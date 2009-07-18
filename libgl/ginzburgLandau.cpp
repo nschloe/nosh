@@ -104,12 +104,12 @@ std::complex<double> GinzburgLandau::boundaryConditions( int eqnum,
               k = psiGrid.i2k( i );
               psiK = ( psiReal[k], psiImag[k] );
 
-              i[0] = 1; i[1] = 0;
+              i[0] = i[0]+1;
               k = psiGrid.i2k( i );
               psiKRight = ( psiReal[k], psiImag[k] );
               ARight    = aGrid.getAxRight( i );
 
-              i[0] = 0; i[1] = 1;
+              i[1] = i[1]+1;
               k = psiGrid.i2k( i );
               psiKAbove = ( psiReal[k], psiImag[k] );
               AAbove    = aGrid.getAyAbove( i );
@@ -123,12 +123,12 @@ std::complex<double> GinzburgLandau::boundaryConditions( int eqnum,
               k = psiGrid.i2k( i );
               psiK = ( psiReal[k], psiImag[k] );
 
-              i[0] = Nx-1; i[1] = 0;
+              i[0] = i[0]-1;
               k = psiGrid.i2k( i );
               psiKLeft = ( psiReal[k], psiImag[k] );
               ALeft    = aGrid.getAxLeft( i );
 
-              i[0] = Nx; i[1] = 1;
+              i[1] = i[1]+1;
               k = psiGrid.i2k( i );
               psiKAbove = ( psiReal[k], psiImag[k] );
               AAbove    = aGrid.getAyAbove( i );
@@ -142,12 +142,12 @@ std::complex<double> GinzburgLandau::boundaryConditions( int eqnum,
               k = psiGrid.i2k( i );
               psiK = ( psiReal[k], psiImag[k] );
 
-              i[0] = Nx-1; i[1] = Nx;
+              i[0] = i[0]-1;
               k = psiGrid.i2k( i );
               psiKLeft = ( psiReal[k], psiImag[k] );
               ALeft    = aGrid.getAxLeft( i );
 
-              i[0] = Nx; i[1] = Nx-1;
+              i[1] = i[1]-1;
               k = psiGrid.i2k( i );
               psiKBelow = ( psiReal[k], psiImag[k] );
               ABelow    = aGrid.getAyBelow( i );
@@ -162,12 +162,12 @@ std::complex<double> GinzburgLandau::boundaryConditions( int eqnum,
               k = psiGrid.i2k( i );
               psiK = ( psiReal[k], psiImag[k] );
 
-              i[0] = 1; i[1] = Nx;
+              i[0] = i[0]+1;
               k = psiGrid.i2k( i );
               psiKRight = ( psiReal[k], psiImag[k] );
               ARight    = aGrid.getAxRight( i );
 
-              i[0] = 0; i[1] = Nx-1;
+              i[1] = i[1]-1;
               k = psiGrid.i2k( i );
               psiKBelow = ( psiReal[k], psiImag[k] );
               ABelow    = aGrid.getAyBelow( i );
@@ -187,7 +187,7 @@ std::complex<double> GinzburgLandau::boundaryConditions( int eqnum,
               AAbove    = aGrid.getAyAbove( i );
 
               res = ( - psiK
-                      + psiKAbove*exp(-cUnit*AAbove*h) ) * cUnit/h;
+                      + psiKAbove * exp(-cUnit*AAbove*h) ) * cUnit/h;
               break;
 
           case RIGHT:
@@ -200,7 +200,7 @@ std::complex<double> GinzburgLandau::boundaryConditions( int eqnum,
               ALeft    = aGrid.getAxLeft( i );
 
               res = ( - psiK
-                      + psiKLeft*exp(-cUnit*ALeft*h) ) * cUnit/h;
+                      + psiKLeft * exp(-cUnit*ALeft*h) ) * cUnit/h;
               break;
 
           case TOP:
@@ -213,7 +213,7 @@ std::complex<double> GinzburgLandau::boundaryConditions( int eqnum,
               ABelow    = aGrid.getAyBelow( i );
 
               res = ( - psiK
-                      + psiKBelow*exp(-cUnit*ABelow*h) ) * cUnit/h;
+                      + psiKBelow * exp(-cUnit*ABelow*h) ) * cUnit/h;
               break;
 
           case LEFT:
@@ -226,7 +226,7 @@ std::complex<double> GinzburgLandau::boundaryConditions( int eqnum,
               ARight    = aGrid.getAxRight( i );
 
               res = ( - psiK
-                      + psiKRight*exp(-cUnit*ARight*h) ) * cUnit/h;
+                      + psiKRight * exp(-cUnit*ARight*h) ) * cUnit/h;
               break;
 
           default:
@@ -236,6 +236,63 @@ std::complex<double> GinzburgLandau::boundaryConditions( int eqnum,
   catch (int) {
       std::cout << "Illegal enumerator in function boundaryConditions." << std::endl;
   }
+
+  // return the result
+  return res;
+}
+// =============================================================================
+
+
+
+// =============================================================================
+// Evaluate GL at the boundary node.
+// Return value for equation #k.
+std::complex<double> GinzburgLandau::interiorEquations( int eqnum,
+                                                        std::complex<double>* psi,
+                                                        PsiGrid::PsiGrid psiGrid,
+                                                        AGrid::AGrid     aGrid )
+{
+  // Equations are ordered counter-clockwise, starting at the origin.
+  static double x[2];
+
+  std::complex<double> psiK, psiKRight, psiKLeft, psiKAbove, psiKBelow,
+                       res;
+  const std::complex<double> cUnit(0.0,1.0);
+  int i[2];
+  int k;
+
+  double ARight = aGrid.getAxRight( i );
+  double ALeft  = aGrid.getAxRight( i );
+  double ABelow = aGrid.getAyBelow( i );
+  double AAbove = aGrid.getAyAbove( i );
+
+  k = psiGrid.i2k( i );
+  psiK = psi[k];
+
+  i[0] = i[0]+1;
+  k = psiGrid.i2k( i );
+  psiKRight = psi[k];
+  i[0] = i[0]-1;
+
+  i[0] = i[0]-1;
+  k = psiGrid.i2k( i );
+  psiKLeft = psi[k];
+  i[0] = i[0]+1;
+
+  i[1] = i[1]+1;
+  k = psiGrid.i2k( i );
+  psiKAbove = psi[k];
+  i[1] = i[1]-1;
+
+  i[1] = i[1]-1;
+  k = psiGrid.i2k( i );
+  psiKBelow = psi[k];
+  i[1] = i[1]+1;
+
+  res = ( -4.0*psiK
+          + exp(cUnit*ALeft *h) + exp(-cUnit*ARight*h)
+          + exp(cUnit*ABelow*h) + exp(-cUnit*AAbove*h) ) / (h*h)
+        + psiK * (1-abs(psiK)*abs(psiK));
 
   // return the result
   return res;

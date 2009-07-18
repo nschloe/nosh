@@ -13,11 +13,16 @@ class GinzburgLandau
      ~GinzburgLandau();
 
      // evaluate the 
-     std::complex<double> boundaryConditions( int k,
+     std::complex<double> boundaryConditions( int eqnum,
                                               double* psiReal,
                                               double* psiImag,
                                               PsiGrid::PsiGrid,
                                               AGrid::AGrid );
+
+     std::complex<double> interiorEquations( int eqnum,
+                                             std::complex<double>* psi,
+                                             PsiGrid::PsiGrid psiGrid,
+                                             AGrid::AGrid     aGrid );
 
   private:
       int Nx;
