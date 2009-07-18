@@ -1,4 +1,5 @@
 #include "psiGrid.h"
+#include <iostream>
 
 // =============================================================================
 // Class constructor
@@ -50,3 +51,34 @@ int* PsiGrid::k2i( int k )
 }
 // =============================================================================
 
+
+// =============================================================================
+// maps a 2D index i to a running index k
+int PsiGrid::i2k( int* i )
+{
+  int k;
+
+  try {
+      if (i[0]<Nx) { // south
+          k = i[0];
+      } else if (i[0]==Nx) { // east
+          k = i[1] + Nx;
+      } else if (i[1]==Nx) { // north
+          k = 3*Nx - i[0];
+      } else if (i[0]==0) { // west
+          k = 4*Nx - i[0];
+      } else if ( i[0]>0 && i[0]<Nx && i[1]>0 && i[1]<Nx ) { // interior
+          k = 4*Nx
+            + (Nx-1)*(i[1]-1)
+            + i[0]-1;
+      } else {
+          throw 1;
+      }
+  }
+  catch(int) {
+      std::cout << "Illegal 2D index i=(" << i[0] << ", " << i[1] << ")." << std::endl;
+  }
+
+  return k;
+}
+// =============================================================================

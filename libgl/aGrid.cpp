@@ -17,6 +17,7 @@ H0(h0),
 Ax(boost::extents[nx][nx+1]),
 Ay(boost::extents[nx+1][nx])
 {
+  // initialize the step size
   h = Edgelength / Nx;
 
   // initialize the Ax with values
