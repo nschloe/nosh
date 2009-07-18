@@ -261,6 +261,10 @@ std::complex<double> GinzburgLandau::interiorEquations( int eqnum,
   int i[2];
   int k;
 
+  // get the corresponding running index for eqnum
+  i[1] = eqnum%(Nx-1) + 1;
+  i[2] = eqnum/(Nx-1) + 1;
+
   double ARight = aGrid.getAxRight( i );
   double ALeft  = aGrid.getAxRight( i );
   double ABelow = aGrid.getAyBelow( i );
