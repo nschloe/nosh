@@ -6,6 +6,19 @@
 class GinzburgLandau
 {
   public:
+      enum equationType
+      {
+        BOTTOMLEFT,
+        BOTTOMRIGHT,
+        TOPLEFT,
+        TOPRIGHT,
+        BOTTOM,
+        TOP,
+        LEFT,
+        RIGHT,
+        INTERIOR
+      };
+
      // constructor
      GinzburgLandau( int nx );
 
@@ -13,19 +26,26 @@ class GinzburgLandau
      ~GinzburgLandau();
 
      // evaluate the 
-     std::complex<double> boundaryConditions( int eqnum,
-                                              double* psiReal,
-                                              double* psiImag,
-                                              PsiGrid::PsiGrid,
-                                              AGrid::AGrid );
+     std::complex<double> computeGl( int eqnum,
+                                     std::complex<double>* psi,
+                                     PsiGrid::PsiGrid,
+                                     AGrid::AGrid );
 
-     std::complex<double> interiorEquations( int eqnum,
-                                             std::complex<double>* psi,
-                                             PsiGrid::PsiGrid psiGrid,
-                                             AGrid::AGrid     aGrid );
+     void computeJacobianBlocks( int eqnum,
+                                 std::complex<double>* psi,
+                                 PsiGrid::PsiGrid psiGrid,
+                                 AGrid::AGrid     aGrid,
+                                 int* columnIndicesPsi, 
+                                 int* columnIndicesPsiConj,
+                                 std::complex<double>* valuesPsi,
+                                 std::complex<double>* valuesPsiConj );
 
   private:
       int Nx;
       int d;
       double h;
+
+      void getEquationType( int,
+                            equationType&,
+                            int* );
 };
