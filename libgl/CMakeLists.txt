@@ -1,7 +1,8 @@
 ENABLE_LANGUAGE( CXX )
 
 SET ( gl_SRCS 
-      psiGrid.cpp )
+      psiGrid.cpp 
+      aGrid.cpp)
 
 add_library ( gl STATIC
               ${gl_SRCS} )
