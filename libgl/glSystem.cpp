@@ -1,8 +1,10 @@
 #include "glSystem.h"
 #include <iostream>
 #include <complex>
+#include <vector>
 
 #include "Epetra_Export.h"
+#include "Epetra_CrsMatrix.h"
 
 // =============================================================================
 // Class constructor
@@ -68,30 +70,27 @@ int GlSystem::realIndex2psiIndex ( int realIndex )
 
 
 // =============================================================================
-bool GlSystem::real2psi( Epetra_Vector realvec,
+void GlSystem::real2psi( Epetra_Vector realvec,
                          std::complex<double>* psi )
 {
   for (int k=0; k<NumComplexUnknowns; k++ )
       psi[k] = ( realvec[2*k-1], realvec[2*k] );
-
-  return true;
 }
 // =============================================================================
 
 
-
 // =============================================================================
 bool GlSystem::computeF( const Epetra_Vector& x,
-                         Epetra_Vector& FVec )
+                         Epetra_Vector& FVec     )
 {
   Epetra_Vector xEverywhere ( *EverywhereMap );
-  std::complex<double> psi[NumComplexUnknowns];
+  std::complex<double>* psi = new std::complex<double>[NumComplexUnknowns];
   std::complex<double> val;
 
   // scatter x over all processors
   Epetra_Export Exporter( *StandardMap, *EverywhereMap );
   xEverywhere.Export( x, Exporter, Insert );
-  real2psi( xEverywhere, psi );
+  (void) real2psi( xEverywhere, psi );
 
   // loop over the system rows
   for( int i=0; i<NumMyElements; i+2 ) {
@@ -117,25 +116,139 @@ bool GlSystem::computeF( const Epetra_Vector& x,
 
 
 
-// // =============================================================================
-// computeJacobian( x )
-// {
-//   complex<double> val;
+// =============================================================================
+bool GlSystem::computeJacobian( const Epetra_Vector& x )
+{
+  int ierr,
+      numEntriesPsi,
+      numEntriesPsiConj;
+  Epetra_Vector xEverywhere ( *EverywhereMap );
+  std::complex<double>* psi = new std::complex<double>[NumComplexUnknowns];
+
+  int *columnIndicesPsi     = NULL,
+      *columnIndicesPsiReal = NULL,
+      *columnIndicesPsiImag = NULL,
+      *columnIndicesPsiConj = NULL,
+      *columnIndicesPsiConjReal = NULL,
+      *columnIndicesPsiConjImag = NULL;
+  std::complex<double> *valuesPsi     = NULL,
+                       *valuesPsiConj = NULL;
+  double *valuesPsiReal     = NULL,
+         *valuesPsiConjReal = NULL,
+         *valuesPsiImag     = NULL,
+         *valuesPsiConjImag = NULL;
+
+  // scatter x over all processors
+  Epetra_Export Exporter( *StandardMap, *EverywhereMap );
+  xEverywhere.Export( x, Exporter, Insert );
+  real2psi( xEverywhere, psi );
+
+  // Construct the Epetra Matrix
+  for( int i=0 ; i<NumMyElements ; i+2 ) {
+      int Row = StandardMap->GID(i);
+      // get the values and column indices
+      Gl.computeJacobianBlocks( Row,
+                                psi,
+                                numEntriesPsi,
+                                columnIndicesPsi,
+                                valuesPsi,
+                                numEntriesPsiConj,
+                                columnIndicesPsiConj,
+                                valuesPsiConj );
+
+      // insert the coefficients Re(alpha_i) of Re(psi_i)
+      columnIndicesPsiReal = new int [numEntriesPsi];
+      for (int k=0; k<numEntriesPsi; k++)
+          columnIndicesPsiReal[k] = 2*columnIndicesPsi[k]-1;
+      valuesPsiReal = new double(numEntriesPsi);
+      for (int k=0; k<numEntriesPsi; k++)
+          valuesPsiReal[k] = std::real( valuesPsi[k] );
+      ierr = jacobian->ReplaceGlobalValues( Row,
+                                            numEntriesPsi,
+                                            valuesPsiReal,
+                                            columnIndicesPsiReal );
+
+      // insert the coefficients Re(beta_i) of Re(psi_i)
+      columnIndicesPsiConjReal = new int[numEntriesPsiConj];
+      for (int k=0; k<numEntriesPsiConj; k++)
+          columnIndicesPsiConjReal[k] = 2*columnIndicesPsiConj[k]-1;
+      valuesPsiConjReal = new double[numEntriesPsiConj];
+      for (int k=0; k<numEntriesPsiConj; k++)
+          valuesPsiConjReal[k] = std::real( valuesPsiConj[k] );
+      ierr = jacobian->SumIntoMyValues( Row,
+                                        numEntriesPsiConj,
+                                        valuesPsiConjReal,
+                                        columnIndicesPsiConjReal );
+
+      // insert the coefficients -Im(alpha_i) of Im(psi_i)
+      columnIndicesPsiImag = new int[numEntriesPsi];
+      for (int k=0; k<numEntriesPsi; k++)
+          columnIndicesPsiImag[k] = 2*columnIndicesPsi[k];
+      valuesPsiImag = new double[numEntriesPsi];
+      for (int k=0; k<numEntriesPsi; k++)
+          valuesPsiImag[k] = -std::imag( valuesPsi[k] );
+      ierr = jacobian->ReplaceGlobalValues( Row,
+                                            numEntriesPsi,
+                                            valuesPsiImag,
+                                            columnIndicesPsiImag );
+
+      // insert the coefficients Im(beta_i) of Im(psi_i)
+      columnIndicesPsiConjImag = new int[numEntriesPsiConj];
+      for (int k=0; k<numEntriesPsiConj; k++)
+          columnIndicesPsiConjImag[k] = 2*columnIndicesPsiConj[k];
+      valuesPsiConjImag = new double[numEntriesPsiConj];
+      for (int k=0; k<numEntriesPsiConj; k++)
+          valuesPsiConjImag[k] = std::imag( valuesPsiConj[k] );
+      ierr = jacobian->SumIntoMyValues( Row,
+                                        numEntriesPsiConj,
+                                        valuesPsiConjImag,
+                                        columnIndicesPsiConjImag );
+
+//       // -----------------------------------------------------------------
+//       if ( i+1<NumMyElements ) {
+//       // insert the coefficients Im(alpha_i) of Re(psi_i)
+//       int* columnIndicesPsiImag = 2*columnIndicesPsi-1;
+//       numEntries = columnIndicesPsiImag.length();
+//       double* valuesPsiImag = imag(valuesPsi);
+//       ierr = jacobian->ReplaceGlobalValues( Row,
+//                                             numEntries,
+//                                             &valuesPsiImag,
+//                                             &columnIndicesPsiImag );
 // 
-//   psi = real2psi(x);
+//       // insert the coefficients Imag(beta_i) of Re(psi_i)
+//       int* columnIndicesPsiImag = 2*columnIndicesPsiConj-1;
+//       numEntries = columnIndicesPsiConjImag.length();
+//       double* valuesPsiConjImag = real(valuesPsiConj);
+//       ierr = jacobian->AddToGlobalValues( Row,
+//                                           numEntries,
+//                                           &valuesPsiConjImag,
+//                                           &columnIndicesPsiImag );
 // 
-//   // distribute psi (x) to each processor
-//   Gl.computeJacobianBlocks( myGlobalRowIndex,
-//                             psi,
-//                             int* columnIndicesPsi, 
-//                             int* columnIndicesPsiConj,
-//                             std::complex<double>* valuesPsi,
-//                             std::complex<double>* valuesPsiConj )
+//       // insert the coefficients -Im(alpha_i) of Im(psi_i)
+//       int* columnIndicesPsiImag = 2*columnIndicesPsi;
+//       numEntries = columnIndicesPsiImag.length();
+//       double* valuesPsiImag = imag(valuesPsi);
+//       ierr = jacobian->ReplaceGlobalValues( Row,
+//                                             numEntries,
+//                                             &valuesPsiImag,
+//                                             &columnIndicesPsiImag );
 // 
-//   ReplaceValue( myGlobalRowIndex, columnIndicesPsi, valuesPsi );
-// 
-// }
-// // =============================================================================
+//       // insert the coefficients Im(beta_i) of Im(psi_i)
+//       int* columnIndicesPsiConjImag = 2*columnIndicesPsi;
+//       numEntries = columnIndicesPsiConjImag.length();
+//       double* valuesPsiConjImag = imag(valuesPsi);
+//       ierr = jacobian->AddToGlobalValues( Row,
+//                                           numEntries,
+//                                           &valuesPsiConjImag,
+//                                           &columnIndicesPsiConjImag );
+//       }
+      // -----------------------------------------------------------------
+
+  }
+
+  return true;
+}
+// =============================================================================
 
 // // =============================================================================
 // createGraph()

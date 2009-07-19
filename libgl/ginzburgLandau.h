@@ -31,11 +31,14 @@ class GinzburgLandau
      std::complex<double> computeGl( int eqnum,
                                      std::complex<double>* psi );
 
+     // get coefficients of the jacobian system
      void computeJacobianBlocks( int eqnum,
                                  std::complex<double>* psi,
+                                 int& numEntriesPsi,
                                  int* columnIndicesPsi, 
-                                 int* columnIndicesPsiConj,
                                  std::complex<double>* valuesPsi,
+                                 int& numEntriesPsiConj,
+                                 int* columnIndicesPsiConj,
                                  std::complex<double>* valuesPsiConj );
 
   private:
