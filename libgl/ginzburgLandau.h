@@ -20,21 +20,19 @@ class GinzburgLandau
       };
 
      // constructor
-     GinzburgLandau( int nx );
+     GinzburgLandau( int nx,
+                     double edgelength,
+                     double h0 );
 
      // destructor
      ~GinzburgLandau();
 
      // evaluate the 
      std::complex<double> computeGl( int eqnum,
-                                     std::complex<double>* psi,
-                                     PsiGrid::PsiGrid,
-                                     AGrid::AGrid );
+                                     std::complex<double>* psi );
 
      void computeJacobianBlocks( int eqnum,
                                  std::complex<double>* psi,
-                                 PsiGrid::PsiGrid psiGrid,
-                                 AGrid::AGrid     aGrid,
                                  int* columnIndicesPsi, 
                                  int* columnIndicesPsiConj,
                                  std::complex<double>* valuesPsi,
@@ -44,6 +42,10 @@ class GinzburgLandau
       int Nx;
       int d;
       double h;
+      double Edgelength;
+      double H0;
+      PsiGrid::PsiGrid psiGrid;
+      AGrid::AGrid     aGrid;
 
       void getEquationType( int,
                             equationType&,
