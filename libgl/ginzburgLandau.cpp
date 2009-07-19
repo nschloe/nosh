@@ -87,7 +87,8 @@ void GinzburgLandau::getEquationType( int eqnum,
       }
   }
   catch(int) {
-      std::cout << "Illegal running index eqnum=" << eqnum << "in function boundaryConditions." << std::endl;
+      std::cout << "Illegal running index eqnum=" << eqnum
+                << "in function boundaryConditions." << std::endl;
   }
 
 }
