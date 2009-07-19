@@ -93,21 +93,26 @@ bool GlSystem::computeF( const Epetra_Vector& x,
   (void) real2psi( xEverywhere, psi );
 
   // loop over the system rows
-  for( int i=0; i<NumMyElements; i+2 ) {
-      // always extract TWO equations at once (real+imaginary part)
+  double passVal;
+  for( int i=0; i<NumMyElements; i++ ) {
       int myGlobalIndex = StandardMap->GID(i);
-      // get the index of the complex valued equation
-      int psiIndex = realIndex2psiIndex( myGlobalIndex );
-      val = Gl.computeGl( psiIndex, psi );
+      if (myGlobalIndex==2*NumComplexUnknowns+1) { // phase condition
+          passVal = 0.0;
+      } else { // GL equations
+          // get the index of the complex valued equation
+          int psiIndex = realIndex2psiIndex( myGlobalIndex );
+          // get the complex value
+          // TODO: The same value is actually fetched twice in this loop
+          //       possibly consecutively: Once for the real, once for
+          //       the imaginary part of it.
+          val = Gl.computeGl( psiIndex, psi );
 
-      // fill in the values
-      double passVal = real(val);
-      rhs->ReplaceGlobalValues( 1, &passVal, &myGlobalIndex );
-      if ( i+1<NumMyElements ) {
-          passVal = imag(val);
-          int passInd = myGlobalIndex+1;
-          rhs->ReplaceGlobalValues( 1, &passVal, &passInd );
+          if ( myGlobalIndex%2 ) // myGlobalIndex is even
+              passVal = real(val);
+          else // myGlobalIndex is odd
+              passVal = imag(val);
       }
+      rhs->ReplaceGlobalValues( 1, &passVal, &myGlobalIndex );
   }
 
   return true;
@@ -125,7 +130,8 @@ bool GlSystem::computeJacobian( const Epetra_Vector& x )
   Epetra_Vector xEverywhere ( *EverywhereMap );
   std::complex<double>* psi = new std::complex<double>[NumComplexUnknowns];
 
-  int *columnIndicesPsi     = NULL,
+  int *columnIndices        = NULL,
+      *columnIndicesPsi     = NULL,
       *columnIndicesPsiReal = NULL,
       *columnIndicesPsiImag = NULL,
       *columnIndicesPsiConj = NULL,
@@ -144,120 +150,160 @@ bool GlSystem::computeJacobian( const Epetra_Vector& x )
   real2psi( xEverywhere, psi );
 
   // Construct the Epetra Matrix
-  for( int i=0 ; i<NumMyElements ; i+2 ) {
+  for( int i=0 ; i<NumMyElements ; i++ ) {
       int Row = StandardMap->GID(i);
-      // get the values and column indices
-      Gl.computeJacobianBlocks( Row,
-                                psi,
-                                numEntriesPsi,
-                                columnIndicesPsi,
-                                valuesPsi,
-                                numEntriesPsiConj,
-                                columnIndicesPsiConj,
-                                valuesPsiConj );
 
-      // insert the coefficients Re(alpha_i) of Re(psi_i)
-      columnIndicesPsiReal = new int [numEntriesPsi];
-      for (int k=0; k<numEntriesPsi; k++)
-          columnIndicesPsiReal[k] = 2*columnIndicesPsi[k]-1;
-      valuesPsiReal = new double(numEntriesPsi);
-      for (int k=0; k<numEntriesPsi; k++)
-          valuesPsiReal[k] = std::real( valuesPsi[k] );
-      ierr = jacobian->ReplaceGlobalValues( Row,
-                                            numEntriesPsi,
-                                            valuesPsiReal,
-                                            columnIndicesPsiReal );
-
-      // insert the coefficients Re(beta_i) of Re(psi_i)
-      columnIndicesPsiConjReal = new int[numEntriesPsiConj];
-      for (int k=0; k<numEntriesPsiConj; k++)
-          columnIndicesPsiConjReal[k] = 2*columnIndicesPsiConj[k]-1;
-      valuesPsiConjReal = new double[numEntriesPsiConj];
-      for (int k=0; k<numEntriesPsiConj; k++)
-          valuesPsiConjReal[k] = std::real( valuesPsiConj[k] );
-      ierr = jacobian->SumIntoMyValues( Row,
-                                        numEntriesPsiConj,
-                                        valuesPsiConjReal,
-                                        columnIndicesPsiConjReal );
-
-      // insert the coefficients -Im(alpha_i) of Im(psi_i)
-      columnIndicesPsiImag = new int[numEntriesPsi];
-      for (int k=0; k<numEntriesPsi; k++)
-          columnIndicesPsiImag[k] = 2*columnIndicesPsi[k];
-      valuesPsiImag = new double[numEntriesPsi];
-      for (int k=0; k<numEntriesPsi; k++)
-          valuesPsiImag[k] = -std::imag( valuesPsi[k] );
-      ierr = jacobian->ReplaceGlobalValues( Row,
-                                            numEntriesPsi,
-                                            valuesPsiImag,
-                                            columnIndicesPsiImag );
-
-      // insert the coefficients Im(beta_i) of Im(psi_i)
-      columnIndicesPsiConjImag = new int[numEntriesPsiConj];
-      for (int k=0; k<numEntriesPsiConj; k++)
-          columnIndicesPsiConjImag[k] = 2*columnIndicesPsiConj[k];
-      valuesPsiConjImag = new double[numEntriesPsiConj];
-      for (int k=0; k<numEntriesPsiConj; k++)
-          valuesPsiConjImag[k] = std::imag( valuesPsiConj[k] );
-      ierr = jacobian->SumIntoMyValues( Row,
-                                        numEntriesPsiConj,
-                                        valuesPsiConjImag,
-                                        columnIndicesPsiConjImag );
-
-      // -----------------------------------------------------------------
-      if ( i+1<NumMyElements ) {
-          Row = Row+1;
-
-          // insert the coefficients Im(alpha_i) of Re(psi_i)
-          columnIndicesPsiReal = new int [numEntriesPsi];
-          for (int k=0; k<numEntriesPsi; k++)
-              columnIndicesPsiReal[k] = 2*columnIndicesPsi[k]-1;
-          valuesPsiImag = new double(numEntriesPsi);
-          for (int k=0; k<numEntriesPsi; k++)
-              valuesPsiImag[k] = std::imag( valuesPsi[k] );
+      if (Row==2*NumComplexUnknowns+1) {// phase condition
+          // fill in phase condition stuff
+          int numEntries = 2*NumComplexUnknowns;
+          columnIndices = new int[numEntries];
+          for (int k; k<numEntries; k++ )
+              columnIndices[k] = k;
+          double* values = new double[numEntries];
+          for (int k; k<NumComplexUnknowns; k++ ) {
+              values[2*k]   = -imag(psi[k]);
+              values[2*k+1] =  real(psi[k]);
+          }
+          // fill it in!
           ierr = jacobian->ReplaceGlobalValues( Row,
                                                 numEntriesPsi,
-                                                valuesPsiImag,
-                                                columnIndicesPsiReal );
+                                                values,
+                                                columnIndices );
+      } else { // GL equations
+          // get the values and column indices
+          // TODO: The same value is actually fetched twice in this loop
+          //       possibly consecutively: Once for the real, once for
+          //       the imaginary part of it.
+          Gl.computeJacobianBlocks( Row,
+                                    psi,
+                                    numEntriesPsi,
+                                    columnIndicesPsi,
+                                    valuesPsi,
+                                    numEntriesPsiConj,
+                                    columnIndicesPsiConj,
+                                    valuesPsiConj );
 
-          // insert the coefficients Im(beta_i) of Re(psi_i)
-          columnIndicesPsiConjReal = new int[numEntriesPsiConj];
-          for (int k=0; k<numEntriesPsiConj; k++)
-              columnIndicesPsiConjReal[k] = 2*columnIndicesPsiConj[k]-1;
-          valuesPsiConjImag = new double[numEntriesPsiConj];
-          for (int k=0; k<numEntriesPsiConj; k++)
-              valuesPsiConjImag[k] = std::imag( valuesPsiConj[k] );
-          ierr = jacobian->SumIntoMyValues( Row,
-                                            numEntriesPsiConj,
-                                            valuesPsiConjImag,
-                                            columnIndicesPsiConjReal );
+          if ( Row%2 ) { // myGlobalIndex is even
+              // ---------------------------------------------------------
+              // insert the coefficients Re(alpha_i) of Re(psi_i)
+              columnIndicesPsiReal = new int [numEntriesPsi];
+              for (int k=0; k<numEntriesPsi; k++)
+                  columnIndicesPsiReal[k] = 2*columnIndicesPsi[k]-1;
+              valuesPsiReal = new double(numEntriesPsi);
+              for (int k=0; k<numEntriesPsi; k++)
+                  valuesPsiReal[k] = std::real( valuesPsi[k] );
+              ierr = jacobian->ReplaceGlobalValues( Row,
+                                                    numEntriesPsi,
+                                                    valuesPsiReal,
+                                                    columnIndicesPsiReal );
 
-          // insert the coefficients Re(alpha_i) of Im(psi_i)
-          columnIndicesPsiImag = new int[numEntriesPsi];
-          for (int k=0; k<numEntriesPsi; k++)
-              columnIndicesPsiImag[k] = 2*columnIndicesPsi[k];
-          valuesPsiReal = new double[numEntriesPsi];
-          for (int k=0; k<numEntriesPsi; k++)
-              valuesPsiReal[k] = std::imag( valuesPsi[k] );
-          ierr = jacobian->ReplaceGlobalValues( Row,
-                                                numEntriesPsi,
-                                                valuesPsiReal,
-                                                columnIndicesPsiImag );
+              // insert the coefficients Re(beta_i) of Re(psi_i)
+              columnIndicesPsiConjReal = new int[numEntriesPsiConj];
+              for (int k=0; k<numEntriesPsiConj; k++)
+                  columnIndicesPsiConjReal[k] = 2*columnIndicesPsiConj[k]-1;
+              valuesPsiConjReal = new double[numEntriesPsiConj];
+              for (int k=0; k<numEntriesPsiConj; k++)
+                  valuesPsiConjReal[k] = std::real( valuesPsiConj[k] );
+              ierr = jacobian->SumIntoMyValues( Row,
+                                                numEntriesPsiConj,
+                                                valuesPsiConjReal,
+                                                columnIndicesPsiConjReal );
 
-          // insert the coefficients -Re(beta_i) of Im(psi_i)
-          columnIndicesPsiConjImag = new int[numEntriesPsiConj];
-          for (int k=0; k<numEntriesPsiConj; k++)
-              columnIndicesPsiConjImag[k] = 2*columnIndicesPsiConj[k];
-          valuesPsiConjReal = new double[numEntriesPsiConj];
-          for (int k=0; k<numEntriesPsiConj; k++)
-              valuesPsiConjReal[k] = -std::imag( valuesPsiConj[k] );
-          ierr = jacobian->SumIntoMyValues( Row,
-                                            numEntriesPsiConj,
-                                            valuesPsiConjReal,
-                                            columnIndicesPsiConjImag );
+              // insert the coefficients -Im(alpha_i) of Im(psi_i)
+              columnIndicesPsiImag = new int[numEntriesPsi];
+              for (int k=0; k<numEntriesPsi; k++)
+                  columnIndicesPsiImag[k] = 2*columnIndicesPsi[k];
+              valuesPsiImag = new double[numEntriesPsi];
+              for (int k=0; k<numEntriesPsi; k++)
+                  valuesPsiImag[k] = -std::imag( valuesPsi[k] );
+              ierr = jacobian->ReplaceGlobalValues( Row,
+                                                    numEntriesPsi,
+                                                    valuesPsiImag,
+                                                    columnIndicesPsiImag );
+
+              // insert the coefficients Im(beta_i) of Im(psi_i)
+              columnIndicesPsiConjImag = new int[numEntriesPsiConj];
+              for (int k=0; k<numEntriesPsiConj; k++)
+                  columnIndicesPsiConjImag[k] = 2*columnIndicesPsiConj[k];
+              valuesPsiConjImag = new double[numEntriesPsiConj];
+              for (int k=0; k<numEntriesPsiConj; k++)
+                  valuesPsiConjImag[k] = std::imag( valuesPsiConj[k] );
+              ierr = jacobian->SumIntoMyValues( Row,
+                                                numEntriesPsiConj,
+                                                valuesPsiConjImag,
+                                                columnIndicesPsiConjImag );
+
+              // right bordering
+              int k = realIndex2psiIndex( Row );
+              double value  = imag(psi[k]);
+              int    column = 2*NumComplexUnknowns+1;
+              ierr = jacobian->ReplaceMyValues( Row,
+                                                1,
+                                                &value,
+                                                &column );
+
+              // ---------------------------------------------------------
+          } else { // myGlobalIndex is odd
+              // ---------------------------------------------------------
+              // insert the coefficients Im(alpha_i) of Re(psi_i)
+              columnIndicesPsiReal = new int [numEntriesPsi];
+              for (int k=0; k<numEntriesPsi; k++)
+                  columnIndicesPsiReal[k] = 2*columnIndicesPsi[k]-1;
+              valuesPsiImag = new double(numEntriesPsi);
+              for (int k=0; k<numEntriesPsi; k++)
+                  valuesPsiImag[k] = std::imag( valuesPsi[k] );
+              ierr = jacobian->ReplaceGlobalValues( Row,
+                                                    numEntriesPsi,
+                                                    valuesPsiImag,
+                                                    columnIndicesPsiReal );
+
+              // insert the coefficients Im(beta_i) of Re(psi_i)
+              columnIndicesPsiConjReal = new int[numEntriesPsiConj];
+              for (int k=0; k<numEntriesPsiConj; k++)
+                  columnIndicesPsiConjReal[k] = 2*columnIndicesPsiConj[k]-1;
+              valuesPsiConjImag = new double[numEntriesPsiConj];
+              for (int k=0; k<numEntriesPsiConj; k++)
+                  valuesPsiConjImag[k] = std::imag( valuesPsiConj[k] );
+              ierr = jacobian->SumIntoMyValues( Row,
+                                                numEntriesPsiConj,
+                                                valuesPsiConjImag,
+                                                columnIndicesPsiConjReal );
+
+              // insert the coefficients Re(alpha_i) of Im(psi_i)
+              columnIndicesPsiImag = new int[numEntriesPsi];
+              for (int k=0; k<numEntriesPsi; k++)
+                  columnIndicesPsiImag[k] = 2*columnIndicesPsi[k];
+              valuesPsiReal = new double[numEntriesPsi];
+              for (int k=0; k<numEntriesPsi; k++)
+                  valuesPsiReal[k] = std::imag( valuesPsi[k] );
+              ierr = jacobian->ReplaceGlobalValues( Row,
+                                                    numEntriesPsi,
+                                                    valuesPsiReal,
+                                                    columnIndicesPsiImag );
+
+              // insert the coefficients -Re(beta_i) of Im(psi_i)
+              columnIndicesPsiConjImag = new int[numEntriesPsiConj];
+              for (int k=0; k<numEntriesPsiConj; k++)
+                  columnIndicesPsiConjImag[k] = 2*columnIndicesPsiConj[k];
+              valuesPsiConjReal = new double[numEntriesPsiConj];
+              for (int k=0; k<numEntriesPsiConj; k++)
+                  valuesPsiConjReal[k] = -std::imag( valuesPsiConj[k] );
+              ierr = jacobian->SumIntoMyValues( Row,
+                                                numEntriesPsiConj,
+                                                valuesPsiConjReal,
+                                                columnIndicesPsiConjImag );
+
+              // right bordering
+              int k = realIndex2psiIndex( Row );
+              double value  = -real(psi[k]);
+              int    column = 2*NumComplexUnknowns+1;
+              ierr = jacobian->ReplaceMyValues( Row,
+                                                1,
+                                                &value,
+                                                &column );
+              // ---------------------------------------------------------
+          }
       }
-      // -----------------------------------------------------------------
-
   }
 
   return true;

@@ -16,7 +16,8 @@ class GinzburgLandau
         TOP,
         LEFT,
         RIGHT,
-        INTERIOR
+        INTERIOR,
+        PHASE_CONDITION
       };
 
      // constructor
