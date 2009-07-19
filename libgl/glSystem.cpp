@@ -204,44 +204,58 @@ bool GlSystem::computeJacobian( const Epetra_Vector& x )
                                         valuesPsiConjImag,
                                         columnIndicesPsiConjImag );
 
-//       // -----------------------------------------------------------------
-//       if ( i+1<NumMyElements ) {
-//       // insert the coefficients Im(alpha_i) of Re(psi_i)
-//       int* columnIndicesPsiImag = 2*columnIndicesPsi-1;
-//       numEntries = columnIndicesPsiImag.length();
-//       double* valuesPsiImag = imag(valuesPsi);
-//       ierr = jacobian->ReplaceGlobalValues( Row,
-//                                             numEntries,
-//                                             &valuesPsiImag,
-//                                             &columnIndicesPsiImag );
-// 
-//       // insert the coefficients Imag(beta_i) of Re(psi_i)
-//       int* columnIndicesPsiImag = 2*columnIndicesPsiConj-1;
-//       numEntries = columnIndicesPsiConjImag.length();
-//       double* valuesPsiConjImag = real(valuesPsiConj);
-//       ierr = jacobian->AddToGlobalValues( Row,
-//                                           numEntries,
-//                                           &valuesPsiConjImag,
-//                                           &columnIndicesPsiImag );
-// 
-//       // insert the coefficients -Im(alpha_i) of Im(psi_i)
-//       int* columnIndicesPsiImag = 2*columnIndicesPsi;
-//       numEntries = columnIndicesPsiImag.length();
-//       double* valuesPsiImag = imag(valuesPsi);
-//       ierr = jacobian->ReplaceGlobalValues( Row,
-//                                             numEntries,
-//                                             &valuesPsiImag,
-//                                             &columnIndicesPsiImag );
-// 
-//       // insert the coefficients Im(beta_i) of Im(psi_i)
-//       int* columnIndicesPsiConjImag = 2*columnIndicesPsi;
-//       numEntries = columnIndicesPsiConjImag.length();
-//       double* valuesPsiConjImag = imag(valuesPsi);
-//       ierr = jacobian->AddToGlobalValues( Row,
-//                                           numEntries,
-//                                           &valuesPsiConjImag,
-//                                           &columnIndicesPsiConjImag );
-//       }
+      // -----------------------------------------------------------------
+      if ( i+1<NumMyElements ) {
+          Row = Row+1;
+
+          // insert the coefficients Im(alpha_i) of Re(psi_i)
+          columnIndicesPsiReal = new int [numEntriesPsi];
+          for (int k=0; k<numEntriesPsi; k++)
+              columnIndicesPsiReal[k] = 2*columnIndicesPsi[k]-1;
+          valuesPsiImag = new double(numEntriesPsi);
+          for (int k=0; k<numEntriesPsi; k++)
+              valuesPsiImag[k] = std::imag( valuesPsi[k] );
+          ierr = jacobian->ReplaceGlobalValues( Row,
+                                                numEntriesPsi,
+                                                valuesPsiImag,
+                                                columnIndicesPsiReal );
+
+          // insert the coefficients Im(beta_i) of Re(psi_i)
+          columnIndicesPsiConjReal = new int[numEntriesPsiConj];
+          for (int k=0; k<numEntriesPsiConj; k++)
+              columnIndicesPsiConjReal[k] = 2*columnIndicesPsiConj[k]-1;
+          valuesPsiConjImag = new double[numEntriesPsiConj];
+          for (int k=0; k<numEntriesPsiConj; k++)
+              valuesPsiConjImag[k] = std::imag( valuesPsiConj[k] );
+          ierr = jacobian->SumIntoMyValues( Row,
+                                            numEntriesPsiConj,
+                                            valuesPsiConjImag,
+                                            columnIndicesPsiConjReal );
+
+          // insert the coefficients Re(alpha_i) of Im(psi_i)
+          columnIndicesPsiImag = new int[numEntriesPsi];
+          for (int k=0; k<numEntriesPsi; k++)
+              columnIndicesPsiImag[k] = 2*columnIndicesPsi[k];
+          valuesPsiReal = new double[numEntriesPsi];
+          for (int k=0; k<numEntriesPsi; k++)
+              valuesPsiReal[k] = std::imag( valuesPsi[k] );
+          ierr = jacobian->ReplaceGlobalValues( Row,
+                                                numEntriesPsi,
+                                                valuesPsiReal,
+                                                columnIndicesPsiImag );
+
+          // insert the coefficients -Re(beta_i) of Im(psi_i)
+          columnIndicesPsiConjImag = new int[numEntriesPsiConj];
+          for (int k=0; k<numEntriesPsiConj; k++)
+              columnIndicesPsiConjImag[k] = 2*columnIndicesPsiConj[k];
+          valuesPsiConjReal = new double[numEntriesPsiConj];
+          for (int k=0; k<numEntriesPsiConj; k++)
+              valuesPsiConjReal[k] = -std::imag( valuesPsiConj[k] );
+          ierr = jacobian->SumIntoMyValues( Row,
+                                            numEntriesPsiConj,
+                                            valuesPsiConjReal,
+                                            columnIndicesPsiConjImag );
+      }
       // -----------------------------------------------------------------
 
   }
