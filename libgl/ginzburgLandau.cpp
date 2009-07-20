@@ -174,7 +174,6 @@ std::complex<double> GinzburgLandau::computeGl( int eqnum,
                   + psiKBelow * exp( cUnit*ABelow*h) ) * cUnit / (sqrt(2)*h);
           break;
 
-        
       case TOPLEFT:
           k = psiGrid.i2k( i );
           psiK = psi[k];
@@ -193,7 +192,7 @@ std::complex<double> GinzburgLandau::computeGl( int eqnum,
                   + psiKRight * exp( cUnit*ARight*h)
                   + psiKBelow * exp( cUnit*ABelow*h) ) * cUnit / (sqrt(2)*h);
           break;
-        
+
       case BOTTOM:
           k = psiGrid.i2k( i );
           psiK = psi[k];

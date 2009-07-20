@@ -13,4 +13,5 @@ int main(int argc, char *argv[])
   for (int k=0; k<2; k++)
       std::cout << i[k] << std::endl;
 
+  return 0;
 }

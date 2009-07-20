@@ -10,3 +10,4 @@ PROJECT( ginzburg-landau )
 
 add_subdirectory ( libgl )
 add_subdirectory ( main )
+add_subdirectory ( nox )

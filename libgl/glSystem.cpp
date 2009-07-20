@@ -9,13 +9,16 @@
 // =============================================================================
 // Class constructor
 GlSystem::GlSystem( int nx,
-                    GinzburgLandau::GinzburgLandau gl,
+                    double h0,
+                    double edgelength,
                     Epetra_Comm& comm ):
   NumGlobalElements(0),
   NumMyElements(0),  // gets set after map creation
   NumComplexUnknowns(0),
-  Gl(gl),
   Nx(nx),
+  H0(h0),
+  Gl(GinzburgLandau::GinzburgLandau( nx, edgelength, h0 )),
+  Edgelength(edgelength),
   Comm(&comm),
   rhs(0),
   StandardMap(0),
@@ -30,6 +33,11 @@ GlSystem::GlSystem( int nx,
 
   // define the map where each processor has a full solution vector
   EverywhereMap = new Epetra_Map( NumGlobalElements, NumGlobalElements, 0, *Comm );
+
+  // initialize solution
+  initialSolution = Teuchos::rcp(new Epetra_Vector(*StandardMap));
+  initializeSoln();
+
 }
 // =============================================================================
 
@@ -43,22 +51,6 @@ GlSystem::~GlSystem()
   delete EverywhereMap;
 }
 // =============================================================================
-
-
-// // =============================================================================
-// int psiIndex2realIndex ( int psiIndex, complexPart cPart )
-// {
-// 
-//   select (cPart) {
-//       case REAL:
-//           realIndex = 2*psiIndex-1;
-//       case IMAGINARY:
-//           realIndex = 2*psiIndex;
-//   }
-// 
-//   return realIndex;
-// }
-// // =============================================================================
 
 
 // =============================================================================
@@ -81,7 +73,8 @@ void GlSystem::real2psi( Epetra_Vector realvec,
 
 // =============================================================================
 bool GlSystem::computeF( const Epetra_Vector& x,
-                         Epetra_Vector& FVec     )
+                         Epetra_Vector& FVec,
+                         const NOX::Epetra::Interface::Required::FillType fillFlag  )
 {
   Epetra_Vector xEverywhere ( *EverywhereMap );
   std::complex<double>* psi = new std::complex<double>[NumComplexUnknowns];
@@ -122,7 +115,8 @@ bool GlSystem::computeF( const Epetra_Vector& x,
 
 
 // =============================================================================
-bool GlSystem::computeJacobian( const Epetra_Vector& x )
+bool GlSystem::computeJacobian( const Epetra_Vector& x,
+                                Epetra_Operator &Jac    )
 {
   int ierr,
       numEntriesPsi,
@@ -309,6 +303,57 @@ bool GlSystem::computeJacobian( const Epetra_Vector& x )
   return true;
 }
 // =============================================================================
+
+
+// ==========================================================================
+bool GlSystem::computePreconditioner( const Epetra_Vector& x,
+                                      Epetra_Operator& Prec,
+                                      Teuchos::ParameterList* precParams )
+{
+  cout << "ERROR: GlSystem::preconditionVector() - "
+       << "Use Explicit Jacobian only for this test problem!" << endl;
+  throw "GlSystem Error";
+}
+// ==========================================================================
+
+
+// ==========================================================================
+// Set initialSolution to desired initial condition
+bool GlSystem::initializeSoln()
+{
+  initialSolution->PutScalar(0.0); // Default initialization
+
+//   int n=(NumGlobalElements-1)/2;
+//   for (int k=0;k<n;k++){
+//     (*initialSolution)[k] = k+1;
+//   }
+//   for (int k=n;k<2*n;k++){
+//     (*initialSolution)[k] = k+1;
+//   }
+//
+//   (*initialSolution)[NumGlobalElements-1] = 2.718291828;
+
+  return true;
+}
+// ==========================================================================
+
+
+// ==========================================================================
+Teuchos::RCP<Epetra_Vector> GlSystem::getSolution()
+{
+  return initialSolution;
+}
+// ==========================================================================
+
+
+// ==========================================================================
+Teuchos::RCP<Epetra_CrsMatrix> GlSystem::getJacobian()
+{
+  return jacobian;
+}
+// ==========================================================================
+
+
 
 // // =============================================================================
 // createGraph()

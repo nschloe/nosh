@@ -8,7 +8,7 @@ SET ( gl_SRCS
 
 INCLUDE_DIRECTORIES( /usr/local/trilinos/090603a/include/ )
 
-add_library ( gl STATIC
+ADD_LIBRARY ( gl STATIC
               ${gl_SRCS} )
 
-target_link_libraries ( gl )
+TARGET_LINK_LIBRARIES ( gl )
