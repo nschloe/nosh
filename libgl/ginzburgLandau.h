@@ -33,14 +33,21 @@ class GinzburgLandau
                                      std::complex<double>* psi );
 
      // get coefficients of the jacobian system
-     void computeJacobianBlocks( int eqnum,
-                                 std::complex<double>* psi,
-                                 int& numEntriesPsi,
-                                 int* columnIndicesPsi, 
-                                 std::complex<double>* valuesPsi,
-                                 int& numEntriesPsiConj,
-                                 int* columnIndicesPsiConj,
-                                 std::complex<double>* valuesPsiConj );
+     void getJacobianRow( int eqnum,
+                          std::complex<double>* psi,
+                          int& numEntriesPsi,
+                          int* columnIndicesPsi,
+                          std::complex<double>* valuesPsi,
+                          int& numEntriesPsiConj,
+                          int* columnIndicesPsiConj,
+                          std::complex<double>* valuesPsiConj );
+
+     // get sparsity pattern of the jacobian system
+     void getJacobianRowSparsity( int eqnum,
+                                  int& numEntriesPsi,
+                                  int* columnIndicesPsi,
+                                  int& numEntriesPsiConj,
+                                  int* columnIndicesPsiConj );
 
   private:
       int Nx;
@@ -54,4 +61,16 @@ class GinzburgLandau
       void getEquationType( int,
                             equationType&,
                             int* );
+
+      enum filltype { VALUES, SPARSITY };
+
+      void computeJacobianRow( filltype ft,
+                               int eqnum,
+                               std::complex<double>* psi,
+                               int& numEntriesPsi,
+                               int* columnIndicesPsi,
+                               std::complex<double>* valuesPsi,
+                               int& numEntriesPsiConj,
+                               int* columnIndicesPsiConj,
+                               std::complex<double>* valuesPsiConj );
 };

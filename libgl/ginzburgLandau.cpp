@@ -108,7 +108,7 @@ std::complex<double> GinzburgLandau::computeGl( int eqnum,
   std::complex<double> res,
                        cUnit(0.0,1.0),
                        psiK, psiKRight, psiKLeft, psiKAbove, psiKBelow;
-  double ARight, ALeft, AAbove, ABelow;               
+  double ARight, ALeft, AAbove, ABelow;
   int i[2] = {0,0};
   int k;
   equationType eqType;
@@ -289,17 +289,73 @@ std::complex<double> GinzburgLandau::computeGl( int eqnum,
 // =============================================================================
 
 
+
 // =============================================================================
 // Evaluate GL at the boundary node.
 // Return value for equation #k.
-void GinzburgLandau::computeJacobianBlocks( int eqnum,
-                                            std::complex<double>* psi,
-                                            int& numEntriesPsi,
-                                            int* columnIndicesPsi, 
-                                            std::complex<double>* valuesPsi,
-                                            int& numEntriesPsiConj,
-                                            int* columnIndicesPsiConj,
-                                            std::complex<double>* valuesPsiConj )
+void GinzburgLandau::getJacobianRow( int eqnum,
+                                         std::complex<double>* psi,
+                                         int& numEntriesPsi,
+                                         int* columnIndicesPsi,
+                                         std::complex<double>* valuesPsi,
+                                         int& numEntriesPsiConj,
+                                         int* columnIndicesPsiConj,
+                                         std::complex<double>* valuesPsiConj )
+{
+  computeJacobianRow( VALUES,
+                      eqnum,
+                      psi,
+                      numEntriesPsi,
+                      columnIndicesPsi,
+                      valuesPsi,
+                      numEntriesPsiConj,
+                      columnIndicesPsiConj,
+                      valuesPsiConj );
+  return;
+}
+// =============================================================================
+
+
+
+// =============================================================================
+void GinzburgLandau::getJacobianRowSparsity( int eqnum,
+                                             int& numEntriesPsi,
+                                             int* columnIndicesPsi,
+                                             int& numEntriesPsiConj,
+                                             int* columnIndicesPsiConj )
+{
+  // create dummy arguments
+  std::complex<double> *psi = NULL,
+                       *valuesPsi = NULL,
+                       *valuesPsiConj=NULL;
+
+  computeJacobianRow( SPARSITY,
+                      eqnum,
+                      psi,
+                      numEntriesPsi,
+                      columnIndicesPsi,
+                      valuesPsi,
+                      numEntriesPsiConj,
+                      columnIndicesPsiConj,
+                      valuesPsiConj );
+  return;
+}
+// =============================================================================
+
+
+
+// =============================================================================
+// Evaluate GL at the boundary node.
+// Return value for equation #k.
+void GinzburgLandau::computeJacobianRow( filltype ft,
+                                         int eqnum,
+                                         std::complex<double>* psi,
+                                         int& numEntriesPsi,
+                                         int* columnIndicesPsi,
+                                         std::complex<double>* valuesPsi,
+                                         int& numEntriesPsiConj,
+                                         int* columnIndicesPsiConj,
+                                         std::complex<double>* valuesPsiConj )
 {
   // initialize all the vectors with NULL
   numEntriesPsi        = 0;
@@ -326,14 +382,18 @@ void GinzburgLandau::computeJacobianBlocks( int eqnum,
 
           i[0] = i[0]+1;
           kRight    = psiGrid.i2k( i );
-          psiKRight = psi[kRight];
-          ARight    = aGrid.getAxRight( i );
+          if (ft==VALUES) {
+              psiKRight = psi[kRight];
+              ARight    = aGrid.getAxRight( i );
+          }
           i[0] = i[0]-1;
 
           i[1] = i[1]+1;
           kAbove = psiGrid.i2k( i );
-          psiKAbove = psi[kAbove];
-          AAbove    = aGrid.getAyAbove( i );
+          if (ft==VALUES) {
+              psiKAbove = psi[kAbove];
+              AAbove    = aGrid.getAyAbove( i );
+          }
           i[1] = i[1]-1;
 
           numEntriesPsi = 3;
@@ -342,10 +402,12 @@ void GinzburgLandau::computeJacobianBlocks( int eqnum,
           columnIndicesPsi[1] = kRight;
           columnIndicesPsi[2] = kAbove;
 
-          valuesPsi = new std::complex<double>[numEntriesPsi];
-          valuesPsi[0] = - 2.0                * cUnit / (sqrt(2)*h);
-          valuesPsi[1] = exp(-cUnit*ARight*h) * cUnit / (sqrt(2)*h);
-          valuesPsi[2] = exp(-cUnit*AAbove*h) * cUnit / (sqrt(2)*h);
+          if (ft==VALUES) {
+              valuesPsi = new std::complex<double>[numEntriesPsi];
+              valuesPsi[0] = - 2.0                * cUnit / (sqrt(2)*h);
+              valuesPsi[1] = exp(-cUnit*ARight*h) * cUnit / (sqrt(2)*h);
+              valuesPsi[2] = exp(-cUnit*AAbove*h) * cUnit / (sqrt(2)*h);
+          }
 
           break;
 
@@ -355,14 +417,18 @@ void GinzburgLandau::computeJacobianBlocks( int eqnum,
 
           i[0] = i[0]-1;
           kLeft = psiGrid.i2k( i );
-          psiKLeft = psi[kLeft];
-          ALeft    = aGrid.getAxLeft( i );
+          if (ft==VALUES) {
+              psiKLeft = psi[kLeft];
+              ALeft    = aGrid.getAxLeft( i );
+          }
           i[0] = i[0]+1;
 
           i[1] = i[1]+1;
           kAbove = psiGrid.i2k( i );
-          psiKAbove = psi[kAbove];
-          AAbove    = aGrid.getAyAbove( i );
+          if (ft==VALUES) {
+              psiKAbove = psi[kAbove];
+              AAbove    = aGrid.getAyAbove( i );
+          }
           i[1] = i[1]-1;
 
           numEntriesPsi = 3;
@@ -371,10 +437,12 @@ void GinzburgLandau::computeJacobianBlocks( int eqnum,
           columnIndicesPsi[1] = kLeft;
           columnIndicesPsi[2] = kAbove;
 
-          valuesPsi = new std::complex<double>[3];
-          valuesPsi[0] = - 2.0                * cUnit / (sqrt(2)*h);
-          valuesPsi[1] = exp( cUnit*ALeft *h) * cUnit / (sqrt(2)*h);
-          valuesPsi[2] = exp(-cUnit*AAbove*h) * cUnit / (sqrt(2)*h);
+          if (ft==VALUES) {
+              valuesPsi = new std::complex<double>[3];
+              valuesPsi[0] = - 2.0                * cUnit / (sqrt(2)*h);
+              valuesPsi[1] = exp( cUnit*ALeft *h) * cUnit / (sqrt(2)*h);
+              valuesPsi[2] = exp(-cUnit*AAbove*h) * cUnit / (sqrt(2)*h);
+          }
 
           break;
 
@@ -384,14 +452,18 @@ void GinzburgLandau::computeJacobianBlocks( int eqnum,
 
           i[0] = i[0]-1;
           kLeft = psiGrid.i2k( i );
-          psiKLeft = psi[kLeft];
-          ALeft    = aGrid.getAxLeft( i );
+          if (ft==VALUES) {
+              psiKLeft = psi[kLeft];
+              ALeft    = aGrid.getAxLeft( i );
+          }
           i[0] = i[0]+1;
 
           i[1] = i[1]-1;
           kBelow = psiGrid.i2k( i );
-          psiKBelow = psi[kBelow];
-          ABelow    = aGrid.getAyBelow( i );
+          if (ft==VALUES) {
+              psiKBelow = psi[kBelow];
+              ABelow    = aGrid.getAyBelow( i );
+          }
           i[1] = i[1]+1;
 
           numEntriesPsi = 3;
@@ -400,28 +472,33 @@ void GinzburgLandau::computeJacobianBlocks( int eqnum,
           columnIndicesPsi[1] = kLeft;
           columnIndicesPsi[2] = kBelow;
 
-          valuesPsi = new std::complex<double>[3];
-          valuesPsi[0] = - 2.0                * cUnit / (sqrt(2)*h);
-          valuesPsi[1] = exp( cUnit*ALeft *h) * cUnit / (sqrt(2)*h);
-          valuesPsi[2] = exp( cUnit*ABelow*h) * cUnit / (sqrt(2)*h);
+          if (ft==VALUES) {
+              valuesPsi = new std::complex<double>[3];
+              valuesPsi[0] = - 2.0                * cUnit / (sqrt(2)*h);
+              valuesPsi[1] = exp( cUnit*ALeft *h) * cUnit / (sqrt(2)*h);
+              valuesPsi[2] = exp( cUnit*ABelow*h) * cUnit / (sqrt(2)*h);
+          }
 
           break;
 
-        
       case TOPLEFT:
           k = psiGrid.i2k( i );
           psiK = psi[k];
 
           i[0] = i[0]+1;
           kRight = psiGrid.i2k( i );
-          psiKRight = psi[kRight];
-          ARight    = aGrid.getAxRight( i );
+          if (ft==VALUES) {
+              psiKRight = psi[kRight];
+              ARight    = aGrid.getAxRight( i );
+          }
           i[0] = i[0]-1;
 
           i[1] = i[1]-1;
           kBelow = psiGrid.i2k( i );
-          psiKBelow = psi[kBelow];
-          ABelow    = aGrid.getAyBelow( i );
+          if (ft==VALUES) {
+              psiKBelow = psi[kBelow];
+              ABelow    = aGrid.getAyBelow( i );
+          }
           i[1] = i[1]+1;
 
           numEntriesPsi = 3;
@@ -430,21 +507,25 @@ void GinzburgLandau::computeJacobianBlocks( int eqnum,
           columnIndicesPsi[1] = kRight;
           columnIndicesPsi[2] = kBelow;
 
-          valuesPsi = new std::complex<double>[3];
-          valuesPsi[0] = - 2.0                * cUnit / (sqrt(2)*h);
-          valuesPsi[1] = exp(-cUnit*ARight*h) * cUnit / (sqrt(2)*h);
-          valuesPsi[2] = exp( cUnit*ABelow*h) * cUnit / (sqrt(2)*h);
+          if (ft==VALUES) {
+              valuesPsi = new std::complex<double>[3];
+              valuesPsi[0] = - 2.0                * cUnit / (sqrt(2)*h);
+              valuesPsi[1] = exp(-cUnit*ARight*h) * cUnit / (sqrt(2)*h);
+              valuesPsi[2] = exp( cUnit*ABelow*h) * cUnit / (sqrt(2)*h);
+          }
 
           break;
-        
+
       case BOTTOM:
           k = psiGrid.i2k( i );
           psiK = psi[k];
 
           i[1] = i[1]+1;
           kAbove = psiGrid.i2k( i );
-          psiKAbove = psi[kAbove];
-          AAbove    = aGrid.getAyAbove( i );
+          if (ft==VALUES) {
+              psiKAbove = psi[kAbove];
+              AAbove    = aGrid.getAyAbove( i );
+          }
           i[1] = i[1]-1;
 
           numEntriesPsi = 2;
@@ -452,9 +533,12 @@ void GinzburgLandau::computeJacobianBlocks( int eqnum,
           columnIndicesPsi[0] = k;
           columnIndicesPsi[1] = kAbove;
 
-          valuesPsi = new std::complex<double>[2];
-          valuesPsi[0] = - 1.0                * cUnit/h;
-          valuesPsi[1] = exp(-cUnit*AAbove*h) * cUnit/h;
+          if (ft==VALUES) {
+              valuesPsi = new std::complex<double>[2];
+              valuesPsi[0] = - 1.0                * cUnit/h;
+              valuesPsi[1] = exp(-cUnit*AAbove*h) * cUnit/h;
+          }
+
           break;
 
       case RIGHT:
@@ -463,8 +547,10 @@ void GinzburgLandau::computeJacobianBlocks( int eqnum,
 
           i[0] = i[0]-1;
           kLeft = psiGrid.i2k( i );
-          psiKLeft = psi[kLeft];
-          ALeft    = aGrid.getAxLeft( i );
+          if (ft==VALUES) {
+              psiKLeft = psi[kLeft];
+              ALeft    = aGrid.getAxLeft( i );
+          }
           i[0] = i[0]+1;
 
           numEntriesPsi = 2;
@@ -472,9 +558,12 @@ void GinzburgLandau::computeJacobianBlocks( int eqnum,
           columnIndicesPsi[0] = k;
           columnIndicesPsi[1] = kAbove;
 
-          valuesPsi = new std::complex<double>[2];
-          valuesPsi[0] = - 1.0                * cUnit/h;
-          valuesPsi[1] = exp(-cUnit*ALeft*h) * cUnit/h;
+          if (ft==VALUES) {
+              valuesPsi = new std::complex<double>[2];
+              valuesPsi[0] = - 1.0                * cUnit/h;
+              valuesPsi[1] = exp(-cUnit*ALeft*h) * cUnit/h;
+          }
+
           break;
 
       case TOP:
@@ -483,8 +572,10 @@ void GinzburgLandau::computeJacobianBlocks( int eqnum,
 
           i[1] = i[1]-1;
           kBelow = psiGrid.i2k( i );
-          psiKBelow = psi[kBelow];
-          ABelow    = aGrid.getAyBelow( i );
+          if (ft==VALUES) {
+              psiKBelow = psi[kBelow];
+              ABelow    = aGrid.getAyBelow( i );
+          }
           i[1] = i[1]+1;
 
           numEntriesPsi = 2;
@@ -492,9 +583,12 @@ void GinzburgLandau::computeJacobianBlocks( int eqnum,
           columnIndicesPsi[0] = k;
           columnIndicesPsi[1] = kBelow;
 
-          valuesPsi = new std::complex<double>[2];
-          valuesPsi[0] = - 1.0                * cUnit/h;
-          valuesPsi[1] = exp(-cUnit*ABelow*h) * cUnit/h;
+          if (ft==VALUES) {
+              valuesPsi = new std::complex<double>[2];
+              valuesPsi[0] = - 1.0                * cUnit/h;
+              valuesPsi[1] = exp(-cUnit*ABelow*h) * cUnit/h;
+          }
+
           break;
 
       case LEFT:
@@ -503,8 +597,10 @@ void GinzburgLandau::computeJacobianBlocks( int eqnum,
 
           i[0] = i[0]+1;
           kRight = psiGrid.i2k( i );
-          psiKBelow = psi[k];
-          ARight    = aGrid.getAxRight( i );
+          if (ft==VALUES) {
+              psiKBelow = psi[k];
+              ARight    = aGrid.getAxRight( i );
+          }
           i[0] = i[0]-1;
 
           numEntriesPsi = 2;
@@ -512,9 +608,11 @@ void GinzburgLandau::computeJacobianBlocks( int eqnum,
           columnIndicesPsi[0] = k;
           columnIndicesPsi[1] = kRight;
 
-          valuesPsi = new std::complex<double>[2];
-          valuesPsi[0] = - 1.0                * cUnit/h;
-          valuesPsi[1] = exp(-cUnit*ARight*h) * cUnit/h;
+          if (ft==VALUES) {
+              valuesPsi = new std::complex<double>[2];
+              valuesPsi[0] = - 1.0                * cUnit/h;
+              valuesPsi[1] = exp(-cUnit*ARight*h) * cUnit/h;
+          }
           break;
 
       case INTERIOR:
@@ -528,22 +626,26 @@ void GinzburgLandau::computeJacobianBlocks( int eqnum,
 
           i[0] = i[0]+1;
           kRight = psiGrid.i2k( i );
-          psiKRight = psi[k];
+          if (ft==VALUES)
+              psiKRight = psi[k];
           i[0] = i[0]-1;
 
           i[0] = i[0]-1;
           kLeft = psiGrid.i2k( i );
-          psiKLeft = psi[k];
+          if (ft==VALUES)
+              psiKLeft = psi[k];
           i[0] = i[0]+1;
 
           i[1] = i[1]+1;
           kAbove = psiGrid.i2k( i );
-          psiKAbove = psi[k];
+          if (ft==VALUES)
+              psiKAbove = psi[k];
           i[1] = i[1]-1;
 
           i[1] = i[1]-1;
           kBelow = psiGrid.i2k( i );
-          psiKBelow = psi[k];
+          if (ft==VALUES)
+              psiKBelow = psi[k];
           i[1] = i[1]+1;
 
           numEntriesPsi = 5;
@@ -554,20 +656,24 @@ void GinzburgLandau::computeJacobianBlocks( int eqnum,
           columnIndicesPsi[3] = kBelow;
           columnIndicesPsi[4] = kAbove;
 
-          valuesPsi = new std::complex<double>[5];
-          valuesPsi[0] = - 4.0                / (h*h) 
-                       + (1 - 2.0*abs(psiK)*abs(psiK));
-          valuesPsi[1] = exp( cUnit*ALeft *h) / (h*h);
-          valuesPsi[2] = exp(-cUnit*ARight*h) / (h*h);
-          valuesPsi[3] = exp( cUnit*ABelow*h) / (h*h);
-          valuesPsi[4] = exp(-cUnit*AAbove*h) / (h*h);
+          if (ft==VALUES) {
+              valuesPsi = new std::complex<double>[5];
+              valuesPsi[0] = - 4.0                / (h*h)
+                          + (1 - 2.0*abs(psiK)*abs(psiK));
+              valuesPsi[1] = exp( cUnit*ALeft *h) / (h*h);
+              valuesPsi[2] = exp(-cUnit*ARight*h) / (h*h);
+              valuesPsi[3] = exp( cUnit*ABelow*h) / (h*h);
+              valuesPsi[4] = exp(-cUnit*AAbove*h) / (h*h);
+          }
 
           numEntriesPsiConj = 1;
           columnIndicesPsiConj = new int[1];
           columnIndicesPsiConj[0] = k;
 
-          valuesPsiConj = new std::complex<double>[1];
-          valuesPsiConj[0] = -psiK*psiK; 
+          if (ft==VALUES) {
+              valuesPsiConj = new std::complex<double>[1];
+              valuesPsiConj[0] = -psiK*psiK;
+          }
 
       default:
           std::cout << "Illegal enumerator value!" << std::endl;

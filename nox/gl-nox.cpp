@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
 			     NOX::Utils::Warning +
                              NOX::Utils::Debug +
 			     NOX::Utils::TestDetails +
-			     NOX::Utils::Error);
+			     NOX::Utils::Error );
   else
     printParams.set("Output Information", NOX::Utils::Error +
 			     NOX::Utils::TestDetails);
@@ -112,8 +112,6 @@ int main(int argc, char *argv[])
   Teuchos::ParameterList& searchParams = nlParams.sublist("Line Search");
   searchParams.set("Method", "Full Step");
 
-cout << "jjj" << endl;
-
   // Sublist for direction
   Teuchos::ParameterList& dirParams = nlParams.sublist("Direction");
   dirParams.set("Method", "Newton");
@@ -125,42 +123,38 @@ cout << "jjj" << endl;
 //  lsParams.set("Amesos Solver", "Amesos_Superlu");
 
   // lsParams.set("Aztec Solver", "BiCGStab");  
- lsParams.set("Aztec Solver", "GMRES");  
- lsParams.set("Output Frequency", 32);  
- lsParams.set("Output Solver Details", true);  
- lsParams.set("Max Iterations", 2000);  
- lsParams.set("Tolerance", 1e-4);
+  lsParams.set("Aztec Solver", "GMRES");  
+  lsParams.set("Output Frequency", 32);  
+  lsParams.set("Output Solver Details", true);
+  lsParams.set("Max Iterations", 2000);  
+  lsParams.set("Tolerance", 1e-4);
 
 
- //================== BEGIN IFPACK PRECONDITIONER =============================
- // lsParams.set("Use Preconditioner as Solver",true);
- lsParams.set("Max Age Of Prec", 1);
+  // ====================== BEGIN IFPACK PRECONDITIONER ========================
+  lsParams.set("Preconditioner","New Ifpack");
+  lsParams.set("Ifpack Preconditioner","Amesos");
 
- lsParams.set("Preconditioner","New Ifpack");
- lsParams.set("Ifpack Preconditioner","Amesos");
+  lsParams.set("Use Preconditioner as Solver",true);
+  lsParams.set("Max Age Of Prec", 1);
 
- Teuchos::ParameterList& IFPACKparams =  lsParams.sublist("Ifpack");
- //  lsParams.set("Ifpack Preconditioner", "Amesos");
- //  IFPACKparams.set("Ifpack Preconditioner", "Amesos");
- IFPACKparams.set("amesos: solver type","Amesos_Superlu");
- // IFPACKparams.set("fact: level-of-fill",1);
- IFPACKparams.set("fact: ilut level-of-fill",1.0);
- IFPACKparams.set("fact: drop tolerance", 1e-1);
- IFPACKparams.set("schwarz: combine mode", "Zero");
- IFPACKparams.set("schwarz: compute condest", true);
- // ================ END IFPACK PRECONDITIONER =============================
+  Teuchos::ParameterList& IFPACKparams = lsParams.sublist("Ifpack");
+      IFPACKparams.set("amesos: solver type","Amesos_Superlu");
+      IFPACKparams.set("fact: ilut level-of-fill",1.0);
+      IFPACKparams.set("fact: drop tolerance", 1e-1);
+      IFPACKparams.set("schwarz: combine mode", "Zero");
+      IFPACKparams.set("schwarz: compute condest", true);
+  // ====================== END IFPACK PRECONDITIONER ==========================
 
-cout << "lll" << endl;
   // Let's force all status tests to do a full check
   nlParams.sublist("Solver Options").set("Status Test Check Type", "Complete");
 
   // Create all possible Epetra_Operators.
   Teuchos::RCP<Epetra_RowMatrix> Analytic = glsystem->getJacobian();
-cout << "mmm" << endl;
+
   // Create the linear system
   Teuchos::RCP<NOX::Epetra::Interface::Required> iReq = glsystem;
   Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = glsystem;
-cout << "nnn" << endl;
+
   Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys =
            Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO( printParams,
                                                               lsParams,
@@ -184,31 +178,39 @@ cout << "mmm" << endl;
 
   // ------------------------------------------------------------------------
   // Create the convergence tests
+cout << "m0" << endl;
   Teuchos::RCP<NOX::StatusTest::NormF> absresid =
     Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-12));
+cout << "m02" << endl;
   Teuchos::RCP<NOX::StatusTest::NormF> relresid =
     Teuchos::rcp(new NOX::StatusTest::NormF(grp, 1.0e-12));
+cout << "m03" << endl;
   Teuchos::RCP<NOX::StatusTest::NormUpdate> update =
     Teuchos::rcp(new NOX::StatusTest::NormUpdate(1.0e-12));
+cout << "m04" << endl;
   Teuchos::RCP<NOX::StatusTest::NormWRMS> wrms =
     Teuchos::rcp(new NOX::StatusTest::NormWRMS(1.0e-2, 1.0e-5));
+cout << "m05" << endl;
   Teuchos::RCP<NOX::StatusTest::Combo> converged =
     Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::AND));
+cout << "m06" << endl;
   converged->addStatusTest(absresid);
   converged->addStatusTest(relresid);
   converged->addStatusTest(wrms);
   converged->addStatusTest(update);
+
+cout << "m1" << endl;
 
   int maxNonlinearIterations = 20;
   Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters =
     Teuchos::rcp(new NOX::StatusTest::MaxIters(maxNonlinearIterations));
   Teuchos::RCP<NOX::StatusTest::FiniteValue> fv =
     Teuchos::rcp(new NOX::StatusTest::FiniteValue);
-
+cout << "m2" << endl;
   // this test is useful if we start in a solution
   Teuchos::RCP<NOX::StatusTest::NormF> absresexact =
     Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-20));
-
+cout << "nnn" << endl;
   Teuchos::RCP<NOX::StatusTest::Combo> combo = 
     Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
 
@@ -217,7 +219,7 @@ cout << "mmm" << endl;
   combo->addStatusTest(converged);
   combo->addStatusTest(maxiters);
   // ------------------------------------------------------------------------
-
+cout << "ooo" << endl;
 
   // Create the solver
   Teuchos::RCP<NOX::Solver::Generic> solver = NOX::Solver::buildSolver(grpPtr, combo, nlParamsPtr);
@@ -230,7 +232,7 @@ cout << "mmm" << endl;
   const Epetra_Vector& finalSolution = 
     (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).
     getEpetraVector();
-
+cout << "ppp" << endl;
 //   // get the energy
 //   passVector sol;
 //   sol.values = finalSolution.Values();
