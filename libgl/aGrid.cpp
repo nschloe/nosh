@@ -3,6 +3,7 @@
 // include Boost's multidimensional arrays to be able to handle Ax, Ay in a more sane way
 #include "boost/multi_array.hpp"
 
+#include <iostream>
 
 // =============================================================================
 // Class constructor
@@ -12,7 +13,6 @@ AGrid::AGrid( int nx,
 Nx(nx),
 Edgelength(edgelength),
 h(0.0),
-d(2),
 H0(h0),
 Ax(boost::extents[nx][nx+1]),
 Ay(boost::extents[nx+1][nx])
@@ -20,15 +20,31 @@ Ay(boost::extents[nx+1][nx])
   // initialize the step size
   h = Edgelength / Nx;
 
+  typedef array_type::index index;
+
   // initialize the Ax with values
-  for ( int i=0; i<nx; i++ )
-      for ( int j=0; j<nx+1; i++ )
-          Ax[i][j] = -h0/2 * j*h;
+  for ( index i=0; i!=nx; ++i )
+      for ( index j=0; j!=nx+1; ++j )
+          Ax[i][j] = - 0.5 *H0 *j*h
+                     + 0.25*H0 *edgelength; //  to level the thing, but not actually necessary
 
   // initialize the Ay with values
-  for ( int i=0; i<nx+1; i++ )
-      for ( int j=0; j<nx; i++ )
-          Ay[i][j] = h0/2 * i*h;
+  for ( index i=0; i!=nx+1; ++i )
+      for ( index j=0; j!=nx; ++j )
+          Ay[i][j] =   0.5 *H0 *i*h
+                     + 0.25*H0 *edgelength; //  to level the thing, but not actually necessary
+
+//   // ---------------------------------------------------------------------------
+//   // for debugging purposes:
+//   std::cout << "Nx=" << Nx << std::endl;
+//   std::cout << "Edgelength=" << Edgelength << std::endl;
+//   std::cout << "h=" << h << std::endl;
+//   std::cout << "H0=" << H0 << std::endl;
+//   for ( index i=0; i!=nx; ++i )
+//       for ( index j=0; j!=nx+1; ++j )
+//           std::cout << "Ax[" << i << "][" << j << "] = " << Ax[i][j]
+//                     << std::endl;
+//   // ---------------------------------------------------------------------------
 
 }
 // =============================================================================
@@ -38,7 +54,6 @@ Ay(boost::extents[nx+1][nx])
 // Destructor
 AGrid::~AGrid()
 {
-// delete the grids
 }
 // =============================================================================
 

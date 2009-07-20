@@ -20,12 +20,14 @@ class AGrid
 //      // Attributes visible to descendents
   private:
       int Nx;
-      int Edgelength;
+      double Edgelength;
       double h;
-      int d;
       double H0;
-      boost::multi_array<double, 2> Ax;
-      boost::multi_array<double, 2> Ay;
+
+      // use the type definition in the CPP file as well (indices!)
+      typedef boost::multi_array<double, 2> array_type;
+      array_type Ax,
+                 Ay;
 
       float* Ax_i2x( int* );
       float* Ay_i2x( int* );

@@ -55,17 +55,15 @@ int main(int argc, char *argv[])
       verbose = true;
 
   // set the discretization parameter
-  int Nx = 0;
-  Nx = 50;
-
-  double edgelength = 10.0;
+  int Nx = 7;
+  double edgelength = 1.0;
   double H0 = 0.4;
   double energy;
 
   // Create the interface between NOX and the application
   // This object is derived from NOX::Epetra::Interface
   Teuchos::RCP<GlSystem> glsystem =
-    Teuchos::rcp(new GlSystem( Nx, edgelength, H0, Comm ));
+    Teuchos::rcp(new GlSystem( Nx, H0, edgelength, Comm ));
 
   // Get the vector from the Problem
   Teuchos::RCP<Epetra_Vector> soln = glsystem->getSolution();
@@ -114,6 +112,8 @@ int main(int argc, char *argv[])
   Teuchos::ParameterList& searchParams = nlParams.sublist("Line Search");
   searchParams.set("Method", "Full Step");
 
+cout << "jjj" << endl;
+
   // Sublist for direction
   Teuchos::ParameterList& dirParams = nlParams.sublist("Direction");
   dirParams.set("Method", "Newton");
@@ -133,7 +133,7 @@ int main(int argc, char *argv[])
 
 
  //================== BEGIN IFPACK PRECONDITIONER =============================
- // lsParams.set("Use Preconditioner as Solver",true);  
+ // lsParams.set("Use Preconditioner as Solver",true);
  lsParams.set("Max Age Of Prec", 1);
 
  lsParams.set("Preconditioner","New Ifpack");
@@ -149,68 +149,26 @@ int main(int argc, char *argv[])
  IFPACKparams.set("schwarz: combine mode", "Zero");
  IFPACKparams.set("schwarz: compute condest", true);
  // ================ END IFPACK PRECONDITIONER =============================
- 
 
- /*
- //====================== BEGIN THE ML PRECONDITIONER ===================================
- lsParams.set("Preconditioner", "ML"); 
- Teuchos::ParameterList& MLParams = lsParams.sublist("ML");
- MLParams.set("default values"               , "SA" );
- MLParams.set("ML output", 10 );
- MLParams.set("max levels", 1);
-  //  MLParams.set("prec type", "full-MGV");
-  MLParams.set("smoother: sweeps", 0);
-  MLParams.set("smoother: pre or post", "pre");
-  //  MLParams.set("viz: print starting solution",true);
-  MLParams.set("smoother: damping factor"     , 0.7 );
-  MLParams.set("aggregation: damping factor"   , 1.3 );
-  //  MLParams.set("aggregation: type", "MIS");
-  MLParams.set("aggregation: smoothing sweeps"  , 0 );
-  MLParams.set("aggregation: threshold",0.2);
-  MLParams.set("smoother: type"               , "Jacobi" );
-  //  MLParams.set("smoother: type"       , "Chebyshev" );
-  MLParams.set("coarse: type","Amesos-Superlu");
-  //  MLParams.set("coarse: type","Amesos-MUMPS");
-  //  MLParams.set("coarse: type","Amesos-KLU");
-  MLParams.set("coarse: max size"             , 1000);
-
-  //======================== END THE ML PRECONDITIONER =====================================
- 
-  */
-
+cout << "lll" << endl;
   // Let's force all status tests to do a full check
   nlParams.sublist("Solver Options").set("Status Test Check Type", "Complete");
 
   // Create all possible Epetra_Operators.
-  // 1. User supplied (Epetra_RowMatrix)
   Teuchos::RCP<Epetra_RowMatrix> Analytic = glsystem->getJacobian();
-//   // 2. Matrix-Free (Epetra_Operator)
-/*  Teuchos::RCP<NOX::Epetra::MatrixFree> MF =
-    Teuchos::rcp(new NOX::Epetra::MatrixFree( printParams,
-                                              glsystem,
-                                              *noxSoln     ) )*/;
-//   // 3. Finite Difference (Epetra_RowMatrix)
-//   Teuchos::RCP<NOX::Epetra::FiniteDifference> FD =
-//     Teuchos::rcp(new NOX::Epetra::FiniteDifference(printParams, glsystem,
-//                                                    *soln));
-
+cout << "mmm" << endl;
   // Create the linear system
   Teuchos::RCP<NOX::Epetra::Interface::Required> iReq = glsystem;
   Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = glsystem;
-//   Teuchos::RCP<NOX::Epetra::Interface::Preconditioner> iPrec = FD;
-  /*  Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys =  Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams,
-													     //						    interface,
-						    iJac, MF,
-						    iPrec, FD,
-						    *soln));*/
-
+cout << "nnn" << endl;
   Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys =
            Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO( printParams,
                                                               lsParams,
-						              glsystem,
+                                                              iReq,
                                                               iJac,
-                                                              Analytic,*soln));
-
+                                                              Analytic,
+                                                              *soln        ) );
+cout << "ooo" << endl;
   // Create the Group
   NOX::Epetra::Vector initialGuess(soln, NOX::Epetra::Vector::CreateView);
   Teuchos::RCP<NOX::Epetra::Group> grpPtr =
@@ -218,11 +176,9 @@ int main(int argc, char *argv[])
 					iReq,
 					initialGuess,
 					linSys));
+cout << "ppp" << endl;
   NOX::Epetra::Group& grp = *grpPtr;
-
-  // uncomment the following for loca supergroups
-  //MF->setGroupForComputeF(*grpPtr);
-  //FD->setGroupForComputeF(*grpPtr);
+cout << "mmm" << endl;
   // ------------------------------------------------------------------------
 
 
