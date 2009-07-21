@@ -7,12 +7,12 @@
 GinzburgLandau::GinzburgLandau( int nx,
                                 double edgelength,
                                 double h0 ):
-Nx(nx),
-d(2),
-Edgelength(edgelength),
-H0(h0),
-psiGrid( PsiGrid::PsiGrid(nx) ),
-aGrid( AGrid::AGrid(nx,edgelength,h0) )
+h      ( edgelength/nx ),
+psiGrid( PsiGrid::PsiGrid( nx,
+                           edgelength ) ),
+aGrid  ( AGrid::AGrid( nx,
+                       edgelength,
+                       h0          ) )
 {
 }
 // =============================================================================
@@ -22,17 +22,9 @@ aGrid( AGrid::AGrid(nx,edgelength,h0) )
 // Destructor
 GinzburgLandau::~GinzburgLandau()
 {
-// delete psiGrid, AGrid
 }
 // =============================================================================
 
-
-// // =============================================================================
-// // calculate the 
-// GinzburgLandau::computeF( psiReal, psiImag )
-// {
-// }
-// // =============================================================================
 
 
 // =============================================================================
@@ -45,6 +37,8 @@ void GinzburgLandau::getEquationType( int eqnum,
                                       equationType &eqType,
                                       int *i )
 {
+  int Nx = psiGrid.getNx();
+
   if (eqnum==0) {
       eqType = BOTTOMLEFT;
       i[0] = 0;
@@ -94,7 +88,7 @@ void GinzburgLandau::getEquationType( int eqnum,
 // Evaluate GL at the boundary node.
 // Return value for equation #k.
 std::complex<double> GinzburgLandau::computeGl( int eqnum,
-                                                std::complex<double>* psi )
+                                                std::vector<std::complex<double> > psi )
 {
   // Equations are ordered counter-clockwise, starting at the origin.
 
@@ -130,6 +124,7 @@ std::complex<double> GinzburgLandau::computeGl( int eqnum,
           res = ( - psiK * 2.0
                   + psiKRight * exp(-cUnit*ARight*h)
                   + psiKAbove * exp(-cUnit*AAbove*h) ) * cUnit / (sqrt(2)*h);
+
           break;
 
       case BOTTOMRIGHT:
@@ -284,6 +279,7 @@ std::complex<double> GinzburgLandau::computeGl( int eqnum,
                   + exp(cUnit*ALeft *h) + exp(-cUnit*ARight*h)
                   + exp(cUnit*ABelow*h) + exp(-cUnit*AAbove*h) ) / (h*h)
                 + psiK * (1-abs(psiK)*abs(psiK));
+          break;
 
       default:
           std::cerr << "computeGl:" << std::endl
@@ -302,7 +298,7 @@ std::complex<double> GinzburgLandau::computeGl( int eqnum,
 // Evaluate GL at the boundary node.
 // Return value for equation #k.
 void GinzburgLandau::getJacobianRow( int eqnum,
-                                     std::complex<double>* psi,
+                                     std::vector<std::complex<double> > psi,
                                      std::vector<int>& columnIndicesPsi,
                                      std::vector<std::complex<double> >& valuesPsi,
                                      std::vector<int>& columnIndicesPsiConj,
@@ -328,7 +324,7 @@ void GinzburgLandau::getJacobianRowSparsity( int eqnum,
                                              std::vector<int>& columnIndicesPsiConj )
 {
   // create dummy arguments
-  std::complex<double> *psi;
+  std::vector<std::complex<double> > psi;
   std::vector<std::complex<double> > valuesPsi,
                                      valuesPsiConj;
 
@@ -351,7 +347,7 @@ void GinzburgLandau::getJacobianRowSparsity( int eqnum,
 // Return value for equation #k.
 void GinzburgLandau::computeJacobianRow( filltype ft,
                                          int eqnum,
-                                         std::complex<double>* psi,
+                                         std::vector<std::complex<double> > psi,
                                          std::vector<int>& columnIndicesPsi,
                                          std::vector<std::complex<double> >& valuesPsi,
                                          std::vector<int>& columnIndicesPsiConj,

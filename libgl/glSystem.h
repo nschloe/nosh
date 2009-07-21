@@ -39,10 +39,10 @@ class GlSystem: public NOX::Epetra::Interface::Required,
      Teuchos::RCP<Epetra_CrsMatrix> getJacobian();
 
   private:
-      int  realIndex2psiIndex ( int realIndex );
+      int  realIndex2complexIndex ( int realIndex );
 
       void real2psi( Epetra_Vector realvec,
-                     std::complex<double>* psi );
+                     vector<std::complex<double> > psi );
 
       bool initializeSoln();
 

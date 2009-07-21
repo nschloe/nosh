@@ -1,14 +1,16 @@
 class PsiGrid
 {
   public:
-     PsiGrid( int );
+     PsiGrid( int nx, double edgelength);
+
      ~PsiGrid();
+
      int* k2i( int  );
      int  i2k( int* );
 
-//   protected:
-//      // Attributes visible to descendents
+     int getNx();
+
   private:
      int Nx;
-     int d;
+     double Edgelength;
 };

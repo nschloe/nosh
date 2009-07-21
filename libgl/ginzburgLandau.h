@@ -30,11 +30,11 @@ class GinzburgLandau
 
      // evaluate the 
      std::complex<double> computeGl( int eqnum,
-                                     std::complex<double>* psi );
+                                     std::vector<std::complex<double> > psi );
 
      // get coefficients of the jacobian system
      void getJacobianRow( int eqnum,
-                          std::complex<double>* psi,
+                          std::vector<std::complex<double> > psi,
                           std::vector<int>& columnIndicesPsi,
                           std::vector<std::complex<double> >& valuesPsi,
                           std::vector<int>& columnIndicesPsiConj,
@@ -46,11 +46,7 @@ class GinzburgLandau
                                   std::vector<int>& columnIndicesPsiConj );
 
   private:
-      int Nx;
-      int d;
       double h;
-      double Edgelength;
-      double H0;
       PsiGrid::PsiGrid psiGrid;
       AGrid::AGrid     aGrid;
 
@@ -62,7 +58,7 @@ class GinzburgLandau
 
       void computeJacobianRow( filltype ft,
                                int eqnum,
-                               std::complex<double>* psi,
+                               std::vector<std::complex<double> > psi,
                                std::vector<int>& columnIndicesPsi,
                                std::vector<std::complex<double> >& valuesPsi,
                                std::vector<int>& columnIndicesPsiConj,

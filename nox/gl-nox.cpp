@@ -220,7 +220,7 @@ int main(int argc, char *argv[])
   const Epetra_Vector& finalSolution = 
     (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).
     getEpetraVector();
-cout << "ppp" << endl;
+
 //   // get the energy
 //   passVector sol;
 //   sol.values = finalSolution.Values();

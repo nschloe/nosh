@@ -16,8 +16,6 @@ class AGrid
       float getAyBelow( int* );
       float getAyAbove( int* );
 
-//   protected:
-//      // Attributes visible to descendents
   private:
       int Nx;
       double Edgelength;

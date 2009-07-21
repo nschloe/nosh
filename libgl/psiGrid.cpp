@@ -6,9 +6,10 @@
 
 // =============================================================================
 // Class constructor
-PsiGrid::PsiGrid( int nx ):
+PsiGrid::PsiGrid( int nx,
+                  double edgelength ):
 Nx(nx),
-d(2)
+Edgelength(edgelength) // not strictly necessary
 {
 }
 // =============================================================================
@@ -18,6 +19,14 @@ d(2)
 // Destructor
 PsiGrid::~PsiGrid()
 {
+}
+// =============================================================================
+
+
+// =============================================================================
+int PsiGrid::getNx()
+{
+    return Nx;
 }
 // =============================================================================
 
@@ -46,8 +55,8 @@ int* PsiGrid::k2i( int k )
   }
   else { // on the interior
     int numBoundaryNodes = 4*Nx;
-    i[0] = (k-numBoundaryNodes)%Nx + 1;
-    i[1] = (k-numBoundaryNodes) / Nx;
+    i[0] = (k-numBoundaryNodes)%(Nx-1) + 1;
+    i[1] = (k-numBoundaryNodes)/(Nx-1);
   }
 
   return i;
