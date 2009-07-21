@@ -1,3 +1,6 @@
+/********************************************//**
+ * The Ginzburg--Landau equations.
+ ***********************************************/
 #include <complex>
 
 #include "psiGrid.h"
@@ -6,6 +9,10 @@
 class GinzburgLandau
 {
   public:
+
+      //! Equation type enumerator.
+      /*! Semantically separates the different types of conditions which must
+          be applied at different parts of the rectangular grid. */
       enum equationType
       {
         BOTTOMLEFT,
@@ -28,11 +35,12 @@ class GinzburgLandau
      // destructor
      ~GinzburgLandau();
 
-     // evaluate the 
+     /*! Evaluates the Ginzburg--Landau equations. */
      std::complex<double> computeGl( int eqnum,
                                      std::vector<std::complex<double> > psi );
 
-     // get coefficients of the jacobian system
+     /*! Returns the coefficients of the jacobian system associated with the
+         Ginzburg--Landau equations. */
      void getJacobianRow( int eqnum,
                           std::vector<std::complex<double> > psi,
                           std::vector<int>& columnIndicesPsi,
@@ -56,6 +64,8 @@ class GinzburgLandau
 
       enum filltype { VALUES, SPARSITY };
 
+      /*! Calculated the coefficients of the jacobian system associated with the
+          Ginzburg--Landau equations. */
       void computeJacobianRow( filltype ft,
                                int eqnum,
                                std::vector<std::complex<double> > psi,
