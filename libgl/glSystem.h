@@ -41,8 +41,8 @@ class GlSystem: public NOX::Epetra::Interface::Required,
   private:
       int  realIndex2complexIndex ( int realIndex );
 
-      void real2psi( Epetra_Vector realvec,
-                     vector<std::complex<double> > psi );
+      void real2complex( Epetra_Vector x,
+                         vector<std::complex<double> >& psi );
 
       bool initializeSoln();
 

@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
 
   // set the discretization parameter
   int Nx = 2;
-  double edgelength = 1.0;
+  double edgelength = 10.0;
   double H0 = 0.4;
   double energy;
 
@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
   Teuchos::RCP<Epetra_Vector> soln = glsystem->getSolution();
   Teuchos::RCP<NOX::Epetra::Vector> noxSoln =
     Teuchos::rcp(new NOX::Epetra::Vector(soln,
-					 NOX::Epetra::Vector::CreateView));
+                                         NOX::Epetra::Vector::CreateView));
 
   // Set the initial guess 
   soln->PutScalar(0.5);
@@ -90,19 +90,19 @@ int main(int argc, char *argv[])
   printParams.set("Output Processor", 0);
   if (verbose)
     printParams.set("Output Information", 
-			     NOX::Utils::OuterIteration +
-			     NOX::Utils::OuterIterationStatusTest +
-			     NOX::Utils::InnerIteration +
-			     NOX::Utils::LinearSolverDetails +
-			     NOX::Utils::Parameters +
-			     NOX::Utils::Details +
-			     NOX::Utils::Warning +
+                             NOX::Utils::OuterIteration +
+                             NOX::Utils::OuterIterationStatusTest +
+                             NOX::Utils::InnerIteration +
+                             NOX::Utils::LinearSolverDetails +
+                             NOX::Utils::Parameters +
+                             NOX::Utils::Details +
+                             NOX::Utils::Warning +
                              NOX::Utils::Debug +
-			     NOX::Utils::TestDetails +
-			     NOX::Utils::Error );
+                             NOX::Utils::TestDetails +
+                             NOX::Utils::Error );
   else
     printParams.set("Output Information", NOX::Utils::Error +
-			     NOX::Utils::TestDetails);
+                             NOX::Utils::TestDetails);
 
   // Create a print class for controlling output below
   NOX::Utils printing(printParams);
@@ -167,9 +167,9 @@ int main(int argc, char *argv[])
   NOX::Epetra::Vector initialGuess(soln, NOX::Epetra::Vector::CreateView);
   Teuchos::RCP<NOX::Epetra::Group> grpPtr =
     Teuchos::rcp(new NOX::Epetra::Group(printParams,
-					iReq,
-					initialGuess,
-					linSys));
+                                        iReq,
+                                        initialGuess,
+                                        linSys));
 
   NOX::Epetra::Group& grp = *grpPtr;
   // ------------------------------------------------------------------------
@@ -232,7 +232,7 @@ int main(int argc, char *argv[])
   if (verbose) {
     if (printing.isPrintType(NOX::Utils::Parameters)) {
       printing.out() << endl << "Final Parameters" << endl
-	   << "****************" << endl;
+           << "****************" << endl;
       solver->getList().print(printing.out());
       printing.out() << endl;
 
@@ -262,7 +262,7 @@ int main(int argc, char *argv[])
   if (solvStatus != NOX::StatusTest::Converged) {
       status = 1;
       if (printing.isPrintType(NOX::Utils::Error))
-	printing.out() << "Nonlinear solver failed to converge!" << endl;
+        printing.out() << "Nonlinear solver failed to converge!" << endl;
   }
 #ifndef HAVE_MPI
   // 2. Linear solve iterations (53) - SERIAL TEST ONLY!

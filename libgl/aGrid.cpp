@@ -12,27 +12,26 @@ AGrid::AGrid( int nx,
               double h0 ):
 Nx(nx),
 Edgelength(edgelength),
-h(0.0),
+h( edgelength/nx ),
 H0(h0),
 Ax(boost::extents[nx][nx+1]),
 Ay(boost::extents[nx+1][nx])
 {
-  // initialize the step size
-  h = Edgelength / Nx;
-
   typedef array_type::index index;
 
   // initialize the Ax with values
+  // A_x = - H0/2*y
   for ( index i=0; i!=nx; ++i )
       for ( index j=0; j!=nx+1; ++j )
           Ax[i][j] = - 0.5 *H0 *j*h
                      + 0.25*H0 *edgelength; //  to level the thing, but not actually necessary
 
   // initialize the Ay with values
+  // A_x = H0/2*x
   for ( index i=0; i!=nx+1; ++i )
       for ( index j=0; j!=nx; ++j )
           Ay[i][j] =   0.5 *H0 *i*h
-                     + 0.25*H0 *edgelength; //  to level the thing, but not actually necessary
+                     - 0.25*H0 *edgelength; //  to level the thing, but not actually necessary
 
 //   // ---------------------------------------------------------------------------
 //   // for debugging purposes:

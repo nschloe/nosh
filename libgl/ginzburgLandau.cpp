@@ -121,7 +121,7 @@ std::complex<double> GinzburgLandau::computeGl( int eqnum,
           AAbove    = aGrid.getAyAbove( i );
           i[1] = i[1]-1;
 
-          res = ( - psiK * 2.0
+          res = ( - psiK      * 2.0
                   + psiKRight * exp(-cUnit*ARight*h)
                   + psiKAbove * exp(-cUnit*AAbove*h) ) * cUnit / (sqrt(2)*h);
 
@@ -186,7 +186,7 @@ std::complex<double> GinzburgLandau::computeGl( int eqnum,
           i[1] = i[1]+1;
 
           res = ( - psiK * 2.0
-                  + psiKRight * exp( cUnit*ARight*h)
+                  + psiKRight * exp(-cUnit*ARight*h)
                   + psiKBelow * exp( cUnit*ABelow*h) ) * cUnit / (sqrt(2)*h);
           break;
 
@@ -238,7 +238,7 @@ std::complex<double> GinzburgLandau::computeGl( int eqnum,
 
           i[0] = i[0]+1;
           k = psiGrid.i2k( i );
-          psiKBelow = psi[k];
+          psiKRight = psi[k];
           ARight    = aGrid.getAxRight( i );
           i[0] = i[0]-1;
 
@@ -247,8 +247,8 @@ std::complex<double> GinzburgLandau::computeGl( int eqnum,
           break;
 
       case INTERIOR:
+          ALeft  = aGrid.getAxLeft ( i );
           ARight = aGrid.getAxRight( i );
-          ALeft  = aGrid.getAxRight( i );
           ABelow = aGrid.getAyBelow( i );
           AAbove = aGrid.getAyAbove( i );
 
@@ -276,8 +276,8 @@ std::complex<double> GinzburgLandau::computeGl( int eqnum,
           i[1] = i[1]+1;
 
           res = ( -4.0*psiK
-                  + exp(cUnit*ALeft *h) + exp(-cUnit*ARight*h)
-                  + exp(cUnit*ABelow*h) + exp(-cUnit*AAbove*h) ) / (h*h)
+                  + psiKLeft*  exp(cUnit*ALeft *h) + psiKRight* exp(-cUnit*ARight*h)
+                  + psiKBelow* exp(cUnit*ABelow*h) + psiKAbove* exp(-cUnit*AAbove*h) ) / (h*h)
                 + psiK * (1-abs(psiK)*abs(psiK));
           break;
 

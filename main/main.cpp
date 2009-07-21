@@ -6,7 +6,8 @@ int main(int argc, char *argv[])
 
   // create grid
   int Nx = 10;
-  PsiGrid grid(Nx);
+  double edgelength = 10.0;
+  PsiGrid grid(Nx,edgelength);
 
   int *i = grid.k2i(55);
 

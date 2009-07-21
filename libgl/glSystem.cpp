@@ -74,11 +74,11 @@ int GlSystem::realIndex2complexIndex ( int realIndex )
 
 
 // =============================================================================
-void GlSystem::real2psi( Epetra_Vector realvec,
-                         vector<std::complex<double> > psi )
+void GlSystem::real2complex( Epetra_Vector realvec,
+                             vector<std::complex<double> >& psi )
 {
   for (int k=0; k<NumComplexUnknowns; k++ )
-      psi[k] = ( realvec[2*k-1], realvec[2*k] );
+      psi[k] = std::complex<double>( realvec[2*k], realvec[2*k+1] );
 }
 // =============================================================================
 
@@ -98,7 +98,7 @@ bool GlSystem::computeF( const Epetra_Vector& x,
   // scatter x over all processors
   Epetra_Export Exporter( *StandardMap, *EverywhereMap );
   xEverywhere.Export( x, Exporter, Insert );
-  (void) real2psi( xEverywhere, psi );
+  (void) real2complex( xEverywhere, psi );
 
   // loop over the system rows
   double passVal;
@@ -115,20 +115,13 @@ bool GlSystem::computeF( const Epetra_Vector& x,
           //       the imaginary part of it.
           val = Gl.computeGl( psiIndex, psi );
 
-std::cout << "val = " << val << std::endl;
-
           if ( !(myGlobalIndex%2) ) // myGlobalIndex is even
               passVal = real(val);
           else // myGlobalIndex is odd
               passVal = imag(val);
       }
-
-std::cout << "passvVal = " << passVal << std::endl;
-
       rhs->ReplaceGlobalValues( 1, &passVal, &myGlobalIndex );
   }
-
-std::cout << *rhs << std::endl;
 
   return true;
 }
@@ -166,7 +159,7 @@ bool GlSystem::computeJacobian( const Epetra_Vector& x,
   // scatter x over all processors
   Epetra_Export Exporter( *StandardMap, *EverywhereMap );
   xEverywhere.Export( x, Exporter, Insert );
-  real2psi( xEverywhere, psi );
+  real2complex( xEverywhere, psi );
 
   // Construct the Epetra Matrix
   for( int i=0 ; i<NumMyElements ; i++ ) {
@@ -377,7 +370,7 @@ bool GlSystem::computePreconditioner( const Epetra_Vector& x,
 // Set initialSolution to desired initial condition
 bool GlSystem::initializeSoln()
 {
-  initialSolution->PutScalar(0.0); // Default initialization
+  initialSolution->PutScalar(0.5); // Default initialization
 
 //   int n=(NumGlobalElements-1)/2;
 //   for (int k=0;k<n;k++){
