@@ -37,7 +37,8 @@ GinzburgLandau::~GinzburgLandau()
 
 // =============================================================================
 // Defines a mapping of all the GL equations to a running index.
-// The equations in the GL context are each associated with a particular node
+// The equations in the GL context are each associated with and
+// uniquely identified by a particular node
 // (around which the equation is centered, e.g., the center node with the five-
 // point stencil).
 void GinzburgLandau::getEquationType( int eqnum,
@@ -102,7 +103,7 @@ std::complex<double> GinzburgLandau::computeGl( int eqnum,
                        cUnit(0.0,1.0),
                        psiK, psiKRight, psiKLeft, psiKAbove, psiKBelow;
   double ARight, ALeft, AAbove, ABelow;
-  int i[2] = {0,0};
+  int i[2];
   int k;
   equationType eqType;
 
@@ -118,11 +119,13 @@ std::complex<double> GinzburgLandau::computeGl( int eqnum,
           k = psiGrid.i2k( i );
           psiKRight = psi[k];
           ARight    = aGrid.getAxRight( i );
+          i[0] = i[0]-1;
 
           i[1] = i[1]+1;
           k = psiGrid.i2k( i );
           psiKAbove = psi[k];
           AAbove    = aGrid.getAyAbove( i );
+          i[1] = i[1]-1;
 
           res = ( - psiK * 2.0
                   + psiKRight * exp(-cUnit*ARight*h)
@@ -137,11 +140,13 @@ std::complex<double> GinzburgLandau::computeGl( int eqnum,
           k = psiGrid.i2k( i );
           psiKLeft = psi[k];
           ALeft    = aGrid.getAxLeft( i );
+          i[0] = i[0]+1;
 
           i[1] = i[1]+1;
           k = psiGrid.i2k( i );
           psiKAbove = psi[k];
           AAbove    = aGrid.getAyAbove( i );
+          i[1] = i[1]-1;
 
           res = ( - psiK * 2.0
                   + psiKLeft  * exp( cUnit*ALeft *h)
@@ -156,11 +161,13 @@ std::complex<double> GinzburgLandau::computeGl( int eqnum,
           k = psiGrid.i2k( i );
           psiKLeft = psi[k];
           ALeft    = aGrid.getAxLeft( i );
+          i[0] = i[0]+1;
 
           i[1] = i[1]-1;
           k = psiGrid.i2k( i );
           psiKBelow = psi[k];
           ABelow    = aGrid.getAyBelow( i );
+          i[1] = i[1]+1;
 
           res = ( - psiK * 2.0
                   + psiKLeft  * exp( cUnit*ALeft *h)
@@ -175,11 +182,13 @@ std::complex<double> GinzburgLandau::computeGl( int eqnum,
           k = psiGrid.i2k( i );
           psiKRight = psi[k];
           ARight    = aGrid.getAxRight( i );
+          i[0] = i[0]-1;
 
           i[1] = i[1]-1;
           k = psiGrid.i2k( i );
           psiKBelow = psi[k];
           ABelow    = aGrid.getAyBelow( i );
+          i[1] = i[1]+1;
 
           res = ( - psiK * 2.0
                   + psiKRight * exp( cUnit*ARight*h)
@@ -194,6 +203,7 @@ std::complex<double> GinzburgLandau::computeGl( int eqnum,
           k = psiGrid.i2k( i );
           psiKAbove = psi[k];
           AAbove    = aGrid.getAyAbove( i );
+          i[1] = i[1]-1;
 
           res = ( - psiK
                   + psiKAbove * exp(-cUnit*AAbove*h) ) * cUnit/h;
@@ -207,6 +217,7 @@ std::complex<double> GinzburgLandau::computeGl( int eqnum,
           k = psiGrid.i2k( i );
           psiKLeft = psi[k];
           ALeft    = aGrid.getAxLeft( i );
+          i[0] = i[0]+1;
 
           res = ( - psiK
                   + psiKLeft * exp(-cUnit*ALeft*h) ) * cUnit/h;
@@ -220,6 +231,7 @@ std::complex<double> GinzburgLandau::computeGl( int eqnum,
           k = psiGrid.i2k( i );
           psiKBelow = psi[k];
           ABelow    = aGrid.getAyBelow( i );
+          i[1] = i[1]+1;
 
           res = ( - psiK
                   + psiKBelow * exp(-cUnit*ABelow*h) ) * cUnit/h;
@@ -233,6 +245,7 @@ std::complex<double> GinzburgLandau::computeGl( int eqnum,
           k = psiGrid.i2k( i );
           psiKBelow = psi[k];
           ARight    = aGrid.getAxRight( i );
+          i[0] = i[0]-1;
 
           res = ( - psiK
                   + psiKRight * exp(-cUnit*ARight*h) ) * cUnit/h;
@@ -273,7 +286,9 @@ std::complex<double> GinzburgLandau::computeGl( int eqnum,
                 + psiK * (1-abs(psiK)*abs(psiK));
 
       default:
-          std::cout << "Illegal enumerator value!" << std::endl;
+          std::cerr << "computeGl:" << std::endl
+                    << "    Illegal equationType \"" << eqType << "\". Abort." << std::endl;
+          exit(EXIT_FAILURE);
   }
 
   // return the result
@@ -540,11 +555,11 @@ void GinzburgLandau::computeJacobianRow( filltype ft,
           numEntriesPsi = 2;
           columnIndicesPsi.resize(numEntriesPsi);
           columnIndicesPsi[0] = k;
-          columnIndicesPsi[1] = kAbove;
+          columnIndicesPsi[1] = kLeft;
 
           if (ft==VALUES) {
               valuesPsi.resize(numEntriesPsi);
-              valuesPsi[0] = - 1.0                * cUnit/h;
+              valuesPsi[0] = - 1.0               * cUnit/h;
               valuesPsi[1] = exp(-cUnit*ALeft*h) * cUnit/h;
           }
 
@@ -664,7 +679,8 @@ void GinzburgLandau::computeJacobianRow( filltype ft,
           break;
 
       default:
-          std::cerr << "Illegal equationType \"" << eqType << "\". Abort." << std::endl;
+          std::cerr << "getJacobianRow:" << std::endl
+                    << "    Illegal equationType \"" << eqType << "\". Abort." << std::endl;
           exit(EXIT_FAILURE);
   }
 }

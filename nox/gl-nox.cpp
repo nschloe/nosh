@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
       verbose = true;
 
   // set the discretization parameter
-  int Nx = 7;
+  int Nx = 2;
   double edgelength = 1.0;
   double H0 = 0.4;
   double energy;
@@ -162,7 +162,7 @@ int main(int argc, char *argv[])
                                                               iJac,
                                                               Analytic,
                                                               *soln        ) );
-cout << "ooo" << endl;
+
   // Create the Group
   NOX::Epetra::Vector initialGuess(soln, NOX::Epetra::Vector::CreateView);
   Teuchos::RCP<NOX::Epetra::Group> grpPtr =
@@ -170,47 +170,36 @@ cout << "ooo" << endl;
 					iReq,
 					initialGuess,
 					linSys));
-cout << "ppp" << endl;
+
   NOX::Epetra::Group& grp = *grpPtr;
-cout << "mmm" << endl;
   // ------------------------------------------------------------------------
 
 
   // ------------------------------------------------------------------------
   // Create the convergence tests
-cout << "m0" << endl;
   Teuchos::RCP<NOX::StatusTest::NormF> absresid =
     Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-12));
-cout << "m02" << endl;
   Teuchos::RCP<NOX::StatusTest::NormF> relresid =
     Teuchos::rcp(new NOX::StatusTest::NormF(grp, 1.0e-12));
-cout << "m03" << endl;
   Teuchos::RCP<NOX::StatusTest::NormUpdate> update =
     Teuchos::rcp(new NOX::StatusTest::NormUpdate(1.0e-12));
-cout << "m04" << endl;
   Teuchos::RCP<NOX::StatusTest::NormWRMS> wrms =
     Teuchos::rcp(new NOX::StatusTest::NormWRMS(1.0e-2, 1.0e-5));
-cout << "m05" << endl;
   Teuchos::RCP<NOX::StatusTest::Combo> converged =
     Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::AND));
-cout << "m06" << endl;
   converged->addStatusTest(absresid);
   converged->addStatusTest(relresid);
   converged->addStatusTest(wrms);
   converged->addStatusTest(update);
-
-cout << "m1" << endl;
 
   int maxNonlinearIterations = 20;
   Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters =
     Teuchos::rcp(new NOX::StatusTest::MaxIters(maxNonlinearIterations));
   Teuchos::RCP<NOX::StatusTest::FiniteValue> fv =
     Teuchos::rcp(new NOX::StatusTest::FiniteValue);
-cout << "m2" << endl;
   // this test is useful if we start in a solution
   Teuchos::RCP<NOX::StatusTest::NormF> absresexact =
     Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-20));
-cout << "nnn" << endl;
   Teuchos::RCP<NOX::StatusTest::Combo> combo = 
     Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
 
@@ -219,7 +208,6 @@ cout << "nnn" << endl;
   combo->addStatusTest(converged);
   combo->addStatusTest(maxiters);
   // ------------------------------------------------------------------------
-cout << "ooo" << endl;
 
   // Create the solver
   Teuchos::RCP<NOX::Solver::Generic> solver = NOX::Solver::buildSolver(grpPtr, combo, nlParamsPtr);

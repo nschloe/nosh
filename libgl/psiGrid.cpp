@@ -68,7 +68,7 @@ int PsiGrid::i2k( int* i )
   } else if (i[1]==Nx) { // north
       k = 3*Nx - i[0];
   } else if (i[0]==0) { // west
-      k = 4*Nx - i[0];
+      k = 4*Nx - i[1];
   } else if ( i[0]>0 && i[0]<Nx && i[1]>0 && i[1]<Nx ) { // interior
       k = 4*Nx
         + (Nx-1)*(i[1]-1)

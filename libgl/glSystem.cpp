@@ -89,6 +89,9 @@ bool GlSystem::computeF( const Epetra_Vector& x,
   std::complex<double>* psi = new std::complex<double>[NumComplexUnknowns];
   std::complex<double> val;
 
+  // have rhs point to FVec
+  rhs = &FVec;
+
   // scatter x over all processors
   Epetra_Export Exporter( *StandardMap, *EverywhereMap );
   xEverywhere.Export( x, Exporter, Insert );
@@ -96,7 +99,7 @@ bool GlSystem::computeF( const Epetra_Vector& x,
 
   // loop over the system rows
   double passVal;
-  for( int i=0; i<NumMyElements; i++ ) {
+  for(int i=0; i<NumMyElements; i++ ) {
       int myGlobalIndex = StandardMap->GID(i);
       if (myGlobalIndex==2*NumComplexUnknowns) { // phase condition
           passVal = 0.0;
@@ -109,7 +112,7 @@ bool GlSystem::computeF( const Epetra_Vector& x,
           //       the imaginary part of it.
           val = Gl.computeGl( psiIndex, psi );
 
-          if ( myGlobalIndex%2 ) // myGlobalIndex is even
+          if ( !(myGlobalIndex%2) ) // myGlobalIndex is even
               passVal = real(val);
           else // myGlobalIndex is odd
               passVal = imag(val);
@@ -148,6 +151,7 @@ bool GlSystem::computeJacobian( const Epetra_Vector& x,
          *valuesPsiConjImag = NULL;
 
   unsigned int k;
+  int complexRow;
 
 
   // scatter x over all processors
@@ -180,15 +184,19 @@ bool GlSystem::computeJacobian( const Epetra_Vector& x,
           // TODO: The same value is actually fetched twice in this loop
           //       possibly consecutively: Once for the real, once for
           //       the imaginary part of it.
-          Gl.getJacobianRow( Row,
+          if ( !(Row%2) ) // Row even
+              complexRow = Row/2;
+          else
+              complexRow = (Row-1)/2;
+
+          Gl.getJacobianRow( complexRow,
                              psi,
                              columnIndicesPsi,
                              valuesPsi,
                              columnIndicesPsiConj,
                              valuesPsiConj );
 
-          if ( Row%2 ) { // myGlobalIndex is even
-std::cout << "Row must be even: " << Row << std::endl;
+          if ( !(Row%2) ) { // myGlobalIndex is even
               // ---------------------------------------------------------
               // insert the coefficients Re(alpha_i) of Re(psi_i)
               columnIndicesPsiReal = new int [columnIndicesPsi.size()];
@@ -386,18 +394,21 @@ bool GlSystem::createGraph()
       *columnIndicesPsiImag = NULL,
       *columnIndicesPsiConjReal = NULL,
       *columnIndicesPsiConjImag = NULL;
-  unsigned int k;
+  int k;
+  int numEntries, complexRow;
 
   // Construct the Epetra Matrix
   for( int i=0 ; i<NumMyElements ; i++ ) {
       int Row = StandardMap->GID(i);
 
       if (Row==2*NumComplexUnknowns) {// phase condition
+
           // fill in phase condition stuff
           int numEntries = 2*NumComplexUnknowns;
           columnIndicesPsiReal = new int[numEntries];
-          for (int k; k<numEntries; k++ )
+          for (int k=0; k<numEntries; k++ )
               columnIndicesPsiReal[k] = k;
+
           Graph->InsertGlobalIndices( Row,
                                       numEntries,
                                       columnIndicesPsiReal );
@@ -407,106 +418,132 @@ bool GlSystem::createGraph()
           // TODO: The same value is actually fetched twice in this loop
           //       possibly consecutively: Once for the real, once for
           //       the imaginary part of it.
-          Gl.getJacobianRowSparsity( Row,
+          if ( !(Row%2) ) // Row even
+              complexRow = Row/2;
+          else
+              complexRow = (Row-1)/2;
+
+          Gl.getJacobianRowSparsity( complexRow,
                                      columnIndicesPsi,
                                      columnIndicesPsiConj );
 
-          if ( !Row%2 ) { // myGlobalIndex is even
-              // ---------------------------------------------------------
+          if ( !(Row%2) ) { // Row even <=> Real part of the equation system
+              // ---------------------------------------------------------------
               // insert the coefficients Re(alpha_i) of Re(psi_i)
-              columnIndicesPsiReal = new int [columnIndicesPsi.size()];
-              for (k=0; k<columnIndicesPsi.size(); k++)
-                  columnIndicesPsiReal[k] = 2*columnIndicesPsi[k]-1;
+              numEntries = columnIndicesPsi.size();
+              columnIndicesPsiReal = new int [numEntries];
+              for (k=0; k<numEntries; k++)
+                  columnIndicesPsiReal[k] = 2*columnIndicesPsi[k];
 
               Graph->InsertGlobalIndices( Row,
-                                          columnIndicesPsi.size(),
+                                          numEntries,
                                           columnIndicesPsiReal );
 
               // insert the coefficients Re(beta_i) of Re(psi_i)
-              columnIndicesPsiConjReal = new int[columnIndicesPsiConj.size()];
-              for (k=0; k<columnIndicesPsiConj.size(); k++)
-                  columnIndicesPsiConjReal[k] = 2*columnIndicesPsiConj[k]-1;
+              numEntries = columnIndicesPsiConj.size();
+              columnIndicesPsiConjReal = new int[numEntries];
+              for (int k=0; k<numEntries; k++)
+                  columnIndicesPsiConjReal[k] = 2*columnIndicesPsiConj[k];
 
               Graph->InsertGlobalIndices( Row,
-                                          columnIndicesPsiConj.size(),
+                                          numEntries,
                                           columnIndicesPsiConjReal );
 
               // insert the coefficients -Im(alpha_i) of Im(psi_i)
-              columnIndicesPsiImag = new int[columnIndicesPsi.size()];
-              for (k=0; k<columnIndicesPsi.size(); k++)
-                  columnIndicesPsiImag[k] = 2*columnIndicesPsi[k];
+              numEntries = columnIndicesPsi.size();
+              columnIndicesPsiImag = new int[numEntries];
+              for (int k=0; k<numEntries; k++)
+                  columnIndicesPsiImag[k] = 2*columnIndicesPsi[k]+1;
 
               Graph->InsertGlobalIndices( Row,
-                                          columnIndicesPsi.size(),
+                                          numEntries,
                                           columnIndicesPsiImag );
 
               // insert the coefficients Im(beta_i) of Im(psi_i)
-              columnIndicesPsiConjImag = new int[columnIndicesPsiConj.size()];
-              for (k=0; k<columnIndicesPsiConj.size(); k++)
-                  columnIndicesPsiConjImag[k] = 2*columnIndicesPsiConj[k];
+              numEntries = columnIndicesPsiConj.size();
+              columnIndicesPsiConjImag = new int[numEntries];
+              for (int k=0; k<numEntries; k++)
+                  columnIndicesPsiConjImag[k] = 2*columnIndicesPsiConj[k]+1;
 
               Graph->InsertGlobalIndices( Row,
-                                          columnIndicesPsiConj.size(),
+                                          numEntries,
                                           columnIndicesPsiConjImag );
 
               // right bordering
-              int column = 2*NumComplexUnknowns+1;
+              int column = 2*NumComplexUnknowns;
+
               Graph->InsertGlobalIndices( Row,
                                           1,
                                           &column );
 
-              // ---------------------------------------------------------
-          } else { // myGlobalIndex is odd
-              // ---------------------------------------------------------
+              // ---------------------------------------------------------------
+          } else { // myGlobalIndex is odd <=> Imaginary part of the equation
+              // ---------------------------------------------------------------
               // insert the coefficients Im(alpha_i) of Re(psi_i)
-              columnIndicesPsiReal = new int [columnIndicesPsi.size()];
-              for (k=0; k<columnIndicesPsi.size(); k++) {
-                  columnIndicesPsiReal[k] = 2*columnIndicesPsi[k]-1;
+              numEntries = columnIndicesPsi.size();
+              columnIndicesPsiReal = new int[numEntries];
+              for (int k=0; k<numEntries; k++) {
+                  columnIndicesPsiReal[k] = 2*columnIndicesPsi[k];
               }
 
               Graph->InsertGlobalIndices( Row,
-                                          columnIndicesPsi.size(),
+                                          numEntries,
                                           columnIndicesPsiReal );
 
               // insert the coefficients Im(beta_i) of Re(psi_i)
-              columnIndicesPsiConjReal = new int[columnIndicesPsiConj.size()];
-              for (k=0; k<columnIndicesPsiConj.size(); k++)
-                  columnIndicesPsiConjReal[k] = 2*columnIndicesPsiConj[k]-1;
+              numEntries = columnIndicesPsiConj.size();
+              columnIndicesPsiConjReal = new int[numEntries];
+              for (int k=0; k<numEntries; k++)
+                  columnIndicesPsiConjReal[k] = 2*columnIndicesPsiConj[k];
 
               Graph->InsertGlobalIndices( Row,
-                                          columnIndicesPsiConj.size(),
+                                          numEntries,
                                           columnIndicesPsiConjReal );
 
               // insert the coefficients Re(alpha_i) of Im(psi_i)
-              columnIndicesPsiImag = new int[columnIndicesPsi.size()];
-              for (k=0; k<columnIndicesPsi.size(); k++)
-                  columnIndicesPsiImag[k] = 2*columnIndicesPsi[k];
+              numEntries = columnIndicesPsi.size();
+              columnIndicesPsiImag = new int[numEntries];
+              for (int k=0; k<numEntries; k++)
+                  columnIndicesPsiImag[k] = 2*columnIndicesPsi[k]+1;
 
               Graph->InsertGlobalIndices( Row,
-                                          columnIndicesPsi.size(),
+                                          numEntries,
                                           columnIndicesPsiImag );
 
               // insert the coefficients -Re(beta_i) of Im(psi_i)
-              columnIndicesPsiConjImag = new int[columnIndicesPsiConj.size()];
-              for (k=0; k<columnIndicesPsiConj.size(); k++)
-                  columnIndicesPsiConjImag[k] = 2*columnIndicesPsiConj[k];
+              numEntries = columnIndicesPsiConj.size();
+              columnIndicesPsiConjImag = new int[numEntries];
+              for (int k=0; k<numEntries; k++)
+                  columnIndicesPsiConjImag[k] = 2*columnIndicesPsiConj[k]+1;
 
               Graph->InsertGlobalIndices( Row,
-                                          columnIndicesPsiConj.size(),
+                                          numEntries,
                                           columnIndicesPsiConjImag );
 
               // right bordering
-              int column = 2*NumComplexUnknowns+1;
+              int column = 2*NumComplexUnknowns;
+
               Graph->InsertGlobalIndices( Row,
                                           1,
                                           &column );
-              // ---------------------------------------------------------
+              // ---------------------------------------------------------------
           }
       }
   }
   // ===========================================================================
 
-  Graph->FillComplete();
+  // ---------------------------------------------------------------------------
+  // finish up the graph construction
+  try{
+      Graph->FillComplete();
+  }
+  catch (int i){
+     std::cerr << "createGraph:" << std::endl
+               << "    FillComplete returned error code " << i << ". Abort."
+               << std::endl;
+     exit(EXIT_FAILURE);
+  }
+  // ---------------------------------------------------------------------------
 
   return true;
 }
