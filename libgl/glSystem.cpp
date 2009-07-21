@@ -23,10 +23,12 @@ GlSystem::GlSystem( int nx,
   StandardMap(0),
   EverywhereMap(0),
   rhs(0),
-  Graph(0)
+  Graph(0),
+  jacobian(0),
+  initialSolution(0)
 {
   NumComplexUnknowns = (Nx+1)*(Nx+1);
-  NumGlobalElements = 2*NumComplexUnknowns+1;
+  NumGlobalElements  = 2*NumComplexUnknowns+1;
 
   // define the map where the data is nicely distributed over all processors
   StandardMap = new Epetra_Map( NumGlobalElements, 0, *Comm );

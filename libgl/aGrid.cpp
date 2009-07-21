@@ -10,12 +10,12 @@
 AGrid::AGrid( int nx,
               double edgelength,
               double h0 ):
-Nx(nx),
-Edgelength(edgelength),
-h( edgelength/nx ),
-H0(h0),
-Ax(boost::extents[nx][nx+1]),
-Ay(boost::extents[nx+1][nx])
+  Nx(nx),
+  Edgelength(edgelength),
+  h( edgelength/nx ),
+  H0(h0),
+  Ax(boost::extents[nx][nx+1]),
+  Ay(boost::extents[nx+1][nx])
 {
   typedef array_type::index index;
 

@@ -8,8 +8,8 @@
 // Class constructor
 PsiGrid::PsiGrid( int nx,
                   double edgelength ):
-Nx(nx),
-Edgelength(edgelength) // not strictly necessary
+  Nx(nx),
+  Edgelength(edgelength) // not strictly necessary
 {
 }
 // =============================================================================

@@ -7,12 +7,12 @@
 GinzburgLandau::GinzburgLandau( int nx,
                                 double edgelength,
                                 double h0 ):
-h      ( edgelength/nx ),
-psiGrid( PsiGrid::PsiGrid( nx,
-                           edgelength ) ),
-aGrid  ( AGrid::AGrid( nx,
-                       edgelength,
-                       h0          ) )
+  h      ( edgelength/nx ),
+  psiGrid( PsiGrid::PsiGrid( nx,
+                            edgelength ) ),
+  aGrid  ( AGrid::AGrid( nx,
+                        edgelength,
+                        h0          ) )
 {
 }
 // =============================================================================

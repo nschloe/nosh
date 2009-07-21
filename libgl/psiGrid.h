@@ -1,3 +1,6 @@
+/********************************************//**
+ * Test class
+ ***********************************************/
 class PsiGrid
 {
   public:
@@ -5,12 +8,12 @@ class PsiGrid
 
      ~PsiGrid();
 
-     int* k2i( int  );
-     int  i2k( int* );
+     int getNx(); //!< returns Nx
 
-     int getNx();
+     int* k2i( int  ); //!< Converts a running index k to a grid index i
+     int  i2k( int* ); //!< Converts a grid index i to a running index k
 
   private:
-     int Nx;
-     double Edgelength;
+     int Nx; //!< Number of grid pieces in both x- and y-direction
+     double Edgelength; //!< Edgelength of the square in both x- and y-direction
 };
