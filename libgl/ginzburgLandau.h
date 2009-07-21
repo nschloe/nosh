@@ -35,19 +35,15 @@ class GinzburgLandau
      // get coefficients of the jacobian system
      void getJacobianRow( int eqnum,
                           std::complex<double>* psi,
-                          int& numEntriesPsi,
-                          int* columnIndicesPsi,
-                          std::complex<double>* valuesPsi,
-                          int& numEntriesPsiConj,
-                          int* columnIndicesPsiConj,
-                          std::complex<double>* valuesPsiConj );
+                          std::vector<int>& columnIndicesPsi,
+                          std::vector<std::complex<double> >& valuesPsi,
+                          std::vector<int>& columnIndicesPsiConj,
+                          std::vector<std::complex<double> >& valuesPsiConj );
 
      // get sparsity pattern of the jacobian system
      void getJacobianRowSparsity( int eqnum,
-                                  int& numEntriesPsi,
-                                  int* columnIndicesPsi,
-                                  int& numEntriesPsiConj,
-                                  int* columnIndicesPsiConj );
+                                  std::vector<int>& columnIndicesPsi,
+                                  std::vector<int>& columnIndicesPsiConj );
 
   private:
       int Nx;
@@ -67,10 +63,9 @@ class GinzburgLandau
       void computeJacobianRow( filltype ft,
                                int eqnum,
                                std::complex<double>* psi,
-                               int& numEntriesPsi,
-                               int* columnIndicesPsi,
-                               std::complex<double>* valuesPsi,
-                               int& numEntriesPsiConj,
-                               int* columnIndicesPsiConj,
-                               std::complex<double>* valuesPsiConj );
+                               std::vector<int>& columnIndicesPsi,
+                               std::vector<std::complex<double> >& valuesPsi,
+                               std::vector<int>& columnIndicesPsiConj,
+                               std::vector<std::complex<double> >& valuesPsiConj );
+
 };

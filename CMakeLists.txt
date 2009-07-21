@@ -6,7 +6,9 @@ PROJECT( ginzburg-landau )
 #SET(CMAKE_CXX_COMPILER g++)
 
 #SET(CMAKE_BUILD_TYPE Profile)
-#SET(CMAKE_BUILD_TYPE Debug)
+
+SET(CMAKE_BUILD_TYPE Debug)
+SET(CMAKE_CXX_FLAGS_DEBUG "-pg -ggdb -Wall -Wextra -pedantic -fbounds-check" )
 
 add_subdirectory ( libgl )
 add_subdirectory ( main )
