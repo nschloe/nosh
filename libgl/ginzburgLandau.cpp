@@ -657,7 +657,7 @@ void GinzburgLandau::computeJacobianRow( filltype ft,
           if (ft==VALUES) {
               valuesPsi.resize(numEntriesPsi);
               valuesPsi[0] = - 4.0                / (h*h)
-                          + (1 - 2.0*abs(psiK)*abs(psiK));
+                             + (1 - 2.0*abs(psiK)*abs(psiK));
               valuesPsi[1] = exp( cUnit*ALeft *h) / (h*h);
               valuesPsi[2] = exp(-cUnit*ARight*h) / (h*h);
               valuesPsi[3] = exp( cUnit*ABelow*h) / (h*h);

@@ -94,9 +94,6 @@ bool GlSystem::computeF( const Epetra_Vector& x,
   vector<std::complex<double> > psi(NumComplexUnknowns);
   std::complex<double> val;
 
-  // have rhs point to FVec
-  rhs = &FVec;
-
   // scatter x over all processors
   Epetra_Export Exporter( *StandardMap, *EverywhereMap );
   xEverywhere.Export( x, Exporter, Insert );
@@ -122,7 +119,7 @@ bool GlSystem::computeF( const Epetra_Vector& x,
           else // myGlobalIndex is odd
               passVal = imag(val);
       }
-      rhs->ReplaceGlobalValues( 1, &passVal, &myGlobalIndex );
+      FVec.ReplaceGlobalValues( 1, &passVal, &myGlobalIndex );
   }
 
   return true;
@@ -169,12 +166,12 @@ bool GlSystem::computeJacobian( const Epetra_Vector& x,
 
       if (Row==2*NumComplexUnknowns) {// phase condition
           // fill in phase condition stuff
-          int numEntries = 2*NumComplexUnknowns;
+          numEntries = 2*NumComplexUnknowns;
           columnIndices = new int[numEntries];
-          for (int k; k<numEntries; k++ )
+          for (int k=0; k<numEntries; k++ )
               columnIndices[k] = k;
           double* values = new double[numEntries];
-          for (int k; k<NumComplexUnknowns; k++ ) {
+          for (int k=0; k<NumComplexUnknowns; k++ ) {
               values[2*k]   = -imag(psi[k]);
               values[2*k+1] =  real(psi[k]);
           }
@@ -276,7 +273,7 @@ bool GlSystem::computeJacobian( const Epetra_Vector& x,
                                                 &column );
 
               // ---------------------------------------------------------
-          } else { // myGlobalIndex is odd
+          } else { // Row is odd
               // ---------------------------------------------------------
               // insert the coefficients Im(alpha_i) of Re(psi_i)
               numEntries = columnIndicesPsi.size();
@@ -305,6 +302,7 @@ bool GlSystem::computeJacobian( const Epetra_Vector& x,
                                                 numEntries,
                                                 valuesPsiConjImag,
                                                 columnIndicesPsiConjReal );
+
               delete [] columnIndicesPsiConjReal; columnIndicesPsiConjReal = NULL;
               delete [] valuesPsiConjImag; valuesPsiConjImag = NULL;
 
@@ -315,11 +313,12 @@ bool GlSystem::computeJacobian( const Epetra_Vector& x,
                   columnIndicesPsiImag[k] = 2*columnIndicesPsi[k]+1;
               valuesPsiReal = new double[columnIndicesPsi.size()];
               for (k=0; k<numEntries; k++)
-                  valuesPsiReal[k] = std::imag( valuesPsi[k] );
+                  valuesPsiReal[k] = std::real( valuesPsi[k] );
               ierr = jacobian->ReplaceGlobalValues( Row,
                                                     numEntries,
                                                     valuesPsiReal,
                                                     columnIndicesPsiImag );
+
               delete [] columnIndicesPsiImag; columnIndicesPsiImag = NULL;
               delete [] valuesPsiReal; valuesPsiReal = NULL;
 
@@ -330,7 +329,7 @@ bool GlSystem::computeJacobian( const Epetra_Vector& x,
                   columnIndicesPsiConjImag[k] = 2*columnIndicesPsiConj[k]+1;
               valuesPsiConjReal = new double[numEntries];
               for (k=0; k<numEntries; k++)
-                  valuesPsiConjReal[k] = -std::imag( valuesPsiConj[k] );
+                  valuesPsiConjReal[k] = -std::real( valuesPsiConj[k] );
               ierr = jacobian->SumIntoMyValues( Row,
                                                 numEntries,
                                                 valuesPsiConjReal,
@@ -350,7 +349,6 @@ bool GlSystem::computeJacobian( const Epetra_Vector& x,
           }
       }
   }
-
   return true;
 }
 // =============================================================================

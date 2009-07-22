@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
       verbose = true;
 
   // set the discretization parameter
-  int Nx = 2;
+  int Nx = 20;
   double edgelength = 10.0;
   double H0 = 0.4;
   double energy;
