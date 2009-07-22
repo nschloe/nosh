@@ -23,29 +23,29 @@ class GlSystem: public NOX::Epetra::Interface::Required,
   public:
 
      //! Default constructor. 
-     GlSystem( int nx,
-               double h0,
-               double edgelength,
-               Epetra_Comm& comm );
+     GlSystem( int          nx,
+               double       h0,
+               double       edgelength,
+               Epetra_Comm& comm        );
 
      //! Destructor
      ~GlSystem();
 
      //! Evaluate the Ginzburg--Landau functions at a given state defined
      //! by the input vector x.
-     bool computeF( const Epetra_Vector& x,
-                    Epetra_Vector& F,
+     bool computeF( const Epetra_Vector &x,
+                    Epetra_Vector       &F,
                     const NOX::Epetra::Interface::Required::FillType fillFlag = Residual  );
 
      //! Evaluate the Jacobian matrix of the Ginzburg--Landau problem
      //! at a given state defined by the input vector x.
      bool computeJacobian ( const Epetra_Vector &x,
-                            Epetra_Operator &Jac    );
+                            Epetra_Operator     &Jac );
 
      //! Dummy preconditioner function. So far does nothing but throwing
      //! an exception when called.
-     bool computePreconditioner( const Epetra_Vector& x,
-                                 Epetra_Operator& Prec,
+     bool computePreconditioner( const Epetra_Vector     &x,
+                                 Epetra_Operator         &Prec,
                                  Teuchos::ParameterList* precParams=0 );
 
      //! Returns the current state. Not necessarily a solution to the problem!
@@ -55,7 +55,8 @@ class GlSystem: public NOX::Epetra::Interface::Required,
      Teuchos::RCP<Epetra_CrsMatrix> getJacobian(); 
 
   private:
-      //! Maps an index 
+
+      //! Maps an index
       int  realIndex2complexIndex ( int realIndex );
 
       void real2complex( Epetra_Vector x,
@@ -63,7 +64,9 @@ class GlSystem: public NOX::Epetra::Interface::Required,
 
       bool initializeSoln();
 
-      bool createGraph();
+      enum jacCreator { ONLY_GRAPH, VALUES };
+      bool createJacobian( const jacCreator    jc,
+                           const Epetra_Vector &x );
 
       int NumGlobalElements;
       int NumMyElements;
