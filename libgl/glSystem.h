@@ -1,3 +1,7 @@
+/*! Jacobian system for the Ginzburg--Landau problem.
+ *  This routine can be used as an interface to NOX.
+ ******************************************************************************/
+
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
@@ -17,28 +21,41 @@ class GlSystem: public NOX::Epetra::Interface::Required,
                 public NOX::Epetra::Interface::Jacobian
 {
   public:
+
+     //! Default constructor. 
      GlSystem( int nx,
                double h0,
                double edgelength,
                Epetra_Comm& comm );
 
+     //! Destructor
      ~GlSystem();
 
+     //! Evaluate the Ginzburg--Landau functions at a given state defined
+     //! by the input vector x.
      bool computeF( const Epetra_Vector& x,
                     Epetra_Vector& F,
                     const NOX::Epetra::Interface::Required::FillType fillFlag = Residual  );
 
+     //! Evaluate the Jacobian matrix of the Ginzburg--Landau problem
+     //! at a given state defined by the input vector x.
      bool computeJacobian ( const Epetra_Vector &x,
                             Epetra_Operator &Jac    );
 
+     //! Dummy preconditioner function. So far does nothing but throwing
+     //! an exception when called.
      bool computePreconditioner( const Epetra_Vector& x,
                                  Epetra_Operator& Prec,
                                  Teuchos::ParameterList* precParams=0 );
 
+     //! Returns the current state. Not necessarily a solution to the problem!
      Teuchos::RCP<Epetra_Vector>    getSolution();
-     Teuchos::RCP<Epetra_CrsMatrix> getJacobian();
+
+     //! Returns the current Jacobian.
+     Teuchos::RCP<Epetra_CrsMatrix> getJacobian(); 
 
   private:
+      //! Maps an index 
       int  realIndex2complexIndex ( int realIndex );
 
       void real2complex( Epetra_Vector x,

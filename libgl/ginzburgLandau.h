@@ -27,12 +27,12 @@ class GinzburgLandau
         PHASE_CONDITION
       };
 
-     // constructor
+     /*! Default constructor. */
      GinzburgLandau( int nx,
                      double edgelength,
                      double h0 );
 
-     // destructor
+     /*! Destructor. */
      ~GinzburgLandau();
 
      /*! Evaluates the Ginzburg--Landau equations. */
@@ -42,19 +42,19 @@ class GinzburgLandau
      /*! Returns the coefficients of the jacobian system associated with the
          Ginzburg--Landau equations. */
      void getJacobianRow( int eqnum,
-                          std::vector<std::complex<double> > psi,
-                          std::vector<int>& columnIndicesPsi,
+                          std::vector<std::complex<double> >  psi,
+                          std::vector<int>&                   columnIndicesPsi,
                           std::vector<std::complex<double> >& valuesPsi,
-                          std::vector<int>& columnIndicesPsiConj,
+                          std::vector<int>&                   columnIndicesPsiConj,
                           std::vector<std::complex<double> >& valuesPsiConj );
 
-     // get sparsity pattern of the jacobian system
+     /*! Get sparsity pattern of the jacobian system. */
      void getJacobianRowSparsity( int eqnum,
                                   std::vector<int>& columnIndicesPsi,
                                   std::vector<int>& columnIndicesPsiConj );
 
   private:
-      double h;
+      double h; //! mesh width
       PsiGrid::PsiGrid psiGrid;
       AGrid::AGrid     aGrid;
 

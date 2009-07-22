@@ -19,15 +19,21 @@ AGrid::AGrid( int nx,
 {
   typedef array_type::index index;
 
-  // initialize the Ax with values
-  // A_x = - H0/2*y
+  /*! Initialize the Ax with values
+   *  \f[
+   *      A_x = - \frac{H_0}{2} y.
+   *  \f]
+   */
   for ( index i=0; i!=nx; ++i )
       for ( index j=0; j!=nx+1; ++j )
           Ax[i][j] = - 0.5 *H0 *j*h
                      + 0.25*H0 *edgelength; //  to level the thing, but not actually necessary
 
-  // initialize the Ay with values
-  // A_x = H0/2*x
+  /*! Initialize the Ay with values
+   *  \f[
+   *      A_y = \frac{H_0}{2} x.
+   *  \f]
+   */
   for ( index i=0; i!=nx+1; ++i )
       for ( index j=0; j!=nx; ++j )
           Ay[i][j] =   0.5 *H0 *i*h
@@ -58,7 +64,7 @@ AGrid::~AGrid()
 
 
 // =============================================================================
-// converts an integer index to the geometric positio
+// converts an integer index to the geometric position
 float* AGrid::Ax_i2x( int* i )
 {
   static float x[2];

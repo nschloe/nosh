@@ -1,3 +1,7 @@
+/********************************************//**
+ * Grid for \f$A\f$.
+ ***********************************************/
+
 // include Boost's multidimensional arrays to be able to handle Ax, Ay in a more sane way
 #include "boost/multi_array.hpp"
 
@@ -5,16 +9,18 @@ class AGrid
 {
   public:
 
+     //! Class constructor.
      AGrid( int nx,
             double edgelength,
             double h0 );
 
+     //! Class destructor
      ~AGrid();
 
-      float getAxLeft ( int* );
-      float getAxRight( int* );
-      float getAyBelow( int* );
-      float getAyAbove( int* );
+      float getAxLeft ( int* i );  //!< Returns the value of \f$A_x\f$ left of point i.
+      float getAxRight( int* i );  //!< Returns the value of \f$A_x\f$ right of point i.
+      float getAyBelow( int* i );  //!< Returns the value of \f$A_y\f$ below point i.
+      float getAyAbove( int* i );  //!< Returns the value of \f$A_y\f$ above point i.
 
   private:
       int Nx;
