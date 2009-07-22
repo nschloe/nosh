@@ -205,30 +205,22 @@ Teuchos::RCP<Epetra_CrsMatrix> GlSystem::getJacobian()
 bool GlSystem::createJacobian( const jacCreator    jc,
                                const Epetra_Vector &x  )
 {
-  int ierr;
-  Epetra_Vector xEverywhere ( *EverywhereMap );
   std::vector<std::complex<double> > psi(NumComplexUnknowns);
 
-  vector<int> columnIndicesPsi,
-              columnIndicesPsiConj;
+  vector<int>                   colIndA, colIndB;
+  vector<std::complex<double> > valuesA, valuesB;
 
-  vector<std::complex<double> > valuesPsi,
-                                valuesPsiConj;
+  int    *colInd      = NULL,
+         *colIndAReal = NULL, *colIndAImag = NULL,
+         *colIndBReal = NULL, *colIndBImag = NULL;
+  double *values      = NULL,
+         *valuesAReal = NULL, *valuesAImag = NULL,
+         *valuesBReal = NULL, *valuesBImag = NULL;
 
-  int *columnIndices        = NULL,
-      *columnIndicesPsiReal = NULL,
-      *columnIndicesPsiImag = NULL,
-      *columnIndicesPsiConjReal = NULL,
-      *columnIndicesPsiConjImag = NULL;
-  double *valuesPsiReal     = NULL,
-         *valuesPsiConjReal = NULL,
-         *valuesPsiImag     = NULL,
-         *valuesPsiConjImag = NULL;
-
-  int k;
-  int complexRow, numEntries;
+  int ierr, k, complexRow, numEntries;
 
   if (jc==VALUES) {
+      Epetra_Vector xEverywhere ( *EverywhereMap );
       // scatter x over all processors
       Epetra_Export Exporter( *StandardMap, *EverywhereMap );
       xEverywhere.Export( x, Exporter, Insert );
@@ -241,7 +233,6 @@ bool GlSystem::createJacobian( const jacCreator    jc,
         delete Graph;
         Graph = 0;
       }
-
       // allocate the graph
       Graph = new Epetra_CrsGraph( Copy, *StandardMap, 1 );
   }
@@ -254,11 +245,11 @@ bool GlSystem::createJacobian( const jacCreator    jc,
       if (Row==2*NumComplexUnknowns) {// phase condition
           // fill in phase condition stuff
           numEntries = 2*NumComplexUnknowns;
-          columnIndices = new int[numEntries];
+          colInd = new int[numEntries];
           for (int k=0; k<numEntries; k++ )
-              columnIndices[k] = k;
+              colInd[k] = k;
           if (jc==VALUES) {// fill on columns and values
-              double* values = new double[numEntries];
+              values = new double[numEntries];
               for (int k=0; k<NumComplexUnknowns; k++ ) {
                   values[2*k]   = -imag(psi[k]);
                   values[2*k+1] =  real(psi[k]);
@@ -267,14 +258,16 @@ bool GlSystem::createJacobian( const jacCreator    jc,
               ierr = jacobian->SumIntoGlobalValues( Row,
                                                     numEntries,
                                                     values,
-                                                    columnIndices );
-              delete [] values; values = NULL;
+                                                    colInd );
+              delete [] values;
+              values = NULL;
           } else {// only fill the sparsity graph
               Graph->InsertGlobalIndices( Row,
                                           numEntries,
-                                          columnIndices );
+                                          colInd );
           }
-          delete [] columnIndices; columnIndices = NULL;
+          delete [] colInd;
+          colInd = NULL;
 
 
       } else { // GL equations
@@ -291,110 +284,108 @@ bool GlSystem::createJacobian( const jacCreator    jc,
               // fill on columns and values
               Gl.getJacobianRow( complexRow,
                                  psi,
-                                 columnIndicesPsi,
-                                 valuesPsi,
-                                 columnIndicesPsiConj,
-                                 valuesPsiConj );
+                                 colIndA, valuesA,
+                                 colIndB, valuesB );
           } else {
               // only fill the sparsity graph
               Gl.getJacobianRowSparsity( complexRow,
-                                         columnIndicesPsi,
-                                         columnIndicesPsiConj );
+                                         colIndA,
+                                         colIndB );
           }
 
-          if ( !(Row%2) ) { // myGlobalIndex is even
-              // ---------------------------------------------------------
-              // insert the coefficients Re(alpha_i) of Re(psi_i)
-              numEntries = columnIndicesPsi.size();
-              columnIndicesPsiReal = new int[numEntries];
+          if ( !(Row%2) ) { // myGlobalIndex is even <=> Real part of the equation system
+              // ---------------------------------------------------------------
+              // insert the coefficients Re(A) of Re(psi)
+              numEntries = colIndA.size();
+              colIndAReal = new int[numEntries];
               for (k=0; k<numEntries; k++)
-                  columnIndicesPsiReal[k] = 2*columnIndicesPsi[k];
+                  colIndAReal[k] = 2*colIndA[k];
 
               if (jc==VALUES) {
-                  valuesPsiReal = new double[numEntries];
+                  valuesAReal = new double[numEntries];
                   for (k=0; k<numEntries; k++)
-                      valuesPsiReal[k] = std::real( valuesPsi[k] );
+                      valuesAReal[k] = real( valuesA[k] );
                   ierr = jacobian->SumIntoGlobalValues( Row,
                                                         numEntries,
-                                                        valuesPsiReal,
-                                                        columnIndicesPsiReal );
-                  delete [] valuesPsiReal; valuesPsiReal = NULL;
+                                                        valuesAReal,
+                                                        colIndAReal );
+                  delete [] valuesAReal; valuesAReal = NULL;
               } else {
                   Graph->InsertGlobalIndices( Row,
                                               numEntries,
-                                              columnIndicesPsiReal );
+                                              colIndAReal );
               }
-              delete [] columnIndicesPsiReal; columnIndicesPsiReal = NULL;
+              delete [] colIndAReal; colIndAReal = NULL;
 
-              // insert the coefficients Re(beta_i) of Re(psi_i)
-              numEntries = columnIndicesPsiConj.size();
-              columnIndicesPsiConjReal = new int[numEntries];
+              // insert the coefficients Re(B) of Re(psi)
+              numEntries = colIndB.size();
+              colIndBReal = new int[numEntries];
               for (k=0; k<numEntries; k++)
-                  columnIndicesPsiConjReal[k] = 2*columnIndicesPsiConj[k];
+                  colIndBReal[k] = 2*colIndB[k];
               if (jc==VALUES) {
-                  valuesPsiConjReal = new double[numEntries];
+                  valuesBReal = new double[numEntries];
                   for (k=0; k<numEntries; k++)
-                      valuesPsiConjReal[k] = real( valuesPsiConj[k] );
+                      valuesBReal[k] = real( valuesB[k] );
                   ierr = jacobian->SumIntoGlobalValues( Row,
                                                         numEntries,
-                                                        valuesPsiConjReal,
-                                                        columnIndicesPsiConjReal );
-                  delete [] valuesPsiConjReal;
-                  valuesPsiConjReal = NULL;
+                                                        valuesBReal,
+                                                        colIndBReal );
+                  delete [] valuesBReal;
+                  valuesBReal = NULL;
               } else {
                   Graph->InsertGlobalIndices( Row,
                                               numEntries,
-                                              columnIndicesPsiConjReal );
+                                              colIndBReal );
               }
-              delete [] columnIndicesPsiConjReal;
-              columnIndicesPsiConjReal = NULL;
+              delete [] colIndBReal;
+              colIndBReal = NULL;
 
-              // insert the coefficients -Im(alpha_i) of Im(psi_i)
-              numEntries = columnIndicesPsi.size();
-              columnIndicesPsiImag = new int[numEntries];
+              // insert the coefficients -Im(A) of Im(psi)
+              numEntries = colIndA.size();
+              colIndAImag = new int[numEntries];
               for (k=0; k<numEntries; k++)
-                  columnIndicesPsiImag[k] = 2*columnIndicesPsi[k]+1;
+                  colIndAImag[k] = 2*colIndA[k]+1;
               if (jc==VALUES) {
-                  valuesPsiImag = new double[numEntries];
+                  valuesAImag = new double[numEntries];
                   for (k=0; k<numEntries; k++)
-                      valuesPsiImag[k] = -std::imag( valuesPsi[k] );
+                      valuesAImag[k] = -imag( valuesA[k] );
                   ierr = jacobian->SumIntoGlobalValues( Row,
                                                         numEntries,
-                                                        valuesPsiImag,
-                                                        columnIndicesPsiImag );
-                  delete [] valuesPsiImag;
-                  valuesPsiImag = NULL;
+                                                        valuesAImag,
+                                                        colIndAImag );
+                  delete [] valuesAImag;
+                  valuesAImag = NULL;
               } else {
                   Graph->InsertGlobalIndices( Row,
                                               numEntries,
-                                              columnIndicesPsiImag );
+                                              colIndAImag );
               }
-              delete [] columnIndicesPsiImag;
-              columnIndicesPsiImag = NULL;
+              delete [] colIndAImag;
+              colIndAImag = NULL;
 
 
-              // insert the coefficients Im(beta_i) of Im(psi_i)
-              numEntries = columnIndicesPsiConj.size();
-              columnIndicesPsiConjImag = new int[numEntries];
+              // insert the coefficients Im(B) of Im(psi)
+              numEntries = colIndB.size();
+              colIndBImag = new int[numEntries];
               for (k=0; k<numEntries; k++)
-                  columnIndicesPsiConjImag[k] = 2*columnIndicesPsiConj[k]+1;
+                  colIndBImag[k] = 2*colIndB[k]+1;
               if (jc==VALUES) {
-                  valuesPsiConjImag = new double[numEntries];
+                  valuesBImag = new double[numEntries];
                   for (k=0; k<numEntries; k++)
-                      valuesPsiConjImag[k] = std::imag( valuesPsiConj[k] );
+                      valuesBImag[k] = imag( valuesB[k] );
                   ierr = jacobian->SumIntoGlobalValues( Row,
                                                         numEntries,
-                                                        valuesPsiConjImag,
-                                                        columnIndicesPsiConjImag );
-                  delete [] valuesPsiConjImag;
-                  valuesPsiConjImag = NULL;
+                                                        valuesBImag,
+                                                        colIndBImag );
+                  delete [] valuesBImag;
+                  valuesBImag = NULL;
               } else {
                   Graph->InsertGlobalIndices( Row,
                                               numEntries,
-                                              columnIndicesPsiConjImag );
+                                              colIndBImag );
               }
-              delete [] columnIndicesPsiConjImag;
-              columnIndicesPsiConjImag = NULL;
+              delete [] colIndBImag;
+              colIndBImag = NULL;
 
 
               // right bordering
@@ -415,99 +406,98 @@ bool GlSystem::createJacobian( const jacCreator    jc,
               // ---------------------------------------------------------
           } else { // Row is odd <=> Imaginary part of the equation
               // ---------------------------------------------------------
-              // insert the coefficients Im(alpha_i) of Re(psi_i)
-              numEntries = columnIndicesPsi.size();
-              columnIndicesPsiReal = new int[numEntries];
+              // insert the coefficients Im(A) of Re(psi)
+              numEntries = colIndA.size();
+              colIndAReal = new int[numEntries];
               for (k=0; k<numEntries; k++)
-                  columnIndicesPsiReal[k] = 2*columnIndicesPsi[k];
+                  colIndAReal[k] = 2*colIndA[k];
               if (jc==VALUES) {
-                  valuesPsiImag = new double[numEntries];
+                  valuesAImag = new double[numEntries];
                   for (k=0; k<numEntries; k++)
-                      valuesPsiImag[k] = imag( valuesPsi[k] );
+                      valuesAImag[k] = imag( valuesA[k] );
                   ierr = jacobian->SumIntoGlobalValues( Row,
                                                         numEntries,
-                                                        valuesPsiImag,
-                                                        columnIndicesPsiReal );
-                  delete [] valuesPsiImag;
-                  valuesPsiImag = NULL;
+                                                        valuesAImag,
+                                                        colIndAReal );
+                  delete [] valuesAImag;
+                  valuesAImag = NULL;
               } else {
                   Graph->InsertGlobalIndices( Row,
                                               numEntries,
-                                              columnIndicesPsiReal );
+                                              colIndAReal );
               }
-              delete [] columnIndicesPsiReal;
-              columnIndicesPsiReal = NULL;
+              delete [] colIndAReal;
+              colIndAReal = NULL;
 
-
-              // insert the coefficients Im(beta_i) of Re(psi_i)
-              numEntries = columnIndicesPsiConj.size();
-              columnIndicesPsiConjReal = new int[numEntries];
+              // insert the coefficients Im(B) of Re(psi)
+              numEntries = colIndB.size();
+              colIndBReal = new int[numEntries];
               for (k=0; k<numEntries; k++)
-                  columnIndicesPsiConjReal[k] = 2*columnIndicesPsiConj[k];
+                  colIndBReal[k] = 2*colIndB[k];
               if (jc==VALUES) {
-                  valuesPsiConjImag = new double[numEntries];
+                  valuesBImag = new double[numEntries];
                   for (k=0; k<numEntries; k++)
-                      valuesPsiConjImag[k] = std::imag( valuesPsiConj[k] );
+                      valuesBImag[k] = imag( valuesB[k] );
                   ierr = jacobian->SumIntoGlobalValues( Row,
                                                         numEntries,
-                                                        valuesPsiConjImag,
-                                                        columnIndicesPsiConjReal );
-                  delete [] valuesPsiConjImag;
-                  valuesPsiConjImag = NULL;
+                                                        valuesBImag,
+                                                        colIndBReal );
+                  delete [] valuesBImag;
+                  valuesBImag = NULL;
               } else {
                   Graph->InsertGlobalIndices( Row,
                                               numEntries,
-                                              columnIndicesPsiConjReal );
+                                              colIndBReal );
               }
-              delete [] columnIndicesPsiConjReal;
-              columnIndicesPsiConjReal = NULL;
+              delete [] colIndBReal;
+              colIndBReal = NULL;
 
 
-              // insert the coefficients Re(alpha_i) of Im(psi_i)
-              numEntries = columnIndicesPsi.size();
-              columnIndicesPsiImag = new int[numEntries];
+              // insert the coefficients Re(A) of Im(psi)
+              numEntries = colIndA.size();
+              colIndAImag = new int[numEntries];
               for (k=0; k<numEntries; k++)
-                  columnIndicesPsiImag[k] = 2*columnIndicesPsi[k]+1;
+                  colIndAImag[k] = 2*colIndA[k]+1;
               if (jc==VALUES) {
-                  valuesPsiReal = new double[columnIndicesPsi.size()];
+                  valuesAReal = new double[numEntries];
                   for (k=0; k<numEntries; k++)
-                      valuesPsiReal[k] = std::real( valuesPsi[k] );
+                      valuesAReal[k] = real( valuesA[k] );
                   ierr = jacobian->SumIntoGlobalValues( Row,
                                                         numEntries,
-                                                        valuesPsiReal,
-                                                        columnIndicesPsiImag );
-                  delete [] valuesPsiReal;
-                  valuesPsiReal = NULL;
+                                                        valuesAReal,
+                                                        colIndAImag );
+                  delete [] valuesAReal;
+                  valuesAReal = NULL;
               } else {
                   Graph->InsertGlobalIndices( Row,
                                               numEntries,
-                                              columnIndicesPsiImag );
+                                              colIndAImag );
               }
-              delete [] columnIndicesPsiImag;
-              columnIndicesPsiImag = NULL;
+              delete [] colIndAImag;
+              colIndAImag = NULL;
 
 
-              // insert the coefficients -Re(beta_i) of Im(psi_i)
-              numEntries = columnIndicesPsiConj.size();
-              columnIndicesPsiConjImag = new int[numEntries];
+              // insert the coefficients -Re(B) of Im(psi)
+              numEntries = colIndB.size();
+              colIndBImag = new int[numEntries];
               for (k=0; k<numEntries; k++)
-                  columnIndicesPsiConjImag[k] = 2*columnIndicesPsiConj[k]+1;
+                  colIndBImag[k] = 2*colIndB[k]+1;
               if (jc==VALUES) {
-                  valuesPsiConjReal = new double[numEntries];
+                  valuesBReal = new double[numEntries];
                   for (k=0; k<numEntries; k++)
-                      valuesPsiConjReal[k] = -std::real( valuesPsiConj[k] );
+                      valuesBReal[k] = -real( valuesB[k] );
                   ierr = jacobian->SumIntoGlobalValues( Row,
                                                         numEntries,
-                                                        valuesPsiConjReal,
-                                                        columnIndicesPsiConjImag );
-                  delete [] valuesPsiConjReal;
-                  valuesPsiConjReal = NULL;
+                                                        valuesBReal,
+                                                        colIndBImag );
+                  delete [] valuesBReal;
+                  valuesBReal = NULL;
               } else {
                   Graph->InsertGlobalIndices( Row,
                                               numEntries,
-                                              columnIndicesPsiConjImag );
+                                              colIndBImag );
               }
-              delete [] columnIndicesPsiConjImag; columnIndicesPsiConjImag = NULL;
+              delete [] colIndBImag; colIndBImag = NULL;
 
               // right bordering
               int column = 2*NumComplexUnknowns;
