@@ -21,7 +21,7 @@ AGrid::AGrid( int nx,
 
   /*! Initialize the Ax with values
    *  \f[
-   *      A_x = - \frac{H_0}{2} y.
+   *      A_x = - \frac{H_0}{2} y + C.
    *  \f]
    */
   for ( index i=0; i!=nx; ++i )
@@ -31,7 +31,7 @@ AGrid::AGrid( int nx,
 
   /*! Initialize the Ay with values
    *  \f[
-   *      A_y = \frac{H_0}{2} x.
+   *      A_y = \frac{H_0}{2} x + C.
    *  \f]
    */
   for ( index i=0; i!=nx+1; ++i )
@@ -64,37 +64,7 @@ AGrid::~AGrid()
 
 
 // =============================================================================
-// converts an integer index to the geometric position
-float* AGrid::Ax_i2x( int* i )
-{
-  static float x[2];
-
-  x[0] = i[0]*h + h/2;
-  x[1] = i[1]*h;
-
-  return x;
-}
-// =============================================================================
-
-
-
-// =============================================================================
-// converts an integer index to the geometric positio
-float* AGrid::Ay_i2x( int* i )
-{
-  static float x[2];
-
-  x[0] = i[0]*h;
-  x[1] = i[1]*h + h/2;
-
-  return x;
-}
-// =============================================================================
-
-
-
-// =============================================================================
-float AGrid::getAxLeft( int *i )
+double AGrid::getAxLeft( int *i )
 {
   return  Ax[ i[0]-1 ][ i[1] ];
 }
@@ -102,7 +72,7 @@ float AGrid::getAxLeft( int *i )
 
 
 // =============================================================================
-float AGrid::getAxRight( int* i )
+double AGrid::getAxRight( int* i )
 {
   return  Ax[ i[0] ][ i[1] ]; // indeed not "+1"; staggered grids!
 }
@@ -110,7 +80,7 @@ float AGrid::getAxRight( int* i )
 
 
 // =============================================================================
-float AGrid::getAyBelow( int* i )
+double AGrid::getAyBelow( int* i )
 {
   return  Ay[ i[0] ][ i[1]-1 ];
 }
@@ -118,7 +88,7 @@ float AGrid::getAyBelow( int* i )
 
 
 // =============================================================================
-float AGrid::getAyAbove( int* i )
+double AGrid::getAyAbove( int* i )
 {
   return  Ay[ i[0] ][ i[1] ]; // indeed not "+1"; staggered grids!
 }

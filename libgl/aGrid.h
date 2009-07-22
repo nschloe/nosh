@@ -17,10 +17,10 @@ class AGrid
      //! Class destructor
      ~AGrid();
 
-      float getAxLeft ( int* i );  //!< Returns the value of \f$A_x\f$ left of point i.
-      float getAxRight( int* i );  //!< Returns the value of \f$A_x\f$ right of point i.
-      float getAyBelow( int* i );  //!< Returns the value of \f$A_y\f$ below point i.
-      float getAyAbove( int* i );  //!< Returns the value of \f$A_y\f$ above point i.
+      double getAxLeft ( int* i );  //!< Returns the value of \f$A_x\f$ left of point i.
+      double getAxRight( int* i );  //!< Returns the value of \f$A_x\f$ right of point i.
+      double getAyBelow( int* i );  //!< Returns the value of \f$A_y\f$ below point i.
+      double getAyAbove( int* i );  //!< Returns the value of \f$A_y\f$ above point i.
 
   private:
       int Nx;
@@ -32,7 +32,4 @@ class AGrid
       typedef boost::multi_array<double, 2> array_type;
       array_type Ax,
                  Ay;
-
-      float* Ax_i2x( int* );
-      float* Ay_i2x( int* );
 };
