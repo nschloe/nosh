@@ -58,7 +58,7 @@ class GinzburgLandau
       PsiGrid::PsiGrid psiGrid;
       AGrid::AGrid     aGrid;
 
-      void getEquationType( int,
+      void getEquationType( const int,
                             equationType&,
                             int* );
 

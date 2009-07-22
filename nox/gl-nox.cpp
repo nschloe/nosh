@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
       verbose = true;
 
   // set the discretization parameter
-  int Nx = 20;
+  int Nx = 3;
   double edgelength = 10.0;
   double H0 = 0.4;
   double energy;
@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
                                          NOX::Epetra::Vector::CreateView));
 
   // Set the initial guess 
-  soln->PutScalar(0.5);
+//  soln->PutScalar(0.5);
 
   // Begin Nonlinear Solver ************************************
   // Create the top level parameter list
