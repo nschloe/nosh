@@ -24,20 +24,20 @@ AGrid::AGrid( int nx,
    *      A_x = - \frac{H_0}{2} y + C.
    *  \f]
    */
-  for ( index i=0; i!=nx; ++i )
-      for ( index j=0; j!=nx+1; ++j )
+  for ( index i=0; i!=Nx; ++i )
+      for ( index j=0; j!=Nx+1; ++j )
           Ax[i][j] = - 0.5 *H0 *j*h
-                     + 0.25*H0 *edgelength; //  to level the thing, but not actually necessary
+                     + 0.25*H0 *Edgelength; //  to level the thing, but not actually necessary
 
   /*! Initialize the Ay with values
    *  \f[
    *      A_y = \frac{H_0}{2} x + C.
    *  \f]
    */
-  for ( index i=0; i!=nx+1; ++i )
-      for ( index j=0; j!=nx; ++j )
+  for ( index i=0; i!=Nx+1; ++i )
+      for ( index j=0; j!=Nx; ++j )
           Ay[i][j] =   0.5 *H0 *i*h
-                     - 0.25*H0 *edgelength; //  to level the thing, but not actually necessary
+                     - 0.25*H0 *Edgelength; //  to level the thing, but not actually necessary
 
 //   // ---------------------------------------------------------------------------
 //   // for debugging purposes:

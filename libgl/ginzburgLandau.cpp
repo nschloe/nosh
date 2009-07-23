@@ -2,9 +2,6 @@
 #include <iostream>
 #include <vector>
 
-// abbreviate the complex type name
-typedef std::complex<double> double_complex;
-
 // complex unit
 const double_complex I(0,1);
 
@@ -627,5 +624,30 @@ void GinzburgLandau::computeJacobianRow( const filltype                    ft,
                     << "    Illegal equationType \"" << eqType << "\". Abort." << std::endl;
           exit(EXIT_FAILURE);
   }
+}
+// =============================================================================
+
+
+// =============================================================================
+// calculate the free energy of a state
+double GinzburgLandau::freeEnergy( const std::vector<double_complex> &psi )
+{
+  double            energy = 0.0;
+  PsiGrid::nodeType nt;
+
+  for (unsigned int k=0; k<psi.size(); k++) {
+      nt = psiGrid.k2nodeType(k);
+      if (nt==PsiGrid::CORNER)
+          energy +=       h*h * pow(abs(psi[k]),4);
+      else if (nt==PsiGrid::EDGE)
+          energy += 0.5*  h*h * pow(abs(psi[k]),4);
+      else if (nt==PsiGrid::INTERIOR)
+          energy += 0.25* h*h * pow(abs(psi[k]),4);
+      else
+          std::cerr << "GinzburgLandau::freeEnergy" << std::endl
+                    << "    Illegal node type " << nt << ". Abort." << std::endl;
+  }
+
+  return energy;
 }
 // =============================================================================

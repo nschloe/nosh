@@ -63,6 +63,19 @@ int PsiGrid::getNx()
 
 
 // =============================================================================
+PsiGrid::nodeType PsiGrid::k2nodeType( int k )
+{
+  if (k==0 || k==Nx || k==2*Nx || k==3*Nx )
+      return PsiGrid::CORNER;
+  else if (k<4*Nx)
+      return PsiGrid::EDGE;
+  else
+      return PsiGrid::INTERIOR;
+}
+// =============================================================================
+
+
+// =============================================================================
 // maps a 2D index i to a running index k
 int PsiGrid::i2k( int* i )
 {
