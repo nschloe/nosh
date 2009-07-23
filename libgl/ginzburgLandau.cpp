@@ -1,5 +1,9 @@
 #include "ginzburgLandau.h"
 #include <iostream>
+
+#include <fstream> // for the VTK writer
+#include <string>
+
 #include <vector>
 
 // complex unit
@@ -657,5 +661,67 @@ double GinzburgLandau::freeEnergy( const std::vector<double_complex> &psi )
   }
 
   return energy;
+}
+// =============================================================================
+
+
+// =============================================================================
+// calculate the free energy of a state
+void GinzburgLandau::psiToVtkFile( const std::vector<double_complex> &psi,
+                                   const std::string                 &filename )
+{
+  int           Nx = sGrid.getNx(),
+                k,
+                index[2];
+  double        h  = sGrid.getH();
+  std::ofstream vtkfile;
+
+  // open the file
+  vtkfile.open( filename.c_str() );
+
+  // write the VTK header
+  vtkfile << "# vtk DataFile Version 2.0\n"
+          << "dummy line\n"
+          << "ASCII\n"
+          << "DATASET STRUCTURED_POINTS\n"
+          << "DIMENSIONS " << Nx+1 << " " << Nx+1 << " " << 1 << "\n"
+          << "ORIGIN 0 0 0\n"
+          << "SPACING " << h << " " << h << " " << 0.0 << "\n"
+          << "POINT_DATA " << sGrid.getNumComplexUnknowns() << "\n";
+
+  // Note that, when writing the data, the values of psi are assumed to be
+  // given in lexicographic ordering.
+
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  // write abs(psi)
+  vtkfile << "SCALARS abs(psi) float\n"
+          << "LOOKUP_TABLE default\n";
+  for (int i=0; i<Nx+1; i++) {
+      index[0] = i;
+      for (int j=0; j<Nx+1; j++) {
+          index[1] = j;
+          k = sGrid.i2k( index );
+          vtkfile << abs(psi[k]) << "\n";
+      }
+  }
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  // write arg(psi)
+  vtkfile << "SCALARS arg(psi) float\n"
+          << "LOOKUP_TABLE default\n";
+  for (int i=0; i<Nx+1; i++) {
+      index[0] = i;
+      for (int j=0; j<Nx+1; j++) {
+          index[1] = j;
+          k = sGrid.i2k( index );
+          vtkfile << arg(psi[k]) << "\n";
+      }
+  }
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+  // close the file
+  vtkfile.close();
 }
 // =============================================================================

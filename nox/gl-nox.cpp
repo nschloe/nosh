@@ -46,7 +46,6 @@ int main(int argc, char *argv[])
 
   // Get the process ID and the total number of processors
   int MyPID = Comm.MyPID();
-  int NumProc = Comm.NumProc();
 
   // Check verbosity level
   bool verbose = false;
@@ -58,7 +57,6 @@ int main(int argc, char *argv[])
   int Nx = 50;
   double edgelength = 10.0;
   double H0 = 0.4;
-  double energy;
 
   // Create the interface between NOX and the application
   // This object is derived from NOX::Epetra::Interface
@@ -249,8 +247,8 @@ int main(int argc, char *argv[])
     fprintf( ifp, "%d  %E\n", soln->Map().MinMyGID()+i, finalSolution[i] );
   fclose(ifp);
 
-//   // print the solution to a file
-//   glSystem->printSolutionVtk( finalSolution );
+  // print the solution to a file
+  glsystem->solutionToVtkFile( finalSolution, "data/solution.vtk" );
 
   // gather full solution to one processor, put it to a file
   nlParams.print(cout,1,true,true);
@@ -274,6 +272,8 @@ int main(int argc, char *argv[])
   // 3. Nonlinear solve iterations (10)
   if (const_cast<Teuchos::ParameterList&>(solver->getList()).sublist("Output").get("Nonlinear Iterations", 0) == maxNonlinearIterations)
     status = 3;
+
+  // 
 
 //   // 4. Test the pre/post iterate options
 //   {

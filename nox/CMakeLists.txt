@@ -43,6 +43,9 @@ FIND_LIBRARY( AMESOS amesos
 FIND_LIBRARY( ML ml
               HINTS /usr/local/trilinos/current/lib
                     /opt/trilinos-090603a/LINUX_MPI_64BIT/lib )
+FIND_LIBRARY( LOCA loca
+              HINTS /usr/local/trilinos/current/lib
+                    /opt/trilinos-090603a/LINUX_MPI_64BIT/lib )
 # ==============================================================================
 
 
@@ -67,6 +70,7 @@ FIND_LIBRARY( GFORTRAN gfortran
 # Set executable linking information.
 TARGET_LINK_LIBRARIES ( gl-nox.out
 			${internal_LIBS}
+                        ${LOCA}
                         ${NOX}
                         ${NOXEPETRA}
                         ${AZTECOO}

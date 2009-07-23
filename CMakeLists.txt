@@ -8,9 +8,10 @@ PROJECT( ginzburg-landau )
 #SET(CMAKE_BUILD_TYPE Profile)
 
 SET(CMAKE_BUILD_TYPE Debug)
-SET(CMAKE_CXX_FLAGS_DEBUG "-pg -ggdb -Wall -Wextra -Weffc++ -pedantic -fbounds-check" )
+#SET(CMAKE_CXX_FLAGS_DEBUG "-pg -ggdb -Wall -Wextra -Weffc++ -pedantic -fbounds-check" )
+SET(CMAKE_CXX_FLAGS_DEBUG "-pg -ggdb -Wall -Wextra" )
 
 add_subdirectory ( libgl )
 add_subdirectory ( main )
 add_subdirectory ( nox )
-#add_subdirectory ( loca )
+add_subdirectory ( loca )

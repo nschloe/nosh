@@ -1,7 +1,6 @@
 /*! Jacobian system for the Ginzburg--Landau problem.
  *  This routine can be used as an interface to NOX.
  ******************************************************************************/
-
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
@@ -18,8 +17,11 @@
 
 #include "LOCA_Epetra_Interface_Required.H" // LOCA base class
 
+#include "LOCA_Parameter_Vector.H"
+
 class GlSystem: public NOX ::Epetra::Interface::Required,
                 public NOX ::Epetra::Interface::Jacobian
+//                 public LOCA::Epetra::Interface::Required
 {
   public:
 
@@ -53,14 +55,22 @@ class GlSystem: public NOX ::Epetra::Interface::Required,
      Teuchos::RCP<Epetra_Vector>    getSolution();
 
      //! Returns the current Jacobian.
-     Teuchos::RCP<Epetra_CrsMatrix> getJacobian(); 
+     Teuchos::RCP<Epetra_CrsMatrix> getJacobian();
+
+     void setParameters(const LOCA::ParameterVector &p);
+
+     void printSolution( const Epetra_Vector &x,
+                         double              conParam );
+
+     void solutionToVtkFile( const Epetra_Vector &x,
+                             const std::string   &filename="dummy.vtk" );
 
   private:
       //! Maps an index
-      int  realIndex2complexIndex ( int realIndex );
+      int realIndex2complexIndex ( const int realIndex );
 
-      void real2complex( Epetra_Vector x,
-                         vector<std::complex<double> >& psi );
+      void real2complex( const Epetra_Vector           &x,
+                         vector<std::complex<double> > &psi );
 
       bool initializeSoln();
 
@@ -68,16 +78,16 @@ class GlSystem: public NOX ::Epetra::Interface::Required,
       bool createJacobian( const jacCreator    jc,
                            const Epetra_Vector &x );
 
-      int NumGlobalElements;
-      int NumMyElements;
-      int NumComplexUnknowns;
-      GinzburgLandau::GinzburgLandau Gl;
-      Epetra_Comm* Comm;
-      Epetra_Map *StandardMap, 
-                 *EverywhereMap;
-      Epetra_Vector* rhs;
-      Epetra_CrsGraph* Graph;
+      int NumGlobalElements,
+          NumMyElements,
+          NumComplexUnknowns;
 
+      GinzburgLandau::GinzburgLandau Gl;
+      Epetra_Comm                    *Comm;
+      Epetra_Map                     *StandardMap, 
+                                     *EverywhereMap;
+      Epetra_Vector                  *rhs;
+      Epetra_CrsGraph                *Graph;
       Teuchos::RCP<Epetra_CrsMatrix> jacobian;
       Teuchos::RCP<Epetra_Vector>    initialSolution;
 };

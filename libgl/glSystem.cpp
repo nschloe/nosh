@@ -83,7 +83,7 @@ int GlSystem::realIndex2complexIndex ( const int realIndex )
 
 
 // =============================================================================
-void GlSystem::real2complex( const Epetra_Vector    realvec,
+void GlSystem::real2complex( const Epetra_Vector    &realvec,
                              vector<double_complex> &psi      )
 {
   for (int k=0; k<NumComplexUnknowns; k++ )
@@ -541,13 +541,38 @@ bool GlSystem::createJacobian( const jacCreator    jc,
 // =============================================================================
 
 
-// // =============================================================================
-// // function used by LOCA
-// void Interface::setParameters(const LOCA::ParameterVector & p)
-// {
-//   double h0 = p.getValue("H0");
-// 
-//   // set H0 in the underlying problem class
-//   Gl.getA.setH0( h0 );
-// }
-// // =============================================================================
+// =============================================================================
+// function used by LOCA
+void GlSystem::setParameters(const LOCA::ParameterVector &p)
+{
+  double h0 = p.getValue("H0");
+
+  // set H0 in the underlying problem class
+  Gl.getStaggeredGrid()->setH0( h0 );
+}
+// =============================================================================
+
+
+// =============================================================================
+// function used by LOCA
+void GlSystem::printSolution( const Epetra_Vector &x,
+                              double              conParam )
+{
+   std::cout << x << std::endl;
+}
+// =============================================================================
+
+
+// =============================================================================
+// calculate the free energy of a state
+void GlSystem::solutionToVtkFile( const Epetra_Vector &x,
+                                  const std::string   &filename )
+{
+  // convert the real valued vector to psi
+  vector<double_complex> psi(NumComplexUnknowns);
+  real2complex( x, psi );
+
+  // print the file through Gl
+  Gl.psiToVtkFile( psi, filename );
+}
+// =============================================================================

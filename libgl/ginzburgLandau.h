@@ -2,6 +2,7 @@
  * The Ginzburg--Landau equations.
  ***********************************************/
 #include <complex>
+#include <string> // for the file output functions
 
 #include "staggeredGrid.h"
 
@@ -11,23 +12,6 @@ typedef std::complex<double> double_complex;
 class GinzburgLandau
 {
   public:
-
-      //! Equation type enumerator.
-      /*! Semantically separates the different types of conditions which must
-          be applied at different parts of the rectangular grid. */
-      enum equationType
-      {
-        BOTTOMLEFT,
-        BOTTOMRIGHT,
-        TOPLEFT,
-        TOPRIGHT,
-        BOTTOM,
-        TOP,
-        LEFT,
-        RIGHT,
-        INTERIOR,
-        PHASE_CONDITION
-      };
 
      /*! Default constructor. */
      GinzburgLandau( int nx,
@@ -65,8 +49,30 @@ class GinzburgLandau
        of a given state \f$\psi\f$. */
      double freeEnergy( const std::vector<double_complex> &psi );
 
+     /*! Print the solution \f$\psi\f$ to an (old-style) VTK file for viewing
+         with ParaView, for example. */
+     void psiToVtkFile( const std::vector<double_complex> &psi,
+                        const std::string                 &filename );
+
   private:
       StaggeredGrid::StaggeredGrid sGrid;
+
+      //! Equation type enumerator.
+      /*! Semantically separates the different types of conditions which must
+          be applied at different parts of the rectangular grid. */
+      enum equationType
+      {
+        BOTTOMLEFT,
+        BOTTOMRIGHT,
+        TOPLEFT,
+        TOPRIGHT,
+        BOTTOM,
+        TOP,
+        LEFT,
+        RIGHT,
+        INTERIOR,
+        PHASE_CONDITION
+      };
 
       void getEquationType( const int,
                             equationType&,

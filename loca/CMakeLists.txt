@@ -65,7 +65,7 @@ FIND_LIBRARY( GFORTRAN gfortran
 
 # ==============================================================================
 # Set executable linking information.
-TARGET_LINK_LIBRARIES ( gl-nox.out
+TARGET_LINK_LIBRARIES ( gl-loca.out
 			${internal_LIBS}
                         ${NOX}
                         ${NOXEPETRA}

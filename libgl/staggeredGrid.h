@@ -15,6 +15,8 @@ class StaggeredGrid
 
       int getNx(); //!< Returns \f$N_x\f$.
 
+      int getNumComplexUnknowns(); //!< Returns the number of grid points for \f$\psi\f$.
+
       double getH(); //!< Returns mesh size \f$h\f$.
 
 //      int* k2i( int  ); //!< Converts a running index k to a grid index i
