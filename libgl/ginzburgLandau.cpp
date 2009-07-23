@@ -2,14 +2,19 @@
 #include <iostream>
 #include <vector>
 
+// abbreviate the complex type name
+typedef std::complex<double> double_complex;
+
+// complex unit
+const double_complex I(0,1);
+
 // =============================================================================
 // Class constructor
 GinzburgLandau::GinzburgLandau( int nx,
                                 double edgelength,
                                 double h0 ):
   h      ( edgelength/nx ),
-  psiGrid( PsiGrid::PsiGrid( nx,
-                             edgelength ) ),
+  psiGrid( PsiGrid::PsiGrid(nx) ),
   aGrid  ( AGrid::AGrid( nx,
                          edgelength,
                          h0          ) )
@@ -87,15 +92,14 @@ void GinzburgLandau::getEquationType( const int    eqnum,
 // =============================================================================
 // Evaluate GL at the boundary node.
 // Return value for equation #k.
-std::complex<double> GinzburgLandau::computeGl( const int                          eqnum,
-                                                std::vector<std::complex<double> > psi    )
+double_complex GinzburgLandau::computeGl( const int                         eqnum,
+                                          const std::vector<double_complex> &psi    )
 {
   // Equations are ordered counter-clockwise, starting at the origin.
 
   // the preliminary result type
-  const std::complex<double> I(0.0,1.0);
-  std::complex<double> res,
-                       psiK, psiKRight, psiKLeft, psiKAbove, psiKBelow;
+  double_complex res,
+                 psiK, psiKRight, psiKLeft, psiKAbove, psiKBelow;
   double ARight, ALeft, AAbove, ABelow;
   int i[2];
   int k;
@@ -305,12 +309,12 @@ std::complex<double> GinzburgLandau::computeGl( const int                       
 // =============================================================================
 // Evaluate GL at the boundary node.
 // Return value for equation #k.
-void GinzburgLandau::getJacobianRow( const int                                eqnum,
-                                     const std::vector<std::complex<double> > psi,
-                                     std::vector<int>&                        columnIndicesPsi,
-                                     std::vector<std::complex<double> >&      valuesPsi,
-                                     std::vector<int>&                        columnIndicesPsiConj,
-                                     std::vector<std::complex<double> >&      valuesPsiConj )
+void GinzburgLandau::getJacobianRow( const int                         eqnum,
+                                     const std::vector<double_complex> &psi,
+                                     std::vector<int>                  &columnIndicesPsi,
+                                     std::vector<double_complex>       &valuesPsi,
+                                     std::vector<int>                  &columnIndicesPsiConj,
+                                     std::vector<double_complex>       &valuesPsiConj )
 {
   computeJacobianRow( VALUES,
                       eqnum,
@@ -327,14 +331,14 @@ void GinzburgLandau::getJacobianRow( const int                                eq
 
 
 // =============================================================================
-void GinzburgLandau::getJacobianRowSparsity( const int         eqnum,
-                                             std::vector<int>& columnIndicesPsi,
-                                             std::vector<int>& columnIndicesPsiConj )
+void GinzburgLandau::getJacobianRowSparsity( const int        eqnum,
+                                             std::vector<int> &columnIndicesPsi,
+                                             std::vector<int> &columnIndicesPsiConj )
 {
   // create dummy arguments
-  std::vector<std::complex<double> > psi;
-  std::vector<std::complex<double> > valuesPsi,
-                                     valuesPsiConj;
+  std::vector<double_complex> psi;
+  std::vector<double_complex> valuesPsi,
+                              valuesPsiConj;
 
   computeJacobianRow( SPARSITY,
                       eqnum,
@@ -353,19 +357,18 @@ void GinzburgLandau::getJacobianRowSparsity( const int         eqnum,
 // =============================================================================
 // Evaluate GL at the boundary node.
 // Return value for equation #k.
-void GinzburgLandau::computeJacobianRow( const filltype                           ft,
-                                         const int                                eqnum,
-                                         const std::vector<std::complex<double> > psi,
-                                         std::vector<int>&                        columnIndicesPsi,
-                                         std::vector<std::complex<double> >&      valuesPsi,
-                                         std::vector<int>&                        columnIndicesPsiConj,
-                                         std::vector<std::complex<double> >&      valuesPsiConj )
+void GinzburgLandau::computeJacobianRow( const filltype                    ft,
+                                         const int                         eqnum,
+                                         const std::vector<double_complex> &psi,
+                                         std::vector<int>                  &columnIndicesPsi,
+                                         std::vector<double_complex>       &valuesPsi,
+                                         std::vector<int>                  &columnIndicesPsiConj,
+                                         std::vector<double_complex>       &valuesPsiConj )
 {
-  int i[2];
-  int k, kLeft, kRight, kBelow, kAbove;
-  int numEntriesPsi, numEntriesPsiConj;
-  double ARight, ALeft, AAbove, ABelow;
-  const std::complex<double> I(0,1);
+  int          i[2],
+               k, kLeft, kRight, kBelow, kAbove,
+               numEntriesPsi, numEntriesPsiConj;
+  double       ARight, ALeft, AAbove, ABelow;
   equationType eqType;
 
   // get the equation type from the running index
@@ -601,7 +604,7 @@ void GinzburgLandau::computeJacobianRow( const filltype                         
               AAbove = aGrid.getAyAbove( i );
 
               valuesPsi.resize(numEntriesPsi);
-              valuesPsi[0] = - 4.0                / (h*h)
+              valuesPsi[0] = - 4.0            / (h*h)
                              + (1 - 2.0*abs(psi[k])*abs(psi[k]));
               valuesPsi[1] = exp( I*ALeft *h) / (h*h);
               valuesPsi[2] = exp(-I*ARight*h) / (h*h);

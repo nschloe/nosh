@@ -4,8 +4,7 @@
 class PsiGrid
 {
   public:
-     PsiGrid( int    nx,
-              double edgelength );
+     PsiGrid( int nx );
 
      ~PsiGrid();
 
@@ -16,5 +15,4 @@ class PsiGrid
 
   private:
      int Nx; //!< Number of grid pieces in both x- and y-direction
-     double Edgelength; //!< Edgelength of the square in both x- and y-direction
 };

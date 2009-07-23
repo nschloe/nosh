@@ -6,12 +6,16 @@
 #include "Epetra_Export.h"
 #include "Epetra_CrsMatrix.h"
 
+// abbreviate the complex type name
+typedef std::complex<double> double_complex;
+
+
 // =============================================================================
 // Class constructor
-GlSystem::GlSystem( int nx,
-                    double h0,
-                    double edgelength,
-                    Epetra_Comm& comm ):
+GlSystem::GlSystem( int          nx,
+                    double       h0,
+                    double       edgelength,
+                    Epetra_Comm& comm         ):
   NumGlobalElements(0),
   NumMyElements(0),  // gets set after map creation
   NumComplexUnknowns(0),
@@ -62,7 +66,7 @@ GlSystem::GlSystem( int nx,
 // Destructor
 GlSystem::~GlSystem()
 {
-// delete graph
+  delete Graph;
   delete StandardMap;
   delete EverywhereMap;
 }
@@ -81,11 +85,11 @@ int GlSystem::realIndex2complexIndex ( const int realIndex )
 
 
 // =============================================================================
-void GlSystem::real2complex( const Epetra_Vector            realvec,
-                             vector<std::complex<double> >& psi      )
+void GlSystem::real2complex( const Epetra_Vector    realvec,
+                             vector<double_complex> &psi      )
 {
   for (int k=0; k<NumComplexUnknowns; k++ )
-      psi[k] = std::complex<double>( realvec[2*k], realvec[2*k+1] );
+      psi[k] = double_complex( realvec[2*k], realvec[2*k+1] );
 }
 // =============================================================================
 
@@ -95,9 +99,9 @@ bool GlSystem::computeF( const Epetra_Vector &x,
                          Epetra_Vector       &FVec,
                          const NOX::Epetra::Interface::Required::FillType fillFlag  )
 {
-  Epetra_Vector xEverywhere ( *EverywhereMap );
-  vector<std::complex<double> > psi(NumComplexUnknowns);
-  std::complex<double> val;
+  Epetra_Vector          xEverywhere ( *EverywhereMap );
+  vector<double_complex> psi(NumComplexUnknowns);
+  double_complex         val;
 
   // scatter x over all processors
   Epetra_Export Exporter( *StandardMap, *EverywhereMap );
@@ -202,10 +206,10 @@ Teuchos::RCP<Epetra_CrsMatrix> GlSystem::getJacobian()
 bool GlSystem::createJacobian( const jacCreator    jc,
                                const Epetra_Vector &x  )
 {
-  std::vector<std::complex<double> > psi(NumComplexUnknowns);
+  std::vector<double_complex> psi(NumComplexUnknowns);
 
-  vector<int>                   colIndA, colIndB;
-  vector<std::complex<double> > valuesA, valuesB;
+  vector<int>            colIndA, colIndB;
+  vector<double_complex> valuesA, valuesB;
 
   int    *colInd      = NULL,
          *colIndAReal = NULL, *colIndAImag = NULL,

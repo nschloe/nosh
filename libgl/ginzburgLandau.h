@@ -36,22 +36,22 @@ class GinzburgLandau
      ~GinzburgLandau();
 
      /*! Evaluates the Ginzburg--Landau equations. */
-     std::complex<double> computeGl( int eqnum,
-                                     std::vector<std::complex<double> > psi );
+     std::complex<double> computeGl( const int                                eqnum,
+                                     const std::vector<std::complex<double> > &psi   );
 
      /*! Returns the coefficients of the jacobian system associated with the
          Ginzburg--Landau equations. */
-     void getJacobianRow( int eqnum,
-                          std::vector<std::complex<double> >  psi,
-                          std::vector<int>&                   columnIndicesPsi,
-                          std::vector<std::complex<double> >& valuesPsi,
-                          std::vector<int>&                   columnIndicesPsiConj,
-                          std::vector<std::complex<double> >& valuesPsiConj );
+     void getJacobianRow( const int                          eqnum,
+                          const std::vector<std::complex<double> > &psi,
+                          std::vector<int>                   &columnIndicesPsi,
+                          std::vector<std::complex<double> > &valuesPsi,
+                          std::vector<int>                   &columnIndicesPsiConj,
+                          std::vector<std::complex<double> > &valuesPsiConj );
 
      /*! Get sparsity pattern of the jacobian system. */
-     void getJacobianRowSparsity( int eqnum,
-                                  std::vector<int>& columnIndicesPsi,
-                                  std::vector<int>& columnIndicesPsiConj );
+     void getJacobianRowSparsity( int              eqnum,
+                                  std::vector<int> &columnIndicesPsi,
+                                  std::vector<int> &columnIndicesPsiConj );
 
   private:
       double h; //! mesh width
@@ -66,12 +66,12 @@ class GinzburgLandau
 
       /*! Calculated the coefficients of the jacobian system associated with the
           Ginzburg--Landau equations. */
-      void computeJacobianRow( filltype ft,
-                               int eqnum,
-                               std::vector<std::complex<double> > psi,
-                               std::vector<int>& columnIndicesPsi,
-                               std::vector<std::complex<double> >& valuesPsi,
-                               std::vector<int>& columnIndicesPsiConj,
-                               std::vector<std::complex<double> >& valuesPsiConj );
+      void computeJacobianRow( const filltype                           ft,
+                               const int                                eqnum,
+                               const std::vector<std::complex<double> > &psi,
+                               std::vector<int>                         &columnIndicesPsi,
+                               std::vector<std::complex<double> >       &valuesPsi,
+                               std::vector<int>                         &columnIndicesPsiConj,
+                               std::vector<std::complex<double> >       &valuesPsiConj         );
 
 };
