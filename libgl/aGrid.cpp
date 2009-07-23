@@ -3,7 +3,7 @@
 // include Boost's multidimensional arrays to be able to handle Ax, Ay in a more sane way
 #include "boost/multi_array.hpp"
 
-#include <iostream>
+// #include <iostream>
 
 // =============================================================================
 // Class constructor

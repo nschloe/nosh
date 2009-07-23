@@ -4,13 +4,14 @@
 class PsiGrid
 {
   public:
-     PsiGrid( int nx, double edgelength);
+     PsiGrid( int    nx,
+              double edgelength );
 
      ~PsiGrid();
 
      int getNx(); //!< returns Nx
 
-     int* k2i( int  ); //!< Converts a running index k to a grid index i
+//     int* k2i( int  ); //!< Converts a running index k to a grid index i
      int  i2k( int* ); //!< Converts a grid index i to a running index k
 
   private:

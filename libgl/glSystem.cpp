@@ -72,7 +72,10 @@ GlSystem::~GlSystem()
 // =============================================================================
 int GlSystem::realIndex2complexIndex ( const int realIndex )
 {
-  return realIndex/2;
+  if ( !(realIndex%2) ) // realIndex even
+      return realIndex/2;
+  else
+      return (realIndex-1)/2;
 }
 // =============================================================================
 
@@ -116,6 +119,7 @@ bool GlSystem::computeF( const Epetra_Vector &x,
           //       the imaginary part of it.
           val = Gl.computeGl( psiIndex, psi );
 
+
           if ( !(myGlobalIndex%2) ) // myGlobalIndex is even
               passVal = real(val);
           else // myGlobalIndex is odd
@@ -134,10 +138,6 @@ bool GlSystem::computeF( const Epetra_Vector &x,
 bool GlSystem::computeJacobian( const Epetra_Vector &x,
                                 Epetra_Operator     &Jac    )
 {
-
-// cout << "x:" << endl;
-// cout << x << endl;
-
   // compute the values of the Jacobian
   createJacobian( VALUES, x );
 
@@ -146,9 +146,6 @@ bool GlSystem::computeJacobian( const Epetra_Vector &x,
 
   // Sync up processors to be safe
   Comm->Barrier();
-
-// cout << "jacobian:" << endl;
-// cout << *jacobian << endl;
 
   return true;
 }
@@ -160,8 +157,8 @@ bool GlSystem::computePreconditioner( const Epetra_Vector    &x,
                                       Epetra_Operator        &Prec,
                                       Teuchos::ParameterList *precParams )
 {
-  cout << "ERROR: GlSystem::preconditionVector() - "
-       << "Use Explicit Jacobian only for this test problem!" << endl;
+  std::cerr << "ERROR: GlSystem::preconditionVector() - "
+            << "    Use Explicit Jacobian only for this test problem!" << std::endl;
   throw "GlSystem Error";
 }
 // ==========================================================================
@@ -531,7 +528,7 @@ bool GlSystem::createJacobian( const jacCreator    jc,
   }
   // ---------------------------------------------------------------------------
 
-  // Sync up processors to be safe
+  // Sync up processors for safety's sake
   Comm->Barrier();
 
 // cout << "jacobian:" << endl;

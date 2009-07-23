@@ -9,10 +9,10 @@ int main(int argc, char *argv[])
   double edgelength = 10.0;
   PsiGrid grid(Nx,edgelength);
 
-  int *i = grid.k2i(55);
+//  int *i = grid.k2i(55);
 
-  for (int k=0; k<2; k++)
-      std::cout << i[k] << std::endl;
+//  for (int k=0; k<2; k++)
+//      std::cout << i[k] << std::endl;
 
   return 0;
 }

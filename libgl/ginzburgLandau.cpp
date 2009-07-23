@@ -9,10 +9,10 @@ GinzburgLandau::GinzburgLandau( int nx,
                                 double h0 ):
   h      ( edgelength/nx ),
   psiGrid( PsiGrid::PsiGrid( nx,
-                            edgelength ) ),
+                             edgelength ) ),
   aGrid  ( AGrid::AGrid( nx,
-                        edgelength,
-                        h0          ) )
+                         edgelength,
+                         h0          ) )
 {
 }
 // =============================================================================
@@ -221,7 +221,7 @@ std::complex<double> GinzburgLandau::computeGl( const int                       
           ALeft = aGrid.getAxLeft( i );
 
           res = ( - psiK
-                  + psiKLeft * exp(-I*ALeft*h) ) * I/h;
+                  + psiKLeft * exp( I*ALeft*h) ) * I/h;
           break;
 
       case TOP:
@@ -236,7 +236,7 @@ std::complex<double> GinzburgLandau::computeGl( const int                       
           ABelow = aGrid.getAyBelow( i );
 
           res = ( - psiK
-                  + psiKBelow * exp(-I*ABelow*h) ) * I/h;
+                  + psiKBelow * exp( I*ABelow*h) ) * I/h;
           break;
 
       case LEFT:
