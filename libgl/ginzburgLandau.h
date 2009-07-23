@@ -49,7 +49,12 @@ class GinzburgLandau
        of a given state \f$\psi\f$. */
      double freeEnergy( const std::vector<double_complex> &psi );
 
-     /*! Print the solution \f$\psi\f$ to an (old-style) VTK file for viewing
+     /*! Print the solution \f$\psi\f$ to a legacy VTK file for viewing
+         with ParaView, for example. */
+     void psiToLegacyVtkFile( const std::vector<double_complex> &psi,
+                              const std::string                 &filename );
+
+     /*! Print the solution \f$\psi\f$ to an (XML-style) VTK file for viewing
          with ParaView, for example. */
      void psiToVtkFile( const std::vector<double_complex> &psi,
                         const std::string                 &filename );

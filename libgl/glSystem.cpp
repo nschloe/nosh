@@ -564,7 +564,20 @@ void GlSystem::printSolution( const Epetra_Vector &x,
 
 
 // =============================================================================
-// calculate the free energy of a state
+void GlSystem::solutionToLegacyVtkFile( const Epetra_Vector &x,
+                                        const std::string   &filename )
+{
+  // convert the real valued vector to psi
+  vector<double_complex> psi(NumComplexUnknowns);
+  real2complex( x, psi );
+
+  // print the file through Gl
+  Gl.psiToLegacyVtkFile( psi, filename );
+}
+// =============================================================================
+
+
+// =============================================================================
 void GlSystem::solutionToVtkFile( const Epetra_Vector &x,
                                   const std::string   &filename )
 {

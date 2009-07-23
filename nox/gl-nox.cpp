@@ -248,7 +248,10 @@ int main(int argc, char *argv[])
   fclose(ifp);
 
   // print the solution to a file
-  glsystem->solutionToVtkFile( finalSolution, "data/solution.vtk" );
+//  glsystem->solutionToVtkFile( finalSolution, "data/solution.vti" );
+  glsystem->solutionToLegacyVtkFile( finalSolution, "data/solution.vtk" );
+
+cout << "Tes" << endl;
 
   // gather full solution to one processor, put it to a file
   nlParams.print(cout,1,true,true);

@@ -6,6 +6,8 @@
 
 #include <vector>
 
+#include <Teuchos_XMLObject.hpp> // for the XMLized VTK format
+
 // complex unit
 const double_complex I(0,1);
 
@@ -667,8 +669,8 @@ double GinzburgLandau::freeEnergy( const std::vector<double_complex> &psi )
 
 // =============================================================================
 // calculate the free energy of a state
-void GinzburgLandau::psiToVtkFile( const std::vector<double_complex> &psi,
-                                   const std::string                 &filename )
+void GinzburgLandau::psiToLegacyVtkFile( const std::vector<double_complex> &psi,
+                                        const std::string                 &filename )
 {
   int           Nx = sGrid.getNx(),
                 k,
@@ -723,5 +725,70 @@ void GinzburgLandau::psiToVtkFile( const std::vector<double_complex> &psi,
 
   // close the file
   vtkfile.close();
+}
+// =============================================================================
+
+
+
+// =============================================================================
+// calculate the free energy of a state
+void GinzburgLandau::psiToVtkFile( const std::vector<double_complex> &psi,
+                                   const std::string                 &filename )
+{
+  int    Nx = sGrid.getNx(),
+         k,
+         index[2];
+  double h  = sGrid.getH();
+  char*  str;
+
+  std::ofstream      vtkfile;
+  Teuchos::XMLObject vtuxml("VTKFile");
+
+  // first build the XML structure
+  Teuchos::XMLObject xmlDataArray("DataArray");
+  xmlDataArray.addAttribute( "type", "Float32" );
+  xmlDataArray.addAttribute( "name", "abs(psi)" );
+  xmlDataArray.addAttribute( "format", "ascii" );
+  for (int i=0; i<Nx+1; i++) {
+      index[0] = i;
+      for (int j=0; j<Nx+1; j++) {
+          index[1] = j;
+          k = sGrid.i2k( index );
+          sprintf( str,"%f ",abs(psi[k]));
+          xmlDataArray.addContent( str );
+      }
+  }
+
+  Teuchos::XMLObject xmlPointData("PointData");
+  xmlPointData.addAttribute( "Scalars", "abs(psi)" );
+  xmlPointData.addChild(xmlDataArray);
+
+  Teuchos::XMLObject xmlPiece("Piece");
+  sprintf( str, "0 %d 0 %d 0 0", Nx, Nx );
+  xmlPiece.addAttribute( "Extent", str );
+  xmlPiece.addChild(xmlPointData);
+
+  Teuchos::XMLObject xmlImageData("ImageData");
+  sprintf( str, "0 %d 0 %d 0 0", Nx, Nx );
+  xmlImageData.addAttribute( "WholeExtent", str );
+  xmlImageData.addAttribute( "Origin", "0 0 0" );
+  sprintf( str, "%f %f 0", h, h );
+  xmlImageData.addAttribute( "Spacing", str );
+  xmlImageData.addChild(xmlPiece);
+
+  vtuxml.addAttribute( "type", "ImageData" );
+  vtuxml.addAttribute( "version", "0.1" );
+  vtuxml.addAttribute( "byte_order", "LittleEndian" );
+  vtuxml.addChild(xmlImageData);
+
+  // open the file
+  vtkfile.open( filename.c_str() );
+  // write the xml tree to a file
+  vtkfile << "<?xml version=\"1.0\"?>" << std::endl;
+  vtkfile << vtuxml;
+  // close the file
+  vtkfile.close();
+
+std::cout << "done8" << std::endl;
 }
 // =============================================================================

@@ -62,8 +62,11 @@ class GlSystem: public NOX ::Epetra::Interface::Required,
      void printSolution( const Epetra_Vector &x,
                          double              conParam );
 
+     void solutionToLegacyVtkFile( const Epetra_Vector &x,
+                                   const std::string   &filename="dummy.vtk" );
+
      void solutionToVtkFile( const Epetra_Vector &x,
-                             const std::string   &filename="dummy.vtk" );
+                             const std::string   &filename="dummy.vti" );
 
   private:
       //! Maps an index
