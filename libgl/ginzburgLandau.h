@@ -3,8 +3,7 @@
  ***********************************************/
 #include <complex>
 
-#include "psiGrid.h"
-#include "aGrid.h"
+#include "staggeredGrid.h"
 
 // abbreviate the complex type name
 typedef std::complex<double> double_complex;
@@ -38,6 +37,9 @@ class GinzburgLandau
      /*! Destructor. */
      ~GinzburgLandau();
 
+     /*! Returns a pointer to the \f$A\f$ grid in use.*/
+     StaggeredGrid::StaggeredGrid* getStaggeredGrid();
+
      /*! Evaluates the Ginzburg--Landau equations. */
      double_complex computeGl( const int                         eqnum,
                                const std::vector<double_complex> &psi   );
@@ -64,9 +66,7 @@ class GinzburgLandau
      double freeEnergy( const std::vector<double_complex> &psi );
 
   private:
-      double h; //! mesh width
-      PsiGrid::PsiGrid psiGrid;
-      AGrid::AGrid     aGrid;
+      StaggeredGrid::StaggeredGrid sGrid;
 
       void getEquationType( const int,
                             equationType&,

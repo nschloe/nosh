@@ -1,8 +1,7 @@
 ENABLE_LANGUAGE( CXX )
 
 SET ( gl_SRCS 
-      psiGrid.cpp 
-      aGrid.cpp 
+      staggeredGrid.cpp
       ginzburgLandau.cpp
       glSystem.cpp )
 

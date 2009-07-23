@@ -13,12 +13,13 @@
 
 #include "Teuchos_ParameterList.hpp"
 
-#include "NOX_Epetra_Interface_Required.H" // base class
-#include "NOX_Epetra_Interface_Jacobian.H" // base class
-#include "NOX_Epetra_Interface_Preconditioner.H" // base class
+#include "NOX_Epetra_Interface_Required.H" // NOX base class
+#include "NOX_Epetra_Interface_Jacobian.H" // NOX base class
 
-class GlSystem: public NOX::Epetra::Interface::Required,
-                public NOX::Epetra::Interface::Jacobian
+#include "LOCA_Epetra_Interface_Required.H" // LOCA base class
+
+class GlSystem: public NOX ::Epetra::Interface::Required,
+                public NOX ::Epetra::Interface::Jacobian
 {
   public:
 
@@ -55,7 +56,6 @@ class GlSystem: public NOX::Epetra::Interface::Required,
      Teuchos::RCP<Epetra_CrsMatrix> getJacobian(); 
 
   private:
-
       //! Maps an index
       int  realIndex2complexIndex ( int realIndex );
 
@@ -72,9 +72,6 @@ class GlSystem: public NOX::Epetra::Interface::Required,
       int NumMyElements;
       int NumComplexUnknowns;
       GinzburgLandau::GinzburgLandau Gl;
-      int Nx;
-      double H0;
-      double Edgelength;
       Epetra_Comm* Comm;
       Epetra_Map *StandardMap, 
                  *EverywhereMap;

@@ -17,12 +17,9 @@ GlSystem::GlSystem( int          nx,
                     double       edgelength,
                     Epetra_Comm& comm         ):
   NumGlobalElements(0),
-  NumMyElements(0),  // gets set after map creation
+  NumMyElements(0),
   NumComplexUnknowns(0),
   Gl(GinzburgLandau::GinzburgLandau( nx, edgelength, h0 )),
-  Nx(nx),
-  H0(h0),
-  Edgelength(edgelength),
   Comm(&comm),
   StandardMap(0),
   EverywhereMap(0),
@@ -31,6 +28,7 @@ GlSystem::GlSystem( int          nx,
   jacobian(0),
   initialSolution(0)
 {
+  int Nx = Gl.getStaggeredGrid()->getNx();
   NumComplexUnknowns = (Nx+1)*(Nx+1);
   NumGlobalElements  = 2*NumComplexUnknowns+1;
 
@@ -541,3 +539,15 @@ bool GlSystem::createJacobian( const jacCreator    jc,
   return true;
 }
 // =============================================================================
+
+
+// // =============================================================================
+// // function used by LOCA
+// void Interface::setParameters(const LOCA::ParameterVector & p)
+// {
+//   double h0 = p.getValue("H0");
+// 
+//   // set H0 in the underlying problem class
+//   Gl.getA.setH0( h0 );
+// }
+// // =============================================================================
