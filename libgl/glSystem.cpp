@@ -26,7 +26,8 @@ GlSystem::GlSystem( int          nx,
   rhs(0),
   Graph(0),
   jacobian(0),
-  initialSolution(0)
+  initialSolution(0),
+  outputDir(".")
 {
   int Nx = Gl.getStaggeredGrid()->getNx();
   NumComplexUnknowns = (Nx+1)*(Nx+1);
@@ -170,7 +171,7 @@ bool GlSystem::computePreconditioner( const Epetra_Vector    &x,
 // Set initialSolution to desired initial condition
 bool GlSystem::initializeSoln()
 {
-  initialSolution->PutScalar(0.5); // Default initialization
+  initialSolution->PutScalar(0.0); // Default initialization
 
 //   for (int k=0;k<NumComplexUnknowns;k++){
 //     (*initialSolution)[2*k]   = k*0.1;
@@ -558,7 +559,16 @@ void GlSystem::setParameters(const LOCA::ParameterVector &p)
 void GlSystem::printSolution( const Epetra_Vector &x,
                               double              conParam )
 {
-   std::cout << x << std::endl;
+   std::cout << "Writing to " << outputDir + "/" << "..." << std::endl;
+}
+// =============================================================================
+
+
+// =============================================================================
+// function used by LOCA
+void GlSystem::setOutputDir( const string &directory )
+{
+   outputDir = directory;
 }
 // =============================================================================
 
@@ -572,7 +582,7 @@ void GlSystem::solutionToLegacyVtkFile( const Epetra_Vector &x,
   real2complex( x, psi );
 
   // print the file through Gl
-  Gl.psiToLegacyVtkFile( psi, filename );
+  Gl.psiToLegacyVtkFile( psi, outputDir+"/"+filename );
 }
 // =============================================================================
 
@@ -586,6 +596,20 @@ void GlSystem::solutionToVtkFile( const Epetra_Vector &x,
   real2complex( x, psi );
 
   // print the file through Gl
-  Gl.psiToVtkFile( psi, filename );
+  Gl.psiToVtkFile( psi, outputDir+"/"+filename );
+}
+// =============================================================================
+
+
+// =============================================================================
+void GlSystem::solutionToXdmfFile( const Epetra_Vector &x,
+                                   const std::string   &filename )
+{
+  // convert the real valued vector to psi
+  vector<double_complex> psi(NumComplexUnknowns);
+  real2complex( x, psi );
+
+  // print the file through Gl
+  Gl.psiToXdmfFile( psi, outputDir+"/"+filename );
 }
 // =============================================================================

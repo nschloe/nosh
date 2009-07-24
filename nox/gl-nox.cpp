@@ -248,8 +248,9 @@ int main(int argc, char *argv[])
   fclose(ifp);
 
   // print the solution to a file
-//  glsystem->solutionToVtkFile( finalSolution, "data/solution.vti" );
-  glsystem->solutionToLegacyVtkFile( finalSolution, "data/solution.vtk" );
+//   glsystem->solutionToVtkFile( finalSolution, "data/solution.vti" );
+//  glsystem->solutionToLegacyVtkFile( finalSolution, "data/solution.vtk" );
+ glsystem->solutionToXdmfFile( finalSolution, "data/solution.xmf" );
 
 cout << "Tes" << endl;
 

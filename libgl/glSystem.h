@@ -52,21 +52,29 @@ class GlSystem: public NOX ::Epetra::Interface::Required,
                                  Teuchos::ParameterList* precParams=0 );
 
      //! Returns the current state. Not necessarily a solution to the problem!
-     Teuchos::RCP<Epetra_Vector>    getSolution();
+     Teuchos::RCP<Epetra_Vector> getSolution();
 
      //! Returns the current Jacobian.
      Teuchos::RCP<Epetra_CrsMatrix> getJacobian();
 
      void setParameters(const LOCA::ParameterVector &p);
 
+     //! Set directory to where all output gets written.
+     void setOutputDir( const string &directory );
+
      void printSolution( const Epetra_Vector &x,
                          double              conParam );
 
+     //! Return the solution in legacy VTK format to file filename.
      void solutionToLegacyVtkFile( const Epetra_Vector &x,
                                    const std::string   &filename="dummy.vtk" );
 
+     //! Return the solution in XML-style VTK format to file filename.
      void solutionToVtkFile( const Epetra_Vector &x,
                              const std::string   &filename="dummy.vti" );
+
+     void solutionToXdmfFile( const Epetra_Vector &x,
+                              const std::string   &filename="dummy.xmf" );
 
   private:
       //! Maps an index
@@ -93,4 +101,5 @@ class GlSystem: public NOX ::Epetra::Interface::Required,
       Epetra_CrsGraph                *Graph;
       Teuchos::RCP<Epetra_CrsMatrix> jacobian;
       Teuchos::RCP<Epetra_Vector>    initialSolution;
+      std::string                    outputDir;  //!< directory to where the output is written
 };

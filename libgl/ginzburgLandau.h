@@ -59,6 +59,9 @@ class GinzburgLandau
      void psiToVtkFile( const std::vector<double_complex> &psi,
                         const std::string                 &filename );
 
+     void psiToXdmfFile( const std::vector<double_complex> &psi,
+                         const std::string                 &filename );
+
   private:
       StaggeredGrid::StaggeredGrid sGrid;
 

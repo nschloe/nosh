@@ -15,7 +15,7 @@ const double_complex I(0,1);
 // Class constructor
 GinzburgLandau::GinzburgLandau( int    nx,
                                 double edgelength,
-                                double h0 ):
+                                double h0          ):
   sGrid( StaggeredGrid::StaggeredGrid( nx,
                                        edgelength,
                                        h0          ) )
@@ -731,7 +731,6 @@ void GinzburgLandau::psiToLegacyVtkFile( const std::vector<double_complex> &psi,
 
 
 // =============================================================================
-// calculate the free energy of a state
 void GinzburgLandau::psiToVtkFile( const std::vector<double_complex> &psi,
                                    const std::string                 &filename )
 {
@@ -739,9 +738,9 @@ void GinzburgLandau::psiToVtkFile( const std::vector<double_complex> &psi,
          k,
          index[2];
   double h  = sGrid.getH();
-  char*  str;
 
   std::ofstream      vtkfile;
+  std::ostringstream os;
   Teuchos::XMLObject vtuxml("VTKFile");
 
   // first build the XML structure
@@ -754,8 +753,8 @@ void GinzburgLandau::psiToVtkFile( const std::vector<double_complex> &psi,
       for (int j=0; j<Nx+1; j++) {
           index[1] = j;
           k = sGrid.i2k( index );
-          sprintf( str,"%f ",abs(psi[k]));
-          xmlDataArray.addContent( str );
+          os << abs(psi[k]) << std::endl;
+          xmlDataArray.addContent( os.str() );
       }
   }
 
@@ -764,16 +763,19 @@ void GinzburgLandau::psiToVtkFile( const std::vector<double_complex> &psi,
   xmlPointData.addChild(xmlDataArray);
 
   Teuchos::XMLObject xmlPiece("Piece");
-  sprintf( str, "0 %d 0 %d 0 0", Nx, Nx );
-  xmlPiece.addAttribute( "Extent", str );
+  os << "0 " << Nx << " 0 " << Nx << " 0 0";
+  xmlPiece.addAttribute( "Extent", os.str() );
+  os.str("");
   xmlPiece.addChild(xmlPointData);
 
   Teuchos::XMLObject xmlImageData("ImageData");
-  sprintf( str, "0 %d 0 %d 0 0", Nx, Nx );
-  xmlImageData.addAttribute( "WholeExtent", str );
+  os << "0 " << Nx << " 0 " << Nx << " 0 0";
+  xmlImageData.addAttribute( "WholeExtent", os.str() );
+  os.str("");
   xmlImageData.addAttribute( "Origin", "0 0 0" );
-  sprintf( str, "%f %f 0", h, h );
-  xmlImageData.addAttribute( "Spacing", str );
+  os << h << " " << h << " " << "0";
+  xmlImageData.addAttribute( "Spacing", os.str() );
+  os.str("");
   xmlImageData.addChild(xmlPiece);
 
   vtuxml.addAttribute( "type", "ImageData" );
@@ -788,7 +790,113 @@ void GinzburgLandau::psiToVtkFile( const std::vector<double_complex> &psi,
   vtkfile << vtuxml;
   // close the file
   vtkfile.close();
+}
+// =============================================================================
 
-std::cout << "done8" << std::endl;
+
+
+// =============================================================================
+void GinzburgLandau::psiToXdmfFile( const std::vector<double_complex> &psi,
+                                    const std::string                 &filename )
+{
+  int    Nx = sGrid.getNx(),
+         k,
+         index[2];
+  double h  = sGrid.getH();
+  std::ostringstream os;
+  std::ofstream      xdmfFile;
+
+  // set grid topology
+  Teuchos::XMLObject xmlTopology("Topology");
+  xmlTopology.addAttribute( "Type", "3DCORECTMESH" );
+  os << "1 " << Nx+1 << " " << Nx+1;
+  xmlTopology.addAttribute( "Dimensions", os.str() );
+  os.str("");
+
+  // define origin
+  Teuchos::XMLObject xmlOrigin("DataStructure");
+  xmlOrigin.addAttribute( "Name", "Origin" );
+  xmlOrigin.addAttribute( "DataType", "Float" );
+  xmlOrigin.addAttribute( "Dimensions", "3" );
+  xmlOrigin.addAttribute( "Format", "XML" );
+  xmlOrigin.addContent( "0 0 0" );
+
+  // define spacing
+  Teuchos::XMLObject xmlSpacing("DataStructure");
+  xmlSpacing.addAttribute( "Name", "Spacing" );
+  xmlSpacing.addAttribute( "DataType", "Float" );
+  xmlSpacing.addAttribute( "Dimensions", "3" );
+  xmlSpacing.addAttribute( "Format", "XML" );
+  os << "0 " << h << " " << h;
+  xmlSpacing.addContent( os.str() );
+  os.str("");
+
+  // merge the latter two into geometry
+  Teuchos::XMLObject xmlGeometry("Geometry");
+  xmlGeometry.addAttribute( "Type", "ORIGIN_DXDYDZ" );
+  xmlGeometry.addChild( xmlOrigin );
+  xmlGeometry.addChild( xmlSpacing );
+
+  // tell me where the actual ABS(PSI) data sits
+  Teuchos::XMLObject xmlAbsData("DataStructure");
+  xmlAbsData.addAttribute( "DataType", "Float" );
+  xmlAbsData.addAttribute( "Precision", "4" );
+  os << "1 " << Nx+1 << " " << Nx+1;
+  xmlAbsData.addAttribute( "Dimensions", os.str() );
+  os.str("");
+  xmlAbsData.addAttribute( "Format", "HDF" );
+  xmlAbsData.addContent( "/path/to/content.h5:/Unnamed/abs(psi)" );
+
+  Teuchos::XMLObject xmlAbs("Attribute");
+  xmlAbs.addAttribute( "Active", "1" );
+  xmlAbs.addAttribute( "Type", "Scalar" );
+  xmlAbs.addAttribute( "Center", "Node" );
+  xmlAbs.addAttribute( "Name", "abs(psi)" );
+  xmlAbs.addChild( xmlAbsData );
+
+
+  // tell me where the actual ARG(PSI) data sits
+  Teuchos::XMLObject xmlArgData("DataStructure");
+  xmlArgData.addAttribute( "DataType", "Float" );
+  xmlArgData.addAttribute( "Precision", "4" );
+  os << "1 " << Nx+1 << " " << Nx+1;
+  xmlArgData.addAttribute( "Dimensions", os.str() );
+  os.str("");
+  xmlArgData.addAttribute( "Format", "HDF" );
+  xmlArgData.addContent( "/path/to/content.h5:/Unnamed/abs(psi)" );
+
+  Teuchos::XMLObject xmlArg("Attribute");
+  xmlArg.addAttribute( "Center", "Node" );
+  xmlArg.addAttribute( "Name", "abs(psi)" );
+  xmlArg.addChild( xmlAbsData );
+
+  // put it all in GRID
+  Teuchos::XMLObject xmlGrid("Grid");
+  xmlGrid.addAttribute( "Name", "Unnamed" );
+  xmlGrid.addChild( xmlTopology );
+  xmlGrid.addChild( xmlGeometry );
+  xmlGrid.addChild( xmlAbs );
+  xmlGrid.addChild( xmlArg );
+
+  // put grid in domain
+  Teuchos::XMLObject xmlDomain("Domain");
+  xmlDomain.addChild( xmlGrid );
+
+  // out domain in Xdmf
+  Teuchos::XMLObject xdmfContainer("Xdmf");
+  xdmfContainer.addChild( xmlDomain );
+
+  // open the file
+  xdmfFile.open( filename.c_str() );
+  // write the xml tree to a file
+  xdmfFile << "<?xml version=\"1.0\" ?>" << std::endl
+           << "<!DOCTYPE Xdmf SYSTEM \"Xdmf.dtd\" [" << std::endl
+           << "<!ENTITY HeavyData \"/path/to/test.h5\">" << std::endl
+           << "]>" << std::endl
+           << std::endl;
+
+  xdmfFile << xdmfContainer;
+  // close the file
+  xdmfFile.close();
 }
 // =============================================================================
