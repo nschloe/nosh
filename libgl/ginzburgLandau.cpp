@@ -16,6 +16,9 @@
 
 #include <Teuchos_XMLParameterListWriter.hpp>
 
+
+#include <EpetraExt_Utils.h> // for the toString function
+
 #include <Epetra_SerialComm.h>
 #include <EpetraExt_HDF5.h>
 
@@ -751,8 +754,7 @@ void GinzburgLandau::psiToVtkFile( const std::vector<double_complex> &psi,
          index[2];
   double h  = sGrid.getH();
 
-  std::ofstream      vtkfile;
-  std::ostringstream os;
+  std::string str;
 
   Teuchos::XMLObject xmlPointData("PointData");
   xmlPointData.addAttribute( "Scalars", "abs(psi)" );
@@ -767,9 +769,7 @@ void GinzburgLandau::psiToVtkFile( const std::vector<double_complex> &psi,
       for (int j=0; j<Nx+1; j++) {
           index[1] = j;
           k = sGrid.i2k( index );
-          os << abs(psi[k]) << " ";
-          xmlDataArrayAbs.addContent( os.str() );
-          os.str("");
+          xmlDataArrayAbs.addContent( EpetraExt::toString(abs(psi[k])) + " ");
       }
   }
   xmlPointData.addChild(xmlDataArrayAbs);
@@ -783,27 +783,21 @@ void GinzburgLandau::psiToVtkFile( const std::vector<double_complex> &psi,
       for (int j=0; j<Nx+1; j++) {
           index[1] = j;
           k = sGrid.i2k( index );
-          os << arg(psi[k]) << " ";
-          xmlDataArrayArg.addContent( os.str() );
-          os.str("");
+          xmlDataArrayArg.addContent( EpetraExt::toString(arg(psi[k])) + " " );
       }
   }
   xmlPointData.addChild(xmlDataArrayArg);
 
   Teuchos::XMLObject xmlPiece("Piece");
-  os << "0 " << Nx << " 0 " << Nx << " 0 0";
-  xmlPiece.addAttribute( "Extent", os.str() );
-  os.str("");
+  str = "0 " + EpetraExt::toString(Nx) + " 0 " + EpetraExt::toString(Nx) + " 0 0";
+  xmlPiece.addAttribute( "Extent", str );
   xmlPiece.addChild(xmlPointData);
 
   Teuchos::XMLObject xmlImageData("ImageData");
-  os << "0 " << Nx << " 0 " << Nx << " 0 0";
-  xmlImageData.addAttribute( "WholeExtent", os.str() );
-  os.str("");
+  xmlImageData.addAttribute( "WholeExtent", str );
   xmlImageData.addAttribute( "Origin", "0 0 0" );
-  os << h << " " << h << " " << "0";
-  xmlImageData.addAttribute( "Spacing", os.str() );
-  os.str("");
+  str = EpetraExt::toString(h) + " " + EpetraExt::toString(h) + " 0";
+  xmlImageData.addAttribute( "Spacing", str );
   xmlImageData.addChild(xmlPiece);
 
 
@@ -824,6 +818,7 @@ void GinzburgLandau::psiToVtkFile( const std::vector<double_complex> &psi,
   vtuxml.addChild(xmlImageData);
 
   // open the file
+  std::ofstream  vtkfile;
   vtkfile.open( filename.c_str() );
   // write the xml tree to a file
   vtkfile << "<?xml version=\"1.0\"?>" << std::endl;
