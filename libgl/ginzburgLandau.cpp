@@ -753,7 +753,6 @@ void GinzburgLandau::psiToVtkFile( const std::vector<double_complex> &psi,
 
   std::ofstream      vtkfile;
   std::ostringstream os;
-  Teuchos::XMLObject vtuxml("VTKFile");
 
   Teuchos::XMLObject xmlPointData("PointData");
   xmlPointData.addAttribute( "Scalars", "abs(psi)" );
@@ -807,6 +806,18 @@ void GinzburgLandau::psiToVtkFile( const std::vector<double_complex> &psi,
   os.str("");
   xmlImageData.addChild(xmlPiece);
 
+
+  // append the problem parameters in XML form to the file
+  Teuchos::XMLObject xmlParameterList("");
+  xmlParameterList = Teuchos::XMLParameterListWriter::XMLParameterListWriter()
+                                                        .toXML( problemParams );
+
+  // define top level object
+  Teuchos::XMLObject vtuxml("VTKFile");
+
+  // append the parameter list to the embracing VTK XML object
+  vtuxml.addChild(xmlParameterList);
+
   vtuxml.addAttribute( "type", "ImageData" );
   vtuxml.addAttribute( "version", "0.1" );
   vtuxml.addAttribute( "byte_order", "LittleEndian" );
@@ -814,17 +825,9 @@ void GinzburgLandau::psiToVtkFile( const std::vector<double_complex> &psi,
 
   // open the file
   vtkfile.open( filename.c_str() );
-
   // write the xml tree to a file
   vtkfile << "<?xml version=\"1.0\"?>" << std::endl;
   vtkfile << vtuxml;
-
-  // append the problem parameters in XML form to the file
-  Teuchos::XMLObject xmlParameterList("");
-  xmlParameterList = Teuchos::XMLParameterListWriter::XMLParameterListWriter()
-                                                        .toXML( problemParams );
-  vtkfile << xmlParameterList;
-
   // close the file
   vtkfile.close();
 }
@@ -972,11 +975,11 @@ void GinzburgLandau::psiToXdmfFile( const std::vector<double_complex> &psi,
       }
   }
 
-  EpetraExt::HDF5 myhdf5(comm);
-  myhdf5.Create("data/myfile.h5");
-  myhdf5.Write("MyGrid/abs(psi)", absPsi);
-  myhdf5.Write("MyGrid/arg(psi)", absPsi);
-  myhdf5.Close();
+//   EpetraExt::HDF5 myhdf5(comm);
+//   myhdf5.Create("data/myfile.h5");
+//   myhdf5.Write("MyGrid/abs(psi)", absPsi);
+//   myhdf5.Write("MyGrid/arg(psi)", absPsi);
+//   myhdf5.Close();
   // ---------------------------------------------------------------------------
 
 }

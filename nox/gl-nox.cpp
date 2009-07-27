@@ -259,10 +259,10 @@ int main(int argc, char *argv[])
   // ---------------------------------------------------------------------------
   // print the solution to a file
 //   glsystem->solutionToLegacyVtkFile( finalSolution, "data/solution.vtk" );
-//   glsystem->solutionToVtkFile( finalSolution,
-//                                problemParameters,
-//                                "data/solution.vti" );
-  glsystem->solutionToXdmfFile( finalSolution, "data/solution.xmf" );
+   glsystem->solutionToVtkFile( finalSolution,
+                                problemParameters,
+                                "data/solution.vti" );
+//  glsystem->solutionToXdmfFile( finalSolution, "data/solution.xmf" );
   // ---------------------------------------------------------------------------
 
   // gather full solution to one processor, put it to a file
