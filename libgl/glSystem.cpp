@@ -152,8 +152,6 @@ bool GlSystem::computeJacobian( const Epetra_Vector &x,
   // Sync up processors to be safe
   Comm->Barrier();
 
-http://www.hdfgroup.org/ftp/HDF5/hdf-java/hdfview/hdfview_install_linux64x86_vm.bin
-
 EpetraExt::RowMatrixToMatlabFile( "test.m",*jacobian );
 
   return true;

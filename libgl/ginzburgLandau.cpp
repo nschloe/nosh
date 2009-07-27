@@ -14,8 +14,9 @@
 #include "Teuchos_RCP.hpp"
 
 
-#include "Teuchos_XMLParameterListWriter.hpp"
+#include <Teuchos_XMLParameterListWriter.hpp>
 
+#include <Epetra_SerialComm.h>
 #include <EpetraExt_HDF5.h>
 
 // complex unit
@@ -830,6 +831,14 @@ void GinzburgLandau::psiToVtkFile( const std::vector<double_complex> &psi,
 // =============================================================================
 
 
+// // =============================================================================
+// void GinzburgLandau::vtkFileToPsi( const std::string           &filename,
+//                                    std::vector<double_complex> *psi,
+//                                    Teuchos::ParameterList      *problemParams )
+// {
+// }
+// // =============================================================================
+
 
 // =============================================================================
 void GinzburgLandau::psiToXdmfFile( const std::vector<double_complex> &psi,
@@ -949,7 +958,9 @@ void GinzburgLandau::psiToXdmfFile( const std::vector<double_complex> &psi,
   // write the HDF5 heavy data file
   // ---------------------------------------------------------------------------
   // create a vector with abs values
-  Epetra_Vector absPsi(StandardMap);
+  Epetra_MultiVector absPsi(StandardMap,1);
+
+// std::cout << absPsi << std::endl;
 
   // fill absPsi
   for (int i=0; i<Nx+1; i++) {
@@ -957,17 +968,15 @@ void GinzburgLandau::psiToXdmfFile( const std::vector<double_complex> &psi,
       for (int j=0; j<Nx+1; j++) {
           index[1] = j;
           k = sGrid.i2k( index );
-          absPsi[k] = abs(psi[k]);
+          absPsi.ReplaceGlobalValue( k, 1, abs(psi[k]) );
       }
   }
 
-//   Epetra_SerialComm Comm;
-//   EpetraExt::HDF5 myhdf5(Comm);
-//   EpetraExt::HDF5 myhdf5(Comm);
-//   myhdf5.Create("data/myfile.h5");
-//   myhdf5.Write("MyGrid", "abs(psi)", absPsi);
-//   myhdf5.Write("MyGrid", "arg(psi)", absPsi);
-//   myhdf5.Close("data/myfile.h5");
+  EpetraExt::HDF5 myhdf5(comm);
+  myhdf5.Create("data/myfile.h5");
+  myhdf5.Write("MyGrid/abs(psi)", absPsi);
+  myhdf5.Write("MyGrid/arg(psi)", absPsi);
+  myhdf5.Close();
   // ---------------------------------------------------------------------------
 
 }

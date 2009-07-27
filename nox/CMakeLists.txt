@@ -63,6 +63,7 @@ FIND_LIBRARY( LAPACK lapack-gfortran
 FIND_LIBRARY( GFORTRAN gfortran
               HINTS /usr/lib/gcc/x86_64-pc-linux-gnu/4.3.3
                     /opt/gcc-4.3.3/lib64 )
+FIND_LIBRARY( HDF5 hdf5 )
 # ==============================================================================
 
 
@@ -81,6 +82,7 @@ TARGET_LINK_LIBRARIES ( gl-nox.out
                         ${EPETRAEXT}
                         ${EPETRA}
                         ${TEUCHOS}
+			${HDF5}
                         ${LAPACK}
                         ${BLAS}
                         ${GFORTRAN}
