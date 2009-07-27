@@ -6,6 +6,8 @@
 #include "Epetra_Export.h"
 #include "Epetra_CrsMatrix.h"
 
+#include "EpetraExt_RowMatrixOut.h"
+
 // abbreviate the complex type name
 typedef std::complex<double> double_complex;
 
@@ -150,6 +152,10 @@ bool GlSystem::computeJacobian( const Epetra_Vector &x,
   // Sync up processors to be safe
   Comm->Barrier();
 
+http://www.hdfgroup.org/ftp/HDF5/hdf-java/hdfview/hdfview_install_linux64x86_vm.bin
+
+EpetraExt::RowMatrixToMatlabFile( "test.m",*jacobian );
+
   return true;
 }
 // =============================================================================
@@ -171,7 +177,7 @@ bool GlSystem::computePreconditioner( const Epetra_Vector    &x,
 // Set initialSolution to desired initial condition
 bool GlSystem::initializeSoln()
 {
-  initialSolution->PutScalar(0.0); // Default initialization
+  initialSolution->PutScalar(0.5); // Default initialization
 
 //   for (int k=0;k<NumComplexUnknowns;k++){
 //     (*initialSolution)[2*k]   = k*0.1;
@@ -588,15 +594,18 @@ void GlSystem::solutionToLegacyVtkFile( const Epetra_Vector &x,
 
 
 // =============================================================================
-void GlSystem::solutionToVtkFile( const Epetra_Vector &x,
-                                  const std::string   &filename )
+void GlSystem::solutionToVtkFile( const Epetra_Vector          &x,
+                                  const Teuchos::ParameterList &problemParams,
+                                  const std::string            &filename       )
 {
   // convert the real valued vector to psi
   vector<double_complex> psi(NumComplexUnknowns);
   real2complex( x, psi );
 
   // print the file through Gl
-  Gl.psiToVtkFile( psi, outputDir+"/"+filename );
+  Gl.psiToVtkFile( psi,
+                   problemParams,
+                   outputDir+"/"+filename );
 }
 // =============================================================================
 
@@ -610,6 +619,10 @@ void GlSystem::solutionToXdmfFile( const Epetra_Vector &x,
   real2complex( x, psi );
 
   // print the file through Gl
-  Gl.psiToXdmfFile( psi, outputDir+"/"+filename );
+  Gl.psiToXdmfFile( psi,
+                    outputDir+"/"+filename,
+                    *StandardMap,
+                    *Comm            );
+
 }
 // =============================================================================

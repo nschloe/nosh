@@ -24,7 +24,9 @@
 
 // #include "libglInterface.H"
 
-// #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_ParameterList.hpp"
+
+
 
 using namespace std;
 
@@ -44,6 +46,9 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
 
+// EpetraExt::HDF5 test(Comm);
+
+
   // Get the process ID and the total number of processors
   int MyPID = Comm.MyPID();
 
@@ -53,15 +58,19 @@ int main(int argc, char *argv[])
     if (argv[1][0]=='-' && argv[1][1]=='v')
       verbose = true;
 
-  // set the discretization parameter
-  int Nx = 50;
-  double edgelength = 10.0;
-  double H0 = 0.4;
+  // set the discretization parameters
+  Teuchos::ParameterList problemParameters;
+  problemParameters.set("Nx",50);
+  problemParameters.set("edgelength",10.0);
+  problemParameters.set("H0",0.4);
 
   // Create the interface between NOX and the application
   // This object is derived from NOX::Epetra::Interface
   Teuchos::RCP<GlSystem> glsystem =
-    Teuchos::rcp(new GlSystem( Nx, H0, edgelength, Comm ));
+    Teuchos::rcp(new GlSystem( problemParameters.get<int>("Nx"),
+                               problemParameters.get<double>("H0"),
+                               problemParameters.get<double>("edgelength"),
+                               Comm ));
 
   // Get the vector from the Problem
   Teuchos::RCP<Epetra_Vector> soln = glsystem->getSolution();
@@ -120,11 +129,11 @@ int main(int argc, char *argv[])
   Teuchos::ParameterList& lsParams = newtonParams.sublist("Linear Solver");
 //  lsParams.set("Amesos Solver", "Amesos_Superlu");
 
-  // lsParams.set("Aztec Solver", "BiCGStab");  
-  lsParams.set("Aztec Solver", "GMRES");  
-  lsParams.set("Output Frequency", 32);  
+  // lsParams.set("Aztec Solver", "BiCGStab");
+  lsParams.set("Aztec Solver", "GMRES");
+  lsParams.set("Output Frequency", 32);
   lsParams.set("Output Solver Details", true);
-  lsParams.set("Max Iterations", 2000);  
+  lsParams.set("Max Iterations", 2000);
   lsParams.set("Tolerance", 1e-4);
 
 
@@ -247,12 +256,14 @@ int main(int argc, char *argv[])
     fprintf( ifp, "%d  %E\n", soln->Map().MinMyGID()+i, finalSolution[i] );
   fclose(ifp);
 
+  // ---------------------------------------------------------------------------
   // print the solution to a file
-//   glsystem->solutionToVtkFile( finalSolution, "data/solution.vti" );
-//  glsystem->solutionToLegacyVtkFile( finalSolution, "data/solution.vtk" );
- glsystem->solutionToXdmfFile( finalSolution, "data/solution.xmf" );
-
-cout << "Tes" << endl;
+//   glsystem->solutionToLegacyVtkFile( finalSolution, "data/solution.vtk" );
+  glsystem->solutionToVtkFile( finalSolution,
+                               problemParameters,
+                               "data/solution.vti" );
+//   glsystem->solutionToXdmfFile( finalSolution, "data/solution.xmf" );
+  // ---------------------------------------------------------------------------
 
   // gather full solution to one processor, put it to a file
   nlParams.print(cout,1,true,true);

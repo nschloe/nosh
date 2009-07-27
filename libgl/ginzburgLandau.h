@@ -6,6 +6,10 @@
 
 #include "staggeredGrid.h"
 
+#include "Epetra_Map.h"
+
+#include "Teuchos_ParameterList.hpp"
+
 // abbreviate the complex type name
 typedef std::complex<double> double_complex;
 
@@ -57,10 +61,13 @@ class GinzburgLandau
      /*! Print the solution \f$\psi\f$ to an (XML-style) VTK file for viewing
          with ParaView, for example. */
      void psiToVtkFile( const std::vector<double_complex> &psi,
-                        const std::string                 &filename );
+                        const Teuchos::ParameterList      &problemParams,
+                        const std::string                 &filename       );
 
      void psiToXdmfFile( const std::vector<double_complex> &psi,
-                         const std::string                 &filename );
+                         const std::string                 &filename,
+                         const Epetra_Map                  &StandardMap,
+                         const Epetra_Comm                 &comm         );
 
   private:
       StaggeredGrid::StaggeredGrid sGrid;

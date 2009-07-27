@@ -70,8 +70,9 @@ class GlSystem: public NOX ::Epetra::Interface::Required,
                                    const std::string   &filename="dummy.vtk" );
 
      //! Return the solution in XML-style VTK format to file filename.
-     void solutionToVtkFile( const Epetra_Vector &x,
-                             const std::string   &filename="dummy.vti" );
+     void solutionToVtkFile( const Epetra_Vector          &x,
+                             const Teuchos::ParameterList &problemParams,
+                             const std::string            &filename="dummy.vti" );
 
      void solutionToXdmfFile( const Epetra_Vector &x,
                               const std::string   &filename="dummy.xmf" );
