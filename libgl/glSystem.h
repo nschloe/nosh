@@ -74,6 +74,8 @@ class GlSystem: public NOX ::Epetra::Interface::Required,
                              const Teuchos::ParameterList &problemParams,
                              const std::string            &filename="dummy.vti" );
 
+     void vtkFileToSolution( const std::string      &filename );
+
      void solutionToXdmfFile( const Epetra_Vector &x,
                               const std::string   &filename="dummy.xmf" );
 

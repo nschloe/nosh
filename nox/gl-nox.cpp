@@ -265,6 +265,8 @@ int main(int argc, char *argv[])
 //  glsystem->solutionToXdmfFile( finalSolution, "data/solution.xmf" );
   // ---------------------------------------------------------------------------
 
+  glsystem->vtkFileToSolution( "data/solution.vti" );
+
   // gather full solution to one processor, put it to a file
   nlParams.print(cout,1,true,true);
 

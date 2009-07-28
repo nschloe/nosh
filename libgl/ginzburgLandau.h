@@ -6,9 +6,11 @@
 
 #include "staggeredGrid.h"
 
-#include "Epetra_Map.h"
+#include <Epetra_Map.h>
 
-#include "Teuchos_ParameterList.hpp"
+#include <Teuchos_ParameterList.hpp>
+
+#include <Teuchos_XMLObject.hpp>
 
 // abbreviate the complex type name
 typedef std::complex<double> double_complex;
@@ -64,12 +66,20 @@ class GinzburgLandau
                         const Teuchos::ParameterList      &problemParams,
                         const std::string                 &filename       );
 
+     void vtkFileToPsi( const std::string           &filename );
+//                         std::vector<double_complex> *psi,
+//                         Teuchos::ParameterList      *problemParams
+
      void psiToXdmfFile( const std::vector<double_complex> &psi,
                          const std::string                 &filename,
                          const Epetra_Map                  &StandardMap,
                          const Epetra_Comm                 &comm         );
 
   private:
+
+      const Teuchos::XMLObject* xmlBeagle ( const Teuchos::XMLObject *xmlObj,
+                                      const std::string        tag      );
+
       StaggeredGrid::StaggeredGrid sGrid;
 
       //! Equation type enumerator.

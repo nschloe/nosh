@@ -11,16 +11,21 @@
 #include <EpetraExt_HDF5.h> // for output in XDMF format
 // #include <Epetra_MultiVector.h>
 #include <Epetra_Vector.h>
-#include "Teuchos_RCP.hpp"
+#include <Teuchos_RCP.hpp>
 
+
+// #include <Teuchos_ParameterList.hpp>
 
 #include <Teuchos_XMLParameterListWriter.hpp>
+#include <Teuchos_XMLParameterListReader.hpp>
 
 
 #include <EpetraExt_Utils.h> // for the toString function
 
 #include <Epetra_SerialComm.h>
 #include <EpetraExt_HDF5.h>
+
+#include <Teuchos_FileInputSource.hpp> // to read XML data from files
 
 // complex unit
 const double_complex I(0,1);
@@ -817,25 +822,85 @@ void GinzburgLandau::psiToVtkFile( const std::vector<double_complex> &psi,
   vtuxml.addAttribute( "byte_order", "LittleEndian" );
   vtuxml.addChild(xmlImageData);
 
+  // ---------------------------------------------------------------------------
+  // write the contents to the file
   // open the file
   std::ofstream  vtkfile;
   vtkfile.open( filename.c_str() );
-  // write the xml tree to a file
-  vtkfile << "<?xml version=\"1.0\"?>" << std::endl;
+
+  // Do not plot the XML header as Teuchos' XML reader can't deal with it
+  // vtkfile << "<?xml version=\"1.0\"?>" << std::endl;
+
   vtkfile << vtuxml;
   // close the file
   vtkfile.close();
+  // ---------------------------------------------------------------------------
 }
 // =============================================================================
 
 
-// // =============================================================================
-// void GinzburgLandau::vtkFileToPsi( const std::string           &filename,
+// =============================================================================
+// parses and XML-style VTK file and returns psi as well as the problem
+// parameters stored in the file
+void GinzburgLandau::vtkFileToPsi( const std::string           &filename )
 //                                    std::vector<double_complex> *psi,
-//                                    Teuchos::ParameterList      *problemParams )
-// {
-// }
-// // =============================================================================
+//                                    Teuchos::ParameterList      *problemParams
+{
+
+// pass a possible 
+//<?xml version="1.0"?>
+// at the beginning of the file
+
+std::cout << "11" << std::endl;
+  Teuchos::FileInputSource xmlFile(filename);
+
+std::cout << filename << std::endl;
+
+  // extract the object from the filename
+  Teuchos::XMLObject xmlFileObject = xmlFile.getObject();
+
+  // plot the contents
+  std::cout << xmlFileObject << std::endl;
+
+  Teuchos::ParameterList plist;
+
+std::cout << "22" << std::endl;
+  // loop over the children
+  const Teuchos::XMLObject* currentNode = &xmlFileObject;
+
+  // find and read the parameter list
+  currentNode = xmlBeagle ( &xmlFileObject, "ParameterList" );
+  plist = Teuchos::XMLParameterListReader().toParameterList( *currentNode );
+
+  std::cout << " plist: " << plist << std::endl;
+
+std::cout << "33" << std::endl;
+
+}
+// =============================================================================
+
+
+
+// =============================================================================
+// Inside an XML object, this function looks for a specific tag and returns
+// a pointer to it.
+const Teuchos::XMLObject* GinzburgLandau::xmlBeagle ( const Teuchos::XMLObject *xmlObj,
+                                                      const std::string        tag     )
+{
+  const Teuchos::XMLObject* xmlOut=NULL;
+
+  if ( !xmlObj->getTag().compare(tag) ) // strings are equal
+      return xmlObj;
+  else
+      for (int k=0; k<xmlObj->numChildren(); k++) {
+          xmlOut = GinzburgLandau::xmlBeagle ( &(xmlObj->getChild(k)), tag );
+          if (xmlOut) break; // not the null pointer => return
+      }
+
+  return xmlOut;
+}
+// =============================================================================
+
 
 
 // =============================================================================

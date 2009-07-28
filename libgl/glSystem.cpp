@@ -609,6 +609,15 @@ void GlSystem::solutionToVtkFile( const Epetra_Vector          &x,
 
 
 // =============================================================================
+void GlSystem::vtkFileToSolution( const std::string      &filename )
+{
+  // print the file through Gl
+  Gl.vtkFileToPsi( filename );
+}
+// =============================================================================
+
+
+// =============================================================================
 void GlSystem::solutionToXdmfFile( const Epetra_Vector &x,
                                    const std::string   &filename )
 {
