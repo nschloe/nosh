@@ -2,6 +2,8 @@ ENABLE_LANGUAGE( CXX )
 
 SET ( gl_SRCS 
       staggeredGrid.cpp
+      stateFileReader.cpp
+      stateFileWriter.cpp
       ginzburgLandau.cpp
       glSystem.cpp )
 

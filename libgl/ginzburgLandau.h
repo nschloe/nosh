@@ -77,8 +77,13 @@ class GinzburgLandau
 
   private:
 
-      const Teuchos::XMLObject* xmlBeagle ( const Teuchos::XMLObject *xmlObj,
-                                      const std::string        tag      );
+      const Teuchos::XMLObject* xmlFind ( const Teuchos::XMLObject *xmlObj,
+                                            const std::string        tag      );
+
+      const Teuchos::XMLObject* xmlAttributeFind ( const Teuchos::XMLObject *xmlObj,
+                                                   const std::string        tag,
+                                                   const std::string        attribute,
+                                                   const std::string        value      );
 
       StaggeredGrid::StaggeredGrid sGrid;
 

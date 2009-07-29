@@ -1,23 +1,24 @@
 /*! Jacobian system for the Ginzburg--Landau problem.
  *  This routine can be used as an interface to NOX.
  ******************************************************************************/
-#include "Epetra_Comm.h"
-#include "Epetra_Map.h"
-#include "Epetra_Vector.h"
-
 #include "ginzburgLandau.h"
-#include "Teuchos_RCP.hpp"
 
-#include "Epetra_CrsMatrix.h"
+#include <Epetra_Comm.h>
+#include <Epetra_Map.h>
+#include <Epetra_Vector.h>
 
-#include "Teuchos_ParameterList.hpp"
+#include <Teuchos_RCP.hpp>
 
-#include "NOX_Epetra_Interface_Required.H" // NOX base class
-#include "NOX_Epetra_Interface_Jacobian.H" // NOX base class
+#include <Epetra_CrsMatrix.h>
 
-#include "LOCA_Epetra_Interface_Required.H" // LOCA base class
+#include <Teuchos_ParameterList.hpp>
 
-#include "LOCA_Parameter_Vector.H"
+#include <NOX_Epetra_Interface_Required.H> // NOX base class
+#include <NOX_Epetra_Interface_Jacobian.H> // NOX base class
+
+#include <LOCA_Epetra_Interface_Required.H> // LOCA base class
+
+#include <LOCA_Parameter_Vector.H>
 
 class GlSystem: public NOX ::Epetra::Interface::Required,
                 public NOX ::Epetra::Interface::Jacobian
@@ -26,10 +27,8 @@ class GlSystem: public NOX ::Epetra::Interface::Required,
   public:
 
      //! Default constructor. 
-     GlSystem( int          nx,
-               double       h0,
-               double       edgelength,
-               Epetra_Comm& comm        );
+     GlSystem( GinzburgLandau::GinzburgLandau &gl,
+               Epetra_Comm                    &comm );
 
      //! Destructor
      ~GlSystem();
@@ -66,18 +65,23 @@ class GlSystem: public NOX ::Epetra::Interface::Required,
                          double              conParam );
 
      //! Return the solution in legacy VTK format to file filename.
-     void solutionToLegacyVtkFile( const Epetra_Vector &x,
-                                   const std::string   &filename="dummy.vtk" );
+//      void solutionToLegacyVtkFile( const Epetra_Vector &x,
+//                                    const std::string   &filename="dummy.vtk" );
 
      //! Return the solution in XML-style VTK format to file filename.
-     void solutionToVtkFile( const Epetra_Vector          &x,
-                             const Teuchos::ParameterList &problemParams,
-                             const std::string            &filename="dummy.vti" );
+//      void solutionToVtkFile( const Epetra_Vector          &x,
+//                              const Teuchos::ParameterList &problemParams,
+//                              const std::string            &filename="dummy.vti" );
+// 
+//      void vtkFileToSolution( const std::string      &filename );
+// 
+//      void solutionToXdmfFile( const Epetra_Vector &x,
+//                               const std::string   &filename="dummy.xmf" );
 
-     void vtkFileToSolution( const std::string      &filename );
-
-     void solutionToXdmfFile( const Epetra_Vector &x,
-                              const std::string   &filename="dummy.xmf" );
+      void solutionToFile( const Epetra_Vector          &x,
+                           const Teuchos::ParameterList &problemParams,
+                           const std::string            &fileFormat,
+                           const std::string            &fileName       );
 
   private:
       //! Maps an index

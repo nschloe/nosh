@@ -1,15 +1,22 @@
 /********************************************//**
  * Grid for \f$\psi\f$ with corresponding functions that .
  ***********************************************/
+#ifndef STAGGEREDGRID_H
+#define STAGGEREDGRID_H
+
 
 #include "boost/multi_array.hpp"
 
 class StaggeredGrid
 {
   public:
+      //! Default constructor.
       StaggeredGrid( int    nx,
                      double edgelength,
                      double h0 );
+
+      //! Copy constructor.
+      StaggeredGrid(const StaggeredGrid& sGrid);
 
       ~StaggeredGrid();
 
@@ -52,3 +59,4 @@ class StaggeredGrid
       //! (Re)sets the values of \f$A\f$.
       void computeA();
 };
+#endif // STAGGEREDGRID_H

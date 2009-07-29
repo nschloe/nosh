@@ -64,13 +64,17 @@ int main(int argc, char *argv[])
   problemParameters.set("edgelength",10.0);
   problemParameters.set("H0",0.4);
 
+  // create the gl problem
+  GinzburgLandau glProblem = GinzburgLandau( problemParameters.get<int>("Nx"),
+                                             problemParameters.get<double>("edgelength"),
+                                             problemParameters.get<double>("H0")
+                                           );
+
   // Create the interface between NOX and the application
   // This object is derived from NOX::Epetra::Interface
-  Teuchos::RCP<GlSystem> glsystem =
-    Teuchos::rcp(new GlSystem( problemParameters.get<int>("Nx"),
-                               problemParameters.get<double>("H0"),
-                               problemParameters.get<double>("edgelength"),
-                               Comm ));
+  Teuchos::RCP<GlSystem> glsystem = Teuchos::rcp(new GlSystem( glProblem,
+                                                               Comm )
+                                                );
 
   // Get the vector from the Problem
   Teuchos::RCP<Epetra_Vector> soln = glsystem->getSolution();
@@ -258,14 +262,14 @@ int main(int argc, char *argv[])
 
   // ---------------------------------------------------------------------------
   // print the solution to a file
-//   glsystem->solutionToLegacyVtkFile( finalSolution, "data/solution.vtk" );
-   glsystem->solutionToVtkFile( finalSolution,
-                                problemParameters,
-                                "data/solution.vti" );
-//  glsystem->solutionToXdmfFile( finalSolution, "data/solution.xmf" );
+  std::string  fileFormat = "legacyVTK"; // VTI, XDMF
+  std::string  fileName   = "data/solution.vtk"; // data/solution.vtk, data/solution.xmf
+  glsystem->solutionToFile( finalSolution,
+                            problemParameters,
+                            fileFormat,
+                            fileName  );
   // ---------------------------------------------------------------------------
 
-  glsystem->vtkFileToSolution( "data/solution.vti" );
 
   // gather full solution to one processor, put it to a file
   nlParams.print(cout,1,true,true);

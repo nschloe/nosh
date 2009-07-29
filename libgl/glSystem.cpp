@@ -1,12 +1,14 @@
 #include "glSystem.h"
+#include "stateFileWriter.h"
+
 #include <iostream>
 #include <complex>
 #include <vector>
 
-#include "Epetra_Export.h"
-#include "Epetra_CrsMatrix.h"
+#include <Epetra_Export.h>
+#include <Epetra_CrsMatrix.h>
 
-#include "EpetraExt_RowMatrixOut.h"
+#include <EpetraExt_RowMatrixOut.h>
 
 // abbreviate the complex type name
 typedef std::complex<double> double_complex;
@@ -14,14 +16,12 @@ typedef std::complex<double> double_complex;
 
 // =============================================================================
 // Class constructor
-GlSystem::GlSystem( int          nx,
-                    double       h0,
-                    double       edgelength,
-                    Epetra_Comm& comm         ):
+GlSystem::GlSystem( GinzburgLandau::GinzburgLandau &gl,
+                    Epetra_Comm                    &comm ):
   NumGlobalElements(0),
   NumMyElements(0),
   NumComplexUnknowns(0),
-  Gl(GinzburgLandau::GinzburgLandau( nx, edgelength, h0 )),
+  Gl(gl),
   Comm(&comm),
   StandardMap(0),
   EverywhereMap(0),
@@ -151,8 +151,6 @@ bool GlSystem::computeJacobian( const Epetra_Vector &x,
 
   // Sync up processors to be safe
   Comm->Barrier();
-
-EpetraExt::RowMatrixToMatlabFile( "test.m",*jacobian );
 
   return true;
 }
@@ -568,6 +566,7 @@ void GlSystem::printSolution( const Epetra_Vector &x,
 // =============================================================================
 
 
+
 // =============================================================================
 // function used by LOCA
 void GlSystem::setOutputDir( const string &directory )
@@ -577,59 +576,23 @@ void GlSystem::setOutputDir( const string &directory )
 // =============================================================================
 
 
+
 // =============================================================================
-void GlSystem::solutionToLegacyVtkFile( const Epetra_Vector &x,
-                                        const std::string   &filename )
+void GlSystem::solutionToFile( const Epetra_Vector          &x,
+                               const Teuchos::ParameterList &problemParams,
+                               const std::string            &fileFormat,
+                               const std::string            &fileName       )
 {
   // convert the real valued vector to psi
   vector<double_complex> psi(NumComplexUnknowns);
   real2complex( x, psi );
 
-  // print the file through Gl
-  Gl.psiToLegacyVtkFile( psi, outputDir+"/"+filename );
-}
-// =============================================================================
+  StateFileWriter psiWriter( *(Gl.getStaggeredGrid()) );
 
-
-// =============================================================================
-void GlSystem::solutionToVtkFile( const Epetra_Vector          &x,
-                                  const Teuchos::ParameterList &problemParams,
-                                  const std::string            &filename       )
-{
-  // convert the real valued vector to psi
-  vector<double_complex> psi(NumComplexUnknowns);
-  real2complex( x, psi );
-
-  // print the file through Gl
-  Gl.psiToVtkFile( psi,
-                   problemParams,
-                   outputDir+"/"+filename );
-}
-// =============================================================================
-
-
-// =============================================================================
-void GlSystem::vtkFileToSolution( const std::string      &filename )
-{
-  // print the file through Gl
-  Gl.vtkFileToPsi( filename );
-}
-// =============================================================================
-
-
-// =============================================================================
-void GlSystem::solutionToXdmfFile( const Epetra_Vector &x,
-                                   const std::string   &filename )
-{
-  // convert the real valued vector to psi
-  vector<double_complex> psi(NumComplexUnknowns);
-  real2complex( x, psi );
-
-  // print the file through Gl
-  Gl.psiToXdmfFile( psi,
-                    outputDir+"/"+filename,
-                    *StandardMap,
-                    *Comm            );
+  psiWriter.writeFile( fileName,
+                       fileFormat,
+                       psi,
+                       problemParams );
 
 }
 // =============================================================================
