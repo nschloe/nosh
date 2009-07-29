@@ -23,10 +23,14 @@ StaggeredGrid::StaggeredGrid( int    nx,
 // =============================================================================
 // copy constructor
 StaggeredGrid::StaggeredGrid(const StaggeredGrid& sGrid) {
-    Nx = sGrid.Nx;
-    H0 = sGrid.H0;
-    h  = sGrid.h;
+    Nx         = sGrid.Nx;
+    Edgelength = sGrid.Edgelength;
+    H0         = sGrid.H0;
+    h          = sGrid.h;
+
+    Ax.resize(boost::extents[Nx][Nx+1]);
     Ax = sGrid.Ax;
+    Ay.resize(boost::extents[Nx+1][Nx]);
     Ay = sGrid.Ay;
 }
 // =============================================================================
@@ -110,8 +114,8 @@ void StaggeredGrid::computeA()
 //   std::cout << "Edgelength=" << Edgelength << std::endl;
 //   std::cout << "h=" << h << std::endl;
 //   std::cout << "H0=" << H0 << std::endl;
-//   for ( index i=0; i!=nx; ++i )
-//       for ( index j=0; j!=nx+1; ++j )
+//   for ( index i=0; i!=Nx; ++i )
+//       for ( index j=0; j!=Nx+1; ++j )
 //           std::cout << "Ax[" << i << "][" << j << "] = " << Ax[i][j]
 //                     << std::endl;
 //   // ---------------------------------------------------------------------------
