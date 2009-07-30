@@ -601,10 +601,11 @@ void GlSystem::solutionToFile( const Epetra_Vector          &x,
                        problemParams );
   } else if ( !fileFormat.compare("XDMF") ) {
 std::cout << "XDMFFFFFFFFFFFFFFFFFFFF" << std::endl;
-      IoXdmf xdmfWriter( *(Gl.getStaggeredGrid()) );
+      IoXdmf xdmfWriter;
       xdmfWriter.write( fileName,
                         psi,
-                        problemParams );
+                        problemParams,
+                        *(Gl.getStaggeredGrid()) );
   } else {
       std::cerr << "GlSystem::solutionToFile" << std::endl
                 << "    Illegal file format \"" << fileFormat << "\"." << std::endl

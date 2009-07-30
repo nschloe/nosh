@@ -1,11 +1,16 @@
 #include "ioXdmf.h"
 
-#include <Teuchos_XMLObject.hpp>
 #include <Teuchos_XMLParameterListWriter.hpp>
 #include <EpetraExt_Utils.h> // for toString
 
 #include <Epetra_MultiVector.h>
 #include <EpetraExt_HDF5.h>
+
+#include <Teuchos_StringInputSource.hpp>
+#include <Teuchos_XMLParameterListReader.hpp>
+
+#include <iostream>
+#include <fstream>
 
 #ifdef HAVE_MPI
 #include <mpi.h>
@@ -16,8 +21,7 @@
 
 // =============================================================================
 // Constructor
-IoXdmf::IoXdmf( StaggeredGrid &sGrid ):
-  SGrid(sGrid) // make this &sGrid
+IoXdmf::IoXdmf()
 {
 }
 // =============================================================================
@@ -38,6 +42,55 @@ void IoXdmf::read( const std::string           &fileName,
                    std::vector<double_complex> *psi,
                    Teuchos::ParameterList      *problemParams )
 {
+
+  // Convert the file to a string, such that we can discard the headers and pass
+  // the pure XML stuff to Teuchos.
+  // This is a workaround.
+  // TODO: Follow the Trilinos bug at
+  //         https://software.sandia.gov/bugzilla/show_bug.cgi?id=4516
+  //       and see what happens.
+
+  // read the file contents to a string
+  std::ifstream inFile( fileName.c_str() );
+  if( !inFile ) {
+      std::cerr << "Couldn't open input file." << endl;
+      exit(EXIT_FAILURE);
+  }
+
+  // Read the file into a string, and discard exactly the first for lines,
+  // which read
+  //
+  // <?xml version="1.0" ?>
+  // <!DOCTYPE Xdmf SYSTEM "Xdmf.dtd" [
+  // <!ENTITY HeavyData "solution.h5">
+  // ]>
+  //
+  string buf, tmp;
+  int row = 1;
+  while(!inFile.eof()) {
+      getline(inFile, tmp);
+      if (row>=5) {
+          buf += tmp;
+          buf += "\n";
+      }
+      row++;
+  }
+
+  // pass string as XML input source
+  Teuchos::StringInputSource xmlString(buf);
+
+
+  // Extract the object from the filename.
+  Teuchos::XMLObject xmlFileObject = xmlString.getObject();
+
+  // find and read the parameter list
+  const Teuchos::XMLObject* parameterListObject =
+                                     xmlFind( &xmlFileObject, "ParameterList" );
+  *problemParams = Teuchos::XMLParameterListReader().
+                                        toParameterList( *parameterListObject );
+
+  // now go find where the heavy data is stored
+
   std::cerr << "IoXdmf::read not yet implemented." << std::endl;
   exit(EXIT_FAILURE);
 }
@@ -48,13 +101,14 @@ void IoXdmf::read( const std::string           &fileName,
 // =============================================================================
 void IoXdmf::write( const std::string                 &fileName,
                     const std::vector<double_complex> &psi,
-                    const Teuchos::ParameterList      &problemParams )
+                    const Teuchos::ParameterList      &problemParams,
+                    StaggeredGrid::StaggeredGrid      &sGrid          )
 {
 
-  int    Nx = SGrid.getNx(),
+  int    Nx = sGrid.getNx(),
          k,
          index[2];
-  double h  = SGrid.getH();
+  double h  = sGrid.getH();
   std::string   str;
   std::ofstream xdmfFile;
 
@@ -189,7 +243,7 @@ void IoXdmf::write( const std::string                 &fileName,
       index[0] = i;
       for (int j=0; j<Nx+1; j++) {
           index[1] = j;
-          k = SGrid.i2k( index );
+          k = sGrid.i2k( index );
           absPsi.ReplaceGlobalValue( i, j, abs(psi[k]) );
           argPsi.ReplaceGlobalValue( i, j, arg(psi[k]) );
       }
@@ -202,5 +256,27 @@ void IoXdmf::write( const std::string                 &fileName,
   myhdf5.Close();
   // ---------------------------------------------------------------------------
 
+}
+// =============================================================================
+
+
+
+// =============================================================================
+// Inside an XML object, this function looks for a specific tag and returns
+// a pointer to it.
+const Teuchos::XMLObject* IoXdmf::xmlFind ( const Teuchos::XMLObject *xmlObj,
+                                            const std::string        tag )
+{
+  const Teuchos::XMLObject* xmlOut=NULL;
+
+  if ( !xmlObj->getTag().compare(tag) ) // strings are equal
+      xmlOut = xmlObj;
+  else
+      for (int k=0; k<xmlObj->numChildren(); k++) {
+          xmlOut = xmlFind ( &(xmlObj->getChild(k)), tag ); // recursive call
+          if (xmlOut) break; // not the null pointer => return
+      }
+
+  return xmlOut;
 }
 // =============================================================================

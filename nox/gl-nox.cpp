@@ -11,6 +11,7 @@
 
 // User's application specific files 
 #include "glSystem.h"
+#include "ioXdmf.h"
 
 #include <string>
 
@@ -50,13 +51,13 @@ int main(int argc, char *argv[])
   // ---------------------------------------------------------------------------
 
 
-//   // ---------------------------------------------------------------------------
-//   std::vector<double_complex> psi;
-//   StateFileReader fileReader;
-//   std::string file = "data/solution.vtk";
-//   std::string format = "legacyVTK";
-//   fileReader.readFile( file, format, &psi, &problemParameters );
-//   // ---------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
+  std::vector<double_complex> psi;
+  IoXdmf xdmfReader;
+  std::string file   = "data/solution.xmf";
+  std::string format = "XDMF";
+  xdmfReader.read( file, &psi, &problemParameters );
+  // ---------------------------------------------------------------------------
 
 
   // create the gl problem
