@@ -8,6 +8,7 @@
 #endif
 
 #include <Teuchos_ParameterList.hpp>
+#include <Teuchos_CommandLineProcessor.hpp>
 
 // User's application specific files 
 #include "glSystem.h"
@@ -35,30 +36,60 @@ int main(int argc, char *argv[])
   // Get the process ID and the total number of processors
   int MyPID = Comm.MyPID();
 
-  // Check verbosity level
-  bool verbose = false;
-  if (argc > 1)
-    if (argv[1][0]=='-' && argv[1][1]=='v')
-      verbose = true;
+
+  // ===========================================================================
+  // handle command line arguments
+  Teuchos::CommandLineProcessor My_CLP;
+
+  My_CLP.setDocString(
+    "This program solves the Ginzburg--Landau problem with a NOX interace.\n"
+  );
+
+  bool verbose=false;
+  My_CLP.setOption("verbose", "silent", &verbose, "Verbostity flag" );
+
+  std::string filename = "";
+  My_CLP.setOption("input-guess", &filename, "File name with initial guess");
+
+  std::string outputdir = "data";
+  My_CLP.setOption("output-dir", &outputdir, "Directory to which the solution files are written");
+
+  // print warning for unrecognized arguments
+  My_CLP.recogniseAllOptions(true);
+
+  // don't throw exceptions
+  My_CLP.throwExceptions(false);
+
+  // finally, parse the stuff!
+  Teuchos::CommandLineProcessor::EParseCommandLineReturn
+                                       parseReturn = My_CLP.parse( argc, argv );
+  if( parseReturn == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED ) {
+    return 0;
+  }
+  if( parseReturn != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL   ) {
+    return 1; // Error!
+  }
+
+  bool withInitialGuess = filename.length()>0;
+  // ===========================================================================
+
+
 
   // ---------------------------------------------------------------------------
-  // set the discretization parameters
-  // (possibly overwritten when reading a file
-  Teuchos::ParameterList problemParameters;
-  problemParameters.set("Nx",50);
-  problemParameters.set("edgelength",10.0);
-  problemParameters.set("H0",0.4);
+  Teuchos::ParameterList      problemParameters;
+  std::vector<double_complex> psiLexicographic;
+  if (withInitialGuess) {
+      IoXdmf xdmfReader;
+      std::string file   = "data/solution.xmf";
+      std::string format = "XDMF";
+      xdmfReader.read( file, &psiLexicographic, &problemParameters );
+  } else {
+      // set default discretization parameters
+      problemParameters.set("Nx",50);
+      problemParameters.set("edgelength",10.0);
+      problemParameters.set("H0",0.4);
+  }
   // ---------------------------------------------------------------------------
-
-
-  // ---------------------------------------------------------------------------
-  std::vector<double_complex> psi;
-  IoXdmf xdmfReader;
-  std::string file   = "data/solution.xmf";
-  std::string format = "XDMF";
-  xdmfReader.read( file, &psi, &problemParameters );
-  // ---------------------------------------------------------------------------
-
 
   // create the gl problem
   GinzburgLandau glProblem = GinzburgLandau( problemParameters.get<int>("Nx"),
@@ -66,13 +97,28 @@ int main(int argc, char *argv[])
                                              problemParameters.get<double>("H0")
                                            );
 
-  // Create the interface between NOX and the application
-  // This object is derived from NOX::Epetra::Interface
-  Teuchos::RCP<GlSystem> glsystem = Teuchos::rcp(new GlSystem( glProblem,
-                                                               Comm )
-                                                );
+  // ---------------------------------------------------------------------------
+  Teuchos::RCP<GlSystem> glsystem;
+  if ( withInitialGuess ) {
+      // If there was is an initial guess, make sure to get the ordering correct.
+      int              NumUnknowns = glProblem. getStaggeredGrid()
+                                              ->getNumComplexUnknowns();
+      std::vector<int> p(NumUnknowns);
+      // fill p:
+      glProblem.getStaggeredGrid()->lexicographic2grid( &p );
+      std::vector<double_complex> psi(NumUnknowns);
+      for (int k=0; k<NumUnknowns; k++)
+          psi[p[k]] = psiLexicographic[k];
 
-  // Get the vector from the Problem
+      // Create the interface between NOX and the application
+      // This object is derived from NOX::Epetra::Interface
+      glsystem = Teuchos::rcp(new GlSystem( glProblem, Comm, &psi ) );
+  } else
+      glsystem = Teuchos::rcp(new GlSystem( glProblem,Comm ) );
+  // ---------------------------------------------------------------------------
+
+
+  // Get initial solution
   Teuchos::RCP<Epetra_Vector> soln = glsystem->getSolution();
   Teuchos::RCP<NOX::Epetra::Vector> noxSoln =
     Teuchos::rcp(new NOX::Epetra::Vector(soln,

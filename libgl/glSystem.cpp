@@ -17,9 +17,10 @@ typedef std::complex<double> double_complex;
 
 
 // =============================================================================
-// Class constructor
+// Default constructor
 GlSystem::GlSystem( GinzburgLandau::GinzburgLandau &gl,
-                    Epetra_Comm                    &comm ):
+                    Epetra_Comm                    &comm,
+                    std::vector<double_complex>    *psi  ):
   NumGlobalElements(0),
   NumMyElements(0),
   NumComplexUnknowns(0),
@@ -49,7 +50,20 @@ GlSystem::GlSystem( GinzburgLandau::GinzburgLandau &gl,
 
   // initialize solution
   initialSolution = Teuchos::rcp(new Epetra_Vector(*StandardMap));
-  initializeSoln();
+
+  if ( !psi ) { // null pointer
+      initialSolution->PutScalar(0.5); // Default initialization
+  } else {
+      if ( psi->size() != NumComplexUnknowns ) {
+          std::cerr << "GlSystem::GlSystem\n"
+                    << "Size of the initial guess vector (" << psi->size()
+                    << ") does not coincide with the number of unknowns ("
+                    << NumComplexUnknowns << "). Abort." << std::endl;
+          exit(EXIT_FAILURE);
+      }
+      complex2real( *psi, initialSolution );
+  }
+
 
   // create the sparsity structure (graph) of the Jacobian
   // use x as DUMMY argument
@@ -63,6 +77,7 @@ GlSystem::GlSystem( GinzburgLandau::GinzburgLandau &gl,
   jacobian->FillComplete();
 }
 // =============================================================================
+
 
 
 // =============================================================================
@@ -95,6 +110,20 @@ void GlSystem::real2complex( const Epetra_Vector    &realvec,
       psi[k] = double_complex( realvec[2*k], realvec[2*k+1] );
 }
 // =============================================================================
+
+
+
+// =============================================================================
+void GlSystem::complex2real( const vector<double_complex> &psi,
+                             Teuchos::RCP<Epetra_Vector>  realvec )
+{
+  for (int k=0; k<NumComplexUnknowns; k++ ) {
+      (*realvec)[2*k]   = real(psi[k]);
+      (*realvec)[2*k+1] = imag(psi[k]);
+  }
+}
+// =============================================================================
+
 
 
 // =============================================================================
@@ -167,24 +196,6 @@ bool GlSystem::computePreconditioner( const Epetra_Vector    &x,
   std::cerr << "ERROR: GlSystem::preconditionVector() - "
             << "    Use Explicit Jacobian only for this test problem!" << std::endl;
   throw "GlSystem Error";
-}
-// ==========================================================================
-
-
-// ==========================================================================
-// Set initialSolution to desired initial condition
-bool GlSystem::initializeSoln()
-{
-  initialSolution->PutScalar(0.5); // Default initialization
-
-//   for (int k=0;k<NumComplexUnknowns;k++){
-//     (*initialSolution)[2*k]   = k*0.1;
-//     (*initialSolution)[2*k+1] = 0.0;
-//   }
-// 
-//   (*initialSolution)[NumGlobalElements-1] = 2.718291828;
-
-  return true;
 }
 // ==========================================================================
 
@@ -600,7 +611,6 @@ void GlSystem::solutionToFile( const Epetra_Vector          &x,
                        psi,
                        problemParams );
   } else if ( !fileFormat.compare("XDMF") ) {
-std::cout << "XDMFFFFFFFFFFFFFFFFFFFF" << std::endl;
       IoXdmf xdmfWriter;
       xdmfWriter.write( fileName,
                         psi,
@@ -612,6 +622,8 @@ std::cout << "XDMFFFFFFFFFFFFFFFFFFFF" << std::endl;
                 << "    Choose one of \"legacyVTK\", \"VTI\", \"XDMF\"." << std::endl;
       exit(EXIT_FAILURE);
   }
+
+  // Reorder it to match the order as specified in Gl.sGrid().
 
 }
 // =============================================================================

@@ -29,6 +29,8 @@ class StaggeredGrid
 //      int* k2i( int  ); //!< Converts a running index k to a grid index i
       int  i2k( int* ); //!< Converts a grid index i to a running index k
 
+      void lexicographic2grid( std::vector<int> *p );
+
       /*! Indicates whether a node sits in a corner of the domain, on an edge,
           or strictly inside it. */
       enum nodeType { CORNER, EDGE, INTERIOR };

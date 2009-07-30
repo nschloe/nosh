@@ -26,57 +26,44 @@ class GlSystem: public NOX ::Epetra::Interface::Required,
 {
   public:
 
-     //! Default constructor. 
-     GlSystem( GinzburgLandau::GinzburgLandau &gl,
-               Epetra_Comm                    &comm );
+      //! Default constructor. 
+      GlSystem( GinzburgLandau::GinzburgLandau &gl,
+                Epetra_Comm                    &comm,
+                std::vector<double_complex>    *psi = NULL );
 
-     //! Destructor
-     ~GlSystem();
+      //! Destructor
+      ~GlSystem();
 
-     //! Evaluate the Ginzburg--Landau functions at a given state defined
-     //! by the input vector x.
-     bool computeF( const Epetra_Vector &x,
-                    Epetra_Vector       &F,
-                    const NOX::Epetra::Interface::Required::FillType fillFlag = Residual  );
+      //! Evaluate the Ginzburg--Landau functions at a given state defined
+      //! by the input vector x.
+      bool computeF( const Epetra_Vector &x,
+                     Epetra_Vector       &F,
+                     const NOX::Epetra::Interface::Required::FillType fillFlag = Residual  );
 
-     //! Evaluate the Jacobian matrix of the Ginzburg--Landau problem
-     //! at a given state defined by the input vector x.
-     bool computeJacobian ( const Epetra_Vector &x,
-                            Epetra_Operator     &Jac );
+      //! Evaluate the Jacobian matrix of the Ginzburg--Landau problem
+      //! at a given state defined by the input vector x.
+      bool computeJacobian ( const Epetra_Vector &x,
+                             Epetra_Operator     &Jac );
 
-     //! Dummy preconditioner function. So far does nothing but throwing
-     //! an exception when called.
-     bool computePreconditioner( const Epetra_Vector     &x,
-                                 Epetra_Operator         &Prec,
-                                 Teuchos::ParameterList* precParams=0 );
+      //! Dummy preconditioner function. So far does nothing but throwing
+      //! an exception when called.
+      bool computePreconditioner( const Epetra_Vector     &x,
+                                  Epetra_Operator         &Prec,
+                                  Teuchos::ParameterList* precParams=0 );
 
-     //! Returns the current state. Not necessarily a solution to the problem!
-     Teuchos::RCP<Epetra_Vector> getSolution();
+      //! Returns the current state. Not necessarily a solution to the problem!
+      Teuchos::RCP<Epetra_Vector> getSolution();
 
-     //! Returns the current Jacobian.
-     Teuchos::RCP<Epetra_CrsMatrix> getJacobian();
+      //! Returns the current Jacobian.
+      Teuchos::RCP<Epetra_CrsMatrix> getJacobian();
 
-     void setParameters(const LOCA::ParameterVector &p);
+      void setParameters(const LOCA::ParameterVector &p);
 
-     //! Set directory to where all output gets written.
-     void setOutputDir( const string &directory );
+      //! Set directory to where all output gets written.
+      void setOutputDir( const string &directory );
 
-     void printSolution( const Epetra_Vector &x,
-                         double              conParam );
-
-     //! Return the solution in legacy VTK format to file filename.
-//      void solutionToLegacyVtkFile( const Epetra_Vector &x,
-//                                    const std::string   &filename="dummy.vtk" );
-
-     //! Return the solution in XML-style VTK format to file filename.
-//      void solutionToVtkFile( const Epetra_Vector          &x,
-//                              const Teuchos::ParameterList &problemParams,
-//                              const std::string            &filename="dummy.vti" );
-// 
-//      void vtkFileToSolution( const std::string      &filename );
-// 
-//      void solutionToXdmfFile( const Epetra_Vector &x,
-//                               const std::string   &filename="dummy.xmf" );
+      void printSolution( const Epetra_Vector &x,
+                          double              conParam );
 
       void solutionToFile( const Epetra_Vector          &x,
                            const Teuchos::ParameterList &problemParams,
@@ -84,11 +71,14 @@ class GlSystem: public NOX ::Epetra::Interface::Required,
                            const std::string            &fileName       );
 
   private:
-      //! Maps an index
+
       int realIndex2complexIndex ( const int realIndex );
 
       void real2complex( const Epetra_Vector           &x,
                          vector<std::complex<double> > &psi );
+
+      void complex2real( const vector<double_complex> &psi,
+                         Teuchos::RCP<Epetra_Vector>  realvec );
 
       bool initializeSoln();
 

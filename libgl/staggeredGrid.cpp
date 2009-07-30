@@ -231,3 +231,32 @@ int StaggeredGrid::i2k( int* i )
   return k;
 }
 // =============================================================================
+
+
+
+// =============================================================================
+// Returns a vector that defines the reordering from a lexicographic grid to
+// the ordering present in this grid
+void StaggeredGrid::lexicographic2grid( std::vector<int> *p )
+{
+  // check if for admissible vector size
+  if ( p->size() != (Nx+1)*(Nx+1) ) {
+      std::cerr << "StaggeredGrid::lexicographic2grid\n"
+                << "Size of the input vector p (" << p->size() << ") "
+                << "does not coincide with with number of unknowns on the "
+                << "grid (" << (Nx+1)*(Nx+1) << "). Abort" << std::endl;
+      exit(EXIT_FAILURE);
+  }
+
+  int index[2],
+      k = 0;
+  for (int j=0; j<Nx+1; j++) {
+      index[1]  = j;
+      for (int i=0; i<Nx+1; i++) {
+          index[0] = i;
+          (*p)[k++] = i2k(index);
+      }
+  }
+
+}
+// =============================================================================

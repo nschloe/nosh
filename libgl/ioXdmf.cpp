@@ -50,20 +50,29 @@ void IoXdmf::read( const std::string           &fileName,
   //         https://software.sandia.gov/bugzilla/show_bug.cgi?id=4516
   //       and see what happens.
 
+  // extract the directory for later
+  string directory = fileName;
+  directory.erase( directory.rfind("/") );
+
+
   // read the file contents to a string
   std::ifstream inFile( fileName.c_str() );
   if( !inFile ) {
-      std::cerr << "Couldn't open input file." << endl;
+      std::cerr << "IoXdmf::read\n"
+                << "    Could not open input file \"" << fileName << "\". Abort."
+                << std::endl;
       exit(EXIT_FAILURE);
   }
 
   // Read the file into a string, and discard exactly the first for lines,
   // which read
   //
+  // ===================== *snip* =====================
   // <?xml version="1.0" ?>
   // <!DOCTYPE Xdmf SYSTEM "Xdmf.dtd" [
   // <!ENTITY HeavyData "solution.h5">
   // ]>
+  // ===================== *snap* =====================
   //
   string buf, tmp;
   int row = 1;
@@ -79,7 +88,6 @@ void IoXdmf::read( const std::string           &fileName,
   // pass string as XML input source
   Teuchos::StringInputSource xmlString(buf);
 
-
   // Extract the object from the filename.
   Teuchos::XMLObject xmlFileObject = xmlString.getObject();
 
@@ -89,10 +97,141 @@ void IoXdmf::read( const std::string           &fileName,
   *problemParams = Teuchos::XMLParameterListReader().
                                         toParameterList( *parameterListObject );
 
+  // create a dummy communicator
+  // TODO: Get rid of this.
+#ifdef HAVE_MPI
+  Epetra_MpiComm Comm(MPI_COMM_WORLD);
+#else
+  Epetra_SerialComm Comm;
+#endif
+
+  // create MultiVectors that will store the abs and arg data
+  int Nx = problemParams->get<int>("Nx");
+  Epetra_Map         StandardMap( Nx+1, 0, Comm );
+  Epetra_MultiVector* absPsi = new Epetra_MultiVector(StandardMap,Nx+1);
+  Epetra_MultiVector* argPsi = new Epetra_MultiVector(StandardMap,Nx+1);
+
+  // gather the heavy abs(psi) data
+  getHeavyData( xmlFileObject, Comm, &absPsi, directory, "abs(psi)", "abs" );
+
+  // gather the heavy abs(psi) data
+  getHeavyData( xmlFileObject, Comm, &argPsi, directory, "arg(psi)", "arg" );
+
+  // build psi of the entries that we got
+  psi->resize( (Nx+1)*(Nx+1) );
+  int k = 0;
+  for (int i=0; i<Nx+1; i++)
+      for (int j=0; j<Nx+1; j++)
+          (*psi)[k++] = polar2complex( (*absPsi)[i][j], (*argPsi)[i][j] );
+
+  return;
+}
+// =============================================================================
+
+
+
+// =============================================================================
+// Construct a complex number out of its absolute value and its angle.
+inline double_complex IoXdmf::polar2complex( double abs,
+                                             double arg  )
+{
+  return double_complex( abs*cos(arg), abs*sin(arg)  );
+}
+// =============================================================================
+
+
+
+// =============================================================================
+void IoXdmf::getHeavyData( const Teuchos::XMLObject &xmlFileObject,
+                           const Epetra_Comm        &comm,
+                           Epetra_MultiVector       **readVec,
+                           const std::string        &fileDirectory,
+                           const std::string        &xmlName,
+                           const std::string        &hdf5GroupName )
+{
+  // ---------------------------------------------------------------------------
   // now go find where the heavy data is stored
 
-  std::cerr << "IoXdmf::read not yet implemented." << std::endl;
-  exit(EXIT_FAILURE);
+  // find the abs(psi) data
+  const Teuchos::XMLObject* absPsiObject = xmlAttributeFind ( &xmlFileObject,
+                                                              "Attribute",
+                                                              "Name",
+                                                              xmlName         );
+
+  // Make sure that is contains something of the form
+  //
+  // ===================== *snip* =====================
+  //   <DataItem Dimensions="1 51 51" Format="HDF" NumberType="Float" Precision="4">
+  //   solution.h5:/abs/Values
+  //   </DataItem>
+  // ===================== *snap* =====================
+  //
+  const Teuchos::XMLObject* dataItem = xmlFind ( absPsiObject,
+                                                 "DataItem" );
+  if ( !dataItem ) {
+      std::cerr << "Found no \"DataItem\". Abort." << std::endl;
+      exit(EXIT_FAILURE);
+  }
+
+  // get the file name
+// TODO: numContentLines currently broken; don't use it until further notice.
+//   int cLines=dataItem->numContentLines();
+//   if ( cLines<1 ) {
+//       std::cerr << "Found no file name in \"DataItem\". Abort." << std::endl;
+//       exit(EXIT_FAILURE);
+//   }
+
+  // Read the first line which is supposed to contain the file and more
+  // (see above).
+  string dataLine;
+
+  // getContentLine actually get content columns, so build up dataLine like
+  // that
+  for (int k=0; k<dataItem->numContentLines(); k++ )
+      dataLine += dataItem->getContentLine(k);
+
+  // trim whitespace
+  std::string whiteSpaceCharacters = " \n\t";
+  dataLine.erase( dataLine.find_last_not_of(whiteSpaceCharacters) + 1);  // from the right
+  dataLine.erase( 0, dataLine.find_first_not_of(whiteSpaceCharacters) ); // from the left
+
+  // extract file name
+  int    colonPos  = dataLine.find(":");
+  string dataFile  = dataLine.substr(0,colonPos);
+  string dataGroup = dataLine.substr(colonPos+1,dataLine.size()-colonPos);
+
+  EpetraExt::HDF5 hdf5Reader(comm);
+  hdf5Reader.Open( fileDirectory+"/"+dataFile ); // directory from fileName
+  if ( !hdf5Reader.IsContained(hdf5GroupName) ) {
+      std::cerr << "Could not find tag \"" << hdf5GroupName << "\" in file "
+                << fileDirectory+"/"+dataFile << ". Abort." << std::endl;
+      exit(EXIT_FAILURE);
+  }
+
+  // get data sizes and compare with the input MultiVector
+  int globalLength, numVectors;
+  hdf5Reader.ReadMultiVectorProperties( hdf5GroupName,
+                                        globalLength,
+                                        numVectors     );
+
+  if ( globalLength != (*readVec)->GlobalLength() ) {
+      std::cerr << "Length of the input MultiVector (" << (*readVec)->GlobalLength()
+                << ") does not coincide with the global length of the data in "
+                << "file " << dataFile << ". Abort." << std::endl;
+      exit(EXIT_FAILURE);
+  }
+
+  if ( numVectors != (*readVec)->NumVectors() ) {
+      std::cerr << "Number of the input MultiVectors (" << (*readVec)->NumVectors()
+                << ") does not coincide with the global number of vectors in "
+                << "file " << dataFile << ". Abort." << std::endl;
+      exit(EXIT_FAILURE);
+  }
+
+  // finally, read the vector
+  hdf5Reader.Read( hdf5GroupName, *readVec );
+
+  hdf5Reader.Close();
 }
 // =============================================================================
 
@@ -274,6 +413,40 @@ const Teuchos::XMLObject* IoXdmf::xmlFind ( const Teuchos::XMLObject *xmlObj,
   else
       for (int k=0; k<xmlObj->numChildren(); k++) {
           xmlOut = xmlFind ( &(xmlObj->getChild(k)), tag ); // recursive call
+          if (xmlOut) break; // not the null pointer => return
+      }
+
+  return xmlOut;
+}
+// =============================================================================
+
+
+
+
+// =============================================================================
+const Teuchos::XMLObject* IoXdmf::xmlAttributeFind ( const Teuchos::XMLObject *xmlObj,
+                                                     const std::string        tag,
+                                                     const std::string        attribute,
+                                                     const std::string        value      )
+{
+  const Teuchos::XMLObject* xmlOut=NULL;
+
+// std::cout << "Looking for: " << tag << " " << attribute << " " <<  value << std::endl;
+// std::cout << "Found:       " << xmlObj->getTag() << " " << xmlObj->hasAttribute(attribute) << std::endl;
+// if ( xmlObj->hasAttribute(attribute) )
+//      std::cout << "1" << std::endl;
+//      std::cout << xmlObj->getAttribute(attribute) << std::endl;
+
+  if (    !xmlObj->getTag().compare(tag)
+       && xmlObj->hasAttribute(attribute)
+       && xmlObj->getAttribute(attribute).compare(value) )
+      xmlOut = xmlObj;
+  else
+      for (int k=0; k<xmlObj->numChildren(); k++) {
+          xmlOut = xmlAttributeFind ( &(xmlObj->getChild(k)), // recursive call
+                                      tag,
+                                      attribute,
+                                      value                    );
           if (xmlOut) break; // not the null pointer => return
       }
 
