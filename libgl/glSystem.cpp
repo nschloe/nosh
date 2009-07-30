@@ -1,5 +1,4 @@
 #include "glSystem.h"
-#include "stateFileWriter.h"
 #include "ioVtk.h"
 #include "ioVti.h"
 #include "ioXdmf.h"

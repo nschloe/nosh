@@ -11,7 +11,6 @@
 
 // User's application specific files 
 #include "glSystem.h"
-#include "stateFileReader.h"
 
 #include <string>
 
