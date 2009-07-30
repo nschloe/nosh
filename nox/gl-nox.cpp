@@ -16,7 +16,6 @@
 
 #include <string>
 
-using namespace std;
 
 int main(int argc, char *argv[])
 {
@@ -35,7 +34,6 @@ int main(int argc, char *argv[])
 
   // Get the process ID and the total number of processors
   int MyPID = Comm.MyPID();
-
 
   // ===========================================================================
   // handle command line arguments
@@ -80,9 +78,8 @@ int main(int argc, char *argv[])
   std::vector<double_complex> psiLexicographic;
   if (withInitialGuess) {
       IoXdmf xdmfReader;
-      std::string file   = "data/solution.xmf";
       std::string format = "XDMF";
-      xdmfReader.read( file, &psiLexicographic, &problemParameters );
+      xdmfReader.read( filename, &psiLexicographic, &problemParameters );
   } else {
       // set default discretization parameters
       problemParameters.set("Nx",50);
@@ -99,7 +96,7 @@ int main(int argc, char *argv[])
 
   // ---------------------------------------------------------------------------
   Teuchos::RCP<GlSystem> glsystem;
-  if ( withInitialGuess ) {
+  if (withInitialGuess) {
       // If there was is an initial guess, make sure to get the ordering correct.
       int              NumUnknowns = glProblem. getStaggeredGrid()
                                               ->getNumComplexUnknowns();
@@ -121,11 +118,9 @@ int main(int argc, char *argv[])
   // Get initial solution
   Teuchos::RCP<Epetra_Vector> soln = glsystem->getSolution();
   Teuchos::RCP<NOX::Epetra::Vector> noxSoln =
-    Teuchos::rcp(new NOX::Epetra::Vector(soln,
-                                         NOX::Epetra::Vector::CreateView));
+         Teuchos::rcp(new NOX::Epetra::Vector(soln,
+                                              NOX::Epetra::Vector::CreateView));
 
-  // Set the initial guess 
-//  soln->PutScalar(0.5);
 
   // Begin Nonlinear Solver ************************************
   // Create the top level parameter list
@@ -252,7 +247,7 @@ int main(int argc, char *argv[])
     Teuchos::rcp(new NOX::StatusTest::FiniteValue);
   // this test is useful if we start in a solution
   Teuchos::RCP<NOX::StatusTest::NormF> absresexact =
-    Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-20));
+    Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-14));
   Teuchos::RCP<NOX::StatusTest::Combo> combo = 
     Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
 
