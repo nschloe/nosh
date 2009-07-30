@@ -102,7 +102,7 @@ class GlSystem: public NOX ::Epetra::Interface::Required,
 
       GinzburgLandau::GinzburgLandau Gl;
       Epetra_Comm                    *Comm;
-      Epetra_Map                     *StandardMap, 
+      Epetra_Map                     *StandardMap,
                                      *EverywhereMap;
       Epetra_Vector                  *rhs;
       Epetra_CrsGraph                *Graph;

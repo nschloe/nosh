@@ -1,32 +1,19 @@
-// NOX Objects
-#include "NOX.H"
-#include "NOX_Epetra.H"
+#include <NOX.H>
+#include <NOX_Epetra.H>
 
-// Trilinos Objects
 #ifdef HAVE_MPI
-#include "Epetra_MpiComm.h"
+#include <Epetra_MpiComm.h>
 #else
-#include "Epetra_SerialComm.h"
+#include <Epetra_SerialComm.h>
 #endif
-// #include "Epetra_Map.h"
-// #include "Epetra_Vector.h"
-// #include "Epetra_RowMatrix.h"
-// #include "Epetra_CrsMatrix.h"
-// #include "Epetra_Map.h"
-// #include "Epetra_LinearProblem.h"
-// #include "AztecOO.h"
 
-// #include "Amesos.h"
-// #include "NOX_Epetra_LinearSystem_Amesos.H"
+#include <Teuchos_ParameterList.hpp>
 
 // User's application specific files 
 #include "glSystem.h"
+#include "stateFileReader.h"
 
-// #include "libglInterface.H"
-
-#include "Teuchos_ParameterList.hpp"
-
-
+#include <string>
 
 using namespace std;
 
@@ -38,16 +25,14 @@ int main(int argc, char *argv[])
   MPI_Init(&argc,&argv);
 #endif
 
-
   // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
+cout << "Aa"<< endl;
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
+cout << "Aa"<< endl;
 #else
   Epetra_SerialComm Comm;
 #endif
-
-// EpetraExt::HDF5 test(Comm);
-
 
   // Get the process ID and the total number of processors
   int MyPID = Comm.MyPID();
@@ -58,11 +43,24 @@ int main(int argc, char *argv[])
     if (argv[1][0]=='-' && argv[1][1]=='v')
       verbose = true;
 
+  // ---------------------------------------------------------------------------
   // set the discretization parameters
+  // (possibly overwritten when reading a file
   Teuchos::ParameterList problemParameters;
   problemParameters.set("Nx",50);
   problemParameters.set("edgelength",10.0);
   problemParameters.set("H0",0.4);
+  // ---------------------------------------------------------------------------
+
+
+//   // ---------------------------------------------------------------------------
+//   std::vector<double_complex> psi;
+//   StateFileReader fileReader;
+//   std::string file = "data/solution.vtk";
+//   std::string format = "legacyVTK";
+//   fileReader.readFile( file, format, &psi, &problemParameters );
+//   // ---------------------------------------------------------------------------
+
 
   // create the gl problem
   GinzburgLandau glProblem = GinzburgLandau( problemParameters.get<int>("Nx"),
@@ -262,8 +260,8 @@ int main(int argc, char *argv[])
 
   // ---------------------------------------------------------------------------
   // print the solution to a file
-  std::string  fileFormat = "legacyVTK"; // VTI, XDMF
-  std::string  fileName   = "data/solution.vtk"; // data/solution.vtk, data/solution.xmf
+  std::string  fileFormat = "XDMF";
+  std::string  fileName   = "data/solution.xmf";
   glsystem->solutionToFile( finalSolution,
                             problemParameters,
                             fileFormat,

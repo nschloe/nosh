@@ -3,7 +3,7 @@ cmake_minimum_required( VERSION 2.6 )
 PROJECT( ginzburg-landau )
 
 # set compilers
-#SET(CMAKE_CXX_COMPILER g++)
+#SET(CMAKE_CXX_COMPILER /opt/openmpi-1.3.3/bin/mpic++)
 
 #SET(CMAKE_BUILD_TYPE Profile)
 

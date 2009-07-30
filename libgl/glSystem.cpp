@@ -1,5 +1,8 @@
 #include "glSystem.h"
 #include "stateFileWriter.h"
+#include "ioVtk.h"
+#include "ioVti.h"
+#include "ioXdmf.h"
 
 #include <iostream>
 #include <complex>
@@ -587,12 +590,28 @@ void GlSystem::solutionToFile( const Epetra_Vector          &x,
   vector<double_complex> psi(NumComplexUnknowns);
   real2complex( x, psi );
 
-  StateFileWriter psiWriter( *(Gl.getStaggeredGrid()) );
-
-  psiWriter.writeFile( fileName,
-                       fileFormat,
+  if ( !fileFormat.compare("legacyVTK") ) {
+      IoVtk vtkWriter( *(Gl.getStaggeredGrid()) );
+      vtkWriter.write( fileName,
                        psi,
                        problemParams );
+  } else if ( !fileFormat.compare("VTI") ) {
+      IoVti vtiWriter( *(Gl.getStaggeredGrid()) );
+      vtiWriter.write( fileName,
+                       psi,
+                       problemParams );
+  } else if ( !fileFormat.compare("XDMF") ) {
+std::cout << "XDMFFFFFFFFFFFFFFFFFFFF" << std::endl;
+      IoXdmf xdmfWriter( *(Gl.getStaggeredGrid()) );
+      xdmfWriter.write( fileName,
+                        psi,
+                        problemParams );
+  } else {
+      std::cerr << "GlSystem::solutionToFile" << std::endl
+                << "    Illegal file format \"" << fileFormat << "\"." << std::endl
+                << "    Choose one of \"legacyVTK\", \"VTI\", \"XDMF\"." << std::endl;
+      exit(EXIT_FAILURE);
+  }
 
 }
 // =============================================================================

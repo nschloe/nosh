@@ -1,11 +1,14 @@
-#include "stateFileReader.h"
+#include "ioVti.h"
 
 #include <Teuchos_FileInputSource.hpp>
-#include <Teuchos_XMLParameterListReader.hpp>
+#include <EpetraExt_Utils.h> // for toString
+#include <Teuchos_XMLParameterListWriter.hpp>
+
 
 // =============================================================================
 // Constructor
-StateFileReader::StateFileReader()
+IoVti::IoVti( StaggeredGrid &sGrid ):
+  SGrid(sGrid) // make this &sGrid
 {
 }
 // =============================================================================
@@ -14,7 +17,7 @@ StateFileReader::StateFileReader()
 
 // =============================================================================
 // Destructor
-StateFileReader::~StateFileReader()
+IoVti::~IoVti()
 {
 }
 // =============================================================================
@@ -22,46 +25,9 @@ StateFileReader::~StateFileReader()
 
 
 // =============================================================================
-void StateFileReader::readFile( std::string                 &fileName,
-                                std::string                 &fileFormat,
-                                std::vector<double_complex> *psi,
-                                Teuchos::ParameterList      *problemParams )
-{
-  if ( !fileFormat.compare("legacyVTK") )
-      readLegacyVtkFile( fileName, psi, problemParams );
-  else if ( !fileFormat.compare("VTI")
- )
-      readVtiFile( fileName, psi, problemParams );
-  else if ( !fileFormat.compare("XDMF") )
-      readXdmfFile( fileName, psi, problemParams );
-  else {
-      std::cerr << "StateFileReader::readFile :" << std::endl
-                << "Illegal file format \"" << fileFormat <<"\"." << std::endl
-                << "Use one of \"legacyVTK\", \"VTI\", and \"XDMF\"." << std::endl;
-      exit(EXIT_FAILURE);
-  }
-}
-// =============================================================================
-
-
-
-// =============================================================================
-void StateFileReader::readLegacyVtkFile( std::string                 &filename,
-                                         std::vector<double_complex> *psi,
-                                         Teuchos::ParameterList      *problemParams )
-{
-  std::cerr << "StateFileReader::readLegacyVtkFile not yet implemented." << std::endl;
-  exit(EXIT_FAILURE);
-}
-// =============================================================================
-
-
-
-
-// =============================================================================
-void StateFileReader::readVtiFile( std::string                 &filename,
-                                   std::vector<double_complex> *psi,
-                                   Teuchos::ParameterList      *problemParams )
+void IoVti::read( const std::string           &filename,
+                  std::vector<double_complex> *psi,
+                  Teuchos::ParameterList      *problemParams )
 {
 
   std::cerr << "StateFileReader::readVtiFile not yet implemented." << std::endl;
@@ -132,17 +98,92 @@ void StateFileReader::readVtiFile( std::string                 &filename,
 // =============================================================================
 
 
-
-
 // =============================================================================
-void StateFileReader::readXdmfFile( std::string                 &filename,
-                                    std::vector<double_complex> *psi,
-                                    Teuchos::ParameterList      *problemParams )
+void IoVti::write( const std::string                 &filename,
+                   const std::vector<double_complex> &psi,
+                   const Teuchos::ParameterList      &problemParams )
 {
+  int    Nx = SGrid.getNx(),
+         k,
+         index[2];
+  double h  = SGrid.getH();
 
-  std::cerr << "StateFileReader::readXdmfFile not yet implemented." << std::endl;
-  exit(EXIT_FAILURE);
+  std::string str;
 
+  Teuchos::XMLObject xmlPointData("PointData");
+  xmlPointData.addAttribute( "Scalars", "abs(psi)" );
+
+  // first build the XML structure
+  Teuchos::XMLObject xmlDataArrayAbs("DataArray");
+  xmlDataArrayAbs.addAttribute( "type", "Float32" );
+  xmlDataArrayAbs.addAttribute( "Name", "abs(psi)" );
+  xmlDataArrayAbs.addAttribute( "format", "ascii" );
+  for (int i=0; i<Nx+1; i++) {
+      index[0] = i;
+      for (int j=0; j<Nx+1; j++) {
+          index[1] = j;
+          k = SGrid.i2k( index );
+          xmlDataArrayAbs.addContent( EpetraExt::toString(abs(psi[k])) + " ");
+      }
+  }
+  xmlPointData.addChild(xmlDataArrayAbs);
+
+  Teuchos::XMLObject xmlDataArrayArg("DataArray");
+  xmlDataArrayArg.addAttribute( "type", "Float32" );
+  xmlDataArrayArg.addAttribute( "Name", "arg(psi)" );
+  xmlDataArrayArg.addAttribute( "format", "ascii" );
+  for (int i=0; i<Nx+1; i++) {
+      index[0] = i;
+      for (int j=0; j<Nx+1; j++) {
+          index[1] = j;
+          k = SGrid.i2k( index );
+          xmlDataArrayArg.addContent( EpetraExt::toString(arg(psi[k])) + " " );
+      }
+  }
+  xmlPointData.addChild(xmlDataArrayArg);
+
+  Teuchos::XMLObject xmlPiece("Piece");
+  str = "0 " + EpetraExt::toString(Nx) + " 0 " + EpetraExt::toString(Nx) + " 0 0";
+  xmlPiece.addAttribute( "Extent", str );
+  xmlPiece.addChild(xmlPointData);
+
+  Teuchos::XMLObject xmlImageData("ImageData");
+  xmlImageData.addAttribute( "WholeExtent", str );
+  xmlImageData.addAttribute( "Origin", "0 0 0" );
+  str = EpetraExt::toString(h) + " " + EpetraExt::toString(h) + " 0";
+  xmlImageData.addAttribute( "Spacing", str );
+  xmlImageData.addChild(xmlPiece);
+
+
+  // append the problem parameters in XML form to the file
+  Teuchos::XMLObject xmlParameterList("");
+  xmlParameterList = Teuchos::XMLParameterListWriter::XMLParameterListWriter()
+                                                        .toXML( problemParams );
+
+  // define top level object
+  Teuchos::XMLObject vtuxml("VTKFile");
+
+  // append the parameter list to the embracing VTK XML object
+  vtuxml.addChild(xmlParameterList);
+
+  vtuxml.addAttribute( "type", "ImageData" );
+  vtuxml.addAttribute( "version", "0.1" );
+  vtuxml.addAttribute( "byte_order", "LittleEndian" );
+  vtuxml.addChild(xmlImageData);
+
+  // ---------------------------------------------------------------------------
+  // write the contents to the file
+  // open the file
+  std::ofstream  vtkfile;
+  vtkfile.open( filename.c_str() );
+
+  // Do not plot the XML header as Teuchos' XML reader can't deal with it
+  // vtkfile << "<?xml version=\"1.0\"?>" << std::endl;
+
+  vtkfile << vtuxml;
+  // close the file
+  vtkfile.close();
+  // ---------------------------------------------------------------------------
 }
 // =============================================================================
 
@@ -152,8 +193,8 @@ void StateFileReader::readXdmfFile( std::string                 &filename,
 // =============================================================================
 // Inside an XML object, this function looks for a specific tag and returns
 // a pointer to it.
-const Teuchos::XMLObject* StateFileReader::xmlFind ( const Teuchos::XMLObject *xmlObj,
-                                                     const std::string        tag )
+const Teuchos::XMLObject* IoVti::xmlFind ( const Teuchos::XMLObject *xmlObj,
+                                           const std::string        tag )
 {
   const Teuchos::XMLObject* xmlOut=NULL;
 
@@ -172,10 +213,10 @@ const Teuchos::XMLObject* StateFileReader::xmlFind ( const Teuchos::XMLObject *x
 
 
 // =============================================================================
-const Teuchos::XMLObject* StateFileReader::xmlAttributeFind ( const Teuchos::XMLObject *xmlObj,
-                                                              const std::string        tag,
-                                                              const std::string        attribute,
-                                                              const std::string        value      )
+const Teuchos::XMLObject* IoVti::xmlAttributeFind ( const Teuchos::XMLObject *xmlObj,
+                                                    const std::string        tag,
+                                                    const std::string        attribute,
+                                                    const std::string        value      )
 {
   const Teuchos::XMLObject* xmlOut=NULL;
 

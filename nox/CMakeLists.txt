@@ -49,6 +49,8 @@ FIND_LIBRARY( ML ml
 FIND_LIBRARY( LOCA loca
               HINTS /usr/local/trilinos/current/lib
                     /opt/trilinos-090603a/LINUX_MPI_64BIT/lib )
+FIND_LIBRARY( PARACONT paracont
+              HINTS /home/nschloe/svn/paracont/trunk/lib )
 SET( TRILINOS_LIBS  
      ${NOX}
      ${NOXEPETRA}
@@ -59,7 +61,8 @@ SET( TRILINOS_LIBS
      ${ML}
      ${EPETRAEXT} 
      ${EPETRA}
-     ${TEUCHOS} )
+     ${TEUCHOS} 
+     ${PARACONT} )
 # ==============================================================================
 
 
@@ -83,11 +86,12 @@ FIND_LIBRARY( LAPACK lapack-gfortran
 FIND_LIBRARY( GFORTRAN gfortran
               HINTS /usr/lib/gcc/x86_64-pc-linux-gnu/4.3.3
                     /opt/gcc-4.3.3/lib64 )
-FIND_LIBRARY( MPI mpich
+FIND_LIBRARY( MPICH mpich
               HINTS /opt/mpich2-1.1/lib/ )
 FIND_LIBRARY( PTHREAD pthread )
 FIND_LIBRARY( HDF5 hdf5 
-              HINTS /opt/hdf5-1.8.3/lib/ )
+              HINTS /opt/hdf5-1.6.9/lib/ )
+FIND_LIBRARY( Z z )
 # ==============================================================================
 
 
@@ -100,11 +104,12 @@ TARGET_LINK_LIBRARIES ( gl-nox.out
                         ${SUPERLUDIST}
                         ${PARMETIS}
                         ${METIS}
-                        ${MPI}
-			${HDF5}
+#                        ${MPICH}
+                        ${HDF5}
+                        ${Z}
                         ${LAPACK}
                         ${BLAS}
-                        ${PTHREAD}
+#                        ${PTHREAD}
                         ${GFORTRAN}
                       )
 # ==============================================================================
