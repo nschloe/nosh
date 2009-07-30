@@ -26,9 +26,7 @@ int main(int argc, char *argv[])
 
   // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
-cout << "Aa"<< endl;
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
-cout << "Aa"<< endl;
 #else
   Epetra_SerialComm Comm;
 #endif

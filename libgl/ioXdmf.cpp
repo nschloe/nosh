@@ -51,14 +51,12 @@ void IoXdmf::write( const std::string                 &fileName,
                     const Teuchos::ParameterList      &problemParams )
 {
 
-// TODO: use toString from EpetraExt instead of those nasty ofstreams!
-
   int    Nx = SGrid.getNx(),
          k,
          index[2];
   double h  = SGrid.getH();
-  std::ostringstream os;
-  std::ofstream      xdmfFile;
+  std::string   str;
+  std::ofstream xdmfFile;
 
   // create the HDF5 file name, take off the suffix and replace it by .h5
   int dotPos = fileName.rfind(".");
@@ -69,16 +67,49 @@ void IoXdmf::write( const std::string                 &fileName,
   std::string hdf5BaseName = hdf5FileName;
   hdf5BaseName.erase(0,dotPos+1);
 
-  // ---------------------------------------------------------------------------
-  // write the XDMF file
-  // ---------------------------------------------------------------------------
-  // set grid topology
+  // open the file
+  xdmfFile.open( fileName.c_str() );
+
+  // write the XDMF header
+  xdmfFile << "<?xml version=\"1.0\" ?>\n"
+           << "<!DOCTYPE Xdmf SYSTEM \"Xdmf.dtd\" [\n"
+           << "<!ENTITY HeavyData \"" << hdf5BaseName << "\">\n"
+           << "]>\n"
+           << std::endl;
+
+  // enclosing structure
+  Teuchos::XMLObject xdmfContainer("Xdmf");
+
+  // Append the problem parameters in XML form.
+  // This needs to go *inside* the enclosing Xdmf tag, otherwise the file format
+  // is not universally recognized.
+  Teuchos::XMLObject xmlParameterList("");
+  xmlParameterList = Teuchos::XMLParameterListWriter::XMLParameterListWriter()
+                                                        .toXML( problemParams );
+  xdmfContainer.addChild(xmlParameterList);
+
+  // add the domain item
+  Teuchos::XMLObject xmlDomain("Domain");
+  xdmfContainer.addChild( xmlDomain );
+
+  // add the grid item
+  Teuchos::XMLObject xmlGrid("Grid");
+  xmlGrid.addAttribute( "Name", "MyGrid" );
+  xmlDomain.addChild( xmlGrid );
+
+  // add topology
   Teuchos::XMLObject xmlTopology("Topology");
   xmlTopology.addAttribute( "TopologyType", "3DCORECTMESH" );
-  os << "1 " << Nx+1 << " " << Nx+1;
-  xmlTopology.addAttribute( "Dimensions", os.str() );
-  os.str("");
+  str = "1 " + EpetraExt::toString(Nx+1) + " " + EpetraExt::toString(Nx+1);
+  xmlTopology.addAttribute( "Dimensions", str );
+  xmlGrid.addChild( xmlTopology );
 
+  // merge the latter two into geometry
+  Teuchos::XMLObject xmlGeometry("Geometry");
+  xmlGeometry.addAttribute( "Type", "ORIGIN_DXDYDZ" );
+  xmlGrid.addChild( xmlGeometry );
+
+  // add actual geometry information to the geometry item
   // define origin
   Teuchos::XMLObject xmlOrigin("DataItem");
   xmlOrigin.addAttribute( "Name", "Origin" );
@@ -86,6 +117,7 @@ void IoXdmf::write( const std::string                 &fileName,
   xmlOrigin.addAttribute( "Dimensions", "3" );
   xmlOrigin.addAttribute( "Format", "XML" );
   xmlOrigin.addContent( "0 0 0" );
+  xmlGeometry.addChild( xmlOrigin );
 
   // define spacing
   Teuchos::XMLObject xmlSpacing("DataItem");
@@ -93,76 +125,47 @@ void IoXdmf::write( const std::string                 &fileName,
   xmlSpacing.addAttribute( "NumberType", "Float" );
   xmlSpacing.addAttribute( "Dimensions", "3" );
   xmlSpacing.addAttribute( "Format", "XML" );
-  os << "0 " << h << " " << h;
-  xmlSpacing.addContent( os.str() );
-  os.str("");
-
-  // merge the latter two into geometry
-  Teuchos::XMLObject xmlGeometry("Geometry");
-  xmlGeometry.addAttribute( "Type", "ORIGIN_DXDYDZ" );
-  xmlGeometry.addChild( xmlOrigin );
+  str = "0 " + EpetraExt::toString(h) + " " + EpetraExt::toString(h);
+  xmlSpacing.addContent( str );
   xmlGeometry.addChild( xmlSpacing );
 
   // tell me where the actual ABS(PSI) data sits
-  Teuchos::XMLObject xmlAbsData("DataItem");
-  xmlAbsData.addAttribute( "NumberType", "Float" );
-  xmlAbsData.addAttribute( "Precision", "4" );
-  os << "1 " << Nx+1 << " " << Nx+1;
-  xmlAbsData.addAttribute( "Dimensions", os.str() );
-  os.str("");
-  xmlAbsData.addAttribute( "Format", "HDF" );
-  xmlAbsData.addContent( hdf5BaseName+":/abs/Values" );
-
   Teuchos::XMLObject xmlAbs("Attribute");
   xmlAbs.addAttribute( "Active", "1" );
   xmlAbs.addAttribute( "AttributeType", "Scalar" );
   xmlAbs.addAttribute( "Center", "Node" );
   xmlAbs.addAttribute( "Name", "abs(psi)" );
+  xmlGrid.addChild( xmlAbs );
+
+  Teuchos::XMLObject xmlAbsData("DataItem");
+  xmlAbsData.addAttribute( "NumberType", "Float" );
+  xmlAbsData.addAttribute( "Precision", "4" );
+  str = "1 " + EpetraExt::toString(Nx+1) + " " + EpetraExt::toString(Nx+1);
+  xmlAbsData.addAttribute( "Dimensions", str );
+  xmlAbsData.addAttribute( "Format", "HDF" );
+  xmlAbsData.addContent( hdf5BaseName+":/abs/Values" );
   xmlAbs.addChild( xmlAbsData );
 
 
   // tell me where the actual ARG(PSI) data sits
-  Teuchos::XMLObject xmlArgData("DataItem");
-  xmlArgData.addAttribute( "NumberType", "Float" );
-  xmlArgData.addAttribute( "Precision", "4" );
-  os << "1 " << Nx+1 << " " << Nx+1;
-  xmlArgData.addAttribute( "Dimensions", os.str() );
-  os.str("");
-  xmlArgData.addAttribute( "Format", "HDF" );
-  xmlArgData.addContent( hdf5BaseName+":/arg/Values" );
-
   Teuchos::XMLObject xmlArg("Attribute");
   xmlArg.addAttribute( "Center", "Node" );
   xmlArg.addAttribute( "AttributeType", "Scalar" );
   xmlArg.addAttribute( "Name", "arg(psi)" );
-  xmlArg.addChild( xmlArgData );
-
-  // put it all in GRID
-  Teuchos::XMLObject xmlGrid("Grid");
-  xmlGrid.addAttribute( "Name", "MyGrid" );
-  xmlGrid.addChild( xmlTopology );
-  xmlGrid.addChild( xmlGeometry );
-  xmlGrid.addChild( xmlAbs );
   xmlGrid.addChild( xmlArg );
 
-  // put grid in domain
-  Teuchos::XMLObject xmlDomain("Domain");
-  xmlDomain.addChild( xmlGrid );
+  Teuchos::XMLObject xmlArgData("DataItem");
+  xmlArgData.addAttribute( "NumberType", "Float" );
+  xmlArgData.addAttribute( "Precision", "4" );
+  str = "1 " + EpetraExt::toString(Nx+1) + " " + EpetraExt::toString(Nx+1);
+  xmlArgData.addAttribute( "Dimensions", str );
+  xmlArgData.addAttribute( "Format", "HDF" );
+  xmlArgData.addContent( hdf5BaseName+":/arg/Values" );
+  xmlArg.addChild( xmlArgData );
 
-  // out domain in Xdmf
-  Teuchos::XMLObject xdmfContainer("Xdmf");
-  xdmfContainer.addChild( xmlDomain );
-
-  // open the file
-  xdmfFile.open( fileName.c_str() );
-  // write the xml tree to a file
-  xdmfFile << "<?xml version=\"1.0\" ?>" << std::endl
-           << "<!DOCTYPE Xdmf SYSTEM \"Xdmf.dtd\" [" << std::endl
-           << "<!ENTITY HeavyData \"myfile.h5\">" << std::endl
-           << "]>" << std::endl
-           << std::endl;
-
+  // write it all to the file
   xdmfFile << xdmfContainer;
+
   // close the file
   xdmfFile.close();
   // ---------------------------------------------------------------------------
