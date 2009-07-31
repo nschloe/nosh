@@ -12,6 +12,5 @@ SET(CMAKE_BUILD_TYPE Debug)
 SET(CMAKE_CXX_FLAGS_DEBUG "-pg -ggdb -Wall -Wextra" )
 
 add_subdirectory ( libgl )
-add_subdirectory ( main )
 add_subdirectory ( nox )
 add_subdirectory ( loca )
