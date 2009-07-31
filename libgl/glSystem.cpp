@@ -1,7 +1,5 @@
 #include "glSystem.h"
-#include "ioVtk.h"
-#include "ioVti.h"
-#include "ioXdmf.h"
+#include "ioFactory.h"
 
 #include <iostream>
 #include <complex>
@@ -14,7 +12,6 @@
 
 // abbreviate the complex type name
 typedef std::complex<double> double_complex;
-
 
 // =============================================================================
 // Default constructor
@@ -600,30 +597,10 @@ void GlSystem::solutionToFile( const Epetra_Vector          &x,
   vector<double_complex> psi(NumComplexUnknowns);
   real2complex( x, psi );
 
-  if ( !fileFormat.compare("legacyVTK") ) {
-      IoVtk vtkWriter( *(Gl.getStaggeredGrid()) );
-      vtkWriter.write( fileName,
-                       psi,
-                       problemParams );
-  } else if ( !fileFormat.compare("VTI") ) {
-      IoVti vtiWriter( *(Gl.getStaggeredGrid()) );
-      vtiWriter.write( fileName,
-                       psi,
-                       problemParams );
-  } else if ( !fileFormat.compare("XDMF") ) {
-      IoXdmf xdmfWriter;
-      xdmfWriter.write( fileName,
-                        psi,
-                        problemParams,
-                        *(Gl.getStaggeredGrid()) );
-  } else {
-      std::cerr << "GlSystem::solutionToFile" << std::endl
-                << "    Illegal file format \"" << fileFormat << "\"." << std::endl
-                << "    Choose one of \"legacyVTK\", \"VTI\", \"XDMF\"." << std::endl;
-      exit(EXIT_FAILURE);
-  }
-
-  // Reorder it to match the order as specified in Gl.sGrid().
+  IoVirtual* fileIo = IoFactory::createFileIo( fileName );
+  fileIo->write( psi,
+                 problemParams,
+                 *(Gl.getStaggeredGrid()) );
 
 }
 // =============================================================================

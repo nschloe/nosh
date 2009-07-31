@@ -1,34 +1,20 @@
-#include "staggeredGrid.h"
+#include "ioVirtual.h"
 
-#include <string>
-#include <vector>
-#include <complex>
-
-#include <Teuchos_ParameterList.hpp>
-
-typedef std::complex<double> double_complex;
-
-class IoVtk
+class IoVtk: public IoVirtual
 {
   public:
 
      //! Default constructor.
-     IoVtk( StaggeredGrid &sGrid );
+     IoVtk( std::string fname );
 
      //! Destructor
-     ~IoVtk();
+     virtual ~IoVtk();
 
-     void read( const std::string           &fileName,
-                std::vector<double_complex> *psi,
-                Teuchos::ParameterList      *problemParams );
+     virtual void read( std::vector<double_complex> *psi,
+                        Teuchos::ParameterList      *problemParams );
 
-     //
-     void write( const std::string                 &fileName,
-                 const std::vector<double_complex> &psi,
-                 const Teuchos::ParameterList      &problemParams );
-
-  private:
-
-     StaggeredGrid::StaggeredGrid SGrid;
+     virtual void write( const std::vector<double_complex> &psi,
+                         const Teuchos::ParameterList      &problemParams,
+                         StaggeredGrid                     &sGrid          );
 
 };

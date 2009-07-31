@@ -2,9 +2,11 @@ ENABLE_LANGUAGE( CXX )
 
 SET ( gl_SRCS 
       staggeredGrid.cpp
+      ioVirtual.cpp
       ioVtk.cpp
       ioVti.cpp
       ioXdmf.cpp
+      ioFactory.cpp
       ginzburgLandau.cpp
       glSystem.cpp )
 

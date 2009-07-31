@@ -21,7 +21,8 @@
 
 // =============================================================================
 // Constructor
-IoXdmf::IoXdmf()
+IoXdmf::IoXdmf( std::string fname ):
+  IoVirtual(fname)
 {
 }
 // =============================================================================
@@ -38,8 +39,7 @@ IoXdmf::~IoXdmf()
 
 
 // =============================================================================
-void IoXdmf::read( const std::string           &fileName,
-                   std::vector<double_complex> *psi,
+void IoXdmf::read( std::vector<double_complex> *psi,
                    Teuchos::ParameterList      *problemParams )
 {
 
@@ -53,7 +53,6 @@ void IoXdmf::read( const std::string           &fileName,
   // extract the directory for later
   string directory = fileName;
   directory.erase( directory.rfind("/") );
-
 
   // read the file contents to a string
   std::ifstream inFile( fileName.c_str() );
@@ -238,8 +237,7 @@ void IoXdmf::getHeavyData( const Teuchos::XMLObject &xmlFileObject,
 
 
 // =============================================================================
-void IoXdmf::write( const std::string                 &fileName,
-                    const std::vector<double_complex> &psi,
+void IoXdmf::write( const std::vector<double_complex> &psi,
                     const Teuchos::ParameterList      &problemParams,
                     StaggeredGrid::StaggeredGrid      &sGrid          )
 {
@@ -430,12 +428,6 @@ const Teuchos::XMLObject* IoXdmf::xmlAttributeFind ( const Teuchos::XMLObject *x
                                                      const std::string        value      )
 {
   const Teuchos::XMLObject* xmlOut=NULL;
-
-// std::cout << "Looking for: " << tag << " " << attribute << " " <<  value << std::endl;
-// std::cout << "Found:       " << xmlObj->getTag() << " " << xmlObj->hasAttribute(attribute) << std::endl;
-// if ( xmlObj->hasAttribute(attribute) )
-//      std::cout << "1" << std::endl;
-//      std::cout << xmlObj->getAttribute(attribute) << std::endl;
 
   if (    !xmlObj->getTag().compare(tag)
        && xmlObj->hasAttribute(attribute)

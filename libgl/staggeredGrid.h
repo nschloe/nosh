@@ -4,7 +4,6 @@
 #ifndef STAGGEREDGRID_H
 #define STAGGEREDGRID_H
 
-
 #include "boost/multi_array.hpp"
 
 class StaggeredGrid

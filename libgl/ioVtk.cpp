@@ -4,8 +4,8 @@
 
 // =============================================================================
 // Constructor
-IoVtk::IoVtk( StaggeredGrid &sGrid ):
-  SGrid(sGrid) // make this &sGrid
+IoVtk::IoVtk( std::string fname ):
+  IoVirtual(fname)
 {
 }
 // =============================================================================
@@ -21,8 +21,7 @@ IoVtk::~IoVtk()
 
 
 // =============================================================================
-void IoVtk::read( const std::string           &fileName,
-                  std::vector<double_complex> *psi,
+void IoVtk::read( std::vector<double_complex> *psi,
                   Teuchos::ParameterList      *problemParams )
 {
 
@@ -127,20 +126,19 @@ void IoVtk::read( const std::string           &fileName,
 
 
 
-
 // =============================================================================
-void IoVtk::write( const std::string                 &filename,
-                   const std::vector<double_complex> &psi,
-                   const Teuchos::ParameterList      &problemParams )
+void IoVtk::write( const std::vector<double_complex> &psi,
+                   const Teuchos::ParameterList      &problemParams,
+                   StaggeredGrid                     &sGrid          )
 {
-  int           Nx = SGrid.getNx(),
+  int           Nx = sGrid.getNx(),
                 k,
                 index[2];
-  double        h  = SGrid.getH();
+  double        h  = sGrid.getH();
   std::ofstream vtkfile;
 
   // open the file
-  vtkfile.open( filename.c_str() );
+  vtkfile.open( fileName.c_str() );
 
   // write the VTK header
   vtkfile << "# vtk DataFile Version 2.0\n";
@@ -158,7 +156,7 @@ void IoVtk::write( const std::string                 &filename,
           << "DIMENSIONS " << Nx+1 << " " << Nx+1 << " " << 1 << "\n"
           << "ORIGIN 0 0 0\n"
           << "SPACING " << h << " " << h << " " << 0.0 << "\n"
-          << "POINT_DATA " << SGrid.getNumComplexUnknowns() << "\n";
+          << "POINT_DATA " << sGrid.getNumComplexUnknowns() << "\n";
 
   // Note that, when writing the data, the values of psi are assumed to be
   // given in lexicographic ordering.
@@ -171,7 +169,7 @@ void IoVtk::write( const std::string                 &filename,
       index[0] = i;
       for (int j=0; j<Nx+1; j++) {
           index[1] = j;
-          k = SGrid.i2k( index );
+          k = sGrid.i2k( index );
           vtkfile << abs(psi[k]) << "\n";
       }
   }
@@ -186,7 +184,7 @@ void IoVtk::write( const std::string                 &filename,
       index[0] = i;
       for (int j=0; j<Nx+1; j++) {
           index[1] = j;
-          k = SGrid.i2k( index );
+          k = sGrid.i2k( index );
           vtkfile << arg(psi[k]) << "\n";
       }
   }

@@ -7,8 +7,8 @@
 
 // =============================================================================
 // Constructor
-IoVti::IoVti( StaggeredGrid &sGrid ):
-  SGrid(sGrid) // make this &sGrid
+IoVti::IoVti( std::string fname ):
+  IoVirtual(fname)
 {
 }
 // =============================================================================
@@ -25,8 +25,7 @@ IoVti::~IoVti()
 
 
 // =============================================================================
-void IoVti::read( const std::string           &filename,
-                  std::vector<double_complex> *psi,
+void IoVti::read( std::vector<double_complex> *psi,
                   Teuchos::ParameterList      *problemParams )
 {
 
@@ -38,9 +37,9 @@ void IoVti::read( const std::string           &filename,
   // at the beginning of the file
 
   std::cout << "11" << std::endl;
-    Teuchos::FileInputSource xmlFile(filename);
+    Teuchos::FileInputSource xmlFile(fileName);
 
-  std::cout << filename << std::endl;
+  std::cout << fileName << std::endl;
 
     // Extract the object from the filename.
     // -- This is actually quite costly, as it read all -- *all* -- data in as
@@ -99,14 +98,14 @@ void IoVti::read( const std::string           &filename,
 
 
 // =============================================================================
-void IoVti::write( const std::string                 &filename,
-                   const std::vector<double_complex> &psi,
-                   const Teuchos::ParameterList      &problemParams )
+void IoVti::write( const std::vector<double_complex> &psi,
+                   const Teuchos::ParameterList      &problemParams,
+                   StaggeredGrid                     &sGrid          )
 {
-  int    Nx = SGrid.getNx(),
+  int    Nx = sGrid.getNx(),
          k,
          index[2];
-  double h  = SGrid.getH();
+  double h  = sGrid.getH();
 
   std::string str;
 
@@ -122,7 +121,7 @@ void IoVti::write( const std::string                 &filename,
       index[0] = i;
       for (int j=0; j<Nx+1; j++) {
           index[1] = j;
-          k = SGrid.i2k( index );
+          k = sGrid.i2k( index );
           xmlDataArrayAbs.addContent( EpetraExt::toString(abs(psi[k])) + " ");
       }
   }
@@ -136,7 +135,7 @@ void IoVti::write( const std::string                 &filename,
       index[0] = i;
       for (int j=0; j<Nx+1; j++) {
           index[1] = j;
-          k = SGrid.i2k( index );
+          k = sGrid.i2k( index );
           xmlDataArrayArg.addContent( EpetraExt::toString(arg(psi[k])) + " " );
       }
   }
@@ -175,7 +174,7 @@ void IoVti::write( const std::string                 &filename,
   // write the contents to the file
   // open the file
   std::ofstream  vtkfile;
-  vtkfile.open( filename.c_str() );
+  vtkfile.open( fileName.c_str() );
 
   // Do not plot the XML header as Teuchos' XML reader can't deal with it
   // vtkfile << "<?xml version=\"1.0\"?>" << std::endl;

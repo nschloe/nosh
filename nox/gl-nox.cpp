@@ -12,7 +12,7 @@
 
 // User's application specific files 
 #include "glSystem.h"
-#include "ioXdmf.h"
+#include "ioFactory.h"
 
 #include <string>
 
@@ -77,9 +77,9 @@ int main(int argc, char *argv[])
   Teuchos::ParameterList      problemParameters;
   std::vector<double_complex> psiLexicographic;
   if (withInitialGuess) {
-      IoXdmf xdmfReader;
-      std::string format = "XDMF";
-      xdmfReader.read( filename, &psiLexicographic, &problemParameters );
+      IoVirtual* fileIo = IoFactory::createFileIo( filename );
+      fileIo->read( &psiLexicographic,
+                    &problemParameters );
   } else {
       // set default discretization parameters
       problemParameters.set("Nx",50);

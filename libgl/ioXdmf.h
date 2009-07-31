@@ -1,36 +1,26 @@
-#include "staggeredGrid.h"
-
-#include <string>
-#include <vector>
-#include <complex>
+#include "ioVirtual.h"
 
 #include <Teuchos_XMLObject.hpp>
-#include <Teuchos_ParameterList.hpp>
 
 #include <Epetra_Comm.h>
 #include <Epetra_MultiVector.h>
 
-typedef std::complex<double> double_complex;
-
-class IoXdmf
+class IoXdmf: public IoVirtual
 {
   public:
 
      //! Default constructor.
-     IoXdmf();
+     IoXdmf( std::string fname );
 
      //! Destructor
-     ~IoXdmf();
+     virtual ~IoXdmf();
 
-     void read( const std::string           &fileName,
-                std::vector<double_complex> *psi,
-                Teuchos::ParameterList      *problemParams );
+     virtual void read( std::vector<double_complex> *psi,
+                        Teuchos::ParameterList      *problemParams );
 
-     //
-     void write( const std::string                 &fileName,
-                 const std::vector<double_complex> &psi,
-                 const Teuchos::ParameterList      &problemParams,
-                 StaggeredGrid                     &sGrid          );
+     virtual void write( const std::vector<double_complex> &psi,
+                         const Teuchos::ParameterList      &problemParams,
+                         StaggeredGrid                     &sGrid          ) ;
 
   private:
 
