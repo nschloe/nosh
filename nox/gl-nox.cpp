@@ -16,7 +16,6 @@
 
 #include <string>
 
-
 int main(int argc, char *argv[])
 {
 
@@ -72,19 +71,23 @@ int main(int argc, char *argv[])
   // ===========================================================================
 
 
+  // The following is actually only necessary when no input file is given, but
+  // the VTK format as adapted here has the shortcoming that for the parameters,
+  // it does not contain the data type (double, int,...). Hence, the list must
+  // be present beforehand to check back for existing parameter names and their
+  // types.
+  Teuchos::ParameterList      problemParameters;
+  problemParameters.set("Nx",50);
+  problemParameters.set("edgelength",10.0);
+  problemParameters.set("H0",0.4);
 
   // ---------------------------------------------------------------------------
-  Teuchos::ParameterList      problemParameters;
   std::vector<double_complex> psiLexicographic;
   if (withInitialGuess) {
       IoVirtual* fileIo = IoFactory::createFileIo( filename );
       fileIo->read( &psiLexicographic,
                     &problemParameters );
-  } else {
-      // set default discretization parameters
-      problemParameters.set("Nx",50);
-      problemParameters.set("edgelength",10.0);
-      problemParameters.set("H0",0.4);
+      delete fileIo;
   }
   // ---------------------------------------------------------------------------
 
@@ -279,12 +282,9 @@ int main(int argc, char *argv[])
 
   // ---------------------------------------------------------------------------
   // print the solution to a file
-  std::string  fileFormat = "XDMF";
-  std::string  fileName   = "data/solution.xmf";
   glsystem->solutionToFile( finalSolution,
                             problemParameters,
-                            fileFormat,
-                            fileName  );
+                            "data/solution.vtk" );
   // ---------------------------------------------------------------------------
 
 

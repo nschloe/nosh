@@ -26,7 +26,7 @@ class GlSystem: public NOX ::Epetra::Interface::Required,
 {
   public:
 
-      //! Default constructor. 
+      //! Default constructor.
       GlSystem( GinzburgLandau::GinzburgLandau &gl,
                 Epetra_Comm                    &comm,
                 std::vector<double_complex>    *psi = NULL );
@@ -67,7 +67,6 @@ class GlSystem: public NOX ::Epetra::Interface::Required,
 
       void solutionToFile( const Epetra_Vector          &x,
                            const Teuchos::ParameterList &problemParams,
-                           const std::string            &fileFormat,
                            const std::string            &fileName       );
 
   private:

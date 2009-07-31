@@ -546,9 +546,6 @@ bool GlSystem::createJacobian( const jacCreator    jc,
   // Sync up processors for safety's sake
   Comm->Barrier();
 
-// cout << "jacobian:" << endl;
-// cout << *jacobian << endl;
-
   return true;
 }
 // =============================================================================
@@ -590,7 +587,6 @@ void GlSystem::setOutputDir( const string &directory )
 // =============================================================================
 void GlSystem::solutionToFile( const Epetra_Vector          &x,
                                const Teuchos::ParameterList &problemParams,
-                               const std::string            &fileFormat,
                                const std::string            &fileName       )
 {
   // convert the real valued vector to psi

@@ -2,6 +2,13 @@
 
 #include <IOVtkUtils.H> // ParaCont
 
+#ifdef HAVE_MPI
+#include <mpi.h>
+#include <Epetra_MpiComm.h>
+#else
+#include <Epetra_SerialComm.h>
+#endif
+
 // =============================================================================
 // Constructor
 IoVtk::IoVtk( std::string fname ):
@@ -27,6 +34,29 @@ void IoVtk::read( std::vector<double_complex> *psi,
 
   // call ParaCont for parameters
   ReadParamsFromVtkFile( fileName, *problemParams );
+
+  // ---------------------------------------------------------------------------
+  // read the vector values
+  // TODO: Get rid of this.
+#ifdef HAVE_MPI
+  Epetra_MpiComm Comm(MPI_COMM_WORLD);
+#else
+  Epetra_SerialComm Comm;
+#endif
+
+  int Nx = problemParams->get<int>("Nx");
+
+  // construct a dummy multivector
+  Epetra_Map          StandardMap( (Nx+1)*(Nx+1), 0, Comm );
+  Teuchos::RCP<Epetra_MultiVector> tmp
+                         = Teuchos::rcp(new Epetra_MultiVector(StandardMap,2) );
+
+  ReadScalarsFromVtkFile( fileName, tmp );
+
+  // build psi of the entries that we got
+  psi->resize( (Nx+1)*(Nx+1) );
+  for (int k=0; k<(Nx+1)*(Nx+1); k++)
+      (*psi)[k] = polar2complex( (*tmp)[0][k], (*tmp)[1][k] );
 
   // call ParaCont for scalars
 
@@ -121,6 +151,17 @@ void IoVtk::read( std::vector<double_complex> *psi,
   // -------------------------------------------------------------------------
   // -------------------------------------------------------------------------
 
+}
+// =============================================================================
+
+
+
+// =============================================================================
+// Construct a complex number out of its absolute value and its angle.
+inline double_complex IoVtk::polar2complex( double abs,
+                                            double arg  )
+{
+  return double_complex( abs*cos(arg), abs*sin(arg)  );
 }
 // =============================================================================
 
