@@ -122,7 +122,9 @@ int main(int argc, char *argv[])
                                               NOX::Epetra::Vector::CreateView));
 
 
-  // Begin Nonlinear Solver ************************************
+  // ===========================================================================
+  // Begin Nonlinear Solver
+  // ===========================================================================
   // Create the top level parameter list
   Teuchos::RCP<Teuchos::ParameterList> nlParamsPtr =
     Teuchos::rcp(new Teuchos::ParameterList);
@@ -258,44 +260,22 @@ int main(int argc, char *argv[])
   // ------------------------------------------------------------------------
 
   // Create the solver
-  Teuchos::RCP<NOX::Solver::Generic> solver = NOX::Solver::buildSolver(grpPtr, combo, nlParamsPtr);
-  NOX::StatusTest::StatusType        solvStatus = solver->solve();
-  // End Nonlinear Solver **************************************
+  Teuchos::RCP<NOX::Solver::Generic> solver = NOX::Solver::buildSolver( grpPtr,
+                                                                        combo,
+                                                                        nlParamsPtr );
+  // solve!
+  NOX::StatusTest::StatusType solvStatus = solver->solve();
+  // ===========================================================================
+  // End Nonlinear Solver
+  // ===========================================================================
 
   // Get the Epetra_Vector with the final solution from the solver
-  const NOX::Epetra::Group& finalGroup = 
+  const NOX::Epetra::Group& finalGroup =
     dynamic_cast<const NOX::Epetra::Group&>(solver->getSolutionGroup());
-  const Epetra_Vector& finalSolution = 
+  const Epetra_Vector& finalSolution =
     (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).
     getEpetraVector();
 
-//   // get the energy
-//   passVector sol;
-//   sol.values = finalSolution.Values();
-//   sol.length = soln->Map().NumMyElements();
-//   get_energy_libgl(&sol,&energy);
-//   cout << "energy:"<< energy << endl;
-
-  // Output the parameter list
-  if (verbose) {
-    if (printing.isPrintType(NOX::Utils::Parameters)) {
-      printing.out() << endl << "Final Parameters" << endl
-           << "****************" << endl;
-      solver->getList().print(printing.out());
-      printing.out() << endl;
-
-    }
-  }
-
-  // Print solution to a file
-  char file_name[25];
-  FILE *ifp;
-  int NumMyElements = soln->Map().NumMyElements();
-  (void) sprintf(file_name, "output.%d",MyPID);
-  ifp = fopen(file_name, "w");
-  for ( int i=0; i<NumMyElements; i++ )
-    fprintf( ifp, "%d  %E\n", soln->Map().MinMyGID()+i, finalSolution[i] );
-  fclose(ifp);
 
   // ---------------------------------------------------------------------------
   // print the solution to a file
@@ -307,9 +287,6 @@ int main(int argc, char *argv[])
                             fileName  );
   // ---------------------------------------------------------------------------
 
-
-  // gather full solution to one processor, put it to a file
-  nlParams.print(cout,1,true,true);
 
   // Tests
   int status = 0; // Converged
@@ -331,36 +308,10 @@ int main(int argc, char *argv[])
   if (const_cast<Teuchos::ParameterList&>(solver->getList()).sublist("Output").get("Nonlinear Iterations", 0) == maxNonlinearIterations)
     status = 3;
 
-  // 
-
-//   // 4. Test the pre/post iterate options
-//   {
-//   UserPrePostOperator* ppoPtr = dynamic_cast<UserPrePostOperator*>(ppo.get());
-//   if (ppoPtr->getNumRunPreIterate() != 10)
-//     status = 4;
-//   if (ppoPtr->getNumRunPostIterate() != 10)
-//     status = 4;
-//   if (ppoPtr->getNumRunPreSolve() != 1)
-//     status = 4;
-//   if (ppoPtr->getNumRunPostSolve() != 1)
-//     status = 4;
-//   }
-  // Summarize test results 
-  if (status == 0)
-    printing.out() << "Test passed!" << endl;
-  else 
-    printing.out() << "Test failed!" << endl;
-
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
 
-  printing.out() << "Status = " << status << endl;
-
-cout << "Final parameters:" << endl
-     << "===================" << endl
-     << solver->getList();
-
-  // Final return value (0 = successfull, non-zero = failure)
+  // Final return value (0 = successful, non-zero = failure)
   return status;
 }
