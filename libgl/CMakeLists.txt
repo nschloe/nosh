@@ -8,7 +8,8 @@ SET ( gl_SRCS
       ioXdmf.cpp
       ioFactory.cpp
       ginzburgLandau.cpp
-      glSystem.cpp )
+      glPrePostOperator.cpp
+      glSystem.cpp          )
 
 INCLUDE_DIRECTORIES( /usr/local/trilinos/090603a/include/
                      /opt/trilinos-090603a/LINUX_MPI_64BIT/include/

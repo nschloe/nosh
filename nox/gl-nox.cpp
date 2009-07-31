@@ -1,5 +1,6 @@
 #include <NOX.H>
 #include <NOX_Epetra.H>
+// #include <NOX_Abstract_PrePostOperator.H>
 
 #ifdef HAVE_MPI
 #include <Epetra_MpiComm.h>
@@ -13,6 +14,8 @@
 // User's application specific files 
 #include "glSystem.h"
 #include "ioFactory.h"
+
+#include "glPrePostOperator.h"
 
 #include <string>
 
@@ -200,6 +203,13 @@ int main(int argc, char *argv[])
 
   // Let's force all status tests to do a full check
   nlParams.sublist("Solver Options").set("Status Test Check Type", "Complete");
+
+  if (verbose) { // get custom pre/post actions
+      Teuchos::RCP<GlPrePostOperator> glPrePost
+                                = Teuchos::rcp(new GlPrePostOperator(printing));
+      nlParams.sublist("Solver Options")
+              .set("User Defined Pre/Post Operator", glPrePost);
+  }
 
   // Create all possible Epetra_Operators.
   Teuchos::RCP<Epetra_RowMatrix> Analytic = glsystem->getJacobian();

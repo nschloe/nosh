@@ -18,10 +18,12 @@
 
 #include <LOCA_Epetra_Interface_Required.H> // LOCA base class
 
+#include <NOX_Abstract_PrePostOperator.H>
+
 #include <LOCA_Parameter_Vector.H>
 
-class GlSystem: public NOX ::Epetra::Interface::Required,
-                public NOX ::Epetra::Interface::Jacobian
+class GlSystem: public NOX::Epetra::Interface::Required,
+                public NOX::Epetra::Interface::Jacobian
 //                 public LOCA::Epetra::Interface::Required
 {
   public:
