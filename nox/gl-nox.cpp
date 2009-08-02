@@ -1,6 +1,6 @@
 #include <NOX.H>
 #include <NOX_Epetra.H>
-// #include <NOX_Abstract_PrePostOperator.H>
+#include <NOX_Abstract_PrePostOperator.H>
 
 #ifdef HAVE_MPI
 #include <Epetra_MpiComm.h>
@@ -11,7 +11,7 @@
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 
-// User's application specific files 
+// User's application specific files
 #include "glSystem.h"
 #include "ioFactory.h"
 
@@ -205,10 +205,11 @@ int main(int argc, char *argv[])
   nlParams.sublist("Solver Options").set("Status Test Check Type", "Complete");
 
   if (verbose) { // get custom pre/post actions
-      Teuchos::RCP<GlPrePostOperator> glPrePost
-                                = Teuchos::rcp(new GlPrePostOperator(printing));
+      Teuchos::RCP<NOX::Abstract::PrePostOperator> ppo =
+                                      Teuchos::rcp(new GlPrePostOperator(glsystem,
+                                                                         problemParameters));
       nlParams.sublist("Solver Options")
-              .set("User Defined Pre/Post Operator", glPrePost);
+              .set("User Defined Pre/Post Operator", ppo);
   }
 
   // Create all possible Epetra_Operators.
@@ -255,7 +256,7 @@ int main(int argc, char *argv[])
   converged->addStatusTest(wrms);
   converged->addStatusTest(update);
 
-  int maxNonlinearIterations = 20;
+  int maxNonlinearIterations = 30;
   Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters =
     Teuchos::rcp(new NOX::StatusTest::MaxIters(maxNonlinearIterations));
   Teuchos::RCP<NOX::StatusTest::FiniteValue> fv =

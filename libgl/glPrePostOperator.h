@@ -2,39 +2,28 @@
 #include <NOX_Abstract_PrePostOperator.H>
 #include <NOX_Utils.H>
 
+#include "glSystem.h"
+
 class GlPrePostOperator : public NOX::Abstract::PrePostOperator {
 
 public:
 
   //! Ctor.
-  GlPrePostOperator(const NOX::Utils& u);
+ GlPrePostOperator( Teuchos::RCP<GlSystem>        glsystem,
+                    const Teuchos::ParameterList& problemParams);
 
   //! Destructor.
   ~GlPrePostOperator();
 
   void runPreIterate(const NOX::Solver::Generic& solver);
 
-  void runPostIterate(const NOX::Solver::Generic& solver);
-
-  void runPreSolve(const NOX::Solver::Generic& solver);
-
-  void runPostSolve(const NOX::Solver::Generic& solver);
-
-  int getNumRunPreIterate() const { return numRunPreIterate; };
-
-  int getNumRunPostIterate() const { return numRunPostIterate; };
-
-  int getNumRunPreSolve() const { return numRunPreSolve; };
-
-  int getNumRunPostSolve() const { return numRunPostSolve; };
-
 protected:
 
   NOX::Utils utils;
 
   int numRunPreIterate;
-  int numRunPostIterate;
-  int numRunPreSolve;
-  int numRunPostSolve;
+
+  Teuchos::ParameterList problemParameters_;
+  Teuchos::RCP<GlSystem> glsystem_;
 
 };

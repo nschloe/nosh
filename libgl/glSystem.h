@@ -1,6 +1,9 @@
 /*! Jacobian system for the Ginzburg--Landau problem.
  *  This routine can be used as an interface to NOX.
  ******************************************************************************/
+#ifndef GLSYSTEM_H
+#define GLSYSTEM_H
+
 #include "ginzburgLandau.h"
 
 #include <Epetra_Comm.h>
@@ -101,3 +104,4 @@ class GlSystem: public NOX::Epetra::Interface::Required,
       Teuchos::RCP<Epetra_Vector>    initialSolution;
       std::string                    outputDir;  //!< directory to where the output is written
 };
+#endif // GLSYSTEM_H

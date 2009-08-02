@@ -1,16 +1,20 @@
 #include "glPrePostOperator.h"
 
+#include "glSystem.h"
+
 #include <Teuchos_ParameterList.hpp>
 #include <NOX_Solver_Generic.H>
 
+#include <NOX_Epetra_Group.H>
 
-GlPrePostOperator::GlPrePostOperator(const NOX::Utils& u) :
+#include <EpetraExt_Utils.h> // for toString
+
+GlPrePostOperator::GlPrePostOperator( Teuchos::RCP<GlSystem>        glsystem,
+                                      const Teuchos::ParameterList& problemParams) :
   numRunPreIterate(0),
-  numRunPostIterate(0),
-  numRunPreSolve(0),
-  numRunPostSolve(0)
-{ 
-  utils = u;
+  problemParameters_( problemParams ),
+  glsystem_(glsystem)
+{
 }
 
 GlPrePostOperator::~GlPrePostOperator()
@@ -21,30 +25,18 @@ void GlPrePostOperator::
 runPreIterate(const NOX::Solver::Generic& solver)
 {
   ++numRunPreIterate;
-  utils.out(NOX::Utils::Details) << 
-    "1Dfem's runPreIterate() routine called!" << endl;
-}
 
-void GlPrePostOperator::
-runPostIterate(const NOX::Solver::Generic& solver)
-{
-  ++numRunPostIterate;
-  utils.out(NOX::Utils::Details) 
-    << "1Dfem's runPostIterate() routine called!" << endl;
-}
+  string fileName = "data/newton-step-"+EpetraExt::toString(numRunPreIterate)+".vtk";
 
-void GlPrePostOperator::
-runPreSolve(const NOX::Solver::Generic& solver)
-{
-  ++numRunPreSolve;
-  utils.out(NOX::Utils::Details) 
-    << "1Dfem's runPreSolve() routine called!" << endl;
-}
+  // Get the Epetra_Vector with the final solution from the solver
+  const NOX::Epetra::Group& solGrp =
+    dynamic_cast<const NOX::Epetra::Group&>(solver.getSolutionGroup());
+  const Epetra_Vector& currentSol =
+    (dynamic_cast<const NOX::Epetra::Vector&>(solGrp.getX())).
+    getEpetraVector();
 
-void GlPrePostOperator::
-runPostSolve(const NOX::Solver::Generic& solver)
-{
-  ++numRunPostSolve;
-  utils.out(NOX::Utils::Details) 
-    << "1Dfem's runPostSolve() routine called!" << endl;
+  glsystem_->solutionToFile( currentSol,
+                             problemParameters_,
+                             fileName );
+
 }
