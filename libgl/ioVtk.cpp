@@ -195,10 +195,10 @@ void IoVtk::write( const std::vector<double_complex> &psi,
   // write abs(psi)
   vtkfile << "SCALARS abs(psi) float\n"
           << "LOOKUP_TABLE default\n";
-  for (int i=0; i<Nx+1; i++) {
-      index[0] = i;
-      for (int j=0; j<Nx+1; j++) {
-          index[1] = j;
+  for (int j=0; j<Nx+1; j++) {
+      index[1] = j;
+      for (int i=0; i<Nx+1; i++) {
+          index[0] = i;
           k = sGrid.i2k( index );
           vtkfile << abs(psi[k]) << "\n";
       }
@@ -210,10 +210,10 @@ void IoVtk::write( const std::vector<double_complex> &psi,
   // write arg(psi)
   vtkfile << "SCALARS arg(psi) float\n"
           << "LOOKUP_TABLE default\n";
-  for (int i=0; i<Nx+1; i++) {
-      index[0] = i;
-      for (int j=0; j<Nx+1; j++) {
-          index[1] = j;
+  for (int j=0; j<Nx+1; j++) {
+      index[1] = j;
+      for (int i=0; i<Nx+1; i++) {
+          index[0] = i;
           k = sGrid.i2k( index );
           vtkfile << arg(psi[k]) << "\n";
       }
