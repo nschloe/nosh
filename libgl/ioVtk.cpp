@@ -56,7 +56,7 @@ void IoVtk::read( std::vector<double_complex> *psi,
   // build psi of the entries that we got
   psi->resize( (Nx+1)*(Nx+1) );
   for (int k=0; k<(Nx+1)*(Nx+1); k++)
-      (*psi)[k] = polar2complex( (*tmp)[0][k], (*tmp)[1][k] );
+      (*psi)[k] = std::polar( (*tmp)[0][k], (*tmp)[1][k] );
 
   // call ParaCont for scalars
 
@@ -151,17 +151,6 @@ void IoVtk::read( std::vector<double_complex> *psi,
   // -------------------------------------------------------------------------
   // -------------------------------------------------------------------------
 
-}
-// =============================================================================
-
-
-
-// =============================================================================
-// Construct a complex number out of its absolute value and its angle.
-inline double_complex IoVtk::polar2complex( double abs,
-                                            double arg  )
-{
-  return double_complex( abs*cos(arg), abs*sin(arg)  );
 }
 // =============================================================================
 

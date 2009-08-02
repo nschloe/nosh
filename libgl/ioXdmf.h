@@ -36,9 +36,6 @@ class IoXdmf: public IoVirtual
                          const std::string        &xmlName,
                          const std::string        &hdf5GroupName );
 
-      inline double_complex polar2complex( double abs,
-                                           double arg  );
-
       const Teuchos::XMLObject* xmlFind ( const Teuchos::XMLObject *xmlObj,
                                           const std::string        tag      );
 

@@ -121,20 +121,9 @@ void IoXdmf::read( std::vector<double_complex> *psi,
   int k = 0;
   for (int i=0; i<Nx+1; i++)
       for (int j=0; j<Nx+1; j++)
-          (*psi)[k++] = polar2complex( (*absPsi)[i][j], (*argPsi)[i][j] );
+          (*psi)[k++] = std::polar( (*absPsi)[i][j], (*argPsi)[i][j] );
 
   return;
-}
-// =============================================================================
-
-
-
-// =============================================================================
-// Construct a complex number out of its absolute value and its angle.
-inline double_complex IoXdmf::polar2complex( double abs,
-                                             double arg  )
-{
-  return double_complex( abs*cos(arg), abs*sin(arg)  );
 }
 // =============================================================================
 

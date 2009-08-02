@@ -17,8 +17,4 @@ class IoVtk: public IoVirtual
                          const Teuchos::ParameterList      &problemParams,
                          StaggeredGrid                     &sGrid          );
 
-  private:
-      inline double_complex polar2complex( double abs,
-                                           double arg  );
-
 };
