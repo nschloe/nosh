@@ -63,12 +63,11 @@ int main(int argc, char *argv[])
   // finally, parse the stuff!
   Teuchos::CommandLineProcessor::EParseCommandLineReturn
                                        parseReturn = My_CLP.parse( argc, argv );
-  if( parseReturn == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED ) {
+  if( parseReturn == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED )
     return 0;
-  }
-  if( parseReturn != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL   ) {
+
+  if( parseReturn != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL   )
     return 1; // Error!
-  }
 
   bool withInitialGuess = filename.length()>0;
   // ===========================================================================

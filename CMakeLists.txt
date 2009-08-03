@@ -13,4 +13,5 @@ SET(CMAKE_CXX_FLAGS_DEBUG "-pg -ggdb -Wall -Wextra" )
 
 add_subdirectory ( libgl )
 add_subdirectory ( nox )
+add_subdirectory ( pseudo-timestepping )
 add_subdirectory ( loca )
