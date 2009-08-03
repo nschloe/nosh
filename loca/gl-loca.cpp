@@ -1,35 +1,24 @@
-// // NOX Objects
-// #include "LOCA.H"
-// #include "LOCA_Epetra.H"
-// 
-// // Trilinos Objects
-#ifdef HAVE_MPI
-#include "Epetra_MpiComm.h"
-#else
-#include "Epetra_SerialComm.h"
-#endif
-// #include "Epetra_Map.h"
-#include "Epetra_Vector.h"
-// #include "Epetra_RowMatrix.h"
-// #include "Epetra_CrsMatrix.h"
-// #include "Epetra_Map.h"
-// #include "Epetra_LinearProblem.h"
-// #include "AztecOO.h"
-// 
-// #include "Amesos.h"
-// #include "NOX_Epetra_LinearSystem_Amesos.H"
-// 
-// // User's application specific files
-// // #include "glSystem.h"
-// 
-// #include <string>
-// 
-#include "Teuchos_ParameterList.hpp"
-#include "Teuchos_CommandLineProcessor.hpp"
-// 
-// // #include "readVtkFile.H"
+#include <LOCA.H>
+#include <LOCA_Epetra_Factory.H>
+#include <LOCA_Epetra_Group.H>
 
-using namespace std;
+
+#ifdef HAVE_MPI
+#include <Epetra_MpiComm.h>
+#else
+#include <Epetra_SerialComm.h>
+#endif
+
+#include <Epetra_Vector.h>
+#include <NOX_Epetra_LinearSystem_AztecOO.H>
+
+#include <Teuchos_ParameterList.hpp>
+#include <Teuchos_CommandLineProcessor.hpp>
+
+#include "ioFactory.h"
+#include "glSystem.h"
+
+typedef complex<double> double_complex;
 
 int main(int argc, char *argv[])
 {
@@ -46,15 +35,6 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
 
-  // Get the process ID and the total number of processors
-  int MyPID = Comm.MyPID();
-  int NumProc = Comm.NumProc();
-
-  int Nx;
-  double edgelength;
-  double H0_initial;
-
-  Teuchos::RCP<Epetra_Vector> initial_soln;
 
   // =========================================================================
   // handle command line arguments
@@ -90,38 +70,57 @@ int main(int argc, char *argv[])
     return 1; // Error!
   }
 
-  // see what we do about the initial guess
-  bool withInitialGuess;
-  if ( filename.length()>0 ){
-      withInitialGuess = true;
-      // readVtkFile expects a char* instead of a string, convert
-      char buf[filename.length()];
-      strcpy( buf, filename.c_str() );
-      readParamsVtkFile( buf,
-                         Comm,
-                         &Nx,
-                         &edgelength,
-                         &H0_initial );
-  }
-  else { // set default options
-      withInitialGuess = false;
-      Nx = 50;
-      edgelength = 10.0;
-      H0_initial = 0.65;
-      // set initial scalar or something
-  }
-
-//   // check the actual values
-//   cout << "Nx: "   << Nx         << endl
-//        << "edge: " << edgelength << endl
-//        << "h0: "   << H0_initial << endl;
+  bool withInitialGuess = filename.length()>0;
   // =========================================================================
 
-  // set the discretization parameter
 
-  double energy;
+  // The following is actually only necessary when no input file is given, but
+  // the VTK format as adapted here has the shortcoming that for the parameters,
+  // it does not contain the data type (double, int,...). Hence, the list must
+  // be present beforehand to check back for existing parameter names and their
+  // types.
+  Teuchos::ParameterList      problemParameters;
+  problemParameters.set("Nx",50);
+  problemParameters.set("edgelength",10.0);
+  problemParameters.set("H0",0.4);
 
-  // Create parameter list
+  // ---------------------------------------------------------------------------
+  std::vector<double_complex> psiLexicographic;
+  if (withInitialGuess) {
+      IoVirtual* fileIo = IoFactory::createFileIo( filename );
+      fileIo->read( &psiLexicographic,
+                    &problemParameters );
+      delete fileIo;
+  }
+  // ---------------------------------------------------------------------------
+
+  // create the gl problem
+  GinzburgLandau glProblem = GinzburgLandau( problemParameters.get<int>("Nx"),
+                                             problemParameters.get<double>("edgelength"),
+                                             problemParameters.get<double>("H0")
+                                           );
+
+
+  // ---------------------------------------------------------------------------
+  Teuchos::RCP<GlSystem> glsystem;
+  if (withInitialGuess) {
+      // If there was is an initial guess, make sure to get the ordering correct.
+      int              NumUnknowns = glProblem. getStaggeredGrid()
+                                              ->getNumComplexUnknowns();
+      std::vector<int> p(NumUnknowns);
+      // fill p:
+      glProblem.getStaggeredGrid()->lexicographic2grid( &p );
+      std::vector<double_complex> psi(NumUnknowns);
+      for (int k=0; k<NumUnknowns; k++)
+          psi[p[k]] = psiLexicographic[k];
+
+      // Create the interface between NOX and the application
+      // This object is derived from NOX::Epetra::Interface
+      glsystem = Teuchos::rcp(new GlSystem( glProblem, Comm, &psi ) );
+  } else
+      glsystem = Teuchos::rcp(new GlSystem( glProblem,Comm ) );
+  // ---------------------------------------------------------------------------
+
 
   // ---------------------------------------------------------------------------
   // setting the LOCA parameters
@@ -136,7 +135,7 @@ int main(int argc, char *argv[])
   stepperList.set("Continuation Method", "Arc Length");// Default
   //stepperList.set("Continuation Method", "Natural");
   stepperList.set("Continuation Parameter", "H0");  // Must set
-  stepperList.set("Initial Value", H0_initial);     // Must set
+  stepperList.set("Initial Value", problemParameters.get<double>("H0"));     // Must set
   stepperList.set("Max Value", 2.0);                // Must set
   stepperList.set("Min Value", 0.0);                // Must set
   stepperList.set("Max Steps", 2);                // Should set
@@ -236,64 +235,38 @@ int main(int argc, char *argv[])
   nlParams.sublist("Solver Options").set("Status Test Check Type", "Complete");
   // ---------------------------------------------------------------------------
 
-//   cout << paramList;
 
   // ---------------------------------------------------------------------------
   // Create the necessary objects
   // ---------------------------------------------------------------------------
   // Create Epetra factory
   Teuchos::RCP<LOCA::Abstract::Factory> epetraFactory =
-                                      Teuchos::rcp(new LOCA::Epetra::Factory);
+                                        Teuchos::rcp(new LOCA::Epetra::Factory);
 
   // Create global data object
   Teuchos::RCP<LOCA::GlobalData> globalData =
-                            LOCA::createGlobalData(paramList, epetraFactory);
-
-  //Set up the problem interface
-  Teuchos::RCP<GlSystem> glsystem = Teuchos::rcp(new GlSystem( Nx,
-                                                               edgelength,
-                                                               H0_initial,
-                                                               Comm        )
-                                                );
+                               LOCA::createGlobalData(paramList, epetraFactory);
 
   // set the directory to which all output gets written
-  GlSystem->setOutputDir( outputdir );
+  glsystem->setOutputDir( outputdir );
 
   // get the initial solution
-  Teuchos::RCP<Epetra_Vector> soln;
-  if(withInitialGuess){
-    char buf[filename.length()];
-    strcpy( buf, filename.c_str() );
-    // read custom initial guess
-    readScalarsVtkFile( buf,
-                        Comm,
-                        soln );
-  }
-  else{
-    soln = interface->getSolution();
-  }
-  // ---------------------------------------------------------------------------
-
-
-  // ---------------------------------------------------------------------------
-  // set LOCA parameters
-  LOCA::ParameterVector locaParams;
-  locaParams.addParameter( "H0", H0_initial );
+  Teuchos::RCP<Epetra_Vector> soln = glsystem->getSolution();
   // ---------------------------------------------------------------------------
 
 
   // ---------------------------------------------------------------------------
   // Create all possible Epetra_Operators.
-  Teuchos::RCP<Epetra_RowMatrix> Analytic = interface->getJacobian();
+  Teuchos::RCP<Epetra_RowMatrix> Analytic = glsystem->getJacobian();
 
   // Create the linear system
-  Teuchos::RCP<LOCA::Epetra::Interface::Required> iReq = interface;
-  Teuchos::RCP<NOX ::Epetra::Interface::Jacobian> iJac = interface;
+  Teuchos::RCP<LOCA::Epetra::Interface::Required> iReq = glsystem;
+  Teuchos::RCP<NOX ::Epetra::Interface::Jacobian> iJac = glsystem;
 
   Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys
     = Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(nlPrintParams,
                                                         lsParams,
-                                                        interface,
+                                                        glsystem,
                                                         iJac,
                                                         Analytic,
                                                         *soln )
@@ -301,10 +274,14 @@ int main(int argc, char *argv[])
   // ---------------------------------------------------------------------------
 
 
+
   // ---------------------------------------------------------------------------
   // Create a group which uses that problem interface. The group will
   // be initialized to contain the default initial guess for the
   // specified problem.
+  LOCA::ParameterVector locaParams;
+  locaParams.addParameter( "H0", problemParameters.get<double>("H0") );
+
   NOX::Epetra::Vector initialGuess(soln, NOX::Epetra::Vector::CreateView);
 
   Teuchos::RCP<LOCA::Epetra::Group> grp =
@@ -316,7 +293,7 @@ int main(int argc, char *argv[])
                                           locaParams )
                 );
 
-  grp->setParams(p);
+  grp->setParams( locaParams );
   // ---------------------------------------------------------------------------
 
 
