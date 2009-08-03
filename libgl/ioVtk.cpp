@@ -167,6 +167,10 @@ void IoVtk::write( const std::vector<double_complex> &psi,
   double        h  = sGrid.getH();
   std::ofstream vtkfile;
 
+  // set the output format
+  vtkfile.setf( std::ios::scientific );
+  vtkfile.precision(15);
+
   // open the file
   vtkfile.open( fileName.c_str() );
 
