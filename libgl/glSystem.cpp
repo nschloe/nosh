@@ -563,12 +563,42 @@ void GlSystem::setParameters(const LOCA::ParameterVector &p)
 // =============================================================================
 
 
+
+
+// ===========================================================================
+void GlSystem::dataForPrintSolution( const int conStep_,
+                                     const int timeStep_,
+                                     const int totalTimeSteps_ )
+{
+//     myConStep = conStep_;
+    std::cout << "ggggggggggg" << std::endl;
+}
+// ===========================================================================
+
+
+
+
 // =============================================================================
 // function used by LOCA
 void GlSystem::printSolution( const Epetra_Vector &x,
                               double              conParam )
 {
-   std::cout << "Writing to " << outputDir + "/" << "..." << std::endl;
+  // convert the real valued vector to psi
+  vector<double_complex> psi(NumComplexUnknowns);
+  real2complex( x, psi );
+
+  // create temporary parameter list
+  // TODO: get rid of this
+  Teuchos::ParameterList tmpList;
+  tmpList.get( "ContinuatonParameter", conParam );
+
+  std::string fileName = "cont.vtk";
+
+  // TODO: print other parameters as well
+  IoVirtual* fileIo = IoFactory::createFileIo( outputDir+"/"+fileName );
+  fileIo->write( psi,
+                 tmpList,
+                 *(Gl.getStaggeredGrid()) );
 }
 // =============================================================================
 

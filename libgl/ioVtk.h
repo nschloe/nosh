@@ -17,4 +17,11 @@ class IoVtk: public IoVirtual
                          const Teuchos::ParameterList      &problemParams,
                          StaggeredGrid                     &sGrid          );
 
+  protected:
+  private:
+
+      //! joins a vector of strings to one string with a separator string sep
+      std::string strJoin( const std::vector<std::string> & vec,
+                           const std::string              & sep  );
+
 };

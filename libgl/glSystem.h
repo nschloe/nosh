@@ -25,9 +25,10 @@
 
 #include <LOCA_Parameter_Vector.H>
 
-class GlSystem: public NOX::Epetra::Interface::Required,
-                public NOX::Epetra::Interface::Jacobian
-//                 public LOCA::Epetra::Interface::Required
+class GlSystem: 
+// public NOX::Epetra::Interface::Required,
+                public NOX::Epetra::Interface::Jacobian,
+                public LOCA::Epetra::Interface::Required
 {
   public:
 
@@ -69,6 +70,10 @@ class GlSystem: public NOX::Epetra::Interface::Required,
 
       void printSolution( const Epetra_Vector &x,
                           double              conParam );
+
+      void dataForPrintSolution( const int conStep_,
+                                 const int timeStep_,
+                                 const int totalTimeSteps_ );
 
       void solutionToFile( const Epetra_Vector          &x,
                            const Teuchos::ParameterList &problemParams,

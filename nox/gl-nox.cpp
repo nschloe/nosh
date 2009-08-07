@@ -73,23 +73,18 @@ int main(int argc, char *argv[])
   // ===========================================================================
 
 
-  // The following is actually only necessary when no input file is given, but
-  // the VTK format as adapted here has the shortcoming that for the parameters,
-  // it does not contain the data type (double, int,...). Hence, the list must
-  // be present beforehand to check back for existing parameter names and their
-  // types.
-  Teuchos::ParameterList      problemParameters;
-  problemParameters.set("Nx",50);
-  problemParameters.set("edgelength",10.0);
-  problemParameters.set("H0",0.4);
-
   // ---------------------------------------------------------------------------
   std::vector<double_complex> psiLexicographic;
+  Teuchos::ParameterList      problemParameters;
   if (withInitialGuess) {
       IoVirtual* fileIo = IoFactory::createFileIo( filename );
       fileIo->read( &psiLexicographic,
                     &problemParameters );
       delete fileIo;
+  } else {
+      problemParameters.set( "Nx"        , 50   );
+      problemParameters.set( "edgelength", 10.0 );
+      problemParameters.set( "H0"        , 0.4  );
   }
   // ---------------------------------------------------------------------------
 

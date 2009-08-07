@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
   My_CLP.setOption("verbose", "silent", &verbose, "Verbostity flag" );
 
   std::string filename = "";
-  My_CLP.setOption("input-guess", &filename, "VTK file name with initial guess");
+  My_CLP.setOption("input-guess", &filename, "File name with initial guess");
 
   std::string outputdir = "data";
   My_CLP.setOption("output-dir", &outputdir, "Directory to which all the solution files are written");

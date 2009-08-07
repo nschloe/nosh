@@ -159,12 +159,12 @@ int main(int argc, char *argv[])
       for ( int l=0; l<NumUnknowns; l++ )
           psi[l] += delta*update[l];
 
-      if (!k%100) { // add a random component
-          for ( int l=0; l<NumUnknowns; l++ ) {
-              double_complex z = complex<double>( (rand()%100)/1000., (rand()%100)/1000. );
-              psi[l] += z;
-          }
-      }
+//       if (!k%100) { // add a random component
+//           for ( int l=0; l<NumUnknowns; l++ ) {
+//               double_complex z = complex<double>( (rand()%100)/1000., (rand()%100)/1000. );
+//               psi[l] += z;
+//           }
+//       }
 
   }
   // ---------------------------------------------------------------------------

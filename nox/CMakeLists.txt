@@ -59,9 +59,9 @@ SET( TRILINOS_LIBS
      ${IFPACK}
      ${AMESOS}
      ${ML}
-     ${EPETRAEXT} 
+     ${EPETRAEXT}
      ${EPETRA}
-     ${TEUCHOS} 
+     ${TEUCHOS}
      ${PARACONT} )
 # ==============================================================================
 
