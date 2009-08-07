@@ -10,12 +10,12 @@
 StaggeredGrid::StaggeredGrid( int    nx,
                               double edgelength,
                               double h0          ):
-  Nx(nx),
-  Edgelength(edgelength),
-  H0(h0),
-  h( edgelength/nx ),
-  Ax(boost::extents[nx][nx+1]),
-  Ay(boost::extents[nx+1][nx])
+  nx_(nx),
+  edgelength_(edgelength),
+  h0_(h0),
+  h_( edgelength/nx ),
+  Ax_(boost::extents[nx][nx+1]),
+  Ay_(boost::extents[nx+1][nx])
 {
   // setup A
   computeA();
@@ -27,15 +27,15 @@ StaggeredGrid::StaggeredGrid( int    nx,
 // =============================================================================
 // copy constructor
 StaggeredGrid::StaggeredGrid(const StaggeredGrid& sGrid) {
-    Nx         = sGrid.Nx;
-    Edgelength = sGrid.Edgelength;
-    H0         = sGrid.H0;
-    h          = sGrid.h;
+    nx_         = sGrid.nx_;
+    edgelength_ = sGrid.edgelength_;
+    h0_         = sGrid.h0_;
+    h_          = sGrid.h_;
 
-    Ax.resize(boost::extents[Nx][Nx+1]);
-    Ax = sGrid.Ax;
-    Ay.resize(boost::extents[Nx+1][Nx]);
-    Ay = sGrid.Ay;
+    Ax_.resize(boost::extents[nx_][nx_+1]);
+    Ax_ = sGrid.Ax_;
+    Ay_.resize(boost::extents[nx_+1][nx_]);
+    Ay_ = sGrid.Ay_;
 }
 // =============================================================================
 
@@ -53,16 +53,26 @@ StaggeredGrid::~StaggeredGrid()
 // =============================================================================
 int StaggeredGrid::getNx()
 {
-    return Nx;
+    return nx_;
 }
 // =============================================================================
+
+
+
+// =============================================================================
+double StaggeredGrid::getEdgelength()
+{
+    return edgelength_;
+}
+// =============================================================================
+
 
 
 // =============================================================================
 int StaggeredGrid::getNumComplexUnknowns()
 {
     // the number of grid points in psi
-    return (Nx+1)*(Nx+1);
+    return (nx_+1)*(nx_+1);
 }
 // =============================================================================
 
@@ -70,7 +80,7 @@ int StaggeredGrid::getNumComplexUnknowns()
 // =============================================================================
 double StaggeredGrid::getH()
 {
-    return h;
+    return h_;
 }
 // =============================================================================
 
@@ -78,7 +88,7 @@ double StaggeredGrid::getH()
 // =============================================================================
 void StaggeredGrid::setH0( double h0 )
 {
-  H0 = h0;
+  h0_ = h0;
   // rebuild the magnetic vector potential values
   computeA();
 }
@@ -92,35 +102,35 @@ void StaggeredGrid::computeA()
 {
   typedef array_type::index index;
 
-  /*! Initialize the Ax with values
+  /*! Initialize the Ax_ with values
    *  \f[
    *      A_x = - \frac{H_0}{2} y + C.
    *  \f]
    */
-  for ( index i=0; i!=Nx; ++i )
-      for ( index j=0; j!=Nx+1; ++j )
-          Ax[i][j] = - 0.5 *H0 *j*h
-                     + 0.25*H0 *Edgelength; //  to level the thing, but not actually necessary
+  for ( index i=0; i!=nx_; ++i )
+      for ( index j=0; j!=nx_+1; ++j )
+          Ax_[i][j] = - 0.5*h0_ *j*h_
+                     + 0.25*h0_ *edgelength_; //  to level the thing, but not actually necessary
 
-  /*! Initialize the Ay with values
+  /*! Initialize the Ay_ with values
    *  \f[
    *      A_y = \frac{H_0}{2} x + C.
    *  \f]
    */
-  for ( index i=0; i!=Nx+1; ++i )
-      for ( index j=0; j!=Nx; ++j )
-          Ay[i][j] =   0.5 *H0 *i*h
-                     - 0.25*H0 *Edgelength; //  to level the thing, but not actually necessary
+  for ( index i=0; i!=nx_+1; ++i )
+      for ( index j=0; j!=nx_; ++j )
+          Ay_[i][j] =   0.5*h0_ *i*h_
+                     - 0.25*h0_ *edgelength_; //  to level the thing, but not actually necessary
 
 //   // ---------------------------------------------------------------------------
 //   // for debugging purposes:
-//   std::cout << "Nx=" << Nx << std::endl;
-//   std::cout << "Edgelength=" << Edgelength << std::endl;
+//   std::cout << "nx_=" << nx_ << std::endl;
+//   std::cout << "edgelength_=" << edgelength_ << std::endl;
 //   std::cout << "h=" << h << std::endl;
-//   std::cout << "H0=" << H0 << std::endl;
-//   for ( index i=0; i!=Nx; ++i )
-//       for ( index j=0; j!=Nx+1; ++j )
-//           std::cout << "Ax[" << i << "][" << j << "] = " << Ax[i][j]
+//   std::cout << "h0_=" << h0_ << std::endl;
+//   for ( index i=0; i!=nx_; ++i )
+//       for ( index j=0; j!=nx_+1; ++j )
+//           std::cout << "Ax_[" << i << "][" << j << "] = " << Ax_[i][j]
 //                     << std::endl;
 //   // ---------------------------------------------------------------------------
 
@@ -131,7 +141,7 @@ void StaggeredGrid::computeA()
 // =============================================================================
 double StaggeredGrid::getAxLeft( int *i )
 {
-  return  Ax[ i[0]-1 ][ i[1] ];
+  return  Ax_[ i[0]-1 ][ i[1] ];
 }
 // =============================================================================
 
@@ -139,7 +149,7 @@ double StaggeredGrid::getAxLeft( int *i )
 // =============================================================================
 double StaggeredGrid::getAxRight( int* i )
 {
-  return  Ax[ i[0] ][ i[1] ]; // indeed not "+1"; staggered grids!
+  return  Ax_[ i[0] ][ i[1] ]; // indeed not "+1"; staggered grids!
 }
 // =============================================================================
 
@@ -147,7 +157,7 @@ double StaggeredGrid::getAxRight( int* i )
 // =============================================================================
 double StaggeredGrid::getAyBelow( int* i )
 {
-  return  Ay[ i[0] ][ i[1]-1 ];
+  return  Ay_[ i[0] ][ i[1]-1 ];
 }
 // =============================================================================
 
@@ -155,7 +165,7 @@ double StaggeredGrid::getAyBelow( int* i )
 // =============================================================================
 double StaggeredGrid::getAyAbove( int* i )
 {
-  return  Ay[ i[0] ][ i[1] ]; // indeed not "+1"; staggered grids!
+  return  Ay_[ i[0] ][ i[1] ]; // indeed not "+1"; staggered grids!
 }
 // =============================================================================
 
@@ -166,26 +176,26 @@ double StaggeredGrid::getAyAbove( int* i )
 // {
 //   static int i[2];
 //
-//   if (k<Nx) { // lower shore
+//   if (k<nx_) { // lower shore
 //     i[0] = k-1;
 //     i[1] = 0;
 //   }
-//   else if (k<2*Nx) { // right shore
-//     i[0] = Nx;
-//     i[1] = k-Nx;
+//   else if (k<2*nx_) { // right shore
+//     i[0] = nx_;
+//     i[1] = k-nx_;
 //   }
-//   else if (k<3*Nx) { // upper shore
-//     i[0] = 3*Nx-k;
-//     i[1] = Nx;
+//   else if (k<3*nx_) { // upper shore
+//     i[0] = 3*nx_-k;
+//     i[1] = nx_;
 //   }
-//   else if (k<4*Nx) { // left shore
+//   else if (k<4*nx_) { // left shore
 //     i[0] = 0;
-//     i[1] = 4*Nx-k;
+//     i[1] = 4*nx_-k;
 //   }
 //   else { // on the interior
-//     int numBoundaryNodes = 4*Nx;
-//     i[0] = (k-numBoundaryNodes)%(Nx-1) + 1;
-//     i[1] = (k-numBoundaryNodes)/(Nx-1) + 1;
+//     int numBoundaryNodes = 4*nx_;
+//     i[0] = (k-numBoundaryNodes)%(nx_-1) + 1;
+//     i[1] = (k-numBoundaryNodes)/(nx_-1) + 1;
 //   }
 //
 //   return i;
@@ -196,9 +206,9 @@ double StaggeredGrid::getAyAbove( int* i )
 // =============================================================================
 StaggeredGrid::nodeType StaggeredGrid::k2nodeType( int k )
 {
-  if (k==0 || k==Nx || k==2*Nx || k==3*Nx )
+  if (k==0 || k==nx_ || k==2*nx_ || k==3*nx_ )
       return StaggeredGrid::CORNER;
-  else if (k<4*Nx)
+  else if (k<4*nx_)
       return StaggeredGrid::EDGE;
   else
       return StaggeredGrid::INTERIOR;
@@ -214,15 +224,15 @@ int StaggeredGrid::i2k( int* i )
 
   if (i[1]==0) { // south
       k = i[0];
-  } else if (i[0]==Nx) { // east
-      k = i[1] + Nx;
-  } else if (i[1]==Nx) { // north
-      k = 3*Nx - i[0];
+  } else if (i[0]==nx_) { // east
+      k = i[1] + nx_;
+  } else if (i[1]==nx_) { // north
+      k = 3*nx_ - i[0];
   } else if (i[0]==0) { // west
-      k = 4*Nx - i[1];
-  } else if ( i[0]>0 && i[0]<Nx && i[1]>0 && i[1]<Nx ) { // interior
-      k = 4*Nx
-        + (Nx-1)*(i[1]-1)
+      k = 4*nx_ - i[1];
+  } else if ( i[0]>0 && i[0]<nx_ && i[1]>0 && i[1]<nx_ ) { // interior
+      k = 4*nx_
+        + (nx_-1)*(i[1]-1)
         + i[0]-1;
   } else {
       std::string message = "Illegal 2D index i=("
@@ -244,11 +254,11 @@ int StaggeredGrid::i2k( int* i )
 void StaggeredGrid::lexicographic2grid( std::vector<int> *p )
 {
   // check if for admissible vector size
-  if ( p->size() != (Nx+1)*(Nx+1) ) {
+  if ( p->size() != (nx_+1)*(nx_+1) ) {
       std::string message = "Size of the input vector p ("
                           + EpetraExt::toString( int(p->size()) ) + ") "
                           + "does not coincide with with number of unknowns on "
-                          + " the grid (" + EpetraExt::toString( (Nx+1)*(Nx+1) )
+                          + " the grid (" + EpetraExt::toString( (nx_+1)*(nx_+1) )
                           + ").";
       throw glException( "StaggeredGrid::lexicographic2grid",
                          message );
@@ -256,9 +266,9 @@ void StaggeredGrid::lexicographic2grid( std::vector<int> *p )
 
   int index[2],
       k = 0;
-  for (int j=0; j<Nx+1; j++) {
+  for (int j=0; j<nx_+1; j++) {
       index[1]  = j;
-      for (int i=0; i<Nx+1; i++) {
+      for (int i=0; i<nx_+1; i++) {
           index[0] = i;
           (*p)[k++] = i2k(index);
       }

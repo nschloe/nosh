@@ -21,6 +21,8 @@ class StaggeredGrid
 
       int getNx(); //!< Returns \f$N_x\f$.
 
+      double getEdgelength();
+
       int getNumComplexUnknowns(); //!< Returns the number of grid points for \f$\psi\f$.
 
       double getH(); //!< Returns mesh size \f$h\f$.
@@ -47,15 +49,15 @@ class StaggeredGrid
       double getAyAbove( int* i );  //!< Returns the value of \f$A_y\f$ above point i.
 
   private:
-      int    Nx; //!< Number of grid pieces in both x- and y-direction
-      double Edgelength,
-             H0,
-             h;
+      int    nx_; //!< Number of grid pieces in both x- and y-direction
+      double edgelength_,
+             h0_,
+             h_;
 
       // use the type definition in the CPP file as well (indices!)
       typedef boost::multi_array<double,2> array_type;
-      array_type Ax,
-                 Ay;
+      array_type Ax_,
+                 Ay_;
 
       //! (Re)sets the values of \f$A\f$.
       void computeA();

@@ -71,10 +71,6 @@ class GlSystem:
       void printSolution( const Epetra_Vector &x,
                           double              conParam );
 
-      void dataForPrintSolution( const int conStep_,
-                                 const int timeStep_,
-                                 const int totalTimeSteps_ );
-
       void solutionToFile( const Epetra_Vector          &x,
                            const Teuchos::ParameterList &problemParams,
                            const std::string            &fileName       );

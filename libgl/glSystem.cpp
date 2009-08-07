@@ -194,9 +194,8 @@ bool GlSystem::computePreconditioner( const Epetra_Vector    &x,
                                       Epetra_Operator        &Prec,
                                       Teuchos::ParameterList *precParams )
 {
-  std::cerr << "ERROR: GlSystem::preconditionVector() - "
-            << "    Use Explicit Jacobian only for this test problem!" << std::endl;
-  throw "GlSystem Error";
+  throw glException( "GlSystem::preconditionVector",
+                     "Use explicit Jacobian only for this test problem!" );
 }
 // ==========================================================================
 
@@ -569,40 +568,44 @@ void GlSystem::setParameters(const LOCA::ParameterVector &p)
 
 
 
-// ===========================================================================
-void GlSystem::dataForPrintSolution( const int conStep_,
-                                     const int timeStep_,
-                                     const int totalTimeSteps_ )
-{
-//     myConStep = conStep_;
-    std::cout << "ggggggggggg" << std::endl;
-}
-// ===========================================================================
-
-
-
-
 // =============================================================================
 // function used by LOCA
 void GlSystem::printSolution( const Epetra_Vector &x,
                               double              conParam )
 {
+  static int conStep = 0;
+  conStep++;
+
   // convert the real valued vector to psi
   vector<double_complex> psi(NumComplexUnknowns);
   real2complex( x, psi );
 
   // create temporary parameter list
   // TODO: get rid of this
+  // -- An ugly thing here is that we have to explicitly mention the parameter
+  // names. A solution could possibly be to include the parameter list in the
+  // constructor of glSystem.
   Teuchos::ParameterList tmpList;
-  tmpList.get( "ContinuatonParameter", conParam );
+  tmpList.get( "H0",         conParam );
+  tmpList.get( "edgelength", Gl.getStaggeredGrid()->getEdgelength() );
+  tmpList.get( "Nx",         Gl.getStaggeredGrid()->getNx() );
 
-  std::string fileName = "cont.vtk";
+  std::string fileName = "continuation-step-"
+                       + EpetraExt::toString(conStep)
+                       + ".vtk";
 
-  // TODO: print other parameters as well
   IoVirtual* fileIo = IoFactory::createFileIo( outputDir+"/"+fileName );
   fileIo->write( psi,
                  tmpList,
                  *(Gl.getStaggeredGrid()) );
+  delete fileIo;
+
+  // print information to screen
+  // TODO: move this to a file or something
+  std::cout << conStep  << "     "
+            << conParam << "     "
+            << Gl.freeEnergy( psi ) << std::endl;
+
 }
 // =============================================================================
 

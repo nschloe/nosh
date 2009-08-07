@@ -671,14 +671,18 @@ double GinzburgLandau::freeEnergy( const std::vector<double_complex> &psi )
   for (unsigned int k=0; k<psi.size(); k++) {
       nt = sGrid.k2nodeType(k);
       if (nt==StaggeredGrid::CORNER)
-          energy +=       h*h * pow(abs(psi[k]),4);
-      else if (nt==StaggeredGrid::EDGE)
-          energy += 0.5*  h*h * pow(abs(psi[k]),4);
+          energy -=       h*h * pow(abs(psi[k]),4);
+      else if (nt =StaggeredGrid::EDGE)
+          energy -= 0.5*  h*h * pow(abs(psi[k]),4);
       else if (nt==StaggeredGrid::INTERIOR)
-          energy += 0.25* h*h * pow(abs(psi[k]),4);
-      else
-          std::cerr << "GinzburgLandau::freeEnergy" << std::endl
-                    << "    Illegal node type " << nt << ". Abort." << std::endl;
+          energy -= 0.25* h*h * pow(abs(psi[k]),4);
+      else {
+          std::string message = "Illegal node type "
+                              + EpetraExt::toString(nt)
+                              + ".";
+          throw glException( "GinzburgLandau::freeEnergy",
+                             message );
+      }
   }
 
   return energy;

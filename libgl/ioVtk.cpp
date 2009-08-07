@@ -1,4 +1,5 @@
 #include "ioVtk.h"
+#include "glException.h"
 
 #include <IOVtkUtils.H> // ParaCont
 
@@ -106,7 +107,6 @@ void IoVtk::write( const std::vector<double_complex> &psi,
   // write the VTK header
   vtkfile << "# vtk DataFile Version 2.0\n";
 
-
   // count the number of entries
   int numEntries = 0;
   Teuchos::map<std::string, Teuchos::ParameterEntry>::const_iterator i;
@@ -123,13 +123,16 @@ void IoVtk::write( const std::vector<double_complex> &psi,
         type = "int";
     else if ( problemParams.isType<double>( problemParams.name(i) ) )
         type = "double";
-    else
-        throw 1;
+    else {
+        std::string message = "Parameter is neither of type \"int\" not of type \"double\".";
+        throw glException( "IoVtk::write",
+                           message );
+    }
 
     paramStringList[k] = type + " "
                        + problemParams.name(i)
                        + "="
-                       + toString(problemParams.entry(i));
+                       + toString( problemParams.entry(i) );
     k++;
   }
 
