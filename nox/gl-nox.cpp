@@ -78,8 +78,13 @@ int main(int argc, char *argv[])
   Teuchos::ParameterList      problemParameters;
   if (withInitialGuess) {
       IoVirtual* fileIo = IoFactory::createFileIo( filename );
-      fileIo->read( &psiLexicographic,
-                    &problemParameters );
+      try {
+          fileIo->read( &psiLexicographic,
+                        &problemParameters );
+      }
+      catch ( std::exception& e ) {
+          std::cerr << e.what() << std::endl;
+      }
       delete fileIo;
   } else {
       problemParameters.set( "Nx"        , 50   );

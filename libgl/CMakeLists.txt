@@ -1,6 +1,7 @@
 ENABLE_LANGUAGE( CXX )
 
 SET ( gl_SRCS 
+      glException.cpp
       staggeredGrid.cpp
       ioVirtual.cpp
       ioVtk.cpp

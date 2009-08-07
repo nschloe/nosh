@@ -1,4 +1,5 @@
 #include "ioFactory.h"
+#include "glException.h"
 
 #include "ioVtk.h"
 #include "ioVti.h"
@@ -19,11 +20,11 @@ IoVirtual* IoFactory::createFileIo( std::string fileName )
   } else if (extension.compare("xmf") == 0) {
       return new IoXdmf( fileName );
   } else {
-      std::cerr << "IoFactory::createFileIo\n"
-                << "File name extension \"" << extension << "\" not recognized. "
-                << "Must be one of \"vtk\", \"vti\", \"xmf\". Abort."
-                << std::endl;
-      exit(EXIT_FAILURE);
+      std::string message = "File name extension \"" + extension + "\" "
+                          + "not recognized. Must be one of \"vtk\", "
+                          + "\"vti\", \"xmf\".";
+      throw glException( "IoFactory::createFileIo",
+                          message );
   }
 
 }

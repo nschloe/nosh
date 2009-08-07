@@ -1,4 +1,5 @@
 #include "ioXdmf.h"
+#include "glException.h"
 
 #include <Teuchos_XMLParameterListWriter.hpp>
 #include <EpetraExt_Utils.h> // for toString
@@ -57,10 +58,8 @@ void IoXdmf::read( std::vector<double_complex> *psi,
   // read the file contents to a string
   std::ifstream inFile( fileName.c_str() );
   if( !inFile ) {
-      std::cerr << "IoXdmf::read\n"
-                << "    Could not open input file \"" << fileName << "\". Abort."
-                << std::endl;
-      exit(EXIT_FAILURE);
+      throw glException( "IoXdmf::read",
+                         "Could not open input file \"" + fileName + "\"." );
   }
 
   // Read the file into a string, and discard exactly the first for lines,
@@ -157,8 +156,8 @@ void IoXdmf::getHeavyData( const Teuchos::XMLObject &xmlFileObject,
   const Teuchos::XMLObject* dataItem = xmlFind ( absPsiObject,
                                                  "DataItem" );
   if ( !dataItem ) {
-      std::cerr << "Found no \"DataItem\". Abort." << std::endl;
-      exit(EXIT_FAILURE);
+      throw glException( "IoXdmf::getHeavyData",
+                         "Found no \"DataItem\"." );
   }
 
   // get the file name
@@ -166,7 +165,6 @@ void IoXdmf::getHeavyData( const Teuchos::XMLObject &xmlFileObject,
 //   int cLines=dataItem->numContentLines();
 //   if ( cLines<1 ) {
 //       std::cerr << "Found no file name in \"DataItem\". Abort." << std::endl;
-//       exit(EXIT_FAILURE);
 //   }
 
   // Read the first line which is supposed to contain the file and more
@@ -191,9 +189,10 @@ void IoXdmf::getHeavyData( const Teuchos::XMLObject &xmlFileObject,
   EpetraExt::HDF5 hdf5Reader(comm);
   hdf5Reader.Open( fileDirectory+"/"+dataFile ); // directory from fileName
   if ( !hdf5Reader.IsContained(hdf5GroupName) ) {
-      std::cerr << "Could not find tag \"" << hdf5GroupName << "\" in file "
-                << fileDirectory+"/"+dataFile << ". Abort." << std::endl;
-      exit(EXIT_FAILURE);
+      std::string message = "Could not find tag \"" + hdf5GroupName + "\" "
+                          + "in file " + fileDirectory + "/" + dataFile + ".";
+      throw glException( "IoXdmf::getHeavyData",
+                         message );
   }
 
   // get data sizes and compare with the input MultiVector
@@ -203,17 +202,21 @@ void IoXdmf::getHeavyData( const Teuchos::XMLObject &xmlFileObject,
                                         numVectors     );
 
   if ( globalLength != (*readVec)->GlobalLength() ) {
-      std::cerr << "Length of the input MultiVector (" << (*readVec)->GlobalLength()
-                << ") does not coincide with the global length of the data in "
-                << "file " << dataFile << ". Abort." << std::endl;
-      exit(EXIT_FAILURE);
+      std::string message = "Length of the input MultiVector ("
+                          + EpetraExt::toString( (*readVec)->GlobalLength() )
+                          + ") does not coincide with the global length of "
+                          + "the data in file " + dataFile + ".";
+      throw glException( "IoXdmf::getHeavyData",
+                         message );
   }
 
   if ( numVectors != (*readVec)->NumVectors() ) {
-      std::cerr << "Number of the input MultiVectors (" << (*readVec)->NumVectors()
-                << ") does not coincide with the global number of vectors in "
-                << "file " << dataFile << ". Abort." << std::endl;
-      exit(EXIT_FAILURE);
+      std::string message = "Number of the input MultiVectors (" 
+                          + EpetraExt::toString( (*readVec)->NumVectors() )
+                          + ") does not coincide with the global number of "
+                          + "vectors in file " + dataFile + ".";
+      throw glException( "IoXdmf::getHeavyData",
+                         message );
   }
 
   // finally, read the vector

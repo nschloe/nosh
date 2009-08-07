@@ -1,5 +1,6 @@
 #include "glSystem.h"
 #include "ioFactory.h"
+#include "glException.h"
 
 #include <iostream>
 #include <complex>
@@ -9,6 +10,8 @@
 #include <Epetra_CrsMatrix.h>
 
 #include <EpetraExt_RowMatrixOut.h>
+
+#include <EpetraExt_Utils.h>
 
 // abbreviate the complex type name
 typedef std::complex<double> double_complex;
@@ -52,11 +55,12 @@ GlSystem::GlSystem( GinzburgLandau::GinzburgLandau &gl,
       initialSolution->PutScalar(0.5); // Default initialization
   } else {
       if ( psi->size() != NumComplexUnknowns ) {
-          std::cerr << "GlSystem::GlSystem\n"
-                    << "Size of the initial guess vector (" << psi->size()
-                    << ") does not coincide with the number of unknowns ("
-                    << NumComplexUnknowns << "). Abort." << std::endl;
-          exit(EXIT_FAILURE);
+          std::string message = "Size of the initial guess vector ("
+                              + EpetraExt::toString( int(psi->size()) )
+                              + ") does not coincide with the number of unknowns ("
+                              + EpetraExt::toString( NumComplexUnknowns ) + ").";
+          throw glException( "GlSystem::GlSystem",
+                             message );
       }
       complex2real( *psi, initialSolution );
   }
@@ -536,10 +540,10 @@ bool GlSystem::createJacobian( const jacCreator    jc,
       Graph->FillComplete();
   }
   catch (int i){
-     std::cerr << "createGraph:" << std::endl
-               << "    FillComplete returned error code " << i << ". Abort."
-               << std::endl;
-     exit(EXIT_FAILURE);
+          std::string message = "FillComplete returned error code "
+                              + EpetraExt::toString( i ) + ".";
+          throw glException( "GlSystem::createGraph",
+                             message );
   }
   // ---------------------------------------------------------------------------
 

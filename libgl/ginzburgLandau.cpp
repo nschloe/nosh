@@ -1,4 +1,6 @@
 #include "ginzburgLandau.h"
+#include "glException.h"
+
 #include <iostream>
 
 #include <fstream> // for the VTK writer
@@ -106,9 +108,9 @@ void GinzburgLandau::getEquationType( const int    eqnum,
       i[0] = (eqnum-4*Nx)%(Nx-1) + 1;
       i[1] = (eqnum-4*Nx)/(Nx-1) + 1;
   } else {
-      std::cerr << "getEquationType:" << std::endl
-                << "    Illegal running index eqnum=" << eqnum << "." << std::endl;
-      exit(EXIT_FAILURE);
+      throw glException( "GinzburgLandau::getEquationType",
+                         "Illegal running index eqnum="
+                                           + EpetraExt::toString(eqnum) + "." );
   }
 }
 // =============================================================================
@@ -320,9 +322,9 @@ double_complex GinzburgLandau::computeGl( const int                         eqnu
           break;
 
       default:
-          std::cerr << "computeGl:" << std::endl
-                    << "    Illegal equationType \"" << eqType << "\". Abort." << std::endl;
-          exit(EXIT_FAILURE);
+          throw glException( "GinzburgLandau::computeGl",
+                             "Illegal equationType "
+                                          + EpetraExt::toString(eqType) + "." );
   }
 
   // return the result
@@ -650,9 +652,9 @@ void GinzburgLandau::computeJacobianRow( const filltype                    ft,
           break;
 
       default:
-          std::cerr << "getJacobianRow:" << std::endl
-                    << "    Illegal equationType \"" << eqType << "\". Abort." << std::endl;
-          exit(EXIT_FAILURE);
+          throw glException( "GinzburgLandau::getJacobianRow",
+                             "Illegal equationType"
+                                          + EpetraExt::toString(eqType) + "." );
   }
 }
 // =============================================================================

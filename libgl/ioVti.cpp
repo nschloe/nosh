@@ -1,5 +1,7 @@
 #include "ioVti.h"
 
+#include "glException.h"
+
 #include <Teuchos_FileInputSource.hpp>
 #include <EpetraExt_Utils.h> // for toString
 #include <Teuchos_XMLParameterListWriter.hpp>
@@ -29,8 +31,8 @@ void IoVti::read( std::vector<double_complex> *psi,
                   Teuchos::ParameterList      *problemParams )
 {
 
-  std::cerr << "StateFileReader::readVtiFile not yet implemented." << std::endl;
-  exit(EXIT_FAILURE);
+  throw glException( "IoVti::StateFileReader",
+                    "readVtiFile not yet implemented." );
 
   // pass a possible 
   //<?xml version="1.0"?>
@@ -60,17 +62,17 @@ void IoVti::read( std::vector<double_complex> *psi,
                                                               "abs(psi)"      );
 
     if ( !absPsiObject ) { // pointer invalid
-        std::cerr << "No such XML Object found! Abort." << std::endl;
-        exit(EXIT_FAILURE);
+        throw glException( "GlSystem::GlSystem",
+                           "No such XML Object found." );
     }
-  
+
   std::cout << "1a" << std::endl;
   std::cout << *absPsiObject << std::endl;
   std::cout << "1b" << std::endl;
   std::cout << absPsiObject->numContentLines() << std::endl;
   std::cout << "1c" << std::endl;
-  
-  
+
+
   //   const char* str;
   //   char** endptr;
   //   for (int l=0; l<absPsiObject->numContentLines(); l++) {

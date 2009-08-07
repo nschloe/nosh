@@ -1,5 +1,9 @@
-#include <iostream>
 #include "staggeredGrid.h"
+#include "glException.h"
+
+#include <iostream>
+
+#include <EpetraExt_Utils.h>
 
 // =============================================================================
 // Class constructor
@@ -221,11 +225,11 @@ int StaggeredGrid::i2k( int* i )
         + (Nx-1)*(i[1]-1)
         + i[0]-1;
   } else {
-      std::cerr << "ERROR: PsiGrid::i2k - "
-                << "    Illegal 2D index i=(" << i[0] << "," << i[1] << ")."
-                << " Abort."
-                << std::endl;
-      exit(EXIT_FAILURE);
+      std::string message = "Illegal 2D index i=("
+                          + EpetraExt::toString( i[0] ) + ","
+                          + EpetraExt::toString( i[1] ) + ").";
+      throw glException( "StaggeredGrid::i2k",
+                         message );
   }
 
   return k;
@@ -241,11 +245,13 @@ void StaggeredGrid::lexicographic2grid( std::vector<int> *p )
 {
   // check if for admissible vector size
   if ( p->size() != (Nx+1)*(Nx+1) ) {
-      std::cerr << "StaggeredGrid::lexicographic2grid\n"
-                << "Size of the input vector p (" << p->size() << ") "
-                << "does not coincide with with number of unknowns on the "
-                << "grid (" << (Nx+1)*(Nx+1) << "). Abort" << std::endl;
-      exit(EXIT_FAILURE);
+      std::string message = "Size of the input vector p ("
+                          + EpetraExt::toString( int(p->size()) ) + ") "
+                          + "does not coincide with with number of unknowns on "
+                          + " the grid (" + EpetraExt::toString( (Nx+1)*(Nx+1) )
+                          + ").";
+      throw glException( "StaggeredGrid::lexicographic2grid",
+                         message );
   }
 
   int index[2],
