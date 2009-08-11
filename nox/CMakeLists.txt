@@ -1,5 +1,11 @@
 ENABLE_LANGUAGE( CXX )
 
+# make use of our own modules
+SET(GL_CMAKE_DIR "${ginzburg-landau_SOURCE_DIR}/CMakeModules")
+SET(CMAKE_MODULE_PATH "${GL_CMAKE_DIR}" ${CMAKE_MODULE_PATH})
+
+FIND_PACKAGE( Boost )
+
 INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/libgl
                       /usr/local/trilinos/090603a/include/
                       /opt/trilinos-090603a/LINUX_MPI_64BIT/include/
@@ -28,9 +34,10 @@ FIND_LIBRARY( EPETRA epetra
 FIND_LIBRARY( EPETRAEXT epetraext
               HINTS /usr/local/trilinos/current/lib
                     /opt/trilinos-090603a/LINUX_MPI_64BIT/lib )
-FIND_LIBRARY( NOX nox
-              HINTS /usr/local/trilinos/current/lib
-                    /opt/trilinos-090603a/LINUX_MPI_64BIT/lib )
+FIND_PACKAGE( NOX )
+# FIND_LIBRARY( NOX nox
+#               HINTS /usr/local/trilinos/current/lib
+#                     /opt/trilinos-090603a/LINUX_MPI_64BIT/lib )
 FIND_LIBRARY( NOXEPETRA noxepetra
               HINTS /usr/local/trilinos/current/lib
                     /opt/trilinos-090603a/LINUX_MPI_64BIT/lib )
@@ -49,9 +56,7 @@ FIND_LIBRARY( ML ml
 FIND_LIBRARY( LOCA loca
               HINTS /usr/local/trilinos/current/lib
                     /opt/trilinos-090603a/LINUX_MPI_64BIT/lib )
-FIND_LIBRARY( PARACONT paracont
-              HINTS /home/nschloe/svn/paracont/trunk/lib )
-SET( TRILINOS_LIBS  
+SET( TRILINOS_LIBS
      ${NOX}
      ${NOXEPETRA}
      ${LOCA}
