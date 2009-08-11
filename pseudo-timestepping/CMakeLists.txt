@@ -7,10 +7,10 @@ INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/libgl
                       /opt/boost/1.39.0/include/boost-1_39/ )
 
 SET ( pseudo-timestepping_SRCS
-      pseudots.cpp )
+      pseudo-ts.cpp )
 
 
-ADD_EXECUTABLE ( pseudots.out
+ADD_EXECUTABLE ( pseudo-ts.out
                  ${pseudo-timestepping_SRCS} )
 
 SET ( internal_LIBS
@@ -97,7 +97,7 @@ FIND_LIBRARY( Z z )
 
 # ==============================================================================
 # Set executable linking information.
-TARGET_LINK_LIBRARIES ( pseudots.out
+TARGET_LINK_LIBRARIES ( pseudo-ts.out
 			${internal_LIBS}
                         ${TRILINOS_LIBS}
                         ${SUPERLU}
