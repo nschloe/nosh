@@ -140,11 +140,11 @@ int main(int argc, char *argv[])
 
   // Set the printing parameters in the "Printing" sublist
   Teuchos::ParameterList& printParams = nlParams.sublist("Printing");
-  printParams.set("MyPID", MyPID); 
+  printParams.set("MyPID", MyPID);
   printParams.set("Output Precision", 16);
   printParams.set("Output Processor", 0);
   if (verbose)
-    printParams.set("Output Information", 
+    printParams.set("Output Information",
                              NOX::Utils::OuterIteration +
                              NOX::Utils::OuterIterationStatusTest +
                              NOX::Utils::InnerIteration +
@@ -157,7 +157,7 @@ int main(int argc, char *argv[])
                              NOX::Utils::Error );
   else
     printParams.set("Output Information", NOX::Utils::Error +
-                             NOX::Utils::TestDetails);
+                                          NOX::Utils::TestDetails );
 
   // Create a print class for controlling output below
   NOX::Utils printing(printParams);
@@ -289,6 +289,18 @@ int main(int argc, char *argv[])
     (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).
     getEpetraVector();
 
+  if (verbose) {
+      try {
+      // get condition number
+      grpPtr->computeJacobian();
+      grpPtr->computeJacobianConditionNumber( 2000, 1e-2, 30, true );
+      double kappa = finalGroup.getJacobianConditionNumber();
+      std::cout << "Condition number: kappa = " << kappa << "." << std::endl;
+      }
+      catch ( std::exception& e ) {
+          std::cerr << e.what() << std::endl;
+      }
+  }
 
   // ---------------------------------------------------------------------------
   // print the solution to a file
