@@ -19,8 +19,6 @@ FIND_PATH( Trilinos_INCLUDE_DIR
            Trilinos_version.h
            ${_trilinos_INCLUDE_SEARCH_DIRS} )
 
-SET( Trilinos_LIB_DIR ${Trilinos_INCLUDE_DIR}/../lib )
-
 IF (Trilinos_INCLUDE_DIR)
    SET(Trilinos_FOUND TRUE)
 ELSE (Trilinos_INCLUDE_DIR)
@@ -32,6 +30,8 @@ IF (Trilinos_FOUND)
   IF (NOT Trilinos_FIND_QUIETLY)
     MESSAGE(STATUS "Found Trilinos: ${Trilinos_INCLUDE_DIR}")
   ENDIF (NOT Trilinos_FIND_QUIETLY)
+
+  SET( Trilinos_LIB_DIR ${Trilinos_INCLUDE_DIR}/../lib )
 
   # ----------------------------------------------------------------------------
   FOREACH(COMPONENT ${Trilinos_FIND_COMPONENTS})

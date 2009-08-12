@@ -1,4 +1,4 @@
-ENABLE_LANGUAGE( CXX )
+ENABLE_LANGUAGE( CXX Fortran )
 
 # make use of our own modules
 SET(GL_CMAKE_DIR "${ginzburg-landau_SOURCE_DIR}/CMakeModules")
@@ -6,11 +6,13 @@ SET(CMAKE_MODULE_PATH "${GL_CMAKE_DIR}" ${CMAKE_MODULE_PATH})
 
 # directories for wave
 SET(CMAKE_INCLUDE_PATH "/opt/boost/1.39.0/include/boost-1_39/"
-                       "/opt/trilinos-090603a/LINUX_MPI_64BIT/include/" )
+                       "/opt/trilinos-090603a/LINUX_MPI_64BIT/include/"
+   )
 
 FIND_PACKAGE( Boost REQUIRED )
 FIND_PACKAGE( MPI REQUIRED )
 
+# FIND_PACKAGE( LAPACK )
 FIND_PACKAGE( Trilinos COMPONENTS NOXEpetra
                                   NOX
                                   AztecOO
@@ -57,12 +59,10 @@ FIND_LIBRARY( LAPACK lapack-gfortran
               HINTS /usr/local/lib
                     /opt/lapack-3.2.1/lib )
 FIND_LIBRARY( GFORTRAN gfortran
-              HINTS /usr/lib/gcc/x86_64-pc-linux-gnu/4.3.3
-                    /opt/gcc-4.3.3/lib64 )
-FIND_LIBRARY( MPICH mpich
-              HINTS /opt/mpich2-1.1/lib/ )
+              HINTS /usr/lib/gcc/x86_64-pc-linux-gnu/4.3.4
+                    /opt/gcc-4.3.4/lib64 )
 FIND_LIBRARY( PTHREAD pthread )
-FIND_LIBRARY( HDF5 hdf5 
+FIND_LIBRARY( HDF5 hdf5
               HINTS /opt/hdf5-1.6.9/lib/ )
 FIND_LIBRARY( Z z )
 # ==============================================================================
