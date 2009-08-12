@@ -36,7 +36,7 @@ GlSystem::GlSystem( GinzburgLandau::GinzburgLandau &gl,
 {
   int Nx = Gl.getStaggeredGrid()->getNx();
   NumComplexUnknowns = (Nx+1)*(Nx+1);
-  NumGlobalElements  = 2*NumComplexUnknowns+1;
+  NumGlobalElements  = 2*NumComplexUnknowns;
 
   // define the map where the data is nicely distributed over all processors
   StandardMap = new Epetra_Map( NumGlobalElements, 0, *Comm );
@@ -145,23 +145,20 @@ bool GlSystem::computeF( const Epetra_Vector &x,
   double passVal;
   for(int i=0; i<NumMyElements; i++ ) {
       int myGlobalIndex = StandardMap->GID(i);
-      if (myGlobalIndex==2*NumComplexUnknowns) { // phase condition
-          passVal = 0.0;
-      } else { // GL equations
-          // get the index of the complex valued equation
-          int psiIndex = realIndex2complexIndex( myGlobalIndex );
-          // get the complex value
-          // TODO: The same value is actually fetched twice in this loop
-          //       possibly consecutively: Once for the real, once for
-          //       the imaginary part of it.
-          val = Gl.computeGl( psiIndex, psi );
 
+      // get the index of the complex-valued equation
+      int psiIndex = realIndex2complexIndex( myGlobalIndex );
+      // get the complex value
+      // TODO: The same value is actually fetched twice in this loop
+      //       possibly consecutively: Once for the real, once for
+      //       the imaginary part of it.
+      val = Gl.computeGl( psiIndex, psi );
 
-          if ( !(myGlobalIndex%2) ) // myGlobalIndex is even
-              passVal = real(val);
-          else // myGlobalIndex is odd
-              passVal = imag(val);
-      }
+      if ( !(myGlobalIndex%2) ) // myGlobalIndex is even
+          passVal = real(val);
+      else // myGlobalIndex is odd
+          passVal = imag(val);
+
       FVec.ReplaceGlobalValues( 1, &passVal, &myGlobalIndex );
   }
 
@@ -173,7 +170,7 @@ bool GlSystem::computeF( const Epetra_Vector &x,
 
 // =============================================================================
 bool GlSystem::computeJacobian( const Epetra_Vector &x,
-                                Epetra_Operator     &Jac    )
+                                Epetra_Operator     &Jac )
 {
   // compute the values of the Jacobian
   createJacobian( VALUES, x );
@@ -257,35 +254,6 @@ bool GlSystem::createJacobian( const jacCreator    jc,
   for( int i=0 ; i<NumMyElements ; i++ ) {
       int Row = StandardMap->GID(i);
 
-      if (Row==2*NumComplexUnknowns) {// phase condition
-          // fill in phase condition stuff
-          numEntries = 2*NumComplexUnknowns;
-          colInd = new int[numEntries];
-          for (int k=0; k<numEntries; k++ )
-              colInd[k] = k;
-          if (jc==VALUES) {// fill on columns and values
-              values = new double[numEntries];
-              for (int k=0; k<NumComplexUnknowns; k++ ) {
-                  values[2*k]   = -imag(psi[k]);
-                  values[2*k+1] =  real(psi[k]);
-              }
-              // fill it in!
-              ierr = jacobian->SumIntoGlobalValues( Row,
-                                                    numEntries,
-                                                    values,
-                                                    colInd );
-              delete [] values;
-              values = NULL;
-          } else {// only fill the sparsity graph
-              Graph->InsertGlobalIndices( Row,
-                                          numEntries,
-                                          colInd );
-          }
-          delete [] colInd;
-          colInd = NULL;
-
-
-      } else { // GL equations
           // get the values and column indices
           // TODO: The same value is actually fetched twice in this loop
           //       possibly consecutively: Once for the real, once for
@@ -296,7 +264,7 @@ bool GlSystem::createJacobian( const jacCreator    jc,
               complexRow = (Row-1)/2;
 
           if (jc==VALUES) {
-              // fill on columns and values
+              // fill in columns and values
               Gl.getJacobianRow( complexRow,
                                  psi,
                                  colIndA, valuesA,
@@ -402,22 +370,6 @@ bool GlSystem::createJacobian( const jacCreator    jc,
               delete [] colIndBImag;
               colIndBImag = NULL;
 
-
-              // right bordering
-              int k = realIndex2complexIndex( Row );
-              int column = 2*NumComplexUnknowns;
-              if (jc==VALUES) {
-                  double value  = imag(psi[k]);
-                  ierr = jacobian->SumIntoGlobalValues( Row,
-                                                        1,
-                                                        &value,
-                                                        &column );
-              } else {
-                  Graph->InsertGlobalIndices( Row,
-                                              1,
-                                              &column );
-              }
-
               // ---------------------------------------------------------
           } else { // Row is odd <=> Imaginary part of the equation
               // ---------------------------------------------------------
@@ -513,23 +465,7 @@ bool GlSystem::createJacobian( const jacCreator    jc,
                                               colIndBImag );
               }
               delete [] colIndBImag; colIndBImag = NULL;
-
-              // right bordering
-              int column = 2*NumComplexUnknowns;
-              if (jc==VALUES) {
-                  int k = realIndex2complexIndex( Row );
-                  double value  = -real(psi[k]);
-                  ierr = jacobian->SumIntoGlobalValues( Row,
-                                                        1,
-                                                        &value,
-                                                        &column );
-              } else {
-                  Graph->InsertGlobalIndices( Row,
-                                              1,
-                                              &column );
-              }
               // ---------------------------------------------------------
-          }
       }
   }
 

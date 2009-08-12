@@ -254,7 +254,8 @@ int StaggeredGrid::i2k( int* i )
 void StaggeredGrid::lexicographic2grid( std::vector<int> *p )
 {
   // check if for admissible vector size
-  if ( p->size() != (nx_+1)*(nx_+1) ) {
+  unsigned int numUnknowns = (nx_+1)*(nx_+1);
+  if ( p->size() != numUnknowns ) {
       std::string message = "Size of the input vector p ("
                           + EpetraExt::toString( int(p->size()) ) + ") "
                           + "does not coincide with with number of unknowns on "

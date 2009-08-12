@@ -263,7 +263,7 @@ int main(int argc, char *argv[])
   // this test is useful if we start in a solution
   Teuchos::RCP<NOX::StatusTest::NormF> absresexact =
     Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-14));
-  Teuchos::RCP<NOX::StatusTest::Combo> combo = 
+  Teuchos::RCP<NOX::StatusTest::Combo> combo =
     Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
 
   combo->addStatusTest(fv);
@@ -300,6 +300,24 @@ int main(int argc, char *argv[])
       catch ( std::exception& e ) {
           std::cerr << e.what() << std::endl;
       }
+
+      // check back with
+      NOX::Epetra::Vector nullVec(finalSolution);
+      double tmp;
+      // Construct the (complex) vector i*finalSolution.
+      int k=0;
+      Epetra_Vector & nV = nullVec.getEpetraVector();
+      while ( k<nullVec.length() ) {
+          tmp     =  nV[k];
+          nV[k]   = -nV[k+1];
+          nV[k+1] = tmp;
+          k += 2;
+      }
+      NOX::Epetra::Vector resVec(finalSolution);
+      grpPtr->applyJacobian( nullVec, resVec );
+      double norm;
+      resVec.getEpetraVector().Norm2( &norm );
+      std::cout << "Norm: ||v|| = " << norm << std::endl;
   }
 
   // ---------------------------------------------------------------------------
