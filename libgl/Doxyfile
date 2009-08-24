@@ -1,4 +1,4 @@
-# Doxyfile 1.5.8
+# Doxyfile 1.6.0
 
 # This file describes the settings to be used by the documentation system
 # doxygen (www.doxygen.org) for a project
@@ -25,7 +25,7 @@ DOXYFILE_ENCODING      = UTF-8
 # The PROJECT_NAME tag is a single word (or a sequence of words surrounded 
 # by quotes) that should identify the project.
 
-PROJECT_NAME           = Ginzburg-Landau
+PROJECT_NAME           = Ginzburg--Landau
 
 # The PROJECT_NUMBER tag can be used to enter a project or revision number. 
 # This could be handy for archiving the generated documentation or 
@@ -38,7 +38,7 @@ PROJECT_NUMBER         =
 # If a relative path is entered, it will be relative to the location 
 # where doxygen was started. If left blank the current directory will be used.
 
-OUTPUT_DIRECTORY       = ./doc
+OUTPUT_DIRECTORY       = /home/nico/research/universiteit-antwerpen/svn/ginzburg-landau/programs/cpp/trunk/libgl/doc
 
 # If the CREATE_SUBDIRS tag is set to YES, then doxygen will create 
 # 4096 sub-directories (in 2 levels) under the output directory of each output 
@@ -54,11 +54,11 @@ CREATE_SUBDIRS         = NO
 # information to generate all constant output in the proper language. 
 # The default language is English, other supported languages are: 
 # Afrikaans, Arabic, Brazilian, Catalan, Chinese, Chinese-Traditional, 
-# Croatian, Czech, Danish, Dutch, Farsi, Finnish, French, German, Greek, 
-# Hungarian, Italian, Japanese, Japanese-en (Japanese with English messages), 
-# Korean, Korean-en, Lithuanian, Norwegian, Macedonian, Persian, Polish, 
-# Portuguese, Romanian, Russian, Serbian, Serbian-Cyrilic, Slovak, Slovene, 
-# Spanish, Swedish, and Ukrainian.
+# Croatian, Czech, Danish, Dutch, Esperanto, Farsi, Finnish, French, German, 
+# Greek, Hungarian, Italian, Japanese, Japanese-en (Japanese with English 
+# messages), Korean, Korean-en, Lithuanian, Norwegian, Macedonian, Persian, 
+# Polish, Portuguese, Romanian, Russian, Serbian, Serbian-Cyrilic, Slovak, 
+# Slovene, Spanish, Swedish, Ukrainian, and Vietnamese.
 
 OUTPUT_LANGUAGE        = English
 
@@ -124,7 +124,7 @@ FULL_PATH_NAMES        = YES
 # If left blank the directory from which doxygen is run is used as the 
 # path to strip.
 
-STRIP_FROM_PATH        = .
+STRIP_FROM_PATH        = /Users/dimitri/doxygen/mail/1.5.7/doxywizard/
 
 # The STRIP_FROM_INC_PATH tag can be used to strip a user-defined part of 
 # the path mentioned in the documentation of a class, which tells 
@@ -224,7 +224,8 @@ OPTIMIZE_OUTPUT_VHDL   = NO
 # the parsers supported by doxygen: IDL, Java, Javascript, C#, C, C++, D, PHP, 
 # Objective-C, Python, Fortran, VHDL, C, C++. For instance to make doxygen treat 
 # .inc files as Fortran files (default is PHP), and .f files as C (default is Fortran), 
-# use: inc=Fortran f=C
+# use: inc=Fortran f=C. Note that for custom extensions you also need to set
+# FILE_PATTERNS otherwise the files are not read by doxygen.
 
 EXTENSION_MAPPING      = 
 
@@ -307,12 +308,12 @@ SYMBOL_CACHE_SIZE      = 0
 # Private class members and static file members will be hidden unless 
 # the EXTRACT_PRIVATE and EXTRACT_STATIC tags are set to YES
 
-EXTRACT_ALL            = YES
+EXTRACT_ALL            = NO
 
 # If the EXTRACT_PRIVATE tag is set to YES all private members of a class 
 # will be included in the documentation.
 
-EXTRACT_PRIVATE        = YES
+EXTRACT_PRIVATE        = NO
 
 # If the EXTRACT_STATIC tag is set to YES all static members of a file 
 # will be included in the documentation.
@@ -415,6 +416,16 @@ SORT_MEMBER_DOCS       = YES
 
 SORT_BRIEF_DOCS        = NO
 
+# If the SORT_MEMBERS_CTORS_1ST tag is set to YES then doxygen
+# will sort the (brief and detailed) documentation of class members so that
+# constructors and destructors are listed first. If set to NO (the default)
+# the constructors will appear in the respective orders defined by
+# SORT_MEMBER_DOCS and SORT_BRIEF_DOCS.
+# This tag will be ignored for brief docs if SORT_BRIEF_DOCS is set to NO
+# and ignored for detailed docs if SORT_MEMBER_DOCS is set to NO.
+
+SORT_MEMBERS_CTORS_1ST = NO
+
 # If the SORT_GROUP_NAMES tag is set to YES then doxygen will sort the 
 # hierarchy of group names into alphabetical order. If set to NO (the default) 
 # the group names will appear in their defined order.
@@ -469,12 +480,6 @@ ENABLED_SECTIONS       =
 # command in the documentation regardless of this setting.
 
 MAX_INITIALIZER_LINES  = 30
-
-# Set the SHOW_USED_FILES tag to NO to disable the list of files generated 
-# at the bottom of the documentation of classes and structs. If set to YES the 
-# list will mention the files that were used to generate the documentation.
-
-SHOW_USED_FILES        = YES
 
 # If the sources in your project are distributed over multiple directories 
 # then setting the SHOW_DIRECTORIES tag to YES will show the directory hierarchy 
@@ -976,17 +981,15 @@ ENUM_VALUES_PER_LINE   = 4
 # If the tag value is set to FRAME, a side panel will be generated 
 # containing a tree-like index structure (just like the one that 
 # is generated for HTML Help). For this to work a browser that supports 
-# JavaScript, DHTML, CSS and frames is required (for instance Mozilla 1.0+, 
-# Netscape 6.0+, Internet explorer 5.0+, or Konqueror). Windows users are 
-# probably better off using the HTML help feature. Other possible values 
-# for this tag are: HIERARCHIES, which will generate the Groups, Directories, 
-# and Class Hierarchy pages using a tree view instead of an ordered list; 
-# ALL, which combines the behavior of FRAME and HIERARCHIES; and NONE, which 
-# disables this behavior completely. For backwards compatibility with previous 
-# releases of Doxygen, the values YES and NO are equivalent to FRAME and NONE 
-# respectively.
+# JavaScript, DHTML, CSS and frames is required (i.e. any modern browser). 
+# Windows users are probably better off using the HTML help feature.
 
-GENERATE_TREEVIEW      = NONE
+GENERATE_TREEVIEW      = NO
+
+# By enabling USE_INLINE_TREES, doxygen will generate the Groups, Directories, 
+# and Class Hierarchy pages using a tree view instead of an ordered list.
+
+USE_INLINE_TREES       = NO
 
 # If the treeview is enabled (see GENERATE_TREEVIEW) then this tag can be 
 # used to set the initial width (in pixels) of the frame in which the tree 
@@ -1001,6 +1004,15 @@ TREEVIEW_WIDTH         = 250
 # to force them to be regenerated.
 
 FORMULA_FONTSIZE       = 10
+
+# When the SEARCHENGINE tag is enable doxygen will generate a search box
+# for the HTML output. The underlying search engine uses javascript 
+# and DHTML and should work on any modern browser. Note that when using
+# HTML help (GENERATE_HTMLHELP) or Qt help (GENERATE_QHP) 
+# there is already a search function so this one should typically 
+# be disabled.
+
+SEARCHENGINE           = YES
 
 #---------------------------------------------------------------------------
 # configuration options related to the LaTeX output
@@ -1038,19 +1050,19 @@ COMPACT_LATEX          = NO
 # by the printer. Possible values are: a4, a4wide, letter, legal and 
 # executive. If left blank a4wide will be used.
 
-PAPER_TYPE             = a4wide
+PAPER_TYPE             = a4
 
 # The EXTRA_PACKAGES tag can be to specify one or more names of LaTeX 
 # packages that should be included in the LaTeX output.
 
-EXTRA_PACKAGES         = 
+EXTRA_PACKAGES         = microtype
 
 # The LATEX_HEADER tag can be used to specify a personal LaTeX header for 
 # the generated latex document. The header should contain everything until 
 # the first chapter. If it is left blank doxygen will generate a 
 # standard header. Notice: only use this tag if you know what you are doing!
 
-LATEX_HEADER           = 
+LATEX_HEADER           = doc/header.tex
 
 # If the PDF_HYPERLINKS tag is set to YES, the LaTeX that is generated 
 # is prepared for conversion to pdf (using ps2pdf). The pdf file will 
@@ -1077,6 +1089,13 @@ LATEX_BATCHMODE        = NO
 # in the output.
 
 LATEX_HIDE_INDICES     = NO
+
+# If LATEX_SOURCE_CODE is set to YES then doxygen will include
+# source code with syntax highlighting in the LaTeX output.
+# Note that which sources are shown also depends on other settings
+# such as SOURCE_BROWSER.
+
+LATEX_SOURCE_CODE      = NO
 
 #---------------------------------------------------------------------------
 # configuration options related to the RTF output
@@ -1229,7 +1248,7 @@ PERLMOD_PRETTY         = YES
 PERLMOD_MAKEVAR_PREFIX = 
 
 #---------------------------------------------------------------------------
-# Configuration options related to the preprocessor   
+# Configuration options related to the preprocessor
 #---------------------------------------------------------------------------
 
 # If the ENABLE_PREPROCESSING tag is set to YES (the default) Doxygen will 
@@ -1295,7 +1314,7 @@ EXPAND_AS_DEFINED      =
 SKIP_FUNCTION_MACROS   = YES
 
 #---------------------------------------------------------------------------
-# Configuration::additions related to external references   
+# Configuration::additions related to external references
 #---------------------------------------------------------------------------
 
 # The TAGFILES option can be used to specify one or more tagfiles. 
@@ -1338,7 +1357,7 @@ EXTERNAL_GROUPS        = YES
 PERL_PATH              = /usr/bin/perl
 
 #---------------------------------------------------------------------------
-# Configuration options related to the dot tool   
+# Configuration options related to the dot tool
 #---------------------------------------------------------------------------
 
 # If the CLASS_DIAGRAMS tag is set to YES (the default) Doxygen will 
@@ -1445,7 +1464,7 @@ INCLUDED_BY_GRAPH      = YES
 # the time of a run. So in most cases it will be better to enable call graphs 
 # for selected functions only using the \callgraph command.
 
-CALL_GRAPH             = NO
+CALL_GRAPH             = YES
 
 # If the CALLER_GRAPH and HAVE_DOT tags are set to YES then 
 # doxygen will generate a caller dependency graph for every global function 
@@ -1453,7 +1472,7 @@ CALL_GRAPH             = NO
 # the time of a run. So in most cases it will be better to enable caller 
 # graphs for selected functions only using the \callergraph command.
 
-CALLER_GRAPH           = NO
+CALLER_GRAPH           = YES
 
 # If the GRAPHICAL_HIERARCHY and HAVE_DOT tags are set to YES then doxygen 
 # will graphical hierarchy of all classes instead of a textual one.
@@ -1530,12 +1549,3 @@ GENERATE_LEGEND        = YES
 # the various graphs.
 
 DOT_CLEANUP            = YES
-
-#---------------------------------------------------------------------------
-# Options related to the search engine
-#---------------------------------------------------------------------------
-
-# The SEARCHENGINE tag specifies whether or not a search engine should be 
-# used. If set to NO the values of all tags below this one will be ignored.
-
-SEARCHENGINE           = YES

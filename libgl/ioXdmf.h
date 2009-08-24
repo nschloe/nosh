@@ -15,9 +15,16 @@ class IoXdmf: public IoVirtual
      //! Destructor
      virtual ~IoXdmf();
 
+     //! Reads the order parameter \f$\psi\f$ and the problem parameter list
+     //! from an XDMF file (plus its accompaining HDF5) into the arguments.
      virtual void read( std::vector<double_complex> *psi,
                         Teuchos::ParameterList      *problemParams );
 
+     //! Writes the  order parameter \f$\psi\f$ and the problem parameter list
+     //! into an XDMF file (plus its accompaining HDF5).
+     //! The data is written such that the lexicographical ordering of the
+     //! nodes is preserved and the resulting file contains a state \f$\psi\f
+     //! that can be viewed using standard tools.
      virtual void write( const std::vector<double_complex> &psi,
                          const Teuchos::ParameterList      &problemParams,
                          StaggeredGrid                     &sGrid          ) ;

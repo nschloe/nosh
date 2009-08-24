@@ -58,19 +58,28 @@ class GlSystem:
                                   Teuchos::ParameterList* precParams=0 );
 
       //! Returns the current state. Not necessarily a solution to the problem!
+      //! @return Reference-counted pointer to the current state.
       Teuchos::RCP<Epetra_Vector> getSolution();
 
       //! Returns the current Jacobian.
+      //! @return Reference-counted pointer to the Jacobian.
       Teuchos::RCP<Epetra_CrsMatrix> getJacobian();
 
+      //! Set the problem parameters.
       void setParameters(const LOCA::ParameterVector &p);
 
       //! Set directory to where all output gets written.
+      //! @param directory Name of the directory.
       void setOutputDir( const string &directory );
 
+      //! Print the solution x along with the continuation parameter conParam
+      //! to a file. This function is called internally by LOCA to print
+      //! solutions of each continuation step.
       void printSolution( const Epetra_Vector &x,
                           double              conParam );
 
+      //! Explictly print the solution x along with the problem parameters
+      //! to the file fileName.
       void solutionToFile( const Epetra_Vector          &x,
                            const Teuchos::ParameterList &problemParams,
                            const std::string            &fileName       );

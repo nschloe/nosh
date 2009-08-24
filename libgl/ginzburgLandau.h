@@ -19,7 +19,10 @@ class GinzburgLandau
 {
   public:
 
-     /*! Default constructor. */
+     /*! Default constructor.
+         @param nx Number of boxes in each spatial dimension.
+         @param edgelength Edge length of the square domain.
+         @param h0 (Initial) external magnetic field strength. */
      GinzburgLandau( int nx,
                      double edgelength,
                      double h0 );
@@ -30,7 +33,9 @@ class GinzburgLandau
      /*! Returns a pointer to the \f$A\f$ grid in use.*/
      StaggeredGrid::StaggeredGrid* getStaggeredGrid();
 
-     /*! Evaluates the Ginzburg--Landau equations. */
+     /*! Evaluates the Ginzburg--Landau equations.
+         @param eqnum Index of the equation to evaluate.
+         @param psi   Current order parameter \f$\psi\f$. */
      double_complex computeGl( const int                         eqnum,
                                const std::vector<double_complex> &psi   );
 
@@ -50,7 +55,7 @@ class GinzburgLandau
 
      /*! Calcuate the grid approximation of the Gibbs free energy
        \f[
-       \mathcal{G} = \int\limits_{\Omega} |\psi|^4 \,\mathrm{d}\omega
+       \mathcal{G} = \int\nolimits_{\Omega} |\psi|^4 \,\mathrm{d}\omega
        \f]
        of a given state \f$\psi\f$. */
      double freeEnergy( const std::vector<double_complex> &psi );

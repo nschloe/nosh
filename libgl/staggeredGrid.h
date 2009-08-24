@@ -21,7 +21,7 @@ class StaggeredGrid
 
       int getNx(); //!< Returns \f$N_x\f$.
 
-      double getEdgelength();
+      double getEdgelength(); //!< Returns the edge length \f$a\f$ of the square.
 
       int getNumComplexUnknowns(); //!< Returns the number of grid points for \f$\psi\f$.
 
@@ -30,6 +30,8 @@ class StaggeredGrid
 //      int* k2i( int  ); //!< Converts a running index k to a grid index i
       int  i2k( int* ); //!< Converts a grid index i to a running index k
 
+      /*! Returns the permutation vector that mats the internal ordering to
+          the generic lexicographic ordering of the sqare grid. */
       void lexicographic2grid( std::vector<int> *p );
 
       /*! Indicates whether a node sits in a corner of the domain, on an edge,
