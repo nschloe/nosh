@@ -13,6 +13,7 @@ SET(_trilinos_INCLUDE_SEARCH_DIRS
   "$ENV{ProgramFiles}/trilinos"
   /usr/local/trilinos
   /opt/trilinos
+  /usr/local/trilinos/current/include
 )
 
 FIND_PATH( Trilinos_INCLUDE_DIR

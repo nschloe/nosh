@@ -1,5 +1,8 @@
 ENABLE_LANGUAGE( CXX )
 
+SET(GL_CMAKE_DIR "${ginzburg-landau_SOURCE_DIR}/CMakeModules")
+SET(CMAKE_MODULE_PATH "${GL_CMAKE_DIR}" ${CMAKE_MODULE_PATH})
+
 INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/libgl
                       /opt/trilinos-090603a/LINUX_MPI_64BIT/include/ 
                       /opt/boost/1.39.0/include/boost-1_39/ )
@@ -15,70 +18,47 @@ SET ( internal_LIBS
       gl
     )
 
-# ==============================================================================
-# Find Trilinos libraries
-FIND_LIBRARY( TEUCHOS teuchos
-              HINTS /usr/local/trilinos/current/lib
-                    /opt/trilinos-090603a/LINUX_MPI_64BIT/lib )
-FIND_LIBRARY( EPETRA epetra
-              HINTS /usr/local/trilinos/current/lib
-                    /opt/trilinos-090603a/LINUX_MPI_64BIT/lib )
-FIND_LIBRARY( EPETRAEXT epetraext
-              HINTS /usr/local/trilinos/current/lib
-                    /opt/trilinos-090603a/LINUX_MPI_64BIT/lib )
-FIND_LIBRARY( LOCAEPETRA locaepetra
-              HINTS /usr/local/trilinos/current/lib
-                    /opt/trilinos-090603a/LINUX_MPI_64BIT/lib )
-FIND_LIBRARY( LOCA loca
-              HINTS /usr/local/trilinos/current/lib
-                    /opt/trilinos-090603a/LINUX_MPI_64BIT/lib )
-FIND_LIBRARY( NOX nox
-              HINTS /usr/local/trilinos/current/lib
-                    /opt/trilinos-090603a/LINUX_MPI_64BIT/lib )
-FIND_LIBRARY( NOXEPETRA noxepetra
-              HINTS /usr/local/trilinos/current/lib
-                    /opt/trilinos-090603a/LINUX_MPI_64BIT/lib )
-FIND_LIBRARY( AZTECOO aztecoo
-              HINTS /usr/local/trilinos/current/lib
-                    /opt/trilinos-090603a/LINUX_MPI_64BIT/lib )
-FIND_LIBRARY( IFPACK ifpack
-              HINTS /usr/local/trilinos/current/lib
-                    /opt/trilinos-090603a/LINUX_MPI_64BIT/lib )
-FIND_LIBRARY( AMESOS amesos
-              HINTS /usr/local/trilinos/current/lib
-                    /opt/trilinos-090603a/LINUX_MPI_64BIT/lib )
-FIND_LIBRARY( ML ml
-              HINTS /usr/local/trilinos/current/lib
-                    /opt/trilinos-090603a/LINUX_MPI_64BIT/lib )
-FIND_LIBRARY( PARACONT paracont
-              HINTS /home/nschloe/svn/paracont/trunk/lib )
-SET( TRILINOS_LIBS
-     ${LOCAEPETRA}
-     ${LOCA}
-     ${NOX}
-     ${NOXEPETRA}
-     ${AZTECOO}
-     ${IFPACK}
-     ${AMESOS}
-     ${ML}
-     ${EPETRAEXT}
-     ${EPETRA}
-     ${TEUCHOS}
-     ${PARACONT} )
-# ==============================================================================
-
+FIND_PACKAGE( Trilinos COMPONENTS NOXEpetra
+                                  NOX
+                                  AztecOO
+                                  IFPACK
+                                  Amesos
+                                  ML
+                                  LOCA
+                                  LOCAEpetra
+                                  EpetraExt
+                                  Epetra
+                                  Teuchos )
 
 # ==============================================================================
 # Find other external libs
-FIND_LIBRARY( SUPERLU superlu_3.0
-              HINTS /usr/local/superlu/3.0/lib
-                    /opt/superlu-3.0/lib )
-FIND_LIBRARY( SUPERLUDIST superlu_dist_2.3
-              HINTS /opt/superlu-dist-2.3/lib )
-FIND_LIBRARY( PARMETIS parmetis
-              HINTS /opt/parmetis-3.1.1/lib )
-FIND_LIBRARY( METIS metis
-              HINTS /opt/parmetis-3.1.1/lib )
+FIND_LIBRARY( PARACONT paracont
+              HINTS /home/nschloe/svn/paracont/trunk/lib )
+IF(TRILINOS_SUPERLU)
+    FIND_LIBRARY( SUPERLU superlu_3.0
+                  HINTS /usr/local/superlu/3.0/lib
+                        /opt/superlu-3.0/lib )
+    SET( LINK_LIBRARIES ${LINK_LIBRARIES}
+                        ${SUPERLU_LIBRARY} )
+ENDIF(TRILINOS_SUPERLU)
+IF(TRILINOS_SUPERLUDIST)
+    FIND_LIBRARY( SUPERLUDIST superlu_dist_2.3
+                  HINTS /opt/superlu-dist-2.3/lib )
+    SET( LINK_LIBRARIES ${LINK_LIBRARIES}
+                        ${SUPERLUDIST_LIBRARY} )
+ENDIF(TRILINOS_SUPERLUDIST)
+IF(TRILINOS_PARMETIS)
+    FIND_LIBRARY( PARMETIS parmetis
+                  HINTS /opt/parmetis-3.1.1/lib )
+    SET( LINK_LIBRARIES ${LINK_LIBRARIES}
+                        ${PARMETIS_LIBRARY})
+ENDIF(TRILINOS_PARMETIS)
+IF(TRILINOS_METIS)
+    FIND_LIBRARY( METIS metis
+                  HINTS /opt/parmetis-3.1.1/lib )
+    SET( LINK_LIBRARIES ${LINK_LIBRARIES}
+                        ${METIS_LIBRARY})
+ENDIF(TRILINOS_METIS)
 FIND_LIBRARY( BLAS goto-blas-gfortran
               HINTS /usr/local/lib
                     /opt/goto-blas-1.26/lib )
@@ -99,10 +79,7 @@ FIND_LIBRARY( Z z )
 TARGET_LINK_LIBRARIES ( gl-paracont.out
 			${internal_LIBS}
                         ${TRILINOS_LIBS}
-                        ${SUPERLU}
-                        ${SUPERLUDIST}
-                        ${PARMETIS}
-                        ${METIS}
+                        ${LINK_LIBRARIES}
                         ${HDF5}
                         ${Z}
                         ${LAPACK}

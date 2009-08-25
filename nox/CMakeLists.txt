@@ -1,4 +1,6 @@
-ENABLE_LANGUAGE( CXX Fortran )
+INCLUDE( ../cmake-system.txt REQUIRED )
+
+ENABLE_LANGUAGE( CXX )
 
 # make use of our own modules
 SET(GL_CMAKE_DIR "${ginzburg-landau_SOURCE_DIR}/CMakeModules")
@@ -10,9 +12,16 @@ SET(CMAKE_INCLUDE_PATH "/opt/boost/1.39.0/include/boost-1_39/"
    )
 
 FIND_PACKAGE( Boost REQUIRED )
-FIND_PACKAGE( MPI REQUIRED )
 
-# FIND_PACKAGE( LAPACK )
+
+SET( LINK_LIBRARIES )
+
+IF(MPI_COMPILED)
+    FIND_PACKAGE( MPI REQUIRED )
+    SET( LINK_LIBRARIES ${LINK_LIBRARIES}
+                        ${MPI_LIBRARY}    )
+ENDIF(MPI_COMPILED)
+
 FIND_PACKAGE( Trilinos COMPONENTS NOXEpetra
                                   NOX
                                   AztecOO
@@ -25,6 +34,7 @@ FIND_PACKAGE( Trilinos COMPONENTS NOXEpetra
                                   Teuchos )
 
 INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/libgl
+                      ${PARACONT_DIR}/include
                       ${Trilinos_INCLUDE_DIR}
                       ${MPI_INCLUDE_PATH}
                       ${Boost_INCLUDE_DIRS} )
@@ -42,16 +52,32 @@ SET ( internal_LIBS
 # ==============================================================================
 # Find other external libs
 FIND_LIBRARY( PARACONT paracont
-              HINTS /home/nschloe/svn/paracont/trunk/lib )
-FIND_LIBRARY( SUPERLU superlu_3.0
-              HINTS /usr/local/superlu/3.0/lib
-                    /opt/superlu-3.0/lib )
-FIND_LIBRARY( SUPERLUDIST superlu_dist_2.3
-              HINTS /opt/superlu-dist-2.3/lib )
-FIND_LIBRARY( PARMETIS parmetis
-              HINTS /opt/parmetis-3.1.1/lib )
-FIND_LIBRARY( METIS metis
-              HINTS /opt/parmetis-3.1.1/lib )
+              HINTS ${PARACONT_DIR}/lib )
+IF(TRILINOS_SUPERLU)
+    FIND_LIBRARY( SUPERLU superlu_3.0
+                  HINTS /usr/local/superlu/3.0/lib
+                        /opt/superlu-3.0/lib )
+    SET( LINK_LIBRARIES ${LINK_LIBRARIES}
+                        ${SUPERLU_LIBRARY} )
+ENDIF(TRILINOS_SUPERLU)
+IF(TRILINOS_SUPERLUDIST)
+    FIND_LIBRARY( SUPERLUDIST superlu_dist_2.3
+                  HINTS /opt/superlu-dist-2.3/lib )
+    SET( LINK_LIBRARIES ${LINK_LIBRARIES}
+                        ${SUPERLUDIST_LIBRARY} )
+ENDIF(TRILINOS_SUPERLUDIST)
+IF(TRILINOS_PARMETIS)
+    FIND_LIBRARY( PARMETIS parmetis
+                  HINTS /opt/parmetis-3.1.1/lib )
+    SET( LINK_LIBRARIES ${LINK_LIBRARIES}
+                        ${PARMETIS_LIBRARY})
+ENDIF(TRILINOS_PARMETIS)
+IF(TRILINOS_METIS)
+    FIND_LIBRARY( METIS metis
+                  HINTS /opt/parmetis-3.1.1/lib )
+    SET( LINK_LIBRARIES ${LINK_LIBRARIES}
+                        ${METIS_LIBRARY})
+ENDIF(TRILINOS_METIS)
 FIND_LIBRARY( BLAS goto-blas-gfortran
               HINTS /usr/local/lib
                     /opt/goto-blas-1.26/lib )
@@ -73,12 +99,8 @@ FIND_LIBRARY( Z z )
 TARGET_LINK_LIBRARIES ( gl-nox.out
 			${internal_LIBS}
                         ${Trilinos_LIBRARIES}
+                        ${LINK_LIBRARIES}
                         ${PARACONT}
-                        ${SUPERLU}
-                        ${SUPERLUDIST}
-                        ${PARMETIS}
-                        ${METIS}
-                        ${MPI_LIBRARY}
                         ${HDF5}
                         ${Z}
                         ${LAPACK}
