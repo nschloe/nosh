@@ -5,6 +5,7 @@
 
 #include <boost/algorithm/string.hpp>
 
+#include <Epetra_Map.h>
 
 #ifdef HAVE_MPI
 #include <mpi.h>

@@ -7,6 +7,8 @@
 #include <Epetra_MultiVector.h>
 #include <EpetraExt_HDF5.h>
 
+#include <Epetra_Map.h>
+
 #include <Teuchos_StringInputSource.hpp>
 #include <Teuchos_XMLParameterListReader.hpp>
 
