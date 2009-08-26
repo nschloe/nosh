@@ -12,7 +12,7 @@ SET ( gl_SRCS
       ioFactory.cpp
       ginzburgLandau.cpp
       glPrePostOperator.cpp
-      glSystem2.cpp          )
+      glSystem.cpp          )
 
 FIND_PACKAGE( Trilinos REQUIRED )
 INCLUDE_DIRECTORIES( ${Trilinos_INCLUDE_DIR} )
