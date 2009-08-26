@@ -12,17 +12,21 @@ SET ( gl_SRCS
       ioFactory.cpp
       ginzburgLandau.cpp
       glPrePostOperator.cpp
-      glSystem.cpp          )
+      glSystem2.cpp          )
 
 FIND_PACKAGE( Trilinos REQUIRED )
+INCLUDE_DIRECTORIES( ${Trilinos_INCLUDE_DIR} )
 
-INCLUDE_DIRECTORIES(
-                     ${Trilinos_INCLUDE_DIR}
-#                      /opt/boost/1.39.0/include/boost-1_39/
-                     ${PARACONT_DIR}/include
-#                      /opt/hdf5-1.6.9/include
-#                      /opt/openmpi-1.3.3/include
-                  )
+FIND_PACKAGE( Boost REQUIRED )
+INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIRS} )
+
+IF(MPI_COMPILED)
+    FIND_PACKAGE( MPI REQUIRED )
+    INCLUDE_DIRECTORIES( ${MPI_INCLUDE_PATH} )
+ENDIF(MPI_COMPILED)
+
+INCLUDE_DIRECTORIES( ${PARACONT_DIR}/include )
+INCLUDE_DIRECTORIES( ${HDF5_DIR}/include )
 
 ADD_LIBRARY ( gl STATIC
               ${gl_SRCS} )

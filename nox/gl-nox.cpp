@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
   if( parseReturn == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED )
     return 0;
 
-  if( parseReturn != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL   )
+  if( parseReturn != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL )
     return 1; // Error!
 
   bool withInitialGuess = filename.length()>0;
@@ -77,16 +77,23 @@ int main(int argc, char *argv[])
   std::vector<double_complex> psiLexicographic;
   Teuchos::ParameterList      problemParameters;
   if (withInitialGuess) {
-      IoVirtual* fileIo = IoFactory::createFileIo( filename );
+      Teuchos::RCP<IoVirtual> fileIo = Teuchos::RCP<IoVirtual>( IoFactory::createFileIo( filename ) );
       try {
           fileIo->read( &psiLexicographic,
                         &problemParameters );
       }
-      catch ( std::exception& e ) {
-          std::cerr << e.what() << std::endl;
+      catch ( const std::exception &e ) {
+          std::cout << e.what() << std::endl;
+          return 1;
       }
-      delete fileIo;
   } else {
+      int Nx = 50;
+      double edgelength = 10.0;
+      double H0 = 0.4;
+      std::cout << "Using the standard parameters \n"
+                << "    Nx         = " << Nx << ",\n"
+                << "    edgelength = " << edgelength << ",\n"
+                << "    H0         = " << H0 << "." << std::endl;
       problemParameters.set( "Nx"        , 50   );
       problemParameters.set( "edgelength", 10.0 );
       problemParameters.set( "H0"        , 0.4  );
@@ -241,11 +248,11 @@ int main(int argc, char *argv[])
   // ------------------------------------------------------------------------
   // Create the convergence tests
   Teuchos::RCP<NOX::StatusTest::NormF> absresid =
-    Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-12));
+    Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-10));
   Teuchos::RCP<NOX::StatusTest::NormF> relresid =
-    Teuchos::rcp(new NOX::StatusTest::NormF(grp, 1.0e-12));
+    Teuchos::rcp(new NOX::StatusTest::NormF(grp, 1.0e-10));
   Teuchos::RCP<NOX::StatusTest::NormUpdate> update =
-    Teuchos::rcp(new NOX::StatusTest::NormUpdate(1.0e-12));
+    Teuchos::rcp(new NOX::StatusTest::NormUpdate(1.0e-10));
   Teuchos::RCP<NOX::StatusTest::NormWRMS> wrms =
     Teuchos::rcp(new NOX::StatusTest::NormWRMS(1.0e-2, 1.0e-5));
   Teuchos::RCP<NOX::StatusTest::Combo> converged =

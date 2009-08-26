@@ -2,19 +2,11 @@ INCLUDE( ../cmake-system.txt REQUIRED )
 
 ENABLE_LANGUAGE( CXX )
 
-# make use of our own modules
-SET(GL_CMAKE_DIR "${ginzburg-landau_SOURCE_DIR}/CMakeModules")
-SET(CMAKE_MODULE_PATH "${GL_CMAKE_DIR}" ${CMAKE_MODULE_PATH})
-
-FIND_PACKAGE( Boost REQUIRED )
-
-
-SET( LINK_LIBRARIES )
-
 IF(MPI_COMPILED)
     FIND_PACKAGE( MPI REQUIRED )
     SET( LINK_LIBRARIES ${LINK_LIBRARIES}
                         ${MPI_LIBRARY}    )
+    INCLUDE_DIRECTORIES ( ${MPI_INCLUDE_PATH} )
 ENDIF(MPI_COMPILED)
 
 FIND_PACKAGE( Trilinos COMPONENTS NOXEpetra
@@ -27,12 +19,9 @@ FIND_PACKAGE( Trilinos COMPONENTS NOXEpetra
                                   EpetraExt
                                   Epetra
                                   Teuchos )
+INCLUDE_DIRECTORIES ( ${Trilinos_INCLUDE_DIR} )
 
-INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/libgl
-                      ${PARACONT_DIR}/include
-                      ${Trilinos_INCLUDE_DIR}
-                      ${MPI_INCLUDE_PATH}
-                      ${Boost_INCLUDE_DIRS} )
+INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/libgl )
 
 SET ( ginzburg_landau_SRCS
       gl-nox.cpp )
@@ -46,52 +35,68 @@ SET ( internal_LIBS
 
 # ==============================================================================
 # Find other external libs
+# -- Almost all of this should actually be handled by Trilinos itself.
+FIND_PACKAGE( Boost REQUIRED )
+INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIRS} )
+# ------------------------------------------------------------------------------
 FIND_LIBRARY( PARACONT paracont
               HINTS ${PARACONT_DIR}/lib )
+SET( LINK_LIBRARIES ${LINK_LIBRARIES}
+                    ${PARACONT} )
 # ------------------------------------------------------------------------------
 IF(TRILINOS_SUPERLU)
     FIND_LIBRARY( SUPERLU ${SUPERLU_LIBNAME}
                   HINTS ${SUPERLU_DIR} )
     SET( LINK_LIBRARIES ${LINK_LIBRARIES}
-                        ${SUPERLU_LIBRARY} )
+                        ${SUPERLU} )
 ENDIF(TRILINOS_SUPERLU)
 # ------------------------------------------------------------------------------
 IF(TRILINOS_SUPERLUDIST)
     FIND_LIBRARY( SUPERLUDIST ${SUPERLUDIST_LIBNAME}
                   HINTS ${SUPERLUDIST_DIR} )
     SET( LINK_LIBRARIES ${LINK_LIBRARIES}
-                        ${SUPERLUDIST_LIBRARY} )
+                        ${SUPERLUDIST} )
 ENDIF(TRILINOS_SUPERLUDIST)
 # ------------------------------------------------------------------------------
 IF(TRILINOS_PARMETIS)
     FIND_LIBRARY( PARMETIS ${PARMETIS_LIBNAME}
                   HINTS ${PARMETIS_DIR} )
     SET( LINK_LIBRARIES ${LINK_LIBRARIES}
-                        ${PARMETIS_LIBRARY} )
+                        ${PARMETIS} )
 ENDIF(TRILINOS_PARMETIS)
 # ------------------------------------------------------------------------------
 IF(TRILINOS_METIS)
     FIND_LIBRARY( METIS ${METIS_LIBNAME}
                   HINTS ${METIS_DIR} )
     SET( LINK_LIBRARIES ${LINK_LIBRARIES}
-                        ${METIS_LIBRARY} )
+                        ${METIS} )
 ENDIF(TRILINOS_METIS)
 # ------------------------------------------------------------------------------
-FIND_LIBRARY( BLAS ${BLAS_LIBNAME}
-              HINTS ${BLAS_DIR} )
+FIND_LIBRARY( HDF5 ${HDF5_LIBNAME}
+              HINTS ${HDF5_DIR}/lib )
+SET( LINK_LIBRARIES ${LINK_LIBRARIES}
+                    ${HDF5} )
+# ------------------------------------------------------------------------------
+FIND_LIBRARY( Z z )
+SET( LINK_LIBRARIES ${LINK_LIBRARIES}
+                    ${Z} )
 # ------------------------------------------------------------------------------
 FIND_LIBRARY( LAPACK ${LAPACK_LIBNAME}
               HINTS ${LAPACK_DIR} )
+SET( LINK_LIBRARIES ${LINK_LIBRARIES}
+                    ${LAPACK} )
 # ------------------------------------------------------------------------------
-FIND_LIBRARY( GFORTRAN ${GFORTRAN_LIB}
-              HINTS ${GFORTRAN_DIR}    )
+FIND_LIBRARY( BLAS ${BLAS_LIBNAME}
+              HINTS ${BLAS_DIR} )
+SET( LINK_LIBRARIES ${LINK_LIBRARIES}
+                    ${BLAS} )
 # ------------------------------------------------------------------------------
 # FIND_LIBRARY( PTHREAD pthread )
 # ------------------------------------------------------------------------------
-FIND_LIBRARY( HDF5 ${HDF5_LIBNAME}
-              HINTS ${HDF5_DIR} )
-# ------------------------------------------------------------------------------
-# FIND_LIBRARY( Z z )
+FIND_LIBRARY( GFORTRAN ${GFORTRAN_LIBNAME}
+              HINTS ${GFORTRAN_DIR}    )
+SET( LINK_LIBRARIES ${LINK_LIBRARIES}
+                    ${GFORTRAN} )
 # ==============================================================================
 
 
@@ -101,12 +106,5 @@ TARGET_LINK_LIBRARIES ( gl-nox.out
 			${internal_LIBS}
                         ${Trilinos_LIBRARIES}
                         ${LINK_LIBRARIES}
-                        ${PARACONT}
-                        ${HDF5}
-#                         ${Z}
-                        ${LAPACK}
-                        ${BLAS}
-#                        ${PTHREAD}
-                        ${GFORTRAN}
                       )
 # ==============================================================================

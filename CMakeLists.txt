@@ -2,6 +2,14 @@ cmake_minimum_required( VERSION 2.6 )
 
 PROJECT( ginzburg-landau )
 
+INCLUDE( cmake-system.txt REQUIRED )
+
+IF(MPI_COMPILED)
+    FIND_PACKAGE( MPI REQUIRED )
+#     SET(CMAKE_CXX_COMPILER ${MPI_COMPILER} )
+ENDIF(MPI_COMPILED)
+
+
 # set compilers
 #SET(CMAKE_CXX_COMPILER /opt/openmpi-1.3.3/bin/mpic++)
 
