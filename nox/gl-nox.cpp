@@ -308,23 +308,23 @@ int main(int argc, char *argv[])
           std::cerr << e.what() << std::endl;
       }
 
-      // check back with
-      NOX::Epetra::Vector nullVec(finalSolution);
-      double tmp;
-      // Construct the (complex) vector i*finalSolution.
-      int k=0;
-      Epetra_Vector & nV = nullVec.getEpetraVector();
-      while ( k<nullVec.length() ) {
-          tmp     =  nV[k];
-          nV[k]   = -nV[k+1];
-          nV[k+1] = tmp;
-          k += 2;
-      }
-      NOX::Epetra::Vector resVec(finalSolution);
-      grpPtr->applyJacobian( nullVec, resVec );
-      double norm;
-      resVec.getEpetraVector().Norm2( &norm );
-      std::cout << "Norm: ||v|| = " << norm << std::endl;
+//       // check back with
+//       NOX::Epetra::Vector nullVec(finalSolution);
+//       double tmp;
+//       // Construct the (complex) vector i*finalSolution.
+//       int k=0;
+//       Epetra_Vector & nV = nullVec.getEpetraVector();
+//       while ( k<nullVec.length() ) {
+//           tmp     =  nV[k];
+//           nV[k]   = -nV[k+1];
+//           nV[k+1] = tmp;
+//           k += 2;
+//       }
+//       NOX::Epetra::Vector resVec(finalSolution);
+//       grpPtr->applyJacobian( nullVec, resVec );
+//       double norm;
+//       resVec.getEpetraVector().Norm2( &norm );
+//       std::cout << "Norm: ||v|| = " << norm << std::endl;
   }
 
   // ---------------------------------------------------------------------------
