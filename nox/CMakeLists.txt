@@ -6,11 +6,6 @@ ENABLE_LANGUAGE( CXX )
 SET(GL_CMAKE_DIR "${ginzburg-landau_SOURCE_DIR}/CMakeModules")
 SET(CMAKE_MODULE_PATH "${GL_CMAKE_DIR}" ${CMAKE_MODULE_PATH})
 
-# directories for wave
-SET(CMAKE_INCLUDE_PATH "/opt/boost/1.39.0/include/boost-1_39/"
-                       "/opt/trilinos-090603a/LINUX_MPI_64BIT/include/"
-   )
-
 FIND_PACKAGE( Boost REQUIRED )
 
 
@@ -53,44 +48,50 @@ SET ( internal_LIBS
 # Find other external libs
 FIND_LIBRARY( PARACONT paracont
               HINTS ${PARACONT_DIR}/lib )
+# ------------------------------------------------------------------------------
 IF(TRILINOS_SUPERLU)
-    FIND_LIBRARY( SUPERLU superlu_3.0
-                  HINTS /usr/local/superlu/3.0/lib
-                        /opt/superlu-3.0/lib )
+    FIND_LIBRARY( SUPERLU ${SUPERLU_LIBNAME}
+                  HINTS ${SUPERLU_DIR} )
     SET( LINK_LIBRARIES ${LINK_LIBRARIES}
                         ${SUPERLU_LIBRARY} )
 ENDIF(TRILINOS_SUPERLU)
+# ------------------------------------------------------------------------------
 IF(TRILINOS_SUPERLUDIST)
-    FIND_LIBRARY( SUPERLUDIST superlu_dist_2.3
-                  HINTS /opt/superlu-dist-2.3/lib )
+    FIND_LIBRARY( SUPERLUDIST ${SUPERLUDIST_LIBNAME}
+                  HINTS ${SUPERLUDIST_DIR} )
     SET( LINK_LIBRARIES ${LINK_LIBRARIES}
                         ${SUPERLUDIST_LIBRARY} )
 ENDIF(TRILINOS_SUPERLUDIST)
+# ------------------------------------------------------------------------------
 IF(TRILINOS_PARMETIS)
-    FIND_LIBRARY( PARMETIS parmetis
-                  HINTS /opt/parmetis-3.1.1/lib )
+    FIND_LIBRARY( PARMETIS ${PARMETIS_LIBNAME}
+                  HINTS ${PARMETIS_DIR} )
     SET( LINK_LIBRARIES ${LINK_LIBRARIES}
-                        ${PARMETIS_LIBRARY})
+                        ${PARMETIS_LIBRARY} )
 ENDIF(TRILINOS_PARMETIS)
+# ------------------------------------------------------------------------------
 IF(TRILINOS_METIS)
-    FIND_LIBRARY( METIS metis
-                  HINTS /opt/parmetis-3.1.1/lib )
+    FIND_LIBRARY( METIS ${METIS_LIBNAME}
+                  HINTS ${METIS_DIR} )
     SET( LINK_LIBRARIES ${LINK_LIBRARIES}
-                        ${METIS_LIBRARY})
+                        ${METIS_LIBRARY} )
 ENDIF(TRILINOS_METIS)
-FIND_LIBRARY( BLAS goto-blas-gfortran
-              HINTS /usr/local/lib
-                    /opt/goto-blas-1.26/lib )
-FIND_LIBRARY( LAPACK lapack-gfortran
-              HINTS /usr/local/lib
-                    /opt/lapack-3.2.1/lib )
-FIND_LIBRARY( GFORTRAN gfortran
-              HINTS /usr/lib/gcc/x86_64-pc-linux-gnu/4.3.4
-                    /opt/gcc-4.3.4/lib64 )
-FIND_LIBRARY( PTHREAD pthread )
-FIND_LIBRARY( HDF5 hdf5
-              HINTS /opt/hdf5-1.6.9/lib/ )
-FIND_LIBRARY( Z z )
+# ------------------------------------------------------------------------------
+FIND_LIBRARY( BLAS ${BLAS_LIBNAME}
+              HINTS ${BLAS_DIR} )
+# ------------------------------------------------------------------------------
+FIND_LIBRARY( LAPACK ${LAPACK_LIBNAME}
+              HINTS ${LAPACK_DIR} )
+# ------------------------------------------------------------------------------
+FIND_LIBRARY( GFORTRAN ${GFORTRAN_LIB}
+              HINTS ${GFORTRAN_DIR}    )
+# ------------------------------------------------------------------------------
+# FIND_LIBRARY( PTHREAD pthread )
+# ------------------------------------------------------------------------------
+FIND_LIBRARY( HDF5 ${HDF5_LIBNAME}
+              HINTS ${HDF5_DIR} )
+# ------------------------------------------------------------------------------
+# FIND_LIBRARY( Z z )
 # ==============================================================================
 
 
@@ -102,7 +103,7 @@ TARGET_LINK_LIBRARIES ( gl-nox.out
                         ${LINK_LIBRARIES}
                         ${PARACONT}
                         ${HDF5}
-                        ${Z}
+#                         ${Z}
                         ${LAPACK}
                         ${BLAS}
 #                        ${PTHREAD}

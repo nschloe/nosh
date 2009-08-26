@@ -1,0 +1,40 @@
+SET( MPI_COMPILED FALSE )
+
+SET( TRILINOS_PARMETIS FALSE )
+SET( TRILINOS_METIS FALSE )
+SET( TRILINOS_SUPERLUDIST FALSE )
+
+SET( PARACONT_DIR /home/nico/ua/svn/paracont/trunk/ )
+#/home/nschloe/svn/paracont/trunk/
+
+# set the SuperLU directory if the libs are not in standard directories
+SET( SUPERLU_LIBNAME superlu_3.0 )
+SET( SUPERLU_DIR /usr/local/superlu/3.0 )
+
+# set the SuperLUDist directory if the libs are not in standard directories
+SET( SUPERLUDIST_LIBNAME superlu_dist_2.3 )
+SET( SUPERLUDIST_DIR /opt/superlu-dist-2.3/lib )
+
+# set the ParMETIS directory if the libs are not in standard directories
+SET( PARMETIS_LIBNAME parmetis )
+SET( PARMETIS_DIR /opt/parmetis-3.1.1/lib )
+
+# set the METIS directory if the libs are not in standard directories
+SET( METIS_LIBNAME metis )
+SET( METIS_DIR /opt/parmetis-3.1.1/lib )
+
+# set the BLAS directory if the libs are not in standard directories
+SET( BLAS_LIBNAME goto-blas-gfortran )
+SET( BLAS_DIR /usr/local/lib )
+
+# set the LAPACK directory if the libs are not in standard directories
+SET( LAPACK_LIBNAME lapack-gfortran )
+SET( LAPACK_DIR /usr/local/lib )
+
+# set the HDF5 directory if the libs are not in standard directories
+SET( HDF5_LIBNAME hdf5 )
+SET( HDF5_DIR /opt/hdf5-1.6.9/lib/ )
+
+# set the gfortran directory if the libs are not in standard directories
+SET( GFORTRAN_LIBNAME gfortran )
+SET( GFORTRAN_DIR /usr/lib/gcc/x86_64-pc-linux-gnu/4.3.4 )
