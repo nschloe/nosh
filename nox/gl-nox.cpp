@@ -87,6 +87,7 @@ int main(int argc, char *argv[])
           return 1;
       }
   } else {
+      // set the default value
       int Nx = 50;
       double edgelength = 10.0;
       double H0 = 0.4;
@@ -94,9 +95,9 @@ int main(int argc, char *argv[])
                 << "    Nx         = " << Nx << ",\n"
                 << "    edgelength = " << edgelength << ",\n"
                 << "    H0         = " << H0 << "." << std::endl;
-      problemParameters.set( "Nx"        , 50   );
-      problemParameters.set( "edgelength", 10.0 );
-      problemParameters.set( "H0"        , 0.4  );
+      problemParameters.set( "Nx"        , Nx   );
+      problemParameters.set( "edgelength", edgelength );
+      problemParameters.set( "H0"        , H0  );
   }
   // ---------------------------------------------------------------------------
 
@@ -262,7 +263,7 @@ int main(int argc, char *argv[])
   converged->addStatusTest(wrms);
   converged->addStatusTest(update);
 
-  int maxNonlinearIterations = 50;
+  int maxNonlinearIterations = 500;
   Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters =
     Teuchos::rcp(new NOX::StatusTest::MaxIters(maxNonlinearIterations));
   Teuchos::RCP<NOX::StatusTest::FiniteValue> fv =

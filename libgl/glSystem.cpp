@@ -235,11 +235,11 @@ bool GlSystem::createJacobian ( const jacCreator    jc,
   vector<double_complex> valuesA, valuesB;
 
   int    *colInd      = NULL,
-                        *colIndAReal = NULL, *colIndAImag = NULL,
-                                                            *colIndBReal = NULL, *colIndBImag = NULL;
+         *colIndAReal = NULL, *colIndAImag = NULL,
+         *colIndBReal = NULL, *colIndBImag = NULL;
   double *values      = NULL,
-                        *valuesAReal = NULL, *valuesAImag = NULL,
-                                                            *valuesBReal = NULL, *valuesBImag = NULL;
+         *valuesAReal = NULL, *valuesAImag = NULL,
+         *valuesBReal = NULL, *valuesBImag = NULL;
 
   int ierr, k, complexRow, numEntries;
 
@@ -323,6 +323,23 @@ bool GlSystem::createJacobian ( const jacCreator    jc,
                                   psi,
                                   colIndA, valuesA,
                                   colIndB, valuesB );
+// if( Row==1 ) {
+// std::cout << "**************************************" << std::endl;
+// std::cout << "--------------------------------------" << std::endl;
+// for (unsigned int l=0; l<colIndA.size(); l++ )
+//     std::cout << " colIndA[" << l << "] = " << colIndA[l] << std::endl;
+// std::cout << "--------------------------------------" << std::endl;
+// for (unsigned int l=0; l<valuesA.size(); l++ )
+//     std::cout << " valuesA[" << l << "] = " << valuesA[l] << std::endl;
+// std::cout << "--------------------------------------" << std::endl;
+// for (unsigned int l=0; l<colIndB.size(); l++ )
+//     std::cout << " colIndB[" << l << "] = " << colIndB[l] << std::endl;
+// std::cout << "--------------------------------------" << std::endl;
+// for (unsigned int l=0; l<valuesB.size(); l++ )
+//     std::cout << " valuesB[" << l << "] = " << valuesB[l] << std::endl;
+// std::cout << "--------------------------------------" << std::endl;
+// std::cout << "**************************************" << std::endl;
+// }
             }
           else
             {
@@ -597,13 +614,18 @@ bool GlSystem::createJacobian ( const jacCreator    jc,
   // finish up the graph construction
   try
     {
-      Graph->FillComplete();
+      if ( jc==VALUES ) {
+          jacobian->FillComplete();
+          jacobian->OptimizeStorage();
+      } else {
+          Graph->FillComplete();
+      }
     }
   catch ( int i )
     {
       std::string message = "FillComplete returned error code "
                             + EpetraExt::toString ( i ) + ".";
-      throw glException ( "GlSystem::createGraph",
+      throw glException ( "GlSystem::createJacobian",
                           message );
     }
   // ---------------------------------------------------------------------------
