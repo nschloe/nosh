@@ -50,6 +50,11 @@ class StaggeredGrid
       double getAyBelow( int* i );  //!< Returns the value of \f$A_y\f$ below point i.
       double getAyAbove( int* i );  //!< Returns the value of \f$A_y\f$ above point i.
 
+      int getKLeft ( int* i ); //!< Returns the running index \c k of the node left of \c i.
+      int getKRight( int* i ); //!< Returns the running index \c k of the node right of \c i.
+      int getKBelow( int* i ); //!< Returns the running index \c k of the node below \c i.
+      int getKAbove( int* i ); //!< Returns the running index \c k of the node above \c i.
+
   private:
       int    nx_; //!< Number of grid pieces in both x- and y-direction
       double edgelength_,

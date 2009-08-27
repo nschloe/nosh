@@ -262,7 +262,7 @@ int main(int argc, char *argv[])
   converged->addStatusTest(wrms);
   converged->addStatusTest(update);
 
-  int maxNonlinearIterations = 30;
+  int maxNonlinearIterations = 50;
   Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters =
     Teuchos::rcp(new NOX::StatusTest::MaxIters(maxNonlinearIterations));
   Teuchos::RCP<NOX::StatusTest::FiniteValue> fv =
@@ -298,11 +298,11 @@ int main(int argc, char *argv[])
 
   if (verbose) {
       try {
-      // get condition number
-      grpPtr->computeJacobian();
-      grpPtr->computeJacobianConditionNumber( 2000, 1e-2, 30, true );
-      double kappa = finalGroup.getJacobianConditionNumber();
-      std::cout << "Condition number: kappa = " << kappa << "." << std::endl;
+          // get condition number
+          grpPtr->computeJacobian();
+          grpPtr->computeJacobianConditionNumber( 2000, 1e-2, 30, true );
+          double kappa = finalGroup.getJacobianConditionNumber();
+          std::cout << "Condition number: kappa = " << kappa << "." << std::endl;
       }
       catch ( std::exception& e ) {
           std::cerr << e.what() << std::endl;

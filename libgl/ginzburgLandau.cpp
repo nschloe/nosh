@@ -136,43 +136,25 @@ double_complex GinzburgLandau::computeGl( const int                         eqnu
   // get the equation type from the running index
   getEquationType( eqnum, eqType, i );
 
+  // set psiK here, it is needed everywhere anyway
+  psiK = psi[ sGrid.i2k(i) ];
+
   switch (eqType) {
       case BOTTOMLEFT:
-          k = sGrid.i2k( i );
-          psiK = psi[k];
+          psiKRight = psi[ sGrid.getKRight(i) ];
+          psiKAbove = psi[ sGrid.getKAbove(i) ];
 
-          i[0] += 1;
-          k = sGrid.i2k( i );
-          psiKRight = psi[k];
-          i[0] -= 1;
-
-          i[1] += 1;
-          k = sGrid.i2k( i );
-          psiKAbove = psi[k];
-          i[1] -= 1;
-
-          AAbove = sGrid.getAyAbove( i );
           ARight = sGrid.getAxRight( i );
+          AAbove = sGrid.getAyAbove( i );
 
           res = ( - psiK      * 2.0
                   + psiKRight * exp(-I*ARight*h)
                   + psiKAbove * exp(-I*AAbove*h) ) * I/(sqrt(2)*h);
-
           break;
 
       case BOTTOMRIGHT:
-          k = sGrid.i2k( i );
-          psiK = psi[k];
-
-          i[0] -= 1;
-          k = sGrid.i2k( i );
-          psiKLeft = psi[k];
-          i[0] += 1;
-
-          i[1] += 1;
-          k = sGrid.i2k( i );
-          psiKAbove = psi[k];
-          i[1] -= 1;
+          psiKLeft  = psi[ sGrid.getKLeft (i) ];
+          psiKAbove = psi[ sGrid.getKAbove(i) ];
 
           ALeft  = sGrid.getAxLeft ( i );
           AAbove = sGrid.getAyAbove( i );
@@ -183,20 +165,10 @@ double_complex GinzburgLandau::computeGl( const int                         eqnu
           break;
 
       case TOPRIGHT:
-          k = sGrid.i2k( i );
-          psiK = psi[k];
+          psiKLeft  = psi[ sGrid.getKLeft (i) ];
+          psiKBelow = psi[ sGrid.getKBelow(i) ];
 
-          i[0] -= 1;
-          k = sGrid.i2k( i );
-          psiKLeft = psi[k];
-          i[0] += 1;
-
-          i[1] -= 1;
-          k = sGrid.i2k( i );
-          psiKBelow = psi[k];
-          i[1] += 1;
-
-          ALeft  = sGrid.getAxLeft( i );
+          ALeft  = sGrid.getAxLeft ( i );
           ABelow = sGrid.getAyBelow( i );
 
           res = ( - psiK      * 2.0
@@ -205,18 +177,8 @@ double_complex GinzburgLandau::computeGl( const int                         eqnu
           break;
 
       case TOPLEFT:
-          k = sGrid.i2k( i );
-          psiK = psi[k];
-
-          i[0] += 1;
-          k = sGrid.i2k( i );
-          psiKRight = psi[k];
-          i[0] -= 1;
-
-          i[1] -= 1;
-          k = sGrid.i2k( i );
-          psiKBelow = psi[k];
-          i[1] += 1;
+          psiKRight = psi[ sGrid.getKRight(i) ];
+          psiKBelow = psi[ sGrid.getKBelow(i) ];
 
           ARight = sGrid.getAxRight( i );
           ABelow = sGrid.getAyBelow( i );
@@ -227,98 +189,129 @@ double_complex GinzburgLandau::computeGl( const int                         eqnu
           break;
 
       case BOTTOM:
-          k = sGrid.i2k( i );
-          psiK = psi[k];
-
-          i[1] += 1;
-          k = sGrid.i2k( i );
-          psiKAbove = psi[k];
-          i[1] -= 1;
-
+          // -------------------------------------------------------------------
+          // normal derivative
+          psiKAbove = psi[ sGrid.getKAbove(i) ];
           AAbove = sGrid.getAyAbove( i );
-
           res = ( - psiK
                   + psiKAbove * exp(-I*AAbove*h) ) * I/h;
+          // -------------------------------------------------------------------
+
+//           // -------------------------------------------------------------------
+//           // formulated with outer point, which is then eliminated by
+//           // boundary condition
+//           psiKLeft  = psi[ sGrid.getKLeft (i) ];
+//           psiKRight = psi[ sGrid.getKRight(i) ];
+//           psiKAbove = psi[ sGrid.getKAbove(i) ];
+//
+//           ALeft  = sGrid.getAxLeft( i );
+//           ARight = sGrid.getAxRight( i );
+//           AAbove = sGrid.getAyAbove( i );
+//           res = (   psiK*      (-3.0)
+//                   + psiKLeft*  exp( I*ALeft *h) + psiKRight* exp(-I*ARight*h)
+//                                                 + psiKAbove* exp(-I*AAbove*h) ) / (h*h)
+//                 + psiK * (1-abs(psiK)*abs(psiK));
+//           // -------------------------------------------------------------------
+
           break;
 
       case RIGHT:
-          k = sGrid.i2k( i );
-          psiK = psi[k];
-
-          i[0] -= 1;
-          k = sGrid.i2k( i );
-          psiKLeft = psi[k];
-          i[0] += 1;
-
-          ALeft = sGrid.getAxLeft( i );
-
+          // -------------------------------------------------------------------
+          // normal derivative
+          psiKLeft = psi[ sGrid.getKLeft(i) ];
+          ALeft  = sGrid.getAxLeft( i );
           res = ( - psiK
                   + psiKLeft * exp( I*ALeft*h) ) * I/h;
+          // -------------------------------------------------------------------
+
+//           // -------------------------------------------------------------------
+//           // formulated with outer point, which is then eliminated by
+//           // boundary condition
+//           psiKLeft  = psi[ sGrid.getKLeft (i) ];
+//           psiKBelow = psi[ sGrid.getKBelow(i) ];
+//           psiKAbove = psi[ sGrid.getKAbove(i) ];
+//
+//           ALeft  = sGrid.getAxLeft( i );
+//           ABelow = sGrid.getAyBelow( i );
+//           AAbove = sGrid.getAyAbove( i );
+//           res = (   psiK*      (-3.0)
+//                   + psiKLeft*  exp( I*ALeft *h)
+//                   + psiKBelow* exp( I*ABelow*h) + psiKAbove* exp(-I*AAbove*h) ) / (h*h)
+//                 + psiK * (1-abs(psiK)*abs(psiK));
+//           // -------------------------------------------------------------------
           break;
 
       case TOP:
-          k = sGrid.i2k( i );
-          psiK = psi[k];
-
-          i[1] -= 1;
-          k = sGrid.i2k( i );
-          psiKBelow = psi[k];
-          i[1] += 1;
-
+          // -------------------------------------------------------------------
+          // normal derivative
+          psiKBelow = psi[ sGrid.getKBelow(i) ];
           ABelow = sGrid.getAyBelow( i );
-
           res = ( - psiK
                   + psiKBelow * exp( I*ABelow*h) ) * I/h;
+          // -------------------------------------------------------------------
+
+//           // -------------------------------------------------------------------
+//           // formulated with outer point, which is then eliminated by
+//           // boundary condition
+//           psiKLeft  = psi[ sGrid.getKLeft (i) ];
+//           psiKRight = psi[ sGrid.getKRight(i) ];
+//           psiKBelow = psi[ sGrid.getKBelow(i) ];
+//
+//           ALeft  = sGrid.getAxLeft ( i );
+//           ARight = sGrid.getAxRight( i );
+//           ABelow = sGrid.getAyBelow( i );
+//           res = (   psiK*      (-3.0)
+//                   + psiKLeft*  exp( I*ALeft *h) + psiKRight* exp(-I*ARight*h)
+//                   + psiKBelow* exp( I*ABelow*h)                               ) / (h*h)
+//                 + psiK * (1-abs(psiK)*abs(psiK));
+//           // -------------------------------------------------------------------
+
           break;
 
       case LEFT:
-          k = sGrid.i2k( i );
-          psiK = psi[k];
-
-          i[0] += 1;
-          k = sGrid.i2k( i );
-          psiKRight = psi[k];
-          i[0] -= 1;
-
+          // -------------------------------------------------------------------
+          // normal derivative
+          psiKRight = psi[ sGrid.getKRight(i) ];
           ARight = sGrid.getAxRight( i );
-
           res = ( - psiK
                   + psiKRight * exp(-I*ARight*h) ) * I/h;
+          // -------------------------------------------------------------------
+
+//           // -------------------------------------------------------------------
+//           // formulated with outer point, which is then eliminated by
+//           // boundary condition
+//           psiKRight = psi[ sGrid.getKRight(i) ];
+//           psiKBelow = psi[ sGrid.getKBelow(i) ];
+//           psiKAbove = psi[ sGrid.getKAbove(i) ];
+//
+//           ARight = sGrid.getAxRight( i );
+//           ABelow = sGrid.getAyBelow( i );
+//           AAbove = sGrid.getAyAbove( i );
+//           res = (   psiK*      (-3.0)
+//                                                 + psiKRight* exp(-I*ARight*h)
+//                   + psiKBelow* exp( I*ABelow*h) + psiKAbove* exp(-I*AAbove*h) ) / (h*h)
+//                 + psiK * (1-abs(psiK)*abs(psiK));
+//           // -------------------------------------------------------------------
+
           break;
 
       case INTERIOR:
-          k = sGrid.i2k( i );
-          psiK = psi[k];
-
-          i[0] += 1;
-          k = sGrid.i2k( i );
-          psiKRight = psi[k];
-          i[0] -= 1;
-
-          i[0] -= 1;
-          k = sGrid.i2k( i );
-          psiKLeft = psi[k];
-          i[0] += 1;
-
-          i[1] += 1;
-          k = sGrid.i2k( i );
-          psiKAbove = psi[k];
-          i[1] -= 1;
-
-          i[1] -= 1;
-          k = sGrid.i2k( i );
-          psiKBelow = psi[k];
-          i[1] += 1;
+          psiKLeft  = psi[ sGrid.getKLeft (i) ];
+          psiKRight = psi[ sGrid.getKRight(i) ];
+          psiKBelow = psi[ sGrid.getKBelow(i) ];
+          psiKAbove = psi[ sGrid.getKAbove(i) ];
 
           ALeft  = sGrid.getAxLeft ( i );
           ARight = sGrid.getAxRight( i );
           ABelow = sGrid.getAyBelow( i );
           AAbove = sGrid.getAyAbove( i );
 
+          // -------------------------------------------------------------------
           res = (   psiK*      (-4.0)
                   + psiKLeft*  exp( I*ALeft *h) + psiKRight* exp(-I*ARight*h)
                   + psiKBelow* exp( I*ABelow*h) + psiKAbove* exp(-I*AAbove*h) ) / (h*h)
                 + psiK * (1-abs(psiK)*abs(psiK));
+          // -------------------------------------------------------------------
           break;
 
       default:
@@ -399,21 +392,21 @@ void GinzburgLandau::computeJacobianRow( const filltype                    ft,
   double       ARight, ALeft, AAbove, ABelow,
                h = sGrid.getH();
   equationType eqType;
+  int toLeft[2];
+  toLeft[0] = -1; toLeft[1]=0;
+  int toRight[2];
+  toLeft[0] = 1; toLeft[1]=0;
 
   // get the equation type from the running index
   getEquationType( eqnum, eqType, i );
 
+  // needed everywhere
+  k = sGrid.i2k( i );
+
   switch (eqType) {
       case BOTTOMLEFT:
-          k = sGrid.i2k( i );
-
-          i[0] += 1;
-          kRight = sGrid.i2k( i );
-          i[0] -= 1;
-
-          i[1] += 1;
-          kAbove = sGrid.i2k( i );
-          i[1] -= 1;
+          kRight = sGrid.getKRight( i );
+          kAbove = sGrid.getKAbove( i );
 
           numEntriesPsi = 3;
           columnIndicesPsi.resize(numEntriesPsi);
@@ -433,15 +426,8 @@ void GinzburgLandau::computeJacobianRow( const filltype                    ft,
           break;
 
       case BOTTOMRIGHT:
-          k = sGrid.i2k( i );
-
-          i[0] -= 1;
-          kLeft = sGrid.i2k( i );
-          i[0] += 1;
-
-          i[1] += 1;
-          kAbove = sGrid.i2k( i );
-          i[1] -= 1;
+          kLeft  = sGrid.getKLeft ( i );
+          kAbove = sGrid.getKAbove( i );
 
           numEntriesPsi = 3;
           columnIndicesPsi.resize(numEntriesPsi);
@@ -461,15 +447,8 @@ void GinzburgLandau::computeJacobianRow( const filltype                    ft,
           break;
 
       case TOPRIGHT:
-          k = sGrid.i2k( i );
-
-          i[0] -= 1;
-          kLeft = sGrid.i2k( i );
-          i[0] += 1;
-
-          i[1] -= 1; 
-          kBelow = sGrid.i2k( i );
-          i[1] += 1;
+          kLeft  = sGrid.getKLeft ( i );
+          kBelow = sGrid.getKBelow( i );
 
           numEntriesPsi = 3;
           columnIndicesPsi.resize(numEntriesPsi);
@@ -489,15 +468,8 @@ void GinzburgLandau::computeJacobianRow( const filltype                    ft,
           break;
 
       case TOPLEFT:
-          k = sGrid.i2k( i );
-
-          i[0] += 1;
-          kRight = sGrid.i2k( i );
-          i[0] -= 1;
-
-          i[1] -= 1;
-          kBelow = sGrid.i2k( i );
-          i[1] += 1;
+          kRight = sGrid.getKRight( i );
+          kBelow = sGrid.getKBelow( i );
 
           numEntriesPsi = 3;
           columnIndicesPsi.resize(numEntriesPsi);
@@ -517,11 +489,9 @@ void GinzburgLandau::computeJacobianRow( const filltype                    ft,
           break;
 
       case BOTTOM:
-          k = sGrid.i2k( i );
-
-          i[1] += 1;
-          kAbove = sGrid.i2k( i );
-          i[1] -= 1;
+          // -------------------------------------------------------------------
+          // normal derivative
+          kAbove = sGrid.getKAbove( i );
 
           numEntriesPsi = 2;
           columnIndicesPsi.resize(numEntriesPsi);
@@ -534,15 +504,49 @@ void GinzburgLandau::computeJacobianRow( const filltype                    ft,
               valuesPsi[0] = -1.0             * I/h;
               valuesPsi[1] = exp(-I*AAbove*h) * I/h;
           }
+          // -------------------------------------------------------------------
+
+//           // -------------------------------------------------------------------
+//           // formulated with outer point, which is then eliminated by
+//           // boundary condition
+//           kAbove = sGrid.getKAbove( i );
+//           kRight = sGrid.getKRight( i );
+//           kLeft  = sGrid.getKLeft ( i );
+//
+//           numEntriesPsi = 4;
+//           columnIndicesPsi.resize(numEntriesPsi);
+//           columnIndicesPsi[0] = k;
+//           columnIndicesPsi[1] = kAbove;
+//           columnIndicesPsi[2] = kLeft;
+//           columnIndicesPsi[3] = kRight;
+//
+//           if (ft==VALUES) {
+//               AAbove = sGrid.getAyAbove( i );
+//               ALeft  = sGrid.getAxLeft ( i );
+//               ARight = sGrid.getAxRight( i );
+//               valuesPsi.resize(numEntriesPsi);
+//               valuesPsi[0] = -3.0             /(h*h);
+//               valuesPsi[1] = exp(-I*AAbove*h) /(h*h);
+//               valuesPsi[2] = exp( I*ALeft *h) /(h*h);
+//               valuesPsi[3] = exp(-I*ARight*h) /(h*h);
+//           }
+//
+//           numEntriesPsiConj = 1;
+//           columnIndicesPsiConj.resize(numEntriesPsiConj);
+//           columnIndicesPsiConj[0] = k;
+//
+//           if (ft==VALUES) {
+//               valuesPsiConj.resize(numEntriesPsiConj);
+//               valuesPsiConj[0] = -psi[k]*psi[k];
+//           }
+//           // -------------------------------------------------------------------
 
           break;
 
       case RIGHT:
-          k = sGrid.i2k( i );
-
-          i[0] -= 1;
-          kLeft = sGrid.i2k( i );
-          i[0] += 1;
+          // -------------------------------------------------------------------
+          // normal derivative
+          kLeft = sGrid.getKLeft( i );
 
           numEntriesPsi = 2;
           columnIndicesPsi.resize(numEntriesPsi);
@@ -555,15 +559,48 @@ void GinzburgLandau::computeJacobianRow( const filltype                    ft,
               valuesPsi[0] = -1.0            * I/h;
               valuesPsi[1] = exp( I*ALeft*h) * I/h;
           }
+          // -------------------------------------------------------------------
 
+//           // -------------------------------------------------------------------
+//           // formulated with outer point, which is then eliminated by
+//           // boundary condition
+//           kBelow = sGrid.getKBelow( i );
+//           kAbove = sGrid.getKAbove( i );
+//           kLeft  = sGrid.getKLeft ( i );
+//
+//           numEntriesPsi = 4;
+//           columnIndicesPsi.resize(numEntriesPsi);
+//           columnIndicesPsi[0] = k;
+//           columnIndicesPsi[1] = kBelow;
+//           columnIndicesPsi[2] = kAbove;
+//           columnIndicesPsi[3] = kLeft;
+//
+//           if (ft==VALUES) {
+//               ABelow = sGrid.getAyBelow( i );
+//               AAbove = sGrid.getAyAbove( i );
+//               ALeft  = sGrid.getAxLeft ( i );
+//               valuesPsi.resize(numEntriesPsi);
+//               valuesPsi[0] = -3.0             /(h*h);
+//               valuesPsi[1] = exp( I*ABelow*h) /(h*h);
+//               valuesPsi[2] = exp(-I*AAbove*h) /(h*h);
+//               valuesPsi[3] = exp( I*ALeft *h) /(h*h);
+//           }
+//
+//           numEntriesPsiConj = 1;
+//           columnIndicesPsiConj.resize(numEntriesPsiConj);
+//           columnIndicesPsiConj[0] = k;
+//
+//           if (ft==VALUES) {
+//               valuesPsiConj.resize(numEntriesPsiConj);
+//               valuesPsiConj[0] = -psi[k]*psi[k];
+//           }
+//           // -------------------------------------------------------------------
           break;
 
       case TOP:
-          k = sGrid.i2k( i );
-
-          i[1] -= 1;
-          kBelow = sGrid.i2k( i );
-          i[1] += 1;
+          // -------------------------------------------------------------------
+          // normal derivative
+          kBelow = sGrid.getKBelow( i );
 
           numEntriesPsi = 2;
           columnIndicesPsi.resize(numEntriesPsi);
@@ -576,15 +613,49 @@ void GinzburgLandau::computeJacobianRow( const filltype                    ft,
               valuesPsi[0] = -1.0             * I/h;
               valuesPsi[1] = exp( I*ABelow*h) * I/h;
           }
+          // -------------------------------------------------------------------
+
+//           // -------------------------------------------------------------------
+//           // formulated with outer point, which is then eliminated by
+//           // boundary condition
+//           kBelow = sGrid.getKBelow( i );
+//           kRight = sGrid.getKRight( i );
+//           kLeft  = sGrid.getKLeft ( i );
+//
+//           numEntriesPsi = 4;
+//           columnIndicesPsi.resize(numEntriesPsi);
+//           columnIndicesPsi[0] = k;
+//           columnIndicesPsi[1] = kBelow;
+//           columnIndicesPsi[2] = kLeft;
+//           columnIndicesPsi[3] = kRight;
+//
+//           if (ft==VALUES) {
+//               ABelow = sGrid.getAyBelow( i );
+//               ALeft  = sGrid.getAxLeft ( i );
+//               ARight = sGrid.getAxRight( i );
+//               valuesPsi.resize(numEntriesPsi);
+//               valuesPsi[0] = -3.0             /(h*h);
+//               valuesPsi[1] = exp( I*ABelow*h) /(h*h);
+//               valuesPsi[2] = exp( I*ALeft *h) /(h*h);
+//               valuesPsi[3] = exp(-I*ARight*h) /(h*h);
+//           }
+//
+//           numEntriesPsiConj = 1;
+//           columnIndicesPsiConj.resize(numEntriesPsiConj);
+//           columnIndicesPsiConj[0] = k;
+//
+//           if (ft==VALUES) {
+//               valuesPsiConj.resize(numEntriesPsiConj);
+//               valuesPsiConj[0] = -psi[k]*psi[k];
+//           }
+//           // -------------------------------------------------------------------
 
           break;
 
       case LEFT:
-          k = sGrid.i2k( i );
-
-          i[0] += 1;
-          kRight = sGrid.i2k( i );
-          i[0] -= 1;
+          // -------------------------------------------------------------------
+          // normal derivative
+          kRight = sGrid.getKRight( i );
 
           numEntriesPsi = 2;
           columnIndicesPsi.resize(numEntriesPsi);
@@ -597,26 +668,49 @@ void GinzburgLandau::computeJacobianRow( const filltype                    ft,
               valuesPsi[0] = -1.0             * I/h;
               valuesPsi[1] = exp(-I*ARight*h) * I/h;
           }
+          // -------------------------------------------------------------------
+
+//           // -------------------------------------------------------------------
+//           // formulated with outer point, which is then eliminated by
+//           // boundary condition
+//           kBelow = sGrid.getKBelow( i );
+//           kAbove = sGrid.getKAbove( i );
+//           kRight = sGrid.getKRight( i );
+//
+//           numEntriesPsi = 4;
+//           columnIndicesPsi.resize(numEntriesPsi);
+//           columnIndicesPsi[0] = k;
+//           columnIndicesPsi[1] = kBelow;
+//           columnIndicesPsi[2] = kAbove;
+//           columnIndicesPsi[3] = kRight;
+//
+//           if (ft==VALUES) {
+//               ABelow = sGrid.getAyBelow( i );
+//               AAbove = sGrid.getAyAbove( i );
+//               ARight = sGrid.getAxRight( i );
+//               valuesPsi.resize(numEntriesPsi);
+//               valuesPsi[0] = -3.0             /(h*h);
+//               valuesPsi[1] = exp( I*ABelow*h) /(h*h);
+//               valuesPsi[2] = exp(-I*AAbove*h) /(h*h);
+//               valuesPsi[3] = exp(-I*ARight*h) /(h*h);
+//           }
+//
+//           numEntriesPsiConj = 1;
+//           columnIndicesPsiConj.resize(numEntriesPsiConj);
+//           columnIndicesPsiConj[0] = k;
+//
+//           if (ft==VALUES) {
+//               valuesPsiConj.resize(numEntriesPsiConj);
+//               valuesPsiConj[0] = -psi[k]*psi[k];
+//           }
+//           // -------------------------------------------------------------------
           break;
 
       case INTERIOR:
-          k = sGrid.i2k( i );
-
-          i[0] += 1;
-          kRight = sGrid.i2k( i );
-          i[0] -= 1;
-
-          i[0] -= 1;
-          kLeft = sGrid.i2k( i );
-          i[0] += 1;
-
-          i[1] += 1;
-          kAbove = sGrid.i2k( i );
-          i[1] -= 1;
-
-          i[1] -= 1;
-          kBelow = sGrid.i2k( i );
-          i[1] += 1;
+          kRight = sGrid.getKRight( i );
+          kLeft  = sGrid.getKLeft ( i );
+          kAbove = sGrid.getKAbove( i );
+          kBelow = sGrid.getKBelow( i );
 
           numEntriesPsi = 5;
           columnIndicesPsi.resize(numEntriesPsi);
@@ -627,8 +721,8 @@ void GinzburgLandau::computeJacobianRow( const filltype                    ft,
           columnIndicesPsi[4] = kAbove;
 
           if (ft==VALUES) {
-              ARight = sGrid.getAxRight( i );
               ALeft  = sGrid.getAxLeft ( i );
+              ARight = sGrid.getAxRight( i );
               ABelow = sGrid.getAyBelow( i );
               AAbove = sGrid.getAyAbove( i );
 
@@ -672,7 +766,7 @@ double GinzburgLandau::freeEnergy( const std::vector<double_complex> &psi )
       nt = sGrid.k2nodeType(k);
       if (nt==StaggeredGrid::CORNER)
           energy -=       h*h * pow(abs(psi[k]),4);
-      else if (nt =StaggeredGrid::EDGE)
+      else if (nt==StaggeredGrid::EDGE)
           energy -= 0.5*  h*h * pow(abs(psi[k]),4);
       else if (nt==StaggeredGrid::INTERIOR)
           energy -= 0.25* h*h * pow(abs(psi[k]),4);

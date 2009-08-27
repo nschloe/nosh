@@ -113,6 +113,11 @@ class GinzburgLandau
                             equationType&,
                             int* );
 
+      int getKLeft ( const int* i );
+      int getKRight( const int* i );
+      int getKBelow( const int* i );
+      int getKAbove( const int* i );
+
       enum filltype { VALUES, SPARSITY };
 
       /*! Calculated the coefficients of the jacobian system associated with the
