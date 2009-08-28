@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
       }
   } else {
       // set the default value
-      int Nx = 50;
+      int Nx = 100;
       double edgelength = 10.0;
       double H0 = 0.4;
       std::cout << "Using the standard parameters \n"

@@ -151,7 +151,7 @@ bool GlSystem::computeF ( const Epetra_Vector &x,
   for ( int i=0; i<NumMyElements; i++ )
     {
       int myGlobalIndex = StandardMap->GID ( i );
-      if ( myGlobalIndex==2*NumComplexUnknowns ) // phase condition
+      if ( myGlobalIndex==2*NumComplexUnknowns )   // phase condition
         {
           passVal = 0.0;
         }
@@ -226,6 +226,28 @@ Teuchos::RCP<Epetra_CrsMatrix> GlSystem::getJacobian()
 
 
 // =============================================================================
+// Of an equation system
+// \f[
+// A\psi + B \psi^* = b
+// \f]
+// where \f$A,B\in\mathbb{C}^{n\times n}\f$, \f$\psi, b\in\mathbb{C}^{n}\f$,
+// this routine constructs the corresponding real-valued equation system
+// \f[
+// \begin{pmatrix}
+// \Re{A}+\Re{B} & -\Im{A}+\Im{B}\\
+// \Im{A}+\Im{B} &  \Re{A}-\Re{B}
+// \end{pmatrix}
+// \begin{pmatrix}
+// \Re{\psi}\\
+// \Im{\psi}
+// \end{pmatrix}
+// =
+// \begin{pmatrix}
+// \Re{b}\\
+// \Im{b}
+// \end{pmatrix}
+// \f].
+// It also incorporates a phase condition.
 bool GlSystem::createJacobian ( const jacCreator    jc,
                                 const Epetra_Vector &x )
 {
@@ -271,14 +293,14 @@ bool GlSystem::createJacobian ( const jacCreator    jc,
     {
       int Row = StandardMap->GID ( i );
 
-      if ( Row==2*NumComplexUnknowns )  // phase condition
+      if ( Row==2*NumComplexUnknowns )   // phase condition
         {
           // fill in phase condition stuff
           numEntries = 2*NumComplexUnknowns;
           colInd = new int[numEntries];
           for ( int k=0; k<numEntries; k++ )
             colInd[k] = k;
-          if ( jc==VALUES )  // fill on columns and values
+          if ( jc==VALUES )   // fill on columns and values
             {
               values = new double[numEntries];
               for ( int k=0; k<NumComplexUnknowns; k++ )
@@ -294,7 +316,7 @@ bool GlSystem::createJacobian ( const jacCreator    jc,
               delete [] values;
               values = NULL;
             }
-          else  // only fill the sparsity graph
+          else   // only fill the sparsity graph
             {
               Graph->InsertGlobalIndices ( Row,
                                            numEntries,
@@ -323,23 +345,23 @@ bool GlSystem::createJacobian ( const jacCreator    jc,
                                   psi,
                                   colIndA, valuesA,
                                   colIndB, valuesB );
-// if( Row==1 ) {
-// std::cout << "**************************************" << std::endl;
-// std::cout << "--------------------------------------" << std::endl;
-// for (unsigned int l=0; l<colIndA.size(); l++ )
-//     std::cout << " colIndA[" << l << "] = " << colIndA[l] << std::endl;
-// std::cout << "--------------------------------------" << std::endl;
-// for (unsigned int l=0; l<valuesA.size(); l++ )
-//     std::cout << " valuesA[" << l << "] = " << valuesA[l] << std::endl;
-// std::cout << "--------------------------------------" << std::endl;
-// for (unsigned int l=0; l<colIndB.size(); l++ )
-//     std::cout << " colIndB[" << l << "] = " << colIndB[l] << std::endl;
-// std::cout << "--------------------------------------" << std::endl;
-// for (unsigned int l=0; l<valuesB.size(); l++ )
-//     std::cout << " valuesB[" << l << "] = " << valuesB[l] << std::endl;
-// std::cout << "--------------------------------------" << std::endl;
-// std::cout << "**************************************" << std::endl;
-// }
+if( Row==1 ) {
+std::cout << "**************************************" << std::endl;
+std::cout << "--------------------------------------" << std::endl;
+for (unsigned int l=0; l<colIndA.size(); l++ )
+    std::cout << " colIndA[" << l << "] = " << colIndA[l] << std::endl;
+std::cout << "--------------------------------------" << std::endl;
+for (unsigned int l=0; l<valuesA.size(); l++ )
+    std::cout << " valuesA[" << l << "] = " << valuesA[l] << std::endl;
+std::cout << "--------------------------------------" << std::endl;
+for (unsigned int l=0; l<colIndB.size(); l++ )
+    std::cout << " colIndB[" << l << "] = " << colIndB[l] << std::endl;
+std::cout << "--------------------------------------" << std::endl;
+for (unsigned int l=0; l<valuesB.size(); l++ )
+    std::cout << " valuesB[" << l << "] = " << valuesB[l] << std::endl;
+std::cout << "--------------------------------------" << std::endl;
+std::cout << "**************************************" << std::endl;
+}
             }
           else
             {
@@ -614,12 +636,15 @@ bool GlSystem::createJacobian ( const jacCreator    jc,
   // finish up the graph construction
   try
     {
-      if ( jc==VALUES ) {
+      if ( jc==VALUES )
+        {
           jacobian->FillComplete();
           jacobian->OptimizeStorage();
-      } else {
+        }
+      else
+        {
           Graph->FillComplete();
-      }
+        }
     }
   catch ( int i )
     {
@@ -632,7 +657,7 @@ bool GlSystem::createJacobian ( const jacCreator    jc,
 
   // Sync up processors for safety's sake
   Comm->Barrier();
-
+  
   return true;
 }
 // =============================================================================
