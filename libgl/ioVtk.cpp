@@ -162,7 +162,15 @@ void IoVtk::write( const std::vector<double_complex> &psi,
       for (int i=0; i<Nx+1; i++) {
           index[0] = i;
           k = sGrid.i2k( index );
-          vtkfile << abs(psi[k]) << "\n";
+          // The following ugly construction makes sure that values as 1.234e-46
+          // are actually returned as 0.0. This is necessary as ParaView has
+          // issues reading the previous.
+          double val = abs(psi[k]);
+          if (val<1.0e-25) {
+              vtkfile << 0.0 << "\n";
+          } else {
+              vtkfile << abs(psi[k]) << "\n";
+          }
       }
   }
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
