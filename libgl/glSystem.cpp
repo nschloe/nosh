@@ -345,23 +345,6 @@ bool GlSystem::createJacobian ( const jacCreator    jc,
                                   psi,
                                   colIndA, valuesA,
                                   colIndB, valuesB );
-if( Row==1 ) {
-std::cout << "**************************************" << std::endl;
-std::cout << "--------------------------------------" << std::endl;
-for (unsigned int l=0; l<colIndA.size(); l++ )
-    std::cout << " colIndA[" << l << "] = " << colIndA[l] << std::endl;
-std::cout << "--------------------------------------" << std::endl;
-for (unsigned int l=0; l<valuesA.size(); l++ )
-    std::cout << " valuesA[" << l << "] = " << valuesA[l] << std::endl;
-std::cout << "--------------------------------------" << std::endl;
-for (unsigned int l=0; l<colIndB.size(); l++ )
-    std::cout << " colIndB[" << l << "] = " << colIndB[l] << std::endl;
-std::cout << "--------------------------------------" << std::endl;
-for (unsigned int l=0; l<valuesB.size(); l++ )
-    std::cout << " valuesB[" << l << "] = " << valuesB[l] << std::endl;
-std::cout << "--------------------------------------" << std::endl;
-std::cout << "**************************************" << std::endl;
-}
             }
           else
             {
@@ -657,7 +640,7 @@ std::cout << "**************************************" << std::endl;
 
   // Sync up processors for safety's sake
   Comm->Barrier();
-  
+
   return true;
 }
 // =============================================================================

@@ -9,13 +9,14 @@ IF(MPI_COMPILED)
     INCLUDE_DIRECTORIES ( ${MPI_INCLUDE_PATH} )
 ENDIF(MPI_COMPILED)
 
-FIND_PACKAGE( Trilinos COMPONENTS NOXEpetra
+FIND_PACKAGE( Trilinos COMPONENTS LOCAEpetra
+                                  LOCA
+                                  NOXEpetra
                                   NOX
                                   AztecOO
                                   IFPACK
                                   Amesos
                                   ML
-                                  LOCA
                                   EpetraExt
                                   Epetra
                                   Teuchos )

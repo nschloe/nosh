@@ -165,6 +165,7 @@ void IoVtk::write( const std::vector<double_complex> &psi,
           // The following ugly construction makes sure that values as 1.234e-46
           // are actually returned as 0.0. This is necessary as ParaView has
           // issues reading the previous.
+          // TODO: Handle this in a more generic fashion.
           double val = abs(psi[k]);
           if (val<1.0e-25) {
               vtkfile << 0.0 << "\n";
