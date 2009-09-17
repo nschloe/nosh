@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
       }
   } else {
       // set the default value
-      int Nx = 10;
+      int Nx = 50;
       double edgelength = 10.0;
       double H0 = 0.4;
       std::cout << "Using the standard parameters \n"
@@ -340,8 +340,8 @@ int main(int argc, char *argv[])
 
   // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   bool verbose = true;
-  bool debug = false;
-  std::string which("SM");
+  bool debug = true;
+  std::string which("LR");
 
   bool boolret;
 
@@ -363,7 +363,7 @@ int main(int argc, char *argv[])
   //
   //  Variables used for the Block Krylov Schur Method
   //    
-  int nev = 4;
+  int nev = 3;
   int blockSize = 1;
   int numBlocks = 20;
   int maxRestarts = 100;
@@ -405,10 +405,7 @@ int main(int argc, char *argv[])
 
   // Create the eigenproblem.
   Teuchos::RCP<Anasazi::BasicEigenproblem<double, MV, OP> > MyProblem =
-    Teuchos::rcp( new Anasazi::BasicEigenproblem<double, MV, OP>(J, ivec) );
-  
-//   // Inform the eigenproblem that the operator A is symmetric
-//   MyProblem->setHermitian(rho==0.0); 
+    Teuchos::rcp( new Anasazi::BasicEigenproblem<double, MV, OP>(J, ivec) );  
   
   // Set the number of eigenvalues requested
   MyProblem->setNEV( nev );
@@ -434,37 +431,37 @@ int main(int argc, char *argv[])
     cout << "Anasazi::EigensolverMgr::solve() returned unconverged." << endl;
   }
 
-//   // Get the Ritz values from the eigensolver
-//   std::vector<Anasazi::Value<double> > ritzValues = MySolverMgr.getRitzValues();
-//   
-//   // Output computed eigenvalues and their direct residuals
-//   if (verbose && MyPID==0) {
-//     int numritz = (int)ritzValues.size();
-//     cout.setf(std::ios_base::right, std::ios_base::adjustfield);
-//     cout<<endl<< "Computed Ritz Values"<< endl;
-//     if (MyProblem->isHermitian()) {
-//       cout<< std::setw(16) << "Real Part"
-//         << endl;
-//       cout<<"-----------------------------------------------------------"<<endl;
-//       for (int i=0; i<numritz; i++) {
-//         cout<< std::setw(16) << ritzValues[i].realpart 
-//           << endl;
-//       }  
-//       cout<<"-----------------------------------------------------------"<<endl;
-//     } 
-//     else {
-//       cout<< std::setw(16) << "Real Part"
-//         << std::setw(16) << "Imag Part"
-//         << endl;
-//       cout<<"-----------------------------------------------------------"<<endl;
-//       for (int i=0; i<numritz; i++) {
-//         cout<< std::setw(16) << ritzValues[i].realpart 
-//           << std::setw(16) << ritzValues[i].imagpart 
-//           << endl;
-//       }  
-//       cout<<"-----------------------------------------------------------"<<endl;
-//       }  
-//     }
+  // Get the Ritz values from the eigensolver
+  std::vector<Anasazi::Value<double> > ritzValues = MySolverMgr.getRitzValues();
+  
+  // Output computed eigenvalues and their direct residuals
+  if (verbose && MyPID==0) {
+    int numritz = (int)ritzValues.size();
+    cout.setf(std::ios_base::right, std::ios_base::adjustfield);
+    cout<<endl<< "Computed Ritz Values"<< endl;
+    if (MyProblem->isHermitian()) {
+      cout<< std::setw(16) << "Real Part"
+        << endl;
+      cout<<"-----------------------------------------------------------"<<endl;
+      for (int i=0; i<numritz; i++) {
+        cout<< std::setw(16) << ritzValues[i].realpart 
+          << endl;
+      }  
+      cout<<"-----------------------------------------------------------"<<endl;
+    } 
+    else {
+      cout<< std::setw(16) << "Real Part"
+        << std::setw(16) << "Imag Part"
+        << endl;
+      cout<<"-----------------------------------------------------------"<<endl;
+      for (int i=0; i<numritz; i++) {
+        cout<< std::setw(16) << ritzValues[i].realpart 
+          << std::setw(16) << ritzValues[i].imagpart 
+          << endl;
+      }  
+      cout<<"-----------------------------------------------------------"<<endl;
+      }  
+    }
 
 //   // Get the eigenvalues and eigenvectors from the eigenproblem
 //   Anasazi::Eigensolution<ScalarType,MV> sol = MyProblem->getSolution();
