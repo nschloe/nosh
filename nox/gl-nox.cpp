@@ -309,8 +309,9 @@ int main(int argc, char *argv[])
     getEpetraVector();
 
   if (verbose) {
+      // -----------------------------------------------------------------------
+      // compute the condition number
       try {
-          // get condition number
           grpPtr->computeJacobian();
           grpPtr->computeJacobianConditionNumber( 2000, 1e-2, 30, true );
           double kappa = finalGroup.getJacobianConditionNumber();
@@ -319,369 +320,144 @@ int main(int argc, char *argv[])
       catch ( std::exception& e ) {
           std::cerr << e.what() << std::endl;
       }
+      // -----------------------------------------------------------------------
 
-//       // check back with
-//       NOX::Epetra::Vector nullVec(finalSolution);
-//       double tmp;
-//       // Construct the (complex) vector i*finalSolution.
-//       int k=0;
-//       Epetra_Vector & nV = nullVec.getEpetraVector();
-//       while ( k<nullVec.length() ) {
-//           tmp     =  nV[k];
-//           nV[k]   = -nV[k+1];
-//           nV[k+1] = tmp;
-//           k += 2;
-//       }
-//       NOX::Epetra::Vector resVec(finalSolution);
-//       grpPtr->applyJacobian( nullVec, resVec );
-//       double norm;
-//       resVec.getEpetraVector().Norm2( &norm );
-//       std::cout << "Norm: ||v|| = " << norm << std::endl;
+      // -----------------------------------------------------------------------
+      // compute some eigenvalues using anasazi
+      bool debug = true; // even more increased verbosity
+      std::string which("LR"); // compute the rightmost eigenvalues
 
-  // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  bool verbose = true;
-  bool debug = true;
-  std::string which("LR");
+      bool boolret;
 
-  bool boolret;
+      typedef double ScalarType;
+      typedef Teuchos::ScalarTraits<ScalarType>          SCT;
+      typedef SCT::magnitudeType               MagnitudeType;
+      typedef Epetra_MultiVector                          MV;
+      typedef Epetra_Operator                             OP;
+      typedef Anasazi::MultiVecTraits<ScalarType,MV>     MVT;
+      typedef Anasazi::OperatorTraits<ScalarType,MV,OP>  OPT;
 
-  typedef double ScalarType;
-  typedef Teuchos::ScalarTraits<ScalarType>          SCT;
-  typedef SCT::magnitudeType               MagnitudeType;
-  typedef Epetra_MultiVector                          MV;
-  typedef Epetra_Operator                             OP;
-  typedef Anasazi::MultiVecTraits<ScalarType,MV>     MVT;
-  typedef Anasazi::OperatorTraits<ScalarType,MV,OP>  OPT;
+      Epetra_BlockMap Map = finalSolution.Map();
 
-  Epetra_BlockMap Map = finalSolution.Map();
+      // shortname for the final Jacobian
+      Teuchos::RCP<Epetra_Operator> J = grpPtr->getLinearSystem()->getJacobianOperator();
 
-  Teuchos::RCP<Epetra_Operator> J = grpPtr->getLinearSystem()->getJacobianOperator();
+      // - - - - - - - - - - - - - - - - -
+      // Start the block Arnoldi iteration
+      // - - - - - - - - - - - - - - - - -
+      // Variables used for the Block Krylov Schur Method
+      int nev = 3;
+      int blockSize = 1;
+      int numBlocks = 20;
+      int maxRestarts = 100;
+      double tol = 1e-8;
 
-  //************************************
-  // Start the block Arnoldi iteration
-  //***********************************
-  //
-  //  Variables used for the Block Krylov Schur Method
-  //    
-  int nev = 3;
-  int blockSize = 1;
-  int numBlocks = 20;
-  int maxRestarts = 100;
-  //int stepSize = 5;
-  double tol = 1e-8;
+      // Create a sort manager to pass into the block Krylov-Schur solver manager
+      // -->  Make sure the reference-counted pointer is of type Anasazi::SortManager<>
+      // -->  The block Krylov-Schur solver manager uses Anasazi::BasicSort<> by default,
+      //      so you can also pass in the parameter "Which", instead of a sort manager.
+      Teuchos::RCP<Anasazi::SortManager<MagnitudeType> > MySort =
+        Teuchos::rcp( new Anasazi::BasicSort<MagnitudeType>( which ) );
 
-  // Create a sort manager to pass into the block Krylov-Schur solver manager
-  // -->  Make sure the reference-counted pointer is of type Anasazi::SortManager<>
-  // -->  The block Krylov-Schur solver manager uses Anasazi::BasicSort<> by default,
-  //      so you can also pass in the parameter "Which", instead of a sort manager.
-  Teuchos::RCP<Anasazi::SortManager<MagnitudeType> > MySort =     
-    Teuchos::rcp( new Anasazi::BasicSort<MagnitudeType>( which ) );
+      // Set verbosity level
+      int verbosity = Anasazi::Errors + Anasazi::Warnings;
+        verbosity += Anasazi::FinalSummary + Anasazi::TimingDetails;
+      if (debug) {
+        verbosity += Anasazi::Debug;
+      }
 
-  // Set verbosity level
-  int verbosity = Anasazi::Errors + Anasazi::Warnings;
-  if (verbose) {
-    verbosity += Anasazi::FinalSummary + Anasazi::TimingDetails;
-  }
-  if (debug) {
-    verbosity += Anasazi::Debug;
-  }
-  //
-  // Create parameter list to pass into solver manager
-  //
-  Teuchos::ParameterList MyPL;
-  MyPL.set( "Verbosity", verbosity );
-  MyPL.set( "Sort Manager", MySort );
-  //MyPL.set( "Which", which );  
-  MyPL.set( "Block Size", blockSize );
-  MyPL.set( "Num Blocks", numBlocks );
-  MyPL.set( "Maximum Restarts", maxRestarts );
-  //MyPL.set( "Step Size", stepSize );
-  MyPL.set( "Convergence Tolerance", tol );
+      // Create parameter list to pass into solver manager
+      Teuchos::ParameterList MyPL;
+      MyPL.set( "Verbosity", verbosity );
+      MyPL.set( "Sort Manager", MySort );
+      //MyPL.set( "Which", which );
+      MyPL.set( "Block Size", blockSize );
+      MyPL.set( "Num Blocks", numBlocks );
+      MyPL.set( "Maximum Restarts", maxRestarts );
+      //MyPL.set( "Step Size", stepSize );
+      MyPL.set( "Convergence Tolerance", tol );
 
-  // Create an Epetra_MultiVector for an initial vector to start the solver.
-  // Note:  This needs to have the same number of columns as the blocksize.
-  Teuchos::RCP<Epetra_MultiVector> ivec = Teuchos::rcp( new Epetra_MultiVector(Map, blockSize) );
-  ivec->Random();
+      // Create an Epetra_MultiVector for an initial vector to start the solver.
+      // Note:  This needs to have the same number of columns as the blocksize.
+      Teuchos::RCP<Epetra_MultiVector> ivec = Teuchos::rcp( new Epetra_MultiVector(Map, blockSize) );
+      ivec->Random();
 
-  // Create the eigenproblem.
-  Teuchos::RCP<Anasazi::BasicEigenproblem<double, MV, OP> > MyProblem =
-    Teuchos::rcp( new Anasazi::BasicEigenproblem<double, MV, OP>(J, ivec) );  
-  
-  // Set the number of eigenvalues requested
-  MyProblem->setNEV( nev );
-  
-  // Inform the eigenproblem that you are finishing passing it information
-  boolret = MyProblem->setProblem();
-  if (boolret != true) {
-    if (verbose && MyPID == 0) {
-      cout << "Anasazi::BasicEigenproblem::setProblem() returned with error." << endl;
-    }
+      // Create the eigenproblem.
+      Teuchos::RCP<Anasazi::BasicEigenproblem<double, MV, OP> > MyProblem =
+        Teuchos::rcp( new Anasazi::BasicEigenproblem<double, MV, OP>(J, ivec) );
+
+      // Set the number of eigenvalues requested
+      MyProblem->setNEV( nev );
+
+      // Inform the eigenproblem that you are finishing passing it information
+      boolret = MyProblem->setProblem();
+      if (boolret != true) {
+        if (MyPID == 0) {
+          cout << "Anasazi::BasicEigenproblem::setProblem() returned with error." << endl;
+        }
 #ifdef HAVE_MPI
-    MPI_Finalize() ;
+        MPI_Finalize() ;
 #endif
-    return -1;
-  }
-  
-  // Initialize the Block Arnoldi solver
-  Anasazi::BlockKrylovSchurSolMgr<double, MV, OP> MySolverMgr(MyProblem, MyPL);
-  
-  // Solve the problem to the specified tolerances or length
-  Anasazi::ReturnType returnCode = MySolverMgr.solve();
-  if (returnCode != Anasazi::Converged && MyPID==0 && verbose) {
-    cout << "Anasazi::EigensolverMgr::solve() returned unconverged." << endl;
-  }
+        return -1;
+      }
 
-  // Get the Ritz values from the eigensolver
-  std::vector<Anasazi::Value<double> > ritzValues = MySolverMgr.getRitzValues();
-  
-  // Output computed eigenvalues and their direct residuals
-  if (verbose && MyPID==0) {
-    int numritz = (int)ritzValues.size();
-    cout.setf(std::ios_base::right, std::ios_base::adjustfield);
-    cout<<endl<< "Computed Ritz Values"<< endl;
-    if (MyProblem->isHermitian()) {
+      // Initialize the Block Arnoldi solver
+      Anasazi::BlockKrylovSchurSolMgr<double, MV, OP> MySolverMgr(MyProblem, MyPL);
+
+      // Solve the problem to the specified tolerances or length
+      Anasazi::ReturnType returnCode = MySolverMgr.solve();
+      if (returnCode != Anasazi::Converged && MyPID==0 && verbose) {
+        cout << "Anasazi::EigensolverMgr::solve() returned unconverged." << endl;
+      }
+
+      // Get the Ritz values from the eigensolver
+      std::vector<Anasazi::Value<double> > ritzValues = MySolverMgr.getRitzValues();
+
+      // Output computed eigenvalues and their direct residuals
+      if (MyPID==0) {
+        int numritz = (int)ritzValues.size();
+        cout.setf(std::ios_base::right, std::ios_base::adjustfield);
+        cout<<endl<< "Computed Ritz Values"<< endl;
+        if (MyProblem->isHermitian()) {
+          cout<< std::setw(16) << "Real Part"
+            << endl;
+          cout<<"-----------------------------------------------------------"<<endl;
+          for (int i=0; i<numritz; i++) {
+            cout<< std::setw(16) << ritzValues[i].realpart
+              << endl;
+          }
+          cout<<"-----------------------------------------------------------"<<endl;
+        }
+        else {
+          cout<< std::setw(16) << "Real Part"
+            << std::setw(16) << "Imag Part"
+            << endl;
+          cout<<"-----------------------------------------------------------"<<endl;
+          for (int i=0; i<numritz; i++) {
+            cout<< std::setw(16) << ritzValues[i].realpart
+              << std::setw(16) << ritzValues[i].imagpart
+              << endl;
+          }
+          cout<<"-----------------------------------------------------------"<<endl;
+          }
+        }
+
+      // Get the eigenvalues and eigenvectors from the eigenproblem
+      Anasazi::Eigensolution<ScalarType,MV> sol = MyProblem->getSolution();
+      std::vector<Anasazi::Value<ScalarType> > evals = sol.Evals;
+      Teuchos::RCP<MV> evecs = sol.Evecs;
+      std::vector<int> index = sol.index;
+      int numev = sol.numVecs;
+
+
       cout<< std::setw(16) << "Real Part"
-        << endl;
+          << std::setw(16) << "Imag Part" << endl;
       cout<<"-----------------------------------------------------------"<<endl;
-      for (int i=0; i<numritz; i++) {
-        cout<< std::setw(16) << ritzValues[i].realpart 
-          << endl;
-      }  
-      cout<<"-----------------------------------------------------------"<<endl;
-    } 
-    else {
-      cout<< std::setw(16) << "Real Part"
-        << std::setw(16) << "Imag Part"
-        << endl;
-      cout<<"-----------------------------------------------------------"<<endl;
-      for (int i=0; i<numritz; i++) {
-        cout<< std::setw(16) << ritzValues[i].realpart 
-          << std::setw(16) << ritzValues[i].imagpart 
-          << endl;
-      }  
-      cout<<"-----------------------------------------------------------"<<endl;
-      }  
-    }
-
-//   // Get the eigenvalues and eigenvectors from the eigenproblem
-//   Anasazi::Eigensolution<ScalarType,MV> sol = MyProblem->getSolution();
-//   std::vector<Anasazi::Value<ScalarType> > evals = sol.Evals;
-//   Teuchos::RCP<MV> evecs = sol.Evecs;
-//   std::vector<int> index = sol.index;
-//   int numev = sol.numVecs;
-//   
-//   if (numev > 0) {
-//     // Compute residuals.
-//     Teuchos::LAPACK<int,double> lapack;
-//     std::vector<double> normA(numev);
-//     
-//     if (MyProblem->isHermitian()) {
-//       // Get storage
-//       Epetra_MultiVector Aevecs(Map,numev);
-//       Teuchos::SerialDenseMatrix<int,double> B(numev,numev);
-//       B.putScalar(0.0); 
-//       for (int i=0; i<numev; i++) {B(i,i) = evals[i].realpart;}
-//       
-//       // Compute A*evecs
-//       OPT::Apply( *J, *evecs, Aevecs );
-//       
-//       // Compute A*evecs - lambda*evecs and its norm
-//       MVT::MvTimesMatAddMv( -1.0, *evecs, B, 1.0, Aevecs );
-//       MVT::MvNorm( Aevecs, normA );
-//       
-//       // Scale the norms by the eigenvalue
-//       for (int i=0; i<numev; i++) {
-//         normA[i] /= Teuchos::ScalarTraits<double>::magnitude( evals[i].realpart );
-//       }
-//     } else {
-//       // The problem is non-Hermitian.
-//       int i=0;
-//       std::vector<int> curind(1);
-//       std::vector<double> resnorm(1), tempnrm(1);
-//       Teuchos::RCP<MV> evecr, eveci, tempAevec;
-//       Epetra_MultiVector Aevec(Map,numev);
-//       
-//       // Compute A*evecs
-//       OPT::Apply( *J, *evecs, Aevec );
-//       
-//       Teuchos::SerialDenseMatrix<int,double> Breal(1,1), Bimag(1,1);
-//       while (i<numev) {
-//         if (index[i]==0) {
-//           // Get a view of the current eigenvector (evecr)
-//           curind[0] = i;
-//           evecr = MVT::CloneView( *evecs, curind );
-// 
-//           // Get a copy of A*evecr
-//           tempAevec = MVT::CloneCopy( Aevec, curind );
-// 
-//           // Compute A*evecr - lambda*evecr
-//           Breal(0,0) = evals[i].realpart;
-//           MVT::MvTimesMatAddMv( -1.0, *evecr, Breal, 1.0, *tempAevec );
-// 
-//           // Compute the norm of the residual and increment counter
-//           MVT::MvNorm( *tempAevec, resnorm );
-//           normA[i] = resnorm[0]/Teuchos::ScalarTraits<MagnitudeType>::magnitude( evals[i].realpart );
-//           i++;
-//         } else {
-//           // Get a view of the real part of the eigenvector (evecr)
-//           curind[0] = i;
-//           evecr = MVT::CloneView( *evecs, curind );
-// 
-//           // Get a copy of A*evecr
-//           tempAevec = MVT::CloneCopy( Aevec, curind );
-// 
-//           // Get a view of the imaginary part of the eigenvector (eveci)
-//           curind[0] = i+1;
-//           eveci = MVT::CloneView( *evecs, curind );
-// 
-//           // Set the eigenvalue into Breal and Bimag
-//           Breal(0,0) = evals[i].realpart;
-//           Bimag(0,0) = evals[i].imagpart;
-// 
-//           // Compute A*evecr - evecr*lambdar + eveci*lambdai
-//           MVT::MvTimesMatAddMv( -1.0, *evecr, Breal, 1.0, *tempAevec );
-//           MVT::MvTimesMatAddMv( 1.0, *eveci, Bimag, 1.0, *tempAevec );
-//           MVT::MvNorm( *tempAevec, tempnrm );
-// 
-//           // Get a copy of A*eveci
-//           tempAevec = MVT::CloneCopy( Aevec, curind );
-// 
-//           // Compute A*eveci - eveci*lambdar - evecr*lambdai
-//           MVT::MvTimesMatAddMv( -1.0, *evecr, Bimag, 1.0, *tempAevec );
-//           MVT::MvTimesMatAddMv( -1.0, *eveci, Breal, 1.0, *tempAevec );
-//           MVT::MvNorm( *tempAevec, resnorm );
-// 
-//           // Compute the norms and scale by magnitude of eigenvalue
-//           normA[i] = lapack.LAPY2( tempnrm[i], resnorm[i] ) /
-//             lapack.LAPY2( evals[i].realpart, evals[i].imagpart );
-//           normA[i+1] = normA[i];
-// 
-//           i=i+2;
-//         }
-//       }
-//     }
-// 
-//     // Output computed eigenvalues and their direct residuals
-//     if (verbose && MyPID==0) {
-//       cout.setf(std::ios_base::right, std::ios_base::adjustfield);
-//       cout<<endl<< "Actual Residuals"<<endl;
-//       if (MyProblem->isHermitian()) {
-//         cout<< std::setw(16) << "Real Part"
-//           << std::setw(20) << "Direct Residual"<< endl;
-//         cout<<"-----------------------------------------------------------"<<endl;
-//         for (int i=0; i<numev; i++) {
-//           cout<< std::setw(16) << evals[i].realpart 
-//             << std::setw(20) << normA[i] << endl;
-//         }  
-//         cout<<"-----------------------------------------------------------"<<endl;
-//       } 
-//       else {
-//         cout<< std::setw(16) << "Real Part"
-//           << std::setw(16) << "Imag Part"
-//           << std::setw(20) << "Direct Residual"<< endl;
-//         cout<<"-----------------------------------------------------------"<<endl;
-//         for (int i=0; i<numev; i++) {
-//           cout<< std::setw(16) << evals[i].realpart 
-//             << std::setw(16) << evals[i].imagpart 
-//             << std::setw(20) << normA[i] << endl;
-//         }  
-//         cout<<"-----------------------------------------------------------"<<endl;
-//       }  
-//     }
-//   }
-  // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-  // ---------------------------------------------------------------------------
-  // get eigenvalue with largest real part with Anasazi
-
-//   // Create an Anasazi output manager
-//   Anasazi::BasicOutputManager<double> printer;
-//   printer.stream(Anasazi::Errors) << Anasazi::Anasazi_Version() << std::endl << std::endl;
-// 
-//   int blockSize = finalSolution.GlobalLength();
-//   int numBlocks = 1;
-// 
-//   // Create an Epetra_MultiVector for an initial vector to start the solver.
-//   // Note:  This needs to have the same number of columns as the blocksize.
-//   Epetra_BlockMap vecMap = finalSolution.Map();
-//   Teuchos::RCP<Epetra_MultiVector> ivec = Teuchos::rcp( new Epetra_MultiVector(vecMap, blockSize) );
-//   // initialize as random
-//   ivec->Random();
-// 
-//   // get pointer to Jacobian
-//   Teuchos::RCP<Epetra_Operator> J = grpPtr->getLinearSystem()->getJacobianOperator();
-// 
-//   // Create the eigenproblem.
-//   Teuchos::RCP<Anasazi::BasicEigenproblem<double, Epetra_MultiVector, Epetra_Operator> > MyProblem =
-//     Teuchos::rcp( new Anasazi::BasicEigenproblem<double, Epetra_MultiVector, Epetra_Operator>(J,ivec) );
-// 
-//   // Set the number of eigenvalues requested
-//   //
-//   int nev = 4;
-//   MyProblem->setNEV( nev );
-// 
-//   // Inform the eigenproblem that you are finishing passing it information
-//   bool boolret = MyProblem->setProblem();
-//   if (boolret != true) {
-//     printer.print(Anasazi::Errors,"Anasazi::BasicEigenproblem::setProblem() returned an error.\n");
-//   }
-// 
-//   // Create parameter list to pass into the solver manager
-//   Teuchos::ParameterList MyPL;
-//   std::string which("LR");  // get eigenvalues with the largest real part
-//   MyPL.set( "Which", which );
-//   MyPL.set( "Block Size", blockSize );
-//   MyPL.set( "Num Blocks", numBlocks );
-//   int maxRestarts = 100;
-//   MyPL.set( "Maximum Restarts", maxRestarts );
-//   double tol = 1e-6;
-//   MyPL.set( "Convergence Tolerance", tol );
-// 
-//   // create the solver manager
-//   Anasazi::BlockDavidsonSolMgr<double, Epetra_MultiVector, Epetra_Operator> MySolverMan(MyProblem, MyPL);
-
-//   // Solve the problem
-//   Anasazi::ReturnType returnCode = MySolverMan.solve();
-// 
-//   // Get the eigenvalues and eigenvectors from the eigenproblem
-//   Anasazi::Eigensolution<double,Epetra_MultiVector> sol = MyProblem->getSolution();
-//   std::vector<Anasazi::Value<double> > evals = sol.Evals;
-//   Teuchos::RCP<Epetra_MultiVector> evecs = sol.Evecs;
-// 
-//   // Compute residuals.
-//   std::vector<double> normR(sol.numVecs);
-//   if (sol.numVecs > 0) {
-//     Teuchos::SerialDenseMatrix<int,double> T(sol.numVecs, sol.numVecs);
-//     Epetra_MultiVector tempAevec( vecMap, sol.numVecs );
-//     T.putScalar(0.0);
-//     for (int i=0; i<sol.numVecs; i++) {
-//       T(i,i) = evals[i].realpart;
-//     }
-//     J->Apply( *evecs, tempAevec );
-//     MVT::MvTimesMatAddMv( -1.0, *evecs, T, 1.0, tempAevec );
-//     MVT::MvNorm( tempAevec, normR );
-//   }
-// 
-//   // Print the results
-//   std::ostringstream os;
-//   os.setf(std::ios_base::right, std::ios_base::adjustfield);
-//   os<<"Solver manager returned "
-//     << (returnCode == Anasazi::Converged ? "converged." : "unconverged.")
-//     << std::endl;
-//   os<<std::endl;
-//   os<<"------------------------------------------------------"<<std::endl;
-//   os<<std::setw(16)<<"Eigenvalue"
-//     <<std::setw(18)<<"Direct Residual"
-//     <<std::endl;
-//   os<<"------------------------------------------------------"<<std::endl;
-//   for (int i=0; i<sol.numVecs; i++) {
-//     os<<std::setw(16)<<evals[i].realpart
-//       <<std::setw(18)<<normR[i]/evals[i].realpart
-//       <<std::endl;
-//   }
-//   os<<"------------------------------------------------------"<<std::endl;
-//   printer.print(Anasazi::Errors,os.str());
-//   // ---------------------------------------------------------------------------
+      for (int i=0; i<numev; i++) {
+          cout<< std::setw(16) << evals[i].realpart
+            << std::setw(16) << evals[i].imagpart << endl;
+      }
+      // -----------------------------------------------------------------------
   }
 
   // ---------------------------------------------------------------------------
