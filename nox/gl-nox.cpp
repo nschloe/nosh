@@ -19,6 +19,11 @@
 
 #include <string>
 
+// for the eigenvalue computation:
+#include <AnasaziBasicEigenproblem.hpp>
+#include <AnasaziBasicOutputManager.hpp>
+#include <AnasaziBlockDavidsonSolMgr.hpp>
+
 int main(int argc, char *argv[])
 {
 
@@ -326,6 +331,98 @@ int main(int argc, char *argv[])
 //       double norm;
 //       resVec.getEpetraVector().Norm2( &norm );
 //       std::cout << "Norm: ||v|| = " << norm << std::endl;
+
+  // ---------------------------------------------------------------------------
+  // get eigenvalue with largest real part with Anasazi
+
+  // Create an Anasazi output manager
+  Anasazi::BasicOutputManager<double> printer;
+  printer.stream(Anasazi::Errors) << Anasazi::Anasazi_Version() << std::endl << std::endl;
+
+  int blockSize = finalSolution.GlobalLength();
+  int numBlocks = 1;
+
+  // Create an Epetra_MultiVector for an initial vector to start the solver.
+  // Note:  This needs to have the same number of columns as the blocksize.
+  Epetra_BlockMap vecMap = finalSolution.Map();
+  Teuchos::RCP<Epetra_MultiVector> ivec = Teuchos::rcp( new Epetra_MultiVector(vecMap, blockSize) );
+  // initialize as random
+  ivec->Random();
+
+  // get pointer to Jacobian
+  Teuchos::RCP<Epetra_Operator> J = grpPtr->getLinearSystem()->getJacobianOperator();
+
+  // Create the eigenproblem.
+  Teuchos::RCP<Anasazi::BasicEigenproblem<double, Epetra_MultiVector, Epetra_Operator> > MyProblem =
+    Teuchos::rcp( new Anasazi::BasicEigenproblem<double, Epetra_MultiVector, Epetra_Operator>(J,ivec) );
+
+  // Set the number of eigenvalues requested
+  //
+  int nev = 4;
+  MyProblem->setNEV( nev );
+
+  // Inform the eigenproblem that you are finishing passing it information
+  bool boolret = MyProblem->setProblem();
+  if (boolret != true) {
+    printer.print(Anasazi::Errors,"Anasazi::BasicEigenproblem::setProblem() returned an error.\n");
+  }
+
+  // Create parameter list to pass into the solver manager
+  Teuchos::ParameterList MyPL;
+  std::string which("LR");  // get eigenvalues with the largest real part
+  MyPL.set( "Which", which );
+  MyPL.set( "Block Size", blockSize );
+  MyPL.set( "Num Blocks", numBlocks );
+  int maxRestarts = 100;
+  MyPL.set( "Maximum Restarts", maxRestarts );
+  double tol = 1e-6;
+  MyPL.set( "Convergence Tolerance", tol );
+
+  // create the solver manager
+  Anasazi::BlockDavidsonSolMgr<double, Epetra_MultiVector, Epetra_Operator> MySolverMan(MyProblem, MyPL);
+
+//   // Solve the problem
+//   Anasazi::ReturnType returnCode = MySolverMan.solve();
+// 
+//   // Get the eigenvalues and eigenvectors from the eigenproblem
+//   Anasazi::Eigensolution<double,Epetra_MultiVector> sol = MyProblem->getSolution();
+//   std::vector<Anasazi::Value<double> > evals = sol.Evals;
+//   Teuchos::RCP<Epetra_MultiVector> evecs = sol.Evecs;
+// 
+//   // Compute residuals.
+//   std::vector<double> normR(sol.numVecs);
+//   if (sol.numVecs > 0) {
+//     Teuchos::SerialDenseMatrix<int,double> T(sol.numVecs, sol.numVecs);
+//     Epetra_MultiVector tempAevec( vecMap, sol.numVecs );
+//     T.putScalar(0.0);
+//     for (int i=0; i<sol.numVecs; i++) {
+//       T(i,i) = evals[i].realpart;
+//     }
+//     J->Apply( *evecs, tempAevec );
+//     MVT::MvTimesMatAddMv( -1.0, *evecs, T, 1.0, tempAevec );
+//     MVT::MvNorm( tempAevec, normR );
+//   }
+// 
+//   // Print the results
+//   std::ostringstream os;
+//   os.setf(std::ios_base::right, std::ios_base::adjustfield);
+//   os<<"Solver manager returned "
+//     << (returnCode == Anasazi::Converged ? "converged." : "unconverged.")
+//     << std::endl;
+//   os<<std::endl;
+//   os<<"------------------------------------------------------"<<std::endl;
+//   os<<std::setw(16)<<"Eigenvalue"
+//     <<std::setw(18)<<"Direct Residual"
+//     <<std::endl;
+//   os<<"------------------------------------------------------"<<std::endl;
+//   for (int i=0; i<sol.numVecs; i++) {
+//     os<<std::setw(16)<<evals[i].realpart
+//       <<std::setw(18)<<normR[i]/evals[i].realpart
+//       <<std::endl;
+//   }
+//   os<<"------------------------------------------------------"<<std::endl;
+//   printer.print(Anasazi::Errors,os.str());
+//   // ---------------------------------------------------------------------------
   }
 
   // ---------------------------------------------------------------------------
