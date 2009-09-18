@@ -8,6 +8,7 @@
 
 #include <Epetra_Export.h>
 #include <Epetra_CrsMatrix.h>
+#include <NOX_Utils.H>
 
 #include <EpetraExt_RowMatrixOut.h>
 
@@ -681,6 +682,7 @@ void GlSystem::printSolution ( const Epetra_Vector &x,
   tmpList.get ( "H0",         conParam );
   tmpList.get ( "edgelength", Gl.getStaggeredGrid()->getEdgelength() );
   tmpList.get ( "Nx",         Gl.getStaggeredGrid()->getNx() );
+  tmpList.get ( "FE",         Gl.freeEnergy( psi ));
 
   std::string fileName = "continuation-step-"
                          + EpetraExt::toString ( conStep )
@@ -692,8 +694,21 @@ void GlSystem::printSolution ( const Epetra_Vector &x,
                   * ( Gl.getStaggeredGrid() ) );
   delete fileIo;
 
+
+  char continuationfilename[100];
+  const char *buff;
+  string conoutfile = outputDir + "/continuation.dat";
+  buff = conoutfile.c_str();
+  (void) sprintf( continuationfilename, buff, conStep );
+
+  ofstream outContinuationFile;
+  outContinuationFile.open(continuationfilename, ios::app);
+  outContinuationFile << conStep << "\t"
+		      << NOX::Utils::Sci(conParam) << "\t"
+		      << NOX::Utils::Sci(Gl.freeEnergy( psi)) << endl;
+  outContinuationFile.close();
+
   // print information to screen
-  // TODO: move this to a file or something
   std::cout << conStep  << "     "
             << conParam << "     "
             << Gl.freeEnergy ( psi ) << std::endl;
