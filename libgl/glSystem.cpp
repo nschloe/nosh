@@ -716,13 +716,14 @@ void GlSystem::setOutputDir ( const string &directory )
 
 // =============================================================================
 void GlSystem::solutionToFile ( const Epetra_Vector          &x,
-                                const Teuchos::ParameterList &problemParams,
+                                Teuchos::ParameterList &problemParams,
                                 const std::string            &fileName )
 {
   // convert the real valued vector to psi
   vector<double_complex> psi ( NumComplexUnknowns );
   real2complex ( x, psi );
 
+  problemParams.set( "FE", Gl.freeEnergy( psi ) );
   IoVirtual* fileIo = IoFactory::createFileIo ( fileName );
   fileIo->write ( psi,
                   problemParams,

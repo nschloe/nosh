@@ -81,7 +81,7 @@ class GlSystem:
       //! Explictly print the solution x along with the problem parameters
       //! to the file fileName.
       void solutionToFile( const Epetra_Vector          &x,
-                           const Teuchos::ParameterList &problemParams,
+                           Teuchos::ParameterList &problemParams,
                            const std::string            &fileName       );
 
   private:
