@@ -1022,19 +1022,19 @@ void GinzburgLandau::computeJacobianRow ( const filltype                    ft,
 // calculate the free energy of a state
 double GinzburgLandau::freeEnergy ( const std::vector<double_complex> &psi )
 {
-  double                  energy = 0.0,
-                                   h      = sGrid.getH();
+  double energy = 0.0;
+  double h      = sGrid.getH();
   StaggeredGrid::nodeType nt;
-
+  
   for ( unsigned int k=0; k<psi.size(); k++ )
     {
       nt = sGrid.k2nodeType ( k );
       if ( nt==StaggeredGrid::CORNER )
-        energy -=       h*h * pow ( norm ( psi[k] ),2 );
+        energy -= 0.25* h*h * pow ( norm ( psi[k] ),2 );
       else if ( nt==StaggeredGrid::EDGE )
         energy -= 0.5*  h*h * pow ( norm ( psi[k] ),2 );
       else if ( nt==StaggeredGrid::INTERIOR )
-        energy -= 0.25* h*h * pow ( norm ( psi[k] ),2 );
+        energy -=       h*h * pow ( norm ( psi[k] ),2 );
       else
         {
           std::string message = "Illegal node type "
