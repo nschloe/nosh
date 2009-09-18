@@ -346,11 +346,11 @@ int main(int argc, char *argv[])
       // Start the block Arnoldi iteration
       // - - - - - - - - - - - - - - - - -
       // Variables used for the Block Krylov Schur Method
-      int nev = 3;
-      int blockSize = 1;
+      int nev = 4;
+      int blockSize = 3;
       int numBlocks = 20;
-      int maxRestarts = 100;
-      double tol = 1e-8;
+      int maxRestarts = 250;
+      double tol = 1e-5;
 
       // Create a sort manager to pass into the block Krylov-Schur solver manager
       // -->  Make sure the reference-counted pointer is of type Anasazi::SortManager<>
@@ -449,6 +449,11 @@ int main(int argc, char *argv[])
       std::vector<int> index = sol.index;
       int numev = sol.numVecs;
 
+      Teuchos::RCP<Epetra_Vector> ev1( (*evecs)(0) );
+
+  glsystem->solutionToFile( *ev1,
+                            problemParameters,
+                            "data/ev1.vtk" );
 
       cout<< std::setw(16) << "Real Part"
           << std::setw(16) << "Imag Part" << endl;
@@ -462,6 +467,7 @@ int main(int argc, char *argv[])
 
   // ---------------------------------------------------------------------------
   // print the solution to a file
+  //problemParameters.set( "FE", glsystem.freeEnergy
   glsystem->solutionToFile( finalSolution,
                             problemParameters,
                             "data/solution.vtk" );
