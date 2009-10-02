@@ -48,6 +48,9 @@ int main(int argc, char *argv[])
   bool verbose=false;
   My_CLP.setOption("verbose", "silent", &verbose, "Verbostity flag" );
 
+  bool reverse=false;
+  My_CLP.setOption("reverse","forward",&reverse, "Orientation of the continuation in the first step" );
+
   std::string filename = "";
   My_CLP.setOption("input-guess", &filename, "File name with initial guess");
 
@@ -137,9 +140,9 @@ int main(int argc, char *argv[])
   //stepperList.set("Continuation Method", "Natural");
   stepperList.set("Continuation Parameter", "H0");  // Must set
   stepperList.set("Initial Value", problemParameters.get<double>("H0"));     // Must set
-  stepperList.set("Max Value", 2.0);                // Must set
-  stepperList.set("Min Value", 0.0);                // Must set
-  stepperList.set("Max Steps", 200);                // Should set
+  stepperList.set("Max Value",  3.0);                // Must set
+  stepperList.set("Min Value", -3.0);                // Must set
+  stepperList.set("Max Steps", 10000);                // Should set
   stepperList.set("Max Nonlinear Iterations", 20);  // Should set
   stepperList.set("Compute Eigenvalues",false);     // Default
   // ---------------------------------------------------------------------------
@@ -171,7 +174,10 @@ int main(int argc, char *argv[])
   // ---------------------------------------------------------------------------
   Teuchos::ParameterList& stepSizeList = locaParamsList.sublist("Step Size");
   stepSizeList.set("Method", "Adaptive");
-  stepSizeList.set("Initial Step Size", 0.001);
+  if (reverse)
+      stepSizeList.set("Initial Step Size", -0.001);
+  else
+      stepSizeList.set("Initial Step Size",  0.001);
   stepSizeList.set("Min Step Size", 1.0e-4);
   stepSizeList.set("Max Step Size", 1.0e-2);
   // ---------------------------------------------------------------------------
