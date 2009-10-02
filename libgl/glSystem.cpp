@@ -3,6 +3,8 @@
 #include "glException.h"
 
 #include <iostream>
+#include <fstream>
+
 #include <complex>
 #include <vector>
 
@@ -694,24 +696,33 @@ void GlSystem::printSolution ( const Epetra_Vector &x,
                   * ( Gl.getStaggeredGrid() ) );
   delete fileIo;
 
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  // fill the continuation parameters file
+  std::string contFileBaseName = "continuation.dat";
+  std::string contFileName     = outputDir+"/"+contFileBaseName;
 
-  char continuationfilename[100];
-  const char *buff;
-  string conoutfile = outputDir + "/continuation.dat";
-  buff = conoutfile.c_str();
-  (void) sprintf( continuationfilename, buff, conStep );
+  std::ofstream contFileStream;
 
-  ofstream outContinuationFile;
-  outContinuationFile.open(continuationfilename, ios::app);
-  outContinuationFile << conStep << "\t"
-		      << NOX::Utils::Sci(conParam) << "\t"
-		      << NOX::Utils::Sci(Gl.freeEnergy( psi)) << endl;
-  outContinuationFile.close();
+  // Set the output format
+  // Think about replacing this with NOX::Utils::Sci.
+  contFileStream.setf( std::ios::scientific );
+  contFileStream.precision(15);
 
-  // print information to screen
-  std::cout << conStep  << "     "
-            << conParam << "     "
-            << Gl.freeEnergy ( psi ) << std::endl;
+
+  if ( conStep==1 ) {
+      contFileStream.open (contFileName.c_str(),ios::trunc);
+      contFileStream << "# Step  \tH0              \tenergy\n";
+  } else {
+      // just append to the the contents to the file
+      contFileStream.open (contFileName.c_str(),ios::app);
+  }
+
+  contFileStream << "  " << conStep << "     "
+                 << "\t" << conParam
+                 << "\t" << Gl.freeEnergy ( psi ) << std::endl;
+
+  contFileStream.close();
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 }
 // =============================================================================

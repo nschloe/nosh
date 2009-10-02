@@ -110,7 +110,7 @@ void StaggeredGrid::computeA()
   for ( index i=0; i!=nx_; ++i )
       for ( index j=0; j!=nx_+1; ++j )
           Ax_[i][j] = - 0.5*h0_ *j*h_
-                     + 0.25*h0_ *edgelength_; //  to level the thing, but not actually necessary
+                      +0.25*h0_ *edgelength_; //  to level the thing, but not actually necessary
 
   /*! Initialize the Ay_ with values
    *  \f[
