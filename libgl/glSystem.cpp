@@ -23,6 +23,7 @@ typedef std::complex<double> double_complex;
 // Default constructor
 GlSystem::GlSystem ( GinzburgLandau::GinzburgLandau &gl,
                      Epetra_Comm                    &comm,
+                     const bool                     &rv,
                      std::vector<double_complex>    *psi ) :
     NumGlobalElements ( 0 ),
     NumMyElements ( 0 ),
@@ -35,6 +36,7 @@ GlSystem::GlSystem ( GinzburgLandau::GinzburgLandau &gl,
     Graph ( 0 ),
     jacobian ( 0 ),
     initialSolution ( 0 ),
+    reverse ( rv ),
     outputDir ( "." )
 {
   int Nx = Gl.getStaggeredGrid()->getNx();
@@ -669,7 +671,11 @@ void GlSystem::printSolution ( const Epetra_Vector &x,
                                double              conParam )
 {
   static int conStep = 0;
-  conStep++;
+
+  if (reverse)
+      conStep--;
+  else
+      conStep++;
 
   // convert the real valued vector to psi
   vector<double_complex> psi ( NumComplexUnknowns );
@@ -686,8 +692,14 @@ void GlSystem::printSolution ( const Epetra_Vector &x,
   tmpList.get ( "Nx",         Gl.getStaggeredGrid()->getNx() );
   tmpList.get ( "FE",         Gl.freeEnergy( psi ));
 
-  std::string fileName = "continuation-step-"
-                         + EpetraExt::toString ( conStep )
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  std::string stepString;
+  if (conStep>0)
+      stepString = "+" + EpetraExt::toString ( conStep );
+  else
+      stepString = EpetraExt::toString ( conStep );
+  std::string fileName = "continuationStep"
+                         + stepString
                          + ".vtk";
 
   IoVirtual* fileIo = IoFactory::createFileIo ( outputDir+"/"+fileName );
@@ -695,13 +707,21 @@ void GlSystem::printSolution ( const Epetra_Vector &x,
                   tmpList,
                   * ( Gl.getStaggeredGrid() ) );
   delete fileIo;
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   // fill the continuation parameters file
-  std::string contFileBaseName = "continuation.dat";
+  std::string contFileBaseName;
+  if (conStep>0)
+       contFileBaseName = "continuation+.dat";
+  else
+       contFileBaseName = "continuation-.dat";
   std::string contFileName     = outputDir+"/"+contFileBaseName;
 
   std::ofstream contFileStream;
+
+std::cout << contFileName << std::endl;
 
   // Set the output format
   // Think about replacing this with NOX::Utils::Sci.
@@ -709,7 +729,7 @@ void GlSystem::printSolution ( const Epetra_Vector &x,
   contFileStream.precision(15);
 
 
-  if ( conStep==1 ) {
+  if ( abs(conStep)==1 ) {
       contFileStream.open (contFileName.c_str(),ios::trunc);
       contFileStream << "# Step  \tH0              \tenergy\n";
   } else {

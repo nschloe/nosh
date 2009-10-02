@@ -35,6 +35,8 @@ class GlSystem:
       //! Default constructor.
       GlSystem( GinzburgLandau::GinzburgLandau &gl,
                 Epetra_Comm                    &comm,
+                const bool                     &reverse, // Actually, this has nothing to do with the linear system.
+                                                         // Get out, pls!
                 std::vector<double_complex>    *psi = NULL );
 
       //! Destructor
@@ -106,6 +108,7 @@ class GlSystem:
 
       GinzburgLandau::GinzburgLandau Gl;
       Epetra_Comm                    *Comm;
+      bool                           reverse;
       Epetra_Map                     *StandardMap,
                                      *EverywhereMap;
       Epetra_Vector                  *rhs;
