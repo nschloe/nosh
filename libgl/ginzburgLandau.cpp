@@ -1048,3 +1048,71 @@ double GinzburgLandau::freeEnergy ( const std::vector<double_complex> &psi )
   return energy;
 }
 // =============================================================================
+
+
+// =============================================================================
+// count the number of vortices by the total phase change along the boundary
+int GinzburgLandau::countVortices ( const std::vector<double_complex> &psi )
+{ 
+  int numVortices = 0;
+  int i[2] = {0,0};
+  int k;
+  int Nx = sGrid.getNx();
+
+  const double pi = 3.14159265358979323846264338327950288419716939937510;
+  const double threshold = 1.5*pi; // Consider jumps in the argument greater
+                                   // than this phase jumps.
+
+  // origin -- our first index
+  k = sGrid.i2k( i );
+
+  double angle = arg(psi[k]);
+  double anglePrev;
+
+  // lower border
+  i[1] = 0;
+  for ( int l=1; l<Nx+1; l++ ) {
+      anglePrev = angle;
+      i[0] = l;
+      k = sGrid.i2k( i );
+      angle = arg(psi[k]);
+      if ( abs(angle-anglePrev)>threshold )
+          numVortices++;
+  }
+
+  // right border
+  i[0] = Nx;
+  for ( int l=1; l<Nx+1; l++ ) {
+      anglePrev = angle;
+      i[1] = l;
+      k = sGrid.i2k( i );
+      angle = arg(psi[k]);
+      if ( abs(angle-anglePrev)>threshold )
+          numVortices++;
+  }
+
+  // top border
+  i[1] = Nx;
+  for ( int l=1; l<Nx+1; l++ ) {
+      anglePrev = angle;
+      i[0] = Nx-l;
+      k = sGrid.i2k( i );
+      angle = arg(psi[k]);
+      if ( abs(angle-anglePrev)>threshold )
+          numVortices++;
+  }
+
+  // left border
+  i[0] = 0;
+  for ( int l=1; l<Nx+1; l++ ) {
+      anglePrev = angle;
+      i[1] = Nx-l;
+      k = sGrid.i2k( i );
+      angle = arg(psi[k]);
+      if ( abs(angle-anglePrev)>threshold )
+          numVortices++;
+  }
+
+  return numVortices;
+}
+// =============================================================================

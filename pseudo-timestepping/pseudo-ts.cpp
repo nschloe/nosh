@@ -124,7 +124,7 @@ int main(int argc, char *argv[])
   // ---------------------------------------------------------------------------
   // run the loop
   int    maxSteps  = 5000;
-  double delta     = 0.01;
+  double delta     = 0.001;
   double tol       = 1e-10;
   bool   converged = false;
   std::vector<double_complex> update(NumUnknowns);

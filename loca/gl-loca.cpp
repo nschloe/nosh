@@ -120,9 +120,9 @@ int main(int argc, char *argv[])
 
       // Create the interface between NOX and the application
       // This object is derived from NOX::Epetra::Interface
-      glsystem = Teuchos::rcp(new GlSystem( glProblem, Comm, &psi ) );
+      glsystem = Teuchos::rcp(new GlSystem( glProblem, Comm, reverse, &psi ) );
   } else
-      glsystem = Teuchos::rcp(new GlSystem( glProblem,Comm ) );
+      glsystem = Teuchos::rcp(new GlSystem( glProblem,Comm, reverse ) );
   // ---------------------------------------------------------------------------
 
 

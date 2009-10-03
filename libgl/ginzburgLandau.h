@@ -60,6 +60,9 @@ class GinzburgLandau
        of a given state \f$\psi\f$. */
      double freeEnergy( const std::vector<double_complex> &psi );
 
+     /*! Count the number of vortices. */
+     int countVortices ( const std::vector<double_complex> &psi );
+
      /*! Print the solution \f$\psi\f$ to a legacy VTK file for viewing
          with ParaView, for example. */
      void psiToLegacyVtkFile( const std::vector<double_complex> &psi,

@@ -731,7 +731,7 @@ std::cout << contFileName << std::endl;
 
   if ( abs(conStep)==1 ) {
       contFileStream.open (contFileName.c_str(),ios::trunc);
-      contFileStream << "# Step  \tH0              \tenergy\n";
+      contFileStream << "# Step  \tH0              \tenergy              \t#vortices\n";
   } else {
       // just append to the the contents to the file
       contFileStream.open (contFileName.c_str(),ios::app);
@@ -739,7 +739,8 @@ std::cout << contFileName << std::endl;
 
   contFileStream << "  " << conStep << "     "
                  << "\t" << conParam
-                 << "\t" << Gl.freeEnergy ( psi ) << std::endl;
+                 << "\t" << Gl.freeEnergy   ( psi )
+                 << "\t" << Gl.countVortices( psi ) << std::endl;
 
   contFileStream.close();
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
