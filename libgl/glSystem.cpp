@@ -693,6 +693,8 @@ void GlSystem::printSolution ( const Epetra_Vector &x,
   tmpList.get ( "FE",         Gl.freeEnergy( psi ));
 
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  // TODO:
+  // see if the following can be replaced by some FORMAT construction
   std::string stepString;
   if (conStep>0)
       stepString = "+" + EpetraExt::toString ( conStep );
@@ -721,17 +723,17 @@ void GlSystem::printSolution ( const Epetra_Vector &x,
 
   std::ofstream contFileStream;
 
-std::cout << contFileName << std::endl;
-
   // Set the output format
   // Think about replacing this with NOX::Utils::Sci.
   contFileStream.setf( std::ios::scientific );
   contFileStream.precision(15);
 
-
   if ( abs(conStep)==1 ) {
       contFileStream.open (contFileName.c_str(),ios::trunc);
-      contFileStream << "# Step  \tH0              \tenergy              \t#vortices\n";
+      contFileStream << "# Step  "
+                     << "\tH0              "
+                     << "\tenergy              "
+                     << "\t#vortices\n";
   } else {
       // just append to the the contents to the file
       contFileStream.open (contFileName.c_str(),ios::app);
@@ -762,9 +764,9 @@ void GlSystem::setOutputDir ( const string &directory )
 
 
 // =============================================================================
-void GlSystem::solutionToFile ( const Epetra_Vector          &x,
+void GlSystem::solutionToFile ( const Epetra_Vector    &x,
                                 Teuchos::ParameterList &problemParams,
-                                const std::string            &fileName )
+                                const std::string      &fileName )
 {
   // convert the real valued vector to psi
   vector<double_complex> psi ( NumComplexUnknowns );
