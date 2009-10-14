@@ -19,6 +19,11 @@ FIND_PACKAGE( Trilinos COMPONENTS NOXEpetra
                                   EpetraExt
                                   Epetra
 				  Anasazi
+				  Tpetra
+				  Kokkosnodeapi
+				  Thyraepetra
+				  Thyra
+				  Rtop
                                   Teuchos )
 INCLUDE_DIRECTORIES ( ${Trilinos_INCLUDE_DIR} )
 

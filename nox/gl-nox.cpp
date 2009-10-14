@@ -1,34 +1,49 @@
 #include <NOX.H>
 #include <NOX_Epetra.H>
-#include <NOX_Abstract_PrePostOperator.H>
+// #include <NOX_Abstract_PrePostOperator.H>
+
+#ifdef HAVE_MPI
+#include <Teuchos_DefaultComm.hpp>
+#else
+#include <Teuchos_DefaultSerialComm.hpp>
+#endif
+
+// #include <Teuchos_ParameterList.hpp>
+// #include <Teuchos_CommandLineProcessor.hpp>
+
+// User's application specific files
+// #include "ioFactory.h"
+
+#include <string>
+
+// for the eigenvalue computation:
+#include <AnasaziBasicEigenproblem.hpp>
+#include <AnasaziBasicOutputManager.hpp>
+#include <AnasaziBlockDavidsonSolMgr.hpp>
+#include "AnasaziBlockKrylovSchurSolMgr.hpp"
+#include "AnasaziBasicEigenproblem.hpp"
+#include "AnasaziConfigDefs.hpp"
+#include "AnasaziEpetraAdapter.hpp"
+#include "AnasaziBasicSort.hpp"
+
+#include <Teuchos_RCP.hpp>
+#include <Teuchos_CommandLineProcessor.hpp>
+#include <Teuchos_ParameterList.hpp>
+
+#include <Tpetra_Map.hpp>
+#include <Tpetra_MultiVector.hpp>
+
+#include <complex>
+typedef std::complex<double> double_complex;
+
+#include "ginzburgLandau.h"
+#include "glPrePostOperator.h"
 
 #ifdef HAVE_MPI
 #include <Epetra_MpiComm.h>
 #else
 #include <Epetra_SerialComm.h>
 #endif
-
-#include <Teuchos_ParameterList.hpp>
-#include <Teuchos_CommandLineProcessor.hpp>
-
-// User's application specific files
-#include "glSystem.h"
-#include "ioFactory.h"
-
-#include "glPrePostOperator.h"
-
-#include <string>
-
-// for the eigenvalue computation:
-// #include <AnasaziBasicEigenproblem.hpp>
-// #include <AnasaziBasicOutputManager.hpp>
-// #include <AnasaziBlockDavidsonSolMgr.hpp>
-
-#include "AnasaziBlockKrylovSchurSolMgr.hpp"
-#include "AnasaziBasicEigenproblem.hpp"
-#include "AnasaziConfigDefs.hpp"
-#include "AnasaziEpetraAdapter.hpp"
-#include "AnasaziBasicSort.hpp"
 
 int main(int argc, char *argv[])
 {
@@ -38,15 +53,20 @@ int main(int argc, char *argv[])
   MPI_Init(&argc,&argv);
 #endif
 
-  // Create a communicator for Epetra objects
+  // Create a communicator for Tpetra objects
+  // TODO:
+  // See if we can replace this whole #ifdef contruct by just a call to
+  // DefaultComm::getComm. Then, remember to get rid the headers as well.
 #ifdef HAVE_MPI
-  Epetra_MpiComm Comm(MPI_COMM_WORLD);
+  Teuchos::RCP<const Teuchos::MpiComm<int> > Comm
+                                         = Teuchos::DefaultComm<int>::getComm();
 #else
-  Epetra_SerialComm Comm;
+  Teuchos::RCP<const Teuchos::Comm<int> > Comm
+                                   = Teuchos::rcp(new Teuchos::SerialComm<int>);
 #endif
 
   // Get the process ID and the total number of processors
-  int MyPID = Comm.MyPID();
+  int MyPID = Comm->getRank();
 
   // ===========================================================================
   // handle command line arguments
@@ -88,23 +108,30 @@ int main(int argc, char *argv[])
 
 
   // ---------------------------------------------------------------------------
-  std::vector<double_complex> psiLexicographic;
-  Teuchos::ParameterList      problemParameters;
-  if (withInitialGuess) {
-      Teuchos::RCP<IoVirtual> fileIo = Teuchos::RCP<IoVirtual>( IoFactory::createFileIo( filename ) );
-      try {
-          fileIo->read( &psiLexicographic,
-                        &problemParameters );
-      }
-      catch ( const std::exception &e ) {
-          std::cout << e.what() << std::endl;
-          return 1;
-      }
-  } else {
+  Teuchos::ParameterList problemParameters;
+  // define a new dummy psiLexicographic vector, to be adapted instantly
+  Teuchos::RCP<Tpetra::Map<int> >dummyMap = Teuchos::rcp(new Tpetra::Map<int>( 1, 0, Comm ) );
+  Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > psiLexicographic;
+//                                                              = Teuchos::ENull();
+//       = Teuchos::rcp( new Tpetra::MultiVector<double_complex,int>(dummyMap,1) );
+//       = Teuchos::RCP::;
+
+//   if (withInitialGuess) {
+//       Teuchos::RCP<IoVirtual> fileIo = Teuchos::RCP<IoVirtual>( IoFactory::createFileIo( filename ) );
+//       try {
+//           fileIo->read( psiLexicographic,
+//                         &problemParameters );
+//       }
+//       catch ( const std::exception &e ) {
+//           std::cout << e.what() << std::endl;
+//           return 1;
+//       }
+//   }
+// else {
       // set the default value
-      int Nx = 80;
+      int    Nx         = 50;
       double edgelength = 10.0;
-      double H0 = 0.4;
+      double H0         = 0.4;
       std::cout << "Using the standard parameters \n"
                 << "    Nx         = " << Nx << ",\n"
                 << "    edgelength = " << edgelength << ",\n"
@@ -112,8 +139,14 @@ int main(int argc, char *argv[])
       problemParameters.set( "Nx"        , Nx   );
       problemParameters.set( "edgelength", edgelength );
       problemParameters.set( "H0"        , H0  );
-  }
-  // ---------------------------------------------------------------------------
+
+      int NumGlobalUnknowns = (Nx+1)*(Nx+1);
+      Teuchos::RCP<Tpetra::Map<int> > standardMap
+            = Teuchos::rcp(new Tpetra::Map<int>( NumGlobalUnknowns, 0, Comm ) );
+      psiLexicographic = Teuchos::rcp( new Tpetra::MultiVector<double_complex,int>(standardMap,1) );
+//       psiLexicographic->replaceMap( standardMap );
+//   }
+//   // ---------------------------------------------------------------------------
 
   // create the gl problem
   GinzburgLandau glProblem = GinzburgLandau( problemParameters.get<int>("Nx"),
@@ -121,24 +154,44 @@ int main(int argc, char *argv[])
                                              problemParameters.get<double>("H0")
                                            );
 
+  // create Epetra communicator
+#ifdef HAVE_MPI
+  Teuchos::RCP<Epetra_MpiComm> eComm
+           = Teuchos::rcp<Epetra_MpiComm>( new Epetra_MpiComm(MPI_COMM_WORLD) );
+#else
+  Teuchos::RCP<Epetra_SerialComm>  eComm
+                  = Teuchos::rcp<Epetra_SerialComm> ( new Epetra_SerialComm() );
+#endif
+
   // ---------------------------------------------------------------------------
   Teuchos::RCP<GlSystem> glsystem;
   if (withInitialGuess) {
       // If there was is an initial guess, make sure to get the ordering correct.
-      int              NumUnknowns = glProblem. getStaggeredGrid()
-                                              ->getNumComplexUnknowns();
+      // TODO:
+      // Look into having this done by Trilinos. If executed on a multiproc
+      // environment, we don't want p to be fully present on all processors.
+      int NumUnknowns = glProblem.getStaggeredGrid()->getNumComplexUnknowns();
       std::vector<int> p(NumUnknowns);
       // fill p:
       glProblem.getStaggeredGrid()->lexicographic2grid( &p );
-      std::vector<double_complex> psi(NumUnknowns);
-      for (int k=0; k<NumUnknowns; k++)
-          psi[p[k]] = psiLexicographic[k];
+
+      Teuchos::RCP<Tpetra::MultiVector<double_complex,int> >  psi
+          = Teuchos::rcp( new Tpetra::MultiVector<double_complex,int>(psiLexicographic->getMap(),1) );
+      // TODO:
+      // The following is certainly not multiproc.
+      Teuchos::ArrayRCP<const double_complex> psiView = psiLexicographic->getVector(0)->get1dView();
+      for (int k=0; k<NumUnknowns; k++) {
+          psi->replaceGlobalValue( p[k],
+                                   0,
+                                   psiView[k]
+                                 );
+      }
 
       // Create the interface between NOX and the application
       // This object is derived from NOX::Epetra::Interface
-      glsystem = Teuchos::rcp(new GlSystem( glProblem, Comm, false, &psi ) );
+      glsystem = Teuchos::rcp(new GlSystem( glProblem, eComm, false, psi ) );
   } else
-      glsystem = Teuchos::rcp(new GlSystem( glProblem,Comm, false  ) );
+      glsystem = Teuchos::rcp(new GlSystem( glProblem, eComm, false  ) );
   // ---------------------------------------------------------------------------
 
 
@@ -418,34 +471,34 @@ int main(int argc, char *argv[])
       // Get the Ritz values from the eigensolver
       std::vector<Anasazi::Value<double> > ritzValues = MySolverMgr.getRitzValues();
 
-      // Output computed eigenvalues and their direct residuals
-      if (MyPID==0) {
-        int numritz = (int)ritzValues.size();
-        cout.setf(std::ios_base::right, std::ios_base::adjustfield);
-        cout<<endl<< "Computed Ritz Values"<< endl;
-        if (MyProblem->isHermitian()) {
-          cout<< std::setw(16) << "Real Part"
-            << endl;
-          cout<<"-----------------------------------------------------------"<<endl;
-          for (int i=0; i<numritz; i++) {
-            cout<< std::setw(16) << ritzValues[i].realpart
-              << endl;
-          }
-          cout<<"-----------------------------------------------------------"<<endl;
-        }
-        else {
-          cout<< std::setw(16) << "Real Part"
-            << std::setw(16) << "Imag Part"
-            << endl;
-          cout<<"-----------------------------------------------------------"<<endl;
-          for (int i=0; i<numritz; i++) {
-            cout<< std::setw(16) << ritzValues[i].realpart
-              << std::setw(16) << ritzValues[i].imagpart
-              << endl;
-          }
-          cout<<"-----------------------------------------------------------"<<endl;
-          }
-        }
+//       // Output computed eigenvalues and their direct residuals
+//       if (MyPID==0) {
+//         int numritz = (int)ritzValues.size();
+//         cout.setf(std::ios_base::right, std::ios_base::adjustfield);
+//         cout<<endl<< "Computed Ritz Values"<< endl;
+//         if (MyProblem->isHermitian()) {
+//           cout<< std::setw(16) << "Real Part"
+//             << endl;
+//           cout<<"-----------------------------------------------------------"<<endl;
+//           for (int i=0; i<numritz; i++) {
+//             cout<< std::setw(16) << ritzValues[i].realpart
+//               << endl;
+//           }
+//           cout<<"-----------------------------------------------------------"<<endl;
+//         }
+//         else {
+//           cout<< std::setw(16) << "Real Part"
+//             << std::setw(16) << "Imag Part"
+//             << endl;
+//           cout<<"-----------------------------------------------------------"<<endl;
+//           for (int i=0; i<numritz; i++) {
+//             cout<< std::setw(16) << ritzValues[i].realpart
+//               << std::setw(16) << ritzValues[i].imagpart
+//               << endl;
+//           }
+//           cout<<"-----------------------------------------------------------"<<endl;
+//           }
+//         }
 
       // Get the eigenvalues and eigenvectors from the eigenproblem
       Anasazi::Eigensolution<ScalarType,MV> sol = MyProblem->getSolution();
@@ -456,17 +509,17 @@ int main(int argc, char *argv[])
 
       Teuchos::RCP<Epetra_Vector> ev1( (*evecs)(0) );
 
-  glsystem->solutionToFile( *ev1,
-                            problemParameters,
-                            "data/ev1.vtk" );
-
-      cout<< std::setw(16) << "Real Part"
-          << std::setw(16) << "Imag Part" << endl;
-      cout<<"-----------------------------------------------------------"<<endl;
-      for (int i=0; i<numev; i++) {
-          cout<< std::setw(16) << evals[i].realpart
-            << std::setw(16) << evals[i].imagpart << endl;
-      }
+//   glsystem->solutionToFile( *ev1,
+//                             problemParameters,
+//                             "data/ev1.vtk" );
+// 
+//       cout<< std::setw(16) << "Real Part"
+//           << std::setw(16) << "Imag Part" << endl;
+//       cout<<"-----------------------------------------------------------"<<endl;
+//       for (int i=0; i<numev; i++) {
+//           cout<< std::setw(16) << evals[i].realpart
+//             << std::setw(16) << evals[i].imagpart << endl;
+//       }
       // -----------------------------------------------------------------------
   }
 

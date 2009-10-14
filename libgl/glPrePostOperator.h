@@ -1,3 +1,6 @@
+#ifndef GLPREPOSTOPERATOR_H
+#define GLPREPOSTOPERATOR_H
+
 #include <NOX_Common.H>
 #include <NOX_Abstract_PrePostOperator.H>
 #include <NOX_Utils.H>
@@ -30,3 +33,4 @@ protected:
   Teuchos::RCP<GlSystem> glsystem_;            //!< The Ginzburg--Landau system.
 
 };
+#endif // GLPREPOSTOPERATOR_H

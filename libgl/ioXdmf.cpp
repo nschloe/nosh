@@ -29,21 +29,14 @@ IoXdmf::IoXdmf( std::string fname ):
 {
 }
 // =============================================================================
-
-
-
-// =============================================================================
 // Destructor
 IoXdmf::~IoXdmf()
 {
 }
 // =============================================================================
-
-
-
-// =============================================================================
-void IoXdmf::read( std::vector<double_complex> *psi,
-                   Teuchos::ParameterList      *problemParams )
+void IoXdmf::read( Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > psi,
+                   Teuchos::RCP<Teuchos::Comm<int> >                      comm, // TODO: remove this
+                   Teuchos::ParameterList                                 *problemParams )
 {
 
   // Convert the file to a string, such that we can discard the headers and pass
@@ -117,19 +110,28 @@ void IoXdmf::read( std::vector<double_complex> *psi,
   // gather the heavy abs(psi) data
   getHeavyData( xmlFileObject, Comm, &argPsi, directory, "arg(psi)", "arg" );
 
+  // @TODO
+  // Make sure that we got some proper multi-core handling here.
+  
   // build psi of the entries that we got
-  psi->resize( (Nx+1)*(Nx+1) );
+  if ( psi->getGlobalLength() != (unsigned int)(Nx+1)*(Nx+1) ) {
+      std::string message = "Length of input vector psi (="
+                          + EpetraExt::toString( (int)psi->getGlobalLength() ) + ") "
+			  + "does not coincide with the number of complex "
+			  + "unknowns (="
+                          + EpetraExt::toString( (Nx+1)*(Nx+1) ) + ").";
+      throw glException( "IoXdmf::read", message );    
+  }
+  
   int k = 0;
   for (int i=0; i<Nx+1; i++)
-      for (int j=0; j<Nx+1; j++)
-          (*psi)[k++] = std::polar( (*absPsi)[i][j], (*argPsi)[i][j] );
+      for (int j=0; j<Nx+1; j++) {
+	  double_complex z = std::polar( (*absPsi)[i][j], (*argPsi)[i][j] );
+	  psi->replaceGlobalValue( k++, 0, z );
+      }
 
   return;
 }
-// =============================================================================
-
-
-
 // =============================================================================
 void IoXdmf::getHeavyData( const Teuchos::XMLObject &xmlFileObject,
                            const Epetra_Comm        &comm,
@@ -227,13 +229,9 @@ void IoXdmf::getHeavyData( const Teuchos::XMLObject &xmlFileObject,
   hdf5Reader.Close();
 }
 // =============================================================================
-
-
-
-// =============================================================================
-void IoXdmf::write( const std::vector<double_complex> &psi,
-                    const Teuchos::ParameterList      &problemParams,
-                    StaggeredGrid::StaggeredGrid      &sGrid          )
+void IoXdmf::write( const Tpetra::MultiVector<double_complex,int> &psi,
+                    const Teuchos::ParameterList                  &problemParams,
+                    StaggeredGrid::StaggeredGrid                  &sGrid          )
 {
 
   int    Nx = sGrid.getNx(),
@@ -370,13 +368,14 @@ void IoXdmf::write( const std::vector<double_complex> &psi,
   // fill absPsi and argPsi
   Epetra_MultiVector absPsi(StandardMap,Nx+1);
   Epetra_MultiVector argPsi(StandardMap,Nx+1);
+  Teuchos::ArrayRCP<const double_complex> psiView = psi.getVector(0)->get1dView();
   for (int i=0; i<Nx+1; i++) {
       index[0] = i;
       for (int j=0; j<Nx+1; j++) {
           index[1] = j;
           k = sGrid.i2k( index );
-          absPsi.ReplaceGlobalValue( i, j, abs(psi[k]) );
-          argPsi.ReplaceGlobalValue( i, j, arg(psi[k]) );
+          absPsi.ReplaceGlobalValue( i, j, abs(psiView[k]) );
+          argPsi.ReplaceGlobalValue( i, j, arg(psiView[k]) );
       }
   }
 

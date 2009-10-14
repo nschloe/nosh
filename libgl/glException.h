@@ -1,3 +1,6 @@
+#ifndef GLEXCEPTION_H
+#define GLEXCEPTION_H
+
 // standard exceptions
 #include <iostream>
 #include <exception>
@@ -27,3 +30,4 @@ class glException: public std::exception
       std::string _errorMessage;
 
 };
+#endif // GLEXCEPTION_H

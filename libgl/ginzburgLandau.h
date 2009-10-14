@@ -1,16 +1,23 @@
 /********************************************//**
  * The Ginzburg--Landau equations.
  ***********************************************/
+#ifndef GINZBURGLANDAU_H
+#define GINZBURGLANDAU_H
+
 #include <complex>
 #include <string> // for the file output functions
 
 #include "staggeredGrid.h"
 
-#include <Epetra_Map.h>
+// #include <Epetra_Map.h>
 
 #include <Teuchos_ParameterList.hpp>
 
 #include <Teuchos_XMLObject.hpp>
+
+#include <Tpetra_MultiVector.hpp>
+
+#include <Epetra_Map.h>
 
 // abbreviate the complex type name
 typedef std::complex<double> double_complex;
@@ -32,12 +39,14 @@ class GinzburgLandau
 
      /*! Returns a pointer to the \f$A\f$ grid in use.*/
      StaggeredGrid::StaggeredGrid* getStaggeredGrid();
+     
+     Tpetra::MultiVector<double_complex,int> computeGlVector( Tpetra::MultiVector<double_complex,int> psi );
 
      /*! Evaluates the Ginzburg--Landau equations.
          @param eqnum Index of the equation to evaluate.
          @param psi   Current order parameter \f$\psi\f$. */
      double_complex computeGl( const int                         eqnum,
-                               const std::vector<double_complex> &psi   );
+                               const Tpetra::MultiVector<double_complex,int> &psi );
 
      /*! Returns the coefficients of the jacobian system associated with the
          Ginzburg--Landau equations. */
@@ -58,7 +67,12 @@ class GinzburgLandau
        \mathcal{G} = \int\nolimits_{\Omega} |\psi|^4 \,\mathrm{d}\omega
        \f]
        of a given state \f$\psi\f$. */
-     double freeEnergy( const std::vector<double_complex> &psi );
+     double freeEnergy ( const Tpetra::MultiVector<double_complex,int> &psi );
+     
+     /*! Count the number of vortices. */
+     int countVortices ( const Tpetra::MultiVector<double_complex,int> &psi );
+     
+  private:
 
      /*! Count the number of vortices. */
      int countVortices ( const std::vector<double_complex> &psi );
@@ -82,16 +96,6 @@ class GinzburgLandau
                          const std::string                 &filename,
                          const Epetra_Map                  &StandardMap,
                          const Epetra_Comm                 &comm         );
-
-  private:
-
-      const Teuchos::XMLObject* xmlFind ( const Teuchos::XMLObject *xmlObj,
-                                            const std::string        tag      );
-
-      const Teuchos::XMLObject* xmlAttributeFind ( const Teuchos::XMLObject *xmlObj,
-                                                   const std::string        tag,
-                                                   const std::string        attribute,
-                                                   const std::string        value      );
 
       StaggeredGrid::StaggeredGrid sGrid;
 
@@ -134,3 +138,4 @@ class GinzburgLandau
                                std::vector<double_complex>       &valuesPsiConj         );
 
 };
+#endif // GINZBURGLANDAU_H

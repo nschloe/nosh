@@ -16,22 +16,32 @@
 
 #include <EpetraExt_Utils.h>
 
+#include <Epetra_Map.h>
+
+#include <Tpetra_Vector.hpp>
+#include <Tpetra_MultiVector.hpp>
+
+#include <Thyra_EpetraThyraWrappers.hpp>
+
+#include <Teuchos_DefaultComm.hpp>
+
 // abbreviate the complex type name
 typedef std::complex<double> double_complex;
 
 // =============================================================================
 // Default constructor
-GlSystem::GlSystem ( GinzburgLandau::GinzburgLandau &gl,
-                     Epetra_Comm                    &comm,
-                     const bool                     &rv,
-                     std::vector<double_complex>    *psi ) :
-    NumGlobalElements ( 0 ),
+GlSystem::GlSystem ( GinzburgLandau::GinzburgLandau                               &gl,
+		     const Teuchos::RCP<Epetra_Comm>                              eComm,
+                     const bool                                                   &rv,
+                     const Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > psi  ) :
+    NumRealUnknowns ( 0 ),
     NumMyElements ( 0 ),
     NumComplexUnknowns ( 0 ),
     Gl ( gl ),
-    Comm ( &comm ),
-    StandardMap ( 0 ),
-    EverywhereMap ( 0 ),
+    EComm ( eComm ),
+    TComm ( 0 ),
+    RealMap ( 0 ),
+    ComplexMap ( 0 ),
     rhs ( 0 ),
     Graph ( 0 ),
     jacobian ( 0 ),
@@ -41,43 +51,82 @@ GlSystem::GlSystem ( GinzburgLandau::GinzburgLandau &gl,
 {
   int Nx = Gl.getStaggeredGrid()->getNx();
   NumComplexUnknowns = ( Nx+1 ) * ( Nx+1 );
-  NumGlobalElements  = 2*NumComplexUnknowns+1;
+  NumRealUnknowns    = 2*NumComplexUnknowns+1;
 
-  // define the map where the data is nicely distributed over all processors
-  StandardMap = new Epetra_Map ( NumGlobalElements, 0, *Comm );
-  NumMyElements = StandardMap->NumMyElements();
-
-  // define the map where each processor has a full solution vector
-  EverywhereMap = new Epetra_Map ( NumGlobalElements,
-                                   NumGlobalElements,
-                                   0,
-                                   *Comm );
-
-  // initialize solution
-  initialSolution = Teuchos::rcp ( new Epetra_Vector ( *StandardMap ) );
-
-  if ( !psi )   // null pointer
+  // @TODO
+  // There is (until now?) no way to convert a Teuchos::Comm (of psi) 
+  // to an Epetra_Comm (of the real valued representation of psi), so the
+  // Epetra_Comm has to be generated explicitly, and two communicators are kept
+  // side by side all the time. One must make sure that the two are actually
+  // equivalent, which can be checked by Thyra's conversion method create_Comm.
+  // @TODO
+  // Is is actually necessary to have equivalent communicators on the
+  // real-valued and the complex-valued side?
+  // How to compare two communicators anyway?
+  
+  // create fitting Tpetra::Comm
+  TComm = Thyra::create_Comm( EComm );
+  
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  // define maps
+  if ( psi.is_null() )   // null pointer
     {
+      // define uniform distribution
+      ComplexMap = Teuchos::rcp(new Tpetra::Map<int>( NumComplexUnknowns, 0, TComm ) );
+    }
+  else
+    {
+      // psi->getMap() returns a CONST map
+      ComplexMap = Teuchos::RCP<const Tpetra::Map<int> >( psi->getMap() );
+    }
+
+  // get the map for the real values
+  makeRealMap( ComplexMap, RealMap );
+  
+  // set the number of local elements
+  NumMyElements = RealMap->NumMyElements();
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
+
+
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  // Create a map for the real-valued vector to be spread all over all
+  // processors.
+  // @TODO Remove (the need for) this.
+  // define the map where each processor has a full solution vector
+  EverywhereMap = Teuchos::rcp( new Epetra_Map ( NumRealUnknowns,
+                                                 NumRealUnknowns,
+                                                 0,
+                                                 *EComm ) );
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  // initialize solution
+  initialSolution = Teuchos::rcp ( new Epetra_Vector ( *RealMap ) );
+  if ( psi.is_null() )   // null pointer
+    {
+      // define map for psi
       initialSolution->PutScalar ( 0.5 ); // Default initialization
     }
   else
     {
-      if ( psi->size() != NumComplexUnknowns )
+      if ( psi->getGlobalLength() != (unsigned int)NumComplexUnknowns )
         {
           std::string message = "Size of the initial guess vector ("
-                                + EpetraExt::toString ( int ( psi->size() ) )
+                                + EpetraExt::toString ( int ( psi->getGlobalLength() ) )
                                 + ") does not coincide with the number of unknowns ("
                                 + EpetraExt::toString ( NumComplexUnknowns ) + ").";
           throw glException ( "GlSystem::GlSystem",
                               message );
         }
-      complex2real ( *psi, initialSolution );
+      psi2real ( *psi, *initialSolution );
     }
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
 
 
   // create the sparsity structure (graph) of the Jacobian
   // use x as DUMMY argument
-  Epetra_Vector dummy ( *StandardMap );
+  Epetra_Vector dummy ( *RealMap );
   createJacobian ( ONLY_GRAPH, dummy );
 
   // Allocate the sparsity pattern of the jacobian matrix
@@ -87,20 +136,10 @@ GlSystem::GlSystem ( GinzburgLandau::GinzburgLandau &gl,
   jacobian->FillComplete();
 }
 // =============================================================================
-
-
-
-// =============================================================================
 // Destructor
 GlSystem::~GlSystem()
 {
-  delete Graph;
-  delete StandardMap;
-  delete EverywhereMap;
 }
-// =============================================================================
-
-
 // =============================================================================
 int GlSystem::realIndex2complexIndex ( const int realIndex )
 {
@@ -110,19 +149,12 @@ int GlSystem::realIndex2complexIndex ( const int realIndex )
     return ( realIndex-1 ) /2;
 }
 // =============================================================================
-
-
-// =============================================================================
 void GlSystem::real2complex ( const Epetra_Vector    &realvec,
                               vector<double_complex> &psi )
 {
   for ( int k=0; k<NumComplexUnknowns; k++ )
     psi[k] = double_complex ( realvec[2*k], realvec[2*k+1] );
 }
-// =============================================================================
-
-
-
 // =============================================================================
 void GlSystem::complex2real ( const vector<double_complex> &psi,
                               Teuchos::RCP<Epetra_Vector>  realvec )
@@ -134,57 +166,148 @@ void GlSystem::complex2real ( const vector<double_complex> &psi,
     }
 }
 // =============================================================================
+// converts a real-valued vector to a complex-valued psi vector
+void GlSystem::real2psi ( const Epetra_Vector                     &realvec,
+                          Tpetra::MultiVector<double_complex,int> &psi     )
+{
+  for ( unsigned int k=0; k<psi.getGlobalLength(); k++ ) {
+    double_complex z = double_complex ( realvec[2*k], realvec[2*k+1] );
+    psi.replaceGlobalValue( k, 0, z );
+  }
+}
+// =============================================================================
+// converts a real-valued vector to a complex-valued psi vector
+void GlSystem::psi2real ( const Tpetra::MultiVector<double_complex,int> &psi,
+                          Epetra_Vector                                 &x   )
+{
+  Teuchos::ArrayRCP<const double_complex> psiView = psi.getVector(0)->get1dView();
+  for ( int k=0; k<NumComplexUnknowns; k++ )
+    {
+      x[2*k]   = real ( psiView[k] );
+      x[2*k+1] = imag ( psiView[k] );
+    }
+}
+// =============================================================================
+void GlSystem::makeRealMap( const Teuchos::RCP<const Tpetra::Map<int> >  complexMap,
+                            Teuchos::RCP<Epetra_Map>                     &realMap     )
+{ 
+  int numRealGlobalElements = 2*complexMap->getNodeNumElements();
+  
+  int myPid = TComm->getRank();
 
+  // treat the phase condition on the first node
+  if ( myPid==0 )
+    numRealGlobalElements++;
+  
+  Epetra_IntSerialDenseVector   realMapGIDs( numRealGlobalElements );
+  Teuchos::ArrayView<const int> myGlobalElements = complexMap->getNodeElementList();
+  // Construct the map in such a way that all complex entries on processor K
+  // are split up into real and imaginary part, which will both reside on
+  // processor K again.
+  for (unsigned int i=0; i<complexMap->getNodeNumElements(); i++)
+    {
+      realMapGIDs[2*i]   = 2*myGlobalElements[i];
+      realMapGIDs[2*i+1] = 2*myGlobalElements[i] + 1;
+    }
+    
+  // set the phase condition
+  if ( myPid==0 )
+    realMapGIDs[numRealGlobalElements-1] = NumRealUnknowns-1;
 
+  realMap = Teuchos::rcp(new Epetra_Map( numRealGlobalElements,
+                                         realMapGIDs.Length(),
+                                         realMapGIDs.Values(),
+                                         complexMap->getIndexBase(),
+                                         *EComm                            ) );
 
+  return;
+}
 // =============================================================================
 bool GlSystem::computeF ( const Epetra_Vector &x,
                           Epetra_Vector       &FVec,
                           const NOX::Epetra::Interface::Required::FillType fillFlag )
 {
-  Epetra_Vector          xEverywhere ( *EverywhereMap );
-  vector<double_complex> psi ( NumComplexUnknowns );
-  double_complex         val;
+//   vector<double_complex> psi ( NumComplexUnknowns );
+//   double_complex         val;
+  
+//   // define the Tpetra platform
+// #ifdef TPETRA_MPI
+//         Tpetra::MpiPlatform<int, double_complex> platformV(MPI_COMM_WORLD);
+//         Tpetra::MpiPlatform<int, int>            platformE(MPI_COMM_WORLD);
+// #else
+//         Tpetra::SerialPlatform<int, double_complex> platformV;
+//         Tpetra::SerialPlatform<int, int>            platformE;
+// #endif
+  
+  // ***************************************************************************
+   
+  // make sure that the input and output vectors are correctly mapped
+  if ( !x.Map().SameAs( *RealMap ) ) {
+      throw glException ( "GlSystem::computeF",
+                          "Maps of x and the computed real-valued map do not coincide." );    
+  }
+  
+  if ( !FVec.Map().SameAs( *RealMap ) ) {
+      throw glException ( "GlSystem::computeF",
+                          "Maps of FVec and the computed real-valued map do not coincide." );    
+  }
+   
+  // define vector
+  // @TODO: Replace this by Tpetra::Vector as soon as upstream is ready.
+  Tpetra::MultiVector<double_complex,int> psi( ComplexMap, 1, true );
 
-  // scatter x over all processors
-  Epetra_Export Exporter ( *StandardMap, *EverywhereMap );
-  xEverywhere.Export ( x, Exporter, Insert );
-  ( void ) real2complex ( xEverywhere, psi );
+  // convert from x to psi2
+  real2psi ( x, psi );
 
-  // loop over the system rows
-  double passVal;
-  for ( int i=0; i<NumMyElements; i++ )
-    {
-      int myGlobalIndex = StandardMap->GID ( i );
-      if ( myGlobalIndex==2*NumComplexUnknowns )   // phase condition
-        {
-          passVal = 0.0;
-        }
-      else   // GL equations
-        {
-          // get the index of the complex valued equation
-          int psiIndex = realIndex2complexIndex ( myGlobalIndex );
-          // get the complex value
-          // TODO: The same value is actually fetched twice in this loop
-          //       possibly consecutively: Once for the real, once for
-          //       the imaginary part of it.
-          val = Gl.computeGl ( psiIndex, psi );
-
-
-          if ( ! ( myGlobalIndex%2 ) ) // myGlobalIndex is even
-            passVal = real ( val );
-          else // myGlobalIndex is odd
-            passVal = imag ( val );
-        }
-      FVec.ReplaceGlobalValues ( 1, &passVal, &myGlobalIndex );
-    }
+  // define output vector
+  Tpetra::MultiVector<double_complex,int> res( ComplexMap, 1, true );
+  
+  // compute the GL residual
+  res = Gl.computeGlVector ( psi );
+  
+  // transform back to fully real equation
+  psi2real( res, FVec );
+  
+  // add phase condition
+  FVec[2*NumComplexUnknowns] = 0.0;
+  
+//   // ***************************************************************************  
+// 
+//   // scatter x over all processors
+//   Epetra_Export Exporter ( *StandardMap, *EverywhereMap );
+//   xEverywhere.Export ( x, Exporter, Insert );
+//   ( void ) real2complex ( xEverywhere, psi );
+// 
+//   // loop over the system rows
+//   double passVal;
+//   for ( int i=0; i<NumMyElements; i++ )
+//     {
+//       int myGlobalIndex = StandardMap->GID ( i );
+//       if ( myGlobalIndex==2*NumComplexUnknowns )   // phase condition
+//         {
+//           passVal = 0.0;
+//         }
+//       else   // GL equations
+//         {
+//           // get the index of the complex valued equation
+//           int psiIndex = realIndex2complexIndex ( myGlobalIndex );
+//           // get the complex value
+//           // TODO: The same value is actually fetched twice in this loop
+//           //       possibly consecutively: Once for the real, once for
+//           //       the imaginary part of it.
+//           val = Gl.computeGl ( psiIndex, psi );
+// 
+// 
+//           if ( ! ( myGlobalIndex%2 ) ) // myGlobalIndex is even
+//             passVal = real ( val );
+//           else // myGlobalIndex is odd
+//             passVal = imag ( val );
+//         }
+//       FVec.ReplaceGlobalValues ( 1, &passVal, &myGlobalIndex );
+//     }
 
   return true;
 }
-// =============================================================================
-
-
-
 // =============================================================================
 bool GlSystem::computeJacobian ( const Epetra_Vector &x,
                                  Epetra_Operator     &Jac )
@@ -196,14 +319,11 @@ bool GlSystem::computeJacobian ( const Epetra_Vector &x,
   jacobian->FillComplete();
 
   // Sync up processors to be safe
-  Comm->Barrier();
+  EComm->Barrier();
 
   return true;
 }
 // =============================================================================
-
-
-// ==========================================================================
 bool GlSystem::computePreconditioner ( const Epetra_Vector    &x,
                                        Epetra_Operator        &Prec,
                                        Teuchos::ParameterList *precParams )
@@ -211,26 +331,17 @@ bool GlSystem::computePreconditioner ( const Epetra_Vector    &x,
   throw glException ( "GlSystem::preconditionVector",
                       "Use explicit Jacobian only for this test problem!" );
 }
-// ==========================================================================
-
-
-// ==========================================================================
+// =============================================================================
 Teuchos::RCP<Epetra_Vector> GlSystem::getSolution()
 {
   return initialSolution;
 }
-// ==========================================================================
-
-
-// ==========================================================================
+// =============================================================================
 Teuchos::RCP<Epetra_CrsMatrix> GlSystem::getJacobian()
 {
   return jacobian;
 }
-// ==========================================================================
-
-
-// =============================================================================
+/* =============================================================================
 // Of an equation system
 // \f[
 // A\psi + B \psi^* = b
@@ -253,6 +364,7 @@ Teuchos::RCP<Epetra_CrsMatrix> GlSystem::getJacobian()
 // \end{pmatrix}
 // \f].
 // It also incorporates a phase condition.
+*/
 bool GlSystem::createJacobian ( const jacCreator    jc,
                                 const Epetra_Vector &x )
 {
@@ -269,34 +381,34 @@ bool GlSystem::createJacobian ( const jacCreator    jc,
          *valuesBReal = NULL, *valuesBImag = NULL;
 
   int ierr, k, complexRow, numEntries;
-
+  
   if ( jc==VALUES )
     {
       Epetra_Vector xEverywhere ( *EverywhereMap );
       // scatter x over all processors
-      Epetra_Export Exporter ( *StandardMap, *EverywhereMap );
+      Epetra_Export Exporter ( *RealMap, *EverywhereMap );
+
       xEverywhere.Export ( x, Exporter, Insert );
       real2complex ( xEverywhere, psi );
-
       // set the matrix to 0
       jacobian->PutScalar ( 0.0 );
     }
   else
     {
-      if ( Graph != 0 )
+      if ( Graph.is_valid_ptr() )
         {
-          delete Graph;
-          Graph = 0;
+	  // Nullify Graph pointer.
+          Graph = Teuchos::ENull();
         }
       // allocate the graph
-      Graph = new Epetra_CrsGraph ( Copy, *StandardMap, 1 );
+      int approxNumEntriesPerRow = 1;
+      Graph = Teuchos::rcp<Epetra_CrsGraph>( new Epetra_CrsGraph ( Copy, *RealMap, approxNumEntriesPerRow, false ) );
     }
-
 
   // Construct the Epetra Matrix
   for ( int i=0 ; i<NumMyElements ; i++ )
     {
-      int Row = StandardMap->GID ( i );
+      int Row = RealMap->GID ( i );
 
       if ( Row==2*NumComplexUnknowns )   // phase condition
         {
@@ -644,13 +756,10 @@ bool GlSystem::createJacobian ( const jacCreator    jc,
   // ---------------------------------------------------------------------------
 
   // Sync up processors for safety's sake
-  Comm->Barrier();
-
+  EComm->Barrier();
+  
   return true;
 }
-// =============================================================================
-
-
 // =============================================================================
 // function used by LOCA
 void GlSystem::setParameters ( const LOCA::ParameterVector &p )
@@ -660,11 +769,6 @@ void GlSystem::setParameters ( const LOCA::ParameterVector &p )
   // set H0 in the underlying problem class
   Gl.getStaggeredGrid()->setH0 ( h0 );
 }
-// =============================================================================
-
-
-
-
 // =============================================================================
 // function used by LOCA
 void GlSystem::printSolution ( const Epetra_Vector &x,
@@ -677,9 +781,11 @@ void GlSystem::printSolution ( const Epetra_Vector &x,
   else
       conStep++;
 
-  // convert the real valued vector to psi
-  vector<double_complex> psi ( NumComplexUnknowns );
-  real2complex ( x, psi );
+  // define vector
+  // @TODO: Replace this by Tpetra::Vector as soon as upstream is ready.
+  Tpetra::MultiVector<double_complex,int>  psi(ComplexMap,1,true);
+  // convert from x to psi
+  real2psi ( x, psi );
 
   // create temporary parameter list
   // TODO: get rid of this
@@ -749,28 +855,23 @@ void GlSystem::printSolution ( const Epetra_Vector &x,
 
 }
 // =============================================================================
-
-
-
-// =============================================================================
 // function used by LOCA
 void GlSystem::setOutputDir ( const string &directory )
 {
   outputDir = directory;
 }
 // =============================================================================
-
-
-
-
-// =============================================================================
 void GlSystem::solutionToFile ( const Epetra_Vector    &x,
                                 Teuchos::ParameterList &problemParams,
                                 const std::string      &fileName )
 {
-  // convert the real valued vector to psi
-  vector<double_complex> psi ( NumComplexUnknowns );
-  real2complex ( x, psi );
+  
+  // define vector
+  // @TODO: Replace this by Tpetra::Vector as soon as upstream is ready.
+  Tpetra::MultiVector<double_complex,int> psi(ComplexMap,1,true);
+
+  // convert from x to psi2
+  real2psi ( x, psi );
 
   problemParams.set( "FE", Gl.freeEnergy( psi ) );
   IoVirtual* fileIo = IoFactory::createFileIo ( fileName );

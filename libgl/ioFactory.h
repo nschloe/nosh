@@ -1,3 +1,6 @@
+#ifndef IOFACTORY_H
+#define IOFACTORY_H
+
 #include "ioVirtual.h"
 
 class IoFactory
@@ -11,3 +14,4 @@ class IoFactory
      static IoVirtual* createFileIo( std::string fileName );
 
 };
+#endif // IOFACTORY_H

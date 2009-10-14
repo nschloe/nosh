@@ -18,6 +18,7 @@ ENDIF(MPI_COMPILED)
 SET(CMAKE_BUILD_TYPE Debug)
 #SET(CMAKE_CXX_FLAGS_DEBUG "-pg -ggdb -Wall -Wextra -Weffc++ -pedantic -fbounds-check" )
 SET(CMAKE_CXX_FLAGS_DEBUG "-pg -ggdb -Wall -Wextra" )
+#SET(CMAKE_CXX_FLAGS_DEBUG "" )
 
 SET(GL_CMAKE_DIR "${ginzburg-landau_SOURCE_DIR}/CMakeModules")
 SET(CMAKE_MODULE_PATH "${GL_CMAKE_DIR}" ${CMAKE_MODULE_PATH})

@@ -1,9 +1,14 @@
+#ifndef IOXDMF_H
+#define IOXDMF_H
+
 #include "ioVirtual.h"
 
 #include <Teuchos_XMLObject.hpp>
 
 #include <Epetra_Comm.h>
 #include <Epetra_MultiVector.h>
+
+#include <Tpetra_MultiVector.hpp>
 
 class IoXdmf: public IoVirtual
 {
@@ -17,17 +22,18 @@ class IoXdmf: public IoVirtual
 
      //! Reads the order parameter \f$\psi\f$ and the problem parameter list
      //! from an XDMF file (plus its accompaining HDF5) into the arguments.
-     virtual void read( std::vector<double_complex> *psi,
-                        Teuchos::ParameterList      *problemParams );
+     virtual void read( Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > psi,
+			Teuchos::RCP<Teuchos::Comm<int> >                      comm, // TODO: remove this
+                        Teuchos::ParameterList                                 *problemParams );
 
      //! Writes the  order parameter \f$\psi\f$ and the problem parameter list
      //! into an XDMF file (plus its accompaining HDF5).
      //! The data is written such that the lexicographical ordering of the
      //! nodes is preserved and the resulting file contains a state \f$\psi\f
      //! that can be viewed using standard tools.
-     virtual void write( const std::vector<double_complex> &psi,
-                         const Teuchos::ParameterList      &problemParams,
-                         StaggeredGrid                     &sGrid          ) ;
+     virtual void write( const Tpetra::MultiVector<double_complex,int> &psi,
+                         const Teuchos::ParameterList                  &problemParams,
+                         StaggeredGrid                                 &sGrid          ) ;
 
   private:
 
@@ -52,3 +58,4 @@ class IoXdmf: public IoVirtual
                                                    const std::string        value      );
 
 };
+#endif // IOXDMF_H
