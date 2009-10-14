@@ -2,11 +2,7 @@
 #include <NOX_Epetra.H>
 // #include <NOX_Abstract_PrePostOperator.H>
 
-#ifdef HAVE_MPI
 #include <Teuchos_DefaultComm.hpp>
-#else
-#include <Teuchos_DefaultSerialComm.hpp>
-#endif
 
 // #include <Teuchos_ParameterList.hpp>
 // #include <Teuchos_CommandLineProcessor.hpp>
@@ -54,16 +50,8 @@ int main(int argc, char *argv[])
 #endif
 
   // Create a communicator for Tpetra objects
-  // TODO:
-  // See if we can replace this whole #ifdef contruct by just a call to
-  // DefaultComm::getComm. Then, remember to get rid the headers as well.
-#ifdef HAVE_MPI
-  Teuchos::RCP<const Teuchos::MpiComm<int> > Comm
-                                         = Teuchos::DefaultComm<int>::getComm();
-#else
   Teuchos::RCP<const Teuchos::Comm<int> > Comm
-                                   = Teuchos::rcp(new Teuchos::SerialComm<int>);
-#endif
+                                         = Teuchos::DefaultComm<int>::getComm();
 
   // Get the process ID and the total number of processors
   int MyPID = Comm->getRank();
