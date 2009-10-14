@@ -59,6 +59,9 @@ int main(int argc, char *argv[])
   bool verbose=false;
   My_CLP.setOption("verbose", "silent", &verbose, "Verbostity flag" );
 
+  bool computeEigenvalues=false;
+  My_CLP.setOption("eigenvalues", "no-eigenvalues", &computeEigenvalues, "Compute eigenvalue approximations in the solution" );
+
   std::string filename = "";
   My_CLP.setOption("input-guess", &filename, "File name with initial guess");
 
@@ -99,7 +102,7 @@ int main(int argc, char *argv[])
       }
   } else {
       // set the default value
-      int Nx = 50;
+      int Nx = 80;
       double edgelength = 10.0;
       double H0 = 0.4;
       std::cout << "Using the standard parameters \n"
@@ -133,9 +136,9 @@ int main(int argc, char *argv[])
 
       // Create the interface between NOX and the application
       // This object is derived from NOX::Epetra::Interface
-      glsystem = Teuchos::rcp(new GlSystem( glProblem, Comm, &psi ) );
+      glsystem = Teuchos::rcp(new GlSystem( glProblem, Comm, false, &psi ) );
   } else
-      glsystem = Teuchos::rcp(new GlSystem( glProblem,Comm ) );
+      glsystem = Teuchos::rcp(new GlSystem( glProblem,Comm, false  ) );
   // ---------------------------------------------------------------------------
 
 
@@ -321,7 +324,9 @@ int main(int argc, char *argv[])
           std::cerr << e.what() << std::endl;
       }
       // -----------------------------------------------------------------------
+  }
 
+  if (computeEigenvalues) {
       // -----------------------------------------------------------------------
       // compute some eigenvalues using anasazi
       bool debug = true; // even more increased verbosity
