@@ -120,8 +120,7 @@ void IoVtk::write( const Tpetra::MultiVector<double_complex,int> &psi,
                    const Teuchos::ParameterList                  &problemParams,
                    StaggeredGrid                                 &sGrid          )
 {
-  int           Nx = sGrid.getNx(),
-                index[2];
+  int           Nx = sGrid.getNx();
   double        h  = sGrid.getH();
   std::ofstream vtkfile;
 
@@ -185,8 +184,9 @@ void IoVtk::write( const Tpetra::MultiVector<double_complex,int> &psi,
   // write abs(psi)
   vtkfile << "SCALARS abs(psi) float\n"
           << "LOOKUP_TABLE default\n";
-	  
+
   Teuchos::ArrayRCP<const double_complex> psiView = psi.getVector(0)->get1dView();
+  Teuchos::Array<int> index(2);
   for (int j=0; j<Nx+1; j++) {
       index[1] = j;
       for (int i=0; i<Nx+1; i++) {

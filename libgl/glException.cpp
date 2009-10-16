@@ -8,20 +8,14 @@ glException::glException( const std::string & functionName,
 {
 }
 // =============================================================================
-
-
-// =============================================================================
 glException::~glException() throw()
 {
 }
 // =============================================================================
-
-
-// =============================================================================
 const char* glException::what() const throw()
 {
   std::string message =  _functionName + ":\n"
-                      + "    " + _errorMessage + ".";
+                      + "\t" + _errorMessage + ".";
 
   return message.c_str();
 }

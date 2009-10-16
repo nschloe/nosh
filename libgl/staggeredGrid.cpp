@@ -11,7 +11,7 @@ StaggeredGrid::StaggeredGrid( int    nx,
                               double edgelength,
                               double h0          ):
   nx_(nx),
-  edgelength_(edgelength),
+  edgeLength_(edgelength),
   h0_(h0),
   h_( edgelength/nx ),
   Ax_(boost::extents[nx][nx+1]),
@@ -21,14 +21,10 @@ StaggeredGrid::StaggeredGrid( int    nx,
   computeA();
 }
 // =============================================================================
-
-
-
-// =============================================================================
 // copy constructor
 StaggeredGrid::StaggeredGrid(const StaggeredGrid& sGrid) {
     nx_         = sGrid.nx_;
-    edgelength_ = sGrid.edgelength_;
+    edgeLength_ = sGrid.edgeLength_;
     h0_         = sGrid.h0_;
     h_          = sGrid.h_;
 
@@ -38,53 +34,31 @@ StaggeredGrid::StaggeredGrid(const StaggeredGrid& sGrid) {
     Ay_ = sGrid.Ay_;
 }
 // =============================================================================
-
-
-
-// =============================================================================
 // Destructor
 StaggeredGrid::~StaggeredGrid()
 {
 }
 // =============================================================================
-
-
-
-// =============================================================================
-int StaggeredGrid::getNx()
+int StaggeredGrid::getNx() const
 {
     return nx_;
 }
 // =============================================================================
-
-
-
-// =============================================================================
-double StaggeredGrid::getEdgelength()
+double StaggeredGrid::getEdgeLength() const
 {
-    return edgelength_;
+    return edgeLength_;
 }
 // =============================================================================
-
-
-
-// =============================================================================
-int StaggeredGrid::getNumComplexUnknowns()
+int StaggeredGrid::getNumComplexUnknowns() const
 {
     // the number of grid points in psi
     return (nx_+1)*(nx_+1);
 }
 // =============================================================================
-
-
-// =============================================================================
-double StaggeredGrid::getH()
+double StaggeredGrid::getH() const
 {
     return h_;
 }
-// =============================================================================
-
-
 // =============================================================================
 void StaggeredGrid::setH0( double h0 )
 {
@@ -92,11 +66,6 @@ void StaggeredGrid::setH0( double h0 )
   // rebuild the magnetic vector potential values
   computeA();
 }
-// =============================================================================
-
-
-
-
 // =============================================================================
 void StaggeredGrid::computeA()
 {
@@ -110,7 +79,7 @@ void StaggeredGrid::computeA()
   for ( index i=0; i!=nx_; ++i )
       for ( index j=0; j!=nx_+1; ++j )
           Ax_[i][j] = - 0.5*h0_ *j*h_
-                      +0.25*h0_ *edgelength_; //  to level the thing, but not actually necessary
+                      +0.25*h0_ *edgeLength_; //  to level the thing, but not actually necessary
 
   /*! Initialize the Ay_ with values
    *  \f[
@@ -120,12 +89,12 @@ void StaggeredGrid::computeA()
   for ( index i=0; i!=nx_+1; ++i )
       for ( index j=0; j!=nx_; ++j )
           Ay_[i][j] =   0.5*h0_ *i*h_
-                     - 0.25*h0_ *edgelength_; //  to level the thing, but not actually necessary
+                     - 0.25*h0_ *edgeLength_; //  to level the thing, but not actually necessary
 
 //   // ---------------------------------------------------------------------------
 //   // for debugging purposes:
 //   std::cout << "nx_=" << nx_ << std::endl;
-//   std::cout << "edgelength_=" << edgelength_ << std::endl;
+//   std::cout << "edgeLength_=" << edgeLength_ << std::endl;
 //   std::cout << "h=" << h << std::endl;
 //   std::cout << "h0_=" << h0_ << std::endl;
 //   for ( index i=0; i!=nx_; ++i )
@@ -136,77 +105,50 @@ void StaggeredGrid::computeA()
 
 }
 // =============================================================================
-
-
-// =============================================================================
-double StaggeredGrid::getAxLeft( int *i )
+double StaggeredGrid::getAxLeft( Teuchos::Array<int> i ) const
 {
   return  Ax_[ i[0]-1 ][ i[1] ];
 }
 // =============================================================================
-
-
-// =============================================================================
-double StaggeredGrid::getAxRight( int* i )
+double StaggeredGrid::getAxRight( Teuchos::Array<int> i ) const
 {
   return  Ax_[ i[0] ][ i[1] ]; // indeed not "+1"; staggered grids!
 }
 // =============================================================================
-
-
-// =============================================================================
-double StaggeredGrid::getAyBelow( int* i )
+double StaggeredGrid::getAyBelow( Teuchos::Array<int> i ) const
 {
   return  Ay_[ i[0] ][ i[1]-1 ];
 }
 // =============================================================================
-
-
-// =============================================================================
-double StaggeredGrid::getAyAbove( int* i )
+double StaggeredGrid::getAyAbove( Teuchos::Array<int> i ) const
 {
   return  Ay_[ i[0] ][ i[1] ]; // indeed not "+1"; staggered grids!
 }
 // =============================================================================
-
-
-// =============================================================================
-int StaggeredGrid::getKLeft( int* i )
+int StaggeredGrid::getKLeft( Teuchos::Array<int> i ) const
 {
-  int j[2] = {i[0]-1,i[1]};
+  Teuchos::Array<int> j = Teuchos::tuple( i[0]-1, i[1] );
   return i2k( j );
 }
 // =============================================================================
-
-
-// =============================================================================
-int StaggeredGrid::getKRight( int* i )
+int StaggeredGrid::getKRight( Teuchos::Array<int> i ) const
 {
-  int j[2] = {i[0]+1,i[1]};
+  Teuchos::Array<int> j = Teuchos::tuple( i[0]+1, i[1] );
   return i2k( j );
 }
 // =============================================================================
-
-
-// =============================================================================
-int StaggeredGrid::getKBelow( int* i )
+int StaggeredGrid::getKBelow( Teuchos::Array<int> i ) const
 {
-  int j[2] = {i[0],i[1]-1};
+  Teuchos::Array<int> j = Teuchos::tuple( i[0], i[1]-1 );
   return i2k( j );
 }
 // =============================================================================
-
-
-// =============================================================================
-int StaggeredGrid::getKAbove( int* i )
+int StaggeredGrid::getKAbove( Teuchos::Array<int> i ) const
 {
-  int j[2] = {i[0],i[1]+1};
+  Teuchos::Array<int> j = Teuchos::tuple( i[0], i[1]+1 );
   return i2k( j );
 }
 // =============================================================================
-
-
-// // =============================================================================
 // // maps a running index k to a 2D index i
 // int* StaggeredGrid::k2i( int k )
 // {
@@ -237,10 +179,7 @@ int StaggeredGrid::getKAbove( int* i )
 //   return i;
 // }
 // // =============================================================================
-
-
-// =============================================================================
-StaggeredGrid::nodeType StaggeredGrid::k2nodeType( int k )
+StaggeredGrid::nodeType StaggeredGrid::k2nodeType( int k ) const
 {
   if (k==0 || k==nx_ || k==2*nx_ || k==3*nx_ )
       return StaggeredGrid::CORNER;
@@ -250,11 +189,8 @@ StaggeredGrid::nodeType StaggeredGrid::k2nodeType( int k )
       return StaggeredGrid::INTERIOR;
 }
 // =============================================================================
-
-
-// =============================================================================
 // maps a 2D index i to a running index k
-int StaggeredGrid::i2k( int* i )
+int StaggeredGrid::i2k( Teuchos::Array<int> i ) const
 {
   int k;
 
@@ -271,9 +207,7 @@ int StaggeredGrid::i2k( int* i )
         + (nx_-1)*(i[1]-1)
         + i[0]-1;
   } else {
-      std::string message = "Illegal 2D index i=("
-                          + EpetraExt::toString( i[0] ) + ","
-                          + EpetraExt::toString( i[1] ) + ").";
+      std::string message = "Illegal 2D index   i = " + Teuchos::toString( i );
       throw glException( "StaggeredGrid::i2k",
                          message );
   }
@@ -281,13 +215,9 @@ int StaggeredGrid::i2k( int* i )
   return k;
 }
 // =============================================================================
-
-
-
-// =============================================================================
 // Returns a vector that defines the reordering from a lexicographic grid to
 // the ordering present in this grid
-void StaggeredGrid::lexicographic2grid( std::vector<int> *p )
+void StaggeredGrid::lexicographic2grid( std::vector<int> *p ) const
 {
   // check if for admissible vector size
   unsigned int numUnknowns = (nx_+1)*(nx_+1);
@@ -301,8 +231,8 @@ void StaggeredGrid::lexicographic2grid( std::vector<int> *p )
                          message );
   }
 
-  int index[2],
-      k = 0;
+  int k=0;
+  Teuchos::Array<int> index(2);
   for (int j=0; j<nx_+1; j++) {
       index[1]  = j;
       for (int i=0; i<nx_+1; i++) {

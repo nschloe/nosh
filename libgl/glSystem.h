@@ -37,10 +37,10 @@ class GlSystem:
   public:
 
 
-    GlSystem ( GinzburgLandau::GinzburgLandau                               &gl,
-               const Teuchos::RCP<Epetra_Comm>                              eComm,
-               const bool                                                   &reverse, // Actually, this has nothing to do with the linear system.
-                                                                                      // Get out, pls!
+    GlSystem ( GinzburgLandau::GinzburgLandau  &gl,
+               const Teuchos::RCP<Epetra_Comm> eComm,
+               const bool                      &reverse, // Actually, this has nothing to do with the linear system.
+                                                         // Get out, pls!
                const Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > psi=Teuchos::ENull()  );
 
     //! Destructor
@@ -50,7 +50,8 @@ class GlSystem:
     //! by the input vector x.
     bool computeF ( const Epetra_Vector &x,
                     Epetra_Vector       &F,
-                    const NOX::Epetra::Interface::Required::FillType fillFlag = Residual );
+                    const NOX::Epetra::Interface::Required::FillType fillFlag = Residual
+                  );
 
     //! Evaluate the Jacobian matrix of the Ginzburg--Landau problem
     //! at a given state defined by the input vector x.
@@ -61,15 +62,16 @@ class GlSystem:
     //! an exception when called.
     bool computePreconditioner ( const Epetra_Vector     &x,
                                  Epetra_Operator         &Prec,
-                                 Teuchos::ParameterList* precParams=0 );
+                                 Teuchos::ParameterList* precParams=0
+                               )  const;
 
     //! Returns the current state. Not necessarily a solution to the problem!
     //! @return Reference-counted pointer to the current state.
-    Teuchos::RCP<Epetra_Vector> getSolution();
+    Teuchos::RCP<Epetra_Vector> getSolution() const;
 
     //! Returns the current Jacobian.
     //! @return Reference-counted pointer to the Jacobian.
-    Teuchos::RCP<Epetra_CrsMatrix> getJacobian();
+    Teuchos::RCP<Epetra_CrsMatrix> getJacobian() const;
 
     //! Set the problem parameters.
     void setParameters ( const LOCA::ParameterVector &p );
@@ -86,50 +88,49 @@ class GlSystem:
 
     //! Explictly print the solution x along with the problem parameters
     //! to the file fileName.
-    void solutionToFile ( const Epetra_Vector          &x,
+    void solutionToFile ( const Epetra_Vector    &x,
                           Teuchos::ParameterList &problemParams,
-                          const std::string            &fileName );
+                          const std::string      &fileName );
 
   private:
 
-    int realIndex2complexIndex ( const int realIndex );
+    int realIndex2complexIndex ( const int realIndex ) const;
 
     void real2complex ( const Epetra_Vector           &x,
-                        vector<std::complex<double> > &psi );
+                        vector<std::complex<double> > &psi ) const;
 
     void real2psi ( const Epetra_Vector                     &x,
-                    Tpetra::MultiVector<double_complex,int> &psi );
+                    Tpetra::MultiVector<double_complex,int> &psi ) const;
 
     void psi2real ( const Tpetra::MultiVector<double_complex,int> &psi,
-                    Epetra_Vector                                 &x    );
+                    Epetra_Vector                                 &x    ) const;
 
     void complex2real ( const vector<double_complex> &psi,
-                        Teuchos::RCP<Epetra_Vector>  realvec );
+                        Teuchos::RCP<Epetra_Vector>  realvec ) const;
 
-    void makeRealMap ( const Teuchos::RCP<const Tpetra::Map<int> >  complexMap,
-                       Teuchos::RCP<Epetra_Map>               &realMap   );
+    void makeRealMap ( const Teuchos::RCP<const Tpetra::Map<int> >  complexMap );
 
     enum jacCreator { ONLY_GRAPH, VALUES };
     bool createJacobian ( const jacCreator    jc,
                           const Epetra_Vector &x );
 
-    int NumRealUnknowns;
-    int NumMyElements;
-    int NumComplexUnknowns;
+    int NumRealUnknowns_;
+    int NumMyElements_;
+    int NumComplexUnknowns_;
 
-    bool reverse;
+    bool reverse_;
     
-    GinzburgLandau::GinzburgLandau          Gl;
-    const Teuchos::RCP<const Epetra_Comm>   EComm;
-    Teuchos::RCP<const Teuchos::Comm<int> > TComm;
-    Teuchos::RCP<Epetra_Map>                RealMap;
-    Teuchos::RCP<Epetra_Map>                EverywhereMap;
-    Teuchos::RCP<const Tpetra::Map<int> >   ComplexMap;
-    Epetra_Vector                           *rhs;
-    Teuchos::RCP<Epetra_CrsGraph>           Graph;
-    Teuchos::RCP<Epetra_CrsMatrix>          jacobian;
-    Teuchos::RCP<Epetra_Vector>             initialSolution;
-    std::string                             outputDir;  //!< directory to where the output is written
+    GinzburgLandau::GinzburgLandau          Gl_;
+    const Teuchos::RCP<const Epetra_Comm>   EComm_;
+    Teuchos::RCP<const Teuchos::Comm<int> > TComm_;
+    Teuchos::RCP<Epetra_Map>                RealMap_;
+    Teuchos::RCP<Epetra_Map>                EverywhereMap_;
+    Teuchos::RCP<const Tpetra::Map<int> >   ComplexMap_;
+    Epetra_Vector                           *rhs_;
+    Teuchos::RCP<Epetra_CrsGraph>           Graph_;
+    Teuchos::RCP<Epetra_CrsMatrix>          jacobian_;
+    Teuchos::RCP<Epetra_Vector>             initialSolution_;
+    std::string                             outputDir_;  //!< directory to where the output is written
   };
 
 #endif // GLSYSTEM_H

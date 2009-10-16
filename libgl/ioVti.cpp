@@ -79,9 +79,8 @@ void IoVti::write( const Tpetra::MultiVector<double_complex,int> &psi,
                    const Teuchos::ParameterList                  &problemParams,
                    StaggeredGrid                                 &sGrid          )
 {
-  int    Nx = sGrid.getNx(),
-         k,
-         index[2];
+  int    Nx = sGrid.getNx();
+  int    k;
   double h  = sGrid.getH();
 
   std::string str;
@@ -94,7 +93,9 @@ void IoVti::write( const Tpetra::MultiVector<double_complex,int> &psi,
   xmlDataArrayAbs.addAttribute( "type", "Float32" );
   xmlDataArrayAbs.addAttribute( "Name", "abs(psi)" );
   xmlDataArrayAbs.addAttribute( "format", "ascii" );
+  
   Teuchos::ArrayRCP<const double_complex> psiView = psi.getVector(0)->get1dView();
+  Teuchos::Array<int> index(2);
   for (int i=0; i<Nx+1; i++) {
       index[0] = i;
       for (int j=0; j<Nx+1; j++) {

@@ -34,24 +34,24 @@ GlSystem::GlSystem ( GinzburgLandau::GinzburgLandau                             
 		     const Teuchos::RCP<Epetra_Comm>                              eComm,
                      const bool                                                   &rv,
                      const Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > psi  ) :
-    NumRealUnknowns ( 0 ),
-    NumMyElements ( 0 ),
-    NumComplexUnknowns ( 0 ),
-    Gl ( gl ),
-    EComm ( eComm ),
-    TComm ( 0 ),
-    RealMap ( 0 ),
-    ComplexMap ( 0 ),
-    rhs ( 0 ),
-    Graph ( 0 ),
-    jacobian ( 0 ),
-    initialSolution ( 0 ),
-    reverse ( rv ),
-    outputDir ( "." )
+    NumRealUnknowns_ ( 0 ),
+    NumMyElements_ ( 0 ),
+    NumComplexUnknowns_ ( 0 ),
+    Gl_ ( gl ),
+    EComm_ ( eComm ),
+    TComm_ ( 0 ),
+    RealMap_ ( 0 ),
+    ComplexMap_ ( 0 ),
+    rhs_ ( 0 ),
+    Graph_ ( 0 ),
+    jacobian_ ( 0 ),
+    initialSolution_ ( 0 ),
+    reverse_ ( rv ),
+    outputDir_ ( "." )
 {
-  int Nx = Gl.getStaggeredGrid()->getNx();
-  NumComplexUnknowns = ( Nx+1 ) * ( Nx+1 );
-  NumRealUnknowns    = 2*NumComplexUnknowns+1;
+  int Nx = Gl_.getStaggeredGrid()->getNx();
+  NumComplexUnknowns_ = ( Nx+1 ) * ( Nx+1 );
+  NumRealUnknowns_    = 2*NumComplexUnknowns_+1;
 
   // @TODO
   // There is (until now?) no way to convert a Teuchos::Comm (of psi) 
@@ -65,26 +65,27 @@ GlSystem::GlSystem ( GinzburgLandau::GinzburgLandau                             
   // How to compare two communicators anyway?
   
   // create fitting Tpetra::Comm
-  TComm = Thyra::create_Comm( EComm );
+  // TODO: move into initializer
+  TComm_ = Thyra::create_Comm( EComm_ );
   
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   // define maps
   if ( psi.is_null() )   // null pointer
     {
       // define uniform distribution
-      ComplexMap = Teuchos::rcp(new Tpetra::Map<int>( NumComplexUnknowns, 0, TComm ) );
+      ComplexMap_ = Teuchos::rcp(new Tpetra::Map<int>( NumComplexUnknowns_, 0, TComm_ ) );
     }
   else
     {
       // psi->getMap() returns a CONST map
-      ComplexMap = Teuchos::RCP<const Tpetra::Map<int> >( psi->getMap() );
+      ComplexMap_ = Teuchos::RCP<const Tpetra::Map<int> >( psi->getMap() );
     }
 
   // get the map for the real values
-  makeRealMap( ComplexMap, RealMap );
+  makeRealMap( ComplexMap_ );
   
   // set the number of local elements
-  NumMyElements = RealMap->NumMyElements();
+  NumMyElements_ = RealMap_->NumMyElements();
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
 
 
@@ -93,47 +94,47 @@ GlSystem::GlSystem ( GinzburgLandau::GinzburgLandau                             
   // processors.
   // @TODO Remove (the need for) this.
   // define the map where each processor has a full solution vector
-  EverywhereMap = Teuchos::rcp( new Epetra_Map ( NumRealUnknowns,
-                                                 NumRealUnknowns,
-                                                 0,
-                                                 *EComm ) );
+  EverywhereMap_ = Teuchos::rcp( new Epetra_Map ( NumRealUnknowns_,
+                                                  NumRealUnknowns_,
+                                                  0,
+                                                  *EComm_ ) );
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   // initialize solution
-  initialSolution = Teuchos::rcp ( new Epetra_Vector ( *RealMap ) );
+  initialSolution_ = Teuchos::rcp ( new Epetra_Vector ( *RealMap_ ) );
   if ( psi.is_null() )   // null pointer
     {
       // define map for psi
-      initialSolution->PutScalar ( 0.5 ); // Default initialization
+      initialSolution_->PutScalar ( 0.5 ); // Default initialization
     }
   else
     {
-      if ( psi->getGlobalLength() != (unsigned int)NumComplexUnknowns )
+      if ( psi->getGlobalLength() != (unsigned int)NumComplexUnknowns_ )
         {
           std::string message = "Size of the initial guess vector ("
                                 + EpetraExt::toString ( int ( psi->getGlobalLength() ) )
                                 + ") does not coincide with the number of unknowns ("
-                                + EpetraExt::toString ( NumComplexUnknowns ) + ").";
+                                + EpetraExt::toString ( NumComplexUnknowns_ ) + ").";
           throw glException ( "GlSystem::GlSystem",
                               message );
         }
-      psi2real ( *psi, *initialSolution );
+      psi2real ( *psi, *initialSolution_ );
     }
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
 
 
   // create the sparsity structure (graph) of the Jacobian
   // use x as DUMMY argument
-  Epetra_Vector dummy ( *RealMap );
+  Epetra_Vector dummy ( *RealMap_ );
   createJacobian ( ONLY_GRAPH, dummy );
 
-  // Allocate the sparsity pattern of the jacobian matrix
-  jacobian = Teuchos::rcp ( new Epetra_CrsMatrix ( Copy, *Graph ) );
+  // Allocate the sparsity pattern of the Jacobian matrix
+  jacobian_ = Teuchos::rcp ( new Epetra_CrsMatrix ( Copy, *Graph_ ) );
 
   // Clean-up
-  jacobian->FillComplete();
+  jacobian_->FillComplete();
 }
 // =============================================================================
 // Destructor
@@ -141,7 +142,7 @@ GlSystem::~GlSystem()
 {
 }
 // =============================================================================
-int GlSystem::realIndex2complexIndex ( const int realIndex )
+int GlSystem::realIndex2complexIndex ( const int realIndex ) const
 {
   if ( ! ( realIndex%2 ) ) // realIndex even
     return realIndex/2;
@@ -150,16 +151,16 @@ int GlSystem::realIndex2complexIndex ( const int realIndex )
 }
 // =============================================================================
 void GlSystem::real2complex ( const Epetra_Vector    &realvec,
-                              vector<double_complex> &psi )
+                              vector<double_complex> &psi ) const
 {
-  for ( int k=0; k<NumComplexUnknowns; k++ )
+  for ( int k=0; k<NumComplexUnknowns_; k++ )
     psi[k] = double_complex ( realvec[2*k], realvec[2*k+1] );
 }
 // =============================================================================
 void GlSystem::complex2real ( const vector<double_complex> &psi,
-                              Teuchos::RCP<Epetra_Vector>  realvec )
+                              Teuchos::RCP<Epetra_Vector>  realvec ) const
 {
-  for ( int k=0; k<NumComplexUnknowns; k++ )
+  for ( int k=0; k<NumComplexUnknowns_; k++ )
     {
       ( *realvec ) [2*k]   = real ( psi[k] );
       ( *realvec ) [2*k+1] = imag ( psi[k] );
@@ -168,7 +169,7 @@ void GlSystem::complex2real ( const vector<double_complex> &psi,
 // =============================================================================
 // converts a real-valued vector to a complex-valued psi vector
 void GlSystem::real2psi ( const Epetra_Vector                     &realvec,
-                          Tpetra::MultiVector<double_complex,int> &psi     )
+                          Tpetra::MultiVector<double_complex,int> &psi     ) const
 {
   for ( unsigned int k=0; k<psi.getGlobalLength(); k++ ) {
     double_complex z = double_complex ( realvec[2*k], realvec[2*k+1] );
@@ -178,22 +179,21 @@ void GlSystem::real2psi ( const Epetra_Vector                     &realvec,
 // =============================================================================
 // converts a real-valued vector to a complex-valued psi vector
 void GlSystem::psi2real ( const Tpetra::MultiVector<double_complex,int> &psi,
-                          Epetra_Vector                                 &x   )
+                          Epetra_Vector                                 &x   ) const
 {
   Teuchos::ArrayRCP<const double_complex> psiView = psi.getVector(0)->get1dView();
-  for ( int k=0; k<NumComplexUnknowns; k++ )
+  for ( int k=0; k<NumComplexUnknowns_; k++ )
     {
       x[2*k]   = real ( psiView[k] );
       x[2*k+1] = imag ( psiView[k] );
     }
 }
 // =============================================================================
-void GlSystem::makeRealMap( const Teuchos::RCP<const Tpetra::Map<int> >  complexMap,
-                            Teuchos::RCP<Epetra_Map>                     &realMap     )
+void GlSystem::makeRealMap( const Teuchos::RCP<const Tpetra::Map<int> >  complexMap )
 { 
   int numRealGlobalElements = 2*complexMap->getNodeNumElements();
   
-  int myPid = TComm->getRank();
+  int myPid = TComm_->getRank();
 
   // treat the phase condition on the first node
   if ( myPid==0 )
@@ -212,22 +212,24 @@ void GlSystem::makeRealMap( const Teuchos::RCP<const Tpetra::Map<int> >  complex
     
   // set the phase condition
   if ( myPid==0 )
-    realMapGIDs[numRealGlobalElements-1] = NumRealUnknowns-1;
+    realMapGIDs[numRealGlobalElements-1] = NumRealUnknowns_-1;
 
-  realMap = Teuchos::rcp(new Epetra_Map( numRealGlobalElements,
-                                         realMapGIDs.Length(),
-                                         realMapGIDs.Values(),
-                                         complexMap->getIndexBase(),
-                                         *EComm                            ) );
+  RealMap_ = Teuchos::rcp(new Epetra_Map( numRealGlobalElements,
+                                          realMapGIDs.Length(),
+                                          realMapGIDs.Values(),
+                                          complexMap->getIndexBase(),
+                                          *EComm_                            ) );
 
   return;
 }
 // =============================================================================
-bool GlSystem::computeF ( const Epetra_Vector &x,
-                          Epetra_Vector       &FVec,
-                          const NOX::Epetra::Interface::Required::FillType fillFlag )
+bool
+GlSystem::computeF ( const Epetra_Vector &x,
+                     Epetra_Vector       &FVec,
+                     const NOX::Epetra::Interface::Required::FillType fillFlag
+                   )
 {
-//   vector<double_complex> psi ( NumComplexUnknowns );
+//   vector<double_complex> psi ( NumComplexUnknowns_ );
 //   double_complex         val;
   
 //   // define the Tpetra platform
@@ -242,48 +244,48 @@ bool GlSystem::computeF ( const Epetra_Vector &x,
   // ***************************************************************************
    
   // make sure that the input and output vectors are correctly mapped
-  if ( !x.Map().SameAs( *RealMap ) ) {
+  if ( !x.Map().SameAs( *RealMap_ ) ) {
       throw glException ( "GlSystem::computeF",
                           "Maps of x and the computed real-valued map do not coincide." );    
   }
   
-  if ( !FVec.Map().SameAs( *RealMap ) ) {
+  if ( !FVec.Map().SameAs( *RealMap_ ) ) {
       throw glException ( "GlSystem::computeF",
                           "Maps of FVec and the computed real-valued map do not coincide." );    
   }
    
   // define vector
   // @TODO: Replace this by Tpetra::Vector as soon as upstream is ready.
-  Tpetra::MultiVector<double_complex,int> psi( ComplexMap, 1, true );
+  Tpetra::MultiVector<double_complex,int> psi( ComplexMap_, 1, true );
 
   // convert from x to psi2
   real2psi ( x, psi );
 
   // define output vector
-  Tpetra::MultiVector<double_complex,int> res( ComplexMap, 1, true );
+  Tpetra::MultiVector<double_complex,int> res( ComplexMap_, 1, true );
   
   // compute the GL residual
-  res = Gl.computeGlVector ( psi );
+  res = Gl_.computeGlVector ( psi );
   
   // transform back to fully real equation
   psi2real( res, FVec );
   
   // add phase condition
-  FVec[2*NumComplexUnknowns] = 0.0;
+  FVec[2*NumComplexUnknowns_] = 0.0;
   
 //   // ***************************************************************************  
 // 
 //   // scatter x over all processors
-//   Epetra_Export Exporter ( *StandardMap, *EverywhereMap );
+//   Epetra_Export Exporter ( *StandardMap, *EverywhereMap_ );
 //   xEverywhere.Export ( x, Exporter, Insert );
 //   ( void ) real2complex ( xEverywhere, psi );
 // 
 //   // loop over the system rows
 //   double passVal;
-//   for ( int i=0; i<NumMyElements; i++ )
+//   for ( int i=0; i<NumMyElements_; i++ )
 //     {
 //       int myGlobalIndex = StandardMap->GID ( i );
-//       if ( myGlobalIndex==2*NumComplexUnknowns )   // phase condition
+//       if ( myGlobalIndex==2*NumComplexUnknowns_ )   // phase condition
 //         {
 //           passVal = 0.0;
 //         }
@@ -295,7 +297,7 @@ bool GlSystem::computeF ( const Epetra_Vector &x,
 //           // TODO: The same value is actually fetched twice in this loop
 //           //       possibly consecutively: Once for the real, once for
 //           //       the imaginary part of it.
-//           val = Gl.computeGl ( psiIndex, psi );
+//           val = Gl_.computeGl ( psiIndex, psi );
 // 
 // 
 //           if ( ! ( myGlobalIndex%2 ) ) // myGlobalIndex is even
@@ -316,30 +318,30 @@ bool GlSystem::computeJacobian ( const Epetra_Vector &x,
   createJacobian ( VALUES, x );
 
   // optimize storage
-  jacobian->FillComplete();
+  jacobian_->FillComplete();
 
   // Sync up processors to be safe
-  EComm->Barrier();
+  EComm_->Barrier();
 
   return true;
 }
 // =============================================================================
 bool GlSystem::computePreconditioner ( const Epetra_Vector    &x,
                                        Epetra_Operator        &Prec,
-                                       Teuchos::ParameterList *precParams )
+                                       Teuchos::ParameterList *precParams ) const
 {
   throw glException ( "GlSystem::preconditionVector",
                       "Use explicit Jacobian only for this test problem!" );
 }
 // =============================================================================
-Teuchos::RCP<Epetra_Vector> GlSystem::getSolution()
+Teuchos::RCP<Epetra_Vector> GlSystem::getSolution() const
 {
-  return initialSolution;
+  return initialSolution_;
 }
 // =============================================================================
-Teuchos::RCP<Epetra_CrsMatrix> GlSystem::getJacobian()
+Teuchos::RCP<Epetra_CrsMatrix> GlSystem::getJacobian() const
 {
-  return jacobian;
+  return jacobian_;
 }
 /* =============================================================================
 // Of an equation system
@@ -365,10 +367,13 @@ Teuchos::RCP<Epetra_CrsMatrix> GlSystem::getJacobian()
 // \f].
 // It also incorporates a phase condition.
 */
-bool GlSystem::createJacobian ( const jacCreator    jc,
-                                const Epetra_Vector &x )
+bool
+GlSystem::createJacobian ( const jacCreator    jc,
+                           const Epetra_Vector &x )
 {
-  std::vector<double_complex> psi ( NumComplexUnknowns );
+//   std::vector<double_complex> psi ( NumComplexUnknowns_ );
+  Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > psi =
+     Teuchos::rcp( new Tpetra::MultiVector<double_complex,int>(ComplexMap_,1) );
 
   vector<int>            colIndA, colIndB;
   vector<double_complex> valuesA, valuesB;
@@ -382,51 +387,58 @@ bool GlSystem::createJacobian ( const jacCreator    jc,
 
   int ierr, k, complexRow, numEntries;
   
+  Teuchos::ArrayRCP<const double_complex> psiView;
+  
   if ( jc==VALUES )
     {
-      Epetra_Vector xEverywhere ( *EverywhereMap );
+//       Epetra_Vector xEverywhere ( *EverywhereMap_ );
       // scatter x over all processors
-      Epetra_Export Exporter ( *RealMap, *EverywhereMap );
+//       Epetra_Export Exporter ( *RealMap_, *EverywhereMap_ );
 
-      xEverywhere.Export ( x, Exporter, Insert );
-      real2complex ( xEverywhere, psi );
+//       xEverywhere.Export ( x, Exporter, Insert );
+//       real2complex ( xEverywhere, psi );
+
+      real2psi( x, *psi );
+      
+      psiView = psi->getVector(0)->get1dView();
+      
       // set the matrix to 0
-      jacobian->PutScalar ( 0.0 );
+      jacobian_->PutScalar ( 0.0 );
     }
   else
     {
-      if ( Graph.is_valid_ptr() )
+      if ( Graph_.is_valid_ptr() )
         {
-	  // Nullify Graph pointer.
-          Graph = Teuchos::ENull();
+	  // Nullify Graph_ pointer.
+          Graph_ = Teuchos::ENull();
         }
       // allocate the graph
       int approxNumEntriesPerRow = 1;
-      Graph = Teuchos::rcp<Epetra_CrsGraph>( new Epetra_CrsGraph ( Copy, *RealMap, approxNumEntriesPerRow, false ) );
+      Graph_ = Teuchos::rcp<Epetra_CrsGraph>( new Epetra_CrsGraph ( Copy, *RealMap_, approxNumEntriesPerRow, false ) );
     }
 
   // Construct the Epetra Matrix
-  for ( int i=0 ; i<NumMyElements ; i++ )
+  for ( int i=0 ; i<NumMyElements_ ; i++ )
     {
-      int Row = RealMap->GID ( i );
+      int Row = RealMap_->GID ( i );
 
-      if ( Row==2*NumComplexUnknowns )   // phase condition
+      if ( Row==2*NumComplexUnknowns_ )   // phase condition
         {
           // fill in phase condition stuff
-          numEntries = 2*NumComplexUnknowns;
+          numEntries = 2*NumComplexUnknowns_;
           colInd = new int[numEntries];
           for ( int k=0; k<numEntries; k++ )
             colInd[k] = k;
           if ( jc==VALUES )   // fill on columns and values
             {
               values = new double[numEntries];
-              for ( int k=0; k<NumComplexUnknowns; k++ )
+              for ( int k=0; k<NumComplexUnknowns_; k++ )
                 {
-                  values[2*k]   = -imag ( psi[k] );
-                  values[2*k+1] =  real ( psi[k] );
+                  values[2*k]   = -imag ( psiView[k] );
+                  values[2*k+1] =  real ( psiView[k] );
                 }
               // fill it in!
-              ierr = jacobian->SumIntoGlobalValues ( Row,
+              ierr = jacobian_->SumIntoGlobalValues ( Row,
                                                      numEntries,
                                                      values,
                                                      colInd );
@@ -435,7 +447,7 @@ bool GlSystem::createJacobian ( const jacCreator    jc,
             }
           else   // only fill the sparsity graph
             {
-              Graph->InsertGlobalIndices ( Row,
+              Graph_->InsertGlobalIndices ( Row,
                                            numEntries,
                                            colInd );
             }
@@ -458,15 +470,15 @@ bool GlSystem::createJacobian ( const jacCreator    jc,
           if ( jc==VALUES )
             {
               // fill on columns and values
-              Gl.getJacobianRow ( complexRow,
-                                  psi,
-                                  colIndA, valuesA,
-                                  colIndB, valuesB );
+              Gl_.getJacobianRow ( complexRow,
+                                   psi,
+                                   colIndA, valuesA,
+                                   colIndB, valuesB );
             }
           else
             {
               // only fill the sparsity graph
-              Gl.getJacobianRowSparsity ( complexRow,
+              Gl_.getJacobianRowSparsity ( complexRow,
                                           colIndA,
                                           colIndB );
             }
@@ -485,7 +497,7 @@ bool GlSystem::createJacobian ( const jacCreator    jc,
                   valuesAReal = new double[numEntries];
                   for ( k=0; k<numEntries; k++ )
                     valuesAReal[k] = real ( valuesA[k] );
-                  ierr = jacobian->SumIntoGlobalValues ( Row,
+                  ierr = jacobian_->SumIntoGlobalValues ( Row,
                                                          numEntries,
                                                          valuesAReal,
                                                          colIndAReal );
@@ -494,7 +506,7 @@ bool GlSystem::createJacobian ( const jacCreator    jc,
                 }
               else
                 {
-                  Graph->InsertGlobalIndices ( Row,
+                  Graph_->InsertGlobalIndices ( Row,
                                                numEntries,
                                                colIndAReal );
                 }
@@ -511,7 +523,7 @@ bool GlSystem::createJacobian ( const jacCreator    jc,
                   valuesBReal = new double[numEntries];
                   for ( k=0; k<numEntries; k++ )
                     valuesBReal[k] = real ( valuesB[k] );
-                  ierr = jacobian->SumIntoGlobalValues ( Row,
+                  ierr = jacobian_->SumIntoGlobalValues ( Row,
                                                          numEntries,
                                                          valuesBReal,
                                                          colIndBReal );
@@ -520,7 +532,7 @@ bool GlSystem::createJacobian ( const jacCreator    jc,
                 }
               else
                 {
-                  Graph->InsertGlobalIndices ( Row,
+                  Graph_->InsertGlobalIndices ( Row,
                                                numEntries,
                                                colIndBReal );
                 }
@@ -537,7 +549,7 @@ bool GlSystem::createJacobian ( const jacCreator    jc,
                   valuesAImag = new double[numEntries];
                   for ( k=0; k<numEntries; k++ )
                     valuesAImag[k] = -imag ( valuesA[k] );
-                  ierr = jacobian->SumIntoGlobalValues ( Row,
+                  ierr = jacobian_->SumIntoGlobalValues ( Row,
                                                          numEntries,
                                                          valuesAImag,
                                                          colIndAImag );
@@ -546,7 +558,7 @@ bool GlSystem::createJacobian ( const jacCreator    jc,
                 }
               else
                 {
-                  Graph->InsertGlobalIndices ( Row,
+                  Graph_->InsertGlobalIndices ( Row,
                                                numEntries,
                                                colIndAImag );
                 }
@@ -564,7 +576,7 @@ bool GlSystem::createJacobian ( const jacCreator    jc,
                   valuesBImag = new double[numEntries];
                   for ( k=0; k<numEntries; k++ )
                     valuesBImag[k] = imag ( valuesB[k] );
-                  ierr = jacobian->SumIntoGlobalValues ( Row,
+                  ierr = jacobian_->SumIntoGlobalValues ( Row,
                                                          numEntries,
                                                          valuesBImag,
                                                          colIndBImag );
@@ -573,7 +585,7 @@ bool GlSystem::createJacobian ( const jacCreator    jc,
                 }
               else
                 {
-                  Graph->InsertGlobalIndices ( Row,
+                  Graph_->InsertGlobalIndices ( Row,
                                                numEntries,
                                                colIndBImag );
                 }
@@ -583,18 +595,18 @@ bool GlSystem::createJacobian ( const jacCreator    jc,
 
               // right bordering
               int k = realIndex2complexIndex ( Row );
-              int column = 2*NumComplexUnknowns;
+              int column = 2*NumComplexUnknowns_;
               if ( jc==VALUES )
                 {
-                  double value  = imag ( psi[k] );
-                  ierr = jacobian->SumIntoGlobalValues ( Row,
+                  double value  = imag ( psiView[k] );
+                  ierr = jacobian_->SumIntoGlobalValues ( Row,
                                                          1,
                                                          &value,
                                                          &column );
                 }
               else
                 {
-                  Graph->InsertGlobalIndices ( Row,
+                  Graph_->InsertGlobalIndices ( Row,
                                                1,
                                                &column );
                 }
@@ -614,7 +626,7 @@ bool GlSystem::createJacobian ( const jacCreator    jc,
                   valuesAImag = new double[numEntries];
                   for ( k=0; k<numEntries; k++ )
                     valuesAImag[k] = imag ( valuesA[k] );
-                  ierr = jacobian->SumIntoGlobalValues ( Row,
+                  ierr = jacobian_->SumIntoGlobalValues ( Row,
                                                          numEntries,
                                                          valuesAImag,
                                                          colIndAReal );
@@ -623,7 +635,7 @@ bool GlSystem::createJacobian ( const jacCreator    jc,
                 }
               else
                 {
-                  Graph->InsertGlobalIndices ( Row,
+                  Graph_->InsertGlobalIndices ( Row,
                                                numEntries,
                                                colIndAReal );
                 }
@@ -640,7 +652,7 @@ bool GlSystem::createJacobian ( const jacCreator    jc,
                   valuesBImag = new double[numEntries];
                   for ( k=0; k<numEntries; k++ )
                     valuesBImag[k] = imag ( valuesB[k] );
-                  ierr = jacobian->SumIntoGlobalValues ( Row,
+                  ierr = jacobian_->SumIntoGlobalValues ( Row,
                                                          numEntries,
                                                          valuesBImag,
                                                          colIndBReal );
@@ -649,7 +661,7 @@ bool GlSystem::createJacobian ( const jacCreator    jc,
                 }
               else
                 {
-                  Graph->InsertGlobalIndices ( Row,
+                  Graph_->InsertGlobalIndices ( Row,
                                                numEntries,
                                                colIndBReal );
                 }
@@ -667,7 +679,7 @@ bool GlSystem::createJacobian ( const jacCreator    jc,
                   valuesAReal = new double[numEntries];
                   for ( k=0; k<numEntries; k++ )
                     valuesAReal[k] = real ( valuesA[k] );
-                  ierr = jacobian->SumIntoGlobalValues ( Row,
+                  ierr = jacobian_->SumIntoGlobalValues ( Row,
                                                          numEntries,
                                                          valuesAReal,
                                                          colIndAImag );
@@ -676,7 +688,7 @@ bool GlSystem::createJacobian ( const jacCreator    jc,
                 }
               else
                 {
-                  Graph->InsertGlobalIndices ( Row,
+                  Graph_->InsertGlobalIndices ( Row,
                                                numEntries,
                                                colIndAImag );
                 }
@@ -694,7 +706,7 @@ bool GlSystem::createJacobian ( const jacCreator    jc,
                   valuesBReal = new double[numEntries];
                   for ( k=0; k<numEntries; k++ )
                     valuesBReal[k] = -real ( valuesB[k] );
-                  ierr = jacobian->SumIntoGlobalValues ( Row,
+                  ierr = jacobian_->SumIntoGlobalValues ( Row,
                                                          numEntries,
                                                          valuesBReal,
                                                          colIndBImag );
@@ -703,7 +715,7 @@ bool GlSystem::createJacobian ( const jacCreator    jc,
                 }
               else
                 {
-                  Graph->InsertGlobalIndices ( Row,
+                  Graph_->InsertGlobalIndices ( Row,
                                                numEntries,
                                                colIndBImag );
                 }
@@ -711,19 +723,19 @@ bool GlSystem::createJacobian ( const jacCreator    jc,
               colIndBImag = NULL;
 
               // right bordering
-              int column = 2*NumComplexUnknowns;
+              int column = 2*NumComplexUnknowns_;
               if ( jc==VALUES )
                 {
                   int k = realIndex2complexIndex ( Row );
-                  double value  = -real ( psi[k] );
-                  ierr = jacobian->SumIntoGlobalValues ( Row,
+                  double value  = -real ( psiView[k] );
+                  ierr = jacobian_->SumIntoGlobalValues ( Row,
                                                          1,
                                                          &value,
                                                          &column );
                 }
               else
                 {
-                  Graph->InsertGlobalIndices ( Row,
+                  Graph_->InsertGlobalIndices ( Row,
                                                1,
                                                &column );
                 }
@@ -738,12 +750,12 @@ bool GlSystem::createJacobian ( const jacCreator    jc,
     {
       if ( jc==VALUES )
         {
-          jacobian->FillComplete();
-          jacobian->OptimizeStorage();
+          jacobian_->FillComplete();
+          jacobian_->OptimizeStorage();
         }
       else
         {
-          Graph->FillComplete();
+          Graph_->FillComplete();
         }
     }
   catch ( int i )
@@ -756,7 +768,7 @@ bool GlSystem::createJacobian ( const jacCreator    jc,
   // ---------------------------------------------------------------------------
 
   // Sync up processors for safety's sake
-  EComm->Barrier();
+  EComm_->Barrier();
   
   return true;
 }
@@ -767,7 +779,7 @@ void GlSystem::setParameters ( const LOCA::ParameterVector &p )
   double h0 = p.getValue ( "H0" );
 
   // set H0 in the underlying problem class
-  Gl.getStaggeredGrid()->setH0 ( h0 );
+  Gl_.getStaggeredGrid()->setH0 ( h0 );
 }
 // =============================================================================
 // function used by LOCA
@@ -776,14 +788,14 @@ void GlSystem::printSolution ( const Epetra_Vector &x,
 {
   static int conStep = 0;
 
-  if (reverse)
+  if (reverse_)
       conStep--;
   else
       conStep++;
 
   // define vector
   // @TODO: Replace this by Tpetra::Vector as soon as upstream is ready.
-  Tpetra::MultiVector<double_complex,int>  psi(ComplexMap,1,true);
+  Tpetra::MultiVector<double_complex,int>  psi(ComplexMap_,1,true);
   // convert from x to psi
   real2psi ( x, psi );
 
@@ -794,9 +806,9 @@ void GlSystem::printSolution ( const Epetra_Vector &x,
   // constructor of glSystem.
   Teuchos::ParameterList tmpList;
   tmpList.get ( "H0",         conParam );
-  tmpList.get ( "edgelength", Gl.getStaggeredGrid()->getEdgelength() );
-  tmpList.get ( "Nx",         Gl.getStaggeredGrid()->getNx() );
-  tmpList.get ( "FE",         Gl.freeEnergy( psi ));
+  tmpList.get ( "edgelength", Gl_.getStaggeredGrid()->getEdgeLength() );
+  tmpList.get ( "Nx",         Gl_.getStaggeredGrid()->getNx() );
+  tmpList.get ( "FE",         Gl_.freeEnergy( psi ));
 
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   // TODO:
@@ -810,10 +822,10 @@ void GlSystem::printSolution ( const Epetra_Vector &x,
                          + stepString
                          + ".vtk";
 
-  IoVirtual* fileIo = IoFactory::createFileIo ( outputDir+"/"+fileName );
+  IoVirtual* fileIo = IoFactory::createFileIo ( outputDir_+"/"+fileName );
   fileIo->write ( psi,
                   tmpList,
-                  * ( Gl.getStaggeredGrid() ) );
+                  * ( Gl_.getStaggeredGrid() ) );
   delete fileIo;
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -825,7 +837,7 @@ void GlSystem::printSolution ( const Epetra_Vector &x,
        contFileBaseName = "continuation+.dat";
   else
        contFileBaseName = "continuation-.dat";
-  std::string contFileName     = outputDir+"/"+contFileBaseName;
+  std::string contFileName     = outputDir_+"/"+contFileBaseName;
 
   std::ofstream contFileStream;
 
@@ -847,8 +859,8 @@ void GlSystem::printSolution ( const Epetra_Vector &x,
 
   contFileStream << "  " << conStep << "     "
                  << "\t" << conParam
-                 << "\t" << Gl.freeEnergy   ( psi )
-                 << "\t" << Gl.countVortices( psi ) << std::endl;
+                 << "\t" << Gl_.freeEnergy   ( psi )
+                 << "\t" << Gl_.countVortices( psi ) << std::endl;
 
   contFileStream.close();
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -858,7 +870,7 @@ void GlSystem::printSolution ( const Epetra_Vector &x,
 // function used by LOCA
 void GlSystem::setOutputDir ( const string &directory )
 {
-  outputDir = directory;
+  outputDir_ = directory;
 }
 // =============================================================================
 void GlSystem::solutionToFile ( const Epetra_Vector    &x,
@@ -868,16 +880,16 @@ void GlSystem::solutionToFile ( const Epetra_Vector    &x,
   
   // define vector
   // @TODO: Replace this by Tpetra::Vector as soon as upstream is ready.
-  Tpetra::MultiVector<double_complex,int> psi(ComplexMap,1,true);
+  Tpetra::MultiVector<double_complex,int> psi(ComplexMap_,1,true);
 
   // convert from x to psi2
   real2psi ( x, psi );
 
-  problemParams.set( "FE", Gl.freeEnergy( psi ) );
+  problemParams.set( "FE", Gl_.freeEnergy( psi ) );
   IoVirtual* fileIo = IoFactory::createFileIo ( fileName );
   fileIo->write ( psi,
                   problemParams,
-                  * ( Gl.getStaggeredGrid() ) );
+                  * ( Gl_.getStaggeredGrid() ) );
 
 }
 // =============================================================================

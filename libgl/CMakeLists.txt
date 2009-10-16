@@ -11,6 +11,9 @@ SET ( gl_SRCS
       ioXdmf.cpp
       ioFactory.cpp
       ginzburgLandau.cpp
+      glBoundaryConditionsVirtual.cpp
+      glBoundaryConditionsInner.cpp
+      glBoundaryConditionsOuter.cpp
       glPrePostOperator.cpp
       glSystem.cpp          )
 

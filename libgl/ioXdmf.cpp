@@ -234,9 +234,8 @@ void IoXdmf::write( const Tpetra::MultiVector<double_complex,int> &psi,
                     StaggeredGrid::StaggeredGrid                  &sGrid          )
 {
 
-  int    Nx = sGrid.getNx(),
-         k,
-         index[2];
+  int    Nx = sGrid.getNx();
+  int    k;
   double h  = sGrid.getH();
   std::string   str;
   std::ofstream xdmfFile;
@@ -369,6 +368,7 @@ void IoXdmf::write( const Tpetra::MultiVector<double_complex,int> &psi,
   Epetra_MultiVector absPsi(StandardMap,Nx+1);
   Epetra_MultiVector argPsi(StandardMap,Nx+1);
   Teuchos::ArrayRCP<const double_complex> psiView = psi.getVector(0)->get1dView();
+  Teuchos::Array<int> index(2);
   for (int i=0; i<Nx+1; i++) {
       index[0] = i;
       for (int j=0; j<Nx+1; j++) {
@@ -388,10 +388,6 @@ void IoXdmf::write( const Tpetra::MultiVector<double_complex,int> &psi,
 
 }
 // =============================================================================
-
-
-
-// =============================================================================
 // Inside an XML object, this function looks for a specific tag and returns
 // a pointer to it.
 const Teuchos::XMLObject* IoXdmf::xmlFind ( const Teuchos::XMLObject *xmlObj,
@@ -409,11 +405,6 @@ const Teuchos::XMLObject* IoXdmf::xmlFind ( const Teuchos::XMLObject *xmlObj,
 
   return xmlOut;
 }
-// =============================================================================
-
-
-
-
 // =============================================================================
 const Teuchos::XMLObject* IoXdmf::xmlAttributeFind ( const Teuchos::XMLObject *xmlObj,
                                                      const std::string        tag,

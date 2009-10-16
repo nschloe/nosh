@@ -7,9 +7,8 @@
 #include <complex>
 #include <string> // for the file output functions
 
+#include "glBoundaryConditionsVirtual.h"
 #include "staggeredGrid.h"
-
-// #include <Epetra_Map.h>
 
 #include <Teuchos_ParameterList.hpp>
 
@@ -32,7 +31,8 @@ class GinzburgLandau
          @param h0 (Initial) external magnetic field strength. */
      GinzburgLandau( int nx,
                      double edgelength,
-                     double h0 );
+                     double h0,
+                     Teuchos::RCP<GlBoundaryConditionsVirtual> bc );
 
      /*! Destructor. */
      ~GinzburgLandau();
@@ -50,12 +50,12 @@ class GinzburgLandau
 
      /*! Returns the coefficients of the jacobian system associated with the
          Ginzburg--Landau equations. */
-     void getJacobianRow( const int                         eqnum,
-                          const std::vector<double_complex> &psi,
-                          std::vector<int>                  &columnIndicesPsi,
-                          std::vector<double_complex>       &valuesPsi,
-                          std::vector<int>                  &columnIndicesPsiConj,
-                          std::vector<double_complex>       &valuesPsiConj );
+     void getJacobianRow( const int                                     eqnum,
+                          const Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > psi,
+                          std::vector<int>                              &columnIndicesPsi,
+                          std::vector<double_complex>                   &valuesPsi,
+                          std::vector<int>                              &columnIndicesPsiConj,
+                          std::vector<double_complex>                   &valuesPsiConj );
 
      /*! Get sparsity pattern of the jacobian system. */
      void getJacobianRowSparsity( int              eqnum,
@@ -71,8 +71,18 @@ class GinzburgLandau
      
      /*! Count the number of vortices. */
      int countVortices ( const Tpetra::MultiVector<double_complex,int> &psi );
-     
+      
   private:
+
+      //! Equation type enumerator.
+      /*! Semantically separates the different types of conditions which must
+          be applied at different parts of the rectangular grid. */
+      enum equationType
+      {
+        BOUNDARY,
+        INTERIOR,
+        PHASE_CONDITION
+      };
 
      /*! Count the number of vortices. */
      int countVortices ( const std::vector<double_complex> &psi );
@@ -99,43 +109,24 @@ class GinzburgLandau
 
       StaggeredGrid::StaggeredGrid sGrid;
 
-      //! Equation type enumerator.
-      /*! Semantically separates the different types of conditions which must
-          be applied at different parts of the rectangular grid. */
-      enum equationType
-      {
-        BOTTOMLEFT,
-        BOTTOMRIGHT,
-        TOPLEFT,
-        TOPRIGHT,
-        BOTTOM,
-        TOP,
-        LEFT,
-        RIGHT,
-        INTERIOR,
-        PHASE_CONDITION
-      };
-
-      void getEquationType( const int,
-                            equationType&,
-                            int* );
-
-      int getKLeft ( const int* i );
-      int getKRight( const int* i );
-      int getKBelow( const int* i );
-      int getKAbove( const int* i );
-
-      enum filltype { VALUES, SPARSITY };
+      void getEquationType ( const int           eqnum,
+                             equationType        &eqType,
+                             int                 &eqIndex );
+      
+      /*! Have \c boundaryConditions_ declared as pointer as its class
+          \c GlBoundaryConditionsVirtual is only available via a forward
+	  declaration. */
+      Teuchos::RCP<GlBoundaryConditionsVirtual> boundaryConditions_;
 
       /*! Calculated the coefficients of the jacobian system associated with the
           Ginzburg--Landau equations. */
-      void computeJacobianRow( const filltype                    ft,
-                               const int                         eqnum,
-                               const std::vector<double_complex> &psi,
-                               std::vector<int>                  &columnIndicesPsi,
-                               std::vector<double_complex>       &valuesPsi,
-                               std::vector<int>                  &columnIndicesPsiConj,
-                               std::vector<double_complex>       &valuesPsiConj         );
+      void computeJacobianRow ( const bool                                    fillValues,
+                                const int                                     eqnum,
+                                const Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > psi,
+                                std::vector<int>                              &columnIndicesPsi,
+                                std::vector<double_complex>                   &valuesPsi,
+                                std::vector<int>                              &columnIndicesPsiConj,
+                                std::vector<double_complex>                   &valuesPsiConj );
 
 };
 #endif // GINZBURGLANDAU_H
