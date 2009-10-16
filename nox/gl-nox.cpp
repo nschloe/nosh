@@ -37,6 +37,7 @@ typedef std::complex<double> double_complex;
 #include "glPrePostOperator.h"
 #include "glBoundaryConditionsInner.h"
 #include "glBoundaryConditionsOuter.h"
+#include "glBoundaryConditionsCentral.h"
 
 #ifdef HAVE_MPI
 #include <Epetra_MpiComm.h>
@@ -141,7 +142,7 @@ int main(int argc, char *argv[])
 
   // create the gl problem
   Teuchos::RCP<GlBoundaryConditionsVirtual> boundaryConditions =
-                                 Teuchos::rcp(new GlBoundaryConditionsOuter() );
+                                 Teuchos::rcp(new GlBoundaryConditionsCentral() );
 //                                  Teuchos::rcp(new GlBoundaryConditionsInner() );
   GinzburgLandau glProblem = GinzburgLandau( problemParameters.get<int>("Nx"),
                                              problemParameters.get<double>("edgelength"),

@@ -1,4 +1,4 @@
-#include "glBoundaryConditionsOuter.h"
+#include "glBoundaryConditionsCentral.h"
 
 #include <EpetraExt_Utils.h> // for toString
 #include <Teuchos_Array.hpp>
@@ -9,16 +9,16 @@
 const double_complex I ( 0,1 );
 
 // =============================================================================
-GlBoundaryConditionsOuter::GlBoundaryConditionsOuter()
+GlBoundaryConditionsCentral::GlBoundaryConditionsCentral()
 {
 }
 // =============================================================================
-GlBoundaryConditionsOuter::~GlBoundaryConditionsOuter()
+GlBoundaryConditionsCentral::~GlBoundaryConditionsCentral()
 {
 }
 // =============================================================================
 double_complex
-GlBoundaryConditionsOuter::getGlEntry ( const int                                     eqIndex,
+GlBoundaryConditionsCentral::getGlEntry ( const int                                     eqIndex,
                                         const Tpetra::MultiVector<double_complex,int> &psi,
                                         const StaggeredGrid::StaggeredGrid            &sGrid
                                       )
@@ -54,10 +54,10 @@ GlBoundaryConditionsOuter::getGlEntry ( const int                               
       ARight = sGrid.getAxRight ( i );
       AAbove = sGrid.getAyAbove ( i );
 
-      res = ( - psiK      * 2.0
-              + psiKRight * exp ( -I*ARight*h )
-              + psiKAbove * exp ( -I*AAbove*h ) ) / ( h*h )
-            + psiK * ( 1-norm ( psiK ) );
+      res = ( - psiK      * 4.0
+              + psiKRight * 2.0 * exp ( -I*ARight*h )
+              + psiKAbove * 2.0 * exp ( -I*AAbove*h ) ) / ( h*h )
+          + psiK * ( 1-norm ( psiK ) );
       // ------------------------------------------------------------------------
       break;
 
@@ -69,10 +69,10 @@ GlBoundaryConditionsOuter::getGlEntry ( const int                               
       ALeft  = sGrid.getAxLeft ( i );
       AAbove = sGrid.getAyAbove ( i );
 
-      res = ( psiK* ( -2.0 )
-              + psiKLeft * exp ( I*ALeft *h )
-              + psiKAbove* exp ( -I*AAbove*h ) ) / ( h*h )
-            + psiK * ( 1-norm ( psiK ) );
+      res = ( - psiK      * 4.0
+              + psiKLeft  * 2.0 * exp (  I*ALeft *h )
+              + psiKAbove * 2.0 * exp ( -I*AAbove*h ) ) / ( h*h )
+          + psiK * ( 1-norm ( psiK ) );
       // ---------------------------------------------------------------------------
       break;
 
@@ -84,10 +84,10 @@ GlBoundaryConditionsOuter::getGlEntry ( const int                               
       ALeft  = sGrid.getAxLeft ( i );
       ABelow = sGrid.getAyBelow ( i );
 
-      res = ( psiK* ( -2.0 )
-              + psiKLeft * exp ( I*ALeft *h )
-              + psiKBelow* exp ( I*ABelow*h ) ) / ( h*h )
-            + psiK * ( 1-norm ( psiK ) );
+      res = ( - psiK      * 4.0
+              + psiKLeft  * 2.0 * exp ( I*ALeft *h )
+              + psiKBelow * 2.0 * exp ( I*ABelow*h ) ) / ( h*h )
+          + psiK * ( 1-norm ( psiK ) );
       // ---------------------------------------------------------------------------
 
       break;
@@ -100,10 +100,10 @@ GlBoundaryConditionsOuter::getGlEntry ( const int                               
       ARight = sGrid.getAxRight ( i );
       ABelow = sGrid.getAyBelow ( i );
 
-      res = ( psiK* ( -2.0 )
-              + psiKRight* exp ( -I*ARight*h )
-              + psiKBelow* exp (  I*ABelow*h ) ) / ( h*h )
-            + psiK * ( 1-norm ( psiK ) );
+      res = ( - psiK      * 4.0
+              + psiKRight * 2.0 * exp ( -I*ARight*h )
+              + psiKBelow * 2.0 * exp (  I*ABelow*h ) ) / ( h*h )
+          + psiK * ( 1-norm ( psiK ) );
       // ---------------------------------------------------------------------------
       break;
 
@@ -116,10 +116,11 @@ GlBoundaryConditionsOuter::getGlEntry ( const int                               
       ALeft  = sGrid.getAxLeft ( i );
       ARight = sGrid.getAxRight ( i );
       AAbove = sGrid.getAyAbove ( i );
-      res = ( psiK* ( -3.0 )
-              + psiKLeft*  exp ( I*ALeft *h ) + psiKRight* exp ( -I*ARight*h )
-              + psiKAbove* exp ( -I*AAbove*h ) ) / ( h*h )
-            + psiK * ( 1.0-norm ( psiK ) );
+      res = ( - psiK      * 4.0
+              + psiKLeft  * exp ( I*ALeft *h ) + psiKRight       * exp ( -I*ARight*h )
+                                               + psiKAbove * 2.0 * exp ( -I*AAbove*h ) )
+            / ( h*h )
+          + psiK * ( 1-norm ( psiK ) );
       // -----------------------------------------------------------------------
       break;
 
@@ -132,10 +133,11 @@ GlBoundaryConditionsOuter::getGlEntry ( const int                               
       ALeft  = sGrid.getAxLeft ( i );
       ABelow = sGrid.getAyBelow ( i );
       AAbove = sGrid.getAyAbove ( i );
-      res = ( psiK* ( -3.0 )
-              + psiKLeft*  exp ( I*ALeft *h )
-              + psiKBelow* exp ( I*ABelow*h ) + psiKAbove* exp ( -I*AAbove*h ) ) / ( h*h )
-            + psiK * ( 1-norm ( psiK ) );
+      res = ( - psiK      * 4.0
+              + psiKLeft  * 2.0 * exp ( I*ALeft *h )
+              + psiKBelow       * exp ( I*AAbove*h ) + psiKAbove * exp ( -I*AAbove*h ) )
+            / ( h*h )
+          + psiK * ( 1-norm ( psiK ) );
       // -----------------------------------------------------------------------
       break;
 
@@ -148,10 +150,11 @@ GlBoundaryConditionsOuter::getGlEntry ( const int                               
       ALeft  = sGrid.getAxLeft ( i );
       ARight = sGrid.getAxRight ( i );
       ABelow = sGrid.getAyBelow ( i );
-      res = ( psiK* ( -3.0 )
-              + psiKLeft*  exp ( I*ALeft *h ) + psiKRight* exp ( -I*ARight*h )
-              + psiKBelow* exp ( I*ABelow*h ) ) / ( h*h )
-            + psiK * ( 1-norm ( psiK ) );
+      res = ( - psiK      * 4.0
+              + psiKLeft        * exp ( I*ALeft *h ) + psiKRight * exp ( -I*ARight*h )
+              + psiKBelow * 2.0 * exp ( I*ABelow*h )                                  )
+            / ( h*h )
+          + psiK * ( 1-norm ( psiK ) );
       // -----------------------------------------------------------------------
       break;
 
@@ -164,15 +167,16 @@ GlBoundaryConditionsOuter::getGlEntry ( const int                               
       ARight = sGrid.getAxRight ( i );
       ABelow = sGrid.getAyBelow ( i );
       AAbove = sGrid.getAyAbove ( i );
-      res = ( psiK* ( -3.0 )
-              + psiKRight* exp ( -I*ARight*h )
-              + psiKBelow* exp ( I*ABelow*h ) + psiKAbove* exp ( -I*AAbove*h ) ) / ( h*h )
-            + psiK * ( 1-norm ( psiK ) );
+      res = ( - psiK      * 4.0
+                                               + psiKRight * 2.0 * exp ( -I*ARight*h )
+              + psiKBelow * exp ( I*AAbove*h ) + psiKAbove       * exp ( -I*AAbove*h ) )
+            / ( h*h )
+          + psiK * ( 1-norm ( psiK ) );
       // -----------------------------------------------------------------------
       break;
 
     default:
-      throw glException ( "GlBoundaryConditionsOuter::getGlEntry",
+      throw glException ( "GlBoundaryConditionsCentral::getGlEntry",
                           "Illegal equationType "
                           + EpetraExt::toString ( eqType ) + "." );
     }
@@ -182,7 +186,7 @@ GlBoundaryConditionsOuter::getGlEntry ( const int                               
 }
 // =============================================================================
 void
-GlBoundaryConditionsOuter::getGlJacobianRow ( const int                                                    eqIndex,
+GlBoundaryConditionsCentral::getGlJacobianRow ( const int                                                    eqIndex,
     const Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > psi,
     const StaggeredGrid::StaggeredGrid                           &sGrid,
     const bool                                                   fillValues,
@@ -216,13 +220,13 @@ GlBoundaryConditionsOuter::getGlJacobianRow ( const int                         
       if ( !psi.is_valid_ptr() )
         {
           std::string message ( "Values are supposed to be filled in, but psi is invalid." );
-          throw glException ( "GlBoundaryConditionsOuter::getGlJacobianRow",
+          throw glException ( "GlBoundaryConditionsCentral::getGlJacobianRow",
                               message );
         }
       if ( psi.is_null() )
         {
           std::string message ( "Values are supposed to be filled in, but psi is NULL." );
-          throw glException ( "GlBoundaryConditionsOuter::getGlJacobianRow",
+          throw glException ( "GlBoundaryConditionsCentral::getGlJacobianRow",
                               message );
         }
       psiView = psi->getVector ( 0 )->get1dView();
@@ -247,10 +251,10 @@ GlBoundaryConditionsOuter::getGlJacobianRow ( const int                         
           AAbove = sGrid.getAyAbove ( i );
 
           valuesPsi.resize ( numEntriesPsi );
-          valuesPsi[0] = - 2.0 / ( h*h )
+          valuesPsi[0] = - 4.0 / ( h*h )
                          + ( 1 - 2.0*norm ( psiView[k] ) );
-          valuesPsi[1] = exp ( -I*ARight*h ) / ( h*h );
-          valuesPsi[2] = exp ( -I*AAbove*h ) / ( h*h );
+          valuesPsi[1] = 2.0 * exp ( -I*ARight*h ) / ( h*h );
+          valuesPsi[2] = 2.0 * exp ( -I*AAbove*h ) / ( h*h );
         }
 
       numEntriesPsiConj = 1;
@@ -280,10 +284,10 @@ GlBoundaryConditionsOuter::getGlJacobianRow ( const int                         
           ALeft    = sGrid.getAxLeft ( i );
           AAbove   = sGrid.getAyAbove ( i );
           valuesPsi.resize ( numEntriesPsi );
-          valuesPsi[0] = -2.0 / ( h*h )
+          valuesPsi[0] = -4.0 / ( h*h )
                          + ( 1 - 2.0*norm ( psiView[k] ) );
-          valuesPsi[1] = exp ( I*ALeft *h ) / ( h*h );
-          valuesPsi[2] = exp ( -I*AAbove*h ) / ( h*h );
+          valuesPsi[1] = 2.0 * exp ( I*ALeft *h ) / ( h*h );
+          valuesPsi[2] = 2.0 * exp ( -I*AAbove*h ) / ( h*h );
         }
 
       numEntriesPsiConj = 1;
@@ -313,10 +317,10 @@ GlBoundaryConditionsOuter::getGlJacobianRow ( const int                         
           ALeft    = sGrid.getAxLeft ( i );
           ABelow   = sGrid.getAyBelow ( i );
           valuesPsi.resize ( numEntriesPsi );
-          valuesPsi[0] = -2.0 / ( h*h )
+          valuesPsi[0] = -4.0 / ( h*h )
                          + ( 1 - 2.0*norm ( psiView[k] ) );
-          valuesPsi[1] = exp ( I*ALeft *h ) / ( h*h );
-          valuesPsi[2] = exp ( I*ABelow*h ) / ( h*h );
+          valuesPsi[1] = 2.0 * exp ( I*ALeft *h ) / ( h*h );
+          valuesPsi[2] = 2.0 * exp ( I*ABelow*h ) / ( h*h );
         }
 
       numEntriesPsiConj = 1;
@@ -346,10 +350,10 @@ GlBoundaryConditionsOuter::getGlJacobianRow ( const int                         
           ARight    = sGrid.getAxRight ( i );
           ABelow    = sGrid.getAyBelow ( i );
           valuesPsi.resize ( numEntriesPsi );
-          valuesPsi[0] = -2.0 / ( h*h )
+          valuesPsi[0] = -4.0 / ( h*h )
                          + ( 1 - 2.0*norm ( psiView[k] ) );
-          valuesPsi[1] = exp ( -I*ARight*h ) / ( h*h );
-          valuesPsi[2] = exp ( I*ABelow*h ) / ( h*h );
+          valuesPsi[1] = 2.0 * exp ( -I*ARight*h ) / ( h*h );
+          valuesPsi[2] = 2.0 * exp (  I*ABelow*h ) / ( h*h );
         }
 
       numEntriesPsiConj = 1;
@@ -365,7 +369,6 @@ GlBoundaryConditionsOuter::getGlJacobianRow ( const int                         
 
     case BOTTOM:
       // -----------------------------------------------------------------------
-      // normal derivative
       kLeft  = sGrid.getKLeft ( i );
       kRight = sGrid.getKRight ( i );
       kAbove = sGrid.getKAbove ( i );
@@ -383,11 +386,11 @@ GlBoundaryConditionsOuter::getGlJacobianRow ( const int                         
           ARight = sGrid.getAxRight ( i );
           AAbove = sGrid.getAyAbove ( i );
           valuesPsi.resize ( numEntriesPsi );
-          valuesPsi[0] = - 3.0            / ( h*h )
+          valuesPsi[0] = - 4.0            / ( h*h )
                          + ( 1.0 - 2.0*norm ( psiView[k] ) );
-          valuesPsi[1] = exp ( I*ALeft *h ) / ( h*h );
-          valuesPsi[2] = exp ( -I*ARight*h ) / ( h*h );
-          valuesPsi[3] = exp ( -I*AAbove*h ) / ( h*h );
+          valuesPsi[1] =       exp (  I*ALeft *h ) / ( h*h );
+          valuesPsi[2] =       exp ( -I*ARight*h ) / ( h*h );
+          valuesPsi[3] = 2.0 * exp ( -I*AAbove*h ) / ( h*h );
         }
 
       numEntriesPsiConj = 1;
@@ -421,11 +424,11 @@ GlBoundaryConditionsOuter::getGlJacobianRow ( const int                         
           AAbove = sGrid.getAyAbove ( i );
           ALeft  = sGrid.getAxLeft ( i );
           valuesPsi.resize ( numEntriesPsi );
-          valuesPsi[0] = - 3.0            / ( h*h )
+          valuesPsi[0] = - 4.0            / ( h*h )
                          + ( 1.0 - 2.0*norm ( psiView[k] ) );
-          valuesPsi[1] = exp ( I*ABelow*h ) / ( h*h );
-          valuesPsi[2] = exp ( -I*AAbove*h ) / ( h*h );
-          valuesPsi[3] = exp ( I*ALeft *h ) / ( h*h );
+          valuesPsi[1] =       exp (  I*ABelow*h ) / ( h*h );
+          valuesPsi[2] =       exp ( -I*AAbove*h ) / ( h*h );
+          valuesPsi[3] = 2.0 * exp (  I*ALeft *h ) / ( h*h );
         }
 
       numEntriesPsiConj = 1;
@@ -459,11 +462,11 @@ GlBoundaryConditionsOuter::getGlJacobianRow ( const int                         
           ALeft  = sGrid.getAxLeft ( i );
           ARight = sGrid.getAxRight ( i );
           valuesPsi.resize ( numEntriesPsi );
-          valuesPsi[0] = - 3.0             / ( h*h )
+          valuesPsi[0] = - 4.0             / ( h*h )
                          + ( 1.0 - 2.0*norm ( psiView[k] ) );
-          valuesPsi[1] = exp ( I*ABelow*h ) / ( h*h );
-          valuesPsi[2] = exp ( I*ALeft *h ) / ( h*h );
-          valuesPsi[3] = exp ( -I*ARight*h ) / ( h*h );
+          valuesPsi[1] = 2.0 * exp (  I*ABelow*h ) / ( h*h );
+          valuesPsi[2] =       exp (  I*ALeft *h ) / ( h*h );
+          valuesPsi[3] =       exp ( -I*ARight*h ) / ( h*h );
         }
 
       numEntriesPsiConj = 1;
@@ -497,11 +500,11 @@ GlBoundaryConditionsOuter::getGlJacobianRow ( const int                         
           AAbove = sGrid.getAyAbove ( i );
           ARight = sGrid.getAxRight ( i );
           valuesPsi.resize ( numEntriesPsi );
-          valuesPsi[0] = - 3.0            / ( h*h )
+          valuesPsi[0] = - 4.0            / ( h*h )
                          + ( 1.0 - 2.0*norm ( psiView[k] ) );
-          valuesPsi[1] = exp ( I*ABelow*h ) / ( h*h );
-          valuesPsi[2] = exp ( -I*AAbove*h ) / ( h*h );
-          valuesPsi[3] = exp ( -I*ARight*h ) / ( h*h );
+          valuesPsi[1] =       exp (  I*ABelow*h ) / ( h*h );
+          valuesPsi[2] =       exp ( -I*AAbove*h ) / ( h*h );
+          valuesPsi[3] = 2.0 * exp ( -I*ARight*h ) / ( h*h );
         }
 
       numEntriesPsiConj = 1;
@@ -517,7 +520,7 @@ GlBoundaryConditionsOuter::getGlJacobianRow ( const int                         
       break;
 
     default:
-      throw glException ( "GlBoundaryConditionsOuter::getJacobianRow",
+      throw glException ( "GlBoundaryConditionsCentral::getJacobianRow",
                           "Illegal equationType"
                           + EpetraExt::toString ( eqType ) + "." );
     }

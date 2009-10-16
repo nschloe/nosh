@@ -14,6 +14,7 @@ SET ( gl_SRCS
       glBoundaryConditionsVirtual.cpp
       glBoundaryConditionsInner.cpp
       glBoundaryConditionsOuter.cpp
+      glBoundaryConditionsCentral.cpp
       glPrePostOperator.cpp
       glSystem.cpp          )
 
