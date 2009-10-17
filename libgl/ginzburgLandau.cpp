@@ -33,8 +33,8 @@ const double_complex I ( 0,1 );
 GinzburgLandau::GinzburgLandau ( int    nx,
                                  double edgelength,
                                  double h0,
-				 Teuchos::RCP<GlBoundaryConditionsVirtual> bc
-				 ) :
+                                 Teuchos::RCP<GlBoundaryConditionsVirtual> bc
+                               ) :
     sGrid ( StaggeredGrid::StaggeredGrid ( nx,
                                            edgelength,
                                            h0 ) ),
@@ -59,7 +59,7 @@ StaggeredGrid::StaggeredGrid* GinzburgLandau::getStaggeredGrid()
 // point stencil).
 void GinzburgLandau::getEquationType ( const int           eqnum,
                                        equationType        &eqType,
-				       int                 &eqIndex )
+                                       int                 &eqIndex )
 {
   int Nx = sGrid.getNx();
   int numBoundaryEquations = 4*Nx;

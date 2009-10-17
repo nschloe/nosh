@@ -17,6 +17,9 @@
 
 #include "ioFactory.h"
 #include "glSystem.h"
+#include "glBoundaryConditionsInner.h"
+#include "glBoundaryConditionsOuter.h"
+#include "glBoundaryConditionsCentral.h"
 
 typedef complex<double> double_complex;
 
@@ -99,9 +102,13 @@ int main(int argc, char *argv[])
   // ---------------------------------------------------------------------------
 
   // create the gl problem
+  Teuchos::RCP<GlBoundaryConditionsVirtual> boundaryConditions =
+                                 Teuchos::rcp(new GlBoundaryConditionsCentral() );
+
   GinzburgLandau glProblem = GinzburgLandau( problemParameters.get<int>("Nx"),
                                              problemParameters.get<double>("edgelength"),
-                                             problemParameters.get<double>("H0")
+                                             problemParameters.get<double>("H0"),
+                                             boundaryConditions
                                            );
 
 

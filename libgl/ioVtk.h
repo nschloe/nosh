@@ -27,8 +27,8 @@ class IoVtk: public IoVirtual
     //! Reads the order parameter \f$\psi\f$ and the problem parameter list
     //! from a legacy VTK file into the arguments.
     virtual void
-    read ( Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > psi,
-           Teuchos::RCP<Teuchos::Comm<int> >                      comm, // TODO: remove this
+    read ( Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > &psi,
+           const Teuchos::RCP<const Teuchos::Comm<int> >          comm, // TODO: remove this
            Teuchos::ParameterList                                 *problemParams
          );
 

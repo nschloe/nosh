@@ -36,7 +36,6 @@ class GlSystem:
   {
   public:
 
-
     GlSystem ( GinzburgLandau::GinzburgLandau  &gl,
                const Teuchos::RCP<Epetra_Comm> eComm,
                const bool                      &reverse, // Actually, this has nothing to do with the linear system.

@@ -32,8 +32,8 @@ IoVtk::~IoVtk()
 {
 }
 // =============================================================================
-void IoVtk::read( Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > psi,
-		  Teuchos::RCP<Teuchos::Comm<int> >                      comm,
+void IoVtk::read( Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > &psi,
+                  const Teuchos::RCP<const Teuchos::Comm<int> >          comm,
                   Teuchos::ParameterList                                 *problemParams )
 {
   // call ParaCont for parameters
@@ -68,13 +68,13 @@ void IoVtk::read( Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > psi,
 			  + std::string("reimplemented in Trilinos.");
       throw glException( "IoVtk::read", message );
   }
-  
+
   // define map
   Teuchos::RCP<Tpetra::Map<int> > newMap
-          = Teuchos::rcp( new Tpetra::Map<int>( NumGlobalElements, 0, comm ) );
+           = Teuchos::rcp( new Tpetra::Map<int>( NumGlobalElements, 0, comm ) );
   psi = Teuchos::rcp( new Tpetra::MultiVector<double_complex,int>(newMap,1) );
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
-  
+
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   // TODO:
   // Resurrect the following as soon as replaceMap is back in Trilinos
@@ -86,7 +86,8 @@ void IoVtk::read( Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > psi,
 //       psi->replaceMap( newMap );
 //   }
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  
+
+
   // TODO:
   // Remove this bit of code and replace by a proper parallel version.
   for (unsigned int k=0; k<psi->getLocalLength(); k++) {
@@ -94,6 +95,7 @@ void IoVtk::read( Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > psi,
       double_complex z = std::polar( (*tmp)[0][kGlobal], (*tmp)[1][kGlobal] );
       psi->replaceLocalValue( k, 0, z );
   }
+
 
   // call ParaCont for scalars
 

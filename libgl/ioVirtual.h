@@ -27,8 +27,8 @@ class IoVirtual
     //! Virtual function for reading the order parameter \f$\psi\f$ and the
     //! parameter list from a given file.
     virtual void
-    read ( Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > psi,
-           Teuchos::RCP<Teuchos::Comm<int> >                      comm, // TODO: remove this
+    read ( Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > &psi,
+           const Teuchos::RCP<const Teuchos::Comm<int> >          comm, // TODO: remove this
            Teuchos::ParameterList                                 *problemParams
          ) = 0; // pure virtual
 

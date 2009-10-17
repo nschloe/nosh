@@ -23,8 +23,8 @@ class IoXdmf: public IoVirtual
     //! Reads the order parameter \f$\psi\f$ and the problem parameter list
     //! from an XDMF file (plus its accompaining HDF5) into the arguments.
     virtual void
-    read ( Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > psi,
-           Teuchos::RCP<Teuchos::Comm<int> >                      comm, // TODO: remove this
+    read ( Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > &psi,
+           const Teuchos::RCP<const Teuchos::Comm<int> >          comm, // TODO: remove this
            Teuchos::ParameterList                                 *problemParams
          );
 
