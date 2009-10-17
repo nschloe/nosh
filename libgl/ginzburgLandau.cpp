@@ -365,7 +365,7 @@ int GinzburgLandau::getVorticity ( const Tpetra::MultiVector<double_complex,int>
   if ( numProcs!=1 )
     return -1;
 
-  int numVortices = 0;
+  int vorticity = 0;
   Teuchos::Array<int> i ( 2,0.0 );
   int k;
   int Nx = sGrid.getNx();
@@ -392,8 +392,10 @@ int GinzburgLandau::getVorticity ( const Tpetra::MultiVector<double_complex,int>
       i[0] = l;
       k = sGrid.i2k ( i );
       angle = arg ( psiView[k] );
-      if ( abs ( angle-anglePrev ) >threshold )
-        numVortices++;
+      if ( angle-anglePrev<-threshold )
+        vorticity++;
+      else if ( angle-anglePrev>threshold )
+        vorticity--;
     }
 
   // right border
@@ -404,8 +406,10 @@ int GinzburgLandau::getVorticity ( const Tpetra::MultiVector<double_complex,int>
       i[1] = l;
       k = sGrid.i2k ( i );
       angle = arg ( psiView[k] );
-      if ( abs ( angle-anglePrev ) >threshold )
-        numVortices++;
+      if ( angle-anglePrev<-threshold )
+        vorticity++;
+      else if ( angle-anglePrev>threshold )
+        vorticity--;
     }
 
   // top border
@@ -416,8 +420,10 @@ int GinzburgLandau::getVorticity ( const Tpetra::MultiVector<double_complex,int>
       i[0] = Nx-l;
       k = sGrid.i2k ( i );
       angle = arg ( psiView[k] );
-      if ( abs ( angle-anglePrev ) >threshold )
-        numVortices++;
+      if ( angle-anglePrev<-threshold )
+        vorticity++;
+      else if ( angle-anglePrev>threshold )
+        vorticity--;
     }
 
   // left border
@@ -428,10 +434,12 @@ int GinzburgLandau::getVorticity ( const Tpetra::MultiVector<double_complex,int>
       i[1] = Nx-l;
       k = sGrid.i2k ( i );
       angle = arg ( psiView[k] );
-      if ( abs ( angle-anglePrev ) >threshold )
-        numVortices++;
+      if ( angle-anglePrev<-threshold )
+        vorticity++;
+      else if ( angle-anglePrev>threshold )
+        vorticity--;
     }
 
-  return numVortices;
+  return vorticity;
 }
 // =============================================================================
