@@ -800,7 +800,7 @@ void GlSystem::printSolution ( const Epetra_Vector &x,
   real2psi ( x, psi );
 
   double energy    = Gl_.freeEnergy  ( psi );
-  double vorticity = Gl_.getVorticity  ( psi );
+  int    vorticity = Gl_.getVorticity  ( psi );
   
   // create temporary parameter list
   // TODO: get rid of this
@@ -811,7 +811,7 @@ void GlSystem::printSolution ( const Epetra_Vector &x,
   tmpList.get ( "H0",         conParam );
   tmpList.get ( "edgelength", Gl_.getStaggeredGrid()->getEdgeLength() );
   tmpList.get ( "Nx",         Gl_.getStaggeredGrid()->getNx() );
-  tmpList.get ( "FE",         energy);
+  tmpList.get ( "freeEnergy", energy);
   tmpList.get ( "vorticity",  vorticity);
 
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
