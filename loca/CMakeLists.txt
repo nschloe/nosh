@@ -19,7 +19,13 @@ FIND_PACKAGE( Trilinos COMPONENTS LOCAEpetra
                                   ML
                                   EpetraExt
                                   Epetra
+                                  Kokkosnodeapi
+                                  Tpetra
+                                  Thyraepetra
+                                  Thyra
+                                  Rtop
                                   Teuchos )
+
 INCLUDE_DIRECTORIES ( ${Trilinos_INCLUDE_DIR} )
 
 INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/libgl )

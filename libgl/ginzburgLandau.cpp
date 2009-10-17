@@ -354,10 +354,11 @@ double GinzburgLandau::freeEnergy ( const Tpetra::MultiVector<double_complex,int
   return globalEnergy;
 }
 // =============================================================================
-// count the number of vortices by the total phase change along the boundary
+// Count the number of vortices by the total phase change along the boundary
+// of the domain.
 // TODO:
-// make this work in multicore environments
-int GinzburgLandau::countVortices ( const Tpetra::MultiVector<double_complex,int> &psi )
+// Make this work in multicore environments.
+int GinzburgLandau::getVorticity ( const Tpetra::MultiVector<double_complex,int> &psi )
 {
   // this function only works
   int numProcs = psi.getMap()->getComm()->getSize();
@@ -369,15 +370,13 @@ int GinzburgLandau::countVortices ( const Tpetra::MultiVector<double_complex,int
   int k;
   int Nx = sGrid.getNx();
 
-  const double pi = 3.14159265358979323846264338327950288419716939937510;
-  const double threshold = 1.5*pi; // Consider jumps in the argument greater
+  const double PI = 3.14159265358979323846264338327950288419716939937510;
+  const double threshold = 1.5*PI; // Consider jumps in the argument greater
   // than this phase jumps.
 
   // Get a view of the whole vector.
   // Remember: This only works with one core.
   Teuchos::ArrayRCP<const double_complex> psiView = psi.getVector ( 0 )->get1dView();
-
-  cout << "ccc" << endl;
 
   // origin -- our first index
   k = sGrid.i2k ( i );

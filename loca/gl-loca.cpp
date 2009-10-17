@@ -14,6 +14,7 @@
 
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
+#include <Teuchos_DefaultComm.hpp>
 
 #include "ioFactory.h"
 #include "glSystem.h"
@@ -31,13 +32,18 @@ int main(int argc, char *argv[])
   MPI_Init(&argc,&argv);
 #endif
 
-  // Create a communicator for Epetra objects
+  // create Epetra communicator
 #ifdef HAVE_MPI
-  Epetra_MpiComm Comm(MPI_COMM_WORLD);
+  Teuchos::RCP<Epetra_MpiComm> eComm =
+         Teuchos::rcp<Epetra_MpiComm> ( new Epetra_MpiComm ( MPI_COMM_WORLD ) );
 #else
-  Epetra_SerialComm Comm;
+  Teuchos::RCP<Epetra_SerialComm> eComm =
+                    Teuchos::rcp<Epetra_SerialComm> ( new Epetra_SerialComm() );
 #endif
 
+  // Create a communicator for Tpetra objects
+  const Teuchos::RCP<const Teuchos::Comm<int> > Comm
+                                         = Teuchos::DefaultComm<int>::getComm();
 
   // =========================================================================
   // handle command line arguments
@@ -81,29 +87,57 @@ int main(int argc, char *argv[])
 
 
   // ---------------------------------------------------------------------------
-  std::vector<double_complex> psiLexicographic;
-  Teuchos::ParameterList      problemParameters;
-  if (withInitialGuess) {
-      IoVirtual* fileIo = IoFactory::createFileIo( filename );
-      try {
-          fileIo->read( &psiLexicographic,
-                        &problemParameters );
-      }
-      catch (std::exception& e) {
-          std::cerr << e.what() << std::endl;
-          exit(EXIT_FAILURE);
-      }
-      delete fileIo;
-  } else {
-      problemParameters.set("Nx",50);
-      problemParameters.set("edgelength",10.0);
-      problemParameters.set("H0",0.4);
-  }
+  Teuchos::ParameterList problemParameters;
+  // define a new dummy psiLexicographic vector, to be adapted instantly
+  Teuchos::RCP<Tpetra::Map<int> > dummyMap =
+    Teuchos::rcp ( new Tpetra::Map<int> ( 1, 0, Comm ) );
+  Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > psiLexicographic =
+                                                               Teuchos::ENull();
+
+//       = Teuchos::rcp( new Tpetra::MultiVector<double_complex,int>(dummyMap,1) );
+//       = Teuchos::RCP::;
+
+  if ( withInitialGuess )
+    {
+      Teuchos::RCP<IoVirtual> fileIo =
+               Teuchos::RCP<IoVirtual> ( IoFactory::createFileIo ( filename ) );
+      try
+        {
+          fileIo->read ( psiLexicographic,
+			 Comm,
+                         &problemParameters );
+        }
+      catch ( const std::exception &e )
+        {
+          std::cout << e.what() << std::endl;
+          return 1;
+        }
+    }
+  else
+    {
+      // set the default value
+      int    Nx         = 50;
+      double edgelength = 10.0;
+      double H0         = 0.4;
+      std::cout << "Using the standard parameters \n"
+                << "    Nx         = " << Nx << ",\n"
+                << "    edgelength = " << edgelength << ",\n"
+                << "    H0         = " << H0 << "." << std::endl;
+      problemParameters.set ( "Nx"        , Nx );
+      problemParameters.set ( "edgelength", edgelength );
+      problemParameters.set ( "H0"        , H0 );
+
+      int NumGlobalUnknowns = ( Nx+1 ) * ( Nx+1 );
+      Teuchos::RCP<Tpetra::Map<int> > standardMap
+         = Teuchos::rcp ( new Tpetra::Map<int> ( NumGlobalUnknowns, 0, Comm ) );
+      psiLexicographic = Teuchos::rcp ( new Tpetra::MultiVector<double_complex,int> ( standardMap,1 ) );
+//       psiLexicographic->replaceMap( standardMap );
+    }
   // ---------------------------------------------------------------------------
 
   // create the gl problem
   Teuchos::RCP<GlBoundaryConditionsVirtual> boundaryConditions =
-                                 Teuchos::rcp(new GlBoundaryConditionsCentral() );
+                               Teuchos::rcp(new GlBoundaryConditionsCentral() );
 
   GinzburgLandau glProblem = GinzburgLandau( problemParameters.get<int>("Nx"),
                                              problemParameters.get<double>("edgelength"),
@@ -114,22 +148,34 @@ int main(int argc, char *argv[])
 
   // ---------------------------------------------------------------------------
   Teuchos::RCP<GlSystem> glsystem;
-  if (withInitialGuess) {
+  if ( withInitialGuess )
+    {
       // If there was is an initial guess, make sure to get the ordering correct.
-      int              NumUnknowns = glProblem. getStaggeredGrid()
-                                              ->getNumComplexUnknowns();
-      std::vector<int> p(NumUnknowns);
+      // TODO:
+      // Look into having this done by Trilinos. If executed on a multiproc
+      // environment, we don't want p to be fully present on all processors.
+      int NumComplexUnknowns = glProblem.getStaggeredGrid()->getNumComplexUnknowns();
+      std::vector<int> p ( NumComplexUnknowns );
       // fill p:
-      glProblem.getStaggeredGrid()->lexicographic2grid( &p );
-      std::vector<double_complex> psi(NumUnknowns);
-      for (int k=0; k<NumUnknowns; k++)
-          psi[p[k]] = psiLexicographic[k];
-
+      glProblem.getStaggeredGrid()->lexicographic2grid ( &p );
+      Teuchos::RCP<Tpetra::MultiVector<double_complex,int> >  psi
+      = Teuchos::rcp ( new Tpetra::MultiVector<double_complex,int> ( psiLexicographic->getMap(),1 ) );
+      // TODO:
+      // The following is certainly not multiproc.
+      Teuchos::ArrayRCP<const double_complex> psiView = psiLexicographic->getVector ( 0 )->get1dView();
+      for ( int k=0; k<NumComplexUnknowns; k++ )
+        {
+          psi->replaceGlobalValue ( p[k],
+                                    0,
+                                    psiView[k]
+                                  );
+        }
       // Create the interface between NOX and the application
       // This object is derived from NOX::Epetra::Interface
-      glsystem = Teuchos::rcp(new GlSystem( glProblem, Comm, reverse, &psi ) );
-  } else
-      glsystem = Teuchos::rcp(new GlSystem( glProblem,Comm, reverse ) );
+      glsystem = Teuchos::rcp ( new GlSystem ( glProblem, eComm, reverse, psi ) );
+    }
+  else
+    glsystem = Teuchos::rcp ( new GlSystem ( glProblem, eComm, reverse ) );
   // ---------------------------------------------------------------------------
 
 

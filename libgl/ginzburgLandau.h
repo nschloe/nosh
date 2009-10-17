@@ -69,8 +69,8 @@ class GinzburgLandau
        of a given state \f$\psi\f$. */
      double freeEnergy ( const Tpetra::MultiVector<double_complex,int> &psi );
      
-     /*! Count the number of vortices. */
-     int countVortices ( const Tpetra::MultiVector<double_complex,int> &psi );
+     /*! Calculate the vorticity of the current solution. */
+     int getVorticity ( const Tpetra::MultiVector<double_complex,int> &psi );
       
   private:
 
@@ -83,29 +83,6 @@ class GinzburgLandau
         INTERIOR,
         PHASE_CONDITION
       };
-
-     /*! Count the number of vortices. */
-     int countVortices ( const std::vector<double_complex> &psi );
-
-     /*! Print the solution \f$\psi\f$ to a legacy VTK file for viewing
-         with ParaView, for example. */
-     void psiToLegacyVtkFile( const std::vector<double_complex> &psi,
-                              const std::string                 &filename );
-
-     /*! Print the solution \f$\psi\f$ to an (XML-style) VTK file for viewing
-         with ParaView, for example. */
-     void psiToVtkFile( const std::vector<double_complex> &psi,
-                        const Teuchos::ParameterList      &problemParams,
-                        const std::string                 &filename       );
-
-     void vtkFileToPsi( const std::string           &filename );
-//                         std::vector<double_complex> *psi,
-//                         Teuchos::ParameterList      *problemParams
-
-     void psiToXdmfFile( const std::vector<double_complex> &psi,
-                         const std::string                 &filename,
-                         const Epetra_Map                  &StandardMap,
-                         const Epetra_Comm                 &comm         );
 
       StaggeredGrid::StaggeredGrid sGrid;
 

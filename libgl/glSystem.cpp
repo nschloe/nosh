@@ -799,6 +799,9 @@ void GlSystem::printSolution ( const Epetra_Vector &x,
   // convert from x to psi
   real2psi ( x, psi );
 
+  double energy    = Gl_.freeEnergy  ( psi );
+  double vorticity = Gl_.getVorticity  ( psi );
+  
   // create temporary parameter list
   // TODO: get rid of this
   // -- An ugly thing here is that we have to explicitly mention the parameter
@@ -808,7 +811,8 @@ void GlSystem::printSolution ( const Epetra_Vector &x,
   tmpList.get ( "H0",         conParam );
   tmpList.get ( "edgelength", Gl_.getStaggeredGrid()->getEdgeLength() );
   tmpList.get ( "Nx",         Gl_.getStaggeredGrid()->getNx() );
-  tmpList.get ( "FE",         Gl_.freeEnergy( psi ));
+  tmpList.get ( "FE",         energy);
+  tmpList.get ( "vorticity",  vorticity);
 
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   // TODO:
@@ -850,8 +854,8 @@ void GlSystem::printSolution ( const Epetra_Vector &x,
       contFileStream.open (contFileName.c_str(),ios::trunc);
       contFileStream << "# Step  "
                      << "\tH0              "
-                     << "\tenergy              "
-                     << "\t#vortices\n";
+                     << "\tfree energy         "
+                     << "\tvorticity\n";
   } else {
       // just append to the the contents to the file
       contFileStream.open (contFileName.c_str(),ios::app);
@@ -859,8 +863,8 @@ void GlSystem::printSolution ( const Epetra_Vector &x,
 
   contFileStream << "  " << conStep << "     "
                  << "\t" << conParam
-                 << "\t" << Gl_.freeEnergy   ( psi )
-                 << "\t" << Gl_.countVortices( psi ) << std::endl;
+                 << "\t" << energy
+                 << "\t" << vorticity << std::endl;
 
   contFileStream.close();
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -885,7 +889,10 @@ void GlSystem::solutionToFile ( const Epetra_Vector    &x,
   // convert from x to psi2
   real2psi ( x, psi );
 
-  problemParams.set( "FE", Gl_.freeEnergy( psi ) );
+  // set extra parameters
+  problemParams.set( "freeEnergy", Gl_.freeEnergy( psi ) );
+  problemParams.set( "vorticity" , Gl_.getVorticity( psi ) );
+
   IoVirtual* fileIo = IoFactory::createFileIo ( fileName );
   fileIo->write ( psi,
                   problemParams,
