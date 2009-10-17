@@ -38,7 +38,7 @@ GinzburgLandau::GinzburgLandau ( int    nx,
     sGrid ( StaggeredGrid::StaggeredGrid ( nx,
                                            edgelength,
                                            h0 ) ),
-    boundaryConditions_( bc )
+    boundaryConditions_ ( bc )
 {
 }
 // =============================================================================
@@ -63,8 +63,8 @@ void GinzburgLandau::getEquationType ( const int           eqnum,
 {
   int Nx = sGrid.getNx();
   int numBoundaryEquations = 4*Nx;
-  int numTotalEquations =  (Nx+1) * (Nx+1);
-  
+  int numTotalEquations = ( Nx+1 ) * ( Nx+1 );
+
   if ( eqnum<numBoundaryEquations )
     {
       eqType = BOUNDARY;
@@ -84,17 +84,18 @@ void GinzburgLandau::getEquationType ( const int           eqnum,
 }
 // =============================================================================
 Tpetra::MultiVector<double_complex,int>
-GinzburgLandau::computeGlVector( Tpetra::MultiVector<double_complex,int> psi )
+GinzburgLandau::computeGlVector ( Tpetra::MultiVector<double_complex,int> psi )
 {
   // setup output vector with the same map as psi
-  Tpetra::MultiVector<double_complex,int> glVec( psi.getMap(), 1, true );
-  
-  for ( unsigned int k=0; k<psi.getLocalLength(); k++ ) {
-    int            globalIndex = psi.getMap()->getGlobalElement(k);
-    double_complex z           = computeGl( globalIndex, psi );
-    glVec.replaceLocalValue( k, 0, z );
-  }
-  
+  Tpetra::MultiVector<double_complex,int> glVec ( psi.getMap(), 1, true );
+
+  for ( unsigned int k=0; k<psi.getLocalLength(); k++ )
+    {
+      int            globalIndex = psi.getMap()->getGlobalElement ( k );
+      double_complex z           = computeGl ( globalIndex, psi );
+      glVec.replaceLocalValue ( k, 0, z );
+    }
+
   return glVec;
 }
 // =============================================================================
@@ -102,7 +103,7 @@ GinzburgLandau::computeGlVector( Tpetra::MultiVector<double_complex,int> psi )
 // Return value for equation #k.
 double_complex
 GinzburgLandau::computeGl ( const int                                     eqnum,
-                            const Tpetra::MultiVector<double_complex,int> &psi   )
+                            const Tpetra::MultiVector<double_complex,int> &psi )
 {
   // the preliminary result type
   double_complex res;
@@ -114,29 +115,30 @@ GinzburgLandau::computeGl ( const int                                     eqnum,
 
   switch ( eqType )
     {
-    // -------------------------------------------------------------------------
+      // -------------------------------------------------------------------------
     case BOUNDARY:
-      res = boundaryConditions_->getGlEntry( eqIndex, psi, sGrid );
+      res = boundaryConditions_->getGlEntry ( eqIndex, psi, sGrid );
       break;
-    // -------------------------------------------------------------------------
-    case INTERIOR: {
+      // -------------------------------------------------------------------------
+    case INTERIOR:
+    {
       // translate eqIndex to i
       // TODO: Unify this with what happens at the Jacobian.
       int Nx = sGrid.getNx();
-      Teuchos::Array<int> i(2);
+      Teuchos::Array<int> i ( 2 );
       i[0] = eqIndex % ( Nx-1 ) + 1;
       i[1] = eqIndex / ( Nx-1 ) + 1;
-  
-      Teuchos::ArrayRCP<const double_complex> psiView =
-                                                  psi.getVector(0)->get1dView();
 
-      double_complex psiK      = psiView[ sGrid.i2k       ( i ) ];
-      double_complex psiKLeft  = psiView[ sGrid.getKLeft  ( i ) ];
+      Teuchos::ArrayRCP<const double_complex> psiView =
+        psi.getVector ( 0 )->get1dView();
+
+      double_complex psiK      = psiView[ sGrid.i2k ( i ) ];
+      double_complex psiKLeft  = psiView[ sGrid.getKLeft ( i ) ];
       double_complex psiKRight = psiView[ sGrid.getKRight ( i ) ];
       double_complex psiKBelow = psiView[ sGrid.getKBelow ( i ) ];
       double_complex psiKAbove = psiView[ sGrid.getKAbove ( i ) ];
 
-      double ALeft  = sGrid.getAxLeft  ( i );
+      double ALeft  = sGrid.getAxLeft ( i );
       double ARight = sGrid.getAxRight ( i );
       double ABelow = sGrid.getAyBelow ( i );
       double AAbove = sGrid.getAyAbove ( i );
@@ -150,7 +152,7 @@ GinzburgLandau::computeGl ( const int                                     eqnum,
             + psiK * ( 1-norm ( psiK ) );
       // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     }
-      break;
+    break;
     // -------------------------------------------------------------------------
     default:
       throw glException ( "GinzburgLandau::computeGl",
@@ -183,8 +185,8 @@ void GinzburgLandau::getJacobianRow ( const int                                 
 }
 // =============================================================================
 void GinzburgLandau::getJacobianRowSparsity ( const int        eqnum,
-                                              std::vector<int> &columnIndicesPsi,
-                                              std::vector<int> &columnIndicesPsiConj )
+    std::vector<int> &columnIndicesPsi,
+    std::vector<int> &columnIndicesPsiConj )
 {
   // create dummy arguments
   Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > psi = Teuchos::ENull();
@@ -205,44 +207,45 @@ void GinzburgLandau::getJacobianRowSparsity ( const int        eqnum,
 // Evaluate GL at the boundary node.
 // Return value for equation #k.
 void GinzburgLandau::computeJacobianRow ( const bool                                    fillValues,
-                                          const int                                     eqnum,
-                                          const Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > psi,
-                                          std::vector<int>                              &columnIndicesPsi,
-                                          std::vector<double_complex>                   &valuesPsi,
-                                          std::vector<int>                              &columnIndicesPsiConj,
-                                          std::vector<double_complex>                   &valuesPsiConj )
-{ 
+    const int                                     eqnum,
+    const Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > psi,
+    std::vector<int>                              &columnIndicesPsi,
+    std::vector<double_complex>                   &valuesPsi,
+    std::vector<int>                              &columnIndicesPsiConj,
+    std::vector<double_complex>                   &valuesPsiConj )
+{
   equationType eqType;
   int          eqIndex;
 
   // get the equation type and the subindex from the running index
   getEquationType ( eqnum, eqType, eqIndex );
-  
+
   switch ( eqType )
     {
     case BOUNDARY:
-        // ---------------------------------------------------------------------
-        boundaryConditions_->getGlJacobianRow ( eqIndex,
-                                                psi,
-                                                sGrid,
-                                                fillValues,
-                                                columnIndicesPsi,
-                                                valuesPsi,
-                                                columnIndicesPsiConj,
-                                                valuesPsiConj );
-        // ---------------------------------------------------------------------
-        break;
+      // ---------------------------------------------------------------------
+      boundaryConditions_->getGlJacobianRow ( eqIndex,
+                                              psi,
+                                              sGrid,
+                                              fillValues,
+                                              columnIndicesPsi,
+                                              valuesPsi,
+                                              columnIndicesPsiConj,
+                                              valuesPsiConj );
+      // ---------------------------------------------------------------------
+      break;
 
-    case INTERIOR: {
+    case INTERIOR:
+    {
       // ---------------------------------------------------------------------
       // translate eqIndex to i
       // TODO: Unify this with what happens at the Jacobian.
       int Nx = sGrid.getNx();
-      Teuchos::Array<int> i(2);
+      Teuchos::Array<int> i ( 2 );
       i[0] = eqIndex % ( Nx-1 ) + 1;
       i[1] = eqIndex / ( Nx-1 ) + 1;
 
-      int k      = sGrid.i2k( i );
+      int k      = sGrid.i2k ( i );
       int kRight = sGrid.getKRight ( i );
       int kLeft  = sGrid.getKLeft ( i );
       int kAbove = sGrid.getKAbove ( i );
@@ -259,7 +262,7 @@ void GinzburgLandau::computeJacobianRow ( const bool                            
       Teuchos::ArrayRCP<const double_complex> psiView;
       if ( fillValues )
         {
-	  psiView = psi->getVector(0)->get1dView();
+          psiView = psi->getVector ( 0 )->get1dView();
 
           double ALeft  = sGrid.getAxLeft ( i );
           double ARight = sGrid.getAxRight ( i );
@@ -271,9 +274,9 @@ void GinzburgLandau::computeJacobianRow ( const bool                            
           valuesPsi.resize ( numEntriesPsi );
           valuesPsi[0] = - 4.0            / ( h*h )
                          + ( 1 - 2.0*norm ( psiView[k] ) );
-          valuesPsi[1] = exp (  I*ALeft *h ) / ( h*h );
+          valuesPsi[1] = exp ( I*ALeft *h ) / ( h*h );
           valuesPsi[2] = exp ( -I*ARight*h ) / ( h*h );
-          valuesPsi[3] = exp (  I*ABelow*h ) / ( h*h );
+          valuesPsi[3] = exp ( I*ABelow*h ) / ( h*h );
           valuesPsi[4] = exp ( -I*AAbove*h ) / ( h*h );
         }
 
@@ -286,7 +289,7 @@ void GinzburgLandau::computeJacobianRow ( const bool                            
           valuesPsiConj[0] = -psiView[k]*psiView[k];
         }
     }
-      break;
+    break;
 
     default:
       throw glException ( "GinzburgLandau::getJacobianRow",
@@ -301,13 +304,13 @@ double GinzburgLandau::freeEnergy ( const Tpetra::MultiVector<double_complex,int
   double localEnergy = 0.0;
   double h      = sGrid.getH();
   StaggeredGrid::nodeType nt;
-  
-  Teuchos::ArrayRCP<const double_complex> psiView = psi.getVector(0)->get1dView();
-  
+
+  Teuchos::ArrayRCP<const double_complex> psiView = psi.getVector ( 0 )->get1dView();
+
   // sum up the energy on each processor
   for ( int k=0; k<psi.getLocalLength(); k++ )
     {
-      nt = sGrid.k2nodeType ( psi.getMap()->getGlobalElement(k) );
+      nt = sGrid.k2nodeType ( psi.getMap()->getGlobalElement ( k ) );
       if ( nt==StaggeredGrid::CORNER )
         localEnergy -= 0.25* h*h * pow ( norm ( psiView[k] ),2 );
       else if ( nt==StaggeredGrid::EDGE )
@@ -323,30 +326,30 @@ double GinzburgLandau::freeEnergy ( const Tpetra::MultiVector<double_complex,int
                               message );
         }
     }
+  
+  // reduce and scatter such that energy is available on
+  // all cores
+  int count = 1; // send *one* integer
+  int numProcs =  psi.getMap()->getComm()->getSize();
+  Teuchos::Array<double> sendBuff ( count ), recvBuff ( count );
 
-    // reduce and scatter such that energy is available on
-    // all cores
-    int count = 1; // send *one* integer
-    int numProcs =  psi.getMap()->getComm()->getSize();
-    Teuchos::Array<double> sendBuff(count), recvBuff(count);
-    
-    // fill send buffer
-    sendBuff[0] = localEnergy;
-    
-    Teuchos::Array<int> recvCounts(numProcs);
+  // fill send buffer
+  sendBuff[0] = localEnergy;
+  
+  Teuchos::Array<int> recvCounts ( numProcs );
 // fill recvCounts with {1,...,1}
   int numItemsPerProcess = 1;
-  std::fill(recvCounts.begin(), recvCounts.end(), numItemsPerProcess);
-  
-    Teuchos::reduceAllAndScatter( *(psi.getMap()->getComm()),
-                                  Teuchos::REDUCE_SUM,
-                                  count,
-                                  &sendBuff[0],
-                                  &recvCounts[0],
-                                  &recvBuff[0]
-                                );
+  std::fill ( recvCounts.begin(), recvCounts.end(), numItemsPerProcess );
 
-    int globalEnergy = recvBuff[0];
+  Teuchos::reduceAllAndScatter ( * ( psi.getMap()->getComm() ),
+                                 Teuchos::REDUCE_SUM,
+                                 count,
+                                 &sendBuff[0],
+                                 &recvCounts[0],
+                                 &recvBuff[0]
+                               );
+
+  double globalEnergy = recvBuff[0];
 
   return globalEnergy;
 }
@@ -355,76 +358,80 @@ double GinzburgLandau::freeEnergy ( const Tpetra::MultiVector<double_complex,int
 // TODO:
 // make this work in multicore environments
 int GinzburgLandau::countVortices ( const Tpetra::MultiVector<double_complex,int> &psi )
-{ 
-  // this function only works 
+{
+  // this function only works
   int numProcs = psi.getMap()->getComm()->getSize();
   if ( numProcs!=1 )
     return -1;
-  
+
   int numVortices = 0;
-  Teuchos::Array<int> i(2,0.0);
+  Teuchos::Array<int> i ( 2,0.0 );
   int k;
   int Nx = sGrid.getNx();
-  
+
   const double pi = 3.14159265358979323846264338327950288419716939937510;
   const double threshold = 1.5*pi; // Consider jumps in the argument greater
-                                   // than this phase jumps.
+  // than this phase jumps.
 
   // Get a view of the whole vector.
   // Remember: This only works with one core.
-  Teuchos::ArrayRCP<const double_complex> psiView = psi.getVector(0)->get1dView();
+  Teuchos::ArrayRCP<const double_complex> psiView = psi.getVector ( 0 )->get1dView();
 
-    cout << "ccc" << endl;
-  
+  cout << "ccc" << endl;
+
   // origin -- our first index
-  k = sGrid.i2k( i );
+  k = sGrid.i2k ( i );
 
-  double angle = arg(psiView[k]);
+  double angle = arg ( psiView[k] );
   double anglePrev;
 
   // lower border
   i[1] = 0;
-  for ( int l=1; l<Nx+1; l++ ) {
+  for ( int l=1; l<Nx+1; l++ )
+    {
       anglePrev = angle;
       i[0] = l;
-      k = sGrid.i2k( i );
-      angle = arg(psiView[k]);
-      if ( abs(angle-anglePrev)>threshold )
-          numVortices++;
-  }
+      k = sGrid.i2k ( i );
+      angle = arg ( psiView[k] );
+      if ( abs ( angle-anglePrev ) >threshold )
+        numVortices++;
+    }
 
   // right border
   i[0] = Nx;
-  for ( int l=1; l<Nx+1; l++ ) {
+  for ( int l=1; l<Nx+1; l++ )
+    {
       anglePrev = angle;
       i[1] = l;
-      k = sGrid.i2k( i );
-      angle = arg(psiView[k]);
-      if ( abs(angle-anglePrev)>threshold )
-          numVortices++;
-  }
+      k = sGrid.i2k ( i );
+      angle = arg ( psiView[k] );
+      if ( abs ( angle-anglePrev ) >threshold )
+        numVortices++;
+    }
 
   // top border
   i[1] = Nx;
-  for ( int l=1; l<Nx+1; l++ ) {
+  for ( int l=1; l<Nx+1; l++ )
+    {
       anglePrev = angle;
       i[0] = Nx-l;
-      k = sGrid.i2k( i );
-      angle = arg(psiView[k]);
-      if ( abs(angle-anglePrev)>threshold )
-          numVortices++;
-  }
+      k = sGrid.i2k ( i );
+      angle = arg ( psiView[k] );
+      if ( abs ( angle-anglePrev ) >threshold )
+        numVortices++;
+    }
 
   // left border
   i[0] = 0;
-  for ( int l=1; l<Nx+1; l++ ) {
+  for ( int l=1; l<Nx+1; l++ )
+    {
       anglePrev = angle;
       i[1] = Nx-l;
-      k = sGrid.i2k( i );
-      angle = arg(psiView[k]);
-      if ( abs(angle-anglePrev)>threshold )
-          numVortices++;
-  }
+      k = sGrid.i2k ( i );
+      angle = arg ( psiView[k] );
+      if ( abs ( angle-anglePrev ) >threshold )
+        numVortices++;
+    }
 
   return numVortices;
 }

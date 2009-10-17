@@ -125,7 +125,7 @@ void IoVtk::write( const Tpetra::MultiVector<double_complex,int> &psi,
   int           Nx = sGrid.getNx();
   double        h  = sGrid.getH();
   std::ofstream vtkfile;
-
+  
   // set the output format
   vtkfile.setf( std::ios::scientific );
   vtkfile.precision(15);
@@ -135,17 +135,17 @@ void IoVtk::write( const Tpetra::MultiVector<double_complex,int> &psi,
 
   // write the VTK header
   vtkfile << "# vtk DataFile Version 2.0\n";
-
+  
   // count the number of entries
   int numEntries = 0;
   Teuchos::map<std::string, Teuchos::ParameterEntry>::const_iterator i;
-  for (i = problemParams.begin(); i !=problemParams.end(); ++i)
+  for (i = problemParams.begin(); i!=problemParams.end(); ++i)
       numEntries++;
 
   // create the list of parameter values
   std::vector<std::string> paramStringList(numEntries);
   int k=0;
-  for (i = problemParams.begin(); i !=problemParams.end(); ++i) {
+  for (i = problemParams.begin(); i!=problemParams.end(); ++i) {
 
     std::string paramName = problemParams.name(i);
     if ( problemParams.isType<int>( paramName ) )
