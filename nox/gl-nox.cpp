@@ -11,6 +11,11 @@
 #include "ioFactory.h"
 #include "ioVtk.h"
 
+#include "EpetraExt_RowMatrixOut.h"
+
+//#include "glPrePostOperator.h"
+
+
 #include <string>
 
 // for the eigenvalue computation:
@@ -70,6 +75,9 @@ int main ( int argc, char *argv[] )
 
   bool verbose=false;
   My_CLP.setOption ( "verbose", "silent", &verbose, "Verbostity flag" );
+
+  bool matlabMatrix=false;
+  My_CLP.setOption ( "jacobian-file", "no-jacobian-file",&matlabMatrix, "Save the jacobian in a text file" );
 
   bool computeEigenvalues=false;
   My_CLP.setOption ( "eigenvalues", "no-eigenvalues", &computeEigenvalues, "Compute eigenvalue approximations in the solution" );
@@ -350,7 +358,7 @@ int main ( int argc, char *argv[] )
     Teuchos::rcp ( new NOX::StatusTest::FiniteValue );
   // this test is useful if we start in a solution
   Teuchos::RCP<NOX::StatusTest::NormF> absresexact =
-    Teuchos::rcp ( new NOX::StatusTest::NormF ( 1.0e-14 ) );
+    Teuchos::rcp ( new NOX::StatusTest::NormF ( 1.0e-13 ) );
   Teuchos::RCP<NOX::StatusTest::Combo> combo =
     Teuchos::rcp ( new NOX::StatusTest::Combo ( NOX::StatusTest::Combo::OR ) );
 
@@ -378,7 +386,7 @@ int main ( int argc, char *argv[] )
     getEpetraVector();
 
   if ( computeConditionNumber )
-    {
+    /*        {
       // -----------------------------------------------------------------------
       // compute the condition number
       try
@@ -393,6 +401,11 @@ int main ( int argc, char *argv[] )
           std::cerr << e.what() << std::endl;
         }
       // -----------------------------------------------------------------------
+      }*/
+  if ( matlabMatrix )
+    {
+      std::string jacFilename = "jacobianMatrix.dat";
+      EpetraExt::RowMatrixToMatlabFile(jacFilename.c_str(),*(glsystem->getJacobian()));
     }
 
   if ( computeEigenvalues )
@@ -417,14 +430,18 @@ int main ( int argc, char *argv[] )
       // shortname for the final Jacobian
       Teuchos::RCP<Epetra_Operator> J = grpPtr->getLinearSystem()->getJacobianOperator();
 
+
+      //Teuchos::RCP<Epetra_CrsMatrix> Jcrs = grpPtr->getLinearSystem()->getJacobianOperator();
+
+
       // - - - - - - - - - - - - - - - - -
       // Start the block Arnoldi iteration
       // - - - - - - - - - - - - - - - - -
       // Variables used for the Block Krylov Schur Method
-      int nev = 4;
-      int blockSize = 3;
-      int numBlocks = 20;
-      int maxRestarts = 250;
+      int nev = 5;
+      int blockSize = 10;
+      int numBlocks = 10;
+      int maxRestarts = 25;
       double tol = 1e-5;
 
       // Create a sort manager to pass into the block Krylov-Schur solver manager
