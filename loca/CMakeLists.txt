@@ -31,6 +31,7 @@ INCLUDE_DIRECTORIES ( ${Trilinos_INCLUDE_DIR} )
 INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/libgl )
 
 SET ( ginzburg_landau_SRCS
+      myLOCA_Stepper.cpp
       gl-loca.cpp )
 
 ADD_EXECUTABLE ( gl-loca.out

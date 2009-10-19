@@ -22,6 +22,8 @@
 #include "glBoundaryConditionsOuter.h"
 #include "glBoundaryConditionsCentral.h"
 
+#include "myLOCA_Stepper.h"
+
 typedef complex<double> double_complex;
 
 int main(int argc, char *argv[])
