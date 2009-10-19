@@ -73,6 +73,9 @@ int main ( int argc, char *argv[] )
 
   bool computeEigenvalues=false;
   My_CLP.setOption ( "eigenvalues", "no-eigenvalues", &computeEigenvalues, "Compute eigenvalue approximations in the solution" );
+  
+  bool computeConditionNumber=false;
+  My_CLP.setOption ( "condest", "no-condest", &computeConditionNumber, "Compute condition number approximations in the solution" );
 
   std::string filename = "";
   My_CLP.setOption ( "input-guess", &filename, "File name with initial guess" );
@@ -374,7 +377,7 @@ int main ( int argc, char *argv[] )
     ( dynamic_cast<const NOX::Epetra::Vector&> ( finalGroup.getX() ) ).
     getEpetraVector();
 
-  if ( verbose )
+  if ( computeConditionNumber )
     {
       // -----------------------------------------------------------------------
       // compute the condition number
