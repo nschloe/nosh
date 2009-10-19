@@ -22,8 +22,6 @@
 #include "glBoundaryConditionsOuter.h"
 #include "glBoundaryConditionsCentral.h"
 
-#include "myLOCA_Stepper.h"
-
 typedef complex<double> double_complex;
 
 int main(int argc, char *argv[])
@@ -197,9 +195,24 @@ int main(int argc, char *argv[])
   stepperList.set("Initial Value", problemParameters.get<double>("H0"));     // Must set
   stepperList.set("Max Value",  3.0);                // Must set
   stepperList.set("Min Value", -3.0);                // Must set
-  stepperList.set("Max Steps", 10000);                // Should set
-  stepperList.set("Max Nonlinear Iterations", 20);  // Should set
-  stepperList.set("Compute Eigenvalues",false);     // Default
+  stepperList.set("Max Steps", 10000);               // Should set
+  stepperList.set("Max Nonlinear Iterations", 20);   // Should set
+  stepperList.set("Compute Eigenvalues",false);
+// #ifdef HAVE_LOCA_ANASAZI
+//     // Create Anasazi Eigensolver sublist
+//     stepperList.set("Compute Eigenvalues",true);
+//     Teuchos::ParameterList& aList = stepperList.sublist("Eigensolver");
+//     aList.set("Method", "Anasazi");
+//     if (!verbose)
+//       aList.set("Verbosity", Anasazi::Errors);
+//     aList.set("Operator","Jacobian Inverse");
+//     aList.set("Num Eigenvalues", 4);
+//     aList.set("Sorting Order", "LR"); // largest real part
+//     aList.set("Num Blocks", 50 ); // = max # of Arnoldi steps
+//     aList.set("Maximum Restarts", 500);
+// #else
+//     stepperList.set("Compute Eigenvalues",false);
+// #endif
   // ---------------------------------------------------------------------------
 
 
