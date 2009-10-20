@@ -95,17 +95,11 @@ class GlSystem:
 
     int realIndex2complexIndex ( const int realIndex ) const;
 
-    void real2complex ( const Epetra_Vector           &x,
-                        vector<std::complex<double> > &psi ) const;
-
-    void real2psi ( const Epetra_Vector                     &x,
+    void real2complex ( const Epetra_Vector                     &x,
                     Tpetra::MultiVector<double_complex,int> &psi ) const;
 
-    void psi2real ( const Tpetra::MultiVector<double_complex,int> &psi,
+    void complex2real ( const Tpetra::MultiVector<double_complex,int> &psi,
                     Epetra_Vector                                 &x    ) const;
-
-    void complex2real ( const vector<double_complex> &psi,
-                        Teuchos::RCP<Epetra_Vector>  realvec ) const;
 
     void makeRealMap ( const Teuchos::RCP<const Tpetra::Map<int> >  complexMap );
 

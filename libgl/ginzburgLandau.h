@@ -40,40 +40,46 @@ class GinzburgLandau
      /*! Returns a pointer to the \f$A\f$ grid in use.*/
      StaggeredGrid::StaggeredGrid* getStaggeredGrid();
      
-     Tpetra::MultiVector<double_complex,int> computeGlVector( Tpetra::MultiVector<double_complex,int> psi );
-
-     /*! Evaluates the Ginzburg--Landau equations.
-         @param eqnum Index of the equation to evaluate.
-         @param psi   Current order parameter \f$\psi\f$. */
-     double_complex computeGl( const int                         eqnum,
-                               const Tpetra::MultiVector<double_complex,int> &psi );
+     Tpetra::MultiVector<double_complex,int>
+     computeGlVector( Tpetra::MultiVector<double_complex,int> psi );
 
      /*! Returns the coefficients of the jacobian system associated with the
          Ginzburg--Landau equations. */
-     void getJacobianRow( const int                                     eqnum,
-                          const Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > psi,
-                          std::vector<int>                              &columnIndicesPsi,
-                          std::vector<double_complex>                   &valuesPsi,
-                          std::vector<int>                              &columnIndicesPsiConj,
-                          std::vector<double_complex>                   &valuesPsiConj );
+     void
+     getJacobianRow( const int                                     eqnum,
+                     const Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > psi,
+                     std::vector<int>                              &columnIndicesPsi,
+                     std::vector<double_complex>                   &valuesPsi,
+                     std::vector<int>                              &columnIndicesPsiConj,
+		     std::vector<double_complex>                   &valuesPsiConj );
 
      /*! Get sparsity pattern of the jacobian system. */
-     void getJacobianRowSparsity( int              eqnum,
-                                  std::vector<int> &columnIndicesPsi,
-                                  std::vector<int> &columnIndicesPsiConj );
+     void
+     getJacobianRowSparsity( int              eqnum,
+                             std::vector<int> &columnIndicesPsi,
+                             std::vector<int> &columnIndicesPsiConj );
 
      /*! Calcuate the grid approximation of the Gibbs free energy
        \f[
        \mathcal{G} = \int\nolimits_{\Omega} |\psi|^4 \,\mathrm{d}\omega
        \f]
        of a given state \f$\psi\f$. */
-     double freeEnergy ( const Tpetra::MultiVector<double_complex,int> &psi );
+     double
+     freeEnergy ( const Tpetra::MultiVector<double_complex,int> &psi );
      
      /*! Calculate the vorticity of the current solution. */
-     int getVorticity ( const Tpetra::MultiVector<double_complex,int> &psi );
+     int
+     getVorticity ( const Tpetra::MultiVector<double_complex,int> &psi );
       
   private:
 
+     /*! Evaluates the Ginzburg--Landau equations.
+         @param eqnum Index of the equation to evaluate.
+         @param psi   Current order parameter \f$\psi\f$. */
+     double_complex
+     computeGl( const int                                     eqnum,
+                const Tpetra::MultiVector<double_complex,int> &psi   );
+    
       //! Equation type enumerator.
       /*! Semantically separates the different types of conditions which must
           be applied at different parts of the rectangular grid. */

@@ -120,7 +120,7 @@ GlSystem::GlSystem ( GinzburgLandau::GinzburgLandau                             
           throw glException ( "GlSystem::GlSystem",
                               message );
         }
-      psi2real ( *psi, *initialSolution_ );
+      complex2real ( *psi, *initialSolution_ );
     }
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
 
@@ -150,25 +150,8 @@ int GlSystem::realIndex2complexIndex ( const int realIndex ) const
     return ( realIndex-1 ) /2;
 }
 // =============================================================================
-void GlSystem::real2complex ( const Epetra_Vector    &realvec,
-                              vector<double_complex> &psi ) const
-{
-  for ( int k=0; k<NumComplexUnknowns_; k++ )
-    psi[k] = double_complex ( realvec[2*k], realvec[2*k+1] );
-}
-// =============================================================================
-void GlSystem::complex2real ( const vector<double_complex> &psi,
-                              Teuchos::RCP<Epetra_Vector>  realvec ) const
-{
-  for ( int k=0; k<NumComplexUnknowns_; k++ )
-    {
-      ( *realvec ) [2*k]   = real ( psi[k] );
-      ( *realvec ) [2*k+1] = imag ( psi[k] );
-    }
-}
-// =============================================================================
 // converts a real-valued vector to a complex-valued psi vector
-void GlSystem::real2psi ( const Epetra_Vector                     &realvec,
+void GlSystem::real2complex ( const Epetra_Vector                     &realvec,
                           Tpetra::MultiVector<double_complex,int> &psi     ) const
 {
   for ( unsigned int k=0; k<psi.getGlobalLength(); k++ ) {
@@ -178,10 +161,13 @@ void GlSystem::real2psi ( const Epetra_Vector                     &realvec,
 }
 // =============================================================================
 // converts a real-valued vector to a complex-valued psi vector
-void GlSystem::psi2real ( const Tpetra::MultiVector<double_complex,int> &psi,
-                          Epetra_Vector                                 &x   ) const
+void
+GlSystem::complex2real ( const Tpetra::MultiVector<double_complex,int> &psi,
+                         Epetra_Vector                                 &x
+                       ) const
 {
-  Teuchos::ArrayRCP<const double_complex> psiView = psi.getVector(0)->get1dView();
+  Teuchos::ArrayRCP<const double_complex> psiView =
+                                                  psi.getVector(0)->get1dView();
   for ( int k=0; k<NumComplexUnknowns_; k++ )
     {
       x[2*k]   = real ( psiView[k] );
@@ -259,7 +245,7 @@ GlSystem::computeF ( const Epetra_Vector &x,
   Tpetra::MultiVector<double_complex,int> psi( ComplexMap_, 1, true );
 
   // convert from x to psi2
-  real2psi ( x, psi );
+  real2complex ( x, psi );
 
   // define output vector
   Tpetra::MultiVector<double_complex,int> res( ComplexMap_, 1, true );
@@ -268,7 +254,7 @@ GlSystem::computeF ( const Epetra_Vector &x,
   res = Gl_.computeGlVector ( psi );
   
   // transform back to fully real equation
-  psi2real( res, FVec );
+  complex2real( res, FVec );
   
   // add phase condition
   FVec[2*NumComplexUnknowns_] = 0.0;
@@ -398,7 +384,7 @@ GlSystem::createJacobian ( const jacCreator    jc,
 //       xEverywhere.Export ( x, Exporter, Insert );
 //       real2complex ( xEverywhere, psi );
 
-      real2psi( x, *psi );
+      real2complex( x, *psi );
       
       psiView = psi->getVector(0)->get1dView();
       
@@ -797,7 +783,7 @@ void GlSystem::printSolution ( const Epetra_Vector &x,
   // @TODO: Replace this by Tpetra::Vector as soon as upstream is ready.
   Tpetra::MultiVector<double_complex,int>  psi(ComplexMap_,1,true);
   // convert from x to psi
-  real2psi ( x, psi );
+  real2complex ( x, psi );
 
   double energy    = Gl_.freeEnergy  ( psi );
   int    vorticity = Gl_.getVorticity  ( psi );
@@ -887,7 +873,7 @@ void GlSystem::solutionToFile ( const Epetra_Vector    &x,
   Tpetra::MultiVector<double_complex,int> psi(ComplexMap_,1,true);
 
   // convert from x to psi2
-  real2psi ( x, psi );
+  real2complex ( x, psi );
 
   // set extra parameters
   problemParams.set( "freeEnergy", Gl_.freeEnergy( psi ) );
