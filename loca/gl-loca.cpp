@@ -2,7 +2,6 @@
 #include <LOCA_Epetra_Factory.H>
 #include <LOCA_Epetra_Group.H>
 
-
 #ifdef HAVE_MPI
 #include <Epetra_MpiComm.h>
 #else
@@ -21,6 +20,7 @@
 #include "glBoundaryConditionsInner.h"
 #include "glBoundaryConditionsOuter.h"
 #include "glBoundaryConditionsCentral.h"
+#include "eigenSaver.h"
 
 typedef complex<double> double_complex;
 
@@ -197,22 +197,41 @@ int main(int argc, char *argv[])
   stepperList.set("Min Value", -3.0);                // Must set
   stepperList.set("Max Steps", 10000);               // Should set
   stepperList.set("Max Nonlinear Iterations", 20);   // Should set
-  stepperList.set("Compute Eigenvalues",false);
-// #ifdef HAVE_LOCA_ANASAZI
-//     // Create Anasazi Eigensolver sublist
-//     stepperList.set("Compute Eigenvalues",true);
-//     Teuchos::ParameterList& aList = stepperList.sublist("Eigensolver");
-//     aList.set("Method", "Anasazi");
-//     if (!verbose)
-//       aList.set("Verbosity", Anasazi::Errors);
-//     aList.set("Operator","Jacobian Inverse");
-//     aList.set("Num Eigenvalues", 4);
-//     aList.set("Sorting Order", "LR"); // largest real part
-//     aList.set("Num Blocks", 50 ); // = max # of Arnoldi steps
-//     aList.set("Maximum Restarts", 500);
-// #else
-//     stepperList.set("Compute Eigenvalues",false);
-// #endif
+  // ---------------------------------------------------------------------------
+
+
+  // ---------------------------------------------------------------------------
+#ifdef HAVE_LOCA_ANASAZI
+    // Create Anasazi Eigensolver sublist
+    stepperList.set("Compute Eigenvalues",true);
+    Teuchos::ParameterList& aList = stepperList.sublist("Eigensolver");
+    aList.set("Method", "Anasazi");
+    if (!verbose)
+      aList.set("Verbosity", Anasazi::Errors);
+    aList.set("Operator","Jacobian Inverse");
+    aList.set("Num Eigenvalues", 20);
+    aList.set("Sorting Order", "LM"); // largest magnitude
+    aList.set("Num Blocks", 30 ); // = max # of Arnoldi steps
+    aList.set("Maximum Restarts", 500);
+
+    aList.set("Save Eigen Data Method","User-Defined");
+    aList.set("User-Defined Save Eigen Data Name", "MySave");
+
+//     Teuchos::RCP<LOCA::Parameter::SublistParser> parser =
+//         Teuchos::rcp(new LOCA::Parameter::SublistParser(globalData));
+//    Teuchos::RCP<Teuchos::ParameterList> aListPtr = Teuchos::rcp(&aList,false);
+
+    std::string fileName = "data/eigenvalues.dat";
+    Teuchos::RCP<EigenSaver> yourGreatSaver =
+                           Teuchos::rcp<EigenSaver>( new EigenSaver(fileName) );
+
+    Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> myGreatSaver =
+                                                                 yourGreatSaver;
+    aList.set("MySave",myGreatSaver);
+
+#else
+    stepperList.set("Compute Eigenvalues",false);
+#endif
   // ---------------------------------------------------------------------------
 
 

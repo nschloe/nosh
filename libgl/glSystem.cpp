@@ -18,6 +18,8 @@
 
 #include <Epetra_Map.h>
 
+#include <LOCA_SaveEigenData_AbstractStrategy.H>
+
 #include <Tpetra_Vector.hpp>
 #include <Tpetra_MultiVector.hpp>
 

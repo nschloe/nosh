@@ -29,6 +29,8 @@
 #include <Tpetra_Map.hpp>
 #include <Tpetra_Vector.hpp>
 
+#include <NOX_Abstract_Group.H>
+
 class GlSystem:
 // public NOX::Epetra::Interface::Required,
       public NOX::Epetra::Interface::Jacobian,

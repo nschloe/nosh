@@ -16,7 +16,8 @@ SET ( gl_SRCS
       glBoundaryConditionsOuter.cpp
       glBoundaryConditionsCentral.cpp
       glPrePostOperator.cpp
-      glSystem.cpp          )
+      glSystem.cpp
+      eigenSaver.cpp          )
 
 FIND_PACKAGE( Trilinos REQUIRED )
 INCLUDE_DIRECTORIES( ${Trilinos_INCLUDE_DIR} )
