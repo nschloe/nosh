@@ -18,8 +18,6 @@
 
 #include <Epetra_Map.h>
 
-#include <LOCA_SaveEigenData_AbstractStrategy.H>
-
 #include <Tpetra_Vector.hpp>
 #include <Tpetra_MultiVector.hpp>
 
@@ -144,7 +142,8 @@ GlSystem::~GlSystem()
 {
 }
 // =============================================================================
-int GlSystem::realIndex2complexIndex ( const int realIndex ) const
+int
+GlSystem::realIndex2complexIndex ( const int realIndex ) const
 {
   if ( ! ( realIndex%2 ) ) // realIndex even
     return realIndex/2;
@@ -153,34 +152,37 @@ int GlSystem::realIndex2complexIndex ( const int realIndex ) const
 }
 // =============================================================================
 // converts a real-valued vector to a complex-valued psi vector
-void GlSystem::real2complex ( const Epetra_Vector                     &realvec,
-                          Tpetra::MultiVector<double_complex,int> &psi     ) const
+void
+GlSystem::real2complex ( const Epetra_Vector                     &realVec,
+                         Tpetra::MultiVector<double_complex,int> &complexVec
+                       ) const
 {
-  for ( unsigned int k=0; k<psi.getGlobalLength(); k++ ) {
-    double_complex z = double_complex ( realvec[2*k], realvec[2*k+1] );
-    psi.replaceGlobalValue( k, 0, z );
+  for ( unsigned int k=0; k<complexVec.getGlobalLength(); k++ ) {
+    double_complex z = double_complex ( realVec[2*k], realVec[2*k+1] );
+    complexVec.replaceGlobalValue( k, 0, z );
   }
 }
 // =============================================================================
 // converts a real-valued vector to a complex-valued psi vector
 void
-GlSystem::complex2real ( const Tpetra::MultiVector<double_complex,int> &psi,
-                         Epetra_Vector                                 &x
+GlSystem::complex2real ( const Tpetra::MultiVector<double_complex,int> &complexVec,
+                         Epetra_Vector                                 &realVec
                        ) const
 {
-  Teuchos::ArrayRCP<const double_complex> psiView =
-                                                  psi.getVector(0)->get1dView();
+  Teuchos::ArrayRCP<const double_complex> complexVecView =
+                                           complexVec.getVector(0)->get1dView();
   for ( int k=0; k<NumComplexUnknowns_; k++ )
     {
-      x[2*k]   = real ( psiView[k] );
-      x[2*k+1] = imag ( psiView[k] );
+      realVec[2*k]   = real ( complexVecView[k] );
+      realVec[2*k+1] = imag ( complexVecView[k] );
     }
 }
 // =============================================================================
-void GlSystem::makeRealMap( const Teuchos::RCP<const Tpetra::Map<int> >  complexMap )
-{ 
+void
+GlSystem::makeRealMap( const Teuchos::RCP<const Tpetra::Map<int> >  complexMap )
+{
   int numRealGlobalElements = 2*complexMap->getNodeNumElements();
-  
+
   int myPid = TComm_->getRank();
 
   // treat the phase condition on the first node
@@ -299,8 +301,9 @@ GlSystem::computeF ( const Epetra_Vector &x,
   return true;
 }
 // =============================================================================
-bool GlSystem::computeJacobian ( const Epetra_Vector &x,
-                                 Epetra_Operator     &Jac )
+bool
+GlSystem::computeJacobian ( const Epetra_Vector &x,
+                            Epetra_Operator     &Jac )
 {
   // compute the values of the Jacobian
   createJacobian ( VALUES, x );
@@ -314,20 +317,24 @@ bool GlSystem::computeJacobian ( const Epetra_Vector &x,
   return true;
 }
 // =============================================================================
-bool GlSystem::computePreconditioner ( const Epetra_Vector    &x,
-                                       Epetra_Operator        &Prec,
-                                       Teuchos::ParameterList *precParams ) const
+bool
+GlSystem::computePreconditioner ( const Epetra_Vector    &x,
+                                  Epetra_Operator        &Prec,
+                                  Teuchos::ParameterList *precParams
+                                ) const
 {
   throw glException ( "GlSystem::preconditionVector",
                       "Use explicit Jacobian only for this test problem!" );
 }
 // =============================================================================
-Teuchos::RCP<Epetra_Vector> GlSystem::getSolution() const
+Teuchos::RCP<Epetra_Vector>
+GlSystem::getSolution() const
 {
   return initialSolution_;
 }
 // =============================================================================
-Teuchos::RCP<Epetra_CrsMatrix> GlSystem::getJacobian() const
+Teuchos::RCP<Epetra_CrsMatrix>
+GlSystem::getJacobian() const
 {
   return jacobian_;
 }
@@ -762,7 +769,8 @@ GlSystem::createJacobian ( const jacCreator    jc,
 }
 // =============================================================================
 // function used by LOCA
-void GlSystem::setParameters ( const LOCA::ParameterVector &p )
+void
+GlSystem::setParameters ( const LOCA::ParameterVector &p )
 {
   double h0 = p.getValue ( "H0" );
 
@@ -771,8 +779,9 @@ void GlSystem::setParameters ( const LOCA::ParameterVector &p )
 }
 // =============================================================================
 // function used by LOCA
-void GlSystem::printSolution ( const Epetra_Vector &x,
-                               double              conParam )
+void
+GlSystem::printSolution ( const Epetra_Vector &x,
+                          double              conParam )
 {
   static int conStep = 0;
 
@@ -860,16 +869,18 @@ void GlSystem::printSolution ( const Epetra_Vector &x,
 }
 // =============================================================================
 // function used by LOCA
-void GlSystem::setOutputDir ( const string &directory )
+void
+GlSystem::setOutputDir ( const string &directory )
 {
   outputDir_ = directory;
 }
 // =============================================================================
-void GlSystem::solutionToFile ( const Epetra_Vector    &x,
-                                Teuchos::ParameterList &problemParams,
-                                const std::string      &fileName )
+void
+GlSystem::solutionToFile ( const Epetra_Vector    &x,
+                           Teuchos::ParameterList &problemParams,
+                           const std::string      &fileName )
 {
-  
+
   // define vector
   // @TODO: Replace this by Tpetra::Vector as soon as upstream is ready.
   Tpetra::MultiVector<double_complex,int> psi(ComplexMap_,1,true);

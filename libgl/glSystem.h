@@ -49,22 +49,25 @@ class GlSystem:
 
     //! Evaluate the Ginzburg--Landau functions at a given state defined
     //! by the input vector x.
-    bool computeF ( const Epetra_Vector &x,
-                    Epetra_Vector       &F,
-                    const NOX::Epetra::Interface::Required::FillType fillFlag = Residual
-                  );
+    virtual bool
+    computeF ( const Epetra_Vector &x,
+               Epetra_Vector       &F,
+               const NOX::Epetra::Interface::Required::FillType fillFlag = Residual
+             );
 
     //! Evaluate the Jacobian matrix of the Ginzburg--Landau problem
     //! at a given state defined by the input vector x.
-    bool computeJacobian ( const Epetra_Vector &x,
-                           Epetra_Operator     &Jac );
+    virtual bool
+    computeJacobian ( const Epetra_Vector &x,
+                      Epetra_Operator     &Jac );
 
     //! Dummy preconditioner function. So far does nothing but throwing
     //! an exception when called.
-    bool computePreconditioner ( const Epetra_Vector     &x,
-                                 Epetra_Operator         &Prec,
-                                 Teuchos::ParameterList* precParams=0
-                               )  const;
+    virtual bool
+    computePreconditioner ( const Epetra_Vector     &x,
+                            Epetra_Operator         &Prec,
+                            Teuchos::ParameterList* precParams=0
+                          )  const;
 
     //! Returns the current state. Not necessarily a solution to the problem!
     //! @return Reference-counted pointer to the current state.
