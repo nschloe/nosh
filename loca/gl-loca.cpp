@@ -139,9 +139,14 @@ int main(int argc, char *argv[])
   Teuchos::RCP<GlBoundaryConditionsVirtual> boundaryConditions =
                                Teuchos::rcp(new GlBoundaryConditionsCentral() );
 
-  GinzburgLandau glProblem = GinzburgLandau( problemParameters.get<int>("Nx"),
-                                             problemParameters.get<double>("edgelength"),
-                                             problemParameters.get<double>("H0"),
+  Teuchos::RCP<StaggeredGrid> sGrid =
+              Teuchos::rcp( new StaggeredGrid( problemParameters.get<int>("Nx"),
+                                               problemParameters.get<double>("edgelength"),
+                                               problemParameters.get<double>("H0")
+                                             )
+                          );
+
+  GinzburgLandau glProblem = GinzburgLandau( sGrid,
                                              boundaryConditions
                                            );
 
@@ -200,39 +205,6 @@ int main(int argc, char *argv[])
   // ---------------------------------------------------------------------------
 
 
-  // ---------------------------------------------------------------------------
-#ifdef HAVE_LOCA_ANASAZI
-    // Create Anasazi Eigensolver sublist
-    stepperList.set("Compute Eigenvalues",true);
-    Teuchos::ParameterList& aList = stepperList.sublist("Eigensolver");
-    aList.set("Method", "Anasazi");
-    if (!verbose)
-      aList.set("Verbosity", Anasazi::Errors);
-    aList.set("Operator","Jacobian Inverse");
-    aList.set("Num Eigenvalues", 20);
-    aList.set("Sorting Order", "LM"); // largest magnitude
-    aList.set("Num Blocks", 30 ); // = max # of Arnoldi steps
-    aList.set("Maximum Restarts", 500);
-
-    aList.set("Save Eigen Data Method","User-Defined");
-    aList.set("User-Defined Save Eigen Data Name", "MySave");
-
-//     Teuchos::RCP<LOCA::Parameter::SublistParser> parser =
-//         Teuchos::rcp(new LOCA::Parameter::SublistParser(globalData));
-//    Teuchos::RCP<Teuchos::ParameterList> aListPtr = Teuchos::rcp(&aList,false);
-
-    std::string fileName = outputdir + "/eigenvalues.dat";
-    Teuchos::RCP<EigenSaver> yourGreatSaver =
-                           Teuchos::rcp<EigenSaver>( new EigenSaver(fileName) );
-
-    Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> myGreatSaver =
-                                                                 yourGreatSaver;
-    aList.set("MySave",myGreatSaver);
-
-#else
-    stepperList.set("Compute Eigenvalues",false);
-#endif
-  // ---------------------------------------------------------------------------
 
 
   // ---------------------------------------------------------------------------
@@ -348,6 +320,39 @@ int main(int argc, char *argv[])
   Teuchos::RCP<Epetra_Vector> soln = glsystem->getSolution();
   // ---------------------------------------------------------------------------
 
+  // ---------------------------------------------------------------------------
+#ifdef HAVE_LOCA_ANASAZI
+    // Create Anasazi Eigensolver sublist
+    stepperList.set("Compute Eigenvalues",true);
+    Teuchos::ParameterList& aList = stepperList.sublist("Eigensolver");
+    aList.set("Method", "Anasazi");
+    if (!verbose)
+      aList.set("Verbosity", Anasazi::Errors);
+    aList.set("Operator","Jacobian Inverse");
+    aList.set("Num Eigenvalues", 20);
+    aList.set("Sorting Order", "LM"); // largest magnitude
+    aList.set("Num Blocks", 30 ); // = max # of Arnoldi steps
+    aList.set("Maximum Restarts", 500);
+
+    aList.set("Save Eigen Data Method","User-Defined");
+    aList.set("User-Defined Save Eigen Data Name", "MySave");
+
+//     Teuchos::RCP<LOCA::Parameter::SublistParser> parser =
+//         Teuchos::rcp(new LOCA::Parameter::SublistParser(globalData));
+//    Teuchos::RCP<Teuchos::ParameterList> aListPtr = Teuchos::rcp(&aList,false);
+
+    std::string fileName = outputdir + "/eigenvalues.dat";
+    Teuchos::RCP<EigenSaver> yourGreatSaver =
+                           Teuchos::rcp<EigenSaver>( new EigenSaver(globalData,fileName,glsystem) );
+
+    Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> myGreatSaver =
+                                                                 yourGreatSaver;
+    aList.set("MySave",myGreatSaver);
+
+#else
+    stepperList.set("Compute Eigenvalues",false);
+#endif
+  // ---------------------------------------------------------------------------
 
   // ---------------------------------------------------------------------------
   // Create all possible Epetra_Operators.
