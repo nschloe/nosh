@@ -39,8 +39,8 @@ class IoVti: public IoVirtual
     //! that can be viewed using standard tools.
     virtual void
     write ( const Tpetra::MultiVector<double_complex,int> &psi,
-            const Teuchos::ParameterList                  &problemParams,
-            StaggeredGrid                                 &sGrid
+            const Teuchos::RCP<Teuchos::ParameterList>    problemParams,
+            const StaggeredGrid                           &sGrid
           );
 
   private:

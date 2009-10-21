@@ -93,9 +93,15 @@ class GlSystem:
     //! Explictly print the solution x along with the problem parameters
     //! to the file fileName.
     void solutionToFile ( const Epetra_Vector    &x,
-                          Teuchos::ParameterList &problemParams,
+                          Teuchos::RCP<Teuchos::ParameterList> problemParams,
                           const std::string      &fileName );
 
+    void
+    printState( const Epetra_Vector                        &x,
+                const std::string                          fileName,
+                const Teuchos::RCP<Teuchos::ParameterList> paraList
+              ) const;
+    
   private:
 
     int realIndex2complexIndex ( const int realIndex ) const;

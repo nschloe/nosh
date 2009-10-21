@@ -230,8 +230,8 @@ void IoXdmf::getHeavyData( const Teuchos::XMLObject &xmlFileObject,
 }
 // =============================================================================
 void IoXdmf::write( const Tpetra::MultiVector<double_complex,int> &psi,
-                    const Teuchos::ParameterList                  &problemParams,
-                    StaggeredGrid::StaggeredGrid                  &sGrid          )
+                    const Teuchos::RCP<Teuchos::ParameterList>    problemParams,
+                    const StaggeredGrid::StaggeredGrid            &sGrid          )
 {
 
   int    Nx = sGrid.getNx();
@@ -267,7 +267,7 @@ void IoXdmf::write( const Tpetra::MultiVector<double_complex,int> &psi,
   // is not universally recognized.
   Teuchos::XMLObject xmlParameterList("");
   xmlParameterList = Teuchos::XMLParameterListWriter::XMLParameterListWriter()
-                                                        .toXML( problemParams );
+                                                       .toXML( *problemParams );
   xdmfContainer.addChild(xmlParameterList);
 
   // add the domain item

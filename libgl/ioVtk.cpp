@@ -119,8 +119,8 @@ void IoVtk::read( Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > &psi,
 }
 // =============================================================================
 void IoVtk::write( const Tpetra::MultiVector<double_complex,int> &psi,
-                   const Teuchos::ParameterList                  &problemParams,
-                   StaggeredGrid                                 &sGrid          )
+                   const Teuchos::RCP<Teuchos::ParameterList> problemParams,
+                   const StaggeredGrid                           &sGrid   )
 {
   int           Nx = sGrid.getNx();
   double        h  = sGrid.getH();
@@ -135,29 +135,30 @@ void IoVtk::write( const Tpetra::MultiVector<double_complex,int> &psi,
 
   // write the VTK header
   vtkfile << "# vtk DataFile Version 2.0\n";
-  
+
+  if ( !problemParams.is_null() ) {
   // count the number of entries
   int numEntries = 0;
   Teuchos::map<std::string, Teuchos::ParameterEntry>::const_iterator i;
-  for (i = problemParams.begin(); i!=problemParams.end(); ++i)
+  for (i = problemParams->begin(); i!=problemParams->end(); ++i)
       numEntries++;
 
   // create the list of parameter values
   std::vector<std::string> paramStringList(numEntries);
   int k=0;
-  for (i = problemParams.begin(); i!=problemParams.end(); ++i) {
+  for (i = problemParams->begin(); i!=problemParams->end(); ++i) {
 
-    std::string paramName = problemParams.name(i);
-    if ( problemParams.isType<int>( paramName ) )
+    std::string paramName = problemParams->name(i);
+    if ( problemParams->isType<int>( paramName ) )
         paramStringList[k] = "int "
-                           + problemParams.name(i)
+                           + problemParams->name(i)
                            + "="
-                           + EpetraExt::toString( problemParams.get<int>(paramName) );
-    else if ( problemParams.isType<double>( paramName ) )
+                           + EpetraExt::toString( problemParams->get<int>(paramName) );
+    else if ( problemParams->isType<double>( paramName ) )
         paramStringList[k] = "double "
-                           + problemParams.name(i)
+                           + problemParams->name(i)
                            + "="
-                           + EpetraExt::toString( problemParams.get<double>(paramName) );
+                           + EpetraExt::toString( problemParams->get<double>(paramName) );
     else {
         std::string message = "Parameter is neither of type \"int\" not of type \"double\".";
         throw glException( "IoVtk::write",
@@ -170,6 +171,9 @@ void IoVtk::write( const Tpetra::MultiVector<double_complex,int> &psi,
   vtkfile << "PARAMETERS ";
   vtkfile << strJoin( paramStringList, " , " );
   vtkfile << " END\n";
+  } else {
+      vtkfile << "# # # # # # # # # # # # # #\n";
+  }
 
   // print the rest of the VTK header
   vtkfile << "ASCII\n"
@@ -193,7 +197,7 @@ void IoVtk::write( const Tpetra::MultiVector<double_complex,int> &psi,
       index[1] = j;
       for (int i=0; i<Nx+1; i++) {
           index[0] = i;
-          k = sGrid.i2k( index );
+          int k = sGrid.i2k( index );
           // The following ugly construction makes sure that values as 1.234e-46
           // are actually returned as 0.0. This is necessary as ParaView has
           // issues reading the previous.
@@ -217,7 +221,7 @@ void IoVtk::write( const Tpetra::MultiVector<double_complex,int> &psi,
       index[1] = j;
       for (int i=0; i<Nx+1; i++) {
           index[0] = i;
-          k = sGrid.i2k( index );
+          int k = sGrid.i2k( index );
           vtkfile << arg(psiView[k]) << "\n";
       }
   }

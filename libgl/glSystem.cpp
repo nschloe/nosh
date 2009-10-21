@@ -804,12 +804,13 @@ GlSystem::printSolution ( const Epetra_Vector &x,
   // -- An ugly thing here is that we have to explicitly mention the parameter
   // names. A solution could possibly be to include the parameter list in the
   // constructor of glSystem.
-  Teuchos::ParameterList tmpList;
-  tmpList.get ( "H0",         conParam );
-  tmpList.get ( "edgelength", Gl_.getStaggeredGrid()->getEdgeLength() );
-  tmpList.get ( "Nx",         Gl_.getStaggeredGrid()->getNx() );
-  tmpList.get ( "freeEnergy", energy);
-  tmpList.get ( "vorticity",  vorticity);
+  Teuchos::RCP<Teuchos::ParameterList> tmpList =
+                                  Teuchos::rcp ( new Teuchos::ParameterList() );
+  tmpList->get ( "H0",         conParam );
+  tmpList->get ( "edgelength", Gl_.getStaggeredGrid()->getEdgeLength() );
+  tmpList->get ( "Nx",         Gl_.getStaggeredGrid()->getNx() );
+  tmpList->get ( "freeEnergy", energy);
+  tmpList->get ( "vorticity",  vorticity);
 
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   // TODO:
@@ -822,14 +823,10 @@ GlSystem::printSolution ( const Epetra_Vector &x,
   std::string fileName = "continuationStep"
                          + stepString
                          + ".vtk";
-
-  IoVirtual* fileIo = IoFactory::createFileIo ( outputDir_+"/"+fileName );
-  fileIo->write ( psi,
-                  tmpList,
-                  * ( Gl_.getStaggeredGrid() ) );
-  delete fileIo;
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+  // actually print the state to the 
+  this->printState( x, fileName, tmpList );
 
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   // fill the continuation parameters file
@@ -865,7 +862,26 @@ GlSystem::printSolution ( const Epetra_Vector &x,
 
   contFileStream.close();
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+}
+// =============================================================================
+void
+GlSystem::printState( const Epetra_Vector          &x,
+                      const std::string            fileName,
+                      const Teuchos::RCP<Teuchos::ParameterList> paraList
+                    ) const
+{
+  // define vector
+  // @TODO: Replace this by Tpetra::Vector as soon as upstream is ready.
+  Tpetra::MultiVector<double_complex,int>  psi(ComplexMap_,1,true);
+  // convert from x to psi
+  real2complex ( x, psi );
 
+  IoVirtual* fileIo = IoFactory::createFileIo ( outputDir_+"/"+fileName );
+  
+  fileIo->write ( psi,
+                  paraList,
+                  * ( Gl_.getStaggeredGrid() ) );
+  delete fileIo;
 }
 // =============================================================================
 // function used by LOCA
@@ -877,10 +893,9 @@ GlSystem::setOutputDir ( const string &directory )
 // =============================================================================
 void
 GlSystem::solutionToFile ( const Epetra_Vector    &x,
-                           Teuchos::ParameterList &problemParams,
+                           Teuchos::RCP<Teuchos::ParameterList> problemParams,
                            const std::string      &fileName )
 {
-
   // define vector
   // @TODO: Replace this by Tpetra::Vector as soon as upstream is ready.
   Tpetra::MultiVector<double_complex,int> psi(ComplexMap_,1,true);
@@ -889,13 +904,12 @@ GlSystem::solutionToFile ( const Epetra_Vector    &x,
   real2complex ( x, psi );
 
   // set extra parameters
-  problemParams.set( "freeEnergy", Gl_.freeEnergy( psi ) );
-  problemParams.set( "vorticity" , Gl_.getVorticity( psi ) );
+  problemParams->set( "freeEnergy", Gl_.freeEnergy( psi ) );
+  problemParams->set( "vorticity" , Gl_.getVorticity( psi ) );
 
   IoVirtual* fileIo = IoFactory::createFileIo ( fileName );
   fileIo->write ( psi,
                   problemParams,
                   * ( Gl_.getStaggeredGrid() ) );
-
 }
 // =============================================================================

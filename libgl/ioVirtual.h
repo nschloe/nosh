@@ -36,8 +36,8 @@ class IoVirtual
     //! parameter list to a given file.
     virtual void
     write ( const Tpetra::MultiVector<double_complex,int> &psi,
-            const Teuchos::ParameterList                  &problemParams,
-            StaggeredGrid                                 &sGrid
+            const Teuchos::RCP<Teuchos::ParameterList>    problemParams,
+            const StaggeredGrid                           &sGrid
           ) = 0; // pure virtual
 
   protected:

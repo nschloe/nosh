@@ -25,23 +25,19 @@ class GinzburgLandau
 {
   public:
 
-     /*! Default constructor.
-         @param nx Number of boxes in each spatial dimension.
-         @param edgelength Edge length of the square domain.
-         @param h0 (Initial) external magnetic field strength. */
-     GinzburgLandau( int nx,
-                     double edgelength,
-                     double h0,
-                     Teuchos::RCP<GlBoundaryConditionsVirtual> bc );
+     /*! Default constructor.*/
+     GinzburgLandau ( Teuchos::RCP<StaggeredGrid>               sGrid,
+                      Teuchos::RCP<GlBoundaryConditionsVirtual> bc   );
 
      /*! Destructor. */
      ~GinzburgLandau();
 
      /*! Returns a pointer to the \f$A\f$ grid in use.*/
-     StaggeredGrid::StaggeredGrid* getStaggeredGrid();
+     Teuchos::RCP<StaggeredGrid>
+     getStaggeredGrid() const;
      
      Tpetra::MultiVector<double_complex,int>
-     computeGlVector( Tpetra::MultiVector<double_complex,int> psi );
+     computeGlVector( const Tpetra::MultiVector<double_complex,int> psi ) const;
 
      /*! Returns the coefficients of the jacobian system associated with the
          Ginzburg--Landau equations. */
@@ -51,13 +47,15 @@ class GinzburgLandau
                      std::vector<int>                              &columnIndicesPsi,
                      std::vector<double_complex>                   &valuesPsi,
                      std::vector<int>                              &columnIndicesPsiConj,
-		     std::vector<double_complex>                   &valuesPsiConj );
+		     std::vector<double_complex>                   &valuesPsiConj
+                   ) const;
 
      /*! Get sparsity pattern of the jacobian system. */
      void
      getJacobianRowSparsity( int              eqnum,
                              std::vector<int> &columnIndicesPsi,
-                             std::vector<int> &columnIndicesPsiConj );
+                             std::vector<int> &columnIndicesPsiConj
+                           ) const;
 
      /*! Calcuate the grid approximation of the Gibbs free energy
        \f[
@@ -65,11 +63,11 @@ class GinzburgLandau
        \f]
        of a given state \f$\psi\f$. */
      double
-     freeEnergy ( const Tpetra::MultiVector<double_complex,int> &psi );
+     freeEnergy ( const Tpetra::MultiVector<double_complex,int> &psi ) const;
      
      /*! Calculate the vorticity of the current solution. */
      int
-     getVorticity ( const Tpetra::MultiVector<double_complex,int> &psi );
+     getVorticity ( const Tpetra::MultiVector<double_complex,int> &psi ) const;
       
   private:
 
@@ -78,7 +76,8 @@ class GinzburgLandau
          @param psi   Current order parameter \f$\psi\f$. */
      double_complex
      computeGl( const int                                     eqnum,
-                const Tpetra::MultiVector<double_complex,int> &psi   );
+                const Tpetra::MultiVector<double_complex,int> &psi
+              ) const;
     
       //! Equation type enumerator.
       /*! Semantically separates the different types of conditions which must
@@ -90,11 +89,12 @@ class GinzburgLandau
         PHASE_CONDITION
       };
 
-      StaggeredGrid::StaggeredGrid sGrid;
+      const Teuchos::RCP<StaggeredGrid> sGrid_;
 
       void getEquationType ( const int           eqnum,
                              equationType        &eqType,
-                             int                 &eqIndex );
+                             int                 &eqIndex
+                           ) const;
       
       /*! Have \c boundaryConditions_ declared as pointer as its class
           \c GlBoundaryConditionsVirtual is only available via a forward
@@ -109,7 +109,8 @@ class GinzburgLandau
                                 std::vector<int>                              &columnIndicesPsi,
                                 std::vector<double_complex>                   &valuesPsi,
                                 std::vector<int>                              &columnIndicesPsiConj,
-                                std::vector<double_complex>                   &valuesPsiConj );
+                                std::vector<double_complex>                   &valuesPsiConj
+                              ) const;
 
 };
 #endif // GINZBURGLANDAU_H

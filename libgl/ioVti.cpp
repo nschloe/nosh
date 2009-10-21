@@ -76,8 +76,8 @@ void IoVti::read( Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > &psi,
 }
 // =============================================================================
 void IoVti::write( const Tpetra::MultiVector<double_complex,int> &psi,
-                   const Teuchos::ParameterList                  &problemParams,
-                   StaggeredGrid                                 &sGrid          )
+                   const Teuchos::RCP<Teuchos::ParameterList>    problemParams,
+                   const StaggeredGrid                           &sGrid          )
 {
   int    Nx = sGrid.getNx();
   int    k;
@@ -136,7 +136,7 @@ void IoVti::write( const Tpetra::MultiVector<double_complex,int> &psi,
   // append the problem parameters in XML form to the file
   Teuchos::XMLObject xmlParameterList("");
   xmlParameterList = Teuchos::XMLParameterListWriter::XMLParameterListWriter()
-                                                        .toXML( problemParams );
+                                                       .toXML( *problemParams );
 
   // define top level object
   Teuchos::XMLObject vtuxml("VTKFile");

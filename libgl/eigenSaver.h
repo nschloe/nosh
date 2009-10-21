@@ -5,6 +5,8 @@
 
 #include <Teuchos_ParameterList.hpp>
 
+#include "glSystem.h"
+
 class EigenSaver : public LOCA::SaveEigenData::AbstractStrategy
 {
 
@@ -16,7 +18,10 @@ class EigenSaver : public LOCA::SaveEigenData::AbstractStrategy
 //      const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
 //      const Teuchos::RCP<Teuchos::ParameterList>& eigenParams      );
 
-   EigenSaver( const std::string fileName );
+   EigenSaver( const Teuchos::RCP<LOCA::GlobalData>& globalData,
+               const std::string fileName,
+               const Teuchos::RCP<GlSystem> glSys
+             );
 
    virtual ~EigenSaver();
 
@@ -28,5 +33,11 @@ class EigenSaver : public LOCA::SaveEigenData::AbstractStrategy
 
   private:
     std::string fileName_;
+    Teuchos::RCP<GlSystem> glSys_;
+    Teuchos::RCP<LOCA::GlobalData> globalData_;
+
+    void
+    saveEigenstate ( const std::string                         fileName,
+                     const Teuchos::RCP<NOX::Abstract::Vector> &evec_r  );
 
 };

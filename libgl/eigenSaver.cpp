@@ -4,12 +4,18 @@
 
 #include <NOX_Abstract_Group.H>
 #include <NOX_Abstract_MultiVector.H>
+#include <NOX_Utils.H>
+#include <LOCA_GlobalData.H>
 
 #include <EpetraExt_Utils.h>
 
 // =============================================================================
-EigenSaver::EigenSaver( const std::string fileName ) :
-  fileName_(fileName)
+EigenSaver::EigenSaver(const Teuchos::RCP<LOCA::GlobalData>& globalData,
+		       const std::string fileName,
+                       const Teuchos::RCP<GlSystem> glSys ) :
+  fileName_(fileName),
+  globalData_(globalData),
+  glSys_(glSys)
 {
 };
 // =============================================================================
@@ -23,6 +29,13 @@ EigenSaver::save ( Teuchos::RCP<std::vector<double> >       &evals_r,
                    Teuchos::RCP<NOX::Abstract::MultiVector> &evecs_r,
                    Teuchos::RCP<NOX::Abstract::MultiVector> &evecs_i  )
 {
+
+// std::cout << "Hi before" << std::endl;
+// std::cout << globalData_->locaUtils->StepperParameters;
+// globalData_->locaUtils->print(std::cout);
+// std::cout << "Hi after" << std::endl;
+//globalData_->locaUtils();//->StepperParameters();
+
   // Keep track of how often this method is called.
   // This is actually somewhat ugly as it assumes that this number coincides
   // with the number of steps in the continuation.
@@ -51,9 +64,25 @@ EigenSaver::save ( Teuchos::RCP<std::vector<double> >       &evals_r,
   }
 
   int numUnstableEigenvalues = 0;
-  for (int k=0; k<numEigenValues; k++ )
-      if ( (*evals_r)[k]>0.0 )
+  for (int k=0; k<numEigenValues; k++ ) {
+      if ( (*evals_r)[k]>0.0 ) {
           numUnstableEigenvalues++;
+          std::string eigenStateFileName = "step-"
+                                         + EpetraExt::toString(step)
+                                         + "eigenfunction-"
+                                         + EpetraExt::toString(numUnstableEigenvalues)
+                                         + ".vtk";
+
+          Teuchos::RCP<NOX::Abstract::Vector> abVec = Teuchos::rcpFromRef( (*evecs_r)[k] );
+          Teuchos::RCP<NOX::Epetra::Vector> myVec = Teuchos::rcp_dynamic_cast<NOX::Epetra::Vector>( abVec,true );
+
+          Teuchos::RCP<Teuchos::ParameterList> tmpList;
+          glSys_->printState( myVec->getEpetraVector(),
+                              eigenStateFileName,
+                              tmpList );
+
+  }
+  }
 
   eigenFileStream << step << "\t";
   eigenFileStream << numUnstableEigenvalues << "\t";
@@ -74,3 +103,28 @@ EigenSaver::save ( Teuchos::RCP<std::vector<double> >       &evals_r,
   return NOX::Abstract::Group::Ok;
 }
 // =============================================================================
+// void
+// EigenSaver::saveEigenstate ( const std::string                         fileName,
+//                              const Teuchos::RCP<NOX::Abstract::Vector> &evec_r  )
+// {
+// //   conParam = 0.0;
+// //   glSys->GlSystem::printSolution ( evec_r, conParam );
+// 
+//   // create complex vector
+//   Teuchos::RCP<const Tpetra::Map<int> > ComplexMap = glSys_->getComplexMap();
+//   Tpetra::MultiVector<double_complex,int>  psi(ComplexMap,1,true);
+// 
+//   glSys->real2complex ( evec_r, psi );
+// 
+//   // create parameter list to be written to the file
+//   Teuchos::ParameterList tmpList;
+// //   tmpList.get ( "edgelength", glSys_->getStaggeredGrid()->getEdgeLength() );
+// //   tmpList.get ( "Nx",         Gl_.getStaggeredGrid()->getNx() );
+// 
+//   IoVirtual* fileIo = IoFactory::createFileIo ( outputDir_+"/"+fileName );
+//   fileIo->write ( psi,
+//                   tmpList,
+//                   * ( Gl_.getStaggeredGrid() ) );
+// 
+// }
+// // =============================================================================
