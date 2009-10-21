@@ -221,7 +221,7 @@ int main(int argc, char *argv[])
 //         Teuchos::rcp(new LOCA::Parameter::SublistParser(globalData));
 //    Teuchos::RCP<Teuchos::ParameterList> aListPtr = Teuchos::rcp(&aList,false);
 
-    std::string fileName = "data/eigenvalues.dat";
+    std::string fileName = outputdir + "/eigenvalues.dat";
     Teuchos::RCP<EigenSaver> yourGreatSaver =
                            Teuchos::rcp<EigenSaver>( new EigenSaver(fileName) );
 
