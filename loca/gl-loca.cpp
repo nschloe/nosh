@@ -60,6 +60,9 @@ int main(int argc, char *argv[])
   bool reverse=false;
   My_CLP.setOption("reverse","forward",&reverse, "Orientation of the continuation in the first step" );
 
+  bool computeEigenvalues;
+  My_CLP.setOption("eigenvalues","no-eigenvalues",&computeEigenvalues, "Compute the eigenvalues of the Jacobian on the fly" );
+
   std::string filename = "";
   My_CLP.setOption("input-guess", &filename, "File name with initial guess");
 
@@ -118,7 +121,7 @@ int main(int argc, char *argv[])
       // set the default value
       int    Nx         = 50;
       double edgelength = 10.0;
-      double H0         = 0.4;
+      double H0         = 0.0;
       std::cout << "Using the standard parameters \n"
                 << "    Nx         = " << Nx << ",\n"
                 << "    edgelength = " << edgelength << ",\n"
@@ -322,6 +325,7 @@ int main(int argc, char *argv[])
 
   // ---------------------------------------------------------------------------
 #ifdef HAVE_LOCA_ANASAZI
+  if (computeEigenvalues) {
     // Create Anasazi Eigensolver sublist
     stepperList.set("Compute Eigenvalues",true);
     Teuchos::ParameterList& aList = stepperList.sublist("Eigensolver");
@@ -348,10 +352,11 @@ int main(int argc, char *argv[])
     Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> myGreatSaver =
                                                                  yourGreatSaver;
     aList.set("MySave",myGreatSaver);
-
+  }
 #else
     stepperList.set("Compute Eigenvalues",false);
 #endif
+  
   // ---------------------------------------------------------------------------
 
   // ---------------------------------------------------------------------------
