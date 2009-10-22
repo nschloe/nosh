@@ -34,7 +34,7 @@ IoVtk::~IoVtk()
 // =============================================================================
 void IoVtk::read( Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > &psi,
                   const Teuchos::RCP<const Teuchos::Comm<int> >          comm,
-                  Teuchos::ParameterList                                 *problemParams )
+                  Teuchos::RCP<Teuchos::ParameterList>                   problemParams )
 {
   // call ParaCont for parameters
   ReadParamsFromVtkFile( fileName, *problemParams );

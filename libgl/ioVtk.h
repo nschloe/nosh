@@ -29,7 +29,7 @@ class IoVtk: public IoVirtual
     virtual void
     read ( Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > &psi,
            const Teuchos::RCP<const Teuchos::Comm<int> >          comm, // TODO: remove this
-           Teuchos::ParameterList                                 *problemParams
+           Teuchos::RCP<Teuchos::ParameterList>                   problemParams
          );
 
     //! Writes the  order parameter \f$\psi\f$ and the problem parameter list

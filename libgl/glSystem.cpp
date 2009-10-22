@@ -106,8 +106,9 @@ GlSystem::GlSystem ( GinzburgLandau::GinzburgLandau                             
   initialSolution_ = Teuchos::rcp ( new Epetra_Vector ( *RealMap_ ) );
   if ( psi.is_null() )   // null pointer
     {
-      // define map for psi
-      initialSolution_->PutScalar ( 0.5 ); // Default initialization
+      initialSolution_->PutScalar ( 0.0 ); // Default initialization
+      for (int k=0; k<NumComplexUnknowns_; k++ )
+          (*initialSolution_)[k] = 1.0;
     }
   else
     {
@@ -211,6 +212,12 @@ GlSystem::makeRealMap( const Teuchos::RCP<const Tpetra::Map<int> >  complexMap )
                                           *EComm_                            ) );
 
   return;
+}
+// =============================================================================
+int
+GlSystem::getNumUnknowns() const
+{
+    return NumRealUnknowns_;
 }
 // =============================================================================
 bool

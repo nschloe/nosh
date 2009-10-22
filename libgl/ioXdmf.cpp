@@ -36,7 +36,7 @@ IoXdmf::~IoXdmf()
 // =============================================================================
 void IoXdmf::read( Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > &psi,
                    const Teuchos::RCP<const Teuchos::Comm<int> >          comm, // TODO: remove this
-                   Teuchos::ParameterList                                 *problemParams )
+                   Teuchos::RCP<Teuchos::ParameterList>                   problemParams )
 {
 
   // Convert the file to a string, such that we can discard the headers and pass

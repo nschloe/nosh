@@ -21,7 +21,7 @@ IoVti::~IoVti()
 // =============================================================================
 void IoVti::read( Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > &psi,
                   const Teuchos::RCP<const Teuchos::Comm<int> >          comm, // TODO: remove this
-                  Teuchos::ParameterList                                 *problemParams )
+                  Teuchos::RCP<Teuchos::ParameterList>                   problemParams )
 {
 
   throw glException( "IoVti::StateFileReader",

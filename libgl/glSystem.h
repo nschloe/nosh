@@ -96,6 +96,9 @@ class GlSystem:
                           Teuchos::RCP<Teuchos::ParameterList> problemParams,
                           const std::string      &fileName );
 
+    int
+    getNumUnknowns() const;
+
     void
     printState( const Epetra_Vector                        &x,
                 const std::string                          fileName,
