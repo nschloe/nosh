@@ -22,11 +22,13 @@
 #include <AnasaziBasicEigenproblem.hpp>
 #include <AnasaziBasicOutputManager.hpp>
 #include <AnasaziBlockDavidsonSolMgr.hpp>
-#include "AnasaziBlockKrylovSchurSolMgr.hpp"
-#include "AnasaziBasicEigenproblem.hpp"
-#include "AnasaziConfigDefs.hpp"
-#include "AnasaziEpetraAdapter.hpp"
-#include "AnasaziBasicSort.hpp"
+#include <AnasaziBlockKrylovSchurSolMgr.hpp>
+#include <AnasaziLOBPCGSolMgr.hpp>
+#include <AnasaziRTRSolMgr.hpp>
+#include <AnasaziBasicEigenproblem.hpp>
+#include <AnasaziConfigDefs.hpp>
+#include <AnasaziEpetraAdapter.hpp>
+#include <AnasaziBasicSort.hpp>
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
@@ -111,7 +113,8 @@ int main ( int argc, char *argv[] )
 
 
   // ---------------------------------------------------------------------------
-  Teuchos::ParameterList problemParameters;
+  Teuchos::RCP<Teuchos::ParameterList> problemParameters = 
+                                  Teuchos::rcp( new  Teuchos::ParameterList() );
   // define a new dummy psiLexicographic vector, to be adapted instantly
   Teuchos::RCP<Tpetra::Map<int> > dummyMap =
     Teuchos::rcp ( new Tpetra::Map<int> ( 1, 0, Comm ) );
@@ -129,7 +132,7 @@ int main ( int argc, char *argv[] )
         {
           fileIo->read ( psiLexicographic,
 			 Comm,
-                         &problemParameters );
+                         problemParameters );
         }
       catch ( const std::exception &e )
         {
@@ -147,9 +150,9 @@ int main ( int argc, char *argv[] )
                 << "    Nx         = " << Nx << ",\n"
                 << "    edgelength = " << edgelength << ",\n"
                 << "    H0         = " << H0 << "." << std::endl;
-      problemParameters.set ( "Nx"        , Nx );
-      problemParameters.set ( "edgelength", edgelength );
-      problemParameters.set ( "H0"        , H0 );
+      problemParameters->set ( "Nx"        , Nx );
+      problemParameters->set ( "edgelength", edgelength );
+      problemParameters->set ( "H0"        , H0 );
 
       int NumGlobalUnknowns = ( Nx+1 ) * ( Nx+1 );
       Teuchos::RCP<Tpetra::Map<int> > standardMap
@@ -168,11 +171,17 @@ int main ( int argc, char *argv[] )
   Teuchos::RCP<GlBoundaryConditionsVirtual> boundaryConditions =
                              Teuchos::rcp ( new GlBoundaryConditionsCentral() );
 
-  GinzburgLandau glProblem = GinzburgLandau ( problemParameters.get<int> ( "Nx" ),
-                                              problemParameters.get<double> ( "edgelength" ),
-                                              problemParameters.get<double> ( "H0" ),
-                                              boundaryConditions
-                                            );
+  Teuchos::RCP<StaggeredGrid> sGrid =
+                           Teuchos::rcp( new StaggeredGrid( problemParameters->get<int>("Nx"),
+                                                            problemParameters->get<double>("edgelength"),
+                                                            problemParameters->get<double>("H0")
+                                                          )
+                                       );
+
+  GinzburgLandau glProblem = GinzburgLandau( sGrid,
+                                             boundaryConditions
+                                           );
+
 
   // create Epetra communicator
 #ifdef HAVE_MPI
@@ -302,7 +311,7 @@ int main ( int argc, char *argv[] )
     {
       Teuchos::RCP<NOX::Abstract::PrePostOperator> ppo =
         Teuchos::rcp ( new GlPrePostOperator ( glsystem,
-                                               problemParameters ) );
+                                               *problemParameters ) );
       nlParams.sublist ( "Solver Options" )
       .set ( "User Defined Pre/Post Operator", ppo );
     }
@@ -438,18 +447,18 @@ int main ( int argc, char *argv[] )
       // Start the block Arnoldi iteration
       // - - - - - - - - - - - - - - - - -
       // Variables used for the Block Krylov Schur Method
-      int nev = 5;
-      int blockSize = 10;
-      int numBlocks = 10;
-      int maxRestarts = 25;
-      double tol = 1e-5;
+      int nev = 10;
+      int blockSize = 1;
+      int numBlocks = 30;
+      int maxRestarts = 250;
+      double tol = 1e-10;
 
       // Create a sort manager to pass into the block Krylov-Schur solver manager
       // -->  Make sure the reference-counted pointer is of type Anasazi::SortManager<>
       // -->  The block Krylov-Schur solver manager uses Anasazi::BasicSort<> by default,
       //      so you can also pass in the parameter "Which", instead of a sort manager.
       Teuchos::RCP<Anasazi::SortManager<MagnitudeType> > MySort =
-        Teuchos::rcp ( new Anasazi::BasicSort<MagnitudeType> ( which ) );
+               Teuchos::rcp ( new Anasazi::BasicSort<MagnitudeType> ( which ) );
 
       // Set verbosity level
       int verbosity = Anasazi::Errors + Anasazi::Warnings;
@@ -472,7 +481,8 @@ int main ( int argc, char *argv[] )
 
       // Create an Epetra_MultiVector for an initial vector to start the solver.
       // Note:  This needs to have the same number of columns as the blocksize.
-      Teuchos::RCP<Epetra_MultiVector> ivec = Teuchos::rcp ( new Epetra_MultiVector ( Map, blockSize ) );
+      Teuchos::RCP<Epetra_MultiVector> ivec =
+                     Teuchos::rcp ( new Epetra_MultiVector ( Map, blockSize ) );
       ivec->Random();
 
       // Create the eigenproblem.
@@ -497,17 +507,19 @@ int main ( int argc, char *argv[] )
         }
 
       // Initialize the Block Arnoldi solver
-      Anasazi::BlockKrylovSchurSolMgr<double, MV, OP> MySolverMgr ( MyProblem, MyPL );
+//       Anasazi::BlockDavidsonSolMgr<double, MV, OP> 
+//       Anasazi::LOBPCGSolMgr<double, MV, OP> 
+//       Anasazi::RTRSolMgr<double, MV, OP> 
+      Anasazi::BlockKrylovSchurSolMgr<double, MV, OP> 
+                                                MySolverMgr ( MyProblem, MyPL );
 
       // Solve the problem to the specified tolerances or length
       Anasazi::ReturnType returnCode = MySolverMgr.solve();
       if ( returnCode != Anasazi::Converged && MyPID==0 && verbose )
-        {
-          cout << "Anasazi::EigensolverMgr::solve() returned unconverged." << endl;
-        }
+        cout << "Anasazi::EigensolverMgr::solve() returned unconverged." << endl;
 
       // Get the Ritz values from the eigensolver
-      std::vector<Anasazi::Value<double> > ritzValues = MySolverMgr.getRitzValues();
+//       std::vector<Anasazi::Value<double> > ritzValues = MySolverMgr.getRitzValues();
 
 //       // Output computed eigenvalues and their direct residuals
 //       if (MyPID==0) {
@@ -564,9 +576,10 @@ int main ( int argc, char *argv[] )
   // ---------------------------------------------------------------------------
   // print the solution to a file
   //problemParameters.set( "FE", glsystem.freeEnergy
+  std::string solutionFile = "data/solution.vtk";
   glsystem->solutionToFile ( finalSolution,
                              problemParameters,
-                             "data/solution.vtk" );
+                             solutionFile );
   // ---------------------------------------------------------------------------
 
 
