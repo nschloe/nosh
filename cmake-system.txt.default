@@ -1,40 +1,42 @@
-SET( MPI_COMPILED FALSE )
+# all what is contained in this file should be set by Trilinos at compile/installation time
+SET( MPI_COMPILED TRUE )
 
-SET( TRILINOS_PARMETIS FALSE )
-SET( TRILINOS_METIS FALSE )
-SET( TRILINOS_SUPERLUDIST FALSE )
+SET( PARACONT_DIR /home/nschloe/svn/paracont/trunk/ )
 
-SET( PARACONT_DIR /home/nico/ua/svn/paracont/trunk/ )
-#/home/nschloe/svn/paracont/trunk/
+SET( BOOST_ROOT /opt/boost/1.39.0/include/boost-1_39 )
 
 # set the SuperLU directory if the libs are not in standard directories
+SET( TRILINOS_SUPERLU TRUE )
 SET( SUPERLU_LIBNAME superlu_3.0 )
-SET( SUPERLU_DIR /usr/local/superlu/3.0 )
+SET( SUPERLU_DIR /opt/superlu-3.0/lib )
 
 # set the SuperLUDist directory if the libs are not in standard directories
+SET( TRILINOS_SUPERLUDIST TRUE )
 SET( SUPERLUDIST_LIBNAME superlu_dist_2.3 )
 SET( SUPERLUDIST_DIR /opt/superlu-dist-2.3/lib )
 
 # set the ParMETIS directory if the libs are not in standard directories
+SET( TRILINOS_PARMETIS TRUE )
 SET( PARMETIS_LIBNAME parmetis )
 SET( PARMETIS_DIR /opt/parmetis-3.1.1/lib )
 
 # set the METIS directory if the libs are not in standard directories
+SET( TRILINOS_METIS TRUE )
 SET( METIS_LIBNAME metis )
 SET( METIS_DIR /opt/parmetis-3.1.1/lib )
 
 # set the BLAS directory if the libs are not in standard directories
 SET( BLAS_LIBNAME goto-blas-gfortran )
-SET( BLAS_DIR /usr/local/lib )
+SET( BLAS_DIR /opt/goto-blas-1.26/lib/ )
 
 # set the LAPACK directory if the libs are not in standard directories
 SET( LAPACK_LIBNAME lapack-gfortran )
-SET( LAPACK_DIR /usr/local/lib )
+SET( LAPACK_DIR /opt/lapack-3.2.1/lib )
 
 # set the HDF5 directory if the libs are not in standard directories
 SET( HDF5_LIBNAME hdf5 )
-SET( HDF5_DIR /opt/hdf5-1.6.9/lib/ )
+SET( HDF5_DIR /opt/hdf5-1.6.9 )
 
 # set the gfortran directory if the libs are not in standard directories
 SET( GFORTRAN_LIBNAME gfortran )
-SET( GFORTRAN_DIR /usr/lib/gcc/x86_64-pc-linux-gnu/4.3.4 )
+SET( GFORTRAN_DIR /opt/gcc-4.3.4/lib64 )
