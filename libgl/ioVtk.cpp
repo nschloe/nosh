@@ -37,7 +37,7 @@ void IoVtk::read( Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > &psi,
                   Teuchos::RCP<Teuchos::ParameterList>                   problemParams )
 {
   // call ParaCont for parameters
-  ReadParamsFromVtkFile( fileName, *problemParams );
+  ReadParamsFromVtkFile( fileName_, *problemParams );
   // ---------------------------------------------------------------------------
   // read the vector values
   // TODO: Get rid of this.
@@ -57,7 +57,7 @@ void IoVtk::read( Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > &psi,
   Teuchos::RCP<Epetra_MultiVector> tmp
                          = Teuchos::rcp(new Epetra_MultiVector(StandardMap,2) );
 
-  ReadScalarsFromVtkFile( fileName, tmp );
+  ReadScalarsFromVtkFile( fileName_, tmp );
 
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   if ( !psi.is_null() ) {
@@ -114,13 +114,15 @@ void IoVtk::read( Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > &psi,
 //   Epetra_Map* StandardMap = new Epetra_Map( NumGlobalElements, 0, Comm );
 // 
 //   Teuchos::RCP<Epetra_MultiVector> scalars = Teuchos::RCP(Epetra_MultiVector(StandardMap,1));
-//   ReadScalarsFromVtkFile( fileName, scalars );
+//   ReadScalarsFromVtkFile( fileName_, scalars );
 
 }
 // =============================================================================
-void IoVtk::write( const Tpetra::MultiVector<double_complex,int> &psi,
-                   const Teuchos::RCP<Teuchos::ParameterList> problemParams,
-                   const StaggeredGrid                           &sGrid   )
+void
+IoVtk::write( const Tpetra::MultiVector<double_complex,int> &psi,
+              const Teuchos::RCP<Teuchos::ParameterList>    problemParams,
+              const StaggeredGrid                           &sGrid
+            )
 {
   int           Nx = sGrid.getNx();
   double        h  = sGrid.getH();
@@ -131,49 +133,15 @@ void IoVtk::write( const Tpetra::MultiVector<double_complex,int> &psi,
   vtkfile.precision(15);
 
   // open the file
-  vtkfile.open( fileName.c_str() );
+  vtkfile.open( fileName_.c_str() );
 
   // write the VTK header
   vtkfile << "# vtk DataFile Version 2.0\n";
 
-  if ( !problemParams.is_null() ) {
-  // count the number of entries
-  int numEntries = 0;
-  Teuchos::map<std::string, Teuchos::ParameterEntry>::const_iterator i;
-  for (i = problemParams->begin(); i!=problemParams->end(); ++i)
-      numEntries++;
-
-  // create the list of parameter values
-  std::vector<std::string> paramStringList(numEntries);
-  int k=0;
-  for (i = problemParams->begin(); i!=problemParams->end(); ++i) {
-
-    std::string paramName = problemParams->name(i);
-    if ( problemParams->isType<int>( paramName ) )
-        paramStringList[k] = "int "
-                           + problemParams->name(i)
-                           + "="
-                           + EpetraExt::toString( problemParams->get<int>(paramName) );
-    else if ( problemParams->isType<double>( paramName ) )
-        paramStringList[k] = "double "
-                           + problemParams->name(i)
-                           + "="
-                           + EpetraExt::toString( problemParams->get<double>(paramName) );
-    else {
-        std::string message = "Parameter is neither of type \"int\" not of type \"double\".";
-        throw glException( "IoVtk::write",
-                           message );
-    }
-    k++;
-  }
-
-  // print parameter list; join the entries with a comma
-  vtkfile << "PARAMETERS ";
-  vtkfile << strJoin( paramStringList, " , " );
-  vtkfile << " END\n";
-  } else {
-      vtkfile << "# # # # # # # # # # # # # #\n";
-  }
+  if ( !problemParams.is_null() )
+      writeParameterList( problemParams, vtkfile );
+  else
+      writeDummyParameterList( vtkfile );
 
   // print the rest of the VTK header
   vtkfile << "ASCII\n"
@@ -183,56 +151,16 @@ void IoVtk::write( const Tpetra::MultiVector<double_complex,int> &psi,
           << "SPACING " << h << " " << h << " " << 0.0 << "\n"
           << "POINT_DATA " << sGrid.getNumComplexUnknowns() << "\n";
 
-  // Note that, when writing the data, the values of psi are assumed to be
-  // given in lexicographic ordering.
-
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  // write abs(psi)
-  vtkfile << "SCALARS abs(psi) float\n"
-          << "LOOKUP_TABLE default\n";
-
-  Teuchos::ArrayRCP<const double_complex> psiView = psi.getVector(0)->get1dView();
-  Teuchos::Array<int> index(2);
-  for (int j=0; j<Nx+1; j++) {
-      index[1] = j;
-      for (int i=0; i<Nx+1; i++) {
-          index[0] = i;
-          int k = sGrid.i2k( index );
-          // The following ugly construction makes sure that values as 1.234e-46
-          // are actually returned as 0.0. This is necessary as ParaView has
-          // issues reading the previous.
-          // TODO: Handle this in a more generic fashion.
-          double val = abs(psiView[k]);
-          if (val<1.0e-25) {
-              vtkfile << 0.0 << "\n";
-          } else {
-              vtkfile << abs(psiView[k]) << "\n";
-          }
-      }
-  }
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  // write arg(psi)
-  vtkfile << "SCALARS arg(psi) float\n"
-          << "LOOKUP_TABLE default\n";
-  for (int j=0; j<Nx+1; j++) {
-      index[1] = j;
-      for (int i=0; i<Nx+1; i++) {
-          index[0] = i;
-          int k = sGrid.i2k( index );
-          vtkfile << arg(psiView[k]) << "\n";
-      }
-  }
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  // write the hard data
+  writeScalars( psi, sGrid, vtkfile );
 
   // close the file
   vtkfile.close();
 }
 // =============================================================================
-std::string IoVtk::strJoin( const std::vector<std::string> & vec,
-                            const std::string              & sep  )
+std::string
+IoVtk::strJoin( const std::vector<std::string> & vec,
+                const std::string              & sep  )
 {
         if(vec.size()==0)
                 return "";
@@ -247,5 +175,107 @@ std::string IoVtk::strJoin( const std::vector<std::string> & vec,
                 tmp=tmp+sep+vec[i];
 
         return tmp;
+}
+// =============================================================================
+void
+IoVtk::writeParameterList( const Teuchos::RCP<const Teuchos::ParameterList> & pList,
+                           std::ofstream                                    & ioStream  )
+{
+  // count the number of list entries
+  int numEntries = 0;
+  Teuchos::map<std::string, Teuchos::ParameterEntry>::const_iterator i;
+  for (i = pList->begin(); i!=pList->end(); ++i)
+      numEntries++;
+
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  // create the list of parameter values
+  std::vector<std::string> paramStringList(numEntries);
+  int k=0;
+  for (i = pList->begin(); i!=pList->end(); ++i) {
+    std::string paramName = pList->name(i);
+    if ( pList->isType<int>( paramName ) )
+        paramStringList[k] = "int "
+                           + pList->name(i)
+                           + "="
+                           + EpetraExt::toString( pList->get<int>(paramName) );
+    else if ( pList->isType<double>( paramName ) )
+        paramStringList[k] = "double "
+                           + pList->name(i)
+                           + "="
+                           + EpetraExt::toString( pList->get<double>(paramName) );
+    else {
+        std::string message =
+                 "Parameter is neither of type \"int\" not of type \"double\".";
+        throw glException( "IoVtk::writeParameterList",
+                           message );
+    }
+    k++;
+  }
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+  ioStream << "PARAMETERS ";
+  ioStream << strJoin( paramStringList, " , " );
+  ioStream << " END\n";
+}
+// =============================================================================
+void
+IoVtk::writeDummyParameterList( std::ofstream & ioStream  )
+{
+  ioStream << "# # # # # # # # # # # # # #\n";
+}
+// =============================================================================
+void
+IoVtk::writeScalars( const Tpetra::MultiVector<double_complex,int> & psi,
+                     const StaggeredGrid                           & sGrid,
+                           std::ofstream                           & oStream
+                   ) const
+{
+
+  int Nx = sGrid.getNx();
+
+  // Note that, when writing the data, the values of psi are assumed to be
+  // given in lexicographic ordering.
+
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  // write abs(psi)
+  oStream << "SCALARS abs(psi) float\n"
+          << "LOOKUP_TABLE default\n";
+
+  Teuchos::ArrayRCP<const double_complex> psiView =
+                                                  psi.getVector(0)->get1dView();
+  Teuchos::Array<int> index(2);
+  for (int j=0; j<Nx+1; j++) {
+      index[1] = j;
+      for (int i=0; i<Nx+1; i++) {
+          index[0] = i;
+          int k = sGrid.i2k( index );
+          // The following ugly construction makes sure that values as 1.234e-46
+          // are actually returned as 0.0. This is necessary as ParaView has
+          // issues reading the previous.
+          // TODO: Handle this in a more generic fashion.
+          double val = abs(psiView[k]);
+          if (val<1.0e-25) {
+              oStream << 0.0 << "\n";
+          } else {
+              oStream << abs(psiView[k]) << "\n";
+          }
+      }
+  }
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  // write arg(psi)
+  oStream << "SCALARS arg(psi) float\n"
+          << "LOOKUP_TABLE default\n";
+  for (int j=0; j<Nx+1; j++) {
+      index[1] = j;
+      for (int i=0; i<Nx+1; i++) {
+          index[0] = i;
+          int k = sGrid.i2k( index );
+          oStream << arg(psiView[k]) << "\n";
+      }
+  }
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 }
 // =============================================================================

@@ -32,7 +32,7 @@ void IoVti::read( Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > &psi,
   // at the beginning of the file
 
 
-    Teuchos::FileInputSource xmlFile(fileName);
+    Teuchos::FileInputSource xmlFile(fileName_);
 
     // Extract the object from the filename.
     // -- This is actually quite costly, as it read all -- *all* -- data in as
@@ -153,7 +153,7 @@ void IoVti::write( const Tpetra::MultiVector<double_complex,int> &psi,
   // write the contents to the file
   // open the file
   std::ofstream  vtkfile;
-  vtkfile.open( fileName.c_str() );
+  vtkfile.open( fileName_.c_str() );
 
   // Do not plot the XML header as Teuchos' XML reader can't deal with it
   // vtkfile << "<?xml version=\"1.0\"?>" << std::endl;

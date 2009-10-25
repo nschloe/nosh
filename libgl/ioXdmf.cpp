@@ -47,14 +47,14 @@ void IoXdmf::read( Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > &psi,
   //       and see what happens.
 
   // extract the directory for later
-  string directory = fileName;
+  string directory = fileName_;
   directory.erase( directory.rfind("/") );
 
   // read the file contents to a string
-  std::ifstream inFile( fileName.c_str() );
+  std::ifstream inFile( fileName_.c_str() );
   if( !inFile ) {
       throw glException( "IoXdmf::read",
-                         "Could not open input file \"" + fileName + "\"." );
+                         "Could not open input file \"" + fileName_ + "\"." );
   }
 
   // Read the file into a string, and discard exactly the first for lines,
@@ -241,16 +241,16 @@ void IoXdmf::write( const Tpetra::MultiVector<double_complex,int> &psi,
   std::ofstream xdmfFile;
 
   // create the HDF5 file name, take off the suffix and replace it by .h5
-  int dotPos = fileName.rfind(".");
-  std::string hdf5FileName = fileName;
-  hdf5FileName.replace(dotPos,fileName.size()-dotPos ,".h5");
+  int dotPos = fileName_.rfind(".");
+  std::string hdf5FileName = fileName_;
+  hdf5FileName.replace(dotPos,fileName_.size()-dotPos ,".h5");
   // strip off the directory names to get the base name
-  dotPos = fileName.rfind("/");
+  dotPos = fileName_.rfind("/");
   std::string hdf5BaseName = hdf5FileName;
   hdf5BaseName.erase(0,dotPos+1);
 
   // open the file
-  xdmfFile.open( fileName.c_str() );
+  xdmfFile.open( fileName_.c_str() );
 
   // write the XDMF header
   xdmfFile << "<?xml version=\"1.0\" ?>\n"

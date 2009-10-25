@@ -12,6 +12,8 @@
 
 #include <Tpetra_MultiVector.hpp>
 
+#include <iostream>
+
 typedef std::complex<double> double_complex;
 
 class IoVtk: public IoVirtual
@@ -45,6 +47,19 @@ class IoVtk: public IoVirtual
 
   protected:
   private:
+
+    void
+    writeDummyParameterList( std::ofstream & ioStream  );
+    
+    void
+    writeParameterList( const Teuchos::RCP<const Teuchos::ParameterList> & pList,
+                        std::ofstream                                    & ioStream  );
+
+    void
+    writeScalars( const Tpetra::MultiVector<double_complex,int> & psi,
+                        const StaggeredGrid                     & sGrid,
+                              std::ofstream                     & oStream
+                      ) const;
 
     //! joins a vector of strings to one string with a separator string sep
     std::string strJoin ( const std::vector<std::string> & vec,

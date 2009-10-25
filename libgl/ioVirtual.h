@@ -42,7 +42,7 @@ class IoVirtual
 
   protected:
     //! File name for the I/O.
-    std::string fileName;
+    std::string fileName_;
 
   };
 #endif // IOVIRTUAL_H

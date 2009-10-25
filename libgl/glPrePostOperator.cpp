@@ -10,7 +10,7 @@
 #include <EpetraExt_Utils.h> // for toString
 // =============================================================================
 GlPrePostOperator::GlPrePostOperator( Teuchos::RCP<GlSystem>        glsystem,
-                                      const Teuchos::ParameterList& problemParams) :
+                                      const Teuchos::ParameterList  & problemParams) :
   numRunPreIterate(0),
   problemParameters_( problemParams ),
   glsystem_(glsystem)
@@ -30,7 +30,7 @@ runPreIterate(const NOX::Solver::Generic& solver)
 
   // Get the Epetra_Vector with the final solution from the solver
   const NOX::Epetra::Group& solGrp =
-    dynamic_cast<const NOX::Epetra::Group&>(solver.getSolutionGroup());
+             dynamic_cast<const NOX::Epetra::Group&>(solver.getSolutionGroup());
 
   Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::rcp(&problemParameters_);
 
