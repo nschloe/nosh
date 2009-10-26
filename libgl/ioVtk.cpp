@@ -34,7 +34,8 @@ IoVtk::~IoVtk()
 // =============================================================================
 void IoVtk::read( Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > &psi,
                   const Teuchos::RCP<const Teuchos::Comm<int> >          comm,
-                  Teuchos::RCP<Teuchos::ParameterList>                   problemParams )
+                  Teuchos::RCP<Teuchos::ParameterList>                   problemParams
+                ) const
 {
   // call ParaCont for parameters
   ReadParamsFromVtkFile( fileName_, *problemParams );
@@ -120,12 +121,10 @@ void IoVtk::read( Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > &psi,
 // =============================================================================
 void
 IoVtk::write( const Tpetra::MultiVector<double_complex,int> &psi,
-              const Teuchos::RCP<Teuchos::ParameterList>    problemParams,
+              const Teuchos::ParameterList                  &problemParams,
               const StaggeredGrid                           &sGrid
-            )
+            ) const
 {
-  int           Nx = sGrid.getNx();
-  double        h  = sGrid.getH();
   std::ofstream vtkfile;
   
   // set the output format
@@ -138,18 +137,47 @@ IoVtk::write( const Tpetra::MultiVector<double_complex,int> &psi,
   // write the VTK header
   vtkfile << "# vtk DataFile Version 2.0\n";
 
-  if ( !problemParams.is_null() )
-      writeParameterList( problemParams, vtkfile );
-  else
-      writeDummyParameterList( vtkfile );
+  // write the parameter list
+  writeParameterList( problemParams, vtkfile );
 
-  // print the rest of the VTK header
-  vtkfile << "ASCII\n"
-          << "DATASET STRUCTURED_POINTS\n"
-          << "DIMENSIONS " << Nx+1 << " " << Nx+1 << " " << 1 << "\n"
-          << "ORIGIN 0 0 0\n"
-          << "SPACING " << h << " " << h << " " << 0.0 << "\n"
-          << "POINT_DATA " << sGrid.getNumComplexUnknowns() << "\n";
+  // write the VTK header
+  int    Nx = sGrid.getNx();
+  double h  = sGrid.getH();
+  int    numScalars = sGrid.getNumComplexUnknowns();
+  writeVtkStructuredPointsHeader( vtkfile, Nx, h, numScalars );
+
+  // write the hard data
+  writeScalars( psi, sGrid, vtkfile );
+
+  // close the file
+  vtkfile.close();
+}
+// =============================================================================
+void
+IoVtk::write( const Tpetra::MultiVector<double_complex,int> &psi,
+              const StaggeredGrid                           &sGrid
+            ) const
+{
+  std::ofstream vtkfile;
+  
+  // set the output format
+  vtkfile.setf( std::ios::scientific );
+  vtkfile.precision(15);
+
+  // open the file
+  vtkfile.open( fileName_.c_str() );
+
+  // write the VTK header
+  vtkfile << "# vtk DataFile Version 2.0\n";
+
+  // write dummy parameter list
+  vtkfile << "# # # # # # # # # # # # # #\n";
+
+  // write the VTK header
+  int    Nx = sGrid.getNx();
+  double h  = sGrid.getH();
+  int    numScalars = sGrid.getNumComplexUnknowns();
+  writeVtkStructuredPointsHeader( vtkfile, Nx, h, numScalars );
 
   // write the hard data
   writeScalars( psi, sGrid, vtkfile );
@@ -160,7 +188,8 @@ IoVtk::write( const Tpetra::MultiVector<double_complex,int> &psi,
 // =============================================================================
 std::string
 IoVtk::strJoin( const std::vector<std::string> & vec,
-                const std::string              & sep  )
+                const std::string              & sep
+              ) const
 {
         if(vec.size()==0)
                 return "";
@@ -178,31 +207,32 @@ IoVtk::strJoin( const std::vector<std::string> & vec,
 }
 // =============================================================================
 void
-IoVtk::writeParameterList( const Teuchos::RCP<const Teuchos::ParameterList> & pList,
-                           std::ofstream                                    & ioStream  )
+IoVtk::writeParameterList( const Teuchos::ParameterList & pList,
+                           std::ofstream                & ioStream
+                         ) const
 {
   // count the number of list entries
   int numEntries = 0;
   Teuchos::map<std::string, Teuchos::ParameterEntry>::const_iterator i;
-  for (i = pList->begin(); i!=pList->end(); ++i)
+  for (i = pList.begin(); i!=pList.end(); ++i)
       numEntries++;
 
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   // create the list of parameter values
   std::vector<std::string> paramStringList(numEntries);
   int k=0;
-  for (i = pList->begin(); i!=pList->end(); ++i) {
-    std::string paramName = pList->name(i);
-    if ( pList->isType<int>( paramName ) )
+  for (i = pList.begin(); i!=pList.end(); ++i) {
+    std::string paramName = pList.name(i);
+    if ( pList.isType<int>( paramName ) )
         paramStringList[k] = "int "
-                           + pList->name(i)
+                           + pList.name(i)
                            + "="
-                           + EpetraExt::toString( pList->get<int>(paramName) );
-    else if ( pList->isType<double>( paramName ) )
+                           + EpetraExt::toString( pList.get<int>(paramName) );
+    else if ( pList.isType<double>( paramName ) )
         paramStringList[k] = "double "
-                           + pList->name(i)
+                           + pList.name(i)
                            + "="
-                           + EpetraExt::toString( pList->get<double>(paramName) );
+                           + EpetraExt::toString( pList.get<double>(paramName) );
     else {
         std::string message =
                  "Parameter is neither of type \"int\" not of type \"double\".";
@@ -219,9 +249,18 @@ IoVtk::writeParameterList( const Teuchos::RCP<const Teuchos::ParameterList> & pL
 }
 // =============================================================================
 void
-IoVtk::writeDummyParameterList( std::ofstream & ioStream  )
+IoVtk::writeVtkStructuredPointsHeader( std::ofstream & ioStream,
+                                       const int     Nx,
+                                       const double  h,
+                                       const int     numScalars
+                                     ) const
 {
-  ioStream << "# # # # # # # # # # # # # #\n";
+  ioStream << "ASCII\n"
+          << "DATASET STRUCTURED_POINTS\n"
+          << "DIMENSIONS " << Nx+1 << " " << Nx+1 << " " << 1 << "\n"
+          << "ORIGIN 0 0 0\n"
+          << "SPACING " << h << " " << h << " " << 0.0 << "\n"
+          << "POINT_DATA " << numScalars << "\n";
 }
 // =============================================================================
 void

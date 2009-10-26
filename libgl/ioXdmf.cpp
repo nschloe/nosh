@@ -36,7 +36,8 @@ IoXdmf::~IoXdmf()
 // =============================================================================
 void IoXdmf::read( Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > &psi,
                    const Teuchos::RCP<const Teuchos::Comm<int> >          comm, // TODO: remove this
-                   Teuchos::RCP<Teuchos::ParameterList>                   problemParams )
+                   Teuchos::RCP<Teuchos::ParameterList>                   problemParams
+                 ) const
 {
 
   // Convert the file to a string, such that we can discard the headers and pass
@@ -133,12 +134,14 @@ void IoXdmf::read( Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > &psi,
   return;
 }
 // =============================================================================
-void IoXdmf::getHeavyData( const Teuchos::XMLObject &xmlFileObject,
-                           const Epetra_Comm        &comm,
-                           Epetra_MultiVector       **readVec,
-                           const std::string        &fileDirectory,
-                           const std::string        &xmlName,
-                           const std::string        &hdf5GroupName )
+void
+IoXdmf::getHeavyData( const Teuchos::XMLObject &xmlFileObject,
+                      const Epetra_Comm        &comm,
+                      Epetra_MultiVector       **readVec,
+                      const std::string        &fileDirectory,
+                      const std::string        &xmlName,
+                      const std::string        &hdf5GroupName
+                    ) const
 {
   // ---------------------------------------------------------------------------
   // now go find where the heavy data is stored
@@ -229,9 +232,11 @@ void IoXdmf::getHeavyData( const Teuchos::XMLObject &xmlFileObject,
   hdf5Reader.Close();
 }
 // =============================================================================
-void IoXdmf::write( const Tpetra::MultiVector<double_complex,int> &psi,
-                    const Teuchos::RCP<Teuchos::ParameterList>    problemParams,
-                    const StaggeredGrid::StaggeredGrid            &sGrid          )
+void
+IoXdmf::write( const Tpetra::MultiVector<double_complex,int> &psi,
+               const Teuchos::ParameterList                  &problemParams,
+               const StaggeredGrid::StaggeredGrid            &sGrid
+             ) const
 {
 
   int    Nx = sGrid.getNx();
@@ -267,7 +272,7 @@ void IoXdmf::write( const Tpetra::MultiVector<double_complex,int> &psi,
   // is not universally recognized.
   Teuchos::XMLObject xmlParameterList("");
   xmlParameterList = Teuchos::XMLParameterListWriter::XMLParameterListWriter()
-                                                       .toXML( *problemParams );
+                                                        .toXML( problemParams );
   xdmfContainer.addChild(xmlParameterList);
 
   // add the domain item
@@ -388,10 +393,20 @@ void IoXdmf::write( const Tpetra::MultiVector<double_complex,int> &psi,
 
 }
 // =============================================================================
+void
+IoXdmf::write( const Tpetra::MultiVector<double_complex,int> &psi,
+               const StaggeredGrid::StaggeredGrid            &sGrid
+             ) const
+{
+    throw glException( "IoXdmf::write", "Method not yet implemented." );
+}
+// =============================================================================
 // Inside an XML object, this function looks for a specific tag and returns
 // a pointer to it.
-const Teuchos::XMLObject* IoXdmf::xmlFind ( const Teuchos::XMLObject *xmlObj,
-                                            const std::string        tag )
+const Teuchos::XMLObject*
+IoXdmf::xmlFind ( const Teuchos::XMLObject *xmlObj,
+                  const std::string        tag
+                ) const
 {
   const Teuchos::XMLObject* xmlOut=NULL;
 
@@ -406,10 +421,12 @@ const Teuchos::XMLObject* IoXdmf::xmlFind ( const Teuchos::XMLObject *xmlObj,
   return xmlOut;
 }
 // =============================================================================
-const Teuchos::XMLObject* IoXdmf::xmlAttributeFind ( const Teuchos::XMLObject *xmlObj,
-                                                     const std::string        tag,
-                                                     const std::string        attribute,
-                                                     const std::string        value      )
+const Teuchos::XMLObject*
+IoXdmf::xmlAttributeFind ( const Teuchos::XMLObject *xmlObj,
+                           const std::string        tag,
+                           const std::string        attribute,
+                           const std::string        value
+                         ) const
 {
   const Teuchos::XMLObject* xmlOut=NULL;
 

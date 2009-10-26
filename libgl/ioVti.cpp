@@ -21,7 +21,8 @@ IoVti::~IoVti()
 // =============================================================================
 void IoVti::read( Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > &psi,
                   const Teuchos::RCP<const Teuchos::Comm<int> >          comm, // TODO: remove this
-                  Teuchos::RCP<Teuchos::ParameterList>                   problemParams )
+                  Teuchos::RCP<Teuchos::ParameterList>                   problemParams
+                ) const
 {
 
   throw glException( "IoVti::StateFileReader",
@@ -76,8 +77,9 @@ void IoVti::read( Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > &psi,
 }
 // =============================================================================
 void IoVti::write( const Tpetra::MultiVector<double_complex,int> &psi,
-                   const Teuchos::RCP<Teuchos::ParameterList>    problemParams,
-                   const StaggeredGrid                           &sGrid          )
+                   const Teuchos::ParameterList                  &problemParams,
+                   const StaggeredGrid                           &sGrid
+                 ) const
 {
   int    Nx = sGrid.getNx();
   int    k;
@@ -136,7 +138,7 @@ void IoVti::write( const Tpetra::MultiVector<double_complex,int> &psi,
   // append the problem parameters in XML form to the file
   Teuchos::XMLObject xmlParameterList("");
   xmlParameterList = Teuchos::XMLParameterListWriter::XMLParameterListWriter()
-                                                       .toXML( *problemParams );
+                                                        .toXML( problemParams );
 
   // define top level object
   Teuchos::XMLObject vtuxml("VTKFile");
@@ -164,10 +166,20 @@ void IoVti::write( const Tpetra::MultiVector<double_complex,int> &psi,
   // ---------------------------------------------------------------------------
 }
 // =============================================================================
+void
+IoVti::write( const Tpetra::MultiVector<double_complex,int> &psi,
+              const StaggeredGrid                           &sGrid
+            ) const
+{
+    throw glException( "IoVti::write", "Method not yet implemented." );
+}
+// =============================================================================
 // Inside an XML object, this function looks for a specific tag and returns
 // a pointer to it.
-const Teuchos::XMLObject* IoVti::xmlFind ( const Teuchos::XMLObject *xmlObj,
-                                           const std::string        tag )
+const Teuchos::XMLObject*
+IoVti::xmlFind ( const Teuchos::XMLObject *xmlObj,
+                 const std::string        tag
+               ) const
 {
   const Teuchos::XMLObject* xmlOut=NULL;
 
@@ -182,10 +194,12 @@ const Teuchos::XMLObject* IoVti::xmlFind ( const Teuchos::XMLObject *xmlObj,
   return xmlOut;
 }
 // =============================================================================
-const Teuchos::XMLObject* IoVti::xmlAttributeFind ( const Teuchos::XMLObject *xmlObj,
-                                                    const std::string        tag,
-                                                    const std::string        attribute,
-                                                    const std::string        value      )
+const Teuchos::XMLObject*
+IoVti::xmlAttributeFind ( const Teuchos::XMLObject *xmlObj,
+                          const std::string        tag,
+                          const std::string        attribute,
+                          const std::string        value
+                        ) const
 {
   const Teuchos::XMLObject* xmlOut=NULL;
 

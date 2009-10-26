@@ -32,7 +32,7 @@ class IoVtk: public IoVirtual
     read ( Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > &psi,
            const Teuchos::RCP<const Teuchos::Comm<int> >          comm, // TODO: remove this
            Teuchos::RCP<Teuchos::ParameterList>                   problemParams
-         );
+         ) const;
 
     //! Writes the  order parameter \f$\psi\f$ and the problem parameter list
     //! into a legac VTK file.
@@ -41,19 +41,29 @@ class IoVtk: public IoVirtual
     //! that can be viewed using standard tools.
     virtual void
     write ( const Tpetra::MultiVector<double_complex,int> &psi,
-            const Teuchos::RCP<Teuchos::ParameterList>    problemParams,
+            const Teuchos::ParameterList                  &problemParams,
             const StaggeredGrid                           &sGrid
-          );
+          ) const;
+
+    virtual void
+    write( const Tpetra::MultiVector<double_complex,int> &psi,
+           const StaggeredGrid                           &sGrid
+         ) const;
 
   protected:
   private:
 
     void
-    writeDummyParameterList( std::ofstream & ioStream  );
+    writeVtkStructuredPointsHeader( std::ofstream & ioStream,
+                                   const int     Nx,
+                                   const double  h,
+                                   const int     numScalars
+                                 ) const;
     
     void
-    writeParameterList( const Teuchos::RCP<const Teuchos::ParameterList> & pList,
-                        std::ofstream                                    & ioStream  );
+    writeParameterList( const Teuchos::ParameterList & pList,
+                        std::ofstream                & ioStream
+                      ) const;
 
     void
     writeScalars( const Tpetra::MultiVector<double_complex,int> & psi,
@@ -63,7 +73,8 @@ class IoVtk: public IoVirtual
 
     //! joins a vector of strings to one string with a separator string sep
     std::string strJoin ( const std::vector<std::string> & vec,
-                          const std::string              & sep );
+                          const std::string              & sep
+                        ) const;
 
   };
 #endif // IOVTK_H

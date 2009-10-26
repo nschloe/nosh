@@ -30,15 +30,20 @@ class IoVirtual
     read ( Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > &psi,
            const Teuchos::RCP<const Teuchos::Comm<int> >          comm, // TODO: remove this
            Teuchos::RCP<Teuchos::ParameterList>                   problemParams
-         ) = 0; // pure virtual
+         ) const = 0; // pure virtual
 
     //! Virtual function for writing the order parameter \f$\psi\f$ and the
     //! parameter list to a given file.
     virtual void
     write ( const Tpetra::MultiVector<double_complex,int> &psi,
-            const Teuchos::RCP<Teuchos::ParameterList>    problemParams,
+            const Teuchos::ParameterList                  &problemParams,
             const StaggeredGrid                           &sGrid
-          ) = 0; // pure virtual
+          ) const = 0; // pure virtual
+
+    virtual void
+    write ( const Tpetra::MultiVector<double_complex,int> &psi,
+            const StaggeredGrid                           &sGrid
+          ) const = 0; // pure virtual
 
   protected:
     //! File name for the I/O.

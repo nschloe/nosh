@@ -30,7 +30,7 @@ class IoVti: public IoVirtual
     read ( Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > &psi,
            const Teuchos::RCP<const Teuchos::Comm<int> >          comm, // TODO: remove this
            Teuchos::RCP<Teuchos::ParameterList>                   problemParams
-         );
+         ) const;
 
     //! Writes the  order parameter \f$\psi\f$ and the problem parameter list
     //! into an XML-style VTI file.
@@ -39,19 +39,26 @@ class IoVti: public IoVirtual
     //! that can be viewed using standard tools.
     virtual void
     write ( const Tpetra::MultiVector<double_complex,int> &psi,
-            const Teuchos::RCP<Teuchos::ParameterList>    problemParams,
+            const Teuchos::ParameterList                  &problemParams,
             const StaggeredGrid                           &sGrid
-          );
+          ) const;
+
+    virtual void
+    write ( const Tpetra::MultiVector<double_complex,int> &psi,
+            const StaggeredGrid                           &sGrid
+          ) const;
 
   private:
 
     const Teuchos::XMLObject* xmlFind ( const Teuchos::XMLObject *xmlObj,
-                                        const std::string        tag );
+                                        const std::string        tag
+                                      ) const;
 
     const Teuchos::XMLObject* xmlAttributeFind ( const Teuchos::XMLObject *xmlObj,
-        const std::string        tag,
-        const std::string        attribute,
-        const std::string        value );
+                                                 const std::string        tag,
+                                                 const std::string        attribute,
+                                                 const std::string        value
+                                               ) const;
 
   };
 #endif // IOVTI_H

@@ -32,7 +32,7 @@ runPreIterate(const NOX::Solver::Generic& solver)
   const NOX::Epetra::Group& solGrp =
              dynamic_cast<const NOX::Epetra::Group&>(solver.getSolutionGroup());
 
-  Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::rcp(&problemParameters_);
+//   Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::rcp(&problemParameters_);
 
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   const Epetra_Vector& currentSol =
@@ -40,7 +40,7 @@ runPreIterate(const NOX::Solver::Generic& solver)
     getEpetraVector();
   fileName = "data/newton-sol-"+EpetraExt::toString(numRunPreIterate)+".vtk";
   glsystem_->solutionToFile( currentSol,
-                             pList,
+                             problemParameters_,
                              fileName );
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -51,7 +51,7 @@ runPreIterate(const NOX::Solver::Generic& solver)
     getEpetraVector();
   fileName = "data/newton-res-"+EpetraExt::toString(numRunPreIterate)+".vtk";
   glsystem_->solutionToFile( currentResidual,
-                             pList,
+                             problemParameters_,
                              fileName );
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 }

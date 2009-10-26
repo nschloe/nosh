@@ -886,7 +886,7 @@ GlSystem::printState( const Epetra_Vector          &x,
   IoVirtual* fileIo = IoFactory::createFileIo ( outputDir_+"/"+fileName );
   
   fileIo->write ( psi,
-                  paraList,
+                  *paraList,
                   * ( Gl_.getStaggeredGrid() ) );
   delete fileIo;
 }
@@ -900,7 +900,7 @@ GlSystem::setOutputDir ( const string &directory )
 // =============================================================================
 void
 GlSystem::solutionToFile ( const Epetra_Vector    &x,
-                           Teuchos::RCP<Teuchos::ParameterList> problemParams,
+                           Teuchos::ParameterList &problemParams,
                            const std::string      &fileName )
 {
   // define vector
@@ -911,8 +911,8 @@ GlSystem::solutionToFile ( const Epetra_Vector    &x,
   real2complex ( x, psi );
 
   // set extra parameters
-  problemParams->set( "freeEnergy", Gl_.freeEnergy( psi ) );
-  problemParams->set( "vorticity" , Gl_.getVorticity( psi ) );
+  problemParams.set( "freeEnergy", Gl_.freeEnergy( psi ) );
+  problemParams.set( "vorticity" , Gl_.getVorticity( psi ) );
 
   IoVirtual* fileIo = IoFactory::createFileIo ( fileName );
   fileIo->write ( psi,
