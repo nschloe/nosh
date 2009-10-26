@@ -113,8 +113,7 @@ int main ( int argc, char *argv[] )
 
 
   // ---------------------------------------------------------------------------
-  Teuchos::RCP<Teuchos::ParameterList> problemParameters = 
-                                  Teuchos::rcp( new  Teuchos::ParameterList() );
+  Teuchos::ParameterList problemParameters = Teuchos::ParameterList();
   // define a new dummy psiLexicographic vector, to be adapted instantly
   Teuchos::RCP<Tpetra::Map<int> > dummyMap =
     Teuchos::rcp ( new Tpetra::Map<int> ( 1, 0, Comm ) );
@@ -130,9 +129,11 @@ int main ( int argc, char *argv[] )
                Teuchos::RCP<IoVirtual> ( IoFactory::createFileIo ( filename ) );
       try
         {
+          Teuchos::RCP<Teuchos::ParameterList> problemParametersPtr =
+                                             Teuchos::rcp( &problemParameters );
           fileIo->read ( psiLexicographic,
 			 Comm,
-                         problemParameters );
+                         problemParametersPtr );
         }
       catch ( const std::exception &e )
         {
@@ -150,9 +151,9 @@ int main ( int argc, char *argv[] )
                 << "    Nx         = " << Nx << ",\n"
                 << "    edgelength = " << edgelength << ",\n"
                 << "    H0         = " << H0 << "." << std::endl;
-      problemParameters->set ( "Nx"        , Nx );
-      problemParameters->set ( "edgelength", edgelength );
-      problemParameters->set ( "H0"        , H0 );
+      problemParameters.set ( "Nx"        , Nx );
+      problemParameters.set ( "edgelength", edgelength );
+      problemParameters.set ( "H0"        , H0 );
 
       int NumGlobalUnknowns = ( Nx+1 ) * ( Nx+1 );
       Teuchos::RCP<Tpetra::Map<int> > standardMap
@@ -172,9 +173,9 @@ int main ( int argc, char *argv[] )
                              Teuchos::rcp ( new GlBoundaryConditionsCentral() );
 
   Teuchos::RCP<StaggeredGrid> sGrid =
-                           Teuchos::rcp( new StaggeredGrid( problemParameters->get<int>("Nx"),
-                                                            problemParameters->get<double>("edgelength"),
-                                                            problemParameters->get<double>("H0")
+                           Teuchos::rcp( new StaggeredGrid( problemParameters.get<int>("Nx"),
+                                                            problemParameters.get<double>("edgelength"),
+                                                            problemParameters.get<double>("H0")
                                                           )
                                        );
 
@@ -311,7 +312,7 @@ int main ( int argc, char *argv[] )
     {
       Teuchos::RCP<NOX::Abstract::PrePostOperator> ppo =
         Teuchos::rcp ( new GlPrePostOperator ( glsystem,
-                                               *problemParameters ) );
+                                               problemParameters ) );
       nlParams.sublist ( "Solver Options" )
       .set ( "User Defined Pre/Post Operator", ppo );
     }
