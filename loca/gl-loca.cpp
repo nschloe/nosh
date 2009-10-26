@@ -234,13 +234,13 @@ predictorList.set("Method", "Tangent");
 // ---------------------------------------------------------------------------
 Teuchos::ParameterList& stepSizeList = locaParamsList.sublist("Step Size");
 stepSizeList.set("Method", "Adaptive");
-double initialStepSize = 1.0e-6;
+double initialStepSize = 1.0e-4;
 if (reverse)
 stepSizeList.set("Initial Step Size", -initialStepSize);
 else
 stepSizeList.set("Initial Step Size",  initialStepSize);
-stepSizeList.set("Min Step Size", 1.0e-6);
-  stepSizeList.set("Max Step Size", 1.0e-6);
+stepSizeList.set("Min Step Size", 1.0e-4);
+  stepSizeList.set("Max Step Size", 1.0e-3);
   // ---------------------------------------------------------------------------
 
 
