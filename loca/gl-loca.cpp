@@ -27,66 +27,66 @@ typedef complex<double> double_complex;
 int main(int argc, char *argv[])
 {
 
-  // Initialize MPI
+// Initialize MPI
 #ifdef HAVE_MPI
-  MPI_Init(&argc,&argv);
+MPI_Init(&argc,&argv);
 #endif
 
-  // create Epetra communicator
+// create Epetra communicator
 #ifdef HAVE_MPI
-  Teuchos::RCP<Epetra_MpiComm> eComm =
-         Teuchos::rcp<Epetra_MpiComm> ( new Epetra_MpiComm ( MPI_COMM_WORLD ) );
+Teuchos::RCP<Epetra_MpiComm> eComm =
+ Teuchos::rcp<Epetra_MpiComm> ( new Epetra_MpiComm ( MPI_COMM_WORLD ) );
 #else
-  Teuchos::RCP<Epetra_SerialComm> eComm =
-                    Teuchos::rcp<Epetra_SerialComm> ( new Epetra_SerialComm() );
+Teuchos::RCP<Epetra_SerialComm> eComm =
+	    Teuchos::rcp<Epetra_SerialComm> ( new Epetra_SerialComm() );
 #endif
 
-  // Create a communicator for Tpetra objects
-  const Teuchos::RCP<const Teuchos::Comm<int> > Comm
-                                         = Teuchos::DefaultComm<int>::getComm();
+// Create a communicator for Tpetra objects
+const Teuchos::RCP<const Teuchos::Comm<int> > Comm
+				 = Teuchos::DefaultComm<int>::getComm();
 
-  // =========================================================================
-  // handle command line arguments
-  Teuchos::CommandLineProcessor My_CLP;
+// =========================================================================
+// handle command line arguments
+Teuchos::CommandLineProcessor My_CLP;
 
-  My_CLP.setDocString(
-    "This program does continuation for the Ginzburg--Landau problem with a LOCA interace.\n"
-    "It is possible to give an initial guess in VTK format on the command line.\n"
-  );
+My_CLP.setDocString(
+"This program does continuation for the Ginzburg--Landau problem with a LOCA interace.\n"
+"It is possible to give an initial guess in VTK format on the command line.\n"
+);
 
-  bool verbose=false;
-  My_CLP.setOption("verbose", "silent", &verbose, "Verbostity flag" );
+bool verbose=false;
+My_CLP.setOption("verbose", "silent", &verbose, "Verbostity flag" );
 
-  bool reverse=false;
-  My_CLP.setOption("reverse","forward",&reverse, "Orientation of the continuation in the first step" );
+bool reverse=false;
+My_CLP.setOption("reverse","forward",&reverse, "Orientation of the continuation in the first step" );
 
-  bool computeEigenvalues;
-  My_CLP.setOption("eigenvalues","no-eigenvalues",&computeEigenvalues, "Compute the eigenvalues of the Jacobian on the fly" );
+bool computeEigenvalues;
+My_CLP.setOption("eigenvalues","no-eigenvalues",&computeEigenvalues, "Compute the eigenvalues of the Jacobian on the fly" );
 
-  std::string filename = "";
-  My_CLP.setOption("input-guess", &filename, "File name with initial guess");
+std::string filename = "";
+My_CLP.setOption("input-guess", &filename, "File name with initial guess");
 
-  std::string outputdir = "data";
-  My_CLP.setOption("output-dir", &outputdir, "Directory to which all the solution files are written");
+std::string outputdir = "data";
+My_CLP.setOption("output-dir", &outputdir, "Directory to which all the solution files are written");
 
-  // print warning for unrecognized arguments
-  My_CLP.recogniseAllOptions(true);
+// print warning for unrecognized arguments
+My_CLP.recogniseAllOptions(true);
 
-  // don't throw exceptions
-  My_CLP.throwExceptions(false);
+// don't throw exceptions
+My_CLP.throwExceptions(false);
 
-  // finally, parse the stuff!
-  Teuchos::CommandLineProcessor::EParseCommandLineReturn
-    parseReturn= My_CLP.parse( argc, argv );
-  if( parseReturn == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED ) {
-    return 0;
-  }
-  if( parseReturn != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL   ) {
-    return 1; // Error!
-  }
+// finally, parse the stuff!
+Teuchos::CommandLineProcessor::EParseCommandLineReturn
+parseReturn= My_CLP.parse( argc, argv );
+if( parseReturn == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED ) {
+return 0;
+}
+if( parseReturn != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL   ) {
+return 1; // Error!
+}
 
-  bool withInitialGuess = filename.length()>0;
-  // =========================================================================
+bool withInitialGuess = filename.length()>0;
+// =========================================================================
 
 
   // ---------------------------------------------------------------------------
@@ -130,17 +130,17 @@ int main(int argc, char *argv[])
       problemParameters->set ( "edgelength", edgelength );
       problemParameters->set ( "H0"        , H0 );
 
-      int NumGlobalUnknowns = ( Nx+1 ) * ( Nx+1 );
-      Teuchos::RCP<Tpetra::Map<int> > standardMap
-         = Teuchos::rcp ( new Tpetra::Map<int> ( NumGlobalUnknowns, 0, Comm ) );
-      psiLexicographic = Teuchos::rcp ( new Tpetra::MultiVector<double_complex,int> ( standardMap,1 ) );
+int NumGlobalUnknowns = ( Nx+1 ) * ( Nx+1 );
+Teuchos::RCP<Tpetra::Map<int> > standardMap
+ = Teuchos::rcp ( new Tpetra::Map<int> ( NumGlobalUnknowns, 0, Comm ) );
+psiLexicographic = Teuchos::rcp ( new Tpetra::MultiVector<double_complex,int> ( standardMap,1 ) );
 //       psiLexicographic->replaceMap( standardMap );
-    }
-  // ---------------------------------------------------------------------------
+}
+// ---------------------------------------------------------------------------
 
-  // create the gl problem
-  Teuchos::RCP<GlBoundaryConditionsVirtual> boundaryConditions =
-                               Teuchos::rcp(new GlBoundaryConditionsCentral() );
+// create the gl problem
+Teuchos::RCP<GlBoundaryConditionsVirtual> boundaryConditions =
+		       Teuchos::rcp(new GlBoundaryConditionsCentral() );
 
   Teuchos::RCP<StaggeredGrid> sGrid =
               Teuchos::rcp( new StaggeredGrid( problemParameters->get<int>("Nx"),
@@ -149,51 +149,51 @@ int main(int argc, char *argv[])
                                              )
                           );
 
-  GinzburgLandau glProblem = GinzburgLandau( sGrid,
-                                             boundaryConditions
-                                           );
+GinzburgLandau glProblem = GinzburgLandau( sGrid,
+				     boundaryConditions
+				   );
 
 
-  // ---------------------------------------------------------------------------
-  Teuchos::RCP<GlSystem> glsystem;
-  if ( withInitialGuess )
-    {
-      // If there was is an initial guess, make sure to get the ordering correct.
-      // TODO:
-      // Look into having this done by Trilinos. If executed on a multiproc
-      // environment, we don't want p to be fully present on all processors.
-      int NumComplexUnknowns = glProblem.getStaggeredGrid()->getNumComplexUnknowns();
-      std::vector<int> p ( NumComplexUnknowns );
-      // fill p:
-      glProblem.getStaggeredGrid()->lexicographic2grid ( &p );
-      Teuchos::RCP<Tpetra::MultiVector<double_complex,int> >  psi
-      = Teuchos::rcp ( new Tpetra::MultiVector<double_complex,int> ( psiLexicographic->getMap(),1 ) );
-      // TODO:
-      // The following is certainly not multiproc.
-      Teuchos::ArrayRCP<const double_complex> psiView = psiLexicographic->getVector ( 0 )->get1dView();
-      for ( int k=0; k<NumComplexUnknowns; k++ )
-        {
-          psi->replaceGlobalValue ( p[k],
-                                    0,
-                                    psiView[k]
-                                  );
-        }
-      // Create the interface between NOX and the application
-      // This object is derived from NOX::Epetra::Interface
-      glsystem = Teuchos::rcp ( new GlSystem ( glProblem, eComm, reverse, psi ) );
-    }
-  else
-    glsystem = Teuchos::rcp ( new GlSystem ( glProblem, eComm, reverse ) );
-  // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+Teuchos::RCP<GlSystem> glsystem;
+if ( withInitialGuess )
+{
+// If there was is an initial guess, make sure to get the ordering correct.
+// TODO:
+// Look into having this done by Trilinos. If executed on a multiproc
+// environment, we don't want p to be fully present on all processors.
+int NumComplexUnknowns = glProblem.getStaggeredGrid()->getNumComplexUnknowns();
+std::vector<int> p ( NumComplexUnknowns );
+// fill p:
+glProblem.getStaggeredGrid()->lexicographic2grid ( &p );
+Teuchos::RCP<Tpetra::MultiVector<double_complex,int> >  psi
+= Teuchos::rcp ( new Tpetra::MultiVector<double_complex,int> ( psiLexicographic->getMap(),1 ) );
+// TODO:
+// The following is certainly not multiproc.
+Teuchos::ArrayRCP<const double_complex> psiView = psiLexicographic->getVector ( 0 )->get1dView();
+for ( int k=0; k<NumComplexUnknowns; k++ )
+{
+  psi->replaceGlobalValue ( p[k],
+			    0,
+			    psiView[k]
+			  );
+}
+// Create the interface between NOX and the application
+// This object is derived from NOX::Epetra::Interface
+glsystem = Teuchos::rcp ( new GlSystem ( glProblem, eComm, reverse, psi ) );
+}
+else
+glsystem = Teuchos::rcp ( new GlSystem ( glProblem, eComm, reverse ) );
+// ---------------------------------------------------------------------------
 
 
-  // ---------------------------------------------------------------------------
-  // setting the LOCA parameters
-  // ---------------------------------------------------------------------------
-  // Create LOCA sublist
-  Teuchos::RCP<Teuchos::ParameterList> paramList =
-                                     Teuchos::rcp(new Teuchos::ParameterList);
-  Teuchos::ParameterList& locaParamsList = paramList->sublist("LOCA");
+// ---------------------------------------------------------------------------
+// setting the LOCA parameters
+// ---------------------------------------------------------------------------
+// Create LOCA sublist
+Teuchos::RCP<Teuchos::ParameterList> paramList =
+			     Teuchos::rcp(new Teuchos::ParameterList);
+Teuchos::ParameterList& locaParamsList = paramList->sublist("LOCA");
 
   // Create the stepper sublist and set the stepper parameters
   Teuchos::ParameterList& stepperList = locaParamsList.sublist("Stepper");
@@ -208,40 +208,39 @@ int main(int argc, char *argv[])
   // ---------------------------------------------------------------------------
 
 
+// ---------------------------------------------------------------------------
+// Setting the bifurcation parameters
+// ---------------------------------------------------------------------------
+// Create bifurcation sublist
+Teuchos::ParameterList& bifurcationList =
+				  locaParamsList.sublist("Bifurcation");
+bifurcationList.set("Type", "None");                 // Default
+// ---------------------------------------------------------------------------
 
 
-  // ---------------------------------------------------------------------------
-  // Setting the bifurcation parameters
-  // ---------------------------------------------------------------------------
-  // Create bifurcation sublist
-  Teuchos::ParameterList& bifurcationList =
-                                          locaParamsList.sublist("Bifurcation");
-  bifurcationList.set("Type", "None");                 // Default
-  // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Create predictor sublist
+// ---------------------------------------------------------------------------
+Teuchos::ParameterList& predictorList =
+locaParamsList.sublist("Predictor");
+//predictorList.set("Method", "Secant");               // Default
+//predictorList.set("Method", "Constant");
+predictorList.set("Method", "Tangent");
+// ---------------------------------------------------------------------------
 
 
-  // ---------------------------------------------------------------------------
-  // Create predictor sublist
-  // ---------------------------------------------------------------------------
-  Teuchos::ParameterList& predictorList =
-    locaParamsList.sublist("Predictor");
-  //predictorList.set("Method", "Secant");               // Default
-  //predictorList.set("Method", "Constant");
-  predictorList.set("Method", "Tangent");
-  // ---------------------------------------------------------------------------
-
-
-  // ---------------------------------------------------------------------------
-  // Create step size sublist
-  // ---------------------------------------------------------------------------
-  Teuchos::ParameterList& stepSizeList = locaParamsList.sublist("Step Size");
-  stepSizeList.set("Method", "Adaptive");
-  if (reverse)
-      stepSizeList.set("Initial Step Size", -0.001);
-  else
-      stepSizeList.set("Initial Step Size",  0.001);
-  stepSizeList.set("Min Step Size", 1.0e-4);
-  stepSizeList.set("Max Step Size", 1.0e-2);
+// ---------------------------------------------------------------------------
+// Create step size sublist
+// ---------------------------------------------------------------------------
+Teuchos::ParameterList& stepSizeList = locaParamsList.sublist("Step Size");
+stepSizeList.set("Method", "Adaptive");
+double initialStepSize = 1.0e-6;
+if (reverse)
+stepSizeList.set("Initial Step Size", -initialStepSize);
+else
+stepSizeList.set("Initial Step Size",  initialStepSize);
+stepSizeList.set("Min Step Size", 1.0e-6);
+  stepSizeList.set("Max Step Size", 1.0e-6);
   // ---------------------------------------------------------------------------
 
 
