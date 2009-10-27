@@ -90,7 +90,7 @@ bool withInitialGuess = filename.length()>0;
 
 
   // ---------------------------------------------------------------------------
-  Teuchos::RCP<Teuchos::ParameterList> problemParameters = Teuchos::rcp(new Teuchos::ParameterList());
+  Teuchos::ParameterList problemParameters;
   // define a new dummy psiLexicographic vector, to be adapted instantly
   Teuchos::RCP<Tpetra::Map<int> > dummyMap =
     Teuchos::rcp ( new Tpetra::Map<int> ( 1, 0, Comm ) );
@@ -126,9 +126,9 @@ bool withInitialGuess = filename.length()>0;
                 << "    Nx         = " << Nx << ",\n"
                 << "    edgelength = " << edgelength << ",\n"
                 << "    H0         = " << H0 << "." << std::endl;
-      problemParameters->set ( "Nx"        , Nx );
-      problemParameters->set ( "edgelength", edgelength );
-      problemParameters->set ( "H0"        , H0 );
+      problemParameters.set ( "Nx"        , Nx );
+      problemParameters.set ( "edgelength", edgelength );
+      problemParameters.set ( "H0"        , H0 );
 
 int NumGlobalUnknowns = ( Nx+1 ) * ( Nx+1 );
 Teuchos::RCP<Tpetra::Map<int> > standardMap
@@ -143,9 +143,9 @@ Teuchos::RCP<GlBoundaryConditionsVirtual> boundaryConditions =
 		       Teuchos::rcp(new GlBoundaryConditionsCentral() );
 
   Teuchos::RCP<StaggeredGrid> sGrid =
-              Teuchos::rcp( new StaggeredGrid( problemParameters->get<int>("Nx"),
-                                               problemParameters->get<double>("edgelength"),
-                                               problemParameters->get<double>("H0")
+              Teuchos::rcp( new StaggeredGrid( problemParameters.get<int>("Nx"),
+                                               problemParameters.get<double>("edgelength"),
+                                               problemParameters.get<double>("H0")
                                              )
                           );
 
@@ -200,7 +200,7 @@ Teuchos::ParameterList& locaParamsList = paramList->sublist("LOCA");
   stepperList.set("Continuation Method", "Arc Length");// Default
   //stepperList.set("Continuation Method", "Natural");
   stepperList.set("Continuation Parameter", "H0");  // Must set
-  stepperList.set("Initial Value", problemParameters->get<double>("H0"));     // Must set
+  stepperList.set("Initial Value", problemParameters.get<double>("H0"));     // Must set
   stepperList.set("Max Value",  3.0);                // Must set
   stepperList.set("Min Value", -3.0);                // Must set
   stepperList.set("Max Steps", 10000);               // Should set
@@ -391,7 +391,7 @@ stepSizeList.set("Min Step Size", 1.0e-4);
   // be initialized to contain the default initial guess for the
   // specified problem.
   LOCA::ParameterVector locaParams;
-  locaParams.addParameter( "H0", problemParameters->get<double>("H0") );
+  locaParams.addParameter( "H0", problemParameters.get<double>("H0") );
 
   NOX::Epetra::Vector initialGuess(soln, NOX::Epetra::Vector::CreateView);
 
