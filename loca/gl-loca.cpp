@@ -121,7 +121,7 @@ bool withInitialGuess = filename.length()>0;
       // set the default value
       int    Nx         = 50;
       double edgelength = 10.0;
-      double H0         = 0.0;
+      double H0         = 0.3;
       std::cout << "Using the standard parameters \n"
                 << "    Nx         = " << Nx << ",\n"
                 << "    edgelength = " << edgelength << ",\n"
@@ -331,7 +331,15 @@ stepSizeList.set("Min Step Size", 1.0e-4);
     aList.set("Method", "Anasazi");
     if (!verbose)
       aList.set("Verbosity", Anasazi::Errors);
+
+//    aList.set("Operator","Cayley");
+//    double sigma = 10.0;
+//    aList.set("Cayley Pole",sigma);
+//    double mu = 11.0;
+//    aList.set("Cayley Zero",mu);
+
     aList.set("Operator","Jacobian Inverse");
+
     aList.set("Num Eigenvalues", 20);
     aList.set("Sorting Order", "LM"); // largest magnitude
     aList.set("Num Blocks", 30 ); // = max # of Arnoldi steps
@@ -414,7 +422,7 @@ stepSizeList.set("Min Step Size", 1.0e-4);
   Teuchos::RCP<NOX::StatusTest::NormF> normF =
     Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-13));
   Teuchos::RCP<NOX::StatusTest::MaxIters> maxIters =
-    Teuchos::rcp(new NOX::StatusTest::MaxIters(30));
+    Teuchos::rcp(new NOX::StatusTest::MaxIters(50));
   Teuchos::RCP<NOX::StatusTest::Generic> comboOR =
     Teuchos::rcp(new NOX::StatusTest::Combo( NOX::StatusTest::Combo::OR,
                                              normF,
@@ -430,7 +438,13 @@ stepSizeList.set("Min Step Size", 1.0e-4);
 
   // ---------------------------------------------------------------------------
   // Perform continuation run
-  LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();
+  LOCA::Abstract::Iterator::IteratorStatus status;
+  try {
+     status = stepper.run();
+  }
+  catch ( char const* e ) {
+     std::cerr << "Exception raised: " << e << std::endl;
+  }
   // ---------------------------------------------------------------------------
 
 #ifdef HAVE_MPI
