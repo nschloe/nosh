@@ -332,13 +332,13 @@ stepSizeList.set("Min Step Size", 1.0e-4);
     if (!verbose)
       aList.set("Verbosity", Anasazi::Errors);
 
-    aList.set("Operator","Cayley");
-    double sigma = 10.0;
-    aList.set("Cayley Pole",sigma);
+//    aList.set("Operator","Cayley");
+//    double sigma = 10.0;
+ //   aList.set("Cayley Pole",sigma);
 //    double mu = 11.0;
 //    aList.set("Cayley Zero",mu);
 
-//    aList.set("Operator","Jacobian Inverse");
+    aList.set("Operator","Jacobian Inverse");
 
     aList.set("Num Eigenvalues", 20);
     aList.set("Sorting Order", "LM"); // largest magnitude
@@ -351,10 +351,17 @@ stepSizeList.set("Min Step Size", 1.0e-4);
 //     Teuchos::RCP<LOCA::Parameter::SublistParser> parser =
 //         Teuchos::rcp(new LOCA::Parameter::SublistParser(globalData));
 //    Teuchos::RCP<Teuchos::ParameterList> aListPtr = Teuchos::rcp(&aList,false);
+//
 
+    Teuchos::RCP<Teuchos::ParameterList> stepperListPtr = 
+        Teuchos::RCP<Teuchos::ParameterList>( &stepperList );
+        //Teuchos::RCP<Teuchos::ParameterList>( new Teuchos::ParameterList(stepperList) );
+//cout << "IN MAIN " << endl;
+//cout << *stepperListPtr;
+//cout << "END MAIN " << endl;
     std::string fileName = outputdir + "/eigenvalues.dat";
     Teuchos::RCP<EigenSaver> yourGreatSaver =
-                           Teuchos::rcp<EigenSaver>( new EigenSaver(globalData,fileName,glsystem) );
+                           Teuchos::RCP<EigenSaver>( new EigenSaver(stepperListPtr,globalData,fileName,glsystem) );
 
     Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> myGreatSaver =
                                                                  yourGreatSaver;

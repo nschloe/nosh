@@ -10,13 +10,20 @@
 #include <EpetraExt_Utils.h>
 
 // =============================================================================
-EigenSaver::EigenSaver(const Teuchos::RCP<LOCA::GlobalData>& globalData,
-		       const std::string fileName,
-                       const Teuchos::RCP<GlSystem> glSys ) :
+EigenSaver::EigenSaver( const Teuchos::RCP<Teuchos::ParameterList>& locaList,
+                        const Teuchos::RCP<LOCA::GlobalData>& globalData,
+		        const std::string fileName,
+                        const Teuchos::RCP<GlSystem> glSys ) :
   fileName_(fileName),
   globalData_(globalData),
-  glSys_(glSys)
+  glSys_(glSys),
+  parsedParams_(Teuchos::rcp(new LOCA::Parameter::SublistParser(globalData)))
 {
+  cout << "CONSTRUCTOR " << endl;
+  cout << *locaList << endl;
+  //parsedParams_->parseSublists(locaList);
+  cout << *(parsedParams_->getSublist("Eigensolver"));
+  cout << "END CONSTRUCTOR " << endl;
 };
 // =============================================================================
 EigenSaver::~EigenSaver()
@@ -99,6 +106,21 @@ EigenSaver::save ( Teuchos::RCP<std::vector<double> >       &evals_r,
 
   eigenFileStream << std::endl;
   eigenFileStream.close();
+
+  // Change the eigenvalue list
+  //cout << *parsedParams_;
+  // Create eigensolver
+  Teuchos::RCP<Teuchos::ParameterList> eigenParams = 
+    parsedParams_->getSublist("Eigensolver");
+  cout << "HIIII BEGINS" << endl;
+  //cout << *parsedParams_ << endl;
+//    parsedParams_->set("Num Eigenvalues", step);
+//    globalData_->locaFactory->createEigensolverStrategy(parsedParams_,
+//							eigenParams);
+
+  cout << "HIIII ENDS" << endl;
+
+
 
   return NOX::Abstract::Group::Ok;
 }
