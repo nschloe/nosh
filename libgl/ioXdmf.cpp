@@ -36,7 +36,7 @@ IoXdmf::~IoXdmf()
 // =============================================================================
 void IoXdmf::read( Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > &psi,
                    const Teuchos::RCP<const Teuchos::Comm<int> >          comm, // TODO: remove this
-                   Teuchos::RCP<Teuchos::ParameterList>                   problemParams
+                  Teuchos::ParameterList                                 &problemParams
                  ) const
 {
 
@@ -88,7 +88,7 @@ void IoXdmf::read( Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > &psi,
   // find and read the parameter list
   const Teuchos::XMLObject* parameterListObject =
                                      xmlFind( &xmlFileObject, "ParameterList" );
-  *problemParams = Teuchos::XMLParameterListReader().
+  problemParams = Teuchos::XMLParameterListReader().
                                         toParameterList( *parameterListObject );
 
   // create a dummy communicator
@@ -99,8 +99,10 @@ void IoXdmf::read( Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > &psi,
   Epetra_SerialComm Comm;
 #endif
 
+  // TODO: Remove assumptions about the parameters
+  int Nx = problemParams.get<int>("Nx");
+
   // create MultiVectors that will store the abs and arg data
-  int Nx = problemParams->get<int>("Nx");
   Epetra_Map         StandardMap( Nx+1, 0, Comm );
   Epetra_MultiVector* absPsi = new Epetra_MultiVector(StandardMap,Nx+1);
   Epetra_MultiVector* argPsi = new Epetra_MultiVector(StandardMap,Nx+1);

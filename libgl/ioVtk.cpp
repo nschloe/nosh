@@ -34,11 +34,11 @@ IoVtk::~IoVtk()
 // =============================================================================
 void IoVtk::read( Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > &psi,
                   const Teuchos::RCP<const Teuchos::Comm<int> >          comm,
-                  Teuchos::RCP<Teuchos::ParameterList>                   problemParams
+                  Teuchos::ParameterList                                 &problemParams
                 ) const
 {
   // call ParaCont for parameters
-  ReadParamsFromVtkFile( fileName_, *problemParams );
+  ReadParamsFromVtkFile( fileName_, problemParams );
   // ---------------------------------------------------------------------------
   // read the vector values
   // TODO: Get rid of this.
@@ -50,7 +50,7 @@ void IoVtk::read( Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > &psi,
 
   // TODO: What's *this*?!? Don't make assumptions on the parameter list.
   //       Get rid of it.
-  int Nx = problemParams->get<int>("Nx");
+  int Nx = problemParams.get<int>("Nx");
   int NumGlobalElements = (Nx+1)*(Nx+1);
   
   // construct a dummy multivector

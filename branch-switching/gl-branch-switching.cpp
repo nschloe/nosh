@@ -15,6 +15,7 @@
 
 //#include "glPrePostOperator.h"
 
+
 #include <string>
 
 // for the eigenvalue computation:
@@ -58,6 +59,23 @@ int main ( int argc, char *argv[] )
 #ifdef HAVE_MPI
   MPI_Init ( &argc,&argv );
 #endif
+
+
+
+
+// ======================
+// 1. get two last solutions via VTK
+// 2. get H0 for the files
+// 3. compute the jacobian
+//
+// compose nonlinear problem: contructor( pointer to glSystem, deltaS, u0, u-1, alpha, alpha-1)
+//       H(u,alpha)
+//  COMPUTE PSI2
+// 	function evaluation, jacobian
+//
+// compute PSI2 (in constructor): anasazi
+// ======================
+
 
   // Create a communicator for Tpetra objects
   const Teuchos::RCP<const Teuchos::Comm<int> > Comm
@@ -110,13 +128,17 @@ int main ( int argc, char *argv[] )
   bool withInitialGuess = filename.length() >0;
   // ===========================================================================
 
+
   // ---------------------------------------------------------------------------
-  Teuchos::ParameterList problemParameters = Teuchos::ParameterList();
+  Teuchos::ParameterList problemParameters;
   // define a new dummy psiLexicographic vector, to be adapted instantly
   Teuchos::RCP<Tpetra::Map<int> > dummyMap =
-                           Teuchos::rcp ( new Tpetra::Map<int> ( 1, 0, Comm ) );
+    Teuchos::rcp ( new Tpetra::Map<int> ( 1, 0, Comm ) );
   Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > psiLexicographic =
                                                                Teuchos::ENull();
+
+//       = Teuchos::rcp( new Tpetra::MultiVector<double_complex,int>(dummyMap,1) );
+//       = Teuchos::RCP::;
 
   if ( withInitialGuess )
     {
@@ -125,8 +147,8 @@ int main ( int argc, char *argv[] )
       try
         {
           fileIo->read ( psiLexicographic,
-                         Comm,
-                         problemParameters );
+			 Comm,
+                         &problemParameters );
         }
       catch ( const std::exception &e )
         {
@@ -155,25 +177,21 @@ int main ( int argc, char *argv[] )
 //       psiLexicographic->replaceMap( standardMap );
     }
   // ---------------------------------------------------------------------------
+
   if ( psiLexicographic.is_null() ) {
     std::cout << "Input guess empty. Abort." << endl;
     return 1; 
   }
+
   // create the gl problem
   Teuchos::RCP<GlBoundaryConditionsVirtual> boundaryConditions =
                              Teuchos::rcp ( new GlBoundaryConditionsCentral() );
 
-  Teuchos::RCP<StaggeredGrid> sGrid =
-                           Teuchos::rcp( new StaggeredGrid( problemParameters.get<int>("Nx"),
-                                                            problemParameters.get<double>("edgelength"),
-                                                            problemParameters.get<double>("H0")
-                                                          )
-                                       );
-
-  GinzburgLandau glProblem = GinzburgLandau( sGrid,
-                                             boundaryConditions
-                                           );
-
+  GinzburgLandau glProblem = GinzburgLandau ( problemParameters.get<int> ( "Nx" ),
+                                              problemParameters.get<double> ( "edgelength" ),
+                                              problemParameters.get<double> ( "H0" ),
+                                              boundaryConditions
+                                            );
 
   // create Epetra communicator
 #ifdef HAVE_MPI
@@ -259,6 +277,7 @@ int main ( int argc, char *argv[] )
   NOX::Utils printing ( printParams );
 
   // Sublist for line search
+
   Teuchos::ParameterList& searchParams = nlParams.sublist ( "Line Search" );
   searchParams.set ( "Method", "Full Step" );
 
@@ -567,10 +586,10 @@ int main ( int argc, char *argv[] )
   // ---------------------------------------------------------------------------
   // print the solution to a file
   //problemParameters.set( "FE", glsystem.freeEnergy
-  std::string solutionFile = "data/solution.vtk";
+  std::string fileName = "data/solution.vtk";
   glsystem->solutionToFile ( finalSolution,
                              problemParameters,
-                             solutionFile );
+                             fileName );
   // ---------------------------------------------------------------------------
 
 

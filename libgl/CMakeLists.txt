@@ -17,6 +17,7 @@ SET ( gl_SRCS
       glBoundaryConditionsCentral.cpp
       glPrePostOperator.cpp
       glSystem.cpp
+      domainRectangle.cpp
       eigenSaver.cpp          )
 
 FIND_PACKAGE( Trilinos REQUIRED )

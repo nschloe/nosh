@@ -14,7 +14,7 @@ SET(_trilinos_INCLUDE_SEARCH_DIRS
   /usr/local/trilinos
   /opt/trilinos
   /usr/local/trilinos/current/include
-  /opt/trilinos-10.0-r1/LINUX_MPI_64BIT/include/
+  /opt/trilinos-10.0.1/LINUX_MPI_64BIT/include/
 )
 
 FIND_PATH( Trilinos_INCLUDE_DIR

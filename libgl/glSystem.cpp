@@ -158,6 +158,7 @@ GlSystem::real2complex ( const Epetra_Vector                     &realVec,
                          Tpetra::MultiVector<double_complex,int> &complexVec
                        ) const
 {
+  // TODO: parallelize
   for ( unsigned int k=0; k<complexVec.getGlobalLength(); k++ ) {
     double_complex z = double_complex ( realVec[2*k], realVec[2*k+1] );
     complexVec.replaceGlobalValue( k, 0, z );
@@ -170,6 +171,7 @@ GlSystem::complex2real ( const Tpetra::MultiVector<double_complex,int> &complexV
                          Epetra_Vector                                 &realVec
                        ) const
 {
+  // TODO: parallelize
   Teuchos::ArrayRCP<const double_complex> complexVecView =
                                            complexVec.getVector(0)->get1dView();
   for ( int k=0; k<NumComplexUnknowns_; k++ )
@@ -226,20 +228,6 @@ GlSystem::computeF ( const Epetra_Vector &x,
                      const NOX::Epetra::Interface::Required::FillType fillFlag
                    )
 {
-//   vector<double_complex> psi ( NumComplexUnknowns_ );
-//   double_complex         val;
-  
-//   // define the Tpetra platform
-// #ifdef TPETRA_MPI
-//         Tpetra::MpiPlatform<int, double_complex> platformV(MPI_COMM_WORLD);
-//         Tpetra::MpiPlatform<int, int>            platformE(MPI_COMM_WORLD);
-// #else
-//         Tpetra::SerialPlatform<int, double_complex> platformV;
-//         Tpetra::SerialPlatform<int, int>            platformE;
-// #endif
-  
-  // ***************************************************************************
-   
   // make sure that the input and output vectors are correctly mapped
   if ( !x.Map().SameAs( *RealMap_ ) ) {
       throw glException ( "GlSystem::computeF",
@@ -393,27 +381,12 @@ GlSystem::createJacobian ( const jacCreator    jc,
   
   if ( jc==VALUES )
     {
-//       Epetra_Vector xEverywhere ( *EverywhereMap_ );
-      // scatter x over all processors
-//       Epetra_Export Exporter ( *RealMap_, *EverywhereMap_ );
-
-//       xEverywhere.Export ( x, Exporter, Insert );
-//       real2complex ( xEverywhere, psi );
-
       real2complex( x, *psi );
-      
       psiView = psi->getVector(0)->get1dView();
-      
-      // set the matrix to 0
-      jacobian_->PutScalar ( 0.0 );
+      jacobian_->PutScalar ( 0.0 );    // set the matrix to 0
     }
   else
     {
-      if ( Graph_.is_valid_ptr() )
-        {
-	  // Nullify Graph_ pointer.
-          Graph_ = Teuchos::ENull();
-        }
       // allocate the graph
       int approxNumEntriesPerRow = 1;
       Graph_ = Teuchos::rcp<Epetra_CrsGraph>( new Epetra_CrsGraph ( Copy, *RealMap_, approxNumEntriesPerRow, false ) );

@@ -332,13 +332,13 @@ stepSizeList.set("Min Step Size", 1.0e-4);
     if (!verbose)
       aList.set("Verbosity", Anasazi::Errors);
 
-//    aList.set("Operator","Cayley");
-//    double sigma = 10.0;
-//    aList.set("Cayley Pole",sigma);
+    aList.set("Operator","Cayley");
+    double sigma = 10.0;
+    aList.set("Cayley Pole",sigma);
 //    double mu = 11.0;
 //    aList.set("Cayley Zero",mu);
 
-    aList.set("Operator","Jacobian Inverse");
+//    aList.set("Operator","Jacobian Inverse");
 
     aList.set("Num Eigenvalues", 20);
     aList.set("Sorting Order", "LM"); // largest magnitude
