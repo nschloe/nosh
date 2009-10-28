@@ -112,9 +112,6 @@ int main ( int argc, char *argv[] )
 
   // ---------------------------------------------------------------------------
   Teuchos::ParameterList problemParameters = Teuchos::ParameterList();
-  // define a new dummy psiLexicographic vector, to be adapted instantly
-  Teuchos::RCP<Tpetra::Map<int> > dummyMap =
-                           Teuchos::rcp ( new Tpetra::Map<int> ( 1, 0, Comm ) );
   Teuchos::RCP<Tpetra::Vector<double_complex,int> > psiLexicographic =
                                                                Teuchos::ENull();
 
