@@ -126,7 +126,7 @@ EigenSaver::save ( Teuchos::RCP<std::vector<double> >       &evals_r,
 // 
 //   // create complex vector
 //   Teuchos::RCP<const Tpetra::Map<int> > ComplexMap = glSys_->getComplexMap();
-//   Tpetra::MultiVector<double_complex,int>  psi(ComplexMap,1,true);
+//   Tpetra::Vector<double_complex,int>  psi(ComplexMap,1,true);
 // 
 //   glSys->real2complex ( evec_r, psi );
 // 

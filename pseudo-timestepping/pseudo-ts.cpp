@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
   // define a new dummy psiLexicographic vector, to be adapted instantly
   Teuchos::RCP<Tpetra::Map<int> > dummyMap =
                            Teuchos::rcp ( new Tpetra::Map<int> ( 1, 0, Comm ) );
-  Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > psiLexicographic =
+  Teuchos::RCP<Tpetra::Vector<double_complex,int> > psiLexicographic =
                                                                Teuchos::ENull();
   if ( withInitialGuess )
     {
@@ -114,7 +114,7 @@ int main(int argc, char *argv[])
       Teuchos::RCP<Tpetra::Map<int> > standardMap =
            Teuchos::rcp ( new Tpetra::Map<int> ( NumGlobalUnknowns, 0, Comm ) );
       psiLexicographic =
-            Teuchos::rcp ( new Tpetra::MultiVector<double_complex,int> ( standardMap,1 ) );
+            Teuchos::rcp ( new Tpetra::Vector<double_complex,int> ( standardMap,1 ) );
     }
   // ---------------------------------------------------------------------------
 
@@ -137,8 +137,8 @@ int main(int argc, char *argv[])
   // get proper initial guess
   // ---------------------------------------------------------------------------
   // initialize psi with the same map as psiLexicographic
-  Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > psi =
-      Teuchos::rcp ( new Tpetra::MultiVector<double_complex,int> ( psiLexicographic->getMap(),1 ) );
+  Teuchos::RCP<Tpetra::Vector<double_complex,int> > psi =
+      Teuchos::rcp ( new Tpetra::Vector<double_complex,int> ( psiLexicographic->getMap(),1 ) );
   if ( withInitialGuess )
     {
       // If there was is an initial guess, make sure to get the ordering correct.
@@ -155,7 +155,6 @@ int main(int argc, char *argv[])
       for ( int k=0; k<NumComplexUnknowns; k++ )
         {
           psi->replaceGlobalValue ( p[k],
-                                    0,
                                     psiView[k]
                                   );
         }
@@ -163,7 +162,8 @@ int main(int argc, char *argv[])
   else
     {
       // create other initial guess for the iteration
-      psi->randomize();
+      double_complex alpha(0.1,0.0);
+      psi->putScalar( alpha );
     }
   // ---------------------------------------------------------------------------
 
@@ -180,12 +180,14 @@ int main(int argc, char *argv[])
   double delta     = 0.001;
   double tol       = 1.0e-10;
   bool   converged = false;
+  double norm2;
 
   // initialize update value to 0
   bool zeroOut = true;
-  Tpetra::MultiVector<double_complex,int> update =
-           Tpetra::MultiVector<double_complex,int> ( psi->getMap(),1, zeroOut );
-  for( int k=0; k<maxSteps; k++ ) {
+  Tpetra::Vector<double_complex,int> update =
+           Tpetra::Vector<double_complex,int> ( psi->getMap(), zeroOut );
+  int k;
+  for( k=0; k<maxSteps; k++ ) {
 
       if (verbose) {
           // print the solution to a file
@@ -200,11 +202,8 @@ int main(int argc, char *argv[])
       // get the update
       update = glProblem.computeGlVector ( *psi );
 
-      Teuchos::Array<double> norm2array(1);
-      update.norm2 ( norm2array() );
-      double norm2 = norm2array[0]; 
-
       // check for its size, and bail out if tolerance is achieved
+      norm2 = update.norm2();
       if ( norm2<=tol ) {
           converged = true;
           break;
@@ -227,7 +226,9 @@ int main(int argc, char *argv[])
   // ---------------------------------------------------------------------------
 
   if (converged)
-      std::cout << "Converged!" << std::endl;
+      std::cout << "Converged after   " << k << "   steps with    norm2(psi)="
+                << norm2 << "   ."
+                <<  std::endl;
   else
       std::cout << "Not converged." << std::endl;
 

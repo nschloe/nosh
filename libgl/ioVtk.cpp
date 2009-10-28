@@ -32,7 +32,7 @@ IoVtk::~IoVtk()
 {
 }
 // =============================================================================
-void IoVtk::read( Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > &psi,
+void IoVtk::read( Teuchos::RCP<Tpetra::Vector<double_complex,int> > &psi,
                   const Teuchos::RCP<const Teuchos::Comm<int> >          comm,
                   Teuchos::ParameterList                                 &problemParams
                 ) const
@@ -73,7 +73,7 @@ void IoVtk::read( Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > &psi,
   // define map
   Teuchos::RCP<Tpetra::Map<int> > newMap
            = Teuchos::rcp( new Tpetra::Map<int>( NumGlobalElements, 0, comm ) );
-  psi = Teuchos::rcp( new Tpetra::MultiVector<double_complex,int>(newMap,1) );
+  psi = Teuchos::rcp( new Tpetra::Vector<double_complex,int>(newMap,1) );
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
 
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -94,7 +94,7 @@ void IoVtk::read( Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > &psi,
   for (unsigned int k=0; k<psi->getLocalLength(); k++) {
       int kGlobal = psi->getMap()->getGlobalElement(k);
       double_complex z = std::polar( (*tmp)[0][kGlobal], (*tmp)[1][kGlobal] );
-      psi->replaceLocalValue( k, 0, z );
+      psi->replaceLocalValue( k, z );
   }
 
 
@@ -120,7 +120,7 @@ void IoVtk::read( Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > &psi,
 }
 // =============================================================================
 void
-IoVtk::write( const Tpetra::MultiVector<double_complex,int> &psi,
+IoVtk::write( const Tpetra::Vector<double_complex,int> &psi,
               const Teuchos::ParameterList                  &problemParams,
               const StaggeredGrid                           &sGrid
             ) const
@@ -154,7 +154,7 @@ IoVtk::write( const Tpetra::MultiVector<double_complex,int> &psi,
 }
 // =============================================================================
 void
-IoVtk::write( const Tpetra::MultiVector<double_complex,int> &psi,
+IoVtk::write( const Tpetra::Vector<double_complex,int> &psi,
               const StaggeredGrid                           &sGrid
             ) const
 {
@@ -264,7 +264,7 @@ IoVtk::writeVtkStructuredPointsHeader( std::ofstream & ioStream,
 }
 // =============================================================================
 void
-IoVtk::writeScalars( const Tpetra::MultiVector<double_complex,int> & psi,
+IoVtk::writeScalars( const Tpetra::Vector<double_complex,int> & psi,
                      const StaggeredGrid                           & sGrid,
                            std::ofstream                           & oStream
                    ) const
@@ -280,8 +280,7 @@ IoVtk::writeScalars( const Tpetra::MultiVector<double_complex,int> & psi,
   oStream << "SCALARS abs(psi) float\n"
           << "LOOKUP_TABLE default\n";
 
-  Teuchos::ArrayRCP<const double_complex> psiView =
-                                                  psi.getVector(0)->get1dView();
+  Teuchos::ArrayRCP<const double_complex> psiView = psi.get1dView();
   Teuchos::Array<int> index(2);
   for (int j=0; j<Nx+1; j++) {
       index[1] = j;

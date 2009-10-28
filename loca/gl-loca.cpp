@@ -60,6 +60,9 @@ My_CLP.setOption("verbose", "silent", &verbose, "Verbostity flag" );
 bool reverse=false;
 My_CLP.setOption("reverse","forward",&reverse, "Orientation of the continuation in the first step" );
 
+bool stopOnUnstable=false;
+My_CLP.setOption("stop-on-unstable","continue-on-unstable",&stopOnUnstable, "[unused] Stop the continuation if an unstable state has been reached" );
+
 bool computeEigenvalues;
 My_CLP.setOption("eigenvalues","no-eigenvalues",&computeEigenvalues, "Compute the eigenvalues of the Jacobian on the fly" );
 
@@ -94,10 +97,10 @@ bool withInitialGuess = filename.length()>0;
   // define a new dummy psiLexicographic vector, to be adapted instantly
   Teuchos::RCP<Tpetra::Map<int> > dummyMap =
     Teuchos::rcp ( new Tpetra::Map<int> ( 1, 0, Comm ) );
-  Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > psiLexicographic =
+  Teuchos::RCP<Tpetra::Vector<double_complex,int> > psiLexicographic =
                                                                Teuchos::ENull();
 
-//       = Teuchos::rcp( new Tpetra::MultiVector<double_complex,int>(dummyMap,1) );
+//       = Teuchos::rcp( new Tpetra::Vector<double_complex,int>(dummyMap,1) );
 //       = Teuchos::RCP::;
 
   if ( withInitialGuess )
@@ -133,7 +136,7 @@ bool withInitialGuess = filename.length()>0;
 int NumGlobalUnknowns = ( Nx+1 ) * ( Nx+1 );
 Teuchos::RCP<Tpetra::Map<int> > standardMap
  = Teuchos::rcp ( new Tpetra::Map<int> ( NumGlobalUnknowns, 0, Comm ) );
-psiLexicographic = Teuchos::rcp ( new Tpetra::MultiVector<double_complex,int> ( standardMap,1 ) );
+psiLexicographic = Teuchos::rcp ( new Tpetra::Vector<double_complex,int> ( standardMap,1 ) );
 //       psiLexicographic->replaceMap( standardMap );
 }
 // ---------------------------------------------------------------------------
@@ -166,15 +169,14 @@ int NumComplexUnknowns = glProblem.getStaggeredGrid()->getNumComplexUnknowns();
 std::vector<int> p ( NumComplexUnknowns );
 // fill p:
 glProblem.getStaggeredGrid()->lexicographic2grid ( &p );
-Teuchos::RCP<Tpetra::MultiVector<double_complex,int> >  psi
-= Teuchos::rcp ( new Tpetra::MultiVector<double_complex,int> ( psiLexicographic->getMap(),1 ) );
+Teuchos::RCP<Tpetra::Vector<double_complex,int> >  psi
+= Teuchos::rcp ( new Tpetra::Vector<double_complex,int> ( psiLexicographic->getMap(),1 ) );
 // TODO:
 // The following is certainly not multiproc.
 Teuchos::ArrayRCP<const double_complex> psiView = psiLexicographic->getVector ( 0 )->get1dView();
 for ( int k=0; k<NumComplexUnknowns; k++ )
 {
   psi->replaceGlobalValue ( p[k],
-			    0,
 			    psiView[k]
 			  );
 }
@@ -324,39 +326,39 @@ stepSizeList.set("Min Step Size", 1.0e-4);
 
   // ---------------------------------------------------------------------------
 #ifdef HAVE_LOCA_ANASAZI
-  if (computeEigenvalues) {
     // Create Anasazi Eigensolver sublist
-    stepperList.set("Compute Eigenvalues",true);
+    stepperList.set("Compute Eigenvalues",computeEigenvalues);
     Teuchos::ParameterList& aList = stepperList.sublist("Eigensolver");
     aList.set("Method", "Anasazi");
     if (!verbose)
       aList.set("Verbosity", Anasazi::Errors);
 
-//    aList.set("Operator","Cayley");
-//    double sigma = 10.0;
- //   aList.set("Cayley Pole",sigma);
+     aList.set("Operator","Jacobian Inverse");
+//     aList.set("Operator","Cayley");
+
+//    aList.set("Operator","Shift-Invert");
+//     double sigma = 10.0;
+//     aList.set("Cayley Pole",sigma);
+
 //    double mu = 11.0;
 //    aList.set("Cayley Zero",mu);
-
-    aList.set("Operator","Jacobian Inverse");
 
     aList.set("Num Eigenvalues", 20);
     aList.set("Sorting Order", "LM"); // largest magnitude
     aList.set("Num Blocks", 30 ); // = max # of Arnoldi steps
     aList.set("Maximum Restarts", 500);
 
-    aList.set("Save Eigen Data Method","User-Defined");
-    aList.set("User-Defined Save Eigen Data Name", "MySave");
+//     aList.set("Save Eigen Data Method","User-Defined");
+//     aList.set("User-Defined Save Eigen Data Name", "MySave");
 
     std::string fileName = outputdir + "/eigenvalues.dat";
-    //Teuchos::RCP<EigenSaver> yourGreatSaver = Teuchos::RCP<EigenSaver>( new EigenSaver(paramList,globalData,fileName,glsystem) );
-    //Teuchos::RCP<EigenSaver> yourGreatSaver = Teuchos::RCP<EigenSaver>( new EigenSaver(globalData,fileName,glsystem) );
-    Teuchos::RCP<EigenSaver> yourGreatSaver = Teuchos::RCP<EigenSaver>( new EigenSaver(aList,globalData,fileName,glsystem) );
+    
+    Teuchos::RCP<EigenSaver> yourGreatSaver =
+       Teuchos::RCP<EigenSaver>( new EigenSaver(aList,globalData,fileName,glsystem) );
 
     Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> myGreatSaver =
                                                                  yourGreatSaver;
     aList.set("MySave",myGreatSaver);
-  }
 #else
     stepperList.set("Compute Eigenvalues",false);
 #endif

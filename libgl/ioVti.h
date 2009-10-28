@@ -27,7 +27,7 @@ class IoVti: public IoVirtual
     //! Reads the order parameter \f$\psi\f$ and the problem parameter list
     //! from a VTI file into the arguments.
     virtual void
-    read ( Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > &psi,
+    read ( Teuchos::RCP<Tpetra::Vector<double_complex,int> > &psi,
            const Teuchos::RCP<const Teuchos::Comm<int> >          comm, // TODO: remove this
            Teuchos::ParameterList                                 &problemParams
          ) const;
@@ -38,13 +38,13 @@ class IoVti: public IoVirtual
     //! nodes is preserved and the resulting file contains a state \f$\psi\f
     //! that can be viewed using standard tools.
     virtual void
-    write ( const Tpetra::MultiVector<double_complex,int> &psi,
+    write ( const Tpetra::Vector<double_complex,int> &psi,
             const Teuchos::ParameterList                  &problemParams,
             const StaggeredGrid                           &sGrid
           ) const;
 
     virtual void
-    write ( const Tpetra::MultiVector<double_complex,int> &psi,
+    write ( const Tpetra::Vector<double_complex,int> &psi,
             const StaggeredGrid                           &sGrid
           ) const;
 

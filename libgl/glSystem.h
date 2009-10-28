@@ -42,7 +42,7 @@ class GlSystem:
                const Teuchos::RCP<Epetra_Comm> eComm,
                const bool                      &reverse, // Actually, this has nothing to do with the linear system.
                                                          // Get out, pls!
-               const Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > psi=Teuchos::ENull()  );
+               const Teuchos::RCP<Tpetra::Vector<double_complex,int> > psi=Teuchos::ENull()  );
 
     //! Destructor
     ~GlSystem();
@@ -110,9 +110,9 @@ class GlSystem:
     int realIndex2complexIndex ( const int realIndex ) const;
 
     void real2complex ( const Epetra_Vector                     &x,
-                    Tpetra::MultiVector<double_complex,int> &psi ) const;
+                    Tpetra::Vector<double_complex,int> &psi ) const;
 
-    void complex2real ( const Tpetra::MultiVector<double_complex,int> &psi,
+    void complex2real ( const Tpetra::Vector<double_complex,int> &psi,
                     Epetra_Vector                                 &x    ) const;
 
     void makeRealMap ( const Teuchos::RCP<const Tpetra::Map<int> >  complexMap );

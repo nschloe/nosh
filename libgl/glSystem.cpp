@@ -33,7 +33,7 @@ typedef std::complex<double> double_complex;
 GlSystem::GlSystem ( GinzburgLandau::GinzburgLandau                               &gl,
 		     const Teuchos::RCP<Epetra_Comm>                              eComm,
                      const bool                                                   &rv,
-                     const Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > psi  ) :
+                     const Teuchos::RCP<Tpetra::Vector<double_complex,int> > psi  ) :
     NumRealUnknowns_ ( 0 ),
     NumMyElements_ ( 0 ),
     NumComplexUnknowns_ ( 0 ),
@@ -155,25 +155,25 @@ GlSystem::realIndex2complexIndex ( const int realIndex ) const
 // converts a real-valued vector to a complex-valued psi vector
 void
 GlSystem::real2complex ( const Epetra_Vector                     &realVec,
-                         Tpetra::MultiVector<double_complex,int> &complexVec
+                         Tpetra::Vector<double_complex,int> &complexVec
                        ) const
 {
   // TODO: parallelize
   for ( unsigned int k=0; k<complexVec.getGlobalLength(); k++ ) {
     double_complex z = double_complex ( realVec[2*k], realVec[2*k+1] );
-    complexVec.replaceGlobalValue( k, 0, z );
+    complexVec.replaceGlobalValue( k, z );
   }
 }
 // =============================================================================
 // converts a real-valued vector to a complex-valued psi vector
 void
-GlSystem::complex2real ( const Tpetra::MultiVector<double_complex,int> &complexVec,
+GlSystem::complex2real ( const Tpetra::Vector<double_complex,int> &complexVec,
                          Epetra_Vector                                 &realVec
                        ) const
 {
   // TODO: parallelize
   Teuchos::ArrayRCP<const double_complex> complexVecView =
-                                           complexVec.getVector(0)->get1dView();
+                                           complexVec.get1dView();
   for ( int k=0; k<NumComplexUnknowns_; k++ )
     {
       realVec[2*k]   = real ( complexVecView[k] );
@@ -240,14 +240,13 @@ GlSystem::computeF ( const Epetra_Vector &x,
   }
    
   // define vector
-  // @TODO: Replace this by Tpetra::Vector as soon as upstream is ready.
-  Tpetra::MultiVector<double_complex,int> psi( ComplexMap_, 1, true );
+  Tpetra::Vector<double_complex,int> psi( ComplexMap_,  true );
 
   // convert from x to psi2
   real2complex ( x, psi );
 
   // define output vector
-  Tpetra::MultiVector<double_complex,int> res( ComplexMap_, 1, true );
+  Tpetra::Vector<double_complex,int> res( ComplexMap_, true );
   
   // compute the GL residual
   res = Gl_.computeGlVector ( psi );
@@ -362,8 +361,8 @@ GlSystem::createJacobian ( const jacCreator    jc,
                            const Epetra_Vector &x )
 {
 //   std::vector<double_complex> psi ( NumComplexUnknowns_ );
-  Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > psi =
-     Teuchos::rcp( new Tpetra::MultiVector<double_complex,int>(ComplexMap_,1) );
+  Teuchos::RCP<Tpetra::Vector<double_complex,int> > psi =
+     Teuchos::rcp( new Tpetra::Vector<double_complex,int>(ComplexMap_,1) );
 
   vector<int>            colIndA, colIndB;
   vector<double_complex> valuesA, valuesB;
@@ -382,7 +381,7 @@ GlSystem::createJacobian ( const jacCreator    jc,
   if ( jc==VALUES )
     {
       real2complex( x, *psi );
-      psiView = psi->getVector(0)->get1dView();
+      psiView = psi->get1dView();
       jacobian_->PutScalar ( 0.0 );    // set the matrix to 0
     }
   else
@@ -771,8 +770,7 @@ GlSystem::printSolution ( const Epetra_Vector &x,
       conStep++;
 
   // define vector
-  // @TODO: Replace this by Tpetra::Vector as soon as upstream is ready.
-  Tpetra::MultiVector<double_complex,int>  psi(ComplexMap_,1,true);
+  Tpetra::Vector<double_complex,int>  psi(ComplexMap_,true);
   // convert from x to psi
   real2complex ( x, psi );
 
@@ -851,8 +849,7 @@ GlSystem::printState( const Epetra_Vector          &x,
                     ) const
 {
   // define vector
-  // @TODO: Replace this by Tpetra::Vector as soon as upstream is ready.
-  Tpetra::MultiVector<double_complex,int>  psi(ComplexMap_,1,true);
+  Tpetra::Vector<double_complex,int>  psi(ComplexMap_,true);
   // convert from x to psi
   real2complex ( x, psi );
 
@@ -877,8 +874,7 @@ GlSystem::solutionToFile ( const Epetra_Vector    &x,
                            const std::string      &fileName )
 {
   // define vector
-  // @TODO: Replace this by Tpetra::Vector as soon as upstream is ready.
-  Tpetra::MultiVector<double_complex,int> psi(ComplexMap_,1,true);
+  Tpetra::Vector<double_complex,int> psi(ComplexMap_,true);
 
   // convert from x to psi2
   real2complex ( x, psi );

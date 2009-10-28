@@ -19,7 +19,7 @@ IoVti::~IoVti()
 {
 }
 // =============================================================================
-void IoVti::read( Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > &psi,
+void IoVti::read( Teuchos::RCP<Tpetra::Vector<double_complex,int> > &psi,
                   const Teuchos::RCP<const Teuchos::Comm<int> >          comm, // TODO: remove this
                   Teuchos::ParameterList                                 &problemParams
                 ) const
@@ -76,7 +76,7 @@ void IoVti::read( Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > &psi,
 
 }
 // =============================================================================
-void IoVti::write( const Tpetra::MultiVector<double_complex,int> &psi,
+void IoVti::write( const Tpetra::Vector<double_complex,int> &psi,
                    const Teuchos::ParameterList                  &problemParams,
                    const StaggeredGrid                           &sGrid
                  ) const
@@ -96,7 +96,7 @@ void IoVti::write( const Tpetra::MultiVector<double_complex,int> &psi,
   xmlDataArrayAbs.addAttribute( "Name", "abs(psi)" );
   xmlDataArrayAbs.addAttribute( "format", "ascii" );
   
-  Teuchos::ArrayRCP<const double_complex> psiView = psi.getVector(0)->get1dView();
+  Teuchos::ArrayRCP<const double_complex> psiView = psi.get1dView();
   Teuchos::Array<int> index(2);
   for (int i=0; i<Nx+1; i++) {
       index[0] = i;
@@ -167,7 +167,7 @@ void IoVti::write( const Tpetra::MultiVector<double_complex,int> &psi,
 }
 // =============================================================================
 void
-IoVti::write( const Tpetra::MultiVector<double_complex,int> &psi,
+IoVti::write( const Tpetra::Vector<double_complex,int> &psi,
               const StaggeredGrid                           &sGrid
             ) const
 {

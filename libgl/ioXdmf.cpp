@@ -34,7 +34,7 @@ IoXdmf::~IoXdmf()
 {
 }
 // =============================================================================
-void IoXdmf::read( Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > &psi,
+void IoXdmf::read( Teuchos::RCP<Tpetra::Vector<double_complex,int> > &psi,
                    const Teuchos::RCP<const Teuchos::Comm<int> >          comm, // TODO: remove this
                   Teuchos::ParameterList                                 &problemParams
                  ) const
@@ -130,7 +130,7 @@ void IoXdmf::read( Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > &psi,
   for (int i=0; i<Nx+1; i++)
       for (int j=0; j<Nx+1; j++) {
 	  double_complex z = std::polar( (*absPsi)[i][j], (*argPsi)[i][j] );
-	  psi->replaceGlobalValue( k++, 0, z );
+	  psi->replaceGlobalValue( k++, z );
       }
 
   return;
@@ -235,7 +235,7 @@ IoXdmf::getHeavyData( const Teuchos::XMLObject &xmlFileObject,
 }
 // =============================================================================
 void
-IoXdmf::write( const Tpetra::MultiVector<double_complex,int> &psi,
+IoXdmf::write( const Tpetra::Vector<double_complex,int> &psi,
                const Teuchos::ParameterList                  &problemParams,
                const StaggeredGrid::StaggeredGrid            &sGrid
              ) const
@@ -374,7 +374,7 @@ IoXdmf::write( const Tpetra::MultiVector<double_complex,int> &psi,
   // fill absPsi and argPsi
   Epetra_MultiVector absPsi(StandardMap,Nx+1);
   Epetra_MultiVector argPsi(StandardMap,Nx+1);
-  Teuchos::ArrayRCP<const double_complex> psiView = psi.getVector(0)->get1dView();
+  Teuchos::ArrayRCP<const double_complex> psiView = psi.get1dView();
   Teuchos::Array<int> index(2);
   for (int i=0; i<Nx+1; i++) {
       index[0] = i;
@@ -396,7 +396,7 @@ IoXdmf::write( const Tpetra::MultiVector<double_complex,int> &psi,
 }
 // =============================================================================
 void
-IoXdmf::write( const Tpetra::MultiVector<double_complex,int> &psi,
+IoXdmf::write( const Tpetra::Vector<double_complex,int> &psi,
                const StaggeredGrid::StaggeredGrid            &sGrid
              ) const
 {

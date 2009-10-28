@@ -19,7 +19,7 @@ GlBoundaryConditionsInner::~GlBoundaryConditionsInner()
 // =============================================================================
 double_complex
 GlBoundaryConditionsInner::getGlEntry ( const int                                     eqIndex,
-                                        const Tpetra::MultiVector<double_complex,int> &psi,
+                                        const Tpetra::Vector<double_complex,int> &psi,
                                         const StaggeredGrid::StaggeredGrid            &sGrid
                                       )
 {
@@ -37,7 +37,7 @@ GlBoundaryConditionsInner::getGlEntry ( const int                               
 
   // Get a view of the whole vector.
   // Remember: This only works with one core.
-  Teuchos::ArrayRCP<const double_complex> psiView = psi.getVector(0)->get1dView();
+  Teuchos::ArrayRCP<const double_complex> psiView = psi.get1dView();
 
   int k = sGrid.i2k ( i );
   psiK = psiView[k];
@@ -153,7 +153,7 @@ GlBoundaryConditionsInner::getGlEntry ( const int                               
 // =============================================================================
 void 
 GlBoundaryConditionsInner::getGlJacobianRow ( const int                                                    eqIndex,
-                                              const Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > psi,
+                                              const Teuchos::RCP<Tpetra::Vector<double_complex,int> > psi,
                                               const StaggeredGrid::StaggeredGrid                           &sGrid,
                                               const bool                                                   fillValues,
                                               std::vector<int>                                             &columnIndicesPsi,

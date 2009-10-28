@@ -36,14 +36,14 @@ class GinzburgLandau
      Teuchos::RCP<StaggeredGrid>
      getStaggeredGrid() const;
      
-     Tpetra::MultiVector<double_complex,int>
-     computeGlVector( const Tpetra::MultiVector<double_complex,int> psi ) const;
+     Tpetra::Vector<double_complex,int>
+     computeGlVector( const Tpetra::Vector<double_complex,int> psi ) const;
 
      /*! Returns the coefficients of the jacobian system associated with the
          Ginzburg--Landau equations. */
      void
      getJacobianRow( const int                                     eqnum,
-                     const Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > psi,
+                     const Teuchos::RCP<Tpetra::Vector<double_complex,int> > psi,
                      std::vector<int>                              &columnIndicesPsi,
                      std::vector<double_complex>                   &valuesPsi,
                      std::vector<int>                              &columnIndicesPsiConj,
@@ -63,11 +63,11 @@ class GinzburgLandau
        \f]
        of a given state \f$\psi\f$. */
      double
-     freeEnergy ( const Tpetra::MultiVector<double_complex,int> &psi ) const;
+     freeEnergy ( const Tpetra::Vector<double_complex,int> &psi ) const;
      
      /*! Calculate the vorticity of the current solution. */
      int
-     getVorticity ( const Tpetra::MultiVector<double_complex,int> &psi ) const;
+     getVorticity ( const Tpetra::Vector<double_complex,int> &psi ) const;
       
   private:
 
@@ -76,7 +76,7 @@ class GinzburgLandau
          @param psi   Current order parameter \f$\psi\f$. */
      double_complex
      computeGl( const int                                     eqnum,
-                const Tpetra::MultiVector<double_complex,int> &psi
+                const Tpetra::Vector<double_complex,int> &psi
               ) const;
     
       //! Equation type enumerator.
@@ -105,7 +105,7 @@ class GinzburgLandau
           Ginzburg--Landau equations. */
       void computeJacobianRow ( const bool                                    fillValues,
                                 const int                                     eqnum,
-                                const Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > psi,
+                                const Teuchos::RCP<Tpetra::Vector<double_complex,int> > psi,
                                 std::vector<int>                              &columnIndicesPsi,
                                 std::vector<double_complex>                   &valuesPsi,
                                 std::vector<int>                              &columnIndicesPsiConj,

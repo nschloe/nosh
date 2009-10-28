@@ -115,7 +115,7 @@ int main ( int argc, char *argv[] )
   // define a new dummy psiLexicographic vector, to be adapted instantly
   Teuchos::RCP<Tpetra::Map<int> > dummyMap =
                            Teuchos::rcp ( new Tpetra::Map<int> ( 1, 0, Comm ) );
-  Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > psiLexicographic =
+  Teuchos::RCP<Tpetra::Vector<double_complex,int> > psiLexicographic =
                                                                Teuchos::ENull();
 
   if ( withInitialGuess )
@@ -151,7 +151,7 @@ int main ( int argc, char *argv[] )
       int NumGlobalUnknowns = ( Nx+1 ) * ( Nx+1 );
       Teuchos::RCP<Tpetra::Map<int> > standardMap
          = Teuchos::rcp ( new Tpetra::Map<int> ( NumGlobalUnknowns, 0, Comm ) );
-      psiLexicographic = Teuchos::rcp ( new Tpetra::MultiVector<double_complex,int> ( standardMap,1 ) );
+      psiLexicographic = Teuchos::rcp ( new Tpetra::Vector<double_complex,int> ( standardMap,1 ) );
 //       psiLexicographic->replaceMap( standardMap );
     }
   // ---------------------------------------------------------------------------
@@ -196,15 +196,14 @@ int main ( int argc, char *argv[] )
       std::vector<int> p ( NumComplexUnknowns );
       // fill p:
       glProblem.getStaggeredGrid()->lexicographic2grid ( &p );
-      Teuchos::RCP<Tpetra::MultiVector<double_complex,int> >  psi
-      = Teuchos::rcp ( new Tpetra::MultiVector<double_complex,int> ( psiLexicographic->getMap(),1 ) );
+      Teuchos::RCP<Tpetra::Vector<double_complex,int> >  psi
+      = Teuchos::rcp ( new Tpetra::Vector<double_complex,int> ( psiLexicographic->getMap(),1 ) );
       // TODO:
       // The following is certainly not multiproc.
       Teuchos::ArrayRCP<const double_complex> psiView = psiLexicographic->getVector ( 0 )->get1dView();
       for ( int k=0; k<NumComplexUnknowns; k++ )
         {
           psi->replaceGlobalValue ( p[k],
-                                    0,
                                     psiView[k]
                                   );
         }
