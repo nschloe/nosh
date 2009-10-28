@@ -10,20 +10,16 @@
 #include <EpetraExt_Utils.h>
 
 // =============================================================================
-EigenSaver::EigenSaver( const Teuchos::RCP<Teuchos::ParameterList>& locaList,
+EigenSaver::EigenSaver( const Teuchos::ParameterList& eigenParamsList,
                         const Teuchos::RCP<LOCA::GlobalData>& globalData,
 		        const std::string fileName,
                         const Teuchos::RCP<GlSystem> glSys ) :
+  eigenParamsList_(eigenParamsList),
   fileName_(fileName),
   globalData_(globalData),
-  glSys_(glSys),
-  parsedParams_(Teuchos::rcp(new LOCA::Parameter::SublistParser(globalData)))
+  glSys_(glSys)
+  //parsedParams_(Teuchos::rcp(new LOCA::Parameter::SublistParser(globalData))),
 {
-  cout << "CONSTRUCTOR " << endl;
-  cout << *locaList << endl;
-  //parsedParams_->parseSublists(locaList);
-  cout << *(parsedParams_->getSublist("Eigensolver"));
-  cout << "END CONSTRUCTOR " << endl;
 };
 // =============================================================================
 EigenSaver::~EigenSaver()
@@ -107,21 +103,17 @@ EigenSaver::save ( Teuchos::RCP<std::vector<double> >       &evals_r,
   eigenFileStream << std::endl;
   eigenFileStream.close();
 
-  // Change the eigenvalue list
-  //cout << *parsedParams_;
-  // Create eigensolver
-  Teuchos::RCP<Teuchos::ParameterList> eigenParams = 
-    parsedParams_->getSublist("Eigensolver");
-  cout << "HIIII BEGINS" << endl;
-  //cout << *parsedParams_ << endl;
-//    parsedParams_->set("Num Eigenvalues", step);
-//    globalData_->locaFactory->createEigensolverStrategy(parsedParams_,
-//							eigenParams);
-
-  cout << "HIIII ENDS" << endl;
-
-
-
+//  Teuchos::RCP<Teuchos::ParameterList> eigenParamsList = 
+//	  Teuchos::RCP<Teuchos::ParameterList> ( new Teuchos::ParameterList( topLevelParams_->sublist("LOCA").
+//								      sublist("Stepper",true).
+//								      sublist("Eigensolver",true) ) ;
+  
+//  Teuchos::ParameterList & eigenParamsList = topLevelParams_->sublist("LOCA").
+//					         	     sublist("Stepper",true).
+//							     sublist("Eigensolver",true);
+  cout << eigenParamsList_ ;
+  //eigenParamsList.set("Num Eigenvalues",step);
+  
   return NOX::Abstract::Group::Ok;
 }
 // =============================================================================

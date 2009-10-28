@@ -348,20 +348,10 @@ stepSizeList.set("Min Step Size", 1.0e-4);
     aList.set("Save Eigen Data Method","User-Defined");
     aList.set("User-Defined Save Eigen Data Name", "MySave");
 
-//     Teuchos::RCP<LOCA::Parameter::SublistParser> parser =
-//         Teuchos::rcp(new LOCA::Parameter::SublistParser(globalData));
-//    Teuchos::RCP<Teuchos::ParameterList> aListPtr = Teuchos::rcp(&aList,false);
-//
-
-    Teuchos::RCP<Teuchos::ParameterList> stepperListPtr = 
-        Teuchos::RCP<Teuchos::ParameterList>( &stepperList );
-        //Teuchos::RCP<Teuchos::ParameterList>( new Teuchos::ParameterList(stepperList) );
-//cout << "IN MAIN " << endl;
-//cout << *stepperListPtr;
-//cout << "END MAIN " << endl;
     std::string fileName = outputdir + "/eigenvalues.dat";
-    Teuchos::RCP<EigenSaver> yourGreatSaver =
-                           Teuchos::RCP<EigenSaver>( new EigenSaver(stepperListPtr,globalData,fileName,glsystem) );
+    //Teuchos::RCP<EigenSaver> yourGreatSaver = Teuchos::RCP<EigenSaver>( new EigenSaver(paramList,globalData,fileName,glsystem) );
+    //Teuchos::RCP<EigenSaver> yourGreatSaver = Teuchos::RCP<EigenSaver>( new EigenSaver(globalData,fileName,glsystem) );
+    Teuchos::RCP<EigenSaver> yourGreatSaver = Teuchos::RCP<EigenSaver>( new EigenSaver(aList,globalData,fileName,glsystem) );
 
     Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> myGreatSaver =
                                                                  yourGreatSaver;
@@ -370,7 +360,6 @@ stepSizeList.set("Min Step Size", 1.0e-4);
 #else
     stepperList.set("Compute Eigenvalues",false);
 #endif
-  
   // ---------------------------------------------------------------------------
 
   // ---------------------------------------------------------------------------
