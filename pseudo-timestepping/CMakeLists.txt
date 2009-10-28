@@ -18,15 +18,10 @@ IF(MPI_COMPILED)
                         ${MPI_LIBRARY}    )
 ENDIF(MPI_COMPILED)
 
-FIND_PACKAGE( Trilinos COMPONENTS NOXEpetra
-                                  NOX
-                                  AztecOO
-                                  IFPACK
-                                  Amesos
-                                  ML
-                                  LOCA
-                                  EpetraExt
+FIND_PACKAGE( Trilinos COMPONENTS EpetraExt
                                   Epetra
+                                  Tpetra
+                                  Kokkosnodeapi
                                   Teuchos )
 
 INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/libgl

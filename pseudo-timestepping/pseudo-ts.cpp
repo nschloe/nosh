@@ -1,10 +1,6 @@
 #include <NOX.H>
 
-#ifdef HAVE_MPI
-#include <Epetra_MpiComm.h>
-#else
-#include <Epetra_SerialComm.h>
-#endif
+#include <Teuchos_DefaultComm.hpp>
 
 #include <EpetraExt_Utils.h> // for toString
 
@@ -14,6 +10,11 @@
 // User's application specific files
 #include "glSystem.h"
 #include "ioFactory.h"
+
+// boundary conditions
+#include "glBoundaryConditionsInner.h"
+#include "glBoundaryConditionsOuter.h"
+#include "glBoundaryConditionsCentral.h"
 
 #include <string>
 
@@ -25,16 +26,12 @@ int main(int argc, char *argv[])
   MPI_Init(&argc,&argv);
 #endif
 
-  // Create a communicator for Epetra objects
-#ifdef HAVE_MPI
-  Epetra_MpiComm Comm(MPI_COMM_WORLD);
-#else
-  Epetra_SerialComm Comm;
-#endif
-
+  // Create a communicator for Tpetra objects
+  const Teuchos::RCP<const Teuchos::Comm<int> > Comm
+                                 = Teuchos::DefaultComm<int>::getComm();
 
   // Get the process ID and the total number of processors
-  int MyPID = Comm.MyPID();
+  int MyPID = Comm->getRank();
 
   // ===========================================================================
   // handle command line arguments
@@ -71,47 +68,103 @@ int main(int argc, char *argv[])
   bool withInitialGuess = filename.length()>0;
   // ===========================================================================
 
-  // The following is actually only necessary when no input file is given, but
-  // the VTK format as adapted here has the shortcoming that for the parameters,
-  // it does not contain the data type (double, int,...). Hence, the list must
-  // be present beforehand to check back for existing parameter names and their
-  // types.
-  Teuchos::ParameterList      problemParameters;
-  problemParameters.set("Nx",50);
-  problemParameters.set("edgelength",10.0);
-  problemParameters.set("H0",0.4);
-
-
   // ---------------------------------------------------------------------------
-  std::vector<double_complex> psiLexicographic;
-  if (withInitialGuess) {
-      IoVirtual* fileIo = IoFactory::createFileIo( filename );
-      fileIo->read( &psiLexicographic,
-                    &problemParameters );
+  Teuchos::ParameterList problemParameters;
+  // define a new dummy psiLexicographic vector, to be adapted instantly
+  Teuchos::RCP<Tpetra::Map<int> > dummyMap =
+                           Teuchos::rcp ( new Tpetra::Map<int> ( 1, 0, Comm ) );
+  Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > psiLexicographic =
+                                                               Teuchos::ENull();
+  if ( withInitialGuess )
+    {
+      Teuchos::RCP<IoVirtual> fileIo =
+               Teuchos::RCP<IoVirtual> ( IoFactory::createFileIo ( filename ) );
+      try
+        {
+          fileIo->read ( psiLexicographic,
+			 Comm,
+                         problemParameters );
+        }
+      catch ( const std::exception &e )
+        {
+          std::cout << e.what() << std::endl;
+          return 1;
+        }
 
-      delete fileIo;
-  }
+      if ( psiLexicographic.is_null() ) {
+	std::cout << "Input guess empty. Abort." << endl;
+	return 1;
+      }
+    }
+  else
+    {
+      // set the default value
+      int    Nx         = 50;
+      double edgelength = 10.0;
+      double H0         = 0.3;
+      std::cout << "Using the standard parameters \n"
+                << "    Nx         = " << Nx << ",\n"
+                << "    edgelength = " << edgelength << ",\n"
+                << "    H0         = " << H0 << "." << std::endl;
+      problemParameters.set ( "Nx"        , Nx );
+      problemParameters.set ( "edgelength", edgelength );
+      problemParameters.set ( "H0"        , H0 );
+
+      int NumGlobalUnknowns = ( Nx+1 ) * ( Nx+1 );
+      Teuchos::RCP<Tpetra::Map<int> > standardMap =
+           Teuchos::rcp ( new Tpetra::Map<int> ( NumGlobalUnknowns, 0, Comm ) );
+      psiLexicographic =
+            Teuchos::rcp ( new Tpetra::MultiVector<double_complex,int> ( standardMap,1 ) );
+    }
   // ---------------------------------------------------------------------------
-
 
   // create the gl problem
-  GinzburgLandau glProblem = GinzburgLandau( problemParameters.get<int>("Nx"),
-                                             problemParameters.get<double>("edgelength"),
-                                             problemParameters.get<double>("H0")
+  Teuchos::RCP<GlBoundaryConditionsVirtual> boundaryConditions =
+		               Teuchos::rcp(new GlBoundaryConditionsCentral() );
+
+  Teuchos::RCP<StaggeredGrid> sGrid =
+              Teuchos::rcp( new StaggeredGrid( problemParameters.get<int>("Nx"),
+                                               problemParameters.get<double>("edgelength"),
+                                               problemParameters.get<double>("H0")
+                                             )
+                          );
+
+  GinzburgLandau glProblem = GinzburgLandau( sGrid,
+                                             boundaryConditions
                                            );
 
-  int NumUnknowns = glProblem.getStaggeredGrid()->getNumComplexUnknowns();
-
   // ---------------------------------------------------------------------------
-  std::vector<double_complex> psi(NumUnknowns);
-  if (withInitialGuess) {
+  // get proper initial guess
+  // ---------------------------------------------------------------------------
+  // initialize psi with the same map as psiLexicographic
+  Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > psi =
+      Teuchos::rcp ( new Tpetra::MultiVector<double_complex,int> ( psiLexicographic->getMap(),1 ) );
+  if ( withInitialGuess )
+    {
       // If there was is an initial guess, make sure to get the ordering correct.
-      std::vector<int> p(NumUnknowns);
+      // TODO:
+      // Look into having this done by Trilinos. If executed on a multiproc
+      // environment, we don't want p to be fully present on all processors.
+      int NumComplexUnknowns = glProblem.getStaggeredGrid()->getNumComplexUnknowns();
+      std::vector<int> p ( NumComplexUnknowns );
       // fill p:
-      glProblem.getStaggeredGrid()->lexicographic2grid( &p );
-      for (int k=0; k<NumUnknowns; k++)
-          psi[p[k]] = psiLexicographic[k];
-  }
+      glProblem.getStaggeredGrid()->lexicographic2grid ( &p );
+      // TODO:
+      // The following is certainly not multiproc.
+      Teuchos::ArrayRCP<const double_complex> psiView = psiLexicographic->getVector ( 0 )->get1dView();
+      for ( int k=0; k<NumComplexUnknowns; k++ )
+        {
+          psi->replaceGlobalValue ( p[k],
+                                    0,
+                                    psiView[k]
+                                  );
+        }
+    }
+  else
+    {
+      // create other initial guess for the iteration
+      psi->randomize();
+    }
   // ---------------------------------------------------------------------------
 
 
@@ -125,39 +178,43 @@ int main(int argc, char *argv[])
   // run the loop
   int    maxSteps  = 5000;
   double delta     = 0.001;
-  double tol       = 1e-10;
+  double tol       = 1.0e-10;
   bool   converged = false;
-  std::vector<double_complex> update(NumUnknowns);
+
+  // initialize update value to 0
+  bool zeroOut = true;
+  Tpetra::MultiVector<double_complex,int> update =
+           Tpetra::MultiVector<double_complex,int> ( psi->getMap(),1, zeroOut );
   for( int k=0; k<maxSteps; k++ ) {
 
       if (verbose) {
           // print the solution to a file
           std::string fileName = outputdir+"/"+"pseudotimestep-"+EpetraExt::toString(k)+".vtk";
-          IoVirtual* fileIo = IoFactory::createFileIo( fileName );
-          fileIo->write( psi,
-                         problemParameters,
+          Teuchos::RCP<IoVirtual> fileIo =
+               Teuchos::RCP<IoVirtual> ( IoFactory::createFileIo ( fileName ) );
+          fileIo->write( *psi,
+                          problemParameters,
                          *(glProblem.getStaggeredGrid()) );
       }
 
       // get the update
-      for ( int l=0; l<NumUnknowns; l++ )
-          update[l] = glProblem.computeGl( l, psi );
+      update = glProblem.computeGlVector ( *psi );
+
+      Teuchos::Array<double> norm2array(1);
+      update.norm2 ( norm2array() );
+      double norm2 = norm2array[0]; 
 
       // check for its size, and bail out if tolerance is achieved
-      double sum = 0.0;
-      for ( int l=0; l<NumUnknowns; l++ )
-          sum += abs(update[l])*abs(update[l]);
-      if ( sqrt(sum)<=tol ) {
+      if ( norm2<=tol ) {
           converged = true;
           break;
       }
 
       if (verbose)
-          std::cout << "norm_2(psi) = " << sqrt(sum) << std::endl;
+          std::cout << "norm_2(psi) = " << norm2 << std::endl;
 
       // update
-      for ( int l=0; l<NumUnknowns; l++ )
-          psi[l] += delta*update[l];
+      psi->update( 1.0, update, 1.0 );
 
 //       if (!k%100) { // add a random component
 //           for ( int l=0; l<NumUnknowns; l++ ) {
