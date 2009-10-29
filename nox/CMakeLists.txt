@@ -30,7 +30,8 @@ INCLUDE_DIRECTORIES ( ${Trilinos_INCLUDE_DIR} )
 INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/libgl )
 
 SET ( ginzburg_landau_SRCS
-      gl-nox.cpp )
+      glNox.cpp
+      main.cpp )
 
 ADD_EXECUTABLE ( gl-nox.out
                  ${ginzburg_landau_SRCS} )
