@@ -209,7 +209,6 @@ Teuchos::ParameterList& locaParamsList = paramList->sublist("LOCA");
   stepperList.set("Max Nonlinear Iterations", 20);   // Should set
   // ---------------------------------------------------------------------------
 
-
 // ---------------------------------------------------------------------------
 // Setting the bifurcation parameters
 // ---------------------------------------------------------------------------
@@ -328,37 +327,37 @@ stepSizeList.set("Min Step Size", 1.0e-4);
 #ifdef HAVE_LOCA_ANASAZI
     // Create Anasazi Eigensolver sublist
     stepperList.set("Compute Eigenvalues",computeEigenvalues);
-    Teuchos::ParameterList& aList = stepperList.sublist("Eigensolver");
-    aList.set("Method", "Anasazi");
+    Teuchos::ParameterList& eigenList = stepperList.sublist("Eigensolver");
+    eigenList.set("Method", "Anasazi");
     if (!verbose)
-      aList.set("Verbosity", Anasazi::Errors);
+      eigenList.set("Verbosity", Anasazi::Errors);
 
-     aList.set("Operator","Jacobian Inverse");
-//     aList.set("Operator","Cayley");
+     eigenList.set("Operator","Jacobian Inverse");
+//     eigenList.set("Operator","Cayley");
 
-//    aList.set("Operator","Shift-Invert");
+//    eigenList.set("Operator","Shift-Invert");
 //     double sigma = 10.0;
-//     aList.set("Cayley Pole",sigma);
+//     eigenList.set("Cayley Pole",sigma);
 
 //    double mu = 11.0;
-//    aList.set("Cayley Zero",mu);
+//    eigenList.set("Cayley Zero",mu);
 
-    aList.set("Num Eigenvalues", 20);
-    aList.set("Sorting Order", "LM"); // largest magnitude
-    aList.set("Num Blocks", 30 ); // = max # of Arnoldi steps
-    aList.set("Maximum Restarts", 500);
+    eigenList.set("Num Eigenvalues", 1);
+    eigenList.set("Sorting Order", "LM"); // largest magnitude
+    eigenList.set("Num Blocks", 30 ); // = max # of Arnoldi steps
+    eigenList.set("Maximum Restarts", 500);
 
-//     aList.set("Save Eigen Data Method","User-Defined");
-//     aList.set("User-Defined Save Eigen Data Name", "MySave");
+    eigenList.set("Save Eigen Data Method","User-Defined");
+    eigenList.set("User-Defined Save Eigen Data Name", "glSaveEigenDataStrategy");
 
     std::string fileName = outputdir + "/eigenvalues.dat";
-    
-    Teuchos::RCP<EigenSaver> yourGreatSaver =
-       Teuchos::RCP<EigenSaver>( new EigenSaver(aList,globalData,fileName,glsystem) );
+    Teuchos::RCP<Teuchos::ParameterList> eigenListPtr = Teuchos::rcpFromRef( (eigenList) );
+    Teuchos::RCP<EigenSaver> glEigenSaver =
+       Teuchos::RCP<EigenSaver>( new EigenSaver(eigenListPtr,globalData,fileName,glsystem) );
 
-    Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> myGreatSaver =
-                                                                 yourGreatSaver;
-    aList.set("MySave",myGreatSaver);
+    Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> glSaveEigenDataStrategy =
+                                                                 glEigenSaver;
+    eigenList.set("glSaveEigenDataStrategy",glSaveEigenDataStrategy);
 #else
     stepperList.set("Compute Eigenvalues",false);
 #endif

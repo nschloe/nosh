@@ -19,11 +19,10 @@ class EigenSaver : public LOCA::SaveEigenData::AbstractStrategy
 //      const Teuchos::RCP<Teuchos::ParameterList>& eigenParams      );
 
    // Constructor
-   EigenSaver( const Teuchos::ParameterList& topLevelParams,
-               const Teuchos::RCP<LOCA::GlobalData>& globalData,
+   EigenSaver( const Teuchos::RCP<Teuchos::ParameterList> eigenParams,
+	       const Teuchos::RCP<LOCA::GlobalData>& globalData,
                const std::string fileName,
-               const Teuchos::RCP<GlSystem> glSys
-             );
+               const Teuchos::RCP<GlSystem> glSys );
 
    virtual ~EigenSaver();
 
@@ -34,13 +33,10 @@ class EigenSaver : public LOCA::SaveEigenData::AbstractStrategy
           Teuchos::RCP<NOX::Abstract::MultiVector> &evecs_i  );
 
   private:
-    Teuchos::ParameterList eigenParamsList_;
+    Teuchos::RCP<Teuchos::ParameterList> eigenParams_;
     std::string fileName_;
     Teuchos::RCP<GlSystem> glSys_;
     Teuchos::RCP<LOCA::GlobalData> globalData_;
-    //Teuchos::RCP<LOCA::Parameter::SublistParser> parsedParams_;
-    //Teuchos::RCP<Teuchos::ParameterList> topLevelParams_;
-  
 
     void
     saveEigenstate ( const std::string                         fileName,

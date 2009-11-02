@@ -10,16 +10,16 @@
 #include <EpetraExt_Utils.h>
 
 // =============================================================================
-EigenSaver::EigenSaver( const Teuchos::ParameterList& eigenParamsList,
+EigenSaver::EigenSaver( const Teuchos::RCP<Teuchos::ParameterList> eigenParams,
                         const Teuchos::RCP<LOCA::GlobalData>& globalData,
 		        const std::string fileName,
                         const Teuchos::RCP<GlSystem> glSys ) :
-  eigenParamsList_(eigenParamsList),
+  eigenParams_(eigenParams),
   fileName_(fileName),
   globalData_(globalData),
   glSys_(glSys)
-  //parsedParams_(Teuchos::rcp(new LOCA::Parameter::SublistParser(globalData))),
 {
+  //cout << "IN CONSTRUCTOR" << endl;
 };
 // =============================================================================
 EigenSaver::~EigenSaver()
@@ -32,13 +32,6 @@ EigenSaver::save ( Teuchos::RCP<std::vector<double> >       &evals_r,
                    Teuchos::RCP<NOX::Abstract::MultiVector> &evecs_r,
                    Teuchos::RCP<NOX::Abstract::MultiVector> &evecs_i  )
 {
-
-// std::cout << "Hi before" << std::endl;
-// std::cout << globalData_->locaUtils->StepperParameters;
-// globalData_->locaUtils->print(std::cout);
-// std::cout << "Hi after" << std::endl;
-//globalData_->locaUtils();//->StepperParameters();
-
   // Keep track of how often this method is called.
   // This is actually somewhat ugly as it assumes that this number coincides
   // with the number of steps in the continuation.
@@ -62,7 +55,7 @@ EigenSaver::save ( Teuchos::RCP<std::vector<double> >       &evals_r,
       }
       eigenFileStream << std::endl;
   } else {
-      // just append to the the contents to the file
+      // just append the contents to the file
       eigenFileStream.open (fileName_.c_str(),ios::app);
   }
 
@@ -103,16 +96,9 @@ EigenSaver::save ( Teuchos::RCP<std::vector<double> >       &evals_r,
   eigenFileStream << std::endl;
   eigenFileStream.close();
 
-//  Teuchos::RCP<Teuchos::ParameterList> eigenParamsList = 
-//	  Teuchos::RCP<Teuchos::ParameterList> ( new Teuchos::ParameterList( topLevelParams_->sublist("LOCA").
-//								      sublist("Stepper",true).
-//								      sublist("Eigensolver",true) ) ;
-  
-//  Teuchos::ParameterList & eigenParamsList = topLevelParams_->sublist("LOCA").
-//					         	     sublist("Stepper",true).
-//							     sublist("Eigensolver",true);
-  cout << eigenParamsList_ ;
-  //eigenParamsList.set("Num Eigenvalues",step);
+  int numEigs = eigenParams_->get<int>("Num Eigenvalues");
+  numEigs++;
+  eigenParams_->set("Num Eigenvalues",numEigs);
   
   return NOX::Abstract::Group::Ok;
 }

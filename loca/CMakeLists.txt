@@ -50,7 +50,7 @@ FIND_LIBRARY( PARACONT paracont
               HINTS ${PARACONT_DIR}/lib )
 SET( LINK_LIBRARIES ${LINK_LIBRARIES}
                     ${PARACONT} )
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 IF(TRILINOS_SUPERLU)
     FIND_LIBRARY( SUPERLU ${SUPERLU_LIBNAME}
                   HINTS ${SUPERLU_DIR} )
@@ -78,7 +78,7 @@ IF(TRILINOS_METIS)
     SET( LINK_LIBRARIES ${LINK_LIBRARIES}
                         ${METIS} )
 ENDIF(TRILINOS_METIS)
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 FIND_LIBRARY( HDF5 ${HDF5_LIBNAME}
               HINTS ${HDF5_DIR}/lib )
 SET( LINK_LIBRARIES ${LINK_LIBRARIES}

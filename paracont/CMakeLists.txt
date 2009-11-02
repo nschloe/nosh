@@ -4,8 +4,8 @@ SET(GL_CMAKE_DIR "${ginzburg-landau_SOURCE_DIR}/CMakeModules")
 SET(CMAKE_MODULE_PATH "${GL_CMAKE_DIR}" ${CMAKE_MODULE_PATH})
 
 INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/libgl
-                      /opt/trilinos-090603a/LINUX_MPI_64BIT/include/ 
-                      /opt/boost/1.39.0/include/boost-1_39/ )
+                      /usr/local/trilinos/trilinos-10.0.1/MAC_MPI/include/
+		      /usr/local/boost/boost_1_40_0/ )
 
 SET ( ginzburg_landau_SRCS
       gl-paracont.cpp )
@@ -59,17 +59,17 @@ IF(TRILINOS_METIS)
     SET( LINK_LIBRARIES ${LINK_LIBRARIES}
                         ${METIS_LIBRARY})
 ENDIF(TRILINOS_METIS)
-FIND_LIBRARY( BLAS goto-blas-gfortran
+FIND_LIBRARY( BLAS blas
               HINTS /usr/local/lib
                     /opt/goto-blas-1.26/lib )
-FIND_LIBRARY( LAPACK lapack-gfortran
+FIND_LIBRARY( LAPACK lapack
               HINTS /usr/local/lib
                     /opt/lapack-3.2.1/lib )
 FIND_LIBRARY( GFORTRAN gfortran
               HINTS /usr/lib/gcc/x86_64-pc-linux-gnu/4.3.3
                     /opt/gcc-4.3.3/lib64 )
 FIND_LIBRARY( HDF5 hdf5 
-              HINTS /opt/hdf5-1.6.9/lib/ )
+              HINTS /usr/local/hdf5/hdf5-1.6.9/hdf5/lib )
 FIND_LIBRARY( Z z )
 # ==============================================================================
 
