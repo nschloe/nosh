@@ -1,22 +1,11 @@
 #include "ioVtk.h"
 #include "ioException.h"
 
+#include <string>
+
 #include <boost/algorithm/string.hpp>
 
-#include <Epetra_Map.h>
-
 #include <EpetraExt_Utils.h>
-
-#ifdef HAVE_MPI
-#include <mpi.h>
-#include <Epetra_MpiComm.h>
-#else
-#include <Epetra_SerialComm.h>
-#endif
-
-// TODO:
-// Remove this:
-#include <Teuchos_Comm.hpp>
 
 // =============================================================================
 // Constructor
@@ -201,7 +190,7 @@ IoVtk::strJoin( const std::vector<std::string> & vec,
   for(unsigned int i=0;i<vec.size();i++)
       size+=vec[i].size();
 
-  string tmp;
+  std::string tmp;
   tmp.reserve(size);
   tmp=vec[0];
   for(unsigned int i=1;i<vec.size();i++)
@@ -333,7 +322,7 @@ IoVtk::ReadParamsFromVtkFile( std::ifstream    &iFile,
    }
 
    // now, 'explode' the string at the separator sign, ',' (comma)
-   std::vector<string> strVec;
+   std::vector<std::string> strVec;
    boost::algorithm::split( strVec,
                             aString,
                             boost::algorithm::is_any_of(",") );
@@ -369,8 +358,8 @@ IoVtk::ReadParamsFromVtkFile( std::ifstream    &iFile,
 
 
     if (terms.size()!=2) {
-      std::string message = string("The expression \"") + equation
-      + string("\" is not of the type \"psi=5.34\".");
+      std::string message = std::string("The expression \"") + equation
+                          + std::string("\" is not of the type \"psi=5.34\".");
       throw ioException( fname, message );
     }
 
@@ -395,7 +384,7 @@ IoVtk::readVtkHeader( std::ifstream    &iFile
 		            ) const
 {
   // check format argument
-  string buf;
+  std::string buf;
   getline(iFile,buf);
   if ( buf.compare("ASCII") ) {
 	std::string message = "VTK file not encoded in \"ASCII\".";
@@ -403,7 +392,7 @@ IoVtk::readVtkHeader( std::ifstream    &iFile
   }
 
   // get POINT_DATA
-  while (buf.find("POINT_DATA")==string::npos)
+  while (buf.find("POINT_DATA")==std::string::npos)
 	getline(iFile,buf);
   int startNum = buf.find_first_of("0123456789");
   int pointData = strtol( buf.substr(startNum).c_str(),
@@ -418,23 +407,6 @@ IoVtk::ReadScalarsFromVtkFile( std::ifstream                                  & 
                              ) const
 {
   std::string fname = "IoVtk::ReadScalarsFromVtkFile";
-
-//  std::ifstream iFile;
-//
-//  // Don't include ifstream::eofbit and ifstream::failbit as otherwise,
-//  // getline will throw an exception
-//  // at the end of the file, while it is actually exptected to reach the end of
-//  // the file.
-//  iFile.exceptions( std::ifstream::badbit );
-//
-//  try {
-//    iFile.open( fileName.c_str(), std::ios_base::in );
-//  }
-//  catch (std::ifstream::failure const &e) {
-//    std::string message = "Exception opening/reading file '" + fileName + "'. "
-//    + "Error message '" + e.what() + "'";
-//    throw ioException( fname, message );
-//  }
 
   int numVectors = scalars->getNumVectors();
 
@@ -451,7 +423,7 @@ IoVtk::ReadScalarsFromVtkFile( std::ifstream                                  & 
     //       an exception here. Find out why, and fix.
     while (!iFile.eof()) {
       getline(iFile,buf);
-      if (buf.find("SCALARS")!=string::npos) {
+      if (buf.find("SCALARS")!=std::string::npos) {
         scalarsFound = true;
         break;
       }
@@ -466,13 +438,13 @@ IoVtk::ReadScalarsFromVtkFile( std::ifstream                                  & 
     // Read the number of components; if none is given, take the default (1).
     int numComponents = 1;
     unsigned int startNum = buf.find_first_of("012456789");
-    if ( startNum!=string::npos )
+    if ( startNum!=std::string::npos )
       numComponents = strtol( buf.substr(startNum,buf.size()-startNum).c_str(),
                               NULL, 10 );
 
     // check that the multivector still has enough room for it
     if ( vecIndex+numComponents>numVectors ) {
-      std::string message = string("Number of data sets in the VTK larger")
+      std::string message = std::string("Number of data sets in the VTK larger")
       + " than what can be stored in the MultiVector "
       + "(#vectors=" + EpetraExt::toString(numVectors)
       + ").";

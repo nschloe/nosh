@@ -1,9 +1,7 @@
 #ifndef IOVIRTUAL_H
 #define IOVIRTUAL_H
 
-
 #include <string>
-#include <complex>
 
 #include <Teuchos_ParameterList.hpp>
 
