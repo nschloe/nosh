@@ -5,11 +5,6 @@ ENABLE_LANGUAGE( CXX )
 SET ( gl_SRCS
       glException.cpp
       staggeredGrid.cpp
-      ioVirtual.cpp
-      ioVtk.cpp
-      ioVti.cpp
-      ioXdmf.cpp
-      ioFactory.cpp
       ginzburgLandau.cpp
       glBoundaryConditionsVirtual.cpp
       glBoundaryConditionsInner.cpp
@@ -31,8 +26,8 @@ IF(MPI_COMPILED)
     INCLUDE_DIRECTORIES( ${MPI_INCLUDE_PATH} )
 ENDIF(MPI_COMPILED)
 
-INCLUDE_DIRECTORIES( ${PARACONT_DIR}/include )
 INCLUDE_DIRECTORIES( ${HDF5_DIR}/include )
+INCLUDE_DIRECTORIES( ${ginzburg-landau_SOURCE_DIR}/libio )
 
 ADD_LIBRARY ( gl STATIC
               ${gl_SRCS} )

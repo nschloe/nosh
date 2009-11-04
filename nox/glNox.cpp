@@ -66,14 +66,13 @@ glNox::glNox( const std::string fileName,
   Teuchos::RCP<IoVirtual> fileIo =
 	       Teuchos::RCP<IoVirtual> ( IoFactory::createFileIo ( fileName ) );
 
-  Teuchos::RCP<Tpetra::Vector<double_complex,int> > psi = Teuchos::ENull();
-
   // read the stuff
-  fileIo->read ( psi,
-                 Comm_,
+  Teuchos::RCP<Tpetra::MultiVector<double,int> > psiSplit = Teuchos::ENull();
+  fileIo->read ( comm,
+                 psiSplit,
                  problemParameters_ );
 
-  if ( psi.is_null() )
+  if ( psiSplit.is_null() )
     throw glException( "glNox::glNox", "Input guess empty" );
 
   Teuchos::RCP<GlBoundaryConditionsVirtual> boundaryConditions =
@@ -85,11 +84,22 @@ glNox::glNox( const std::string fileName,
   Teuchos::RCP<StaggeredGrid> sGrid =
                        Teuchos::rcp ( new StaggeredGrid( Nx, edgeLength, H0 ) );  
 
+  // convert initial solution to a proper guess (ordering, complex values)
+  Teuchos::RCP<Tpetra::Vector<double_complex,int> > psi =
+                     Teuchos::rcp( new Tpetra::Vector<double_complex,int>( psiSplit->getMap() ) );
+  Teuchos::ArrayRCP<const double> psiSplitAbsView = psiSplit->getVector(0)->get1dView();
+  Teuchos::ArrayRCP<const double> psiSplitArgView = psiSplit->getVector(1)->get1dView();
+  int localLength = psi->getLocalLength();
+  for (int k=0; k<localLength; k++){
+      int kGlobal = psi->getMap()->getGlobalElement( k );
+      double_complex value = polar( sqrt(psiSplitAbsView[kGlobal]), psiSplitArgView[kGlobal]  );
+      psi->replaceLocalValue( k, value );
+  }
+  reOrder( *psi, sGrid );
+
   GinzburgLandau glProblem = GinzburgLandau( sGrid,
                                              boundaryConditions
                                            );
-
-  reOrder( *psi, sGrid );
 
   // Create the interface between NOX and the application
   // This object is derived from NOX::Epetra::Interface

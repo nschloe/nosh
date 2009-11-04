@@ -2,9 +2,6 @@
 #define IOVIRTUAL_H
 
 
-
-#include "staggeredGrid.h"
-
 #include <string>
 #include <complex>
 
@@ -12,7 +9,7 @@
 
 #include <Tpetra_MultiVector.hpp>
 
-typedef std::complex<double> double_complex;
+#include <Teuchos_Comm.hpp>
 
 class IoVirtual
   {
@@ -27,22 +24,24 @@ class IoVirtual
     //! Virtual function for reading the order parameter \f$\psi\f$ and the
     //! parameter list from a given file.
     virtual void
-    read ( Teuchos::RCP<Tpetra::Vector<double_complex,int> > &psi,
-           const Teuchos::RCP<const Teuchos::Comm<int> >          comm, // TODO: remove this
-           Teuchos::ParameterList                                 &problemParams
-         ) const = 0; // pure virtual
+    read( const Teuchos::RCP<const Teuchos::Comm<int> >        &tComm,
+                Teuchos::RCP<Tpetra::MultiVector<double,int> > &x,
+                Teuchos::ParameterList                         &problemParams
+        ) const = 0; // pure virtual
 
     //! Virtual function for writing the order parameter \f$\psi\f$ and the
     //! parameter list to a given file.
     virtual void
-    write ( const Tpetra::Vector<double_complex,int> &psi,
-            const Teuchos::ParameterList                  &problemParams,
-            const StaggeredGrid                           &sGrid
+    write ( const Tpetra::MultiVector<double,int> & x,
+            const int                               Nx,
+            const double                            h,
+            const Teuchos::ParameterList          & problemParams
           ) const = 0; // pure virtual
 
     virtual void
-    write ( const Tpetra::Vector<double_complex,int> &psi,
-            const StaggeredGrid                           &sGrid
+    write( const Tpetra::MultiVector<double,int> & x,
+           const int                               Nx,
+           const double                            h
           ) const = 0; // pure virtual
 
   protected:

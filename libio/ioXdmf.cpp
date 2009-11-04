@@ -1,5 +1,5 @@
 #include "ioXdmf.h"
-#include "glException.h"
+#include "ioException.h"
 
 #include <Teuchos_XMLParameterListWriter.hpp>
 #include <EpetraExt_Utils.h> // for toString
@@ -34,104 +34,107 @@ IoXdmf::~IoXdmf()
 {
 }
 // =============================================================================
-void IoXdmf::read( Teuchos::RCP<Tpetra::Vector<double_complex,int> > &psi,
-                   const Teuchos::RCP<const Teuchos::Comm<int> >          comm, // TODO: remove this
-                  Teuchos::ParameterList                                 &problemParams
-                 ) const
+void
+IoXdmf::read( const Teuchos::RCP<const Teuchos::Comm<int> >        &tComm,
+			        Teuchos::RCP<Tpetra::MultiVector<double,int> > &x,
+			        Teuchos::ParameterList                         &problemParams
+	        ) const
 {
 
-  // Convert the file to a string, such that we can discard the headers and pass
-  // the pure XML stuff to Teuchos.
-  // This is a workaround.
-  // TODO: Follow the Trilinos bug at
-  //         https://software.sandia.gov/bugzilla/show_bug.cgi?id=4516
-  //       and see what happens.
-
-  // extract the directory for later
-  string directory = fileName_;
-  directory.erase( directory.rfind("/") );
-
-  // read the file contents to a string
-  std::ifstream inFile( fileName_.c_str() );
-  if( !inFile ) {
-      throw glException( "IoXdmf::read",
-                         "Could not open input file \"" + fileName_ + "\"." );
-  }
-
-  // Read the file into a string, and discard exactly the first for lines,
-  // which read
-  //
-  // ===================== *snip* =====================
-  // <?xml version="1.0" ?>
-  // <!DOCTYPE Xdmf SYSTEM "Xdmf.dtd" [
-  // <!ENTITY HeavyData "solution.h5">
-  // ]>
-  // ===================== *snap* =====================
-  //
-  string buf, tmp;
-  int row = 1;
-  while(!inFile.eof()) {
-      getline(inFile, tmp);
-      if (row>=5) {
-          buf += tmp;
-          buf += "\n";
-      }
-      row++;
-  }
-
-  // pass string as XML input source
-  Teuchos::StringInputSource xmlString(buf);
-
-  // Extract the object from the filename.
-  Teuchos::XMLObject xmlFileObject = xmlString.getObject();
-
-  // find and read the parameter list
-  const Teuchos::XMLObject* parameterListObject =
-                                     xmlFind( &xmlFileObject, "ParameterList" );
-  problemParams = Teuchos::XMLParameterListReader().
-                                        toParameterList( *parameterListObject );
-
-  // create a dummy communicator
-  // TODO: Get rid of this.
-#ifdef HAVE_MPI
-  Epetra_MpiComm Comm(MPI_COMM_WORLD);
-#else
-  Epetra_SerialComm Comm;
-#endif
-
-  // TODO: Remove assumptions about the parameters
-  int Nx = problemParams.get<int>("Nx");
-
-  // create MultiVectors that will store the abs and arg data
-  Epetra_Map         StandardMap( Nx+1, 0, Comm );
-  Epetra_MultiVector* absPsi = new Epetra_MultiVector(StandardMap,Nx+1);
-  Epetra_MultiVector* argPsi = new Epetra_MultiVector(StandardMap,Nx+1);
-
-  // gather the heavy abs(psi) data
-  getHeavyData( xmlFileObject, Comm, &absPsi, directory, "abs(psi)", "abs" );
-
-  // gather the heavy abs(psi) data
-  getHeavyData( xmlFileObject, Comm, &argPsi, directory, "arg(psi)", "arg" );
-
-  // @TODO
-  // Make sure that we got some proper multi-core handling here.
-  
-  // build psi of the entries that we got
-  if ( psi->getGlobalLength() != (unsigned int)(Nx+1)*(Nx+1) ) {
-      std::string message = "Length of input vector psi (="
-                          + EpetraExt::toString( (int)psi->getGlobalLength() ) + ") "
-			  + "does not coincide with the number of complex "
-			  + "unknowns (="
-                          + EpetraExt::toString( (Nx+1)*(Nx+1) ) + ").";
-      throw glException( "IoXdmf::read", message );    
-  }
-  
-  int k = 0;
-  for (int i=0; i<Nx+1; i++)
-      for (int j=0; j<Nx+1; j++) {
-	  double_complex z = std::polar( (*absPsi)[i][j], (*argPsi)[i][j] );
-	  psi->replaceGlobalValue( k++, z );
-      }
+  throw ioException( "IoXdmf::read", "Not yet implemented" );
+//
+//  // Convert the file to a string, such that we can discard the headers and pass
+//  // the pure XML stuff to Teuchos.
+//  // This is a workaround.
+//  // TODO: Follow the Trilinos bug at
+//  //         https://software.sandia.gov/bugzilla/show_bug.cgi?id=4516
+//  //       and see what happens.
+//
+//  // extract the directory for later
+//  string directory = fileName_;
+//  directory.erase( directory.rfind("/") );
+//
+//  // read the file contents to a string
+//  std::ifstream inFile( fileName_.c_str() );
+//  if( !inFile ) {
+//      throw ioException( "IoXdmf::read",
+//                         "Could not open input file \"" + fileName_ + "\"." );
+//  }
+//
+//  // Read the file into a string, and discard exactly the first four lines,
+//  // which read
+//  //
+//  // ===================== *snip* =====================
+//  // <?xml version="1.0" ?>
+//  // <!DOCTYPE Xdmf SYSTEM "Xdmf.dtd" [
+//  // <!ENTITY HeavyData "solution.h5">
+//  // ]>
+//  // ===================== *snap* =====================
+//  //
+//  string buf, tmp;
+//  int row = 1;
+//  while(!inFile.eof()) {
+//      getline(inFile, tmp);
+//      if (row>=5) {
+//          buf += tmp;
+//          buf += "\n";
+//      }
+//      row++;
+//  }
+//
+//  // pass string as XML input source
+//  Teuchos::StringInputSource xmlString(buf);
+//
+//  // Extract the object from the filename.
+//  Teuchos::XMLObject xmlFileObject = xmlString.getObject();
+//
+//  // find and read the parameter list
+//  const Teuchos::XMLObject* parameterListObject =
+//                                     xmlFind( &xmlFileObject, "ParameterList" );
+//  problemParams = Teuchos::XMLParameterListReader().
+//                                        toParameterList( *parameterListObject );
+//
+//  // create a dummy communicator
+//  // TODO: Get rid of this.
+//#ifdef HAVE_MPI
+//  Epetra_MpiComm Comm(MPI_COMM_WORLD);
+//#else
+//  Epetra_SerialComm Comm;
+//#endif
+//
+//  // TODO: Remove assumptions about the parameters
+//  int Nx = problemParams.get<int>("Nx");
+//
+//  // create MultiVectors that will store the abs and arg data
+//  Epetra_Map         StandardMap( Nx+1, 0, Comm );
+//  Epetra_MultiVector* absPsi = new Epetra_MultiVector(StandardMap,Nx+1);
+//  Epetra_MultiVector* argPsi = new Epetra_MultiVector(StandardMap,Nx+1);
+//
+//  // gather the heavy abs(psi) data
+//  getHeavyData( xmlFileObject, Comm, &absPsi, directory, "abs(psi)", "abs" );
+//
+//  // gather the heavy abs(psi) data
+//  getHeavyData( xmlFileObject, Comm, &argPsi, directory, "arg(psi)", "arg" );
+//
+//  // @TODO
+//  // Make sure that we got some proper multi-core handling here.
+//
+//  // build psi of the entries that we got
+//  if ( x->getGlobalLength() != (unsigned int)(Nx+1)*(Nx+1) ) {
+//      std::string message = "Length of input vector psi (="
+//                          + EpetraExt::toString( (int)x->getGlobalLength() ) + ") "
+//			  + "does not coincide with the number of complex "
+//			  + "unknowns (="
+//                          + EpetraExt::toString( (Nx+1)*(Nx+1) ) + ").";
+//      throw ioException( "IoXdmf::read", message );
+//  }
+//
+//  int k = 0;
+//  for (int i=0; i<Nx+1; i++)
+//      for (int j=0; j<Nx+1; j++) {
+//	  double_complex z = std::polar( (*absPsi)[i][j], (*argPsi)[i][j] );
+//	  psi->replaceGlobalValue( k++, z );
+//      }
 
   return;
 }
@@ -165,7 +168,7 @@ IoXdmf::getHeavyData( const Teuchos::XMLObject &xmlFileObject,
   const Teuchos::XMLObject* dataItem = xmlFind ( absPsiObject,
                                                  "DataItem" );
   if ( !dataItem ) {
-      throw glException( "IoXdmf::getHeavyData",
+      throw ioException( "IoXdmf::getHeavyData",
                          "Found no \"DataItem\"." );
   }
 
@@ -200,7 +203,7 @@ IoXdmf::getHeavyData( const Teuchos::XMLObject &xmlFileObject,
   if ( !hdf5Reader.IsContained(hdf5GroupName) ) {
       std::string message = "Could not find tag \"" + hdf5GroupName + "\" "
                           + "in file " + fileDirectory + "/" + dataFile + ".";
-      throw glException( "IoXdmf::getHeavyData",
+      throw ioException( "IoXdmf::getHeavyData",
                          message );
   }
 
@@ -215,7 +218,7 @@ IoXdmf::getHeavyData( const Teuchos::XMLObject &xmlFileObject,
                           + EpetraExt::toString( (*readVec)->GlobalLength() )
                           + ") does not coincide with the global length of "
                           + "the data in file " + dataFile + ".";
-      throw glException( "IoXdmf::getHeavyData",
+      throw ioException( "IoXdmf::getHeavyData",
                          message );
   }
 
@@ -224,7 +227,7 @@ IoXdmf::getHeavyData( const Teuchos::XMLObject &xmlFileObject,
                           + EpetraExt::toString( (*readVec)->NumVectors() )
                           + ") does not coincide with the global number of "
                           + "vectors in file " + dataFile + ".";
-      throw glException( "IoXdmf::getHeavyData",
+      throw ioException( "IoXdmf::getHeavyData",
                          message );
   }
 
@@ -235,15 +238,12 @@ IoXdmf::getHeavyData( const Teuchos::XMLObject &xmlFileObject,
 }
 // =============================================================================
 void
-IoXdmf::write( const Tpetra::Vector<double_complex,int> &psi,
-               const Teuchos::ParameterList                  &problemParams,
-               const StaggeredGrid::StaggeredGrid            &sGrid
-             ) const
+IoXdmf::write ( const Tpetra::MultiVector<double,int> & x,
+                const int                               Nx,
+                const double                            h,
+                const Teuchos::ParameterList          & problemParams
+              ) const
 {
-
-  int    Nx = sGrid.getNx();
-  int    k;
-  double h  = sGrid.getH();
   std::string   str;
   std::ofstream xdmfFile;
 
@@ -371,36 +371,34 @@ IoXdmf::write( const Tpetra::Vector<double_complex,int> &psi,
 //   int NumUnknowns = (SGrid.getNx()+1)*(SGrid.getNx()+1);
   Epetra_Map StandardMap( Nx+1,0,Comm);
 
-  // fill absPsi and argPsi
-  Epetra_MultiVector absPsi(StandardMap,Nx+1);
-  Epetra_MultiVector argPsi(StandardMap,Nx+1);
-  Teuchos::ArrayRCP<const double_complex> psiView = psi.get1dView();
-  Teuchos::Array<int> index(2);
-  for (int i=0; i<Nx+1; i++) {
-      index[0] = i;
-      for (int j=0; j<Nx+1; j++) {
-          index[1] = j;
-          k = sGrid.i2k( index );
-          absPsi.ReplaceGlobalValue( i, j, abs(psiView[k]) );
-          argPsi.ReplaceGlobalValue( i, j, arg(psiView[k]) );
-      }
-  }
-
   EpetraExt::HDF5 myhdf5( Comm );
   myhdf5.Create( hdf5FileName );
-  myhdf5.Write( "abs", absPsi );
-  myhdf5.Write( "arg", argPsi );
+
+  int numVectors = x.getNumVectors();
+  for (int k; k<numVectors; k++) {
+	  // fill absPsi and argPsi
+	  Epetra_MultiVector xK(StandardMap,Nx+1);
+	  Teuchos::ArrayRCP<const double> xKView = x.getVector(k)->get1dView();
+	  int l=0;
+	  for (int i=0; i<Nx+1; i++)
+		  for (int j=0; j<Nx+1; j++)
+			  xK.ReplaceGlobalValue( i, j, xKView[l++] );
+	  std::string name = "x" + EpetraExt::toString(k);
+      myhdf5.Write( name, xK );
+  }
+
   myhdf5.Close();
   // ---------------------------------------------------------------------------
 
 }
 // =============================================================================
 void
-IoXdmf::write( const Tpetra::Vector<double_complex,int> &psi,
-               const StaggeredGrid::StaggeredGrid            &sGrid
+IoXdmf::write( const Tpetra::MultiVector<double,int> & x,
+               const int                               Nx,
+               const double                            h
              ) const
 {
-    throw glException( "IoXdmf::write", "Method not yet implemented." );
+    throw ioException( "IoXdmf::write", "Method not yet implemented." );
 }
 // =============================================================================
 // Inside an XML object, this function looks for a specific tag and returns

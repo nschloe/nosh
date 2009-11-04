@@ -27,7 +27,8 @@ FIND_PACKAGE( Trilinos COMPONENTS NOXEpetra
                                   Teuchos )
 INCLUDE_DIRECTORIES ( ${Trilinos_INCLUDE_DIR} )
 
-INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/libgl )
+INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/libio
+                      ${ginzburg-landau_SOURCE_DIR}/libgl )
 
 SET ( ginzburg_landau_SRCS
       glNox.cpp
@@ -37,6 +38,7 @@ ADD_EXECUTABLE ( gl-nox.out
                  ${ginzburg_landau_SRCS} )
 
 SET ( internal_LIBS
+      io
       gl
     )
 
@@ -45,11 +47,6 @@ SET ( internal_LIBS
 # -- Almost all of this should actually be handled by Trilinos itself.
 FIND_PACKAGE( Boost REQUIRED )
 INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIRS} )
-# ------------------------------------------------------------------------------
-FIND_LIBRARY( PARACONT paracont
-              HINTS ${PARACONT_DIR}/lib )
-SET( LINK_LIBRARIES ${LINK_LIBRARIES}
-                    ${PARACONT} )
 # ------------------------------------------------------------------------------
 IF(TRILINOS_SUPERLU)
     FIND_LIBRARY( SUPERLU ${SUPERLU_LIBNAME}
@@ -104,9 +101,6 @@ FIND_LIBRARY( GFORTRAN ${GFORTRAN_LIBNAME}
               HINTS ${GFORTRAN_DIR}    )
 SET( LINK_LIBRARIES ${LINK_LIBRARIES}
                     ${GFORTRAN} )
-# ==============================================================================
-
-
 # ==============================================================================
 # Set executable linking information.
 TARGET_LINK_LIBRARIES ( gl-nox.out

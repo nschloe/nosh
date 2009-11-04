@@ -39,7 +39,7 @@ class GlSystem:
   public:
 
     GlSystem ( GinzburgLandau::GinzburgLandau  &gl,
-               const Teuchos::RCP<Epetra_Comm> eComm,
+               const Teuchos::RCP<const Epetra_Comm> eComm,
                const bool                      &reverse, // Actually, this has nothing to do with the linear system.
                                                          // Get out, pls!
                const Teuchos::RCP<Tpetra::Vector<double_complex,int> > psi=Teuchos::ENull()  );
@@ -90,7 +90,7 @@ class GlSystem:
     void printSolution ( const Epetra_Vector &x,
                          double              conParam );
 
-    //! Explictly print the solution x along with the problem parameters
+    //! Explicitly print the solution x along with the problem parameters
     //! to the file fileName.
     void solutionToFile ( const Epetra_Vector    &x,
                           Teuchos::ParameterList &problemParams,
@@ -98,12 +98,6 @@ class GlSystem:
 
     int
     getNumUnknowns() const;
-
-    void
-    printState( const Epetra_Vector                        &x,
-                const std::string                          fileName,
-                const Teuchos::RCP<Teuchos::ParameterList> paraList
-              ) const;
     
   private:
 

@@ -30,9 +30,9 @@ typedef std::complex<double> double_complex;
 
 // =============================================================================
 // Default constructor
-GlSystem::GlSystem ( GinzburgLandau::GinzburgLandau                               &gl,
-		     const Teuchos::RCP<Epetra_Comm>                              eComm,
-                     const bool                                                   &rv,
+GlSystem::GlSystem ( GinzburgLandau::GinzburgLandau                          &gl,
+		             const Teuchos::RCP<const Epetra_Comm>                    eComm,
+                     const bool                                              &rv,
                      const Teuchos::RCP<Tpetra::Vector<double_complex,int> > psi  ) :
     NumRealUnknowns_ ( 0 ),
     NumMyElements_ ( 0 ),
@@ -106,9 +106,15 @@ GlSystem::GlSystem ( GinzburgLandau::GinzburgLandau                             
   initialSolution_ = Teuchos::rcp ( new Epetra_Vector ( *RealMap_ ) );
   if ( psi.is_null() )   // null pointer
     {
-      initialSolution_->PutScalar ( 0.0 ); // Default initialization
-      for (int k=0; k<NumComplexUnknowns_; k++ )
-          (*initialSolution_)[k] = 1.0;
+	  Teuchos::RCP<Tpetra::Vector<double_complex,int> > psi2 =
+		   Teuchos::rcp( new  Tpetra::Vector<double_complex,int>(ComplexMap_) );
+	  double_complex alpha( 1.0, 0.0 );
+	  psi2->putScalar(alpha); // default initialization
+	  complex2real ( *psi2, *initialSolution_ );
+//	  Teuchos::ArrayRCP<const double_complex> psi2View = psi2->get1dView();
+//	  for (int k=0; k<psi2->getGlobalLength(); k++)
+//          cout << psi2View[k] << endl;
+//	  cout << *initialSolution_ << endl;
     }
   else
     {
@@ -125,7 +131,8 @@ GlSystem::GlSystem ( GinzburgLandau::GinzburgLandau                             
     }
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
 
-
+  // TODO:
+  // Remove 'dummy'.
   // create the sparsity structure (graph) of the Jacobian
   // use x as DUMMY argument
   Epetra_Vector dummy ( *RealMap_ );
@@ -154,8 +161,8 @@ GlSystem::realIndex2complexIndex ( const int realIndex ) const
 // =============================================================================
 // converts a real-valued vector to a complex-valued psi vector
 void
-GlSystem::real2complex ( const Epetra_Vector                     &realVec,
-                         Tpetra::Vector<double_complex,int> &complexVec
+GlSystem::real2complex ( const Epetra_Vector                & realVec,
+                         Tpetra::Vector<double_complex,int> & complexVec
                        ) const
 {
   // TODO: parallelize
@@ -782,13 +789,12 @@ GlSystem::printSolution ( const Epetra_Vector &x,
   // -- An ugly thing here is that we have to explicitly mention the parameter
   // names. A solution could possibly be to include the parameter list in the
   // constructor of glSystem.
-  Teuchos::RCP<Teuchos::ParameterList> tmpList =
-                                  Teuchos::rcp ( new Teuchos::ParameterList() );
-  tmpList->get ( "H0",         conParam );
-  tmpList->get ( "edgelength", Gl_.getStaggeredGrid()->getEdgeLength() );
-  tmpList->get ( "Nx",         Gl_.getStaggeredGrid()->getNx() );
-  tmpList->get ( "freeEnergy", energy);
-  tmpList->get ( "vorticity",  vorticity);
+  Teuchos::ParameterList tmpList;
+  tmpList.get ( "H0",         conParam );
+  tmpList.get ( "edgelength", Gl_.getStaggeredGrid()->getEdgeLength() );
+  tmpList.get ( "Nx",         Gl_.getStaggeredGrid()->getNx() );
+  tmpList.get ( "freeEnergy", energy);
+  tmpList.get ( "vorticity",  vorticity);
 
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   // TODO:
@@ -804,7 +810,7 @@ GlSystem::printSolution ( const Epetra_Vector &x,
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
   // actually print the state to the 
-  this->printState( x, fileName, tmpList );
+  solutionToFile( x, tmpList, fileName );
 
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   // fill the continuation parameters file
@@ -842,24 +848,40 @@ GlSystem::printSolution ( const Epetra_Vector &x,
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 }
 // =============================================================================
-void
-GlSystem::printState( const Epetra_Vector          &x,
-                      const std::string            fileName,
-                      const Teuchos::RCP<Teuchos::ParameterList> paraList
-                    ) const
-{
-  // define vector
-  Tpetra::Vector<double_complex,int>  psi(ComplexMap_,true);
-  // convert from x to psi
-  real2complex ( x, psi );
-
-  IoVirtual* fileIo = IoFactory::createFileIo ( outputDir_+"/"+fileName );
-  
-  fileIo->write ( psi,
-                  *paraList,
-                  * ( Gl_.getStaggeredGrid() ) );
-  delete fileIo;
-}
+//void
+//GlSystem::printState( const Epetra_Vector          &x,
+//                      const std::string            fileName,
+//                      const Teuchos::RCP<Teuchos::ParameterList> paraList
+//                    ) const
+//{
+//  // define vector
+//  Tpetra::Vector<double_complex,int>  psi(ComplexMap_,true);
+//  // convert from x to psi
+//  real2complex ( x, psi );
+//
+//  Teuchos::RCP<IoVirtual> fileIo =
+//		   Teuchos::rcp( IoFactory::createFileIo ( outputDir_+"/"+fileName ) );
+//
+//  std::vector<int> p;
+//  Gl_.getStaggeredGrid()->lexicographic2grid( &p );
+//
+//  // Create multivector containing the components that we would like to print.
+//  // Also make sure the entries appear in lexicographic order.
+//  Teuchos::ArrayRCP<const double_complex> psiView = psi.get1dView();
+//  Tpetra::MultiVector<double,int>  psiSplit(ComplexMap_,2,true);
+//  int globalLength = psiSplit.getGlobalLength();
+//  for (int k=0; k<globalLength; k++) {
+//	  psiSplit.replaceLocalValue( p[k], 0, norm(psiView[k]) );
+//	  psiSplit.replaceLocalValue( p[k], 1,  arg(psiView[k]) );
+//  }
+//
+//  int    Nx = Gl_.getStaggeredGrid()->getNx();
+//  double h  = Gl_.getStaggeredGrid()->getH();
+//  fileIo->write ( psiSplit,
+//		          Nx,
+//		          h,
+//                  *paraList );
+//}
 // =============================================================================
 // function used by LOCA
 void
@@ -873,19 +895,35 @@ GlSystem::solutionToFile ( const Epetra_Vector    &x,
                            Teuchos::ParameterList &problemParams,
                            const std::string      &fileName )
 {
-  // define vector
-  Tpetra::Vector<double_complex,int> psi(ComplexMap_,true);
+	  // define vector
+	  Tpetra::Vector<double_complex,int>  psi(ComplexMap_,true);
 
-  // convert from x to psi2
-  real2complex ( x, psi );
+	  // TODO: Remove the need for several real2complex calls per step.
+	  // convert from x to psi
+	  real2complex ( x, psi );
 
-  // set extra parameters
-  problemParams.set( "freeEnergy", Gl_.freeEnergy( psi ) );
-  problemParams.set( "vorticity" , Gl_.getVorticity( psi ) );
+	  Teuchos::RCP<IoVirtual> fileIo =
+			   Teuchos::rcp( IoFactory::createFileIo ( outputDir_+"/"+fileName ) );
 
-  IoVirtual* fileIo = IoFactory::createFileIo ( fileName );
-  fileIo->write ( psi,
-                  problemParams,
-                  * ( Gl_.getStaggeredGrid() ) );
+	  int numUnknowns = psi.getGlobalLength();
+	  std::vector<int> p(numUnknowns);
+	  Gl_.getStaggeredGrid()->lexicographic2grid( &p );
+
+	  // Create multivector containing the components that we would like to print.
+	  // Also make sure the entries appear in lexicographic order.
+	  Teuchos::ArrayRCP<const double_complex> psiView = psi.get1dView();
+	  Tpetra::MultiVector<double,int>  psiSplit(ComplexMap_,2,true);
+	  int globalLength = psiSplit.getGlobalLength();
+	  for (int k=0; k<globalLength; k++) {
+		  psiSplit.replaceLocalValue( k, 0, norm(psiView[p[k]]) );
+		  psiSplit.replaceLocalValue( k, 1,  arg(psiView[p[k]]) );
+	  }
+
+	  int    Nx = Gl_.getStaggeredGrid()->getNx();
+	  double h  = Gl_.getStaggeredGrid()->getH();
+	  fileIo->write ( psiSplit,
+			          Nx,
+			          h,
+	                  problemParams );
 }
 // =============================================================================

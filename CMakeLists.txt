@@ -12,8 +12,8 @@ ENDIF(MPI_COMPILED)
 
 
 # set compilers
-SET(CMAKE_CXX_COMPILER /usr/local/bin/mpic++)
-SET(CMAKE_C_COMPILER /usr/local/bin/mpicc)
+SET(CMAKE_CXX_COMPILER /opt/gcc/4.4.2/bin/g++ )
+SET(CMAKE_C_COMPILER /opt/gcc/4.4.2/bin/gcc )
 
 #SET(CMAKE_BUILD_TYPE Profile)
 
@@ -25,8 +25,9 @@ SET(CMAKE_CXX_FLAGS_DEBUG "" )
 SET(GL_CMAKE_DIR "${ginzburg-landau_SOURCE_DIR}/CMakeModules")
 SET(CMAKE_MODULE_PATH "${GL_CMAKE_DIR}" ${CMAKE_MODULE_PATH})
 
+add_subdirectory ( libio )
 add_subdirectory ( libgl )
-#add_subdirectory ( nox )
+add_subdirectory ( nox )
 #add_subdirectory ( pseudo-timestepping )
 add_subdirectory ( loca )
 #add_subdirectory ( pitchfork-continuation )

@@ -1,6 +1,6 @@
 #include "ioVti.h"
 
-#include "glException.h"
+#include "ioException.h"
 
 #include <Teuchos_FileInputSource.hpp>
 #include <EpetraExt_Utils.h> // for toString
@@ -19,13 +19,14 @@ IoVti::~IoVti()
 {
 }
 // =============================================================================
-void IoVti::read( Teuchos::RCP<Tpetra::Vector<double_complex,int> > &psi,
-                  const Teuchos::RCP<const Teuchos::Comm<int> >          comm, // TODO: remove this
-                  Teuchos::ParameterList                                 &problemParams
-                ) const
+void
+IoVti::read( const Teuchos::RCP<const Teuchos::Comm<int> >        &tComm,
+	               Teuchos::RCP<Tpetra::MultiVector<double,int> > &x,
+			       Teuchos::ParameterList                         &problemParams
+	       ) const
 {
 
-  throw glException( "IoVti::StateFileReader",
+  throw ioException( "IoVti::StateFileReader",
                      "readVtiFile not yet implemented." );
 
   // pass a possible 
@@ -54,7 +55,7 @@ void IoVti::read( Teuchos::RCP<Tpetra::Vector<double_complex,int> > &psi,
                                                               "abs(psi)"      );
 
     if ( !absPsiObject ) { // pointer invalid
-        throw glException( "GlSystem::GlSystem",
+        throw ioException( "GlSystem::GlSystem",
                            "No such XML Object found." );
     }
 
@@ -76,51 +77,37 @@ void IoVti::read( Teuchos::RCP<Tpetra::Vector<double_complex,int> > &psi,
 
 }
 // =============================================================================
-void IoVti::write( const Tpetra::Vector<double_complex,int> &psi,
-                   const Teuchos::ParameterList                  &problemParams,
-                   const StaggeredGrid                           &sGrid
-                 ) const
+void
+IoVti::write ( const Tpetra::MultiVector<double,int> & x,
+               const int                               Nx,
+               const double                            h,
+               const Teuchos::ParameterList          & problemParams
+             ) const
 {
-  int    Nx = sGrid.getNx();
-  int    k;
-  double h  = sGrid.getH();
-
   std::string str;
 
   Teuchos::XMLObject xmlPointData("PointData");
   xmlPointData.addAttribute( "Scalars", "abs(psi)" );
 
-  // first build the XML structure
-  Teuchos::XMLObject xmlDataArrayAbs("DataArray");
-  xmlDataArrayAbs.addAttribute( "type", "Float32" );
-  xmlDataArrayAbs.addAttribute( "Name", "abs(psi)" );
-  xmlDataArrayAbs.addAttribute( "format", "ascii" );
-  
-  Teuchos::ArrayRCP<const double_complex> psiView = psi.get1dView();
-  Teuchos::Array<int> index(2);
-  for (int i=0; i<Nx+1; i++) {
-      index[0] = i;
-      for (int j=0; j<Nx+1; j++) {
-          index[1] = j;
-          k = sGrid.i2k( index );
-          xmlDataArrayAbs.addContent( EpetraExt::toString(abs(psiView[k])) + " ");
-      }
-  }
-  xmlPointData.addChild(xmlDataArrayAbs);
+  int numVectors = x.getNumVectors();
+  for (int k; k<numVectors; k++) {
+	  // first build the XML structure
+	  Teuchos::XMLObject xmlDataArray("DataArray");
+	  xmlDataArray.addAttribute( "type", "Float32" );
+	  std::string name = "x" + EpetraExt::toString(k);
+	  xmlDataArray.addAttribute( "Name", name );
+	  xmlDataArray.addAttribute( "format", "ascii" );
 
-  Teuchos::XMLObject xmlDataArrayArg("DataArray");
-  xmlDataArrayArg.addAttribute( "type", "Float32" );
-  xmlDataArrayArg.addAttribute( "Name", "arg(psi)" );
-  xmlDataArrayArg.addAttribute( "format", "ascii" );
-  for (int i=0; i<Nx+1; i++) {
-      index[0] = i;
-      for (int j=0; j<Nx+1; j++) {
-          index[1] = j;
-          k = sGrid.i2k( index );
-          xmlDataArrayArg.addContent( EpetraExt::toString(arg(psiView[k])) + " " );
-      }
+	  Teuchos::ArrayRCP<const double> xKView = x.getVector(k)->get1dView();
+	  int l = 0;
+	  for (int i=0; i<Nx+1; i++) {
+		  for (int j=0; j<Nx+1; j++) {
+			  l++;
+			  xmlDataArray.addContent( EpetraExt::toString(abs(xKView[l])) + " ");
+		  }
+	  }
+	  xmlPointData.addChild(xmlDataArray);
   }
-  xmlPointData.addChild(xmlDataArrayArg);
 
   Teuchos::XMLObject xmlPiece("Piece");
   str = "0 " + EpetraExt::toString(Nx) + " 0 " + EpetraExt::toString(Nx) + " 0 0";
@@ -167,11 +154,12 @@ void IoVti::write( const Tpetra::Vector<double_complex,int> &psi,
 }
 // =============================================================================
 void
-IoVti::write( const Tpetra::Vector<double_complex,int> &psi,
-              const StaggeredGrid                           &sGrid
+IoVti::write( const Tpetra::MultiVector<double,int> & x,
+              const int                               Nx,
+              const double                            h
             ) const
 {
-    throw glException( "IoVti::write", "Method not yet implemented." );
+    throw ioException( "IoVti::write", "Method not yet implemented." );
 }
 // =============================================================================
 // Inside an XML object, this function looks for a specific tag and returns

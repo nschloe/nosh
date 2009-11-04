@@ -3,16 +3,13 @@
 
 #include "ioVirtual.h"
 
-#include "staggeredGrid.h"
-
 #include <string>
 #include <complex>
 
+#include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_XMLObject.hpp>
 #include <Tpetra_MultiVector.hpp>
-
-typedef std::complex<double> double_complex;
 
 class IoVti: public IoVirtual
   {
@@ -27,10 +24,10 @@ class IoVti: public IoVirtual
     //! Reads the order parameter \f$\psi\f$ and the problem parameter list
     //! from a VTI file into the arguments.
     virtual void
-    read ( Teuchos::RCP<Tpetra::Vector<double_complex,int> > &psi,
-           const Teuchos::RCP<const Teuchos::Comm<int> >          comm, // TODO: remove this
-           Teuchos::ParameterList                                 &problemParams
-         ) const;
+    read( const Teuchos::RCP<const Teuchos::Comm<int> >        &tComm,
+                Teuchos::RCP<Tpetra::MultiVector<double,int> > &x,
+                Teuchos::ParameterList                         &problemParams
+        ) const;
 
     //! Writes the  order parameter \f$\psi\f$ and the problem parameter list
     //! into an XML-style VTI file.
@@ -38,15 +35,17 @@ class IoVti: public IoVirtual
     //! nodes is preserved and the resulting file contains a state \f$\psi\f
     //! that can be viewed using standard tools.
     virtual void
-    write ( const Tpetra::Vector<double_complex,int> &psi,
-            const Teuchos::ParameterList                  &problemParams,
-            const StaggeredGrid                           &sGrid
+    write ( const Tpetra::MultiVector<double,int> & x,
+            const int                               Nx,
+            const double                            h,
+            const Teuchos::ParameterList          & problemParams
           ) const;
 
     virtual void
-    write ( const Tpetra::Vector<double_complex,int> &psi,
-            const StaggeredGrid                           &sGrid
-          ) const;
+    write( const Tpetra::MultiVector<double,int> & x,
+           const int                               Nx,
+           const double                            h
+         ) const;
 
   private:
 

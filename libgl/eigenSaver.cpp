@@ -72,10 +72,10 @@ EigenSaver::save ( Teuchos::RCP<std::vector<double> >       &evals_r,
           Teuchos::RCP<NOX::Abstract::Vector> abVec = Teuchos::rcpFromRef( (*evecs_r)[k] );
           Teuchos::RCP<NOX::Epetra::Vector> myVec = Teuchos::rcp_dynamic_cast<NOX::Epetra::Vector>( abVec,true );
 
-          Teuchos::RCP<Teuchos::ParameterList> tmpList;
-          glSys_->printState( myVec->getEpetraVector(),
-                              eigenStateFileName,
-                              tmpList );
+          Teuchos::ParameterList tmpList;
+          glSys_->solutionToFile( myVec->getEpetraVector(),
+        		                  tmpList,
+                                  eigenStateFileName );
 
   }
   }

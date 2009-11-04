@@ -3,18 +3,15 @@
 
 #include "ioVirtual.h"
 
-#include "staggeredGrid.h"
-
 #include <string>
 #include <complex>
 
+#include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
 
 #include <Tpetra_MultiVector.hpp>
 
 #include <iostream>
-
-typedef std::complex<double> double_complex;
 
 class IoVtk: public IoVirtual
   {
@@ -29,10 +26,10 @@ class IoVtk: public IoVirtual
     //! Reads the order parameter \f$\psi\f$ and the problem parameter list
     //! from a legacy VTK file into the arguments.
     virtual void
-    read ( Teuchos::RCP<Tpetra::Vector<double_complex,int> > &psi,
-           const Teuchos::RCP<const Teuchos::Comm<int> >          comm, // TODO: remove this
-           Teuchos::ParameterList                                 &problemParams
-         ) const;
+    read( const Teuchos::RCP<const Teuchos::Comm<int> >        &tComm,
+                Teuchos::RCP<Tpetra::MultiVector<double,int> > &x,
+                Teuchos::ParameterList                         &problemParams
+        ) const;
 
     //! Writes the  order parameter \f$\psi\f$ and the problem parameter list
     //! into a legac VTK file.
@@ -40,14 +37,16 @@ class IoVtk: public IoVirtual
     //! nodes is preserved and the resulting file contains a state \f$\psi\f
     //! that can be viewed using standard tools.
     virtual void
-    write ( const Tpetra::Vector<double_complex,int> &psi,
-            const Teuchos::ParameterList                  &problemParams,
-            const StaggeredGrid                           &sGrid
+    write ( const Tpetra::MultiVector<double,int> & x,
+            const int                               Nx,
+            const double                            h,
+            const Teuchos::ParameterList          & problemParams
           ) const;
 
     virtual void
-    write( const Tpetra::Vector<double_complex,int> &psi,
-           const StaggeredGrid                           &sGrid
+    write( const Tpetra::MultiVector<double,int> & x,
+           const int                               Nx,
+           const double                            h
          ) const;
 
   protected:
@@ -66,15 +65,29 @@ class IoVtk: public IoVirtual
                       ) const;
 
     void
-    writeScalars( const Tpetra::Vector<double_complex,int> & psi,
-                        const StaggeredGrid                     & sGrid,
-                              std::ofstream                     & oStream
-                      ) const;
+    writeScalars( const Tpetra::MultiVector<double,int> & psi,
+                  const int                               Nx,
+                        std::ofstream                   & oStream
+                ) const;
 
     //! joins a vector of strings to one string with a separator string sep
     std::string strJoin ( const std::vector<std::string> & vec,
                           const std::string              & sep
                         ) const;
+  
+    bool
+    ReadParamsFromVtkFile( std::ifstream          &iFile,
+                           Teuchos::ParameterList &fileParams
+                         ) const;
+
+    int
+    readVtkHeader( std::ifstream & iFile
+                 ) const;
+
+    bool
+    ReadScalarsFromVtkFile( std::ifstream                                  & iFile,
+                            Teuchos::RCP<Tpetra::MultiVector<double,int> > & scalars
+                          ) const;
 
   };
 #endif // IOVTK_H

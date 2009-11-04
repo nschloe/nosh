@@ -1,5 +1,5 @@
 #include "ioFactory.h"
-#include "glException.h"
+#include "ioException.h"
 
 #include "ioVtk.h"
 #include "ioVti.h"
@@ -23,7 +23,7 @@ IoVirtual* IoFactory::createFileIo( std::string fileName )
       std::string message = "File name extension \"" + extension + "\" "
                           + "not recognized. Must be one of \"vtk\", "
                           + "\"vti\", \"xmf\".";
-      throw glException( "IoFactory::createFileIo",
+      throw ioException( "IoFactory::createFileIo",
                           message );
   }
 
