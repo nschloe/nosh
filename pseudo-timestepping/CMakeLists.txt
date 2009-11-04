@@ -41,8 +41,6 @@ SET ( internal_LIBS
 
 # ==============================================================================
 # Find other external libs
-FIND_LIBRARY( PARACONT paracont
-              HINTS ${PARACONT_DIR}/lib )
 IF(TRILINOS_SUPERLU)
 FIND_LIBRARY( SUPERLU superlu_3.0
               HINTS /usr/local/superlu/3.0/lib
@@ -68,9 +66,8 @@ IF(TRILINOS_METIS)
     SET( LINK_LIBRARIES ${LINK_LIBRARIES}
                         ${METIS_LIBRARY})
 ENDIF(TRILINOS_METIS)
-FIND_LIBRARY( BLAS goto-blas-gfortran
-              HINTS /usr/local/lib
-                    /opt/goto-blas-1.26/lib )
+FIND_LIBRARY( BLAS blas
+              HINTS /opt/blas )
 FIND_LIBRARY( LAPACK lapack-gfortran
               HINTS /usr/local/lib
                     /opt/lapack-3.2.1/lib )
@@ -82,15 +79,11 @@ FIND_LIBRARY( HDF5 hdf5
               HINTS /opt/hdf5-1.6.9/lib/ )
 FIND_LIBRARY( Z z )
 # ==============================================================================
-
-
-# ==============================================================================
 # Set executable linking information.
 TARGET_LINK_LIBRARIES ( pseudo-ts.out
                         ${internal_LIBS}
                         ${Trilinos_LIBRARIES}
                         ${LINK_LIBRARIES}
-                        ${PARACONT}
                         ${HDF5}
                         ${Z}
                         ${LAPACK}
