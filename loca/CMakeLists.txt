@@ -28,7 +28,8 @@ FIND_PACKAGE( Trilinos COMPONENTS LOCAEpetra
 
 INCLUDE_DIRECTORIES ( ${Trilinos_INCLUDE_DIR} )
 
-INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/libgl )
+INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/libgl
+                      ${ginzburg-landau_SOURCE_DIR}/libio )
 
 SET ( ginzburg_landau_SRCS
       gl-loca.cpp )
@@ -38,6 +39,7 @@ ADD_EXECUTABLE ( gl-loca.out
 
 SET ( internal_LIBS
       gl
+      io
     )
 
 # ==============================================================================
@@ -46,11 +48,6 @@ SET ( internal_LIBS
 FIND_PACKAGE( Boost REQUIRED )
 INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIRS} )
 # ------------------------------------------------------------------------------
-FIND_LIBRARY( PARACONT paracont
-              HINTS ${PARACONT_DIR}/lib )
-SET( LINK_LIBRARIES ${LINK_LIBRARIES}
-                    ${PARACONT} )
-#------------------------------------------------------------------------------
 IF(TRILINOS_SUPERLU)
     FIND_LIBRARY( SUPERLU ${SUPERLU_LIBNAME}
                   HINTS ${SUPERLU_DIR} )

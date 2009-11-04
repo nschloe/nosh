@@ -99,6 +99,8 @@ bool withInitialGuess = filename.length()>0;
     Teuchos::rcp ( new Tpetra::Map<int> ( 1, 0, Comm ) );
   Teuchos::RCP<Tpetra::Vector<double_complex,int> > psiLexicographic =
                                                                Teuchos::ENull();
+  Teuchos::RCP<Tpetra::MultiVector<double,int> > psiLexicographicSplit =
+                                                               Teuchos::ENull();
 
 //       = Teuchos::rcp( new Tpetra::Vector<double_complex,int>(dummyMap,1) );
 //       = Teuchos::RCP::;
@@ -109,8 +111,8 @@ bool withInitialGuess = filename.length()>0;
                Teuchos::RCP<IoVirtual> ( IoFactory::createFileIo ( filename ) );
       try
         {
-          fileIo->read ( psiLexicographic,
-			 Comm,
+          fileIo->read ( Comm,
+                         psiLexicographicSplit,
                          problemParameters );
         }
       catch ( const std::exception &e )
@@ -118,6 +120,19 @@ bool withInitialGuess = filename.length()>0;
           std::cout << e.what() << std::endl;
           return 1;
         }
+
+    Teuchos::RCP<Tpetra::Vector<double_complex,int> > psiLexicographic =
+                      Teuchos::rcp( new Tpetra::Vector<double_complex,int>( psiLexicographicSplit->getMap() ) );
+   Teuchos::ArrayRCP<const double> psiLexicographicSplitAbsView = psiLexicographicSplit->getVector(0)->get1dView();
+   Teuchos::ArrayRCP<const double> psiLexicographicSplitArgView = psiLexicographicSplit->getVector(1)->get1dView();
+   int localLength = psiLexicographic->getLocalLength();
+   for (int k=0; k<localLength; k++){
+       int kGlobal = psiLexicographic->getMap()->getGlobalElement( k );
+       double_complex value = polar( sqrt(psiLexicographicSplitAbsView[kGlobal]),
+                                     psiLexicographicSplitArgView[kGlobal]  );
+       psiLexicographic->replaceLocalValue( k, value );
+   }
+
     }
   else
     {
