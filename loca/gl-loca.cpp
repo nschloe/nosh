@@ -12,6 +12,7 @@
 #include <NOX_Epetra_LinearSystem_AztecOO.H>
 
 #include <Teuchos_ParameterList.hpp>
+#include <Teuchos_XMLParameterListHelpers.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_DefaultComm.hpp>
 
@@ -207,195 +208,69 @@ glsystem = Teuchos::rcp ( new GlSystem ( glProblem, eComm, reverse ) );
 
 
 // ---------------------------------------------------------------------------
-// setting the LOCA parameters
+// Create the necessary objects
 // ---------------------------------------------------------------------------
-// Create LOCA sublist
-Teuchos::RCP<Teuchos::ParameterList> paramList =
-			     Teuchos::rcp(new Teuchos::ParameterList);
-Teuchos::ParameterList& locaParamsList = paramList->sublist("LOCA");
+// Create Epetra factory
+Teuchos::RCP<LOCA::Abstract::Factory> epetraFactory =
+                                      Teuchos::rcp(new LOCA::Epetra::Factory);
 
-  // Create the stepper sublist and set the stepper parameters
-  Teuchos::ParameterList& stepperList = locaParamsList.sublist("Stepper");
-  stepperList.set("Continuation Method", "Arc Length");// Default
-  //stepperList.set("Continuation Method", "Natural");
-  stepperList.set("Continuation Parameter", "H0");  // Must set
-  stepperList.set("Initial Value", problemParameters.get<double>("H0"));     // Must set
-  stepperList.set("Max Value",  3.0);                // Must set
-  stepperList.set("Min Value", -3.0);                // Must set
-  stepperList.set("Max Steps", 10000);               // Should set
-  stepperList.set("Max Nonlinear Iterations", 20);   // Should set
-  // ---------------------------------------------------------------------------
+cout << "Reading parameter list from \"input.xml\"" << endl;
+Teuchos::RCP<Teuchos::ParameterList> paramList = Teuchos::rcp(new Teuchos::ParameterList);
+Teuchos::updateParametersFromXmlFile("input.xml", paramList.get());
 
-// ---------------------------------------------------------------------------
-// Setting the bifurcation parameters
-// ---------------------------------------------------------------------------
-// Create bifurcation sublist
-Teuchos::ParameterList& bifurcationList =
-				  locaParamsList.sublist("Bifurcation");
-bifurcationList.set("Type", "None");                 // Default
+// Create global data object
+Teuchos::RCP<LOCA::GlobalData> globalData =
+                             LOCA::createGlobalData(paramList, epetraFactory);
+
+// set the directory to which all output gets written
+glsystem->setOutputDir( outputdir );
+
+// get the initial solution
+Teuchos::RCP<Epetra_Vector> soln = glsystem->getSolution();
 // ---------------------------------------------------------------------------
 
 
-// ---------------------------------------------------------------------------
-// Create predictor sublist
-// ---------------------------------------------------------------------------
-Teuchos::ParameterList& predictorList =
-locaParamsList.sublist("Predictor");
-//predictorList.set("Method", "Secant");               // Default
-//predictorList.set("Method", "Constant");
-predictorList.set("Method", "Tangent");
-// ---------------------------------------------------------------------------
-
-
-// ---------------------------------------------------------------------------
-// Create step size sublist
-// ---------------------------------------------------------------------------
-Teuchos::ParameterList& stepSizeList = locaParamsList.sublist("Step Size");
-stepSizeList.set("Method", "Adaptive");
-double initialStepSize = 1.0e-4;
-if (reverse)
-stepSizeList.set("Initial Step Size", -initialStepSize);
-else
-stepSizeList.set("Initial Step Size",  initialStepSize);
-stepSizeList.set("Min Step Size", 1.0e-4);
-  stepSizeList.set("Max Step Size", 1.0e-3);
-  // ---------------------------------------------------------------------------
-
-
-  // ---------------------------------------------------------------------------
-  // Setting the nonlinear solver parameters
-  // ---------------------------------------------------------------------------
-  Teuchos::ParameterList& nlParams = paramList->sublist("NOX");
-
-  Teuchos::ParameterList& nlPrintParams = nlParams.sublist("Printing");
-  if (verbose) {
-      nlPrintParams.set( "Output Information",
-                         NOX::Utils::Details +
-                         NOX::Utils::OuterIteration +
-                         NOX::Utils::InnerIteration +
-                         NOX::Utils::Warning +
-                         NOX::Utils::StepperIteration +
-                         NOX::Utils::StepperDetails +
-                         NOX::Utils::StepperParameters );  // Should set
-  } else {
-      nlPrintParams.set( "Output Information", 0 );  // No output of Trilinos
-  }
-
-  // Sublist for direction
-  Teuchos::ParameterList& dirParams = nlParams.sublist("Direction");
-  dirParams.set("Method", "Newton");
-  Teuchos::ParameterList& newtonParams = dirParams.sublist("Newton");
-  newtonParams.set("Forcing Term Method", "Constant");
-  // ---------------------------------------------------------------------------
-
-
-  // ---------------------------------------------------------------------------
-  // Sublist for linear solver for the Newton method
-  // ---------------------------------------------------------------------------
-  Teuchos::ParameterList& lsParams = newtonParams.sublist("Linear Solver");
-
-  // lsParams.set("Aztec Solver", "BiCGStab");
-  lsParams.set("Aztec Solver", "GMRES");
-  lsParams.set("Output Frequency", 32);
-  lsParams.set("Output Solver Details", true);
-  lsParams.set("Max Iterations", 2000);
-  lsParams.set("Tolerance", 1e-4);
-
-  // lsParams.set("Use Preconditioner as Solver",true);
-  lsParams.set("Max Age Of Prec", 1);
-
-  lsParams.set("Preconditioner","New Ifpack");
-  lsParams.set("Ifpack Preconditioner","Amesos");
-  Teuchos::ParameterList& IFPACKparams =  lsParams.sublist("Ifpack");
-  IFPACKparams.set("amesos: solver type","Amesos_Superlu");
-  // IFPACKparams.set("fact: level-of-fill",1);
-  IFPACKparams.set("fact: ilut level-of-fill",1.0);
-  IFPACKparams.set("fact: drop tolerance", 1e-1);
-  IFPACKparams.set("schwarz: combine mode", "Zero");
-  IFPACKparams.set("schwarz: compute condest", true);
-  // ---------------------------------------------------------------------------
-
-
-  // ---------------------------------------------------------------------------
-  // Let's force all status tests to do a full check
-  nlParams.sublist("Solver Options").set("Status Test Check Type", "Complete");
-  // ---------------------------------------------------------------------------
-
-
-  // ---------------------------------------------------------------------------
-  // Create the necessary objects
-  // ---------------------------------------------------------------------------
-  // Create Epetra factory
-  Teuchos::RCP<LOCA::Abstract::Factory> epetraFactory =
-                                        Teuchos::rcp(new LOCA::Epetra::Factory);
-
-  // Create global data object
-  Teuchos::RCP<LOCA::GlobalData> globalData =
-                               LOCA::createGlobalData(paramList, epetraFactory);
-
-  // set the directory to which all output gets written
-  glsystem->setOutputDir( outputdir );
-
-  // get the initial solution
-  Teuchos::RCP<Epetra_Vector> soln = glsystem->getSolution();
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
 #ifdef HAVE_LOCA_ANASAZI
-    // Create Anasazi Eigensolver sublist
-    stepperList.set("Compute Eigenvalues",computeEigenvalues);
-    Teuchos::ParameterList& eigenList = stepperList.sublist("Eigensolver");
-    eigenList.set("Method", "Anasazi");
-    if (!verbose)
-      eigenList.set("Verbosity", Anasazi::Errors);
+Teuchos::ParameterList& eigenList = paramList->sublist("LOCA")
+                                              .sublist("Stepper")
+                                              .sublist("Eigensolver");
+Teuchos::RCP<Teuchos::ParameterList> eigenListPtr = Teuchos::rcpFromRef( (eigenList) );
+std::string fileName = outputdir + "/eigenvalues.dat";
+Teuchos::RCP<EigenSaver> glEigenSaver =
+   Teuchos::RCP<EigenSaver>( new EigenSaver(eigenListPtr,globalData,fileName,glsystem) );
 
-     eigenList.set("Operator","Jacobian Inverse");
-//     eigenList.set("Operator","Cayley");
-
-//    eigenList.set("Operator","Shift-Invert");
-//     double sigma = 10.0;
-//     eigenList.set("Cayley Pole",sigma);
-
-//    double mu = 11.0;
-//    eigenList.set("Cayley Zero",mu);
-
-    eigenList.set("Num Eigenvalues", 1);
-    eigenList.set("Sorting Order", "LM"); // largest magnitude
-    eigenList.set("Num Blocks", 30 ); // = max # of Arnoldi steps
-    eigenList.set("Maximum Restarts", 500);
-
-    eigenList.set("Save Eigen Data Method","User-Defined");
-    eigenList.set("User-Defined Save Eigen Data Name", "glSaveEigenDataStrategy");
-
-    std::string fileName = outputdir + "/eigenvalues.dat";
-    Teuchos::RCP<Teuchos::ParameterList> eigenListPtr = Teuchos::rcpFromRef( (eigenList) );
-    Teuchos::RCP<EigenSaver> glEigenSaver =
-       Teuchos::RCP<EigenSaver>( new EigenSaver(eigenListPtr,globalData,fileName,glsystem) );
-
-    Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> glSaveEigenDataStrategy =
-                                                                 glEigenSaver;
-    eigenList.set("glSaveEigenDataStrategy",glSaveEigenDataStrategy);
-#else
-    stepperList.set("Compute Eigenvalues",false);
+Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> glSaveEigenDataStrategy =
+                                                             glEigenSaver;
+eigenList.set("glSaveEigenDataStrategy",glSaveEigenDataStrategy);
 #endif
-  // ---------------------------------------------------------------------------
 
   // ---------------------------------------------------------------------------
   // Create all possible Epetra_Operators.
   Teuchos::RCP<Epetra_RowMatrix> Analytic = glsystem->getJacobian();
 
-  // Create the linear system
+  // Create the linear system.
+  // Use the TimeDependent interface for computation of shifted matrices.
   Teuchos::RCP<LOCA::Epetra::Interface::Required> iReq = glsystem;
   Teuchos::RCP<NOX ::Epetra::Interface::Jacobian> iJac = glsystem;
+
+  Teuchos::ParameterList& nlPrintParams = paramList->sublist("NOX")
+                                                    .sublist("Printing");
+
+  Teuchos::ParameterList& lsParams = paramList->sublist("NOX")
+      .sublist("Direction")
+      .sublist("Newton")
+      .sublist("Linear Solver");
 
   Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys
     = Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(nlPrintParams,
                                                         lsParams,
-                                                        glsystem,
+                                                        iReq,
                                                         iJac,
                                                         Analytic,
                                                         *soln )
                   );
+
+  Teuchos::RCP<LOCA::Epetra::Interface::TimeDependent> iTime = glsystem;
   // ---------------------------------------------------------------------------
 
 
@@ -412,8 +287,9 @@ stepSizeList.set("Min Step Size", 1.0e-4);
   Teuchos::RCP<LOCA::Epetra::Group> grp =
     Teuchos::rcp(new LOCA::Epetra::Group( globalData,
                                           nlPrintParams,
-                                          iReq,
+                                          iTime,
                                           initialGuess,
+                                          linSys,
                                           linSys,
                                           locaParams )
                 );
@@ -443,6 +319,8 @@ stepSizeList.set("Min Step Size", 1.0e-4);
                                              maxIters));
   // ---------------------------------------------------------------------------
 
+
+//  Teuchos::writeParameterListToXmlFile( *paramList, "input.xml");
 
   // ---------------------------------------------------------------------------
   // Create the stepper
