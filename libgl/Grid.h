@@ -23,6 +23,10 @@ public:
   int
   getNx() const; //!< Returns \f$N_x\f$.
 
+  //! Returns the measure of the discretized domain.
+  double
+  getGridDomainArea() const;
+
   double
   getEdgeLength() const; //!< Returns the edge length \f$a\f$ of the square.
 

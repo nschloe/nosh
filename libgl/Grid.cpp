@@ -30,6 +30,12 @@ Grid::getNx() const
 }
 // =============================================================================
 double
+Grid::getGridDomainArea() const
+{
+  return edgeLength_*edgeLength_;
+}
+// =============================================================================
+double
 Grid::getEdgeLength() const
 {
   return edgeLength_;

@@ -363,7 +363,9 @@ double GinzburgLandau::freeEnergy ( const Tpetra::Vector<double_complex,int> &ps
                                  &recvBuff[0]
                                );
 
-  double globalEnergy = recvBuff[0];
+  // normalize
+  double maxEnergy = 1.0 * grid_->getGridDomainArea();
+  double globalEnergy = recvBuff[0] / maxEnergy;
 
   return globalEnergy;
 }
