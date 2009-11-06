@@ -204,6 +204,9 @@ IoVtk::writeParameterList( const Teuchos::ParameterList & pList,
                            std::ofstream                & ioStream
                          ) const
 {
+  // TODO: Look into dynamically *appending*things to paramStringList to avoid
+  // the need for precomputing numEntries.
+
   // count the number of list entries
   int numEntries = 0;
   Teuchos::map<std::string, Teuchos::ParameterEntry>::const_iterator i;
@@ -267,7 +270,7 @@ IoVtk::writeScalars( const Tpetra::MultiVector<double,int> & x,
 
   int numVectors = x.getNumVectors();
   for (int k=0; k<numVectors; k++ ) {
-      oStream << "SCALARS no" << k << " float\n"
+      oStream << "SCALARS x" << k << " float\n"
               << "LOOKUP_TABLE default\n";
       Teuchos::ArrayRCP<const double> xKView = x.getVector(k)->get1dView();
       int l = 0;
@@ -279,7 +282,7 @@ IoVtk::writeScalars( const Tpetra::MultiVector<double,int> & x,
               // issues reading the previous.
               // TODO: Handle this in a more generic fashion.
               double val = xKView[l++];
-              if (abs(val)<1.0e-25)
+              if (fabs(val)<1.0e-25)
                   oStream << 0.0 << "\n";
               else
                   oStream << val << "\n";
