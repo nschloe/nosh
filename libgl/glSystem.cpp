@@ -31,7 +31,7 @@ typedef std::complex<double> double_complex;
 // =============================================================================
 // Default constructor
 GlSystem::GlSystem ( GinzburgLandau::GinzburgLandau                          &gl,
-		             const Teuchos::RCP<const Epetra_Comm>                    eComm,
+		     const Teuchos::RCP<const Epetra_Comm>                   eComm,
                      const bool                                              &rv,
                      const Teuchos::RCP<Tpetra::Vector<double_complex,int> > psi  ) :
     NumRealUnknowns_ ( 0 ),
@@ -49,7 +49,7 @@ GlSystem::GlSystem ( GinzburgLandau::GinzburgLandau                          &gl
     reverse_ ( rv ),
     outputDir_ ( "." )
 {
-  int Nx = Gl_.getStaggeredGrid()->getNx();
+  int Nx = Gl_.getGrid()->getNx();
   NumComplexUnknowns_ = ( Nx+1 ) * ( Nx+1 );
   NumRealUnknowns_    = 2*NumComplexUnknowns_+1;
 
@@ -136,6 +136,7 @@ GlSystem::GlSystem ( GinzburgLandau::GinzburgLandau                          &gl
   // create the sparsity structure (graph) of the Jacobian
   // use x as DUMMY argument
   Epetra_Vector dummy ( *RealMap_ );
+
   createJacobian ( ONLY_GRAPH, dummy );
 
   // Allocate the sparsity pattern of the Jacobian matrix
@@ -761,7 +762,7 @@ GlSystem::setParameters ( const LOCA::ParameterVector &p )
   double h0 = p.getValue ( "H0" );
 
   // set H0 in the underlying problem class
-  Gl_.getStaggeredGrid()->setH0 ( h0 );
+  Gl_.getMagneticVectorPotential()->setH0 ( h0 );
 }
 // =============================================================================
 // function used by LOCA
@@ -791,8 +792,8 @@ GlSystem::printSolution ( const Epetra_Vector &x,
   // constructor of glSystem.
   Teuchos::ParameterList tmpList;
   tmpList.get ( "H0",         conParam );
-  tmpList.get ( "edgelength", Gl_.getStaggeredGrid()->getEdgeLength() );
-  tmpList.get ( "Nx",         Gl_.getStaggeredGrid()->getNx() );
+  tmpList.get ( "edgelength", Gl_.getGrid()->getEdgeLength() );
+  tmpList.get ( "Nx",         Gl_.getGrid()->getNx() );
   tmpList.get ( "freeEnergy", energy);
   tmpList.get ( "vorticity",  vorticity);
 
@@ -907,7 +908,7 @@ GlSystem::solutionToFile ( const Epetra_Vector    &x,
 
 	  int numUnknowns = psi.getGlobalLength();
 	  std::vector<int> p(numUnknowns);
-	  Gl_.getStaggeredGrid()->lexicographic2grid( &p );
+	  Gl_.getGrid()->lexicographic2grid( &p );
 
 	  // Create multivector containing the components that we would like to print.
 	  // Also make sure the entries appear in lexicographic order.
@@ -919,11 +920,11 @@ GlSystem::solutionToFile ( const Epetra_Vector    &x,
 		  psiSplit.replaceLocalValue( k, 1,  arg(psiView[p[k]]) );
 	  }
 
-	  int    Nx = Gl_.getStaggeredGrid()->getNx();
-	  double h  = Gl_.getStaggeredGrid()->getH();
+	  int    Nx = Gl_.getGrid()->getNx();
+	  double h  = Gl_.getGrid()->getH();
 	  fileIo->write ( psiSplit,
-			          Nx,
-			          h,
+		          Nx,
+                          h,
 	                  problemParams );
 }
 // =============================================================================

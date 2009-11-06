@@ -3,16 +3,11 @@
 #include "glBoundaryConditionsVirtual.h"
 #include "glException.h"
 
-#include <iostream>
+//#include <iostream>
 
-#include <fstream> // for the VTK writer
-#include <string>
+//#include <string>
 
-#include <vector>
-
-// #include <EpetraExt_HDF5.h> // for output in XDMF format
-// #include <Epetra_MultiVector.h>
-// #include <Epetra_Vector.h>
+//#include <vector>
 
 #include <Teuchos_RCP.hpp>
 
@@ -30,10 +25,12 @@ const double_complex I ( 0,1 );
 
 // =============================================================================
 // Class constructor
-GinzburgLandau::GinzburgLandau ( Teuchos::RCP<StaggeredGrid>               sGrid,
-                                 Teuchos::RCP<GlBoundaryConditionsVirtual> bc
+GinzburgLandau::GinzburgLandau ( Teuchos::RCP<Grid>                        &grid,
+                                 Teuchos::RCP<MagneticVectorPotential>     &A,
+                                 Teuchos::RCP<GlBoundaryConditionsVirtual> &bc
                                ) :
-    sGrid_ ( sGrid ),
+    grid_ ( grid ),
+    A_ ( A ),
     boundaryConditions_ ( bc )
 {
 }
@@ -43,10 +40,16 @@ GinzburgLandau::~GinzburgLandau()
 {
 }
 // =============================================================================
-Teuchos::RCP<StaggeredGrid>
-GinzburgLandau::getStaggeredGrid() const
+Teuchos::RCP<MagneticVectorPotential>
+GinzburgLandau::getMagneticVectorPotential() const
 {
-  return sGrid_;
+  return A_;
+}
+// =============================================================================
+Teuchos::RCP<Grid>
+GinzburgLandau::getGrid() const
+{
+  return grid_;
 }
 // =============================================================================
 // Defines a mapping of all the GL equations to a running index.
@@ -59,7 +62,7 @@ void GinzburgLandau::getEquationType ( const int           eqnum,
                                        int                 &eqIndex
                                      ) const
 {
-  int Nx = sGrid_->getNx();
+  int Nx = grid_->getNx();
   int numBoundaryEquations = 4*Nx;
   int numTotalEquations = ( Nx+1 ) * ( Nx+1 );
 
@@ -101,7 +104,7 @@ GinzburgLandau::computeGlVector ( const Tpetra::Vector<double_complex,int> psi
 // Evaluate GL at the boundary node.
 // Return value for equation #k.
 double_complex
-GinzburgLandau::computeGl ( const int                                     eqnum,
+GinzburgLandau::computeGl ( const int                                eqnum,
                             const Tpetra::Vector<double_complex,int> &psi
                           ) const
 {
@@ -110,40 +113,44 @@ GinzburgLandau::computeGl ( const int                                     eqnum,
   equationType eqType;
   int eqIndex;
 
-  // get the equation type and the subindex from the running index
+  // get the equation type and the sub-index from the running index (0,1,2,3,...
+  // of the boundary; 0,1,2,3,... of the interior)
   getEquationType ( eqnum, eqType, eqIndex );
 
   switch ( eqType )
     {
       // -------------------------------------------------------------------------
     case BOUNDARY:
-      res = boundaryConditions_->getGlEntry ( eqIndex, psi, *sGrid_ );
+      res = boundaryConditions_->getGlEntry ( eqIndex, psi, *grid_, *A_ );
       break;
       // -------------------------------------------------------------------------
     case INTERIOR:
     {
-      // translate eqIndex to i
+      // Translate eqIndex to k.
       // TODO: Unify this with what happens at the Jacobian.
-      int Nx = sGrid_->getNx();
-      Teuchos::Array<int> i ( 2 );
-      i[0] = eqIndex % ( Nx-1 ) + 1;
-      i[1] = eqIndex / ( Nx-1 ) + 1;
+      // The equations here are "centered" around a node. Take node 'k'
+      // for equation 'eqIndex'.
+      int k = eqnum;
 
-      Teuchos::ArrayRCP<const double_complex> psiView =
-        psi.get1dView();
+      Teuchos::ArrayRCP<const double_complex> psiView = psi.get1dView();
 
-      double_complex psiK      = psiView[ sGrid_->i2k ( i ) ];
-      double_complex psiKLeft  = psiView[ sGrid_->getKLeft ( i ) ];
-      double_complex psiKRight = psiView[ sGrid_->getKRight ( i ) ];
-      double_complex psiKBelow = psiView[ sGrid_->getKBelow ( i ) ];
-      double_complex psiKAbove = psiView[ sGrid_->getKAbove ( i ) ];
+      double_complex psiK      = psiView[ k ];
+      double_complex psiKLeft  = psiView[ grid_->getKLeft ( k ) ];
+      double_complex psiKRight = psiView[ grid_->getKRight( k ) ];
+      double_complex psiKBelow = psiView[ grid_->getKBelow( k ) ];
+      double_complex psiKAbove = psiView[ grid_->getKAbove( k ) ];
 
-      double ALeft  = sGrid_->getAxLeft ( i );
-      double ARight = sGrid_->getAxRight ( i );
-      double ABelow = sGrid_->getAyBelow ( i );
-      double AAbove = sGrid_->getAyAbove ( i );
+      Teuchos::RCP<Teuchos::Array<double> > xLeft ( grid_->getXLeft ( k ) );
+      Teuchos::RCP<Teuchos::Array<double> > xRight( grid_->getXRight( k ) );
+      Teuchos::RCP<Teuchos::Array<double> > xBelow( grid_->getXBelow( k ) );
+      Teuchos::RCP<Teuchos::Array<double> > xAbove( grid_->getXAbove( k ) );
 
-      double h = sGrid_->getH();
+      double ALeft  = A_->getAx ( *xLeft  );
+      double ARight = A_->getAx ( *xRight );
+      double ABelow = A_->getAy ( *xBelow );
+      double AAbove = A_->getAy ( *xAbove );
+
+      double h = grid_->getH();
 
       // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
       res = ( psiK* ( -4.0 )
@@ -216,11 +223,11 @@ void GinzburgLandau::computeJacobianRow ( const bool                            
                                           std::vector<int>                              &columnIndicesPsiConj,
                                           std::vector<double_complex>                   &valuesPsiConj
                                         ) const
-    {
+{
   equationType eqType;
   int          eqIndex;
 
-  // get the equation type and the subindex from the running index
+  // get the equation type and the sub-index from the running index
   getEquationType ( eqnum, eqType, eqIndex );
 
   switch ( eqType )
@@ -229,7 +236,8 @@ void GinzburgLandau::computeJacobianRow ( const bool                            
       // ---------------------------------------------------------------------
       boundaryConditions_->getGlJacobianRow ( eqIndex,
                                               psi,
-                                              *sGrid_,
+                                              *grid_,
+                                              *A_,
                                               fillValues,
                                               columnIndicesPsi,
                                               valuesPsi,
@@ -241,18 +249,16 @@ void GinzburgLandau::computeJacobianRow ( const bool                            
     case INTERIOR:
     {
       // ---------------------------------------------------------------------
-      // translate eqIndex to i
+      // Translate eqIndex to k.
       // TODO: Unify this with what happens at the Jacobian.
-      int Nx = sGrid_->getNx();
-      Teuchos::Array<int> i ( 2 );
-      i[0] = eqIndex % ( Nx-1 ) + 1;
-      i[1] = eqIndex / ( Nx-1 ) + 1;
+      // The equations here are "centered" around a node. Take node 'k'
+      // for equation 'eqIndex'.
+      int k = eqnum;
 
-      int k      = sGrid_->i2k ( i );
-      int kRight = sGrid_->getKRight ( i );
-      int kLeft  = sGrid_->getKLeft ( i );
-      int kAbove = sGrid_->getKAbove ( i );
-      int kBelow = sGrid_->getKBelow ( i );
+      int kRight = grid_->getKRight ( k );
+      int kLeft  = grid_->getKLeft  ( k );
+      int kAbove = grid_->getKAbove ( k );
+      int kBelow = grid_->getKBelow ( k );
 
       int numEntriesPsi = 5;
       columnIndicesPsi.resize ( numEntriesPsi );
@@ -267,12 +273,16 @@ void GinzburgLandau::computeJacobianRow ( const bool                            
         {
           psiView = psi->get1dView();
 
-          double ALeft  = sGrid_->getAxLeft ( i );
-          double ARight = sGrid_->getAxRight ( i );
-          double ABelow = sGrid_->getAyBelow ( i );
-          double AAbove = sGrid_->getAyAbove ( i );
+          Teuchos::RCP<Teuchos::Array<double> > xLeft ( grid_->getXLeft ( k ) );
+          Teuchos::RCP<Teuchos::Array<double> > xRight( grid_->getXRight( k ) );
+          Teuchos::RCP<Teuchos::Array<double> > xBelow( grid_->getXBelow( k ) );
+          Teuchos::RCP<Teuchos::Array<double> > xAbove( grid_->getXAbove( k ) );
+          double ALeft  = A_->getAx ( *xLeft  );
+          double ARight = A_->getAx ( *xRight );
+          double ABelow = A_->getAy ( *xBelow );
+          double AAbove = A_->getAy ( *xAbove );
 
-          double h = sGrid_->getH();
+          double h = grid_->getH();
 
           valuesPsi.resize ( numEntriesPsi );
           valuesPsi[0] = - 4.0            / ( h*h )
@@ -306,20 +316,20 @@ double GinzburgLandau::freeEnergy ( const Tpetra::Vector<double_complex,int> &ps
                                   ) const
 {
   double localEnergy = 0.0;
-  double h      = sGrid_->getH();
-  StaggeredGrid::nodeType nt;
+  double h      = grid_->getH();
+  Grid::nodeType nt;
 
   Teuchos::ArrayRCP<const double_complex> psiView = psi.get1dView();
 
   // sum up the energy on each processor
   for ( int k=0; k<psi.getLocalLength(); k++ )
     {
-      nt = sGrid_->k2nodeType ( psi.getMap()->getGlobalElement ( k ) );
-      if ( nt==StaggeredGrid::CORNER )
+      nt = grid_->k2nodeType ( psi.getMap()->getGlobalElement ( k ) );
+      if ( nt==Grid::CORNER )
         localEnergy -= 0.25* h*h * pow ( norm ( psiView[k] ),2 );
-      else if ( nt==StaggeredGrid::EDGE )
+      else if ( nt==Grid::EDGE )
         localEnergy -= 0.5*  h*h * pow ( norm ( psiView[k] ),2 );
-      else if ( nt==StaggeredGrid::INTERIOR )
+      else if ( nt==Grid::INTERIOR )
         localEnergy -=       h*h * pow ( norm ( psiView[k] ),2 );
       else
         {
@@ -371,9 +381,9 @@ int GinzburgLandau::getVorticity ( const Tpetra::Vector<double_complex,int> &psi
     return -1;
 
   int vorticity = 0;
-  Teuchos::Array<int> i ( 2,0.0 );
+  Teuchos::RCP<Teuchos::Array<int> > i = Teuchos::rcp(new Teuchos::Array<int>(2) );
   int k;
-  int Nx = sGrid_->getNx();
+  int Nx = grid_->getNx();
 
   const double PI = 3.14159265358979323846264338327950288419716939937510;
   const double threshold = 1.5*PI; // Consider jumps in the argument greater
@@ -384,18 +394,18 @@ int GinzburgLandau::getVorticity ( const Tpetra::Vector<double_complex,int> &psi
   Teuchos::ArrayRCP<const double_complex> psiView = psi.get1dView();
 
   // origin -- our first index
-  k = sGrid_->i2k ( i );
+  k = grid_->i2k ( i );
 
   double angle = arg ( psiView[k] );
   double anglePrev;
 
   // lower border
-  i[1] = 0;
+  (*i)[1] = 0;
   for ( int l=1; l<Nx+1; l++ )
     {
       anglePrev = angle;
-      i[0] = l;
-      k = sGrid_->i2k ( i );
+      (*i)[0] = l;
+      k = grid_->i2k ( i );
       angle = arg ( psiView[k] );
       if ( angle-anglePrev<-threshold )
         vorticity++;
@@ -404,12 +414,12 @@ int GinzburgLandau::getVorticity ( const Tpetra::Vector<double_complex,int> &psi
     }
 
   // right border
-  i[0] = Nx;
+  (*i)[0] = Nx;
   for ( int l=1; l<Nx+1; l++ )
     {
       anglePrev = angle;
-      i[1] = l;
-      k = sGrid_->i2k ( i );
+      (*i)[1] = l;
+      k = grid_->i2k ( i );
       angle = arg ( psiView[k] );
       if ( angle-anglePrev<-threshold )
         vorticity++;
@@ -418,12 +428,12 @@ int GinzburgLandau::getVorticity ( const Tpetra::Vector<double_complex,int> &psi
     }
 
   // top border
-  i[1] = Nx;
+  (*i)[1] = Nx;
   for ( int l=1; l<Nx+1; l++ )
     {
       anglePrev = angle;
-      i[0] = Nx-l;
-      k = sGrid_->i2k ( i );
+      (*i)[0] = Nx-l;
+      k = grid_->i2k ( i );
       angle = arg ( psiView[k] );
       if ( angle-anglePrev<-threshold )
         vorticity++;
@@ -432,12 +442,12 @@ int GinzburgLandau::getVorticity ( const Tpetra::Vector<double_complex,int> &psi
     }
 
   // left border
-  i[0] = 0;
+  (*i)[0] = 0;
   for ( int l=1; l<Nx+1; l++ )
     {
       anglePrev = angle;
-      i[1] = Nx-l;
-      k = sGrid_->i2k ( i );
+      (*i)[1] = Nx-l;
+      k = grid_->i2k ( i );
       angle = arg ( psiView[k] );
       if ( angle-anglePrev<-threshold )
         vorticity++;

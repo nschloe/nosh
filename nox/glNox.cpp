@@ -4,8 +4,8 @@
 #include "ioFactory.h"
 #include "glException.h"
 #include "glBoundaryConditionsVirtual.h"
-// #include "glBoundaryConditionsInner.h"
-// #include "glBoundaryConditionsOuter.h"
+#include "glBoundaryConditionsInner.h"
+#include "glBoundaryConditionsOuter.h"
 #include "glBoundaryConditionsCentral.h"
 #include "ginzburgLandau.h"
 #include "glPrePostOperator.h"
@@ -81,8 +81,9 @@ glNox::glNox( const std::string fileName,
   int    Nx         = problemParameters_.get<int>   ("Nx");
   double edgeLength = problemParameters_.get<double>("edgelength");
   double H0         = problemParameters_.get<double>("H0");
-  Teuchos::RCP<StaggeredGrid> sGrid =
-                       Teuchos::rcp ( new StaggeredGrid( Nx, edgeLength, H0 ) );  
+  Teuchos::RCP<Grid> grid = Teuchos::rcp ( new Grid( Nx, edgeLength ) );
+  Teuchos::RCP<MagneticVectorPotential> A =
+                              Teuchos::rcp ( new MagneticVectorPotential( H0, edgeLength) );
 
   // convert initial solution to a proper guess (ordering, complex values)
   Teuchos::RCP<Tpetra::Vector<double_complex,int> > psi =
@@ -95,9 +96,10 @@ glNox::glNox( const std::string fileName,
       double_complex value = polar( sqrt(psiSplitAbsView[kGlobal]), psiSplitArgView[kGlobal]  );
       psi->replaceLocalValue( k, value );
   }
-  reOrder( *psi, sGrid );
+  reOrder( *psi, grid );
 
-  GinzburgLandau glProblem = GinzburgLandau( sGrid,
+  GinzburgLandau glProblem = GinzburgLandau( grid,
+                                             A,
                                              boundaryConditions
                                            );
 
@@ -130,10 +132,12 @@ glNox::glNox( const int Nx,
   Teuchos::RCP<GlBoundaryConditionsVirtual> boundaryConditions =
                              Teuchos::rcp ( new GlBoundaryConditionsCentral() );
 
-  Teuchos::RCP<StaggeredGrid> sGrid =
-                       Teuchos::rcp ( new StaggeredGrid( Nx, edgeLength, H0 ) );  
+  Teuchos::RCP<Grid> grid = Teuchos::rcp ( new Grid( Nx, edgeLength ) );
+  Teuchos::RCP<MagneticVectorPotential> A
+                             = Teuchos::rcp ( new MagneticVectorPotential(H0, edgeLength) );
 
-  GinzburgLandau glProblem = GinzburgLandau( sGrid,
+  GinzburgLandau glProblem = GinzburgLandau( grid,
+                                             A,
                                              boundaryConditions
                                            );
 
@@ -221,8 +225,8 @@ glNox::createSolver()
 // Look into having this done by Trilinos. If executed on a multiproc
 // environment, we don't want p to be fully present on all processors.
 void
-glNox::reOrder( Tpetra::Vector<double_complex>    &psi,
-                const Teuchos::RCP<StaggeredGrid> &sGrid )
+glNox::reOrder( Tpetra::Vector<double_complex> &psi,
+                const Teuchos::RCP<Grid>       &grid )
 {
   int NumElements = psi.getGlobalLength();
 
@@ -233,7 +237,7 @@ glNox::reOrder( Tpetra::Vector<double_complex>    &psi,
   Tpetra::Vector<double_complex,int> psiTmp( psi );
 
 //   = Teuchos::rcp ( new Tpetra::Vector<double_complex,int> ( psiLexicographic->getMap(),1 ) );
-  sGrid->lexicographic2grid ( &p );
+  grid->lexicographic2grid ( &p );
 
   Teuchos::ArrayRCP<const double_complex> psiTmpView = psiTmp.get1dView();
   for ( int k=0; k<NumElements; k++ )

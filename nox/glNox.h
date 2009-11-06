@@ -11,7 +11,7 @@
 #include <NOX.H>
 #include <NOX_Epetra.H>
 
-#include "staggeredGrid.h"
+#include "Grid.h"
 #include "glSystem.h"
 
 // abbreviate the complex type name
@@ -83,8 +83,8 @@ class glNox
       initializeGrid();
 
       void
-      reOrder( Tpetra::Vector<double_complex>    &psi,
-               const Teuchos::RCP<StaggeredGrid> &sGrid );
+      reOrder( Tpetra::Vector<double_complex> &psi,
+               const Teuchos::RCP<Grid>       &grid );
 
       void
       setNonlinearSolverParameters( Teuchos::ParameterList & nlParams );

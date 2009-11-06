@@ -4,7 +4,8 @@ ENABLE_LANGUAGE( CXX )
 
 SET ( gl_SRCS
       glException.cpp
-      staggeredGrid.cpp
+      Grid.cpp
+      MagneticVectorPotential.cpp
       ginzburgLandau.cpp
       glBoundaryConditionsVirtual.cpp
       glBoundaryConditionsInner.cpp

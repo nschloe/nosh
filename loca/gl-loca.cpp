@@ -160,16 +160,18 @@ psiLexicographic = Teuchos::rcp ( new Tpetra::Vector<double_complex,int> ( stand
 Teuchos::RCP<GlBoundaryConditionsVirtual> boundaryConditions =
 		       Teuchos::rcp(new GlBoundaryConditionsCentral() );
 
-  Teuchos::RCP<StaggeredGrid> sGrid =
-              Teuchos::rcp( new StaggeredGrid( problemParameters.get<int>("Nx"),
-                                               problemParameters.get<double>("edgelength"),
-                                               problemParameters.get<double>("H0")
+  Teuchos::RCP<Grid> grid =
+              Teuchos::rcp( new Grid( problemParameters.get<int>("Nx"),
+                                               problemParameters.get<double>("edgelength")
                                              )
                           );
+  Teuchos::RCP<MagneticVectorPotential> A =
+        Teuchos::rcp( new MagneticVectorPotential( problemParameters.get<double>("H0"), problemParameters.get<double>("edgelength") ) );
 
-GinzburgLandau glProblem = GinzburgLandau( sGrid,
-				     boundaryConditions
-				   );
+GinzburgLandau glProblem = GinzburgLandau( grid,
+                                           A,
+                                           boundaryConditions
+                                         );
 
 
 // ---------------------------------------------------------------------------
@@ -180,10 +182,10 @@ if ( withInitialGuess )
 // TODO:
 // Look into having this done by Trilinos. If executed on a multiproc
 // environment, we don't want p to be fully present on all processors.
-int NumComplexUnknowns = glProblem.getStaggeredGrid()->getNumComplexUnknowns();
+int NumComplexUnknowns = glProblem.getGrid()->getNumGridPoints();
 std::vector<int> p ( NumComplexUnknowns );
 // fill p:
-glProblem.getStaggeredGrid()->lexicographic2grid ( &p );
+glProblem.getGrid()->lexicographic2grid ( &p );
 Teuchos::RCP<Tpetra::Vector<double_complex,int> >  psi
 = Teuchos::rcp ( new Tpetra::Vector<double_complex,int> ( psiLexicographic->getMap(),1 ) );
 // TODO:

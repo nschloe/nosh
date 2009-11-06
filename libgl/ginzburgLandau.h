@@ -5,16 +5,14 @@
 #define GINZBURGLANDAU_H
 
 #include <complex>
-#include <string> // for the file output functions
 
 #include "glBoundaryConditionsVirtual.h"
-#include "staggeredGrid.h"
+#include "Grid.h"
+#include "MagneticVectorPotential.h"
 
 #include <Teuchos_ParameterList.hpp>
 
 #include <Teuchos_XMLObject.hpp>
-
-#include <Tpetra_MultiVector.hpp>
 
 #include <Epetra_Map.h>
 
@@ -26,16 +24,20 @@ class GinzburgLandau
   public:
 
      /*! Default constructor.*/
-     GinzburgLandau ( Teuchos::RCP<StaggeredGrid>               sGrid,
-                      Teuchos::RCP<GlBoundaryConditionsVirtual> bc   );
+     GinzburgLandau ( Teuchos::RCP<Grid>                        &grid,
+                      Teuchos::RCP<MagneticVectorPotential>     &potential,
+                      Teuchos::RCP<GlBoundaryConditionsVirtual> &bc    );
 
      /*! Destructor. */
      ~GinzburgLandau();
 
-     /*! Returns a pointer to the \f$A\f$ grid in use.*/
-     Teuchos::RCP<StaggeredGrid>
-     getStaggeredGrid() const;
-     
+     /*! Returns a pointer to the magnetic vector potential \f$A\f$ in use.*/
+     Teuchos::RCP<MagneticVectorPotential>
+     getMagneticVectorPotential() const;
+
+     Teuchos::RCP<Grid>
+     getGrid() const;
+
      Tpetra::Vector<double_complex,int>
      computeGlVector( const Tpetra::Vector<double_complex,int> psi ) const;
 
@@ -89,7 +91,8 @@ class GinzburgLandau
         PHASE_CONDITION
       };
 
-      const Teuchos::RCP<StaggeredGrid> sGrid_;
+      const Teuchos::RCP<Grid>                    grid_;
+      const Teuchos::RCP<MagneticVectorPotential> A_;
 
       void getEquationType ( const int           eqnum,
                              equationType        &eqType,

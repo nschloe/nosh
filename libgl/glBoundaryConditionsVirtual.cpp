@@ -14,11 +14,11 @@ GlBoundaryConditionsVirtual::~GlBoundaryConditionsVirtual()
 // =============================================================================
 void
 GlBoundaryConditionsVirtual::getEquationType ( const int eqIndex,
-                                               const StaggeredGrid::StaggeredGrid &sGrid,
+                                               const Grid::Grid  &grid,
                                                GlBoundaryConditionsVirtual::equationType  &eqType,
                                                Teuchos::Array<int>                &i       )
 {
-  int Nx = sGrid.getNx();
+  int Nx = grid.getNx();
 
   if ( eqIndex==0 )
     {
