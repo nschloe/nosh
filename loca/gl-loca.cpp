@@ -216,6 +216,7 @@ int main(int argc, char *argv[]) {
 			paramList, epetraFactory);
 
 	// set the directory to which all output gets written
+	// TODO remove?
 	glsystem->setOutputDir(outputDirectory);
 
 	// get the initial solution
@@ -325,15 +326,17 @@ int main(int argc, char *argv[]) {
 
 	// ---------------------------------------------------------------------------
 	// Create the stepper
-	LOCA::Stepper stepper(globalData, grp, comboOR, paramList);
+	Teuchos::RCP<LOCA::Stepper> stepper = Teuchos::rcp( new LOCA::Stepper(globalData, grp, comboOR, paramList) );
 	// ---------------------------------------------------------------------------
 
+	// pass pointer to stepper to glSystem to be able to read stats from the stepper in there
+	glsystem->setLocaStepper( stepper );
 
 	// ---------------------------------------------------------------------------
 	// Perform continuation run
 	LOCA::Abstract::Iterator::IteratorStatus status;
 	try {
-		status = stepper.run();
+		status = stepper->run();
 	} catch (char const* e) {
 		std::cerr << "Exception raised: " << e << std::endl;
 	}

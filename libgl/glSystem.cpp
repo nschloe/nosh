@@ -37,7 +37,7 @@ GlSystem::GlSystem(GinzburgLandau::GinzburgLandau &gl, const Teuchos::RCP<
 			Graph_(0), jacobian_(0), initialSolution_(0),
 			outputDir_(outputDir), outputFileNameBase_(outputFileNameBase),
 			outputFileFormat_(outputFileFormat), outputDataFileName_(
-					outputDataFileName) {
+					outputDataFileName), stepper_(0) {
 	NumComplexUnknowns_ = Gl_.getGrid()->getNumGridPoints();
 	NumRealUnknowns_ = 2 * NumComplexUnknowns_ + 1;
 
@@ -124,7 +124,7 @@ GlSystem::GlSystem(GinzburgLandau::GinzburgLandau &gl, const Teuchos::RCP<
 			Graph_(0), jacobian_(0), initialSolution_(0),
 			outputDir_(outputDir), outputFileNameBase_(outputFileNameBase),
 			outputFileFormat_(outputFileFormat), outputDataFileName_(
-					outputDataFileName) {
+					outputDataFileName), stepper_(0) {
 	NumComplexUnknowns_ = Gl_.getGrid()->getNumGridPoints();
 	NumRealUnknowns_ = 2 * NumComplexUnknowns_ + 1;
 
@@ -695,9 +695,13 @@ void GlSystem::setParameters(const LOCA::ParameterVector &p) {
 	Gl_.getMagneticVectorPotential()->setH0(h0);
 }
 // =============================================================================
+void GlSystem::setLocaStepper(const Teuchos::RCP<const LOCA::Stepper> stepper) {
+	stepper_ = stepper;
+}
+// =============================================================================
 // function used by LOCA
 void GlSystem::printSolution(const Epetra_Vector &x, double conParam) {
-	static int conStep = 0;
+	static int conStep = -1;
 
 	conStep++;
 
@@ -739,17 +743,22 @@ void GlSystem::printSolution(const Epetra_Vector &x, double conParam) {
 	contFileStream.setf(std::ios::scientific);
 	contFileStream.precision(15);
 
-	if (conStep == 1) {
+	if (conStep == 0) {
 		contFileStream.open(contFileName.c_str(), ios::trunc);
 		contFileStream << "# Step  " << "\tH0              "
-				<< "\tfree energy         " << "\tvorticity\n";
+				       << "\tfree energy         "
+				       << "\tvorticity "
+				       << "\t#nonlinear steps\n";
 	} else {
 		// just append to the the contents to the file
 		contFileStream.open(contFileName.c_str(), ios::app);
 	}
 
-	contFileStream << "  " << conStep << "     " << "\t" << conParam << "\t"
-			<< energy << "\t" << vorticity << std::endl;
+	int nonlinearIterations = stepper_->getSolver()->getNumIterations();
+
+	contFileStream << "  " << conStep << "     " << "\t"
+			       << conParam << "\t"
+			       << energy << "\t" << vorticity << "       " << "\t" << nonlinearIterations << std::endl;
 
 	contFileStream.close();
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -

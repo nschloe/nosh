@@ -30,6 +30,8 @@
 
 #include <NOX_Abstract_Group.H>
 
+#include <LOCA_Stepper.H>
+
 typedef Tpetra::Vector<double_complex, int> ComplexVector;
 
 class GlSystem: public NOX::Epetra::Interface::Jacobian,
@@ -96,6 +98,9 @@ public:
 	//! solutions of each continuation step.
 	void printSolution(const Epetra_Vector &x, double conParam);
 
+	void
+	setLocaStepper( const Teuchos::RCP<const LOCA::Stepper> stepper );
+
 	//! Explicitly print the solution x along with the problem parameters
 	//! to the file fileName.
 	void solutionToFile(const Epetra_Vector &x,
@@ -127,6 +132,8 @@ private:
 	const std::string outputFileNameBase_;
 	const std::string outputFileFormat_;
 	const std::string outputDataFileName_;
+
+	Teuchos::RCP<const LOCA::Stepper> stepper_;
 
 	GinzburgLandau::GinzburgLandau Gl_;
 	const Teuchos::RCP<const Epetra_Comm> EComm_;
