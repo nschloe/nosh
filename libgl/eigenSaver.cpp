@@ -73,7 +73,6 @@ NOX::Abstract::Group::ReturnType EigenSaver::save(Teuchos::RCP<std::vector<
 			Teuchos::ParameterList tmpList;
 			glSys_->solutionToFile(myVec->getEpetraVector(), tmpList,
 					eigenstateFilePath);
-
 		}
 	}
 

@@ -55,6 +55,8 @@
     </ParameterList>
   </ParameterList>
   <ParameterList name="NOX">
+    <Parameter name="Tolerance" type="double" value="1.0e-13"/>
+    <Parameter name="Max steps" type="int" value="30"/>
     <ParameterList name="Direction">
       <Parameter name="Method" type="string" value="Newton"/>
       <ParameterList name="Newton">

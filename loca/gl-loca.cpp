@@ -56,9 +56,9 @@ int main(int argc, char *argv[]) {
 			"This program does continuation for the Ginzburg--Landau problem with a LOCA interface.\n"
 				"It is possible to give an initial guess in VTK format on the command line.\n");
 
-	bool reverse = false;
-	My_CLP.setOption("reverse", "forward", &reverse,
-			"Orientation of the continuation in the first step");
+//	bool reverse = false;
+//	My_CLP.setOption("reverse", "forward", &reverse,
+//			"Orientation of the continuation in the first step");
 
 	//	bool stopOnUnstable = false;
 	//	My_CLP.setOption("stop-on-unstable", "continue-on-unstable",
@@ -294,16 +294,21 @@ int main(int argc, char *argv[]) {
 	// ---------------------------------------------------------------------------
 	// Set up the status tests
 	// ---------------------------------------------------------------------------
+	Teuchos::ParameterList& noxList = paramList->sublist("NOX", true);
+	double tol = noxList.get<double>("Tolerance");
+	int maxNonlinarSteps = noxList.get<int>("Max steps");
 	Teuchos::RCP<NOX::StatusTest::NormF> normF = Teuchos::rcp(
-			new NOX::StatusTest::NormF(1.0e-13));
+			new NOX::StatusTest::NormF(tol));
 	Teuchos::RCP<NOX::StatusTest::MaxIters> maxIters = Teuchos::rcp(
-			new NOX::StatusTest::MaxIters(100));
+			new NOX::StatusTest::MaxIters(maxNonlinarSteps));
 	Teuchos::RCP<NOX::StatusTest::Generic> comboOR = Teuchos::rcp(
 			new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR, normF,
 					maxIters));
 	// ---------------------------------------------------------------------------
 
 
+	// ---------------------------------------------------------------------------
+	// add LOCA options which cannot be provided in the XML file
 	Teuchos::ParameterList& bifList = paramList->sublist("LOCA").sublist(
 			"Bifurcation");
 	Teuchos::RCP<NOX::Abstract::Vector> lengthNormVec = Teuchos::rcp(
@@ -315,7 +320,8 @@ int main(int argc, char *argv[]) {
 			new NOX::Epetra::Vector(*noxSoln));
 	initialNullVec->init(1.0);
 	bifList.set("Initial Null Vector", initialNullVec);
-	//  Teuchos::writeParameterListToXmlFile( *paramList, "input.xml");
+	// ---------------------------------------------------------------------------
+
 
 	// ---------------------------------------------------------------------------
 	// Create the stepper
