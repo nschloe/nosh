@@ -2,9 +2,11 @@
   <ParameterList name="IO">
       <Parameter name="Input guess" type="string" value="continuationStep+1.vtk"/>
       <Parameter name="Output directory" type="string" value="./data"/>
-      <Parameter name="Continuation file base name" type="string" value="continuationStep+"/>
+      <Parameter name="Continuation file base name" type="string" value="continuationStep"/>
       <Parameter name="Continuation file format" type="string" value="VTK"/>
-      <Parameter name="Continuation data file name" type="string" value="continuationData+.dat"/>
+      <Parameter name="Continuation data file name" type="string" value="continuationData.dat"/>
+      <Parameter name="Eigenvalues file name" type="string" value="eigenvalues.dat"/>
+      <Parameter name="Eigenstate file name appendix" type="string" value="eigenstate"/>
   </ParameterList>
   <ParameterList name="GL">
       <Parameter name="Nx" type="int" value="50"/>
@@ -28,17 +30,19 @@
       <Parameter name="Min Step Size" type="double" value="0.0001"/>
     </ParameterList>
     <ParameterList name="Stepper">
-      <Parameter name="Compute Eigenvalues" type="bool" value="false"/>
       <Parameter name="Continuation Method" type="string" value="Arc Length"/>
       <Parameter name="Continuation Parameter" type="string" value="H0"/>
+      <Parameter name="Compute Eigenvalues" type="bool" value="true"/>
       <ParameterList name="Eigensolver">
         <Parameter name="Maximum Restarts" type="int" value="1"/>
         <Parameter name="Method" type="string" value="Anasazi"/>
-        <Parameter name="Num Blocks" type="int" value="100"/>
-        <Parameter name="Num Eigenvalues" type="int" value="5"/>
+        <Parameter name="Num Blocks" type="int" value="30"/>
+        <Parameter name="Num Eigenvalues" type="int" value="7"/>
         <Parameter name="Operator" type="string" value="Shift-Invert"/>
+        <Parameter name="Shift" type="double" value="0.3"/>
         <Parameter name="Save Eigen Data Method" type="string" value="User-Defined"/>
-        <Parameter name="Shift" type="double" value="0.1"/>
+        <Parameter name="Cayley Pole" type="double" value="0.5"/>
+        <Parameter name="Cayley Zero" type="double" value="1.0"/>
         <Parameter name="Sorting Order" type="string" value="LM"/>
         <Parameter name="User-Defined Save Eigen Data Name" type="string" value="glSaveEigenDataStrategy"/>
         <Parameter name="glSaveEigenDataStrategy" type="any" value="N7Teuchos3RCPIN4LOCA13SaveEigenData16AbstractStrategyEEE{ptr=0x1254b90,node=0x1254bc0,count=3}   [unused]"/>

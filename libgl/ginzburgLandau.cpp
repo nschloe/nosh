@@ -11,7 +11,6 @@
 
 #include <Teuchos_RCP.hpp>
 
-
 // really needed?
 // --> reduceAllAndScatter in freeEnergy()
 #include <Teuchos_Comm.hpp>
@@ -85,11 +84,11 @@ void GinzburgLandau::getEquationType ( const int           eqnum,
 }
 // =============================================================================
 Tpetra::Vector<double_complex,int>
-GinzburgLandau::computeGlVector ( const Tpetra::Vector<double_complex,int> psi
+GinzburgLandau::computeGlVector ( const ComplexVector psi
                                 ) const
 {
   // setup output vector with the same map as psi
-  Tpetra::Vector<double_complex,int> glVec ( psi.getMap(), true );
+  ComplexVector glVec ( psi.getMap(), true );
 
   for ( unsigned int k=0; k<psi.getLocalLength(); k++ )
     {
@@ -104,8 +103,8 @@ GinzburgLandau::computeGlVector ( const Tpetra::Vector<double_complex,int> psi
 // Evaluate GL at the boundary node.
 // Return value for equation #k.
 double_complex
-GinzburgLandau::computeGl ( const int                                eqnum,
-                            const Tpetra::Vector<double_complex,int> &psi
+GinzburgLandau::computeGl ( const int           eqnum,
+                            const ComplexVector &psi
                           ) const
 {
   // the preliminary result type
@@ -173,12 +172,12 @@ GinzburgLandau::computeGl ( const int                                eqnum,
 // =============================================================================
 // Evaluate GL at the boundary node.
 // Return value for equation #k.
-void GinzburgLandau::getJacobianRow ( const int                                     eqnum,
-                                      const Teuchos::RCP<Tpetra::Vector<double_complex,int> > psi,
-                                      std::vector<int>                              &columnIndicesPsi,
-                                      std::vector<double_complex>                   &valuesPsi,
-                                      std::vector<int>                              &columnIndicesPsiConj,
-                                      std::vector<double_complex>                   &valuesPsiConj
+void GinzburgLandau::getJacobianRow ( const int                         eqnum,
+                                      const Teuchos::RCP<ComplexVector> &psi,
+                                      std::vector<int>                  &columnIndicesPsi,
+                                      std::vector<double_complex>       &valuesPsi,
+                                      std::vector<int>                  &columnIndicesPsiConj,
+                                      std::vector<double_complex>       &valuesPsiConj
                                     ) const
 {
   computeJacobianRow ( true,
@@ -198,7 +197,7 @@ void GinzburgLandau::getJacobianRowSparsity ( const int        eqnum,
                                             ) const
 {
   // create dummy arguments
-  Teuchos::RCP<Tpetra::Vector<double_complex,int> > psi = Teuchos::ENull();
+  Teuchos::RCP<ComplexVector > psi = Teuchos::ENull();
 
   std::vector<double_complex> valuesPsi, valuesPsiConj;
 
@@ -215,13 +214,13 @@ void GinzburgLandau::getJacobianRowSparsity ( const int        eqnum,
 // =============================================================================
 // Evaluate GL at the boundary node.
 // Return value for equation #k.
-void GinzburgLandau::computeJacobianRow ( const bool                                    fillValues,
-                                          const int                                     eqnum,
-                                          const Teuchos::RCP<Tpetra::Vector<double_complex,int> > psi,
-                                          std::vector<int>                              &columnIndicesPsi,
-                                          std::vector<double_complex>                   &valuesPsi,
-                                          std::vector<int>                              &columnIndicesPsiConj,
-                                          std::vector<double_complex>                   &valuesPsiConj
+void GinzburgLandau::computeJacobianRow ( const bool                        fillValues,
+                                          const int                         eqnum,
+                                          const Teuchos::RCP<ComplexVector> &psi,
+                                          std::vector<int>                  &columnIndicesPsi,
+                                          std::vector<double_complex>       &valuesPsi,
+                                          std::vector<int>                  &columnIndicesPsiConj,
+                                          std::vector<double_complex>       &valuesPsiConj
                                         ) const
 {
   equationType eqType;
@@ -312,7 +311,7 @@ void GinzburgLandau::computeJacobianRow ( const bool                            
 }
 // =============================================================================
 // calculate the free energy of a state
-double GinzburgLandau::freeEnergy ( const Tpetra::Vector<double_complex,int> &psi
+double GinzburgLandau::freeEnergy ( const ComplexVector &psi
                                   ) const
 {
   double localEnergy = 0.0;
@@ -374,7 +373,7 @@ double GinzburgLandau::freeEnergy ( const Tpetra::Vector<double_complex,int> &ps
 // of the domain.
 // TODO:
 // Make this work in multicore environments.
-int GinzburgLandau::getVorticity ( const Tpetra::Vector<double_complex,int> &psi
+int GinzburgLandau::getVorticity ( const ComplexVector &psi
                                  ) const
 {
   // this function only works

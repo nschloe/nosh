@@ -139,10 +139,6 @@ int main(int argc, char *argv[]) {
 					psiLexicographicSplitArgView[kGlobal]);
 			psiLexicographic->replaceLocalValue(k, value);
 		}
-		ComplexArrayRCP psiView = psiLexicographic->get1dView();
-		for (int k = 0; k < 5; k++)
-			cout << psiView[k] << endl;
-		cout << psiLexicographic.is_null() << endl;
 	} else {
 		Teuchos::ParameterList& glList = paramList->sublist("GL", true);
 		int Nx = glList.get<int> ("Nx");
@@ -232,9 +228,14 @@ int main(int argc, char *argv[]) {
 			"Stepper") .sublist("Eigensolver");
 	Teuchos::RCP<Teuchos::ParameterList> eigenListPtr = Teuchos::rcpFromRef(
 			(eigenList));
-	std::string fileName = outputDirectory + "/eigenvalues.dat";
+	std::string eigenvaluesFileName = ioList.get<string> (
+			"Eigenvalues file name");
+	std::string eigenstateFileNameAppendix = ioList.get<string> (
+			"Eigenstate file name appendix");
 	Teuchos::RCP<EigenSaver> glEigenSaver = Teuchos::RCP<EigenSaver>(
-			new EigenSaver(eigenListPtr, globalData, fileName, glsystem));
+			new EigenSaver(eigenListPtr, globalData, outputDirectory,
+					eigenvaluesFileName, contFileBaseName,
+					eigenstateFileNameAppendix, glsystem));
 
 	Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy>
 			glSaveEigenDataStrategy = glEigenSaver;

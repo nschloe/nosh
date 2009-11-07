@@ -16,8 +16,8 @@
 
 #include <Epetra_Map.h>
 
-// abbreviate the complex type name
 typedef std::complex<double> double_complex;
+typedef Tpetra::Vector<double_complex,int> ComplexVector;
 
 class GinzburgLandau
 {
@@ -44,12 +44,12 @@ class GinzburgLandau
      /*! Returns the coefficients of the jacobian system associated with the
          Ginzburg--Landau equations. */
      void
-     getJacobianRow( const int                                     eqnum,
-                     const Teuchos::RCP<Tpetra::Vector<double_complex,int> > psi,
-                     std::vector<int>                              &columnIndicesPsi,
-                     std::vector<double_complex>                   &valuesPsi,
-                     std::vector<int>                              &columnIndicesPsiConj,
-		     std::vector<double_complex>                   &valuesPsiConj
+     getJacobianRow( const int                         eqnum,
+                     const Teuchos::RCP<ComplexVector> &psi,
+                     std::vector<int>                  &columnIndicesPsi,
+                     std::vector<double_complex>       &valuesPsi,
+                     std::vector<int>                  &columnIndicesPsiConj,
+		             std::vector<double_complex>       &valuesPsiConj
                    ) const;
 
      /*! Get sparsity pattern of the jacobian system. */
@@ -65,11 +65,11 @@ class GinzburgLandau
        \f]
        of a given state \f$\psi\f$. */
      double
-     freeEnergy ( const Tpetra::Vector<double_complex,int> &psi ) const;
+     freeEnergy ( const ComplexVector &psi ) const;
      
      /*! Calculate the vorticity of the current solution. */
      int
-     getVorticity ( const Tpetra::Vector<double_complex,int> &psi ) const;
+     getVorticity ( const ComplexVector &psi ) const;
       
   private:
 
@@ -77,8 +77,8 @@ class GinzburgLandau
          @param eqnum Index of the equation to evaluate.
          @param psi   Current order parameter \f$\psi\f$. */
      double_complex
-     computeGl( const int                                     eqnum,
-                const Tpetra::Vector<double_complex,int> &psi
+     computeGl( const int           eqnum,
+                const ComplexVector &psi
               ) const;
     
       //! Equation type enumerator.
@@ -106,13 +106,13 @@ class GinzburgLandau
 
       /*! Calculated the coefficients of the jacobian system associated with the
           Ginzburg--Landau equations. */
-      void computeJacobianRow ( const bool                                    fillValues,
-                                const int                                     eqnum,
-                                const Teuchos::RCP<Tpetra::Vector<double_complex,int> > psi,
-                                std::vector<int>                              &columnIndicesPsi,
-                                std::vector<double_complex>                   &valuesPsi,
-                                std::vector<int>                              &columnIndicesPsiConj,
-                                std::vector<double_complex>                   &valuesPsiConj
+      void computeJacobianRow ( const bool                        fillValues,
+                                const int                         eqnum,
+                                const Teuchos::RCP<ComplexVector> &psi,
+                                std::vector<int>                  &columnIndicesPsi,
+                                std::vector<double_complex>       &valuesPsi,
+                                std::vector<int>                  &columnIndicesPsiConj,
+                                std::vector<double_complex>       &valuesPsiConj
                               ) const;
 
 };

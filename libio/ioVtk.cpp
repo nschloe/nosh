@@ -204,7 +204,7 @@ IoVtk::writeParameterList( const Teuchos::ParameterList & pList,
                            std::ofstream                & ioStream
                          ) const
 {
-  // TODO: Look into dynamically *appending*things to paramStringList to avoid
+  // TODO: Look into dynamically *appending* things to paramStringList to avoid
   // the need for precomputing numEntries.
 
   // count the number of list entries

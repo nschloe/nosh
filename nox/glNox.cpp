@@ -47,6 +47,8 @@
 #include <AnasaziEpetraAdapter.hpp>
 #include <AnasaziBasicSort.hpp>
 
+#include "Teuchos_XMLParameterListHelpers.hpp"
+
 // =============================================================================
 glNox::glNox( const std::string fileName,
               const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
@@ -106,7 +108,7 @@ glNox::glNox( const std::string fileName,
   // Create the interface between NOX and the application
   // This object is derived from NOX::Epetra::Interface
   bool reverse = false;
-  glSystem_ = Teuchos::rcp ( new GlSystem ( glProblem, eComm, reverse, psi ) );
+  glSystem_ = Teuchos::rcp ( new GlSystem ( glProblem, eComm, psi ) );
 }
 // =============================================================================
 glNox::glNox( const int Nx,
@@ -142,7 +144,7 @@ glNox::glNox( const int Nx,
                                            );
 
   bool reverse = false;
-  glSystem_ = Teuchos::rcp ( new GlSystem ( glProblem, eComm, reverse ) );
+  glSystem_ = Teuchos::rcp ( new GlSystem ( glProblem, eComm ) );
 }
 // =============================================================================
 void

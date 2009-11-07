@@ -31,7 +31,7 @@ public:
   getEdgeLength() const; //!< Returns the edge length \f$a\f$ of the square.
 
   int
-  getNumGridPoints() const; //!< Returns the number of grid points for \f$\psi\f$.
+  getNumGridPoints() const; //!< Returns the number of grid points.
 
   double
   getH() const; //!< Returns mesh size \f$h\f$.
