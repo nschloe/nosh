@@ -53,44 +53,6 @@ Grid::getH() const
 {
   return h_;
 }
-//// =============================================================================
-//void Grid::computeA()
-//{
-//  typedef array_type::index index;
-//
-//  /*! Initialize the Ax_ with values
-//   *  \f[
-//   *      A_x = - \frac{H_0}{2} y + C.
-//   *  \f]
-//   */
-//  for ( index i=0; i!=nx_; ++i )
-//      for ( index j=0; j!=nx_+1; ++j )
-//          Ax_[i][j] = - 0.5*h0_ *j*h_
-//                      +0.25*h0_ *edgeLength_; //  to level the thing, but not actually necessary
-//
-//  /*! Initialize the Ay_ with values
-//   *  \f[
-//   *      A_y = \frac{H_0}{2} x + C.
-//   *  \f]
-//   */
-//  for ( index i=0; i!=nx_+1; ++i )
-//      for ( index j=0; j!=nx_; ++j )
-//          Ay_[i][j] =   0.5*h0_ *i*h_
-//                     - 0.25*h0_ *edgeLength_; //  to level the thing, but not actually necessary
-//
-////   // ---------------------------------------------------------------------------
-////   // for debugging purposes:
-////   std::cout << "nx_=" << nx_ << std::endl;
-////   std::cout << "edgeLength_=" << edgeLength_ << std::endl;
-////   std::cout << "h=" << h << std::endl;
-////   std::cout << "h0_=" << h0_ << std::endl;
-////   for ( index i=0; i!=nx_; ++i )
-////       for ( index j=0; j!=nx_+1; ++j )
-////           std::cout << "Ax_[" << i << "][" << j << "] = " << Ax_[i][j]
-////                     << std::endl;
-////   // ---------------------------------------------------------------------------
-//
-//}
 // =============================================================================
 Teuchos::RCP<Teuchos::Array<double> >
 Grid::getX(Teuchos::Array<int> i) const
@@ -137,24 +99,6 @@ Grid::getXAbove(int k) const
   (*x)[1] += 0.5 * h_;
   return x;
 }
-// =============================================================================
-//double
-//Grid::getAxRight(Teuchos::Array<int> i) const
-//{
-//  return Ax_[i[0]][i[1]]; // indeed not "+1"; staggered grids!
-//}
-//// =============================================================================
-//double
-//Grid::getAyBelow(Teuchos::Array<int> i) const
-//{
-//  return Ay_[i[0]][i[1] - 1];
-//}
-//// =============================================================================
-//double
-//Grid::getAyAbove(Teuchos::Array<int> i) const
-//{
-//  return Ay_[i[0]][i[1]]; // indeed not "+1"; staggered grids!
-//}
 // =============================================================================
 int
 Grid::getKLeft( int k ) const
@@ -231,15 +175,18 @@ Grid::k2i(int k) const
   return i;
 }
 // =============================================================================
-Grid::nodeType
-Grid::k2nodeType(int k) const
+double
+Grid::cellArea(int k) const
 {
   if (k == 0 || k == nx_ || k == 2 * nx_ || k == 3 * nx_)
-    return Grid::CORNER;
+	  // corner
+	  return 0.25*h_*h_;
   else if (k < 4 * nx_)
-    return Grid::EDGE;
+	  // edge
+      return 0.5*h_*h_;
   else
-    return Grid::INTERIOR;
+	  // interior
+	  return h_*h_;
 }
 // =============================================================================
 // maps a 2D index i to a running index k

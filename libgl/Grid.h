@@ -50,10 +50,9 @@ public:
     CORNER, EDGE, INTERIOR
   };
 
-  /*! For a given node number k, indicates whether the node sits in a corner
-   of the domain, on an edge, or strictly inside it. */
-  nodeType
-  k2nodeType(int k) const;
+  /*! For a given node number k, returns the the area of the surrounding cell. */
+  double
+  cellArea(int k) const;
 
   Teuchos::RCP<Teuchos::Array<double> >
   getXLeft(int k) const; //!< Returns the value of \f$x\f$ left of point i.

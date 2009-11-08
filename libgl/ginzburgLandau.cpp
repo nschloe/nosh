@@ -315,29 +315,15 @@ double GinzburgLandau::freeEnergy ( const ComplexVector &psi
                                   ) const
 {
   double localEnergy = 0.0;
-  double h      = grid_->getH();
-  Grid::nodeType nt;
 
   Teuchos::ArrayRCP<const double_complex> psiView = psi.get1dView();
 
   // sum up the energy on each processor
   for ( int k=0; k<psi.getLocalLength(); k++ )
     {
-      nt = grid_->k2nodeType ( psi.getMap()->getGlobalElement ( k ) );
-      if ( nt==Grid::CORNER )
-        localEnergy -= 0.25* h*h * pow ( norm ( psiView[k] ),2 );
-      else if ( nt==Grid::EDGE )
-        localEnergy -= 0.5*  h*h * pow ( norm ( psiView[k] ),2 );
-      else if ( nt==Grid::INTERIOR )
-        localEnergy -=       h*h * pow ( norm ( psiView[k] ),2 );
-      else
-        {
-          std::string message = "Illegal node type "
-                                + EpetraExt::toString ( nt )
-                                + ".";
-          throw glException ( "GinzburgLandau::freeEnergy",
-                              message );
-        }
+	  int kGlobal = psi.getMap()->getGlobalElement ( k );
+	  double area = grid_->cellArea( kGlobal );
+	  localEnergy -= area * pow ( norm ( psiView[k] ),2 );
     }
   
   // reduce and scatter such that energy is available on
