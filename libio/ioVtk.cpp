@@ -28,7 +28,7 @@ void IoVtk::read( const Teuchos::RCP<const Teuchos::Comm<int> >        &tComm,
 
   // Don't include ifstream::eofbit and ifstream::failbit as otherwise,
   // getline will throw an exception
-  // at the end of the file, while it is actually exptected to reach the end of
+  // at the end of the file, while it is actually expected to reach the end of
   // the file.
   iFile.exceptions( std::ifstream::badbit );
 
@@ -314,15 +314,19 @@ IoVtk::ReadParamsFromVtkFile( std::ifstream    &iFile,
    if ( boost::algorithm::starts_with(aString,"PARAMETERS") ) {
      aString.erase(0,10);
    } else {
-     std::string message = "Keyword \"PARAMETERS\" missing.";
+     std::string message = "Keyword \"PARAMETERS\" missing in file '" + fileName_ + "'";
      throw IoException( fname, message );
    }
    if ( boost::algorithm::ends_with(aString,"END") ) {
      aString.erase(aString.size()-3,aString.size());
    } else {
-     std::string message = "Keyword \"END\" missing.";
+     std::string message = "Keyword \"END\" missing in file '" + fileName_ + "'";
      throw IoException( fname, message );
    }
+
+   // trim the string first to avoid dealing with entirely empty parameters lists
+   // below
+   boost::trim(aString);
 
    // now, 'explode' the string at the separator sign, ',' (comma)
    std::vector<std::string> strVec;
@@ -337,15 +341,18 @@ IoVtk::ReadParamsFromVtkFile( std::ifstream    &iFile,
     // trim it!
     boost::trim(strVec[k]);
 
+	// discard empty items
+    if ( strVec[k].empty() )
+    	break;
+
     // get the variable type
     int it1 = strVec[k].find(" ");
     std::string type = strVec[k].substr(0,it1);
 
-    if ( type.compare("int") &&
-      type.compare("double") ) {
-      std::string message = "Type \"" + type + "\" is neither \"int\""
-      + " nor \"double\".";
-    throw IoException( fname, message );
+    if ( type.compare("int") && type.compare("double") ) {
+    	std::string message = "Type \"" + type + "\" is neither \"int\""
+                            + " nor \"double\" in file '" + fileName_ + "'";
+        throw IoException( fname, message );
     }
 
     std::string equation = strVec[k].substr(it1);
@@ -362,7 +369,8 @@ IoVtk::ReadParamsFromVtkFile( std::ifstream    &iFile,
 
     if (terms.size()!=2) {
       std::string message = std::string("The expression \"") + equation
-                          + std::string("\" is not of the type \"psi=5.34\".");
+                          + std::string("\" is not of the type \"psi=5.34\"")
+                          + "in file '" + fileName_ + "'";
       throw IoException( fname, message );
     }
 
@@ -390,7 +398,7 @@ IoVtk::readVtkHeader( std::ifstream    &iFile
   std::string buf;
   getline(iFile,buf);
   if ( buf.compare("ASCII") ) {
-	std::string message = "VTK file not encoded in \"ASCII\".";
+	std::string message = "VTK file not encoded in \"ASCII\" in file '" + fileName_ + "'";
 	throw IoException( "IoVtk::readVtkHeader", message );
   }
 
@@ -450,7 +458,7 @@ IoVtk::ReadScalarsFromVtkFile( std::ifstream                                  & 
       std::string message = std::string("Number of data sets in the VTK larger")
       + " than what can be stored in the MultiVector "
       + "(#vectors=" + EpetraExt::toString(numVectors)
-      + ").";
+      + ") in file '" + fileName_ + "'";
       throw IoException( fname, message );
     }
 
