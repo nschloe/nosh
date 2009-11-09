@@ -1,6 +1,7 @@
 <ParameterList>
   <ParameterList name="IO">
       <Parameter name="Input guess" type="string" value="stable4/continuationStep44.vtk"/>
+      <Parameter name="Initial null vector guess" type="string" value="stable4/continuationStep44-eigenstate4.vtk"/>
       <Parameter name="Output directory" type="string" value="./data"/>
       <Parameter name="Continuation file base name" type="string" value="continuationStep"/>
       <Parameter name="Continuation file format" type="string" value="VTK"/>

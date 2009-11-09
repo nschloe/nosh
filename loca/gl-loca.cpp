@@ -275,7 +275,7 @@ int main(int argc, char *argv[]) {
 
 	// ---------------------------------------------------------------------------
 	// read in initial null vector and convert it to a glsystem-compliant vector
-	std::string initialNullVectorFile = "stable4/continuationStep44-eigenstate4.vtk";
+	std::string initialNullVectorFile = ioList.get<string> ("Initial null vector guess");
 	Teuchos::RCP<ComplexVector> initialNullVector;
 	try {
 	    readStateFromFile( Comm, initialNullVectorFile, initialNullVector, grid, glParameters );
