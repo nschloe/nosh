@@ -3,13 +3,18 @@
 #include "glBoundaryConditionsVirtual.h"
 #include "glException.h"
 
+#include "ioFactory.h"
+
 #include <Teuchos_RCP.hpp>
 
 // really needed?
 // --> reduceAllAndScatter in freeEnergy()
 #include <Teuchos_Comm.hpp>
 
+#include <Tpetra_Map.hpp>
+
 #include <EpetraExt_Utils.h> // for the toString function
+
 
 // complex unit
 const double_complex I ( 0,1 );
@@ -53,9 +58,8 @@ void GinzburgLandau::getEquationType ( const int           eqnum,
                                        int                 &eqIndex
                                      ) const
 {
-  int Nx = grid_->getNx();
-  int numBoundaryEquations = 4*Nx;
-  int numTotalEquations = ( Nx+1 ) * ( Nx+1 );
+  int numBoundaryEquations = grid_->getNumBoundaryPoints();
+  int numTotalEquations = grid_->getNumGridPoints();
 
   if ( eqnum<numBoundaryEquations )
     {
@@ -369,13 +373,13 @@ int GinzburgLandau::getVorticity ( const ComplexVector &psi
   // Remember: This only works with one core.
   Teuchos::ArrayRCP<const double_complex> psiView = psi.get1dView();
 
-  int numBorderPoints = grid_->getNumBorderPoints();
+  int numBoundaryPoints = grid_->getNumBoundaryPoints();
 
   int l = 0;
   double angle = std::arg( psiView[ grid_->boundaryIndex2globalIndex(l) ] );
   double angle0 = angle;
   double anglePrevious;
-  for ( l=1; l<numBorderPoints; l++ ){
+  for ( l=1; l<numBoundaryPoints; l++ ){
 	  anglePrevious = angle;
 	  angle = std::arg( psiView[grid_->boundaryIndex2globalIndex(l)] );
       if ( angle-anglePrevious<-threshold )
@@ -392,5 +396,32 @@ int GinzburgLandau::getVorticity ( const ComplexVector &psi
     vorticity--;
 
   return vorticity;
+}
+// =============================================================================
+void
+GinzburgLandau::writeStateToFile( const Teuchos::RCP<const ComplexVector> &psi,
+                                  Teuchos::ParameterList &params,
+                                  const std::string &filePath)
+{
+	int numUnknowns = psi->getGlobalLength();
+	std::vector<int> p(numUnknowns);
+	grid_->lexicographic2grid(&p);
+
+	// Create multivector containing the components that we would like to print.
+	// Also make sure the entries appear in lexicographic order.
+	Teuchos::RCP<const Tpetra::Map<int> > psiMap = psi->getMap();
+	Tpetra::MultiVector<double, int> psiSplit(psiMap, 2, true);
+	Teuchos::ArrayRCP<const double_complex> psiView = psi->get1dView();
+	int globalLength = psiSplit.getGlobalLength();
+	for (int k = 0; k < globalLength; k++) {
+		psiSplit.replaceLocalValue(k, 0, norm(psiView[p[k]]));
+		psiSplit.replaceLocalValue(k, 1, arg(psiView[p[k]]));
+	}
+
+	int Nx = grid_->getNx();
+	double h = grid_->getH();
+
+	Teuchos::RCP<IoVirtual> fileIo = Teuchos::rcp(IoFactory::createFileIo(filePath));
+	fileIo->write(psiSplit, Nx, h, params);
 }
 // =============================================================================

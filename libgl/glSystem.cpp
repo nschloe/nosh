@@ -731,7 +731,7 @@ void GlSystem::printSolution(const Epetra_Vector &x, double conParam) {
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 	// actually print the state to the
-	solutionToFile(x, tmpList, fileName);
+	writeStateToFile(x, tmpList, fileName);
 
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	// fill the continuation parameters file
@@ -769,34 +769,18 @@ void GlSystem::setOutputDir(const string &directory) {
 	outputDir_ = directory;
 }
 // =============================================================================
-void GlSystem::solutionToFile(const Epetra_Vector &x,
-		Teuchos::ParameterList &params, const std::string &filePath) {
+void
+GlSystem::writeStateToFile( const Epetra_Vector &x,
+                            Teuchos::ParameterList &params,
+                            const std::string &filePath)
+{
 	// define vector
-	ComplexVector psi(ComplexMap_, true);
+	Teuchos::RCP<ComplexVector> psi = Teuchos::rcp( new ComplexVector(ComplexMap_, true) );
 
 	// TODO: Remove the need for several real2complex calls per step.
 	// convert from x to psi
-	real2complex(x, psi);
+	real2complex(x, *psi);
 
-	int numUnknowns = psi.getGlobalLength();
-	std::vector<int> p(numUnknowns);
-	Gl_.getGrid()->lexicographic2grid(&p);
-
-	// Create multivector containing the components that we would like to print.
-	// Also make sure the entries appear in lexicographic order.
-	Teuchos::ArrayRCP<const double_complex> psiView = psi.get1dView();
-	Tpetra::MultiVector<double, int> psiSplit(ComplexMap_, 2, true);
-	int globalLength = psiSplit.getGlobalLength();
-	for (int k = 0; k < globalLength; k++) {
-		psiSplit.replaceLocalValue(k, 0, norm(psiView[p[k]]));
-		psiSplit.replaceLocalValue(k, 1, arg(psiView[p[k]]));
-	}
-
-	int Nx = Gl_.getGrid()->getNx();
-	double h = Gl_.getGrid()->getH();
-
-	Teuchos::RCP<IoVirtual> fileIo = Teuchos::rcp(IoFactory::createFileIo(
-			filePath));
-	fileIo->write(psiSplit, Nx, h, params);
+	Gl_.writeStateToFile( psi, params, filePath );
 }
 // =============================================================================

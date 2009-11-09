@@ -9,6 +9,9 @@
 #define GRID_H_
 
 #include <Teuchos_Array.hpp>
+#include <Tpetra_Vector.hpp>
+
+#include <complex>
 
 class Grid
 {
@@ -35,7 +38,7 @@ public:
 
   //! Returns the number of grid points on the boundary.
   int
-  getNumBorderPoints() const;
+  getNumBoundaryPoints() const;
 
   double
   getH() const; //!< Returns mesh size \f$h\f$.
@@ -104,6 +107,14 @@ public:
   // TODO: move this to private
   int
   i2k( Teuchos::RCP<Teuchos::Array<int> > & i ) const; //!< Converts a grid index i to a running index k
+
+  void
+  reorderToLexicographic( Tpetra::Vector<std::complex<double> > & x
+                        ) const;
+
+  void
+  reorderFromLexicographic( Tpetra::Vector<std::complex<double> > & x
+                          ) const;
 
 protected:
 private:

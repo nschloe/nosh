@@ -103,11 +103,16 @@ public:
 
 	//! Explicitly print the solution x along with the problem parameters
 	//! to the file fileName.
-	void solutionToFile(const Epetra_Vector &x,
-			Teuchos::ParameterList &problemParams, const std::string &fileName);
+	void
+	writeStateToFile( const Epetra_Vector &x,
+	                  Teuchos::ParameterList &params,
+	                  const std::string &filePath);
 
 	int
 	getNumUnknowns() const;
+
+	void
+	complex2real(const ComplexVector &psi, Epetra_Vector &x) const;
 
 private:
 
@@ -115,7 +120,7 @@ private:
 
 	void real2complex(const Epetra_Vector &x, ComplexVector &psi) const;
 
-	void complex2real(const ComplexVector &psi, Epetra_Vector &x) const;
+//	void complex2real(const ComplexVector &psi, Epetra_Vector &x) const;
 
 	void makeRealMap(const Teuchos::RCP<const Tpetra::Map<int> > complexMap);
 

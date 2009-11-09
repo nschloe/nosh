@@ -56,9 +56,9 @@ class GlBoundaryConditionsVirtual
       LEFT
     };
 
-    // TODO: Document.
+    //! With the \cboundaryEquationIndex-th boundary equation
     static void
-    getEquationType ( const int                                 eqIndex,
+    getEquationType ( const int                                 boundaryEquationIndex,
                       const Grid::Grid                          &grid,
                       GlBoundaryConditionsVirtual::equationType &eqType,
                       Teuchos::Array<int>                       &i

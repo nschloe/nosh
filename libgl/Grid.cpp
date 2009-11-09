@@ -49,7 +49,7 @@ Grid::getNumGridPoints() const
 }
 // =============================================================================
 int
-Grid::getNumBorderPoints() const
+Grid::getNumBoundaryPoints() const
 {
   return 4*nx_;
 }
@@ -327,6 +327,84 @@ Grid::lexicographic2grid(std::vector<int> *p) const
         {
           (*index)[0] = i;
           (*p)[k++] = i2k(index);
+        }
+    }
+
+}
+// =============================================================================
+// TODO implement this using import/export mechanisms
+// TODO templatetize this
+void
+Grid::reorderToLexicographic( Tpetra::Vector<std::complex<double> > & x
+		                    ) const
+{
+  // check if for admissible vector size
+  unsigned int numUnknowns = getNumGridPoints();
+
+  if (x.getGlobalLength() != numUnknowns)
+    {
+      std::string message = "Global length of the input vector x ("
+          + EpetraExt::toString(int(x.getGlobalLength())) + ") "
+          + "does not coincide with with number of unknowns on "
+          + " the grid (" + EpetraExt::toString(numUnknowns) + ").";
+      throw glException("Grid::reorderToLexicographic", message);
+    }
+
+  // Make a temporary copy of the full vector.
+  Tpetra::Vector<std::complex<double> > tmp( x );
+
+  // Loop through the lexicographic ordering.
+  // This really depends on the grid to be rectangular.
+  Teuchos::ArrayRCP<const std::complex<double> > tmpView = tmp.get1dView();
+  int k = 0;
+  Teuchos::RCP<Teuchos::Array<int> > index = Teuchos::rcp( new Teuchos::Array<int>(2) );
+  for (int j = 0; j < nx_ + 1; j++)
+    {
+      (*index)[1] = j;
+      for (int i = 0; i < nx_ + 1; i++)
+        {
+          (*index)[0] = i;
+          int kGlobal = i2k(index);
+          x.replaceGlobalValue( kGlobal, tmpView[k++] );
+        }
+    }
+
+}
+// =============================================================================
+// TODO implement this using import/export mechanisms
+// TODO templatetize this
+void
+Grid::reorderFromLexicographic( Tpetra::Vector<std::complex<double> > & x
+		                      ) const
+{
+  // check if for admissible vector size
+  unsigned int numUnknowns = getNumGridPoints();
+
+  if (x.getGlobalLength() != numUnknowns)
+    {
+      std::string message = "Global length of the input vector x ("
+          + EpetraExt::toString(int(x.getGlobalLength())) + ") "
+          + "does not coincide with with number of unknowns on "
+          + " the grid (" + EpetraExt::toString(numUnknowns) + ").";
+      throw glException("Grid::reorderToLexicographic", message);
+    }
+
+  // Make a temporary copy of the full vector.
+  Tpetra::Vector<std::complex<double> > tmp( x );
+
+  // Loop through the lexicographic ordering.
+  // This really depends on the grid to be rectangular.
+  Teuchos::ArrayRCP<const std::complex<double> > tmpView = tmp.get1dView();
+  int k = 0;
+  Teuchos::RCP<Teuchos::Array<int> > index = Teuchos::rcp( new Teuchos::Array<int>(2) );
+  for (int j = 0; j < nx_ + 1; j++)
+    {
+      (*index)[1] = j;
+      for (int i = 0; i < nx_ + 1; i++)
+        {
+          (*index)[0] = i;
+          int kGlobal = i2k(index);
+          x.replaceGlobalValue( k++, tmpView[kGlobal] );
         }
     }
 

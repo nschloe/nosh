@@ -70,6 +70,11 @@ class GinzburgLandau
      /*! Calculate the vorticity of the current solution. */
      int
      getVorticity ( const ComplexVector &psi ) const;
+
+     void
+     writeStateToFile( const Teuchos::RCP<const ComplexVector> &psi,
+                       Teuchos::ParameterList &params,
+                       const std::string &filePath);
       
   private:
 

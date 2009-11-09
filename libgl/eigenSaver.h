@@ -35,14 +35,22 @@ class EigenSaver : public LOCA::SaveEigenData::AbstractStrategy
           Teuchos::RCP<NOX::Abstract::MultiVector> &evecs_r,
           Teuchos::RCP<NOX::Abstract::MultiVector> &evecs_i  );
 
+   void
+   setLocaStepper( const Teuchos::RCP<LOCA::Stepper> locaStepper );
+
+ protected:
   private:
-    Teuchos::RCP<Teuchos::ParameterList> eigenParams_;
+    Teuchos::RCP<Teuchos::ParameterList> eigenParamList_;
     std::string outputDir_;
     std::string eigenvaluesFilePath_;
     std::string contFileBaseName_;
     std::string eigenstateFileNameAppendix_;
     Teuchos::RCP<GlSystem> glSys_;
     Teuchos::RCP<LOCA::GlobalData> globalData_;
+    Teuchos::RCP<LOCA::Stepper> locaStepper_;
+
+    //! The minimum number of stable eigenvalues that is to be computed in each step.
+    int numComputeStableEigenvalues_;
 
     void
     saveEigenstate ( const std::string                         fileName,

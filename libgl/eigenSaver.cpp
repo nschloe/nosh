@@ -10,27 +10,42 @@
 #include <EpetraExt_Utils.h>
 
 // =============================================================================
-EigenSaver::EigenSaver(const Teuchos::RCP<Teuchos::ParameterList> eigenParams,
-		const Teuchos::RCP<LOCA::GlobalData>& globalData,
-		const std::string outputDir, const std::string eigenvaluesFileName,
-		const std::string contFileBaseName,
-		const std::string eigenstateFileNameAppendix, const Teuchos::RCP<
-				GlSystem> glSys) :
-	eigenParams_(eigenParams), outputDir_(outputDir), eigenvaluesFilePath_(
-			outputDir + "/" + eigenvaluesFileName), contFileBaseName_(
-			contFileBaseName), eigenstateFileNameAppendix_(
-					eigenstateFileNameAppendix), globalData_(globalData), glSys_(glSys) {
+EigenSaver::EigenSaver(const Teuchos::RCP<Teuchos::ParameterList> eigenParamList,
+		               const Teuchos::RCP<LOCA::GlobalData>& globalData,
+		               const std::string outputDir,
+		               const std::string eigenvaluesFileName,
+		               const std::string contFileBaseName,
+		               const std::string eigenstateFileNameAppendix,
+		               const Teuchos::RCP<GlSystem> glSys) :
+eigenParamList_(eigenParamList),
+outputDir_(outputDir),
+eigenvaluesFilePath_(outputDir + "/" + eigenvaluesFileName),
+contFileBaseName_(contFileBaseName),
+eigenstateFileNameAppendix_(eigenstateFileNameAppendix),
+globalData_(globalData),
+glSys_(glSys),
+locaStepper_(0),
+numComputeStableEigenvalues_(3)
+{
 }
-;
 // =============================================================================
-EigenSaver::~EigenSaver() {
+EigenSaver::~EigenSaver()
+{
 }
-;
 // =============================================================================
-NOX::Abstract::Group::ReturnType EigenSaver::save(Teuchos::RCP<std::vector<
-		double> > &evals_r, Teuchos::RCP<std::vector<double> > &evals_i,
-		Teuchos::RCP<NOX::Abstract::MultiVector> &evecs_r, Teuchos::RCP<
-				NOX::Abstract::MultiVector> &evecs_i) {
+void
+EigenSaver::setLocaStepper( const Teuchos::RCP<LOCA::Stepper> locaStepper )
+{
+	locaStepper_ = locaStepper;
+}
+// =============================================================================
+NOX::Abstract::Group::ReturnType
+EigenSaver::save(Teuchos::RCP<std::vector<double> > &evals_r,
+		         Teuchos::RCP<std::vector<double> > &evals_i,
+		         Teuchos::RCP<NOX::Abstract::MultiVector> &evecs_r,
+		         Teuchos::RCP<NOX::Abstract::MultiVector> &evecs_i
+		         )
+{
 	// Keep track of how often this method is called.
 	// This is actually somewhat ugly as it assumes that this number coincides
 	// with the number of steps in the continuation.
@@ -71,7 +86,7 @@ NOX::Abstract::Group::ReturnType EigenSaver::save(Teuchos::RCP<std::vector<
 					Teuchos::rcp_dynamic_cast<NOX::Epetra::Vector>(abVec, true);
 
 			Teuchos::ParameterList tmpList;
-			glSys_->solutionToFile(myVec->getEpetraVector(), tmpList,
+			glSys_->writeStateToFile(myVec->getEpetraVector(), tmpList,
 					eigenstateFilePath);
 		}
 	}
@@ -90,35 +105,14 @@ NOX::Abstract::Group::ReturnType EigenSaver::save(Teuchos::RCP<std::vector<
 	eigenFileStream << std::endl;
 	eigenFileStream.close();
 
-	int numEigs = eigenParams_->get<int> ("Num Eigenvalues");
-	numEigs++;
-	eigenParams_->set("Num Eigenvalues", numEigs);
+	// Adapt the computation for the next step.
+	// Make sure that approximately \c numComputeStableEigenvalues_ stable eigenvalues
+	// will be computed in the next step.
+	eigenParamList_->set("Num Eigenvalues", numUnstableEigenvalues + numComputeStableEigenvalues_ );
+
+	// reset the eigensolver to take notice of the new values
+	locaStepper_->eigensolverReset();
 
 	return NOX::Abstract::Group::Ok;
 }
 // =============================================================================
-// void
-// EigenSaver::saveEigenstate ( const std::string                         fileName,
-//                              const Teuchos::RCP<NOX::Abstract::Vector> &evec_r  )
-// {
-// //   conParam = 0.0;
-// //   glSys->GlSystem::printSolution ( evec_r, conParam );
-// 
-//   // create complex vector
-//   Teuchos::RCP<const Tpetra::Map<int> > ComplexMap = glSys_->getComplexMap();
-//   Tpetra::Vector<double_complex,int>  psi(ComplexMap,1,true);
-// 
-//   glSys->real2complex ( evec_r, psi );
-// 
-//   // create parameter list to be written to the file
-//   Teuchos::ParameterList tmpList;
-// //   tmpList.get ( "edgelength", glSys_->getStaggeredGrid()->getEdgeLength() );
-// //   tmpList.get ( "Nx",         Gl_.getStaggeredGrid()->getNx() );
-// 
-//   IoVirtual* fileIo = IoFactory::createFileIo ( outputDir_+"/"+fileName );
-//   fileIo->write ( psi,
-//                   tmpList,
-//                   * ( Gl_.getStaggeredGrid() ) );
-// 
-// }
-// // =============================================================================
