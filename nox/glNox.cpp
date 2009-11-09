@@ -593,9 +593,9 @@ glNox::printSolutionToFile( std::string fileName )
 	    ( dynamic_cast<const NOX::Epetra::Vector&> ( finalGroup.getX() ) ).
 							      getEpetraVector();
 
-  glSystem_->solutionToFile ( finalSolution,
-                              problemParameters_,
-                              fileName );
+  glSystem_->writeStateToFile ( finalSolution,
+                                problemParameters_,
+                                fileName );
 }
 // =============================================================================
 int

@@ -74,7 +74,7 @@ class GinzburgLandau
      void
      writeStateToFile( const Teuchos::RCP<const ComplexVector> &psi,
                        Teuchos::ParameterList &params,
-                       const std::string &filePath);
+                       const std::string &filePath) const;
       
   private:
 
@@ -122,3 +122,12 @@ class GinzburgLandau
 
 };
 #endif // GINZBURGLANDAU_H
+
+
+void
+readStateFromFile ( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
+		            const std::string           & filePath,
+                    Teuchos::RCP<ComplexVector> & psi,
+                    Teuchos::RCP<Grid>          & grid,
+                    Teuchos::ParameterList      & params
+                  );

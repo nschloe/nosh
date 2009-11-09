@@ -108,64 +108,33 @@ int main(int argc, char *argv[]) {
 	// ---------------------------------------------------------------------------
 	// define a new dummy psiLexicographic vector, to be adapted instantly
 	Teuchos::ParameterList glParameters;
-	Teuchos::RCP<ComplexVector> psiLexicographic;
+	Teuchos::RCP<ComplexVector> psi;
+	Teuchos::RCP<Grid> grid;
 
 	if (withInitialGuess) {
-		Teuchos::RCP<Tpetra::MultiVector<double, int> > psiLexicographicSplit;
+		readStateFromFile( Comm,
+				           inputGuessFile,
+		                   psi,
+		                   grid,
+		                   glParameters );
 
-		Teuchos::RCP<IoVirtual> fileIo = Teuchos::RCP<IoVirtual>(
-				IoFactory::createFileIo(inputGuessFile));
-		try {
-			fileIo->read(Comm, psiLexicographicSplit, glParameters);
-		} catch (const std::exception &e) {
-			std::cout << e.what() << std::endl;
-			return 1;
-		}
-
-		psiLexicographic = Teuchos::rcp(new ComplexVector(
-				psiLexicographicSplit->getMap()));
-
-		// TODO Replace this with get1dView or get2dView of the full MultiVector
-		DoubleArrayRCP psiLexicographicSplitAbsView =
-				psiLexicographicSplit->getVector(0)->get1dView();
-		DoubleArrayRCP psiLexicographicSplitArgView =
-				psiLexicographicSplit->getVector(1)->get1dView();
-
-		int localLength = psiLexicographic->getLocalLength();
-		for (int k = 0; k < localLength; k++) {
-			int kGlobal = psiLexicographic->getMap()->getGlobalElement(k);
-			double_complex value = polar(sqrt(
-					psiLexicographicSplitAbsView[kGlobal]),
-					psiLexicographicSplitArgView[kGlobal]);
-			psiLexicographic->replaceLocalValue(k, value);
-		}
 	} else {
 		Teuchos::ParameterList& glList = paramList->sublist("GL", true);
 		int Nx = glList.get<int> ("Nx");
-		double edgelength = glList.get<double> ("edge length");
+		double edgeLength = glList.get<double> ("edge length");
 		double H0 = glList.get<double> ("H0");
 
 		glParameters.set("Nx", Nx);
-		glParameters.set("edge length", edgelength);
+		glParameters.set("edge length", edgeLength);
 		glParameters.set("H0", H0);
+
+		grid = Teuchos::rcp(new Grid(Nx,edgeLength) );
 	}
 	// ---------------------------------------------------------------------------
 
 	// create the gl problem
 	Teuchos::RCP<GlBoundaryConditionsVirtual> boundaryConditions =
 			Teuchos::rcp(new GlBoundaryConditionsCentral());
-
-	Teuchos::RCP<Grid> grid = Teuchos::rcp(new Grid(
-			glParameters.get<int> ("Nx"), glParameters.get<double> (
-					"edge length")));
-
-	// true if no initial guess was given
-	if (psiLexicographic.is_null()) {
-		int NumGlobalUnknowns = grid->getNumGridPoints();
-		Teuchos::RCP<Tpetra::Map<int> > standardMap = Teuchos::rcp(
-				new Tpetra::Map<int>(NumGlobalUnknowns, 0, Comm));
-		psiLexicographic = Teuchos::rcp(new ComplexVector(standardMap));
-	}
 
 	Teuchos::RCP<MagneticVectorPotential> A = Teuchos::rcp(
 			new MagneticVectorPotential(glParameters.get<double> ("H0"),
@@ -176,23 +145,6 @@ int main(int argc, char *argv[]) {
 	// ---------------------------------------------------------------------------
 	Teuchos::RCP<GlSystem> glsystem;
 	if (withInitialGuess) {
-		// If there was is an initial guess, make sure to get the ordering correct.
-		// TODO:
-		// Look into having this done by Trilinos. If executed on a multiproc
-		// environment, we don't want p to be fully present on all processors.
-		int NumComplexUnknowns = glProblem.getGrid()->getNumGridPoints();
-		std::vector<int> p(NumComplexUnknowns);
-		// fill p:
-		glProblem.getGrid()->lexicographic2grid(&p);
-		Teuchos::RCP<ComplexVector> psi = Teuchos::rcp(new ComplexVector(
-				psiLexicographic->getMap()));
-		// TODO:
-		// The following is certainly not multiproc.
-		Teuchos::ArrayRCP<const double_complex> psiView =
-				psiLexicographic->get1dView();
-		for (int k = 0; k < NumComplexUnknowns; k++)
-			psi->replaceGlobalValue(p[k], psiView[k]);
-
 		// Create the interface between NOX and the application
 		// This object is derived from NOX::Epetra::Interface
 		glsystem = Teuchos::rcp(new GlSystem(glProblem, eComm, psi,
@@ -308,20 +260,72 @@ int main(int argc, char *argv[]) {
 	// ---------------------------------------------------------------------------
 
 
-	// ---------------------------------------------------------------------------
-	// add LOCA options which cannot be provided in the XML file
-	Teuchos::ParameterList& bifList = paramList->sublist("LOCA").sublist(
-			"Bifurcation");
-	Teuchos::RCP<NOX::Abstract::Vector> lengthNormVec = Teuchos::rcp(
-			new NOX::Epetra::Vector(*noxSoln));
-	lengthNormVec->init(1.0);
-	bifList.set("Length Normalization Vector", lengthNormVec);
 
-	Teuchos::RCP<NOX::Abstract::Vector> initialNullVec = Teuchos::rcp(
-			new NOX::Epetra::Vector(*noxSoln));
-	initialNullVec->init(1.0);
-	bifList.set("Initial Null Vector", initialNullVec);
-	// ---------------------------------------------------------------------------
+//                Teuchos::RCP<Tpetra::MultiVector<double, int> > psiLexicographicSplit;
+//
+//                Teuchos::RCP<IoVirtual> fileIo = Teuchos::RCP<IoVirtual>(
+//                                IoFactory::createFileIo("data/continuationStep44-eigenstate4.vtk"));
+//                try {
+//                        fileIo->read(Comm, psiLexicographicSplit, glParameters);
+//                } catch (const std::exception &e) {
+//                        std::cout << e.what() << std::endl;
+//                        return 1;
+//                }
+//
+//                psiLexicographic = Teuchos::rcp(new ComplexVector(
+//                                psiLexicographicSplit->getMap()));
+//
+//                // TODO Replace this with get1dView or get2dView of the full MultiVector
+//                DoubleArrayRCP psiLexicographicSplitAbsView =
+//                                psiLexicographicSplit->getVector(0)->get1dView();
+//                DoubleArrayRCP psiLexicographicSplitArgView =
+//                                psiLexicographicSplit->getVector(1)->get1dView();
+//
+//                int localLength = psiLexicographic->getLocalLength();
+//                for (int k = 0; k < localLength; k++) {
+//                        int kGlobal = psiLexicographic->getMap()->getGlobalElement(k);
+//                        double_complex value = polar(sqrt(
+//                                        psiLexicographicSplitAbsView[kGlobal]),
+//                                        psiLexicographicSplitArgView[kGlobal]);
+//                        psiLexicographic->replaceLocalValue(k, value);
+//
+//                }
+//
+//                // If there was is an initial guess, make sure to get the ordering correct.
+//                // TODO:
+//                // Look into having this done by Trilinos. If executed on a multiproc
+//                // environment, we don't want p to be fully present on all processors.
+//                int NumComplexUnknowns = glProblem.getGrid()->getNumGridPoints();
+//                std::vector<int> p(NumComplexUnknowns);
+//                // fill p:
+//                glProblem.getGrid()->lexicographic2grid(&p);
+//                Teuchos::RCP<ComplexVector> initialNullVec = Teuchos::rcp(new ComplexVector(
+//                                psiLexicographic->getMap()));
+//                // TODO:
+//                // The following is certainly not multiproc.
+//                Teuchos::ArrayRCP<const double_complex> psiView =
+//                                psiLexicographic->get1dView();
+//                for (int k = 0; k < NumComplexUnknowns; k++)
+//                        initialNullVec->replaceGlobalValue(p[k], psiView[k]);
+//
+//         Teuchos::RCP<Epetra_Vector> initialNullEpetraVec= Teuchos::rcp( new Epetra_Vector(*soln) );
+//         glsystem->complex2real( *initialNullVec, *initialNullEpetraVec );
+//
+//	// ---------------------------------------------------------------------------
+//	// add LOCA options which cannot be provided in the XML file
+//	Teuchos::ParameterList& bifList = paramList->sublist("LOCA").sublist(
+//			"Bifurcation");
+//	Teuchos::RCP<NOX::Abstract::Vector> lengthNormVec = Teuchos::rcp(
+//			new NOX::Epetra::Vector(*initialNullEpetraVec));
+////	lengthNormVec->init(1.0);
+//	bifList.set("Length Normalization Vector", lengthNormVec);
+//
+//
+//	Teuchos::RCP<NOX::Abstract::Vector> initialNullAbstractVec = Teuchos::rcp(
+//			new NOX::Epetra::Vector(*initialNullEpetraVec));
+////	initialNullVec->init(1.0);
+//	bifList.set("Initial Null Vector", initialNullAbstractVec);
+//	// ---------------------------------------------------------------------------
 
 
 	// ---------------------------------------------------------------------------
@@ -331,6 +335,9 @@ int main(int argc, char *argv[]) {
 
 	// pass pointer to stepper to glSystem to be able to read stats from the stepper in there
 	glsystem->setLocaStepper( stepper );
+#ifdef HAVE_LOCA_ANASAZI
+	glEigenSaver->setLocaStepper( stepper );
+#endif
 
 	// ---------------------------------------------------------------------------
 	// Perform continuation run

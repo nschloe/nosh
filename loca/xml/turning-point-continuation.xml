@@ -1,9 +1,22 @@
 <ParameterList>
+  <ParameterList name="IO">
+      <Parameter name="Input guess" type="string" value="data/continuationStep44.vtk"/>
+      <Parameter name="Output directory" type="string" value="./data"/>
+      <Parameter name="Continuation file base name" type="string" value="continuationStep"/>
+      <Parameter name="Continuation file format" type="string" value="VTK"/>
+      <Parameter name="Continuation data file name" type="string" value="continuationData.dat"/>
+      <Parameter name="Eigenvalues file name" type="string" value="eigenvalues.dat"/>
+      <Parameter name="Eigenstate file name appendix" type="string" value="eigenstate"/>
+  </ParameterList>
+  <ParameterList name="GL">
+      <Parameter name="Nx" type="int" value="50"/>
+      <Parameter name="H0" type="double" value="0.2"/>
+      <Parameter name="edge length" type="double" value="10.0"/>
+  </ParameterList>
   <ParameterList name="LOCA">
     <ParameterList name="Bifurcation">
-      <Parameter name="Type" type="string" value="Turning Point"/>
+      <Parameter name="Method" type="string" value="Turning Point"/>
       <Parameter name="Bifurcation Parameter" type="string" value="H0"/>
-      <Parameter name="Initial Value" type="double" value="0.3"/>
     </ParameterList>
     <ParameterList name="Constraints"/>
     <ParameterList name="Predictor">
@@ -16,22 +29,25 @@
       <Parameter name="Max Step Size" type="double" value="0.01"/>
       <Parameter name="Method" type="string" value="Adaptive"/>
       <Parameter name="Min Step Size" type="double" value="0.0001"/>
-      <Parameter name="Aggressiveness" type="double" value="5.0"/>
+      <Parameter name="Aggressiveness" type="double" value="4.0"/>
     </ParameterList>
     <ParameterList name="Stepper">
-      <Parameter name="Compute Eigenvalues" type="bool" value="false"/>
-      <Parameter name="Continuation Method" type="string" value="Arc Length"/>
+      <Parameter name="Continuation Method" type="string" value="Natural"/>
       <Parameter name="Continuation Parameter" type="string" value="edge length"/>
+      <Parameter name="Compute Eigenvalues" type="bool" value="true"/>
       <ParameterList name="Eigensolver">
         <Parameter name="Maximum Restarts" type="int" value="1"/>
         <Parameter name="Method" type="string" value="Anasazi"/>
-        <Parameter name="Num Blocks" type="int" value="100"/>
-        <Parameter name="Num Eigenvalues" type="int" value="5"/>
+        <Parameter name="Num Blocks" type="int" value="30"/>
+        <Parameter name="Num Eigenvalues" type="int" value="7"/>
         <Parameter name="Operator" type="string" value="Shift-Invert"/>
+        <Parameter name="Shift" type="double" value="0.5"/>
         <Parameter name="Save Eigen Data Method" type="string" value="User-Defined"/>
-        <Parameter name="Shift" type="double" value="0.1"/>
+        <Parameter name="Cayley Pole" type="double" value="0.5"/>
+        <Parameter name="Cayley Zero" type="double" value="1.0"/>
         <Parameter name="Sorting Order" type="string" value="LM"/>
         <Parameter name="User-Defined Save Eigen Data Name" type="string" value="glSaveEigenDataStrategy"/>
+        <Parameter name="glSaveEigenDataStrategy" type="any" value="N7Teuchos3RCPIN4LOCA13SaveEigenData16AbstractStrategyEEE{ptr=0x1254b90,node=0x1254bc0,count=3}   [unused]"/>
       </ParameterList>
       <Parameter name="Initial Value" type="double" value="10"/>
       <Parameter name="Max Nonlinear Iterations" type="int" value="20"/>
@@ -41,14 +57,16 @@
     </ParameterList>
   </ParameterList>
   <ParameterList name="NOX">
+    <Parameter name="Tolerance" type="double" value="1.0e-13"/>
+    <Parameter name="Max steps" type="int" value="30"/>
     <ParameterList name="Direction">
       <Parameter name="Method" type="string" value="Newton"/>
       <ParameterList name="Newton">
         <Parameter name="Forcing Term Method" type="string" value="Constant"/>
         <ParameterList name="Linear Solver">
           <Parameter name="Aztec Solver" type="string" value="GMRES"/>
-          <Parameter name="Compute Scaling Manually" type="bool" value="true"/>
-          <Parameter name="Convergence Test" type="string" value="r0"/>
+          <Parameter  name="Compute Scaling Manually" type="bool" value="true"/>
+          <Parameter  name="Convergence Test" type="string" value="r0"/>
           <ParameterList name="Ifpack">
             <Parameter name="amesos: solver type" type="string" value="Amesos_Superlu"/>
             <Parameter name="fact: drop tolerance" type="double" value="0.1"/>
@@ -75,7 +93,7 @@
     </ParameterList>
     <ParameterList name="Line Search"/>
     <ParameterList name="Printing">
-      <Parameter name="MyPID" type="int" value="0"/>
+      <Parameter  name="MyPID" type="int" value="0"/>
       <ParameterList name="Output Information">
           <Parameter name="Details" type="bool" value="true"/>
           <Parameter name="Outer Iteration" type="bool" value="true"/>
@@ -85,8 +103,8 @@
           <Parameter name="Stepper Details" type="bool" value="true"/>
           <Parameter name="Stepper Parameters" type="bool" value="true"/>
       </ParameterList>
-      <Parameter name="Output Precision" type="int" value="3"/>
-      <Parameter name="Output Processor" type="int" value="0"/>
+      <Parameter  name="Output Precision" type="int" value="3"/>
+      <Parameter  name="Output Processor" type="int" value="0"/>
     </ParameterList>
     <ParameterList name="Solver Options">
       <Parameter name="Status Test Check Type" type="string" value="Complete"/>

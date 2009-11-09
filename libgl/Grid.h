@@ -18,7 +18,7 @@ class Grid
 public:
 
   //! Default constructor.
-  Grid(int nx, double edgelength);
+  Grid(int nx, double edgeLength);
 
   virtual
   ~Grid();
