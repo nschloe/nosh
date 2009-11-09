@@ -17,6 +17,8 @@
 #include <Teuchos_DefaultComm.hpp>
 
 #include "ioFactory.h"
+#include "ioException.h"
+
 #include "glSystem.h"
 #include "glBoundaryConditionsInner.h"
 #include "glBoundaryConditionsOuter.h"
@@ -112,11 +114,15 @@ int main(int argc, char *argv[]) {
 	Teuchos::RCP<Grid> grid;
 
 	if (withInitialGuess) {
-		readStateFromFile( Comm,
-				           inputGuessFile,
-		                   psi,
-		                   grid,
-		                   glParameters );
+	   try {
+		   readStateFromFile( Comm, inputGuessFile, psi, grid, glParameters );
+	   }
+	   catch (IoException& e) {
+	       std::cerr << e.what() << std::endl;
+	   }
+	   catch (...) {
+	       std::cerr << "Unknown exception caught." << std::endl;
+	   }
 
 	} else {
 		Teuchos::ParameterList& glList = paramList->sublist("GL", true);
