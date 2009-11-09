@@ -108,11 +108,8 @@ public:
 	                  Teuchos::ParameterList &params,
 	                  const std::string &filePath);
 
-	int
-	getNumUnknowns() const;
-
-	void
-	complex2real(const ComplexVector &psi, Epetra_Vector &x) const;
+	Teuchos::RCP<Epetra_Vector>
+	getGlSystemVector( const Teuchos::RCP<const ComplexVector> psi ) const;
 
 private:
 
@@ -120,7 +117,7 @@ private:
 
 	void real2complex(const Epetra_Vector &x, ComplexVector &psi) const;
 
-//	void complex2real(const ComplexVector &psi, Epetra_Vector &x) const;
+	void complex2real(const ComplexVector &psi, Epetra_Vector &x) const;
 
 	void makeRealMap(const Teuchos::RCP<const Tpetra::Map<int> > complexMap);
 

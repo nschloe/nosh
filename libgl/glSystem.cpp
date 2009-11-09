@@ -205,7 +205,8 @@ int GlSystem::realIndex2complexIndex(const int realIndex) const {
 // =============================================================================
 // converts a real-valued vector to a complex-valued psi vector
 void GlSystem::real2complex(const Epetra_Vector & realVec,
-		ComplexVector &complexVec) const {
+                                  ComplexVector & complexVec) const
+{
 	// TODO: parallelize
 	for (unsigned int k = 0; k < complexVec.getGlobalLength(); k++) {
 		double_complex z = double_complex(realVec[2 * k], realVec[2 * k + 1]);
@@ -214,8 +215,11 @@ void GlSystem::real2complex(const Epetra_Vector & realVec,
 }
 // =============================================================================
 // converts a real-valued vector to a complex-valued psi vector
-void GlSystem::complex2real(const ComplexVector &complexVec,
-		Epetra_Vector &realVec) const {
+void
+GlSystem::complex2real(const ComplexVector &complexVec,
+                             Epetra_Vector &realVec
+                      ) const
+{
 	// TODO: parallelize
 	Teuchos::ArrayRCP<const double_complex> complexVecView =
 			complexVec.get1dView();
@@ -256,10 +260,10 @@ void GlSystem::makeRealMap(
 
 	return;
 }
-// =============================================================================
-int GlSystem::getNumUnknowns() const {
-	return NumRealUnknowns_;
-}
+//// =============================================================================
+//int GlSystem::getNumUnknowns() const {
+//	return NumRealUnknowns_;
+//}
 // =============================================================================
 bool GlSystem::computeF(const Epetra_Vector &x, Epetra_Vector &FVec,
 		const NOX::Epetra::Interface::Required::FillType fillFlag) {
@@ -783,5 +787,13 @@ GlSystem::writeStateToFile( const Epetra_Vector &x,
 	real2complex(x, *psi);
 
 	Gl_.writeStateToFile( psi, params, filePath );
+}
+// =============================================================================
+Teuchos::RCP<Epetra_Vector>
+GlSystem::getGlSystemVector( const Teuchos::RCP<const ComplexVector> psi ) const
+{
+	Teuchos::RCP<Epetra_Vector> x = Teuchos::rcp( new Epetra_Vector(*RealMap_) );
+	complex2real( *psi, *x );
+	return x;
 }
 // =============================================================================
