@@ -171,6 +171,7 @@ GlSystem::GlSystem(GinzburgLandau::GinzburgLandau &gl, const Teuchos::RCP<
 	initialSolution_ = Teuchos::rcp(new Epetra_Vector(*RealMap_));
 	Teuchos::RCP<ComplexVector> psi = Teuchos::rcp(new ComplexVector(
 			ComplexMap_));
+	// TODO Move default initialization out to main file
 	double_complex alpha(1.0, 0.0);
 	psi->putScalar(alpha); // default initialization
 	complex2real(*psi, *initialSolution_);

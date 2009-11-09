@@ -48,7 +48,7 @@
         <Parameter name="User-Defined Save Eigen Data Name" type="string" value="glSaveEigenDataStrategy"/>
         <Parameter name="glSaveEigenDataStrategy" type="any" value="N7Teuchos3RCPIN4LOCA13SaveEigenData16AbstractStrategyEEE{ptr=0x1254b90,node=0x1254bc0,count=3}   [unused]"/>
       </ParameterList>
-      <Parameter name="Initial Value" type="double" value="0.3"/>
+      <Parameter name="Initial Value" type="double" value="0.22"/>
       <Parameter name="Max Nonlinear Iterations" type="int" value="20"/>
       <Parameter name="Max Steps" type="int" value="10000"/>
       <Parameter name="Max Value" type="double" value="3"/>

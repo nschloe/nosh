@@ -125,6 +125,7 @@ int main(int argc, char *argv[]) {
 	   }
 
 	} else {
+		// read the parameters from the XML file
 		Teuchos::ParameterList& glList = paramList->sublist("GL", true);
 		int Nx = glList.get<int> ("Nx");
 		double edgeLength = glList.get<double> ("edge length");
@@ -138,13 +139,18 @@ int main(int argc, char *argv[]) {
 	}
 	// ---------------------------------------------------------------------------
 
+	// Make sure that the calculation starts off with the correct H0.
+	// TODO See if it's possible to declare the initial parameter once instead of three times in the
+	//      input XML file.
+	paramList->sublist("LOCA").sublist("Stepper").set("Initial Value", glParameters.get<double>("H0") );
+
 	// create the gl problem
 	Teuchos::RCP<GlBoundaryConditionsVirtual> boundaryConditions =
 			Teuchos::rcp(new GlBoundaryConditionsCentral());
 
 	Teuchos::RCP<MagneticVectorPotential> A = Teuchos::rcp(
-			new MagneticVectorPotential(glParameters.get<double> ("H0"),
-					glParameters.get<double> ("edge length")));
+			new MagneticVectorPotential( glParameters.get<double> ("H0"),
+				                         glParameters.get<double> ("edge length")));
 
 	GinzburgLandau glProblem = GinzburgLandau(grid, A, boundaryConditions);
 
@@ -229,9 +235,9 @@ int main(int argc, char *argv[]) {
 	// be initialized to contain the default initial guess for the
 	// specified problem.
 	LOCA::ParameterVector locaParams;
+
 	locaParams.addParameter("H0", glParameters.get<double> ("H0"));
-	locaParams.addParameter("edge length", glParameters.get<double> (
-			"edge length"));
+	locaParams.addParameter("edge length", glParameters.get<double>("edge length") );
 
 	NOX::Epetra::Vector initialGuess(soln, NOX::Epetra::Vector::CreateView);
 
@@ -338,6 +344,8 @@ int main(int argc, char *argv[]) {
 	// Create the stepper
 	Teuchos::RCP<LOCA::Stepper> stepper = Teuchos::rcp( new LOCA::Stepper(globalData, grp, comboOR, paramList) );
 	// ---------------------------------------------------------------------------
+
+	// make sure that the stepper starts off with the correct starting value
 
 	// pass pointer to stepper to glSystem to be able to read stats from the stepper in there
 	glsystem->setLocaStepper( stepper );
