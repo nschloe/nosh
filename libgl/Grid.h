@@ -33,10 +33,12 @@ public:
   int
   getNumGridPoints() const; //!< Returns the number of grid points.
 
+  //! Returns the number of grid points on the boundary.
+  int
+  getNumBorderPoints() const;
+
   double
   getH() const; //!< Returns mesh size \f$h\f$.
-
-  //      int* k2i( int  ); //!< Converts a running index k to a grid index i
 
   /*! Returns the permutation vector that mats the internal ordering to
    the generic lexicographic ordering of the square grid. */
@@ -78,6 +80,11 @@ public:
 
   int
   getKAbove(int k) const; //!< Returns the running index \c k of the node above \c i.
+
+  //! Returns the global index \ck of the \cl-th border node. Subsequent nodes \c l, \cl+1
+  //! sit next to each other.
+  int
+  borderNode( int l );
 
   // TODO: move this to private
   int

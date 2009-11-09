@@ -3,19 +3,11 @@
 #include "glBoundaryConditionsVirtual.h"
 #include "glException.h"
 
-//#include <iostream>
-
-//#include <string>
-
-//#include <vector>
-
 #include <Teuchos_RCP.hpp>
 
 // really needed?
 // --> reduceAllAndScatter in freeEnergy()
 #include <Teuchos_Comm.hpp>
-
-// #include <Tpetra_Vector.hpp>
 
 #include <EpetraExt_Utils.h> // for the toString function
 
@@ -368,9 +360,6 @@ int GinzburgLandau::getVorticity ( const ComplexVector &psi
     return -1;
 
   int vorticity = 0;
-  Teuchos::RCP<Teuchos::Array<int> > i = Teuchos::rcp(new Teuchos::Array<int>(2) );
-  int k;
-  int Nx = grid_->getNx();
 
   const double PI = 3.14159265358979323846264338327950288419716939937510;
   const double threshold = 1.5*PI; // Consider jumps in the argument greater
@@ -380,67 +369,28 @@ int GinzburgLandau::getVorticity ( const ComplexVector &psi
   // Remember: This only works with one core.
   Teuchos::ArrayRCP<const double_complex> psiView = psi.get1dView();
 
-  // origin -- our first index
-  k = grid_->i2k ( i );
+  int numBorderPoints = grid_->getNumBorderPoints();
 
-  double angle = arg ( psiView[k] );
-  double anglePrev;
-
-  // lower border
-  (*i)[1] = 0;
-  for ( int l=1; l<Nx+1; l++ )
-    {
-      anglePrev = angle;
-      (*i)[0] = l;
-      k = grid_->i2k ( i );
-      angle = arg ( psiView[k] );
-      if ( angle-anglePrev<-threshold )
+  int l = 0;
+  double angle = arg( psiView[ grid_->borderNode(l) ] );
+  double anglePrevious;
+  for ( l=1; l<numBorderPoints; l++ ){
+	  anglePrevious = angle;
+	  angle = arg( psiView[grid_->borderNode(l)] );
+      if ( angle-anglePrevious<-threshold )
         vorticity++;
-      else if ( angle-anglePrev>threshold )
+      else if ( angle-anglePrevious>threshold )
         vorticity--;
-    }
+  }
 
-  // right border
-  (*i)[0] = Nx;
-  for ( int l=1; l<Nx+1; l++ )
-    {
-      anglePrev = angle;
-      (*i)[1] = l;
-      k = grid_->i2k ( i );
-      angle = arg ( psiView[k] );
-      if ( angle-anglePrev<-threshold )
-        vorticity++;
-      else if ( angle-anglePrev>threshold )
-        vorticity--;
-    }
-
-  // top border
-  (*i)[1] = Nx;
-  for ( int l=1; l<Nx+1; l++ )
-    {
-      anglePrev = angle;
-      (*i)[0] = Nx-l;
-      k = grid_->i2k ( i );
-      angle = arg ( psiView[k] );
-      if ( angle-anglePrev<-threshold )
-        vorticity++;
-      else if ( angle-anglePrev>threshold )
-        vorticity--;
-    }
-
-  // left border
-  (*i)[0] = 0;
-  for ( int l=1; l<Nx+1; l++ )
-    {
-      anglePrev = angle;
-      (*i)[1] = Nx-l;
-      k = grid_->i2k ( i );
-      angle = arg ( psiView[k] );
-      if ( angle-anglePrev<-threshold )
-        vorticity++;
-      else if ( angle-anglePrev>threshold )
-        vorticity--;
-    }
+  // close the circle
+  l = 0;
+  anglePrevious = angle;
+  angle = arg( psiView[grid_->borderNode(l)] );
+  if ( angle-anglePrevious<-threshold )
+    vorticity++;
+  else if ( angle-anglePrevious>threshold )
+    vorticity--;
 
   return vorticity;
 }

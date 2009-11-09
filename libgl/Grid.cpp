@@ -48,6 +48,12 @@ Grid::getNumGridPoints() const
   return (nx_ + 1) * (nx_ + 1);
 }
 // =============================================================================
+int
+Grid::getNumBorderPoints() const
+{
+  return 4*nx_;
+}
+// =============================================================================
 double
 Grid::getH() const
 {
@@ -173,6 +179,45 @@ Grid::k2i(int k) const
     }
 
   return i;
+}
+// =============================================================================
+// Defines a series of neighboring border nodes.
+// This is independent of the actual numbering scheme of the nodes.
+int
+Grid::borderNode( int l )
+{
+   int d = 2;
+   Teuchos::RCP<Teuchos::Array<int> > i = Teuchos::rcp( new Teuchos::Array<int>(d));
+
+	if (l < nx_)
+	  { // south
+	    (*i)[0] = l;
+	    (*i)[1] = 0;
+	  }
+	else if (l < 2 * nx_)
+	    { // east
+	      (*i)[0] = nx_;
+	      (*i)[1] = l - nx_;
+	    }
+	else if (l < 3 * nx_)
+	    { // north
+	      (*i)[0] = 3 * nx_ - l;
+	      (*i)[1] = nx_;
+	    }
+	else if (l < 4 * nx_)
+	    { // west
+	      (*i)[0] = 0;
+	      (*i)[1] = 4 * nx_ - l;
+	    }
+	else
+	{
+		  std::string message = "Given index l=" + EpetraExt::toString(l)
+		                      + "larger than the number of border nodes n="
+		                      + EpetraExt::toString(4*nx_);
+		  throw glException( "Grid::borderNode", message );
+	}
+
+	return i2k(i);
 }
 // =============================================================================
 double
