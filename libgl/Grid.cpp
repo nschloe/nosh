@@ -181,43 +181,76 @@ Grid::k2i(int k) const
   return i;
 }
 // =============================================================================
-// Defines a series of neighboring border nodes.
+// Defines a series of neighboring boundary nodes.
 // This is independent of the actual numbering scheme of the nodes.
+Teuchos::RCP<Teuchos::Array<int> >
+Grid::boundaryPosition ( int l ) {
+	   int d = 2;
+	   Teuchos::RCP<Teuchos::Array<int> > i = Teuchos::rcp( new Teuchos::Array<int>(d));
+
+	   // start at the bottom left, and go around counter-clockwise
+		if (l < nx_)
+		  { // south
+		    (*i)[0] = l;
+		    (*i)[1] = 0;
+		  }
+		else if (l < 2 * nx_)
+		    { // east
+		      (*i)[0] = nx_;
+		      (*i)[1] = l - nx_;
+		    }
+		else if (l < 3 * nx_)
+		    { // north
+		      (*i)[0] = 3 * nx_ - l;
+		      (*i)[1] = nx_;
+		    }
+		else if (l < 4 * nx_)
+		    { // west
+		      (*i)[0] = 0;
+		      (*i)[1] = 4 * nx_ - l;
+		    }
+		else
+		{
+			  std::string message = "Given index l=" + EpetraExt::toString(l)
+			                      + "larger than the number of border nodes n="
+			                      + EpetraExt::toString(4*nx_);
+			  throw glException( "Grid::borderNode", message );
+		}
+		return i;
+}
+// =============================================================================
 int
-Grid::borderNode( int l )
+Grid::boundaryIndex2globalIndex( int l )
 {
-   int d = 2;
-   Teuchos::RCP<Teuchos::Array<int> > i = Teuchos::rcp( new Teuchos::Array<int>(d));
+	Teuchos::RCP<Teuchos::Array<int> > i = boundaryPosition(l);
+	return i2k( i );
+}
+// =============================================================================
+Grid::nodeType
+Grid::boundaryNodeType( int l )
+{
+	Teuchos::RCP<Teuchos::Array<int> > i = boundaryPosition(l);
 
-	if (l < nx_)
-	  { // south
-	    (*i)[0] = l;
-	    (*i)[1] = 0;
-	  }
-	else if (l < 2 * nx_)
-	    { // east
-	      (*i)[0] = nx_;
-	      (*i)[1] = l - nx_;
-	    }
-	else if (l < 3 * nx_)
-	    { // north
-	      (*i)[0] = 3 * nx_ - l;
-	      (*i)[1] = nx_;
-	    }
-	else if (l < 4 * nx_)
-	    { // west
-	      (*i)[0] = 0;
-	      (*i)[1] = 4 * nx_ - l;
-	    }
+	if ( (*i)[0]==0 ) {
+		if ((*i)[1]==0)
+			return Grid::BOTTOMLEFTCONVEX;
+		else if ((*i)[1]==nx_)
+			return Grid::TOPLEFTCONVEX;
+		else
+			return Grid::LEFT;
+	} else if ( (*i)[0]==nx_ ) {
+		if ( (*i)[1]==0 )
+			return Grid::BOTTOMRIGHTCONVEX;
+		else if ( (*i)[1]==nx_ )
+			return Grid::TOPRIGHTCONVEX;
+		else
+			return Grid::RIGHT;
+	} else if ( (*i)[1]==0 )
+		return Grid::BOTTOM;
+	else if ( (*i)[1]==nx_ )
+		return Grid::TOP;
 	else
-	{
-		  std::string message = "Given index l=" + EpetraExt::toString(l)
-		                      + "larger than the number of border nodes n="
-		                      + EpetraExt::toString(4*nx_);
-		  throw glException( "Grid::borderNode", message );
-	}
-
-	return i2k(i);
+		return Grid::INTERIOR;
 }
 // =============================================================================
 double

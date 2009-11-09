@@ -107,7 +107,6 @@ glNox::glNox( const std::string fileName,
 
   // Create the interface between NOX and the application
   // This object is derived from NOX::Epetra::Interface
-  bool reverse = false;
   glSystem_ = Teuchos::rcp ( new GlSystem ( glProblem, eComm, psi ) );
 }
 // =============================================================================
@@ -142,8 +141,6 @@ glNox::glNox( const int Nx,
                                              A,
                                              boundaryConditions
                                            );
-
-  bool reverse = false;
   glSystem_ = Teuchos::rcp ( new GlSystem ( glProblem, eComm ) );
 }
 // =============================================================================

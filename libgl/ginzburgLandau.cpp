@@ -311,7 +311,7 @@ double GinzburgLandau::freeEnergy ( const ComplexVector &psi
   Teuchos::ArrayRCP<const double_complex> psiView = psi.get1dView();
 
   // sum up the energy on each processor
-  for ( int k=0; k<psi.getLocalLength(); k++ )
+  for ( unsigned int k=0; k<psi.getLocalLength(); k++ )
     {
 	  int kGlobal = psi.getMap()->getGlobalElement ( k );
 	  double area = grid_->cellArea( kGlobal );
@@ -372,11 +372,12 @@ int GinzburgLandau::getVorticity ( const ComplexVector &psi
   int numBorderPoints = grid_->getNumBorderPoints();
 
   int l = 0;
-  double angle = arg( psiView[ grid_->borderNode(l) ] );
+  double angle = std::arg( psiView[ grid_->boundaryIndex2globalIndex(l) ] );
+  double angle0 = angle;
   double anglePrevious;
   for ( l=1; l<numBorderPoints; l++ ){
 	  anglePrevious = angle;
-	  angle = arg( psiView[grid_->borderNode(l)] );
+	  angle = std::arg( psiView[grid_->boundaryIndex2globalIndex(l)] );
       if ( angle-anglePrevious<-threshold )
         vorticity++;
       else if ( angle-anglePrevious>threshold )
@@ -384,12 +385,10 @@ int GinzburgLandau::getVorticity ( const ComplexVector &psi
   }
 
   // close the circle
-  l = 0;
   anglePrevious = angle;
-  angle = arg( psiView[grid_->borderNode(l)] );
-  if ( angle-anglePrevious<-threshold )
+  if ( angle0-anglePrevious<-threshold )
     vorticity++;
-  else if ( angle-anglePrevious>threshold )
+  else if ( angle0-anglePrevious>threshold )
     vorticity--;
 
   return vorticity;

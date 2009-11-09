@@ -2,7 +2,7 @@
  * Grid.h
  *
  *  Created on: Nov 5, 2009
- *      Author: nico
+ *      Author: Nico Schlšmer
  */
 
 #ifndef GRID_H_
@@ -49,8 +49,23 @@ public:
    or strictly inside it. */
   enum nodeType
   {
-    CORNER, EDGE, INTERIOR
+    BOTTOMLEFTCONVEX,
+    BOTTOMLEFTCONCAVE,
+    BOTTOMRIGHTCONVEX,
+    BOTTOMRIGHTCONCAVE,
+    TOPLEFTCONVEX,
+    TOPLEFTCONCAVE,
+    TOPRIGHTCONVEX,
+    TOPRIGHTCONCAVE,
+    BOTTOM,
+    RIGHT,
+    TOP,
+    LEFT,
+    INTERIOR
   };
+
+  Grid::nodeType
+  boundaryNodeType( int l );
 
   /*! For a given node number k, returns the the area of the surrounding cell. */
   double
@@ -81,10 +96,10 @@ public:
   int
   getKAbove(int k) const; //!< Returns the running index \c k of the node above \c i.
 
-  //! Returns the global index \ck of the \cl-th border node. Subsequent nodes \c l, \cl+1
+  //! Returns the global index \ck of the \cl-th boundary node. Subsequent nodes \c l, \cl+1
   //! sit next to each other.
   int
-  borderNode( int l );
+  boundaryIndex2globalIndex( int l );
 
   // TODO: move this to private
   int
@@ -95,6 +110,11 @@ private:
   int nx_; //!< Number of grid pieces in both x- and y-direction
   double edgeLength_;
   double h_;
+
+  //! Defines a subsequent order of boundary nodes by associating a running index \c l with
+  //! \f$i\f$-coordinates on the grid.
+  Teuchos::RCP<Teuchos::Array<int> >
+  boundaryPosition ( int l );
 
   Teuchos::RCP<Teuchos::Array<double> >
   getX(Teuchos::Array<int> i) const;
