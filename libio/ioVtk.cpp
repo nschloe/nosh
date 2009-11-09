@@ -39,7 +39,7 @@ void IoVtk::read( const Teuchos::RCP<const Teuchos::Comm<int> >        &tComm,
   catch (std::ifstream::failure const &e) {
 	std::string message = "Exception opening/reading file '" + fileName_ + "'. "
 	+ "Error message '" + e.what() + "'";
-	throw ioException( "IoVtk::read", message );
+	throw IoException( "IoVtk::read", message );
   }
 
   // read the parameters
@@ -58,7 +58,7 @@ void IoVtk::read( const Teuchos::RCP<const Teuchos::Comm<int> >        &tComm,
 			  + std::string("of the MultiVector.\n")
 			  + std::string("The error message will be gone as soon as replaceMap is\n")
 			  + std::string("reimplemented in Trilinos.");
-      throw ioException( "IoVtk::read", message );
+      throw IoException( "IoVtk::read", message );
   }
 
   // create map
@@ -232,7 +232,7 @@ IoVtk::writeParameterList( const Teuchos::ParameterList & pList,
     else {
         std::string message =
                  "Parameter is neither of type \"int\" not of type \"double\".";
-        throw ioException( "IoVtk::writeParameterList",
+        throw IoException( "IoVtk::writeParameterList",
                            message );
     }
     k++;
@@ -315,13 +315,13 @@ IoVtk::ReadParamsFromVtkFile( std::ifstream    &iFile,
      aString.erase(0,10);
    } else {
      std::string message = "Keyword \"PARAMETERS\" missing.";
-     throw ioException( fname, message );
+     throw IoException( fname, message );
    }
    if ( boost::algorithm::ends_with(aString,"END") ) {
      aString.erase(aString.size()-3,aString.size());
    } else {
      std::string message = "Keyword \"END\" missing.";
-     throw ioException( fname, message );
+     throw IoException( fname, message );
    }
 
    // now, 'explode' the string at the separator sign, ',' (comma)
@@ -345,7 +345,7 @@ IoVtk::ReadParamsFromVtkFile( std::ifstream    &iFile,
       type.compare("double") ) {
       std::string message = "Type \"" + type + "\" is neither \"int\""
       + " nor \"double\".";
-    throw ioException( fname, message );
+    throw IoException( fname, message );
     }
 
     std::string equation = strVec[k].substr(it1);
@@ -363,7 +363,7 @@ IoVtk::ReadParamsFromVtkFile( std::ifstream    &iFile,
     if (terms.size()!=2) {
       std::string message = std::string("The expression \"") + equation
                           + std::string("\" is not of the type \"psi=5.34\".");
-      throw ioException( fname, message );
+      throw IoException( fname, message );
     }
 
     if ( type.compare("int")==0 ) {
@@ -375,7 +375,7 @@ IoVtk::ReadParamsFromVtkFile( std::ifstream    &iFile,
     } else {
       std::string message = "Type \"" + type + "\" is neither \"int\""
       + " nor \"double\".";
-      throw ioException( fname, message );
+      throw IoException( fname, message );
     }
   }
 
@@ -391,7 +391,7 @@ IoVtk::readVtkHeader( std::ifstream    &iFile
   getline(iFile,buf);
   if ( buf.compare("ASCII") ) {
 	std::string message = "VTK file not encoded in \"ASCII\".";
-	throw ioException( "IoVtk::readVtkHeader", message );
+	throw IoException( "IoVtk::readVtkHeader", message );
   }
 
   // get POINT_DATA
@@ -451,7 +451,7 @@ IoVtk::ReadScalarsFromVtkFile( std::ifstream                                  & 
       + " than what can be stored in the MultiVector "
       + "(#vectors=" + EpetraExt::toString(numVectors)
       + ").";
-      throw ioException( fname, message );
+      throw IoException( fname, message );
     }
 
     // Read the elements row by row

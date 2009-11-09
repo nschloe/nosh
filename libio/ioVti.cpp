@@ -26,7 +26,7 @@ IoVti::read( const Teuchos::RCP<const Teuchos::Comm<int> >        &tComm,
 	       ) const
 {
 
-  throw ioException( "IoVti::StateFileReader",
+  throw IoException( "IoVti::StateFileReader",
                      "readVtiFile not yet implemented." );
 
   // pass a possible 
@@ -55,7 +55,7 @@ IoVti::read( const Teuchos::RCP<const Teuchos::Comm<int> >        &tComm,
                                                               "abs(psi)"      );
 
     if ( !absPsiObject ) { // pointer invalid
-        throw ioException( "GlSystem::GlSystem",
+        throw IoException( "GlSystem::GlSystem",
                            "No such XML Object found." );
     }
 
@@ -159,7 +159,7 @@ IoVti::write( const Tpetra::MultiVector<double,int> & x,
               const double                            h
             ) const
 {
-    throw ioException( "IoVti::write", "Method not yet implemented." );
+    throw IoException( "IoVti::write", "Method not yet implemented." );
 }
 // =============================================================================
 // Inside an XML object, this function looks for a specific tag and returns

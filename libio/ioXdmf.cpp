@@ -41,7 +41,7 @@ IoXdmf::read( const Teuchos::RCP<const Teuchos::Comm<int> >        &tComm,
 	        ) const
 {
 
-  throw ioException( "IoXdmf::read", "Not yet implemented" );
+  throw IoException( "IoXdmf::read", "Not yet implemented" );
 //
 //  // Convert the file to a string, such that we can discard the headers and pass
 //  // the pure XML stuff to Teuchos.
@@ -57,7 +57,7 @@ IoXdmf::read( const Teuchos::RCP<const Teuchos::Comm<int> >        &tComm,
 //  // read the file contents to a string
 //  std::ifstream inFile( fileName_.c_str() );
 //  if( !inFile ) {
-//      throw ioException( "IoXdmf::read",
+//      throw IoException( "IoXdmf::read",
 //                         "Could not open input file \"" + fileName_ + "\"." );
 //  }
 //
@@ -126,7 +126,7 @@ IoXdmf::read( const Teuchos::RCP<const Teuchos::Comm<int> >        &tComm,
 //			  + "does not coincide with the number of complex "
 //			  + "unknowns (="
 //                          + EpetraExt::toString( (Nx+1)*(Nx+1) ) + ").";
-//      throw ioException( "IoXdmf::read", message );
+//      throw IoException( "IoXdmf::read", message );
 //  }
 //
 //  int k = 0;
@@ -168,7 +168,7 @@ IoXdmf::getHeavyData( const Teuchos::XMLObject &xmlFileObject,
   const Teuchos::XMLObject* dataItem = xmlFind ( absPsiObject,
                                                  "DataItem" );
   if ( !dataItem ) {
-      throw ioException( "IoXdmf::getHeavyData",
+      throw IoException( "IoXdmf::getHeavyData",
                          "Found no \"DataItem\"." );
   }
 
@@ -203,7 +203,7 @@ IoXdmf::getHeavyData( const Teuchos::XMLObject &xmlFileObject,
   if ( !hdf5Reader.IsContained(hdf5GroupName) ) {
       std::string message = "Could not find tag \"" + hdf5GroupName + "\" "
                           + "in file " + fileDirectory + "/" + dataFile + ".";
-      throw ioException( "IoXdmf::getHeavyData",
+      throw IoException( "IoXdmf::getHeavyData",
                          message );
   }
 
@@ -218,7 +218,7 @@ IoXdmf::getHeavyData( const Teuchos::XMLObject &xmlFileObject,
                           + EpetraExt::toString( (*readVec)->GlobalLength() )
                           + ") does not coincide with the global length of "
                           + "the data in file " + dataFile + ".";
-      throw ioException( "IoXdmf::getHeavyData",
+      throw IoException( "IoXdmf::getHeavyData",
                          message );
   }
 
@@ -227,7 +227,7 @@ IoXdmf::getHeavyData( const Teuchos::XMLObject &xmlFileObject,
                           + EpetraExt::toString( (*readVec)->NumVectors() )
                           + ") does not coincide with the global number of "
                           + "vectors in file " + dataFile + ".";
-      throw ioException( "IoXdmf::getHeavyData",
+      throw IoException( "IoXdmf::getHeavyData",
                          message );
   }
 
@@ -398,7 +398,7 @@ IoXdmf::write( const Tpetra::MultiVector<double,int> & x,
                const double                            h
              ) const
 {
-    throw ioException( "IoXdmf::write", "Method not yet implemented." );
+    throw IoException( "IoXdmf::write", "Method not yet implemented." );
 }
 // =============================================================================
 // Inside an XML object, this function looks for a specific tag and returns

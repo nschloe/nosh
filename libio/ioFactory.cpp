@@ -6,7 +6,8 @@
 #include "ioXdmf.h"
 
 // =============================================================================
-IoVirtual* IoFactory::createFileIo( std::string fileName )
+IoVirtual*
+IoFactory::createFileIo( std::string fileName )
 {
 
   // analyze the file name for extension
@@ -23,7 +24,7 @@ IoVirtual* IoFactory::createFileIo( std::string fileName )
       std::string message = "File name extension \"" + extension + "\" "
                           + "not recognized. Must be one of \"vtk\", "
                           + "\"vti\", \"xmf\".";
-      throw ioException( "IoFactory::createFileIo",
+      throw IoException( "IoFactory::createFileIo",
                           message );
   }
 
