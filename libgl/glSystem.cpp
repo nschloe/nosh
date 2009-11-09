@@ -693,11 +693,13 @@ bool GlSystem::computeShiftedMatrix(double alpha, double beta,
 }
 // =============================================================================
 // function used by LOCA
-void GlSystem::setParameters(const LOCA::ParameterVector &p) {
+void
+GlSystem::setParameters(const LOCA::ParameterVector &p) {
 	double h0 = p.getValue("H0");
+	Gl_.setH0(h0);
 
-	// set H0 in the underlying problem class
-	Gl_.getMagneticVectorPotential()->setH0(h0);
+	double edgeLength = p.getValue("edge length");
+	Gl_.setEdgeLength( edgeLength );
 }
 // =============================================================================
 void GlSystem::setLocaStepper(const Teuchos::RCP<const LOCA::Stepper> stepper) {

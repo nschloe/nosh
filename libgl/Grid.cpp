@@ -41,6 +41,12 @@ Grid::getEdgeLength() const
   return edgeLength_;
 }
 // =============================================================================
+void
+Grid::setEdgeLength( const double edgeLength )
+{
+	edgeLength_ = edgeLength;
+}
+// =============================================================================
 int
 Grid::getNumGridPoints() const
 {

@@ -31,12 +31,14 @@ class GinzburgLandau
      /*! Destructor. */
      ~GinzburgLandau();
 
-     /*! Returns a pointer to the magnetic vector potential \f$A\f$ in use.*/
-     Teuchos::RCP<MagneticVectorPotential>
-     getMagneticVectorPotential() const;
+     void
+     setH0(const double h0);
 
      Teuchos::RCP<Grid>
      getGrid() const;
+
+     void
+     setEdgeLength( const double edgeLength);
 
      Tpetra::Vector<double_complex,int>
      computeGlVector( const Tpetra::Vector<double_complex,int> psi ) const;

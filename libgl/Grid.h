@@ -33,6 +33,9 @@ public:
   double
   getEdgeLength() const; //!< Returns the edge length \f$a\f$ of the square.
 
+  void
+  setEdgeLength( const double edgeLength );
+
   int
   getNumGridPoints() const; //!< Returns the number of grid points.
 

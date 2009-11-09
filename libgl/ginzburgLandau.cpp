@@ -36,10 +36,16 @@ GinzburgLandau::~GinzburgLandau()
 {
 }
 // =============================================================================
-Teuchos::RCP<MagneticVectorPotential>
-GinzburgLandau::getMagneticVectorPotential() const
+void
+GinzburgLandau::setH0(const double h0)
 {
-  return A_;
+  A_->setH0( h0 );
+}
+// =============================================================================
+void
+GinzburgLandau::setEdgeLength( const double edgeLength)
+{
+  grid_->setEdgeLength( edgeLength );
 }
 // =============================================================================
 Teuchos::RCP<Grid>
