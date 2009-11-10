@@ -265,40 +265,6 @@ int main(int argc, char *argv[]) {
 	// ---------------------------------------------------------------------------
 
 
-	// ---------------------------------------------------------------------------
-	// read in initial null vector and convert it to a glsystem-compliant vector
-	std::string initialNullVectorFile = ioList.get<string> ("Initial null vector guess");
-	Teuchos::RCP<ComplexVector> initialNullVector;
-	try {
-	    readStateFromFile( Comm, initialNullVectorFile, initialNullVector, grid, glParameters );
-	}
-	catch (const IoException& e) {
-	    std::cerr << e.what() << std::endl;
-	}
-	catch (...) {
-	    std::cerr << "Unknown exception caught." << std::endl;
-	}
-	// convert the complex vector into an GlSystem-compliant vector
-	Teuchos::RCP<Epetra_Vector> glsystemInitialNullVector = glsystem->getGlSystemVector( initialNullVector );
-	// ---------------------------------------------------------------------------
-
-
-	// ---------------------------------------------------------------------------
-	// add LOCA options which cannot be provided in the XML file
-	Teuchos::ParameterList& bifList = paramList->sublist("LOCA").sublist(
-			"Bifurcation");
-	Teuchos::RCP<NOX::Abstract::Vector> lengthNormVec = Teuchos::rcp(
-			new NOX::Epetra::Vector(*glsystemInitialNullVector));
-//	lengthNormVec->init(1.0);
-	bifList.set("Length Normalization Vector", lengthNormVec);
-
-
-	Teuchos::RCP<NOX::Abstract::Vector> initialNullAbstractVec = Teuchos::rcp(
-			new NOX::Epetra::Vector(*glsystemInitialNullVector));
-//	initialNullVec->init(1.0);
-	bifList.set("Initial Null Vector", initialNullAbstractVec);
-	// ---------------------------------------------------------------------------
-
 
 	// ---------------------------------------------------------------------------
 	// Create the stepper

@@ -32,9 +32,9 @@ INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/libgl
                       ${ginzburg-landau_SOURCE_DIR}/libio )
 
 SET ( ginzburg_landau_SRCS
-      gl-loca.cpp )
+      oneParameterContinuation.cpp )
 
-ADD_EXECUTABLE ( gl-loca.out
+ADD_EXECUTABLE ( oneParameterContinuation.out
                  ${ginzburg_landau_SRCS} )
 
 SET ( internal_LIBS
@@ -106,7 +106,7 @@ SET( LINK_LIBRARIES ${LINK_LIBRARIES}
 
 # ==============================================================================
 # Set executable linking information.
-TARGET_LINK_LIBRARIES ( gl-loca.out
+TARGET_LINK_LIBRARIES ( oneParameterContinuation.out
                         ${internal_LIBS}
                         ${Trilinos_LIBRARIES}
                         ${LINK_LIBRARIES}
