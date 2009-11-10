@@ -747,7 +747,7 @@ void GlSystem::printSolution(const Epetra_Vector &x, double conParam) {
 
 	int nonlinearIterations = stepper_->getSolver()->getNumIterations();
 
-	contFileStream << "  " << conStep << "     " << "\t";
+	contFileStream << "  " << conStep << "      \t";
 	Gl_.appendStats( contFileStream, false, psi );
 	contFileStream << "       \t" << nonlinearIterations << std::endl;
 

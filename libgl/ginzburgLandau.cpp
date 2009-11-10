@@ -472,16 +472,18 @@ GinzburgLandau::appendStats( std::ofstream & fileStream,
 		                   ) const
 {
     if ( header ) {
-    	fileStream << "H0     \t"
-    	 		   << "free energy    \t"
+    	fileStream << "H0                \t"
+    			   << "edge length       \t"
+    	 		   << "free energy       \t"
     	           << "vorticity";
     }
     else {
     	// TODO avoid calculating the free energy twice
     	double energy = freeEnergy( *psi );
     	int vorticity = getVorticity( *psi );
-    	fileStream << A_->getH0()
-    			   << energy
+    	fileStream << A_->getH0() << " \t"
+    			   << grid_->getEdgeLength() << " \t"
+    			   << energy << " \t"
     			   << vorticity;
     }
 
