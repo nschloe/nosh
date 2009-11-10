@@ -55,7 +55,7 @@ GlSystem::GlSystem( GinzburgLandau::GinzburgLandau &gl,
 	outputDataFileName_(outputDataFileName),
 	stepper_(0)
 {
-	NumComplexUnknowns_ = Gl_.getGrid()->getNumGridPoints();
+	NumComplexUnknowns_ = Gl_.getNumUnknowns();
 	NumRealUnknowns_ = 2 * NumComplexUnknowns_ + 1;
 
 	if (!psi.is_valid_ptr())
@@ -156,7 +156,7 @@ outputFileFormat_(outputFileFormat),
 outputDataFileName_(outputDataFileName),
 stepper_(0)
 {
-	NumComplexUnknowns_ = Gl_.getGrid()->getNumGridPoints();
+	NumComplexUnknowns_ = Gl_.getNumUnknowns();
 	NumRealUnknowns_ = 2 * NumComplexUnknowns_ + 1;
 
 	// TODO There is (until now?) no way to convert a Teuchos::Comm (of psi)

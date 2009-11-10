@@ -48,10 +48,10 @@ GinzburgLandau::setEdgeLength( const double edgeLength)
   grid_->setEdgeLength( edgeLength );
 }
 // =============================================================================
-Teuchos::RCP<Grid>
-GinzburgLandau::getGrid() const
+int
+GinzburgLandau::getNumUnknowns() const
 {
-  return grid_;
+  return grid_->getNumGridPoints();
 }
 // =============================================================================
 // Defines a mapping of all the GL equations to a running index.

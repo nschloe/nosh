@@ -34,8 +34,8 @@ class GinzburgLandau
      void
      setH0(const double h0);
 
-     Teuchos::RCP<Grid>
-     getGrid() const;
+     int
+     getNumUnknowns() const;
 
      void
      setEdgeLength( const double edgeLength);
