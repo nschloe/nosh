@@ -54,7 +54,7 @@ GlSystem::GlSystem(GinzburgLandau::GinzburgLandau &gl, const Teuchos::RCP<
 	// side by side all the time. One must make sure that the two are actually
 	// equivalent, which can be checked by Thyra's conversion method create_Comm.
 	// @TODO
-	// Is is actually necessary to have equivalent communicators on the
+	// Is is actÄsetually necessary to have equivalent communicators on the
 	// real-valued and the complex-valued side?
 	// How to compare two communicators anyway?
 
@@ -717,28 +717,15 @@ void GlSystem::printSolution(const Epetra_Vector &x, double conParam) {
 	// convert from x to psi
 	real2complex(x, psi);
 
-	double energy = Gl_.freeEnergy(psi);
-	int vorticity = Gl_.getVorticity(psi);
-
-	// create temporary parameter list
-	// TODO: get rid of this
-	// -- An ugly thing here is that we have to explicitly mention the parameter
-	// names. A solution could possibly be to include the parameter list in the
-	// constructor of glSystem.
-	Teuchos::ParameterList tmpList;
-	tmpList.get("H0", conParam);
-	tmpList.get("edge length", Gl_.getGrid()->getEdgeLength());
-	tmpList.get("Nx", Gl_.getGrid()->getNx());
-	tmpList.get("free energy", energy);
-	tmpList.get("vorticity", vorticity);
+	const Teuchos::RCP<const ComplexVector> psiPtr = Teuchos::rcp( &psi );
 
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	std::string fileName = outputDir_ + "/" + outputFileNameBase_
 			+ EpetraExt::toString(conStep) + ".vtk";
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-	// actually print the state to the
-	writeStateToFile(x, tmpList, fileName);
+	// actually print the state to fileName
+	writeSolutionToFile(x, fileName);
 
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	// fill the continuation parameters file
@@ -752,10 +739,9 @@ void GlSystem::printSolution(const Epetra_Vector &x, double conParam) {
 
 	if (conStep == 0) {
 		contFileStream.open(contFileName.c_str(), ios::trunc);
-		contFileStream << "# Step  " << "\tH0              "
-				       << "\tfree energy         "
-				       << "\tvorticity "
-				       << "\t#nonlinear steps\n";
+		contFileStream << "# Step  \t";
+		Gl_.appendStats( contFileStream, true );
+		contFileStream << "\t#nonlinear steps\n";
 	} else {
 		// just append to the the contents to the file
 		contFileStream.open(contFileName.c_str(), ios::app);
@@ -763,9 +749,9 @@ void GlSystem::printSolution(const Epetra_Vector &x, double conParam) {
 
 	int nonlinearIterations = stepper_->getSolver()->getNumIterations();
 
-	contFileStream << "  " << conStep << "     " << "\t"
-			       << conParam << "\t"
-			       << energy << "\t" << vorticity << "       " << "\t" << nonlinearIterations << std::endl;
+	contFileStream << "  " << conStep << "     " << "\t";
+	Gl_.appendStats( contFileStream, false, psiPtr );
+	contFileStream << "       \t" << nonlinearIterations << std::endl;
 
 	contFileStream.close();
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -777,9 +763,8 @@ void GlSystem::setOutputDir(const string &directory) {
 }
 // =============================================================================
 void
-GlSystem::writeStateToFile( const Epetra_Vector &x,
-                            Teuchos::ParameterList &params,
-                            const std::string &filePath)
+GlSystem::writeSolutionToFile( const Epetra_Vector &x,
+                               const std::string &filePath) const
 {
 	// define vector
 	Teuchos::RCP<ComplexVector> psi = Teuchos::rcp( new ComplexVector(ComplexMap_, true) );
@@ -788,7 +773,21 @@ GlSystem::writeStateToFile( const Epetra_Vector &x,
 	// convert from x to psi
 	real2complex(x, *psi);
 
-	Gl_.writeStateToFile( psi, params, filePath );
+	Gl_.writeSolutionToFile( psi, filePath );
+}
+// =============================================================================
+void
+GlSystem::writeAbstractStateToFile( const Epetra_Vector &x,
+                                    const std::string &filePath) const
+{
+	// define vector
+	Teuchos::RCP<ComplexVector> psi = Teuchos::rcp( new ComplexVector(ComplexMap_, true) );
+
+	// TODO: Remove the need for several real2complex calls per step.
+	// convert from x to psi
+	real2complex(x, *psi);
+
+	Gl_.writeAbstractStateToFile( psi, filePath );
 }
 // =============================================================================
 Teuchos::RCP<Epetra_Vector>

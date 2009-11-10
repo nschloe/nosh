@@ -85,9 +85,7 @@ EigenSaver::save(Teuchos::RCP<std::vector<double> > &evals_r,
 			Teuchos::RCP<NOX::Epetra::Vector> myVec =
 					Teuchos::rcp_dynamic_cast<NOX::Epetra::Vector>(abVec, true);
 
-			Teuchos::ParameterList tmpList;
-			glSys_->writeStateToFile(myVec->getEpetraVector(), tmpList,
-					eigenstateFilePath);
+			glSys_->writeAbstractStateToFile(myVec->getEpetraVector(),eigenstateFilePath);
 		}
 	}
 

@@ -20,9 +20,15 @@ MagneticVectorPotential::~MagneticVectorPotential()
 }
 // ============================================================================
 void
-MagneticVectorPotential::setH0( double h0 )
+MagneticVectorPotential::setH0( const double h0 )
 {
   h0_ = h0;
+}
+// ============================================================================
+double
+MagneticVectorPotential::getH0() const
+{
+  return h0_;
 }
 // ============================================================================
 Teuchos::RCP<Teuchos::Array<double> >

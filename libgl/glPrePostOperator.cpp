@@ -38,9 +38,8 @@ runPreIterate(const NOX::Solver::Generic& solver)
     (dynamic_cast<const NOX::Epetra::Vector&>(solGrp.getX())).
     getEpetraVector();
   fileName = "data/newton-sol-"+EpetraExt::toString(numRunPreIterate)+".vtk";
-  glsystem_->writeStateToFile( currentSol,
-                             problemParameters_,
-                             fileName );
+  glsystem_->writeSolutionToFile( currentSol,
+                                  fileName );
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
@@ -49,9 +48,8 @@ runPreIterate(const NOX::Solver::Generic& solver)
     (dynamic_cast<const NOX::Epetra::Vector&>(solGrp.getF())).
     getEpetraVector();
   fileName = "data/newton-res-"+EpetraExt::toString(numRunPreIterate)+".vtk";
-  glsystem_->writeStateToFile( currentResidual,
-                             problemParameters_,
-                             fileName );
+  glsystem_->writeAbstractStateToFile( currentResidual,
+                                       fileName );
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 }
 // =============================================================================

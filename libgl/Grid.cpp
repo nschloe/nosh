@@ -14,7 +14,9 @@
 // =============================================================================
 // Class constructor
 Grid::Grid(int nx, double edgeLength) :
-  nx_(nx), edgeLength_(edgeLength), h_(edgeLength / nx)
+  nx_(nx),
+  edgeLength_(edgeLength),
+  h_(edgeLength / nx)
 {
 }
 // =============================================================================
@@ -45,6 +47,7 @@ void
 Grid::setEdgeLength( const double edgeLength )
 {
 	edgeLength_ = edgeLength;
+	h_          = edgeLength_ / nx_;
 }
 // =============================================================================
 int

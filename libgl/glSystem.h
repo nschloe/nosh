@@ -104,9 +104,12 @@ public:
 	//! Explicitly print the solution x along with the problem parameters
 	//! to the file fileName.
 	void
-	writeStateToFile( const Epetra_Vector &x,
-	                  Teuchos::ParameterList &params,
-	                  const std::string &filePath);
+	writeSolutionToFile( const Epetra_Vector &x,
+	                     const std::string &filePath) const;
+
+	void
+	writeAbstractStateToFile( const Epetra_Vector &x,
+	                          const std::string &filePath) const;
 
 	Teuchos::RCP<Epetra_Vector>
 	getGlSystemVector( const Teuchos::RCP<const ComplexVector> psi ) const;
@@ -130,11 +133,6 @@ private:
 	int NumMyElements_;
 	int NumComplexUnknowns_;
 
-	std::string outputDir_;
-	const std::string outputFileNameBase_;
-	const std::string outputFileFormat_;
-	const std::string outputDataFileName_;
-
 	Teuchos::RCP<const LOCA::Stepper> stepper_;
 
 	GinzburgLandau::GinzburgLandau Gl_;
@@ -147,6 +145,11 @@ private:
 	Teuchos::RCP<Epetra_CrsGraph> Graph_;
 	Teuchos::RCP<Epetra_CrsMatrix> jacobian_;
 	Teuchos::RCP<Epetra_Vector> initialSolution_;
+
+	std::string outputDir_;
+	const std::string outputFileNameBase_;
+	const std::string outputFileFormat_;
+	const std::string outputDataFileName_;
 };
 
 #endif // GLSYSTEM_H

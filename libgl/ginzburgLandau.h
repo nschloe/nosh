@@ -73,10 +73,30 @@ class GinzburgLandau
      int
      getVorticity ( const ComplexVector &psi ) const;
 
+     /*! Writes a solution \c psi to a file with all parameters that
+      *  may be interesting. */
      void
-     writeStateToFile( const Teuchos::RCP<const ComplexVector> &psi,
-                       Teuchos::ParameterList &params,
-                       const std::string &filePath) const;
+     writeSolutionToFile( const Teuchos::RCP<const ComplexVector> &psi,
+                          const std::string &filePath
+                        ) const;
+
+     /*! Writes an abstract state \c psi to a file (e.g., an eigenstate). The
+      * only difference compared to the method \c writeSolutionToFile is
+      * the number and the kind of parameters that are returned in the file.
+      */
+     void
+     writeAbstractStateToFile( const Teuchos::RCP<const ComplexVector> &psi,
+                               const std::string &filePath
+                             ) const;
+
+     /*! Appends useful statistics about a given state \c psi to the \c ofstream
+      *  \c filestream.
+      */
+     void
+     appendStats( std::ofstream & fileStream,
+                  const bool header = false,
+                  const Teuchos::RCP<const ComplexVector> &psi = Teuchos::ENull()
+                ) const;
       
   private:
 
@@ -121,6 +141,11 @@ class GinzburgLandau
                                 std::vector<int>                  &columnIndicesPsiConj,
                                 std::vector<double_complex>       &valuesPsiConj
                               ) const;
+
+      void
+      writeStateToFile( const Teuchos::RCP<const ComplexVector> &psi,
+                        Teuchos::ParameterList &params,
+                        const std::string &filePath) const;
 
 };
 #endif // GINZBURGLANDAU_H

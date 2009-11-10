@@ -22,7 +22,10 @@ public:
   ~MagneticVectorPotential();
 
   void
-  setH0( double h0 );
+  setH0( const double h0 );
+
+  double
+  getH0() const;
 
   Teuchos::RCP<Teuchos::Array<double> >
   getA(const Teuchos::Array<double> & x ) const;

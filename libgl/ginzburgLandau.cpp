@@ -432,6 +432,61 @@ GinzburgLandau::writeStateToFile( const Teuchos::RCP<const ComplexVector> &psi,
 	fileIo->write(psiSplit, Nx, h, params);
 }
 // =============================================================================
+void
+GinzburgLandau::writeSolutionToFile( const Teuchos::RCP<const ComplexVector> &psi,
+                                     const std::string &filePath
+                                   ) const
+{
+	// create a parameter list that contains useful items for a solution file
+	Teuchos::ParameterList params;
+
+	// TODO avoid calculating free energy and vorticity twice
+	double energy = freeEnergy( *psi );
+	int vorticity = getVorticity( *psi );
+
+	params.get("H0", A_->getH0() );
+	params.get("edge length", grid_->getEdgeLength());
+	params.get("Nx", grid_->getNx());
+	params.get("free energy", energy);
+	params.get("vorticity", vorticity);
+
+	writeStateToFile( psi, params, filePath );
+}
+// =============================================================================
+void
+GinzburgLandau::writeAbstractStateToFile( const Teuchos::RCP<const ComplexVector> &psi,
+                                          const std::string &filePath
+                                        ) const
+{
+	Teuchos::ParameterList params;
+	params.get("edge length", grid_->getEdgeLength());
+	params.get("Nx", grid_->getNx());
+
+	writeStateToFile( psi, params, filePath );
+}
+// =============================================================================
+void
+GinzburgLandau::appendStats( std::ofstream & fileStream,
+		                     const bool header,
+		                     const Teuchos::RCP<const ComplexVector> & psi
+		                   ) const
+{
+    if ( header ) {
+    	fileStream << "H0     \t"
+    	 		   << "free energy    \t"
+    	           << "vorticity";
+    }
+    else {
+    	// TODO avoid calculating the free energy twice
+    	double energy = freeEnergy( *psi );
+    	int vorticity = getVorticity( *psi );
+    	fileStream << A_->getH0()
+    			   << energy
+    			   << vorticity;
+    }
+
+}
+// =============================================================================
 // NOT A MEMBER OF Ginzburg:Landau!
 void
 readStateFromFile ( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
