@@ -69,6 +69,9 @@ class GinzburgLandau
      double
      freeEnergy ( const ComplexVector &psi ) const;
      
+     double
+     normalizedScaledL2Norm ( const ComplexVector &psi ) const;
+
      /*! Calculate the vorticity of the current solution. */
      int
      getVorticity ( const ComplexVector &psi ) const;

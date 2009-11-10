@@ -357,6 +357,51 @@ double GinzburgLandau::freeEnergy ( const ComplexVector &psi
   return globalEnergy;
 }
 // =============================================================================
+double
+GinzburgLandau::normalizedScaledL2Norm ( const ComplexVector &psi
+                                       ) const
+{
+  double localSum = 0.0;
+
+  Teuchos::ArrayRCP<const double_complex> psiView = psi.get1dView();
+
+  // sum up on each processor
+  for ( unsigned int k=0; k<psi.getLocalLength(); k++ )
+    {
+	  int kGlobal = psi.getMap()->getGlobalElement ( k );
+	  double area = grid_->cellArea( kGlobal );
+	  localSum += area * norm ( psiView[k] );
+    }
+
+  // reduce and scatter such that energy is available on
+  // all cores
+  int count = 1; // send *one* integer
+  Teuchos::Array<double> sendBuff ( count ), recvBuff ( count );
+
+  // fill send buffer
+  sendBuff[0] = localSum;
+
+  int numProcs =  psi.getMap()->getComm()->getSize();
+  Teuchos::Array<int> recvCounts ( numProcs );
+// fill recvCounts with {1,...,1}
+  int numItemsPerProcess = 1;
+  std::fill ( recvCounts.begin(), recvCounts.end(), numItemsPerProcess );
+
+  Teuchos::reduceAllAndScatter ( * ( psi.getMap()->getComm() ),
+                                 Teuchos::REDUCE_SUM,
+                                 count,
+                                 &sendBuff[0],
+                                 &recvCounts[0],
+                                 &recvBuff[0]
+                               );
+
+  // normalize
+  double domainArea = grid_->getGridDomainArea();
+  double l2norm = sqrt(recvBuff[0]) / domainArea;
+
+  return l2norm;
+}
+// =============================================================================
 // Count the number of vortices by the total phase change along the boundary
 // of the domain.
 // TODO Make this work in multicore environments.
@@ -474,15 +519,18 @@ GinzburgLandau::appendStats( std::ofstream & fileStream,
     	fileStream << "H0                \t"
     			   << "edge length       \t"
     	 		   << "free energy       \t"
+    	           << "||x||_2 scaled    \t"
     	           << "vorticity";
     }
     else {
     	// TODO avoid calculating the free energy twice
     	double energy = freeEnergy( *psi );
+    	double l2norm = normalizedScaledL2Norm( *psi );
     	int vorticity = getVorticity( *psi );
     	fileStream << A_->getH0() << " \t"
     			   << grid_->getEdgeLength() << " \t"
     			   << energy << " \t"
+    	    	   << l2norm << " \t"
     			   << vorticity;
     }
 
