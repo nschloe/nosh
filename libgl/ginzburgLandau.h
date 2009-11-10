@@ -40,8 +40,8 @@ class GinzburgLandau
      void
      setEdgeLength( const double edgeLength);
 
-     Tpetra::Vector<double_complex,int>
-     computeGlVector( const Tpetra::Vector<double_complex,int> psi ) const;
+     ComplexVector
+     computeGlVector( const Teuchos::RCP<ComplexVector> & psi ) const;
 
      /*! Returns the coefficients of the jacobian system associated with the
          Ginzburg--Landau equations. */

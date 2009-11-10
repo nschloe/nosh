@@ -85,17 +85,17 @@ void GinzburgLandau::getEquationType ( const int           eqnum,
     }
 }
 // =============================================================================
-Tpetra::Vector<double_complex,int>
-GinzburgLandau::computeGlVector ( const ComplexVector psi
+ComplexVector
+GinzburgLandau::computeGlVector ( const Teuchos::RCP<ComplexVector> & psi
                                 ) const
 {
   // setup output vector with the same map as psi
-  ComplexVector glVec ( psi.getMap(), true );
+  ComplexVector glVec ( psi->getMap(), true );
 
-  for ( unsigned int k=0; k<psi.getLocalLength(); k++ )
+  for ( unsigned int k=0; k<psi->getLocalLength(); k++ )
     {
-      int            globalIndex = psi.getMap()->getGlobalElement ( k );
-      double_complex z           = computeGl ( globalIndex, psi );
+      int            globalIndex = psi->getMap()->getGlobalElement ( k );
+      double_complex z           = computeGl ( globalIndex, *psi );
       glVec.replaceLocalValue ( k, z );
     }
 
@@ -371,8 +371,8 @@ int GinzburgLandau::getVorticity ( const ComplexVector &psi
   int vorticity = 0;
 
   const double PI = 3.14159265358979323846264338327950288419716939937510;
-  const double threshold = 1.5*PI; // Consider jumps in the argument greater
-  // than this phase jumps.
+  // Consider jumps in the argument greater than threshold phase jumps.
+  const double threshold = 1.5*PI;
 
   // Get a view of the whole vector.
   // Remember: This only works with one core.
@@ -488,7 +488,7 @@ GinzburgLandau::appendStats( std::ofstream & fileStream,
 
 }
 // =============================================================================
-// NOT A MEMBER OF Ginzburg:Landau!
+// NOT A MEMBER OF GinzburgLandau!
 void
 readStateFromFile ( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
 		            const std::string                             & filePath,

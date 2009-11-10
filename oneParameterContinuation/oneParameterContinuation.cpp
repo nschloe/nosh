@@ -162,8 +162,8 @@ int main(int argc, char *argv[]) {
 	GinzburgLandau glProblem = GinzburgLandau(grid, A, boundaryConditions);
 
 	Teuchos::RCP<GlSystem> glsystem = Teuchos::rcp(new GlSystem( glProblem, eComm, psi,
-			                                                     outputDirectory, contFileBaseName,
-			                                                     contFileFormat, contDataFileName));
+			                                                     outputDirectory, contDataFileName,
+			                                                     contFileFormat, contFileBaseName ));
 
 	// ---------------------------------------------------------------------------
 	// Create the necessary objects

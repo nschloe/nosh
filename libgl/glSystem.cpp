@@ -27,17 +27,34 @@ typedef std::complex<double> double_complex;
 
 // =============================================================================
 // Default constructor
-GlSystem::GlSystem(GinzburgLandau::GinzburgLandau &gl, const Teuchos::RCP<
-		const Epetra_Comm> eComm, const Teuchos::RCP<ComplexVector> psi,
-		const std::string outputDir, const std::string outputFileNameBase,
-		const std::string outputFileFormat,
-		const std::string outputDataFileName) :
-	NumRealUnknowns_(0), NumMyElements_(0), NumComplexUnknowns_(0), Gl_(gl),
-			EComm_(eComm), TComm_(0), RealMap_(0), ComplexMap_(0), rhs_(0),
-			Graph_(0), jacobian_(0), initialSolution_(0),
-			outputDir_(outputDir), outputFileNameBase_(outputFileNameBase),
-			outputFileFormat_(outputFileFormat), outputDataFileName_(
-					outputDataFileName), stepper_(0) {
+GlSystem::GlSystem( GinzburgLandau::GinzburgLandau &gl,
+		            const Teuchos::RCP<const Epetra_Comm> eComm,
+		            const Teuchos::RCP<ComplexVector> psi,
+		            const std::string outputDir,
+	                const std::string outputDataFileName,
+	                const std::string outputFileFormat,
+		            const std::string solutionFileNameBase,
+		            const std::string nullvectorFileNameBase
+	              ) :
+	NumRealUnknowns_(0),
+	NumMyElements_(0),
+	NumComplexUnknowns_(0),
+	Gl_(gl),
+	EComm_(eComm),
+	TComm_(0),
+	RealMap_(0),
+	ComplexMap_(0),
+	rhs_(0),
+	Graph_(0),
+	jacobian_(0),
+	initialSolution_(0),
+	outputDir_(outputDir),
+	solutionFileNameBase_(solutionFileNameBase),
+	nullvectorFileNameBase_(nullvectorFileNameBase),
+	outputFileFormat_(outputFileFormat),
+	outputDataFileName_(outputDataFileName),
+	stepper_(0)
+{
 	NumComplexUnknowns_ = Gl_.getGrid()->getNumGridPoints();
 	NumRealUnknowns_ = 2 * NumComplexUnknowns_ + 1;
 
@@ -112,17 +129,33 @@ GlSystem::GlSystem(GinzburgLandau::GinzburgLandau &gl, const Teuchos::RCP<
 }
 // =============================================================================
 // constructor without initial guess
-GlSystem::GlSystem(GinzburgLandau::GinzburgLandau &gl, const Teuchos::RCP<
-		const Epetra_Comm> eComm, const std::string outputDir,
-		const std::string outputFileNameBase,
-		const std::string outputFileFormat,
-		const std::string outputDataFileName) :
-	NumRealUnknowns_(0), NumMyElements_(0), NumComplexUnknowns_(0), Gl_(gl),
-			EComm_(eComm), TComm_(0), RealMap_(0), ComplexMap_(0), rhs_(0),
-			Graph_(0), jacobian_(0), initialSolution_(0),
-			outputDir_(outputDir), outputFileNameBase_(outputFileNameBase),
-			outputFileFormat_(outputFileFormat), outputDataFileName_(
-					outputDataFileName), stepper_(0) {
+GlSystem::GlSystem(GinzburgLandau::GinzburgLandau &gl,
+		const Teuchos::RCP<const Epetra_Comm> eComm,
+        const std::string outputDir,
+        const std::string outputDataFileName,
+        const std::string outputFileFormat,
+        const std::string solutionFileNameBase,
+        const std::string nullvectorFileNameBase
+      ) :
+NumRealUnknowns_(0),
+NumMyElements_(0),
+NumComplexUnknowns_(0),
+Gl_(gl),
+EComm_(eComm),
+TComm_(0),
+RealMap_(0),
+ComplexMap_(0),
+rhs_(0),
+Graph_(0),
+jacobian_(0),
+initialSolution_(0),
+outputDir_(outputDir),
+solutionFileNameBase_(solutionFileNameBase),
+nullvectorFileNameBase_(nullvectorFileNameBase),
+outputFileFormat_(outputFileFormat),
+outputDataFileName_(outputDataFileName),
+stepper_(0)
+{
 	NumComplexUnknowns_ = Gl_.getGrid()->getNumGridPoints();
 	NumRealUnknowns_ = 2 * NumComplexUnknowns_ + 1;
 
@@ -261,8 +294,11 @@ void GlSystem::makeRealMap(
 //	return NumRealUnknowns_;
 //}
 // =============================================================================
-bool GlSystem::computeF(const Epetra_Vector &x, Epetra_Vector &FVec,
-		const NOX::Epetra::Interface::Required::FillType fillFlag) {
+bool
+GlSystem::computeF(const Epetra_Vector &x,
+		                 Epetra_Vector &FVec,
+		           const NOX::Epetra::Interface::Required::FillType fillFlag)
+{
 	// make sure that the input and output vectors are correctly mapped
 	if (!x.Map().SameAs(*RealMap_)) {
 		throw glException("GlSystem::computeF",
@@ -275,16 +311,17 @@ bool GlSystem::computeF(const Epetra_Vector &x, Epetra_Vector &FVec,
 	}
 
 	// define vector
-	ComplexVector psi(ComplexMap_, true);
+	const Teuchos::RCP<ComplexVector> psi =
+	    	Teuchos::rcp( new ComplexVector(ComplexMap_, true) );
 
 	// convert from x to psi2
-	real2complex(x, psi);
+	real2complex(x, *psi);
 
 	// define output vector
 	ComplexVector res(ComplexMap_, true);
 
 	// compute the GL residual
-	res = Gl_.computeGlVector(psi);
+	res = Gl_.computeGlVector( psi );
 
 	// transform back to fully real equation
 	complex2real(res, FVec);
@@ -691,6 +728,10 @@ bool GlSystem::computeShiftedMatrix(double alpha, double beta,
 // function used by LOCA
 void
 GlSystem::setParameters(const LOCA::ParameterVector &p) {
+
+//	cout << "Set LOCA Parameters" << endl;
+//	cout << p << endl;
+
 	double h0 = p.getValue("H0");
 	Gl_.setH0(h0);
 
@@ -698,30 +739,115 @@ GlSystem::setParameters(const LOCA::ParameterVector &p) {
 	Gl_.setEdgeLength( edgeLength );
 }
 // =============================================================================
-void GlSystem::setLocaStepper(const Teuchos::RCP<const LOCA::Stepper> stepper) {
+void
+GlSystem::setLocaStepper(const Teuchos::RCP<const LOCA::Stepper> stepper)
+{
 	stepper_ = stepper;
+
+	// extract the continuation type
+	const Teuchos::ParameterList & bifurcationSublist = stepper_->getList()
+	                                                            ->sublist("LOCA")
+	                                                             .sublist("Bifurcation");
+
+	std::string bifurcationType = bifurcationSublist.get<string>("Type");
+
+	if ( bifurcationType == "None" )
+		continuationType_ = ONEPARAMETER;
+	else if ( bifurcationType == "Turning Point" )
+		continuationType_ = TURNINGPOINT;
+	else {
+		std::string message = "Unknown continuation type "
+				            + std::string("\"") + bifurcationType
+				            + std::string("\"");
+        throw glException( "GlSystem::setLocaStepper", message );
+	}
 }
 // =============================================================================
 // function used by LOCA
-void GlSystem::printSolution(const Epetra_Vector &x, double conParam) {
-	static int conStep = -1;
-	conStep++;
-
+void
+GlSystem::printSolution( const Epetra_Vector &x,
+		                 double conParam )
+{
 	// define vector
-	const Teuchos::RCP<ComplexVector> psi = Teuchos::rcp( new ComplexVector(ComplexMap_, true) );
+	const Teuchos::RCP<ComplexVector> psi =
+			              Teuchos::rcp( new ComplexVector(ComplexMap_, true) );
 	// convert from x to psi
 	real2complex(x, *psi);
 
+	// The switch hack is necessary as different continuation algorithms
+	// call printSolution() a different number of times per step, e.g.,
+	// to store solutions, null vectors, and so forth.
+	switch ( continuationType_ ) {
+	case ONEPARAMETER:
+	    printSolutionOneParameterContinuation( psi );
+	    break;
+	case TURNINGPOINT:
+	    printSolutionTurningPointContinuation( psi );
+	    break;
+	default:
+		std::string message = "Illegal continuation type "
+				            + EpetraExt::toString( continuationType_ );
+		throw glException( "GlSystem::printSolution", message );
+	}
+}
+// =============================================================================
+void
+GlSystem::printSolutionOneParameterContinuation( const Teuchos::RCP<const ComplexVector> & psi
+		                                       ) const
+{
+	static int conStep = -1;
+	conStep++;
 
-	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-	std::string fileName = outputDir_ + "/" + outputFileNameBase_
+	std::string fileName = outputDir_ + "/" + solutionFileNameBase_
 			+ EpetraExt::toString(conStep) + ".vtk";
-	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 	// actually print the state to fileName
-	writeSolutionToFile(x, fileName);
+	Gl_.writeSolutionToFile(psi, fileName);
 
-	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+	writeContinuationStats( conStep, psi );
+}
+// =============================================================================
+// In Turning Point continuation, the printSolution method is called exactly
+// twice per step:
+//
+//   1. For printing the solution.
+//   2. For printing the right null vector of the Jacobian.
+//
+// The method gets called subsequently in this order.
+void
+GlSystem::printSolutionTurningPointContinuation( const Teuchos::RCP<const ComplexVector> & psi
+		                                       ) const
+{
+	static bool printSolution=false;
+	static int conStep = -1;
+
+	// alternate between solution and nullvector
+	printSolution = !printSolution;
+
+	// increment the step counter only when printing a solution
+	if ( printSolution )
+		conStep++;
+
+	// determine file name
+	std::string fileName;
+	if ( printSolution ) {
+	    fileName = outputDir_ + "/" + solutionFileNameBase_
+		         + EpetraExt::toString(conStep) + ".vtk";
+	    writeContinuationStats( conStep, psi );
+	}
+	else
+	    fileName = outputDir_ + "/" + nullvectorFileNameBase_
+		         + EpetraExt::toString(conStep) + ".vtk";
+
+	// actually print the state to fileName
+	Gl_.writeSolutionToFile(psi, fileName);
+
+}
+// =============================================================================
+void
+GlSystem::writeContinuationStats( const int conStep,
+		                          const Teuchos::RCP<const ComplexVector> psi ) const
+{
 	// fill the continuation parameters file
 	std::string contFileName = outputDir_ + "/" + outputDataFileName_;
 	std::ofstream contFileStream;
@@ -748,7 +874,6 @@ void GlSystem::printSolution(const Epetra_Vector &x, double conParam) {
 	contFileStream << "       \t" << nonlinearIterations << std::endl;
 
 	contFileStream.close();
-	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 }
 // =============================================================================
 // function used by LOCA

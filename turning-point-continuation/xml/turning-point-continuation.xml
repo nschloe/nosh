@@ -3,7 +3,7 @@
       <Parameter name="Input guess" type="string" value="stable4/continuationStep44.vtk"/>
       <Parameter name="Initial null vector guess" type="string" value="stable4/continuationStep44-eigenstate4.vtk"/>
       <Parameter name="Output directory" type="string" value="./data"/>
-      <Parameter name="Continuation file base name" type="string" value="continuationStep"/>
+      <Parameter name="Continuation file base name" type="string" value="solutionStep"/>
       <Parameter name="Continuation file format" type="string" value="VTK"/>
       <Parameter name="Continuation data file name" type="string" value="continuationData.dat"/>
       <Parameter name="Eigenvalues file name" type="string" value="eigenvalues.dat"/>
@@ -17,6 +17,7 @@
   <ParameterList name="LOCA">
     <ParameterList name="Bifurcation">
       <Parameter name="Type" type="string" value="Turning Point"/>
+      <Parameter name="Solver Method" type="string" value="Phipps Bordering"/>
       <Parameter name="Bifurcation Parameter" type="string" value="H0"/>
     </ParameterList>
     <ParameterList name="Constraints"/>
@@ -26,11 +27,11 @@
       <Parameter name="Method" type="string" value="Tangent"/>
     </ParameterList>
     <ParameterList name="Step Size">
-      <Parameter name="Initial Step Size" type="double" value="0.01"/>
-      <Parameter name="Max Step Size" type="double" value="0.1"/>
+      <Parameter name="Initial Step Size" type="double" value="0.005"/>
+      <Parameter name="Max Step Size" type="double" value="0.05"/>
       <Parameter name="Method" type="string" value="Adaptive"/>
-      <Parameter name="Min Step Size" type="double" value="0.01"/>
-      <Parameter name="Aggressiveness" type="double" value="4.0"/>
+      <Parameter name="Min Step Size" type="double" value="0.005"/>
+      <Parameter name="Aggressiveness" type="double" value="1.0"/>
     </ParameterList>
     <ParameterList name="Stepper">
       <Parameter name="Continuation Method" type="string" value="Natural"/>

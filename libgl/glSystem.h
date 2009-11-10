@@ -39,19 +39,23 @@ class GlSystem: public NOX::Epetra::Interface::Jacobian,
 public:
 
 	//! Constructor with initial guess.
-	GlSystem(GinzburgLandau::GinzburgLandau &gl, const Teuchos::RCP<
-			const Epetra_Comm> eComm, const Teuchos::RCP<ComplexVector> psi,
-			const std::string outputDir = "data",
-			const std::string outputFileNameBase = "continuationStep+",
-			const std::string outputFileFormat = "VTK",
-			const std::string outputDataFileName = "continuationData.dat");
+	GlSystem( GinzburgLandau::GinzburgLandau &gl,
+			const Teuchos::RCP<const Epetra_Comm> eComm,
+			const Teuchos::RCP<ComplexVector> psi,
+            const std::string outputDir = "data",
+            const std::string outputDataFileName = "continuationData.dat",
+            const std::string outputFileFormat = "VTK",
+            const std::string solutionFileNameBase = "solutionStep",
+            const std::string nullvectorFileNameBase = "nullvectorStep" );
 
 	// Constructor without initial guess.
-	GlSystem(GinzburgLandau::GinzburgLandau &gl, const Teuchos::RCP<
-			const Epetra_Comm> eComm, const std::string outputDir = "data",
-			const std::string outputFileNameBase = "continuationStep+",
-			const std::string outputFileFormat = "VTK",
-			const std::string outputDataFileName = "continuationData.dat");
+	GlSystem( GinzburgLandau::GinzburgLandau &gl,
+			const Teuchos::RCP<const Epetra_Comm> eComm,
+            const std::string outputDir = "data",
+            const std::string outputDataFileName = "continuationData.dat",
+            const std::string outputFileFormat = "VTK",
+            const std::string solutionFileNameBase = "solutionStep",
+            const std::string nullvectorFileNameBase = "nullvectorStep" );
 
 	//! Destructor
 	~GlSystem();
@@ -127,7 +131,32 @@ private:
 	enum jacCreator {
 		ONLY_GRAPH, VALUES
 	};
+
+	enum continuationType {
+		ONEPARAMETER,
+		TURNINGPOINT
+	};
+
 	bool createJacobian(const jacCreator jc, const Epetra_Vector &x);
+
+	//! Print method for the continuation in one parameter.
+	void
+	printSolutionOneParameterContinuation( const Teuchos::RCP<const ComplexVector> & psi
+	                                     ) const;
+
+	//! Print method for turning point continuation continuation.
+	void
+	printSolutionTurningPointContinuation( const Teuchos::RCP<const ComplexVector> & psi
+                                         ) const;
+
+
+	//! Write statistics about the current continuation step to the file
+	//! \c outputDataFileName_ .
+	void
+	writeContinuationStats( const int conStep,
+			                const Teuchos::RCP<const ComplexVector> psi ) const;
+
+	continuationType continuationType_;
 
 	int NumRealUnknowns_;
 	int NumMyElements_;
@@ -147,7 +176,8 @@ private:
 	Teuchos::RCP<Epetra_Vector> initialSolution_;
 
 	std::string outputDir_;
-	const std::string outputFileNameBase_;
+	const std::string solutionFileNameBase_;
+	const std::string nullvectorFileNameBase_;
 	const std::string outputFileFormat_;
 	const std::string outputDataFileName_;
 };
