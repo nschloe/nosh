@@ -709,15 +709,13 @@ void GlSystem::setLocaStepper(const Teuchos::RCP<const LOCA::Stepper> stepper) {
 // function used by LOCA
 void GlSystem::printSolution(const Epetra_Vector &x, double conParam) {
 	static int conStep = -1;
-
 	conStep++;
 
 	// define vector
-	ComplexVector psi(ComplexMap_, true);
+	const Teuchos::RCP<ComplexVector> psi = Teuchos::rcp( new ComplexVector(ComplexMap_, true) );
 	// convert from x to psi
-	real2complex(x, psi);
+	real2complex(x, *psi);
 
-	const Teuchos::RCP<const ComplexVector> psiPtr = Teuchos::rcp( &psi );
 
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	std::string fileName = outputDir_ + "/" + outputFileNameBase_
@@ -750,7 +748,7 @@ void GlSystem::printSolution(const Epetra_Vector &x, double conParam) {
 	int nonlinearIterations = stepper_->getSolver()->getNumIterations();
 
 	contFileStream << "  " << conStep << "     " << "\t";
-	Gl_.appendStats( contFileStream, false, psiPtr );
+	Gl_.appendStats( contFileStream, false, psi );
 	contFileStream << "       \t" << nonlinearIterations << std::endl;
 
 	contFileStream.close();
