@@ -359,8 +359,7 @@ double GinzburgLandau::freeEnergy ( const ComplexVector &psi
 // =============================================================================
 // Count the number of vortices by the total phase change along the boundary
 // of the domain.
-// TODO:
-// Make this work in multicore environments.
+// TODO Make this work in multicore environments.
 int GinzburgLandau::getVorticity ( const ComplexVector &psi
                                  ) const
 {

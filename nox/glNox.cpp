@@ -220,9 +220,8 @@ glNox::createSolver()
                                        nlParamsPtr_ );
 }
 // =============================================================================
-// TODO:
-// Look into having this done by Trilinos. If executed on a multiproc
-// environment, we don't want p to be fully present on all processors.
+// TODO Look into having this done by Trilinos. If executed on a multiproc
+//      environment, we don't want p to be fully present on all processors.
 void
 glNox::reOrder( Tpetra::Vector<double_complex> &psi,
                 const Teuchos::RCP<Grid>       &grid )

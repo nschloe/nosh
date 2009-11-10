@@ -123,7 +123,6 @@ int main(int argc, char *argv[]) {
 	   catch (...) {
 	       std::cerr << "Unknown exception caught." << std::endl;
 	   }
-
 	} else {
 		// read the parameters from the XML file
 		Teuchos::ParameterList& glList = paramList->sublist("GL", true);
@@ -136,13 +135,21 @@ int main(int argc, char *argv[]) {
 		glParameters.set("H0", H0);
 
 		grid = Teuchos::rcp(new Grid(Nx,edgeLength) );
+
+		// set initial guess
+		int numComplexUnknowns = grid->getNumGridPoints();
+		Teuchos::RCP<Tpetra::Map<int> >complexMap =
+				   Teuchos::rcp(new Tpetra::Map<int>(numComplexUnknowns,0,Comm) );
+		psi = Teuchos::rcp( new ComplexVector(complexMap) );
+		double_complex alpha( 1.0, 0.0 );
+		psi->putScalar( alpha );
 	}
 	// ---------------------------------------------------------------------------
 
 	// Make sure that the calculation starts off with the correct H0.
 	// TODO See if it's possible to declare the initial parameter once instead of three times in the
 	//      input XML file.
-	paramList->sublist("LOCA").sublist("Stepper").set("Initial Value", glParameters.get<double>("H0") );
+//	paramList->sublist("LOCA").sublist("Stepper").set("Initial Value", glParameters.get<double>("H0") );
 
 	// create the gl problem
 	Teuchos::RCP<GlBoundaryConditionsVirtual> boundaryConditions =
@@ -154,19 +161,9 @@ int main(int argc, char *argv[]) {
 
 	GinzburgLandau glProblem = GinzburgLandau(grid, A, boundaryConditions);
 
-	// ---------------------------------------------------------------------------
-	Teuchos::RCP<GlSystem> glsystem;
-	if (withInitialGuess) {
-		// Create the interface between NOX and the application
-		// This object is derived from NOX::Epetra::Interface
-		glsystem = Teuchos::rcp(new GlSystem(glProblem, eComm, psi,
-				outputDirectory, contFileBaseName, contFileFormat,
-				contDataFileName));
-	} else
-		glsystem = Teuchos::rcp(new GlSystem(glProblem, eComm, outputDirectory,
-				contFileBaseName, contFileFormat, contDataFileName));
-	// ---------------------------------------------------------------------------
-
+	Teuchos::RCP<GlSystem> glsystem = Teuchos::rcp(new GlSystem( glProblem, eComm, psi,
+			                                                     outputDirectory, contFileBaseName,
+			                                                     contFileFormat, contDataFileName));
 
 	// ---------------------------------------------------------------------------
 	// Create the necessary objects
@@ -178,10 +175,6 @@ int main(int argc, char *argv[]) {
 	// Create global data object
 	Teuchos::RCP<LOCA::GlobalData> globalData = LOCA::createGlobalData(
 			paramList, epetraFactory);
-
-	// set the directory to which all output gets written
-	// TODO remove?
-	glsystem->setOutputDir(outputDirectory);
 
 	// get the initial solution
 	Teuchos::RCP<Epetra_Vector> soln = glsystem->getSolution();
@@ -272,7 +265,6 @@ int main(int argc, char *argv[]) {
 	// ---------------------------------------------------------------------------
 
 
-
 	// ---------------------------------------------------------------------------
 	// read in initial null vector and convert it to a glsystem-compliant vector
 	std::string initialNullVectorFile = ioList.get<string> ("Initial null vector guess");
@@ -289,6 +281,7 @@ int main(int argc, char *argv[]) {
 	// convert the complex vector into an GlSystem-compliant vector
 	Teuchos::RCP<Epetra_Vector> glsystemInitialNullVector = glsystem->getGlSystemVector( initialNullVector );
 	// ---------------------------------------------------------------------------
+
 
 	// ---------------------------------------------------------------------------
 	// add LOCA options which cannot be provided in the XML file

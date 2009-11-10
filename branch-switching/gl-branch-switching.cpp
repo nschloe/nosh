@@ -207,17 +207,15 @@ int main ( int argc, char *argv[] )
   if ( withInitialGuess )
     {
       // If there was is an initial guess, make sure to get the ordering correct.
-      // TODO:
-      // Look into having this done by Trilinos. If executed on a multiproc
-      // environment, we don't want p to be fully present on all processors.
+      // TODO Look into having this done by Trilinos. If executed on a multiproc
+      //      environment, we don't want p to be fully present on all processors.
       int NumComplexUnknowns = glProblem.getStaggeredGrid()->getNumComplexUnknowns();
       std::vector<int> p ( NumComplexUnknowns );
       // fill p:
       glProblem.getStaggeredGrid()->lexicographic2grid ( &p );
       Teuchos::RCP<Tpetra::MultiVector<double_complex,int> >  psi
       = Teuchos::rcp ( new Tpetra::MultiVector<double_complex,int> ( psiLexicographic->getMap(),1 ) );
-      // TODO:
-      // The following is certainly not multiproc.
+      // TODO The following is certainly not multiproc.
       Teuchos::ArrayRCP<const double_complex> psiView = psiLexicographic->getVector ( 0 )->get1dView();
       for ( int k=0; k<NumComplexUnknowns; k++ )
         {

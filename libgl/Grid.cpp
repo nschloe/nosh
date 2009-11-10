@@ -47,7 +47,7 @@ void
 Grid::setEdgeLength( const double edgeLength )
 {
 	edgeLength_ = edgeLength;
-	h_          = edgeLength_ / nx_;
+	h_          = edgeLength / nx_;
 }
 // =============================================================================
 int

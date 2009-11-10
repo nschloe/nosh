@@ -1,6 +1,7 @@
 <ParameterList>
   <ParameterList name="IO">
-      <Parameter name="Input guess" type="string" value="test.vtk"/>
+      <Parameter name="Input guess" type="string" value="stable4/continuationStep44.vtk"/>
+      <Parameter name="Initial null vector guess" type="string" value="stable4/continuationStep44-eigenstate4.vtk"/>
       <Parameter name="Output directory" type="string" value="./data"/>
       <Parameter name="Continuation file base name" type="string" value="continuationStep"/>
       <Parameter name="Continuation file format" type="string" value="VTK"/>
@@ -15,7 +16,8 @@
   </ParameterList>
   <ParameterList name="LOCA">
     <ParameterList name="Bifurcation">
-      <Parameter name="Type" type="string" value="None"/>
+      <Parameter name="Type" type="string" value="Turning Point"/>
+      <Parameter name="Bifurcation Parameter" type="string" value="H0"/>
     </ParameterList>
     <ParameterList name="Constraints"/>
     <ParameterList name="Predictor">
@@ -25,15 +27,15 @@
     </ParameterList>
     <ParameterList name="Step Size">
       <Parameter name="Initial Step Size" type="double" value="0.01"/>
-      <Parameter name="Max Step Size" type="double" value="0.05"/>
+      <Parameter name="Max Step Size" type="double" value="0.1"/>
       <Parameter name="Method" type="string" value="Adaptive"/>
       <Parameter name="Min Step Size" type="double" value="0.01"/>
       <Parameter name="Aggressiveness" type="double" value="4.0"/>
     </ParameterList>
     <ParameterList name="Stepper">
-      <Parameter name="Continuation Method" type="string" value="Arc Length"/>
-      <Parameter name="Continuation Parameter" type="string" value="H0"/>
-      <Parameter name="Compute Eigenvalues" type="bool" value="true"/>
+      <Parameter name="Continuation Method" type="string" value="Natural"/>
+      <Parameter name="Continuation Parameter" type="string" value="edge length"/>
+      <Parameter name="Compute Eigenvalues" type="bool" value="false"/>
       <ParameterList name="Eigensolver">
         <Parameter name="Maximum Restarts" type="int" value="1"/>
         <Parameter name="Method" type="string" value="Anasazi"/>
@@ -48,15 +50,15 @@
         <Parameter name="User-Defined Save Eigen Data Name" type="string" value="glSaveEigenDataStrategy"/>
         <Parameter name="glSaveEigenDataStrategy" type="any" value="N7Teuchos3RCPIN4LOCA13SaveEigenData16AbstractStrategyEEE{ptr=0x1254b90,node=0x1254bc0,count=3}   [unused]"/>
       </ParameterList>
-      <Parameter name="Initial Value" type="double" value="0.22"/>
+      <Parameter name="Initial Value" type="double" value="10.0"/>
       <Parameter name="Max Nonlinear Iterations" type="int" value="20"/>
       <Parameter name="Max Steps" type="int" value="10000"/>
-      <Parameter name="Max Value" type="double" value="3"/>
-      <Parameter name="Min Value" type="double" value="-3"/>
+      <Parameter name="Max Value" type="double" value="20.0"/>
+      <Parameter name="Min Value" type="double" value="0.0"/>
     </ParameterList>
   </ParameterList>
   <ParameterList name="NOX">
-    <Parameter name="Tolerance" type="double" value="1.0e-13"/>
+    <Parameter name="Tolerance" type="double" value="1.0e-6"/>
     <Parameter name="Max steps" type="int" value="30"/>
     <ParameterList name="Direction">
       <Parameter name="Method" type="string" value="Newton"/>
@@ -95,6 +97,7 @@
       <Parameter  name="MyPID" type="int" value="0"/>
       <ParameterList name="Output Information">
           <Parameter name="Details" type="bool" value="true"/>
+          <Parameter name="Parameters" type="bool" value="true"/>
           <Parameter name="Outer Iteration" type="bool" value="true"/>
           <Parameter name="Inner Iteration" type="bool" value="true"/>
           <Parameter name="Warning" type="bool" value="true"/>

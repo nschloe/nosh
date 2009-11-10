@@ -116,8 +116,7 @@ IoXdmf::read( const Teuchos::RCP<const Teuchos::Comm<int> >        &tComm,
 //  // gather the heavy abs(psi) data
 //  getHeavyData( xmlFileObject, Comm, &argPsi, directory, "arg(psi)", "arg" );
 //
-//  // @TODO
-//  // Make sure that we got some proper multi-core handling here.
+//  // TODO Make sure that we got some proper multi-core handling here.
 //
 //  // build psi of the entries that we got
 //  if ( x->getGlobalLength() != (unsigned int)(Nx+1)*(Nx+1) ) {

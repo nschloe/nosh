@@ -70,8 +70,7 @@ void IoVtk::read( const Teuchos::RCP<const Teuchos::Comm<int> >        &tComm,
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
 
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  // TODO:
-  // Resurrect the following as soon as replaceMap is back in Trilinos
+  // TODO Resurrect the following as soon as replaceMap is back in Trilinos
   // build psi of the entries that we got
 //   if ( psi->getGlobalLength() !=  (unsigned int)NumGlobalElements ) {
 //       // discard all old values, define a new map and plug it in
@@ -82,8 +81,7 @@ void IoVtk::read( const Teuchos::RCP<const Teuchos::Comm<int> >        &tComm,
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
-//  // TODO:
-//  // Remove this bit of code and replace by a proper parallel version.
+//  // TODO Remove this bit of code and replace by a proper parallel version.
 //  for (unsigned int k=0; k<psi->getLocalLength(); k++) {
 //      int kGlobal = psi->getMap()->getGlobalElement(k);
 //      double_complex z = std::polar( (*tmp)[0][kGlobal], (*tmp)[1][kGlobal] );

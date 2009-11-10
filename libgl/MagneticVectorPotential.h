@@ -13,8 +13,7 @@
 class MagneticVectorPotential
 {
 public:
-  // TODO:
-  // Remove edge length from this class.
+  // TODO Remove edge length from this class.
   MagneticVectorPotential( double h0,
                            double edgeLength );
 

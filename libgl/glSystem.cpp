@@ -47,14 +47,12 @@ GlSystem::GlSystem(GinzburgLandau::GinzburgLandau &gl, const Teuchos::RCP<
 	if (psi.is_null())
 		throw glException("GlSystem::GlSystem", "Input guess is null pointer");
 
-	// TODO
-	// There is (until now?) no way to convert a Teuchos::Comm (of psi)
+	// TODO There is (until now?) no way to convert a Teuchos::Comm (of psi)
 	// to an Epetra_Comm (of the real valued representation of psi), so the
 	// Epetra_Comm has to be generated explicitly, and two communicators are kept
 	// side by side all the time. One must make sure that the two are actually
 	// equivalent, which can be checked by Thyra's conversion method create_Comm.
-	// @TODO
-	// Is is actÄsetually necessary to have equivalent communicators on the
+	// TODO Is is actually necessary to have equivalent communicators on the
 	// real-valued and the complex-valued side?
 	// How to compare two communicators anyway?
 
@@ -128,14 +126,12 @@ GlSystem::GlSystem(GinzburgLandau::GinzburgLandau &gl, const Teuchos::RCP<
 	NumComplexUnknowns_ = Gl_.getGrid()->getNumGridPoints();
 	NumRealUnknowns_ = 2 * NumComplexUnknowns_ + 1;
 
-	// TODO
-	// There is (until now?) no way to convert a Teuchos::Comm (of psi)
+	// TODO There is (until now?) no way to convert a Teuchos::Comm (of psi)
 	// to an Epetra_Comm (of the real valued representation of psi), so the
 	// Epetra_Comm has to be generated explicitly, and two communicators are kept
 	// side by side all the time. One must make sure that the two are actually
 	// equivalent, which can be checked by Thyra's conversion method create_Comm.
-	// TODO
-	// Is is actually necessary to have equivalent communicators on the
+	// TODO Is is actually necessary to have equivalent communicators on the
 	// real-valued and the complex-valued side?
 	// How to compare two communicators anyway?
 
@@ -168,17 +164,17 @@ GlSystem::GlSystem(GinzburgLandau::GinzburgLandau &gl, const Teuchos::RCP<
 
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	// initialize solution
-	initialSolution_ = Teuchos::rcp(new Epetra_Vector(*RealMap_));
 	Teuchos::RCP<ComplexVector> psi = Teuchos::rcp(new ComplexVector(
 			ComplexMap_));
 	// TODO Move default initialization out to main file
 	double_complex alpha(1.0, 0.0);
 	psi->putScalar(alpha); // default initialization
+
+	initialSolution_ = Teuchos::rcp(new Epetra_Vector(*RealMap_));
 	complex2real(*psi, *initialSolution_);
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-	// TODO:
-	// Remove 'dummy'.
+	// TODO Remove 'dummy'.
 	// create the sparsity structure (graph) of the Jacobian
 	// use x as DUMMY argument
 	Epetra_Vector dummy(*RealMap_);
