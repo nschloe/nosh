@@ -109,6 +109,11 @@ public:
 	void
 	setLocaStepper( const Teuchos::RCP<const LOCA::Stepper> stepper );
 
+	// This function is necessary to break the circular dependency with the
+	// LOCA_Stepper object to allow for a clean termination
+	void
+	releaseLocaStepper();
+
 	//! Explicitly print the solution x along with the problem parameters
 	//! to the file fileName.
 	void

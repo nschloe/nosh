@@ -223,6 +223,7 @@ stepper_(0)
 // =============================================================================
 // Destructor
 GlSystem::~GlSystem() {
+	stepper_ = Teuchos::null;
 }
 // =============================================================================
 int GlSystem::realIndex2complexIndex(const int realIndex) const {
@@ -761,6 +762,12 @@ GlSystem::setLocaStepper(const Teuchos::RCP<const LOCA::Stepper> stepper)
 				            + std::string("\"");
         throw glException( "GlSystem::setLocaStepper", message );
 	}
+}
+// =============================================================================
+void
+GlSystem::releaseLocaStepper()
+{
+	stepper_ = Teuchos::null;
 }
 // =============================================================================
 // function used by LOCA

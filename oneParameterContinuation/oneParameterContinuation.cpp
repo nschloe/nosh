@@ -289,13 +289,13 @@ int main(int argc, char *argv[]) {
 	}
 	// ---------------------------------------------------------------------------
 
-
+    // clean up
 	LOCA::destroyGlobalData(globalData);
-	stepper = Teuchos::null;
-	glsystem = Teuchos::null;
+	glsystem->releaseLocaStepper();
 #ifdef HAVE_LOCA_ANASAZI
-	glEigenSaver = Teuchos::null;
+	glEigenSaver->releaseLocaStepper();
 #endif
+
 
 #ifdef HAVE_MPI
 	MPI_Finalize();

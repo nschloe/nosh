@@ -39,6 +39,12 @@ EigenSaver::setLocaStepper( const Teuchos::RCP<LOCA::Stepper> locaStepper )
 	locaStepper_ = locaStepper;
 }
 // =============================================================================
+void
+EigenSaver::releaseLocaStepper()
+{
+	locaStepper_ = Teuchos::null;
+}
+// =============================================================================
 NOX::Abstract::Group::ReturnType
 EigenSaver::save(Teuchos::RCP<std::vector<double> > &evals_r,
 		         Teuchos::RCP<std::vector<double> > &evals_i,

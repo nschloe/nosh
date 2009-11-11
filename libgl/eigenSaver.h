@@ -38,6 +38,11 @@ class EigenSaver : public LOCA::SaveEigenData::AbstractStrategy
    void
    setLocaStepper( const Teuchos::RCP<LOCA::Stepper> locaStepper );
 
+	// This function is necessary to break the circular dependency with the
+	// LOCA_Stepper object to allow for a clean termination
+	void
+	releaseLocaStepper();
+
  protected:
   private:
     Teuchos::RCP<Teuchos::ParameterList> eigenParamList_;
