@@ -199,7 +199,7 @@ void GinzburgLandau::getJacobianRowSparsity ( const int        eqnum,
                                             ) const
 {
   // create dummy arguments
-  Teuchos::RCP<ComplexVector > psi = Teuchos::ENull();
+  Teuchos::RCP<ComplexVector > psi = Teuchos::null;
 
   std::vector<double_complex> valuesPsi, valuesPsiConj;
 

@@ -2,6 +2,7 @@
 #include "ioException.h"
 
 #include "ioVtk.h"
+#include "IoVtkStructuredPoints.h"
 #include "ioVti.h"
 #include "ioXdmf.h"
 
@@ -16,6 +17,7 @@ IoFactory::createFileIo( std::string fileName )
 
   if ( extension.compare("vtk") == 0) {
       return new IoVtk( fileName );
+//      return new IoVtkStructuredPoints( fileName );
   } else if (extension.compare("vti") == 0) {
       return new IoVti( fileName );
   } else if (extension.compare("xmf") == 0) {

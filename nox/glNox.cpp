@@ -57,10 +57,10 @@ glNox::glNox( const std::string fileName,
   eComm_( eComm ),
   problemParameters_(),
   MyPID_( comm->getRank() ),
-  glSystem_( Teuchos::ENull() ),
+  glSystem_( Teuchos::null ),
   nlParamsPtr_( Teuchos::rcp ( new Teuchos::ParameterList ) ),
-  combo_( Teuchos::ENull() ),
-  solver_( Teuchos::ENull() ),
+  combo_( Teuchos::null ),
+  solver_( Teuchos::null ),
   verbose_( false ),
   maxNonlinearIterations_( 10 )
 {
@@ -69,7 +69,7 @@ glNox::glNox( const std::string fileName,
 	       Teuchos::RCP<IoVirtual> ( IoFactory::createFileIo ( fileName ) );
 
   // read the stuff
-  Teuchos::RCP<Tpetra::MultiVector<double,int> > psiSplit = Teuchos::ENull();
+  Teuchos::RCP<Tpetra::MultiVector<double,int> > psiSplit = Teuchos::null;
   fileIo->read ( comm,
                  psiSplit,
                  problemParameters_ );
@@ -119,10 +119,10 @@ glNox::glNox( const int Nx,
   eComm_( eComm ),
   problemParameters_(),
   MyPID_( comm->getRank() ),
-  glSystem_( Teuchos::ENull() ),
+  glSystem_( Teuchos::null ),
   nlParamsPtr_( Teuchos::rcp ( new Teuchos::ParameterList ) ),
-  combo_( Teuchos::ENull() ),
-  solver_( Teuchos::ENull() ),
+  combo_( Teuchos::null ),
+  solver_( Teuchos::null ),
   verbose_( false ),
   maxNonlinearIterations_( 10 )
 {

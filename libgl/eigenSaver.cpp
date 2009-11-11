@@ -85,7 +85,8 @@ EigenSaver::save(Teuchos::RCP<std::vector<double> > &evals_r,
 			Teuchos::RCP<NOX::Epetra::Vector> myVec =
 					Teuchos::rcp_dynamic_cast<NOX::Epetra::Vector>(abVec, true);
 
-			glSys_->writeAbstractStateToFile(myVec->getEpetraVector(),eigenstateFilePath);
+			glSys_->writeAbstractStateToFile( myVec->getEpetraVector(),
+					                          eigenstateFilePath );
 		}
 	}
 
@@ -106,7 +107,8 @@ EigenSaver::save(Teuchos::RCP<std::vector<double> > &evals_r,
 	// Adapt the computation for the next step.
 	// Make sure that approximately \c numComputeStableEigenvalues_ stable eigenvalues
 	// will be computed in the next step.
-	eigenParamList_->set("Num Eigenvalues", numUnstableEigenvalues + numComputeStableEigenvalues_ );
+	eigenParamList_->set("Num Eigenvalues", numUnstableEigenvalues
+			                                + numComputeStableEigenvalues_ );
 
 	// reset the eigensolver to take notice of the new values
 	locaStepper_->eigensolverReset();

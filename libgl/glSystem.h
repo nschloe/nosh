@@ -11,7 +11,6 @@
 #include <Epetra_Vector.h>
 
 #include <Teuchos_RCP.hpp>
-#include <Teuchos_ENull.hpp>
 
 #include <Epetra_CrsMatrix.h>
 
@@ -82,25 +81,30 @@ public:
 	computePreconditioner(const Epetra_Vector &x, Epetra_Operator &Prec,
 			Teuchos::ParameterList* precParams = 0) const;
 
-	//! Returns the current state. Not necessarily a solution to the problem!
+	//! Returns the current state. Not necessarily a solution to the problem.
 	//! @return Reference-counted pointer to the current state.
-	Teuchos::RCP<Epetra_Vector> getSolution() const;
+	Teuchos::RCP<Epetra_Vector>
+	getSolution() const;
 
 	//! Returns the current Jacobian.
 	//! @return Reference-counted pointer to the Jacobian.
-	Teuchos::RCP<Epetra_CrsMatrix> getJacobian() const;
+	Teuchos::RCP<Epetra_CrsMatrix>
+	getJacobian() const;
 
 	//! Set the problem parameters.
-	void setParameters(const LOCA::ParameterVector &p);
+	virtual void
+	setParameters(const LOCA::ParameterVector &p);
 
 	//! Set directory to where all output gets written.
 	//! @param directory Name of the directory.
-	void setOutputDir(const string &directory);
+	void
+	setOutputDir(const string &directory);
 
 	//! Print the solution x along with the continuation parameter conParam
 	//! to a file. This function is called internally by LOCA to print
 	//! solutions of each continuation step.
-	void printSolution(const Epetra_Vector &x, double conParam);
+	virtual void
+	printSolution(const Epetra_Vector &x, double conParam);
 
 	void
 	setLocaStepper( const Teuchos::RCP<const LOCA::Stepper> stepper );
@@ -120,13 +124,17 @@ public:
 
 private:
 
-	int realIndex2complexIndex(const int realIndex) const;
+	int
+	realIndex2complexIndex(const int realIndex) const;
 
-	void real2complex(const Epetra_Vector &x, ComplexVector &psi) const;
+	void
+	real2complex(const Epetra_Vector &x, ComplexVector &psi) const;
 
-	void complex2real(const ComplexVector &psi, Epetra_Vector &x) const;
+	void
+	complex2real(const ComplexVector &psi, Epetra_Vector &x) const;
 
-	void makeRealMap(const Teuchos::RCP<const Tpetra::Map<int> > complexMap);
+	void
+	makeRealMap(const Teuchos::RCP<const Tpetra::Map<int> > complexMap);
 
 	enum jacCreator {
 		ONLY_GRAPH, VALUES
@@ -137,7 +145,8 @@ private:
 		TURNINGPOINT
 	};
 
-	bool createJacobian(const jacCreator jc, const Epetra_Vector &x);
+	bool
+	createJacobian(const jacCreator jc, const Epetra_Vector &x);
 
 	//! Print method for the continuation in one parameter.
 	void

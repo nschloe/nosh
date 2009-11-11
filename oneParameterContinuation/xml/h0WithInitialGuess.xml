@@ -1,6 +1,6 @@
 <ParameterList>
   <ParameterList name="IO">
-      <Parameter name="Input guess" type="string" value="test.vtk"/>
+      <Parameter name="Input guess" type="string" value="turningPoint10.vtk"/>
       <Parameter name="Output directory" type="string" value="./data"/>
       <Parameter name="Continuation file base name" type="string" value="continuationStep"/>
       <Parameter name="Continuation file format" type="string" value="VTK"/>
@@ -15,8 +15,7 @@
   </ParameterList>
   <ParameterList name="LOCA">
     <ParameterList name="Bifurcation">
-      <Parameter name="Type" type="string" value="Turning Point"/>
-      <Parameter name="Bifurcation Parameter" type="string" value="H0"/>
+      <Parameter name="Type" type="string" value="None"/>
     </ParameterList>
     <ParameterList name="Constraints"/>
     <ParameterList name="Predictor">
@@ -33,8 +32,8 @@
     </ParameterList>
     <ParameterList name="Stepper">
       <Parameter name="Continuation Method" type="string" value="Arc Length"/>
-      <Parameter name="Continuation Parameter" type="string" value="edge length"/>
-      <Parameter name="Compute Eigenvalues" type="bool" value="true"/>
+      <Parameter name="Continuation Parameter" type="string" value="H0"/>
+      <Parameter name="Compute Eigenvalues" type="bool" value="false"/>
       <ParameterList name="Eigensolver">
         <Parameter name="Maximum Restarts" type="int" value="1"/>
         <Parameter name="Method" type="string" value="Anasazi"/>

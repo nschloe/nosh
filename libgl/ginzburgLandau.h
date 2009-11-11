@@ -98,7 +98,7 @@ class GinzburgLandau
      void
      appendStats( std::ofstream & fileStream,
                   const bool header = false,
-                  const Teuchos::RCP<const ComplexVector> &psi = Teuchos::ENull()
+                  const Teuchos::RCP<const ComplexVector> &psi = Teuchos::null
                 ) const;
       
   private:

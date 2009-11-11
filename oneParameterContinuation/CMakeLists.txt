@@ -97,6 +97,20 @@ SET( LINK_LIBRARIES ${LINK_LIBRARIES}
 # ------------------------------------------------------------------------------
 # FIND_LIBRARY( PTHREAD pthread )
 # ------------------------------------------------------------------------------
+FIND_PACKAGE( VTK REQUIRED )
+FIND_LIBRARY( VTKIO vtkIO
+              HINTS ${VTK_LIBRARY_DIRS} )
+SET( LINK_LIBRARIES ${LINK_LIBRARIES}
+                    ${VTKIO} )
+FIND_LIBRARY( VTKFIL vtkFiltering
+              HINTS ${VTK_LIBRARY_DIRS} )
+SET( LINK_LIBRARIES ${LINK_LIBRARIES}
+                    ${VTKFIL} )
+FIND_LIBRARY( VTKCOM vtkCommon
+              HINTS ${VTK_LIBRARY_DIRS} )
+SET( LINK_LIBRARIES ${LINK_LIBRARIES}
+                    ${VTKCOM} )
+# ------------------------------------------------------------------------------
 FIND_LIBRARY( GFORTRAN ${GFORTRAN_LIBNAME}
               HINTS ${GFORTRAN_DIR}    )
 SET( LINK_LIBRARIES ${LINK_LIBRARIES}

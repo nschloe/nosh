@@ -135,7 +135,7 @@ int main ( int argc, char *argv[] )
   Teuchos::RCP<Tpetra::Map<int> > dummyMap =
     Teuchos::rcp ( new Tpetra::Map<int> ( 1, 0, Comm ) );
   Teuchos::RCP<Tpetra::MultiVector<double_complex,int> > psiLexicographic =
-                                                               Teuchos::ENull();
+                                                               Teuchos::null;
 
 //       = Teuchos::rcp( new Tpetra::MultiVector<double_complex,int>(dummyMap,1) );
 //       = Teuchos::RCP::;

@@ -155,7 +155,7 @@ GlBranchSwitcher::getNullvector( const Teuchos::RCP<const Epetra_Operator> A )
 #ifdef HAVE_MPI
       MPI_Finalize() ;
 #endif
-      return Teuchos::ENull();
+      return Teuchos::null;
   }
 
   // Initialize the Block Arnoldi solver

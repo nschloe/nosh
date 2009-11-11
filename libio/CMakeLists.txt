@@ -6,6 +6,7 @@ SET ( gl_SRCS
       ioException.cpp
       ioVirtual.cpp
       ioVtk.cpp
+#      IoVtkStructuredPoints.cpp
       ioVti.cpp
       ioXdmf.cpp
       ioFactory.cpp )
@@ -15,6 +16,9 @@ INCLUDE_DIRECTORIES( ${Trilinos_INCLUDE_DIR} )
 
 FIND_PACKAGE( Boost REQUIRED )
 INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIRS} )
+
+FIND_PACKAGE( VTK REQUIRED )
+INCLUDE_DIRECTORIES( ${VTK_INCLUDE_DIRS} )
 
 IF(MPI_COMPILED)
     FIND_PACKAGE( MPI REQUIRED )

@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
   Teuchos::RCP<Tpetra::Map<int> > dummyMap =
                            Teuchos::rcp ( new Tpetra::Map<int> ( 1, 0, Comm ) );
   Teuchos::RCP<Tpetra::Vector<double_complex,int> > psiLexicographic =
-                                                               Teuchos::ENull();
+                                                               Teuchos::null;
   if ( withInitialGuess )
     {
       Teuchos::RCP<IoVirtual> fileIo =

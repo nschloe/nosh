@@ -289,6 +289,14 @@ int main(int argc, char *argv[]) {
 	}
 	// ---------------------------------------------------------------------------
 
+
+	LOCA::destroyGlobalData(globalData);
+	stepper = Teuchos::null;
+	glsystem = Teuchos::null;
+#ifdef HAVE_LOCA_ANASAZI
+	glEigenSaver = Teuchos::null;
+#endif
+
 #ifdef HAVE_MPI
 	MPI_Finalize();
 #endif

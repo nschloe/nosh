@@ -13,7 +13,6 @@
 #include <Epetra_Vector.h>
 
 #include <Teuchos_RCP.hpp>
-#include <Teuchos_ENull.hpp>
 
 #include <Epetra_CrsMatrix.h>
 

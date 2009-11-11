@@ -97,7 +97,7 @@ int main ( int argc, char *argv[] )
 
 
   // create GL-NOX object with initial parameters/guess
-  Teuchos::RCP<glNox> myNoxObject = Teuchos::ENull();
+  Teuchos::RCP<glNox> myNoxObject = Teuchos::null;
   if ( filename.length()>0 ) {
       myNoxObject = Teuchos::rcp( new glNox( filename, Comm, eComm ) );
   }

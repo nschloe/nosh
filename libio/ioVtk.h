@@ -4,7 +4,6 @@
 #include "ioVirtual.h"
 
 #include <string>
-#include <complex>
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
