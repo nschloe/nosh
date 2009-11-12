@@ -1,5 +1,4 @@
 #include "ioFactory.h"
-#include "ioException.h"
 
 #include "ioVtk.h"
 #include "IoVtkStructuredPoints.h"
@@ -23,11 +22,11 @@ IoFactory::createFileIo( std::string fileName )
   } else if (extension.compare("xmf") == 0) {
       return new IoXdmf( fileName );
   } else {
-      std::string message = "File name extension \"" + extension + "\" "
-                          + "not recognized. Must be one of \"vtk\", "
-                          + "\"vti\", \"xmf\".";
-      throw IoException( "IoFactory::createFileIo",
-                          message );
+	  TEST_FOR_EXCEPTION( true,
+			              std::logic_error,
+			              "File name extension \"" << extension << "\" "
+			              << "not recognized. Must be one of \"vtk\", "
+			              << "\"vti\", \"xmf\"." );
   }
 
 }

@@ -3,7 +3,6 @@ INCLUDE( ../cmake-system.txt REQUIRED )
 ENABLE_LANGUAGE( CXX )
 
 SET ( gl_SRCS
-      ioException.cpp
       ioVirtual.cpp
       ioVtk.cpp
 #      IoVtkStructuredPoints.cpp

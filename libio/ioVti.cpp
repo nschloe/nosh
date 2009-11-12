@@ -1,7 +1,5 @@
 #include "ioVti.h"
 
-#include "ioException.h"
-
 #include <Teuchos_FileInputSource.hpp>
 #include <EpetraExt_Utils.h> // for toString
 #include <Teuchos_XMLParameterListWriter.hpp>
@@ -26,8 +24,9 @@ IoVti::read( const Teuchos::RCP<const Teuchos::Comm<int> >        &tComm,
 	       ) const
 {
 
-  throw IoException( "IoVti::StateFileReader",
-                     "readVtiFile not yet implemented." );
+  TEST_FOR_EXCEPTION( true,
+	                  std::logic_error,
+	                  "readVtiFile not yet implemented." );
 
   // pass a possible 
   //<?xml version="1.0"?>
@@ -54,10 +53,9 @@ IoVti::read( const Teuchos::RCP<const Teuchos::Comm<int> >        &tComm,
                                                               "Name",
                                                               "abs(psi)"      );
 
-    if ( !absPsiObject ) { // pointer invalid
-        throw IoException( "GlSystem::GlSystem",
-                           "No such XML Object found." );
-    }
+    TEST_FOR_EXCEPTION( !absPsiObject, // pointer invalid
+                        std::logic_error,
+                        "No such XML Object found." );
 
   //   const char* str;
   //   char** endptr;
@@ -159,7 +157,9 @@ IoVti::write( const Tpetra::MultiVector<double,int> & x,
               const double                            h
             ) const
 {
-    throw IoException( "IoVti::write", "Method not yet implemented." );
+  TEST_FOR_EXCEPTION( true,
+	                  std::logic_error,
+	                  "Not yet implemented." );
 }
 // =============================================================================
 // Inside an XML object, this function looks for a specific tag and returns

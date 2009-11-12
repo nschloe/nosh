@@ -1,5 +1,4 @@
 #include "ioXdmf.h"
-#include "ioException.h"
 
 #include <Teuchos_XMLParameterListWriter.hpp>
 #include <EpetraExt_Utils.h> // for toString
@@ -40,8 +39,9 @@ IoXdmf::read( const Teuchos::RCP<const Teuchos::Comm<int> >        &tComm,
 			        Teuchos::ParameterList                         &problemParams
 	        ) const
 {
-
-  throw IoException( "IoXdmf::read", "Not yet implemented" );
+  TEST_FOR_EXCEPTION( true,
+                      std::logic_error,
+	                  "Not yet implemented." );
 //
 //  // Convert the file to a string, such that we can discard the headers and pass
 //  // the pure XML stuff to Teuchos.
@@ -166,10 +166,10 @@ IoXdmf::getHeavyData( const Teuchos::XMLObject &xmlFileObject,
   //
   const Teuchos::XMLObject* dataItem = xmlFind ( absPsiObject,
                                                  "DataItem" );
-  if ( !dataItem ) {
-      throw IoException( "IoXdmf::getHeavyData",
-                         "Found no \"DataItem\"." );
-  }
+
+  TEST_FOR_EXCEPTION( !dataItem,
+	                  std::logic_error,
+	                  "Found no \"DataItem\"." );
 
   // get the file name
 // TODO: numContentLines currently broken; don't use it until further notice.
@@ -199,12 +199,11 @@ IoXdmf::getHeavyData( const Teuchos::XMLObject &xmlFileObject,
 
   EpetraExt::HDF5 hdf5Reader(comm);
   hdf5Reader.Open( fileDirectory+"/"+dataFile ); // directory from fileName
-  if ( !hdf5Reader.IsContained(hdf5GroupName) ) {
-      std::string message = "Could not find tag \"" + hdf5GroupName + "\" "
-                          + "in file " + fileDirectory + "/" + dataFile + ".";
-      throw IoException( "IoXdmf::getHeavyData",
-                         message );
-  }
+
+  TEST_FOR_EXCEPTION( !hdf5Reader.IsContained(hdf5GroupName),
+	                  std::logic_error,
+	                  "Could not find tag \"" << hdf5GroupName << "\" "
+	                  << "in file " << fileDirectory << "/" << dataFile << "." );
 
   // get data sizes and compare with the input MultiVector
   int globalLength, numVectors;
@@ -212,23 +211,17 @@ IoXdmf::getHeavyData( const Teuchos::XMLObject &xmlFileObject,
                                         globalLength,
                                         numVectors     );
 
-  if ( globalLength != (*readVec)->GlobalLength() ) {
-      std::string message = "Length of the input MultiVector ("
-                          + EpetraExt::toString( (*readVec)->GlobalLength() )
-                          + ") does not coincide with the global length of "
-                          + "the data in file " + dataFile + ".";
-      throw IoException( "IoXdmf::getHeavyData",
-                         message );
-  }
+  TEST_FOR_EXCEPTION( globalLength != (*readVec)->GlobalLength(),
+	                  std::logic_error,
+	                  "Length of the input MultiVector ("<<  (*readVec)->GlobalLength()
+	                  << ") does not coincide with the global length of "
+	                  << "the data in file " << dataFile << "." );
 
-  if ( numVectors != (*readVec)->NumVectors() ) {
-      std::string message = "Number of the input MultiVectors (" 
-                          + EpetraExt::toString( (*readVec)->NumVectors() )
-                          + ") does not coincide with the global number of "
-                          + "vectors in file " + dataFile + ".";
-      throw IoException( "IoXdmf::getHeavyData",
-                         message );
-  }
+  TEST_FOR_EXCEPTION( numVectors != (*readVec)->NumVectors(),
+	                  std::logic_error,
+	                  "Number of the input MultiVectors (" << (*readVec)->NumVectors()
+	                  << ") does not coincide with the global number of "
+	                  << "vectors in file " << dataFile << "." );
 
   // finally, read the vector
   hdf5Reader.Read( hdf5GroupName, *readVec );
@@ -397,7 +390,9 @@ IoXdmf::write( const Tpetra::MultiVector<double,int> & x,
                const double                            h
              ) const
 {
-    throw IoException( "IoXdmf::write", "Method not yet implemented." );
+	  TEST_FOR_EXCEPTION( true,
+	                      std::logic_error,
+		                  "Not yet implemented." );
 }
 // =============================================================================
 // Inside an XML object, this function looks for a specific tag and returns
