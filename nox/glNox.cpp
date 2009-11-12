@@ -2,7 +2,7 @@
 
 #include "ioVirtual.h"
 #include "ioFactory.h"
-#include "glException.h"
+
 #include "glBoundaryConditionsVirtual.h"
 #include "glBoundaryConditionsInner.h"
 #include "glBoundaryConditionsOuter.h"
@@ -74,8 +74,9 @@ glNox::glNox( const std::string fileName,
                  psiSplit,
                  problemParameters_ );
 
-  if ( psiSplit.is_null() )
-    throw glException( "glNox::glNox", "Input guess empty" );
+  TEST_FOR_EXCEPTION( psiSplit.is_null(),
+		              std::logic_error,
+		              "Input guess NULL." );
 
   Teuchos::RCP<GlBoundaryConditionsVirtual> boundaryConditions =
                              Teuchos::rcp ( new GlBoundaryConditionsCentral() );
@@ -203,17 +204,17 @@ glNox::createSolverGroup()
 void
 glNox::createSolver()
 {
-  if ( grpPtr_.is_null() )
-      throw glException( "glNox::createSolver",
-                         "Group not initialized" );
+	TEST_FOR_EXCEPTION( grpPtr_.is_null(),
+			            std::logic_error,
+                        "Group not initialized." );
 
-  if ( combo_.is_null() )
-      throw glException( "glNox::createSolver",
-                         "Combo not initialized" );
+	TEST_FOR_EXCEPTION( combo_.is_null(),
+			            std::logic_error,
+                        "Combo not initialized." );
 
-  if ( nlParamsPtr_.is_null() )
-      throw glException( "glNox::createSolver",
-                         "Nonlinear solver parameters not initialized" );
+	TEST_FOR_EXCEPTION( nlParamsPtr_.is_null(),
+			            std::logic_error,
+                        "Nonlinear solver parameters not initialized." );
 
   solver_ = NOX::Solver::buildSolver ( grpPtr_,
                                        combo_,
@@ -359,9 +360,9 @@ glNox::createConvergenceTests()
   Teuchos::RCP<NOX::StatusTest::NormF> absresid =
                         Teuchos::rcp ( new NOX::StatusTest::NormF ( 1.0e-10 ) );
 
-  if ( grpPtr_.is_null() )
-      throw glException( "glNox::createConvergenceTests",
-                         "Group not initialized" );
+  TEST_FOR_EXCEPTION( grpPtr_.is_null(),
+		              std::logic_error,
+		              "Group not initialized." );
 
   NOX::Epetra::Group& grp = *grpPtr_;
 
@@ -497,11 +498,9 @@ glNox::computeJacobianEigenvalues()
 
   // Inform the eigenproblem that you are finishing passing it information
   boolret = MyProblem->setProblem();
-  if ( boolret != true )
-    {
-       std::string message( "Anasazi::BasicEigenproblem::setProblem() returned with error." );
-       throw glException( "glNox::computeJacobianEigenvalues", message );
-    }
+  TEST_FOR_EXCEPTION( !boolret,
+		              std::runtime_error,
+                      "Anasazi::BasicEigenproblem::setProblem() returned with error." );
 
   // Initialize the Block Arnoldi solver
 //       Anasazi::BlockDavidsonSolMgr<double, MV, OP> 

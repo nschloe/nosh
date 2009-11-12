@@ -734,9 +734,6 @@ bool GlSystem::computeShiftedMatrix(double alpha, double beta,
 void
 GlSystem::setParameters(const LOCA::ParameterVector &p) {
 
-//	cout << "Set LOCA Parameters" << endl;
-//	cout << p << endl;
-
 	double h0 = p.getValue("H0");
 	Gl_.setH0(h0);
 

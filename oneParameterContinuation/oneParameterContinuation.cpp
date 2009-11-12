@@ -17,7 +17,6 @@
 #include <Teuchos_DefaultComm.hpp>
 
 #include "ioFactory.h"
-#include "ioException.h"
 
 #include "glSystem.h"
 #include "glBoundaryConditionsInner.h"
@@ -117,11 +116,8 @@ int main(int argc, char *argv[]) {
 	   try {
 		   readStateFromFile( Comm, inputGuessFile, psi, grid, glParameters );
 	   }
-	   catch (const IoException& e) {
-	       std::cerr << e.what() << std::endl;
-	   }
 	   catch (...) {
-	       std::cerr << "Unknown exception caught." << std::endl;
+	       std::cerr << "Exception caught." << std::endl;
 	   }
 	} else {
 		// read the parameters from the XML file
