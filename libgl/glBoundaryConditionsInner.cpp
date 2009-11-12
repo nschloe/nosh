@@ -1,9 +1,6 @@
 #include "glBoundaryConditionsInner.h"
 
-#include <EpetraExt_Utils.h> // for toString
 #include <Teuchos_Array.hpp>
-
-#include "glException.h"
 
 // complex unit
 const double_complex I ( 0,1 );
@@ -172,9 +169,9 @@ GlBoundaryConditionsInner::getGlEntry ( const int                               
     break;
 
   default:
-    throw glException ( "GlBoundaryConditionsInner::getGlEntry",
-                        "Illegal equationType "
-                        + EpetraExt::toString ( eqType ) + "." );
+      TEST_FOR_EXCEPTION( true,
+  		                std::logic_error,
+  			            "Illegal equationType " << eqType );
   }
 
   // return the result
@@ -447,9 +444,9 @@ GlBoundaryConditionsInner::getGlJacobianRow ( const int                         
       break;
 
     default:
-      throw glException ( "GlBoundaryConditionsInner::getJacobianRow",
-                          "Illegal equationType"
-                          + EpetraExt::toString ( eqType ) + "." );
+        TEST_FOR_EXCEPTION( psi.is_null(),
+    		                std::logic_error,
+    		                "Illegal equationType" << eqType  );
     }
 
 }

@@ -1,6 +1,5 @@
 #include "glSystem.h"
 #include "ioFactory.h"
-#include "glException.h"
 
 #include <complex>
 #include <vector>
@@ -58,11 +57,15 @@ GlSystem::GlSystem( GinzburgLandau::GinzburgLandau &gl,
 	NumComplexUnknowns_ = Gl_.getNumUnknowns();
 	NumRealUnknowns_ = 2 * NumComplexUnknowns_ + 1;
 
-	if (!psi.is_valid_ptr())
-		throw glException("GlSystem::GlSystem", "Invalid pointer");
+	// TODO Don't throw exception in constructor?
+	TEST_FOR_EXCEPTION( !psi.is_valid_ptr(),
+			            std::logic_error,
+			            "Invalid pointer" );
 
-	if (psi.is_null())
-		throw glException("GlSystem::GlSystem", "Input guess is null pointer");
+	// TODO Don't throw exception in constructor?
+	TEST_FOR_EXCEPTION( psi.is_null(),
+			            std::logic_error,
+			            "Input guess is null pointer" );
 
 	// TODO There is (until now?) no way to convert a Teuchos::Comm (of psi)
 	// to an Epetra_Comm (of the real valued representation of psi), so the
@@ -104,13 +107,15 @@ GlSystem::GlSystem( GinzburgLandau::GinzburgLandau &gl,
 	// initialize solution
 	initialSolution_ = Teuchos::rcp(new Epetra_Vector(*RealMap_));
 
-	if (psi->getGlobalLength() != (unsigned int) NumComplexUnknowns_) {
-		std::string message = "Size of the initial guess vector ("
-				+ EpetraExt::toString(int(psi->getGlobalLength()))
-				+ ") does not coincide with the number of unknowns ("
-				+ EpetraExt::toString(NumComplexUnknowns_) + ").";
-		throw glException("GlSystem::GlSystem", message);
-	}
+
+	// TODO Don't throw exception in constructor?
+    TEST_FOR_EXCEPTION( psi->getGlobalLength() != (unsigned int) NumComplexUnknowns_,
+			            std::logic_error,
+			            "Size of the initial guess vector ("
+			            << psi->getGlobalLength()
+			            << ") does not coincide with the number of unknowns ("
+			            << NumComplexUnknowns_ << ")" );
+
 	complex2real(*psi, *initialSolution_);
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -301,15 +306,13 @@ GlSystem::computeF(const Epetra_Vector &x,
 		           const NOX::Epetra::Interface::Required::FillType fillFlag)
 {
 	// make sure that the input and output vectors are correctly mapped
-	if (!x.Map().SameAs(*RealMap_)) {
-		throw glException("GlSystem::computeF",
-				"Maps of x and the computed real-valued map do not coincide.");
-	}
+    TEST_FOR_EXCEPTION( !x.Map().SameAs(*RealMap_),
+			            std::logic_error,
+			            "Maps of x and the computed real-valued map do not coincide." );
 
-	if (!FVec.Map().SameAs(*RealMap_)) {
-		throw glException("GlSystem::computeF",
-				"Maps of FVec and the computed real-valued map do not coincide.");
-	}
+    TEST_FOR_EXCEPTION( !FVec.Map().SameAs(*RealMap_),
+			            std::logic_error,
+			            "Maps of FVec and the computed real-valued map do not coincide." );
 
 	// define vector
 	const Teuchos::RCP<ComplexVector> psi =
@@ -383,8 +386,9 @@ bool GlSystem::computeJacobian(const Epetra_Vector &x, Epetra_Operator &Jac) {
 // =============================================================================
 bool GlSystem::computePreconditioner(const Epetra_Vector &x,
 		Epetra_Operator &Prec, Teuchos::ParameterList *precParams) const {
-	throw glException("GlSystem::preconditionVector",
-			"Use explicit Jacobian only for this test problem!");
+    TEST_FOR_EXCEPTION( true,
+			            std::logic_error,
+			            "Use explicit Jacobian only for this test problem!" );
 }
 // =============================================================================
 Teuchos::RCP<Epetra_Vector> GlSystem::getSolution() const {
@@ -692,9 +696,9 @@ bool GlSystem::createJacobian(const jacCreator jc, const Epetra_Vector &x) {
 			Graph_->FillComplete();
 		}
 	} catch (int i) {
-		std::string message = "FillComplete returned error code "
-				+ EpetraExt::toString(i) + ".";
-		throw glException("GlSystem::createJacobian", message);
+	    TEST_FOR_EXCEPTION( true,
+				            std::logic_error,
+				            "FillComplete returned error code " << i );
 	}
 	// ---------------------------------------------------------------------------
 
@@ -756,12 +760,11 @@ GlSystem::setLocaStepper(const Teuchos::RCP<const LOCA::Stepper> stepper)
 		continuationType_ = ONEPARAMETER;
 	else if ( bifurcationType == "Turning Point" )
 		continuationType_ = TURNINGPOINT;
-	else {
-		std::string message = "Unknown continuation type "
-				            + std::string("\"") + bifurcationType
-				            + std::string("\"");
-        throw glException( "GlSystem::setLocaStepper", message );
-	}
+	else
+	    TEST_FOR_EXCEPTION( true,
+				            std::logic_error,
+				            "Unknown continuation type \""
+				            << bifurcationType << "\"" );
 }
 // =============================================================================
 void
@@ -792,9 +795,9 @@ GlSystem::printSolution( const Epetra_Vector &x,
 	    printSolutionTurningPointContinuation( psi );
 	    break;
 	default:
-		std::string message = "Illegal continuation type "
-				            + EpetraExt::toString( continuationType_ );
-		throw glException( "GlSystem::printSolution", message );
+	    TEST_FOR_EXCEPTION( true,
+				            std::logic_error,
+				            "Illegal continuation type " << continuationType_ );
 	}
 }
 // =============================================================================

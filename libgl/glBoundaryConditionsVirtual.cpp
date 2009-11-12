@@ -1,7 +1,4 @@
 #include "glBoundaryConditionsVirtual.h"
-#include "glException.h"
-
-#include <EpetraExt_Utils.h>
 
 // =============================================================================
 GlBoundaryConditionsVirtual::GlBoundaryConditionsVirtual()
@@ -78,9 +75,10 @@ GlBoundaryConditionsVirtual::getEquationType ( const int boundaryEquationIndex,
     }
   else
     {
-      throw glException ( "GlBoundaryConditionsVirtual::getEquationType",
-                          "Illegal running index boundaryEquationIndex="
-                          + EpetraExt::toString ( boundaryEquationIndex ) );
+      TEST_FOR_EXCEPTION( true,
+  			              std::logic_error,
+  			              "Illegal running index boundaryEquationIndex="
+  			              << boundaryEquationIndex );
     }
 }
 // =============================================================================

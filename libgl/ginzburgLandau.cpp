@@ -1,7 +1,6 @@
 #include "ginzburgLandau.h"
 
 #include "glBoundaryConditionsVirtual.h"
-#include "glException.h"
 
 #include "ioFactory.h"
 
@@ -12,8 +11,6 @@
 #include <Teuchos_Comm.hpp>
 
 #include <Tpetra_Map.hpp>
-
-#include <EpetraExt_Utils.h> // for the toString function
 
 
 // complex unit
@@ -79,9 +76,9 @@ void GinzburgLandau::getEquationType ( const int           eqnum,
     }
   else
     {
-      throw glException ( "GinzburgLandau::getEquationType",
-                          "Illegal running index eqnum="
-                          + EpetraExt::toString ( eqnum ) );
+      TEST_FOR_EXCEPTION( true,
+  			              std::logic_error,
+  			              "Illegal running index   eqnum = " <<  eqnum );
     }
 }
 // =============================================================================
@@ -163,9 +160,9 @@ GinzburgLandau::computeGl ( const int           eqnum,
     break;
     // -------------------------------------------------------------------------
     default:
-      throw glException ( "GinzburgLandau::computeGl",
-                          "Illegal equationType "
-                          + EpetraExt::toString ( eqType ) + "." );
+        TEST_FOR_EXCEPTION( true,
+    			            std::logic_error,
+    			            "Illegal equationType " << eqType );
     }
 
   // return the result
@@ -306,9 +303,9 @@ void GinzburgLandau::computeJacobianRow ( const bool                        fill
     break;
 
     default:
-      throw glException ( "GinzburgLandau::getJacobianRow",
-                          "Illegal equationType"
-                          + EpetraExt::toString ( eqType ) + "." );
+        TEST_FOR_EXCEPTION( true,
+    			            std::logic_error,
+    			            "Illegal equationType " << eqType );
     }
 }
 // =============================================================================

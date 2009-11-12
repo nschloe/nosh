@@ -1,9 +1,6 @@
 #include "glBoundaryConditionsOuter.h"
 
-#include <EpetraExt_Utils.h> // for toString
 #include <Teuchos_Array.hpp>
-
-#include "glException.h"
 
 // complex unit
 const double_complex I ( 0,1 );
@@ -208,9 +205,9 @@ GlBoundaryConditionsOuter::getGlEntry ( const int                               
       break;
 
     default:
-      throw glException ( "GlBoundaryConditionsOuter::getGlEntry",
-                          "Illegal equationType "
-                          + EpetraExt::toString ( eqType ) + "." );
+        TEST_FOR_EXCEPTION( true,
+    		                std::logic_error,
+    			            "Illegal equationType " << eqType );
     }
 
   // return the result
@@ -254,18 +251,12 @@ GlBoundaryConditionsOuter::getGlJacobianRow ( const int                         
 
   if ( fillValues )
     {
-      if ( !psi.is_valid_ptr() )
-        {
-          std::string message ( "Values are supposed to be filled in, but psi is invalid." );
-          throw glException ( "GlBoundaryConditionsOuter::getGlJacobianRow",
-                              message );
-        }
-      if ( psi.is_null() )
-        {
-          std::string message ( "Values are supposed to be filled in, but psi is NULL." );
-          throw glException ( "GlBoundaryConditionsOuter::getGlJacobianRow",
-                              message );
-        }
+      TEST_FOR_EXCEPTION( !psi.is_valid_ptr(),
+  		                  std::logic_error,
+  		                  "Values are supposed to be filled in, but psi is invalid." );
+      TEST_FOR_EXCEPTION( psi.is_null(),
+  		                  std::logic_error,
+  		                  "Values are supposed to be filled in, but psi is NULL." );
       psiView = psi->get1dView();
     }
 
@@ -593,9 +584,9 @@ GlBoundaryConditionsOuter::getGlJacobianRow ( const int                         
       break;
 
     default:
-      throw glException ( "GlBoundaryConditionsOuter::getJacobianRow",
-                          "Illegal equationType"
-                          + EpetraExt::toString ( eqType ) + "." );
+        TEST_FOR_EXCEPTION( psi.is_null(),
+    		                std::logic_error,
+    		                "Illegal equationType" << eqType  );
     }
 
 }

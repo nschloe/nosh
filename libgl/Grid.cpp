@@ -7,10 +7,6 @@
 
 #include "Grid.h"
 
-#include "glException.h"
-
-#include <EpetraExt_Utils.h> // for toString
-
 // =============================================================================
 // Class constructor
 Grid::Grid(int nx, double edgeLength) :
@@ -183,8 +179,9 @@ Grid::k2i(int k) const
     }
   else
     {
-      std::string message = "Illegal running index   k = " + EpetraExt::toString(k);
-      throw glException("Grid::k2i", message);
+	  TEST_FOR_EXCEPTION( true,
+			              std::logic_error,
+			              "Illegal running index   k = " << k );
     }
 
   return i;
@@ -220,10 +217,10 @@ Grid::boundaryPosition ( int l ) {
 		    }
 		else
 		{
-			  std::string message = "Given index l=" + EpetraExt::toString(l)
-			                      + "larger than the number of border nodes n="
-			                      + EpetraExt::toString(4*nx_);
-			  throw glException( "Grid::borderNode", message );
+			TEST_FOR_EXCEPTION( true, std::logic_error,
+					            "Given index l=" << l
+					            << "larger than the number of border nodes n="
+					            << 4*nx_ );
 		}
 		return i;
 }
@@ -282,31 +279,19 @@ Grid::i2k( Teuchos::RCP<Teuchos::Array<int> > & i) const
 {
   int k;
 
-  if ((*i)[1] == 0)
-    { // south
+  if ((*i)[1] == 0) // south
       k = (*i)[0];
-    }
-  else if ((*i)[0] == nx_)
-    { // east
+  else if ((*i)[0] == nx_) // east
       k = (*i)[1] + nx_;
-    }
-  else if ((*i)[1] == nx_)
-    { // north
+  else if ((*i)[1] == nx_) // north
       k = 3 * nx_ - (*i)[0];
-    }
-  else if ((*i)[0] == 0)
-    { // west
+  else if ((*i)[0] == 0) // west
       k = 4 * nx_ - (*i)[1];
-    }
-  else if ((*i)[0] > 0 && (*i)[0] < nx_ && (*i)[1] > 0 && (*i)[1] < nx_)
-    { // interior
+  else if ((*i)[0] > 0 && (*i)[0] < nx_ && (*i)[1] > 0 && (*i)[1] < nx_) // interior
       k = 4 * nx_ + (nx_ - 1) * ((*i)[1] - 1) + (*i)[0] - 1;
-    }
   else
-    {
-      std::string message = "Illegal 2D index   i = " + Teuchos::toString(*i);
-      throw glException("Grid::i2k", message);
-    }
+	  TEST_FOR_EXCEPTION( true, std::logic_error,
+			              "Illegal 2D index   i = " << *i );
 
   return k;
 }
@@ -318,14 +303,12 @@ Grid::lexicographic2grid(std::vector<int> *p) const
 {
   // check if for admissible vector size
   unsigned int numUnknowns = (nx_ + 1) * (nx_ + 1);
-  if (p->size() != numUnknowns)
-    {
-      std::string message = "Size of the input vector p ("
-          + EpetraExt::toString(int(p->size())) + ") "
-          + "does not coincide with with number of unknowns on "
-          + " the grid (" + EpetraExt::toString((nx_ + 1) * (nx_ + 1)) + ").";
-      throw glException("Grid::lexicographic2grid", message);
-    }
+
+  TEST_FOR_EXCEPTION( p->size() != numUnknowns,
+		              std::logic_error,
+		              "Size of the input vector p (" << p->size() <<") "
+		              << "does not coincide with with number of unknowns on "
+		              << " the grid (" << (nx_+1)*(nx_+1)  << ")." );
 
   int k = 0;
   Teuchos::RCP<Teuchos::Array<int> > index = Teuchos::rcp( new Teuchos::Array<int>(2) );
@@ -350,14 +333,12 @@ Grid::reorderToLexicographic( Tpetra::Vector<std::complex<double> > & x
   // check if for admissible vector size
   unsigned int numUnknowns = getNumGridPoints();
 
-  if (x.getGlobalLength() != numUnknowns)
-    {
-      std::string message = "Global length of the input vector x ("
-          + EpetraExt::toString(int(x.getGlobalLength())) + ") "
-          + "does not coincide with with number of unknowns on "
-          + " the grid (" + EpetraExt::toString(numUnknowns) + ").";
-      throw glException("Grid::reorderToLexicographic", message);
-    }
+  TEST_FOR_EXCEPTION( x.getGlobalLength() != numUnknowns,
+		              std::logic_error,
+		              "Global length of the input vector x ("
+		              << x.getGlobalLength() << ") does not coincide "
+		              << "with with number of unknowns on the grid ("
+		              << numUnknowns << ")." );
 
   // Make a temporary copy of the full vector.
   Tpetra::Vector<std::complex<double> > tmp( x );
@@ -389,14 +370,12 @@ Grid::reorderFromLexicographic( Tpetra::Vector<std::complex<double> > & x
   // check if for admissible vector size
   unsigned int numUnknowns = getNumGridPoints();
 
-  if (x.getGlobalLength() != numUnknowns)
-    {
-      std::string message = "Global length of the input vector x ("
-          + EpetraExt::toString(int(x.getGlobalLength())) + ") "
-          + "does not coincide with with number of unknowns on "
-          + " the grid (" + EpetraExt::toString(numUnknowns) + ").";
-      throw glException("Grid::reorderToLexicographic", message);
-    }
+  TEST_FOR_EXCEPTION( x.getGlobalLength() != numUnknowns,
+		              std::logic_error,
+		              "Global length of the input vector x ("
+		              << x.getGlobalLength() << ") does not coincide "
+		              << "with with number of unknowns on the grid ("
+		              << numUnknowns << ")." );
 
   // Make a temporary copy of the full vector.
   Tpetra::Vector<std::complex<double> > tmp( x );
