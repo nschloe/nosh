@@ -11,7 +11,6 @@
 
 // =============================================================================
 EigenSaver::EigenSaver(const Teuchos::RCP<Teuchos::ParameterList> eigenParamList,
-		               const Teuchos::RCP<LOCA::GlobalData>& globalData,
 		               const std::string outputDir,
 		               const std::string eigenvaluesFileName,
 		               const std::string contFileBaseName,
@@ -22,7 +21,6 @@ outputDir_(outputDir),
 eigenvaluesFilePath_(outputDir + "/" + eigenvaluesFileName),
 contFileBaseName_(contFileBaseName),
 eigenstateFileNameAppendix_(eigenstateFileNameAppendix),
-globalData_(globalData),
 glSys_(glSys),
 locaStepper_(0),
 numComputeStableEigenvalues_(3)
@@ -116,8 +114,16 @@ EigenSaver::save(Teuchos::RCP<std::vector<double> > &evals_r,
 	eigenParamList_->set("Num Eigenvalues", numUnstableEigenvalues
 			                                + numComputeStableEigenvalues_ );
 
+        // Make sure that the shift SIGMA (if using Shift-Invert) sits THRESHOLD above
+        // the rightmost eigenvalue.
+        if ( !eigenParamList_->get<string>("Operator").compare("Shift-Invert") ) {
+            double maxEigenval = *std::max_element( evals_r->begin(), evals_r->end() );
+            double threshold = 0.5;
+            eigenParamList_->set("Shift", maxEigenval + threshold );
+        }
+
 	// reset the eigensolver to take notice of the new values
-	locaStepper_->eigensolverReset();
+	locaStepper_->eigensolverReset( eigenParamList_ );
 
 	return NOX::Abstract::Group::Ok;
 }

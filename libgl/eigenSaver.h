@@ -20,7 +20,6 @@ class EigenSaver : public LOCA::SaveEigenData::AbstractStrategy
 
    // Constructor
    EigenSaver( const Teuchos::RCP<Teuchos::ParameterList> eigenParams,
-	           const Teuchos::RCP<LOCA::GlobalData>& globalData,
 	           const std::string outputDir,
 	           const std::string eigenvaluesFileName,
 	           const std::string contFileBaseName,
@@ -51,7 +50,6 @@ class EigenSaver : public LOCA::SaveEigenData::AbstractStrategy
     std::string contFileBaseName_;
     std::string eigenstateFileNameAppendix_;
     Teuchos::RCP<GlSystem> glSys_;
-    Teuchos::RCP<LOCA::GlobalData> globalData_;
     Teuchos::RCP<LOCA::Stepper> locaStepper_;
 
     //! The minimum number of stable eigenvalues that is to be computed in each step.
