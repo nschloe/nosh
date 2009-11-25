@@ -73,7 +73,7 @@ IoVti::read(const Teuchos::RCP<const Teuchos::Comm<int> > &tComm, Teuchos::RCP<
 // =============================================================================
 void
 IoVti::write(const Tpetra::MultiVector<double, int> & x, const int Nx,
-    const double h, const Teuchos::ParameterList & problemParams) const
+    const double h, const Teuchos::ParameterList & problemParams)
 {
   std::string str;
 
@@ -150,7 +150,7 @@ IoVti::write(const Tpetra::MultiVector<double, int> & x, const int Nx,
 // =============================================================================
 void
 IoVti::write(const Tpetra::MultiVector<double, int> & x, const int Nx,
-    const double h) const
+    const double h)
 {
   TEST_FOR_EXCEPTION( true,
       std::logic_error,

@@ -5,7 +5,7 @@ ENABLE_LANGUAGE( CXX )
 SET ( gl_SRCS
       ioVirtual.cpp
       ioVtk.cpp
-#      IoVtkStructuredPoints.cpp
+      IoVtkStructuredPoints.cpp
       ioVti.cpp
       ioXdmf.cpp
       ioFactory.cpp )

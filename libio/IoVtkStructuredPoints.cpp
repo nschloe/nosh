@@ -13,15 +13,21 @@
 //#include "vtkStructuredGridWriter.h"
 //#include "vtkImageData.h"
 #include "vtkStructuredPoints.h"
+#include "vtkDataSetWriter.h"
 //#include "vtkStructuredPointsReader.h"
 #include "vtkStructuredPointsWriter.h"
 #include "vtkDoubleArray.h"
 #include "vtkPointData.h"
+#include "vtkSmartPointer.h"
+
+#include "vtkImageStencil.h"
+#include "vtkXMLImageDataWriter.h"
+#include "vtkImageAppendComponents.h"
 
 // ============================================================================
 IoVtkStructuredPoints::IoVtkStructuredPoints(std::string fname) :
-  IoVirtual(fname), exportProc_(0), sourceMap_(Teuchos::null),
-      oneProcExporter_(Teuchos::null)
+  IoVirtual(fname), ioProc_(0), sourceMap_(Teuchos::null),
+      oneProcImporter_(Teuchos::null)
 {
 }
 // ============================================================================
@@ -35,7 +41,7 @@ IoVtkStructuredPoints::createOneProcMap(const Tpetra::Map<int> & sourceMap,
 {
   int numGlobalElements = sourceMap.getGlobalNumElements();
   int numLocalElements;
-  if (sourceMap.getComm()->getRank() == exportProc_)
+  if (sourceMap.getComm()->getRank() == ioProc_)
     numLocalElements = numGlobalElements;
   else
     numLocalElements = 0;
@@ -57,68 +63,77 @@ IoVtkStructuredPoints::read(
 // ============================================================================
 void
 IoVtkStructuredPoints::write(const Tpetra::MultiVector<double, int> & x,
-    const int Nx, const double h) const
+    const int Nx, const double h)
 {
-  Teuchos::RCP<const Tpetra::Map<int> > sourceMapPtr = x.getMap();
-  if (!x.getMap()->isSameAs(*sourceMap_))
+  if ( !sourceMap_.is_valid_ptr() ||
+        sourceMap_.is_null() ||
+       !x.getMap()->isSameAs(*sourceMap_) )
     {
-      // do a deep copy of the map
-      //		Teuchos::rcp( x.getMap() ); // copy constructor is private!
-      //		const Teuchos::RCP<const Tpetra::Map<int> > testMap( x.getMap() );
       sourceMap_ = x.getMap();
       // recreate the the exporter
-      Teuchos::RCP<Tpetra::Map<int> > oneProcMap;
-      createOneProcMap(*sourceMap_, oneProcMap);
-      oneProcExporter_ = Teuchos::rcp(new Tpetra::Export<int>(*sourceMap_,
-          *oneProcMap));
+      createOneProcMap(*sourceMap_, oneProcMap_);
+      oneProcImporter_ = Teuchos::rcp(new Tpetra::Import<int>(sourceMap_,
+          oneProcMap_));
     }
 
-  // export all the data to one processor
-  const Tpetra::MultiVector<double, int> xOneProc;
-  x.doExport(xOneProc, oneProcExporter_);
+  // Export all the data to one processor.
+  // Can't make it const as vtkDoubleArray::SetArray below needs non-const
+  // access.
+  // TODO See if this can be made const.
+  unsigned int numVectors = x.getNumVectors();
+  Teuchos::RCP<Tpetra::MultiVector<double, int> > xOneProc =
+      Teuchos::rcp( new Tpetra::MultiVector<double,int>(oneProcMap_,numVectors) );
+  xOneProc->doImport( x, *oneProcImporter_, Tpetra::INSERT );
 
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  // All the date now sits on exportProc_; write the file from here.
-  if (sourceMap_->getComm()->getRank() == exportProc_){
-      vtkStructuredPoints * spData = vtkStructuredPoints::New();
+  // All the date now sits on ioProc_; write the file from here.
+  if (sourceMap_->getComm()->getRank() == ioProc_){
 
+    vtkImageAppendComponents * imageAppend = vtkImageAppendComponents::New();
+
+    // TODO Replace by StructuredPoitnsWriter?
+    // TODO Replace this function by a general data set preparator, and have one writer for them all?
+    vtkSmartPointer<vtkDataSetWriter> writer = vtkDataSetWriter::New();
+    writer->SetFileName(fileName_.c_str());
+    writer->SetHeader("myheader");
+    writer->SetFileTypeToASCII();
+//    writer->SetFileTypeToBinary();
+    writer->SetScalarsName("psi");
+
+    for (unsigned int k=0; k<numVectors; k++ ) {
+      vtkSmartPointer<vtkStructuredPoints> spData = vtkStructuredPoints::New();
       spData->SetDimensions(Nx + 1, Nx + 1, 1);
       spData->SetOrigin(0, 0, 0);
       spData->SetSpacing(h, h, 0);
 
-      Teuchos::ArrayRCP<const double> xOneProcView =
-          xOneProc.getVector(0)->get1dView();
+      // NonConst view necessary here as vtkDoubleArray::SetArray needs
+      // a nonconst array (for whatever reason).
+      // TODO See if this can be made const.
+      Teuchos::ArrayRCP<double> xOneProcView =
+          xOneProc->getVectorNonConst(k)->get1dViewNonConst();
 
-      vtkDoubleArray * scalars = vtkDoubleArray::New();
-      int k = 0;
-      for (int z = 0; z < 1; z++)
-        for (int y = 0; y < Nx + 1; y++)
-          for (int x = 0; x < Nx + 1; x++)
-            scalars->InsertNextValue(xOneProcView[k++]);
-
+      // TODO Replace this by a length specification of xOneProcView
+      int size = xOneProc->getGlobalLength();
+      // TODO See if this can be made const double.
+      double* array = xOneProcView.getRawPtr();
+      int save = 1; // don't have VTK delete the array at cleanup
+      vtkSmartPointer<vtkDoubleArray> scalars = vtkDoubleArray::New();
+      scalars->SetArray( array, size, save );
       spData->GetPointData()->SetScalars(scalars);
 
-      // write the stuff
-      vtkStructuredPointsWriter* writer = vtkStructuredPointsWriter::New();
-      writer->SetInput(spData);
-      writer->SetHeader("myheader");
-      writer->SetScalarsName("myscalarsname");
-      writer->SetFileName(fileName_.c_str());
-      writer->SetFileTypeToASCII();
-      //    writer->SetFileTypeToBinary();
-      writer->Write();
-
-      // clean up
-      spData->Delete();
-      scalars->Delete();
-      writer->Delete();
+      imageAppend->AddInput(spData);
     }
+
+    writer->SetInputConnection(imageAppend->GetOutputPort());
+    writer->Update(); // really necessary?
+    writer->Write();
+  }
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 }
 // ============================================================================
 void
 IoVtkStructuredPoints::write(const Tpetra::MultiVector<double, int> & x,
-    const int Nx, const double h, const Teuchos::ParameterList & problemParams) const
+    const int Nx, const double h, const Teuchos::ParameterList & problemParams)
 {
   write(x, Nx, h);
 }

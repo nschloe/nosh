@@ -37,11 +37,11 @@ public:
   //! that can be viewed using standard tools.
   virtual void
   write(const Tpetra::MultiVector<double, int> & x, const int Nx,
-      const double h, const Teuchos::ParameterList & problemParams) const;
+      const double h, const Teuchos::ParameterList & problemParams);
 
   virtual void
   write(const Tpetra::MultiVector<double, int> & x, const int Nx,
-      const double h) const;
+      const double h);
 
 protected:
 private:

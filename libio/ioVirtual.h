@@ -34,13 +34,13 @@ class IoVirtual
             const int                               Nx,
             const double                            h,
             const Teuchos::ParameterList          & problemParams
-          ) const = 0; // pure virtual
+          ) = 0; // pure virtual
 
     virtual void
     write( const Tpetra::MultiVector<double,int> & x,
            const int                               Nx,
            const double                            h
-          ) const = 0; // pure virtual
+          ) = 0; // pure virtual
 
   protected:
     //! File name for the I/O.

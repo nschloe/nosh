@@ -26,34 +26,35 @@ public:
 
 	virtual void
 	read( const Teuchos::RCP<const Teuchos::Comm<int> >        &tComm,
-				Teuchos::RCP<Tpetra::MultiVector<double,int> > &x,
-				Teuchos::ParameterList                         &problemParams
-		) const;
+	            Teuchos::RCP<Tpetra::MultiVector<double,int> > &x,
+	            Teuchos::ParameterList                         &problemParams
+	    ) const;
 
 
 	virtual void
 	write( const Tpetra::MultiVector<double,int> & x,
 		   const int                               Nx,
 		   const double                            h
-		 ) const;
+		 );
 
 	virtual void
 	write( const Tpetra::MultiVector<double,int> & x,
 		   const int                               Nx,
 		   const double                            h,
            const Teuchos::ParameterList          & problemParams
-		 ) const;
+		 );
 
 protected:
 private:
 
 	void
-	createOneProcMap( const Tpetra::Map<int> & sourceMap,
-			                Teuchos::RCP<Tpetra::Map<int> > & oneProcMap );
+	createOneProcMap( const Tpetra::Map<int>          & sourceMap,
+                          Teuchos::RCP<Tpetra::Map<int> > & oneProcMap );
 
-	int exportProc_;
-	Teuchos::RCP<Tpetra::Map<int> > sourceMap_;
-	Teuchos::RCP<Tpetra::Export<int> >    oneProcExporter_;
+	int ioProc_;
+	Teuchos::RCP<const Tpetra::Map<int> > sourceMap_;
+	Teuchos::RCP<Tpetra::Map<int> >       oneProcMap_;
+	Teuchos::RCP<Tpetra::Import<int> > oneProcImporter_;
 
 };
 

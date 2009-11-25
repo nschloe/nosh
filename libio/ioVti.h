@@ -38,13 +38,13 @@ class IoVti: public IoVirtual
             const int                               Nx,
             const double                            h,
             const Teuchos::ParameterList          & problemParams
-          ) const;
+          );
 
     virtual void
     write( const Tpetra::MultiVector<double,int> & x,
            const int                               Nx,
            const double                            h
-         ) const;
+         );
 
   private:
 

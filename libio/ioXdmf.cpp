@@ -234,7 +234,7 @@ IoXdmf::write ( const Tpetra::MultiVector<double,int> & x,
                 const int                               Nx,
                 const double                            h,
                 const Teuchos::ParameterList          & problemParams
-              ) const
+              )
 {
   std::string   str;
   std::ofstream xdmfFile;
@@ -388,7 +388,7 @@ void
 IoXdmf::write( const Tpetra::MultiVector<double,int> & x,
                const int                               Nx,
                const double                            h
-             ) const
+             )
 {
 	  TEST_FOR_EXCEPTION( true,
 	                      std::logic_error,

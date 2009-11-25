@@ -115,7 +115,7 @@ IoVtk::read(const Teuchos::RCP<const Teuchos::Comm<int> > &tComm, Teuchos::RCP<
 // =============================================================================
 void
 IoVtk::write(const Tpetra::MultiVector<double, int> & x, const int Nx,
-    const double h, const Teuchos::ParameterList & problemParams) const
+    const double h, const Teuchos::ParameterList & problemParams)
 {
   std::ofstream vtkfile;
 
@@ -145,7 +145,7 @@ IoVtk::write(const Tpetra::MultiVector<double, int> & x, const int Nx,
 // =============================================================================
 void
 IoVtk::write(const Tpetra::MultiVector<double, int> & x, const int Nx,
-    const double h) const
+    const double h)
 {
   std::ofstream vtkfile;
 
