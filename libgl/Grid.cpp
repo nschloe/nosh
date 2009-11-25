@@ -7,6 +7,9 @@
 
 #include "Grid.h"
 
+#include "ioVirtual.h"
+#include "ioFactory.h"
+
 // =============================================================================
 // Class constructor
 Grid::Grid(int nx, double edgeLength) :
@@ -396,5 +399,32 @@ Grid::reorderFromLexicographic( Tpetra::Vector<std::complex<double> > & x
         }
     }
 
+}
+// =============================================================================
+void
+Grid::writeWithGrid( const Tpetra::MultiVector<double,int> & x,
+                     const Teuchos::ParameterList &params,
+                     const std::string &filePath) const
+{
+  Teuchos::RCP<IoVirtual> fileIo = Teuchos::rcp(IoFactory::createFileIo(filePath));
+  fileIo->write( x, nx_, h_, params);
+}
+// =============================================================================
+// ATTENTION: Not a member of Grid!
+void
+readWithGrid( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
+              const std::string                             & filePath,
+              Teuchos::RCP<Tpetra::MultiVector<double> >    & x,
+              Teuchos::RCP<Grid>                            & grid,
+              Teuchos::ParameterList                        & params )
+{
+  Teuchos::RCP<IoVirtual> fileIo = Teuchos::RCP<IoVirtual>(
+                    IoFactory::createFileIo(filePath));
+  fileIo->read(Comm, x, params);
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  // create the grid with the just attained information
+  int    Nx         = params.get<int>("Nx");
+  double edgeLength = params.get<double>("edge length");
+  grid = Teuchos::rcp( new Grid( Nx, edgeLength) );
 }
 // =============================================================================

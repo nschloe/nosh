@@ -10,8 +10,9 @@
 
 #include <Teuchos_Array.hpp>
 #include <Tpetra_Vector.hpp>
-
-#include <complex>
+#include <Tpetra_MultiVector.hpp>
+#include <Teuchos_ParameterList.hpp>
+#include <Teuchos_Comm.hpp>
 
 class Grid
 {
@@ -119,6 +120,11 @@ public:
   reorderFromLexicographic( Tpetra::Vector<std::complex<double> > & x
                           ) const;
 
+  void
+  writeWithGrid( const Tpetra::MultiVector<double,int> & x,
+                 const Teuchos::ParameterList &params,
+                 const std::string &filePath) const;
+
 protected:
 private:
   int nx_; //!< Number of grid pieces in both x- and y-direction
@@ -137,5 +143,13 @@ private:
   k2i(int k) const;
 
 };
+
+void
+readWithGrid( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
+              const std::string                             & filePath,
+              Teuchos::RCP<Tpetra::MultiVector<double> >    & x,
+              Teuchos::RCP<Grid>                            & grid,
+              Teuchos::ParameterList                        & params
+            );
 
 #endif /* GRID_H_ */

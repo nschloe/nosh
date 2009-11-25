@@ -2,8 +2,6 @@
 
 #include "glBoundaryConditionsVirtual.h"
 
-#include "ioFactory.h"
-
 #include <Teuchos_RCP.hpp>
 
 // really needed?
@@ -11,7 +9,6 @@
 #include <Teuchos_Comm.hpp>
 
 #include <Tpetra_Map.hpp>
-
 
 // complex unit
 const double_complex I ( 0,1 );
@@ -451,26 +448,22 @@ GinzburgLandau::writeStateToFile( const Teuchos::RCP<const ComplexVector> &psi,
                                   const std::string &filePath
                                 ) const
 {
-	int numUnknowns = psi->getGlobalLength();
-	std::vector<int> p(numUnknowns);
-	grid_->lexicographic2grid(&p);
+  int numUnknowns = psi->getGlobalLength();
+  std::vector<int> p(numUnknowns);
+  grid_->lexicographic2grid(&p);
 
-	// Create multivector containing the components that we would like to print.
-	// Also make sure the entries appear in lexicographic order.
-	Teuchos::RCP<const Tpetra::Map<int> > psiMap = psi->getMap();
-	Tpetra::MultiVector<double, int> psiSplit(psiMap, 2, true);
-	Teuchos::ArrayRCP<const double_complex> psiView = psi->get1dView();
-	int globalLength = psiSplit.getGlobalLength();
-	for (int k = 0; k < globalLength; k++) {
-		psiSplit.replaceLocalValue(k, 0, norm(psiView[p[k]]));
-		psiSplit.replaceLocalValue(k, 1, arg(psiView[p[k]]));
-	}
+  // Create multivector containing the components that we would like to print.
+  // Also make sure the entries appear in lexicographic order.
+  Teuchos::RCP<const Tpetra::Map<int> > psiMap = psi->getMap();
+  Tpetra::MultiVector<double, int> psiSplit(psiMap, 2, true);
+  Teuchos::ArrayRCP<const double_complex> psiView = psi->get1dView();
+  int globalLength = psiSplit.getGlobalLength();
+  for (int k = 0; k < globalLength; k++) {
+    psiSplit.replaceLocalValue(k, 0, norm(psiView[p[k]]));
+    psiSplit.replaceLocalValue(k, 1, arg(psiView[p[k]]));
+  }
 
-	int Nx = grid_->getNx();
-	double h = grid_->getH();
-
-	Teuchos::RCP<IoVirtual> fileIo = Teuchos::rcp(IoFactory::createFileIo(filePath));
-	fileIo->write(psiSplit, Nx, h, params);
+  grid_->writeWithGrid( psiSplit, params, filePath );
 }
 // =============================================================================
 void
@@ -478,20 +471,20 @@ GinzburgLandau::writeSolutionToFile( const Teuchos::RCP<const ComplexVector> &ps
                                      const std::string &filePath
                                    ) const
 {
-	// create a parameter list that contains useful items for a solution file
-	Teuchos::ParameterList params;
+  // create a parameter list that contains useful items for a solution file
+  Teuchos::ParameterList params;
 
-	// TODO avoid calculating free energy and vorticity twice
-	double energy = freeEnergy( *psi );
-	int vorticity = getVorticity( *psi );
+  // TODO avoid calculating free energy and vorticity twice
+  double energy = freeEnergy( *psi );
+  int vorticity = getVorticity( *psi );
 
-	params.get("H0", A_->getH0() );
-	params.get("edge length", grid_->getEdgeLength());
-	params.get("Nx", grid_->getNx());
-	params.get("free energy", energy);
-	params.get("vorticity", vorticity);
+  params.get("H0", A_->getH0() );
+  params.get("edge length", grid_->getEdgeLength());
+  params.get("Nx", grid_->getNx());
+  params.get("free energy", energy);
+  params.get("vorticity", vorticity);
 
-	writeStateToFile( psi, params, filePath );
+  writeStateToFile( psi, params, filePath );
 }
 // =============================================================================
 void
@@ -536,47 +529,42 @@ GinzburgLandau::appendStats( std::ofstream & fileStream,
 // NOT A MEMBER OF GinzburgLandau!
 void
 readStateFromFile ( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
-		            const std::string                             & filePath,
+		    const std::string                             & filePath,
                     Teuchos::RCP<ComplexVector>                   & psi,
                     Teuchos::RCP<Grid>                            & grid,
                     Teuchos::ParameterList                        & params
                   )
 {
-	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-	// read the raw data, parameters
-	Teuchos::RCP<Tpetra::MultiVector<double, int> > psiLexicographicSplit;
 
-	Teuchos::RCP<IoVirtual> fileIo = Teuchos::RCP<IoVirtual>(
-			IoFactory::createFileIo(filePath));
-    fileIo->read(Comm, psiLexicographicSplit, params);
-	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-	// create the grid with the just attained information
-	int    Nx         = params.get<int>("Nx");
-	double edgeLength = params.get<double>("edge length");
-	grid = Teuchos::rcp( new Grid( Nx, edgeLength) );
-	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-	// Reorder the input guess and put abs and arg part together again.
-	// If there was is an initial guess, make sure to get the ordering correct.
-	// TODO Look into having this done by Trilinos. If executed on a multiproc
-	//      environment, we don't want p to be fully present on all processors.
-	int NumComplexUnknowns = psiLexicographicSplit->getGlobalLength();
-	// fill p
-	std::vector<int> p(NumComplexUnknowns);
-	grid->lexicographic2grid(&p);
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  // read the raw data, parameters, grid
+  Teuchos::RCP<Tpetra::MultiVector<double, int> > psiLexicographicSplit;
 
-	psi = Teuchos::rcp(new ComplexVector(psiLexicographicSplit->getMap()));
+  readWithGrid( Comm, filePath, psiLexicographicSplit, grid, params );
 
-	// TODO Replace this with get1dView or get2dView of the full MultiVector
-	// TODO Make the following work on multiproc
-	Teuchos::ArrayRCP<const double> psiSplitAbsView = psiLexicographicSplit->getVector(0)->get1dView();
-	Teuchos::ArrayRCP<const double> psiSplitArgView = psiLexicographicSplit->getVector(1)->get1dView();
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  // Reorder the input guess and put abs and arg part together again.
+  // If there was is an initial guess, make sure to get the ordering correct.
+  // TODO Look into having this done by Trilinos. If executed on a multiproc
+  //      environment, we don't want p to be fully present on all processors.
+  int NumComplexUnknowns = psiLexicographicSplit->getGlobalLength();
+  // fill p
+  std::vector<int> p(NumComplexUnknowns);
+  grid->lexicographic2grid(&p);
 
-	for (int k = 0; k < NumComplexUnknowns; k++) {
-		double_complex value = std::polar( sqrt(psiSplitAbsView[k]),
-			                               psiSplitArgView[k]
+  psi = Teuchos::rcp(new ComplexVector(psiLexicographicSplit->getMap()));
+
+  // TODO Replace this with get1dView or get2dView of the full MultiVector
+  // TODO Make the following work on multiproc
+  Teuchos::ArrayRCP<const double> psiSplitAbsView = psiLexicographicSplit->getVector(0)->get1dView();
+  Teuchos::ArrayRCP<const double> psiSplitArgView = psiLexicographicSplit->getVector(1)->get1dView();
+
+  for (int k = 0; k < NumComplexUnknowns; k++) {
+      double_complex value = std::polar( sqrt(psiSplitAbsView[k]),
+                                         psiSplitArgView[k]
 			                             );
-		psi->replaceGlobalValue(p[k], value);
-	}
-	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+       psi->replaceGlobalValue(p[k], value);
+  }
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 }
 // =============================================================================
