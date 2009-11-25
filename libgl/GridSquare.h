@@ -5,8 +5,10 @@
  *      Author: Nico Schlšmer
  */
 
-#ifndef GRID_H_
-#define GRID_H_
+#ifndef GRIDSQUARE_H_
+#define GRIDSQUARE_H_
+
+#include "GridVirtual.h"
 
 #include <Teuchos_Array.hpp>
 #include <Tpetra_Vector.hpp>
@@ -14,15 +16,15 @@
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_Comm.hpp>
 
-class Grid
+class GridSquare: public GridVirtual
 {
 public:
 
   //! Default constructor.
-  Grid(int nx, double edgeLength);
+  GridSquare(int nx, double edgeLength);
 
   virtual
-  ~Grid();
+  ~GridSquare();
 
   int
   getNx() const; //!< Returns \f$N_x\f$.
@@ -71,7 +73,7 @@ public:
     INTERIOR
   };
 
-  Grid::nodeType
+  nodeType
   boundaryNodeType( int l );
 
   /*! For a given node number k, returns the the area of the surrounding cell. */
@@ -148,8 +150,8 @@ void
 readWithGrid( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
               const std::string                             & filePath,
               Teuchos::RCP<Tpetra::MultiVector<double> >    & x,
-              Teuchos::RCP<Grid>                            & grid,
+              Teuchos::RCP<GridSquare>                      & grid,
               Teuchos::ParameterList                        & params
             );
 
-#endif /* GRID_H_ */
+#endif /* GRIDSQUARE_H_ */

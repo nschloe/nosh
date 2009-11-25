@@ -188,7 +188,7 @@ int main(int argc, char *argv[]) {
 	std::string eigenstateFileNameAppendix = ioList.get<string> (
 			"Eigenstate file name appendix");
 	Teuchos::RCP<EigenSaver> glEigenSaver = Teuchos::RCP<EigenSaver>(
-			new EigenSaver(eigenListPtr, globalData, outputDirectory,
+			new EigenSaver(eigenListPtr, outputDirectory,
 					eigenvaluesFileName, contFileBaseName,
 					eigenstateFileNameAppendix, glsystem));
 

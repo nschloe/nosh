@@ -3,7 +3,8 @@ INCLUDE( ../cmake-system.txt REQUIRED )
 ENABLE_LANGUAGE( CXX )
 
 SET ( gl_SRCS
-      Grid.cpp
+      GridVirtual.cpp
+      GridSquare.cpp
       MagneticVectorPotential.cpp
       ginzburgLandau.cpp
       glBoundaryConditionsVirtual.cpp

@@ -15,7 +15,7 @@ const double_complex I ( 0,1 );
 
 // =============================================================================
 // Class constructor
-GinzburgLandau::GinzburgLandau ( Teuchos::RCP<Grid>                        &grid,
+GinzburgLandau::GinzburgLandau ( Teuchos::RCP<GridSquare>                  &grid,
                                  Teuchos::RCP<MagneticVectorPotential>     &A,
                                  Teuchos::RCP<GlBoundaryConditionsVirtual> &bc
                                ) :
@@ -531,7 +531,7 @@ void
 readStateFromFile ( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
 		    const std::string                             & filePath,
                     Teuchos::RCP<ComplexVector>                   & psi,
-                    Teuchos::RCP<Grid>                            & grid,
+                    Teuchos::RCP<GridSquare>                      & grid,
                     Teuchos::ParameterList                        & params
                   )
 {

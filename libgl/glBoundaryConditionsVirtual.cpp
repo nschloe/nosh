@@ -14,7 +14,7 @@ GlBoundaryConditionsVirtual::~GlBoundaryConditionsVirtual()
 //! boundary node.
 void
 GlBoundaryConditionsVirtual::getEquationType ( const int boundaryEquationIndex,
-                                               const Grid::Grid  &grid,
+                                               const GridSquare::GridSquare &grid,
                                                GlBoundaryConditionsVirtual::equationType  &eqType,
                                                Teuchos::Array<int>                &i       )
 {

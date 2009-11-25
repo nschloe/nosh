@@ -16,6 +16,9 @@
 #include <Tpetra_Map.hpp>
 #include <Tpetra_Export.hpp>
 
+#include <vtkLookupTable.h>
+#include <vtkSmartPointer.h>
+
 class IoVtkStructuredPoints: public IoVirtual
 {
 public:
@@ -50,6 +53,9 @@ private:
 	void
 	createOneProcMap( const Tpetra::Map<int>          & sourceMap,
                           Teuchos::RCP<Tpetra::Map<int> > & oneProcMap );
+
+	void
+	constructLookupTable(vtkSmartPointer<vtkLookupTable> LookupTable) const;
 
 	int ioProc_;
 	Teuchos::RCP<const Tpetra::Map<int> > sourceMap_;

@@ -7,7 +7,7 @@
 #include <complex>
 
 #include "glBoundaryConditionsVirtual.h"
-#include "Grid.h"
+#include "GridSquare.h"
 #include "MagneticVectorPotential.h"
 
 #include <Teuchos_ParameterList.hpp>
@@ -24,7 +24,7 @@ class GinzburgLandau
   public:
 
      /*! Default constructor.*/
-     GinzburgLandau ( Teuchos::RCP<Grid>                        &grid,
+     GinzburgLandau ( Teuchos::RCP<GridSquare>                  &grid,
                       Teuchos::RCP<MagneticVectorPotential>     &potential,
                       Teuchos::RCP<GlBoundaryConditionsVirtual> &bc    );
 
@@ -51,7 +51,7 @@ class GinzburgLandau
                      std::vector<int>                  &columnIndicesPsi,
                      std::vector<double_complex>       &valuesPsi,
                      std::vector<int>                  &columnIndicesPsiConj,
-		             std::vector<double_complex>       &valuesPsiConj
+		     std::vector<double_complex>       &valuesPsiConj
                    ) const;
 
      /*! Get sparsity pattern of the jacobian system. */
@@ -121,7 +121,7 @@ class GinzburgLandau
         PHASE_CONDITION
       };
 
-      const Teuchos::RCP<Grid>                    grid_;
+      const Teuchos::RCP<GridSquare>              grid_;
       const Teuchos::RCP<MagneticVectorPotential> A_;
 
       void getEquationType ( const int           eqnum,
@@ -158,6 +158,6 @@ void
 readStateFromFile ( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
 		    const std::string           & filePath,
                     Teuchos::RCP<ComplexVector> & psi,
-                    Teuchos::RCP<Grid>          & grid,
+                    Teuchos::RCP<GridSquare>    & grid,
                     Teuchos::ParameterList      & params
                   );

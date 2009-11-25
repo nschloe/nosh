@@ -89,7 +89,10 @@ IoVtkStructuredPoints::write(const Tpetra::MultiVector<double, int> & x,
   // All the date now sits on ioProc_; write the file from here.
   if (sourceMap_->getComm()->getRank() == ioProc_){
 
-    vtkImageAppendComponents * imageAppend = vtkImageAppendComponents::New();
+    vtkSmartPointer<vtkLookupTable> lTable;
+    constructLookupTable( lTable );
+
+    vtkSmartPointer<vtkImageAppendComponents> imageAppend = vtkImageAppendComponents::New();
 
     // TODO Replace by StructuredPoitnsWriter?
     // TODO Replace this function by a general data set preparator, and have one writer for them all?
@@ -136,5 +139,16 @@ IoVtkStructuredPoints::write(const Tpetra::MultiVector<double, int> & x,
     const int Nx, const double h, const Teuchos::ParameterList & problemParams)
 {
   write(x, Nx, h);
+}
+// =============================================================================
+void
+IoVtkStructuredPoints::constructLookupTable(vtkSmartPointer<vtkLookupTable> LookupTable) const
+{
+  LookupTable = vtkLookupTable::New();
+
+  LookupTable->SetTableRange(0.0, 1.0);
+  //if you don't want to use the whole color range, you can use
+  //SetValueRange, SetHueRange, and SetSaturationRange
+  LookupTable->Build();
 }
 // =============================================================================

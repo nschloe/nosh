@@ -5,14 +5,14 @@
  *      Author: Nico Schlšmer
  */
 
-#include "Grid.h"
+#include "GridSquare.h"
 
 #include "ioVirtual.h"
 #include "ioFactory.h"
 
 // =============================================================================
 // Class constructor
-Grid::Grid(int nx, double edgeLength) :
+GridSquare::GridSquare(int nx, double edgeLength) :
   nx_(nx),
   edgeLength_(edgeLength),
   h_(edgeLength / nx)
@@ -20,56 +20,56 @@ Grid::Grid(int nx, double edgeLength) :
 }
 // =============================================================================
 // Destructor
-Grid::~Grid()
+GridSquare::~GridSquare()
 {
 }
 // =============================================================================
 int
-Grid::getNx() const
+GridSquare::getNx() const
 {
   return nx_;
 }
 // =============================================================================
 double
-Grid::getGridDomainArea() const
+GridSquare::getGridDomainArea() const
 {
   return edgeLength_*edgeLength_;
 }
 // =============================================================================
 double
-Grid::getEdgeLength() const
+GridSquare::getEdgeLength() const
 {
   return edgeLength_;
 }
 // =============================================================================
 void
-Grid::setEdgeLength( const double edgeLength )
+GridSquare::setEdgeLength( const double edgeLength )
 {
 	edgeLength_ = edgeLength;
 	h_          = edgeLength / nx_;
 }
 // =============================================================================
 int
-Grid::getNumGridPoints() const
+GridSquare::getNumGridPoints() const
 {
   // the number of grid points in psi
   return (nx_ + 1) * (nx_ + 1);
 }
 // =============================================================================
 int
-Grid::getNumBoundaryPoints() const
+GridSquare::getNumBoundaryPoints() const
 {
   return 4*nx_;
 }
 // =============================================================================
 double
-Grid::getH() const
+GridSquare::getH() const
 {
   return h_;
 }
 // =============================================================================
 Teuchos::RCP<Teuchos::Array<double> >
-Grid::getX(Teuchos::Array<int> i) const
+GridSquare::getX(Teuchos::Array<int> i) const
 {
   Teuchos::RCP<Teuchos::Array<double> > x = Teuchos::rcp(new Teuchos::Array<
       double>(2));
@@ -79,7 +79,7 @@ Grid::getX(Teuchos::Array<int> i) const
 }
 // =============================================================================
 Teuchos::RCP<Teuchos::Array<double> >
-Grid::getXLeft(int k) const
+GridSquare::getXLeft(int k) const
 {
   Teuchos::RCP<Teuchos::Array<int> > i(k2i(k));
   Teuchos::RCP<Teuchos::Array<double> >x(getX(*i));
@@ -88,7 +88,7 @@ Grid::getXLeft(int k) const
 }
 // =============================================================================
 Teuchos::RCP<Teuchos::Array<double> >
-Grid::getXRight(int k) const
+GridSquare::getXRight(int k) const
 {
   Teuchos::RCP<Teuchos::Array<int> > i(k2i(k));
   Teuchos::RCP<Teuchos::Array<double> >x(getX(*i));
@@ -97,7 +97,7 @@ Grid::getXRight(int k) const
 }
 // =============================================================================
 Teuchos::RCP<Teuchos::Array<double> >
-Grid::getXBelow(int k) const
+GridSquare::getXBelow(int k) const
 {
   Teuchos::RCP<Teuchos::Array<int> > i(k2i(k));
   Teuchos::RCP<Teuchos::Array<double> >x(getX(*i));
@@ -106,7 +106,7 @@ Grid::getXBelow(int k) const
 }
 // =============================================================================
 Teuchos::RCP<Teuchos::Array<double> >
-Grid::getXAbove(int k) const
+GridSquare::getXAbove(int k) const
 {
   Teuchos::RCP<Teuchos::Array<int> > i(k2i(k));
   Teuchos::RCP<Teuchos::Array<double> >x(getX(*i));
@@ -115,7 +115,7 @@ Grid::getXAbove(int k) const
 }
 // =============================================================================
 int
-Grid::getKLeft( int k ) const
+GridSquare::getKLeft( int k ) const
 {
   Teuchos::RCP<Teuchos::Array<int> > i( k2i(k) );
   (*i)[0] -= 1;
@@ -123,7 +123,7 @@ Grid::getKLeft( int k ) const
 }
 // =============================================================================
 int
-Grid::getKRight(int k) const
+GridSquare::getKRight(int k) const
 {
   Teuchos::RCP<Teuchos::Array<int> > i( k2i(k) );
   (*i)[0] += 1;
@@ -131,7 +131,7 @@ Grid::getKRight(int k) const
 }
 // =============================================================================
 int
-Grid::getKBelow(int k) const
+GridSquare::getKBelow(int k) const
 {
   Teuchos::RCP<Teuchos::Array<int> > i( k2i(k) );
   (*i)[1] -= 1;
@@ -139,7 +139,7 @@ Grid::getKBelow(int k) const
 }
 // =============================================================================
 int
-Grid::getKAbove(int k) const
+GridSquare::getKAbove(int k) const
 {
   Teuchos::RCP<Teuchos::Array<int> > i( k2i(k) );
   (*i)[1] += 1;
@@ -148,7 +148,7 @@ Grid::getKAbove(int k) const
 // =============================================================================
 // maps a running index k to a 2D index i
 Teuchos::RCP<Teuchos::Array<int> >
-Grid::k2i(int k) const
+GridSquare::k2i(int k) const
 {
   int d = 2;
   Teuchos::RCP<Teuchos::Array<int> > i = Teuchos::rcp(
@@ -193,7 +193,7 @@ Grid::k2i(int k) const
 // Defines a series of neighboring boundary nodes.
 // This is independent of the actual numbering scheme of the nodes.
 Teuchos::RCP<Teuchos::Array<int> >
-Grid::boundaryPosition ( int l ) {
+GridSquare::boundaryPosition ( int l ) {
 	   int d = 2;
 	   Teuchos::RCP<Teuchos::Array<int> > i = Teuchos::rcp( new Teuchos::Array<int>(d));
 
@@ -229,41 +229,41 @@ Grid::boundaryPosition ( int l ) {
 }
 // =============================================================================
 int
-Grid::boundaryIndex2globalIndex( int l )
+GridSquare::boundaryIndex2globalIndex( int l )
 {
 	Teuchos::RCP<Teuchos::Array<int> > i = boundaryPosition(l);
 	return i2k( i );
 }
 // =============================================================================
-Grid::nodeType
-Grid::boundaryNodeType( int l )
+GridSquare::nodeType
+GridSquare::boundaryNodeType( int l )
 {
 	Teuchos::RCP<Teuchos::Array<int> > i = boundaryPosition(l);
 
 	if ( (*i)[0]==0 ) {
 		if ((*i)[1]==0)
-			return Grid::BOTTOMLEFTCONVEX;
+			return GridSquare::BOTTOMLEFTCONVEX;
 		else if ((*i)[1]==nx_)
-			return Grid::TOPLEFTCONVEX;
+			return GridSquare::TOPLEFTCONVEX;
 		else
-			return Grid::LEFT;
+			return GridSquare::LEFT;
 	} else if ( (*i)[0]==nx_ ) {
 		if ( (*i)[1]==0 )
-			return Grid::BOTTOMRIGHTCONVEX;
+			return GridSquare::BOTTOMRIGHTCONVEX;
 		else if ( (*i)[1]==nx_ )
-			return Grid::TOPRIGHTCONVEX;
+			return GridSquare::TOPRIGHTCONVEX;
 		else
-			return Grid::RIGHT;
+			return GridSquare::RIGHT;
 	} else if ( (*i)[1]==0 )
-		return Grid::BOTTOM;
+		return GridSquare::BOTTOM;
 	else if ( (*i)[1]==nx_ )
-		return Grid::TOP;
+		return GridSquare::TOP;
 	else
-		return Grid::INTERIOR;
+		return GridSquare::INTERIOR;
 }
 // =============================================================================
 double
-Grid::cellArea(int k) const
+GridSquare::cellArea(int k) const
 {
   if (k == 0 || k == nx_ || k == 2 * nx_ || k == 3 * nx_)
 	  // corner
@@ -278,7 +278,7 @@ Grid::cellArea(int k) const
 // =============================================================================
 // maps a 2D index i to a running index k
 int
-Grid::i2k( Teuchos::RCP<Teuchos::Array<int> > & i) const
+GridSquare::i2k( Teuchos::RCP<Teuchos::Array<int> > & i) const
 {
   int k;
 
@@ -302,7 +302,7 @@ Grid::i2k( Teuchos::RCP<Teuchos::Array<int> > & i) const
 // Returns a vector that defines the reordering from a lexicographic grid to
 // the ordering present in this grid
 void
-Grid::lexicographic2grid(std::vector<int> *p) const
+GridSquare::lexicographic2grid(std::vector<int> *p) const
 {
   // check if for admissible vector size
   unsigned int numUnknowns = (nx_ + 1) * (nx_ + 1);
@@ -330,7 +330,7 @@ Grid::lexicographic2grid(std::vector<int> *p) const
 // TODO implement this using import/export mechanisms
 // TODO templatetize this
 void
-Grid::reorderToLexicographic( Tpetra::Vector<std::complex<double> > & x
+GridSquare::reorderToLexicographic( Tpetra::Vector<std::complex<double> > & x
 		                    ) const
 {
   // check if for admissible vector size
@@ -367,7 +367,7 @@ Grid::reorderToLexicographic( Tpetra::Vector<std::complex<double> > & x
 // TODO implement this using import/export mechanisms
 // TODO templatetize this
 void
-Grid::reorderFromLexicographic( Tpetra::Vector<std::complex<double> > & x
+GridSquare::reorderFromLexicographic( Tpetra::Vector<std::complex<double> > & x
 		                      ) const
 {
   // check if for admissible vector size
@@ -402,7 +402,7 @@ Grid::reorderFromLexicographic( Tpetra::Vector<std::complex<double> > & x
 }
 // =============================================================================
 void
-Grid::writeWithGrid( const Tpetra::MultiVector<double,int> & x,
+GridSquare::writeWithGrid( const Tpetra::MultiVector<double,int> & x,
                      const Teuchos::ParameterList &params,
                      const std::string &filePath) const
 {
@@ -410,12 +410,12 @@ Grid::writeWithGrid( const Tpetra::MultiVector<double,int> & x,
   fileIo->write( x, nx_, h_, params);
 }
 // =============================================================================
-// ATTENTION: Not a member of Grid!
+// ATTENTION: Not a member of GridSquare!
 void
 readWithGrid( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
               const std::string                             & filePath,
               Teuchos::RCP<Tpetra::MultiVector<double> >    & x,
-              Teuchos::RCP<Grid>                            & grid,
+              Teuchos::RCP<GridSquare>                      & grid,
               Teuchos::ParameterList                        & params )
 {
   Teuchos::RCP<IoVirtual> fileIo = Teuchos::RCP<IoVirtual>(
@@ -425,6 +425,6 @@ readWithGrid( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
   // create the grid with the just attained information
   int    Nx         = params.get<int>("Nx");
   double edgeLength = params.get<double>("edge length");
-  grid = Teuchos::rcp( new Grid( Nx, edgeLength) );
+  grid = Teuchos::rcp( new GridSquare( Nx, edgeLength) );
 }
 // =============================================================================
