@@ -276,7 +276,7 @@ main(int argc, char *argv[])
   // ---------------------------------------------------------------------------
   // Set up the LOCA status tests
   // ---------------------------------------------------------------------------
-  int maxLocaSteps = 100;
+  int maxLocaSteps = 5000;
   Teuchos::RCP<LOCA::StatusTest::MaxIters> maxLocaStepsTest = Teuchos::rcp(
       new LOCA::StatusTest::MaxIters(maxLocaSteps));
   // ---------------------------------------------------------------------------

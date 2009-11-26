@@ -1,6 +1,6 @@
 <ParameterList>
   <ParameterList name="IO">
-      <Parameter name="Input guess" type="string" value="continuationStep19.vtk"/>
+      <Parameter name="Input guess" type="string" value="l3.vtk"/>
       <Parameter name="Output directory" type="string" value="./data"/>
       <Parameter name="Continuation file base name" type="string" value="continuationStep"/>
       <Parameter name="Continuation file format" type="string" value="VTK"/>

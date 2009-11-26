@@ -16,6 +16,9 @@
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_Comm.hpp>
 
+typedef Tpetra::Vector<double>      DoubleVector;
+typedef Tpetra::MultiVector<double> DoubleMultiVector;
+
 class GridSquare: public GridVirtual
 {
 public:
@@ -72,14 +75,6 @@ public:
   boundaryIndex2globalIndex( int l ) const;
 
   void
-  reorderToLexicographic( Tpetra::Vector<std::complex<double> > & x
-                        ) const;
-
-  void
-  reorderFromLexicographic( Tpetra::Vector<std::complex<double> > & x
-                          ) const;
-
-  void
   writeWithGrid( const Tpetra::MultiVector<double,int> & x,
                  const Teuchos::ParameterList &params,
                  const std::string &filePath) const;
@@ -88,6 +83,17 @@ protected:
 private:
   int nx_; //!< Number of grid pieces in both x- and y-direction
 
+
+  //  void
+  //  reorderToLexicographic( DoubleMultiVector & x
+  //                        ) const;
+
+  Teuchos::RCP<DoubleMultiVector>
+  reorderToLexicographic( const DoubleMultiVector & x ) const;
+
+  //  void
+  //  reorderFromLexicographic( Tpetra::Vector<std::complex<double> > & x
+  //                          ) const;
 
   //! Defines a subsequent order of boundary nodes by associating a running index \c l with
   //! \f$i\f$-coordinates on the grid.

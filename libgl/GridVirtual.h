@@ -100,10 +100,6 @@ public:
     virtual int
     boundaryIndex2globalIndex( int l ) const = 0;
 
-    // TODO: move this to private
-    int
-    i2k( Teuchos::RCP<Teuchos::Array<int> > & i ) const; //!< Converts a grid index i to a running index k
-
     virtual void
     writeWithGrid( const Tpetra::MultiVector<double,int> & x,
                    const Teuchos::ParameterList &params,

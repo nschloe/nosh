@@ -40,7 +40,7 @@ protected:
 private:
 
   double h0_;
-  double edgeLength_; // TODO: remove this
+  double edgeLength_; // TODO: Remove geometric info from magnetic vector potential
 
 };
 

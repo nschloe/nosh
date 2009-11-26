@@ -450,9 +450,9 @@ GinzburgLandau::writeStateToFile( const Teuchos::RCP<const ComplexVector> &psi,
                                   const std::string &filePath
                                 ) const
 {
-  int numUnknowns = psi->getGlobalLength();
-  std::vector<int> p(numUnknowns);
-  grid_->lexicographic2grid(&p);
+//  int numUnknowns = psi->getGlobalLength();
+//  std::vector<int> p(numUnknowns);
+//  grid_->lexicographic2grid(&p);
 
   // Create multivector containing the components that we would like to print.
   // Also make sure the entries appear in lexicographic order.
@@ -461,8 +461,8 @@ GinzburgLandau::writeStateToFile( const Teuchos::RCP<const ComplexVector> &psi,
   Teuchos::ArrayRCP<const double_complex> psiView = psi->get1dView();
   int globalLength = psiSplit.getGlobalLength();
   for (int k = 0; k < globalLength; k++) {
-    psiSplit.replaceLocalValue(k, 0, norm(psiView[p[k]]));
-    psiSplit.replaceLocalValue(k, 1, arg(psiView[p[k]]));
+    psiSplit.replaceLocalValue(k, 0, norm(psiView[k]));
+    psiSplit.replaceLocalValue(k, 1, arg(psiView[k]));
   }
 
   grid_->writeWithGrid( psiSplit, params, filePath );

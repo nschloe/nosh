@@ -292,76 +292,80 @@ GridSquare::lexicographic2grid(std::vector<int> *p) const
 // =============================================================================
 // TODO implement this using import/export mechanisms
 // TODO templatetize this
-void
-GridSquare::reorderToLexicographic( Tpetra::Vector<std::complex<double> > & x
-		                    ) const
+Teuchos::RCP<DoubleMultiVector>
+GridSquare::reorderToLexicographic( const DoubleMultiVector & x
+		                  ) const
 {
   TEST_FOR_EXCEPTION( x.getGlobalLength() != numGridPoints_,
-		              std::logic_error,
-		              "Global length of the input vector x ("
-		              << x.getGlobalLength() << ") does not coincide "
-		              << "with with number of unknowns on the grid ("
-		              << numGridPoints_ << ")." );
+		      std::logic_error,
+		      "Global length of the input vector x ("
+		      << x.getGlobalLength() << ") does not coincide "
+		      << "with with number of unknowns on the grid ("
+		     << numGridPoints_ << ")." );
 
-  // Make a temporary copy of the full vector.
-  Tpetra::Vector<std::complex<double> > tmp( x );
-
-  // Loop through the lexicographic ordering.
-  // This really depends on the grid to be rectangular.
-  Teuchos::ArrayRCP<const std::complex<double> > tmpView = tmp.get1dView();
-  int k = 0;
-  Teuchos::RCP<Teuchos::Array<int> > index = Teuchos::rcp( new Teuchos::Array<int>(2) );
-  for (int j = 0; j < nx_ + 1; j++)
-    {
-      (*index)[1] = j;
-      for (int i = 0; i < nx_ + 1; i++)
-        {
-          (*index)[0] = i;
-          int kGlobal = i2k(index);
-          x.replaceGlobalValue( kGlobal, tmpView[k++] );
-        }
-    }
-
-}
-// =============================================================================
-// TODO implement this using import/export mechanisms
-// TODO templatetize this
-void
-GridSquare::reorderFromLexicographic( Tpetra::Vector<std::complex<double> > & x
-		                      ) const
-{
-  TEST_FOR_EXCEPTION( x.getGlobalLength() != numGridPoints_,
-		              std::logic_error,
-		              "Global length of the input vector x ("
-		              << x.getGlobalLength() << ") does not coincide "
-		              << "with with number of unknowns on the grid ("
-		              << numGridPoints_ << ")." );
-
-  // Make a temporary copy of the full vector.
-  Tpetra::Vector<std::complex<double> > tmp( x );
+  unsigned int numVectors = x.getNumVectors();
+  Teuchos::RCP<DoubleMultiVector> xLexicographic =
+                  Teuchos::rcp( new DoubleMultiVector(x.getMap(),numVectors) );
 
   // Loop through the lexicographic ordering.
-  // This really depends on the grid to be rectangular.
-  Teuchos::ArrayRCP<const std::complex<double> > tmpView = tmp.get1dView();
-  int k = 0;
-  Teuchos::RCP<Teuchos::Array<int> > index = Teuchos::rcp( new Teuchos::Array<int>(2) );
-  for (int j = 0; j < nx_ + 1; j++)
-    {
-      (*index)[1] = j;
-      for (int i = 0; i < nx_ + 1; i++)
-        {
-          (*index)[0] = i;
-          int kGlobal = i2k(index);
-          x.replaceGlobalValue( k++, tmpView[kGlobal] );
-        }
-    }
+  for ( unsigned int l=0; l<numVectors; l++) {
+      Teuchos::ArrayRCP<const double> xView = x.getVector(l)->get1dView();
+      int k = 0;
+      Teuchos::RCP<Teuchos::Array<int> > index = Teuchos::rcp( new Teuchos::Array<int>(2) );
+      for (int j = 0; j < nx_ + 1; j++)
+      {
+          (*index)[1] = j;
+          for (int i = 0; i < nx_ + 1; i++)
+          {
+              (*index)[0] = i;
+              int kGlobal = i2k(index);
+              xLexicographic->replaceGlobalValue( k++, l, xView[kGlobal] );
+          }
+      }
+  }
 
+  return xLexicographic;
 }
 // =============================================================================
+//// TODO implement this using import/export mechanisms
+//// TODO templatetize this
+//void
+//GridSquare::reorderFromLexicographic( Tpetra::Vector<std::complex<double> > & x
+//		                      ) const
+//{
+//  TEST_FOR_EXCEPTION( x.getGlobalLength() != numGridPoints_,
+//		              std::logic_error,
+//		              "Global length of the input vector x ("
+//		              << x.getGlobalLength() << ") does not coincide "
+//		              << "with with number of unknowns on the grid ("
+//		              << numGridPoints_ << ")." );
+//
+//  // Make a temporary copy of the full vector.
+//  Tpetra::Vector<std::complex<double> > tmp( x );
+//
+//  // Loop through the lexicographic ordering.
+//  // This really depends on the grid to be rectangular.
+//  Teuchos::ArrayRCP<const std::complex<double> > tmpView = tmp.get1dView();
+//  int k = 0;
+//  Teuchos::RCP<Teuchos::Array<int> > index = Teuchos::rcp( new Teuchos::Array<int>(2) );
+//  for (int j = 0; j < nx_ + 1; j++)
+//    {
+//      (*index)[1] = j;
+//      for (int i = 0; i < nx_ + 1; i++)
+//        {
+//          (*index)[0] = i;
+//          int kGlobal = i2k(index);
+//          x.replaceGlobalValue( kGlobal, tmpView[k++] );
+//        }
+//    }
+//
+//}
+// =============================================================================
 void
-GridSquare::writeWithGrid( const Tpetra::MultiVector<double,int> & x,
-                     const Teuchos::ParameterList &params,
-                     const std::string &filePath) const
+GridSquare::writeWithGrid( const DoubleMultiVector      & x,
+                           const Teuchos::ParameterList & params,
+                           const std::string            & filePath
+                         ) const
 {
   Teuchos::RCP<IoVirtual> fileIo = Teuchos::rcp(IoFactory::createFileIo(filePath));
 
@@ -370,7 +374,10 @@ GridSquare::writeWithGrid( const Tpetra::MultiVector<double,int> & x,
   extendedParams.get("scaling", scaling_ );
   extendedParams.get("Nx", nx_ );
 
-  fileIo->write( x, nx_, h_, extendedParams);
+  // reorder the grid to lexicographic ordering
+  Teuchos::RCP<DoubleMultiVector> xLexicographic( reorderToLexicographic(x) );
+
+  fileIo->write( *xLexicographic, nx_, h_, extendedParams);
 }
 // =============================================================================
 // ATTENTION: Not a member of GridSquare!

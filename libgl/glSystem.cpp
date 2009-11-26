@@ -30,14 +30,15 @@ GlSystem::GlSystem( GinzburgLandau::GinzburgLandau &gl,
 		            const Teuchos::RCP<const Epetra_Comm> eComm,
 		            const Teuchos::RCP<ComplexVector> psi,
 		            const std::string outputDir,
-	                const std::string outputDataFileName,
-	                const std::string outputFileFormat,
+	                    const std::string outputDataFileName,
+	                    const std::string outputFileFormat,
 		            const std::string solutionFileNameBase,
 		            const std::string nullvectorFileNameBase
 	              ) :
 	NumRealUnknowns_(0),
 	NumMyElements_(0),
 	NumComplexUnknowns_(0),
+	stepper_(0),
 	Gl_(gl),
 	EComm_(eComm),
 	TComm_(0),
@@ -51,8 +52,7 @@ GlSystem::GlSystem( GinzburgLandau::GinzburgLandau &gl,
 	solutionFileNameBase_(solutionFileNameBase),
 	nullvectorFileNameBase_(nullvectorFileNameBase),
 	outputFileFormat_(outputFileFormat),
-	outputDataFileName_(outputDataFileName),
-	stepper_(0)
+	outputDataFileName_(outputDataFileName)
 {
 	NumComplexUnknowns_ = Gl_.getNumUnknowns();
 	NumRealUnknowns_ = 2 * NumComplexUnknowns_ + 1;
@@ -145,6 +145,7 @@ GlSystem::GlSystem(GinzburgLandau::GinzburgLandau &gl,
 NumRealUnknowns_(0),
 NumMyElements_(0),
 NumComplexUnknowns_(0),
+stepper_(0),
 Gl_(gl),
 EComm_(eComm),
 TComm_(0),
@@ -158,8 +159,7 @@ outputDir_(outputDir),
 solutionFileNameBase_(solutionFileNameBase),
 nullvectorFileNameBase_(nullvectorFileNameBase),
 outputFileFormat_(outputFileFormat),
-outputDataFileName_(outputDataFileName),
-stepper_(0)
+outputDataFileName_(outputDataFileName)
 {
   NumComplexUnknowns_ = Gl_.getNumUnknowns();
   NumRealUnknowns_ = 2 * NumComplexUnknowns_ + 1;
