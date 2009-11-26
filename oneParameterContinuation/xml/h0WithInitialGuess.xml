@@ -11,7 +11,7 @@
   <ParameterList name="GL">
       <Parameter name="Nx" type="int" value="50"/>
       <Parameter name="H0" type="double" value="0.2"/>
-      <Parameter name="edge length" type="double" value="10.0"/>
+      <Parameter name="scaling" type="double" value="10.0"/>
   </ParameterList>
   <ParameterList name="LOCA">
     <ParameterList name="Bifurcation">
@@ -38,6 +38,7 @@
         <Parameter name="Maximum Restarts" type="int" value="1"/>
         <Parameter name="Method" type="string" value="Anasazi"/>
         <Parameter name="Num Blocks" type="int" value="30"/>
+        <Parameter name="Block Size" type="int" value="2"/>
         <Parameter name="Num Eigenvalues" type="int" value="7"/>
         <Parameter name="Operator" type="string" value="Shift-Invert"/>
         <Parameter name="Shift" type="double" value="0.5"/>

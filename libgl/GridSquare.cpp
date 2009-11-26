@@ -259,8 +259,8 @@ GridSquare::i2k( Teuchos::RCP<Teuchos::Array<int> > & i) const
   else if ((*i)[0] > 0 && (*i)[0] < nx_ && (*i)[1] > 0 && (*i)[1] < nx_) // interior
       k = 4 * nx_ + (nx_ - 1) * ((*i)[1] - 1) + (*i)[0] - 1;
   else
-	  TEST_FOR_EXCEPTION( true, std::logic_error,
-			              "Illegal 2D index   i = " << *i );
+      TEST_FOR_EXCEPTION( true, std::logic_error,
+	                  "Illegal 2D index   i = " << *i );
 
   return k;
 }
@@ -384,17 +384,27 @@ GridSquare::writeWithGrid( const DoubleMultiVector      & x,
 void
 readWithGrid( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
               const std::string                             & filePath,
-              Teuchos::RCP<Tpetra::MultiVector<double> >    & x,
+              Teuchos::RCP<DoubleMultiVector>               & x,
               Teuchos::RCP<GridSquare>                      & grid,
               Teuchos::ParameterList                        & params )
 {
   Teuchos::RCP<IoVirtual> fileIo = Teuchos::RCP<IoVirtual>(
                     IoFactory::createFileIo(filePath));
+
   fileIo->read(Comm, x, params);
+
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   // create the grid with the just attained information
-  int    Nx      = params.get<int>("Nx");
+  TEST_FOR_EXCEPTION( !params.isParameter("Nx"),
+                      std::logic_error,
+                      "Parameter \"Nx\" not found." );
+  int    Nx = params.get<int>("Nx");
+
+  TEST_FOR_EXCEPTION( !params.isParameter("scaling"),
+                      std::logic_error,
+                      "Parameter \"scaling\" not found." );
   double scaling = params.get<double>("scaling");
+
   grid = Teuchos::rcp( new GridSquare(Nx,scaling) );
 }
 // =============================================================================

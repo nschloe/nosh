@@ -38,10 +38,9 @@ GinzburgLandau::setH0(const double h0)
 }
 // =============================================================================
 void
-GinzburgLandau::setEdgeLength( const double edgeLength)
-{
-//  grid_->setEdgeLength( edgeLength );
-  grid_->setScaling( edgeLength );
+GinzburgLandau::setScaling( const double scaling)
+{;
+  grid_->setScaling( scaling );
 }
 // =============================================================================
 int
@@ -504,8 +503,8 @@ GinzburgLandau::appendStats( std::ofstream & fileStream,
 {
     if ( header ) {
     	fileStream << "H0                \t"
-    			   << "edge length       \t"
-    	 		   << "free energy       \t"
+    	           << "scaling           \t"
+    	 	   << "free energy       \t"
     	           << "||x||_2 scaled    \t"
     	           << "vorticity";
     }
@@ -515,10 +514,10 @@ GinzburgLandau::appendStats( std::ofstream & fileStream,
     	double l2norm = normalizedScaledL2Norm( *psi );
     	int vorticity = getVorticity( *psi );
     	fileStream << A_->getH0() << " \t"
-    			   << grid_->getScaling() << " \t"
-    			   << energy << " \t"
+    		   << grid_->getScaling() << " \t"
+    		   << energy << " \t"
     	    	   << l2norm << " \t"
-    			   << vorticity;
+    		   << vorticity;
     }
 
 }

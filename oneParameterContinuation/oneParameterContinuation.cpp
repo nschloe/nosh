@@ -133,14 +133,14 @@ main(int argc, char *argv[])
       // read the parameters from the XML file
       Teuchos::ParameterList& glList = paramList->sublist("GL", true);
       int Nx = glList.get<int> ("Nx");
-      double edgeLength = glList.get<double> ("edge length");
+      double scaling = glList.get<double> ("scaling");
       double H0 = glList.get<double> ("H0");
 
       glParameters.set("Nx", Nx);
-      glParameters.set("edge length", edgeLength);
+      glParameters.set("scaling", scaling);
       glParameters.set("H0", H0);
 
-      grid = Teuchos::rcp(new GridSquare(Nx, edgeLength));
+      grid = Teuchos::rcp(new GridSquare(Nx, scaling));
 
       // set initial guess
       int numComplexUnknowns = grid->getNumGridPoints();
@@ -165,7 +165,7 @@ main(int argc, char *argv[])
 
   Teuchos::RCP<MagneticVectorPotential> A = Teuchos::rcp(
       new MagneticVectorPotential(glParameters.get<double> ("H0"),
-          glParameters.get<double> ("edge length")));
+          glParameters.get<double> ("scaling")));
 
   GinzburgLandau glProblem = GinzburgLandau(grid, A, boundaryConditions);
 
@@ -238,8 +238,8 @@ main(int argc, char *argv[])
   LOCA::ParameterVector locaParams;
 
   locaParams.addParameter("H0", glParameters.get<double> ("H0"));
-  locaParams.addParameter("edge length", glParameters.get<double> (
-      "edge length"));
+  locaParams.addParameter("scaling", glParameters.get<double> (
+      "scaling"));
 
   NOX::Epetra::Vector initialGuess(soln, NOX::Epetra::Vector::CreateView);
 

@@ -39,7 +39,7 @@ class GinzburgLandau
      getNumUnknowns() const;
 
      void
-     setEdgeLength( const double edgeLength);
+     setScaling( const double scaling);
 
      ComplexVector
      computeGlVector( const Teuchos::RCP<ComplexVector> & psi ) const;

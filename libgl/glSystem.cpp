@@ -737,8 +737,8 @@ GlSystem::setParameters(const LOCA::ParameterVector &p) {
 	double h0 = p.getValue("H0");
 	Gl_.setH0(h0);
 
-	double edgeLength = p.getValue("edge length");
-	Gl_.setEdgeLength( edgeLength );
+	double scaling = p.getValue("scaling");
+	Gl_.setScaling( scaling );
 }
 // =============================================================================
 void
