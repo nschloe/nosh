@@ -84,7 +84,7 @@ glNox::glNox( const std::string fileName,
   int    Nx         = problemParameters_.get<int>   ("Nx");
   double edgeLength = problemParameters_.get<double>("edgelength");
   double H0         = problemParameters_.get<double>("H0");
-  Teuchos::RCP<Grid> grid = Teuchos::rcp ( new Grid( Nx, edgeLength ) );
+  Teuchos::RCP<GridSquare> grid = Teuchos::rcp ( new GridSquare( Nx, edgeLength ) );
   Teuchos::RCP<MagneticVectorPotential> A =
                               Teuchos::rcp ( new MagneticVectorPotential( H0, edgeLength) );
 
@@ -134,7 +134,7 @@ glNox::glNox( const int Nx,
   Teuchos::RCP<GlBoundaryConditionsVirtual> boundaryConditions =
                              Teuchos::rcp ( new GlBoundaryConditionsCentral() );
 
-  Teuchos::RCP<Grid> grid = Teuchos::rcp ( new Grid( Nx, edgeLength ) );
+  Teuchos::RCP<GridSquare> grid = Teuchos::rcp ( new GridSquare( Nx, edgeLength ) );
   Teuchos::RCP<MagneticVectorPotential> A
                              = Teuchos::rcp ( new MagneticVectorPotential(H0, edgeLength) );
 
@@ -225,7 +225,7 @@ glNox::createSolver()
 //      environment, we don't want p to be fully present on all processors.
 void
 glNox::reOrder( Tpetra::Vector<double_complex> &psi,
-                const Teuchos::RCP<Grid>       &grid )
+                const Teuchos::RCP<GridSquare> &grid )
 {
   int NumElements = psi.getGlobalLength();
 

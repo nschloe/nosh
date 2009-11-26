@@ -12,73 +12,45 @@ GlBoundaryConditionsVirtual::~GlBoundaryConditionsVirtual()
 //! With the \cboundaryEquationIndex-th boundary equation, this functions
 //! connects the equations ``centered'' around the \cboundaryEquationIndex-th
 //! boundary node.
-void
+GlBoundaryConditionsVirtual::equationType
 GlBoundaryConditionsVirtual::getEquationType ( const int boundaryEquationIndex,
-                                               const GridSquare::GridSquare &grid,
-                                               GlBoundaryConditionsVirtual::equationType  &eqType,
-                                               Teuchos::Array<int>                &i       )
+                                               const GridSquare::GridSquare &grid  )
 {
+  GridVirtual::nodeType nt;
+  nt = grid.getBoundaryNodeType( boundaryEquationIndex );
 
-//  Grid::notType nt = grid.boundaryNodeType( boundaryEquationIndex );
-// the switch to translate
-// also return index K around with it is centered!
+  // translate node type into equation type
+  switch (nt)
+  {
+  case GridVirtual::BOTTOMLEFTCONVEX:
+    return GlBoundaryConditionsVirtual::BOTTOMLEFTCONVEX;
+  case GridVirtual::BOTTOMLEFTCONCAVE:
+    return GlBoundaryConditionsVirtual::BOTTOMLEFTCONCAVE;
+  case GridVirtual::TOPLEFTCONVEX:
+    return GlBoundaryConditionsVirtual::TOPLEFTCONVEX;
+  case GridVirtual::TOPLEFTCONCAVE:
+    return GlBoundaryConditionsVirtual::TOPLEFTCONCAVE;
+  case GridVirtual::BOTTOMRIGHTCONVEX:
+    return GlBoundaryConditionsVirtual::BOTTOMRIGHTCONVEX;
+  case GridVirtual::BOTTOMRIGHTCONCAVE:
+    return GlBoundaryConditionsVirtual::BOTTOMRIGHTCONCAVE;
+  case GridVirtual::TOPRIGHTCONVEX:
+    return GlBoundaryConditionsVirtual::TOPRIGHTCONVEX;
+  case GridVirtual::TOPRIGHTCONCAVE:
+    return GlBoundaryConditionsVirtual::TOPRIGHTCONCAVE;
+  case GridVirtual::TOP:
+    return GlBoundaryConditionsVirtual::TOP;
+  case GridVirtual::BOTTOM:
+    return GlBoundaryConditionsVirtual::BOTTOM;
+  case GridVirtual::LEFT:
+    return GlBoundaryConditionsVirtual::LEFT;
+  case GridVirtual::RIGHT:
+    return GlBoundaryConditionsVirtual::RIGHT;
+  default:
+    TEST_FOR_EXCEPTION( true,
+                        std::logic_error,
+                        "Illegal nodeType=" << nt << ".");
+  }
 
-  int Nx = grid.getNx();
-
-  if ( boundaryEquationIndex==0 )
-    {
-      eqType = GlBoundaryConditionsVirtual::BOTTOMLEFT;
-      i[0] = 0;
-      i[1] = 0;
-    }
-  else if ( boundaryEquationIndex==Nx )
-    {
-      eqType = GlBoundaryConditionsVirtual::BOTTOMRIGHT;
-      i[0] = Nx;
-      i[1] = 0;
-    }
-  else if ( boundaryEquationIndex==2*Nx )
-    {
-      eqType = GlBoundaryConditionsVirtual::TOPRIGHT;
-      i[0] = Nx;
-      i[1] = Nx;
-    }
-  else if ( boundaryEquationIndex==3*Nx )
-    {
-      eqType = GlBoundaryConditionsVirtual::TOPLEFT;
-      i[0] = 0;
-      i[1] = Nx;
-    }
-  else if ( boundaryEquationIndex<Nx )
-    {
-      eqType = GlBoundaryConditionsVirtual::BOTTOM;
-      i[0] = boundaryEquationIndex;
-      i[1] = 0;
-    }
-  else if ( boundaryEquationIndex<2*Nx )
-    {
-      eqType = GlBoundaryConditionsVirtual::RIGHT;
-      i[0] = Nx;
-      i[1] = boundaryEquationIndex-Nx;
-    }
-  else if ( boundaryEquationIndex<3*Nx )
-    {
-      eqType = GlBoundaryConditionsVirtual::TOP;
-      i[0] = 3*Nx-boundaryEquationIndex;
-      i[1] = Nx;
-    }
-  else if ( boundaryEquationIndex<4*Nx )
-    {
-      eqType = GlBoundaryConditionsVirtual::LEFT;
-      i[0] = 0;
-      i[1] = 4*Nx-boundaryEquationIndex;
-    }
-  else
-    {
-      TEST_FOR_EXCEPTION( true,
-  			              std::logic_error,
-  			              "Illegal running index boundaryEquationIndex="
-  			              << boundaryEquationIndex );
-    }
 }
 // =============================================================================

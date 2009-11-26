@@ -11,7 +11,7 @@
 #include <NOX.H>
 #include <NOX_Epetra.H>
 
-#include "Grid.h"
+#include "GridSquare.h"
 #include "glSystem.h"
 
 // abbreviate the complex type name
@@ -84,7 +84,7 @@ class glNox
 
       void
       reOrder( Tpetra::Vector<double_complex> &psi,
-               const Teuchos::RCP<Grid>       &grid );
+               const Teuchos::RCP<GridSquare> &grid );
 
       void
       setNonlinearSolverParameters( Teuchos::ParameterList & nlParams );

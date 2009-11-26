@@ -25,29 +25,27 @@ GlBoundaryConditionsInner::getGlEntry ( const int                               
   double_complex psiK, psiKRight, psiKLeft, psiKAbove, psiKBelow;
   double ARight, ALeft, AAbove, ABelow;
   double h = grid.getH();
-  Teuchos::RCP<Teuchos::Array<int> >    i      = Teuchos::rcp( new Teuchos::Array<int>(2) );
   Teuchos::RCP<Teuchos::Array<double> > xRight = Teuchos::rcp( new Teuchos::Array<double>(2) );
   Teuchos::RCP<Teuchos::Array<double> > xLeft  = Teuchos::rcp( new Teuchos::Array<double>(2) );
   Teuchos::RCP<Teuchos::Array<double> > xAbove = Teuchos::rcp( new Teuchos::Array<double>(2) );
   Teuchos::RCP<Teuchos::Array<double> > xBelow = Teuchos::rcp( new Teuchos::Array<double>(2) );
 
   
+  // associate the equation index with the grid point k
+  int k = eqIndex;
+
   equationType eqType;
-  getEquationType ( eqIndex,
-                    grid,
-                    eqType,
-                    *i       );
+  eqType = getEquationType ( k, grid );
 
   // Get a view of the whole vector.
   // Remember: This only works with one core.
   Teuchos::ArrayRCP<const double_complex> psiView = psi.get1dView();
 
-  int k = grid.i2k ( i );
   psiK = psiView[k];
   
   switch ( eqType )
   {
-    case BOTTOMLEFT:
+    case BOTTOMLEFTCONVEX:
       // -------------------------------------------------------------------
       psiKRight = psiView[ grid.getKRight(k) ];
       psiKAbove = psiView[ grid.getKAbove(k) ];
@@ -64,7 +62,7 @@ GlBoundaryConditionsInner::getGlEntry ( const int                               
       // -------------------------------------------------------------------
     break;
 
-  case BOTTOMRIGHT:
+  case BOTTOMRIGHTCONVEX:
     // -----------------------------------------------------------------------
     psiKLeft  = psiView[ grid.getKLeft ( k ) ];
     psiKAbove = psiView[ grid.getKAbove ( k ) ];
@@ -81,7 +79,7 @@ GlBoundaryConditionsInner::getGlEntry ( const int                               
     // -----------------------------------------------------------------------
     break;
 
-  case TOPRIGHT:
+  case TOPRIGHTCONVEX:
     // -----------------------------------------------------------------------
     psiKLeft  = psiView[ grid.getKLeft ( k ) ];
     psiKBelow = psiView[ grid.getKBelow ( k ) ];
@@ -99,7 +97,7 @@ GlBoundaryConditionsInner::getGlEntry ( const int                               
 
     break;
 
-  case TOPLEFT:
+  case TOPLEFTCONVEX:
     // -----------------------------------------------------------------------
     psiKRight = psiView[ grid.getKRight ( k ) ];
     psiKBelow = psiView[ grid.getKBelow ( k ) ];
@@ -194,24 +192,22 @@ GlBoundaryConditionsInner::getGlJacobianRow ( const int                         
   int numEntriesPsi, numEntriesPsiConj;
   double ARight, ALeft, AAbove, ABelow;
   double h = grid.getH();
-  Teuchos::RCP<Teuchos::Array<int> >    i      = Teuchos::rcp( new Teuchos::Array<int>(2) );
   Teuchos::RCP<Teuchos::Array<double> > xRight = Teuchos::rcp( new Teuchos::Array<double>(2) );
   Teuchos::RCP<Teuchos::Array<double> > xLeft  = Teuchos::rcp( new Teuchos::Array<double>(2) );
   Teuchos::RCP<Teuchos::Array<double> > xAbove = Teuchos::rcp( new Teuchos::Array<double>(2) );
   Teuchos::RCP<Teuchos::Array<double> > xBelow = Teuchos::rcp( new Teuchos::Array<double>(2) );
 
-  equationType eqType;
-  getEquationType ( eqIndex,
-                    grid,
-                    eqType,
-                    *i       );
+  // associate the equation index with the grid point k
+  k = eqIndex;
 
-  // needed everywhere
-  k = grid.i2k ( i );
+  equationType eqType;
+  eqType = getEquationType ( k, grid );
+
+
 
   switch ( eqType )
     {
-    case BOTTOMLEFT:
+    case BOTTOMLEFTCONVEX:
           // -------------------------------------------------------------------
           kRight = grid.getKRight( k );
           kAbove = grid.getKAbove( k );
@@ -241,7 +237,7 @@ GlBoundaryConditionsInner::getGlJacobianRow ( const int                         
           // -------------------------------------------------------------------
       break;
 
-    case BOTTOMRIGHT:
+    case BOTTOMRIGHTCONVEX:
       // -----------------------------------------------------------------------
       kLeft  = grid.getKLeft ( k );
       kAbove = grid.getKAbove ( k );
@@ -273,7 +269,7 @@ GlBoundaryConditionsInner::getGlJacobianRow ( const int                         
       // -----------------------------------------------------------------------
       break;
 
-    case TOPRIGHT:
+    case TOPRIGHTCONVEX:
       // -----------------------------------------------------------------------
       kLeft  = grid.getKLeft ( k );
       kBelow = grid.getKBelow ( k );
@@ -304,7 +300,7 @@ GlBoundaryConditionsInner::getGlJacobianRow ( const int                         
       // -----------------------------------------------------------------------
       break;
 
-    case TOPLEFT:
+    case TOPLEFTCONVEX:
       // -----------------------------------------------------------------------
       kRight = grid.getKRight ( k );
       kBelow = grid.getKBelow ( k );

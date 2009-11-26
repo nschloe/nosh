@@ -44,12 +44,19 @@ class GlBoundaryConditionsVirtual
 
   protected:
 
+    //! These are very much the grid node types, as appearing the GridVirtual.
+    //! The reason for this is that the discretizations applied yield localized
+    //! equations which can be associated with exactly one grid point.
     enum equationType
     {
-      BOTTOMLEFT,
-      BOTTOMRIGHT,
-      TOPRIGHT,
-      TOPLEFT,
+      BOTTOMLEFTCONVEX,
+      BOTTOMLEFTCONCAVE,
+      BOTTOMRIGHTCONVEX,
+      BOTTOMRIGHTCONCAVE,
+      TOPLEFTCONVEX,
+      TOPLEFTCONCAVE,
+      TOPRIGHTCONVEX,
+      TOPRIGHTCONCAVE,
       BOTTOM,
       RIGHT,
       TOP,
@@ -57,11 +64,9 @@ class GlBoundaryConditionsVirtual
     };
 
     //! With the \cboundaryEquationIndex-th boundary equation
-    static void
-    getEquationType ( const int                                 boundaryEquationIndex,
-                      const GridSquare::GridSquare              &grid,
-                      GlBoundaryConditionsVirtual::equationType &eqType,
-                      Teuchos::Array<int>                       &i
+    static GlBoundaryConditionsVirtual::equationType
+    getEquationType ( const int                      boundaryEquationIndex,
+                      const GridSquare::GridSquare & grid
                     );
 
   private:

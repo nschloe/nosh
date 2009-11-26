@@ -110,7 +110,7 @@ int main(int argc, char *argv[]) {
 	// define a new dummy psiLexicographic vector, to be adapted instantly
 	Teuchos::ParameterList glParameters;
 	Teuchos::RCP<ComplexVector> psi;
-	Teuchos::RCP<Grid> grid;
+	Teuchos::RCP<GridSquare> grid;
 
 	if (withInitialGuess) {
 	   try {
@@ -130,7 +130,7 @@ int main(int argc, char *argv[]) {
 		glParameters.set("edge length", edgeLength);
 		glParameters.set("H0", H0);
 
-		grid = Teuchos::rcp(new Grid(Nx,edgeLength) );
+		grid = Teuchos::rcp(new GridSquare(Nx,edgeLength) );
 
 		// set initial guess
 		int numComplexUnknowns = grid->getNumGridPoints();

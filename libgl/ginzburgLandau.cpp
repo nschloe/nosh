@@ -39,7 +39,8 @@ GinzburgLandau::setH0(const double h0)
 void
 GinzburgLandau::setEdgeLength( const double edgeLength)
 {
-  grid_->setEdgeLength( edgeLength );
+//  grid_->setEdgeLength( edgeLength );
+  grid_->setScaling( edgeLength );
 }
 // =============================================================================
 int
@@ -479,8 +480,6 @@ GinzburgLandau::writeSolutionToFile( const Teuchos::RCP<const ComplexVector> &ps
   int vorticity = getVorticity( *psi );
 
   params.get("H0", A_->getH0() );
-  params.get("edge length", grid_->getEdgeLength());
-  params.get("Nx", grid_->getNx());
   params.get("free energy", energy);
   params.get("vorticity", vorticity);
 
@@ -493,9 +492,6 @@ GinzburgLandau::writeAbstractStateToFile( const Teuchos::RCP<const ComplexVector
                                         ) const
 {
 	Teuchos::ParameterList params;
-	params.get("edge length", grid_->getEdgeLength());
-	params.get("Nx", grid_->getNx());
-
 	writeStateToFile( psi, params, filePath );
 }
 // =============================================================================
@@ -518,7 +514,7 @@ GinzburgLandau::appendStats( std::ofstream & fileStream,
     	double l2norm = normalizedScaledL2Norm( *psi );
     	int vorticity = getVorticity( *psi );
     	fileStream << A_->getH0() << " \t"
-    			   << grid_->getEdgeLength() << " \t"
+    			   << grid_->getScaling() << " \t"
     			   << energy << " \t"
     	    	   << l2norm << " \t"
     			   << vorticity;

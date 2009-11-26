@@ -16,20 +16,20 @@
 class GridVirtual
 {
 public:
-    GridVirtual();
+    GridVirtual( double scaling = 0.0,
+                 double h = 0.0,
+                 double gridDomainArea = 0.0,
+                 int    numGridPoints = 0,
+                 int    numBoundaryPoints = 0);
 
     virtual
     ~GridVirtual();
-
-    //! Returns the measure of the discretized domain.
-    virtual double
-    getGridDomainArea() const = 0;
 
     double
     getScaling() const; //!< Returns the scaling factor \f$alpha\f$ of the domain.
 
     void
-    setScaling( const double scaling );
+    setScaling( const double alpha );
 
     int
     getNumGridPoints() const; //!< Returns the number of grid points.
@@ -40,6 +40,10 @@ public:
 
     double
     getH() const; //!< Returns mesh size \f$h\f$.
+
+    //! Returns the measure of the discretized domain.
+    double
+    getGridDomainArea() const;
 
     /*! Indicates whether a node sits in a corner of the domain, on an edge,
      or strictly inside it. */
@@ -60,8 +64,8 @@ public:
       INTERIOR
     };
 
-    nodeType
-    boundaryNodeType( int l );
+    virtual nodeType
+    getBoundaryNodeType( int l ) const = 0;
 
     /*! For a given node number k, returns the the area of the surrounding cell. */
     virtual double
@@ -79,7 +83,6 @@ public:
     virtual Teuchos::RCP<Teuchos::Array<double> >
     getXAbove(int k) const = 0; //!< Returns the value of \f$x\f$ above point i.
 
-
     virtual int
     getKLeft(int k) const = 0; //!< Returns the running index \c k of the node left of \c i.
 
@@ -95,7 +98,7 @@ public:
     //! Returns the global index \ck of the \cl-th boundary node. Subsequent nodes \c l, \cl+1
     //! sit next to each other.
     virtual int
-    boundaryIndex2globalIndex( int l ) = 0;
+    boundaryIndex2globalIndex( int l ) const = 0;
 
     // TODO: move this to private
     int
@@ -107,21 +110,13 @@ public:
                    const std::string &filePath) const = 0;
 
   protected:
-  private:
-    double alpha_; //! scaling factor
+    double scaling_; //! scaling factor
     double h_;
+    double gridDomainArea_;
+    unsigned int numGridPoints_;
+    unsigned int numBoundaryPoints_;
 
-    //! Defines a subsequent order of boundary nodes by associating a running index \c l with
-    //! \f$i\f$-coordinates on the grid.
-    Teuchos::RCP<Teuchos::Array<int> >
-    boundaryPosition ( int l );
-
-    Teuchos::RCP<Teuchos::Array<double> >
-    getX(Teuchos::Array<int> i) const;
-
-    Teuchos::RCP<Teuchos::Array<int> >
-    k2i(int k) const;
-
+  private:
   };
 
   void

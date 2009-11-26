@@ -12,10 +12,13 @@
 
 // =============================================================================
 // Class constructor
-GridSquare::GridSquare(int nx, double edgeLength) :
-  nx_(nx),
-  edgeLength_(edgeLength),
-  h_(edgeLength / nx)
+GridSquare::GridSquare(int nx, double scaling) :
+  GridVirtual( scaling,
+               scaling / nx,
+               pow( scaling, 2 ),
+               (nx+1)*(nx+1), 4*nx
+             ),
+  nx_(nx)
 {
 }
 // =============================================================================
@@ -28,44 +31,6 @@ int
 GridSquare::getNx() const
 {
   return nx_;
-}
-// =============================================================================
-double
-GridSquare::getGridDomainArea() const
-{
-  return edgeLength_*edgeLength_;
-}
-// =============================================================================
-double
-GridSquare::getEdgeLength() const
-{
-  return edgeLength_;
-}
-// =============================================================================
-void
-GridSquare::setEdgeLength( const double edgeLength )
-{
-	edgeLength_ = edgeLength;
-	h_          = edgeLength / nx_;
-}
-// =============================================================================
-int
-GridSquare::getNumGridPoints() const
-{
-  // the number of grid points in psi
-  return (nx_ + 1) * (nx_ + 1);
-}
-// =============================================================================
-int
-GridSquare::getNumBoundaryPoints() const
-{
-  return 4*nx_;
-}
-// =============================================================================
-double
-GridSquare::getH() const
-{
-  return h_;
 }
 // =============================================================================
 Teuchos::RCP<Teuchos::Array<double> >
@@ -193,73 +158,74 @@ GridSquare::k2i(int k) const
 // Defines a series of neighboring boundary nodes.
 // This is independent of the actual numbering scheme of the nodes.
 Teuchos::RCP<Teuchos::Array<int> >
-GridSquare::boundaryPosition ( int l ) {
-	   int d = 2;
-	   Teuchos::RCP<Teuchos::Array<int> > i = Teuchos::rcp( new Teuchos::Array<int>(d));
+GridSquare::boundaryPosition ( int l ) const
+{
+  int d = 2;
+  Teuchos::RCP<Teuchos::Array<int> > i = Teuchos::rcp( new Teuchos::Array<int>(d));
 
-	   // start at the bottom left, and go around counter-clockwise
-		if (l < nx_)
-		  { // south
-		    (*i)[0] = l;
-		    (*i)[1] = 0;
-		  }
-		else if (l < 2 * nx_)
-		    { // east
-		      (*i)[0] = nx_;
-		      (*i)[1] = l - nx_;
-		    }
-		else if (l < 3 * nx_)
-		    { // north
-		      (*i)[0] = 3 * nx_ - l;
-		      (*i)[1] = nx_;
-		    }
-		else if (l < 4 * nx_)
-		    { // west
-		      (*i)[0] = 0;
-		      (*i)[1] = 4 * nx_ - l;
-		    }
-		else
-		{
-			TEST_FOR_EXCEPTION( true, std::logic_error,
-					            "Given index l=" << l
-					            << "larger than the number of border nodes n="
-					            << 4*nx_ );
-		}
-		return i;
+  // start at the bottom left, and go around counter-clockwise
+  if (l < nx_)
+  { // south
+      (*i)[0] = l;
+      (*i)[1] = 0;
+  }
+  else if (l < 2 * nx_)
+  { // east
+      (*i)[0] = nx_;
+      (*i)[1] = l - nx_;
+  }
+  else if (l < 3 * nx_)
+  { // north
+      (*i)[0] = 3 * nx_ - l;
+      (*i)[1] = nx_;
+  }
+  else if (l < 4 * nx_)
+  { // west
+      (*i)[0] = 0;
+      (*i)[1] = 4 * nx_ - l;
+  }
+  else
+  {
+      TEST_FOR_EXCEPTION( true, std::logic_error,
+                          "Given index l=" << l
+                          << "larger than the number of boundary nodes n="
+                          << 4*nx_  << ".");
+  }
+  return i;
 }
 // =============================================================================
 int
-GridSquare::boundaryIndex2globalIndex( int l )
+GridSquare::boundaryIndex2globalIndex( int l ) const
 {
 	Teuchos::RCP<Teuchos::Array<int> > i = boundaryPosition(l);
 	return i2k( i );
 }
 // =============================================================================
 GridSquare::nodeType
-GridSquare::boundaryNodeType( int l )
+GridSquare::getBoundaryNodeType( int l ) const
 {
-	Teuchos::RCP<Teuchos::Array<int> > i = boundaryPosition(l);
+  Teuchos::RCP<Teuchos::Array<int> > i = boundaryPosition(l);
 
-	if ( (*i)[0]==0 ) {
-		if ((*i)[1]==0)
-			return GridSquare::BOTTOMLEFTCONVEX;
-		else if ((*i)[1]==nx_)
-			return GridSquare::TOPLEFTCONVEX;
-		else
-			return GridSquare::LEFT;
-	} else if ( (*i)[0]==nx_ ) {
-		if ( (*i)[1]==0 )
-			return GridSquare::BOTTOMRIGHTCONVEX;
-		else if ( (*i)[1]==nx_ )
-			return GridSquare::TOPRIGHTCONVEX;
-		else
-			return GridSquare::RIGHT;
-	} else if ( (*i)[1]==0 )
-		return GridSquare::BOTTOM;
-	else if ( (*i)[1]==nx_ )
-		return GridSquare::TOP;
-	else
-		return GridSquare::INTERIOR;
+  if ( (*i)[0]==0 ) {
+          if ((*i)[1]==0)
+                  return BOTTOMLEFTCONVEX;
+          else if ((*i)[1]==nx_)
+                  return TOPLEFTCONVEX;
+          else
+                  return LEFT;
+  } else if ( (*i)[0]==nx_ ) {
+          if ( (*i)[1]==0 )
+                  return BOTTOMRIGHTCONVEX;
+          else if ( (*i)[1]==nx_ )
+                  return TOPRIGHTCONVEX;
+          else
+                  return RIGHT;
+  } else if ( (*i)[1]==0 )
+          return BOTTOM;
+  else if ( (*i)[1]==nx_ )
+          return TOP;
+  else
+          return INTERIOR;
 }
 // =============================================================================
 double
@@ -304,14 +270,11 @@ GridSquare::i2k( Teuchos::RCP<Teuchos::Array<int> > & i) const
 void
 GridSquare::lexicographic2grid(std::vector<int> *p) const
 {
-  // check if for admissible vector size
-  unsigned int numUnknowns = (nx_ + 1) * (nx_ + 1);
-
-  TEST_FOR_EXCEPTION( p->size() != numUnknowns,
-		              std::logic_error,
-		              "Size of the input vector p (" << p->size() <<") "
-		              << "does not coincide with with number of unknowns on "
-		              << " the grid (" << (nx_+1)*(nx_+1)  << ")." );
+  TEST_FOR_EXCEPTION( p->size() != numGridPoints_,
+		      std::logic_error,
+		      "Size of the input vector p (" << p->size() <<") "
+		      << "does not coincide with with number of unknowns on "
+		      << " the grid (" << numGridPoints_  << ")." );
 
   int k = 0;
   Teuchos::RCP<Teuchos::Array<int> > index = Teuchos::rcp( new Teuchos::Array<int>(2) );
@@ -333,15 +296,12 @@ void
 GridSquare::reorderToLexicographic( Tpetra::Vector<std::complex<double> > & x
 		                    ) const
 {
-  // check if for admissible vector size
-  unsigned int numUnknowns = getNumGridPoints();
-
-  TEST_FOR_EXCEPTION( x.getGlobalLength() != numUnknowns,
+  TEST_FOR_EXCEPTION( x.getGlobalLength() != numGridPoints_,
 		              std::logic_error,
 		              "Global length of the input vector x ("
 		              << x.getGlobalLength() << ") does not coincide "
 		              << "with with number of unknowns on the grid ("
-		              << numUnknowns << ")." );
+		              << numGridPoints_ << ")." );
 
   // Make a temporary copy of the full vector.
   Tpetra::Vector<std::complex<double> > tmp( x );
@@ -370,15 +330,12 @@ void
 GridSquare::reorderFromLexicographic( Tpetra::Vector<std::complex<double> > & x
 		                      ) const
 {
-  // check if for admissible vector size
-  unsigned int numUnknowns = getNumGridPoints();
-
-  TEST_FOR_EXCEPTION( x.getGlobalLength() != numUnknowns,
+  TEST_FOR_EXCEPTION( x.getGlobalLength() != numGridPoints_,
 		              std::logic_error,
 		              "Global length of the input vector x ("
 		              << x.getGlobalLength() << ") does not coincide "
 		              << "with with number of unknowns on the grid ("
-		              << numUnknowns << ")." );
+		              << numGridPoints_ << ")." );
 
   // Make a temporary copy of the full vector.
   Tpetra::Vector<std::complex<double> > tmp( x );
@@ -407,7 +364,13 @@ GridSquare::writeWithGrid( const Tpetra::MultiVector<double,int> & x,
                      const std::string &filePath) const
 {
   Teuchos::RCP<IoVirtual> fileIo = Teuchos::rcp(IoFactory::createFileIo(filePath));
-  fileIo->write( x, nx_, h_, params);
+
+  // append grid parameters
+  Teuchos::ParameterList extendedParams( params );
+  extendedParams.get("scaling", scaling_ );
+  extendedParams.get("Nx", nx_ );
+
+  fileIo->write( x, nx_, h_, extendedParams);
 }
 // =============================================================================
 // ATTENTION: Not a member of GridSquare!
@@ -423,8 +386,8 @@ readWithGrid( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
   fileIo->read(Comm, x, params);
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   // create the grid with the just attained information
-  int    Nx         = params.get<int>("Nx");
-  double edgeLength = params.get<double>("edge length");
-  grid = Teuchos::rcp( new GridSquare( Nx, edgeLength) );
+  int    Nx      = params.get<int>("Nx");
+  double scaling = params.get<double>("scaling");
+  grid = Teuchos::rcp( new GridSquare(Nx,scaling) );
 }
 // =============================================================================

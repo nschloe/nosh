@@ -161,69 +161,69 @@ outputFileFormat_(outputFileFormat),
 outputDataFileName_(outputDataFileName),
 stepper_(0)
 {
-	NumComplexUnknowns_ = Gl_.getNumUnknowns();
-	NumRealUnknowns_ = 2 * NumComplexUnknowns_ + 1;
+  NumComplexUnknowns_ = Gl_.getNumUnknowns();
+  NumRealUnknowns_ = 2 * NumComplexUnknowns_ + 1;
 
-	// TODO There is (until now?) no way to convert a Teuchos::Comm (of psi)
-	// to an Epetra_Comm (of the real valued representation of psi), so the
-	// Epetra_Comm has to be generated explicitly, and two communicators are kept
-	// side by side all the time. One must make sure that the two are actually
-	// equivalent, which can be checked by Thyra's conversion method create_Comm.
-	// TODO Is is actually necessary to have equivalent communicators on the
-	// real-valued and the complex-valued side?
-	// How to compare two communicators anyway?
+  // TODO There is (until now?) no way to convert a Teuchos::Comm (of psi)
+  // to an Epetra_Comm (of the real valued representation of psi), so the
+  // Epetra_Comm has to be generated explicitly, and two communicators are kept
+  // side by side all the time. One must make sure that the two are actually
+  // equivalent, which can be checked by Thyra's conversion method create_Comm.
+  // TODO Is is actually necessary to have equivalent communicators on the
+  // real-valued and the complex-valued side?
+  // How to compare two communicators anyway?
 
-	// create fitting Tpetra::Comm
-	// TODO: move into initializer
-	TComm_ = Thyra::create_Comm(EComm_);
+  // create fitting Tpetra::Comm
+  // TODO: move into initializer
+  TComm_ = Thyra::create_Comm(EComm_);
 
-	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-	// define maps
-	ComplexMap_ = Teuchos::rcp(new Tpetra::Map<int>(NumComplexUnknowns_, 0,
-			TComm_));
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  // define maps
+  ComplexMap_ = Teuchos::rcp(new Tpetra::Map<int>(NumComplexUnknowns_, 0,
+                  TComm_));
 
-	// get the map for the real values
-	makeRealMap(ComplexMap_);
+  // get the map for the real values
+  makeRealMap(ComplexMap_);
 
-	// set the number of local elements
-	NumMyElements_ = RealMap_->NumMyElements();
-	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-
-	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-	// Create a map for the real-valued vector to be spread all over all
-	// processors.
-	// @TODO Remove (the need for) this.
-	// define the map where each processor has a full solution vector
-	EverywhereMap_ = Teuchos::rcp(new Epetra_Map(NumRealUnknowns_,
-			NumRealUnknowns_, 0, *EComm_));
-	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  // set the number of local elements
+  NumMyElements_ = RealMap_->NumMyElements();
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
-	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-	// initialize solution
-	Teuchos::RCP<ComplexVector> psi = Teuchos::rcp(new ComplexVector(
-			ComplexMap_));
-	// TODO Move default initialization out to main file
-	double_complex alpha(1.0, 0.0);
-	psi->putScalar(alpha); // default initialization
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  // Create a map for the real-valued vector to be spread all over all
+  // processors.
+  // @TODO Remove (the need for) this.
+  // define the map where each processor has a full solution vector
+  EverywhereMap_ = Teuchos::rcp(new Epetra_Map(NumRealUnknowns_,
+                  NumRealUnknowns_, 0, *EComm_));
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-	initialSolution_ = Teuchos::rcp(new Epetra_Vector(*RealMap_));
-	complex2real(*psi, *initialSolution_);
-	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-	// TODO Remove 'dummy'.
-	// create the sparsity structure (graph) of the Jacobian
-	// use x as DUMMY argument
-	Epetra_Vector dummy(*RealMap_);
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  // initialize solution
+  Teuchos::RCP<ComplexVector> psi = Teuchos::rcp(new ComplexVector(
+                  ComplexMap_));
+  // TODO Move default initialization out to main file
+  double_complex alpha(1.0, 0.0);
+  psi->putScalar(alpha); // default initialization
 
-	createJacobian(ONLY_GRAPH, dummy);
+  initialSolution_ = Teuchos::rcp(new Epetra_Vector(*RealMap_));
+  complex2real(*psi, *initialSolution_);
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-	// Allocate the sparsity pattern of the Jacobian matrix
-	jacobian_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, *Graph_));
+  // TODO Remove 'dummy'.
+  // create the sparsity structure (graph) of the Jacobian
+  // use x as DUMMY argument
+  Epetra_Vector dummy(*RealMap_);
 
-	// Clean-up
-	jacobian_->FillComplete();
+  createJacobian(ONLY_GRAPH, dummy);
+
+  // Allocate the sparsity pattern of the Jacobian matrix
+  jacobian_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, *Graph_));
+
+  // Clean-up
+  jacobian_->FillComplete();
 }
 // =============================================================================
 // Destructor
