@@ -1,6 +1,7 @@
 #include "ginzburgLandau.h"
 
 #include "glBoundaryConditionsVirtual.h"
+#include "GridSquare.h"
 
 #include <Teuchos_RCP.hpp>
 

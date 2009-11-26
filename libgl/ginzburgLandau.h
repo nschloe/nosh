@@ -7,6 +7,7 @@
 #include <complex>
 
 #include "glBoundaryConditionsVirtual.h"
+#include "GridVirtual.h"
 #include "GridSquare.h"
 #include "MagneticVectorPotential.h"
 
@@ -121,7 +122,7 @@ class GinzburgLandau
         PHASE_CONDITION
       };
 
-      const Teuchos::RCP<GridSquare>              grid_;
+      const Teuchos::RCP<GridSquare>             grid_;
       const Teuchos::RCP<MagneticVectorPotential> A_;
 
       void getEquationType ( const int           eqnum,

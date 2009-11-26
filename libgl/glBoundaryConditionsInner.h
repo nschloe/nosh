@@ -23,7 +23,7 @@ class GlBoundaryConditionsInner: public GlBoundaryConditionsVirtual
     virtual double_complex
     getGlEntry ( const int                                eqIndex,
                  const Tpetra::Vector<double_complex,int> &psi,
-                 const GridSquare::GridSquare             &grid,
+                 const GridVirtual                        &grid,
                  const MagneticVectorPotential            &A
                ) const;
 
@@ -32,7 +32,7 @@ class GlBoundaryConditionsInner: public GlBoundaryConditionsVirtual
     virtual void
     getGlJacobianRow ( const int                                               eqIndex,
                        const Teuchos::RCP<Tpetra::Vector<double_complex,int> > &psi,
-                       const GridSquare::GridSquare                            &grid,
+                       const GridVirtual                                       &grid,
                        const MagneticVectorPotential                           &A,
                        const bool                                              fillValues,
                        std::vector<int>                                        &columnIndicesPsi,

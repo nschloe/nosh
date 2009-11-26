@@ -88,6 +88,7 @@ protected:
 private:
   int nx_; //!< Number of grid pieces in both x- and y-direction
 
+
   //! Defines a subsequent order of boundary nodes by associating a running index \c l with
   //! \f$i\f$-coordinates on the grid.
   Teuchos::RCP<Teuchos::Array<int> >
