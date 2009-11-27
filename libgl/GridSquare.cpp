@@ -22,15 +22,15 @@ GridSquare::GridSquare(int nx, double scaling) :
 {
 }
 // =============================================================================
-// Destructor
-GridSquare::~GridSquare()
+GridSquare::GridSquare() :
+  GridVirtual( 0.0, 0.0, 0.0, 0, 0 ),
+  nx_(0)
 {
 }
 // =============================================================================
-int
-GridSquare::getNx() const
+// Destructor
+GridSquare::~GridSquare()
 {
-  return nx_;
 }
 // =============================================================================
 Teuchos::RCP<Teuchos::Array<double> >
@@ -265,36 +265,11 @@ GridSquare::i2k( Teuchos::RCP<Teuchos::Array<int> > & i) const
   return k;
 }
 // =============================================================================
-// Returns a vector that defines the reordering from a lexicographic grid to
-// the ordering present in this grid
-void
-GridSquare::lexicographic2grid(std::vector<int> *p) const
-{
-  TEST_FOR_EXCEPTION( p->size() != numGridPoints_,
-		      std::logic_error,
-		      "Size of the input vector p (" << p->size() <<") "
-		      << "does not coincide with with number of unknowns on "
-		      << " the grid (" << numGridPoints_  << ")." );
-
-  int k = 0;
-  Teuchos::RCP<Teuchos::Array<int> > index = Teuchos::rcp( new Teuchos::Array<int>(2) );
-  for (int j = 0; j < nx_ + 1; j++)
-    {
-      (*index)[1] = j;
-      for (int i = 0; i < nx_ + 1; i++)
-        {
-          (*index)[0] = i;
-          (*p)[k++] = i2k(index);
-        }
-    }
-
-}
-// =============================================================================
 // TODO implement this using import/export mechanisms
 // TODO templatetize this
 Teuchos::RCP<DoubleMultiVector>
-GridSquare::reorderToLexicographic( const DoubleMultiVector & x
-		                  ) const
+GridSquare::permuteGrid2Lexicographic( const DoubleMultiVector & x
+		                     ) const
 {
   TEST_FOR_EXCEPTION( x.getGlobalLength() != numGridPoints_,
 		      std::logic_error,
@@ -329,37 +304,40 @@ GridSquare::reorderToLexicographic( const DoubleMultiVector & x
 // =============================================================================
 //// TODO implement this using import/export mechanisms
 //// TODO templatetize this
-//void
-//GridSquare::reorderFromLexicographic( Tpetra::Vector<std::complex<double> > & x
-//		                      ) const
-//{
-//  TEST_FOR_EXCEPTION( x.getGlobalLength() != numGridPoints_,
-//		              std::logic_error,
-//		              "Global length of the input vector x ("
-//		              << x.getGlobalLength() << ") does not coincide "
-//		              << "with with number of unknowns on the grid ("
-//		              << numGridPoints_ << ")." );
-//
-//  // Make a temporary copy of the full vector.
-//  Tpetra::Vector<std::complex<double> > tmp( x );
-//
-//  // Loop through the lexicographic ordering.
-//  // This really depends on the grid to be rectangular.
-//  Teuchos::ArrayRCP<const std::complex<double> > tmpView = tmp.get1dView();
-//  int k = 0;
-//  Teuchos::RCP<Teuchos::Array<int> > index = Teuchos::rcp( new Teuchos::Array<int>(2) );
-//  for (int j = 0; j < nx_ + 1; j++)
-//    {
-//      (*index)[1] = j;
-//      for (int i = 0; i < nx_ + 1; i++)
-//        {
-//          (*index)[0] = i;
-//          int kGlobal = i2k(index);
-//          x.replaceGlobalValue( kGlobal, tmpView[k++] );
-//        }
-//    }
-//
-//}
+Teuchos::RCP<DoubleMultiVector>
+GridSquare::permuteLexicographic2Grid( const DoubleMultiVector & xLexicographic
+                                     ) const
+{
+  TEST_FOR_EXCEPTION( xLexicographic.getGlobalLength() != numGridPoints_,
+                      std::logic_error,
+                      "Global length of the input vector x ("
+                      << xLexicographic.getGlobalLength() << ") does not coincide "
+                      << "with with number of unknowns on the grid ("
+                      << numGridPoints_ << ")." );
+
+  unsigned int numVectors = xLexicographic.getNumVectors();
+  Teuchos::RCP<DoubleMultiVector> x =
+                  Teuchos::rcp( new DoubleMultiVector(xLexicographic.getMap(),numVectors) );
+
+  // Loop through the lexicographic ordering.
+  for ( unsigned int l=0; l<numVectors; l++) {
+      Teuchos::ArrayRCP<const double> xLexicographicView = xLexicographic.getVector(l)->get1dView();
+      int k = 0;
+      Teuchos::RCP<Teuchos::Array<int> > index = Teuchos::rcp( new Teuchos::Array<int>(2) );
+      for (int j = 0; j < nx_ + 1; j++)
+      {
+          (*index)[1] = j;
+          for (int i = 0; i < nx_ + 1; i++)
+          {
+              (*index)[0] = i;
+              int kGlobal = i2k(index);
+              x->replaceGlobalValue( kGlobal, l, xLexicographicView[k++] );
+          }
+      }
+  }
+
+  return x;
+}
 // =============================================================================
 void
 GridSquare::writeWithGrid( const DoubleMultiVector      & x,
@@ -375,36 +353,43 @@ GridSquare::writeWithGrid( const DoubleMultiVector      & x,
   extendedParams.get("Nx", nx_ );
 
   // reorder the grid to lexicographic ordering
-  Teuchos::RCP<DoubleMultiVector> xLexicographic( reorderToLexicographic(x) );
+  Teuchos::RCP<DoubleMultiVector> xLexicographic = permuteGrid2Lexicographic(x);
 
   fileIo->write( *xLexicographic, nx_, h_, extendedParams);
 }
 // =============================================================================
-// ATTENTION: Not a member of GridSquare!
 void
-readWithGrid( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
-              const std::string                             & filePath,
-              Teuchos::RCP<DoubleMultiVector>               & x,
-              Teuchos::RCP<GridSquare>                      & grid,
-              Teuchos::ParameterList                        & params )
+GridSquare::read( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
+                  const std::string                             & filePath,
+                  Teuchos::RCP<DoubleMultiVector>               & x,
+                  Teuchos::ParameterList                        & params
+                )
 {
   Teuchos::RCP<IoVirtual> fileIo = Teuchos::RCP<IoVirtual>(
                     IoFactory::createFileIo(filePath));
 
-  fileIo->read(Comm, x, params);
+  Teuchos::RCP<DoubleMultiVector> xLexicographic;
+  fileIo->read(Comm, xLexicographic, params);
 
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   // create the grid with the just attained information
   TEST_FOR_EXCEPTION( !params.isParameter("Nx"),
                       std::logic_error,
                       "Parameter \"Nx\" not found." );
-  int    Nx = params.get<int>("Nx");
+  nx_ = params.get<int>("Nx");
 
   TEST_FOR_EXCEPTION( !params.isParameter("scaling"),
                       std::logic_error,
                       "Parameter \"scaling\" not found." );
-  double scaling = params.get<double>("scaling");
+  scaling_ = params.get<double>("scaling");
 
-  grid = Teuchos::rcp( new GridSquare(Nx,scaling) );
+  // initialization of the dependent members
+  h_                 = scaling_ / nx_;
+  gridDomainArea_    = pow( scaling_, 2 );
+  numGridPoints_     = pow( nx_+1   , 2 );
+  numBoundaryPoints_ = 4*nx_;
+
+  // apply the grid ordering
+  x = permuteLexicographic2Grid( *xLexicographic );
 }
 // =============================================================================

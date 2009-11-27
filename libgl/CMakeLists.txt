@@ -5,6 +5,7 @@ ENABLE_LANGUAGE( CXX )
 SET ( gl_SRCS
       GridVirtual.cpp
       GridSquare.cpp
+      GridReader.cpp
       MagneticVectorPotential.cpp
       ginzburgLandau.cpp
       glBoundaryConditionsVirtual.cpp

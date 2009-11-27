@@ -21,21 +21,16 @@ typedef Tpetra::MultiVector<double> DoubleMultiVector;
 
 class GridSquare: public GridVirtual
 {
+
 public:
 
   //! Default constructor.
-  GridSquare(int nx, double edgeLength);
+  GridSquare(int nx, double scaling);
+
+  GridSquare();
 
   virtual
   ~GridSquare();
-
-  int
-  getNx() const; //!< Returns \f$N_x\f$.
-
-  /*! Returns the permutation vector that mats the internal ordering to
-   the generic lexicographic ordering of the square grid. */
-  void
-  lexicographic2grid(std::vector<int> *p) const;
 
   virtual nodeType
   getBoundaryNodeType( int l ) const;
@@ -79,21 +74,23 @@ public:
                  const Teuchos::ParameterList &params,
                  const std::string &filePath) const;
 
+  void
+  read( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
+        const std::string                             & filePath,
+        Teuchos::RCP<DoubleMultiVector>               & x,
+        Teuchos::ParameterList                        & params
+      );
+
 protected:
 private:
   int nx_; //!< Number of grid pieces in both x- and y-direction
 
-
-  //  void
-  //  reorderToLexicographic( DoubleMultiVector & x
-  //                        ) const;
+  Teuchos::RCP<DoubleMultiVector>
+  permuteGrid2Lexicographic( const DoubleMultiVector & x ) const;
 
   Teuchos::RCP<DoubleMultiVector>
-  reorderToLexicographic( const DoubleMultiVector & x ) const;
-
-  //  void
-  //  reorderFromLexicographic( Tpetra::Vector<std::complex<double> > & x
-  //                          ) const;
+  permuteLexicographic2Grid( const DoubleMultiVector & xLexicographic
+                           ) const;
 
   //! Defines a subsequent order of boundary nodes by associating a running index \c l with
   //! \f$i\f$-coordinates on the grid.
@@ -110,13 +107,5 @@ private:
   i2k( Teuchos::RCP<Teuchos::Array<int> > & i ) const; //!< Converts a grid index i to a running index k
 
 };
-
-void
-readWithGrid( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
-              const std::string                             & filePath,
-              Teuchos::RCP<Tpetra::MultiVector<double> >    & x,
-              Teuchos::RCP<GridSquare>                      & grid,
-              Teuchos::ParameterList                        & params
-            );
 
 #endif /* GRIDSQUARE_H_ */

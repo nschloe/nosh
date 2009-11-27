@@ -25,7 +25,7 @@ class GinzburgLandau
   public:
 
      /*! Default constructor.*/
-     GinzburgLandau ( Teuchos::RCP<GridSquare>                  &grid,
+     GinzburgLandau ( Teuchos::RCP<GridVirtual>                 &grid,
                       Teuchos::RCP<MagneticVectorPotential>     &potential,
                       Teuchos::RCP<GlBoundaryConditionsVirtual> &bc    );
 
@@ -122,7 +122,7 @@ class GinzburgLandau
         PHASE_CONDITION
       };
 
-      const Teuchos::RCP<GridSquare>             grid_;
+      const Teuchos::RCP<GridVirtual>             grid_;
       const Teuchos::RCP<MagneticVectorPotential> A_;
 
       void getEquationType ( const int           eqnum,
@@ -159,6 +159,6 @@ void
 readStateFromFile ( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
 		    const std::string           & filePath,
                     Teuchos::RCP<ComplexVector> & psi,
-                    Teuchos::RCP<GridSquare>    & grid,
+                    Teuchos::RCP<GridVirtual>   & grid,
                     Teuchos::ParameterList      & params
                   );

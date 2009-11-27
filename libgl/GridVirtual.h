@@ -13,6 +13,8 @@
 #include <Teuchos_ParameterList.hpp>
 #include <Tpetra_MultiVector.hpp>
 
+typedef Tpetra::MultiVector<double> DoubleMultiVector;
+
 class GridVirtual
 {
 public:
@@ -45,6 +47,7 @@ public:
     double
     getGridDomainArea() const;
 
+public:
     /*! Indicates whether a node sits in a corner of the domain, on an edge,
      or strictly inside it. */
     enum nodeType
@@ -63,6 +66,8 @@ public:
       LEFT,
       INTERIOR
     };
+
+public:
 
     virtual nodeType
     getBoundaryNodeType( int l ) const = 0;
@@ -101,9 +106,17 @@ public:
     boundaryIndex2globalIndex( int l ) const = 0;
 
     virtual void
-    writeWithGrid( const Tpetra::MultiVector<double,int> & x,
-                   const Teuchos::ParameterList &params,
-                   const std::string &filePath) const = 0;
+    writeWithGrid( const DoubleMultiVector      & x,
+                   const Teuchos::ParameterList & params,
+                   const std::string            & filePath
+                 ) const = 0;
+
+    virtual void
+    read( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
+          const std::string                             & filePath,
+          Teuchos::RCP<DoubleMultiVector>               & x,
+          Teuchos::ParameterList                        & params
+        ) = 0;
 
   protected:
     double scaling_; //! scaling factor
@@ -114,13 +127,5 @@ public:
 
   private:
   };
-
-  void
-  readWithGrid( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
-                const std::string                             & filePath,
-                Teuchos::RCP<Tpetra::MultiVector<double> >    & x,
-                Teuchos::RCP<GridVirtual>                     & grid,
-                Teuchos::ParameterList                        & params
-              );
 
 #endif /* GRIDVIRTUAL_H_ */

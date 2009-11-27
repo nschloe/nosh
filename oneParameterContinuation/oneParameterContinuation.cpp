@@ -20,6 +20,8 @@
 
 #include "ioFactory.h"
 
+#include "ginzburgLandau.h"
+
 #include "glSystem.h"
 #include "glBoundaryConditionsInner.h"
 #include "glBoundaryConditionsOuter.h"
@@ -115,7 +117,7 @@ main(int argc, char *argv[])
   // define a new dummy psiLexicographic vector, to be adapted instantly
   Teuchos::ParameterList glParameters;
   Teuchos::RCP<ComplexVector> psi;
-  Teuchos::RCP<GridSquare> grid;
+  Teuchos::RCP<GridVirtual> grid;
 
   if (withInitialGuess)
     {
@@ -167,7 +169,9 @@ main(int argc, char *argv[])
       new MagneticVectorPotential(glParameters.get<double> ("H0"),
           glParameters.get<double> ("scaling")));
 
-  GinzburgLandau glProblem = GinzburgLandau(grid, A, boundaryConditions);
+  // upcast to GridVirtual
+  Teuchos::RCP<GridVirtual> gridV = grid;
+  GinzburgLandau glProblem = GinzburgLandau(gridV, A, boundaryConditions);
 
   Teuchos::RCP<GlSystem> glsystem =
       Teuchos::rcp(new GlSystem(glProblem, eComm, psi, outputDirectory,
