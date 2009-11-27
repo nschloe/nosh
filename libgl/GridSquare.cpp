@@ -22,12 +22,6 @@ GridSquare::GridSquare(int nx, double scaling) :
 {
 }
 // =============================================================================
-GridSquare::GridSquare() :
-  GridVirtual( 0.0, 0.0, 0.0, 0, 0 ),
-  nx_(0)
-{
-}
-// =============================================================================
 // Destructor
 GridSquare::~GridSquare()
 {

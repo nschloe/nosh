@@ -25,9 +25,8 @@ class GridSquare: public GridVirtual
 public:
 
   //! Default constructor.
-  GridSquare(int nx, double scaling);
-
-  GridSquare();
+  GridSquare( int nx = 0,
+              double scaling = 0);
 
   virtual
   ~GridSquare();
