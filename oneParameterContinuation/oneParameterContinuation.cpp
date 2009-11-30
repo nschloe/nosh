@@ -117,7 +117,7 @@ main(int argc, char *argv[])
   // define a new dummy psiLexicographic vector, to be adapted instantly
   Teuchos::ParameterList glParameters;
   Teuchos::RCP<ComplexVector> psi;
-  Teuchos::RCP<GridVirtual> grid;
+  Teuchos::RCP<GridUniformVirtual> grid;
 
   if (withInitialGuess)
     {
@@ -170,7 +170,7 @@ main(int argc, char *argv[])
           glParameters.get<double> ("scaling")));
 
   // upcast to GridVirtual
-  Teuchos::RCP<GridVirtual> gridV = grid;
+  Teuchos::RCP<GridUniformVirtual> gridV = grid;
   GinzburgLandau glProblem = GinzburgLandau(gridV, A, boundaryConditions);
 
   Teuchos::RCP<GlSystem> glsystem =

@@ -8,7 +8,7 @@
 #ifndef GRIDSQUARE_H_
 #define GRIDSQUARE_H_
 
-#include "GridVirtual.h"
+#include "GridUniformVirtual.h"
 
 #include <Teuchos_Array.hpp>
 #include <Tpetra_Vector.hpp>
@@ -19,7 +19,7 @@
 typedef Tpetra::Vector<double>      DoubleVector;
 typedef Tpetra::MultiVector<double> DoubleMultiVector;
 
-class GridSquare: public GridVirtual
+class GridSquare: public GridUniformVirtual
 {
 
 public:

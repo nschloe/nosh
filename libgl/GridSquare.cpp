@@ -13,11 +13,11 @@
 // =============================================================================
 // Class constructor
 GridSquare::GridSquare(int nx, double scaling) :
-  GridVirtual( scaling,
-               scaling / nx,
-               pow( scaling, 2 ),
-               (nx+1)*(nx+1), 4*nx
-             ),
+  GridUniformVirtual( scaling,
+                      scaling / nx,
+                      pow( scaling, 2 ),
+                     (nx+1)*(nx+1), 4*nx
+                    ),
   nx_(nx)
 {
 }

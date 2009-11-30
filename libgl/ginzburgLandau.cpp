@@ -16,7 +16,7 @@ const double_complex I ( 0,1 );
 
 // =============================================================================
 // Class constructor
-GinzburgLandau::GinzburgLandau ( Teuchos::RCP<GridVirtual>                 &grid,
+GinzburgLandau::GinzburgLandau ( Teuchos::RCP<GridUniformVirtual>          &grid,
                                  Teuchos::RCP<MagneticVectorPotential>     &A,
                                  Teuchos::RCP<GlBoundaryConditionsVirtual> &bc
                                ) :
@@ -527,7 +527,7 @@ void
 readStateFromFile ( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
 		    const std::string                             & filePath,
                     Teuchos::RCP<ComplexVector>                   & psi,
-                    Teuchos::RCP<GridVirtual>                     & grid,
+                    Teuchos::RCP<GridUniformVirtual>              & grid,
                     Teuchos::ParameterList                        & params
                   )
 {
@@ -535,10 +535,8 @@ readStateFromFile ( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
   // read the raw data, parameters, grid
   Teuchos::RCP<Tpetra::MultiVector<double, int> > psiSplit;
 
-  std::cout << "Aa" << std::endl;
   Teuchos::RCP<GridReader> gridReader;
   gridReader->read( Comm, filePath, psiSplit, grid, params );
-  std::cout << "BB" << std::endl;
 
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   // Put the two parts back together to a complex vector.

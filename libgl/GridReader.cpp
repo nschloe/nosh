@@ -23,7 +23,7 @@ void
 GridReader::read( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
                   const std::string                             & filePath,
                   Teuchos::RCP<DoubleMultiVector>               & x,
-                  Teuchos::RCP<GridVirtual>                     & grid,
+                  Teuchos::RCP<GridUniformVirtual>              & grid,
                   Teuchos::ParameterList                        & params
                 ) const
 {

@@ -1,7 +1,7 @@
 #ifndef GLBOUNDARYCONDITIONSVIRTUAL_H
 #define GLBOUNDARYCONDITIONSVIRTUAL_H
 
-#include "GridVirtual.h"
+#include "GridUniformVirtual.h"
 #include "MagneticVectorPotential.h"
 
 #include <Tpetra_MultiVector.hpp>
@@ -24,7 +24,7 @@ class GlBoundaryConditionsVirtual
     virtual double_complex
     getGlEntry ( const int                                eqIndex,
                  const Tpetra::Vector<double_complex,int> &psi,
-                 const GridVirtual                        &grid,
+                 const GridUniformVirtual                 &grid,
                  const MagneticVectorPotential            &A
                ) const = 0; // pure virtual
 
@@ -33,7 +33,7 @@ class GlBoundaryConditionsVirtual
     virtual void
     getGlJacobianRow ( const int                                               eqIndex,
                        const Teuchos::RCP<Tpetra::Vector<double_complex,int> > &psi,
-                       const GridVirtual                                       &grid,
+                       const GridUniformVirtual                                &grid,
                        const MagneticVectorPotential                           &A,
                        const bool                                              fillValues,
                        std::vector<int>                                        &columnIndicesPsi,
@@ -65,8 +65,8 @@ class GlBoundaryConditionsVirtual
 
     //! With the \cboundaryEquationIndex-th boundary equation
     static GlBoundaryConditionsVirtual::equationType
-    getEquationType ( const int           boundaryEquationIndex,
-                      const GridVirtual & grid
+    getEquationType ( const int                  boundaryEquationIndex,
+                      const GridUniformVirtual & grid
                     );
 
   private:

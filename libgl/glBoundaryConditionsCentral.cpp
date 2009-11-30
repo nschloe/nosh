@@ -17,7 +17,7 @@ GlBoundaryConditionsCentral::~GlBoundaryConditionsCentral()
 double_complex
 GlBoundaryConditionsCentral::getGlEntry ( const int                                eqIndex,
                                           const Tpetra::Vector<double_complex,int> &psi,
-                                          const GridVirtual                        &grid,
+                                          const GridUniformVirtual                 &grid,
                                           const MagneticVectorPotential            &A
                                         ) const
 {
@@ -212,7 +212,7 @@ GlBoundaryConditionsCentral::getGlEntry ( const int                             
 void
 GlBoundaryConditionsCentral::getGlJacobianRow ( const int                                               eqIndex,
                                                 const Teuchos::RCP<Tpetra::Vector<double_complex,int> > &psi,
-                                                const GridVirtual                                       &grid,
+                                                const GridUniformVirtual                                &grid,
                                                 const MagneticVectorPotential                           &A,
                                                 const bool                                              fillValues,
                                                 std::vector<int>                                        &columnIndicesPsi,

@@ -13,8 +13,8 @@ GlBoundaryConditionsVirtual::~GlBoundaryConditionsVirtual()
 //! connects the equations ``centered'' around the \cboundaryEquationIndex-th
 //! boundary node.
 GlBoundaryConditionsVirtual::equationType
-GlBoundaryConditionsVirtual::getEquationType ( const int           boundaryEquationIndex,
-                                               const GridVirtual & grid  )
+GlBoundaryConditionsVirtual::getEquationType ( const int                  boundaryEquationIndex,
+                                               const GridUniformVirtual & grid  )
 {
   GridVirtual::nodeType nt;
   nt = grid.getBoundaryNodeType( boundaryEquationIndex );

@@ -24,10 +24,10 @@
       <Parameter name="Method" type="string" value="Tangent"/>
     </ParameterList>
     <ParameterList name="Step Size">
-      <Parameter name="Initial Step Size" type="double" value="0.00001"/>
-      <Parameter name="Max Step Size" type="double" value="0.00005"/>
+      <Parameter name="Initial Step Size" type="double" value="0.01"/>
+      <Parameter name="Max Step Size" type="double" value="0.05"/>
       <Parameter name="Method" type="string" value="Adaptive"/>
-      <Parameter name="Min Step Size" type="double" value="0.00001"/>
+      <Parameter name="Min Step Size" type="double" value="0.01"/>
       <Parameter name="Aggressiveness" type="double" value="1.0"/>
     </ParameterList>
     <ParameterList name="Stepper">

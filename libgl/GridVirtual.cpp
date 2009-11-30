@@ -9,7 +9,7 @@
 
 // ============================================================================
 GridVirtual::GridVirtual( double scaling,
-                          double h,
+                          Teuchos::Tuple<double,2> h,
                           double gridDomainArea,
                           int    numGridPoints,
                           int    numBoundaryPoints ) :
@@ -34,8 +34,11 @@ GridVirtual::getScaling() const
 void
 GridVirtual::setScaling( const double scaling )
 {
+
   double ratio = scaling/scaling_;
-  h_              *= ratio; // rescale h
+  for ( int k=0; k<h_.size(); k++)
+    h_[k] *= ratio;
+//  h_              *= ratio; // rescale h
   gridDomainArea_ *= ratio*ratio;  // rescale domain area
   scaling_         = scaling;
   return;
@@ -53,7 +56,7 @@ GridVirtual::getNumBoundaryPoints() const
   return numBoundaryPoints_;
 }
 // ============================================================================
-double
+Teuchos::Tuple<double,2>
 GridVirtual::getH() const
 {
   return h_;

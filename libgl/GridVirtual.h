@@ -10,6 +10,7 @@
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Array.hpp>
+#include <Teuchos_Tuple.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Tpetra_MultiVector.hpp>
 
@@ -18,11 +19,11 @@ typedef Tpetra::MultiVector<double> DoubleMultiVector;
 class GridVirtual
 {
 public:
-    GridVirtual( double scaling = 0.0,
-                 double h = 0.0,
-                 double gridDomainArea = 0.0,
-                 int    numGridPoints = 0,
-                 int    numBoundaryPoints = 0);
+    GridVirtual( double                   scaling = 0.0,
+                 Teuchos::Tuple<double,2> h = Teuchos::tuple(0.0,0.0),
+                 double                   gridDomainArea = 0.0,
+                 int                      numGridPoints = 0,
+                 int                      numBoundaryPoints = 0);
 
     virtual
     ~GridVirtual();
@@ -40,8 +41,8 @@ public:
     int
     getNumBoundaryPoints() const;
 
-    double
-    getH() const; //!< Returns mesh size \f$h\f$.
+    Teuchos::Tuple<double,2>
+    getH() const; //!< Returns mesh sizes \f$h\f$.
 
     //! Returns the measure of the discretized domain.
     double
@@ -120,7 +121,7 @@ public:
 
   protected:
     double scaling_; //! scaling factor
-    double h_;
+    Teuchos::Tuple<double,2> h_;
     double gridDomainArea_;
     unsigned int numGridPoints_;
     unsigned int numBoundaryPoints_;
