@@ -36,16 +36,16 @@ public:
 
 	virtual void
 	write( const Tpetra::MultiVector<double,int> & x,
-		   const int                               Nx,
-		   const double                            h
-		 );
+               const Teuchos::Tuple<int,2>           & Nx,
+               const double                            h
+             );
 
 	virtual void
 	write( const Tpetra::MultiVector<double,int> & x,
-		   const int                               Nx,
-		   const double                            h,
-           const Teuchos::ParameterList          & problemParams
-		 );
+               const Teuchos::Tuple<int,2>           & Nx,
+               const double                            h,
+               const Teuchos::ParameterList          & problemParams
+             );
 
 protected:
 private:

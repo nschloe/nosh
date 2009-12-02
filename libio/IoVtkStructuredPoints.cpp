@@ -63,7 +63,7 @@ IoVtkStructuredPoints::read(
 // ============================================================================
 void
 IoVtkStructuredPoints::write(const Tpetra::MultiVector<double, int> & x,
-    const int Nx, const double h)
+    const Teuchos::Tuple<int,2> & Nx, const double h)
 {
   if ( !sourceMap_.is_valid_ptr() ||
         sourceMap_.is_null() ||
@@ -105,7 +105,7 @@ IoVtkStructuredPoints::write(const Tpetra::MultiVector<double, int> & x,
 
     for (unsigned int k=0; k<numVectors; k++ ) {
       vtkSmartPointer<vtkStructuredPoints> spData = vtkStructuredPoints::New();
-      spData->SetDimensions(Nx + 1, Nx + 1, 1);
+      spData->SetDimensions(Nx[0] + 1, Nx[1] + 1, 1);
       spData->SetOrigin(0, 0, 0);
       spData->SetSpacing(h, h, 0);
 
@@ -136,7 +136,7 @@ IoVtkStructuredPoints::write(const Tpetra::MultiVector<double, int> & x,
 // ============================================================================
 void
 IoVtkStructuredPoints::write(const Tpetra::MultiVector<double, int> & x,
-    const int Nx, const double h, const Teuchos::ParameterList & problemParams)
+    const Teuchos::Tuple<int,2> & Nx, const double h, const Teuchos::ParameterList & problemParams)
 {
   write(x, Nx, h);
 }

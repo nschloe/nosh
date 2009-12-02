@@ -7,6 +7,8 @@
 
 #include "GridReader.h"
 
+#include "GridUniformSquare.h"
+
 #include "ioVirtual.h"
 #include "ioFactory.h"
 
@@ -29,11 +31,15 @@ GridReader::read( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
 {
 
   // TODO Get some clues about which grid we read.
-  //      Right now we can only read GridSquare.
+  //      Right now we can only read GridUniformSquare.
 
-  Teuchos::RCP<GridSquare> tmpGridSquare = Teuchos::rcp( new GridSquare() );
-  tmpGridSquare->read( Comm, filePath, x, params );
-  grid = tmpGridSquare; // slice
+  std::cout << "aaa" << std::endl;
+
+  Teuchos::RCP<GridUniformSquare> tmpGridUniformSquare = Teuchos::rcp( new GridUniformSquare() );
+  tmpGridUniformSquare->read( Comm, filePath, x, params );
+  grid = tmpGridUniformSquare; // slice
+
+  std::cout << "bbb" << std::endl;
 
 }
 // =============================================================================

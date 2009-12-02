@@ -8,9 +8,10 @@
 #ifndef GRIDSQUARE_H_
 #define GRIDSQUARE_H_
 
-#include "GridUniformVirtual.h"
+#include "GridVirtual.h"
 
 #include <Teuchos_Array.hpp>
+#include <Teuchos_Tuple.hpp>
 #include <Tpetra_Vector.hpp>
 #include <Tpetra_MultiVector.hpp>
 #include <Teuchos_ParameterList.hpp>
@@ -19,61 +20,63 @@
 typedef Tpetra::Vector<double>      DoubleVector;
 typedef Tpetra::MultiVector<double> DoubleMultiVector;
 
-class GridSquare: public GridUniformVirtual
+class GridSquare: virtual public GridVirtual
 {
 
 public:
 
   //! Default constructor.
-  GridSquare( int nx = 0,
-              double scaling = 0);
+  GridSquare( Teuchos::Tuple<unsigned int,2> Nx = Teuchos::tuple<unsigned int>(0,0),
+              double scaling = 1.0
+            );
 
   virtual
   ~GridSquare();
 
   virtual nodeType
-  getBoundaryNodeType( int l ) const;
+  getBoundaryNodeType( unsigned int l ) const;
 
   /*! For a given node number k, returns the the area of the surrounding cell. */
   virtual double
-  cellArea(int k) const;
+  cellArea(unsigned int k) const;
 
   virtual Teuchos::RCP<Teuchos::Array<double> >
-  getXLeft(int k) const; //!< Returns the value of \f$x\f$ left of point i.
+  getXLeft(unsigned int k) const; //!< Returns the value of \f$x\f$ left of point i.
 
   virtual Teuchos::RCP<Teuchos::Array<double> >
-  getXRight(int k) const; //!< Returns the value of \f$x\f$ right of point i.
+  getXRight(unsigned int k) const; //!< Returns the value of \f$x\f$ right of point i.
 
   virtual Teuchos::RCP<Teuchos::Array<double> >
-  getXBelow(int k) const; //!< Returns the value of \f$x\f$ below point i.
+  getXBelow(unsigned int k) const; //!< Returns the value of \f$x\f$ below point i.
 
   virtual Teuchos::RCP<Teuchos::Array<double> >
-  getXAbove(int k) const; //!< Returns the value of \f$x\f$ above point i.
+  getXAbove(unsigned int k) const; //!< Returns the value of \f$x\f$ above point i.
 
 
-  virtual int
-  getKLeft(int k) const; //!< Returns the running index \c k of the node left of \c i.
+  virtual unsigned int
+  getKLeft(unsigned int k) const; //!< Returns the running index \c k of the node left of \c i.
 
-  virtual int
-  getKRight(int k) const; //!< Returns the running index \c k of the node right of \c i.
+  virtual unsigned int
+  getKRight(unsigned int k) const; //!< Returns the running index \c k of the node right of \c i.
 
-  virtual int
-  getKBelow(int k) const; //!< Returns the running index \c k of the node below \c i.
+  virtual unsigned int
+  getKBelow(unsigned int k) const; //!< Returns the running index \c k of the node below \c i.
 
-  virtual int
-  getKAbove(int k) const; //!< Returns the running index \c k of the node above \c i.
+  virtual unsigned int
+  getKAbove(unsigned int k) const; //!< Returns the running index \c k of the node above \c i.
 
   //! Returns the global index \ck of the \cl-th boundary node. Subsequent nodes \c l, \cl+1
   //! sit next to each other.
-  virtual int
-  boundaryIndex2globalIndex( int l ) const;
+  virtual unsigned int
+  boundaryIndex2globalIndex( unsigned int l ) const;
 
-  void
+  virtual void
   writeWithGrid( const Tpetra::MultiVector<double,int> & x,
                  const Teuchos::ParameterList &params,
-                 const std::string &filePath) const;
+                 const std::string &filePath
+               ) const;
 
-  void
+  virtual void
   read( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
         const std::string                             & filePath,
         Teuchos::RCP<DoubleMultiVector>               & x,
@@ -81,28 +84,29 @@ public:
       );
 
 protected:
-private:
-  int nx_; //!< Number of grid pieces in both x- and y-direction
-
-  Teuchos::RCP<DoubleMultiVector>
-  permuteGrid2Lexicographic( const DoubleMultiVector & x ) const;
+  Teuchos::Tuple<unsigned int,2> Nx_; //!< Number of grid pieces in both x- and y-direction
 
   Teuchos::RCP<DoubleMultiVector>
   permuteLexicographic2Grid( const DoubleMultiVector & xLexicographic
                            ) const;
 
+private:
+
+  Teuchos::RCP<DoubleMultiVector>
+  permuteGrid2Lexicographic( const DoubleMultiVector & x ) const;
+
   //! Defines a subsequent order of boundary nodes by associating a running index \c l with
   //! \f$i\f$-coordinates on the grid.
   Teuchos::RCP<Teuchos::Array<int> >
-  boundaryPosition ( int l ) const;
+  boundaryPosition ( unsigned int l ) const;
 
   Teuchos::RCP<Teuchos::Array<double> >
   getX(Teuchos::Array<int> i) const;
 
   Teuchos::RCP<Teuchos::Array<int> >
-  k2i(int k) const;
+  k2i(unsigned int k) const;
 
-  int
+  unsigned int
   i2k( Teuchos::RCP<Teuchos::Array<int> > & i ) const; //!< Converts a grid index i to a running index k
 
 };

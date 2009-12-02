@@ -231,8 +231,8 @@ IoXdmf::getHeavyData( const Teuchos::XMLObject &xmlFileObject,
 // =============================================================================
 void
 IoXdmf::write ( const Tpetra::MultiVector<double,int> & x,
-                const int                               Nx,
-                const double                            h,
+                const Teuchos::Tuple<unsigned int,2>  & Nx,
+                const Teuchos::Tuple<double,2>        & h,
                 const Teuchos::ParameterList          & problemParams
               )
 {
@@ -281,7 +281,7 @@ IoXdmf::write ( const Tpetra::MultiVector<double,int> & x,
   // add topology
   Teuchos::XMLObject xmlTopology("Topology");
   xmlTopology.addAttribute( "TopologyType", "3DCORECTMESH" );
-  str = "1 " + EpetraExt::toString(Nx+1) + " " + EpetraExt::toString(Nx+1);
+  str = "1 " + EpetraExt::toString(Nx[0]+1) + " " + EpetraExt::toString(Nx[1]+1);
   xmlTopology.addAttribute( "Dimensions", str );
   xmlGrid.addChild( xmlTopology );
 
@@ -306,7 +306,7 @@ IoXdmf::write ( const Tpetra::MultiVector<double,int> & x,
   xmlSpacing.addAttribute( "NumberType", "Float" );
   xmlSpacing.addAttribute( "Dimensions", "3" );
   xmlSpacing.addAttribute( "Format", "XML" );
-  str = "0 " + EpetraExt::toString(h) + " " + EpetraExt::toString(h);
+  str = "0 " + EpetraExt::toString(h[0]) + " " + EpetraExt::toString(h[1]);
   xmlSpacing.addContent( str );
   xmlGeometry.addChild( xmlSpacing );
 
@@ -321,7 +321,7 @@ IoXdmf::write ( const Tpetra::MultiVector<double,int> & x,
   Teuchos::XMLObject xmlAbsData("DataItem");
   xmlAbsData.addAttribute( "NumberType", "Float" );
   xmlAbsData.addAttribute( "Precision", "4" );
-  str = "1 " + EpetraExt::toString(Nx+1) + " " + EpetraExt::toString(Nx+1);
+  str = "1 " + EpetraExt::toString(Nx[0]+1) + " " + EpetraExt::toString(Nx[1]+1);
   xmlAbsData.addAttribute( "Dimensions", str );
   xmlAbsData.addAttribute( "Format", "HDF" );
   xmlAbsData.addContent( hdf5BaseName+":/abs/Values" );
@@ -338,7 +338,7 @@ IoXdmf::write ( const Tpetra::MultiVector<double,int> & x,
   Teuchos::XMLObject xmlArgData("DataItem");
   xmlArgData.addAttribute( "NumberType", "Float" );
   xmlArgData.addAttribute( "Precision", "4" );
-  str = "1 " + EpetraExt::toString(Nx+1) + " " + EpetraExt::toString(Nx+1);
+  str = "1 " + EpetraExt::toString(Nx[0]+1) + " " + EpetraExt::toString(Nx[1]+1);
   xmlArgData.addAttribute( "Dimensions", str );
   xmlArgData.addAttribute( "Format", "HDF" );
   xmlArgData.addContent( hdf5BaseName+":/arg/Values" );
@@ -361,7 +361,7 @@ IoXdmf::write ( const Tpetra::MultiVector<double,int> & x,
   Epetra_SerialComm Comm;
 #endif
 //   int NumUnknowns = (SGrid.getNx()+1)*(SGrid.getNx()+1);
-  Epetra_Map StandardMap( Nx+1,0,Comm);
+  Epetra_Map StandardMap( Nx[0]+1,0,Comm);
 
   EpetraExt::HDF5 myhdf5( Comm );
   myhdf5.Create( hdf5FileName );
@@ -369,11 +369,11 @@ IoXdmf::write ( const Tpetra::MultiVector<double,int> & x,
   int numVectors = x.getNumVectors();
   for (int k; k<numVectors; k++) {
 	  // fill absPsi and argPsi
-	  Epetra_MultiVector xK(StandardMap,Nx+1);
+	  Epetra_MultiVector xK(StandardMap,Nx[1]+1);
 	  Teuchos::ArrayRCP<const double> xKView = x.getVector(k)->get1dView();
 	  int l=0;
-	  for (int i=0; i<Nx+1; i++)
-		  for (int j=0; j<Nx+1; j++)
+	  for (unsigned int i=0; i<Nx[0]+1; i++)
+		  for (unsigned int j=0; j<Nx[1]+1; j++)
 			  xK.ReplaceGlobalValue( i, j, xKView[l++] );
 	  std::string name = "x" + EpetraExt::toString(k);
       myhdf5.Write( name, xK );
@@ -386,13 +386,13 @@ IoXdmf::write ( const Tpetra::MultiVector<double,int> & x,
 // =============================================================================
 void
 IoXdmf::write( const Tpetra::MultiVector<double,int> & x,
-               const int                               Nx,
-               const double                            h
+               const Teuchos::Tuple<unsigned int,2>  & Nx,
+               const Teuchos::Tuple<double,2>        & h
              )
 {
-	  TEST_FOR_EXCEPTION( true,
-	                      std::logic_error,
-		                  "Not yet implemented." );
+  TEST_FOR_EXCEPTION( true,
+                      std::logic_error,
+                      "Not yet implemented." );
 }
 // =============================================================================
 // Inside an XML object, this function looks for a specific tag and returns

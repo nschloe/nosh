@@ -36,26 +36,26 @@ public:
   //! nodes is preserved and the resulting file contains a state \f$\psi\f
   //! that can be viewed using standard tools.
   virtual void
-  write(const Tpetra::MultiVector<double, int> & x, const int Nx,
-      const double h, const Teuchos::ParameterList & problemParams);
+  write(const Tpetra::MultiVector<double, int> & x, const Teuchos::Tuple<unsigned int,2>  & Nx,
+      const Teuchos::Tuple<double,2>        & h, const Teuchos::ParameterList & problemParams);
 
   virtual void
-  write(const Tpetra::MultiVector<double, int> & x, const int Nx,
-      const double h);
+  write(const Tpetra::MultiVector<double, int> & x, const Teuchos::Tuple<unsigned int,2>  & Nx,
+      const Teuchos::Tuple<double,2>        & h);
 
 protected:
 private:
 
   void
-  writeVtkStructuredPointsHeader(std::ofstream & ioStream, const int Nx,
-      const double h, const int numScalars) const;
+  writeVtkStructuredPointsHeader(std::ofstream & ioStream, const Teuchos::Tuple<unsigned int,2>  & Nx,
+      const Teuchos::Tuple<double,2>        & h, const int numScalars) const;
 
   void
   writeParameterList(const Teuchos::ParameterList & pList,
       std::ofstream & ioStream) const;
 
   void
-  writeScalars(const Tpetra::MultiVector<double, int> & psi, const int Nx,
+  writeScalars(const Tpetra::MultiVector<double, int> & psi, const Teuchos::Tuple<unsigned int,2>  & Nx,
       std::ofstream & oStream) const;
 
   //! joins a vector of strings to one string with a separator string \c sep

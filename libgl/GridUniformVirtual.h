@@ -10,15 +10,14 @@
 
 #include "GridVirtual.h"
 
-class GridUniformVirtual: public GridVirtual
+class GridUniformVirtual: virtual public GridVirtual
 {
 public:
-
     GridUniformVirtual( double scaling = 0.0,
-                      double h = 0.0,
-                      double gridDomainArea = 0.0,
-                      int    numGridPoints = 0,
-                      int    numBoundaryPoints = 0);
+                        double h = 0.0,
+                        double gridDomainArea = 0.0,
+                        int    numGridPoints = 0,
+                        int    numBoundaryPoints = 0);
 
     virtual
     ~GridUniformVirtual();
@@ -34,6 +33,6 @@ public:
     double h_;
 
   private:
-  };
+};
 
 #endif /* GRIDUNIFORMVIRTUAL_H_ */

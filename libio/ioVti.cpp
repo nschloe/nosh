@@ -72,8 +72,8 @@ IoVti::read(const Teuchos::RCP<const Teuchos::Comm<int> > &tComm, Teuchos::RCP<
 }
 // =============================================================================
 void
-IoVti::write(const Tpetra::MultiVector<double, int> & x, const int Nx,
-    const double h, const Teuchos::ParameterList & problemParams)
+IoVti::write(const Tpetra::MultiVector<double, int> & x, const Teuchos::Tuple<unsigned int,2>  & Nx,
+    const Teuchos::Tuple<double,2>        & h, const Teuchos::ParameterList & problemParams)
 {
   std::string str;
 
@@ -92,9 +92,9 @@ IoVti::write(const Tpetra::MultiVector<double, int> & x, const int Nx,
 
       Teuchos::ArrayRCP<const double> xKView = x.getVector(k)->get1dView();
       int l = 0;
-      for (int i = 0; i < Nx + 1; i++)
+      for (unsigned int i = 0; i < Nx[0] + 1; i++)
         {
-          for (int j = 0; j < Nx + 1; j++)
+          for (unsigned int j = 0; j < Nx[1] + 1; j++)
             {
               l++;
               xmlDataArray.addContent(EpetraExt::toString(abs(xKView[l])) + " ");
@@ -104,7 +104,7 @@ IoVti::write(const Tpetra::MultiVector<double, int> & x, const int Nx,
     }
 
   Teuchos::XMLObject xmlPiece("Piece");
-  str = "0 " + EpetraExt::toString(Nx) + " 0 " + EpetraExt::toString(Nx)
+  str = "0 " + EpetraExt::toString(Nx[0]) + " 0 " + EpetraExt::toString(Nx[1])
       + " 0 0";
   xmlPiece.addAttribute("Extent", str);
   xmlPiece.addChild(xmlPointData);
@@ -112,7 +112,7 @@ IoVti::write(const Tpetra::MultiVector<double, int> & x, const int Nx,
   Teuchos::XMLObject xmlImageData("ImageData");
   xmlImageData.addAttribute("WholeExtent", str);
   xmlImageData.addAttribute("Origin", "0 0 0");
-  str = EpetraExt::toString(h) + " " + EpetraExt::toString(h) + " 0";
+  str = EpetraExt::toString(h[0]) + " " + EpetraExt::toString(h[1]) + " 0";
   xmlImageData.addAttribute("Spacing", str);
   xmlImageData.addChild(xmlPiece);
 
@@ -149,8 +149,10 @@ IoVti::write(const Tpetra::MultiVector<double, int> & x, const int Nx,
 }
 // =============================================================================
 void
-IoVti::write(const Tpetra::MultiVector<double, int> & x, const int Nx,
-    const double h)
+IoVti::write( const Tpetra::MultiVector<double, int> & x,
+              const Teuchos::Tuple<unsigned int,2>  & Nx,
+              const Teuchos::Tuple<double,2>        & h
+            )
 {
   TEST_FOR_EXCEPTION( true,
       std::logic_error,

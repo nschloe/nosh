@@ -387,8 +387,8 @@ bool GlSystem::computeJacobian(const Epetra_Vector &x, Epetra_Operator &Jac) {
 bool GlSystem::computePreconditioner(const Epetra_Vector &x,
 		Epetra_Operator &Prec, Teuchos::ParameterList *precParams) const {
     TEST_FOR_EXCEPTION( true,
-			            std::logic_error,
-			            "Use explicit Jacobian only for this test problem!" );
+			std::logic_error,
+	                "Use explicit Jacobian only for this test problem!" );
 }
 // =============================================================================
 Teuchos::RCP<Epetra_Vector> GlSystem::getSolution() const {

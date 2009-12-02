@@ -35,15 +35,15 @@ class IoXdmf: public IoVirtual
     //! that can be viewed using standard tools.
     virtual void
     write ( const Tpetra::MultiVector<double,int> & x,
-            const int                               Nx,
-            const double                            h,
+            const Teuchos::Tuple<unsigned int,2>  & Nx,
+            const Teuchos::Tuple<double,2>        & h,
             const Teuchos::ParameterList          & problemParams
           );
 
     virtual void
     write( const Tpetra::MultiVector<double,int> & x,
-           const int                               Nx,
-           const double                            h
+           const Teuchos::Tuple<unsigned int,2>  & Nx,
+           const Teuchos::Tuple<double,2>        & h
          );
 
   private:

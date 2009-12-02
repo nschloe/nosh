@@ -28,6 +28,8 @@
 #include "glBoundaryConditionsCentral.h"
 #include "eigenSaver.h"
 
+#include "GridUniformSquare.h"
+
 typedef complex<double> double_complex;
 typedef Tpetra::Vector<double_complex, int> ComplexVector;
 typedef Teuchos::ArrayRCP<const double> DoubleArrayRCP;
@@ -142,7 +144,7 @@ main(int argc, char *argv[])
       glParameters.set("scaling", scaling);
       glParameters.set("H0", H0);
 
-      grid = Teuchos::rcp(new GridSquare(Nx, scaling));
+      grid = Teuchos::rcp(new GridUniformSquare(Nx, scaling));
 
       // set initial guess
       int numComplexUnknowns = grid->getNumGridPoints();

@@ -6,6 +6,7 @@ SET ( gl_SRCS
       GridVirtual.cpp
       GridUniformVirtual.cpp
       GridSquare.cpp
+      GridUniformSquare.cpp
       GridReader.cpp
       MagneticVectorPotential.cpp
       ginzburgLandau.cpp

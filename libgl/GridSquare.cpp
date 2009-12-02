@@ -12,13 +12,13 @@
 
 // =============================================================================
 // Class constructor
-GridSquare::GridSquare(int nx, double scaling) :
-  GridUniformVirtual( scaling,
-                      scaling / nx,
-                      pow( scaling, 2 ),
-                     (nx+1)*(nx+1), 4*nx
-                    ),
-  nx_(nx)
+GridSquare::GridSquare(Teuchos::Tuple<unsigned int,2> Nx, double scaling) :
+  GridVirtual( scaling,
+               Teuchos::tuple(scaling/Nx[0],scaling/Nx[1]),
+               pow( scaling, 2 ),
+               (Nx[0]+1)*(Nx[1]+1), 2*( Nx[0]+Nx[1] )
+             ),
+  Nx_(Nx)
 {
 }
 // =============================================================================
@@ -32,73 +32,73 @@ GridSquare::getX(Teuchos::Array<int> i) const
 {
   Teuchos::RCP<Teuchos::Array<double> > x = Teuchos::rcp(new Teuchos::Array<
       double>(2));
-  (*x)[0] = i[0] * h_;
-  (*x)[1] = i[1] * h_;
+  (*x)[0] = i[0] * h_[0];
+  (*x)[1] = i[1] * h_[1];
   return x;
 }
 // =============================================================================
 Teuchos::RCP<Teuchos::Array<double> >
-GridSquare::getXLeft(int k) const
+GridSquare::getXLeft(unsigned int k) const
 {
-  Teuchos::RCP<Teuchos::Array<int> > i(k2i(k));
-  Teuchos::RCP<Teuchos::Array<double> >x(getX(*i));
-  (*x)[0] -= 0.5 * h_;
+  Teuchos::RCP<Teuchos::Array<int> >    i( k2i(k)   );
+  Teuchos::RCP<Teuchos::Array<double> > x( getX(*i) );
+  (*x)[0] -= 0.5 * h_[0];
   return x;
 }
 // =============================================================================
 Teuchos::RCP<Teuchos::Array<double> >
-GridSquare::getXRight(int k) const
+GridSquare::getXRight(unsigned int k) const
 {
   Teuchos::RCP<Teuchos::Array<int> > i(k2i(k));
   Teuchos::RCP<Teuchos::Array<double> >x(getX(*i));
-  (*x)[0] += 0.5 * h_;
+  (*x)[0] += 0.5 * h_[0];
   return x;
 }
 // =============================================================================
 Teuchos::RCP<Teuchos::Array<double> >
-GridSquare::getXBelow(int k) const
+GridSquare::getXBelow(unsigned int k) const
 {
   Teuchos::RCP<Teuchos::Array<int> > i(k2i(k));
   Teuchos::RCP<Teuchos::Array<double> >x(getX(*i));
-  (*x)[1] -= 0.5 * h_;
+  (*x)[1] -= 0.5 * h_[1];
   return x;
 }
 // =============================================================================
 Teuchos::RCP<Teuchos::Array<double> >
-GridSquare::getXAbove(int k) const
+GridSquare::getXAbove(unsigned int k) const
 {
   Teuchos::RCP<Teuchos::Array<int> > i(k2i(k));
   Teuchos::RCP<Teuchos::Array<double> >x(getX(*i));
-  (*x)[1] += 0.5 * h_;
+  (*x)[1] += 0.5 * h_[1];
   return x;
 }
 // =============================================================================
-int
-GridSquare::getKLeft( int k ) const
+unsigned int
+GridSquare::getKLeft( unsigned int k ) const
 {
   Teuchos::RCP<Teuchos::Array<int> > i( k2i(k) );
   (*i)[0] -= 1;
   return i2k(i);
 }
 // =============================================================================
-int
-GridSquare::getKRight(int k) const
+unsigned int
+GridSquare::getKRight(unsigned int k) const
 {
   Teuchos::RCP<Teuchos::Array<int> > i( k2i(k) );
   (*i)[0] += 1;
   return i2k(i);
 }
 // =============================================================================
-int
-GridSquare::getKBelow(int k) const
+unsigned int
+GridSquare::getKBelow(unsigned int k) const
 {
   Teuchos::RCP<Teuchos::Array<int> > i( k2i(k) );
   (*i)[1] -= 1;
   return i2k(i);
 }
 // =============================================================================
-int
-GridSquare::getKAbove(int k) const
+unsigned int
+GridSquare::getKAbove(unsigned int k) const
 {
   Teuchos::RCP<Teuchos::Array<int> > i( k2i(k) );
   (*i)[1] += 1;
@@ -107,43 +107,42 @@ GridSquare::getKAbove(int k) const
 // =============================================================================
 // maps a running index k to a 2D index i
 Teuchos::RCP<Teuchos::Array<int> >
-GridSquare::k2i(int k) const
+GridSquare::k2i(unsigned int k) const
 {
   int d = 2;
   Teuchos::RCP<Teuchos::Array<int> > i = Teuchos::rcp(
       new Teuchos::Array<int>(d));
 
-  if (k < nx_)
+  if (k < Nx_[0])
     { // south
       (*i)[0] = k;
       (*i)[1] = 0;
     }
-  else if (k < 2 * nx_)
+  else if (k < Nx_[0]+Nx_[1])
     { // east
-      (*i)[0] = nx_;
-      (*i)[1] = k - nx_;
+      (*i)[0] = Nx_[0];
+      (*i)[1] = k - Nx_[0];
     }
-  else if (k < 3 * nx_)
+  else if (k < 2*Nx_[0]+Nx_[1])
     { // north
-      (*i)[0] = 3 * nx_ - k;
-      (*i)[1] = nx_;
+      (*i)[0] = 2*Nx_[0]+Nx_[1] -k;
+      (*i)[1] = Nx_[1];
     }
-  else if (k < 4 * nx_)
+  else if (k < 2*(Nx_[0]+Nx_[1]) )
     { // west
       (*i)[0] = 0;
-      (*i)[1] = 4 * nx_ - k;
+      (*i)[1] = 2*(Nx_[0]+Nx_[1]) - k;
     }
-  else if ( k < (nx_+1)*(nx_+1) )
+  else if ( k < (Nx_[0]+1)*(Nx_[1]+1) )
     { // on the interior
-      int numBoundaryNodes = 4 * nx_;
-      (*i)[0] = (k - numBoundaryNodes) % (nx_ - 1) + 1;
-      (*i)[1] = (k - numBoundaryNodes) / (nx_ - 1) + 1;
+      (*i)[0] = (k - numBoundaryPoints_) % (Nx_[0] - 1) + 1;
+      (*i)[1] = (k - numBoundaryPoints_) / (Nx_[0] - 1) + 1;
     }
   else
     {
-	  TEST_FOR_EXCEPTION( true,
-			              std::logic_error,
-			              "Illegal running index   k = " << k );
+      TEST_FOR_EXCEPTION( true,
+	                  std::logic_error,
+		          "Illegal running index   k = " << k );
     }
 
   return i;
@@ -152,106 +151,109 @@ GridSquare::k2i(int k) const
 // Defines a series of neighboring boundary nodes.
 // This is independent of the actual numbering scheme of the nodes.
 Teuchos::RCP<Teuchos::Array<int> >
-GridSquare::boundaryPosition ( int l ) const
+GridSquare::boundaryPosition ( unsigned int l ) const
 {
   int d = 2;
   Teuchos::RCP<Teuchos::Array<int> > i = Teuchos::rcp( new Teuchos::Array<int>(d));
 
   // start at the bottom left, and go around counter-clockwise
-  if (l < nx_)
+  if (l < Nx_[0])
   { // south
       (*i)[0] = l;
       (*i)[1] = 0;
   }
-  else if (l < 2 * nx_)
+  else if (l < Nx_[0]+Nx_[1])
   { // east
-      (*i)[0] = nx_;
-      (*i)[1] = l - nx_;
+      (*i)[0] = Nx_[0];
+      (*i)[1] = l - Nx_[0];
   }
-  else if (l < 3 * nx_)
+  else if (l < 2*Nx_[0]+Nx_[1])
   { // north
-      (*i)[0] = 3 * nx_ - l;
-      (*i)[1] = nx_;
+      (*i)[0] = 2*Nx_[0]+Nx_[1] - l;
+      (*i)[1] = Nx_[1];
   }
-  else if (l < 4 * nx_)
+  else if (l < numBoundaryPoints_)
   { // west
       (*i)[0] = 0;
-      (*i)[1] = 4 * nx_ - l;
+      (*i)[1] = 2*(Nx_[0]+Nx_[1])  - l;
   }
   else
   {
       TEST_FOR_EXCEPTION( true, std::logic_error,
                           "Given index l=" << l
                           << "larger than the number of boundary nodes n="
-                          << 4*nx_  << ".");
+                          << numBoundaryPoints_  << ".");
   }
   return i;
 }
 // =============================================================================
-int
-GridSquare::boundaryIndex2globalIndex( int l ) const
+unsigned int
+GridSquare::boundaryIndex2globalIndex( unsigned int l ) const
 {
 	Teuchos::RCP<Teuchos::Array<int> > i = boundaryPosition(l);
 	return i2k( i );
 }
 // =============================================================================
 GridSquare::nodeType
-GridSquare::getBoundaryNodeType( int l ) const
+GridSquare::getBoundaryNodeType( unsigned int l ) const
 {
   Teuchos::RCP<Teuchos::Array<int> > i = boundaryPosition(l);
 
   if ( (*i)[0]==0 ) {
           if ((*i)[1]==0)
                   return BOTTOMLEFTCONVEX;
-          else if ((*i)[1]==nx_)
+          else if ((*i)[1]==(int)Nx_[1])
                   return TOPLEFTCONVEX;
           else
                   return LEFT;
-  } else if ( (*i)[0]==nx_ ) {
+  } else if ( (*i)[0]==(int)Nx_[1] ) {
           if ( (*i)[1]==0 )
                   return BOTTOMRIGHTCONVEX;
-          else if ( (*i)[1]==nx_ )
+          else if ( (*i)[1]==(int)Nx_[1] )
                   return TOPRIGHTCONVEX;
           else
                   return RIGHT;
   } else if ( (*i)[1]==0 )
           return BOTTOM;
-  else if ( (*i)[1]==nx_ )
+  else if ( (*i)[1]==(int)Nx_[1] )
           return TOP;
   else
           return INTERIOR;
 }
 // =============================================================================
 double
-GridSquare::cellArea(int k) const
+GridSquare::cellArea(unsigned int k) const
 {
-  if (k == 0 || k == nx_ || k == 2 * nx_ || k == 3 * nx_)
+  // TODO Use nodeType association here and possibly move out to Virtual
+  if (k == 0 || k == Nx_[0] || k == Nx_[0]+Nx_[1] || k == 2*Nx_[0]+Nx_[1] )
 	  // corner
-	  return 0.25*h_*h_;
-  else if (k < 4 * nx_)
+	  return 0.25*h_[0]*h_[1];
+  else if (k < numBoundaryPoints_)
 	  // edge
-      return 0.5*h_*h_;
+      return 0.5*h_[0]*h_[1];
   else
 	  // interior
-	  return h_*h_;
+	  return h_[0]*h_[1];
 }
 // =============================================================================
 // maps a 2D index i to a running index k
-int
+unsigned int
 GridSquare::i2k( Teuchos::RCP<Teuchos::Array<int> > & i) const
 {
   int k;
 
   if ((*i)[1] == 0) // south
       k = (*i)[0];
-  else if ((*i)[0] == nx_) // east
-      k = (*i)[1] + nx_;
-  else if ((*i)[1] == nx_) // north
-      k = 3 * nx_ - (*i)[0];
+  else if ((*i)[0] == (int)Nx_[0]) // east
+      k = (*i)[1] + Nx_[0];
+  else if ((*i)[1] == (int)Nx_[1]) // north
+      k = 2*Nx_[0]+Nx_[1] - (*i)[0];
   else if ((*i)[0] == 0) // west
-      k = 4 * nx_ - (*i)[1];
-  else if ((*i)[0] > 0 && (*i)[0] < nx_ && (*i)[1] > 0 && (*i)[1] < nx_) // interior
-      k = 4 * nx_ + (nx_ - 1) * ((*i)[1] - 1) + (*i)[0] - 1;
+      k = 2*(Nx_[0]+Nx_[1]) - (*i)[1];
+  else if ((*i)[0] > 0 && (*i)[0] < (int)Nx_[0] && (*i)[1] > 0 && (*i)[1] < (int)Nx_[1]) // interior
+      k = 2*(Nx_[0]+Nx_[1])
+        + (Nx_[0] - 1) * ((*i)[1] - 1)
+        + (*i)[0] - 1;
   else
       TEST_FOR_EXCEPTION( true, std::logic_error,
 	                  "Illegal 2D index   i = " << *i );
@@ -281,10 +283,10 @@ GridSquare::permuteGrid2Lexicographic( const DoubleMultiVector & x
       Teuchos::ArrayRCP<const double> xView = x.getVector(l)->get1dView();
       int k = 0;
       Teuchos::RCP<Teuchos::Array<int> > index = Teuchos::rcp( new Teuchos::Array<int>(2) );
-      for (int j = 0; j < nx_ + 1; j++)
+      for (unsigned int j = 0; j < Nx_[1] + 1; j++)
       {
           (*index)[1] = j;
-          for (int i = 0; i < nx_ + 1; i++)
+          for (unsigned int i = 0; i < Nx_[0] + 1; i++)
           {
               (*index)[0] = i;
               int kGlobal = i2k(index);
@@ -318,10 +320,10 @@ GridSquare::permuteLexicographic2Grid( const DoubleMultiVector & xLexicographic
       Teuchos::ArrayRCP<const double> xLexicographicView = xLexicographic.getVector(l)->get1dView();
       int k = 0;
       Teuchos::RCP<Teuchos::Array<int> > index = Teuchos::rcp( new Teuchos::Array<int>(2) );
-      for (int j = 0; j < nx_ + 1; j++)
+      for (unsigned int j = 0; j < Nx_[1] + 1; j++)
       {
           (*index)[1] = j;
-          for (int i = 0; i < nx_ + 1; i++)
+          for (unsigned int i = 0; i < Nx_[0] + 1; i++)
           {
               (*index)[0] = i;
               int kGlobal = i2k(index);
@@ -344,12 +346,13 @@ GridSquare::writeWithGrid( const DoubleMultiVector      & x,
   // append grid parameters
   Teuchos::ParameterList extendedParams( params );
   extendedParams.get("scaling", scaling_ );
-  extendedParams.get("Nx", nx_ );
+  extendedParams.get("Nx", Nx_[0] );
+  extendedParams.get("Ny", Nx_[1] );
 
   // reorder the grid to lexicographic ordering
   Teuchos::RCP<DoubleMultiVector> xLexicographic = permuteGrid2Lexicographic(x);
 
-  fileIo->write( *xLexicographic, nx_, h_, extendedParams);
+  fileIo->write( *xLexicographic, Nx_, h_, extendedParams);
 }
 // =============================================================================
 void
@@ -370,7 +373,11 @@ GridSquare::read( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
   TEST_FOR_EXCEPTION( !params.isParameter("Nx"),
                       std::logic_error,
                       "Parameter \"Nx\" not found." );
-  nx_ = params.get<int>("Nx");
+  TEST_FOR_EXCEPTION( !params.isParameter("Ny"),
+                      std::logic_error,
+                      "Parameter \"Ny\" not found." );
+  Nx_ = Teuchos::tuple<unsigned int>( params.get<unsigned int>("Nx"), params.get<unsigned int>("Ny") );
+
 
   TEST_FOR_EXCEPTION( !params.isParameter("scaling"),
                       std::logic_error,
@@ -378,10 +385,10 @@ GridSquare::read( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
   scaling_ = params.get<double>("scaling");
 
   // initialization of the dependent members
-  h_                 = scaling_ / nx_;
+  h_                 = Teuchos::tuple<double>( scaling_/Nx_[0], scaling_/Nx_[1] );
   gridDomainArea_    = pow( scaling_, 2 );
-  numGridPoints_     = pow( nx_+1   , 2 );
-  numBoundaryPoints_ = 4*nx_;
+  numGridPoints_     = (Nx_[0]+1)*(Nx_[1]+1);
+  numBoundaryPoints_ = 2*(Nx_[0]+Nx_[1]);
 
   // apply the grid ordering
   x = permuteLexicographic2Grid( *xLexicographic );

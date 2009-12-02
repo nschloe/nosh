@@ -29,10 +29,10 @@ GridUniformVirtual::~GridUniformVirtual()
 void
 GridUniformVirtual::setScaling( const double scaling )
 {
-  GridVirtual::setScaling( scaling );
-
   double ratio = scaling/scaling_;
   GridUniformVirtual::h_ *= ratio; // rescale h
+
+  GridVirtual::setScaling( scaling );
 
   return;
 }

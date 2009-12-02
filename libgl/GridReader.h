@@ -8,8 +8,7 @@
 #ifndef GRIDREADER_H_
 #define GRIDREADER_H_
 
-#include "GridVirtual.h"
-#include "GridSquare.h"
+#include "GridUniformVirtual.h"
 
 class GridReader
 {

@@ -114,8 +114,10 @@ IoVtk::read(const Teuchos::RCP<const Teuchos::Comm<int> > &tComm, Teuchos::RCP<
 }
 // =============================================================================
 void
-IoVtk::write(const Tpetra::MultiVector<double, int> & x, const int Nx,
-    const double h, const Teuchos::ParameterList & problemParams)
+IoVtk::write( const Tpetra::MultiVector<double,int> & x,
+              const Teuchos::Tuple<unsigned int,2>  & Nx,
+              const Teuchos::Tuple<double,2>        & h,
+              const Teuchos::ParameterList & problemParams )
 {
   std::ofstream vtkfile;
 
@@ -144,8 +146,10 @@ IoVtk::write(const Tpetra::MultiVector<double, int> & x, const int Nx,
 }
 // =============================================================================
 void
-IoVtk::write(const Tpetra::MultiVector<double, int> & x, const int Nx,
-    const double h)
+IoVtk::write( const Tpetra::MultiVector<double, int> & x,
+              const Teuchos::Tuple<unsigned int,2>  & Nx,
+              const Teuchos::Tuple<double,2>        & h
+            )
 {
   std::ofstream vtkfile;
 
@@ -215,14 +219,17 @@ IoVtk::writeParameterList(const Teuchos::ParameterList & pList,
       if (pList.isType<int> (paramName))
         paramStringList[k] = "int " + pList.name(i) + "="
             + EpetraExt::toString(pList.get<int> (paramName));
+      else if (pList.isType<unsigned int> (paramName))
+        paramStringList[k] = "unsigned int " + pList.name(i) + "="
+            + EpetraExt::toString(pList.get<unsigned int> (paramName));
       else if (pList.isType<double> (paramName))
         paramStringList[k] = "double " + pList.name(i) + "="
             + EpetraExt::toString(pList.get<double> (paramName));
       else
         {
           TEST_FOR_EXCEPTION( true,
-              std::logic_error,
-              "Parameter is neither of type \"int\" not of type \"double\"." );
+                              std::logic_error,
+                              "Parameter \"" << paramName << "\"is neither of type \"int\", \"unsigned int\", nor \"double\"." );
         }
       k++;
     }
@@ -234,17 +241,20 @@ IoVtk::writeParameterList(const Teuchos::ParameterList & pList,
 }
 // =============================================================================
 void
-IoVtk::writeVtkStructuredPointsHeader(std::ofstream & ioStream, const int Nx,
-    const double h, const int numScalars) const
+IoVtk::writeVtkStructuredPointsHeader( std::ofstream & ioStream,
+                                       const Teuchos::Tuple<unsigned int,2>  & Nx,
+                                       const Teuchos::Tuple<double,2>        & h,
+                                       const int numScalars
+                                     ) const
 {
-  ioStream << "ASCII\n" << "DATASET STRUCTURED_POINTS\n" << "DIMENSIONS " << Nx
-      + 1 << " " << Nx + 1 << " " << 1 << "\n" << "ORIGIN 0 0 0\n"
-      << "SPACING " << h << " " << h << " " << 0.0 << "\n" << "POINT_DATA "
+  ioStream << "ASCII\n" << "DATASET STRUCTURED_POINTS\n" << "DIMENSIONS " << Nx[0]
+      + 1 << " " << Nx[1] + 1 << " " << 1 << "\n" << "ORIGIN 0 0 0\n"
+      << "SPACING " << h[0] << " " << h[1] << " " << 0.0 << "\n" << "POINT_DATA "
       << numScalars << "\n";
 }
 // =============================================================================
 void
-IoVtk::writeScalars(const Tpetra::MultiVector<double, int> & x, const int Nx,
+IoVtk::writeScalars(const Tpetra::MultiVector<double, int> & x, const Teuchos::Tuple<unsigned int,2>  & Nx,
     std::ofstream & oStream) const
 {
   // Note that, when writing the data, the values of psi are assumed to be
@@ -256,9 +266,9 @@ IoVtk::writeScalars(const Tpetra::MultiVector<double, int> & x, const int Nx,
       oStream << "SCALARS x" << k << " float\n" << "LOOKUP_TABLE default\n";
       Teuchos::ArrayRCP<const double> xKView = x.getVector(k)->get1dView();
       int l = 0;
-      for (int j = 0; j < Nx + 1; j++)
+      for (unsigned int j = 0; j < Nx[1] + 1; j++)
         {
-          for (int i = 0; i < Nx + 1; i++)
+          for (unsigned int i = 0; i < Nx[0] + 1; i++)
             {
               // TODO: Remove this.
               // The following ugly construction makes sure that values as 1.234e-46

@@ -22,8 +22,9 @@ public:
     GridVirtual( double                   scaling = 0.0,
                  Teuchos::Tuple<double,2> h = Teuchos::tuple(0.0,0.0),
                  double                   gridDomainArea = 0.0,
-                 int                      numGridPoints = 0,
-                 int                      numBoundaryPoints = 0);
+                 unsigned int             numGridPoints = 0,
+                 unsigned int             numBoundaryPoints = 0
+               );
 
     virtual
     ~GridVirtual();
@@ -34,11 +35,11 @@ public:
     void
     setScaling( const double alpha );
 
-    int
+    unsigned int
     getNumGridPoints() const; //!< Returns the number of grid points.
 
     //! Returns the number of grid points on the boundary.
-    int
+    unsigned int
     getNumBoundaryPoints() const;
 
     Teuchos::Tuple<double,2>
@@ -71,40 +72,40 @@ public:
 public:
 
     virtual nodeType
-    getBoundaryNodeType( int l ) const = 0;
+    getBoundaryNodeType( unsigned int l ) const = 0;
 
     /*! For a given node number k, returns the the area of the surrounding cell. */
     virtual double
-    cellArea(int k) const = 0;
+    cellArea(unsigned int k) const = 0;
 
     virtual Teuchos::RCP<Teuchos::Array<double> >
-    getXLeft(int k) const = 0; //!< Returns the value of \f$x\f$ left of point i.
+    getXLeft(unsigned int k) const = 0; //!< Returns the value of \f$x\f$ left of point i.
 
     virtual Teuchos::RCP<Teuchos::Array<double> >
-    getXRight(int k) const = 0; //!< Returns the value of \f$x\f$ right of point i.
+    getXRight(unsigned int k) const = 0; //!< Returns the value of \f$x\f$ right of point i.
 
     virtual Teuchos::RCP<Teuchos::Array<double> >
-    getXBelow(int k) const = 0 ; //!< Returns the value of \f$x\f$ below point i.
+    getXBelow(unsigned int k) const = 0 ; //!< Returns the value of \f$x\f$ below point i.
 
     virtual Teuchos::RCP<Teuchos::Array<double> >
-    getXAbove(int k) const = 0; //!< Returns the value of \f$x\f$ above point i.
+    getXAbove(unsigned int k) const = 0; //!< Returns the value of \f$x\f$ above point i.
 
-    virtual int
-    getKLeft(int k) const = 0; //!< Returns the running index \c k of the node left of \c i.
+    virtual unsigned int
+    getKLeft(unsigned int k) const = 0; //!< Returns the running index \c k of the node left of \c i.
 
-    virtual int
-    getKRight(int k) const = 0; //!< Returns the running index \c k of the node right of \c i.
+    virtual unsigned int
+    getKRight(unsigned int k) const = 0; //!< Returns the running index \c k of the node right of \c i.
 
-    virtual int
-    getKBelow(int k) const = 0; //!< Returns the running index \c k of the node below \c i.
+    virtual unsigned int
+    getKBelow(unsigned int k) const = 0; //!< Returns the running index \c k of the node below \c i.
 
-    virtual int
-    getKAbove(int k) const = 0; //!< Returns the running index \c k of the node above \c i.
+    virtual unsigned int
+    getKAbove(unsigned int k) const = 0; //!< Returns the running index \c k of the node above \c i.
 
     //! Returns the global index \ck of the \cl-th boundary node. Subsequent nodes \c l, \cl+1
     //! sit next to each other.
-    virtual int
-    boundaryIndex2globalIndex( int l ) const = 0;
+    virtual unsigned int
+    boundaryIndex2globalIndex( unsigned int l ) const = 0;
 
     virtual void
     writeWithGrid( const DoubleMultiVector      & x,
