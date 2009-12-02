@@ -443,7 +443,7 @@ IoVtk::ReadScalarsFromVtkFile(std::ifstream & iFile, Teuchos::RCP<
 
       // Read the number of components; if none is given, take the default (1).
       int numComponents = 1;
-      unsigned int startNum = buf.find_first_of("012456789");
+      unsigned int startNum = buf.find_first_of("0123456789");
       if (startNum != std::string::npos)
         numComponents = strtol(
             buf.substr(startNum, buf.size() - startNum).c_str(), NULL, 10);
