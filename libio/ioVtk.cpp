@@ -1,7 +1,5 @@
 #include "ioVtk.h"
 
-#include <string>
-
 #include <boost/algorithm/string.hpp>
 
 #include <EpetraExt_Utils.h>
@@ -328,6 +326,8 @@ IoVtk::ReadParamsFromVtkFile(std::ifstream &iFile,
 
   // Now loop over the separate elements and decode them into the parameter
   // vector.
+  Teuchos::Tuple<std::string,3> validDataTypes = Teuchos::tuple<std::string>("int", "unsigned int", "double" );
+
   for (unsigned int k = 0; k < strVec.size(); k++)
     {
 
@@ -342,12 +342,26 @@ IoVtk::ReadParamsFromVtkFile(std::ifstream &iFile,
       int it1 = strVec[k].find(" ");
       std::string type = strVec[k].substr(0, it1);
 
-      TEST_FOR_EXCEPTION( type.compare("int") && type.compare("double"),
-          std::runtime_error,
-          "Type \"" << type << "\" is neither \"int\""
-          << " nor \"double\" in file '" << fileName_ << "'." );
+      bool isValidDataType = false;
+      int  typeIndex = -1;
+      for ( int l=0; l<validDataTypes.size(); l++ ) {
+        it1 = validDataTypes[l].length();
+        if ( !strVec[k].substr(0, it1).compare( validDataTypes[l] ) ) {
+            typeIndex = l;
+            isValidDataType = true;
+            break;
+        }
+      }
+
+      TEST_FOR_EXCEPTION( !isValidDataType,
+                          std::runtime_error,
+                          "Type \"" << type << "\" is none of the valid data types "
+                          << validDataTypes << " in file \"" << fileName_ << "\"." );
 
       std::string equation = strVec[k].substr(it1);
+
+      std::cout << validDataTypes[typeIndex] << std::endl;
+      std::cout << equation << std::endl;
 
       // split the rest up by '='
       std::vector<std::string> terms;
@@ -362,25 +376,33 @@ IoVtk::ReadParamsFromVtkFile(std::ifstream &iFile,
           << "\" is not of the form \"psi=5.34\""
           << "in file '" << fileName_ << "'." );
 
-      if (type.compare("int") == 0)
-        {
+      switch (typeIndex) {
+      case(0): // int
+      {
           int val = strtol(terms[1].c_str(), NULL, 10);
           fileParams.set(terms[0], val);
-        }
-      else if (type.compare("double") == 0)
-        {
+          break;
+      }
+      case(1): // unsigned int
+      {
+          int val = strtoul(terms[1].c_str(), NULL, 10);
+          fileParams.set(terms[0], val);
+          break;
+      }
+      case(2): // double
+      {
           double val = strtod(terms[1].c_str(), NULL);
           fileParams.set(terms[0], val);
-        }
-      else
-        {
-          TEST_FOR_EXCEPTION( true,
-              std::logic_error,
-              "Type \"" << type << "\" is neither \"int\""
-              << " nor \"double\"." );
-        }
-    }
+          break;
+      }
+      default:
+        TEST_FOR_EXCEPTION( true,
+            std::logic_error,
+            "Type \"" << type << "\" is none of the valid data types "
+            << validDataTypes << " in file \"" << fileName_ << "\"." );
+      }
 
+    } // loop over parameter list
   return true;
 }
 // ============================================================================
