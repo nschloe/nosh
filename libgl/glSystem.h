@@ -18,6 +18,7 @@
 
 #include <NOX_Epetra_Interface_Required.H> // NOX base class
 #include <NOX_Epetra_Interface_Jacobian.H> // NOX base class
+#include <NOX_Epetra_Interface_Preconditioner.H> // NOX base class
 #include <LOCA_Epetra_Interface_Required.H> // LOCA base class
 #include <LOCA_Epetra_Interface_TimeDependent.H> // LOCA base class
 #include <NOX_Abstract_PrePostOperator.H>
@@ -34,6 +35,7 @@
 typedef Tpetra::Vector<double_complex, int> ComplexVector;
 
 class GlSystem: public NOX::Epetra::Interface::Jacobian,
+                public NOX::Epetra::Interface::Preconditioner,
 		public LOCA::Epetra::Interface::TimeDependent {
 public:
 
@@ -79,7 +81,7 @@ public:
 	//! an exception when called.
 	virtual bool
 	computePreconditioner(const Epetra_Vector &x, Epetra_Operator &Prec,
-			Teuchos::ParameterList* precParams = 0) const;
+			Teuchos::ParameterList* precParams = 0);
 
 	//! Returns the current state. Not necessarily a solution to the problem.
 	//! @return Reference-counted pointer to the current state.
@@ -90,6 +92,9 @@ public:
 	//! @return Reference-counted pointer to the Jacobian.
 	Teuchos::RCP<Epetra_CrsMatrix>
 	getJacobian() const;
+
+	Teuchos::RCP<Epetra_CrsMatrix>
+        getPreconditioner() const;
 
 	//! Set the problem parameters.
 	virtual void
@@ -187,6 +192,7 @@ private:
 	Epetra_Vector *rhs_;
 	Teuchos::RCP<Epetra_CrsGraph> Graph_;
 	Teuchos::RCP<Epetra_CrsMatrix> jacobian_;
+	Teuchos::RCP<Epetra_CrsMatrix> preconditioner_;
 	Teuchos::RCP<Epetra_Vector> initialSolution_;
 
 	std::string outputDir_;

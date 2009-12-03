@@ -128,9 +128,10 @@ GlSystem::GlSystem( GinzburgLandau::GinzburgLandau &gl,
 
 	// Allocate the sparsity pattern of the Jacobian matrix
 	jacobian_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, *Graph_));
-
-	// Clean-up
 	jacobian_->FillComplete();
+
+	preconditioner_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, *Graph_));
+	preconditioner_->FillComplete();
 }
 // =============================================================================
 // constructor without initial guess
@@ -221,9 +222,10 @@ outputDataFileName_(outputDataFileName)
 
   // Allocate the sparsity pattern of the Jacobian matrix
   jacobian_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, *Graph_));
-
-  // Clean-up
   jacobian_->FillComplete();
+
+  preconditioner_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, *Graph_));
+  preconditioner_->FillComplete();
 }
 // =============================================================================
 // Destructor
@@ -384,19 +386,32 @@ bool GlSystem::computeJacobian(const Epetra_Vector &x, Epetra_Operator &Jac) {
 	return true;
 }
 // =============================================================================
-bool GlSystem::computePreconditioner(const Epetra_Vector &x,
-		Epetra_Operator &Prec, Teuchos::ParameterList *precParams) const {
-    TEST_FOR_EXCEPTION( true,
-			std::logic_error,
-	                "Use explicit Jacobian only for this test problem!" );
+bool GlSystem::computePreconditioner( const Epetra_Vector &x,
+		                      Epetra_Operator &Prec,
+                                      Teuchos::ParameterList *precParams )
+{
+  Epetra_Vector diag = x;
+  diag.PutScalar(1.0);
+  preconditioner_->ReplaceDiagonalValues( diag );
+
+//    TEST_FOR_EXCEPTION( true,
+//			std::logic_error,
+//	                "Use explicit Jacobian only for this test problem!" );
 }
 // =============================================================================
-Teuchos::RCP<Epetra_Vector> GlSystem::getSolution() const {
+Teuchos::RCP<Epetra_Vector>
+GlSystem::getSolution() const {
 	return initialSolution_;
 }
 // =============================================================================
-Teuchos::RCP<Epetra_CrsMatrix> GlSystem::getJacobian() const {
+Teuchos::RCP<Epetra_CrsMatrix>
+GlSystem::getJacobian() const {
 	return jacobian_;
+}
+// =============================================================================
+Teuchos::RCP<Epetra_CrsMatrix>
+GlSystem::getPreconditioner() const {
+        return preconditioner_;
 }
 /* =============================================================================
  // Of an equation system

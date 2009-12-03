@@ -24,6 +24,8 @@
 #include "glBoundaryConditionsCentral.h"
 #include "eigenSaver.h"
 
+#include "GridUniformSquare.h"
+
 typedef complex<double> double_complex;
 typedef Tpetra::Vector<double_complex, int> ComplexVector;
 typedef Teuchos::ArrayRCP<const double> DoubleArrayRCP;
@@ -110,7 +112,7 @@ int main(int argc, char *argv[]) {
 	// define a new dummy psiLexicographic vector, to be adapted instantly
 	Teuchos::ParameterList glParameters;
 	Teuchos::RCP<ComplexVector> psi;
-	Teuchos::RCP<GridSquare> grid;
+	Teuchos::RCP<GridUniformVirtual> grid;
 
 	if (withInitialGuess) {
 	   try {
@@ -123,14 +125,14 @@ int main(int argc, char *argv[]) {
 		// read the parameters from the XML file
 		Teuchos::ParameterList& glList = paramList->sublist("GL", true);
 		int Nx = glList.get<int> ("Nx");
-		double edgeLength = glList.get<double> ("edge length");
+		double scaling = glList.get<double> ("scaling");
 		double H0 = glList.get<double> ("H0");
 
 		glParameters.set("Nx", Nx);
-		glParameters.set("edge length", edgeLength);
+		glParameters.set("scaling", scaling);
 		glParameters.set("H0", H0);
 
-		grid = Teuchos::rcp(new GridSquare(Nx,edgeLength) );
+		grid = Teuchos::rcp(new GridUniformSquare(Nx,scaling) );
 
 		// set initial guess
 		int numComplexUnknowns = grid->getNumGridPoints();
@@ -153,7 +155,7 @@ int main(int argc, char *argv[]) {
 
 	Teuchos::RCP<MagneticVectorPotential> A = Teuchos::rcp(
 			new MagneticVectorPotential( glParameters.get<double> ("H0"),
-				                         glParameters.get<double> ("edge length")));
+				                     glParameters.get<double> ("scaling")));
 
 	GinzburgLandau glProblem = GinzburgLandau(grid, A, boundaryConditions);
 

@@ -9,32 +9,11 @@
 #include "glBoundaryConditionsCentral.h"
 #include "ginzburgLandau.h"
 #include "glPrePostOperator.h"
+#include "GridUniformSquare.h"
 
 #include <NOX.H>
 #include <NOX_Epetra_LinearSystem_AztecOO.H>
 #include <NOX_Epetra.H>
-
-// // #include <NOX_Abstract_PrePostOperator.H>
-// 
-// // #include <Teuchos_ParameterList.hpp>
-// 
-// // User's application specific files
-// #include "ioVtk.h"
-// 
-// //#include "glPrePostOperator.h"
-// 
-// #include <Teuchos_RCP.hpp>
-// #include <Teuchos_CommandLineProcessor.hpp>
-// #include <Teuchos_ParameterList.hpp>
-// 
-// #include <Tpetra_Map.hpp>
-// #include <Tpetra_MultiVector.hpp>
-// 
-// #include <complex>
-// typedef std::complex<double> double_complex;
-// 
-// #include "glPrePostOperator.h"
-
 
 // for the eigenvalue computation:
 #include <AnasaziBasicEigenproblem.hpp>
@@ -64,42 +43,64 @@ glNox::glNox( const std::string fileName,
   verbose_( false ),
   maxNonlinearIterations_( 10 )
 {
-  // instantiate file I/O object
-  Teuchos::RCP<IoVirtual> fileIo =
-	       Teuchos::RCP<IoVirtual> ( IoFactory::createFileIo ( fileName ) );
+//  // instantiate file I/O object
+//  Teuchos::RCP<IoVirtual> fileIo =
+//	       Teuchos::RCP<IoVirtual> ( IoFactory::createFileIo ( fileName ) );
+//
+//  // read the stuff
+//  Teuchos::RCP<Tpetra::MultiVector<double,int> > psiSplit = Teuchos::null;
+//  fileIo->read ( comm,
+//                 psiSplit,
+//                 problemParameters_ );
+//
+//  TEST_FOR_EXCEPTION( psiSplit.is_null(),
+//		              std::logic_error,
+//		              "Input guess NULL." );
+//
+//  Teuchos::RCP<GlBoundaryConditionsVirtual> boundaryConditions =
+//                             Teuchos::rcp ( new GlBoundaryConditionsCentral() );
+//
+//  int    Nx      = problemParameters_.get<int>   ("Nx");
+//  double scaling = problemParameters_.get<double>("scaling");
+//  double H0      = problemParameters_.get<double>("H0");
+//  Teuchos::RCP<GridUniformSquare> grid = Teuchos::rcp ( new GridUniformSquare( Nx, scaling ) );
+//  Teuchos::RCP<MagneticVectorPotential> A =
+//                              Teuchos::rcp ( new MagneticVectorPotential( H0, scaling) );
+//
+//  // convert initial solution to a proper guess (ordering, complex values)
+//  Teuchos::RCP<Tpetra::Vector<double_complex,int> > psi =
+//                     Teuchos::rcp( new Tpetra::Vector<double_complex,int>( psiSplit->getMap() ) );
+//  Teuchos::ArrayRCP<const double> psiSplitAbsView = psiSplit->getVector(0)->get1dView();
+//  Teuchos::ArrayRCP<const double> psiSplitArgView = psiSplit->getVector(1)->get1dView();
+//  int localLength = psi->getLocalLength();
+//  for (int k=0; k<localLength; k++){
+//      int kGlobal = psi->getMap()->getGlobalElement( k );
+//      double_complex value = polar( sqrt(psiSplitAbsView[kGlobal]), psiSplitArgView[kGlobal]  );
+//      psi->replaceLocalValue( k, value );
+//  }
+//  reOrder( *psi, grid );
 
-  // read the stuff
-  Teuchos::RCP<Tpetra::MultiVector<double,int> > psiSplit = Teuchos::null;
-  fileIo->read ( comm,
-                 psiSplit,
-                 problemParameters_ );
 
-  TEST_FOR_EXCEPTION( psiSplit.is_null(),
-		              std::logic_error,
-		              "Input guess NULL." );
+  Teuchos::ParameterList glParameters;
+  Teuchos::RCP<ComplexVector> psi;
+  Teuchos::RCP<GridUniformVirtual> grid;
 
+  try
+    {
+      readStateFromFile(comm, fileName, psi, grid, glParameters);
+    }
+  catch (...)
+    {
+      std::cerr << "Exception caught." << std::endl;
+    }
+
+  double scaling = problemParameters_.get<double>("scaling");
+  double H0      = problemParameters_.get<double>("H0");
+
+  Teuchos::RCP<MagneticVectorPotential> A =
+                              Teuchos::rcp ( new MagneticVectorPotential( H0, scaling) );
   Teuchos::RCP<GlBoundaryConditionsVirtual> boundaryConditions =
                              Teuchos::rcp ( new GlBoundaryConditionsCentral() );
-
-  int    Nx         = problemParameters_.get<int>   ("Nx");
-  double edgeLength = problemParameters_.get<double>("edgelength");
-  double H0         = problemParameters_.get<double>("H0");
-  Teuchos::RCP<GridSquare> grid = Teuchos::rcp ( new GridSquare( Nx, edgeLength ) );
-  Teuchos::RCP<MagneticVectorPotential> A =
-                              Teuchos::rcp ( new MagneticVectorPotential( H0, edgeLength) );
-
-  // convert initial solution to a proper guess (ordering, complex values)
-  Teuchos::RCP<Tpetra::Vector<double_complex,int> > psi =
-                     Teuchos::rcp( new Tpetra::Vector<double_complex,int>( psiSplit->getMap() ) );
-  Teuchos::ArrayRCP<const double> psiSplitAbsView = psiSplit->getVector(0)->get1dView();
-  Teuchos::ArrayRCP<const double> psiSplitArgView = psiSplit->getVector(1)->get1dView();
-  int localLength = psi->getLocalLength();
-  for (int k=0; k<localLength; k++){
-      int kGlobal = psi->getMap()->getGlobalElement( k );
-      double_complex value = polar( sqrt(psiSplitAbsView[kGlobal]), psiSplitArgView[kGlobal]  );
-      psi->replaceLocalValue( k, value );
-  }
-  reOrder( *psi, grid );
 
   GinzburgLandau glProblem = GinzburgLandau( grid,
                                              A,
@@ -111,7 +112,7 @@ glNox::glNox( const std::string fileName,
   glSystem_ = Teuchos::rcp ( new GlSystem ( glProblem, eComm, psi ) );
 }
 // =============================================================================
-glNox::glNox( const int Nx,
+glNox::glNox( const unsigned int Nx,
               const double edgeLength,
               const double H0,
               const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
@@ -134,7 +135,7 @@ glNox::glNox( const int Nx,
   Teuchos::RCP<GlBoundaryConditionsVirtual> boundaryConditions =
                              Teuchos::rcp ( new GlBoundaryConditionsCentral() );
 
-  Teuchos::RCP<GridSquare> grid = Teuchos::rcp ( new GridSquare( Nx, edgeLength ) );
+  Teuchos::RCP<GridUniformVirtual> grid = Teuchos::rcp ( new GridUniformSquare( Nx, edgeLength ) );
   Teuchos::RCP<MagneticVectorPotential> A
                              = Teuchos::rcp ( new MagneticVectorPotential(H0, edgeLength) );
 
@@ -142,6 +143,7 @@ glNox::glNox( const int Nx,
                                              A,
                                              boundaryConditions
                                            );
+
   glSystem_ = Teuchos::rcp ( new GlSystem ( glProblem, eComm ) );
 }
 // =============================================================================
@@ -221,31 +223,31 @@ glNox::createSolver()
                                        nlParamsPtr_ );
 }
 // =============================================================================
-// TODO Look into having this done by Trilinos. If executed on a multiproc
-//      environment, we don't want p to be fully present on all processors.
-void
-glNox::reOrder( Tpetra::Vector<double_complex> &psi,
-                const Teuchos::RCP<GridSquare> &grid )
-{
-  int NumElements = psi.getGlobalLength();
-
-  // fill p:
-  std::vector<int> p ( NumElements );
-
-  // copy over
-  Tpetra::Vector<double_complex,int> psiTmp( psi );
-
-//   = Teuchos::rcp ( new Tpetra::Vector<double_complex,int> ( psiLexicographic->getMap(),1 ) );
-  grid->lexicographic2grid ( &p );
-
-  Teuchos::ArrayRCP<const double_complex> psiTmpView = psiTmp.get1dView();
-  for ( int k=0; k<NumElements; k++ )
-    {
-      psi.replaceGlobalValue ( p[k],
-	                       psiTmpView[k]
-			     );
-    }
-}
+//// TODO Look into having this done by Trilinos. If executed on a multiproc
+////      environment, we don't want p to be fully present on all processors.
+//void
+//glNox::reOrder( Tpetra::Vector<double_complex> &psi,
+//                const Teuchos::RCP<GridSquare> &grid )
+//{
+//  int NumElements = psi.getGlobalLength();
+//
+//  // fill p:
+//  std::vector<int> p ( NumElements );
+//
+//  // copy over
+//  Tpetra::Vector<double_complex,int> psiTmp( psi );
+//
+////   = Teuchos::rcp ( new Tpetra::Vector<double_complex,int> ( psiLexicographic->getMap(),1 ) );
+//  grid->lexicographic2grid ( &p );
+//
+//  Teuchos::ArrayRCP<const double_complex> psiTmpView = psiTmp.get1dView();
+//  for ( int k=0; k<NumElements; k++ )
+//    {
+//      psi.replaceGlobalValue ( p[k],
+//	                       psiTmpView[k]
+//			     );
+//    }
+//}
 // =============================================================================
 void
 glNox::setNonlinearSolverParameters( Teuchos::ParameterList & nlParams )

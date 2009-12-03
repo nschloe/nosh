@@ -28,8 +28,8 @@ class glNox
              const Teuchos::RCP<const Epetra_Comm>         &eComm );
 
       // Class constructor 2
-      glNox( const int Nx,
-             const double edgeLength,
+      glNox( const unsigned int Nx,
+             const double scaling,
              const double H0,
              const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
              const Teuchos::RCP<const Epetra_Comm>         &eComm );

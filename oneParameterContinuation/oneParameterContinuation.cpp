@@ -216,12 +216,14 @@ main(int argc, char *argv[])
 
   // ---------------------------------------------------------------------------
   // Create all possible Epetra_Operators.
-  Teuchos::RCP<Epetra_RowMatrix> Analytic = glsystem->getJacobian();
+  Teuchos::RCP<Epetra_RowMatrix> J = glsystem->getJacobian();
+  Teuchos::RCP<Epetra_RowMatrix> M = glsystem->getPreconditioner();
 
   // Create the linear system.
   // Use the TimeDependent interface for computation of shifted matrices.
   Teuchos::RCP<LOCA::Epetra::Interface::Required> iReq = glsystem;
   Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = glsystem;
+  Teuchos::RCP<NOX::Epetra::Interface::Preconditioner> iPrec = glsystem;
 
   Teuchos::ParameterList& nlPrintParams = paramList->sublist("NOX") .sublist(
       "Printing");
@@ -229,9 +231,11 @@ main(int argc, char *argv[])
   Teuchos::ParameterList& lsParams = paramList->sublist("NOX") .sublist(
       "Direction") .sublist("Newton") .sublist("Linear Solver");
 
+//  Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys = Teuchos::rcp(
+//      new NOX::Epetra::LinearSystemAztecOO(nlPrintParams, lsParams, iJac, J, iPrec, M, *soln));
+
   Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys = Teuchos::rcp(
-      new NOX::Epetra::LinearSystemAztecOO(nlPrintParams, lsParams, iReq, iJac,
-          Analytic, *soln));
+      new NOX::Epetra::LinearSystemAztecOO(nlPrintParams, lsParams, iReq, iJac, J, *soln));
 
   Teuchos::RCP<LOCA::Epetra::Interface::TimeDependent> iTime = glsystem;
   // ---------------------------------------------------------------------------
