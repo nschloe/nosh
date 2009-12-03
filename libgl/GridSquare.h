@@ -90,10 +90,10 @@ protected:
   permuteLexicographic2Grid( const DoubleMultiVector & xLexicographic
                            ) const;
 
-private:
-
   Teuchos::RCP<DoubleMultiVector>
   permuteGrid2Lexicographic( const DoubleMultiVector & x ) const;
+
+private:
 
   //! Defines a subsequent order of boundary nodes by associating a running index \c l with
   //! \f$i\f$-coordinates on the grid.

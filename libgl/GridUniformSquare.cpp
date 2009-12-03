@@ -29,6 +29,25 @@ GridUniformSquare::~GridUniformSquare()
 }
 // =============================================================================
 void
+GridUniformSquare::writeWithGrid( const DoubleMultiVector      & x,
+                                  const Teuchos::ParameterList & params,
+                                  const std::string            & filePath
+                                ) const
+{
+  Teuchos::RCP<IoVirtual> fileIo = Teuchos::rcp(IoFactory::createFileIo(filePath));
+
+  // append grid parameters
+  Teuchos::ParameterList extendedParams( params );
+  extendedParams.get("scaling", scaling_ );
+  extendedParams.get("Nx", Nx_[0] );
+
+  // reorder the grid to lexicographic ordering
+  Teuchos::RCP<DoubleMultiVector> xLexicographic = permuteGrid2Lexicographic(x);
+
+  fileIo->write( *xLexicographic, Nx_, GridSquare::h_, extendedParams);
+}
+// =============================================================================
+void
 GridUniformSquare::read( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
                          const std::string                             & filePath,
                          Teuchos::RCP<DoubleMultiVector>               & x,

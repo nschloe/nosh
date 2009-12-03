@@ -24,6 +24,12 @@ public:
   ~GridUniformSquare();
 
   virtual void
+  writeWithGrid( const DoubleMultiVector      & x,
+                 const Teuchos::ParameterList & params,
+                 const std::string            & filePath
+               ) const;
+
+  virtual void
   read( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
         const std::string                             & filePath,
         Teuchos::RCP<DoubleMultiVector>               & x,
