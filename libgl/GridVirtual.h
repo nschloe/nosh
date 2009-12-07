@@ -19,34 +19,38 @@ typedef Tpetra::MultiVector<double> DoubleMultiVector;
 class GridVirtual
 {
 public:
-    GridVirtual( double                   scaling = 0.0,
-                 Teuchos::Tuple<double,2> h = Teuchos::tuple(0.0,0.0),
-                 double                   gridDomainArea = 0.0,
-                 unsigned int             numGridPoints = 0,
-                 unsigned int             numBoundaryPoints = 0
-               );
+
+    //! Default constructor.
+    GridVirtual( double scaling,
+                 Teuchos::Tuple<double,2> h,
+                 double gridDomainArea,
+                 unsigned int numGridPoints,
+                 unsigned int numBoundaryPoints );
+
+    //! Empty constructor.
+    GridVirtual();
 
     virtual
     ~GridVirtual();
 
-    double
+    virtual double
     getScaling() const; //!< Returns the scaling factor \f$alpha\f$ of the domain.
 
-    void
+    virtual void
     setScaling( const double alpha );
 
-    unsigned int
-    getNumGridPoints() const; //!< Returns the number of grid points.
+    virtual unsigned int
+    getNumGridPoints() const ; //!< Returns the number of grid points.
 
     //! Returns the number of grid points on the boundary.
-    unsigned int
+    virtual unsigned int
     getNumBoundaryPoints() const;
 
-    Teuchos::Tuple<double,2>
+    virtual Teuchos::Tuple<double,2>
     getH() const; //!< Returns mesh sizes \f$h\f$.
 
     //! Returns the measure of the discretized domain.
-    double
+    virtual double
     getGridDomainArea() const;
 
 public:
@@ -121,12 +125,11 @@ public:
         ) = 0;
 
   protected:
-    double scaling_; //! scaling factor
     Teuchos::Tuple<double,2> h_;
+    double scaling_; //! scaling factor
     double gridDomainArea_;
     unsigned int numGridPoints_;
     unsigned int numBoundaryPoints_;
-
   private:
   };
 

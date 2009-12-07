@@ -11,14 +11,18 @@
 GridUniformVirtual::GridUniformVirtual( double scaling,
                                         double h,
                                         double gridDomainArea,
-                                        int    numGridPoints,
-                                        int    numBoundaryPoints ) :
+                                        unsigned int numGridPoints,
+                                        unsigned int numBoundaryPoints ) :
 GridVirtual( scaling,
-             Teuchos::tuple(h,h),
+             Teuchos::tuple<double>(h,h),
              gridDomainArea,
              numGridPoints,
-             numBoundaryPoints ),
-h_( h )
+             numBoundaryPoints )
+{
+}
+// ============================================================================
+GridUniformVirtual::GridUniformVirtual() :
+GridVirtual()
 {
 }
 // ============================================================================
@@ -26,20 +30,9 @@ GridUniformVirtual::~GridUniformVirtual()
 {
 }
 // ============================================================================
-void
-GridUniformVirtual::setScaling( const double scaling )
-{
-  double ratio = scaling/scaling_;
-  GridUniformVirtual::h_ *= ratio; // rescale h
-
-  GridVirtual::setScaling( scaling );
-
-  return;
-}
-// ============================================================================
 double
-GridUniformVirtual::getH() const
+GridUniformVirtual::getUniformH() const
 {
-  return GridUniformVirtual::h_;
+  return h_[0];
 }
 // ============================================================================

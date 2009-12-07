@@ -98,7 +98,7 @@ glNox::glNox( const std::string fileName,
   double H0      = problemParameters_.get<double>("H0");
 
   Teuchos::RCP<MagneticVectorPotential> A =
-                              Teuchos::rcp ( new MagneticVectorPotential( H0, scaling) );
+                              Teuchos::rcp ( new MagneticVectorPotential( H0, scaling ) );
   Teuchos::RCP<GlBoundaryConditionsVirtual> boundaryConditions =
                              Teuchos::rcp ( new GlBoundaryConditionsCentral() );
 
@@ -113,7 +113,7 @@ glNox::glNox( const std::string fileName,
 }
 // =============================================================================
 glNox::glNox( const unsigned int Nx,
-              const double edgeLength,
+              const double scaling,
               const double H0,
               const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
               const Teuchos::RCP<const Epetra_Comm>         &eComm ) :
@@ -128,16 +128,17 @@ glNox::glNox( const unsigned int Nx,
   verbose_( false ),
   maxNonlinearIterations_( 10 )
 {
-  problemParameters_.set ( "Nx"        , Nx );
-  problemParameters_.set ( "edgelength", edgeLength );
-  problemParameters_.set ( "H0"        , H0 );
+  problemParameters_.set ( "Nx"     , Nx );
+  problemParameters_.set ( "scaling", scaling );
+  problemParameters_.set ( "H0"     , H0 );
 
   Teuchos::RCP<GlBoundaryConditionsVirtual> boundaryConditions =
                              Teuchos::rcp ( new GlBoundaryConditionsCentral() );
 
-  Teuchos::RCP<GridUniformVirtual> grid = Teuchos::rcp ( new GridUniformSquare( Nx, edgeLength ) );
+  Teuchos::RCP<GridUniformVirtual> grid = Teuchos::rcp ( new GridUniformSquare( Nx, scaling ) );
+
   Teuchos::RCP<MagneticVectorPotential> A
-                             = Teuchos::rcp ( new MagneticVectorPotential(H0, edgeLength) );
+                             = Teuchos::rcp ( new MagneticVectorPotential(H0, scaling) );
 
   GinzburgLandau glProblem = GinzburgLandau( grid,
                                              A,
@@ -595,6 +596,7 @@ glNox::printSolutionToFile( std::string fileName )
 
   glSystem_->writeSolutionToFile ( finalSolution,
                                    fileName );
+
 }
 // =============================================================================
 int

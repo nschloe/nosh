@@ -13,13 +13,14 @@
 // =============================================================================
 // Class constructor
 GridUniformSquare::GridUniformSquare( unsigned int nx, double scaling) :
-  GridUniformVirtual( scaling,
-                      scaling / nx,
-                      pow( scaling, 2 ),
-                     (nx+1)*(nx+1), 4*nx
-                    ),
-  GridSquare( Teuchos::tuple<unsigned int>(nx,nx),
-              scaling )
+  GridVirtual( scaling,
+               Teuchos::tuple<double>( scaling/nx,scaling/nx ),
+               pow( scaling, 2 ),
+               pow( nx+1, 2 ),
+               4*nx
+             ),
+  GridUniformVirtual(),
+  GridSquare( Teuchos::tuple<unsigned int>(nx,nx) )
 {
 }
 // =============================================================================
@@ -76,8 +77,7 @@ GridUniformSquare::read( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
 
   // initialization of the dependent members
   double h = scaling_/nx;
-  GridUniformVirtual::h_ = h;
-  GridSquare::h_         = Teuchos::tuple<double>( h, h );
+  h_                 = Teuchos::tuple<double>( h, h );
   gridDomainArea_    = pow( scaling_, 2 );
   numGridPoints_     = (Nx_[0]+1)*(Nx_[1]+1);
   numBoundaryPoints_ = 2*(Nx_[0]+Nx_[1]);

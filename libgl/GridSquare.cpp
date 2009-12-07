@@ -14,10 +14,18 @@
 // Class constructor
 GridSquare::GridSquare(Teuchos::Tuple<unsigned int,2> Nx, double scaling) :
   GridVirtual( scaling,
-               Teuchos::tuple(scaling/Nx[0],scaling/Nx[1]),
+               Teuchos::tuple<double>(scaling/Nx[0],scaling/Nx[1]),
                pow( scaling, 2 ),
-               (Nx[0]+1)*(Nx[1]+1), 2*( Nx[0]+Nx[1] )
+               (Nx[0]+1)*(Nx[1]+1),
+               2*( Nx[0]+Nx[1] )
              ),
+  Nx_(Nx)
+{
+}
+// =============================================================================
+// Class constructor for this classes data only.
+GridSquare::GridSquare( Teuchos::Tuple<unsigned int,2> Nx ) :
+  GridVirtual(),
   Nx_(Nx)
 {
 }

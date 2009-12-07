@@ -144,7 +144,13 @@ main(int argc, char *argv[])
       glParameters.set("scaling", scaling);
       glParameters.set("H0", H0);
 
+      cout << "MMMM " << endl;
+      Teuchos::RCP<GridSquare> gridS = Teuchos::rcp( new GridSquare( Teuchos::tuple<unsigned int>(10,10), 1.0 ) );
+      cout << "MMM " << endl;
+
+      cout << "NNNNN " << Nx << endl;
       grid = Teuchos::rcp(new GridUniformSquare(Nx, scaling));
+      cout << "end NNNNN " << endl;
 
       // set initial guess
       int numComplexUnknowns = grid->getNumGridPoints();
@@ -171,7 +177,7 @@ main(int argc, char *argv[])
       new MagneticVectorPotential(glParameters.get<double> ("H0"),
           glParameters.get<double> ("scaling")));
 
-  // upcast to GridVirtual
+  // upcast to GridUniformVirtual
   Teuchos::RCP<GridUniformVirtual> gridV = grid;
   GinzburgLandau glProblem = GinzburgLandau(gridV, A, boundaryConditions);
 

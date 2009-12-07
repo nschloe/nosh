@@ -13,11 +13,20 @@ GridVirtual::GridVirtual( double scaling,
                           double gridDomainArea,
                           unsigned int numGridPoints,
                           unsigned int numBoundaryPoints ) :
-scaling_(scaling),
 h_( h ),
+scaling_( scaling ),
 gridDomainArea_( gridDomainArea ),
 numGridPoints_( numGridPoints ),
 numBoundaryPoints_( numBoundaryPoints )
+{
+}
+// ============================================================================
+GridVirtual::GridVirtual() :
+h_( Teuchos::tuple<double>(0.0,0.0) ),
+scaling_( 0.0 ),
+gridDomainArea_( 0.0 ),
+numGridPoints_( 0 ),
+numBoundaryPoints_( 0 )
 {
 }
 // ============================================================================
@@ -34,14 +43,24 @@ GridVirtual::getScaling() const
 void
 GridVirtual::setScaling( const double scaling )
 {
+  TEST_FOR_EXCEPTION( scaling==0.0,
+                      std::logic_error,
+                      "Previous scaling value scaling_=0.0." );
 
   double ratio = scaling/scaling_;
+
   for ( int k=0; k<h_.size(); k++)
     h_[k] *= ratio;
-//  h_              *= ratio; // rescale h
   gridDomainArea_ *= ratio*ratio;  // rescale domain area
   scaling_         = scaling;
+
   return;
+}
+// ============================================================================
+Teuchos::Tuple<double,2>
+GridVirtual::getH() const
+{
+  return h_;
 }
 // ============================================================================
 unsigned int
@@ -54,12 +73,6 @@ unsigned int
 GridVirtual::getNumBoundaryPoints() const
 {
   return numBoundaryPoints_;
-}
-// ============================================================================
-Teuchos::Tuple<double,2>
-GridVirtual::getH() const
-{
-  return h_;
 }
 // ============================================================================
 double

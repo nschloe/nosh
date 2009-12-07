@@ -13,25 +13,23 @@
 class GridUniformVirtual: virtual public GridVirtual
 {
 public:
-    GridUniformVirtual( double scaling = 0.0,
-                        double h = 0.0,
-                        double gridDomainArea = 0.0,
-                        int    numGridPoints = 0,
-                        int    numBoundaryPoints = 0);
+    //! Default constructor.
+    GridUniformVirtual( double scaling,
+                        double h,
+                        double gridDomainArea,
+                        unsigned int numGridPoints,
+                        unsigned int numBoundaryPoints);
+
+    //! Class constructor that only initializes the data members of this class.
+    GridUniformVirtual();
 
     virtual
     ~GridUniformVirtual();
 
-    void
-    setScaling( const double alpha );
-
     double
-    getH() const; //!< Returns the uniform mesh size \f$h\f$.
-
+    getUniformH() const; //!< Returns the uniform mesh size \f$h\f$.
 
   protected:
-    double h_;
-
   private:
 };
 

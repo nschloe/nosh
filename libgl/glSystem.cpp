@@ -54,18 +54,18 @@ GlSystem::GlSystem( GinzburgLandau::GinzburgLandau &gl,
 	outputFileFormat_(outputFileFormat),
 	outputDataFileName_(outputDataFileName)
 {
-	NumComplexUnknowns_ = Gl_.getNumUnknowns();
-	NumRealUnknowns_ = 2 * NumComplexUnknowns_ + 1;
+  NumComplexUnknowns_ = Gl_.getNumUnknowns();
+  NumRealUnknowns_ = 2 * NumComplexUnknowns_ + 1;
 
-	// TODO Don't throw exception in constructor?
-	TEST_FOR_EXCEPTION( !psi.is_valid_ptr(),
-		            std::logic_error,
-		            "Invalid pointer" );
+  // TODO Don't throw exception in constructor?
+  TEST_FOR_EXCEPTION( !psi.is_valid_ptr(),
+                      std::logic_error,
+	              "Invalid pointer" );
 
-	// TODO Don't throw exception in constructor?
-	TEST_FOR_EXCEPTION( psi.is_null(),
-		            std::logic_error,
-		            "Input guess is null pointer" );
+  // TODO Don't throw exception in constructor?
+  TEST_FOR_EXCEPTION( psi.is_null(),
+                      std::logic_error,
+	              "Input guess is null pointer" );
 
 	// TODO There is (until now?) no way to convert a Teuchos::Comm (of psi)
 	// to an Epetra_Comm (of the real valued representation of psi), so the
@@ -136,13 +136,13 @@ GlSystem::GlSystem( GinzburgLandau::GinzburgLandau &gl,
 // =============================================================================
 // constructor without initial guess
 GlSystem::GlSystem(GinzburgLandau::GinzburgLandau &gl,
-		const Teuchos::RCP<const Epetra_Comm> eComm,
-        const std::string outputDir,
-        const std::string outputDataFileName,
-        const std::string outputFileFormat,
-        const std::string solutionFileNameBase,
-        const std::string nullvectorFileNameBase
-      ) :
+		   const Teuchos::RCP<const Epetra_Comm> eComm,
+                   const std::string outputDir,
+                   const std::string outputDataFileName,
+                   const std::string outputFileFormat,
+                   const std::string solutionFileNameBase,
+                   const std::string nullvectorFileNameBase
+                  ) :
 NumRealUnknowns_(0),
 NumMyElements_(0),
 NumComplexUnknowns_(0),

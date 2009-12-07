@@ -24,7 +24,7 @@ GlBoundaryConditionsOuter::getGlEntry ( const int                               
   double_complex res;
   double_complex psiK, psiKRight, psiKLeft, psiKAbove, psiKBelow;
   double ARight, ALeft, AAbove, ABelow;
-  double h = grid.getH();
+  double h = grid.getUniformH();
   Teuchos::RCP<Teuchos::Array<double> > xRight = Teuchos::rcp( new Teuchos::Array<double>(2) );
   Teuchos::RCP<Teuchos::Array<double> > xLeft  = Teuchos::rcp( new Teuchos::Array<double>(2) );
   Teuchos::RCP<Teuchos::Array<double> > xAbove = Teuchos::rcp( new Teuchos::Array<double>(2) );
@@ -227,7 +227,7 @@ GlBoundaryConditionsOuter::getGlJacobianRow ( const int                         
   int k, kLeft, kRight, kBelow, kAbove;
   int numEntriesPsi, numEntriesPsiConj;
   double ARight, ALeft, AAbove, ABelow;
-  double h = grid.getH();
+  double h = grid.getUniformH();
   Teuchos::RCP<Teuchos::Array<int> >    i      = Teuchos::rcp( new Teuchos::Array<int>(2) );
   Teuchos::RCP<Teuchos::Array<double> > xRight = Teuchos::rcp( new Teuchos::Array<double>(2) );
   Teuchos::RCP<Teuchos::Array<double> > xLeft  = Teuchos::rcp( new Teuchos::Array<double>(2) );

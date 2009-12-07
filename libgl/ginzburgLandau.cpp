@@ -146,7 +146,7 @@ GinzburgLandau::computeGl ( const int           eqnum,
       double ABelow = A_->getAy ( *xBelow );
       double AAbove = A_->getAy ( *xAbove );
 
-      double h = grid_->getH();
+      double h = grid_->getUniformH();
 
       // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
       res = ( psiK* ( -4.0 )
@@ -278,7 +278,7 @@ void GinzburgLandau::computeJacobianRow ( const bool                        fill
           double ABelow = A_->getAy ( *xBelow );
           double AAbove = A_->getAy ( *xAbove );
 
-          double h = grid_->getH();
+          double h = grid_->getUniformH();
 
           valuesPsi.resize ( numEntriesPsi );
           valuesPsi[0] = - 4.0            / ( h*h )
@@ -403,7 +403,6 @@ GinzburgLandau::normalizedScaledL2Norm ( const ComplexVector &psi
 int GinzburgLandau::getVorticity ( const ComplexVector &psi
                                  ) const
 {
-  // this function only works
   int numProcs = psi.getMap()->getComm()->getSize();
   if ( numProcs!=1 )
     return -1;
@@ -420,13 +419,27 @@ int GinzburgLandau::getVorticity ( const ComplexVector &psi
 
   int numBoundaryPoints = grid_->getNumBoundaryPoints();
 
-  int l = 0;
-  double angle = std::arg( psiView[ grid_->boundaryIndex2globalIndex(l) ] );
+  int psiLowerOffset = psiView.lowerOffset();
+  int psiUpperOffset = psiView.upperOffset();
+  int boundaryIndex = 0;
+  int globalIndex = grid_->boundaryIndex2globalIndex(boundaryIndex);
+
+  TEST_FOR_EXCEPTION( globalIndex < psiLowerOffset || globalIndex > psiUpperOffset,
+                      std::out_of_range,
+                      "Index globalIndex=" << globalIndex << " out of bounds (lower="
+                      << psiLowerOffset << ", upper=" << psiUpperOffset << ")" );
+
+  double angle = std::arg( psiView[globalIndex] );
   double angle0 = angle;
   double anglePrevious;
-  for ( l=1; l<numBoundaryPoints; l++ ){
-	  anglePrevious = angle;
-	  angle = std::arg( psiView[grid_->boundaryIndex2globalIndex(l)] );
+  for ( boundaryIndex=1; boundaryIndex<numBoundaryPoints; boundaryIndex++ ){
+      anglePrevious = angle;
+      globalIndex   = grid_->boundaryIndex2globalIndex(boundaryIndex);
+      TEST_FOR_EXCEPTION( globalIndex < psiLowerOffset || globalIndex > psiUpperOffset,
+                          std::out_of_range,
+                          "Index globalIndex=" << globalIndex << " out of bounds (lower="
+                          << psiLowerOffset << ", upper=" << psiUpperOffset << ")" );
+      angle = std::arg( psiView[globalIndex] );
       if ( angle-anglePrevious<-threshold )
         vorticity++;
       else if ( angle-anglePrevious>threshold )

@@ -26,19 +26,15 @@ class GridSquare: virtual public GridVirtual
 public:
 
   //! Default constructor.
-  GridSquare( Teuchos::Tuple<unsigned int,2> Nx = Teuchos::tuple<unsigned int>(0,0),
-              double scaling = 1.0
+  GridSquare( Teuchos::Tuple<unsigned int,2> Nx,
+              double scaling
             );
+
+  //! Class constructor that only initializes the data members of this class.
+  GridSquare( Teuchos::Tuple<unsigned int,2> Nx );
 
   virtual
   ~GridSquare();
-
-  virtual nodeType
-  getBoundaryNodeType( unsigned int l ) const;
-
-  /*! For a given node number k, returns the the area of the surrounding cell. */
-  virtual double
-  cellArea(unsigned int k) const;
 
   virtual Teuchos::RCP<Teuchos::Array<double> >
   getXLeft(unsigned int k) const; //!< Returns the value of \f$x\f$ left of point i.
@@ -83,6 +79,12 @@ public:
         Teuchos::ParameterList                        & params
       );
 
+  virtual nodeType
+  getBoundaryNodeType( unsigned int l ) const;
+
+  virtual double
+  cellArea(unsigned int k) const;
+
 protected:
   Teuchos::Tuple<unsigned int,2> Nx_; //!< Number of grid pieces in both x- and y-direction
 
@@ -109,6 +111,7 @@ private:
   unsigned int
   i2k( Teuchos::RCP<Teuchos::Array<int> > & i ) const; //!< Converts a grid index i to a running index k
 
+private:
 };
 
 #endif /* GRIDSQUARE_H_ */

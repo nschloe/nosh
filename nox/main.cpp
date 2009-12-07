@@ -137,7 +137,6 @@ int main ( int argc, char *argv[] )
   // compute the eigenvaluesof the Jacobian
   if ( computeEigenvalues )
         myNoxObject->computeJacobianEigenvalues();
-
   
   // print the solution to a file
   myNoxObject->printSolutionToFile( "data/solution.vtk" );
