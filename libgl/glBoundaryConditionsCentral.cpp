@@ -15,10 +15,10 @@ GlBoundaryConditionsCentral::~GlBoundaryConditionsCentral()
 }
 // =============================================================================
 double_complex
-GlBoundaryConditionsCentral::getGlEntry ( const int                                eqIndex,
-                                          const Tpetra::Vector<double_complex,int> &psi,
-                                          const GridUniformVirtual                 &grid,
-                                          const MagneticVectorPotential            &A
+GlBoundaryConditionsCentral::getGlEntry ( const int                       eqIndex,
+                                          const ComplexVector           & psi,
+                                          const GridUniformVirtual      & grid,
+                                          const MagneticVectorPotential & A
                                         ) const
 {
   double_complex res;
@@ -210,15 +210,15 @@ GlBoundaryConditionsCentral::getGlEntry ( const int                             
 }
 // =============================================================================
 void
-GlBoundaryConditionsCentral::getGlJacobianRow ( const int                                               eqIndex,
-                                                const Teuchos::RCP<Tpetra::Vector<double_complex,int> > &psi,
-                                                const GridUniformVirtual                                &grid,
-                                                const MagneticVectorPotential                           &A,
-                                                const bool                                              fillValues,
-                                                std::vector<int>                                        &columnIndicesPsi,
-                                                std::vector<double_complex>                             &valuesPsi,
-                                                std::vector<int>                                        &columnIndicesPsiConj,
-                                                std::vector<double_complex>                             &valuesPsiConj
+GlBoundaryConditionsCentral::getGlJacobianRow ( const int                           eqIndex,
+                                                const Teuchos::RCP<ComplexVector> & psi,
+                                                const GridUniformVirtual          & grid,
+                                                const MagneticVectorPotential     & A,
+                                                const bool                          fillValues,
+                                                std::vector<int>                  & columnIndicesPsi,
+                                                std::vector<double_complex>       & valuesPsi,
+                                                std::vector<int>                  & columnIndicesPsiConj,
+                                                std::vector<double_complex>       & valuesPsiConj
                                               ) const
 {
   int k, kLeft, kRight, kBelow, kAbove;

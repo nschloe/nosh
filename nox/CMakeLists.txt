@@ -9,6 +9,7 @@ IF(MPI_COMPILED)
     INCLUDE_DIRECTORIES ( ${MPI_INCLUDE_PATH} )
 ENDIF(MPI_COMPILED)
 
+
 FIND_PACKAGE( Trilinos COMPONENTS NOXEpetra
                                   NOX
                                   AztecOO
@@ -38,8 +39,8 @@ ADD_EXECUTABLE ( gl-nox.out
                  ${ginzburg_landau_SRCS} )
 
 SET ( internal_LIBS
-      io
       gl
+      io
     )
 
 # ==============================================================================
@@ -105,7 +106,7 @@ SET( LINK_LIBRARIES ${LINK_LIBRARIES}
 # Set executable linking information.
 TARGET_LINK_LIBRARIES ( gl-nox.out
 			${internal_LIBS}
-                        ${Trilinos_LIBRARIES}
+                        ${Trilinos_LIBS}
                         ${LINK_LIBRARIES}
                       )
 # ==============================================================================

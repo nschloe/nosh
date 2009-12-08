@@ -21,6 +21,12 @@
 
 #include <Teuchos_DefaultComm.hpp>
 
+#ifdef HAVE_MPI
+#include <Epetra_MpiComm.h>
+#else
+#include <Epetra_SerialComm.h>
+#endif
+
 // abbreviate the complex type name
 typedef std::complex<double> double_complex;
 
@@ -78,7 +84,7 @@ GlSystem::GlSystem( GinzburgLandau::GinzburgLandau &gl,
 
 	// create fitting Tpetra::Comm
 	// TODO: move into initializer
-	TComm_ = Thyra::create_Comm(EComm_);
+	TComm_ = create_CommInt(EComm_);
 
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	// define maps
@@ -176,7 +182,7 @@ outputDataFileName_(outputDataFileName)
 
   // create fitting Tpetra::Comm
   // TODO: move into initializer
-  TComm_ = Thyra::create_Comm(EComm_);
+  TComm_ = create_CommInt(EComm_);
 
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   // define maps
@@ -937,5 +943,39 @@ GlSystem::getGlSystemVector( const Teuchos::RCP<const ComplexVector> psi ) const
 	Teuchos::RCP<Epetra_Vector> x = Teuchos::rcp( new Epetra_Vector(*RealMap_) );
 	complex2real( *psi, *x );
 	return x;
+}
+// =============================================================================
+Teuchos::RCP<const Teuchos::Comm<int> >
+GlSystem::create_CommInt( const Teuchos::RCP<const Epetra_Comm> &epetraComm )
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::rcp_dynamic_cast;
+  using Teuchos::set_extra_data;
+
+#ifdef HAVE_MPI
+  RCP<const Epetra_MpiComm>
+    mpiEpetraComm = rcp_dynamic_cast<const Epetra_MpiComm>(epetraComm);
+  if( mpiEpetraComm.get() ) {
+    RCP<const Teuchos::OpaqueWrapper<MPI_Comm> >
+      rawMpiComm = Teuchos::opaqueWrapper(mpiEpetraComm->Comm());
+    set_extra_data( mpiEpetraComm, "mpiEpetraComm", Teuchos::inOutArg(rawMpiComm) );
+    RCP<const Teuchos::MpiComm<int> >
+      mpiComm = rcp(new Teuchos::MpiComm<int>(rawMpiComm));
+    return mpiComm;
+  }
+#else
+  RCP<const Epetra_SerialComm>
+    serialEpetraComm = rcp_dynamic_cast<const Epetra_SerialComm>(epetraComm);
+  if( serialEpetraComm.get() ) {
+    RCP<const Teuchos::SerialComm<int> >
+      serialComm = rcp(new Teuchos::SerialComm<int>());
+    set_extra_data( serialEpetraComm, "serialEpetraComm", Teuchos::inOutArg(serialComm) );
+    return serialComm;
+  }
+#endif // HAVE_MPI
+
+  // If you get here then the conversion failed!
+  return Teuchos::null;
 }
 // =============================================================================

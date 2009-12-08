@@ -177,6 +177,10 @@ private:
 	writeContinuationStats( const int conStep,
 			                const Teuchos::RCP<const ComplexVector> psi ) const;
 
+    //! Translate an Epetra_Comm into a Teuchos::Comm<int>, no matter the Thyra::Ordinal.
+    Teuchos::RCP<const Teuchos::Comm<int> >
+    create_CommInt( const Teuchos::RCP<const Epetra_Comm> &epetraComm );
+
 	continuationType continuationType_;
 
 	int NumRealUnknowns_;
@@ -187,7 +191,7 @@ private:
 
 	GinzburgLandau::GinzburgLandau Gl_;
 	const Teuchos::RCP<const Epetra_Comm> EComm_;
-	Teuchos::RCP<const Teuchos::Comm<Thyra::Ordinal> > TComm_;
+	Teuchos::RCP<const Teuchos::Comm<int> > TComm_;
 	Teuchos::RCP<Epetra_Map> RealMap_;
 	Teuchos::RCP<Epetra_Map> EverywhereMap_;
 	Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> > ComplexMap_;
