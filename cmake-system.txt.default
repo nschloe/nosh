@@ -37,4 +37,4 @@ SET( HDF5_DIR /opt/hdf5-1.6.9 )
 
 # set the gfortran directory if the libs are not in standard directories
 SET( GFORTRAN_LIBNAME gfortran )
-SET( GFORTRAN_DIR /opt/gcc-4.3.4/lib64 )
+SET( GFORTRAN_DIR /opt/gcc-4.4.2/lib64 )
