@@ -7,6 +7,7 @@
 #endif
 
 #include <Teuchos_CommandLineProcessor.hpp>
+#include <Teuchos_XMLParameterListHelpers.hpp>
 
 #include <EpetraExt_RowMatrixOut.h>
 
@@ -33,6 +34,7 @@ int main ( int argc, char *argv[] )
   = Teuchos::rcp<Epetra_SerialComm> ( new Epetra_SerialComm() );
 #endif
 
+
   // ===========================================================================
   // handle command line arguments
   Teuchos::CommandLineProcessor My_CLP;
@@ -55,51 +57,56 @@ int main ( int argc, char *argv[] )
   My_CLP.setOption ( "eigenvalues", "no-eigenvalues",
                      &computeEigenvalues,
                      "Compute eigenvalue approximations in the solution" );
-  
+
   bool computeConditionNumber = false;
   My_CLP.setOption ( "condest", "no-condest",
                      &computeConditionNumber,
                      "Compute condition number approximations in the solution" );
-
-  std::string filename = "";
-  My_CLP.setOption ( "input-guess",
-                     &filename,
-                     "File name with initial guess" );
 
   std::string outputdir = "data";
   My_CLP.setOption ( "output-dir",
                      &outputdir,
                      "Directory to which the solution files are written" );
 
+  std::string xmlInputFileName = "";
+  My_CLP.setOption("xml-input-file", &xmlInputFileName,
+      "XML file containing the parameter list", true);
+
   // print warning for unrecognized arguments
-  My_CLP.recogniseAllOptions ( true );
+  My_CLP.recogniseAllOptions(true);
 
   // don't throw exceptions
-  My_CLP.throwExceptions ( false );
+  My_CLP.throwExceptions(false);
 
   // finally, parse the stuff!
-  Teuchos::CommandLineProcessor::EParseCommandLineReturn
-  parseReturn = My_CLP.parse ( argc, argv );
-  if ( parseReturn == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED ) {
-#ifdef HAVE_MPI
-    MPI_Finalize();
-#endif
-    return 0;
-  }
+  Teuchos::CommandLineProcessor::EParseCommandLineReturn parseReturn =
+      My_CLP.parse(argc, argv);
+  if (parseReturn == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED)
+    {
+      return 0;
+    }
+  if (parseReturn != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL)
+    {
+      return 1; // Error!
+    }
 
-  if ( parseReturn != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL ) {
-#ifdef HAVE_MPI
-    MPI_Finalize();
-#endif
-    return 1; // Error!;
-  }
-  // ===========================================================================
-
+  Teuchos::RCP<Teuchos::ParameterList> paramList = Teuchos::rcp(
+      new Teuchos::ParameterList);
+  std::cout << "Reading parameter list from \"" << xmlInputFileName << "\"."
+      << std::endl;
+  Teuchos::updateParametersFromXmlFile(xmlInputFileName, paramList.get());
+  // =========================================================================
+  // extract data of the parameter list
+  Teuchos::ParameterList& ioList = paramList->sublist("IO", true);
+  std::string inputGuessFile = ioList.get<string> ("Input guess");
+  bool withInitialGuess = inputGuessFile.length() > 0;
+  std::string outputDirectory = ioList.get<string> ("Output directory");
+  // =========================================================================
 
   // create GL-NOX object with initial parameters/guess
   Teuchos::RCP<glNox> myNoxObject = Teuchos::null;
-  if ( filename.length()>0 ) {
-      myNoxObject = Teuchos::rcp( new glNox( filename, Comm, eComm ) );
+  if ( inputGuessFile.length()>0 ) {
+      myNoxObject = Teuchos::rcp( new glNox( inputGuessFile, Comm, eComm ) );
   }
   else {
       int    Nx         = 50;
@@ -112,11 +119,12 @@ int main ( int argc, char *argv[] )
 
   // set default solver options
   int maxNonlinearIterations = 30;
-  myNoxObject->setSolverOptions( maxNonlinearIterations );
+  myNoxObject->setSolverOptions( maxNonlinearIterations,
+                                 paramList->sublist("NOX",true) );
 
 
   myNoxObject->createSolverGroup();
-  myNoxObject->createConvergenceTests();
+  myNoxObject->createConvergenceTests( paramList->sublist("NOX Status Test",true) );
   myNoxObject->createSolver();
 
   // solve the system

@@ -38,7 +38,8 @@ class glNox
       setVerbose( bool verbose );
 
       void
-      setSolverOptions( int maxNonlinearIterations );
+      setSolverOptions( int maxNonlinearIterations,
+                        Teuchos::ParameterList noxParaList );
 
       void
       createSolver();
@@ -47,7 +48,7 @@ class glNox
       createSolverGroup();
 
       void
-      createConvergenceTests();
+      createConvergenceTests( Teuchos::ParameterList & noxStatusList );
 
       void
       solve();
@@ -73,8 +74,9 @@ class glNox
       int MyPID_;
       Teuchos::RCP<GlSystem> glSystem_;
       Teuchos::RCP<Teuchos::ParameterList> nlParamsPtr_;
+//      Teuchos::RCP<NOX::StatusTest::Combo> combo_;
+      Teuchos::RCP<NOX::StatusTest::Generic> statusTest_;
       Teuchos::RCP<NOX::Solver::Generic> solver_;
-      Teuchos::RCP<NOX::StatusTest::Combo> combo_;
       bool verbose_;
       Teuchos::RCP<NOX::Epetra::Group> grpPtr_;
       int maxNonlinearIterations_;

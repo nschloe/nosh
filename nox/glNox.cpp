@@ -38,7 +38,7 @@ glNox::glNox( const std::string fileName,
   MyPID_( comm->getRank() ),
   glSystem_( Teuchos::null ),
   nlParamsPtr_( Teuchos::rcp ( new Teuchos::ParameterList ) ),
-  combo_( Teuchos::null ),
+  statusTest_( Teuchos::null ),
   solver_( Teuchos::null ),
   verbose_( false ),
   maxNonlinearIterations_( 10 )
@@ -123,7 +123,7 @@ glNox::glNox( const unsigned int Nx,
   MyPID_( comm->getRank() ),
   glSystem_( Teuchos::null ),
   nlParamsPtr_( Teuchos::rcp ( new Teuchos::ParameterList ) ),
-  combo_( Teuchos::null ),
+  statusTest_( Teuchos::null ),
   solver_( Teuchos::null ),
   verbose_( false ),
   maxNonlinearIterations_( 10 )
@@ -156,14 +156,26 @@ glNox::solve()
 // =============================================================================
 // set parameters
 void
-glNox::setSolverOptions( int maxNonlinearIterations )
+glNox::setSolverOptions( int maxNonlinearIterations,
+                         Teuchos::ParameterList noxParaList )
 {
   maxNonlinearIterations_ = maxNonlinearIterations;
 
-  nlParamsPtr_ =  Teuchos::rcp ( new Teuchos::ParameterList );
+  nlParamsPtr_ =  Teuchos::rcp ( new Teuchos::ParameterList(noxParaList) );
 
-  Teuchos::ParameterList& nlParams = * ( nlParamsPtr_.get() );
-  setNonlinearSolverParameters( nlParams );
+
+  if ( verbose_ ) // get custom pre/post actions
+    {
+      Teuchos::RCP<NOX::Abstract::PrePostOperator> ppo =
+        Teuchos::rcp ( new GlPrePostOperator ( glSystem_,
+                                               problemParameters_ ) );
+      nlParamsPtr_->sublist ( "Solver Options" )
+                                 .set ( "User Defined Pre/Post Operator", ppo );
+    }
+
+//  nlParamsPtr_ =  Teuchos::rcp ( new Teuchos::ParameterList() );
+//  Teuchos::ParameterList& nlParams = * ( nlParamsPtr_.get() );
+//  setNonlinearSolverParameters( nlParams );
 }
 // =============================================================================
 void
@@ -208,195 +220,29 @@ void
 glNox::createSolver()
 {
 	TEST_FOR_EXCEPTION( grpPtr_.is_null(),
-			            std::logic_error,
-                        "Group not initialized." );
+			    std::logic_error,
+                            "Group not initialized." );
 
-	TEST_FOR_EXCEPTION( combo_.is_null(),
-			            std::logic_error,
-                        "Combo not initialized." );
+	TEST_FOR_EXCEPTION( statusTest_.is_null(),
+			    std::logic_error,
+                            "Status test not initialized." );
 
 	TEST_FOR_EXCEPTION( nlParamsPtr_.is_null(),
-			            std::logic_error,
-                        "Nonlinear solver parameters not initialized." );
+			    std::logic_error,
+                            "Nonlinear solver parameters not initialized." );
 
   solver_ = NOX::Solver::buildSolver ( grpPtr_,
-                                       combo_,
+                                       statusTest_,
                                        nlParamsPtr_ );
 }
 // =============================================================================
-//// TODO Look into having this done by Trilinos. If executed on a multiproc
-////      environment, we don't want p to be fully present on all processors.
-//void
-//glNox::reOrder( Tpetra::Vector<double_complex> &psi,
-//                const Teuchos::RCP<GridSquare> &grid )
-//{
-//  int NumElements = psi.getGlobalLength();
-//
-//  // fill p:
-//  std::vector<int> p ( NumElements );
-//
-//  // copy over
-//  Tpetra::Vector<double_complex,int> psiTmp( psi );
-//
-////   = Teuchos::rcp ( new Tpetra::Vector<double_complex,int> ( psiLexicographic->getMap(),1 ) );
-//  grid->lexicographic2grid ( &p );
-//
-//  Teuchos::ArrayRCP<const double_complex> psiTmpView = psiTmp.get1dView();
-//  for ( int k=0; k<NumElements; k++ )
-//    {
-//      psi.replaceGlobalValue ( p[k],
-//	                       psiTmpView[k]
-//			     );
-//    }
-//}
-// =============================================================================
 void
-glNox::setNonlinearSolverParameters( Teuchos::ParameterList & nlParams )
+glNox::createConvergenceTests( Teuchos::ParameterList & noxStatusList )
 {
+  NOX::StatusTest::Factory statusTestFactory;
 
-  // Set the nonlinear solver method
-  nlParams.set ( "Nonlinear Solver", "Line Search Based" );
-
-  Teuchos::ParameterList& printParams = nlParams.sublist ( "Printing" );
-  setPrintParameters( printParams );
-
-  Teuchos::ParameterList& searchParams = nlParams.sublist ( "Line Search" );
-  setSearchParameters( searchParams );
-
-  Teuchos::ParameterList& dirParams = nlParams.sublist ( "Direction" );
-  setDirectionParameters( dirParams );
-
-  // Let's force all status tests to do a full check
-  nlParams.sublist ( "Solver Options" )
-                                   .set( "Status Test Check Type", "Complete" );
-
-  if ( verbose_ ) // get custom pre/post actions
-    {
-      Teuchos::RCP<NOX::Abstract::PrePostOperator> ppo =
-        Teuchos::rcp ( new GlPrePostOperator ( glSystem_,
-                                               problemParameters_ ) );
-      nlParamsPtr_->sublist ( "Solver Options" )
-                                 .set ( "User Defined Pre/Post Operator", ppo );
-    }
-}
-// =============================================================================
-  // Set the printing parameters in the "Printing" sublist
-void
-glNox::setPrintParameters( Teuchos::ParameterList & printParams )
-{
-  printParams.set ( "MyPID", MyPID_ );
-  printParams.set ( "Output Precision", 16 );
-  printParams.set ( "Output Processor", 0 );
-
-  if ( verbose_ )
-    printParams.set ( "Output Information",
-                      NOX::Utils::OuterIteration +
-                      NOX::Utils::OuterIterationStatusTest +
-                      NOX::Utils::InnerIteration +
-                      NOX::Utils::LinearSolverDetails +
-                      NOX::Utils::Parameters +
-                      NOX::Utils::Details +
-                      NOX::Utils::Warning +
-                      NOX::Utils::Debug +
-                      NOX::Utils::TestDetails +
-                      NOX::Utils::Error );
-  else
-    printParams.set ( "Output Information", NOX::Utils::Error +
-                      NOX::Utils::TestDetails );
-}
-// =============================================================================
-void
-glNox::setSearchParameters( Teuchos::ParameterList & searchParams )
-{
-  searchParams.set ( "Method", "Full Step" );
-}
-// =============================================================================
-void
-glNox::setDirectionParameters( Teuchos::ParameterList & dirParams )
-{
-  dirParams.set ( "Method", "Newton" );
-
-  Teuchos::ParameterList& newtonParams = dirParams.sublist ( "Newton" );
-  setNewtonParameters( newtonParams );
-}
-// =============================================================================
-void
-glNox::setNewtonParameters( Teuchos::ParameterList & newtonParams )
-{
-  newtonParams.set ( "Forcing Term Method", "Constant" );
-
-  Teuchos::ParameterList& lsParams = newtonParams.sublist ( "Linear Solver" );
-  setLinearSolverParameters( lsParams );
-}
-// =============================================================================
-void
-glNox::setLinearSolverParameters( Teuchos::ParameterList & lsParams )
-{
-//  lsParams.set("Amesos Solver", "Amesos_Superlu");
-
-  // lsParams.set("Aztec Solver", "BiCGStab");
-  lsParams.set ( "Aztec Solver", "GMRES" );
-  lsParams.set ( "Output Frequency", 32 );
-  lsParams.set ( "Output Solver Details", true );
-  lsParams.set ( "Max Iterations", 2000 );
-  lsParams.set ( "Tolerance", 1e-4 );
-
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  lsParams.set ( "Preconditioner","New Ifpack" );
-  lsParams.set ( "Ifpack Preconditioner","Amesos" );
-
-  lsParams.set ( "Use Preconditioner as Solver",true );
-  lsParams.set ( "Max Age Of Prec", 1 );
-
-  Teuchos::ParameterList& IFPACKparams = lsParams.sublist ( "Ifpack" );
-  IFPACKparams.set ( "amesos: solver type","Amesos_Superlu" );
-  IFPACKparams.set ( "fact: ilut level-of-fill",1.0 );
-  IFPACKparams.set ( "fact: drop tolerance", 1e-1 );
-  IFPACKparams.set ( "schwarz: combine mode", "Zero" );
-  IFPACKparams.set ( "schwarz: compute condest", true );
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-}
-// =============================================================================
-void
-glNox::createConvergenceTests()
-{
-  Teuchos::RCP<NOX::StatusTest::NormF> absresid =
-                        Teuchos::rcp ( new NOX::StatusTest::NormF ( 1.0e-10 ) );
-
-  TEST_FOR_EXCEPTION( grpPtr_.is_null(),
-		              std::logic_error,
-		              "Group not initialized." );
-
-  NOX::Epetra::Group& grp = *grpPtr_;
-
-  Teuchos::RCP<NOX::StatusTest::NormF> relresid =
-                   Teuchos::rcp ( new NOX::StatusTest::NormF ( grp, 1.0e-10 ) );
-  Teuchos::RCP<NOX::StatusTest::NormUpdate> update =
-                   Teuchos::rcp ( new NOX::StatusTest::NormUpdate ( 1.0e-10 ) );
-  Teuchos::RCP<NOX::StatusTest::NormWRMS> wrms =
-              Teuchos::rcp ( new NOX::StatusTest::NormWRMS ( 1.0e-2, 1.0e-5 ) );
-  Teuchos::RCP<NOX::StatusTest::Combo> converged =
-    Teuchos::rcp ( new NOX::StatusTest::Combo ( NOX::StatusTest::Combo::AND ) );
-  converged->addStatusTest ( absresid );
-  converged->addStatusTest ( relresid );
-  converged->addStatusTest ( wrms );
-  converged->addStatusTest ( update );
-
-  Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters =
-    Teuchos::rcp ( new NOX::StatusTest::MaxIters ( maxNonlinearIterations_ ) );
-  Teuchos::RCP<NOX::StatusTest::FiniteValue> fv =
-    Teuchos::rcp ( new NOX::StatusTest::FiniteValue );
-  // this test is useful if we start in a solution
-  Teuchos::RCP<NOX::StatusTest::NormF> absresexact =
-    Teuchos::rcp ( new NOX::StatusTest::NormF ( 1.0e-13 ) );
-
-  combo_ =
-     Teuchos::rcp ( new NOX::StatusTest::Combo ( NOX::StatusTest::Combo::OR ) );
-
-  combo_->addStatusTest ( fv );
-  combo_->addStatusTest ( absresexact );
-  combo_->addStatusTest ( converged );
-  combo_->addStatusTest ( maxiters );
+  NOX::Utils outputUtils;
+  statusTest_ = statusTestFactory.buildStatusTests( noxStatusList, outputUtils ) ;
 }
 // =============================================================================
 double
