@@ -38,8 +38,9 @@ class glNox
       setVerbose( bool verbose );
 
       void
-      setSolverOptions( int maxNonlinearIterations,
-                        Teuchos::ParameterList noxParaList );
+      setSolverOptions( bool                           plotEachNewtonStep,
+                        const Teuchos::ParameterList & noxParaList,
+                        const std::string            & outputDir );
 
       void
       createSolver();
@@ -74,12 +75,9 @@ class glNox
       int MyPID_;
       Teuchos::RCP<GlSystem> glSystem_;
       Teuchos::RCP<Teuchos::ParameterList> nlParamsPtr_;
-//      Teuchos::RCP<NOX::StatusTest::Combo> combo_;
       Teuchos::RCP<NOX::StatusTest::Generic> statusTest_;
       Teuchos::RCP<NOX::Solver::Generic> solver_;
-      bool verbose_;
       Teuchos::RCP<NOX::Epetra::Group> grpPtr_;
-      int maxNonlinearIterations_;
 
       void
       initializeGrid();

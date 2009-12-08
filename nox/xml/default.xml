@@ -3,6 +3,8 @@
   <ParameterList name="IO">
       <Parameter name="Input guess" type="string" value=""/>
       <Parameter name="Output directory" type="string" value="./data"/>
+      <Parameter name="Plot each Newton step" type="bool" value="false"/>
+      <Parameter name="Jacobian MATLAB matrix file name" type="string" value="" /> 
       <Parameter name="Eigenvalues file name" type="string" value="eigenvalues.dat"/>
       <Parameter name="Eigenstate file name appendix" type="string" value="eigenstate"/>
   </ParameterList>
@@ -11,6 +13,14 @@
       <Parameter name="Nx" type="int" value="60"/>
       <Parameter name="H0" type="double" value="0.1"/>
       <Parameter name="scaling" type="double" value="10.0"/>
+  </ParameterList>
+
+  <ParameterList name="Eigenvalues">
+      <Parameter name="Compute Eigenvalues" type="bool" value="false"/>
+  </ParameterList>
+
+  <ParameterList name="Condition Numbers">
+      <Parameter name="Compute Condition Numbers" type="bool" value="false"/>
   </ParameterList>
 
   <ParameterList name="NOX Status Test" >

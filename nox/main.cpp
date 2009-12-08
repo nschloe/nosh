@@ -40,33 +40,13 @@ int main ( int argc, char *argv[] )
   Teuchos::CommandLineProcessor My_CLP;
 
   My_CLP.setDocString (
-    "This program solves the Ginzburg--Landau problem with a NOX interace.\n"
+    "This program solves the Ginzburg--Landau problem with a NOX interface.\n"
   );
 
-  bool verbose = false;
-  My_CLP.setOption ( "verbose", "silent",
-                     &verbose,
-                     "Verbostity flag" );
-
-  bool matlabMatrix = false;
-  My_CLP.setOption ( "jacobian-file", "no-jacobian-file",
-                     &matlabMatrix,
-                     "Save the jacobian in a text file" );
-
-  bool computeEigenvalues = false;
-  My_CLP.setOption ( "eigenvalues", "no-eigenvalues",
-                     &computeEigenvalues,
-                     "Compute eigenvalue approximations in the solution" );
-
-  bool computeConditionNumber = false;
-  My_CLP.setOption ( "condest", "no-condest",
-                     &computeConditionNumber,
-                     "Compute condition number approximations in the solution" );
-
-  std::string outputdir = "data";
-  My_CLP.setOption ( "output-dir",
-                     &outputdir,
-                     "Directory to which the solution files are written" );
+//  bool verbose = false;
+//  My_CLP.setOption ( "verbose", "silent",
+//                     &verbose,
+//                     "Verbostity flag" );
 
   std::string xmlInputFileName = "";
   My_CLP.setOption("xml-input-file", &xmlInputFileName,
@@ -101,6 +81,18 @@ int main ( int argc, char *argv[] )
   std::string inputGuessFile = ioList.get<string> ("Input guess");
   bool withInitialGuess = inputGuessFile.length() > 0;
   std::string outputDirectory = ioList.get<string> ("Output directory");
+
+  bool computeEigenvalues =paramList->sublist("Eigenvalues",true)
+                                     .get("Compute Eigenvalues", false);
+
+  bool computeConditionNumbers = paramList->sublist("Condition Numbers",true)
+                                     .get("Compute Condition Numbers", false);
+
+  bool plotEachNewtonStep = paramList->sublist("IO",true)
+                                      .get("Plot each Newton step",false);
+
+  std::string jacFilename = paramList->sublist("IO",true)
+                                      .get("Jacobian MATLAB matrix file name","");
   // =========================================================================
 
   // create GL-NOX object with initial parameters/guess
@@ -115,13 +107,10 @@ int main ( int argc, char *argv[] )
       myNoxObject = Teuchos::rcp( new glNox( Nx, edgeLength, H0, Comm, eComm ) );
   }
 
-  myNoxObject->setVerbose( verbose );
-
   // set default solver options
-  int maxNonlinearIterations = 30;
-  myNoxObject->setSolverOptions( maxNonlinearIterations,
-                                 paramList->sublist("NOX",true) );
-
+  myNoxObject->setSolverOptions( plotEachNewtonStep,
+                                 paramList->sublist("NOX",true),
+                                 outputDirectory );
 
   myNoxObject->createSolverGroup();
   myNoxObject->createConvergenceTests( paramList->sublist("NOX Status Test",true) );
@@ -131,14 +120,13 @@ int main ( int argc, char *argv[] )
   myNoxObject->solve();
 
   // compute the condition number
-  if ( computeConditionNumber ) {
+  if ( computeConditionNumbers ) {
       double kappa = myNoxObject->computeJacobianConditionNumber();
       std::cout << "Condition number: kappa = " << kappa << "." << std::endl;
   }
 
   // spit out the Jacobian in MATLAB readable format
-  if ( matlabMatrix ) {
-      std::string jacFilename = "jacobianMatrix.dat";
+  if ( !jacFilename.empty() ) {
 //       EpetraExt::RowMatrixToMatlabFile(jacFilename.c_str(),*(glsystem->getJacobian()));
   }
 
@@ -147,7 +135,7 @@ int main ( int argc, char *argv[] )
         myNoxObject->computeJacobianEigenvalues();
   
   // print the solution to a file
-  myNoxObject->printSolutionToFile( "data/solution.vtk" );
+  myNoxObject->printSolutionToFile( outputDirectory + "/solution.vtk" );
 
   // check the convergence status
   int status = myNoxObject->checkConvergence();

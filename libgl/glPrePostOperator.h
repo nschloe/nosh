@@ -12,8 +12,9 @@ class GlPrePostOperator : public NOX::Abstract::PrePostOperator {
 public:
 
   //! Constructor.
- GlPrePostOperator( Teuchos::RCP<GlSystem>        glsystem,
-                    const Teuchos::ParameterList& problemParams);
+ GlPrePostOperator( Teuchos::RCP<GlSystem>       & glsystem,
+                    const Teuchos::ParameterList & problemParams,
+                    const std::string            & outputDir );
 
   //! Destructor.
   ~GlPrePostOperator();
@@ -31,6 +32,7 @@ protected:
 
   Teuchos::ParameterList problemParameters_;   //!< The problem parameters.
   Teuchos::RCP<GlSystem> glsystem_;            //!< The Ginzburg--Landau system.
+  std::string            outputDir_;
 
 };
 #endif // GLPREPOSTOPERATOR_H

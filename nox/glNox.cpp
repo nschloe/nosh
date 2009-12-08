@@ -39,48 +39,8 @@ glNox::glNox( const std::string fileName,
   glSystem_( Teuchos::null ),
   nlParamsPtr_( Teuchos::rcp ( new Teuchos::ParameterList ) ),
   statusTest_( Teuchos::null ),
-  solver_( Teuchos::null ),
-  verbose_( false ),
-  maxNonlinearIterations_( 10 )
+  solver_( Teuchos::null )
 {
-//  // instantiate file I/O object
-//  Teuchos::RCP<IoVirtual> fileIo =
-//	       Teuchos::RCP<IoVirtual> ( IoFactory::createFileIo ( fileName ) );
-//
-//  // read the stuff
-//  Teuchos::RCP<Tpetra::MultiVector<double,int> > psiSplit = Teuchos::null;
-//  fileIo->read ( comm,
-//                 psiSplit,
-//                 problemParameters_ );
-//
-//  TEST_FOR_EXCEPTION( psiSplit.is_null(),
-//		              std::logic_error,
-//		              "Input guess NULL." );
-//
-//  Teuchos::RCP<GlBoundaryConditionsVirtual> boundaryConditions =
-//                             Teuchos::rcp ( new GlBoundaryConditionsCentral() );
-//
-//  int    Nx      = problemParameters_.get<int>   ("Nx");
-//  double scaling = problemParameters_.get<double>("scaling");
-//  double H0      = problemParameters_.get<double>("H0");
-//  Teuchos::RCP<GridUniformSquare> grid = Teuchos::rcp ( new GridUniformSquare( Nx, scaling ) );
-//  Teuchos::RCP<MagneticVectorPotential> A =
-//                              Teuchos::rcp ( new MagneticVectorPotential( H0, scaling) );
-//
-//  // convert initial solution to a proper guess (ordering, complex values)
-//  Teuchos::RCP<Tpetra::Vector<double_complex,int> > psi =
-//                     Teuchos::rcp( new Tpetra::Vector<double_complex,int>( psiSplit->getMap() ) );
-//  Teuchos::ArrayRCP<const double> psiSplitAbsView = psiSplit->getVector(0)->get1dView();
-//  Teuchos::ArrayRCP<const double> psiSplitArgView = psiSplit->getVector(1)->get1dView();
-//  int localLength = psi->getLocalLength();
-//  for (int k=0; k<localLength; k++){
-//      int kGlobal = psi->getMap()->getGlobalElement( k );
-//      double_complex value = polar( sqrt(psiSplitAbsView[kGlobal]), psiSplitArgView[kGlobal]  );
-//      psi->replaceLocalValue( k, value );
-//  }
-//  reOrder( *psi, grid );
-
-
   Teuchos::ParameterList glParameters;
   Teuchos::RCP<ComplexVector> psi;
   Teuchos::RCP<GridUniformVirtual> grid;
@@ -124,9 +84,7 @@ glNox::glNox( const unsigned int Nx,
   glSystem_( Teuchos::null ),
   nlParamsPtr_( Teuchos::rcp ( new Teuchos::ParameterList ) ),
   statusTest_( Teuchos::null ),
-  solver_( Teuchos::null ),
-  verbose_( false ),
-  maxNonlinearIterations_( 10 )
+  solver_( Teuchos::null )
 {
   problemParameters_.set ( "Nx"     , Nx );
   problemParameters_.set ( "scaling", scaling );
@@ -156,26 +114,22 @@ glNox::solve()
 // =============================================================================
 // set parameters
 void
-glNox::setSolverOptions( int maxNonlinearIterations,
-                         Teuchos::ParameterList noxParaList )
+glNox::setSolverOptions( bool                           plotEachNewtonStep,
+                         const Teuchos::ParameterList & noxParaList,
+                         const std::string            & outputDir )
 {
-  maxNonlinearIterations_ = maxNonlinearIterations;
-
   nlParamsPtr_ =  Teuchos::rcp ( new Teuchos::ParameterList(noxParaList) );
 
-
-  if ( verbose_ ) // get custom pre/post actions
+  if ( plotEachNewtonStep ) // get custom pre/post actions
     {
       Teuchos::RCP<NOX::Abstract::PrePostOperator> ppo =
         Teuchos::rcp ( new GlPrePostOperator ( glSystem_,
-                                               problemParameters_ ) );
+                                               problemParameters_,
+                                               outputDir ) );
       nlParamsPtr_->sublist ( "Solver Options" )
                                  .set ( "User Defined Pre/Post Operator", ppo );
     }
 
-//  nlParamsPtr_ =  Teuchos::rcp ( new Teuchos::ParameterList() );
-//  Teuchos::ParameterList& nlParams = * ( nlParamsPtr_.get() );
-//  setNonlinearSolverParameters( nlParams );
 }
 // =============================================================================
 void
@@ -241,7 +195,8 @@ glNox::createConvergenceTests( Teuchos::ParameterList & noxStatusList )
 {
   NOX::StatusTest::Factory statusTestFactory;
 
-  NOX::Utils outputUtils;
+  Teuchos::ParameterList &printParams = nlParamsPtr_->sublist( "Printing" );
+  NOX::Utils outputUtils( printParams );
   statusTest_ = statusTestFactory.buildStatusTests( noxStatusList, outputUtils ) ;
 }
 // =============================================================================
@@ -360,7 +315,7 @@ glNox::computeJacobianEigenvalues()
 
   // Solve the problem to the specified tolerances or length
   Anasazi::ReturnType returnCode = MySolverMgr.solve();
-  if ( returnCode != Anasazi::Converged && MyPID_==0 && verbose_ )
+  if ( returnCode != Anasazi::Converged && MyPID_==0 )
     cout << "Anasazi::EigensolverMgr::solve() returned unconverged." << endl;
 
   // Get the Ritz values from the eigensolver
@@ -471,19 +426,14 @@ glNox::checkConvergence()
       status = 2;
     }
 #endif
-  // 3. Nonlinear solve iterations (10)
-  if ( const_cast<Teuchos::ParameterList&> ( solver_->getList() )
-                                             .sublist ( "Output" )
-                                             .get ( "Nonlinear Iterations", 0 )
-        == maxNonlinearIterations_ )
-    status = 3;
+
+//  // 3. Nonlinear solve iterations (10)
+//  if ( const_cast<Teuchos::ParameterList&> ( solver_->getList() )
+//                                             .sublist ( "Output" )
+//                                             .get ( "Nonlinear Iterations", 0 )
+//        == maxNonlinearIterations_ )
+//    status = 3;
 
   return status;
-}
-// =============================================================================
-void
-glNox::setVerbose( bool verbose )
-{
-    verbose_ = verbose;
 }
 // =============================================================================
