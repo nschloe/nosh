@@ -2,7 +2,7 @@
  * Grid.h
  *
  *  Created on: Nov 5, 2009
- *      Author: Nico Schlšmer
+ *      Author: Nico Schlï¿½mer
  */
 
 #ifndef GRIDSQUARE_H_
@@ -16,9 +16,6 @@
 #include <Tpetra_MultiVector.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_Comm.hpp>
-
-typedef Tpetra::Vector<double>      DoubleVector;
-typedef Tpetra::MultiVector<double> DoubleMultiVector;
 
 class GridSquare: virtual public GridVirtual
 {
@@ -67,9 +64,9 @@ public:
   boundaryIndex2globalIndex( unsigned int l ) const;
 
   virtual void
-  writeWithGrid( const Tpetra::MultiVector<double,int> & x,
-                 const Teuchos::ParameterList &params,
-                 const std::string &filePath
+  writeWithGrid( const DoubleMultiVector      & x,
+                 const Teuchos::ParameterList & params,
+                 const std::string            & filePath
                ) const;
 
   virtual void

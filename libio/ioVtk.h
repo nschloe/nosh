@@ -26,8 +26,8 @@ public:
   //! Reads the order parameter \f$\psi\f$ and the problem parameter list
   //! from a legacy VTK file into the arguments.
   virtual void
-  read(const Teuchos::RCP<const Teuchos::Comm<int> > &tComm, Teuchos::RCP<
-      Tpetra::MultiVector<double, int> > &x,
+  read(const Teuchos::RCP<const Teuchos::Comm<int> > &tComm,
+             Teuchos::RCP<DoubleMultiVector> &x,
       Teuchos::ParameterList &problemParams) const;
 
   //! Writes the  order parameter \f$\psi\f$ and the problem parameter list
@@ -36,11 +36,11 @@ public:
   //! nodes is preserved and the resulting file contains a state \f$\psi\f
   //! that can be viewed using standard tools.
   virtual void
-  write(const Tpetra::MultiVector<double, int> & x, const Teuchos::Tuple<unsigned int,2>  & Nx,
+  write(const DoubleMultiVector & x, const Teuchos::Tuple<unsigned int,2>  & Nx,
       const Teuchos::Tuple<double,2>        & h, const Teuchos::ParameterList & problemParams);
 
   virtual void
-  write(const Tpetra::MultiVector<double, int> & x, const Teuchos::Tuple<unsigned int,2>  & Nx,
+  write(const DoubleMultiVector & x, const Teuchos::Tuple<unsigned int,2>  & Nx,
       const Teuchos::Tuple<double,2>        & h);
 
 protected:
@@ -55,7 +55,7 @@ private:
       std::ofstream & ioStream) const;
 
   void
-  writeScalars(const Tpetra::MultiVector<double, int> & psi, const Teuchos::Tuple<unsigned int,2>  & Nx,
+  writeScalars(const DoubleMultiVector & psi, const Teuchos::Tuple<unsigned int,2>  & Nx,
       std::ofstream & oStream) const;
 
   //! joins a vector of strings to one string with a separator string \c sep
@@ -70,8 +70,8 @@ private:
   readVtkHeader(std::ifstream & iFile) const;
 
   bool
-  ReadScalarsFromVtkFile(std::ifstream & iFile, Teuchos::RCP<
-      Tpetra::MultiVector<double, int> > & scalars) const;
+  ReadScalarsFromVtkFile( std::ifstream & iFile,
+                          Teuchos::RCP<DoubleMultiVector> & scalars) const;
 
 };
 #endif // IOVTK_H

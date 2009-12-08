@@ -17,8 +17,8 @@ IoVtk::~IoVtk()
 }
 // =============================================================================
 void
-IoVtk::read(const Teuchos::RCP<const Teuchos::Comm<int> > &tComm, Teuchos::RCP<
-    Tpetra::MultiVector<double, int> > &x,
+IoVtk::read(const Teuchos::RCP<const Teuchos::Comm<int> > & tComm,
+                  Teuchos::RCP<DoubleMultiVector>         & x,
     Teuchos::ParameterList &problemParams) const
 {
   std::ifstream iFile;
@@ -61,11 +61,9 @@ IoVtk::read(const Teuchos::RCP<const Teuchos::Comm<int> > &tComm, Teuchos::RCP<
       << "reimplemented in Trilinos." );
 
   // create map
-  Teuchos::RCP<const Tpetra::Map<int> > myMap = Teuchos::rcp(new Tpetra::Map<
-      int>(vecSize, 0, tComm));
+  Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> > myMap = Teuchos::rcp(new Tpetra::Map<Thyra::Ordinal>(vecSize, 0, tComm));
   int numVectors = 2; // TODO: remove this random value!!!
-  x = Teuchos::rcp(
-      new Tpetra::MultiVector<double, int>(myMap, numVectors, true));
+  x = Teuchos::rcp( new DoubleMultiVector(myMap, numVectors, true));
   ReadScalarsFromVtkFile(iFile, x);
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
 
@@ -112,9 +110,9 @@ IoVtk::read(const Teuchos::RCP<const Teuchos::Comm<int> > &tComm, Teuchos::RCP<
 }
 // =============================================================================
 void
-IoVtk::write( const Tpetra::MultiVector<double,int> & x,
-              const Teuchos::Tuple<unsigned int,2>  & Nx,
-              const Teuchos::Tuple<double,2>        & h,
+IoVtk::write( const DoubleMultiVector              & x,
+              const Teuchos::Tuple<unsigned int,2> & Nx,
+              const Teuchos::Tuple<double,2>       & h,
               const Teuchos::ParameterList & problemParams )
 {
   std::ofstream vtkfile;
@@ -144,9 +142,9 @@ IoVtk::write( const Tpetra::MultiVector<double,int> & x,
 }
 // =============================================================================
 void
-IoVtk::write( const Tpetra::MultiVector<double, int> & x,
-              const Teuchos::Tuple<unsigned int,2>  & Nx,
-              const Teuchos::Tuple<double,2>        & h
+IoVtk::write( const DoubleMultiVector              & x,
+              const Teuchos::Tuple<unsigned int,2> & Nx,
+              const Teuchos::Tuple<double,2>       & h
             )
 {
   std::ofstream vtkfile;
@@ -252,7 +250,7 @@ IoVtk::writeVtkStructuredPointsHeader( std::ofstream & ioStream,
 }
 // =============================================================================
 void
-IoVtk::writeScalars(const Tpetra::MultiVector<double, int> & x, const Teuchos::Tuple<unsigned int,2>  & Nx,
+IoVtk::writeScalars(const DoubleMultiVector & x, const Teuchos::Tuple<unsigned int,2>  & Nx,
     std::ofstream & oStream) const
 {
   // Note that, when writing the data, the values of psi are assumed to be
@@ -427,11 +425,9 @@ IoVtk::readVtkHeader(std::ifstream &iFile) const
 }
 // ============================================================================
 bool
-IoVtk::ReadScalarsFromVtkFile(std::ifstream & iFile, Teuchos::RCP<
-    Tpetra::MultiVector<double, int> > & scalars) const
+IoVtk::ReadScalarsFromVtkFile( std::ifstream                   & iFile,
+                               Teuchos::RCP<DoubleMultiVector> & scalars) const
 {
-  std::string fname = "IoVtk::ReadScalarsFromVtkFile";
-
   int numVectors = scalars->getNumVectors();
 
   // TODO: make the reader work on multiproc environments
@@ -467,8 +463,8 @@ IoVtk::ReadScalarsFromVtkFile(std::ifstream & iFile, Teuchos::RCP<
       int numComponents = 1;
       unsigned int startNum = buf.find_first_of("0123456789");
       if (startNum != std::string::npos)
-        numComponents = strtol(
-            buf.substr(startNum, buf.size() - startNum).c_str(), NULL, 10);
+        numComponents = strtol( buf.substr(startNum, buf.size() - startNum).c_str(), NULL, 10);
+  
 
       // check that the multivector still has enough room for it
       TEST_FOR_EXCEPTION( vecIndex+numComponents>numVectors,

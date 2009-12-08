@@ -17,9 +17,9 @@ IoVti::~IoVti()
 }
 // =============================================================================
 void
-IoVti::read(const Teuchos::RCP<const Teuchos::Comm<int> > &tComm, Teuchos::RCP<
-    Tpetra::MultiVector<double, int> > &x,
-    Teuchos::ParameterList &problemParams) const
+IoVti::read(const Teuchos::RCP<const Teuchos::Comm<int> > &tComm,
+                  Teuchos::RCP<DoubleMultiVector> &x,
+                  Teuchos::ParameterList &problemParams) const
 {
 
   TEST_FOR_EXCEPTION( true,
@@ -72,7 +72,7 @@ IoVti::read(const Teuchos::RCP<const Teuchos::Comm<int> > &tComm, Teuchos::RCP<
 }
 // =============================================================================
 void
-IoVti::write(const Tpetra::MultiVector<double, int> & x, const Teuchos::Tuple<unsigned int,2>  & Nx,
+IoVti::write(const DoubleMultiVector & x, const Teuchos::Tuple<unsigned int,2>  & Nx,
     const Teuchos::Tuple<double,2>        & h, const Teuchos::ParameterList & problemParams)
 {
   std::string str;
@@ -149,9 +149,9 @@ IoVti::write(const Tpetra::MultiVector<double, int> & x, const Teuchos::Tuple<un
 }
 // =============================================================================
 void
-IoVti::write( const Tpetra::MultiVector<double, int> & x,
-              const Teuchos::Tuple<unsigned int,2>  & Nx,
-              const Teuchos::Tuple<double,2>        & h
+IoVti::write( const DoubleMultiVector              & x,
+              const Teuchos::Tuple<unsigned int,2> & Nx,
+              const Teuchos::Tuple<double,2>       & h
             )
 {
   TEST_FOR_EXCEPTION( true,

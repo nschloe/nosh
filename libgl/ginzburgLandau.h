@@ -17,8 +17,10 @@
 
 #include <Epetra_Map.h>
 
+#include <Thyra_OperatorVectorTypes.hpp> // For Thyra::Ordinal
+
 typedef std::complex<double> double_complex;
-typedef Tpetra::Vector<double_complex,int> ComplexVector;
+typedef Tpetra::Vector<double_complex,Thyra::Ordinal> ComplexVector;
 
 class GinzburgLandau
 {

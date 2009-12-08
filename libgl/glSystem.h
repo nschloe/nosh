@@ -28,11 +28,13 @@
 #include <Tpetra_Map.hpp>
 #include <Tpetra_Vector.hpp>
 
+#include <Thyra_OperatorVectorTypes.hpp> // For Thyra::Ordinal
+
 #include <NOX_Abstract_Group.H>
 
 #include <LOCA_Stepper.H>
 
-typedef Tpetra::Vector<double_complex, int> ComplexVector;
+typedef Tpetra::Vector<double_complex, Thyra::Ordinal> ComplexVector;
 
 class GlSystem: public NOX::Epetra::Interface::Jacobian,
                 public NOX::Epetra::Interface::Preconditioner,
@@ -144,7 +146,7 @@ private:
 	complex2real(const ComplexVector &psi, Epetra_Vector &x) const;
 
 	void
-	makeRealMap(const Teuchos::RCP<const Tpetra::Map<int> > complexMap);
+	makeRealMap(const Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> > complexMap);
 
 	enum jacCreator {
 		ONLY_GRAPH, VALUES
@@ -185,10 +187,10 @@ private:
 
 	GinzburgLandau::GinzburgLandau Gl_;
 	const Teuchos::RCP<const Epetra_Comm> EComm_;
-	Teuchos::RCP<const Teuchos::Comm<int> > TComm_;
+	Teuchos::RCP<const Teuchos::Comm<Thyra::Ordinal> > TComm_;
 	Teuchos::RCP<Epetra_Map> RealMap_;
 	Teuchos::RCP<Epetra_Map> EverywhereMap_;
-	Teuchos::RCP<const Tpetra::Map<int> > ComplexMap_;
+	Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> > ComplexMap_;
 	Epetra_Vector *rhs_;
 	Teuchos::RCP<Epetra_CrsGraph> Graph_;
 	Teuchos::RCP<Epetra_CrsMatrix> jacobian_;

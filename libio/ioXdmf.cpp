@@ -34,9 +34,9 @@ IoXdmf::~IoXdmf()
 }
 // =============================================================================
 void
-IoXdmf::read( const Teuchos::RCP<const Teuchos::Comm<int> >        &tComm,
-			        Teuchos::RCP<Tpetra::MultiVector<double,int> > &x,
-			        Teuchos::ParameterList                         &problemParams
+IoXdmf::read( const Teuchos::RCP<const Teuchos::Comm<int> > & tComm,
+			        Teuchos::RCP<DoubleMultiVector>         & x,
+			        Teuchos::ParameterList                  & problemParams
 	        ) const
 {
   TEST_FOR_EXCEPTION( true,
@@ -230,10 +230,10 @@ IoXdmf::getHeavyData( const Teuchos::XMLObject &xmlFileObject,
 }
 // =============================================================================
 void
-IoXdmf::write ( const Tpetra::MultiVector<double,int> & x,
-                const Teuchos::Tuple<unsigned int,2>  & Nx,
-                const Teuchos::Tuple<double,2>        & h,
-                const Teuchos::ParameterList          & problemParams
+IoXdmf::write ( const DoubleMultiVector              & x,
+                const Teuchos::Tuple<unsigned int,2> & Nx,
+                const Teuchos::Tuple<double,2>       & h,
+                const Teuchos::ParameterList         & problemParams
               )
 {
   std::string   str;
@@ -385,9 +385,9 @@ IoXdmf::write ( const Tpetra::MultiVector<double,int> & x,
 }
 // =============================================================================
 void
-IoXdmf::write( const Tpetra::MultiVector<double,int> & x,
-               const Teuchos::Tuple<unsigned int,2>  & Nx,
-               const Teuchos::Tuple<double,2>        & h
+IoXdmf::write( const DoubleMultiVector              & x,
+               const Teuchos::Tuple<unsigned int,2> & Nx,
+               const Teuchos::Tuple<double,2>       & h
              )
 {
   TEST_FOR_EXCEPTION( true,

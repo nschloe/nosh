@@ -10,6 +10,10 @@
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_Tuple.hpp>
 
+#include <Thyra_OperatorVectorTypes.hpp> // For Thyra::Ordinal
+
+typedef Tpetra::MultiVector<double,Thyra::Ordinal> DoubleMultiVector;
+
 class IoVirtual
   {
   public:
@@ -23,24 +27,24 @@ class IoVirtual
     //! Virtual function for reading the order parameter \f$\psi\f$ and the
     //! parameter list from a given file.
     virtual void
-    read( const Teuchos::RCP<const Teuchos::Comm<int> >        &tComm,
-                Teuchos::RCP<Tpetra::MultiVector<double,int> > &x,
-                Teuchos::ParameterList                         &problemParams
+    read( const Teuchos::RCP<const Teuchos::Comm<int> > & tComm,
+                Teuchos::RCP<DoubleMultiVector>         & x,
+                Teuchos::ParameterList                  & problemParams
         ) const = 0; // pure virtual
 
     //! Virtual function for writing the order parameter \f$\psi\f$ and the
     //! parameter list to a given file.
     virtual void
-    write ( const Tpetra::MultiVector<double,int> & x,
-            const Teuchos::Tuple<unsigned int,2>  & Nx,
-            const Teuchos::Tuple<double,2>        & h,
-            const Teuchos::ParameterList          & problemParams
+    write ( const DoubleMultiVector              & x,
+            const Teuchos::Tuple<unsigned int,2> & Nx,
+            const Teuchos::Tuple<double,2>       & h,
+            const Teuchos::ParameterList         & problemParams
           ) = 0; // pure virtual
 
     virtual void
-    write( const Tpetra::MultiVector<double,int> & x,
-           const Teuchos::Tuple<unsigned int,2>  & Nx,
-           const Teuchos::Tuple<double,2>        & h
+    write( const DoubleMultiVector              & x,
+           const Teuchos::Tuple<unsigned int,2> & Nx,
+           const Teuchos::Tuple<double,2>       & h
           ) = 0; // pure virtual
 
   protected:

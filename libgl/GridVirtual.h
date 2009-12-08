@@ -2,7 +2,7 @@
  * GridVirtual.h
  *
  *  Created on: Nov 25, 2009
- *      Author: Nico Schlšmer
+ *      Author: Nico Schlï¿½mer
  */
 
 #ifndef GRIDVIRTUAL_H_
@@ -14,7 +14,9 @@
 #include <Teuchos_ParameterList.hpp>
 #include <Tpetra_MultiVector.hpp>
 
-typedef Tpetra::MultiVector<double> DoubleMultiVector;
+#include <Thyra_OperatorVectorTypes.hpp> // For Thyra::Ordinal
+
+typedef Tpetra::MultiVector<double,Thyra::Ordinal> DoubleMultiVector;
 
 class GridVirtual
 {

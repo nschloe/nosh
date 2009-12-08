@@ -83,7 +83,7 @@ GlSystem::GlSystem( GinzburgLandau::GinzburgLandau &gl,
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	// define maps
 	// psi->getMap() returns a CONST map
-	ComplexMap_ = Teuchos::RCP<const Tpetra::Map<int> >(psi->getMap());
+	ComplexMap_ = Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> >(psi->getMap());
 
 	// get the map for the real values
 	makeRealMap(ComplexMap_);
@@ -180,8 +180,7 @@ outputDataFileName_(outputDataFileName)
 
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   // define maps
-  ComplexMap_ = Teuchos::rcp(new Tpetra::Map<int>(NumComplexUnknowns_, 0,
-                  TComm_));
+  ComplexMap_ = Teuchos::rcp(new Tpetra::Map<Thyra::Ordinal>(NumComplexUnknowns_, 0, TComm_));
 
   // get the map for the real values
   makeRealMap(ComplexMap_);
@@ -267,7 +266,7 @@ GlSystem::complex2real(const ComplexVector &complexVec,
 }
 // =============================================================================
 void GlSystem::makeRealMap(
-		const Teuchos::RCP<const Tpetra::Map<int> > complexMap) {
+		const Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> > complexMap) {
 	int numRealGlobalElements = 2 * complexMap->getNodeNumElements();
 
 	int myPid = TComm_->getRank();
@@ -277,7 +276,7 @@ void GlSystem::makeRealMap(
 		numRealGlobalElements++;
 
 	Epetra_IntSerialDenseVector realMapGIDs(numRealGlobalElements);
-	Teuchos::ArrayView<const int> myGlobalElements =
+	Teuchos::ArrayView<const Thyra::Ordinal> myGlobalElements =
 			complexMap->getNodeElementList();
 	// Construct the map in such a way that all complex entries on processor K
 	// are split up into real and imaginary part, which will both reside on
@@ -397,6 +396,7 @@ bool GlSystem::computePreconditioner( const Epetra_Vector &x,
 //    TEST_FOR_EXCEPTION( true,
 //			std::logic_error,
 //	                "Use explicit Jacobian only for this test problem!" );
+  return true;
 }
 // =============================================================================
 Teuchos::RCP<Epetra_Vector>

@@ -468,8 +468,8 @@ GinzburgLandau::writeStateToFile( const Teuchos::RCP<const ComplexVector> &psi,
 
   // Create multivector containing the components that we would like to print.
   // Also make sure the entries appear in lexicographic order.
-  Teuchos::RCP<const Tpetra::Map<int> > psiMap = psi->getMap();
-  Tpetra::MultiVector<double, int> psiSplit(psiMap, 2, true);
+  Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> > psiMap = psi->getMap();
+  Tpetra::MultiVector<double, Thyra::Ordinal> psiSplit(psiMap, 2, true);
   Teuchos::ArrayRCP<const double_complex> psiView = psi->get1dView();
   int globalLength = psiSplit.getGlobalLength();
   for (int k = 0; k < globalLength; k++) {
@@ -538,7 +538,7 @@ GinzburgLandau::appendStats( std::ofstream & fileStream,
 // NOT A MEMBER OF GinzburgLandau!
 void
 readStateFromFile ( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
-		    const std::string                             & filePath,
+		            const std::string                             & filePath,
                     Teuchos::RCP<ComplexVector>                   & psi,
                     Teuchos::RCP<GridUniformVirtual>              & grid,
                     Teuchos::ParameterList                        & params
@@ -546,7 +546,7 @@ readStateFromFile ( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
 {
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   // read the raw data, parameters, grid
-  Teuchos::RCP<Tpetra::MultiVector<double, int> > psiSplit;
+  Teuchos::RCP<DoubleMultiVector> psiSplit;
 
   Teuchos::RCP<GridReader> gridReader;
   gridReader->read( Comm, filePath, psiSplit, grid, params );
