@@ -14,7 +14,7 @@ SET(_trilinos_INCLUDE_SEARCH_DIRS
   /usr/local/trilinos
   /opt/trilinos
   /usr/local/trilinos/current/include
-  /opt/trilinos-dev/LINUX_64BIT/include/
+  /opt/trilinos/dev/openmpi/1.4/gcc/4.4.2/include/
 )
 
 FIND_PATH( Trilinos_INCLUDE_DIR
@@ -38,6 +38,9 @@ IF (Trilinos_FOUND)
   SET( CMAKE_CXX_COMPILER ${Trilinos_CXX_COMPILER} )
   SET( CMAKE_Fortran_COMPILER ${Trilinos_Fortran_COMPILER} )
 
+  INCLUDE( ${Trilinos_INCLUDE_DIR}/../TrilinosLibraryDepends.cmake )
+
+
   SET( Trilinos_LIB_DIR ${Trilinos_INCLUDE_DIR}/../lib )
 
   # ----------------------------------------------------------------------------
@@ -54,7 +57,7 @@ IF (Trilinos_FOUND)
       MESSAGE(FATAL_ERROR "Could NOT find Trilinos component ${COMPONENT}")
     ELSE (NOT Trilinos_${UPPERCOMPONENT}_LIBRARY)
       SET( Trilinos_${UPPERCOMPONENT}_FOUND TRUE )
-      SET( Trilinos_LIBRARIES ${Trilinos_LIBRARIES} ${Trilinos_${UPPERCOMPONENT}_LIBRARY})
+      SET( Trilinos_LIBS ${Trilinos_LIBS} ${Trilinos_${UPPERCOMPONENT}_LIBRARY})
       IF (NOT Trilinos_FIND_QUIETLY)
         MESSAGE(STATUS "Found Trilinos component: ${COMPONENT}")
       ENDIF (NOT Trilinos_FIND_QUIETLY)
@@ -62,6 +65,8 @@ IF (Trilinos_FOUND)
 
   ENDFOREACH(COMPONENT)
   # ----------------------------------------------------------------------------
+
+LINK_DIRECTORIES( ${LINK_DIRECTORIES} ${Trilinos_LIB_DIR} )
 
 ELSE (Trilinos_FOUND)
    IF (Trilinos_FIND_REQUIRED)
