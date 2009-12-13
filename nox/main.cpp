@@ -59,8 +59,15 @@ int main ( int argc, char *argv[] )
   My_CLP.throwExceptions(false);
 
   // finally, parse the stuff!
-  Teuchos::CommandLineProcessor::EParseCommandLineReturn parseReturn =
-      My_CLP.parse(argc, argv);
+  Teuchos::CommandLineProcessor::EParseCommandLineReturn parseReturn;
+  try {
+      parseReturn = My_CLP.parse(argc, argv);
+  }
+  catch (...)
+  {
+      std::cerr << "Caught error." << std::endl;
+      return 1;
+  }
   if (parseReturn == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED)
     {
       return 0;
