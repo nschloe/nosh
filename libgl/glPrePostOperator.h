@@ -23,7 +23,7 @@ public:
   //! This particular implementation prints the current state to the file
   //! data/newton-step-numRunPreIterate.vtk .
   //! @param solver The solver.
-  void runPreIterate(const NOX::Solver::Generic& solver);
+  void runPostIterate(const NOX::Solver::Generic& solver);
 
 protected:
 

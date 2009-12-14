@@ -309,13 +309,13 @@ void GlSystem::makeRealMap(
 // =============================================================================
 bool
 GlSystem::computeF(const Epetra_Vector &x,
-		                 Epetra_Vector &FVec,
-		           const NOX::Epetra::Interface::Required::FillType fillFlag)
+		         Epetra_Vector &FVec,
+		   const NOX::Epetra::Interface::Required::FillType fillFlag)
 {
-	// make sure that the input and output vectors are correctly mapped
-    TEST_FOR_EXCEPTION( !x.Map().SameAs(*RealMap_),
-			            std::logic_error,
-			            "Maps of x and the computed real-valued map do not coincide." );
+  // make sure that the input and output vectors are correctly mapped
+  TEST_FOR_EXCEPTION( !x.Map().SameAs(*RealMap_),
+                      std::logic_error,
+	              "Maps of x and the computed real-valued map do not coincide." );
 
     TEST_FOR_EXCEPTION( !FVec.Map().SameAs(*RealMap_),
 			            std::logic_error,
@@ -874,7 +874,7 @@ GlSystem::printSolutionTurningPointContinuation( const Teuchos::RCP<const Comple
 // =============================================================================
 void
 GlSystem::writeContinuationStats( const int conStep,
-		                          const Teuchos::RCP<const ComplexVector> psi ) const
+		                  const Teuchos::RCP<const ComplexVector> psi ) const
 {
 	// fill the continuation parameters file
 	std::string contFileName = outputDir_ + "/" + outputDataFileName_;

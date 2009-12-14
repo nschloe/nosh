@@ -25,11 +25,12 @@ GlPrePostOperator::~GlPrePostOperator()
 }
 // =============================================================================
 void GlPrePostOperator::
-runPreIterate(const NOX::Solver::Generic& solver)
+runPostIterate(const NOX::Solver::Generic& solver)
 {
   string fileName;
 
   ++numRunPreIterate;
+
 
   // Get the Epetra_Vector with the final solution from the solver
   const NOX::Epetra::Group& solGrp =
@@ -44,7 +45,11 @@ runPreIterate(const NOX::Solver::Generic& solver)
                                   fileName );
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  TEST_FOR_EXCEPTION( !solGrp.isF(),
+                      std::logic_error,
+                      "Group contains invalid right hand side. Has F ever been computed?" );
   const Epetra_Vector& currentResidual =
     (dynamic_cast<const NOX::Epetra::Vector&>(solGrp.getF())).getEpetraVector();
   fileName = outputDir_ + "/newton-res-"+EpetraExt::toString(numRunPreIterate)+".vtk";
