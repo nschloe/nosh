@@ -82,19 +82,19 @@ main(int argc, char *argv[])
   My_CLP.recogniseAllOptions(true);
 
   // don't throw exceptions
-  My_CLP.throwExceptions(false);
+  My_CLP.throwExceptions(true);
 
   // finally, parse the stuff!
-  Teuchos::CommandLineProcessor::EParseCommandLineReturn parseReturn =
-      My_CLP.parse(argc, argv);
-  if (parseReturn == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED)
-    {
-      return 0;
-    }
-  if (parseReturn != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL)
-    {
-      return 1; // Error!
-    }
+  Teuchos::CommandLineProcessor::EParseCommandLineReturn parseReturn;
+  try {
+      parseReturn = My_CLP.parse(argc, argv);
+  }
+  catch (std::exception &e)
+  {
+      std::cerr << e.what() << std::endl;
+      return 1;
+  }
+
 
   Teuchos::RCP<Teuchos::ParameterList> paramList = Teuchos::rcp(
       new Teuchos::ParameterList);
