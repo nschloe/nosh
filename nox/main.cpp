@@ -108,9 +108,9 @@ int main ( int argc, char *argv[] )
       myNoxObject = Teuchos::rcp( new glNox( inputGuessFile, Comm, eComm ) );
   }
   else {
-      int    Nx      = 50;
-      double scaling = 10.0;
-      double H0      = 0.4;
+      int    Nx      = paramList->sublist("GL",true).get("Nx",50);
+      double scaling = paramList->sublist("GL",true).get("scaling",10.0);
+      double H0      = paramList->sublist("GL",true).get("H0",0.0);
       myNoxObject = Teuchos::rcp( new glNox( Nx, scaling, H0, Comm, eComm ) );
   }
 

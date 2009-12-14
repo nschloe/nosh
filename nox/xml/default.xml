@@ -11,7 +11,7 @@
 
   <ParameterList name="GL">
       <Parameter name="Nx" type="int" value="60"/>
-      <Parameter name="H0" type="double" value="0.1"/>
+      <Parameter name="H0" type="double" value="0.7"/>
       <Parameter name="scaling" type="double" value="10.0"/>
   </ParameterList>
 
@@ -55,7 +55,7 @@
       </ParameterList>
       <ParameterList name="Test 1">
           <Parameter name="Test Type" type="string" value="MaxIters"/>
-          <Parameter name="Maximum Iterations" type="int" value="20"/>
+          <Parameter name="Maximum Iterations" type="int" value="25"/>
       </ParameterList>
       <ParameterList name="Test 2">
           <Parameter name="Test Type" type="string" value="NormF"/>
