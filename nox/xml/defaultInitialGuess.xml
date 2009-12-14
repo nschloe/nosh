@@ -1,0 +1,132 @@
+<ParameterList>
+
+  <ParameterList name="IO">
+      <Parameter name="Input guess" type="string" value="initial-4nodes.vtk"/>
+      <Parameter name="Output directory" type="string" value="./data"/>
+      <Parameter name="Plot each Newton step" type="bool" value="true"/>
+      <Parameter name="Jacobian MATLAB matrix file name" type="string" value="" /> 
+      <Parameter name="Eigenvalues file name" type="string" value="eigenvalues.dat"/>
+      <Parameter name="Eigenstate file name appendix" type="string" value="eigenstate"/>
+  </ParameterList>
+
+  <ParameterList name="GL">
+      <Parameter name="Nx" type="int" value="60"/>
+      <Parameter name="H0" type="double" value="0.1"/>
+      <Parameter name="scaling" type="double" value="10.0"/>
+  </ParameterList>
+
+  <ParameterList name="Eigenvalues">
+      <Parameter name="Compute Eigenvalues" type="bool" value="false"/>
+  </ParameterList>
+
+  <ParameterList name="Condition Numbers">
+      <Parameter name="Compute Condition Numbers" type="bool" value="false"/>
+  </ParameterList>
+
+  <ParameterList name="NOX Status Test" >
+      <Parameter name="Test Type" type="string" value="Combo"/>
+      <Parameter name="Number of Tests" type="int" value="4"/>
+      <Parameter name="Combo Type" type="string" value="OR"/>
+      <ParameterList name="Test 0">
+          <Parameter name="Test Type" type="string" value="Combo"/>
+          <Parameter name="Number of Tests" type="int" value="3"/>
+          <Parameter name="Combo Type" type="string" value="AND"/>
+          <ParameterList name="Test 0">
+              <Parameter name="Test Type" type="string" value="NormF"/>
+              <Parameter name="Norm Type" type="string" value="Two Norm"/>
+              <Parameter name="Tolerance" type="double" value="1.0e-8"/>
+              <Parameter name="Scale Type" type="string" value="Unscaled"/>
+          </ParameterList>
+          <ParameterList name="Test 1">
+              <Parameter name="Test Type" type="string" value="NormUpdate"/>
+              <Parameter name="Norm Type" type="string" value="Two Norm"/>
+              <Parameter name="Tolerance" type="double" value="1.0e-8"/>
+              <Parameter name="Scale Type" type="string" value="Unscaled"/>
+          </ParameterList>
+          <ParameterList name="Test 2">
+              <Parameter name="Test Type" type="string" value="NormWRMS"/>
+              <Parameter name="BDF Multiplier" type="double" value="1.0"/>
+              <Parameter name="Tolerance" type="double" value="1.0"/>
+              <Parameter name="Alpha" type="double" value="1.0"/>
+              <Parameter name="Beta" type="double" value="0.5"/>
+              <Parameter name="Relative Tolerance" type="double" value="1.0e-5"/>
+              <Parameter name="Absolute Tolerance" type="double" value="1.0e-8"/>
+          </ParameterList>
+      </ParameterList>
+      <ParameterList name="Test 1">
+          <Parameter name="Test Type" type="string" value="MaxIters"/>
+          <Parameter name="Maximum Iterations" type="int" value="20"/>
+      </ParameterList>
+      <ParameterList name="Test 2">
+          <Parameter name="Test Type" type="string" value="NormF"/>
+          <Parameter name="Norm Type" type="string" value="Two Norm"/>
+          <Parameter name="Tolerance" type="double" value="1.0e-13"/>
+          <Parameter name="Scale Type" type="string" value="Unscaled"/>
+      </ParameterList>
+      <ParameterList name="Test 3">
+          <Parameter name="Test Type" type="string" value="FiniteValue"/>
+      </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="NOX">
+    <Parameter name="Tolerance" type="double" value="1.0e-7"/>
+    <Parameter name="Max steps" type="int" value="15"/>
+    <ParameterList name="Direction">
+      <Parameter name="Method" type="string" value="Newton"/>
+      <ParameterList name="Newton">
+        <Parameter name="Forcing Term Method" type="string" value="Constant"/>
+        <ParameterList name="Linear Solver">
+          <Parameter name="Aztec Solver" type="string" value="GMRES"/>
+          <Parameter  name="Compute Scaling Manually" type="bool" value="true"/>
+          <Parameter  name="Convergence Test" type="string" value="r0"/>
+          <Parameter name="Ifpack Preconditioner" type="string" value="Amesos"/>
+          <Parameter name="Max Age Of Prec" type="int" value="1"/>
+          <Parameter name="Max Iterations" type="int" value="2000"/>
+          <Parameter name="Orthogonalization" type="string" value="Classical"/>
+          <Parameter name="Output Frequency" type="int" value="32"/>
+          <Parameter name="Output Solver Details" type="bool" value="true"/>
+          <Parameter name="Preconditioner" type="string" value="New Ifpack"/>
+          <Parameter name="Preconditioner Operator" type="string" value="Use Jacobian"/>
+          <Parameter name="Preconditioner Reuse Policy" type="string" value="Rebuild"/>
+          <Parameter name="RCM Reordering" type="string" value="Disabled"/>
+          <Parameter name="Size of Krylov Subspace" type="int" value="300"/>
+          <Parameter name="Throw Error on Prec Failure" type="bool" value="true"/>
+          <Parameter name="Tolerance" type="double" value="0.0001"/>
+          <Parameter name="Zero Initial Guess" type="bool" value="false"/>
+          <ParameterList name="Ifpack">
+            <Parameter name="amesos: solver type" type="string" value="Amesos_Superlu"/>
+            <Parameter name="fact: drop tolerance" type="double" value="0.1"/>
+            <Parameter name="fact: ilut level-of-fill" type="double" value="0.7"/>
+            <Parameter name="schwarz: combine mode" type="string" value="Zero"/>
+            <Parameter name="schwarz: compute condest" type="bool" value="true"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Line Search"/>
+    <ParameterList name="Printing">
+      <Parameter  name="MyPID" type="int" value="0"/>
+      <ParameterList name="Output Information">
+          <Parameter name="Details" type="bool" value="true"/>
+          <Parameter name="Outer Iteration" type="bool" value="true"/>
+          <Parameter name="Outer Iteration Status Test" type="bool" value="true"/>
+          <Parameter name="Inner Iteration" type="bool" value="true"/>
+          <Parameter name="Linear Solver Details" type="bool" value="true"/>
+          <Parameter name="Parameters" type="bool" value="true"/>
+          <Parameter name="Warning" type="bool" value="true"/>
+          <Parameter name="Debug" type="bool" value="true"/>
+          <Parameter name="Test Details" type="bool" value="true"/>
+          <Parameter name="Error" type="bool" value="true"/>
+          <Parameter name="Stepper Iteration" type="bool" value="true"/>
+          <Parameter name="Stepper Details" type="bool" value="true"/>
+          <Parameter name="Stepper Parameters" type="bool" value="true"/>
+      </ParameterList>
+      <Parameter  name="Output Precision" type="int" value="3"/>
+      <Parameter  name="Output Processor" type="int" value="0"/>
+    </ParameterList>
+    <ParameterList name="Solver Options">
+      <Parameter name="Status Test Check Type" type="string" value="Complete"/>
+    </ParameterList>
+  </ParameterList>
+
+</ParameterList>

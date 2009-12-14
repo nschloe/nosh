@@ -108,10 +108,10 @@ int main ( int argc, char *argv[] )
       myNoxObject = Teuchos::rcp( new glNox( inputGuessFile, Comm, eComm ) );
   }
   else {
-      int    Nx         = 50;
-      double edgeLength = 10.0;
-      double H0         = 0.4;
-      myNoxObject = Teuchos::rcp( new glNox( Nx, edgeLength, H0, Comm, eComm ) );
+      int    Nx      = 50;
+      double scaling = 10.0;
+      double H0      = 0.4;
+      myNoxObject = Teuchos::rcp( new glNox( Nx, scaling, H0, Comm, eComm ) );
   }
 
   // set default solver options

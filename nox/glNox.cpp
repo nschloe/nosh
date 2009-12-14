@@ -47,7 +47,7 @@ glNox::glNox( const std::string fileName,
 
   try
     {
-      readStateFromFile(comm, fileName, psi, grid, glParameters);
+      readStateFromFile(comm, fileName, psi, grid, problemParameters_);
     }
   catch (...)
     {
