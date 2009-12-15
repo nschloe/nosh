@@ -30,11 +30,6 @@
 
 #include "GridUniformSquare.h"
 
-typedef complex<double> double_complex;
-typedef Tpetra::Vector<double_complex, int> ComplexVector;
-typedef Teuchos::ArrayRCP<const double> DoubleArrayRCP;
-typedef Teuchos::ArrayRCP<const double_complex> ComplexArrayRCP;
-
 int
 main(int argc, char *argv[])
 {
