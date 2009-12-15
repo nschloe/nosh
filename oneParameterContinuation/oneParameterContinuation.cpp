@@ -139,18 +139,12 @@ main(int argc, char *argv[])
       glParameters.set("scaling", scaling);
       glParameters.set("H0", H0);
 
-      cout << "MMMM " << endl;
-      Teuchos::RCP<GridSquare> gridS = Teuchos::rcp( new GridSquare( Teuchos::tuple<unsigned int>(10,10), 1.0 ) );
-      cout << "MMM " << endl;
-
-      cout << "NNNNN " << Nx << endl;
       grid = Teuchos::rcp(new GridUniformSquare(Nx, scaling));
-      cout << "end NNNNN " << endl;
 
       // set initial guess
       int numComplexUnknowns = grid->getNumGridPoints();
-      Teuchos::RCP<Tpetra::Map<int> > complexMap = Teuchos::rcp(
-          new Tpetra::Map<int>(numComplexUnknowns, 0, Comm));
+      Teuchos::RCP<Tpetra::Map<Thyra::Ordinal> > complexMap = Teuchos::rcp(
+          new Tpetra::Map<Thyra::Ordinal>(numComplexUnknowns, 0, Comm));
       psi = Teuchos::rcp(new ComplexVector(complexMap));
       double_complex alpha(1.0, 0.0);
       psi->putScalar(alpha);
