@@ -35,7 +35,10 @@ class GinzburgLandau
      ~GinzburgLandau();
 
      void
-     setH0(const double h0);
+     setH0( const double h0 );
+
+     void
+     setChi( const double chi );
 
      int
      getNumUnknowns() const;
@@ -126,6 +129,7 @@ class GinzburgLandau
 
       const Teuchos::RCP<GridUniformVirtual>      grid_;
       const Teuchos::RCP<MagneticVectorPotential> A_;
+            double                                chi_;
 
       void getEquationType ( const int           eqnum,
                              equationType        &eqType,

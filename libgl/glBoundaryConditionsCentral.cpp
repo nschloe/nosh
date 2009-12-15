@@ -17,6 +17,7 @@ GlBoundaryConditionsCentral::~GlBoundaryConditionsCentral()
 double_complex
 GlBoundaryConditionsCentral::getGlEntry ( const int                       eqIndex,
                                           const ComplexVector           & psi,
+                                          const double                    chi,
                                           const GridUniformVirtual      & grid,
                                           const MagneticVectorPotential & A
                                         ) const
@@ -59,6 +60,7 @@ GlBoundaryConditionsCentral::getGlEntry ( const int                       eqInde
               + psiKRight * 2.0 * exp ( -I*ARight*h )
               + psiKAbove * 2.0 * exp ( -I*AAbove*h ) ) / ( h*h )
           + psiK * ( 1-norm ( psiK ) );
+      res *= exp( I*chi );
       // ------------------------------------------------------------------------
       break;
 
@@ -76,6 +78,7 @@ GlBoundaryConditionsCentral::getGlEntry ( const int                       eqInde
               + psiKLeft  * 2.0 * exp (  I*ALeft *h )
               + psiKAbove * 2.0 * exp ( -I*AAbove*h ) ) / ( h*h )
           + psiK * ( 1-norm ( psiK ) );
+      res *= exp( I*chi );
       // ---------------------------------------------------------------------------
       break;
 
@@ -93,6 +96,7 @@ GlBoundaryConditionsCentral::getGlEntry ( const int                       eqInde
               + psiKLeft  * 2.0 * exp ( I*ALeft *h )
               + psiKBelow * 2.0 * exp ( I*ABelow*h ) ) / ( h*h )
           + psiK * ( 1-norm ( psiK ) );
+      res *= exp( I*chi );
       // ---------------------------------------------------------------------------
 
       break;
@@ -111,6 +115,7 @@ GlBoundaryConditionsCentral::getGlEntry ( const int                       eqInde
               + psiKRight * 2.0 * exp ( -I*ARight*h )
               + psiKBelow * 2.0 * exp (  I*ABelow*h ) ) / ( h*h )
           + psiK * ( 1-norm ( psiK ) );
+      res *= exp( I*chi );
       // ---------------------------------------------------------------------------
       break;
 
@@ -133,6 +138,7 @@ GlBoundaryConditionsCentral::getGlEntry ( const int                       eqInde
                                                + psiKAbove * 2.0 * exp ( -I*AAbove*h ) )
             / ( h*h )
           + psiK * ( 1-norm ( psiK ) );
+      res *= exp( I*chi );
       // -----------------------------------------------------------------------
       break;
 
@@ -154,6 +160,7 @@ GlBoundaryConditionsCentral::getGlEntry ( const int                       eqInde
               + psiKBelow       * exp ( I*AAbove*h ) + psiKAbove * exp ( -I*AAbove*h ) )
             / ( h*h )
           + psiK * ( 1-norm ( psiK ) );
+      res *= exp( I*chi );
       // -----------------------------------------------------------------------
       break;
 
@@ -175,6 +182,7 @@ GlBoundaryConditionsCentral::getGlEntry ( const int                       eqInde
               + psiKBelow * 2.0 * exp ( I*ABelow*h )                                  )
             / ( h*h )
           + psiK * ( 1-norm ( psiK ) );
+      res *= exp( I*chi );
       // -----------------------------------------------------------------------
       break;
 
@@ -196,6 +204,7 @@ GlBoundaryConditionsCentral::getGlEntry ( const int                       eqInde
               + psiKBelow * exp ( I*AAbove*h ) + psiKAbove       * exp ( -I*AAbove*h ) )
             / ( h*h )
           + psiK * ( 1-norm ( psiK ) );
+      res *= exp( I*chi );
       // -----------------------------------------------------------------------
       break;
 
@@ -212,6 +221,7 @@ GlBoundaryConditionsCentral::getGlEntry ( const int                       eqInde
 void
 GlBoundaryConditionsCentral::getGlJacobianRow ( const int                           eqIndex,
                                                 const Teuchos::RCP<ComplexVector> & psi,
+                                                const double                        chi,
                                                 const GridUniformVirtual          & grid,
                                                 const MagneticVectorPotential     & A,
                                                 const bool                          fillValues,
@@ -286,6 +296,7 @@ GlBoundaryConditionsCentral::getGlJacobianRow ( const int                       
         {
           valuesPsiConj.resize ( numEntriesPsiConj );
           valuesPsiConj[0] = -psiView[k]*psiView[k];
+          valuesPsiConj[0] *= exp( I*chi*2.0 );
         }
       // -----------------------------------------------------------------------
       break;
@@ -322,6 +333,7 @@ GlBoundaryConditionsCentral::getGlJacobianRow ( const int                       
         {
           valuesPsiConj.resize ( numEntriesPsiConj );
           valuesPsiConj[0] = -psiView[k]*psiView[k];
+          valuesPsiConj[0] *= exp( I*chi*2.0 );
         }
       // ---------------------------------------------------------------------------
       break;
@@ -358,6 +370,7 @@ GlBoundaryConditionsCentral::getGlJacobianRow ( const int                       
         {
           valuesPsiConj.resize ( numEntriesPsiConj );
           valuesPsiConj[0] = -psiView[k]*psiView[k];
+          valuesPsiConj[0] *= exp( I*chi*2.0 );
         }
       // ---------------------------------------------------------------------------
       break;
@@ -394,6 +407,7 @@ GlBoundaryConditionsCentral::getGlJacobianRow ( const int                       
         {
           valuesPsiConj.resize ( numEntriesPsiConj );
           valuesPsiConj[0] = -psiView[k]*psiView[k];
+          valuesPsiConj[0] *= exp( I*chi*2.0 );
         }
       // ---------------------------------------------------------------------------
       break;
@@ -436,6 +450,7 @@ GlBoundaryConditionsCentral::getGlJacobianRow ( const int                       
         {
           valuesPsiConj.resize ( numEntriesPsiConj );
           valuesPsiConj[0] = -psiView[k]*psiView[k];
+          valuesPsiConj[0] *= exp( I*chi*2.0 );
         }
       // -----------------------------------------------------------------------
       break;
@@ -478,6 +493,7 @@ GlBoundaryConditionsCentral::getGlJacobianRow ( const int                       
         {
           valuesPsiConj.resize ( numEntriesPsiConj );
           valuesPsiConj[0] = -psiView[k]*psiView[k];
+          valuesPsiConj[0] *= exp( I*chi*2.0 );
         }
       // -----------------------------------------------------------------------
       break;
@@ -520,6 +536,7 @@ GlBoundaryConditionsCentral::getGlJacobianRow ( const int                       
         {
           valuesPsiConj.resize ( numEntriesPsiConj );
           valuesPsiConj[0] = -psiView[k]*psiView[k];
+          valuesPsiConj[0] *= exp( I*chi*2.0 );
         }
       // -----------------------------------------------------------------------
       break;
@@ -562,6 +579,7 @@ GlBoundaryConditionsCentral::getGlJacobianRow ( const int                       
         {
           valuesPsiConj.resize ( numEntriesPsiConj );
           valuesPsiConj[0] = -psiView[k]*psiView[k];
+          valuesPsiConj[0] *= exp( I*chi*2.0 );
         }
       // -----------------------------------------------------------------------
       break;

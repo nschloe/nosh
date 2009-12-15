@@ -22,6 +22,7 @@ GinzburgLandau::GinzburgLandau ( Teuchos::RCP<GridUniformVirtual>          &grid
                                ) :
     grid_ ( grid ),
     A_ ( A ),
+    chi_( 0.0 ),
     boundaryConditions_ ( bc )
 {
 }
@@ -39,8 +40,14 @@ GinzburgLandau::setH0(const double h0)
 // =============================================================================
 void
 GinzburgLandau::setScaling( const double scaling)
-{;
+{
   grid_->setScaling( scaling );
+}
+// =============================================================================
+void
+GinzburgLandau::setChi( const double chi )
+{
+  chi_ = chi;
 }
 // =============================================================================
 int
@@ -117,7 +124,7 @@ GinzburgLandau::computeGl ( const int           eqnum,
     {
       // -------------------------------------------------------------------------
     case BOUNDARY:
-      res = boundaryConditions_->getGlEntry ( eqIndex, psi, *grid_, *A_ );
+      res = boundaryConditions_->getGlEntry ( eqIndex, psi, chi_, *grid_, *A_ );
       break;
       // -------------------------------------------------------------------------
     case INTERIOR:
@@ -153,6 +160,7 @@ GinzburgLandau::computeGl ( const int           eqnum,
               + psiKLeft*  exp ( I*ALeft *h ) + psiKRight* exp ( -I*ARight*h )
               + psiKBelow* exp ( I*ABelow*h ) + psiKAbove* exp ( -I*AAbove*h ) ) / ( h*h )
             + psiK * ( 1-norm ( psiK ) );
+      res *= exp( I*chi_ );
       // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     }
     break;
@@ -232,6 +240,7 @@ void GinzburgLandau::computeJacobianRow ( const bool                        fill
       // ---------------------------------------------------------------------
       boundaryConditions_->getGlJacobianRow ( eqIndex,
                                               psi,
+                                              chi_,
                                               *grid_,
                                               *A_,
                                               fillValues,

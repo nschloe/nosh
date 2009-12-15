@@ -27,6 +27,7 @@ class GlBoundaryConditionsVirtual
     virtual double_complex
     getGlEntry ( const int                        eqIndex,
                  const ComplexVector            & psi,
+                 const double                     chi,
                  const GridUniformVirtual       & grid,
                  const MagneticVectorPotential  & A
                ) const = 0; // pure virtual
@@ -36,6 +37,7 @@ class GlBoundaryConditionsVirtual
     virtual void
     getGlJacobianRow ( const int                           eqIndex,
                        const Teuchos::RCP<ComplexVector> & psi,
+                       const double                        chi,
                        const GridUniformVirtual          & grid,
                        const MagneticVectorPotential     & A,
                        const bool                          fillValues,

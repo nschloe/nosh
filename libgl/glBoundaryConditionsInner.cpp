@@ -15,10 +15,11 @@ GlBoundaryConditionsInner::~GlBoundaryConditionsInner()
 }
 // =============================================================================
 double_complex
-GlBoundaryConditionsInner::getGlEntry ( const int                                eqIndex,
-                                        const Tpetra::Vector<double_complex,int> &psi,
-                                        const GridUniformVirtual                 &grid,
-                                        const MagneticVectorPotential            &A
+GlBoundaryConditionsInner::getGlEntry ( const int                       eqIndex,
+                                        const ComplexVector           & psi,
+                                        const double                    chi,
+                                        const GridUniformVirtual      & grid,
+                                        const MagneticVectorPotential & A
                                       ) const
 {
   double_complex res;
@@ -59,6 +60,7 @@ GlBoundaryConditionsInner::getGlEntry ( const int                               
       res = ( - psiK      * 2.0
               + psiKRight * exp(-I*ARight*h)
               + psiKAbove * exp(-I*AAbove*h) ) * I/(sqrt(2)*h);
+      res *= exp( I*chi );
       // -------------------------------------------------------------------
     break;
 
@@ -93,6 +95,7 @@ GlBoundaryConditionsInner::getGlEntry ( const int                               
     res = ( - psiK      * 2.0
             + psiKLeft  * exp ( I*ALeft *h )
             + psiKBelow * exp ( I*ABelow*h ) ) * I/ ( sqrt ( 2 ) *h );
+    res *= exp( I*chi );
     // -----------------------------------------------------------------------
 
     break;
@@ -111,6 +114,7 @@ GlBoundaryConditionsInner::getGlEntry ( const int                               
     res = ( - psiK      * 2.0
             + psiKRight * exp ( -I*ARight*h )
             + psiKBelow * exp ( I*ABelow*h ) ) * I/ ( sqrt ( 2 ) *h );
+    res *= exp( I*chi );
     // -----------------------------------------------------------------------
     break;
 
@@ -124,6 +128,7 @@ GlBoundaryConditionsInner::getGlEntry ( const int                               
 
     res = ( - psiK
             + psiKAbove * exp ( -I*AAbove*h ) ) * I/h;
+    res *= exp( I*chi );
     // -------------------------------------------------------------------
     break;
 
@@ -137,6 +142,7 @@ GlBoundaryConditionsInner::getGlEntry ( const int                               
 
     res = ( - psiK
             + psiKLeft * exp ( I*ALeft*h ) ) * I/h;
+    res *= exp( I*chi );
     // -------------------------------------------------------------------
     break;
 
@@ -150,6 +156,7 @@ GlBoundaryConditionsInner::getGlEntry ( const int                               
 
     res = ( - psiK
             + psiKBelow * exp ( I*ABelow*h ) ) * I/h;
+    res *= exp( I*chi );
     // -------------------------------------------------------------------
     break;
 
@@ -163,6 +170,7 @@ GlBoundaryConditionsInner::getGlEntry ( const int                               
 
     res = ( - psiK
             + psiKRight * exp ( -I*ARight*h ) ) * I/h;
+    res *= exp( I*chi );
     // -------------------------------------------------------------------
     break;
 
@@ -177,15 +185,16 @@ GlBoundaryConditionsInner::getGlEntry ( const int                               
 }
 // =============================================================================
 void 
-GlBoundaryConditionsInner::getGlJacobianRow ( const int                                               eqIndex,
-                                              const Teuchos::RCP<Tpetra::Vector<double_complex,int> > &psi,
-                                              const GridUniformVirtual                                &grid,
-                                              const MagneticVectorPotential                           &A,
-                                              const bool                                              fillValues,
-                                              std::vector<int>                                        &columnIndicesPsi,
-                                              std::vector<double_complex>                             &valuesPsi,
-                                              std::vector<int>                                        &columnIndicesPsiConj,
-                                              std::vector<double_complex>                             &valuesPsiConj
+GlBoundaryConditionsInner::getGlJacobianRow ( const int                           eqIndex,
+                                              const Teuchos::RCP<ComplexVector> & psi,
+                                              const double                        chi,
+                                              const GridUniformVirtual          & grid,
+                                              const MagneticVectorPotential     & A,
+                                              const bool                          fillValues,
+                                              std::vector<int>                  & columnIndicesPsi,
+                                              std::vector<double_complex>       & valuesPsi,
+                                              std::vector<int>                  & columnIndicesPsiConj,
+                                              std::vector<double_complex>       & valuesPsiConj
                                             ) const
 {
   int k, kLeft, kRight, kBelow, kAbove;

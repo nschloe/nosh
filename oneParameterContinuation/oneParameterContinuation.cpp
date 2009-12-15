@@ -154,9 +154,7 @@ main(int argc, char *argv[])
   // Make sure that the calculation starts off with the correct H0.
   // TODO See if it's possible to declare the initial parameter once instead of three times in the
   //      input XML file.
-  	paramList->sublist("LOCA").sublist("Stepper").set("Initial Value", glParameters.get<double>("H0") );
-//cout << glParameters.get<double>("H0") << endl;
-
+  paramList->sublist("LOCA").sublist("Stepper").set("Initial Value", glParameters.get<double>("H0") );
 
   // create the gl problem
   Teuchos::RCP<GlBoundaryConditionsVirtual> boundaryConditions = Teuchos::rcp(
