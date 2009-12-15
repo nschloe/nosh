@@ -1,40 +1,40 @@
 # all what is contained in this file should be set by Trilinos at compile/installation time
 SET( MPI_COMPILED TRUE )
 
-SET( BOOST_ROOT /opt/boost/1.39.0/include/boost-1_39 )
+SET( BOOST_ROOT /opt/boost/1.41.0/gcc/4.4.2/ )
 
 # set the SuperLU directory if the libs are not in standard directories
 SET( TRILINOS_SUPERLU TRUE )
-SET( SUPERLU_LIBNAME superlu_3.0 )
-SET( SUPERLU_DIR /opt/superlu-3.0/lib )
+SET( SUPERLU_LIBNAME superlu )
+SET( SUPERLU_DIR /opt/superlu/3.0/gcc/4.4.2/lib )
 
 # set the SuperLUDist directory if the libs are not in standard directories
 SET( TRILINOS_SUPERLUDIST TRUE )
-SET( SUPERLUDIST_LIBNAME superlu_dist_2.3 )
-SET( SUPERLUDIST_DIR /opt/superlu-dist-2.3/lib )
+SET( SUPERLUDIST_LIBNAME superlu_dist )
+SET( SUPERLUDIST_DIR /opt/superlu-dist/2.0/openmpi/1.4/gcc/4.4.2/lib )
 
 # set the ParMETIS directory if the libs are not in standard directories
 SET( TRILINOS_PARMETIS TRUE )
 SET( PARMETIS_LIBNAME parmetis )
-SET( PARMETIS_DIR /opt/parmetis-3.1.1/lib )
+SET( PARMETIS_DIR /opt/parmetis/3.1.1/openmpi/1.4/gcc/4.4.2/lib )
 
 # set the METIS directory if the libs are not in standard directories
 SET( TRILINOS_METIS TRUE )
 SET( METIS_LIBNAME metis )
-SET( METIS_DIR /opt/parmetis-3.1.1/lib )
+SET( METIS_DIR /opt/parmetis/3.1.1/openmpi/1.4/gcc/4.4.2/lib )
 
 # set the BLAS directory if the libs are not in standard directories
-SET( BLAS_LIBNAME goto-blas-gfortran )
-SET( BLAS_DIR /opt/goto-blas-1.26/lib/ )
+SET( BLAS_LIBNAME blas )
+SET( BLAS_DIR /opt/netlib-blas/gcc/4.4.2/lib/ )
 
 # set the LAPACK directory if the libs are not in standard directories
-SET( LAPACK_LIBNAME lapack-gfortran )
-SET( LAPACK_DIR /opt/lapack-3.2.1/lib )
+SET( LAPACK_LIBNAME lapack )
+SET( LAPACK_DIR /opt/lapack/3.2.1/gcc/4.4.2/lib )
 
 # set the HDF5 directory if the libs are not in standard directories
 SET( HDF5_LIBNAME hdf5 )
-SET( HDF5_DIR /opt/hdf5-1.6.9 )
+SET( HDF5_DIR /opt/hdf5/1.6.9/openmpi/1.4/gcc/4.4.2 )
 
 # set the gfortran directory if the libs are not in standard directories
 SET( GFORTRAN_LIBNAME gfortran )
-SET( GFORTRAN_DIR /opt/gcc-4.4.2/lib64 )
+SET( GFORTRAN_DIR /opt/gcc/4.4.2/lib64 )
