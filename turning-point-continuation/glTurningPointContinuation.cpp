@@ -160,7 +160,6 @@ int main(int argc, char *argv[]) {
 		                                                         outputDirectory, contDataFileName,
 						                                         contFileFormat, contFileBaseName ));
 
-
 	// ---------------------------------------------------------------------------
 	// Create the necessary objects
 	// ---------------------------------------------------------------------------
@@ -175,7 +174,6 @@ int main(int argc, char *argv[]) {
 	// get the initial solution
 	Teuchos::RCP<Epetra_Vector> soln = glsystem->getSolution();
 	// ---------------------------------------------------------------------------
-
 
 #ifdef HAVE_LOCA_ANASAZI
 	Teuchos::ParameterList& eigenList = paramList->sublist("LOCA").sublist(
@@ -218,15 +216,23 @@ int main(int argc, char *argv[]) {
 	Teuchos::RCP<LOCA::Epetra::Interface::TimeDependent> iTime = glsystem;
 	// ---------------------------------------------------------------------------
 
-
 	// ---------------------------------------------------------------------------
 	// Create a group which uses that problem interface. The group will
 	// be initialized to contain the default initial guess for the
 	// specified problem.
 	LOCA::ParameterVector locaParams;
 
+        if ( !glParameters.isParameter("H0") ) {
+          std::cerr << "Parameter \"H0\" not found in GL parameters list." << std::endl;
+          return 1;
+        }
 	locaParams.addParameter("H0", glParameters.get<double> ("H0"));
-	locaParams.addParameter("edge length", glParameters.get<double>("edge length") );
+
+	if ( !glParameters.isParameter("scaling") ) {
+	  std::cerr << "Parameter \"scaling\" not found in GL parameters list." << std::endl;
+	  return 1;
+	}
+	locaParams.addParameter("scaling", glParameters.get<double>("scaling") );
 
 	NOX::Epetra::Vector initialGuess(soln, NOX::Epetra::Vector::CreateView);
 
