@@ -65,13 +65,13 @@ GridUniformSquare::read( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
   // create the grid with the just attained information
   TEST_FOR_EXCEPTION( !params.isParameter("Nx"),
                       std::logic_error,
-                      "Parameter \"Nx\" not found." );
+                      "Parameter \"Nx\" not found in file " << filePath );
   unsigned int nx = params.get<int>("Nx");
   Nx_ = Teuchos::tuple<unsigned int>( nx, nx );
 
   TEST_FOR_EXCEPTION( !params.isParameter("scaling"),
                       std::logic_error,
-                      "Parameter \"scaling\" not found." );
+                      "Parameter \"scaling\" not found in file " << filePath );
 
   scaling_ = params.get<double>("scaling");
 

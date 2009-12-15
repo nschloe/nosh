@@ -59,10 +59,6 @@ int main(int argc, char *argv[]) {
 			"This program does continuation for the Ginzburg--Landau problem with a LOCA interface.\n"
 				"It is possible to give an initial guess in VTK format on the command line.\n");
 
-//	bool reverse = false;
-//	My_CLP.setOption("reverse", "forward", &reverse,
-//			"Orientation of the continuation in the first step");
-
 	//	bool stopOnUnstable = false;
 	//	My_CLP.setOption("stop-on-unstable", "continue-on-unstable",
 	//			&stopOnUnstable,
@@ -118,8 +114,9 @@ int main(int argc, char *argv[]) {
 	   try {
 		   readStateFromFile( Comm, inputGuessFile, psi, grid, glParameters );
 	   }
-	   catch (...) {
-	       std::cerr << "Unknown exception caught." << std::endl;
+	   catch (std::exception &e) {
+	       std::cerr << e.what() << std::endl;
+	       return 1;
 	   }
 	} else {
 		// read the parameters from the XML file

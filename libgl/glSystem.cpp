@@ -755,11 +755,11 @@ bool GlSystem::computeShiftedMatrix(double alpha, double beta,
 void
 GlSystem::setParameters(const LOCA::ParameterVector &p) {
 
-	double h0 = p.getValue("H0");
-	Gl_.setH0(h0);
+  double h0 = p.getValue("H0");
+  Gl_.setH0(h0);
 
-	double scaling = p.getValue("scaling");
-	Gl_.setScaling( scaling );
+  double scaling = p.getValue("scaling");
+  Gl_.setScaling( scaling );
 }
 // =============================================================================
 void
