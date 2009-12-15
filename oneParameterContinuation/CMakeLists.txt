@@ -126,7 +126,7 @@ SET( LINK_LIBRARIES ${LINK_LIBRARIES}
 # Set executable linking information.
 TARGET_LINK_LIBRARIES ( oneParameterContinuation.out
                         ${internal_LIBS}
-                        ${Trilinos_LIBRARIES}
+                        ${Trilinos_LIBS}
                         ${LINK_LIBRARIES}
                       )
 # ==============================================================================
