@@ -26,10 +26,10 @@
 
 #include "GridUniformSquare.h"
 
-typedef complex<double> double_complex;
-typedef Tpetra::Vector<double_complex, int> ComplexVector;
-typedef Teuchos::ArrayRCP<const double> DoubleArrayRCP;
-typedef Teuchos::ArrayRCP<const double_complex> ComplexArrayRCP;
+//typedef complex<double> double_complex;
+//typedef Tpetra::Vector<double_complex, int> ComplexVector;
+//typedef Teuchos::ArrayRCP<const double> DoubleArrayRCP;
+//typedef Teuchos::ArrayRCP<const double_complex> ComplexArrayRCP;
 
 int main(int argc, char *argv[]) {
 
@@ -136,8 +136,8 @@ int main(int argc, char *argv[]) {
 
 		// set initial guess
 		int numComplexUnknowns = grid->getNumGridPoints();
-		Teuchos::RCP<Tpetra::Map<int> >complexMap =
-				   Teuchos::rcp(new Tpetra::Map<int>(numComplexUnknowns,0,Comm) );
+		Teuchos::RCP<Tpetra::Map<Thyra::Ordinal> >complexMap =
+				   Teuchos::rcp(new Tpetra::Map<Thyra::Ordinal>(numComplexUnknowns,0,Comm) );
 		psi = Teuchos::rcp( new ComplexVector(complexMap) );
 		double_complex alpha( 1.0, 0.0 );
 		psi->putScalar( alpha );
