@@ -15,7 +15,10 @@ SET ( gl_SRCS
       glBoundaryConditionsOuter.cpp
       glBoundaryConditionsCentral.cpp
       glPrePostOperator.cpp
+      GlKomplex.cpp
+      AbstractStateWriter.cpp
       glSystem.cpp
+      GlSystemWithConstraint.cpp
       domainRectangle.cpp
       eigenSaver.cpp          )
 

@@ -58,7 +58,8 @@ GlSystem::GlSystem( GinzburgLandau::GinzburgLandau &gl,
 	solutionFileNameBase_(solutionFileNameBase),
 	nullvectorFileNameBase_(nullvectorFileNameBase),
 	outputFileFormat_(outputFileFormat),
-	outputDataFileName_(outputDataFileName)
+	outputDataFileName_(outputDataFileName),
+	glKomplex( Teuchos::rcp(new GlKomplex(eComm) ) )
 {
   NumComplexUnknowns_ = Gl_.getNumUnknowns();
   NumRealUnknowns_ = 2 * NumComplexUnknowns_ + 1;
@@ -166,7 +167,8 @@ outputDir_(outputDir),
 solutionFileNameBase_(solutionFileNameBase),
 nullvectorFileNameBase_(nullvectorFileNameBase),
 outputFileFormat_(outputFileFormat),
-outputDataFileName_(outputDataFileName)
+outputDataFileName_(outputDataFileName),
+glKomplex( Teuchos::rcp(new GlKomplex(eComm) ) )
 {
   NumComplexUnknowns_ = Gl_.getNumUnknowns();
   NumRealUnknowns_ = 2 * NumComplexUnknowns_ + 1;
@@ -302,10 +304,6 @@ void GlSystem::makeRealMap(
 
 	return;
 }
-//// =============================================================================
-//int GlSystem::getNumUnknowns() const {
-//	return NumRealUnknowns_;
-//}
 // =============================================================================
 bool
 GlSystem::computeF(const Epetra_Vector &x,
@@ -317,91 +315,56 @@ GlSystem::computeF(const Epetra_Vector &x,
                       std::logic_error,
 	              "Maps of x and the computed real-valued map do not coincide." );
 
-    TEST_FOR_EXCEPTION( !FVec.Map().SameAs(*RealMap_),
-			            std::logic_error,
-			            "Maps of FVec and the computed real-valued map do not coincide." );
+  TEST_FOR_EXCEPTION( !FVec.Map().SameAs(*RealMap_),
+                      std::logic_error,
+                      "Maps of FVec and the computed real-valued map do not coincide." );
 
-	// define vector
-	const Teuchos::RCP<ComplexVector> psi =
-	    	Teuchos::rcp( new ComplexVector(ComplexMap_, true) );
+  // define vector
+  const Teuchos::RCP<ComplexVector> psi =
+      Teuchos::rcp( new ComplexVector(ComplexMap_, true) );
 
-	// convert from x to psi2
-	real2complex(x, *psi);
+  // convert from x to psi
+  real2complex(x, *psi);
 
-	// define output vector
-	ComplexVector res(ComplexMap_, true);
+  // define output vector
+  ComplexVector res(ComplexMap_, true);
 
-	// compute the GL residual
-	res = Gl_.computeGlVector( psi );
+  // compute the GL residual
+  res = Gl_.computeGlVector( psi );
 
-	// transform back to fully real equation
-	complex2real(res, FVec);
+  // transform back to fully real equation
+  complex2real(res, FVec);
 
-	// add phase condition
-	FVec[2 * NumComplexUnknowns_] = 0.0;
+  // add phase condition
+  FVec[2 * NumComplexUnknowns_] = 0.0;
 
-	//   // ***************************************************************************
-	//
-	//   // scatter x over all processors
-	//   Epetra_Export Exporter ( *StandardMap, *EverywhereMap_ );
-	//   xEverywhere.Export ( x, Exporter, Insert );
-	//   ( void ) real2complex ( xEverywhere, psi );
-	//
-	//   // loop over the system rows
-	//   double passVal;
-	//   for ( int i=0; i<NumMyElements_; i++ )
-	//     {
-	//       int myGlobalIndex = StandardMap->GID ( i );
-	//       if ( myGlobalIndex==2*NumComplexUnknowns_ )   // phase condition
-	//         {
-	//           passVal = 0.0;
-	//         }
-	//       else   // GL equations
-	//         {
-	//           // get the index of the complex valued equation
-	//           int psiIndex = realIndex2complexIndex ( myGlobalIndex );
-	//           // get the complex value
-	//           // TODO: The same value is actually fetched twice in this loop
-	//           //       possibly consecutively: Once for the real, once for
-	//           //       the imaginary part of it.
-	//           val = Gl_.computeGl ( psiIndex, psi );
-	//
-	//
-	//           if ( ! ( myGlobalIndex%2 ) ) // myGlobalIndex is even
-	//             passVal = real ( val );
-	//           else // myGlobalIndex is odd
-	//             passVal = imag ( val );
-	//         }
-	//       FVec.ReplaceGlobalValues ( 1, &passVal, &myGlobalIndex );
-	//     }
-
-	return true;
+  return true;
 }
 // =============================================================================
 bool GlSystem::computeJacobian(const Epetra_Vector &x, Epetra_Operator &Jac) {
-	// compute the values of the Jacobian
-	createJacobian(VALUES, x);
+  // compute the values of the Jacobian
+  createJacobian(VALUES, x);
 
-	// optimize storage
-	jacobian_->FillComplete();
+  // optimize storage
+  jacobian_->FillComplete();
 
-	// Sync up processors to be safe
-	EComm_->Barrier();
+  // Sync up processors to be safe
+  EComm_->Barrier();
 
-	return true;
+  return true;
 }
 // =============================================================================
 bool GlSystem::computePreconditioner( const Epetra_Vector &x,
 		                      Epetra_Operator &Prec,
                                       Teuchos::ParameterList *precParams )
 {
-  Epetra_Vector diag = x;
-  diag.PutScalar(1.0);
-  preconditioner_->ReplaceDiagonalValues( diag );
+//  Epetra_Vector diag = x;
+//  diag.PutScalar(1.0);
+//  preconditioner_->ReplaceDiagonalValues( diag );
 
-//    TEST_FOR_EXCEPTION( true,
-//			std::logic_error,
-//	                "Use explicit Jacobian only for this test problem!" );
+    TEST_FOR_EXCEPTION( true,
+			std::logic_error,
+	                "Use explicit Jacobian only for this test problem!" );
   return true;
 }
 // =============================================================================

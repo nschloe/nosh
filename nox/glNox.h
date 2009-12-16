@@ -12,7 +12,7 @@
 #include <NOX_Epetra.H>
 
 #include "GridSquare.h"
-#include "glSystem.h"
+#include "GlSystemWithConstraint.h"
 
 // abbreviate the complex type name
 typedef std::complex<double> double_complex;
@@ -73,7 +73,7 @@ class glNox
       const Teuchos::RCP<const Epetra_Comm>         eComm_;
       Teuchos::ParameterList problemParameters_;
       int MyPID_;
-      Teuchos::RCP<GlSystem> glSystem_;
+      Teuchos::RCP<GlSystemWithConstraint> glSystem_;
       Teuchos::RCP<Teuchos::ParameterList> nlParamsPtr_;
       Teuchos::RCP<NOX::StatusTest::Generic> statusTest_;
       Teuchos::RCP<NOX::Solver::Generic> solver_;

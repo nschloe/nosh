@@ -69,7 +69,7 @@ glNox::glNox( const std::string fileName,
 
   // Create the interface between NOX and the application
   // This object is derived from NOX::Epetra::Interface
-  glSystem_ = Teuchos::rcp ( new GlSystem ( glProblem, eComm, psi ) );
+  glSystem_ = Teuchos::rcp ( new GlSystemWithConstraint ( glProblem, eComm, psi ) );
 }
 // =============================================================================
 glNox::glNox( const unsigned int Nx,
@@ -103,7 +103,7 @@ glNox::glNox( const unsigned int Nx,
                                              boundaryConditions
                                            );
 
-  glSystem_ = Teuchos::rcp ( new GlSystem ( glProblem, eComm ) );
+  glSystem_ = Teuchos::rcp ( new GlSystemWithConstraint ( glProblem, eComm ) );
 }
 // =============================================================================
 void
@@ -122,8 +122,9 @@ glNox::setSolverOptions( bool                           plotEachNewtonStep,
 
   if ( plotEachNewtonStep ) // get custom pre/post actions
     {
+      Teuchos::RCP<AbstractStateWriter> asw = glSystem_;
       Teuchos::RCP<NOX::Abstract::PrePostOperator> ppo =
-        Teuchos::rcp ( new GlPrePostOperator ( glSystem_,
+        Teuchos::rcp ( new GlPrePostOperator ( asw,
                                                problemParameters_,
                                                outputDir ) );
       nlParamsPtr_->sublist ( "Solver Options" )

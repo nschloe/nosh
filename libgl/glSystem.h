@@ -5,6 +5,8 @@
 #define GLSYSTEM_H
 
 #include "ginzburgLandau.h"
+#include "AbstractStateWriter.h"
+#include "GlKomplex.h"
 
 #include <Epetra_Comm.h>
 #include <Epetra_Map.h>
@@ -36,9 +38,11 @@
 
 typedef Tpetra::Vector<double_complex, Thyra::Ordinal> ComplexVector;
 
-class GlSystem: public NOX::Epetra::Interface::Jacobian,
+class GlSystem: public AbstractStateWriter,
+                public NOX::Epetra::Interface::Jacobian,
                 public NOX::Epetra::Interface::Preconditioner,
-		public LOCA::Epetra::Interface::TimeDependent {
+		public LOCA::Epetra::Interface::TimeDependent
+{
 public:
 
 	//! Constructor with initial guess.
@@ -67,8 +71,7 @@ public:
 	//! by the input vector x.
 	virtual bool
 	computeF(const Epetra_Vector &x, Epetra_Vector &F,
-			const NOX::Epetra::Interface::Required::FillType fillFlag =
-					Residual);
+                 const NOX::Epetra::Interface::Required::FillType fillFlag = Residual);
 
 	//! Evaluate the Jacobian matrix of the Ginzburg--Landau problem
 	//! at a given state defined by the input vector x.
@@ -76,8 +79,10 @@ public:
 	computeJacobian(const Epetra_Vector &x, Epetra_Operator &Jac);
 
 	virtual bool
-	computeShiftedMatrix(double alpha, double beta, const Epetra_Vector &x,
-			Epetra_Operator &A);
+	computeShiftedMatrix(double alpha,
+	                     double beta,
+	                     const Epetra_Vector &x,
+		             Epetra_Operator &A );
 
 	//! Dummy preconditioner function. So far does nothing but throwing
 	//! an exception when called.
@@ -188,6 +193,8 @@ private:
 	int NumComplexUnknowns_;
 
 	Teuchos::RCP<const LOCA::Stepper> stepper_;
+
+	const Teuchos::RCP<const GlKomplex> glKomplex;
 
 	GinzburgLandau::GinzburgLandau Gl_;
 	const Teuchos::RCP<const Epetra_Comm> EComm_;

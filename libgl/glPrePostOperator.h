@@ -4,17 +4,19 @@
 #include <NOX_Common.H>
 #include <NOX_Abstract_PrePostOperator.H>
 #include <NOX_Utils.H>
+#include <Teuchos_ParameterList.hpp>
 
-#include "glSystem.h"
+
+#include "AbstractStateWriter.h"
 
 class GlPrePostOperator : public NOX::Abstract::PrePostOperator {
 
 public:
 
   //! Constructor.
- GlPrePostOperator( Teuchos::RCP<GlSystem>       & glsystem,
-                    const Teuchos::ParameterList & problemParams,
-                    const std::string            & outputDir );
+  GlPrePostOperator( Teuchos::RCP<AbstractStateWriter> & stateWriter,
+                     const Teuchos::ParameterList      & problemParams,
+                     const std::string                 & outputDir );
 
   //! Destructor.
   ~GlPrePostOperator();
@@ -30,9 +32,9 @@ protected:
   //! How ofter the function has been invoked yet.
   int numRunPreIterate;
 
-  Teuchos::ParameterList problemParameters_;   //!< The problem parameters.
-  Teuchos::RCP<GlSystem> glsystem_;            //!< The Ginzburg--Landau system.
-  std::string            outputDir_;
+  Teuchos::ParameterList            problemParameters_;   //!< The problem parameters.
+  Teuchos::RCP<AbstractStateWriter> stateWriter_;
+  std::string                       outputDir_;
 
 };
 #endif // GLPREPOSTOPERATOR_H

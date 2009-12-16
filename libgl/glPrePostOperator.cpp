@@ -1,7 +1,5 @@
 #include "glPrePostOperator.h"
 
-#include "glSystem.h"
-
 #include <Teuchos_ParameterList.hpp>
 #include <NOX_Solver_Generic.H>
 
@@ -10,12 +8,12 @@
 #include <EpetraExt_Utils.h> // for toString
 
 // =============================================================================
-GlPrePostOperator::GlPrePostOperator( Teuchos::RCP<GlSystem>       & glsystem,
-                                      const Teuchos::ParameterList & problemParams,
-                                      const std::string            & outputDir) :
+GlPrePostOperator::GlPrePostOperator( Teuchos::RCP<AbstractStateWriter>  & stateWriter,
+                                      const Teuchos::ParameterList       & problemParams,
+                                      const std::string                  & outputDir) :
   numRunPreIterate(0),
   problemParameters_( problemParams ),
-  glsystem_(glsystem),
+  stateWriter_(stateWriter),
   outputDir_(outputDir)
 {
 }
@@ -31,7 +29,6 @@ runPostIterate(const NOX::Solver::Generic& solver)
 
   ++numRunPreIterate;
 
-
   // Get the Epetra_Vector with the final solution from the solver
   const NOX::Epetra::Group& solGrp =
              dynamic_cast<const NOX::Epetra::Group&>(solver.getSolutionGroup());
@@ -41,7 +38,7 @@ runPostIterate(const NOX::Solver::Generic& solver)
     (dynamic_cast<const NOX::Epetra::Vector&>(solGrp.getX())).
     getEpetraVector();
   fileName = outputDir_ + "/newton-sol-"+EpetraExt::toString(numRunPreIterate)+".vtk";
-  glsystem_->writeSolutionToFile( currentSol,
+  stateWriter_->writeSolutionToFile( currentSol,
                                   fileName );
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -53,7 +50,7 @@ runPostIterate(const NOX::Solver::Generic& solver)
   const Epetra_Vector& currentResidual =
     (dynamic_cast<const NOX::Epetra::Vector&>(solGrp.getF())).getEpetraVector();
   fileName = outputDir_ + "/newton-res-"+EpetraExt::toString(numRunPreIterate)+".vtk";
-  glsystem_->writeAbstractStateToFile( currentResidual,
+  stateWriter_->writeAbstractStateToFile( currentResidual,
                                        fileName );
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 }
