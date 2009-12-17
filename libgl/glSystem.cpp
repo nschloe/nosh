@@ -323,17 +323,15 @@ GlSystem::computeF(const Epetra_Vector &x,
   const Teuchos::RCP<ComplexVector> psi =
       Teuchos::rcp( new ComplexVector(ComplexMap_, true) );
 
+
   // convert from x to psi
   real2complex(x, *psi);
 
-  // define output vector
-  ComplexVector res(ComplexMap_, true);
-
   // compute the GL residual
-  res = Gl_.computeGlVector( psi );
+  Teuchos::RCP<ComplexVector> res = Gl_.computeGlVector( psi );
 
   // transform back to fully real equation
-  complex2real(res, FVec);
+  complex2real(*res, FVec);
 
   // add phase condition
   FVec[2 * NumComplexUnknowns_] = 0.0;

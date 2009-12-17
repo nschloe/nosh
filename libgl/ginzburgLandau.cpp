@@ -87,18 +87,23 @@ void GinzburgLandau::getEquationType ( const int           eqnum,
     }
 }
 // =============================================================================
-ComplexVector
+Teuchos::RCP<ComplexVector>
 GinzburgLandau::computeGlVector ( const Teuchos::RCP<ComplexVector> & psi
                                 ) const
 {
+  TEST_FOR_EXCEPTION( !psi.is_valid_ptr() || psi.is_null(),
+                      std::logic_error,
+                      "Input argument 'psi' not properly initialized." );
+
   // setup output vector with the same map as psi
-  ComplexVector glVec ( psi->getMap(), true );
+  Teuchos::RCP<ComplexVector> glVec =
+        Teuchos::rcp( new ComplexVector(psi->getMap(), true ) );
 
   for ( unsigned int k=0; k<psi->getLocalLength(); k++ )
     {
       int            globalIndex = psi->getMap()->getGlobalElement ( k );
       double_complex z           = computeGl ( globalIndex, *psi );
-      glVec.replaceLocalValue ( k, z );
+      glVec->replaceLocalValue ( k, z );
     }
 
   return glVec;

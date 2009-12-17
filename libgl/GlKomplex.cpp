@@ -69,17 +69,21 @@ GlKomplex::real2complex(const Epetra_Vector & x ) const
 
   TEST_FOR_EXCEPTION( !RealMap_.is_valid_ptr() || RealMap_.is_null(),
                       std::logic_error,
-                      "RealMap_ has not been properly initialized." );
+                      "RealMap_ not properly initialized." );
 
   TEST_FOR_EXCEPTION( !x.Map().SameAs(*RealMap_),
                       std::logic_error,
-                      "Maps for real-valued vectors do not coincide." );
+                      "Maps for real-valued vectors do not coincide. "
+                      << "Check, for example, the number of elements "
+                      << "(" << x.Map().NumGlobalElements() << " for x vs. "
+                      << RealMap_->NumGlobalElements() << " for RealMap_).");
 
   TEST_FOR_EXCEPTION( !ComplexMap_.is_valid_ptr() || ComplexMap_.is_null(),
                       std::logic_error,
                       "ComplexMap_ has not been properly initialized." );
 
   Teuchos::RCP<ComplexVector> z = Teuchos::rcp( new ComplexVector(ComplexMap_) );
+
   // TODO: parallelize
   for (unsigned int k=0; k < z->getGlobalLength(); k++) {
       double_complex c = double_complex(x[2 * k], x[2 * k + 1]);
@@ -92,7 +96,9 @@ GlKomplex::real2complex(const Epetra_Vector & x ) const
 Teuchos::RCP<Epetra_Vector>
 GlKomplex::complex2real( const ComplexVector &complexVec )
 {
-  if( !complexVec.getMap()->isSameAs(*ComplexMap_) ) {
+  if(    !ComplexMap_.is_valid_ptr()
+      ||  ComplexMap_.is_null()
+      || !complexVec.getMap()->isSameAs(*ComplexMap_) ) {
     // recreate maps
     ComplexMap_ = complexVec.getMap();
     createRealMap();
@@ -102,6 +108,7 @@ GlKomplex::complex2real( const ComplexVector &complexVec )
   // TODO: parallelize
   Teuchos::ArrayRCP<const double_complex> complexVecView = complexVec.get1dView();
   int numComplexUnknowns = ComplexMap_->getGlobalNumElements();
+
   for (int k = 0; k < numComplexUnknowns; k++) {
       x->ReplaceGlobalValue( 2*k  , 0, real(complexVecView[k]) );
       x->ReplaceGlobalValue( 2*k+1, 0, imag(complexVecView[k]) );
@@ -112,6 +119,11 @@ GlKomplex::complex2real( const ComplexVector &complexVec )
 void
 GlKomplex::createRealMap()
 {
+  TEST_FOR_EXCEPTION(   !ComplexMap_.is_valid_ptr()
+                     ||  ComplexMap_.is_null(),
+                      std::logic_error,
+                      "ComplexMap_ has not been properly initialized." );
+
   int numRealGlobalElements = 2 * ComplexMap_->getNodeNumElements();
 
   Epetra_IntSerialDenseVector realMapGIDs(numRealGlobalElements);
@@ -134,6 +146,49 @@ GlKomplex::createRealMap()
                          );
   return;
 }
+// =============================================================================
+//void
+//GlKomplex::createComplexMap()
+//{
+//  TEST_FOR_EXCEPTION( !RealMap_.is_valid_ptr() || RealMap_.is_null(),
+//                      std::logic_error,
+//                      "RealMap_ has not been properly initialized." );
+//
+//  n = RealMap_->NumGlobalElements();
+//  TEST_FOR_EXCEPTION( !n%2,
+//                      std::logical_error,
+//                      "Number of elements in RealMap is odd (" << n
+//                      << "). Can't create ComplexMap_.");
+//
+//  int numComplexGlobalElements =  n / 2;
+//
+//  Epetra_IntSerialDenseVector realMapGIDs(numRealGlobalElements);
+//  Teuchos::ArrayView<const Thyra::Ordinal> myGlobalElements;
+//  =
+//                                             ComplexMap_->getNodeElementList();
+//
+//  // Construct the map in such a way that all complex entries on processor K
+//  // are split up into real and imaginary part, which will both reside on
+//  // processor K again.
+//
+//  for (unsigned int k=0; k<n; i++) {
+//      myGlobalElements[k]
+//      realMapGIDs[2*i  ] = 2 * myGlobalElements[i];
+//      realMapGIDs[2*i+1] = 2 * myGlobalElements[i] + 1;
+//  }
+//
+//  Complex_ = Teuchos::rcp( new Tpetra::Map(numRealGlobalElements,
+//                                           elementList,
+//                                           RealMap_->IndexBase(),
+//                                           TComm_,
+//
+//                                           realMapGIDs.Length(),
+//                                          realMapGIDs.Values(),
+//                                          ComplexMap_->getIndexBase(),
+//                                          *EComm_)
+//                         );
+//  return;
+//}
 // =============================================================================
 Teuchos::RCP<const Teuchos::Comm<int> >
 GlKomplex::create_CommInt( const Teuchos::RCP<const Epetra_Comm> &epetraComm )

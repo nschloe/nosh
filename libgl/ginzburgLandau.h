@@ -46,7 +46,7 @@ class GinzburgLandau
      void
      setScaling( const double scaling);
 
-     ComplexVector
+     Teuchos::RCP<ComplexVector>
      computeGlVector( const Teuchos::RCP<ComplexVector> & psi ) const;
 
      /*! Returns the coefficients of the jacobian system associated with the

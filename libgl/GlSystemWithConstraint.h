@@ -137,22 +137,16 @@ public:
         writeAbstractStateToFile( const Epetra_Vector & x,
                                   const std::string   & filePath) const;
 
-        Teuchos::RCP<Epetra_Vector>
-        getGlSystemVector( const Teuchos::RCP<const ComplexVector> psi ) const;
-
 private:
 
         int
         realIndex2complexIndex(const int realIndex) const;
 
+        //! Creates a map identical to the input argument \c realMap, but
+        //! extended by one entry.
+        //! This extra slot is usually used for the phase condition.
         void
-        real2complex(const Epetra_Vector &x, ComplexVector &psi) const;
-
-        void
-        complex2real(const ComplexVector &psi, Epetra_Vector &x) const;
-
-        void
-        makeRealMap(const Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> > complexMap);
+        createExtendedRealMap( const Epetra_BlockMap & realMap );
 
         enum jacCreator {
                 ONLY_GRAPH, VALUES
@@ -189,19 +183,16 @@ private:
 
         continuationType continuationType_;
 
-        int NumRealUnknowns_;
         int NumMyElements_;
         int NumComplexUnknowns_;
 
         Teuchos::RCP<const LOCA::Stepper> stepper_;
 
-        const Teuchos::RCP<const GlKomplex> glKomplex;
-
         GinzburgLandau::GinzburgLandau Gl_;
         const Teuchos::RCP<const Epetra_Comm> EComm_;
         Teuchos::RCP<const Teuchos::Comm<int> > TComm_;
-        Teuchos::RCP<Epetra_Map> RealMap_;
-        Teuchos::RCP<Epetra_Map> EverywhereMap_;
+        Teuchos::RCP<Epetra_BlockMap> regularRealMap_;
+        Teuchos::RCP<Epetra_Map> extendedRealMap_;
         Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> > ComplexMap_;
         Epetra_Vector *rhs_;
         Teuchos::RCP<Epetra_CrsGraph> Graph_;
@@ -214,6 +205,8 @@ private:
         const std::string nullvectorFileNameBase_;
         const std::string outputFileFormat_;
         const std::string outputDataFileName_;
+
+        const Teuchos::RCP<GlKomplex> glKomplex_;
 };
 
 #endif /* GLSYSTEMWITHCONSTRAINT_H_ */
