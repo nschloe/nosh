@@ -22,7 +22,7 @@ class GlBoundaryConditionsInner: public GlBoundaryConditionsVirtual
     //! at eqType.
     virtual double_complex
     getGlEntry ( const int                                  eqIndex,
-                 const Tpetra::Vector<double_complex,int> & psi,
+                 const ComplexVector                      & psi,
                  const double                               chi,
                  const GridUniformVirtual                 & grid,
                  const MagneticVectorPotential            & A
