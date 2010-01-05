@@ -418,7 +418,7 @@ IoVtk::readVtkHeader(std::ifstream &iFile) const
   // get POINT_DATA
   while (buf.find("POINT_DATA") == std::string::npos)
     getline(iFile, buf);
-  int startNum = buf.find_first_of("0123456789");
+  size_t startNum = buf.find_first_of("0123456789");
   int pointData = strtol(buf.substr(startNum).c_str(), NULL, 10);
 
   return pointData;
@@ -461,7 +461,7 @@ IoVtk::ReadScalarsFromVtkFile( std::ifstream                   & iFile,
 
       // Read the number of components; if none is given, take the default (1).
       int numComponents = 1;
-      unsigned int startNum = buf.find_first_of("0123456789");
+      size_t startNum = buf.find_first_of("0123456789");
       if (startNum != std::string::npos)
         numComponents = strtol( buf.substr(startNum, buf.size() - startNum).c_str(), NULL, 10);
   
