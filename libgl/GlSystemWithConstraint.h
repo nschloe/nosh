@@ -2,7 +2,7 @@
  * GlSystemWithConstraint.h
  *
  *  Created on: Dec 16, 2009
- *      Author: Nico Schlšmer
+ *      Author: Nico Schlï¿½mer
  */
 #ifndef GLSYSTEMWITHCONSTRAINT_H_
 #define GLSYSTEMWITHCONSTRAINT_H_
@@ -175,11 +175,11 @@ private:
         //! \c outputDataFileName_ .
         void
         writeContinuationStats( const int conStep,
-                                        const Teuchos::RCP<const ComplexVector> psi ) const;
+                                const Teuchos::RCP<const ComplexVector> psi ) const;
 
-    //! Translate an Epetra_Comm into a Teuchos::Comm<int>, no matter the Thyra::Ordinal.
-    Teuchos::RCP<const Teuchos::Comm<int> >
-    create_CommInt( const Teuchos::RCP<const Epetra_Comm> &epetraComm );
+        //! Translate an Epetra_Comm into a Teuchos::Comm<int>, no matter the Thyra::Ordinal.
+        Teuchos::RCP<const Teuchos::Comm<int> >
+        create_CommInt( const Teuchos::RCP<const Epetra_Comm> &epetraComm );
 
         continuationType continuationType_;
 

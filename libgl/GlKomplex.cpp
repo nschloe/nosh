@@ -2,7 +2,7 @@
  * GlKomplex.cpp
  *
  *  Created on: Dec 16, 2009
- *      Author: Nico Schlšmer
+ *      Author: Nico Schlï¿½mer
  */
 
 #include "GlKomplex.h"
@@ -119,28 +119,28 @@ GlKomplex::complex2real( const ComplexVector &complexVec )
 void
 GlKomplex::createRealMap()
 {
-  TEST_FOR_EXCEPTION(   !ComplexMap_.is_valid_ptr()
-                     ||  ComplexMap_.is_null(),
+  TEST_FOR_EXCEPTION( !ComplexMap_.is_valid_ptr() || ComplexMap_.is_null(),
                       std::logic_error,
                       "ComplexMap_ has not been properly initialized." );
 
-  int numRealGlobalElements = 2 * ComplexMap_->getNodeNumElements();
-
-  Epetra_IntSerialDenseVector realMapGIDs(numRealGlobalElements);
-  Teuchos::ArrayView<const Thyra::Ordinal> myGlobalElements =
+  // get view for the global indices of the global elements
+  Teuchos::ArrayView<const Thyra::Ordinal> myComplexGIDs =
                                              ComplexMap_->getNodeElementList();
 
   // Construct the map in such a way that all complex entries on processor K
   // are split up into real and imaginary part, which will both reside on
   // processor K again.
-  for (unsigned int i = 0; i < ComplexMap_->getNodeNumElements(); i++) {
-      realMapGIDs[2*i  ] = 2 * myGlobalElements[i];
-      realMapGIDs[2*i+1] = 2 * myGlobalElements[i] + 1;
+  unsigned int numMyComplexElements = myComplexGIDs.size();
+  unsigned int numMyRealElements    = 2*numMyComplexElements;
+  Epetra_IntSerialDenseVector myRealGIDs( numMyRealElements );
+  for (unsigned int i = 0; i < numMyComplexElements; i++) {
+	  myRealGIDs[2*i  ] = 2 * myComplexGIDs[i];
+	  myRealGIDs[2*i+1] = 2 * myComplexGIDs[i] + 1;
   }
 
-  RealMap_ = Teuchos::rcp( new Epetra_Map(numRealGlobalElements,
-                                          realMapGIDs.Length(),
-                                          realMapGIDs.Values(),
+  RealMap_ = Teuchos::rcp( new Epetra_Map(numMyRealElements,
+		                                  myRealGIDs.Length(),
+				                          myRealGIDs.Values(),
                                           ComplexMap_->getIndexBase(),
                                           *EComm_)
                          );

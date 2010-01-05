@@ -2,7 +2,7 @@
  * GlSystemWithConstraint.cpp
  *
  *  Created on: Dec 16, 2009
- *      Author: Nico Schlšmer
+ *      Author: Nico Schlï¿½mer
  */
 
 #include "GlSystemWithConstraint.h"
@@ -81,65 +81,65 @@ GlSystemWithConstraint::GlSystemWithConstraint( GinzburgLandau::GinzburgLandau &
                       std::logic_error,
                       "Input guess is null pointer" );
 
-        // TODO There is (until now?) no way to convert a Teuchos::Comm (of psi)
-        // to an Epetra_Comm (of the real valued representation of psi), so the
-        // Epetra_Comm has to be generated explicitly, and two communicators are kept
-        // side by side all the time. One must make sure that the two are actually
-        // equivalent, which can be checked by Thyra's conversion method create_Comm.
-        // TODO Is is actually necessary to have equivalent communicators on the
-        // real-valued and the complex-valued side?
-        // How to compare two communicators anyway?
+  // TODO There is (until now?) no way to convert a Teuchos::Comm (of psi)
+  // to an Epetra_Comm (of the real valued representation of psi), so the
+  // Epetra_Comm has to be generated explicitly, and two communicators are kept
+  // side by side all the time. One must make sure that the two are actually
+  // equivalent, which can be checked by Thyra's conversion method create_Comm.
+  // TODO Is is actually necessary to have equivalent communicators on the
+  // real-valued and the complex-valued side?
+  // How to compare two communicators anyway?
 
-        // create fitting Tpetra::Comm
-        // TODO: move into initializer
-        TComm_ = create_CommInt(EComm_);
+  // create fitting Tpetra::Comm
+  // TODO: move into initializer
+  TComm_ = create_CommInt(EComm_);
 
-        // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        // define maps
-        // psi->getMap() returns a CONST map
-        ComplexMap_ = Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> >(psi->getMap());
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  // Define maps and initialize solution.
 
-        // get the map for the real values
-//        makeRealMap(ComplexMap_);
-//
-        // set the number of local elements
-//        NumMyElements_ = RealMap_->NumMyElements();
-        // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  // TODO Don't throw exception in constructor?
+  TEST_FOR_EXCEPTION( psi->getGlobalLength() != (unsigned int) NumComplexUnknowns_,
+                      std::logic_error,
+                      "Size of the initial guess vector ("
+                      << psi->getGlobalLength()
+                      << ") does not coincide with the number of unknowns ("
+                      << NumComplexUnknowns_ << ")" );
 
+  // psi->getMap() returns a CONST map
+  ComplexMap_ = Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> >(psi->getMap());
+        
+  Teuchos::RCP<Epetra_Vector> tmp = glKomplex_->complex2real(*psi);
+  // Create the maps with and without phase constraint.
+  regularRealMap_ = Teuchos::rcp( new Epetra_BlockMap(tmp->Map()) );
+  createExtendedRealMap( *regularRealMap_ );
 
-        // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        // initialize solution
-        // TODO Don't throw exception in constructor?
-        TEST_FOR_EXCEPTION( psi->getGlobalLength() != (unsigned int) NumComplexUnknowns_,
-                            std::logic_error,
-                            "Size of the initial guess vector ("
-                            << psi->getGlobalLength()
-                            << ") does not coincide with the number of unknowns ("
-                            << NumComplexUnknowns_ << ")" );
+  initialSolution_ = Teuchos::rcp( new Epetra_Vector(*extendedRealMap_), true );
+  for (int k=0; k<tmp->MyLength(); k++ ) {
+      initialSolution_->ReplaceMyValue( k, 0, (*tmp)[tmp->Map().GID(k)] );
+  }
+  int n = initialSolution_->GlobalLength();
+  initialSolution_->ReplaceGlobalValue( n-1, 0, 0.0 );
 
-        initialSolution_ = glKomplex_->complex2real( *psi );
-        // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  NumMyElements_ = extendedRealMap_->NumMyElements();
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-        // Create a map *with phase constraint.
-        createExtendedRealMap( initialSolution_->Map()  );
+  // TODO: Remove 'dummy'.
+  // create the sparsity structure (graph) of the Jacobian
+  // use x as DUMMY argument
+  Epetra_Vector dummy(*extendedRealMap_);
 
-        // TODO: Remove 'dummy'.
-        // create the sparsity structure (graph) of the Jacobian
-        // use x as DUMMY argument
-        Epetra_Vector dummy(*extendedRealMap_);
+  createJacobian(ONLY_GRAPH, dummy);
 
-        createJacobian(ONLY_GRAPH, dummy);
+  // Allocate the sparsity pattern of the Jacobian matrix.
+  jacobian_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, *Graph_));
+  jacobian_->FillComplete();
 
-        // Allocate the sparsity pattern of the Jacobian matrix.
-        jacobian_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, *Graph_));
-        jacobian_->FillComplete();
-
-        // Allocate the sparsity pattern of the preconditioner.
-        preconditioner_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, *Graph_));
-        preconditioner_->FillComplete();
+  // Allocate the sparsity pattern of the preconditioner.
+  preconditioner_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, *Graph_));
+  preconditioner_->FillComplete();
 }
 // =============================================================================
-// constructor without initial guess
+// constructor *without* initial guess
 GlSystemWithConstraint::GlSystemWithConstraint(GinzburgLandau::GinzburgLandau &gl,
                    const Teuchos::RCP<const Epetra_Comm> eComm,
                    const std::string outputDir,
