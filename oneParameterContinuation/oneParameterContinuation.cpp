@@ -60,18 +60,9 @@ main(int argc, char *argv[])
       "This program does continuation for the Ginzburg--Landau problem with a LOCA interface.\n"
         "It is possible to give an initial guess in VTK format on the command line.\n");
 
-  //	bool reverse = false;
-  //	My_CLP.setOption("reverse", "forward", &reverse,
-  //			"Orientation of the continuation in the first step");
-
-  //	bool stopOnUnstable = false;
-  //	My_CLP.setOption("stop-on-unstable", "continue-on-unstable",
-  //			&stopOnUnstable,
-  //			"[unused] Stop the continuation if an unstable state has been reached");
-
   std::string xmlInputFileName = "";
-  My_CLP.setOption("xml-input-file", &xmlInputFileName,
-      "XML file containing the parameter list", true);
+  My_CLP.setOption( "xml-input-file", &xmlInputFileName,
+                    "XML file containing the parameter list", true);
 
   // print warning for unrecognized arguments
   My_CLP.recogniseAllOptions(true);
@@ -93,47 +84,91 @@ main(int argc, char *argv[])
 
   Teuchos::RCP<Teuchos::ParameterList> paramList = Teuchos::rcp(
       new Teuchos::ParameterList);
+
   std::cout << "Reading parameter list from \"" << xmlInputFileName << "\"."
       << std::endl;
-  Teuchos::updateParametersFromXmlFile(xmlInputFileName, paramList.get());
+
+  try {
+      Teuchos::updateParametersFromXmlFile(xmlInputFileName, paramList.get());
+  }
+  catch (std::exception &e)
+  {
+      std::cerr << e.what() << "\n"
+                << "Check your XML file for syntax errors." << std::endl;
+      return 1;
+  }
+
   // =========================================================================
-  // extract data of the parameter list
-  Teuchos::ParameterList& ioList = paramList->sublist("IO", true);
-  std::string inputGuessFile = ioList.get<string> ("Input guess");
-  bool withInitialGuess = inputGuessFile.length() > 0;
-  std::string outputDirectory = ioList.get<string> ("Output directory");
-  std::string contFileBaseName = ioList.get<string> (
+  // extract data for the output the parameter list
+  Teuchos::ParameterList outputList;
+  try {
+	  outputList = paramList->sublist("Output", true);
+  }
+  catch (std::exception &e)
+  {
+      std::cerr << e.what() << std::endl;
+      return 1;
+  }
+  std::string outputDirectory = outputList.get<string> ("Output directory");
+  std::string contFileBaseName = outputList.get<string> (
       "Continuation file base name");
-  std::string contFileFormat = ioList.get<string> ("Continuation file format");
-  std::string contDataFileName = ioList.get<string> (
+  std::string contFileFormat = outputList.get<string> ("Continuation file format");
+  std::string contDataFileName = outputList.get<string> (
       "Continuation data file name");
   // =========================================================================
 
 
   // ---------------------------------------------------------------------------
-  // define a new dummy psiLexicographic vector, to be adapted instantly
   Teuchos::ParameterList glParameters;
   Teuchos::RCP<ComplexVector> psi;
   Teuchos::RCP<GridUniformVirtual> grid;
 
-  if (withInitialGuess)
+  Teuchos::ParameterList initialGuessList;
+  try {
+	  initialGuessList = paramList->sublist("Initial guess", true);
+  }
+  catch (std::exception &e)
+  {
+      std::cerr << e.what() << std::endl;
+      return 1;
+  }
+  std::string inputGuessFile = initialGuessList.get<string> ("File name", "");
+
+
+  if ( !inputGuessFile.empty() )
     {
       try
         {
           readStateFromFile(Comm, inputGuessFile, psi, grid, glParameters);
         }
-      catch (...)
+      catch (std::exception &e)
         {
-          std::cerr << "Exception caught." << std::endl;
+          std::cerr << e.what() << std::endl;
+          return 1;
         }
+
+	  if ( initialGuessList.isParameter("Nx") ) {
+		  std::cerr << "Warning: Parameter 'Nx' *and* input guess file given."
+				    << "Using value as in input guess file, discarding 'Nx'."
+				    << std::endl;
+	  }
+	  if ( initialGuessList.isParameter("scaling") ) {
+		  std::cerr << "Warning: Parameter 'scaling' *and* input guess file given."
+				    << "Using value as in input guess file, discarding 'scaling'."
+				    << std::endl;
+	  }
+	  if ( initialGuessList.isParameter("H0") ) {
+		  std::cerr << "Warning: Parameter 'H0' *and* input guess file given."
+				    << "Using value as in input guess file, discarding 'H0'."
+				    << std::endl;
+	  }
+
     }
-  else
+  else // no or empty input guess file
     {
-      // read the parameters from the XML file
-      Teuchos::ParameterList& glList = paramList->sublist("GL", true);
-      int Nx = glList.get<int> ("Nx");
-      double scaling = glList.get<double> ("scaling");
-      double H0 = glList.get<double> ("H0");
+      int    Nx      = initialGuessList.get<int>    ("Nx");
+      double scaling = initialGuessList.get<double> ("scaling");
+      double H0      = initialGuessList.get<double> ("H0");
 
       glParameters.set("Nx", Nx);
       glParameters.set("scaling", scaling);
@@ -151,10 +186,23 @@ main(int argc, char *argv[])
     }
   // ---------------------------------------------------------------------------
 
-  // Make sure that the calculation starts off with the correct H0.
-  // TODO See if it's possible to declare the initial parameter once instead of three times in the
-  //      input XML file.
-  paramList->sublist("LOCA").sublist("Stepper").set("Initial Value", glParameters.get<double>("H0") );
+  Teuchos::ParameterList & stepperList = paramList->sublist("LOCA").sublist("Stepper");
+
+  // set the initial value from glParameters
+  std::string contParam = stepperList.get<string>("Continuation Parameter", "");
+  TEST_FOR_EXCEPTION( !glParameters.isParameter(contParam),
+		              std::logic_error,
+		              "Parameter \"" << contParam << "\" given as continuation parameter, but doesn't exist"
+		              << "in the glParameters list." );
+
+  // check if the initial value was given (will be unused anyway)
+  if ( stepperList.isParameter("Initial Value") ) {
+	  std::cerr << "Warning: Parmameter 'LOCA->Stepper->Initial Value' given, but will not be used."
+			    << std::endl;
+  }
+
+  // TODO Get rid of the explicit "double".
+  stepperList.set("Initial Value", glParameters.get<double>(contParam) );
 
   // create the gl problem
   Teuchos::RCP<GlBoundaryConditionsVirtual> boundaryConditions = Teuchos::rcp(
@@ -194,8 +242,8 @@ main(int argc, char *argv[])
   Teuchos::RCP<Teuchos::ParameterList> eigenListPtr = Teuchos::rcpFromRef(
       (eigenList));
   std::string eigenvaluesFileName =
-      ioList.get<string> ("Eigenvalues file name");
-  std::string eigenstateFileNameAppendix = ioList.get<string> (
+      outputList.get<string> ("Eigenvalues file name");
+  std::string eigenstateFileNameAppendix = outputList.get<string> (
       "Eigenstate file name appendix");
   Teuchos::RCP<EigenSaver> glEigenSaver = Teuchos::RCP<EigenSaver>(
       new EigenSaver(eigenListPtr, outputDirectory,
