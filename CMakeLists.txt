@@ -11,7 +11,7 @@ SET(CMAKE_BUILD_TYPE Debug)
 SET(CMAKE_CXX_FLAGS_DEBUG "-g -pg -ggdb -Wall -Wextra -Wno-unused" )
 #SET(CMAKE_CXX_FLAGS_DEBUG "" )
 
-SET(GL_CMAKE_DIR "${ginzburg-landau_SOURCE_DIR}/CMakeModules")
+SET(GL_CMAKE_DIR "${ginzburg-landau_SOURCE_DIR}/../CMakeMacros")
 SET(CMAKE_MODULE_PATH "${GL_CMAKE_DIR}" ${CMAKE_MODULE_PATH})
 
 add_subdirectory ( libio )
