@@ -24,7 +24,8 @@ IoFactory::createFileIo( std::string fileName )
   } else {
 	  TEST_FOR_EXCEPTION( true,
 			              std::logic_error,
-			              "File name extension \"" << extension << "\" "
+			              "Error when reading file \"" << fileName
+			              << "\". File name extension \"" << extension << "\" "
 			              << "not recognized. Must be one of \"vtk\", "
 			              << "\"vti\", \"xmf\"." );
   }
