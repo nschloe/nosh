@@ -108,35 +108,8 @@ GlSystemWithConstraint::GlSystemWithConstraint( GinzburgLandau::GinzburgLandau &
   // psi->getMap() returns a CONST map
   ComplexMap_ = Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> >(psi->getMap());
         
-  Teuchos::RCP<Epetra_Vector> tmp = glKomplex_->complex2real(*psi);
-  // Create the maps with and without phase constraint.
-  regularRealMap_ = Teuchos::rcp( new Epetra_BlockMap(tmp->Map()) );
-  createExtendedRealMap( *regularRealMap_ );
-
-  initialSolution_ = Teuchos::rcp( new Epetra_Vector(*extendedRealMap_), true );
-  for (int k=0; k<tmp->MyLength(); k++ ) {
-      initialSolution_->ReplaceMyValue( k, 0, (*tmp)[tmp->Map().GID(k)] );
-  }
-  int n = initialSolution_->GlobalLength();
-  initialSolution_->ReplaceGlobalValue( n-1, 0, 0.0 );
-
-  NumMyElements_ = extendedRealMap_->NumMyElements();
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-  // TODO: Remove 'dummy'.
-  // create the sparsity structure (graph) of the Jacobian
-  // use x as DUMMY argument
-  Epetra_Vector dummy(*extendedRealMap_);
-
-  createJacobian(ONLY_GRAPH, dummy);
-
-  // Allocate the sparsity pattern of the Jacobian matrix.
-  jacobian_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, *Graph_));
-  jacobian_->FillComplete();
-
-  // Allocate the sparsity pattern of the preconditioner.
-  preconditioner_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, *Graph_));
-  preconditioner_->FillComplete();
+  // do the rest of the initialization
+  initialize( psi );
 }
 // =============================================================================
 // constructor *without* initial guess
@@ -193,40 +166,47 @@ glKomplex_( Teuchos::rcp(new GlKomplex(eComm) ) )
   // TODO Move default initialization out to main file
   double_complex alpha(1.0, 0.0);
   psi->putScalar(alpha); // default initialization
-
-  Teuchos::RCP<Epetra_Vector> tmp = glKomplex_->complex2real(*psi);
-  // Create the maps with and without phase constraint.
-  regularRealMap_ = Teuchos::rcp( new Epetra_BlockMap(tmp->Map()) );
-  createExtendedRealMap( *regularRealMap_ );
-
-  initialSolution_ = Teuchos::rcp( new Epetra_Vector(*extendedRealMap_), true );
-  for (int k=0; k<tmp->MyLength(); k++ ) {
-      initialSolution_->ReplaceMyValue( k, 0, (*tmp)[tmp->Map().GID(k)] );
-  }
-  int n = initialSolution_->GlobalLength();
-  initialSolution_->ReplaceGlobalValue( n-1, 0, 0.0 );
-
-  NumMyElements_ = extendedRealMap_->NumMyElements();
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-  // TODO Remove 'dummy'.
-  // create the sparsity structure (graph) of the Jacobian
-  // use x as DUMMY argument
-  Epetra_Vector dummy(*extendedRealMap_);
-
-  createJacobian(ONLY_GRAPH, dummy);
-
-  // Allocate the sparsity pattern of the Jacobian matrix
-  jacobian_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, *Graph_));
-  jacobian_->FillComplete();
-
-  preconditioner_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, *Graph_));
-  preconditioner_->FillComplete();
+  // do the rest of the initialization
+  initialize( psi );
 }
 // =============================================================================
 // Destructor
 GlSystemWithConstraint::~GlSystemWithConstraint() {
         stepper_ = Teuchos::null;
+}
+// =============================================================================
+void
+GlSystemWithConstraint::initialize(const Teuchos::RCP<ComplexVector> psi) {
+
+	Teuchos::RCP<Epetra_Vector> tmp = glKomplex_->complex2real(*psi);
+	// Create the maps with and without phase constraint.
+	regularRealMap_ = Teuchos::rcp( new Epetra_BlockMap(tmp->Map()) );
+	createExtendedRealMap( *regularRealMap_ );
+
+	initialSolution_ = Teuchos::rcp( new Epetra_Vector(*extendedRealMap_), true );
+	for (int k=0; k<tmp->MyLength(); k++ ) {
+	    initialSolution_->ReplaceMyValue( k, 0, (*tmp)[tmp->Map().GID(k)] );
+	}
+	int n = initialSolution_->GlobalLength();
+	initialSolution_->ReplaceGlobalValue( n-1, 0, 0.0 );
+
+	NumMyElements_ = extendedRealMap_->NumMyElements();
+
+	// TODO Remove 'dummy'.
+	// create the sparsity structure (graph) of the Jacobian
+	// use x as DUMMY argument
+	Epetra_Vector dummy(*extendedRealMap_);
+
+	createJacobian(ONLY_GRAPH, dummy);
+
+	// Allocate the sparsity pattern of the Jacobian matrix
+	jacobian_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, *Graph_));
+	jacobian_->FillComplete();
+
+	preconditioner_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, *Graph_));
+	preconditioner_->FillComplete();
 }
 // =============================================================================
 int GlSystemWithConstraint::realIndex2complexIndex(const int realIndex) const {

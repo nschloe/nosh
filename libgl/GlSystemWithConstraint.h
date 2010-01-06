@@ -139,6 +139,9 @@ public:
 
 private:
 
+        void
+        initialize(const Teuchos::RCP<ComplexVector> psi);
+
         int
         realIndex2complexIndex(const int realIndex) const;
 

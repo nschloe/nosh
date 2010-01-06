@@ -2,7 +2,7 @@
  * MagneticVectorPotential.cpp
  *
  *  Created on: Nov 5, 2009
- *      Author: Nico Schlšmer
+ *      Author: Nico Schlï¿½mer
  */
 
 #include "MagneticVectorPotential.h"
@@ -23,6 +23,12 @@ void
 MagneticVectorPotential::setH0( const double h0 )
 {
   h0_ = h0;
+}
+// ============================================================================
+void
+MagneticVectorPotential::setEdgeLength( const double edgeLength )
+{
+	edgeLength_ = edgeLength;
 }
 // ============================================================================
 double

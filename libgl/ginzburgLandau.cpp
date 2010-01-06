@@ -39,9 +39,10 @@ GinzburgLandau::setH0(const double h0)
 }
 // =============================================================================
 void
-GinzburgLandau::setScaling( const double scaling)
+GinzburgLandau::setScaling( const double scaling )
 {
   grid_->setScaling( scaling );
+  A_->setEdgeLength( scaling );
 }
 // =============================================================================
 void
