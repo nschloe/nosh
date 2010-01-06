@@ -7,7 +7,6 @@
   </ParameterList>
 
   <ParameterList name="Output">
-      <Parameter name="Output directory" type="string" value="./data"/>
       <Parameter name="Continuation file base name" type="string" value="continuationStep"/>
       <Parameter name="Continuation file format" type="string" value="VTK"/>
       <Parameter name="Continuation data file name" type="string" value="continuationData.dat"/>

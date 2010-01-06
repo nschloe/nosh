@@ -1,3 +1,5 @@
+#include <boost/filesystem.hpp>
+
 #include <LOCA.H>
 #include <LOCA_Epetra_Factory.H>
 #include <LOCA_Epetra_Group.H>
@@ -109,7 +111,9 @@ main(int argc, char *argv[])
       std::cerr << e.what() << std::endl;
       return 1;
   }
-  std::string outputDirectory = outputList.get<string> ("Output directory");
+  // set default directory to be the directory of the XML file itself
+  std::string outputDirectoryDefault = boost::filesystem::path(xmlInputFileName).branch_path().string();
+  std::string outputDirectory = outputList.get<string> ("Output directory", outputDirectoryDefault );
   std::string contFileBaseName = outputList.get<string> (
       "Continuation file base name");
   std::string contFileFormat = outputList.get<string> ("Continuation file format");
@@ -197,7 +201,7 @@ main(int argc, char *argv[])
 
   // check if the initial value was given (will be unused anyway)
   if ( stepperList.isParameter("Initial Value") ) {
-	  std::cerr << "Warning: Parmameter 'LOCA->Stepper->Initial Value' given, but will not be used."
+	  std::cerr << "Warning: Parameter 'LOCA->Stepper->Initial Value' given, but will not be used."
 			    << std::endl;
   }
 
