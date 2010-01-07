@@ -29,4 +29,6 @@ INCLUDE_DIRECTORIES( ${HDF5_DIR}/include )
 ADD_LIBRARY ( io STATIC
               ${gl_SRCS} )
 
-TARGET_LINK_LIBRARIES ( io )
+# list the libraries against which libio must be linked here
+TARGET_LINK_LIBRARIES ( io 
+                        vtkIO vtkFiltering vtkCommon vtkImaging )
