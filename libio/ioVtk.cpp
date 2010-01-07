@@ -205,22 +205,30 @@ IoVtk::writeParameterList(const Teuchos::ParameterList & pList,
   for (i = pList.begin(); i != pList.end(); ++i)
     numEntries++;
 
+  ioStream << "PARAMETERS ";
+
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  // create the list of parameter values
+  // write the list of parameter values
   std::vector<std::string> paramStringList(numEntries);
   int k = 0;
   for (i = pList.begin(); i != pList.end(); ++i)
     {
+	  if (i!=pList.begin() ) {
+		  ioStream << ", ";
+	  }
       std::string paramName = pList.name(i);
       if (pList.isType<int> (paramName))
-        paramStringList[k] = "int " + pList.name(i) + "="
-            + EpetraExt::toString(pList.get<int> (paramName));
+    	ioStream <<  "int " << pList.name(i)
+    	         << "="
+                 << pList.get<int>(paramName);
       else if (pList.isType<unsigned int> (paramName))
-        paramStringList[k] = "unsigned int " + pList.name(i) + "="
-            + EpetraExt::toString(pList.get<unsigned int> (paramName));
+      	ioStream <<  "unsigned int " << pList.name(i)
+      	         << "="
+                 << pList.get<unsigned int>(paramName);
       else if (pList.isType<double> (paramName))
-        paramStringList[k] = "double " + pList.name(i) + "="
-            + EpetraExt::toString(pList.get<double> (paramName));
+          ioStream <<  "double " << pList.name(i)
+        	       << "="
+                   << pList.get<double>(paramName);
       else
         {
           TEST_FOR_EXCEPTION( true,
@@ -231,8 +239,6 @@ IoVtk::writeParameterList(const Teuchos::ParameterList & pList,
     }
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-  ioStream << "PARAMETERS ";
-  ioStream << strJoin(paramStringList, " , ");
   ioStream << " END\n";
 }
 // =============================================================================
