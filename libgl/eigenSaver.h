@@ -53,7 +53,10 @@ class EigenSaver : public LOCA::SaveEigenData::AbstractStrategy
     Teuchos::RCP<LOCA::Stepper> locaStepper_;
 
     //! The minimum number of stable eigenvalues that is to be computed in each step.
-    int numComputeStableEigenvalues_;
+    unsigned int numComputeStableEigenvalues_;
+
+    //! Maximum number of eigenvalues that are stored in \c eigenvaluesFilePath_.
+    unsigned int maxEigenvaluesSave_;
 
     void
     saveEigenstate ( const std::string                         fileName,

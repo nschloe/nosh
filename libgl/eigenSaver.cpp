@@ -11,10 +11,10 @@
 
 // =============================================================================
 EigenSaver::EigenSaver(const Teuchos::RCP<Teuchos::ParameterList> eigenParamList,
-		               const std::string outputDir,
-		               const std::string eigenvaluesFileName,
-		               const std::string contFileBaseName,
-		               const std::string eigenstateFileNameAppendix,
+		               const std::string  outputDir,
+		               const std::string  eigenvaluesFileName,
+		               const std::string  contFileBaseName,
+		               const std::string  eigenstateFileNameAppendix,
 		               const Teuchos::RCP<GlSystem> glSys) :
 eigenParamList_(eigenParamList),
 outputDir_(outputDir),
@@ -23,7 +23,8 @@ contFileBaseName_(contFileBaseName),
 eigenstateFileNameAppendix_(eigenstateFileNameAppendix),
 glSys_(glSys),
 locaStepper_(0),
-numComputeStableEigenvalues_(3)
+numComputeStableEigenvalues_(3),
+maxEigenvaluesSave_(20)
 {
 }
 // =============================================================================
@@ -57,16 +58,19 @@ EigenSaver::save(Teuchos::RCP<std::vector<double> > &evals_r,
 	static int step = 0;
 	step++;
 
-	int numEigenValues = evals_r->size();
+	unsigned int numEigenValues = evals_r->size();
 
 	std::ofstream eigenFileStream;
 
 	if (step == 1) {
 		eigenFileStream.open(eigenvaluesFilePath_.c_str(), ios::trunc);
 		eigenFileStream << "# Step" << "\t#unstable ev";
-		eigenFileStream << "\tRe(lambda_0)" << "\t\tIm(lambda_0)";
-		for (int k = 1; k < numEigenValues; k++) {
-			eigenFileStream << "\t\tRe(lambda_" << k << ")" << "\t\tIm(lambda_"
+		for (unsigned int k = 0; k < maxEigenvaluesSave_; k++) {
+			if (k==0)
+				eigenFileStream << "\t";
+			else
+				eigenFileStream << "\t\t";
+			eigenFileStream << "Re(lambda_" << k << ")" << "\t\tIm(lambda_"
 					<< k << ")";
 		}
 		eigenFileStream << std::endl;
@@ -76,7 +80,7 @@ EigenSaver::save(Teuchos::RCP<std::vector<double> > &evals_r,
 	}
 
 	int numUnstableEigenvalues = 0;
-	for (int k = 0; k < numEigenValues; k++) {
+	for (unsigned int k = 0; k < numEigenValues; k++) {
 		if ((*evals_r)[k] > 0.0) {
 			numUnstableEigenvalues++;
 			std::string eigenstateFilePath = outputDir_ + "/"
@@ -102,8 +106,13 @@ EigenSaver::save(Teuchos::RCP<std::vector<double> > &evals_r,
 	eigenFileStream.setf(std::ios::scientific);
 	eigenFileStream.precision(15);
 
-	for (int k = 0; k < numEigenValues; k++)
+	for (unsigned int k = 0; k < min(numEigenValues,maxEigenvaluesSave_); k++)
 		eigenFileStream << "\t" << (*evals_r)[k] << "\t" << (*evals_i)[k];
+
+	// print "NaN" as fill-ins if there are more columns than eigenvalues
+	if ( maxEigenvaluesSave_>numEigenValues )
+	    for (unsigned int k = 0; k < 2*(maxEigenvaluesSave_-numEigenValues); k++)
+		    eigenFileStream << "\tNaN                   ";
 
 	eigenFileStream << std::endl;
 	eigenFileStream.close();
@@ -111,16 +120,16 @@ EigenSaver::save(Teuchos::RCP<std::vector<double> > &evals_r,
 	// Adapt the computation for the next step.
 	// Make sure that approximately \c numComputeStableEigenvalues_ stable eigenvalues
 	// will be computed in the next step.
-	eigenParamList_->set("Num Eigenvalues", numUnstableEigenvalues
-			                                + numComputeStableEigenvalues_ );
+	int nextNumEigenvalues = numUnstableEigenvalues + numComputeStableEigenvalues_;
+	eigenParamList_->set("Num Eigenvalues", nextNumEigenvalues  );
 
-        // Make sure that the shift SIGMA (if using Shift-Invert) sits THRESHOLD above
-        // the rightmost eigenvalue.
-        if ( !eigenParamList_->get<string>("Operator").compare("Shift-Invert") ) {
-            double maxEigenval = *std::max_element( evals_r->begin(), evals_r->end() );
-            double threshold = 0.5;
-            eigenParamList_->set("Shift", maxEigenval + threshold );
-        }
+    // Make sure that the shift SIGMA (if using Shift-Invert) sits THRESHOLD above
+    // the rightmost eigenvalue.
+    if ( eigenParamList_->get<string>("Operator").compare("Shift-Invert")==0 ) {
+        double maxEigenval = *std::max_element( evals_r->begin(), evals_r->end() );
+        double threshold = 0.5;
+        eigenParamList_->set("Shift", maxEigenval + threshold );
+    }
 
 	// reset the eigensolver to take notice of the new values
 	locaStepper_->eigensolverReset( eigenParamList_ );

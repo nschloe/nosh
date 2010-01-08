@@ -2,8 +2,6 @@
 
 #include <boost/algorithm/string.hpp>
 
-#include <EpetraExt_Utils.h>
-
 // =============================================================================
 // Constructor
 IoVtk::IoVtk(std::string fname) :
