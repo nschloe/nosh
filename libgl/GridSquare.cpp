@@ -357,6 +357,7 @@ GridSquare::writeWithGrid( const DoubleMultiVector      & x,
   extendedParams.get("Nx", Nx_[0] );
   extendedParams.get("Ny", Nx_[1] );
 
+  std::cout << "extended" << extendedParams << std::endl;
   // reorder the grid to lexicographic ordering
   Teuchos::RCP<DoubleMultiVector> xLexicographic = permuteGrid2Lexicographic(x);
 

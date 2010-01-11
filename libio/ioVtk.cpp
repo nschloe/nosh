@@ -1,5 +1,5 @@
 #include "ioVtk.h"
-
+#include <stdio.h>
 #include <boost/algorithm/string.hpp>
 
 // =============================================================================
@@ -42,7 +42,6 @@ IoVtk::read(const Teuchos::RCP<const Teuchos::Comm<int> > & tComm,
 
   // read the parameters
   ReadParamsFromVtkFile(iFile, problemParams);
-
   // read the header (in particular the size the of the vectors, point_data)
   int vecSize = readVtkHeader(iFile);
 
@@ -223,10 +222,13 @@ IoVtk::writeParameterList(const Teuchos::ParameterList & pList,
       	ioStream <<  "unsigned int " << pList.name(i)
       	         << "="
                  << pList.get<unsigned int>(paramName);
-      else if (pList.isType<double> (paramName))
+      else if (pList.isType<double> (paramName)){
+	char buffer[30];
+	sprintf(buffer,"%1.10e",pList.get<double> (paramName));
           ioStream <<  "double " << pList.name(i)
         	       << "="
                    << pList.get<double>(paramName);
+      }
       else
         {
           TEST_FOR_EXCEPTION( true,
@@ -465,6 +467,8 @@ IoVtk::ReadScalarsFromVtkFile( std::ifstream                   & iFile,
 
       // Read the number of components; if none is given, take the default (1).
       int numComponents = 1;
+ //      std::string::size_type startNum = buf.find_first_of("0123456789");
+ //      std::cout << buf <<std::endl;
       size_t startNum = buf.find_first_of("0123456789");
       if (startNum != std::string::npos)
         numComponents = strtol( buf.substr(startNum, buf.size() - startNum).c_str(), NULL, 10);

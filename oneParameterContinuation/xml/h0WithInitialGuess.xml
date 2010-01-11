@@ -9,9 +9,9 @@
       <Parameter name="Eigenstate file name appendix" type="string" value="eigenstate"/>
   </ParameterList>
   <ParameterList name="GL">
-      <Parameter name="Nx" type="int" value="50"/>
-      <Parameter name="H0" type="double" value="0.2"/>
-      <Parameter name="scaling" type="double" value="10.0"/>
+      <Parameter name="Nx" type="int" value="64"/>
+      <Parameter name="H0" type="double" value="0.894236"/>
+      <Parameter name="scaling" type="double" value="6.0"/>
   </ParameterList>
   <ParameterList name="LOCA">
     <ParameterList name="Bifurcation">

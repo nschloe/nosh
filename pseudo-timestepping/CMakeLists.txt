@@ -25,6 +25,7 @@ FIND_PACKAGE( Trilinos COMPONENTS EpetraExt
                                   Teuchos )
 
 INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/libgl
+		      ${ginzburg-landau_SOURCE_DIR}/libio
                       ${Trilinos_INCLUDE_DIR}
                       ${MPI_INCLUDE_PATH}
                       ${Boost_INCLUDE_DIRS} )

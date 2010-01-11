@@ -211,7 +211,7 @@ int main(int argc, char *argv[])
           std::cout << "norm_2(psi) = " << norm2 << std::endl;
 
       // update
-      psi->update( 1.0, update, 1.0 );
+      psi->update( delta, update, 1.0 );
 
 //       if (!k%100) { // add a random component
 //           for ( int l=0; l<NumUnknowns; l++ ) {

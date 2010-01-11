@@ -160,7 +160,6 @@ GinzburgLandau::computeGl ( const int           eqnum,
       double AAbove = A_->getAy ( *xAbove );
 
       double h = grid_->getUniformH();
-
       // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
       res = ( psiK* ( -4.0 )
               + psiKLeft*  exp ( I*ALeft *h ) + psiKRight* exp ( -I*ARight*h )
@@ -491,7 +490,6 @@ GinzburgLandau::writeStateToFile( const Teuchos::RCP<const ComplexVector> &psi,
     psiSplit.replaceLocalValue(k, 0, norm(psiView[k]));
     psiSplit.replaceLocalValue(k, 1, arg(psiView[k]));
   }
-
   grid_->writeWithGrid( psiSplit, params, filePath );
 }
 // =============================================================================
@@ -510,7 +508,7 @@ GinzburgLandau::writeSolutionToFile( const Teuchos::RCP<const ComplexVector> &ps
   params.get("H0", A_->getH0() );
   params.get("free energy", energy);
   params.get("vorticity", vorticity);
-
+  cout << params << endl;
   writeStateToFile( psi, params, filePath );
 }
 // =============================================================================

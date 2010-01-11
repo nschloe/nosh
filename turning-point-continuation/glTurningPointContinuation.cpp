@@ -113,7 +113,9 @@ int main(int argc, char *argv[]) {
 
 	if (withInitialGuess) {
 	   try {
+		   cout << "before readstate "<< endl;
 		   readStateFromFile( Comm, inputGuessFile, psi, grid, glParameters );
+		   cout << "after readstate "<< endl;
 	   }
 	   catch (std::exception &e) {
 	       std::cerr << e.what() << std::endl;

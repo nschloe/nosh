@@ -41,7 +41,6 @@ GridUniformSquare::writeWithGrid( const DoubleMultiVector      & x,
   Teuchos::ParameterList extendedParams( params );
   extendedParams.get("scaling", scaling_ );
   extendedParams.get("Nx", Nx_[0] );
-
   // reorder the grid to lexicographic ordering
   Teuchos::RCP<DoubleMultiVector> xLexicographic = permuteGrid2Lexicographic(x);
 
