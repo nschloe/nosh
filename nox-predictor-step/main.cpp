@@ -141,7 +141,7 @@ main(int argc, char *argv[])
   std::string tangentFile = initialGuessList.get<string> ("Tangent file", "");
 
 
-  if ( !inputGuessFile.empty() )
+  if ( !stateFile.empty() && !tangentFile.empty() )
     {
       try
         {
