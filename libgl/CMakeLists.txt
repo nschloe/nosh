@@ -22,7 +22,7 @@ SET ( gl_SRCS
       domainRectangle.cpp
       eigenSaver.cpp          )
 
-FIND_PACKAGE( Trilinos REQUIRED )
+INCLUDE( SetTrilinosVariables REQUIRED )
 INCLUDE_DIRECTORIES( ${Trilinos_INCLUDE_DIR} )
 
 IF(MPI_COMPILED)

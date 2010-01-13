@@ -10,7 +10,7 @@ SET ( gl_SRCS
       ioXdmf.cpp
       ioFactory.cpp )
 
-FIND_PACKAGE( Trilinos REQUIRED )
+INCLUDE( SetTrilinosVariables REQUIRED )
 INCLUDE_DIRECTORIES( ${Trilinos_INCLUDE_DIR} )
 
 FIND_PACKAGE( Boost REQUIRED )
