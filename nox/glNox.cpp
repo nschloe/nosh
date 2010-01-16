@@ -26,7 +26,7 @@
 #include <AnasaziEpetraAdapter.hpp>
 #include <AnasaziBasicSort.hpp>
 
-#include "Teuchos_XMLParameterListHelpers.hpp"
+#include <Teuchos_XMLParameterListHelpers.hpp>
 
 // =============================================================================
 glNox::glNox( const std::string fileName,

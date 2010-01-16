@@ -31,6 +31,13 @@ SET ( internal_LIBS
     )
 
 # ==============================================================================
+FIND_PACKAGE( Boost COMPONENTS filesystem REQUIRED )
+INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIRS} )
+SET(Boost_USE_STATIC_LIBS   ON)
+SET(Boost_USE_MULTITHREADED ON)
+SET( LINK_LIBRARIES ${LINK_LIBRARIES}
+	                    ${Boost_LIBRARIES} )
+# ------------------------------------------------------------------------------
 FIND_LIBRARY( GFORTRAN ${GFORTRAN_LIBNAME}
               HINTS ${GFORTRAN_DIR}    )
 SET( LINK_LIBRARIES ${LINK_LIBRARIES}

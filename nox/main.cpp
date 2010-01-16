@@ -11,7 +11,10 @@
 
 #include <EpetraExt_RowMatrixOut.h>
 
+#include <boost/filesystem.hpp>
+
 #include "glNox.h"
+
 
 int main ( int argc, char *argv[] )
 {
@@ -43,11 +46,6 @@ int main ( int argc, char *argv[] )
     "This program solves the Ginzburg--Landau problem with a NOX interface.\n"
   );
 
-//  bool verbose = false;
-//  My_CLP.setOption ( "verbose", "silent",
-//                     &verbose,
-//                     "Verbostity flag" );
-
   std::string xmlInputFileName = "";
   My_CLP.setOption("xml-input-file", &xmlInputFileName,
       "XML file containing the parameter list", true);
@@ -55,10 +53,10 @@ int main ( int argc, char *argv[] )
   // print warning for unrecognized arguments
   My_CLP.recogniseAllOptions(true);
 
-  // don't throw exceptions
-  My_CLP.throwExceptions(false);
+  // do throw exceptions
+  My_CLP.throwExceptions(true);
 
-  // finally, parse the stuff!
+  // finally, parse the command line
   Teuchos::CommandLineProcessor::EParseCommandLineReturn parseReturn;
   try {
       parseReturn = My_CLP.parse(argc, argv);
@@ -85,12 +83,15 @@ int main ( int argc, char *argv[] )
   // =========================================================================
   // extract data of the parameter list
   Teuchos::ParameterList& ioList = paramList->sublist("IO", true);
-  std::string inputGuessFile = ioList.get<string> ("Input guess");
-  bool withInitialGuess = inputGuessFile.length() > 0;
-  std::string outputDirectory = ioList.get<string> ("Output directory");
 
-  bool computeEigenvalues =paramList->sublist("Eigenvalues",true)
-                                     .get("Compute Eigenvalues", false);
+  std::string inputGuessFileDefault = "";
+  std::string inputGuessFile = ioList.get<string> ("Input guess",inputGuessFileDefault);
+
+  std::string outputDirectoryDefault = boost::filesystem::path(xmlInputFileName).branch_path().string();
+  std::string outputDirectory = ioList.get<string> ("Output directory",outputDirectoryDefault);
+
+  bool computeEigenvalues = paramList->sublist("Eigenvalues",true)
+                                      .get("Compute Eigenvalues", false);
 
   bool computeConditionNumbers = paramList->sublist("Condition Numbers",true)
                                      .get("Compute Condition Numbers", false);

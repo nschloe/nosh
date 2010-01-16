@@ -214,7 +214,7 @@ main(int argc, char *argv[])
   Teuchos::ArrayRCP<const double_complex> psiView = psi->get1dView();
   Teuchos::ArrayRCP<const double_complex> tangentView = tangent->get1dView();
   Teuchos::ArrayRCP<double_complex> predictorView = tangent->get1dViewNonConst();
-  for( int k; k<psi->getGlobalLength(); k++ )
+  for( unsigned int k; k<psi->getGlobalLength(); k++ )
 	  predictorView[k] = psiView[k] + s*tangentView[k];
 
 //  Teuchos::RCP<GlSystem> glPredSys =
