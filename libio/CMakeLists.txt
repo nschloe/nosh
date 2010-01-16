@@ -20,16 +20,12 @@ FIND_PACKAGE( VTK REQUIRED )
 INCLUDE_DIRECTORIES( ${VTK_INCLUDE_DIRS} )
 
 FIND_PACKAGE( HDF5 REQUIRED )
-#INCLUDE_DIRECTORIES( ${HDF5_DIR}/include )
-
-IF(MPI_COMPILED)
-    FIND_PACKAGE( MPI REQUIRED )
-    INCLUDE_DIRECTORIES( ${MPI_INCLUDE_PATH} )
-ENDIF(MPI_COMPILED)
+INCLUDE_DIRECTORIES( ${HDF5_INCLUDE_DIR} )
 
 ADD_LIBRARY ( io STATIC
               ${gl_SRCS} )
 
 # list the libraries against which libio must be linked here
 TARGET_LINK_LIBRARIES ( io 
-                        hdf5 vtkIO vtkFiltering vtkCommon vtkImaging )
+                        ${HDF5_CXX_LIBRARIES}
+                        vtkIO vtkFiltering vtkCommon vtkImaging )
