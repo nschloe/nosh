@@ -919,3 +919,39 @@ GlSystemWithConstraint::create_CommInt( const Teuchos::RCP<const Epetra_Comm> &e
   return Teuchos::null;
 }
 // =============================================================================
+// TODO delete?
+const Teuchos::RCP<const GlKomplex>
+GlSystemWithConstraint::getGlKomplex() const {
+  return glKomplex_;
+}
+// =============================================================================
+double
+GlSystemWithConstraint::getH0() const
+{
+  return Gl_.getH0();
+}
+// =============================================================================
+const Teuchos::RCP<const Epetra_Map>
+GlSystemWithConstraint::getMap() const
+{
+  return extendedRealMap_;
+}
+// =============================================================================
+void
+GlSystemWithConstraint::setH0(const double h0)
+{
+  Gl_.setH0( h0 );
+}
+// =============================================================================
+void
+GlSystemWithConstraint::setScaling(const double scaling)
+{
+  Gl_.setScaling( scaling );
+}
+// =============================================================================
+void
+GlSystemWithConstraint::setChi(const double chi)
+{
+  Gl_.setChi( chi );
+}
+// =============================================================================

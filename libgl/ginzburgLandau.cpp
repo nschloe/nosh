@@ -38,6 +38,13 @@ GinzburgLandau::setH0(const double h0)
   A_->setH0( h0 );
 }
 // =============================================================================
+// TODO delete?
+double
+GinzburgLandau::getH0() const
+{
+  return A_->getH0();
+}
+// =============================================================================
 void
 GinzburgLandau::setScaling( const double scaling )
 {

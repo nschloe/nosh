@@ -94,6 +94,25 @@ GlKomplex::real2complex(const Epetra_Vector & x ) const
 // =============================================================================
 // converts a real-valued vector to a complex-valued psi vector
 Teuchos::RCP<Epetra_Vector>
+GlKomplex::complex2realConst( const ComplexVector &complexVec ) const
+{
+  Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> > ComplexMap = complexVec.getMap();
+  Teuchos::RCP<Epetra_Map>                         RealMap    = createRealMap( ComplexMap );
+
+  Teuchos::RCP<Epetra_Vector> x = Teuchos::rcp( new Epetra_Vector(*RealMap) );
+  // TODO: parallelize
+  Teuchos::ArrayRCP<const double_complex> complexVecView = complexVec.get1dView();
+  int numComplexUnknowns = ComplexMap->getGlobalNumElements();
+
+  for (int k = 0; k < numComplexUnknowns; k++) {
+      x->ReplaceGlobalValue( 2*k  , 0, real(complexVecView[k]) );
+      x->ReplaceGlobalValue( 2*k+1, 0, imag(complexVecView[k]) );
+  }
+  return x;
+}
+// =============================================================================
+// converts a real-valued vector to a complex-valued psi vector
+Teuchos::RCP<Epetra_Vector>
 GlKomplex::complex2real( const ComplexVector &complexVec )
 {
   if(    !ComplexMap_.is_valid_ptr()
@@ -101,7 +120,7 @@ GlKomplex::complex2real( const ComplexVector &complexVec )
       || !complexVec.getMap()->isSameAs(*ComplexMap_) ) {
     // recreate maps
     ComplexMap_ = complexVec.getMap();
-    createRealMap();
+    RealMap_    = createRealMap(ComplexMap_);
   }
 
   Teuchos::RCP<Epetra_Vector> x = Teuchos::rcp( new Epetra_Vector(*RealMap_) );
@@ -116,16 +135,16 @@ GlKomplex::complex2real( const ComplexVector &complexVec )
   return x;
 }
 // =============================================================================
-void
-GlKomplex::createRealMap()
+Teuchos::RCP<Epetra_Map>
+GlKomplex::createRealMap( const Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> > & ComplexMap ) const
 {
-  TEST_FOR_EXCEPTION( !ComplexMap_.is_valid_ptr() || ComplexMap_.is_null(),
+  TEST_FOR_EXCEPTION( !ComplexMap.is_valid_ptr() || ComplexMap.is_null(),
                       std::logic_error,
-                      "ComplexMap_ has not been properly initialized." );
+                      "ComplexMap has not been properly initialized." );
 
   // get view for the global indices of the global elements
   Teuchos::ArrayView<const Thyra::Ordinal> myComplexGIDs =
-                                             ComplexMap_->getNodeElementList();
+                                             ComplexMap->getNodeElementList();
 
   // Construct the map in such a way that all complex entries on processor K
   // are split up into real and imaginary part, which will both reside on
@@ -138,13 +157,12 @@ GlKomplex::createRealMap()
 	  myRealGIDs[2*i+1] = 2 * myComplexGIDs[i] + 1;
   }
 
-  RealMap_ = Teuchos::rcp( new Epetra_Map(numMyRealElements,
-		                                  myRealGIDs.Length(),
-				                          myRealGIDs.Values(),
-                                          ComplexMap_->getIndexBase(),
-                                          *EComm_)
-                         );
-  return;
+  return Teuchos::rcp( new Epetra_Map(numMyRealElements,
+		                              myRealGIDs.Length(),
+		                              myRealGIDs.Values(),
+                                      ComplexMap->getIndexBase(),
+                                      *EComm_)
+                     );
 }
 // =============================================================================
 //void

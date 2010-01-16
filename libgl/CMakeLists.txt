@@ -18,6 +18,7 @@ SET ( gl_SRCS
       GlKomplex.cpp
       AbstractStateWriter.cpp
       glSystem.cpp
+      glPredictorSystem.cpp
       GlSystemWithConstraint.cpp
       domainRectangle.cpp
       eigenSaver.cpp          )

@@ -951,3 +951,9 @@ GlSystem::create_CommInt( const Teuchos::RCP<const Epetra_Comm> &epetraComm )
   return Teuchos::null;
 }
 // =============================================================================
+double
+GlSystem::getH0() const
+{
+  return Gl_.getH0();
+}
+// =============================================================================

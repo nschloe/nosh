@@ -2,7 +2,7 @@
  * GlKomplex.h
  *
  *  Created on: Dec 16, 2009
- *      Author: Nico Schlšmer
+ *      Author: Nico Schlï¿½mer
  */
 
 #ifndef GLKOMPLEX_H_
@@ -37,10 +37,13 @@ public:
   Teuchos::RCP<Epetra_Vector>
   complex2real( const ComplexVector &complexVec );
 
+  Teuchos::RCP<Epetra_Vector>
+  complex2realConst( const ComplexVector &complexVec ) const;
+
 private:
 
-  void
-  createRealMap();
+  Teuchos::RCP<Epetra_Map>
+  createRealMap( const Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> > & ComplexMap ) const;
 
   Teuchos::RCP<const Teuchos::Comm<int> >
   create_CommInt( const Teuchos::RCP<const Epetra_Comm> &epetraComm );

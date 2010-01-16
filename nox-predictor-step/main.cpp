@@ -24,7 +24,7 @@
 
 #include "ginzburgLandau.h"
 
-#include "glSystem.h"
+#include "glPredictorSystem.h"
 #include "glBoundaryConditionsInner.h"
 #include "glBoundaryConditionsOuter.h"
 #include "glBoundaryConditionsCentral.h"
@@ -207,9 +207,23 @@ main(int argc, char *argv[])
   Teuchos::RCP<GridUniformVirtual> gridV = grid;
   GinzburgLandau glProblem = GinzburgLandau(gridV, A, boundaryConditions);
 
-  Teuchos::RCP<GlSystem> glsystem =
-      Teuchos::rcp(new GlSystem(glProblem, eComm, psi, outputDirectory,
-          contDataFileName, contFileFormat, contFileBaseName));
+
+  // construct predictor
+  Teuchos::RCP<ComplexVector> predictor = Teuchos::rcp( new ComplexVector(psi->getMap()) );
+  double s = 1;
+  Teuchos::ArrayRCP<const double_complex> psiView = psi->get1dView();
+  Teuchos::ArrayRCP<const double_complex> tangentView = tangent->get1dView();
+  Teuchos::ArrayRCP<double_complex> predictorView = tangent->get1dViewNonConst();
+  for( int k; k<psi->getGlobalLength(); k++ )
+	  predictorView[k] = psiView[k] + s*tangentView[k];
+
+//  Teuchos::RCP<GlSystem> glPredSys =
+//	      Teuchos::rcp(new GlSystem(glProblem, eComm, psi,
+//	    		  outputDirectory, contDataFileName, contFileFormat, contFileBaseName, "base" ));
+
+	      Teuchos::RCP<GlPredictorSystem> glPredSys =
+      Teuchos::rcp(new GlPredictorSystem(glProblem, eComm, psi,
+    		  tangent, predictor, outputDirectory, contDataFileName, contFileFormat, contFileBaseName, "base" ));
 
   // ---------------------------------------------------------------------------
   // Create the necessary objects
@@ -223,39 +237,22 @@ main(int argc, char *argv[])
       epetraFactory);
 
   // get the initial solution
-  Teuchos::RCP<Epetra_Vector> soln = glsystem->getSolution();
+  Teuchos::RCP<Epetra_Vector> soln = glPredSys->getSolution();
   // ---------------------------------------------------------------------------
-
-
-#ifdef HAVE_LOCA_ANASAZI
-  Teuchos::ParameterList& eigenList = paramList->sublist("LOCA").sublist(
-      "Stepper") .sublist("Eigensolver");
-  Teuchos::RCP<Teuchos::ParameterList> eigenListPtr = Teuchos::rcpFromRef(
-      (eigenList));
-  std::string eigenvaluesFileName =
-      outputList.get<string> ("Eigenvalues file name");
-  std::string eigenstateFileNameAppendix = outputList.get<string> (
-      "Eigenstate file name appendix");
-  Teuchos::RCP<EigenSaver> glEigenSaver = Teuchos::RCP<EigenSaver>(
-      new EigenSaver(eigenListPtr, outputDirectory,
-          eigenvaluesFileName, contFileBaseName, eigenstateFileNameAppendix,
-          glsystem));
-
-  Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> glSaveEigenDataStrategy =
-      glEigenSaver;
-  eigenList.set("glSaveEigenDataStrategy", glSaveEigenDataStrategy);
-#endif
 
   // ---------------------------------------------------------------------------
   // Create all possible Epetra_Operators.
-  Teuchos::RCP<Epetra_RowMatrix> J = glsystem->getJacobian();
-  Teuchos::RCP<Epetra_RowMatrix> M = glsystem->getPreconditioner();
+  Teuchos::RCP<Epetra_RowMatrix> J = glPredSys->getJacobian();
+
+  cout << "H" << endl;
+  Teuchos::RCP<Epetra_RowMatrix> M = glPredSys->getPreconditioner();
+  cout << "ier" << endl;
 
   // Create the linear system.
   // Use the TimeDependent interface for computation of shifted matrices.
-  Teuchos::RCP<LOCA::Epetra::Interface::Required> iReq = glsystem;
-  Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = glsystem;
-  Teuchos::RCP<NOX::Epetra::Interface::Preconditioner> iPrec = glsystem;
+  Teuchos::RCP<LOCA::Epetra::Interface::Required> iReq = glPredSys;
+  Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = glPredSys;
+  Teuchos::RCP<NOX::Epetra::Interface::Preconditioner> iPrec = glPredSys;
 
   Teuchos::ParameterList& nlPrintParams = paramList->sublist("NOX") .sublist(
       "Printing");
@@ -266,12 +263,11 @@ main(int argc, char *argv[])
 //  Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys = Teuchos::rcp(
 //      new NOX::Epetra::LinearSystemAztecOO(nlPrintParams, lsParams, iJac, J, iPrec, M, *soln));
 
+ cout << "D" <<endl;
   Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys = Teuchos::rcp(
       new NOX::Epetra::LinearSystemAztecOO(nlPrintParams, lsParams, iReq, iJac, J, *soln));
-
-  Teuchos::RCP<LOCA::Epetra::Interface::TimeDependent> iTime = glsystem;
   // ---------------------------------------------------------------------------
-
+  cout << "aar" << endl;
 
   // ---------------------------------------------------------------------------
   // Create a group which uses that problem interface. The group will
@@ -286,8 +282,7 @@ main(int argc, char *argv[])
   NOX::Epetra::Vector initialGuess(soln, NOX::Epetra::Vector::CreateView);
 
   Teuchos::RCP<LOCA::Epetra::Group> grp = Teuchos::rcp(new LOCA::Epetra::Group(
-      globalData, nlPrintParams, iTime, initialGuess, linSys, linSys,
-      locaParams));
+      globalData, nlPrintParams, iReq, initialGuess, linSys, locaParams));
 
   grp->setParams(locaParams);
   // ---------------------------------------------------------------------------
@@ -334,10 +329,7 @@ main(int argc, char *argv[])
   // make sure that the stepper starts off with the correct starting value
 
   // pass pointer to stepper to glSystem to be able to read stats from the stepper in there
-  glsystem->setLocaStepper(stepper);
-#ifdef HAVE_LOCA_ANASAZI
-  glEigenSaver->setLocaStepper(stepper);
-#endif
+  glPredSys->setLocaStepper(stepper);
 
   // ---------------------------------------------------------------------------
   // Perform continuation run
@@ -354,10 +346,7 @@ main(int argc, char *argv[])
 
   // clean up
   LOCA::destroyGlobalData(globalData);
-  glsystem->releaseLocaStepper();
-#ifdef HAVE_LOCA_ANASAZI
-  glEigenSaver->releaseLocaStepper();
-#endif
+  glPredSys->releaseLocaStepper();
 
 #ifdef HAVE_MPI
   MPI_Finalize();

@@ -106,6 +106,10 @@ class GinzburgLandau
                   const bool header = false,
                   const Teuchos::RCP<const ComplexVector> &psi = Teuchos::null
                 ) const;
+
+     // TODO delete?
+     double
+     getH0() const;
       
   private:
 

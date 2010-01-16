@@ -101,7 +101,7 @@ public:
 	getJacobian() const;
 
 	Teuchos::RCP<Epetra_CrsMatrix>
-        getPreconditioner() const;
+    getPreconditioner() const;
 
 	//! Set the problem parameters.
 	virtual void
@@ -138,6 +138,10 @@ public:
 
 	Teuchos::RCP<Epetra_Vector>
 	getGlSystemVector( const Teuchos::RCP<const ComplexVector> psi ) const;
+
+	// TODO delete
+	double
+	getH0() const;
 
 private:
 

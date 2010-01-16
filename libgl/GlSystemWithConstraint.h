@@ -137,6 +137,28 @@ public:
         writeAbstractStateToFile( const Epetra_Vector & x,
                                   const std::string   & filePath) const;
 
+        // TODO delete?
+        const Teuchos::RCP<const GlKomplex>
+        getGlKomplex() const;
+
+        // TODO delete
+        double
+        getH0() const;
+        void
+        setH0( const double h0 );
+        void
+        setScaling( const double h0 );
+        void
+        setChi( const double h0 );
+
+
+        const Teuchos::RCP<const Epetra_Map>
+        getMap() const;
+
+        enum jacCreator {
+                ONLY_GRAPH, VALUES
+        };
+
 private:
 
         void
@@ -150,10 +172,6 @@ private:
         //! This extra slot is usually used for the phase condition.
         void
         createExtendedRealMap( const Epetra_BlockMap & realMap );
-
-        enum jacCreator {
-                ONLY_GRAPH, VALUES
-        };
 
         enum continuationType {
                 ONEPARAMETER,

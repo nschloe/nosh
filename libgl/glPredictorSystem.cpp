@@ -1,4 +1,4 @@
-#include "glSystem.h"
+#include "glPredictorSystem.h"
 #include "ioFactory.h"
 
 #include <complex>
@@ -36,24 +36,28 @@ GlPredictorSystem::GlPredictorSystem( GinzburgLandau::GinzburgLandau &gl,
 	                                  const Teuchos::RCP<const Epetra_Comm> eComm,
 	                                  const Teuchos::RCP<ComplexVector> psi,
 	                                  const Teuchos::RCP<ComplexVector> tangent,
+	                                  const Teuchos::RCP<ComplexVector> predictor,
 	                                  const std::string outputDir,
                                       const std::string outputDataFileName,
                                       const std::string outputFileFormat,
 	                                  const std::string solutionFileNameBase,
 	                                  const std::string nullvectorFileNameBase
                                     ) :
-	GlSystem( Teuchos::rcp(new GlSystem( gl,
-                                         eComm,
-                                         psi,
-                                         outputDir,
-                                         outputDataFileName,
-                                         outputFileFormat,
-                                         solutionFileNameBase,
-                                         nullvectorFileNameBase
-                                        ) ) )
+	glSystem_( Teuchos::rcp(new GlSystemWithConstraint( gl,
+                                          eComm,
+                                          psi,
+                                          outputDir,
+                                          outputDataFileName,
+                                          outputFileFormat,
+                                          solutionFileNameBase,
+                                          nullvectorFileNameBase
+                                         ) ) ),
+   EComm_( eComm ),
+   psi_ ( psi ),
+   tangent_ ( tangent ),
+   predictor_ ( predictor ),
+   preconditioner_( 0 )
 {
-  NumUnknowns_ = glSystem.getNumUnknowns() + 1;
-
   // TODO Don't throw exception in constructor?
   TEST_FOR_EXCEPTION( !tangent.is_valid_ptr(),
                       std::logic_error,
@@ -64,124 +68,82 @@ GlPredictorSystem::GlPredictorSystem( GinzburgLandau::GinzburgLandau &gl,
                       std::logic_error,
 	                  "Input guess is null pointer" );
 
+  sliceMap_    = glSystem_->getMap();
+  extendedMap_ = createExtendedMap( *sliceMap_ );
+  cout << "GGG DONE THE CONSTRUCTOR" << endl;
+
 }
 // =============================================================================
 // Destructor
 GlPredictorSystem::~GlPredictorSystem() {
-	stepper_ = Teuchos::null;
-}
-// =============================================================================
-int GlPredictorSystem::realIndex2complexIndex(const int realIndex) const {
-	if (!(realIndex % 2)) // realIndex even
-		return realIndex / 2;
-	else
-		return (realIndex - 1) / 2;
-}
-// =============================================================================
-// converts a real-valued vector to a complex-valued psi vector
-void GlPredictorSystem::real2complex(const Epetra_Vector & realVec,
-                                  ComplexVector & complexVec) const
-{
-	// TODO: parallelize
-	for (unsigned int k = 0; k < complexVec.getGlobalLength(); k++) {
-		double_complex z = double_complex(realVec[2 * k], realVec[2 * k + 1]);
-		complexVec.replaceGlobalValue(k, z);
-	}
-}
-// =============================================================================
-// converts a real-valued vector to a complex-valued psi vector
-void
-GlPredictorSystem::complex2real(const ComplexVector &complexVec,
-                             Epetra_Vector &realVec
-                      ) const
-{
-	// TODO: parallelize
-	Teuchos::ArrayRCP<const double_complex> complexVecView =
-			complexVec.get1dView();
-	for (int k = 0; k < NumComplexUnknowns_; k++) {
-		realVec[2 * k] = real(complexVecView[k]);
-		realVec[2 * k + 1] = imag(complexVecView[k]);
-	}
-}
-// =============================================================================
-void GlPredictorSystem::makeRealMap(
-		const Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> > complexMap) {
-	int numRealGlobalElements = 2 * complexMap->getNodeNumElements();
-
-	int myPid = TComm_->getRank();
-
-	// treat the phase condition on the first node
-	if (myPid == 0)
-		numRealGlobalElements++;
-
-	Epetra_IntSerialDenseVector realMapGIDs(numRealGlobalElements);
-	Teuchos::ArrayView<const Thyra::Ordinal> myGlobalElements =
-			complexMap->getNodeElementList();
-	// Construct the map in such a way that all complex entries on processor K
-	// are split up into real and imaginary part, which will both reside on
-	// processor K again.
-	for (unsigned int i = 0; i < complexMap->getNodeNumElements(); i++) {
-		realMapGIDs[2 * i] = 2 * myGlobalElements[i];
-		realMapGIDs[2 * i + 1] = 2 * myGlobalElements[i] + 1;
-	}
-
-	// set the phase condition
-	if (myPid == 0)
-		realMapGIDs[numRealGlobalElements - 1] = NumRealUnknowns_ - 1;
-
-	RealMap_ = Teuchos::rcp(new Epetra_Map(numRealGlobalElements,
-			realMapGIDs.Length(), realMapGIDs.Values(),
-			complexMap->getIndexBase(), *EComm_));
-
-	return;
 }
 // =============================================================================
 bool
 GlPredictorSystem::computeF( const Epetra_Vector &xExtended,
-		                     Epetra_Vector &FVec,
+		                     Epetra_Vector &FVecExtended,
 		                     const NOX::Epetra::Interface::Required::FillType fillFlag)
 {
-  // make sure that the input and output vectors are correctly mapped
-  TEST_FOR_EXCEPTION( !x.Map().SameAs(*RealMap_),
-                      std::logic_error,
-	              "Maps of x and the computed real-valued map do not coincide." );
+	cout << "11" << endl;
 
-  TEST_FOR_EXCEPTION( !FVec.Map().SameAs(*RealMap_),
+  // make sure that the input and output vectors are correctly mapped
+  TEST_FOR_EXCEPTION( !xExtended.Map().SameAs(*extendedMap_),
+                      std::logic_error,
+	                  "Maps of x and the computed real-valued map do not coincide." );
+
+  TEST_FOR_EXCEPTION( !FVecExtended.Map().SameAs(*extendedMap_),
                       std::logic_error,
                       "Maps of FVec and the computed real-valued map do not coincide." );
 
-  //
-  Epetra_Vector x( sliceMap );
-  for ( k=0; k<x)
-     x = xExtended
+  cout << "AAA" << endl;
 
-  glSystem->computeF( x );
+  Epetra_Vector x( *sliceMap_ );
+  for (int k=0; k<x.MyLength(); k++ ) {
+    int kGlobal = extendedMap_->GID(k);
+    x.ReplaceMyValue( k,0, xExtended[kGlobal] );
+  }
 
+  cout << "bbb" << endl;
 
+  Epetra_Vector FVec( *sliceMap_ );
+  glSystem_->computeF( x, FVec );
 
-  // define vector
-  const Teuchos::RCP<ComplexVector> psi =
-      Teuchos::rcp( new ComplexVector(ComplexMap_, true) );
+  cout << "CCC" << endl;
 
+  for (int k=0; k < FVec.MyLength(); k++ ) {
+    int kGlobal = FVec.Map().GID(k);
+    FVecExtended(kGlobal) = FVec(kGlobal);
+  }
 
-  // convert from x to psi
-  real2complex(x, *psi);
+  cout << "DDD" << endl;
 
-  // compute the GL residual
-  Teuchos::RCP<ComplexVector> res = Gl_.computeGlVector( psi );
+  Teuchos::RCP<const Epetra_Vector> tangentReal = glSystem_->getGlKomplex()->complex2realConst(*tangent_);
+  Teuchos::RCP<Epetra_Vector> predictorReal     = glSystem_->getGlKomplex()->complex2realConst(*predictor_);
+  Teuchos::RCP<Epetra_Vector> psiReal           = glSystem_->getGlKomplex()->complex2realConst(*psi_);
 
-  // transform back to fully real equation
-  complex2real(*res, FVec);
+  Teuchos::RCP<Epetra_Vector> diff = Teuchos::rcp( new Epetra_Vector( psiReal->Map() ) );
 
-  // add phase condition
-  FVec[2 * NumComplexUnknowns_] = 0.0;
+  cout << "EEE" << endl;
+
+  // compute last entry
+  for (int k=0; k<diff->MyLength(); k++ )
+	  diff->ReplaceMyValue( k, 0, (*predictorReal)[k] - (*psiReal)[k] );
+
+  int k = FVecExtended.GlobalLength()-1;
+  double *result;
+  tangentReal->Dot( *diff,result );
+  FVecExtended[k] = result[0];
+
+  cout << "FFF" << endl;
 
   return true;
 }
 // =============================================================================
 bool GlPredictorSystem::computeJacobian(const Epetra_Vector &x, Epetra_Operator &Jac) {
+
+	cout << "GGG" << endl;
+
   // compute the values of the Jacobian
-  createJacobian(VALUES, x);
+  createJacobian(x);
 
   // optimize storage
   jacobian_->FillComplete();
@@ -193,13 +155,10 @@ bool GlPredictorSystem::computeJacobian(const Epetra_Vector &x, Epetra_Operator 
 }
 // =============================================================================
 bool GlPredictorSystem::computePreconditioner( const Epetra_Vector &x,
-		                      Epetra_Operator &Prec,
-                                      Teuchos::ParameterList *precParams )
+	                                                 Epetra_Operator &Prec,
+                                                     Teuchos::ParameterList *precParams )
 {
-//  Epetra_Vector diag = x;
-//  diag.PutScalar(1.0);
-//  preconditioner_->ReplaceDiagonalValues( diag );
-
+	cout << "22" << endl;
     TEST_FOR_EXCEPTION( true,
 			std::logic_error,
 	                "Use explicit Jacobian only for this test problem!" );
@@ -208,314 +167,98 @@ bool GlPredictorSystem::computePreconditioner( const Epetra_Vector &x,
 // =============================================================================
 Teuchos::RCP<Epetra_Vector>
 GlPredictorSystem::getSolution() const {
+	cout << "33" << endl;
 	return initialSolution_;
 }
 // =============================================================================
 Teuchos::RCP<Epetra_CrsMatrix>
 GlPredictorSystem::getJacobian() const {
+	cout << "44" << endl;
+	cout << jacobian_.is_valid_ptr() << endl;
+	cout << jacobian_.is_null() << endl;
+	cout << "44b" << endl;
 	return jacobian_;
 }
 // =============================================================================
 Teuchos::RCP<Epetra_CrsMatrix>
 GlPredictorSystem::getPreconditioner() const {
-        return preconditioner_;
+	cout << "55" << endl;
+	cout << preconditioner_.is_valid_ptr() << endl;
+	cout << preconditioner_.is_null() << endl;
+    cout << "55b" << endl;
+    return preconditioner_;
 }
-/* =============================================================================
- // Of an equation system
- // \f[
- // A\psi + B \psi^* = b
- // \f]
- // where \f$A,B\in\mathbb{C}^{n\times n}\f$, \f$\psi, b\in\mathbb{C}^{n}\f$,
- // this routine constructs the corresponding real-valued equation system
- // \f[
- // \begin{pmatrix}
- // \Re{A}+\Re{B} & -\Im{A}+\Im{B}\\
-// \Im{A}+\Im{B} &  \Re{A}-\Re{B}
- // \end{pmatrix}
- // \begin{pmatrix}
- // \Re{\psi}\\
-// \Im{\psi}
- // \end{pmatrix}
- // =
- // \begin{pmatrix}
- // \Re{b}\\
-// \Im{b}
- // \end{pmatrix}
- // \f].
- // It also incorporates a phase condition.
- */
-bool GlPredictorSystem::createJacobian(const jacCreator jc, const Epetra_Vector &x) {
-	//   std::vector<double_complex> psi ( NumComplexUnknowns_ );
-	Teuchos::RCP<ComplexVector> psi = Teuchos::rcp(new ComplexVector(
-			ComplexMap_, 1));
+// =============================================================================
+bool GlPredictorSystem::createJacobian(const Epetra_Vector &xExtended)
+{
 
-	vector<int> colIndA, colIndB;
-	vector<double_complex> valuesA, valuesB;
+	cout << "6" << endl;
+		// approximate df/dH0 by finite difference
+		double origH0 = glSystem_->getH0();
 
-	int *colInd = NULL, *colIndAReal = NULL, *colIndAImag = NULL, *colIndBReal =
-			NULL, *colIndBImag = NULL;
-	double *values = NULL, *valuesAReal = NULL, *valuesAImag = NULL,
-			*valuesBReal = NULL, *valuesBImag = NULL;
+		Epetra_Vector x( *sliceMap_ );
+		  for (int k=0; k<x.MyLength(); k++ ) {
+		    int kGlobal = extendedMap_->GID(k);
+		    x.ReplaceMyValue( k,0, xExtended[kGlobal] );
+		  }
 
-	int ierr, k, complexRow, numEntries;
+		Epetra_Vector FVec( *sliceMap_ );
+		Epetra_Vector FVec2( *sliceMap_ );
+		glSystem_->computeF( x, FVec );
+        // reset parameters
+		double eps = 1.0e-6;
+		glSystem_->setH0( origH0+eps );
+		glSystem_->computeF( x, FVec2 );
 
-	Teuchos::ArrayRCP<const double_complex> psiView;
-
-	if (jc == VALUES) {
-		real2complex(x, *psi);
-		psiView = psi->get1dView();
-		jacobian_->PutScalar(0.0); // set the matrix to 0
-	} else {
-		// allocate the graph
-		int approxNumEntriesPerRow = 1;
-		Graph_ = Teuchos::rcp<Epetra_CrsGraph>(new Epetra_CrsGraph(Copy,
-				*RealMap_, approxNumEntriesPerRow, false));
-	}
-
-	// Construct the Epetra Matrix
-	for (int i = 0; i < NumMyElements_; i++) {
-		int Row = RealMap_->GID(i);
-
-		if (Row == 2 * NumComplexUnknowns_) // phase condition
-		{
-			// fill in phase condition stuff
-			numEntries = 2 * NumComplexUnknowns_;
-			colInd = new int[numEntries];
-			for (int k = 0; k < numEntries; k++)
-				colInd[k] = k;
-			if (jc == VALUES) // fill on columns and values
-			{
-				values = new double[numEntries];
-				for (int k = 0; k < NumComplexUnknowns_; k++) {
-					values[2 * k] = -imag(psiView[k]);
-					values[2 * k + 1] = real(psiView[k]);
-				}
-				// fill it in!
-				ierr = jacobian_->SumIntoGlobalValues(Row, numEntries, values,
-						colInd);
-				delete[] values;
-				values = NULL;
-			} else // only fill the sparsity graph
-			{
-				Graph_->InsertGlobalIndices(Row, numEntries, colInd);
-			}
-			delete[] colInd;
-			colInd = NULL;
-
-		} else // GL equations
-		{
-			// get the values and column indices
-			// TODO: The same value is actually fetched twice in this loop
-			//       possibly consecutively: Once for the real, once for
-			//       the imaginary part of it.
-			if (!(Row % 2)) // Row even
-				complexRow = Row / 2;
-			else
-				complexRow = (Row - 1) / 2;
-
-			if (jc == VALUES) {
-				// fill on columns and values
-				Gl_.getJacobianRow(complexRow, psi, colIndA, valuesA, colIndB,
-						valuesB);
-			} else {
-				// only fill the sparsity graph
-				Gl_.getJacobianRowSparsity(complexRow, colIndA, colIndB);
-			}
-
-			if (!(Row % 2)) // myGlobalIndex is even <=> Real part of the equation system
-			{
-				// ---------------------------------------------------------------
-				// insert the coefficients Re(A) of Re(psi)
-				numEntries = colIndA.size();
-				colIndAReal = new int[numEntries];
-				for (k = 0; k < numEntries; k++)
-					colIndAReal[k] = 2 * colIndA[k];
-
-				if (jc == VALUES) {
-					valuesAReal = new double[numEntries];
-					for (k = 0; k < numEntries; k++)
-						valuesAReal[k] = real(valuesA[k]);
-					ierr = jacobian_->SumIntoGlobalValues(Row, numEntries,
-							valuesAReal, colIndAReal);
-					delete[] valuesAReal;
-					valuesAReal = NULL;
-				} else {
-					Graph_->InsertGlobalIndices(Row, numEntries, colIndAReal);
-				}
-				delete[] colIndAReal;
-				colIndAReal = NULL;
-
-				// insert the coefficients Re(B) of Re(psi)
-				numEntries = colIndB.size();
-				colIndBReal = new int[numEntries];
-				for (k = 0; k < numEntries; k++)
-					colIndBReal[k] = 2 * colIndB[k];
-				if (jc == VALUES) {
-					valuesBReal = new double[numEntries];
-					for (k = 0; k < numEntries; k++)
-						valuesBReal[k] = real(valuesB[k]);
-					ierr = jacobian_->SumIntoGlobalValues(Row, numEntries,
-							valuesBReal, colIndBReal);
-					delete[] valuesBReal;
-					valuesBReal = NULL;
-				} else {
-					Graph_->InsertGlobalIndices(Row, numEntries, colIndBReal);
-				}
-				delete[] colIndBReal;
-				colIndBReal = NULL;
-
-				// insert the coefficients -Im(A) of Im(psi)
-				numEntries = colIndA.size();
-				colIndAImag = new int[numEntries];
-				for (k = 0; k < numEntries; k++)
-					colIndAImag[k] = 2 * colIndA[k] + 1;
-				if (jc == VALUES) {
-					valuesAImag = new double[numEntries];
-					for (k = 0; k < numEntries; k++)
-						valuesAImag[k] = -imag(valuesA[k]);
-					ierr = jacobian_->SumIntoGlobalValues(Row, numEntries,
-							valuesAImag, colIndAImag);
-					delete[] valuesAImag;
-					valuesAImag = NULL;
-				} else {
-					Graph_->InsertGlobalIndices(Row, numEntries, colIndAImag);
-				}
-				delete[] colIndAImag;
-				colIndAImag = NULL;
-
-				// insert the coefficients Im(B) of Im(psi)
-				numEntries = colIndB.size();
-				colIndBImag = new int[numEntries];
-				for (k = 0; k < numEntries; k++)
-					colIndBImag[k] = 2 * colIndB[k] + 1;
-				if (jc == VALUES) {
-					valuesBImag = new double[numEntries];
-					for (k = 0; k < numEntries; k++)
-						valuesBImag[k] = imag(valuesB[k]);
-					ierr = jacobian_->SumIntoGlobalValues(Row, numEntries,
-							valuesBImag, colIndBImag);
-					delete[] valuesBImag;
-					valuesBImag = NULL;
-				} else {
-					Graph_->InsertGlobalIndices(Row, numEntries, colIndBImag);
-				}
-				delete[] colIndBImag;
-				colIndBImag = NULL;
-
-				// right bordering
-				int k = realIndex2complexIndex(Row);
-				int column = 2 * NumComplexUnknowns_;
-				if (jc == VALUES) {
-					double value = imag(psiView[k]);
-					ierr = jacobian_->SumIntoGlobalValues(Row, 1, &value,
-							&column);
-				} else {
-					Graph_->InsertGlobalIndices(Row, 1, &column);
-				}
-
-				// ---------------------------------------------------------
-			} else // Row is odd <=> Imaginary part of the equation
-			{
-				// ---------------------------------------------------------
-				// insert the coefficients Im(A) of Re(psi)
-				numEntries = colIndA.size();
-				colIndAReal = new int[numEntries];
-				for (k = 0; k < numEntries; k++)
-					colIndAReal[k] = 2 * colIndA[k];
-				if (jc == VALUES) {
-					valuesAImag = new double[numEntries];
-					for (k = 0; k < numEntries; k++)
-						valuesAImag[k] = imag(valuesA[k]);
-					ierr = jacobian_->SumIntoGlobalValues(Row, numEntries,
-							valuesAImag, colIndAReal);
-					delete[] valuesAImag;
-					valuesAImag = NULL;
-				} else {
-					Graph_->InsertGlobalIndices(Row, numEntries, colIndAReal);
-				}
-				delete[] colIndAReal;
-				colIndAReal = NULL;
-
-				// insert the coefficients Im(B) of Re(psi)
-				numEntries = colIndB.size();
-				colIndBReal = new int[numEntries];
-				for (k = 0; k < numEntries; k++)
-					colIndBReal[k] = 2 * colIndB[k];
-				if (jc == VALUES) {
-					valuesBImag = new double[numEntries];
-					for (k = 0; k < numEntries; k++)
-						valuesBImag[k] = imag(valuesB[k]);
-					ierr = jacobian_->SumIntoGlobalValues(Row, numEntries,
-							valuesBImag, colIndBReal);
-					delete[] valuesBImag;
-					valuesBImag = NULL;
-				} else {
-					Graph_->InsertGlobalIndices(Row, numEntries, colIndBReal);
-				}
-				delete[] colIndBReal;
-				colIndBReal = NULL;
-
-				// insert the coefficients Re(A) of Im(psi)
-				numEntries = colIndA.size();
-				colIndAImag = new int[numEntries];
-				for (k = 0; k < numEntries; k++)
-					colIndAImag[k] = 2 * colIndA[k] + 1;
-				if (jc == VALUES) {
-					valuesAReal = new double[numEntries];
-					for (k = 0; k < numEntries; k++)
-						valuesAReal[k] = real(valuesA[k]);
-					ierr = jacobian_->SumIntoGlobalValues(Row, numEntries,
-							valuesAReal, colIndAImag);
-					delete[] valuesAReal;
-					valuesAReal = NULL;
-				} else {
-					Graph_->InsertGlobalIndices(Row, numEntries, colIndAImag);
-				}
-				delete[] colIndAImag;
-				colIndAImag = NULL;
-
-				// insert the coefficients -Re(B) of Im(psi)
-				numEntries = colIndB.size();
-				colIndBImag = new int[numEntries];
-				for (k = 0; k < numEntries; k++)
-					colIndBImag[k] = 2 * colIndB[k] + 1;
-				if (jc == VALUES) {
-					valuesBReal = new double[numEntries];
-					for (k = 0; k < numEntries; k++)
-						valuesBReal[k] = -real(valuesB[k]);
-					ierr = jacobian_->SumIntoGlobalValues(Row, numEntries,
-							valuesBReal, colIndBImag);
-					delete[] valuesBReal;
-					valuesBReal = NULL;
-				} else {
-					Graph_->InsertGlobalIndices(Row, numEntries, colIndBImag);
-				}
-				delete[] colIndBImag;
-				colIndBImag = NULL;
-
-				// right bordering
-				int column = 2 * NumComplexUnknowns_;
-				if (jc == VALUES) {
-					int k = realIndex2complexIndex(Row);
-					double value = -real(psiView[k]);
-					ierr = jacobian_->SumIntoGlobalValues(Row, 1, &value,
-							&column);
-				} else {
-					Graph_->InsertGlobalIndices(Row, 1, &column);
-				}
-				// ---------------------------------------------------------
-			}
+		Epetra_Vector finiteDiff( *sliceMap_ );
+		for(int k=0; k<finiteDiff.MyLength(); k++ ) {
+			int kGlobal = finiteDiff.Map().GID(k);
+			finiteDiff[kGlobal] = (FVec2[kGlobal] - FVec[kGlobal])
+					            / eps;
 		}
-	}
+		// set back to original value
+		glSystem_->setH0( origH0 );
+
+		Teuchos::RCP<Epetra_CrsMatrix> originalJac = Teuchos::rcp( new Epetra_CrsMatrix( Copy, *sliceMap_, 1, false ) );
+		glSystem_->computeJacobian( x, *originalJac );
+
+		originalJac = glSystem_->getJacobian();
+
+		// loop through the matrix and insert all values originalJac into jacobian_
+		int     numRowEntries;
+		double* rowValues;
+		int*    rowIndices;
+		for(int row=0; row<x.GlobalLength(); row++) {
+			originalJac->ExtractMyRowView( row, numRowEntries, rowValues, rowIndices );
+			PutMyValues( jacobian_, row, numRowEntries, rowValues, rowIndices );
+
+			int rowGlobal = finiteDiff.Map().GID(row);
+			double* val;
+			val[0] = finiteDiff[rowGlobal];
+			int* col;
+			col[0] = x.GlobalLength();
+			PutMyValues( jacobian_, row, 1, val, col );
+		}
+
+		// add last row
+		Teuchos::RCP<Epetra_Vector> xTangent = glSystem_->getGlKomplex()->complex2realConst(*tangent_);
+		int lastRow = x.GlobalLength();
+        for( int column=0; column<xTangent->GlobalLength(); column++) {
+        	double* val;
+        	val[0] = (*xTangent)[column];
+        	int* col;
+        	col[0] = column;
+		    PutMyValues( jacobian_, lastRow, 1, val, col );
+        }
+        // don't explicitly fill 0.0 at (end,end)
 
 	// ---------------------------------------------------------------------------
 	// finish up the graph construction
 	try {
-		if (jc == VALUES) {
+		if (firstTime_) {
 			jacobian_->FillComplete();
 			jacobian_->OptimizeStorage();
-		} else {
-			Graph_->FillComplete();
+			firstTime_ = false;
 		}
 	} catch (int i) {
 	    TEST_FOR_EXCEPTION( true,
@@ -530,264 +273,137 @@ bool GlPredictorSystem::createJacobian(const jacCreator jc, const Epetra_Vector 
 	return true;
 }
 // =============================================================================
-bool GlPredictorSystem::computeShiftedMatrix(double alpha, double beta,
-		const Epetra_Vector &x, Epetra_Operator &A) {
-	// compute the values of the Jacobian
-	createJacobian(VALUES, x);
-
-	jacobian_->Scale(alpha);
-	//  jacobian_->FillComplete();
-
-	Epetra_Vector newDiag(x);
-	Epetra_Vector unitVector(x);
-	unitVector.PutScalar(1.0);
-	//  newDiag.PutScalar(0.0);
-	jacobian_->ExtractDiagonalCopy(newDiag);
-	newDiag.Update(beta, unitVector, 1.0);
-	jacobian_->ReplaceDiagonalValues(newDiag);
-
-	// Sync up processors to be safe
-	EComm_->Barrier();
-
-	return true;
+void
+GlPredictorSystem::PutMyValues( Teuchos::RCP<Epetra_CrsMatrix> mat,
+		                        int row,
+		                        int numEntries,
+		                        double* values,
+		                        int* columns ) const
+{
+	cout << "77" << endl;
+  if ( firstTime_ ) {
+	  TEST_FOR_EXCEPT( mat->InsertMyValues ( row, numEntries, values, columns )<0 );
+  } else {
+	  TEST_FOR_EXCEPT( mat->ReplaceMyValues( row, numEntries, values, columns )<0 );
+  }
+}
+// =============================================================================
+void
+GlPredictorSystem::PutGlobalValues( Teuchos::RCP<Epetra_CrsMatrix> mat,
+		                            int     row,
+		                            int     numEntries,
+		                            double* values,
+		                            int*    columns ) const
+{
+	cout << "8" << endl;
+  if ( firstTime_ ) {
+	  TEST_FOR_EXCEPT( mat->InsertGlobalValues ( row, numEntries, values, columns )<0 );
+  } else {
+	  TEST_FOR_EXCEPT( mat->ReplaceGlobalValues( row, numEntries, values, columns )<0 );
+  }
 }
 // =============================================================================
 // function used by LOCA
 void
 GlPredictorSystem::setParameters(const LOCA::ParameterVector &p) {
 
+	cout << "HHH" << endl;
+
   TEST_FOR_EXCEPTION( !p.isParameter("H0"),
                       std::logic_error,
                       "Label \"H0\" not valid." );
   double h0 = p.getValue("H0");
-  Gl_.setH0(h0);
+  glSystem_->setH0(h0);
 
   TEST_FOR_EXCEPTION( !p.isParameter("scaling"),
                       std::logic_error,
                       "Label \"scaling\" not valid." );
   double scaling = p.getValue("scaling");
-  Gl_.setScaling( scaling );
+  glSystem_->setScaling( scaling );
 
   if (p.isParameter("chi")) {
       double chi = p.getValue("chi");
-      Gl_.setChi( chi );
+      glSystem_->setChi( chi );
   }
+
+  cout << "III" << endl;
 }
 // =============================================================================
 void
 GlPredictorSystem::setLocaStepper(const Teuchos::RCP<const LOCA::Stepper> stepper)
 {
-	stepper_ = stepper;
-
-	// extract the continuation type
-	const Teuchos::ParameterList & bifurcationSublist = stepper_->getList()
-	                                                            ->sublist("LOCA")
-	                                                             .sublist("Bifurcation");
-
-	std::string bifurcationType = bifurcationSublist.get<string>("Type");
-
-	if ( bifurcationType == "None" )
-		continuationType_ = ONEPARAMETER;
-	else if ( bifurcationType == "Turning Point" )
-		continuationType_ = TURNINGPOINT;
-	else
-	    TEST_FOR_EXCEPTION( true,
-				            std::logic_error,
-				            "Unknown continuation type \""
-				            << bifurcationType << "\"" );
+	cout << "GGGLOCASTEPPER" << endl;
+	glSystem_->setLocaStepper( stepper );
 }
 // =============================================================================
 void
 GlPredictorSystem::releaseLocaStepper()
 {
-	stepper_ = Teuchos::null;
+	glSystem_->releaseLocaStepper();
 }
 // =============================================================================
 // function used by LOCA
 void
-GlPredictorSystem::printSolution( const Epetra_Vector &x,
-		                 double conParam )
+GlPredictorSystem::printSolution( const Epetra_Vector &xExtended,
+                                  double conParam )
 {
-	// define vector
-	const Teuchos::RCP<ComplexVector> psi =
-			              Teuchos::rcp( new ComplexVector(ComplexMap_, true) );
-	// convert from x to psi
-	real2complex(x, *psi);
+	cout << "KKK" << endl;
 
-	// The switch hack is necessary as different continuation algorithms
-	// call printSolution() a different number of times per step, e.g.,
-	// to store solutions, null vectors, and so forth.
-	switch ( continuationType_ ) {
-	case ONEPARAMETER:
-	    printSolutionOneParameterContinuation( psi );
-	    break;
-	case TURNINGPOINT:
-	    printSolutionTurningPointContinuation( psi );
-	    break;
-	default:
-	    TEST_FOR_EXCEPTION( true,
-				            std::logic_error,
-				            "Illegal continuation type " << continuationType_ );
+	Epetra_Vector xSliced( *sliceMap_ );
+	for (int k=0; k<xSliced.MyLength(); k++ ) {
+	  int kGlobal = extendedMap_->GID(k);
+	  xSliced.ReplaceMyValue( k,0, xExtended[kGlobal] );
 	}
-}
-// =============================================================================
-void
-GlPredictorSystem::printSolutionOneParameterContinuation( const Teuchos::RCP<const ComplexVector> & psi
-		                                       ) const
-{
-	static int conStep = -1;
-	conStep++;
 
-	std::string fileName = outputDir_ + "/" + solutionFileNameBase_
-			+ EpetraExt::toString(conStep) + ".vtk";
+	glSystem_->printSolution( xSliced, conParam );
 
-	// actually print the state to fileName
-	Gl_.writeSolutionToFile(psi, fileName);
-
-	writeContinuationStats( conStep, psi );
-}
-// =============================================================================
-// In Turning Point continuation, the printSolution method is called exactly
-// twice per step:
+//	// define vector
+//	const Teuchos::RCP<ComplexVector> psi =
+//			              Teuchos::rcp( new ComplexVector(ComplexMap_, true) );
+//	// convert from x to psi
+//	real2complex(x, *psi);
 //
-//   1. For printing the solution.
-//   2. For printing the right null vector of the Jacobian.
+//	static int conStep = -1;
+//	conStep++;
 //
-// The method gets called subsequently in this order.
-void
-GlPredictorSystem::printSolutionTurningPointContinuation( const Teuchos::RCP<const ComplexVector> & psi
-		                                       ) const
-{
-	static bool printSolution=false;
-	static int conStep = -1;
-
-	// alternate between solution and nullvector
-	printSolution = !printSolution;
-
-	// increment the step counter only when printing a solution
-	if ( printSolution )
-		conStep++;
-
-	// determine file name
-	std::string fileName;
-	if ( printSolution ) {
-	    fileName = outputDir_ + "/" + solutionFileNameBase_
-		         + EpetraExt::toString(conStep) + ".vtk";
-	    writeContinuationStats( conStep, psi );
-	}
-	else
-	    fileName = outputDir_ + "/" + nullvectorFileNameBase_
-		         + EpetraExt::toString(conStep) + ".vtk";
-
-	// actually print the state to fileName
-	Gl_.writeSolutionToFile(psi, fileName);
-
-}
-// =============================================================================
-void
-GlPredictorSystem::writeContinuationStats( const int conStep,
-		                  const Teuchos::RCP<const ComplexVector> psi ) const
-{
-	// fill the continuation parameters file
-	std::string contFileName = outputDir_ + "/" + outputDataFileName_;
-	std::ofstream contFileStream;
-
-	// Set the output format
-	// Think about replacing this with NOX::Utils::Sci.
-	contFileStream.setf(std::ios::scientific);
-	contFileStream.precision(15);
-
-	if (conStep == 0) {
-		contFileStream.open(contFileName.c_str(), ios::trunc);
-		contFileStream << "# Step  \t";
-		Gl_.appendStats( contFileStream, true );
-		contFileStream << "\t#nonlinear steps\n";
-	} else {
-		// just append to the the contents to the file
-		contFileStream.open(contFileName.c_str(), ios::app);
-	}
-
-	int nonlinearIterations = stepper_->getSolver()->getNumIterations();
-
-	contFileStream << "  " << conStep << "      \t";
-	Gl_.appendStats( contFileStream, false, psi );
-	contFileStream << "       \t" << nonlinearIterations << std::endl;
-
-	contFileStream.close();
+//	std::string fileName = outputDir_ + "/" + solutionFileNameBase_
+//			+ EpetraExt::toString(conStep) + ".vtk";
+//
+//	// actually print the state to fileName
+//	Gl_.writeSolutionToFile(psi, fileName);
+//
+//	writeContinuationStats( conStep, psi );
 }
 // =============================================================================
 // function used by LOCA
 void GlPredictorSystem::setOutputDir(const string &directory) {
-	outputDir_ = directory;
+	glSystem_->setOutputDir( directory );
+	cout << "HIHI" << endl;
 }
 // =============================================================================
-void
-GlPredictorSystem::writeSolutionToFile( const Epetra_Vector &x,
-                               const std::string &filePath) const
+Teuchos::RCP<Epetra_Map>
+GlPredictorSystem::createExtendedMap( const Epetra_BlockMap & sliceMap  )
 {
-	// define vector
-	Teuchos::RCP<ComplexVector> psi = Teuchos::rcp( new ComplexVector(ComplexMap_, true) );
+  // fill up realMapGIDs
+  int numMyElements = sliceMap.NumMyElements();
+  Teuchos::Array<int> myElements( numMyElements );
+  sliceMap.MyGlobalElements( myElements.getRawPtr() );
 
-	// TODO: Remove the need for several real2complex calls per step.
-	// convert from x to psi
-	real2complex(x, *psi);
-
-	Gl_.writeSolutionToFile( psi, filePath );
-}
-// =============================================================================
-void
-GlPredictorSystem::writeAbstractStateToFile( const Epetra_Vector &x,
-                                    const std::string &filePath) const
-{
-	// define vector
-	Teuchos::RCP<ComplexVector> psi = Teuchos::rcp( new ComplexVector(ComplexMap_, true) );
-
-	// TODO: Remove the need for several real2complex calls per step.
-	// convert from x to psi
-	real2complex(x, *psi);
-
-	Gl_.writeAbstractStateToFile( psi, filePath );
-}
-// =============================================================================
-Teuchos::RCP<Epetra_Vector>
-GlPredictorSystem::getGlPredictorSystemVector( const Teuchos::RCP<const ComplexVector> psi ) const
-{
-	Teuchos::RCP<Epetra_Vector> x = Teuchos::rcp( new Epetra_Vector(*RealMap_) );
-	complex2real( *psi, *x );
-	return x;
-}
-// =============================================================================
-Teuchos::RCP<const Teuchos::Comm<int> >
-GlPredictorSystem::create_CommInt( const Teuchos::RCP<const Epetra_Comm> &epetraComm )
-{
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  using Teuchos::rcp_dynamic_cast;
-  using Teuchos::set_extra_data;
-
-#ifdef HAVE_MPI
-  RCP<const Epetra_MpiComm>
-    mpiEpetraComm = rcp_dynamic_cast<const Epetra_MpiComm>(epetraComm);
-  if( mpiEpetraComm.get() ) {
-    RCP<const Teuchos::OpaqueWrapper<MPI_Comm> >
-      rawMpiComm = Teuchos::opaqueWrapper(mpiEpetraComm->Comm());
-    set_extra_data( mpiEpetraComm, "mpiEpetraComm", Teuchos::inOutArg(rawMpiComm) );
-    RCP<const Teuchos::MpiComm<int> >
-      mpiComm = rcp(new Teuchos::MpiComm<int>(rawMpiComm));
-    return mpiComm;
+  // Unconditionally put the phase constraint on the first process.
+  int myPID = sliceMap.Comm().MyPID();
+  if ( myPID==0 ) {
+    int n = sliceMap.NumGlobalElements();
+    // extend the GIDs by the phase constraint
+    myElements.append( n );
   }
-#else
-  RCP<const Epetra_SerialComm>
-    serialEpetraComm = rcp_dynamic_cast<const Epetra_SerialComm>(epetraComm);
-  if( serialEpetraComm.get() ) {
-    RCP<const Teuchos::SerialComm<int> >
-      serialComm = rcp(new Teuchos::SerialComm<int>());
-    set_extra_data( serialEpetraComm, "serialEpetraComm", Teuchos::inOutArg(serialComm) );
-    return serialComm;
-  }
-#endif // HAVE_MPI
 
-  // If you get here then the conversion failed!
-  return Teuchos::null;
+  int numGlobalElements = sliceMap.NumGlobalElements() + 1;
+  Teuchos::RCP<Epetra_Map> extendedMap = Teuchos::rcp( new Epetra_Map(numGlobalElements,
+                                             myElements.length(),
+                                             myElements.getRawPtr(),
+                                             sliceMap.IndexBase(),
+                                  			 sliceMap.Comm() )
+                            );
+  return extendedMap;
 }
 // =============================================================================
