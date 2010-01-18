@@ -80,7 +80,13 @@ int main ( int argc, char *argv[] )
       new Teuchos::ParameterList);
   std::cout << "Reading parameter list from \"" << xmlInputFileName << "\"."
       << std::endl;
-  Teuchos::updateParametersFromXmlFile(xmlInputFileName, paramList.get());
+  try {
+	  Teuchos::updateParametersFromXmlFile(xmlInputFileName, paramList.get());
+  }
+  catch ( std::exception &  e ) {
+	  cout << e.what() << endl;
+	  return 1; // Error!
+  }
   // =========================================================================
   // extract data of the parameter list
   Teuchos::ParameterList& ioList = paramList->sublist("IO", true);

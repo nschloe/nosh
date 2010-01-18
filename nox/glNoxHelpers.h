@@ -9,48 +9,11 @@
 #define GLNOXHELPERS_H_
 
 #include <Teuchos_RCP.hpp>
-//#include <Teuchos_Comm.hpp>
 #include <Teuchos_ParameterList.hpp>
 
 #include <Epetra_Comm.h>
-
-//#include <Tpetra_Vector.hpp>
-//
-//#include <NOX.H>
-//#include <NOX_Epetra.H>
-//
-//#include <NOX.H>
-//#include <NOX_Epetra_LinearSystem_AztecOO.H>
 #include <NOX_Epetra.H>
-//
-//// for the eigenvalue computation:
-//#include <AnasaziBasicEigenproblem.hpp>
-//#include <AnasaziBasicOutputManager.hpp>
-//#include <AnasaziBlockDavidsonSolMgr.hpp>
-//#include <AnasaziBlockKrylovSchurSolMgr.hpp>
-//#include <AnasaziLOBPCGSolMgr.hpp>
-//#include <AnasaziRTRSolMgr.hpp>
-//#include <AnasaziConfigDefs.hpp>
-//#include <AnasaziEpetraAdapter.hpp>
-//#include <AnasaziBasicSort.hpp>
-//
-//#include <Teuchos_XMLParameterListHelpers.hpp>
-//
-//
-//#include "glNox.h"
-//
-//#include "ioVirtual.h"
-//#include "ioFactory.h"
-//
-//#include "glBoundaryConditionsVirtual.h"
-//#include "glBoundaryConditionsInner.h"
-//#include "glBoundaryConditionsOuter.h"
-//#include "glBoundaryConditionsCentral.h"
-//#include "ginzburgLandau.h"
-//#include "glPrePostOperator.h"
-//#include "GridUniformSquare.h"
-//
-//#include "GridSquare.h"
+
 #include "GlSystemWithConstraint.h"
 
 namespace glNoxHelpers {
