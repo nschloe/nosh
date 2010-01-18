@@ -2,7 +2,7 @@
 
   <ParameterList name="IO">
       <Parameter name="Input guess" type="string" value=""/>
-      <Parameter name="Output directory" type="string" value="./data"/>
+      <Parameter name="Output directory" type="string" value=""/>
       <Parameter name="Plot each Newton step" type="bool" value="true"/>
       <Parameter name="Jacobian MATLAB matrix file name" type="string" value="" /> 
       <Parameter name="Eigenvalues file name" type="string" value="eigenvalues.dat"/>
