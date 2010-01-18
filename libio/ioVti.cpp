@@ -4,9 +4,11 @@
 #include <EpetraExt_Utils.h> // for toString
 #include <Teuchos_XMLParameterListWriter.hpp>
 
+#include <boost/filesystem/fstream.hpp>
+
 // =============================================================================
 // Constructor
-IoVti::IoVti(std::string fname) :
+IoVti::IoVti(boost::filesystem::path fname) :
   IoVirtual(fname)
 {
 }
@@ -22,16 +24,16 @@ IoVti::read(const Teuchos::RCP<const Teuchos::Comm<int> > &tComm,
                   Teuchos::ParameterList &problemParams) const
 {
 
+  // TODO implement
   TEST_FOR_EXCEPTION( true,
-      std::logic_error,
-      "readVtiFile not yet implemented." );
+                      std::logic_error,
+                      "readVtiFile not yet implemented." );
 
   // pass a possible 
   //<?xml version="1.0"?>
   // at the beginning of the file
 
-
-  Teuchos::FileInputSource xmlFile(fileName_);
+  Teuchos::FileInputSource xmlFile(fileName_.string());
 
   // Extract the object from the filename.
   // -- This is actually quite costly, as it read all -- *all* -- data in as
@@ -136,8 +138,7 @@ IoVti::write(const DoubleMultiVector & x, const Teuchos::Tuple<unsigned int,2>  
   // ---------------------------------------------------------------------------
   // write the contents to the file
   // open the file
-  std::ofstream vtkfile;
-  vtkfile.open(fileName_.c_str());
+  boost::filesystem::ofstream vtkfile(fileName_);
 
   // Do not plot the XML header as Teuchos' XML reader can't deal with it
   // vtkfile << "<?xml version=\"1.0\"?>" << std::endl;

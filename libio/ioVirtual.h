@@ -1,8 +1,6 @@
 #ifndef IOVIRTUAL_H
 #define IOVIRTUAL_H
 
-#include <string>
-
 #include <Teuchos_ParameterList.hpp>
 
 #include <Tpetra_MultiVector.hpp>
@@ -12,6 +10,8 @@
 
 #include <Thyra_OperatorVectorTypes.hpp> // For Thyra::Ordinal
 
+#include <boost/filesystem.hpp>
+
 typedef Tpetra::MultiVector<double,Thyra::Ordinal> DoubleMultiVector;
 
 class IoVirtual
@@ -19,7 +19,7 @@ class IoVirtual
   public:
 
     //! Default constructor.
-    IoVirtual ( std::string fname );
+    IoVirtual ( const boost::filesystem::path fileName );
 
     //! Destructor
     virtual ~IoVirtual();
@@ -49,7 +49,7 @@ class IoVirtual
 
   protected:
     //! File name for the I/O.
-    std::string fileName_;
+    boost::filesystem::path fileName_;
 
   };
 #endif // IOVIRTUAL_H

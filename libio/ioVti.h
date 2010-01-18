@@ -15,7 +15,7 @@ class IoVti: public IoVirtual
   public:
 
     //! Default constructor.
-    IoVti ( std::string fname );
+    IoVti ( boost::filesystem::path fname );
 
     //! Destructor
     virtual ~IoVti();

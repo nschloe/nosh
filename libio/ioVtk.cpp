@@ -1,6 +1,8 @@
 #include "ioVtk.h"
-#include <stdio.h>
+
 #include <boost/algorithm/string.hpp>
+
+#include <boost/filesystem/fstream.hpp>
 
 // =============================================================================
 // Constructor
@@ -17,28 +19,20 @@ IoVtk::~IoVtk()
 void
 IoVtk::read(const Teuchos::RCP<const Teuchos::Comm<int> > & tComm,
                   Teuchos::RCP<DoubleMultiVector>         & x,
-    Teuchos::ParameterList &problemParams) const
+                  Teuchos::ParameterList                  & problemParams) const
 {
-  std::ifstream iFile;
+  // check if file exists
+  TEST_FOR_EXCEPTION( !boost::filesystem::exists(fileName_),
+	                  std::runtime_error,
+			          "File \"" << fileName_ << "\" not found." );
+
+  boost::filesystem::ifstream iFile(fileName_);
 
   // Don't include ifstream::eofbit and ifstream::failbit as otherwise,
   // getline will throw an exception
   // at the end of the file, while it is actually expected to reach the end of
   // the file.
   iFile.exceptions(std::ifstream::badbit);
-
-  // Opening
-  try
-    {
-      iFile.open(fileName_.c_str(), std::ios_base::in);
-    }
-  catch (std::ifstream::failure const &e)
-    {
-      TEST_FOR_EXCEPTION( true,
-          std::runtime_error,
-          "Exception opening/reading file '" << fileName_ << "'. "
-          << "Error message '" << e.what() << "'." );
-    }
 
   // read the parameters
   ReadParamsFromVtkFile(iFile, problemParams);
@@ -110,16 +104,13 @@ void
 IoVtk::write( const DoubleMultiVector              & x,
               const Teuchos::Tuple<unsigned int,2> & Nx,
               const Teuchos::Tuple<double,2>       & h,
-              const Teuchos::ParameterList & problemParams )
+              const Teuchos::ParameterList         & problemParams )
 {
-  std::ofstream vtkfile;
+  boost::filesystem::ofstream vtkfile(fileName_);
 
   // set the output format
   vtkfile.setf(std::ios::scientific);
   vtkfile.precision(15);
-
-  // open the file
-  vtkfile.open(fileName_.c_str());
 
   // write the VTK header
   vtkfile << "# vtk DataFile Version 2.0\n";
@@ -144,14 +135,12 @@ IoVtk::write( const DoubleMultiVector              & x,
               const Teuchos::Tuple<double,2>       & h
             )
 {
-  std::ofstream vtkfile;
+  // open the file
+  boost::filesystem::ofstream vtkfile(fileName_);
 
   // set the output format
   vtkfile.setf(std::ios::scientific);
   vtkfile.precision(15);
-
-  // open the file
-  vtkfile.open(fileName_.c_str());
 
   // write the VTK header
   vtkfile << "# vtk DataFile Version 2.0\n";
@@ -289,8 +278,8 @@ IoVtk::writeScalars(const DoubleMultiVector & x, const Teuchos::Tuple<unsigned i
 }
 // =============================================================================
 bool
-IoVtk::ReadParamsFromVtkFile(std::ifstream &iFile,
-    Teuchos::ParameterList &fileParams) const
+IoVtk::ReadParamsFromVtkFile( std::ifstream &iFile,
+                              Teuchos::ParameterList &fileParams) const
 {
   std::string fname = "ReadParamsFromVtkFile";
 
@@ -307,15 +296,15 @@ IoVtk::ReadParamsFromVtkFile(std::ifstream &iFile,
   // Make sure the line starts with PARAMETERS and ends with END, and erase
   // the two; throw an error if either of the two doesn't exist.
   TEST_FOR_EXCEPTION( !boost::algorithm::starts_with(aString,"PARAMETERS"),
-      std::logic_error,
-      "Keyword \"PARAMETERS\" missing in file '" << fileName_ << "'" );
+                      std::runtime_error,
+                      "Keyword \"PARAMETERS\" missing in file '" << fileName_ << "'" );
 
   // delete the PARAMETERS string
   aString.erase(0, 10);
 
   TEST_FOR_EXCEPTION( !boost::algorithm::ends_with(aString,"END"),
-      std::logic_error,
-      "Keyword \"END\" missing in file '" << fileName_ << "'" );
+                      std::runtime_error,
+                      "Keyword \"END\" missing in file '" << fileName_ << "'" );
 
   // delete END string
   aString.erase(aString.size() - 3, aString.size());

@@ -15,7 +15,7 @@ class IoXdmf: public IoVirtual
   public:
 
     //! Default constructor.
-    IoXdmf ( std::string fname );
+    IoXdmf ( boost::filesystem::path fname );
 
     //! Destructor
     virtual ~IoXdmf();

@@ -2,7 +2,7 @@
  * IoVtkStructuredPoints.cpp
  *
  *  Created on: Nov 10, 2009
- *      Author: Nico Schlšmer
+ *      Author: Nico Schlï¿½mer
  */
 
 #include "IoVtkStructuredPoints.h"
@@ -97,7 +97,7 @@ IoVtkStructuredPoints::write(const Tpetra::MultiVector<double, int> & x,
     // TODO Replace by StructuredPoitnsWriter?
     // TODO Replace this function by a general data set preparator, and have one writer for them all?
     vtkSmartPointer<vtkDataSetWriter> writer = vtkDataSetWriter::New();
-    writer->SetFileName(fileName_.c_str());
+    writer->SetFileName(fileName_.string().c_str());
     writer->SetHeader("myheader");
     writer->SetFileTypeToASCII();
 //    writer->SetFileTypeToBinary();

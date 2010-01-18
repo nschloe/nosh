@@ -11,8 +11,7 @@
 #include <Teuchos_StringInputSource.hpp>
 #include <Teuchos_XMLParameterListReader.hpp>
 
-#include <iostream>
-#include <fstream>
+#include <boost/filesystem/fstream.hpp>
 
 #ifdef HAVE_MPI
 #include <mpi.h>
@@ -23,7 +22,7 @@
 
 // =============================================================================
 // Constructor
-IoXdmf::IoXdmf( std::string fname ):
+IoXdmf::IoXdmf( boost::filesystem::path fname ):
   IoVirtual(fname)
 {
 }
@@ -39,10 +38,11 @@ IoXdmf::read( const Teuchos::RCP<const Teuchos::Comm<int> > & tComm,
 			        Teuchos::ParameterList                  & problemParams
 	        ) const
 {
+  // TODO Implement IoXdmf::read().
   TEST_FOR_EXCEPTION( true,
                       std::logic_error,
 	                  "Not yet implemented." );
-//
+
 //  // Convert the file to a string, such that we can discard the headers and pass
 //  // the pure XML stuff to Teuchos.
 //  // This is a workaround.
@@ -236,20 +236,13 @@ IoXdmf::write ( const DoubleMultiVector              & x,
                 const Teuchos::ParameterList         & problemParams
               )
 {
-  std::string   str;
-  std::ofstream xdmfFile;
 
   // create the HDF5 file name, take off the suffix and replace it by .h5
-  int dotPos = fileName_.rfind(".");
-  std::string hdf5FileName = fileName_;
-  hdf5FileName.replace(dotPos,fileName_.size()-dotPos ,".h5");
-  // strip off the directory names to get the base name
-  dotPos = fileName_.rfind("/");
-  std::string hdf5BaseName = hdf5FileName;
-  hdf5BaseName.erase(0,dotPos+1);
+  boost::filesystem::path hdf5FileName = change_extension(fileName_,".h5");
+  boost::filesystem::path hdf5BaseName = basename( hdf5FileName );
 
   // open the file
-  xdmfFile.open( fileName_.c_str() );
+  boost::filesystem::ofstream xdmfFile( fileName_ );
 
   // write the XDMF header
   xdmfFile << "<?xml version=\"1.0\" ?>\n"
@@ -281,7 +274,7 @@ IoXdmf::write ( const DoubleMultiVector              & x,
   // add topology
   Teuchos::XMLObject xmlTopology("Topology");
   xmlTopology.addAttribute( "TopologyType", "3DCORECTMESH" );
-  str = "1 " + EpetraExt::toString(Nx[0]+1) + " " + EpetraExt::toString(Nx[1]+1);
+  std::string str = "1 " + EpetraExt::toString(Nx[0]+1) + " " + EpetraExt::toString(Nx[1]+1);
   xmlTopology.addAttribute( "Dimensions", str );
   xmlGrid.addChild( xmlTopology );
 
@@ -324,7 +317,7 @@ IoXdmf::write ( const DoubleMultiVector              & x,
   str = "1 " + EpetraExt::toString(Nx[0]+1) + " " + EpetraExt::toString(Nx[1]+1);
   xmlAbsData.addAttribute( "Dimensions", str );
   xmlAbsData.addAttribute( "Format", "HDF" );
-  xmlAbsData.addContent( hdf5BaseName+":/abs/Values" );
+  xmlAbsData.addContent( hdf5BaseName.string()+":/abs/Values" );
   xmlAbs.addChild( xmlAbsData );
 
 
@@ -341,7 +334,7 @@ IoXdmf::write ( const DoubleMultiVector              & x,
   str = "1 " + EpetraExt::toString(Nx[0]+1) + " " + EpetraExt::toString(Nx[1]+1);
   xmlArgData.addAttribute( "Dimensions", str );
   xmlArgData.addAttribute( "Format", "HDF" );
-  xmlArgData.addContent( hdf5BaseName+":/arg/Values" );
+  xmlArgData.addContent( hdf5BaseName.string()+":/arg/Values" );
   xmlArg.addChild( xmlArgData );
 
   // write it all to the file
@@ -364,7 +357,7 @@ IoXdmf::write ( const DoubleMultiVector              & x,
   Epetra_Map StandardMap( Nx[0]+1,0,Comm);
 
   EpetraExt::HDF5 myhdf5( Comm );
-  myhdf5.Create( hdf5FileName );
+  myhdf5.Create( hdf5FileName.string() );
 
   int numVectors = x.getNumVectors();
   for (int k; k<numVectors; k++) {
