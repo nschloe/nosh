@@ -14,9 +14,8 @@ class GlPrePostOperator : public NOX::Abstract::PrePostOperator {
 public:
 
   //! Constructor.
-  GlPrePostOperator( Teuchos::RCP<AbstractStateWriter> & stateWriter,
-                     const Teuchos::ParameterList      & problemParams,
-                     const std::string                 & outputDir );
+  GlPrePostOperator( const Teuchos::RCP<const AbstractStateWriter> & stateWriter,
+                     const std::string                             & outputDir );
 
   //! Destructor.
   ~GlPrePostOperator();
@@ -32,9 +31,8 @@ protected:
   //! How ofter the function has been invoked yet.
   int numRunPreIterate;
 
-  Teuchos::ParameterList            problemParameters_;   //!< The problem parameters.
-  Teuchos::RCP<AbstractStateWriter> stateWriter_;
-  std::string                       outputDir_;
+  const Teuchos::RCP<const AbstractStateWriter> stateWriter_;
+  std::string                                   outputDir_;
 
 };
 #endif // GLPREPOSTOPERATOR_H

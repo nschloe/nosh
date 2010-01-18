@@ -167,7 +167,7 @@ class GinzburgLandau
 
 void
 readStateFromFile ( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
-		    const std::string           & filePath,
+		            const std::string           & filePath,
                     Teuchos::RCP<ComplexVector> & psi,
                     Teuchos::RCP<GridUniformVirtual>   & grid,
                     Teuchos::ParameterList      & params

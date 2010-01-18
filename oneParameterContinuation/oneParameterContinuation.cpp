@@ -112,8 +112,8 @@ main(int argc, char *argv[])
       return 1;
   }
   // set default directory to be the directory of the XML file itself
-  std::string outputDirectoryDefault = boost::filesystem::path(xmlInputFileName).branch_path().string();
-  std::string outputDirectory = outputList.get<string> ("Output directory", outputDirectoryDefault );
+  std::string xmlPath = boost::filesystem::path(xmlInputFileName).branch_path().string();
+  std::string outputDirectory = outputList.get<string> ("Output directory", xmlPath );
   std::string contFileBaseName = outputList.get<string> (
       "Continuation file base name");
   std::string contFileFormat = outputList.get<string> ("Continuation file format");
@@ -141,6 +141,7 @@ main(int argc, char *argv[])
 
   if ( !inputGuessFile.empty() )
     {
+	  inputGuessFile = xmlPath + "/" + inputGuessFile;
       try
         {
           readStateFromFile(Comm, inputGuessFile, psi, grid, glParameters);

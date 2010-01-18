@@ -81,11 +81,13 @@ int main ( int argc, char *argv[] )
   std::cout << "Reading parameter list from \"" << xmlInputFileName << "\"."
       << std::endl;
   try {
-	  Teuchos::updateParametersFromXmlFile(xmlInputFileName, paramList.get());
+      Teuchos::updateParametersFromXmlFile(xmlInputFileName, paramList.get());
   }
-  catch ( std::exception &  e ) {
-	  cout << e.what() << endl;
-	  return 1; // Error!
+  catch (std::exception &e)
+  {
+      std::cerr << e.what() << "\n"
+                << "Check your XML file for syntax errors." << std::endl;
+      return 1;
   }
   // =========================================================================
   // extract data of the parameter list

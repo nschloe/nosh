@@ -17,7 +17,7 @@
 #include "GlSystemWithConstraint.h"
 
 namespace glNoxHelpers {
-// =========================================================================
+
 void
 createGlSystem( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
 		        const Teuchos::RCP<const Epetra_Comm>         & eComm,
@@ -68,5 +68,6 @@ printSolutionToFile( const Teuchos::RCP<const NOX::Solver::Generic> solver,
 
 int
 checkConvergence( const Teuchos::RCP<const NOX::Solver::Generic> solver );
+
 }
 #endif /* GLNOXHELPERS_H_ */

@@ -8,11 +8,9 @@
 #include <EpetraExt_Utils.h> // for toString
 
 // =============================================================================
-GlPrePostOperator::GlPrePostOperator( Teuchos::RCP<AbstractStateWriter>  & stateWriter,
-                                      const Teuchos::ParameterList       & problemParams,
-                                      const std::string                  & outputDir) :
+GlPrePostOperator::GlPrePostOperator( const Teuchos::RCP<const AbstractStateWriter>  & stateWriter,
+                                      const std::string                              & outputDir) :
   numRunPreIterate(0),
-  problemParameters_( problemParams ),
   stateWriter_(stateWriter),
   outputDir_(outputDir)
 {

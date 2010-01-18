@@ -2,7 +2,7 @@
  * GridVirtual.cpp
  *
  *  Created on: Nov 25, 2009
- *      Author: Nico Schlšmer
+ *      Author: Nico Schlï¿½mer
  */
 
 #include "GridVirtual.h"
@@ -43,9 +43,6 @@ GridVirtual::getScaling() const
 void
 GridVirtual::setScaling( const double scaling )
 {
-
-  printf("Grid Scaling %2.10e\n",scaling);
-
   TEST_FOR_EXCEPTION( scaling==0.0,
                       std::logic_error,
                       "Previous scaling value scaling_=0.0." );
