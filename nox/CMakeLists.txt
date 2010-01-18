@@ -19,7 +19,7 @@ INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/libio
                       ${ginzburg-landau_SOURCE_DIR}/libgl )
 
 SET ( ginzburg_landau_SRCS
-      glNox.cpp
+      glNoxHelpers.cpp
       main.cpp )
 
 ADD_EXECUTABLE ( gl-nox.out

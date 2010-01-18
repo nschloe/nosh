@@ -13,9 +13,10 @@
 
 #include <boost/filesystem.hpp>
 
-#include "glNox.h"
+#include "glNoxHelpers.h"
 
 
+// =============================================================================
 int main ( int argc, char *argv[] )
 {
 
@@ -103,33 +104,48 @@ int main ( int argc, char *argv[] )
                                       .get("Jacobian MATLAB matrix file name","");
   // =========================================================================
 
-  // create GL-NOX object with initial parameters/guess
-  Teuchos::RCP<glNox> myNoxObject = Teuchos::null;
+  // set problemParameters and glSystem
+  Teuchos::ParameterList               problemParameters;
+  Teuchos::RCP<GlSystemWithConstraint> glSystem = Teuchos::null;
   if ( inputGuessFile.length()>0 ) {
-      myNoxObject = Teuchos::rcp( new glNox( inputGuessFile, Comm, eComm ) );
+      glNoxHelpers::createGlSystem( Comm, eComm, inputGuessFile, problemParameters, glSystem );
   }
   else {
       int    Nx      = paramList->sublist("GL",true).get("Nx",50);
       double scaling = paramList->sublist("GL",true).get("scaling",10.0);
       double H0      = paramList->sublist("GL",true).get("H0",0.0);
-      myNoxObject = Teuchos::rcp( new glNox( Nx, scaling, H0, Comm, eComm ) );
+      glNoxHelpers::createGlSystem( Comm, eComm, Nx, scaling, H0, problemParameters, glSystem );
   }
 
-  // set default solver options
-  myNoxObject->setSolverOptions( plotEachNewtonStep,
-                                 paramList->sublist("NOX",true),
-                                 outputDirectory );
+  Teuchos::RCP<Teuchos::ParameterList> nlParamsPtr = Teuchos::rcpFromRef ( paramList->sublist("NOX",true) );
 
-  myNoxObject->createSolverGroup();
-  myNoxObject->createConvergenceTests( paramList->sublist("NOX Status Test",true) );
-  myNoxObject->createSolver();
+  if ( plotEachNewtonStep ) {
+	  glNoxHelpers::setPrePostWriter( *nlParamsPtr,
+  		                              glSystem,
+  		                              outputDirectory );
+  }
+
+
+  // create NOX group
+  Teuchos::RCP<NOX::Epetra::Group> grpPtr =
+		     glNoxHelpers::createSolverGroup( glSystem,  nlParamsPtr );
+
+
+  // create convergence test from sublist
+  Teuchos::RCP<NOX::StatusTest::Generic> statusTest =
+		  glNoxHelpers::createConvergenceTest( paramList->sublist("NOX Status Test",true),
+  		                                       *nlParamsPtr );
+
+  // create solver object
+  Teuchos::RCP<NOX::Solver::Generic> solver =
+		  glNoxHelpers::createSolver( grpPtr, statusTest, nlParamsPtr );
 
   // solve the system
-  myNoxObject->solve();
+  NOX::StatusTest::StatusType solvStatus = solver->solve();
 
   // compute the condition number
   if ( computeConditionNumbers ) {
-      double kappa = myNoxObject->computeJacobianConditionNumber();
+      double kappa = glNoxHelpers::computeJacobianConditionNumber( solver, grpPtr );
       std::cout << "Condition number: kappa = " << kappa << "." << std::endl;
   }
 
@@ -138,15 +154,17 @@ int main ( int argc, char *argv[] )
 //       EpetraExt::RowMatrixToMatlabFile(jacFilename.c_str(),*(glsystem->getJacobian()));
   }
 
-  // compute the eigenvaluesof the Jacobian
+  // compute the eigenvalues of the Jacobian
   if ( computeEigenvalues )
-        myNoxObject->computeJacobianEigenvalues();
+	  glNoxHelpers::computeJacobianEigenvalues( solver, grpPtr, Comm->getRank() );
   
   // print the solution to a file
-  myNoxObject->printSolutionToFile( outputDirectory + "/solution.vtk" );
+  glNoxHelpers::printSolutionToFile( solver,
+  		                             glSystem,
+  		                             outputDirectory + "/solution.vtk" );
 
   // check the convergence status
-  int status = myNoxObject->checkConvergence();
+  int status = glNoxHelpers::checkConvergence( solver );
 
 #ifdef HAVE_MPI
   MPI_Finalize();
@@ -154,3 +172,4 @@ int main ( int argc, char *argv[] )
 
   return status;
 }
+// =========================================================================

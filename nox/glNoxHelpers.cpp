@@ -1,15 +1,20 @@
-#include "glNox.h"
+/*
+ * glNoxHelpers.cpp
+ *
+ *  Created on: Jan 17, 2010
+ *      Author: Nico Schloemer
+ */
 
-#include "ioVirtual.h"
-#include "ioFactory.h"
+#include <Teuchos_RCP.hpp>
+#include <Teuchos_Comm.hpp>
+#include <Teuchos_ParameterList.hpp>
 
-#include "glBoundaryConditionsVirtual.h"
-#include "glBoundaryConditionsInner.h"
-#include "glBoundaryConditionsOuter.h"
-#include "glBoundaryConditionsCentral.h"
-#include "ginzburgLandau.h"
-#include "glPrePostOperator.h"
-#include "GridUniformSquare.h"
+#include <Epetra_Comm.h>
+
+#include <Tpetra_Vector.hpp>
+
+#include <NOX.H>
+#include <NOX_Epetra.H>
 
 #include <NOX.H>
 #include <NOX_Epetra_LinearSystem_AztecOO.H>
@@ -28,18 +33,32 @@
 
 #include <Teuchos_XMLParameterListHelpers.hpp>
 
-// =============================================================================
-glNox::glNox( const std::string fileName,
-              const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-              const Teuchos::RCP<const Epetra_Comm>         &eComm ) :
-  Comm_( comm ),
-  eComm_( eComm ),
-  problemParameters_(),
-  MyPID_( comm->getRank() ),
-  glSystem_( Teuchos::null ),
-  nlParamsPtr_( Teuchos::rcp ( new Teuchos::ParameterList ) ),
-  statusTest_( Teuchos::null ),
-  solver_( Teuchos::null )
+
+#include "glNox.h"
+
+#include "ioVirtual.h"
+#include "ioFactory.h"
+
+#include "glBoundaryConditionsVirtual.h"
+#include "glBoundaryConditionsInner.h"
+#include "glBoundaryConditionsOuter.h"
+#include "glBoundaryConditionsCentral.h"
+#include "ginzburgLandau.h"
+#include "glPrePostOperator.h"
+#include "GridUniformSquare.h"
+
+#include "GridSquare.h"
+#include "GlSystemWithConstraint.h"
+
+namespace glNoxHelpers {
+
+// =========================================================================
+void
+createGlSystem( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
+		        const Teuchos::RCP<const Epetra_Comm>         & eComm,
+		        const std::string                             & fileName,
+		              Teuchos::ParameterList                  & problemParameters,
+		              Teuchos::RCP<GlSystemWithConstraint>    & glSystem )
 {
   Teuchos::ParameterList glParameters;
   Teuchos::RCP<ComplexVector> psi;
@@ -47,15 +66,15 @@ glNox::glNox( const std::string fileName,
 
   try
     {
-      readStateFromFile(comm, fileName, psi, grid, problemParameters_);
+      readStateFromFile(comm, fileName, psi, grid, problemParameters);
     }
-  catch (...)
+  catch (std::exception & e )
     {
-      std::cerr << "Exception caught." << std::endl;
+      std::cerr << e.what() << std::endl;
     }
 
-  double scaling = problemParameters_.get<double>("scaling");
-  double H0      = problemParameters_.get<double>("H0");
+  double scaling = problemParameters.get<double>("scaling");
+  double H0      = problemParameters.get<double>("H0");
 
   Teuchos::RCP<MagneticVectorPotential> A =
                               Teuchos::rcp ( new MagneticVectorPotential( H0, scaling ) );
@@ -69,26 +88,21 @@ glNox::glNox( const std::string fileName,
 
   // Create the interface between NOX and the application
   // This object is derived from NOX::Epetra::Interface
-  glSystem_ = Teuchos::rcp ( new GlSystemWithConstraint ( glProblem, eComm, psi ) );
+  glSystem =  Teuchos::rcp ( new GlSystemWithConstraint ( glProblem, eComm, psi ) );
 }
 // =============================================================================
-glNox::glNox( const unsigned int Nx,
-              const double scaling,
-              const double H0,
-              const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-              const Teuchos::RCP<const Epetra_Comm>         &eComm ) :
-  Comm_( comm ),
-  eComm_( eComm ),
-  problemParameters_(),
-  MyPID_( comm->getRank() ),
-  glSystem_( Teuchos::null ),
-  nlParamsPtr_( Teuchos::rcp ( new Teuchos::ParameterList ) ),
-  statusTest_( Teuchos::null ),
-  solver_( Teuchos::null )
+void
+createGlSystem( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
+                const Teuchos::RCP<const Epetra_Comm>         & eComm,
+                const unsigned int Nx,
+                const double scaling,
+                const double H0,
+	                  Teuchos::ParameterList                  & problemParameters,
+                      Teuchos::RCP<GlSystemWithConstraint>    & glSystem )
 {
-  problemParameters_.set ( "Nx"     , Nx );
-  problemParameters_.set ( "scaling", scaling );
-  problemParameters_.set ( "H0"     , H0 );
+  problemParameters.set ( "Nx"     , Nx );
+  problemParameters.set ( "scaling", scaling );
+  problemParameters.set ( "H0"     , H0 );
 
   Teuchos::RCP<GlBoundaryConditionsVirtual> boundaryConditions =
                              Teuchos::rcp ( new GlBoundaryConditionsCentral() );
@@ -103,114 +117,107 @@ glNox::glNox( const unsigned int Nx,
                                              boundaryConditions
                                            );
 
-  glSystem_ = Teuchos::rcp ( new GlSystemWithConstraint ( glProblem, eComm ) );
+  glSystem = Teuchos::rcp ( new GlSystemWithConstraint ( glProblem, eComm ) );
 }
-// =============================================================================
+// =========================================================================
 void
-glNox::solve()
+setPrePostWriter(       Teuchos::ParameterList                  & noxParaList,
+		          const Teuchos::RCP<const AbstractStateWriter> & asw,
+                  const std::string                             & outputDir )
 {
-  NOX::StatusTest::StatusType solvStatus = solver_->solve();
+	using namespace Teuchos;
+//   Teuchos::RCP<AbstractStateWriter> asw = glSystem_;
+   RCP<NOX::Abstract::PrePostOperator> ppo =
+              rcp ( new GlPrePostOperator ( asw,
+                                            outputDir )
+                    );
+   noxParaList.sublist ( "Solver Options" )
+              .set ( "User Defined Pre/Post Operator", ppo );
 }
-// =============================================================================
-// set parameters
-void
-glNox::setSolverOptions( bool                           plotEachNewtonStep,
-                         const Teuchos::ParameterList & noxParaList,
-                         const std::string            & outputDir )
+// =========================================================================
+Teuchos::RCP<NOX::Epetra::Group>
+createSolverGroup( const Teuchos::RCP<GlSystemWithConstraint> glSystem,
+		           const Teuchos::RCP<Teuchos::ParameterList> nlParamsPtr )
 {
-  nlParamsPtr_ =  Teuchos::rcp ( new Teuchos::ParameterList(noxParaList) );
+	// Create all possible Epetra_Operators.
+	Teuchos::RCP<Epetra_RowMatrix> Analytic = glSystem->getJacobian();
 
-  if ( plotEachNewtonStep ) // get custom pre/post actions
-    {
-      Teuchos::RCP<AbstractStateWriter> asw = glSystem_;
-      Teuchos::RCP<NOX::Abstract::PrePostOperator> ppo =
-        Teuchos::rcp ( new GlPrePostOperator ( asw,
-                                               problemParameters_,
-                                               outputDir ) );
-      nlParamsPtr_->sublist ( "Solver Options" )
-                                 .set ( "User Defined Pre/Post Operator", ppo );
-    }
+	// Create the linear system
+	Teuchos::RCP<NOX::Epetra::Interface::Required> iReq = glSystem;
+	Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = glSystem;
 
+	Teuchos::ParameterList & printParams = nlParamsPtr->sublist( "Printing" );
+
+	Teuchos::ParameterList & lsParams    = nlParamsPtr->sublist ( "Direction" )
+	                                                   .sublist ( "Newton" )
+		                                               .sublist ( "Linear Solver" );
+
+	// Get initial solution
+	Teuchos::RCP<Epetra_Vector> soln = glSystem->getSolution();
+
+	Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys =
+			Teuchos::rcp ( new NOX::Epetra::LinearSystemAztecOO ( printParams,
+					lsParams,
+					iReq,
+					iJac,
+					Analytic,
+					*soln ) );
+
+	// Create the Group
+	NOX::Epetra::Vector initialGuess ( soln, NOX::Epetra::Vector::CreateView );
+
+	return Teuchos::rcp ( new NOX::Epetra::Group ( printParams,
+			                                       iReq,
+			                                       initialGuess,
+			                                       linSys ) );
 }
-// =============================================================================
-void
-glNox::createSolverGroup()
-{
-  // Create all possible Epetra_Operators.
-  Teuchos::RCP<Epetra_RowMatrix> Analytic = glSystem_->getJacobian();
-
-  // Create the linear system
-  Teuchos::RCP<NOX::Epetra::Interface::Required> iReq = glSystem_;
-  Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = glSystem_;
-
-  Teuchos::ParameterList &printParams = nlParamsPtr_->sublist( "Printing" );
-
-  Teuchos::ParameterList& lsParams = nlParamsPtr_
-                                    ->sublist ( "Direction" )
-                                     .sublist ( "Newton" )
-                                     .sublist ( "Linear Solver" );
-
-  // Get initial solution
-  Teuchos::RCP<Epetra_Vector> soln = glSystem_->getSolution();
-
-  Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys =
-    Teuchos::rcp ( new NOX::Epetra::LinearSystemAztecOO ( printParams,
-                                                          lsParams,
-                                                          iReq,
-                                                          iJac,
-                                                          Analytic,
-                                                          *soln ) );
-
-  // Create the Group
-  NOX::Epetra::Vector initialGuess ( soln, NOX::Epetra::Vector::CreateView );
-
-  grpPtr_ = Teuchos::rcp ( new NOX::Epetra::Group ( printParams,
-                                                    iReq,
-                                                    initialGuess,
-                                                    linSys ) );
-}
-// =============================================================================
-// Create the solver
-void
-glNox::createSolver()
-{
-	TEST_FOR_EXCEPTION( grpPtr_.is_null(),
-			    std::logic_error,
-                            "Group not initialized." );
-
-	TEST_FOR_EXCEPTION( statusTest_.is_null(),
-			    std::logic_error,
-                            "Status test not initialized." );
-
-	TEST_FOR_EXCEPTION( nlParamsPtr_.is_null(),
-			    std::logic_error,
-                            "Nonlinear solver parameters not initialized." );
-
-  solver_ = NOX::Solver::buildSolver ( grpPtr_,
-                                       statusTest_,
-                                       nlParamsPtr_ );
-}
-// =============================================================================
-void
-glNox::createConvergenceTests( Teuchos::ParameterList & noxStatusList )
+// =========================================================================
+Teuchos::RCP<NOX::StatusTest::Generic>
+createConvergenceTest( Teuchos::ParameterList & noxStatusList,
+		               Teuchos::ParameterList & nlParamsPtr )
 {
   NOX::StatusTest::Factory statusTestFactory;
 
-  Teuchos::ParameterList &printParams = nlParamsPtr_->sublist( "Printing" );
+  Teuchos::ParameterList & printParams = nlParamsPtr.sublist( "Printing" );
   NOX::Utils outputUtils( printParams );
-  statusTest_ = statusTestFactory.buildStatusTests( noxStatusList, outputUtils ) ;
+
+  return statusTestFactory.buildStatusTests( noxStatusList, outputUtils ) ;
 }
 // =============================================================================
+// Create the solver
+Teuchos::RCP<NOX::Solver::Generic>
+createSolver( const Teuchos::RCP<NOX::Epetra::Group>       grpPtr,
+		      const Teuchos::RCP<NOX::StatusTest::Generic> statusTest,
+		      const Teuchos::RCP<Teuchos::ParameterList>   nlParamsPtr )
+{
+	TEST_FOR_EXCEPTION( grpPtr.is_null(),
+			            std::logic_error,
+                        "Group not initialized." );
+
+	TEST_FOR_EXCEPTION( statusTest.is_null(),
+			            std::logic_error,
+                        "Status test not initialized." );
+
+	TEST_FOR_EXCEPTION( nlParamsPtr.is_null(),
+         			    std::logic_error,
+                        "Nonlinear solver parameters not initialized." );
+
+    return NOX::Solver::buildSolver ( grpPtr,
+                                      statusTest,
+                                      nlParamsPtr );
+}
+// =========================================================================
 double
-glNox::computeJacobianConditionNumber()
+computeJacobianConditionNumber( const Teuchos::RCP<const NOX::Solver::Generic> solver,
+		                        const Teuchos::RCP<      NOX::Epetra::Group>   grpPtr )
 {
   double kappa;
   try
     {
       const NOX::Epetra::Group& finalGroup =
-        dynamic_cast<const NOX::Epetra::Group&> ( solver_->getSolutionGroup() );
-      grpPtr_->computeJacobian();
-      grpPtr_->computeJacobianConditionNumber ( 2000, 1e-2, 30, true );
+        dynamic_cast<const NOX::Epetra::Group&> ( solver->getSolutionGroup() );
+      grpPtr->computeJacobian();
+      grpPtr->computeJacobianConditionNumber ( 2000, 1e-2, 30, true );
       kappa = finalGroup.getJacobianConditionNumber();
     }
   catch ( std::exception& e )
@@ -223,7 +230,9 @@ glNox::computeJacobianConditionNumber()
 // =============================================================================
 // compute some eigenvalues using anasazi
 void
-glNox::computeJacobianEigenvalues()
+computeJacobianEigenvalues( const Teuchos::RCP<const NOX::Solver::Generic> solver,
+		                    const Teuchos::RCP<      NOX::Epetra::Group>   grpPtr,
+		                    const int MyPID )
 {
   bool debug = true; // even more increased verbosity
 
@@ -240,7 +249,7 @@ glNox::computeJacobianEigenvalues()
   typedef Anasazi::OperatorTraits<ScalarType,MV,OP>  OPT;
 
   const NOX::Epetra::Group& finalGroup =
-        dynamic_cast<const NOX::Epetra::Group&> ( solver_->getSolutionGroup() );
+        dynamic_cast<const NOX::Epetra::Group&> ( solver->getSolutionGroup() );
 
   const Epetra_Vector& finalSolution =
             ( dynamic_cast<const NOX::Epetra::Vector&> ( finalGroup.getX() ) ).
@@ -249,8 +258,8 @@ glNox::computeJacobianEigenvalues()
   Epetra_BlockMap Map = finalSolution.Map();
 
   // shortname for the final Jacobian
-  Teuchos::RCP<Epetra_Operator> J = 
-                              grpPtr_->getLinearSystem()->getJacobianOperator();
+  Teuchos::RCP<Epetra_Operator> J =
+            grpPtr->getLinearSystem()->getJacobianOperator();
 
   // - - - - - - - - - - - - - - - - -
   // Start the block Arnoldi iteration
@@ -308,15 +317,15 @@ glNox::computeJacobianEigenvalues()
                       "Anasazi::BasicEigenproblem::setProblem() returned with error." );
 
   // Initialize the Block Arnoldi solver
-//       Anasazi::BlockDavidsonSolMgr<double, MV, OP> 
-//       Anasazi::LOBPCGSolMgr<double, MV, OP> 
-//       Anasazi::RTRSolMgr<double, MV, OP> 
-  Anasazi::BlockKrylovSchurSolMgr<double, MV, OP> 
+//       Anasazi::BlockDavidsonSolMgr<double, MV, OP>
+//       Anasazi::LOBPCGSolMgr<double, MV, OP>
+//       Anasazi::RTRSolMgr<double, MV, OP>
+  Anasazi::BlockKrylovSchurSolMgr<double, MV, OP>
 					        MySolverMgr ( MyProblem, MyPL );
 
   // Solve the problem to the specified tolerances or length
   Anasazi::ReturnType returnCode = MySolverMgr.solve();
-  if ( returnCode != Anasazi::Converged && MyPID_==0 )
+  if ( returnCode != Anasazi::Converged && MyPID==0 )
     cout << "Anasazi::EigensolverMgr::solve() returned unconverged." << endl;
 
   // Get the Ritz values from the eigensolver
@@ -373,36 +382,26 @@ glNox::computeJacobianEigenvalues()
 //       }
   // -----------------------------------------------------------------------
 }
-// =============================================================================
-// void
-// glNox::getSolution()
-// {
-//   const NOX::Epetra::Group& finalGroup =
-//         dynamic_cast<const NOX::Epetra::Group&> ( solver_->getSolutionGroup() );
-// 
-//   const Epetra_Vector& finalSolution =
-//             ( dynamic_cast<const NOX::Epetra::Vector&> ( finalGroup.getX() ) ).
-//                                                               getEpetraVector();
-// }
-// =============================================================================
-  // print the solution to a file
+// =========================================================================
 void
-glNox::printSolutionToFile( std::string fileName )
+printSolutionToFile( const Teuchos::RCP<const NOX::Solver::Generic> solver,
+		             const Teuchos::RCP<const GlSystemWithConstraint> glSystem,
+		             const std::string & fileName )
 {
   const NOX::Epetra::Group& finalGroup =
-	dynamic_cast<const NOX::Epetra::Group&> ( solver_->getSolutionGroup() );
+	dynamic_cast<const NOX::Epetra::Group&> ( solver->getSolutionGroup() );
 
   const Epetra_Vector& finalSolution =
 	    ( dynamic_cast<const NOX::Epetra::Vector&> ( finalGroup.getX() ) ).
 							      getEpetraVector();
 
-  glSystem_->writeSolutionToFile ( finalSolution,
-                                   fileName );
+  glSystem->writeSolutionToFile ( finalSolution,
+                                  fileName );
 
 }
-// =============================================================================
+// =========================================================================
 int
-glNox::checkConvergence()
+checkConvergence( const Teuchos::RCP<const NOX::Solver::Generic> solver )
 {
   int status = 0;
 
@@ -416,7 +415,7 @@ glNox::checkConvergence()
 #ifndef HAVE_MPI
   // 2. Linear solve iterations (53) - SERIAL TEST ONLY!
   //    The number of linear iterations changes with # of procs.
-  if ( const_cast<Teuchos::ParameterList&> ( solver_->getList() )
+  if ( const_cast<Teuchos::ParameterList&> ( solver->getList() )
                                            .sublist ( "Direction" )
                                            .sublist ( "Newton" )
                                            .sublist ( "Linear Solver" )
@@ -437,4 +436,5 @@ glNox::checkConvergence()
 
   return status;
 }
-// =============================================================================
+// =========================================================================
+} // namespace
