@@ -1,0 +1,9 @@
+SET( BOOST_ROOT /opt/boost/1.41.0/gcc/4.4.2/ )
+SET( TRILINOS_ROOT /opt/trilinos/dev/openmpi/1.4/gcc/4.4.2/ )
+
+# If not already done, you may want to set the HDF5_ROOT environment variable, too, e.g.:
+# # export HDF5_ROOT=/opt/hdf5/1.6.9/openmpi/1.4/gcc/4.4.2/
+
+# set the gfortran directory if the libs are not in standard directories
+SET( GFORTRAN_LIBNAME gfortran )
+SET( GFORTRAN_DIR /opt/gcc/4.4.2/lib64 )
