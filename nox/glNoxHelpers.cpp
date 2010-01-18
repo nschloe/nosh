@@ -33,9 +33,6 @@
 
 #include <Teuchos_XMLParameterListHelpers.hpp>
 
-
-#include "glNox.h"
-
 #include "ioVirtual.h"
 #include "ioFactory.h"
 
