@@ -112,8 +112,12 @@ main(int argc, char *argv[])
       return 1;
   }
   // set default directory to be the directory of the XML file itself
-  std::string xmlPath = boost::filesystem::path(xmlInputFileName).branch_path().string();
-  std::string outputDirectory = outputList.get<string> ("Output directory", xmlPath );
+  std::string             xmlPath = boost::filesystem::path(xmlInputFileName).branch_path().string();
+  boost::filesystem::path outputDirectory = outputList.get<string> ("Output directory", "" );
+  if (outputDirectory.root_directory().empty()) {
+	  // outputDirectory is empty or is a relative directory.
+	  outputDirectory = xmlPath / outputDirectory;
+  }
   std::string contFileBaseName = outputList.get<string> (
       "Continuation file base name");
   std::string contFileFormat = outputList.get<string> ("Continuation file format");
@@ -222,8 +226,8 @@ main(int argc, char *argv[])
   GinzburgLandau glProblem = GinzburgLandau(gridV, A, boundaryConditions);
 
   Teuchos::RCP<GlSystem> glsystem =
-      Teuchos::rcp(new GlSystem(glProblem, eComm, psi, outputDirectory,
-          contDataFileName, contFileFormat, contFileBaseName));
+      Teuchos::rcp(new GlSystem( glProblem, eComm, psi, outputDirectory.string(),
+                                 contDataFileName, contFileFormat, contFileBaseName));
 
   // ---------------------------------------------------------------------------
   // Create the necessary objects
@@ -251,7 +255,7 @@ main(int argc, char *argv[])
   std::string eigenstateFileNameAppendix = outputList.get<string> (
       "Eigenstate file name appendix");
   Teuchos::RCP<EigenSaver> glEigenSaver = Teuchos::RCP<EigenSaver>(
-      new EigenSaver(eigenListPtr, outputDirectory,
+      new EigenSaver(eigenListPtr, outputDirectory.string(),
           eigenvaluesFileName, contFileBaseName, eigenstateFileNameAppendix,
           glsystem));
 
