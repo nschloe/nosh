@@ -47,7 +47,7 @@
 #include "GridSquare.h"
 #include "GlSystemWithConstraint.h"
 
-
+namespace glNoxHelpers {
 // =========================================================================
 void
 createGlSystem( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
@@ -433,3 +433,4 @@ checkConvergence( const Teuchos::RCP<const NOX::Solver::Generic> solver )
   return status;
 }
 // =========================================================================
+} // namespace glNoxHelpers
