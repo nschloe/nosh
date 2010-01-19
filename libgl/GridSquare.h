@@ -70,6 +70,12 @@ public:
                ) const;
 
   virtual void
+  writeWithGrid( const ComplexMultiVector     & x,
+                 const Teuchos::ParameterList & params,
+                 const std::string            & filePath
+               ) const;
+
+  virtual void
   read( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
         const std::string                             & filePath,
         Teuchos::RCP<DoubleMultiVector>               & x,
@@ -88,9 +94,16 @@ protected:
   Teuchos::RCP<DoubleMultiVector>
   permuteLexicographic2Grid( const DoubleMultiVector & xLexicographic
                            ) const;
+  Teuchos::RCP<ComplexMultiVector>
+  permuteLexicographic2Grid( const ComplexMultiVector & xLexicographic
+                           ) const;
 
   Teuchos::RCP<DoubleMultiVector>
-  permuteGrid2Lexicographic( const DoubleMultiVector & x ) const;
+  permuteGrid2Lexicographic( const DoubleMultiVector & x
+		                   ) const;
+  Teuchos::RCP<ComplexMultiVector>
+  permuteGrid2Lexicographic( const ComplexMultiVector & x
+		                   ) const;
 
 private:
 

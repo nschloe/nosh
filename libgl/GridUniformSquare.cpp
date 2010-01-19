@@ -2,7 +2,7 @@
  * GridUniformSquare.cpp
  *
  *  Created on: Nov 30, 2009
- *      Author: Nico Schlšmer
+ *      Author: Nico Schlï¿½mer
  */
 
 #include "GridUniformSquare.h"
@@ -43,6 +43,24 @@ GridUniformSquare::writeWithGrid( const DoubleMultiVector      & x,
   extendedParams.get("Nx", Nx_[0] );
   // reorder the grid to lexicographic ordering
   Teuchos::RCP<DoubleMultiVector> xLexicographic = permuteGrid2Lexicographic(x);
+
+  fileIo->write( *xLexicographic, Nx_, GridSquare::h_, extendedParams);
+}
+// =============================================================================
+void
+GridUniformSquare::writeWithGrid( const ComplexMultiVector     & x,
+                                  const Teuchos::ParameterList & params,
+                                  const std::string            & filePath
+                                ) const
+{
+  Teuchos::RCP<IoVirtual> fileIo = Teuchos::rcp(IoFactory::createFileIo(filePath));
+
+  // append grid parameters
+  Teuchos::ParameterList extendedParams( params );
+  extendedParams.get("scaling", scaling_ );
+  extendedParams.get("Nx", Nx_[0] );
+  // reorder the grid to lexicographic ordering
+  Teuchos::RCP<ComplexMultiVector> xLexicographic = permuteGrid2Lexicographic(x);
 
   fileIo->write( *xLexicographic, Nx_, GridSquare::h_, extendedParams);
 }

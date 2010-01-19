@@ -130,7 +130,66 @@ IoVtk::write( const DoubleMultiVector              & x,
 }
 // =============================================================================
 void
+IoVtk::write( const ComplexMultiVector             & x,
+              const Teuchos::Tuple<unsigned int,2> & Nx,
+              const Teuchos::Tuple<double,2>       & h,
+              const Teuchos::ParameterList         & problemParams )
+{
+  boost::filesystem::ofstream vtkfile(fileName_);
+
+  // set the output format
+  vtkfile.setf(std::ios::scientific);
+  vtkfile.precision(15);
+
+  // write the VTK header
+  vtkfile << "# vtk DataFile Version 2.0\n";
+
+  // write the parameter list
+  writeParameterList(problemParams, vtkfile);
+
+  // write the VTK header
+  int numScalars = x.getGlobalLength();
+  writeVtkStructuredPointsHeader(vtkfile, Nx, h, numScalars);
+
+  // write the hard data
+  writeScalars(x, Nx, vtkfile);
+
+  // close the file
+  vtkfile.close();
+}
+// =============================================================================
+void
 IoVtk::write( const DoubleMultiVector              & x,
+              const Teuchos::Tuple<unsigned int,2> & Nx,
+              const Teuchos::Tuple<double,2>       & h
+            )
+{
+  // open the file
+  boost::filesystem::ofstream vtkfile(fileName_);
+
+  // set the output format
+  vtkfile.setf(std::ios::scientific);
+  vtkfile.precision(15);
+
+  // write the VTK header
+  vtkfile << "# vtk DataFile Version 2.0\n";
+
+  // write dummy parameter list
+  vtkfile << "# # # # # # # # # # # # # #\n";
+
+  // write the VTK header
+  int numScalars = x.getGlobalLength();
+  writeVtkStructuredPointsHeader(vtkfile, Nx, h, numScalars);
+
+  // write the hard data
+  writeScalars(x, Nx, vtkfile);
+
+  // close the file
+  vtkfile.close();
+}
+// =============================================================================
+void
+IoVtk::write( const ComplexMultiVector             & x,
               const Teuchos::Tuple<unsigned int,2> & Nx,
               const Teuchos::Tuple<double,2>       & h
             )
@@ -238,23 +297,29 @@ IoVtk::writeVtkStructuredPointsHeader( std::ofstream & ioStream,
                                        const int numScalars
                                      ) const
 {
-  ioStream << "ASCII\n" << "DATASET STRUCTURED_POINTS\n" << "DIMENSIONS " << Nx[0]
-      + 1 << " " << Nx[1] + 1 << " " << 1 << "\n" << "ORIGIN 0 0 0\n"
-      << "SPACING " << h[0] << " " << h[1] << " " << 0.0 << "\n" << "POINT_DATA "
-      << numScalars << "\n";
+  ioStream << "ASCII\n"
+		   << "DATASET STRUCTURED_POINTS\n"
+		   << "DIMENSIONS " << Nx[0] + 1 << " " << Nx[1] + 1 << " " << 1 << "\n"
+		   << "ORIGIN 0 0 0\n"
+           << "SPACING " << h[0] << " " << h[1] << " " << 0.0 << "\n"
+           << "POINT_DATA " << numScalars << "\n";
 }
 // =============================================================================
+// Note that, when writing the data, the values of psi are assumed to be
+// given in lexicographic ordering.
 void
-IoVtk::writeScalars(const DoubleMultiVector & x, const Teuchos::Tuple<unsigned int,2>  & Nx,
-    std::ofstream & oStream) const
+IoVtk::writeScalars( const DoubleMultiVector & x,
+		             const Teuchos::Tuple<unsigned int,2>  & Nx,
+                     std::ofstream & oStream) const
 {
-  // Note that, when writing the data, the values of psi are assumed to be
-  // given in lexicographic ordering.
+  // below this threshold, values are actually printed as 0.0
+  double threshold = 1.0e-25;
 
   int numVectors = x.getNumVectors();
   for (int k = 0; k < numVectors; k++)
     {
-      oStream << "SCALARS x" << k << " float\n" << "LOOKUP_TABLE default\n";
+      oStream << "SCALARS x" << k << " float\n"
+              << "LOOKUP_TABLE default\n";
       Teuchos::ArrayRCP<const double> xKView = x.getVector(k)->get1dView();
       int l = 0;
       for (unsigned int j = 0; j < Nx[1] + 1; j++)
@@ -267,10 +332,53 @@ IoVtk::writeScalars(const DoubleMultiVector & x, const Teuchos::Tuple<unsigned i
               // issues reading the previous.
               // TODO: Handle this in a more generic fashion.
               double val = xKView[l++];
-              if (fabs(val) < 1.0e-25)
-                oStream << 0.0 << "\n";
-              else
-                oStream << val << "\n";
+
+              double alpha = (fabs(val)<threshold) ? 0.0 : val;
+              oStream << alpha << "\n";
+            }
+        }
+    }
+
+}
+// =============================================================================
+// Note that, when writing the data, the values of psi are assumed to be
+// given in lexicographic ordering.
+void
+IoVtk::writeScalars( const ComplexMultiVector              & z,
+		             const Teuchos::Tuple<unsigned int,2>  & Nx,
+                           std::ofstream                   & oStream
+                   ) const
+{
+  // below this threshold, values are actually printed as 0.0
+  double threshold = 1.0e-25;
+
+  int numVectors = z.getNumVectors();
+
+  for (int k = 0; k < numVectors; k++)
+    {
+      oStream << "SCALARS psi";
+      if (numVectors>1) // add a numbering scheme to psi if necessary
+    	  oStream << k;
+      oStream << " float 2\n"
+              << "LOOKUP_TABLE default\n";
+      Teuchos::ArrayRCP<const std::complex<double> > zKView = z.getVector(k)->get1dView();
+      int l = 0;
+      for (unsigned int j = 0; j < Nx[1] + 1; j++)
+        {
+          for (unsigned int i = 0; i < Nx[0] + 1; i++)
+            {
+              // TODO: Remove this.
+              // The following ugly construction makes sure that values as 1.234e-46
+              // are actually returned as 0.0. This is necessary as ParaView has
+              // issues reading the previous.
+              // TODO: Handle this in a more generic fashion.
+              std::complex<double> val = zKView[l++];
+
+              double re = (fabs(real(val))<threshold) ? 0.0 : real(val);
+              oStream << re << " ";
+
+              double im = (fabs(imag(val))<threshold) ? 0.0 : imag(val);
+              oStream << im << "\n";
             }
         }
     }

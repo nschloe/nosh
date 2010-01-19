@@ -36,12 +36,28 @@ public:
   //! nodes is preserved and the resulting file contains a state \f$\psi\f
   //! that can be viewed using standard tools.
   virtual void
-  write(const DoubleMultiVector & x, const Teuchos::Tuple<unsigned int,2>  & Nx,
-      const Teuchos::Tuple<double,2>        & h, const Teuchos::ParameterList & problemParams);
+  write(const DoubleMultiVector               & x,
+		const Teuchos::Tuple<unsigned int,2>  & Nx,
+        const Teuchos::Tuple<double,2>        & h,
+        const Teuchos::ParameterList          & problemParams);
 
   virtual void
-  write(const DoubleMultiVector & x, const Teuchos::Tuple<unsigned int,2>  & Nx,
-      const Teuchos::Tuple<double,2>        & h);
+  write(const ComplexMultiVector              & x,
+		const Teuchos::Tuple<unsigned int,2>  & Nx,
+        const Teuchos::Tuple<double,2>        & h,
+        const Teuchos::ParameterList          & problemParams);
+
+  virtual void
+  write(const DoubleMultiVector               & x,
+		const Teuchos::Tuple<unsigned int,2>  & Nx,
+        const Teuchos::Tuple<double,2>        & h
+       );
+
+  virtual void
+  write( const ComplexMultiVector             & x,
+         const Teuchos::Tuple<unsigned int,2> & Nx,
+         const Teuchos::Tuple<double,2>       & h
+       );
 
 protected:
 private:
@@ -55,8 +71,16 @@ private:
       std::ofstream & ioStream) const;
 
   void
-  writeScalars(const DoubleMultiVector & psi, const Teuchos::Tuple<unsigned int,2>  & Nx,
-      std::ofstream & oStream) const;
+  writeScalars( const DoubleMultiVector              & x,
+		        const Teuchos::Tuple<unsigned int,2> & Nx,
+                      std::ofstream                  & oStream
+              ) const;
+
+  void
+  writeScalars( const ComplexMultiVector              & psi,
+                const Teuchos::Tuple<unsigned int,2>  & Nx,
+                      std::ofstream                   & oStream
+              ) const;
 
   //! joins a vector of strings to one string with a separator string \c sep
   std::string

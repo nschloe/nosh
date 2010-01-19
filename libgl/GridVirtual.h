@@ -17,6 +17,7 @@
 #include <Thyra_OperatorVectorTypes.hpp> // For Thyra::Ordinal
 
 typedef Tpetra::MultiVector<double,Thyra::Ordinal> DoubleMultiVector;
+typedef Tpetra::MultiVector<std::complex<double>,Thyra::Ordinal> ComplexMultiVector;
 
 class GridVirtual
 {
@@ -115,6 +116,12 @@ public:
 
     virtual void
     writeWithGrid( const DoubleMultiVector      & x,
+                   const Teuchos::ParameterList & params,
+                   const std::string            & filePath
+                 ) const = 0;
+
+    virtual void
+    writeWithGrid( const ComplexMultiVector     & x,
                    const Teuchos::ParameterList & params,
                    const std::string            & filePath
                  ) const = 0;

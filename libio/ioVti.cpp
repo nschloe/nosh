@@ -74,8 +74,11 @@ IoVti::read(const Teuchos::RCP<const Teuchos::Comm<int> > &tComm,
 }
 // =============================================================================
 void
-IoVti::write(const DoubleMultiVector & x, const Teuchos::Tuple<unsigned int,2>  & Nx,
-    const Teuchos::Tuple<double,2>        & h, const Teuchos::ParameterList & problemParams)
+IoVti::write( const DoubleMultiVector               & x,
+		      const Teuchos::Tuple<unsigned int,2>  & Nx,
+              const Teuchos::Tuple<double,2>        & h,
+              const Teuchos::ParameterList          & problemParams
+            )
 {
   std::string str;
 
@@ -150,6 +153,18 @@ IoVti::write(const DoubleMultiVector & x, const Teuchos::Tuple<unsigned int,2>  
 }
 // =============================================================================
 void
+IoVti::write( const ComplexMultiVector               & x,
+		      const Teuchos::Tuple<unsigned int,2>  & Nx,
+              const Teuchos::Tuple<double,2>        & h,
+              const Teuchos::ParameterList          & problemParams
+            )
+{
+	TEST_FOR_EXCEPTION( true,
+			            std::logic_error,
+			            "Not yet implemented." );
+}
+// =============================================================================
+void
 IoVti::write( const DoubleMultiVector              & x,
               const Teuchos::Tuple<unsigned int,2> & Nx,
               const Teuchos::Tuple<double,2>       & h
@@ -158,6 +173,17 @@ IoVti::write( const DoubleMultiVector              & x,
   TEST_FOR_EXCEPTION( true,
       std::logic_error,
       "Not yet implemented." );
+}
+// =============================================================================
+void
+IoVti::write( const ComplexMultiVector              & x,
+		      const Teuchos::Tuple<unsigned int,2>  & Nx,
+              const Teuchos::Tuple<double,2>        & h
+            )
+{
+	TEST_FOR_EXCEPTION( true,
+			            std::logic_error,
+			            "Not yet implemented." );
 }
 // =============================================================================
 // Inside an XML object, this function looks for a specific tag and returns

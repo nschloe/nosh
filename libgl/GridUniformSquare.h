@@ -2,7 +2,7 @@
  * GridUniformSquare.h
  *
  *  Created on: Nov 30, 2009
- *      Author: Nico Schlšmer
+ *      Author: Nico Schlï¿½mer
  */
 
 #ifndef GRIDUNIFORMSQUARE_H_
@@ -25,6 +25,12 @@ public:
 
   virtual void
   writeWithGrid( const DoubleMultiVector      & x,
+                 const Teuchos::ParameterList & params,
+                 const std::string            & filePath
+               ) const;
+
+  void
+  writeWithGrid( const ComplexMultiVector     & x,
                  const Teuchos::ParameterList & params,
                  const std::string            & filePath
                ) const;
