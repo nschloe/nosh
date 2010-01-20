@@ -492,6 +492,10 @@ GridSquare::read( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
   numGridPoints_     = (Nx_[0]+1)*(Nx_[1]+1);
   numBoundaryPoints_ = 2*(Nx_[0]+Nx_[1]);
 
+  TEST_FOR_EXCEPTION( !x.is_valid_ptr() || x.is_null(),
+		              std::logic_error,
+		              "x not properly initialized." );
+
   // apply the grid ordering
   x = permuteLexicographic2Grid( *xLexicographic );
 }

@@ -93,11 +93,18 @@ int main ( int argc, char *argv[] )
   // extract data of the parameter list
   Teuchos::ParameterList& ioList = paramList->sublist("IO", true);
 
-  std::string inputGuessFileDefault = "";
-  std::string inputGuessFile = ioList.get<string> ("Input guess",inputGuessFileDefault);
+  boost::filesystem::path xmlPath = boost::filesystem::path(xmlInputFileName).branch_path();
 
-  std::string outputDirectoryDefault = boost::filesystem::path(xmlInputFileName).branch_path().string();
-  std::string outputDirectory = ioList.get<string> ("Output directory",outputDirectoryDefault);
+  boost::filesystem::path inputGuessFile = ioList.get<string> ("Input guess", "" );
+  if ( !inputGuessFile.empty() && inputGuessFile.root_directory().empty() ) // if inputGuessFile is not empty and is a relative path
+	  inputGuessFile = xmlPath / inputGuessFile;
+
+  // set default directory to be the directory of the XML file itself
+  boost::filesystem::path outputDirectory = ioList.get<string> ("Output directory", "" );
+  if (outputDirectory.root_directory().empty()) {
+	  // outputDirectory is empty or is a relative directory.
+	  outputDirectory = xmlPath / outputDirectory;
+  }
 
   bool computeEigenvalues = paramList->sublist("Eigenvalues",true)
                                       .get("Compute Eigenvalues", false);
@@ -115,8 +122,15 @@ int main ( int argc, char *argv[] )
   // set problemParameters and glSystem
   Teuchos::ParameterList               problemParameters;
   Teuchos::RCP<GlSystemWithConstraint> glSystem = Teuchos::null;
-  if ( inputGuessFile.length()>0 ) {
-      glNoxHelpers::createGlSystem( Comm, eComm, inputGuessFile, problemParameters, glSystem );
+  if ( !inputGuessFile.empty() ) {
+	  try {
+		  glNoxHelpers::createGlSystem( Comm, eComm, inputGuessFile.string(), problemParameters, glSystem );
+	  }
+	  catch ( std::exception & e )  {
+		  std::cerr << e.what() << std::endl;
+		  return 1;
+	  }
+
   }
   else {
       int    Nx      = paramList->sublist("GL",true).get("Nx",50);
@@ -130,7 +144,7 @@ int main ( int argc, char *argv[] )
   if ( plotEachNewtonStep ) {
 	  glNoxHelpers::setPrePostWriter( *nlParamsPtr,
   		                              glSystem,
-  		                              outputDirectory );
+  		                              outputDirectory.string() );
   }
 
 
@@ -169,7 +183,7 @@ int main ( int argc, char *argv[] )
   // print the solution to a file
   glNoxHelpers::printSolutionToFile( solver,
   		                             glSystem,
-  		                             outputDirectory + "/solution.vtk" );
+  		                             (outputDirectory / "solution.vtk" ).string() );
 
   // check the convergence status
   int status = glNoxHelpers::checkConvergence( solver );

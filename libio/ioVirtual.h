@@ -33,6 +33,14 @@ class IoVirtual
                 Teuchos::ParameterList                  & problemParams
         ) const = 0; // pure virtual
 
+    //! Virtual function for reading the order parameter \f$\psi\f$ and the
+    //! parameter list from a given file.
+    virtual void
+    read( const Teuchos::RCP<const Teuchos::Comm<int> > & tComm,
+                Teuchos::RCP<ComplexMultiVector>        & x,
+                Teuchos::ParameterList                  & problemParams
+        ) const = 0; // pure virtual
+
     //! Virtual function for writing the order parameter \f$\psi\f$ and the
     //! parameter list to a given file.
     virtual void
@@ -43,7 +51,7 @@ class IoVirtual
           ) = 0; // pure virtual
 
     virtual void
-    write ( const ComplexMultiVector             & x,
+    write ( const ComplexMultiVector            & x,
             const Teuchos::Tuple<unsigned int,2> & Nx,
             const Teuchos::Tuple<double,2>       & h,
             const Teuchos::ParameterList         & problemParams
@@ -56,7 +64,7 @@ class IoVirtual
           ) = 0; // pure virtual
 
     virtual void
-    write( const ComplexMultiVector              & x,
+    write( const ComplexMultiVector             & x,
            const Teuchos::Tuple<unsigned int,2> & Nx,
            const Teuchos::Tuple<double,2>       & h
           ) = 0; // pure virtual

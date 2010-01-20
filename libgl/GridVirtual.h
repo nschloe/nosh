@@ -16,7 +16,9 @@
 
 #include <Thyra_OperatorVectorTypes.hpp> // For Thyra::Ordinal
 
-typedef Tpetra::MultiVector<double,Thyra::Ordinal> DoubleMultiVector;
+typedef Tpetra::MultiVector<double              ,Thyra::Ordinal> DoubleMultiVector;
+
+typedef Tpetra::Vector     <std::complex<double>,Thyra::Ordinal> ComplexVector;
 typedef Tpetra::MultiVector<std::complex<double>,Thyra::Ordinal> ComplexMultiVector;
 
 class GridVirtual
@@ -130,6 +132,13 @@ public:
     read( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
           const std::string                             & filePath,
           Teuchos::RCP<DoubleMultiVector>               & x,
+          Teuchos::ParameterList                        & params
+        ) = 0;
+
+    virtual void
+    read( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
+          const std::string                             & filePath,
+          Teuchos::RCP<ComplexMultiVector>              & x,
           Teuchos::ParameterList                        & params
         ) = 0;
 

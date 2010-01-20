@@ -74,6 +74,16 @@ IoVti::read(const Teuchos::RCP<const Teuchos::Comm<int> > &tComm,
 }
 // =============================================================================
 void
+IoVti::read(const Teuchos::RCP<const Teuchos::Comm<int> > &tComm,
+                  Teuchos::RCP<ComplexMultiVector> &x,
+                  Teuchos::ParameterList &problemParams) const
+{
+	  TEST_FOR_EXCEPTION( true,
+	      std::logic_error,
+	      "Not yet implemented." );
+}
+// =============================================================================
+void
 IoVti::write( const DoubleMultiVector               & x,
 		      const Teuchos::Tuple<unsigned int,2>  & Nx,
               const Teuchos::Tuple<double,2>        & h,

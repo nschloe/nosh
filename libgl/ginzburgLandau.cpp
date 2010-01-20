@@ -1,7 +1,6 @@
 #include "ginzburgLandau.h"
 
 #include "glBoundaryConditionsVirtual.h"
-#include "GridReader.h"
 
 #include <Teuchos_RCP.hpp>
 
@@ -539,39 +538,5 @@ GinzburgLandau::appendStats( std::ofstream & fileStream,
     		   << vorticity;
     }
 
-}
-// =============================================================================
-// NOT A MEMBER OF GinzburgLandau!
-void
-readStateFromFile ( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
-		            const std::string                             & filePath,
-                    Teuchos::RCP<ComplexVector>                   & psi,
-                    Teuchos::RCP<GridUniformVirtual>              & grid,
-                    Teuchos::ParameterList                        & params
-                  )
-{
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  // read the raw data, parameters, grid
-  Teuchos::RCP<DoubleMultiVector> psiSplit;
-
-  Teuchos::RCP<GridReader> gridReader;
-  gridReader->read( Comm, filePath, psiSplit, grid, params );
-
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  // Put the two parts back together to a complex vector.
-  psi = Teuchos::rcp(new ComplexVector(psiSplit->getMap()));
-
-  // TODO Replace this with get1dView or get2dView of the full MultiVector
-  // TODO Make the following work on multiproc
-  Teuchos::ArrayRCP<const double> psiSplitAbsView = psiSplit->getVector(0)->get1dView();
-  Teuchos::ArrayRCP<const double> psiSplitArgView = psiSplit->getVector(1)->get1dView();
-
-  for (unsigned int k = 0; k < psiSplit->getGlobalLength(); k++) {
-      double_complex value = std::polar( sqrt(psiSplitAbsView[k]),
-                                         psiSplitArgView[k]
-			               );
-      psi->replaceGlobalValue(k, value);
-  }
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 }
 // =============================================================================

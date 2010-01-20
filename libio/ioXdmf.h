@@ -28,6 +28,14 @@ class IoXdmf: public IoVirtual
                 Teuchos::ParameterList                  & problemParams
         ) const;
 
+    //! Virtual function for reading the order parameter \f$\psi\f$ and the
+    //! parameter list from a given file.
+    virtual void
+    read( const Teuchos::RCP<const Teuchos::Comm<int> > & tComm,
+                Teuchos::RCP<ComplexMultiVector>        & x,
+                Teuchos::ParameterList                  & problemParams
+        ) const;
+
     //! Writes the  order parameter \f$\psi\f$ and the problem parameter list
     //! into an XDMF file (plus its accompaining HDF5).
     //! The data is written such that the lexicographical ordering of the

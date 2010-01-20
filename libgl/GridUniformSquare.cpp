@@ -103,3 +103,41 @@ GridUniformSquare::read( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
   x = permuteLexicographic2Grid( *xLexicographic );
 }
 // =============================================================================
+void
+GridUniformSquare::read( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
+                         const std::string                             & filePath,
+                         Teuchos::RCP<ComplexMultiVector>                   & x,
+                         Teuchos::ParameterList                        & params
+                       )
+{
+  Teuchos::RCP<IoVirtual> fileIo = Teuchos::RCP<IoVirtual>(
+                    IoFactory::createFileIo(filePath));
+
+  Teuchos::RCP<ComplexMultiVector> xLexicographic;
+  fileIo->read(Comm, xLexicographic, params);
+
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  // create the grid with the just attained information
+  TEST_FOR_EXCEPTION( !params.isParameter("Nx"),
+                      std::logic_error,
+                      "Parameter \"Nx\" not found in file " << filePath );
+  unsigned int nx = params.get<int>("Nx");
+  Nx_ = Teuchos::tuple<unsigned int>( nx, nx );
+
+  TEST_FOR_EXCEPTION( !params.isParameter("scaling"),
+                      std::logic_error,
+                      "Parameter \"scaling\" not found in file " << filePath );
+
+  scaling_ = params.get<double>("scaling");
+
+  // initialization of the dependent members
+  double h = scaling_/nx;
+  h_                 = Teuchos::tuple<double>( h, h );
+  gridDomainArea_    = pow( scaling_, 2 );
+  numGridPoints_     = (Nx_[0]+1)*(Nx_[1]+1);
+  numBoundaryPoints_ = 2*(Nx_[0]+Nx_[1]);
+
+  // apply the grid ordering
+  x = permuteLexicographic2Grid( *xLexicographic );
+}
+// =============================================================================

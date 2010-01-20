@@ -71,12 +71,10 @@ GlSystemWithConstraint::GlSystemWithConstraint( GinzburgLandau::GinzburgLandau &
 {
   NumComplexUnknowns_ = Gl_.getNumUnknowns();
 
-  // TODO Don't throw exception in constructor?
   TEST_FOR_EXCEPTION( !psi.is_valid_ptr(),
                       std::logic_error,
                       "Invalid pointer" );
 
-  // TODO Don't throw exception in constructor?
   TEST_FOR_EXCEPTION( psi.is_null(),
                       std::logic_error,
                       "Input guess is null pointer" );

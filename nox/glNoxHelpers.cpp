@@ -42,10 +42,13 @@
 #include "glBoundaryConditionsCentral.h"
 #include "ginzburgLandau.h"
 #include "glPrePostOperator.h"
-#include "GridUniformSquare.h"
 
+#include "GridReader.h"
+#include "GridUniformSquare.h"
 #include "GridSquare.h"
 #include "GlSystemWithConstraint.h"
+
+typedef Tpetra::Vector<std::complex<double>, Thyra::Ordinal> ComplexVector;
 
 namespace glNoxHelpers {
 // =========================================================================
@@ -57,17 +60,15 @@ createGlSystem( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
 		              Teuchos::RCP<GlSystemWithConstraint>    & glSystem )
 {
   Teuchos::ParameterList glParameters;
-  Teuchos::RCP<ComplexVector> psi;
   Teuchos::RCP<GridUniformVirtual> grid;
 
-  try
-    {
-      readStateFromFile(comm, fileName, psi, grid, problemParameters);
-    }
-  catch (std::exception & e )
-    {
-      std::cerr << e.what() << std::endl;
-    }
+  Teuchos::RCP<ComplexMultiVector> psiM;
+  GridReader::read( comm, fileName, psiM, grid, problemParameters );
+
+  // TODO Remove this workaround
+  // make sure that an actual ComplexVector was produced, and fetch it
+  TEUCHOS_ASSERT_EQUALITY( psiM->getNumVectors(), 1 );
+  Teuchos::RCP<ComplexVector> psi = psiM->getVectorNonConst(0);
 
   double scaling = problemParameters.get<double>("scaling");
   double H0      = problemParameters.get<double>("H0");

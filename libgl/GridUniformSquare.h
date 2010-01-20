@@ -42,6 +42,13 @@ public:
         Teuchos::ParameterList                        & params
       );
 
+  virtual void
+  read( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
+        const std::string                             & filePath,
+        Teuchos::RCP<ComplexMultiVector>                   & x,
+        Teuchos::ParameterList                        & params
+      );
+
 protected:
 private:
 };

@@ -139,6 +139,16 @@ IoXdmf::read( const Teuchos::RCP<const Teuchos::Comm<int> > & tComm,
 }
 // =============================================================================
 void
+IoXdmf::read(const Teuchos::RCP<const Teuchos::Comm<int> > &tComm,
+                   Teuchos::RCP<ComplexMultiVector> &x,
+                   Teuchos::ParameterList &problemParams) const
+{
+	  TEST_FOR_EXCEPTION( true,
+	      std::logic_error,
+	      "Not yet implemented." );
+}
+// =============================================================================
+void
 IoXdmf::getHeavyData( const Teuchos::XMLObject &xmlFileObject,
                       const Epetra_Comm        &comm,
                       Epetra_MultiVector       **readVec,

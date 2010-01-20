@@ -28,7 +28,14 @@ public:
   virtual void
   read(const Teuchos::RCP<const Teuchos::Comm<int> > &tComm,
              Teuchos::RCP<DoubleMultiVector> &x,
-      Teuchos::ParameterList &problemParams) const;
+             Teuchos::ParameterList &problemParams) const;
+
+  //! Reads the order parameter \f$\psi\f$ and the problem parameter list
+  //! from a legacy VTK file into the arguments.
+  virtual void
+  read(const Teuchos::RCP<const Teuchos::Comm<int> > &tComm,
+             Teuchos::RCP<ComplexMultiVector> &x,
+             Teuchos::ParameterList &problemParams) const;
 
   //! Writes the  order parameter \f$\psi\f$ and the problem parameter list
   //! into a legacy VTK file.
@@ -86,16 +93,25 @@ private:
   std::string
   strJoin(const std::vector<std::string> & vec, const std::string & sep) const;
 
-  bool
-  ReadParamsFromVtkFile(std::ifstream &iFile,
-      Teuchos::ParameterList &fileParams) const;
+  void
+  ReadParamsFromVtkFile( const std::string            & aString,
+                               Teuchos::ParameterList & fileParams
+                       ) const;
 
-  int
-  readVtkHeader(std::ifstream & iFile) const;
+  void
+  readVtkHeader( std::ifstream          & iFile,
+                 int                    * vecSize,
+  	             Teuchos::ParameterList * paramList
+  	           ) const;
 
-  bool
+  void
   ReadScalarsFromVtkFile( std::ifstream & iFile,
                           Teuchos::RCP<DoubleMultiVector> & scalars) const;
+  void
+  ReadScalarsFromVtkFile( std::ifstream                    & iFile,
+                          const int                          pointData,
+                          Teuchos::RCP<ComplexMultiVector> & scalars
+                        ) const;
 
 };
 #endif // IOVTK_H
