@@ -32,6 +32,8 @@
 
 #include "GridUniformSquare.h"
 
+#include "GridReader.h"
+
 int
 main(int argc, char *argv[])
 {
@@ -140,15 +142,19 @@ main(int argc, char *argv[])
       std::cerr << e.what() << std::endl;
       return 1;
   }
-  std::string inputGuessFile = initialGuessList.get<string> ("File name", "");
-
+  boost::filesystem::path inputGuessFile = initialGuessList.get<string> ("File name", "");
+  if ( !inputGuessFile.empty() && inputGuessFile.root_directory().empty()) // if inputGuessFile is a relative path
+      inputGuessFile = xmlPath / inputGuessFile;
 
   if ( !inputGuessFile.empty() )
     {
-	  inputGuessFile = xmlPath + "/" + inputGuessFile;
       try
         {
-          readStateFromFile(Comm, inputGuessFile, psi, grid, glParameters);
+    	  // For technical reasons, the reader can only accept ComplexMultiVectors.
+    	  Teuchos::RCP<ComplexMultiVector> psiM;
+    	  GridReader::read( Comm, inputGuessFile.string(), psiM, grid, glParameters );
+    	  TEUCHOS_ASSERT_EQUALITY( psiM->getNumVectors(), 1 );
+    	  psi = psiM->getVectorNonConst(0);
         }
       catch (std::exception &e)
         {

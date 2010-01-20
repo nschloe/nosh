@@ -57,7 +57,7 @@ IoVtk::read(const Teuchos::RCP<const Teuchos::Comm<int> > & tComm,
   Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> > myMap = Teuchos::rcp(new Tpetra::Map<Thyra::Ordinal>(vecSize, 0, tComm));
   int numVectors = 2; // TODO: remove this random value!!!
   x = Teuchos::rcp( new DoubleMultiVector(myMap, numVectors, true));
-  ReadScalarsFromVtkFile(iFile, x);
+  ReadScalarsFromVtkFile(iFile, vecSize, x);
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
 
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -627,8 +627,11 @@ IoVtk::ReadParamsFromVtkFile( const std::string            & paramLine,
 // ============================================================================
 void
 IoVtk::ReadScalarsFromVtkFile( std::ifstream                   & iFile,
-                               Teuchos::RCP<DoubleMultiVector> & scalars) const
+                               const int                         pointData,
+                               Teuchos::RCP<DoubleMultiVector> & scalars
+                             ) const
 {
+  TEUCHOS_ASSERT_EQUALITY( scalars->getGlobalLength(), pointData );
   int numVectors = scalars->getNumVectors();
 
   // TODO: make the reader work on multiproc environments
@@ -636,48 +639,24 @@ IoVtk::ReadScalarsFromVtkFile( std::ifstream                   & iFile,
   // loop over the SCALARS section and read the thing
   int vecIndex = 0;
   std::string buf;
-  while (!iFile.eof())
+  iFile >> buf; // read ahead
+  while (iFile.good())
     {
-      // move forward to the next SCALARS line
-      // TODO: come up with something more elegant here
-      bool scalarsFound = false;
-      // TODO: With ifstream::eofbit or ifstream::failbit, getline will throw
-      //       an exception here. Find out why, and fix.
-      while (!iFile.eof())
-        {
-          getline(iFile, buf);
-          if (buf.find("SCALARS") != std::string::npos)
-            {
-              scalarsFound = true;
-              break;
-            }
-        }
-      if (!scalarsFound)
-        break;
+	  // read the header
+	  int numComponents;
+	  readScalarFieldHeader( iFile, numComponents );
 
-      // TODO: make sure we're dealing with FLOATS here
-
-      // Read the number of components; if none is given, take the default (1).
-      int numComponents = 1;
-      size_t startNum = buf.find_first_of("0123456789");
-      if (startNum != std::string::npos)
-        numComponents = strtol( buf.substr(startNum, buf.size() - startNum).c_str(), NULL, 10);
-
-      // skip LOOKUP_TABLE line
-      getline(iFile, buf);
-
-      // check that the multivector still has enough room for it
+      // Now the numbers start rolling.
+      // Check that the multivector still has enough room for it.
       TEST_FOR_EXCEPTION( vecIndex+numComponents>numVectors,
-          std::logic_error,
-          "Number of data sets in the VTK larger"
-          << " than what can be stored in the MultiVector "
-          << "(#vectors=" << numVectors
-          << ") in file '" << fileName_ << "'." );
+                          std::logic_error,
+                          "Number of data sets in the VTK larger"
+                          << " than what can be stored in the MultiVector "
+                          << "(#vectors=" << numVectors << ") in file '" << fileName_ << "'." );
 
       // Read the elements row by row
       double dummy;
-      int vecSize = scalars->getGlobalLength();
-      for (int k = 0; k < vecSize; k++)
+      for (int k = 0; k < pointData; k++)
         {
           for (int component = 0; component < numComponents; component++)
             {
@@ -686,17 +665,21 @@ IoVtk::ReadScalarsFromVtkFile( std::ifstream                   & iFile,
             }
         }
       vecIndex += numComponents;
-    }
+
+	  iFile >> buf; // read-ahead
+	}
 
   return;
 }
 // ============================================================================
 void
 IoVtk::ReadScalarsFromVtkFile( std::ifstream                    & iFile,
-		                       const int                          pointData,
+ 		                       const int                          pointData,
                                Teuchos::RCP<ComplexMultiVector> & scalars
                              ) const
 {
+  TEUCHOS_ASSERT_EQUALITY( scalars->getGlobalLength(), pointData );
+
   int numVectors = scalars->getNumVectors();
 
   // TODO: make the reader work on multiproc environments
@@ -711,49 +694,19 @@ IoVtk::ReadScalarsFromVtkFile( std::ifstream                    & iFile,
   iFile >> buf; // read ahead
   while (iFile.good())
     {
-	  TEST_FOR_EXCEPTION( buf.compare("SCALARS")!=0,
-	                      std::logic_error,
-	                      "Keyword \"SCALARS\" not found in file '" << fileName_ << "'."
-	                      << " Instead found \"" << buf << "\".");
+	  // read the header
+	  int numComponents;
+	  readScalarFieldHeader( iFile, numComponents );
 
-	   iFile >> buf; // name of the variable
-
-	   iFile >> buf; // type
-       TEST_FOR_EXCEPTION( buf.compare("float")!=0 && buf.compare("double")!=0,
-		                   std::logic_error,
-		                   "None of the keywords \"float\" or \"double\" found in file '" << fileName_ << "'."
-		                   << " Instead found \"" << buf << "\".");
-
-       // now follows either nothing, or the number of components
-       int numComponents = 1; // default if nothing
-       getline( iFile, buf ); // get the remainder of the line
-       if ( !buf.empty() ) // something here! must be numComponents
-    	   numComponents = atoi( buf.c_str() );
-
-       // make sure the number of components is between 1 and 4
-       TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( numComponents, 1, 5 );
-
-       // LOOKUP_TABLE
- 	   iFile >> buf;
- 	   TEST_FOR_EXCEPTION( buf.compare("LOOKUP_TABLE")!=0,
- 	                      std::logic_error,
- 	                      "Keyword \"LOOKUP_TABLE\" not found in file '" << fileName_ << "'."
- 	                      << " Instead found \"" << buf << "\".");
-
-       // LOOKUP_TABLE name
- 	   iFile >> buf; // discard
-
-       // now the numbers start running
-
-      int vecSize = scalars->getGlobalLength();
+      // now the numbers start running
 
   	  if (numComponents==2) {
           // Read the elements row by row
           double re, im;
-          for (int k = 0; k < vecSize; k++)
+          for (int k = 0; k < pointData; k++)
             {
                iFile >> re; iFile >> im;
-               scalars->replaceGlobalValue(k, vecIndex, std::complex<double>(re,im) );
+               scalars->replaceGlobalValue(k, pointData, std::complex<double>(re,im) );
             }
           vecIndex++;
   	  } else if (numComponents==1) { // there's only one component, so assume that the other one is in the next scalar field
@@ -775,8 +728,8 @@ IoVtk::ReadScalarsFromVtkFile( std::ifstream                    & iFile,
   	  				    << " ***\n"
   	  				    << " ******************************************************************"
   	  				    << std::endl;
-  	    	  legacyRealValues = Teuchos::rcp( new DoubleVector(scalars->getMap(),vecSize) );
-  	  	      for (int k = 0; k < vecSize; k++)
+  	    	  legacyRealValues = Teuchos::rcp( new DoubleVector(scalars->getMap(),pointData) );
+  	  	      for (int k = 0; k < pointData; k++)
   	  	        {
   	  	           iFile >> dummy;
   	  	           legacyRealValues->replaceGlobalValue(k, dummy );
@@ -785,14 +738,14 @@ IoVtk::ReadScalarsFromVtkFile( std::ifstream                    & iFile,
   	    	  // get view of the real part
   	    	  Teuchos::ArrayRCP<const double> legacyRealView = legacyRealValues->get1dView();
 	  	      std::complex<double> alpha;
-  	  	      for (int k = 0; k < vecSize; k++)
+  	  	      for (int k = 0; k < pointData; k++)
   	  	        {
   	  	           iFile >> dummy;
   	  	           // calculate the complex data from the legacy structure
   	  	           alpha = std::polar( sqrt(legacyRealView[k]), dummy );
   	  	           scalars->sumIntoGlobalValue(k, vecIndex, alpha );
   	  	        }
-    	    	vecIndex++; // move on to the next vector
+    	    	vecIndex++; // move on to the next vector -- actually useless as nothing more is expected to come
   	      }
   	      realPart = !realPart; // alternate real and imaginary part
   	  } else {
@@ -804,5 +757,46 @@ IoVtk::ReadScalarsFromVtkFile( std::ifstream                    & iFile,
     }
 
   return;
+}
+//==============================================================================
+void
+IoVtk::readScalarFieldHeader( std::ifstream & iFile,
+		                      int           & numComponents
+		                    ) const
+{
+  std::string buf;
+
+  TEST_FOR_EXCEPTION( buf.compare("SCALARS")!=0,
+                      std::logic_error,
+                      "Keyword \"SCALARS\" not found in file '" << fileName_ << "'."
+                      << " Instead found \"" << buf << "\".");
+
+  iFile >> buf; // name of the variable
+
+  iFile >> buf; // type
+  TEST_FOR_EXCEPTION( buf.compare("float")!=0 && buf.compare("double")!=0,
+                      std::logic_error,
+	                  "None of the keywords \"float\" or \"double\" found in file '" << fileName_ << "'."
+	                  << " Instead found \"" << buf << "\".");
+
+  // now follows either nothing, or the number of components
+  numComponents = 1; // default if nothing
+  getline( iFile, buf ); // get the remainder of the line
+  if ( !buf.empty() ) // something here! must be numComponents
+      numComponents = atoi( buf.c_str() );
+
+  // make sure the number of components is between 1 and 4
+  TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( numComponents, 1, 5 );
+
+  // LOOKUP_TABLE
+  iFile >> buf;
+  TEST_FOR_EXCEPTION( buf.compare("LOOKUP_TABLE")!=0,
+	                  std::logic_error,
+	                  "Keyword \"LOOKUP_TABLE\" not found in file '" << fileName_ << "'."
+	                  << " Instead found \"" << buf << "\".");
+
+  // LOOKUP_TABLE name
+  iFile >> buf; // discard
+
 }
 //==============================================================================

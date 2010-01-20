@@ -32,6 +32,8 @@
 
 #include "GridUniformSquare.h"
 
+#include "GridReader.h"
+
 int
 main(int argc, char *argv[])
 {
@@ -145,8 +147,16 @@ main(int argc, char *argv[])
     {
       try
         {
-          readStateFromFile(Comm, stateFile  , psi    , grid, glParameters);
-          readStateFromFile(Comm, tangentFile, tangent, grid, glParameters);
+    	  // For technical reasons, the reader can only accept ComplexMultiVectors.
+    	  Teuchos::RCP<ComplexMultiVector> psiM;
+    	  GridReader::read( Comm, stateFile  , psiM    , grid, glParameters );
+    	  TEUCHOS_ASSERT_EQUALITY( psiM->getNumVectors(), 1 );
+    	  psi = psiM->getVectorNonConst(0);
+
+    	  Teuchos::RCP<ComplexMultiVector> tangentM;
+    	  GridReader::read( Comm, tangentFile, tangentM, grid, glParameters );
+    	  TEUCHOS_ASSERT_EQUALITY( tangentM->getNumVectors(), 1 );
+    	  tangent = tangentM->getVectorNonConst(0);
         }
       catch (std::exception &e)
         {

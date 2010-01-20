@@ -26,6 +26,8 @@
 
 #include "GridUniformSquare.h"
 
+#include "GridReader.h"
+
 //typedef complex<double> double_complex;
 //typedef Tpetra::Vector<double_complex, int> ComplexVector;
 //typedef Teuchos::ArrayRCP<const double> DoubleArrayRCP;
@@ -113,9 +115,11 @@ int main(int argc, char *argv[]) {
 
 	if (withInitialGuess) {
 	   try {
-		   cout << "before readstate "<< endl;
-		   readStateFromFile( Comm, inputGuessFile, psi, grid, glParameters );
-		   cout << "after readstate "<< endl;
+	       // For technical reasons, the reader can only accept ComplexMultiVectors.
+	       Teuchos::RCP<ComplexMultiVector> psiM;
+	       GridReader::read( Comm, inputGuessFile, psiM, grid, glParameters );
+           TEUCHOS_ASSERT_EQUALITY( psiM->getNumVectors(), 1 );
+	       psi = psiM->getVectorNonConst(0);
 	   }
 	   catch (std::exception &e) {
 	       std::cerr << e.what() << std::endl;
@@ -275,7 +279,10 @@ int main(int argc, char *argv[]) {
 	std::string initialNullVectorFile = ioList.get<string> ("Initial null vector guess");
 	Teuchos::RCP<ComplexVector> initialNullVector;
 	try {
-	    readStateFromFile( Comm, initialNullVectorFile, initialNullVector, grid, glParameters );
+	    Teuchos::RCP<ComplexMultiVector> initialNullVectorM;
+	    GridReader::read( Comm, initialNullVectorFile, initialNullVectorM, grid, glParameters );
+        TEUCHOS_ASSERT_EQUALITY( initialNullVectorM->getNumVectors(), 1 );
+        initialNullVector = initialNullVectorM->getVectorNonConst(0);
 	}
 	catch (...) {
 	    std::cerr << "Unknown exception caught." << std::endl;
