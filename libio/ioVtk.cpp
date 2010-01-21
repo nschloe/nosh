@@ -288,7 +288,7 @@ IoVtk::strJoin(const std::vector<std::string> & vec, const std::string & sep) co
 // =============================================================================
 void
 IoVtk::writeParameterList(const Teuchos::ParameterList & pList,
-    std::ofstream & ioStream) const
+                                std::ofstream & ioStream) const
 {
   // TODO: Look into dynamically *appending* things to paramStringList to avoid
   // the need for precomputing numEntries.
@@ -627,7 +627,7 @@ IoVtk::ReadParamsFromVtkFile( const std::string            & paramLine,
 // ============================================================================
 void
 IoVtk::ReadScalarsFromVtkFile( std::ifstream                   & iFile,
-                               const int                         pointData,
+                               const unsigned int                pointData,
                                Teuchos::RCP<DoubleMultiVector> & scalars
                              ) const
 {
@@ -644,7 +644,7 @@ IoVtk::ReadScalarsFromVtkFile( std::ifstream                   & iFile,
     {
 	  // read the header
 	  int numComponents;
-	  readScalarFieldHeader( iFile, numComponents );
+	  readScalarFieldHeader( iFile, buf, numComponents );
 
       // Now the numbers start rolling.
       // Check that the multivector still has enough room for it.
@@ -656,7 +656,7 @@ IoVtk::ReadScalarsFromVtkFile( std::ifstream                   & iFile,
 
       // Read the elements row by row
       double dummy;
-      for (int k = 0; k < pointData; k++)
+      for (unsigned int k = 0; k < pointData; k++)
         {
           for (int component = 0; component < numComponents; component++)
             {
@@ -674,7 +674,7 @@ IoVtk::ReadScalarsFromVtkFile( std::ifstream                   & iFile,
 // ============================================================================
 void
 IoVtk::ReadScalarsFromVtkFile( std::ifstream                    & iFile,
- 		                       const int                          pointData,
+ 		                       const unsigned int                 pointData,
                                Teuchos::RCP<ComplexMultiVector> & scalars
                              ) const
 {
@@ -691,19 +691,20 @@ IoVtk::ReadScalarsFromVtkFile( std::ifstream                    & iFile,
   // loop over the SCALARS section and read the thing
   int vecIndex = 0;
   std::string buf;
-  iFile >> buf; // read ahead
+  iFile >> buf; // read-ahead
+
   while (iFile.good())
     {
 	  // read the header
 	  int numComponents;
-	  readScalarFieldHeader( iFile, numComponents );
+	  readScalarFieldHeader( iFile, buf, numComponents );
 
       // now the numbers start running
 
   	  if (numComponents==2) {
           // Read the elements row by row
           double re, im;
-          for (int k = 0; k < pointData; k++)
+          for (unsigned int k = 0; k < pointData; k++)
             {
                iFile >> re; iFile >> im;
                scalars->replaceGlobalValue(k, pointData, std::complex<double>(re,im) );
@@ -729,7 +730,7 @@ IoVtk::ReadScalarsFromVtkFile( std::ifstream                    & iFile,
   	  				    << " ******************************************************************"
   	  				    << std::endl;
   	    	  legacyRealValues = Teuchos::rcp( new DoubleVector(scalars->getMap(),pointData) );
-  	  	      for (int k = 0; k < pointData; k++)
+  	  	      for (unsigned int k = 0; k < pointData; k++)
   	  	        {
   	  	           iFile >> dummy;
   	  	           legacyRealValues->replaceGlobalValue(k, dummy );
@@ -738,7 +739,7 @@ IoVtk::ReadScalarsFromVtkFile( std::ifstream                    & iFile,
   	    	  // get view of the real part
   	    	  Teuchos::ArrayRCP<const double> legacyRealView = legacyRealValues->get1dView();
 	  	      std::complex<double> alpha;
-  	  	      for (int k = 0; k < pointData; k++)
+  	  	      for (unsigned int k = 0; k < pointData; k++)
   	  	        {
   	  	           iFile >> dummy;
   	  	           // calculate the complex data from the legacy structure
@@ -761,11 +762,10 @@ IoVtk::ReadScalarsFromVtkFile( std::ifstream                    & iFile,
 //==============================================================================
 void
 IoVtk::readScalarFieldHeader( std::ifstream & iFile,
+		                      std::string   & buf,
 		                      int           & numComponents
 		                    ) const
 {
-  std::string buf;
-
   TEST_FOR_EXCEPTION( buf.compare("SCALARS")!=0,
                       std::logic_error,
                       "Keyword \"SCALARS\" not found in file '" << fileName_ << "'."

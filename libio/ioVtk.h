@@ -106,18 +106,19 @@ private:
 
   void
   ReadScalarsFromVtkFile( std::ifstream                   & iFile,
-                          const int                         pointData,
+                          const unsigned int                pointData,
                           Teuchos::RCP<DoubleMultiVector> & scalars
                         ) const;
 
   void
   ReadScalarsFromVtkFile( std::ifstream                    & iFile,
-                          const int                          pointData,
+                          const unsigned int                 pointData,
                           Teuchos::RCP<ComplexMultiVector> & scalars
                         ) const;
 
   void
   readScalarFieldHeader( std::ifstream & iFile,
+		                 std::string   & buf,
                          int           & numComponents
   	                   ) const;
 
