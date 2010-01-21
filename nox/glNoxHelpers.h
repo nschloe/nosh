@@ -58,7 +58,7 @@ computeJacobianConditionNumber( const Teuchos::RCP<const NOX::Solver::Generic> s
 
 void
 computeJacobianEigenvalues( const Teuchos::RCP<const NOX::Solver::Generic> solver,
-		                    const Teuchos::RCP<      NOX::Epetra::Group>   grpPtr,
+		             const Teuchos::RCP<      NOX::Epetra::Group>   grpPtr,
 		                    const int MyPID );
 
 void

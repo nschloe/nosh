@@ -54,7 +54,8 @@ public:
                           const std::string outputDataFileName = "continuationData.dat",
                           const std::string outputFileFormat = "VTK",
                           const std::string solutionFileNameBase = "solutionStep",
-                          const std::string nullvectorFileNameBase = "nullvectorStep" );
+                          const std::string nullvectorFileNameBase = "nullvectorStep",
+                          const unsigned int maxStepNumberDecimals = 3 );
 
   // Constructor without initial guess.
   GlSystemWithConstraint( GinzburgLandau::GinzburgLandau &gl,
@@ -63,7 +64,8 @@ public:
                           const std::string outputDataFileName = "continuationData.dat",
                           const std::string outputFileFormat = "VTK",
                           const std::string solutionFileNameBase = "solutionStep",
-                          const std::string nullvectorFileNameBase = "nullvectorStep" );
+                          const std::string nullvectorFileNameBase = "nullvectorStep",
+                          const unsigned int maxStepNumberDecimals = 3 );
 
         //! Destructor
         ~GlSystemWithConstraint();
@@ -228,6 +230,9 @@ private:
         const std::string outputDataFileName_;
 
         const Teuchos::RCP<GlKomplex> glKomplex_;
+
+        const unsigned int maxStepNumberDecimals_;
+        std::string stepNumFileNameFormat_;
 };
 
 #endif /* GLSYSTEMWITHCONSTRAINT_H_ */

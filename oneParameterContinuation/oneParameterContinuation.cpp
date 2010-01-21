@@ -24,7 +24,7 @@
 
 #include "ginzburgLandau.h"
 
-#include "glSystem.h"
+#include "GlSystemWithConstraint.h"
 #include "glBoundaryConditionsInner.h"
 #include "glBoundaryConditionsOuter.h"
 #include "glBoundaryConditionsCentral.h"
@@ -231,9 +231,12 @@ main(int argc, char *argv[])
   Teuchos::RCP<GridUniformVirtual> gridV = grid;
   GinzburgLandau glProblem = GinzburgLandau(gridV, A, boundaryConditions);
 
-  Teuchos::RCP<GlSystem> glsystem =
-      Teuchos::rcp(new GlSystem( glProblem, eComm, psi, outputDirectory.string(),
-                                 contDataFileName, contFileFormat, contFileBaseName));
+  int maxLocaSteps = 5000;
+
+  unsigned int maxLocaStepsDecimals = (unsigned int) floor( log10(maxLocaSteps)+1.0 );
+  Teuchos::RCP<GlSystemWithConstraint> glsystem =
+      Teuchos::rcp(new GlSystemWithConstraint( glProblem, eComm, psi, outputDirectory.string(),
+                                 contDataFileName, contFileFormat, contFileBaseName, "", maxLocaStepsDecimals ));
 
   // ---------------------------------------------------------------------------
   // Create the necessary objects
@@ -342,7 +345,6 @@ main(int argc, char *argv[])
   // ---------------------------------------------------------------------------
   // Set up the LOCA status tests
   // ---------------------------------------------------------------------------
-  int maxLocaSteps = 5000;
   Teuchos::RCP<LOCA::StatusTest::MaxIters> maxLocaStepsTest = Teuchos::rcp(
       new LOCA::StatusTest::MaxIters(maxLocaSteps));
   // ---------------------------------------------------------------------------
@@ -357,7 +359,7 @@ main(int argc, char *argv[])
 
   // make sure that the stepper starts off with the correct starting value
 
-  // pass pointer to stepper to glSystem to be able to read stats from the stepper in there
+  // pass pointer to stepper to glsystem to be able to read stats from the stepper in there
   glsystem->setLocaStepper(stepper);
 #ifdef HAVE_LOCA_ANASAZI
   glEigenSaver->setLocaStepper(stepper);

@@ -15,13 +15,13 @@ EigenSaver::EigenSaver(const Teuchos::RCP<Teuchos::ParameterList> eigenParamList
 		               const std::string  eigenvaluesFileName,
 		               const std::string  contFileBaseName,
 		               const std::string  eigenstateFileNameAppendix,
-		               const Teuchos::RCP<GlSystem> glSys) :
+		               const Teuchos::RCP<AbstractStateWriter> stateWriter) :
 eigenParamList_(eigenParamList),
 outputDir_(outputDir),
 eigenvaluesFilePath_(outputDir + "/" + eigenvaluesFileName),
 contFileBaseName_(contFileBaseName),
 eigenstateFileNameAppendix_(eigenstateFileNameAppendix),
-glSys_(glSys),
+stateWriter_(stateWriter),
 locaStepper_(0),
 numComputeStableEigenvalues_(3),
 maxEigenvaluesSave_(20)
@@ -93,7 +93,7 @@ EigenSaver::save(Teuchos::RCP<std::vector<double> > &evals_r,
 			Teuchos::RCP<NOX::Epetra::Vector> myVec =
 					Teuchos::rcp_dynamic_cast<NOX::Epetra::Vector>(abVec, true);
 
-			glSys_->writeAbstractStateToFile( myVec->getEpetraVector(),
+			stateWriter_->writeAbstractStateToFile( myVec->getEpetraVector(),
 					                          eigenstateFilePath );
 		}
 	}

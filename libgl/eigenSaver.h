@@ -24,7 +24,7 @@ class EigenSaver : public LOCA::SaveEigenData::AbstractStrategy
 	           const std::string eigenvaluesFileName,
 	           const std::string contFileBaseName,
 	           const std::string eigenstateFileNameAppendix,
-               const Teuchos::RCP<GlSystem> glSys );
+               const Teuchos::RCP<AbstractStateWriter> glSys );
 
    virtual ~EigenSaver();
 
@@ -49,7 +49,7 @@ class EigenSaver : public LOCA::SaveEigenData::AbstractStrategy
     std::string eigenvaluesFilePath_;
     std::string contFileBaseName_;
     std::string eigenstateFileNameAppendix_;
-    Teuchos::RCP<GlSystem> glSys_;
+    Teuchos::RCP<AbstractStateWriter> stateWriter_;
     Teuchos::RCP<LOCA::Stepper> locaStepper_;
 
     //! The minimum number of stable eigenvalues that is to be computed in each step.

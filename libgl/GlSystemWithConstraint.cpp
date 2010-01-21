@@ -9,8 +9,7 @@
 
 #include "ioFactory.h"
 
-#include <complex>
-#include <vector>
+#include <boost/format.hpp>
 
 #include <Epetra_Export.h>
 #include <Epetra_CrsMatrix.h>
@@ -41,14 +40,15 @@ typedef std::complex<double> double_complex;
 // =============================================================================
 // Default constructor
 GlSystemWithConstraint::GlSystemWithConstraint( GinzburgLandau::GinzburgLandau &gl,
-                    const Teuchos::RCP<const Epetra_Comm> eComm,
-                    const Teuchos::RCP<ComplexVector> psi,
-                    const std::string outputDir,
-                    const std::string outputDataFileName,
-                    const std::string outputFileFormat,
-                    const std::string solutionFileNameBase,
-                    const std::string nullvectorFileNameBase
-                  ) :
+                                                const Teuchos::RCP<const Epetra_Comm> eComm,
+                                                const Teuchos::RCP<ComplexVector> psi,
+                                                const std::string outputDir,
+                                                const std::string outputDataFileName,
+                                                const std::string outputFileFormat,
+                                                const std::string solutionFileNameBase,
+                                                const std::string nullvectorFileNameBase,
+                                                const unsigned int maxStepNumberDecimals
+                                              ) :
         NumMyElements_(0),
         NumComplexUnknowns_(0),
         stepper_(0),
@@ -67,7 +67,8 @@ GlSystemWithConstraint::GlSystemWithConstraint( GinzburgLandau::GinzburgLandau &
         nullvectorFileNameBase_(nullvectorFileNameBase),
         outputFileFormat_(outputFileFormat),
         outputDataFileName_(outputDataFileName),
-        glKomplex_( Teuchos::rcp(new GlKomplex(eComm) ) )
+        glKomplex_( Teuchos::rcp(new GlKomplex(eComm) ) ),
+        maxStepNumberDecimals_( maxStepNumberDecimals )
 {
   NumComplexUnknowns_ = Gl_.getNumUnknowns();
 
@@ -117,7 +118,8 @@ GlSystemWithConstraint::GlSystemWithConstraint(GinzburgLandau::GinzburgLandau &g
                    const std::string outputDataFileName,
                    const std::string outputFileFormat,
                    const std::string solutionFileNameBase,
-                   const std::string nullvectorFileNameBase
+                   const std::string nullvectorFileNameBase,
+                   const unsigned int maxStepNumberDecimals
                   ) :
 NumMyElements_(0),
 NumComplexUnknowns_(0),
@@ -137,7 +139,8 @@ solutionFileNameBase_(solutionFileNameBase),
 nullvectorFileNameBase_(nullvectorFileNameBase),
 outputFileFormat_(outputFileFormat),
 outputDataFileName_(outputDataFileName),
-glKomplex_( Teuchos::rcp(new GlKomplex(eComm) ) )
+glKomplex_( Teuchos::rcp(new GlKomplex(eComm) ) ),
+maxStepNumberDecimals_( maxStepNumberDecimals )
 {
   NumComplexUnknowns_ = Gl_.getNumUnknowns();
 
@@ -205,6 +208,10 @@ GlSystemWithConstraint::initialize(const Teuchos::RCP<ComplexVector> psi) {
 
 	preconditioner_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, *Graph_));
 	preconditioner_->FillComplete();
+
+	// Initialize the format for the the continuation step number.
+	// Here: 00012 for step no. 12, if maxStepNumberDecimals_=5.
+    stepNumFileNameFormat_ = boost::str(  boost::format("%%|0%d|") % maxStepNumberDecimals_ );
 }
 // =============================================================================
 int GlSystemWithConstraint::realIndex2complexIndex(const int realIndex) const {
@@ -714,9 +721,9 @@ GlSystemWithConstraint::setLocaStepper(const Teuchos::RCP<const LOCA::Stepper> s
                 continuationType_ = TURNINGPOINT;
         else
             TEST_FOR_EXCEPTION( true,
-                                            std::logic_error,
-                                            "Unknown continuation type \""
-                                            << bifurcationType << "\"" );
+                                std::logic_error,
+                                "Unknown continuation type \""
+                                << bifurcationType << "\"" );
 }
 // =============================================================================
 void
@@ -748,23 +755,25 @@ GlSystemWithConstraint::printSolution( const  Epetra_Vector &x,
             break;
         default:
             TEST_FOR_EXCEPTION( true,
-                                            std::logic_error,
-                                            "Illegal continuation type " << continuationType_ );
+                                std::logic_error,
+                                "Illegal continuation type " << continuationType_ );
         }
 }
 // =============================================================================
 void
 GlSystemWithConstraint::printSolutionOneParameterContinuation( const Teuchos::RCP<const ComplexVector> & psi
-                                                       ) const
+                                                             ) const
 {
         static int conStep = -1;
         conStep++;
 
-        std::string fileName = outputDir_ + "/" + solutionFileNameBase_
-                        + EpetraExt::toString(conStep) + ".vtk";
+        // determine file name
+        std::string conStepStr = boost::str(  boost::format(stepNumFileNameFormat_) % conStep );
+        std::ostringstream fileNameStream;
+        fileNameStream << outputDir_ << "/" << solutionFileNameBase_ << conStepStr << ".vtk";
 
         // actually print the state to fileName
-        Gl_.writeSolutionToFile(psi, fileName);
+        Gl_.writeSolutionToFile(psi, fileNameStream.str() );
 
         writeContinuationStats( conStep, psi );
 }
@@ -778,7 +787,7 @@ GlSystemWithConstraint::printSolutionOneParameterContinuation( const Teuchos::RC
 // The method gets called subsequently in this order.
 void
 GlSystemWithConstraint::printSolutionTurningPointContinuation( const Teuchos::RCP<const ComplexVector> & psi
-                                                       ) const
+                                                             ) const
 {
         static bool printSolution=false;
         static int conStep = -1;
@@ -791,18 +800,20 @@ GlSystemWithConstraint::printSolutionTurningPointContinuation( const Teuchos::RC
                 conStep++;
 
         // determine file name
-        std::string fileName;
+        std::ostringstream oss;
+
+        // determine file name
+        std::string conStepStr = boost::str(  boost::format(stepNumFileNameFormat_) % conStep );
+
         if ( printSolution ) {
-            fileName = outputDir_ + "/" + solutionFileNameBase_
-                         + EpetraExt::toString(conStep) + ".vtk";
+        	oss << outputDir_ << "/" << solutionFileNameBase_ << conStepStr << ".vtk";
             writeContinuationStats( conStep, psi );
         }
         else
-            fileName = outputDir_ + "/" + nullvectorFileNameBase_
-                         + EpetraExt::toString(conStep) + ".vtk";
+        	oss << outputDir_ << "/" << nullvectorFileNameBase_ << conStepStr << ".vtk";
 
         // actually print the state to fileName
-        Gl_.writeSolutionToFile(psi, fileName);
+        Gl_.writeSolutionToFile(psi, oss.str());
 
 }
 // =============================================================================
