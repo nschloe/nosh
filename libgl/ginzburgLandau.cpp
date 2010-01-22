@@ -90,7 +90,8 @@ void GinzburgLandau::getEquationType ( const int           eqnum,
     {
       TEST_FOR_EXCEPTION( true,
   			              std::logic_error,
-  			              "Illegal running index   eqnum = " <<  eqnum );
+  			              "Illegal running index   eqnum = " <<  eqnum << " "
+  			              << "(numTotalEquations=" << numTotalEquations << ").");
     }
 }
 // =============================================================================

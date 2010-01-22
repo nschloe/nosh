@@ -2,7 +2,7 @@
  * GlSystemWithConstraint.cpp
  *
  *  Created on: Dec 16, 2009
- *      Author: Nico Schl�mer
+ *      Author: Nico Schloemer
  */
 
 #include "GlSystemWithConstraint.h"
@@ -49,12 +49,11 @@ GlSystemWithConstraint::GlSystemWithConstraint( GinzburgLandau::GinzburgLandau &
                                                 const std::string nullvectorFileNameBase,
                                                 const unsigned int maxStepNumberDecimals
                                               ) :
+        glSystem_( gl, eComm, psi, outputDir, outputDataFileName, outputFileFormat, solutionFileNameBase, nullvectorFileNameBase ),
         NumMyElements_(0),
         NumComplexUnknowns_(0),
-        stepper_(0),
         Gl_(gl),
         EComm_(eComm),
-        TComm_(0),
         regularRealMap_(0),
         extendedRealMap_(0),
         ComplexMap_(0),
@@ -62,7 +61,6 @@ GlSystemWithConstraint::GlSystemWithConstraint( GinzburgLandau::GinzburgLandau &
         Graph_(0),
         jacobian_(0),
         initialSolution_(0),
-        outputDir_(outputDir),
         solutionFileNameBase_(solutionFileNameBase),
         nullvectorFileNameBase_(nullvectorFileNameBase),
         outputFileFormat_(outputFileFormat),
@@ -72,30 +70,6 @@ GlSystemWithConstraint::GlSystemWithConstraint( GinzburgLandau::GinzburgLandau &
 {
   NumComplexUnknowns_ = Gl_.getNumUnknowns();
 
-  TEST_FOR_EXCEPTION( !psi.is_valid_ptr(),
-                      std::logic_error,
-                      "Invalid pointer" );
-
-  TEST_FOR_EXCEPTION( psi.is_null(),
-                      std::logic_error,
-                      "Input guess is null pointer" );
-
-  // TODO There is (until now?) no way to convert a Teuchos::Comm (of psi)
-  // to an Epetra_Comm (of the real valued representation of psi), so the
-  // Epetra_Comm has to be generated explicitly, and two communicators are kept
-  // side by side all the time. One must make sure that the two are actually
-  // equivalent, which can be checked by Thyra's conversion method create_Comm.
-  // TODO Is is actually necessary to have equivalent communicators on the
-  // real-valued and the complex-valued side?
-  // How to compare two communicators anyway?
-
-  // create fitting Tpetra::Comm
-  // TODO: move into initializer
-  TComm_ = create_CommInt(EComm_);
-
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  // Define maps and initialize solution.
-
   // TODO Don't throw exception in constructor?
   TEST_FOR_EXCEPTION( psi->getGlobalLength() != (unsigned int) NumComplexUnknowns_,
                       std::logic_error,
@@ -104,9 +78,8 @@ GlSystemWithConstraint::GlSystemWithConstraint( GinzburgLandau::GinzburgLandau &
                       << ") does not coincide with the number of unknowns ("
                       << NumComplexUnknowns_ << ")" );
 
-  // psi->getMap() returns a CONST map
-  ComplexMap_ = Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> >(psi->getMap());
-        
+  ComplexMap_ = glSystem_.getComplexMap();
+
   // do the rest of the initialization
   initialize( psi );
 }
@@ -121,12 +94,11 @@ GlSystemWithConstraint::GlSystemWithConstraint(GinzburgLandau::GinzburgLandau &g
                    const std::string nullvectorFileNameBase,
                    const unsigned int maxStepNumberDecimals
                   ) :
+glSystem_( gl, eComm, outputDir, outputDataFileName, outputFileFormat, solutionFileNameBase, nullvectorFileNameBase ),
 NumMyElements_(0),
 NumComplexUnknowns_(0),
-stepper_(0),
 Gl_(gl),
 EComm_(eComm),
-TComm_(0),
 regularRealMap_(0),
 extendedRealMap_(0),
 ComplexMap_(0),
@@ -134,7 +106,6 @@ rhs_(0),
 Graph_(0),
 jacobian_(0),
 initialSolution_(0),
-outputDir_(outputDir),
 solutionFileNameBase_(solutionFileNameBase),
 nullvectorFileNameBase_(nullvectorFileNameBase),
 outputFileFormat_(outputFileFormat),
@@ -153,17 +124,12 @@ maxStepNumberDecimals_( maxStepNumberDecimals )
   // real-valued and the complex-valued side?
   // How to compare two communicators anyway?
 
-  // create fitting Tpetra::Comm
-  // TODO: move into initializer
-  TComm_ = create_CommInt(EComm_);
-
   // define complex map
-  ComplexMap_ = Teuchos::rcp(new Tpetra::Map<Thyra::Ordinal>(NumComplexUnknowns_, 0, TComm_));
+  ComplexMap_ = glSystem_.getComplexMap();
 
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   // initialize solution
-  Teuchos::RCP<ComplexVector> psi = Teuchos::rcp(new ComplexVector(
-                  ComplexMap_));
+  Teuchos::RCP<ComplexVector> psi = Teuchos::rcp(new ComplexVector(ComplexMap_));
   // TODO Move default initialization out to main file
   double_complex alpha(1.0, 0.0);
   psi->putScalar(alpha); // default initialization
@@ -175,16 +141,16 @@ maxStepNumberDecimals_( maxStepNumberDecimals )
 // =============================================================================
 // Destructor
 GlSystemWithConstraint::~GlSystemWithConstraint() {
-        stepper_ = Teuchos::null;
 }
 // =============================================================================
 void
-GlSystemWithConstraint::initialize(const Teuchos::RCP<ComplexVector> psi) {
-
+GlSystemWithConstraint::initialize(const Teuchos::RCP<ComplexVector> psi)
+{
 	Teuchos::RCP<Epetra_Vector> tmp = glKomplex_->complex2real(*psi);
+
 	// Create the maps with and without phase constraint.
-	regularRealMap_ = Teuchos::rcp( new Epetra_BlockMap(tmp->Map()) );
-	createExtendedRealMap( *regularRealMap_ );
+	regularRealMap_  = glSystem_.getRealMap();
+	extendedRealMap_ = createExtendedRealMap( *regularRealMap_ );
 
 	initialSolution_ = Teuchos::rcp( new Epetra_Vector(*extendedRealMap_), true );
 	for (int k=0; k<tmp->MyLength(); k++ ) {
@@ -200,6 +166,8 @@ GlSystemWithConstraint::initialize(const Teuchos::RCP<ComplexVector> psi) {
 	// use x as DUMMY argument
 	Epetra_Vector dummy(*extendedRealMap_);
 
+	// Create the current graph. Note that the underlying graph is already
+	// constructed (happens in the initializer of glSystem).
 	createJacobian(ONLY_GRAPH, dummy);
 
 	// Allocate the sparsity pattern of the Jacobian matrix
@@ -212,13 +180,6 @@ GlSystemWithConstraint::initialize(const Teuchos::RCP<ComplexVector> psi) {
 	// Initialize the format for the the continuation step number.
 	// Here: 00012 for step no. 12, if maxStepNumberDecimals_=5.
     stepNumFileNameFormat_ = boost::str(  boost::format("%%|0%d|") % maxStepNumberDecimals_ );
-}
-// =============================================================================
-int GlSystemWithConstraint::realIndex2complexIndex(const int realIndex) const {
-        if (!(realIndex % 2)) // realIndex even
-                return realIndex / 2;
-        else
-                return (realIndex - 1) / 2;
 }
 // =============================================================================
 bool
@@ -249,33 +210,27 @@ GlSystemWithConstraint::computeF(const Epetra_Vector &x,
                       << "(" << FVec.Map().NumGlobalElements() << " for FVec vs. "
                       << extendedRealMap_->NumGlobalElements() << " for extendedRealMap_).");
 
-  // strip off the phase constraint
   // TODO replace by {im,ex}porter
+  // strip off the phase constraint
   Epetra_Vector tmp(*regularRealMap_);
   for (int k=0; k<tmp.MyLength(); k++)
     tmp.ReplaceMyValue( k, 0, x[x.Map().GID(k)] );
 
-  // convert x to psi
-  const Teuchos::RCP<ComplexVector> psi = glKomplex_->real2complex(tmp);
-
-  // compute the GL residual
-  Teuchos::RCP<ComplexVector> res = Gl_.computeGlVector( psi );
-
-  // transform back to fully real equation
-  const Teuchos::RCP<Epetra_Vector> shortFVec = glKomplex_->complex2real(*res);
+  Epetra_Vector shortFVec(*regularRealMap_);
+  glSystem_.computeF( tmp, shortFVec, fillFlag );
 
   // copy over and add phase condition
   // TODO replace by {im,ex}porter
-  for (int k=0; k<shortFVec->MyLength(); k++) {
-    FVec.ReplaceMyValue( k, 0, (*shortFVec)[shortFVec->Map().GID(k)] );
+  for (int k=0; k<shortFVec.MyLength(); k++) {
+    FVec.ReplaceMyValue( k, 0, shortFVec[shortFVec.Map().GID(k)] );
   }
   FVec.ReplaceGlobalValue( 2*NumComplexUnknowns_, 0, 0.0 );
 
   return true;
 }
 // =============================================================================
-void
-GlSystemWithConstraint::createExtendedRealMap( const Epetra_BlockMap & realMap  )
+Teuchos::RCP<Epetra_Map>
+GlSystemWithConstraint::createExtendedRealMap( const Epetra_BlockMap & realMap  ) const
 {
   // fill up realMapGIDs
   int numMyElements = realMap.NumMyElements();
@@ -291,16 +246,27 @@ GlSystemWithConstraint::createExtendedRealMap( const Epetra_BlockMap & realMap  
   }
 
   int numGlobalElements = realMap.NumGlobalElements() + 1;
-  extendedRealMap_ = Teuchos::rcp( new Epetra_Map(numGlobalElements,
-                                                  myElements.length(),
-                                                  myElements.getRawPtr(),
-                                                  realMap.IndexBase(),
-                                                  realMap.Comm() )
-                                 );
-  return;
+  return Teuchos::rcp( new Epetra_Map(numGlobalElements,
+                                      myElements.length(),
+                                      myElements.getRawPtr(),
+                                      realMap.IndexBase(),
+                                      realMap.Comm() )
+                     );
 }
 // =============================================================================
 bool GlSystemWithConstraint::computeJacobian(const Epetra_Vector &x, Epetra_Operator &Jac) {
+
+  // strip off the phase constraint
+  Epetra_Vector tmp(*regularRealMap_);
+  for (int k=0; k<tmp.MyLength(); k++)
+    tmp.ReplaceMyValue( k, 0, x[x.Map().GID(k)] );
+
+  // TODO Strip down Jac, too.
+  // --   Not really necessary as it's not being used anyway.
+
+  // compute the underlying Jacobian
+  glSystem_.computeJacobian( tmp, Jac );
+
   // compute the values of the Jacobian
   createJacobian(VALUES, x);
 
@@ -317,10 +283,6 @@ bool GlSystemWithConstraint::computePreconditioner( const Epetra_Vector    & x,
                                                     Epetra_Operator        & Prec,
                                                     Teuchos::ParameterList * precParams )
 {
-//  Epetra_Vector diag = x;
-//  diag.PutScalar(1.0);
-//  preconditioner_->ReplaceDiagonalValues( diag );
-
   TEST_FOR_EXCEPTION( true,
                       std::logic_error,
                       "Use explicit Jacobian only for this test problem!" );
@@ -341,326 +303,78 @@ Teuchos::RCP<Epetra_CrsMatrix>
 GlSystemWithConstraint::getPreconditioner() const {
         return preconditioner_;
 }
-/* =============================================================================
- // Of an equation system
- // \f[
- // A\psi + B \psi^* = b
- // \f]
- // where \f$A,B\in\mathbb{C}^{n\times n}\f$, \f$\psi, b\in\mathbb{C}^{n}\f$,
- // this routine constructs the corresponding real-valued equation system
- // \f[
- // \begin{pmatrix}
- // \Re{A}+\Re{B} & -\Im{A}+\Im{B}\\
-// \Im{A}+\Im{B} &  \Re{A}-\Re{B}
- // \end{pmatrix}
- // \begin{pmatrix}
- // \Re{\psi}\\
-// \Im{\psi}
- // \end{pmatrix}
- // =
- // \begin{pmatrix}
- // \Re{b}\\
-// \Im{b}
- // \end{pmatrix}
- // \f].
- // It also incorporates a phase condition.
- */
-bool GlSystemWithConstraint::createJacobian( const jacCreator      jc,
-                                             const Epetra_Vector & x   )
+// =============================================================================
+// It also incorporates a phase condition.
+void
+GlSystemWithConstraint::createJacobian( const jacCreator      jc,
+                                        const Epetra_Vector & x   )
 {
   TEST_FOR_EXCEPTION( !extendedRealMap_.is_valid_ptr() || extendedRealMap_.is_null(),
                       std::logic_error,
                       "extendedRealMap_ not properly initialized." );
 
-  Teuchos::RCP<ComplexVector> psi;
+  if (jc == VALUES) // fill in values
+  {
+	  // TODO replace by {im,ex}porter
+	  // strip off the phase constraint
+	  Epetra_Vector tmp(*regularRealMap_);
+	  for (int k=0; k<tmp.MyLength(); k++)
+	    tmp.ReplaceMyValue( k, 0, x[x.Map().GID(k)] );
 
-  vector<int> colIndA, colIndB;
-  vector<double_complex> valuesA, valuesB;
+	  // TODO don't explicitly construct psi? get1dCopy on the rhs
+      Teuchos::RCP<ComplexVector>             psi     = glKomplex_->real2complex(tmp);
+      Teuchos::ArrayRCP<const double_complex> psiView = psi->get1dView();
 
-  int *colInd = NULL, *colIndAReal = NULL, *colIndAImag = NULL, *colIndBReal =
-      NULL, *colIndBImag = NULL;
-  double *values = NULL, *valuesAReal = NULL, *valuesAImag = NULL,
-         *valuesBReal = NULL, *valuesBImag = NULL;
+	  // get the unbordered Jacobian
+	  Teuchos::RCP<Epetra_CrsMatrix> regularJacobian = glSystem_.getJacobian();
 
-        int ierr, k, complexRow, numEntries;
 
-        Teuchos::ArrayRCP<const double_complex> psiView;
+	  std::string::size_type n = regularRealMap_->NumGlobalElements();
+	  // create right bordering
+	  Teuchos::Array<double> rightBorder(n);
+      for (int k = 0; k < NumComplexUnknowns_; k++) {
+    	  rightBorder[2 * k]     =  imag(psiView[k]);
+    	  rightBorder[2 * k + 1] = -real(psiView[k]);
+      }
 
-        if (jc == VALUES) {
-            Epetra_Vector tmp(*regularRealMap_);
-            for (int k=0; k<tmp.MyLength(); k++)
-                tmp.ReplaceMyValue( k, 0, x[x.Map().GID(k)] );
-            psi = glKomplex_->real2complex(tmp);
-            psiView = psi->get1dView();
+	  // create lower border
+	  Teuchos::Array<double> lowerBorder(n);
+      for (int k = 0; k < NumComplexUnknowns_; k++) {
+    	  lowerBorder[2 * k]     = -imag(psiView[k]);
+          lowerBorder[2 * k + 1] =  real(psiView[k]);
+      }
 
-            jacobian_->PutScalar(0.0); // set the matrix to 0
-        } else {
-                // allocate the graph
-                int approxNumEntriesPerRow = 1;
-                Graph_ = Teuchos::rcp<Epetra_CrsGraph>(new Epetra_CrsGraph(Copy,
-                                *extendedRealMap_, approxNumEntriesPerRow, false));
-        }
+      // corner element
+      double d = 0.0;
 
-        // Construct the Epetra Matrix
-        for (int i = 0; i < NumMyElements_; i++) {
-                int Row = extendedRealMap_->GID(i);
+      // create the bordered Jacobian out of this
+      fillBorderedMatrix( jacobian_, regularJacobian, rightBorder, lowerBorder, d );
 
-                if (Row == 2 * NumComplexUnknowns_) // phase condition
-                {
-                        // fill in phase condition stuff
-                        numEntries = 2 * NumComplexUnknowns_;
-                        colInd = new int[numEntries];
-                        for (int k = 0; k < numEntries; k++)
-                                colInd[k] = k;
-                        if (jc == VALUES) // fill on columns and values
-                        {
-                                values = new double[numEntries];
-                                for (int k = 0; k < NumComplexUnknowns_; k++) {
-                                        values[2 * k] = -imag(psiView[k]);
-                                        values[2 * k + 1] = real(psiView[k]);
-                                }
-                                // fill it in!
-                                ierr = jacobian_->SumIntoGlobalValues(Row, numEntries, values,
-                                                colInd);
-                                delete[] values;
-                                values = NULL;
-                        } else // only fill the sparsity graph
-                        {
-                                Graph_->InsertGlobalIndices(Row, numEntries, colInd);
-                        }
-                        delete[] colInd;
-                        colInd = NULL;
+      TEST_FOR_EXCEPT( 0 != jacobian_->FillComplete() );
+      TEST_FOR_EXCEPT( 0 != jacobian_->OptimizeStorage() );
 
-                } else // GL equations
-                {
-                        // get the values and column indices
-                        // TODO: The same value is actually fetched twice in this loop
-                        //       possibly consecutively: Once for the real, once for
-                        //       the imaginary part of it.
-                        if (!(Row % 2)) // Row even
-                                complexRow = Row / 2;
-                        else
-                                complexRow = (Row - 1) / 2;
+  } else { // just create graph
+	  // get the unbordered Graph
+	  Teuchos::RCP<const Epetra_CrsGraph> regularGraph = glSystem_.getGraph();
 
-                        if (jc == VALUES) {
-                                // fill on columns and values
-                                Gl_.getJacobianRow(complexRow, psi, colIndA, valuesA, colIndB,
-                                                valuesB);
-                        } else {
-                                // only fill the sparsity graph
-                                Gl_.getJacobianRowSparsity(complexRow, colIndA, colIndB);
-                        }
+      // create the bordered Graph out of this
+      Graph_ = createBorderedGraph( extendedRealMap_, regularGraph );
 
-                        if (!(Row % 2)) // myGlobalIndex is even <=> Real part of the equation system
-                        {
-                                // ---------------------------------------------------------------
-                                // insert the coefficients Re(A) of Re(psi)
-                                numEntries = colIndA.size();
-                                colIndAReal = new int[numEntries];
-                                for (k = 0; k < numEntries; k++)
-                                        colIndAReal[k] = 2 * colIndA[k];
+      TEST_FOR_EXCEPT( 0 != Graph_->FillComplete() );
+  }
 
-                                if (jc == VALUES) {
-                                        valuesAReal = new double[numEntries];
-                                        for (k = 0; k < numEntries; k++)
-                                                valuesAReal[k] = real(valuesA[k]);
-                                        ierr = jacobian_->SumIntoGlobalValues(Row, numEntries,
-                                                        valuesAReal, colIndAReal);
-                                        delete[] valuesAReal;
-                                        valuesAReal = NULL;
-                                } else {
-                                        Graph_->InsertGlobalIndices(Row, numEntries, colIndAReal);
-                                }
-                                delete[] colIndAReal;
-                                colIndAReal = NULL;
+  // Sync up processors for safety's sake
+  EComm_->Barrier();
 
-                                // insert the coefficients Re(B) of Re(psi)
-                                numEntries = colIndB.size();
-                                colIndBReal = new int[numEntries];
-                                for (k = 0; k < numEntries; k++)
-                                        colIndBReal[k] = 2 * colIndB[k];
-                                if (jc == VALUES) {
-                                        valuesBReal = new double[numEntries];
-                                        for (k = 0; k < numEntries; k++)
-                                                valuesBReal[k] = real(valuesB[k]);
-                                        ierr = jacobian_->SumIntoGlobalValues(Row, numEntries,
-                                                        valuesBReal, colIndBReal);
-                                        delete[] valuesBReal;
-                                        valuesBReal = NULL;
-                                } else {
-                                        Graph_->InsertGlobalIndices(Row, numEntries, colIndBReal);
-                                }
-                                delete[] colIndBReal;
-                                colIndBReal = NULL;
-
-                                // insert the coefficients -Im(A) of Im(psi)
-                                numEntries = colIndA.size();
-                                colIndAImag = new int[numEntries];
-                                for (k = 0; k < numEntries; k++)
-                                        colIndAImag[k] = 2 * colIndA[k] + 1;
-                                if (jc == VALUES) {
-                                        valuesAImag = new double[numEntries];
-                                        for (k = 0; k < numEntries; k++)
-                                                valuesAImag[k] = -imag(valuesA[k]);
-                                        ierr = jacobian_->SumIntoGlobalValues(Row, numEntries,
-                                                        valuesAImag, colIndAImag);
-                                        delete[] valuesAImag;
-                                        valuesAImag = NULL;
-                                } else {
-                                        Graph_->InsertGlobalIndices(Row, numEntries, colIndAImag);
-                                }
-                                delete[] colIndAImag;
-                                colIndAImag = NULL;
-
-                                // insert the coefficients Im(B) of Im(psi)
-                                numEntries = colIndB.size();
-                                colIndBImag = new int[numEntries];
-                                for (k = 0; k < numEntries; k++)
-                                        colIndBImag[k] = 2 * colIndB[k] + 1;
-                                if (jc == VALUES) {
-                                        valuesBImag = new double[numEntries];
-                                        for (k = 0; k < numEntries; k++)
-                                                valuesBImag[k] = imag(valuesB[k]);
-                                        ierr = jacobian_->SumIntoGlobalValues(Row, numEntries,
-                                                        valuesBImag, colIndBImag);
-                                        delete[] valuesBImag;
-                                        valuesBImag = NULL;
-                                } else {
-                                        Graph_->InsertGlobalIndices(Row, numEntries, colIndBImag);
-                                }
-                                delete[] colIndBImag;
-                                colIndBImag = NULL;
-
-                                // right bordering
-                                int k = realIndex2complexIndex(Row);
-                                int column = 2 * NumComplexUnknowns_;
-                                if (jc == VALUES) {
-                                        double value = imag(psiView[k]);
-                                        ierr = jacobian_->SumIntoGlobalValues(Row, 1, &value,
-                                                        &column);
-                                } else {
-                                        Graph_->InsertGlobalIndices(Row, 1, &column);
-                                }
-
-                                // ---------------------------------------------------------
-                        } else // Row is odd <=> Imaginary part of the equation
-                        {
-                                // ---------------------------------------------------------
-                                // insert the coefficients Im(A) of Re(psi)
-                                numEntries = colIndA.size();
-                                colIndAReal = new int[numEntries];
-                                for (k = 0; k < numEntries; k++)
-                                        colIndAReal[k] = 2 * colIndA[k];
-                                if (jc == VALUES) {
-                                        valuesAImag = new double[numEntries];
-                                        for (k = 0; k < numEntries; k++)
-                                                valuesAImag[k] = imag(valuesA[k]);
-                                        ierr = jacobian_->SumIntoGlobalValues(Row, numEntries,
-                                                        valuesAImag, colIndAReal);
-                                        delete[] valuesAImag;
-                                        valuesAImag = NULL;
-                                } else {
-                                        Graph_->InsertGlobalIndices(Row, numEntries, colIndAReal);
-                                }
-                                delete[] colIndAReal;
-                                colIndAReal = NULL;
-
-                                // insert the coefficients Im(B) of Re(psi)
-                                numEntries = colIndB.size();
-                                colIndBReal = new int[numEntries];
-                                for (k = 0; k < numEntries; k++)
-                                        colIndBReal[k] = 2 * colIndB[k];
-                                if (jc == VALUES) {
-                                        valuesBImag = new double[numEntries];
-                                        for (k = 0; k < numEntries; k++)
-                                                valuesBImag[k] = imag(valuesB[k]);
-                                        ierr = jacobian_->SumIntoGlobalValues(Row, numEntries,
-                                                        valuesBImag, colIndBReal);
-                                        delete[] valuesBImag;
-                                        valuesBImag = NULL;
-                                } else {
-                                        Graph_->InsertGlobalIndices(Row, numEntries, colIndBReal);
-                                }
-                                delete[] colIndBReal;
-                                colIndBReal = NULL;
-
-                                // insert the coefficients Re(A) of Im(psi)
-                                numEntries = colIndA.size();
-                                colIndAImag = new int[numEntries];
-                                for (k = 0; k < numEntries; k++)
-                                        colIndAImag[k] = 2 * colIndA[k] + 1;
-                                if (jc == VALUES) {
-                                        valuesAReal = new double[numEntries];
-                                        for (k = 0; k < numEntries; k++)
-                                                valuesAReal[k] = real(valuesA[k]);
-                                        ierr = jacobian_->SumIntoGlobalValues(Row, numEntries,
-                                                        valuesAReal, colIndAImag);
-                                        delete[] valuesAReal;
-                                        valuesAReal = NULL;
-                                } else {
-                                        Graph_->InsertGlobalIndices(Row, numEntries, colIndAImag);
-                                }
-                                delete[] colIndAImag;
-                                colIndAImag = NULL;
-
-                                // insert the coefficients -Re(B) of Im(psi)
-                                numEntries = colIndB.size();
-                                colIndBImag = new int[numEntries];
-                                for (k = 0; k < numEntries; k++)
-                                        colIndBImag[k] = 2 * colIndB[k] + 1;
-                                if (jc == VALUES) {
-                                        valuesBReal = new double[numEntries];
-                                        for (k = 0; k < numEntries; k++)
-                                                valuesBReal[k] = -real(valuesB[k]);
-                                        ierr = jacobian_->SumIntoGlobalValues(Row, numEntries,
-                                                        valuesBReal, colIndBImag);
-                                        delete[] valuesBReal;
-                                        valuesBReal = NULL;
-                                } else {
-                                        Graph_->InsertGlobalIndices(Row, numEntries, colIndBImag);
-                                }
-                                delete[] colIndBImag;
-                                colIndBImag = NULL;
-
-                                // right bordering
-                                int column = 2 * NumComplexUnknowns_;
-                                if (jc == VALUES) {
-                                        int k = realIndex2complexIndex(Row);
-                                        double value = -real(psiView[k]);
-                                        ierr = jacobian_->SumIntoGlobalValues(Row, 1, &value,
-                                                        &column);
-                                } else {
-                                        Graph_->InsertGlobalIndices(Row, 1, &column);
-                                }
-                                // ---------------------------------------------------------
-                        }
-                }
-        }
-
-        // ---------------------------------------------------------------------------
-        // finish up the graph construction
-        try {
-                if (jc == VALUES) {
-                        jacobian_->FillComplete();
-                        jacobian_->OptimizeStorage();
-                } else {
-                        Graph_->FillComplete();
-                }
-        } catch (int i) {
-            TEST_FOR_EXCEPTION( true,
-                                std::logic_error,
-                                "FillComplete returned error code " << i );
-        }
-        // ---------------------------------------------------------------------------
-
-        // Sync up processors for safety's sake
-        EComm_->Barrier();
-
-        return true;
+  return;
 }
 // =============================================================================
-bool GlSystemWithConstraint::computeShiftedMatrix(double alpha, double beta,
-                const Epetra_Vector &x, Epetra_Operator &A) {
+bool
+GlSystemWithConstraint::computeShiftedMatrix( double alpha,
+		                                      double beta,
+                                              const Epetra_Vector &x,
+                                              Epetra_Operator &A)
+{
         // compute the values of the Jacobian
         createJacobian(VALUES, x);
 
@@ -706,30 +420,13 @@ GlSystemWithConstraint::setParameters(const LOCA::ParameterVector &p) {
 void
 GlSystemWithConstraint::setLocaStepper(const Teuchos::RCP<const LOCA::Stepper> stepper)
 {
-        stepper_ = stepper;
-
-        // extract the continuation type
-        const Teuchos::ParameterList & bifurcationSublist = stepper_->getList()
-                                                                    ->sublist("LOCA")
-                                                                     .sublist("Bifurcation");
-
-        std::string bifurcationType = bifurcationSublist.get<string>("Type");
-
-        if ( bifurcationType == "None" )
-                continuationType_ = ONEPARAMETER;
-        else if ( bifurcationType == "Turning Point" )
-                continuationType_ = TURNINGPOINT;
-        else
-            TEST_FOR_EXCEPTION( true,
-                                std::logic_error,
-                                "Unknown continuation type \""
-                                << bifurcationType << "\"" );
+	glSystem_.setLocaStepper( stepper );
 }
 // =============================================================================
 void
 GlSystemWithConstraint::releaseLocaStepper()
 {
-        stepper_ = Teuchos::null;
+	glSystem_.releaseLocaStepper();
 }
 // =============================================================================
 // function used by LOCA
@@ -737,162 +434,27 @@ void
 GlSystemWithConstraint::printSolution( const  Epetra_Vector &x,
                                        double conParam )
 {
-        Epetra_Vector tmp(*regularRealMap_);
-        for (int k=0; k<tmp.MyLength(); k++)
-            tmp.ReplaceMyValue( k, 0, x[x.Map().GID(k)] );
-
-        Teuchos::RCP<ComplexVector> psi = glKomplex_->real2complex(tmp);
-
-        // The switch hack is necessary as different continuation algorithms
-        // call printSolution() a different number of times per step, e.g.,
-        // to store solutions, null vectors, and so forth.
-        switch ( continuationType_ ) {
-        case ONEPARAMETER:
-            printSolutionOneParameterContinuation( psi );
-            break;
-        case TURNINGPOINT:
-            printSolutionTurningPointContinuation( psi );
-            break;
-        default:
-            TEST_FOR_EXCEPTION( true,
-                                std::logic_error,
-                                "Illegal continuation type " << continuationType_ );
-        }
-}
-// =============================================================================
-void
-GlSystemWithConstraint::printSolutionOneParameterContinuation( const Teuchos::RCP<const ComplexVector> & psi
-                                                             ) const
-{
-        static int conStep = -1;
-        conStep++;
-
-        // determine file name
-        std::string conStepStr = boost::str(  boost::format(stepNumFileNameFormat_) % conStep );
-        std::ostringstream fileNameStream;
-        fileNameStream << outputDir_ << "/" << solutionFileNameBase_ << conStepStr << ".vtk";
-
-        // actually print the state to fileName
-        Gl_.writeSolutionToFile(psi, fileNameStream.str() );
-
-        writeContinuationStats( conStep, psi );
-}
-// =============================================================================
-// In Turning Point continuation, the printSolution method is called exactly
-// twice per step:
-//
-//   1. For printing the solution.
-//   2. For printing the right null vector of the Jacobian.
-//
-// The method gets called subsequently in this order.
-void
-GlSystemWithConstraint::printSolutionTurningPointContinuation( const Teuchos::RCP<const ComplexVector> & psi
-                                                             ) const
-{
-        static bool printSolution=false;
-        static int conStep = -1;
-
-        // alternate between solution and nullvector
-        printSolution = !printSolution;
-
-        // increment the step counter only when printing a solution
-        if ( printSolution )
-                conStep++;
-
-        // determine file name
-        std::ostringstream oss;
-
-        // determine file name
-        std::string conStepStr = boost::str(  boost::format(stepNumFileNameFormat_) % conStep );
-
-        if ( printSolution ) {
-        	oss << outputDir_ << "/" << solutionFileNameBase_ << conStepStr << ".vtk";
-            writeContinuationStats( conStep, psi );
-        }
-        else
-        	oss << outputDir_ << "/" << nullvectorFileNameBase_ << conStepStr << ".vtk";
-
-        // actually print the state to fileName
-        Gl_.writeSolutionToFile(psi, oss.str());
-
-}
-// =============================================================================
-void
-GlSystemWithConstraint::writeContinuationStats( const int conStep,
-                                  const Teuchos::RCP<const ComplexVector> psi ) const
-{
-        // fill the continuation parameters file
-        std::string contFileName = outputDir_ + "/" + outputDataFileName_;
-        std::ofstream contFileStream;
-
-        // Set the output format
-        // Think about replacing this with NOX::Utils::Sci.
-        contFileStream.setf(std::ios::scientific);
-        contFileStream.precision(15);
-
-        if (conStep == 0) {
-                contFileStream.open(contFileName.c_str(), ios::trunc);
-                contFileStream << "# Step  \t";
-                Gl_.appendStats( contFileStream, true );
-                contFileStream << "\t#nonlinear steps\n";
-        } else {
-                // just append to the the contents to the file
-                contFileStream.open(contFileName.c_str(), ios::app);
-        }
-
-        int nonlinearIterations = stepper_->getSolver()->getNumIterations();
-
-        contFileStream << "  " << conStep << "      \t";
-        Gl_.appendStats( contFileStream, false, psi );
-        contFileStream << "       \t" << nonlinearIterations << std::endl;
-
-        contFileStream.close();
+	glSystem_.printSolution(  x, conParam );
 }
 // =============================================================================
 // function used by LOCA
 void GlSystemWithConstraint::setOutputDir(const string &directory) {
-        outputDir_ = directory;
+    glSystem_.setOutputDir( directory );
 }
 // =============================================================================
 void
 GlSystemWithConstraint::writeSolutionToFile( const Epetra_Vector &x,
                                              const std::string &filePath) const
 {
-  // TODO: Remove the need for several real2complex calls per step.
-
-  // strip off the phase constraint
-  // TODO replace by {im,ex}porter
-  Epetra_Vector tmp(*regularRealMap_);
-  for (int k=0; k<tmp.MyLength(); k++)
-      tmp.ReplaceMyValue( k, 0, x[x.Map().GID(k)] );
-
-  Teuchos::RCP<ComplexVector> psi = glKomplex_->real2complex(tmp);
-
-  Gl_.writeSolutionToFile( psi, filePath );
+	glSystem_.writeSolutionToFile( x, filePath );
 }
 // =============================================================================
 void
 GlSystemWithConstraint::writeAbstractStateToFile( const Epetra_Vector &x,
-                                    const std::string &filePath) const
+                                                  const std::string &filePath) const
 {
-  // strip off the phase constraint
-  // TODO replace by {im,ex}porter
-  Epetra_Vector tmp(*regularRealMap_);
-  for (int k=0; k<tmp.MyLength(); k++)
-      tmp.ReplaceMyValue( k, 0, x[x.Map().GID(k)] );
-
-  Teuchos::RCP<ComplexVector> psi = glKomplex_->real2complex(tmp);
-
-  Gl_.writeAbstractStateToFile( psi, filePath );
+	glSystem_.writeAbstractStateToFile( x, filePath );
 }
-// =============================================================================
-//Teuchos::RCP<Epetra_Vector>
-//GlSystemWithConstraint::getGlSystemVector( const Teuchos::RCP<const ComplexVector> psi ) const
-//{
-//        Teuchos::RCP<Epetra_Vector> x = Teuchos::rcp( new Epetra_Vector(*extendedRealMap_) );
-//        complex2real( *psi, *x );
-//        return x;
-//}
 // =============================================================================
 Teuchos::RCP<const Teuchos::Comm<int> >
 GlSystemWithConstraint::create_CommInt( const Teuchos::RCP<const Epetra_Comm> &epetraComm )
@@ -962,5 +524,107 @@ void
 GlSystemWithConstraint::setChi(const double chi)
 {
   Gl_.setChi( chi );
+}
+// =============================================================================
+void
+GlSystemWithConstraint::fillBorderedMatrix( const Teuchos::RCP<      Epetra_CrsMatrix> & extendedMatrix,
+                                            const Teuchos::RCP<const Epetra_CrsMatrix> & regularMatrix,
+                                            const Teuchos::Array<double>               & rightBorder,
+                                            // TODO Declare the following const as soon as Trilinos allows (ReplaceGlobalValues)
+                                                  Teuchos::Array<double>               & lowerBorder,
+                                                  double                                 d
+                                          ) const
+{
+  int m = regularMatrix->NumGlobalRows();
+  int n = regularMatrix->NumGlobalCols();
+
+  // check if the sizes all match
+  TEUCHOS_ASSERT_EQUALITY( m+1, extendedMatrix->NumGlobalRows() );
+  TEUCHOS_ASSERT_EQUALITY( n+1, extendedMatrix->NumGlobalCols() );
+  TEUCHOS_ASSERT_EQUALITY( m, rightBorder.length() );
+  TEUCHOS_ASSERT_EQUALITY( n, lowerBorder.length() );
+
+  int numMyRows = regularMatrix->NumMyRows();
+
+  // fill the matrix with the entries
+  int numRowNonZeros;
+
+  int maxNumEntries = regularMatrix->MaxNumEntries() + 1; // count the last column in
+  int    * indices = new int   [maxNumEntries];
+  double * values  = new double[maxNumEntries];
+  for ( int myRow=0; myRow<numMyRows; myRow++ ) {
+	  // extract row view
+	  TEST_FOR_EXCEPT( 0 != regularMatrix->ExtractMyRowView( myRow, numRowNonZeros, values, indices ) );
+
+	  // Can't use InsertMyIndices because the *indices are given in global indexing.
+	  int globalRow = extendedMatrix->Map().GID(myRow);
+
+      // write the data to the new matrix
+      TEST_FOR_EXCEPT( 0 > extendedMatrix->ReplaceGlobalValues( globalRow, numRowNonZeros, values, indices ) );
+
+      // add last column
+      double val = rightBorder[globalRow];
+      TEST_FOR_EXCEPT( 0 > extendedMatrix->ReplaceGlobalValues( globalRow, 1, &val, &n ) );
+  }
+
+  // set the last row
+  // create the indices array
+  int lastRow[n];
+  for ( int k=0; k<n; k++ )
+	  lastRow[k] = k;
+  TEST_FOR_EXCEPT( 0 > extendedMatrix->ReplaceGlobalValues( n, n, lowerBorder.getRawPtr(), lastRow ) );
+
+  // set the last element d
+  TEST_FOR_EXCEPT( 0 > extendedMatrix->ReplaceGlobalValues( n, 1, &d, &n ) );
+
+  extendedMatrix->FillComplete();
+
+  return;
+}
+// =============================================================================
+Teuchos::RCP<Epetra_CrsGraph>
+GlSystemWithConstraint::createBorderedGraph( const Teuchos::RCP<const Epetra_Map>      & extendedMap,
+                                             const Teuchos::RCP<const Epetra_CrsGraph> & regularGraph
+                                           ) const
+{
+  int n = extendedMap->NumGlobalElements() - 1;
+
+  // check if the sizes all match
+  TEUCHOS_ASSERT_EQUALITY( n, regularGraph->Map().NumGlobalElements() );
+
+  int numMyElements = extendedMap->NumMyElements() - 1;
+
+  int maxNumRowNonZeros = 10; // TODO sensible guess?
+  Teuchos::RCP<Epetra_CrsGraph> extendedGraph = Teuchos::rcp( new Epetra_CrsGraph(Copy, *extendedMap, maxNumRowNonZeros)  );
+
+  // fill the matrix with the entries
+  int   numRowNonZeros;
+  int   maxNumIndices = regularGraph->MaxNumIndices() + 1; // count the last column in
+  int * indices = new int[maxNumIndices];
+  for ( int myRow=0; myRow<numMyElements; myRow++ ) {
+	  // extract row view
+	  TEST_FOR_EXCEPT( 0 != regularGraph->ExtractMyRowView( myRow, numRowNonZeros, indices ) );
+
+	  // Can't use InsertMyIndices because the *indices are given in global indexing.
+	  int globalRow = extendedMap->GID(myRow);
+
+      // write the data to the new matrix
+      TEST_FOR_EXCEPT( 0 > extendedGraph->InsertGlobalIndices( globalRow, numRowNonZeros, indices ) );
+
+      // add last column
+      TEST_FOR_EXCEPT( 0 > extendedGraph->InsertGlobalIndices( globalRow, 1, &n ) );
+  }
+
+  // set the last row
+  // create the indices array
+  int * lastRow = new int[n];
+  for ( int k=0; k<n; k++ )
+	  lastRow[k] = k;
+  TEST_FOR_EXCEPT( 0 > extendedGraph->InsertGlobalIndices( n, n, lastRow ) );
+
+  // set the last element d
+  TEST_FOR_EXCEPT( 0 > extendedGraph->InsertGlobalIndices( n, 1, &n ) );
+
+  return extendedGraph;
 }
 // =============================================================================

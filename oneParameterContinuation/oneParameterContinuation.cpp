@@ -234,9 +234,23 @@ main(int argc, char *argv[])
   int maxLocaSteps = 5000;
 
   unsigned int maxLocaStepsDecimals = (unsigned int) floor( log10(maxLocaSteps)+1.0 );
-  Teuchos::RCP<GlSystemWithConstraint> glsystem =
-      Teuchos::rcp(new GlSystemWithConstraint( glProblem, eComm, psi, outputDirectory.string(),
-                                 contDataFileName, contFileFormat, contFileBaseName, "", maxLocaStepsDecimals ));
+  Teuchos::RCP<GlSystemWithConstraint> glsystem;
+  try {
+      glsystem = Teuchos::rcp(new GlSystemWithConstraint( glProblem,
+                                                          eComm,
+                                                          psi,
+                                                          outputDirectory.string(),
+                                                          contDataFileName,
+                                                          contFileFormat,
+                                                          contFileBaseName,
+                                                          "",
+                                                          maxLocaStepsDecimals
+                                                         )
+                             );
+  }
+  catch ( std::exception & e ) {
+	  std::cerr << e.what() << std::endl;
+  }
 
   // ---------------------------------------------------------------------------
   // Create the necessary objects

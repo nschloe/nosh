@@ -143,6 +143,15 @@ public:
 	double
 	getH0() const;
 
+	Teuchos::RCP<const Epetra_Map>
+	getRealMap() const;
+
+	Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> >
+	getComplexMap() const;
+
+	Teuchos::RCP<const Epetra_CrsGraph>
+	getGraph() const;
+
 private:
 
 	int
@@ -198,7 +207,7 @@ private:
 
 	Teuchos::RCP<const LOCA::Stepper> stepper_;
 
-	const Teuchos::RCP<const GlKomplex> glKomplex;
+	const Teuchos::RCP<const GlKomplex> glKomplex_;
 
 	GinzburgLandau::GinzburgLandau Gl_;
 	const Teuchos::RCP<const Epetra_Comm> EComm_;
@@ -206,7 +215,7 @@ private:
 	Teuchos::RCP<Epetra_Map> RealMap_;
 	Teuchos::RCP<Epetra_Map> EverywhereMap_;
 	Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> > ComplexMap_;
-	Epetra_Vector *rhs_;
+	Teuchos::RCP<Epetra_Vector> rhs_;
 	Teuchos::RCP<Epetra_CrsGraph> Graph_;
 	Teuchos::RCP<Epetra_CrsMatrix> jacobian_;
 	Teuchos::RCP<Epetra_CrsMatrix> preconditioner_;

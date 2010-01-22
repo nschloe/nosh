@@ -10,12 +10,14 @@
 #include "ginzburgLandau.h"
 #include "AbstractStateWriter.h"
 #include "GlKomplex.h"
+#include "glSystem.h"
 
 #include <Epetra_Comm.h>
 #include <Epetra_Map.h>
 #include <Epetra_Vector.h>
 
 #include <Teuchos_RCP.hpp>
+#include <Teuchos_Array.hpp>
 
 #include <Epetra_CrsMatrix.h>
 
@@ -166,21 +168,33 @@ private:
         void
         initialize(const Teuchos::RCP<ComplexVector> psi);
 
-        int
-        realIndex2complexIndex(const int realIndex) const;
+        void
+        fillBorderedMatrix( const Teuchos::RCP<      Epetra_CrsMatrix> & extendedMatrix,
+                            const Teuchos::RCP<const Epetra_CrsMatrix> & regularMatrix,
+                            const Teuchos::Array<double>               & rightBorder,
+                                  Teuchos::Array<double>               & lowerBorder,
+                                  double                                 d
+                          ) const;
+
+
+        Teuchos::RCP<Epetra_CrsGraph>
+        createBorderedGraph( const Teuchos::RCP<const Epetra_Map>       & extendedMap,
+                             const Teuchos::RCP<const Epetra_CrsGraph> & regularMatrix
+                           ) const;
+
 
         //! Creates a map identical to the input argument \c realMap, but
         //! extended by one entry.
         //! This extra slot is usually used for the phase condition.
-        void
-        createExtendedRealMap( const Epetra_BlockMap & realMap );
+        Teuchos::RCP<Epetra_Map>
+        createExtendedRealMap( const Epetra_BlockMap & realMap  ) const;
 
         enum continuationType {
                 ONEPARAMETER,
                 TURNINGPOINT
         };
 
-        bool
+        void
         createJacobian(const jacCreator jc, const Epetra_Vector &x);
 
         //! Print method for the continuation in one parameter.
@@ -206,15 +220,14 @@ private:
 
         continuationType continuationType_;
 
+        GlSystem::GlSystem glSystem_;
+
         int NumMyElements_;
         int NumComplexUnknowns_;
 
-        Teuchos::RCP<const LOCA::Stepper> stepper_;
-
         GinzburgLandau::GinzburgLandau Gl_;
         const Teuchos::RCP<const Epetra_Comm> EComm_;
-        Teuchos::RCP<const Teuchos::Comm<int> > TComm_;
-        Teuchos::RCP<Epetra_BlockMap> regularRealMap_;
+        Teuchos::RCP<const Epetra_BlockMap> regularRealMap_;
         Teuchos::RCP<Epetra_Map> extendedRealMap_;
         Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> > ComplexMap_;
         Epetra_Vector *rhs_;
@@ -223,7 +236,6 @@ private:
         Teuchos::RCP<Epetra_CrsMatrix> preconditioner_;
         Teuchos::RCP<Epetra_Vector> initialSolution_;
 
-        std::string outputDir_;
         const std::string solutionFileNameBase_;
         const std::string nullvectorFileNameBase_;
         const std::string outputFileFormat_;
