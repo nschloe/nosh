@@ -11,6 +11,7 @@
 #include <Teuchos_RCP.hpp>
 #include <Tpetra_Vector.hpp>
 #include <Epetra_Vector.h>
+#include <Epetra_CrsMatrix.h>
 #include <Thyra_OperatorVectorTypes.hpp> // For Thyra::Ordinal
 
 typedef std::complex<double> double_complex;
@@ -23,11 +24,18 @@ class GlKomplex
 public:
 
   // Default constructor
-  GlKomplex( const Teuchos::RCP<const Epetra_Comm> eComm );
+  GlKomplex( const Teuchos::RCP<const Epetra_Comm>                  eComm,
+	         const Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> > ComplexMap );
 
   // Destructor
   virtual
   ~GlKomplex();
+
+  Teuchos::RCP<Epetra_Map>
+  getRealMap() const;
+
+  Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> >
+  getComplexMap() const;
 
   //! Converts a real-valued vector to a complex-valued vector.
   Teuchos::RCP<ComplexVector>
@@ -35,10 +43,28 @@ public:
 
   //! Converts a complex-valued vector to a real-valued vector.
   Teuchos::RCP<Epetra_Vector>
-  complex2real( const ComplexVector &complexVec );
+  complex2real( const ComplexVector &complexVec ) const;
 
-  Teuchos::RCP<Epetra_Vector>
-  complex2realConst( const ComplexVector &complexVec ) const;
+  void
+  initializeMatrix();
+
+  void
+  finalizeMatrix();
+
+  void
+  zeroOutMatrix();
+
+  Teuchos::RCP<const Epetra_CrsMatrix>
+  getMatrix() const;
+
+  void
+  updateRow( const int                            row,
+             const std::vector<int>             & indicesA,
+             const std::vector<double_complex>  & valuesA,
+             const std::vector<int>             & indicesB,
+             const std::vector<double_complex>  & valuesB,
+             const bool                           firstTime
+           );
 
 private:
 
@@ -48,15 +74,20 @@ private:
   Teuchos::RCP<const Teuchos::Comm<int> >
   create_CommInt( const Teuchos::RCP<const Epetra_Comm> &epetraComm );
 
+  int
+  PutRow( int Row, int & numIndices, double * values, int * indices, bool firstTime );
+
 private:
 
   //! Communicators.
   const Teuchos::RCP<const Epetra_Comm>         EComm_;
-        Teuchos::RCP<const Teuchos::Comm<int> > TComm_;
+  const Teuchos::RCP<const Teuchos::Comm<int> > TComm_;
 
   //! Maps for real- and complex-valued vectors.
   Teuchos::RCP<Epetra_Map>                         RealMap_;
   Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> > ComplexMap_;
+
+  Teuchos::RCP<Epetra_CrsMatrix> realMatrix_;
 
 };
 

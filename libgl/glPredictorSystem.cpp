@@ -116,9 +116,9 @@ GlPredictorSystem::computeF( const Epetra_Vector &xExtended,
 
   cout << "DDD" << endl;
 
-  Teuchos::RCP<const Epetra_Vector> tangentReal = glSystem_->getGlKomplex()->complex2realConst(*tangent_);
-  Teuchos::RCP<Epetra_Vector> predictorReal     = glSystem_->getGlKomplex()->complex2realConst(*predictor_);
-  Teuchos::RCP<Epetra_Vector> psiReal           = glSystem_->getGlKomplex()->complex2realConst(*psi_);
+  Teuchos::RCP<const Epetra_Vector> tangentReal = glSystem_->getGlKomplex()->complex2real(*tangent_);
+  Teuchos::RCP<Epetra_Vector> predictorReal     = glSystem_->getGlKomplex()->complex2real(*predictor_);
+  Teuchos::RCP<Epetra_Vector> psiReal           = glSystem_->getGlKomplex()->complex2real(*psi_);
 
   Teuchos::RCP<Epetra_Vector> diff = Teuchos::rcp( new Epetra_Vector( psiReal->Map() ) );
 
@@ -241,7 +241,7 @@ bool GlPredictorSystem::createJacobian(const Epetra_Vector &xExtended)
 		}
 
 		// add last row
-		Teuchos::RCP<Epetra_Vector> xTangent = glSystem_->getGlKomplex()->complex2realConst(*tangent_);
+		Teuchos::RCP<Epetra_Vector> xTangent = glSystem_->getGlKomplex()->complex2real(*tangent_);
 		int lastRow = x.GlobalLength();
         for( int column=0; column<xTangent->GlobalLength(); column++) {
         	double* val;

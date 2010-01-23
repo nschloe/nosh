@@ -59,7 +59,7 @@ GlSystem::GlSystem( GinzburgLandau::GinzburgLandau &gl,
 	nullvectorFileNameBase_(nullvectorFileNameBase),
 	outputFileFormat_(outputFileFormat),
 	outputDataFileName_(outputDataFileName),
-	glKomplex_( Teuchos::rcp(new GlKomplex(eComm) ) )
+	glKomplex_( Teuchos::rcp(new GlKomplex(eComm,psi->getMap()) ) )
 {
   NumComplexUnknowns_ = Gl_.getNumUnknowns();
   NumRealUnknowns_ = 2 * NumComplexUnknowns_;
@@ -116,7 +116,7 @@ GlSystem::GlSystem( GinzburgLandau::GinzburgLandau &gl,
 			            << ") does not coincide with the number of unknowns ("
 			            << NumComplexUnknowns_ << ")" );
 
-	Teuchos::RCP<Epetra_Vector> initialSolution_ = glKomplex_->complex2realConst(*psi);
+	Teuchos::RCP<Epetra_Vector> initialSolution_ = glKomplex_->complex2real(*psi);
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 	// TODO: Remove 'dummy'.
@@ -161,7 +161,7 @@ solutionFileNameBase_(solutionFileNameBase),
 nullvectorFileNameBase_(nullvectorFileNameBase),
 outputFileFormat_(outputFileFormat),
 outputDataFileName_(outputDataFileName),
-glKomplex_( Teuchos::rcp(new GlKomplex(eComm) ) )
+glKomplex_( Teuchos::null )
 {
   NumComplexUnknowns_ = Gl_.getNumUnknowns();
   NumRealUnknowns_ = 2 * NumComplexUnknowns_;
@@ -180,16 +180,18 @@ glKomplex_( Teuchos::rcp(new GlKomplex(eComm) ) )
   TComm_ = create_CommInt(EComm_);
 
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  // define maps
-  ComplexMap_ = Teuchos::rcp(new Tpetra::Map<Thyra::Ordinal>(NumComplexUnknowns_, 0, TComm_));
+    // define maps
+    ComplexMap_ = Teuchos::rcp(new Tpetra::Map<Thyra::Ordinal>(NumComplexUnknowns_, 0, TComm_));
 
-  // get the map for the real values
-  makeRealMap(ComplexMap_);
+    // get the map for the real values
+    makeRealMap(ComplexMap_);
 
-  // set the number of local elements
-  NumMyElements_ = RealMap_->NumMyElements();
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    // set the number of local elements
+    NumMyElements_ = RealMap_->NumMyElements();
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+    glKomplex_ = Teuchos::rcp(new GlKomplex(eComm,ComplexMap_) );
+    RealMap_   = glKomplex_->getRealMap();
 
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   // Create a map for the real-valued vector to be spread all over all
@@ -208,7 +210,7 @@ glKomplex_( Teuchos::rcp(new GlKomplex(eComm) ) )
   double_complex alpha(1.0, 0.0);
   psi->putScalar(alpha); // default initialization
 
-  Teuchos::RCP<Epetra_Vector> initialSolution_ = glKomplex_->complex2realConst(*psi);
+  Teuchos::RCP<Epetra_Vector> initialSolution_ = glKomplex_->complex2real(*psi);
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
   // TODO Remove 'dummy'.

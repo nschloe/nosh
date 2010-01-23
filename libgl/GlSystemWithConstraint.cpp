@@ -65,8 +65,9 @@ GlSystemWithConstraint::GlSystemWithConstraint( GinzburgLandau::GinzburgLandau &
         nullvectorFileNameBase_(nullvectorFileNameBase),
         outputFileFormat_(outputFileFormat),
         outputDataFileName_(outputDataFileName),
-        glKomplex_( Teuchos::rcp(new GlKomplex(eComm) ) ),
-        maxStepNumberDecimals_( maxStepNumberDecimals )
+        glKomplex_( Teuchos::rcp(new GlKomplex(eComm,psi->getMap()) ) ),
+        maxStepNumberDecimals_( maxStepNumberDecimals ),
+        firstTime_(true)
 {
   NumComplexUnknowns_ = Gl_.getNumUnknowns();
 
@@ -110,8 +111,9 @@ solutionFileNameBase_(solutionFileNameBase),
 nullvectorFileNameBase_(nullvectorFileNameBase),
 outputFileFormat_(outputFileFormat),
 outputDataFileName_(outputDataFileName),
-glKomplex_( Teuchos::rcp(new GlKomplex(eComm) ) ),
-maxStepNumberDecimals_( maxStepNumberDecimals )
+glKomplex_( Teuchos::null ),
+maxStepNumberDecimals_( maxStepNumberDecimals ),
+firstTime_(true)
 {
   NumComplexUnknowns_ = Gl_.getNumUnknowns();
 
@@ -126,6 +128,8 @@ maxStepNumberDecimals_( maxStepNumberDecimals )
 
   // define complex map
   ComplexMap_ = glSystem_.getComplexMap();
+
+  glKomplex_ = Teuchos::rcp(new GlKomplex(eComm,ComplexMap_) );
 
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   // initialize solution
@@ -161,21 +165,8 @@ GlSystemWithConstraint::initialize(const Teuchos::RCP<ComplexVector> psi)
 
 	NumMyElements_ = extendedRealMap_->NumMyElements();
 
-	// TODO Remove 'dummy'.
-	// create the sparsity structure (graph) of the Jacobian
-	// use x as DUMMY argument
-	Epetra_Vector dummy(*extendedRealMap_);
-
-	// Create the current graph. Note that the underlying graph is already
-	// constructed (happens in the initializer of glSystem).
-	createJacobian(ONLY_GRAPH, dummy);
-
-	// Allocate the sparsity pattern of the Jacobian matrix
-	jacobian_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, *Graph_));
-	jacobian_->FillComplete();
-
-	preconditioner_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, *Graph_));
-	preconditioner_->FillComplete();
+	// TODO Why is *this necessary??
+	jacobian_ = Teuchos::rcp( new Epetra_CrsMatrix(Copy, *extendedRealMap_, 0) );
 
 	// Initialize the format for the the continuation step number.
 	// Here: 00012 for step no. 12, if maxStepNumberDecimals_=5.
@@ -254,8 +245,10 @@ GlSystemWithConstraint::createExtendedRealMap( const Epetra_BlockMap & realMap  
                      );
 }
 // =============================================================================
-bool GlSystemWithConstraint::computeJacobian(const Epetra_Vector &x, Epetra_Operator &Jac) {
-
+bool GlSystemWithConstraint::computeJacobian(const Epetra_Vector   & x,
+		                                           Epetra_Operator & Jac
+		                                    )
+{
   // strip off the phase constraint
   Epetra_Vector tmp(*regularRealMap_);
   for (int k=0; k<tmp.MyLength(); k++)
@@ -268,10 +261,10 @@ bool GlSystemWithConstraint::computeJacobian(const Epetra_Vector &x, Epetra_Oper
   glSystem_.computeJacobian( tmp, Jac );
 
   // compute the values of the Jacobian
-  createJacobian(VALUES, x);
+  createJacobian( x );
 
   // optimize storage
-  jacobian_->FillComplete();
+//  jacobian_->FillComplete();
 
   // Sync up processors to be safe
   EComm_->Barrier();
@@ -306,61 +299,50 @@ GlSystemWithConstraint::getPreconditioner() const {
 // =============================================================================
 // It also incorporates a phase condition.
 void
-GlSystemWithConstraint::createJacobian( const jacCreator      jc,
-                                        const Epetra_Vector & x   )
+GlSystemWithConstraint::createJacobian( const Epetra_Vector & x   )
 {
   TEST_FOR_EXCEPTION( !extendedRealMap_.is_valid_ptr() || extendedRealMap_.is_null(),
                       std::logic_error,
                       "extendedRealMap_ not properly initialized." );
 
-  if (jc == VALUES) // fill in values
-  {
-	  // TODO replace by {im,ex}porter
-	  // strip off the phase constraint
-	  Epetra_Vector tmp(*regularRealMap_);
-	  for (int k=0; k<tmp.MyLength(); k++)
-	    tmp.ReplaceMyValue( k, 0, x[x.Map().GID(k)] );
+  // TODO replace by {im,ex}porter
+  // strip off the phase constraint
+  Epetra_Vector tmp(*regularRealMap_);
+  for (int k=0; k<tmp.MyLength(); k++)
+    tmp.ReplaceMyValue( k, 0, x[x.Map().GID(k)] );
 
-	  // TODO don't explicitly construct psi? get1dCopy on the rhs
-      Teuchos::RCP<ComplexVector>             psi     = glKomplex_->real2complex(tmp);
-      Teuchos::ArrayRCP<const double_complex> psiView = psi->get1dView();
+  // TODO don't explicitly construct psi? get1dCopy on the rhs
+  Teuchos::RCP<ComplexVector>             psi     = glKomplex_->real2complex(tmp);
+  Teuchos::ArrayRCP<const double_complex> psiView = psi->get1dView();
 
-	  // get the unbordered Jacobian
-	  Teuchos::RCP<Epetra_CrsMatrix> regularJacobian = glSystem_.getJacobian();
+  // get the unbordered Jacobian
+  Teuchos::RCP<Epetra_CrsMatrix> regularJacobian = glSystem_.getJacobian();
 
+  std::string::size_type n = regularRealMap_->NumGlobalElements();
+  // create right bordering
+  Teuchos::Array<double> rightBorder(n);
+  for (int k = 0; k < NumComplexUnknowns_; k++) {
+      rightBorder[2 * k]     =  imag(psiView[k]);
+      rightBorder[2 * k + 1] = -real(psiView[k]);
+  }
 
-	  std::string::size_type n = regularRealMap_->NumGlobalElements();
-	  // create right bordering
-	  Teuchos::Array<double> rightBorder(n);
-      for (int k = 0; k < NumComplexUnknowns_; k++) {
-    	  rightBorder[2 * k]     =  imag(psiView[k]);
-    	  rightBorder[2 * k + 1] = -real(psiView[k]);
-      }
+  // create lower border
+  Teuchos::Array<double> lowerBorder(n);
+  for (int k = 0; k < NumComplexUnknowns_; k++) {
+   	  lowerBorder[2 * k]     = -imag(psiView[k]);
+      lowerBorder[2 * k + 1] =  real(psiView[k]);
+  }
 
-	  // create lower border
-	  Teuchos::Array<double> lowerBorder(n);
-      for (int k = 0; k < NumComplexUnknowns_; k++) {
-    	  lowerBorder[2 * k]     = -imag(psiView[k]);
-          lowerBorder[2 * k + 1] =  real(psiView[k]);
-      }
+  // corner element
+  double d = 0.0;
 
-      // corner element
-      double d = 0.0;
+  // create the bordered Jacobian out of this
+  fillBorderedMatrix( jacobian_, regularJacobian, rightBorder, lowerBorder, d, firstTime_ );
 
-      // create the bordered Jacobian out of this
-      fillBorderedMatrix( jacobian_, regularJacobian, rightBorder, lowerBorder, d );
-
-      TEST_FOR_EXCEPT( 0 != jacobian_->FillComplete() );
-      TEST_FOR_EXCEPT( 0 != jacobian_->OptimizeStorage() );
-
-  } else { // just create graph
-	  // get the unbordered Graph
-	  Teuchos::RCP<const Epetra_CrsGraph> regularGraph = glSystem_.getGraph();
-
-      // create the bordered Graph out of this
-      Graph_ = createBorderedGraph( extendedRealMap_, regularGraph );
-
-      TEST_FOR_EXCEPT( 0 != Graph_->FillComplete() );
+  if (firstTime_) {
+  	  TEST_FOR_EXCEPT( 0 != jacobian_->FillComplete() );
+  	  TEST_FOR_EXCEPT( 0 != jacobian_->OptimizeStorage() );
+  	  firstTime_ = false;
   }
 
   // Sync up processors for safety's sake
@@ -376,7 +358,7 @@ GlSystemWithConstraint::computeShiftedMatrix( double alpha,
                                               Epetra_Operator &A)
 {
         // compute the values of the Jacobian
-        createJacobian(VALUES, x);
+        createJacobian(x);
 
         jacobian_->Scale(alpha);
         //  jacobian_->FillComplete();
@@ -532,9 +514,13 @@ GlSystemWithConstraint::fillBorderedMatrix( const Teuchos::RCP<      Epetra_CrsM
                                             const Teuchos::Array<double>               & rightBorder,
                                             // TODO Declare the following const as soon as Trilinos allows (ReplaceGlobalValues)
                                                   Teuchos::Array<double>               & lowerBorder,
-                                                  double                                 d
+                                                  double                                 d,
+                                                  bool                                   firstTime
                                           ) const
 {
+  TEUCHOS_ASSERT( regularMatrix.is_valid_ptr()  && !regularMatrix.is_null() );
+  TEUCHOS_ASSERT( extendedMatrix.is_valid_ptr() && !extendedMatrix.is_null() );
+
   int m = regularMatrix->NumGlobalRows();
   int n = regularMatrix->NumGlobalCols();
 
@@ -554,17 +540,17 @@ GlSystemWithConstraint::fillBorderedMatrix( const Teuchos::RCP<      Epetra_CrsM
   double * values  = new double[maxNumEntries];
   for ( int myRow=0; myRow<numMyRows; myRow++ ) {
 	  // extract row view
-	  TEST_FOR_EXCEPT( 0 != regularMatrix->ExtractMyRowView( myRow, numRowNonZeros, values, indices ) );
+	  TEUCHOS_ASSERT_EQUALITY( 0, regularMatrix->ExtractMyRowView( myRow, numRowNonZeros, values, indices ) );
 
 	  // Can't use InsertMyIndices because the *indices are given in global indexing.
 	  int globalRow = extendedMatrix->Map().GID(myRow);
 
       // write the data to the new matrix
-      TEST_FOR_EXCEPT( 0 > extendedMatrix->ReplaceGlobalValues( globalRow, numRowNonZeros, values, indices ) );
+	  TEUCHOS_ASSERT_INEQUALITY( 0, <=, PutRow( extendedMatrix, globalRow, numRowNonZeros, values, indices, firstTime ) );
 
       // add last column
       double val = rightBorder[globalRow];
-      TEST_FOR_EXCEPT( 0 > extendedMatrix->ReplaceGlobalValues( globalRow, 1, &val, &n ) );
+      TEUCHOS_ASSERT_INEQUALITY( 0, <=, PutRow( extendedMatrix, globalRow, 1, &val, &n, firstTime ) );
   }
 
   // set the last row
@@ -572,59 +558,26 @@ GlSystemWithConstraint::fillBorderedMatrix( const Teuchos::RCP<      Epetra_CrsM
   int lastRow[n];
   for ( int k=0; k<n; k++ )
 	  lastRow[k] = k;
-  TEST_FOR_EXCEPT( 0 > extendedMatrix->ReplaceGlobalValues( n, n, lowerBorder.getRawPtr(), lastRow ) );
+  TEUCHOS_ASSERT_INEQUALITY( 0, <=, PutRow( extendedMatrix, n, n, lowerBorder.getRawPtr(), lastRow, firstTime ) );
 
   // set the last element d
-  TEST_FOR_EXCEPT( 0 > extendedMatrix->ReplaceGlobalValues( n, 1, &d, &n ) );
-
-  extendedMatrix->FillComplete();
+  TEUCHOS_ASSERT_INEQUALITY( 0, <=, PutRow( extendedMatrix, n, 1, &d, &n, firstTime ) );
 
   return;
 }
 // =============================================================================
-Teuchos::RCP<Epetra_CrsGraph>
-GlSystemWithConstraint::createBorderedGraph( const Teuchos::RCP<const Epetra_Map>      & extendedMap,
-                                             const Teuchos::RCP<const Epetra_CrsGraph> & regularGraph
-                                           ) const
+int
+GlSystemWithConstraint::PutRow( const Teuchos::RCP<Epetra_CrsMatrix> A,
+		                        int      Row,
+              		            const int      numIndices,
+		                        double * values,
+		                        int    * indices,
+		                        const bool     firstTime ) const
 {
-  int n = extendedMap->NumGlobalElements() - 1;
-
-  // check if the sizes all match
-  TEUCHOS_ASSERT_EQUALITY( n, regularGraph->Map().NumGlobalElements() );
-
-  int numMyElements = extendedMap->NumMyElements() - 1;
-
-  int maxNumRowNonZeros = 10; // TODO sensible guess?
-  Teuchos::RCP<Epetra_CrsGraph> extendedGraph = Teuchos::rcp( new Epetra_CrsGraph(Copy, *extendedMap, maxNumRowNonZeros)  );
-
-  // fill the matrix with the entries
-  int   numRowNonZeros;
-  int   maxNumIndices = regularGraph->MaxNumIndices() + 1; // count the last column in
-  int * indices = new int[maxNumIndices];
-  for ( int myRow=0; myRow<numMyElements; myRow++ ) {
-	  // extract row view
-	  TEST_FOR_EXCEPT( 0 != regularGraph->ExtractMyRowView( myRow, numRowNonZeros, indices ) );
-
-	  // Can't use InsertMyIndices because the *indices are given in global indexing.
-	  int globalRow = extendedMap->GID(myRow);
-
-      // write the data to the new matrix
-      TEST_FOR_EXCEPT( 0 > extendedGraph->InsertGlobalIndices( globalRow, numRowNonZeros, indices ) );
-
-      // add last column
-      TEST_FOR_EXCEPT( 0 > extendedGraph->InsertGlobalIndices( globalRow, 1, &n ) );
-  }
-
-  // set the last row
-  // create the indices array
-  int * lastRow = new int[n];
-  for ( int k=0; k<n; k++ )
-	  lastRow[k] = k;
-  TEST_FOR_EXCEPT( 0 > extendedGraph->InsertGlobalIndices( n, n, lastRow ) );
-
-  // set the last element d
-  TEST_FOR_EXCEPT( 0 > extendedGraph->InsertGlobalIndices( n, 1, &n ) );
-
-  return extendedGraph;
+	if (firstTime) {
+		return A->InsertGlobalValues( Row, numIndices, values, indices );
+	} else {
+		return A->ReplaceGlobalValues( Row, numIndices, values, indices );
+	}
 }
 // =============================================================================

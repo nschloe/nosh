@@ -173,14 +173,17 @@ private:
                             const Teuchos::RCP<const Epetra_CrsMatrix> & regularMatrix,
                             const Teuchos::Array<double>               & rightBorder,
                                   Teuchos::Array<double>               & lowerBorder,
-                                  double                                 d
+                                  double                                 d,
+                                  bool                                   firstTime
                           ) const;
 
-
-        Teuchos::RCP<Epetra_CrsGraph>
-        createBorderedGraph( const Teuchos::RCP<const Epetra_Map>       & extendedMap,
-                             const Teuchos::RCP<const Epetra_CrsGraph> & regularMatrix
-                           ) const;
+        int
+        PutRow( const Teuchos::RCP<Epetra_CrsMatrix> A,
+        		int      Row,
+                const int      numIndices,
+        		double * values,
+        		int    * indices,
+        		const bool     firstTime ) const;
 
 
         //! Creates a map identical to the input argument \c realMap, but
@@ -195,7 +198,7 @@ private:
         };
 
         void
-        createJacobian(const jacCreator jc, const Epetra_Vector &x);
+        createJacobian( const Epetra_Vector &x );
 
         //! Print method for the continuation in one parameter.
         void
@@ -241,10 +244,12 @@ private:
         const std::string outputFileFormat_;
         const std::string outputDataFileName_;
 
-        const Teuchos::RCP<GlKomplex> glKomplex_;
+        Teuchos::RCP<GlKomplex> glKomplex_;
 
         const unsigned int maxStepNumberDecimals_;
         std::string stepNumFileNameFormat_;
+
+        bool firstTime_;
 };
 
 #endif /* GLSYSTEMWITHCONSTRAINT_H_ */

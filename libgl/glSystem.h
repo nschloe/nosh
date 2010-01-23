@@ -207,7 +207,7 @@ private:
 
 	Teuchos::RCP<const LOCA::Stepper> stepper_;
 
-	const Teuchos::RCP<const GlKomplex> glKomplex_;
+	Teuchos::RCP<const GlKomplex> glKomplex_;
 
 	GinzburgLandau::GinzburgLandau Gl_;
 	const Teuchos::RCP<const Epetra_Comm> EComm_;
