@@ -155,13 +155,8 @@ public:
         void
         setChi( const double h0 );
 
-
         const Teuchos::RCP<const Epetra_Map>
         getMap() const;
-
-        enum jacCreator {
-                ONLY_GRAPH, VALUES
-        };
 
 private:
 
@@ -171,8 +166,8 @@ private:
         void
         fillBorderedMatrix( const Teuchos::RCP<      Epetra_CrsMatrix> & extendedMatrix,
                             const Teuchos::RCP<const Epetra_CrsMatrix> & regularMatrix,
-                            const Teuchos::Array<double>               & rightBorder,
-                                  Teuchos::Array<double>               & lowerBorder,
+                            const Epetra_Vector                        & rightBorder,
+                                  Epetra_Vector                        & lowerBorder,
                                   double                                 d,
                                   bool                                   firstTime
                           ) const;
@@ -191,11 +186,6 @@ private:
         //! This extra slot is usually used for the phase condition.
         Teuchos::RCP<Epetra_Map>
         createExtendedRealMap( const Epetra_BlockMap & realMap  ) const;
-
-        enum continuationType {
-                ONEPARAMETER,
-                TURNINGPOINT
-        };
 
         void
         createJacobian( const Epetra_Vector &x );
@@ -221,30 +211,15 @@ private:
         Teuchos::RCP<const Teuchos::Comm<int> >
         create_CommInt( const Teuchos::RCP<const Epetra_Comm> &epetraComm );
 
-        continuationType continuationType_;
+private:
 
         GlSystem::GlSystem glSystem_;
 
-        int NumMyElements_;
-        int NumComplexUnknowns_;
-
-        GinzburgLandau::GinzburgLandau Gl_;
-        const Teuchos::RCP<const Epetra_Comm> EComm_;
-        Teuchos::RCP<const Epetra_BlockMap> regularRealMap_;
-        Teuchos::RCP<Epetra_Map> extendedRealMap_;
-        Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> > ComplexMap_;
-        Epetra_Vector *rhs_;
-        Teuchos::RCP<Epetra_CrsGraph> Graph_;
+        Teuchos::RCP<const Epetra_BlockMap> regularMap_;
+        Teuchos::RCP<Epetra_Map> extendedMap_;
         Teuchos::RCP<Epetra_CrsMatrix> jacobian_;
         Teuchos::RCP<Epetra_CrsMatrix> preconditioner_;
         Teuchos::RCP<Epetra_Vector> initialSolution_;
-
-        const std::string solutionFileNameBase_;
-        const std::string nullvectorFileNameBase_;
-        const std::string outputFileFormat_;
-        const std::string outputDataFileName_;
-
-        Teuchos::RCP<GlKomplex> glKomplex_;
 
         const unsigned int maxStepNumberDecimals_;
         std::string stepNumFileNameFormat_;

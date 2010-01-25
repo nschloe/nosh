@@ -172,14 +172,14 @@ GlKomplex::initializeMatrix()
 void
 GlKomplex::finalizeMatrix()
 {
-	TEST_FOR_EXCEPT( 0 != realMatrix_->FillComplete() );
-	TEST_FOR_EXCEPT( 0 != realMatrix_->OptimizeStorage() );
+	TEUCHOS_ASSERT_EQUALITY( 0, realMatrix_->FillComplete() );
+	TEUCHOS_ASSERT_EQUALITY( 0, realMatrix_->OptimizeStorage() );
 }
 // =============================================================================
 void
 GlKomplex::zeroOutMatrix()
 {
-	TEST_FOR_EXCEPT( 0 != realMatrix_->PutScalar(0.0) );
+	TEUCHOS_ASSERT_EQUALITY( 0, realMatrix_->PutScalar(0.0) );
 }
 // =============================================================================
 // Of an equation system
@@ -213,7 +213,7 @@ GlKomplex::updateRow( const int                            row,
                     )
 {
 	TEUCHOS_ASSERT( realMatrix_.is_valid_ptr() && !realMatrix_.is_null() );
-	TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE(row, 0, ComplexMap_->getMaxGlobalIndex());
+	TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE(row, 0, ComplexMap_->getGlobalNumElements());
 
 	int numEntries;
 	int * indicesAReal;  double * valuesAReal;
@@ -233,7 +233,7 @@ GlKomplex::updateRow( const int                            row,
 	for (int k = 0; k < numEntries; k++)
 		valuesAReal[k] = std::real(valuesA[k]);
 
-	TEST_FOR_EXCEPT( 0 != PutRow(realRow, numEntries, valuesAReal, indicesAReal, firstTime) );
+	TEUCHOS_ASSERT_INEQUALITY( 0, <=, PutRow(realRow, numEntries, valuesAReal, indicesAReal, firstTime) );
 	delete[] valuesAReal;
 	valuesAReal = NULL;
 	delete[] indicesAReal;
@@ -248,7 +248,7 @@ GlKomplex::updateRow( const int                            row,
 	for (int k = 0; k < numEntries; k++)
 		valuesBReal[k] = std::real(valuesB[k]);
 
-	TEST_FOR_EXCEPT( 0 != PutRow(realRow, numEntries, valuesBReal, indicesBReal, firstTime) );
+	TEUCHOS_ASSERT_INEQUALITY( 0, <=, PutRow(realRow, numEntries, valuesBReal, indicesBReal, firstTime) );
 
 	delete[] valuesBReal;
 	valuesBReal = NULL;
@@ -264,7 +264,7 @@ GlKomplex::updateRow( const int                            row,
 	for (int k = 0; k < numEntries; k++)
 		valuesAImag[k] = -std::imag(valuesA[k]);
 
-	TEST_FOR_EXCEPT( 0 != PutRow(realRow, numEntries, valuesAImag, indicesAImag, firstTime) );
+	TEUCHOS_ASSERT_INEQUALITY( 0, <=, PutRow(realRow, numEntries, valuesAImag, indicesAImag, firstTime) );
 
 	delete[] valuesAImag;
 	valuesAImag = NULL;
@@ -280,7 +280,7 @@ GlKomplex::updateRow( const int                            row,
 	for (int k = 0; k < numEntries; k++)
 		valuesBImag[k] = std::imag(valuesB[k]);
 
-	TEST_FOR_EXCEPT( 0 != PutRow(realRow, numEntries, valuesBImag, indicesBImag, firstTime) );
+	TEUCHOS_ASSERT_INEQUALITY( 0, <=, PutRow(realRow, numEntries, valuesBImag, indicesBImag, firstTime) );
 
 	delete[] valuesBImag;
 	valuesBImag = NULL;
@@ -300,7 +300,7 @@ GlKomplex::updateRow( const int                            row,
 	for (int k = 0; k < numEntries; k++)
 		valuesAImag[k] = std::imag(valuesA[k]);
 
-	TEST_FOR_EXCEPT( 0 != PutRow(imagRow, numEntries, valuesAImag, indicesAReal, firstTime) );
+	TEUCHOS_ASSERT_INEQUALITY( 0, <=, PutRow(imagRow, numEntries, valuesAImag, indicesAReal, firstTime) );
 
 	delete[] valuesAImag;
 	valuesAImag = NULL;
@@ -316,7 +316,7 @@ GlKomplex::updateRow( const int                            row,
 	for (int k = 0; k < numEntries; k++)
 		valuesBImag[k] = std::imag(valuesB[k]);
 
-	TEST_FOR_EXCEPT( 0 != PutRow(imagRow, numEntries, valuesBImag, indicesBReal, firstTime) );
+	TEUCHOS_ASSERT_INEQUALITY( 0, <=, PutRow(imagRow, numEntries, valuesBImag, indicesBReal, firstTime) );
 
 	delete[] valuesBImag;
 	valuesBImag = NULL;
@@ -332,7 +332,7 @@ GlKomplex::updateRow( const int                            row,
 	for (int k = 0; k < numEntries; k++)
 		valuesAReal[k] = std::real(valuesA[k]);
 
-	TEST_FOR_EXCEPT( 0 != PutRow(imagRow, numEntries, valuesAReal, indicesAImag, firstTime) );
+	TEUCHOS_ASSERT_INEQUALITY( 0, <=, PutRow(imagRow, numEntries, valuesAReal, indicesAImag, firstTime) );
 
 	delete[] valuesAReal;
 	valuesAReal = NULL;
@@ -348,7 +348,7 @@ GlKomplex::updateRow( const int                            row,
 	for (int k = 0; k < numEntries; k++)
 		valuesBReal[k] = -std::real(valuesB[k]);
 
-	TEST_FOR_EXCEPT( 0 != PutRow(imagRow, numEntries, valuesBReal, indicesBImag, firstTime) );
+	TEUCHOS_ASSERT_INEQUALITY( 0, <=, PutRow(imagRow, numEntries, valuesBReal, indicesBImag, firstTime) );
 
 	delete[] valuesBReal;
 	valuesBReal = NULL;
@@ -367,9 +367,53 @@ GlKomplex::PutRow( int Row, int & numIndices, double * values, int * indices, bo
 	}
 }
 // =============================================================================
-Teuchos::RCP<const Epetra_CrsMatrix>
+Teuchos::RCP<Epetra_CrsMatrix>
 GlKomplex::getMatrix() const
 {
 	return realMatrix_;
+}
+// =============================================================================
+//Teuchos::RCP<Epetra_Vector>
+//GlKomplex::getRealCoefficients( const Teuchos::RCP<const ComplexVector> a,
+//		                        const Teuchos::RCP<const ComplexVector> b
+//		                      ) const
+//{
+//	TEUCHOS_ASSERT( a.is_valid_ptr() && !a.is_null() );
+//	TEUCHOS_ASSERT( b.is_valid_ptr() && !b.is_null() );
+//	TEUCHOS_ASSERT( a->getMap()->isSameAs(*ComplexMap_) );
+//	TEUCHOS_ASSERT( b->getMap()->isSameAs(*ComplexMap_) );
+//
+//	Teuchos::RCP<Epetra_Vector> compound = Teuchos::rcp( new Epetra_Vector(*RealMap_) );
+//
+//	// TODO Handle without 1dViews
+//	Teuchos::ArrayRCP<const double_complex> aView = a->get1dView();
+//	Teuchos::ArrayRCP<const double_complex> bView = b->get1dView();
+//	for ( unsigned int k=0; k<ComplexMap_->getNodeNumElements(); k++) {
+//		int K = ComplexMap_->getGlobalElement(k);
+//		compound->ReplaceMyValue( 2*k  , 0,  std::real(aView[K]) + std::real(bView[K]) );
+//		compound->ReplaceMyValue( 2*k+1, 0, -std::imag(aView[K]) + std::imag(bView[K]) );
+//	}
+//
+//	return compound;
+//}
+// =============================================================================
+Teuchos::RCP<Epetra_Vector>
+GlKomplex::imagScalarProductCoeff( const Teuchos::RCP<const ComplexVector> a
+		                         ) const
+{
+	TEUCHOS_ASSERT( a.is_valid_ptr() && !a.is_null() );
+	TEUCHOS_ASSERT( a->getMap()->isSameAs(*ComplexMap_) );
+
+	Teuchos::RCP<Epetra_Vector> compound = Teuchos::rcp( new Epetra_Vector(*RealMap_) );
+
+	// TODO Handle without 1dViews
+	Teuchos::ArrayRCP<const double_complex> aView = a->get1dView();
+	for ( unsigned int k=0; k<ComplexMap_->getNodeNumElements(); k++) {
+		int K = ComplexMap_->getGlobalElement(k);
+		compound->ReplaceMyValue( 2*k  , 0, -std::imag(aView[K]) );
+		compound->ReplaceMyValue( 2*k+1, 0,  std::real(aView[K]) );
+	}
+
+	return compound;
 }
 // =============================================================================

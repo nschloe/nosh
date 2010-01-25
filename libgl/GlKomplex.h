@@ -54,7 +54,8 @@ public:
   void
   zeroOutMatrix();
 
-  Teuchos::RCP<const Epetra_CrsMatrix>
+  //! Get read/write access to the matrix from outside.
+  Teuchos::RCP<Epetra_CrsMatrix>
   getMatrix() const;
 
   void
@@ -65,6 +66,29 @@ public:
              const std::vector<double_complex>  & valuesB,
              const bool                           firstTime
            );
+
+  //! Considering the term \f$a \psi + b \psi^*\f$ with
+  //! \f$a,b,\psi\in\mathbb{C}\f$, one has
+  //! \f[
+  //! \Re( a \psi + b \psi^* )
+  //! = (\Re(a)+\Re(b))\Re(\psi) + (-\Im(a)+ \Im(b))\Im(\psi)
+  //! = (\Re(a)+\Re(b),-\Im(a)+ \Im(b)) (\Re(\psi),\Im\psi)^{\mathrm{T}}
+  //! \f]
+  //! For given \f$a,b\f$, this function returns the vector \f$v\f$.
+  Teuchos::RCP<Epetra_Vector>
+  getRealCoefficients( const Teuchos::RCP<const ComplexVector> a,
+                       const Teuchos::RCP<const ComplexVector> b
+                     ) const;
+
+  //! The term \f$\Im(\psi^*z)\f$ with \f$\psi,z\in\mathbb{C}^n\f$
+  //! can be written as a scalar product \f$v^{\mathrm{T}} w\f$,
+  //! where $w\in\mathbb{R}^{2n}$ is the real-valued representation
+  //! of $z$.
+  //! For given \f$\psi\f$, this function returns the corresponding
+  //! \f$\v\in\mathbb{R}^{2n}\f$.
+  Teuchos::RCP<Epetra_Vector>
+  imagScalarProductCoeff( const Teuchos::RCP<const ComplexVector> a
+                        ) const;
 
 private:
 

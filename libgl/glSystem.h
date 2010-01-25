@@ -97,7 +97,7 @@ public:
 
 	//! Returns the current Jacobian.
 	//! @return Reference-counted pointer to the Jacobian.
-	Teuchos::RCP<Epetra_CrsMatrix>
+	Teuchos::RCP<const Epetra_CrsMatrix>
 	getJacobian() const;
 
 	Teuchos::RCP<Epetra_CrsMatrix>
@@ -149,8 +149,16 @@ public:
 	Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> >
 	getComplexMap() const;
 
-	Teuchos::RCP<const Epetra_CrsGraph>
-	getGraph() const;
+	Teuchos::RCP<const GlKomplex>
+	getGlKomplex() const;
+
+    // TODO delete
+    void
+    setH0( const double h0 );
+    void
+    setScaling( const double h0 );
+    void
+    setChi( const double h0 );
 
 private:
 
@@ -166,17 +174,13 @@ private:
 	void
 	makeRealMap(const Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> > complexMap);
 
-	enum jacCreator {
-		ONLY_GRAPH, VALUES
-	};
-
 	enum continuationType {
 		ONEPARAMETER,
 		TURNINGPOINT
 	};
 
-	bool
-	createJacobian(const jacCreator jc, const Epetra_Vector &x);
+	void
+	createJacobian(const Epetra_Vector &x);
 
 	//! Print method for the continuation in one parameter.
 	void
@@ -207,7 +211,7 @@ private:
 
 	Teuchos::RCP<const LOCA::Stepper> stepper_;
 
-	Teuchos::RCP<const GlKomplex> glKomplex_;
+	Teuchos::RCP<GlKomplex> glKomplex_;
 
 	GinzburgLandau::GinzburgLandau Gl_;
 	const Teuchos::RCP<const Epetra_Comm> EComm_;
@@ -216,8 +220,6 @@ private:
 	Teuchos::RCP<Epetra_Map> EverywhereMap_;
 	Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> > ComplexMap_;
 	Teuchos::RCP<Epetra_Vector> rhs_;
-	Teuchos::RCP<Epetra_CrsGraph> Graph_;
-	Teuchos::RCP<Epetra_CrsMatrix> jacobian_;
 	Teuchos::RCP<Epetra_CrsMatrix> preconditioner_;
 	Teuchos::RCP<Epetra_Vector> initialSolution_;
 
@@ -226,6 +228,8 @@ private:
 	const std::string nullvectorFileNameBase_;
 	const std::string outputFileFormat_;
 	const std::string outputDataFileName_;
+
+	bool firstTime_;
 };
 
 #endif // GLSYSTEM_H
