@@ -68,12 +68,12 @@ GlKomplex::real2complex(const Epetra_Vector & x ) const
                       std::logic_error,
                       "ComplexMap_ has not been properly initialized." );
 
+  // TODO get Epetra entries locally?
   Teuchos::RCP<ComplexVector> z = Teuchos::rcp( new ComplexVector(ComplexMap_) );
-
-  // TODO: parallelize
-  for (unsigned int k=0; k < z->getGlobalLength(); k++) {
-      double_complex c = double_complex(x[2 * k], x[2 * k + 1]);
-      z->replaceGlobalValue(k, c);
+  Teuchos::ArrayRCP<double_complex> zView = z->get1dViewNonConst();
+  for (unsigned int k=0; k < z->getLocalLength(); k++) {
+	  int K = ComplexMap_->getGlobalElement(k);
+      zView[k] = double_complex(x[2*K], x[2*K+1]);
   }
   return z;
 }

@@ -1,4 +1,4 @@
-INCLUDE( ../cmake-system.txt REQUIRED )
+INCLUDE( ../../cmake-system.txt REQUIRED )
 
 ENABLE_LANGUAGE( CXX )
 
@@ -14,8 +14,8 @@ FIND_PACKAGE( NOXEpetra  REQUIRED )
 
 INCLUDE_DIRECTORIES ( ${Trilinos_INCLUDE_DIR} )
 
-INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/libgl
-                      ${ginzburg-landau_SOURCE_DIR}/libio )
+INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/packages/libgl/src
+                      ${ginzburg-landau_SOURCE_DIR}/packages/libio/src )
 
 SET ( ginzburg_landau_SRCS
       main.cpp )

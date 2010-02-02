@@ -1,4 +1,4 @@
-INCLUDE( ../cmake-system.txt REQUIRED )
+INCLUDE( ${ginzburg-landau_SOURCE_DIR}/cmake-system.txt REQUIRED )
 
 ENABLE_LANGUAGE( CXX )
 
@@ -31,7 +31,7 @@ IF(MPI_COMPILED)
     INCLUDE_DIRECTORIES( ${MPI_INCLUDE_PATH} )
 ENDIF(MPI_COMPILED)
 
-INCLUDE_DIRECTORIES( ${ginzburg-landau_SOURCE_DIR}/libio )
+INCLUDE_DIRECTORIES( ${ginzburg-landau_SOURCE_DIR}/packages/libio/src )
 
 ADD_LIBRARY ( gl STATIC
               ${gl_SRCS} )

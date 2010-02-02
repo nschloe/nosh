@@ -41,7 +41,7 @@ typedef Tpetra::Vector<double_complex, Thyra::Ordinal> ComplexVector;
 class GlSystem: public AbstractStateWriter,
                 public NOX::Epetra::Interface::Jacobian,
                 public NOX::Epetra::Interface::Preconditioner,
-		public LOCA::Epetra::Interface::TimeDependent
+                public LOCA::Epetra::Interface::TimeDependent
 {
 public:
 
@@ -162,18 +162,6 @@ public:
 
 private:
 
-	int
-	realIndex2complexIndex(const int realIndex) const;
-
-	void
-	real2complex(const Epetra_Vector &x, ComplexVector &psi) const;
-
-	void
-	complex2real(const ComplexVector &psi, Epetra_Vector &x) const;
-
-	void
-	makeRealMap(const Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> > complexMap);
-
 	enum continuationType {
 		ONEPARAMETER,
 		TURNINGPOINT
@@ -203,23 +191,16 @@ private:
     Teuchos::RCP<const Teuchos::Comm<int> >
     create_CommInt( const Teuchos::RCP<const Epetra_Comm> &epetraComm );
 
-	continuationType continuationType_;
 
-	int NumRealUnknowns_;
-	int NumMyElements_;
-	int NumComplexUnknowns_;
+private:
+
+	continuationType continuationType_;
 
 	Teuchos::RCP<const LOCA::Stepper> stepper_;
 
 	Teuchos::RCP<GlKomplex> glKomplex_;
 
 	GinzburgLandau::GinzburgLandau Gl_;
-	const Teuchos::RCP<const Epetra_Comm> EComm_;
-	Teuchos::RCP<const Teuchos::Comm<int> > TComm_;
-	Teuchos::RCP<Epetra_Map> RealMap_;
-	Teuchos::RCP<Epetra_Map> EverywhereMap_;
-	Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> > ComplexMap_;
-	Teuchos::RCP<Epetra_Vector> rhs_;
 	Teuchos::RCP<Epetra_CrsMatrix> preconditioner_;
 	Teuchos::RCP<Epetra_Vector> initialSolution_;
 

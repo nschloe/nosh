@@ -1,4 +1,4 @@
-INCLUDE( ../cmake-system.txt REQUIRED )
+INCLUDE( ${ginzburg-landau_SOURCE_DIR}/cmake-system.txt REQUIRED )
 
 ENABLE_LANGUAGE( CXX )
 

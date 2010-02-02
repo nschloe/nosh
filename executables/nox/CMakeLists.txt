@@ -1,4 +1,4 @@
-INCLUDE( ../cmake-system.txt REQUIRED )
+INCLUDE( ../../cmake-system.txt REQUIRED )
 
 ENABLE_LANGUAGE( CXX )
 
@@ -9,17 +9,20 @@ IF(MPI_COMPILED)
     INCLUDE_DIRECTORIES ( ${MPI_INCLUDE_PATH} )
 ENDIF(MPI_COMPILED)
 
-FIND_PACKAGE( LOCAEpetra REQUIRED )
+FIND_PACKAGE( LOCA      REQUIRED )
+FIND_PACKAGE( NOXEpetra REQUIRED )
+
 
 INCLUDE_DIRECTORIES ( ${Trilinos_INCLUDE_DIR} )
 
-INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/libgl
-                      ${ginzburg-landau_SOURCE_DIR}/libio )
+INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/packages/libio/src
+                      ${ginzburg-landau_SOURCE_DIR}/packages/libgl/src )
 
 SET ( ginzburg_landau_SRCS
-      glTurningPointContinuation.cpp )
+      glNoxHelpers.cpp
+      main.cpp )
 
-ADD_EXECUTABLE ( glTurningPointContinuation.out
+ADD_EXECUTABLE ( gl-nox.out
                  ${ginzburg_landau_SRCS} )
 
 SET ( internal_LIBS
@@ -28,26 +31,23 @@ SET ( internal_LIBS
     )
 
 # ==============================================================================
-# Find other external libs
 FIND_PACKAGE( Boost COMPONENTS filesystem REQUIRED )
 INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIRS} )
 SET(Boost_USE_STATIC_LIBS   ON)
 SET(Boost_USE_MULTITHREADED ON)
 SET( LINK_LIBRARIES ${LINK_LIBRARIES}
 	                    ${Boost_LIBRARIES} )
-# ==============================================================================
+# ------------------------------------------------------------------------------
 FIND_LIBRARY( GFORTRAN ${GFORTRAN_LIBNAME}
               HINTS ${GFORTRAN_DIR}    )
 SET( LINK_LIBRARIES ${LINK_LIBRARIES}
                     ${GFORTRAN} )
 # ==============================================================================
-
-
-# ==============================================================================
 # Set executable linking information.
-TARGET_LINK_LIBRARIES ( glTurningPointContinuation.out
-                        ${internal_LIBS}
-                        LOCAEpetra
-                        ${LINK_LIBRARIES}
+TARGET_LINK_LIBRARIES ( gl-nox.out
+			${internal_LIBS}
+			LOCA
+			NOXEpetra
+			${LINK_LIBRARIES}
                       )
 # ==============================================================================

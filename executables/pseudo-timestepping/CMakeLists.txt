@@ -1,4 +1,4 @@
-INCLUDE( ../cmake-system.txt REQUIRED )
+INCLUDE( ../../cmake-system.txt REQUIRED )
 
 ENABLE_LANGUAGE( CXX )
 

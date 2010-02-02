@@ -38,99 +38,23 @@ GlSystem::GlSystem( GinzburgLandau::GinzburgLandau &gl,
 	                const std::string solutionFileNameBase,
 	                const std::string nullvectorFileNameBase
                   ) :
-	NumRealUnknowns_(0),
-	NumMyElements_(0),
-	NumComplexUnknowns_(0),
 	stepper_(Teuchos::null),
+	glKomplex_( Teuchos::rcp(new GlKomplex(eComm,psi->getMap()) ) ),
 	Gl_(gl),
-	EComm_(eComm),
-	TComm_(Teuchos::null),
-	RealMap_(Teuchos::null),
-	ComplexMap_(Teuchos::null),
-	rhs_(Teuchos::null),
 	initialSolution_(Teuchos::null),
 	outputDir_(outputDir),
 	solutionFileNameBase_(solutionFileNameBase),
 	nullvectorFileNameBase_(nullvectorFileNameBase),
 	outputFileFormat_(outputFileFormat),
 	outputDataFileName_(outputDataFileName),
-	glKomplex_( Teuchos::rcp(new GlKomplex(eComm,psi->getMap()) ) ),
 	firstTime_(true)
 {
-  NumComplexUnknowns_ = Gl_.getNumUnknowns();
-  NumRealUnknowns_ = 2 * NumComplexUnknowns_;
-
   TEST_FOR_EXCEPTION( !psi.is_valid_ptr() || psi.is_null(),
                       std::logic_error,
                       "psi not properly initialized." );
 
-	// TODO There is (until now?) no way to convert a Teuchos::Comm (of psi)
-	// to an Epetra_Comm (of the real valued representation of psi), so the
-	// Epetra_Comm has to be generated explicitly, and two communicators are kept
-	// side by side all the time. One must make sure that the two are actually
-	// equivalent, which can be checked by Thyra's conversion method create_Comm.
-	// TODO Is is actually necessary to have equivalent communicators on the
-	// real-valued and the complex-valued side?
-	// How to compare two communicators anyway?
-
-	// create fitting Tpetra::Comm
-	// TODO: move into initializer
-	TComm_ = create_CommInt(EComm_);
-
-	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-	// define maps
-	// psi->getMap() returns a CONST map
-	ComplexMap_ = Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> >(psi->getMap());
-
-	// get the map for the real values
-	makeRealMap(ComplexMap_);
-
-	// set the number of local elements
-	NumMyElements_ = RealMap_->NumMyElements();
-	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-	// Create a map for the real-valued vector to be spread all over all
-	// processors.
-	// TODO Remove (the need for) this.
-	// define the map where each processor has a full solution vector
- 	EverywhereMap_ = Teuchos::rcp(new Epetra_Map(NumRealUnknowns_,
-			NumRealUnknowns_, 0, *EComm_));
-	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-
-	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-	// initialize solution
-	initialSolution_ = Teuchos::rcp(new Epetra_Vector(*RealMap_));
-
-
-	// TODO Don't throw exception in constructor?
-    TEST_FOR_EXCEPTION( psi->getGlobalLength() != (unsigned int) NumComplexUnknowns_,
-			            std::logic_error,
-			            "Size of the initial guess vector ("
-			            << psi->getGlobalLength()
-			            << ") does not coincide with the number of unknowns ("
-			            << NumComplexUnknowns_ << ")" );
-
-	Teuchos::RCP<Epetra_Vector> initialSolution_ = glKomplex_->complex2real(*psi);
-	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-	// TODO: Remove 'dummy'.
-	// create the sparsity structure (graph) of the Jacobian
-	// use x as DUMMY argument
-//	Epetra_Vector dummy(*RealMap_);
-
-//	createJacobian(ONLY_GRAPH, dummy);
-
-	// Allocate the sparsity pattern of the Jacobian matrix
-//	jacobian_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, *Graph_));
-//	jacobian_->FillComplete();
-
-	// TODO Why is *this necessary??
-//	jacobian_ = Teuchos::rcp( new Epetra_CrsMatrix(Copy, *RealMap_, 0) );
-
-//	preconditioner_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, *Graph_));
-//	preconditioner_->FillComplete();
+  // initialize solution
+  Teuchos::RCP<Epetra_Vector> initialSolution_ = glKomplex_->complex2real(*psi);
 }
 // =============================================================================
 // constructor without initial guess
@@ -142,28 +66,17 @@ GlSystem::GlSystem(GinzburgLandau::GinzburgLandau &gl,
                    const std::string solutionFileNameBase,
                    const std::string nullvectorFileNameBase
                   ) :
-NumRealUnknowns_(0),
-NumMyElements_(0),
-NumComplexUnknowns_(0),
 stepper_(Teuchos::null),
+glKomplex_( Teuchos::null ),
 Gl_(gl),
-EComm_(eComm),
-TComm_(Teuchos::null),
-RealMap_(Teuchos::null),
-ComplexMap_(Teuchos::null),
-rhs_(Teuchos::null),
 initialSolution_(Teuchos::null),
 outputDir_(outputDir),
 solutionFileNameBase_(solutionFileNameBase),
 nullvectorFileNameBase_(nullvectorFileNameBase),
 outputFileFormat_(outputFileFormat),
 outputDataFileName_(outputDataFileName),
-glKomplex_( Teuchos::null ),
 firstTime_(true)
 {
-  NumComplexUnknowns_ = Gl_.getNumUnknowns();
-  NumRealUnknowns_ = 2 * NumComplexUnknowns_;
-
   // TODO There is (until now?) no way to convert a Teuchos::Comm (of psi)
   // to an Epetra_Comm (of the real valued representation of psi), so the
   // Epetra_Comm has to be generated explicitly, and two communicators are kept
@@ -175,35 +88,18 @@ firstTime_(true)
 
   // create fitting Tpetra::Comm
   // TODO: move into initializer
-  TComm_ = create_CommInt(EComm_);
+  Teuchos::RCP<const Teuchos::Comm<int> > TComm = create_CommInt(eComm);
 
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    // define maps
-    ComplexMap_ = Teuchos::rcp(new Tpetra::Map<Thyra::Ordinal>(NumComplexUnknowns_, 0, TComm_));
+  // define map
+  int NumComplexUnknowns = Gl_.getNumUnknowns();
+  Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> > ComplexMap
+     = Teuchos::rcp(new Tpetra::Map<Thyra::Ordinal>(NumComplexUnknowns, 0, TComm));
 
-    // get the map for the real values
-    makeRealMap(ComplexMap_);
-
-    // set the number of local elements
-    NumMyElements_ = RealMap_->NumMyElements();
-    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-    glKomplex_ = Teuchos::rcp(new GlKomplex(eComm,ComplexMap_) );
-    RealMap_   = glKomplex_->getRealMap();
-
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  // Create a map for the real-valued vector to be spread all over all
-  // processors.
-  // TODO Remove (the need for) this.
-  // define the map where each processor has a full solution vector
-  EverywhereMap_ = Teuchos::rcp(new Epetra_Map(NumRealUnknowns_,
-                  NumRealUnknowns_, 0, *EComm_));
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
+  glKomplex_ = Teuchos::rcp(new GlKomplex(eComm,ComplexMap) );
 
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   // initialize solution
-  Teuchos::RCP<ComplexVector> psi = Teuchos::rcp(new ComplexVector( ComplexMap_));
+  Teuchos::RCP<ComplexVector> psi = Teuchos::rcp(new ComplexVector(ComplexMap));
   // TODO Move default initialization out to main file
   double_complex alpha(1.0, 0.0);
   psi->putScalar(alpha); // default initialization
@@ -211,81 +107,11 @@ firstTime_(true)
   Teuchos::RCP<Epetra_Vector> initialSolution_ = glKomplex_->complex2real(*psi);
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-  // TODO Remove 'dummy'.
-  // create the sparsity structure (graph) of the Jacobian
-  // use x as DUMMY argument
-//  Epetra_Vector dummy(*RealMap_);
-//
-//  createJacobian(ONLY_GRAPH, dummy);
-//
-//  // Allocate the sparsity pattern of the Jacobian matrix
-//  jacobian_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, *Graph_));
-//  jacobian_->FillComplete();
-//
-//  preconditioner_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, *Graph_));
-//  preconditioner_->FillComplete();
 }
 // =============================================================================
 // Destructor
 GlSystem::~GlSystem() {
 	stepper_ = Teuchos::null;
-}
-// =============================================================================
-int GlSystem::realIndex2complexIndex(const int realIndex) const {
-	if (!(realIndex % 2)) // realIndex even
-		return realIndex / 2;
-	else
-		return (realIndex - 1) / 2;
-}
-// =============================================================================
-// converts a real-valued vector to a complex-valued psi vector
-void GlSystem::real2complex(const Epetra_Vector & realVec,
-                                  ComplexVector & complexVec) const
-{
-	// TODO: parallelize
-	for (unsigned int k = 0; k < complexVec.getGlobalLength(); k++) {
-		double_complex z = double_complex(realVec[2 * k], realVec[2 * k + 1]);
-		complexVec.replaceGlobalValue(k, z);
-	}
-}
-// =============================================================================
-// converts a real-valued vector to a complex-valued psi vector
-void
-GlSystem::complex2real(const ComplexVector &complexVec,
-                             Epetra_Vector &realVec
-                      ) const
-{
-	// TODO: parallelize
-	Teuchos::ArrayRCP<const double_complex> complexVecView =
-			complexVec.get1dView();
-	for (int k = 0; k < NumComplexUnknowns_; k++) {
-		realVec[2 * k] = real(complexVecView[k]);
-		realVec[2 * k + 1] = imag(complexVecView[k]);
-	}
-}
-// =============================================================================
-void GlSystem::makeRealMap(
-		const Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> > complexMap) {
-	int numRealGlobalElements = 2 * complexMap->getNodeNumElements();
-
-	int myPid = TComm_->getRank();
-
-	Epetra_IntSerialDenseVector realMapGIDs(numRealGlobalElements);
-	Teuchos::ArrayView<const Thyra::Ordinal> myGlobalElements =
-			complexMap->getNodeElementList();
-	// Construct the map in such a way that all complex entries on processor K
-	// are split up into real and imaginary part, which will both reside on
-	// processor K again.
-	for (unsigned int i = 0; i < complexMap->getNodeNumElements(); i++) {
-		realMapGIDs[2 * i] = 2 * myGlobalElements[i];
-		realMapGIDs[2 * i + 1] = 2 * myGlobalElements[i] + 1;
-	}
-
-	RealMap_ = Teuchos::rcp(new Epetra_Map(numRealGlobalElements,
-			realMapGIDs.Length(), realMapGIDs.Values(),
-			complexMap->getIndexBase(), *EComm_));
-
-	return;
 }
 // =============================================================================
 bool
@@ -294,11 +120,11 @@ GlSystem::computeF(const Epetra_Vector &x,
 		           const NOX::Epetra::Interface::Required::FillType fillFlag )
 {
   // make sure that the input and output vectors are correctly mapped
-  TEST_FOR_EXCEPTION( !x.Map().SameAs(*RealMap_),
+  TEST_FOR_EXCEPTION( !x.Map().SameAs(*glKomplex_->getRealMap()),
                       std::logic_error,
                       "Maps of x and the computed real-valued map do not coincide." );
 
-  TEST_FOR_EXCEPTION( !FVec.Map().SameAs(*RealMap_),
+  TEST_FOR_EXCEPTION( !FVec.Map().SameAs(*glKomplex_->getRealMap()),
                       std::logic_error,
                       "Maps of FVec and the computed real-valued map do not coincide." );
 
@@ -382,9 +208,6 @@ GlSystem::createJacobian( const Epetra_Vector &x)
       firstTime_ = false;
   }
 
-  // Sync up processors for safety's sake
-  EComm_->Barrier();
-
   return;
 }
 // =============================================================================
@@ -406,9 +229,6 @@ GlSystem::computeShiftedMatrix( double alpha,
 	glKomplex_->getMatrix()->ExtractDiagonalCopy(newDiag);
 	newDiag.Update(beta, unitVector, 1.0);
 	glKomplex_->getMatrix()->ReplaceDiagonalValues(newDiag);
-
-	// Sync up processors to be safe
-	EComm_->Barrier();
 
 	return true;
 }
@@ -470,10 +290,8 @@ GlSystem::printSolution( const Epetra_Vector &x,
 		                 double conParam )
 {
 	// define vector
-	const Teuchos::RCP<ComplexVector> psi =
-			              Teuchos::rcp( new ComplexVector(ComplexMap_, true) );
-	// convert from x to psi
-	real2complex(x, *psi);
+	const Teuchos::RCP<ComplexVector> psi
+			              = glKomplex_->real2complex(x);
 
 	// The switch hack is necessary as different continuation algorithms
 	// call printSolution() a different number of times per step, e.g.,
@@ -586,12 +404,9 @@ void
 GlSystem::writeSolutionToFile( const Epetra_Vector &x,
                                const std::string &filePath) const
 {
-	// define vector
-	Teuchos::RCP<ComplexVector> psi = Teuchos::rcp( new ComplexVector(ComplexMap_, true) );
-
 	// TODO: Remove the need for several real2complex calls per step.
-	// convert from x to psi
-	real2complex(x, *psi);
+	Teuchos::RCP<ComplexVector> psi
+	                   = glKomplex_->real2complex(x);
 
 	Gl_.writeSolutionToFile( psi, filePath );
 }
@@ -600,12 +415,9 @@ void
 GlSystem::writeAbstractStateToFile( const Epetra_Vector &x,
                                     const std::string &filePath) const
 {
-	// define vector
-	Teuchos::RCP<ComplexVector> psi = Teuchos::rcp( new ComplexVector(ComplexMap_, true) );
-
 	// TODO: Remove the need for several real2complex calls per step.
-	// convert from x to psi
-	real2complex(x, *psi);
+	Teuchos::RCP<ComplexVector> psi
+	                   = glKomplex_->real2complex(x);
 
 	Gl_.writeAbstractStateToFile( psi, filePath );
 }
@@ -613,9 +425,7 @@ GlSystem::writeAbstractStateToFile( const Epetra_Vector &x,
 Teuchos::RCP<Epetra_Vector>
 GlSystem::getGlSystemVector( const Teuchos::RCP<const ComplexVector> psi ) const
 {
-	Teuchos::RCP<Epetra_Vector> x = Teuchos::rcp( new Epetra_Vector(*RealMap_) );
-	complex2real( *psi, *x );
-	return x;
+	return glKomplex_->complex2real(*psi);
 }
 // =============================================================================
 Teuchos::RCP<const Teuchos::Comm<int> >
@@ -661,13 +471,13 @@ GlSystem::getH0() const
 Teuchos::RCP<const Epetra_Map>
 GlSystem::getRealMap() const
 {
-	return RealMap_;
+	return glKomplex_->getRealMap();
 }
 // =============================================================================
 Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> >
 GlSystem::getComplexMap() const
 {
-	return ComplexMap_;
+	return glKomplex_->getComplexMap();
 }
 // =============================================================================
 void

@@ -343,7 +343,13 @@ void
 GlSystemWithConstraint::printSolution( const  Epetra_Vector &x,
                                        double conParam )
 {
-	glSystem_.printSolution(  x, conParam );
+	  // TODO replace by {im,ex}porter
+	  // strip off the phase constraint
+	  Epetra_Vector tmp(*regularMap_);
+	  for (int k=0; k<tmp.MyLength(); k++)
+	    tmp.ReplaceMyValue( k, 0, x[x.Map().GID(k)] );
+
+	glSystem_.printSolution(  tmp, conParam );
 }
 // =============================================================================
 // function used by LOCA
@@ -355,14 +361,26 @@ void
 GlSystemWithConstraint::writeSolutionToFile( const Epetra_Vector &x,
                                              const std::string &filePath) const
 {
-	glSystem_.writeSolutionToFile( x, filePath );
+	  // TODO replace by {im,ex}porter
+	  // strip off the phase constraint
+	  Epetra_Vector tmp(*regularMap_);
+	  for (int k=0; k<tmp.MyLength(); k++)
+	    tmp.ReplaceMyValue( k, 0, x[x.Map().GID(k)] );
+
+	glSystem_.writeSolutionToFile( tmp, filePath );
 }
 // =============================================================================
 void
 GlSystemWithConstraint::writeAbstractStateToFile( const Epetra_Vector &x,
                                                   const std::string &filePath) const
 {
-	glSystem_.writeAbstractStateToFile( x, filePath );
+	  // TODO replace by {im,ex}porter
+	  // strip off the phase constraint
+	  Epetra_Vector tmp(*regularMap_);
+	  for (int k=0; k<tmp.MyLength(); k++)
+	    tmp.ReplaceMyValue( k, 0, x[x.Map().GID(k)] );
+
+	glSystem_.writeAbstractStateToFile( tmp, filePath );
 }
 // =============================================================================
 Teuchos::RCP<const Teuchos::Comm<int> >

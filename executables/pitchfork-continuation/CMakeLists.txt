@@ -1,4 +1,4 @@
-INCLUDE( ../cmake-system.txt REQUIRED )
+INCLUDE( ../../cmake-system.txt REQUIRED )
 
 ENABLE_LANGUAGE( CXX )
 
@@ -9,31 +9,31 @@ IF(MPI_COMPILED)
     INCLUDE_DIRECTORIES ( ${MPI_INCLUDE_PATH} )
 ENDIF(MPI_COMPILED)
 
-FIND_PACKAGE( Trilinos COMPONENTS NOXEpetra
+FIND_PACKAGE( Trilinos COMPONENTS LOCAEpetra
+                                  LOCA
+                                  NOXEpetra
                                   NOX
                                   AztecOO
                                   IFPACK
                                   Amesos
                                   ML
-                                  LOCA
                                   EpetraExt
                                   Epetra
-				  Anasazi
-				  Tpetra
-				  Kokkosnodeapi
-				  Thyraepetra
-				  Thyra
-				  Rtop
+                                  Kokkosnodeapi
+                                  Tpetra
+                                  Thyraepetra
+                                  Thyra
+                                  Rtop
                                   Teuchos )
+
 INCLUDE_DIRECTORIES ( ${Trilinos_INCLUDE_DIR} )
 
 INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/libgl )
 
 SET ( ginzburg_landau_SRCS
-      gl-branch-switching.cpp
-      glBranchSwitcher.cpp )
+      gl-pitchcont.cpp )
 
-ADD_EXECUTABLE ( gl-branch-switching.out
+ADD_EXECUTABLE ( gl-pitchcont.out
                  ${ginzburg_landau_SRCS} )
 
 SET ( internal_LIBS
@@ -109,8 +109,8 @@ SET( LINK_LIBRARIES ${LINK_LIBRARIES}
 
 # ==============================================================================
 # Set executable linking information.
-TARGET_LINK_LIBRARIES ( gl-branch-switching.out
-			${internal_LIBS}
+TARGET_LINK_LIBRARIES ( gl-pitchcont.out
+                        ${internal_LIBS}
                         ${Trilinos_LIBRARIES}
                         ${LINK_LIBRARIES}
                       )
