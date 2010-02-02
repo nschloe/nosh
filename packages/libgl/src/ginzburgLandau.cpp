@@ -143,7 +143,7 @@ GinzburgLandau::computeGl ( const int           eqnum,
     case INTERIOR:
     {
       // Translate eqIndex to k.
-      // TODO: Unify this with what happens at the Jacobian.
+      // TODO Unify this with what happens at the Jacobian.
       // The equations here are "centered" around a node. Take node 'k'
       // for equation 'eqIndex'.
       int k = eqnum;
@@ -533,10 +533,10 @@ GinzburgLandau::appendStats( std::ofstream & fileStream,
     	double l2norm = normalizedScaledL2Norm( *psi );
     	int vorticity = getVorticity( *psi );
     	fileStream << A_->getH0() << " \t"
-    		   << grid_->getScaling() << " \t"
-    		   << energy << " \t"
+    		       << grid_->getScaling() << " \t"
+    		       << energy << " \t"
     	    	   << l2norm << " \t"
-    		   << vorticity;
+                   << vorticity;
     }
 
 }

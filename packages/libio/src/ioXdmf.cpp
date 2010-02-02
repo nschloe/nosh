@@ -22,8 +22,8 @@
 
 // =============================================================================
 // Constructor
-IoXdmf::IoXdmf( boost::filesystem::path fname ):
-  IoVirtual(fname)
+IoXdmf::IoXdmf ( boost::filesystem::path fname ) :
+        IoVirtual ( fname )
 {
 }
 // =============================================================================
@@ -33,15 +33,15 @@ IoXdmf::~IoXdmf()
 }
 // =============================================================================
 void
-IoXdmf::read( const Teuchos::RCP<const Teuchos::Comm<int> > & tComm,
-			        Teuchos::RCP<DoubleMultiVector>         & x,
-			        Teuchos::ParameterList                  & problemParams
-	        ) const
+IoXdmf::read ( const Teuchos::RCP<const Teuchos::Comm<int> > & tComm,
+               Teuchos::RCP<DoubleMultiVector>         & x,
+               Teuchos::ParameterList                  & problemParams
+             ) const
 {
-  // TODO Implement IoXdmf::read().
-  TEST_FOR_EXCEPTION( true,
-                      std::logic_error,
-	                  "Not yet implemented." );
+    // TODO Implement IoXdmf::read().
+    TEST_FOR_EXCEPTION ( true,
+                         std::logic_error,
+                         "Not yet implemented." );
 
 //  // Convert the file to a string, such that we can discard the headers and pass
 //  // the pure XML stuff to Teuchos.
@@ -122,8 +122,8 @@ IoXdmf::read( const Teuchos::RCP<const Teuchos::Comm<int> > & tComm,
 //  if ( x->getGlobalLength() != (unsigned int)(Nx+1)*(Nx+1) ) {
 //      std::string message = "Length of input vector psi (="
 //                          + EpetraExt::toString( (int)x->getGlobalLength() ) + ") "
-//			  + "does not coincide with the number of complex "
-//			  + "unknowns (="
+//                        + "does not coincide with the number of complex "
+//                        + "unknowns (="
 //                          + EpetraExt::toString( (Nx+1)*(Nx+1) ) + ").";
 //      throw IoException( "IoXdmf::read", message );
 //  }
@@ -131,112 +131,124 @@ IoXdmf::read( const Teuchos::RCP<const Teuchos::Comm<int> > & tComm,
 //  int k = 0;
 //  for (int i=0; i<Nx+1; i++)
 //      for (int j=0; j<Nx+1; j++) {
-//	  double_complex z = std::polar( (*absPsi)[i][j], (*argPsi)[i][j] );
-//	  psi->replaceGlobalValue( k++, z );
+//        double_complex z = std::polar( (*absPsi)[i][j], (*argPsi)[i][j] );
+//        psi->replaceGlobalValue( k++, z );
 //      }
 
-  return;
+    return;
 }
 // =============================================================================
 void
-IoXdmf::read(const Teuchos::RCP<const Teuchos::Comm<int> > &tComm,
-                   Teuchos::RCP<ComplexMultiVector> &x,
-                   Teuchos::ParameterList &problemParams) const
+IoXdmf::read ( const Teuchos::RCP<const Teuchos::Comm<int> > &tComm,
+               Teuchos::RCP<ComplexMultiVector> &x,
+               Teuchos::ParameterList &problemParams ) const
 {
-	  TEST_FOR_EXCEPTION( true,
-	      std::logic_error,
-	      "Not yet implemented." );
+    TEST_FOR_EXCEPTION ( true,
+                         std::logic_error,
+                         "Not yet implemented." );
 }
 // =============================================================================
 void
-IoXdmf::getHeavyData( const Teuchos::XMLObject &xmlFileObject,
-                      const Epetra_Comm        &comm,
-                      Epetra_MultiVector       **readVec,
-                      const std::string        &fileDirectory,
-                      const std::string        &xmlName,
-                      const std::string        &hdf5GroupName
-                    ) const
+IoXdmf::getHeavyData ( const Teuchos::XMLObject &xmlFileObject,
+                       const Epetra_Comm        &comm,
+                       Epetra_MultiVector       **readVec,
+                       const std::string        &fileDirectory,
+                       const std::string        &xmlName,
+                       const std::string        &hdf5GroupName
+                     ) const
 {
-  // ---------------------------------------------------------------------------
-  // now go find where the heavy data is stored
+    // ---------------------------------------------------------------------------
+    // now go find where the heavy data is stored
 
-  // find the abs(psi) data
-  const Teuchos::XMLObject* absPsiObject = xmlAttributeFind ( &xmlFileObject,
-                                                              "Attribute",
-                                                              "Name",
-                                                              xmlName         );
+    // find the abs(psi) data
+    const Teuchos::XMLObject* absPsiObject = xmlAttributeFind ( &xmlFileObject,
+            "Attribute",
+            "Name",
+            xmlName );
 
-  // Make sure that is contains something of the form
-  //
-  // ===================== *snip* =====================
-  //   <DataItem Dimensions="1 51 51" Format="HDF" NumberType="Float" Precision="4">
-  //   solution.h5:/abs/Values
-  //   </DataItem>
-  // ===================== *snap* =====================
-  //
-  const Teuchos::XMLObject* dataItem = xmlFind ( absPsiObject,
-                                                 "DataItem" );
+    // Make sure that is contains something of the form
+    //
+    // ===================== *snip* =====================
+    //   <DataItem Dimensions="1 51 51" Format="HDF" NumberType="Float" Precision="4">
+    //   solution.h5:/abs/Values
+    //   </DataItem>
+    // ===================== *snap* =====================
+    //
+    const Teuchos::XMLObject* dataItem = xmlFind ( absPsiObject,
+                                         "DataItem" );
 
-  TEST_FOR_EXCEPTION( !dataItem,
-	                  std::logic_error,
-	                  "Found no \"DataItem\"." );
+    TEST_FOR_EXCEPTION ( !dataItem,
+                         std::logic_error,
+                         "Found no \"DataItem\"." );
 
-  // get the file name
+    // get the file name
 // TODO: numContentLines currently broken; don't use it until further notice.
 //   int cLines=dataItem->numContentLines();
 //   if ( cLines<1 ) {
 //       std::cerr << "Found no file name in \"DataItem\". Abort." << std::endl;
 //   }
 
-  // Read the first line which is supposed to contain the file and more
-  // (see above).
-  string dataLine;
+    // Read the first line which is supposed to contain the file and more
+    // (see above).
+    string dataLine;
 
-  // getContentLine actually get content columns, so build up dataLine like
-  // that
-  for (int k=0; k<dataItem->numContentLines(); k++ )
-      dataLine += dataItem->getContentLine(k);
+    // getContentLine actually get content columns, so build up dataLine like
+    // that
+    for ( int k=0; k<dataItem->numContentLines(); k++ )
+        dataLine += dataItem->getContentLine ( k );
 
-  // trim whitespace
-  std::string whiteSpaceCharacters = " \n\t";
-  dataLine.erase( dataLine.find_last_not_of(whiteSpaceCharacters) + 1);  // from the right
-  dataLine.erase( 0, dataLine.find_first_not_of(whiteSpaceCharacters) ); // from the left
+    // trim whitespace
+    std::string whiteSpaceCharacters = " \n\t";
+    dataLine.erase ( dataLine.find_last_not_of ( whiteSpaceCharacters ) + 1 );  // from the right
+    dataLine.erase ( 0, dataLine.find_first_not_of ( whiteSpaceCharacters ) ); // from the left
 
-  // extract file name
-  int    colonPos  = dataLine.find(":");
-  string dataFile  = dataLine.substr(0,colonPos);
-  string dataGroup = dataLine.substr(colonPos+1,dataLine.size()-colonPos);
+    // extract file name
+    int    colonPos  = dataLine.find ( ":" );
+    string dataFile  = dataLine.substr ( 0,colonPos );
+    string dataGroup = dataLine.substr ( colonPos+1,dataLine.size()-colonPos );
 
-  EpetraExt::HDF5 hdf5Reader(comm);
-  hdf5Reader.Open( fileDirectory+"/"+dataFile ); // directory from fileName
+    EpetraExt::HDF5 hdf5Reader ( comm );
+    hdf5Reader.Open ( fileDirectory+"/"+dataFile ); // directory from fileName
 
-  TEST_FOR_EXCEPTION( !hdf5Reader.IsContained(hdf5GroupName),
-	                  std::logic_error,
-	                  "Could not find tag \"" << hdf5GroupName << "\" "
-	                  << "in file " << fileDirectory << "/" << dataFile << "." );
+    TEST_FOR_EXCEPTION ( !hdf5Reader.IsContained ( hdf5GroupName ),
+                         std::logic_error,
+                         "Could not find tag \"" << hdf5GroupName << "\" "
+                         << "in file " << fileDirectory << "/" << dataFile << "." );
 
-  // get data sizes and compare with the input MultiVector
-  int globalLength, numVectors;
-  hdf5Reader.ReadMultiVectorProperties( hdf5GroupName,
-                                        globalLength,
-                                        numVectors     );
+    // get data sizes and compare with the input MultiVector
+    int globalLength, numVectors;
+    hdf5Reader.ReadMultiVectorProperties ( hdf5GroupName,
+                                           globalLength,
+                                           numVectors );
 
-  TEST_FOR_EXCEPTION( globalLength != (*readVec)->GlobalLength(),
-	                  std::logic_error,
-	                  "Length of the input MultiVector ("<<  (*readVec)->GlobalLength()
-	                  << ") does not coincide with the global length of "
-	                  << "the data in file " << dataFile << "." );
+    TEST_FOR_EXCEPTION ( globalLength != ( *readVec )->GlobalLength(),
+                         std::logic_error,
+                         "Length of the input MultiVector ("<< ( *readVec )->GlobalLength()
+                         << ") does not coincide with the global length of "
+                         << "the data in file " << dataFile << "." );
 
-  TEST_FOR_EXCEPTION( numVectors != (*readVec)->NumVectors(),
-	                  std::logic_error,
-	                  "Number of the input MultiVectors (" << (*readVec)->NumVectors()
-	                  << ") does not coincide with the global number of "
-	                  << "vectors in file " << dataFile << "." );
+    TEST_FOR_EXCEPTION ( numVectors != ( *readVec )->NumVectors(),
+                         std::logic_error,
+                         "Number of the input MultiVectors (" << ( *readVec )->NumVectors()
+                         << ") does not coincide with the global number of "
+                         << "vectors in file " << dataFile << "." );
 
-  // finally, read the vector
-  hdf5Reader.Read( hdf5GroupName, *readVec );
+    // finally, read the vector
+    hdf5Reader.Read ( hdf5GroupName, *readVec );
 
-  hdf5Reader.Close();
+    hdf5Reader.Close();
+}
+// =============================================================================
+void
+IoXdmf::write ( const Epetra_MultiVector             & x,
+                const Teuchos::Tuple<unsigned int,2> & Nx,
+                const Teuchos::Tuple<double,2>       & h,
+                const Teuchos::ParameterList         & problemParams
+              )
+{
+    TEST_FOR_EXCEPTION ( true,
+                         std::logic_error,
+                         "Not yet implemented." );
 }
 // =============================================================================
 void
@@ -246,144 +258,144 @@ IoXdmf::write ( const DoubleMultiVector              & x,
                 const Teuchos::ParameterList         & problemParams
               )
 {
+    // create the HDF5 file name, take off the suffix and replace it by .h5
+    boost::filesystem::path hdf5FileName = change_extension ( fileName_,".h5" );
+    boost::filesystem::path hdf5BaseName = basename ( hdf5FileName );
 
-  // create the HDF5 file name, take off the suffix and replace it by .h5
-  boost::filesystem::path hdf5FileName = change_extension(fileName_,".h5");
-  boost::filesystem::path hdf5BaseName = basename( hdf5FileName );
+    // open the file
+    boost::filesystem::ofstream xdmfFile ( fileName_ );
 
-  // open the file
-  boost::filesystem::ofstream xdmfFile( fileName_ );
+    // write the XDMF header
+    xdmfFile << "<?xml version=\"1.0\" ?>\n"
+    << "<!DOCTYPE Xdmf SYSTEM \"Xdmf.dtd\" [\n"
+    << "<!ENTITY HeavyData \"" << hdf5BaseName << "\">\n"
+    << "]>\n"
+    << std::endl;
 
-  // write the XDMF header
-  xdmfFile << "<?xml version=\"1.0\" ?>\n"
-           << "<!DOCTYPE Xdmf SYSTEM \"Xdmf.dtd\" [\n"
-           << "<!ENTITY HeavyData \"" << hdf5BaseName << "\">\n"
-           << "]>\n"
-           << std::endl;
+    // enclosing structure
+    Teuchos::XMLObject xdmfContainer ( "Xdmf" );
 
-  // enclosing structure
-  Teuchos::XMLObject xdmfContainer("Xdmf");
+    // Append the problem parameters in XML form.
+    // This needs to go *inside* the enclosing Xdmf tag, otherwise the file format
+    // is not universally recognized.
+    Teuchos::XMLObject xmlParameterList ( "" );
+    xmlParameterList = Teuchos::XMLParameterListWriter::XMLParameterListWriter()
+                       .toXML ( problemParams );
+    xdmfContainer.addChild ( xmlParameterList );
 
-  // Append the problem parameters in XML form.
-  // This needs to go *inside* the enclosing Xdmf tag, otherwise the file format
-  // is not universally recognized.
-  Teuchos::XMLObject xmlParameterList("");
-  xmlParameterList = Teuchos::XMLParameterListWriter::XMLParameterListWriter()
-                                                        .toXML( problemParams );
-  xdmfContainer.addChild(xmlParameterList);
+    // add the domain item
+    Teuchos::XMLObject xmlDomain ( "Domain" );
+    xdmfContainer.addChild ( xmlDomain );
 
-  // add the domain item
-  Teuchos::XMLObject xmlDomain("Domain");
-  xdmfContainer.addChild( xmlDomain );
+    // add the grid item
+    Teuchos::XMLObject xmlGrid ( "Grid" );
+    xmlGrid.addAttribute ( "Name", "MyGrid" );
+    xmlDomain.addChild ( xmlGrid );
 
-  // add the grid item
-  Teuchos::XMLObject xmlGrid("Grid");
-  xmlGrid.addAttribute( "Name", "MyGrid" );
-  xmlDomain.addChild( xmlGrid );
+    // add topology
+    Teuchos::XMLObject xmlTopology ( "Topology" );
+    xmlTopology.addAttribute ( "TopologyType", "3DCORECTMESH" );
+    std::string str = "1 " + EpetraExt::toString ( Nx[0]+1 ) + " " + EpetraExt::toString ( Nx[1]+1 );
+    xmlTopology.addAttribute ( "Dimensions", str );
+    xmlGrid.addChild ( xmlTopology );
 
-  // add topology
-  Teuchos::XMLObject xmlTopology("Topology");
-  xmlTopology.addAttribute( "TopologyType", "3DCORECTMESH" );
-  std::string str = "1 " + EpetraExt::toString(Nx[0]+1) + " " + EpetraExt::toString(Nx[1]+1);
-  xmlTopology.addAttribute( "Dimensions", str );
-  xmlGrid.addChild( xmlTopology );
+    // merge the latter two into geometry
+    Teuchos::XMLObject xmlGeometry ( "Geometry" );
+    xmlGeometry.addAttribute ( "Type", "ORIGIN_DXDYDZ" );
+    xmlGrid.addChild ( xmlGeometry );
 
-  // merge the latter two into geometry
-  Teuchos::XMLObject xmlGeometry("Geometry");
-  xmlGeometry.addAttribute( "Type", "ORIGIN_DXDYDZ" );
-  xmlGrid.addChild( xmlGeometry );
+    // add actual geometry information to the geometry item
+    // define origin
+    Teuchos::XMLObject xmlOrigin ( "DataItem" );
+    xmlOrigin.addAttribute ( "Name", "Origin" );
+    xmlOrigin.addAttribute ( "NumberType", "Float" );
+    xmlOrigin.addAttribute ( "Dimensions", "3" );
+    xmlOrigin.addAttribute ( "Format", "XML" );
+    xmlOrigin.addContent ( "0 0 0" );
+    xmlGeometry.addChild ( xmlOrigin );
 
-  // add actual geometry information to the geometry item
-  // define origin
-  Teuchos::XMLObject xmlOrigin("DataItem");
-  xmlOrigin.addAttribute( "Name", "Origin" );
-  xmlOrigin.addAttribute( "NumberType", "Float" );
-  xmlOrigin.addAttribute( "Dimensions", "3" );
-  xmlOrigin.addAttribute( "Format", "XML" );
-  xmlOrigin.addContent( "0 0 0" );
-  xmlGeometry.addChild( xmlOrigin );
+    // define spacing
+    Teuchos::XMLObject xmlSpacing ( "DataItem" );
+    xmlSpacing.addAttribute ( "Name", "Spacing" );
+    xmlSpacing.addAttribute ( "NumberType", "Float" );
+    xmlSpacing.addAttribute ( "Dimensions", "3" );
+    xmlSpacing.addAttribute ( "Format", "XML" );
+    str = "0 " + EpetraExt::toString ( h[0] ) + " " + EpetraExt::toString ( h[1] );
+    xmlSpacing.addContent ( str );
+    xmlGeometry.addChild ( xmlSpacing );
 
-  // define spacing
-  Teuchos::XMLObject xmlSpacing("DataItem");
-  xmlSpacing.addAttribute( "Name", "Spacing" );
-  xmlSpacing.addAttribute( "NumberType", "Float" );
-  xmlSpacing.addAttribute( "Dimensions", "3" );
-  xmlSpacing.addAttribute( "Format", "XML" );
-  str = "0 " + EpetraExt::toString(h[0]) + " " + EpetraExt::toString(h[1]);
-  xmlSpacing.addContent( str );
-  xmlGeometry.addChild( xmlSpacing );
+    // tell me where the actual ABS(PSI) data sits
+    Teuchos::XMLObject xmlAbs ( "Attribute" );
+    xmlAbs.addAttribute ( "Active", "1" );
+    xmlAbs.addAttribute ( "AttributeType", "Scalar" );
+    xmlAbs.addAttribute ( "Center", "Node" );
+    xmlAbs.addAttribute ( "Name", "abs(psi)" );
+    xmlGrid.addChild ( xmlAbs );
 
-  // tell me where the actual ABS(PSI) data sits
-  Teuchos::XMLObject xmlAbs("Attribute");
-  xmlAbs.addAttribute( "Active", "1" );
-  xmlAbs.addAttribute( "AttributeType", "Scalar" );
-  xmlAbs.addAttribute( "Center", "Node" );
-  xmlAbs.addAttribute( "Name", "abs(psi)" );
-  xmlGrid.addChild( xmlAbs );
-
-  Teuchos::XMLObject xmlAbsData("DataItem");
-  xmlAbsData.addAttribute( "NumberType", "Float" );
-  xmlAbsData.addAttribute( "Precision", "4" );
-  str = "1 " + EpetraExt::toString(Nx[0]+1) + " " + EpetraExt::toString(Nx[1]+1);
-  xmlAbsData.addAttribute( "Dimensions", str );
-  xmlAbsData.addAttribute( "Format", "HDF" );
-  xmlAbsData.addContent( hdf5BaseName.string()+":/abs/Values" );
-  xmlAbs.addChild( xmlAbsData );
+    Teuchos::XMLObject xmlAbsData ( "DataItem" );
+    xmlAbsData.addAttribute ( "NumberType", "Float" );
+    xmlAbsData.addAttribute ( "Precision", "4" );
+    str = "1 " + EpetraExt::toString ( Nx[0]+1 ) + " " + EpetraExt::toString ( Nx[1]+1 );
+    xmlAbsData.addAttribute ( "Dimensions", str );
+    xmlAbsData.addAttribute ( "Format", "HDF" );
+    xmlAbsData.addContent ( hdf5BaseName.string() +":/abs/Values" );
+    xmlAbs.addChild ( xmlAbsData );
 
 
-  // tell me where the actual ARG(PSI) data sits
-  Teuchos::XMLObject xmlArg("Attribute");
-  xmlArg.addAttribute( "Center", "Node" );
-  xmlArg.addAttribute( "AttributeType", "Scalar" );
-  xmlArg.addAttribute( "Name", "arg(psi)" );
-  xmlGrid.addChild( xmlArg );
+    // tell me where the actual ARG(PSI) data sits
+    Teuchos::XMLObject xmlArg ( "Attribute" );
+    xmlArg.addAttribute ( "Center", "Node" );
+    xmlArg.addAttribute ( "AttributeType", "Scalar" );
+    xmlArg.addAttribute ( "Name", "arg(psi)" );
+    xmlGrid.addChild ( xmlArg );
 
-  Teuchos::XMLObject xmlArgData("DataItem");
-  xmlArgData.addAttribute( "NumberType", "Float" );
-  xmlArgData.addAttribute( "Precision", "4" );
-  str = "1 " + EpetraExt::toString(Nx[0]+1) + " " + EpetraExt::toString(Nx[1]+1);
-  xmlArgData.addAttribute( "Dimensions", str );
-  xmlArgData.addAttribute( "Format", "HDF" );
-  xmlArgData.addContent( hdf5BaseName.string()+":/arg/Values" );
-  xmlArg.addChild( xmlArgData );
+    Teuchos::XMLObject xmlArgData ( "DataItem" );
+    xmlArgData.addAttribute ( "NumberType", "Float" );
+    xmlArgData.addAttribute ( "Precision", "4" );
+    str = "1 " + EpetraExt::toString ( Nx[0]+1 ) + " " + EpetraExt::toString ( Nx[1]+1 );
+    xmlArgData.addAttribute ( "Dimensions", str );
+    xmlArgData.addAttribute ( "Format", "HDF" );
+    xmlArgData.addContent ( hdf5BaseName.string() +":/arg/Values" );
+    xmlArg.addChild ( xmlArgData );
 
-  // write it all to the file
-  xdmfFile << xdmfContainer;
+    // write it all to the file
+    xdmfFile << xdmfContainer;
 
-  // close the file
-  xdmfFile.close();
-  // ---------------------------------------------------------------------------
+    // close the file
+    xdmfFile.close();
+    // ---------------------------------------------------------------------------
 
-  // ---------------------------------------------------------------------------
-  // write the HDF5 heavy data file
-  // ---------------------------------------------------------------------------
-  // create a vector with abs values
+    // ---------------------------------------------------------------------------
+    // write the HDF5 heavy data file
+    // ---------------------------------------------------------------------------
+    // create a vector with abs values
 #ifdef HAVE_MPI
-  Epetra_MpiComm Comm(MPI_COMM_WORLD);
+    Epetra_MpiComm Comm ( MPI_COMM_WORLD );
 #else
-  Epetra_SerialComm Comm;
+    Epetra_SerialComm Comm;
 #endif
 //   int NumUnknowns = (SGrid.getNx()+1)*(SGrid.getNx()+1);
-  Epetra_Map StandardMap( Nx[0]+1,0,Comm);
+    Epetra_Map StandardMap ( Nx[0]+1,0,Comm );
 
-  EpetraExt::HDF5 myhdf5( Comm );
-  myhdf5.Create( hdf5FileName.string() );
+    EpetraExt::HDF5 myhdf5 ( Comm );
+    myhdf5.Create ( hdf5FileName.string() );
 
-  int numVectors = x.getNumVectors();
-  for (int k; k<numVectors; k++) {
-	  // fill absPsi and argPsi
-	  Epetra_MultiVector xK(StandardMap,Nx[1]+1);
-	  Teuchos::ArrayRCP<const double> xKView = x.getVector(k)->get1dView();
-	  int l=0;
-	  for (unsigned int i=0; i<Nx[0]+1; i++)
-		  for (unsigned int j=0; j<Nx[1]+1; j++)
-			  xK.ReplaceGlobalValue( i, j, xKView[l++] );
-	  std::string name = "x" + EpetraExt::toString(k);
-      myhdf5.Write( name, xK );
-  }
+    int numVectors = x.getNumVectors();
+    for ( int k; k<numVectors; k++ )
+    {
+        // fill absPsi and argPsi
+        Epetra_MultiVector xK ( StandardMap,Nx[1]+1 );
+        Teuchos::ArrayRCP<const double> xKView = x.getVector ( k )->get1dView();
+        int l=0;
+        for ( unsigned int i=0; i<Nx[0]+1; i++ )
+            for ( unsigned int j=0; j<Nx[1]+1; j++ )
+                xK.ReplaceGlobalValue ( i, j, xKView[l++] );
+        std::string name = "x" + EpetraExt::toString ( k );
+        myhdf5.Write ( name, xK );
+    }
 
-  myhdf5.Close();
-  // ---------------------------------------------------------------------------
+    myhdf5.Close();
+    // ---------------------------------------------------------------------------
 
 }
 // =============================================================================
@@ -394,20 +406,20 @@ IoXdmf::write ( const ComplexMultiVector             & x,
                 const Teuchos::ParameterList         & problemParams
               )
 {
-	TEST_FOR_EXCEPTION( true,
-			            std::logic_error,
-			            "Not yet implemented." );
+    TEST_FOR_EXCEPTION ( true,
+                         std::logic_error,
+                         "Not yet implemented." );
 }
 // =============================================================================
 void
-IoXdmf::write( const DoubleMultiVector              & x,
-               const Teuchos::Tuple<unsigned int,2> & Nx,
-               const Teuchos::Tuple<double,2>       & h
-             )
+IoXdmf::write ( const DoubleMultiVector              & x,
+                const Teuchos::Tuple<unsigned int,2> & Nx,
+                const Teuchos::Tuple<double,2>       & h
+              )
 {
-  TEST_FOR_EXCEPTION( true,
-                      std::logic_error,
-                      "Not yet implemented." );
+    TEST_FOR_EXCEPTION ( true,
+                         std::logic_error,
+                         "Not yet implemented." );
 }
 // =============================================================================
 void
@@ -416,9 +428,9 @@ IoXdmf::write ( const ComplexMultiVector              & x,
                 const Teuchos::Tuple<double,2>       & h
               )
 {
-	TEST_FOR_EXCEPTION( true,
-			            std::logic_error,
-			            "Not yet implemented." );
+    TEST_FOR_EXCEPTION ( true,
+                         std::logic_error,
+                         "Not yet implemented." );
 }
 // =============================================================================
 // Inside an XML object, this function looks for a specific tag and returns
@@ -428,17 +440,18 @@ IoXdmf::xmlFind ( const Teuchos::XMLObject *xmlObj,
                   const std::string        tag
                 ) const
 {
-  const Teuchos::XMLObject* xmlOut=NULL;
+    const Teuchos::XMLObject* xmlOut=NULL;
 
-  if ( !xmlObj->getTag().compare(tag) ) // strings are equal
-      xmlOut = xmlObj;
-  else
-      for (int k=0; k<xmlObj->numChildren(); k++) {
-          xmlOut = xmlFind ( &(xmlObj->getChild(k)), tag ); // recursive call
-          if (xmlOut) break; // not the null pointer => return
-      }
+    if ( !xmlObj->getTag().compare ( tag ) ) // strings are equal
+        xmlOut = xmlObj;
+    else
+        for ( int k=0; k<xmlObj->numChildren(); k++ )
+        {
+            xmlOut = xmlFind ( & ( xmlObj->getChild ( k ) ), tag ); // recursive call
+            if ( xmlOut ) break; // not the null pointer => return
+        }
 
-  return xmlOut;
+    return xmlOut;
 }
 // =============================================================================
 const Teuchos::XMLObject*
@@ -448,21 +461,22 @@ IoXdmf::xmlAttributeFind ( const Teuchos::XMLObject *xmlObj,
                            const std::string        value
                          ) const
 {
-  const Teuchos::XMLObject* xmlOut=NULL;
+    const Teuchos::XMLObject* xmlOut=NULL;
 
-  if (    !xmlObj->getTag().compare(tag)
-       && xmlObj->hasAttribute(attribute)
-       && xmlObj->getAttribute(attribute).compare(value) )
-      xmlOut = xmlObj;
-  else
-      for (int k=0; k<xmlObj->numChildren(); k++) {
-          xmlOut = xmlAttributeFind ( &(xmlObj->getChild(k)), // recursive call
-                                      tag,
-                                      attribute,
-                                      value                    );
-          if (xmlOut) break; // not the null pointer => return
-      }
+    if ( !xmlObj->getTag().compare ( tag )
+         && xmlObj->hasAttribute ( attribute )
+         && xmlObj->getAttribute ( attribute ).compare ( value ) )
+        xmlOut = xmlObj;
+    else
+        for ( int k=0; k<xmlObj->numChildren(); k++ )
+        {
+            xmlOut = xmlAttributeFind ( & ( xmlObj->getChild ( k ) ), // recursive call
+                                        tag,
+                                        attribute,
+                                        value );
+            if ( xmlOut ) break; // not the null pointer => return
+        }
 
-  return xmlOut;
+    return xmlOut;
 }
 // =============================================================================

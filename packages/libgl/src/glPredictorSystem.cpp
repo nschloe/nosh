@@ -53,25 +53,21 @@ GlPredictorSystem::GlPredictorSystem( GinzburgLandau::GinzburgLandau &gl,
                                           nullvectorFileNameBase
                                          ) ) ),
    EComm_( eComm ),
+   preconditioner_( Teuchos::null ),
    psi_ ( psi ),
    tangent_ ( tangent ),
-   predictor_ ( predictor ),
-   preconditioner_( 0 )
+   predictor_ ( predictor )
 {
-  // TODO Don't throw exception in constructor?
   TEST_FOR_EXCEPTION( !tangent.is_valid_ptr(),
                       std::logic_error,
 	                  "Invalid pointer" );
 
-  // TODO Don't throw exception in constructor?
   TEST_FOR_EXCEPTION( tangent.is_null(),
                       std::logic_error,
 	                  "Input guess is null pointer" );
 
   sliceMap_    = glSystem_->getMap();
   extendedMap_ = createExtendedMap( *sliceMap_ );
-  cout << "GGG DONE THE CONSTRUCTOR" << endl;
-
 }
 // =============================================================================
 // Destructor

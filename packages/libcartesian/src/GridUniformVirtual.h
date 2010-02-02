@@ -2,7 +2,7 @@
  * GridUniformVirtual.h
  *
  *  Created on: Nov 30, 2009
- *      Author: Nico Schlšmer
+ *      Author: Nico Schl\omer
  */
 
 #ifndef GRIDUNIFORMVIRTUAL_H_

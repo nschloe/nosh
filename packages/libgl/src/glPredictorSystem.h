@@ -174,10 +174,8 @@ private:
 	const Teuchos::RCP<GlSystemWithConstraint> glSystem_ ;
 
 	const Teuchos::RCP<const Epetra_Comm> EComm_;
-//	Teuchos::RCP<const Teuchos::Comm<int> > TComm_;
 	Teuchos::RCP<const Epetra_Map> sliceMap_;
 	Teuchos::RCP<const Epetra_Map> extendedMap_;
-//	Epetra_Vector *rhs_;
 	Teuchos::RCP<Epetra_CrsMatrix> jacobian_;
 	Teuchos::RCP<Epetra_CrsMatrix> preconditioner_;
 	Teuchos::RCP<Epetra_Vector> initialSolution_;
@@ -186,11 +184,6 @@ private:
 	const Teuchos::RCP<ComplexVector> tangent_;
 	const Teuchos::RCP<ComplexVector> predictor_;
 
-//	std::string outputDir_;
-//	const std::string solutionFileNameBase_;
-//	const std::string nullvectorFileNameBase_;
-//	const std::string outputFileFormat_;
-//	const std::string outputDataFileName_;
 };
 
 #endif // GLPREDICTORSYSTEM_H

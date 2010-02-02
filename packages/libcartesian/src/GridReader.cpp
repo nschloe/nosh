@@ -2,7 +2,7 @@
  * GridReader.cpp
  *
  *  Created on: Nov 27, 2009
- *      Author: Nico Schl�mer
+ *      Author: Nico Schl\"omer
  */
 
 #include "GridUniformSquare.h"
@@ -20,7 +20,6 @@ read( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
             Teuchos::ParameterList                  & params
     )
 {
-
   // TODO Get some clues about which grid we read.
   //      Right now we can only read GridUniformSquare.
 

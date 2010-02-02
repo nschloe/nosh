@@ -42,6 +42,13 @@ class IoXdmf: public IoVirtual
     //! nodes is preserved and the resulting file contains a state \f$\psi\f
     //! that can be viewed using standard tools.
     virtual void
+    write ( const Epetra_MultiVector             & x,
+            const Teuchos::Tuple<unsigned int,2> & Nx,
+            const Teuchos::Tuple<double,2>       & h,
+            const Teuchos::ParameterList         & problemParams
+          );
+
+    virtual void
     write ( const DoubleMultiVector              & x,
             const Teuchos::Tuple<unsigned int,2> & Nx,
             const Teuchos::Tuple<double,2>       & h,

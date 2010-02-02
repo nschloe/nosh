@@ -123,7 +123,7 @@ GlSystemWithConstraint::initialize(const Teuchos::RCP<ComplexVector> psi)
 	int n = initialSolution_->GlobalLength();
 	initialSolution_->ReplaceGlobalValue( n-1, 0, 0.0 );
 
-	// TODO Why is *this necessary??
+	// TODO Why is this necessary??
 	jacobian_ = Teuchos::rcp( new Epetra_CrsMatrix(Copy, *extendedMap_, 0) );
 
 	// Initialize the format for the the continuation step number.
