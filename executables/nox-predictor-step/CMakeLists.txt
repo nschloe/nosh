@@ -15,6 +15,7 @@ FIND_PACKAGE( NOXEpetra  REQUIRED )
 INCLUDE_DIRECTORIES ( ${Trilinos_INCLUDE_DIR} )
 
 INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/packages/libgl/src
+                      ${ginzburg-landau_SOURCE_DIR}/packages/libcartesian/src
                       ${ginzburg-landau_SOURCE_DIR}/packages/libio/src )
 
 SET ( ginzburg_landau_SRCS
@@ -25,6 +26,7 @@ ADD_EXECUTABLE ( nox-predictor-step.out
 
 SET ( internal_LIBS
       gl
+      cartesian
       io
     )
 

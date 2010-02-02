@@ -182,29 +182,8 @@ GlKomplex::zeroOutMatrix()
 	TEUCHOS_ASSERT_EQUALITY( 0, realMatrix_->PutScalar(0.0) );
 }
 // =============================================================================
-// Of an equation system
-// \f[
-// A\psi + B \psi^* = b
-// \f]
-// where \f$A,B\in\mathbb{C}^{n\times n}\f$, \f$\psi, b\in\mathbb{C}^{n}\f$,
-// this routine constructs the corresponding real-valued equation system
-// \f[
-// \begin{pmatrix}
-// \Re{A}+\Re{B} & -\Im{A}+\Im{B}\\
-// \Im{A}+\Im{B} &  \Re{A}-\Re{B}
-// \end{pmatrix}
-// \begin{pmatrix}
-// \Re{\psi}\\
-// \Im{\psi}
-// \end{pmatrix}
-// =
-// \begin{pmatrix}
-// \Re{b}\\
-// \Im{b}
-// \end{pmatrix}
-// \f].
 void
-GlKomplex::updateRow( const int                            row,
+GlKomplex::updateRow( const unsigned int                   row,
                       const std::vector<int>             & indicesA,
                       const std::vector<double_complex>  & valuesA,
                       const std::vector<int>             & indicesB,
@@ -213,7 +192,7 @@ GlKomplex::updateRow( const int                            row,
                     )
 {
 	TEUCHOS_ASSERT( realMatrix_.is_valid_ptr() && !realMatrix_.is_null() );
-	TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE(row, 0, ComplexMap_->getGlobalNumElements());
+	TEUCHOS_ASSERT_INEQUALITY(row, <, ComplexMap_->getGlobalNumElements());
 
 	int numEntries;
 	int * indicesAReal;  double * valuesAReal;

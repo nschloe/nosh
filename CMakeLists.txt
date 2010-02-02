@@ -15,6 +15,7 @@ SET(GL_CMAKE_DIR "${ginzburg-landau_SOURCE_DIR}/../CMakeMacros")
 SET(CMAKE_MODULE_PATH "${GL_CMAKE_DIR}" ${CMAKE_MODULE_PATH})
 
 add_subdirectory ( packages/libio )
+add_subdirectory ( packages/libcartesian )
 add_subdirectory ( packages/libgl )
 add_subdirectory ( executables/nox )
 #add_subdirectory ( pseudo-timestepping )

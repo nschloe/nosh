@@ -58,8 +58,39 @@ public:
   Teuchos::RCP<Epetra_CrsMatrix>
   getMatrix() const;
 
+
+
+  /** \param row       row of the matrix that gets updated
+    * \param indicesA  column indices of matrix \$fA\f$
+    * \param valuesA   values in \$fA\f$ at \c indicesA
+    * \param indicesB  column indices of matrix \$fB\f$
+    * \param valuesA   values in \$fB\f$ at \c indicesB
+    * \param firstTime whether or not the method gets called for the first time
+    *
+    * Of an equation system
+    * \f[
+    * A\psi + B \psi^* = b
+    * \f]
+    * where \f$A,B\in\mathbb{C}^{n\times n}\f$, \f$\psi, b\in\mathbb{C}^{n}\f$,
+    * this routine constructs the corresponding real-valued equation system
+    * \f[
+    * \begin{pmatrix}
+    * \Re{A}+\Re{B} & -\Im{A}+\Im{B}\\
+    * \Im{A}+\Im{B} &  \Re{A}-\Re{B}
+    * \end{pmatrix}
+    * \begin{pmatrix}
+    * \Re{\psi}\\
+    * \Im{\psi}
+    * \end{pmatrix}
+    * =
+    * \begin{pmatrix}
+    * \Re{b}\\
+    * \Im{b}
+    * \end{pmatrix}
+    * \f].
+    */
   void
-  updateRow( const int                            row,
+  updateRow( const unsigned int                   row,
              const std::vector<int>             & indicesA,
              const std::vector<double_complex>  & valuesA,
              const std::vector<int>             & indicesB,
