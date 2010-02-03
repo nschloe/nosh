@@ -61,10 +61,10 @@ public:
 
 
   /** \param row       row of the matrix that gets updated
-    * \param indicesA  column indices of matrix \$fA\f$
-    * \param valuesA   values in \$fA\f$ at \c indicesA
-    * \param indicesB  column indices of matrix \$fB\f$
-    * \param valuesA   values in \$fB\f$ at \c indicesB
+    * \param indicesA  column indices of matrix \f$A\f$
+    * \param valuesA   values in \f$A\f$ at \c indicesA
+    * \param indicesB  column indices of matrix \f$B\f$
+    * \param valuesA   values in \f$B\f$ at \c indicesB
     * \param firstTime whether or not the method gets called for the first time
     *
     * Of an equation system
@@ -98,14 +98,16 @@ public:
              const bool                           firstTime
            );
 
-  //! Considering the term \f$a \psi + b \psi^*\f$ with
-  //! \f$a,b,\psi\in\mathbb{C}\f$, one has
-  //! \f[
-  //! \Re( a \psi + b \psi^* )
-  //! = (\Re(a)+\Re(b))\Re(\psi) + (-\Im(a)+ \Im(b))\Im(\psi)
-  //! = (\Re(a)+\Re(b),-\Im(a)+ \Im(b)) (\Re(\psi),\Im\psi)^{\mathrm{T}}
-  //! \f]
-  //! For given \f$a,b\f$, this function returns the vector \f$v\f$.
+  /** Considering the term \f$a \psi + b \psi^*\f$ with
+    * \f$a,b,\psi\in\mathbb{C}\f$, one has
+    * \f[\begin{split}
+    * \Re( a \psi + b \psi^* )
+    * &= (\Re(a)+\Re(b))\Re(\psi) + (-\Im(a)+ \Im(b))\Im(\psi)\\
+    * &= (\Re(a)+\Re(b),-\Im(a)+ \Im(b)) (\Re(\psi),\Im\psi)^{\mathrm{T}}
+    * \end{split}
+    * \f]
+    * For given \f$a,b\f$, this function returns the vector \f$v\f$.
+  */
   Teuchos::RCP<Epetra_Vector>
   getRealCoefficients( const Teuchos::RCP<const ComplexVector> a,
                        const Teuchos::RCP<const ComplexVector> b
@@ -113,10 +115,10 @@ public:
 
   //! The term \f$\Im(\psi^*z)\f$ with \f$\psi,z\in\mathbb{C}^n\f$
   //! can be written as a scalar product \f$v^{\mathrm{T}} w\f$,
-  //! where $w\in\mathbb{R}^{2n}$ is the real-valued representation
-  //! of $z$.
+  //! where \f$w\in\mathbb{R}^{2n}\f$ is the real-valued representation
+  //! of \f$z\f$.
   //! For given \f$\psi\f$, this function returns the corresponding
-  //! \f$\v\in\mathbb{R}^{2n}\f$.
+  //! \f$v\in\mathbb{R}^{2n}\f$.
   Teuchos::RCP<Epetra_Vector>
   imagScalarProductCoeff( const Teuchos::RCP<const ComplexVector> a
                         ) const;
