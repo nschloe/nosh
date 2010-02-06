@@ -1,8 +1,8 @@
 #include "ioVirtual.h"
 
 // =============================================================================
-IoVirtual::IoVirtual( const boost::filesystem::path fileName ) :
-  fileName_(fileName)
+IoVirtual::IoVirtual ( const boost::filesystem::path fileName ) :
+        fileName_ ( fileName )
 {
 }
 // =============================================================================

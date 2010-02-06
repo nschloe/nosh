@@ -20,8 +20,9 @@
 
 #include <Stratimikos_DefaultLinearSolverBuilder.hpp>
 
-#include "GridUniformSquare.h"
-
+#include "Grid.h"
+#include "DomainSquare.h"
+#include "DomainCircle.h"
 
 // =============================================================================
 // Helper function to compute a single norm for a vector
@@ -81,15 +82,29 @@ int main ( int argc, char *argv[] )
     }
     // =========================================================================
 
-    // create the domain
-    unsigned int nx = 100;
-    double       scaling = 1.0;
-    GridUniformSquare Omega ( nx, scaling );
+//     // create the domain
+//     double edgeLength = 4.0;
+//     Teuchos::RCP<DomainVirtual> domain = Teuchos::rcp( new DomainSquare(edgeLength) );
 
-    double h = Omega.getUniformH();
+    double aa = 4.0;
+    double bb = 2.0;
+    Teuchos::RCP<DomainVirtual> domain = Teuchos::rcp( new DomainRectangle(aa,bb) );
+
+//     double radius = 3.0;
+//     Teuchos::RCP<DomainVirtual> domain = Teuchos::rcp( new DomainCircle(radius) );
+
+//     double aa = 3.0;
+//     double bb = 2.0;
+//     Teuchos::RCP<DomainVirtual> domain = Teuchos::rcp( new DomainEllipse(aa,bb) );
+    
+    // create a grid from the domain
+    double hh = 0.05;
+    Teuchos::Tuple<double,2> h = Teuchos::tuple( hh, hh );
+    double scaling = 1.0;
+    Grid grid( domain, h, scaling );
 
     // create Map for the domain
-    int N = Omega.getNumGridPoints();
+    int N = grid.getNumGridPoints();
     const Epetra_Map Map ( N, 0, *eComm );
 
     // create matrix with the map
@@ -101,71 +116,74 @@ int main ( int argc, char *argv[] )
     Teuchos::RCP<Epetra_Vector> bEpetra = Teuchos::rcp ( new Epetra_Vector ( Map ) );
 
 
-    std::vector<int>    columnsBoundary ( 1 );
-    std::vector<double> valuesBoundary ( 1 );
+    Teuchos::Array<int>    columnsBoundary ( 1 );
+    Teuchos::Array<double> valuesBoundary ( 1 );
     valuesBoundary[0] = 1.0;
 
-    std::vector<int>    columnsInterior ( 5 );
-    std::vector<double> valuesInterior ( 5 );
-    valuesInterior[0] =  4.0 / ( h*h ) ;
-    valuesInterior[1] = -1.0 / ( h*h ) ;
-    valuesInterior[2] = -1.0 / ( h*h ) ;
-    valuesInterior[3] = -1.0 / ( h*h ) ;
-    valuesInterior[4] = -1.0 / ( h*h ) ;
+    Teuchos::Array<int>    columnsInterior ( 5 );
+    Teuchos::Array<double> valuesInterior ( 5 );
+    valuesInterior[0] =  4.0 / ( hh*hh ) ;
+    valuesInterior[1] = -1.0 / ( hh*hh ) ;
+    valuesInterior[2] = -1.0 / ( hh*hh ) ;
+    valuesInterior[3] = -1.0 / ( hh*hh ) ;
+    valuesInterior[4] = -1.0 / ( hh*hh ) ;
 
     double rhsInterior = 1.0;
     double rhsBoundary = 0.0;
     for ( int row=0; row<Map.NumMyElements(); row++ )
     {
         int k = Map.GID ( row );
-        switch ( Omega.getNodeType ( k ) )
+        switch ( grid.getNodeType ( k ) )
         {
         case GridVirtual::INTERIOR:
             columnsInterior[0] = k;
-            columnsInterior[1] = Omega.getKLeft ( k );
-            columnsInterior[2] = Omega.getKRight ( k );
-            columnsInterior[3] = Omega.getKAbove ( k );
-            columnsInterior[4] = Omega.getKBelow ( k );
+            columnsInterior[1] = grid.getKLeft ( k );
+            columnsInterior[2] = grid.getKRight ( k );
+            columnsInterior[3] = grid.getKAbove ( k );
+            columnsInterior[4] = grid.getKBelow ( k );
 
-            AEpetra->InsertMyValues ( row, columnsInterior.size(), &valuesInterior[0], &columnsInterior[0] );
+            AEpetra->InsertMyValues ( row, columnsInterior.size(),
+                                           valuesInterior.getRawPtr(),
+                                           columnsInterior.getRawPtr()       
+                                    );
             bEpetra->ReplaceMyValue ( row, 0, rhsInterior );
             break;
-            // boundary nodes
-        case GridVirtual::BOTTOMLEFTCONVEX:
-        case GridVirtual::BOTTOMLEFTCONCAVE:
-        case GridVirtual::BOTTOMRIGHTCONVEX:
-        case GridVirtual::BOTTOMRIGHTCONCAVE:
-        case GridVirtual::TOPLEFTCONVEX:
-        case GridVirtual::TOPLEFTCONCAVE:
-        case GridVirtual::TOPRIGHTCONVEX:
-        case GridVirtual::TOPRIGHTCONCAVE:
-        case GridVirtual::BOTTOM:
-        case GridVirtual::RIGHT:
-        case GridVirtual::TOP:
-        case GridVirtual::LEFT:
+        // boundary nodes
+        case GridVirtual::BOUNDARY_BOTTOMLEFTCONVEX:
+        case GridVirtual::BOUNDARY_BOTTOMLEFTCONCAVE:
+        case GridVirtual::BOUNDARY_BOTTOMRIGHTCONVEX:
+        case GridVirtual::BOUNDARY_BOTTOMRIGHTCONCAVE:
+        case GridVirtual::BOUNDARY_TOPLEFTCONVEX:
+        case GridVirtual::BOUNDARY_TOPLEFTCONCAVE:
+        case GridVirtual::BOUNDARY_TOPRIGHTCONVEX:
+        case GridVirtual::BOUNDARY_TOPRIGHTCONCAVE:
+        case GridVirtual::BOUNDARY_BOTTOM:
+        case GridVirtual::BOUNDARY_RIGHT:
+        case GridVirtual::BOUNDARY_TOP:
+        case GridVirtual::BOUNDARY_LEFT:
             columnsBoundary[0] = k;
-            AEpetra->InsertMyValues ( row, columnsBoundary.size(), &valuesBoundary[0], &columnsBoundary[0] );
+            AEpetra->InsertMyValues ( row, columnsBoundary.size(), valuesBoundary.getRawPtr(),
+                                                                   columnsBoundary.getRawPtr() );
             bEpetra->ReplaceMyValue ( row, 0, rhsBoundary );
             break;
         }
 
     }
+              
     // finalize the matrix
     AEpetra->FillComplete();
-
-
+    
     // solve the equation system using Thyra + Stratimikos
     Teuchos::RCP<Epetra_Vector> xEpetra = Teuchos::rcp ( new Epetra_Vector ( Map ) );
 
-
     // ------------------------------------------------------------------------
     // wrap the Epetra objects into Thyra objects
-    Teuchos::RCP<const Thyra::LinearOpBase<double> >
-    A = Thyra::epetraLinearOp ( AEpetra );
-    Teuchos::RCP<Thyra::VectorBase<double> >
-    x = Thyra::create_Vector ( xEpetra, A->domain() );
-    Teuchos::RCP<const Thyra::VectorBase<double> >
-    b = Thyra::create_Vector ( bEpetra, A->range() );
+    Teuchos::RCP<const Thyra::LinearOpBase<double> > A =
+          Thyra::epetraLinearOp ( AEpetra );
+    Teuchos::RCP<Thyra::VectorBase<double> > x =
+          Thyra::create_Vector ( xEpetra, A->domain() );
+    Teuchos::RCP<const Thyra::VectorBase<double> > b =
+          Thyra::create_Vector ( bEpetra, A->range() );
 
     Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
 
@@ -230,7 +248,7 @@ int main ( int argc, char *argv[] )
     // plot the result on the grid
     Teuchos::ParameterList params;
     std::string filePath = "test.vtk";
-    Omega.writeWithGrid ( *xEpetra, params, filePath );
+    grid.writeWithBoundingBoxGrid ( *xEpetra, params, filePath );
 
 
 #ifdef HAVE_MPI

@@ -46,6 +46,21 @@ public:
     write ( const Epetra_MultiVector             & x,
             const Teuchos::Tuple<unsigned int,2> & Nx,
             const Teuchos::Tuple<double,2>       & h,
+            const Teuchos::Array<int>            & filter,
+            const Teuchos::ParameterList         & problemParams,
+            const double                         & dummyValue
+          );
+
+    virtual void
+    write ( const Epetra_MultiVector                        & x,
+            const Teuchos::Array<Teuchos::Tuple<double,2> > & loc,
+            const Teuchos::ParameterList                    & problemParams
+          );
+
+    virtual void
+    write ( const Epetra_MultiVector             & x,
+            const Teuchos::Tuple<unsigned int,2> & Nx,
+            const Teuchos::Tuple<double,2>       & h,
             const Teuchos::ParameterList         & problemParams
           );
 
@@ -77,27 +92,51 @@ protected:
 private:
 
     void
-    writeVtkStructuredPointsHeader ( std::ofstream & ioStream, const Teuchos::Tuple<unsigned int,2>  & Nx,
-                                     const Teuchos::Tuple<double,2>        & h, const int numScalars ) const;
+    writeVtkStructuredPointsHeader ( std::ofstream & ioStream,
+                                     const Teuchos::Tuple<unsigned int,2>  & Nx,
+                                     const Teuchos::Tuple<double,2>        & h,
+                                     const int numScalars
+                                   ) const;
+
+    void
+    writeVtkStructuredGridHeader ( std::ofstream                         & ioStream,
+                                   const Teuchos::Tuple<unsigned int,2>  & Nx
+                                 ) const;
 
     void
     writeParameterList ( const Teuchos::ParameterList & pList,
                          std::ofstream & ioStream ) const;
 
+
     void
-    writeScalars ( const Epetra_MultiVector             & x,
-                   const Teuchos::Tuple<unsigned int,2> & Nx,
-                   std::ofstream                        & oStream
+    writePointsData ( std::ofstream                                   & ioStream,
+                      const Teuchos::Array<Teuchos::Tuple<double,2> > & loc
+                    ) const;
+
+    void
+    writeScalarsPointData ( const Epetra_MultiVector & x,
+                            std::ofstream            & oStream
+                          ) const;
+
+    void
+    writeScalars ( const Epetra_MultiVector  & x,
+                   const Teuchos::Array<int> & filter,
+                   const double                dummyValue,
+                   std::ofstream             & oStream
+                 ) const;
+
+    void
+    writeScalars ( const Epetra_MultiVector & x,
+                   std::ofstream            & oStream
+                 ) const;
+
+    void
+    writeScalars ( const DoubleMultiVector  & x,
+                   std::ofstream            & oStream
                  ) const;
     void
-    writeScalars ( const DoubleMultiVector              & x,
-                   const Teuchos::Tuple<unsigned int,2> & Nx,
-                   std::ofstream                        & oStream
-                 ) const;
-    void
-    writeScalars ( const ComplexMultiVector              & psi,
-                   const Teuchos::Tuple<unsigned int,2>  & Nx,
-                   std::ofstream                         & oStream
+    writeScalars ( const ComplexMultiVector & psi,
+                   std::ofstream            & oStream
                  ) const;
 
     //! joins a vector of strings to one string with a separator string \c sep

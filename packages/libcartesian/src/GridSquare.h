@@ -23,26 +23,26 @@ class GridSquare: virtual public GridVirtual
 public:
 
     //! Default constructor.
-    GridSquare ( Teuchos::Tuple<unsigned int,2> Nx,
-                 double scaling
+    GridSquare ( UIntTuple Nx,
+                 double    scaling
                );
 
     //! Class constructor that only initializes the data members of this class.
-    GridSquare ( Teuchos::Tuple<unsigned int,2> Nx );
+    GridSquare ( UIntTuple Nx );
 
     virtual
     ~GridSquare();
 
-    virtual Teuchos::RCP<Teuchos::Array<double> >
+    virtual Teuchos::RCP<DoubleTuple>
     getXLeft ( unsigned int k ) const; //!< Returns the value of \f$x\f$ left of point i.
 
-    virtual Teuchos::RCP<Teuchos::Array<double> >
+    virtual Teuchos::RCP<DoubleTuple>
     getXRight ( unsigned int k ) const; //!< Returns the value of \f$x\f$ right of point i.
 
-    virtual Teuchos::RCP<Teuchos::Array<double> >
+    virtual Teuchos::RCP<DoubleTuple>
     getXBelow ( unsigned int k ) const; //!< Returns the value of \f$x\f$ below point i.
 
-    virtual Teuchos::RCP<Teuchos::Array<double> >
+    virtual Teuchos::RCP<DoubleTuple>
     getXAbove ( unsigned int k ) const; //!< Returns the value of \f$x\f$ above point i.
 
 
@@ -115,21 +115,21 @@ private:
 
     //! Defines a subsequent order of boundary nodes by associating a running index \c l with
     //! a \f$d\f$-dimensional grid coordinate \f$i\f$.
-    Teuchos::RCP<Teuchos::Array<int> >
+    Teuchos::RCP<IntTuple>
     boundaryPosition ( unsigned int l ) const;
 
-    Teuchos::RCP<Teuchos::Array<double> >
-    getX ( Teuchos::Array<int> i ) const;
+    Teuchos::RCP<DoubleTuple>
+    getX ( IntTuple & i ) const;
 
-    Teuchos::RCP<Teuchos::Array<int> >
+    Teuchos::RCP<IntTuple>
     k2i ( unsigned int k ) const;
 
     //!< Converts a grid index i to a running index k
     unsigned int
-    i2k ( Teuchos::RCP<Teuchos::Array<int> > & i ) const;
+    i2k ( Teuchos::RCP<IntTuple> & i ) const;
 
     nodeType
-    getNodeTypeFromI ( Teuchos::Array<int> & i ) const;
+    getNodeTypeFromI ( IntTuple & i ) const;
 
 private:
 };

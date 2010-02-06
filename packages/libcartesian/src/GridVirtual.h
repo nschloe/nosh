@@ -22,13 +22,17 @@ typedef Tpetra::MultiVector<double              ,Thyra::Ordinal> DoubleMultiVect
 typedef Tpetra::Vector     <std::complex<double>,Thyra::Ordinal> ComplexVector;
 typedef Tpetra::MultiVector<std::complex<double>,Thyra::Ordinal> ComplexMultiVector;
 
+typedef Teuchos::Tuple<int,2>           IntTuple;
+typedef Teuchos::Tuple<unsigned int,2>  UIntTuple;
+typedef Teuchos::Tuple<double,2>        DoubleTuple;
+
 class GridVirtual
 {
 public:
 
     //! Default constructor.
     GridVirtual ( double scaling,
-                  Teuchos::Tuple<double,2> h,
+                  DoubleTuple h,
                   double gridDomainArea,
                   unsigned int numGridPoints,
                   unsigned int numBoundaryPoints );
@@ -52,7 +56,7 @@ public:
     virtual unsigned int
     getNumBoundaryPoints() const;
 
-    virtual Teuchos::Tuple<double,2>
+    virtual DoubleTuple
     getH() const; //!< Returns mesh sizes \f$h\f$.
 
     //! Returns the measure of the discretized domain.
@@ -64,19 +68,19 @@ public:
      or strictly inside it. */
     enum nodeType
     {
-        BOTTOMLEFTCONVEX,
-        BOTTOMLEFTCONCAVE,
-        BOTTOMRIGHTCONVEX,
-        BOTTOMRIGHTCONCAVE,
-        TOPLEFTCONVEX,
-        TOPLEFTCONCAVE,
-        TOPRIGHTCONVEX,
-        TOPRIGHTCONCAVE,
-        BOTTOM,
-        RIGHT,
-        TOP,
-        LEFT,
-        INTERIOR
+        INTERIOR,
+        BOUNDARY_BOTTOMLEFTCONVEX,
+        BOUNDARY_BOTTOMLEFTCONCAVE,
+        BOUNDARY_BOTTOMRIGHTCONVEX,
+        BOUNDARY_BOTTOMRIGHTCONCAVE,
+        BOUNDARY_TOPLEFTCONVEX,
+        BOUNDARY_TOPLEFTCONCAVE,
+        BOUNDARY_TOPRIGHTCONVEX,
+        BOUNDARY_TOPRIGHTCONCAVE,
+        BOUNDARY_BOTTOM,
+        BOUNDARY_RIGHT,
+        BOUNDARY_TOP,
+        BOUNDARY_LEFT
     };
 
 public:
@@ -95,16 +99,16 @@ public:
     virtual double
     cellArea ( unsigned int k ) const = 0;
 
-    virtual Teuchos::RCP<Teuchos::Array<double> >
+    virtual Teuchos::RCP<DoubleTuple>
     getXLeft ( unsigned int k ) const = 0; //!< Returns the value of \f$x\f$ left of point i.
 
-    virtual Teuchos::RCP<Teuchos::Array<double> >
+    virtual Teuchos::RCP<DoubleTuple>
     getXRight ( unsigned int k ) const = 0; //!< Returns the value of \f$x\f$ right of point i.
 
-    virtual Teuchos::RCP<Teuchos::Array<double> >
+    virtual Teuchos::RCP<DoubleTuple>
     getXBelow ( unsigned int k ) const = 0 ; //!< Returns the value of \f$x\f$ below point i.
 
-    virtual Teuchos::RCP<Teuchos::Array<double> >
+    virtual Teuchos::RCP<DoubleTuple>
     getXAbove ( unsigned int k ) const = 0; //!< Returns the value of \f$x\f$ above point i.
 
     virtual unsigned int
@@ -159,7 +163,7 @@ public:
 
 protected:
 
-    Teuchos::Tuple<double,2> h_;
+    DoubleTuple h_;
     double scaling_; //! scaling factor
     double gridDomainArea_;
     unsigned int numGridPoints_;

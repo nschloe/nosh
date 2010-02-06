@@ -3,7 +3,14 @@ INCLUDE( ${ginzburg-landau_SOURCE_DIR}/cmake-system.txt REQUIRED )
 ENABLE_LANGUAGE( CXX )
 
 SET ( cartesian_SRCS
+      DomainVirtual.cpp
+      DomainEllipse.cpp
+      DomainCircle.cpp
+      DomainPolygon.cpp
+      DomainRectangle.cpp
+      DomainSquare.cpp
       GridVirtual.cpp
+      Grid.cpp
       GridUniformVirtual.cpp
       GridSquare.cpp
       GridUniformSquare.cpp

@@ -90,9 +90,9 @@ IoVti::write ( const Epetra_MultiVector              & x,
                const Teuchos::ParameterList          & problemParams
              )
 {
-  TEST_FOR_EXCEPTION( true,
-                      std::logic_error,
-                      "Not yet implemented." );
+    TEST_FOR_EXCEPTION ( true,
+                         std::logic_error,
+                         "Not yet implemented." );
 }
 // =============================================================================
 void
@@ -253,5 +253,30 @@ IoVti::xmlAttributeFind ( const Teuchos::XMLObject *xmlObj,
         }
 
     return xmlOut;
+}
+// =============================================================================
+void
+IoVti::write ( const Epetra_MultiVector                        & x,
+               const Teuchos::Array<Teuchos::Tuple<double,2> > & loc,
+               const Teuchos::ParameterList                    & problemParams
+             )
+{
+    TEST_FOR_EXCEPTION ( true,
+                         std::logic_error,
+                         "Not yet implemented." );
+}
+// =============================================================================
+void
+IoVti::write ( const Epetra_MultiVector             & x,
+               const Teuchos::Tuple<unsigned int,2> & Nx,
+               const Teuchos::Tuple<double,2>       & h,
+               const Teuchos::Array<int>            & kBoundingBox,
+               const Teuchos::ParameterList         & problemParams,
+               const double                         & dummyValue
+             )
+{
+    TEST_FOR_EXCEPTION ( true,
+                         std::logic_error,
+                         "Not yet implemented." );
 }
 // =============================================================================

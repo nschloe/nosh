@@ -43,6 +43,23 @@ public:
            Teuchos::ParameterList                  & problemParams
          ) const = 0; // pure virtual
 
+    //! Virtual function for writing the order parameter \f$\psi\f$ and the
+    //! parameter list to a given file.
+    virtual void
+    write ( const Epetra_MultiVector              & x,
+            const Teuchos::Tuple<unsigned int,2>  & Nx,
+            const Teuchos::Tuple<double,2>        & h,
+            const Teuchos::Array<int>             & kBoundingBox,
+            const Teuchos::ParameterList          & problemParams,
+            const double                          & dummyValue
+          ) = 0; // pure virtual
+    
+    virtual void
+    write ( const Epetra_MultiVector                        & x,
+            const Teuchos::Array<Teuchos::Tuple<double,2> > & loc,
+            const Teuchos::ParameterList                    & problemParams
+          ) = 0; // pure virtual
+          
     virtual void
     write ( const Epetra_MultiVector             & x,
             const Teuchos::Tuple<unsigned int,2> & Nx,
@@ -50,8 +67,6 @@ public:
             const Teuchos::ParameterList         & problemParams
           ) = 0; // pure virtual
 
-    //! Virtual function for writing the order parameter \f$\psi\f$ and the
-    //! parameter list to a given file.
     virtual void
     write ( const DoubleMultiVector              & x,
             const Teuchos::Tuple<unsigned int,2> & Nx,
