@@ -20,7 +20,7 @@ Grid::Grid ( const Teuchos::RCP<const DomainVirtual> & domain,
         domain_ ( domain ),
         h_ ( h ),
         scaling_ ( scaling )
-{ 
+{
     // get the boundary box
     Teuchos::Tuple<double,4> bb = domain_->getBoundingBox();
 
@@ -36,9 +36,9 @@ Grid::Grid ( const Teuchos::RCP<const DomainVirtual> & domain,
     // bottom to top
     IntTuple firstBoundaryNode = findFirstBoundaryNode ();
 
-    
+
     Teuchos::Array<direction> directions;
-    directions.push_back( RIGHT ); // arbitrarily chosen
+    directions.push_back ( RIGHT ); // arbitrarily chosen
     nodes_.push_back ( firstBoundaryNode );
     boundaryStepper ( nodes_, directions );
 
@@ -47,14 +47,14 @@ Grid::Grid ( const Teuchos::RCP<const DomainVirtual> & domain,
     pruneInitialTentacle ( nodes_, directions );
 
     int numBoundaryPoints = nodes_.length();
-    
+
     // get the node types out of the directions
     for ( int k=0; k<numBoundaryPoints-1; k++ )
-      nodeTypes_.push_back( getNodeType( directions[k], directions[k+1] ) );
+        nodeTypes_.push_back ( getNodeType ( directions[k], directions[k+1] ) );
 
     // take care of the last element
     int k = numBoundaryPoints-1;
-    nodeTypes_.push_back( getNodeType( directions[k], directions[0] ) );
+    nodeTypes_.push_back ( getNodeType ( directions[k], directions[0] ) );
 
 
     // create connection between running bounding box indexing
@@ -64,7 +64,7 @@ Grid::Grid ( const Teuchos::RCP<const DomainVirtual> & domain,
     for ( k=0; k<numBoundaryPoints; k++ )
         kBB_[ i2kBoundingBox ( nodes_[k] ) ] = k;
 
-    
+
     // Flood: Now, loop over the whole field, left to right, top to bottom, and check
     // the remaining nodes.
     // Watch out for tentacles:
@@ -84,15 +84,18 @@ Grid::Grid ( const Teuchos::RCP<const DomainVirtual> & domain,
             if ( kBB_[l++]>=0 )
             {
                 if ( !isSwitched )
+                {
                     isInside = !isInside;
+                    isSwitched = true;
+                }
                 continue;
             }
-            isSwitched = false; // re-set for the next switch            
+            isSwitched = false; // re-set for the next switch
 
             node = Teuchos::tuple ( i,j );
             // TODO checking for the domain should not be necessary.
             // but when running line by line, you can't tell otherwise
-            
+
             if ( isInside && domain_->isInDomain ( *getX ( node ) ) )
             {
                 nodes_[k]     = node;
@@ -107,7 +110,7 @@ Grid::Grid ( const Teuchos::RCP<const DomainVirtual> & domain,
     // all BOUNDARY_* and INTERIOR nodes have been classified now; cut off the rest
     nodes_.resize ( numGridPoints_ );
     nodeTypes_.resize ( numGridPoints_ );
-    
+
     // update kBB with the interior nodes
     for ( int k=numBoundaryPoints; k<numGridPoints_; k++ )
         kBB_[ i2kBoundingBox ( nodes_[k] ) ] = k;
@@ -441,7 +444,7 @@ Grid::boundaryStepper ( Teuchos::Array<IntTuple>  & boundaryNodes,
 {
     // Try to step into direction, and return if not possible.
     IntTuple nextNode;
-    
+
     IntTuple  & node    = boundaryNodes.back();
     direction & prevDir = directions.back();
 
@@ -764,7 +767,7 @@ Grid::writeWithBoundingBoxGrid ( const Epetra_MultiVector     & x,
     // append grid parameters
     Teuchos::ParameterList extendedParams ( params );
     extendedParams.get ( "scaling", scaling_ );
-    
+
     double dummyValue = 0.0;
     fileIo->write ( x, Nx_, h_, kBB_, extendedParams, dummyValue );
 }
@@ -791,7 +794,7 @@ Grid::writeWithGrid ( const ComplexMultiVector     & x,
     // append grid parameters
     Teuchos::ParameterList extendedParams ( params );
     extendedParams.get ( "scaling", scaling_ );
-    
+
     double dummyValue = 0.0;
     fileIo->write ( x, Nx_, h_, kBB_, extendedParams, dummyValue );
 }
@@ -835,7 +838,7 @@ Grid::pruneInitialTentacle ( Teuchos::Array<IntTuple>  & nodes,
     for ( int k=0; k<lengthInitialTentacle; k++ )
     {
         nodes.erase ( nodes.begin() );
-        directions.erase( directions.begin() );
+        directions.erase ( directions.begin() );
     }
 
     return;
