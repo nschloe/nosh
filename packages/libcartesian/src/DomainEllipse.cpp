@@ -21,8 +21,8 @@
 
 // ============================================================================
 DomainEllipse::DomainEllipse ( double a, double b ) :
-        a_(a),
-        b_(b)
+        a_ ( a ),
+        b_ ( b )
 {
 }
 // ============================================================================
@@ -33,12 +33,12 @@ DomainEllipse::~DomainEllipse()
 Teuchos::Tuple<double,4>
 DomainEllipse::getBoundingBox () const
 {
-    return Teuchos::tuple( -a_, -b_, a_, b_ );
+    return Teuchos::tuple ( -a_, -b_, a_, b_ );
 }
 // ============================================================================
 bool
 DomainEllipse::isInDomain ( const DoubleTuple & x ) const
 {
-    return    x[0]*x[0]/(a_*a_) + x[1]*x[1] / (b_*b_) <= 1.0;
+    return x[0]*x[0]/ ( a_*a_ ) + x[1]*x[1] / ( b_*b_ ) <= 1.0;
 }
 // ============================================================================

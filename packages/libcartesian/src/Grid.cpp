@@ -181,7 +181,7 @@ Grid::getX ( const IntTuple & i ) const
 {
     Teuchos::RCP<DoubleTuple> x = Teuchos::rcp ( new DoubleTuple() );
     ( *x ) [0] = i[0] * h_[0] + origin_[0];
-    ( *x ) [1] = i[1] * h_[1] + origin_[0];
+    ( *x ) [1] = i[1] * h_[1] + origin_[1];
     return x;
 }
 // =============================================================================
