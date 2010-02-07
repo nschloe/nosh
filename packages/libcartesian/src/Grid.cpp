@@ -38,7 +38,7 @@ Grid::Grid ( const Teuchos::RCP<const DomainVirtual> & domain,
 
 
     Teuchos::Array<direction> directions;
-    directions.push_back ( RIGHT ); // arbitrarily chosen
+    directions.push_back ( RIGHT ); // arbitrarily chosen for bootstrapping
     nodes_.push_back ( firstBoundaryNode );
     boundaryStepper ( nodes_, directions );
 
@@ -448,10 +448,12 @@ Grid::boundaryStepper ( Teuchos::Array<IntTuple>  & boundaryNodes,
     IntTuple  & node    = boundaryNodes.back();
     direction & prevDir = directions.back();
 
+    direction newDir;
+
     Teuchos::Tuple<direction,3> nextDirections = getNextDirections ( prevDir );
     for ( int k=0; k<3; k++ ) // try going into any of the the three directions, in order
     {
-        direction newDir = nextDirections[k];
+        newDir = nextDirections[k];
         try
         {
             nextNode = step ( node, newDir );
@@ -462,7 +464,7 @@ Grid::boundaryStepper ( Teuchos::Array<IntTuple>  & boundaryNodes,
         }
 
         // step successful
-        if ( equal ( nextNode, boundaryNodes[0] ) )
+        if ( equal ( nextNode, boundaryNodes.front() ) )
         {   // the loop is closed
             directions[0] = newDir;
             return true;
@@ -829,13 +831,16 @@ Grid::pruneInitialTentacle ( Teuchos::Array<IntTuple>  & nodes,
         else
             break;
     }
-    // delete lengthInitialTentacle nodes at the beginning and the end
-    for ( int k=0; k<lengthInitialTentacle; k++ )
+    
+    // Delete the respective nodes at the beginning and the end.
+    // Note that one more node is deleted at the beginning (the first node),
+    // *and* one more node is preserved at the end, the tentacle root.
+    for ( int k=0; k<lengthInitialTentacle-1; k++ )
     {
         nodes.pop_back();
         directions.pop_back();
     }
-    for ( int k=0; k<lengthInitialTentacle; k++ )
+    for ( int k=0; k<lengthInitialTentacle+1; k++ )
     {
         nodes.erase ( nodes.begin() );
         directions.erase ( directions.begin() );
