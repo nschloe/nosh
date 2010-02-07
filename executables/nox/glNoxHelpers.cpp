@@ -48,156 +48,178 @@
 #include "GridSquare.h"
 #include "GlSystemWithConstraint.h"
 
+#include "DomainSquare.h"
+#include "GlOperatorBCInner.h"
+#include "GlOperatorBCOuter.h"
+#include "GlOperatorBCCentral.h"
+
 typedef Tpetra::Vector<std::complex<double>, Thyra::Ordinal> ComplexVector;
 
-namespace glNoxHelpers {
+namespace glNoxHelpers
+{
 // =========================================================================
 void
-createGlSystem( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
-		        const Teuchos::RCP<const Epetra_Comm>         & eComm,
-		        const std::string                             & fileName,
-		              Teuchos::ParameterList                  & problemParameters,
-		              Teuchos::RCP<GlSystemWithConstraint>    & glSystem )
+createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
+                 const Teuchos::RCP<const Epetra_Comm>         & eComm,
+                 const std::string                             & fileName,
+                 Teuchos::ParameterList                  & problemParameters,
+                 Teuchos::RCP<GlSystemWithConstraint>    & glSystem )
 {
-  Teuchos::ParameterList glParameters;
-  Teuchos::RCP<GridUniformVirtual> grid;
-
-  Teuchos::RCP<ComplexMultiVector> psiM;
-  GridReader::read( comm, fileName, psiM, grid, problemParameters );
-
-  // TODO Remove this workaround
-  // make sure that an actual ComplexVector was produced, and fetch it
-  TEUCHOS_ASSERT_EQUALITY( psiM->getNumVectors(), 1 );
-  Teuchos::RCP<ComplexVector> psi = psiM->getVectorNonConst(0);
-
-  double scaling = problemParameters.get<double>("scaling");
-  double H0      = problemParameters.get<double>("H0");
-
-  Teuchos::RCP<MagneticVectorPotential> A =
-                              Teuchos::rcp ( new MagneticVectorPotential( H0, scaling ) );
-  Teuchos::RCP<GlBoundaryConditionsVirtual> boundaryConditions =
-                             Teuchos::rcp ( new GlBoundaryConditionsCentral() );
-
-  GinzburgLandau glProblem = GinzburgLandau( grid,
-                                             A,
-                                             boundaryConditions
-                                           );
-
-  // Create the interface between NOX and the application
-  // This object is derived from NOX::Epetra::Interface
-  glSystem =  Teuchos::rcp ( new GlSystemWithConstraint ( glProblem, eComm, psi ) );
+  TEST_FOR_EXCEPTION( true,
+                      std::logic_error,
+                      "Not yet implemented." );
+//     Teuchos::ParameterList glParameters;
+// 
+//     Teuchos::RCP<ComplexMultiVector> psiM;
+//     GridReader::read ( comm, fileName, psiM, grid, problemParameters );
+// 
+//     // TODO Remove this workaround
+//     // make sure that an actual ComplexVector was produced, and fetch it
+//     TEUCHOS_ASSERT_EQUALITY ( psiM->getNumVectors(), 1 );
+//     Teuchos::RCP<ComplexVector> psi = psiM->getVectorNonConst ( 0 );
+// 
+//     double edgeLength = 1.0;
+//     Teuchos::RCP<DomainVirtual> domain =
+//         Teuchos::rcp ( new DomainSquare ( edgeLength ) );
+// 
+//     double scaling = problemParameters.get<double> ( "scaling" );
+//     double h = scaling / 50;
+//     GridUniform grid ( domain, h, scaling );
+// 
+//     double H0      = problemParameters.get<double> ( "H0" );
+//     Teuchos::RCP<MagneticVectorPotential> A =
+//         Teuchos::rcp ( new MagneticVectorPotential ( H0, scaling ) );
+// 
+//     Teuchos::RCP<GlOperatorVirtual> glOperator =
+//         Teuchos::rcp ( new GlOperatorBCInner ( grid, A ) );
+// 
+//     GinzburgLandau glProblem = GinzburgLandau ( glOperator );
+// 
+//     // Create the interface between NOX and the application
+//     // This object is derived from NOX::Epetra::Interface
+//     glSystem =  Teuchos::rcp ( new GlSystemWithConstraint ( glProblem, eComm, psi ) );
 }
 // =============================================================================
 void
-createGlSystem( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
-                const Teuchos::RCP<const Epetra_Comm>         & eComm,
-                const unsigned int Nx,
-                const double scaling,
-                const double H0,
-	                  Teuchos::ParameterList                  & problemParameters,
-                      Teuchos::RCP<GlSystemWithConstraint>    & glSystem )
+createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
+                 const Teuchos::RCP<const Epetra_Comm>         & eComm,
+                 const unsigned int Nx,
+                 const double scaling,
+                 const double H0,
+                 Teuchos::ParameterList                  & problemParameters,
+                 Teuchos::RCP<GlSystemWithConstraint>    & glSystem )
 {
-  problemParameters.set ( "Nx"     , Nx );
-  problemParameters.set ( "scaling", scaling );
-  problemParameters.set ( "H0"     , H0 );
+    problemParameters.set ( "Nx"     , Nx );
+    problemParameters.set ( "scaling", scaling );
+    problemParameters.set ( "H0"     , H0 );
 
-  Teuchos::RCP<GlBoundaryConditionsVirtual> boundaryConditions =
-                             Teuchos::rcp ( new GlBoundaryConditionsCentral() );
+//     double edgeLength = 1.0;
+//     Teuchos::RCP<DomainVirtual> domain =
+//         Teuchos::rcp ( new DomainSquare ( edgeLength ) );
 
-  Teuchos::RCP<GridUniformVirtual> grid = Teuchos::rcp ( new GridUniformSquare( Nx, scaling ) );
+    // create the domain
+    Teuchos::RCP<DomainVirtual> domain =
+        Teuchos::rcp ( new DomainRectangle ( 2.0, 1.0 ) );
+        
+        
+    // create the grid 
+    double h = 1.0 / Nx;
+    Teuchos::RCP<GridUniform> grid =
+        Teuchos::rcp ( new GridUniform ( domain, h, scaling ) );
 
-  Teuchos::RCP<MagneticVectorPotential> A
-                             = Teuchos::rcp ( new MagneticVectorPotential(H0, scaling) );
+    Teuchos::RCP<MagneticVectorPotential> A =
+        Teuchos::rcp ( new MagneticVectorPotential ( H0, scaling ) );
 
-  GinzburgLandau glProblem = GinzburgLandau( grid,
-                                             A,
-                                             boundaryConditions
-                                           );
+    // create the operator
+    Teuchos::RCP<GlOperatorVirtual> glOperator =
+        Teuchos::rcp ( new GlOperatorBCCentral ( grid, A ) );
 
-  glSystem = Teuchos::rcp ( new GlSystemWithConstraint ( glProblem, eComm ) );
+    GinzburgLandau glProblem = GinzburgLandau ( glOperator );
+
+    glSystem = Teuchos::rcp ( new GlSystemWithConstraint ( glProblem, eComm ) );
 }
 // =========================================================================
 void
-setPrePostWriter(       Teuchos::ParameterList                  & noxParaList,
-		          const Teuchos::RCP<const AbstractStateWriter> & asw,
-                  const std::string                             & outputDir )
+setPrePostWriter ( Teuchos::ParameterList                  & noxParaList,
+                   const Teuchos::RCP<const AbstractStateWriter> & asw,
+                   const std::string                             & outputDir )
 {
-	using namespace Teuchos;
+    using namespace Teuchos;
 //   Teuchos::RCP<AbstractStateWriter> asw = glSystem_;
-   RCP<NOX::Abstract::PrePostOperator> ppo =
-              rcp ( new GlPrePostOperator ( asw,
-                                            outputDir )
-                    );
-   noxParaList.sublist ( "Solver Options" )
-              .set ( "User Defined Pre/Post Operator", ppo );
+    RCP<NOX::Abstract::PrePostOperator> ppo =
+        rcp ( new GlPrePostOperator ( asw,
+                                      outputDir )
+            );
+    noxParaList.sublist ( "Solver Options" )
+    .set ( "User Defined Pre/Post Operator", ppo );
 }
 // =========================================================================
 Teuchos::RCP<NOX::Epetra::Group>
-createSolverGroup( const Teuchos::RCP<GlSystemWithConstraint> glSystem,
-		           const Teuchos::RCP<Teuchos::ParameterList> nlParamsPtr )
+createSolverGroup ( const Teuchos::RCP<GlSystemWithConstraint> glSystem,
+                    const Teuchos::RCP<Teuchos::ParameterList> nlParamsPtr )
 {
-	// Create all possible Epetra_Operators.
-	Teuchos::RCP<Epetra_RowMatrix> Analytic = glSystem->getJacobian();
+    // Create all possible Epetra_Operators.
+    Teuchos::RCP<Epetra_RowMatrix> Analytic = glSystem->getJacobian();
 
-	// Create the linear system
-	Teuchos::RCP<NOX::Epetra::Interface::Required> iReq = glSystem;
-	Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = glSystem;
+    // Create the linear system
+    Teuchos::RCP<NOX::Epetra::Interface::Required> iReq = glSystem;
+    Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = glSystem;
 
-	Teuchos::ParameterList & printParams = nlParamsPtr->sublist( "Printing" );
+    Teuchos::ParameterList & printParams = nlParamsPtr->sublist ( "Printing" );
 
-	Teuchos::ParameterList & lsParams    = nlParamsPtr->sublist ( "Direction" )
-	                                                   .sublist ( "Newton" )
-		                                               .sublist ( "Linear Solver" );
+    Teuchos::ParameterList & lsParams    = nlParamsPtr->sublist ( "Direction" )
+                                           .sublist ( "Newton" )
+                                           .sublist ( "Linear Solver" );
 
-	// Get initial solution
-	Teuchos::RCP<Epetra_Vector> soln = glSystem->getSolution();
+    // Get initial solution
+    Teuchos::RCP<Epetra_Vector> soln = glSystem->getSolution();
 
-	Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys =
-			Teuchos::rcp ( new NOX::Epetra::LinearSystemAztecOO ( printParams,
-					lsParams,
-					iReq,
-					iJac,
-					Analytic,
-					*soln ) );
+    Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys =
+        Teuchos::rcp ( new NOX::Epetra::LinearSystemAztecOO ( printParams,
+                       lsParams,
+                       iReq,
+                       iJac,
+                       Analytic,
+                       *soln ) );
 
-	// Create the Group
-	NOX::Epetra::Vector initialGuess ( soln, NOX::Epetra::Vector::CreateView );
+    // Create the Group
+    NOX::Epetra::Vector initialGuess ( soln, NOX::Epetra::Vector::CreateView );
 
-	return Teuchos::rcp ( new NOX::Epetra::Group ( printParams,
-			                                       iReq,
-			                                       initialGuess,
-			                                       linSys ) );
+    return Teuchos::rcp ( new NOX::Epetra::Group ( printParams,
+                          iReq,
+                          initialGuess,
+                          linSys ) );
 }
 // =========================================================================
 Teuchos::RCP<NOX::StatusTest::Generic>
-createConvergenceTest( Teuchos::ParameterList & noxStatusList,
-		               Teuchos::ParameterList & nlParamsPtr )
+createConvergenceTest ( Teuchos::ParameterList & noxStatusList,
+                        Teuchos::ParameterList & nlParamsPtr )
 {
-  NOX::StatusTest::Factory statusTestFactory;
+    NOX::StatusTest::Factory statusTestFactory;
 
-  Teuchos::ParameterList & printParams = nlParamsPtr.sublist( "Printing" );
-  NOX::Utils outputUtils( printParams );
+    Teuchos::ParameterList & printParams = nlParamsPtr.sublist ( "Printing" );
+    NOX::Utils outputUtils ( printParams );
 
-  return statusTestFactory.buildStatusTests( noxStatusList, outputUtils ) ;
+    return statusTestFactory.buildStatusTests ( noxStatusList, outputUtils ) ;
 }
 // =============================================================================
 // Create the solver
 Teuchos::RCP<NOX::Solver::Generic>
-createSolver( const Teuchos::RCP<NOX::Epetra::Group>       grpPtr,
-		      const Teuchos::RCP<NOX::StatusTest::Generic> statusTest,
-		      const Teuchos::RCP<Teuchos::ParameterList>   nlParamsPtr )
+createSolver ( const Teuchos::RCP<NOX::Epetra::Group>       grpPtr,
+               const Teuchos::RCP<NOX::StatusTest::Generic> statusTest,
+               const Teuchos::RCP<Teuchos::ParameterList>   nlParamsPtr )
 {
-	TEST_FOR_EXCEPTION( grpPtr.is_null(),
-			            std::logic_error,
-                        "Group not initialized." );
+    TEST_FOR_EXCEPTION ( grpPtr.is_null(),
+                         std::logic_error,
+                         "Group not initialized." );
 
-	TEST_FOR_EXCEPTION( statusTest.is_null(),
-			            std::logic_error,
-                        "Status test not initialized." );
+    TEST_FOR_EXCEPTION ( statusTest.is_null(),
+                         std::logic_error,
+                         "Status test not initialized." );
 
-	TEST_FOR_EXCEPTION( nlParamsPtr.is_null(),
-         			    std::logic_error,
-                        "Nonlinear solver parameters not initialized." );
+    TEST_FOR_EXCEPTION ( nlParamsPtr.is_null(),
+                         std::logic_error,
+                         "Nonlinear solver parameters not initialized." );
 
     return NOX::Solver::buildSolver ( grpPtr,
                                       statusTest,
@@ -205,127 +227,127 @@ createSolver( const Teuchos::RCP<NOX::Epetra::Group>       grpPtr,
 }
 // =========================================================================
 double
-computeJacobianConditionNumber( const Teuchos::RCP<const NOX::Solver::Generic> solver,
-		                        const Teuchos::RCP<      NOX::Epetra::Group>   grpPtr )
+computeJacobianConditionNumber ( const Teuchos::RCP<const NOX::Solver::Generic> solver,
+                                 const Teuchos::RCP<      NOX::Epetra::Group>   grpPtr )
 {
-  double kappa;
-  try
+    double kappa;
+    try
     {
-      const NOX::Epetra::Group& finalGroup =
-        dynamic_cast<const NOX::Epetra::Group&> ( solver->getSolutionGroup() );
-      grpPtr->computeJacobian();
-      grpPtr->computeJacobianConditionNumber ( 2000, 1e-2, 30, true );
-      kappa = finalGroup.getJacobianConditionNumber();
+        const NOX::Epetra::Group& finalGroup =
+            dynamic_cast<const NOX::Epetra::Group&> ( solver->getSolutionGroup() );
+        grpPtr->computeJacobian();
+        grpPtr->computeJacobianConditionNumber ( 2000, 1e-2, 30, true );
+        kappa = finalGroup.getJacobianConditionNumber();
     }
-  catch ( std::exception& e )
+    catch ( std::exception& e )
     {
-      std::cerr << e.what() << std::endl;
+        std::cerr << e.what() << std::endl;
     }
 
-  return kappa;
+    return kappa;
 }
 // =============================================================================
 // compute some eigenvalues using anasazi
 void
-computeJacobianEigenvalues( const Teuchos::RCP<const NOX::Solver::Generic> solver,
-		                    const Teuchos::RCP<      NOX::Epetra::Group>   grpPtr,
-		                    const int MyPID )
+computeJacobianEigenvalues ( const Teuchos::RCP<const NOX::Solver::Generic> solver,
+                             const Teuchos::RCP<      NOX::Epetra::Group>   grpPtr,
+                             const int MyPID )
 {
-  bool debug = true; // even more increased verbosity
+    bool debug = true; // even more increased verbosity
 
-  std::string which ( "LR" ); // compute the rightmost eigenvalues
+    std::string which ( "LR" ); // compute the rightmost eigenvalues
 
-  bool boolret;
+    bool boolret;
 
-  typedef double ScalarType;
-  typedef Teuchos::ScalarTraits<ScalarType>          SCT;
-  typedef SCT::magnitudeType               MagnitudeType;
-  typedef Epetra_MultiVector                          MV;
-  typedef Epetra_Operator                             OP;
-  typedef Anasazi::MultiVecTraits<ScalarType,MV>     MVT;
-  typedef Anasazi::OperatorTraits<ScalarType,MV,OP>  OPT;
+    typedef double ScalarType;
+    typedef Teuchos::ScalarTraits<ScalarType>          SCT;
+    typedef SCT::magnitudeType               MagnitudeType;
+    typedef Epetra_MultiVector                          MV;
+    typedef Epetra_Operator                             OP;
+    typedef Anasazi::MultiVecTraits<ScalarType,MV>     MVT;
+    typedef Anasazi::OperatorTraits<ScalarType,MV,OP>  OPT;
 
-  const NOX::Epetra::Group& finalGroup =
+    const NOX::Epetra::Group& finalGroup =
         dynamic_cast<const NOX::Epetra::Group&> ( solver->getSolutionGroup() );
 
-  const Epetra_Vector& finalSolution =
-            ( dynamic_cast<const NOX::Epetra::Vector&> ( finalGroup.getX() ) ).
-                                                              getEpetraVector();
+    const Epetra_Vector& finalSolution =
+        ( dynamic_cast<const NOX::Epetra::Vector&> ( finalGroup.getX() ) ).
+        getEpetraVector();
 
-  Epetra_BlockMap Map = finalSolution.Map();
+    Epetra_BlockMap Map = finalSolution.Map();
 
-  // shortname for the final Jacobian
-  Teuchos::RCP<Epetra_Operator> J =
-            grpPtr->getLinearSystem()->getJacobianOperator();
+    // shortname for the final Jacobian
+    Teuchos::RCP<Epetra_Operator> J =
+        grpPtr->getLinearSystem()->getJacobianOperator();
 
-  // - - - - - - - - - - - - - - - - -
-  // Start the block Arnoldi iteration
-  // - - - - - - - - - - - - - - - - -
-  // Variables used for the Block Krylov Schur Method
-  int nev = 10;
-  int blockSize = 1;
-  int numBlocks = 30;
-  int maxRestarts = 250;
-  double tol = 1e-10;
+    // - - - - - - - - - - - - - - - - -
+    // Start the block Arnoldi iteration
+    // - - - - - - - - - - - - - - - - -
+    // Variables used for the Block Krylov Schur Method
+    int nev = 10;
+    int blockSize = 1;
+    int numBlocks = 30;
+    int maxRestarts = 250;
+    double tol = 1e-10;
 
-  // Create a sort manager to pass into the block Krylov-Schur solver manager
-  // -->  Make sure the reference-counted pointer is of type Anasazi::SortManager<>
-  // -->  The block Krylov-Schur solver manager uses Anasazi::BasicSort<> by default,
-  //      so you can also pass in the parameter "Which", instead of a sort manager.
-  Teuchos::RCP<Anasazi::SortManager<MagnitudeType> > MySort =
-	    Teuchos::rcp ( new Anasazi::BasicSort<MagnitudeType> ( which ) );
+    // Create a sort manager to pass into the block Krylov-Schur solver manager
+    // -->  Make sure the reference-counted pointer is of type Anasazi::SortManager<>
+    // -->  The block Krylov-Schur solver manager uses Anasazi::BasicSort<> by default,
+    //      so you can also pass in the parameter "Which", instead of a sort manager.
+    Teuchos::RCP<Anasazi::SortManager<MagnitudeType> > MySort =
+        Teuchos::rcp ( new Anasazi::BasicSort<MagnitudeType> ( which ) );
 
-  // Set verbosity level
-  int verbosity = Anasazi::Errors + Anasazi::Warnings;
-  verbosity += Anasazi::FinalSummary + Anasazi::TimingDetails;
-  if ( debug )
+    // Set verbosity level
+    int verbosity = Anasazi::Errors + Anasazi::Warnings;
+    verbosity += Anasazi::FinalSummary + Anasazi::TimingDetails;
+    if ( debug )
     {
-      verbosity += Anasazi::Debug;
+        verbosity += Anasazi::Debug;
     }
 
-  // Create parameter list to pass into solver manager
-  Teuchos::ParameterList MyPL;
-  MyPL.set ( "Verbosity", verbosity );
-  MyPL.set ( "Sort Manager", MySort );
-  //MyPL.set( "Which", which );
-  MyPL.set ( "Block Size", blockSize );
-  MyPL.set ( "Num Blocks", numBlocks );
-  MyPL.set ( "Maximum Restarts", maxRestarts );
-  //MyPL.set( "Step Size", stepSize );
-  MyPL.set ( "Convergence Tolerance", tol );
+    // Create parameter list to pass into solver manager
+    Teuchos::ParameterList MyPL;
+    MyPL.set ( "Verbosity", verbosity );
+    MyPL.set ( "Sort Manager", MySort );
+    //MyPL.set( "Which", which );
+    MyPL.set ( "Block Size", blockSize );
+    MyPL.set ( "Num Blocks", numBlocks );
+    MyPL.set ( "Maximum Restarts", maxRestarts );
+    //MyPL.set( "Step Size", stepSize );
+    MyPL.set ( "Convergence Tolerance", tol );
 
-  // Create an Epetra_MultiVector for an initial vector to start the solver.
-  // Note:  This needs to have the same number of columns as the blocksize.
-  Teuchos::RCP<Epetra_MultiVector> ivec =
-		  Teuchos::rcp ( new Epetra_MultiVector ( Map, blockSize ) );
-  ivec->Random();
+    // Create an Epetra_MultiVector for an initial vector to start the solver.
+    // Note:  This needs to have the same number of columns as the blocksize.
+    Teuchos::RCP<Epetra_MultiVector> ivec =
+        Teuchos::rcp ( new Epetra_MultiVector ( Map, blockSize ) );
+    ivec->Random();
 
-  // Create the eigenproblem.
-  Teuchos::RCP<Anasazi::BasicEigenproblem<double, MV, OP> > MyProblem =
-    Teuchos::rcp ( new Anasazi::BasicEigenproblem<double, MV, OP> ( J, ivec ) );
+    // Create the eigenproblem.
+    Teuchos::RCP<Anasazi::BasicEigenproblem<double, MV, OP> > MyProblem =
+        Teuchos::rcp ( new Anasazi::BasicEigenproblem<double, MV, OP> ( J, ivec ) );
 
-  // Set the number of eigenvalues requested
-  MyProblem->setNEV ( nev );
+    // Set the number of eigenvalues requested
+    MyProblem->setNEV ( nev );
 
-  // Inform the eigenproblem that you are finishing passing it information
-  boolret = MyProblem->setProblem();
-  TEST_FOR_EXCEPTION( !boolret,
-		              std::runtime_error,
-                      "Anasazi::BasicEigenproblem::setProblem() returned with error." );
+    // Inform the eigenproblem that you are finishing passing it information
+    boolret = MyProblem->setProblem();
+    TEST_FOR_EXCEPTION ( !boolret,
+                         std::runtime_error,
+                         "Anasazi::BasicEigenproblem::setProblem() returned with error." );
 
-  // Initialize the Block Arnoldi solver
+    // Initialize the Block Arnoldi solver
 //       Anasazi::BlockDavidsonSolMgr<double, MV, OP>
 //       Anasazi::LOBPCGSolMgr<double, MV, OP>
 //       Anasazi::RTRSolMgr<double, MV, OP>
-  Anasazi::BlockKrylovSchurSolMgr<double, MV, OP>
-					        MySolverMgr ( MyProblem, MyPL );
+    Anasazi::BlockKrylovSchurSolMgr<double, MV, OP>
+    MySolverMgr ( MyProblem, MyPL );
 
-  // Solve the problem to the specified tolerances or length
-  Anasazi::ReturnType returnCode = MySolverMgr.solve();
-  if ( returnCode != Anasazi::Converged && MyPID==0 )
-    cout << "Anasazi::EigensolverMgr::solve() returned unconverged." << endl;
+    // Solve the problem to the specified tolerances or length
+    Anasazi::ReturnType returnCode = MySolverMgr.solve();
+    if ( returnCode != Anasazi::Converged && MyPID==0 )
+        cout << "Anasazi::EigensolverMgr::solve() returned unconverged." << endl;
 
-  // Get the Ritz values from the eigensolver
+    // Get the Ritz values from the eigensolver
 //       std::vector<Anasazi::Value<double> > ritzValues = MySolverMgr.getRitzValues();
 
 //       // Output computed eigenvalues and their direct residuals
@@ -357,14 +379,14 @@ computeJacobianEigenvalues( const Teuchos::RCP<const NOX::Solver::Generic> solve
 //           }
 //         }
 
-  // Get the eigenvalues and eigenvectors from the eigenproblem
-  Anasazi::Eigensolution<ScalarType,MV> sol = MyProblem->getSolution();
-  std::vector<Anasazi::Value<ScalarType> > evals = sol.Evals;
-  Teuchos::RCP<MV> evecs = sol.Evecs;
-  std::vector<int> index = sol.index;
-  int numev = sol.numVecs;
+    // Get the eigenvalues and eigenvectors from the eigenproblem
+    Anasazi::Eigensolution<ScalarType,MV> sol = MyProblem->getSolution();
+    std::vector<Anasazi::Value<ScalarType> > evals = sol.Evals;
+    Teuchos::RCP<MV> evecs = sol.Evecs;
+    std::vector<int> index = sol.index;
+    int numev = sol.numVecs;
 
-  Teuchos::RCP<Epetra_Vector> ev1 ( ( *evecs ) ( 0 ) );
+    Teuchos::RCP<Epetra_Vector> ev1 ( ( *evecs ) ( 0 ) );
 
 //   glsystem->solutionToFile( *ev1,
 //                             problemParameters,
@@ -377,30 +399,30 @@ computeJacobianEigenvalues( const Teuchos::RCP<const NOX::Solver::Generic> solve
 //           cout<< std::setw(16) << evals[i].realpart
 //             << std::setw(16) << evals[i].imagpart << endl;
 //       }
-  // -----------------------------------------------------------------------
+    // -----------------------------------------------------------------------
 }
 // =========================================================================
 void
-printSolutionToFile( const Teuchos::RCP<const NOX::Solver::Generic> solver,
-		             const Teuchos::RCP<const GlSystemWithConstraint> glSystem,
-		             const std::string & fileName )
+printSolutionToFile ( const Teuchos::RCP<const NOX::Solver::Generic> solver,
+                      const Teuchos::RCP<const GlSystemWithConstraint> glSystem,
+                      const std::string & fileName )
 {
-  const NOX::Epetra::Group& finalGroup =
-	dynamic_cast<const NOX::Epetra::Group&> ( solver->getSolutionGroup() );
+    const NOX::Epetra::Group& finalGroup =
+        dynamic_cast<const NOX::Epetra::Group&> ( solver->getSolutionGroup() );
 
-  const Epetra_Vector& finalSolution =
-	    ( dynamic_cast<const NOX::Epetra::Vector&> ( finalGroup.getX() ) ).
-							      getEpetraVector();
+    const Epetra_Vector& finalSolution =
+        ( dynamic_cast<const NOX::Epetra::Vector&> ( finalGroup.getX() ) ).
+        getEpetraVector();
 
-  glSystem->writeSolutionToFile ( finalSolution,
-                                  fileName );
+    glSystem->writeSolutionToFile ( finalSolution,
+                                    fileName );
 
 }
 // =========================================================================
 int
-checkConvergence( const Teuchos::RCP<const NOX::Solver::Generic> solver )
+checkConvergence ( const Teuchos::RCP<const NOX::Solver::Generic> solver )
 {
-  int status = 0;
+    int status = 0;
 
 //   // 1. Convergence
 //   if ( solvStatus != NOX::StatusTest::Converged ) {
@@ -410,17 +432,17 @@ checkConvergence( const Teuchos::RCP<const NOX::Solver::Generic> solver )
 //   }
 
 #ifndef HAVE_MPI
-  // 2. Linear solve iterations (53) - SERIAL TEST ONLY!
-  //    The number of linear iterations changes with # of procs.
-  if ( const_cast<Teuchos::ParameterList&> ( solver->getList() )
-                                           .sublist ( "Direction" )
-                                           .sublist ( "Newton" )
-                                           .sublist ( "Linear Solver" )
-                                           .sublist ( "Output" )
-                                           .get ( "Total Number of Linear Iterations",0 )
-     != 53 )
+    // 2. Linear solve iterations (53) - SERIAL TEST ONLY!
+    //    The number of linear iterations changes with # of procs.
+    if ( const_cast<Teuchos::ParameterList&> ( solver->getList() )
+         .sublist ( "Direction" )
+         .sublist ( "Newton" )
+         .sublist ( "Linear Solver" )
+         .sublist ( "Output" )
+         .get ( "Total Number of Linear Iterations",0 )
+         != 53 )
     {
-      status = 2;
+        status = 2;
     }
 #endif
 
@@ -431,7 +453,7 @@ checkConvergence( const Teuchos::RCP<const NOX::Solver::Generic> solver )
 //        == maxNonlinearIterations_ )
 //    status = 3;
 
-  return status;
+    return status;
 }
 // =========================================================================
 } // namespace glNoxHelpers

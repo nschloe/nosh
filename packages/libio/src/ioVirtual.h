@@ -80,6 +80,15 @@ public:
             const Teuchos::Tuple<double,2>       & h,
             const Teuchos::ParameterList         & problemParams
           ) = 0; // pure virtual
+          
+    virtual void
+    write ( const ComplexMultiVector              & x,
+            const Teuchos::Tuple<unsigned int,2>  & Nx,
+            const Teuchos::Tuple<double,2>        & h,
+            const Teuchos::Array<int>             & kBoundingBox,
+            const Teuchos::ParameterList          & problemParams,
+            const double                          & dummyValue
+          ) = 0; // pure virtual
 
     virtual void
     write ( const DoubleMultiVector              & x,

@@ -11,6 +11,7 @@ SET ( cartesian_SRCS
       DomainSquare.cpp
       GridVirtual.cpp
       Grid.cpp
+      GridUniform.cpp
       GridUniformVirtual.cpp
       GridSquare.cpp
       GridUniformSquare.cpp

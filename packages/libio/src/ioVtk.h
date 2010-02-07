@@ -77,6 +77,15 @@ public:
             const Teuchos::ParameterList          & problemParams );
 
     virtual void
+    write ( const ComplexMultiVector              & x,
+            const Teuchos::Tuple<unsigned int,2>  & Nx,
+            const Teuchos::Tuple<double,2>        & h,
+            const Teuchos::Array<int>             & kBoundingBox,
+            const Teuchos::ParameterList          & problemParams,
+            const double                          & dummyValue
+          ); // pure virtual
+
+    virtual void
     write ( const DoubleMultiVector               & x,
             const Teuchos::Tuple<unsigned int,2>  & Nx,
             const Teuchos::Tuple<double,2>        & h
@@ -120,6 +129,13 @@ private:
 
     void
     writeScalars ( const Epetra_MultiVector  & x,
+                   const Teuchos::Array<int> & filter,
+                   const double                dummyValue,
+                   std::ofstream             & oStream
+                 ) const;
+
+    void
+    writeScalars ( const ComplexMultiVector  & x,
                    const Teuchos::Array<int> & filter,
                    const double                dummyValue,
                    std::ofstream             & oStream

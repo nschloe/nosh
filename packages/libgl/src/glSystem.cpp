@@ -29,301 +29,314 @@ typedef std::complex<double> double_complex;
 
 // =============================================================================
 // Default constructor
-GlSystem::GlSystem( GinzburgLandau::GinzburgLandau &gl,
-	                const Teuchos::RCP<const Epetra_Comm> eComm,
-	                const Teuchos::RCP<ComplexVector> psi,
-	                const std::string outputDir,
-                    const std::string outputDataFileName,
-                    const std::string outputFileFormat,
-	                const std::string solutionFileNameBase,
-	                const std::string nullvectorFileNameBase
-                  ) :
-	stepper_(Teuchos::null),
-	glKomplex_( Teuchos::rcp(new GlKomplex(eComm,psi->getMap()) ) ),
-	Gl_(gl),
-	initialSolution_(Teuchos::null),
-	outputDir_(outputDir),
-	solutionFileNameBase_(solutionFileNameBase),
-	nullvectorFileNameBase_(nullvectorFileNameBase),
-	outputFileFormat_(outputFileFormat),
-	outputDataFileName_(outputDataFileName),
-	firstTime_(true)
+GlSystem::GlSystem ( GinzburgLandau::GinzburgLandau &gl,
+                     const Teuchos::RCP<const Epetra_Comm> eComm,
+                     const Teuchos::RCP<ComplexVector> psi,
+                     const std::string outputDir,
+                     const std::string outputDataFileName,
+                     const std::string outputFileFormat,
+                     const std::string solutionFileNameBase,
+                     const std::string nullvectorFileNameBase
+                   ) :
+        stepper_ ( Teuchos::null ),
+        glKomplex_ ( Teuchos::rcp ( new GlKomplex ( eComm,psi->getMap() ) ) ),
+        Gl_ ( gl ),
+        initialSolution_ ( Teuchos::null ),
+        outputDir_ ( outputDir ),
+        solutionFileNameBase_ ( solutionFileNameBase ),
+        nullvectorFileNameBase_ ( nullvectorFileNameBase ),
+        outputFileFormat_ ( outputFileFormat ),
+        outputDataFileName_ ( outputDataFileName ),
+        firstTime_ ( true )
 {
-  TEST_FOR_EXCEPTION( !psi.is_valid_ptr() || psi.is_null(),
-                      std::logic_error,
-                      "psi not properly initialized." );
+    TEST_FOR_EXCEPTION ( !psi.is_valid_ptr() || psi.is_null(),
+                         std::logic_error,
+                         "psi not properly initialized." );
 
-  // initialize solution
-  Teuchos::RCP<Epetra_Vector> initialSolution_ = glKomplex_->complex2real(*psi);
+    // initialize solution
+    Teuchos::RCP<Epetra_Vector> initialSolution_ =
+        glKomplex_->complex2real ( *psi );
 }
 // =============================================================================
 // constructor without initial guess
-GlSystem::GlSystem(GinzburgLandau::GinzburgLandau &gl,
-		           const Teuchos::RCP<const Epetra_Comm> eComm,
-                   const std::string outputDir,
-                   const std::string outputDataFileName,
-                   const std::string outputFileFormat,
-                   const std::string solutionFileNameBase,
-                   const std::string nullvectorFileNameBase
-                  ) :
-stepper_(Teuchos::null),
-glKomplex_( Teuchos::null ),
-Gl_(gl),
-initialSolution_(Teuchos::null),
-outputDir_(outputDir),
-solutionFileNameBase_(solutionFileNameBase),
-nullvectorFileNameBase_(nullvectorFileNameBase),
-outputFileFormat_(outputFileFormat),
-outputDataFileName_(outputDataFileName),
-firstTime_(true)
+GlSystem::GlSystem ( GinzburgLandau::GinzburgLandau &gl,
+                     const Teuchos::RCP<const Epetra_Comm> eComm,
+                     const std::string outputDir,
+                     const std::string outputDataFileName,
+                     const std::string outputFileFormat,
+                     const std::string solutionFileNameBase,
+                     const std::string nullvectorFileNameBase
+                   ) :
+        stepper_ ( Teuchos::null ),
+        glKomplex_ ( Teuchos::null ),
+        Gl_ ( gl ),
+        initialSolution_ ( Teuchos::null ),
+        outputDir_ ( outputDir ),
+        solutionFileNameBase_ ( solutionFileNameBase ),
+        nullvectorFileNameBase_ ( nullvectorFileNameBase ),
+        outputFileFormat_ ( outputFileFormat ),
+        outputDataFileName_ ( outputDataFileName ),
+        firstTime_ ( true )
 {
-  // TODO There is (until now?) no way to convert a Teuchos::Comm (of psi)
-  // to an Epetra_Comm (of the real valued representation of psi), so the
-  // Epetra_Comm has to be generated explicitly, and two communicators are kept
-  // side by side all the time. One must make sure that the two are actually
-  // equivalent, which can be checked by Thyra's conversion method create_Comm.
-  // TODO Is is actually necessary to have equivalent communicators on the
-  // real-valued and the complex-valued side?
-  // How to compare two communicators anyway?
+    // TODO There is (until now?) no way to convert a Teuchos::Comm (of psi)
+    // to an Epetra_Comm (of the real valued representation of psi), so the
+    // Epetra_Comm has to be generated explicitly, and two communicators are kept
+    // side by side all the time. One must make sure that the two are actually
+    // equivalent, which can be checked by Thyra's conversion method create_Comm.
+    // TODO Is is actually necessary to have equivalent communicators on the
+    // real-valued and the complex-valued side?
+    // How to compare two communicators anyway?
 
-  // create fitting Tpetra::Comm
-  // TODO: move into initializer
-  Teuchos::RCP<const Teuchos::Comm<int> > TComm = create_CommInt(eComm);
+    // create fitting Tpetra::Comm
+    // TODO: move into initializer
+    Teuchos::RCP<const Teuchos::Comm<int> > TComm = create_CommInt ( eComm );
 
-  // define map
-  int NumComplexUnknowns = Gl_.getNumUnknowns();
-  Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> > ComplexMap
-     = Teuchos::rcp(new Tpetra::Map<Thyra::Ordinal>(NumComplexUnknowns, 0, TComm));
+    // define map
+    int NumComplexUnknowns = Gl_.getNumUnknowns();
+    Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> > ComplexMap =
+        Teuchos::rcp ( new Tpetra::Map<Thyra::Ordinal> ( NumComplexUnknowns, 0, TComm ) );
 
-  glKomplex_ = Teuchos::rcp(new GlKomplex(eComm,ComplexMap) );
+    glKomplex_ = Teuchos::rcp ( new GlKomplex ( eComm,ComplexMap ) );
 
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  // initialize solution
-  Teuchos::RCP<ComplexVector> psi = Teuchos::rcp(new ComplexVector(ComplexMap));
-  // TODO Move default initialization out to main file
-  double_complex alpha(1.0, 0.0);
-  psi->putScalar(alpha); // default initialization
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    // initialize solution
+    Teuchos::RCP<ComplexVector> psi = Teuchos::rcp ( new ComplexVector ( ComplexMap ) );
+    // TODO Move default initialization out to main file
+    double_complex alpha ( 1.0, 0.0 );
+    psi->putScalar ( alpha ); // default initialization
 
-  Teuchos::RCP<Epetra_Vector> initialSolution_ = glKomplex_->complex2real(*psi);
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    Teuchos::RCP<Epetra_Vector> initialSolution_ =
+        glKomplex_->complex2real ( *psi );
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 }
 // =============================================================================
 // Destructor
-GlSystem::~GlSystem() {
-	stepper_ = Teuchos::null;
+GlSystem::~GlSystem()
+{
+    stepper_ = Teuchos::null;
 }
 // =============================================================================
 bool
-GlSystem::computeF(const Epetra_Vector &x,
-		                 Epetra_Vector &FVec,
-		           const NOX::Epetra::Interface::Required::FillType fillFlag )
+GlSystem::computeF ( const Epetra_Vector &x,
+                     Epetra_Vector &FVec,
+                     const NOX::Epetra::Interface::Required::FillType fillFlag )
 {
-  // make sure that the input and output vectors are correctly mapped
-  TEST_FOR_EXCEPTION( !x.Map().SameAs(*glKomplex_->getRealMap()),
-                      std::logic_error,
-                      "Maps of x and the computed real-valued map do not coincide." );
+    // make sure that the input and output vectors are correctly mapped
+    TEST_FOR_EXCEPTION ( !x.Map().SameAs ( *glKomplex_->getRealMap() ),
+                         std::logic_error,
+                         "Maps of x and the computed real-valued map do not coincide." );
 
-  TEST_FOR_EXCEPTION( !FVec.Map().SameAs(*glKomplex_->getRealMap()),
-                      std::logic_error,
-                      "Maps of FVec and the computed real-valued map do not coincide." );
+    TEST_FOR_EXCEPTION ( !FVec.Map().SameAs ( *glKomplex_->getRealMap() ),
+                         std::logic_error,
+                         "Maps of FVec and the computed real-valued map do not coincide." );
 
-  // convert from x to psi
-  const Teuchos::RCP<ComplexVector> psi = glKomplex_->real2complex(x);
+    // convert from x to psi
+    const Teuchos::RCP<ComplexVector> psi = glKomplex_->real2complex ( x );
 
-  // compute the GL residual
-  Teuchos::RCP<ComplexVector> res = Gl_.computeGlVector( psi );
+    // compute the GL residual
+    Teuchos::RCP<ComplexVector> res = Gl_.computeGlVector ( psi );
 
-  // TODO Avoid this explicit copy.
-  // transform back to fully real equation
-  FVec = *(glKomplex_->complex2real(*res));
+    // TODO Avoid this explicit copy.
+    // transform back to fully real equation
+    FVec = * ( glKomplex_->complex2real ( *res ) );
 
-  return true;
+    return true;
 }
 // =============================================================================
-bool GlSystem::computeJacobian(const Epetra_Vector &x, Epetra_Operator &Jac) {
-  // compute the values of the Jacobian
-  createJacobian(x);
+bool GlSystem::computeJacobian ( const Epetra_Vector &x, Epetra_Operator &Jac )
+{
+    // compute the values of the Jacobian
+    createJacobian ( x );
 
-  return true;
+    return true;
 }
 // =============================================================================
-bool GlSystem::computePreconditioner( const Epetra_Vector &x,
-		                      Epetra_Operator &Prec,
-                                      Teuchos::ParameterList *precParams )
+bool GlSystem::computePreconditioner ( const Epetra_Vector &x,
+                                       Epetra_Operator &Prec,
+                                       Teuchos::ParameterList *precParams )
 {
 //  Epetra_Vector diag = x;
 //  diag.PutScalar(1.0);
 //  preconditioner_->ReplaceDiagonalValues( diag );
 
-    TEST_FOR_EXCEPTION( true,
-			            std::logic_error,
-	                    "Use explicit Jacobian only for this test problem!" );
-  return true;
+    TEST_FOR_EXCEPTION ( true,
+                         std::logic_error,
+                         "Use explicit Jacobian only for this test problem!" );
+    return true;
 }
 // =============================================================================
 Teuchos::RCP<Epetra_Vector>
-GlSystem::getSolution() const {
-	return initialSolution_;
+GlSystem::getSolution() const
+{
+    return initialSolution_;
 }
 // =============================================================================
 Teuchos::RCP<const Epetra_CrsMatrix>
 GlSystem::getJacobian() const
 {
-//	TEUCHOS_ASSERT( jacobian_.is_valid_ptr() && !jacobian_.is_null() );
-	return glKomplex_->getMatrix();
+//      TEUCHOS_ASSERT( jacobian_.is_valid_ptr() && !jacobian_.is_null() );
+    return glKomplex_->getMatrix();
 }
 // =============================================================================
 Teuchos::RCP<Epetra_CrsMatrix>
-GlSystem::getPreconditioner() const {
-        return preconditioner_;
+GlSystem::getPreconditioner() const
+{
+    return preconditioner_;
 }
 // =============================================================================
 void
-GlSystem::createJacobian( const Epetra_Vector &x)
+GlSystem::createJacobian ( const Epetra_Vector &x )
 {
-  vector<int> indicesA, indicesB;
-  vector<double_complex> valuesA, valuesB;
+    Teuchos::Array<int> indicesA, indicesB;
+    Teuchos::Array<double_complex> valuesA, valuesB;
 
-  if( firstTime_ ) {
-      glKomplex_->initializeMatrix();
-  } else {
-      glKomplex_->zeroOutMatrix();
-  }
+    if ( firstTime_ )
+    {
+        glKomplex_->initializeMatrix();
+    }
+    else
+    {
+        glKomplex_->zeroOutMatrix();
+    }
 
-  Teuchos::RCP<ComplexVector> psi = glKomplex_->real2complex(x);
+    Teuchos::RCP<ComplexVector> psi = glKomplex_->real2complex ( x );
 
-  // loop over the rows and fill the matrix
-  int numMyElements = glKomplex_->getComplexMap()->getNodeNumElements();
-  for (int row = 0; row < numMyElements; row++) {
-      int globalRow = glKomplex_->getComplexMap()->getGlobalElement(row);
-      // get the values from Gl_
-      Gl_.getJacobianRow( globalRow, psi, indicesA, valuesA, indicesB, valuesB);
-      // ... and fill them into glKomplex_
-      glKomplex_->updateRow( globalRow, indicesA, valuesA, indicesB, valuesB, firstTime_ );
-  }
+    // loop over the rows and fill the matrix
+    int numMyElements = glKomplex_->getComplexMap()->getNodeNumElements();
+    for ( int row = 0; row < numMyElements; row++ )
+    {
+        int globalRow = glKomplex_->getComplexMap()->getGlobalElement ( row );
+        // get the values from Gl_
+        Gl_.getJacobianRow ( globalRow, psi, indicesA, valuesA, indicesB, valuesB );
+        // ... and fill them into glKomplex_
+        glKomplex_->updateRow ( globalRow, indicesA, valuesA, indicesB, valuesB, firstTime_ );
+    }
 
-  if( firstTime_ ) {
-      glKomplex_->finalizeMatrix();
-      firstTime_ = false;
-  }
+    if ( firstTime_ )
+    {
+        glKomplex_->finalizeMatrix();
+        firstTime_ = false;
+    }
 
-  return;
+    return;
 }
 // =============================================================================
 bool
-GlSystem::computeShiftedMatrix( double alpha,
-                                double beta,
-                                const Epetra_Vector &x,
-	                            Epetra_Operator &A )
+GlSystem::computeShiftedMatrix ( double alpha,
+                                 double beta,
+                                 const Epetra_Vector &x,
+                                 Epetra_Operator &A )
 {
-	// compute the values of the Jacobian
-	createJacobian(x);
+    // compute the values of the Jacobian
+    createJacobian ( x );
 
-	glKomplex_->getMatrix()->Scale(alpha);
+    glKomplex_->getMatrix()->Scale ( alpha );
 
-	Epetra_Vector newDiag(x);
-	Epetra_Vector unitVector(x);
-	unitVector.PutScalar(1.0);
-	//  newDiag.PutScalar(0.0);
-	glKomplex_->getMatrix()->ExtractDiagonalCopy(newDiag);
-	newDiag.Update(beta, unitVector, 1.0);
-	glKomplex_->getMatrix()->ReplaceDiagonalValues(newDiag);
+    Epetra_Vector newDiag ( x );
+    Epetra_Vector unitVector ( x );
+    unitVector.PutScalar ( 1.0 );
+    //  newDiag.PutScalar(0.0);
+    glKomplex_->getMatrix()->ExtractDiagonalCopy ( newDiag );
+    newDiag.Update ( beta, unitVector, 1.0 );
+    glKomplex_->getMatrix()->ReplaceDiagonalValues ( newDiag );
 
-	return true;
+    return true;
 }
 // =============================================================================
 // function used by LOCA
 void
-GlSystem::setParameters(const LOCA::ParameterVector &p) {
+GlSystem::setParameters ( const LOCA::ParameterVector &p )
+{
 
-  TEST_FOR_EXCEPTION( !p.isParameter("H0"),
-                      std::logic_error,
-                      "Label \"H0\" not valid." );
-  double h0 = p.getValue("H0");
-  Gl_.setH0(h0);
+    TEST_FOR_EXCEPTION ( !p.isParameter ( "H0" ),
+                         std::logic_error,
+                         "Label \"H0\" not valid." );
+    double h0 = p.getValue ( "H0" );
+    Gl_.setH0 ( h0 );
 
-  TEST_FOR_EXCEPTION( !p.isParameter("scaling"),
-                      std::logic_error,
-                      "Label \"scaling\" not valid." );
-  double scaling = p.getValue("scaling");
-  Gl_.setScaling( scaling );
+    TEST_FOR_EXCEPTION ( !p.isParameter ( "scaling" ),
+                         std::logic_error,
+                         "Label \"scaling\" not valid." );
+    double scaling = p.getValue ( "scaling" );
+    Gl_.setScaling ( scaling );
 
-  if (p.isParameter("chi")) {
-      double chi = p.getValue("chi");
-      Gl_.setChi( chi );
-  }
+    if ( p.isParameter ( "chi" ) )
+    {
+        double chi = p.getValue ( "chi" );
+        Gl_.setChi ( chi );
+    }
 }
 // =============================================================================
 void
-GlSystem::setLocaStepper(const Teuchos::RCP<const LOCA::Stepper> stepper)
+GlSystem::setLocaStepper ( const Teuchos::RCP<const LOCA::Stepper> stepper )
 {
-	stepper_ = stepper;
+    stepper_ = stepper;
 
-	// extract the continuation type
-	const Teuchos::ParameterList & bifurcationSublist = stepper_->getList()
-	                                                            ->sublist("LOCA")
-	                                                             .sublist("Bifurcation");
+    // extract the continuation type
+    const Teuchos::ParameterList & bifurcationSublist =
+        stepper_->getList()->sublist ( "LOCA" ).sublist ( "Bifurcation" );
 
-	std::string bifurcationType = bifurcationSublist.get<string>("Type");
+    std::string bifurcationType = bifurcationSublist.get<string> ( "Type" );
 
-	if ( bifurcationType == "None" )
-		continuationType_ = ONEPARAMETER;
-	else if ( bifurcationType == "Turning Point" )
-		continuationType_ = TURNINGPOINT;
-	else
-	    TEST_FOR_EXCEPTION( true,
-				            std::logic_error,
-				            "Unknown continuation type \""
-				            << bifurcationType << "\"" );
+    if ( bifurcationType == "None" )
+        continuationType_ = ONEPARAMETER;
+    else if ( bifurcationType == "Turning Point" )
+        continuationType_ = TURNINGPOINT;
+    else
+        TEST_FOR_EXCEPTION ( true,
+                             std::logic_error,
+                             "Unknown continuation type \""
+                             << bifurcationType << "\"." );
 }
 // =============================================================================
 void
 GlSystem::releaseLocaStepper()
 {
-	stepper_ = Teuchos::null;
+    stepper_ = Teuchos::null;
 }
 // =============================================================================
 // function used by LOCA
 void
-GlSystem::printSolution( const Epetra_Vector &x,
-		                 double conParam )
+GlSystem::printSolution ( const Epetra_Vector &x,
+                          double conParam )
 {
-	// define vector
-	const Teuchos::RCP<ComplexVector> psi
-			              = glKomplex_->real2complex(x);
+    // define vector
+    const Teuchos::RCP<ComplexVector> psi =
+        glKomplex_->real2complex ( x );
 
-	// The switch hack is necessary as different continuation algorithms
-	// call printSolution() a different number of times per step, e.g.,
-	// to store solutions, null vectors, and so forth.
-	switch ( continuationType_ ) {
-	case ONEPARAMETER:
-	    printSolutionOneParameterContinuation( psi );
-	    break;
-	case TURNINGPOINT:
-	    printSolutionTurningPointContinuation( psi );
-	    break;
-	default:
-	    TEST_FOR_EXCEPTION( true,
-				            std::logic_error,
-				            "Illegal continuation type " << continuationType_ );
-	}
+    // The switch hack is necessary as different continuation algorithms
+    // call printSolution() a different number of times per step, e.g.,
+    // to store solutions, null vectors, and so forth.
+    switch ( continuationType_ )
+    {
+    case ONEPARAMETER:
+        printSolutionOneParameterContinuation ( psi );
+        break;
+    case TURNINGPOINT:
+        printSolutionTurningPointContinuation ( psi );
+        break;
+    default:
+        TEST_FOR_EXCEPTION ( true,
+                             std::logic_error,
+                             "Illegal continuation type " << continuationType_ );
+    }
 }
 // =============================================================================
 void
-GlSystem::printSolutionOneParameterContinuation( const Teuchos::RCP<const ComplexVector> & psi
-		                                       ) const
+GlSystem::printSolutionOneParameterContinuation ( const Teuchos::RCP<const ComplexVector> & psi
+                                                ) const
 {
-	static int conStep = -1;
-	conStep++;
+    static int conStep = -1;
+    conStep++;
 
-	std::string fileName = outputDir_ + "/" + solutionFileNameBase_
-			+ EpetraExt::toString(conStep) + ".vtk";
+    std::string fileName = outputDir_ + "/" + solutionFileNameBase_
+                           + EpetraExt::toString ( conStep ) + ".vtk";
 
-	// actually print the state to fileName
-	Gl_.writeSolutionToFile(psi, fileName);
+    // actually print the state to fileName
+    Gl_.writeSolutionToFile ( psi, fileName );
 
-	writeContinuationStats( conStep, psi );
+    writeContinuationStats ( conStep, psi );
 }
 // =============================================================================
 // In Turning Point continuation, the printSolution method is called exactly
@@ -334,173 +347,174 @@ GlSystem::printSolutionOneParameterContinuation( const Teuchos::RCP<const Comple
 //
 // The method gets called subsequently in this order.
 void
-GlSystem::printSolutionTurningPointContinuation( const Teuchos::RCP<const ComplexVector> & psi
-		                                       ) const
+GlSystem::printSolutionTurningPointContinuation ( const Teuchos::RCP<const ComplexVector> & psi
+                                                ) const
 {
-	static bool printSolution=false;
-	static int conStep = -1;
+    static bool printSolution=false;
+    static int conStep = -1;
 
-	// alternate between solution and nullvector
-	printSolution = !printSolution;
+    // alternate between solution and nullvector
+    printSolution = !printSolution;
 
-	// increment the step counter only when printing a solution
-	if ( printSolution )
-		conStep++;
+    // increment the step counter only when printing a solution
+    if ( printSolution )
+        conStep++;
 
-	// determine file name
-	std::string fileName;
-	if ( printSolution ) {
-	    fileName = outputDir_ + "/" + solutionFileNameBase_
-		         + EpetraExt::toString(conStep) + ".vtk";
-	    writeContinuationStats( conStep, psi );
-	}
-	else
-	    fileName = outputDir_ + "/" + nullvectorFileNameBase_
-		         + EpetraExt::toString(conStep) + ".vtk";
+    // determine file name
+    std::string fileName;
+    if ( printSolution )
+    {
+        fileName = outputDir_ + "/" + solutionFileNameBase_
+                   + EpetraExt::toString ( conStep ) + ".vtk";
+        writeContinuationStats ( conStep, psi );
+    }
+    else
+        fileName = outputDir_ + "/" + nullvectorFileNameBase_
+                   + EpetraExt::toString ( conStep ) + ".vtk";
 
-	// actually print the state to fileName
-	Gl_.writeSolutionToFile(psi, fileName);
+    // actually print the state to fileName
+    Gl_.writeSolutionToFile ( psi, fileName );
 
 }
 // =============================================================================
 void
-GlSystem::writeContinuationStats( const int conStep,
-		                  const Teuchos::RCP<const ComplexVector> psi ) const
+GlSystem::writeContinuationStats ( const int conStep,
+                                   const Teuchos::RCP<const ComplexVector> psi ) const
 {
-	// fill the continuation parameters file
-	std::string contFileName = outputDir_ + "/" + outputDataFileName_;
-	std::ofstream contFileStream;
+    // fill the continuation parameters file
+    std::string contFileName = outputDir_ + "/" + outputDataFileName_;
+    std::ofstream contFileStream;
 
-	// Set the output format
-	// Think about replacing this with NOX::Utils::Sci.
-	contFileStream.setf(std::ios::scientific);
-	contFileStream.precision(15);
+    // Set the output format
+    // Think about replacing this with NOX::Utils::Sci.
+    contFileStream.setf ( std::ios::scientific );
+    contFileStream.precision ( 15 );
 
-	if (conStep == 0) {
-		contFileStream.open(contFileName.c_str(), ios::trunc);
-		contFileStream << "# Step  \t";
-		Gl_.appendStats( contFileStream, true );
-		contFileStream << "\t#nonlinear steps\n";
-	} else {
-		// just append to the the contents to the file
-		contFileStream.open(contFileName.c_str(), ios::app);
-	}
+    if ( conStep == 0 )
+    {
+        contFileStream.open ( contFileName.c_str(), ios::trunc );
+        contFileStream << "# Step  \t";
+        Gl_.appendStats ( contFileStream, true );
+        contFileStream << "\t#nonlinear steps\n";
+    }
+    else
+    {
+        // just append to the the contents to the file
+        contFileStream.open ( contFileName.c_str(), ios::app );
+    }
 
-	int nonlinearIterations = stepper_->getSolver()->getNumIterations();
+    int nonlinearIterations = stepper_->getSolver()->getNumIterations();
 
-	contFileStream << "  " << conStep << "      \t";
-	Gl_.appendStats( contFileStream, false, psi );
-	contFileStream << "       \t" << nonlinearIterations << std::endl;
+    contFileStream << "  " << conStep << "      \t";
+    Gl_.appendStats ( contFileStream, false, psi );
+    contFileStream << "       \t" << nonlinearIterations << std::endl;
 
-	contFileStream.close();
+    contFileStream.close();
 }
 // =============================================================================
 // function used by LOCA
-void GlSystem::setOutputDir(const string &directory) {
-	outputDir_ = directory;
+void GlSystem::setOutputDir ( const string &directory )
+{
+    outputDir_ = directory;
 }
 // =============================================================================
 void
-GlSystem::writeSolutionToFile( const Epetra_Vector &x,
-                               const std::string &filePath) const
+GlSystem::writeSolutionToFile ( const Epetra_Vector &x,
+                                const std::string &filePath ) const
 {
-	// TODO: Remove the need for several real2complex calls per step.
-	Teuchos::RCP<ComplexVector> psi
-	                   = glKomplex_->real2complex(x);
-
-	Gl_.writeSolutionToFile( psi, filePath );
+    // TODO: Remove the need for several real2complex calls per step.
+    Gl_.writeSolutionToFile ( glKomplex_->real2complex ( x ), filePath );
 }
 // =============================================================================
 void
-GlSystem::writeAbstractStateToFile( const Epetra_Vector &x,
-                                    const std::string &filePath) const
+GlSystem::writeAbstractStateToFile ( const Epetra_Vector &x,
+                                     const std::string &filePath ) const
 {
-	// TODO: Remove the need for several real2complex calls per step.
-	Teuchos::RCP<ComplexVector> psi
-	                   = glKomplex_->real2complex(x);
-
-	Gl_.writeAbstractStateToFile( psi, filePath );
+    // TODO: Remove the need for several real2complex calls per step.
+    Gl_.writeAbstractStateToFile ( glKomplex_->real2complex ( x ), filePath );
 }
 // =============================================================================
 Teuchos::RCP<Epetra_Vector>
-GlSystem::getGlSystemVector( const Teuchos::RCP<const ComplexVector> psi ) const
+GlSystem::getGlSystemVector ( const Teuchos::RCP<const ComplexVector> psi ) const
 {
-	return glKomplex_->complex2real(*psi);
+    return glKomplex_->complex2real ( *psi );
 }
 // =============================================================================
 Teuchos::RCP<const Teuchos::Comm<int> >
-GlSystem::create_CommInt( const Teuchos::RCP<const Epetra_Comm> &epetraComm )
+GlSystem::create_CommInt ( const Teuchos::RCP<const Epetra_Comm> &epetraComm )
 {
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  using Teuchos::rcp_dynamic_cast;
-  using Teuchos::set_extra_data;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    using Teuchos::rcp_dynamic_cast;
+    using Teuchos::set_extra_data;
 
 #ifdef HAVE_MPI
-  RCP<const Epetra_MpiComm>
-    mpiEpetraComm = rcp_dynamic_cast<const Epetra_MpiComm>(epetraComm);
-  if( mpiEpetraComm.get() ) {
-    RCP<const Teuchos::OpaqueWrapper<MPI_Comm> >
-      rawMpiComm = Teuchos::opaqueWrapper(mpiEpetraComm->Comm());
-    set_extra_data( mpiEpetraComm, "mpiEpetraComm", Teuchos::inOutArg(rawMpiComm) );
-    RCP<const Teuchos::MpiComm<int> >
-      mpiComm = rcp(new Teuchos::MpiComm<int>(rawMpiComm));
-    return mpiComm;
-  }
+    RCP<const Epetra_MpiComm>
+    mpiEpetraComm = rcp_dynamic_cast<const Epetra_MpiComm> ( epetraComm );
+    if ( mpiEpetraComm.get() )
+    {
+        RCP<const Teuchos::OpaqueWrapper<MPI_Comm> >
+        rawMpiComm = Teuchos::opaqueWrapper ( mpiEpetraComm->Comm() );
+        set_extra_data ( mpiEpetraComm, "mpiEpetraComm", Teuchos::inOutArg ( rawMpiComm ) );
+        RCP<const Teuchos::MpiComm<int> >
+        mpiComm = rcp ( new Teuchos::MpiComm<int> ( rawMpiComm ) );
+        return mpiComm;
+    }
 #else
-  RCP<const Epetra_SerialComm>
-    serialEpetraComm = rcp_dynamic_cast<const Epetra_SerialComm>(epetraComm);
-  if( serialEpetraComm.get() ) {
-    RCP<const Teuchos::SerialComm<int> >
-      serialComm = rcp(new Teuchos::SerialComm<int>());
-    set_extra_data( serialEpetraComm, "serialEpetraComm", Teuchos::inOutArg(serialComm) );
-    return serialComm;
-  }
+    RCP<const Epetra_SerialComm>
+    serialEpetraComm = rcp_dynamic_cast<const Epetra_SerialComm> ( epetraComm );
+    if ( serialEpetraComm.get() )
+    {
+        RCP<const Teuchos::SerialComm<int> >
+        serialComm = rcp ( new Teuchos::SerialComm<int>() );
+        set_extra_data ( serialEpetraComm, "serialEpetraComm", Teuchos::inOutArg ( serialComm ) );
+        return serialComm;
+    }
 #endif // HAVE_MPI
 
-  // If you get here then the conversion failed!
-  return Teuchos::null;
+    // If you get here then the conversion failed!
+    return Teuchos::null;
 }
 // =============================================================================
 double
 GlSystem::getH0() const
 {
-  return Gl_.getH0();
+    return Gl_.getH0();
 }
 // =============================================================================
 Teuchos::RCP<const Epetra_Map>
 GlSystem::getRealMap() const
 {
-	return glKomplex_->getRealMap();
+    return glKomplex_->getRealMap();
 }
 // =============================================================================
 Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> >
 GlSystem::getComplexMap() const
 {
-	return glKomplex_->getComplexMap();
+    return glKomplex_->getComplexMap();
 }
 // =============================================================================
 void
-GlSystem::setH0(const double h0)
+GlSystem::setH0 ( const double h0 )
 {
-	Gl_.setH0( h0 );
+    Gl_.setH0 ( h0 );
 }
 // =============================================================================
 void
-GlSystem::setScaling(const double scaling)
+GlSystem::setScaling ( const double scaling )
 {
-	Gl_.setScaling( scaling );
+    Gl_.setScaling ( scaling );
 }
 // =============================================================================
 void
-GlSystem::setChi(const double chi)
+GlSystem::setChi ( const double chi )
 {
-	Gl_.setChi( chi );
+    Gl_.setChi ( chi );
 }
 // =============================================================================
 Teuchos::RCP<const GlKomplex>
 GlSystem::getGlKomplex() const
 {
-	return glKomplex_;
+    return glKomplex_;
 }
 // =============================================================================

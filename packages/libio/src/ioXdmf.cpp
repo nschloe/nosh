@@ -505,3 +505,17 @@ IoXdmf::write ( const Epetra_MultiVector             & x,
                          "Not yet implemented." );
 }
 // =============================================================================
+void
+IoXdmf::write ( const ComplexMultiVector              & x,
+                const Teuchos::Tuple<unsigned int,2>  & Nx,
+                const Teuchos::Tuple<double,2>        & h,
+                const Teuchos::Array<int>             & kBoundingBox,
+                const Teuchos::ParameterList          & problemParams,
+                const double                          & dummyValue
+              )
+{
+    TEST_FOR_EXCEPTION ( true,
+                         std::logic_error,
+                         "Not yet implemented." );
+}
+// =============================================================================

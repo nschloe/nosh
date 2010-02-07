@@ -20,7 +20,8 @@
 #include <Thyra_OperatorVectorTypes.hpp> // For Thyra::Ordinal
 
 
-class Grid: public GridVirtual
+class Grid:
+            virtual public GridVirtual
 {
 public:
 
@@ -152,7 +153,7 @@ public:
          );
 
 
-protected:
+private:
 
     const Teuchos::RCP<const DomainVirtual> domain_;
     DoubleTuple h_;
@@ -183,17 +184,8 @@ private:
                   const direction newDir
                 ) const;
 
-//     Grid::nodeType
-//     getNodeTypeFromI ( IntTuple & i ) const;
-
     Teuchos::RCP<DoubleTuple>
     getX ( const IntTuple & i ) const;
-
-//     Teuchos::RCP<IntTuple>
-//     k2i ( unsigned int k ) const;
-
-//     unsigned int
-//     i2k ( Teuchos::RCP<IntTuple> & i ) const;
 
     bool
     boundaryStepper ( Teuchos::Array<IntTuple>  & boundaryNodes,
@@ -229,11 +221,11 @@ private:
 
     unsigned int
     kBoundingBox2kDomain ( const unsigned int k ) const;
-    
+
     void
-    pruneInitialTentacle( Teuchos::Array<IntTuple>  & nodes,
-                          Teuchos::Array<direction> & directions
-                        ) const;
+    pruneInitialTentacle ( Teuchos::Array<IntTuple>  & nodes,
+                           Teuchos::Array<direction> & directions
+                         ) const;
 };
 
 #endif /* GRID_H_ */

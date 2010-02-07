@@ -1,1 +1,1 @@
-ADD_SUBDIRECTORY( poisson-square )
+ADD_SUBDIRECTORY( poisson )

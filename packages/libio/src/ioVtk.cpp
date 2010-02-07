@@ -172,7 +172,7 @@ IoVtk::write ( const Epetra_MultiVector             & x,
     writeParameterList ( problemParams, vtkfile );
 
     // write the VTK header
-    int numScalars = (Nx[0]+1)*(Nx[1]+1);  // not equal to x.GlobalLength(), see filter
+    int numScalars = ( Nx[0]+1 ) * ( Nx[1]+1 );  // not equal to x.GlobalLength(), see filter
     writeVtkStructuredPointsHeader ( vtkfile, Nx, h, numScalars );
 
     // write the hard data
@@ -502,6 +502,45 @@ IoVtk::writeScalars ( const Epetra_MultiVector  & x,
 
             double alpha = ( fabs ( val ) <threshold ) ? 0.0 : val;
             oStream << alpha << "\n";
+        }
+    }
+}
+// =============================================================================
+void
+IoVtk::writeScalars ( const ComplexMultiVector  & x,
+                      const Teuchos::Array<int> & filter,
+                      const double                dummyValue,
+                      std::ofstream             & oStream
+                    ) const
+{
+    // below this threshold, values are actually printed as 0.0
+    double threshold = 1.0e-25;
+
+    int numVectors = x.getNumVectors();
+    double reVal, imVal;
+    for ( int k = 0; k < numVectors; k++ )
+    {
+        Teuchos::ArrayRCP<const std::complex<double> > xKView = x.getVector ( k )->get1dView();
+
+        oStream
+        << "SCALARS x" << k << " double 2\n"
+        << "LOOKUP_TABLE default\n";
+        for ( int l=0; l<filter.length(); l++ )
+        {
+            int index = filter[l];
+            if ( index<0 )
+            {
+                reVal = dummyValue;
+                imVal = dummyValue;
+            }
+            else
+            {
+                reVal = std::real ( xKView[index] );
+                imVal = std::imag ( xKView[index] );
+            }
+            double alpha = ( fabs ( reVal ) <threshold ) ? 0.0 : reVal;
+            double beta  = ( fabs ( imVal ) <threshold ) ? 0.0 : imVal;
+            oStream << alpha << " " << beta << "\n";
         }
     }
 }
@@ -1022,3 +1061,35 @@ IoVtk::readScalarFieldHeader ( std::ifstream & iFile,
 
 }
 //==============================================================================
+void
+IoVtk::write ( const ComplexMultiVector              & x,
+               const Teuchos::Tuple<unsigned int,2>  & Nx,
+               const Teuchos::Tuple<double,2>        & h,
+               const Teuchos::Array<int>             & filter,
+               const Teuchos::ParameterList          & problemParams,
+               const double                          & dummyValue
+             )
+{
+    boost::filesystem::ofstream vtkfile ( fileName_ );
+
+    // set the output format
+    vtkfile.setf ( std::ios::scientific );
+    vtkfile.precision ( 15 );
+
+    // write the VTK header
+    vtkfile << "# vtk DataFile Version 2.0\n";
+
+    // write the parameter list
+    writeParameterList ( problemParams, vtkfile );
+
+    // write the VTK header
+    int numScalars = ( Nx[0]+1 ) * ( Nx[1]+1 );  // not equal to x.GlobalLength(), see filter
+    writeVtkStructuredPointsHeader ( vtkfile, Nx, h, numScalars );
+
+    // write the hard data
+    writeScalars ( x, filter, dummyValue, vtkfile );
+
+    // close the file
+    vtkfile.close();
+}
+// =============================================================================

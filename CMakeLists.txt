@@ -7,8 +7,8 @@ INCLUDE( cmake-system.txt REQUIRED )
 #SET(CMAKE_BUILD_TYPE Profile)
 
 SET(CMAKE_BUILD_TYPE Debug)
-#SET(CMAKE_CXX_FLAGS_DEBUG "-pg -ggdb -Wall -Wextra -Weffc++ -pedantic -fbounds-check" )
-SET(CMAKE_CXX_FLAGS_DEBUG "-g -pg -ggdb -Wall -Wextra -Wno-unused" )
+SET(CMAKE_CXX_FLAGS_DEBUG "-g -pg -ggdb -Wall" )
+# SET(CMAKE_CXX_FLAGS_DEBUG "-g -pg -ggdb -Wall -fbounds-check -pedantic -Wextra -Wno-unused -std=c++0x -Weffc++ -Wstrict-null-sentinel" )
 #SET(CMAKE_CXX_FLAGS_DEBUG "" )
 
 SET(GL_CMAKE_DIR "${ginzburg-landau_SOURCE_DIR}/../CMakeMacros")

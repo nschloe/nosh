@@ -16,58 +16,59 @@
 
 #include "GlSystemWithConstraint.h"
 
-namespace glNoxHelpers {
+namespace glNoxHelpers
+{
 
 void
-createGlSystem( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
-		        const Teuchos::RCP<const Epetra_Comm>         & eComm,
-		        const std::string                             & fileName,
-		              Teuchos::ParameterList                  & problemParameters,
-		              Teuchos::RCP<GlSystemWithConstraint>    & glSystem );
+createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
+                 const Teuchos::RCP<const Epetra_Comm>         & eComm,
+                 const std::string                             & fileName,
+                 Teuchos::ParameterList                  & problemParameters,
+                 Teuchos::RCP<GlSystemWithConstraint>    & glSystem );
 
 void
-createGlSystem( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
-                const Teuchos::RCP<const Epetra_Comm>         & eComm,
-                const unsigned int Nx,
-                const double scaling,
-                const double H0,
-	                  Teuchos::ParameterList                  & problemParameters,
-                      Teuchos::RCP<GlSystemWithConstraint>    & glSystem );
+createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
+                 const Teuchos::RCP<const Epetra_Comm>         & eComm,
+                 const unsigned int Nx,
+                 const double scaling,
+                 const double H0,
+                 Teuchos::ParameterList                  & problemParameters,
+                 Teuchos::RCP<GlSystemWithConstraint>    & glSystem );
 
 void
-setPrePostWriter(       Teuchos::ParameterList & noxParaList,
-		          const Teuchos::RCP<const AbstractStateWriter> & asw,
-                  const std::string            & outputDir );
+setPrePostWriter ( Teuchos::ParameterList & noxParaList,
+                   const Teuchos::RCP<const AbstractStateWriter> & asw,
+                   const std::string            & outputDir );
 
 Teuchos::RCP<NOX::Epetra::Group>
-createSolverGroup( const Teuchos::RCP<GlSystemWithConstraint> glSystem,
-		           const Teuchos::RCP<Teuchos::ParameterList> nlParamsPtr );
+createSolverGroup ( const Teuchos::RCP<GlSystemWithConstraint> glSystem,
+                    const Teuchos::RCP<Teuchos::ParameterList> nlParamsPtr );
 
 Teuchos::RCP<NOX::StatusTest::Generic>
-createConvergenceTest( Teuchos::ParameterList & noxStatusList,
-		               Teuchos::ParameterList & nlParamsPtr );
+createConvergenceTest ( Teuchos::ParameterList & noxStatusList,
+                        Teuchos::ParameterList & nlParamsPtr );
 
 Teuchos::RCP<NOX::Solver::Generic>
-createSolver( const Teuchos::RCP<NOX::Epetra::Group>       grpPtr,
-		      const Teuchos::RCP<NOX::StatusTest::Generic> statusTest,
-		      const Teuchos::RCP<Teuchos::ParameterList>   nlParamsPtr );
+createSolver ( const Teuchos::RCP<NOX::Epetra::Group>       grpPtr,
+               const Teuchos::RCP<NOX::StatusTest::Generic> statusTest,
+               const Teuchos::RCP<Teuchos::ParameterList>   nlParamsPtr );
 
 double
-computeJacobianConditionNumber( const Teuchos::RCP<const NOX::Solver::Generic> solver,
-		                        const Teuchos::RCP<      NOX::Epetra::Group>   grpPtr );
+computeJacobianConditionNumber ( const Teuchos::RCP<const NOX::Solver::Generic> solver,
+                                 const Teuchos::RCP<      NOX::Epetra::Group>   grpPtr );
 
 void
-computeJacobianEigenvalues( const Teuchos::RCP<const NOX::Solver::Generic> solver,
-		             const Teuchos::RCP<      NOX::Epetra::Group>   grpPtr,
-		                    const int MyPID );
+computeJacobianEigenvalues ( const Teuchos::RCP<const NOX::Solver::Generic> solver,
+                             const Teuchos::RCP<      NOX::Epetra::Group>   grpPtr,
+                             const int MyPID );
 
 void
-printSolutionToFile( const Teuchos::RCP<const NOX::Solver::Generic> solver,
-		             const Teuchos::RCP<const GlSystemWithConstraint> glSystem,
-		             const std::string & fileName );
+printSolutionToFile ( const Teuchos::RCP<const NOX::Solver::Generic> solver,
+                      const Teuchos::RCP<const GlSystemWithConstraint> glSystem,
+                      const std::string & fileName );
 
 int
-checkConvergence( const Teuchos::RCP<const NOX::Solver::Generic> solver );
+checkConvergence ( const Teuchos::RCP<const NOX::Solver::Generic> solver );
 
 }
 #endif /* GLNOXHELPERS_H_ */

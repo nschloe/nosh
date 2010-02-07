@@ -20,7 +20,7 @@ Grid::Grid ( const Teuchos::RCP<const DomainVirtual> & domain,
         domain_ ( domain ),
         h_ ( h ),
         scaling_ ( scaling )
-{
+{ 
     // get the boundary box
     Teuchos::Tuple<double,4> bb = domain_->getBoundingBox();
 
@@ -786,9 +786,14 @@ Grid::writeWithGrid ( const ComplexMultiVector     & x,
                       const std::string            & filePath
                     ) const
 {
-    TEST_FOR_EXCEPTION ( true,
-                         std::logic_error,
-                         "Not yet implemented." );
+    Teuchos::RCP<IoVirtual> fileIo = Teuchos::rcp ( IoFactory::createFileIo ( filePath ) );
+
+    // append grid parameters
+    Teuchos::ParameterList extendedParams ( params );
+    extendedParams.get ( "scaling", scaling_ );
+    
+    double dummyValue = 0.0;
+    fileIo->write ( x, Nx_, h_, kBB_, extendedParams, dummyValue );
 }
 // =============================================================================
 GridVirtual::nodeType
