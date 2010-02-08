@@ -699,18 +699,21 @@ Grid::pruneInitialTentacle ( Teuchos::Array<IntTuple>  & nodes,
             break;
     }
 
-    // Delete the respective nodes at the beginning and the end.
-    // Note that one more node is deleted at the beginning (the first node),
-    // *and* one more node is preserved at the end, the tentacle root.
-    for ( int k=0; k<lengthInitialTentacle-1; k++ )
+    if ( lengthInitialTentacle>0 )
     {
-        nodes.pop_back();
-        directions.pop_back();
-    }
-    for ( int k=0; k<lengthInitialTentacle+1; k++ )
-    {
-        nodes.erase ( nodes.begin() );
-        directions.erase ( directions.begin() );
+        // Delete the respective nodes at the beginning and the end.
+        // Note that one more node is deleted at the beginning (the first node),
+        // *and* one more node is preserved at the end, the tentacle root.
+        for ( int k=0; k<lengthInitialTentacle-1; k++ )
+        {
+            nodes.pop_back();
+            directions.pop_back();
+        }
+        for ( int k=0; k<lengthInitialTentacle+1; k++ )
+        {
+            nodes.erase ( nodes.begin() );
+            directions.erase ( directions.begin() );
+        }
     }
 
     return;
