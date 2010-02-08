@@ -28,23 +28,24 @@ class DomainPolygon: public DomainVirtual
 {
 public:
     //! Constructor.
-    DomainPolygon ( const Teuchos::Array<Teuchos::Tuple<double,2> > & polygonPoints,
-                    const Teuchos::Tuple<double,2>                  & anchorPoint
-                  );
+    DomainPolygon ( const Teuchos::Array<DoubleTuple> & polygonPoints );
 
     //! Destructor.
     virtual
     ~DomainPolygon();
 
+    Teuchos::Tuple<double,4>
+    getBoundingBox () const;
+
     //! \brief  Classical point-in-polygon problem (http://en.wikipedia.org/wiki/Point_in_polygon).
     //! @param  x Point that is checked
     //! @return   Whether or not \c x sits in the domain.
     virtual bool
-    isInDomain ( const Teuchos::Array<double> & x ) const;
+    isInDomain ( const DoubleTuple & x ) const;
 
 protected:
 private:
-    Teuchos::Array<Teuchos::Tuple<double,2> > polygonPoints_;
+    Teuchos::Array<DoubleTuple> polygonPoints_;
 };
 
 #endif // DOMAINPOLYGON_H

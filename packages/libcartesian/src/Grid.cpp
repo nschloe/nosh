@@ -40,6 +40,7 @@ Grid::Grid ( const Teuchos::RCP<const DomainVirtual> & domain,
     Teuchos::Array<direction> directions;
     directions.push_back ( RIGHT ); // arbitrarily chosen for bootstrapping
     nodes_.push_back ( firstBoundaryNode );
+
     boundaryStepper ( nodes_, directions );
 
     // firstBoundaryNode possibly sat in a tentacle, and boundaryStepper
@@ -74,33 +75,72 @@ Grid::Grid ( const Teuchos::RCP<const DomainVirtual> & domain,
     nodeTypes_.resize ( maxNumNodes );
     IntTuple node;
     int l = 0;
+
+    Teuchos::Array<bool> leftSweep ( Nx_[0]+1 );
+    Teuchos::Array<bool> rightSweep ( Nx_[0]+1 );
+    Teuchos::Array<bool> isBoundary ( Nx_[0]+1 );
+
+    // TODO Replace the following with a proper filling algorithm
+    // http://en.wikipedia.org/wiki/Flood_fill
     for ( int j=0; j<Nx_[1]+1; j++ )
     {
-        bool isInside = false; // the left endpoint is *never inside (at most boundary)
+        // fill isBoundary for the left/right sweeps
+        for ( int i=0; i<Nx_[0]+1; i++ )
+            isBoundary[i] = kBB_[l++]>=0;
+
+        // sweep the row from left to right to find candidates for interior nodes
+        bool maybeInside = false; // the left endpoint is *never inside (at most boundary)
         bool isSwitched = false;
         for ( int i=0; i<Nx_[0]+1; i++ )
         {
             // check if we are crossing the border
-            if ( kBB_[l++]>=0 )
+            if ( isBoundary[i] )
             {
+                leftSweep[i] = false;
                 if ( !isSwitched )
                 {
-                    isInside = !isInside;
+                    maybeInside = !maybeInside;
                     isSwitched = true;
                 }
                 continue;
             }
             isSwitched = false; // re-set for the next switch
+            leftSweep[i] = maybeInside;
+        }
 
-            node = Teuchos::tuple ( i,j );
+        // sweep the row from right to left to find candidates for interior nodes
+        maybeInside = false; // the left endpoint is *never inside (at most boundary)
+        isSwitched = false;
+        for ( int i=Nx_[0]; i>=0; i-- )
+        {
+            // check if we are crossing the border
+            if ( isBoundary[i] )
+            {
+                rightSweep[i] = false;
+                if ( !isSwitched )
+                {
+                    maybeInside = !maybeInside;
+                    isSwitched = true;
+                }
+                continue;
+            }
+            isSwitched = false; // re-set for the next switch
+            rightSweep[i] = maybeInside;
+        }
+
+        for ( int i=0; i<Nx_[0]+1; i++ )
+        {
             // TODO checking for the domain should not be necessary.
             // but when running line by line, you can't tell otherwise
-
-            if ( isInside && domain_->isInDomain ( *getX ( node ) ) )
+            if ( leftSweep[i] && rightSweep[i] )
             {
-                nodes_[k]     = node;
-                nodeTypes_[k] = GridVirtual::INTERIOR;
-                k++;
+                node = Teuchos::tuple ( i,j );
+                if ( domain_->isInDomain ( *getX ( node ) ) )
+                {
+                    nodes_[k]     = node;
+                    nodeTypes_[k] = GridVirtual::INTERIOR;
+                    k++;
+                }
             }
         }
     }
@@ -297,72 +337,6 @@ Grid::getKAbove ( unsigned int kDomain ) const
     return k;
 }
 // =============================================================================
-// maps a running index k to a 2D index i
-// Teuchos::RCP<IntTuple >
-// Grid::k2i ( unsigned int k ) const
-// {
-//     Teuchos::RCP<IntTuple > i = Teuchos::rcp ( new IntTuple() );
-//
-//     if ( k < Nx_[0] )
-//     { // south
-//         ( *i ) [0] = k;
-//         ( *i ) [1] = 0;
-//     }
-//     else if ( k < Nx_[0]+Nx_[1] )
-//     { // east
-//         ( *i ) [0] = Nx_[0];
-//         ( *i ) [1] = k - Nx_[0];
-//     }
-//     else if ( k < 2*Nx_[0]+Nx_[1] )
-//     { // north
-//         ( *i ) [0] = 2*Nx_[0]+Nx_[1] -k;
-//         ( *i ) [1] = Nx_[1];
-//     }
-//     else if ( k < 2* ( Nx_[0]+Nx_[1] ) )
-//     { // west
-//         ( *i ) [0] = 0;
-//         ( *i ) [1] = 2* ( Nx_[0]+Nx_[1] ) - k;
-//     }
-//     else if ( k < ( Nx_[0]+1 ) * ( Nx_[1]+1 ) )
-//     { // on the interior
-//         ( *i ) [0] = ( k - numBoundaryPoints_ ) % ( Nx_[0] - 1 ) + 1;
-//         ( *i ) [1] = ( k - numBoundaryPoints_ ) / ( Nx_[0] - 1 ) + 1;
-//     }
-//     else
-//     {
-//         TEST_FOR_EXCEPTION ( true,
-//                              std::logic_error,
-//                              "Illegal running index   k = " << k );
-//     }
-//
-//     return i;
-// }
-// =============================================================================
-// maps a 2D index i to a running index k
-// unsigned int
-// Grid::i2k ( Teuchos::RCP<IntTuple> & i ) const
-// {
-//     int k;
-//
-//     if ( ( *i ) [1] == 0 ) // south
-//         k = ( *i ) [0];
-//     else if ( ( *i ) [0] == ( int ) Nx_[0] ) // east
-//         k = ( *i ) [1] + Nx_[0];
-//     else if ( ( *i ) [1] == ( int ) Nx_[1] ) // north
-//         k = 2*Nx_[0]+Nx_[1] - ( *i ) [0];
-//     else if ( ( *i ) [0] == 0 ) // west
-//         k = 2* ( Nx_[0]+Nx_[1] ) - ( *i ) [1];
-//     else if ( ( *i ) [0] > 0 && ( *i ) [0] < ( int ) Nx_[0] && ( *i ) [1] > 0 && ( *i ) [1] < ( int ) Nx_[1] ) // interior
-//         k = 2* ( Nx_[0]+Nx_[1] )
-//             + ( Nx_[0] - 1 ) * ( ( *i ) [1] - 1 )
-//             + ( *i ) [0] - 1;
-//     else
-//         TEST_FOR_EXCEPTION ( true, std::logic_error,
-//                              "Illegal 2D index   i = " << *i );
-//
-//     return k;
-// }
-// =============================================================================
 Teuchos::RCP<IntTuple>
 Grid::k2iBoundingBox ( const unsigned int k ) const
 {
@@ -381,35 +355,6 @@ Grid::getNodeType ( unsigned int kDomain ) const
     return nodeTypes_[ kDomain ];
 }
 // =============================================================================
-// GridVirtual::nodeType
-// Grid::getNodeTypeFromI ( IntTuple & i ) const
-// {
-//     if ( i[0]==0 )
-//     {
-//         if ( i[1]==0 )
-//             return GridVirtual::BOUNDARY_BOTTOMLEFTCONVEX;
-//         else if ( i[1]== ( int ) Nx_[1] )
-//             return GridVirtual::BOUNDARY_TOPLEFTCONVEX;
-//         else
-//             return GridVirtual::BOUNDARY_LEFT;
-//     }
-//     else if ( i[0]== ( int ) Nx_[1] )
-//     {
-//         if ( i[1]==0 )
-//             return GridVirtual::BOUNDARY_BOTTOMRIGHTCONVEX;
-//         else if ( i[1]== ( int ) Nx_[1] )
-//             return GridVirtual::BOUNDARY_TOPRIGHTCONVEX;
-//         else
-//             return GridVirtual::BOUNDARY_RIGHT;
-//     }
-//     else if ( i[1]==0 )
-//         return GridVirtual::BOUNDARY_BOTTOM;
-//     else if ( i[1]== ( int ) Nx_[1] )
-//         return GridVirtual::BOUNDARY_TOP;
-//     else
-//         return GridVirtual::INTERIOR;
-// }
-// ============================================================================
 // TODO move to helpers, along with getX, getK, and so forth
 IntTuple
 Grid::findFirstBoundaryNode () const
@@ -445,8 +390,8 @@ Grid::boundaryStepper ( Teuchos::Array<IntTuple>  & boundaryNodes,
     // Try to step into direction, and return if not possible.
     IntTuple nextNode;
 
-    IntTuple  & node    = boundaryNodes.back();
-    direction & prevDir = directions.back();
+    IntTuple  node = boundaryNodes.back();
+    direction prevDir = directions.back();
 
     direction newDir;
 
@@ -462,8 +407,8 @@ Grid::boundaryStepper ( Teuchos::Array<IntTuple>  & boundaryNodes,
         {   // try next node
             continue;
         }
-
         // step successful
+
         if ( equal ( nextNode, boundaryNodes.front() ) )
         {   // the loop is closed
             directions[0] = newDir;
@@ -504,84 +449,6 @@ Grid::getNextDirections ( const direction dir ) const
                              "Illegal direction \"" << dir << "\"." );
     }
 }
-// ============================================================================
-// Grid::direction
-// Grid::findNextDirection ( const IntTuple  & currentBoundaryNode,
-//                           const direction   prevDir
-//                         ) const
-// {
-//     Teuchos::RCP<DoubleTuple> leftPos  = getXLeft ( currentBoundaryNode );
-//     Teuchos::RCP<DoubleTuple> rightPos = getXRight ( currentBoundaryNode );
-//     Teuchos::RCP<DoubleTuple> abovePos = getXAbove ( currentBoundaryNode );
-//     Teuchos::RCP<DoubleTuple> belowPos = getXBelow ( currentBoundaryNode );
-//
-//     switch ( prevDir )
-//     {
-//     case LEFT:
-//         if ( currentBoundaryNode[1]!=Nx_[1] && domain_->isInDomain ( *abovePos ) )
-//         {
-//             return UP;
-//         }
-//         else if ( currentBoundaryNode[0]!=0 && domain_->isInDomain ( *leftPos ) )
-//         {
-//             return LEFT;
-//         }
-//         else if ( currentBoundaryNode[1]!=0 && domain_->isInDomain ( *belowPos ) )
-//         {
-//             return DOWN;
-//         }
-//         break;
-//     case RIGHT:
-//         std::cout << domain_->isInDomain ( *belowPos ) << std::endl;
-//         std::cout << domain_->isInDomain ( *rightPos ) << std::endl;
-//         std::cout << domain_->isInDomain ( *abovePos ) << std::endl;
-//         if ( currentBoundaryNode[1]!=0 && domain_->isInDomain ( *belowPos ) )
-//         {
-//             return DOWN;
-//         }
-//         else if ( currentBoundaryNode[0]!=Nx_[0] && domain_->isInDomain ( *rightPos ) )
-//         {
-//             return RIGHT;
-//         }
-//         else if ( currentBoundaryNode[1]!=Nx_[1] && domain_->isInDomain ( *abovePos ) )
-//         {
-//             return UP;
-//         }
-//         break;
-//     case UP:
-//         if ( currentBoundaryNode[0]!=Nx_[0] && domain_->isInDomain ( *rightPos ) )
-//         {
-//             return RIGHT;
-//         }
-//         else if ( currentBoundaryNode[1]!=Nx_[1] && domain_->isInDomain ( *abovePos ) )
-//         {
-//             return UP;
-//         }
-//         else if ( currentBoundaryNode[0]!=0 && domain_->isInDomain ( *leftPos ) )
-//         {
-//             return LEFT;
-//         }
-//         break;
-//     case DOWN:
-//         if ( currentBoundaryNode[0]!=0 && domain_->isInDomain ( *leftPos ) )
-//         {
-//             return LEFT;
-//         }
-//         else if ( currentBoundaryNode[1]!=0 && domain_->isInDomain ( *belowPos ) )
-//         {
-//             return DOWN;
-//         }
-//         if ( currentBoundaryNode[0]!=Nx_[0] && domain_->isInDomain ( *rightPos ) )
-//         {
-//             return RIGHT;
-//         }
-//         break;
-//     }
-//
-//     TEST_FOR_EXCEPTION ( true,
-//                          std::logic_error,
-//                          "Illegal direction \"" << prevDir << "\"." );
-// }
 // ============================================================================
 IntTuple
 Grid::step ( const IntTuple  & node,
@@ -831,7 +698,7 @@ Grid::pruneInitialTentacle ( Teuchos::Array<IntTuple>  & nodes,
         else
             break;
     }
-    
+
     // Delete the respective nodes at the beginning and the end.
     // Note that one more node is deleted at the beginning (the first node),
     // *and* one more node is preserved at the end, the tentacle root.
