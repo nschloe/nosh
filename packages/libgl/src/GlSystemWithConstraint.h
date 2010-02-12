@@ -51,7 +51,7 @@ public:
   //! Constructor with initial guess.
   GlSystemWithConstraint( GinzburgLandau::GinzburgLandau &gl,
                           const Teuchos::RCP<const Epetra_Comm> eComm,
-                          const Teuchos::RCP<ComplexVector> psi,
+                          const Teuchos::RCP<const ComplexVector> psi,
                           const std::string outputDir = "data",
                           const std::string outputDataFileName = "continuationData.dat",
                           const std::string outputFileFormat = "VTK",
@@ -161,7 +161,7 @@ public:
 private:
 
         void
-        initialize(const Teuchos::RCP<ComplexVector> psi);
+        initialize(const Teuchos::RCP<const ComplexVector> psi);
 
         void
         fillBorderedMatrix( const Teuchos::RCP<      Epetra_CrsMatrix> & extendedMatrix,

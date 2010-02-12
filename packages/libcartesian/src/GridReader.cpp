@@ -5,10 +5,13 @@
  *      Author: Nico Schl\"omer
  */
 
-#include "GridUniformSquare.h"
+#include "GridReader.h"
 
 #include "ioVirtual.h"
 #include "ioFactory.h"
+
+#include "VtiReader.h"
+#include "VtkReader.h"
 
 namespace GridReader {
 // =============================================================================
@@ -16,33 +19,56 @@ void
 read( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
       const std::string                             & filePath,
             Teuchos::RCP<DoubleMultiVector>         & x,
-            Teuchos::RCP<GridUniformVirtual>        & grid,
+            Teuchos::RCP<GridUniform>               & grid,
             Teuchos::ParameterList                  & params
     )
 {
-  // TODO Get some clues about which grid we read.
-  //      Right now we can only read GridUniformSquare.
+  TEST_FOR_EXCEPTION ( true,
+                       std::logic_error,
+                       "Not yet implemented." );
 
-  Teuchos::RCP<GridUniformSquare> tmpGridUniformSquare = Teuchos::rcp( new GridUniformSquare() );
-  tmpGridUniformSquare->read( Comm, filePath, x, params );
-  grid = tmpGridUniformSquare; // slice
+//   Teuchos::RCP<GridUniformSquare> tmpGridUniformSquare = Teuchos::rcp( new GridUniformSquare() );
+//   tmpGridUniformSquare->read( Comm, filePath, x, params );
+//   grid = tmpGridUniformSquare; // slice
+
+//   Teuchos::RCP<VtiReader> reader = Teuchos::rcp( new VtiReader( filePath ) );
+//   reader->read();
+//   
+//   return;
 }
 // =============================================================================
 void
 read( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
       const std::string                             & filePath,
-            Teuchos::RCP<ComplexMultiVector>        & x,
-            Teuchos::RCP<GridUniformVirtual>        & grid,
-            Teuchos::ParameterList                  & params
+            Teuchos::RCP<ComplexMultiVector>        & z,
+            Teuchos::RCP<GridUniform>               & grid,
+            Teuchos::ParameterList                  & fieldData
     )
 {
+  Teuchos::RCP<VtkReader> reader = Teuchos::rcp( new VtkReader( filePath ) );
+  
+  // read all the values
+  UIntTuple dims;
+  DoubleTuple origin;
+  DoubleTuple h;
+  Teuchos::Array<int> bbIndex;
+  reader->read( z, bbIndex, dims, origin, h, fieldData, Comm );
+  
+  // extract the necessary values
+  double scaling = fieldData.get<double>( "scaling" );
+  Teuchos::Array<int> boundaryIndices = fieldData.get<Teuchos::Array<int> >( "boundary indices" );
+  fieldData.remove( "boundary indices" );
+  
+  TEST_FOR_EXCEPTION( fabs( h[0]-h[1] ) > 1.e-15,
+                      std::logic_error,
+                      "Spacing not uniform accross spatial dimensions: h = " << h << "." );
+  // now create a grid out of what we got
+  double hh = h[0];
+  UIntTuple numCells = Teuchos::tuple(  dims[0]-1, dims[1]-1 );
+  grid = Teuchos::rcp( new GridUniform ( hh, numCells, bbIndex, boundaryIndices,
+                                         scaling, origin ) );
 
-  // TODO Get some clues about which grid we read.
-  //      Right now we can only read GridUniformSquare.
-
-  Teuchos::RCP<GridUniformSquare> tmpGridUniformSquare = Teuchos::rcp( new GridUniformSquare() );
-  tmpGridUniformSquare->read( Comm, filePath, x, params );
-  grid = tmpGridUniformSquare; // slice
+  return;
 }
 // =============================================================================
 } // namespace GridReader

@@ -36,10 +36,6 @@
 #include "ioVirtual.h"
 #include "ioFactory.h"
 
-#include "glBoundaryConditionsVirtual.h"
-#include "glBoundaryConditionsInner.h"
-#include "glBoundaryConditionsOuter.h"
-#include "glBoundaryConditionsCentral.h"
 #include "ginzburgLandau.h"
 #include "glPrePostOperator.h"
 
@@ -49,6 +45,8 @@
 #include "GlSystemWithConstraint.h"
 
 #include "DomainSquare.h"
+#include "DomainCircle.h"
+#include "DomainPolygon.h"
 #include "GlOperatorBCInner.h"
 #include "GlOperatorBCOuter.h"
 #include "GlOperatorBCCentral.h"
@@ -65,39 +63,33 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
                  Teuchos::ParameterList                  & problemParameters,
                  Teuchos::RCP<GlSystemWithConstraint>    & glSystem )
 {
-  TEST_FOR_EXCEPTION( true,
-                      std::logic_error,
-                      "Not yet implemented." );
-//     Teuchos::ParameterList glParameters;
-// 
-//     Teuchos::RCP<ComplexMultiVector> psiM;
-//     GridReader::read ( comm, fileName, psiM, grid, problemParameters );
-// 
-//     // TODO Remove this workaround
-//     // make sure that an actual ComplexVector was produced, and fetch it
-//     TEUCHOS_ASSERT_EQUALITY ( psiM->getNumVectors(), 1 );
-//     Teuchos::RCP<ComplexVector> psi = psiM->getVectorNonConst ( 0 );
-// 
-//     double edgeLength = 1.0;
-//     Teuchos::RCP<DomainVirtual> domain =
-//         Teuchos::rcp ( new DomainSquare ( edgeLength ) );
-// 
-//     double scaling = problemParameters.get<double> ( "scaling" );
-//     double h = scaling / 50;
-//     GridUniform grid ( domain, h, scaling );
-// 
-//     double H0      = problemParameters.get<double> ( "H0" );
-//     Teuchos::RCP<MagneticVectorPotential> A =
-//         Teuchos::rcp ( new MagneticVectorPotential ( H0, scaling ) );
-// 
-//     Teuchos::RCP<GlOperatorVirtual> glOperator =
-//         Teuchos::rcp ( new GlOperatorBCInner ( grid, A ) );
-// 
-//     GinzburgLandau glProblem = GinzburgLandau ( glOperator );
-// 
-//     // Create the interface between NOX and the application
-//     // This object is derived from NOX::Epetra::Interface
-//     glSystem =  Teuchos::rcp ( new GlSystemWithConstraint ( glProblem, eComm, psi ) );
+    Teuchos::ParameterList glParameters;
+
+    Teuchos::RCP<ComplexMultiVector> psi;
+
+    Teuchos::RCP<GridUniform> grid;
+    GridReader::read ( comm, fileName, psi, grid, problemParameters );
+
+    std::cout << problemParameters << std::endl;
+    
+    Teuchos::ArrayRCP<const double_complex> psiView = psi->get1dView();
+    for ( int k =0; k<5; k++ )
+      std::cout << psiView[k] << std::endl;
+    
+    double h0      = problemParameters.get<double>("H0");
+    double scaling = problemParameters.get<double>("scaling");
+    Teuchos::RCP<MagneticVectorPotential> A =
+        Teuchos::rcp ( new MagneticVectorPotential ( h0, scaling ) );
+
+    // create the operator
+    Teuchos::RCP<GlOperatorVirtual> glOperator =
+        Teuchos::rcp ( new GlOperatorBCInner ( grid, A ) );
+
+    GinzburgLandau glProblem = GinzburgLandau ( glOperator );
+    
+    TEUCHOS_ASSERT_EQUALITY( psi->getNumVectors(), 1 );
+
+    glSystem = Teuchos::rcp ( new GlSystemWithConstraint ( glProblem, eComm, psi->getVector(0) ) );
 }
 // =============================================================================
 void
@@ -113,15 +105,41 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
     problemParameters.set ( "scaling", scaling );
     problemParameters.set ( "H0"     , H0 );
 
+    // create the domain
 //     double edgeLength = 1.0;
 //     Teuchos::RCP<DomainVirtual> domain =
 //         Teuchos::rcp ( new DomainSquare ( edgeLength ) );
 
-    // create the domain
     Teuchos::RCP<DomainVirtual> domain =
         Teuchos::rcp ( new DomainRectangle ( 2.0, 1.0 ) );
-        
-        
+
+//     Teuchos::RCP<DomainVirtual> domain =
+//         Teuchos::rcp ( new DomainCircle ( 1.0 ) );
+
+//     Teuchos::RCP<DomainVirtual> domain =
+//         Teuchos::rcp ( new DomainEllipse ( 2.0, 1.0 ) );
+
+//     Teuchos::Array<DoubleTuple> P( Teuchos::tuple( Teuchos::tuple(0.0,0.0),
+//                                                    Teuchos::tuple(4.0,0.0),
+//                                                    Teuchos::tuple(2.0,2.0),
+//                                                    Teuchos::tuple(4.0,4.0),
+//                                                    Teuchos::tuple(0.0,4.0) ) );
+//     Teuchos::Array<DoubleTuple> P( Teuchos::tuple( Teuchos::tuple(0.0,0.0),
+//                                                    Teuchos::tuple(4.0,0.0),
+//                                                    Teuchos::tuple(2.0,3.0) ) );
+//     Teuchos::Array<DoubleTuple> P( Teuchos::tuple( Teuchos::tuple(1.0,0.0),
+//                                                    Teuchos::tuple(4.0,0.0),
+//                                                    Teuchos::tuple(4.0,4.0),
+//                                                    Teuchos::tuple(0.0,4.0),
+//                                                    Teuchos::tuple(0.0,1.0) ) );
+//     Teuchos::Array<DoubleTuple> P( Teuchos::tuple( Teuchos::tuple(0.0,0.0),
+//                                                    Teuchos::tuple(4.0,0.0),
+//                                                    Teuchos::tuple(4.0,2.0),
+//                                                    Teuchos::tuple(0.0,2.0) ) );
+
+//     Teuchos::RCP<DomainVirtual> domain = Teuchos::rcp( new DomainPolygon(P) );
+
+    // TODO Create GridContructor with Nx
     // create the grid 
     double h = 1.0 / Nx;
     Teuchos::RCP<GridUniform> grid =
@@ -132,7 +150,7 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
 
     // create the operator
     Teuchos::RCP<GlOperatorVirtual> glOperator =
-        Teuchos::rcp ( new GlOperatorBCCentral ( grid, A ) );
+        Teuchos::rcp ( new GlOperatorBCInner ( grid, A ) );
 
     GinzburgLandau glProblem = GinzburgLandau ( glOperator );
 
@@ -384,7 +402,7 @@ computeJacobianEigenvalues ( const Teuchos::RCP<const NOX::Solver::Generic> solv
     std::vector<Anasazi::Value<ScalarType> > evals = sol.Evals;
     Teuchos::RCP<MV> evecs = sol.Evecs;
     std::vector<int> index = sol.index;
-    int numev = sol.numVecs;
+//     int numev = sol.numVecs;
 
     Teuchos::RCP<Epetra_Vector> ev1 ( ( *evecs ) ( 0 ) );
 

@@ -17,13 +17,13 @@ INCLUDE_DIRECTORIES ( ${Trilinos_INCLUDE_DIR} )
 
 INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/packages/libio/src
                       ${ginzburg-landau_SOURCE_DIR}/packages/libcartesian/src
-		    )
+                    )
 
-SET ( poisson_square_SRCS
+SET ( poisson_SRCS
       main.cpp )
 
-ADD_EXECUTABLE ( poisson-square.out
-                 ${poisson_square_SRCS} )
+ADD_EXECUTABLE ( poisson.out
+                 ${poisson_SRCS} )
 
 SET ( internal_LIBS
       cartesian
@@ -36,7 +36,7 @@ INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIRS} )
 SET(Boost_USE_STATIC_LIBS   ON)
 SET(Boost_USE_MULTITHREADED ON)
 SET( LINK_LIBRARIES ${LINK_LIBRARIES}
-	            ${Boost_LIBRARIES} )
+                    ${Boost_LIBRARIES} )
 # ------------------------------------------------------------------------------
 FIND_LIBRARY( GFORTRAN ${GFORTRAN_LIBNAME}
               HINTS ${GFORTRAN_DIR}    )
@@ -44,10 +44,10 @@ SET( LINK_LIBRARIES ${LINK_LIBRARIES}
                     ${GFORTRAN} )
 # ==============================================================================
 # Set executable linking information.
-TARGET_LINK_LIBRARIES ( poisson-square.out
-			${internal_LIBS}
-			LOCA
-			NOXEpetra
-			${LINK_LIBRARIES}
+TARGET_LINK_LIBRARIES ( poisson.out
+                        ${internal_LIBS}
+                        LOCA
+                        NOXEpetra
+                        ${LINK_LIBRARIES}
                       )
 # ==============================================================================

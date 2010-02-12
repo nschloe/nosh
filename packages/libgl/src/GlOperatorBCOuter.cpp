@@ -62,7 +62,6 @@ GlOperatorBCOuter::getEntry ( const int k ) const
     {
     case GridVirtual::INTERIOR:
         // TODO Gets the local index. ==> Only works on one core.
-        psiK      = psiView[ k ];
         psiKLeft  = psiView[ grid_->getKLeft ( k ) ];
         psiKRight = psiView[ grid_->getKRight ( k ) ];
         psiKBelow = psiView[ grid_->getKBelow ( k ) ];
@@ -255,7 +254,7 @@ GlOperatorBCOuter::getEntry ( const int k ) const
     default:
         TEST_FOR_EXCEPTION ( true,
                              std::logic_error,
-                             "Illegal not type \"" << nt << "\"." );
+                             "Illegal node type \"" << nt << "\"." );
     }
 
     // return the result

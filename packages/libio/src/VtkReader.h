@@ -17,34 +17,34 @@
 
 */
 
-#ifndef GRIDUNIFORM_H
-#define GRIDUNIFORM_H
+#ifndef VTKREADER_H
+#define VTKREADER_H
 
-#include "Grid.h"
+#include "AbstractImageReader.h"
 
-class GridUniform:
-            virtual public Grid
+#include <vtkStructuredPoints.h>
+
+class VtkReader:
+            public AbstractImageReader
 {
 public:
-    GridUniform ( const Teuchos::RCP<const DomainVirtual> & domain,
-                  const double                              h,
-                  const double                              scaling
-                );
+    VtkReader ( const std::string & filePath );
 
-    GridUniform ( const double                h,
-                  const UIntTuple           & numCells,
-                  const Teuchos::Array<int> & kBB,
-                  const Teuchos::Array<int> & boundaryNodes,
-                  const double                scaling,
-                  const DoubleTuple         & origin
-                );
+    virtual
+    ~VtkReader ();
 
-    double
-    getUniformH() const;
+    virtual void
+    read ( Teuchos::RCP<ComplexMultiVector>              & z,
+           Teuchos::Array<int>                           & p,
+           UIntTuple                                     & dims,
+           DoubleTuple                                   & origin,
+           DoubleTuple                                   & spacing,
+           Teuchos::ParameterList                        & fieldData,
+           const Teuchos::RCP<const Teuchos::Comm<int> > & TComm
+         ) const;
 
+protected:
 private:
-    double h_;
-
 };
 
-#endif // GRIDUNIFORM_H
+#endif // VTKREADER_H

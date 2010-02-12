@@ -41,7 +41,7 @@ typedef std::complex<double> double_complex;
 // Default constructor
 GlSystemWithConstraint::GlSystemWithConstraint ( GinzburgLandau::GinzburgLandau &gl,
         const Teuchos::RCP<const Epetra_Comm> eComm,
-        const Teuchos::RCP<ComplexVector> psi,
+        const Teuchos::RCP<const ComplexVector> psi,
         const std::string outputDir,
         const std::string outputDataFileName,
         const std::string outputFileFormat,
@@ -109,7 +109,7 @@ GlSystemWithConstraint::~GlSystemWithConstraint()
 }
 // =============================================================================
 void
-GlSystemWithConstraint::initialize ( const Teuchos::RCP<ComplexVector> psi )
+GlSystemWithConstraint::initialize ( const Teuchos::RCP<const ComplexVector> psi )
 {
     Teuchos::RCP<Epetra_Vector> tmp = glSystem_.getGlKomplex()->complex2real ( *psi );
 

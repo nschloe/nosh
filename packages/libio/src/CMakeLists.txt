@@ -3,12 +3,17 @@ INCLUDE( ${ginzburg-landau_SOURCE_DIR}/cmake-system.txt REQUIRED )
 ENABLE_LANGUAGE( CXX )
 
 SET ( gl_SRCS
-      ioVirtual.cpp
-      ioVtk.cpp
-      IoVtkStructuredPoints.cpp
-      ioVti.cpp
-      ioXdmf.cpp
-      ioFactory.cpp )
+      AbstractImageWriter.cpp
+      VtiWriter.cpp
+      VtkWriter.cpp
+      AbstractImageReader.cpp
+      VtiReader.cpp
+      VtkReader.cpp
+    )
+
+#       ioVirtual.cpp
+#       ioXdmf.cpp
+#       ioFactory.cpp
 
 INCLUDE( SetTrilinosVariables REQUIRED )
 INCLUDE_DIRECTORIES( ${Trilinos_INCLUDE_DIR} )

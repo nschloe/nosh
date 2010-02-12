@@ -23,8 +23,8 @@ void
 createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
                  const Teuchos::RCP<const Epetra_Comm>         & eComm,
                  const std::string                             & fileName,
-                 Teuchos::ParameterList                  & problemParameters,
-                 Teuchos::RCP<GlSystemWithConstraint>    & glSystem );
+                 Teuchos::ParameterList                        & problemParameters,
+                 Teuchos::RCP<GlSystemWithConstraint>          & glSystem );
 
 void
 createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,

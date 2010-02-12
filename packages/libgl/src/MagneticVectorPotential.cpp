@@ -2,7 +2,7 @@
  * MagneticVectorPotential.cpp
  *
  *  Created on: Nov 5, 2009
- *      Author: Nico Schl�mer
+ *      Author: Nico Schl\"omer
  */
 
 #include "MagneticVectorPotential.h"

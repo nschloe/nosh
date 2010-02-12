@@ -30,6 +30,15 @@ public:
            const DoubleTuple                         h,
            const double                              scaling = 1.0
          );
+         
+    //! Constructor for information gotten from a file read.
+    Grid ( const DoubleTuple         & h,
+           const UIntTuple           & numCells,
+           const Teuchos::Array<int> & kBB,
+           const Teuchos::Array<int> & boundaryNodes,
+           const double                scaling,
+           const DoubleTuple         & origin
+         );
 
     //! Empty constructor.
     Grid();
@@ -132,12 +141,6 @@ public:
                     const std::string            & filePath
                   ) const;
 
-    void
-    writeWithBoundingBoxGrid ( const Epetra_MultiVector     & x,
-                               const Teuchos::ParameterList & params,
-                               const std::string            & filePath
-                             ) const;
-
     virtual void
     read ( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
            const std::string                             & filePath,
@@ -155,17 +158,17 @@ public:
 
 private:
 
-    const Teuchos::RCP<const DomainVirtual> domain_;
     DoubleTuple h_;
-    UIntTuple Nx_;
+    UIntTuple numCells_;
     Teuchos::Array<int> kBB_;
+    Teuchos::Array<int> boundaryIndices_;
     double scaling_; //! scaling factor
     double gridDomainArea_;
     unsigned int numGridPoints_;
     unsigned int numBoundaryPoints_;
     Teuchos::Array<IntTuple> nodes_;
     Teuchos::Array<nodeType> nodeTypes_;
-    Teuchos::Tuple<double,2> origin_;
+    DoubleTuple origin_;
 
 private:
     //! Indicates directions when traversing the boundary of a
@@ -173,7 +176,7 @@ private:
     enum direction
     {
         LEFT,  // 0
-        RIGHT, // 1 
+        RIGHT, // 1
         UP,    // 2
         DOWN   // 3
     };
@@ -184,12 +187,21 @@ private:
                   const direction newDir
                 ) const;
 
+    Grid::direction
+    getDirection ( const IntTuple & node0,
+                   const IntTuple & node1
+                 ) const;
+
+    void
+    updateGridDomainArea();
+
     Teuchos::RCP<DoubleTuple>
     getX ( const IntTuple & i ) const;
 
     bool
-    boundaryStepper ( Teuchos::Array<IntTuple>  & boundaryNodes,
-                      Teuchos::Array<direction> & directions
+    boundaryStepper ( Teuchos::Array<IntTuple>                & boundaryNodes,
+                      Teuchos::Array<direction>               & directions,
+                      const Teuchos::RCP<const DomainVirtual> & domain
                     ) const;
 
     bool
@@ -198,7 +210,7 @@ private:
           ) const;
 
     IntTuple
-    findFirstBoundaryNode () const;
+    findFirstBoundaryNode ( const Teuchos::RCP<const DomainVirtual> & domain ) const;
 
     Grid::direction
     findNextDirection ( const IntTuple  & currentBoundaryNode,
@@ -209,8 +221,9 @@ private:
     getNextDirections ( const direction dir ) const;
 
     IntTuple
-    step ( const IntTuple  & node,
-           const direction   dir
+    step ( const IntTuple                          & node,
+           const direction                           dir,
+           const Teuchos::RCP<const DomainVirtual> & domain
          ) const;
 
     unsigned int

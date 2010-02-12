@@ -31,7 +31,7 @@ typedef std::complex<double> double_complex;
 // Default constructor
 GlSystem::GlSystem ( GinzburgLandau::GinzburgLandau &gl,
                      const Teuchos::RCP<const Epetra_Comm> eComm,
-                     const Teuchos::RCP<ComplexVector> psi,
+                     const Teuchos::RCP<const ComplexVector> psi,
                      const std::string outputDir,
                      const std::string outputDataFileName,
                      const std::string outputFileFormat,
@@ -88,7 +88,6 @@ GlSystem::GlSystem ( GinzburgLandau::GinzburgLandau &gl,
     // How to compare two communicators anyway?
 
     // create fitting Tpetra::Comm
-    // TODO: move into initializer
     Teuchos::RCP<const Teuchos::Comm<int> > TComm = create_CommInt ( eComm );
 
     // define map
@@ -100,13 +99,12 @@ GlSystem::GlSystem ( GinzburgLandau::GinzburgLandau &gl,
 
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     // initialize solution
-    Teuchos::RCP<ComplexVector> psi = Teuchos::rcp ( new ComplexVector ( ComplexMap ) );
+    ComplexVector psi( ComplexMap );
     // TODO Move default initialization out to main file
-    double_complex alpha ( 1.0, 0.0 );
-    psi->putScalar ( alpha ); // default initialization
+    psi.putScalar ( double_complex(0.0,0.0) ); // default initialization
 
     Teuchos::RCP<Epetra_Vector> initialSolution_ =
-        glKomplex_->complex2real ( *psi );
+        glKomplex_->complex2real ( psi );
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 }

@@ -1,7 +1,5 @@
 #include "ginzburgLandau.h"
 
-#include "glBoundaryConditionsVirtual.h"
-
 #include <Teuchos_RCP.hpp>
 
 // really needed?
@@ -82,85 +80,6 @@ GinzburgLandau::computeGlVector ( const Teuchos::RCP<const ComplexVector> & psi
     return glVec;
 }
 // =============================================================================
-// double_complex
-// GinzburgLandau::getInterior ( const int k,
-//                               const ComplexVector & psi
-//                             ) const
-// {
-//
-//     return res;
-// }
-// =============================================================================
-// Evaluate GL at the boundary node.
-// Return value for equation #k.
-// double_complex
-// GinzburgLandau::computeGl ( const int           eqnum,
-//                             const ComplexVector &psi
-//                           ) const
-// {
-//     // the preliminary result type
-//     double_complex res;
-//     equationType eqType;
-//     int eqIndex;
-//
-//     // get the equation type and the sub-index from the running index (0,1,2,3,...
-//     // of the boundary; 0,1,2,3,... of the interior)
-//     getEquationType ( eqnum, eqType, eqIndex );
-//
-//     switch ( eqType )
-//     {
-//         // -------------------------------------------------------------------------
-//     case BOUNDARY:
-//         res = boundaryConditions_->getGlEntry ( eqIndex, psi, chi_, *grid_, *A_ );
-//         break;
-//         // -------------------------------------------------------------------------
-//     case INTERIOR:
-//     {
-//         // Translate eqIndex to k.
-//         // TODO Unify this with what happens at the Jacobian.
-//         // The equations here are "centered" around a node. Take node 'k'
-//         // for equation 'eqIndex'.
-//         int k = eqnum;
-//
-//         Teuchos::ArrayRCP<const double_complex> psiView = psi.get1dView();
-//
-//         double_complex psiK      = psiView[ k ];
-//         double_complex psiKLeft  = psiView[ grid_->getKLeft ( k ) ];
-//         double_complex psiKRight = psiView[ grid_->getKRight ( k ) ];
-//         double_complex psiKBelow = psiView[ grid_->getKBelow ( k ) ];
-//         double_complex psiKAbove = psiView[ grid_->getKAbove ( k ) ];
-//
-//         Teuchos::RCP<DoubleTuple> xLeft ( grid_->getXLeft ( k ) );
-//         Teuchos::RCP<DoubleTuple> xRight ( grid_->getXRight ( k ) );
-//         Teuchos::RCP<DoubleTuple> xBelow ( grid_->getXBelow ( k ) );
-//         Teuchos::RCP<DoubleTuple> xAbove ( grid_->getXAbove ( k ) );
-//
-//         double ALeft  = A_->getAx ( *xLeft );
-//         double ARight = A_->getAx ( *xRight );
-//         double ABelow = A_->getAy ( *xBelow );
-//         double AAbove = A_->getAy ( *xAbove );
-//
-//         double h = grid_->getUniformH();
-//         // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-//         res = ( psiK* ( -4.0 )
-//                 + psiKLeft*  exp ( I*ALeft *h ) + psiKRight* exp ( -I*ARight*h )
-//                 + psiKBelow* exp ( I*ABelow*h ) + psiKAbove* exp ( -I*AAbove*h ) ) / ( h*h )
-//               + psiK * ( 1-norm ( psiK ) );
-//         res *= exp ( I*chi_ );
-//         // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-//     }
-//     break;
-//     // -------------------------------------------------------------------------
-//     default:
-//         TEST_FOR_EXCEPTION ( true,
-//                              std::logic_error,
-//                              "Illegal equationType " << eqType );
-//     }
-//
-//     // return the result
-//     return res;
-// }
-// =============================================================================
 // Evaluate GL at the boundary node.
 // Return value for equation #k.
 void
@@ -179,46 +98,9 @@ GinzburgLandau::getJacobianRow ( const int                           eqnum,
     return;
 }
 // =============================================================================
-// void
-// GinzburgLandau::getJacobianRowSparsity ( const int        eqnum,
-//         std::vector<int> &columnIndicesPsi,
-//         std::vector<int> &columnIndicesPsiConj
-//                                        ) const
-// {
-//     // create dummy arguments
-//     Teuchos::RCP<ComplexVector > psi = Teuchos::null;
-//
-//     std::vector<double_complex> valuesPsi, valuesPsiConj;
-//
-//     computeJacobianRow ( false,
-//                          eqnum,
-//                          psi,
-//                          columnIndicesPsi,
-//                          valuesPsi,
-//                          columnIndicesPsiConj,
-//                          valuesPsiConj );
-//
-//     return;
-// }
-// =============================================================================
-// Evaluate GL at the boundary node.
-// Return value for equation #k.
-// void
-// GinzburgLandau::computeJacobianRow ( const bool                        fillValues,
-//                                      const int                         eqnum,
-//                                      const Teuchos::RCP<ComplexVector> &psi,
-//                                      std::vector<int>                  &columnIndicesPsi,
-//                                      std::vector<double_complex>       &valuesPsi,
-//                                      std::vector<int>                  &columnIndicesPsiConj,
-//                                      std::vector<double_complex>       &valuesPsiConj
-//                                    ) const
-// {
-//
-// }
-// =============================================================================
 // calculate the free energy of a state
 double
-GinzburgLandau::freeEnergy ( const ComplexVector &psi
+GinzburgLandau::freeEnergy ( const ComplexVector & psi
                            ) const
 {
     double localEnergy = 0.0;

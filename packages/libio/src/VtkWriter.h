@@ -17,34 +17,27 @@
 
 */
 
-#ifndef GRIDUNIFORM_H
-#define GRIDUNIFORM_H
+#ifndef VTKWRITER_H
+#define VTKWRITER_H
 
-#include "Grid.h"
+#include "AbstractImageWriter.h"
 
-class GridUniform:
-            virtual public Grid
+class VtkWriter:
+            public AbstractImageWriter
 {
 public:
-    GridUniform ( const Teuchos::RCP<const DomainVirtual> & domain,
-                  const double                              h,
-                  const double                              scaling
-                );
 
-    GridUniform ( const double                h,
-                  const UIntTuple           & numCells,
-                  const Teuchos::Array<int> & kBB,
-                  const Teuchos::Array<int> & boundaryNodes,
-                  const double                scaling,
-                  const DoubleTuple         & origin
-                );
+    //! Default constructor.
+    VtkWriter ( const std::string & filePath );
 
-    double
-    getUniformH() const;
+    //! Destructor
+    virtual ~VtkWriter();
 
+    virtual void
+    write () const;
+
+protected:
 private:
-    double h_;
-
 };
 
-#endif // GRIDUNIFORM_H
+#endif // VTKWRITER_H

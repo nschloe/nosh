@@ -7,8 +7,8 @@
 
 #include "Grid.h"
 
-#include "ioVirtual.h"
-#include "ioFactory.h"
+#include "VtkWriter.h"
+#include "VtiWriter.h"
 
 #include <Teuchos_SerialDenseMatrix.hpp>
 
@@ -17,54 +17,63 @@ Grid::Grid ( const Teuchos::RCP<const DomainVirtual> & domain,
              const DoubleTuple                         h,
              const double                              scaling
            ) :
-        domain_ ( domain ),
         h_ ( h ),
-        scaling_ ( scaling )
+        numCells_ ( Teuchos::tuple ( ( unsigned int ) 0, ( unsigned int ) 0 ) ),
+        kBB_ ( Teuchos::Array<int>() ),
+        scaling_ ( scaling ),
+        gridDomainArea_ ( 0.0 ),
+        numGridPoints_ ( 0 ),
+        numBoundaryPoints_ ( 0 ),
+        nodes_ ( Teuchos::Array<IntTuple>() ),
+        boundaryIndices_ ( Teuchos::Array<int>() ),
+        nodeTypes_ ( Teuchos::Array<nodeType>() ),
+        origin_ ( Teuchos::tuple ( 0.0, 0.0 ) )
 {
     // get the boundary box
-    Teuchos::Tuple<double,4> bb = domain_->getBoundingBox();
+    Teuchos::Tuple<double,4> bb = domain->getBoundingBox();
 
     origin_ = Teuchos::tuple ( bb[0], bb[1] );
 
     // lay a grid over the box
-    Nx_[0] = ceil ( ( bb[2]-bb[0] ) / h_[0] );
-    Nx_[1] = ceil ( ( bb[3]-bb[1] ) / h_[1] );
+    numCells_[0] = ceil ( ( bb[2]-bb[0] ) / h_[0] );
+    numCells_[1] = ceil ( ( bb[3]-bb[1] ) / h_[1] );
 
-    unsigned int maxNumNodes = ( Nx_[0]+1 ) * ( Nx_[1]+1 );
+    unsigned int maxNumNodes = ( numCells_[0]+1 ) * ( numCells_[1]+1 );
 
     // find a boundary node by scanning through the bounding box, left to right,
     // bottom to top
-    IntTuple firstBoundaryNode = findFirstBoundaryNode ();
-
+    IntTuple firstBoundaryNode = findFirstBoundaryNode ( domain );
 
     Teuchos::Array<direction> directions;
     directions.push_back ( RIGHT ); // arbitrarily chosen for bootstrapping
     nodes_.push_back ( firstBoundaryNode );
 
-    boundaryStepper ( nodes_, directions );
+    boundaryStepper ( nodes_, directions, domain );
 
     // firstBoundaryNode possibly sat in a tentacle, and boundaryStepper
     // can't deal with that. Hence, manually remove this tentacle.
     pruneInitialTentacle ( nodes_, directions );
 
-    int numBoundaryPoints = nodes_.length();
+    numBoundaryPoints_ = nodes_.length();
+
+    boundaryIndices_.resize ( numBoundaryPoints_ );
+    for ( int k=0; k<numBoundaryPoints_; k++ )
+        boundaryIndices_[k] = k;
 
     // get the node types out of the directions
-    for ( int k=0; k<numBoundaryPoints-1; k++ )
+    for ( int k=0; k<numBoundaryPoints_-1; k++ )
         nodeTypes_.push_back ( getNodeType ( directions[k], directions[k+1] ) );
 
     // take care of the last element
-    int k = numBoundaryPoints-1;
+    int k = numBoundaryPoints_-1;
     nodeTypes_.push_back ( getNodeType ( directions[k], directions[0] ) );
-
 
     // create connection between running bounding box indexing
     // and running domain indexing;
     // first, only for the boundary nodes, rest follows later on
     kBB_.resize ( maxNumNodes,-1 );
-    for ( k=0; k<numBoundaryPoints; k++ )
+    for ( k=0; k<numBoundaryPoints_; k++ )
         kBB_[ i2kBoundingBox ( nodes_[k] ) ] = k;
-
 
     // Flood: Now, loop over the whole field, left to right, top to bottom, and check
     // the remaining nodes.
@@ -76,22 +85,22 @@ Grid::Grid ( const Teuchos::RCP<const DomainVirtual> & domain,
     IntTuple node;
     int l = 0;
 
-    Teuchos::Array<bool> leftSweep ( Nx_[0]+1 );
-    Teuchos::Array<bool> rightSweep ( Nx_[0]+1 );
-    Teuchos::Array<bool> isBoundary ( Nx_[0]+1 );
+    Teuchos::Array<bool> leftSweep ( numCells_[0]+1 );
+    Teuchos::Array<bool> rightSweep ( numCells_[0]+1 );
+    Teuchos::Array<bool> isBoundary ( numCells_[0]+1 );
 
     // TODO Replace the following with a proper filling algorithm
     // http://en.wikipedia.org/wiki/Flood_fill
-    for ( int j=0; j<Nx_[1]+1; j++ )
+    for ( int j=0; j<numCells_[1]+1; j++ )
     {
         // fill isBoundary for the left/right sweeps
-        for ( int i=0; i<Nx_[0]+1; i++ )
+        for ( int i=0; i<numCells_[0]+1; i++ )
             isBoundary[i] = kBB_[l++]>=0;
 
         // sweep the row from left to right to find candidates for interior nodes
         bool maybeInside = false; // the left endpoint is *never inside (at most boundary)
         bool isSwitched = false;
-        for ( int i=0; i<Nx_[0]+1; i++ )
+        for ( int i=0; i<numCells_[0]+1; i++ )
         {
             // check if we are crossing the border
             if ( isBoundary[i] )
@@ -111,7 +120,7 @@ Grid::Grid ( const Teuchos::RCP<const DomainVirtual> & domain,
         // sweep the row from right to left to find candidates for interior nodes
         maybeInside = false; // the left endpoint is *never inside (at most boundary)
         isSwitched = false;
-        for ( int i=Nx_[0]; i>=0; i-- )
+        for ( int i=numCells_[0]; i>=0; i-- )
         {
             // check if we are crossing the border
             if ( isBoundary[i] )
@@ -128,14 +137,14 @@ Grid::Grid ( const Teuchos::RCP<const DomainVirtual> & domain,
             rightSweep[i] = maybeInside;
         }
 
-        for ( int i=0; i<Nx_[0]+1; i++ )
+        for ( int i=0; i<numCells_[0]+1; i++ )
         {
             // TODO checking for the domain should not be necessary.
             // but when running line by line, you can't tell otherwise
             if ( leftSweep[i] && rightSweep[i] )
             {
                 node = Teuchos::tuple ( i,j );
-                if ( domain_->isInDomain ( *getX ( node ) ) )
+                if ( domain->isInDomain ( *getX ( node ) ) )
                 {
                     nodes_[k]     = node;
                     nodeTypes_[k] = GridVirtual::INTERIOR;
@@ -152,8 +161,75 @@ Grid::Grid ( const Teuchos::RCP<const DomainVirtual> & domain,
     nodeTypes_.resize ( numGridPoints_ );
 
     // update kBB with the interior nodes
-    for ( int k=numBoundaryPoints; k<numGridPoints_; k++ )
+    for ( int k=numBoundaryPoints_; k<numGridPoints_; k++ )
         kBB_[ i2kBoundingBox ( nodes_[k] ) ] = k;
+
+    updateGridDomainArea();
+
+    return;
+}
+// ============================================================================
+Grid::Grid ( const DoubleTuple         & h,
+             const UIntTuple           & numCells,
+             const Teuchos::Array<int> & kBB,
+             const Teuchos::Array<int> & boundaryNodes,
+             const double                scaling,
+             const DoubleTuple         & origin
+           ) :
+        h_ ( h ),
+        numCells_ ( numCells ),
+        kBB_ ( kBB ),
+        scaling_ ( scaling ),
+        gridDomainArea_ ( 0.0 ),
+        numGridPoints_ ( 0 ),
+        numBoundaryPoints_ ( boundaryNodes.length() ),
+        nodes_ ( Teuchos::Array<IntTuple>() ),
+        boundaryIndices_ ( boundaryNodes ),
+        nodeTypes_ ( Teuchos::Array<nodeType>() ),
+        origin_ ( origin )
+{
+    int numBoundaryBoxPoints = ( numCells_[0]+1 ) * ( numCells_[1]+1 );
+    TEUCHOS_ASSERT_EQUALITY ( kBB_.length(), numBoundaryBoxPoints );
+
+    // count the number of interior points
+    for ( int k=0; k<kBB_.length(); k++ )
+        if ( kBB_[k]>=0 )
+            numGridPoints_++;
+
+    // gather info about the i-j-location of the nodes
+    nodes_.resize ( numGridPoints_ );
+    unsigned int k = 0;
+    for ( int j=0; j<numCells_[1]+1; j++ )
+    {
+        for ( int i=0; i<numCells_[0]+1; i++ )
+        {
+            if ( kBB_[k]>=0 )
+                nodes_[kBB_[k]] = Teuchos::tuple ( i, j );
+            k++;
+        }
+    }
+
+    // regenerate information about the node type
+    direction firstDir = getDirection ( nodes_[boundaryIndices_[numBoundaryPoints_-1]],
+                                        nodes_[boundaryIndices_[0]] );
+    direction currentDir;
+    direction nextDir = firstDir;
+    nodeTypes_ = Teuchos::Array<nodeType> ( numGridPoints_, INTERIOR ); // default: interior
+    for ( int k=0; k<boundaryIndices_.length()-1; k++ )
+    {
+        currentDir = nextDir;
+        nextDir = getDirection ( nodes_[boundaryIndices_[k]],
+                                 nodes_[boundaryIndices_[k+1]] );
+        nodeTypes_[k] = getNodeType ( currentDir, nextDir );
+    }
+    // set the type of the last node
+    currentDir = nextDir;
+    nextDir = firstDir;
+    nodeTypes_[boundaryIndices_[numBoundaryPoints_-1]] = getNodeType ( currentDir, nextDir );
+
+    updateGridDomainArea();
+
+    return;
 }
 // ============================================================================
 Grid::Grid() :
@@ -167,6 +243,68 @@ Grid::Grid() :
 // ============================================================================
 Grid::~Grid()
 {
+}
+// ============================================================================
+void
+Grid::updateGridDomainArea()
+{
+    gridDomainArea_ = 0.0;
+    double h2 = h_[0]*h_[1];
+    for ( int k=0; k<nodes_.length(); k++ )
+    {
+        switch ( nodeTypes_[k] )
+        {
+        case BOUNDARY_BOTTOMLEFTCONVEX:
+        case BOUNDARY_TOPLEFTCONVEX:
+        case BOUNDARY_BOTTOMRIGHTCONVEX:
+        case BOUNDARY_TOPRIGHTCONVEX:
+            gridDomainArea_ += 0.25 * h2;
+            break;
+        case BOUNDARY_BOTTOM:
+        case BOUNDARY_TOP:
+        case BOUNDARY_LEFT:
+        case BOUNDARY_RIGHT:
+            gridDomainArea_ += 0.5 * h2;
+            break;
+        case BOUNDARY_BOTTOMLEFTCONCAVE:
+        case BOUNDARY_TOPLEFTCONCAVE:
+        case BOUNDARY_BOTTOMRIGHTCONCAVE:
+        case BOUNDARY_TOPRIGHTCONCAVE:
+            gridDomainArea_ += 0.25 * h2;
+            break;
+        case INTERIOR:
+            gridDomainArea_ += 1.0 * h2;
+            break;
+        default:
+            TEST_FOR_EXCEPTION ( true,
+                                 std::logic_error,
+                                 "Illegal node type \"" << nodeTypes_[k] << "\"." );
+        }
+    }
+}
+// ============================================================================
+Grid::direction
+Grid::getDirection ( const IntTuple & node0,
+                     const IntTuple & node1
+                   ) const
+{
+    IntTuple diff;
+    diff[0] = node1[0]-node0[0];
+    diff[1] = node1[1]-node0[1];
+
+    if ( diff[0]==0 && diff[1]==1 )
+        return UP;
+    else if ( diff[0]==0 && diff[1]==-1 )
+        return DOWN;
+    else if ( diff[0]==1 && diff[1]==0 )
+        return RIGHT;
+    else if ( diff[0]==-1 && diff[1]==0 )
+        return LEFT;
+
+    TEST_FOR_EXCEPTION ( true,
+                         std::logic_error,
+                         "The nodes " << node0 << " and " << node1
+                         << " do not sit next to each other." );
 }
 // ============================================================================
 double
@@ -340,13 +478,13 @@ Grid::getKAbove ( unsigned int kDomain ) const
 Teuchos::RCP<IntTuple>
 Grid::k2iBoundingBox ( const unsigned int k ) const
 {
-    return Teuchos::rcp ( new IntTuple ( Teuchos::tuple<int> ( k%Nx_[0],k/Nx_[0] ) ) );
+    return Teuchos::rcp ( new IntTuple ( Teuchos::tuple<int> ( k%numCells_[0],k/numCells_[0] ) ) );
 }
 // =============================================================================
 unsigned int
 Grid::i2kBoundingBox ( const IntTuple & i ) const
 {
-    return i[0] + i[1]* ( Nx_[0]+1 );
+    return i[0] + i[1]* ( numCells_[0]+1 );
 }
 // =============================================================================
 GridVirtual::nodeType
@@ -357,14 +495,11 @@ Grid::getNodeType ( unsigned int kDomain ) const
 // =============================================================================
 // TODO move to helpers, along with getX, getK, and so forth
 IntTuple
-Grid::findFirstBoundaryNode () const
+Grid::findFirstBoundaryNode ( const Teuchos::RCP<const DomainVirtual> & domain ) const
 {
-
-
-
-    for ( unsigned int j=0; j<Nx_[1]; j++ )
-        for ( unsigned int i=0; i<Nx_[0]; i++ )
-            if ( domain_->isInDomain ( *getX ( Teuchos::tuple ( ( int ) i, ( int ) j ) ) ) )
+    for ( unsigned int j=0; j<numCells_[1]; j++ )
+        for ( unsigned int i=0; i<numCells_[0]; i++ )
+            if ( domain->isInDomain ( *getX ( Teuchos::tuple ( ( int ) i, ( int ) j ) ) ) )
                 return Teuchos::tuple ( ( int ) i, ( int ) j );
 
     // if you get here no node was found
@@ -383,8 +518,9 @@ Grid::equal ( const IntTuple & a,
 }
 // ============================================================================
 bool
-Grid::boundaryStepper ( Teuchos::Array<IntTuple>  & boundaryNodes,
-                        Teuchos::Array<direction> & directions
+Grid::boundaryStepper ( Teuchos::Array<IntTuple>                & boundaryNodes,
+                        Teuchos::Array<direction>               & directions,
+                        const Teuchos::RCP<const DomainVirtual> & domain
                       ) const
 {
     // Try to step into direction, and return if not possible.
@@ -401,7 +537,7 @@ Grid::boundaryStepper ( Teuchos::Array<IntTuple>  & boundaryNodes,
         newDir = nextDirections[k];
         try
         {
-            nextNode = step ( node, newDir );
+            nextNode = step ( node, newDir, domain );
         }
         catch ( ... )
         {   // try next node
@@ -418,7 +554,7 @@ Grid::boundaryStepper ( Teuchos::Array<IntTuple>  & boundaryNodes,
         {   // append node to the list and restart
             boundaryNodes.push_back ( nextNode );
             directions.push_back ( newDir );
-            if ( boundaryStepper ( boundaryNodes, directions ) )
+            if ( boundaryStepper ( boundaryNodes, directions, domain ) )
                 return true; // unwind
         }
     }
@@ -451,8 +587,9 @@ Grid::getNextDirections ( const direction dir ) const
 }
 // ============================================================================
 IntTuple
-Grid::step ( const IntTuple  & node,
-             const direction   dir
+Grid::step ( const IntTuple                          & node,
+             const direction                           dir,
+             const Teuchos::RCP<const DomainVirtual> & domain
            ) const
 {
     IntTuple newNode ( node );
@@ -477,9 +614,9 @@ Grid::step ( const IntTuple  & node,
     }
 
     // check of the new node sits in the domain, and throw exception if not
-    if ( newNode[0]<0 || newNode[0]>Nx_[0]
-         || newNode[1]<0 || newNode[1]>Nx_[1]
-         ||  !domain_->isInDomain ( *getX ( newNode ) ) )
+    if ( newNode[0]<0 || newNode[0]>numCells_[0]
+         || newNode[1]<0 || newNode[1]>numCells_[1]
+         ||  !domain->isInDomain ( *getX ( newNode ) ) )
         throw std::exception();
 
     return newNode;
@@ -611,34 +748,16 @@ Grid::writeWithGrid ( const Epetra_MultiVector     & x,
                       const std::string            & filePath
                     ) const
 {
-    Teuchos::RCP<IoVirtual> fileIo = Teuchos::rcp ( IoFactory::createFileIo ( filePath ) );
+    Teuchos::RCP<VtiWriter> writer = Teuchos::rcp ( new VtiWriter ( filePath ) );
 
     // append grid parameters
     Teuchos::ParameterList extendedParams ( params );
-    extendedParams.get ( "scaling", scaling_ );
+    extendedParams.set ( "scaling", scaling_ );
 
-    // create a list with the x,y values of the points
-    Teuchos::Array<DoubleTuple> loc ( numGridPoints_ );
-    for ( int k; k<numGridPoints_; k++ )
-        loc[k] = *getX ( nodes_[k] );
-
-    fileIo->write ( x, loc, extendedParams );
-}
-// =============================================================================
-void
-Grid::writeWithBoundingBoxGrid ( const Epetra_MultiVector     & x,
-                                 const Teuchos::ParameterList & params,
-                                 const std::string            & filePath
-                               ) const
-{
-    Teuchos::RCP<IoVirtual> fileIo = Teuchos::rcp ( IoFactory::createFileIo ( filePath ) );
-
-    // append grid parameters
-    Teuchos::ParameterList extendedParams ( params );
-    extendedParams.get ( "scaling", scaling_ );
-
-    double dummyValue = 0.0;
-    fileIo->write ( x, Nx_, h_, kBB_, extendedParams, dummyValue );
+    writer->addParameterList ( extendedParams );
+    writer->addFieldData ( boundaryIndices_, "boundaryNodes" );
+    writer->setImageData ( x, numCells_, h_, kBB_ );
+    writer->write();
 }
 // =============================================================================
 void
@@ -647,25 +766,44 @@ Grid::writeWithGrid ( const DoubleMultiVector      & x,
                       const std::string            & filePath
                     ) const
 {
-    TEST_FOR_EXCEPTION ( true,
-                         std::logic_error,
-                         "Not yet implemented." );
-}
-// =============================================================================
-void
-Grid::writeWithGrid ( const ComplexMultiVector     & x,
-                      const Teuchos::ParameterList & params,
-                      const std::string            & filePath
-                    ) const
-{
-    Teuchos::RCP<IoVirtual> fileIo = Teuchos::rcp ( IoFactory::createFileIo ( filePath ) );
+    Teuchos::RCP<VtiWriter> writer = Teuchos::rcp ( new VtiWriter ( filePath ) );
 
     // append grid parameters
     Teuchos::ParameterList extendedParams ( params );
     extendedParams.get ( "scaling", scaling_ );
 
-    double dummyValue = 0.0;
-    fileIo->write ( x, Nx_, h_, kBB_, extendedParams, dummyValue );
+
+    writer->addParameterList ( extendedParams );
+    writer->addFieldData ( boundaryIndices_, "boundaryNodes" );
+    writer->setImageData ( x, numCells_, h_, kBB_ );
+    writer->write();
+}
+// =============================================================================
+void
+Grid::writeWithGrid ( const ComplexMultiVector     & z,
+                      const Teuchos::ParameterList & params,
+                      const std::string            & filePath
+                    ) const
+{
+    Teuchos::RCP<VtkWriter> writer = Teuchos::rcp ( new VtkWriter ( filePath ) );
+
+    // append grid parameters
+    Teuchos::ParameterList extendedParams ( params );
+    extendedParams.get ( "scaling", scaling_ );
+
+    writer->addParameterList ( extendedParams );
+    writer->addFieldData ( boundaryIndices_, "boundary indices" );
+
+    if ( z.getNumVectors() == 1 )
+    {
+        Teuchos::Array<std::string> zName ( 1, "psi" );
+        writer->setImageData ( z, numCells_, h_, kBB_, zName );
+    }
+    else
+    {
+        writer->setImageData ( z, numCells_, h_, kBB_ );
+    }
+    writer->write();
 }
 // =============================================================================
 GridVirtual::nodeType

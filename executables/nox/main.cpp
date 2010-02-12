@@ -15,11 +15,12 @@
 
 #include "glNoxHelpers.h"
 
+#include "VtiWriter.h"
+#include "VtkWriter.h"
 
 // =============================================================================
 int main ( int argc, char *argv[] )
-{
-
+{ 
     // Initialize MPI
 #ifdef HAVE_MPI
     MPI_Init ( &argc,&argv );
@@ -137,7 +138,6 @@ int main ( int argc, char *argv[] )
             std::cerr << e.what() << std::endl;
             return 1;
         }
-
     }
     else
     {
@@ -147,7 +147,8 @@ int main ( int argc, char *argv[] )
         glNoxHelpers::createGlSystem ( Comm, eComm, Nx, scaling, H0, problemParameters, glSystem );
     }
 
-    Teuchos::RCP<Teuchos::ParameterList> nlParamsPtr = Teuchos::rcpFromRef ( paramList->sublist ( "NOX",true ) );
+    Teuchos::RCP<Teuchos::ParameterList> nlParamsPtr =
+        Teuchos::rcpFromRef ( paramList->sublist ( "NOX",true ) );
 
     if ( plotEachNewtonStep )
     {
@@ -172,7 +173,21 @@ int main ( int argc, char *argv[] )
         glNoxHelpers::createSolver ( grpPtr, statusTest, nlParamsPtr );
 
     // solve the system
-    NOX::StatusTest::StatusType solvStatus = solver->solve();
+    try
+    {
+        NOX::StatusTest::StatusType solvStatus = solver->solve();
+    }
+    catch ( std::exception & e )
+    {
+        std::cerr << e.what() << std::endl;
+        return 1;
+    }
+    catch ( int e )
+    {
+        std::cerr << "Solver returned error code " << e << "." << std::endl;
+        return 1;
+    }
+
 
     // compute the condition number
     if ( computeConditionNumbers )

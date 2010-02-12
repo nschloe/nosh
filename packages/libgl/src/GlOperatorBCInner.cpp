@@ -62,7 +62,6 @@ GlOperatorBCInner::getEntry ( const int k ) const
     {
     case GridVirtual::INTERIOR:
         // TODO Gets the local index. ==> Only works on one core.
-        psiK      = psiView[ k ];
         psiKLeft  = psiView[ grid_->getKLeft ( k ) ];
         psiKRight = psiView[ grid_->getKRight ( k ) ];
         psiKBelow = psiView[ grid_->getKBelow ( k ) ];
@@ -88,6 +87,7 @@ GlOperatorBCInner::getEntry ( const int k ) const
         break;
 
     case GridVirtual::BOUNDARY_BOTTOMLEFTCONVEX:
+    case GridVirtual::BOUNDARY_BOTTOMLEFTCONCAVE:
         // -------------------------------------------------------------------
         psiKRight = psiView[ grid_->getKRight ( k ) ];
         psiKAbove = psiView[ grid_->getKAbove ( k ) ];
@@ -106,6 +106,7 @@ GlOperatorBCInner::getEntry ( const int k ) const
         break;
 
     case GridVirtual::BOUNDARY_BOTTOMRIGHTCONVEX:
+    case GridVirtual::BOUNDARY_BOTTOMRIGHTCONCAVE:
         // -----------------------------------------------------------------------
         psiKLeft  = psiView[ grid_->getKLeft ( k ) ];
         psiKAbove = psiView[ grid_->getKAbove ( k ) ];
@@ -123,6 +124,7 @@ GlOperatorBCInner::getEntry ( const int k ) const
         break;
 
     case GridVirtual::BOUNDARY_TOPRIGHTCONVEX:
+    case GridVirtual::BOUNDARY_TOPRIGHTCONCAVE:
         // -----------------------------------------------------------------------
         psiKLeft  = psiView[ grid_->getKLeft ( k ) ];
         psiKBelow = psiView[ grid_->getKBelow ( k ) ];
@@ -142,6 +144,7 @@ GlOperatorBCInner::getEntry ( const int k ) const
         break;
 
     case GridVirtual::BOUNDARY_TOPLEFTCONVEX:
+    case GridVirtual::BOUNDARY_TOPLEFTCONCAVE:
         // -----------------------------------------------------------------------
         psiKRight = psiView[ grid_->getKRight ( k ) ];
         psiKBelow = psiView[ grid_->getKBelow ( k ) ];
@@ -218,7 +221,7 @@ GlOperatorBCInner::getEntry ( const int k ) const
     default:
         TEST_FOR_EXCEPTION ( true,
                              std::logic_error,
-                             "Illegal not type \"" << nt << "\"." );
+                             "Illegal node type \"" << nt << "\"." );
     }
 
     // return the result
@@ -290,6 +293,7 @@ GlOperatorBCInner::getJacobianRow ( const int                        k,
 
         break;
     case GridVirtual::BOUNDARY_BOTTOMLEFTCONVEX:
+    case GridVirtual::BOUNDARY_BOTTOMLEFTCONCAVE:
         // -------------------------------------------------------------------
         kRight = grid_->getKRight ( k );
         kAbove = grid_->getKAbove ( k );
@@ -318,6 +322,7 @@ GlOperatorBCInner::getJacobianRow ( const int                        k,
         break;
 
     case GridVirtual::BOUNDARY_BOTTOMRIGHTCONVEX:
+    case GridVirtual::BOUNDARY_BOTTOMRIGHTCONCAVE:
         // -----------------------------------------------------------------------
         kLeft  = grid_->getKLeft ( k );
         kAbove = grid_->getKAbove ( k );
@@ -347,6 +352,7 @@ GlOperatorBCInner::getJacobianRow ( const int                        k,
         break;
 
     case GridVirtual::BOUNDARY_TOPRIGHTCONVEX:
+    case GridVirtual::BOUNDARY_TOPRIGHTCONCAVE:
         // -----------------------------------------------------------------------
         kLeft  = grid_->getKLeft ( k );
         kBelow = grid_->getKBelow ( k );
@@ -375,6 +381,7 @@ GlOperatorBCInner::getJacobianRow ( const int                        k,
         break;
 
     case GridVirtual::BOUNDARY_TOPLEFTCONVEX:
+    case GridVirtual::BOUNDARY_TOPLEFTCONCAVE:
         // -----------------------------------------------------------------------
         kRight = grid_->getKRight ( k );
         kBelow = grid_->getKBelow ( k );
@@ -498,7 +505,7 @@ GlOperatorBCInner::getJacobianRow ( const int                        k,
     default:
         TEST_FOR_EXCEPTION ( true,
                              std::logic_error,
-                             "Illegal note type \"" << nt << "\"." );
+                             "Illegal node type \"" << nt << "\"." );
     }
 
 }

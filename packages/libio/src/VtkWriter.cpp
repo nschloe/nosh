@@ -1,6 +1,6 @@
 /*
     <one line to give the program's name and a brief idea of what it does.>
-    Copyright (C) <year>  <name of author>
+    Copyright (C) 2010 Nico Schl\"omer
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,33 +17,32 @@
 
 */
 
-#include "GridUniform.h"
+#include "VtkWriter.h"
+
+#include <vtkStructuredPointsWriter.h>
 
 // =============================================================================
-GridUniform::GridUniform ( const Teuchos::RCP<const DomainVirtual> & domain,
-                           const double                              h,
-                           const double                              scaling
-                         ) :
-        Grid ( domain, Teuchos::tuple ( h,h ), scaling ),
-        h_ ( h )
+// Constructor
+VtkWriter::VtkWriter ( const std::string & filePath ) :
+        AbstractImageWriter ( filePath )
 {
 }
 // =============================================================================
-GridUniform::GridUniform ( const double                h,
-                           const UIntTuple           & numCells,
-                           const Teuchos::Array<int> & kBB,
-                           const Teuchos::Array<int> & boundaryNodes,
-                           const double                scaling,
-                           const DoubleTuple         & origin
-                         ) :
-        Grid ( Teuchos::tuple ( h,h ), numCells, kBB, boundaryNodes, scaling, origin ),
-        h_ ( h )
+// Destructor
+VtkWriter::~VtkWriter()
 {
 }
 // =============================================================================
-double
-GridUniform::getUniformH() const
+void
+VtkWriter::write () const
 {
-    return h_;
+    // write the file
+    vtkSmartPointer<vtkStructuredPointsWriter> writer =
+        vtkSmartPointer<vtkStructuredPointsWriter>::New();
+    writer->SetFileName ( filePath_.c_str() );
+    writer->SetInput ( imageData_ );
+    writer->Write();
+
+    return;
 }
 // =============================================================================

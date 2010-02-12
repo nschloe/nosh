@@ -12,6 +12,8 @@ ENDIF(MPI_COMPILED)
 FIND_PACKAGE( LOCA      REQUIRED )
 FIND_PACKAGE( NOXEpetra REQUIRED )
 
+FIND_PACKAGE( VTK REQUIRED )
+INCLUDE_DIRECTORIES( ${VTK_INCLUDE_DIRS} )
 
 INCLUDE_DIRECTORIES ( ${Trilinos_INCLUDE_DIR} )
 
@@ -38,7 +40,7 @@ INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIRS} )
 SET(Boost_USE_STATIC_LIBS   ON)
 SET(Boost_USE_MULTITHREADED ON)
 SET( LINK_LIBRARIES ${LINK_LIBRARIES}
-	                    ${Boost_LIBRARIES} )
+                            ${Boost_LIBRARIES} )
 # ------------------------------------------------------------------------------
 FIND_LIBRARY( GFORTRAN ${GFORTRAN_LIBNAME}
               HINTS ${GFORTRAN_DIR}    )
@@ -47,9 +49,9 @@ SET( LINK_LIBRARIES ${LINK_LIBRARIES}
 # ==============================================================================
 # Set executable linking information.
 TARGET_LINK_LIBRARIES ( gl-nox.out
-			${internal_LIBS}
-			LOCA
-			NOXEpetra
-			${LINK_LIBRARIES}
+                        ${internal_LIBS}
+                        LOCA
+                        NOXEpetra
+                        ${LINK_LIBRARIES}
                       )
 # ==============================================================================

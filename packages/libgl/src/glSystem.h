@@ -49,7 +49,7 @@ public:
     //! Constructor with initial guess.
     GlSystem ( GinzburgLandau::GinzburgLandau &gl,
                const Teuchos::RCP<const Epetra_Comm> eComm,
-               const Teuchos::RCP<ComplexVector> psi,
+               const Teuchos::RCP<const ComplexVector> psi,
                const std::string outputDir = "data",
                const std::string outputDataFileName = "continuationData.dat",
                const std::string outputFileFormat = "VTK",

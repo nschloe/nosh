@@ -23,6 +23,7 @@
 #include "Grid.h"
 #include "DomainSquare.h"
 #include "DomainCircle.h"
+#include "DomainPolygon.h"
 
 // =============================================================================
 // Helper function to compute a single norm for a vector
@@ -86,9 +87,9 @@ int main ( int argc, char *argv[] )
 //     double edgeLength = 4.0;
 //     Teuchos::RCP<DomainVirtual> domain = Teuchos::rcp( new DomainSquare(edgeLength) );
 
-    double aa = 4.0;
-    double bb = 2.0;
-    Teuchos::RCP<DomainVirtual> domain = Teuchos::rcp( new DomainRectangle(aa,bb) );
+//     double aa = 4.0;
+//     double bb = 2.0;
+//     Teuchos::RCP<DomainVirtual> domain = Teuchos::rcp( new DomainRectangle(aa,bb) );
 
 //     double radius = 3.0;
 //     Teuchos::RCP<DomainVirtual> domain = Teuchos::rcp( new DomainCircle(radius) );
@@ -96,12 +97,18 @@ int main ( int argc, char *argv[] )
 //     double aa = 3.0;
 //     double bb = 2.0;
 //     Teuchos::RCP<DomainVirtual> domain = Teuchos::rcp( new DomainEllipse(aa,bb) );
+
+    Teuchos::Array<DoubleTuple> P( Teuchos::tuple( Teuchos::tuple(0.0,0.0),
+                                                   Teuchos::tuple(4.0,0.0),
+                                                   Teuchos::tuple(2.0,2.0),
+                                                   Teuchos::tuple(4.0,4.0),
+                                                   Teuchos::tuple(0.0,4.0) ) );
+    Teuchos::RCP<DomainVirtual> domain = Teuchos::rcp( new DomainPolygon(P) );
     
     // create a grid from the domain
-    double hh = 0.05;
+    double hh = 0.1;
     Teuchos::Tuple<double,2> h = Teuchos::tuple( hh, hh );
-    double scaling = 1.0;
-    Grid grid( domain, h, scaling );
+    Grid grid( domain, h );
 
     // create Map for the domain
     int N = grid.getNumGridPoints();
@@ -248,8 +255,7 @@ int main ( int argc, char *argv[] )
     // plot the result on the grid
     Teuchos::ParameterList params;
     std::string filePath = "test.vtk";
-    grid.writeWithBoundingBoxGrid ( *xEpetra, params, filePath );
-
+    grid.writeWithGrid ( *xEpetra, params, filePath );
 
 #ifdef HAVE_MPI
     MPI_Finalize();

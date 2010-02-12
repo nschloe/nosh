@@ -14,7 +14,9 @@
 
 #include <boost/filesystem.hpp>
 
+typedef Tpetra::Vector<double,Thyra::Ordinal> DoubleVector;
 typedef Tpetra::MultiVector<double,Thyra::Ordinal> DoubleMultiVector;
+typedef Tpetra::Vector<std::complex<double>,Thyra::Ordinal> ComplexVector;
 typedef Tpetra::MultiVector<std::complex<double>,Thyra::Ordinal> ComplexMultiVector;
 
 class IoVirtual
