@@ -86,25 +86,25 @@ public:
     getXLeft ( unsigned int k ) const; //!< Returns the value of \f$x\f$ left of point i.
 
     Teuchos::RCP<DoubleTuple>
-    getXLeft ( const IntTuple & i ) const;
+    getXLeft ( const UIntTuple & i ) const;
 
     virtual Teuchos::RCP<DoubleTuple>
     getXRight ( unsigned int k ) const; //!< Returns the value of \f$x\f$ right of point i.
 
     Teuchos::RCP<DoubleTuple>
-    getXRight ( const IntTuple & i ) const;
+    getXRight ( const UIntTuple & i ) const;
 
     virtual Teuchos::RCP<DoubleTuple>
     getXBelow ( unsigned int k ) const ; //!< Returns the value of \f$x\f$ below point i.
 
     Teuchos::RCP<DoubleTuple>
-    getXBelow ( const IntTuple & i ) const;
+    getXBelow ( const UIntTuple & i ) const;
 
     virtual Teuchos::RCP<DoubleTuple>
     getXAbove ( unsigned int k ) const; //!< Returns the value of \f$x\f$ above point i.
 
     Teuchos::RCP<DoubleTuple>
-    getXAbove ( const IntTuple & i ) const;
+    getXAbove ( const UIntTuple & i ) const;
 
     virtual unsigned int
     getKLeft ( unsigned int k ) const; //!< Returns the running index \c k of the node left of \c i.
@@ -161,12 +161,12 @@ private:
     DoubleTuple h_;
     UIntTuple numCells_;
     Teuchos::Array<int> kBB_;
-    Teuchos::Array<int> boundaryIndices_;
     double scaling_; //! scaling factor
     double gridDomainArea_;
     unsigned int numGridPoints_;
     unsigned int numBoundaryPoints_;
-    Teuchos::Array<IntTuple> nodes_;
+    Teuchos::Array<UIntTuple> nodes_;
+    Teuchos::Array<int> boundaryIndices_;
     Teuchos::Array<nodeType> nodeTypes_;
     DoubleTuple origin_;
 
@@ -188,28 +188,28 @@ private:
                 ) const;
 
     Grid::direction
-    getDirection ( const IntTuple & node0,
-                   const IntTuple & node1
+    getDirection ( const UIntTuple & node0,
+                   const UIntTuple & node1
                  ) const;
 
     void
     updateGridDomainArea();
 
     Teuchos::RCP<DoubleTuple>
-    getX ( const IntTuple & i ) const;
+    getX ( const UIntTuple & i ) const;
 
     bool
-    boundaryStepper ( Teuchos::Array<IntTuple>                & boundaryNodes,
+    boundaryStepper ( Teuchos::Array<UIntTuple>               & boundaryNodes,
                       Teuchos::Array<direction>               & directions,
                       const Teuchos::RCP<const DomainVirtual> & domain
                     ) const;
 
     bool
-    equal ( const IntTuple & a,
-            const IntTuple & b
+    equal ( const UIntTuple & a,
+            const UIntTuple & b
           ) const;
 
-    IntTuple
+    UIntTuple
     findFirstBoundaryNode ( const Teuchos::RCP<const DomainVirtual> & domain ) const;
 
     Grid::direction
@@ -220,23 +220,23 @@ private:
     Teuchos::Tuple<Grid::direction,3>
     getNextDirections ( const direction dir ) const;
 
-    IntTuple
-    step ( const IntTuple                          & node,
+    UIntTuple
+    step ( const UIntTuple                         & node,
            const direction                           dir,
            const Teuchos::RCP<const DomainVirtual> & domain
          ) const;
 
     unsigned int
-    i2kBoundingBox ( const IntTuple & i ) const;
+    i2kBoundingBox ( const UIntTuple & i ) const;
 
-    Teuchos::RCP<IntTuple>
+    Teuchos::RCP<UIntTuple>
     k2iBoundingBox ( const unsigned int k ) const;
 
     unsigned int
     kBoundingBox2kDomain ( const unsigned int k ) const;
 
     void
-    pruneInitialTentacle ( Teuchos::Array<IntTuple>  & nodes,
+    pruneInitialTentacle ( Teuchos::Array<UIntTuple> & nodes,
                            Teuchos::Array<direction> & directions
                          ) const;
 };

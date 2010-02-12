@@ -23,7 +23,7 @@ Grid::Grid ( const Teuchos::RCP<const DomainVirtual> & domain,
         gridDomainArea_ ( 0.0 ),
         numGridPoints_ ( 0 ),
         numBoundaryPoints_ ( 0 ),
-        nodes_ ( Teuchos::Array<IntTuple>() ),
+        nodes_ ( Teuchos::Array<UIntTuple>() ),
         boundaryIndices_ ( Teuchos::Array<int>() ),
         nodeTypes_ ( Teuchos::Array<nodeType>() ),
         origin_ ( Teuchos::tuple ( 0.0, 0.0 ) )
@@ -41,7 +41,7 @@ Grid::Grid ( const Teuchos::RCP<const DomainVirtual> & domain,
 
     // find a boundary node by scanning through the bounding box, left to right,
     // bottom to top
-    IntTuple firstBoundaryNode = findFirstBoundaryNode ( domain );
+    UIntTuple firstBoundaryNode = findFirstBoundaryNode ( domain );
 
     Teuchos::Array<direction> directions;
     directions.push_back ( RIGHT ); // arbitrarily chosen for bootstrapping
@@ -56,32 +56,31 @@ Grid::Grid ( const Teuchos::RCP<const DomainVirtual> & domain,
     numBoundaryPoints_ = nodes_.length();
 
     boundaryIndices_.resize ( numBoundaryPoints_ );
-    for ( int k=0; k<numBoundaryPoints_; k++ )
+    for ( unsigned int k=0; k<numBoundaryPoints_; k++ )
         boundaryIndices_[k] = k;
 
     // get the node types out of the directions
-    for ( int k=0; k<numBoundaryPoints_-1; k++ )
+    for ( unsigned int k=0; k<numBoundaryPoints_-1; k++ )
         nodeTypes_.push_back ( getNodeType ( directions[k], directions[k+1] ) );
 
     // take care of the last element
-    int k = numBoundaryPoints_-1;
-    nodeTypes_.push_back ( getNodeType ( directions[k], directions[0] ) );
+    nodeTypes_.push_back ( getNodeType ( directions[numBoundaryPoints_-1], directions[0] ) );
 
     // create connection between running bounding box indexing
     // and running domain indexing;
     // first, only for the boundary nodes, rest follows later on
     kBB_.resize ( maxNumNodes,-1 );
-    for ( k=0; k<numBoundaryPoints_; k++ )
+    for ( unsigned int k=0; k<numBoundaryPoints_; k++ )
         kBB_[ i2kBoundingBox ( nodes_[k] ) ] = k;
 
     // Flood: Now, loop over the whole field, left to right, top to bottom, and check
     // the remaining nodes.
     // Watch out for tentacles:
     // Only admit those nodes which actually sit inside the boundary points.
-    k = nodes_.length(); // number of boundary nodes
+    unsigned int k = nodes_.length(); // number of boundary nodes
     nodes_.resize ( maxNumNodes );
     nodeTypes_.resize ( maxNumNodes );
-    IntTuple node;
+    UIntTuple node;
     int l = 0;
 
     Teuchos::Array<bool> leftSweep ( numCells_[0]+1 );
@@ -90,16 +89,16 @@ Grid::Grid ( const Teuchos::RCP<const DomainVirtual> & domain,
 
     // TODO Replace the following with a proper filling algorithm
     // http://en.wikipedia.org/wiki/Flood_fill
-    for ( int j=0; j<numCells_[1]+1; j++ )
+    for ( unsigned int j=0; j<numCells_[1]+1; j++ )
     {
         // fill isBoundary for the left/right sweeps
-        for ( int i=0; i<numCells_[0]+1; i++ )
+        for ( unsigned int i=0; i<numCells_[0]+1; i++ )
             isBoundary[i] = kBB_[l++]>=0;
 
         // sweep the row from left to right to find candidates for interior nodes
         bool maybeInside = false; // the left endpoint is *never inside (at most boundary)
         bool isSwitched = false;
-        for ( int i=0; i<numCells_[0]+1; i++ )
+        for ( unsigned int i=0; i<numCells_[0]+1; i++ )
         {
             // check if we are crossing the border
             if ( isBoundary[i] )
@@ -119,7 +118,7 @@ Grid::Grid ( const Teuchos::RCP<const DomainVirtual> & domain,
         // sweep the row from right to left to find candidates for interior nodes
         maybeInside = false; // the left endpoint is *never inside (at most boundary)
         isSwitched = false;
-        for ( int i=numCells_[0]; i>=0; i-- )
+        for ( unsigned int i=numCells_[0]; i>=0; i-- )
         {
             // check if we are crossing the border
             if ( isBoundary[i] )
@@ -136,7 +135,7 @@ Grid::Grid ( const Teuchos::RCP<const DomainVirtual> & domain,
             rightSweep[i] = maybeInside;
         }
 
-        for ( int i=0; i<numCells_[0]+1; i++ )
+        for ( unsigned int i=0; i<numCells_[0]+1; i++ )
         {
             // TODO checking for the domain should not be necessary.
             // but when running line by line, you can't tell otherwise
@@ -160,7 +159,7 @@ Grid::Grid ( const Teuchos::RCP<const DomainVirtual> & domain,
     nodeTypes_.resize ( numGridPoints_ );
 
     // update kBB with the interior nodes
-    for ( int k=numBoundaryPoints_; k<numGridPoints_; k++ )
+    for ( unsigned int k=numBoundaryPoints_; k<numGridPoints_; k++ )
         kBB_[ i2kBoundingBox ( nodes_[k] ) ] = k;
 
     updateGridDomainArea();
@@ -182,7 +181,7 @@ Grid::Grid ( const DoubleTuple         & h,
         gridDomainArea_ ( 0.0 ),
         numGridPoints_ ( 0 ),
         numBoundaryPoints_ ( boundaryNodes.length() ),
-        nodes_ ( Teuchos::Array<IntTuple>() ),
+        nodes_ ( Teuchos::Array<UIntTuple>() ),
         boundaryIndices_ ( boundaryNodes ),
         nodeTypes_ ( Teuchos::Array<nodeType>() ),
         origin_ ( origin )
@@ -198,9 +197,9 @@ Grid::Grid ( const DoubleTuple         & h,
     // gather info about the i-j-location of the nodes
     nodes_.resize ( numGridPoints_ );
     unsigned int k = 0;
-    for ( int j=0; j<numCells_[1]+1; j++ )
+    for ( unsigned int j=0; j<numCells_[1]+1; j++ )
     {
-        for ( int i=0; i<numCells_[0]+1; i++ )
+        for ( unsigned int i=0; i<numCells_[0]+1; i++ )
         {
             if ( kBB_[k]>=0 )
                 nodes_[kBB_[k]] = Teuchos::tuple ( i, j );
@@ -283,22 +282,24 @@ Grid::updateGridDomainArea()
 }
 // ============================================================================
 Grid::direction
-Grid::getDirection ( const IntTuple & node0,
-                     const IntTuple & node1
+Grid::getDirection ( const UIntTuple & node0,
+                     const UIntTuple & node1
                    ) const
 {
-    IntTuple diff;
-    diff[0] = node1[0]-node0[0];
-    diff[1] = node1[1]-node0[1];
-
-    if ( diff[0]==0 && diff[1]==1 )
-        return UP;
-    else if ( diff[0]==0 && diff[1]==-1 )
-        return DOWN;
-    else if ( diff[0]==1 && diff[1]==0 )
-        return RIGHT;
-    else if ( diff[0]==-1 && diff[1]==0 )
-        return LEFT;
+    if ( node0[0] == node1[0] )
+    {
+        if ( node0[1]+1 == node1[1] )
+            return UP;
+        else if ( node0[1] == node1[1]+1 )
+            return DOWN;
+    }
+    else if ( node0[1] == node1[1] )
+    {
+        if ( node0[0]+1 == node1[0] )
+            return RIGHT;
+        else if ( node0[0] == node1[0]+1 )
+            return LEFT;
+    }
 
     TEST_FOR_EXCEPTION ( true,
                          std::logic_error,
@@ -354,7 +355,7 @@ Grid::getGridDomainArea() const
 }
 // =============================================================================
 Teuchos::RCP<DoubleTuple>
-Grid::getX ( const IntTuple & i ) const
+Grid::getX ( const UIntTuple & i ) const
 {
     Teuchos::RCP<DoubleTuple> x = Teuchos::rcp ( new DoubleTuple() );
     ( *x ) [0] = i[0] * h_[0] + origin_[0];
@@ -369,7 +370,7 @@ Grid::getXLeft ( const unsigned int k ) const
 }
 // =============================================================================
 Teuchos::RCP<DoubleTuple>
-Grid::getXLeft ( const IntTuple & i ) const
+Grid::getXLeft ( const UIntTuple & i ) const
 {
     Teuchos::RCP<DoubleTuple> x ( getX ( i ) );
     ( *x ) [0] -= 0.5 * h_[0];
@@ -383,7 +384,7 @@ Grid::getXRight ( const unsigned int k ) const
 }
 // =============================================================================
 Teuchos::RCP<DoubleTuple>
-Grid::getXRight ( const IntTuple & i ) const
+Grid::getXRight ( const UIntTuple & i ) const
 {
     Teuchos::RCP<DoubleTuple> x ( getX ( i ) );
     ( *x ) [0] += 0.5 * h_[0];
@@ -397,7 +398,7 @@ Grid::getXBelow ( const unsigned int k ) const
 }
 // =============================================================================
 Teuchos::RCP<DoubleTuple>
-Grid::getXBelow ( const IntTuple & i ) const
+Grid::getXBelow ( const UIntTuple & i ) const
 {
     Teuchos::RCP<DoubleTuple> x ( getX ( i ) );
     ( *x ) [1] -= 0.5 * h_[1];
@@ -411,7 +412,7 @@ Grid::getXAbove ( const unsigned int k ) const
 }
 // =============================================================================
 Teuchos::RCP<DoubleTuple>
-Grid::getXAbove ( const IntTuple & i ) const
+Grid::getXAbove ( const UIntTuple & i ) const
 {
     Teuchos::RCP<DoubleTuple> x ( getX ( i ) );
     ( *x ) [1] += 0.5 * h_[1];
@@ -422,7 +423,7 @@ unsigned int
 Grid::getKLeft ( unsigned int kDomain ) const
 {
     // get the left i
-    IntTuple i = nodes_[kDomain];
+    UIntTuple i = nodes_[kDomain];
     i[0]--;
 
     // get the running index of the bounding box, and translate it
@@ -436,7 +437,7 @@ unsigned int
 Grid::getKRight ( unsigned int kDomain ) const
 {
     // get the left i
-    IntTuple i = nodes_[kDomain];
+    UIntTuple i = nodes_[kDomain];
     i[0]++;
 
     // get the running index of the bounding box, and translate it
@@ -450,7 +451,7 @@ unsigned int
 Grid::getKBelow ( unsigned int kDomain ) const
 {
     // get the left i
-    IntTuple i = nodes_[kDomain];
+    UIntTuple i = nodes_[kDomain];
     i[1]--;
 
     // get the running index of the bounding box, and translate it
@@ -464,7 +465,7 @@ unsigned int
 Grid::getKAbove ( unsigned int kDomain ) const
 {
     // get the left i
-    IntTuple i = nodes_[kDomain];
+    UIntTuple i = nodes_[kDomain];
     i[1]++;
 
     // get the running index of the bounding box, and translate it
@@ -474,14 +475,14 @@ Grid::getKAbove ( unsigned int kDomain ) const
     return k;
 }
 // =============================================================================
-Teuchos::RCP<IntTuple>
+Teuchos::RCP<UIntTuple>
 Grid::k2iBoundingBox ( const unsigned int k ) const
 {
-    return Teuchos::rcp ( new IntTuple ( Teuchos::tuple<int> ( k%numCells_[0],k/numCells_[0] ) ) );
+    return Teuchos::rcp ( new UIntTuple ( Teuchos::tuple<unsigned int> ( k%numCells_[0],k/numCells_[0] ) ) );
 }
 // =============================================================================
 unsigned int
-Grid::i2kBoundingBox ( const IntTuple & i ) const
+Grid::i2kBoundingBox ( const UIntTuple & i ) const
 {
     return i[0] + i[1]* ( numCells_[0]+1 );
 }
@@ -493,13 +494,13 @@ Grid::getNodeType ( unsigned int kDomain ) const
 }
 // =============================================================================
 // TODO move to helpers, along with getX, getK, and so forth
-IntTuple
+UIntTuple
 Grid::findFirstBoundaryNode ( const Teuchos::RCP<const DomainVirtual> & domain ) const
 {
     for ( unsigned int j=0; j<numCells_[1]; j++ )
         for ( unsigned int i=0; i<numCells_[0]; i++ )
-            if ( domain->isInDomain ( *getX ( Teuchos::tuple ( ( int ) i, ( int ) j ) ) ) )
-                return Teuchos::tuple ( ( int ) i, ( int ) j );
+            if ( domain->isInDomain ( *getX ( Teuchos::tuple ( i,j ) ) ) )
+                return Teuchos::tuple ( i,j );
 
     // if you get here no node was found
     TEST_FOR_EXCEPTION ( true,
@@ -509,23 +510,23 @@ Grid::findFirstBoundaryNode ( const Teuchos::RCP<const DomainVirtual> & domain )
 }
 // ============================================================================
 bool
-Grid::equal ( const IntTuple & a,
-              const IntTuple & b
+Grid::equal ( const UIntTuple & a,
+              const UIntTuple & b
             ) const
 {
     return a[0]==b[0] && a[1]==b[1];
 }
 // ============================================================================
 bool
-Grid::boundaryStepper ( Teuchos::Array<IntTuple>                & boundaryNodes,
+Grid::boundaryStepper ( Teuchos::Array<UIntTuple>               & boundaryNodes,
                         Teuchos::Array<direction>               & directions,
                         const Teuchos::RCP<const DomainVirtual> & domain
                       ) const
 {
     // Try to step into direction, and return if not possible.
-    IntTuple nextNode;
+    UIntTuple nextNode;
 
-    IntTuple  node = boundaryNodes.back();
+    UIntTuple  node = boundaryNodes.back();
     direction prevDir = directions.back();
 
     direction newDir;
@@ -585,13 +586,13 @@ Grid::getNextDirections ( const direction dir ) const
     }
 }
 // ============================================================================
-IntTuple
-Grid::step ( const IntTuple                          & node,
+UIntTuple
+Grid::step ( const UIntTuple                         & node,
              const direction                           dir,
              const Teuchos::RCP<const DomainVirtual> & domain
            ) const
 {
-    IntTuple newNode ( node );
+    UIntTuple newNode ( node );
     switch ( dir )
     {
     case LEFT:
@@ -825,7 +826,7 @@ Grid::boundaryIndex2globalIndex ( unsigned int l ) const
 }
 // =============================================================================
 void
-Grid::pruneInitialTentacle ( Teuchos::Array<IntTuple>  & nodes,
+Grid::pruneInitialTentacle ( Teuchos::Array<UIntTuple> & nodes,
                              Teuchos::Array<direction> & directions
                            ) const
 {
