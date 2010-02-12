@@ -7,11 +7,7 @@
 
 #include "GridReader.h"
 
-#include "ioVirtual.h"
-#include "ioFactory.h"
-
-#include "VtiReader.h"
-#include "VtkReader.h"
+#include "ReaderFactory.h"
 
 namespace GridReader {
 // =============================================================================
@@ -45,7 +41,8 @@ read( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
             Teuchos::ParameterList                  & fieldData
     )
 {
-  Teuchos::RCP<VtkReader> reader = Teuchos::rcp( new VtkReader( filePath ) );
+  
+  Teuchos::RCP<AbstractImageReader> reader = ReaderFactory::create( filePath );
   
   // read all the values
   UIntTuple dims;

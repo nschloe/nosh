@@ -7,8 +7,7 @@
 
 #include "Grid.h"
 
-#include "VtkWriter.h"
-#include "VtiWriter.h"
+#include "WriterFactory.h"
 
 #include <Teuchos_SerialDenseMatrix.hpp>
 
@@ -748,7 +747,8 @@ Grid::writeWithGrid ( const Epetra_MultiVector     & x,
                       const std::string            & filePath
                     ) const
 {
-    Teuchos::RCP<VtiWriter> writer = Teuchos::rcp ( new VtiWriter ( filePath ) );
+    Teuchos::RCP<AbstractImageWriter> writer =
+        WriterFactory::createImageWriter ( filePath );
 
     // append grid parameters
     Teuchos::ParameterList extendedParams ( params );
@@ -766,7 +766,8 @@ Grid::writeWithGrid ( const DoubleMultiVector      & x,
                       const std::string            & filePath
                     ) const
 {
-    Teuchos::RCP<VtiWriter> writer = Teuchos::rcp ( new VtiWriter ( filePath ) );
+    Teuchos::RCP<AbstractImageWriter> writer =
+        WriterFactory::createImageWriter ( filePath );
 
     // append grid parameters
     Teuchos::ParameterList extendedParams ( params );
@@ -785,7 +786,8 @@ Grid::writeWithGrid ( const ComplexMultiVector     & z,
                       const std::string            & filePath
                     ) const
 {
-    Teuchos::RCP<VtkWriter> writer = Teuchos::rcp ( new VtkWriter ( filePath ) );
+    Teuchos::RCP<AbstractImageWriter> writer =
+        WriterFactory::createImageWriter ( filePath );
 
     // append grid parameters
     Teuchos::ParameterList extendedParams ( params );

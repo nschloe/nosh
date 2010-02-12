@@ -35,7 +35,7 @@ runPostIterate(const NOX::Solver::Generic& solver)
   const Epetra_Vector& currentSol =
     (dynamic_cast<const NOX::Epetra::Vector&>(solGrp.getX())).
     getEpetraVector();
-  fileName = outputDir_ + "/newton-sol-"+EpetraExt::toString(numRunPreIterate)+".vtk";
+  fileName = outputDir_ + "/newton-sol-"+EpetraExt::toString(numRunPreIterate)+".vti";
   stateWriter_->writeSolutionToFile( currentSol,
                                   fileName );
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -47,7 +47,7 @@ runPostIterate(const NOX::Solver::Generic& solver)
                       "Group contains invalid right hand side. Has F ever been computed?" );
   const Epetra_Vector& currentResidual =
     (dynamic_cast<const NOX::Epetra::Vector&>(solGrp.getF())).getEpetraVector();
-  fileName = outputDir_ + "/newton-res-"+EpetraExt::toString(numRunPreIterate)+".vtk";
+  fileName = outputDir_ + "/newton-res-"+EpetraExt::toString(numRunPreIterate)+".vti";
   stateWriter_->writeAbstractStateToFile( currentResidual,
                                        fileName );
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -

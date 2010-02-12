@@ -3,9 +3,11 @@ INCLUDE( ${ginzburg-landau_SOURCE_DIR}/cmake-system.txt REQUIRED )
 ENABLE_LANGUAGE( CXX )
 
 SET ( gl_SRCS
+      WriterFactory.cpp
       AbstractImageWriter.cpp
       VtiWriter.cpp
       VtkWriter.cpp
+      ReaderFactory.cpp
       AbstractImageReader.cpp
       VtiReader.cpp
       VtkReader.cpp
