@@ -209,7 +209,7 @@ int main ( int argc, char *argv[] )
     // print the solution to a file
     glNoxHelpers::printSolutionToFile ( solver,
                                         glSystem,
-                                        ( outputDirectory / "solution.vtk" ).string() );
+                                        ( outputDirectory / "solution.vti" ).string() );
 
     // check the convergence status
     int status = glNoxHelpers::checkConvergence ( solver );

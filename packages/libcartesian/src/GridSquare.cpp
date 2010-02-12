@@ -8,9 +8,6 @@
 
 #include "GridSquare.h"
 
-#include "ioVirtual.h"
-#include "ioFactory.h"
-
 // =============================================================================
 // Class constructor
 GridSquare::GridSquare ( Teuchos::Tuple<unsigned int,2> Nx, double scaling ) :
@@ -285,18 +282,22 @@ GridSquare::writeWithGrid ( const DoubleMultiVector      & x,
                             const std::string            & filePath
                           ) const
 {
-    Teuchos::RCP<IoVirtual> fileIo = Teuchos::rcp ( IoFactory::createFileIo ( filePath ) );
-
-    // append grid parameters
-    Teuchos::ParameterList extendedParams ( params );
-    extendedParams.get ( "scaling", scaling_ );
-    extendedParams.get ( "Nx", Nx_[0] );
-    extendedParams.get ( "Ny", Nx_[1] );
-
-    // reorder the grid to lexicographic ordering
-    Teuchos::RCP<DoubleMultiVector> xLexicographic = permuteGrid2Lexicographic ( x );
-
-    fileIo->write ( *xLexicographic, Nx_, h_, extendedParams );
+  TEST_FOR_EXCEPTION( true,
+                      std::logic_error,
+                      "Not yet implemented." );
+  
+//     Teuchos::RCP<IoVirtual> fileIo = Teuchos::rcp ( IoFactory::createFileIo ( filePath ) );
+// 
+//     // append grid parameters
+//     Teuchos::ParameterList extendedParams ( params );
+//     extendedParams.get ( "scaling", scaling_ );
+//     extendedParams.get ( "Nx", Nx_[0] );
+//     extendedParams.get ( "Ny", Nx_[1] );
+// 
+//     // reorder the grid to lexicographic ordering
+//     Teuchos::RCP<DoubleMultiVector> xLexicographic = permuteGrid2Lexicographic ( x );
+// 
+//     fileIo->write ( *xLexicographic, Nx_, h_, extendedParams );
 }
 // =============================================================================
 void
@@ -305,18 +306,22 @@ GridSquare::writeWithGrid ( const ComplexMultiVector     & x,
                             const std::string            & filePath
                           ) const
 {
-    Teuchos::RCP<IoVirtual> fileIo = Teuchos::rcp ( IoFactory::createFileIo ( filePath ) );
-
-    // append grid parameters
-    Teuchos::ParameterList extendedParams ( params );
-    extendedParams.get ( "scaling", scaling_ );
-    extendedParams.get ( "Nx", Nx_[0] );
-    extendedParams.get ( "Ny", Nx_[1] );
-
-    // reorder the grid to lexicographic ordering
-    Teuchos::RCP<ComplexMultiVector> xLexicographic = permuteGrid2Lexicographic ( x );
-
-    fileIo->write ( *xLexicographic, Nx_, h_, extendedParams );
+  TEST_FOR_EXCEPTION( true,
+                      std::logic_error,
+                      "Not yet implemented." );
+                      
+//     Teuchos::RCP<IoVirtual> fileIo = Teuchos::rcp ( IoFactory::createFileIo ( filePath ) );
+// 
+//     // append grid parameters
+//     Teuchos::ParameterList extendedParams ( params );
+//     extendedParams.get ( "scaling", scaling_ );
+//     extendedParams.get ( "Nx", Nx_[0] );
+//     extendedParams.get ( "Ny", Nx_[1] );
+// 
+//     // reorder the grid to lexicographic ordering
+//     Teuchos::RCP<ComplexMultiVector> xLexicographic = permuteGrid2Lexicographic ( x );
+// 
+//     fileIo->write ( *xLexicographic, Nx_, h_, extendedParams );
 }
 // =============================================================================
 void
@@ -326,39 +331,43 @@ GridSquare::read ( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
                    Teuchos::ParameterList                        & params
                  )
 {
-    Teuchos::RCP<IoVirtual> fileIo = Teuchos::RCP<IoVirtual> (
-                                         IoFactory::createFileIo ( filePath ) );
-
-    Teuchos::RCP<DoubleMultiVector> xLexicographic;
-    fileIo->read ( Comm, xLexicographic, params );
-
-    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    // create the grid with the just attained information
-    TEST_FOR_EXCEPTION ( !params.isParameter ( "Nx" ),
-                         std::logic_error,
-                         "Parameter \"Nx\" not found." );
-    TEST_FOR_EXCEPTION ( !params.isParameter ( "Ny" ),
-                         std::logic_error,
-                         "Parameter \"Ny\" not found." );
-    Nx_ = Teuchos::tuple<unsigned int> ( params.get<unsigned int> ( "Nx" ), params.get<unsigned int> ( "Ny" ) );
-
-
-    TEST_FOR_EXCEPTION ( !params.isParameter ( "scaling" ),
-                         std::logic_error,
-                         "Parameter \"scaling\" not found." );
-    scaling_ = params.get<double> ( "scaling" );
-
-    // initialization of the dependent members
-    h_                 = Teuchos::tuple<double> ( scaling_/Nx_[0], scaling_/Nx_[1] );
-    gridDomainArea_    = pow ( scaling_, 2 );
-    numGridPoints_     = ( Nx_[0]+1 ) * ( Nx_[1]+1 );
-    numBoundaryPoints_ = 2* ( Nx_[0]+Nx_[1] );
-
-    TEST_FOR_EXCEPTION ( !x.is_valid_ptr() || x.is_null(),
-                         std::logic_error,
-                         "x not properly initialized." );
-
-    // apply the grid ordering
-    x = permuteLexicographic2Grid ( *xLexicographic );
+  TEST_FOR_EXCEPTION( true,
+                      std::logic_error,
+                      "Not yet implemented." );
+  
+//     Teuchos::RCP<IoVirtual> fileIo = Teuchos::RCP<IoVirtual> (
+//                                          IoFactory::createFileIo ( filePath ) );
+// 
+//     Teuchos::RCP<DoubleMultiVector> xLexicographic;
+//     fileIo->read ( Comm, xLexicographic, params );
+// 
+//     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+//     // create the grid with the just attained information
+//     TEST_FOR_EXCEPTION ( !params.isParameter ( "Nx" ),
+//                          std::logic_error,
+//                          "Parameter \"Nx\" not found." );
+//     TEST_FOR_EXCEPTION ( !params.isParameter ( "Ny" ),
+//                          std::logic_error,
+//                          "Parameter \"Ny\" not found." );
+//     Nx_ = Teuchos::tuple<unsigned int> ( params.get<unsigned int> ( "Nx" ), params.get<unsigned int> ( "Ny" ) );
+// 
+// 
+//     TEST_FOR_EXCEPTION ( !params.isParameter ( "scaling" ),
+//                          std::logic_error,
+//                          "Parameter \"scaling\" not found." );
+//     scaling_ = params.get<double> ( "scaling" );
+// 
+//     // initialization of the dependent members
+//     h_                 = Teuchos::tuple<double> ( scaling_/Nx_[0], scaling_/Nx_[1] );
+//     gridDomainArea_    = pow ( scaling_, 2 );
+//     numGridPoints_     = ( Nx_[0]+1 ) * ( Nx_[1]+1 );
+//     numBoundaryPoints_ = 2* ( Nx_[0]+Nx_[1] );
+// 
+//     TEST_FOR_EXCEPTION ( !x.is_valid_ptr() || x.is_null(),
+//                          std::logic_error,
+//                          "x not properly initialized." );
+// 
+//     // apply the grid ordering
+//     x = permuteLexicographic2Grid ( *xLexicographic );
 }
 // =============================================================================

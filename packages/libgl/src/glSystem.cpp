@@ -1,5 +1,4 @@
 #include "glSystem.h"
-#include "ioFactory.h"
 
 #include <Epetra_Export.h>
 #include <Epetra_CrsMatrix.h>

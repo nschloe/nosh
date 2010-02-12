@@ -7,8 +7,6 @@
 
 #include "GlSystemWithConstraint.h"
 
-#include "ioFactory.h"
-
 #include <boost/format.hpp>
 
 #include <Epetra_Export.h>

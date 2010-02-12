@@ -20,8 +20,6 @@
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_DefaultComm.hpp>
 
-#include "ioFactory.h"
-
 #include "ginzburgLandau.h"
 
 #include "glPredictorSystem.h"

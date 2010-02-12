@@ -33,9 +33,6 @@
 
 #include <Teuchos_XMLParameterListHelpers.hpp>
 
-#include "ioVirtual.h"
-#include "ioFactory.h"
-
 #include "ginzburgLandau.h"
 #include "glPrePostOperator.h"
 

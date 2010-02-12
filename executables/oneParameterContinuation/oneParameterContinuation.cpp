@@ -20,8 +20,6 @@
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_DefaultComm.hpp>
 
-#include "ioFactory.h"
-
 #include "ginzburgLandau.h"
 #include "GlOperatorBCCentral.h"
 #include "GlOperatorBCInner.h"
@@ -153,38 +151,38 @@ main ( int argc, char *argv[] )
 
     if ( !inputGuessFile.empty() )
     {
-//         try
-//         {
-//             // For technical reasons, the reader can only accept ComplexMultiVectors.
-//             Teuchos::RCP<ComplexMultiVector> psiM;
-//             GridReader::read ( Comm, inputGuessFile.string(), psiM, grid, glParameters );
-//             TEUCHOS_ASSERT_EQUALITY ( psiM->getNumVectors(), 1 );
-//             psi = psiM->getVectorNonConst ( 0 );
-//         }
-//         catch ( std::exception &e )
-//         {
-//             std::cerr << e.what() << std::endl;
-//             return 1;
-//         }
-// 
-//         if ( initialGuessList.isParameter ( "Nx" ) )
-//         {
-//             std::cerr << "Warning: Parameter 'Nx' *and* input guess file given."
-//                       << "Using value as in input guess file, discarding 'Nx'."
-//                       << std::endl;
-//         }
-//         if ( initialGuessList.isParameter ( "scaling" ) )
-//         {
-//             std::cerr << "Warning: Parameter 'scaling' *and* input guess file given."
-//                       << "Using value as in input guess file, discarding 'scaling'."
-//                       << std::endl;
-//         }
-//         if ( initialGuessList.isParameter ( "H0" ) )
-//         {
-//             std::cerr << "Warning: Parameter 'H0' *and* input guess file given."
-//                       << "Using value as in input guess file, discarding 'H0'."
-//                       << std::endl;
-//         }
+        try
+        {
+            // For technical reasons, the reader can only accept ComplexMultiVectors.
+            Teuchos::RCP<ComplexMultiVector> psiM;
+            GridReader::read ( Comm, inputGuessFile.string(), psiM, grid, glParameters );
+            TEUCHOS_ASSERT_EQUALITY ( psiM->getNumVectors(), 1 );
+            psi = psiM->getVectorNonConst ( 0 );
+        }
+        catch ( std::exception &e )
+        {
+            std::cerr << e.what() << std::endl;
+            return 1;
+        }
+
+        if ( initialGuessList.isParameter ( "Nx" ) )
+        {
+            std::cerr << "Warning: Parameter 'Nx' *and* input guess file given."
+                      << "Using value as in input guess file, discarding 'Nx'."
+                      << std::endl;
+        }
+        if ( initialGuessList.isParameter ( "scaling" ) )
+        {
+            std::cerr << "Warning: Parameter 'scaling' *and* input guess file given."
+                      << "Using value as in input guess file, discarding 'scaling'."
+                      << std::endl;
+        }
+        if ( initialGuessList.isParameter ( "H0" ) )
+        {
+            std::cerr << "Warning: Parameter 'H0' *and* input guess file given."
+                      << "Using value as in input guess file, discarding 'H0'."
+                      << std::endl;
+        }
 
     }
     else // no or empty input guess file
