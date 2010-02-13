@@ -7,8 +7,6 @@
 
 #include "GlSystemWithConstraint.h"
 
-#include <boost/format.hpp>
-
 #include <Epetra_Export.h>
 #include <Epetra_CrsMatrix.h>
 #include <NOX_Utils.H>
@@ -38,16 +36,17 @@ typedef std::complex<double> double_complex;
 // =============================================================================
 // Default constructor
 GlSystemWithConstraint::GlSystemWithConstraint ( GinzburgLandau::GinzburgLandau &gl,
-        const Teuchos::RCP<const Epetra_Comm> eComm,
-        const Teuchos::RCP<const ComplexVector> psi,
-        const std::string outputDir,
-        const std::string outputDataFileName,
-        const std::string outputFileFormat,
-        const std::string solutionFileNameBase,
-        const std::string nullvectorFileNameBase,
-        const unsigned int maxStepNumberDecimals
+                                                 const Teuchos::RCP<const Epetra_Comm> eComm,
+                                                 const Teuchos::RCP<const ComplexVector> psi,
+                                                 const std::string outputDir,
+                                                 const std::string outputDataFileName,
+                                                 const std::string outputFileFormat,
+                                                 const std::string solutionFileNameBase,
+                                                 const std::string nullvectorFileNameBase,
+                                                 const unsigned int maxStepNumberDecimals
                                                ) :
-        glSystem_ ( gl, eComm, psi, outputDir, outputDataFileName, outputFileFormat, solutionFileNameBase, nullvectorFileNameBase ),
+        glSystem_ ( gl, eComm, psi, outputDir, outputDataFileName, outputFileFormat,
+                    solutionFileNameBase, nullvectorFileNameBase, maxStepNumberDecimals ),
         regularMap_ ( 0 ),
         extendedMap_ ( 0 ),
         jacobian_ ( 0 ),
@@ -61,15 +60,16 @@ GlSystemWithConstraint::GlSystemWithConstraint ( GinzburgLandau::GinzburgLandau 
 // =============================================================================
 // constructor *without* initial guess
 GlSystemWithConstraint::GlSystemWithConstraint ( GinzburgLandau::GinzburgLandau &gl,
-        const Teuchos::RCP<const Epetra_Comm> eComm,
-        const std::string outputDir,
-        const std::string outputDataFileName,
-        const std::string outputFileFormat,
-        const std::string solutionFileNameBase,
-        const std::string nullvectorFileNameBase,
-        const unsigned int maxStepNumberDecimals
+                                                 const Teuchos::RCP<const Epetra_Comm> eComm,
+                                                 const std::string outputDir,
+                                                 const std::string outputDataFileName,
+                                                 const std::string outputFileFormat,
+                                                 const std::string solutionFileNameBase,
+                                                 const std::string nullvectorFileNameBase,
+                                                 const unsigned int maxStepNumberDecimals
                                                ) :
-        glSystem_ ( gl, eComm, outputDir, outputDataFileName, outputFileFormat, solutionFileNameBase, nullvectorFileNameBase ),
+        glSystem_ ( gl, eComm, outputDir, outputDataFileName, outputFileFormat,
+                    solutionFileNameBase, nullvectorFileNameBase, maxStepNumberDecimals ),
         regularMap_ ( 0 ),
         extendedMap_ ( 0 ),
         jacobian_ ( 0 ),
@@ -87,11 +87,13 @@ GlSystemWithConstraint::GlSystemWithConstraint ( GinzburgLandau::GinzburgLandau 
     // How to compare two communicators anyway?
 
     // define complex map
-    Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> >  ComplexMap = glSystem_.getComplexMap();
+    Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> >  ComplexMap =
+         glSystem_.getComplexMap();
 
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     // initialize solution
-    Teuchos::RCP<ComplexVector> psi = Teuchos::rcp ( new ComplexVector ( ComplexMap ) );
+    Teuchos::RCP<ComplexVector> psi =
+        Teuchos::rcp ( new ComplexVector ( ComplexMap ) );
     // TODO Move default initialization out to main file
     double_complex alpha ( 1.0, 0.0 );
     psi->putScalar ( alpha ); // default initialization
@@ -127,7 +129,7 @@ GlSystemWithConstraint::initialize ( const Teuchos::RCP<const ComplexVector> psi
 
     // Initialize the format for the the continuation step number.
     // Here: 00012 for step no. 12, if maxStepNumberDecimals_=5.
-    stepNumFileNameFormat_ = boost::str ( boost::format ( "%%|0%d|" ) % maxStepNumberDecimals_ );
+//     stepNumFileNameFormat_ = boost::str ( boost::format ( "%%|0%d|" ) % maxStepNumberDecimals_ );
 }
 // =============================================================================
 bool
@@ -170,9 +172,8 @@ GlSystemWithConstraint::computeF ( const Epetra_Vector &x,
     // copy over and add phase condition
     // TODO replace by {im,ex}porter
     for ( int k=0; k<shortFVec.MyLength(); k++ )
-    {
         FVec.ReplaceMyValue ( k, 0, shortFVec[shortFVec.Map().GID ( k ) ] );
-    }
+
     FVec.ReplaceGlobalValue ( shortFVec.GlobalLength(), 0, 0.0 );
 
     return true;
@@ -225,9 +226,10 @@ bool GlSystemWithConstraint::computeJacobian ( const Epetra_Vector   & x,
     return true;
 }
 // =============================================================================
-bool GlSystemWithConstraint::computePreconditioner ( const Epetra_Vector    & x,
-        Epetra_Operator        & Prec,
-        Teuchos::ParameterList * precParams )
+bool
+GlSystemWithConstraint::computePreconditioner ( const Epetra_Vector    & x,
+                                                Epetra_Operator        & Prec,
+                                                Teuchos::ParameterList * precParams )
 {
     TEST_FOR_EXCEPTION ( true,
                          std::logic_error,
@@ -278,12 +280,12 @@ GlSystemWithConstraint::createJacobian ( const Epetra_Vector & x )
     // right bordering: (phi:=) -i*psi
     ComplexVector phi = *psi;
     phi.scale ( std::complex<double> ( 0.0,-1.0 ) );
-    Teuchos::RCP<Epetra_Vector> rightBorder
-    = glSystem_.getGlKomplex()->complex2real ( phi );
+    Teuchos::RCP<Epetra_Vector> rightBorder =
+        glSystem_.getGlKomplex()->complex2real ( phi );
 
     // Get the lower bordering  Im( psi_{old}^H, dpsi ).
-    Teuchos::RCP<Epetra_Vector> lowerBorder
-    = glSystem_.getGlKomplex()->imagScalarProductCoeff ( psi );
+    Teuchos::RCP<Epetra_Vector> lowerBorder =
+        glSystem_.getGlKomplex()->imagScalarProductCoeff ( psi );
 
     // corner element
     double d = 0.0;
@@ -364,8 +366,9 @@ void GlSystemWithConstraint::setOutputDir ( const string &directory )
 }
 // =============================================================================
 void
-GlSystemWithConstraint::writeSolutionToFile ( const Epetra_Vector &x,
-        const std::string &filePath ) const
+GlSystemWithConstraint::writeSolutionToFile ( const Epetra_Vector & x,
+                                              const std::string   & filePath
+                                            ) const
 {
     // TODO replace by {im,ex}porter
     // strip off the phase constraint
@@ -377,8 +380,9 @@ GlSystemWithConstraint::writeSolutionToFile ( const Epetra_Vector &x,
 }
 // =============================================================================
 void
-GlSystemWithConstraint::writeAbstractStateToFile ( const Epetra_Vector &x,
-        const std::string &filePath ) const
+GlSystemWithConstraint::writeAbstractStateToFile ( const Epetra_Vector & x,
+                                                   const std::string   & filePath
+                                                 ) const
 {
     // TODO replace by {im,ex}porter
     // strip off the phase constraint
@@ -464,12 +468,12 @@ GlSystemWithConstraint::setChi ( const double chi )
 // =============================================================================
 void
 GlSystemWithConstraint::fillBorderedMatrix ( const Teuchos::RCP<      Epetra_CrsMatrix> & extendedMatrix,
-        const Teuchos::RCP<const Epetra_CrsMatrix> & regularMatrix,
-        const Epetra_Vector                        & rightBorder,
-        // TODO Declare the following const as soon as Trilinos allows (ReplaceGlobalValues)
-        Epetra_Vector                        & lowerBorder,
-        double                                 d,
-        bool                                   firstTime
+                                             const Teuchos::RCP<const Epetra_CrsMatrix> & regularMatrix,
+                                             const Epetra_Vector                        & rightBorder,
+                                             // TODO Declare the following const as soon as Trilinos allows (ReplaceGlobalValues)
+                                             Epetra_Vector                              & lowerBorder,
+                                             double                                       d,
+                                             bool                                         firstTime
                                            ) const
 {
     TEUCHOS_ASSERT ( regularMatrix.is_valid_ptr()  && !regularMatrix.is_null() );
@@ -538,12 +542,8 @@ GlSystemWithConstraint::PutRow ( const Teuchos::RCP<Epetra_CrsMatrix> A,
                                  const bool     firstTime ) const
 {
     if ( firstTime )
-    {
         return A->InsertGlobalValues ( Row, numIndices, values, indices );
-    }
     else
-    {
         return A->ReplaceGlobalValues ( Row, numIndices, values, indices );
-    }
 }
 // =============================================================================

@@ -118,12 +118,12 @@ Grid::Grid ( const Teuchos::RCP<const DomainVirtual> & domain,
         // sweep the row from right to left to find candidates for interior nodes
         maybeInside = false; // the left endpoint is *never inside (at most boundary)
         isSwitched = false;
-        for ( unsigned int i=numCells_[0]; i>=0; i-- )
+        for ( unsigned int i=0; i<numCells_[0]+1; i++ )
         {
             // check if we are crossing the border
-            if ( isBoundary[i] )
+            if ( isBoundary[numCells_[0]-i] )
             {
-                rightSweep[i] = false;
+                rightSweep[numCells_[0]-i] = false;
                 if ( !isSwitched )
                 {
                     maybeInside = !maybeInside;
@@ -132,7 +132,7 @@ Grid::Grid ( const Teuchos::RCP<const DomainVirtual> & domain,
                 continue;
             }
             isSwitched = false; // re-set for the next switch
-            rightSweep[i] = maybeInside;
+            rightSweep[numCells_[0]-i] = maybeInside;
         }
 
         for ( unsigned int i=0; i<numCells_[0]+1; i++ )
@@ -422,8 +422,8 @@ Grid::getXAbove ( const UIntTuple & i ) const
 unsigned int
 Grid::getKLeft ( unsigned int kDomain ) const
 {
-    // get the left i
     UIntTuple i = nodes_[kDomain];
+    TEUCHOS_ASSERT_INEQUALITY( i[0], >, 0 );
     i[0]--;
 
     // get the running index of the bounding box, and translate it
@@ -436,8 +436,8 @@ Grid::getKLeft ( unsigned int kDomain ) const
 unsigned int
 Grid::getKRight ( unsigned int kDomain ) const
 {
-    // get the left i
     UIntTuple i = nodes_[kDomain];
+    TEUCHOS_ASSERT_INEQUALITY( i[0], <, numCells_[0] );
     i[0]++;
 
     // get the running index of the bounding box, and translate it
@@ -450,8 +450,8 @@ Grid::getKRight ( unsigned int kDomain ) const
 unsigned int
 Grid::getKBelow ( unsigned int kDomain ) const
 {
-    // get the left i
     UIntTuple i = nodes_[kDomain];
+    TEUCHOS_ASSERT_INEQUALITY( i[1], >, 0 );
     i[1]--;
 
     // get the running index of the bounding box, and translate it
@@ -466,6 +466,7 @@ Grid::getKAbove ( unsigned int kDomain ) const
 {
     // get the left i
     UIntTuple i = nodes_[kDomain];
+    TEUCHOS_ASSERT_INEQUALITY( i[1], <, numCells_[1] );
     i[1]++;
 
     // get the running index of the bounding box, and translate it

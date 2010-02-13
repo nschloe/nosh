@@ -36,9 +36,10 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
                  Teuchos::RCP<GlSystemWithConstraint>    & glSystem );
 
 void
-setPrePostWriter ( Teuchos::ParameterList & noxParaList,
+setPrePostWriter ( Teuchos::ParameterList                        & noxParaList,
                    const Teuchos::RCP<const AbstractStateWriter> & asw,
-                   const std::string            & outputDir );
+                   const std::string                             & outputDir,
+                   const std::string                             & outputFormat = "VTK" );
 
 Teuchos::RCP<NOX::Epetra::Group>
 createSolverGroup ( const Teuchos::RCP<GlSystemWithConstraint> glSystem,
@@ -71,4 +72,5 @@ int
 checkConvergence ( const Teuchos::RCP<const NOX::Solver::Generic> solver );
 
 }
+
 #endif /* GLNOXHELPERS_H_ */

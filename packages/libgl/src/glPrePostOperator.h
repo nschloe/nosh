@@ -15,7 +15,8 @@ public:
 
   //! Constructor.
   GlPrePostOperator( const Teuchos::RCP<const AbstractStateWriter> & stateWriter,
-                     const std::string                             & outputDir );
+                     const std::string                             & outputDir,
+                     const std::string                             & outputFormat );
 
   //! Destructor.
   ~GlPrePostOperator();
@@ -33,6 +34,7 @@ protected:
 
   const Teuchos::RCP<const AbstractStateWriter> stateWriter_;
   std::string                                   outputDir_;
+  std::string                                   filenameExtension_;
 
 };
 #endif // GLPREPOSTOPERATOR_H

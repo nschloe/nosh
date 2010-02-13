@@ -5,15 +5,23 @@
 
 #include <NOX_Epetra_Group.H>
 
-#include <EpetraExt_Utils.h> // for toString
-
 // =============================================================================
-GlPrePostOperator::GlPrePostOperator( const Teuchos::RCP<const AbstractStateWriter>  & stateWriter,
-                                      const std::string                              & outputDir) :
-  numRunPreIterate(0),
-  stateWriter_(stateWriter),
-  outputDir_(outputDir)
+GlPrePostOperator::GlPrePostOperator ( const Teuchos::RCP<const AbstractStateWriter>  & stateWriter,
+                                       const std::string                              & outputDir,
+                                       const std::string                              & outputFormat ) :
+        numRunPreIterate ( 0 ),
+        stateWriter_ ( stateWriter ),
+        outputDir_ ( outputDir ),
+        filenameExtension_ ( "" )
 {
+  if ( outputFormat.compare("VTK")==0 )
+    filenameExtension_ = "vtk";
+  else if ( outputFormat.compare("VTI")==0 )
+    filenameExtension_ = "vti";
+  else
+    TEST_FOR_EXCEPTION( true,
+                        std::logic_error,
+                        "Illegal output format \"" << outputFormat << "\"." );
 }
 // =============================================================================
 GlPrePostOperator::~GlPrePostOperator()
@@ -21,35 +29,40 @@ GlPrePostOperator::~GlPrePostOperator()
 }
 // =============================================================================
 void GlPrePostOperator::
-runPostIterate(const NOX::Solver::Generic& solver)
+runPostIterate ( const NOX::Solver::Generic& solver )
 {
-  string fileName;
+    string fileName;
 
-  ++numRunPreIterate;
+    ++numRunPreIterate;
 
-  // Get the Epetra_Vector with the final solution from the solver
-  const NOX::Epetra::Group& solGrp =
-             dynamic_cast<const NOX::Epetra::Group&>(solver.getSolutionGroup());
+    // Get the Epetra_Vector with the final solution from the solver
+    const NOX::Epetra::Group& solGrp =
+        dynamic_cast<const NOX::Epetra::Group&> ( solver.getSolutionGroup() );
 
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  const Epetra_Vector& currentSol =
-    (dynamic_cast<const NOX::Epetra::Vector&>(solGrp.getX())).
-    getEpetraVector();
-  fileName = outputDir_ + "/newton-sol-"+EpetraExt::toString(numRunPreIterate)+".vti";
-  stateWriter_->writeSolutionToFile( currentSol,
-                                  fileName );
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    const Epetra_Vector& currentSol =
+        ( dynamic_cast<const NOX::Epetra::Vector&> ( solGrp.getX() ) ).getEpetraVector();
+    stringstream fileStream;
+    fileStream
+    << outputDir_ << "/newton-sol-" << numRunPreIterate
+    << "." << filenameExtension_;
+    stateWriter_->writeSolutionToFile ( currentSol,
+                                        fileStream.str() );
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  TEST_FOR_EXCEPTION( !solGrp.isF(),
-                      std::logic_error,
-                      "Group contains invalid right hand side. Has F ever been computed?" );
-  const Epetra_Vector& currentResidual =
-    (dynamic_cast<const NOX::Epetra::Vector&>(solGrp.getF())).getEpetraVector();
-  fileName = outputDir_ + "/newton-res-"+EpetraExt::toString(numRunPreIterate)+".vti";
-  stateWriter_->writeAbstractStateToFile( currentResidual,
-                                       fileName );
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    TEST_FOR_EXCEPTION ( !solGrp.isF(),
+                         std::logic_error,
+                         "Group contains invalid right hand side. Has F ever been computed?" );
+    const Epetra_Vector& currentResidual =
+        ( dynamic_cast<const NOX::Epetra::Vector&> ( solGrp.getF() ) ).getEpetraVector();
+    stringstream fileStream;
+    fileStream
+    << outputDir_ << "/newton-res-" << numRunPreIterate 
+    << "." << filenameExtension_;
+    stateWriter_->writeAbstractStateToFile ( currentResidual,
+                                             fileStream.str() );
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 }
 // =============================================================================

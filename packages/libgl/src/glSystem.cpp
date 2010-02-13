@@ -6,8 +6,6 @@
 
 #include <EpetraExt_RowMatrixOut.h>
 
-#include <EpetraExt_Utils.h>
-
 #include <Epetra_Map.h>
 
 #include <Tpetra_Vector.hpp>
@@ -35,7 +33,8 @@ GlSystem::GlSystem ( GinzburgLandau::GinzburgLandau &gl,
                      const std::string outputDataFileName,
                      const std::string outputFileFormat,
                      const std::string solutionFileNameBase,
-                     const std::string nullvectorFileNameBase
+                     const std::string nullvectorFileNameBase,
+                     const unsigned int maxNumDigits
                    ) :
         stepper_ ( Teuchos::null ),
         glKomplex_ ( Teuchos::rcp ( new GlKomplex ( eComm,psi->getMap() ) ) ),
@@ -46,11 +45,12 @@ GlSystem::GlSystem ( GinzburgLandau::GinzburgLandau &gl,
         nullvectorFileNameBase_ ( nullvectorFileNameBase ),
         outputFileFormat_ ( outputFileFormat ),
         outputDataFileName_ ( outputDataFileName ),
-        firstTime_ ( true )
+        firstTime_ ( true ),
+        maxNumDigits_( maxNumDigits )
 {
     TEST_FOR_EXCEPTION ( !psi.is_valid_ptr() || psi.is_null(),
-                         std::logic_error,
-                         "psi not properly initialized." );
+    std::logic_error,
+    "psi not properly initialized." );
 
     // initialize solution
     Teuchos::RCP<Epetra_Vector> initialSolution_ =
@@ -64,7 +64,8 @@ GlSystem::GlSystem ( GinzburgLandau::GinzburgLandau &gl,
                      const std::string outputDataFileName,
                      const std::string outputFileFormat,
                      const std::string solutionFileNameBase,
-                     const std::string nullvectorFileNameBase
+                     const std::string nullvectorFileNameBase,
+                     const unsigned int maxNumDigits
                    ) :
         stepper_ ( Teuchos::null ),
         glKomplex_ ( Teuchos::null ),
@@ -75,7 +76,8 @@ GlSystem::GlSystem ( GinzburgLandau::GinzburgLandau &gl,
         nullvectorFileNameBase_ ( nullvectorFileNameBase ),
         outputFileFormat_ ( outputFileFormat ),
         outputDataFileName_ ( outputDataFileName ),
-        firstTime_ ( true )
+        firstTime_ ( true ),
+        maxNumDigits_( maxNumDigits )
 {
     // TODO There is (until now?) no way to convert a Teuchos::Comm (of psi)
     // to an Epetra_Comm (of the real valued representation of psi), so the
@@ -98,9 +100,9 @@ GlSystem::GlSystem ( GinzburgLandau::GinzburgLandau &gl,
 
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     // initialize solution
-    ComplexVector psi( ComplexMap );
+    ComplexVector psi ( ComplexMap );
     // TODO Move default initialization out to main file
-    psi.putScalar ( double_complex(0.0,0.0) ); // default initialization
+    psi.putScalar ( double_complex ( 0.0,0.0 ) ); // default initialization
 
     Teuchos::RCP<Epetra_Vector> initialSolution_ =
         glKomplex_->complex2real ( psi );
@@ -326,12 +328,14 @@ GlSystem::printSolutionOneParameterContinuation ( const Teuchos::RCP<const Compl
 {
     static int conStep = -1;
     conStep++;
-
-    std::string fileName = outputDir_ + "/" + solutionFileNameBase_
-                           + EpetraExt::toString ( conStep ) + ".vtk";
-
+    
+    stringstream fileName;
+    fileName
+    << outputDir_ << "/" << solutionFileNameBase_ 
+    << setw ( maxNumDigits_ ) << setfill ( '0' ) << conStep << ".vtk";
+    
     // actually print the state to fileName
-    Gl_.writeSolutionToFile ( psi, fileName );
+    Gl_.writeSolutionToFile ( psi, fileName.str() );
 
     writeContinuationStats ( conStep, psi );
 }
@@ -358,20 +362,21 @@ GlSystem::printSolutionTurningPointContinuation ( const Teuchos::RCP<const Compl
         conStep++;
 
     // determine file name
-    std::string fileName;
+    stringstream fileName;
     if ( printSolution )
     {
-        fileName = outputDir_ + "/" + solutionFileNameBase_
-                   + EpetraExt::toString ( conStep ) + ".vtk";
+        fileName
+        << outputDir_ << "/" << solutionFileNameBase_
+        << setw ( maxNumDigits_ ) << setfill ( '0' ) << conStep << ".vtk";
         writeContinuationStats ( conStep, psi );
     }
     else
-        fileName = outputDir_ + "/" + nullvectorFileNameBase_
-                   + EpetraExt::toString ( conStep ) + ".vtk";
+        fileName
+        << outputDir_ << "/" << nullvectorFileNameBase_
+        << setw ( maxNumDigits_ ) << setfill ( '0' ) << conStep << ".vtk";
 
     // actually print the state to fileName
-    Gl_.writeSolutionToFile ( psi, fileName );
-
+    Gl_.writeSolutionToFile ( psi, fileName.str() );
 }
 // =============================================================================
 void

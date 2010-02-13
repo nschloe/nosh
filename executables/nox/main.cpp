@@ -103,6 +103,8 @@ int main ( int argc, char *argv[] )
     if ( !inputGuessFile.empty() && inputGuessFile.root_directory().empty() ) // if inputGuessFile is not empty and is a relative path
         inputGuessFile = xmlPath / inputGuessFile;
 
+    const std::string outputFormat = ioList.get<string> ( "Output format" );
+    
     // set default directory to be the directory of the XML file itself
     boost::filesystem::path outputDirectory = ioList.get<string> ( "Output directory", "" );
     if ( outputDirectory.root_directory().empty() )
@@ -142,8 +144,8 @@ int main ( int argc, char *argv[] )
     else
     {
         int    Nx      = paramList->sublist ( "GL",true ).get ( "Nx",50 );
-        double scaling = paramList->sublist ( "GL",true ).get ( "scaling",10.0 );
-        double H0      = paramList->sublist ( "GL",true ).get ( "H0",0.0 );
+        double scaling = paramList->sublist ( "GL",true ).get ( "scaling",5.0 );
+        double H0      = paramList->sublist ( "GL",true ).get ( "H0",0.333 );
         glNoxHelpers::createGlSystem ( Comm, eComm, Nx, scaling, H0, problemParameters, glSystem );
     }
 
@@ -154,7 +156,8 @@ int main ( int argc, char *argv[] )
     {
         glNoxHelpers::setPrePostWriter ( *nlParamsPtr,
                                          glSystem,
-                                         outputDirectory.string() );
+                                         outputDirectory.string(),
+                                         outputFormat );
     }
 
 
@@ -209,7 +212,7 @@ int main ( int argc, char *argv[] )
     // print the solution to a file
     glNoxHelpers::printSolutionToFile ( solver,
                                         glSystem,
-                                        ( outputDirectory / "solution.vti" ).string() );
+                                        ( outputDirectory / "solution.vtk" ).string() );
 
     // check the convergence status
     int status = glNoxHelpers::checkConvergence ( solver );

@@ -68,13 +68,13 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
     GridReader::read ( comm, fileName, psi, grid, problemParameters );
 
     std::cout << problemParameters << std::endl;
-    
+
     Teuchos::ArrayRCP<const double_complex> psiView = psi->get1dView();
     for ( int k =0; k<5; k++ )
-      std::cout << psiView[k] << std::endl;
-    
-    double h0      = problemParameters.get<double>("H0");
-    double scaling = problemParameters.get<double>("scaling");
+        std::cout << psiView[k] << std::endl;
+
+    double h0      = problemParameters.get<double> ( "H0" );
+    double scaling = problemParameters.get<double> ( "scaling" );
     Teuchos::RCP<MagneticVectorPotential> A =
         Teuchos::rcp ( new MagneticVectorPotential ( h0, scaling ) );
 
@@ -83,10 +83,10 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
         Teuchos::rcp ( new GlOperatorBCInner ( grid, A ) );
 
     GinzburgLandau glProblem = GinzburgLandau ( glOperator );
-    
-    TEUCHOS_ASSERT_EQUALITY( psi->getNumVectors(), 1 );
 
-    glSystem = Teuchos::rcp ( new GlSystemWithConstraint ( glProblem, eComm, psi->getVector(0) ) );
+    TEUCHOS_ASSERT_EQUALITY ( psi->getNumVectors(), 1 );
+
+    glSystem = Teuchos::rcp ( new GlSystemWithConstraint ( glProblem, eComm, psi->getVector ( 0 ) ) );
 }
 // =============================================================================
 void
@@ -103,12 +103,12 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
     problemParameters.set ( "H0"     , H0 );
 
     // create the domain
-//     double edgeLength = 1.0;
-//     Teuchos::RCP<DomainVirtual> domain =
-//         Teuchos::rcp ( new DomainSquare ( edgeLength ) );
-
+    double edgeLength = 1.0;
     Teuchos::RCP<DomainVirtual> domain =
-        Teuchos::rcp ( new DomainRectangle ( 2.0, 1.0 ) );
+        Teuchos::rcp ( new DomainSquare ( edgeLength ) );
+
+//     Teuchos::RCP<DomainVirtual> domain =
+//         Teuchos::rcp ( new DomainRectangle ( 2.0, 1.0 ) );
 
 //     Teuchos::RCP<DomainVirtual> domain =
 //         Teuchos::rcp ( new DomainCircle ( 1.0 ) );
@@ -137,7 +137,7 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
 //     Teuchos::RCP<DomainVirtual> domain = Teuchos::rcp( new DomainPolygon(P) );
 
     // TODO Create GridContructor with Nx
-    // create the grid 
+    // create the grid
     double h = 1.0 / Nx;
     Teuchos::RCP<GridUniform> grid =
         Teuchos::rcp ( new GridUniform ( domain, h, scaling ) );
@@ -155,18 +155,16 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
 }
 // =========================================================================
 void
-setPrePostWriter ( Teuchos::ParameterList                  & noxParaList,
+setPrePostWriter ( Teuchos::ParameterList                        & noxParaList,
                    const Teuchos::RCP<const AbstractStateWriter> & asw,
-                   const std::string                             & outputDir )
+                   const std::string                             & outputDir,
+                   const std::string                             & outputFormat )
 {
     using namespace Teuchos;
 //   Teuchos::RCP<AbstractStateWriter> asw = glSystem_;
     RCP<NOX::Abstract::PrePostOperator> ppo =
-        rcp ( new GlPrePostOperator ( asw,
-                                      outputDir )
-            );
-    noxParaList.sublist ( "Solver Options" )
-    .set ( "User Defined Pre/Post Operator", ppo );
+        rcp ( new GlPrePostOperator ( asw, outputDir, outputFormat ) );
+    noxParaList.sublist ( "Solver Options" ).set ( "User Defined Pre/Post Operator", ppo );
 }
 // =========================================================================
 Teuchos::RCP<NOX::Epetra::Group>

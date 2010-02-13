@@ -7,8 +7,6 @@
 #include <NOX_Utils.H>
 #include <LOCA_GlobalData.H>
 
-#include <EpetraExt_Utils.h>
-
 // =============================================================================
 EigenSaver::EigenSaver ( const Teuchos::RCP<Teuchos::ParameterList> eigenParamList,
                          const std::string  outputDir,
@@ -89,18 +87,20 @@ EigenSaver::save ( Teuchos::RCP<std::vector<double> > &evals_r,
         if ( ( *evals_r ) [k] > 0.0 )
         {
             numUnstableEigenvalues++;
-            std::string eigenstateFilePath = outputDir_ + "/"
-                                             + contFileBaseName_ + EpetraExt::toString ( step ) + "-"
-                                             + eigenstateFileNameAppendix_ + EpetraExt::toString (
-                                                 numUnstableEigenvalues ) + ".vtk";
+            stringstream eigenstateString;
+            eigenstateString
+            << outputDir_  << "/"
+            << contFileBaseName_ << step << "-"
+            << eigenstateFileNameAppendix_ 
+            << numUnstableEigenvalues << ".vtk";
 
-            Teuchos::RCP<NOX::Abstract::Vector> abVec = Teuchos::rcpFromRef (
-                        ( *evecs_r ) [k] );
+            Teuchos::RCP<NOX::Abstract::Vector> abVec =
+                Teuchos::rcpFromRef ( ( *evecs_r ) [k] );
             Teuchos::RCP<NOX::Epetra::Vector> myVec =
                 Teuchos::rcp_dynamic_cast<NOX::Epetra::Vector> ( abVec, true );
 
             stateWriter_->writeAbstractStateToFile ( myVec->getEpetraVector(),
-                    eigenstateFilePath );
+                                                     eigenstateString.str() );
         }
     }
 

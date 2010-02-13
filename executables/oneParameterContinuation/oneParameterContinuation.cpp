@@ -32,6 +32,24 @@
 
 #include "GridReader.h"
 
+
+// =============================================================================
+unsigned int
+numDigits ( const int i )
+{
+    int numDigits = 0;
+    int ii = i;
+    if ( ii < 0 )
+        ii = -ii;
+
+    while ( ii > 0 )
+    {
+        numDigits++;
+        ii/=10;
+    }
+    return numDigits;
+}
+// =============================================================================
 int
 main ( int argc, char *argv[] )
 {
@@ -243,16 +261,15 @@ main ( int argc, char *argv[] )
     Teuchos::RCP<GlSystemWithConstraint> glsystem;
 
     int maxLocaSteps = 5000;
-    unsigned int maxLocaStepsDecimals = ( unsigned int ) floor ( log10 ( maxLocaSteps ) +1.0 );
-
+    std::cout << numDigits( maxLocaSteps ) << std::endl;
     try
     {
         glsystem = Teuchos::rcp ( new GlSystemWithConstraint ( glProblem, eComm,outputDirectory.string(),
-                                                               contDataFileName,
-                                                               contFileFormat,
-                                                               contFileBaseName,
-                                                               "",
-                                                               maxLocaStepsDecimals ) );
+                                  contDataFileName,
+                                  contFileFormat,
+                                  contFileBaseName,
+                                  "",
+                                  numDigits ( maxLocaSteps ) ) );
     }
     catch ( std::exception & e )
     {
@@ -264,12 +281,12 @@ main ( int argc, char *argv[] )
     // Create the necessary objects
     // ---------------------------------------------------------------------------
     // Create Epetra factory
-    Teuchos::RCP<LOCA::Abstract::Factory> epetraFactory = Teuchos::rcp (
-                new LOCA::Epetra::Factory );
+    Teuchos::RCP<LOCA::Abstract::Factory> epetraFactory =
+        Teuchos::rcp ( new LOCA::Epetra::Factory );
 
     // Create global data object
-    Teuchos::RCP<LOCA::GlobalData> globalData = LOCA::createGlobalData ( paramList,
-            epetraFactory );
+    Teuchos::RCP<LOCA::GlobalData> globalData =
+        LOCA::createGlobalData ( paramList, epetraFactory );
 
     // get the initial solution
     Teuchos::RCP<Epetra_Vector> soln = glsystem->getSolution();
@@ -315,8 +332,8 @@ main ( int argc, char *argv[] )
 //  Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys = Teuchos::rcp(
 //      new NOX::Epetra::LinearSystemAztecOO(nlPrintParams, lsParams, iJac, J, iPrec, M, *soln));
 
-    Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys = Teuchos::rcp (
-                new NOX::Epetra::LinearSystemAztecOO ( nlPrintParams, lsParams, iReq, iJac, J, *soln ) );
+    Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys =
+        Teuchos::rcp ( new NOX::Epetra::LinearSystemAztecOO ( nlPrintParams, lsParams, iReq, iJac, J, *soln ) );
 
     Teuchos::RCP<LOCA::Epetra::Interface::TimeDependent> iTime = glsystem;
     // ---------------------------------------------------------------------------
@@ -344,8 +361,8 @@ main ( int argc, char *argv[] )
 
     // ---------------------------------------------------------------------------
     // Get the vector from the Problem
-    Teuchos::RCP<NOX::Epetra::Vector> noxSoln = Teuchos::rcp (
-                new NOX::Epetra::Vector ( soln, NOX::Epetra::Vector::CreateView ) );
+    Teuchos::RCP<NOX::Epetra::Vector> noxSoln =
+        Teuchos::rcp ( new NOX::Epetra::Vector ( soln, NOX::Epetra::Vector::CreateView ) );
     // ---------------------------------------------------------------------------
 
 
@@ -355,28 +372,28 @@ main ( int argc, char *argv[] )
     Teuchos::ParameterList& noxList = paramList->sublist ( "NOX", true );
     double tol = noxList.get<double> ( "Tolerance" );
     int maxNonlinarSteps = noxList.get<int> ( "Max steps" );
-    Teuchos::RCP<NOX::StatusTest::NormF> normF = Teuchos::rcp (
-                new NOX::StatusTest::NormF ( tol ) );
-    Teuchos::RCP<NOX::StatusTest::MaxIters> maxIters = Teuchos::rcp (
-                new NOX::StatusTest::MaxIters ( maxNonlinarSteps ) );
-    Teuchos::RCP<NOX::StatusTest::Generic> comboOR = Teuchos::rcp (
-                new NOX::StatusTest::Combo ( NOX::StatusTest::Combo::OR, normF, maxIters ) );
+    Teuchos::RCP<NOX::StatusTest::NormF> normF =
+        Teuchos::rcp ( new NOX::StatusTest::NormF ( tol ) );
+    Teuchos::RCP<NOX::StatusTest::MaxIters> maxIters =
+        Teuchos::rcp ( new NOX::StatusTest::MaxIters ( maxNonlinarSteps ) );
+    Teuchos::RCP<NOX::StatusTest::Generic> comboOR =
+        Teuchos::rcp ( new NOX::StatusTest::Combo ( NOX::StatusTest::Combo::OR, normF, maxIters ) );
     // ---------------------------------------------------------------------------
 
 
     // ---------------------------------------------------------------------------
     // Set up the LOCA status tests
     // ---------------------------------------------------------------------------
-    Teuchos::RCP<LOCA::StatusTest::MaxIters> maxLocaStepsTest = Teuchos::rcp (
-                new LOCA::StatusTest::MaxIters ( maxLocaSteps ) );
+    Teuchos::RCP<LOCA::StatusTest::MaxIters> maxLocaStepsTest =
+        Teuchos::rcp ( new LOCA::StatusTest::MaxIters ( maxLocaSteps ) );
     // ---------------------------------------------------------------------------
 
     // ---------------------------------------------------------------------------
     // Create the stepper
-    Teuchos::RCP<LOCA::Stepper> stepper = Teuchos::rcp ( new LOCA::Stepper (
-                                              globalData, grp, maxLocaStepsTest, comboOR, paramList ) );
-//  Teuchos::RCP<LOCA::Stepper> stepper = Teuchos::rcp(new LOCA::Stepper(
-//      globalData, grp, comboOR, paramList));
+    Teuchos::RCP<LOCA::Stepper> stepper =
+        Teuchos::rcp ( new LOCA::Stepper ( globalData, grp, maxLocaStepsTest, comboOR, paramList ) );
+//  Teuchos::RCP<LOCA::Stepper> stepper =
+//  Teuchos::rcp(new LOCA::Stepper( globalData, grp, comboOR, paramList));
     // ---------------------------------------------------------------------------
 
     // make sure that the stepper starts off with the correct starting value
@@ -414,3 +431,4 @@ main ( int argc, char *argv[] )
     // Final return value (0 = successful, non-zero = failure)
     return status;
 }
+// =============================================================================

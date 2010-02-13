@@ -54,7 +54,8 @@ public:
                const std::string outputDataFileName = "continuationData.dat",
                const std::string outputFileFormat = "VTK",
                const std::string solutionFileNameBase = "solutionStep",
-               const std::string nullvectorFileNameBase = "nullvectorStep" );
+               const std::string nullvectorFileNameBase = "nullvectorStep",
+               const unsigned int maxStepNumberDecimals = 4 );
 
     // Constructor without initial guess.
     GlSystem ( GinzburgLandau::GinzburgLandau &gl,
@@ -63,7 +64,8 @@ public:
                const std::string outputDataFileName = "continuationData.dat",
                const std::string outputFileFormat = "VTK",
                const std::string solutionFileNameBase = "solutionStep",
-               const std::string nullvectorFileNameBase = "nullvectorStep" );
+               const std::string nullvectorFileNameBase = "nullvectorStep",
+               const unsigned int maxNumDigits = 4 );
 
     //! Destructor
     ~GlSystem();
@@ -170,6 +172,9 @@ private:
         TURNINGPOINT
     };
 
+    int
+    numDigits ( const int i );
+
     void
     createJacobian ( const Epetra_Vector &x );
 
@@ -214,6 +219,8 @@ private:
     const std::string outputDataFileName_;
 
     bool firstTime_;
+    
+    unsigned int maxNumDigits_;
 };
 
 #endif // GLSYSTEM_H
