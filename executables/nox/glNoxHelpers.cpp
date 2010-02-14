@@ -67,11 +67,7 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
     Teuchos::RCP<GridUniform> grid;
     GridReader::read ( comm, fileName, psi, grid, problemParameters );
 
-    std::cout << problemParameters << std::endl;
-
     Teuchos::ArrayRCP<const double_complex> psiView = psi->get1dView();
-    for ( int k =0; k<5; k++ )
-        std::cout << psiView[k] << std::endl;
 
     double h0      = problemParameters.get<double> ( "H0" );
     double scaling = problemParameters.get<double> ( "scaling" );
@@ -136,11 +132,13 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
 
 //     Teuchos::RCP<DomainVirtual> domain = Teuchos::rcp( new DomainPolygon(P) );
 
-    // TODO Create GridContructor with Nx
+    // TODO Create GridConstructor with Nx
     // create the grid
     double h = 1.0 / Nx;
     Teuchos::RCP<GridUniform> grid =
-        Teuchos::rcp ( new GridUniform ( domain, h, scaling ) );
+        Teuchos::rcp ( new GridUniform ( domain, h ) );
+        
+    grid->setScaling( scaling );
 
     Teuchos::RCP<MagneticVectorPotential> A =
         Teuchos::rcp ( new MagneticVectorPotential ( H0, scaling ) );

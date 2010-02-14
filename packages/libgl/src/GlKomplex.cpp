@@ -171,7 +171,7 @@ void
 GlKomplex::initializeMatrix()
 {
     int numEntriesPerRow = 0; // Fill during insertion phase.
-    realMatrix_ = Teuchos::rcp ( new Epetra_CrsMatrix ( Copy,*RealMap_,0 ) );
+    realMatrix_ = Teuchos::rcp ( new Epetra_CrsMatrix ( Copy,*RealMap_, numEntriesPerRow ) );
 }
 // =============================================================================
 void

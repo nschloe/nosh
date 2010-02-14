@@ -27,8 +27,7 @@ class GridUniform:
 {
 public:
     GridUniform ( const Teuchos::RCP<const DomainVirtual> & domain,
-                  const double                              h,
-                  const double                              scaling
+                  const double                              h
                 );
 
     GridUniform ( const double                h,

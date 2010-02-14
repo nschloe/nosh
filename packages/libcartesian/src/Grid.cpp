@@ -13,13 +13,12 @@
 
 // ============================================================================
 Grid::Grid ( const Teuchos::RCP<const DomainVirtual> & domain,
-             const DoubleTuple                         h,
-             const double                              scaling
+             const DoubleTuple                         h
            ) :
         h_ ( h ),
         numCells_ ( Teuchos::tuple ( ( unsigned int ) 0, ( unsigned int ) 0 ) ),
         kBB_ ( Teuchos::Array<int>() ),
-        scaling_ ( scaling ),
+        scaling_ ( 1.0 ),
         gridDomainArea_ ( 0.0 ),
         numGridPoints_ ( 0 ),
         numBoundaryPoints_ ( 0 ),
@@ -319,7 +318,7 @@ Grid::setScaling ( const double scaling )
     TEST_FOR_EXCEPTION ( scaling==0.0,
                          std::logic_error,
                          "Previous scaling value scaling_=0.0." );
-
+                         
     double ratio = scaling/scaling_;
 
     for ( int k=0; k<h_.size(); k++ )

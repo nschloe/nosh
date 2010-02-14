@@ -21,10 +21,9 @@
 
 // =============================================================================
 GridUniform::GridUniform ( const Teuchos::RCP<const DomainVirtual> & domain,
-                           const double                              h,
-                           const double                              scaling
+                           const double                              h
                          ) :
-        Grid ( domain, Teuchos::tuple ( h,h ), scaling ),
+        Grid ( domain, Teuchos::tuple ( h,h ) ),
         h_ ( h )
 {
 }

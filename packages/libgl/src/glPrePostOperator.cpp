@@ -57,7 +57,7 @@ runPostIterate ( const NOX::Solver::Generic& solver )
                          "Group contains invalid right hand side. Has F ever been computed?" );
     const Epetra_Vector& currentResidual =
         ( dynamic_cast<const NOX::Epetra::Vector&> ( solGrp.getF() ) ).getEpetraVector();
-    stringstream fileStream;
+    fileStream.str(std::string()); // empty the filestream
     fileStream
     << outputDir_ << "/newton-res-" << numRunPreIterate 
     << "." << filenameExtension_;

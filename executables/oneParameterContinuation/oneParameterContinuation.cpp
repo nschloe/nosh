@@ -217,7 +217,8 @@ main ( int argc, char *argv[] )
         Teuchos::RCP<DomainVirtual> domain = Teuchos::rcp ( new DomainSquare ( edgeLength ) );
 
         double h = edgeLength / Nx;
-        Teuchos::RCP<GridUniform> grid = Teuchos::rcp ( new GridUniform ( domain, h, scaling ) );
+        Teuchos::RCP<GridUniform> grid = Teuchos::rcp ( new GridUniform ( domain, h ) );
+        grid->setScaling( scaling );
 
         // set initial guess
         int numComplexUnknowns = grid->getNumGridPoints();

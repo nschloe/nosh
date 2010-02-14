@@ -27,8 +27,7 @@ public:
 
     //! Default constructor.
     Grid ( const Teuchos::RCP<const DomainVirtual> & domain,
-           const DoubleTuple                         h,
-           const double                              scaling = 1.0
+           const DoubleTuple                         h
          );
          
     //! Constructor for information gotten from a file read.
