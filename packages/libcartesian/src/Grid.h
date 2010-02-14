@@ -57,6 +57,9 @@ public:
     //! Returns the number of grid points on the boundary.
     virtual unsigned int
     getNumBoundaryPoints() const;
+    
+    virtual const Teuchos::Array<int> &
+    getBoundaryIndices() const;
 
     virtual DoubleTuple
     getH() const; //!< Returns mesh sizes \f$h\f$.
@@ -64,8 +67,6 @@ public:
     //! Returns the measure of the discretized domain.
     virtual double
     getGridDomainArea() const;
-
-public:
 
     //! @param   k Global node index
     //! @return    Node type
@@ -139,21 +140,6 @@ public:
                     const Teuchos::ParameterList & params,
                     const std::string            & filePath
                   ) const;
-
-    virtual void
-    read ( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
-           const std::string                             & filePath,
-           Teuchos::RCP<DoubleMultiVector>               & x,
-           Teuchos::ParameterList                        & params
-         );
-
-    virtual void
-    read ( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
-           const std::string                             & filePath,
-           Teuchos::RCP<ComplexMultiVector>              & x,
-           Teuchos::ParameterList                        & params
-         );
-
 
 private:
 

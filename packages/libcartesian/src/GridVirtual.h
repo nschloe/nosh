@@ -146,21 +146,6 @@ public:
                     const std::string            & filePath
                   ) const = 0;
 
-    virtual void
-    read ( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
-           const std::string                             & filePath,
-           Teuchos::RCP<DoubleMultiVector>               & x,
-           Teuchos::ParameterList                        & params
-         ) = 0;
-
-    virtual void
-    read ( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
-           const std::string                             & filePath,
-           Teuchos::RCP<ComplexMultiVector>              & x,
-           Teuchos::ParameterList                        & params
-         ) = 0;
-
-
 protected:
 
     DoubleTuple h_;

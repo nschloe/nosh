@@ -62,7 +62,7 @@ public:
     double
     getH0 () const;
 
-    Teuchos::RCP<const GridVirtual>
+    Teuchos::RCP<const Grid>
     getGrid() const;
 
     double

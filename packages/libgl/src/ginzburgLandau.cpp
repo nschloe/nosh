@@ -91,10 +91,10 @@ GinzburgLandau::getJacobianRow ( const int                           eqnum,
                                  Teuchos::Array<double_complex>    & valuesPsiConj
                                ) const
 {
-    glOperator_->updatePsi( psi );
-    glOperator_->getJacobianRow( eqnum,
-                                 columnIndicesPsi, valuesPsi,
-                                 columnIndicesPsiConj, valuesPsiConj );
+    glOperator_->updatePsi ( psi );
+    glOperator_->getJacobianRow ( eqnum,
+                                  columnIndicesPsi, valuesPsi,
+                                  columnIndicesPsiConj, valuesPsiConj );
     return;
 }
 // =============================================================================
@@ -196,59 +196,68 @@ int
 GinzburgLandau::getVorticity ( const ComplexVector &psi
                              ) const
 {
-    return 0;
-//     int numProcs = psi.getMap()->getComm()->getSize();
-//     if ( numProcs!=1 )
-//         return -1;
-//
-//     int vorticity = 0;
-//
-//     const double PI = 3.14159265358979323846264338327950288419716939937510;
-//     // Consider jumps in the argument greater than threshold phase jumps.
-//     const double threshold = 1.5*PI;
-//
-//     // Get a view of the whole vector.
-//     // Remember: This only works with one core.
-//     Teuchos::ArrayRCP<const double_complex> psiView = psi.get1dView();
-//
-//     int numBoundaryPoints = grid_->getNumBoundaryPoints();
-//
-//     int psiLowerOffset = psiView.lowerOffset();
-//     int psiUpperOffset = psiView.upperOffset();
-//     int boundaryIndex = 0;
-//     int globalIndex = grid_->boundaryIndex2globalIndex ( boundaryIndex );
-//
-//     TEST_FOR_EXCEPTION ( globalIndex < psiLowerOffset || globalIndex > psiUpperOffset,
-//                          std::out_of_range,
-//                          "Index globalIndex=" << globalIndex << " out of bounds (lower="
-//                          << psiLowerOffset << ", upper=" << psiUpperOffset << ")" );
-//
-//     double angle = std::arg ( psiView[globalIndex] );
-//     double angle0 = angle;
-//     double anglePrevious;
-//     for ( boundaryIndex=1; boundaryIndex<numBoundaryPoints; boundaryIndex++ )
-//     {
-//         anglePrevious = angle;
-//         globalIndex   = grid_->boundaryIndex2globalIndex ( boundaryIndex );
-//         TEST_FOR_EXCEPTION ( globalIndex < psiLowerOffset || globalIndex > psiUpperOffset,
-//                              std::out_of_range,
-//                              "Index globalIndex=" << globalIndex << " out of bounds (lower="
-//                              << psiLowerOffset << ", upper=" << psiUpperOffset << ")" );
-//         angle = std::arg ( psiView[globalIndex] );
-//         if ( angle-anglePrevious<-threshold )
-//             vorticity++;
-//         else if ( angle-anglePrevious>threshold )
-//             vorticity--;
-//     }
-//
-//     // close the circle
-//     anglePrevious = angle;
-//     if ( angle0-anglePrevious<-threshold )
-//         vorticity++;
-//     else if ( angle0-anglePrevious>threshold )
-//         vorticity--;
-//
-//     return vorticity;
+    int numProcs = psi.getMap()->getComm()->getSize();
+    if ( numProcs!=1 )
+        return -1;
+
+    Teuchos::ArrayRCP<const double_complex> psiView = psi.get1dView();
+
+    Teuchos::Array<int> boundaryIndices =
+        glOperator_->getGrid()->getBoundaryIndices();
+
+    unsigned int n = boundaryIndices.length();
+
+    // winding number algorithm
+    // http://www.google.be/url?sa=t&source=web&ct=res&cd=1&ved=0CAkQFjAA&url=http%3A%2F%2Fwww.engr.colostate.edu%2F~dga%2Fdga%2Fpapers%2Fpoint_in_polygon.pdf&ei=ntxvS6eyOYLI-Qao2vjoAQ&usg=AFQjCNF_btLpRhTfkUQt34nXfsRylaF95g&sig2=Hh8I-SjpWC6queaj3QMeZw
+    // TODO make vorticity INT
+    double vorticity = 0;
+
+    const double tol= 1.0e-15;
+
+    double_complex currentZ;
+    double_complex nextZ = psiView[ boundaryIndices[0] ];
+    for ( unsigned int k=0; k<n; k++ )
+    {
+        currentZ = nextZ;
+        if ( k<n-1 )
+            nextZ = psiView[ boundaryIndices[k+1] ];
+        else
+            nextZ = psiView[ boundaryIndices[0] ];
+
+        std::cout << currentZ << std::endl;
+
+        bool isK0Neg = std::imag ( currentZ ) < 0.0;
+        bool isK1Neg = std::imag ( nextZ )    < 0.0;
+        // check crossings of the negative real axis
+        if ( isK0Neg ^ isK1Neg ) // crosses real axis
+        {
+            // calculate the intersection point
+            double r = std::real ( currentZ ) + std::imag ( currentZ ) * ( std::real ( nextZ ) - std::real ( currentZ ) ) / ( std::imag ( currentZ )- std::imag ( nextZ ) );
+            if ( std::signbit ( r ) ) // is negative?
+            {
+                if ( isK0Neg ) // crossing clockwise
+                    --vorticity;
+                else  // crossing counter-clockwise
+                    ++vorticity;
+            }
+        }
+        else if ( fabs ( std::imag ( currentZ ) ) < tol && std::real ( currentZ ) < 0.0 )
+        {
+            if ( isK1Neg )
+                vorticity += 0.5;
+            else
+                vorticity -= 0.5;
+        }
+        else if ( fabs ( std::imag ( nextZ ) ) < tol && std::real ( nextZ ) < 0.0 )
+        {
+            if ( isK0Neg )
+                vorticity -= 0.5;
+            else
+                vorticity += 0.5;
+        }
+    }
+
+    return round ( vorticity );
 }
 // =============================================================================
 void

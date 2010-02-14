@@ -719,30 +719,6 @@ Grid::cellArea ( unsigned int k ) const
 }
 // =============================================================================
 void
-Grid::read ( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
-             const std::string                             & filePath,
-             Teuchos::RCP<DoubleMultiVector>               & x,
-             Teuchos::ParameterList                        & params
-           )
-{
-    TEST_FOR_EXCEPTION ( true,
-                         std::logic_error,
-                         "Not yet implemented." );
-}
-// =============================================================================
-void
-Grid::read ( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
-             const std::string                             & filePath,
-             Teuchos::RCP<ComplexMultiVector>              & x,
-             Teuchos::ParameterList                        & params
-           )
-{
-    TEST_FOR_EXCEPTION ( true,
-                         std::logic_error,
-                         "Not yet implemented." );
-}
-// =============================================================================
-void
 Grid::writeWithGrid ( const Epetra_MultiVector     & x,
                       const Teuchos::ParameterList & params,
                       const std::string            & filePath
@@ -815,6 +791,12 @@ Grid::getBoundaryNodeType ( unsigned int l ) const
     TEST_FOR_EXCEPTION ( true,
                          std::logic_error,
                          "Not yet implemented." );
+}
+// =============================================================================
+const Teuchos::Array<int> &
+Grid::getBoundaryIndices() const
+{
+   return boundaryIndices_;
 }
 // =============================================================================
 unsigned int

@@ -70,7 +70,7 @@ GlOperatorVirtual::getScaling () const
     return grid_->getScaling();
 }
 // =============================================================================
-Teuchos::RCP<const GridVirtual>
+Teuchos::RCP<const Grid>
 GlOperatorVirtual::getGrid() const
 {
   return grid_;

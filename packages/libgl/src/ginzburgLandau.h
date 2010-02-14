@@ -115,31 +115,10 @@ private:
                   const ComplexVector & psi
                 ) const;
 
-    //! Equation type enumerator.
-    /*! Semantically separates the different types of conditions which must
-        be applied at different parts of the rectangular grid. */
-//     enum equationType
-//     {
-//         BOUNDARY,
-//         INTERIOR,
-//         PHASE_CONDITION
-//     };
-
-
-private:
-//     void getEquationType ( const int           eqnum,
-//                            equationType        &eqType,
-//                            int                 &eqIndex
-//                          ) const;
-
 private:
     const Teuchos::RCP<GlOperatorVirtual> glOperator_;
-    
-    /*! Have \c boundaryConditions_ declared as pointer as its class
-        \c GlBoundaryConditionsVirtual is only available via a forward
-    declaration. */
-//     Teuchos::RCP<GlBoundaryConditionsVirtual> boundaryConditions_;
 
+private:
     /*! Calculated the coefficients of the jacobian system associated with the
         Ginzburg--Landau equations. */
     void computeJacobianRow ( const bool                        fillValues,
