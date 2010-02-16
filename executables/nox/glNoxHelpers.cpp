@@ -57,8 +57,8 @@ void
 createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
                  const Teuchos::RCP<const Epetra_Comm>         & eComm,
                  const std::string                             & fileName,
-                 Teuchos::ParameterList                  & problemParameters,
-                 Teuchos::RCP<GlSystemWithConstraint>    & glSystem )
+                 Teuchos::ParameterList                        & problemParameters,
+                 Teuchos::RCP<GlSystemWithConstraint>          & glSystem )
 {
     Teuchos::ParameterList glParameters;
 
@@ -83,6 +83,8 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
     TEUCHOS_ASSERT_EQUALITY ( psi->getNumVectors(), 1 );
 
     glSystem = Teuchos::rcp ( new GlSystemWithConstraint ( glProblem, eComm, psi->getVector ( 0 ) ) );
+
+    return;
 }
 // =============================================================================
 void
@@ -137,8 +139,8 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
     double h = 1.0 / Nx;
     Teuchos::RCP<GridUniform> grid =
         Teuchos::rcp ( new GridUniform ( domain, h ) );
-        
-    grid->setScaling( scaling );
+
+    grid->setScaling ( scaling );
 
     Teuchos::RCP<MagneticVectorPotential> A =
         Teuchos::rcp ( new MagneticVectorPotential ( H0, scaling ) );

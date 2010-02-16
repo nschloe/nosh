@@ -41,6 +41,7 @@ VtkWriter::write () const
         vtkSmartPointer<vtkStructuredPointsWriter>::New();
     writer->SetFileName ( filePath_.c_str() );
     writer->SetInput ( imageData_ );
+    writer->SetFileTypeToBinary(); // write binary data to avoid losing precision
     writer->Write();
 
     return;

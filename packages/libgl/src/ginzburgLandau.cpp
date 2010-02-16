@@ -192,6 +192,9 @@ GinzburgLandau::normalizedScaledL2Norm ( const ComplexVector &psi
 // Count the number of vortices by the total phase change along the boundary
 // of the domain.
 // TODO Make this work in multicore environments.
+// Idea: Cauchy's integral formula: just caluculate the integral.
+//       Numerically difficult when too close to origin (rather: points
+//       closest to and furthest from origin too far apart).
 int
 GinzburgLandau::getVorticity ( const ComplexVector &psi
                              ) const
@@ -223,8 +226,6 @@ GinzburgLandau::getVorticity ( const ComplexVector &psi
             nextZ = psiView[ boundaryIndices[k+1] ];
         else
             nextZ = psiView[ boundaryIndices[0] ];
-
-        std::cout << currentZ << std::endl;
 
         bool isK0Neg = std::imag ( currentZ ) < 0.0;
         bool isK1Neg = std::imag ( nextZ )    < 0.0;

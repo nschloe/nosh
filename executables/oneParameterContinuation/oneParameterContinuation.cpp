@@ -250,8 +250,10 @@ main ( int argc, char *argv[] )
     // TODO Get rid of the explicit "double".
     stepperList.set ( "Initial Value", glParameters.get<double> ( contParam ) );
 
+    double h0      = glParameters.get<double> ( "H0" );
+    double scaling = glParameters.get<double> ( "scaling" );
     Teuchos::RCP<MagneticVectorPotential> A =
-        Teuchos::rcp ( new MagneticVectorPotential ( glParameters.get<double> ( "H0" ), glParameters.get<double> ( "scaling" ) ) );
+        Teuchos::rcp ( new MagneticVectorPotential ( h0, scaling ) );
 
     // create the operator
     Teuchos::RCP<GlOperatorVirtual> glOperator =
@@ -262,15 +264,17 @@ main ( int argc, char *argv[] )
     Teuchos::RCP<GlSystemWithConstraint> glsystem;
 
     int maxLocaSteps = 5000;
-    std::cout << numDigits( maxLocaSteps ) << std::endl;
     try
     {
-        glsystem = Teuchos::rcp ( new GlSystemWithConstraint ( glProblem, eComm,outputDirectory.string(),
-                                  contDataFileName,
-                                  contFileFormat,
-                                  contFileBaseName,
-                                  "",
-                                  numDigits ( maxLocaSteps ) ) );
+        glsystem = Teuchos::rcp ( new GlSystemWithConstraint ( glProblem,
+                                                               eComm,
+                                                               psi,
+                                                               outputDirectory.string(),
+                                                               contDataFileName,
+                                                               contFileFormat,
+                                                               contFileBaseName,
+                                                               "",
+                                                               numDigits ( maxLocaSteps ) ) );
     }
     catch ( std::exception & e )
     {
