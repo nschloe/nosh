@@ -1,15 +1,7 @@
 #include "ginzburgLandau.h"
 
-#include <Teuchos_RCP.hpp>
-
-// really needed?
-// --> reduceAllAndScatter in freeEnergy()
+// needed for reduceAllAndScatter in freeEnergy()
 #include <Teuchos_Comm.hpp>
-
-#include <Tpetra_Map.hpp>
-
-// complex unit
-const double_complex I ( 0,1 );
 
 // =============================================================================
 // Class constructor
@@ -278,13 +270,7 @@ GinzburgLandau::writeSolutionToFile ( const Teuchos::RCP<const ComplexVector> &p
     // create a parameter list that contains useful items for a solution file
     Teuchos::ParameterList params;
 
-    // TODO avoid calculating free energy and vorticity twice
-    double energy = freeEnergy ( *psi );
-    int vorticity = getVorticity ( *psi );
-
     params.get ( "H0", glOperator_->getH0() );
-    params.get ( "free energy", energy );
-    params.get ( "vorticity", vorticity );
 
     writeStateToFile ( psi, params, filePath );
 }
@@ -315,7 +301,6 @@ GinzburgLandau::appendStats ( std::ofstream & fileStream,
     }
     else
     {
-        // TODO avoid calculating the free energy twice
         double energy = freeEnergy ( *psi );
         double l2norm = normalizedScaledL2Norm ( *psi );
         int vorticity = getVorticity ( *psi );

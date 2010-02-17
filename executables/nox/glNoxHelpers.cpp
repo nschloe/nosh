@@ -96,23 +96,23 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
                  Teuchos::ParameterList                  & problemParameters,
                  Teuchos::RCP<GlSystemWithConstraint>    & glSystem )
 {
-    problemParameters.set ( "Nx"     , Nx );
     problemParameters.set ( "scaling", scaling );
     problemParameters.set ( "H0"     , H0 );
 
-    // create the domain
-    double edgeLength = 1.0;
-    Teuchos::RCP<DomainVirtual> domain =
-        Teuchos::rcp ( new DomainSquare ( edgeLength ) );
-
+//     // create the domain
+//     double edgeLength = 1.0;
 //     Teuchos::RCP<DomainVirtual> domain =
-//         Teuchos::rcp ( new DomainRectangle ( 2.0, 1.0 ) );
+//         Teuchos::rcp ( new DomainSquare ( edgeLength ) );
+
+    Teuchos::RCP<DomainVirtual> domain =
+        Teuchos::rcp ( new DomainRectangle ( 2.0, 1.0 ) );
 
 //     Teuchos::RCP<DomainVirtual> domain =
 //         Teuchos::rcp ( new DomainCircle ( 1.0 ) );
 
 //     Teuchos::RCP<DomainVirtual> domain =
 //         Teuchos::rcp ( new DomainEllipse ( 2.0, 1.0 ) );
+
 
 //     Teuchos::Array<DoubleTuple> P( Teuchos::tuple( Teuchos::tuple(0.0,0.0),
 //                                                    Teuchos::tuple(4.0,0.0),

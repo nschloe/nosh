@@ -205,18 +205,17 @@ main ( int argc, char *argv[] )
     }
     else // no or empty input guess file
     {
-        int    Nx      = initialGuessList.get<int> ( "Nx" );
         double scaling = initialGuessList.get<double> ( "scaling" );
         double H0      = initialGuessList.get<double> ( "H0" );
 
-        glParameters.set ( "Nx", Nx );
         glParameters.set ( "scaling", scaling );
         glParameters.set ( "H0", H0 );
 
         double edgeLength = 1.0;
         Teuchos::RCP<DomainVirtual> domain = Teuchos::rcp ( new DomainSquare ( edgeLength ) );
 
-        double h = edgeLength / Nx;
+        int    Nx = initialGuessList.get<int> ( "Nx" );
+        double h  = edgeLength / Nx;
         Teuchos::RCP<GridUniform> grid = Teuchos::rcp ( new GridUniform ( domain, h ) );
         grid->setScaling( scaling );
 

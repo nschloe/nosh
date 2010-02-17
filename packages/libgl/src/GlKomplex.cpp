@@ -68,14 +68,11 @@ GlKomplex::real2complex ( const Epetra_Vector & x ) const
                          std::logic_error,
                          "ComplexMap_ has not been properly initialized." );
 
-    // TODO get Epetra entries locally?
     Teuchos::RCP<ComplexVector> z = Teuchos::rcp ( new ComplexVector ( ComplexMap_ ) );
     Teuchos::ArrayRCP<double_complex> zView = z->get1dViewNonConst();
     for ( unsigned int k=0; k < z->getLocalLength(); k++ )
-    {
-        int K = ComplexMap_->getGlobalElement ( k );
-        zView[k] = double_complex ( x[2*K], x[2*K+1] );
-    }
+        zView[k] = double_complex ( x[2*k], x[2*k+1] );
+
     return z;
 }
 // =============================================================================
@@ -88,14 +85,13 @@ GlKomplex::complex2real ( const ComplexVector &complexVec ) const
                      && complexVec.getMap()->isSameAs ( *ComplexMap_ ) );
 
     Teuchos::RCP<Epetra_Vector> x = Teuchos::rcp ( new Epetra_Vector ( *RealMap_ ) );
-    // TODO: parallelize
-    Teuchos::ArrayRCP<const double_complex> complexVecView = complexVec.get1dView();
-    int numComplexUnknowns = ComplexMap_->getGlobalNumElements();
 
-    for ( int k = 0; k < numComplexUnknowns; k++ )
+    Teuchos::ArrayRCP<const double_complex> complexVecView = complexVec.get1dView();
+
+    for ( unsigned int k = 0; k < ComplexMap_->getNodeNumElements(); k++ )
     {
-        x->ReplaceGlobalValue ( 2*k  , 0, real ( complexVecView[k] ) );
-        x->ReplaceGlobalValue ( 2*k+1, 0, imag ( complexVecView[k] ) );
+        (*x)[2*k]   = std::real ( complexVecView[k] );
+        (*x)[2*k+1] = std::imag ( complexVecView[k] );
     }
     return x;
 }
