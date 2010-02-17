@@ -2,12 +2,11 @@
  * GlKomplex.cpp
  *
  *  Created on: Dec 16, 2009
- *      Author: Nico Schl�mer
+ *      Author: Nico Schl\"omer
  */
 
 #include "GlKomplex.h"
 
-#include <Epetra_IntSerialDenseVector.h>
 #include <Epetra_Map.h>
 
 #include <Teuchos_DefaultComm.hpp> // for Teuchos::SerialComm
@@ -90,8 +89,8 @@ GlKomplex::complex2real ( const ComplexVector & complexVec ) const
 
     for ( unsigned int k = 0; k < ComplexMap_->getNodeNumElements(); k++ )
     {
-        (*x)[2*k]   = std::real ( complexVecView[k] );
-        (*x)[2*k+1] = std::imag ( complexVecView[k] );
+        ( *x ) [2*k]   = std::real ( complexVecView[k] );
+        ( *x ) [2*k+1] = std::imag ( complexVecView[k] );
     }
     return x;
 }
@@ -112,7 +111,7 @@ GlKomplex::createRealMap ( const Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> 
     // processor K again.
     unsigned int numMyComplexElements = myComplexGIDs.size();
     unsigned int numMyRealElements    = 2*numMyComplexElements;
-    Epetra_IntSerialDenseVector myRealGIDs ( numMyRealElements );
+    Teuchos::Array<int> myRealGIDs ( numMyRealElements );
     for ( unsigned int k = 0; k < numMyComplexElements; k++ )
     {
         myRealGIDs[2*k  ] = 2 * myComplexGIDs[k];
@@ -120,8 +119,8 @@ GlKomplex::createRealMap ( const Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> 
     }
 
     return Teuchos::rcp ( new Epetra_Map ( numMyRealElements,
-                                           myRealGIDs.Length(),
-                                           myRealGIDs.Values(),
+                                           myRealGIDs.size(),
+                                           myRealGIDs.getRawPtr(),
                                            ComplexMap->getIndexBase(),
                                            *EComm_ )
                         );
@@ -140,20 +139,20 @@ GlKomplex::create_CommInt ( const Teuchos::RCP<const Epetra_Comm> &epetraComm )
     mpiEpetraComm = rcp_dynamic_cast<const Epetra_MpiComm> ( epetraComm );
     if ( mpiEpetraComm.get() )
     {
-        RCP<const Teuchos::OpaqueWrapper<MPI_Comm> >
-        rawMpiComm = Teuchos::opaqueWrapper ( mpiEpetraComm->Comm() );
+        RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > rawMpiComm =
+            Teuchos::opaqueWrapper ( mpiEpetraComm->Comm() );
         set_extra_data ( mpiEpetraComm, "mpiEpetraComm", Teuchos::inOutArg ( rawMpiComm ) );
-        RCP<const Teuchos::MpiComm<int> >
-        mpiComm = rcp ( new Teuchos::MpiComm<int> ( rawMpiComm ) );
+        RCP<const Teuchos::MpiComm<int> > mpiComm =
+            rcp ( new Teuchos::MpiComm<int> ( rawMpiComm ) );
         return mpiComm;
     }
 #else
     Teuchos::RCP<const Epetra_SerialComm>
-    serialEpetraComm = rcp_dynamic_cast<const Epetra_SerialComm> ( epetraComm );
+    serialEpetraComm = Teuchos::rcp_dynamic_cast<const Epetra_SerialComm> ( epetraComm );
     if ( serialEpetraComm.get() )
     {
-        Teuchos::RCP<const Teuchos::SerialComm<int> >
-        serialComm = rcp ( new Teuchos::SerialComm<int>() );
+        Teuchos::RCP<const Teuchos::SerialComm<int> > serialComm =
+            Teuchos::rcp ( new Teuchos::SerialComm<int>() );
         set_extra_data ( serialEpetraComm, "serialEpetraComm", Teuchos::inOutArg ( serialComm ) );
         return serialComm;
     }
@@ -396,8 +395,8 @@ GlKomplex::imagScalarProductCoeff ( const Teuchos::RCP<const ComplexVector> a
     Teuchos::ArrayRCP<const double_complex> aView = a->get1dView();
     for ( unsigned int k=0; k<ComplexMap_->getNodeNumElements(); k++ )
     {
-        (*compound)[2*k]   = -std::imag ( aView[k] );
-        (*compound)[2*k+1] =  std::real ( aView[k] );
+        ( *compound ) [2*k]   = -std::imag ( aView[k] );
+        ( *compound ) [2*k+1] =  std::real ( aView[k] );
     }
 
     return compound;
