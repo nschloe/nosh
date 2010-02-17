@@ -47,14 +47,21 @@ read( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
   // read all the values
   UIntTuple dims;
   DoubleTuple origin;
-  DoubleTuple h;
+  DoubleTuple spacing; // see note below
   Teuchos::Array<int> bbIndex;
-  reader->read( z, bbIndex, dims, origin, h, fieldData, Comm );
+  reader->read( z, bbIndex, dims, origin, spacing, fieldData, Comm );
   
   // extract the necessary values
   double scaling = fieldData.get<double>( "scaling" );
   Teuchos::Array<int> boundaryIndices = fieldData.get<Teuchos::Array<int> >( "boundary indices" );
   fieldData.remove( "boundary indices" );
+  
+  // h and spacing should essentially deliver the same values, where SPACING is less reliable
+  // as it may be stored with little precision in the file, depending on the file type.
+  Teuchos::Array<double> hArray = fieldData.get<Teuchos::Array<double> >( "h" );
+  fieldData.remove( "h" );
+  TEUCHOS_ASSERT_EQUALITY( hArray.length(), 2 );
+  DoubleTuple h = Teuchos::tuple( hArray[0], hArray[1] );
   
   TEST_FOR_EXCEPTION( fabs( h[0]-h[1] ) > 1.e-15,
                       std::logic_error,

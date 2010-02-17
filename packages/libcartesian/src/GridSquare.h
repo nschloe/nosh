@@ -23,12 +23,12 @@ class GridSquare: virtual public GridVirtual
 public:
 
     //! Default constructor.
-    GridSquare ( UIntTuple Nx,
-                 double    scaling
+    GridSquare ( const UIntTuple & numCells,
+                 const double      edgeLength
                );
 
     //! Class constructor that only initializes the data members of this class.
-    GridSquare ( UIntTuple Nx );
+    GridSquare ( const UIntTuple & numCells );
 
     virtual
     ~GridSquare();
@@ -92,7 +92,7 @@ public:
     cellArea ( unsigned int k ) const;
 
 protected:
-    Teuchos::Tuple<unsigned int,2> Nx_; //!< Number of grid pieces in both x- and y-direction
+    Teuchos::Tuple<unsigned int,2> numCells_; //!< Number of grid pieces in both x- and y-direction
 
     Teuchos::RCP<DoubleMultiVector>
     permuteLexicographic2Grid ( const DoubleMultiVector & xLexicographic

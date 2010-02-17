@@ -21,13 +21,13 @@
 
 
 class Grid:
-            virtual public GridVirtual
+            public GridVirtual
 {
 public:
 
     //! Default constructor.
     Grid ( const Teuchos::RCP<const DomainVirtual> & domain,
-           const DoubleTuple                         h
+           const DoubleTuple                       & h
          );
          
     //! Constructor for information gotten from a file read.
@@ -44,29 +44,9 @@ public:
 
     virtual
     ~Grid();
-
-    virtual double
-    getScaling() const; //!< Returns the scaling factor \f$alpha\f$ of the domain.
-
-    virtual void
-    setScaling ( const double alpha );
-
-    virtual unsigned int
-    getNumGridPoints() const ; //!< Returns the number of grid points.
-
-    //! Returns the number of grid points on the boundary.
-    virtual unsigned int
-    getNumBoundaryPoints() const;
     
     virtual const Teuchos::Array<int> &
     getBoundaryIndices() const;
-
-    virtual DoubleTuple
-    getH() const; //!< Returns mesh sizes \f$h\f$.
-
-    //! Returns the measure of the discretized domain.
-    virtual double
-    getGridDomainArea() const;
 
     //! @param   k Global node index
     //! @return    Node type
@@ -143,13 +123,8 @@ public:
 
 private:
 
-    DoubleTuple h_;
     UIntTuple numCells_;
     Teuchos::Array<int> kBB_;
-    double scaling_; //! scaling factor
-    double gridDomainArea_;
-    unsigned int numGridPoints_;
-    unsigned int numBoundaryPoints_;
     Teuchos::Array<UIntTuple> nodes_;
     Teuchos::Array<int> boundaryIndices_;
     Teuchos::Array<nodeType> nodeTypes_;

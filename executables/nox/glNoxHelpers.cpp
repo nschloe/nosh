@@ -67,10 +67,9 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
     Teuchos::RCP<GridUniform> grid;
     GridReader::read ( comm, fileName, psi, grid, problemParameters );
 
-    Teuchos::ArrayRCP<const double_complex> psiView = psi->get1dView();
-
     double h0      = problemParameters.get<double> ( "H0" );
     double scaling = problemParameters.get<double> ( "scaling" );
+
     Teuchos::RCP<MagneticVectorPotential> A =
         Teuchos::rcp ( new MagneticVectorPotential ( h0, scaling ) );
 
@@ -105,7 +104,7 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
 //         Teuchos::rcp ( new DomainSquare ( edgeLength ) );
 
     Teuchos::RCP<DomainVirtual> domain =
-        Teuchos::rcp ( new DomainRectangle ( 2.0, 1.0 ) );
+        Teuchos::rcp ( new DomainRectangle ( 0.25, 4.0 ) );
 
 //     Teuchos::RCP<DomainVirtual> domain =
 //         Teuchos::rcp ( new DomainCircle ( 1.0 ) );
@@ -140,7 +139,7 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
     Teuchos::RCP<GridUniform> grid =
         Teuchos::rcp ( new GridUniform ( domain, h ) );
 
-    grid->setScaling ( scaling );
+    grid->updateScaling ( scaling );
 
     Teuchos::RCP<MagneticVectorPotential> A =
         Teuchos::rcp ( new MagneticVectorPotential ( H0, scaling ) );
@@ -150,8 +149,15 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
         Teuchos::rcp ( new GlOperatorBCInner ( grid, A ) );
 
     GinzburgLandau glProblem = GinzburgLandau ( glOperator );
+    
+    // create an initial guess
+    int numGlobalElements = grid->getNumGridPoints();
+    int indexBase = 0;
+    Teuchos::RCP<Tpetra::Map<Thyra::Ordinal> > map = Teuchos::rcp( new Tpetra::Map<Thyra::Ordinal>(numGlobalElements, indexBase, comm ) );
+    Teuchos::RCP<ComplexVector> psi = Teuchos::rcp( new ComplexVector(map) );
+    psi->putScalar( double_complex(0.5,0.0) );
 
-    glSystem = Teuchos::rcp ( new GlSystemWithConstraint ( glProblem, eComm ) );
+    glSystem = Teuchos::rcp ( new GlSystemWithConstraint ( glProblem, eComm, psi ) );
 }
 // =========================================================================
 void
@@ -420,12 +426,11 @@ printSolutionToFile ( const Teuchos::RCP<const NOX::Solver::Generic> solver,
                       const Teuchos::RCP<const GlSystemWithConstraint> glSystem,
                       const std::string & fileName )
 {
-    const NOX::Epetra::Group& finalGroup =
+    const NOX::Epetra::Group & finalGroup =
         dynamic_cast<const NOX::Epetra::Group&> ( solver->getSolutionGroup() );
 
-    const Epetra_Vector& finalSolution =
-        ( dynamic_cast<const NOX::Epetra::Vector&> ( finalGroup.getX() ) ).
-        getEpetraVector();
+    const Epetra_Vector & finalSolution =
+        ( dynamic_cast<const NOX::Epetra::Vector&> ( finalGroup.getX() ) ).getEpetraVector();
 
     glSystem->writeSolutionToFile ( finalSolution,
                                     fileName );

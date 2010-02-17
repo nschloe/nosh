@@ -54,64 +54,7 @@ GlSystemWithConstraint::GlSystemWithConstraint ( GinzburgLandau::GinzburgLandau 
         maxStepNumberDecimals_ ( maxStepNumberDecimals ),
         firstTime_ ( true )
 {
-    // do the rest of the initialization
-    initialize ( psi );
-}
-// =============================================================================
-// constructor *without* initial guess
-GlSystemWithConstraint::GlSystemWithConstraint ( GinzburgLandau::GinzburgLandau &gl,
-                                                 const Teuchos::RCP<const Epetra_Comm> eComm,
-                                                 const std::string outputDir,
-                                                 const std::string outputDataFileName,
-                                                 const std::string outputFileFormat,
-                                                 const std::string solutionFileNameBase,
-                                                 const std::string nullvectorFileNameBase,
-                                                 const unsigned int maxStepNumberDecimals
-                                               ) :
-        glSystem_ ( gl, eComm, outputDir, outputDataFileName, outputFileFormat,
-                    solutionFileNameBase, nullvectorFileNameBase, maxStepNumberDecimals ),
-        regularMap_ ( 0 ),
-        extendedMap_ ( 0 ),
-        jacobian_ ( 0 ),
-        initialSolution_ ( 0 ),
-        maxStepNumberDecimals_ ( maxStepNumberDecimals ),
-        firstTime_ ( true )
-{
-    // TODO There is (until now?) no way to convert a Teuchos::Comm (of psi)
-    // to an Epetra_Comm (of the real valued representation of psi), so the
-    // Epetra_Comm has to be generated explicitly, and two communicators are kept
-    // side by side all the time. One must make sure that the two are actually
-    // equivalent, which can be checked by Thyra's conversion method create_Comm.
-    // TODO Is is actually necessary to have equivalent communicators on the
-    // real-valued and the complex-valued side?
-    // How to compare two communicators anyway?
-
-    // define complex map
-    Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> >  ComplexMap =
-         glSystem_.getComplexMap();
-
-    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    // initialize solution
-    Teuchos::RCP<ComplexVector> psi =
-        Teuchos::rcp ( new ComplexVector ( ComplexMap ) );
-    // TODO Move default initialization out to main file
-    double_complex alpha ( 1.0, 0.0 );
-    psi->putScalar ( alpha ); // default initialization
-    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-    // do the rest of the initialization
-    initialize ( psi );
-}
-// =============================================================================
-// Destructor
-GlSystemWithConstraint::~GlSystemWithConstraint()
-{
-}
-// =============================================================================
-void
-GlSystemWithConstraint::initialize ( const Teuchos::RCP<const ComplexVector> psi )
-{
-    Teuchos::RCP<Epetra_Vector> tmp = glSystem_.getGlKomplex()->complex2real ( *psi );
+   Teuchos::RCP<Epetra_Vector> tmp = glSystem_.getGlKomplex()->complex2real ( *psi );
 
     // Create the maps with and without phase constraint.
     regularMap_  = glSystem_.getRealMap();
@@ -119,7 +62,7 @@ GlSystemWithConstraint::initialize ( const Teuchos::RCP<const ComplexVector> psi
 
     initialSolution_ = Teuchos::rcp ( new Epetra_Vector ( *extendedMap_ ), true );
     for ( int k=0; k<tmp->MyLength(); k++ )
-        initialSolution_->ReplaceMyValue ( k, 0, ( *tmp ) [tmp->Map().GID ( k ) ] );
+        (*initialSolution_)[k] = ( *tmp ) [tmp->Map().GID ( k ) ];
 
     int n = initialSolution_->GlobalLength();
     initialSolution_->ReplaceGlobalValue ( n-1, 0, 0.0 );
@@ -132,9 +75,14 @@ GlSystemWithConstraint::initialize ( const Teuchos::RCP<const ComplexVector> psi
 //     stepNumFileNameFormat_ = boost::str ( boost::format ( "%%|0%d|" ) % maxStepNumberDecimals_ );
 }
 // =============================================================================
+// Destructor
+GlSystemWithConstraint::~GlSystemWithConstraint()
+{
+}
+// =============================================================================
 bool
-GlSystemWithConstraint::computeF ( const Epetra_Vector &x,
-                                   Epetra_Vector &FVec,
+GlSystemWithConstraint::computeF ( const Epetra_Vector & x,
+                                   Epetra_Vector       & FVec,
                                    const NOX::Epetra::Interface::Required::FillType fillFlag )
 {
     TEST_FOR_EXCEPTION ( !regularMap_.is_valid_ptr() || regularMap_.is_null(),
@@ -159,12 +107,12 @@ GlSystemWithConstraint::computeF ( const Epetra_Vector &x,
                          << "Check, for example, the number of elements "
                          << "(" << FVec.Map().NumGlobalElements() << " for FVec vs. "
                          << extendedMap_->NumGlobalElements() << " for extendedMap_)." );
-
+    
     // TODO replace by {im,ex}porter
     // strip off the phase constraint
     Epetra_Vector tmp ( *regularMap_ );
     for ( int k=0; k<tmp.MyLength(); k++ )
-        tmp.ReplaceMyValue ( k, 0, x[x.Map().GID ( k ) ] );
+        tmp[k] = x[x.Map().GID ( k ) ];
 
     Epetra_Vector shortFVec ( *regularMap_ );
     glSystem_.computeF ( tmp, shortFVec, fillFlag );
@@ -172,7 +120,7 @@ GlSystemWithConstraint::computeF ( const Epetra_Vector &x,
     // copy over and add phase condition
     // TODO replace by {im,ex}porter
     for ( int k=0; k<shortFVec.MyLength(); k++ )
-        FVec.ReplaceMyValue ( k, 0, shortFVec[shortFVec.Map().GID ( k ) ] );
+        FVec[k] = shortFVec[shortFVec.Map().GID ( k ) ];
 
     FVec.ReplaceGlobalValue ( shortFVec.GlobalLength(), 0, 0.0 );
 
@@ -212,7 +160,7 @@ bool GlSystemWithConstraint::computeJacobian ( const Epetra_Vector   & x,
     // strip off the phase constraint
     Epetra_Vector tmp ( *regularMap_ );
     for ( int k=0; k<tmp.MyLength(); k++ )
-        tmp.ReplaceMyValue ( k, 0, x[x.Map().GID ( k ) ] );
+        tmp[k] = x[x.Map().GID ( k ) ];
 
     // TODO Strip down Jac, too.
     // --   Not really necessary as it's not being used anyway.
@@ -267,7 +215,7 @@ GlSystemWithConstraint::createJacobian ( const Epetra_Vector & x )
     // strip off the phase constraint
     Epetra_Vector tmp ( *regularMap_ );
     for ( int k=0; k<tmp.MyLength(); k++ )
-        tmp.ReplaceMyValue ( k, 0, x[x.Map().GID ( k ) ] );
+        tmp[k] = x[x.Map().GID ( k ) ];
 
     // TODO don't explicitly construct psi? get1dCopy on the rhs
     Teuchos::RCP<ComplexVector>             psi     = glSystem_.getGlKomplex()->real2complex ( tmp );
@@ -354,7 +302,7 @@ GlSystemWithConstraint::printSolution ( const  Epetra_Vector &x,
     // strip off the phase constraint
     Epetra_Vector tmp ( *regularMap_ );
     for ( int k=0; k<tmp.MyLength(); k++ )
-        tmp.ReplaceMyValue ( k, 0, x[x.Map().GID ( k ) ] );
+        tmp[k] = x[x.Map().GID ( k ) ];
 
     glSystem_.printSolution ( tmp, conParam );
 }
@@ -374,7 +322,7 @@ GlSystemWithConstraint::writeSolutionToFile ( const Epetra_Vector & x,
     // strip off the phase constraint
     Epetra_Vector tmp ( *regularMap_ );
     for ( int k=0; k<tmp.MyLength(); k++ )
-        tmp.ReplaceMyValue ( k, 0, x[x.Map().GID ( k ) ] );
+        tmp[k] = x[x.Map().GID ( k ) ];
 
     glSystem_.writeSolutionToFile ( tmp, filePath );
 }
@@ -388,7 +336,7 @@ GlSystemWithConstraint::writeAbstractStateToFile ( const Epetra_Vector & x,
     // strip off the phase constraint
     Epetra_Vector tmp ( *regularMap_ );
     for ( int k=0; k<tmp.MyLength(); k++ )
-        tmp.ReplaceMyValue ( k, 0, x[x.Map().GID ( k ) ] );
+        tmp[k] = x[x.Map().GID ( k ) ];
 
     glSystem_.writeAbstractStateToFile ( tmp, filePath );
 }

@@ -30,12 +30,18 @@ class GridVirtual
 {
 public:
 
-    //! Default constructor.
-    GridVirtual ( double scaling,
-                  DoubleTuple h,
-                  double gridDomainArea,
-                  unsigned int numGridPoints,
-                  unsigned int numBoundaryPoints );
+    /*!
+      Constructor for the grid base class, setting all the essential data at once.
+      @param[in] h               Grid distance.
+      @param[in] gridDomainArea  Total area occupied by the grid.
+      @param[in] numGridPoints   Total number of grid points.
+      @param[in] scaling         Scaling of the grid with the given \c h. Defaults to \c 1.0.
+    */
+    GridVirtual ( const DoubleTuple  & h,
+                  const double         gridDomainArea,
+                  const unsigned int   numGridPoints,
+                  const double         scaling=1.0
+                );
 
     //! Empty constructor.
     GridVirtual();
@@ -46,15 +52,15 @@ public:
     virtual double
     getScaling() const; //!< Returns the scaling factor \f$alpha\f$ of the domain.
 
+    /*!
+      Resets the scaling factor of the domain and updates all the dependent values (e.g., \c gridDomainArea_).
+      @param[in] alpha New scaling value.
+    */
     virtual void
-    setScaling ( const double alpha );
+    updateScaling ( const double alpha );
 
     virtual unsigned int
     getNumGridPoints() const ; //!< Returns the number of grid points.
-
-    //! Returns the number of grid points on the boundary.
-    virtual unsigned int
-    getNumBoundaryPoints() const;
 
     virtual DoubleTuple
     getH() const; //!< Returns mesh sizes \f$h\f$.
@@ -152,8 +158,7 @@ protected:
     double scaling_; //! scaling factor
     double gridDomainArea_;
     unsigned int numGridPoints_;
-    unsigned int numBoundaryPoints_;
-
+    
 private:
 };
 

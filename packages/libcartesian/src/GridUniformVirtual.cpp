@@ -2,22 +2,18 @@
  * GridUniformVirtual.cpp
  *
  *  Created on: Nov 30, 2009
- *      Author: Nico Schlšmer
+ *      Author: Nico Schlï¿½mer
  */
 
 #include "GridUniformVirtual.h"
 
 // ============================================================================
-GridUniformVirtual::GridUniformVirtual( double scaling,
-                                        double h,
+GridUniformVirtual::GridUniformVirtual( double h,
                                         double gridDomainArea,
-                                        unsigned int numGridPoints,
-                                        unsigned int numBoundaryPoints ) :
-GridVirtual( scaling,
-             Teuchos::tuple<double>(h,h),
+                                        unsigned int numGridPoints ) :
+GridVirtual( Teuchos::tuple<double>(h,h),
              gridDomainArea,
-             numGridPoints,
-             numBoundaryPoints )
+             numGridPoints )
 {
 }
 // ============================================================================

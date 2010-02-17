@@ -9,15 +9,14 @@
 
 // =============================================================================
 // Class constructor
-GridUniformSquare::GridUniformSquare ( unsigned int nx, double scaling ) :
-        GridVirtual ( scaling,
-                      Teuchos::tuple<double> ( scaling/nx,scaling/nx ),
-                      pow ( scaling, 2 ),
-                      pow ( nx+1, 2 ),
-                      4*nx
+GridUniformSquare::GridUniformSquare ( const unsigned int  numCells,
+                                       const double        edgeLength ) :
+        GridVirtual ( Teuchos::tuple<double> ( edgeLength/numCells,edgeLength/numCells ),
+                      pow ( edgeLength, 2 ),
+                      pow ( numCells+1, 2 )
                     ),
         GridUniformVirtual(),
-        GridSquare ( Teuchos::tuple<unsigned int> ( nx,nx ) )
+        GridSquare ( Teuchos::tuple<unsigned int> ( numCells,numCells ), edgeLength )
 {
 }
 // =============================================================================
@@ -115,8 +114,8 @@ GridUniformSquare::read ( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
 //     TEST_FOR_EXCEPTION ( !params.isParameter ( "Nx" ),
 //                          std::logic_error,
 //                          "Parameter \"Nx\" not found in file " << filePath );
-//     unsigned int nx = params.get<int> ( "Nx" );
-//     Nx_ = Teuchos::tuple<unsigned int> ( nx, nx );
+//     unsigned int numCells = params.get<int> ( "Nx" );
+//     Nx_ = Teuchos::tuple<unsigned int> ( numCells, numCells );
 // 
 //     TEST_FOR_EXCEPTION ( !params.isParameter ( "scaling" ),
 //                          std::logic_error,
@@ -125,7 +124,7 @@ GridUniformSquare::read ( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
 //     scaling_ = params.get<double> ( "scaling" );
 // 
 //     // initialization of the dependent members
-//     double h = scaling_/nx;
+//     double h = scaling_/numCells;
 //     h_                 = Teuchos::tuple<double> ( h, h );
 //     gridDomainArea_    = pow ( scaling_, 2 );
 //     numGridPoints_     = ( Nx_[0]+1 ) * ( Nx_[1]+1 );
@@ -157,8 +156,8 @@ GridUniformSquare::read ( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
 //     TEST_FOR_EXCEPTION ( !params.isParameter ( "Nx" ),
 //                          std::logic_error,
 //                          "Parameter \"Nx\" not found in file " << filePath );
-//     unsigned int nx = params.get<int> ( "Nx" );
-//     Nx_ = Teuchos::tuple<unsigned int> ( nx, nx );
+//     unsigned int numCells = params.get<int> ( "Nx" );
+//     Nx_ = Teuchos::tuple<unsigned int> ( numCells, numCells );
 // 
 //     TEST_FOR_EXCEPTION ( !params.isParameter ( "scaling" ),
 //                          std::logic_error,
@@ -167,7 +166,7 @@ GridUniformSquare::read ( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
 //     scaling_ = params.get<double> ( "scaling" );
 // 
 //     // initialization of the dependent members
-//     double h = scaling_/nx;
+//     double h = scaling_/numCells;
 //     h_                 = Teuchos::tuple<double> ( h, h );
 //     gridDomainArea_    = pow ( scaling_, 2 );
 //     numGridPoints_     = ( Nx_[0]+1 ) * ( Nx_[1]+1 );

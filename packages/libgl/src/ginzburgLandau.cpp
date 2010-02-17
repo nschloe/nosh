@@ -54,7 +54,7 @@ GinzburgLandau::computeGlVector ( const Teuchos::RCP<const ComplexVector> & psi
     TEST_FOR_EXCEPTION ( !psi.is_valid_ptr() || psi.is_null(),
                          std::logic_error,
                          "Input argument 'psi' not properly initialized." );
-
+    
     // setup output vector with the same map as psi
     Teuchos::RCP<ComplexVector> glVec =
         Teuchos::rcp ( new ComplexVector ( psi->getMap(), true ) );
@@ -276,8 +276,8 @@ GinzburgLandau::writeSolutionToFile ( const Teuchos::RCP<const ComplexVector> &p
 }
 // =============================================================================
 void
-GinzburgLandau::writeAbstractStateToFile ( const Teuchos::RCP<const ComplexVector> &psi,
-        const std::string &filePath
+GinzburgLandau::writeAbstractStateToFile ( const Teuchos::RCP<const ComplexVector> & psi,
+                                           const std::string                       & filePath
                                          ) const
 {
     Teuchos::ParameterList params;
@@ -285,8 +285,8 @@ GinzburgLandau::writeAbstractStateToFile ( const Teuchos::RCP<const ComplexVecto
 }
 // =============================================================================
 void
-GinzburgLandau::appendStats ( std::ofstream & fileStream,
-                              const bool header,
+GinzburgLandau::appendStats ( std::ofstream                           & fileStream,
+                              const bool                                header,
                               const Teuchos::RCP<const ComplexVector> & psi
                             ) const
 {

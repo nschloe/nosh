@@ -57,16 +57,6 @@ public:
                const std::string nullvectorFileNameBase = "nullvectorStep",
                const unsigned int maxStepNumberDecimals = 4 );
 
-    // Constructor without initial guess.
-    GlSystem ( GinzburgLandau::GinzburgLandau &gl,
-               const Teuchos::RCP<const Epetra_Comm> eComm,
-               const std::string outputDir = "data",
-               const std::string outputDataFileName = "continuationData.dat",
-               const std::string outputFileFormat = "VTK",
-               const std::string solutionFileNameBase = "solutionStep",
-               const std::string nullvectorFileNameBase = "nullvectorStep",
-               const unsigned int maxNumDigits = 4 );
-
     //! Destructor
     ~GlSystem();
 

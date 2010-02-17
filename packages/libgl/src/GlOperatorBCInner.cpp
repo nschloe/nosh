@@ -166,7 +166,7 @@ GlOperatorBCInner::getEntry ( const int k ) const
         // -------------------------------------------------------------------
         // normal derivative
         psiKAbove = psiView[ grid_->getKAbove ( k ) ];
-
+        
         xAbove = grid_->getXAbove ( k );
         AAbove = A_->getAy ( *xAbove );
 

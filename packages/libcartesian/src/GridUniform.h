@@ -42,8 +42,6 @@ public:
     getUniformH() const;
 
 private:
-    double h_;
-
 };
 
 #endif // GRIDUNIFORM_H

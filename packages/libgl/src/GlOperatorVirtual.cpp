@@ -60,7 +60,7 @@ GlOperatorVirtual::getH0 () const
 void
 GlOperatorVirtual::setScaling ( const double scaling )
 {
-    grid_->setScaling( scaling );
+    grid_->updateScaling( scaling );
     A_->setEdgeLength( scaling );
 }
 // =============================================================================

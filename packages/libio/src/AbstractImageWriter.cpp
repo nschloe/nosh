@@ -76,6 +76,15 @@ AbstractImageWriter::addParameterList ( const Teuchos::ParameterList & problemPa
             fieldData->SetName ( paramName.c_str() );
             imageData_->GetFieldData()->AddArray ( fieldData );
         }
+        else if ( problemParams.isType<Teuchos::Array<double> > ( paramName ) )
+        {
+            vtkSmartPointer<vtkDoubleArray> fieldData = vtkSmartPointer<vtkDoubleArray>::New();
+            const Teuchos::Array<double> & arr = problemParams.get<Teuchos::Array<double> > ( paramName );
+            for ( int k=0; k<arr.length(); k++ )
+                fieldData->InsertNextValue ( arr[k] );
+            fieldData->SetName ( paramName.c_str() );
+            imageData_->GetFieldData()->AddArray ( fieldData );
+        }
         else
         {
             TEST_FOR_EXCEPTION ( true,
@@ -126,17 +135,22 @@ AbstractImageWriter::setImageData ( const Epetra_MultiVector              & x,
     }
 
     // fill the scalars vector and add it to imageData_
-    for ( int vec=0; vec<numVecs; vec++ )
-    {
-        scalars->SetName ( scNames[vec].c_str() );
-        // TODO don't check each loop
-        for ( int k=0; k<numPoints; k++ )
-            if ( isScrambled )
+    if ( isScrambled )
+        for ( int vec=0; vec<numVecs; vec++ )
+        {
+            scalars->SetName ( scNames[vec].c_str() );
+            for ( int k=0; k<numPoints; k++ )
                 scalars->InsertNextValue ( p[k]>=0 ? x[vec][p[k]] : dummy );
-            else
+            imageData_->GetPointData()->AddArray ( scalars );
+        }
+    else
+        for ( int vec=0; vec<numVecs; vec++ )
+        {
+            scalars->SetName ( scNames[vec].c_str() );
+            for ( int k=0; k<numPoints; k++ )
                 scalars->InsertNextValue ( x[vec][k] );
-        imageData_->GetPointData()->AddArray ( scalars );
-    }
+            imageData_->GetPointData()->AddArray ( scalars );
+        }
 
     return;
 }

@@ -49,65 +49,12 @@ GlSystem::GlSystem ( GinzburgLandau::GinzburgLandau &gl,
         maxNumDigits_( maxNumDigits )
 {
     TEST_FOR_EXCEPTION ( !psi.is_valid_ptr() || psi.is_null(),
-    std::logic_error,
-    "psi not properly initialized." );
+                         std::logic_error,
+                         "psi not properly initialized." );
 
     // initialize solution
     Teuchos::RCP<Epetra_Vector> initialSolution_ =
         glKomplex_->complex2real ( *psi );
-}
-// =============================================================================
-// constructor without initial guess
-GlSystem::GlSystem ( GinzburgLandau::GinzburgLandau &gl,
-                     const Teuchos::RCP<const Epetra_Comm> eComm,
-                     const std::string outputDir,
-                     const std::string outputDataFileName,
-                     const std::string outputFileFormat,
-                     const std::string solutionFileNameBase,
-                     const std::string nullvectorFileNameBase,
-                     const unsigned int maxNumDigits
-                   ) :
-        stepper_ ( Teuchos::null ),
-        glKomplex_ ( Teuchos::null ),
-        Gl_ ( gl ),
-        initialSolution_ ( Teuchos::null ),
-        outputDir_ ( outputDir ),
-        solutionFileNameBase_ ( solutionFileNameBase ),
-        nullvectorFileNameBase_ ( nullvectorFileNameBase ),
-        outputFileFormat_ ( outputFileFormat ),
-        outputDataFileName_ ( outputDataFileName ),
-        firstTime_ ( true ),
-        maxNumDigits_( maxNumDigits )
-{
-    // TODO There is (until now?) no way to convert a Teuchos::Comm (of psi)
-    // to an Epetra_Comm (of the real valued representation of psi), so the
-    // Epetra_Comm has to be generated explicitly, and two communicators are kept
-    // side by side all the time. One must make sure that the two are actually
-    // equivalent, which can be checked by Thyra's conversion method create_Comm.
-    // TODO Is is actually necessary to have equivalent communicators on the
-    // real-valued and the complex-valued side?
-    // How to compare two communicators anyway?
-
-    // create fitting Tpetra::Comm
-    Teuchos::RCP<const Teuchos::Comm<int> > TComm = create_CommInt ( eComm );
-
-    // define map
-    int NumComplexUnknowns = Gl_.getNumUnknowns();
-    Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> > ComplexMap =
-        Teuchos::rcp ( new Tpetra::Map<Thyra::Ordinal> ( NumComplexUnknowns, 0, TComm ) );
-
-    glKomplex_ = Teuchos::rcp ( new GlKomplex ( eComm,ComplexMap ) );
-
-    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    // initialize solution
-    ComplexVector psi ( ComplexMap );
-    // TODO Move default initialization out to main file
-    psi.putScalar ( double_complex ( 0.0,0.0 ) ); // default initialization
-
-    Teuchos::RCP<Epetra_Vector> initialSolution_ =
-        glKomplex_->complex2real ( psi );
-    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
 }
 // =============================================================================
 // Destructor
@@ -129,7 +76,7 @@ GlSystem::computeF ( const Epetra_Vector &x,
     TEST_FOR_EXCEPTION ( !FVec.Map().SameAs ( *glKomplex_->getRealMap() ),
                          std::logic_error,
                          "Maps of FVec and the computed real-valued map do not coincide." );
-
+                         
     // convert from x to psi
     const Teuchos::RCP<ComplexVector> psi = glKomplex_->real2complex ( x );
 
@@ -245,7 +192,7 @@ GlSystem::computeShiftedMatrix ( double alpha,
 // =============================================================================
 // function used by LOCA
 void
-GlSystem::setParameters ( const LOCA::ParameterVector &p )
+GlSystem::setParameters ( const LOCA::ParameterVector & p )
 {
 
     TEST_FOR_EXCEPTION ( !p.isParameter ( "H0" ),
@@ -421,16 +368,18 @@ void GlSystem::setOutputDir ( const string &directory )
 }
 // =============================================================================
 void
-GlSystem::writeSolutionToFile ( const Epetra_Vector &x,
-                                const std::string &filePath ) const
+GlSystem::writeSolutionToFile ( const Epetra_Vector & x,
+                                const std::string   & filePath
+                              ) const
 {
     // TODO: Remove the need for several real2complex calls per step.
     Gl_.writeSolutionToFile ( glKomplex_->real2complex ( x ), filePath );
 }
 // =============================================================================
 void
-GlSystem::writeAbstractStateToFile ( const Epetra_Vector &x,
-                                     const std::string &filePath ) const
+GlSystem::writeAbstractStateToFile ( const Epetra_Vector & x,
+                                     const std::string   & filePath
+                                   ) const
 {
     // TODO: Remove the need for several real2complex calls per step.
     Gl_.writeAbstractStateToFile ( glKomplex_->real2complex ( x ), filePath );
@@ -443,7 +392,7 @@ GlSystem::getGlSystemVector ( const Teuchos::RCP<const ComplexVector> psi ) cons
 }
 // =============================================================================
 Teuchos::RCP<const Teuchos::Comm<int> >
-GlSystem::create_CommInt ( const Teuchos::RCP<const Epetra_Comm> &epetraComm )
+GlSystem::create_CommInt ( const Teuchos::RCP<const Epetra_Comm> & epetraComm )
 {
     using Teuchos::RCP;
     using Teuchos::rcp;

@@ -23,8 +23,7 @@
 GridUniform::GridUniform ( const Teuchos::RCP<const DomainVirtual> & domain,
                            const double                              h
                          ) :
-        Grid ( domain, Teuchos::tuple ( h,h ) ),
-        h_ ( h )
+        Grid ( domain, Teuchos::tuple ( h,h ) )
 {
 }
 // =============================================================================
@@ -35,14 +34,13 @@ GridUniform::GridUniform ( const double                h,
                            const double                scaling,
                            const DoubleTuple         & origin
                          ) :
-        Grid ( Teuchos::tuple ( h,h ), numCells, kBB, boundaryNodes, scaling, origin ),
-        h_ ( h )
+        Grid ( Teuchos::tuple ( h,h ), numCells, kBB, boundaryNodes, scaling, origin )
 {
 }
 // =============================================================================
 double
 GridUniform::getUniformH() const
 {
-    return h_;
+    return h_[0];
 }
-// =============================================================================
+// ============================================================================

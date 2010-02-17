@@ -15,11 +15,9 @@ class GridUniformVirtual:
 {
 public:
     //! Default constructor.
-    GridUniformVirtual ( double scaling,
-                         double h,
+    GridUniformVirtual ( double h,
                          double gridDomainArea,
-                         unsigned int numGridPoints,
-                         unsigned int numBoundaryPoints );
+                         unsigned int numGridPoints );
 
     //! Class constructor that only initializes the data members of this class.
     GridUniformVirtual();

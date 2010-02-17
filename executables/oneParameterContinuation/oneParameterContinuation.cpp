@@ -217,7 +217,7 @@ main ( int argc, char *argv[] )
         int    Nx = initialGuessList.get<int> ( "Nx" );
         double h  = edgeLength / Nx;
         Teuchos::RCP<GridUniform> grid = Teuchos::rcp ( new GridUniform ( domain, h ) );
-        grid->setScaling( scaling );
+        grid->updateScaling( scaling );
 
         // set initial guess
         int numComplexUnknowns = grid->getNumGridPoints();

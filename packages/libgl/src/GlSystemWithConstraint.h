@@ -2,7 +2,7 @@
  * GlSystemWithConstraint.h
  *
  *  Created on: Dec 16, 2009
- *      Author: Nico Schl�mer
+ *      Author: Nico Schl\"omer
  */
 #ifndef GLSYSTEMWITHCONSTRAINT_H_
 #define GLSYSTEMWITHCONSTRAINT_H_
@@ -58,16 +58,6 @@ public:
                              const std::string solutionFileNameBase = "solutionStep",
                              const std::string nullvectorFileNameBase = "nullvectorStep",
                              const unsigned int maxStepNumberDecimals = 4 );
-
-    // Constructor without initial guess.
-    GlSystemWithConstraint ( GinzburgLandau::GinzburgLandau &gl,
-                             const Teuchos::RCP<const Epetra_Comm> eComm,
-                             const std::string outputDir = "data",
-                             const std::string outputDataFileName = "continuationData.dat",
-                             const std::string outputFileFormat = "VTK",
-                             const std::string solutionFileNameBase = "solutionStep",
-                             const std::string nullvectorFileNameBase = "nullvectorStep",
-                             const unsigned int maxStepNumberDecimals = 3 );
 
     //! Destructor
     ~GlSystemWithConstraint();
@@ -161,9 +151,6 @@ public:
     getMap() const;
 
 private:
-
-    void
-    initialize ( const Teuchos::RCP<const ComplexVector> psi );
 
     void
     fillBorderedMatrix ( const Teuchos::RCP<      Epetra_CrsMatrix> & extendedMatrix,

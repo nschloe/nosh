@@ -18,8 +18,8 @@ class GridUniformSquare:
 public:
 
     //! Default constructor.
-    GridUniformSquare ( unsigned int nx = 0,
-                        double       scaling = 1.0 );
+    GridUniformSquare ( const unsigned int numCells,
+                        const double       edgeLength );
 
     virtual
     ~GridUniformSquare();
