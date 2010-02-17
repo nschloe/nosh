@@ -503,7 +503,7 @@ GlSystemWithConstraint::fillBorderedMatrix ( const Teuchos::RCP<      Epetra_Crs
         // extract row view
         TEUCHOS_ASSERT_EQUALITY ( 0, regularMatrix->ExtractMyRowView ( myRow, numRowNonZeros, values, indices ) );
 
-        // Can't use InsertMyIndices because the *indices are given in global indexing.
+        // *indices are given in global indexing.
         int globalRow = extendedMatrix->Map().GID ( myRow );
 
         // Write the data to the new matrix.
@@ -535,15 +535,16 @@ GlSystemWithConstraint::fillBorderedMatrix ( const Teuchos::RCP<      Epetra_Crs
 // =============================================================================
 int
 GlSystemWithConstraint::PutRow ( const Teuchos::RCP<Epetra_CrsMatrix> A,
-                                 int      Row,
-                                 const int      numIndices,
-                                 double * values,
-                                 int    * indices,
-                                 const bool     firstTime ) const
+                                 const int                            globalRow,
+                                 const int                            numIndices,
+                                 double                             * values,
+                                 int                                * indices,
+                                 const bool                           firstTime
+                               ) const
 {
     if ( firstTime )
-        return A->InsertGlobalValues ( Row, numIndices, values, indices );
+        return A->InsertGlobalValues ( globalRow, numIndices, values, indices );
     else
-        return A->ReplaceGlobalValues ( Row, numIndices, values, indices );
+        return A->ReplaceGlobalValues ( globalRow, numIndices, values, indices );
 }
 // =============================================================================

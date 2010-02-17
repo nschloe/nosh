@@ -78,7 +78,7 @@ GlKomplex::real2complex ( const Epetra_Vector & x ) const
 // =============================================================================
 // converts a real-valued vector to a complex-valued psi vector
 Teuchos::RCP<Epetra_Vector>
-GlKomplex::complex2real ( const ComplexVector &complexVec ) const
+GlKomplex::complex2real ( const ComplexVector & complexVec ) const
 {
     TEUCHOS_ASSERT ( ComplexMap_.is_valid_ptr()
                      && !ComplexMap_.is_null()
@@ -113,10 +113,10 @@ GlKomplex::createRealMap ( const Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> 
     unsigned int numMyComplexElements = myComplexGIDs.size();
     unsigned int numMyRealElements    = 2*numMyComplexElements;
     Epetra_IntSerialDenseVector myRealGIDs ( numMyRealElements );
-    for ( unsigned int i = 0; i < numMyComplexElements; i++ )
+    for ( unsigned int k = 0; k < numMyComplexElements; k++ )
     {
-        myRealGIDs[2*i  ] = 2 * myComplexGIDs[i];
-        myRealGIDs[2*i+1] = 2 * myComplexGIDs[i] + 1;
+        myRealGIDs[2*k  ] = 2 * myComplexGIDs[k];
+        myRealGIDs[2*k+1] = 2 * myComplexGIDs[k] + 1;
     }
 
     return Teuchos::rcp ( new Epetra_Map ( numMyRealElements,
@@ -393,13 +393,11 @@ GlKomplex::imagScalarProductCoeff ( const Teuchos::RCP<const ComplexVector> a
 
     Teuchos::RCP<Epetra_Vector> compound = Teuchos::rcp ( new Epetra_Vector ( *RealMap_ ) );
 
-    // TODO Handle without 1dViews
     Teuchos::ArrayRCP<const double_complex> aView = a->get1dView();
     for ( unsigned int k=0; k<ComplexMap_->getNodeNumElements(); k++ )
     {
-        int K = ComplexMap_->getGlobalElement ( k );
-        compound->ReplaceMyValue ( 2*k  , 0, -std::imag ( aView[K] ) );
-        compound->ReplaceMyValue ( 2*k+1, 0,  std::real ( aView[K] ) );
+        (*compound)[2*k]   = -std::imag ( aView[k] );
+        (*compound)[2*k+1] =  std::real ( aView[k] );
     }
 
     return compound;

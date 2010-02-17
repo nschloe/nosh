@@ -176,7 +176,7 @@ private:
 
     int
     PutRow ( const Teuchos::RCP<Epetra_CrsMatrix> A,
-             int      Row,
+             const int      Row,
              const int      numIndices,
              double * values,
              int    * indices,
