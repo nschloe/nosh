@@ -39,8 +39,8 @@ SET(Boost_USE_MULTITHREADED ON)
 SET( LINK_LIBRARIES ${LINK_LIBRARIES}
                     ${Boost_LIBRARIES} )
 # ------------------------------------------------------------------------------
-FIND_LIBRARY( GFORTRAN ${GFORTRAN_LIBNAME}
-              HINTS ${GFORTRAN_DIR}    )
+FIND_LIBRARY( GFORTRAN ${GFORTRAN_LIBRARY_NAMES}
+              HINTS ${GFORTRAN_LIBRARY_DIRS} )
 SET( LINK_LIBRARIES ${LINK_LIBRARIES}
                     ${GFORTRAN} )
 # ==============================================================================
