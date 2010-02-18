@@ -24,11 +24,10 @@
 #include "GlOperatorBCCentral.h"
 #include "GlOperatorBCInner.h"
 
+#include "DomainSquare.h"
+
 #include "GlSystemWithConstraint.h"
 #include "eigenSaver.h"
-
-#include "DomainSquare.h"
-#include "GridUniform.h"
 
 #include "GridReader.h"
 
@@ -53,7 +52,6 @@ numDigits ( const int i )
 int
 main ( int argc, char *argv[] )
 {
-
     // Initialize MPI
 #ifdef HAVE_MPI
     MPI_Init ( &argc,&argv );
@@ -64,8 +62,8 @@ main ( int argc, char *argv[] )
     Teuchos::RCP<Epetra_MpiComm> eComm =
         Teuchos::rcp<Epetra_MpiComm> ( new Epetra_MpiComm ( MPI_COMM_WORLD ) );
 #else
-    Teuchos::RCP<Epetra_SerialComm> eComm = Teuchos::rcp<Epetra_SerialComm> (
-                                                new Epetra_SerialComm() );
+    Teuchos::RCP<Epetra_SerialComm> eComm =
+        Teuchos::rcp<Epetra_SerialComm> ( new Epetra_SerialComm() );
 #endif
 
     // Create a communicator for Tpetra objects
@@ -88,7 +86,7 @@ main ( int argc, char *argv[] )
     My_CLP.recogniseAllOptions ( true );
 
     // don't throw exceptions
-    My_CLP.throwExceptions ( true );
+    My_CLP.throwExceptions ( false );
 
     // finally, parse the stuff!
     Teuchos::CommandLineProcessor::EParseCommandLineReturn parseReturn;
@@ -102,10 +100,8 @@ main ( int argc, char *argv[] )
         return 1;
     }
 
-
-    Teuchos::RCP<Teuchos::ParameterList> paramList = Teuchos::rcp (
-                new Teuchos::ParameterList );
-
+    Teuchos::RCP<Teuchos::ParameterList> paramList =
+        Teuchos::rcp ( new Teuchos::ParameterList );
     std::cout << "Reading parameter list from \"" << xmlInputFileName << "\"."
               << std::endl;
 
@@ -119,7 +115,6 @@ main ( int argc, char *argv[] )
                   << "Check your XML file for syntax errors." << std::endl;
         return 1;
     }
-
     // =========================================================================
     // extract data for the output the parameter list
     Teuchos::ParameterList outputList;
@@ -133,18 +128,16 @@ main ( int argc, char *argv[] )
         return 1;
     }
     // set default directory to be the directory of the XML file itself
-    std::string             xmlPath = boost::filesystem::path ( xmlInputFileName ).branch_path().string();
+    std::string xmlPath = boost::filesystem::path ( xmlInputFileName ).branch_path().string();
     boost::filesystem::path outputDirectory = outputList.get<string> ( "Output directory", "" );
-    if ( outputDirectory.root_directory().empty() )
-    {
-        // outputDirectory is empty or is a relative directory.
+    if ( outputDirectory.root_directory().empty() ) // outputDirectory is empty or is a relative directory.
         outputDirectory = xmlPath / outputDirectory;
-    }
-    std::string contFileBaseName = outputList.get<string> (
-                                       "Continuation file base name" );
-    std::string contFileFormat = outputList.get<string> ( "Continuation file format" );
-    std::string contDataFileName = outputList.get<string> (
-                                       "Continuation data file name" );
+    std::string contFileBaseName =
+        outputList.get<string> ( "Continuation file base name" );
+    std::string contFileFormat =
+        outputList.get<string> ( "Continuation file format" );
+    std::string contDataFileName =
+        outputList.get<string> ( "Continuation data file name" );
     // =========================================================================
 
 
@@ -217,7 +210,7 @@ main ( int argc, char *argv[] )
         int    Nx = initialGuessList.get<int> ( "Nx" );
         double h  = edgeLength / Nx;
         Teuchos::RCP<GridUniform> grid = Teuchos::rcp ( new GridUniform ( domain, h ) );
-        grid->updateScaling( scaling );
+        grid->updateScaling ( scaling );
 
         // set initial guess
         int numComplexUnknowns = grid->getNumGridPoints();
@@ -229,6 +222,38 @@ main ( int argc, char *argv[] )
         psi->putScalar ( alpha );
     }
     // ---------------------------------------------------------------------------
+
+    double h0      = glParameters.get<double> ( "H0" );
+    double scaling = glParameters.get<double> ( "scaling" );
+    Teuchos::RCP<MagneticVectorPotential> A =
+        Teuchos::rcp ( new MagneticVectorPotential ( h0, scaling ) );
+
+    // create the operator
+    Teuchos::RCP<GlOperatorVirtual> glOperator =
+        Teuchos::rcp ( new GlOperatorBCInner ( grid, A ) );
+
+    GinzburgLandau glProblem = GinzburgLandau ( glOperator );
+
+    Teuchos::RCP<GlSystemWithConstraint> glsystem;
+
+    int maxLocaSteps = 5000;
+    try
+    {
+        glsystem = Teuchos::rcp ( new GlSystemWithConstraint ( glProblem,
+                                  eComm,
+                                  psi,
+                                  outputDirectory.string(),
+                                  contDataFileName,
+                                  contFileFormat,
+                                  contFileBaseName,
+                                  "",
+                                  numDigits ( maxLocaSteps ) ) );
+    }
+    catch ( std::exception & e )
+    {
+        std::cerr << e.what() << std::endl;
+        return 1;
+    }
 
     Teuchos::ParameterList & stepperList = paramList->sublist ( "LOCA" ).sublist ( "Stepper" );
 
@@ -249,38 +274,6 @@ main ( int argc, char *argv[] )
     // TODO Get rid of the explicit "double".
     stepperList.set ( "Initial Value", glParameters.get<double> ( contParam ) );
 
-    double h0      = glParameters.get<double> ( "H0" );
-    double scaling = glParameters.get<double> ( "scaling" );
-    Teuchos::RCP<MagneticVectorPotential> A =
-        Teuchos::rcp ( new MagneticVectorPotential ( h0, scaling ) );
-
-    // create the operator
-    Teuchos::RCP<GlOperatorVirtual> glOperator =
-        Teuchos::rcp ( new GlOperatorBCInner ( grid, A ) );
-
-    GinzburgLandau glProblem = GinzburgLandau ( glOperator );
-
-    Teuchos::RCP<GlSystemWithConstraint> glsystem;
-
-    int maxLocaSteps = 5000;
-    try
-    {
-        glsystem = Teuchos::rcp ( new GlSystemWithConstraint ( glProblem,
-                                                               eComm,
-                                                               psi,
-                                                               outputDirectory.string(),
-                                                               contDataFileName,
-                                                               contFileFormat,
-                                                               contFileBaseName,
-                                                               "",
-                                                               numDigits ( maxLocaSteps ) ) );
-    }
-    catch ( std::exception & e )
-    {
-        std::cerr << e.what() << std::endl;
-    }
-
-
     // ---------------------------------------------------------------------------
     // Create the necessary objects
     // ---------------------------------------------------------------------------
@@ -296,20 +289,19 @@ main ( int argc, char *argv[] )
     Teuchos::RCP<Epetra_Vector> soln = glsystem->getSolution();
     // ---------------------------------------------------------------------------
 
-
 #ifdef HAVE_LOCA_ANASAZI
-    Teuchos::ParameterList& eigenList = paramList->sublist ( "LOCA" ).sublist (
-                                            "Stepper" ) .sublist ( "Eigensolver" );
-    Teuchos::RCP<Teuchos::ParameterList> eigenListPtr = Teuchos::rcpFromRef (
-                ( eigenList ) );
+    Teuchos::ParameterList& eigenList =
+        paramList->sublist ( "LOCA" ).sublist ( "Stepper" ) .sublist ( "Eigensolver" );
+    Teuchos::RCP<Teuchos::ParameterList> eigenListPtr =
+        Teuchos::rcpFromRef ( ( eigenList ) );
     std::string eigenvaluesFileName =
         outputList.get<string> ( "Eigenvalues file name" );
-    std::string eigenstateFileNameAppendix = outputList.get<string> (
-                "Eigenstate file name appendix" );
-    Teuchos::RCP<EigenSaver> glEigenSaver = Teuchos::RCP<EigenSaver> (
-                                                new EigenSaver ( eigenListPtr, outputDirectory.string(),
-                                                                 eigenvaluesFileName, contFileBaseName, eigenstateFileNameAppendix,
-                                                                 glsystem ) );
+    std::string eigenstateFileNameAppendix =
+        outputList.get<string> ( "Eigenstate file name appendix" );
+    Teuchos::RCP<EigenSaver> glEigenSaver =
+        Teuchos::RCP<EigenSaver> ( new EigenSaver ( eigenListPtr, outputDirectory.string(),
+                                   eigenvaluesFileName, contFileBaseName,
+                                   eigenstateFileNameAppendix, glsystem ) );
 
     Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> glSaveEigenDataStrategy =
         glEigenSaver;
@@ -327,11 +319,11 @@ main ( int argc, char *argv[] )
     Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = glsystem;
 //  Teuchos::RCP<NOX::Epetra::Interface::Preconditioner> iPrec = glsystem;
 
-    Teuchos::ParameterList& nlPrintParams = paramList->sublist ( "NOX" ) .sublist (
-                                                "Printing" );
+    Teuchos::ParameterList& nlPrintParams =
+        paramList->sublist ( "NOX" ) .sublist ( "Printing" );
 
-    Teuchos::ParameterList& lsParams = paramList->sublist ( "NOX" ) .sublist (
-                                           "Direction" ) .sublist ( "Newton" ) .sublist ( "Linear Solver" );
+    Teuchos::ParameterList& lsParams =
+        paramList->sublist ( "NOX" ) .sublist ( "Direction" ) .sublist ( "Newton" ) .sublist ( "Linear Solver" );
 
 //  Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys = Teuchos::rcp(
 //      new NOX::Epetra::LinearSystemAztecOO(nlPrintParams, lsParams, iJac, J, iPrec, M, *soln));
@@ -342,22 +334,19 @@ main ( int argc, char *argv[] )
     Teuchos::RCP<LOCA::Epetra::Interface::TimeDependent> iTime = glsystem;
     // ---------------------------------------------------------------------------
 
-
     // ---------------------------------------------------------------------------
     // Create a group which uses that problem interface. The group will
     // be initialized to contain the default initial guess for the
     // specified problem.
     LOCA::ParameterVector locaParams;
-
     locaParams.addParameter ( "H0", glParameters.get<double> ( "H0" ) );
-    locaParams.addParameter ( "scaling", glParameters.get<double> (
-                                  "scaling" ) );
+    locaParams.addParameter ( "scaling", glParameters.get<double> ( "scaling" ) );
 
     NOX::Epetra::Vector initialGuess ( soln, NOX::Epetra::Vector::CreateView );
 
-    Teuchos::RCP<LOCA::Epetra::Group> grp = Teuchos::rcp ( new LOCA::Epetra::Group (
-                                                globalData, nlPrintParams, iTime, initialGuess, linSys, linSys,
-                                                locaParams ) );
+    Teuchos::RCP<LOCA::Epetra::Group> grp =
+        Teuchos::rcp ( new LOCA::Epetra::Group ( globalData, nlPrintParams, iTime,
+                       initialGuess, linSys, linSys, locaParams ) );
 
     grp->setParams ( locaParams );
     // ---------------------------------------------------------------------------
@@ -384,7 +373,6 @@ main ( int argc, char *argv[] )
         Teuchos::rcp ( new NOX::StatusTest::Combo ( NOX::StatusTest::Combo::OR, normF, maxIters ) );
     // ---------------------------------------------------------------------------
 
-
     // ---------------------------------------------------------------------------
     // Set up the LOCA status tests
     // ---------------------------------------------------------------------------
@@ -396,8 +384,6 @@ main ( int argc, char *argv[] )
     // Create the stepper
     Teuchos::RCP<LOCA::Stepper> stepper =
         Teuchos::rcp ( new LOCA::Stepper ( globalData, grp, maxLocaStepsTest, comboOR, paramList ) );
-//  Teuchos::RCP<LOCA::Stepper> stepper =
-//  Teuchos::rcp(new LOCA::Stepper( globalData, grp, comboOR, paramList));
     // ---------------------------------------------------------------------------
 
     // make sure that the stepper starts off with the correct starting value

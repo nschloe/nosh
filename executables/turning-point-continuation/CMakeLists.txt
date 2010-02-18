@@ -10,10 +10,12 @@ IF(MPI_COMPILED)
 ENDIF(MPI_COMPILED)
 
 FIND_PACKAGE( LOCAEpetra REQUIRED )
+FIND_PACKAGE( NOXEpetra  REQUIRED )
 
 INCLUDE_DIRECTORIES ( ${Trilinos_INCLUDE_DIR} )
 
 INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/packages/libgl/src
+                      ${ginzburg-landau_SOURCE_DIR}/packages/libcartesian/src
                       ${ginzburg-landau_SOURCE_DIR}/packages/libio/src )
 
 SET ( ginzburg_landau_SRCS
@@ -24,6 +26,7 @@ ADD_EXECUTABLE ( glTurningPointContinuation.out
 
 SET ( internal_LIBS
       gl
+      cartesian
       io
     )
 
@@ -34,8 +37,8 @@ INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIRS} )
 SET(Boost_USE_STATIC_LIBS   ON)
 SET(Boost_USE_MULTITHREADED ON)
 SET( LINK_LIBRARIES ${LINK_LIBRARIES}
-	                    ${Boost_LIBRARIES} )
-# ==============================================================================
+                    ${Boost_LIBRARIES} )
+# ------------------------------------------------------------------------------
 FIND_LIBRARY( GFORTRAN ${GFORTRAN_LIBNAME}
               HINTS ${GFORTRAN_DIR}    )
 SET( LINK_LIBRARIES ${LINK_LIBRARIES}
@@ -48,6 +51,7 @@ SET( LINK_LIBRARIES ${LINK_LIBRARIES}
 TARGET_LINK_LIBRARIES ( glTurningPointContinuation.out
                         ${internal_LIBS}
                         LOCAEpetra
+                        NOXEpetra
                         ${LINK_LIBRARIES}
                       )
 # ==============================================================================
