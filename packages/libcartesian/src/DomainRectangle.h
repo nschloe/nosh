@@ -1,6 +1,6 @@
 /*
     <one line to give the program's name and a brief idea of what it does.>
-    Copyright (C) <year>  <name of author>
+    Copyright (C) 2010 Nico Schl\"omer
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -21,7 +21,6 @@
 #define DOMAINRECTANGLE_H
 
 #include "DomainVirtual.h"
-#include <boost-1_35/boost/concept_check.hpp>
 
 class DomainRectangle:
             public DomainVirtual
