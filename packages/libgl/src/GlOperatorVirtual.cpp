@@ -24,6 +24,8 @@
 // =============================================================================
 GlOperatorVirtual::GlOperatorVirtual ( Teuchos::RCP<GridUniform>             & grid,
                                        Teuchos::RCP<MagneticVectorPotential> & A ) :
+        psi_ ( Teuchos::null ),
+        chi_ ( 0.0 ),
         grid_ ( grid ),
         A_ ( A )
 {
