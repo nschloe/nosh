@@ -2,8 +2,6 @@ cmake_minimum_required( VERSION 2.6 )
 
 PROJECT( ginzburg-landau )
 
-INCLUDE( cmake-system.txt REQUIRED )
-
 #SET(CMAKE_BUILD_TYPE Profile)
 
 SET(CMAKE_BUILD_TYPE Debug)

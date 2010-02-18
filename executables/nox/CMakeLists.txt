@@ -1,5 +1,3 @@
-INCLUDE( ../../cmake-system.txt REQUIRED )
-
 ENABLE_LANGUAGE( CXX )
 
 IF(MPI_COMPILED)

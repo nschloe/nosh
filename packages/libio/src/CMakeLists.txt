@@ -1,5 +1,3 @@
-INCLUDE( ${ginzburg-landau_SOURCE_DIR}/cmake-system.txt REQUIRED )
-
 ENABLE_LANGUAGE( CXX )
 
 SET ( gl_SRCS
