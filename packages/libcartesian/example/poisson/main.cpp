@@ -15,7 +15,6 @@
 #include <Thyra_LinearOpBase.hpp>
 #include <Thyra_EpetraLinearOp.hpp>
 #include <Thyra_EpetraThyraWrappers.hpp>
-#include <Thyra_Vector.hpp>
 #include <Thyra_LinearOpWithSolveFactoryHelpers.hpp>
 
 #include <Stratimikos_DefaultLinearSolverBuilder.hpp>
@@ -181,7 +180,8 @@ int main ( int argc, char *argv[] )
     AEpetra->FillComplete();
     
     // solve the equation system using Thyra + Stratimikos
-    Teuchos::RCP<Epetra_Vector> xEpetra = Teuchos::rcp ( new Epetra_Vector ( Map ) );
+    Teuchos::RCP<Epetra_Vector> xEpetra =
+       Teuchos::rcp ( new Epetra_Vector ( Map ) );
 
     // ------------------------------------------------------------------------
     // wrap the Epetra objects into Thyra objects
@@ -216,10 +216,12 @@ int main ( int argc, char *argv[] )
     // Create a linear solver based on the forward operator A
     Teuchos::RCP<Thyra::LinearOpWithSolveBase<double> >
     lows = Thyra::linearOpWithSolve ( *lowsFactory, A );
-
+    
     // Solve the linear system (note: the initial guess in 'x' is critical)
-    Thyra::SolveStatus<double>
-    status = Thyra::solve ( *lows, Thyra::NOTRANS, *b, &*x );
+    // TODO remove conversion as soon as Trilinos allows for it
+    Teuchos::Ptr<Thyra::VectorBase<double> > xPtr( x.getRawPtr() );
+    Thyra::SolveStatus<double> status =
+    lows->solve ( Thyra::NOTRANS, *b, xPtr );
     *out << "\nSolve status:\n" << status;
     // ------------------------------------------------------------------------
     
