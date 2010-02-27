@@ -2,7 +2,7 @@
  * GlKomplex.h
  *
  *  Created on: Dec 16, 2009
- *      Author: Nico Schl�mer
+ *      Author: Nico Schl\"omer
  */
 
 #ifndef GLKOMPLEX_H_
