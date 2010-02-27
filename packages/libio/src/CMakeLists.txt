@@ -11,10 +11,6 @@ SET ( gl_SRCS
       VtkReader.cpp
     )
 
-#       ioVirtual.cpp
-#       ioXdmf.cpp
-#       ioFactory.cpp
-
 INCLUDE( SetTrilinosVariables REQUIRED )
 INCLUDE_DIRECTORIES( ${Trilinos_INCLUDE_DIR} )
 

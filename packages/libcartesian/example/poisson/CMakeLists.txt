@@ -7,10 +7,7 @@ IF(MPI_COMPILED)
     INCLUDE_DIRECTORIES ( ${MPI_INCLUDE_PATH} )
 ENDIF(MPI_COMPILED)
 
-FIND_PACKAGE( LOCA      REQUIRED )
-FIND_PACKAGE( NOX       REQUIRED )
-FIND_PACKAGE( NOXEpetra REQUIRED )
-
+FIND_PACKAGE( LOCA REQUIRED )
 
 INCLUDE_DIRECTORIES ( ${Trilinos_INCLUDE_DIR} )
 
@@ -46,7 +43,6 @@ SET( LINK_LIBRARIES ${LINK_LIBRARIES}
 TARGET_LINK_LIBRARIES ( poisson.out
                         ${internal_LIBS}
                         LOCA
-                        NOXEpetra
                         ${LINK_LIBRARIES}
                       )
 # ==============================================================================
