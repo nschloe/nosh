@@ -2,6 +2,9 @@ cmake_minimum_required( VERSION 2.6 )
 
 PROJECT( ginzburg-landau )
 
+# sets the compilers:
+INCLUDE( SetTrilinosVariables )
+
 #SET(CMAKE_BUILD_TYPE Profile)
 
 SET(CMAKE_BUILD_TYPE Debug)
