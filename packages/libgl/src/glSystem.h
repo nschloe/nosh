@@ -91,7 +91,7 @@ public:
 
     //! Returns the current Jacobian.
     //! @return Reference-counted pointer to the Jacobian.
-    Teuchos::RCP<const Epetra_CrsMatrix>
+    Teuchos::RCP<Epetra_CrsMatrix>
     getJacobian() const;
 
     Teuchos::RCP<Epetra_CrsMatrix>

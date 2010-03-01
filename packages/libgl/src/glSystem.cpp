@@ -39,7 +39,8 @@ GlSystem::GlSystem ( GinzburgLandau::GinzburgLandau &gl,
         stepper_ ( Teuchos::null ),
         glKomplex_ ( Teuchos::rcp ( new GlKomplex ( eComm,psi->getMap() ) ) ),
         Gl_ ( gl ),
-        initialSolution_ ( Teuchos::null ),
+        preconditioner_( Teuchos::null ),
+        initialSolution_ ( glKomplex_->complex2real ( psi ) ),
         outputDir_ ( outputDir ),
         solutionFileNameBase_ ( solutionFileNameBase ),
         nullvectorFileNameBase_ ( nullvectorFileNameBase ),
@@ -48,13 +49,6 @@ GlSystem::GlSystem ( GinzburgLandau::GinzburgLandau &gl,
         firstTime_ ( true ),
         maxNumDigits_( maxNumDigits )
 {
-    TEST_FOR_EXCEPTION ( !psi.is_valid_ptr() || psi.is_null(),
-                         std::logic_error,
-                         "psi not properly initialized." );
-
-    // initialize solution
-    Teuchos::RCP<Epetra_Vector> initialSolution_ =
-        glKomplex_->complex2real ( *psi );
 }
 // =============================================================================
 // Destructor
@@ -119,7 +113,7 @@ GlSystem::getSolution() const
     return initialSolution_;
 }
 // =============================================================================
-Teuchos::RCP<const Epetra_CrsMatrix>
+Teuchos::RCP<Epetra_CrsMatrix>
 GlSystem::getJacobian() const
 {
 //      TEUCHOS_ASSERT( jacobian_.is_valid_ptr() && !jacobian_.is_null() );
@@ -138,14 +132,7 @@ GlSystem::createJacobian ( const Epetra_Vector &x )
     Teuchos::Array<int> indicesA, indicesB;
     Teuchos::Array<double_complex> valuesA, valuesB;
 
-    if ( firstTime_ )
-    {
-        glKomplex_->initializeMatrix();
-    }
-    else
-    {
-        glKomplex_->zeroOutMatrix();
-    }
+    glKomplex_->zeroOutMatrix();
 
     Teuchos::RCP<ComplexVector> psi = glKomplex_->real2complex ( x );
 

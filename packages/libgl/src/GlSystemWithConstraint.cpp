@@ -47,28 +47,20 @@ GlSystemWithConstraint::GlSystemWithConstraint ( GinzburgLandau::GinzburgLandau 
                                                ) :
         glSystem_ ( gl, eComm, psi, outputDir, outputDataFileName, outputFileFormat,
                     solutionFileNameBase, nullvectorFileNameBase, maxStepNumberDecimals ),
-        regularMap_ ( 0 ),
-        extendedMap_ ( 0 ),
-        jacobian_ ( 0 ),
-        initialSolution_ ( 0 ),
+        regularMap_ (  glSystem_.getRealMap() ),
+        extendedMap_ ( createExtendedRealMap ( *regularMap_ ) ),
+        jacobian_ ( new Epetra_CrsMatrix ( Copy, *extendedMap_, 0 ) ),
+        solution_ ( new Epetra_Vector ( *extendedMap_ ) ),
         maxStepNumberDecimals_ ( maxStepNumberDecimals ),
         firstTime_ ( true )
 {
-   Teuchos::RCP<Epetra_Vector> tmp = glSystem_.getGlKomplex()->complex2real ( *psi );
+    Teuchos::RCP<Epetra_Vector> tmp = glSystem_.getGlKomplex()->complex2real ( *psi );
 
-    // Create the maps with and without phase constraint.
-    regularMap_  = glSystem_.getRealMap();
-    extendedMap_ = createExtendedRealMap ( *regularMap_ );
-
-    initialSolution_ = Teuchos::rcp ( new Epetra_Vector ( *extendedMap_ ), true );
     for ( int k=0; k<tmp->MyLength(); k++ )
-        (*initialSolution_)[k] = ( *tmp ) [tmp->Map().GID ( k ) ];
+        (*solution_)[k] = ( *tmp ) [tmp->Map().GID ( k ) ];
 
-    int n = initialSolution_->GlobalLength();
-    initialSolution_->ReplaceGlobalValue ( n-1, 0, 0.0 );
-
-    // TODO Why is this necessary??
-    jacobian_ = Teuchos::rcp ( new Epetra_CrsMatrix ( Copy, *extendedMap_, 0 ) );
+    int n = solution_->GlobalLength();
+    solution_->ReplaceGlobalValue ( n-1, 0, 0.0 );
 
     // Initialize the format for the the continuation step number.
     // Here: 00012 for step no. 12, if maxStepNumberDecimals_=5.
@@ -189,7 +181,7 @@ GlSystemWithConstraint::computePreconditioner ( const Epetra_Vector    & x,
 Teuchos::RCP<Epetra_Vector>
 GlSystemWithConstraint::getSolution() const
 {
-    return initialSolution_;
+    return solution_;
 }
 // =============================================================================
 Teuchos::RCP<Epetra_CrsMatrix>

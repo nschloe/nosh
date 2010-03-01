@@ -1,56 +1,40 @@
 /*
- * GlSystemWithConstraint.h
- *
- *  Created on: Dec 16, 2009
- *      Author: Nico Schl\"omer
- */
-#ifndef GLSYSTEMWITHCONSTRAINT_H_
-#define GLSYSTEMWITHCONSTRAINT_H_
+    <one line to give the program's name and a brief idea of what it does.>
+    Copyright (C) 2009--2010 Nico Schl\"omer
 
-#include "ginzburgLandau.h"
-#include "AbstractStateWriter.h"
-#include "GlKomplex.h"
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+*/
+
+#ifndef GLSYSTEMLOCACONSTRAINT_H
+#define GLSYSTEMLOCACONSTRAINT_H
+
+#include <LOCA_MultiContinuation_ConstraintInterfaceMVDX.H>
+
 #include "glSystem.h"
 
-#include <Epetra_Comm.h>
-#include <Epetra_Map.h>
-#include <Epetra_Vector.h>
-
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_Array.hpp>
-
-#include <Epetra_CrsMatrix.h>
-
-#include <Teuchos_ParameterList.hpp>
-
-#include <NOX_Epetra_Interface_Required.H> // NOX base class
-#include <NOX_Epetra_Interface_Jacobian.H> // NOX base class
-#include <NOX_Epetra_Interface_Preconditioner.H> // NOX base class
-#include <LOCA_Epetra_Interface_Required.H> // LOCA base class
-#include <LOCA_Epetra_Interface_TimeDependent.H> // LOCA base class
-#include <NOX_Abstract_PrePostOperator.H>
-
-#include <LOCA_Parameter_Vector.H>
-
-#include <Tpetra_Map.hpp>
-#include <Tpetra_Vector.hpp>
-
-#include <Thyra_OperatorVectorTypes.hpp> // For Thyra::Ordinal
-
-#include <NOX_Abstract_Group.H>
-
-#include <LOCA_Stepper.H>
-
-class GlSystemWithConstraint:
+class GlSystemLocaConstraint:
             public AbstractStateWriter,
             public NOX::Epetra::Interface::Jacobian,
             public NOX::Epetra::Interface::Preconditioner,
             public LOCA::Epetra::Interface::TimeDependent
+//             public LOCA::MultiContinuation::ConstraintInterfaceMVDX
 {
-public:
+  public:
 
     //! Constructor with initial guess.
-    GlSystemWithConstraint ( GinzburgLandau::GinzburgLandau &gl,
+    GlSystemLocaConstraint ( GinzburgLandau::GinzburgLandau &gl,
                              const Teuchos::RCP<const Epetra_Comm> eComm,
                              const Teuchos::RCP<const ComplexVector> psi,
                              const std::string outputDir = "data",
@@ -59,9 +43,9 @@ public:
                              const std::string solutionFileNameBase = "solutionStep",
                              const std::string nullvectorFileNameBase = "nullvectorStep",
                              const unsigned int maxStepNumberDecimals = 4 );
-
-    //! Destructor
-    ~GlSystemWithConstraint();
+  
+    //! Destructor.
+    ~GlSystemLocaConstraint();
 
     //! Evaluate the Ginzburg--Landau functions at a given state defined
     //! by the input vector x.
@@ -148,37 +132,7 @@ public:
     void
     setChi ( const double h0 );
 
-    const Teuchos::RCP<const Epetra_Map>
-    getMap() const;
-
 private:
-
-    void
-    fillBorderedMatrix ( const Teuchos::RCP<      Epetra_CrsMatrix> & extendedMatrix,
-                         const Teuchos::RCP<const Epetra_CrsMatrix> & regularMatrix,
-                         const Epetra_Vector                        & rightBorder,
-                         Epetra_Vector                              & lowerBorder,
-                         double                                       d,
-                         bool                                         firstTime
-                       ) const;
-
-    int
-    PutRow ( const Teuchos::RCP<Epetra_CrsMatrix> A,
-             const int      Row,
-             const int      numIndices,
-             double * values,
-             int    * indices,
-             const bool     firstTime ) const;
-
-
-    //! Creates a map identical to the input argument \c realMap, but
-    //! extended by one entry.
-    //! This extra slot is usually used for the phase condition.
-    Teuchos::RCP<Epetra_Map>
-    createExtendedRealMap ( const Epetra_BlockMap & realMap ) const;
-
-    void
-    createJacobian ( const Epetra_Vector &x );
 
     //! Print method for the continuation in one parameter.
     void
@@ -197,24 +151,12 @@ private:
     writeContinuationStats ( const int conStep,
                              const Teuchos::RCP<const ComplexVector> psi ) const;
 
-    //! Translate an Epetra_Comm into a Teuchos::Comm<int>, no matter the Thyra::Ordinal.
-    Teuchos::RCP<const Teuchos::Comm<int> >
-    create_CommInt ( const Teuchos::RCP<const Epetra_Comm> &epetraComm );
-
 private:
 
     GlSystem::GlSystem glSystem_;
-
-    Teuchos::RCP<const Epetra_BlockMap> regularMap_;
-    Teuchos::RCP<Epetra_Map> extendedMap_;
-    const Teuchos::RCP<Epetra_CrsMatrix> jacobian_;
-    Teuchos::RCP<Epetra_CrsMatrix> preconditioner_;
-    const Teuchos::RCP<Epetra_Vector> solution_;
-
-    const unsigned int maxStepNumberDecimals_;
-    std::string stepNumFileNameFormat_;
-
-    bool firstTime_;
 };
 
-#endif /* GLSYSTEMWITHCONSTRAINT_H_ */
+#endif // GLSYSTEMLOCACONSTRAINT_H
+
+
+

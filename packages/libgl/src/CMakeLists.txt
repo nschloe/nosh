@@ -14,6 +14,7 @@ SET ( gl_SRCS
       glSystem.cpp
       glPredictorSystem.cpp
       GlSystemWithConstraint.cpp
+      GlSystemLocaConstraint.cpp
       eigenSaver.cpp          )
 
 INCLUDE( SetTrilinosVariables REQUIRED )
