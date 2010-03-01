@@ -9,12 +9,10 @@ SET ( gl_SRCS
       GlOperatorBCCentral.cpp
       glPrePostOperator.cpp
       GlKomplex.cpp
-      GlHelpers.cpp
       AbstractStateWriter.cpp
       glSystem.cpp
       glPredictorSystem.cpp
       GlSystemWithConstraint.cpp
-      GlSystemLocaConstraint.cpp
       eigenSaver.cpp          )
 
 INCLUDE( SetTrilinosVariables REQUIRED )
