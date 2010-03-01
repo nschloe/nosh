@@ -2,7 +2,7 @@
  * GlSystemWithConstraint.cpp
  *
  *  Created on: Dec 16, 2009
- *      Author: Nico Schloemer
+ *      Author: Nico Schl\"omer
  */
 
 #include "GlSystemWithConstraint.h"

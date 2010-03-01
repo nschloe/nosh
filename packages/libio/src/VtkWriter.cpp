@@ -24,13 +24,27 @@
 // =============================================================================
 // Constructor
 VtkWriter::VtkWriter ( const std::string & filePath ) :
-        AbstractImageWriter ( filePath )
+        AbstractImageWriter ( filePath ),
+        isFormatBinary_( false ) // Set the default to ASCII.
+                                 // If you want compressed files, use VTI.
 {
 }
 // =============================================================================
 // Destructor
 VtkWriter::~VtkWriter()
 {
+}
+// =============================================================================
+void
+VtkWriter::setFormatBinary()
+{
+  isFormatBinary_ = true;
+}
+// =============================================================================
+void
+VtkWriter::setFormatAscii()
+{
+  isFormatBinary_ = false;
 }
 // =============================================================================
 void
@@ -41,7 +55,13 @@ VtkWriter::write () const
         vtkSmartPointer<vtkStructuredPointsWriter>::New();
     writer->SetFileName ( filePath_.c_str() );
     writer->SetInput ( imageData_ );
-    writer->SetFileTypeToBinary(); // write binary data to avoid losing precision
+    if ( isFormatBinary_ )
+        // write binary data to avoid losing precision
+        writer->SetFileTypeToBinary();
+    else
+        // ASCII format stores only eight significant digits
+        writer->SetFileTypeToASCII();
+
     writer->Write();
 
     return;

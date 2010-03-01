@@ -35,9 +35,17 @@ public:
 
     virtual void
     write () const;
+    
+    void
+    setFormatBinary();
+    
+    void
+    setFormatAscii();
 
 protected:
 private:
+  //! whether to write binary of ASCII format VTK
+  bool isFormatBinary_;
 };
 
 #endif // VTKWRITER_H
