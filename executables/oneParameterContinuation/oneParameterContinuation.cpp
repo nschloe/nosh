@@ -236,7 +236,9 @@ main ( int argc, char *argv[] )
 
     Teuchos::RCP<GlSystemWithConstraint> glsystem;
 
-    int maxLocaSteps = 5000;
+    Teuchos::ParameterList & stepperList = paramList->sublist ( "LOCA" ).sublist ( "Stepper" );
+    int maxLocaSteps = stepperList.get<int> ( "Max Steps" );
+
     try
     {
         glsystem = Teuchos::rcp ( new GlSystemWithConstraint ( glProblem,
@@ -254,9 +256,7 @@ main ( int argc, char *argv[] )
         std::cerr << e.what() << std::endl;
         return 1;
     }
-
-    Teuchos::ParameterList & stepperList = paramList->sublist ( "LOCA" ).sublist ( "Stepper" );
-
+    
     // set the initial value from glParameters
     std::string contParam = stepperList.get<string> ( "Continuation Parameter", "" );
     TEST_FOR_EXCEPTION ( !glParameters.isParameter ( contParam ),
