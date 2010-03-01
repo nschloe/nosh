@@ -44,9 +44,8 @@ public:
     //! Converts a complex-valued vector to a real-valued vector.
     Teuchos::RCP<Epetra_Vector>
     complex2real ( const ComplexVector &complexVec ) const;
-
-    void
-    initializeMatrix();
+    Teuchos::RCP<Epetra_Vector>
+    complex2real ( const Teuchos::RCP<const ComplexVector> & complexVecPtr ) const;
 
     void
     finalizeMatrix();

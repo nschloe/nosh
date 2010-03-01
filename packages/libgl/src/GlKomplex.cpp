@@ -28,7 +28,7 @@ GlKomplex::GlKomplex ( const Teuchos::RCP<const Epetra_Comm>                  eC
         TComm_ ( create_CommInt ( eComm ) ),
         RealMap_ ( createRealMap ( ComplexMap ) ),
         ComplexMap_ ( ComplexMap ),
-        realMatrix_ ( Teuchos::null )
+        realMatrix_ ( new Epetra_CrsMatrix (Copy,*RealMap_,0) )
 {
 }
 // =============================================================================
@@ -93,6 +93,13 @@ GlKomplex::complex2real ( const ComplexVector & complexVec ) const
         ( *x ) [2*k+1] = std::imag ( complexVecView[k] );
     }
     return x;
+}
+// =============================================================================
+Teuchos::RCP<Epetra_Vector>
+GlKomplex::complex2real ( const Teuchos::RCP<const ComplexVector> & complexVecPtr ) const
+{
+    TEUCHOS_ASSERT ( complexVecPtr.is_valid_ptr() && !complexVecPtr.is_null() );
+    return complex2real ( *complexVecPtr );
 }
 // =============================================================================
 Teuchos::RCP<Epetra_Map>
@@ -160,13 +167,6 @@ GlKomplex::create_CommInt ( const Teuchos::RCP<const Epetra_Comm> &epetraComm )
 
     // If you get here then the conversion failed!
     return Teuchos::null;
-}
-// =============================================================================
-void
-GlKomplex::initializeMatrix()
-{ 
-    int numEntriesPerRow = 0; // Fill during insertion phase.
-    realMatrix_ = Teuchos::rcp ( new Epetra_CrsMatrix ( Copy,*RealMap_, numEntriesPerRow ) );
 }
 // =============================================================================
 void
