@@ -90,7 +90,8 @@ GlSystem::computeF ( const Epetra_Vector &x,
     return true;
 }
 // =============================================================================
-bool GlSystem::computeJacobian ( const Epetra_Vector &x, Epetra_Operator &Jac )
+bool
+GlSystem::computeJacobian ( const Epetra_Vector &x, Epetra_Operator &Jac )
 {
     // compute the values of the Jacobian
     createJacobian ( x );

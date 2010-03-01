@@ -164,7 +164,7 @@ GlKomplex::create_CommInt ( const Teuchos::RCP<const Epetra_Comm> &epetraComm )
 // =============================================================================
 void
 GlKomplex::initializeMatrix()
-{
+{ 
     int numEntriesPerRow = 0; // Fill during insertion phase.
     realMatrix_ = Teuchos::rcp ( new Epetra_CrsMatrix ( Copy,*RealMap_, numEntriesPerRow ) );
 }

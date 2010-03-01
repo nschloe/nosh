@@ -153,9 +153,10 @@ GlSystemWithConstraint::createExtendedRealMap ( const Epetra_BlockMap & realMap 
                         );
 }
 // =============================================================================
-bool GlSystemWithConstraint::computeJacobian ( const Epetra_Vector   & x,
-        Epetra_Operator & Jac
-                                             )
+bool
+GlSystemWithConstraint::computeJacobian ( const Epetra_Vector & x,
+                                          Epetra_Operator     & Jac
+                                        )
 {
     // strip off the phase constraint
     Epetra_Vector tmp ( *regularMap_ );
@@ -167,7 +168,7 @@ bool GlSystemWithConstraint::computeJacobian ( const Epetra_Vector   & x,
 
     // compute the underlying Jacobian
     glSystem_.computeJacobian ( tmp, Jac );
-
+    
     // compute the values of the Jacobian
     createJacobian ( x );
 
@@ -223,7 +224,7 @@ GlSystemWithConstraint::createJacobian ( const Epetra_Vector & x )
 
     // get the unbordered Jacobian
     Teuchos::RCP<const Epetra_CrsMatrix> regularJacobian = glSystem_.getJacobian();
-
+    
     // TODO: Conversion to real-valued vector in one go?
     // right bordering: (phi:=) -i*psi
     ComplexVector phi = *psi;
@@ -253,10 +254,18 @@ GlSystemWithConstraint::createJacobian ( const Epetra_Vector & x )
 // =============================================================================
 bool
 GlSystemWithConstraint::computeShiftedMatrix ( double alpha,
-        double beta,
-        const Epetra_Vector &x,
-        Epetra_Operator &A )
+                                               double beta,
+                                               const Epetra_Vector   & x,
+                                                     Epetra_Operator & A )
 {
+    // strip off the phase constraint
+    Epetra_Vector tmp ( *regularMap_ );
+    for ( int k=0; k<tmp.MyLength(); k++ )
+        tmp[k] = x[x.Map().GID ( k ) ];
+    
+    // compute the underlying Jacobian
+    glSystem_.computeJacobian ( tmp, A );
+  
     // compute the values of the Jacobian
     createJacobian ( x );
 
