@@ -11,6 +11,7 @@
 #endif
 
 #include <Epetra_Vector.h>
+#include <Epetra_Import.h>
 #include <NOX_Epetra_LinearSystem_AztecOO.H>
 
 #include <LOCA_StatusTest_MaxIters.H>
@@ -156,7 +157,7 @@ main ( int argc, char *argv[] )
         std::cerr << e.what() << std::endl;
         return 1;
     }
-    boost::filesystem::path inputGuessFile = initialGuessList.get<string> ( "File name", "" );
+    boost::filesystem::path inputGuessFile = initialGuessList.get<string> ( "Solution" );
     if ( !inputGuessFile.empty() && inputGuessFile.root_directory().empty() ) // if inputGuessFile is a relative path
         inputGuessFile = xmlPath / inputGuessFile;
 
@@ -236,7 +237,8 @@ main ( int argc, char *argv[] )
 
     Teuchos::RCP<GL::LinearSystem::Bordered> glsystem;
 
-    int maxLocaSteps = 5000;
+    Teuchos::ParameterList & stepperList = paramList->sublist ( "LOCA" ).sublist ( "Stepper" );
+    int maxLocaSteps = stepperList.get<int> ( "Max Steps" );
     try
     {
         glsystem = Teuchos::rcp ( new GL::LinearSystem::Bordered ( glProblem,
@@ -254,8 +256,6 @@ main ( int argc, char *argv[] )
         std::cerr << e.what() << std::endl;
         return 1;
     }
-
-    Teuchos::ParameterList & stepperList = paramList->sublist ( "LOCA" ).sublist ( "Stepper" );
 
     // set the initial value from glParameters
     std::string contParam = stepperList.get<string> ( "Continuation Parameter", "" );
@@ -371,18 +371,27 @@ main ( int argc, char *argv[] )
     // ---------------------------------------------------------------------------
     // Set up the LOCA status tests
     // ---------------------------------------------------------------------------
-    Teuchos::RCP<LOCA::StatusTest::MaxIters> maxLocaStepsTest =
-        Teuchos::rcp ( new LOCA::StatusTest::MaxIters ( maxLocaSteps ) );
+    Teuchos::RCP<LOCA::StatusTest::MaxIters> maxLocaStepsTest;
+    try {
+        maxLocaStepsTest = Teuchos::rcp ( new LOCA::StatusTest::MaxIters ( maxLocaSteps ) );
+    }
+    catch ( char const * e ) {
+        std::cerr << e << std::endl;
+        return 1;
+    }
     // ---------------------------------------------------------------------------
 
     // ---------------------------------------------------------------------------
     // read in initial null vector and convert it to a glsystem-compliant vector
-    std::string initialNullVectorFile = outputList.get<string> ( "Initial null vector guess" );
+    boost::filesystem::path initialNullVectorFile = initialGuessList.get<string> ( "Null vector" );
+    if ( !initialNullVectorFile.empty() && initialNullVectorFile.root_directory().empty() ) // if initialNullVectorFile is a relative path
+        initialNullVectorFile = xmlPath / initialNullVectorFile;
+    
     Teuchos::RCP<ComplexVector> initialNullVector;
     try
     {
         Teuchos::RCP<ComplexMultiVector> initialNullVectorM;
-        GridReader::read ( Comm, initialNullVectorFile, initialNullVectorM, grid, glParameters );
+        GridReader::read ( Comm, initialNullVectorFile.string(), initialNullVectorM, grid, glParameters );
         TEUCHOS_ASSERT_EQUALITY ( initialNullVectorM->getNumVectors(), 1 );
         initialNullVector = initialNullVectorM->getVectorNonConst ( 0 );
     }
@@ -406,22 +415,44 @@ main ( int argc, char *argv[] )
     // add LOCA options which cannot be provided in the XML file
     Teuchos::ParameterList & bifList =
         paramList->sublist ( "LOCA" ).sublist ( "Bifurcation" );
+        
+    // create extended vectors
+    Teuchos::RCP<const Epetra_BlockMap> regularMap = Teuchos::rcpFromRef ( glsystemInitialNullVector->Map() );
+    Teuchos::RCP<const Epetra_Map> extendedMap = glsystem->getExtendedMap();
+    Teuchos::RCP<Epetra_Vector> glsystemInitialNullVectorExt =
+        Teuchos::rcp( new Epetra_Vector( *extendedMap, true ) );
+    Teuchos::RCP<Epetra_Import> importFromRegularMap =
+         Teuchos::rcp (new Epetra_Import(*extendedMap,*regularMap)); 
+    glsystemInitialNullVectorExt->Import( *glsystemInitialNullVector,*importFromRegularMap,Insert );
+    
+        
     Teuchos::RCP<NOX::Abstract::Vector> lengthNormVec =
-        Teuchos::rcp ( new NOX::Epetra::Vector ( *glsystemInitialNullVector ) );
-//      lengthNormVec->init(1.0);
+        Teuchos::rcp ( new NOX::Epetra::Vector ( *glsystemInitialNullVectorExt ) );
+//     lengthNormVec->init(1.0);
+    
     bifList.set ( "Length Normalization Vector", lengthNormVec );
 
     Teuchos::RCP<NOX::Abstract::Vector> initialNullAbstractVec =
-        Teuchos::rcp ( new NOX::Epetra::Vector ( *glsystemInitialNullVector ) );
-//      initialNullVec->init(1.0);
+        Teuchos::rcp ( new NOX::Epetra::Vector ( *glsystemInitialNullVectorExt ) );
+//     initialNullAbstractVec->init(1.0);
     bifList.set ( "Initial Null Vector", initialNullAbstractVec );
     // ---------------------------------------------------------------------------
 
 
     // ---------------------------------------------------------------------------
     // Create the stepper
-    Teuchos::RCP<LOCA::Stepper> stepper =
-        Teuchos::rcp ( new LOCA::Stepper ( globalData, grp, maxLocaStepsTest, comboOR, paramList ) );
+    Teuchos::RCP<LOCA::Stepper> stepper;
+    try {
+        stepper = Teuchos::rcp ( new LOCA::Stepper ( globalData,
+                                                     grp,
+                                                     maxLocaStepsTest,
+                                                     comboOR,
+                                                     paramList ) );
+    }
+    catch (...) {
+        std::cerr << "Exception caught. Abort." << std::endl;
+        return 1;
+    }
     // ---------------------------------------------------------------------------
 
     // make sure that the stepper starts off with the correct starting value

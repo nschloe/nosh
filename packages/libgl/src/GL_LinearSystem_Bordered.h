@@ -152,7 +152,7 @@ public:
     setChi ( const double h0 );
 
     const Teuchos::RCP<const Epetra_Map>
-    getMap() const;
+    getExtendedMap() const;
 
 private:
 

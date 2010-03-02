@@ -392,7 +392,7 @@ GL::LinearSystem::Bordered::getH0() const
 }
 // =============================================================================
 const Teuchos::RCP<const Epetra_Map>
-GL::LinearSystem::Bordered::getMap() const
+GL::LinearSystem::Bordered::getExtendedMap() const
 {
     return extendedMap_;
 }

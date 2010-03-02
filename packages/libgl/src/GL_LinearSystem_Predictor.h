@@ -42,7 +42,6 @@ class Predictor:
         public NOX::Epetra::Interface::Preconditioner
 {
 public:
-
         Predictor( GinzburgLandau::GinzburgLandau &gl,
                    const Teuchos::RCP<const Epetra_Comm> eComm,
                    const Teuchos::RCP<ComplexVector> psi,
@@ -51,8 +50,8 @@ public:
                    const std::string outputDir,
                    const std::string outputDataFileName,
                    const std::string outputFileFormat,
-                    const std::string solutionFileNameBase,
-                    const std::string nullvectorFileNameBase
+                   const std::string solutionFileNameBase,
+                   const std::string nullvectorFileNameBase
                  );
 
         //! Destructor

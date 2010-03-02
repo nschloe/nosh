@@ -62,7 +62,7 @@ GL::LinearSystem::Predictor::Predictor ( GinzburgLandau::GinzburgLandau &gl,
                          std::logic_error,
                          "Input guess is null pointer" );
 
-    sliceMap_    = glSystem_->getMap();
+    sliceMap_    = glSystem_->getExtendedMap();
     extendedMap_ = createExtendedMap ( *sliceMap_ );
 }
 // =============================================================================
