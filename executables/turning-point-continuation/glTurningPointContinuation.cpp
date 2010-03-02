@@ -21,13 +21,13 @@
 #include <Teuchos_DefaultComm.hpp>
 
 #include "ginzburgLandau.h"
-#include "GlOperatorBCCentral.h"
-#include "GlOperatorBCInner.h"
+#include "GL_Operator_BCCentral.h"
+#include "GL_Operator_BCInner.h"
 
 #include "DomainSquare.h"
 
-#include "GlSystemWithConstraint.h"
-#include "eigenSaver.h"
+#include "GL_LinearSystem_Bordered.h"
+#include "GL_IO_SaveEigenData.h"
 
 #include "GridReader.h"
 
@@ -225,21 +225,21 @@ main ( int argc, char *argv[] )
 
     double h0      = glParameters.get<double> ( "H0" );
     double scaling = glParameters.get<double> ( "scaling" );
-    Teuchos::RCP<MagneticVectorPotential> A =
-        Teuchos::rcp ( new MagneticVectorPotential ( h0, scaling ) );
+    Teuchos::RCP<GL::MagneticVectorPotential::Centered> A =
+        Teuchos::rcp ( new GL::MagneticVectorPotential::Centered ( h0, scaling ) );
 
     // create the operator
-    Teuchos::RCP<GlOperatorVirtual> glOperator =
-        Teuchos::rcp ( new GlOperatorBCInner ( grid, A ) );
+    Teuchos::RCP<GL::Operator::Virtual> glOperator =
+        Teuchos::rcp ( new GL::Operator::BCCentral ( grid, A ) );
 
     GinzburgLandau glProblem = GinzburgLandau ( glOperator );
 
-    Teuchos::RCP<GlSystemWithConstraint> glsystem;
+    Teuchos::RCP<GL::LinearSystem::Bordered> glsystem;
 
     int maxLocaSteps = 5000;
     try
     {
-        glsystem = Teuchos::rcp ( new GlSystemWithConstraint ( glProblem,
+        glsystem = Teuchos::rcp ( new GL::LinearSystem::Bordered ( glProblem,
                                   eComm,
                                   psi,
                                   outputDirectory.string(),
@@ -298,8 +298,8 @@ main ( int argc, char *argv[] )
         outputList.get<string> ( "Eigenvalues file name" );
     std::string eigenstateFileNameAppendix =
         outputList.get<string> ( "Eigenstate file name appendix" );
-    Teuchos::RCP<EigenSaver> glEigenSaver =
-        Teuchos::RCP<EigenSaver> ( new EigenSaver ( eigenListPtr, outputDirectory.string(),
+    Teuchos::RCP<GL::IO::SaveEigenData> glEigenSaver =
+        Teuchos::RCP<GL::IO::SaveEigenData> ( new GL::IO::SaveEigenData ( eigenListPtr, outputDirectory.string(),
                                    eigenvaluesFileName, contFileBaseName,
                                    eigenstateFileNameAppendix, glsystem ) );
 
@@ -396,9 +396,9 @@ main ( int argc, char *argv[] )
         std::cerr << "Unknown exception caught." << std::endl;
         return 1;
     }
-    // convert the complex vector into an GlSystem-compliant vector
+    // convert the complex vector into a (real-valued) GlSystem-compliant vector
     Teuchos::RCP<Epetra_Vector> glsystemInitialNullVector =
-        glsystem->getGlSystemVector ( initialNullVector );
+        glsystem->getGlKomplex()->complex2real ( initialNullVector );
     // ---------------------------------------------------------------------------
 
 
