@@ -4,10 +4,10 @@
 #ifndef GINZBURGLANDAU_H
 #define GINZBURGLANDAU_H
 
-#include "GlOperatorVirtual.h"
+#include "GL_Operator_Virtual.h"
 #include "GridVirtual.h"
 // #include "GridSquare.h"
-#include "MagneticVectorPotential.h"
+#include "GL_MagneticVectorPotential_Centered.h"
 
 
 #include <Teuchos_ParameterList.hpp>
@@ -23,7 +23,7 @@ class GinzburgLandau
 public:
 
     /*! Default constructor.*/
-    GinzburgLandau ( const Teuchos::RCP<GlOperatorVirtual> & glOperator );
+    GinzburgLandau ( const Teuchos::RCP<GL::Operator::Virtual> & glOperator );
 
     /*! Destructor. */
     ~GinzburgLandau();
@@ -116,7 +116,7 @@ private:
                 ) const;
 
 private:
-    const Teuchos::RCP<GlOperatorVirtual> glOperator_;
+    const Teuchos::RCP<GL::Operator::Virtual> glOperator_;
 
 private:
     /*! Calculated the coefficients of the jacobian system associated with the

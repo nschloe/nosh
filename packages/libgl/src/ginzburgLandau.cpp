@@ -5,7 +5,7 @@
 
 // =============================================================================
 // Class constructor
-GinzburgLandau::GinzburgLandau ( const Teuchos::RCP<GlOperatorVirtual>  & glOperator
+GinzburgLandau::GinzburgLandau ( const Teuchos::RCP<GL::Operator::Virtual>  & glOperator
                                ) :
         glOperator_ ( glOperator )
 {

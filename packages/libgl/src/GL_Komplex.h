@@ -17,19 +17,19 @@
 typedef std::complex<double> double_complex;
 typedef Tpetra::Vector<double_complex,Thyra::Ordinal> ComplexVector;
 
+namespace GL {
 
-class GlKomplex
+class Komplex
 {
-
 public:
 
     // Default constructor
-    GlKomplex ( const Teuchos::RCP<const Epetra_Comm>                  eComm,
-                const Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> > ComplexMap );
+    Komplex ( const Teuchos::RCP<const Epetra_Comm>                  eComm,
+              const Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> > ComplexMap );
 
     // Destructor
     virtual
-    ~GlKomplex();
+    ~Komplex();
 
     Teuchos::RCP<Epetra_Map>
     getRealMap() const;
@@ -147,4 +147,5 @@ private:
 
 };
 
+}
 #endif /* GLKOMPLEX_H_ */

@@ -17,67 +17,49 @@
 
 */
 
-#ifndef GLOPERATORVIRTUAL_H
-#define GLOPERATORVIRTUAL_H
+#ifndef GLOPERATORBCCENTRAL_H
+#define GLOPERATORBCCENTRAL_H
 
-#include <complex>
-#include <Tpetra_Vector.hpp>
+#include "GL_Operator_Virtual.h"
 
-#include "MagneticVectorPotential.h"
-#include "GridUniform.h"
+namespace GL {
+  namespace Operator {
 
-typedef std::complex<double> double_complex;
-
-class GlOperatorVirtual
+class BCCentral:
+            public Virtual
 {
 public:
+
     //! Default constructor.
-    GlOperatorVirtual ( Teuchos::RCP<GridUniform>             & grid,
-                        Teuchos::RCP<MagneticVectorPotential> & A
-                      );
+    BCCentral ( Teuchos::RCP<GridUniform>             & grid,
+                Teuchos::RCP<GL::MagneticVectorPotential::Centered> & A
+              );
 
     //! Destructor
-    virtual ~GlOperatorVirtual();
+    virtual
+    ~BCCentral();
 
+    //! Return the value of the Ginzburg-Landau equations for the equation
+    //! at eqType.
     virtual double_complex
-    getEntry ( const int k ) const = 0; // purely virtual
+    getEntry ( const int k ) const;
 
+    //! Returns entries and positions of the Jacobian matrix belonging to the
+    //! boundary conditions.
     virtual void
     getJacobianRow ( const int                        k,
                      Teuchos::Array<int>            & columnIndicesPsi,
                      Teuchos::Array<double_complex> & valuesPsi,
                      Teuchos::Array<int>            & columnIndicesPsiConj,
                      Teuchos::Array<double_complex> & valuesPsiCon
-                   ) const = 0; // purely virtual
-
-    void
-    updatePsi ( const Teuchos::RCP<const ComplexVector> psi );
-
-    void
-    setChi ( const double chi );
-
-    void
-    setH0 ( const double h0 );
-
-    double
-    getH0 () const;
-
-    Teuchos::RCP<const Grid>
-    getGrid() const;
-
-    double
-    getScaling () const;
-
-    void
-    setScaling ( const double scaling );
+                   ) const;
 
 protected:
-    Teuchos::RCP<const ComplexVector> psi_;
-    double chi_;
-    Teuchos::RCP<GridUniform> grid_;
-    Teuchos::RCP<MagneticVectorPotential> A_;
-
 private:
+
 };
 
-#endif // GLOPERATORVIRTUAL_H
+  } // namespace Operator
+} // namespace GL
+
+#endif // GLOPERATORBCCENTRAL_H

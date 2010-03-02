@@ -1,4 +1,4 @@
-#include "glSystem.h"
+#include "GL_LinearSystem_Default.h"
 
 #include <Epetra_Export.h>
 #include <Epetra_CrsMatrix.h>
@@ -26,7 +26,7 @@ typedef std::complex<double> double_complex;
 
 // =============================================================================
 // Default constructor
-GlSystem::GlSystem ( GinzburgLandau::GinzburgLandau &gl,
+GL::LinearSystem::Default::Default ( GinzburgLandau::GinzburgLandau &gl,
                      const Teuchos::RCP<const Epetra_Comm> eComm,
                      const Teuchos::RCP<const ComplexVector> psi,
                      const std::string outputDir,
@@ -37,7 +37,7 @@ GlSystem::GlSystem ( GinzburgLandau::GinzburgLandau &gl,
                      const unsigned int maxNumDigits
                    ) :
         stepper_ ( Teuchos::null ),
-        glKomplex_ ( Teuchos::rcp ( new GlKomplex ( eComm,psi->getMap() ) ) ),
+        glKomplex_ ( Teuchos::rcp ( new GL::Komplex ( eComm,psi->getMap() ) ) ),
         Gl_ ( gl ),
         preconditioner_( Teuchos::null ),
         initialSolution_ ( glKomplex_->complex2real ( psi ) ),
@@ -52,13 +52,13 @@ GlSystem::GlSystem ( GinzburgLandau::GinzburgLandau &gl,
 }
 // =============================================================================
 // Destructor
-GlSystem::~GlSystem()
+GL::LinearSystem::Default::~Default()
 {
     stepper_ = Teuchos::null;
 }
 // =============================================================================
 bool
-GlSystem::computeF ( const Epetra_Vector &x,
+GL::LinearSystem::Default::computeF ( const Epetra_Vector &x,
                      Epetra_Vector &FVec,
                      const NOX::Epetra::Interface::Required::FillType fillFlag )
 {
@@ -85,7 +85,7 @@ GlSystem::computeF ( const Epetra_Vector &x,
 }
 // =============================================================================
 bool
-GlSystem::computeJacobian ( const Epetra_Vector &x, Epetra_Operator &Jac )
+GL::LinearSystem::Default::computeJacobian ( const Epetra_Vector &x, Epetra_Operator &Jac )
 {
     // compute the values of the Jacobian
     createJacobian ( x );
@@ -93,7 +93,7 @@ GlSystem::computeJacobian ( const Epetra_Vector &x, Epetra_Operator &Jac )
     return true;
 }
 // =============================================================================
-bool GlSystem::computePreconditioner ( const Epetra_Vector &x,
+bool GL::LinearSystem::Default::computePreconditioner ( const Epetra_Vector &x,
                                        Epetra_Operator &Prec,
                                        Teuchos::ParameterList *precParams )
 {
@@ -108,26 +108,26 @@ bool GlSystem::computePreconditioner ( const Epetra_Vector &x,
 }
 // =============================================================================
 Teuchos::RCP<Epetra_Vector>
-GlSystem::getSolution() const
+GL::LinearSystem::Default::getSolution() const
 {
     return initialSolution_;
 }
 // =============================================================================
 Teuchos::RCP<Epetra_CrsMatrix>
-GlSystem::getJacobian() const
+GL::LinearSystem::Default::getJacobian() const
 {
 //      TEUCHOS_ASSERT( jacobian_.is_valid_ptr() && !jacobian_.is_null() );
     return glKomplex_->getMatrix();
 }
 // =============================================================================
 Teuchos::RCP<Epetra_CrsMatrix>
-GlSystem::getPreconditioner() const
+GL::LinearSystem::Default::getPreconditioner() const
 {
     return preconditioner_;
 }
 // =============================================================================
 void
-GlSystem::createJacobian ( const Epetra_Vector &x )
+GL::LinearSystem::Default::createJacobian ( const Epetra_Vector &x )
 {
     Teuchos::Array<int> indicesA, indicesB;
     Teuchos::Array<double_complex> valuesA, valuesB;
@@ -157,7 +157,7 @@ GlSystem::createJacobian ( const Epetra_Vector &x )
 }
 // =============================================================================
 bool
-GlSystem::computeShiftedMatrix ( double alpha,
+GL::LinearSystem::Default::computeShiftedMatrix ( double alpha,
                                  double beta,
                                  const Epetra_Vector &x,
                                  Epetra_Operator &A )
@@ -180,7 +180,7 @@ GlSystem::computeShiftedMatrix ( double alpha,
 // =============================================================================
 // function used by LOCA
 void
-GlSystem::setParameters ( const LOCA::ParameterVector & p )
+GL::LinearSystem::Default::setParameters ( const LOCA::ParameterVector & p )
 {
 
     TEST_FOR_EXCEPTION ( !p.isParameter ( "H0" ),
@@ -203,7 +203,7 @@ GlSystem::setParameters ( const LOCA::ParameterVector & p )
 }
 // =============================================================================
 void
-GlSystem::setLocaStepper ( const Teuchos::RCP<const LOCA::Stepper> stepper )
+GL::LinearSystem::Default::setLocaStepper ( const Teuchos::RCP<const LOCA::Stepper> stepper )
 {
     stepper_ = stepper;
 
@@ -225,14 +225,14 @@ GlSystem::setLocaStepper ( const Teuchos::RCP<const LOCA::Stepper> stepper )
 }
 // =============================================================================
 void
-GlSystem::releaseLocaStepper()
+GL::LinearSystem::Default::releaseLocaStepper()
 {
     stepper_ = Teuchos::null;
 }
 // =============================================================================
 // function used by LOCA
 void
-GlSystem::printSolution ( const Epetra_Vector &x,
+GL::LinearSystem::Default::printSolution ( const Epetra_Vector &x,
                           double conParam )
 {
     // define vector
@@ -258,7 +258,7 @@ GlSystem::printSolution ( const Epetra_Vector &x,
 }
 // =============================================================================
 void
-GlSystem::printSolutionOneParameterContinuation ( const Teuchos::RCP<const ComplexVector> & psi
+GL::LinearSystem::Default::printSolutionOneParameterContinuation ( const Teuchos::RCP<const ComplexVector> & psi
                                                 ) const
 {
     static int conStep = -1;
@@ -283,7 +283,7 @@ GlSystem::printSolutionOneParameterContinuation ( const Teuchos::RCP<const Compl
 //
 // The method gets called subsequently in this order.
 void
-GlSystem::printSolutionTurningPointContinuation ( const Teuchos::RCP<const ComplexVector> & psi
+GL::LinearSystem::Default::printSolutionTurningPointContinuation ( const Teuchos::RCP<const ComplexVector> & psi
                                                 ) const
 {
     static bool printSolution=false;
@@ -315,7 +315,7 @@ GlSystem::printSolutionTurningPointContinuation ( const Teuchos::RCP<const Compl
 }
 // =============================================================================
 void
-GlSystem::writeContinuationStats ( const int conStep,
+GL::LinearSystem::Default::writeContinuationStats ( const int conStep,
                                    const Teuchos::RCP<const ComplexVector> psi ) const
 {
     // fill the continuation parameters file
@@ -350,13 +350,13 @@ GlSystem::writeContinuationStats ( const int conStep,
 }
 // =============================================================================
 // function used by LOCA
-void GlSystem::setOutputDir ( const string &directory )
+void GL::LinearSystem::Default::setOutputDir ( const string &directory )
 {
     outputDir_ = directory;
 }
 // =============================================================================
 void
-GlSystem::writeSolutionToFile ( const Epetra_Vector & x,
+GL::LinearSystem::Default::writeSolutionToFile ( const Epetra_Vector & x,
                                 const std::string   & filePath
                               ) const
 {
@@ -365,7 +365,7 @@ GlSystem::writeSolutionToFile ( const Epetra_Vector & x,
 }
 // =============================================================================
 void
-GlSystem::writeAbstractStateToFile ( const Epetra_Vector & x,
+GL::LinearSystem::Default::writeAbstractStateToFile ( const Epetra_Vector & x,
                                      const std::string   & filePath
                                    ) const
 {
@@ -374,13 +374,13 @@ GlSystem::writeAbstractStateToFile ( const Epetra_Vector & x,
 }
 // =============================================================================
 Teuchos::RCP<Epetra_Vector>
-GlSystem::getGlSystemVector ( const Teuchos::RCP<const ComplexVector> psi ) const
+GL::LinearSystem::Default::getGlSystemVector ( const Teuchos::RCP<const ComplexVector> psi ) const
 {
     return glKomplex_->complex2real ( *psi );
 }
 // =============================================================================
 Teuchos::RCP<const Teuchos::Comm<int> >
-GlSystem::create_CommInt ( const Teuchos::RCP<const Epetra_Comm> & epetraComm )
+GL::LinearSystem::Default::create_CommInt ( const Teuchos::RCP<const Epetra_Comm> & epetraComm )
 {
     using Teuchos::RCP;
     using Teuchos::rcp;
@@ -416,43 +416,43 @@ GlSystem::create_CommInt ( const Teuchos::RCP<const Epetra_Comm> & epetraComm )
 }
 // =============================================================================
 double
-GlSystem::getH0() const
+GL::LinearSystem::Default::getH0() const
 {
     return Gl_.getH0();
 }
 // =============================================================================
 Teuchos::RCP<const Epetra_Map>
-GlSystem::getRealMap() const
+GL::LinearSystem::Default::getRealMap() const
 {
     return glKomplex_->getRealMap();
 }
 // =============================================================================
 Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> >
-GlSystem::getComplexMap() const
+GL::LinearSystem::Default::getComplexMap() const
 {
     return glKomplex_->getComplexMap();
 }
 // =============================================================================
 void
-GlSystem::setH0 ( const double h0 )
+GL::LinearSystem::Default::setH0 ( const double h0 )
 {
     Gl_.setH0 ( h0 );
 }
 // =============================================================================
 void
-GlSystem::setScaling ( const double scaling )
+GL::LinearSystem::Default::setScaling ( const double scaling )
 {
     Gl_.setScaling ( scaling );
 }
 // =============================================================================
 void
-GlSystem::setChi ( const double chi )
+GL::LinearSystem::Default::setChi ( const double chi )
 {
     Gl_.setChi ( chi );
 }
 // =============================================================================
-Teuchos::RCP<const GlKomplex>
-GlSystem::getGlKomplex() const
+Teuchos::RCP<const GL::Komplex>
+GL::LinearSystem::Default::getGlKomplex() const
 {
     return glKomplex_;
 }

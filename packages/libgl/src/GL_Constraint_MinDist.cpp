@@ -17,14 +17,14 @@
 
 */
 
-#include "GlMinDistConstraint.h"
+#include "GL_Constraint_MinDist.h"
 
 #include "glSystem.h"
 
 // =============================================================================
 // Default constructor
-GlMinDistConstraint::GlMinDistConstraint ( const Teuchos::RCP <GlSystem> & glSystem,
-                                           const NOX::Abstract::Vector & initialGuess ):
+GL::Constraint::MinDist ( const Teuchos::RCP <GlSystem> & glSystem,
+                          const NOX::Abstract::Vector & initialGuess ):
   glSystem_( glSystem ),
   constraints_(1,1),
   isValidConstraints_(false),
@@ -47,12 +47,12 @@ GlMinDistConstraint::GlMinDistConstraint ( const Teuchos::RCP <GlSystem> & glSys
 }
 // =============================================================================
 // Destructor
-GlMinDistConstraint::~GlMinDistConstraint()
+GL::Constraint::~MinDist()
 {
 }
 // =============================================================================
 // copy constructor
-GlMinDistConstraint::GlMinDistConstraint(const GlMinDistConstraint& source, 
+GL::Constraint::MinDist::GL::Constraint::MinDist(const GL::Constraint::MinDist& source,
                                          NOX::CopyType              type) :
   glSystem_(source.glSystem_),
   constraints_(source.constraints_),
@@ -64,14 +64,14 @@ GlMinDistConstraint::GlMinDistConstraint(const GlMinDistConstraint& source,
     isValidConstraints_ = true;
 }
 // =============================================================================
-GlMinDistConstraint::~GlMinDistConstraint()
+GL::Constraint::MinDist::~GL::Constraint::MinDist()
 {
 }
 // =============================================================================
 void
-GlMinDistConstraint::copy(const LOCA::MultiContinuation::ConstraintInterface& src)
+GL::Constraint::MinDist::copy(const LOCA::MultiContinuation::ConstraintInterface& src)
 {
-  const GlMinDistConstraint& source = dynamic_cast<const GlMinDistConstraint&>(src);
+  const GL::Constraint::MinDist& source = dynamic_cast<const GL::Constraint::MinDist&>(src);
 
   if (this != &source) {
     glSystem_ = source.glSystem_;
@@ -85,19 +85,19 @@ GlMinDistConstraint::copy(const LOCA::MultiContinuation::ConstraintInterface& sr
 }
 // =============================================================================
 Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface>
-GlMinDistConstraint::clone(NOX::CopyType type) const
+GL::Constraint::MinDist::clone(NOX::CopyType type) const
 {
-  return Teuchos::rcp(new GlMinDistConstraint(*this, type));
+  return Teuchos::rcp(new GL::Constraint::MinDist(*this, type));
 }
 // =============================================================================
 int
-GlMinDistConstraint::numConstraints() const
+GL::Constraint::MinDist::numConstraints() const
 {
   return constraints_.numRows();
 }
 // =============================================================================
 void
-GlMinDistConstraint::setX(const NOX::Abstract::Vector & y)
+GL::Constraint::MinDist::setX(const NOX::Abstract::Vector & y)
 {
   psi_ = glSystem_->getGlKomplex()->real2complex( y );
   isValidConstraints_ = false;
@@ -106,7 +106,7 @@ GlMinDistConstraint::setX(const NOX::Abstract::Vector & y)
 }
 // =============================================================================
 void
-GlMinDistConstraint::setParam( int paramID, double val )
+GL::Constraint::MinDist::setParam( int paramID, double val )
 {
   paramsVector_[paramID] = val;
   
@@ -116,7 +116,7 @@ GlMinDistConstraint::setParam( int paramID, double val )
 }
 // =============================================================================
 void
-GlMinDistConstraint::setParams( const vector<int> & paramIDs, 
+GL::Constraint::MinDist::setParams( const vector<int> & paramIDs,
                                 const NOX::Abstract::MultiVector::DenseMatrix & vals)
 {
   for (int i=0; i<paramIDs.size(); i++)
@@ -128,7 +128,7 @@ GlMinDistConstraint::setParams( const vector<int> & paramIDs,
 }
 // =============================================================================
 NOX::Abstract::Group::ReturnType
-GlMinDistConstraint::computeConstraints()
+GL::Constraint::MinDist::computeConstraints()
 {
   if (!isValidConstraints_)
   {
@@ -141,7 +141,7 @@ GlMinDistConstraint::computeConstraints()
 }
 // =============================================================================
 NOX::Abstract::Group::ReturnType
-GlMinDistConstraint::computeDX()
+GL::Constraint::MinDist::computeDX()
 {
   // TODO compute something here?!
   return NOX::Abstract::Group::Ok;
@@ -151,7 +151,7 @@ GlMinDistConstraint::computeDX()
 // residuals g if isValidG is false.
 // If isValidG is true, then the dgdp contains g on input.
 NOX::Abstract::Group::ReturnType
-GlMinDistConstraint::computeDP( const vector<int> & paramIDs, 
+GL::Constraint::MinDist::computeDP( const vector<int> & paramIDs,
                                 NOX::Abstract::MultiVector::DenseMatrix & dgdp, 
                                 bool isValidG
                               )
@@ -166,39 +166,39 @@ GlMinDistConstraint::computeDP( const vector<int> & paramIDs,
 }
 // =============================================================================
 bool
-GlMinDistConstraint::isConstraints() const
+GL::Constraint::MinDist::isConstraints() const
 {
   return isValidConstraints_;
 }
 // =============================================================================
 bool
-GlMinDistConstraint::isDX() const
+GL::Constraint::MinDist::isDX() const
 {
   return true;
 }
 // =============================================================================
 const NOX::Abstract::MultiVector::DenseMatrix &
-GlMinDistConstraint::getConstraints() const
+GL::Constraint::MinDist::getConstraints() const
 {
   return constraints_;
 }
 // =============================================================================
 const NOX::Abstract::MultiVector*
-GlMinDistConstraint::getDX() const
+GL::Constraint::MinDist::getDX() const
 {
   // TODO check if this is correct
   return NULL;
 }
 // =============================================================================
 bool
-GlMinDistConstraint::isDXZero() const
+GL::Constraint::MinDist::isDXZero() const
 {
   // TODO check if this is correct
   return true;
 }
 // =============================================================================
 void
-GlMinDistConstraint::postProcessContinuationStep( LOCA::Abstract::Iterator::StepStatus stepStatus )
+GL::Constraint::MinDist::postProcessContinuationStep( LOCA::Abstract::Iterator::StepStatus stepStatus )
 {
   // If the step has been successful, put the solution in psiRef.
   // This means updating the phase condition each *continuation step anew.

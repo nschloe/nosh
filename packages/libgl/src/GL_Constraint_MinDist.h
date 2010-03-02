@@ -33,20 +33,24 @@
 
 #include "glSystem.h"
 
-class GlMinDistConstraint:
+namespace GL {
+
+  namespace Constraint {
+
+class MinDist:
             public LOCA::MultiContinuation::ConstraintInterfaceMVDX
 {
   public:
 
   // Constructor
-  GlMinDistConstraint( const Teuchos::RCP<GlSystem> & glSystem,
-                       const NOX::Abstract::Vector  & initialGuess
-                     );
+  MinDist( const Teuchos::RCP<GlSystem> & glSystem,
+           const NOX::Abstract::Vector  & initialGuess
+         );
 
   // Copy constructor
-  GlMinDistConstraint( const GlMinDistConstraint & source, 
-                       NOX::CopyType               type = NOX::DeepCop
-                     );
+  MinDist( const GlMinDistConstraint & source,
+                 NOX::CopyType               type = NOX::DeepCop
+         );
 
   // Destructor
   virtual
@@ -142,4 +146,6 @@ private:
   Teuchos::RCP<const ComplexVector> psiRef_;
 };
 
+  } // namespace Constraint
+} // namespace GL
 #endif // GLMINDISTCONSTRAINT

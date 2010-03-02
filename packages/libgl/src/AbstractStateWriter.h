@@ -2,7 +2,7 @@
  * AbstractStateWriter.h
  *
  *  Created on: Dec 16, 2009
- *      Author: Nico Schlšmer
+ *      Author: Nico Schl\"omer
  */
 
 #ifndef ABSTRACTSTATEWRITER_H_

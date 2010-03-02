@@ -1,19 +1,20 @@
 ENABLE_LANGUAGE( CXX )
 
 SET ( gl_SRCS
-      MagneticVectorPotential.cpp
+      GL_MagneticVectorPotential_Centered.cpp
       ginzburgLandau.cpp
-      GlOperatorVirtual.cpp
-      GlOperatorBCInner.cpp
-      GlOperatorBCOuter.cpp
-      GlOperatorBCCentral.cpp
-      glPrePostOperator.cpp
-      GlKomplex.cpp
+      GL_Operator_Virtual.cpp
+      GL_Operator_BCInner.cpp
+      GL_Operator_BCOuter.cpp
+      GL_Operator_BCCentral.cpp
+      GL_IO_SaveNewtonData.cpp
+      GL_IO_SaveEigenData.cpp
+      GL_Komplex.cpp
+      GL_LinearSystem_Default.cpp
+      GL_LinearSystem_Bordered.cpp
+      GL_LinearSystem_Predictor.cpp
       AbstractStateWriter.cpp
-      glSystem.cpp
-      glPredictorSystem.cpp
-      GlSystemWithConstraint.cpp
-      eigenSaver.cpp          )
+    )
 
 INCLUDE( SetTrilinosVariables REQUIRED )
 INCLUDE_DIRECTORIES( ${Trilinos_INCLUDE_DIR} )

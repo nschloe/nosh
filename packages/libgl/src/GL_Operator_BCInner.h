@@ -17,24 +17,28 @@
 
 */
 
-#ifndef GLOPERATORBCOUTER_H
-#define GLOPERATORBCOUTER_H
+#ifndef GLOPERATORBCINNER_H
+#define GLOPERATORBCINNER_H
 
-#include "GlOperatorVirtual.h"
+#include "GL_Operator_Virtual.h"
 
-class GlOperatorBCOuter:
-            public GlOperatorVirtual
+namespace GL {
+  
+  namespace Operator {
+
+class BCInner:
+            public Virtual
 {
 public:
 
     //! Default constructor.
-    GlOperatorBCOuter ( Teuchos::RCP<GridUniform>             & grid,
-                        Teuchos::RCP<MagneticVectorPotential> & A
-                      );
+    BCInner ( Teuchos::RCP<GridUniform>             & grid,
+              Teuchos::RCP<GL::MagneticVectorPotential::Centered> & A
+            );
 
     //! Destructor
     virtual
-    ~GlOperatorBCOuter();
+    ~BCInner();
 
     //! Return the value of the Ginzburg-Landau equations for the equation
     //! at eqType.
@@ -56,4 +60,7 @@ private:
 
 };
 
-#endif // GLOPERATORBCOUTER_H
+  } // namespace Operator
+} // namespace GL
+
+#endif // GLOPERATORBCINNER_H

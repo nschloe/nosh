@@ -17,7 +17,7 @@
 
 */
 
-#include "GlOperatorBCOuter.h"
+#include "GL_Operator_BCCentral.h"
 
 #include <Teuchos_Array.hpp>
 
@@ -25,19 +25,19 @@
 const double_complex I ( 0,1 );
 
 // =============================================================================
-GlOperatorBCOuter::GlOperatorBCOuter ( Teuchos::RCP<GridUniform> & grid,
-                                       Teuchos::RCP<MagneticVectorPotential> & A
-                                     ) :
-        GlOperatorVirtual ( grid, A )
+GL::Operator::BCCentral::BCCentral ( Teuchos::RCP<GridUniform> & grid,
+                                     Teuchos::RCP<GL::MagneticVectorPotential::Centered> & A
+                                         ) :
+        GL::Operator::Virtual ( grid, A )
 {
 }
 // =============================================================================
-GlOperatorBCOuter::~GlOperatorBCOuter()
+GL::Operator::BCCentral::~BCCentral()
 {
 }
 // =============================================================================
 double_complex
-GlOperatorBCOuter::getEntry ( const int k ) const
+GL::Operator::BCCentral::getEntry ( const int k ) const
 {
     double_complex res;
     double_complex psiK, psiKRight, psiKLeft, psiKAbove, psiKBelow;
@@ -88,18 +88,18 @@ GlOperatorBCOuter::getEntry ( const int k ) const
 
     case GridVirtual::BOUNDARY_BOTTOMLEFTCONVEX:
         // -------------------------------------------------------------------
+        // interior equation, then outward derivative substituted
         psiKRight = psiView[ grid_->getKRight ( k ) ];
         psiKAbove = psiView[ grid_->getKAbove ( k ) ];
 
         xRight = grid_->getXRight ( k );
         xAbove = grid_->getXAbove ( k );
-
         ARight = A_->getAx ( *xRight );
         AAbove = A_->getAy ( *xAbove );
 
-        res = ( - psiK      * 2.0
-                + psiKRight * exp ( -I*ARight*h )
-                + psiKAbove * exp ( -I*AAbove*h ) ) / ( h*h )
+        res = ( - psiK      * 4.0
+                + psiKRight * 2.0 * exp ( -I*ARight*h )
+                + psiKAbove * 2.0 * exp ( -I*AAbove*h ) ) / ( h*h )
               + psiK * ( 1-norm ( psiK ) );
         res *= exp ( I*chi_ );
         // -------------------------------------------------------------------
@@ -112,13 +112,12 @@ GlOperatorBCOuter::getEntry ( const int k ) const
 
         xLeft  = grid_->getXLeft ( k );
         xAbove = grid_->getXAbove ( k );
-
         ALeft  = A_->getAx ( *xLeft );
         AAbove = A_->getAy ( *xAbove );
 
-        res = ( psiK* ( -2.0 )
-                + psiKLeft * exp ( I*ALeft *h )
-                + psiKAbove* exp ( -I*AAbove*h ) ) / ( h*h )
+        res = ( - psiK      * 4.0
+                + psiKLeft  * 2.0 * exp ( I*ALeft *h )
+                + psiKAbove * 2.0 * exp ( -I*AAbove*h ) ) / ( h*h )
               + psiK * ( 1-norm ( psiK ) );
         res *= exp ( I*chi_ );
         // -----------------------------------------------------------------------
@@ -131,13 +130,12 @@ GlOperatorBCOuter::getEntry ( const int k ) const
 
         xLeft  = grid_->getXLeft ( k );
         xBelow = grid_->getXBelow ( k );
-
         ALeft  = A_->getAx ( *xLeft );
         ABelow = A_->getAy ( *xBelow );
 
-        res = ( psiK* ( -2.0 )
-                + psiKLeft * exp ( I*ALeft *h )
-                + psiKBelow* exp ( I*ABelow*h ) ) / ( h*h )
+        res = ( - psiK      * 4.0
+                + psiKLeft  * 2.0 * exp ( I*ALeft *h )
+                + psiKBelow * 2.0 * exp ( I*ABelow*h ) ) / ( h*h )
               + psiK * ( 1-norm ( psiK ) );
         res *= exp ( I*chi_ );
         // -----------------------------------------------------------------------
@@ -151,13 +149,12 @@ GlOperatorBCOuter::getEntry ( const int k ) const
 
         xRight = grid_->getXRight ( k );
         xBelow = grid_->getXBelow ( k );
-
         ARight = A_->getAx ( *xRight );
         ABelow = A_->getAy ( *xBelow );
 
-        res = ( psiK* ( -2.0 )
-                + psiKRight* exp ( -I*ARight*h )
-                + psiKBelow* exp ( I*ABelow*h ) ) / ( h*h )
+        res = ( - psiK      * 4.0
+                + psiKRight * 2.0 * exp ( -I*ARight*h )
+                + psiKBelow * 2.0 * exp ( I*ABelow*h ) ) / ( h*h )
               + psiK * ( 1-norm ( psiK ) );
         res *= exp ( I*chi_ );
         // -----------------------------------------------------------------------
@@ -177,10 +174,11 @@ GlOperatorBCOuter::getEntry ( const int k ) const
         ARight = A_->getAx ( *xRight );
         AAbove = A_->getAy ( *xAbove );
 
-        res = ( psiK* ( -3.0 )
-                + psiKLeft*  exp ( I*ALeft *h ) + psiKRight* exp ( -I*ARight*h )
-                + psiKAbove* exp ( -I*AAbove*h ) ) / ( h*h )
-              + psiK * ( 1.0-norm ( psiK ) );
+        res = ( - psiK      * 4.0
+                + psiKLeft  *       exp ( I*ALeft *h ) + psiKRight       * exp ( -I*ARight*h )
+                + psiKAbove * 2.0 * exp ( -I*AAbove*h ) )
+              / ( h*h )
+              + psiK * ( 1-norm ( psiK ) );
         res *= exp ( I*chi_ );
         // -------------------------------------------------------------------
         break;
@@ -194,14 +192,14 @@ GlOperatorBCOuter::getEntry ( const int k ) const
         xLeft  = grid_->getXLeft ( k );
         xBelow = grid_->getXBelow ( k );
         xAbove = grid_->getXAbove ( k );
-
         ALeft  = A_->getAx ( *xLeft );
-        ABelow = A_->getAy ( *xBelow );
+        ARight = A_->getAx ( *xRight );
         AAbove = A_->getAy ( *xAbove );
 
-        res = ( psiK* ( -3.0 )
-                + psiKLeft*  exp ( I*ALeft *h )
-                + psiKBelow* exp ( I*ABelow*h ) + psiKAbove* exp ( -I*AAbove*h ) ) / ( h*h )
+        res = ( - psiK      * 4.0
+                + psiKLeft  * 2.0 * exp ( I*ALeft *h )
+                + psiKBelow       * exp ( I*AAbove*h ) + psiKAbove * exp ( -I*AAbove*h ) )
+              / ( h*h )
               + psiK * ( 1-norm ( psiK ) );
         res *= exp ( I*chi_ );
         // -------------------------------------------------------------------
@@ -216,14 +214,14 @@ GlOperatorBCOuter::getEntry ( const int k ) const
         xLeft  = grid_->getXLeft ( k );
         xRight = grid_->getXRight ( k );
         xBelow = grid_->getXBelow ( k );
-
         ALeft  = A_->getAx ( *xLeft );
         ARight = A_->getAx ( *xRight );
         ABelow = A_->getAy ( *xBelow );
 
-        res = ( psiK* ( -3.0 )
-                + psiKLeft*  exp ( I*ALeft *h ) + psiKRight* exp ( -I*ARight*h )
-                + psiKBelow* exp ( I*ABelow*h ) ) / ( h*h )
+        res = ( - psiK      * 4.0
+                + psiKLeft        * exp ( I*ALeft *h ) + psiKRight * exp ( -I*ARight*h )
+                + psiKBelow * 2.0 * exp ( I*ABelow*h ) )
+              / ( h*h )
               + psiK * ( 1-norm ( psiK ) );
         res *= exp ( I*chi_ );
         // -------------------------------------------------------------------
@@ -238,23 +236,122 @@ GlOperatorBCOuter::getEntry ( const int k ) const
         xRight = grid_->getXRight ( k );
         xBelow = grid_->getXBelow ( k );
         xAbove = grid_->getXAbove ( k );
-
         ARight = A_->getAx ( *xRight );
         ABelow = A_->getAy ( *xBelow );
         AAbove = A_->getAy ( *xAbove );
 
-        res = ( psiK* ( -3.0 )
-                + psiKRight* exp ( -I*ARight*h )
-                + psiKBelow* exp ( I*ABelow*h ) + psiKAbove* exp ( -I*AAbove*h ) ) / ( h*h )
+        res = ( - psiK      * 4.0
+                + psiKRight * 2.0 * exp ( -I*ARight*h )
+                + psiKBelow * exp ( I*AAbove*h ) + psiKAbove       * exp ( -I*AAbove*h ) )
+              / ( h*h )
               + psiK * ( 1-norm ( psiK ) );
         res *= exp ( I*chi_ );
         // -------------------------------------------------------------------
         break;
 
+    case GridVirtual::BOUNDARY_BOTTOMRIGHTCONCAVE:
+        // -------------------------------------------------------------------
+        psiKLeft  = psiView[ grid_->getKLeft ( k ) ];
+        psiKRight = psiView[ grid_->getKRight ( k ) ];
+        psiKBelow = psiView[ grid_->getKBelow ( k ) ];
+        psiKAbove = psiView[ grid_->getKAbove ( k ) ];
+
+        xLeft  = grid_->getXLeft ( k );
+        xRight = grid_->getXRight ( k );
+        xBelow = grid_->getXBelow ( k );
+        xAbove = grid_->getXAbove ( k );
+        ALeft  = A_->getAx ( *xLeft );
+        ARight = A_->getAx ( *xRight );
+        ABelow = A_->getAy ( *xBelow );
+        AAbove = A_->getAy ( *xAbove );
+
+        res = ( + psiKLeft  * exp ( I*ALeft *h )
+                - psiKRight * exp ( -I*ARight*h )
+                - psiKBelow * exp ( I*ABelow*h )
+                + psiKAbove * exp ( -I*AAbove*h ) ) * I/ ( sqrt ( 2 ) *2*h );
+
+        res *= exp ( I*chi_ );
+        // -------------------------------------------------------------------
+        break;
+
+    case GridVirtual::BOUNDARY_BOTTOMLEFTCONCAVE:
+        // -------------------------------------------------------------------
+        psiKLeft  = psiView[ grid_->getKLeft ( k ) ];
+        psiKRight = psiView[ grid_->getKRight ( k ) ];
+        psiKBelow = psiView[ grid_->getKBelow ( k ) ];
+        psiKAbove = psiView[ grid_->getKAbove ( k ) ];
+
+        xLeft  = grid_->getXLeft ( k );
+        xRight = grid_->getXRight ( k );
+        xBelow = grid_->getXBelow ( k );
+        xAbove = grid_->getXAbove ( k );
+        ALeft  = A_->getAx ( *xLeft );
+        ARight = A_->getAx ( *xRight );
+        ABelow = A_->getAy ( *xBelow );
+        AAbove = A_->getAy ( *xAbove );
+
+        res = ( - psiKLeft  * exp ( I*ALeft *h )
+                + psiKRight * exp ( -I*ARight*h )
+                - psiKBelow * exp ( I*ABelow*h )
+                + psiKAbove * exp ( -I*AAbove*h ) ) * I/ ( sqrt ( 2 ) *2*h );
+
+        res *= exp ( I*chi_ );
+        // -------------------------------------------------------------------
+        break;
+
+    case GridVirtual::BOUNDARY_TOPRIGHTCONCAVE:
+        // -------------------------------------------------------------------
+        psiKLeft  = psiView[ grid_->getKLeft ( k ) ];
+        psiKRight = psiView[ grid_->getKRight ( k ) ];
+        psiKBelow = psiView[ grid_->getKBelow ( k ) ];
+        psiKAbove = psiView[ grid_->getKAbove ( k ) ];
+
+        xLeft  = grid_->getXLeft ( k );
+        xRight = grid_->getXRight ( k );
+        xBelow = grid_->getXBelow ( k );
+        xAbove = grid_->getXAbove ( k );
+        ALeft  = A_->getAx ( *xLeft );
+        ARight = A_->getAx ( *xRight );
+        ABelow = A_->getAy ( *xBelow );
+        AAbove = A_->getAy ( *xAbove );
+
+        res = ( + psiKLeft  * exp ( I*ALeft *h )
+                - psiKRight * exp ( -I*ARight*h )
+                + psiKBelow * exp ( I*ABelow*h )
+                - psiKAbove * exp ( -I*AAbove*h ) ) * I/ ( sqrt ( 2 ) *2*h );
+
+        res *= exp ( I*chi_ );
+        // -------------------------------------------------------------------
+        break;
+
+    case GridVirtual::BOUNDARY_TOPLEFTCONCAVE:
+        // -------------------------------------------------------------------
+        psiKLeft  = psiView[ grid_->getKLeft ( k ) ];
+        psiKRight = psiView[ grid_->getKRight ( k ) ];
+        psiKBelow = psiView[ grid_->getKBelow ( k ) ];
+        psiKAbove = psiView[ grid_->getKAbove ( k ) ];
+
+        xLeft  = grid_->getXLeft ( k );
+        xRight = grid_->getXRight ( k );
+        xBelow = grid_->getXBelow ( k );
+        xAbove = grid_->getXAbove ( k );
+        ALeft  = A_->getAx ( *xLeft );
+        ARight = A_->getAx ( *xRight );
+        ABelow = A_->getAy ( *xBelow );
+        AAbove = A_->getAy ( *xAbove );
+
+        res = ( - psiKLeft  * exp ( I*ALeft *h )
+                + psiKRight * exp ( -I*ARight*h )
+                + psiKBelow * exp ( I*ABelow*h )
+                - psiKAbove * exp ( -I*AAbove*h ) ) * I/ ( sqrt ( 2 ) *2*h );
+
+        res *= exp ( I*chi_ );
+        // -------------------------------------------------------------------
+        break;
     default:
         TEST_FOR_EXCEPTION ( true,
                              std::logic_error,
-                             "Illegal node type \"" << nt << "\"." );
+                             "Illegal not type \"" << nt << "\"." );
     }
 
     // return the result
@@ -262,12 +359,12 @@ GlOperatorBCOuter::getEntry ( const int k ) const
 }
 // =============================================================================
 void
-GlOperatorBCOuter::getJacobianRow ( const int                        k,
-                                    Teuchos::Array<int>            & columnIndicesPsi,
-                                    Teuchos::Array<double_complex> & valuesPsi,
-                                    Teuchos::Array<int>            & columnIndicesPsiConj,
-                                    Teuchos::Array<double_complex> & valuesPsiConj
-                                  ) const
+GL::Operator::BCCentral::getJacobianRow ( const int                        k,
+                                      Teuchos::Array<int>            & columnIndicesPsi,
+                                      Teuchos::Array<double_complex> & valuesPsi,
+                                      Teuchos::Array<int>            & columnIndicesPsiConj,
+                                      Teuchos::Array<double_complex> & valuesPsiConj
+                                    ) const
 {
     int kLeft, kRight, kBelow, kAbove;
     int numEntriesPsi, numEntriesPsiConj;
@@ -281,8 +378,9 @@ GlOperatorBCOuter::getJacobianRow ( const int                        k,
     Teuchos::RCP<DoubleTuple> xBelow = Teuchos::rcp ( new DoubleTuple() );
 
     Teuchos::ArrayRCP<const double_complex> psiView = psi_->get1dView();
-
+    
     GridVirtual::nodeType nt = grid_->getNodeType ( k );
+    
     switch ( nt )
     {
     case GridVirtual::INTERIOR:
@@ -338,16 +436,14 @@ GlOperatorBCOuter::getJacobianRow ( const int                        k,
 
         xRight = grid_->getXRight ( k );
         xAbove = grid_->getXAbove ( k );
-
         ARight = A_->getAx ( *xRight );
         AAbove = A_->getAy ( *xAbove );
 
         valuesPsi.resize ( numEntriesPsi );
-        valuesPsi[0] = - 2.0 / ( h*h )
+        valuesPsi[0] = - 4.0 / ( h*h )
                        + ( 1 - 2.0*norm ( psiView[k] ) );
-        valuesPsi[1] = exp ( -I*ARight*h ) / ( h*h );
-        valuesPsi[2] = exp ( -I*AAbove*h ) / ( h*h );
-
+        valuesPsi[1] = 2.0 * exp ( -I*ARight*h ) / ( h*h );
+        valuesPsi[2] = 2.0 * exp ( -I*AAbove*h ) / ( h*h );
 
         numEntriesPsiConj = 1;
         columnIndicesPsiConj.resize ( numEntriesPsiConj );
@@ -356,7 +452,6 @@ GlOperatorBCOuter::getJacobianRow ( const int                        k,
         valuesPsiConj.resize ( numEntriesPsiConj );
         valuesPsiConj[0] = -psiView[k]*psiView[k];
         valuesPsiConj[0] *= exp ( I*chi_*2.0 );
-
         // -------------------------------------------------------------------
         break;
 
@@ -371,19 +466,16 @@ GlOperatorBCOuter::getJacobianRow ( const int                        k,
         columnIndicesPsi[1] = kLeft;
         columnIndicesPsi[2] = kAbove;
 
-
         xLeft  = grid_->getXLeft ( k );
         xAbove = grid_->getXAbove ( k );
-
         ALeft  = A_->getAx ( *xLeft );
         AAbove = A_->getAy ( *xAbove );
 
         valuesPsi.resize ( numEntriesPsi );
-        valuesPsi[0] = -2.0 / ( h*h )
+        valuesPsi[0] = -4.0 / ( h*h )
                        + ( 1 - 2.0*norm ( psiView[k] ) );
-        valuesPsi[1] = exp ( I*ALeft *h ) / ( h*h );
-        valuesPsi[2] = exp ( -I*AAbove*h ) / ( h*h );
-
+        valuesPsi[1] = 2.0 * exp ( I*ALeft *h ) / ( h*h );
+        valuesPsi[2] = 2.0 * exp ( -I*AAbove*h ) / ( h*h );
 
         numEntriesPsiConj = 1;
         columnIndicesPsiConj.resize ( numEntriesPsiConj );
@@ -408,19 +500,19 @@ GlOperatorBCOuter::getJacobianRow ( const int                        k,
 
         xLeft  = grid_->getXLeft ( k );
         xBelow = grid_->getXBelow ( k );
-
         ALeft  = A_->getAx ( *xLeft );
         ABelow = A_->getAy ( *xBelow );
 
         valuesPsi.resize ( numEntriesPsi );
-        valuesPsi[0] = -2.0 / ( h*h )
+        valuesPsi[0] = -4.0 / ( h*h )
                        + ( 1 - 2.0*norm ( psiView[k] ) );
-        valuesPsi[1] = exp ( I*ALeft *h ) / ( h*h );
-        valuesPsi[2] = exp ( I*ABelow*h ) / ( h*h );
+        valuesPsi[1] = 2.0 * exp ( I*ALeft *h ) / ( h*h );
+        valuesPsi[2] = 2.0 * exp ( I*ABelow*h ) / ( h*h );
 
         numEntriesPsiConj = 1;
         columnIndicesPsiConj.resize ( numEntriesPsiConj );
         columnIndicesPsiConj[0] = k;
+
         valuesPsiConj.resize ( numEntriesPsiConj );
         valuesPsiConj[0] = -psiView[k]*psiView[k];
         valuesPsiConj[0] *= exp ( I*chi_*2.0 );
@@ -440,15 +532,14 @@ GlOperatorBCOuter::getJacobianRow ( const int                        k,
 
         xRight = grid_->getXRight ( k );
         xBelow = grid_->getXBelow ( k );
-
         ARight = A_->getAx ( *xRight );
         ABelow = A_->getAy ( *xBelow );
 
         valuesPsi.resize ( numEntriesPsi );
-        valuesPsi[0] = -2.0 / ( h*h )
+        valuesPsi[0] = -4.0 / ( h*h )
                        + ( 1 - 2.0*norm ( psiView[k] ) );
-        valuesPsi[1] = exp ( -I*ARight*h ) / ( h*h );
-        valuesPsi[2] = exp ( I*ABelow*h ) / ( h*h );
+        valuesPsi[1] = 2.0 * exp ( -I*ARight*h ) / ( h*h );
+        valuesPsi[2] = 2.0 * exp ( I*ABelow*h ) / ( h*h );
 
         numEntriesPsiConj = 1;
         columnIndicesPsiConj.resize ( numEntriesPsiConj );
@@ -476,17 +567,16 @@ GlOperatorBCOuter::getJacobianRow ( const int                        k,
         xLeft  = grid_->getXLeft ( k );
         xRight = grid_->getXRight ( k );
         xAbove = grid_->getXAbove ( k );
-
         ALeft  = A_->getAx ( *xLeft );
         ARight = A_->getAx ( *xRight );
         AAbove = A_->getAy ( *xAbove );
 
         valuesPsi.resize ( numEntriesPsi );
-        valuesPsi[0] = - 3.0            / ( h*h )
+        valuesPsi[0] = - 4.0            / ( h*h )
                        + ( 1.0 - 2.0*norm ( psiView[k] ) );
-        valuesPsi[1] = exp ( I*ALeft *h ) / ( h*h );
-        valuesPsi[2] = exp ( -I*ARight*h ) / ( h*h );
-        valuesPsi[3] = exp ( -I*AAbove*h ) / ( h*h );
+        valuesPsi[1] =       exp ( I*ALeft *h ) / ( h*h );
+        valuesPsi[2] =       exp ( -I*ARight*h ) / ( h*h );
+        valuesPsi[3] = 2.0 * exp ( -I*AAbove*h ) / ( h*h );
 
         numEntriesPsiConj = 1;
         columnIndicesPsiConj.resize ( numEntriesPsiConj );
@@ -514,17 +604,16 @@ GlOperatorBCOuter::getJacobianRow ( const int                        k,
         xLeft  = grid_->getXLeft ( k );
         xBelow = grid_->getXBelow ( k );
         xAbove = grid_->getXAbove ( k );
-
         ALeft  = A_->getAx ( *xLeft );
         ABelow = A_->getAy ( *xBelow );
         AAbove = A_->getAy ( *xAbove );
 
         valuesPsi.resize ( numEntriesPsi );
-        valuesPsi[0] = - 3.0            / ( h*h )
+        valuesPsi[0] = - 4.0            / ( h*h )
                        + ( 1.0 - 2.0*norm ( psiView[k] ) );
-        valuesPsi[1] = exp ( I*ABelow*h ) / ( h*h );
-        valuesPsi[2] = exp ( -I*AAbove*h ) / ( h*h );
-        valuesPsi[3] = exp ( I*ALeft *h ) / ( h*h );
+        valuesPsi[1] =       exp ( I*ABelow*h ) / ( h*h );
+        valuesPsi[2] =       exp ( -I*AAbove*h ) / ( h*h );
+        valuesPsi[3] = 2.0 * exp ( I*ALeft *h ) / ( h*h );
 
         numEntriesPsiConj = 1;
         columnIndicesPsiConj.resize ( numEntriesPsiConj );
@@ -552,17 +641,16 @@ GlOperatorBCOuter::getJacobianRow ( const int                        k,
         xLeft  = grid_->getXLeft ( k );
         xRight = grid_->getXRight ( k );
         xBelow = grid_->getXBelow ( k );
-
         ALeft  = A_->getAx ( *xLeft );
         ARight = A_->getAx ( *xRight );
         ABelow = A_->getAy ( *xBelow );
 
         valuesPsi.resize ( numEntriesPsi );
-        valuesPsi[0] = - 3.0             / ( h*h )
+        valuesPsi[0] = - 4.0             / ( h*h )
                        + ( 1.0 - 2.0*norm ( psiView[k] ) );
-        valuesPsi[1] = exp ( I*ABelow*h ) / ( h*h );
-        valuesPsi[2] = exp ( I*ALeft *h ) / ( h*h );
-        valuesPsi[3] = exp ( -I*ARight*h ) / ( h*h );
+        valuesPsi[1] = 2.0 * exp ( I*ABelow*h ) / ( h*h );
+        valuesPsi[2] =       exp ( I*ALeft *h ) / ( h*h );
+        valuesPsi[3] =       exp ( -I*ARight*h ) / ( h*h );
 
         numEntriesPsiConj = 1;
         columnIndicesPsiConj.resize ( numEntriesPsiConj );
@@ -590,17 +678,16 @@ GlOperatorBCOuter::getJacobianRow ( const int                        k,
         xRight = grid_->getXRight ( k );
         xBelow = grid_->getXBelow ( k );
         xAbove = grid_->getXAbove ( k );
-
         ARight = A_->getAx ( *xRight );
         ABelow = A_->getAy ( *xBelow );
         AAbove = A_->getAy ( *xAbove );
 
         valuesPsi.resize ( numEntriesPsi );
-        valuesPsi[0] = - 3.0            / ( h*h )
+        valuesPsi[0] = - 4.0            / ( h*h )
                        + ( 1.0 - 2.0*norm ( psiView[k] ) );
-        valuesPsi[1] = exp ( I*ABelow*h ) / ( h*h );
-        valuesPsi[2] = exp ( -I*AAbove*h ) / ( h*h );
-        valuesPsi[3] = exp ( -I*ARight*h ) / ( h*h );
+        valuesPsi[1] =       exp ( I*ABelow*h ) / ( h*h );
+        valuesPsi[2] =       exp ( -I*AAbove*h ) / ( h*h );
+        valuesPsi[3] = 2.0 * exp ( -I*ARight*h ) / ( h*h );
 
         numEntriesPsiConj = 1;
         columnIndicesPsiConj.resize ( numEntriesPsiConj );
@@ -610,6 +697,146 @@ GlOperatorBCOuter::getJacobianRow ( const int                        k,
         valuesPsiConj[0] = -psiView[k]*psiView[k];
         valuesPsiConj[0] *= exp ( I*chi_*2.0 );
         // -------------------------------------------------------------------
+        break;
+
+    case GridVirtual::BOUNDARY_BOTTOMRIGHTCONCAVE:
+        // -----------------------------------------------------------------------
+        kRight = grid_->getKRight ( k );
+        kLeft  = grid_->getKLeft ( k );
+        kAbove = grid_->getKAbove ( k );
+        kBelow = grid_->getKBelow ( k );
+
+        numEntriesPsi = 4;
+        columnIndicesPsi.resize ( numEntriesPsi );
+        columnIndicesPsi[0] = kLeft;
+        columnIndicesPsi[1] = kRight;
+        columnIndicesPsi[2] = kBelow;
+        columnIndicesPsi[3] = kAbove;
+
+        xLeft  = grid_->getXLeft ( k );
+        xRight = grid_->getXRight ( k );
+        xBelow = grid_->getXBelow ( k );
+        xAbove = grid_->getXAbove ( k );
+        ALeft  = A_->getAx ( *xLeft );
+        ARight = A_->getAx ( *xRight );
+        ABelow = A_->getAy ( *xBelow );
+        AAbove = A_->getAy ( *xAbove );
+
+        valuesPsi.resize ( numEntriesPsi );
+        valuesPsi[0] =  exp ( I*ALeft  *h ) * I/ ( sqrt ( 2 ) *2*h );
+        valuesPsi[1] = -exp ( -I*ARight *h ) * I/ ( sqrt ( 2 ) *2*h );
+        valuesPsi[2] = -exp ( I*ABelow *h ) * I/ ( sqrt ( 2 ) *2*h );
+        valuesPsi[3] =  exp ( -I*AAbove *h ) * I/ ( sqrt ( 2 ) *2*h );
+
+        numEntriesPsiConj = 0;
+        columnIndicesPsiConj.resize ( numEntriesPsiConj );
+        valuesPsiConj.resize ( numEntriesPsiConj );
+        // -----------------------------------------------------------------------
+        break;
+
+    case GridVirtual::BOUNDARY_BOTTOMLEFTCONCAVE:
+        // -----------------------------------------------------------------------
+        kRight = grid_->getKRight ( k );
+        kLeft  = grid_->getKLeft ( k );
+        kAbove = grid_->getKAbove ( k );
+        kBelow = grid_->getKBelow ( k );
+
+        numEntriesPsi = 4;
+        columnIndicesPsi.resize ( numEntriesPsi );
+        columnIndicesPsi[0] = kLeft;
+        columnIndicesPsi[1] = kRight;
+        columnIndicesPsi[2] = kBelow;
+        columnIndicesPsi[3] = kAbove;
+
+        xLeft  = grid_->getXLeft ( k );
+        xRight = grid_->getXRight ( k );
+        xBelow = grid_->getXBelow ( k );
+        xAbove = grid_->getXAbove ( k );
+        ALeft  = A_->getAx ( *xLeft );
+        ARight = A_->getAx ( *xRight );
+        ABelow = A_->getAy ( *xBelow );
+        AAbove = A_->getAy ( *xAbove );
+
+        valuesPsi.resize ( numEntriesPsi );
+        valuesPsi[0] = -exp ( I*ALeft  *h ) * I/ ( sqrt ( 2 ) *2*h );
+        valuesPsi[1] =  exp ( -I*ARight *h ) * I/ ( sqrt ( 2 ) *2*h );
+        valuesPsi[2] = -exp ( I*ABelow *h ) * I/ ( sqrt ( 2 ) *2*h );
+        valuesPsi[3] =  exp ( -I*AAbove *h ) * I/ ( sqrt ( 2 ) *2*h );
+
+        numEntriesPsiConj = 0;
+        columnIndicesPsiConj.resize ( numEntriesPsiConj );
+        valuesPsiConj.resize ( numEntriesPsiConj );
+        // -----------------------------------------------------------------------
+        break;
+
+    case GridVirtual::BOUNDARY_TOPRIGHTCONCAVE:
+        // -----------------------------------------------------------------------
+        kRight = grid_->getKRight ( k );
+        kLeft  = grid_->getKLeft ( k );
+        kAbove = grid_->getKAbove ( k );
+        kBelow = grid_->getKBelow ( k );
+
+        numEntriesPsi = 4;
+        columnIndicesPsi.resize ( numEntriesPsi );
+        columnIndicesPsi[0] = kLeft;
+        columnIndicesPsi[1] = kRight;
+        columnIndicesPsi[2] = kBelow;
+        columnIndicesPsi[3] = kAbove;
+
+        xLeft  = grid_->getXLeft ( k );
+        xRight = grid_->getXRight ( k );
+        xBelow = grid_->getXBelow ( k );
+        xAbove = grid_->getXAbove ( k );
+        ALeft  = A_->getAx ( *xLeft );
+        ARight = A_->getAx ( *xRight );
+        ABelow = A_->getAy ( *xBelow );
+        AAbove = A_->getAy ( *xAbove );
+
+        valuesPsi.resize ( numEntriesPsi );
+        valuesPsi[0] =  exp ( I*ALeft  *h ) * I/ ( sqrt ( 2 ) *2*h );
+        valuesPsi[1] = -exp ( -I*ARight *h ) * I/ ( sqrt ( 2 ) *2*h );
+        valuesPsi[2] =  exp ( I*ABelow *h ) * I/ ( sqrt ( 2 ) *2*h );
+        valuesPsi[3] = -exp ( -I*AAbove *h ) * I/ ( sqrt ( 2 ) *2*h );
+
+        numEntriesPsiConj = 0;
+        columnIndicesPsiConj.resize ( numEntriesPsiConj );
+        valuesPsiConj.resize ( numEntriesPsiConj );
+        // -----------------------------------------------------------------------
+        break;
+
+    case GridVirtual::BOUNDARY_TOPLEFTCONCAVE:
+        // -----------------------------------------------------------------------
+        kRight = grid_->getKRight ( k );
+        kLeft  = grid_->getKLeft ( k );
+        kAbove = grid_->getKAbove ( k );
+        kBelow = grid_->getKBelow ( k );
+
+        numEntriesPsi = 4;
+        columnIndicesPsi.resize ( numEntriesPsi );
+        columnIndicesPsi[0] = kLeft;
+        columnIndicesPsi[1] = kRight;
+        columnIndicesPsi[2] = kBelow;
+        columnIndicesPsi[3] = kAbove;
+
+        xLeft  = grid_->getXLeft ( k );
+        xRight = grid_->getXRight ( k );
+        xBelow = grid_->getXBelow ( k );
+        xAbove = grid_->getXAbove ( k );
+        ALeft  = A_->getAx ( *xLeft );
+        ARight = A_->getAx ( *xRight );
+        ABelow = A_->getAy ( *xBelow );
+        AAbove = A_->getAy ( *xAbove );
+
+        valuesPsi.resize ( numEntriesPsi );
+        valuesPsi[0] = -exp ( I*ALeft  *h ) * I/ ( sqrt ( 2 ) *2*h );
+        valuesPsi[1] =  exp ( -I*ARight *h ) * I/ ( sqrt ( 2 ) *2*h );
+        valuesPsi[2] =  exp ( I*ABelow *h ) * I/ ( sqrt ( 2 ) *2*h );
+        valuesPsi[3] = -exp ( -I*AAbove *h ) * I/ ( sqrt ( 2 ) *2*h );
+
+        numEntriesPsiConj = 0;
+        columnIndicesPsiConj.resize ( numEntriesPsiConj );
+        valuesPsiConj.resize ( numEntriesPsiConj );
+        // -----------------------------------------------------------------------
         break;
 
     default:

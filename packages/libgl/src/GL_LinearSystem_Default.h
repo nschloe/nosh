@@ -6,7 +6,7 @@
 
 #include "ginzburgLandau.h"
 #include "AbstractStateWriter.h"
-#include "GlKomplex.h"
+#include "GL_Komplex.h"
 
 #include <Epetra_Comm.h>
 #include <Epetra_Map.h>
@@ -38,7 +38,10 @@
 
 typedef Tpetra::Vector<double_complex, Thyra::Ordinal> ComplexVector;
 
-class GlSystem:
+namespace GL {
+  namespace LinearSystem {
+
+class Default:
             public AbstractStateWriter,
             public NOX::Epetra::Interface::Jacobian,
             public NOX::Epetra::Interface::Preconditioner,
@@ -47,7 +50,7 @@ class GlSystem:
 public:
 
     //! Constructor with initial guess.
-    GlSystem ( GinzburgLandau::GinzburgLandau &gl,
+    Default ( GinzburgLandau::GinzburgLandau &gl,
                const Teuchos::RCP<const Epetra_Comm> eComm,
                const Teuchos::RCP<const ComplexVector> psi,
                const std::string outputDir = "data",
@@ -58,7 +61,7 @@ public:
                const unsigned int maxStepNumberDecimals = 4 );
 
     //! Destructor
-    ~GlSystem();
+    ~Default();
 
     //! Evaluate the Ginzburg--Landau functions at a given state defined
     //! by the input vector x.
@@ -143,7 +146,7 @@ public:
     Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> >
     getComplexMap() const;
 
-    Teuchos::RCP<const GlKomplex>
+    Teuchos::RCP<const GL::Komplex>
     getGlKomplex() const;
 
     // TODO delete
@@ -196,7 +199,7 @@ private:
 
     Teuchos::RCP<const LOCA::Stepper> stepper_;
 
-    Teuchos::RCP<GlKomplex> glKomplex_;
+    Teuchos::RCP<GL::Komplex> glKomplex_;
 
     GinzburgLandau::GinzburgLandau Gl_;
     Teuchos::RCP<Epetra_CrsMatrix> preconditioner_;
@@ -212,5 +215,8 @@ private:
     
     unsigned int maxNumDigits_;
 };
+
+  } // namespace LinearSystem
+} // namespace GL
 
 #endif // GLSYSTEM_H

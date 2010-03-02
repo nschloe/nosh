@@ -10,15 +10,18 @@
 
 #include <Teuchos_Array.hpp>
 
-class MagneticVectorPotential
+namespace GL {
+  namespace MagneticVectorPotential {
+
+class Centered
 {
 public:
   // TODO Remove edge length from this class.
-  MagneticVectorPotential( double h0,
-                           double edgeLength );
+  Centered( double h0,
+            double edgeLength );
 
   virtual
-  ~MagneticVectorPotential();
+  ~Centered();
 
   void
   setH0( const double h0 );
@@ -47,4 +50,6 @@ private:
 
 };
 
+  } // namespace MagneticVectorPotential
+} // namespace GL
 #endif /* MAGNETICVECTORPOTENTIAL_H_ */

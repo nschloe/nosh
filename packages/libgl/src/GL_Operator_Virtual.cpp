@@ -17,13 +17,13 @@
 
 */
 
-#include "GlOperatorVirtual.h"
+#include "GL_Operator_Virtual.h"
 
 #include <Teuchos_RCP.hpp>
 
 // =============================================================================
-GlOperatorVirtual::GlOperatorVirtual ( Teuchos::RCP<GridUniform>             & grid,
-                                       Teuchos::RCP<MagneticVectorPotential> & A ) :
+GL::Operator::Virtual::Virtual ( Teuchos::RCP<GridUniform>             & grid,
+                                 Teuchos::RCP<GL::MagneticVectorPotential::Centered> & A ) :
         psi_ ( Teuchos::null ),
         chi_ ( 0.0 ),
         grid_ ( grid ),
@@ -31,49 +31,49 @@ GlOperatorVirtual::GlOperatorVirtual ( Teuchos::RCP<GridUniform>             & g
 {
 }
 // =============================================================================
-GlOperatorVirtual::~GlOperatorVirtual()
+GL::Operator::Virtual::~Virtual()
 {
 }
 // =============================================================================
 void
-GlOperatorVirtual::updatePsi ( const Teuchos::RCP<const ComplexVector> psi )
+GL::Operator::Virtual::updatePsi ( const Teuchos::RCP<const ComplexVector> psi )
 {
     psi_ = psi;
 }
 // =============================================================================
 void
-GlOperatorVirtual::setChi ( const double chi )
+GL::Operator::Virtual::setChi ( const double chi )
 {
     chi_ = chi;
 }
 // =============================================================================
 void
-GlOperatorVirtual::setH0 ( const double h0 )
+GL::Operator::Virtual::setH0 ( const double h0 )
 {
     A_->setH0 ( h0 );
 }
 // =============================================================================
 double
-GlOperatorVirtual::getH0 () const
+GL::Operator::Virtual::getH0 () const
 {
     return A_->getH0();
 }
 // =============================================================================
 void
-GlOperatorVirtual::setScaling ( const double scaling )
+GL::Operator::Virtual::setScaling ( const double scaling )
 {
     grid_->updateScaling( scaling );
     A_->setEdgeLength( scaling );
 }
 // =============================================================================
 double
-GlOperatorVirtual::getScaling () const
+GL::Operator::Virtual::getScaling () const
 {
     return grid_->getScaling();
 }
 // =============================================================================
 Teuchos::RCP<const Grid>
-GlOperatorVirtual::getGrid() const
+GL::Operator::Virtual::getGrid() const
 {
   return grid_;
 }

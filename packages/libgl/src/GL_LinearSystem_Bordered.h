@@ -4,13 +4,13 @@
  *  Created on: Dec 16, 2009
  *      Author: Nico Schl\"omer
  */
-#ifndef GLSYSTEMWITHCONSTRAINT_H_
-#define GLSYSTEMWITHCONSTRAINT_H_
+#ifndef GL_LINEARSYSTEM_BORDERED_H_
+#define GL_LINEARSYSTEM_BORDERED_H_
 
 #include "ginzburgLandau.h"
 #include "AbstractStateWriter.h"
-#include "GlKomplex.h"
-#include "glSystem.h"
+#include "GL_Komplex.h"
+#include "GL_LinearSystem_Default.h"
 
 #include <Epetra_Comm.h>
 #include <Epetra_Map.h>
@@ -41,7 +41,10 @@
 
 #include <LOCA_Stepper.H>
 
-class GlSystemWithConstraint:
+namespace GL {
+  namespace LinearSystem {
+
+class Bordered:
             public AbstractStateWriter,
             public NOX::Epetra::Interface::Jacobian,
             public NOX::Epetra::Interface::Preconditioner,
@@ -50,18 +53,18 @@ class GlSystemWithConstraint:
 public:
 
     //! Constructor with initial guess.
-    GlSystemWithConstraint ( GinzburgLandau::GinzburgLandau &gl,
-                             const Teuchos::RCP<const Epetra_Comm> eComm,
-                             const Teuchos::RCP<const ComplexVector> psi,
-                             const std::string outputDir = "data",
-                             const std::string outputDataFileName = "continuationData.dat",
-                             const std::string outputFileFormat = "VTK",
-                             const std::string solutionFileNameBase = "solutionStep",
-                             const std::string nullvectorFileNameBase = "nullvectorStep",
-                             const unsigned int maxStepNumberDecimals = 4 );
+    Bordered ( GinzburgLandau::GinzburgLandau &gl,
+               const Teuchos::RCP<const Epetra_Comm> eComm,
+               const Teuchos::RCP<const ComplexVector> psi,
+               const std::string outputDir = "data",
+               const std::string outputDataFileName = "continuationData.dat",
+               const std::string outputFileFormat = "VTK",
+               const std::string solutionFileNameBase = "solutionStep",
+               const std::string nullvectorFileNameBase = "nullvectorStep",
+               const unsigned int maxStepNumberDecimals = 4 );
 
     //! Destructor
-    ~GlSystemWithConstraint();
+    ~Bordered();
 
     //! Evaluate the Ginzburg--Landau functions at a given state defined
     //! by the input vector x.
@@ -135,7 +138,7 @@ public:
                                const std::string   & filePath ) const;
 
     // TODO delete?
-    const Teuchos::RCP<const GlKomplex>
+    const Teuchos::RCP<const Komplex>
     getGlKomplex() const;
 
     // TODO delete
@@ -203,7 +206,7 @@ private:
 
 private:
 
-    GlSystem::GlSystem glSystem_;
+    Default::Default glSystem_;
 
     Teuchos::RCP<const Epetra_BlockMap> regularMap_;
     Teuchos::RCP<Epetra_Map> extendedMap_;
@@ -217,4 +220,7 @@ private:
     bool firstTime_;
 };
 
-#endif /* GLSYSTEMWITHCONSTRAINT_H_ */
+  } // namespace LinearSystem
+} // namespace GL
+
+#endif // GL_LINEARSYSTEM_BORDERED_H_

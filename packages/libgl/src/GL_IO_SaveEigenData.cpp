@@ -1,4 +1,4 @@
-#include "eigenSaver.h"
+#include "GL_IO_SaveEigenData.h"
 
 #include <vector>
 
@@ -8,7 +8,7 @@
 #include <LOCA_GlobalData.H>
 
 // =============================================================================
-EigenSaver::EigenSaver ( const Teuchos::RCP<Teuchos::ParameterList> eigenParamList,
+GL::IO::SaveEigenData::SaveEigenData ( const Teuchos::RCP<Teuchos::ParameterList> eigenParamList,
                          const std::string  outputDir,
                          const std::string  eigenvaluesFileName,
                          const std::string  contFileBaseName,
@@ -26,24 +26,24 @@ EigenSaver::EigenSaver ( const Teuchos::RCP<Teuchos::ParameterList> eigenParamLi
 {
 }
 // =============================================================================
-EigenSaver::~EigenSaver()
+GL::IO::SaveEigenData::~SaveEigenData()
 {
 }
 // =============================================================================
 void
-EigenSaver::setLocaStepper ( const Teuchos::RCP<LOCA::Stepper> locaStepper )
+GL::IO::SaveEigenData::setLocaStepper ( const Teuchos::RCP<LOCA::Stepper> locaStepper )
 {
     locaStepper_ = locaStepper;
 }
 // =============================================================================
 void
-EigenSaver::releaseLocaStepper()
+GL::IO::SaveEigenData::releaseLocaStepper()
 {
     locaStepper_ = Teuchos::null;
 }
 // =============================================================================
 NOX::Abstract::Group::ReturnType
-EigenSaver::save ( Teuchos::RCP<std::vector<double> > &evals_r,
+GL::IO::SaveEigenData::save ( Teuchos::RCP<std::vector<double> > &evals_r,
                    Teuchos::RCP<std::vector<double> > &evals_i,
                    Teuchos::RCP<NOX::Abstract::MultiVector> &evecs_r,
                    Teuchos::RCP<NOX::Abstract::MultiVector> &evecs_i

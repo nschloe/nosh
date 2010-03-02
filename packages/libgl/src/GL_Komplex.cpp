@@ -1,11 +1,11 @@
 /*
- * GlKomplex.cpp
+ * GL::Komplex.cpp
  *
  *  Created on: Dec 16, 2009
  *      Author: Nico Schl\"omer
  */
 
-#include "GlKomplex.h"
+#include "GL_Komplex.h"
 
 #include <Epetra_Map.h>
 
@@ -22,7 +22,7 @@ typedef std::complex<double> double_complex;
 
 // =============================================================================
 // Default constructor
-GlKomplex::GlKomplex ( const Teuchos::RCP<const Epetra_Comm>                  eComm,
+GL::Komplex::Komplex ( const Teuchos::RCP<const Epetra_Comm>                  eComm,
                        const Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> > ComplexMap ) :
         EComm_ ( eComm ),
         TComm_ ( create_CommInt ( eComm ) ),
@@ -32,25 +32,25 @@ GlKomplex::GlKomplex ( const Teuchos::RCP<const Epetra_Comm>                  eC
 {
 }
 // =============================================================================
-GlKomplex::~GlKomplex()
+GL::Komplex::~Komplex()
 {
 }
 // =============================================================================
 Teuchos::RCP<Epetra_Map>
-GlKomplex::getRealMap() const
+GL::Komplex::getRealMap() const
 {
     return RealMap_;
 }
 // =============================================================================
 Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> >
-GlKomplex::getComplexMap() const
+GL::Komplex::getComplexMap() const
 {
     return ComplexMap_;
 }
 // =============================================================================
 // converts a real-valued vector to a complex-valued psi vector
 Teuchos::RCP<ComplexVector>
-GlKomplex::real2complex ( const Epetra_Vector & x ) const
+GL::Komplex::real2complex ( const Epetra_Vector & x ) const
 {
     TEST_FOR_EXCEPTION ( !RealMap_.is_valid_ptr() || RealMap_.is_null(),
                          std::logic_error,
@@ -77,7 +77,7 @@ GlKomplex::real2complex ( const Epetra_Vector & x ) const
 // =============================================================================
 // converts a real-valued vector to a complex-valued psi vector
 Teuchos::RCP<Epetra_Vector>
-GlKomplex::complex2real ( const ComplexVector & complexVec ) const
+GL::Komplex::complex2real ( const ComplexVector & complexVec ) const
 {
     TEUCHOS_ASSERT ( ComplexMap_.is_valid_ptr()
                      && !ComplexMap_.is_null()
@@ -96,14 +96,14 @@ GlKomplex::complex2real ( const ComplexVector & complexVec ) const
 }
 // =============================================================================
 Teuchos::RCP<Epetra_Vector>
-GlKomplex::complex2real ( const Teuchos::RCP<const ComplexVector> & complexVecPtr ) const
+GL::Komplex::complex2real ( const Teuchos::RCP<const ComplexVector> & complexVecPtr ) const
 {
     TEUCHOS_ASSERT ( complexVecPtr.is_valid_ptr() && !complexVecPtr.is_null() );
     return complex2real ( *complexVecPtr );
 }
 // =============================================================================
 Teuchos::RCP<Epetra_Map>
-GlKomplex::createRealMap ( const Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> > & ComplexMap ) const
+GL::Komplex::createRealMap ( const Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> > & ComplexMap ) const
 {
     TEST_FOR_EXCEPTION ( !ComplexMap.is_valid_ptr() || ComplexMap.is_null(),
                          std::logic_error,
@@ -134,7 +134,7 @@ GlKomplex::createRealMap ( const Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> 
 }
 // =============================================================================
 Teuchos::RCP<const Teuchos::Comm<int> >
-GlKomplex::create_CommInt ( const Teuchos::RCP<const Epetra_Comm> &epetraComm )
+GL::Komplex::create_CommInt ( const Teuchos::RCP<const Epetra_Comm> &epetraComm )
 {
     using Teuchos::RCP;
     using Teuchos::rcp;
@@ -170,20 +170,20 @@ GlKomplex::create_CommInt ( const Teuchos::RCP<const Epetra_Comm> &epetraComm )
 }
 // =============================================================================
 void
-GlKomplex::finalizeMatrix()
+GL::Komplex::finalizeMatrix()
 {
     TEUCHOS_ASSERT_EQUALITY ( 0, realMatrix_->FillComplete() );
     TEUCHOS_ASSERT_EQUALITY ( 0, realMatrix_->OptimizeStorage() );
 }
 // =============================================================================
 void
-GlKomplex::zeroOutMatrix()
+GL::Komplex::zeroOutMatrix()
 {
     TEUCHOS_ASSERT_EQUALITY ( 0, realMatrix_->PutScalar ( 0.0 ) );
 }
 // =============================================================================
 void
-GlKomplex::updateRow ( const unsigned int                      row,
+GL::Komplex::updateRow ( const unsigned int                      row,
                        const Teuchos::Array<int>             & indicesA,
                        const Teuchos::Array<double_complex>  & valuesA,
                        const Teuchos::Array<int>             & indicesB,
@@ -341,7 +341,7 @@ GlKomplex::updateRow ( const unsigned int                      row,
 }
 // =============================================================================
 int
-GlKomplex::PutRow ( int Row, int & numIndices, double * values, int * indices, bool firstTime )
+GL::Komplex::PutRow ( int Row, int & numIndices, double * values, int * indices, bool firstTime )
 {
     if ( firstTime )
     {
@@ -354,13 +354,13 @@ GlKomplex::PutRow ( int Row, int & numIndices, double * values, int * indices, b
 }
 // =============================================================================
 Teuchos::RCP<Epetra_CrsMatrix>
-GlKomplex::getMatrix() const
+GL::Komplex::getMatrix() const
 {
     return realMatrix_;
 }
 // =============================================================================
 //Teuchos::RCP<Epetra_Vector>
-//GlKomplex::getRealCoefficients( const Teuchos::RCP<const ComplexVector> a,
+//GL::Komplex::getRealCoefficients( const Teuchos::RCP<const ComplexVector> a,
 //                                      const Teuchos::RCP<const ComplexVector> b
 //                                    ) const
 //{
@@ -384,7 +384,7 @@ GlKomplex::getMatrix() const
 //}
 // =============================================================================
 Teuchos::RCP<Epetra_Vector>
-GlKomplex::imagScalarProductCoeff ( const Teuchos::RCP<const ComplexVector> a
+GL::Komplex::imagScalarProductCoeff ( const Teuchos::RCP<const ComplexVector> a
                                   ) const
 {
     TEUCHOS_ASSERT ( a.is_valid_ptr() && !a.is_null() );

@@ -6,20 +6,24 @@
 #include <NOX_Utils.H>
 #include <Teuchos_ParameterList.hpp>
 
-
 #include "AbstractStateWriter.h"
 
-class GlPrePostOperator : public NOX::Abstract::PrePostOperator {
+namespace GL {
+  namespace IO {
+
+class SaveNewtonData:
+        public NOX::Abstract::PrePostOperator
+{
 
 public:
 
   //! Constructor.
-  GlPrePostOperator( const Teuchos::RCP<const AbstractStateWriter> & stateWriter,
-                     const std::string                             & outputDir,
-                     const std::string                             & outputFormat );
+  SaveNewtonData( const Teuchos::RCP<const AbstractStateWriter> & stateWriter,
+                  const std::string                             & outputDir,
+                  const std::string                             & outputFormat );
 
   //! Destructor.
-  ~GlPrePostOperator();
+  ~SaveNewtonData();
 
   //! Function that gets called before each iteration.
   //! This particular implementation prints the current state to the file
@@ -28,13 +32,16 @@ public:
   void runPostIterate(const NOX::Solver::Generic& solver);
 
 protected:
-
+private:
   //! How ofter the function has been invoked yet.
   int numRunPreIterate;
 
   const Teuchos::RCP<const AbstractStateWriter> stateWriter_;
   std::string                                   outputDir_;
   std::string                                   filenameExtension_;
-
 };
+
+  } // namespace IO
+} // namespace SaveNewtonData
+
 #endif // GLPREPOSTOPERATOR_H

@@ -1,4 +1,4 @@
-#include "glPrePostOperator.h"
+#include "GL_IO_SaveNewtonData.h"
 
 #include <Teuchos_ParameterList.hpp>
 #include <NOX_Solver_Generic.H>
@@ -6,9 +6,9 @@
 #include <NOX_Epetra_Group.H>
 
 // =============================================================================
-GlPrePostOperator::GlPrePostOperator ( const Teuchos::RCP<const AbstractStateWriter>  & stateWriter,
-                                       const std::string                              & outputDir,
-                                       const std::string                              & outputFormat ) :
+GL::IO::SaveNewtonData::SaveNewtonData ( const Teuchos::RCP<const AbstractStateWriter>  & stateWriter,
+                                        const std::string                              & outputDir,
+                                        const std::string                              & outputFormat ) :
         numRunPreIterate ( 0 ),
         stateWriter_ ( stateWriter ),
         outputDir_ ( outputDir ),
@@ -24,11 +24,11 @@ GlPrePostOperator::GlPrePostOperator ( const Teuchos::RCP<const AbstractStateWri
                         "Illegal output format \"" << outputFormat << "\"." );
 }
 // =============================================================================
-GlPrePostOperator::~GlPrePostOperator()
+GL::IO::SaveNewtonData::~SaveNewtonData()
 {
 }
 // =============================================================================
-void GlPrePostOperator::
+void GL::IO::SaveNewtonData::
 runPostIterate ( const NOX::Solver::Generic& solver )
 {
     string fileName;

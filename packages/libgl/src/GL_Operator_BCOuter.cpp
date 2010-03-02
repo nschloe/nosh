@@ -17,7 +17,7 @@
 
 */
 
-#include "GlOperatorBCInner.h"
+#include "GL_Operator_BCOuter.h"
 
 #include <Teuchos_Array.hpp>
 
@@ -25,19 +25,19 @@
 const double_complex I ( 0,1 );
 
 // =============================================================================
-GlOperatorBCInner::GlOperatorBCInner ( Teuchos::RCP<GridUniform> & grid,
-                                       Teuchos::RCP<MagneticVectorPotential> & A
-                                     ) :
-        GlOperatorVirtual ( grid, A )
+GL::Operator::BCOuter::BCOuter ( Teuchos::RCP<GridUniform> & grid,
+                                 Teuchos::RCP<GL::MagneticVectorPotential::Centered> & A
+                                ) :
+        GL::Operator::Virtual ( grid, A )
 {
 }
 // =============================================================================
-GlOperatorBCInner::~GlOperatorBCInner()
+GL::Operator::BCOuter::~BCOuter()
 {
 }
 // =============================================================================
 double_complex
-GlOperatorBCInner::getEntry ( const int k ) const
+GL::Operator::BCOuter::getEntry ( const int k ) const
 {
     double_complex res;
     double_complex psiK, psiKRight, psiKLeft, psiKAbove, psiKBelow;
@@ -87,7 +87,6 @@ GlOperatorBCInner::getEntry ( const int k ) const
         break;
 
     case GridVirtual::BOUNDARY_BOTTOMLEFTCONVEX:
-    case GridVirtual::BOUNDARY_BOTTOMLEFTCONCAVE:
         // -------------------------------------------------------------------
         psiKRight = psiView[ grid_->getKRight ( k ) ];
         psiKAbove = psiView[ grid_->getKAbove ( k ) ];
@@ -100,13 +99,13 @@ GlOperatorBCInner::getEntry ( const int k ) const
 
         res = ( - psiK      * 2.0
                 + psiKRight * exp ( -I*ARight*h )
-                + psiKAbove * exp ( -I*AAbove*h ) ) * I/ ( sqrt ( 2 ) *h );
+                + psiKAbove * exp ( -I*AAbove*h ) ) / ( h*h )
+              + psiK * ( 1-norm ( psiK ) );
         res *= exp ( I*chi_ );
         // -------------------------------------------------------------------
         break;
 
     case GridVirtual::BOUNDARY_BOTTOMRIGHTCONVEX:
-    case GridVirtual::BOUNDARY_BOTTOMRIGHTCONCAVE:
         // -----------------------------------------------------------------------
         psiKLeft  = psiView[ grid_->getKLeft ( k ) ];
         psiKAbove = psiView[ grid_->getKAbove ( k ) ];
@@ -117,14 +116,15 @@ GlOperatorBCInner::getEntry ( const int k ) const
         ALeft  = A_->getAx ( *xLeft );
         AAbove = A_->getAy ( *xAbove );
 
-        res = ( - psiK      * 2.0
-                + psiKLeft  * exp ( I*ALeft *h )
-                + psiKAbove * exp ( -I*AAbove*h ) ) * I/ ( sqrt ( 2 ) *h );
+        res = ( psiK* ( -2.0 )
+                + psiKLeft * exp ( I*ALeft *h )
+                + psiKAbove* exp ( -I*AAbove*h ) ) / ( h*h )
+              + psiK * ( 1-norm ( psiK ) );
+        res *= exp ( I*chi_ );
         // -----------------------------------------------------------------------
         break;
 
     case GridVirtual::BOUNDARY_TOPRIGHTCONVEX:
-    case GridVirtual::BOUNDARY_TOPRIGHTCONCAVE:
         // -----------------------------------------------------------------------
         psiKLeft  = psiView[ grid_->getKLeft ( k ) ];
         psiKBelow = psiView[ grid_->getKBelow ( k ) ];
@@ -135,16 +135,16 @@ GlOperatorBCInner::getEntry ( const int k ) const
         ALeft  = A_->getAx ( *xLeft );
         ABelow = A_->getAy ( *xBelow );
 
-        res = ( - psiK      * 2.0
-                + psiKLeft  * exp ( I*ALeft *h )
-                + psiKBelow * exp ( I*ABelow*h ) ) * I/ ( sqrt ( 2 ) *h );
+        res = ( psiK* ( -2.0 )
+                + psiKLeft * exp ( I*ALeft *h )
+                + psiKBelow* exp ( I*ABelow*h ) ) / ( h*h )
+              + psiK * ( 1-norm ( psiK ) );
         res *= exp ( I*chi_ );
         // -----------------------------------------------------------------------
 
         break;
 
     case GridVirtual::BOUNDARY_TOPLEFTCONVEX:
-    case GridVirtual::BOUNDARY_TOPLEFTCONCAVE:
         // -----------------------------------------------------------------------
         psiKRight = psiView[ grid_->getKRight ( k ) ];
         psiKBelow = psiView[ grid_->getKBelow ( k ) ];
@@ -155,65 +155,98 @@ GlOperatorBCInner::getEntry ( const int k ) const
         ARight = A_->getAx ( *xRight );
         ABelow = A_->getAy ( *xBelow );
 
-        res = ( - psiK      * 2.0
-                + psiKRight * exp ( -I*ARight*h )
-                + psiKBelow * exp ( I*ABelow*h ) ) * I/ ( sqrt ( 2 ) *h );
+        res = ( psiK* ( -2.0 )
+                + psiKRight* exp ( -I*ARight*h )
+                + psiKBelow* exp ( I*ABelow*h ) ) / ( h*h )
+              + psiK * ( 1-norm ( psiK ) );
         res *= exp ( I*chi_ );
         // -----------------------------------------------------------------------
         break;
 
     case GridVirtual::BOUNDARY_BOTTOM:
         // -------------------------------------------------------------------
-        // normal derivative
+        psiKLeft  = psiView[ grid_->getKLeft ( k ) ];
+        psiKRight = psiView[ grid_->getKRight ( k ) ];
         psiKAbove = psiView[ grid_->getKAbove ( k ) ];
-        
+
+        xLeft  = grid_->getXLeft ( k );
+        xRight = grid_->getXRight ( k );
         xAbove = grid_->getXAbove ( k );
+
+        ALeft  = A_->getAx ( *xLeft );
+        ARight = A_->getAx ( *xRight );
         AAbove = A_->getAy ( *xAbove );
 
-        res = ( - psiK
-                + psiKAbove * exp ( -I*AAbove*h ) ) * I/h;
+        res = ( psiK* ( -3.0 )
+                + psiKLeft*  exp ( I*ALeft *h ) + psiKRight* exp ( -I*ARight*h )
+                + psiKAbove* exp ( -I*AAbove*h ) ) / ( h*h )
+              + psiK * ( 1.0-norm ( psiK ) );
         res *= exp ( I*chi_ );
         // -------------------------------------------------------------------
         break;
 
     case GridVirtual::BOUNDARY_RIGHT:
         // -------------------------------------------------------------------
-        // normal derivative
-        psiKLeft = psiView[ grid_->getKLeft ( k ) ];
+        psiKLeft  = psiView[ grid_->getKLeft ( k ) ];
+        psiKBelow = psiView[ grid_->getKBelow ( k ) ];
+        psiKAbove = psiView[ grid_->getKAbove ( k ) ];
 
         xLeft  = grid_->getXLeft ( k );
-        ALeft  = A_->getAx ( *xLeft );
+        xBelow = grid_->getXBelow ( k );
+        xAbove = grid_->getXAbove ( k );
 
-        res = ( - psiK
-                + psiKLeft * exp ( I*ALeft*h ) ) * I/h;
+        ALeft  = A_->getAx ( *xLeft );
+        ABelow = A_->getAy ( *xBelow );
+        AAbove = A_->getAy ( *xAbove );
+
+        res = ( psiK* ( -3.0 )
+                + psiKLeft*  exp ( I*ALeft *h )
+                + psiKBelow* exp ( I*ABelow*h ) + psiKAbove* exp ( -I*AAbove*h ) ) / ( h*h )
+              + psiK * ( 1-norm ( psiK ) );
         res *= exp ( I*chi_ );
         // -------------------------------------------------------------------
         break;
 
     case GridVirtual::BOUNDARY_TOP:
         // -------------------------------------------------------------------
-        // normal derivative
+        psiKLeft  = psiView[ grid_->getKLeft ( k ) ];
+        psiKRight = psiView[ grid_->getKRight ( k ) ];
         psiKBelow = psiView[ grid_->getKBelow ( k ) ];
 
+        xLeft  = grid_->getXLeft ( k );
+        xRight = grid_->getXRight ( k );
         xBelow = grid_->getXBelow ( k );
+
+        ALeft  = A_->getAx ( *xLeft );
+        ARight = A_->getAx ( *xRight );
         ABelow = A_->getAy ( *xBelow );
 
-        res = ( - psiK
-                + psiKBelow * exp ( I*ABelow*h ) ) * I/h;
+        res = ( psiK* ( -3.0 )
+                + psiKLeft*  exp ( I*ALeft *h ) + psiKRight* exp ( -I*ARight*h )
+                + psiKBelow* exp ( I*ABelow*h ) ) / ( h*h )
+              + psiK * ( 1-norm ( psiK ) );
         res *= exp ( I*chi_ );
         // -------------------------------------------------------------------
         break;
 
     case GridVirtual::BOUNDARY_LEFT:
         // -------------------------------------------------------------------
-        // normal derivative
         psiKRight = psiView[ grid_->getKRight ( k ) ];
+        psiKBelow = psiView[ grid_->getKBelow ( k ) ];
+        psiKAbove = psiView[ grid_->getKAbove ( k ) ];
 
         xRight = grid_->getXRight ( k );
-        ARight = A_->getAx ( *xRight );
+        xBelow = grid_->getXBelow ( k );
+        xAbove = grid_->getXAbove ( k );
 
-        res = ( - psiK
-                + psiKRight * exp ( -I*ARight*h ) ) * I/h;
+        ARight = A_->getAx ( *xRight );
+        ABelow = A_->getAy ( *xBelow );
+        AAbove = A_->getAy ( *xAbove );
+
+        res = ( psiK* ( -3.0 )
+                + psiKRight* exp ( -I*ARight*h )
+                + psiKBelow* exp ( I*ABelow*h ) + psiKAbove* exp ( -I*AAbove*h ) ) / ( h*h )
+              + psiK * ( 1-norm ( psiK ) );
         res *= exp ( I*chi_ );
         // -------------------------------------------------------------------
         break;
@@ -229,7 +262,7 @@ GlOperatorBCInner::getEntry ( const int k ) const
 }
 // =============================================================================
 void
-GlOperatorBCInner::getJacobianRow ( const int                        k,
+GL::Operator::BCOuter::getJacobianRow ( const int                        k,
                                     Teuchos::Array<int>            & columnIndicesPsi,
                                     Teuchos::Array<double_complex> & valuesPsi,
                                     Teuchos::Array<int>            & columnIndicesPsiConj,
@@ -249,7 +282,7 @@ GlOperatorBCInner::getJacobianRow ( const int                        k,
 
     Teuchos::ArrayRCP<const double_complex> psiView = psi_->get1dView();
 
-    GridVirtual::nodeType nt = grid_->getNodeType(k);
+    GridVirtual::nodeType nt = grid_->getNodeType ( k );
     switch ( nt )
     {
     case GridVirtual::INTERIOR:
@@ -293,7 +326,6 @@ GlOperatorBCInner::getJacobianRow ( const int                        k,
 
         break;
     case GridVirtual::BOUNDARY_BOTTOMLEFTCONVEX:
-    case GridVirtual::BOUNDARY_BOTTOMLEFTCONCAVE:
         // -------------------------------------------------------------------
         kRight = grid_->getKRight ( k );
         kAbove = grid_->getKAbove ( k );
@@ -306,23 +338,29 @@ GlOperatorBCInner::getJacobianRow ( const int                        k,
 
         xRight = grid_->getXRight ( k );
         xAbove = grid_->getXAbove ( k );
+
         ARight = A_->getAx ( *xRight );
         AAbove = A_->getAy ( *xAbove );
 
         valuesPsi.resize ( numEntriesPsi );
-        valuesPsi[0] = -2.0                * I/ ( sqrt ( 2 ) *h );
-        valuesPsi[1] = exp ( -I*ARight*h ) * I/ ( sqrt ( 2 ) *h );
-        valuesPsi[2] = exp ( -I*AAbove*h ) * I/ ( sqrt ( 2 ) *h );
+        valuesPsi[0] = - 2.0 / ( h*h )
+                       + ( 1 - 2.0*norm ( psiView[k] ) );
+        valuesPsi[1] = exp ( -I*ARight*h ) / ( h*h );
+        valuesPsi[2] = exp ( -I*AAbove*h ) / ( h*h );
 
 
-        numEntriesPsiConj = 0;
+        numEntriesPsiConj = 1;
         columnIndicesPsiConj.resize ( numEntriesPsiConj );
+        columnIndicesPsiConj[0] = k;
+
         valuesPsiConj.resize ( numEntriesPsiConj );
+        valuesPsiConj[0] = -psiView[k]*psiView[k];
+        valuesPsiConj[0] *= exp ( I*chi_*2.0 );
+
         // -------------------------------------------------------------------
         break;
 
     case GridVirtual::BOUNDARY_BOTTOMRIGHTCONVEX:
-    case GridVirtual::BOUNDARY_BOTTOMRIGHTCONCAVE:
         // -----------------------------------------------------------------------
         kLeft  = grid_->getKLeft ( k );
         kAbove = grid_->getKAbove ( k );
@@ -333,6 +371,7 @@ GlOperatorBCInner::getJacobianRow ( const int                        k,
         columnIndicesPsi[1] = kLeft;
         columnIndicesPsi[2] = kAbove;
 
+
         xLeft  = grid_->getXLeft ( k );
         xAbove = grid_->getXAbove ( k );
 
@@ -340,19 +379,23 @@ GlOperatorBCInner::getJacobianRow ( const int                        k,
         AAbove = A_->getAy ( *xAbove );
 
         valuesPsi.resize ( numEntriesPsi );
-        valuesPsi[0] = -2.0                * I/ ( sqrt ( 2 ) *h );
-        valuesPsi[1] = exp ( I*ALeft *h )  * I/ ( sqrt ( 2 ) *h );
-        valuesPsi[2] = exp ( -I*AAbove*h ) * I/ ( sqrt ( 2 ) *h );
+        valuesPsi[0] = -2.0 / ( h*h )
+                       + ( 1 - 2.0*norm ( psiView[k] ) );
+        valuesPsi[1] = exp ( I*ALeft *h ) / ( h*h );
+        valuesPsi[2] = exp ( -I*AAbove*h ) / ( h*h );
 
-        numEntriesPsiConj = 0;
+
+        numEntriesPsiConj = 1;
         columnIndicesPsiConj.resize ( numEntriesPsiConj );
+        columnIndicesPsiConj[0] = k;
 
         valuesPsiConj.resize ( numEntriesPsiConj );
+        valuesPsiConj[0] = -psiView[k]*psiView[k];
+        valuesPsiConj[0] *= exp ( I*chi_*2.0 );
         // -----------------------------------------------------------------------
         break;
 
     case GridVirtual::BOUNDARY_TOPRIGHTCONVEX:
-    case GridVirtual::BOUNDARY_TOPRIGHTCONCAVE:
         // -----------------------------------------------------------------------
         kLeft  = grid_->getKLeft ( k );
         kBelow = grid_->getKBelow ( k );
@@ -365,23 +408,26 @@ GlOperatorBCInner::getJacobianRow ( const int                        k,
 
         xLeft  = grid_->getXLeft ( k );
         xBelow = grid_->getXBelow ( k );
+
         ALeft  = A_->getAx ( *xLeft );
         ABelow = A_->getAy ( *xBelow );
 
         valuesPsi.resize ( numEntriesPsi );
-        valuesPsi[0] = -2.0             * I/ ( sqrt ( 2 ) *h );
-        valuesPsi[1] = exp ( I*ALeft *h ) * I/ ( sqrt ( 2 ) *h );
-        valuesPsi[2] = exp ( I*ABelow*h ) * I/ ( sqrt ( 2 ) *h );
+        valuesPsi[0] = -2.0 / ( h*h )
+                       + ( 1 - 2.0*norm ( psiView[k] ) );
+        valuesPsi[1] = exp ( I*ALeft *h ) / ( h*h );
+        valuesPsi[2] = exp ( I*ABelow*h ) / ( h*h );
 
-        numEntriesPsiConj = 0;
+        numEntriesPsiConj = 1;
         columnIndicesPsiConj.resize ( numEntriesPsiConj );
-
+        columnIndicesPsiConj[0] = k;
         valuesPsiConj.resize ( numEntriesPsiConj );
+        valuesPsiConj[0] = -psiView[k]*psiView[k];
+        valuesPsiConj[0] *= exp ( I*chi_*2.0 );
         // -----------------------------------------------------------------------
         break;
 
     case GridVirtual::BOUNDARY_TOPLEFTCONVEX:
-    case GridVirtual::BOUNDARY_TOPLEFTCONCAVE:
         // -----------------------------------------------------------------------
         kRight = grid_->getKRight ( k );
         kBelow = grid_->getKBelow ( k );
@@ -394,118 +440,182 @@ GlOperatorBCInner::getJacobianRow ( const int                        k,
 
         xRight = grid_->getXRight ( k );
         xBelow = grid_->getXBelow ( k );
+
         ARight = A_->getAx ( *xRight );
         ABelow = A_->getAy ( *xBelow );
 
         valuesPsi.resize ( numEntriesPsi );
-        valuesPsi[0] = -2.0                * I/ ( sqrt ( 2 ) *h );
-        valuesPsi[1] = exp ( -I*ARight*h ) * I/ ( sqrt ( 2 ) *h );
-        valuesPsi[2] = exp ( I*ABelow*h ) * I/ ( sqrt ( 2 ) *h );
+        valuesPsi[0] = -2.0 / ( h*h )
+                       + ( 1 - 2.0*norm ( psiView[k] ) );
+        valuesPsi[1] = exp ( -I*ARight*h ) / ( h*h );
+        valuesPsi[2] = exp ( I*ABelow*h ) / ( h*h );
 
-        numEntriesPsiConj = 0;
+        numEntriesPsiConj = 1;
         columnIndicesPsiConj.resize ( numEntriesPsiConj );
+        columnIndicesPsiConj[0] = k;
+
         valuesPsiConj.resize ( numEntriesPsiConj );
+        valuesPsiConj[0] = -psiView[k]*psiView[k];
+        valuesPsiConj[0] *= exp ( I*chi_*2.0 );
         // -----------------------------------------------------------------------
         break;
 
     case GridVirtual::BOUNDARY_BOTTOM:
         // -------------------------------------------------------------------
-        // normal derivative
+        kLeft  = grid_->getKLeft ( k );
+        kRight = grid_->getKRight ( k );
         kAbove = grid_->getKAbove ( k );
 
-        numEntriesPsi = 2;
+        numEntriesPsi = 4;
         columnIndicesPsi.resize ( numEntriesPsi );
         columnIndicesPsi[0] = k;
-        columnIndicesPsi[1] = kAbove;
+        columnIndicesPsi[1] = kLeft;
+        columnIndicesPsi[2] = kRight;
+        columnIndicesPsi[3] = kAbove;
 
+        xLeft  = grid_->getXLeft ( k );
+        xRight = grid_->getXRight ( k );
         xAbove = grid_->getXAbove ( k );
+
+        ALeft  = A_->getAx ( *xLeft );
+        ARight = A_->getAx ( *xRight );
         AAbove = A_->getAy ( *xAbove );
 
         valuesPsi.resize ( numEntriesPsi );
-        valuesPsi[0] = -1.0                * I/h;
-        valuesPsi[1] = exp ( -I*AAbove*h ) * I/h;
+        valuesPsi[0] = - 3.0            / ( h*h )
+                       + ( 1.0 - 2.0*norm ( psiView[k] ) );
+        valuesPsi[1] = exp ( I*ALeft *h ) / ( h*h );
+        valuesPsi[2] = exp ( -I*ARight*h ) / ( h*h );
+        valuesPsi[3] = exp ( -I*AAbove*h ) / ( h*h );
 
-        numEntriesPsiConj = 0;
+        numEntriesPsiConj = 1;
         columnIndicesPsiConj.resize ( numEntriesPsiConj );
+        columnIndicesPsiConj[0] = k;
 
         valuesPsiConj.resize ( numEntriesPsiConj );
+        valuesPsiConj[0] = -psiView[k]*psiView[k];
+        valuesPsiConj[0] *= exp ( I*chi_*2.0 );
         // -------------------------------------------------------------------
         break;
 
     case GridVirtual::BOUNDARY_RIGHT:
         // -------------------------------------------------------------------
-        // normal derivative
-        kLeft = grid_->getKLeft ( k );
+        kBelow = grid_->getKBelow ( k );
+        kAbove = grid_->getKAbove ( k );
+        kLeft  = grid_->getKLeft ( k );
 
-        numEntriesPsi = 2;
+        numEntriesPsi = 4;
         columnIndicesPsi.resize ( numEntriesPsi );
         columnIndicesPsi[0] = k;
-        columnIndicesPsi[1] = kLeft;
+        columnIndicesPsi[1] = kBelow;
+        columnIndicesPsi[2] = kAbove;
+        columnIndicesPsi[3] = kLeft;
 
-        xLeft = grid_->getXLeft ( k );
-        ALeft = A_->getAx ( *xLeft );
+        xLeft  = grid_->getXLeft ( k );
+        xBelow = grid_->getXBelow ( k );
+        xAbove = grid_->getXAbove ( k );
+
+        ALeft  = A_->getAx ( *xLeft );
+        ABelow = A_->getAy ( *xBelow );
+        AAbove = A_->getAy ( *xAbove );
 
         valuesPsi.resize ( numEntriesPsi );
-        valuesPsi[0] = -1.0            * I/h;
-        valuesPsi[1] = exp ( I*ALeft*h ) * I/h;
+        valuesPsi[0] = - 3.0            / ( h*h )
+                       + ( 1.0 - 2.0*norm ( psiView[k] ) );
+        valuesPsi[1] = exp ( I*ABelow*h ) / ( h*h );
+        valuesPsi[2] = exp ( -I*AAbove*h ) / ( h*h );
+        valuesPsi[3] = exp ( I*ALeft *h ) / ( h*h );
 
-        numEntriesPsiConj = 0;
+        numEntriesPsiConj = 1;
         columnIndicesPsiConj.resize ( numEntriesPsiConj );
+        columnIndicesPsiConj[0] = k;
+
         valuesPsiConj.resize ( numEntriesPsiConj );
+        valuesPsiConj[0] = -psiView[k]*psiView[k];
+        valuesPsiConj[0] *= exp ( I*chi_*2.0 );
         // -------------------------------------------------------------------
         break;
 
     case GridVirtual::BOUNDARY_TOP:
         // -------------------------------------------------------------------
-        // normal derivative
         kBelow = grid_->getKBelow ( k );
+        kRight = grid_->getKRight ( k );
+        kLeft  = grid_->getKLeft ( k );
 
-        numEntriesPsi = 2;
+        numEntriesPsi = 4;
         columnIndicesPsi.resize ( numEntriesPsi );
         columnIndicesPsi[0] = k;
         columnIndicesPsi[1] = kBelow;
+        columnIndicesPsi[2] = kLeft;
+        columnIndicesPsi[3] = kRight;
 
+        xLeft  = grid_->getXLeft ( k );
+        xRight = grid_->getXRight ( k );
         xBelow = grid_->getXBelow ( k );
+
+        ALeft  = A_->getAx ( *xLeft );
+        ARight = A_->getAx ( *xRight );
         ABelow = A_->getAy ( *xBelow );
 
         valuesPsi.resize ( numEntriesPsi );
-        valuesPsi[0] = -1.0             * I/h;
-        valuesPsi[1] = exp ( I*ABelow*h ) * I/h;
+        valuesPsi[0] = - 3.0             / ( h*h )
+                       + ( 1.0 - 2.0*norm ( psiView[k] ) );
+        valuesPsi[1] = exp ( I*ABelow*h ) / ( h*h );
+        valuesPsi[2] = exp ( I*ALeft *h ) / ( h*h );
+        valuesPsi[3] = exp ( -I*ARight*h ) / ( h*h );
 
-        numEntriesPsiConj = 0;
+        numEntriesPsiConj = 1;
         columnIndicesPsiConj.resize ( numEntriesPsiConj );
+        columnIndicesPsiConj[0] = k;
+
         valuesPsiConj.resize ( numEntriesPsiConj );
+        valuesPsiConj[0] = -psiView[k]*psiView[k];
+        valuesPsiConj[0] *= exp ( I*chi_*2.0 );
         // -------------------------------------------------------------------
         break;
 
     case GridVirtual::BOUNDARY_LEFT:
         // -------------------------------------------------------------------
-        // normal derivative
+        kBelow = grid_->getKBelow ( k );
+        kAbove = grid_->getKAbove ( k );
         kRight = grid_->getKRight ( k );
 
-        numEntriesPsi = 2;
+        numEntriesPsi = 4;
         columnIndicesPsi.resize ( numEntriesPsi );
         columnIndicesPsi[0] = k;
-        columnIndicesPsi[1] = kRight;
+        columnIndicesPsi[1] = kBelow;
+        columnIndicesPsi[2] = kAbove;
+        columnIndicesPsi[3] = kRight;
 
         xRight = grid_->getXRight ( k );
+        xBelow = grid_->getXBelow ( k );
+        xAbove = grid_->getXAbove ( k );
+
         ARight = A_->getAx ( *xRight );
+        ABelow = A_->getAy ( *xBelow );
+        AAbove = A_->getAy ( *xAbove );
 
         valuesPsi.resize ( numEntriesPsi );
-        valuesPsi[0] = -1.0                * I/h;
-        valuesPsi[1] = exp ( -I*ARight*h ) * I/h;
+        valuesPsi[0] = - 3.0            / ( h*h )
+                       + ( 1.0 - 2.0*norm ( psiView[k] ) );
+        valuesPsi[1] = exp ( I*ABelow*h ) / ( h*h );
+        valuesPsi[2] = exp ( -I*AAbove*h ) / ( h*h );
+        valuesPsi[3] = exp ( -I*ARight*h ) / ( h*h );
 
-        numEntriesPsiConj = 0;
+        numEntriesPsiConj = 1;
         columnIndicesPsiConj.resize ( numEntriesPsiConj );
+        columnIndicesPsiConj[0] = k;
 
         valuesPsiConj.resize ( numEntriesPsiConj );
+        valuesPsiConj[0] = -psiView[k]*psiView[k];
+        valuesPsiConj[0] *= exp ( I*chi_*2.0 );
         // -------------------------------------------------------------------
         break;
 
     default:
         TEST_FOR_EXCEPTION ( true,
                              std::logic_error,
-                             "Illegal node type \"" << nt << "\"." );
+                             "Illegal note type \"" << nt << "\"." );
     }
 
 }

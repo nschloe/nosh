@@ -1,3 +1,6 @@
+#ifndef GL_IO_SAVEEIGENDATA_H
+#define GL_IO_SAVEEIGENDATA_H
+
 #include <Teuchos_RCP.hpp>
 
 #include <LOCA_SaveEigenData_AbstractStrategy.H>
@@ -5,9 +8,13 @@
 
 #include <Teuchos_ParameterList.hpp>
 
-#include "glSystem.h"
+#include "GL_LinearSystem_Default.h"
 
-class EigenSaver : public LOCA::SaveEigenData::AbstractStrategy
+namespace GL {
+  namespace IO {
+
+class SaveEigenData:
+        public LOCA::SaveEigenData::AbstractStrategy
 {
 
  public:
@@ -15,18 +22,19 @@ class EigenSaver : public LOCA::SaveEigenData::AbstractStrategy
 // Actually suggested interface:
 //    EigenSaver(
 //      const Teuchos::RCP<LOCA::GlobalData>& global_data,
-//      const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+//      const Teuchos::RCP<LOCA::P#ifndef GL_IO_SAVEEIGENDATA_Harameter::SublistParser>& topParams,
 //      const Teuchos::RCP<Teuchos::ParameterList>& eigenParams      );
 
    // Constructor
-   EigenSaver( const Teuchos::RCP<Teuchos::ParameterList> eigenParams,
+   SaveEigenData( const Teuchos::RCP<Teuchos::ParameterList> eigenParams,
 	           const std::string outputDir,
 	           const std::string eigenvaluesFileName,
 	           const std::string contFileBaseName,
 	           const std::string eigenstateFileNameAppendix,
                const Teuchos::RCP<AbstractStateWriter> glSys );
-
-   virtual ~EigenSaver();
+               
+   virtual
+   ~SaveEigenData();
 
    virtual NOX::Abstract::Group::ReturnType
    save ( Teuchos::RCP<std::vector<double> >       &evals_r,
@@ -57,9 +65,9 @@ class EigenSaver : public LOCA::SaveEigenData::AbstractStrategy
 
     //! Maximum number of eigenvalues that are stored in \c eigenvaluesFilePath_.
     unsigned int maxEigenvaluesSave_;
-
-    void
-    saveEigenstate ( const std::string                         fileName,
-                     const Teuchos::RCP<NOX::Abstract::Vector> &evec_r  );
-
 };
+
+  } // namespace IO
+} // namespace GL
+
+#endif // GL_IO_SAVEEIGENDATA_H
