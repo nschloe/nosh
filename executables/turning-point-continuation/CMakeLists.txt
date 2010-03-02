@@ -10,6 +10,10 @@ ENDIF(MPI_COMPILED)
 FIND_PACKAGE( LOCAEpetra REQUIRED )
 FIND_PACKAGE( NOXEpetra  REQUIRED )
 
+FIND_PACKAGE( VTK REQUIRED )
+INCLUDE_DIRECTORIES( ${VTK_INCLUDE_DIRS} )
+LINK_DIRECTORIES( ${VTK_LIBRARY_DIRS} )
+
 INCLUDE_DIRECTORIES ( ${Trilinos_INCLUDE_DIR} )
 
 INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/packages/libgl/src
@@ -30,7 +34,7 @@ SET ( internal_LIBS
 
 # ==============================================================================
 # Find other external libs
-FIND_PACKAGE( Boost COMPONENTS filesystem REQUIRED )
+FIND_PACKAGE( Boost COMPONENTS system filesystem REQUIRED )
 INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIRS} )
 SET(Boost_USE_STATIC_LIBS   ON)
 SET(Boost_USE_MULTITHREADED ON)
