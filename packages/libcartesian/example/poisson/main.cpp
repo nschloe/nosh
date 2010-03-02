@@ -1,9 +1,9 @@
 // #include <Teuchos_DefaultComm.hpp>
-#ifdef HAVE_MPI
+//#ifdef HAVE_MPI
 #include <Epetra_MpiComm.h>
-#else
-#include <Epetra_SerialComm.h>
-#endif
+//#else
+//#include <Epetra_SerialComm.h>
+//#endif
 
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_XMLParameterListHelpers.hpp>
