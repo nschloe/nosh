@@ -15,6 +15,7 @@
 #include <Epetra_Comm.h>
 #include <Epetra_Map.h>
 #include <Epetra_Vector.h>
+#include <Epetra_Import.h>
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Array.hpp>
@@ -218,6 +219,9 @@ private:
     std::string stepNumFileNameFormat_;
 
     bool firstTime_;
+
+    const Epetra_Import importFromExtendedMap_;
+    const Epetra_Import importFromRegularMap_;
 };
 
   } // namespace LinearSystem

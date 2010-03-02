@@ -52,15 +52,17 @@ GL::LinearSystem::Bordered::Bordered ( GinzburgLandau::GinzburgLandau &gl,
         jacobian_ ( new Epetra_CrsMatrix ( Copy, *extendedMap_, 0 ) ),
         solution_ ( new Epetra_Vector ( *extendedMap_ ) ),
         maxStepNumberDecimals_ ( maxStepNumberDecimals ),
-        firstTime_ ( true )
-{
+        firstTime_ ( true ),
+        importFromExtendedMap_(  Epetra_Import(*regularMap_,*extendedMap_) ),
+        importFromRegularMap_( Epetra_Import(*extendedMap_,*regularMap_) )
+{ 
     Teuchos::RCP<Epetra_Vector> tmp = glSystem_.getGlKomplex()->complex2real ( *psi );
 
     for ( int k=0; k<tmp->MyLength(); k++ )
         (*solution_)[k] = ( *tmp ) [tmp->Map().GID ( k ) ];
 
     int n = solution_->GlobalLength();
-    solution_->ReplaceGlobalValue ( n-1, 0, 0.0 );
+    solution_->ReplaceGlobalValue ( n-1, 0, 0.0 );   
 
     // Initialize the format for the the continuation step number.
     // Here: 00012 for step no. 12, if maxStepNumberDecimals_=5.
@@ -100,20 +102,17 @@ GL::LinearSystem::Bordered::computeF ( const Epetra_Vector & x,
                          << "(" << FVec.Map().NumGlobalElements() << " for FVec vs. "
                          << extendedMap_->NumGlobalElements() << " for extendedMap_)." );
     
-    // TODO replace by {im,ex}porter
     // strip off the phase constraint
     Epetra_Vector tmp ( *regularMap_ );
-    for ( int k=0; k<tmp.MyLength(); k++ )
-        tmp[k] = x[x.Map().GID ( k ) ];
+    tmp.Import( x, importFromExtendedMap_, Insert );
 
     Epetra_Vector shortFVec ( *regularMap_ );
     glSystem_.computeF ( tmp, shortFVec, fillFlag );
 
     // copy over and add phase condition
-    // TODO replace by {im,ex}porter
-    for ( int k=0; k<shortFVec.MyLength(); k++ )
-        FVec[k] = shortFVec[shortFVec.Map().GID ( k ) ];
+    FVec.Import( shortFVec, importFromRegularMap_, Insert );
 
+    // set last entry
     FVec.ReplaceGlobalValue ( shortFVec.GlobalLength(), 0, 0.0 );
 
     return true;
@@ -147,15 +146,14 @@ GL::LinearSystem::Bordered::createExtendedRealMap ( const Epetra_BlockMap & real
 // =============================================================================
 bool
 GL::LinearSystem::Bordered::computeJacobian ( const Epetra_Vector & x,
-                                          Epetra_Operator     & Jac
-                                        )
+                                              Epetra_Operator     & Jac
+                                            )
 {
     // strip off the phase constraint
     Epetra_Vector tmp ( *regularMap_ );
-    for ( int k=0; k<tmp.MyLength(); k++ )
-        tmp[k] = x[x.Map().GID ( k ) ];
+    tmp.Import( x, importFromExtendedMap_, Insert );
 
-    // TODO Strip down Jac, too.
+    // Strip down Jac, too?
     // --   Not really necessary as it's not being used anyway.
 
     // compute the underlying Jacobian
@@ -204,11 +202,9 @@ GL::LinearSystem::Bordered::createJacobian ( const Epetra_Vector & x )
                          std::logic_error,
                          "extendedMap_ not properly initialized." );
 
-    // TODO replace by {im,ex}porter
     // strip off the phase constraint
     Epetra_Vector tmp ( *regularMap_ );
-    for ( int k=0; k<tmp.MyLength(); k++ )
-        tmp[k] = x[x.Map().GID ( k ) ];
+    tmp.Import( x, importFromExtendedMap_, Insert );
 
     // TODO don't explicitly construct psi? get1dCopy on the rhs
     Teuchos::RCP<ComplexVector>             psi     = glSystem_.getGlKomplex()->real2complex ( tmp );
@@ -246,14 +242,13 @@ GL::LinearSystem::Bordered::createJacobian ( const Epetra_Vector & x )
 // =============================================================================
 bool
 GL::LinearSystem::Bordered::computeShiftedMatrix ( double alpha,
-                                               double beta,
-                                               const Epetra_Vector   & x,
-                                                     Epetra_Operator & A )
+                                                   double beta,
+                                                   const Epetra_Vector   & x,
+                                                   Epetra_Operator & A )
 {
     // strip off the phase constraint
     Epetra_Vector tmp ( *regularMap_ );
-    for ( int k=0; k<tmp.MyLength(); k++ )
-        tmp[k] = x[x.Map().GID ( k ) ];
+    tmp.Import( x, importFromExtendedMap_, Insert );
     
     // compute the underlying Jacobian
     glSystem_.computeJacobian ( tmp, A );
@@ -299,11 +294,9 @@ void
 GL::LinearSystem::Bordered::printSolution ( const  Epetra_Vector &x,
                                         double conParam )
 {
-    // TODO replace by {im,ex}porter
     // strip off the phase constraint
     Epetra_Vector tmp ( *regularMap_ );
-    for ( int k=0; k<tmp.MyLength(); k++ )
-        tmp[k] = x[x.Map().GID ( k ) ];
+    tmp.Import( x, importFromExtendedMap_, Insert );
 
     glSystem_.printSolution ( tmp, conParam );
 }
@@ -319,11 +312,9 @@ GL::LinearSystem::Bordered::writeSolutionToFile ( const Epetra_Vector & x,
                                               const std::string   & filePath
                                             ) const
 {
-    // TODO replace by {im,ex}porter
     // strip off the phase constraint
     Epetra_Vector tmp ( *regularMap_ );
-    for ( int k=0; k<tmp.MyLength(); k++ )
-        tmp[k] = x[x.Map().GID ( k ) ];
+    tmp.Import( x, importFromExtendedMap_, Insert );
 
     glSystem_.writeSolutionToFile ( tmp, filePath );
 }
@@ -333,11 +324,9 @@ GL::LinearSystem::Bordered::writeAbstractStateToFile ( const Epetra_Vector & x,
                                                    const std::string   & filePath
                                                  ) const
 {
-    // TODO replace by {im,ex}porter
     // strip off the phase constraint
     Epetra_Vector tmp ( *regularMap_ );
-    for ( int k=0; k<tmp.MyLength(); k++ )
-        tmp[k] = x[x.Map().GID ( k ) ];
+    tmp.Import( x, importFromExtendedMap_, Insert );
 
     glSystem_.writeAbstractStateToFile ( tmp, filePath );
 }
