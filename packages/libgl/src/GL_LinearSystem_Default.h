@@ -55,7 +55,7 @@ public:
                const Teuchos::RCP<const ComplexVector> psi,
                const std::string outputDir = "data",
                const std::string outputDataFileName = "continuationData.dat",
-               const std::string outputFileFormat = "VTK",
+               const std::string outputFileFormat = "VTI",
                const std::string solutionFileNameBase = "solutionStep",
                const std::string nullvectorFileNameBase = "nullvectorStep",
                const unsigned int maxStepNumberDecimals = 4 );

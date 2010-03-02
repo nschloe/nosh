@@ -14,7 +14,7 @@
 #include <Epetra_Comm.h>
 #include <NOX_Epetra.H>
 
-#include "GlSystemWithConstraint.h"
+#include "GL_LinearSystem_Bordered.h"
 
 namespace glNoxHelpers
 {
@@ -24,7 +24,7 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
                  const Teuchos::RCP<const Epetra_Comm>         & eComm,
                  const std::string                             & fileName,
                  Teuchos::ParameterList                        & problemParameters,
-                 Teuchos::RCP<GlSystemWithConstraint>          & glSystem );
+                 Teuchos::RCP<GL::LinearSystem::Bordered>      & glSystem );
 
 void
 createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
@@ -32,8 +32,8 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
                  const unsigned int Nx,
                  const double scaling,
                  const double H0,
-                 Teuchos::ParameterList                  & problemParameters,
-                 Teuchos::RCP<GlSystemWithConstraint>    & glSystem );
+                 Teuchos::ParameterList                    & problemParameters,
+                 Teuchos::RCP<GL::LinearSystem::Bordered>  & glSystem );
 
 void
 setPrePostWriter ( Teuchos::ParameterList                        & noxParaList,
@@ -42,7 +42,7 @@ setPrePostWriter ( Teuchos::ParameterList                        & noxParaList,
                    const std::string                             & outputFormat = "VTK" );
 
 Teuchos::RCP<NOX::Epetra::Group>
-createSolverGroup ( const Teuchos::RCP<GlSystemWithConstraint> glSystem,
+createSolverGroup ( const Teuchos::RCP<GL::LinearSystem::Bordered> glSystem,
                     const Teuchos::RCP<Teuchos::ParameterList> nlParamsPtr );
 
 Teuchos::RCP<NOX::StatusTest::Generic>
@@ -65,7 +65,7 @@ computeJacobianEigenvalues ( const Teuchos::RCP<const NOX::Solver::Generic> solv
 
 void
 printSolutionToFile ( const Teuchos::RCP<const NOX::Solver::Generic> solver,
-                      const Teuchos::RCP<const GlSystemWithConstraint> glSystem,
+                      const Teuchos::RCP<const GL::LinearSystem::Bordered> glSystem,
                       const std::string & fileName );
 
 int

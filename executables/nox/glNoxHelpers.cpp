@@ -34,19 +34,19 @@
 #include <Teuchos_XMLParameterListHelpers.hpp>
 
 #include "ginzburgLandau.h"
-#include "glPrePostOperator.h"
+#include "GL_IO_SaveNewtonData.h"
 
 #include "GridReader.h"
 #include "GridUniformSquare.h"
 #include "GridSquare.h"
-#include "GlSystemWithConstraint.h"
+#include "GL_LinearSystem_Bordered.h"
 
 #include "DomainSquare.h"
 #include "DomainCircle.h"
 #include "DomainPolygon.h"
-#include "GlOperatorBCInner.h"
-#include "GlOperatorBCOuter.h"
-#include "GlOperatorBCCentral.h"
+#include "GL_Operator_BCInner.h"
+#include "GL_Operator_BCOuter.h"
+#include "GL_Operator_BCCentral.h"
 
 typedef Tpetra::Vector<std::complex<double>, Thyra::Ordinal> ComplexVector;
 
@@ -58,7 +58,7 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
                  const Teuchos::RCP<const Epetra_Comm>         & eComm,
                  const std::string                             & fileName,
                  Teuchos::ParameterList                        & problemParameters,
-                 Teuchos::RCP<GlSystemWithConstraint>          & glSystem )
+                 Teuchos::RCP<GL::LinearSystem::Bordered>      & glSystem )
 {
     Teuchos::ParameterList glParameters;
 
@@ -70,18 +70,18 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
     double h0      = problemParameters.get<double> ( "H0" );
     double scaling = problemParameters.get<double> ( "scaling" );
 
-    Teuchos::RCP<MagneticVectorPotential> A =
-        Teuchos::rcp ( new MagneticVectorPotential ( h0, scaling ) );
+    Teuchos::RCP<GL::MagneticVectorPotential::Centered> A =
+        Teuchos::rcp ( new GL::MagneticVectorPotential::Centered ( h0, scaling ) );
 
     // create the operator
-    Teuchos::RCP<GlOperatorVirtual> glOperator =
-        Teuchos::rcp ( new GlOperatorBCInner ( grid, A ) );
+    Teuchos::RCP<GL::Operator::Virtual> glOperator =
+        Teuchos::rcp ( new GL::Operator::BCInner ( grid, A ) );
 
     GinzburgLandau glProblem = GinzburgLandau ( glOperator );
 
     TEUCHOS_ASSERT_EQUALITY ( psi->getNumVectors(), 1 );
 
-    glSystem = Teuchos::rcp ( new GlSystemWithConstraint ( glProblem, eComm, psi->getVector ( 0 ) ) );
+    glSystem = Teuchos::rcp ( new GL::LinearSystem::Bordered ( glProblem, eComm, psi->getVector ( 0 ) ) );
 
     return;
 }
@@ -93,7 +93,7 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
                  const double scaling,
                  const double H0,
                  Teuchos::ParameterList                  & problemParameters,
-                 Teuchos::RCP<GlSystemWithConstraint>    & glSystem )
+                 Teuchos::RCP<GL::LinearSystem::Bordered>    & glSystem )
 {
     problemParameters.set ( "scaling", scaling );
     problemParameters.set ( "H0"     , H0 );
@@ -141,12 +141,12 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
 
     grid->updateScaling ( scaling );
 
-    Teuchos::RCP<MagneticVectorPotential> A =
-        Teuchos::rcp ( new MagneticVectorPotential ( H0, scaling ) );
+    Teuchos::RCP<GL::MagneticVectorPotential::Centered> A =
+        Teuchos::rcp ( new GL::MagneticVectorPotential::Centered ( H0, scaling ) );
 
     // create the operator
-    Teuchos::RCP<GlOperatorVirtual> glOperator =
-        Teuchos::rcp ( new GlOperatorBCInner ( grid, A ) );
+    Teuchos::RCP<GL::Operator::Virtual> glOperator =
+        Teuchos::rcp ( new GL::Operator::BCInner ( grid, A ) );
 
     GinzburgLandau glProblem = GinzburgLandau ( glOperator );
     
@@ -157,7 +157,7 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
     Teuchos::RCP<ComplexVector> psi = Teuchos::rcp( new ComplexVector(map) );
     psi->putScalar( double_complex(0.5,0.0) );
 
-    glSystem = Teuchos::rcp ( new GlSystemWithConstraint ( glProblem, eComm, psi ) );
+    glSystem = Teuchos::rcp ( new GL::LinearSystem::Bordered ( glProblem, eComm, psi ) );
 }
 // =========================================================================
 void
@@ -169,12 +169,12 @@ setPrePostWriter ( Teuchos::ParameterList                        & noxParaList,
     using namespace Teuchos;
 //   Teuchos::RCP<AbstractStateWriter> asw = glSystem_;
     RCP<NOX::Abstract::PrePostOperator> ppo =
-        rcp ( new GlPrePostOperator ( asw, outputDir, outputFormat ) );
+        rcp ( new GL::IO::SaveNewtonData ( asw, outputDir, outputFormat ) );
     noxParaList.sublist ( "Solver Options" ).set ( "User Defined Pre/Post Operator", ppo );
 }
 // =========================================================================
 Teuchos::RCP<NOX::Epetra::Group>
-createSolverGroup ( const Teuchos::RCP<GlSystemWithConstraint> glSystem,
+createSolverGroup ( const Teuchos::RCP<GL::LinearSystem::Bordered> glSystem,
                     const Teuchos::RCP<Teuchos::ParameterList> nlParamsPtr )
 {
     // Create all possible Epetra_Operators.
@@ -423,7 +423,7 @@ computeJacobianEigenvalues ( const Teuchos::RCP<const NOX::Solver::Generic> solv
 // =========================================================================
 void
 printSolutionToFile ( const Teuchos::RCP<const NOX::Solver::Generic> solver,
-                      const Teuchos::RCP<const GlSystemWithConstraint> glSystem,
+                      const Teuchos::RCP<const GL::LinearSystem::Bordered> glSystem,
                       const std::string & fileName )
 {
     const NOX::Epetra::Group & finalGroup =

@@ -127,8 +127,8 @@ int main ( int argc, char *argv[] )
     // =========================================================================
 
     // set problemParameters and glSystem
-    Teuchos::ParameterList               problemParameters;
-    Teuchos::RCP<GlSystemWithConstraint> glSystem = Teuchos::null;
+    Teuchos::ParameterList                   problemParameters;
+    Teuchos::RCP<GL::LinearSystem::Bordered> glSystem = Teuchos::null;
     if ( !inputGuessFile.empty() )
     {
         try
@@ -210,9 +210,15 @@ int main ( int argc, char *argv[] )
         glNoxHelpers::computeJacobianEigenvalues ( solver, grpPtr, Comm->getRank() );
 
     // print the solution to a file
+    std::string solFilename;
+    if ( outputFormat.compare("VTK")==0 )
+        solFilename = ( outputDirectory / "solution.vtk" ).string();
+    else
+        solFilename = ( outputDirectory / "solution.vti" ).string();
+    
     glNoxHelpers::printSolutionToFile ( solver,
                                         glSystem,
-                                        ( outputDirectory / "solution.vtk" ).string() );
+                                        solFilename );
 
     // check the convergence status
     int status = glNoxHelpers::checkConvergence ( solver );

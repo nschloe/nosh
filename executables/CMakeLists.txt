@@ -1,0 +1,7 @@
+add_subdirectory ( nox )
+#add_subdirectory ( pseudo-timestepping )
+add_subdirectory ( oneParameterContinuation )
+# add_subdirectory ( nox-predictor-step )
+# add_subdirectory ( turning-point-continuation )
+#add_subdirectory ( pitchfork-continuation )
+#add_subdirectory ( branch-switching )

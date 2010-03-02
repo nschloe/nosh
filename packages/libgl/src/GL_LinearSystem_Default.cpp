@@ -356,18 +356,20 @@ void GL::LinearSystem::Default::setOutputDir ( const string &directory )
 }
 // =============================================================================
 void
-GL::LinearSystem::Default::writeSolutionToFile ( const Epetra_Vector & x,
-                                const std::string   & filePath
-                              ) const
+GL::LinearSystem::Default::
+writeSolutionToFile ( const Epetra_Vector & x,
+                      const std::string   & filePath
+                    ) const
 {
     // TODO: Remove the need for several real2complex calls per step.
     Gl_.writeSolutionToFile ( glKomplex_->real2complex ( x ), filePath );
 }
 // =============================================================================
 void
-GL::LinearSystem::Default::writeAbstractStateToFile ( const Epetra_Vector & x,
-                                     const std::string   & filePath
-                                   ) const
+GL::LinearSystem::Default::
+writeAbstractStateToFile ( const Epetra_Vector & x,
+                           const std::string   & filePath
+                         ) const
 {
     // TODO: Remove the need for several real2complex calls per step.
     Gl_.writeAbstractStateToFile ( glKomplex_->real2complex ( x ), filePath );
