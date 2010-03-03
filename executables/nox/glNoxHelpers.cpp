@@ -39,7 +39,7 @@
 #include "GridReader.h"
 #include "GridUniformSquare.h"
 #include "GridSquare.h"
-#include "GL_LinearSystem_Bordered.h"
+#include "GL_LocaSystem_Bordered.h"
 
 #include "DomainSquare.h"
 #include "DomainCircle.h"
@@ -58,7 +58,7 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
                  const Teuchos::RCP<const Epetra_Comm>         & eComm,
                  const std::string                             & fileName,
                  Teuchos::ParameterList                        & problemParameters,
-                 Teuchos::RCP<GL::LinearSystem::Bordered>      & glSystem )
+                 Teuchos::RCP<GL::LocaSystem::Bordered>      & glSystem )
 {
     Teuchos::ParameterList glParameters;
 
@@ -81,7 +81,7 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
 
     TEUCHOS_ASSERT_EQUALITY ( psi->getNumVectors(), 1 );
 
-    glSystem = Teuchos::rcp ( new GL::LinearSystem::Bordered ( glProblem, eComm, psi->getVector ( 0 ) ) );
+    glSystem = Teuchos::rcp ( new GL::LocaSystem::Bordered ( glProblem, eComm, psi->getVector ( 0 ) ) );
 
     return;
 }
@@ -93,7 +93,7 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
                  const double scaling,
                  const double H0,
                  Teuchos::ParameterList                  & problemParameters,
-                 Teuchos::RCP<GL::LinearSystem::Bordered>    & glSystem )
+                 Teuchos::RCP<GL::LocaSystem::Bordered>    & glSystem )
 {
     problemParameters.set ( "scaling", scaling );
     problemParameters.set ( "H0"     , H0 );
@@ -157,7 +157,7 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
     Teuchos::RCP<ComplexVector> psi = Teuchos::rcp( new ComplexVector(map) );
     psi->putScalar( double_complex(0.5,0.0) );
 
-    glSystem = Teuchos::rcp ( new GL::LinearSystem::Bordered ( glProblem, eComm, psi ) );
+    glSystem = Teuchos::rcp ( new GL::LocaSystem::Bordered ( glProblem, eComm, psi ) );
 }
 // =========================================================================
 void
@@ -174,7 +174,7 @@ setPrePostWriter ( Teuchos::ParameterList                        & noxParaList,
 }
 // =========================================================================
 Teuchos::RCP<NOX::Epetra::Group>
-createSolverGroup ( const Teuchos::RCP<GL::LinearSystem::Bordered> glSystem,
+createSolverGroup ( const Teuchos::RCP<GL::LocaSystem::Bordered> glSystem,
                     const Teuchos::RCP<Teuchos::ParameterList> nlParamsPtr )
 {
     // Create all possible Epetra_Operators.
@@ -423,7 +423,7 @@ computeJacobianEigenvalues ( const Teuchos::RCP<const NOX::Solver::Generic> solv
 // =========================================================================
 void
 printSolutionToFile ( const Teuchos::RCP<const NOX::Solver::Generic> solver,
-                      const Teuchos::RCP<const GL::LinearSystem::Bordered> glSystem,
+                      const Teuchos::RCP<const GL::LocaSystem::Bordered> glSystem,
                       const std::string & fileName )
 {
     const NOX::Epetra::Group & finalGroup =

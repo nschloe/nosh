@@ -10,9 +10,9 @@ SET ( gl_SRCS
       GL_IO_SaveNewtonData.cpp
       GL_IO_SaveEigenData.cpp
       GL_Komplex.cpp
-      GL_LinearSystem_Default.cpp
-      GL_LinearSystem_Bordered.cpp
-      GL_LinearSystem_Predictor.cpp
+      GL_LocaSystem_Default.cpp
+      GL_LocaSystem_Bordered.cpp
+      GL_LocaSystem_Predictor.cpp
       AbstractStateWriter.cpp
     )
 

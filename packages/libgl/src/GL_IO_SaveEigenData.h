@@ -5,10 +5,12 @@
 
 #include <LOCA_SaveEigenData_AbstractStrategy.H>
 #include <LOCA_Parameter_SublistParser.H>
+#include <LOCA_Stepper.H>
+#include <NOX_Epetra_Vector.H>
 
 #include <Teuchos_ParameterList.hpp>
 
-#include "GL_LinearSystem_Default.h"
+#include "AbstractStateWriter.h"
 
 namespace GL {
   namespace IO {

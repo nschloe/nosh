@@ -10,7 +10,7 @@
 #include "ginzburgLandau.h"
 #include "AbstractStateWriter.h"
 #include "GL_Komplex.h"
-#include "GL_LinearSystem_Default.h"
+#include "GL_LocaSystem_Default.h"
 
 #include <Epetra_Comm.h>
 #include <Epetra_Map.h>
@@ -43,7 +43,7 @@
 #include <LOCA_Stepper.H>
 
 namespace GL {
-  namespace LinearSystem {
+  namespace LocaSystem {
 
 class Bordered:
             public AbstractStateWriter,
@@ -224,7 +224,7 @@ private:
     const Epetra_Import importFromRegularMap_;
 };
 
-  } // namespace LinearSystem
+  } // namespace LocaSystem
 } // namespace GL
 
 #endif // GL_LINEARSYSTEM_BORDERED_H_

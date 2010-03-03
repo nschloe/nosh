@@ -39,7 +39,7 @@
 typedef Tpetra::Vector<double_complex, Thyra::Ordinal> ComplexVector;
 
 namespace GL {
-  namespace LinearSystem {
+  namespace LocaSystem {
 
 class Default:
             public AbstractStateWriter,
@@ -216,7 +216,7 @@ private:
     unsigned int maxNumDigits_;
 };
 
-  } // namespace LinearSystem
+  } // namespace LocaSystem
 } // namespace GL
 
 #endif // GLSYSTEM_H

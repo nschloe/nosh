@@ -26,7 +26,7 @@
 
 #include "DomainSquare.h"
 
-#include "GL_LinearSystem_Bordered.h"
+#include "GL_LocaSystem_Bordered.h"
 #include "GL_IO_SaveEigenData.h"
 
 #include "GridReader.h"
@@ -234,14 +234,14 @@ main ( int argc, char *argv[] )
 
     GinzburgLandau glProblem = GinzburgLandau ( glOperator );
 
-    Teuchos::RCP<GL::LinearSystem::Bordered> glsystem;
+    Teuchos::RCP<GL::LocaSystem::Bordered> glsystem;
 
     Teuchos::ParameterList & stepperList = paramList->sublist ( "LOCA" ).sublist ( "Stepper" );
     int maxLocaSteps = stepperList.get<int> ( "Max Steps" );
 
     try
     {
-        glsystem = Teuchos::rcp ( new GL::LinearSystem::Bordered ( glProblem,
+        glsystem = Teuchos::rcp ( new GL::LocaSystem::Bordered ( glProblem,
                                   eComm,
                                   psi,
                                   outputDirectory.string(),

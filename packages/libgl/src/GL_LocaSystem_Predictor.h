@@ -1,7 +1,7 @@
 #ifndef GLPREDICTORSYSTEM_H
 #define GLPREDICTORSYSTEM_H
 
-#include "GL_LinearSystem_Bordered.h"
+#include "GL_LocaSystem_Bordered.h"
 #include "AbstractStateWriter.h"
 
 #include <Epetra_Comm.h>
@@ -34,7 +34,7 @@
 typedef Tpetra::Vector<double_complex, Thyra::Ordinal> ComplexVector;
 
 namespace GL {
-  namespace LinearSystem {
+  namespace LocaSystem {
 
 class Predictor:
         public LOCA::Epetra::Interface::Required,
@@ -189,7 +189,7 @@ private:
 
 };
 
-  } // namespace LinearSystem
+  } // namespace LocaSystem
 } // namespace GL
 
 #endif // GLPREDICTORSYSTEM_H

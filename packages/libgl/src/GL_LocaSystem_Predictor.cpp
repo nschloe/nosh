@@ -1,4 +1,4 @@
-#include "GL_LinearSystem_Predictor.h"
+#include "GL_LocaSystem_Predictor.h"
 
 #include <Epetra_Export.h>
 #include <Epetra_CrsMatrix.h>
@@ -28,7 +28,7 @@ typedef std::complex<double> double_complex;
 
 // =============================================================================
 // Default constructor
-GL::LinearSystem::Predictor::Predictor ( GinzburgLandau::GinzburgLandau &gl,
+GL::LocaSystem::Predictor::Predictor ( GinzburgLandau::GinzburgLandau &gl,
                                        const Teuchos::RCP<const Epetra_Comm> eComm,
                                        const Teuchos::RCP<ComplexVector> psi,
                                        const Teuchos::RCP<ComplexVector> tangent,
@@ -39,7 +39,7 @@ GL::LinearSystem::Predictor::Predictor ( GinzburgLandau::GinzburgLandau &gl,
                                        const std::string solutionFileNameBase,
                                        const std::string nullvectorFileNameBase
                                      ) :
-        glSystem_ ( Teuchos::rcp ( new GL::LinearSystem::Bordered ( gl,
+        glSystem_ ( Teuchos::rcp ( new GL::LocaSystem::Bordered ( gl,
                                    eComm,
                                    psi,
                                    outputDir,
@@ -67,12 +67,12 @@ GL::LinearSystem::Predictor::Predictor ( GinzburgLandau::GinzburgLandau &gl,
 }
 // =============================================================================
 // Destructor
-GL::LinearSystem::Predictor::~Predictor()
+GL::LocaSystem::Predictor::~Predictor()
 {
 }
 // =============================================================================
 bool
-GL::LinearSystem::Predictor::computeF ( const Epetra_Vector &xExtended,
+GL::LocaSystem::Predictor::computeF ( const Epetra_Vector &xExtended,
                               Epetra_Vector &FVecExtended,
                               const NOX::Epetra::Interface::Required::FillType fillFlag )
 {
@@ -119,7 +119,7 @@ GL::LinearSystem::Predictor::computeF ( const Epetra_Vector &xExtended,
     return true;
 }
 // =============================================================================
-bool GL::LinearSystem::Predictor::computeJacobian ( const Epetra_Vector &x, Epetra_Operator &Jac )
+bool GL::LocaSystem::Predictor::computeJacobian ( const Epetra_Vector &x, Epetra_Operator &Jac )
 {
     // compute the values of the Jacobian
     createJacobian ( x );
@@ -133,7 +133,7 @@ bool GL::LinearSystem::Predictor::computeJacobian ( const Epetra_Vector &x, Epet
     return true;
 }
 // =============================================================================
-bool GL::LinearSystem::Predictor::computePreconditioner ( const Epetra_Vector &x,
+bool GL::LocaSystem::Predictor::computePreconditioner ( const Epetra_Vector &x,
         Epetra_Operator &Prec,
         Teuchos::ParameterList *precParams )
 {
@@ -144,24 +144,24 @@ bool GL::LinearSystem::Predictor::computePreconditioner ( const Epetra_Vector &x
 }
 // =============================================================================
 Teuchos::RCP<Epetra_Vector>
-GL::LinearSystem::Predictor::getSolution() const
+GL::LocaSystem::Predictor::getSolution() const
 {
     return initialSolution_;
 }
 // =============================================================================
 Teuchos::RCP<Epetra_CrsMatrix>
-GL::LinearSystem::Predictor::getJacobian() const
+GL::LocaSystem::Predictor::getJacobian() const
 {
     return jacobian_;
 }
 // =============================================================================
 Teuchos::RCP<Epetra_CrsMatrix>
-GL::LinearSystem::Predictor::getPreconditioner() const
+GL::LocaSystem::Predictor::getPreconditioner() const
 {
     return preconditioner_;
 }
 // =============================================================================
-bool GL::LinearSystem::Predictor::createJacobian ( const Epetra_Vector &xExtended )
+bool GL::LocaSystem::Predictor::createJacobian ( const Epetra_Vector &xExtended )
 {
     // approximate df/dH0 by finite difference
     double origH0 = glSystem_->getH0();
@@ -252,7 +252,7 @@ bool GL::LinearSystem::Predictor::createJacobian ( const Epetra_Vector &xExtende
 }
 // =============================================================================
 void
-GL::LinearSystem::Predictor::PutMyValues ( Teuchos::RCP<Epetra_CrsMatrix> mat,
+GL::LocaSystem::Predictor::PutMyValues ( Teuchos::RCP<Epetra_CrsMatrix> mat,
                                  int row,
                                  int numEntries,
                                  double* values,
@@ -269,7 +269,7 @@ GL::LinearSystem::Predictor::PutMyValues ( Teuchos::RCP<Epetra_CrsMatrix> mat,
 }
 // =============================================================================
 void
-GL::LinearSystem::Predictor::PutGlobalValues ( Teuchos::RCP<Epetra_CrsMatrix> mat,
+GL::LocaSystem::Predictor::PutGlobalValues ( Teuchos::RCP<Epetra_CrsMatrix> mat,
                                      int     row,
                                      int     numEntries,
                                      double* values,
@@ -287,7 +287,7 @@ GL::LinearSystem::Predictor::PutGlobalValues ( Teuchos::RCP<Epetra_CrsMatrix> ma
 // =============================================================================
 // function used by LOCA
 void
-GL::LinearSystem::Predictor::setParameters ( const LOCA::ParameterVector &p )
+GL::LocaSystem::Predictor::setParameters ( const LOCA::ParameterVector &p )
 {
     TEST_FOR_EXCEPTION ( !p.isParameter ( "H0" ),
                          std::logic_error,
@@ -309,20 +309,20 @@ GL::LinearSystem::Predictor::setParameters ( const LOCA::ParameterVector &p )
 }
 // =============================================================================
 void
-GL::LinearSystem::Predictor::setLocaStepper ( const Teuchos::RCP<const LOCA::Stepper> stepper )
+GL::LocaSystem::Predictor::setLocaStepper ( const Teuchos::RCP<const LOCA::Stepper> stepper )
 {
     glSystem_->setLocaStepper ( stepper );
 }
 // =============================================================================
 void
-GL::LinearSystem::Predictor::releaseLocaStepper()
+GL::LocaSystem::Predictor::releaseLocaStepper()
 {
     glSystem_->releaseLocaStepper();
 }
 // =============================================================================
 // function used by LOCA
 void
-GL::LinearSystem::Predictor::printSolution ( const Epetra_Vector &xExtended,
+GL::LocaSystem::Predictor::printSolution ( const Epetra_Vector &xExtended,
                                    double conParam )
 {
     Epetra_Vector xSliced ( *sliceMap_ );
@@ -353,13 +353,13 @@ GL::LinearSystem::Predictor::printSolution ( const Epetra_Vector &xExtended,
 }
 // =============================================================================
 // function used by LOCA
-void GL::LinearSystem::Predictor::setOutputDir ( const string &directory )
+void GL::LocaSystem::Predictor::setOutputDir ( const string &directory )
 {
     glSystem_->setOutputDir ( directory );
 }
 // =============================================================================
 Teuchos::RCP<Epetra_Map>
-GL::LinearSystem::Predictor::createExtendedMap ( const Epetra_BlockMap & sliceMap )
+GL::LocaSystem::Predictor::createExtendedMap ( const Epetra_BlockMap & sliceMap )
 {
     // fill up realMapGIDs
     int numMyElements = sliceMap.NumMyElements();

@@ -1,11 +1,11 @@
 /*
- * GL::LinearSystem::Bordered.cpp
+ * GL::LocaSystem::Bordered.cpp
  *
  *  Created on: Dec 16, 2009
  *      Author: Nico Schl\"omer
  */
 
-#include "GL_LinearSystem_Bordered.h"
+#include "GL_LocaSystem_Bordered.h"
 
 #include <Epetra_Export.h>
 #include <Epetra_CrsMatrix.h>
@@ -35,7 +35,7 @@ typedef std::complex<double> double_complex;
 
 // =============================================================================
 // Default constructor
-GL::LinearSystem::Bordered::Bordered ( GinzburgLandau::GinzburgLandau &gl,
+GL::LocaSystem::Bordered::Bordered ( GinzburgLandau::GinzburgLandau &gl,
                                        const Teuchos::RCP<const Epetra_Comm> eComm,
                                        const Teuchos::RCP<const ComplexVector> psi,
                                        const std::string outputDir,
@@ -70,12 +70,12 @@ GL::LinearSystem::Bordered::Bordered ( GinzburgLandau::GinzburgLandau &gl,
 }
 // =============================================================================
 // Destructor
-GL::LinearSystem::Bordered::~Bordered()
+GL::LocaSystem::Bordered::~Bordered()
 {
 }
 // =============================================================================
 bool
-GL::LinearSystem::Bordered::computeF ( const Epetra_Vector & x,
+GL::LocaSystem::Bordered::computeF ( const Epetra_Vector & x,
                                        Epetra_Vector       & FVec,
                                        const NOX::Epetra::Interface::Required::FillType fillFlag )
 {
@@ -119,7 +119,7 @@ GL::LinearSystem::Bordered::computeF ( const Epetra_Vector & x,
 }
 // =============================================================================
 Teuchos::RCP<Epetra_Map>
-GL::LinearSystem::Bordered::createExtendedRealMap ( const Epetra_BlockMap & realMap ) const
+GL::LocaSystem::Bordered::createExtendedRealMap ( const Epetra_BlockMap & realMap ) const
 {
     // fill up realMapGIDs
     int numMyElements = realMap.NumMyElements();
@@ -145,7 +145,7 @@ GL::LinearSystem::Bordered::createExtendedRealMap ( const Epetra_BlockMap & real
 }
 // =============================================================================
 bool
-GL::LinearSystem::Bordered::computeJacobian ( const Epetra_Vector & x,
+GL::LocaSystem::Bordered::computeJacobian ( const Epetra_Vector & x,
                                               Epetra_Operator     & Jac
                                             )
 {
@@ -166,7 +166,7 @@ GL::LinearSystem::Bordered::computeJacobian ( const Epetra_Vector & x,
 }
 // =============================================================================
 bool
-GL::LinearSystem::Bordered::computePreconditioner ( const Epetra_Vector    & x,
+GL::LocaSystem::Bordered::computePreconditioner ( const Epetra_Vector    & x,
                                                 Epetra_Operator        & Prec,
                                                 Teuchos::ParameterList * precParams )
 {
@@ -177,26 +177,26 @@ GL::LinearSystem::Bordered::computePreconditioner ( const Epetra_Vector    & x,
 }
 // =============================================================================
 Teuchos::RCP<Epetra_Vector>
-GL::LinearSystem::Bordered::getSolution() const
+GL::LocaSystem::Bordered::getSolution() const
 {
     return solution_;
 }
 // =============================================================================
 Teuchos::RCP<Epetra_CrsMatrix>
-GL::LinearSystem::Bordered::getJacobian() const
+GL::LocaSystem::Bordered::getJacobian() const
 {
     return jacobian_;
 }
 // =============================================================================
 Teuchos::RCP<Epetra_CrsMatrix>
-GL::LinearSystem::Bordered::getPreconditioner() const
+GL::LocaSystem::Bordered::getPreconditioner() const
 {
     return preconditioner_;
 }
 // =============================================================================
 // It also incorporates a phase condition.
 void
-GL::LinearSystem::Bordered::createJacobian ( const Epetra_Vector & x )
+GL::LocaSystem::Bordered::createJacobian ( const Epetra_Vector & x )
 {
     TEST_FOR_EXCEPTION ( !extendedMap_.is_valid_ptr() || extendedMap_.is_null(),
                          std::logic_error,
@@ -241,7 +241,7 @@ GL::LinearSystem::Bordered::createJacobian ( const Epetra_Vector & x )
 }
 // =============================================================================
 bool
-GL::LinearSystem::Bordered::computeShiftedMatrix ( double alpha,
+GL::LocaSystem::Bordered::computeShiftedMatrix ( double alpha,
                                                    double beta,
                                                    const Epetra_Vector   & x,
                                                    Epetra_Operator & A )
@@ -272,26 +272,26 @@ GL::LinearSystem::Bordered::computeShiftedMatrix ( double alpha,
 // =============================================================================
 // function used by LOCA
 void
-GL::LinearSystem::Bordered::setParameters ( const LOCA::ParameterVector &p )
+GL::LocaSystem::Bordered::setParameters ( const LOCA::ParameterVector &p )
 {
     glSystem_.setParameters ( p );
 }
 // =============================================================================
 void
-GL::LinearSystem::Bordered::setLocaStepper ( const Teuchos::RCP<const LOCA::Stepper> stepper )
+GL::LocaSystem::Bordered::setLocaStepper ( const Teuchos::RCP<const LOCA::Stepper> stepper )
 {
     glSystem_.setLocaStepper ( stepper );
 }
 // =============================================================================
 void
-GL::LinearSystem::Bordered::releaseLocaStepper()
+GL::LocaSystem::Bordered::releaseLocaStepper()
 {
     glSystem_.releaseLocaStepper();
 }
 // =============================================================================
 // function used by LOCA
 void
-GL::LinearSystem::Bordered::printSolution ( const  Epetra_Vector &x,
+GL::LocaSystem::Bordered::printSolution ( const  Epetra_Vector &x,
                                         double conParam )
 {
     // strip off the phase constraint
@@ -302,13 +302,13 @@ GL::LinearSystem::Bordered::printSolution ( const  Epetra_Vector &x,
 }
 // =============================================================================
 // function used by LOCA
-void GL::LinearSystem::Bordered::setOutputDir ( const string &directory )
+void GL::LocaSystem::Bordered::setOutputDir ( const string &directory )
 {
     glSystem_.setOutputDir ( directory );
 }
 // =============================================================================
 void
-GL::LinearSystem::Bordered::writeSolutionToFile ( const Epetra_Vector & x,
+GL::LocaSystem::Bordered::writeSolutionToFile ( const Epetra_Vector & x,
                                               const std::string   & filePath
                                             ) const
 {
@@ -320,7 +320,7 @@ GL::LinearSystem::Bordered::writeSolutionToFile ( const Epetra_Vector & x,
 }
 // =============================================================================
 void
-GL::LinearSystem::Bordered::writeAbstractStateToFile ( const Epetra_Vector & x,
+GL::LocaSystem::Bordered::writeAbstractStateToFile ( const Epetra_Vector & x,
                                                    const std::string   & filePath
                                                  ) const
 {
@@ -332,7 +332,7 @@ GL::LinearSystem::Bordered::writeAbstractStateToFile ( const Epetra_Vector & x,
 }
 // =============================================================================
 Teuchos::RCP<const Teuchos::Comm<int> >
-GL::LinearSystem::Bordered::create_CommInt ( const Teuchos::RCP<const Epetra_Comm> &epetraComm )
+GL::LocaSystem::Bordered::create_CommInt ( const Teuchos::RCP<const Epetra_Comm> &epetraComm )
 {
     using Teuchos::RCP;
     using Teuchos::rcp;
@@ -369,43 +369,43 @@ GL::LinearSystem::Bordered::create_CommInt ( const Teuchos::RCP<const Epetra_Com
 // =============================================================================
 // TODO delete?
 const Teuchos::RCP<const GL::Komplex>
-GL::LinearSystem::Bordered::getGlKomplex() const
+GL::LocaSystem::Bordered::getGlKomplex() const
 {
     return glSystem_.getGlKomplex();
 }
 // =============================================================================
 double
-GL::LinearSystem::Bordered::getH0() const
+GL::LocaSystem::Bordered::getH0() const
 {
     return glSystem_.getH0();
 }
 // =============================================================================
 const Teuchos::RCP<const Epetra_Map>
-GL::LinearSystem::Bordered::getExtendedMap() const
+GL::LocaSystem::Bordered::getExtendedMap() const
 {
     return extendedMap_;
 }
 // =============================================================================
 void
-GL::LinearSystem::Bordered::setH0 ( const double h0 )
+GL::LocaSystem::Bordered::setH0 ( const double h0 )
 {
     glSystem_.setH0 ( h0 );
 }
 // =============================================================================
 void
-GL::LinearSystem::Bordered::setScaling ( const double scaling )
+GL::LocaSystem::Bordered::setScaling ( const double scaling )
 {
     glSystem_.setScaling ( scaling );
 }
 // =============================================================================
 void
-GL::LinearSystem::Bordered::setChi ( const double chi )
+GL::LocaSystem::Bordered::setChi ( const double chi )
 {
     glSystem_.setChi ( chi );
 }
 // =============================================================================
 void
-GL::LinearSystem::Bordered::fillBorderedMatrix ( const Teuchos::RCP<      Epetra_CrsMatrix> & extendedMatrix,
+GL::LocaSystem::Bordered::fillBorderedMatrix ( const Teuchos::RCP<      Epetra_CrsMatrix> & extendedMatrix,
                                              const Teuchos::RCP<const Epetra_CrsMatrix> & regularMatrix,
                                              const Epetra_Vector                        & rightBorder,
                                              // TODO Declare the following const as soon as Trilinos allows (ReplaceGlobalValues)
@@ -472,7 +472,7 @@ GL::LinearSystem::Bordered::fillBorderedMatrix ( const Teuchos::RCP<      Epetra
 }
 // =============================================================================
 int
-GL::LinearSystem::Bordered::PutRow ( const Teuchos::RCP<Epetra_CrsMatrix> A,
+GL::LocaSystem::Bordered::PutRow ( const Teuchos::RCP<Epetra_CrsMatrix> A,
                                      const int                            globalRow,
                                      const int                            numIndices,
                                      double                             * values,
