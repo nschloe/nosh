@@ -1,5 +1,3 @@
-ENABLE_LANGUAGE( CXX )
-
 SET ( gl_SRCS
       GL_MagneticVectorPotential_Centered.cpp
       ginzburgLandau.cpp
@@ -13,21 +11,17 @@ SET ( gl_SRCS
       GL_LocaSystem_Default.cpp
       GL_LocaSystem_Bordered.cpp
       GL_LocaSystem_Predictor.cpp
+      GL_Constraint_MinDist.cpp
       GL_Perturbation_Quadrants.cpp
       GL_Perturbation_Virtual.cpp
       AbstractStateWriter.cpp
     )
 
-INCLUDE( SetTrilinosVariables REQUIRED )
-INCLUDE_DIRECTORIES( ${Trilinos_INCLUDE_DIR} )
+FIND_PACKAGE( Trilinos REQUIRED )
+INCLUDE_DIRECTORIES( ${Trilinos_INCLUDE_DIRS} )
 
-IF(MPI_COMPILED)
-    FIND_PACKAGE( MPI REQUIRED )
-    INCLUDE_DIRECTORIES( ${MPI_INCLUDE_PATH} )
-ENDIF(MPI_COMPILED)
-
-INCLUDE_DIRECTORIES( ${ginzburg-landau_SOURCE_DIR}/packages/libcartesian/src )
-INCLUDE_DIRECTORIES( ${ginzburg-landau_SOURCE_DIR}/packages/libio/src )
+INCLUDE_DIRECTORIES( ${ginzburg-landau_SOURCE_DIR}/packages/libcartesian/src
+                     ${ginzburg-landau_SOURCE_DIR}/packages/libio/src )
 
 ADD_LIBRARY ( gl STATIC
               ${gl_SRCS} )

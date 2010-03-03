@@ -1,30 +1,16 @@
-ENABLE_LANGUAGE( CXX )
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
-IF(MPI_COMPILED)
-    FIND_PACKAGE( MPI REQUIRED )
-    SET( LINK_LIBRARIES ${LINK_LIBRARIES}
-                        ${MPI_LIBRARY}    )
-    INCLUDE_DIRECTORIES ( ${MPI_INCLUDE_PATH} )
-ENDIF(MPI_COMPILED)
-
-FIND_PACKAGE( LOCAEpetra REQUIRED )
-FIND_PACKAGE( NOXEpetra  REQUIRED )
-
+FIND_PACKAGE( NOX REQUIRED PATHS /opt/trilinos/dev/gcc/4.3.4/ )
 FIND_PACKAGE( VTK REQUIRED )
-INCLUDE_DIRECTORIES( ${VTK_INCLUDE_DIRS} )
-LINK_DIRECTORIES( ${VTK_LIBRARY_DIRS} )
+FIND_PACKAGE( Boost COMPONENTS system filesystem REQUIRED )
+SET(Boost_USE_STATIC_LIBS   ON)
+SET(Boost_USE_MULTITHREADED ON)
 
-INCLUDE_DIRECTORIES ( ${Trilinos_INCLUDE_DIR} )
-
-INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/packages/libgl/src
-                      ${ginzburg-landau_SOURCE_DIR}/packages/libcartesian/src
-                      ${ginzburg-landau_SOURCE_DIR}/packages/libio/src )
+FIND_LIBRARY( GFORTRAN ${GFORTRAN_LIBRARY_NAMES}
+              HINTS ${GFORTRAN_LIBRARY_DIRS}    )
 
 SET ( ginzburg_landau_SRCS
       glTurningPointContinuation.cpp )
-
-ADD_EXECUTABLE ( glTurningPointContinuation.out
-                 ${ginzburg_landau_SRCS} )
 
 SET ( internal_LIBS
       gl
@@ -32,28 +18,26 @@ SET ( internal_LIBS
       io
     )
 
-# ==============================================================================
-# Find other external libs
-FIND_PACKAGE( Boost COMPONENTS system filesystem REQUIRED )
-INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIRS} )
-SET(Boost_USE_STATIC_LIBS   ON)
-SET(Boost_USE_MULTITHREADED ON)
-SET( LINK_LIBRARIES ${LINK_LIBRARIES}
-                    ${Boost_LIBRARIES} )
-# ------------------------------------------------------------------------------
-FIND_LIBRARY( GFORTRAN ${GFORTRAN_LIBRARY_NAMES}
-              HINTS ${GFORTRAN_LIBRARY_DIRS}    )
-SET( LINK_LIBRARIES ${LINK_LIBRARIES}
-                    ${GFORTRAN} )
-# ==============================================================================
+INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/packages/libio/src
+                      ${ginzburg-landau_SOURCE_DIR}/packages/libcartesian/src
+                      ${ginzburg-landau_SOURCE_DIR}/packages/libgl/src
+                      ${VTK_INCLUDE_DIRS}
+                      ${Trilinos_INCLUDE_DIRS}
+                      ${Trilinos_TPL_INCLUDE_DIRS} )
 
+LINK_DIRECTORIES( ${Boost_LIBRARY_DIRS}
+                  ${VTK_LIBRARY_DIRS}
+                  ${Trilinos_LIBRARY_DIRS}
+                  ${Trilinos_TPL_LIBRARY_DIRS} )
 
-# ==============================================================================
-# Set executable linking information.
-TARGET_LINK_LIBRARIES ( glTurningPointContinuation.out
-                        ${internal_LIBS}
-                        LOCAEpetra
-                        NOXEpetra
-                        ${LINK_LIBRARIES}
-                      )
-# ==============================================================================
+SET( MY_EXECUTABLE "glTurningPointContinuation.out" )
+
+ADD_EXECUTABLE( ${MY_EXECUTABLE}
+                ${ginzburg_landau_SRCS})
+
+TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
+                       ${internal_LIBS}
+                       ${Trilinos_LIBRARIES}
+                       ${Trilinos_TPL_LIBRARIES}
+                       ${Boost_LIBRARIES}
+                       ${GFORTRAN} )

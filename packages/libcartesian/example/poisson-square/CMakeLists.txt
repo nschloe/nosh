@@ -1,53 +1,38 @@
-INCLUDE( ${ginzburg-landau_SOURCE_DIR}/cmake-system.txt REQUIRED )
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
-ENABLE_LANGUAGE( CXX )
+FIND_PACKAGE( NOX  REQUIRED )
+INCLUDE_DIRECTORIES ( ${NOX_INCLUDE_DIRS} )
+LINK_DIRECTORIES( ${Trilinos_LIBRARY_DIRS}
+                  ${Trilinos_TPL_LIBRARY_DIRS} )
 
-IF(MPI_COMPILED)
-    FIND_PACKAGE( MPI REQUIRED )
-    SET( LINK_LIBRARIES ${LINK_LIBRARIES}
-                        ${MPI_LIBRARY}    )
-    INCLUDE_DIRECTORIES ( ${MPI_INCLUDE_PATH} )
-ENDIF(MPI_COMPILED)
+FIND_PACKAGE( Boost COMPONENTS filesystem REQUIRED )
+INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIRS} )
+SET(Boost_USE_STATIC_LIBS   ON)
+SET(Boost_USE_MULTITHREADED ON)
+LINK_DIRECTORIES( ${Boost_LIBRARY_DIRS} )
 
-FIND_PACKAGE( LOCA      REQUIRED )
-FIND_PACKAGE( NOXEpetra REQUIRED )
-
-
-INCLUDE_DIRECTORIES ( ${Trilinos_INCLUDE_DIR} )
 
 INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/packages/libio/src
                       ${ginzburg-landau_SOURCE_DIR}/packages/libcartesian/src
-		    )
+                    )
 
 SET ( poisson_square_SRCS
       main.cpp )
-
-ADD_EXECUTABLE ( poisson-square.out
-                 ${poisson_square_SRCS} )
 
 SET ( internal_LIBS
       cartesian
       io
     )
 
-# ==============================================================================
-FIND_PACKAGE( Boost COMPONENTS filesystem REQUIRED )
-INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIRS} )
-SET(Boost_USE_STATIC_LIBS   ON)
-SET(Boost_USE_MULTITHREADED ON)
-SET( LINK_LIBRARIES ${LINK_LIBRARIES}
-	            ${Boost_LIBRARIES} )
-# ------------------------------------------------------------------------------
-FIND_LIBRARY( GFORTRAN ${GFORTRAN_LIBNAME}
-              HINTS ${GFORTRAN_DIR}    )
-SET( LINK_LIBRARIES ${LINK_LIBRARIES}
-                    ${GFORTRAN} )
-# ==============================================================================
-# Set executable linking information.
-TARGET_LINK_LIBRARIES ( poisson-square.out
-			${internal_LIBS}
-			LOCA
-			NOXEpetra
-			${LINK_LIBRARIES}
+SET ( MY_EXECUTABLE "poisson-square.out" )
+
+ADD_EXECUTABLE ( ${MY_EXECUTABLE}
+                 ${poisson_square_SRCS} )
+
+TARGET_LINK_LIBRARIES ( ${MY_EXECUTABLE}
+                        ${internal_LIBS}
+                       ${Trilinos_LIBRARIES}
+                       ${Trilinos_TPL_LIBRARIES}
+                       ${Boost_LIBRARIES}
+                       ${GFORTRAN} )
                       )
-# ==============================================================================

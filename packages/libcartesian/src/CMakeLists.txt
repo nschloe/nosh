@@ -1,5 +1,3 @@
-ENABLE_LANGUAGE( CXX )
-
 SET ( cartesian_SRCS
       DomainVirtual.cpp
       DomainEllipse.cpp
@@ -15,8 +13,8 @@ SET ( cartesian_SRCS
       GridUniformSquare.cpp
       GridReader.cpp )
 
-INCLUDE( SetTrilinosVariables REQUIRED )
-INCLUDE_DIRECTORIES( ${Trilinos_INCLUDE_DIR} )
+FIND_PACKAGE( Trilinos REQUIRED )
+INCLUDE_DIRECTORIES( ${Trilinos_INCLUDE_DIRS} )
 
 FIND_PACKAGE( VTK REQUIRED )
 INCLUDE_DIRECTORIES( ${VTK_INCLUDE_DIRS} )

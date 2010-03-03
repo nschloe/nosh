@@ -76,6 +76,33 @@ GL::Komplex::real2complex ( const Epetra_Vector & x ) const
 }
 // =============================================================================
 // converts a real-valued vector to a complex-valued psi vector
+// Teuchos::RCP<ComplexMultiVector>
+// GL::Komplex::real2complex ( const Epetra_MultiVector & x ) const
+// {
+//     TEST_FOR_EXCEPTION ( !RealMap_.is_valid_ptr() || RealMap_.is_null(),
+//                          std::logic_error,
+//                          "RealMap_ not properly initialized." );
+// 
+//     TEST_FOR_EXCEPTION ( !x.Map().SameAs ( *RealMap_ ),
+//                          std::logic_error,
+//                          "Maps for real-valued vectors do not coincide. "
+//                          << "Check, for example, the number of elements "
+//                          << "(" << x.Map().NumGlobalElements() << " for x vs. "
+//                          << RealMap_->NumGlobalElements() << " for RealMap_)." );
+// 
+//     TEST_FOR_EXCEPTION ( !ComplexMap_.is_valid_ptr() || ComplexMap_.is_null(),
+//                          std::logic_error,
+//                          "ComplexMap_ has not been properly initialized." );
+// 
+//     Teuchos::RCP<ComplexVector> z = Teuchos::rcp ( new ComplexVector ( ComplexMap_ ) );
+//     Teuchos::ArrayRCP<double_complex> zView = z->get1dViewNonConst();
+//     for ( unsigned int k=0; k < z->getLocalLength(); k++ )
+//         zView[k] = double_complex ( x[2*k], x[2*k+1] );
+// 
+//     return z;
+// }
+// =============================================================================
+// converts a real-valued vector to a complex-valued psi vector
 Teuchos::RCP<Epetra_Vector>
 GL::Komplex::complex2real ( const ComplexVector & complexVec ) const
 {

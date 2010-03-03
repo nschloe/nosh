@@ -9,8 +9,6 @@
 
 #include "WriterFactory.h"
 
-// #include <Teuchos_SerialDenseMatrix.hpp>
-
 #include <Teuchos_ArrayView.hpp>
 
 // ============================================================================

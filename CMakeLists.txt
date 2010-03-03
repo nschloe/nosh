@@ -1,7 +1,11 @@
-cmake_minimum_required( VERSION 2.6 )
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
-# set compiler variables *before declaring the project
-INCLUDE( SetTrilinosVariables )
+FIND_PACKAGE( Trilinos REQUIRED PATHS /opt/trilinos/dev/gcc/4.3.4/ )
+
+# set compilers *before the PROJECT is declared
+SET( CMAKE_C_COMPILER ${Trilinos_C_COMPILER} )
+SET( CMAKE_CXX_COMPILER ${Trilinos_CXX_COMPILER} )
+SET( CMAKE_Fortran_COMPILER ${Trilinos_Fortran_COMPILER} )
 
 PROJECT( ginzburg-landau )
 

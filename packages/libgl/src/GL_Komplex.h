@@ -16,6 +16,7 @@
 
 typedef std::complex<double> double_complex;
 typedef Tpetra::Vector<double_complex,Thyra::Ordinal> ComplexVector;
+typedef Tpetra::MultiVector<double_complex,Thyra::Ordinal> ComplexMultiVector;
 
 namespace GL {
 
@@ -41,6 +42,9 @@ public:
     Teuchos::RCP<ComplexVector>
     real2complex ( const Epetra_Vector & x ) const;
 
+//     Teuchos::RCP<ComplexMultiVector>
+//     real2complex ( const Epetra_MultiVector & x ) const;
+    
     //! Converts a complex-valued vector to a real-valued vector.
     Teuchos::RCP<Epetra_Vector>
     complex2real ( const ComplexVector &complexVec ) const;

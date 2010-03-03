@@ -1,5 +1,3 @@
-ENABLE_LANGUAGE( CXX )
-
 SET ( gl_SRCS
       WriterFactory.cpp
       AbstractImageWriter.cpp
@@ -11,8 +9,8 @@ SET ( gl_SRCS
       VtkReader.cpp
     )
 
-INCLUDE( SetTrilinosVariables REQUIRED )
-INCLUDE_DIRECTORIES( ${Trilinos_INCLUDE_DIR} )
+FIND_PACKAGE( Trilinos REQUIRED )
+INCLUDE_DIRECTORIES( ${Trilinos_INCLUDE_DIRS} )
 
 FIND_PACKAGE( Boost REQUIRED )
 INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIRS} )
