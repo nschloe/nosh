@@ -1,6 +1,6 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
-FIND_PACKAGE( Trilinos REQUIRED PATHS /opt/trilinos/dev/gcc/4.3.4/ )
+FIND_PACKAGE( Trilinos REQUIRED PATHS ${TRILINOS_ROOT} )
 
 # set compilers *before the PROJECT is declared
 SET( CMAKE_C_COMPILER ${Trilinos_C_COMPILER} )
