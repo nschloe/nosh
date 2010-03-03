@@ -53,6 +53,19 @@ GL::Operator::Virtual::setH0 ( const double h0 )
     A_->setH0 ( h0 );
 }
 // =============================================================================
+void
+GL::Operator::Virtual::setParameters ( const LOCA::ParameterVector & p )
+{
+
+    TEST_FOR_EXCEPTION ( !p.isParameter ( "chi" ),
+                         std::logic_error,
+                         "Label \"chi\" not valid." );
+    chi_ = p.getValue ( "chi" );
+
+    A_->setParameters ( p );
+    grid_->updateScaling ( p );
+}
+// =============================================================================
 double
 GL::Operator::Virtual::getH0 () const
 {

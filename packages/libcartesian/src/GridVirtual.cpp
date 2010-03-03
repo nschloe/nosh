@@ -52,6 +52,17 @@ GridVirtual::updateScaling ( const double scaling )
     return;
 }
 // ============================================================================
+void
+GridVirtual::updateScaling ( const LOCA::ParameterVector & p)
+{    
+    TEST_FOR_EXCEPTION ( !p.isParameter ( "scaling" ),
+                         std::logic_error,
+                         "Label \"scaling\" not valid." );
+    double scaling = p.getValue ( "scaling" );
+    updateScaling(scaling);
+    return;
+}
+// ============================================================================
 DoubleTuple
 GridVirtual::getH() const
 {

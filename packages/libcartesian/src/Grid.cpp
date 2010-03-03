@@ -294,6 +294,12 @@ Grid::getDirection ( const UIntTuple & node0,
 }
 // =============================================================================
 Teuchos::RCP<DoubleTuple>
+Grid::getX( const unsigned int k ) const
+{
+    return getX( nodes_[k] );
+}
+// =============================================================================
+Teuchos::RCP<DoubleTuple>
 Grid::getX ( const UIntTuple & i ) const
 {
     Teuchos::RCP<DoubleTuple> x = Teuchos::rcp ( new DoubleTuple() );

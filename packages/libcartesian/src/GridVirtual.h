@@ -17,6 +17,8 @@
 
 #include <Thyra_OperatorVectorTypes.hpp> // For Thyra::Ordinal
 
+#include <LOCA_Parameter_Vector.H>
+
 typedef Tpetra::MultiVector<double              ,Thyra::Ordinal> DoubleMultiVector;
 
 typedef Tpetra::Vector     <std::complex<double>,Thyra::Ordinal> ComplexVector;
@@ -58,6 +60,9 @@ public:
     */
     virtual void
     updateScaling ( const double alpha );
+
+    virtual void
+    updateScaling ( const LOCA::ParameterVector & p );
 
     virtual unsigned int
     getNumGridPoints() const ; //!< Returns the number of grid points.
@@ -104,6 +109,9 @@ public:
     /*! For a given node number \c k, returns the the area of the surrounding cell. */
     virtual double
     cellArea ( unsigned int k ) const = 0;
+
+    virtual Teuchos::RCP<DoubleTuple>
+    getX ( unsigned int k ) const = 0; //!< Returns the value of \f$x\f$.
 
     virtual Teuchos::RCP<DoubleTuple>
     getXLeft ( unsigned int k ) const = 0; //!< Returns the value of \f$x\f$ left of point i.

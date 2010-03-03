@@ -75,6 +75,9 @@ public:
     void
     setScaling ( const double scaling );
 
+    void
+    setParameters( const LOCA::ParameterVector & p );
+
 protected:
     Teuchos::RCP<const ComplexVector> psi_;
     double chi_;

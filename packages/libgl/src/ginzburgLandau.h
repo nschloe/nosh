@@ -9,6 +9,8 @@
 // #include "GridSquare.h"
 #include "GL_MagneticVectorPotential_Centered.h"
 
+#include "GL_Perturbation_Virtual.h"
+
 
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_XMLObject.hpp>
@@ -25,6 +27,10 @@ public:
     /*! Default constructor.*/
     GinzburgLandau ( const Teuchos::RCP<GL::Operator::Virtual> & glOperator );
 
+    /*! Constructor with a specified perturbation.*/
+    GinzburgLandau ( const Teuchos::RCP<GL::Operator::Virtual>  & glOperator,
+	const Teuchos::RCP<GL::Perturbation::Virtual> & perturbation);
+
     /*! Destructor. */
     ~GinzburgLandau();
 
@@ -33,6 +39,9 @@ public:
 
     void
     setChi ( const double chi );
+
+    void 
+    setParameters( const LOCA::ParameterVector & p );
 
     int
     getNumUnknowns() const;
@@ -117,6 +126,8 @@ private:
 
 private:
     const Teuchos::RCP<GL::Operator::Virtual> glOperator_;
+
+    const Teuchos::RCP<GL::Perturbation::Virtual> perturbation_;
 
 private:
     /*! Calculated the coefficients of the jacobian system associated with the

@@ -183,23 +183,25 @@ void
 GL::LocaSystem::Default::setParameters ( const LOCA::ParameterVector & p )
 {
 
-    TEST_FOR_EXCEPTION ( !p.isParameter ( "H0" ),
-                         std::logic_error,
-                         "Label \"H0\" not valid." );
-    double h0 = p.getValue ( "H0" );
-    Gl_.setH0 ( h0 );
-
-    TEST_FOR_EXCEPTION ( !p.isParameter ( "scaling" ),
-                         std::logic_error,
-                         "Label \"scaling\" not valid." );
-    double scaling = p.getValue ( "scaling" );
-    Gl_.setScaling ( scaling );
-
-    if ( p.isParameter ( "chi" ) )
-    {
-        double chi = p.getValue ( "chi" );
-        Gl_.setChi ( chi );
-    }
+  Gl_.setParameters( p );
+//
+//    TEST_FOR_EXCEPTION ( !p.isParameter ( "H0" ),
+//                         std::logic_error,
+//                         "Label \"H0\" not valid." );
+//    double h0 = p.getValue ( "H0" );
+//    Gl_.setH0 ( h0 );
+//
+//    TEST_FOR_EXCEPTION ( !p.isParameter ( "scaling" ),
+//                         std::logic_error,
+//                         "Label \"scaling\" not valid." );
+//    double scaling = p.getValue ( "scaling" );
+//    Gl_.setScaling ( scaling );
+//
+//    if ( p.isParameter ( "chi" ) )
+//    {
+//        double chi = p.getValue ( "chi" );
+//        Gl_.setChi ( chi );
+//    }
 }
 // =============================================================================
 void

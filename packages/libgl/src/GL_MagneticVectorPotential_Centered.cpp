@@ -30,6 +30,23 @@ GL::MagneticVectorPotential::Centered::setEdgeLength( const double edgeLength )
 {
 	edgeLength_ = edgeLength;
 }
+void
+GL::MagneticVectorPotential::Centered::setParameters( const LOCA::ParameterVector & p)
+{
+
+    TEST_FOR_EXCEPTION ( !p.isParameter ( "H0" ),
+                         std::logic_error,
+                         "Label \"H0\" not valid." );
+    h0_ = p.getValue ( "H0" );
+
+    TEST_FOR_EXCEPTION ( !p.isParameter ( "scaling" ),
+                         std::logic_error,
+                         "Label \"scaling\" not valid." );
+    edgeLength_ = p.getValue ( "scaling" );
+
+    return;
+
+}
 // ============================================================================
 double
 GL::MagneticVectorPotential::Centered::getH0() const

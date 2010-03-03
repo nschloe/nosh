@@ -9,6 +9,7 @@
 #define MAGNETICVECTORPOTENTIAL_H_
 
 #include <Teuchos_Array.hpp>
+#include <LOCA_Parameter_Vector.H>
 
 namespace GL {
   namespace MagneticVectorPotential {
@@ -31,6 +32,9 @@ public:
 
   double
   getH0() const;
+
+  void
+  setParameters( const LOCA::ParameterVector & p );
 
   Teuchos::RCP<Teuchos::Array<double> >
   getA(const Teuchos::Array<double> & x ) const;

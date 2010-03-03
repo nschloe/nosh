@@ -13,6 +13,8 @@ SET ( gl_SRCS
       GL_LocaSystem_Default.cpp
       GL_LocaSystem_Bordered.cpp
       GL_LocaSystem_Predictor.cpp
+      GL_Perturbation_Quadrants.cpp
+      GL_Perturbation_Virtual.cpp
       AbstractStateWriter.cpp
     )
 

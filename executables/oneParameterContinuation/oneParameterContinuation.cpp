@@ -31,6 +31,8 @@
 
 #include "GridReader.h"
 
+#include "GL_Perturbation_Quadrants.h"
+
 
 // =============================================================================
 unsigned int
@@ -194,32 +196,39 @@ main ( int argc, char *argv[] )
                       << "Using value as in input guess file, discarding 'H0'."
                       << std::endl;
         }
+        if ( initialGuessList.isParameter ( "chi" ) )
+        {
+            std::cerr << "Warning: Parameter 'chi' *and* input guess file given."
+                      << "Using value as in input guess file, discarding 'chi'."
+                      << std::endl;
+        }
 
     }
     else // no or empty input guess file
     {
-        double scaling = initialGuessList.get<double> ( "scaling" );
-        double H0      = initialGuessList.get<double> ( "H0" );
+      std::cerr << "Give me a file, idiot! " << std::endl;
+        // double scaling = initialGuessList.get<double> ( "scaling" );
+        // double H0      = initialGuessList.get<double> ( "H0" );
 
-        glParameters.set ( "scaling", scaling );
-        glParameters.set ( "H0", H0 );
+        // glParameters.set ( "scaling", scaling );
+        // glParameters.set ( "H0", H0 );
 
-        double edgeLength = 1.0;
-        Teuchos::RCP<DomainVirtual> domain = Teuchos::rcp ( new DomainSquare ( edgeLength ) );
+        // double edgeLength = 1.0;
+        // Teuchos::RCP<DomainVirtual> domain = Teuchos::rcp ( new DomainSquare ( edgeLength ) );
 
-        int    Nx = initialGuessList.get<int> ( "Nx" );
-        double h  = edgeLength / Nx;
-        Teuchos::RCP<GridUniform> grid = Teuchos::rcp ( new GridUniform ( domain, h ) );
-        grid->updateScaling ( scaling );
+        // int    Nx = initialGuessList.get<int> ( "Nx" );
+        // double h  = edgeLength / Nx;
+        // Teuchos::RCP<GridUniform> grid = Teuchos::rcp ( new GridUniform ( domain, h ) );
+        // grid->updateScaling ( scaling );
 
-        // set initial guess
-        int numComplexUnknowns = grid->getNumGridPoints();
-        Teuchos::RCP<Tpetra::Map<Thyra::Ordinal> > complexMap =
-            Teuchos::rcp ( new Tpetra::Map<Thyra::Ordinal> ( numComplexUnknowns, 0, Comm ) );
+        // // set initial guess
+        // int numComplexUnknowns = grid->getNumGridPoints();
+        // Teuchos::RCP<Tpetra::Map<Thyra::Ordinal> > complexMap =
+        //     Teuchos::rcp ( new Tpetra::Map<Thyra::Ordinal> ( numComplexUnknowns, 0, Comm ) );
 
-        psi = Teuchos::rcp ( new ComplexVector ( complexMap ) );
-        double_complex alpha ( 1.0, 0.0 );
-        psi->putScalar ( alpha );
+        // psi = Teuchos::rcp ( new ComplexVector ( complexMap ) );
+        // double_complex alpha ( 1.0, 0.0 );
+        // psi->putScalar ( alpha );
     }
     // ---------------------------------------------------------------------------
 
@@ -232,7 +241,12 @@ main ( int argc, char *argv[] )
     Teuchos::RCP<GL::Operator::Virtual> glOperator =
         Teuchos::rcp ( new GL::Operator::BCCentral ( grid, A ) );
 
-    GinzburgLandau glProblem = GinzburgLandau ( glOperator );
+    // create a perturbation
+    Teuchos::RCP<GL::Perturbation::Virtual> quadrantsPerturbation =
+      Teuchos::rcp ( new GL::Perturbation::Quadrants ( grid ) );
+
+    // TODO: why not make glOperator depend upon perturbation instead?
+    GinzburgLandau glProblem = GinzburgLandau ( glOperator, quadrantsPerturbation );
 
     Teuchos::RCP<GL::LocaSystem::Bordered> glsystem;
 
@@ -348,6 +362,8 @@ main ( int argc, char *argv[] )
     LOCA::ParameterVector locaParams;
     locaParams.addParameter ( "H0", glParameters.get<double> ( "H0" ) );
     locaParams.addParameter ( "scaling", glParameters.get<double> ( "scaling" ) );
+    locaParams.addParameter ( "chi", glParameters.get<double> ( "chi" ) );
+    locaParams.addParameter ( "Epsilon Quadrant 1", glParameters.get<double> ( "Epsilon Quadrant 1" ) );
 
     NOX::Epetra::Vector initialGuess ( soln, NOX::Epetra::Vector::CreateView );
 

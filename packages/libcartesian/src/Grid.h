@@ -63,6 +63,9 @@ public:
     cellArea ( unsigned int k ) const;
 
     virtual Teuchos::RCP<DoubleTuple>
+    getX ( unsigned int k ) const; //!< Returns the value of \f$x\f$. */
+
+    virtual Teuchos::RCP<DoubleTuple>
     getXLeft ( unsigned int k ) const; //!< Returns the value of \f$x\f$ left of point i.
 
     Teuchos::RCP<DoubleTuple>

@@ -7,7 +7,17 @@
 // Class constructor
 GinzburgLandau::GinzburgLandau ( const Teuchos::RCP<GL::Operator::Virtual>  & glOperator
                                ) :
-        glOperator_ ( glOperator )
+        glOperator_ ( glOperator ),
+        perturbation_ ( Teuchos::null )
+{
+}
+
+// =============================================================================
+// Class constructor containing a perturbation
+GinzburgLandau::GinzburgLandau ( const Teuchos::RCP<GL::Operator::Virtual>  & glOperator,
+                                 const Teuchos::RCP<GL::Perturbation::Virtual> & perturbation) :
+        glOperator_ ( glOperator ),
+        perturbation_ ( perturbation )
 {
 }
 // =============================================================================
@@ -41,6 +51,13 @@ GinzburgLandau::setChi ( const double chi )
     glOperator_->setChi ( chi );
 }
 // =============================================================================
+void
+GinzburgLandau::setParameters ( const LOCA::ParameterVector & p )
+{
+    glOperator_->setParameters ( p );
+    perturbation_->setParameters ( p );
+}
+// =============================================================================
 int
 GinzburgLandau::getNumUnknowns() const
 {
@@ -67,6 +84,9 @@ GinzburgLandau::computeGlVector ( const Teuchos::RCP<const ComplexVector> & psi
     {
         int globalIndex = psi->getMap()->getGlobalElement ( k );
         glVecView[k] = glOperator_->getEntry ( globalIndex );
+
+	if ( !perturbation_.is_null() )
+	  glVecView[k] += perturbation_->computePerturbation ( globalIndex );
     }
 
     return glVec;
