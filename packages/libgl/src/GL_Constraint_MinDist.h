@@ -31,7 +31,7 @@
 
 #include <LOCA_MultiContinuation_ConstraintInterfaceMVDX.H>
 
-#include "glSystem.h"
+#include "GL_LocaSystem_Default.h"
 
 namespace GL {
 
@@ -43,18 +43,19 @@ class MinDist:
   public:
 
   // Constructor
-  MinDist( const Teuchos::RCP<GlSystem> & glSystem,
-           const NOX::Abstract::Vector  & initialGuess
+  MinDist( const Teuchos::RCP<GL::LocaSystem::Default> & glSystem,
+           const NOX::Abstract::Vector                 & initialGuess,
+           const LOCA::ParameterVector                 & paramsVector
          );
 
   // Copy constructor
-  MinDist( const GlMinDistConstraint & source,
-                 NOX::CopyType               type = NOX::DeepCop
+  MinDist( const GL::Constraint::MinDist & source,
+                 NOX::CopyType             type = NOX::DeepCopy
          );
 
   // Destructor
   virtual
-  ~GlMinDistConstraint();
+  ~MinDist();
 
   // Copy
   virtual void 
@@ -91,7 +92,7 @@ class MinDist:
 
   //! Compute derivative of constraints w.r.t. supplied parameters.
   virtual NOX::Abstract::Group::ReturnType
-  computeDP(const vector<int>& paramIDs, 
+  computeDP(const vector<int>& paramIDGlMinDistConstraints, 
             NOX::Abstract::MultiVector::DenseMatrix& dgdp, 
             bool isValidG);
 
@@ -123,12 +124,12 @@ class MinDist:
 private:
 
   // Prohibit generation and use of operator=()
-  GlMinDistConstraint& operator=(const GlMinDistConstraint& source);
+  MinDist& operator=(const MinDist& source);
 
 private:
   
   //! ProblemLOCAPrototype problem
-  const Teuchos::RCP<const GlSystem> glSystem_;
+  Teuchos::RCP<const GL::LocaSystem::Default> glSystem_;
 
   //! Constraint values
   NOX::Abstract::MultiVector::DenseMatrix constraints_;
