@@ -28,6 +28,8 @@ GL::Constraint::MinDist ( const Teuchos::RCP <GlSystem> & glSystem,
   glSystem_( glSystem ),
   constraints_(1,1),
   isValidConstraints_(false),
+  // TODO: note that paramsVector must be a LOCA::ParameterVector containing all
+  // parameters, and it should include chi
   paramsVector_(glSystem->GetContinuableParams()),
   psi_(Teuchos::null),
   psiRef_(Teuchos::null)
@@ -57,6 +59,7 @@ GL::Constraint::MinDist::GL::Constraint::MinDist(const GL::Constraint::MinDist& 
   glSystem_(source.glSystem_),
   constraints_(source.constraints_),
   isValidConstraints_(false),
+  // TODO: should we put paramsVector in here?
   psi_(source.psi_->clone(type)),
   psiRef_(source.psiRef_->clone(type))
 {
@@ -124,7 +127,8 @@ GL::Constraint::MinDist::setParams( const vector<int> & paramIDs,
 
   // This would usually be set to FALSE, but in this case, the constraints
   // do not depend of the constraints. Hence, they remain valid.
-  // isValidConstraints_ = false;
+  // TO DO: are you sure it must be set to false??
+  isValidConstraints_ = false;
 }
 // =============================================================================
 NOX::Abstract::Group::ReturnType
