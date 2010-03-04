@@ -1,5 +1,7 @@
-FIND_PACKAGE( NOX REQUIRED )
+# actually only needed: NOX and Tpetra
+FIND_PACKAGE( Trilinos REQUIRED )
 INCLUDE_DIRECTORIES ( ${Trilinos_INCLUDE_DIRS} )
+LINK_DIRECTORIES( ${Trilinos_LIBRARY_DIRS} )
 
 FIND_PACKAGE( VTK REQUIRED )
 INCLUDE_DIRECTORIES( ${VTK_INCLUDE_DIRS} )
@@ -35,7 +37,8 @@ SET ( internal_LIBS
 # Set executable linking information.
 TARGET_LINK_LIBRARIES ( ${MY_EXECUTABLE}
                         ${internal_LIBS}
-                        ${NOX_LIBRARIES}
+                        ${Trilinos_LIBRARIES}
+                        ${Trilinos_TPL_LIBRARIES}
                         ${Boost_LIBRARIES}
                         ${LINK_LIBRARIES}
                       )

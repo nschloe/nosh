@@ -75,7 +75,7 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
 
     // create the operator
     Teuchos::RCP<GL::Operator::Virtual> glOperator =
-        Teuchos::rcp ( new GL::Operator::BCInner ( grid, A ) );
+        Teuchos::rcp ( new GL::Operator::BCCentral ( grid, A ) );
 
     GinzburgLandau glProblem = GinzburgLandau ( glOperator );
 
