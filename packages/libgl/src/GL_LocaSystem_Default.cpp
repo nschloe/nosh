@@ -261,10 +261,9 @@ GL::LocaSystem::Default::printSolution ( const Epetra_Vector &x,
 // =============================================================================
 void
 GL::LocaSystem::Default::printSolutionOneParameterContinuation ( const Teuchos::RCP<const ComplexVector> & psi
-                                                ) const
+                                                               ) const
 {
-    static int conStep = -1;
-    conStep++;
+    int conStep = stepper_->getStepNumber();
     
     stringstream fileName;
     fileName
@@ -285,18 +284,15 @@ GL::LocaSystem::Default::printSolutionOneParameterContinuation ( const Teuchos::
 //
 // The method gets called subsequently in this order.
 void
-GL::LocaSystem::Default::printSolutionTurningPointContinuation ( const Teuchos::RCP<const ComplexVector> & psi
-                                                ) const
+GL::LocaSystem::Default::
+printSolutionTurningPointContinuation ( const Teuchos::RCP<const ComplexVector> & psi
+                                      ) const
 {
     static bool printSolution=false;
-    static int conStep = -1;
+    int conStep = stepper_->getNumTotalSteps();
 
     // alternate between solution and nullvector
     printSolution = !printSolution;
-
-    // increment the step counter only when printing a solution
-    if ( printSolution )
-        conStep++;
 
     // determine file name
     stringstream fileName;

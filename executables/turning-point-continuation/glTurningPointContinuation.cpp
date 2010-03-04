@@ -301,7 +301,8 @@ main ( int argc, char *argv[] )
     Teuchos::RCP<GL::IO::SaveEigenData> glEigenSaver =
         Teuchos::RCP<GL::IO::SaveEigenData> ( new GL::IO::SaveEigenData ( eigenListPtr, outputDirectory.string(),
                                    eigenvaluesFileName, contFileBaseName,
-                                   eigenstateFileNameAppendix, glsystem ) );
+                                   eigenstateFileNameAppendix, glsystem,
+                                   numDigits ( maxLocaSteps ) ) );
 
     Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> glSaveEigenDataStrategy =
         glEigenSaver;

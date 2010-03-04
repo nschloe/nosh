@@ -8,21 +8,24 @@
 #include <LOCA_GlobalData.H>
 
 // =============================================================================
-GL::IO::SaveEigenData::SaveEigenData ( const Teuchos::RCP<Teuchos::ParameterList> eigenParamList,
-                         const std::string  outputDir,
-                         const std::string  eigenvaluesFileName,
-                         const std::string  contFileBaseName,
-                         const std::string  eigenstateFileNameAppendix,
-                         const Teuchos::RCP<AbstractStateWriter> stateWriter ) :
+GL::IO::SaveEigenData::SaveEigenData ( Teuchos::RCP<Teuchos::ParameterList> & eigenParamList,
+                                       const std::string  outputDir,
+                                       const std::string  eigenvaluesFileName,
+                                       const std::string  contFileBaseName,
+                                       const std::string  eigenstateFileNameAppendix,
+                                       const Teuchos::RCP<AbstractStateWriter> stateWriter,
+                                       const unsigned int maxNumDigits
+                                     ) :
         eigenParamList_ ( eigenParamList ),
         outputDir_ ( outputDir ),
         eigenvaluesFilePath_ ( outputDir + "/" + eigenvaluesFileName ),
         contFileBaseName_ ( contFileBaseName ),
         eigenstateFileNameAppendix_ ( eigenstateFileNameAppendix ),
         stateWriter_ ( stateWriter ),
-        locaStepper_ ( 0 ),
+        locaStepper_ ( Teuchos::null ),
         numComputeStableEigenvalues_ ( 3 ),
-        maxEigenvaluesSave_ ( 20 )
+        maxEigenvaluesSave_ ( 20 ),
+        maxNumDigits_( maxNumDigits )
 {
 }
 // =============================================================================
@@ -44,23 +47,18 @@ GL::IO::SaveEigenData::releaseLocaStepper()
 // =============================================================================
 NOX::Abstract::Group::ReturnType
 GL::IO::SaveEigenData::save ( Teuchos::RCP<std::vector<double> > &evals_r,
-                   Teuchos::RCP<std::vector<double> > &evals_i,
-                   Teuchos::RCP<NOX::Abstract::MultiVector> &evecs_r,
-                   Teuchos::RCP<NOX::Abstract::MultiVector> &evecs_i
-                 )
-{
-    // Keep track of how often this method is called.
-    // This is actually somewhat ugly as it assumes that this number coincides
-    // with the number of steps in the continuation.
-    // Generally, though, this will probably be true.
-    static int step = 0;
-    step++;
+                              Teuchos::RCP<std::vector<double> > &evals_i,
+                              Teuchos::RCP<NOX::Abstract::MultiVector> &evecs_r,
+                              Teuchos::RCP<NOX::Abstract::MultiVector> &evecs_i
+                            )
+{    
+    int step = locaStepper_->getStepNumber();
 
     unsigned int numEigenValues = evals_r->size();
 
     std::ofstream eigenFileStream;
 
-    if ( step == 1 )
+    if ( step == 0 )
     {
         eigenFileStream.open ( eigenvaluesFilePath_.c_str(), ios::trunc );
         eigenFileStream << "# Step" << "\t#unstable ev";
@@ -85,12 +83,13 @@ GL::IO::SaveEigenData::save ( Teuchos::RCP<std::vector<double> > &evals_r,
     for ( unsigned int k = 0; k < numEigenValues; k++ )
     {
         if ( ( *evals_r ) [k] > 0.0 )
-        {
+        { 
             numUnstableEigenvalues++;
             stringstream eigenstateString;
             eigenstateString
             << outputDir_  << "/"
-            << contFileBaseName_ << step << "-"
+            << contFileBaseName_
+            << setw ( maxNumDigits_ ) << setfill ( '0' ) << step << "-"
             << eigenstateFileNameAppendix_ 
             << numUnstableEigenvalues << ".vtk";
 
@@ -108,7 +107,7 @@ GL::IO::SaveEigenData::save ( Teuchos::RCP<std::vector<double> > &evals_r,
     eigenFileStream << numUnstableEigenvalues << "\t";
 
     // Set the output format
-    // TODO: Think about replacing this with NOX::Utils::Sci.
+    // TODO Think about replacing this with NOX::Utils::Sci.
     eigenFileStream.setf ( std::ios::scientific );
     eigenFileStream.precision ( 15 );
 

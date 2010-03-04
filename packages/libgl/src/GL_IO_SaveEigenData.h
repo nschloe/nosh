@@ -28,12 +28,14 @@ class SaveEigenData:
 //      const Teuchos::RCP<Teuchos::ParameterList>& eigenParams      );
 
    // Constructor
-   SaveEigenData( const Teuchos::RCP<Teuchos::ParameterList> eigenParams,
-	           const std::string outputDir,
-	           const std::string eigenvaluesFileName,
-	           const std::string contFileBaseName,
-	           const std::string eigenstateFileNameAppendix,
-               const Teuchos::RCP<AbstractStateWriter> glSys );
+   SaveEigenData( Teuchos::RCP<Teuchos::ParameterList> & eigenParams,
+                  const std::string outputDir,
+                  const std::string eigenvaluesFileName,
+                  const std::string contFileBaseName,
+                  const std::string eigenstateFileNameAppendix,
+                  const Teuchos::RCP<AbstractStateWriter> glSys,
+                  const unsigned int maxNumDigits
+                );
                
    virtual
    ~SaveEigenData();
@@ -47,10 +49,10 @@ class SaveEigenData:
    void
    setLocaStepper( const Teuchos::RCP<LOCA::Stepper> locaStepper );
 
-	// This function is necessary to break the circular dependency with the
-	// LOCA_Stepper object to allow for a clean termination
-	void
-	releaseLocaStepper();
+        // This function is necessary to break the circular dependency with the
+        // LOCA_Stepper object to allow for a clean termination
+        void
+        releaseLocaStepper();
 
  protected:
   private:
@@ -67,6 +69,7 @@ class SaveEigenData:
 
     //! Maximum number of eigenvalues that are stored in \c eigenvaluesFilePath_.
     unsigned int maxEigenvaluesSave_;
+    unsigned int maxNumDigits_;
 };
 
   } // namespace IO
