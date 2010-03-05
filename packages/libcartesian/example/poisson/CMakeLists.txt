@@ -12,11 +12,6 @@ INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIRS} )
 SET(Boost_USE_STATIC_LIBS   ON)
 SET(Boost_USE_MULTITHREADED ON)
 
-FIND_LIBRARY( GFORTRAN ${GFORTRAN_LIBRARY_NAMES}
-              HINTS ${GFORTRAN_LIBRARY_DIRS}    )
-SET( LINK_LIBRARIES ${LINK_LIBRARIES}
-                    ${GFORTRAN} )
-
 INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/packages/libio/src
                       ${ginzburg-landau_SOURCE_DIR}/packages/libcartesian/src
                     )
@@ -28,6 +23,9 @@ SET( MY_EXECUTABLE "poisson.out" )
 
 ADD_EXECUTABLE ( ${MY_EXECUTABLE}
                  ${poisson_SRCS} )
+
+SET_TARGET_PROPERTIES( ${MY_EXECUTABLE}
+                       PROPERTIES LINKER_LANGUAGE Fortran )
 
 SET ( internal_LIBS
       cartesian

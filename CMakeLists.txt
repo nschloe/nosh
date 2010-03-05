@@ -8,7 +8,7 @@ SET( CMAKE_C_COMPILER ${Trilinos_C_COMPILER} )
 SET( CMAKE_CXX_COMPILER ${Trilinos_CXX_COMPILER} )
 SET( CMAKE_Fortran_COMPILER ${Trilinos_Fortran_COMPILER} )
 
-PROJECT( ginzburg-landau )
+PROJECT( ginzburg-landau CXX Fortran )
 
 #SET(CMAKE_BUILD_TYPE Profile)
 

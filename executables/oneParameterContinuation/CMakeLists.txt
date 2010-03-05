@@ -7,9 +7,6 @@ SET(Boost_USE_STATIC_LIBS   ON)
 SET(Boost_USE_MULTITHREADED ON)
 INCLUDE_DIRECTORIES ( ${Boost_INCLUDE_DIRS} )
 
-FIND_LIBRARY( GFORTRAN ${GFORTRAN_LIBRARY_NAMES}
-              HINTS ${GFORTRAN_LIBRARY_DIRS}    )
-
 SET ( ginzburg_landau_SRCS
       oneParameterContinuation.cpp  )
 
@@ -18,8 +15,7 @@ SET ( internal_LIBS
       cartesian
       io
     )
-SET( LINK_LIBRARIES ${LINK_LIBRARIES}
-                    ${GFORTRAN} )
+
 INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/packages/libio/src
                       ${ginzburg-landau_SOURCE_DIR}/packages/libcartesian/src
                       ${ginzburg-landau_SOURCE_DIR}/packages/libgl/src
@@ -37,9 +33,11 @@ SET( MY_EXECUTABLE "oneParameterContinuation.out" )
 ADD_EXECUTABLE( ${MY_EXECUTABLE}
                 ${ginzburg_landau_SRCS} )
 
+SET_TARGET_PROPERTIES( ${MY_EXECUTABLE}
+                       PROPERTIES LINKER_LANGUAGE Fortran )
+
 TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
                        ${internal_LIBS}
                        ${Trilinos_LIBRARIES}
                        ${Trilinos_TPL_LIBRARIES}
-                       ${Boost_LIBRARIES}
-                       ${GFORTRAN} )
+                       ${Boost_LIBRARIES} )
