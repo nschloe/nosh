@@ -1,6 +1,6 @@
 /*
     <one line to give the program's name and a brief idea of what it does.>
-    Copyright (C) <year>  <name of author>
+    Copyright (C) 2010 Nico Schl\"omer
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -32,6 +32,16 @@ namespace Helpers
   Teuchos::RCP<LOCA::ParameterVector>
   teuchosParameterList2locaParameterVector( const Teuchos::ParameterList & p
                                           );
+
+  Teuchos::RCP<Teuchos::ParameterList>
+  locaParameterVector2teuchosParameterList( const LOCA::ParameterVector & pL );
+                                          
+  //! Merges two \c LOCA::ParameterLists into one, checking for discrepancies
+  //! in the entries.
+  Teuchos::RCP<LOCA::ParameterVector>
+  mergeLocaParameterVectors( const LOCA::ParameterVector & p0,
+                             const LOCA::ParameterVector & p1
+                           );
                                           
 };
 

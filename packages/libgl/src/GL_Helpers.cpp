@@ -41,3 +41,47 @@ teuchosParameterList2locaParameterVector( const Teuchos::ParameterList & p
   return pL;
 }
 // ============================================================================
+Teuchos::RCP<Teuchos::ParameterList>
+GL::Helpers::
+locaParameterVector2teuchosParameterList( const LOCA::ParameterVector & pL )
+{
+  Teuchos::RCP<Teuchos::ParameterList> p =
+      Teuchos::rcp( new Teuchos::ParameterList() );
+        
+  Teuchos::ParameterList::ConstIterator k;
+  for ( int k=0; k<pL.length(); k++ )
+     p->set<double>( pL.getLabel(k), pL[k] );  
+
+  return p;
+}
+// ============================================================================
+Teuchos::RCP<LOCA::ParameterVector>
+GL::Helpers::
+mergeLocaParameterVectors( const LOCA::ParameterVector & p0,
+                           const LOCA::ParameterVector & p1
+                         )
+{
+  // intialize p with p0
+  Teuchos::RCP<LOCA::ParameterVector> p = 
+          Teuchos::rcp( new LOCA::ParameterVector( p0 ) );
+
+  // add elements from p1
+  for( int k=0; k<p1.length(); k++ )
+  {
+    double value = p1.getValue(k);
+    std::string label = p1.getLabel(k);
+    if( p->isParameter(label) )
+    {
+        // If the entry already exists, make sure the values
+        // coincide.
+        TEUCHOS_ASSERT_EQUALITY( p->getValue(label), value );
+    }
+    else
+    {
+        p->addParameter( label, value );
+    }
+  }
+  
+  return p;
+}
+// ============================================================================

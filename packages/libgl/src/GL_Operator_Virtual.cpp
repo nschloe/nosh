@@ -19,6 +19,8 @@
 
 #include "GL_Operator_Virtual.h"
 
+#include "GL_Helpers.h"
+
 #include <Teuchos_RCP.hpp>
 
 // =============================================================================
@@ -44,23 +46,26 @@ GL::Operator::Virtual::updatePsi ( const Teuchos::RCP<const ComplexVector> psi )
 void
 GL::Operator::Virtual::setParameters ( const LOCA::ParameterVector & p )
 {
-    // don't provide a default value here
     chi_ = p.getValue ( "chi" );
 
     A_->setParameters ( p );
     grid_->updateScaling ( p );
+    
+    return;
 }
 // =============================================================================
-double
-GL::Operator::Virtual::getH0 () const
+Teuchos::RCP<LOCA::ParameterVector>
+GL::Operator::Virtual::getParameters () const
 {
-    return A_->getH0();
-}
-// =============================================================================
-double
-GL::Operator::Virtual::getScaling () const
-{
-    return grid_->getScaling();
+  Teuchos::RCP<LOCA::ParameterVector> pA = A_->getParameters();
+  Teuchos::RCP<LOCA::ParameterVector> pG = grid_->getParameters();
+  
+  Teuchos::RCP<LOCA::ParameterVector> pMerge =
+      GL::Helpers::mergeLocaParameterVectors( *pA, *pG );
+      
+  pMerge->addParameter( "chi", chi_ );
+
+  return pMerge;
 }
 // =============================================================================
 Teuchos::RCP<const Grid>

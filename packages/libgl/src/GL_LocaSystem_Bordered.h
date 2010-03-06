@@ -138,13 +138,8 @@ public:
     writeAbstractStateToFile ( const Epetra_Vector & x,
                                const std::string   & filePath ) const;
 
-    // TODO delete?
     const Teuchos::RCP<const Komplex>
     getGlKomplex() const;
-
-    // TODO delete
-    double
-    getH0() const;
 
     const Teuchos::RCP<const Epetra_Map>
     getExtendedMap() const;
@@ -164,8 +159,8 @@ private:
     PutRow ( const Teuchos::RCP<Epetra_CrsMatrix> A,
              const int      Row,
              const int      numIndices,
-             double * values,
-             int    * indices,
+             double       * values,
+             int          * indices,
              const bool     firstTime ) const;
 
 

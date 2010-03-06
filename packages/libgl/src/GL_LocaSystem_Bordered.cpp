@@ -375,12 +375,6 @@ GL::LocaSystem::Bordered::getGlKomplex() const
     return glSystem_.getGlKomplex();
 }
 // =============================================================================
-double
-GL::LocaSystem::Bordered::getH0() const
-{
-    return glSystem_.getH0();
-}
-// =============================================================================
 const Teuchos::RCP<const Epetra_Map>
 GL::LocaSystem::Bordered::getExtendedMap() const
 {

@@ -22,25 +22,21 @@ GL::MagneticVectorPotential::Centered::~Centered()
 void
 GL::MagneticVectorPotential::Centered::setParameters( const LOCA::ParameterVector & p)
 {
-
-    TEST_FOR_EXCEPTION ( !p.isParameter ( "H0" ),
-                         std::logic_error,
-                         "Label \"H0\" not valid." );
     h0_ = p.getValue ( "H0" );
-
-    TEST_FOR_EXCEPTION ( !p.isParameter ( "scaling" ),
-                         std::logic_error,
-                         "Label \"scaling\" not valid." );
     edgeLength_ = p.getValue ( "scaling" );
-
     return;
-
 }
 // ============================================================================
-double
-GL::MagneticVectorPotential::Centered::getH0() const
+Teuchos::RCP<LOCA::ParameterVector>
+GL::MagneticVectorPotential::Centered::getParameters() const
 {
-  return h0_;
+  Teuchos::RCP<LOCA::ParameterVector> p =
+          Teuchos::rcp( new LOCA::ParameterVector() );
+          
+  p->addParameter( "H0", h0_ );
+  p->addParameter( "scaling", edgeLength_ );
+          
+  return p;
 }
 // ============================================================================
 Teuchos::RCP<Teuchos::Array<double> >

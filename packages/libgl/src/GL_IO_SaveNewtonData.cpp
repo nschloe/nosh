@@ -6,9 +6,10 @@
 #include <NOX_Epetra_Group.H>
 
 // =============================================================================
-GL::IO::SaveNewtonData::SaveNewtonData ( const Teuchos::RCP<const AbstractStateWriter>  & stateWriter,
-                                        const std::string                              & outputDir,
-                                        const std::string                              & outputFormat ) :
+GL::IO::SaveNewtonData::
+SaveNewtonData ( const Teuchos::RCP<const AbstractStateWriter>  & stateWriter,
+                 const std::string                              & outputDir,
+                 const std::string                              & outputFormat ) :
         numRunPreIterate ( 0 ),
         stateWriter_ ( stateWriter ),
         outputDir_ ( outputDir ),

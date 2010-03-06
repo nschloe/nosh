@@ -24,11 +24,11 @@ public:
   virtual
   ~Centered();
 
-  double
-  getH0() const;
-
   void
   setParameters( const LOCA::ParameterVector & p );
+  
+  Teuchos::RCP<LOCA::ParameterVector>
+  getParameters() const;
 
   Teuchos::RCP<Teuchos::Array<double> >
   getA(const Teuchos::Array<double> & x ) const;

@@ -57,17 +57,14 @@ public:
     void
     updatePsi ( const Teuchos::RCP<const ComplexVector> psi );
 
-    double
-    getH0 () const;
-
     Teuchos::RCP<const Grid>
     getGrid() const;
 
-    double
-    getScaling () const;
-
     void
     setParameters( const LOCA::ParameterVector & p );
+    
+    Teuchos::RCP<LOCA::ParameterVector>
+    getParameters() const;
 
 protected:
     Teuchos::RCP<const ComplexVector> psi_;

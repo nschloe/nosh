@@ -29,7 +29,7 @@ public:
 
     /*! Constructor with a specified perturbation.*/
     GinzburgLandau ( const Teuchos::RCP<GL::Operator::Virtual>  & glOperator,
-	const Teuchos::RCP<GL::Perturbation::Virtual> & perturbation);
+	             const Teuchos::RCP<GL::Perturbation::Virtual> & perturbation);
 
     /*! Destructor. */
     ~GinzburgLandau();
@@ -96,10 +96,6 @@ public:
                   const Teuchos::RCP<const ComplexVector> &psi = Teuchos::null
                 ) const;
 
-    // TODO delete?
-    double
-    getH0() const;
-
 private:
 
     /*! Evaluates the Ginzburg--Landau equations.
@@ -133,9 +129,10 @@ private:
                             ) const;
 
     void
-    writeStateToFile ( const Teuchos::RCP<const ComplexVector> &psi,
-                       Teuchos::ParameterList &params,
-                       const std::string &filePath ) const;
+    writeStateToFile ( const Teuchos::RCP<const ComplexVector> & psi,
+                       LOCA::ParameterVector                   & params,
+                       const std::string                       & filePath
+                     ) const;
 
 };
 #endif // GINZBURGLANDAU_H

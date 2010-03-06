@@ -216,7 +216,7 @@ GL::LocaSystem::Default::releaseLocaStepper()
 // function used by LOCA
 void
 GL::LocaSystem::Default::printSolution ( const Epetra_Vector &x,
-                          double conParam )
+                                         double conParam )
 {
     // define vector
     const Teuchos::RCP<ComplexVector> psi =
@@ -394,12 +394,6 @@ GL::LocaSystem::Default::create_CommInt ( const Teuchos::RCP<const Epetra_Comm> 
 
     // If you get here then the conversion failed!
     return Teuchos::null;
-}
-// =============================================================================
-double
-GL::LocaSystem::Default::getH0() const
-{
-    return Gl_.getH0();
 }
 // =============================================================================
 Teuchos::RCP<const Epetra_Map>

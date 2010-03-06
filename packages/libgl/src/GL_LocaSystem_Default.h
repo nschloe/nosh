@@ -136,10 +136,6 @@ public:
     Teuchos::RCP<Epetra_Vector>
     getGlSystemVector ( const Teuchos::RCP<const ComplexVector> psi ) const;
 
-    // TODO delete
-    double
-    getH0() const;
-
     Teuchos::RCP<const Epetra_Map>
     getRealMap() const;
 

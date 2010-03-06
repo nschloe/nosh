@@ -1,12 +1,15 @@
 #include "ginzburgLandau.h"
 
+#include "GL_Helpers.h"
+
 // needed for reduceAllAndScatter in freeEnergy()
 #include <Teuchos_Comm.hpp>
 
 // =============================================================================
 // Class constructor
-GinzburgLandau::GinzburgLandau ( const Teuchos::RCP<GL::Operator::Virtual>  & glOperator
-                               ) :
+GinzburgLandau::
+GinzburgLandau ( const Teuchos::RCP<GL::Operator::Virtual>  & glOperator
+               ) :
         glOperator_ ( glOperator ),
         perturbation_ ( Teuchos::null )
 {
@@ -14,8 +17,9 @@ GinzburgLandau::GinzburgLandau ( const Teuchos::RCP<GL::Operator::Virtual>  & gl
 
 // =============================================================================
 // Class constructor containing a perturbation
-GinzburgLandau::GinzburgLandau ( const Teuchos::RCP<GL::Operator::Virtual>  & glOperator,
-                                 const Teuchos::RCP<GL::Perturbation::Virtual> & perturbation) :
+GinzburgLandau::
+GinzburgLandau ( const Teuchos::RCP<GL::Operator::Virtual>     & glOperator,
+                 const Teuchos::RCP<GL::Perturbation::Virtual> & perturbation) :
         glOperator_ ( glOperator ),
         perturbation_ ( perturbation )
 {
@@ -26,18 +30,14 @@ GinzburgLandau::~GinzburgLandau()
 {
 }
 // =============================================================================
-// TODO delete?
-double
-GinzburgLandau::getH0() const
-{
-    return glOperator_->getH0();
-}
-// =============================================================================
 void
 GinzburgLandau::setParameters ( const LOCA::ParameterVector & p )
 {
+    TEUCHOS_ASSERT( glOperator_.is_valid_ptr() && !glOperator_.is_null() );
     glOperator_->setParameters ( p );
-    perturbation_->setParameters ( p );
+    
+    if ( perturbation_.is_valid_ptr() && !perturbation_.is_null() )
+        perturbation_->setParameters ( p );
 }
 // =============================================================================
 int
@@ -67,8 +67,8 @@ GinzburgLandau::computeGlVector ( const Teuchos::RCP<const ComplexVector> & psi
         int globalIndex = psi->getMap()->getGlobalElement ( k );
         glVecView[k] = glOperator_->getEntry ( globalIndex );
 
-	if ( !perturbation_.is_null() )
-	  glVecView[k] += perturbation_->computePerturbation ( globalIndex );
+        if ( !perturbation_.is_null() )
+            glVecView[k] += perturbation_->computePerturbation ( globalIndex );
     }
 
     return glVec;
@@ -256,61 +256,73 @@ GinzburgLandau::getVorticity ( const ComplexVector &psi
 }
 // =============================================================================
 void
-GinzburgLandau::writeStateToFile ( const Teuchos::RCP<const ComplexVector> &psi,
-                                   Teuchos::ParameterList &params,
-                                   const std::string &filePath
-                                 ) const
+GinzburgLandau::
+writeStateToFile ( const Teuchos::RCP<const ComplexVector> & psi,
+                   LOCA::ParameterVector                   & params,
+                   const std::string                       & filePath
+                 ) const
 {
-    glOperator_->getGrid()->writeWithGrid ( *psi, params, filePath );
+    Teuchos::RCP<Teuchos::ParameterList> p =
+        GL::Helpers::locaParameterVector2teuchosParameterList( params );
+    glOperator_->getGrid()->writeWithGrid ( *psi, *p, filePath );
 }
 // =============================================================================
 void
-GinzburgLandau::writeSolutionToFile ( const Teuchos::RCP<const ComplexVector> &psi,
-                                      const std::string &filePath
-                                    ) const
+GinzburgLandau::
+writeSolutionToFile ( const Teuchos::RCP<const ComplexVector> & psi,
+                      const std::string                       & filePath
+                    ) const
 {
     // create a parameter list that contains useful items for a solution file
-    Teuchos::ParameterList params;
+    Teuchos::RCP<LOCA::ParameterVector> params = glOperator_->getParameters();
 
-    params.get ( "H0", glOperator_->getH0() );
-
+    writeStateToFile ( psi, *params, filePath );
+}
+// =============================================================================
+void
+GinzburgLandau::
+writeAbstractStateToFile ( const Teuchos::RCP<const ComplexVector> & psi,
+                           const std::string                       & filePath
+                         ) const
+{
+    LOCA::ParameterVector params;
     writeStateToFile ( psi, params, filePath );
 }
 // =============================================================================
 void
-GinzburgLandau::writeAbstractStateToFile ( const Teuchos::RCP<const ComplexVector> & psi,
-                                           const std::string                       & filePath
-                                         ) const
+GinzburgLandau::
+appendStats ( std::ofstream                           & fileStream,
+              const bool                                header,
+              const Teuchos::RCP<const ComplexVector> & psi
+            ) const
 {
-    Teuchos::ParameterList params;
-    writeStateToFile ( psi, params, filePath );
-}
-// =============================================================================
-void
-GinzburgLandau::appendStats ( std::ofstream                           & fileStream,
-                              const bool                                header,
-                              const Teuchos::RCP<const ComplexVector> & psi
-                            ) const
-{
+    int columnWidth = 18;
+    Teuchos::RCP<LOCA::ParameterVector> p = glOperator_->getParameters();
+  
     if ( header )
     {
+     
+        for ( int k=0; k<p->length(); k++ )
+            fileStream << p->getLabel(k)
+                       << setw ( columnWidth ) << "\t";
+
         fileStream
-        << "H0                \t"
-        << "scaling           \t"
-        << "free energy       \t"
-        << "||x||_2 scaled    \t"
+        << "free energy" << setw ( columnWidth ) << "\t"
+        << "||x||_2 scaled" << setw ( columnWidth ) << "\t"
         << "vorticity";
     }
     else
     {
+        for ( int k=0; k<p->length(); k++ )
+            fileStream << (*p)[k]
+                       << setw ( columnWidth ) << "\t";
+        
         double energy = freeEnergy ( *psi );
         double l2norm = normalizedScaledL2Norm ( *psi );
         int vorticity = getVorticity ( *psi );
         fileStream
-        << glOperator_->getH0() << " \t"
-        << glOperator_->getScaling() << " \t"
-        << energy << " \t"
-        << l2norm << " \t"
+        << energy << setw ( columnWidth ) << "\t"
+        << l2norm << setw ( columnWidth ) << "\t"
         << vorticity;
     }
 

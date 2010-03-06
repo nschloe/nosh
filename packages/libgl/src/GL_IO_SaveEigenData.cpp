@@ -8,14 +8,15 @@
 #include <LOCA_GlobalData.H>
 
 // =============================================================================
-GL::IO::SaveEigenData::SaveEigenData ( Teuchos::RCP<Teuchos::ParameterList> & eigenParamList,
-                                       const std::string  outputDir,
-                                       const std::string  eigenvaluesFileName,
-                                       const std::string  contFileBaseName,
-                                       const std::string  eigenstateFileNameAppendix,
-                                       const Teuchos::RCP<AbstractStateWriter> stateWriter,
-                                       const unsigned int maxNumDigits
-                                     ) :
+GL::IO::SaveEigenData::
+SaveEigenData ( Teuchos::RCP<Teuchos::ParameterList> & eigenParamList,
+                const std::string  outputDir,
+                const std::string  eigenvaluesFileName,
+                const std::string  contFileBaseName,
+                const std::string  eigenstateFileNameAppendix,
+                const Teuchos::RCP<AbstractStateWriter> stateWriter,
+                const unsigned int maxNumDigits
+              ) :
         eigenParamList_ ( eigenParamList ),
         outputDir_ ( outputDir ),
         eigenvaluesFilePath_ ( outputDir + "/" + eigenvaluesFileName ),
