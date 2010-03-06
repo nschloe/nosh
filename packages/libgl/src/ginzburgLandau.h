@@ -34,20 +34,11 @@ public:
     /*! Destructor. */
     ~GinzburgLandau();
 
-    void
-    setH0 ( const double h0 );
-
-    void
-    setChi ( const double chi );
-
     void 
     setParameters( const LOCA::ParameterVector & p );
 
     int
     getNumUnknowns() const;
-
-    void
-    setScaling ( const double scaling );
 
     Teuchos::RCP<ComplexVector>
     computeGlVector ( const Teuchos::RCP<const ComplexVector> & psi ) const;

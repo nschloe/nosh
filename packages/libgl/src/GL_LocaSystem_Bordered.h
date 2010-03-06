@@ -145,12 +145,6 @@ public:
     // TODO delete
     double
     getH0() const;
-    void
-    setH0 ( const double h0 );
-    void
-    setScaling ( const double h0 );
-    void
-    setChi ( const double h0 );
 
     const Teuchos::RCP<const Epetra_Map>
     getExtendedMap() const;

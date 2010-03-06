@@ -1,4 +1,5 @@
 SET ( gl_SRCS
+      GL_Helpers.cpp
       GL_MagneticVectorPotential_Centered.cpp
       ginzburgLandau.cpp
       GL_Operator_Virtual.cpp
@@ -10,7 +11,6 @@ SET ( gl_SRCS
       GL_Komplex.cpp
       GL_LocaSystem_Default.cpp
       GL_LocaSystem_Bordered.cpp
-      GL_LocaSystem_Predictor.cpp
       GL_Constraint_MinDist.cpp
       GL_Perturbation_Quadrants.cpp
       GL_Perturbation_Virtual.cpp

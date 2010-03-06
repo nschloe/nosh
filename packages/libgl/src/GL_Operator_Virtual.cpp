@@ -42,24 +42,9 @@ GL::Operator::Virtual::updatePsi ( const Teuchos::RCP<const ComplexVector> psi )
 }
 // =============================================================================
 void
-GL::Operator::Virtual::setChi ( const double chi )
-{
-    chi_ = chi;
-}
-// =============================================================================
-void
-GL::Operator::Virtual::setH0 ( const double h0 )
-{
-    A_->setH0 ( h0 );
-}
-// =============================================================================
-void
 GL::Operator::Virtual::setParameters ( const LOCA::ParameterVector & p )
 {
-
-    TEST_FOR_EXCEPTION ( !p.isParameter ( "chi" ),
-                         std::logic_error,
-                         "Label \"chi\" not valid." );
+    // don't provide a default value here
     chi_ = p.getValue ( "chi" );
 
     A_->setParameters ( p );
@@ -70,13 +55,6 @@ double
 GL::Operator::Virtual::getH0 () const
 {
     return A_->getH0();
-}
-// =============================================================================
-void
-GL::Operator::Virtual::setScaling ( const double scaling )
-{
-    grid_->updateScaling( scaling );
-    A_->setEdgeLength( scaling );
 }
 // =============================================================================
 double

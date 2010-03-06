@@ -182,26 +182,7 @@ GL::LocaSystem::Default::computeShiftedMatrix ( double alpha,
 void
 GL::LocaSystem::Default::setParameters ( const LOCA::ParameterVector & p )
 {
-
   Gl_.setParameters( p );
-//
-//    TEST_FOR_EXCEPTION ( !p.isParameter ( "H0" ),
-//                         std::logic_error,
-//                         "Label \"H0\" not valid." );
-//    double h0 = p.getValue ( "H0" );
-//    Gl_.setH0 ( h0 );
-//
-//    TEST_FOR_EXCEPTION ( !p.isParameter ( "scaling" ),
-//                         std::logic_error,
-//                         "Label \"scaling\" not valid." );
-//    double scaling = p.getValue ( "scaling" );
-//    Gl_.setScaling ( scaling );
-//
-//    if ( p.isParameter ( "chi" ) )
-//    {
-//        double chi = p.getValue ( "chi" );
-//        Gl_.setChi ( chi );
-//    }
 }
 // =============================================================================
 void
@@ -431,24 +412,6 @@ Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> >
 GL::LocaSystem::Default::getComplexMap() const
 {
     return glKomplex_->getComplexMap();
-}
-// =============================================================================
-void
-GL::LocaSystem::Default::setH0 ( const double h0 )
-{
-    Gl_.setH0 ( h0 );
-}
-// =============================================================================
-void
-GL::LocaSystem::Default::setScaling ( const double scaling )
-{
-    Gl_.setScaling ( scaling );
-}
-// =============================================================================
-void
-GL::LocaSystem::Default::setChi ( const double chi )
-{
-    Gl_.setChi ( chi );
 }
 // =============================================================================
 Teuchos::RCP<const GL::Komplex>

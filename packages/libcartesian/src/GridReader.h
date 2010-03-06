@@ -2,7 +2,7 @@
  * GridReader.h
  *
  *  Created on: Nov 27, 2009
- *      Author: Nico Schl�mer
+ *      Author: Nico Schl\"omer
  */
 
 #ifndef GRIDREADER_H_
@@ -11,6 +11,7 @@
 #include "GridUniform.h"
 
 #include <Tpetra_Vector.hpp>
+#include <LOCA_Parameter_Vector.H>
 
 
 namespace GridReader

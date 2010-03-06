@@ -76,8 +76,9 @@ GL::LocaSystem::Bordered::~Bordered()
 // =============================================================================
 bool
 GL::LocaSystem::Bordered::computeF ( const Epetra_Vector & x,
-                                       Epetra_Vector       & FVec,
-                                       const NOX::Epetra::Interface::Required::FillType fillFlag )
+                                           Epetra_Vector       & FVec,
+                                     const NOX::Epetra::Interface::Required::FillType fillFlag
+                                   )
 {
     TEST_FOR_EXCEPTION ( !regularMap_.is_valid_ptr() || regularMap_.is_null(),
                          std::logic_error,
@@ -384,24 +385,6 @@ const Teuchos::RCP<const Epetra_Map>
 GL::LocaSystem::Bordered::getExtendedMap() const
 {
     return extendedMap_;
-}
-// =============================================================================
-void
-GL::LocaSystem::Bordered::setH0 ( const double h0 )
-{
-    glSystem_.setH0 ( h0 );
-}
-// =============================================================================
-void
-GL::LocaSystem::Bordered::setScaling ( const double scaling )
-{
-    glSystem_.setScaling ( scaling );
-}
-// =============================================================================
-void
-GL::LocaSystem::Bordered::setChi ( const double chi )
-{
-    glSystem_.setChi ( chi );
 }
 // =============================================================================
 void

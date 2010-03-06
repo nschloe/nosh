@@ -57,12 +57,6 @@ public:
     void
     updatePsi ( const Teuchos::RCP<const ComplexVector> psi );
 
-    void
-    setChi ( const double chi );
-
-    void
-    setH0 ( const double h0 );
-
     double
     getH0 () const;
 
@@ -71,9 +65,6 @@ public:
 
     double
     getScaling () const;
-
-    void
-    setScaling ( const double scaling );
 
     void
     setParameters( const LOCA::ParameterVector & p );

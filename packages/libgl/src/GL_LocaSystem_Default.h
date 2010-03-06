@@ -149,14 +149,6 @@ public:
     Teuchos::RCP<const GL::Komplex>
     getGlKomplex() const;
 
-    // TODO delete
-    void
-    setH0 ( const double h0 );
-    void
-    setScaling ( const double h0 );
-    void
-    setChi ( const double h0 );
-
 private:
 
     enum continuationType

@@ -24,12 +24,6 @@ public:
   virtual
   ~Centered();
 
-  void
-  setH0( const double h0 );
-
-  void
-  setEdgeLength( const double edgeLength );
-
   double
   getH0() const;
 

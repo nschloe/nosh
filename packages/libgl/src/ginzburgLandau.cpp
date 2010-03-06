@@ -26,29 +26,11 @@ GinzburgLandau::~GinzburgLandau()
 {
 }
 // =============================================================================
-void
-GinzburgLandau::setH0 ( const double h0 )
-{
-    glOperator_->setH0 ( h0 );
-}
-// =============================================================================
 // TODO delete?
 double
 GinzburgLandau::getH0() const
 {
     return glOperator_->getH0();
-}
-// =============================================================================
-void
-GinzburgLandau::setScaling ( const double scaling )
-{
-    glOperator_->setScaling ( scaling );
-}
-// =============================================================================
-void
-GinzburgLandau::setChi ( const double chi )
-{
-    glOperator_->setChi ( chi );
 }
 // =============================================================================
 void

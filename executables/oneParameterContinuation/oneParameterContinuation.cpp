@@ -28,6 +28,7 @@
 
 #include "GL_LocaSystem_Bordered.h"
 #include "GL_IO_SaveEigenData.h"
+#include "GL_Helpers.h"
 
 #include "GridReader.h"
 
@@ -232,10 +233,9 @@ main ( int argc, char *argv[] )
     }
     // ---------------------------------------------------------------------------
 
-    double h0      = glParameters.get<double> ( "H0" );
-    double scaling = glParameters.get<double> ( "scaling" );
     Teuchos::RCP<GL::MagneticVectorPotential::Centered> A =
-        Teuchos::rcp ( new GL::MagneticVectorPotential::Centered ( h0, scaling ) );
+        Teuchos::rcp ( new GL::MagneticVectorPotential::Centered ( glParameters.get<double> ( "H0" ),
+                                                                   glParameters.get<double> ( "scaling" ) ) );
 
     // create the operator
     Teuchos::RCP<GL::Operator::Virtual> glOperator =
@@ -360,11 +360,10 @@ main ( int argc, char *argv[] )
     // Create a group which uses that problem interface. The group will
     // be initialized to contain the default initial guess for the
     // specified problem.
-    LOCA::ParameterVector locaParams;
-    locaParams.addParameter ( "H0", glParameters.get<double> ( "H0" ) );
-    locaParams.addParameter ( "scaling", glParameters.get<double> ( "scaling" ) );
-    locaParams.addParameter ( "chi", glParameters.get<double> ( "chi" ) );
-    locaParams.addParameter ( "Epsilon Quadrant 1", glParameters.get<double> ( "Epsilon Quadrant 1" ) );
+    
+    // translate parameters into a LOCA list
+    LOCA::ParameterVector locaParams =
+          *(GL::Helpers::teuchosParameterList2locaParameterVector( glParameters ));
 
     NOX::Epetra::Vector initialGuess ( soln, NOX::Epetra::Vector::CreateView );
 

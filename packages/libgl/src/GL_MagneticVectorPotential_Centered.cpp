@@ -20,17 +20,6 @@ GL::MagneticVectorPotential::Centered::~Centered()
 }
 // ============================================================================
 void
-GL::MagneticVectorPotential::Centered::setH0( const double h0 )
-{
-  h0_ = h0;
-}
-// ============================================================================
-void
-GL::MagneticVectorPotential::Centered::setEdgeLength( const double edgeLength )
-{
-	edgeLength_ = edgeLength;
-}
-void
 GL::MagneticVectorPotential::Centered::setParameters( const LOCA::ParameterVector & p)
 {
 

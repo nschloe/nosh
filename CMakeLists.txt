@@ -1,6 +1,5 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
-#FIND_PACKAGE( Trilinos REQUIRED PATHS ${TRILINOS_ROOT} )
 FIND_PACKAGE( Trilinos REQUIRED )
 
 # set compilers *before the PROJECT is declared
@@ -9,6 +8,8 @@ SET( CMAKE_CXX_COMPILER ${Trilinos_CXX_COMPILER} )
 SET( CMAKE_Fortran_COMPILER ${Trilinos_Fortran_COMPILER} )
 
 PROJECT( ginzburg-landau CXX Fortran )
+
+ENABLE_TESTING()
 
 #SET(CMAKE_BUILD_TYPE Profile)
 
