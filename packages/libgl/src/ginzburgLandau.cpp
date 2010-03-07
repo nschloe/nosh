@@ -348,8 +348,6 @@ appendStats ( const Teuchos::RCP<const ComplexVector> & psi
     statsWriter_->getList()->set( "2free energy", freeEnergy ( *psi ) );
     statsWriter_->getList()->set( "2||x||_2 scaled", normalizedScaledL2Norm ( *psi ) );
     statsWriter_->getList()->set( "2vorticity", getVorticity ( *psi ) );
- 
-    statsWriter_->print();
 
     return;
 }
