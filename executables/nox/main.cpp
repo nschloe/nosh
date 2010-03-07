@@ -27,16 +27,16 @@ int main ( int argc, char *argv[] )
 #endif
 
     // Create a communicator for Tpetra objects
-    const Teuchos::RCP<const Teuchos::Comm<int> > Comm
-    = Teuchos::DefaultComm<int>::getComm();
+    const Teuchos::RCP<const Teuchos::Comm<int> > Comm =
+          Teuchos::DefaultComm<int>::getComm();
 
     // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
-    Teuchos::RCP<Epetra_MpiComm> eComm
+    Teuchos::RCP<Epetra_MpiComm> eComm =
     = Teuchos::rcp<Epetra_MpiComm> ( new Epetra_MpiComm ( MPI_COMM_WORLD ) );
 #else
-    Teuchos::RCP<Epetra_SerialComm>  eComm
-    = Teuchos::rcp<Epetra_SerialComm> ( new Epetra_SerialComm() );
+    Teuchos::RCP<Epetra_SerialComm>  eComm =
+           Teuchos::rcp<Epetra_SerialComm> ( new Epetra_SerialComm() );
 #endif
 
 
@@ -160,11 +160,9 @@ int main ( int argc, char *argv[] )
                                          outputFormat );
     }
 
-
     // create NOX group
     Teuchos::RCP<NOX::Epetra::Group> grpPtr =
         glNoxHelpers::createSolverGroup ( glSystem,  nlParamsPtr );
-
 
     // create convergence test from sublist
     Teuchos::RCP<NOX::StatusTest::Generic> statusTest =

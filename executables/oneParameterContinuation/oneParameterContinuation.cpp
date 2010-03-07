@@ -29,6 +29,7 @@
 #include "GL_LocaSystem_Bordered.h"
 #include "GL_IO_SaveEigenData.h"
 #include "GL_Helpers.h"
+#include "GL_StatsWriter.h"
 
 #include "GridReader.h"
 
@@ -246,7 +247,16 @@ main ( int argc, char *argv[] )
       Teuchos::rcp ( new GL::Perturbation::Quadrants ( grid ) );
 
     // TODO: why not make glOperator depend upon perturbation instead?
-    GinzburgLandau glProblem = GinzburgLandau ( glOperator, quadrantsPerturbation );
+//     GinzburgLandau glProblem = GinzburgLandau ( glOperator,
+//                                                 quadrantsPerturbation );
+
+
+    std::string fn = outputDirectory.string() + "/" + contDataFileName;
+    Teuchos::RCP<GL::StatsWriter> statsWriter = 
+        Teuchos::rcp( new GL::StatsWriter( fn ) );
+
+    GinzburgLandau glProblem = GinzburgLandau ( glOperator,
+                                                statsWriter );
 
     Teuchos::RCP<GL::LocaSystem::Bordered> glsystem;
 

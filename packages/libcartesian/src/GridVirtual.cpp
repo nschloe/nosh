@@ -31,10 +31,14 @@ GridVirtual::~GridVirtual()
 {
 }
 // ============================================================================
-double
-GridVirtual::getScaling() const
+Teuchos::RCP<LOCA::ParameterVector>
+GridVirtual::getParameters() const
 {
-    return scaling_;
+    Teuchos::RCP<LOCA::ParameterVector> p =
+          Teuchos::rcp ( new LOCA::ParameterVector() );
+  
+    p->addParameter( "scaling", scaling_ );
+    return p;
 }
 // ============================================================================
 void

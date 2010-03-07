@@ -51,8 +51,9 @@ public:
     virtual
     ~GridVirtual();
 
-    virtual double
-    getScaling() const; //!< Returns the scaling factor \f$alpha\f$ of the domain.
+    //! Returns the parameters connected with the grid, e.g, the scaling factor.
+    virtual Teuchos::RCP<LOCA::ParameterVector>
+    getParameters() const;
 
     /*!
       Resets the scaling factor of the domain and updates all the dependent values (e.g., \c gridDomainArea_).

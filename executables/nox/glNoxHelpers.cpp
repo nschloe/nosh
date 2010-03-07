@@ -97,6 +97,7 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
 {
     problemParameters.set ( "scaling", scaling );
     problemParameters.set ( "H0"     , H0 );
+    problemParameters.set ( "chi"    , 0.0 );
 
 //     // create the domain
 //     double edgeLength = 1.0;
@@ -146,7 +147,7 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
 
     // create the operator
     Teuchos::RCP<GL::Operator::Virtual> glOperator =
-        Teuchos::rcp ( new GL::Operator::BCInner ( grid, A ) );
+        Teuchos::rcp ( new GL::Operator::BCCentral ( grid, A ) );
 
     GinzburgLandau glProblem = GinzburgLandau ( glOperator );
     
