@@ -63,7 +63,7 @@ print()
    int doublePrec = 15;
    int columnWidth = doublePrec + 7;
    
-   int intColumnWidth = 5;
+   unsigned int intColumnWidth = 5;
    
    std::string columnSep = "  ";
    std::string headerStart = "# ";

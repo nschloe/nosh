@@ -32,7 +32,6 @@ Default ( GinzburgLandau::GinzburgLandau          & gl,
           const Teuchos::RCP<const ComplexVector>   psi,
           const std::string outputDir,
           const std::string outputDataFileName,
-          const std::string outputFileFormat,
           const std::string solutionFileNameBase,
           const std::string nullvectorFileNameBase,
           const unsigned int maxNumDigits
@@ -45,7 +44,6 @@ Default ( GinzburgLandau::GinzburgLandau          & gl,
         outputDir_ ( outputDir ),
         solutionFileNameBase_ ( solutionFileNameBase ),
         nullvectorFileNameBase_ ( nullvectorFileNameBase ),
-        outputFileFormat_ ( outputFileFormat ),
         outputDataFileName_ ( outputDataFileName ),
         firstTime_ ( true ),
         maxNumDigits_( maxNumDigits )
@@ -251,13 +249,13 @@ printSolutionOneParameterContinuation ( const Teuchos::RCP<const ComplexVector> 
 {
     int conStep = stepper_->getStepNumber();
     
-    stringstream fileName;
-    fileName
+    stringstream baseName;
+    baseName
     << outputDir_ << "/" << solutionFileNameBase_ 
-    << setw ( maxNumDigits_ ) << setfill ( '0' ) << conStep << ".vtk";
+    << setw ( maxNumDigits_ ) << setfill ( '0' ) << conStep;
     
     // actually print the state to fileName
-    Gl_.writeSolutionToFile ( psi, fileName.str() );
+    Gl_.writeSolutionToFile ( psi, baseName.str() );
 
     writeContinuationStats ( psi );
 }
@@ -281,21 +279,21 @@ printSolutionTurningPointContinuation ( const Teuchos::RCP<const ComplexVector> 
     printSolution = !printSolution;
 
     // determine file name
-    stringstream fileName;
+    stringstream baseName;
     if ( printSolution )
     {
-        fileName
+        baseName
         << outputDir_ << "/" << solutionFileNameBase_
-        << setw ( maxNumDigits_ ) << setfill ( '0' ) << conStep << ".vtk";
+        << setw ( maxNumDigits_ ) << setfill ( '0' ) << conStep;
         writeContinuationStats ( psi );
     }
     else
-        fileName
+        baseName
         << outputDir_ << "/" << nullvectorFileNameBase_
-        << setw ( maxNumDigits_ ) << setfill ( '0' ) << conStep << ".vtk";
+        << setw ( maxNumDigits_ ) << setfill ( '0' ) << conStep;
 
     // actually print the state to fileName
-    Gl_.writeSolutionToFile ( psi, fileName.str() );
+    Gl_.writeSolutionToFile ( psi, baseName.str() );
 }
 // =============================================================================
 void

@@ -1,6 +1,6 @@
 /*
     <one line to give the program's name and a brief idea of what it does.>
-    Copyright (C) <year>  <name of author>
+    Copyright (C) 2010 Nico Schl\"omer
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -42,7 +42,6 @@ VtkReader::read ( Teuchos::RCP<ComplexMultiVector>              & z,
                   const Teuchos::RCP<const Teuchos::Comm<int> > & TComm
                 ) const
 {
-    //get all data from the file
     vtkSmartPointer<vtkStructuredPointsReader> reader =
         vtkSmartPointer<vtkStructuredPointsReader>::New();
     reader->SetFileName ( filePath_.c_str() );

@@ -28,12 +28,19 @@ public:
 
     /*! Default constructor.*/
     GinzburgLandau ( const Teuchos::RCP<GL::Operator::Virtual> & glOperator,
-                     const Teuchos::RCP<GL::StatsWriter>       & statsWriter
+                     const Teuchos::RCP<GL::StatsWriter>       & statsWriter,
+                     const std::string                         & outputFormat = "VTI"
+                   );
+                   
+    GinzburgLandau ( const Teuchos::RCP<GL::Operator::Virtual> & glOperator,
+                     const std::string                         & outputFormat = "VTI"
                    );
 
     /*! Constructor with a specified perturbation.*/
-    GinzburgLandau ( const Teuchos::RCP<GL::Operator::Virtual>  & glOperator,
-	             const Teuchos::RCP<GL::Perturbation::Virtual> & perturbation);
+    GinzburgLandau ( const Teuchos::RCP<GL::Operator::Virtual>     & glOperator,
+	             const Teuchos::RCP<GL::Perturbation::Virtual> & perturbation,
+                     const std::string                             & outputFormat = "VTI"
+                   );
 
     /*! Destructor. */
     ~GinzburgLandau();
@@ -82,7 +89,7 @@ public:
       */
     void
     writeSolutionToFile ( const Teuchos::RCP<const ComplexVector> &psi,
-                          const std::string &filePath
+                          const std::string &fileBaseName
                         ) const;
 
     /*! Writes an abstract state \c psi to a file (e.g., an eigenstate). The
@@ -91,7 +98,7 @@ public:
      */
     void
     writeAbstractStateToFile ( const Teuchos::RCP<const ComplexVector> &psi,
-                               const std::string &filePath
+                               const std::string &fileBaseName
                              ) const;
 
     /*! Appends useful statistics about a given state \c psi to the \c ofstream
@@ -122,6 +129,8 @@ private:
     const Teuchos::RCP<GL::Perturbation::Virtual> perturbation_;
     
     const Teuchos::RCP<GL::StatsWriter> statsWriter_;
+    
+    const std::string outputFormat_;
 
 private:
     /*! Calculated the coefficients of the jacobian system associated with the
@@ -138,7 +147,7 @@ private:
     void
     writeStateToFile ( const Teuchos::RCP<const ComplexVector> & psi,
                        LOCA::ParameterVector                   & params,
-                       const std::string                       & filePath
+                       const std::string                       & fileBaseName
                      ) const;
 
 };

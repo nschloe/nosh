@@ -58,7 +58,8 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
                  const Teuchos::RCP<const Epetra_Comm>         & eComm,
                  const std::string                             & fileName,
                  Teuchos::ParameterList                        & problemParameters,
-                 Teuchos::RCP<GL::LocaSystem::Bordered>      & glSystem )
+                 Teuchos::RCP<GL::LocaSystem::Bordered>        & glSystem
+               )
 {
     Teuchos::ParameterList glParameters;
 
@@ -76,7 +77,7 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
     // create the operator
     Teuchos::RCP<GL::Operator::Virtual> glOperator =
         Teuchos::rcp ( new GL::Operator::BCCentral ( grid, A ) );
-
+        
     GinzburgLandau glProblem = GinzburgLandau ( glOperator );
 
     TEUCHOS_ASSERT_EQUALITY ( psi->getNumVectors(), 1 );

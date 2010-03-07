@@ -42,7 +42,7 @@ WriterFactory::createImageWriter ( const std::string & fileName )
     {
         TEST_FOR_EXCEPTION ( true,
                              std::logic_error,
-                             "Error when reading file \"" << fileName
+                             "Error when writing file \"" << fileName
                              << "\". File name extension \"" << extension << "\" "
                              << "not recognized. Must be one of \"vtk\", "
                              << "\"vti\"." );

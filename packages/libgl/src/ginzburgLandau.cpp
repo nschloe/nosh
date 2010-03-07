@@ -11,20 +11,37 @@
 // Class constructor
 GinzburgLandau::
 GinzburgLandau ( const Teuchos::RCP<GL::Operator::Virtual> & glOperator,
-                 const Teuchos::RCP<GL::StatsWriter>       & statsWriter
+                 const Teuchos::RCP<GL::StatsWriter>       & statsWriter,
+                 const std::string                         & outputFormat
                ) :
         glOperator_ ( glOperator ),
         perturbation_ ( Teuchos::null ),
-        statsWriter_( statsWriter )
+        statsWriter_( statsWriter ),
+        outputFormat_( outputFormat )
+{
+}
+// =============================================================================
+// Class constructor
+GinzburgLandau::
+GinzburgLandau ( const Teuchos::RCP<GL::Operator::Virtual> & glOperator,
+                 const std::string                         & outputFormat
+               ) :
+        glOperator_ ( glOperator ),
+        perturbation_ ( Teuchos::null ),
+        statsWriter_( Teuchos::null ),
+        outputFormat_( outputFormat )
 {
 }
 // =============================================================================
 // Class constructor containing a perturbation
 GinzburgLandau::
 GinzburgLandau ( const Teuchos::RCP<GL::Operator::Virtual>     & glOperator,
-                 const Teuchos::RCP<GL::Perturbation::Virtual> & perturbation) :
+                 const Teuchos::RCP<GL::Perturbation::Virtual> & perturbation,
+                 const std::string                             & outputFormat
+               ) :
         glOperator_ ( glOperator ),
-        perturbation_ ( perturbation )
+        perturbation_ ( perturbation ),
+        outputFormat_( outputFormat )
 {
 }
 // =============================================================================
@@ -268,34 +285,49 @@ void
 GinzburgLandau::
 writeStateToFile ( const Teuchos::RCP<const ComplexVector> & psi,
                    LOCA::ParameterVector                   & params,
-                   const std::string                       & filePath
+                   const std::string                       & fileBaseName
                  ) const
 {
     Teuchos::RCP<Teuchos::ParameterList> p =
         GL::Helpers::locaParameterVector2teuchosParameterList( params );
-    glOperator_->getGrid()->writeWithGrid ( *psi, *p, filePath );
+        
+    std::string filenameExtension;
+    if ( outputFormat_.compare("VTI")==0 )
+      filenameExtension = "vti";
+    else if ( outputFormat_.compare("VTK")==0 )
+      filenameExtension = "vtk";
+    else
+      TEST_FOR_EXCEPTION( true,
+                          std::runtime_error,
+                          "outputFormat_ (\"" << outputFormat_
+                          << "\") must be either one of \"VTI\", \"VTK\"" );
+        
+    std::string fileName = fileBaseName + "." + filenameExtension;
+    glOperator_->getGrid()->writeWithGrid ( *psi, *p, fileName );
+    return;
 }
 // =============================================================================
 void
 GinzburgLandau::
 writeSolutionToFile ( const Teuchos::RCP<const ComplexVector> & psi,
-                      const std::string                       & filePath
+                      const std::string                       & fileBaseName
                     ) const
 {
     // create a parameter list that contains useful items for a solution file
     Teuchos::RCP<LOCA::ParameterVector> params = glOperator_->getParameters();
-
-    writeStateToFile ( psi, *params, filePath );
+    writeStateToFile ( psi, *params, fileBaseName );
+    return;
 }
 // =============================================================================
 void
 GinzburgLandau::
 writeAbstractStateToFile ( const Teuchos::RCP<const ComplexVector> & psi,
-                           const std::string                       & filePath
+                           const std::string                       & fileBaseName
                          ) const
 {
     LOCA::ParameterVector params;
-    writeStateToFile ( psi, params, filePath );
+    writeStateToFile ( psi, params, fileBaseName );
+    return;
 }
 // =============================================================================
 void
@@ -303,6 +335,8 @@ GinzburgLandau::
 appendStats ( const Teuchos::RCP<const ComplexVector> & psi
             ) const
 { 
+    TEUCHOS_ASSERT( statsWriter_.is_valid_ptr() && !statsWriter_.is_null() );
+  
     // put the parameter list into statsWriter_
     std::string labelPrepend = "1";
     GL::Helpers::appendToTeuchosParameterList( *(statsWriter_->getList()),

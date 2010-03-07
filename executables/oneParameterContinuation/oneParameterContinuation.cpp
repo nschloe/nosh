@@ -256,7 +256,9 @@ main ( int argc, char *argv[] )
         Teuchos::rcp( new GL::StatsWriter( fn ) );
 
     GinzburgLandau glProblem = GinzburgLandau ( glOperator,
-                                                statsWriter );
+                                                statsWriter,
+                                                contFileFormat
+                                              );
 
     Teuchos::RCP<GL::LocaSystem::Bordered> glsystem;
 
@@ -270,7 +272,6 @@ main ( int argc, char *argv[] )
                                   psi,
                                   outputDirectory.string(),
                                   contDataFileName,
-                                  contFileFormat,
                                   contFileBaseName,
                                   "",
                                   numDigits ( maxLocaSteps ) ) );

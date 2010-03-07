@@ -42,7 +42,6 @@ VtiReader::read ( Teuchos::RCP<ComplexMultiVector>              & z,
                   const Teuchos::RCP<const Teuchos::Comm<int> > & TComm
                 ) const
 {
-    //get all data from the file
     vtkSmartPointer<vtkXMLImageDataReader> reader =
         vtkSmartPointer<vtkXMLImageDataReader>::New();
     reader->SetFileName ( filePath_.c_str() );

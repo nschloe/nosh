@@ -40,12 +40,11 @@ GL::LocaSystem::Bordered::Bordered ( GinzburgLandau::GinzburgLandau &gl,
                                        const Teuchos::RCP<const ComplexVector> psi,
                                        const std::string outputDir,
                                        const std::string outputDataFileName,
-                                       const std::string outputFileFormat,
                                        const std::string solutionFileNameBase,
                                        const std::string nullvectorFileNameBase,
                                        const unsigned int maxStepNumberDecimals
                                      ) :
-        glSystem_ ( gl, eComm, psi, outputDir, outputDataFileName, outputFileFormat,
+        glSystem_ ( gl, eComm, psi, outputDir, outputDataFileName,
                     solutionFileNameBase, nullvectorFileNameBase, maxStepNumberDecimals ),
         regularMap_ (  glSystem_.getRealMap() ),
         extendedMap_ ( createExtendedRealMap ( *regularMap_ ) ),
