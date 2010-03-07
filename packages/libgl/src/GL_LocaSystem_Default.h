@@ -7,6 +7,7 @@
 #include "ginzburgLandau.h"
 #include "AbstractStateWriter.h"
 #include "GL_Komplex.h"
+#include "GL_StatsWriter.h"
 
 #include <Epetra_Comm.h>
 #include <Epetra_Map.h>
@@ -162,21 +163,20 @@ private:
     //! Print method for the continuation in one parameter.
     void
     printSolutionOneParameterContinuation ( const Teuchos::RCP<const ComplexVector> & psi
-                                          ) const;
+                                          );
 
     //! Print method for turning point continuation continuation.
     void
     printSolutionTurningPointContinuation ( const Teuchos::RCP<const ComplexVector> & psi
-                                          ) const;
-
+                                          );
 
     //! Write statistics about the current continuation step to the file
     //! \c outputDataFileName_ .
     void
-    writeContinuationStats ( const int conStep,
-                             const Teuchos::RCP<const ComplexVector> psi ) const;
+    writeContinuationStats ( const Teuchos::RCP<const ComplexVector> & psi );
 
-    //! Translate an Epetra_Comm into a Teuchos::Comm<int>, no matter the Thyra::Ordinal.
+    //! Translate an Epetra_Comm into a Teuchos::Comm<int>,
+    //! no matter the Thyra::Ordinal.
     Teuchos::RCP<const Teuchos::Comm<int> >
     create_CommInt ( const Teuchos::RCP<const Epetra_Comm> &epetraComm );
 
@@ -189,7 +189,7 @@ private:
 
     Teuchos::RCP<GL::Komplex> glKomplex_;
 
-    GinzburgLandau::GinzburgLandau Gl_;
+    GinzburgLandau Gl_;
     Teuchos::RCP<Epetra_CrsMatrix> preconditioner_;
     Teuchos::RCP<Epetra_Vector> initialSolution_;
 

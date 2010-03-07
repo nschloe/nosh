@@ -42,6 +42,12 @@ namespace Helpers
   mergeLocaParameterVectors( const LOCA::ParameterVector & p0,
                              const LOCA::ParameterVector & p1
                            );
+                           
+  void
+  appendToTeuchosParameterList( Teuchos::ParameterList      & p,
+                                const LOCA::ParameterVector & pL,
+                                const std::string           & labelPrepend = ""
+                              );
                                           
 };
 

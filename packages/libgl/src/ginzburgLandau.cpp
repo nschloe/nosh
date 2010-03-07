@@ -5,16 +5,19 @@
 // needed for reduceAllAndScatter in freeEnergy()
 #include <Teuchos_Comm.hpp>
 
+
+
 // =============================================================================
 // Class constructor
 GinzburgLandau::
-GinzburgLandau ( const Teuchos::RCP<GL::Operator::Virtual>  & glOperator
+GinzburgLandau ( const Teuchos::RCP<GL::Operator::Virtual> & glOperator,
+                 const Teuchos::RCP<GL::StatsWriter>       & statsWriter
                ) :
         glOperator_ ( glOperator ),
-        perturbation_ ( Teuchos::null )
+        perturbation_ ( Teuchos::null ),
+        statsWriter_( statsWriter )
 {
 }
-
 // =============================================================================
 // Class constructor containing a perturbation
 GinzburgLandau::
@@ -44,6 +47,12 @@ int
 GinzburgLandau::getNumUnknowns() const
 {
     return glOperator_->getGrid()->getNumGridPoints();
+}
+// =============================================================================
+Teuchos::RCP<GL::StatsWriter>
+GinzburgLandau::getStatsWriter()
+{
+    return statsWriter_;
 }
 // =============================================================================
 Teuchos::RCP<ComplexVector>
@@ -291,40 +300,23 @@ writeAbstractStateToFile ( const Teuchos::RCP<const ComplexVector> & psi,
 // =============================================================================
 void
 GinzburgLandau::
-appendStats ( std::ofstream                           & fileStream,
-              const bool                                header,
-              const Teuchos::RCP<const ComplexVector> & psi
+appendStats ( const Teuchos::RCP<const ComplexVector> & psi
             ) const
-{
-    int columnWidth = 18;
-    Teuchos::RCP<LOCA::ParameterVector> p = glOperator_->getParameters();
-  
-    if ( header )
-    {
-     
-        for ( int k=0; k<p->length(); k++ )
-            fileStream << p->getLabel(k)
-                       << setw ( columnWidth ) << "\t";
+{ 
+    // put the parameter list into statsWriter_
+    std::string labelPrepend = "1";
+    GL::Helpers::appendToTeuchosParameterList( *(statsWriter_->getList()),
+                                               *(glOperator_->getParameters()),
+                                               labelPrepend );
+    
+    TEUCHOS_ASSERT( psi.is_valid_ptr() && !psi.is_null() );
+    
+    statsWriter_->getList()->set( "2free energy", freeEnergy ( *psi ) );
+    statsWriter_->getList()->set( "2||x||_2 scaled", normalizedScaledL2Norm ( *psi ) );
+    statsWriter_->getList()->set( "2vorticity", getVorticity ( *psi ) );
+ 
+    statsWriter_->print();
 
-        fileStream
-        << "free energy" << setw ( columnWidth ) << "\t"
-        << "||x||_2 scaled" << setw ( columnWidth ) << "\t"
-        << "vorticity";
-    }
-    else
-    {
-        for ( int k=0; k<p->length(); k++ )
-            fileStream << (*p)[k]
-                       << setw ( columnWidth ) << "\t";
-        
-        double energy = freeEnergy ( *psi );
-        double l2norm = normalizedScaledL2Norm ( *psi );
-        int vorticity = getVorticity ( *psi );
-        fileStream
-        << energy << setw ( columnWidth ) << "\t"
-        << l2norm << setw ( columnWidth ) << "\t"
-        << vorticity;
-    }
-
+    return;
 }
 // =============================================================================

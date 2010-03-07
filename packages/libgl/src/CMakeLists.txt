@@ -1,5 +1,6 @@
 SET ( gl_SRCS
       GL_Helpers.cpp
+      GL_StatsWriter.cpp
       GL_MagneticVectorPotential_Centered.cpp
       ginzburgLandau.cpp
       GL_Operator_Virtual.cpp

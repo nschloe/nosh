@@ -26,16 +26,17 @@ typedef std::complex<double> double_complex;
 
 // =============================================================================
 // Default constructor
-GL::LocaSystem::Default::Default ( GinzburgLandau::GinzburgLandau &gl,
-                     const Teuchos::RCP<const Epetra_Comm> eComm,
-                     const Teuchos::RCP<const ComplexVector> psi,
-                     const std::string outputDir,
-                     const std::string outputDataFileName,
-                     const std::string outputFileFormat,
-                     const std::string solutionFileNameBase,
-                     const std::string nullvectorFileNameBase,
-                     const unsigned int maxNumDigits
-                   ) :
+GL::LocaSystem::Default::
+Default ( GinzburgLandau::GinzburgLandau          & gl,
+          const Teuchos::RCP<const Epetra_Comm>     eComm,
+          const Teuchos::RCP<const ComplexVector>   psi,
+          const std::string outputDir,
+          const std::string outputDataFileName,
+          const std::string outputFileFormat,
+          const std::string solutionFileNameBase,
+          const std::string nullvectorFileNameBase,
+          const unsigned int maxNumDigits
+        ) :
         stepper_ ( Teuchos::null ),
         glKomplex_ ( Teuchos::rcp ( new GL::Komplex ( eComm,psi->getMap() ) ) ),
         Gl_ ( gl ),
@@ -49,12 +50,15 @@ GL::LocaSystem::Default::Default ( GinzburgLandau::GinzburgLandau &gl,
         firstTime_ ( true ),
         maxNumDigits_( maxNumDigits )
 {
+  return;
 }
 // =============================================================================
 // Destructor
 GL::LocaSystem::Default::~Default()
 {
     stepper_ = Teuchos::null;
+//     contFileStream.close();
+  return;
 }
 // =============================================================================
 bool
@@ -241,8 +245,9 @@ GL::LocaSystem::Default::printSolution ( const Epetra_Vector &x,
 }
 // =============================================================================
 void
-GL::LocaSystem::Default::printSolutionOneParameterContinuation ( const Teuchos::RCP<const ComplexVector> & psi
-                                                               ) const
+GL::LocaSystem::Default::
+printSolutionOneParameterContinuation ( const Teuchos::RCP<const ComplexVector> & psi
+                                      )
 {
     int conStep = stepper_->getStepNumber();
     
@@ -254,7 +259,7 @@ GL::LocaSystem::Default::printSolutionOneParameterContinuation ( const Teuchos::
     // actually print the state to fileName
     Gl_.writeSolutionToFile ( psi, fileName.str() );
 
-    writeContinuationStats ( conStep, psi );
+    writeContinuationStats ( psi );
 }
 // =============================================================================
 // In Turning Point continuation, the printSolution method is called exactly
@@ -267,10 +272,10 @@ GL::LocaSystem::Default::printSolutionOneParameterContinuation ( const Teuchos::
 void
 GL::LocaSystem::Default::
 printSolutionTurningPointContinuation ( const Teuchos::RCP<const ComplexVector> & psi
-                                      ) const
+                                      )
 {
     static bool printSolution=false;
-    int conStep = stepper_->getNumTotalSteps();
+    int conStep = stepper_->getStepNumber();
 
     // alternate between solution and nullvector
     printSolution = !printSolution;
@@ -282,7 +287,7 @@ printSolutionTurningPointContinuation ( const Teuchos::RCP<const ComplexVector> 
         fileName
         << outputDir_ << "/" << solutionFileNameBase_
         << setw ( maxNumDigits_ ) << setfill ( '0' ) << conStep << ".vtk";
-        writeContinuationStats ( conStep, psi );
+        writeContinuationStats ( psi );
     }
     else
         fileName
@@ -294,38 +299,26 @@ printSolutionTurningPointContinuation ( const Teuchos::RCP<const ComplexVector> 
 }
 // =============================================================================
 void
-GL::LocaSystem::Default::writeContinuationStats ( const int conStep,
-                                   const Teuchos::RCP<const ComplexVector> psi ) const
-{
-    // fill the continuation parameters file
-    std::string contFileName = outputDir_ + "/" + outputDataFileName_;
-    std::ofstream contFileStream;
+GL::LocaSystem::Default::
+writeContinuationStats ( const Teuchos::RCP<const ComplexVector> & psi )
+{   
+    TEUCHOS_ASSERT( Gl_.getStatsWriter().is_valid_ptr()
+                    && !Gl_.getStatsWriter().is_null() );
 
-    // Set the output format
-    // Think about replacing this with NOX::Utils::Sci.
-    contFileStream.setf ( std::ios::scientific );
-    contFileStream.precision ( 15 );
+    TEUCHOS_ASSERT( Gl_.getStatsWriter()->getList().is_valid_ptr()
+                    && !Gl_.getStatsWriter()->getList().is_null() );
 
-    if ( conStep == 0 )
-    {
-        contFileStream.open ( contFileName.c_str(), ios::trunc );
-        contFileStream << "# Step  \t";
-        Gl_.appendStats ( contFileStream, true );
-        contFileStream << "\t#nonlinear steps\n";
-    }
-    else
-    {
-        // just append to the the contents to the file
-        contFileStream.open ( contFileName.c_str(), ios::app );
-    }
+    Gl_.getStatsWriter()->getList()->set( "0step",
+                                          stepper_->getStepNumber() );
+    Gl_.getStatsWriter()->getList()->set( "2#nonlinear steps",
+                                          stepper_->getSolver()->getNumIterations() );
+              
+    Gl_.appendStats( psi );
+                                          
+    // actually print the data
+    Gl_.getStatsWriter()->print();
 
-    int nonlinearIterations = stepper_->getSolver()->getNumIterations();
-
-    contFileStream << "  " << conStep << "      \t";
-    Gl_.appendStats ( contFileStream, false, psi );
-    contFileStream << "       \t" << nonlinearIterations << std::endl;
-
-    contFileStream.close();
+    return;
 }
 // =============================================================================
 // function used by LOCA

@@ -11,6 +11,8 @@
 
 #include "GL_Perturbation_Virtual.h"
 
+#include "GL_StatsWriter.h"
+
 
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_XMLObject.hpp>
@@ -25,7 +27,9 @@ class GinzburgLandau
 public:
 
     /*! Default constructor.*/
-    GinzburgLandau ( const Teuchos::RCP<GL::Operator::Virtual> & glOperator );
+    GinzburgLandau ( const Teuchos::RCP<GL::Operator::Virtual> & glOperator,
+                     const Teuchos::RCP<GL::StatsWriter>       & statsWriter
+                   );
 
     /*! Constructor with a specified perturbation.*/
     GinzburgLandau ( const Teuchos::RCP<GL::Operator::Virtual>  & glOperator,
@@ -39,6 +43,9 @@ public:
 
     int
     getNumUnknowns() const;
+    
+    Teuchos::RCP<GL::StatsWriter>
+    getStatsWriter();
 
     Teuchos::RCP<ComplexVector>
     computeGlVector ( const Teuchos::RCP<const ComplexVector> & psi ) const;
@@ -91,9 +98,7 @@ public:
      *  \c filestream.
      */
     void
-    appendStats ( std::ofstream & fileStream,
-                  const bool header = false,
-                  const Teuchos::RCP<const ComplexVector> &psi = Teuchos::null
+    appendStats ( const Teuchos::RCP<const ComplexVector> & psi = Teuchos::null
                 ) const;
 
 private:
@@ -115,6 +120,8 @@ private:
     const Teuchos::RCP<GL::Operator::Virtual> glOperator_;
 
     const Teuchos::RCP<GL::Perturbation::Virtual> perturbation_;
+    
+    const Teuchos::RCP<GL::StatsWriter> statsWriter_;
 
 private:
     /*! Calculated the coefficients of the jacobian system associated with the

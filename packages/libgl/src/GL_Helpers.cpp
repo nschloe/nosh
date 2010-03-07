@@ -45,14 +45,13 @@ Teuchos::RCP<Teuchos::ParameterList>
 GL::Helpers::
 locaParameterVector2teuchosParameterList( const LOCA::ParameterVector & pL )
 {
-  Teuchos::RCP<Teuchos::ParameterList> p =
-      Teuchos::rcp( new Teuchos::ParameterList() );
-        
-  Teuchos::ParameterList::ConstIterator k;
-  for ( int k=0; k<pL.length(); k++ )
-     p->set<double>( pL.getLabel(k), pL[k] );  
 
-  return p;
+    Teuchos::RCP<Teuchos::ParameterList> p =
+      Teuchos::rcp( new Teuchos::ParameterList() );
+      
+    appendToTeuchosParameterList(  *p, pL );
+
+    return p;
 }
 // ============================================================================
 Teuchos::RCP<LOCA::ParameterVector>
@@ -83,5 +82,19 @@ mergeLocaParameterVectors( const LOCA::ParameterVector & p0,
   }
   
   return p;
+}
+// ============================================================================
+void
+GL::Helpers::
+appendToTeuchosParameterList( Teuchos::ParameterList      & p,
+                              const LOCA::ParameterVector & pL,
+                              const std::string           & labelPrepend
+                            )
+{       
+  Teuchos::ParameterList::ConstIterator k;
+  for ( int k=0; k<pL.length(); k++ )
+     p.set<double>( labelPrepend + pL.getLabel(k), pL[k] );  
+  
+  return;
 }
 // ============================================================================
