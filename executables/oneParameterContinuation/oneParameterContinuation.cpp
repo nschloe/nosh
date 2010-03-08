@@ -133,7 +133,7 @@ main ( int argc, char *argv[] )
     }
     // set default directory to be the directory of the XML file itself
     std::string xmlPath = boost::filesystem::path ( xmlInputFileName ).branch_path().string();
-    boost::filesystem::path outputDirectory = outputList.get<string> ( "Output directory", "" );
+    boost::filesystem::path outputDirectory = outputList.get<string> ( "Output directory" );
     if ( outputDirectory.root_directory().empty() ) // outputDirectory is empty or is a relative directory.
         outputDirectory = xmlPath / outputDirectory;
     std::string contFileBaseName =
@@ -160,7 +160,7 @@ main ( int argc, char *argv[] )
         std::cerr << e.what() << std::endl;
         return 1;
     }
-    boost::filesystem::path inputGuessFile = initialGuessList.get<string> ( "File name", "" );
+    boost::filesystem::path inputGuessFile = initialGuessList.get<string> ( "File name" );
     if ( !inputGuessFile.empty() && inputGuessFile.root_directory().empty() ) // if inputGuessFile is a relative path
         inputGuessFile = xmlPath / inputGuessFile;
 
@@ -283,7 +283,7 @@ main ( int argc, char *argv[] )
     }
     
     // set the initial value from glParameters
-    std::string contParam = stepperList.get<string> ( "Continuation Parameter", "" );
+    std::string contParam = stepperList.get<string> ( "Continuation Parameter" );
     TEST_FOR_EXCEPTION ( !glParameters.isParameter ( contParam ),
                          std::logic_error,
                          "Parameter \"" << contParam << "\" given as continuation parameter, but doesn't exist"
