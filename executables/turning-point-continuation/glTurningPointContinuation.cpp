@@ -11,7 +11,6 @@
 #endif
 
 #include <Epetra_Vector.h>
-#include <Epetra_Import.h>
 #include <NOX_Epetra_LinearSystem_AztecOO.H>
 
 #include <LOCA_StatusTest_MaxIters.H>
@@ -29,6 +28,9 @@
 
 #include "GL_LocaSystem_Bordered.h"
 #include "GL_IO_SaveEigenData.h"
+
+#include "GL_Helpers.h"
+#include "GL_StatsWriter.h"
 
 #include "GridReader.h"
 
@@ -130,7 +132,7 @@ main ( int argc, char *argv[] )
     }
     // set default directory to be the directory of the XML file itself
     std::string xmlPath = boost::filesystem::path ( xmlInputFileName ).branch_path().string();
-    boost::filesystem::path outputDirectory = outputList.get<string> ( "Output directory", "" );
+    boost::filesystem::path outputDirectory = outputList.get<string> ( "Output directory" );
     if ( outputDirectory.root_directory().empty() ) // outputDirectory is empty or is a relative directory.
         outputDirectory = xmlPath / outputDirectory;
     std::string contFileBaseName =
@@ -233,7 +235,13 @@ main ( int argc, char *argv[] )
     Teuchos::RCP<GL::Operator::Virtual> glOperator =
         Teuchos::rcp ( new GL::Operator::BCCentral ( grid, A ) );
 
-    GinzburgLandau glProblem = GinzburgLandau ( glOperator );
+        
+    std::string fn = outputDirectory.string() + "/" + contDataFileName;
+    Teuchos::RCP<GL::StatsWriter> statsWriter =
+        Teuchos::rcp( new GL::StatsWriter( fn ) );
+    GinzburgLandau glProblem = GinzburgLandau ( glOperator,
+                                                statsWriter,
+                                                contFileFormat );
 
     Teuchos::RCP<GL::LocaSystem::Bordered> glsystem;
 
@@ -246,7 +254,6 @@ main ( int argc, char *argv[] )
                                   psi,
                                   outputDirectory.string(),
                                   contDataFileName,
-                                  contFileFormat,
                                   contFileBaseName,
                                   "",
                                   numDigits ( maxLocaSteps ) ) );
@@ -258,7 +265,7 @@ main ( int argc, char *argv[] )
     }
 
     // set the initial value from glParameters
-    std::string contParam = stepperList.get<string> ( "Continuation Parameter", "" );
+    std::string contParam = stepperList.get<string> ( "Continuation Parameter" );
     TEST_FOR_EXCEPTION ( !glParameters.isParameter ( contParam ),
                          std::logic_error,
                          "Parameter \"" << contParam << "\" given as continuation parameter, but doesn't exist"
@@ -334,9 +341,10 @@ main ( int argc, char *argv[] )
     // Create a group which uses that problem interface. The group will
     // be initialized to contain the default initial guess for the
     // specified problem.
-    LOCA::ParameterVector locaParams;
-    locaParams.addParameter ( "H0", glParameters.get<double> ( "H0" ) );
-    locaParams.addParameter ( "scaling", glParameters.get<double> ( "scaling" ) );
+
+    // translate parameters into a LOCA list
+    LOCA::ParameterVector locaParams =
+          *(GL::Helpers::teuchosParameterList2locaParameterVector( glParameters ));
 
     NOX::Epetra::Vector initialGuess ( soln, NOX::Epetra::Vector::CreateView );
 
