@@ -795,7 +795,8 @@ getBoundaryIndices() const
 }
 // =============================================================================
 unsigned int
-Recti::Grid::General::boundaryIndex2globalIndex ( unsigned int l ) const
+Recti::Grid::General::
+boundaryIndex2globalIndex ( unsigned int l ) const
 {
     TEST_FOR_EXCEPTION ( true,
                          std::logic_error,
@@ -805,8 +806,8 @@ Recti::Grid::General::boundaryIndex2globalIndex ( unsigned int l ) const
 void
 Recti::Grid::General::
 pruneInitialTentacle ( Teuchos::Array<UIntTuple> & nodes,
-                             Teuchos::Array<direction> & directions
-                           ) const
+                       Teuchos::Array<direction> & directions
+                     ) const
 {
     int numNodes = nodes.length();
     int lengthInitialTentacle = 0;

@@ -164,73 +164,32 @@ main ( int argc, char *argv[] )
     if ( !inputGuessFile.empty() && inputGuessFile.root_directory().empty() ) // if inputGuessFile is a relative path
         inputGuessFile = xmlPath / inputGuessFile;
 
-    if ( !inputGuessFile.empty() )
+    TEUCHOS_ASSERT( !inputGuessFile.empty() );
+    
+    try
     {
-        try
-        {
-            // For technical reasons, the reader can only accept ComplexMultiVectors.
-            Teuchos::RCP<ComplexMultiVector> psiM;
-            Recti::Grid::Reader::read ( Comm, inputGuessFile.string(), psiM, grid, glParameters );
-            TEUCHOS_ASSERT_EQUALITY ( psiM->getNumVectors(), 1 );
-            psi = psiM->getVectorNonConst ( 0 );
-        }
-        catch ( std::exception &e )
-        {
-            std::cerr << e.what() << std::endl;
-            return 1;
-        }
-
-        if ( initialGuessList.isParameter ( "Nx" ) )
-        {
-            std::cerr << "Warning: Parameter 'Nx' *and* input guess file given."
-                      << "Using value as in input guess file, discarding 'Nx'."
-                      << std::endl;
-        }
-        if ( initialGuessList.isParameter ( "scaling" ) )
-        {
-            std::cerr << "Warning: Parameter 'scaling' *and* input guess file given."
-                      << "Using value as in input guess file, discarding 'scaling'."
-                      << std::endl;
-        }
-        if ( initialGuessList.isParameter ( "H0" ) )
-        {
-            std::cerr << "Warning: Parameter 'H0' *and* input guess file given."
-                      << "Using value as in input guess file, discarding 'H0'."
-                      << std::endl;
-        }
-        if ( initialGuessList.isParameter ( "chi" ) )
-        {
-            std::cerr << "Warning: Parameter 'chi' *and* input guess file given."
-                      << "Using value as in input guess file, discarding 'chi'."
-                      << std::endl;
-        }
-
+        // For technical reasons, the reader can only accept ComplexMultiVectors.
+        Teuchos::RCP<ComplexMultiVector> psiM;
+        Recti::Grid::Reader::read ( Comm, inputGuessFile.string(), psiM, grid, glParameters );
+        TEUCHOS_ASSERT_EQUALITY ( psiM->getNumVectors(), 1 );
+        psi = psiM->getVectorNonConst ( 0 );
     }
-    else // no or empty input guess file
+    catch ( std::exception &e )
     {
-      std::cerr << "Give me a file, idiot! " << std::endl;
-        // double scaling = initialGuessList.get<double> ( "scaling" );
-        // double H0      = initialGuessList.get<double> ( "H0" );
+        std::cerr << e.what() << std::endl;
+        return 1;
+    }
 
-        // glParameters.set ( "scaling", scaling );
-        // glParameters.set ( "H0", H0 );
-
-        // double edgeLength = 1.0;
-        // Teuchos::RCP<DomainVirtual> domain = Teuchos::rcp ( new DomainSquare ( edgeLength ) );
-
-        // int    Nx = initialGuessList.get<int> ( "Nx" );
-        // double h  = edgeLength / Nx;
-        // Teuchos::RCP<GridUniform> grid = Teuchos::rcp ( new GridUniform ( domain, h ) );
-        // grid->updateScaling ( scaling );
-
-        // // set initial guess
-        // int numComplexUnknowns = grid->getNumGridPoints();
-        // Teuchos::RCP<Tpetra::Map<Thyra::Ordinal> > complexMap =
-        //     Teuchos::rcp ( new Tpetra::Map<Thyra::Ordinal> ( numComplexUnknowns, 0, Comm ) );
-
-        // psi = Teuchos::rcp ( new ComplexVector ( complexMap ) );
-        // double_complex alpha ( 1.0, 0.0 );
-        // psi->putScalar ( alpha );
+    // possibly overwrite the parameters
+    Teuchos::ParameterList & overwriteParamsList = paramList->sublist ( "Overwrite parameter list", true ); 
+    bool overwriteParameters = overwriteParamsList.get<bool> ( "Overwrite parameters" );
+    if ( overwriteParameters )
+    {
+        Teuchos::ParameterList & overwritePList = overwriteParamsList.sublist( "Parameters", true );
+        glParameters.setParameters( overwritePList );
+        
+        // possibly update the scaling of the grid
+        grid->updateScaling( glParameters.get<double>("scaling") );
     }
     // ---------------------------------------------------------------------------
 
