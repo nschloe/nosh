@@ -15,9 +15,6 @@
 
 #include "glNoxHelpers.h"
 
-#include "VtiWriter.h"
-#include "VtkWriter.h"
-
 // =============================================================================
 int main ( int argc, char *argv[] )
 { 

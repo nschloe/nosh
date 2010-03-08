@@ -17,51 +17,33 @@
 
 */
 
-#include "VtkWriter.h"
+#include "VIO_Writer_VTI.h"
 
-#include <vtkStructuredPointsWriter.h>
+#include <vtkXMLImageDataWriter.h>
 
 // =============================================================================
 // Constructor
-VtkWriter::VtkWriter ( const std::string & filePath ) :
-        AbstractImageWriter ( filePath ),
-        isFormatBinary_( false ) // Set the default to ASCII.
-                                 // If you want compressed files, use VTI.
+VIO::Writer::VTI::
+VTI ( const std::string & filePath ) :
+      VIO::Writer::Abstract ( filePath )
 {
 }
 // =============================================================================
 // Destructor
-VtkWriter::~VtkWriter()
+VIO::Writer::VTI::
+~VTI()
 {
 }
 // =============================================================================
 void
-VtkWriter::setFormatBinary()
-{
-  isFormatBinary_ = true;
-}
-// =============================================================================
-void
-VtkWriter::setFormatAscii()
-{
-  isFormatBinary_ = false;
-}
-// =============================================================================
-void
-VtkWriter::write () const
+VIO::Writer::VTI::
+write () const
 {
     // write the file
-    vtkSmartPointer<vtkStructuredPointsWriter> writer =
-        vtkSmartPointer<vtkStructuredPointsWriter>::New();
+    vtkSmartPointer<vtkXMLImageDataWriter> writer =
+        vtkSmartPointer<vtkXMLImageDataWriter>::New();
     writer->SetFileName ( filePath_.c_str() );
     writer->SetInput ( imageData_ );
-    if ( isFormatBinary_ )
-        // write binary data to avoid losing precision
-        writer->SetFileTypeToBinary();
-    else
-        // ASCII format stores only eight significant digits
-        writer->SetFileTypeToASCII();
-
     writer->Write();
 
     return;

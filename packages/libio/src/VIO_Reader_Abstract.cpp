@@ -17,7 +17,7 @@
 
 */
 
-#include "AbstractImageReader.h"
+#include "VIO_Reader_Abstract.h"
 
 #include <vtkCellArray.h>
 #include <vtkPoints.h>
@@ -29,18 +29,21 @@
 #include <vtkPointData.h>
 
 // =============================================================================
-AbstractImageReader::AbstractImageReader ( const std::string & filePath ) :
-        filePath_ ( filePath )
+VIO::Reader::Abstract::
+Abstract ( const std::string & filePath ) :
+           filePath_ ( filePath )
 {
 }
 // =============================================================================
-AbstractImageReader::~AbstractImageReader ()
+VIO::Reader::Abstract::
+~Abstract ()
 {
 }
 // =============================================================================
 double
-AbstractImageReader::extractDoubleValue ( const vtkSmartPointer<vtkDataArray> & array
-                                        ) const
+VIO::Reader::Abstract::
+extractDoubleValue ( const vtkSmartPointer<vtkDataArray> & array
+                   ) const
 {
     TEUCHOS_ASSERT_EQUALITY ( array->GetSize(), 1 );
 
@@ -52,8 +55,9 @@ AbstractImageReader::extractDoubleValue ( const vtkSmartPointer<vtkDataArray> & 
 }
 // =============================================================================
 int
-AbstractImageReader::extractIntValue ( const vtkSmartPointer<vtkDataArray> & array
-                                     ) const
+VIO::Reader::Abstract::
+extractIntValue ( const vtkSmartPointer<vtkDataArray> & array
+                ) const
 {
     TEUCHOS_ASSERT_EQUALITY ( array->GetSize(), 1 );
 
@@ -65,8 +69,9 @@ AbstractImageReader::extractIntValue ( const vtkSmartPointer<vtkDataArray> & arr
 }
 // =============================================================================
 Teuchos::Array<int>
-AbstractImageReader::extractIntArray ( const vtkSmartPointer<vtkDataArray> & array
-                                     ) const
+VIO::Reader::Abstract::
+extractIntArray ( const vtkSmartPointer<vtkDataArray> & array
+                ) const
 {
     TEUCHOS_ASSERT_EQUALITY ( array->GetNumberOfComponents(), 1 );
 
@@ -87,8 +92,9 @@ AbstractImageReader::extractIntArray ( const vtkSmartPointer<vtkDataArray> & arr
 }
 // =============================================================================
 Teuchos::Array<double>
-AbstractImageReader::extractDoubleArray ( const vtkSmartPointer<vtkDataArray> & array
-                                        ) const
+VIO::Reader::Abstract::
+extractDoubleArray ( const vtkSmartPointer<vtkDataArray> & array
+                   ) const
 {
     TEUCHOS_ASSERT_EQUALITY ( array->GetNumberOfComponents(), 1 );
 
@@ -109,15 +115,16 @@ AbstractImageReader::extractDoubleArray ( const vtkSmartPointer<vtkDataArray> & 
 }
 // =============================================================================
 void
-AbstractImageReader::processImageData ( const vtkSmartPointer<vtkImageData>           & imageData,
-                                        Teuchos::RCP<ComplexMultiVector>              & z,
-                                        Teuchos::Array<int>                           & p,
-                                        UIntTuple                                     & dims,
-                                        DoubleTuple                                   & origin,
-                                        DoubleTuple                                   & spacing,
-                                        Teuchos::ParameterList                        & fieldData,
-                                        const Teuchos::RCP<const Teuchos::Comm<int> > & TComm
-                                      ) const
+VIO::Reader::Abstract::
+processImageData ( const vtkSmartPointer<vtkImageData>           & imageData,
+                   Teuchos::RCP<ComplexMultiVector>              & z,
+                   Teuchos::Array<int>                           & p,
+                   UIntTuple                                     & dims,
+                   DoubleTuple                                   & origin,
+                   DoubleTuple                                   & spacing,
+                   Teuchos::ParameterList                        & fieldData,
+                   const Teuchos::RCP<const Teuchos::Comm<int> > & TComm
+                 ) const
 {
     double *tmp;
     tmp = imageData->GetOrigin();
@@ -178,8 +185,9 @@ AbstractImageReader::processImageData ( const vtkSmartPointer<vtkImageData>     
 }
 // =============================================================================
 Teuchos::ParameterList
-AbstractImageReader::readFieldData ( const vtkSmartPointer<vtkImageData>  & imageData
-                                   ) const
+VIO::Reader::Abstract::
+readFieldData ( const vtkSmartPointer<vtkImageData>  & imageData
+              ) const
 {
     Teuchos::ParameterList fieldData;
 

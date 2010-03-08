@@ -17,14 +17,15 @@
 
 */
 
-#include "WriterFactory.h"
+#include "VIO_Writer_Factory.h"
 
-#include "VtiWriter.h"
-#include "VtkWriter.h"
+#include "VIO_Writer_VTI.h"
+#include "VIO_Writer_legacyVTK.h"
 
 // =============================================================================
-Teuchos::RCP<AbstractImageWriter>
-WriterFactory::createImageWriter ( const std::string & fileName )
+Teuchos::RCP<VIO::Writer::Abstract>
+VIO::Writer::Factory::
+createImageWriter ( const std::string & fileName )
 {
     // analyze the file name for extension
     int         dotPos    = fileName.rfind ( "." );
@@ -32,11 +33,11 @@ WriterFactory::createImageWriter ( const std::string & fileName )
 
     if ( extension.compare ( "vtk" ) == 0 )
     {
-        return Teuchos::rcp( new VtkWriter ( fileName ) );
+        return Teuchos::rcp( new VIO::Writer::legacyVTK ( fileName ) );
     }
     else if ( extension.compare ( "vti" ) == 0 )
     {
-        return Teuchos::rcp( new VtiWriter ( fileName ) );
+        return Teuchos::rcp( new VIO::Writer::VTI ( fileName ) );
     }
     else
     {

@@ -17,7 +17,7 @@
 
 */
 
-#include "AbstractImageWriter.h"
+#include "VIO_Writer_Abstract.h"
 
 #include <vtkIntArray.h>
 #include <vtkDoubleArray.h>
@@ -26,19 +26,22 @@
 #include <EpetraExt_Utils.h> // for toString
 
 // =============================================================================
-AbstractImageWriter::AbstractImageWriter ( const std::string & filePath ) :
+VIO::Writer::Abstract::
+Abstract ( const std::string & filePath ) :
         filePath_ ( filePath ),
         imageData_ ( vtkSmartPointer<vtkImageData>::New() )
 {
 }
 // =============================================================================
-AbstractImageWriter::~AbstractImageWriter()
+VIO::Writer::Abstract::
+~Abstract()
 {
 }
 // =============================================================================
 void
-AbstractImageWriter::addFieldData ( const Teuchos::Array<int> & array,
-                                    const std::string         & name )
+VIO::Writer::Abstract::
+addFieldData ( const Teuchos::Array<int> & array,
+               const std::string         & name )
 {
     // create field data
     vtkSmartPointer<vtkIntArray> fieldData = vtkSmartPointer<vtkIntArray>::New();
@@ -55,7 +58,8 @@ AbstractImageWriter::addFieldData ( const Teuchos::Array<int> & array,
 }
 // =============================================================================
 void
-AbstractImageWriter::addParameterList ( const Teuchos::ParameterList & problemParams )
+VIO::Writer::Abstract::
+addParameterList ( const Teuchos::ParameterList & problemParams )
 {
     // add to imageData_
     Teuchos::map<std::string, Teuchos::ParameterEntry>::const_iterator k;
@@ -97,12 +101,13 @@ AbstractImageWriter::addParameterList ( const Teuchos::ParameterList & problemPa
 }
 // =============================================================================
 void
-AbstractImageWriter::setImageData ( const Epetra_MultiVector              & x,
-                                    const Teuchos::Tuple<unsigned int,2>  & Nx,
-                                    const Teuchos::Tuple<double,2>        & h,
-                                    const Teuchos::Array<int>             & p,
-                                    const Teuchos::Array<std::string>     & scalarsNames
-                                  )
+VIO::Writer::Abstract::
+setImageData ( const Epetra_MultiVector              & x,
+               const Teuchos::Tuple<unsigned int,2>  & Nx,
+               const Teuchos::Tuple<double,2>        & h,
+               const Teuchos::Array<int>             & p,
+               const Teuchos::Array<std::string>     & scalarsNames
+             )
 {
     int numVecs   = x.NumVectors();
     int numPoints = ( Nx[0]+1 ) * ( Nx[1]+1 );
@@ -156,12 +161,13 @@ AbstractImageWriter::setImageData ( const Epetra_MultiVector              & x,
 }
 // =============================================================================
 void
-AbstractImageWriter::setImageData ( const DoubleMultiVector               & x,
-                                    const Teuchos::Tuple<unsigned int,2>  & Nx,
-                                    const Teuchos::Tuple<double,2>        & h,
-                                    const Teuchos::Array<int>             & p,
-                                    const Teuchos::Array<std::string>     & scalarsNames
-                                  )
+VIO::Writer::Abstract::
+setImageData ( const DoubleMultiVector               & x,
+               const Teuchos::Tuple<unsigned int,2>  & Nx,
+               const Teuchos::Tuple<double,2>        & h,
+               const Teuchos::Array<int>             & p,
+               const Teuchos::Array<std::string>     & scalarsNames
+             )
 {
     int numVecs   = x.getNumVectors();
     int numPoints = ( Nx[0]+1 ) * ( Nx[1]+1 );
@@ -212,12 +218,13 @@ AbstractImageWriter::setImageData ( const DoubleMultiVector               & x,
 }
 // =============================================================================
 void
-AbstractImageWriter::setImageData ( const ComplexMultiVector              & x,
-                                    const Teuchos::Tuple<unsigned int,2>  & Nx,
-                                    const Teuchos::Tuple<double,2>        & h,
-                                    const Teuchos::Array<int>             & p,
-                                    const Teuchos::Array<std::string>     & scalarsNames
-                                  )
+VIO::Writer::Abstract::
+setImageData ( const ComplexMultiVector              & x,
+               const Teuchos::Tuple<unsigned int,2>  & Nx,
+               const Teuchos::Tuple<double,2>        & h,
+               const Teuchos::Array<int>             & p,
+               const Teuchos::Array<std::string>     & scalarsNames
+             )
 {
     int numVecs   = x.getNumVectors();
     int numPoints = ( Nx[0]+1 ) * ( Nx[1]+1 );

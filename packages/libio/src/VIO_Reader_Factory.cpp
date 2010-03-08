@@ -17,14 +17,15 @@
 
 */
 
-#include "ReaderFactory.h"
+#include "VIO_Reader_Factory.h"
 
-#include "VtiReader.h"
-#include "VtkReader.h"
+#include "VIO_Reader_VTI.h"
+#include "VIO_Reader_legacyVTK.h"
 
 // =============================================================================
-Teuchos::RCP<AbstractImageReader>
-ReaderFactory::create ( const std::string & fileName )
+Teuchos::RCP<VIO::Reader::Abstract>
+VIO::Reader::Factory::
+create ( const std::string & fileName )
 {
     // analyze the file name for extension
     int         dotPos    = fileName.rfind ( "." );
@@ -32,11 +33,11 @@ ReaderFactory::create ( const std::string & fileName )
 
     if ( extension.compare ( "vtk" ) == 0 )
     {
-        return Teuchos::rcp( new VtkReader ( fileName ) );
+        return Teuchos::rcp( new VIO::Reader::legacyVTK ( fileName ) );
     }
     else if ( extension.compare ( "vti" ) == 0 )
     {
-        return Teuchos::rcp( new VtiReader ( fileName ) );
+        return Teuchos::rcp( new VIO::Reader::VTI ( fileName ) );
     }
     else
     {

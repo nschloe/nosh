@@ -1,12 +1,12 @@
 SET ( gl_SRCS
-      WriterFactory.cpp
-      AbstractImageWriter.cpp
-      VtiWriter.cpp
-      VtkWriter.cpp
-      ReaderFactory.cpp
-      AbstractImageReader.cpp
-      VtiReader.cpp
-      VtkReader.cpp
+      VIO_Writer_Factory.cpp
+      VIO_Writer_Abstract.cpp
+      VIO_Writer_VTI.cpp
+      VIO_Writer_legacyVTK.cpp
+      VIO_Reader_Factory.cpp
+      VIO_Reader_Abstract.cpp
+      VIO_Reader_VTI.cpp
+      VIO_Reader_legacyVTK.cpp
     )
 
 FIND_PACKAGE( Trilinos REQUIRED )

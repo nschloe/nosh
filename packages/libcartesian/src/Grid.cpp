@@ -7,7 +7,7 @@
 
 #include "Grid.h"
 
-#include "WriterFactory.h"
+#include "VIO_Writer_Factory.h"
 
 #include <Teuchos_ArrayView.hpp>
 
@@ -668,8 +668,8 @@ Grid::writeWithGrid ( const Epetra_MultiVector     & x,
                       const std::string            & filePath
                     ) const
 {
-    Teuchos::RCP<AbstractImageWriter> writer =
-        WriterFactory::createImageWriter ( filePath );
+    Teuchos::RCP<VIO::Writer::Abstract> writer =
+        VIO::Writer::Factory::createImageWriter ( filePath );
 
     // append grid parameters
     Teuchos::ParameterList extendedParams ( params );
@@ -693,8 +693,8 @@ Grid::writeWithGrid ( const DoubleMultiVector      & x,
                       const std::string            & filePath
                     ) const
 {
-    Teuchos::RCP<AbstractImageWriter> writer =
-        WriterFactory::createImageWriter ( filePath );
+    Teuchos::RCP<VIO::Writer::Abstract> writer =
+        VIO::Writer::Factory::createImageWriter ( filePath );
 
     // append grid parameters
     Teuchos::ParameterList extendedParams ( params );
@@ -718,8 +718,8 @@ Grid::writeWithGrid ( const ComplexMultiVector     & z,
                       const std::string            & filePath
                     ) const
 {
-    Teuchos::RCP<AbstractImageWriter> writer =
-        WriterFactory::createImageWriter ( filePath );
+    Teuchos::RCP<VIO::Writer::Abstract> writer =
+        VIO::Writer::Factory::createImageWriter ( filePath );
 
     // append grid parameters
     Teuchos::ParameterList extendedParams ( params );

@@ -37,14 +37,19 @@ typedef Tpetra::MultiVector<double,Thyra::Ordinal> DoubleMultiVector;
 typedef Tpetra::Vector<std::complex<double>,Thyra::Ordinal> ComplexVector;
 typedef Tpetra::MultiVector<std::complex<double>,Thyra::Ordinal> ComplexMultiVector;
 
-class AbstractImageWriter
+namespace VIO
+{
+  namespace Writer
+  {
+
+class Abstract
 {
 public:
     //! Default constructor.
-    AbstractImageWriter ( const std::string & filePath );
+    Abstract ( const std::string & filePath );
 
     //! Destructor
-    virtual ~AbstractImageWriter();
+    virtual ~Abstract();
 
     virtual void
     write () const = 0; // pure virtual
@@ -89,5 +94,7 @@ protected:
 private:
 };
 
+  } // namespace Writer
+} // namespace VIO
 
 #endif // ABSTRACTIMAGEWRITER_H

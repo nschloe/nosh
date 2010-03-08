@@ -17,27 +17,40 @@
 
 */
 
-#ifndef VTIWRITER_H
-#define VTIWRITER_H
+#ifndef VTIREADER_H
+#define VTIREADER_H
 
-#include "AbstractImageWriter.h"
+#include "VIO_Reader_Abstract.h"
 
-class VtiWriter:
-            public AbstractImageWriter
+namespace VIO
+{
+  namespace Reader
+  {
+
+class VTI:
+            public Abstract
 {
 public:
+    VTI ( const std::string & filePath );
 
-    //! Default constructor.
-    VtiWriter ( const std::string & filePath );
-
-    //! Destructor
-    virtual ~VtiWriter();
+    virtual
+    ~VTI ();
 
     virtual void
-    write () const;
+    read ( Teuchos::RCP<ComplexMultiVector>              & z,
+           Teuchos::Array<int>                           & p,
+           UIntTuple                                     & dims,
+           DoubleTuple                                   & origin,
+           DoubleTuple                                   & spacing,
+           Teuchos::ParameterList                        & fieldData,
+           const Teuchos::RCP<const Teuchos::Comm<int> > & TComm
+         ) const;
 
 protected:
 private:
 };
 
-#endif // VTIWRITER_H
+  } // namespace Reader
+} // namespace VIO
+
+#endif // VTIREADER_H

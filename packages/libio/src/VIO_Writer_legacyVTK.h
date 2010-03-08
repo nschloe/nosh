@@ -20,18 +20,23 @@
 #ifndef VTKWRITER_H
 #define VTKWRITER_H
 
-#include "AbstractImageWriter.h"
+#include "VIO_Writer_Abstract.h"
 
-class VtkWriter:
-            public AbstractImageWriter
+namespace VIO
+{
+  namespace Writer
+  {
+
+class legacyVTK:
+            public Abstract
 {
 public:
 
     //! Default constructor.
-    VtkWriter ( const std::string & filePath );
+    legacyVTK ( const std::string & filePath );
 
     //! Destructor
-    virtual ~VtkWriter();
+    virtual ~legacyVTK();
 
     virtual void
     write () const;
@@ -47,5 +52,8 @@ private:
   //! whether to write binary of ASCII format VTK
   bool isFormatBinary_;
 };
+
+  } // namespace Writer
+} // namespace VIO
 
 #endif // VTKWRITER_H

@@ -20,18 +20,23 @@
 #ifndef VTKREADER_H
 #define VTKREADER_H
 
-#include "AbstractImageReader.h"
+#include "VIO_Reader_Abstract.h"
 
 #include <vtkStructuredPoints.h>
 
-class VtkReader:
-            public AbstractImageReader
+namespace VIO
+{
+  namespace Reader
+  {
+
+class legacyVTK:
+            public Abstract
 {
 public:
-    VtkReader ( const std::string & filePath );
+    legacyVTK ( const std::string & filePath );
 
     virtual
-    ~VtkReader ();
+    ~legacyVTK ();
 
     virtual void
     read ( Teuchos::RCP<ComplexMultiVector>              & z,
@@ -46,5 +51,7 @@ public:
 protected:
 private:
 };
+  } // namespace Reader
+} // VIO
 
 #endif // VTKREADER_H

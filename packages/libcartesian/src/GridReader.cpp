@@ -7,7 +7,7 @@
 
 #include "GridReader.h"
 
-#include "ReaderFactory.h"
+#include "VIO_Reader_Factory.h"
 
 namespace GridReader {
 // =============================================================================
@@ -42,7 +42,7 @@ read( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
     )
 {
   
-  Teuchos::RCP<AbstractImageReader> reader = ReaderFactory::create( filePath );
+  Teuchos::RCP<VIO::Reader::Abstract> reader = VIO::Reader::Factory::create( filePath );
   
   // read all the values
   UIntTuple dims;

@@ -17,23 +17,35 @@
 
 */
 
-#ifndef WRITERFACTORY_H
-#define WRITERFACTORY_H
+#ifndef VTIWRITER_H
+#define VTIWRITER_H
 
-#include "AbstractImageWriter.h"
+#include "VIO_Writer_Abstract.h"
 
-class WriterFactory
+namespace VIO
+{
+  namespace Writer
+  {
+
+class VTI:
+    public Abstract
 {
 public:
-    //! Returns an pointer to an object of type IoVirtual for a given file
-    //! fileName.
-    //! Which of the implementations of IoVirtual is chosen is determined
-    //! according to the suffix if fileName.
-    static Teuchos::RCP<AbstractImageWriter>
-    createImageWriter ( const std::string & fileName );
+
+    //! Default constructor.
+    VTI ( const std::string & filePath );
+
+    //! Destructor
+    virtual ~VTI();
+
+    virtual void
+    write () const;
 
 protected:
 private:
 };
 
-#endif // WRITERFACTORY_H
+  } // namespace Writer
+} // namespace VIO
+
+#endif // VTIWRITER_H

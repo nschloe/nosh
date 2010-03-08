@@ -17,36 +17,39 @@
 
 */
 
-#include "VtiReader.h"
+#include "VIO_Reader_legacyVTK.h"
 
-#include <vtkXMLImageDataReader.h>
+#include <vtkStructuredPointsReader.h>
 #include <vtkPointData.h>
 
 // =============================================================================
-VtiReader::VtiReader ( const std::string & filePath ) :
-        AbstractImageReader ( filePath )
+VIO::Reader::legacyVTK::
+legacyVTK ( const std::string & filePath ) :
+        VIO::Reader::Abstract ( filePath )
 {
 }
 // =============================================================================
-VtiReader::~VtiReader ()
+VIO::Reader::legacyVTK::
+~legacyVTK ()
 {
 }
 // =============================================================================
 void
-VtiReader::read ( Teuchos::RCP<ComplexMultiVector>              & z,
-                  Teuchos::Array<int>                           & p,
-                  UIntTuple                                     & dims,
-                  DoubleTuple                                   & origin,
-                  DoubleTuple                                   & spacing,
-                  Teuchos::ParameterList                        & fieldData,
-                  const Teuchos::RCP<const Teuchos::Comm<int> > & TComm
-                ) const
+VIO::Reader::legacyVTK::
+read ( Teuchos::RCP<ComplexMultiVector>              & z,
+       Teuchos::Array<int>                           & p,
+       UIntTuple                                     & dims,
+       DoubleTuple                                   & origin,
+       DoubleTuple                                   & spacing,
+       Teuchos::ParameterList                        & fieldData,
+       const Teuchos::RCP<const Teuchos::Comm<int> > & TComm
+     ) const
 {
-    vtkSmartPointer<vtkXMLImageDataReader> reader =
-        vtkSmartPointer<vtkXMLImageDataReader>::New();
+    vtkSmartPointer<vtkStructuredPointsReader> reader =
+        vtkSmartPointer<vtkStructuredPointsReader>::New();
     reader->SetFileName ( filePath_.c_str() );
     reader->Update();
-
+    
     processImageData ( reader->GetOutput(),
                        z, p, dims, origin, spacing, fieldData, TComm );
 

@@ -17,36 +17,39 @@
 
 */
 
-#include "VtkReader.h"
+#include "VIO_Reader_VTI.h"
 
-#include <vtkStructuredPointsReader.h>
+#include <vtkXMLImageDataReader.h>
 #include <vtkPointData.h>
 
 // =============================================================================
-VtkReader::VtkReader ( const std::string & filePath ) :
-        AbstractImageReader ( filePath )
+VIO::Reader::VTI::
+VTI ( const std::string & filePath ) :
+        VIO::Reader::Abstract ( filePath )
 {
 }
 // =============================================================================
-VtkReader::~VtkReader ()
+VIO::Reader::VTI::
+~VTI ()
 {
 }
 // =============================================================================
 void
-VtkReader::read ( Teuchos::RCP<ComplexMultiVector>              & z,
-                  Teuchos::Array<int>                           & p,
-                  UIntTuple                                     & dims,
-                  DoubleTuple                                   & origin,
-                  DoubleTuple                                   & spacing,
-                  Teuchos::ParameterList                        & fieldData,
-                  const Teuchos::RCP<const Teuchos::Comm<int> > & TComm
-                ) const
+VIO::Reader::VTI::
+read ( Teuchos::RCP<ComplexMultiVector>              & z,
+       Teuchos::Array<int>                           & p,
+       UIntTuple                                     & dims,
+       DoubleTuple                                   & origin,
+       DoubleTuple                                   & spacing,
+       Teuchos::ParameterList                        & fieldData,
+       const Teuchos::RCP<const Teuchos::Comm<int> > & TComm
+     ) const
 {
-    vtkSmartPointer<vtkStructuredPointsReader> reader =
-        vtkSmartPointer<vtkStructuredPointsReader>::New();
+    vtkSmartPointer<vtkXMLImageDataReader> reader =
+        vtkSmartPointer<vtkXMLImageDataReader>::New();
     reader->SetFileName ( filePath_.c_str() );
     reader->Update();
-    
+
     processImageData ( reader->GetOutput(),
                        z, p, dims, origin, spacing, fieldData, TComm );
 

@@ -17,23 +17,31 @@
 
 */
 
-#ifndef READERFACTORY_H
-#define READERFACTORY_H
+#ifndef WRITERFACTORY_H
+#define WRITERFACTORY_H
 
-#include "AbstractImageReader.h"
+#include "VIO_Writer_Abstract.h"
 
-class ReaderFactory
+namespace VIO
+{
+  namespace Writer
+  {
+
+class Factory
 {
 public:
     //! Returns an pointer to an object of type IoVirtual for a given file
     //! fileName.
     //! Which of the implementations of IoVirtual is chosen is determined
     //! according to the suffix if fileName.
-    static Teuchos::RCP<AbstractImageReader>
-    create ( const std::string & fileName );
+    static Teuchos::RCP<Abstract>
+    createImageWriter ( const std::string & fileName );
 
 protected:
 private:
 };
 
-#endif // READERFACTORY_H
+  } // namespace Writer
+} // namespace VIO
+
+#endif // WRITERFACTORY_H

@@ -1,6 +1,6 @@
 /*
     <one line to give the program's name and a brief idea of what it does.>
-    Copyright (C) <year>  <name of author>
+    Copyright (C) 2010 Nico Sch\"omer
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,32 +17,31 @@
 
 */
 
-#ifndef VTIREADER_H
-#define VTIREADER_H
+#ifndef READERFACTORY_H
+#define READERFACTORY_H
 
-#include "AbstractImageReader.h"
+#include "VIO_Reader_Abstract.h"
 
-class VtiReader:
-            public AbstractImageReader
+namespace VIO
+{
+  namespace Reader
+  {
+  
+class Factory
 {
 public:
-    VtiReader ( const std::string & filePath );
-
-    virtual
-    ~VtiReader ();
-
-    virtual void
-    read ( Teuchos::RCP<ComplexMultiVector>              & z,
-           Teuchos::Array<int>                           & p,
-           UIntTuple                                     & dims,
-           DoubleTuple                                   & origin,
-           DoubleTuple                                   & spacing,
-           Teuchos::ParameterList                        & fieldData,
-           const Teuchos::RCP<const Teuchos::Comm<int> > & TComm
-         ) const;
+    //! Returns an pointer to an object of type IoVirtual for a given file
+    //! fileName.
+    //! Which of the implementations of IoVirtual is chosen is determined
+    //! according to the suffix if fileName.
+    static Teuchos::RCP<Abstract>
+    create ( const std::string & fileName );
 
 protected:
 private:
 };
 
-#endif // VTIREADER_H
+  } // namespace Reader
+} // namespace reader
+
+#endif // READERFACTORY_H

@@ -36,13 +36,18 @@ typedef Teuchos::Tuple<int,2>      IntTuple;
 typedef Teuchos::Tuple<unsigned,2> UIntTuple;
 typedef Teuchos::Tuple<double,2>   DoubleTuple;
 
-class AbstractImageReader
+namespace VIO 
+{
+  namespace Reader 
+  {
+
+class Abstract
 {
 public:
-    AbstractImageReader ( const std::string & filePath );
+    Abstract ( const std::string & filePath );
 
     virtual
-    ~AbstractImageReader ();
+    ~Abstract ();
 
     virtual void
     read ( Teuchos::RCP<ComplexMultiVector>              & z,
@@ -91,5 +96,8 @@ protected:
 
 private:
 };
+
+  } // namespace Reader
+} // namespace VIO
 
 #endif // ABSTRACTIMAGEREADER_H
