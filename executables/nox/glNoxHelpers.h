@@ -38,8 +38,7 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
 void
 setPrePostWriter ( Teuchos::ParameterList                        & noxParaList,
                    const Teuchos::RCP<const AbstractStateWriter> & asw,
-                   const std::string                             & outputDir,
-                   const std::string                             & outputFormat = "VTK" );
+                   const std::string                             & outputDir );
 
 Teuchos::RCP<NOX::Epetra::Group>
 createSolverGroup ( const Teuchos::RCP<GL::LocaSystem::Bordered> glSystem,

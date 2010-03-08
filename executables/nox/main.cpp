@@ -156,8 +156,7 @@ int main ( int argc, char *argv[] )
     {
         glNoxHelpers::setPrePostWriter ( *nlParamsPtr,
                                          glSystem,
-                                         outputDirectory.string(),
-                                         outputFormat );
+                                         outputDirectory.string() );
     }
 
     // create NOX group

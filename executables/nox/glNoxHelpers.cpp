@@ -165,13 +165,12 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
 void
 setPrePostWriter ( Teuchos::ParameterList                        & noxParaList,
                    const Teuchos::RCP<const AbstractStateWriter> & asw,
-                   const std::string                             & outputDir,
-                   const std::string                             & outputFormat )
+                   const std::string                             & outputDir )
 {
     using namespace Teuchos;
 //   Teuchos::RCP<AbstractStateWriter> asw = glSystem_;
     RCP<NOX::Abstract::PrePostOperator> ppo =
-        rcp ( new GL::IO::SaveNewtonData ( asw, outputDir, outputFormat ) );
+        rcp ( new GL::IO::SaveNewtonData ( asw, outputDir ) );
     noxParaList.sublist ( "Solver Options" ).set ( "User Defined Pre/Post Operator", ppo );
 }
 // =========================================================================
