@@ -33,7 +33,7 @@ int main ( int argc, char *argv[] )
     // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
     Teuchos::RCP<Epetra_MpiComm> eComm =
-    = Teuchos::rcp<Epetra_MpiComm> ( new Epetra_MpiComm ( MPI_COMM_WORLD ) );
+      Teuchos::rcp<Epetra_MpiComm> ( new Epetra_MpiComm ( MPI_COMM_WORLD ) );
 #else
     Teuchos::RCP<Epetra_SerialComm>  eComm =
            Teuchos::rcp<Epetra_SerialComm> ( new Epetra_SerialComm() );
