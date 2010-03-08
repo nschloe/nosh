@@ -143,9 +143,9 @@ int main ( int argc, char *argv[] )
     }
     else
     {
-        int    Nx      = paramList->sublist ( "GL",true ).get ( "Nx",50 );
-        double scaling = paramList->sublist ( "GL",true ).get ( "scaling",5.0 );
-        double H0      = paramList->sublist ( "GL",true ).get ( "H0",0.333 );
+        int    Nx      = paramList->sublist ( "GL",true ).get<int> ( "Nx" );
+        double scaling = paramList->sublist ( "GL",true ).get<double> ( "scaling" );
+        double H0      = paramList->sublist ( "GL",true ).get<double> ( "H0" );
         paramList->sublist ( "GL",true ).get ( "chi",0.0 );
         glNoxHelpers::createGlSystem ( Comm, eComm, Nx, scaling, H0, problemParameters, glSystem );
     }

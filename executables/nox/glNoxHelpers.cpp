@@ -100,10 +100,10 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
     problemParameters.set ( "H0"     , H0 );
     problemParameters.set ( "chi"    , 0.0 );
 
-//     // create the domain
-//     double edgeLength = 1.0;
-//     Teuchos::RCP<DomainVirtual> domain =
-//         Teuchos::rcp ( new DomainSquare ( edgeLength ) );
+    // create the domain
+    double edgeLength = 1.0;
+    Teuchos::RCP<DomainVirtual> domain =
+        Teuchos::rcp ( new DomainSquare ( edgeLength ) );
 
 //     Teuchos::RCP<DomainVirtual> domain =
 //         Teuchos::rcp ( new DomainRectangle ( 0.5, 1.0 ) );
@@ -123,17 +123,19 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
 //     Teuchos::Array<DoubleTuple> P( Teuchos::tuple( Teuchos::tuple(0.0,0.0),
 //                                                    Teuchos::tuple(4.0,0.0),
 //                                                    Teuchos::tuple(2.0,3.0) ) );
-    Teuchos::Array<DoubleTuple> P( Teuchos::tuple( Teuchos::tuple(0.1,0.0),
-                                                   Teuchos::tuple(1.0,0.0),
-                                                   Teuchos::tuple(1.0,1.0),
-                                                   Teuchos::tuple(0.0,1.0),
-                                                   Teuchos::tuple(0.0,0.1) ) );
+
+//     Teuchos::Array<DoubleTuple> P( Teuchos::tuple( Teuchos::tuple(0.1,0.0),
+//                                                    Teuchos::tuple(1.0,0.0),
+//                                                    Teuchos::tuple(1.0,1.0),
+//                                                    Teuchos::tuple(0.0,1.0),
+//                                                    Teuchos::tuple(0.0,0.1) ) );
+//     Teuchos::RCP<DomainVirtual> domain = Teuchos::rcp( new DomainPolygon(P) );                                                   
+                                                   
 //     Teuchos::Array<DoubleTuple> P( Teuchos::tuple( Teuchos::tuple(0.0,0.0),
 //                                                    Teuchos::tuple(4.0,0.0),
 //                                                    Teuchos::tuple(4.0,2.0),
 //                                                    Teuchos::tuple(0.0,2.0) ) );
 
-    Teuchos::RCP<DomainVirtual> domain = Teuchos::rcp( new DomainPolygon(P) );
 
     // TODO Create GridConstructor with Nx
     // create the grid
