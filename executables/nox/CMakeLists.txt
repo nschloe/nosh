@@ -20,11 +20,11 @@ SET ( ginzburg_landau_SRCS
 SET ( internal_LIBS
       gl
       recti
-      io
+      vio
     )
 
-INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/packages/libio/src
-                      ${ginzburg-landau_SOURCE_DIR}/packages/libcartesian/src
+INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/packages/vio/src
+                      ${ginzburg-landau_SOURCE_DIR}/packages/recti/src
                       ${ginzburg-landau_SOURCE_DIR}/packages/libgl/src
                       ${VTK_INCLUDE_DIRS} )
 

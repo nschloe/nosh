@@ -1,3 +1,3 @@
 add_subdirectory ( vio )
-add_subdirectory ( libcartesian )
+add_subdirectory ( recti )
 add_subdirectory ( libgl )

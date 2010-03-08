@@ -19,9 +19,9 @@ FIND_PACKAGE( VTK REQUIRED )
 INCLUDE_DIRECTORIES( ${VTK_INCLUDE_DIRS} )
 # TODO Use absolute paths in TARGET_LINK_LIBRARIES rather than LINK_LIBRARIES
 
-ADD_LIBRARY ( io STATIC
+ADD_LIBRARY ( vio STATIC
               ${gl_SRCS} )
 
 # list the libraries against which libio must be linked here
-TARGET_LINK_LIBRARIES ( io 
+TARGET_LINK_LIBRARIES ( vio
                         vtkIO vtkFiltering vtkCommon vtkImaging )

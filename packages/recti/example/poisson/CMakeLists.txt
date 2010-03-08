@@ -12,8 +12,8 @@ INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIRS} )
 SET(Boost_USE_STATIC_LIBS   ON)
 SET(Boost_USE_MULTITHREADED ON)
 
-INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/packages/libio/src
-                      ${ginzburg-landau_SOURCE_DIR}/packages/libcartesian/src
+INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/packages/vio/src
+                      ${ginzburg-landau_SOURCE_DIR}/packages/recti/src
                     )
 
 SET ( poisson_SRCS
@@ -30,7 +30,7 @@ SET_TARGET_PROPERTIES( ${MY_EXECUTABLE}
 
 SET ( internal_LIBS
       recti
-      io
+      vio
     )
 
 # Set executable linking information.

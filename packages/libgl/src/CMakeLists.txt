@@ -21,8 +21,8 @@ SET ( gl_SRCS
 FIND_PACKAGE( Trilinos REQUIRED )
 INCLUDE_DIRECTORIES( ${Trilinos_INCLUDE_DIRS} )
 
-INCLUDE_DIRECTORIES( ${ginzburg-landau_SOURCE_DIR}/packages/libcartesian/src
-                     ${ginzburg-landau_SOURCE_DIR}/packages/libio/src )
+INCLUDE_DIRECTORIES( ${ginzburg-landau_SOURCE_DIR}/packages/recti/src
+                     ${ginzburg-landau_SOURCE_DIR}/packages/vio/src )
 
 ADD_LIBRARY ( gl STATIC
               ${gl_SRCS} )
