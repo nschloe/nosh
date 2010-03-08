@@ -8,24 +8,16 @@
 // =============================================================================
 GL::IO::SaveNewtonData::
 SaveNewtonData ( const Teuchos::RCP<const AbstractStateWriter>  & stateWriter,
-                 const std::string                              & outputDir,
-                 const std::string                              & outputFormat ) :
+                 const std::string                              & outputDir
+               ) :
         numRunPreIterate ( 0 ),
         stateWriter_ ( stateWriter ),
-        outputDir_ ( outputDir ),
-        filenameExtension_ ( "" )
+        outputDir_ ( outputDir )
 {
-  if ( outputFormat.compare("VTK")==0 )
-    filenameExtension_ = "vtk";
-  else if ( outputFormat.compare("VTI")==0 )
-    filenameExtension_ = "vti";
-  else
-    TEST_FOR_EXCEPTION( true,
-                        std::logic_error,
-                        "Illegal output format \"" << outputFormat << "\"." );
 }
 // =============================================================================
-GL::IO::SaveNewtonData::~SaveNewtonData()
+GL::IO::SaveNewtonData::
+~SaveNewtonData()
 {
 }
 // =============================================================================
@@ -45,8 +37,7 @@ runPostIterate ( const NOX::Solver::Generic& solver )
         ( dynamic_cast<const NOX::Epetra::Vector&> ( solGrp.getX() ) ).getEpetraVector();
     stringstream fileStream;
     fileStream
-    << outputDir_ << "/newton-sol-" << numRunPreIterate
-    << "." << filenameExtension_;
+    << outputDir_ << "/newton-sol-" << numRunPreIterate;
     stateWriter_->writeSolutionToFile ( currentSol,
                                         fileStream.str() );
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -60,8 +51,7 @@ runPostIterate ( const NOX::Solver::Generic& solver )
         ( dynamic_cast<const NOX::Epetra::Vector&> ( solGrp.getF() ) ).getEpetraVector();
     fileStream.str(std::string()); // empty the filestream
     fileStream
-    << outputDir_ << "/newton-res-" << numRunPreIterate 
-    << "." << filenameExtension_;
+    << outputDir_ << "/newton-res-" << numRunPreIterate;
     stateWriter_->writeAbstractStateToFile ( currentResidual,
                                              fileStream.str() );
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -

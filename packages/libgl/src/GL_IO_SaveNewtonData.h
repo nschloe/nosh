@@ -19,8 +19,8 @@ public:
 
   //! Constructor.
   SaveNewtonData( const Teuchos::RCP<const AbstractStateWriter> & stateWriter,
-                  const std::string                             & outputDir,
-                  const std::string                             & outputFormat );
+                  const std::string                             & outputDir 
+                );
 
   //! Destructor.
   ~SaveNewtonData();
@@ -38,7 +38,6 @@ private:
 
   const Teuchos::RCP<const AbstractStateWriter> stateWriter_;
   std::string                                   outputDir_;
-  std::string                                   filenameExtension_;
 };
 
   } // namespace IO
