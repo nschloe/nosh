@@ -99,14 +99,14 @@ int main ( int argc, char *argv[] )
     boost::filesystem::path xmlPath =
         boost::filesystem::path ( xmlInputFileName ).branch_path();
 
-    boost::filesystem::path inputGuessFile = ioList.get<string> ( "Input guess", "" );
+    boost::filesystem::path inputGuessFile = ioList.get<string> ( "Input guess" );
     if ( !inputGuessFile.empty() && inputGuessFile.root_directory().empty() ) // if inputGuessFile is not empty and is a relative path
         inputGuessFile = xmlPath / inputGuessFile;
 
     const std::string outputFormat = ioList.get<string> ( "Output format" );
     
     // set default directory to be the directory of the XML file itself
-    boost::filesystem::path outputDirectory = ioList.get<string> ( "Output directory", "" );
+    boost::filesystem::path outputDirectory = ioList.get<string> ( "Output directory" );
     if ( outputDirectory.root_directory().empty() )
     {
         // outputDirectory is empty or is a relative directory.
@@ -114,16 +114,16 @@ int main ( int argc, char *argv[] )
     }
 
     bool computeEigenvalues = paramList->sublist ( "Eigenvalues",true )
-                              .get ( "Compute Eigenvalues", false );
+                              .get<bool>( "Compute Eigenvalues" );
 
     bool computeConditionNumbers = paramList->sublist ( "Condition Numbers",true )
-                                   .get ( "Compute Condition Numbers", false );
+                                   .get<bool> ( "Compute Condition Numbers" );
 
     bool plotEachNewtonStep = paramList->sublist ( "IO",true )
-                              .get ( "Plot each Newton step",false );
+                              .get<bool> ( "Plot each Newton step" );
 
     std::string jacFilename = paramList->sublist ( "IO",true )
-                              .get ( "Jacobian MATLAB matrix file name","" );
+                              .get<std::string> ( "Jacobian MATLAB matrix file name" );
     // =========================================================================
 
     // set problemParameters and glSystem
@@ -146,6 +146,7 @@ int main ( int argc, char *argv[] )
         int    Nx      = paramList->sublist ( "GL",true ).get ( "Nx",50 );
         double scaling = paramList->sublist ( "GL",true ).get ( "scaling",5.0 );
         double H0      = paramList->sublist ( "GL",true ).get ( "H0",0.333 );
+        paramList->sublist ( "GL",true ).get ( "chi",0.0 );
         glNoxHelpers::createGlSystem ( Comm, eComm, Nx, scaling, H0, problemParameters, glSystem );
     }
 
@@ -207,15 +208,11 @@ int main ( int argc, char *argv[] )
         glNoxHelpers::computeJacobianEigenvalues ( solver, grpPtr, Comm->getRank() );
 
     // print the solution to a file
-    std::string solFilename;
-    if ( outputFormat.compare("VTK")==0 )
-        solFilename = ( outputDirectory / "solution.vtk" ).string();
-    else
-        solFilename = ( outputDirectory / "solution.vti" ).string();
+    std::string solFileBasename = ( outputDirectory / "solution" ).string();
     
     glNoxHelpers::printSolutionToFile ( solver,
                                         glSystem,
-                                        solFilename );
+                                        solFileBasename );
 
     // check the convergence status
     int status = glNoxHelpers::checkConvergence ( solver );
