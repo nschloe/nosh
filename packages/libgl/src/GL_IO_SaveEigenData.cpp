@@ -86,13 +86,13 @@ GL::IO::SaveEigenData::save ( Teuchos::RCP<std::vector<double> > &evals_r,
         if ( ( *evals_r ) [k] > 0.0 )
         { 
             numUnstableEigenvalues++;
-            stringstream eigenstateString;
-            eigenstateString
+            stringstream eigenstateFileBaseName;
+            eigenstateFileBaseName
             << outputDir_  << "/"
             << contFileBaseName_
             << setw ( maxNumDigits_ ) << setfill ( '0' ) << step << "-"
             << eigenstateFileNameAppendix_ 
-            << numUnstableEigenvalues << ".vtk";
+            << numUnstableEigenvalues;
 
             Teuchos::RCP<NOX::Abstract::Vector> abVec =
                 Teuchos::rcpFromRef ( ( *evecs_r ) [k] );
@@ -100,7 +100,7 @@ GL::IO::SaveEigenData::save ( Teuchos::RCP<std::vector<double> > &evals_r,
                 Teuchos::rcp_dynamic_cast<NOX::Epetra::Vector> ( abVec, true );
 
             stateWriter_->writeAbstractStateToFile ( myVec->getEpetraVector(),
-                                                     eigenstateString.str() );
+                                                     eigenstateFileBaseName.str() );
         }
     }
 
