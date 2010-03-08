@@ -11,9 +11,6 @@
 
 #include <EpetraExt_RowMatrixOut.h>
 
-#include "VtiWriter.h"
-#include "VtkWriter.h"
-
 // =============================================================================
 int main ( int argc, char *argv[] )
 { 

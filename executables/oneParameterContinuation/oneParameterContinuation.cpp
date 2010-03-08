@@ -138,8 +138,8 @@ main ( int argc, char *argv[] )
         outputDirectory = xmlPath / outputDirectory;
     std::string contFileBaseName =
         outputList.get<string> ( "Continuation file base name" );
-    std::string contFileFormat =
-        outputList.get<string> ( "Continuation file format" );
+    std::string outputFormat =
+        outputList.get<string> ( "Output format" );
     std::string contDataFileName =
         outputList.get<string> ( "Continuation data file name" );
     // =========================================================================
@@ -257,7 +257,7 @@ main ( int argc, char *argv[] )
 
     GinzburgLandau glProblem = GinzburgLandau ( glOperator,
                                                 statsWriter,
-                                                contFileFormat
+                                                outputFormat
                                               );
 
     Teuchos::RCP<GL::LocaSystem::Bordered> glsystem;

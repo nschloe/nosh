@@ -29,8 +29,6 @@ GL::StatsWriter::StatsWriter( std::string & fileName ):
     // Think about replacing this with NOX::Utils::Sci.
     fileStream_.setf ( std::ios::scientific );
     fileStream_.precision ( 15 );
-    
-    std::cout << "eeee " << fileName << std::endl;
 
     fileStream_.open ( fileName.c_str(), std::ios::trunc );
     return;
