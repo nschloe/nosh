@@ -19,7 +19,7 @@ INCLUDE_DIRECTORIES( ${Trilinos_INCLUDE_DIRS} )
 FIND_PACKAGE( VTK REQUIRED )
 INCLUDE_DIRECTORIES( ${VTK_INCLUDE_DIRS} )
 
-INCLUDE_DIRECTORIES( ${ginzburg-landau_SOURCE_DIR}/packages/libio/src )
+INCLUDE_DIRECTORIES( ${ginzburg-landau_SOURCE_DIR}/packages/vio/src )
 
 ADD_LIBRARY ( cartesian STATIC
               ${cartesian_SRCS} )
