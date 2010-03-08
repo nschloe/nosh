@@ -24,7 +24,7 @@
 #include <Tpetra_Vector.hpp>
 
 #include "GL_MagneticVectorPotential_Centered.h"
-#include "GridUniform.h"
+#include "Recti_Grid_Uniform.h"
 
 typedef std::complex<double> double_complex;
 
@@ -36,7 +36,7 @@ class Virtual
 {
 public:
     //! Default constructor.
-    Virtual ( Teuchos::RCP<GridUniform>                           & grid,
+    Virtual ( Teuchos::RCP<Recti::Grid::Uniform>                  & grid,
               Teuchos::RCP<GL::MagneticVectorPotential::Centered> & A
             );
 
@@ -57,7 +57,7 @@ public:
     void
     updatePsi ( const Teuchos::RCP<const ComplexVector> psi );
 
-    Teuchos::RCP<const Grid>
+    Teuchos::RCP<const Recti::Grid::General>
     getGrid() const;
 
     void
@@ -69,7 +69,7 @@ public:
 protected:
     Teuchos::RCP<const ComplexVector> psi_;
     double chi_;
-    Teuchos::RCP<GridUniform> grid_;
+    Teuchos::RCP<Recti::Grid::Uniform> grid_;
     Teuchos::RCP<GL::MagneticVectorPotential::Centered> A_;
 
 private:

@@ -17,28 +17,17 @@
 
 */
 
-#include "DomainEllipse.h"
+#include "Recti_Domain_Square.h"
 
 // ============================================================================
-DomainEllipse::DomainEllipse ( double a, double b ) :
-        a_ ( a ),
-        b_ ( b )
+Recti::Domain::Square::
+Square ( double edgeLength ) :
+        Recti::Domain::Rectangle ( edgeLength, edgeLength )
 {
 }
 // ============================================================================
-DomainEllipse::~DomainEllipse()
+Recti::Domain::Square::
+~Square()
 {
-}
-// ============================================================================
-Teuchos::Tuple<double,4>
-DomainEllipse::getBoundingBox () const
-{
-    return Teuchos::tuple ( -a_, -b_, a_, b_ );
-}
-// ============================================================================
-bool
-DomainEllipse::isInDomain ( const DoubleTuple & x ) const
-{
-    return x[0]*x[0]/ ( a_*a_ ) + x[1]*x[1] / ( b_*b_ ) <= 1.0;
 }
 // ============================================================================

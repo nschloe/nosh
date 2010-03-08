@@ -5,17 +5,18 @@
  *      Author: Nico Schl\"omer
  */
 
-#include "Grid.h"
+#include "Recti_Grid_General.h"
 
 #include "VIO_Writer_Factory.h"
 
 #include <Teuchos_ArrayView.hpp>
 
 // ============================================================================
-Grid::Grid ( const Teuchos::RCP<const DomainVirtual> & domain,
-             const DoubleTuple                       & h
-           ) :
-        GridVirtual ( h, 0.0, 0 ),
+Recti::Grid::General::
+General ( const Teuchos::RCP<const Recti::Domain::Abstract> & domain,
+          const DoubleTuple                                 & h
+        ) :
+        Recti::Grid::Abstract ( h, 0.0, 0 ),
         numCells_ ( Teuchos::tuple ( ( unsigned int ) 0, ( unsigned int ) 0 ) ),
         kBB_ ( Teuchos::Array<int>() ),
         nodes_ ( Teuchos::Array<UIntTuple>() ),
@@ -140,7 +141,7 @@ Grid::Grid ( const Teuchos::RCP<const DomainVirtual> & domain,
                 if ( domain->isInDomain ( *getX ( node ) ) )
                 {
                     nodes_[k]     = node;
-                    nodeTypes_[k] = GridVirtual::INTERIOR;
+                    nodeTypes_[k] = Abstract::INTERIOR;
                     k++;
                 }
             }
@@ -162,14 +163,15 @@ Grid::Grid ( const Teuchos::RCP<const DomainVirtual> & domain,
     return;
 }
 // ============================================================================
-Grid::Grid ( const DoubleTuple         & h,
-             const UIntTuple           & numCells,
-             const Teuchos::Array<int> & kBB,
-             const Teuchos::Array<int> & boundaryNodes,
-             const double                scaling,
-             const DoubleTuple         & origin
-           ) :
-        GridVirtual ( h, 0.0, 0, scaling ),
+Recti::Grid::General::
+General ( const DoubleTuple         & h,
+          const UIntTuple           & numCells,
+          const Teuchos::Array<int> & kBB,
+          const Teuchos::Array<int> & boundaryNodes,
+          const double                scaling,
+          const DoubleTuple         & origin
+        ) :
+        Abstract ( h, 0.0, 0, scaling ),
         numCells_ ( numCells ),
         kBB_ ( kBB ),
         nodes_ ( Teuchos::Array<UIntTuple>() ),
@@ -223,12 +225,14 @@ Grid::Grid ( const DoubleTuple         & h,
     return;
 }
 // ============================================================================
-Grid::~Grid()
+Recti::Grid::General::
+~General()
 {
 }
 // ============================================================================
 void
-Grid::updateGridDomainArea()
+Recti::Grid::General::
+updateGridDomainArea()
 {
     gridDomainArea_ = 0.0;
     double h2 = h_[0]*h_[1];
@@ -265,8 +269,9 @@ Grid::updateGridDomainArea()
     }
 }
 // ============================================================================
-Grid::direction
-Grid::getDirection ( const UIntTuple & node0,
+Recti::Grid::General::direction
+Recti::Grid::General::
+getDirection ( const UIntTuple & node0,
                      const UIntTuple & node1
                    ) const
 {
@@ -292,13 +297,15 @@ Grid::getDirection ( const UIntTuple & node0,
 }
 // =============================================================================
 Teuchos::RCP<DoubleTuple>
-Grid::getX( const unsigned int k ) const
+Recti::Grid::General::
+getX( const unsigned int k ) const
 {
     return getX( nodes_[k] );
 }
 // =============================================================================
 Teuchos::RCP<DoubleTuple>
-Grid::getX ( const UIntTuple & i ) const
+Recti::Grid::General::
+getX ( const UIntTuple & i ) const
 {
     Teuchos::RCP<DoubleTuple> x = Teuchos::rcp ( new DoubleTuple() );
     ( *x ) [0] = i[0] * h_[0] + origin_[0];
@@ -307,13 +314,15 @@ Grid::getX ( const UIntTuple & i ) const
 }
 // =============================================================================
 Teuchos::RCP<DoubleTuple>
-Grid::getXLeft ( const unsigned int k ) const
+Recti::Grid::General::
+getXLeft ( const unsigned int k ) const
 {
     return getXLeft ( nodes_[k] );
 }
 // =============================================================================
 Teuchos::RCP<DoubleTuple>
-Grid::getXLeft ( const UIntTuple & i ) const
+Recti::Grid::General::
+getXLeft ( const UIntTuple & i ) const
 {
     Teuchos::RCP<DoubleTuple> x ( getX ( i ) );
     ( *x ) [0] -= 0.5 * h_[0];
@@ -321,13 +330,15 @@ Grid::getXLeft ( const UIntTuple & i ) const
 }
 // =============================================================================
 Teuchos::RCP<DoubleTuple>
-Grid::getXRight ( const unsigned int k ) const
+Recti::Grid::General::
+getXRight ( const unsigned int k ) const
 {
     return getXRight ( nodes_[k] );
 }
 // =============================================================================
 Teuchos::RCP<DoubleTuple>
-Grid::getXRight ( const UIntTuple & i ) const
+Recti::Grid::General::
+getXRight ( const UIntTuple & i ) const
 {
     Teuchos::RCP<DoubleTuple> x ( getX ( i ) );
     ( *x ) [0] += 0.5 * h_[0];
@@ -335,13 +346,15 @@ Grid::getXRight ( const UIntTuple & i ) const
 }
 // =============================================================================
 Teuchos::RCP<DoubleTuple>
-Grid::getXBelow ( const unsigned int k ) const
+Recti::Grid::General::
+getXBelow ( const unsigned int k ) const
 {
     return getXBelow ( nodes_[k] );
 }
 // =============================================================================
 Teuchos::RCP<DoubleTuple>
-Grid::getXBelow ( const UIntTuple & i ) const
+Recti::Grid::General::
+getXBelow ( const UIntTuple & i ) const
 {
     Teuchos::RCP<DoubleTuple> x ( getX ( i ) );
     ( *x ) [1] -= 0.5 * h_[1];
@@ -349,13 +362,15 @@ Grid::getXBelow ( const UIntTuple & i ) const
 }
 // =============================================================================
 Teuchos::RCP<DoubleTuple>
-Grid::getXAbove ( const unsigned int k ) const
+Recti::Grid::General::
+getXAbove ( const unsigned int k ) const
 {
     return getXAbove ( nodes_[k] );
 }
 // =============================================================================
 Teuchos::RCP<DoubleTuple>
-Grid::getXAbove ( const UIntTuple & i ) const
+Recti::Grid::General::
+getXAbove ( const UIntTuple & i ) const
 {
     Teuchos::RCP<DoubleTuple> x ( getX ( i ) );
     ( *x ) [1] += 0.5 * h_[1];
@@ -363,7 +378,8 @@ Grid::getXAbove ( const UIntTuple & i ) const
 }
 // =============================================================================
 unsigned int
-Grid::getKLeft ( unsigned int kDomain ) const
+Recti::Grid::General::
+getKLeft ( unsigned int kDomain ) const
 {
     UIntTuple i = nodes_[kDomain];
     TEUCHOS_ASSERT_INEQUALITY( i[0], >, 0 );
@@ -377,7 +393,8 @@ Grid::getKLeft ( unsigned int kDomain ) const
 }
 // =============================================================================
 unsigned int
-Grid::getKRight ( unsigned int kDomain ) const
+Recti::Grid::General::
+getKRight ( unsigned int kDomain ) const
 {
     UIntTuple i = nodes_[kDomain];
     TEUCHOS_ASSERT_INEQUALITY( i[0], <, numCells_[0] );
@@ -391,7 +408,8 @@ Grid::getKRight ( unsigned int kDomain ) const
 }
 // =============================================================================
 unsigned int
-Grid::getKBelow ( unsigned int kDomain ) const
+Recti::Grid::General::
+getKBelow ( unsigned int kDomain ) const
 {
     UIntTuple i = nodes_[kDomain];
     TEUCHOS_ASSERT_INEQUALITY( i[1], >, 0 );
@@ -405,7 +423,8 @@ Grid::getKBelow ( unsigned int kDomain ) const
 }
 // =============================================================================
 unsigned int
-Grid::getKAbove ( unsigned int kDomain ) const
+Recti::Grid::General::
+getKAbove ( unsigned int kDomain ) const
 {
     // get the left i
     UIntTuple i = nodes_[kDomain];
@@ -420,26 +439,30 @@ Grid::getKAbove ( unsigned int kDomain ) const
 }
 // =============================================================================
 Teuchos::RCP<UIntTuple>
-Grid::k2iBoundingBox ( const unsigned int k ) const
+Recti::Grid::General::
+k2iBoundingBox ( const unsigned int k ) const
 {
     return Teuchos::rcp ( new UIntTuple ( Teuchos::tuple<unsigned int> ( k%numCells_[0],k/numCells_[0] ) ) );
 }
 // =============================================================================
 unsigned int
-Grid::i2kBoundingBox ( const UIntTuple & i ) const
+Recti::Grid::General::
+i2kBoundingBox ( const UIntTuple & i ) const
 {
     return i[0] + i[1]* ( numCells_[0]+1 );
 }
 // =============================================================================
-GridVirtual::nodeType
-Grid::getNodeType ( unsigned int kDomain ) const
+Recti::Grid::Abstract::nodeType
+Recti::Grid::General::
+getNodeType ( unsigned int kDomain ) const
 {
     return nodeTypes_[ kDomain ];
 }
 // =============================================================================
 // TODO move to helpers, along with getX, getK, and so forth
 UIntTuple
-Grid::findFirstBoundaryNode ( const Teuchos::RCP<const DomainVirtual> & domain ) const
+Recti::Grid::General::
+findFirstBoundaryNode ( const Teuchos::RCP<const Domain::Abstract> & domain ) const
 {  
     for ( unsigned int j=0; j<numCells_[1]; j++ )
         for ( unsigned int i=0; i<numCells_[0]; i++ )
@@ -454,7 +477,8 @@ Grid::findFirstBoundaryNode ( const Teuchos::RCP<const DomainVirtual> & domain )
 }
 // ============================================================================
 bool
-Grid::equal ( const UIntTuple & a,
+Recti::Grid::General::
+equal ( const UIntTuple & a,
               const UIntTuple & b
             ) const
 {
@@ -462,9 +486,10 @@ Grid::equal ( const UIntTuple & a,
 }
 // ============================================================================
 bool
-Grid::boundaryStepper ( Teuchos::Array<UIntTuple>               & boundaryNodes,
+Recti::Grid::General::
+boundaryStepper ( Teuchos::Array<UIntTuple>               & boundaryNodes,
                         Teuchos::Array<direction>               & directions,
-                        const Teuchos::RCP<const DomainVirtual> & domain
+                        const Teuchos::RCP<const Domain::Abstract> & domain
                       ) const
 {
     // Try to step into direction, and return if not possible.
@@ -510,8 +535,9 @@ Grid::boundaryStepper ( Teuchos::Array<UIntTuple>               & boundaryNodes,
     return false;
 }
 // ============================================================================
-Teuchos::Tuple<Grid::direction,3>
-Grid::getNextDirections ( const direction dir ) const
+Teuchos::Tuple<Recti::Grid::General::direction,3>
+Recti::Grid::General::
+getNextDirections ( const direction dir ) const
 {
     switch ( dir )
     {
@@ -531,9 +557,10 @@ Grid::getNextDirections ( const direction dir ) const
 }
 // ============================================================================
 UIntTuple
-Grid::step ( const UIntTuple                         & node,
+Recti::Grid::General::
+step ( const UIntTuple                         & node,
              const direction                           dir,
-             const Teuchos::RCP<const DomainVirtual> & domain
+             const Teuchos::RCP<const Domain::Abstract> & domain
            ) const
 {
     UIntTuple newNode ( node );
@@ -566,8 +593,9 @@ Grid::step ( const UIntTuple                         & node,
     return newNode;
 }
 // ============================================================================
-Grid::nodeType
-Grid::getNodeType ( const direction prevDir,
+Recti::Grid::General::nodeType
+Recti::Grid::General::
+getNodeType ( const direction prevDir,
                     const direction newDir
                   ) const
 {
@@ -631,28 +659,29 @@ Grid::getNodeType ( const direction prevDir,
 }
 // =============================================================================
 double
-Grid::cellArea ( unsigned int k ) const
+Recti::Grid::General::
+cellArea ( unsigned int k ) const
 {
     switch ( nodeTypes_[k] )
     {
-    case GridVirtual::INTERIOR:
+    case Recti::Grid::Abstract::INTERIOR:
         return h_[0]*h_[1];
         break;
-    case GridVirtual::BOUNDARY_BOTTOM:
-    case GridVirtual::BOUNDARY_TOP:
-    case GridVirtual::BOUNDARY_LEFT:
-    case GridVirtual::BOUNDARY_RIGHT:
+    case Recti::Grid::Abstract::BOUNDARY_BOTTOM:
+    case Recti::Grid::Abstract::BOUNDARY_TOP:
+    case Recti::Grid::Abstract::BOUNDARY_LEFT:
+    case Recti::Grid::Abstract::BOUNDARY_RIGHT:
         return 0.5*h_[0]*h_[1];
         break;
-    case GridVirtual::BOUNDARY_BOTTOMLEFTCONCAVE:
-    case GridVirtual::BOUNDARY_BOTTOMRIGHTCONCAVE:
-    case GridVirtual::BOUNDARY_TOPLEFTCONCAVE:
-    case GridVirtual::BOUNDARY_TOPRIGHTCONCAVE:
+    case Recti::Grid::Abstract::BOUNDARY_BOTTOMLEFTCONCAVE:
+    case Recti::Grid::Abstract::BOUNDARY_BOTTOMRIGHTCONCAVE:
+    case Recti::Grid::Abstract::BOUNDARY_TOPLEFTCONCAVE:
+    case Recti::Grid::Abstract::BOUNDARY_TOPRIGHTCONCAVE:
         return 0.75*h_[0]*h_[1];
-    case GridVirtual::BOUNDARY_BOTTOMLEFTCONVEX:
-    case GridVirtual::BOUNDARY_BOTTOMRIGHTCONVEX:
-    case GridVirtual::BOUNDARY_TOPLEFTCONVEX:
-    case GridVirtual::BOUNDARY_TOPRIGHTCONVEX:
+    case Recti::Grid::Abstract::BOUNDARY_BOTTOMLEFTCONVEX:
+    case Recti::Grid::Abstract::BOUNDARY_BOTTOMRIGHTCONVEX:
+    case Recti::Grid::Abstract::BOUNDARY_TOPLEFTCONVEX:
+    case Recti::Grid::Abstract::BOUNDARY_TOPRIGHTCONVEX:
         return 0.25*h_[0]*h_[1];
         break;
     }
@@ -663,7 +692,8 @@ Grid::cellArea ( unsigned int k ) const
 }
 // =============================================================================
 void
-Grid::writeWithGrid ( const Epetra_MultiVector     & x,
+Recti::Grid::General::
+writeWithGrid ( const Epetra_MultiVector     & x,
                       const Teuchos::ParameterList & params,
                       const std::string            & filePath
                     ) const
@@ -688,7 +718,8 @@ Grid::writeWithGrid ( const Epetra_MultiVector     & x,
 }
 // =============================================================================
 void
-Grid::writeWithGrid ( const DoubleMultiVector      & x,
+Recti::Grid::General::
+writeWithGrid ( const DoubleMultiVector      & x,
                       const Teuchos::ParameterList & params,
                       const std::string            & filePath
                     ) const
@@ -713,7 +744,8 @@ Grid::writeWithGrid ( const DoubleMultiVector      & x,
 }
 // =============================================================================
 void
-Grid::writeWithGrid ( const ComplexMultiVector     & z,
+Recti::Grid::General::
+writeWithGrid ( const ComplexMultiVector     & z,
                       const Teuchos::ParameterList & params,
                       const std::string            & filePath
                     ) const
@@ -746,8 +778,9 @@ Grid::writeWithGrid ( const ComplexMultiVector     & z,
     writer->write();
 }
 // =============================================================================
-GridVirtual::nodeType
-Grid::getBoundaryNodeType ( unsigned int l ) const
+Recti::Grid::Abstract::nodeType
+Recti::Grid::General::
+getBoundaryNodeType ( unsigned int l ) const
 {
     TEST_FOR_EXCEPTION ( true,
                          std::logic_error,
@@ -755,13 +788,14 @@ Grid::getBoundaryNodeType ( unsigned int l ) const
 }
 // =============================================================================
 const Teuchos::Array<int> &
-Grid::getBoundaryIndices() const
+Recti::Grid::General::
+getBoundaryIndices() const
 {
    return boundaryIndices_;
 }
 // =============================================================================
 unsigned int
-Grid::boundaryIndex2globalIndex ( unsigned int l ) const
+Recti::Grid::General::boundaryIndex2globalIndex ( unsigned int l ) const
 {
     TEST_FOR_EXCEPTION ( true,
                          std::logic_error,
@@ -769,7 +803,8 @@ Grid::boundaryIndex2globalIndex ( unsigned int l ) const
 }
 // =============================================================================
 void
-Grid::pruneInitialTentacle ( Teuchos::Array<UIntTuple> & nodes,
+Recti::Grid::General::
+pruneInitialTentacle ( Teuchos::Array<UIntTuple> & nodes,
                              Teuchos::Array<direction> & directions
                            ) const
 {

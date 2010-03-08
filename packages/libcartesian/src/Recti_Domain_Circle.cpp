@@ -17,36 +17,17 @@
 
 */
 
-#ifndef GEOMETRY_H
-#define GEOMETRY_H
+#include "Recti_Domain_Circle.h"
 
-#include<Teuchos_Tuple.hpp>
-
-typedef Teuchos::Tuple<double,2> DoubleTuple;
-
-class DomainVirtual
+// ============================================================================
+Recti::Domain::Circle::
+Circle ( double radius ) :
+        Recti::Domain::Ellipse ( radius,radius )
 {
-public:
-    //! Constructor.
-    DomainVirtual ( double tolerance = 1.0e-10 );
-
-    //! Destructor.
-    virtual
-    ~DomainVirtual();
-
-    //! Returns a bounding box around the domain.
-    virtual Teuchos::Tuple<double,4>
-    getBoundingBox () const = 0;
-
-    //! @param  x Point that is checked
-    //! @return   Whether or not \c x sits in the domain.
-    virtual bool
-    isInDomain ( const DoubleTuple & x ) const = 0;
-
-protected:
-    double tolerance_;
-   
-private:
-};
-
-#endif // GEOMETRY_H
+}
+// ============================================================================
+Recti::Domain::Circle::
+~Circle()
+{
+}
+// ============================================================================

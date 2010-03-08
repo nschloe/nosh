@@ -31,7 +31,7 @@ class BCCentral:
 public:
 
     //! Default constructor.
-    BCCentral ( Teuchos::RCP<GridUniform>             & grid,
+    BCCentral ( Teuchos::RCP<Recti::Grid::Uniform>                  & grid,
                 Teuchos::RCP<GL::MagneticVectorPotential::Centered> & A
               );
 

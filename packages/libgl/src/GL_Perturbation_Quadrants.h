@@ -31,8 +31,8 @@
 
 #include<Teuchos_RCP.hpp>
 
-#include"GridVirtual.h"
-#include"GL_Perturbation_Virtual.h"
+#include "Recti_Grid_Abstract.h"
+#include "GL_Perturbation_Virtual.h"
 
 namespace GL {
 
@@ -44,7 +44,7 @@ class Quadrants:
   public:
 
   // Constructor
-  Quadrants( const Teuchos::RCP<const GridVirtual> & grid);
+  Quadrants( const Teuchos::RCP<const Recti::Grid::Abstract> & grid);
 
   // Destructor
   virtual
@@ -63,7 +63,7 @@ class Quadrants:
 
   double epsilonQuadrant1_;
 
-  const Teuchos::RCP<const GridVirtual> grid_;
+  const Teuchos::RCP<const Recti::Grid::Abstract> grid_;
 
 };
 

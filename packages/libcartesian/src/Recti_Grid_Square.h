@@ -8,7 +8,7 @@
 #ifndef GRIDSQUARE_H_
 #define GRIDSQUARE_H_
 
-#include "GridVirtual.h"
+#include "Recti_Grid_Abstract.h"
 
 #include <Teuchos_Array.hpp>
 #include <Teuchos_Tuple.hpp>
@@ -17,21 +17,27 @@
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_Comm.hpp>
 
-class GridSquare: virtual public GridVirtual
+namespace Recti
+{
+  namespace Grid
+  {
+
+class Square:
+        virtual public Abstract
 {
 
 public:
 
     //! Default constructor.
-    GridSquare ( const UIntTuple & numCells,
+    Square ( const UIntTuple & numCells,
                  const double      edgeLength
                );
 
     //! Class constructor that only initializes the data members of this class.
-    GridSquare ( const UIntTuple & numCells );
+    Square ( const UIntTuple & numCells );
 
     virtual
-    ~GridSquare();
+    ~Square();
 
     virtual Teuchos::RCP<DoubleTuple>
     getXLeft ( unsigned int k ) const; //!< Returns the value of \f$x\f$ left of point i.
@@ -133,5 +139,8 @@ private:
 
 private:
 };
+
+  } // namespace Grid
+} // namespace Recti
 
 #endif /* GRIDSQUARE_H_ */

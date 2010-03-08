@@ -24,8 +24,9 @@
 #include <Teuchos_RCP.hpp>
 
 // =============================================================================
-GL::Operator::Virtual::Virtual ( Teuchos::RCP<GridUniform>             & grid,
-                                 Teuchos::RCP<GL::MagneticVectorPotential::Centered> & A ) :
+GL::Operator::Virtual::
+Virtual ( Teuchos::RCP<Recti::Grid::Uniform>                  & grid,
+          Teuchos::RCP<GL::MagneticVectorPotential::Centered> & A ) :
         psi_ ( Teuchos::null ),
         chi_ ( 0.0 ),
         grid_ ( grid ),
@@ -68,7 +69,7 @@ GL::Operator::Virtual::getParameters () const
   return pMerge;
 }
 // =============================================================================
-Teuchos::RCP<const Grid>
+Teuchos::RCP<const Recti::Grid::General>
 GL::Operator::Virtual::getGrid() const
 {
   return grid_;

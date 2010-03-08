@@ -28,7 +28,12 @@ typedef Teuchos::Tuple<int,2>           IntTuple;
 typedef Teuchos::Tuple<unsigned int,2>  UIntTuple;
 typedef Teuchos::Tuple<double,2>        DoubleTuple;
 
-class GridVirtual
+namespace Recti
+{
+  namespace Grid
+  {
+
+class Abstract
 {
 public:
 
@@ -39,17 +44,17 @@ public:
       @param[in] numGridPoints   Total number of grid points.
       @param[in] scaling         Scaling of the grid with the given \c h. Defaults to \c 1.0.
     */
-    GridVirtual ( const DoubleTuple  & h,
-                  const double         gridDomainArea,
-                  const unsigned int   numGridPoints,
-                  const double         scaling=1.0
-                );
+    Abstract ( const DoubleTuple  & h,
+               const double         gridDomainArea,
+               const unsigned int   numGridPoints,
+               const double         scaling=1.0
+             );
 
     //! Empty constructor.
-    GridVirtual();
+    Abstract();
 
     virtual
-    ~GridVirtual();
+    ~Abstract();
 
     //! Returns the parameters connected with the grid, e.g, the scaling factor.
     virtual Teuchos::RCP<LOCA::ParameterVector>
@@ -170,5 +175,8 @@ protected:
     
 private:
 };
+
+  } // namespace Grid
+} // namespace Recti
 
 #endif /* GRIDVIRTUAL_H_ */

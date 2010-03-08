@@ -8,21 +8,25 @@
 #ifndef GRIDUNIFORMSQUARE_H_
 #define GRIDUNIFORMSQUARE_H_
 
-#include "GridUniformVirtual.h"
-#include "GridSquare.h"
+#include "Recti_Grid_UniformAbstract.h"
+#include "Recti_Grid_Square.h"
 
-class GridUniformSquare:
-            public GridUniformVirtual,
-            public GridSquare
+namespace Recti
+{
+  namespace Grid
+  {
+
+class UniformSquare:
+            public UniformAbstract,
+            public Square
 {
 public:
-
     //! Default constructor.
-    GridUniformSquare ( const unsigned int numCells,
-                        const double       edgeLength );
+    UniformSquare ( const unsigned int numCells,
+                    const double       edgeLength );
 
     virtual
-    ~GridUniformSquare();
+    ~UniformSquare();
 
     virtual void
     writeWithGrid ( const Epetra_MultiVector     & x,
@@ -59,5 +63,8 @@ public:
 protected:
 private:
 };
+
+  } // namespace Grid
+} // namespace Recti
 
 #endif /* GRIDUNIFORMSQUARE_H_ */

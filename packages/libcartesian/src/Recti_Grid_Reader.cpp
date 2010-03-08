@@ -5,17 +5,17 @@
  *      Author: Nico Schl\"omer
  */
 
-#include "GridReader.h"
+#include "Recti_Grid_Reader.h"
 
 #include "VIO_Reader_Factory.h"
 
-namespace GridReader {
 // =============================================================================
 void
+Recti::Grid::Reader::
 read( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
       const std::string                             & filePath,
             Teuchos::RCP<DoubleMultiVector>         & x,
-            Teuchos::RCP<GridUniform>               & grid,
+            Teuchos::RCP<Uniform>                   & grid,
             Teuchos::ParameterList                  & params
     )
 {
@@ -34,10 +34,11 @@ read( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
 }
 // =============================================================================
 void
+Recti::Grid::Reader::
 read( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
       const std::string                             & filePath,
             Teuchos::RCP<ComplexMultiVector>        & z,
-            Teuchos::RCP<GridUniform>               & grid,
+            Teuchos::RCP<Uniform>                   & grid,
             Teuchos::ParameterList                  & fieldData
     )
 {
@@ -70,10 +71,9 @@ read( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
   // now create a grid out of what we got
   double hh = h[0];
   UIntTuple numCells = Teuchos::tuple(  dims[0]-1, dims[1]-1 );
-  grid = Teuchos::rcp( new GridUniform ( hh, numCells, bbIndex, boundaryIndices,
-                                         scaling, origin ) );
+  grid = Teuchos::rcp( new Uniform ( hh, numCells, bbIndex, boundaryIndices,
+                                     scaling, origin ) );
 
   return;
 }
 // =============================================================================
-} // namespace GridReader

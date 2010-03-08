@@ -5,8 +5,8 @@
 #define GINZBURGLANDAU_H
 
 #include "GL_Operator_Virtual.h"
-#include "GridVirtual.h"
-// #include "GridSquare.h"
+#include "Recti_Grid_Abstract.h"
+
 #include "GL_MagneticVectorPotential_Centered.h"
 
 #include "GL_Perturbation_Virtual.h"

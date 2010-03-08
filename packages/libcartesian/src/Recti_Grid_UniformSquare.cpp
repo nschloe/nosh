@@ -2,34 +2,37 @@
  * GridUniformSquare.cpp
  *
  *  Created on: Nov 30, 2009
- *      Author: Nico Schl�mer
+ *      Author: Nico Schl\"omer
  */
 
-#include "GridUniformSquare.h"
+#include "Recti_Grid_UniformSquare.h"
 
 // =============================================================================
 // Class constructor
-GridUniformSquare::GridUniformSquare ( const unsigned int  numCells,
-                                       const double        edgeLength ) :
-        GridVirtual ( Teuchos::tuple<double> ( edgeLength/numCells,edgeLength/numCells ),
-                      pow ( edgeLength, 2 ),
-                      pow ( numCells+1, 2 )
-                    ),
-        GridUniformVirtual(),
-        GridSquare ( Teuchos::tuple<unsigned int> ( numCells,numCells ), edgeLength )
+Recti::Grid::UniformSquare::
+UniformSquare ( const unsigned int  numCells,
+                const double        edgeLength ) :
+        Abstract ( Teuchos::tuple<double> ( edgeLength/numCells,edgeLength/numCells ),
+                   pow ( edgeLength, 2 ),
+                   pow ( numCells+1, 2 )
+                 ),
+        UniformAbstract(),
+        Square ( Teuchos::tuple<unsigned int> ( numCells,numCells ), edgeLength )
 {
 }
 // =============================================================================
 // Destructor
-GridUniformSquare::~GridUniformSquare()
+Recti::Grid::UniformSquare::
+~UniformSquare()
 {
 }
 // =============================================================================
 void
-GridUniformSquare::writeWithGrid ( const Epetra_MultiVector     & x,
-                                   const Teuchos::ParameterList & params,
-                                   const std::string            & filePath
-                                 ) const
+Recti::Grid::UniformSquare::
+writeWithGrid ( const Epetra_MultiVector     & x,
+                const Teuchos::ParameterList & params,
+                const std::string            & filePath
+              ) const
 {
   TEST_FOR_EXCEPTION( true,
                       std::logic_error,
@@ -49,10 +52,11 @@ GridUniformSquare::writeWithGrid ( const Epetra_MultiVector     & x,
 }
 // =============================================================================
 void
-GridUniformSquare::writeWithGrid ( const DoubleMultiVector      & x,
-                                   const Teuchos::ParameterList & params,
-                                   const std::string            & filePath
-                                 ) const
+Recti::Grid::UniformSquare::
+writeWithGrid ( const DoubleMultiVector      & x,
+                const Teuchos::ParameterList & params,
+                const std::string            & filePath
+              ) const
 {
   TEST_FOR_EXCEPTION( true,
                       std::logic_error,
@@ -71,7 +75,8 @@ GridUniformSquare::writeWithGrid ( const DoubleMultiVector      & x,
 }
 // =============================================================================
 void
-GridUniformSquare::writeWithGrid ( const ComplexMultiVector     & x,
+Recti::Grid::UniformSquare::
+writeWithGrid ( const ComplexMultiVector     & x,
                                    const Teuchos::ParameterList & params,
                                    const std::string            & filePath
                                  ) const
@@ -93,7 +98,8 @@ GridUniformSquare::writeWithGrid ( const ComplexMultiVector     & x,
 }
 // =============================================================================
 void
-GridUniformSquare::read ( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
+Recti::Grid::UniformSquare::
+read ( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
                           const std::string                             & filePath,
                           Teuchos::RCP<DoubleMultiVector>               & x,
                           Teuchos::ParameterList                        & params
@@ -135,7 +141,8 @@ GridUniformSquare::read ( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
 }
 // =============================================================================
 void
-GridUniformSquare::read ( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
+Recti::Grid::UniformSquare::
+read ( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
                           const std::string                             & filePath,
                           Teuchos::RCP<ComplexMultiVector>                   & x,
                           Teuchos::ParameterList                        & params

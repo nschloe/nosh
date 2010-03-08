@@ -20,19 +20,25 @@
 #ifndef DOMAINPOLYGON_H
 #define DOMAINPOLYGON_H
 
-#include "DomainVirtual.h"
+#include "Recti_Domain_Abstract.h"
 #include <Teuchos_Array.hpp>
 
+namespace Recti
+{
+  namespace Domain
+  {
+
 //! Defer this class until the availabilty of GGL through Boost, providing polygon algorithms.
-class DomainPolygon: public DomainVirtual
+class Polygon:
+   public Abstract
 {
 public:
     //! Constructor.
-    DomainPolygon ( const Teuchos::Array<DoubleTuple> & polygonPoints );
+    Polygon ( const Teuchos::Array<DoubleTuple> & polygonPoints );
 
     //! Destructor.
     virtual
-    ~DomainPolygon();
+    ~Polygon();
 
     Teuchos::Tuple<double,4>
     getBoundingBox () const;
@@ -47,5 +53,8 @@ protected:
 private:
     Teuchos::Array<DoubleTuple> polygonPoints_;
 };
+
+  } // namespace Domain
+} // namespace Recti
 
 #endif // DOMAINPOLYGON_H

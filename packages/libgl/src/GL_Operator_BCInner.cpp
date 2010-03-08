@@ -25,7 +25,7 @@
 const double_complex I ( 0,1 );
 
 // =============================================================================
-GL::Operator::BCInner::BCInner ( Teuchos::RCP<GridUniform> & grid,
+GL::Operator::BCInner::BCInner ( Teuchos::RCP<Recti::Grid::Uniform>                  & grid,
                                  Teuchos::RCP<GL::MagneticVectorPotential::Centered> & A
                                      ) :
         GL::Operator::Virtual ( grid, A )
@@ -50,7 +50,7 @@ GL::Operator::BCInner::getEntry ( const int k ) const
     Teuchos::RCP<DoubleTuple> xAbove = Teuchos::rcp ( new DoubleTuple() );
     Teuchos::RCP<DoubleTuple> xBelow = Teuchos::rcp ( new DoubleTuple() );
 
-    GridVirtual::nodeType nt = grid_->getNodeType ( k );
+    Recti::Grid::Abstract::nodeType nt = grid_->getNodeType ( k );
 
     // Get a view of the whole vector.
     // Remember: This only works with one core.
@@ -60,7 +60,7 @@ GL::Operator::BCInner::getEntry ( const int k ) const
 
     switch ( nt )
     {
-    case GridVirtual::INTERIOR:
+    case Recti::Grid::Abstract::INTERIOR:
         // TODO Gets the local index. ==> Only works on one core.
         psiKLeft  = psiView[ grid_->getKLeft ( k ) ];
         psiKRight = psiView[ grid_->getKRight ( k ) ];
@@ -86,8 +86,8 @@ GL::Operator::BCInner::getEntry ( const int k ) const
 
         break;
 
-    case GridVirtual::BOUNDARY_BOTTOMLEFTCONVEX:
-    case GridVirtual::BOUNDARY_BOTTOMLEFTCONCAVE:
+    case Recti::Grid::Abstract::BOUNDARY_BOTTOMLEFTCONVEX:
+    case Recti::Grid::Abstract::BOUNDARY_BOTTOMLEFTCONCAVE:
         // -------------------------------------------------------------------
         psiKRight = psiView[ grid_->getKRight ( k ) ];
         psiKAbove = psiView[ grid_->getKAbove ( k ) ];
@@ -105,8 +105,8 @@ GL::Operator::BCInner::getEntry ( const int k ) const
         // -------------------------------------------------------------------
         break;
 
-    case GridVirtual::BOUNDARY_BOTTOMRIGHTCONVEX:
-    case GridVirtual::BOUNDARY_BOTTOMRIGHTCONCAVE:
+    case Recti::Grid::Abstract::BOUNDARY_BOTTOMRIGHTCONVEX:
+    case Recti::Grid::Abstract::BOUNDARY_BOTTOMRIGHTCONCAVE:
         // -----------------------------------------------------------------------
         psiKLeft  = psiView[ grid_->getKLeft ( k ) ];
         psiKAbove = psiView[ grid_->getKAbove ( k ) ];
@@ -123,8 +123,8 @@ GL::Operator::BCInner::getEntry ( const int k ) const
         // -----------------------------------------------------------------------
         break;
 
-    case GridVirtual::BOUNDARY_TOPRIGHTCONVEX:
-    case GridVirtual::BOUNDARY_TOPRIGHTCONCAVE:
+    case Recti::Grid::Abstract::BOUNDARY_TOPRIGHTCONVEX:
+    case Recti::Grid::Abstract::BOUNDARY_TOPRIGHTCONCAVE:
         // -----------------------------------------------------------------------
         psiKLeft  = psiView[ grid_->getKLeft ( k ) ];
         psiKBelow = psiView[ grid_->getKBelow ( k ) ];
@@ -143,8 +143,8 @@ GL::Operator::BCInner::getEntry ( const int k ) const
 
         break;
 
-    case GridVirtual::BOUNDARY_TOPLEFTCONVEX:
-    case GridVirtual::BOUNDARY_TOPLEFTCONCAVE:
+    case Recti::Grid::Abstract::BOUNDARY_TOPLEFTCONVEX:
+    case Recti::Grid::Abstract::BOUNDARY_TOPLEFTCONCAVE:
         // -----------------------------------------------------------------------
         psiKRight = psiView[ grid_->getKRight ( k ) ];
         psiKBelow = psiView[ grid_->getKBelow ( k ) ];
@@ -162,7 +162,7 @@ GL::Operator::BCInner::getEntry ( const int k ) const
         // -----------------------------------------------------------------------
         break;
 
-    case GridVirtual::BOUNDARY_BOTTOM:
+    case Recti::Grid::Abstract::BOUNDARY_BOTTOM:
         // -------------------------------------------------------------------
         // normal derivative
         psiKAbove = psiView[ grid_->getKAbove ( k ) ];
@@ -176,7 +176,7 @@ GL::Operator::BCInner::getEntry ( const int k ) const
         // -------------------------------------------------------------------
         break;
 
-    case GridVirtual::BOUNDARY_RIGHT:
+    case Recti::Grid::Abstract::BOUNDARY_RIGHT:
         // -------------------------------------------------------------------
         // normal derivative
         psiKLeft = psiView[ grid_->getKLeft ( k ) ];
@@ -190,7 +190,7 @@ GL::Operator::BCInner::getEntry ( const int k ) const
         // -------------------------------------------------------------------
         break;
 
-    case GridVirtual::BOUNDARY_TOP:
+    case Recti::Grid::Abstract::BOUNDARY_TOP:
         // -------------------------------------------------------------------
         // normal derivative
         psiKBelow = psiView[ grid_->getKBelow ( k ) ];
@@ -204,7 +204,7 @@ GL::Operator::BCInner::getEntry ( const int k ) const
         // -------------------------------------------------------------------
         break;
 
-    case GridVirtual::BOUNDARY_LEFT:
+    case Recti::Grid::Abstract::BOUNDARY_LEFT:
         // -------------------------------------------------------------------
         // normal derivative
         psiKRight = psiView[ grid_->getKRight ( k ) ];
@@ -249,10 +249,10 @@ GL::Operator::BCInner::getJacobianRow ( const int                        k,
 
     Teuchos::ArrayRCP<const double_complex> psiView = psi_->get1dView();
 
-    GridVirtual::nodeType nt = grid_->getNodeType(k);
+    Recti::Grid::Abstract::nodeType nt = grid_->getNodeType(k);
     switch ( nt )
     {
-    case GridVirtual::INTERIOR:
+    case Recti::Grid::Abstract::INTERIOR:
         // ---------------------------------------------------------------------
         kRight = grid_->getKRight ( k );
         kLeft  = grid_->getKLeft ( k );
@@ -292,8 +292,8 @@ GL::Operator::BCInner::getJacobianRow ( const int                        k,
         valuesPsiConj[0] = -psiView[k]*psiView[k];
 
         break;
-    case GridVirtual::BOUNDARY_BOTTOMLEFTCONVEX:
-    case GridVirtual::BOUNDARY_BOTTOMLEFTCONCAVE:
+    case Recti::Grid::Abstract::BOUNDARY_BOTTOMLEFTCONVEX:
+    case Recti::Grid::Abstract::BOUNDARY_BOTTOMLEFTCONCAVE:
         // -------------------------------------------------------------------
         kRight = grid_->getKRight ( k );
         kAbove = grid_->getKAbove ( k );
@@ -321,8 +321,8 @@ GL::Operator::BCInner::getJacobianRow ( const int                        k,
         // -------------------------------------------------------------------
         break;
 
-    case GridVirtual::BOUNDARY_BOTTOMRIGHTCONVEX:
-    case GridVirtual::BOUNDARY_BOTTOMRIGHTCONCAVE:
+    case Recti::Grid::Abstract::BOUNDARY_BOTTOMRIGHTCONVEX:
+    case Recti::Grid::Abstract::BOUNDARY_BOTTOMRIGHTCONCAVE:
         // -----------------------------------------------------------------------
         kLeft  = grid_->getKLeft ( k );
         kAbove = grid_->getKAbove ( k );
@@ -351,8 +351,8 @@ GL::Operator::BCInner::getJacobianRow ( const int                        k,
         // -----------------------------------------------------------------------
         break;
 
-    case GridVirtual::BOUNDARY_TOPRIGHTCONVEX:
-    case GridVirtual::BOUNDARY_TOPRIGHTCONCAVE:
+    case Recti::Grid::Abstract::BOUNDARY_TOPRIGHTCONVEX:
+    case Recti::Grid::Abstract::BOUNDARY_TOPRIGHTCONCAVE:
         // -----------------------------------------------------------------------
         kLeft  = grid_->getKLeft ( k );
         kBelow = grid_->getKBelow ( k );
@@ -380,8 +380,8 @@ GL::Operator::BCInner::getJacobianRow ( const int                        k,
         // -----------------------------------------------------------------------
         break;
 
-    case GridVirtual::BOUNDARY_TOPLEFTCONVEX:
-    case GridVirtual::BOUNDARY_TOPLEFTCONCAVE:
+    case Recti::Grid::Abstract::BOUNDARY_TOPLEFTCONVEX:
+    case Recti::Grid::Abstract::BOUNDARY_TOPLEFTCONCAVE:
         // -----------------------------------------------------------------------
         kRight = grid_->getKRight ( k );
         kBelow = grid_->getKBelow ( k );
@@ -408,7 +408,7 @@ GL::Operator::BCInner::getJacobianRow ( const int                        k,
         // -----------------------------------------------------------------------
         break;
 
-    case GridVirtual::BOUNDARY_BOTTOM:
+    case Recti::Grid::Abstract::BOUNDARY_BOTTOM:
         // -------------------------------------------------------------------
         // normal derivative
         kAbove = grid_->getKAbove ( k );
@@ -432,7 +432,7 @@ GL::Operator::BCInner::getJacobianRow ( const int                        k,
         // -------------------------------------------------------------------
         break;
 
-    case GridVirtual::BOUNDARY_RIGHT:
+    case Recti::Grid::Abstract::BOUNDARY_RIGHT:
         // -------------------------------------------------------------------
         // normal derivative
         kLeft = grid_->getKLeft ( k );
@@ -455,7 +455,7 @@ GL::Operator::BCInner::getJacobianRow ( const int                        k,
         // -------------------------------------------------------------------
         break;
 
-    case GridVirtual::BOUNDARY_TOP:
+    case Recti::Grid::Abstract::BOUNDARY_TOP:
         // -------------------------------------------------------------------
         // normal derivative
         kBelow = grid_->getKBelow ( k );
@@ -478,7 +478,7 @@ GL::Operator::BCInner::getJacobianRow ( const int                        k,
         // -------------------------------------------------------------------
         break;
 
-    case GridVirtual::BOUNDARY_LEFT:
+    case Recti::Grid::Abstract::BOUNDARY_LEFT:
         // -------------------------------------------------------------------
         // normal derivative
         kRight = grid_->getKRight ( k );

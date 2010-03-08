@@ -17,21 +17,24 @@
 
 */
 
-#include "DomainPolygon.h"
+#include "Recti_Domain_Polygon.h"
 
 // ============================================================================
-DomainPolygon::DomainPolygon ( const Teuchos::Array<DoubleTuple> & polygonPoints ) :
-        DomainVirtual (),
+Recti::Domain::Polygon::
+Polygon ( const Teuchos::Array<DoubleTuple> & polygonPoints ) :
+        Recti::Domain::Abstract (),
         polygonPoints_ ( polygonPoints )
 {
 }
 // ============================================================================
-DomainPolygon::~DomainPolygon()
+Recti::Domain::Polygon::
+~Polygon()
 {
 }
 // ============================================================================
 Teuchos::Tuple<double,4>
-DomainPolygon::getBoundingBox () const
+Recti::Domain::Polygon::
+getBoundingBox () const
 {
     double xMin = polygonPoints_[0][0];
     double xMax = polygonPoints_[0][0];
@@ -54,7 +57,8 @@ DomainPolygon::getBoundingBox () const
 }
 // ============================================================================
 bool
-DomainPolygon::isInDomain ( const DoubleTuple & x ) const
+Recti::Domain::Polygon::
+isInDomain ( const DoubleTuple & x ) const
 {
     // winding number algorithm
     // http://www.google.be/url?sa=t&source=web&ct=res&cd=1&ved=0CAkQFjAA&url=http%3A%2F%2Fwww.engr.colostate.edu%2F~dga%2Fdga%2Fpapers%2Fpoint_in_polygon.pdf&ei=ntxvS6eyOYLI-Qao2vjoAQ&usg=AFQjCNF_btLpRhTfkUQt34nXfsRylaF95g&sig2=Hh8I-SjpWC6queaj3QMeZw

@@ -17,31 +17,17 @@
 
 */
 
-#include "DomainRectangle.h"
+#include "Recti_Domain_Abstract.h"
 
 // ============================================================================
-DomainRectangle::DomainRectangle ( const double a,
-                                   const double b ) :
-        DomainVirtual(),
-        a_(a),
-        b_(b)
+Recti::Domain::Abstract::
+Abstract ( double tolerance ) :
+        tolerance_ ( tolerance )
 {
 }
 // ============================================================================
-DomainRectangle::~DomainRectangle()
+Recti::Domain::Abstract::
+~Abstract()
 {
-}
-// ============================================================================
-Teuchos::Tuple<double,4>
-DomainRectangle::getBoundingBox () const
-{
-    return Teuchos::tuple( 0.0, 0.0, a_, b_ );
-}
-// ============================================================================
-bool
-DomainRectangle::isInDomain ( const DoubleTuple & x ) const
-{
-    return    x[0]>=-tolerance_ && x[0]<=a_+tolerance_
-           && x[1]>=-tolerance_ && x[1]<=b_+tolerance_;
 }
 // ============================================================================

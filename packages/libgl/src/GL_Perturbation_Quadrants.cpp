@@ -22,19 +22,19 @@
 
 // ============================================================================ 
 // Constructor
-GL::Perturbation::Quadrants::Quadrants( const Teuchos::RCP<const GridVirtual> & grid ):
+GL::Perturbation::Quadrants::
+Quadrants( const Teuchos::RCP<const Recti::Grid::Abstract> & grid ):
   GL::Perturbation::Virtual(),
   epsilonQuadrant1_(0.0),
   grid_(grid)
 {
 }
-
 // ============================================================================ 
 // Destructor
-GL::Perturbation::Quadrants::~Quadrants()
+GL::Perturbation::Quadrants::
+~Quadrants()
 {
 }
-
 // ============================================================================ 
 // Compute perturbation
 std::complex<double>
@@ -43,11 +43,10 @@ computePerturbation( int k ) const
 {
   Teuchos::RCP<Teuchos::Tuple<double,2> > xy = grid_->getX(k);
   if ( ( (*xy)[0] >= 0.0 ) && ( (*xy)[1] >= 0.0 ) )
-    return std::complex<double>(epsilonQuadrant1_,0.0);
+      return std::complex<double>(epsilonQuadrant1_,0.0);
   else
-    return std::complex<double>(0.0,0.0);
+      return std::complex<double>(0.0,0.0);
 }
-
 // ============================================================================ 
 // Set parameters
 void GL::Perturbation::Quadrants::

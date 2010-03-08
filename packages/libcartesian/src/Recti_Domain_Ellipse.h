@@ -17,25 +17,40 @@
 
 */
 
-#ifndef DOMAINSQUARE_H
-#define DOMAINSQUARE_H
+#ifndef DOMAINELLIPSE_H
+#define DOMAINELLIPSE_H
 
-#include "DomainRectangle.h"
+#include "Recti_Domain_Abstract.h"
 
-class DomainSquare:
-            public DomainRectangle
+namespace Recti
+{
+  namespace Domain
+  {
+
+class Ellipse:
+            public Abstract
 {
 public:
     //! Constructor.
-    DomainSquare ( double edgeLength );
+    Ellipse ( double a, double b );
 
     //! Destructor.
     virtual
-    ~DomainSquare();
+    ~Ellipse();
+
+    virtual Teuchos::Tuple<double,4>
+    getBoundingBox () const;
+
+    virtual bool
+    isInDomain ( const DoubleTuple & x ) const;
 
 protected:
 private:
-    double edgeLength_;
+    double a_;
+    double b_;
 };
 
-#endif // DOMAINSQUARE_H
+  } // namespace Domain
+} // namespace Recti
+
+#endif // DOMAINELLIPSE_H

@@ -17,29 +17,32 @@
 
 */
 
-#include "GridUniform.h"
+#include "Recti_Grid_Uniform.h"
 
 // =============================================================================
-GridUniform::GridUniform ( const Teuchos::RCP<const DomainVirtual> & domain,
-                           const double                              h
-                         ) :
-        Grid ( domain, Teuchos::tuple ( h,h ) )
+Recti::Grid::Uniform::
+Uniform ( const Teuchos::RCP<const Domain::Abstract> & domain,
+          const double                              h
+        ) :
+        General ( domain, Teuchos::tuple ( h,h ) )
 {
 }
 // =============================================================================
-GridUniform::GridUniform ( const double                h,
-                           const UIntTuple           & numCells,
-                           const Teuchos::Array<int> & kBB,
-                           const Teuchos::Array<int> & boundaryNodes,
-                           const double                scaling,
-                           const DoubleTuple         & origin
-                         ) :
-        Grid ( Teuchos::tuple ( h,h ), numCells, kBB, boundaryNodes, scaling, origin )
+Recti::Grid::Uniform::
+Uniform ( const double                h,
+          const UIntTuple           & numCells,
+          const Teuchos::Array<int> & kBB,
+          const Teuchos::Array<int> & boundaryNodes,
+          const double                scaling,
+          const DoubleTuple         & origin
+        ) :
+        General ( Teuchos::tuple ( h,h ), numCells, kBB, boundaryNodes, scaling, origin )
 {
 }
 // =============================================================================
 double
-GridUniform::getUniformH() const
+Recti::Grid::Uniform::
+getUniformH() const
 {
     return h_[0];
 }

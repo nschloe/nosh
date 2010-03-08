@@ -1,6 +1,6 @@
 /*
     <one line to give the program's name and a brief idea of what it does.>
-    Copyright (C) 2010 Nico Schl\"omer
+    Copyright (C) <year>  <name of author>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,36 +17,33 @@
 
 */
 
-#ifndef DOMAINRECTANGLE_H
-#define DOMAINRECTANGLE_H
+#ifndef DOMAINSQUARE_H
+#define DOMAINSQUARE_H
 
-#include "DomainVirtual.h"
+#include "Recti_Domain_Rectangle.h"
 
-class DomainRectangle:
-            public DomainVirtual
+namespace Recti
+{
+  namespace Domain
+  {
+
+class Square:
+            public Rectangle
 {
 public:
     //! Constructor.
-    DomainRectangle ( const double a,
-                      const double b );
+    Square ( double edgeLength );
 
     //! Destructor.
     virtual
-    ~DomainRectangle();
-
-    //! Returns a bounding box around the domain.
-    virtual Teuchos::Tuple<double,4>
-    getBoundingBox () const;
-
-    //! @param  x Point that is checked
-    //! @return   Whether or not \c x sits in the domain.
-    virtual bool
-    isInDomain ( const DoubleTuple & x ) const;
+    ~Square();
 
 protected:
 private:
-    double a_;
-    double b_;
+    double edgeLength_;
 };
 
-#endif // DOMAINRECTANGLE_H
+  } // namespace Domain
+} // namespace Recti
+
+#endif // DOMAINSQUARE_H

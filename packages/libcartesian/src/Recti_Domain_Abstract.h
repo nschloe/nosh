@@ -1,6 +1,6 @@
 /*
     <one line to give the program's name and a brief idea of what it does.>
-    Copyright (C) <year>  <name of author>
+    Copyright (C) 2010 Nico Schl\"omer
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,32 +17,44 @@
 
 */
 
-#ifndef DOMAINELLIPSE_H
-#define DOMAINELLIPSE_H
+#ifndef GEOMETRY_H
+#define GEOMETRY_H
 
-#include "DomainVirtual.h"
+#include<Teuchos_Tuple.hpp>
 
-class DomainEllipse:
-            public DomainVirtual
+typedef Teuchos::Tuple<double,2> DoubleTuple;
+
+namespace Recti
+{
+  namespace Domain
+  {
+
+class Abstract
 {
 public:
     //! Constructor.
-    DomainEllipse ( double a, double b );
+    Abstract ( double tolerance = 1.0e-10 );
 
     //! Destructor.
     virtual
-    ~DomainEllipse();
+    ~Abstract();
 
+    //! Returns a bounding box around the domain.
     virtual Teuchos::Tuple<double,4>
-    getBoundingBox () const;
+    getBoundingBox () const = 0;
 
+    //! @param  x Point that is checked
+    //! @return   Whether or not \c x sits in the domain.
     virtual bool
-    isInDomain ( const DoubleTuple & x ) const;
+    isInDomain ( const DoubleTuple & x ) const = 0;
 
 protected:
+    double tolerance_;
+   
 private:
-    double a_;
-    double b_;
 };
 
-#endif // DOMAINELLIPSE_H
+  } // namespace Domain
+} // namespace Recti
+
+#endif // GEOMETRY_H

@@ -8,8 +8,8 @@
 #ifndef GRID_H_
 #define GRID_H_
 
-#include "DomainVirtual.h"
-#include "GridVirtual.h"
+#include "Recti_Domain_Abstract.h"
+#include "Recti_Grid_Abstract.h"
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Tuple.hpp>
@@ -19,31 +19,35 @@
 
 #include <Thyra_OperatorVectorTypes.hpp> // For Thyra::Ordinal
 
+namespace Recti
+{
+  namespace Grid
+  {
 
-class Grid:
-            public GridVirtual
+class General:
+            public Abstract
 {
 public:
 
     //! Default constructor.
-    Grid ( const Teuchos::RCP<const DomainVirtual> & domain,
-           const DoubleTuple                       & h
-         );
+    General ( const Teuchos::RCP<const Recti::Domain::Abstract> & domain,
+              const DoubleTuple                                 & h
+            );
          
     //! Constructor for information gotten from a file read.
-    Grid ( const DoubleTuple         & h,
-           const UIntTuple           & numCells,
-           const Teuchos::Array<int> & kBB,
-           const Teuchos::Array<int> & boundaryNodes,
-           const double                scaling,
-           const DoubleTuple         & origin
-         );
+    General ( const DoubleTuple         & h,
+              const UIntTuple           & numCells,
+              const Teuchos::Array<int> & kBB,
+              const Teuchos::Array<int> & boundaryNodes,
+              const double                scaling,
+              const DoubleTuple         & origin
+            );
 
     //! Empty constructor.
-    Grid();
+    General();
 
     virtual
-    ~Grid();
+    ~General();
     
     virtual const Teuchos::Array<int> &
     getBoundaryIndices() const;
@@ -145,12 +149,12 @@ private:
     };
 
 private:
-    Grid::nodeType
+    nodeType
     getNodeType ( const direction prevDir,
                   const direction newDir
                 ) const;
 
-    Grid::direction
+    direction
     getDirection ( const UIntTuple & node0,
                    const UIntTuple & node1
                  ) const;
@@ -162,9 +166,9 @@ private:
     getX ( const UIntTuple & i ) const;
 
     bool
-    boundaryStepper ( Teuchos::Array<UIntTuple>               & boundaryNodes,
-                      Teuchos::Array<direction>               & directions,
-                      const Teuchos::RCP<const DomainVirtual> & domain
+    boundaryStepper ( Teuchos::Array<UIntTuple>                  & boundaryNodes,
+                      Teuchos::Array<direction>                  & directions,
+                      const Teuchos::RCP<const Domain::Abstract> & domain
                     ) const;
 
     bool
@@ -173,20 +177,20 @@ private:
           ) const;
 
     UIntTuple
-    findFirstBoundaryNode ( const Teuchos::RCP<const DomainVirtual> & domain ) const;
+    findFirstBoundaryNode ( const Teuchos::RCP<const Domain::Abstract> & domain ) const;
 
-    Grid::direction
+    direction
     findNextDirection ( const IntTuple  & currentBoundaryNode,
                         const direction   prevDir
                       ) const;
 
-    Teuchos::Tuple<Grid::direction,3>
+    Teuchos::Tuple<direction,3>
     getNextDirections ( const direction dir ) const;
 
     UIntTuple
     step ( const UIntTuple                         & node,
            const direction                           dir,
-           const Teuchos::RCP<const DomainVirtual> & domain
+           const Teuchos::RCP<const Domain::Abstract> & domain
          ) const;
 
     unsigned int
@@ -203,5 +207,8 @@ private:
                            Teuchos::Array<direction> & directions
                          ) const;
 };
+
+  } // namespace Grid
+} // namespace Recti
 
 #endif /* GRID_H_ */

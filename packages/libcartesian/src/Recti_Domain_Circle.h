@@ -20,21 +20,29 @@
 #ifndef DOMAINCIRCLE_H
 #define DOMAINCIRCLE_H
 
-#include "DomainEllipse.h"
+#include "Recti_Domain_Ellipse.h"
 
-class DomainCircle:
-            public DomainEllipse
+namespace Recti
+{
+  namespace Domain
+  {
+
+class Circle:
+            public Ellipse
 {
 public:
     //! Constructor.
-    DomainCircle ( double radius );
+    Circle ( double radius );
 
     //! Destructor.
     virtual
-    ~DomainCircle();
+    ~Circle();
 
 protected:
 private:
 };
+
+  } // namespace Domain
+} // namespace Recti
 
 #endif // DOMAINCIRCLE_H

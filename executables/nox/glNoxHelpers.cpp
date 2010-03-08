@@ -36,14 +36,14 @@
 #include "ginzburgLandau.h"
 #include "GL_IO_SaveNewtonData.h"
 
-#include "GridReader.h"
-#include "GridUniformSquare.h"
-#include "GridSquare.h"
+#include "Recti_Grid_Reader.h"
+#include "Recti_Grid_UniformSquare.h"
+#include "Recti_Grid_Square.h"
 #include "GL_LocaSystem_Bordered.h"
 
-#include "DomainSquare.h"
-#include "DomainCircle.h"
-#include "DomainPolygon.h"
+#include "Recti_Domain_Square.h"
+#include "Recti_Domain_Circle.h"
+#include "Recti_Domain_Polygon.h"
 #include "GL_Operator_BCInner.h"
 #include "GL_Operator_BCOuter.h"
 #include "GL_Operator_BCCentral.h"
@@ -65,8 +65,8 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
 
     Teuchos::RCP<ComplexMultiVector> psi;
 
-    Teuchos::RCP<GridUniform> grid;
-    GridReader::read ( comm, fileName, psi, grid, problemParameters );
+    Teuchos::RCP<Recti::Grid::Uniform> grid;
+    Recti::Grid::Reader::read ( comm, fileName, psi, grid, problemParameters );
 
     double h0      = problemParameters.get<double> ( "H0" );
     double scaling = problemParameters.get<double> ( "scaling" );
@@ -102,8 +102,8 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
 
     // create the domain
     double edgeLength = 1.0;
-    Teuchos::RCP<DomainVirtual> domain =
-        Teuchos::rcp ( new DomainSquare ( edgeLength ) );
+    Teuchos::RCP<Recti::Domain::Abstract> domain =
+        Teuchos::rcp ( new Recti::Domain::Square ( edgeLength ) );
 
 //     Teuchos::RCP<DomainVirtual> domain =
 //         Teuchos::rcp ( new DomainRectangle ( 0.5, 1.0 ) );
@@ -136,12 +136,11 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
 //                                                    Teuchos::tuple(4.0,2.0),
 //                                                    Teuchos::tuple(0.0,2.0) ) );
 
-
     // TODO Create GridConstructor with Nx
     // create the grid
     double h = 1.0 / Nx;
-    Teuchos::RCP<GridUniform> grid =
-        Teuchos::rcp ( new GridUniform ( domain, h ) );
+    Teuchos::RCP<Recti::Grid::Uniform> grid =
+        Teuchos::rcp ( new Recti::Grid::Uniform ( domain, h ) );
 
     grid->updateScaling ( scaling );
 

@@ -2,32 +2,36 @@
  * GridUniformVirtual.cpp
  *
  *  Created on: Nov 30, 2009
- *      Author: Nico Schl�mer
+ *      Author: Nico Schl\"omer
  */
 
-#include "GridUniformVirtual.h"
+#include "Recti_Grid_UniformAbstract.h"
 
 // ============================================================================
-GridUniformVirtual::GridUniformVirtual( double h,
-                                        double gridDomainArea,
-                                        unsigned int numGridPoints ) :
-GridVirtual( Teuchos::tuple<double>(h,h),
+Recti::Grid::UniformAbstract::
+UniformAbstract( double h,
+                    double gridDomainArea,
+                    unsigned int numGridPoints ) :
+Abstract( Teuchos::tuple<double>(h,h),
              gridDomainArea,
              numGridPoints )
 {
 }
 // ============================================================================
-GridUniformVirtual::GridUniformVirtual() :
-GridVirtual()
+Recti::Grid::UniformAbstract::
+UniformAbstract() :
+Abstract()
 {
 }
 // ============================================================================
-GridUniformVirtual::~GridUniformVirtual()
+Recti::Grid::UniformAbstract::
+~UniformAbstract()
 {
 }
 // ============================================================================
 double
-GridUniformVirtual::getUniformH() const
+Recti::Grid::UniformAbstract::
+getUniformH() const
 {
   return h_[0];
 }

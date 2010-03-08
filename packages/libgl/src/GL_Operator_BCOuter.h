@@ -31,9 +31,9 @@ class BCOuter:
 public:
 
     //! Default constructor.
-    BCOuter ( Teuchos::RCP<GridUniform>             & grid,
-                        Teuchos::RCP<GL::MagneticVectorPotential::Centered> & A
-                      );
+    BCOuter ( Teuchos::RCP<Recti::Grid::Uniform>             & grid,
+              Teuchos::RCP<GL::MagneticVectorPotential::Centered> & A
+            );
 
     //! Destructor
     virtual

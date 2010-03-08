@@ -17,15 +17,35 @@
 
 */
 
-#include "DomainVirtual.h"
+#include "Recti_Domain_Rectangle.h"
 
 // ============================================================================
-DomainVirtual::DomainVirtual ( double tolerance ) :
-        tolerance_ ( tolerance )
+Recti::Domain::Rectangle::
+Rectangle ( const double a,
+            const double b ) :
+        Recti::Domain::Abstract (),
+        a_(a),
+        b_(b)
 {
 }
 // ============================================================================
-DomainVirtual::~DomainVirtual()
+Recti::Domain::Rectangle::
+~Rectangle()
 {
+}
+// ============================================================================
+Teuchos::Tuple<double,4>
+Recti::Domain::Rectangle::
+getBoundingBox () const
+{
+    return Teuchos::tuple( 0.0, 0.0, a_, b_ );
+}
+// ============================================================================
+bool
+Recti::Domain::Rectangle::
+isInDomain ( const DoubleTuple & x ) const
+{
+    return    x[0]>=-tolerance_ && x[0]<=a_+tolerance_
+           && x[1]>=-tolerance_ && x[1]<=b_+tolerance_;
 }
 // ============================================================================

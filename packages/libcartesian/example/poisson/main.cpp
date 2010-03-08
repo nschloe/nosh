@@ -19,10 +19,10 @@
 
 #include <Stratimikos_DefaultLinearSolverBuilder.hpp>
 
-#include "Grid.h"
-#include "DomainSquare.h"
-#include "DomainCircle.h"
-#include "DomainPolygon.h"
+#include "Recti_Grid_General.h"
+#include "Recti_Domain_Square.h"
+#include "Recti_Domain_Circle.h"
+#include "Recti_Domain_Polygon.h"
 
 // =============================================================================
 // Helper function to compute a single norm for a vector
@@ -102,12 +102,12 @@ int main ( int argc, char *argv[] )
                                                    Teuchos::tuple(2.0,2.0),
                                                    Teuchos::tuple(4.0,4.0),
                                                    Teuchos::tuple(0.0,4.0) ) );
-    Teuchos::RCP<DomainVirtual> domain = Teuchos::rcp( new DomainPolygon(P) );
+    Teuchos::RCP<Recti::Domain::Abstract> domain = Teuchos::rcp( new Recti::Domain::Polygon(P) );
     
     // create a grid from the domain
     double hh = 0.1;
     Teuchos::Tuple<double,2> h = Teuchos::tuple( hh, hh );
-    Grid grid( domain, h );
+    Recti::Grid::General grid( domain, h );
 
     // create Map for the domain
     int N = grid.getNumGridPoints();
@@ -141,7 +141,7 @@ int main ( int argc, char *argv[] )
         int k = Map.GID ( row );
         switch ( grid.getNodeType ( k ) )
         {
-        case GridVirtual::INTERIOR:
+        case Recti::Grid::Abstract::INTERIOR:
             columnsInterior[0] = k;
             columnsInterior[1] = grid.getKLeft ( k );
             columnsInterior[2] = grid.getKRight ( k );
@@ -155,18 +155,18 @@ int main ( int argc, char *argv[] )
             bEpetra->ReplaceMyValue ( row, 0, rhsInterior );
             break;
         // boundary nodes
-        case GridVirtual::BOUNDARY_BOTTOMLEFTCONVEX:
-        case GridVirtual::BOUNDARY_BOTTOMLEFTCONCAVE:
-        case GridVirtual::BOUNDARY_BOTTOMRIGHTCONVEX:
-        case GridVirtual::BOUNDARY_BOTTOMRIGHTCONCAVE:
-        case GridVirtual::BOUNDARY_TOPLEFTCONVEX:
-        case GridVirtual::BOUNDARY_TOPLEFTCONCAVE:
-        case GridVirtual::BOUNDARY_TOPRIGHTCONVEX:
-        case GridVirtual::BOUNDARY_TOPRIGHTCONCAVE:
-        case GridVirtual::BOUNDARY_BOTTOM:
-        case GridVirtual::BOUNDARY_RIGHT:
-        case GridVirtual::BOUNDARY_TOP:
-        case GridVirtual::BOUNDARY_LEFT:
+        case Recti::Grid::Abstract::BOUNDARY_BOTTOMLEFTCONVEX:
+        case Recti::Grid::Abstract::BOUNDARY_BOTTOMLEFTCONCAVE:
+        case Recti::Grid::Abstract::BOUNDARY_BOTTOMRIGHTCONVEX:
+        case Recti::Grid::Abstract::BOUNDARY_BOTTOMRIGHTCONCAVE:
+        case Recti::Grid::Abstract::BOUNDARY_TOPLEFTCONVEX:
+        case Recti::Grid::Abstract::BOUNDARY_TOPLEFTCONCAVE:
+        case Recti::Grid::Abstract::BOUNDARY_TOPRIGHTCONVEX:
+        case Recti::Grid::Abstract::BOUNDARY_TOPRIGHTCONCAVE:
+        case Recti::Grid::Abstract::BOUNDARY_BOTTOM:
+        case Recti::Grid::Abstract::BOUNDARY_RIGHT:
+        case Recti::Grid::Abstract::BOUNDARY_TOP:
+        case Recti::Grid::Abstract::BOUNDARY_LEFT:
             columnsBoundary[0] = k;
             AEpetra->InsertMyValues ( row, columnsBoundary.size(), valuesBoundary.getRawPtr(),
                                                                    columnsBoundary.getRawPtr() );

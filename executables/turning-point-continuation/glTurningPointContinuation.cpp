@@ -24,7 +24,7 @@
 #include "GL_Operator_BCCentral.h"
 #include "GL_Operator_BCInner.h"
 
-#include "DomainSquare.h"
+#include "Recti_Domain_Square.h"
 
 #include "GL_LocaSystem_Bordered.h"
 #include "GL_IO_SaveEigenData.h"
@@ -32,7 +32,7 @@
 #include "GL_Helpers.h"
 #include "GL_StatsWriter.h"
 
-#include "GridReader.h"
+#include "Recti_Grid_Reader.h"
 
 
 // =============================================================================
@@ -147,7 +147,7 @@ main ( int argc, char *argv[] )
     // ---------------------------------------------------------------------------
     Teuchos::ParameterList glParameters;
     Teuchos::RCP<ComplexVector> psi;
-    Teuchos::RCP<GridUniform> grid;
+    Teuchos::RCP<Recti::Grid::Uniform> grid;
 
     Teuchos::ParameterList initialGuessList;
     try
@@ -169,7 +169,7 @@ main ( int argc, char *argv[] )
         {
             // For technical reasons, the reader can only accept ComplexMultiVectors.
             Teuchos::RCP<ComplexMultiVector> psiM;
-            GridReader::read ( Comm, inputGuessFile.string(), psiM, grid, glParameters );
+            Recti::Grid::Reader::read ( Comm, inputGuessFile.string(), psiM, grid, glParameters );
             TEUCHOS_ASSERT_EQUALITY ( psiM->getNumVectors(), 1 );
             psi = psiM->getVectorNonConst ( 0 );
         }
@@ -208,11 +208,11 @@ main ( int argc, char *argv[] )
         glParameters.set ( "H0", H0 );
 
         double edgeLength = 1.0;
-        Teuchos::RCP<DomainVirtual> domain = Teuchos::rcp ( new DomainSquare ( edgeLength ) );
+        Teuchos::RCP<Recti::Domain::Abstract> domain = Teuchos::rcp ( new Recti::Domain::Square ( edgeLength ) );
 
         int    Nx = initialGuessList.get<int> ( "Nx" );
         double h  = edgeLength / Nx;
-        Teuchos::RCP<GridUniform> grid = Teuchos::rcp ( new GridUniform ( domain, h ) );
+        Teuchos::RCP<Recti::Grid::Uniform> grid = Teuchos::rcp ( new Recti::Grid::Uniform ( domain, h ) );
         grid->updateScaling ( scaling );
 
         // set initial guess
@@ -400,7 +400,7 @@ main ( int argc, char *argv[] )
     try
     {
         Teuchos::RCP<ComplexMultiVector> initialNullVectorM;
-        GridReader::read ( Comm, initialNullVectorFile.string(), initialNullVectorM, grid, glParameters );
+        Recti::Grid::Reader::read ( Comm, initialNullVectorFile.string(), initialNullVectorM, grid, glParameters );
         TEUCHOS_ASSERT_EQUALITY ( initialNullVectorM->getNumVectors(), 1 );
         initialNullVector = initialNullVectorM->getVectorNonConst ( 0 );
     }

@@ -32,7 +32,7 @@ class BCInner:
 public:
 
     //! Default constructor.
-    BCInner ( Teuchos::RCP<GridUniform>             & grid,
+    BCInner ( Teuchos::RCP<Recti::Grid::Uniform>                  & grid,
               Teuchos::RCP<GL::MagneticVectorPotential::Centered> & A
             );
 

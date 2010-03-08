@@ -6,13 +6,14 @@
  */
 #include <Epetra_Vector.h>
 
-#include "GridSquare.h"
+#include "Recti_Grid_Square.h"
 
 // =============================================================================
 // Class constructor
-GridSquare::GridSquare ( const UIntTuple & numCells,
-                         const double      edgeLength ) :
-        GridVirtual ( Teuchos::tuple<double> ( edgeLength/numCells[0],edgeLength/numCells[1] ),
+Recti::Grid::Square::
+Square ( const UIntTuple & numCells,
+         const double      edgeLength ) :
+        Abstract ( Teuchos::tuple<double> ( edgeLength/numCells[0],edgeLength/numCells[1] ),
                       pow ( edgeLength, 2 ),
                       ( numCells[0]+1 ) * ( numCells[1]+1 )
                     ),
@@ -21,19 +22,22 @@ GridSquare::GridSquare ( const UIntTuple & numCells,
 }
 // =============================================================================
 // Class constructor for this classes data only.
-GridSquare::GridSquare ( const UIntTuple & numCells ) :
-        GridVirtual(),
+Recti::Grid::Square::
+Square ( const UIntTuple & numCells ) :
+        Abstract(),
         numCells_ ( numCells )
 {
 }
 // =============================================================================
 // Destructor
-GridSquare::~GridSquare()
+Recti::Grid::Square::
+~Square()
 {
 }
 // =============================================================================
 Teuchos::RCP<IntTuple>
-GridSquare::boundaryPosition ( unsigned int l ) const
+Recti::Grid::Square::
+boundaryPosition ( unsigned int l ) const
 {
     Teuchos::RCP<IntTuple> i = Teuchos::rcp ( new IntTuple() );
 
@@ -71,26 +75,30 @@ GridSquare::boundaryPosition ( unsigned int l ) const
 }
 // =============================================================================
 unsigned int
-GridSquare::boundaryIndex2globalIndex ( unsigned int l ) const
+Recti::Grid::Square::
+boundaryIndex2globalIndex ( unsigned int l ) const
 {
     Teuchos::RCP<IntTuple> i = boundaryPosition ( l );
     return i2k ( i );
 }
 // =============================================================================
-GridSquare::nodeType
-GridSquare::getNodeType ( unsigned int k ) const
+Recti::Grid::Square::nodeType
+Recti::Grid::Square::
+getNodeType ( unsigned int k ) const
 {
     return getNodeTypeFromI ( * ( k2i ( k ) ) );
 }
 // =============================================================================
-GridSquare::nodeType
-GridSquare::getBoundaryNodeType ( unsigned int l ) const
+Recti::Grid::Square::nodeType
+Recti::Grid::Square::
+getBoundaryNodeType ( unsigned int l ) const
 {
     return getNodeTypeFromI ( * ( boundaryPosition ( l ) ) );
 }
 // =============================================================================
 double
-GridSquare::cellArea ( unsigned int k ) const
+Recti::Grid::Square::
+cellArea ( unsigned int k ) const
 {
     unsigned int numBoundaryPoints = 2 * ( numCells_[0] + numCells_[1] );
   
@@ -108,7 +116,8 @@ GridSquare::cellArea ( unsigned int k ) const
 // =============================================================================
 // TODO implement this using import/export mechanisms
 Teuchos::RCP<Epetra_MultiVector>
-GridSquare::permuteGrid2Lexicographic ( const Epetra_MultiVector & x
+Recti::Grid::Square::
+permuteGrid2Lexicographic ( const Epetra_MultiVector & x
                                       ) const
 {
     TEUCHOS_ASSERT_EQUALITY ( ( unsigned int ) x.GlobalLength(), numGridPoints_ );
@@ -140,7 +149,8 @@ GridSquare::permuteGrid2Lexicographic ( const Epetra_MultiVector & x
 // TODO implement this using import/export mechanisms
 // TODO templatetize this
 Teuchos::RCP<DoubleMultiVector>
-GridSquare::permuteGrid2Lexicographic ( const DoubleMultiVector & x
+Recti::Grid::Square::
+permuteGrid2Lexicographic ( const DoubleMultiVector & x
                                       ) const
 {
     TEUCHOS_ASSERT_EQUALITY ( x.getGlobalLength(), numGridPoints_ );
@@ -173,7 +183,8 @@ GridSquare::permuteGrid2Lexicographic ( const DoubleMultiVector & x
 // TODO implement this using import/export mechanisms
 // TODO templatetize this
 Teuchos::RCP<ComplexMultiVector>
-GridSquare::permuteGrid2Lexicographic ( const ComplexMultiVector & x
+Recti::Grid::Square::
+permuteGrid2Lexicographic ( const ComplexMultiVector & x
                                       ) const
 {
     TEUCHOS_ASSERT_EQUALITY ( x.getGlobalLength(), numGridPoints_ );
@@ -206,7 +217,8 @@ GridSquare::permuteGrid2Lexicographic ( const ComplexMultiVector & x
 //// TODO implement this using import/export mechanisms
 //// TODO templatetize this
 Teuchos::RCP<DoubleMultiVector>
-GridSquare::permuteLexicographic2Grid ( const DoubleMultiVector & xLexicographic
+Recti::Grid::Square::
+permuteLexicographic2Grid ( const DoubleMultiVector & xLexicographic
                                       ) const
 {
     TEST_FOR_EXCEPTION ( xLexicographic.getGlobalLength() != numGridPoints_,
@@ -244,7 +256,8 @@ GridSquare::permuteLexicographic2Grid ( const DoubleMultiVector & xLexicographic
 //// TODO implement this using import/export mechanisms
 //// TODO templatetize this
 Teuchos::RCP<ComplexMultiVector>
-GridSquare::permuteLexicographic2Grid ( const ComplexMultiVector & xLexicographic
+Recti::Grid::Square::
+permuteLexicographic2Grid ( const ComplexMultiVector & xLexicographic
                                       ) const
 {
     TEST_FOR_EXCEPTION ( xLexicographic.getGlobalLength() != numGridPoints_,
@@ -280,7 +293,8 @@ GridSquare::permuteLexicographic2Grid ( const ComplexMultiVector & xLexicographi
 }
 // =============================================================================
 void
-GridSquare::writeWithGrid ( const DoubleMultiVector      & x,
+Recti::Grid::Square::
+writeWithGrid ( const DoubleMultiVector      & x,
                             const Teuchos::ParameterList & params,
                             const std::string            & filePath
                           ) const
@@ -304,7 +318,8 @@ GridSquare::writeWithGrid ( const DoubleMultiVector      & x,
 }
 // =============================================================================
 void
-GridSquare::writeWithGrid ( const ComplexMultiVector     & x,
+Recti::Grid::Square::
+writeWithGrid ( const ComplexMultiVector     & x,
                             const Teuchos::ParameterList & params,
                             const std::string            & filePath
                           ) const
@@ -328,7 +343,7 @@ GridSquare::writeWithGrid ( const ComplexMultiVector     & x,
 }
 // =============================================================================
 void
-GridSquare::read ( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
+Recti::Grid::Square::read ( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
                    const std::string                             & filePath,
                    Teuchos::RCP<DoubleMultiVector>               & x,
                    Teuchos::ParameterList                        & params

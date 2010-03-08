@@ -8,22 +8,27 @@
 #ifndef GRIDUNIFORMVIRTUAL_H_
 #define GRIDUNIFORMVIRTUAL_H_
 
-#include "GridVirtual.h"
+#include "Recti_Grid_Abstract.h"
 
-class GridUniformVirtual:
-            virtual public GridVirtual
+namespace Recti
+{
+  namespace Grid
+  {
+
+class UniformAbstract:
+            virtual public Abstract
 {
 public:
     //! Default constructor.
-    GridUniformVirtual ( double h,
-                         double gridDomainArea,
-                         unsigned int numGridPoints );
+    UniformAbstract ( double h,
+                      double gridDomainArea,
+                      unsigned int numGridPoints );
 
     //! Class constructor that only initializes the data members of this class.
-    GridUniformVirtual();
+    UniformAbstract();
 
     virtual
-    ~GridUniformVirtual();
+    ~UniformAbstract();
 
     double
     getUniformH() const; //!< Returns the uniform mesh size \f$h\f$.
@@ -31,5 +36,8 @@ public:
 protected:
 private:
 };
+
+  } // namespace Grid
+} // namespace Recti
 
 #endif /* GRIDUNIFORMVIRTUAL_H_ */

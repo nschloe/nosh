@@ -20,28 +20,35 @@
 #ifndef GRIDUNIFORM_H
 #define GRIDUNIFORM_H
 
-#include "Grid.h"
+#include "Recti_Grid_General.h"
 
-class GridUniform:
-            virtual public Grid
+namespace Recti
+{
+  namespace Grid
+  {
+
+class Uniform:
+            virtual public General
 {
 public:
-    GridUniform ( const Teuchos::RCP<const DomainVirtual> & domain,
-                  const double                              h
-                );
+    Uniform ( const Teuchos::RCP<const Domain::Abstract> & domain,
+              const double                                 h
+            );
 
-    GridUniform ( const double                h,
-                  const UIntTuple           & numCells,
-                  const Teuchos::Array<int> & kBB,
-                  const Teuchos::Array<int> & boundaryNodes,
-                  const double                scaling,
-                  const DoubleTuple         & origin
-                );
+    Uniform ( const double                h,
+              const UIntTuple           & numCells,
+              const Teuchos::Array<int> & kBB,
+              const Teuchos::Array<int> & boundaryNodes,
+              const double                scaling,
+              const DoubleTuple         & origin
+            );
 
     double
     getUniformH() const;
 
 private:
 };
+  } // namespace Grid
+} // namespace Recti
 
 #endif // GRIDUNIFORM_H

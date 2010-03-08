@@ -19,7 +19,8 @@ INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/packages/libio/src
 SET ( poisson_SRCS
       main.cpp )
 
-SET( MY_EXECUTABLE "poisson.out" )
+SET( MY_EXECUTABLE
+     "poisson.out" )
 
 ADD_EXECUTABLE ( ${MY_EXECUTABLE}
                  ${poisson_SRCS} )
@@ -28,7 +29,7 @@ SET_TARGET_PROPERTIES( ${MY_EXECUTABLE}
                        PROPERTIES LINKER_LANGUAGE Fortran )
 
 SET ( internal_LIBS
-      cartesian
+      recti
       io
     )
 

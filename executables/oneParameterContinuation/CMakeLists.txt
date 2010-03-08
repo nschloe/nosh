@@ -12,7 +12,7 @@ SET ( ginzburg_landau_SRCS
 
 SET ( internal_LIBS
       gl
-      cartesian
+      recti
       io
     )
 

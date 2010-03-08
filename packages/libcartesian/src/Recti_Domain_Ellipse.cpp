@@ -17,15 +17,32 @@
 
 */
 
-#include "DomainCircle.h"
+#include "Recti_Domain_Ellipse.h"
 
 // ============================================================================
-DomainCircle::DomainCircle ( double radius ) :
-        DomainEllipse ( radius,radius )
+Recti::Domain::Ellipse::
+Ellipse ( double a, double b ) :
+        a_ ( a ),
+        b_ ( b )
 {
 }
 // ============================================================================
-DomainCircle::~DomainCircle()
+Recti::Domain::Ellipse::
+~Ellipse()
 {
+}
+// ============================================================================
+Teuchos::Tuple<double,4>
+Recti::Domain::Ellipse::
+getBoundingBox () const
+{
+    return Teuchos::tuple ( -a_, -b_, a_, b_ );
+}
+// ============================================================================
+bool
+Recti::Domain::Ellipse::
+isInDomain ( const DoubleTuple & x ) const
+{
+    return x[0]*x[0]/ ( a_*a_ ) + x[1]*x[1] / ( b_*b_ ) <= 1.0;
 }
 // ============================================================================

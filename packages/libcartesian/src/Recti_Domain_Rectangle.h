@@ -17,15 +17,44 @@
 
 */
 
-#include "DomainSquare.h"
+#ifndef DOMAINRECTANGLE_H
+#define DOMAINRECTANGLE_H
 
-// ============================================================================
-DomainSquare::DomainSquare ( double edgeLength ) :
-        DomainRectangle ( edgeLength, edgeLength )
+#include "Recti_Domain_Abstract.h"
+
+namespace Recti
 {
-}
-// ============================================================================
-DomainSquare::~DomainSquare()
+  namespace Domain
+  {
+
+class Rectangle:
+            public Abstract
 {
-}
-// ============================================================================
+public:
+    //! Constructor.
+    Rectangle ( const double a,
+                const double b );
+
+    //! Destructor.
+    virtual
+    ~Rectangle();
+
+    //! Returns a bounding box around the domain.
+    virtual Teuchos::Tuple<double,4>
+    getBoundingBox () const;
+
+    //! @param  x Point that is checked
+    //! @return   Whether or not \c x sits in the domain.
+    virtual bool
+    isInDomain ( const DoubleTuple & x ) const;
+
+protected:
+private:
+    double a_;
+    double b_;
+};
+
+  } // namespace Domain
+} // namespace Recti
+
+#endif // DOMAINRECTANGLE_H
