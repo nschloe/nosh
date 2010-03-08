@@ -41,11 +41,10 @@ GL::LocaSystem::Bordered::Bordered ( GinzburgLandau::GinzburgLandau &gl,
                                        const std::string outputDir,
                                        const std::string outputDataFileName,
                                        const std::string solutionFileNameBase,
-                                       const std::string nullvectorFileNameBase,
                                        const unsigned int maxStepNumberDecimals
                                      ) :
         glSystem_ ( gl, eComm, psi, outputDir, outputDataFileName,
-                    solutionFileNameBase, nullvectorFileNameBase, maxStepNumberDecimals ),
+                    solutionFileNameBase, maxStepNumberDecimals ),
         regularMap_ (  glSystem_.getRealMap() ),
         extendedMap_ ( createExtendedRealMap ( *regularMap_ ) ),
         jacobian_ ( new Epetra_CrsMatrix ( Copy, *extendedMap_, 0 ) ),

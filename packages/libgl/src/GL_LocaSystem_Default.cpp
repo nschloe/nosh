@@ -33,7 +33,6 @@ Default ( GinzburgLandau::GinzburgLandau          & gl,
           const std::string outputDir,
           const std::string outputDataFileName,
           const std::string solutionFileNameBase,
-          const std::string nullvectorFileNameBase,
           const unsigned int maxNumDigits
         ) :
         stepper_ ( Teuchos::null ),
@@ -43,7 +42,6 @@ Default ( GinzburgLandau::GinzburgLandau          & gl,
         initialSolution_ ( glKomplex_->complex2real ( psi ) ),
         outputDir_ ( outputDir ),
         solutionFileNameBase_ ( solutionFileNameBase ),
-        nullvectorFileNameBase_ ( nullvectorFileNameBase ),
         outputDataFileName_ ( outputDataFileName ),
         firstTime_ ( true ),
         maxNumDigits_( maxNumDigits )
@@ -284,13 +282,15 @@ printSolutionTurningPointContinuation ( const Teuchos::RCP<const ComplexVector> 
     {
         baseName
         << outputDir_ << "/" << solutionFileNameBase_
-        << setw ( maxNumDigits_ ) << setfill ( '0' ) << conStep;
+        << setw ( maxNumDigits_ ) << setfill ( '0' ) << conStep
+        << "-state";
         writeContinuationStats ( psi );
     }
     else
         baseName
-        << outputDir_ << "/" << nullvectorFileNameBase_
-        << setw ( maxNumDigits_ ) << setfill ( '0' ) << conStep;
+        << outputDir_ << "/" << solutionFileNameBase_
+        << setw ( maxNumDigits_ ) << setfill ( '0' ) << conStep
+        << "-nullvector";
 
     // actually print the state to fileName
     Gl_.writeSolutionToFile ( psi, baseName.str() );

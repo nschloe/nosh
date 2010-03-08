@@ -54,11 +54,10 @@ public:
     Default ( GinzburgLandau::GinzburgLandau &gl,
                const Teuchos::RCP<const Epetra_Comm> eComm,
                const Teuchos::RCP<const ComplexVector> psi,
-               const std::string outputDir = "data",
-               const std::string outputDataFileName = "continuationData.dat",
-               const std::string solutionFileNameBase = "solutionStep",
-               const std::string nullvectorFileNameBase = "nullvectorStep",
-               const unsigned int maxStepNumberDecimals = 4 );
+               const std::string outputDir,
+               const std::string outputDataFileName,
+               const std::string solutionFileNameBase,
+               const unsigned int maxStepNumberDecimals );
 
     //! Destructor
     ~Default();
@@ -194,7 +193,6 @@ private:
 
     std::string outputDir_;
     const std::string solutionFileNameBase_;
-    const std::string nullvectorFileNameBase_;
     const std::string outputFileFormat_;
     const std::string outputDataFileName_;
 

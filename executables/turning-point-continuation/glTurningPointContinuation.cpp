@@ -255,7 +255,6 @@ main ( int argc, char *argv[] )
                                   outputDirectory.string(),
                                   contDataFileName,
                                   contFileBaseName,
-                                  "",
                                   numDigits ( maxLocaSteps ) ) );
     }
     catch ( std::exception & e )

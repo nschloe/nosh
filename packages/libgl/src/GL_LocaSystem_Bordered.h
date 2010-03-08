@@ -60,7 +60,6 @@ public:
                const std::string outputDir = "data",
                const std::string outputDataFileName = "continuationData.dat",
                const std::string solutionFileNameBase = "solutionStep",
-               const std::string nullvectorFileNameBase = "nullvectorStep",
                const unsigned int maxStepNumberDecimals = 4 );
 
     //! Destructor
