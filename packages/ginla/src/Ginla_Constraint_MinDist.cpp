@@ -39,7 +39,7 @@ MinDist ( const Teuchos::RCP<const Ginla::Komplex> & komplex,
   // Set the initial guess.
   // psiRef_ is adapted accordingly before the first continuation step
   // (see preProcessContinuationStep()).
-  psi_(psi),
+  psi_( psi ),
   psiRef_( Teuchos::rcp( new ComplexVector( psi->getMap() ) ) )
 { 
   // Initialize constraint
@@ -48,19 +48,20 @@ MinDist ( const Teuchos::RCP<const Ginla::Komplex> & komplex,
 }
 // =============================================================================
 // Destructor
-Ginla::Constraint::MinDist::~MinDist()
+Ginla::Constraint::MinDist::
+~MinDist()
 {
 }
 // =============================================================================
 // TODO what does this function do? deep copy?
 Ginla::Constraint::MinDist::
 MinDist( const Ginla::Constraint::MinDist & source,
-         NOX::CopyType             type
+         NOX::CopyType                      type
        ) :
   komplex_( Teuchos::rcp( new Ginla::Komplex(*source.komplex_) ) ),
   constraints_(source.constraints_),
   isValidConstraints_(false),
-  // TODO should we put paramsVector in here?
+  paramsVector_( source.paramsVector_ ),
   psi_( Teuchos::rcp( new ComplexVector(*source.psi_) ) ),
   psiRef_( Teuchos::rcp( new ComplexVector(*source.psiRef_) ) )
 {
@@ -104,7 +105,7 @@ preProcessContinuationStep( LOCA::Abstract::Iterator::StepStatus stepStatus )
 {
   // deep copy the current guess as a reference solution
   *psiRef_ = *psi_;
-
+  isValidConstraints_ = false;
   return;
 }
 // =============================================================================
@@ -121,7 +122,8 @@ setX(const NOX::Abstract::Vector & y)
 { 
   TEUCHOS_ASSERT( komplex_.is_valid_ptr() && !komplex_.is_null() );
 
-  const Epetra_Vector & yE = Teuchos::dyn_cast<const NOX::Epetra::Vector>( y ).getEpetraVector();
+  const Epetra_Vector & yE =
+          Teuchos::dyn_cast<const NOX::Epetra::Vector>( y ).getEpetraVector();
   psi_ = komplex_->real2complex( yE );
   
   isValidConstraints_ = false;
@@ -178,7 +180,6 @@ NOX::Abstract::Group::ReturnType
 Ginla::Constraint::MinDist::
 computeDX()
 {
-  // TODO compute something here?!
   return NOX::Abstract::Group::Ok;
 }
 // =============================================================================
@@ -246,9 +247,8 @@ multiplyDX ( double                                    alpha,
   {
       const Epetra_Vector & xE =
               Teuchos::dyn_cast<const NOX::Epetra::Vector>( input_x[0] ).getEpetraVector();
-          
       Teuchos::RCP<ComplexVector> xPsi = komplex_->real2complex( xE );
-  
+
       result_p(0,k) = alpha * std::imag( psiRef_->dot(*xPsi) );
   }
   
