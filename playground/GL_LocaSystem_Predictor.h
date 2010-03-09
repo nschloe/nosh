@@ -33,7 +33,7 @@
 
 typedef Tpetra::Vector<double_complex, Thyra::Ordinal> ComplexVector;
 
-namespace GL {
+namespace Ginla {
   namespace LocaSystem {
 
 class Predictor:

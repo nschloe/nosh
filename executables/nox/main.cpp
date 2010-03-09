@@ -125,7 +125,7 @@ int main ( int argc, char *argv[] )
 
     // set problemParameters and glSystem
     Teuchos::ParameterList                   problemParameters;
-    Teuchos::RCP<GL::LocaSystem::Bordered> glSystem = Teuchos::null;
+    Teuchos::RCP<Ginla::LocaSystem::Bordered> glSystem = Teuchos::null;
     if ( !inputGuessFile.empty() )
     {
         try

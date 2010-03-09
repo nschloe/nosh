@@ -18,14 +18,14 @@ SET ( ginzburg_landau_SRCS
       main.cpp )
 
 SET ( internal_LIBS
-      gl
+      ginla
       recti
       vio
     )
 
 INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/packages/vio/src
                       ${ginzburg-landau_SOURCE_DIR}/packages/recti/src
-                      ${ginzburg-landau_SOURCE_DIR}/packages/libgl/src
+                      ${ginzburg-landau_SOURCE_DIR}/packages/ginla/src
                       ${VTK_INCLUDE_DIRS} )
 
 LINK_DIRECTORIES( ${Boost_LIBRARY_DIRS}

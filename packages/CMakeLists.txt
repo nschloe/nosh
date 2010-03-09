@@ -1,3 +1,3 @@
-add_subdirectory ( vio )
+add_subdirectory ( ginla )
 add_subdirectory ( recti )
-add_subdirectory ( libgl )
+add_subdirectory ( vio )

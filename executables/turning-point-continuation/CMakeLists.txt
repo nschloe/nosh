@@ -12,14 +12,14 @@ SET ( ginzburg_landau_SRCS
       glTurningPointContinuation.cpp )
 
 SET ( internal_LIBS
-      gl
+      ginla
       recti
       vio
     )
 
 INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/packages/vio/src
                       ${ginzburg-landau_SOURCE_DIR}/packages/recti/src
-                      ${ginzburg-landau_SOURCE_DIR}/packages/libgl/src
+                      ${ginzburg-landau_SOURCE_DIR}/packages/ginla/src
                       ${VTK_INCLUDE_DIRS}
                       ${Trilinos_INCLUDE_DIRS}
                       ${Trilinos_TPL_INCLUDE_DIRS} )

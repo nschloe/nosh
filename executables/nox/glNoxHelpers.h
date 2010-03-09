@@ -14,7 +14,7 @@
 #include <Epetra_Comm.h>
 #include <NOX_Epetra.H>
 
-#include "GL_LocaSystem_Bordered.h"
+#include "Ginla_LocaSystem_Bordered.h"
 
 namespace glNoxHelpers
 {
@@ -24,7 +24,7 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
                  const Teuchos::RCP<const Epetra_Comm>         & eComm,
                  const std::string                             & fileName,
                  Teuchos::ParameterList                        & problemParameters,
-                 Teuchos::RCP<GL::LocaSystem::Bordered>      & glSystem );
+                 Teuchos::RCP<Ginla::LocaSystem::Bordered>      & glSystem );
 
 void
 createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
@@ -33,7 +33,7 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
                  const double scaling,
                  const double H0,
                  Teuchos::ParameterList                    & problemParameters,
-                 Teuchos::RCP<GL::LocaSystem::Bordered>  & glSystem );
+                 Teuchos::RCP<Ginla::LocaSystem::Bordered>  & glSystem );
 
 void
 setPrePostWriter ( Teuchos::ParameterList                        & noxParaList,
@@ -41,7 +41,7 @@ setPrePostWriter ( Teuchos::ParameterList                        & noxParaList,
                    const std::string                             & outputDir );
 
 Teuchos::RCP<NOX::Epetra::Group>
-createSolverGroup ( const Teuchos::RCP<GL::LocaSystem::Bordered> glSystem,
+createSolverGroup ( const Teuchos::RCP<Ginla::LocaSystem::Bordered> glSystem,
                     const Teuchos::RCP<Teuchos::ParameterList> nlParamsPtr );
 
 Teuchos::RCP<NOX::StatusTest::Generic>
@@ -64,7 +64,7 @@ computeJacobianEigenvalues ( const Teuchos::RCP<const NOX::Solver::Generic> solv
 
 void
 printSolutionToFile ( const Teuchos::RCP<const NOX::Solver::Generic> solver,
-                      const Teuchos::RCP<const GL::LocaSystem::Bordered> glSystem,
+                      const Teuchos::RCP<const Ginla::LocaSystem::Bordered> glSystem,
                       const std::string & fileName );
 
 int

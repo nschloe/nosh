@@ -21,19 +21,19 @@
 #include <Teuchos_DefaultComm.hpp>
 
 #include "ginzburgLandau.h"
-#include "GL_Operator_BCCentral.h"
-#include "GL_Operator_BCInner.h"
+#include "Ginla_Operator_BCCentral.h"
+#include "Ginla_Operator_BCInner.h"
 
 #include "Recti_Domain_Square.h"
 
-#include "GL_LocaSystem_Bordered.h"
-#include "GL_IO_SaveEigenData.h"
-#include "GL_Helpers.h"
-#include "GL_StatsWriter.h"
+#include "Ginla_LocaSystem_Bordered.h"
+#include "Ginla_IO_SaveEigenData.h"
+#include "Ginla_Helpers.h"
+#include "Ginla_StatsWriter.h"
 
 #include "Recti_Grid_Reader.h"
 
-#include "GL_Perturbation_Quadrants.h"
+#include "Ginla_Perturbation_Quadrants.h"
 
 
 // =============================================================================
@@ -193,13 +193,13 @@ main ( int argc, char *argv[] )
     }
     // ---------------------------------------------------------------------------
 
-    Teuchos::RCP<GL::MagneticVectorPotential::Centered> A =
-        Teuchos::rcp ( new GL::MagneticVectorPotential::Centered ( glParameters.get<double> ( "H0" ),
+    Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> A =
+        Teuchos::rcp ( new Ginla::MagneticVectorPotential::Centered ( glParameters.get<double> ( "H0" ),
                                                                    glParameters.get<double> ( "scaling" ) ) );
 
     // create the operator
-    Teuchos::RCP<GL::Operator::Virtual> glOperator =
-        Teuchos::rcp ( new GL::Operator::BCCentral ( grid, A ) );
+    Teuchos::RCP<Ginla::Operator::Virtual> glOperator =
+        Teuchos::rcp ( new Ginla::Operator::BCCentral ( grid, A ) );
 
 //     // create a perturbation
 //     Teuchos::RCP<GL::Perturbation::Virtual> quadrantsPerturbation =
@@ -211,22 +211,22 @@ main ( int argc, char *argv[] )
 
 
     std::string fn = outputDirectory.string() + "/" + contDataFileName;
-    Teuchos::RCP<GL::StatsWriter> statsWriter = 
-        Teuchos::rcp( new GL::StatsWriter( fn ) );
+    Teuchos::RCP<Ginla::StatsWriter> statsWriter = 
+        Teuchos::rcp( new Ginla::StatsWriter( fn ) );
 
     GinzburgLandau glProblem = GinzburgLandau ( glOperator,
                                                 statsWriter,
                                                 outputFormat
                                               );
 
-    Teuchos::RCP<GL::LocaSystem::Bordered> glsystem;
+    Teuchos::RCP<Ginla::LocaSystem::Bordered> glsystem;
 
     Teuchos::ParameterList & stepperList = paramList->sublist ( "LOCA" ).sublist ( "Stepper" );
     int maxLocaSteps = stepperList.get<int> ( "Max Steps" );
 
     try
     {
-        glsystem = Teuchos::rcp ( new GL::LocaSystem::Bordered ( glProblem,
+        glsystem = Teuchos::rcp ( new Ginla::LocaSystem::Bordered ( glProblem,
                                   eComm,
                                   psi,
                                   outputDirectory.string(),
@@ -281,8 +281,8 @@ main ( int argc, char *argv[] )
         outputList.get<string> ( "Eigenvalues file name" );
     std::string eigenstateFileNameAppendix =
         outputList.get<string> ( "Eigenstate file name appendix" );
-    Teuchos::RCP<GL::IO::SaveEigenData> glEigenSaver =
-        Teuchos::RCP<GL::IO::SaveEigenData> ( new GL::IO::SaveEigenData ( eigenListPtr, outputDirectory.string(),
+    Teuchos::RCP<Ginla::IO::SaveEigenData> glEigenSaver =
+        Teuchos::RCP<Ginla::IO::SaveEigenData> ( new Ginla::IO::SaveEigenData ( eigenListPtr, outputDirectory.string(),
                                    eigenvaluesFileName, contFileBaseName,
                                    eigenstateFileNameAppendix, glsystem,
                                    numDigits ( maxLocaSteps ) ) );
@@ -332,7 +332,7 @@ main ( int argc, char *argv[] )
     
     // translate parameters into a LOCA list
     LOCA::ParameterVector locaParams =
-          *(GL::Helpers::teuchosParameterList2locaParameterVector( glParameters ));
+          *(Ginla::Helpers::teuchosParameterList2locaParameterVector( glParameters ));
 
     NOX::Epetra::Vector initialGuess ( soln, NOX::Epetra::Vector::CreateView );
 
