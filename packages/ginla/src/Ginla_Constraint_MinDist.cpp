@@ -26,11 +26,11 @@
 // =============================================================================
 // Default constructor
 Ginla::Constraint::MinDist::
-MinDist ( const Teuchos::RCP<Ginla::LocaSystem::Default> & glSystem,
-          const Teuchos::RCP<ComplexVector>           & psi,
-          const LOCA::ParameterVector                 & paramsVector
+MinDist ( const Teuchos::RCP<const Ginla::Komplex> & komplex,
+          const Teuchos::RCP<ComplexVector>        & psi,
+          const LOCA::ParameterVector              & paramsVector
         ):
-  glSystem_( glSystem ),
+  komplex_( komplex ),
   constraints_(1,1),
   isValidConstraints_(false),
   // TODO: note that paramsVector must be a LOCA::ParameterVector containing all
@@ -57,7 +57,7 @@ Ginla::Constraint::MinDist::
 MinDist( const Ginla::Constraint::MinDist & source,
          NOX::CopyType             type
        ) :
-  glSystem_( Teuchos::rcp( new Ginla::LocaSystem::Default(*source.glSystem_) ) ),
+  komplex_( Teuchos::rcp( new Ginla::Komplex(*source.komplex_) ) ),
   constraints_(source.constraints_),
   isValidConstraints_(false),
   // TODO should we put paramsVector in here?
@@ -71,21 +71,22 @@ MinDist( const Ginla::Constraint::MinDist & source,
 // =============================================================================
 void
 Ginla::Constraint::MinDist::
-copy(const LOCA::MultiContinuation::ConstraintInterface& src)
-{
-  
-  TEST_FOR_EXCEPT( true );
-  
-//   const GL::Constraint::MinDist& source =
-//       dynamic_cast<const GL::Constraint::MinDist&>(src);
-// 
-//   if (this != &source) {
-//     *glSystem_ = *source.glSystem_;
-//     constraints_ = source.constraints_;
-//     isValidConstraints_ = source.isValidConstraints_;
-//     *psi_ = *source.psi_;
-//     *psiRef_ = *source.psiRef_;
-//   }
+copy( const LOCA::MultiContinuation::ConstraintInterface & src )
+{ 
+  const MinDist & source = Teuchos::dyn_cast<const MinDist>( src );
+
+  if (this != &source) {
+    // No deep copy needed as only
+    //   komplex_->real2complex()
+    // is used.
+    komplex_ = source.komplex_;
+    // deep copies:
+    constraints_ = source.constraints_;
+    isValidConstraints_ = source.isValidConstraints_;
+    paramsVector_ = source.paramsVector_;
+    *psi_ = *source.psi_;
+    *psiRef_ = *source.psiRef_;
+  }
 
   return;
 }
@@ -118,15 +119,10 @@ void
 Ginla::Constraint::MinDist::
 setX(const NOX::Abstract::Vector & y)
 { 
-//   const NOX::Epetra::MultiVector & yE =
-//           dynamic_cast<NOX::Epetra::MultiVector&>(*(y.createMultiVector(1)));
-//   psi_ = glSystem_->getGlKomplex()->real2complex( *(yE.getEpetraMultiVector()(0)) );
+  TEUCHOS_ASSERT( komplex_.is_valid_ptr() && !komplex_.is_null() );
 
-  TEUCHOS_ASSERT( glSystem_.is_valid_ptr() && !glSystem_.is_null() );
-  TEUCHOS_ASSERT( glSystem_->getGlKomplex().is_valid_ptr() && !glSystem_->getGlKomplex().is_null() );
-
-  const Epetra_Vector & yE = dynamic_cast<const NOX::Epetra::Vector&>( y ).getEpetraVector();
-  psi_ = glSystem_->getGlKomplex()->real2complex( yE );
+  const Epetra_Vector & yE = Teuchos::dyn_cast<const NOX::Epetra::Vector>( y ).getEpetraVector();
+  psi_ = komplex_->real2complex( yE );
   
   isValidConstraints_ = false;
 
@@ -241,20 +237,20 @@ multiplyDX ( double                                    alpha,
              const NOX::Abstract::MultiVector        & input_x,
              NOX::Abstract::MultiVector::DenseMatrix & result_p
            ) const
-
 { 
-  TEUCHOS_ASSERT_EQUALITY( 1, input_x.numVectors() );
-
-  const Epetra_Vector & xE =
-          dynamic_cast<const NOX::Epetra::Vector&>( input_x ).getEpetraVector();
-          
-  TEUCHOS_ASSERT( glSystem_.is_valid_ptr() && !glSystem_.is_null() );
-  TEUCHOS_ASSERT( glSystem_->getGlKomplex().is_valid_ptr() && !glSystem_->getGlKomplex().is_null() );
-          
-  Teuchos::RCP<ComplexVector> xPsi =
-          glSystem_->getGlKomplex()->real2complex( xE );
+  TEUCHOS_ASSERT( komplex_.is_valid_ptr() && !komplex_.is_null() );
   
-  result_p(0,0) = alpha * std::imag( psiRef_->dot(*xPsi) );
+  TEUCHOS_ASSERT_EQUALITY( result_p.numCols(), input_x.numVectors() );
+  
+  for ( int k=0; k<input_x.numVectors(); k++ )
+  {
+      const Epetra_Vector & xE =
+              Teuchos::dyn_cast<const NOX::Epetra::Vector>( input_x[0] ).getEpetraVector();
+          
+      Teuchos::RCP<ComplexVector> xPsi = komplex_->real2complex( xE );
+  
+      result_p(0,k) = alpha * std::imag( psiRef_->dot(*xPsi) );
+  }
   
   return NOX::Abstract::Group::Ok;
 }

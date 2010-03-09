@@ -47,9 +47,9 @@ class MinDist:
   public:
 
   // Constructor
-  MinDist( const Teuchos::RCP<Ginla::LocaSystem::Default> & glSystem,
-           const Teuchos::RCP<ComplexVector>           & psi,
-           const LOCA::ParameterVector                 & paramsVector
+  MinDist( const Teuchos::RCP<const Ginla::Komplex> & komplex,
+           const Teuchos::RCP<ComplexVector>        & psi,
+           const LOCA::ParameterVector              & paramsVector
          );
 
   // Copy constructor
@@ -145,7 +145,7 @@ private:
 private:
   
   //! ProblemLOCAPrototype problem
-  Teuchos::RCP<const Ginla::LocaSystem::Default> glSystem_;
+  Teuchos::RCP<const Ginla::Komplex> komplex_;
 
   //! Constraint values
   NOX::Abstract::MultiVector::DenseMatrix constraints_;
@@ -157,7 +157,7 @@ private:
   LOCA::ParameterVector paramsVector_;
 
   //! Solution vector
-  Teuchos::RCP<const ComplexVector> psi_;
+  Teuchos::RCP<ComplexVector> psi_;
 
   //! Reference Solution vector
   const Teuchos::RCP<ComplexVector> psiRef_;
