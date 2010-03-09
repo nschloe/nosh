@@ -201,9 +201,9 @@ main ( int argc, char *argv[] )
     Teuchos::RCP<GL::Operator::Virtual> glOperator =
         Teuchos::rcp ( new GL::Operator::BCCentral ( grid, A ) );
 
-    // create a perturbation
-    Teuchos::RCP<GL::Perturbation::Virtual> quadrantsPerturbation =
-      Teuchos::rcp ( new GL::Perturbation::Quadrants ( grid ) );
+//     // create a perturbation
+//     Teuchos::RCP<GL::Perturbation::Virtual> quadrantsPerturbation =
+//       Teuchos::rcp ( new GL::Perturbation::Quadrants ( grid ) );
 
     // TODO: why not make glOperator depend upon perturbation instead?
 //     GinzburgLandau glProblem = GinzburgLandau ( glOperator,

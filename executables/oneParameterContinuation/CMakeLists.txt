@@ -7,9 +7,6 @@ SET(Boost_USE_STATIC_LIBS   ON)
 SET(Boost_USE_MULTITHREADED ON)
 INCLUDE_DIRECTORIES ( ${Boost_INCLUDE_DIRS} )
 
-SET ( ginzburg_landau_SRCS
-      oneParameterContinuation.cpp  )
-
 SET ( internal_LIBS
       gl
       recti
@@ -28,14 +25,28 @@ LINK_DIRECTORIES( ${Boost_LIBRARY_DIRS}
                   ${Trilinos_LIBRARY_DIRS}
                   ${Trilinos_TPL_LIBRARY_DIRS} )
 
-SET( MY_EXECUTABLE "oneParameterContinuation.out" )
-
+SET ( opc_SRCS
+      oneParameterContinuation.cpp  )
+SET( MY_EXECUTABLE
+     "oneParameterContinuation.out" )
 ADD_EXECUTABLE( ${MY_EXECUTABLE}
-                ${ginzburg_landau_SRCS} )
-
+                ${opc_SRCS} )
 SET_TARGET_PROPERTIES( ${MY_EXECUTABLE}
                        PROPERTIES LINKER_LANGUAGE Fortran )
+TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
+                       ${internal_LIBS}
+                       ${Trilinos_LIBRARIES}
+                       ${Trilinos_TPL_LIBRARIES}
+                       ${Boost_LIBRARIES} )
 
+SET ( opcConstraintInterface_SRCS
+      opcConstraintInterface.cpp  )
+SET( MY_EXECUTABLE
+     "opcConstraintInterface.out" )
+ADD_EXECUTABLE( ${MY_EXECUTABLE}
+                ${opcConstraintInterface_SRCS} )
+SET_TARGET_PROPERTIES( ${MY_EXECUTABLE}
+                       PROPERTIES LINKER_LANGUAGE Fortran )
 TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
                        ${internal_LIBS}
                        ${Trilinos_LIBRARIES}

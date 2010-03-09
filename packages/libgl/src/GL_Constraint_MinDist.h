@@ -29,7 +29,7 @@
 #ifndef GLMINDISTCONSTRAINT
 #define GLMINDISTCONSTRAINT
 
-#include <LOCA_MultiContinuation_ConstraintInterfaceMVDX.H>
+#include <LOCA_MultiContinuation_ConstraintInterface.H>
 
 #include "GL_LocaSystem_Default.h"
 
@@ -38,13 +38,17 @@ namespace GL {
   namespace Constraint {
 
 class MinDist:
-            public LOCA::MultiContinuation::ConstraintInterfaceMVDX
+            // Can't use LOCA::MultiContinuation::ConstraintInterfaceMVDX
+            // as the multiplication with the constraint is calculated
+            // incorrectly, i.e., there's no way to define a vector
+            // such that multiplication with it equals our phase condition.
+            public LOCA::MultiContinuation::ConstraintInterface
 {
   public:
 
   // Constructor
   MinDist( const Teuchos::RCP<GL::LocaSystem::Default> & glSystem,
-           const NOX::Abstract::Vector                 & initialGuess,
+           const Teuchos::RCP<ComplexVector>           & psi,
            const LOCA::ParameterVector                 & paramsVector
          );
 
@@ -65,6 +69,10 @@ class MinDist:
   virtual Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface>
   clone(NOX::CopyType type = NOX::DeepCopy) const;
 
+  //! Before the next continuation step, save the solution vector.
+  virtual void
+  preProcessContinuationStep( LOCA::Abstract::Iterator::StepStatus stepStatus );
+  
   // Return number of constraints
   virtual int
   numConstraints() const;
@@ -108,19 +116,27 @@ class MinDist:
   virtual const NOX::Abstract::MultiVector::DenseMatrix&
   getConstraints() const;
 
-  //! Return solution component of constraint derivatives.
-  virtual const NOX::Abstract::MultiVector*
-  getDX() const;
-
   //! Return \c true if solution component of constraint 
   //! derivatives is zero.
   virtual bool
   isDXZero() const;
-
-  //! Before the next continuation step, save the solution vector.
-  virtual void
-  postProcessContinuationStep( LOCA::Abstract::Iterator::StepStatus stepStatus);
-
+  
+  //! Compute result_p = alpha * dg/dx * input_x.
+  virtual NOX::Abstract::Group::ReturnType
+  multiplyDX ( double                                    alpha,
+               const NOX::Abstract::MultiVector        & input_x,
+               NOX::Abstract::MultiVector::DenseMatrix & result_p
+             ) const;
+             
+  //! Compute result_x = alpha * dg/dx^T * op(b) + beta * result_x.
+  virtual NOX::Abstract::Group::ReturnType        
+  addDX ( Teuchos::ETransp transb,
+          double alpha,
+          const NOX::Abstract::MultiVector::DenseMatrix &b,
+          double beta,
+          NOX::Abstract::MultiVector &result_x
+        ) const;
+  
 private:
 
   // Prohibit generation and use of operator=()
@@ -144,7 +160,7 @@ private:
   Teuchos::RCP<const ComplexVector> psi_;
 
   //! Reference Solution vector
-  Teuchos::RCP<const ComplexVector> psiRef_;
+  const Teuchos::RCP<ComplexVector> psiRef_;
 };
 
   } // namespace Constraint

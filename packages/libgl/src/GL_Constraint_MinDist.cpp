@@ -25,36 +25,26 @@
 
 // =============================================================================
 // Default constructor
-GL::Constraint::MinDist::MinDist ( const Teuchos::RCP <GL::LocaSystem::Default> & glSystem,
-                                   const NOX::Abstract::Vector & initialGuess,
-                                   const LOCA::ParameterVector & paramsVector ):
+GL::Constraint::MinDist::
+MinDist ( const Teuchos::RCP<GL::LocaSystem::Default> & glSystem,
+          const Teuchos::RCP<ComplexVector>           & psi,
+          const LOCA::ParameterVector                 & paramsVector
+        ):
   glSystem_( glSystem ),
   constraints_(1,1),
   isValidConstraints_(false),
   // TODO: note that paramsVector must be a LOCA::ParameterVector containing all
   // parameters, and it should include chi
   paramsVector_( paramsVector ),
-  psi_(Teuchos::null),
-  psiRef_(Teuchos::null)
+  // Set the initial guess.
+  // psiRef_ is adapted accordingly before the first continuation step
+  // (see preProcessContinuationStep()).
+  psi_(psi),
+  psiRef_( Teuchos::rcp( new ComplexVector( psi->getMap() ) ) )
 { 
   // Initialize constraint
   constraints_.putScalar(0.0);
-
-  // We're trying to get an Epetra_Vector here, but apparently
-  // the straightforward cast NOX::Abstract::Vector-->NOX::Epetra::Vector
-  // doesn't work. That works for MultiVector's though, so do the dance.
-  NOX::Epetra::MultiVector & initialGuessE =
-          dynamic_cast<NOX::Epetra::MultiVector&>(*(initialGuess.createMultiVector(1)));
-  
-  // At the first step, the reference solution is
-  // the initial guess. For other steps, the solution
-  // at the previous continuation step will be taken 
-  // (see postProcessContinuationStep())
-  psiRef_ = glSystem_->getGlKomplex()->real2complex( *(initialGuessE.getEpetraMultiVector()(0)) );
-  
-  // Soluion equals initialGuess at the instantiation.
-  // Essentially we needed to shape x as xRef
-  psi_ = glSystem_->getGlKomplex()->real2complex( *(initialGuessE.getEpetraMultiVector()(0)) );
+  return;
 }
 // =============================================================================
 // Destructor
@@ -63,8 +53,10 @@ GL::Constraint::MinDist::~MinDist()
 }
 // =============================================================================
 // TODO what does this function do? deep copy?
-GL::Constraint::MinDist::MinDist(const GL::Constraint::MinDist & source,
-                                       NOX::CopyType             type ) :
+GL::Constraint::MinDist::
+MinDist( const GL::Constraint::MinDist & source,
+         NOX::CopyType             type
+       ) :
   glSystem_( Teuchos::rcp( new GL::LocaSystem::Default(*source.glSystem_) ) ),
   constraints_(source.constraints_),
   isValidConstraints_(false),
@@ -74,10 +66,12 @@ GL::Constraint::MinDist::MinDist(const GL::Constraint::MinDist & source,
 {
   if (source.isValidConstraints_ && type == NOX::DeepCopy)
     isValidConstraints_ = true;
+  return;
 }
 // =============================================================================
 void
-GL::Constraint::MinDist::copy(const LOCA::MultiContinuation::ConstraintInterface& src)
+GL::Constraint::MinDist::
+copy(const LOCA::MultiContinuation::ConstraintInterface& src)
 {
   
   TEST_FOR_EXCEPT( true );
@@ -97,23 +91,42 @@ GL::Constraint::MinDist::copy(const LOCA::MultiContinuation::ConstraintInterface
 }
 // =============================================================================
 Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface>
-GL::Constraint::MinDist::clone(NOX::CopyType type) const
+GL::Constraint::MinDist::
+clone(NOX::CopyType type) const
 {
   return Teuchos::rcp(new GL::Constraint::MinDist(*this, type));
 }
 // =============================================================================
+void
+GL::Constraint::MinDist::
+preProcessContinuationStep( LOCA::Abstract::Iterator::StepStatus stepStatus )
+{
+  // deep copy the current guess as a reference solution
+  *psiRef_ = *psi_;
+
+  return;
+}
+// =============================================================================
 int
-GL::Constraint::MinDist::numConstraints() const
+GL::Constraint::MinDist::
+numConstraints() const
 {
   return constraints_.numRows();
 }
 // =============================================================================
 void
-GL::Constraint::MinDist::setX(const NOX::Abstract::Vector & y)
+GL::Constraint::MinDist::
+setX(const NOX::Abstract::Vector & y)
 { 
-  const NOX::Epetra::MultiVector & yE =
-          dynamic_cast<NOX::Epetra::MultiVector&>(*(y.createMultiVector(1)));
-  psi_ = glSystem_->getGlKomplex()->real2complex( *(yE.getEpetraMultiVector()(0)) );
+//   const NOX::Epetra::MultiVector & yE =
+//           dynamic_cast<NOX::Epetra::MultiVector&>(*(y.createMultiVector(1)));
+//   psi_ = glSystem_->getGlKomplex()->real2complex( *(yE.getEpetraMultiVector()(0)) );
+
+  TEUCHOS_ASSERT( glSystem_.is_valid_ptr() && !glSystem_.is_null() );
+  TEUCHOS_ASSERT( glSystem_->getGlKomplex().is_valid_ptr() && !glSystem_->getGlKomplex().is_null() );
+
+  const Epetra_Vector & yE = dynamic_cast<const NOX::Epetra::Vector&>( y ).getEpetraVector();
+  psi_ = glSystem_->getGlKomplex()->real2complex( yE );
   
   isValidConstraints_ = false;
 
@@ -121,37 +134,43 @@ GL::Constraint::MinDist::setX(const NOX::Abstract::Vector & y)
 }
 // =============================================================================
 void
-GL::Constraint::MinDist::setParam( int paramID, double val )
+GL::Constraint::MinDist::
+setParam( int paramID, double val )
 {
   paramsVector_[paramID] = val;
   
   // This would usually be set to FALSE, but in this case, the constraints
-  // do not depend of the constraints. Hence, they remain valid.
-  // TODO are you sure it must be set to false??
-  isValidConstraints_ = false;
+  // do not depend of the parameters. Hence, the constraints
+  // remain valid even when changing the parameters.
+  // isValidConstraints_ = false;
+  
+  return;
 }
 // =============================================================================
 void
-GL::Constraint::MinDist::setParams( const vector<int> & paramIDs,
-                                const NOX::Abstract::MultiVector::DenseMatrix & vals)
+GL::Constraint::MinDist::
+setParams( const vector<int>                             & paramIDs,
+           const NOX::Abstract::MultiVector::DenseMatrix & vals )
 {
   for (unsigned int i=0; i<paramIDs.size(); i++)
     paramsVector_[paramIDs[i]] = vals(i,0);
 
   // This would usually be set to FALSE, but in this case, the constraints
-  // do not depend of the constraints. Hence, they remain valid.
-  // TODO are you sure it must be set to false??
-  isValidConstraints_ = false;
+  // do not depend of the parameters. Hence, the constraints
+  // remain valid even when changing the parameters.
+  // isValidConstraints_ = false;
+  
+  return;
 }
 // =============================================================================
 NOX::Abstract::Group::ReturnType
-GL::Constraint::MinDist::computeConstraints()
+GL::Constraint::MinDist::
+computeConstraints()
 {
   if (!isValidConstraints_)
   {
-    // TODO This goes horribly wrong as Tpetra really calculates
-    // Re( psiRef_^T psi_ ) when doing dot().
-    // Reported to mailing list on 03/03/2010.
+    // the dot() method is indeed smart enough to compute
+    // conjugate the first complex vector psiRef_
     constraints_(0,0) = std::imag( psiRef_->dot(*psi_) );
     isValidConstraints_ = true;
   }
@@ -160,7 +179,8 @@ GL::Constraint::MinDist::computeConstraints()
 }
 // =============================================================================
 NOX::Abstract::Group::ReturnType
-GL::Constraint::MinDist::computeDX()
+GL::Constraint::MinDist::
+computeDX()
 {
   // TODO compute something here?!
   return NOX::Abstract::Group::Ok;
@@ -170,10 +190,11 @@ GL::Constraint::MinDist::computeDX()
 // residuals g if isValidG is false.
 // If isValidG is true, then the dgdp contains g on input.
 NOX::Abstract::Group::ReturnType
-GL::Constraint::MinDist::computeDP( const vector<int> & paramIDs,
-                                NOX::Abstract::MultiVector::DenseMatrix & dgdp, 
-                                bool isValidG
-                              )
+GL::Constraint::MinDist::
+computeDP( const vector<int> & paramIDs,
+           NOX::Abstract::MultiVector::DenseMatrix & dgdp, 
+           bool isValidG
+         )
 {
   if (!isValidG)
       dgdp(0,0) = constraints_(0,0);
@@ -185,46 +206,72 @@ GL::Constraint::MinDist::computeDP( const vector<int> & paramIDs,
 }
 // =============================================================================
 bool
-GL::Constraint::MinDist::isConstraints() const
+GL::Constraint::MinDist::
+isConstraints() const
 {
   return isValidConstraints_;
 }
 // =============================================================================
 bool
-GL::Constraint::MinDist::isDX() const
+GL::Constraint::MinDist::
+isDX() const
 {
   return true;
 }
 // =============================================================================
 const NOX::Abstract::MultiVector::DenseMatrix &
-GL::Constraint::MinDist::getConstraints() const
+GL::Constraint::MinDist::
+getConstraints() const
 {
   return constraints_;
 }
 // =============================================================================
-const NOX::Abstract::MultiVector*
-GL::Constraint::MinDist::getDX() const
-{
-  // TODO check if this is correct
-  return NULL;
-}
-// =============================================================================
+// Return true if solution component of constraint derivatives is zero.
 bool
-GL::Constraint::MinDist::isDXZero() const
+GL::Constraint::MinDist::
+isDXZero() const
 {
-  // TODO check if this is correct
-  return true;
+  return false;
 }
 // =============================================================================
-void
-GL::Constraint::MinDist::postProcessContinuationStep( LOCA::Abstract::Iterator::StepStatus stepStatus )
-{
-  // If the step has been successful, put the solution in psiRef.
-  // This means updating the phase condition each *continuation step anew.
-  // This is not at each Newton step, which would be rather what we want.
-  if (stepStatus == LOCA::Abstract::Iterator::Successful)
-    psiRef_ = psi_;
+// Compute result_p = alpha * dg/dx * input_x.
+NOX::Abstract::Group::ReturnType
+GL::Constraint::MinDist::
+multiplyDX ( double                                    alpha,
+             const NOX::Abstract::MultiVector        & input_x,
+             NOX::Abstract::MultiVector::DenseMatrix & result_p
+           ) const
 
-  return;
+{ 
+  TEUCHOS_ASSERT_EQUALITY( 1, input_x.numVectors() );
+
+  const Epetra_Vector & xE =
+          dynamic_cast<const NOX::Epetra::Vector&>( input_x ).getEpetraVector();
+          
+  TEUCHOS_ASSERT( glSystem_.is_valid_ptr() && !glSystem_.is_null() );
+  TEUCHOS_ASSERT( glSystem_->getGlKomplex().is_valid_ptr() && !glSystem_->getGlKomplex().is_null() );
+          
+  Teuchos::RCP<ComplexVector> xPsi =
+          glSystem_->getGlKomplex()->real2complex( xE );
+  
+  result_p(0,0) = alpha * std::imag( psiRef_->dot(*xPsi) );
+  
+  return NOX::Abstract::Group::Ok;
+}
+// =============================================================================
+NOX::Abstract::Group::ReturnType
+GL::Constraint::MinDist::
+addDX ( Teuchos::ETransp transb,
+        double alpha,
+        const NOX::Abstract::MultiVector::DenseMatrix &b,
+        double beta,
+        NOX::Abstract::MultiVector &result_x
+      ) const
+{
+  TEST_FOR_EXCEPTION( true,
+                      std::logic_error,
+                      "Not yet implemented." );
+
+  return NOX::Abstract::Group::Failed;
 }
 // =============================================================================
