@@ -42,11 +42,11 @@ int main ( int argc, char *argv[] )
 
     // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
-    Teuchos::RCP<Epetra_MpiComm> eComm
-    = Teuchos::rcp<Epetra_MpiComm> ( new Epetra_MpiComm ( MPI_COMM_WORLD ) );
+    Teuchos::RCP<Epetra_MpiComm> eComm =
+        Teuchos::rcp<Epetra_MpiComm> ( new Epetra_MpiComm ( MPI_COMM_WORLD ) );
 #else
-    Teuchos::RCP<Epetra_SerialComm>  eComm
-    = Teuchos::rcp<Epetra_SerialComm> ( new Epetra_SerialComm() );
+    Teuchos::RCP<Epetra_SerialComm> eComm =
+        Teuchos::rcp<Epetra_SerialComm> ( new Epetra_SerialComm() );
 #endif
 
 
@@ -84,25 +84,27 @@ int main ( int argc, char *argv[] )
 
 //     // create the domain
 //     double edgeLength = 4.0;
-//     Teuchos::RCP<DomainVirtual> domain = Teuchos::rcp( new DomainSquare(edgeLength) );
+//     Teuchos::RCP<Recti::Domain::Abstract> domain =
+//           Teuchos::rcp( new Recti::Domain::Square(edgeLength) );
 
 //     double aa = 4.0;
 //     double bb = 2.0;
-//     Teuchos::RCP<DomainVirtual> domain = Teuchos::rcp( new DomainRectangle(aa,bb) );
+//     Teuchos::RCP<Recti::Domain::Abstract> domain = Teuchos::rcp( new DomainRectangle(aa,bb) );
 
 //     double radius = 3.0;
-//     Teuchos::RCP<DomainVirtual> domain = Teuchos::rcp( new DomainCircle(radius) );
+//     Teuchos::RCP<Recti::Domain::Abstract> domain = Teuchos::rcp( new DomainCircle(radius) );
 
 //     double aa = 3.0;
 //     double bb = 2.0;
-//     Teuchos::RCP<DomainVirtual> domain = Teuchos::rcp( new DomainEllipse(aa,bb) );
+//     Teuchos::RCP<Recti::Domain::Abstract> domain = Teuchos::rcp( new DomainEllipse(aa,bb) );
 
     Teuchos::Array<DoubleTuple> P( Teuchos::tuple( Teuchos::tuple(0.0,0.0),
                                                    Teuchos::tuple(4.0,0.0),
                                                    Teuchos::tuple(2.0,2.0),
                                                    Teuchos::tuple(4.0,4.0),
                                                    Teuchos::tuple(0.0,4.0) ) );
-    Teuchos::RCP<Recti::Domain::Abstract> domain = Teuchos::rcp( new Recti::Domain::Polygon(P) );
+    Teuchos::RCP<Recti::Domain::Abstract> domain =
+            Teuchos::rcp( new Recti::Domain::Polygon(P) );
     
     // create a grid from the domain
     double hh = 0.1;

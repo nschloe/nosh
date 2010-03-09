@@ -32,7 +32,8 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
                  const unsigned int Nx,
                  const double scaling,
                  const double H0,
-                 Teuchos::ParameterList                    & problemParameters,
+                 const Teuchos::ParameterList               & domainParameters,
+                 Teuchos::ParameterList                     & problemParameters,
                  Teuchos::RCP<Ginla::LocaSystem::Bordered>  & glSystem );
 
 void

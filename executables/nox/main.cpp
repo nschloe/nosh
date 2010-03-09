@@ -130,7 +130,11 @@ int main ( int argc, char *argv[] )
     {
         try
         {
-            glNoxHelpers::createGlSystem ( Comm, eComm, inputGuessFile.string(), problemParameters, glSystem );
+            glNoxHelpers::createGlSystem ( Comm,
+                                           eComm,
+                                           inputGuessFile.string(),
+                                           problemParameters,
+                                           glSystem );
         }
         catch ( std::exception & e )
         {
@@ -144,7 +148,16 @@ int main ( int argc, char *argv[] )
         double scaling = paramList->sublist ( "GL",true ).get<double> ( "scaling" );
         double H0      = paramList->sublist ( "GL",true ).get<double> ( "H0" );
         paramList->sublist ( "GL",true ).get ( "chi",0.0 );
-        glNoxHelpers::createGlSystem ( Comm, eComm, Nx, scaling, H0, problemParameters, glSystem );
+        Teuchos::ParameterList & domainParameters =
+                paramList->sublist ( "Domain",true );
+        glNoxHelpers::createGlSystem ( Comm,
+                                       eComm,
+                                       Nx,
+                                       scaling,
+                                       H0,
+                                       domainParameters,
+                                       problemParameters,
+                                       glSystem );
     }
 
     Teuchos::RCP<Teuchos::ParameterList> nlParamsPtr =
