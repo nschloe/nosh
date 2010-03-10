@@ -76,7 +76,8 @@ copy( const LOCA::MultiContinuation::ConstraintInterface & src )
 { 
   const MinDist & source = Teuchos::dyn_cast<const MinDist>( src );
 
-  if (this != &source) {
+  if (this != &source)
+  {
     // No deep copy needed as only
     //   komplex_->real2complex()
     // is used.
@@ -125,8 +126,6 @@ setX(const NOX::Abstract::Vector & y)
   const Epetra_Vector & yE =
           Teuchos::dyn_cast<const NOX::Epetra::Vector>( y ).getEpetraVector();
   psi_ = komplex_->real2complex( yE );
-  
-  isValidConstraints_ = false;
 
   return;
 }

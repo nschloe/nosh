@@ -3,10 +3,35 @@
 #define BOOST_TEST_MODULE GRNN MyTest
 
 #include <boost/test/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 #include <Teuchos_DefaultComm.hpp>
+#include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_ParameterList.hpp>
+#include <Teuchos_XMLParameterListHelpers.hpp>
+
+#include <LOCA_Epetra_Factory.H>
+#include <LOCA_Epetra_Group.H>
+#include <LOCA_StatusTest_MaxIters.H>
+#include <NOX_Epetra_LinearSystem_AztecOO.H>
+#include <NOX_StatusTest_NormF.H>
+#include <NOX_StatusTest_MaxIters.H>
+#include <NOX_StatusTest_Combo.H>
+// #include <NOX_Epetra_Group.H>
+
+#include "Ginla_MagneticVectorPotential_Centered.h"
+#include "Ginla_Komplex.h"
+#include "Ginla_Operator_BCCentral.h"
+#include "Ginla_StatsWriter.h"
+#include "Ginla_IO_SaveEigenData.h"
+#include "Ginla_Helpers.h"
+#include "ginzburgLandau.h"
+#include "Ginla_LocaSystem_Bordered.h"
+
+#include "Recti_Grid_Uniform.h"
+#include "Recti_Grid_Reader.h"
+
 #ifdef HAVE_MPI
 #include <Epetra_MpiComm.h>
 #else
@@ -38,34 +63,43 @@ BOOST_AUTO_TEST_CASE( my_test )
     Teuchos::RCP<Epetra_SerialComm>  eComm =
             Teuchos::rcp<Epetra_SerialComm> ( new Epetra_SerialComm() );
 #endif
+
+    // ------------------------------------------------------------------------
+    // handle command line arguments
+    Teuchos::CommandLineProcessor My_CLP;
+
+    std::string xmlInputFileName = "";
+    My_CLP.setOption ( "xml-input-file", &xmlInputFileName,
+                       "XML file containing the parameter list", true );
+                       
+    std::string expSolFileName = "";
+    My_CLP.setOption ( "expected-solution-file", &expSolFileName,
+                       "VTK/VTI file containing the expected solution", true );
+
+    // print warning for unrecognized arguments
+    My_CLP.recogniseAllOptions ( true );
+
+    // don't throw exceptions
+    My_CLP.throwExceptions ( true );
+
+    // finally, parse the stuff!
+    Teuchos::CommandLineProcessor::EParseCommandLineReturn parseReturn;
     
+    parseReturn = My_CLP.parse ( boost::unit_test::framework::master_test_suite().argc,
+                                 boost::unit_test::framework::master_test_suite().argv );
     // ------------------------------------------------------------------------
     // Read the XML file
-    std::string xmlInputFileName = "data/conf.xml";
     Teuchos::RCP<Teuchos::ParameterList> paramList =
             Teuchos::rcp ( new Teuchos::ParameterList );
-    try
-    {
-        Teuchos::updateParametersFromXmlFile ( xmlInputFileName, paramList.get() );
-    }
-    catch ( std::exception &e )
-    {
-        std::cerr << e.what() << "\n"
-                  << "Check your XML file for syntax errors." << std::endl;
-        return EXIT_FAILURE;
-    }
+
+    Teuchos::updateParametersFromXmlFile ( xmlInputFileName,
+                                           paramList.get()
+                                         );
     // ------------------------------------------------------------------------
     // extract data for the output the parameter list
     Teuchos::ParameterList outputList;
-    try
-    {
-        outputList = paramList->sublist ( "Output", true );
-    }
-    catch ( std::exception &e )
-    {
-        std::cerr << e.what() << std::endl;
-        return EXIT_FAILURE;
-    }
+    outputList = paramList->sublist ( "Output", true );
+
     // set default directory to be the directory of the XML file itself
     std::string xmlPath = boost::filesystem::path ( xmlInputFileName ).branch_path().string();
     boost::filesystem::path outputDirectory = outputList.get<string> ( "Output directory" );
@@ -83,34 +117,19 @@ BOOST_AUTO_TEST_CASE( my_test )
     Teuchos::RCP<Recti::Grid::Uniform> grid;
 
     Teuchos::ParameterList initialGuessList;
-    try
-    {
-        initialGuessList = paramList->sublist ( "Initial guess", true );
-    }
-    catch ( std::exception &e )
-    {
-        std::cerr << e.what() << std::endl;
-        return 1;
-    }
+    initialGuessList = paramList->sublist ( "Initial guess", true );
+
     boost::filesystem::path inputGuessFile = initialGuessList.get<string> ( "File name" );
     if ( !inputGuessFile.empty() && inputGuessFile.root_directory().empty() ) // if inputGuessFile is a relative path
         inputGuessFile = xmlPath / inputGuessFile;
 
-    TEUCHOS_ASSERT( !inputGuessFile.empty() );
+    BOOST_REQUIRE( !inputGuessFile.empty() );
     
-    try
-    {
-        // For technical reasons, the reader can only accept ComplexMultiVectors.
-        Teuchos::RCP<ComplexMultiVector> psiM;
-        Recti::Grid::Reader::read ( Comm, inputGuessFile.string(), psiM, grid, glParameters );
-        TEUCHOS_ASSERT_EQUALITY ( psiM->getNumVectors(), 1 );
-        psi = psiM->getVectorNonConst ( 0 );
-    }
-    catch ( std::exception &e )
-    {
-        std::cerr << e.what() << std::endl;
-        return 1;
-    }
+    // For technical reasons, the reader can only accept ComplexMultiVectors.
+    Teuchos::RCP<ComplexMultiVector> psiM;
+    Recti::Grid::Reader::read ( Comm, inputGuessFile.string(), psiM, grid, glParameters );
+    TEUCHOS_ASSERT_EQUALITY ( psiM->getNumVectors(), 1 );
+    psi = psiM->getVectorNonConst ( 0 );
 
     // possibly overwrite the parameters
     Teuchos::ParameterList & overwriteParamsList = paramList->sublist ( "Overwrite parameter list", true ); 
@@ -127,20 +146,11 @@ BOOST_AUTO_TEST_CASE( my_test )
 
     Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> A =
         Teuchos::rcp ( new Ginla::MagneticVectorPotential::Centered ( glParameters.get<double> ( "H0" ),
-                                                                   glParameters.get<double> ( "scaling" ) ) );
+                                                                      glParameters.get<double> ( "scaling" ) ) );
 
     // create the operator
     Teuchos::RCP<Ginla::Operator::Virtual> glOperator =
         Teuchos::rcp ( new Ginla::Operator::BCCentral ( grid, A ) );
-
-//     // create a perturbation
-//     Teuchos::RCP<GL::Perturbation::Virtual> quadrantsPerturbation =
-//       Teuchos::rcp ( new GL::Perturbation::Quadrants ( grid ) );
-
-    // TODO: why not make glOperator depend upon perturbation instead?
-//     GinzburgLandau glProblem = GinzburgLandau ( glOperator,
-//                                                 quadrantsPerturbation );
-
 
     std::string fn = outputDirectory.string() + "/" + contDataFileName;
     Teuchos::RCP<Ginla::StatsWriter> statsWriter = 
@@ -156,28 +166,20 @@ BOOST_AUTO_TEST_CASE( my_test )
     Teuchos::ParameterList & stepperList = paramList->sublist ( "LOCA" ).sublist ( "Stepper" );
     int maxLocaSteps = stepperList.get<int> ( "Max Steps" );
 
-    try
-    {
-        glsystem = Teuchos::rcp ( new Ginla::LocaSystem::Bordered ( glProblem,
-                                  eComm,
-                                  psi,
-                                  outputDirectory.string(),
-                                  contDataFileName,
-                                  contFileBaseName,
-                                  numDigits ( maxLocaSteps ) ) );
-    }
-    catch ( std::exception & e )
-    {
-        std::cerr << e.what() << std::endl;
-        return 1;
-    }
+    int numDigits = 1;
+    
+    glsystem = Teuchos::rcp ( new Ginla::LocaSystem::Bordered ( glProblem,
+                              eComm,
+                              psi,
+                              outputDirectory.string(),
+                              contDataFileName,
+                              contFileBaseName,
+                              numDigits ) );
     
     // set the initial value from glParameters
     std::string contParam = stepperList.get<string> ( "Continuation Parameter" );
-    TEST_FOR_EXCEPTION ( !glParameters.isParameter ( contParam ),
-                         std::logic_error,
-                         "Parameter \"" << contParam << "\" given as continuation parameter, but doesn't exist"
-                         << "in the glParameters list." );
+    
+    BOOST_REQUIRE( glParameters.isParameter ( contParam ) );
 
     // check if the initial value was given (will be unused anyway)
     if ( stepperList.isParameter ( "Initial Value" ) )
@@ -186,7 +188,6 @@ BOOST_AUTO_TEST_CASE( my_test )
                   << std::endl;
     }
 
-    // TODO Get rid of the explicit "double".
     stepperList.set ( "Initial Value", glParameters.get<double> ( contParam ) );
 
     // ------------------------------------------------------------------------
@@ -217,7 +218,7 @@ BOOST_AUTO_TEST_CASE( my_test )
         Teuchos::RCP<Ginla::IO::SaveEigenData> ( new Ginla::IO::SaveEigenData ( eigenListPtr, outputDirectory.string(),
                                    eigenvaluesFileName, contFileBaseName,
                                    eigenstateFileNameAppendix, glsystem,
-                                   numDigits ( maxLocaSteps ) ) );
+                                   numDigits ) );
 
     Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> glSaveEigenDataStrategy =
         glEigenSaver;
@@ -241,16 +242,8 @@ BOOST_AUTO_TEST_CASE( my_test )
     Teuchos::ParameterList& lsParams =
         paramList->sublist ( "NOX" ) .sublist ( "Direction" ) .sublist ( "Newton" ) .sublist ( "Linear Solver" );
 
-//  Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys = Teuchos::rcp(
-//      new NOX::Epetra::LinearSystemAztecOO(nlPrintParams, lsParams, iJac, J, iPrec, M, *soln));
+    BOOST_REQUIRE( soln.is_valid_ptr() && !soln.is_null() );
 
-
-    std::cout << J.is_null() << std::endl;
-    if ( !soln.is_valid_ptr() || soln.is_null() )
-    {
-      std::cout << "soln not properly initialized. Abort." << std::endl;
-      return 1;
-    }
     Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys =
         Teuchos::rcp ( new NOX::Epetra::LinearSystemAztecOO ( nlPrintParams, lsParams, iReq, iJac, J, *soln ) );
 
@@ -289,13 +282,8 @@ BOOST_AUTO_TEST_CASE( my_test )
     // ------------------------------------------------------------------------
     // Set up the LOCA status tests
     Teuchos::RCP<LOCA::StatusTest::MaxIters> maxLocaStepsTest;
-    try {
-        maxLocaStepsTest = Teuchos::rcp ( new LOCA::StatusTest::MaxIters ( maxLocaSteps ) );
-    }
-    catch ( char const * e ) {
-        std::cerr << e << std::endl;
-        return 1;
-    }
+    
+    maxLocaStepsTest = Teuchos::rcp ( new LOCA::StatusTest::MaxIters ( maxLocaSteps ) );
     // ------------------------------------------------------------------------
     // Create the stepper
     Teuchos::RCP<LOCA::Stepper> stepper =
@@ -310,28 +298,33 @@ BOOST_AUTO_TEST_CASE( my_test )
     // ------------------------------------------------------------------------
     // Perform continuation run
     LOCA::Abstract::Iterator::IteratorStatus status;
-    try
-    {
-        status = stepper->run();
-    }
-    catch ( char const* e )
-    {
-        std::cerr << "Exception raised: " << e << std::endl;
-    }
+    status = stepper->run();
     // ------------------------------------------------------------------------
     // retrieve solution
-    const NOX::Epetra::Group & finalGroup =
-        dynamic_cast<const NOX::Epetra::Group&> ( stepper->getSolutionGroup() );
-
-    const Epetra_Vector & finalSolution =
-        ( dynamic_cast<const NOX::Epetra::Vector&> ( finalGroup.getX() ) ).getEpetraVector();
-    std::cout << "Fff" << std::endl;
+//     const NOX::Epetra::Group & finalGroup =
+//         dynamic_cast<const NOX::Epetra::Group&> ( stepper->getSolutionGroup() );
+// 
+//     const Epetra_Vector & finalSolution =
+//         ( dynamic_cast<const NOX::Epetra::Vector&> ( finalGroup.getX() ) ).getEpetraVector();
     // ------------------------------------------------------------------------
     // read expected solution from file
+    // For technical reasons, the reader can only accept ComplexMultiVectors.
+    Teuchos::RCP<ComplexMultiVector> psiMSol;
+    Recti::Grid::Reader::read ( Comm, expSolFileName, psiMSol, grid, glParameters );
+    TEUCHOS_ASSERT_EQUALITY ( psiM->getNumVectors(), 1 );
     
+    Teuchos::RCP<ComplexVector> psiRefSol = psiM->getVectorNonConst ( 0 );
     // ------------------------------------------------------------------------
-    // compare the results
-    bool status = false;
+    // compare the results:
+    // get final solution
+    Teuchos::RCP<ComplexVector> diff =  Teuchos::rcp( new ComplexVector( *psi ) );
+
+    diff->update( -1.0, *psiRefSol, 1.0 );
+    
+    Teuchos::Tuple<double,1> nrm;
+    diff->normInf( nrm );
+    
+    BOOST_CHECK_SMALL( nrm[0], 1.0e-12 );
     // ------------------------------------------------------------------------
     // clean up
     LOCA::destroyGlobalData ( globalData );
@@ -343,7 +336,8 @@ BOOST_AUTO_TEST_CASE( my_test )
     MPI_Finalize();
 #endif
     // ------------------------------------------------------------------------
-    BOOST_CHECK( status );
+
+    return;
 }
 // ============================================================================
 BOOST_AUTO_TEST_CASE( my_other_test )
@@ -373,6 +367,7 @@ BOOST_AUTO_TEST_CASE( my_other_test )
 #endif
 
     BOOST_CHECK( status );
+    return;
 }
 // ============================================================================
 BOOST_AUTO_TEST_SUITE_END()

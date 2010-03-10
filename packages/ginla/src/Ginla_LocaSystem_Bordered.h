@@ -94,7 +94,7 @@ public:
     //! @return Reference-counted pointer to the current state.
     Teuchos::RCP<Epetra_Vector>
     getSolution() const;
-
+    
     //! Returns the current Jacobian.
     //! @return Reference-counted pointer to the Jacobian.
     Teuchos::RCP<Epetra_CrsMatrix>
@@ -116,7 +116,8 @@ public:
     //! to a file. This function is called internally by LOCA to print
     //! solutions of each continuation step.
     virtual void
-    printSolution ( const Epetra_Vector &x, double conParam );
+    printSolution ( const Epetra_Vector & x,
+                    double conParam );
 
     void
     setLocaStepper ( const Teuchos::RCP<const LOCA::Stepper> stepper );

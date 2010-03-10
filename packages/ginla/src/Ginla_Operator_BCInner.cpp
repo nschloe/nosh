@@ -25,9 +25,10 @@
 const double_complex I ( 0,1 );
 
 // =============================================================================
-Ginla::Operator::BCInner::BCInner ( Teuchos::RCP<Recti::Grid::Uniform>                  & grid,
-                                 Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> & A
-                                     ) :
+Ginla::Operator::BCInner::
+BCInner ( Teuchos::RCP<Recti::Grid::Uniform>                     & grid,
+          Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> & A
+        ) :
         Ginla::Operator::Virtual ( grid, A )
 {
 }

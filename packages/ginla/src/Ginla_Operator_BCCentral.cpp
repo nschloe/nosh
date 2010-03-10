@@ -38,7 +38,8 @@ Ginla::Operator::BCCentral::~BCCentral()
 }
 // =============================================================================
 double_complex
-Ginla::Operator::BCCentral::getEntry ( const int k ) const
+Ginla::Operator::BCCentral::
+getEntry ( const int k ) const
 {
     double_complex res;
     double_complex psiK, psiKRight, psiKLeft, psiKAbove, psiKBelow;
@@ -360,12 +361,13 @@ Ginla::Operator::BCCentral::getEntry ( const int k ) const
 }
 // =============================================================================
 void
-Ginla::Operator::BCCentral::getJacobianRow ( const int                        k,
-                                      Teuchos::Array<int>            & columnIndicesPsi,
-                                      Teuchos::Array<double_complex> & valuesPsi,
-                                      Teuchos::Array<int>            & columnIndicesPsiConj,
-                                      Teuchos::Array<double_complex> & valuesPsiConj
-                                    ) const
+Ginla::Operator::BCCentral::
+getJacobianRow ( const int                        k,
+                 Teuchos::Array<int>            & columnIndicesPsi,
+                 Teuchos::Array<double_complex> & valuesPsi,
+                 Teuchos::Array<int>            & columnIndicesPsiConj,
+                 Teuchos::Array<double_complex> & valuesPsiConj
+               ) const
 {
     int kLeft, kRight, kBelow, kAbove;
     int numEntriesPsi, numEntriesPsiConj;

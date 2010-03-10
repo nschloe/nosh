@@ -58,9 +58,10 @@ Ginla::LocaSystem::Default::~Default()
 }
 // =============================================================================
 bool
-Ginla::LocaSystem::Default::computeF ( const Epetra_Vector &x,
-                     Epetra_Vector &FVec,
-                     const NOX::Epetra::Interface::Required::FillType fillFlag )
+Ginla::LocaSystem::Default::
+computeF ( const Epetra_Vector &x,
+           Epetra_Vector &FVec,
+           const NOX::Epetra::Interface::Required::FillType fillFlag )
 {
     // make sure that the input and output vectors are correctly mapped
     TEST_FOR_EXCEPTION ( !x.Map().SameAs ( *glKomplex_->getRealMap() ),
@@ -85,7 +86,9 @@ Ginla::LocaSystem::Default::computeF ( const Epetra_Vector &x,
 }
 // =============================================================================
 bool
-Ginla::LocaSystem::Default::computeJacobian ( const Epetra_Vector &x, Epetra_Operator &Jac )
+Ginla::LocaSystem::Default::
+computeJacobian ( const Epetra_Vector & x,
+                  Epetra_Operator     & Jac )
 {
     // compute the values of the Jacobian
     createJacobian ( x );
@@ -157,10 +160,11 @@ Ginla::LocaSystem::Default::createJacobian ( const Epetra_Vector &x )
 }
 // =============================================================================
 bool
-Ginla::LocaSystem::Default::computeShiftedMatrix ( double alpha,
-                                 double beta,
-                                 const Epetra_Vector &x,
-                                 Epetra_Operator &A )
+Ginla::LocaSystem::Default::
+computeShiftedMatrix ( double alpha,
+                       double beta,
+                       const Epetra_Vector &x,
+                       Epetra_Operator &A )
 {
     // compute the values of the Jacobian
     createJacobian ( x );

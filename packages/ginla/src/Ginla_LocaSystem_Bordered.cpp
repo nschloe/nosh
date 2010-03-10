@@ -178,7 +178,8 @@ Ginla::LocaSystem::Bordered::computePreconditioner ( const Epetra_Vector    & x,
 }
 // =============================================================================
 Teuchos::RCP<Epetra_Vector>
-Ginla::LocaSystem::Bordered::getSolution() const
+Ginla::LocaSystem::Bordered::
+getSolution() const
 {
     return solution_;
 }
@@ -242,10 +243,11 @@ Ginla::LocaSystem::Bordered::createJacobian ( const Epetra_Vector & x )
 }
 // =============================================================================
 bool
-Ginla::LocaSystem::Bordered::computeShiftedMatrix ( double alpha,
-                                                   double beta,
-                                                   const Epetra_Vector   & x,
-                                                   Epetra_Operator & A )
+Ginla::LocaSystem::Bordered::
+computeShiftedMatrix ( double alpha,
+                       double beta,
+                       const Epetra_Vector & x,
+                       Epetra_Operator     & A )
 {
     // strip off the phase constraint
     Epetra_Vector tmp ( *regularMap_ );
