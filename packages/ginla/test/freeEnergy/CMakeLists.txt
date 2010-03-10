@@ -19,14 +19,13 @@ INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/packages/vio/src
                       ${ginzburg-landau_SOURCE_DIR}/packages/ginla/src )
 
 SET( MY_EXECUTABLE
-     "zeroStepLoca.out" )
+     "freeEnergy.out" )
 
 # see http://www.docstoc.com/docs/14857835/CTest-and-Dashboard-_Slides-by-J
 #INCLUDE( CTest )
-ADD_TEST( zeroStepLoca
+ADD_TEST( freeEnergy
           ${MY_EXECUTABLE}
           "--xml-input-file=${CMAKE_CURRENT_SOURCE_DIR}/data/conf.xml"
-          "--expected-solution-file=${CMAKE_CURRENT_SOURCE_DIR}/data/expected-solution.vti"
         )
 
 ADD_EXECUTABLE ( ${MY_EXECUTABLE}

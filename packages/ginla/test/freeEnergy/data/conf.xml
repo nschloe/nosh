@@ -1,0 +1,8 @@
+<ParameterList>
+  
+  <ParameterList name="State 0">
+      <Parameter name="File name" type="string" value="state0.vti"/>
+      <Parameter name="Energy" type="double" value="-1.00050383593625"/>
+  </ParameterList>
+
+</ParameterList>

@@ -6,13 +6,12 @@
 #include <Teuchos_Comm.hpp>
 
 
-
 // =============================================================================
 // Class constructor
 GinzburgLandau::
 GinzburgLandau ( const Teuchos::RCP<Ginla::Operator::Virtual> & glOperator,
                  const Teuchos::RCP<Ginla::StatsWriter>       & statsWriter,
-                 const std::string                         & outputFormat
+                 const std::string                            & outputFormat
                ) :
         glOperator_ ( glOperator ),
         perturbation_ ( Teuchos::null ),
@@ -24,7 +23,7 @@ GinzburgLandau ( const Teuchos::RCP<Ginla::Operator::Virtual> & glOperator,
 // Class constructor
 GinzburgLandau::
 GinzburgLandau ( const Teuchos::RCP<Ginla::Operator::Virtual> & glOperator,
-                 const std::string                         & outputFormat
+                 const std::string                            & outputFormat
                ) :
         glOperator_ ( glOperator ),
         perturbation_ ( Teuchos::null ),
