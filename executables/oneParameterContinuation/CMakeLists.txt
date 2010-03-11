@@ -5,10 +5,6 @@ LINK_DIRECTORIES( ${Trilinos_LIBRARY_DIRS}
                   ${Trilinos_TPL_LIBRARY_DIRS} )
 INCLUDE_DIRECTORIES ( ${Trilinos_INCLUDE_DIRS}
                       ${Trilinos_TPL_INCLUDE_DIRS} )
-
-FIND_PACKAGE( VTK REQUIRED )
-LINK_DIRECTORIES( ${VTK_LIBRARY_DIRS} )
-INCLUDE_DIRECTORIES ( ${VTK_INCLUDE_DIRS} )
                       
 FIND_PACKAGE( Boost COMPONENTS system filesystem REQUIRED )
 SET(Boost_USE_STATIC_LIBS   ON)

@@ -1,4 +1,4 @@
-SET ( gl_SRCS
+SET ( vio_SRCS
       VIO_Writer_Factory.cpp
       VIO_Writer_Abstract.cpp
       VIO_Writer_VTI.cpp
@@ -17,11 +17,20 @@ INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIRS} )
 
 FIND_PACKAGE( VTK REQUIRED )
 INCLUDE_DIRECTORIES( ${VTK_INCLUDE_DIRS} )
-# TODO Use absolute paths in TARGET_LINK_LIBRARIES rather than LINK_LIBRARIES
 
 ADD_LIBRARY ( vio STATIC
-              ${gl_SRCS} )
+              ${vio_SRCS} )
+
+# Get the absolute paths of the libraries.
+# -- this is recommended for TARGET_LINK_LIBRARIES.
+FIND_LIBRARY( VTKIO_LIBRARY vtkIO ${VTK_LIBRARY_DIRS} )
+FIND_LIBRARY( VTKFILTERING_LIBRARY vtkFiltering ${VTK_LIBRARY_DIRS} )
+FIND_LIBRARY( VTKCOMMON_LIBRARY vtkCommon ${VTK_LIBRARY_DIRS} )
+FIND_LIBRARY( VTKIMAGING_LIBRARY vtkImaging ${VTK_LIBRARY_DIRS} )
 
 # list the libraries against which libio must be linked here
 TARGET_LINK_LIBRARIES ( vio
-                        vtkIO vtkFiltering vtkCommon vtkImaging )
+                        ${VTKIO_LIBRARY}
+                        ${VTKFILTERING_LIBRARY}
+                        ${VTKCOMMON_LIBRARY}
+                        ${VTKIMAGING_LIBRARY} )
