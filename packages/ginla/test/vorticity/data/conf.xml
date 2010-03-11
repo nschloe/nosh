@@ -1,0 +1,18 @@
+<ParameterList>
+  
+  <ParameterList name="State 0">
+      <Parameter name="File name" type="string" value="state0.vti"/>
+      <Parameter name="Vorticity" type="int" value="0"/>
+  </ParameterList>
+
+  <ParameterList name="State 1">
+      <Parameter name="File name" type="string" value="state1.vti"/>
+      <Parameter name="Vorticity" type="int" value="4"/>
+  </ParameterList>
+
+  <ParameterList name="State 2">
+      <Parameter name="File name" type="string" value="state2.vti"/>
+      <Parameter name="Vorticity" type="int" value="-4"/>
+  </ParameterList>
+
+</ParameterList>

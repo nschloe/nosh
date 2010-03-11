@@ -107,7 +107,7 @@ BOOST_AUTO_TEST_CASE( free_energy_test )
         boost::filesystem::path filePath = stateSublist.get<string> ( "File name" );
         filePath = xmlPath / filePath;
         
-        double energyRef = stateSublist.get<double>( "Energy" );
+        int vorticityRef = stateSublist.get<int>( "Vorticity" );
         
         // read the state
         Recti::Grid::Reader::read ( Comm, filePath.string(), psiM, grid, glParameters );
@@ -123,10 +123,9 @@ BOOST_AUTO_TEST_CASE( free_energy_test )
             Teuchos::rcp ( new Ginla::Operator::BCCentral ( grid, A ) );
         GinzburgLandau glProblem = GinzburgLandau ( glOperator, "VTI" );
         
-        double energy = glProblem.freeEnergy( *psi );
-        
-        // TODO replace by  BOOST_CHECK_CLOSE( energy, energyRef, 1.0e-15 );
-        BOOST_CHECK_SMALL( fabs(energy-energyRef), 1.0e-14 );
+        int vorticity = glProblem.getVorticity( *psi );
+
+        BOOST_CHECK_EQUAL( vorticity, vorticityRef );
     }
     // ------------------------------------------------------------------------
     // clean up
