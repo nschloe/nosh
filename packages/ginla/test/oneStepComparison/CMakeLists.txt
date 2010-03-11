@@ -4,15 +4,12 @@ INCLUDE_DIRECTORIES ( ${Trilinos_INCLUDE_DIRS}
 LINK_DIRECTORIES( ${Trilinos_LIBRARY_DIRS}
                   ${Trilinos_TPL_LIBRARY_DIRS} )
 
-FIND_PACKAGE( Boost COMPONENTS system filesystem REQUIRED )
-SET(Boost_USE_STATIC_LIBS   ON)
+FIND_PACKAGE( Boost
+              COMPONENTS system filesystem unit_test_framework
+              REQUIRED )
+# SET(Boost_USE_STATIC_LIBS   ON)
 SET(Boost_USE_MULTITHREADED ON)
 INCLUDE_DIRECTORIES ( ${Boost_INCLUDE_DIRS} )
-
-FIND_PACKAGE( VTK REQUIRED )
-INCLUDE_DIRECTORIES( ${VTK_INCLUDE_DIRS} )
-
-FIND_PACKAGE( Boost COMPONENTS unit_test_framework REQUIRED )
 
 INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/packages/vio/src
                       ${ginzburg-landau_SOURCE_DIR}/packages/recti/src

@@ -107,7 +107,6 @@ BOOST_AUTO_TEST_CASE( free_energy_test )
         boost::filesystem::path filePath = stateSublist.get<string> ( "File name" );
         filePath = xmlPath / filePath;
         
-        
         double energyRef = stateSublist.get<double>( "Energy" );
         
         // read the state
@@ -126,7 +125,9 @@ BOOST_AUTO_TEST_CASE( free_energy_test )
         
         double energy = glProblem.freeEnergy( *psi );
         
-        // TODO replace by BOOST_CHECK_CLOSE( energy, energyRef, 1.0e-15 );
+        std::cout << std::setprecision(15) << energy << std::endl;
+        
+        // TODO replace by  BOOST_CHECK_CLOSE( energy, energyRef, 1.0e-15 );
         BOOST_CHECK_SMALL( fabs(energy-energyRef), 1.0e-14 );
     }
     // ------------------------------------------------------------------------

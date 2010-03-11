@@ -5,4 +5,14 @@
       <Parameter name="Energy" type="double" value="-1.00050383593625"/>
   </ParameterList>
 
+  <ParameterList name="State 1">
+      <Parameter name="File name" type="string" value="state1.vti"/>
+      <Parameter name="Energy" type="double" value="-2.510177302154716e-01"/>
+  </ParameterList>
+
+  <ParameterList name="State 2">
+      <Parameter name="File name" type="string" value="state2.vti"/>
+      <Parameter name="Energy" type="double" value="-1.736252517882987e-02"/>
+  </ParameterList>
+
 </ParameterList>
