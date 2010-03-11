@@ -72,9 +72,6 @@ public:
     computeF ( const Epetra_Vector &x,
                Epetra_Vector &F,
                const NOX::Epetra::Interface::Required::FillType fillFlag = Residual );
-
-    Teuchos::RCP<ComplexVector>
-    computeGlVector ( const Teuchos::RCP<const ComplexVector> & psi ) const;
                
     //! Evaluate the Jacobian matrix of the Ginzburg--Landau problem
     //! at a given state defined by the input vector x.

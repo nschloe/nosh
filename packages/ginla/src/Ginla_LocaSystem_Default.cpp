@@ -63,8 +63,8 @@ Ginla::LocaSystem::Default::~Default()
 // =============================================================================
 bool
 Ginla::LocaSystem::Default::
-computeF ( const Epetra_Vector &x,
-           Epetra_Vector &FVec,
+computeF ( const Epetra_Vector & x,
+           Epetra_Vector       & FVec,
            const NOX::Epetra::Interface::Required::FillType fillFlag )
 {
     // make sure that the input and output vectors are correctly mapped
@@ -75,47 +75,35 @@ computeF ( const Epetra_Vector &x,
     TEST_FOR_EXCEPTION ( !FVec.Map().SameAs ( *glKomplex_->getRealMap() ),
                          std::logic_error,
                          "Maps of FVec and the computed real-valued map do not coincide." );
-                         
+    // ------------------------------------------------------------------------
     // convert from x to psi
     const Teuchos::RCP<ComplexVector> psi = glKomplex_->real2complex ( x );
-
+    // ------------------------------------------------------------------------
     // compute the GL residual
-    Teuchos::RCP<ComplexVector> res = computeGlVector ( psi );
-
-    // TODO Avoid this explicit copy.
-    // transform back to fully real equation
-    FVec = * ( glKomplex_->complex2real ( *res ) );
-
-    return true;
-}
-// =============================================================================
-Teuchos::RCP<ComplexVector>
-Ginla::LocaSystem::Default::
-computeGlVector ( const Teuchos::RCP<const ComplexVector> & psi ) const
-{
-    TEST_FOR_EXCEPTION ( !psi.is_valid_ptr() || psi.is_null(),
-                         std::logic_error,
-                         "Input argument 'psi' not properly initialized." );
-    
     // setup output vector with the same map as psi
-    Teuchos::RCP<ComplexVector> glVec =
+    Teuchos::RCP<ComplexVector> res =
         Teuchos::rcp ( new ComplexVector ( psi->getMap(), true ) );
 
     // TODO not really necessary
     glOperator_->updatePsi ( psi );
 
-    Teuchos::ArrayRCP<double_complex> glVecView = glVec->get1dViewNonConst();
+    Teuchos::ArrayRCP<double_complex> resView = res->get1dViewNonConst();
     // loop over the nodes
     for ( unsigned int k=0; k<psi->getLocalLength(); k++ )
     {
         int globalIndex = psi->getMap()->getGlobalElement ( k );
-        glVecView[k] = glOperator_->getEntry ( globalIndex );
+        resView[k] = glOperator_->getEntry ( globalIndex );
 
         if ( !perturbation_.is_null() )
-            glVecView[k] += perturbation_->computePerturbation ( globalIndex );
+            resView[k] += perturbation_->computePerturbation ( globalIndex );
     }
-
-    return glVec;
+    // ------------------------------------------------------------------------
+    // TODO Avoid this explicit copy.
+    // transform back to fully real equation
+    FVec = * ( glKomplex_->complex2real ( *res ) );
+    // ------------------------------------------------------------------------
+    
+    return true;
 }
 // =============================================================================
 bool
@@ -140,10 +128,13 @@ computeJacobian ( const Epetra_Vector & x,
         int globalRow = glKomplex_->getComplexMap()->getGlobalElement ( row );
         // get the values from the operator
         glOperator_->getJacobianRow ( globalRow,
-                                            indicesA, valuesA,
-                                            indicesB, valuesB );
+                                      indicesA, valuesA,
+                                      indicesB, valuesB );
         // ... and fill them into glKomplex_
-        glKomplex_->updateRow ( globalRow, indicesA, valuesA, indicesB, valuesB, firstTime_ );
+        glKomplex_->updateRow ( globalRow,
+                                indicesA, valuesA,
+                                indicesB, valuesB,
+                                firstTime_ );
     }
 
     if ( firstTime_ )
@@ -180,7 +171,6 @@ Ginla::LocaSystem::Default::getSolution() const
 Teuchos::RCP<Epetra_CrsMatrix>
 Ginla::LocaSystem::Default::getJacobian() const
 {
-//      TEUCHOS_ASSERT( jacobian_.is_valid_ptr() && !jacobian_.is_null() );
     return glKomplex_->getMatrix();
 }
 // =============================================================================
