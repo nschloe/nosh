@@ -1,4 +1,5 @@
 #include "Ginla_LocaSystem_Default.h"
+#include "Ginla_Helpers.h"
 
 #include <Epetra_Export.h>
 #include <Epetra_CrsMatrix.h>
@@ -255,9 +256,13 @@ printSolutionOneParameterContinuation ( const Teuchos::RCP<const ComplexVector> 
     baseName
     << outputDir_ << "/" << solutionFileNameBase_ 
     << setw ( maxNumDigits_ ) << setfill ( '0' ) << conStep;
-    
+        
     // actually print the state to fileName
-    Gl_.writeSolutionToFile ( psi, baseName.str() );
+    Ginla::Helpers::writeStateToFile( psi,
+                                      Gl_.getOperator()->getGrid(),
+                                      *(Gl_.getOperator()->getParameters()),
+                                      baseName.str(),
+                                      "VTI" );
 
     writeContinuationStats ( psi );
 }
@@ -295,9 +300,15 @@ printSolutionTurningPointContinuation ( const Teuchos::RCP<const ComplexVector> 
         << outputDir_ << "/" << solutionFileNameBase_
         << setw ( maxNumDigits_ ) << setfill ( '0' ) << conStep
         << "-nullvector";
-
+    
     // actually print the state to fileName
-    Gl_.writeSolutionToFile ( psi, baseName.str() );
+    Ginla::Helpers::writeStateToFile( psi,
+                                      Gl_.getOperator()->getGrid(),
+                                      *(Gl_.getOperator()->getParameters()),
+                                      baseName.str(),
+                                      "VTI" );
+
+    return;
 }
 // =============================================================================
 void
@@ -334,9 +345,14 @@ Ginla::LocaSystem::Default::
 writeSolutionToFile ( const Epetra_Vector & x,
                       const std::string   & filePath
                     ) const
-{
+{   
     // TODO: Remove the need for several real2complex calls per step.
-    Gl_.writeSolutionToFile ( glKomplex_->real2complex ( x ), filePath );
+    Ginla::Helpers::writeStateToFile( glKomplex_->real2complex ( x ),
+                                      Gl_.getOperator()->getGrid(),
+                                      *(Gl_.getOperator()->getParameters()),
+                                      filePath,
+                                      "VTI" );
+    return;
 }
 // =============================================================================
 void
@@ -346,7 +362,13 @@ writeAbstractStateToFile ( const Epetra_Vector & x,
                          ) const
 {
     // TODO: Remove the need for several real2complex calls per step.
-    Gl_.writeAbstractStateToFile ( glKomplex_->real2complex ( x ), filePath );
+    LOCA::ParameterVector empty;
+    Ginla::Helpers::writeStateToFile( glKomplex_->real2complex ( x ),
+                                      Gl_.getOperator()->getGrid(),
+                                      empty,
+                                      filePath,
+                                      "VTI" );
+    return;
 }
 // =============================================================================
 Teuchos::RCP<Epetra_Vector>

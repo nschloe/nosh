@@ -65,6 +65,12 @@ GinzburgLandau::getNumUnknowns() const
     return glOperator_->getGrid()->getNumGridPoints();
 }
 // =============================================================================
+Teuchos::RCP<Ginla::Operator::Virtual>
+GinzburgLandau::getOperator() const
+{
+    return glOperator_;
+}
+// =============================================================================
 Teuchos::RCP<Ginla::StatsWriter>
 GinzburgLandau::getStatsWriter()
 {
@@ -114,55 +120,6 @@ GinzburgLandau::getJacobianRow ( const int                           eqnum,
     glOperator_->getJacobianRow ( eqnum,
                                   columnIndicesPsi, valuesPsi,
                                   columnIndicesPsiConj, valuesPsiConj );
-    return;
-}
-// =============================================================================
-void
-GinzburgLandau::
-writeStateToFile ( const Teuchos::RCP<const ComplexVector> & psi,
-                   LOCA::ParameterVector                   & params,
-                   const std::string                       & fileBaseName
-                 ) const
-{
-    Teuchos::RCP<Teuchos::ParameterList> p =
-        Ginla::Helpers::locaParameterVector2teuchosParameterList( params );
-        
-    std::string filenameExtension;
-    if ( outputFormat_.compare("VTI")==0 )
-      filenameExtension = "vti";
-    else if ( outputFormat_.compare("VTK")==0 )
-      filenameExtension = "vtk";
-    else
-      TEST_FOR_EXCEPTION( true,
-                          std::runtime_error,
-                          "outputFormat_ (\"" << outputFormat_
-                          << "\") must be either one of \"VTI\", \"VTK\"" );
-        
-    std::string fileName = fileBaseName + "." + filenameExtension;
-    glOperator_->getGrid()->writeWithGrid ( *psi, *p, fileName );
-    return;
-}
-// =============================================================================
-void
-GinzburgLandau::
-writeSolutionToFile ( const Teuchos::RCP<const ComplexVector> & psi,
-                      const std::string                       & fileBaseName
-                    ) const
-{
-    // create a parameter list that contains useful items for a solution file
-    Teuchos::RCP<LOCA::ParameterVector> params = glOperator_->getParameters();
-    writeStateToFile ( psi, *params, fileBaseName );
-    return;
-}
-// =============================================================================
-void
-GinzburgLandau::
-writeAbstractStateToFile ( const Teuchos::RCP<const ComplexVector> & psi,
-                           const std::string                       & fileBaseName
-                         ) const
-{
-    LOCA::ParameterVector params;
-    writeStateToFile ( psi, params, fileBaseName );
     return;
 }
 // =============================================================================

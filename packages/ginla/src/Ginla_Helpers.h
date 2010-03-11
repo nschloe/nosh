@@ -70,6 +70,17 @@ namespace Helpers
   getVorticity ( const ComplexVector        & psi,
                  const Recti::Grid::General & grid );
                  
+  /** Writes a solution \c psi to a file with all parameters that
+    * may be interesting.
+    */
+  void
+  writeStateToFile ( const Teuchos::RCP<const ComplexVector>        & psi,
+                     const Teuchos::RCP<const Recti::Grid::General> & grid,
+                     LOCA::ParameterVector                          & params,
+                     const std::string                              & fileBaseName,
+                     const std::string                              & outputFormat
+                   );
+
 };
 
 }

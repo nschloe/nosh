@@ -67,23 +67,9 @@ public:
                      Teuchos::Array<double_complex>    & valuesPsiConj
                    ) const;
 
-    /** Writes a solution \c psi to a file with all parameters that
-      * may be interesting.
-      */
-    void
-    writeSolutionToFile ( const Teuchos::RCP<const ComplexVector> &psi,
-                          const std::string &fileBaseName
-                        ) const;
-
-    /*! Writes an abstract state \c psi to a file (e.g., an eigenstate). The
-     * only difference compared to the method \c writeSolutionToFile is
-     * the number and the kind of parameters that are returned in the file.
-     */
-    void
-    writeAbstractStateToFile ( const Teuchos::RCP<const ComplexVector> &psi,
-                               const std::string &fileBaseName
-                             ) const;
-
+    Teuchos::RCP<Ginla::Operator::Virtual>
+    getOperator() const;
+                   
     /*! Appends useful statistics about a given state \c psi to the \c ofstream
      *  \c filestream.
      */
@@ -126,12 +112,6 @@ private:
                               std::vector<int>                  &columnIndicesPsiConj,
                               std::vector<double_complex>       &valuesPsiConj
                             ) const;
-
-    void
-    writeStateToFile ( const Teuchos::RCP<const ComplexVector> & psi,
-                       LOCA::ParameterVector                   & params,
-                       const std::string                       & fileBaseName
-                     ) const;
 
 };
 #endif // GINZBURGLANDAU_H
