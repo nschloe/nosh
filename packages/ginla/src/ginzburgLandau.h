@@ -67,22 +67,6 @@ public:
                      Teuchos::Array<double_complex>    & valuesPsiConj
                    ) const;
 
-    /** Calcuate the grid approximation of the Gibbs free energy
-      * \f[
-      * \mathcal{G} = \int\nolimits_{\Omega} |\psi|^4 \,\mathrm{d}\omega
-      * \f]
-      * of a given state \f$\psi\f$.
-      */
-    double
-    freeEnergy ( const ComplexVector & psi ) const;
-
-    double
-    normalizedScaledL2Norm ( const ComplexVector & psi ) const;
-
-    /*! Calculate the vorticity of the current solution. */
-    int
-    getVorticity ( const ComplexVector & psi ) const;
-
     /** Writes a solution \c psi to a file with all parameters that
       * may be interesting.
       */

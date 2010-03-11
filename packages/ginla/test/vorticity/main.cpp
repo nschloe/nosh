@@ -112,18 +112,9 @@ BOOST_AUTO_TEST_CASE( free_energy_test )
         // read the state
         Recti::Grid::Reader::read ( Comm, filePath.string(), psiM, grid, glParameters );
         TEUCHOS_ASSERT_EQUALITY ( psiM->getNumVectors(), 1 );
-        psi = psiM->getVectorNonConst ( 0 );
-       
-        // a bit of useless stuff
-        Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> A =
-            Teuchos::rcp ( new Ginla::MagneticVectorPotential::Centered ( glParameters.get<double> ( "H0" ),
-                                                                          glParameters.get<double> ( "scaling" ) ) );
-        // create the operator
-        Teuchos::RCP<Ginla::Operator::Virtual> glOperator =
-            Teuchos::rcp ( new Ginla::Operator::BCCentral ( grid, A ) );
-        GinzburgLandau glProblem = GinzburgLandau ( glOperator, "VTI" );
+        psi = psiM->getVectorNonConst ( 0 );       
         
-        int vorticity = glProblem.getVorticity( *psi );
+        int vorticity = Ginla::Helpers::getVorticity( *psi, *grid );
 
         BOOST_CHECK_EQUAL( vorticity, vorticityRef );
     }

@@ -23,6 +23,8 @@
 #include <LOCA_Parameter_Vector.H>
 #include <Teuchos_ParameterList.hpp>
 
+#include "Recti_Grid_General.h"
+
 namespace Ginla {
 
 namespace Helpers
@@ -48,7 +50,26 @@ namespace Helpers
                                 const LOCA::ParameterVector & pL,
                                 const std::string           & labelPrepend = ""
                               );
-                                          
+
+  double
+  normalizedScaledL2Norm ( const ComplexVector        & psi,
+                           const Recti::Grid::General & grid );
+
+  /** Calcuate the grid approximation of the Gibbs free energy
+    * \f[
+    * \mathcal{G} = \int\nolimits_{\Omega} |\psi|^4 \,\mathrm{d}\omega
+    * \f]
+    * of a given state \f$\psi\f$.
+    */
+  double
+  freeEnergy ( const ComplexVector & psi,
+               const Recti::Grid::General & grid );
+
+  /*! Calculate the vorticity of the current solution. */
+  int
+  getVorticity ( const ComplexVector        & psi,
+                 const Recti::Grid::General & grid );
+                 
 };
 
 }
