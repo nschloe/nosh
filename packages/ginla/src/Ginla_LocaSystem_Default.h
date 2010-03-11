@@ -162,9 +162,6 @@ private:
     int
     numDigits ( const int i );
 
-    void
-    createJacobian ( const Epetra_Vector &x );
-
     //! Print method for the continuation in one parameter.
     void
     printSolutionOneParameterContinuation ( const Teuchos::RCP<const ComplexVector> & psi

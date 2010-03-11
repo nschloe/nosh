@@ -155,8 +155,8 @@ Ginla::LocaSystem::Bordered::createExtendedRealMap ( const Epetra_BlockMap & rea
 // =============================================================================
 bool
 Ginla::LocaSystem::Bordered::computeJacobian ( const Epetra_Vector & x,
-                                              Epetra_Operator     & Jac
-                                            )
+                                               Epetra_Operator     & Jac
+                                             )
 {
     // strip off the phase constraint
     Epetra_Vector tmp ( *regularMap_ );

@@ -123,8 +123,34 @@ Ginla::LocaSystem::Default::
 computeJacobian ( const Epetra_Vector & x,
                   Epetra_Operator     & Jac )
 {
-    // compute the values of the Jacobian
-    createJacobian ( x );
+    Teuchos::Array<int> indicesA, indicesB;
+    Teuchos::Array<double_complex> valuesA, valuesB;
+
+    glKomplex_->zeroOutMatrix();
+
+    Teuchos::RCP<ComplexVector> psi = glKomplex_->real2complex ( x );
+
+    // update to the latest psi vector before retrieving the Jacobian
+    glOperator_->updatePsi ( psi );
+    
+    // loop over the rows and fill the matrix
+    int numMyElements = glKomplex_->getComplexMap()->getNodeNumElements();
+    for ( int row = 0; row < numMyElements; row++ )
+    {
+        int globalRow = glKomplex_->getComplexMap()->getGlobalElement ( row );
+        // get the values from the operator
+        glOperator_->getJacobianRow ( globalRow,
+                                            indicesA, valuesA,
+                                            indicesB, valuesB );
+        // ... and fill them into glKomplex_
+        glKomplex_->updateRow ( globalRow, indicesA, valuesA, indicesB, valuesB, firstTime_ );
+    }
+
+    if ( firstTime_ )
+    {
+        glKomplex_->finalizeMatrix();
+        firstTime_ = false;
+    }
 
     return true;
 }
@@ -164,51 +190,15 @@ Ginla::LocaSystem::Default::getPreconditioner() const
     return preconditioner_;
 }
 // =============================================================================
-void
-Ginla::LocaSystem::Default::
-createJacobian ( const Epetra_Vector &x )
-{
-    Teuchos::Array<int> indicesA, indicesB;
-    Teuchos::Array<double_complex> valuesA, valuesB;
-
-    glKomplex_->zeroOutMatrix();
-
-    Teuchos::RCP<ComplexVector> psi = glKomplex_->real2complex ( x );
-
-    // update to the latest psi vector before retrieving the Jacobian
-    glOperator_->updatePsi ( psi );
-    
-    // loop over the rows and fill the matrix
-    int numMyElements = glKomplex_->getComplexMap()->getNodeNumElements();
-    for ( int row = 0; row < numMyElements; row++ )
-    {
-        int globalRow = glKomplex_->getComplexMap()->getGlobalElement ( row );
-        // get the values from the operator
-        glOperator_->getJacobianRow ( globalRow,
-                                            indicesA, valuesA,
-                                            indicesB, valuesB );
-        // ... and fill them into glKomplex_
-        glKomplex_->updateRow ( globalRow, indicesA, valuesA, indicesB, valuesB, firstTime_ );
-    }
-
-    if ( firstTime_ )
-    {
-        glKomplex_->finalizeMatrix();
-        firstTime_ = false;
-    }
-
-    return;
-}
-// =============================================================================
 bool
 Ginla::LocaSystem::Default::
 computeShiftedMatrix ( double alpha,
                        double beta,
-                       const Epetra_Vector &x,
-                       Epetra_Operator &A )
+                       const Epetra_Vector & x,
+                       Epetra_Operator     & A )
 {
     // compute the values of the Jacobian
-    createJacobian ( x );
+    computeJacobian ( x, A );
 
     glKomplex_->getMatrix()->Scale ( alpha );
 
