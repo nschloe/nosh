@@ -321,13 +321,23 @@ writeContinuationStats ( const Teuchos::RCP<const ComplexVector> & psi )
     TEUCHOS_ASSERT( Gl_.getStatsWriter()->getList().is_valid_ptr()
                     && !Gl_.getStatsWriter()->getList().is_null() );
 
-    Gl_.getStatsWriter()->getList()->set( "0step",
-                                          stepper_->getStepNumber() );
-    Gl_.getStatsWriter()->getList()->set( "2#nonlinear steps",
-                                          stepper_->getSolver()->getNumIterations() );
-              
-    Gl_.appendStats( psi );
-                                          
+    Teuchos::RCP<Teuchos::ParameterList> paramList = Gl_.getStatsWriter()->getList();
+                    
+    paramList->set( "0step", stepper_->getStepNumber() );
+    paramList->set( "2#nonlinear steps", stepper_->getSolver()->getNumIterations() );
+  
+    // put the parameter list into statsWriter_
+    std::string labelPrepend = "1";
+    Ginla::Helpers::appendToTeuchosParameterList( *(Gl_.getStatsWriter()->getList()),
+                                                  *(Gl_.getOperator()->getParameters()),
+                                                  labelPrepend );
+
+    TEUCHOS_ASSERT( psi.is_valid_ptr() && !psi.is_null() );
+    
+    paramList->set( "2free energy", Ginla::Helpers::freeEnergy ( *psi, *(Gl_.getOperator()->getGrid()) ) );
+    paramList->set( "2||x||_2 scaled", Ginla::Helpers::normalizedScaledL2Norm ( *psi, *(Gl_.getOperator()->getGrid()) ) );
+    paramList->set( "2vorticity", Ginla::Helpers::getVorticity ( *psi, *(Gl_.getOperator()->getGrid()) ) );
+
     // actually print the data
     Gl_.getStatsWriter()->print();
 

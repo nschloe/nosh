@@ -123,25 +123,3 @@ GinzburgLandau::getJacobianRow ( const int                           eqnum,
     return;
 }
 // =============================================================================
-void
-GinzburgLandau::
-appendStats ( const Teuchos::RCP<const ComplexVector> & psi
-            ) const
-{ 
-    TEUCHOS_ASSERT( statsWriter_.is_valid_ptr() && !statsWriter_.is_null() );
-  
-    // put the parameter list into statsWriter_
-    std::string labelPrepend = "1";
-    Ginla::Helpers::appendToTeuchosParameterList( *(statsWriter_->getList()),
-                                               *(glOperator_->getParameters()),
-                                               labelPrepend );
-    
-    TEUCHOS_ASSERT( psi.is_valid_ptr() && !psi.is_null() );
-    
-    statsWriter_->getList()->set( "2free energy", Ginla::Helpers::freeEnergy ( *psi, *(glOperator_->getGrid()) ) );
-    statsWriter_->getList()->set( "2||x||_2 scaled", Ginla::Helpers::normalizedScaledL2Norm ( *psi, *(glOperator_->getGrid()) ) );
-    statsWriter_->getList()->set( "2vorticity", Ginla::Helpers::getVorticity ( *psi, *(glOperator_->getGrid()) ) );
-
-    return;
-}
-// =============================================================================

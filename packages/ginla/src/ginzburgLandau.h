@@ -38,7 +38,7 @@ public:
     /*! Constructor with a specified perturbation.*/
     GinzburgLandau ( const Teuchos::RCP<Ginla::Operator::Virtual>     & glOperator,
 	             const Teuchos::RCP<Ginla::Perturbation::Virtual> & perturbation,
-                     const std::string                             & outputFormat = "VTI"
+                     const std::string                                & outputFormat = "VTI"
                    );
 
     /*! Destructor. */
@@ -69,13 +69,6 @@ public:
 
     Teuchos::RCP<Ginla::Operator::Virtual>
     getOperator() const;
-                   
-    /*! Appends useful statistics about a given state \c psi to the \c ofstream
-     *  \c filestream.
-     */
-    void
-    appendStats ( const Teuchos::RCP<const ComplexVector> & psi = Teuchos::null
-                ) const;
 
 private:
 
