@@ -17,10 +17,10 @@
 
 */
 
-#include "Ginla_StatsWriter.h"
+#include "Ginla_IO_StatsWriter.h"
 
 // ============================================================================
-Ginla::StatsWriter::StatsWriter( std::string & fileName ):
+Ginla::IO::StatsWriter::StatsWriter( std::string & fileName ):
     fileStream_(),
     statisticsList_( Teuchos::rcp( new Teuchos::ParameterList() ) ),
     printHeader_( true )
@@ -34,20 +34,20 @@ Ginla::StatsWriter::StatsWriter( std::string & fileName ):
     return;
 }
 // ============================================================================
-Ginla::StatsWriter::~StatsWriter()
+Ginla::IO::StatsWriter::~StatsWriter()
 {
   fileStream_.close();
 }
 // ============================================================================
 Teuchos::RCP<Teuchos::ParameterList>
-Ginla::StatsWriter::
+Ginla::IO::StatsWriter::
 getList()
 {
     return statisticsList_; 
 }
 // ============================================================================
 void
-Ginla::StatsWriter::
+Ginla::IO::StatsWriter::
 setList( const Teuchos::RCP<Teuchos::ParameterList> statisticsList )
 {
     statisticsList_ = statisticsList;
@@ -55,7 +55,7 @@ setList( const Teuchos::RCP<Teuchos::ParameterList> statisticsList )
 }
 // ============================================================================
 void
-Ginla::StatsWriter::
+Ginla::IO::StatsWriter::
 print()
 { 
    int doublePrec = 15;

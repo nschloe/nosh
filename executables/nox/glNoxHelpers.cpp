@@ -42,7 +42,7 @@
 
 #include "Recti_Domain_Factory.h"
 
-#include "Ginla_StatsWriter.h"
+#include "Ginla_IO_StatsWriter.h"
 
 #include "Ginla_Operator_BCInner.h"
 #include "Ginla_Operator_BCOuter.h"
@@ -88,7 +88,7 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
     std::string contFileBaseName = "continuationStep";
     std::string outputFormat = "VTI";
     int numDigits = 4;
-    Teuchos::RCP<Ginla::StatsWriter> statsWriter = Teuchos::null;
+    Teuchos::RCP<Ginla::IO::StatsWriter> statsWriter = Teuchos::null;
     glSystem = Teuchos::rcp ( new Ginla::LocaSystem::Bordered ( glOperator,
                                                                 statsWriter,
                                                                 eComm,
@@ -147,7 +147,7 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
     std::string contFileBaseName = "continuationStep";
     std::string outputFormat = "VTI";
     int numDigits = 4;
-    Teuchos::RCP<Ginla::StatsWriter> statsWriter = Teuchos::null;
+    Teuchos::RCP<Ginla::IO::StatsWriter> statsWriter = Teuchos::null;
     glSystem = Teuchos::rcp ( new Ginla::LocaSystem::Bordered ( glOperator,
                                                                 statsWriter,
                                                                 eComm,

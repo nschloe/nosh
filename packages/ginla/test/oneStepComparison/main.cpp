@@ -23,7 +23,7 @@
 #include "Ginla_MagneticVectorPotential_Centered.h"
 #include "Ginla_Komplex.h"
 #include "Ginla_Operator_BCCentral.h"
-#include "Ginla_StatsWriter.h"
+#include "Ginla_IO_StatsWriter.h"
 #include "Ginla_IO_SaveEigenData.h"
 #include "Ginla_Helpers.h"
 #include "Ginla_LocaSystem_Bordered.h"
@@ -151,8 +151,8 @@ BOOST_AUTO_TEST_CASE( zero_step_loca_test )
         Teuchos::rcp ( new Ginla::Operator::BCCentral ( grid, A ) );
 
     std::string fn = outputDirectory.string() + "/" + contDataFileName;
-    Teuchos::RCP<Ginla::StatsWriter> statsWriter = 
-        Teuchos::rcp( new Ginla::StatsWriter( fn ) );
+    Teuchos::RCP<Ginla::IO::StatsWriter> statsWriter = 
+            Teuchos::rcp( new Ginla::IO::StatsWriter( fn ) );
 
     Teuchos::ParameterList & stepperList = paramList->sublist ( "LOCA" ).sublist ( "Stepper" );
     int maxLocaSteps = stepperList.get<int> ( "Max Steps" );

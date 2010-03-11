@@ -54,7 +54,7 @@ public:
 
     //! Constructor with initial guess.
     Bordered ( const Teuchos::RCP<Ginla::Operator::Virtual> & glOperator,
-               const Teuchos::RCP<Ginla::StatsWriter>       & statsWriter,
+               const Teuchos::RCP<Ginla::IO::StatsWriter>   & statsWriter,
                const Teuchos::RCP<const Epetra_Comm>        & eComm,
                const Teuchos::RCP<const ComplexVector>      & psi,
                const std::string & outputDir,

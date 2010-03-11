@@ -28,7 +28,7 @@
 #include "Ginla_LocaSystem_Bordered.h"
 #include "Ginla_IO_SaveEigenData.h"
 #include "Ginla_Helpers.h"
-#include "Ginla_StatsWriter.h"
+#include "Ginla_IO_StatsWriter.h"
 
 #include "Recti_Grid_Reader.h"
 
@@ -210,8 +210,8 @@ main ( int argc, char *argv[] )
 
 
     std::string fn = outputDirectory.string() + "/" + contDataFileName;
-    Teuchos::RCP<Ginla::StatsWriter> statsWriter = 
-        Teuchos::rcp( new Ginla::StatsWriter( fn ) );
+    Teuchos::RCP<Ginla::IO::StatsWriter> statsWriter = 
+        Teuchos::rcp( new Ginla::IO::StatsWriter( fn ) );
 
     Teuchos::RCP<Ginla::LocaSystem::Bordered> glsystem;
 

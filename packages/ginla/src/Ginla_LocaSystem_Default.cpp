@@ -29,7 +29,7 @@ typedef std::complex<double> double_complex;
 // Default constructor without perturbation
 Ginla::LocaSystem::Default::
 Default ( const Teuchos::RCP<Ginla::Operator::Virtual> & glOperator,
-          const Teuchos::RCP<Ginla::StatsWriter>       & statsWriter,
+          const Teuchos::RCP<Ginla::IO::StatsWriter>   & statsWriter,
           const Teuchos::RCP<const Epetra_Comm>        & eComm,
           const Teuchos::RCP<const ComplexVector>      & psi,
           const std::string & outputDir,
@@ -52,15 +52,13 @@ Default ( const Teuchos::RCP<Ginla::Operator::Virtual> & glOperator,
         firstTime_ ( true ),
         maxNumDigits_( maxNumDigits )
 {
-  return;
 }
 // =============================================================================
 // Destructor
 Ginla::LocaSystem::Default::~Default()
 {
     stepper_ = Teuchos::null;
-//     contFileStream.close();
-  return;
+    return;
 }
 // =============================================================================
 bool
@@ -268,8 +266,10 @@ Ginla::LocaSystem::Default::releaseLocaStepper()
 // =============================================================================
 // function used by LOCA
 void
-Ginla::LocaSystem::Default::printSolution ( const Epetra_Vector &x,
-                                         double conParam )
+Ginla::LocaSystem::Default::
+printSolution ( const  Epetra_Vector &x,
+                double conParam
+              )
 {
     // define vector
     const Teuchos::RCP<ComplexVector> psi =

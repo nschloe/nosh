@@ -6,7 +6,7 @@
 
 #include "AbstractStateWriter.h"
 #include "Ginla_Komplex.h"
-#include "Ginla_StatsWriter.h"
+#include "Ginla_IO_StatsWriter.h"
 #include "Ginla_Operator_Virtual.h"
 #include "Ginla_Perturbation_Virtual.h"
 
@@ -53,7 +53,7 @@ public:
 
     //! Constructor with initial guess.
     Default ( const Teuchos::RCP<Ginla::Operator::Virtual> & glOperator,
-              const Teuchos::RCP<Ginla::StatsWriter>       & statsWriter,
+              const Teuchos::RCP<Ginla::IO::StatsWriter>   & statsWriter,
               const Teuchos::RCP<const Epetra_Comm>        & eComm,
               const Teuchos::RCP<const ComplexVector>      & psi,
               const std::string & outputDir,
@@ -197,7 +197,7 @@ private:
     
     Teuchos::RCP<Epetra_Vector> initialSolution_;
     
-    const Teuchos::RCP<Ginla::StatsWriter> statsWriter_;
+    const Teuchos::RCP<Ginla::IO::StatsWriter> statsWriter_;
 
     const std::string outputFormat_;
     std::string outputDir_;
