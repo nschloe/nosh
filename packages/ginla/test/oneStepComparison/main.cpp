@@ -26,7 +26,6 @@
 #include "Ginla_StatsWriter.h"
 #include "Ginla_IO_SaveEigenData.h"
 #include "Ginla_Helpers.h"
-#include "ginzburgLandau.h"
 #include "Ginla_LocaSystem_Bordered.h"
 
 #include "Recti_Grid_Uniform.h"
@@ -155,25 +154,21 @@ BOOST_AUTO_TEST_CASE( zero_step_loca_test )
     Teuchos::RCP<Ginla::StatsWriter> statsWriter = 
         Teuchos::rcp( new Ginla::StatsWriter( fn ) );
 
-    GinzburgLandau glProblem = GinzburgLandau ( glOperator,
-                                                statsWriter,
-                                                outputFormat
-                                              );
-
-    Teuchos::RCP<Ginla::LocaSystem::Bordered> glsystem;
-
     Teuchos::ParameterList & stepperList = paramList->sublist ( "LOCA" ).sublist ( "Stepper" );
     int maxLocaSteps = stepperList.get<int> ( "Max Steps" );
 
     int numDigits = 1;
     
-    glsystem = Teuchos::rcp ( new Ginla::LocaSystem::Bordered ( glProblem,
-                              eComm,
-                              psi,
-                              outputDirectory.string(),
-                              contDataFileName,
-                              contFileBaseName,
-                              numDigits ) );
+    Teuchos::RCP<Ginla::LocaSystem::Bordered> glsystem =
+               Teuchos::rcp ( new Ginla::LocaSystem::Bordered ( glOperator,
+                                                                statsWriter,
+                                                                eComm,
+                                                                psi,
+                                                                outputDirectory.string(),
+                                                                contDataFileName,
+                                                                contFileBaseName,
+                                                                outputFormat,
+                                                                numDigits ) );
     
     // set the initial value from glParameters
     std::string contParam = stepperList.get<string> ( "Continuation Parameter" );

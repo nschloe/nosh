@@ -33,7 +33,6 @@
 
 #include <Teuchos_XMLParameterListHelpers.hpp>
 
-#include "ginzburgLandau.h"
 #include "Ginla_IO_SaveNewtonData.h"
 
 #include "Recti_Grid_Reader.h"
@@ -42,6 +41,8 @@
 #include "Ginla_LocaSystem_Bordered.h"
 
 #include "Recti_Domain_Factory.h"
+
+#include "Ginla_StatsWriter.h"
 
 #include "Ginla_Operator_BCInner.h"
 #include "Ginla_Operator_BCOuter.h"
@@ -76,12 +77,27 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
     // create the operator
     Teuchos::RCP<Ginla::Operator::Virtual> glOperator =
         Teuchos::rcp ( new Ginla::Operator::BCCentral ( grid, A ) );
-        
-    GinzburgLandau glProblem = GinzburgLandau ( glOperator );
 
     TEUCHOS_ASSERT_EQUALITY ( psi->getNumVectors(), 1 );
 
-    glSystem = Teuchos::rcp ( new Ginla::LocaSystem::Bordered ( glProblem, eComm, psi->getVector ( 0 ) ) );
+//     glSystem = Teuchos::rcp ( new Ginla::LocaSystem::Bordered ( glProblem, eComm, psi->getVector ( 0 ) ) );
+    
+    
+    std::string outputDirectory = "";
+    std::string contDataFileName = "continuationData.dat";
+    std::string contFileBaseName = "continuationStep";
+    std::string outputFormat = "VTI";
+    int numDigits = 4;
+    Teuchos::RCP<Ginla::StatsWriter> statsWriter = Teuchos::null;
+    glSystem = Teuchos::rcp ( new Ginla::LocaSystem::Bordered ( glOperator,
+                                                                statsWriter,
+                                                                eComm,
+                                                                psi->getVector ( 0 ),
+                                                                outputDirectory,
+                                                                contDataFileName,
+                                                                contFileBaseName,
+                                                                outputFormat,
+                                                                numDigits ) );
 
     return;
 }
@@ -118,8 +134,6 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
     // create the operator
     Teuchos::RCP<Ginla::Operator::Virtual> glOperator =
         Teuchos::rcp ( new Ginla::Operator::BCCentral ( grid, A ) );
-
-    GinzburgLandau glProblem = GinzburgLandau ( glOperator );
     
     // create an initial guess
     int numGlobalElements = grid->getNumGridPoints();
@@ -127,8 +141,22 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
     Teuchos::RCP<Tpetra::Map<Thyra::Ordinal> > map = Teuchos::rcp( new Tpetra::Map<Thyra::Ordinal>(numGlobalElements, indexBase, comm ) );
     Teuchos::RCP<ComplexVector> psi = Teuchos::rcp( new ComplexVector(map) );
     psi->putScalar( double_complex(0.5,0.0) );
-
-    glSystem = Teuchos::rcp ( new Ginla::LocaSystem::Bordered ( glProblem, eComm, psi ) );
+    
+    std::string outputDirectory = "";
+    std::string contDataFileName = "continuationData.dat";
+    std::string contFileBaseName = "continuationStep";
+    std::string outputFormat = "VTI";
+    int numDigits = 4;
+    Teuchos::RCP<Ginla::StatsWriter> statsWriter = Teuchos::null;
+    glSystem = Teuchos::rcp ( new Ginla::LocaSystem::Bordered ( glOperator,
+                                                                statsWriter,
+                                                                eComm,
+                                                                psi,
+                                                                outputDirectory,
+                                                                contDataFileName,
+                                                                contFileBaseName,
+                                                                outputFormat,
+                                                                numDigits ) );
 }
 // =========================================================================
 void

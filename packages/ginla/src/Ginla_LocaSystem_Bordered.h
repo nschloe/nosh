@@ -7,7 +7,6 @@
 #ifndef GL_LINEARSYSTEM_BORDERED_H_
 #define GL_LINEARSYSTEM_BORDERED_H_
 
-#include "ginzburgLandau.h"
 #include "AbstractStateWriter.h"
 #include "Ginla_Komplex.h"
 #include "Ginla_LocaSystem_Default.h"
@@ -54,13 +53,15 @@ class Bordered:
 public:
 
     //! Constructor with initial guess.
-    Bordered ( GinzburgLandau::GinzburgLandau &gl,
-               const Teuchos::RCP<const Epetra_Comm> eComm,
-               const Teuchos::RCP<const ComplexVector> psi,
-               const std::string outputDir = "data",
-               const std::string outputDataFileName = "continuationData.dat",
-               const std::string solutionFileNameBase = "solutionStep",
-               const unsigned int maxStepNumberDecimals = 4 );
+    Bordered ( const Teuchos::RCP<Ginla::Operator::Virtual> & glOperator,
+               const Teuchos::RCP<Ginla::StatsWriter>       & statsWriter,
+               const Teuchos::RCP<const Epetra_Comm>        & eComm,
+               const Teuchos::RCP<const ComplexVector>      & psi,
+               const std::string & outputDir,
+               const std::string & outputDataFileName,
+               const std::string & solutionFileNameBase,
+               const std::string & outputFormat,
+               const unsigned int maxStepNumberDecimals );
 
     //! Destructor
     ~Bordered();
@@ -203,7 +204,6 @@ private:
     Teuchos::RCP<Epetra_CrsMatrix> preconditioner_;
     const Teuchos::RCP<Epetra_Vector> solution_;
 
-    const unsigned int maxStepNumberDecimals_;
     std::string stepNumFileNameFormat_;
 
     bool firstTime_;

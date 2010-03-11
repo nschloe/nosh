@@ -20,7 +20,6 @@
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_DefaultComm.hpp>
 
-#include "ginzburgLandau.h"
 #include "Ginla_Operator_BCCentral.h"
 #include "Ginla_Operator_BCInner.h"
 
@@ -239,9 +238,6 @@ main ( int argc, char *argv[] )
     std::string fn = outputDirectory.string() + "/" + contDataFileName;
     Teuchos::RCP<Ginla::StatsWriter> statsWriter =
         Teuchos::rcp( new Ginla::StatsWriter( fn ) );
-    GinzburgLandau glProblem = GinzburgLandau ( glOperator,
-                                                statsWriter,
-                                                contFileFormat );
 
     Teuchos::RCP<Ginla::LocaSystem::Bordered> glsystem;
 
@@ -249,13 +245,16 @@ main ( int argc, char *argv[] )
     int maxLocaSteps = stepperList.get<int> ( "Max Steps" );
     try
     {
-        glsystem = Teuchos::rcp ( new Ginla::LocaSystem::Bordered ( glProblem,
-                                  eComm,
-                                  psi,
-                                  outputDirectory.string(),
-                                  contDataFileName,
-                                  contFileBaseName,
-                                  numDigits ( maxLocaSteps ) ) );
+        std::string outputFormat = "VTI";
+        glsystem = Teuchos::rcp ( new Ginla::LocaSystem::Bordered ( glOperator,
+                                                                   statsWriter,
+                                                                    eComm,
+                                                                    psi,
+                                                                    outputDirectory.string(),
+                                                                    contDataFileName,
+                                                                    contFileBaseName,
+                                                                    outputFormat,
+                                                                    numDigits( maxLocaSteps ) ) );
     }
     catch ( std::exception & e )
     {

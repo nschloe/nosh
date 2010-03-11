@@ -18,15 +18,9 @@
 #include <NOX_StatusTest_NormF.H>
 #include <NOX_StatusTest_MaxIters.H>
 #include <NOX_StatusTest_Combo.H>
-// #include <NOX_Epetra_Group.H>
 
-#include "Ginla_MagneticVectorPotential_Centered.h"
-#include "Ginla_Komplex.h"
-#include "Ginla_Operator_BCCentral.h"
-#include "Ginla_StatsWriter.h"
-#include "Ginla_IO_SaveEigenData.h"
 #include "Ginla_Helpers.h"
-#include "ginzburgLandau.h"
+
 #include "Ginla_LocaSystem_Bordered.h"
 
 #include "Recti_Grid_Uniform.h"

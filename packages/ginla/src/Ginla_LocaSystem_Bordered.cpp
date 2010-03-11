@@ -36,21 +36,29 @@ typedef std::complex<double> double_complex;
 // =============================================================================
 // Default constructor
 Ginla::LocaSystem::Bordered::
-Bordered ( GinzburgLandau::GinzburgLandau &gl,
-           const Teuchos::RCP<const Epetra_Comm> eComm,
-           const Teuchos::RCP<const ComplexVector> psi,
-           const std::string outputDir,
-           const std::string outputDataFileName,
-           const std::string solutionFileNameBase,
+Bordered ( const Teuchos::RCP<Ginla::Operator::Virtual> & glOperator,
+           const Teuchos::RCP<Ginla::StatsWriter>       & statsWriter,
+           const Teuchos::RCP<const Epetra_Comm>        & eComm,
+           const Teuchos::RCP<const ComplexVector>      & psi,
+           const std::string & outputDir,
+           const std::string & outputDataFileName,
+           const std::string & solutionFileNameBase,
+           const std::string & outputFormat,
            const unsigned int maxStepNumberDecimals
          ) :
-        glSystem_ ( gl, eComm, psi, outputDir, outputDataFileName,
-                    solutionFileNameBase, maxStepNumberDecimals ),
+        glSystem_ ( glOperator,
+                    statsWriter,
+                    eComm,
+                    psi,
+                    outputDir,
+                    outputDataFileName,
+                    solutionFileNameBase,
+                    outputFormat,
+                    maxStepNumberDecimals ),
         regularMap_ (  glSystem_.getRealMap() ),
         extendedMap_ ( createExtendedRealMap ( *regularMap_ ) ),
         jacobian_ ( new Epetra_CrsMatrix ( Copy, *extendedMap_, 0 ) ),
         solution_ ( new Epetra_Vector ( *extendedMap_ ) ),
-        maxStepNumberDecimals_ ( maxStepNumberDecimals ),
         firstTime_ ( true ),
         importFromExtendedMap_(  Epetra_Import(*regularMap_,*extendedMap_) ),
         importFromRegularMap_( Epetra_Import(*extendedMap_,*regularMap_) )

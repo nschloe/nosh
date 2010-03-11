@@ -4,10 +4,11 @@
 #ifndef GLSYSTEM_H
 #define GLSYSTEM_H
 
-#include "ginzburgLandau.h"
 #include "AbstractStateWriter.h"
 #include "Ginla_Komplex.h"
 #include "Ginla_StatsWriter.h"
+#include "Ginla_Operator_Virtual.h"
+#include "Ginla_Perturbation_Virtual.h"
 
 #include <Epetra_Comm.h>
 #include <Epetra_Map.h>
@@ -51,13 +52,16 @@ class Default:
 public:
 
     //! Constructor with initial guess.
-    Default ( GinzburgLandau::GinzburgLandau &gl,
-               const Teuchos::RCP<const Epetra_Comm> eComm,
-               const Teuchos::RCP<const ComplexVector> psi,
-               const std::string outputDir,
-               const std::string outputDataFileName,
-               const std::string solutionFileNameBase,
-               const unsigned int maxStepNumberDecimals );
+    Default ( const Teuchos::RCP<Ginla::Operator::Virtual> & glOperator,
+              const Teuchos::RCP<Ginla::StatsWriter>       & statsWriter,
+              const Teuchos::RCP<const Epetra_Comm>        & eComm,
+              const Teuchos::RCP<const ComplexVector>      & psi,
+              const std::string & outputDir,
+              const std::string & outputDataFileName,
+              const std::string & solutionFileNameBase,
+              const std::string & outputFormat,
+              const unsigned int maxNumDigits
+            );
 
     //! Destructor
     ~Default();
@@ -69,6 +73,9 @@ public:
                Epetra_Vector &F,
                const NOX::Epetra::Interface::Required::FillType fillFlag = Residual );
 
+    Teuchos::RCP<ComplexVector>
+    computeGlVector ( const Teuchos::RCP<const ComplexVector> & psi ) const;
+               
     //! Evaluate the Jacobian matrix of the Ginzburg--Landau problem
     //! at a given state defined by the input vector x.
     virtual bool
@@ -180,25 +187,29 @@ private:
 
 
 private:
-
-    continuationType continuationType_;
+    const Teuchos::RCP<Ginla::Operator::Virtual> glOperator_;
+    const Teuchos::RCP<Ginla::Perturbation::Virtual> perturbation_;
+    Teuchos::RCP<Epetra_CrsMatrix> preconditioner_;
 
     Teuchos::RCP<const LOCA::Stepper> stepper_;
 
     Teuchos::RCP<Ginla::Komplex> glKomplex_;
-
-    GinzburgLandau Gl_;
-    Teuchos::RCP<Epetra_CrsMatrix> preconditioner_;
+    
     Teuchos::RCP<Epetra_Vector> initialSolution_;
+    
+    const Teuchos::RCP<Ginla::StatsWriter> statsWriter_;
 
+    const std::string outputFormat_;
     std::string outputDir_;
     const std::string solutionFileNameBase_;
     const std::string outputFileFormat_;
     const std::string outputDataFileName_;
-
+    
     bool firstTime_;
     
-    unsigned int maxNumDigits_;
+    unsigned int maxNumDigits_; 
+    
+    continuationType continuationType_;
 };
 
   } // namespace LocaSystem

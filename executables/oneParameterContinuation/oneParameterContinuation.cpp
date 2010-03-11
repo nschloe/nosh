@@ -20,7 +20,6 @@
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_DefaultComm.hpp>
 
-#include "ginzburgLandau.h"
 #include "Ginla_Operator_BCCentral.h"
 #include "Ginla_Operator_BCInner.h"
 
@@ -214,11 +213,6 @@ main ( int argc, char *argv[] )
     Teuchos::RCP<Ginla::StatsWriter> statsWriter = 
         Teuchos::rcp( new Ginla::StatsWriter( fn ) );
 
-    GinzburgLandau glProblem = GinzburgLandau ( glOperator,
-                                                statsWriter,
-                                                outputFormat
-                                              );
-
     Teuchos::RCP<Ginla::LocaSystem::Bordered> glsystem;
 
     Teuchos::ParameterList & stepperList = paramList->sublist ( "LOCA" ).sublist ( "Stepper" );
@@ -226,13 +220,16 @@ main ( int argc, char *argv[] )
 
     try
     {
-        glsystem = Teuchos::rcp ( new Ginla::LocaSystem::Bordered ( glProblem,
-                                  eComm,
-                                  psi,
-                                  outputDirectory.string(),
-                                  contDataFileName,
-                                  contFileBaseName,
-                                  numDigits ( maxLocaSteps ) ) );
+      std::cout << psi->getNumVectors() << std::endl;
+        glsystem = Teuchos::rcp ( new Ginla::LocaSystem::Bordered ( glOperator,
+                                                                    statsWriter,
+                                                                    eComm,
+                                                                    psi,
+                                                                    outputDirectory.string(),
+                                                                    contDataFileName,
+                                                                    contFileBaseName,
+                                                                    outputFormat,
+                                                                    numDigits( maxLocaSteps ) ) );
     }
     catch ( std::exception & e )
     {

@@ -26,21 +26,26 @@
 typedef std::complex<double> double_complex;
 
 // =============================================================================
-// Default constructor
+// Default constructor without perturbation
 Ginla::LocaSystem::Default::
-Default ( GinzburgLandau::GinzburgLandau          & gl,
-          const Teuchos::RCP<const Epetra_Comm>     eComm,
-          const Teuchos::RCP<const ComplexVector>   psi,
-          const std::string outputDir,
-          const std::string outputDataFileName,
-          const std::string solutionFileNameBase,
+Default ( const Teuchos::RCP<Ginla::Operator::Virtual> & glOperator,
+          const Teuchos::RCP<Ginla::StatsWriter>       & statsWriter,
+          const Teuchos::RCP<const Epetra_Comm>        & eComm,
+          const Teuchos::RCP<const ComplexVector>      & psi,
+          const std::string & outputDir,
+          const std::string & outputDataFileName,
+          const std::string & solutionFileNameBase,
+          const std::string & outputFormat,
           const unsigned int maxNumDigits
-        ) :
-        stepper_ ( Teuchos::null ),
-        glKomplex_ ( Teuchos::rcp ( new Ginla::Komplex ( eComm,psi->getMap() ) ) ),
-        Gl_ ( gl ),
+          ) :
+        glOperator_ ( glOperator ),
+        perturbation_ ( Teuchos::null ),
         preconditioner_( Teuchos::null ),
+        stepper_ ( Teuchos::null ),
+        glKomplex_ ( Teuchos::rcp ( new Ginla::Komplex ( eComm, psi->getMap() ) ) ),
         initialSolution_ ( glKomplex_->complex2real ( psi ) ),
+        statsWriter_( statsWriter ),
+        outputFormat_( outputFormat ),
         outputDir_ ( outputDir ),
         solutionFileNameBase_ ( solutionFileNameBase ),
         outputDataFileName_ ( outputDataFileName ),
@@ -77,13 +82,42 @@ computeF ( const Epetra_Vector &x,
     const Teuchos::RCP<ComplexVector> psi = glKomplex_->real2complex ( x );
 
     // compute the GL residual
-    Teuchos::RCP<ComplexVector> res = Gl_.computeGlVector ( psi );
+    Teuchos::RCP<ComplexVector> res = computeGlVector ( psi );
 
     // TODO Avoid this explicit copy.
     // transform back to fully real equation
     FVec = * ( glKomplex_->complex2real ( *res ) );
 
     return true;
+}
+// =============================================================================
+Teuchos::RCP<ComplexVector>
+Ginla::LocaSystem::Default::
+computeGlVector ( const Teuchos::RCP<const ComplexVector> & psi ) const
+{
+    TEST_FOR_EXCEPTION ( !psi.is_valid_ptr() || psi.is_null(),
+                         std::logic_error,
+                         "Input argument 'psi' not properly initialized." );
+    
+    // setup output vector with the same map as psi
+    Teuchos::RCP<ComplexVector> glVec =
+        Teuchos::rcp ( new ComplexVector ( psi->getMap(), true ) );
+
+    // TODO not really necessary
+    glOperator_->updatePsi ( psi );
+
+    Teuchos::ArrayRCP<double_complex> glVecView = glVec->get1dViewNonConst();
+    // loop over the nodes
+    for ( unsigned int k=0; k<psi->getLocalLength(); k++ )
+    {
+        int globalIndex = psi->getMap()->getGlobalElement ( k );
+        glVecView[k] = glOperator_->getEntry ( globalIndex );
+
+        if ( !perturbation_.is_null() )
+            glVecView[k] += perturbation_->computePerturbation ( globalIndex );
+    }
+
+    return glVec;
 }
 // =============================================================================
 bool
@@ -97,9 +131,11 @@ computeJacobian ( const Epetra_Vector & x,
     return true;
 }
 // =============================================================================
-bool Ginla::LocaSystem::Default::computePreconditioner ( const Epetra_Vector &x,
-                                       Epetra_Operator &Prec,
-                                       Teuchos::ParameterList *precParams )
+bool
+Ginla::LocaSystem::Default::
+computePreconditioner ( const Epetra_Vector &x,
+                        Epetra_Operator &Prec,
+                        Teuchos::ParameterList *precParams )
 {
 //  Epetra_Vector diag = x;
 //  diag.PutScalar(1.0);
@@ -131,7 +167,8 @@ Ginla::LocaSystem::Default::getPreconditioner() const
 }
 // =============================================================================
 void
-Ginla::LocaSystem::Default::createJacobian ( const Epetra_Vector &x )
+Ginla::LocaSystem::Default::
+createJacobian ( const Epetra_Vector &x )
 {
     Teuchos::Array<int> indicesA, indicesB;
     Teuchos::Array<double_complex> valuesA, valuesB;
@@ -140,13 +177,18 @@ Ginla::LocaSystem::Default::createJacobian ( const Epetra_Vector &x )
 
     Teuchos::RCP<ComplexVector> psi = glKomplex_->real2complex ( x );
 
+    // update to the latest psi vector before retrieving the Jacobian
+    glOperator_->updatePsi ( psi );
+    
     // loop over the rows and fill the matrix
     int numMyElements = glKomplex_->getComplexMap()->getNodeNumElements();
     for ( int row = 0; row < numMyElements; row++ )
     {
         int globalRow = glKomplex_->getComplexMap()->getGlobalElement ( row );
-        // get the values from Gl_
-        Gl_.getJacobianRow ( globalRow, psi, indicesA, valuesA, indicesB, valuesB );
+        // get the values from the operator
+        glOperator_->getJacobianRow ( globalRow,
+                                            indicesA, valuesA,
+                                            indicesB, valuesB );
         // ... and fill them into glKomplex_
         glKomplex_->updateRow ( globalRow, indicesA, valuesA, indicesB, valuesB, firstTime_ );
     }
@@ -187,7 +229,13 @@ computeShiftedMatrix ( double alpha,
 void
 Ginla::LocaSystem::Default::setParameters ( const LOCA::ParameterVector & p )
 {
-  Gl_.setParameters( p );
+    TEUCHOS_ASSERT( glOperator_.is_valid_ptr() && !glOperator_.is_null() );
+    glOperator_->setParameters ( p );
+    
+    if ( perturbation_.is_valid_ptr() && !perturbation_.is_null() )
+        perturbation_->setParameters ( p );
+
+    return;
 }
 // =============================================================================
 void
@@ -259,8 +307,8 @@ printSolutionOneParameterContinuation ( const Teuchos::RCP<const ComplexVector> 
         
     // actually print the state to fileName
     Ginla::Helpers::writeStateToFile( psi,
-                                      Gl_.getOperator()->getGrid(),
-                                      *(Gl_.getOperator()->getParameters()),
+                                      glOperator_->getGrid(),
+                                      *(glOperator_->getParameters()),
                                       baseName.str(),
                                       "VTI" );
 
@@ -303,8 +351,8 @@ printSolutionTurningPointContinuation ( const Teuchos::RCP<const ComplexVector> 
     
     // actually print the state to fileName
     Ginla::Helpers::writeStateToFile( psi,
-                                      Gl_.getOperator()->getGrid(),
-                                      *(Gl_.getOperator()->getParameters()),
+                                      glOperator_->getGrid(),
+                                      *(glOperator_->getParameters()),
                                       baseName.str(),
                                       "VTI" );
 
@@ -315,31 +363,31 @@ void
 Ginla::LocaSystem::Default::
 writeContinuationStats ( const Teuchos::RCP<const ComplexVector> & psi )
 {   
-    TEUCHOS_ASSERT( Gl_.getStatsWriter().is_valid_ptr()
-                    && !Gl_.getStatsWriter().is_null() );
+    TEUCHOS_ASSERT( statsWriter_.is_valid_ptr()
+                    && !statsWriter_.is_null() );
 
-    TEUCHOS_ASSERT( Gl_.getStatsWriter()->getList().is_valid_ptr()
-                    && !Gl_.getStatsWriter()->getList().is_null() );
+    TEUCHOS_ASSERT( statsWriter_->getList().is_valid_ptr()
+                    && !statsWriter_->getList().is_null() );
 
-    Teuchos::RCP<Teuchos::ParameterList> paramList = Gl_.getStatsWriter()->getList();
+    Teuchos::RCP<Teuchos::ParameterList> paramList = statsWriter_->getList();
                     
     paramList->set( "0step", stepper_->getStepNumber() );
     paramList->set( "2#nonlinear steps", stepper_->getSolver()->getNumIterations() );
   
     // put the parameter list into statsWriter_
     std::string labelPrepend = "1";
-    Ginla::Helpers::appendToTeuchosParameterList( *(Gl_.getStatsWriter()->getList()),
-                                                  *(Gl_.getOperator()->getParameters()),
+    Ginla::Helpers::appendToTeuchosParameterList( *(statsWriter_->getList()),
+                                                  *(glOperator_->getParameters()),
                                                   labelPrepend );
 
     TEUCHOS_ASSERT( psi.is_valid_ptr() && !psi.is_null() );
     
-    paramList->set( "2free energy", Ginla::Helpers::freeEnergy ( *psi, *(Gl_.getOperator()->getGrid()) ) );
-    paramList->set( "2||x||_2 scaled", Ginla::Helpers::normalizedScaledL2Norm ( *psi, *(Gl_.getOperator()->getGrid()) ) );
-    paramList->set( "2vorticity", Ginla::Helpers::getVorticity ( *psi, *(Gl_.getOperator()->getGrid()) ) );
+    paramList->set( "2free energy", Ginla::Helpers::freeEnergy ( *psi, *(glOperator_->getGrid()) ) );
+    paramList->set( "2||x||_2 scaled", Ginla::Helpers::normalizedScaledL2Norm ( *psi, *(glOperator_->getGrid()) ) );
+    paramList->set( "2vorticity", Ginla::Helpers::getVorticity ( *psi, *(glOperator_->getGrid()) ) );
 
     // actually print the data
-    Gl_.getStatsWriter()->print();
+    statsWriter_->print();
 
     return;
 }
@@ -358,8 +406,8 @@ writeSolutionToFile ( const Epetra_Vector & x,
 {   
     // TODO: Remove the need for several real2complex calls per step.
     Ginla::Helpers::writeStateToFile( glKomplex_->real2complex ( x ),
-                                      Gl_.getOperator()->getGrid(),
-                                      *(Gl_.getOperator()->getParameters()),
+                                      glOperator_->getGrid(),
+                                      *(glOperator_->getParameters()),
                                       filePath,
                                       "VTI" );
     return;
@@ -374,7 +422,7 @@ writeAbstractStateToFile ( const Epetra_Vector & x,
     // TODO: Remove the need for several real2complex calls per step.
     LOCA::ParameterVector empty;
     Ginla::Helpers::writeStateToFile( glKomplex_->real2complex ( x ),
-                                      Gl_.getOperator()->getGrid(),
+                                      glOperator_->getGrid(),
                                       empty,
                                       filePath,
                                       "VTI" );

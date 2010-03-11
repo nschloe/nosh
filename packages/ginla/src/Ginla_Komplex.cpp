@@ -104,7 +104,8 @@ Ginla::Komplex::real2complex ( const Epetra_Vector & x ) const
 // =============================================================================
 // converts a real-valued vector to a complex-valued psi vector
 Teuchos::RCP<Epetra_Vector>
-Ginla::Komplex::complex2real ( const ComplexVector & complexVec ) const
+Ginla::Komplex::
+complex2real ( const ComplexVector & complexVec ) const
 {
     TEUCHOS_ASSERT ( ComplexMap_.is_valid_ptr()
                      && !ComplexMap_.is_null()
@@ -123,14 +124,17 @@ Ginla::Komplex::complex2real ( const ComplexVector & complexVec ) const
 }
 // =============================================================================
 Teuchos::RCP<Epetra_Vector>
-Ginla::Komplex::complex2real ( const Teuchos::RCP<const ComplexVector> & complexVecPtr ) const
+Ginla::Komplex::
+complex2real ( const Teuchos::RCP<const ComplexVector> & complexVecPtr ) const
 {
+  
     TEUCHOS_ASSERT ( complexVecPtr.is_valid_ptr() && !complexVecPtr.is_null() );
     return complex2real ( *complexVecPtr );
 }
 // =============================================================================
 Teuchos::RCP<Epetra_Map>
-Ginla::Komplex::createRealMap ( const Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> > & ComplexMap ) const
+Ginla::Komplex::
+createRealMap ( const Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> > & ComplexMap ) const
 {
     TEST_FOR_EXCEPTION ( !ComplexMap.is_valid_ptr() || ComplexMap.is_null(),
                          std::logic_error,
@@ -161,7 +165,8 @@ Ginla::Komplex::createRealMap ( const Teuchos::RCP<const Tpetra::Map<Thyra::Ordi
 }
 // =============================================================================
 Teuchos::RCP<const Teuchos::Comm<int> >
-Ginla::Komplex::create_CommInt ( const Teuchos::RCP<const Epetra_Comm> &epetraComm )
+Ginla::Komplex::
+create_CommInt ( const Teuchos::RCP<const Epetra_Comm> &epetraComm )
 {
     using Teuchos::RCP;
     using Teuchos::rcp;
@@ -210,13 +215,14 @@ Ginla::Komplex::zeroOutMatrix()
 }
 // =============================================================================
 void
-Ginla::Komplex::updateRow ( const unsigned int                      row,
-                       const Teuchos::Array<int>             & indicesA,
-                       const Teuchos::Array<double_complex>  & valuesA,
-                       const Teuchos::Array<int>             & indicesB,
-                       const Teuchos::Array<double_complex>  & valuesB,
-                       const bool                              firstTime
-                     )
+Ginla::Komplex::
+updateRow ( const unsigned int                      row,
+            const Teuchos::Array<int>             & indicesA,
+            const Teuchos::Array<double_complex>  & valuesA,
+            const Teuchos::Array<int>             & indicesB,
+            const Teuchos::Array<double_complex>  & valuesB,
+            const bool                              firstTime
+          )
 {
     TEUCHOS_ASSERT ( realMatrix_.is_valid_ptr() && !realMatrix_.is_null() );
     TEUCHOS_ASSERT_INEQUALITY ( row, <, ComplexMap_->getGlobalNumElements() );
@@ -368,16 +374,17 @@ Ginla::Komplex::updateRow ( const unsigned int                      row,
 }
 // =============================================================================
 int
-Ginla::Komplex::PutRow ( int Row, int & numIndices, double * values, int * indices, bool firstTime )
+Ginla::Komplex::
+PutRow ( int Row,
+         int & numIndices,
+         double * values,
+         int * indices,
+         bool firstTime )
 {
     if ( firstTime )
-    {
         return realMatrix_->InsertGlobalValues ( Row, numIndices, values, indices );
-    }
     else
-    {
         return realMatrix_->SumIntoGlobalValues ( Row, numIndices, values, indices );
-    }
 }
 // =============================================================================
 Teuchos::RCP<Epetra_CrsMatrix>
@@ -411,8 +418,8 @@ Ginla::Komplex::getMatrix() const
 //}
 // =============================================================================
 Teuchos::RCP<Epetra_Vector>
-Ginla::Komplex::imagScalarProductCoeff ( const Teuchos::RCP<const ComplexVector> a
-                                  ) const
+Ginla::Komplex::
+imagScalarProductCoeff ( const Teuchos::RCP<const ComplexVector> a ) const
 {
     TEUCHOS_ASSERT ( a.is_valid_ptr() && !a.is_null() );
     TEUCHOS_ASSERT ( a->getMap()->isSameAs ( *ComplexMap_ ) );
