@@ -21,9 +21,10 @@
 // #include <NOX_Epetra_Group.H>
 
 #include "Ginla_MagneticVectorPotential_Centered.h"
-#include "Ginla_Komplex.h"
+// #include "Ginla_Komplex.h"
 #include "Ginla_Operator_BCCentral.h"
 #include "Ginla_IO_StatsWriter.h"
+#include "Ginla_IO_StateWriter.h"
 #include "Ginla_IO_SaveEigenData.h"
 #include "Ginla_Helpers.h"
 #include "Ginla_LocaSystem_Bordered.h"
@@ -156,19 +157,19 @@ BOOST_AUTO_TEST_CASE( zero_step_loca_test )
 
     Teuchos::ParameterList & stepperList = paramList->sublist ( "LOCA" ).sublist ( "Stepper" );
     int maxLocaSteps = stepperList.get<int> ( "Max Steps" );
-
-    int numDigits = 1;
+        
+    Teuchos::RCP<Ginla::IO::StateWriter> stateWriter =
+        Teuchos::rcp( new Ginla::IO::StateWriter( outputDirectory.string(),
+                                                  contFileBaseName,
+                                                  outputFormat,
+                                                  maxLocaSteps ) );
     
     Teuchos::RCP<Ginla::LocaSystem::Bordered> glsystem =
                Teuchos::rcp ( new Ginla::LocaSystem::Bordered ( glOperator,
-                                                                statsWriter,
                                                                 eComm,
                                                                 psi,
-                                                                outputDirectory.string(),
-                                                                contDataFileName,
-                                                                contFileBaseName,
-                                                                outputFormat,
-                                                                numDigits ) );
+                                                                statsWriter,
+                                                                stateWriter ) );
     
     // set the initial value from glParameters
     std::string contParam = stepperList.get<string> ( "Continuation Parameter" );
@@ -208,14 +209,18 @@ BOOST_AUTO_TEST_CASE( zero_step_loca_test )
         outputList.get<string> ( "Eigenvalues file name" );
     std::string eigenstateFileNameAppendix =
         outputList.get<string> ( "Eigenstate file name appendix" );
-    Teuchos::RCP<Ginla::IO::SaveEigenData> glEigenSaver =
-        Teuchos::RCP<Ginla::IO::SaveEigenData> ( new Ginla::IO::SaveEigenData ( eigenListPtr, outputDirectory.string(),
-                                   eigenvaluesFileName, contFileBaseName,
-                                   eigenstateFileNameAppendix, glsystem,
-                                   numDigits ) );
 
-    Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> glSaveEigenDataStrategy =
-        glEigenSaver;
+    Teuchos::RCP<Ginla::IO::StatsWriter> eigenStatsWriter =
+        Teuchos::rcp( new Ginla::IO::StatsWriter( eigenvaluesFileName ) );
+
+    Teuchos::RCP<Ginla::IO::SaveEigenData> glEigenSaver =    
+        Teuchos::RCP<Ginla::IO::SaveEigenData> ( new Ginla::IO::SaveEigenData ( eigenListPtr,
+                                                                                grid,
+                                                                                glsystem->getGlKomplex(),
+                                                                                eigenStatsWriter,
+                                                                                stateWriter ) );
+
+    Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> glSaveEigenDataStrategy = glEigenSaver;
     eigenList.set ( "glSaveEigenDataStrategy", glSaveEigenDataStrategy );
 #endif
 

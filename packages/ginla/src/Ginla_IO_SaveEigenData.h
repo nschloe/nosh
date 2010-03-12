@@ -10,7 +10,9 @@
 
 #include <Teuchos_ParameterList.hpp>
 
-#include "AbstractStateWriter.h"
+#include "Ginla_Komplex.h"
+#include "Ginla_IO_StateWriter.h"
+#include "Ginla_IO_StatsWriter.h"
 
 namespace Ginla {
   namespace IO {
@@ -28,15 +30,13 @@ class SaveEigenData:
 //      const Teuchos::RCP<Teuchos::ParameterList>& eigenParams      );
 
    // Constructor
-   SaveEigenData( Teuchos::RCP<Teuchos::ParameterList> & eigenParams,
-                  const std::string outputDir,
-                  const std::string eigenvaluesFileName,
-                  const std::string contFileBaseName,
-                  const std::string eigenstateFileNameAppendix,
-                  const Teuchos::RCP<AbstractStateWriter> glSys,
-                  const unsigned int maxNumDigits
-                );
-               
+   SaveEigenData ( Teuchos::RCP<Teuchos::ParameterList>           & eigenParamList,
+                   const Teuchos::RCP<const Recti::Grid::General> & grid,
+                   const Teuchos::RCP<const Ginla::Komplex>       & komplex,
+                   const Teuchos::RCP<Ginla::IO::StatsWriter>     & statsWriter,
+                   const Teuchos::RCP<Ginla::IO::StateWriter>     & stateWriter
+                 );
+              
    virtual
    ~SaveEigenData();
 
@@ -57,11 +57,10 @@ class SaveEigenData:
  protected:
   private:
     Teuchos::RCP<Teuchos::ParameterList> eigenParamList_;
-    std::string outputDir_;
-    std::string eigenvaluesFilePath_;
-    std::string contFileBaseName_;
-    std::string eigenstateFileNameAppendix_;
-    Teuchos::RCP<AbstractStateWriter> stateWriter_;
+    const Teuchos::RCP<const Recti::Grid::General> grid_;
+    const Teuchos::RCP<const Ginla::Komplex> komplex_;
+    Teuchos::RCP<Ginla::IO::StatsWriter> statsWriter_;
+    Teuchos::RCP<Ginla::IO::StateWriter> stateWriter_;
     Teuchos::RCP<LOCA::Stepper> locaStepper_;
 
     //! The minimum number of stable eigenvalues that is to be computed in each step.

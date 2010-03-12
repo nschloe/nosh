@@ -6,7 +6,8 @@
 #include <NOX_Utils.H>
 #include <Teuchos_ParameterList.hpp>
 
-#include "AbstractStateWriter.h"
+#include "Ginla_IO_StateWriter.h"
+#include "Ginla_Komplex.h"
 
 namespace Ginla {
   namespace IO {
@@ -18,9 +19,10 @@ class SaveNewtonData:
 public:
 
   //! Constructor.
-  SaveNewtonData( const Teuchos::RCP<const AbstractStateWriter> & stateWriter,
-                  const std::string                             & outputDir 
-                );
+  SaveNewtonData ( const Teuchos::RCP<const Ginla::IO::StateWriter> & stateWriter,
+                   const Teuchos::RCP<const Recti::Grid::General>   & grid,
+                   const Teuchos::RCP<const Ginla::Komplex>         & komplex
+                 );
 
   //! Destructor.
   ~SaveNewtonData();
@@ -36,8 +38,9 @@ private:
   //! How ofter the function has been invoked yet.
   int numRunPreIterate;
 
-  const Teuchos::RCP<const AbstractStateWriter> stateWriter_;
-  std::string                                   outputDir_;
+  const Teuchos::RCP<const Ginla::IO::StateWriter> stateWriter_;
+  const Teuchos::RCP<const Recti::Grid::General>   grid_;
+  const Teuchos::RCP<const Ginla::Komplex>         komplex_;
 };
 
   } // namespace IO

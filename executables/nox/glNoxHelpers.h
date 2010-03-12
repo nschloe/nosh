@@ -24,7 +24,9 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
                  const Teuchos::RCP<const Epetra_Comm>         & eComm,
                  const std::string                             & fileName,
                  Teuchos::ParameterList                        & problemParameters,
-                 Teuchos::RCP<Ginla::LocaSystem::Bordered>      & glSystem );
+                 Teuchos::RCP<Ginla::LocaSystem::Bordered>     & glSystem,
+                 Teuchos::RCP<Recti::Grid::Uniform>            & grid
+               );
 
 void
 createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
@@ -34,12 +36,8 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
                  const double H0,
                  const Teuchos::ParameterList               & domainParameters,
                  Teuchos::ParameterList                     & problemParameters,
-                 Teuchos::RCP<Ginla::LocaSystem::Bordered>  & glSystem );
-
-void
-setPrePostWriter ( Teuchos::ParameterList                        & noxParaList,
-                   const Teuchos::RCP<const AbstractStateWriter> & asw,
-                   const std::string                             & outputDir );
+                 Teuchos::RCP<Ginla::LocaSystem::Bordered>  & glSystem,
+                 Teuchos::RCP<Recti::Grid::Uniform>         & grid );
 
 Teuchos::RCP<NOX::Epetra::Group>
 createSolverGroup ( const Teuchos::RCP<Ginla::LocaSystem::Bordered> glSystem,

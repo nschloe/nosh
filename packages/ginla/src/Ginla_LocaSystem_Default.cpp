@@ -29,14 +29,10 @@ typedef std::complex<double> double_complex;
 // Default constructor without perturbation
 Ginla::LocaSystem::Default::
 Default ( const Teuchos::RCP<Ginla::Operator::Virtual> & glOperator,
-          const Teuchos::RCP<Ginla::IO::StatsWriter>   & statsWriter,
           const Teuchos::RCP<const Epetra_Comm>        & eComm,
           const Teuchos::RCP<const ComplexVector>      & psi,
-          const std::string & outputDir,
-          const std::string & outputDataFileName,
-          const std::string & solutionFileNameBase,
-          const std::string & outputFormat,
-          const unsigned int maxNumDigits
+          const Teuchos::RCP<Ginla::IO::StatsWriter>   & statsWriter,
+          const Teuchos::RCP<Ginla::IO::StateWriter>   & stateWriter
           ) :
         glOperator_ ( glOperator ),
         perturbation_ ( Teuchos::null ),
@@ -45,12 +41,8 @@ Default ( const Teuchos::RCP<Ginla::Operator::Virtual> & glOperator,
         glKomplex_ ( Teuchos::rcp ( new Ginla::Komplex ( eComm, psi->getMap() ) ) ),
         initialSolution_ ( glKomplex_->complex2real ( psi ) ),
         statsWriter_( statsWriter ),
-        outputFormat_( outputFormat ),
-        outputDir_ ( outputDir ),
-        solutionFileNameBase_ ( solutionFileNameBase ),
-        outputDataFileName_ ( outputDataFileName ),
-        firstTime_ ( true ),
-        maxNumDigits_( maxNumDigits )
+        stateWriter_( stateWriter ),
+        firstTime_ ( true )
 {
 }
 // =============================================================================
@@ -84,7 +76,7 @@ computeF ( const Epetra_Vector & x,
     Teuchos::RCP<ComplexVector> res =
         Teuchos::rcp ( new ComplexVector ( psi->getMap(), true ) );
 
-    // TODO not really necessary
+    // TODO not really necessary?
     glOperator_->updatePsi ( psi );
 
     Teuchos::ArrayRCP<double_complex> resView = res->get1dViewNonConst();
@@ -205,7 +197,8 @@ computeShiftedMatrix ( double alpha,
 // =============================================================================
 // function used by LOCA
 void
-Ginla::LocaSystem::Default::setParameters ( const LOCA::ParameterVector & p )
+Ginla::LocaSystem::Default::
+setParameters ( const LOCA::ParameterVector & p )
 {
     TEUCHOS_ASSERT( glOperator_.is_valid_ptr() && !glOperator_.is_null() );
     glOperator_->setParameters ( p );
@@ -217,7 +210,8 @@ Ginla::LocaSystem::Default::setParameters ( const LOCA::ParameterVector & p )
 }
 // =============================================================================
 void
-Ginla::LocaSystem::Default::setLocaStepper ( const Teuchos::RCP<const LOCA::Stepper> stepper )
+Ginla::LocaSystem::Default::
+setLocaStepper ( const Teuchos::RCP<const LOCA::Stepper> stepper )
 {
     stepper_ = stepper;
 
@@ -239,7 +233,8 @@ Ginla::LocaSystem::Default::setLocaStepper ( const Teuchos::RCP<const LOCA::Step
 }
 // =============================================================================
 void
-Ginla::LocaSystem::Default::releaseLocaStepper()
+Ginla::LocaSystem::Default::
+releaseLocaStepper()
 {
     stepper_ = Teuchos::null;
 }
@@ -278,21 +273,14 @@ Ginla::LocaSystem::Default::
 printSolutionOneParameterContinuation ( const Teuchos::RCP<const ComplexVector> & psi
                                       )
 {
-    int conStep = stepper_->getStepNumber();
-    
-    stringstream baseName;
-    baseName
-    << outputDir_ << "/" << solutionFileNameBase_ 
-    << setw ( maxNumDigits_ ) << setfill ( '0' ) << conStep;
-        
-    // actually print the state to fileName
-    Ginla::Helpers::writeStateToFile( psi,
-                                      glOperator_->getGrid(),
-                                      *(glOperator_->getParameters()),
-                                      baseName.str(),
-                                      "VTI" );
+    stateWriter_->write( psi,
+                         glOperator_->getGrid(),
+                         stepper_->getStepNumber(),
+                         *(glOperator_->getParameters())
+                         );
 
     writeContinuationStats ( psi );
+    return;
 }
 // =============================================================================
 // In Turning Point continuation, the printSolution method is called exactly
@@ -307,34 +295,31 @@ Ginla::LocaSystem::Default::
 printSolutionTurningPointContinuation ( const Teuchos::RCP<const ComplexVector> & psi
                                       )
 {
-    static bool printSolution=false;
-    int conStep = stepper_->getStepNumber();
+    static bool isSolution = false;
 
     // alternate between solution and nullvector
-    printSolution = !printSolution;
+    isSolution = !isSolution;
 
     // determine file name
     stringstream baseName;
-    if ( printSolution )
+    if ( isSolution )
     {
-        baseName
-        << outputDir_ << "/" << solutionFileNameBase_
-        << setw ( maxNumDigits_ ) << setfill ( '0' ) << conStep
-        << "-state";
+        stateWriter_->write( psi,
+                            glOperator_->getGrid(),
+                            stepper_->getStepNumber(),
+                            "-state",
+                            *(glOperator_->getParameters())
+                            );
         writeContinuationStats ( psi );
     }
     else
-        baseName
-        << outputDir_ << "/" << solutionFileNameBase_
-        << setw ( maxNumDigits_ ) << setfill ( '0' ) << conStep
-        << "-nullvector";
-    
-    // actually print the state to fileName
-    Ginla::Helpers::writeStateToFile( psi,
-                                      glOperator_->getGrid(),
-                                      *(glOperator_->getParameters()),
-                                      baseName.str(),
-                                      "VTI" );
+    {
+        stateWriter_->write( psi,
+                            glOperator_->getGrid(),
+                            stepper_->getStepNumber(),
+                            "-nullvector"
+                            );
+    }
 
     return;
 }
@@ -373,50 +358,17 @@ writeContinuationStats ( const Teuchos::RCP<const ComplexVector> & psi )
 }
 // =============================================================================
 // function used by LOCA
-void Ginla::LocaSystem::Default::setOutputDir ( const string &directory )
-{
-    outputDir_ = directory;
-}
-// =============================================================================
 void
 Ginla::LocaSystem::Default::
-writeSolutionToFile ( const Epetra_Vector & x,
-                      const std::string   & filePath
-                    ) const
-{   
-    // TODO: Remove the need for several real2complex calls per step.
-    Ginla::Helpers::writeStateToFile( glKomplex_->real2complex ( x ),
-                                      glOperator_->getGrid(),
-                                      *(glOperator_->getParameters()),
-                                      filePath,
-                                      "VTI" );
-    return;
-}
-// =============================================================================
-void
-Ginla::LocaSystem::Default::
-writeAbstractStateToFile ( const Epetra_Vector & x,
-                           const std::string   & filePath
-                         ) const
+setOutputDir ( const string & directory )
 {
-    // TODO: Remove the need for several real2complex calls per step.
-    LOCA::ParameterVector empty;
-    Ginla::Helpers::writeStateToFile( glKomplex_->real2complex ( x ),
-                                      glOperator_->getGrid(),
-                                      empty,
-                                      filePath,
-                                      "VTI" );
+    stateWriter_->setOutputDir( directory );
     return;
-}
-// =============================================================================
-Teuchos::RCP<Epetra_Vector>
-Ginla::LocaSystem::Default::getGlSystemVector ( const Teuchos::RCP<const ComplexVector> psi ) const
-{
-    return glKomplex_->complex2real ( *psi );
 }
 // =============================================================================
 Teuchos::RCP<const Teuchos::Comm<int> >
-Ginla::LocaSystem::Default::create_CommInt ( const Teuchos::RCP<const Epetra_Comm> & epetraComm )
+Ginla::LocaSystem::Default::
+create_CommInt ( const Teuchos::RCP<const Epetra_Comm> & epetraComm )
 {
     using Teuchos::RCP;
     using Teuchos::rcp;
@@ -455,12 +407,6 @@ Teuchos::RCP<const Epetra_Map>
 Ginla::LocaSystem::Default::getRealMap() const
 {
     return glKomplex_->getRealMap();
-}
-// =============================================================================
-Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> >
-Ginla::LocaSystem::Default::getComplexMap() const
-{
-    return glKomplex_->getComplexMap();
 }
 // =============================================================================
 Teuchos::RCP<const Ginla::Komplex>

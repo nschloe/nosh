@@ -19,6 +19,11 @@
 
 #include "Ginla_Helpers.h"
 
+#include "NOX_Abstract_Vector.H"
+#include "NOX_Epetra_Vector.H"
+
+#include <Tpetra_Vector.hpp>
+
 typedef std::complex<double> double_complex;
 
 // ============================================================================
@@ -103,7 +108,7 @@ appendToTeuchosParameterList( Teuchos::ParameterList      & p,
 // calculate the free energy of a state
 double
 Ginla::Helpers::
-freeEnergy ( const ComplexVector         & psi,
+freeEnergy ( const ComplexVector        & psi,
              const Recti::Grid::General & grid )
 {
     double localEnergy = 0.0;
@@ -265,44 +270,3 @@ getVorticity ( const ComplexVector        & psi,
     return round ( vorticity );
 }
 // ============================================================================
-// TODO Make this private somehow?
-void
-Ginla::Helpers::
-writeStateToFile ( const Teuchos::RCP<const ComplexVector>        & psi,
-                   const Teuchos::RCP<const Recti::Grid::General> & grid,
-                   LOCA::ParameterVector                          & params,
-                   const std::string                              & fileBaseName,
-                   const std::string                              & outputFormat
-                 )
-{
-    Teuchos::RCP<Teuchos::ParameterList> p =
-        Ginla::Helpers::locaParameterVector2teuchosParameterList( params );
-        
-    std::string filenameExtension;
-    if ( outputFormat.compare("VTI")==0 )
-      filenameExtension = "vti";
-    else if ( outputFormat.compare("VTK")==0 )
-      filenameExtension = "vtk";
-    else
-      TEST_FOR_EXCEPTION( true,
-                          std::runtime_error,
-                          "outputFormat_ (\"" << outputFormat
-                          << "\") must be either one of \"VTI\", \"VTK\"" );
-        
-    std::string fileName = fileBaseName + "." + filenameExtension;
-    grid->writeWithGrid ( *psi, *p, fileName );
-    return;
-}
-// =============================================================================
-// void
-// Ginla::Helpers::
-// writeAbstractStateToFile ( const Teuchos::RCP<const ComplexVector> & psi,
-//                            const Teuchos::RCP<const Recti::Grid::General> & grid,
-//                            const std::string                       & fileBaseName
-//                          )
-// {
-//     LOCA::ParameterVector params;
-//     Ginla::Helpers::writeStateToFile ( psi, params, fileBaseName );
-//     return;
-// }
-// =============================================================================

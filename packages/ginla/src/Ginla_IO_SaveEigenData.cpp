@@ -1,32 +1,26 @@
 #include "Ginla_IO_SaveEigenData.h"
 
-#include <vector>
-
-#include <NOX_Abstract_Group.H>
+// #include <NOX_Abstract_Group.H>
 #include <NOX_Abstract_MultiVector.H>
-#include <NOX_Utils.H>
-#include <LOCA_GlobalData.H>
+// #include <NOX_Utils.H>
+// #include <LOCA_GlobalData.H>
 
 // =============================================================================
 Ginla::IO::SaveEigenData::
-SaveEigenData ( Teuchos::RCP<Teuchos::ParameterList> & eigenParamList,
-                const std::string  outputDir,
-                const std::string  eigenvaluesFileName,
-                const std::string  contFileBaseName,
-                const std::string  eigenstateFileNameAppendix,
-                const Teuchos::RCP<AbstractStateWriter> stateWriter,
-                const unsigned int maxNumDigits
+SaveEigenData ( Teuchos::RCP<Teuchos::ParameterList>           & eigenParamList,
+                const Teuchos::RCP<const Recti::Grid::General> & grid,
+                const Teuchos::RCP<const Ginla::Komplex>       & komplex,
+                const Teuchos::RCP<Ginla::IO::StatsWriter>     & statsWriter,
+                const Teuchos::RCP<Ginla::IO::StateWriter>     & stateWriter
               ) :
         eigenParamList_ ( eigenParamList ),
-        outputDir_ ( outputDir ),
-        eigenvaluesFilePath_ ( outputDir + "/" + eigenvaluesFileName ),
-        contFileBaseName_ ( contFileBaseName ),
-        eigenstateFileNameAppendix_ ( eigenstateFileNameAppendix ),
+        grid_ ( grid ),
+        komplex_ ( komplex ),
+        statsWriter_ ( statsWriter ),
         stateWriter_ ( stateWriter ),
         locaStepper_ ( Teuchos::null ),
         numComputeStableEigenvalues_ ( 3 ),
-        maxEigenvaluesSave_ ( 20 ),
-        maxNumDigits_( maxNumDigits )
+        maxEigenvaluesSave_ ( 20 )
 {
 }
 // =============================================================================
@@ -35,93 +29,97 @@ Ginla::IO::SaveEigenData::~SaveEigenData()
 }
 // =============================================================================
 void
-Ginla::IO::SaveEigenData::setLocaStepper ( const Teuchos::RCP<LOCA::Stepper> locaStepper )
+Ginla::IO::SaveEigenData::
+setLocaStepper ( const Teuchos::RCP<LOCA::Stepper> locaStepper )
 {
     locaStepper_ = locaStepper;
 }
 // =============================================================================
 void
-Ginla::IO::SaveEigenData::releaseLocaStepper()
+Ginla::IO::SaveEigenData::
+releaseLocaStepper()
 {
     locaStepper_ = Teuchos::null;
 }
 // =============================================================================
 NOX::Abstract::Group::ReturnType
-Ginla::IO::SaveEigenData::save ( Teuchos::RCP<std::vector<double> > &evals_r,
-                              Teuchos::RCP<std::vector<double> > &evals_i,
-                              Teuchos::RCP<NOX::Abstract::MultiVector> &evecs_r,
-                              Teuchos::RCP<NOX::Abstract::MultiVector> &evecs_i
-                            )
+Ginla::IO::SaveEigenData::
+save ( Teuchos::RCP<std::vector<double> >       & evals_r,
+       Teuchos::RCP<std::vector<double> >       & evals_i,
+       Teuchos::RCP<NOX::Abstract::MultiVector> & evecs_r,
+       Teuchos::RCP<NOX::Abstract::MultiVector> & evecs_i
+     )
 {    
-    int step = locaStepper_->getStepNumber();
+    unsigned int step = locaStepper_->getStepNumber();
 
     unsigned int numEigenValues = evals_r->size();
 
-    std::ofstream eigenFileStream;
-
-    if ( step == 0 )
-    {
-        eigenFileStream.open ( eigenvaluesFilePath_.c_str(), ios::trunc );
-        eigenFileStream << "# Step" << "\t#unstable ev";
-        for ( unsigned int k = 0; k < maxEigenvaluesSave_; k++ )
-        {
-            if ( k==0 )
-                eigenFileStream << "\t";
-            else
-                eigenFileStream << "\t\t";
-            eigenFileStream << "Re(lambda_" << k << ")" << "\t\tIm(lambda_"
-            << k << ")";
-        }
-        eigenFileStream << std::endl;
-    }
-    else
-    {
-        // just append the contents to the file
-        eigenFileStream.open ( eigenvaluesFilePath_.c_str(), ios::app );
-    }
-
+    // store the unstable eigenstate into files
     int numUnstableEigenvalues = 0;
     for ( unsigned int k = 0; k < numEigenValues; k++ )
     {
         if ( ( *evals_r ) [k] > 0.0 )
-        { 
+        {
             numUnstableEigenvalues++;
-            stringstream eigenstateFileBaseName;
-            eigenstateFileBaseName
-            << outputDir_  << "/"
-            << contFileBaseName_
-            << setw ( maxNumDigits_ ) << setfill ( '0' ) << step << "-"
-            << eigenstateFileNameAppendix_ 
-            << numUnstableEigenvalues;
 
-            Teuchos::RCP<NOX::Abstract::Vector> abVec =
+            // make sure that the imaginary part of the eigenvector
+            // is in fact 0
+            Teuchos::RCP<NOX::Abstract::Vector> imagPart =
+                Teuchos::rcpFromRef ( ( *evecs_i ) [k] );
+            TEUCHOS_ASSERT_EQUALITY( 0.0, imagPart->norm() );
+
+            // transform the real part of the eigenvector into psi
+            Teuchos::RCP<NOX::Abstract::Vector> realPart =
                 Teuchos::rcpFromRef ( ( *evecs_r ) [k] );
-            Teuchos::RCP<NOX::Epetra::Vector> myVec =
-                Teuchos::rcp_dynamic_cast<NOX::Epetra::Vector> ( abVec, true );
-
-            stateWriter_->writeAbstractStateToFile ( myVec->getEpetraVector(),
-                                                     eigenstateFileBaseName.str() );
+            Teuchos::RCP<NOX::Epetra::Vector> realPartE =
+                Teuchos::rcp_dynamic_cast<NOX::Epetra::Vector> ( realPart, true );
+            Teuchos::RCP<ComplexVector> psi =
+                komplex_->real2complex( realPartE->getEpetraVector() );
+                                                     
+            stringstream eigenstateFileNameAppendix;
+            eigenstateFileNameAppendix << "-eigenvalue" << numEigenValues;
+            stateWriter_->write( psi,
+                                 grid_,
+                                 step,
+                                 eigenstateFileNameAppendix.str() );
         }
     }
 
-    eigenFileStream << step << "\t";
-    eigenFileStream << numUnstableEigenvalues << "\t";
+    // Create Teuchos::ParameterList containing the data to be put into the
+    // stats file.
+    Teuchos::RCP<Teuchos::ParameterList> eigenvaluesList;
+    eigenvaluesList->set( "0Step", step );
+    eigenvaluesList->set( "1#unstable ev", numUnstableEigenvalues );
+    for ( unsigned int k = 0; k < maxEigenvaluesSave_; k++ )
+    {
+        std::stringstream label;
+        label << "Re(lambda_" << k << ")";
+        eigenvaluesList->set( label.str(), ( *evals_r ) [k] );
+        
+        label << "Im(lambda_" << k << ")";
+        eigenvaluesList->set( label.str(), ( *evals_i ) [k] );
+    }
+    statsWriter_->setList( eigenvaluesList );
+    statsWriter_->print();
 
-    // Set the output format
-    // TODO Think about replacing this with NOX::Utils::Sci.
-    eigenFileStream.setf ( std::ios::scientific );
-    eigenFileStream.precision ( 15 );
-
-    for ( unsigned int k = 0; k < min ( numEigenValues,maxEigenvaluesSave_ ); k++ )
-        eigenFileStream << "\t" << ( *evals_r ) [k] << "\t" << ( *evals_i ) [k];
-
-    // print "NaN" as fill-ins if there are more columns than eigenvalues
-    if ( maxEigenvaluesSave_>numEigenValues )
-        for ( unsigned int k = 0; k < 2* ( maxEigenvaluesSave_-numEigenValues ); k++ )
-            eigenFileStream << "\tNaN                   ";
-
-    eigenFileStream << std::endl;
-    eigenFileStream.close();
+//     eigenFileStream << step << "\t";
+//     eigenFileStream << numUnstableEigenvalues << "\t";
+// 
+//     // Set the output format
+//     // TODO Think about replacing this with NOX::Utils::Sci.
+//     eigenFileStream.setf ( std::ios::scientific );
+//     eigenFileStream.precision ( 15 );
+// 
+//     for ( unsigned int k = 0; k < min ( numEigenValues,maxEigenvaluesSave_ ); k++ )
+//         eigenFileStream << "\t" << ( *evals_r ) [k] << "\t" << ( *evals_i ) [k];
+// 
+//     // print "NaN" as fill-ins if there are more columns than eigenvalues
+//     if ( maxEigenvaluesSave_>numEigenValues )
+//         for ( unsigned int k = 0; k < 2* ( maxEigenvaluesSave_-numEigenValues ); k++ )
+//             eigenFileStream << "\tNaN                   ";
+// 
+//     eigenFileStream << std::endl;
+//     eigenFileStream.close();
 
     // Adapt the computation for the next step.
     // Make sure that approximately \c numComputeStableEigenvalues_ stable eigenvalues

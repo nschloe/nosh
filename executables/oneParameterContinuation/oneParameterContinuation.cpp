@@ -29,28 +29,13 @@
 #include "Ginla_IO_SaveEigenData.h"
 #include "Ginla_Helpers.h"
 #include "Ginla_IO_StatsWriter.h"
+#include "Ginla_IO_StateWriter.h"
 
 #include "Recti_Grid_Reader.h"
 
 #include "Ginla_Perturbation_Quadrants.h"
 
 
-// =============================================================================
-unsigned int
-numDigits ( const int i )
-{
-    int numDigits = 0;
-    int ii = i;
-    if ( ii < 0 )
-        ii = -ii;
-
-    while ( ii > 0 )
-    {
-        numDigits++;
-        ii/=10;
-    }
-    return numDigits;
-}
 // =============================================================================
 int
 main ( int argc, char *argv[] )
@@ -217,19 +202,19 @@ main ( int argc, char *argv[] )
 
     Teuchos::ParameterList & stepperList = paramList->sublist ( "LOCA" ).sublist ( "Stepper" );
     int maxLocaSteps = stepperList.get<int> ( "Max Steps" );
-
+    
+    Teuchos::RCP<Ginla::IO::StateWriter> stateWriter = 
+        Teuchos::rcp( new Ginla::IO::StateWriter( outputDirectory.string(),
+                                                  contFileBaseName,
+                                                  outputFormat,
+                                                  maxLocaSteps ) );
     try
     {
-      std::cout << psi->getNumVectors() << std::endl;
         glsystem = Teuchos::rcp ( new Ginla::LocaSystem::Bordered ( glOperator,
-                                                                    statsWriter,
                                                                     eComm,
                                                                     psi,
-                                                                    outputDirectory.string(),
-                                                                    contDataFileName,
-                                                                    contFileBaseName,
-                                                                    outputFormat,
-                                                                    numDigits( maxLocaSteps ) ) );
+                                                                    statsWriter,
+                                                                    stateWriter ) );
     }
     catch ( std::exception & e )
     {
@@ -278,11 +263,16 @@ main ( int argc, char *argv[] )
         outputList.get<string> ( "Eigenvalues file name" );
     std::string eigenstateFileNameAppendix =
         outputList.get<string> ( "Eigenstate file name appendix" );
-    Teuchos::RCP<Ginla::IO::SaveEigenData> glEigenSaver =
-        Teuchos::RCP<Ginla::IO::SaveEigenData> ( new Ginla::IO::SaveEigenData ( eigenListPtr, outputDirectory.string(),
-                                   eigenvaluesFileName, contFileBaseName,
-                                   eigenstateFileNameAppendix, glsystem,
-                                   numDigits ( maxLocaSteps ) ) );
+
+    Teuchos::RCP<Ginla::IO::StatsWriter> eigenStatsWriter =
+        Teuchos::rcp( new Ginla::IO::StatsWriter( eigenvaluesFileName ) );
+
+    Teuchos::RCP<Ginla::IO::SaveEigenData> glEigenSaver =    
+        Teuchos::RCP<Ginla::IO::SaveEigenData> ( new Ginla::IO::SaveEigenData ( eigenListPtr,
+                                                                                grid,
+                                                                                glsystem->getGlKomplex(),
+                                                                                eigenStatsWriter,
+                                                                                stateWriter ) );
 
     Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> glSaveEigenDataStrategy =
         glEigenSaver;

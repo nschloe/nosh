@@ -8,6 +8,7 @@ SET ( ginla_SRCS
       Ginla_IO_SaveNewtonData.cpp
       Ginla_IO_SaveEigenData.cpp
       Ginla_IO_StatsWriter.cpp
+      Ginla_IO_StateWriter.cpp
       Ginla_Komplex.cpp
       Ginla_LocaSystem_Default.cpp
       Ginla_LocaSystem_Bordered.cpp

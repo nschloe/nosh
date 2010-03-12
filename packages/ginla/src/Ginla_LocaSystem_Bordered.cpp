@@ -37,24 +37,16 @@ typedef std::complex<double> double_complex;
 // Default constructor
 Ginla::LocaSystem::Bordered::
 Bordered ( const Teuchos::RCP<Ginla::Operator::Virtual> & glOperator,
-           const Teuchos::RCP<Ginla::IO::StatsWriter>   & statsWriter,
            const Teuchos::RCP<const Epetra_Comm>        & eComm,
            const Teuchos::RCP<const ComplexVector>      & psi,
-           const std::string & outputDir,
-           const std::string & outputDataFileName,
-           const std::string & solutionFileNameBase,
-           const std::string & outputFormat,
-           const unsigned int maxStepNumberDecimals
+           const Teuchos::RCP<Ginla::IO::StatsWriter>   & statsWriter,
+           const Teuchos::RCP<Ginla::IO::StateWriter>   & stateWriter
          ) :
         glSystem_ ( glOperator,
-                    statsWriter,
                     eComm,
                     psi,
-                    outputDir,
-                    outputDataFileName,
-                    solutionFileNameBase,
-                    outputFormat,
-                    maxStepNumberDecimals ),
+                    statsWriter,
+                    stateWriter ),
         regularMap_ (  glSystem_.getRealMap() ),
         extendedMap_ ( createExtendedRealMap ( *regularMap_ ) ),
         jacobian_ ( new Epetra_CrsMatrix ( Copy, *extendedMap_, 0 ) ),
@@ -83,10 +75,11 @@ Ginla::LocaSystem::Bordered::
 }
 // =============================================================================
 bool
-Ginla::LocaSystem::Bordered::computeF ( const Epetra_Vector & x,
-                                           Epetra_Vector       & FVec,
-                                     const NOX::Epetra::Interface::Required::FillType fillFlag
-                                   )
+Ginla::LocaSystem::Bordered::
+computeF ( const Epetra_Vector & x,
+           Epetra_Vector       & FVec,
+           const NOX::Epetra::Interface::Required::FillType fillFlag
+         )
 {
     TEST_FOR_EXCEPTION ( !regularMap_.is_valid_ptr() || regularMap_.is_null(),
                          std::logic_error,
@@ -302,8 +295,9 @@ Ginla::LocaSystem::Bordered::releaseLocaStepper()
 // =============================================================================
 // function used by LOCA
 void
-Ginla::LocaSystem::Bordered::printSolution ( const  Epetra_Vector &x,
-                                        double conParam )
+Ginla::LocaSystem::Bordered::
+printSolution ( const  Epetra_Vector &x,
+                double conParam )
 {
     // strip off the phase constraint
     Epetra_Vector tmp ( *regularMap_ );
@@ -313,37 +307,15 @@ Ginla::LocaSystem::Bordered::printSolution ( const  Epetra_Vector &x,
 }
 // =============================================================================
 // function used by LOCA
-void Ginla::LocaSystem::Bordered::setOutputDir ( const string &directory )
+void Ginla::LocaSystem::Bordered::
+setOutputDir ( const string &directory )
 {
     glSystem_.setOutputDir ( directory );
 }
 // =============================================================================
-void
-Ginla::LocaSystem::Bordered::writeSolutionToFile ( const Epetra_Vector & x,
-                                              const std::string   & filePath
-                                            ) const
-{
-    // strip off the phase constraint
-    Epetra_Vector tmp ( *regularMap_ );
-    tmp.Import( x, importFromExtendedMap_, Insert );
-
-    glSystem_.writeSolutionToFile ( tmp, filePath );
-}
-// =============================================================================
-void
-Ginla::LocaSystem::Bordered::writeAbstractStateToFile ( const Epetra_Vector & x,
-                                                   const std::string   & filePath
-                                                 ) const
-{
-    // strip off the phase constraint
-    Epetra_Vector tmp ( *regularMap_ );
-    tmp.Import( x, importFromExtendedMap_, Insert );
-
-    glSystem_.writeAbstractStateToFile ( tmp, filePath );
-}
-// =============================================================================
 Teuchos::RCP<const Teuchos::Comm<int> >
-Ginla::LocaSystem::Bordered::create_CommInt ( const Teuchos::RCP<const Epetra_Comm> &epetraComm )
+Ginla::LocaSystem::Bordered::
+create_CommInt ( const Teuchos::RCP<const Epetra_Comm> &epetraComm )
 {
     using Teuchos::RCP;
     using Teuchos::rcp;
@@ -392,14 +364,15 @@ Ginla::LocaSystem::Bordered::getExtendedMap() const
 }
 // =============================================================================
 void
-Ginla::LocaSystem::Bordered::fillBorderedMatrix ( const Teuchos::RCP<      Epetra_CrsMatrix> & extendedMatrix,
-                                             const Teuchos::RCP<const Epetra_CrsMatrix> & regularMatrix,
-                                             const Epetra_Vector                        & rightBorder,
-                                             // TODO Declare the following const as soon as Trilinos allows (ReplaceGlobalValues)
-                                             Epetra_Vector                              & lowerBorder,
-                                             double                                       d,
-                                             bool                                         firstTime
-                                           ) const
+Ginla::LocaSystem::Bordered::
+fillBorderedMatrix ( const Teuchos::RCP<      Epetra_CrsMatrix> & extendedMatrix,
+                     const Teuchos::RCP<const Epetra_CrsMatrix> & regularMatrix,
+                     const Epetra_Vector                        & rightBorder,
+                     // TODO Declare the following const as soon as Trilinos allows (ReplaceGlobalValues)
+                     Epetra_Vector                              & lowerBorder,
+                     double                                       d,
+                     bool                                         firstTime
+                   ) const
 {
     TEUCHOS_ASSERT ( regularMatrix.is_valid_ptr()  && !regularMatrix.is_null() );
     TEUCHOS_ASSERT ( extendedMatrix.is_valid_ptr() && !extendedMatrix.is_null() );
@@ -459,13 +432,14 @@ Ginla::LocaSystem::Bordered::fillBorderedMatrix ( const Teuchos::RCP<      Epetr
 }
 // =============================================================================
 int
-Ginla::LocaSystem::Bordered::PutRow ( const Teuchos::RCP<Epetra_CrsMatrix> A,
-                                     const int                            globalRow,
-                                     const int                            numIndices,
-                                     double                             * values,
-                                     int                                * indices,
-                                     const bool                           firstTime
-                                   ) const
+Ginla::LocaSystem::Bordered::
+PutRow ( const Teuchos::RCP<Epetra_CrsMatrix> A,
+         const int                            globalRow,
+         const int                            numIndices,
+         double                             * values,
+         int                                * indices,
+         const bool                           firstTime
+       ) const
 {
     if ( firstTime )
         return A->InsertGlobalValues ( globalRow, numIndices, values, indices );

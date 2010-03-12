@@ -45,7 +45,6 @@ namespace Ginla {
   namespace LocaSystem {
 
 class Bordered:
-            public AbstractStateWriter,
             public NOX::Epetra::Interface::Jacobian,
             public NOX::Epetra::Interface::Preconditioner,
             public LOCA::Epetra::Interface::TimeDependent
@@ -54,14 +53,10 @@ public:
 
     //! Constructor with initial guess.
     Bordered ( const Teuchos::RCP<Ginla::Operator::Virtual> & glOperator,
-               const Teuchos::RCP<Ginla::IO::StatsWriter>   & statsWriter,
                const Teuchos::RCP<const Epetra_Comm>        & eComm,
                const Teuchos::RCP<const ComplexVector>      & psi,
-               const std::string & outputDir,
-               const std::string & outputDataFileName,
-               const std::string & solutionFileNameBase,
-               const std::string & outputFormat,
-               const unsigned int maxStepNumberDecimals );
+               const Teuchos::RCP<Ginla::IO::StatsWriter>   & statsWriter,
+               const Teuchos::RCP<Ginla::IO::StateWriter>   & stateWriter );
 
     //! Destructor
     ~Bordered();
@@ -127,16 +122,6 @@ public:
     // LOCA_Stepper object to allow for a clean termination
     void
     releaseLocaStepper();
-
-    //! Explicitly print the solution x along with the problem parameters
-    //! to the file fileName.
-    void
-    writeSolutionToFile ( const Epetra_Vector & x,
-                          const std::string   & filePath ) const;
-
-    void
-    writeAbstractStateToFile ( const Epetra_Vector & x,
-                               const std::string   & filePath ) const;
 
     const Teuchos::RCP<const Komplex>
     getGlKomplex() const;

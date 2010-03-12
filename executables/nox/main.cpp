@@ -15,6 +15,8 @@
 
 #include "glNoxHelpers.h"
 
+#include "Ginla_IO_SaveNewtonData.h"
+
 // =============================================================================
 int main ( int argc, char *argv[] )
 { 
@@ -126,6 +128,7 @@ int main ( int argc, char *argv[] )
     // set problemParameters and glSystem
     Teuchos::ParameterList                   problemParameters;
     Teuchos::RCP<Ginla::LocaSystem::Bordered> glSystem = Teuchos::null;
+    Teuchos::RCP<Recti::Grid::Uniform>  grid = Teuchos::null;
     if ( !inputGuessFile.empty() )
     {
         try
@@ -134,7 +137,8 @@ int main ( int argc, char *argv[] )
                                            eComm,
                                            inputGuessFile.string(),
                                            problemParameters,
-                                           glSystem );
+                                           glSystem,
+                                           grid );
         }
         catch ( std::exception & e )
         {
@@ -157,7 +161,8 @@ int main ( int argc, char *argv[] )
                                        H0,
                                        domainParameters,
                                        problemParameters,
-                                       glSystem );
+                                       glSystem,
+                                       grid );
     }
 
     Teuchos::RCP<Teuchos::ParameterList> nlParamsPtr =
@@ -165,9 +170,21 @@ int main ( int argc, char *argv[] )
 
     if ( plotEachNewtonStep )
     {
-        glNoxHelpers::setPrePostWriter ( *nlParamsPtr,
-                                         glSystem,
-                                         outputDirectory.string() );
+        const std::string fileBaseName = "newtonStep";
+        const std::string outputFormat = "VTI";
+        const unsigned int maxIndex    = 1000; // TODO replace by maxnumsteps
+        Teuchos::RCP<Ginla::IO::StateWriter> stateWriter =
+            Teuchos::rcp( new Ginla::IO::StateWriter( outputDirectory.string(),
+                                                      fileBaseName,
+                                                      outputFormat,
+                                                      maxIndex ) );
+                     
+        Teuchos::RCP<NOX::Abstract::PrePostOperator> ppo =
+            Teuchos::rcp ( new Ginla::IO::SaveNewtonData ( stateWriter,
+                                                           grid,
+                                                           glSystem->getGlKomplex() ) );
+        nlParamsPtr->sublist ( "Solver Options" )
+                    .set ( "User Defined Pre/Post Operator", ppo );
     }
 
     // create NOX group

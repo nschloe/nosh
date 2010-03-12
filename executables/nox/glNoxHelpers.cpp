@@ -58,14 +58,14 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
                  const Teuchos::RCP<const Epetra_Comm>         & eComm,
                  const std::string                             & fileName,
                  Teuchos::ParameterList                        & problemParameters,
-                 Teuchos::RCP<Ginla::LocaSystem::Bordered>        & glSystem
+                 Teuchos::RCP<Ginla::LocaSystem::Bordered>     & glSystem,
+                 Teuchos::RCP<Recti::Grid::Uniform>            & grid
                )
 {
     Teuchos::ParameterList glParameters;
 
     Teuchos::RCP<ComplexMultiVector> psi;
 
-    Teuchos::RCP<Recti::Grid::Uniform> grid;
     Recti::Grid::Reader::read ( comm, fileName, psi, grid, problemParameters );
 
     double h0      = problemParameters.get<double> ( "H0" );
@@ -79,25 +79,25 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
         Teuchos::rcp ( new Ginla::Operator::BCCentral ( grid, A ) );
 
     TEUCHOS_ASSERT_EQUALITY ( psi->getNumVectors(), 1 );
-
-//     glSystem = Teuchos::rcp ( new Ginla::LocaSystem::Bordered ( glProblem, eComm, psi->getVector ( 0 ) ) );
     
     
     std::string outputDirectory = "";
     std::string contDataFileName = "continuationData.dat";
-    std::string contFileBaseName = "continuationStep";
+    std::string contFileBaseName = "newtonStep";
     std::string outputFormat = "VTI";
-    int numDigits = 4;
+    unsigned int maxIndex = 1000; // TODO replace by maxnumsteps
     Teuchos::RCP<Ginla::IO::StatsWriter> statsWriter = Teuchos::null;
+    Teuchos::RCP<Ginla::IO::StateWriter> stateWriter = 
+        Teuchos::rcp( new Ginla::IO::StateWriter( outputDirectory,
+                                                  contFileBaseName,
+                                                  outputFormat,
+                                                  maxIndex ) );
+    
     glSystem = Teuchos::rcp ( new Ginla::LocaSystem::Bordered ( glOperator,
-                                                                statsWriter,
                                                                 eComm,
                                                                 psi->getVector ( 0 ),
-                                                                outputDirectory,
-                                                                contDataFileName,
-                                                                contFileBaseName,
-                                                                outputFormat,
-                                                                numDigits ) );
+                                                                statsWriter,
+                                                                stateWriter ) );
 
     return;
 }
@@ -110,7 +110,8 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
                  const double H0,
                  const Teuchos::ParameterList                & domainParameters,
                  Teuchos::ParameterList                      & problemParameters,
-                 Teuchos::RCP<Ginla::LocaSystem::Bordered>   & glSystem )
+                 Teuchos::RCP<Ginla::LocaSystem::Bordered>   & glSystem,
+                 Teuchos::RCP<Recti::Grid::Uniform>          & grid)
 {
     problemParameters.set ( "scaling", scaling );
     problemParameters.set ( "H0"     , H0 );
@@ -123,8 +124,7 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
     // TODO Create GridConstructor with Nx
     // create the grid
     double h = 1.0 / Nx;
-    Teuchos::RCP<Recti::Grid::Uniform> grid =
-        Teuchos::rcp ( new Recti::Grid::Uniform ( domain, h ) );
+    grid = Teuchos::rcp ( new Recti::Grid::Uniform ( domain, h ) );
 
     grid->updateScaling ( scaling );
 
@@ -146,29 +146,18 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
     std::string contDataFileName = "continuationData.dat";
     std::string contFileBaseName = "continuationStep";
     std::string outputFormat = "VTI";
-    int numDigits = 4;
+    unsigned int maxIndex = 1000;
     Teuchos::RCP<Ginla::IO::StatsWriter> statsWriter = Teuchos::null;
+    Teuchos::RCP<Ginla::IO::StateWriter> stateWriter = 
+        Teuchos::rcp( new Ginla::IO::StateWriter( outputDirectory,
+                                                  contFileBaseName,
+                                                  outputFormat,
+                                                  maxIndex ) );
     glSystem = Teuchos::rcp ( new Ginla::LocaSystem::Bordered ( glOperator,
-                                                                statsWriter,
                                                                 eComm,
                                                                 psi,
-                                                                outputDirectory,
-                                                                contDataFileName,
-                                                                contFileBaseName,
-                                                                outputFormat,
-                                                                numDigits ) );
-}
-// =========================================================================
-void
-setPrePostWriter ( Teuchos::ParameterList                        & noxParaList,
-                   const Teuchos::RCP<const AbstractStateWriter> & asw,
-                   const std::string                             & outputDir )
-{
-    using namespace Teuchos;
-//   Teuchos::RCP<AbstractStateWriter> asw = glSystem_;
-    RCP<NOX::Abstract::PrePostOperator> ppo =
-        rcp ( new Ginla::IO::SaveNewtonData ( asw, outputDir ) );
-    noxParaList.sublist ( "Solver Options" ).set ( "User Defined Pre/Post Operator", ppo );
+                                                                statsWriter,
+                                                                stateWriter ) );
 }
 // =========================================================================
 Teuchos::RCP<NOX::Epetra::Group>
@@ -430,9 +419,10 @@ printSolutionToFile ( const Teuchos::RCP<const NOX::Solver::Generic> solver,
     const Epetra_Vector & finalSolution =
         ( dynamic_cast<const NOX::Epetra::Vector&> ( finalGroup.getX() ) ).getEpetraVector();
 
-    glSystem->writeSolutionToFile ( finalSolution,
-                                    fileName );
+//     glSystem->writeSolutionToFile ( finalSolution,
+//                                     fileName );
 
+    return;
 }
 // =========================================================================
 int
