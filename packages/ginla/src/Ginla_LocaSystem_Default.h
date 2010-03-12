@@ -64,25 +64,27 @@ public:
     //! Evaluate the Ginzburg--Landau functions at a given state defined
     //! by the input vector x.
     virtual bool
-    computeF ( const Epetra_Vector &x,
-               Epetra_Vector &F,
+    computeF ( const Epetra_Vector & x,
+               Epetra_Vector       & F,
                const NOX::Epetra::Interface::Required::FillType fillFlag = Residual );
                
     //! Evaluate the Jacobian matrix of the Ginzburg--Landau problem
     //! at a given state defined by the input vector x.
     virtual bool
-    computeJacobian ( const Epetra_Vector &x, Epetra_Operator &Jac );
+    computeJacobian ( const Epetra_Vector & x,
+                      Epetra_Operator     & Jac );
 
     virtual bool
     computeShiftedMatrix ( double alpha,
                            double beta,
-                           const Epetra_Vector &x,
-                           Epetra_Operator &A );
+                           const Epetra_Vector & x,
+                           Epetra_Operator     & A );
 
     //! Dummy preconditioner function. So far does nothing but throwing
     //! an exception when called.
     virtual bool
-    computePreconditioner ( const Epetra_Vector &x, Epetra_Operator &Prec,
+    computePreconditioner ( const Epetra_Vector & x,
+                            Epetra_Operator     & Prec,
                             Teuchos::ParameterList* precParams = 0 );
 
     //! Returns the current Jacobian.
@@ -106,7 +108,8 @@ public:
     //! to a file. This function is called internally by LOCA to print
     //! solutions of each continuation step.
     virtual void
-    printSolution ( const Epetra_Vector &x, double conParam );
+    printSolution ( const Epetra_Vector & x,
+                    double conParam );
 
     void
     setLocaStepper ( const Teuchos::RCP<const LOCA::Stepper> stepper );
@@ -162,7 +165,7 @@ private:
 
     Teuchos::RCP<const LOCA::Stepper> stepper_;
 
-    Teuchos::RCP<Ginla::Komplex> glKomplex_;
+    const Teuchos::RCP<Ginla::Komplex> komplex_;
     
     const Teuchos::RCP<Ginla::IO::StatsWriter> statsWriter_;
     const Teuchos::RCP<Ginla::IO::StateWriter> stateWriter_;

@@ -35,7 +35,7 @@ Default ( const Teuchos::RCP<Ginla::Operator::Virtual>           & glOperator,
         perturbation_ ( Teuchos::null ),
         preconditioner_( Teuchos::null ),
         stepper_ ( Teuchos::null ),
-        glKomplex_ ( Teuchos::rcp ( new Ginla::Komplex ( eComm, complexMap ) ) ),
+        komplex_ ( Teuchos::rcp ( new Ginla::Komplex ( eComm, complexMap ) ) ),
         statsWriter_( statsWriter ),
         stateWriter_( stateWriter ),
         firstTime_ ( true )
@@ -56,16 +56,16 @@ computeF ( const Epetra_Vector & x,
            const NOX::Epetra::Interface::Required::FillType fillFlag )
 {
     // make sure that the input and output vectors are correctly mapped
-    TEST_FOR_EXCEPTION ( !x.Map().SameAs ( *glKomplex_->getRealMap() ),
+    TEST_FOR_EXCEPTION ( !x.Map().SameAs ( *komplex_->getRealMap() ),
                          std::logic_error,
                          "Maps of x and the computed real-valued map do not coincide." );
 
-    TEST_FOR_EXCEPTION ( !FVec.Map().SameAs ( *glKomplex_->getRealMap() ),
+    TEST_FOR_EXCEPTION ( !FVec.Map().SameAs ( *komplex_->getRealMap() ),
                          std::logic_error,
                          "Maps of FVec and the computed real-valued map do not coincide." );
     // ------------------------------------------------------------------------
     // convert from x to psi
-    const Teuchos::RCP<ComplexVector> psi = glKomplex_->real2complex ( x );
+    const Teuchos::RCP<ComplexVector> psi = komplex_->real2complex ( x );
     // ------------------------------------------------------------------------
     // compute the GL residual
     // setup output vector with the same map as psi
@@ -88,7 +88,7 @@ computeF ( const Epetra_Vector & x,
     // ------------------------------------------------------------------------
     // TODO Avoid this explicit copy.
     // transform back to fully real equation
-    FVec = * ( glKomplex_->complex2real ( *res ) );
+    FVec = * ( komplex_->complex2real ( *res ) );
     // ------------------------------------------------------------------------
     
     return true;
@@ -102,32 +102,32 @@ computeJacobian ( const Epetra_Vector & x,
     Teuchos::Array<int> indicesA, indicesB;
     Teuchos::Array<double_complex> valuesA, valuesB;
 
-    glKomplex_->zeroOutMatrix();
+    komplex_->zeroOutMatrix();
 
-    Teuchos::RCP<ComplexVector> psi = glKomplex_->real2complex ( x );
+    Teuchos::RCP<ComplexVector> psi = komplex_->real2complex ( x );
 
     // update to the latest psi vector before retrieving the Jacobian
     glOperator_->updatePsi ( psi );
     
     // loop over the rows and fill the matrix
-    int numMyElements = glKomplex_->getComplexMap()->getNodeNumElements();
+    int numMyElements = komplex_->getComplexMap()->getNodeNumElements();
     for ( int row = 0; row < numMyElements; row++ )
     {
-        int globalRow = glKomplex_->getComplexMap()->getGlobalElement ( row );
+        int globalRow = komplex_->getComplexMap()->getGlobalElement ( row );
         // get the values from the operator
         glOperator_->getJacobianRow ( globalRow,
                                       indicesA, valuesA,
                                       indicesB, valuesB );
         // ... and fill them into glKomplex_
-        glKomplex_->updateRow ( globalRow,
-                                indicesA, valuesA,
-                                indicesB, valuesB,
-                                firstTime_ );
+        komplex_->updateRow ( globalRow,
+                              indicesA, valuesA,
+                              indicesB, valuesB,
+                              firstTime_ );
     }
 
     if ( firstTime_ )
     {
-        glKomplex_->finalizeMatrix();
+        komplex_->finalizeMatrix();
         firstTime_ = false;
     }
 
@@ -153,7 +153,7 @@ computePreconditioner ( const Epetra_Vector & x,
 Teuchos::RCP<Epetra_CrsMatrix>
 Ginla::LocaSystem::Default::getJacobian() const
 {
-    return glKomplex_->getMatrix();
+    return komplex_->getMatrix();
 }
 // =============================================================================
 Teuchos::RCP<Epetra_CrsMatrix>
@@ -172,15 +172,15 @@ computeShiftedMatrix ( double alpha,
     // compute the values of the Jacobian
     computeJacobian ( x, A );
 
-    glKomplex_->getMatrix()->Scale ( alpha );
+    komplex_->getMatrix()->Scale ( alpha );
 
     Epetra_Vector newDiag ( x );
     Epetra_Vector unitVector ( x );
     unitVector.PutScalar ( 1.0 );
     //  newDiag.PutScalar(0.0);
-    glKomplex_->getMatrix()->ExtractDiagonalCopy ( newDiag );
+    komplex_->getMatrix()->ExtractDiagonalCopy ( newDiag );
     newDiag.Update ( beta, unitVector, 1.0 );
-    glKomplex_->getMatrix()->ReplaceDiagonalValues ( newDiag );
+    komplex_->getMatrix()->ReplaceDiagonalValues ( newDiag );
 
     return true;
 }
@@ -238,7 +238,7 @@ printSolution ( const  Epetra_Vector &x,
 {
     // define vector
     const Teuchos::RCP<ComplexVector> psi =
-        glKomplex_->real2complex ( x );
+        komplex_->real2complex ( x );
 
     // The switch hack is necessary as different continuation algorithms
     // call printSolution() a different number of times per step, e.g.,
@@ -396,12 +396,12 @@ create_CommInt ( const Teuchos::RCP<const Epetra_Comm> & epetraComm )
 Teuchos::RCP<const Epetra_Map>
 Ginla::LocaSystem::Default::getRealMap() const
 {
-    return glKomplex_->getRealMap();
+    return komplex_->getRealMap();
 }
 // =============================================================================
 Teuchos::RCP<const Ginla::Komplex>
 Ginla::LocaSystem::Default::getKomplex() const
 {
-    return glKomplex_;
+    return komplex_;
 }
 // =============================================================================

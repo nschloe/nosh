@@ -265,13 +265,15 @@ Ginla::LocaSystem::Bordered::setParameters ( const LOCA::ParameterVector &p )
 }
 // =============================================================================
 void
-Ginla::LocaSystem::Bordered::setLocaStepper ( const Teuchos::RCP<const LOCA::Stepper> stepper )
+Ginla::LocaSystem::Bordered::
+setLocaStepper ( const Teuchos::RCP<const LOCA::Stepper> stepper )
 {
     glSystem_.setLocaStepper ( stepper );
 }
 // =============================================================================
 void
-Ginla::LocaSystem::Bordered::releaseLocaStepper()
+Ginla::LocaSystem::Bordered::
+releaseLocaStepper()
 {
     glSystem_.releaseLocaStepper();
 }
