@@ -129,6 +129,7 @@ int main ( int argc, char *argv[] )
     Teuchos::ParameterList                   problemParameters;
     Teuchos::RCP<Ginla::LocaSystem::Bordered> glSystem = Teuchos::null;
     Teuchos::RCP<Recti::Grid::Uniform>  grid = Teuchos::null;
+    Teuchos::RCP<ComplexVector> initialPsi = Teuchos::null;
     if ( !inputGuessFile.empty() )
     {
         try
@@ -138,6 +139,7 @@ int main ( int argc, char *argv[] )
                                            inputGuessFile.string(),
                                            problemParameters,
                                            glSystem,
+                                           initialPsi,
                                            grid );
         }
         catch ( std::exception & e )
@@ -162,6 +164,7 @@ int main ( int argc, char *argv[] )
                                        domainParameters,
                                        problemParameters,
                                        glSystem,
+                                       initialPsi,
                                        grid );
     }
 
@@ -182,14 +185,17 @@ int main ( int argc, char *argv[] )
         Teuchos::RCP<NOX::Abstract::PrePostOperator> ppo =
             Teuchos::rcp ( new Ginla::IO::SaveNewtonData ( stateWriter,
                                                            grid,
-                                                           glSystem->getGlKomplex() ) );
+                                                           glSystem->getKomplex() ) );
         nlParamsPtr->sublist ( "Solver Options" )
                     .set ( "User Defined Pre/Post Operator", ppo );
     }
 
     // create NOX group
     Teuchos::RCP<NOX::Epetra::Group> grpPtr =
-        glNoxHelpers::createSolverGroup ( glSystem,  nlParamsPtr );
+        glNoxHelpers::createSolverGroup ( glSystem,
+                                          nlParamsPtr,
+                                          initialPsi
+                                        );
 
     // create convergence test from sublist
     Teuchos::RCP<NOX::StatusTest::Generic> statusTest =

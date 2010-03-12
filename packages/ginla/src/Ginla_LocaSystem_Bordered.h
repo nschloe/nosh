@@ -51,11 +51,11 @@ class Bordered:
 public:
 
     //! Constructor with initial guess.
-    Bordered ( const Teuchos::RCP<Ginla::Operator::Virtual> & glOperator,
-               const Teuchos::RCP<const Epetra_Comm>        & eComm,
-               const Teuchos::RCP<const ComplexVector>      & psi,
-               const Teuchos::RCP<Ginla::IO::StatsWriter>   & statsWriter,
-               const Teuchos::RCP<Ginla::IO::StateWriter>   & stateWriter );
+    Bordered ( const Teuchos::RCP<Ginla::Operator::Virtual>           & glOperator,
+               const Teuchos::RCP<const Epetra_Comm>                  & eComm,
+               const Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> > & complexMap,
+               const Teuchos::RCP<Ginla::IO::StatsWriter>             & statsWriter,
+               const Teuchos::RCP<Ginla::IO::StateWriter>             & stateWriter );
 
     //! Destructor
     ~Bordered();
@@ -84,11 +84,6 @@ public:
     computePreconditioner ( const Epetra_Vector    & x,
                             Epetra_Operator        & Prec,
                             Teuchos::ParameterList * precParams = 0 );
-
-    //! Returns the current state. Not necessarily a solution to the problem.
-    //! @return Reference-counted pointer to the current state.
-    Teuchos::RCP<Epetra_Vector>
-    getSolution() const;
     
     //! Returns the current Jacobian.
     //! @return Reference-counted pointer to the Jacobian.
@@ -123,10 +118,17 @@ public:
     releaseLocaStepper();
 
     const Teuchos::RCP<const Komplex>
-    getGlKomplex() const;
+    getKomplex() const;
 
     const Teuchos::RCP<const Epetra_Map>
     getExtendedMap() const;
+
+    //! Creates a state suitable for usage in the present interface.
+    //! This function can be used, for example, to create an initial guess for
+    //! the system.
+    Teuchos::RCP<Epetra_Vector>
+    createInterfaceState( const Teuchos::RCP<const ComplexVector> & psi,
+                          const double                              chi );
 
 private:
 
@@ -186,7 +188,6 @@ private:
     Teuchos::RCP<Epetra_Map> extendedMap_;
     const Teuchos::RCP<Epetra_CrsMatrix> jacobian_;
     Teuchos::RCP<Epetra_CrsMatrix> preconditioner_;
-    const Teuchos::RCP<Epetra_Vector> solution_;
 
     std::string stepNumFileNameFormat_;
 

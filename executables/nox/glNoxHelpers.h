@@ -25,6 +25,7 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
                  const std::string                             & fileName,
                  Teuchos::ParameterList                        & problemParameters,
                  Teuchos::RCP<Ginla::LocaSystem::Bordered>     & glSystem,
+                 Teuchos::RCP<ComplexVector>                   & initialPsi,
                  Teuchos::RCP<Recti::Grid::Uniform>            & grid
                );
 
@@ -37,11 +38,15 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
                  const Teuchos::ParameterList               & domainParameters,
                  Teuchos::ParameterList                     & problemParameters,
                  Teuchos::RCP<Ginla::LocaSystem::Bordered>  & glSystem,
-                 Teuchos::RCP<Recti::Grid::Uniform>         & grid );
+                 Teuchos::RCP<ComplexVector>                & initialPsi,
+                 Teuchos::RCP<Recti::Grid::Uniform>         & grid
+               );
 
 Teuchos::RCP<NOX::Epetra::Group>
-createSolverGroup ( const Teuchos::RCP<Ginla::LocaSystem::Bordered> glSystem,
-                    const Teuchos::RCP<Teuchos::ParameterList> nlParamsPtr );
+createSolverGroup ( const Teuchos::RCP<Ginla::LocaSystem::Bordered> & glSystem,
+                    const Teuchos::RCP<Teuchos::ParameterList>      & nlParamsPtr,
+                    const Teuchos::RCP<ComplexVector>               & initialPsi
+                  );
 
 Teuchos::RCP<NOX::StatusTest::Generic>
 createConvergenceTest ( Teuchos::ParameterList & noxStatusList,

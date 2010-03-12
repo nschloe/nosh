@@ -51,11 +51,11 @@ class Default:
 public:
 
     //! Constructor with initial guess.
-    Default ( const Teuchos::RCP<Ginla::Operator::Virtual> & glOperator,
-              const Teuchos::RCP<const Epetra_Comm>        & eComm,
-              const Teuchos::RCP<const ComplexVector>      & psi,
-              const Teuchos::RCP<Ginla::IO::StatsWriter>   & statsWriter,
-              const Teuchos::RCP<Ginla::IO::StateWriter>   & stateWriter
+    Default ( const Teuchos::RCP<Ginla::Operator::Virtual>           & glOperator,
+              const Teuchos::RCP<const Epetra_Comm>                  & eComm,
+              const Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> > & complexMap,
+              const Teuchos::RCP<Ginla::IO::StatsWriter>             & statsWriter,
+              const Teuchos::RCP<Ginla::IO::StateWriter>             & stateWriter
             );
 
     //! Destructor
@@ -84,11 +84,6 @@ public:
     virtual bool
     computePreconditioner ( const Epetra_Vector &x, Epetra_Operator &Prec,
                             Teuchos::ParameterList* precParams = 0 );
-
-    //! Returns the current state. Not necessarily a solution to the problem.
-    //! @return Reference-counted pointer to the current state.
-    Teuchos::RCP<Epetra_Vector>
-    getSolution() const;
 
     //! Returns the current Jacobian.
     //! @return Reference-counted pointer to the Jacobian.
@@ -121,11 +116,12 @@ public:
     void
     releaseLocaStepper();
 
+    // needed, e.g., to allocate the linear system in the main file
     Teuchos::RCP<const Epetra_Map>
     getRealMap() const;
 
     Teuchos::RCP<const Ginla::Komplex>
-    getGlKomplex() const;
+    getKomplex() const;
 
 private:
 
@@ -167,8 +163,6 @@ private:
     Teuchos::RCP<const LOCA::Stepper> stepper_;
 
     Teuchos::RCP<Ginla::Komplex> glKomplex_;
-    
-    Teuchos::RCP<Epetra_Vector> initialSolution_;
     
     const Teuchos::RCP<Ginla::IO::StatsWriter> statsWriter_;
     const Teuchos::RCP<Ginla::IO::StateWriter> stateWriter_;

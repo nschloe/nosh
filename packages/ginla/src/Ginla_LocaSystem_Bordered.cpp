@@ -36,36 +36,25 @@ typedef std::complex<double> double_complex;
 // =============================================================================
 // Default constructor
 Ginla::LocaSystem::Bordered::
-Bordered ( const Teuchos::RCP<Ginla::Operator::Virtual> & glOperator,
-           const Teuchos::RCP<const Epetra_Comm>        & eComm,
-           const Teuchos::RCP<const ComplexVector>      & psi,
-           const Teuchos::RCP<Ginla::IO::StatsWriter>   & statsWriter,
-           const Teuchos::RCP<Ginla::IO::StateWriter>   & stateWriter
+Bordered ( const Teuchos::RCP<Ginla::Operator::Virtual>           & glOperator,
+           const Teuchos::RCP<const Epetra_Comm>                  & eComm,
+           const Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> > & complexMap,
+           const Teuchos::RCP<Ginla::IO::StatsWriter>             & statsWriter,
+           const Teuchos::RCP<Ginla::IO::StateWriter>             & stateWriter
          ) :
         glSystem_ ( glOperator,
                     eComm,
-                    psi,
+                    complexMap,
                     statsWriter,
                     stateWriter ),
         regularMap_ (  glSystem_.getRealMap() ),
         extendedMap_ ( createExtendedRealMap ( *regularMap_ ) ),
         jacobian_ ( new Epetra_CrsMatrix ( Copy, *extendedMap_, 0 ) ),
-        solution_ ( new Epetra_Vector ( *extendedMap_ ) ),
         firstTime_ ( true ),
         importFromExtendedMap_(  Epetra_Import(*regularMap_,*extendedMap_) ),
         importFromRegularMap_( Epetra_Import(*extendedMap_,*regularMap_) )
-{ 
-    Teuchos::RCP<Epetra_Vector> tmp = glSystem_.getGlKomplex()->complex2real ( *psi );
-
-    for ( int k=0; k<tmp->MyLength(); k++ )
-        (*solution_)[k] = ( *tmp ) [tmp->Map().GID ( k ) ];
-
-    int n = solution_->GlobalLength();
-    solution_->ReplaceGlobalValue ( n-1, 0, 0.0 );   
-
-    // Initialize the format for the the continuation step number.
-    // Here: 00012 for step no. 12, if maxStepNumberDecimals_=5.
-//     stepNumFileNameFormat_ = boost::str ( boost::format ( "%%|0%d|" ) % maxStepNumberDecimals_ );
+{
+  return;
 }
 // =============================================================================
 // Destructor
@@ -168,21 +157,15 @@ Ginla::LocaSystem::Bordered::computeJacobian ( const Epetra_Vector & x,
 }
 // =============================================================================
 bool
-Ginla::LocaSystem::Bordered::computePreconditioner ( const Epetra_Vector    & x,
-                                                Epetra_Operator        & Prec,
-                                                Teuchos::ParameterList * precParams )
+Ginla::LocaSystem::Bordered::
+computePreconditioner ( const Epetra_Vector    & x,
+                        Epetra_Operator        & Prec,
+                        Teuchos::ParameterList * precParams )
 {
     TEST_FOR_EXCEPTION ( true,
                          std::logic_error,
                          "Use explicit Jacobian only for this test problem!" );
     return true;
-}
-// =============================================================================
-Teuchos::RCP<Epetra_Vector>
-Ginla::LocaSystem::Bordered::
-getSolution() const
-{
-    return solution_;
 }
 // =============================================================================
 Teuchos::RCP<Epetra_CrsMatrix>
@@ -210,7 +193,7 @@ Ginla::LocaSystem::Bordered::createJacobian ( const Epetra_Vector & x )
     tmp.Import( x, importFromExtendedMap_, Insert );
 
     // TODO don't explicitly construct psi? get1dCopy on the rhs
-    Teuchos::RCP<ComplexVector>             psi     = glSystem_.getGlKomplex()->real2complex ( tmp );
+    Teuchos::RCP<ComplexVector>             psi     = glSystem_.getKomplex()->real2complex ( tmp );
     Teuchos::ArrayRCP<const double_complex> psiView = psi->get1dView();
 
     // get the unbordered Jacobian
@@ -221,11 +204,11 @@ Ginla::LocaSystem::Bordered::createJacobian ( const Epetra_Vector & x )
     ComplexVector phi = *psi;
     phi.scale ( std::complex<double> ( 0.0,-1.0 ) );
     Teuchos::RCP<Epetra_Vector> rightBorder =
-        glSystem_.getGlKomplex()->complex2real ( phi );
+        glSystem_.getKomplex()->complex2real ( phi );
 
     // Get the lower bordering  Im( psi_{old}^H, dpsi ).
     Teuchos::RCP<Epetra_Vector> lowerBorder =
-        glSystem_.getGlKomplex()->imagScalarProductCoeff ( psi );
+        glSystem_.getKomplex()->imagScalarProductCoeff ( psi );
 
     // corner element
     double d = 0.0;
@@ -352,9 +335,9 @@ create_CommInt ( const Teuchos::RCP<const Epetra_Comm> &epetraComm )
 // =============================================================================
 // TODO delete?
 const Teuchos::RCP<const Ginla::Komplex>
-Ginla::LocaSystem::Bordered::getGlKomplex() const
+Ginla::LocaSystem::Bordered::getKomplex() const
 {
-    return glSystem_.getGlKomplex();
+    return glSystem_.getKomplex();
 }
 // =============================================================================
 const Teuchos::RCP<const Epetra_Map>
@@ -445,5 +428,23 @@ PutRow ( const Teuchos::RCP<Epetra_CrsMatrix> A,
         return A->InsertGlobalValues ( globalRow, numIndices, values, indices );
     else
         return A->ReplaceGlobalValues ( globalRow, numIndices, values, indices );
+}
+// =============================================================================
+Teuchos::RCP<Epetra_Vector>
+Ginla::LocaSystem::Bordered::
+createInterfaceState( const Teuchos::RCP<const ComplexVector> & psi,
+                      const double                              chi )
+{
+    Teuchos::RCP<Epetra_Vector> x =
+        Teuchos::rcp( new Epetra_Vector( *extendedMap_ ) );
+  
+    x->Import( *glSystem_.getKomplex()->complex2real(psi),
+               importFromRegularMap_,
+               Insert );
+
+    // set last entry
+    x->ReplaceGlobalValue ( x->GlobalLength()-1, 0, chi );
+                
+    return x;
 }
 // =============================================================================

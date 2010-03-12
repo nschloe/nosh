@@ -59,6 +59,7 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
                  const std::string                             & fileName,
                  Teuchos::ParameterList                        & problemParameters,
                  Teuchos::RCP<Ginla::LocaSystem::Bordered>     & glSystem,
+                 Teuchos::RCP<ComplexVector>                   & initialPsi,
                  Teuchos::RCP<Recti::Grid::Uniform>            & grid
                )
 {
@@ -79,7 +80,7 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
         Teuchos::rcp ( new Ginla::Operator::BCCentral ( grid, A ) );
 
     TEUCHOS_ASSERT_EQUALITY ( psi->getNumVectors(), 1 );
-    
+    initialPsi = psi->getVectorNonConst( 0 );
     
     std::string outputDirectory = "";
     std::string contDataFileName = "continuationData.dat";
@@ -95,7 +96,7 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
     
     glSystem = Teuchos::rcp ( new Ginla::LocaSystem::Bordered ( glOperator,
                                                                 eComm,
-                                                                psi->getVector ( 0 ),
+                                                                psi->getMap(),
                                                                 statsWriter,
                                                                 stateWriter ) );
 
@@ -111,7 +112,9 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
                  const Teuchos::ParameterList                & domainParameters,
                  Teuchos::ParameterList                      & problemParameters,
                  Teuchos::RCP<Ginla::LocaSystem::Bordered>   & glSystem,
-                 Teuchos::RCP<Recti::Grid::Uniform>          & grid)
+                 Teuchos::RCP<ComplexVector>                 & initialPsi,
+                 Teuchos::RCP<Recti::Grid::Uniform>          & grid
+               )
 {
     problemParameters.set ( "scaling", scaling );
     problemParameters.set ( "H0"     , H0 );
@@ -138,9 +141,11 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
     // create an initial guess
     int numGlobalElements = grid->getNumGridPoints();
     int indexBase = 0;
-    Teuchos::RCP<Tpetra::Map<Thyra::Ordinal> > map = Teuchos::rcp( new Tpetra::Map<Thyra::Ordinal>(numGlobalElements, indexBase, comm ) );
-    Teuchos::RCP<ComplexVector> psi = Teuchos::rcp( new ComplexVector(map) );
-    psi->putScalar( double_complex(0.5,0.0) );
+    Teuchos::RCP<Tpetra::Map<Thyra::Ordinal> > map =
+        Teuchos::rcp( new Tpetra::Map<Thyra::Ordinal>(numGlobalElements, indexBase, comm ) );
+
+    initialPsi = Teuchos::rcp( new ComplexVector(map) );
+    initialPsi->putScalar( double_complex(0.5,0.0) );
     
     std::string outputDirectory = "";
     std::string contDataFileName = "continuationData.dat";
@@ -155,14 +160,18 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
                                                   maxIndex ) );
     glSystem = Teuchos::rcp ( new Ginla::LocaSystem::Bordered ( glOperator,
                                                                 eComm,
-                                                                psi,
+                                                                initialPsi->getMap(),
                                                                 statsWriter,
                                                                 stateWriter ) );
+
+    return;
 }
 // =========================================================================
 Teuchos::RCP<NOX::Epetra::Group>
-createSolverGroup ( const Teuchos::RCP<Ginla::LocaSystem::Bordered> glSystem,
-                    const Teuchos::RCP<Teuchos::ParameterList> nlParamsPtr )
+createSolverGroup ( const Teuchos::RCP<Ginla::LocaSystem::Bordered> & glSystem,
+                    const Teuchos::RCP<Teuchos::ParameterList>      & nlParamsPtr,
+                    const Teuchos::RCP<ComplexVector>               & initialPsi
+                  )
 {
     // Create all possible Epetra_Operators.
     Teuchos::RCP<Epetra_RowMatrix> Analytic = glSystem->getJacobian();
@@ -178,23 +187,26 @@ createSolverGroup ( const Teuchos::RCP<Ginla::LocaSystem::Bordered> glSystem,
                                            .sublist ( "Linear Solver" );
 
     // Get initial solution
-    Teuchos::RCP<Epetra_Vector> soln = glSystem->getSolution();
-
+    Epetra_Vector cloneVector( *glSystem->getExtendedMap() );
     Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys =
         Teuchos::rcp ( new NOX::Epetra::LinearSystemAztecOO ( printParams,
-                       lsParams,
-                       iReq,
-                       iJac,
-                       Analytic,
-                       *soln ) );
+                                                              lsParams,
+                                                              iReq,
+                                                              iJac,
+                                                              Analytic,
+                                                              cloneVector ) );
 
     // Create the Group
-    NOX::Epetra::Vector initialGuess ( soln, NOX::Epetra::Vector::CreateView );
+    // get initial guess
+    double chi = 0.0;
+    NOX::Epetra::Vector initialGuess ( glSystem->createInterfaceState( initialPsi, chi ),
+                                       NOX::Epetra::Vector::CreateView
+                                     );
 
     return Teuchos::rcp ( new NOX::Epetra::Group ( printParams,
-                          iReq,
-                          initialGuess,
-                          linSys ) );
+                                                   iReq,
+                                                   initialGuess,
+                                                   linSys ) );
 }
 // =========================================================================
 Teuchos::RCP<NOX::StatusTest::Generic>

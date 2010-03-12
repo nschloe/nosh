@@ -22,24 +22,20 @@
 #include <Epetra_SerialComm.h>
 #endif
 
-// abbreviate the complex type name
-typedef std::complex<double> double_complex;
-
 // =============================================================================
 // Default constructor without perturbation
 Ginla::LocaSystem::Default::
-Default ( const Teuchos::RCP<Ginla::Operator::Virtual> & glOperator,
-          const Teuchos::RCP<const Epetra_Comm>        & eComm,
-          const Teuchos::RCP<const ComplexVector>      & psi,
-          const Teuchos::RCP<Ginla::IO::StatsWriter>   & statsWriter,
-          const Teuchos::RCP<Ginla::IO::StateWriter>   & stateWriter
-          ) :
+Default ( const Teuchos::RCP<Ginla::Operator::Virtual>           & glOperator,
+          const Teuchos::RCP<const Epetra_Comm>                  & eComm,
+          const Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> > & complexMap,
+          const Teuchos::RCP<Ginla::IO::StatsWriter>             & statsWriter,
+          const Teuchos::RCP<Ginla::IO::StateWriter>             & stateWriter
+        ) :
         glOperator_ ( glOperator ),
         perturbation_ ( Teuchos::null ),
         preconditioner_( Teuchos::null ),
         stepper_ ( Teuchos::null ),
-        glKomplex_ ( Teuchos::rcp ( new Ginla::Komplex ( eComm, psi->getMap() ) ) ),
-        initialSolution_ ( glKomplex_->complex2real ( psi ) ),
+        glKomplex_ ( Teuchos::rcp ( new Ginla::Komplex ( eComm, complexMap ) ) ),
         statsWriter_( statsWriter ),
         stateWriter_( stateWriter ),
         firstTime_ ( true )
@@ -140,8 +136,8 @@ computeJacobian ( const Epetra_Vector & x,
 // =============================================================================
 bool
 Ginla::LocaSystem::Default::
-computePreconditioner ( const Epetra_Vector &x,
-                        Epetra_Operator &Prec,
+computePreconditioner ( const Epetra_Vector & x,
+                        Epetra_Operator     & Prec,
                         Teuchos::ParameterList *precParams )
 {
 //  Epetra_Vector diag = x;
@@ -152,12 +148,6 @@ computePreconditioner ( const Epetra_Vector &x,
                          std::logic_error,
                          "Use explicit Jacobian only for this test problem!" );
     return true;
-}
-// =============================================================================
-Teuchos::RCP<Epetra_Vector>
-Ginla::LocaSystem::Default::getSolution() const
-{
-    return initialSolution_;
 }
 // =============================================================================
 Teuchos::RCP<Epetra_CrsMatrix>
@@ -410,7 +400,7 @@ Ginla::LocaSystem::Default::getRealMap() const
 }
 // =============================================================================
 Teuchos::RCP<const Ginla::Komplex>
-Ginla::LocaSystem::Default::getGlKomplex() const
+Ginla::LocaSystem::Default::getKomplex() const
 {
     return glKomplex_;
 }

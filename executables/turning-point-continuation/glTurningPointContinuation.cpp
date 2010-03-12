@@ -253,10 +253,9 @@ main ( int argc, char *argv[] )
                                                   
     try
     {
-        
         glsystem = Teuchos::rcp ( new Ginla::LocaSystem::Bordered ( glOperator,
                                                                     eComm,
-                                                                    psi,
+                                                                    psi->getMap(),
                                                                     statsWriter,
                                                                     stateWriter ) );
     }
@@ -293,9 +292,6 @@ main ( int argc, char *argv[] )
     // Create global data object
     Teuchos::RCP<LOCA::GlobalData> globalData =
         LOCA::createGlobalData ( paramList, epetraFactory );
-
-    // get the initial solution
-    Teuchos::RCP<Epetra_Vector> soln = glsystem->getSolution();
     // ---------------------------------------------------------------------------
 
 #ifdef HAVE_LOCA_ANASAZI
@@ -314,7 +310,7 @@ main ( int argc, char *argv[] )
     Teuchos::RCP<Ginla::IO::SaveEigenData> glEigenSaver =    
         Teuchos::RCP<Ginla::IO::SaveEigenData> ( new Ginla::IO::SaveEigenData ( eigenListPtr,
                                                                                 grid,
-                                                                                glsystem->getGlKomplex(),
+                                                                                glsystem->getKomplex(),
                                                                                 eigenStatsWriter,
                                                                                 stateWriter ) );
 
@@ -333,17 +329,25 @@ main ( int argc, char *argv[] )
     Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = glsystem;
 
     Teuchos::ParameterList& nlPrintParams =
-        paramList->sublist ( "NOX" ) .sublist ( "Printing" );
+        paramList->sublist ( "NOX" )
+                  .sublist ( "Printing" );
 
     Teuchos::ParameterList& lsParams =
-        paramList->sublist ( "NOX" ) .sublist ( "Direction" ) .sublist ( "Newton" ) .sublist ( "Linear Solver" );
+        paramList->sublist ( "NOX" )
+                  .sublist ( "Direction" )
+                  .sublist ( "Newton" )
+                  .sublist ( "Linear Solver" );
 
+    NOX::Epetra::Vector cloneVector( Epetra_Vector( *glsystem->getExtendedMap() ) );
     Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys =
-        Teuchos::rcp ( new NOX::Epetra::LinearSystemAztecOO ( nlPrintParams, lsParams, iReq, iJac, J, *soln ) );
+        Teuchos::rcp ( new NOX::Epetra::LinearSystemAztecOO ( nlPrintParams,
+                                                              lsParams,
+                                                              iReq,
+                                                              iJac,
+                                                              J,
+                                                              cloneVector ) );
 
     Teuchos::RCP<LOCA::Epetra::Interface::TimeDependent> iTime = glsystem;
-    // ---------------------------------------------------------------------------
-
     // ---------------------------------------------------------------------------
     // Create a group which uses that problem interface. The group will
     // be initialized to contain the default initial guess for the
@@ -353,26 +357,23 @@ main ( int argc, char *argv[] )
     LOCA::ParameterVector locaParams =
           *(Ginla::Helpers::teuchosParameterList2locaParameterVector( glParameters ));
 
-    NOX::Epetra::Vector initialGuess ( soln, NOX::Epetra::Vector::CreateView );
-
+    // get initial guess
+    double chi = 0.0;
+    NOX::Epetra::Vector initialGuess ( glsystem->createInterfaceState( psi, chi ),
+                                       NOX::Epetra::Vector::CreateView
+                                     );
     Teuchos::RCP<LOCA::Epetra::Group> grp =
-        Teuchos::rcp ( new LOCA::Epetra::Group ( globalData, nlPrintParams, iTime,
-                       initialGuess, linSys, linSys, locaParams ) );
+        Teuchos::rcp ( new LOCA::Epetra::Group ( globalData,
+                                                 nlPrintParams,
+                                                 iTime,
+                                                 initialGuess,
+                                                 linSys,
+                                                 linSys,
+                                                 locaParams ) );
 
     grp->setParams ( locaParams );
     // ---------------------------------------------------------------------------
-
-
-    // ---------------------------------------------------------------------------
-    // Get the vector from the Problem
-    Teuchos::RCP<NOX::Epetra::Vector> noxSoln =
-        Teuchos::rcp ( new NOX::Epetra::Vector ( soln, NOX::Epetra::Vector::CreateView ) );
-    // ---------------------------------------------------------------------------
-
-
-    // ---------------------------------------------------------------------------
     // Set up the NOX status tests
-    // ---------------------------------------------------------------------------
     Teuchos::ParameterList& noxList = paramList->sublist ( "NOX", true );
     double tol = noxList.get<double> ( "Tolerance" );
     int maxNonlinarSteps = noxList.get<int> ( "Max steps" );
@@ -383,10 +384,7 @@ main ( int argc, char *argv[] )
     Teuchos::RCP<NOX::StatusTest::Generic> comboOR =
         Teuchos::rcp ( new NOX::StatusTest::Combo ( NOX::StatusTest::Combo::OR, normF, maxIters ) );
     // ---------------------------------------------------------------------------
-
-    // ---------------------------------------------------------------------------
     // Set up the LOCA status tests
-    // ---------------------------------------------------------------------------
     Teuchos::RCP<LOCA::StatusTest::MaxIters> maxLocaStepsTest;
     try {
         maxLocaStepsTest = Teuchos::rcp ( new LOCA::StatusTest::MaxIters ( maxLocaSteps ) );
@@ -423,10 +421,7 @@ main ( int argc, char *argv[] )
     }
     // convert the complex vector into a (real-valued) GlSystem-compliant vector
     Teuchos::RCP<Epetra_Vector> glsystemInitialNullVector =
-        glsystem->getGlKomplex()->complex2real ( initialNullVector );
-    // ---------------------------------------------------------------------------
-
-
+        glsystem->getKomplex()->complex2real ( initialNullVector );
     // ---------------------------------------------------------------------------
     // add LOCA options which cannot be provided in the XML file
     Teuchos::ParameterList & bifList =
@@ -452,9 +447,6 @@ main ( int argc, char *argv[] )
         Teuchos::rcp ( new NOX::Epetra::Vector ( *glsystemInitialNullVectorExt ) );
 //     initialNullAbstractVec->init(1.0);
     bifList.set ( "Initial Null Vector", initialNullAbstractVec );
-    // ---------------------------------------------------------------------------
-
-
     // ---------------------------------------------------------------------------
     // Create the stepper
     Teuchos::RCP<LOCA::Stepper> stepper;

@@ -21,7 +21,6 @@
 // #include <NOX_Epetra_Group.H>
 
 #include "Ginla_MagneticVectorPotential_Centered.h"
-// #include "Ginla_Komplex.h"
 #include "Ginla_Operator_BCCentral.h"
 #include "Ginla_IO_StatsWriter.h"
 #include "Ginla_IO_StateWriter.h"
@@ -167,7 +166,7 @@ BOOST_AUTO_TEST_CASE( zero_step_loca_test )
     Teuchos::RCP<Ginla::LocaSystem::Bordered> glsystem =
                Teuchos::rcp ( new Ginla::LocaSystem::Bordered ( glOperator,
                                                                 eComm,
-                                                                psi,
+                                                                psi->getMap(),
                                                                 statsWriter,
                                                                 stateWriter ) );
     
@@ -195,11 +194,7 @@ BOOST_AUTO_TEST_CASE( zero_step_loca_test )
     // Create global data object
     Teuchos::RCP<LOCA::GlobalData> globalData =
         LOCA::createGlobalData ( paramList, epetraFactory );
-
-    // get the initial solution
-    Teuchos::RCP<Epetra_Vector> soln = glsystem->getSolution();
     // ------------------------------------------------------------------------
-
 #ifdef HAVE_LOCA_ANASAZI
     Teuchos::ParameterList& eigenList =
         paramList->sublist ( "LOCA" ).sublist ( "Stepper" ) .sublist ( "Eigensolver" );
@@ -216,7 +211,7 @@ BOOST_AUTO_TEST_CASE( zero_step_loca_test )
     Teuchos::RCP<Ginla::IO::SaveEigenData> glEigenSaver =    
         Teuchos::RCP<Ginla::IO::SaveEigenData> ( new Ginla::IO::SaveEigenData ( eigenListPtr,
                                                                                 grid,
-                                                                                glsystem->getGlKomplex(),
+                                                                                glsystem->getKomplex(),
                                                                                 eigenStatsWriter,
                                                                                 stateWriter ) );
 
@@ -236,37 +231,50 @@ BOOST_AUTO_TEST_CASE( zero_step_loca_test )
 //  Teuchos::RCP<NOX::Epetra::Interface::Preconditioner> iPrec = glsystem;
 
     Teuchos::ParameterList& nlPrintParams =
-        paramList->sublist ( "NOX" ) .sublist ( "Printing" );
+        paramList->sublist ( "NOX" )
+                  .sublist ( "Printing" );
 
     Teuchos::ParameterList& lsParams =
-        paramList->sublist ( "NOX" ) .sublist ( "Direction" ) .sublist ( "Newton" ) .sublist ( "Linear Solver" );
+        paramList->sublist ( "NOX" )
+                  .sublist ( "Direction" )
+                  .sublist ( "Newton" )
+                  .sublist ( "Linear Solver" );
 
-    BOOST_REQUIRE( soln.is_valid_ptr() && !soln.is_null() );
-
+    NOX::Epetra::Vector cloneVector( Epetra_Vector( *glsystem->getExtendedMap() ) );
     Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys =
-        Teuchos::rcp ( new NOX::Epetra::LinearSystemAztecOO ( nlPrintParams, lsParams, iReq, iJac, J, *soln ) );
+        Teuchos::rcp ( new NOX::Epetra::LinearSystemAztecOO ( nlPrintParams,
+                                                              lsParams,
+                                                              iReq,
+                                                              iJac,
+                                                              J,
+                                                              cloneVector ) );
 
     Teuchos::RCP<LOCA::Epetra::Interface::TimeDependent> iTime = glsystem;
     // ------------------------------------------------------------------------
     // Create a group which uses that problem interface. The group will
     // be initialized to contain the default initial guess for the
     // specified problem.
-    
+
     // translate parameters into a LOCA list
     LOCA::ParameterVector locaParams =
           *(Ginla::Helpers::teuchosParameterList2locaParameterVector( glParameters ));
 
-    NOX::Epetra::Vector initialGuess ( soln, NOX::Epetra::Vector::CreateView );
+    // get initial guess
+    double chi = 0.0;
+    NOX::Epetra::Vector initialGuess ( glsystem->createInterfaceState( psi, chi ),
+                                       NOX::Epetra::Vector::CreateView
+                                     );
 
     Teuchos::RCP<LOCA::Epetra::Group> grp =
-        Teuchos::rcp ( new LOCA::Epetra::Group ( globalData, nlPrintParams, iTime,
-                       initialGuess, linSys, linSys, locaParams ) );
+        Teuchos::rcp ( new LOCA::Epetra::Group ( globalData,
+                                                 nlPrintParams,
+                                                 iTime,
+                                                 initialGuess,
+                                                 linSys,
+                                                 linSys,
+                                                 locaParams ) );
 
     grp->setParams ( locaParams );
-    // ------------------------------------------------------------------------
-    // Get the vector from the Problem
-    Teuchos::RCP<NOX::Epetra::Vector> noxSoln =
-        Teuchos::rcp ( new NOX::Epetra::Vector ( soln, NOX::Epetra::Vector::CreateView ) );
     // ------------------------------------------------------------------------
     // Set up the NOX status tests
     Teuchos::ParameterList& noxList = paramList->sublist ( "NOX", true );
@@ -277,7 +285,9 @@ BOOST_AUTO_TEST_CASE( zero_step_loca_test )
     Teuchos::RCP<NOX::StatusTest::MaxIters> maxIters =
         Teuchos::rcp ( new NOX::StatusTest::MaxIters ( maxNonlinarSteps ) );
     Teuchos::RCP<NOX::StatusTest::Generic> comboOR =
-        Teuchos::rcp ( new NOX::StatusTest::Combo ( NOX::StatusTest::Combo::OR, normF, maxIters ) );
+        Teuchos::rcp ( new NOX::StatusTest::Combo ( NOX::StatusTest::Combo::OR,
+                                                    normF,
+                                                    maxIters ) );
     // ------------------------------------------------------------------------
     // Set up the LOCA status tests
     Teuchos::RCP<LOCA::StatusTest::MaxIters> maxLocaStepsTest;
