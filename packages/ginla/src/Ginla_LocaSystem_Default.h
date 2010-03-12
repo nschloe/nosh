@@ -4,7 +4,6 @@
 #ifndef GLSYSTEM_H
 #define GLSYSTEM_H
 
-#include "AbstractStateWriter.h"
 #include "Ginla_Komplex.h"
 #include "Ginla_IO_StatsWriter.h"
 #include "Ginla_IO_StateWriter.h"

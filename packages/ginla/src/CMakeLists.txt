@@ -16,7 +16,6 @@ SET ( ginla_SRCS
 #       Ginla_Constraint_MinDistReal.cpp
       Ginla_Perturbation_Quadrants.cpp
       Ginla_Perturbation_Virtual.cpp
-      AbstractStateWriter.cpp
     )
 
 FIND_PACKAGE( Trilinos REQUIRED )

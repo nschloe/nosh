@@ -7,7 +7,6 @@
 #ifndef GL_LINEARSYSTEM_BORDERED_H_
 #define GL_LINEARSYSTEM_BORDERED_H_
 
-#include "AbstractStateWriter.h"
 #include "Ginla_Komplex.h"
 #include "Ginla_LocaSystem_Default.h"
 
