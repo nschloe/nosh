@@ -1,6 +1,6 @@
 // see <http://old.nabble.com/Undefined-reference-to-%27main%27-with-Boost-Test.-Why--td15986217.html>
 #define BOOST_TEST_DYN_LINK
-#define BOOST_TEST_MODULE GRNN freeEnergyTest
+#define BOOST_TEST_MODULE GRNN vorticityTest
 
 #include <boost/test/unit_test.hpp>
 #include <boost/test/floating_point_comparison.hpp>
@@ -36,11 +36,11 @@
 
 // ===========================================================================
 // <http://www.boost.org/doc/libs/1_42_0/libs/test/doc/html/tutorials/hello-the-testing-world.htmlhh>
-BOOST_AUTO_TEST_CASE( free_energy_test )
+BOOST_AUTO_TEST_CASE( vorticity_test )
 {
     // Initialize MPI
 #ifdef HAVE_MPI
-    MPI_Init ( &argc,&argv );
+    MPI_Init ( NULL, NULL );
 #endif
 
     // Create a communicator for Tpetra objects
