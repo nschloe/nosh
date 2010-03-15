@@ -13,10 +13,6 @@ SET(Boost_USE_STATIC_LIBS   ON)
 SET(Boost_USE_MULTITHREADED ON)
 INCLUDE_DIRECTORIES ( ${Boost_INCLUDE_DIRS} )
 
-SET ( ginzburg_landau_SRCS
-      glNoxHelpers.cpp
-      main.cpp )
-
 SET ( internal_LIBS
       ginla
       recti
@@ -31,14 +27,29 @@ INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/packages/vio/src
 LINK_DIRECTORIES( ${Boost_LIBRARY_DIRS}
                   ${VTK_LIBRARY_DIRS} )
 
-SET( MY_EXECUTABLE "gl-nox.out" )
-
+SET( MY_EXECUTABLE
+     "gl-nox.out" )
+SET ( glNOX_SRCS
+      glNoxHelpers.cpp
+      main.cpp )
 ADD_EXECUTABLE( ${MY_EXECUTABLE}
-                ${ginzburg_landau_SRCS})
-
+                ${glNOX_SRCS})
 SET_TARGET_PROPERTIES( ${MY_EXECUTABLE}
                        PROPERTIES LINKER_LANGUAGE Fortran )
+TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
+                       ${internal_LIBS}
+                       ${Trilinos_LIBRARIES}
+                       ${Trilinos_TPL_LIBRARIES}
+                       ${Boost_LIBRARIES} )
 
+SET( MY_EXECUTABLE
+     "noxWithModelEvaluator.out" )
+SET ( glNOXModelEvaluator_SRCS
+      noxWithModelEvaluator.cpp )
+ADD_EXECUTABLE( ${MY_EXECUTABLE}
+                ${glNOXModelEvaluator_SRCS})
+SET_TARGET_PROPERTIES( ${MY_EXECUTABLE}
+                       PROPERTIES LINKER_LANGUAGE Fortran )
 TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
                        ${internal_LIBS}
                        ${Trilinos_LIBRARIES}

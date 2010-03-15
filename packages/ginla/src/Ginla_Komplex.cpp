@@ -22,8 +22,9 @@ typedef std::complex<double> double_complex;
 
 // =============================================================================
 // Default constructor
-Ginla::Komplex::Komplex ( const Teuchos::RCP<const Epetra_Comm>                  eComm,
-                       const Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> > ComplexMap ) :
+Ginla::Komplex::
+Komplex ( const Teuchos::RCP<const Epetra_Comm>                  eComm,
+          const Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> > ComplexMap ) :
         EComm_ ( eComm ),
         TComm_ ( create_CommInt ( eComm ) ),
         RealMap_ ( createRealMap ( ComplexMap ) ),
