@@ -81,6 +81,9 @@ namespace Helpers
                      const std::string                              & outputFormat
                    );
 
+  unsigned int
+  numDigits ( const int i );
+
 };
 
 }

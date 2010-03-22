@@ -270,3 +270,20 @@ getVorticity ( const ComplexVector        & psi,
     return round ( vorticity );
 }
 // ============================================================================
+unsigned int
+Ginla::Helpers::
+numDigits ( const int i )
+{
+    int numDigits = 0;
+    int ii = i;
+    if ( ii < 0 )
+        ii = -ii;
+
+    while ( ii > 0 )
+    {
+        numDigits++;
+        ii/=10;
+    }
+    return numDigits;
+}
+// ============================================================================

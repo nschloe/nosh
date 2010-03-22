@@ -66,9 +66,8 @@ void
 Ginla::IO::StatsWriter::
 print()
 { 
-   int doublePrec = 15;
-   int columnWidth = doublePrec + 7;
-   
+   unsigned int doublePrec = 15;
+   unsigned int doubleColumnWidth = doublePrec + 7;
    unsigned int intColumnWidth = 5;
    
    std::string columnSep = "  ";
@@ -88,11 +87,18 @@ print()
          
          std::string label = statisticsList_->name(k);
          if ( statisticsList_->isType<double>( label ) )
-             strstream.width( columnWidth );
-         else
+             strstream.width( doubleColumnWidth );
+         else if ( statisticsList_->isType<int>( label )
+                   || statisticsList_->isType<unsigned int>( label ) )
              strstream.width( (intColumnWidth<label.length())?
                               label.length():intColumnWidth
                             );
+         else if ( statisticsList_->isType<std::string>( label ) )
+             strstream.width( statisticsList_->get<std::string>( label ).length() );
+         else
+           TEST_FOR_EXCEPTION( true,
+                               std::logic_error,
+                               "Invalid data type for item \"" << statisticsList_->get( label, "" ) << "\"." );
            
          strstream << statisticsList_->name(k);
          fileStream_ << strstream.str() << columnSep;
@@ -101,7 +107,6 @@ print()
        fileStream_ << std::endl;
        printHeader_ = false; 
    }
-
 
    // pad from the left with the width of the header line starter
    // to get column alignment
@@ -112,13 +117,11 @@ print()
        std::stringstream strstream;
        strstream.fill( ' ' );
        strstream << std::left; // have the number flush left
-       
      
        std::string label = statisticsList_->name(k);
-    
        if ( statisticsList_->isType<double>( label ) )
        {
-           strstream.width( columnWidth );
+           strstream.width( doubleColumnWidth );
            strstream.setf ( std::ios::scientific );
            strstream.precision( doublePrec );
            strstream << statisticsList_->get<double>( label );
@@ -130,6 +133,22 @@ print()
                           );
            strstream << statisticsList_->get<int>( label );
        }
+       else if ( statisticsList_->isType<unsigned int>( label ) )
+       {
+           strstream.width( (intColumnWidth<label.length())?
+                            label.length():intColumnWidth
+                          );
+           strstream << statisticsList_->get<unsigned int>( label );
+       }
+       else if ( statisticsList_->isType<std::string>( label ) )
+       {
+           strstream.width( statisticsList_->get<std::string>( label ).length() );
+           strstream << statisticsList_->get<std::string>( label );
+       }
+       else
+           TEST_FOR_EXCEPTION( true,
+                               std::logic_error,
+                               "Invalid data type for item \"" << statisticsList_->get( label, "" ) << "\"." );
 
        fileStream_ << strstream.str() << columnSep;
   }

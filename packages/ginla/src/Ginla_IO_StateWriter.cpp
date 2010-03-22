@@ -40,7 +40,7 @@ StateWriter( const std::string & outputDir,
                         "outputFormat_ (\"" << outputFormat
                         << "\") must be either one of \"VTI\", \"VTK\"" );
 
-  maxNumDigits_ = numDigits( maxIndex );
+  maxNumDigits_ = Ginla::Helpers::numDigits( maxIndex );
   return;
 }
 // ============================================================================
@@ -115,22 +115,5 @@ write ( const Teuchos::RCP<const ComplexVector>        & psi,
   LOCA::ParameterVector empty;
   write ( psi, grid, index, filenameAppend, empty );
   return;
-}
-// ============================================================================
-unsigned int
-Ginla::IO::StateWriter::
-numDigits ( const int i )
-{
-    int numDigits = 0;
-    int ii = i;
-    if ( ii < 0 )
-        ii = -ii;
-
-    while ( ii > 0 )
-    {
-        numDigits++;
-        ii/=10;
-    }
-    return numDigits;
 }
 // ============================================================================

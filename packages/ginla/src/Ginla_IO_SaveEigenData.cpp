@@ -1,5 +1,7 @@
 #include "Ginla_IO_SaveEigenData.h"
 
+#include "Ginla_Helpers.h"
+
 #include <NOX_Abstract_MultiVector.H>
 
 // =============================================================================
@@ -52,7 +54,7 @@ save ( Teuchos::RCP<std::vector<double> >       & evals_r,
     unsigned int numEigenValues = evals_r->size();
 
     // store the unstable eigenstate into files
-    int numUnstableEigenvalues = 0;
+    unsigned int numUnstableEigenvalues = 0;
     for ( unsigned int k = 0; k < numEigenValues; k++ )
     {
         if ( ( *evals_r ) [k] > 0.0 )
@@ -85,16 +87,25 @@ save ( Teuchos::RCP<std::vector<double> >       & evals_r,
     // Create Teuchos::ParameterList containing the data to be put into the
     // stats file.
     Teuchos::ParameterList eigenvaluesList;
-    eigenvaluesList.set( "0Step", step );
-    eigenvaluesList.set( "1#unstable ev", numUnstableEigenvalues );
+    eigenvaluesList.set( "#step", step );
+    eigenvaluesList.set( "#unstable", numUnstableEigenvalues );
     for ( unsigned int k = 0; k < maxEigenvaluesSave_; k++ )
     {
         std::stringstream label;
-        label << "Re(lambda_" << k << ")";
-        eigenvaluesList.set( label.str(), ( *evals_r ) [k] );
+        label << setw( Ginla::Helpers::numDigits(maxEigenvaluesSave_) ) << setfill( '0' ) << k << "-0Re()";
+        if ( k<numEigenValues )
+            eigenvaluesList.set( label.str(), ( *evals_r ) [k] );
+        else
+            eigenvaluesList.set( label.str(), "----------------------" );
         
-        label << "Im(lambda_" << k << ")";
-        eigenvaluesList.set( label.str(), ( *evals_i ) [k] );
+        // empty the stringstream
+        label.str(std::string());
+        
+        label << setw( Ginla::Helpers::numDigits(maxEigenvaluesSave_) ) << setfill( '0' ) <<  k<< "-1Im()";
+        if ( k<numEigenValues )
+            eigenvaluesList.set( label.str(), ( *evals_i ) [k] );
+        else
+            eigenvaluesList.set( label.str(), "----------------------" );
     }
     statsWriter_->setList( eigenvaluesList );
     statsWriter_->print();
@@ -126,7 +137,7 @@ save ( Teuchos::RCP<std::vector<double> >       & evals_r,
 
     // Make sure that the shift SIGMA (if using Shift-Invert) sits THRESHOLD above
     // the rightmost eigenvalue.
-    if ( eigenParamList_->get<string> ( "Operator" ).compare ( "Shift-Invert" ) ==0 )
+    if ( eigenParamList_->get<string> ( "Operator" ).compare ( "Shift-Invert" ) == 0 )
     {
         double maxEigenval = *std::max_element ( evals_r->begin(), evals_r->end() );
         double threshold = 0.5;

@@ -258,7 +258,7 @@ main ( int argc, char *argv[] )
     Teuchos::RCP<Teuchos::ParameterList> eigenListPtr =
         Teuchos::rcpFromRef ( ( eigenList ) );
     std::string eigenvaluesFileName =
-        outputList.get<string> ( "Eigenvalues file name" );
+        outputDirectory.string()  + "/" + outputList.get<string> ( "Eigenvalues file name" );
     std::string eigenstateFileNameAppendix =
         outputList.get<string> ( "Eigenstate file name appendix" );
 
@@ -274,6 +274,8 @@ main ( int argc, char *argv[] )
 
     Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> glSaveEigenDataStrategy =
         glEigenSaver;
+    eigenList.set ( "Save Eigen Data Method", "User-Defined" );
+    eigenList.set ( "User-Defined Save Eigen Data Name", "glSaveEigenDataStrategy" );
     eigenList.set ( "glSaveEigenDataStrategy", glSaveEigenDataStrategy );
 #endif
 

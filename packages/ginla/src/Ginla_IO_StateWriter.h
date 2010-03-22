@@ -73,8 +73,6 @@ public:
                
   protected:
   private:
-    unsigned int
-    numDigits ( const int i );
     
   private:
     std::string outputDir_;

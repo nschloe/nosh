@@ -40,11 +40,13 @@ class SaveEigenData:
    virtual
    ~SaveEigenData();
 
-   virtual NOX::Abstract::Group::ReturnType
-   save ( Teuchos::RCP<std::vector<double> >       &evals_r,
-          Teuchos::RCP<std::vector<double> >       &evals_i,
-          Teuchos::RCP<NOX::Abstract::MultiVector> &evecs_r,
-          Teuchos::RCP<NOX::Abstract::MultiVector> &evecs_i  );
+   virtual
+   NOX::Abstract::Group::ReturnType
+   save ( Teuchos::RCP<std::vector<double> >       & evals_r,
+          Teuchos::RCP<std::vector<double> >       & evals_i,
+          Teuchos::RCP<NOX::Abstract::MultiVector> & evecs_r,
+          Teuchos::RCP<NOX::Abstract::MultiVector> & evecs_i
+        );
 
    void
    setLocaStepper( const Teuchos::RCP<LOCA::Stepper> locaStepper );
@@ -54,7 +56,7 @@ class SaveEigenData:
         void
         releaseLocaStepper();
 
- protected:
+  protected:
   private:
     Teuchos::RCP<Teuchos::ParameterList> eigenParamList_;
     const Teuchos::RCP<const Recti::Grid::General> grid_;
