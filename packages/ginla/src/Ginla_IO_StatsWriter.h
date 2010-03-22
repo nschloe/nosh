@@ -42,7 +42,10 @@ public:
   getList();
   
   void
-  setList( const Teuchos::RCP<Teuchos::ParameterList> statisticsList );
+  setList( const Teuchos::ParameterList & statisticsList );
+  
+  void
+  setList( const Teuchos::RCP<Teuchos::ParameterList> & statisticsList );
   
   void
   print();

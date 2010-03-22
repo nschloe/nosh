@@ -48,7 +48,15 @@ getList()
 // ============================================================================
 void
 Ginla::IO::StatsWriter::
-setList( const Teuchos::RCP<Teuchos::ParameterList> statisticsList )
+setList( const Teuchos::ParameterList & statisticsList )
+{
+    statisticsList_ = Teuchos::rcp( new Teuchos::ParameterList( statisticsList ) );
+    return;
+}
+// ============================================================================
+void
+Ginla::IO::StatsWriter::
+setList( const Teuchos::RCP<Teuchos::ParameterList> & statisticsList )
 {
     statisticsList_ = statisticsList;
     return;

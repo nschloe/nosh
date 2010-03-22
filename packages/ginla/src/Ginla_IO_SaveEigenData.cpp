@@ -84,17 +84,17 @@ save ( Teuchos::RCP<std::vector<double> >       & evals_r,
 
     // Create Teuchos::ParameterList containing the data to be put into the
     // stats file.
-    Teuchos::RCP<Teuchos::ParameterList> eigenvaluesList;
-    eigenvaluesList->set( "0Step", step );
-    eigenvaluesList->set( "1#unstable ev", numUnstableEigenvalues );
+    Teuchos::ParameterList eigenvaluesList;
+    eigenvaluesList.set( "0Step", step );
+    eigenvaluesList.set( "1#unstable ev", numUnstableEigenvalues );
     for ( unsigned int k = 0; k < maxEigenvaluesSave_; k++ )
     {
         std::stringstream label;
         label << "Re(lambda_" << k << ")";
-        eigenvaluesList->set( label.str(), ( *evals_r ) [k] );
+        eigenvaluesList.set( label.str(), ( *evals_r ) [k] );
         
         label << "Im(lambda_" << k << ")";
-        eigenvaluesList->set( label.str(), ( *evals_i ) [k] );
+        eigenvaluesList.set( label.str(), ( *evals_i ) [k] );
     }
     statsWriter_->setList( eigenvaluesList );
     statsWriter_->print();
