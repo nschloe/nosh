@@ -57,12 +57,6 @@ save ( Teuchos::RCP<std::vector<double> >       & evals_r,
         {
             numUnstableEigenvalues++;
 
-            // make sure that the imaginary part of the eigenvector
-            // is in fact 0
-            Teuchos::RCP<NOX::Abstract::Vector> imagPart =
-                Teuchos::rcpFromRef ( ( *evecs_i ) [k] );
-            TEUCHOS_ASSERT_EQUALITY( 0.0, imagPart->norm() );
-
             // transform the real part of the eigenvector into psi
             Teuchos::RCP<NOX::Abstract::Vector> realPart =
                 Teuchos::rcpFromRef ( ( *evecs_r ) [k] );
@@ -70,9 +64,24 @@ save ( Teuchos::RCP<std::vector<double> >       & evals_r,
                 Teuchos::rcp_dynamic_cast<NOX::Epetra::Vector> ( realPart, true );
                                                      
             stringstream eigenstateFileNameAppendix;
-            eigenstateFileNameAppendix << "-eigenvalue" << k;
+            eigenstateFileNameAppendix << "eigenvalue" << k;
             eigenSaver_->printSolution( realPartE->getEpetraVector(),
                                         eigenstateFileNameAppendix.str() );
+                                        
+            // The matrix and the eigenvalue is supposedly purely real,
+            // so the eigenvector's real an imaginary parts are eigenvectors
+            // in their own right. Check here for the imaginary part,
+            // and print it, too, if it's nonzero.
+            Teuchos::RCP<NOX::Abstract::Vector> imagPart =
+                Teuchos::rcpFromRef ( ( *evecs_i ) [k] );
+            if ( imagPart->norm()>1.0e-15 )
+            {
+                Teuchos::RCP<NOX::Epetra::Vector> imagPartE =
+                    Teuchos::rcp_dynamic_cast<NOX::Epetra::Vector> ( imagPart, true );
+                eigenstateFileNameAppendix << "eigenvalue" << k << "-im";
+                eigenSaver_->printSolution( imagPartE->getEpetraVector(),
+                                            eigenstateFileNameAppendix.str() );
+            }
         }
     }
 
