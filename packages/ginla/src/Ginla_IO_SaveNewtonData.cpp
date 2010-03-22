@@ -33,7 +33,7 @@ runPostIterate ( const NOX::Solver::Generic& solver )
 
     const Epetra_Vector& currentSol =
         ( dynamic_cast<const NOX::Epetra::Vector&> ( solGrp.getX() ) ).getEpetraVector();
-   
+
     stateWriter_->write( komplex_->real2complex(currentSol),
                          grid_,
                          solver.getNumIterations() );

@@ -1,9 +1,6 @@
 #include "Ginla_IO_SaveEigenData.h"
 
-// #include <NOX_Abstract_Group.H>
 #include <NOX_Abstract_MultiVector.H>
-// #include <NOX_Utils.H>
-// #include <LOCA_GlobalData.H>
 
 // =============================================================================
 Ginla::IO::SaveEigenData::

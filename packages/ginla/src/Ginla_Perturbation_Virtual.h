@@ -33,36 +33,33 @@
 #include<complex>
 
 namespace Ginla {
-
   namespace Perturbation {
+    class Virtual
+    {
+      public:
 
-class Virtual
-{
-  public:
+      // Constructor
+      Virtual();
 
-  // Constructor
-  Virtual();
+      // Destructor
+      virtual
+      ~Virtual();
 
-  // Destructor
-  virtual
-  ~Virtual();
+      // Compute perturbation
+      virtual std::complex<double> 
+        computePerturbation( int k ) const = 0;
 
-  // Compute perturbation
-  virtual std::complex<double> 
-    computePerturbation( int k ) const = 0;
+      // Set parameters
+      virtual void 
+        setParameters( const LOCA::ParameterVector & p ) = 0;
 
-  // Set parameters
-  virtual void 
-    setParameters( const LOCA::ParameterVector & p ) = 0;
+      protected:
 
-  protected:
+      LOCA::ParameterVector paramList_;
 
-  LOCA::ParameterVector paramList_;
+      private:
 
-  private:
-
-};
-
+    };
   } // namespace Constraint
 } // namespace GL
 #endif // GLPERTURBATIONVIRTUAL
