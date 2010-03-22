@@ -11,7 +11,7 @@
 #include <Teuchos_ParameterList.hpp>
 
 #include "Ginla_Komplex.h"
-#include "Ginla_IO_StateWriter.h"
+#include "Ginla_IO_EigenSaver_Abstract.h"
 #include "Ginla_IO_StatsWriter.h"
 
 namespace Ginla {
@@ -31,10 +31,8 @@ class SaveEigenData:
 
    // Constructor
    SaveEigenData ( Teuchos::RCP<Teuchos::ParameterList>           & eigenParamList,
-                   const Teuchos::RCP<const Recti::Grid::General> & grid,
-                   const Teuchos::RCP<const Ginla::Komplex>       & komplex,
-                   const Teuchos::RCP<Ginla::IO::StatsWriter>     & statsWriter,
-                   const Teuchos::RCP<Ginla::IO::StateWriter>     & stateWriter
+                   const Teuchos::RCP<const EigenSaver::Abstract> & eigenSaver,
+                   const Teuchos::RCP<Ginla::IO::StatsWriter>     & statsWriter
                  );
               
    virtual
@@ -59,10 +57,9 @@ class SaveEigenData:
   protected:
   private:
     Teuchos::RCP<Teuchos::ParameterList> eigenParamList_;
-    const Teuchos::RCP<const Recti::Grid::General> grid_;
+    const Teuchos::RCP<const EigenSaver::Abstract> eigenSaver_;
     const Teuchos::RCP<const Ginla::Komplex> komplex_;
     Teuchos::RCP<Ginla::IO::StatsWriter> statsWriter_;
-    Teuchos::RCP<Ginla::IO::StateWriter> stateWriter_;
     Teuchos::RCP<LOCA::Stepper> locaStepper_;
 
     //! The minimum number of stable eigenvalues that is to be computed in each step.

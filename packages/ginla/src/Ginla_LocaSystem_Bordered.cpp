@@ -291,6 +291,20 @@ printSolution ( const  Epetra_Vector &x,
     glSystem_.printSolution ( tmp, conParam );
 }
 // =============================================================================
+void
+Ginla::LocaSystem::Bordered::
+printSolution ( const Epetra_Vector & x,
+                const std::string   & filenameAppendix
+              ) const
+{
+    // strip off the phase constraint
+    Epetra_Vector tmp ( *regularMap_ );
+    tmp.Import( x, importFromExtendedMap_, Insert );
+    
+    glSystem_.printSolution ( tmp, filenameAppendix );
+    return;
+}
+// =============================================================================
 // function used by LOCA
 void Ginla::LocaSystem::Bordered::
 setOutputDir ( const string &directory )

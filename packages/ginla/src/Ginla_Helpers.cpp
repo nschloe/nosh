@@ -36,7 +36,7 @@ teuchosParameterList2locaParameterVector( const Teuchos::ParameterList & p
       Teuchos::rcp( new LOCA::ParameterVector() );
         
   Teuchos::ParameterList::ConstIterator k;
-  double * dummy;
+  double * dummy = NULL;
   for ( k=p.begin(); k!=p.end(); ++k )
   {
     Teuchos::ParameterEntry e = p.entry(k);
@@ -52,7 +52,6 @@ Teuchos::RCP<Teuchos::ParameterList>
 Ginla::Helpers::
 locaParameterVector2teuchosParameterList( const LOCA::ParameterVector & pL )
 {
-
     Teuchos::RCP<Teuchos::ParameterList> p =
       Teuchos::rcp( new Teuchos::ParameterList() );
       

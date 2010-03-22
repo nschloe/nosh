@@ -7,16 +7,12 @@
 // =============================================================================
 Ginla::IO::SaveEigenData::
 SaveEigenData ( Teuchos::RCP<Teuchos::ParameterList>           & eigenParamList,
-                const Teuchos::RCP<const Recti::Grid::General> & grid,
-                const Teuchos::RCP<const Ginla::Komplex>       & komplex,
-                const Teuchos::RCP<Ginla::IO::StatsWriter>     & statsWriter,
-                const Teuchos::RCP<Ginla::IO::StateWriter>     & stateWriter
+                const Teuchos::RCP<const EigenSaver::Abstract> & eigenSaver,
+                const Teuchos::RCP<Ginla::IO::StatsWriter>     & statsWriter
               ) :
         eigenParamList_ ( eigenParamList ),
-        grid_ ( grid ),
-        komplex_ ( komplex ),
+        eigenSaver_ ( eigenSaver ),
         statsWriter_ ( statsWriter ),
-        stateWriter_ ( stateWriter ),
         locaStepper_ ( Teuchos::null ),
         numComputeStableEigenvalues_ ( 3 ),
         maxEigenvaluesSave_ ( 20 )
@@ -72,15 +68,11 @@ save ( Teuchos::RCP<std::vector<double> >       & evals_r,
                 Teuchos::rcpFromRef ( ( *evecs_r ) [k] );
             Teuchos::RCP<NOX::Epetra::Vector> realPartE =
                 Teuchos::rcp_dynamic_cast<NOX::Epetra::Vector> ( realPart, true );
-            Teuchos::RCP<ComplexVector> psi =
-                komplex_->real2complex( realPartE->getEpetraVector() );
                                                      
             stringstream eigenstateFileNameAppendix;
-            eigenstateFileNameAppendix << "-eigenvalue" << numEigenValues;
-            stateWriter_->write( psi,
-                                 grid_,
-                                 step,
-                                 eigenstateFileNameAppendix.str() );
+            eigenstateFileNameAppendix << "-eigenvalue" << k;
+            eigenSaver_->printSolution( realPartE->getEpetraVector(),
+                                        eigenstateFileNameAppendix.str() );
         }
     }
 

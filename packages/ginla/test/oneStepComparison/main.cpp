@@ -210,10 +210,8 @@ BOOST_AUTO_TEST_CASE( zero_step_loca_test )
 
     Teuchos::RCP<Ginla::IO::SaveEigenData> glEigenSaver =    
         Teuchos::RCP<Ginla::IO::SaveEigenData> ( new Ginla::IO::SaveEigenData ( eigenListPtr,
-                                                                                grid,
-                                                                                glsystem->getKomplex(),
-                                                                                eigenStatsWriter,
-                                                                                stateWriter ) );
+                                                                                glsystem,
+                                                                                eigenStatsWriter ) );
 
     Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> glSaveEigenDataStrategy = glEigenSaver;
     eigenList.set ( "glSaveEigenDataStrategy", glSaveEigenDataStrategy );

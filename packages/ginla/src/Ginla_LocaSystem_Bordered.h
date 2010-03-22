@@ -44,6 +44,7 @@ namespace Ginla {
   namespace LocaSystem {
 
 class Bordered:
+            public Ginla::IO::EigenSaver::Abstract,
             public NOX::Epetra::Interface::Jacobian,
             public NOX::Epetra::Interface::Preconditioner,
             public LOCA::Epetra::Interface::TimeDependent
@@ -108,6 +109,12 @@ public:
     virtual void
     printSolution ( const Epetra_Vector & x,
                     double conParam );
+        
+    //! Used to print eigenvectors.
+    void
+    printSolution ( const Epetra_Vector & x,
+                    const std::string   & filenameAppendix
+                  ) const;
 
     void
     setLocaStepper ( const Teuchos::RCP<const LOCA::Stepper> stepper );
