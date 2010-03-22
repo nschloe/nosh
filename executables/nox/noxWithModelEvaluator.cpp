@@ -171,7 +171,7 @@ int main ( int argc, char *argv[] )
       //   EpetraExt::ModelEvaluator is  base class of all Piro::Epetra solvers
       Teuchos::RCP<EpetraExt::ModelEvaluator> piro;
 
-      std::string& solver = piroParams->get( "Piro Solver" );
+      std::string& solver = piroParams->get( "Piro Solver", "" );
 
 //       if (solver=="NOX")
       piro = Teuchos::rcp(new Piro::Epetra::NOXSolver( piroParams, glModel, observer ));
