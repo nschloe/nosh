@@ -81,6 +81,11 @@ private:
   
 private:
   bool firstTime_;
+  
+  //! Whether the continuation has ever left the \c tol_ ball around
+  //! the reference solution. If not, tests are not conducted.
+  bool wasAway_;
+  
   double tol_;
   double diffNorm_;
   const Teuchos::RCP<const Ginla::LocaSystem::Bordered> glSystem_;

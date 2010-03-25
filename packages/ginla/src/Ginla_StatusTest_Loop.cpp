@@ -34,7 +34,8 @@ Ginla::StatusTest::Loop::
 Loop(  const Teuchos::RCP<const Ginla::LocaSystem::Bordered> & glSystem,
        const Teuchos::RCP<const Recti::Grid::General>        & grid ):
     firstTime_( true ),
-    tol_( 1.0e-12 ),
+    wasAway_( false ),
+    tol_( 1.0e-2 ), // TODO make this depend on the maximum step size
     diffNorm_( 0.0 ),
     glSystem_( glSystem ),
     grid_( grid ),
@@ -62,15 +63,24 @@ checkStatus( const LOCA::Stepper& stepper,
       return status_;
   }
   
+  
   switch (checkType)
   {
   case LOCA::StatusTest::Complete:
   case LOCA::StatusTest::Minimal:
     computeDiffNorm( stepper );
-    if ( abs(diffNorm_) < tol_ )
-      status_ = LOCA::StatusTest::Finished;
+    if ( diffNorm_ > tol_ )
+        wasAway_ = true;
+    
+    if ( !wasAway_ )
+        status_ = LOCA::StatusTest::Unevaluated;
     else
-      status_ = LOCA::StatusTest::NotFinished;
+    {
+        if ( diffNorm_ < tol_ )
+          status_ = LOCA::StatusTest::Finished;
+        else
+          status_ = LOCA::StatusTest::NotFinished;
+    }
     break;
 
   case LOCA::StatusTest::None:
