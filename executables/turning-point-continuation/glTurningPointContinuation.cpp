@@ -3,6 +3,7 @@
 #include <LOCA.H>
 #include <LOCA_Epetra_Factory.H>
 #include <LOCA_Epetra_Group.H>
+#include <Epetra_CrsMatrix.h>
 
 #ifdef HAVE_MPI
 #include <Epetra_MpiComm.h>
@@ -30,8 +31,11 @@
 
 #include "Ginla_Helpers.h"
 #include "Ginla_IO_StatsWriter.h"
+#include "Ginla_IO_StateWriter.h"
+#include "Ginla_MagneticVectorPotential_Centered.h"
 
 #include "Recti_Grid_Reader.h"
+
 
 
 // =============================================================================

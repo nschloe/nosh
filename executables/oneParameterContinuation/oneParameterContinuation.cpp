@@ -11,9 +11,11 @@
 #endif
 
 #include <Epetra_Vector.h>
+#include <Epetra_CrsMatrix.h>
 #include <NOX_Epetra_LinearSystem_AztecOO.H>
 
 #include <LOCA_StatusTest_MaxIters.H>
+#include <LOCA_StatusTest_Combo.H>
 
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_XMLParameterListHelpers.hpp>
@@ -30,6 +32,8 @@
 #include "Ginla_Helpers.h"
 #include "Ginla_IO_StatsWriter.h"
 #include "Ginla_IO_StateWriter.h"
+#include "Ginla_StatusTest_Energy.h"
+#include "Ginla_MagneticVectorPotential_Centered.h"
 
 #include "Recti_Grid_Reader.h"
 
@@ -155,7 +159,11 @@ main ( int argc, char *argv[] )
     {
         // For technical reasons, the reader can only accept ComplexMultiVectors.
         Teuchos::RCP<ComplexMultiVector> psiM;
-        Recti::Grid::Reader::read ( Comm, inputGuessFile.string(), psiM, grid, glParameters );
+        Recti::Grid::Reader::read ( Comm,
+                                    inputGuessFile.string(),
+                                    psiM,
+                                    grid,
+                                    glParameters );
         TEUCHOS_ASSERT_EQUALITY ( psiM->getNumVectors(), 1 );
         psi = psiM->getVectorNonConst ( 0 );
     }
@@ -344,10 +352,12 @@ main ( int argc, char *argv[] )
     Teuchos::RCP<NOX::StatusTest::MaxIters> maxIters =
         Teuchos::rcp ( new NOX::StatusTest::MaxIters ( maxNonlinarSteps ) );
     Teuchos::RCP<NOX::StatusTest::Generic> comboOR =
-        Teuchos::rcp ( new NOX::StatusTest::Combo ( NOX::StatusTest::Combo::OR, normF, maxIters ) );
+        Teuchos::rcp ( new NOX::StatusTest::Combo ( NOX::StatusTest::Combo::OR,
+                                                    normF,
+                                                    maxIters ) );
     // ---------------------------------------------------------------------------
     // Set up the LOCA status tests
-    Teuchos::RCP<LOCA::StatusTest::MaxIters> maxLocaStepsTest;
+    Teuchos::RCP<LOCA::StatusTest::Abstract> maxLocaStepsTest;
     try {
         maxLocaStepsTest = Teuchos::rcp ( new LOCA::StatusTest::MaxIters ( maxLocaSteps ) );
     }
@@ -355,13 +365,26 @@ main ( int argc, char *argv[] )
         std::cerr << e << std::endl;
         return 1;
     }
+    Teuchos::RCP<LOCA::StatusTest::Abstract> zeroEnergyTest;
+    try {
+        zeroEnergyTest = Teuchos::rcp ( new Ginla::StatusTest::Energy ( glsystem,
+                                                                        grid ) );
+    }
+    catch ( char const * e ) {
+        std::cerr << e << std::endl;
+        return 1;
+    }
+    Teuchos::RCP<LOCA::StatusTest::Abstract> locaCombo =
+        Teuchos::rcp ( new LOCA::StatusTest::Combo ( LOCA::StatusTest::Combo::OR,
+                                                     maxLocaStepsTest,
+                                                     zeroEnergyTest ) );
     // ---------------------------------------------------------------------------
     // Create the stepper
     Teuchos::RCP<LOCA::Thyra::Group> grp2 = Teuchos::null;
     Teuchos::RCP<LOCA::Stepper> stepper =
         Teuchos::rcp ( new LOCA::Stepper ( globalData,
                                            grp,
-                                           maxLocaStepsTest,
+                                           locaCombo,
                                            comboOR,
                                            paramList ) );
     // ---------------------------------------------------------------------------

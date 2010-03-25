@@ -16,6 +16,7 @@
 #include "glNoxHelpers.h"
 
 #include "Ginla_IO_SaveNewtonData.h"
+#include "Ginla_IO_StateWriter.h"
 
 // =============================================================================
 int main ( int argc, char *argv[] )

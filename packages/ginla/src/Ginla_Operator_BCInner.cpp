@@ -19,6 +19,9 @@
 
 #include "Ginla_Operator_BCInner.h"
 
+#include "Recti_Grid_Uniform.h"
+#include "Ginla_MagneticVectorPotential_Centered.h"
+
 #include <Teuchos_Array.hpp>
 
 // complex unit

@@ -78,7 +78,7 @@ save ( Teuchos::RCP<std::vector<double> >       & evals_r,
             {
                 Teuchos::RCP<NOX::Epetra::Vector> imagPartE =
                     Teuchos::rcp_dynamic_cast<NOX::Epetra::Vector> ( imagPart, true );
-                eigenstateFileNameAppendix << "eigenvalue" << k << "-im";
+                eigenstateFileNameAppendix << "-im";
                 eigenSaver_->printSolution( imagPartE->getEpetraVector(),
                                             eigenstateFileNameAppendix.str() );
             }

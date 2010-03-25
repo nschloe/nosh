@@ -8,17 +8,15 @@
 #include "Ginla_Komplex.h"
 
 #include <Epetra_Map.h>
-
 #include <Teuchos_DefaultComm.hpp> // for Teuchos::SerialComm
+#include <Epetra_CrsMatrix.h>
+#include <Epetra_Vector.h>
 
 #ifdef HAVE_MPI
 #include <Epetra_MpiComm.h>
 #else
 #include <Epetra_SerialComm.h>
 #endif // HAVE_MPI
-
-// abbreviate the complex type name
-typedef std::complex<double> double_complex;
 
 // =============================================================================
 // Default constructor

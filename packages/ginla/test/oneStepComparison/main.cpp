@@ -11,6 +11,8 @@
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_XMLParameterListHelpers.hpp>
 
+#include <Epetra_CrsMatrix.h>
+
 #include <LOCA_Epetra_Factory.H>
 #include <LOCA_Epetra_Group.H>
 #include <LOCA_StatusTest_MaxIters.H>

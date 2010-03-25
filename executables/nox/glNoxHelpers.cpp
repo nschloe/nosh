@@ -34,11 +34,13 @@
 #include <Teuchos_XMLParameterListHelpers.hpp>
 
 #include "Ginla_IO_SaveNewtonData.h"
+#include "Ginla_IO_StateWriter.h"
 
 #include "Recti_Grid_Reader.h"
 #include "Recti_Grid_UniformSquare.h"
 #include "Recti_Grid_Square.h"
 #include "Ginla_LocaSystem_Bordered.h"
+#include "Ginla_MagneticVectorPotential_Centered.h"
 
 #include "Recti_Domain_Factory.h"
 

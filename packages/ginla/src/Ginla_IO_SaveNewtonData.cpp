@@ -1,9 +1,10 @@
 #include "Ginla_IO_SaveNewtonData.h"
 
-#include <Teuchos_ParameterList.hpp>
 #include <NOX_Solver_Generic.H>
-
 #include <NOX_Epetra_Group.H>
+
+#include "Ginla_IO_StateWriter.h"
+#include "Ginla_Komplex.h"
 
 // =============================================================================
 Ginla::IO::SaveNewtonData::

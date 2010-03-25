@@ -35,7 +35,11 @@
 #include "Ginla_IO_NoxObserver.h"
 #include "Ginla_ModelEvaluator_Default.h"
 #include "Recti_Grid_Reader.h"
+#include "Ginla_MagneticVectorPotential_Centered.h"
 #include "Ginla_Operator_BCCentral.h"
+#include "Ginla_Operator_BCInner.h"
+#include "Ginla_Operator_BCOuter.h"
+#include "Ginla_IO_StateWriter.h"
 
 // =============================================================================
 int main ( int argc, char *argv[] )
@@ -120,8 +124,8 @@ int main ( int argc, char *argv[] )
 //     bool plotEachNewtonStep = paramList->sublist ( "IO",true )
 //                               .get<bool> ( "Plot each Newton step" );
 
-    std::string jacFilename = paramList->sublist ( "IO",true )
-                              .get<std::string> ( "Jacobian MATLAB matrix file name" );
+//     std::string jacFilename = paramList->sublist ( "IO",true )
+//                               .get<std::string> ( "Jacobian MATLAB matrix file name" );
     // =========================================================================
 
     Teuchos::ParameterList             problemParameters;
@@ -134,9 +138,9 @@ int main ( int argc, char *argv[] )
                                 grid,
                                 problemParameters );
 
-    double h0      = problemParameters.get<double> ( "H0" );
-    double scaling = problemParameters.get<double> ( "scaling" );
-
+    double h0      = 0.8; //problemParameters.get<double> ( "H0" );
+    double scaling = 7.0; //problemParameters.get<double> ( "scaling" );
+    
     Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> A =
         Teuchos::rcp ( new Ginla::MagneticVectorPotential::Centered ( h0,
                                                                       scaling ) );
@@ -151,37 +155,41 @@ int main ( int argc, char *argv[] )
                                                   "VTI",
                                                   1000 ) );
     Teuchos::RCP<Ginla::IO::NoxObserver> observer =
-        Teuchos::rcp( new Ginla::IO::NoxObserver( stateWriter, grid, komplex ) );
+        Teuchos::rcp( new Ginla::IO::NoxObserver( stateWriter,
+                                                  grid,
+                                                  komplex ) );
                                                                       
     // create the operator
     Teuchos::RCP<Ginla::Operator::Virtual> glOperator =
         Teuchos::rcp ( new Ginla::Operator::BCCentral ( grid, A ) );
 
-      // Create the interface between NOX and the application
-      // This object is derived from NOX::Epetra::Interface
-      Teuchos::RCP<EpetraExt::ModelEvaluator> glModel = 
-                Teuchos::rcp(new Ginla::ModelEvaluator::Default( glOperator,
-                                                                 komplex ) );
+    // Create the interface between NOX and the application
+    // This object is derived from NOX::Epetra::Interface
+    Teuchos::RCP<EpetraExt::ModelEvaluator> glModel = 
+              Teuchos::rcp(new Ginla::ModelEvaluator::Default( glOperator,
+                                                                komplex ) );
 
-      Teuchos::RCP<Teuchos::ParameterList> piroParams =
-         Teuchos::rcp(new Teuchos::ParameterList("Piro Parameters"));
-      Teuchos::updateParametersFromXmlFile(xmlInputFileName, piroParams.get());
+    Teuchos::RCP<Teuchos::ParameterList> piroParams =
+        Teuchos::rcp(new Teuchos::ParameterList("Piro Parameters"));
+    Teuchos::updateParametersFromXmlFile(xmlInputFileName, piroParams.get());
 
-      // Use these two objects to construct a Piro solved application 
-      //   EpetraExt::ModelEvaluator is  base class of all Piro::Epetra solvers
-      Teuchos::RCP<EpetraExt::ModelEvaluator> piro;
+    // Use these two objects to construct a Piro solved application 
+    //   EpetraExt::ModelEvaluator is  base class of all Piro::Epetra solvers
+    Teuchos::RCP<EpetraExt::ModelEvaluator> piro;
 
-      std::string& solver = piroParams->get( "Piro Solver", "" );
+    std::string& solver = piroParams->get( "Piro Solver", "" );
 
-//       if (solver=="NOX")
-      piro = Teuchos::rcp(new Piro::Epetra::NOXSolver( piroParams, glModel, observer ));
+//     if (solver=="NOX")
+    piro = Teuchos::rcp(new Piro::Epetra::NOXSolver( piroParams,
+                                                       glModel,
+                                                       observer ));
       
-      bool computeSens = piroParams->get("Compute Sensitivities", false);
+//       bool computeSens = piroParams->get("Compute Sensitivities", false);
 
       // Now the (somewhat cumbersome) setting of inputs and outputs
       EpetraExt::ModelEvaluator::InArgs inArgs = piro->createInArgs();
       int num_p = inArgs.Np();     // Number of *vectors* of parameters
-//       std::cout << num_p << std::endl;
+
 //       Teuchos::RCP<Epetra_Vector> p1 =
 //           Teuchos::rcp(new Epetra_Vector(*(piro->get_p_init(0))));
 //       int numParams = p1->MyLength(); // Number of parameters in p1 vector

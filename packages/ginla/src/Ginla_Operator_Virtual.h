@@ -20,11 +20,23 @@
 #ifndef GLOPERATORVIRTUAL_H
 #define GLOPERATORVIRTUAL_H
 
-#include <complex>
-#include <Tpetra_Vector.hpp>
+#include "Ginla_Typedefs.h"
 
-#include "Ginla_MagneticVectorPotential_Centered.h"
-#include "Recti_Grid_Uniform.h"
+// forward declarations
+namespace Recti {
+  namespace Grid {
+    class Uniform;
+    class General;
+  }
+}
+namespace Ginla {
+  namespace MagneticVectorPotential{
+    class Centered;
+  }
+}
+
+#include <Teuchos_Array.hpp>
+#include <LOCA_Parameter_Vector.H>
 
 typedef std::complex<double> double_complex;
 
@@ -36,7 +48,7 @@ class Virtual
 {
 public:
     //! Default constructor.
-    Virtual ( Teuchos::RCP<Recti::Grid::Uniform>                  & grid,
+    Virtual ( Teuchos::RCP<Recti::Grid::Uniform>                     & grid,
               Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> & A
             );
 

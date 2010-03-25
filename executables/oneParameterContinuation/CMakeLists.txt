@@ -37,6 +37,20 @@ TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
                        ${Trilinos_TPL_LIBRARIES}
                        ${Boost_LIBRARIES} )
 
+SET ( opc_SRCS
+      opcWithModelEvaluator.cpp  )
+SET( MY_EXECUTABLE
+     "opcWithModelEvaluator.out" )
+ADD_EXECUTABLE( ${MY_EXECUTABLE}
+                ${opc_SRCS} )
+SET_TARGET_PROPERTIES( ${MY_EXECUTABLE}
+                       PROPERTIES LINKER_LANGUAGE Fortran )
+TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
+                       ${internal_LIBS}
+                       ${Trilinos_LIBRARIES}
+                       ${Trilinos_TPL_LIBRARIES}
+                       ${Boost_LIBRARIES} )
+
 # SET ( opcConstraintInterface_SRCS
 #       opcConstraintInterface.cpp  )
 # SET( MY_EXECUTABLE

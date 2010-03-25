@@ -21,6 +21,9 @@
 
 #include <Teuchos_Array.hpp>
 
+#include "Recti_Grid_Uniform.h"
+#include "Ginla_MagneticVectorPotential_Centered.h"
+
 // complex unit
 const double_complex I ( 0,1 );
 
@@ -84,8 +87,8 @@ getEntry ( const int k ) const
                 + psiKLeft*  exp ( I*ALeft *h ) + psiKRight* exp ( -I*ARight*h )
                 + psiKBelow* exp ( I*ABelow*h ) + psiKAbove* exp ( -I*AAbove*h ) ) / ( h*h )
               + psiK * ( 1-norm ( psiK ) );
+              
         res *= exp ( I*chi_ );
-
         break;
 
     case Recti::Grid::Abstract::BOUNDARY_BOTTOMLEFTCONVEX:

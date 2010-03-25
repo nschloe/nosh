@@ -18,6 +18,8 @@ SET ( ginla_SRCS
 #       Ginla_Constraint_MinDistReal.cpp
       Ginla_Perturbation_Quadrants.cpp
       Ginla_Perturbation_Virtual.cpp
+      Ginla_StatusTest_Energy.cpp
+      Ginla_StatusTest_Loop.cpp
     )
 
 FIND_PACKAGE( Trilinos REQUIRED )
@@ -26,5 +28,6 @@ INCLUDE_DIRECTORIES( ${Trilinos_INCLUDE_DIRS} )
 INCLUDE_DIRECTORIES( ${ginzburg-landau_SOURCE_DIR}/packages/recti/src
                      ${ginzburg-landau_SOURCE_DIR}/packages/vio/src )
 
-ADD_LIBRARY ( ginla STATIC
+#ADD_LIBRARY ( ginla STATIC
+ADD_LIBRARY ( ginla
               ${ginla_SRCS} )

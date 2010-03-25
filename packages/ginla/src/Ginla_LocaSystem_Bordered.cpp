@@ -110,7 +110,8 @@ computeF ( const Epetra_Vector & x,
 }
 // =============================================================================
 Teuchos::RCP<Epetra_Map>
-Ginla::LocaSystem::Bordered::createExtendedRealMap ( const Epetra_BlockMap & realMap ) const
+Ginla::LocaSystem::Bordered::
+createExtendedRealMap ( const Epetra_BlockMap & realMap ) const
 {
     // fill up realMapGIDs
     int numMyElements = realMap.NumMyElements();
@@ -136,9 +137,10 @@ Ginla::LocaSystem::Bordered::createExtendedRealMap ( const Epetra_BlockMap & rea
 }
 // =============================================================================
 bool
-Ginla::LocaSystem::Bordered::computeJacobian ( const Epetra_Vector & x,
-                                               Epetra_Operator     & Jac
-                                             )
+Ginla::LocaSystem::Bordered::
+computeJacobian ( const Epetra_Vector   & x,
+                        Epetra_Operator & Jac
+                )
 {
     // strip off the phase constraint
     Epetra_Vector tmp ( *regularMap_ );
@@ -182,7 +184,8 @@ Ginla::LocaSystem::Bordered::getPreconditioner() const
 // =============================================================================
 // It also incorporates a phase condition.
 void
-Ginla::LocaSystem::Bordered::createJacobian ( const Epetra_Vector & x )
+Ginla::LocaSystem::Bordered::
+createJacobian ( const Epetra_Vector & x )
 {
     TEST_FOR_EXCEPTION ( !extendedMap_.is_valid_ptr() || extendedMap_.is_null(),
                          std::logic_error,
@@ -462,5 +465,16 @@ createInterfaceState( const Teuchos::RCP<const ComplexVector> & psi,
     x->ReplaceGlobalValue ( x->GlobalLength()-1, 0, chi );
                 
     return x;
+}
+// =============================================================================
+Teuchos::RCP<ComplexVector>
+Ginla::LocaSystem::Bordered::
+extractPsi( const Epetra_Vector & x ) const
+{
+    // strip off the phase constraint
+    Epetra_Vector tmp ( *regularMap_ );
+    tmp.Import( x, importFromExtendedMap_, Insert );
+  
+    return glSystem_.extractPsi( tmp );
 }
 // =============================================================================

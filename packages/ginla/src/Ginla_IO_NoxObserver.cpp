@@ -19,6 +19,10 @@
 
 #include "Ginla_IO_NoxObserver.h"
 
+#include "Ginla_IO_StateWriter.h"
+#include "Ginla_Komplex.h"
+
+
 // ============================================================================
 Ginla::IO::NoxObserver::
 NoxObserver ( const Teuchos::RCP<const Ginla::IO::StateWriter> & stateWriter,

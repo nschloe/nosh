@@ -15,6 +15,7 @@
 #include <NOX_Epetra.H>
 
 #include "Ginla_LocaSystem_Bordered.h"
+#include "Recti_Grid_Uniform.h"
 
 namespace glNoxHelpers
 {

@@ -1,20 +1,15 @@
 #include "Ginla_LocaSystem_Default.h"
+
 #include "Ginla_Helpers.h"
-
-#include <Epetra_Export.h>
-#include <Epetra_CrsMatrix.h>
-#include <NOX_Utils.H>
-
-#include <EpetraExt_RowMatrixOut.h>
+#include "Ginla_Operator_Virtual.h"
+#include "Ginla_Perturbation_Virtual.h"
+#include "Ginla_IO_StateWriter.h"
+#include "Ginla_IO_StatsWriter.h"
 
 #include <Epetra_Map.h>
-
-#include <Tpetra_Vector.hpp>
-#include <Tpetra_MultiVector.hpp>
-
-#include <Thyra_EpetraThyraWrappers.hpp>
-
+#include <LOCA_Stepper.H>
 #include <Teuchos_DefaultComm.hpp>
+#include <Epetra_CrsMatrix.h>
 
 #ifdef HAVE_MPI
 #include <Epetra_MpiComm.h>
@@ -399,7 +394,7 @@ create_CommInt ( const Teuchos::RCP<const Epetra_Comm> & epetraComm )
     serialEpetraComm = rcp_dynamic_cast<const Epetra_SerialComm> ( epetraComm );
     if ( serialEpetraComm.get() )
     {
-        RCP<const Teuchos::SerialComm<int> >
+        Teuchos::RCP<const Teuchos::SerialComm<int> >
         serialComm = rcp ( new Teuchos::SerialComm<int>() );
         set_extra_data ( serialEpetraComm, "serialEpetraComm", Teuchos::inOutArg ( serialComm ) );
         return serialComm;
@@ -420,5 +415,12 @@ Teuchos::RCP<const Ginla::Komplex>
 Ginla::LocaSystem::Default::getKomplex() const
 {
     return komplex_;
+}
+// =============================================================================
+Teuchos::RCP<ComplexVector>
+Ginla::LocaSystem::Default::
+extractPsi( const Epetra_Vector & x ) const
+{
+    return komplex_->real2complex( x );
 }
 // =============================================================================

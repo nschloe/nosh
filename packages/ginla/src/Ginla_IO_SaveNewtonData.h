@@ -1,17 +1,24 @@
 #ifndef GLPREPOSTOPERATOR_H
 #define GLPREPOSTOPERATOR_H
 
-#include <NOX_Common.H>
+#include <Teuchos_RCP.hpp>
 #include <NOX_Abstract_PrePostOperator.H>
-#include <NOX_Utils.H>
-#include <Teuchos_ParameterList.hpp>
 
-#include "Ginla_IO_StateWriter.h"
-#include "Ginla_Komplex.h"
-
+// foward declarations
 namespace Ginla {
+  class Komplex;
   namespace IO {
+      class StateWriter;
+  }
+}
+namespace Recti{
+  namespace Grid {
+    class General;
+  }
+}
 
+namespace Ginla { 
+  namespace IO {
 class SaveNewtonData:
         public NOX::Abstract::PrePostOperator
 {

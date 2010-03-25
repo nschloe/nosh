@@ -24,9 +24,19 @@
 #include <Epetra_Vector.h>
 #include <Piro_Epetra_NOXObserver.hpp>
 
-#include "Ginla_IO_StateWriter.h"
-#include "Recti_Grid_General.h"
-#include "Ginla_Komplex.h"
+// forward declarations
+namespace Ginla {
+  class Komplex;
+  namespace IO {
+    class StateWriter;
+  }
+}
+namespace Recti {
+  namespace Grid {
+    class General;
+  }
+}
+
 
 namespace Ginla {
 

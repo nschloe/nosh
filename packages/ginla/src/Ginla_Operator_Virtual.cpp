@@ -20,6 +20,8 @@
 #include "Ginla_Operator_Virtual.h"
 
 #include "Ginla_Helpers.h"
+#include "Ginla_MagneticVectorPotential_Centered.h"
+#include "Recti_Grid_Uniform.h"
 
 #include <Teuchos_RCP.hpp>
 

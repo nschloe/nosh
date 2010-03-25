@@ -4,41 +4,35 @@
  *  Created on: Dec 16, 2009
  *      Author: Nico Schl\"omer
  */
-#ifndef GL_LINEARSYSTEM_BORDERED_H_
-#define GL_LINEARSYSTEM_BORDERED_H_
+#ifndef GINLA_LOCASYSTEM_BORDERED_H
+#define GINLA_LOCASYSTEM_BORDERED_H
 
 #include "Ginla_Komplex.h"
 #include "Ginla_LocaSystem_Default.h"
+#include "Ginla_IO_EigenSaver_Abstract.h"
 
-#include <Epetra_Comm.h>
-#include <Epetra_Map.h>
-#include <Epetra_Vector.h>
 #include <Epetra_Import.h>
 
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_Array.hpp>
-
-#include <Epetra_CrsMatrix.h>
-
-#include <Teuchos_ParameterList.hpp>
-
-#include <NOX_Epetra_Interface_Required.H> // NOX base class
+// #include <NOX_Epetra_Interface_Required.H> // NOX base class
 #include <NOX_Epetra_Interface_Jacobian.H> // NOX base class
 #include <NOX_Epetra_Interface_Preconditioner.H> // NOX base class
-#include <LOCA_Epetra_Interface_Required.H> // LOCA base class
+// #include <LOCA_Epetra_Interface_Required.H> // LOCA base class
 #include <LOCA_Epetra_Interface_TimeDependent.H> // LOCA base class
-#include <NOX_Abstract_PrePostOperator.H>
 
-#include <LOCA_Parameter_Vector.H>
+// forward declarations
+namespace Ginla {
+  namespace Operator {
+    class Virtual;
+  }
+  namespace IO {
+    class StatsWriter;
+    class StateWriter;
+  }
+}
+namespace LOCA {
+  class Stepper;
+}
 
-#include <Tpetra_Map.hpp>
-#include <Tpetra_Vector.hpp>
-
-#include <Thyra_OperatorVectorTypes.hpp> // For Thyra::Ordinal
-
-#include <NOX_Abstract_Group.H>
-
-#include <LOCA_Stepper.H>
 
 namespace Ginla {
   namespace LocaSystem {
@@ -136,6 +130,13 @@ public:
     Teuchos::RCP<Epetra_Vector>
     createInterfaceState( const Teuchos::RCP<const ComplexVector> & psi,
                           const double                              chi );
+                          
+    //! Extracts a complex-valued state from a vector of the linear
+    //! equation system.
+    //! Can be used to tranform eigenvalues into states from within
+    //! other classes.
+    Teuchos::RCP<ComplexVector>
+    extractPsi( const Epetra_Vector & x ) const;
 
 private:
 
@@ -207,4 +208,4 @@ private:
   } // namespace LocaSystem
 } // namespace GL
 
-#endif // GL_LINEARSYSTEM_BORDERED_H_
+#endif // GINLA_LOCASYSTEM_BORDERED_H

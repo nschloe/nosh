@@ -18,7 +18,8 @@ INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIRS} )
 FIND_PACKAGE( VTK REQUIRED )
 INCLUDE_DIRECTORIES( ${VTK_INCLUDE_DIRS} )
 
-ADD_LIBRARY ( vio STATIC
+#ADD_LIBRARY ( vio STATIC
+ADD_LIBRARY ( vio
               ${vio_SRCS} )
 
 # Get the absolute paths of the libraries.

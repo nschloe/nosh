@@ -8,15 +8,13 @@
 #ifndef GLKOMPLEX_H_
 #define GLKOMPLEX_H_
 
-#include <Teuchos_RCP.hpp>
-#include <Tpetra_Vector.hpp>
-#include <Epetra_Vector.h>
-#include <Epetra_CrsMatrix.h>
-#include <Thyra_OperatorVectorTypes.hpp> // For Thyra::Ordinal
+#include "Ginla_Typedefs.h"
 
-typedef std::complex<double> double_complex;
-typedef Tpetra::Vector<double_complex,Thyra::Ordinal> ComplexVector;
-typedef Tpetra::MultiVector<double_complex,Thyra::Ordinal> ComplexMultiVector;
+// forward declarations
+class Epetra_Comm;
+class Epetra_Map;
+class Epetra_CrsMatrix;
+class Epetra_Vector;
 
 namespace Ginla {
 
@@ -60,8 +58,6 @@ public:
     //! Get read/write access to the matrix from outside.
     Teuchos::RCP<Epetra_CrsMatrix>
     getMatrix() const;
-
-
 
     /** \param row       row of the matrix that gets updated
       * \param indicesA  column indices of matrix \f$A\f$
@@ -135,7 +131,11 @@ private:
     create_CommInt ( const Teuchos::RCP<const Epetra_Comm> &epetraComm );
 
     int
-    PutRow ( int Row, int & numIndices, double * values, int * indices, bool firstTime );
+    PutRow ( int      Row,
+             int    & numIndices,
+             double * values,
+             int    * indices,
+             bool     firstTime );
 
 private:
 

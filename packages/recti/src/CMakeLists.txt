@@ -23,5 +23,6 @@ INCLUDE_DIRECTORIES( ${VTK_INCLUDE_DIRS} )
 
 INCLUDE_DIRECTORIES( ${ginzburg-landau_SOURCE_DIR}/packages/vio/src )
 
-ADD_LIBRARY ( recti STATIC
+#ADD_LIBRARY ( recti STATIC
+ADD_LIBRARY ( recti
               ${recti_SRCS} )

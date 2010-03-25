@@ -33,6 +33,8 @@
 
 #include "Ginla_LocaSystem_Default.h"
 
+#include <LOCA_Parameter_Vector.H>
+
 namespace Ginla {
 
   namespace Constraint {

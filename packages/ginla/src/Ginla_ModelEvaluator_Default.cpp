@@ -19,7 +19,10 @@
 
 #include "Ginla_ModelEvaluator_Default.h"
 
-#include <Epetra_Map.h>
+#include <Epetra_LocalMap.h>
+#include <Epetra_CrsMatrix.h>
+
+#include "Ginla_Operator_Virtual.h"
 
 // ============================================================================
 Ginla::ModelEvaluator::Default::
@@ -29,10 +32,29 @@ Default ( const Teuchos::RCP<Ginla::Operator::Virtual> & glOperator,
         glOperator_ ( glOperator ),
         komplex_ ( komplex ),
         x_(  Teuchos::rcp( new Epetra_Vector( *komplex_->getRealMap(), true ) ) ),
-        firstTime_ ( true )
+        firstTime_ ( true ),
+        numParameters_( 1 )
 {
 //   x_->Random();
-  x_->PutScalar( 1.0 );
+
+  Teuchos::RCP<ComplexVector> psi =
+      Teuchos::rcp( new ComplexVector( komplex_->getComplexMap() ) );
+  psi->putScalar( double_complex(1.0,0.0) );
+  *x_ = *(komplex_->complex2real( psi ));
+  
+  // set up parameters
+  p_map_ = Teuchos::rcp(new Epetra_LocalMap( numParameters_,
+                                             0,
+                                             komplex_->getRealMap()->Comm() ) );
+
+  p_init_ = Teuchos::rcp(new Epetra_Vector(*p_map_));
+  for (int i=0; i<numParameters_; i++)
+      (*p_init_)[i]= 0.0;
+  
+  Teuchos::Tuple<std::string,1> t = Teuchos::tuple<std::string>( "Parameter 0" );
+  p_names_ = Teuchos::rcp( new Teuchos::Array<std::string>( t ) );
+
+  return;
 }
 // ============================================================================
 Ginla::ModelEvaluator::Default::
@@ -43,7 +65,8 @@ Default ( const Teuchos::RCP<Ginla::Operator::Virtual> & glOperator,
         glOperator_ ( glOperator ),
         komplex_ ( komplex ),
         x_( komplex_->complex2real( psi ) ),
-        firstTime_ ( true )
+        firstTime_ ( true ),
+        numParameters_( 1 )
 {
   // make sure the maps are compatible
   TEUCHOS_ASSERT( psi->getMap()->isSameAs( *komplex->getComplexMap()) );
@@ -75,6 +98,36 @@ get_x_init () const
   return x_;
 }
 // ============================================================================
+Teuchos::RCP<const Epetra_Vector>
+Ginla::ModelEvaluator::Default::
+get_p_init ( int l ) const
+{
+  TEUCHOS_ASSERT_EQUALITY( 0, l );
+
+  std::cout << "Ginla::ModelEvaluator::Default::get_p_init " << p_init_ << std::endl;
+  std::cout << ">>>>" << (*p_init_)[0] << "<<<<" << std::endl;
+
+  return p_init_;
+}
+// ============================================================================
+Teuchos::RCP<const Epetra_Map>
+Ginla::ModelEvaluator::Default::
+get_p_map(int l) const
+{
+  TEUCHOS_ASSERT_EQUALITY( 0, l );
+  std::cout << "get_p_map" << std::endl;
+  return p_map_;
+}
+// ============================================================================
+Teuchos::RCP<const Teuchos::Array<std::string> >
+Ginla::ModelEvaluator::Default::
+get_p_names (int l) const
+{
+  TEUCHOS_ASSERT_EQUALITY( 0, l );
+  std::cout << *p_names_ << std::endl;
+  return p_names_;
+}
+// ============================================================================
 Teuchos::RCP<Epetra_Operator>
 Ginla::ModelEvaluator::Default::
 create_W() const
@@ -88,9 +141,9 @@ createInArgs() const
 {
   EpetraExt::ModelEvaluator::InArgsSetup inArgs;
   inArgs.setModelEvalDescription( "Ginzburg--Landau extreme type-II on a square" );
-  inArgs.setSupports( IN_ARG_x,
-                      true // supports
-                    );
+  inArgs.set_Np( 1 );
+  inArgs.setSupports( IN_ARG_x, true );
+  
   return inArgs;
 }
 // ============================================================================
@@ -102,6 +155,7 @@ createOutArgs() const
   outArgs.setModelEvalDescription("Ginzburg--Landau extreme type-II on a square");
   outArgs.setSupports( OUT_ARG_f, true );
   outArgs.setSupports( OUT_ARG_W, true );
+  outArgs.set_Np_Ng( 1 , 0 );
   outArgs.set_W_properties( DerivativeProperties( DERIV_LINEARITY_NONCONST,
                                                   DERIV_RANK_FULL,
                                                   false // supportsAdjoint
@@ -116,27 +170,19 @@ evalModel( const InArgs  & inArgs,
            const OutArgs & outArgs
          ) const
 {
-//   std::cout << "\n\n>>>>>>>>>>>>>>>>>>>>> evalModel\n";
-//   std::cout << outArgs.get_W().is_null() << " " << outArgs.get_f().is_null()
-//             << std::endl;
-  
   const Teuchos::RCP<const Epetra_Vector> & x = inArgs.get_x();
   
   Teuchos::RCP<Epetra_Vector>   f_out = outArgs.get_f();
   Teuchos::RCP<Epetra_Operator> W_out = outArgs.get_W();
   
-//   std::cout << "norm at 0: ";
-//   double alpha[1];
-//   x->Norm2( alpha );
-//   std::cout << alpha[0] << std::endl;
+  // Parse InArgs
+  Teuchos::RCP<const Epetra_Vector> p_in = inArgs.get_p(0);
+  TEUCHOS_ASSERT( !p_in.is_null() );
+  //int numParameters = p_in->GlobalLength();
   
   // compute F
   if (!f_out.is_null())
-     this->computeF_( *x, *f_out ); 
-  
-//   std::cout << "after: ";
-//   outArgs.get_f()->Norm2( alpha );
-//   std::cout << alpha[0] << std::endl;
+      this->computeF_( *x, *f_out ); 
 
   if( !W_out.is_null() )
   {

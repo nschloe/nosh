@@ -1,45 +1,35 @@
 /*! Jacobian system for the Ginzburg--Landau problem.
  *  This routine can be used as an interface to NOX.
  ******************************************************************************/
-#ifndef GLSYSTEM_H
-#define GLSYSTEM_H
+#ifndef GINLA_LOCASYSTEM_DEFAULT_H
+#define GINLA_LOCASYSTEM_DEFAULT_H
 
 #include "Ginla_Komplex.h"
-#include "Ginla_IO_StatsWriter.h"
-#include "Ginla_IO_StateWriter.h"
-#include "Ginla_Operator_Virtual.h"
-#include "Ginla_Perturbation_Virtual.h"
 #include "Ginla_IO_EigenSaver_Abstract.h"
 
-#include <Epetra_Comm.h>
-#include <Epetra_Map.h>
-#include <Epetra_Vector.h>
-
-#include <Teuchos_RCP.hpp>
-
-#include <Epetra_CrsMatrix.h>
-
-#include <Teuchos_ParameterList.hpp>
-
-#include <NOX_Epetra_Interface_Required.H> // NOX base class
+// #include <NOX_Epetra_Interface_Required.H> // NOX base class
 #include <NOX_Epetra_Interface_Jacobian.H> // NOX base class
 #include <NOX_Epetra_Interface_Preconditioner.H> // NOX base class
-#include <LOCA_Epetra_Interface_Required.H> // LOCA base class
+// #include <LOCA_Epetra_Interface_Required.H> // LOCA base class
 #include <LOCA_Epetra_Interface_TimeDependent.H> // LOCA base class
-#include <NOX_Abstract_PrePostOperator.H>
 
-#include <LOCA_Parameter_Vector.H>
+// forward declarations
+namespace Ginla {
+  namespace Operator {
+    class Virtual;
+  }
+  namespace IO {
+    class StatsWriter;
+    class StateWriter;
+  }
+  namespace Perturbation {
+    class Virtual;
+  }
+}
+namespace LOCA {
+  class Stepper;
+}
 
-#include <Tpetra_Map.hpp>
-#include <Tpetra_Vector.hpp>
-
-#include <Thyra_OperatorVectorTypes.hpp> // For Thyra::Ordinal
-
-#include <NOX_Abstract_Group.H>
-
-#include <LOCA_Stepper.H>
-
-typedef Tpetra::Vector<double_complex, Thyra::Ordinal> ComplexVector;
 
 namespace Ginla {
   namespace LocaSystem {
@@ -133,6 +123,9 @@ public:
 
     Teuchos::RCP<const Ginla::Komplex>
     getKomplex() const;
+    
+    Teuchos::RCP<ComplexVector>
+    extractPsi( const Epetra_Vector & x ) const;
 
 private:
 
@@ -188,4 +181,4 @@ private:
   } // namespace LocaSystem
 } // namespace GL
 
-#endif // GLSYSTEM_H
+#endif // GINLA_LOCASYSTEM_DEFAULT_H
