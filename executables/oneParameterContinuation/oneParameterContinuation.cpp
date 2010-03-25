@@ -33,6 +33,8 @@
 #include "Ginla_IO_StatsWriter.h"
 #include "Ginla_IO_StateWriter.h"
 #include "Ginla_StatusTest_Energy.h"
+#include "Ginla_StatusTest_Loop.h"
+#include "Ginla_StatusTest_Turnaround.h"
 #include "Ginla_MagneticVectorPotential_Centered.h"
 
 #include "Recti_Grid_Reader.h"
@@ -59,6 +61,11 @@ main ( int argc, char *argv[] )
         Teuchos::rcp<Epetra_SerialComm> ( new Epetra_SerialComm() );
 #endif
 
+    int status;
+
+    try
+    {
+
     // Create a communicator for Tpetra objects
     const Teuchos::RCP<const Teuchos::Comm<int> > Comm =
         Teuchos::DefaultComm<int>::getComm();
@@ -83,43 +90,21 @@ main ( int argc, char *argv[] )
 
     // finally, parse the stuff!
     Teuchos::CommandLineProcessor::EParseCommandLineReturn parseReturn;
-    try
-    {
-        parseReturn = My_CLP.parse ( argc, argv );
-    }
-    catch ( std::exception &e )
-    {
-        std::cerr << e.what() << std::endl;
-        return 1;
-    }
+    parseReturn = My_CLP.parse ( argc, argv );
+
 
     Teuchos::RCP<Teuchos::ParameterList> paramList =
         Teuchos::rcp ( new Teuchos::ParameterList );
     std::cout << "Reading parameter list from \"" << xmlInputFileName << "\"."
               << std::endl;
 
-    try
-    {
-        Teuchos::updateParametersFromXmlFile ( xmlInputFileName, paramList.get() );
-    }
-    catch ( std::exception &e )
-    {
-        std::cerr << e.what() << "\n"
-                  << "Check your XML file for syntax errors." << std::endl;
-        return 1;
-    }
+    Teuchos::updateParametersFromXmlFile ( xmlInputFileName, paramList.get() );
+
     // =========================================================================
     // extract data for the output the parameter list
     Teuchos::ParameterList outputList;
-    try
-    {
-        outputList = paramList->sublist ( "Output", true );
-    }
-    catch ( std::exception &e )
-    {
-        std::cerr << e.what() << std::endl;
-        return 1;
-    }
+    outputList = paramList->sublist ( "Output", true );
+
     // set default directory to be the directory of the XML file itself
     std::string xmlPath = boost::filesystem::path ( xmlInputFileName ).branch_path().string();
     boost::filesystem::path outputDirectory = outputList.get<string> ( "Output directory" );
@@ -140,38 +125,23 @@ main ( int argc, char *argv[] )
     Teuchos::RCP<Recti::Grid::Uniform> grid;
 
     Teuchos::ParameterList initialGuessList;
-    try
-    {
-        initialGuessList = paramList->sublist ( "Initial guess", true );
-    }
-    catch ( std::exception &e )
-    {
-        std::cerr << e.what() << std::endl;
-        return 1;
-    }
+    initialGuessList = paramList->sublist ( "Initial guess", true );
+
     boost::filesystem::path inputGuessFile = initialGuessList.get<string> ( "File name" );
     if ( !inputGuessFile.empty() && inputGuessFile.root_directory().empty() ) // if inputGuessFile is a relative path
         inputGuessFile = xmlPath / inputGuessFile;
 
     TEUCHOS_ASSERT( !inputGuessFile.empty() );
     
-    try
-    {
-        // For technical reasons, the reader can only accept ComplexMultiVectors.
-        Teuchos::RCP<ComplexMultiVector> psiM;
-        Recti::Grid::Reader::read ( Comm,
-                                    inputGuessFile.string(),
-                                    psiM,
-                                    grid,
-                                    glParameters );
-        TEUCHOS_ASSERT_EQUALITY ( psiM->getNumVectors(), 1 );
-        psi = psiM->getVectorNonConst ( 0 );
-    }
-    catch ( std::exception &e )
-    {
-        std::cerr << e.what() << std::endl;
-        return 1;
-    }
+    // For technical reasons, the reader can only accept ComplexMultiVectors.
+    Teuchos::RCP<ComplexMultiVector> psiM;
+    Recti::Grid::Reader::read ( Comm,
+                                inputGuessFile.string(),
+                                psiM,
+                                grid,
+                                glParameters );
+    TEUCHOS_ASSERT_EQUALITY ( psiM->getNumVectors(), 1 );
+    psi = psiM->getVectorNonConst ( 0 );
 
     // possibly overwrite the parameters
     Teuchos::ParameterList & overwriteParamsList = paramList->sublist ( "Overwrite parameter list", true ); 
@@ -217,19 +187,12 @@ main ( int argc, char *argv[] )
                                                   contFileBaseName,
                                                   outputFormat,
                                                   maxLocaSteps ) );
-    try
-    {
-        glsystem = Teuchos::rcp ( new Ginla::LocaSystem::Bordered ( glOperator,
-                                                                    eComm,
-                                                                    psi->getMap(),
-                                                                    statsWriter,
-                                                                    stateWriter ) );
-    }
-    catch ( std::exception & e )
-    {
-        std::cerr << e.what() << std::endl;
-        return 1;
-    }
+
+    glsystem = Teuchos::rcp ( new Ginla::LocaSystem::Bordered ( glOperator,
+                                                                eComm,
+                                                                psi->getMap(),
+                                                                statsWriter,
+                                                                stateWriter ) );
     
     // set the initial value from glParameters
     std::string contParam = stepperList.get<string> ( "Continuation Parameter" );
@@ -357,27 +320,26 @@ main ( int argc, char *argv[] )
                                                     maxIters ) );
     // ---------------------------------------------------------------------------
     // Set up the LOCA status tests
-    Teuchos::RCP<LOCA::StatusTest::Abstract> maxLocaStepsTest;
-    try {
-        maxLocaStepsTest = Teuchos::rcp ( new LOCA::StatusTest::MaxIters ( maxLocaSteps ) );
-    }
-    catch ( char const * e ) {
-        std::cerr << e << std::endl;
-        return 1;
-    }
-    Teuchos::RCP<LOCA::StatusTest::Abstract> zeroEnergyTest;
-    try {
-        zeroEnergyTest = Teuchos::rcp ( new Ginla::StatusTest::Energy ( glsystem,
-                                                                        grid ) );
-    }
-    catch ( char const * e ) {
-        std::cerr << e << std::endl;
-        return 1;
-    }
-    Teuchos::RCP<LOCA::StatusTest::Abstract> locaCombo =
-        Teuchos::rcp ( new LOCA::StatusTest::Combo ( LOCA::StatusTest::Combo::OR,
-                                                     maxLocaStepsTest,
-                                                     zeroEnergyTest ) );
+    Teuchos::RCP<LOCA::StatusTest::Abstract> maxLocaStepsTest =
+           Teuchos::rcp ( new LOCA::StatusTest::MaxIters ( maxLocaSteps ) );
+
+    Teuchos::RCP<LOCA::StatusTest::Abstract> zeroEnergyTest =
+                     Teuchos::rcp ( new Ginla::StatusTest::Energy ( glsystem,
+                                                                    grid ) );
+                                                                        
+    Teuchos::RCP<LOCA::StatusTest::Abstract> loopTest =
+                     Teuchos::rcp ( new Ginla::StatusTest::Loop ( glsystem,
+                                                                  grid ) );
+                                                                  
+    Teuchos::RCP<LOCA::StatusTest::Abstract> turnaroundTest =
+                     Teuchos::rcp ( new Ginla::StatusTest::Turnaround () );
+
+    Teuchos::RCP<LOCA::StatusTest::Combo> locaCombo =
+        Teuchos::rcp ( new LOCA::StatusTest::Combo ( LOCA::StatusTest::Combo::OR ) );
+    locaCombo->addStatusTest( maxLocaStepsTest );
+//     locaCombo->addStatusTest( zeroEnergyTest );
+    locaCombo->addStatusTest( loopTest );
+    locaCombo->addStatusTest( turnaroundTest );
     // ---------------------------------------------------------------------------
     // Create the stepper
     Teuchos::RCP<LOCA::Thyra::Group> grp2 = Teuchos::null;
@@ -399,15 +361,7 @@ main ( int argc, char *argv[] )
 
     // ---------------------------------------------------------------------------
     // Perform continuation run
-    LOCA::Abstract::Iterator::IteratorStatus status;
-    try
-    {
-        status = stepper->run();
-    }
-    catch ( char const* e )
-    {
-        std::cerr << "Exception raised: " << e << std::endl;
-    }
+    status = stepper->run();
     // ---------------------------------------------------------------------------
 
     // clean up
@@ -416,7 +370,18 @@ main ( int argc, char *argv[] )
 #ifdef HAVE_LOCA_ANASAZI
     glEigenSaver->releaseLocaStepper();
 #endif
-
+    }
+    catch ( std::exception &e )
+    {
+        std::cerr << e.what() << std::endl;
+        status += 10;
+    }
+    catch ( char const* e )
+    {
+        std::cerr << "Exception raised: " << e << std::endl;
+        status += 20;
+    }
+    
 #ifdef HAVE_MPI
     MPI_Finalize();
 #endif

@@ -1,6 +1,6 @@
 /*
     <one line to give the program's name and a brief idea of what it does.>
-    Copyright (C) 2010 Nico Schl\"omer
+    Copyright (C) <year>  <name of author>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
 
 */
 
-#include "Ginla_StatusTest_Loop.h"
+#include "Ginla_StatusTest_Turnaround.h"
 
 #include "Ginla_StatusTest_Energy.h"
 
@@ -30,45 +30,50 @@
 
 
 // ============================================================================
-Ginla::StatusTest::Loop::
-Loop(  const Teuchos::RCP<const Ginla::LocaSystem::Bordered> & glSystem,
-       const Teuchos::RCP<const Recti::Grid::General>        & grid ):
-    firstTime_( true ),
+Ginla::StatusTest::Turnaround::
+Turnaround():
+    firstTime_ ( true ),
     tol_( 1.0e-12 ),
-    diffNorm_( 0.0 ),
-    glSystem_( glSystem ),
-    grid_( grid ),
+    updateProjection_( 0.0 ),
     status_( LOCA::StatusTest::Unevaluated ),
-    referencePoint_( Teuchos::null )
+    previousPoint_( Teuchos::null ),
+    previousUpd_( Teuchos::null )
 {
 }
 // ============================================================================
-Ginla::StatusTest::Loop::
-~Loop()
+Ginla::StatusTest::Turnaround::
+~Turnaround()
 {
 }
 // ============================================================================
 LOCA::StatusTest::StatusType
-Ginla::StatusTest::Loop::
+Ginla::StatusTest::Turnaround::
 checkStatus( const LOCA::Stepper& stepper,
                    LOCA::StatusTest::CheckType checkType )
-{ 
+{
   // store the reference solution
   if ( firstTime_ )
   {
-      setReferencePoint( stepper );
-      status_ = LOCA::StatusTest::NotFinished;
+      Teuchos::RCP<const NOX::Abstract::Group> solGroup =
+        Teuchos::rcp_dynamic_cast<const NOX::Abstract::Group> ( stepper.getSolutionGroup() );
+      const NOX::Abstract::Vector & x = solGroup->getX();
+      previousPoint_ = x.clone();
+      
+      // set the initial update to 0
+      previousUpd_ = x.clone();
+      previousUpd_->scale( 0.0 );
+      
       firstTime_ = false;
-      return status_;
+      return LOCA::StatusTest::Unevaluated;
   }
   
   switch (checkType)
   {
   case LOCA::StatusTest::Complete:
   case LOCA::StatusTest::Minimal:
-    computeDiffNorm( stepper );
-    if ( abs(diffNorm_) < tol_ )
-      status_ = LOCA::StatusTest::Finished;
+    computeUpdateProjection( stepper );
+    if ( abs(updateProjection_+1.0) < tol_ )
+      status_ = LOCA::StatusTest::Failed; // LOCA::StatusTest::Failed
     else
       status_ = LOCA::StatusTest::NotFinished;
     break;
@@ -83,55 +88,51 @@ checkStatus( const LOCA::Stepper& stepper,
 }
 // ============================================================================
 void
-Ginla::StatusTest::Loop::
-setReferencePoint( const LOCA::Stepper & stepper )
+Ginla::StatusTest::Turnaround::
+computeUpdateProjection( const LOCA::Stepper & stepper )
 {
     Teuchos::RCP<const NOX::Abstract::Group> solGroup =
         Teuchos::rcp_dynamic_cast<const NOX::Abstract::Group> ( stepper.getSolutionGroup() );
-    const Epetra_Vector & x =
-        ( Teuchos::dyn_cast<const NOX::Epetra::Vector> ( solGroup->getX() ) ).getEpetraVector();
-    
-    referencePoint_ = glSystem_->extractPsi( x );
+    const NOX::Abstract::Vector & x = solGroup->getX();
+        
+    // calculate update
+    Teuchos::RCP<NOX::Abstract::Vector> upd =  x.clone();
+    upd->update( 1.0, *previousPoint_, -1.0 );
 
-    return;
-}
-// ============================================================================
-void
-Ginla::StatusTest::Loop::
-computeDiffNorm( const LOCA::Stepper & stepper )
-{
-    Teuchos::RCP<const NOX::Abstract::Group> solGroup =
-        Teuchos::rcp_dynamic_cast<const NOX::Abstract::Group> ( stepper.getSolutionGroup() );
-    const Epetra_Vector & x =
-        ( Teuchos::dyn_cast<const NOX::Epetra::Vector> ( solGroup->getX() ) ).getEpetraVector();
-    
-    Teuchos::RCP<ComplexVector> psi = glSystem_->extractPsi( x );
-    
-    TEUCHOS_ASSERT( !referencePoint_.is_null() );
-    
-    psi->update( 1.0, *referencePoint_, -1.0 );
-    diffNorm_ = Ginla::Helpers::normalizedScaledL2Norm( *psi, *grid_ );
+    // normalize
+    double alpha = upd->norm();
+    if ( fabs(alpha)>1.0e-15 )
+        upd->scale( 1.0/alpha );
 
+    // project update to previous update
+    updateProjection_ = upd->innerProduct( *previousUpd_ );
+//     upd->update( 1.0, *previousUpd_, -1.0 );
+//     updateProjection_ = upd->norm();
+
+    // save for next step
+    previousUpd_ = upd;
+    previousPoint_ = x.clone();
+    
     return;
 }
 // ============================================================================
 LOCA::StatusTest::StatusType
-Ginla::StatusTest::Loop::
+Ginla::StatusTest::Turnaround::
 getStatus() const
 {
   return status_;
 }
 // ============================================================================
 ostream&
-Ginla::StatusTest::Loop::
+Ginla::StatusTest::Turnaround::
 print(ostream& stream, int indent) const
 {
   for (int j = 0; j < indent; j ++)
     stream << ' ';
   stream << status_;
-  stream << "||psi-ref||_L2 = " << NOX::Utils::sciformat(fabs(diffNorm_),3);
-  stream << " > " << NOX::Utils::sciformat(tol_,3);
+  stream << "<upd,prevUpd>_2 = " << NOX::Utils::sciformat(updateProjection_,3);
   stream << std::endl;
  return stream;
 }
 // ============================================================================
+

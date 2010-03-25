@@ -20,6 +20,7 @@ SET ( ginla_SRCS
       Ginla_Perturbation_Virtual.cpp
       Ginla_StatusTest_Energy.cpp
       Ginla_StatusTest_Loop.cpp
+      Ginla_StatusTest_Turnaround.cpp
     )
 
 FIND_PACKAGE( Trilinos REQUIRED )

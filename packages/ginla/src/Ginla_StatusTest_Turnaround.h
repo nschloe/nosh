@@ -17,8 +17,8 @@
 
 */
 
-#ifndef GINLA_STATUSTEST_LOOP_H
-#define GINLA_STATUSTEST_LOOP_H
+#ifndef GINLA_STATUSTEST_TURNAROUND_H
+#define GINLA_STATUSTEST_TURNAROUND_H
 
 #include "Ginla_Typedefs.h"
 
@@ -26,14 +26,9 @@
 #include <LOCA_StatusTest_Abstract.H>
 
 // forward declarations
-namespace Ginla {
-  namespace LocaSystem {
-    class Bordered;
-  }
-}
-namespace Recti {
-  namespace Grid {
-    class General;
+namespace NOX {
+  namespace Abstract {
+    class Vector;
   }
 }
 
@@ -42,17 +37,16 @@ namespace Ginla {
 
 namespace StatusTest {
 
-class Loop:
+class Turnaround:
     public LOCA::StatusTest::Abstract
 {
 public:
   //! Constructor.
-  Loop( const Teuchos::RCP<const Ginla::LocaSystem::Bordered> & glSystem,
-        const Teuchos::RCP<const Recti::Grid::General>        & grid );
+  Turnaround();
 
   //! Destructor.
   virtual
-  ~Loop();
+  ~Turnaround();
 
   virtual
   LOCA::StatusTest::StatusType
@@ -68,29 +62,27 @@ public:
   virtual
   ostream&
   print( ostream& stream,
-         int indent = 0) const;
+         int indent = 0 ) const;
 
 protected:
 
 private:
   void
-  computeDiffNorm( const LOCA::Stepper & stepper );
-  
-  void
-  setReferencePoint( const LOCA::Stepper & stepper );
+  computeUpdateProjection( const LOCA::Stepper & stepper );
   
 private:
   bool firstTime_;
   double tol_;
-  double diffNorm_;
-  const Teuchos::RCP<const Ginla::LocaSystem::Bordered> glSystem_;
-  const Teuchos::RCP<const Recti::Grid::General> grid_;
+  double updateProjection_;
+
   LOCA::StatusTest::StatusType status_;
-  Teuchos::RCP<const ComplexVector> referencePoint_;
-  
+  Teuchos::RCP<const NOX::Abstract::Vector> previousPoint_;
+  Teuchos::RCP<NOX::Abstract::Vector> previousUpd_;
+
 };
 
 }
+
 }
 
-#endif // GINLA_STATUSTEST_LOOP_H
+#endif // GINLA_STATUSTEST_TURNAROUND_H
