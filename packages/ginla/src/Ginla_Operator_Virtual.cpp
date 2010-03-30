@@ -27,8 +27,8 @@
 
 // =============================================================================
 Ginla::Operator::Virtual::
-Virtual ( Teuchos::RCP<Recti::Grid::Uniform>                  & grid,
-          Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> & A ) :
+Virtual ( const Teuchos::RCP<Recti::Grid::Uniform>                     & grid,
+          const Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> & A ) :
         psi_ ( Teuchos::null ),
         chi_ ( 0.0 ),
         grid_ ( grid ),

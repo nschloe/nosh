@@ -24,13 +24,10 @@
 #include "Recti_Grid_Uniform.h"
 #include "Ginla_MagneticVectorPotential_Centered.h"
 
-// complex unit
-const double_complex I ( 0,1 );
-
 // =============================================================================
 Ginla::Operator::BCOuter::
-BCOuter ( Teuchos::RCP<Recti::Grid::Uniform>                  & grid,
-          Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> & A
+BCOuter ( const Teuchos::RCP<Recti::Grid::Uniform>                     & grid,
+          const Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> & A
         ) :
         Ginla::Operator::Virtual ( grid, A )
 {
@@ -83,10 +80,10 @@ Ginla::Operator::BCOuter::getEntry ( const int k ) const
 
         // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         res = ( psiK* ( -4.0 )
-                + psiKLeft*  exp ( I*ALeft *h ) + psiKRight* exp ( -I*ARight*h )
-                + psiKBelow* exp ( I*ABelow*h ) + psiKAbove* exp ( -I*AAbove*h ) ) / ( h*h )
+                + psiKLeft*  exp ( IM*ALeft *h ) + psiKRight* exp ( -IM*ARight*h )
+                + psiKBelow* exp ( IM*ABelow*h ) + psiKAbove* exp ( -IM*AAbove*h ) ) / ( h*h )
               + psiK * ( 1-norm ( psiK ) );
-        res *= exp ( I*chi_ );
+        res *= exp ( IM*chi_ );
 
         break;
 
@@ -102,10 +99,10 @@ Ginla::Operator::BCOuter::getEntry ( const int k ) const
         AAbove = A_->getAy ( *xAbove );
 
         res = ( - psiK      * 2.0
-                + psiKRight * exp ( -I*ARight*h )
-                + psiKAbove * exp ( -I*AAbove*h ) ) / ( h*h )
+                + psiKRight * exp ( -IM*ARight*h )
+                + psiKAbove * exp ( -IM*AAbove*h ) ) / ( h*h )
               + psiK * ( 1-norm ( psiK ) );
-        res *= exp ( I*chi_ );
+        res *= exp ( IM*chi_ );
         // -------------------------------------------------------------------
         break;
 
@@ -121,10 +118,10 @@ Ginla::Operator::BCOuter::getEntry ( const int k ) const
         AAbove = A_->getAy ( *xAbove );
 
         res = ( psiK* ( -2.0 )
-                + psiKLeft * exp ( I*ALeft *h )
-                + psiKAbove* exp ( -I*AAbove*h ) ) / ( h*h )
+                + psiKLeft * exp ( IM*ALeft *h )
+                + psiKAbove* exp ( -IM*AAbove*h ) ) / ( h*h )
               + psiK * ( 1-norm ( psiK ) );
-        res *= exp ( I*chi_ );
+        res *= exp ( IM*chi_ );
         // -----------------------------------------------------------------------
         break;
 
@@ -140,10 +137,10 @@ Ginla::Operator::BCOuter::getEntry ( const int k ) const
         ABelow = A_->getAy ( *xBelow );
 
         res = ( psiK* ( -2.0 )
-                + psiKLeft * exp ( I*ALeft *h )
-                + psiKBelow* exp ( I*ABelow*h ) ) / ( h*h )
+                + psiKLeft * exp ( IM*ALeft *h )
+                + psiKBelow* exp ( IM*ABelow*h ) ) / ( h*h )
               + psiK * ( 1-norm ( psiK ) );
-        res *= exp ( I*chi_ );
+        res *= exp ( IM*chi_ );
         // -----------------------------------------------------------------------
 
         break;
@@ -160,10 +157,10 @@ Ginla::Operator::BCOuter::getEntry ( const int k ) const
         ABelow = A_->getAy ( *xBelow );
 
         res = ( psiK* ( -2.0 )
-                + psiKRight* exp ( -I*ARight*h )
-                + psiKBelow* exp ( I*ABelow*h ) ) / ( h*h )
+                + psiKRight* exp ( -IM*ARight*h )
+                + psiKBelow* exp ( IM*ABelow*h ) ) / ( h*h )
               + psiK * ( 1-norm ( psiK ) );
-        res *= exp ( I*chi_ );
+        res *= exp ( IM*chi_ );
         // -----------------------------------------------------------------------
         break;
 
@@ -182,10 +179,10 @@ Ginla::Operator::BCOuter::getEntry ( const int k ) const
         AAbove = A_->getAy ( *xAbove );
 
         res = ( psiK* ( -3.0 )
-                + psiKLeft*  exp ( I*ALeft *h ) + psiKRight* exp ( -I*ARight*h )
-                + psiKAbove* exp ( -I*AAbove*h ) ) / ( h*h )
+                + psiKLeft*  exp ( IM*ALeft *h ) + psiKRight* exp ( -IM*ARight*h )
+                + psiKAbove* exp ( -IM*AAbove*h ) ) / ( h*h )
               + psiK * ( 1.0-norm ( psiK ) );
-        res *= exp ( I*chi_ );
+        res *= exp ( IM*chi_ );
         // -------------------------------------------------------------------
         break;
 
@@ -204,10 +201,10 @@ Ginla::Operator::BCOuter::getEntry ( const int k ) const
         AAbove = A_->getAy ( *xAbove );
 
         res = ( psiK* ( -3.0 )
-                + psiKLeft*  exp ( I*ALeft *h )
-                + psiKBelow* exp ( I*ABelow*h ) + psiKAbove* exp ( -I*AAbove*h ) ) / ( h*h )
+                + psiKLeft*  exp ( IM*ALeft *h )
+                + psiKBelow* exp ( IM*ABelow*h ) + psiKAbove* exp ( -IM*AAbove*h ) ) / ( h*h )
               + psiK * ( 1-norm ( psiK ) );
-        res *= exp ( I*chi_ );
+        res *= exp ( IM*chi_ );
         // -------------------------------------------------------------------
         break;
 
@@ -226,10 +223,10 @@ Ginla::Operator::BCOuter::getEntry ( const int k ) const
         ABelow = A_->getAy ( *xBelow );
 
         res = ( psiK* ( -3.0 )
-                + psiKLeft*  exp ( I*ALeft *h ) + psiKRight* exp ( -I*ARight*h )
-                + psiKBelow* exp ( I*ABelow*h ) ) / ( h*h )
+                + psiKLeft*  exp ( IM*ALeft *h ) + psiKRight* exp ( -IM*ARight*h )
+                + psiKBelow* exp ( IM*ABelow*h ) ) / ( h*h )
               + psiK * ( 1-norm ( psiK ) );
-        res *= exp ( I*chi_ );
+        res *= exp ( IM*chi_ );
         // -------------------------------------------------------------------
         break;
 
@@ -248,10 +245,10 @@ Ginla::Operator::BCOuter::getEntry ( const int k ) const
         AAbove = A_->getAy ( *xAbove );
 
         res = ( psiK* ( -3.0 )
-                + psiKRight* exp ( -I*ARight*h )
-                + psiKBelow* exp ( I*ABelow*h ) + psiKAbove* exp ( -I*AAbove*h ) ) / ( h*h )
+                + psiKRight* exp ( -IM*ARight*h )
+                + psiKBelow* exp ( IM*ABelow*h ) + psiKAbove* exp ( -IM*AAbove*h ) ) / ( h*h )
               + psiK * ( 1-norm ( psiK ) );
-        res *= exp ( I*chi_ );
+        res *= exp ( IM*chi_ );
         // -------------------------------------------------------------------
         break;
 
@@ -316,10 +313,10 @@ Ginla::Operator::BCOuter::getJacobianRow ( const int                        k,
         valuesPsi.resize ( numEntriesPsi );
         valuesPsi[0] = - 4.0            / ( h*h )
                        + ( 1 - 2.0*norm ( psiView[k] ) );
-        valuesPsi[1] = exp ( I*ALeft *h ) / ( h*h );
-        valuesPsi[2] = exp ( -I*ARight*h ) / ( h*h );
-        valuesPsi[3] = exp ( I*ABelow*h ) / ( h*h );
-        valuesPsi[4] = exp ( -I*AAbove*h ) / ( h*h );
+        valuesPsi[1] = exp ( IM*ALeft *h ) / ( h*h );
+        valuesPsi[2] = exp ( -IM*ARight*h ) / ( h*h );
+        valuesPsi[3] = exp ( IM*ABelow*h ) / ( h*h );
+        valuesPsi[4] = exp ( -IM*AAbove*h ) / ( h*h );
 
         numEntriesPsiConj = 1;
         columnIndicesPsiConj.resize ( numEntriesPsiConj );
@@ -349,8 +346,8 @@ Ginla::Operator::BCOuter::getJacobianRow ( const int                        k,
         valuesPsi.resize ( numEntriesPsi );
         valuesPsi[0] = - 2.0 / ( h*h )
                        + ( 1 - 2.0*norm ( psiView[k] ) );
-        valuesPsi[1] = exp ( -I*ARight*h ) / ( h*h );
-        valuesPsi[2] = exp ( -I*AAbove*h ) / ( h*h );
+        valuesPsi[1] = exp ( -IM*ARight*h ) / ( h*h );
+        valuesPsi[2] = exp ( -IM*AAbove*h ) / ( h*h );
 
 
         numEntriesPsiConj = 1;
@@ -359,7 +356,7 @@ Ginla::Operator::BCOuter::getJacobianRow ( const int                        k,
 
         valuesPsiConj.resize ( numEntriesPsiConj );
         valuesPsiConj[0] = -psiView[k]*psiView[k];
-        valuesPsiConj[0] *= exp ( I*chi_*2.0 );
+        valuesPsiConj[0] *= exp ( IM*chi_*2.0 );
 
         // -------------------------------------------------------------------
         break;
@@ -385,8 +382,8 @@ Ginla::Operator::BCOuter::getJacobianRow ( const int                        k,
         valuesPsi.resize ( numEntriesPsi );
         valuesPsi[0] = -2.0 / ( h*h )
                        + ( 1 - 2.0*norm ( psiView[k] ) );
-        valuesPsi[1] = exp ( I*ALeft *h ) / ( h*h );
-        valuesPsi[2] = exp ( -I*AAbove*h ) / ( h*h );
+        valuesPsi[1] = exp ( IM*ALeft *h ) / ( h*h );
+        valuesPsi[2] = exp ( -IM*AAbove*h ) / ( h*h );
 
 
         numEntriesPsiConj = 1;
@@ -395,7 +392,7 @@ Ginla::Operator::BCOuter::getJacobianRow ( const int                        k,
 
         valuesPsiConj.resize ( numEntriesPsiConj );
         valuesPsiConj[0] = -psiView[k]*psiView[k];
-        valuesPsiConj[0] *= exp ( I*chi_*2.0 );
+        valuesPsiConj[0] *= exp ( IM*chi_*2.0 );
         // -----------------------------------------------------------------------
         break;
 
@@ -419,15 +416,15 @@ Ginla::Operator::BCOuter::getJacobianRow ( const int                        k,
         valuesPsi.resize ( numEntriesPsi );
         valuesPsi[0] = -2.0 / ( h*h )
                        + ( 1 - 2.0*norm ( psiView[k] ) );
-        valuesPsi[1] = exp ( I*ALeft *h ) / ( h*h );
-        valuesPsi[2] = exp ( I*ABelow*h ) / ( h*h );
+        valuesPsi[1] = exp ( IM*ALeft *h ) / ( h*h );
+        valuesPsi[2] = exp ( IM*ABelow*h ) / ( h*h );
 
         numEntriesPsiConj = 1;
         columnIndicesPsiConj.resize ( numEntriesPsiConj );
         columnIndicesPsiConj[0] = k;
         valuesPsiConj.resize ( numEntriesPsiConj );
         valuesPsiConj[0] = -psiView[k]*psiView[k];
-        valuesPsiConj[0] *= exp ( I*chi_*2.0 );
+        valuesPsiConj[0] *= exp ( IM*chi_*2.0 );
         // -----------------------------------------------------------------------
         break;
 
@@ -451,8 +448,8 @@ Ginla::Operator::BCOuter::getJacobianRow ( const int                        k,
         valuesPsi.resize ( numEntriesPsi );
         valuesPsi[0] = -2.0 / ( h*h )
                        + ( 1 - 2.0*norm ( psiView[k] ) );
-        valuesPsi[1] = exp ( -I*ARight*h ) / ( h*h );
-        valuesPsi[2] = exp ( I*ABelow*h ) / ( h*h );
+        valuesPsi[1] = exp ( -IM*ARight*h ) / ( h*h );
+        valuesPsi[2] = exp ( IM*ABelow*h ) / ( h*h );
 
         numEntriesPsiConj = 1;
         columnIndicesPsiConj.resize ( numEntriesPsiConj );
@@ -460,7 +457,7 @@ Ginla::Operator::BCOuter::getJacobianRow ( const int                        k,
 
         valuesPsiConj.resize ( numEntriesPsiConj );
         valuesPsiConj[0] = -psiView[k]*psiView[k];
-        valuesPsiConj[0] *= exp ( I*chi_*2.0 );
+        valuesPsiConj[0] *= exp ( IM*chi_*2.0 );
         // -----------------------------------------------------------------------
         break;
 
@@ -488,9 +485,9 @@ Ginla::Operator::BCOuter::getJacobianRow ( const int                        k,
         valuesPsi.resize ( numEntriesPsi );
         valuesPsi[0] = - 3.0            / ( h*h )
                        + ( 1.0 - 2.0*norm ( psiView[k] ) );
-        valuesPsi[1] = exp ( I*ALeft *h ) / ( h*h );
-        valuesPsi[2] = exp ( -I*ARight*h ) / ( h*h );
-        valuesPsi[3] = exp ( -I*AAbove*h ) / ( h*h );
+        valuesPsi[1] = exp ( IM*ALeft *h ) / ( h*h );
+        valuesPsi[2] = exp ( -IM*ARight*h ) / ( h*h );
+        valuesPsi[3] = exp ( -IM*AAbove*h ) / ( h*h );
 
         numEntriesPsiConj = 1;
         columnIndicesPsiConj.resize ( numEntriesPsiConj );
@@ -498,7 +495,7 @@ Ginla::Operator::BCOuter::getJacobianRow ( const int                        k,
 
         valuesPsiConj.resize ( numEntriesPsiConj );
         valuesPsiConj[0] = -psiView[k]*psiView[k];
-        valuesPsiConj[0] *= exp ( I*chi_*2.0 );
+        valuesPsiConj[0] *= exp ( IM*chi_*2.0 );
         // -------------------------------------------------------------------
         break;
 
@@ -526,9 +523,9 @@ Ginla::Operator::BCOuter::getJacobianRow ( const int                        k,
         valuesPsi.resize ( numEntriesPsi );
         valuesPsi[0] = - 3.0            / ( h*h )
                        + ( 1.0 - 2.0*norm ( psiView[k] ) );
-        valuesPsi[1] = exp ( I*ABelow*h ) / ( h*h );
-        valuesPsi[2] = exp ( -I*AAbove*h ) / ( h*h );
-        valuesPsi[3] = exp ( I*ALeft *h ) / ( h*h );
+        valuesPsi[1] = exp ( IM*ABelow*h ) / ( h*h );
+        valuesPsi[2] = exp ( -IM*AAbove*h ) / ( h*h );
+        valuesPsi[3] = exp ( IM*ALeft *h ) / ( h*h );
 
         numEntriesPsiConj = 1;
         columnIndicesPsiConj.resize ( numEntriesPsiConj );
@@ -536,7 +533,7 @@ Ginla::Operator::BCOuter::getJacobianRow ( const int                        k,
 
         valuesPsiConj.resize ( numEntriesPsiConj );
         valuesPsiConj[0] = -psiView[k]*psiView[k];
-        valuesPsiConj[0] *= exp ( I*chi_*2.0 );
+        valuesPsiConj[0] *= exp ( IM*chi_*2.0 );
         // -------------------------------------------------------------------
         break;
 
@@ -564,9 +561,9 @@ Ginla::Operator::BCOuter::getJacobianRow ( const int                        k,
         valuesPsi.resize ( numEntriesPsi );
         valuesPsi[0] = - 3.0             / ( h*h )
                        + ( 1.0 - 2.0*norm ( psiView[k] ) );
-        valuesPsi[1] = exp ( I*ABelow*h ) / ( h*h );
-        valuesPsi[2] = exp ( I*ALeft *h ) / ( h*h );
-        valuesPsi[3] = exp ( -I*ARight*h ) / ( h*h );
+        valuesPsi[1] = exp ( IM*ABelow*h ) / ( h*h );
+        valuesPsi[2] = exp ( IM*ALeft *h ) / ( h*h );
+        valuesPsi[3] = exp ( -IM*ARight*h ) / ( h*h );
 
         numEntriesPsiConj = 1;
         columnIndicesPsiConj.resize ( numEntriesPsiConj );
@@ -574,7 +571,7 @@ Ginla::Operator::BCOuter::getJacobianRow ( const int                        k,
 
         valuesPsiConj.resize ( numEntriesPsiConj );
         valuesPsiConj[0] = -psiView[k]*psiView[k];
-        valuesPsiConj[0] *= exp ( I*chi_*2.0 );
+        valuesPsiConj[0] *= exp ( IM*chi_*2.0 );
         // -------------------------------------------------------------------
         break;
 
@@ -602,9 +599,9 @@ Ginla::Operator::BCOuter::getJacobianRow ( const int                        k,
         valuesPsi.resize ( numEntriesPsi );
         valuesPsi[0] = - 3.0            / ( h*h )
                        + ( 1.0 - 2.0*norm ( psiView[k] ) );
-        valuesPsi[1] = exp ( I*ABelow*h ) / ( h*h );
-        valuesPsi[2] = exp ( -I*AAbove*h ) / ( h*h );
-        valuesPsi[3] = exp ( -I*ARight*h ) / ( h*h );
+        valuesPsi[1] = exp ( IM*ABelow*h ) / ( h*h );
+        valuesPsi[2] = exp ( -IM*AAbove*h ) / ( h*h );
+        valuesPsi[3] = exp ( -IM*ARight*h ) / ( h*h );
 
         numEntriesPsiConj = 1;
         columnIndicesPsiConj.resize ( numEntriesPsiConj );
@@ -612,7 +609,7 @@ Ginla::Operator::BCOuter::getJacobianRow ( const int                        k,
 
         valuesPsiConj.resize ( numEntriesPsiConj );
         valuesPsiConj[0] = -psiView[k]*psiView[k];
-        valuesPsiConj[0] *= exp ( I*chi_*2.0 );
+        valuesPsiConj[0] *= exp ( IM*chi_*2.0 );
         // -------------------------------------------------------------------
         break;
 

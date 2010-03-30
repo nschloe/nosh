@@ -24,13 +24,10 @@
 #include "Recti_Grid_Uniform.h"
 #include "Ginla_MagneticVectorPotential_Centered.h"
 
-// complex unit
-const double_complex I ( 0,1 );
-
 // =============================================================================
 Ginla::Operator::BCCentral::
-BCCentral ( Teuchos::RCP<Recti::Grid::Uniform>                  & grid,
-            Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> & A
+BCCentral ( const Teuchos::RCP<Recti::Grid::Uniform>                     & grid,
+            const Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> & A
           ) :
         Ginla::Operator::Virtual ( grid, A )
 {
@@ -84,11 +81,11 @@ getEntry ( const int k ) const
 
         // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         res = ( psiK* ( -4.0 )
-                + psiKLeft*  exp ( I*ALeft *h ) + psiKRight* exp ( -I*ARight*h )
-                + psiKBelow* exp ( I*ABelow*h ) + psiKAbove* exp ( -I*AAbove*h ) ) / ( h*h )
+                + psiKLeft*  exp ( IM*ALeft *h ) + psiKRight* exp ( -IM*ARight*h )
+                + psiKBelow* exp ( IM*ABelow*h ) + psiKAbove* exp ( -IM*AAbove*h ) ) / ( h*h )
               + psiK * ( 1-norm ( psiK ) );
               
-        res *= exp ( I*chi_ );
+        res *= exp ( IM*chi_ );
         break;
 
     case Recti::Grid::Abstract::BOUNDARY_BOTTOMLEFTCONVEX:
@@ -103,10 +100,10 @@ getEntry ( const int k ) const
         AAbove = A_->getAy ( *xAbove );
 
         res = ( - psiK      * 4.0
-                + psiKRight * 2.0 * exp ( -I*ARight*h )
-                + psiKAbove * 2.0 * exp ( -I*AAbove*h ) ) / ( h*h )
+                + psiKRight * 2.0 * exp ( -IM*ARight*h )
+                + psiKAbove * 2.0 * exp ( -IM*AAbove*h ) ) / ( h*h )
               + psiK * ( 1-norm ( psiK ) );
-        res *= exp ( I*chi_ );
+        res *= exp ( IM*chi_ );
         // -------------------------------------------------------------------
         break;
 
@@ -121,10 +118,10 @@ getEntry ( const int k ) const
         AAbove = A_->getAy ( *xAbove );
 
         res = ( - psiK      * 4.0
-                + psiKLeft  * 2.0 * exp ( I*ALeft *h )
-                + psiKAbove * 2.0 * exp ( -I*AAbove*h ) ) / ( h*h )
+                + psiKLeft  * 2.0 * exp ( IM*ALeft *h )
+                + psiKAbove * 2.0 * exp ( -IM*AAbove*h ) ) / ( h*h )
               + psiK * ( 1-norm ( psiK ) );
-        res *= exp ( I*chi_ );
+        res *= exp ( IM*chi_ );
         // -----------------------------------------------------------------------
         break;
 
@@ -139,10 +136,10 @@ getEntry ( const int k ) const
         ABelow = A_->getAy ( *xBelow );
 
         res = ( - psiK      * 4.0
-                + psiKLeft  * 2.0 * exp ( I*ALeft *h )
-                + psiKBelow * 2.0 * exp ( I*ABelow*h ) ) / ( h*h )
+                + psiKLeft  * 2.0 * exp ( IM*ALeft *h )
+                + psiKBelow * 2.0 * exp ( IM*ABelow*h ) ) / ( h*h )
               + psiK * ( 1-norm ( psiK ) );
-        res *= exp ( I*chi_ );
+        res *= exp ( IM*chi_ );
         // -----------------------------------------------------------------------
 
         break;
@@ -158,10 +155,10 @@ getEntry ( const int k ) const
         ABelow = A_->getAy ( *xBelow );
 
         res = ( - psiK      * 4.0
-                + psiKRight * 2.0 * exp ( -I*ARight*h )
-                + psiKBelow * 2.0 * exp ( I*ABelow*h ) ) / ( h*h )
+                + psiKRight * 2.0 * exp ( -IM*ARight*h )
+                + psiKBelow * 2.0 * exp ( IM*ABelow*h ) ) / ( h*h )
               + psiK * ( 1-norm ( psiK ) );
-        res *= exp ( I*chi_ );
+        res *= exp ( IM*chi_ );
         // -----------------------------------------------------------------------
         break;
 
@@ -180,11 +177,11 @@ getEntry ( const int k ) const
         AAbove = A_->getAy ( *xAbove );
 
         res = ( - psiK      * 4.0
-                + psiKLeft  *       exp ( I*ALeft *h ) + psiKRight       * exp ( -I*ARight*h )
-                + psiKAbove * 2.0 * exp ( -I*AAbove*h ) )
+                + psiKLeft  *       exp ( IM*ALeft *h ) + psiKRight       * exp ( -IM*ARight*h )
+                + psiKAbove * 2.0 * exp ( -IM*AAbove*h ) )
               / ( h*h )
               + psiK * ( 1-norm ( psiK ) );
-        res *= exp ( I*chi_ );
+        res *= exp ( IM*chi_ );
         // -------------------------------------------------------------------
         break;
 
@@ -202,11 +199,11 @@ getEntry ( const int k ) const
         AAbove = A_->getAy ( *xAbove );
 
         res = ( - psiK      * 4.0
-                + psiKLeft  * 2.0 * exp ( I*ALeft *h )
-                + psiKBelow       * exp ( I*AAbove*h ) + psiKAbove * exp ( -I*AAbove*h ) )
+                + psiKLeft  * 2.0 * exp ( IM*ALeft *h )
+                + psiKBelow       * exp ( IM*AAbove*h ) + psiKAbove * exp ( -IM*AAbove*h ) )
               / ( h*h )
               + psiK * ( 1-norm ( psiK ) );
-        res *= exp ( I*chi_ );
+        res *= exp ( IM*chi_ );
         // -------------------------------------------------------------------
         break;
 
@@ -224,11 +221,11 @@ getEntry ( const int k ) const
         ABelow = A_->getAy ( *xBelow );
 
         res = ( - psiK      * 4.0
-                + psiKLeft        * exp ( I*ALeft *h ) + psiKRight * exp ( -I*ARight*h )
-                + psiKBelow * 2.0 * exp ( I*ABelow*h ) )
+                + psiKLeft        * exp ( IM*ALeft *h ) + psiKRight * exp ( -IM*ARight*h )
+                + psiKBelow * 2.0 * exp ( IM*ABelow*h ) )
               / ( h*h )
               + psiK * ( 1-norm ( psiK ) );
-        res *= exp ( I*chi_ );
+        res *= exp ( IM*chi_ );
         // -------------------------------------------------------------------
         break;
 
@@ -246,11 +243,11 @@ getEntry ( const int k ) const
         AAbove = A_->getAy ( *xAbove );
 
         res = ( - psiK      * 4.0
-                + psiKRight * 2.0 * exp ( -I*ARight*h )
-                + psiKBelow * exp ( I*AAbove*h ) + psiKAbove       * exp ( -I*AAbove*h ) )
+                + psiKRight * 2.0 * exp ( -IM*ARight*h )
+                + psiKBelow * exp ( IM*AAbove*h ) + psiKAbove       * exp ( -IM*AAbove*h ) )
               / ( h*h )
               + psiK * ( 1-norm ( psiK ) );
-        res *= exp ( I*chi_ );
+        res *= exp ( IM*chi_ );
         // -------------------------------------------------------------------
         break;
 
@@ -270,12 +267,12 @@ getEntry ( const int k ) const
         ABelow = A_->getAy ( *xBelow );
         AAbove = A_->getAy ( *xAbove );
 
-        res = ( + psiKLeft  * exp ( I*ALeft *h )
-                - psiKRight * exp ( -I*ARight*h )
-                - psiKBelow * exp ( I*ABelow*h )
-                + psiKAbove * exp ( -I*AAbove*h ) ) * I/ ( sqrt ( 2 ) *2*h );
+        res = ( + psiKLeft  * exp ( IM*ALeft *h )
+                - psiKRight * exp ( -IM*ARight*h )
+                - psiKBelow * exp ( IM*ABelow*h )
+                + psiKAbove * exp ( -IM*AAbove*h ) ) * IM/ ( sqrt ( 2 ) *2*h );
 
-        res *= exp ( I*chi_ );
+        res *= exp ( IM*chi_ );
         // -------------------------------------------------------------------
         break;
 
@@ -295,12 +292,12 @@ getEntry ( const int k ) const
         ABelow = A_->getAy ( *xBelow );
         AAbove = A_->getAy ( *xAbove );
 
-        res = ( - psiKLeft  * exp ( I*ALeft *h )
-                + psiKRight * exp ( -I*ARight*h )
-                - psiKBelow * exp ( I*ABelow*h )
-                + psiKAbove * exp ( -I*AAbove*h ) ) * I/ ( sqrt ( 2 ) *2*h );
+        res = ( - psiKLeft  * exp ( IM*ALeft *h )
+                + psiKRight * exp ( -IM*ARight*h )
+                - psiKBelow * exp ( IM*ABelow*h )
+                + psiKAbove * exp ( -IM*AAbove*h ) ) * IM/ ( sqrt ( 2 ) *2*h );
 
-        res *= exp ( I*chi_ );
+        res *= exp ( IM*chi_ );
         // -------------------------------------------------------------------
         break;
 
@@ -320,12 +317,12 @@ getEntry ( const int k ) const
         ABelow = A_->getAy ( *xBelow );
         AAbove = A_->getAy ( *xAbove );
 
-        res = ( + psiKLeft  * exp ( I*ALeft *h )
-                - psiKRight * exp ( -I*ARight*h )
-                + psiKBelow * exp ( I*ABelow*h )
-                - psiKAbove * exp ( -I*AAbove*h ) ) * I/ ( sqrt ( 2 ) *2*h );
+        res = ( + psiKLeft  * exp ( IM*ALeft *h )
+                - psiKRight * exp ( -IM*ARight*h )
+                + psiKBelow * exp ( IM*ABelow*h )
+                - psiKAbove * exp ( -IM*AAbove*h ) ) * IM/ ( sqrt ( 2 ) *2*h );
 
-        res *= exp ( I*chi_ );
+        res *= exp ( IM*chi_ );
         // -------------------------------------------------------------------
         break;
 
@@ -345,12 +342,12 @@ getEntry ( const int k ) const
         ABelow = A_->getAy ( *xBelow );
         AAbove = A_->getAy ( *xAbove );
 
-        res = ( - psiKLeft  * exp ( I*ALeft *h )
-                + psiKRight * exp ( -I*ARight*h )
-                + psiKBelow * exp ( I*ABelow*h )
-                - psiKAbove * exp ( -I*AAbove*h ) ) * I/ ( sqrt ( 2 ) *2*h );
+        res = ( - psiKLeft  * exp ( IM*ALeft *h )
+                + psiKRight * exp ( -IM*ARight*h )
+                + psiKBelow * exp ( IM*ABelow*h )
+                - psiKAbove * exp ( -IM*AAbove*h ) ) * IM/ ( sqrt ( 2 ) *2*h );
 
-        res *= exp ( I*chi_ );
+        res *= exp ( IM*chi_ );
         // -------------------------------------------------------------------
         break;
     default:
@@ -416,10 +413,10 @@ getJacobianRow ( const int                        k,
         valuesPsi.resize ( numEntriesPsi );
         valuesPsi[0] = - 4.0            / ( h*h )
                        + ( 1 - 2.0*norm ( psiView[k] ) );
-        valuesPsi[1] = exp ( I*ALeft *h ) / ( h*h );
-        valuesPsi[2] = exp ( -I*ARight*h ) / ( h*h );
-        valuesPsi[3] = exp ( I*ABelow*h ) / ( h*h );
-        valuesPsi[4] = exp ( -I*AAbove*h ) / ( h*h );
+        valuesPsi[1] = exp ( IM*ALeft *h ) / ( h*h );
+        valuesPsi[2] = exp ( -IM*ARight*h ) / ( h*h );
+        valuesPsi[3] = exp ( IM*ABelow*h ) / ( h*h );
+        valuesPsi[4] = exp ( -IM*AAbove*h ) / ( h*h );
 
         numEntriesPsiConj = 1;
         columnIndicesPsiConj.resize ( numEntriesPsiConj );
@@ -448,8 +445,8 @@ getJacobianRow ( const int                        k,
         valuesPsi.resize ( numEntriesPsi );
         valuesPsi[0] = - 4.0 / ( h*h )
                        + ( 1 - 2.0*norm ( psiView[k] ) );
-        valuesPsi[1] = 2.0 * exp ( -I*ARight*h ) / ( h*h );
-        valuesPsi[2] = 2.0 * exp ( -I*AAbove*h ) / ( h*h );
+        valuesPsi[1] = 2.0 * exp ( -IM*ARight*h ) / ( h*h );
+        valuesPsi[2] = 2.0 * exp ( -IM*AAbove*h ) / ( h*h );
 
         numEntriesPsiConj = 1;
         columnIndicesPsiConj.resize ( numEntriesPsiConj );
@@ -457,7 +454,7 @@ getJacobianRow ( const int                        k,
 
         valuesPsiConj.resize ( numEntriesPsiConj );
         valuesPsiConj[0] = -psiView[k]*psiView[k];
-        valuesPsiConj[0] *= exp ( I*chi_*2.0 );
+        valuesPsiConj[0] *= exp ( IM*chi_*2.0 );
         // -------------------------------------------------------------------
         break;
 
@@ -480,8 +477,8 @@ getJacobianRow ( const int                        k,
         valuesPsi.resize ( numEntriesPsi );
         valuesPsi[0] = -4.0 / ( h*h )
                        + ( 1 - 2.0*norm ( psiView[k] ) );
-        valuesPsi[1] = 2.0 * exp ( I*ALeft *h ) / ( h*h );
-        valuesPsi[2] = 2.0 * exp ( -I*AAbove*h ) / ( h*h );
+        valuesPsi[1] = 2.0 * exp ( IM*ALeft *h ) / ( h*h );
+        valuesPsi[2] = 2.0 * exp ( -IM*AAbove*h ) / ( h*h );
 
         numEntriesPsiConj = 1;
         columnIndicesPsiConj.resize ( numEntriesPsiConj );
@@ -489,7 +486,7 @@ getJacobianRow ( const int                        k,
 
         valuesPsiConj.resize ( numEntriesPsiConj );
         valuesPsiConj[0] = -psiView[k]*psiView[k];
-        valuesPsiConj[0] *= exp ( I*chi_*2.0 );
+        valuesPsiConj[0] *= exp ( IM*chi_*2.0 );
         // -----------------------------------------------------------------------
         break;
 
@@ -512,8 +509,8 @@ getJacobianRow ( const int                        k,
         valuesPsi.resize ( numEntriesPsi );
         valuesPsi[0] = -4.0 / ( h*h )
                        + ( 1 - 2.0*norm ( psiView[k] ) );
-        valuesPsi[1] = 2.0 * exp ( I*ALeft *h ) / ( h*h );
-        valuesPsi[2] = 2.0 * exp ( I*ABelow*h ) / ( h*h );
+        valuesPsi[1] = 2.0 * exp ( IM*ALeft *h ) / ( h*h );
+        valuesPsi[2] = 2.0 * exp ( IM*ABelow*h ) / ( h*h );
 
         numEntriesPsiConj = 1;
         columnIndicesPsiConj.resize ( numEntriesPsiConj );
@@ -521,7 +518,7 @@ getJacobianRow ( const int                        k,
 
         valuesPsiConj.resize ( numEntriesPsiConj );
         valuesPsiConj[0] = -psiView[k]*psiView[k];
-        valuesPsiConj[0] *= exp ( I*chi_*2.0 );
+        valuesPsiConj[0] *= exp ( IM*chi_*2.0 );
         // -----------------------------------------------------------------------
         break;
 
@@ -544,8 +541,8 @@ getJacobianRow ( const int                        k,
         valuesPsi.resize ( numEntriesPsi );
         valuesPsi[0] = -4.0 / ( h*h )
                        + ( 1 - 2.0*norm ( psiView[k] ) );
-        valuesPsi[1] = 2.0 * exp ( -I*ARight*h ) / ( h*h );
-        valuesPsi[2] = 2.0 * exp ( I*ABelow*h ) / ( h*h );
+        valuesPsi[1] = 2.0 * exp ( -IM*ARight*h ) / ( h*h );
+        valuesPsi[2] = 2.0 * exp ( IM*ABelow*h ) / ( h*h );
 
         numEntriesPsiConj = 1;
         columnIndicesPsiConj.resize ( numEntriesPsiConj );
@@ -553,7 +550,7 @@ getJacobianRow ( const int                        k,
 
         valuesPsiConj.resize ( numEntriesPsiConj );
         valuesPsiConj[0] = -psiView[k]*psiView[k];
-        valuesPsiConj[0] *= exp ( I*chi_*2.0 );
+        valuesPsiConj[0] *= exp ( IM*chi_*2.0 );
         // -----------------------------------------------------------------------
         break;
 
@@ -580,9 +577,9 @@ getJacobianRow ( const int                        k,
         valuesPsi.resize ( numEntriesPsi );
         valuesPsi[0] = - 4.0            / ( h*h )
                        + ( 1.0 - 2.0*norm ( psiView[k] ) );
-        valuesPsi[1] =       exp ( I*ALeft *h ) / ( h*h );
-        valuesPsi[2] =       exp ( -I*ARight*h ) / ( h*h );
-        valuesPsi[3] = 2.0 * exp ( -I*AAbove*h ) / ( h*h );
+        valuesPsi[1] =       exp ( IM*ALeft *h ) / ( h*h );
+        valuesPsi[2] =       exp ( -IM*ARight*h ) / ( h*h );
+        valuesPsi[3] = 2.0 * exp ( -IM*AAbove*h ) / ( h*h );
 
         numEntriesPsiConj = 1;
         columnIndicesPsiConj.resize ( numEntriesPsiConj );
@@ -590,7 +587,7 @@ getJacobianRow ( const int                        k,
 
         valuesPsiConj.resize ( numEntriesPsiConj );
         valuesPsiConj[0] = -psiView[k]*psiView[k];
-        valuesPsiConj[0] *= exp ( I*chi_*2.0 );
+        valuesPsiConj[0] *= exp ( IM*chi_*2.0 );
         // -------------------------------------------------------------------
         break;
 
@@ -617,9 +614,9 @@ getJacobianRow ( const int                        k,
         valuesPsi.resize ( numEntriesPsi );
         valuesPsi[0] = - 4.0            / ( h*h )
                        + ( 1.0 - 2.0*norm ( psiView[k] ) );
-        valuesPsi[1] =       exp ( I*ABelow*h ) / ( h*h );
-        valuesPsi[2] =       exp ( -I*AAbove*h ) / ( h*h );
-        valuesPsi[3] = 2.0 * exp ( I*ALeft *h ) / ( h*h );
+        valuesPsi[1] =       exp ( IM*ABelow*h ) / ( h*h );
+        valuesPsi[2] =       exp ( -IM*AAbove*h ) / ( h*h );
+        valuesPsi[3] = 2.0 * exp ( IM*ALeft *h ) / ( h*h );
 
         numEntriesPsiConj = 1;
         columnIndicesPsiConj.resize ( numEntriesPsiConj );
@@ -627,7 +624,7 @@ getJacobianRow ( const int                        k,
 
         valuesPsiConj.resize ( numEntriesPsiConj );
         valuesPsiConj[0] = -psiView[k]*psiView[k];
-        valuesPsiConj[0] *= exp ( I*chi_*2.0 );
+        valuesPsiConj[0] *= exp ( IM*chi_*2.0 );
         // -------------------------------------------------------------------
         break;
 
@@ -654,9 +651,9 @@ getJacobianRow ( const int                        k,
         valuesPsi.resize ( numEntriesPsi );
         valuesPsi[0] = - 4.0             / ( h*h )
                        + ( 1.0 - 2.0*norm ( psiView[k] ) );
-        valuesPsi[1] = 2.0 * exp ( I*ABelow*h ) / ( h*h );
-        valuesPsi[2] =       exp ( I*ALeft *h ) / ( h*h );
-        valuesPsi[3] =       exp ( -I*ARight*h ) / ( h*h );
+        valuesPsi[1] = 2.0 * exp ( IM*ABelow*h ) / ( h*h );
+        valuesPsi[2] =       exp ( IM*ALeft *h ) / ( h*h );
+        valuesPsi[3] =       exp ( -IM*ARight*h ) / ( h*h );
 
         numEntriesPsiConj = 1;
         columnIndicesPsiConj.resize ( numEntriesPsiConj );
@@ -664,7 +661,7 @@ getJacobianRow ( const int                        k,
 
         valuesPsiConj.resize ( numEntriesPsiConj );
         valuesPsiConj[0] = -psiView[k]*psiView[k];
-        valuesPsiConj[0] *= exp ( I*chi_*2.0 );
+        valuesPsiConj[0] *= exp ( IM*chi_*2.0 );
         // -------------------------------------------------------------------
         break;
 
@@ -691,9 +688,9 @@ getJacobianRow ( const int                        k,
         valuesPsi.resize ( numEntriesPsi );
         valuesPsi[0] = - 4.0            / ( h*h )
                        + ( 1.0 - 2.0*norm ( psiView[k] ) );
-        valuesPsi[1] =       exp ( I*ABelow*h ) / ( h*h );
-        valuesPsi[2] =       exp ( -I*AAbove*h ) / ( h*h );
-        valuesPsi[3] = 2.0 * exp ( -I*ARight*h ) / ( h*h );
+        valuesPsi[1] =       exp ( IM*ABelow*h ) / ( h*h );
+        valuesPsi[2] =       exp ( -IM*AAbove*h ) / ( h*h );
+        valuesPsi[3] = 2.0 * exp ( -IM*ARight*h ) / ( h*h );
 
         numEntriesPsiConj = 1;
         columnIndicesPsiConj.resize ( numEntriesPsiConj );
@@ -701,7 +698,7 @@ getJacobianRow ( const int                        k,
 
         valuesPsiConj.resize ( numEntriesPsiConj );
         valuesPsiConj[0] = -psiView[k]*psiView[k];
-        valuesPsiConj[0] *= exp ( I*chi_*2.0 );
+        valuesPsiConj[0] *= exp ( IM*chi_*2.0 );
         // -------------------------------------------------------------------
         break;
 
@@ -729,10 +726,10 @@ getJacobianRow ( const int                        k,
         AAbove = A_->getAy ( *xAbove );
 
         valuesPsi.resize ( numEntriesPsi );
-        valuesPsi[0] =  exp ( I*ALeft  *h ) * I/ ( sqrt ( 2 ) *2*h );
-        valuesPsi[1] = -exp ( -I*ARight *h ) * I/ ( sqrt ( 2 ) *2*h );
-        valuesPsi[2] = -exp ( I*ABelow *h ) * I/ ( sqrt ( 2 ) *2*h );
-        valuesPsi[3] =  exp ( -I*AAbove *h ) * I/ ( sqrt ( 2 ) *2*h );
+        valuesPsi[0] =  exp ( IM*ALeft  *h ) * IM/ ( sqrt ( 2 ) *2*h );
+        valuesPsi[1] = -exp ( -IM*ARight *h ) * IM/ ( sqrt ( 2 ) *2*h );
+        valuesPsi[2] = -exp ( IM*ABelow *h ) * IM/ ( sqrt ( 2 ) *2*h );
+        valuesPsi[3] =  exp ( -IM*AAbove *h ) * IM/ ( sqrt ( 2 ) *2*h );
 
         numEntriesPsiConj = 0;
         columnIndicesPsiConj.resize ( numEntriesPsiConj );
@@ -764,10 +761,10 @@ getJacobianRow ( const int                        k,
         AAbove = A_->getAy ( *xAbove );
 
         valuesPsi.resize ( numEntriesPsi );
-        valuesPsi[0] = -exp ( I*ALeft  *h ) * I/ ( sqrt ( 2 ) *2*h );
-        valuesPsi[1] =  exp ( -I*ARight *h ) * I/ ( sqrt ( 2 ) *2*h );
-        valuesPsi[2] = -exp ( I*ABelow *h ) * I/ ( sqrt ( 2 ) *2*h );
-        valuesPsi[3] =  exp ( -I*AAbove *h ) * I/ ( sqrt ( 2 ) *2*h );
+        valuesPsi[0] = -exp ( IM*ALeft  *h ) * IM/ ( sqrt ( 2 ) *2*h );
+        valuesPsi[1] =  exp ( -IM*ARight *h ) * IM/ ( sqrt ( 2 ) *2*h );
+        valuesPsi[2] = -exp ( IM*ABelow *h ) * IM/ ( sqrt ( 2 ) *2*h );
+        valuesPsi[3] =  exp ( -IM*AAbove *h ) * IM/ ( sqrt ( 2 ) *2*h );
 
         numEntriesPsiConj = 0;
         columnIndicesPsiConj.resize ( numEntriesPsiConj );
@@ -799,10 +796,10 @@ getJacobianRow ( const int                        k,
         AAbove = A_->getAy ( *xAbove );
 
         valuesPsi.resize ( numEntriesPsi );
-        valuesPsi[0] =  exp ( I*ALeft  *h ) * I/ ( sqrt ( 2 ) *2*h );
-        valuesPsi[1] = -exp ( -I*ARight *h ) * I/ ( sqrt ( 2 ) *2*h );
-        valuesPsi[2] =  exp ( I*ABelow *h ) * I/ ( sqrt ( 2 ) *2*h );
-        valuesPsi[3] = -exp ( -I*AAbove *h ) * I/ ( sqrt ( 2 ) *2*h );
+        valuesPsi[0] =  exp ( IM*ALeft  *h ) * IM/ ( sqrt ( 2 ) *2*h );
+        valuesPsi[1] = -exp ( -IM*ARight *h ) * IM/ ( sqrt ( 2 ) *2*h );
+        valuesPsi[2] =  exp ( IM*ABelow *h ) * IM/ ( sqrt ( 2 ) *2*h );
+        valuesPsi[3] = -exp ( -IM*AAbove *h ) * IM/ ( sqrt ( 2 ) *2*h );
 
         numEntriesPsiConj = 0;
         columnIndicesPsiConj.resize ( numEntriesPsiConj );
@@ -834,10 +831,10 @@ getJacobianRow ( const int                        k,
         AAbove = A_->getAy ( *xAbove );
 
         valuesPsi.resize ( numEntriesPsi );
-        valuesPsi[0] = -exp ( I*ALeft  *h ) * I/ ( sqrt ( 2 ) *2*h );
-        valuesPsi[1] =  exp ( -I*ARight *h ) * I/ ( sqrt ( 2 ) *2*h );
-        valuesPsi[2] =  exp ( I*ABelow *h ) * I/ ( sqrt ( 2 ) *2*h );
-        valuesPsi[3] = -exp ( -I*AAbove *h ) * I/ ( sqrt ( 2 ) *2*h );
+        valuesPsi[0] = -exp ( IM*ALeft  *h ) * IM/ ( sqrt ( 2 ) *2*h );
+        valuesPsi[1] =  exp ( -IM*ARight *h ) * IM/ ( sqrt ( 2 ) *2*h );
+        valuesPsi[2] =  exp ( IM*ABelow *h ) * IM/ ( sqrt ( 2 ) *2*h );
+        valuesPsi[3] = -exp ( -IM*AAbove *h ) * IM/ ( sqrt ( 2 ) *2*h );
 
         numEntriesPsiConj = 0;
         columnIndicesPsiConj.resize ( numEntriesPsiConj );

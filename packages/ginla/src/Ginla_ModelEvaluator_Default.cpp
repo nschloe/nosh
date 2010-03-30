@@ -49,7 +49,7 @@ Default ( const Teuchos::RCP<Ginla::Operator::Virtual> & glOperator,
 
   p_init_ = Teuchos::rcp(new Epetra_Vector(*p_map_));
   for (int i=0; i<numParameters_; i++)
-      (*p_init_)[i]= 0.0;
+      (*p_init_)[i]= 3.14;
   
   Teuchos::Tuple<std::string,1> t = Teuchos::tuple<std::string>( "Parameter 0" );
   p_names_ = Teuchos::rcp( new Teuchos::Array<std::string>( t ) );
@@ -103,10 +103,6 @@ Ginla::ModelEvaluator::Default::
 get_p_init ( int l ) const
 {
   TEUCHOS_ASSERT_EQUALITY( 0, l );
-
-  std::cout << "Ginla::ModelEvaluator::Default::get_p_init " << p_init_ << std::endl;
-  std::cout << ">>>>" << (*p_init_)[0] << "<<<<" << std::endl;
-
   return p_init_;
 }
 // ============================================================================
@@ -115,7 +111,6 @@ Ginla::ModelEvaluator::Default::
 get_p_map(int l) const
 {
   TEUCHOS_ASSERT_EQUALITY( 0, l );
-  std::cout << "get_p_map" << std::endl;
   return p_map_;
 }
 // ============================================================================
@@ -124,7 +119,6 @@ Ginla::ModelEvaluator::Default::
 get_p_names (int l) const
 {
   TEUCHOS_ASSERT_EQUALITY( 0, l );
-  std::cout << *p_names_ << std::endl;
   return p_names_;
 }
 // ============================================================================
@@ -178,7 +172,13 @@ evalModel( const InArgs  & inArgs,
   // Parse InArgs
   Teuchos::RCP<const Epetra_Vector> p_in = inArgs.get_p(0);
   TEUCHOS_ASSERT( !p_in.is_null() );
-  //int numParameters = p_in->GlobalLength();
+  
+  // create the LOCA parameter vector of it
+  LOCA::ParameterVector locaParams;
+  locaParams.addParameter( "H0", (*p_in)[0] );
+  locaParams.addParameter( "chi", 0.0 );
+  locaParams.addParameter( "scaling", 3.0 );
+  glOperator_->setParameters( locaParams );
   
   // compute F
   if (!f_out.is_null())

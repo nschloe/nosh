@@ -48,8 +48,8 @@ class Virtual
 {
 public:
     //! Default constructor.
-    Virtual ( Teuchos::RCP<Recti::Grid::Uniform>                     & grid,
-              Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> & A
+    Virtual ( const Teuchos::RCP<Recti::Grid::Uniform>                     & grid,
+              const Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> & A
             );
 
     //! Destructor
@@ -81,8 +81,8 @@ public:
 protected:
     Teuchos::RCP<const ComplexVector> psi_;
     double chi_;
-    Teuchos::RCP<Recti::Grid::Uniform> grid_;
-    Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> A_;
+    const Teuchos::RCP<Recti::Grid::Uniform> grid_;
+    const Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> A_;
 
 private:
 };

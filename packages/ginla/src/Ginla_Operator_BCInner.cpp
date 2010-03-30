@@ -24,13 +24,11 @@
 
 #include <Teuchos_Array.hpp>
 
-// complex unit
-const double_complex I ( 0,1 );
 
 // =============================================================================
 Ginla::Operator::BCInner::
-BCInner ( Teuchos::RCP<Recti::Grid::Uniform>                     & grid,
-          Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> & A
+BCInner ( const Teuchos::RCP<Recti::Grid::Uniform>                     & grid,
+          const Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> & A
         ) :
         Ginla::Operator::Virtual ( grid, A )
 {
@@ -83,10 +81,10 @@ Ginla::Operator::BCInner::getEntry ( const int k ) const
 
         // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         res = ( psiK* ( -4.0 )
-                + psiKLeft*  exp ( I*ALeft *h ) + psiKRight* exp ( -I*ARight*h )
-                + psiKBelow* exp ( I*ABelow*h ) + psiKAbove* exp ( -I*AAbove*h ) ) / ( h*h )
+                + psiKLeft*  exp ( IM*ALeft *h ) + psiKRight* exp ( -IM*ARight*h )
+                + psiKBelow* exp ( IM*ABelow*h ) + psiKAbove* exp ( -IM*AAbove*h ) ) / ( h*h )
               + psiK * ( 1-norm ( psiK ) );
-        res *= exp ( I*chi_ );
+        res *= exp ( IM*chi_ );
 
         break;
 
@@ -103,9 +101,9 @@ Ginla::Operator::BCInner::getEntry ( const int k ) const
         AAbove = A_->getAy ( *xAbove );
 
         res = ( - psiK      * 2.0
-                + psiKRight * exp ( -I*ARight*h )
-                + psiKAbove * exp ( -I*AAbove*h ) ) * I/ ( sqrt ( 2 ) *h );
-        res *= exp ( I*chi_ );
+                + psiKRight * exp ( -IM*ARight*h )
+                + psiKAbove * exp ( -IM*AAbove*h ) ) * IM/ ( sqrt ( 2 ) *h );
+        res *= exp ( IM*chi_ );
         // -------------------------------------------------------------------
         break;
 
@@ -122,8 +120,8 @@ Ginla::Operator::BCInner::getEntry ( const int k ) const
         AAbove = A_->getAy ( *xAbove );
 
         res = ( - psiK      * 2.0
-                + psiKLeft  * exp ( I*ALeft *h )
-                + psiKAbove * exp ( -I*AAbove*h ) ) * I/ ( sqrt ( 2 ) *h );
+                + psiKLeft  * exp ( IM*ALeft *h )
+                + psiKAbove * exp ( -IM*AAbove*h ) ) * IM/ ( sqrt ( 2 ) *h );
         // -----------------------------------------------------------------------
         break;
 
@@ -140,9 +138,9 @@ Ginla::Operator::BCInner::getEntry ( const int k ) const
         ABelow = A_->getAy ( *xBelow );
 
         res = ( - psiK      * 2.0
-                + psiKLeft  * exp ( I*ALeft *h )
-                + psiKBelow * exp ( I*ABelow*h ) ) * I/ ( sqrt ( 2 ) *h );
-        res *= exp ( I*chi_ );
+                + psiKLeft  * exp ( IM*ALeft *h )
+                + psiKBelow * exp ( IM*ABelow*h ) ) * IM/ ( sqrt ( 2 ) *h );
+        res *= exp ( IM*chi_ );
         // -----------------------------------------------------------------------
 
         break;
@@ -160,9 +158,9 @@ Ginla::Operator::BCInner::getEntry ( const int k ) const
         ABelow = A_->getAy ( *xBelow );
 
         res = ( - psiK      * 2.0
-                + psiKRight * exp ( -I*ARight*h )
-                + psiKBelow * exp ( I*ABelow*h ) ) * I/ ( sqrt ( 2 ) *h );
-        res *= exp ( I*chi_ );
+                + psiKRight * exp ( -IM*ARight*h )
+                + psiKBelow * exp ( IM*ABelow*h ) ) * IM/ ( sqrt ( 2 ) *h );
+        res *= exp ( IM*chi_ );
         // -----------------------------------------------------------------------
         break;
 
@@ -175,8 +173,8 @@ Ginla::Operator::BCInner::getEntry ( const int k ) const
         AAbove = A_->getAy ( *xAbove );
 
         res = ( - psiK
-                + psiKAbove * exp ( -I*AAbove*h ) ) * I/h;
-        res *= exp ( I*chi_ );
+                + psiKAbove * exp ( -IM*AAbove*h ) ) * IM/h;
+        res *= exp ( IM*chi_ );
         // -------------------------------------------------------------------
         break;
 
@@ -189,8 +187,8 @@ Ginla::Operator::BCInner::getEntry ( const int k ) const
         ALeft  = A_->getAx ( *xLeft );
 
         res = ( - psiK
-                + psiKLeft * exp ( I*ALeft*h ) ) * I/h;
-        res *= exp ( I*chi_ );
+                + psiKLeft * exp ( IM*ALeft*h ) ) * IM/h;
+        res *= exp ( IM*chi_ );
         // -------------------------------------------------------------------
         break;
 
@@ -203,8 +201,8 @@ Ginla::Operator::BCInner::getEntry ( const int k ) const
         ABelow = A_->getAy ( *xBelow );
 
         res = ( - psiK
-                + psiKBelow * exp ( I*ABelow*h ) ) * I/h;
-        res *= exp ( I*chi_ );
+                + psiKBelow * exp ( IM*ABelow*h ) ) * IM/h;
+        res *= exp ( IM*chi_ );
         // -------------------------------------------------------------------
         break;
 
@@ -217,8 +215,8 @@ Ginla::Operator::BCInner::getEntry ( const int k ) const
         ARight = A_->getAx ( *xRight );
 
         res = ( - psiK
-                + psiKRight * exp ( -I*ARight*h ) ) * I/h;
-        res *= exp ( I*chi_ );
+                + psiKRight * exp ( -IM*ARight*h ) ) * IM/h;
+        res *= exp ( IM*chi_ );
         // -------------------------------------------------------------------
         break;
 
@@ -283,10 +281,10 @@ Ginla::Operator::BCInner::getJacobianRow ( const int                        k,
         valuesPsi.resize ( numEntriesPsi );
         valuesPsi[0] = - 4.0            / ( h*h )
                        + ( 1 - 2.0*norm ( psiView[k] ) );
-        valuesPsi[1] = exp ( I*ALeft *h ) / ( h*h );
-        valuesPsi[2] = exp ( -I*ARight*h ) / ( h*h );
-        valuesPsi[3] = exp ( I*ABelow*h ) / ( h*h );
-        valuesPsi[4] = exp ( -I*AAbove*h ) / ( h*h );
+        valuesPsi[1] = exp ( IM*ALeft *h ) / ( h*h );
+        valuesPsi[2] = exp ( -IM*ARight*h ) / ( h*h );
+        valuesPsi[3] = exp ( IM*ABelow*h ) / ( h*h );
+        valuesPsi[4] = exp ( -IM*AAbove*h ) / ( h*h );
 
         numEntriesPsiConj = 1;
         columnIndicesPsiConj.resize ( numEntriesPsiConj );
@@ -314,9 +312,9 @@ Ginla::Operator::BCInner::getJacobianRow ( const int                        k,
         AAbove = A_->getAy ( *xAbove );
 
         valuesPsi.resize ( numEntriesPsi );
-        valuesPsi[0] = -2.0                * I/ ( sqrt ( 2 ) *h );
-        valuesPsi[1] = exp ( -I*ARight*h ) * I/ ( sqrt ( 2 ) *h );
-        valuesPsi[2] = exp ( -I*AAbove*h ) * I/ ( sqrt ( 2 ) *h );
+        valuesPsi[0] = -2.0                * IM/ ( sqrt ( 2 ) *h );
+        valuesPsi[1] = exp ( -IM*ARight*h ) * IM/ ( sqrt ( 2 ) *h );
+        valuesPsi[2] = exp ( -IM*AAbove*h ) * IM/ ( sqrt ( 2 ) *h );
 
 
         numEntriesPsiConj = 0;
@@ -344,9 +342,9 @@ Ginla::Operator::BCInner::getJacobianRow ( const int                        k,
         AAbove = A_->getAy ( *xAbove );
 
         valuesPsi.resize ( numEntriesPsi );
-        valuesPsi[0] = -2.0                * I/ ( sqrt ( 2 ) *h );
-        valuesPsi[1] = exp ( I*ALeft *h )  * I/ ( sqrt ( 2 ) *h );
-        valuesPsi[2] = exp ( -I*AAbove*h ) * I/ ( sqrt ( 2 ) *h );
+        valuesPsi[0] = -2.0                * IM/ ( sqrt ( 2 ) *h );
+        valuesPsi[1] = exp ( IM*ALeft *h )  * IM/ ( sqrt ( 2 ) *h );
+        valuesPsi[2] = exp ( -IM*AAbove*h ) * IM/ ( sqrt ( 2 ) *h );
 
         numEntriesPsiConj = 0;
         columnIndicesPsiConj.resize ( numEntriesPsiConj );
@@ -373,9 +371,9 @@ Ginla::Operator::BCInner::getJacobianRow ( const int                        k,
         ABelow = A_->getAy ( *xBelow );
 
         valuesPsi.resize ( numEntriesPsi );
-        valuesPsi[0] = -2.0             * I/ ( sqrt ( 2 ) *h );
-        valuesPsi[1] = exp ( I*ALeft *h ) * I/ ( sqrt ( 2 ) *h );
-        valuesPsi[2] = exp ( I*ABelow*h ) * I/ ( sqrt ( 2 ) *h );
+        valuesPsi[0] = -2.0             * IM/ ( sqrt ( 2 ) *h );
+        valuesPsi[1] = exp ( IM*ALeft *h ) * IM/ ( sqrt ( 2 ) *h );
+        valuesPsi[2] = exp ( IM*ABelow*h ) * IM/ ( sqrt ( 2 ) *h );
 
         numEntriesPsiConj = 0;
         columnIndicesPsiConj.resize ( numEntriesPsiConj );
@@ -402,9 +400,9 @@ Ginla::Operator::BCInner::getJacobianRow ( const int                        k,
         ABelow = A_->getAy ( *xBelow );
 
         valuesPsi.resize ( numEntriesPsi );
-        valuesPsi[0] = -2.0                * I/ ( sqrt ( 2 ) *h );
-        valuesPsi[1] = exp ( -I*ARight*h ) * I/ ( sqrt ( 2 ) *h );
-        valuesPsi[2] = exp ( I*ABelow*h ) * I/ ( sqrt ( 2 ) *h );
+        valuesPsi[0] = -2.0                * IM/ ( sqrt ( 2 ) *h );
+        valuesPsi[1] = exp ( -IM*ARight*h ) * IM/ ( sqrt ( 2 ) *h );
+        valuesPsi[2] = exp ( IM*ABelow*h ) * IM/ ( sqrt ( 2 ) *h );
 
         numEntriesPsiConj = 0;
         columnIndicesPsiConj.resize ( numEntriesPsiConj );
@@ -426,8 +424,8 @@ Ginla::Operator::BCInner::getJacobianRow ( const int                        k,
         AAbove = A_->getAy ( *xAbove );
 
         valuesPsi.resize ( numEntriesPsi );
-        valuesPsi[0] = -1.0                * I/h;
-        valuesPsi[1] = exp ( -I*AAbove*h ) * I/h;
+        valuesPsi[0] = -1.0                * IM/h;
+        valuesPsi[1] = exp ( -IM*AAbove*h ) * IM/h;
 
         numEntriesPsiConj = 0;
         columnIndicesPsiConj.resize ( numEntriesPsiConj );
@@ -450,8 +448,8 @@ Ginla::Operator::BCInner::getJacobianRow ( const int                        k,
         ALeft = A_->getAx ( *xLeft );
 
         valuesPsi.resize ( numEntriesPsi );
-        valuesPsi[0] = -1.0            * I/h;
-        valuesPsi[1] = exp ( I*ALeft*h ) * I/h;
+        valuesPsi[0] = -1.0            * IM/h;
+        valuesPsi[1] = exp ( IM*ALeft*h ) * IM/h;
 
         numEntriesPsiConj = 0;
         columnIndicesPsiConj.resize ( numEntriesPsiConj );
@@ -473,8 +471,8 @@ Ginla::Operator::BCInner::getJacobianRow ( const int                        k,
         ABelow = A_->getAy ( *xBelow );
 
         valuesPsi.resize ( numEntriesPsi );
-        valuesPsi[0] = -1.0             * I/h;
-        valuesPsi[1] = exp ( I*ABelow*h ) * I/h;
+        valuesPsi[0] = -1.0             * IM/h;
+        valuesPsi[1] = exp ( IM*ABelow*h ) * IM/h;
 
         numEntriesPsiConj = 0;
         columnIndicesPsiConj.resize ( numEntriesPsiConj );
@@ -496,8 +494,8 @@ Ginla::Operator::BCInner::getJacobianRow ( const int                        k,
         ARight = A_->getAx ( *xRight );
 
         valuesPsi.resize ( numEntriesPsi );
-        valuesPsi[0] = -1.0                * I/h;
-        valuesPsi[1] = exp ( -I*ARight*h ) * I/h;
+        valuesPsi[0] = -1.0                * IM/h;
+        valuesPsi[1] = exp ( -IM*ARight*h ) * IM/h;
 
         numEntriesPsiConj = 0;
         columnIndicesPsiConj.resize ( numEntriesPsiConj );

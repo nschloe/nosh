@@ -93,13 +93,21 @@ computeF ( const Epetra_Vector & x,
                          << "(" << FVec.Map().NumGlobalElements() << " for FVec vs. "
                          << extendedMap_->NumGlobalElements() << " for extendedMap_)." );
     
-    // strip off the phase constraint
+    // strip off the phase constraint variable
     Epetra_Vector tmp ( *regularMap_ );
     tmp.Import( x, importFromExtendedMap_, Insert );
 
+    double eta = x[ x.GlobalLength()-1 ];
+
+    // compute GL
     Epetra_Vector shortFVec ( *regularMap_ );
     glSystem_.computeF ( tmp, shortFVec, fillFlag );
 
+    // add -i\eta\psi
+    Teuchos::RCP<ComplexVector> psi = glSystem_.getKomplex()->real2complex( tmp );
+    psi->scale( -IM*eta );
+    TEUCHOS_ASSERT_EQUALITY( 0, tmp.Update( 1.0, *glSystem_.getKomplex()->complex2real(psi), 1.0 ) );
+    
     // copy over and add phase condition
     FVec.Import( shortFVec, importFromRegularMap_, Insert );
 
@@ -187,6 +195,8 @@ void
 Ginla::LocaSystem::Bordered::
 createJacobian ( const Epetra_Vector & x )
 {
+    const Ginla::Komplex & komplex = *glSystem_.getKomplex();
+  
     TEST_FOR_EXCEPTION ( !extendedMap_.is_valid_ptr() || extendedMap_.is_null(),
                          std::logic_error,
                          "extendedMap_ not properly initialized." );
@@ -194,18 +204,28 @@ createJacobian ( const Epetra_Vector & x )
     // strip off the phase constraint
     Epetra_Vector tmp ( *regularMap_ );
     tmp.Import( x, importFromExtendedMap_, Insert );
+    
+    double eta = x[ x.GlobalLength()-1 ];
 
     // TODO don't explicitly construct psi? get1dCopy on the rhs
-    Teuchos::RCP<ComplexVector>             psi     = glSystem_.getKomplex()->real2complex ( tmp );
+    Teuchos::RCP<ComplexVector>             psi     = komplex.real2complex ( tmp );
     Teuchos::ArrayRCP<const double_complex> psiView = psi->get1dView();
 
     // get the unbordered Jacobian
-    Teuchos::RCP<const Epetra_CrsMatrix> regularJacobian = glSystem_.getJacobian();
+    Teuchos::RCP<Epetra_CrsMatrix> regularJacobian = glSystem_.getJacobian();
+    
+    // add -i*eta on the diagonal
+    Epetra_Vector newDiag ( tmp );
+    regularJacobian->ExtractDiagonalCopy( newDiag );
+    Teuchos::RCP<ComplexVector> diag = komplex.real2complex( newDiag );
+    diag->putScalar( -IM*eta );
+    newDiag.Update( 1.0, *komplex.complex2real(*diag), 1.0 );
+    regularJacobian->ReplaceDiagonalValues( newDiag );
     
     // TODO: Conversion to real-valued vector in one go?
     // right bordering: (phi:=) -i*psi
     ComplexVector phi = *psi;
-    phi.scale ( std::complex<double> ( 0.0,-1.0 ) );
+    phi.scale ( -IM );
     Teuchos::RCP<Epetra_Vector> rightBorder =
         glSystem_.getKomplex()->complex2real ( phi );
 
@@ -217,12 +237,17 @@ createJacobian ( const Epetra_Vector & x )
     double d = 0.0;
 
     // create the bordered Jacobian out of this
-    fillBorderedMatrix ( jacobian_, regularJacobian, *rightBorder, *lowerBorder, d, firstTime_ );
+    fillBorderedMatrix ( jacobian_,
+                         regularJacobian,
+                         *rightBorder,
+                         *lowerBorder,
+                         d,
+                         firstTime_ );
 
     if ( firstTime_ )
     {
-        TEST_FOR_EXCEPT ( 0 != jacobian_->FillComplete() );
-        TEST_FOR_EXCEPT ( 0 != jacobian_->OptimizeStorage() );
+        TEUCHOS_ASSERT_EQUALITY ( 0, jacobian_->FillComplete() );
+        TEUCHOS_ASSERT_EQUALITY ( 0, jacobian_->OptimizeStorage() );
         firstTime_ = false;
     }
 

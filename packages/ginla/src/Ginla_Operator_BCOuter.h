@@ -31,8 +31,8 @@ class BCOuter:
 public:
 
     //! Default constructor.
-    BCOuter ( Teuchos::RCP<Recti::Grid::Uniform>             & grid,
-              Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> & A
+    BCOuter ( const Teuchos::RCP<Recti::Grid::Uniform>             & grid,
+              const Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> & A
             );
 
     //! Destructor
