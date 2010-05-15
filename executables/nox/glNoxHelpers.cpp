@@ -79,7 +79,7 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
 
     // create the operator
     Teuchos::RCP<Ginla::Operator::Virtual> glOperator =
-        Teuchos::rcp ( new Ginla::Operator::BCCentral ( grid, A ) );
+        Teuchos::rcp ( new Ginla::Operator::BCCentral ( grid, A, psi->getMap(), psi->getMap() ) );
 
     TEUCHOS_ASSERT_EQUALITY ( psi->getNumVectors(), 1 );
     initialPsi = psi->getVectorNonConst( 0 );
@@ -138,7 +138,7 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
 
     // create the operator
     Teuchos::RCP<Ginla::Operator::Virtual> glOperator =
-        Teuchos::rcp ( new Ginla::Operator::BCCentral ( grid, A ) );
+        Teuchos::rcp ( new Ginla::Operator::BCCentral ( grid, A, initialPsi->getMap(), initialPsi->getMap() ) );
     
     // create an initial guess
     int numGlobalElements = grid->getNumGridPoints();

@@ -31,32 +31,37 @@ class BCOuter:
 public:
 
     //! Default constructor.
-    BCOuter ( const Teuchos::RCP<Recti::Grid::Uniform>             & grid,
-              const Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> & A
+    BCOuter ( const Teuchos::RCP<Recti::Grid::Uniform>                     & grid,
+              const Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> & A,
+              const Teuchos::RCP<const ComplexMap>                         & domainMap,
+              const Teuchos::RCP<const ComplexMap>                         & rangeMap
             );
 
     //! Destructor
     virtual
     ~BCOuter();
-
-    //! Return the value of the Ginzburg-Landau equations for the equation
-    //! at eqType.
-    virtual double_complex
-    getEntry ( const int k ) const;
+    
+    //! Return the value of the Ginzburg-Landau equations.
+    virtual Teuchos::RCP<Ginla::State>
+    getF( const Teuchos::RCP<const Ginla::State> & state ) const;
 
     //! Returns entries and positions of the Jacobian matrix belonging to the
     //! boundary conditions.
     virtual void
-    getJacobianRow ( const int                        k,
-                     Teuchos::Array<int>            & columnIndicesPsi,
-                     Teuchos::Array<double_complex> & valuesPsi,
-                     Teuchos::Array<int>            & columnIndicesPsiConj,
-                     Teuchos::Array<double_complex> & valuesPsiCon
+    getJacobianRow ( const Teuchos::RCP<const Ginla::State> & state,
+                     const int                                k,
+                     Teuchos::Array<int>                    & columnIndicesPsi,
+                     Teuchos::Array<double_complex>         & valuesPsi,
+                     Teuchos::Array<int>                    & columnIndicesPsiConj,
+                     Teuchos::Array<double_complex>         & valuesPsiConj
                    ) const;
 
 protected:
 private:
-
+    double_complex
+    getFEntry ( const Teuchos::RCP<const Ginla::State> & state,
+                const int k
+              ) const;
 };
 
   } // namespace Operator

@@ -203,30 +203,23 @@ computeF_ ( const Epetra_Vector & x,
 {
     // ------------------------------------------------------------------------
     // convert from x to psi
-    const Teuchos::RCP<ComplexVector> psi = komplex_->real2complex ( x );
+//     const Teuchos::RCP<ComplexVector> psi = komplex_->real2complex ( x );
+    const Teuchos::RCP<const Ginla::State> state = this->createState_( x );
     // ------------------------------------------------------------------------
     // compute the GL residual
     // setup output vector with the same map as psi
-    Teuchos::RCP<ComplexVector> res =
-        Teuchos::rcp ( new ComplexVector ( psi->getMap(), true ) );
-
+    
     // TODO not really necessary?
-    glOperator_->updatePsi ( psi );
+//     glOperator_->updatePsi ( psi );
+    
+    const Teuchos::RCP<const Ginla::State> res = glOperator_->getF( state );
 
-    Teuchos::ArrayRCP<double_complex> resView = res->get1dViewNonConst();
-    // loop over the nodes
-    for ( unsigned int k=0; k<psi->getLocalLength(); k++ )
-    {
-        int globalIndex = psi->getMap()->getGlobalElement ( k );
-        resView[k] = glOperator_->getEntry ( globalIndex );
-
-//         if ( !perturbation_.is_null() )
-//             resView[k] += perturbation_->computePerturbation ( globalIndex );
-    }
     // ------------------------------------------------------------------------
     // TODO Avoid this explicit copy?
     // transform back to fully real equation
-    FVec = * ( komplex_->complex2real ( *res ) );
+//     FVec = * ( komplex_->complex2real ( *res ) );
+    
+    FVec = *(this->createX_( *res ));
     // ------------------------------------------------------------------------
     
     return;
@@ -243,10 +236,7 @@ computeJacobian_ ( const Epetra_Vector & x,
 
     komplex_->zeroOutMatrix();
 
-    Teuchos::RCP<ComplexVector> psi = komplex_->real2complex ( x );
-
-    // update to the latest psi vector before retrieving the Jacobian
-    glOperator_->updatePsi ( psi );
+    const Teuchos::RCP<const Ginla::State> state = this->createState_( x );
     
     // loop over the rows and fill the matrix
     int numMyElements = komplex_->getComplexMap()->getNodeNumElements();
@@ -254,7 +244,8 @@ computeJacobian_ ( const Epetra_Vector & x,
     {
         int globalRow = komplex_->getComplexMap()->getGlobalElement ( row );
         // get the values from the operator
-        glOperator_->getJacobianRow ( globalRow,
+        glOperator_->getJacobianRow ( state,
+                                      globalRow,
                                       indicesA, valuesA,
                                       indicesB, valuesB );
         // ... and fill them into glKomplex_
@@ -280,3 +271,18 @@ getKomplex() const
     return komplex_; 
 }
 // ============================================================================
+Teuchos::RCP<Ginla::State>
+Ginla::ModelEvaluator::Default::
+createState_( const Epetra_Vector & x ) const
+{
+    const Teuchos::RCP<ComplexVector> psi = komplex_->real2complex ( x );
+    return Teuchos::rcp( new Ginla::State( psi, glOperator_->getGrid() ) );
+}
+// =============================================================================
+Teuchos::RCP<Epetra_Vector>
+Ginla::ModelEvaluator::Default::
+createX_(  const Ginla::State & state ) const
+{
+    return komplex_->complex2real ( state.getValuesConst() );
+}
+// =============================================================================

@@ -1,6 +1,7 @@
 SET ( ginla_SRCS
       Ginla_Helpers.cpp
       Ginla_MagneticVectorPotential_Centered.cpp
+      Ginla_State.cpp
       Ginla_Operator_Virtual.cpp
       Ginla_Operator_BCInner.cpp
       Ginla_Operator_BCOuter.cpp

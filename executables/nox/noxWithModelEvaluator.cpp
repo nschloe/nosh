@@ -161,7 +161,7 @@ int main ( int argc, char *argv[] )
                                                                       
     // create the operator
     Teuchos::RCP<Ginla::Operator::Virtual> glOperator =
-        Teuchos::rcp ( new Ginla::Operator::BCCentral ( grid, A ) );
+        Teuchos::rcp ( new Ginla::Operator::BCCentral ( grid, A, psi->getMap(), psi->getMap() ) );
 
     // Create the interface between NOX and the application
     // This object is derived from NOX::Epetra::Interface

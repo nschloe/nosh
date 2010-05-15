@@ -5,6 +5,7 @@
 #define GINLA_LOCASYSTEM_DEFAULT_H
 
 #include "Ginla_Komplex.h"
+#include "Ginla_State.h"
 #include "Ginla_IO_EigenSaver_Abstract.h"
 
 // #include <NOX_Epetra_Interface_Required.H> // NOX base class
@@ -134,6 +135,12 @@ private:
         ONEPARAMETER,
         TURNINGPOINT
     };
+    
+    Teuchos::RCP<Ginla::State>
+    createState(  const Epetra_Vector & x );
+    
+    Teuchos::RCP<Epetra_Vector>
+    createX(  const Ginla::State & state );
 
     int
     numDigits ( const int i );

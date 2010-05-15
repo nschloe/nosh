@@ -20,7 +20,7 @@
 #include <NOX_StatusTest_Combo.H>
 // #include <NOX_Epetra_Group.H>
 
-#include "Ginla_Helpers.h"
+#include "Ginla_State.h"
 
 #include "Recti_Grid_Uniform.h"
 #include "Recti_Grid_Reader.h"
@@ -105,9 +105,12 @@ BOOST_AUTO_TEST_CASE( vorticity_test )
         // read the state
         Recti::Grid::Reader::read ( Comm, filePath.string(), psiM, grid, glParameters );
         TEUCHOS_ASSERT_EQUALITY ( psiM->getNumVectors(), 1 );
-        psi = psiM->getVectorNonConst ( 0 );       
+        psi = psiM->getVectorNonConst ( 0 );
         
-        int vorticity = Ginla::Helpers::getVorticity( *psi, *grid );
+        Teuchos::RCP<Ginla::State> state = 
+            Teuchos::rcp( new Ginla::State( psiM->getVectorNonConst(0),
+                                            grid ) );       
+        double vorticity = state->getVorticity();
 
         BOOST_CHECK_EQUAL( vorticity, vorticityRef );
     }

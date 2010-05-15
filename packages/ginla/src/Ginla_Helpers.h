@@ -51,24 +51,21 @@ namespace Helpers
                                 const std::string           & labelPrepend = ""
                               );
 
+  unsigned int
+  numDigits ( const int i );
+  
   double
   normalizedScaledL2Norm ( const ComplexVector        & psi,
-                           const Recti::Grid::General & grid );
-
-  /** Calcuate the grid approximation of the Gibbs free energy
-    * \f[
-    * \mathcal{G} = \int\nolimits_{\Omega} |\psi|^4 \,\mathrm{d}\omega
-    * \f]
-    * of a given state \f$\psi\f$.
-    */
+                          const Recti::Grid::General & grid );
+  
   double
-  freeEnergy ( const ComplexVector & psi,
-               const Recti::Grid::General & grid );
+  freeEnergy ( const ComplexVector        & psi,
+              const Recti::Grid::General & grid );
 
   /*! Calculate the vorticity of the current solution. */
   int
   getVorticity ( const ComplexVector        & psi,
-                 const Recti::Grid::General & grid );
+                const Recti::Grid::General & grid );
                  
   /** Writes a solution \c psi to a file with all parameters that
     * may be interesting.
@@ -80,9 +77,6 @@ namespace Helpers
                      const std::string                              & fileBaseName,
                      const std::string                              & outputFormat
                    );
-
-  unsigned int
-  numDigits ( const int i );
 
 };
 

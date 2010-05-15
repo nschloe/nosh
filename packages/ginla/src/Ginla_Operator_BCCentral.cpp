@@ -1,6 +1,6 @@
 /*
     <one line to give the program's name and a brief idea of what it does.>
-    Copyright (C) 2010 Nico Schl\"omer
+    Copyright (C) 2010  Nico Schl\"omer
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -27,19 +27,47 @@
 // =============================================================================
 Ginla::Operator::BCCentral::
 BCCentral ( const Teuchos::RCP<Recti::Grid::Uniform>                     & grid,
-            const Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> & A
+            const Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> & A,
+            const Teuchos::RCP<const ComplexMap>                         & domainMap,
+            const Teuchos::RCP<const ComplexMap>                         & rangeMap
           ) :
-        Ginla::Operator::Virtual ( grid, A )
+        Ginla::Operator::Virtual ( grid, A, domainMap, rangeMap )
 {
 }
 // =============================================================================
-Ginla::Operator::BCCentral::~BCCentral()
+Ginla::Operator::BCCentral::
+~BCCentral()
 {
+}
+// =============================================================================
+Teuchos::RCP<Ginla::State>
+Ginla::Operator::BCCentral::
+getF( const Teuchos::RCP<const Ginla::State> & state ) const
+{ 
+  // initialize F
+  Teuchos::RCP<Ginla::State> F =
+      Teuchos::rcp( new Ginla::State( state->getValuesConst()->getMap(),
+                                      state->getGrid() ) );
+                                      
+  Teuchos::ArrayRCP<double_complex> FView = F->getValuesNonConst()->get1dViewNonConst();
+  
+  // loop over the nodes
+  unsigned int localLength = F->getValuesConst()->getLocalLength();
+  
+  for ( unsigned int k=0; k<localLength; k++ )
+  {
+      int globalIndex = rangeMap_->getGlobalElement ( k );
+      FView[k] = this->getFEntry ( state, globalIndex );
+  }
+  
+  return F;
 }
 // =============================================================================
 double_complex
 Ginla::Operator::BCCentral::
-getEntry ( const int k ) const
+getFEntry ( const Teuchos::RCP<const Ginla::State> & state,
+            const int k
+          ) const
 {
     double_complex res;
     double_complex psiK, psiKRight, psiKLeft, psiKAbove, psiKBelow;
@@ -51,15 +79,16 @@ getEntry ( const int k ) const
     Teuchos::RCP<DoubleTuple> xLeft  = Teuchos::rcp ( new DoubleTuple() );
     Teuchos::RCP<DoubleTuple> xAbove = Teuchos::rcp ( new DoubleTuple() );
     Teuchos::RCP<DoubleTuple> xBelow = Teuchos::rcp ( new DoubleTuple() );
-
+      
     Recti::Grid::Abstract::nodeType nt = grid_->getNodeType ( k );
-
+    
     // Get a view of the whole vector.
     // Remember: This only works with one core.
-    Teuchos::ArrayRCP<const double_complex> psiView = psi_->get1dView();
-
+    Teuchos::ArrayRCP<const double_complex> psiView = state->getValuesConst()->get1dView();
+    double chi = state->getChi();
+    
     psiK = psiView[k];
-
+    
     switch ( nt )
     {
     case Recti::Grid::Abstract::INTERIOR:
@@ -85,7 +114,7 @@ getEntry ( const int k ) const
                 + psiKBelow* exp ( IM*ABelow*h ) + psiKAbove* exp ( -IM*AAbove*h ) ) / ( h*h )
               + psiK * ( 1-norm ( psiK ) );
               
-        res *= exp ( IM*chi_ );
+        res *= exp ( IM*chi );
         break;
 
     case Recti::Grid::Abstract::BOUNDARY_BOTTOMLEFTCONVEX:
@@ -103,7 +132,7 @@ getEntry ( const int k ) const
                 + psiKRight * 2.0 * exp ( -IM*ARight*h )
                 + psiKAbove * 2.0 * exp ( -IM*AAbove*h ) ) / ( h*h )
               + psiK * ( 1-norm ( psiK ) );
-        res *= exp ( IM*chi_ );
+        res *= exp ( IM*chi );
         // -------------------------------------------------------------------
         break;
 
@@ -121,7 +150,7 @@ getEntry ( const int k ) const
                 + psiKLeft  * 2.0 * exp ( IM*ALeft *h )
                 + psiKAbove * 2.0 * exp ( -IM*AAbove*h ) ) / ( h*h )
               + psiK * ( 1-norm ( psiK ) );
-        res *= exp ( IM*chi_ );
+        res *= exp ( IM*chi );
         // -----------------------------------------------------------------------
         break;
 
@@ -139,7 +168,7 @@ getEntry ( const int k ) const
                 + psiKLeft  * 2.0 * exp ( IM*ALeft *h )
                 + psiKBelow * 2.0 * exp ( IM*ABelow*h ) ) / ( h*h )
               + psiK * ( 1-norm ( psiK ) );
-        res *= exp ( IM*chi_ );
+        res *= exp ( IM*chi );
         // -----------------------------------------------------------------------
 
         break;
@@ -158,7 +187,7 @@ getEntry ( const int k ) const
                 + psiKRight * 2.0 * exp ( -IM*ARight*h )
                 + psiKBelow * 2.0 * exp ( IM*ABelow*h ) ) / ( h*h )
               + psiK * ( 1-norm ( psiK ) );
-        res *= exp ( IM*chi_ );
+        res *= exp ( IM*chi );
         // -----------------------------------------------------------------------
         break;
 
@@ -181,7 +210,7 @@ getEntry ( const int k ) const
                 + psiKAbove * 2.0 * exp ( -IM*AAbove*h ) )
               / ( h*h )
               + psiK * ( 1-norm ( psiK ) );
-        res *= exp ( IM*chi_ );
+        res *= exp ( IM*chi );
         // -------------------------------------------------------------------
         break;
 
@@ -203,7 +232,7 @@ getEntry ( const int k ) const
                 + psiKBelow       * exp ( IM*AAbove*h ) + psiKAbove * exp ( -IM*AAbove*h ) )
               / ( h*h )
               + psiK * ( 1-norm ( psiK ) );
-        res *= exp ( IM*chi_ );
+        res *= exp ( IM*chi );
         // -------------------------------------------------------------------
         break;
 
@@ -225,7 +254,7 @@ getEntry ( const int k ) const
                 + psiKBelow * 2.0 * exp ( IM*ABelow*h ) )
               / ( h*h )
               + psiK * ( 1-norm ( psiK ) );
-        res *= exp ( IM*chi_ );
+        res *= exp ( IM*chi );
         // -------------------------------------------------------------------
         break;
 
@@ -247,7 +276,7 @@ getEntry ( const int k ) const
                 + psiKBelow * exp ( IM*AAbove*h ) + psiKAbove       * exp ( -IM*AAbove*h ) )
               / ( h*h )
               + psiK * ( 1-norm ( psiK ) );
-        res *= exp ( IM*chi_ );
+        res *= exp ( IM*chi );
         // -------------------------------------------------------------------
         break;
 
@@ -272,7 +301,7 @@ getEntry ( const int k ) const
                 - psiKBelow * exp ( IM*ABelow*h )
                 + psiKAbove * exp ( -IM*AAbove*h ) ) * IM/ ( sqrt ( 2 ) *2*h );
 
-        res *= exp ( IM*chi_ );
+        res *= exp ( IM*chi );
         // -------------------------------------------------------------------
         break;
 
@@ -297,7 +326,7 @@ getEntry ( const int k ) const
                 - psiKBelow * exp ( IM*ABelow*h )
                 + psiKAbove * exp ( -IM*AAbove*h ) ) * IM/ ( sqrt ( 2 ) *2*h );
 
-        res *= exp ( IM*chi_ );
+        res *= exp ( IM*chi );
         // -------------------------------------------------------------------
         break;
 
@@ -322,7 +351,7 @@ getEntry ( const int k ) const
                 + psiKBelow * exp ( IM*ABelow*h )
                 - psiKAbove * exp ( -IM*AAbove*h ) ) * IM/ ( sqrt ( 2 ) *2*h );
 
-        res *= exp ( IM*chi_ );
+        res *= exp ( IM*chi );
         // -------------------------------------------------------------------
         break;
 
@@ -347,7 +376,7 @@ getEntry ( const int k ) const
                 + psiKBelow * exp ( IM*ABelow*h )
                 - psiKAbove * exp ( -IM*AAbove*h ) ) * IM/ ( sqrt ( 2 ) *2*h );
 
-        res *= exp ( IM*chi_ );
+        res *= exp ( IM*chi );
         // -------------------------------------------------------------------
         break;
     default:
@@ -362,11 +391,12 @@ getEntry ( const int k ) const
 // =============================================================================
 void
 Ginla::Operator::BCCentral::
-getJacobianRow ( const int                        k,
-                 Teuchos::Array<int>            & columnIndicesPsi,
-                 Teuchos::Array<double_complex> & valuesPsi,
-                 Teuchos::Array<int>            & columnIndicesPsiConj,
-                 Teuchos::Array<double_complex> & valuesPsiConj
+getJacobianRow ( const Teuchos::RCP<const Ginla::State> & state,
+                 const int                                k,
+                 Teuchos::Array<int>                    & columnIndicesPsi,
+                 Teuchos::Array<double_complex>         & valuesPsi,
+                 Teuchos::Array<int>                    & columnIndicesPsiConj,
+                 Teuchos::Array<double_complex>         & valuesPsiConj
                ) const
 {
     int kLeft, kRight, kBelow, kAbove;
@@ -380,7 +410,8 @@ getJacobianRow ( const int                        k,
     Teuchos::RCP<DoubleTuple> xAbove = Teuchos::rcp ( new DoubleTuple() );
     Teuchos::RCP<DoubleTuple> xBelow = Teuchos::rcp ( new DoubleTuple() );
 
-    Teuchos::ArrayRCP<const double_complex> psiView = psi_->get1dView();
+    Teuchos::ArrayRCP<const double_complex> psiView = state->getValuesConst()->get1dView();
+    double chi = state->getChi();
     
     Recti::Grid::Abstract::nodeType nt = grid_->getNodeType ( k );
     
@@ -454,7 +485,7 @@ getJacobianRow ( const int                        k,
 
         valuesPsiConj.resize ( numEntriesPsiConj );
         valuesPsiConj[0] = -psiView[k]*psiView[k];
-        valuesPsiConj[0] *= exp ( IM*chi_*2.0 );
+        valuesPsiConj[0] *= exp ( IM*chi*2.0 );
         // -------------------------------------------------------------------
         break;
 
@@ -486,7 +517,7 @@ getJacobianRow ( const int                        k,
 
         valuesPsiConj.resize ( numEntriesPsiConj );
         valuesPsiConj[0] = -psiView[k]*psiView[k];
-        valuesPsiConj[0] *= exp ( IM*chi_*2.0 );
+        valuesPsiConj[0] *= exp ( IM*chi*2.0 );
         // -----------------------------------------------------------------------
         break;
 
@@ -518,7 +549,7 @@ getJacobianRow ( const int                        k,
 
         valuesPsiConj.resize ( numEntriesPsiConj );
         valuesPsiConj[0] = -psiView[k]*psiView[k];
-        valuesPsiConj[0] *= exp ( IM*chi_*2.0 );
+        valuesPsiConj[0] *= exp ( IM*chi*2.0 );
         // -----------------------------------------------------------------------
         break;
 
@@ -550,7 +581,7 @@ getJacobianRow ( const int                        k,
 
         valuesPsiConj.resize ( numEntriesPsiConj );
         valuesPsiConj[0] = -psiView[k]*psiView[k];
-        valuesPsiConj[0] *= exp ( IM*chi_*2.0 );
+        valuesPsiConj[0] *= exp ( IM*chi*2.0 );
         // -----------------------------------------------------------------------
         break;
 
@@ -587,7 +618,7 @@ getJacobianRow ( const int                        k,
 
         valuesPsiConj.resize ( numEntriesPsiConj );
         valuesPsiConj[0] = -psiView[k]*psiView[k];
-        valuesPsiConj[0] *= exp ( IM*chi_*2.0 );
+        valuesPsiConj[0] *= exp ( IM*chi*2.0 );
         // -------------------------------------------------------------------
         break;
 
@@ -624,7 +655,7 @@ getJacobianRow ( const int                        k,
 
         valuesPsiConj.resize ( numEntriesPsiConj );
         valuesPsiConj[0] = -psiView[k]*psiView[k];
-        valuesPsiConj[0] *= exp ( IM*chi_*2.0 );
+        valuesPsiConj[0] *= exp ( IM*chi*2.0 );
         // -------------------------------------------------------------------
         break;
 
@@ -661,7 +692,7 @@ getJacobianRow ( const int                        k,
 
         valuesPsiConj.resize ( numEntriesPsiConj );
         valuesPsiConj[0] = -psiView[k]*psiView[k];
-        valuesPsiConj[0] *= exp ( IM*chi_*2.0 );
+        valuesPsiConj[0] *= exp ( IM*chi*2.0 );
         // -------------------------------------------------------------------
         break;
 
@@ -698,7 +729,7 @@ getJacobianRow ( const int                        k,
 
         valuesPsiConj.resize ( numEntriesPsiConj );
         valuesPsiConj[0] = -psiView[k]*psiView[k];
-        valuesPsiConj[0] *= exp ( IM*chi_*2.0 );
+        valuesPsiConj[0] *= exp ( IM*chi*2.0 );
         // -------------------------------------------------------------------
         break;
 

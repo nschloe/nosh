@@ -30,9 +30,6 @@
 #include <Epetra_SerialComm.h>
 #endif
 
-// abbreviate the complex type name
-typedef std::complex<double> double_complex;
-
 // =============================================================================
 // Default constructor
 Ginla::LocaSystem::Bordered::

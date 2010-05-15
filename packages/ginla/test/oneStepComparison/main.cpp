@@ -150,7 +150,7 @@ BOOST_AUTO_TEST_CASE( zero_step_loca_test )
 
     // create the operator
     Teuchos::RCP<Ginla::Operator::Virtual> glOperator =
-        Teuchos::rcp ( new Ginla::Operator::BCCentral ( grid, A ) );
+        Teuchos::rcp ( new Ginla::Operator::BCCentral ( grid, A, psi->getMap(), psi->getMap() ) );
 
     std::string fn = outputDirectory.string() + "/" + contDataFileName;
     Teuchos::RCP<Ginla::IO::StatsWriter> statsWriter = 
@@ -174,7 +174,7 @@ BOOST_AUTO_TEST_CASE( zero_step_loca_test )
     
     // set the initial value from glParameters
     std::string contParam = stepperList.get<string> ( "Continuation Parameter" );
-    
+
     BOOST_REQUIRE( glParameters.isParameter ( contParam ) );
 
     // check if the initial value was given (will be unused anyway)

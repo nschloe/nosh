@@ -1,6 +1,6 @@
 /*
     <one line to give the program's name and a brief idea of what it does.>
-    Copyright (C) <year>  <name of author>
+    Copyright (C) 2010  Nico Schl"omer
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,132 +17,87 @@
 
 */
 
-#include "Ginla_Helpers.h"
+#include "Ginla_State.h"
 
-#include "NOX_Abstract_Vector.H"
-#include "NOX_Epetra_Vector.H"
-
-#include <Tpetra_Vector.hpp>
-
-typedef std::complex<double> double_complex;
-
-// ============================================================================
-Teuchos::RCP<LOCA::ParameterVector>
-Ginla::Helpers::
-teuchosParameterList2locaParameterVector( const Teuchos::ParameterList & p
-                                        )
+// =============================================================================
+Ginla::State::
+State( const Teuchos::RCP<ComplexVector>              & psi,
+       const Teuchos::RCP<const Recti::Grid::General> & grid ):
+       psi_( psi ),
+       chi_( 0.0 ),
+       grid_( grid )
 {
-  Teuchos::RCP<LOCA::ParameterVector> pL =
-      Teuchos::rcp( new LOCA::ParameterVector() );
-        
-  Teuchos::ParameterList::ConstIterator k;
-  double * dummy = NULL;
-  for ( k=p.begin(); k!=p.end(); ++k )
-  {
-    Teuchos::ParameterEntry e = p.entry(k);
-    if ( e.isType<double>() )
-      pL->addParameter( p.name(k),
-                        e.getValue<double>(dummy) );
-  }
-  
-  return pL;
-}
-// ============================================================================
-Teuchos::RCP<Teuchos::ParameterList>
-Ginla::Helpers::
-locaParameterVector2teuchosParameterList( const LOCA::ParameterVector & pL )
-{
-    Teuchos::RCP<Teuchos::ParameterList> p =
-      Teuchos::rcp( new Teuchos::ParameterList() );
-      
-    appendToTeuchosParameterList(  *p, pL );
-
-    return p;
-}
-// ============================================================================
-Teuchos::RCP<LOCA::ParameterVector>
-Ginla::Helpers::
-mergeLocaParameterVectors( const LOCA::ParameterVector & p0,
-                           const LOCA::ParameterVector & p1
-                         )
-{
-  // intialize p with p0
-  Teuchos::RCP<LOCA::ParameterVector> p = 
-          Teuchos::rcp( new LOCA::ParameterVector( p0 ) );
-
-  // add elements from p1
-  for( int k=0; k<p1.length(); k++ )
-  {
-    double value = p1.getValue(k);
-    std::string label = p1.getLabel(k);
-    if( p->isParameter(label) )
-    {
-        // If the entry already exists, make sure the values
-        // coincide.
-        TEUCHOS_ASSERT_EQUALITY( p->getValue(label), value );
-    }
-    else
-    {
-        p->addParameter( label, value );
-    }
-  }
-  
-  return p;
-}
-// ============================================================================
-void
-Ginla::Helpers::
-appendToTeuchosParameterList( Teuchos::ParameterList      & p,
-                              const LOCA::ParameterVector & pL,
-                              const std::string           & labelPrepend
-                            )
-{       
-  Teuchos::ParameterList::ConstIterator k;
-  for ( int k=0; k<pL.length(); k++ )
-     p.set<double>( labelPrepend + pL.getLabel(k), pL[k] );  
-  
-  return;
-}
-// ============================================================================
-unsigned int
-Ginla::Helpers::
-numDigits ( const int i )
-{
-    int numDigits = 0;
-    int ii = i;
-    if ( ii < 0 )
-        ii = -ii;
-
-    while ( ii > 0 )
-    {
-        numDigits++;
-        ii/=10;
-    }
-    return numDigits;
+    TEUCHOS_ASSERT_EQUALITY( psi->getGlobalLength(),
+                             grid->getNumGridPoints() );
 }
 // =============================================================================
-// calculate the free energy of a state
+Ginla::State::
+State( const Teuchos::RCP<const ComplexMap>           & map,
+       const Teuchos::RCP<const Recti::Grid::General> & grid ):
+       chi_( 0.0 ),
+       grid_( grid )
+{
+   bool zeroOut = true;
+   psi_ = Teuchos::rcp( new ComplexVector( map, zeroOut ) );
+}
+// =============================================================================
+Teuchos::RCP<const ComplexVector>
+Ginla::State::
+getValuesConst () const
+{
+    return psi_; 
+}
+// =============================================================================
+Teuchos::RCP<ComplexVector>
+Ginla::State::
+getValuesNonConst ()
+{
+    return psi_; 
+}
+// =============================================================================
+void
+Ginla::State::
+setValues ( Teuchos::RCP<ComplexVector> & psi )
+{
+    TEUCHOS_ASSERT_EQUALITY( psi->getGlobalLength(),
+                             grid_->getNumGridPoints() );
+    psi_ = psi; 
+}
+// =============================================================================
+const Teuchos::RCP<const Recti::Grid::General>
+Ginla::State::
+getGrid () const
+{
+    return grid_; 
+}
+// =============================================================================
 double
-Ginla::Helpers::
-freeEnergy ( const ComplexVector        & psi,
-             const Recti::Grid::General & grid )
+Ginla::State::
+getChi () const
+{
+  return chi_;
+}
+// =============================================================================
+double
+Ginla::State::
+freeEnergy () const
 {
     double localEnergy = 0.0;
 
-    Teuchos::ArrayRCP<const double_complex> psiView = psi.get1dView();
+    Teuchos::ArrayRCP<const double_complex> psiView = psi_->get1dView();
 
     // sum up the energy on each processor
-    for ( unsigned int k=0; k<psi.getLocalLength(); k++ )
+    for ( unsigned int k=0; k<psi_->getLocalLength(); k++ )
     {
-        int kGlobal = psi.getMap()->getGlobalElement ( k );
-        double area = grid.cellArea ( kGlobal );
+        int kGlobal = psi_->getMap()->getGlobalElement ( k );
+        double area = grid_->cellArea ( kGlobal );
         localEnergy -= area * pow ( norm ( psiView[k] ),2 );
     }
 
     // reduce and scatter such that energy is available on
     // all cores
     int count = 1; // send *one* integer
-    int numProcs =  psi.getMap()->getComm()->getSize();
+    int numProcs =  psi_->getMap()->getComm()->getSize();
     Teuchos::Array<double> sendBuff ( count ), recvBuff ( count );
 
     // fill send buffer
@@ -153,7 +108,7 @@ freeEnergy ( const ComplexVector        & psi,
     int numItemsPerProcess = 1;
     std::fill ( recvCounts.begin(), recvCounts.end(), numItemsPerProcess );
 
-    Teuchos::reduceAllAndScatter ( * ( psi.getMap()->getComm() ),
+    Teuchos::reduceAllAndScatter ( * ( psi_->getMap()->getComm() ),
                                    Teuchos::REDUCE_SUM,
                                    count,
                                    &sendBuff[0],
@@ -162,26 +117,25 @@ freeEnergy ( const ComplexVector        & psi,
                                  );
 
     // normalize
-    double maxEnergy = 1.0 * grid.getGridDomainArea();
+    double maxEnergy = 1.0 * grid_->getGridDomainArea();
     double globalEnergy = recvBuff[0] / maxEnergy;
 
     return globalEnergy;
 }
 // =============================================================================
 double
-Ginla::Helpers::
-normalizedScaledL2Norm ( const ComplexVector        & psi,
-                         const Recti::Grid::General & grid )
+Ginla::State::
+normalizedScaledL2Norm () const
 {
     double localSum = 0.0;
 
-    Teuchos::ArrayRCP<const double_complex> psiView = psi.get1dView();
+    Teuchos::ArrayRCP<const double_complex> psiView = psi_->get1dView();
 
     // sum up on each processor
-    for ( unsigned int k=0; k<psi.getLocalLength(); k++ )
+    for ( unsigned int k=0; k<psi_->getLocalLength(); k++ )
     {
-        int kGlobal = psi.getMap()->getGlobalElement ( k );
-        double area = grid.cellArea ( kGlobal );
+        int kGlobal = psi_->getMap()->getGlobalElement ( k );
+        double area = grid_->cellArea ( kGlobal );
         localSum += area * norm ( psiView[k] );
     }
 
@@ -193,13 +147,13 @@ normalizedScaledL2Norm ( const ComplexVector        & psi,
     // fill send buffer
     sendBuff[0] = localSum;
 
-    int numProcs =  psi.getMap()->getComm()->getSize();
+    int numProcs =  psi_->getMap()->getComm()->getSize();
     Teuchos::Array<int> recvCounts ( numProcs );
 // fill recvCounts with {1,...,1}
     int numItemsPerProcess = 1;
     std::fill ( recvCounts.begin(), recvCounts.end(), numItemsPerProcess );
 
-    Teuchos::reduceAllAndScatter ( * ( psi.getMap()->getComm() ),
+    Teuchos::reduceAllAndScatter ( * ( psi_->getMap()->getComm() ),
                                    Teuchos::REDUCE_SUM,
                                    count,
                                    &sendBuff[0],
@@ -208,7 +162,7 @@ normalizedScaledL2Norm ( const ComplexVector        & psi,
                                  );
 
     // normalize
-    double domainArea = grid.getGridDomainArea();
+    double domainArea = grid_->getGridDomainArea();
     double l2norm = sqrt ( recvBuff[0] ) / domainArea;
 
     return l2norm;
@@ -221,17 +175,16 @@ normalizedScaledL2Norm ( const ComplexVector        & psi,
 //       Numerically difficult when too close to origin (rather: points
 //       closest to and furthest from origin too far apart).
 int
-Ginla::Helpers::
-getVorticity ( const ComplexVector        & psi,
-               const Recti::Grid::General & grid )
+Ginla::State::
+getVorticity () const
 {
-    int numProcs = psi.getMap()->getComm()->getSize();
+    int numProcs = psi_->getMap()->getComm()->getSize();
     if ( numProcs!=1 )
         return -1;
 
-    Teuchos::ArrayRCP<const double_complex> psiView = psi.get1dView();
+    Teuchos::ArrayRCP<const double_complex> psiView = psi_->get1dView();
 
-    Teuchos::Array<int> boundaryIndices = grid.getBoundaryIndices();
+    Teuchos::Array<int> boundaryIndices = grid_->getBoundaryIndices();
 
     unsigned int n = boundaryIndices.length();
 

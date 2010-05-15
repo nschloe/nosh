@@ -44,12 +44,27 @@ Ginla::LocaSystem::Default::~Default()
     return;
 }
 // =============================================================================
+Teuchos::RCP<Ginla::State>
+Ginla::LocaSystem::Default::
+createState(  const Epetra_Vector & x )
+{
+    const Teuchos::RCP<ComplexVector> psi = komplex_->real2complex ( x );
+    return Teuchos::rcp( new Ginla::State( psi, glOperator_->getGrid() ) );
+}
+// =============================================================================
+Teuchos::RCP<Epetra_Vector>
+Ginla::LocaSystem::Default::
+createX(  const Ginla::State & state )
+{
+    return komplex_->complex2real ( state.getValuesConst() );
+}
+// =============================================================================
 bool
 Ginla::LocaSystem::Default::
 computeF ( const Epetra_Vector & x,
            Epetra_Vector       & FVec,
            const NOX::Epetra::Interface::Required::FillType fillFlag )
-{
+{ 
     // make sure that the input and output vectors are correctly mapped
     TEST_FOR_EXCEPTION ( !x.Map().SameAs ( *komplex_->getRealMap() ),
                          std::logic_error,
@@ -59,33 +74,30 @@ computeF ( const Epetra_Vector & x,
                          std::logic_error,
                          "Maps of FVec and the computed real-valued map do not coincide." );
     // ------------------------------------------------------------------------
-    // convert from x to psi
-    const Teuchos::RCP<ComplexVector> psi = komplex_->real2complex ( x );
+    // convert from x to a state
+    const Teuchos::RCP<const Ginla::State> state = this->createState( x );
     // ------------------------------------------------------------------------
     // compute the GL residual
-    // setup output vector with the same map as psi
-    Teuchos::RCP<ComplexVector> res =
-        Teuchos::rcp ( new ComplexVector ( psi->getMap(), true ) );
 
-    // TODO not really necessary?
-    glOperator_->updatePsi ( psi );
+    Teuchos::RCP<Ginla::State> res = glOperator_->getF( state );
 
-    Teuchos::ArrayRCP<double_complex> resView = res->get1dViewNonConst();
-    // loop over the nodes
-    for ( unsigned int k=0; k<psi->getLocalLength(); k++ )
+    // add perturbation
+    if ( !perturbation_.is_null() )
     {
-        int globalIndex = psi->getMap()->getGlobalElement ( k );
-        resView[k] = glOperator_->getEntry ( globalIndex );
-
-        if ( !perturbation_.is_null() )
+        Teuchos::ArrayRCP<double_complex> resView = res->getValuesNonConst()->get1dViewNonConst();
+        // loop over the nodes
+        for ( unsigned int k=0; k<state->getValuesConst()->getLocalLength(); k++ )
+        {
+            int globalIndex = state->getValuesConst()->getMap()->getGlobalElement ( k );
             resView[k] += perturbation_->computePerturbation ( globalIndex );
+        }
     }
     // ------------------------------------------------------------------------
     // TODO Avoid this explicit copy.
     // transform back to fully real equation
-    FVec = * ( komplex_->complex2real ( *res ) );
+    FVec = *(this->createX( *res ));
     // ------------------------------------------------------------------------
-    
+
     return true;
 }
 // =============================================================================
@@ -99,10 +111,11 @@ computeJacobian ( const Epetra_Vector & x,
 
     komplex_->zeroOutMatrix();
 
-    Teuchos::RCP<ComplexVector> psi = komplex_->real2complex ( x );
+    const Teuchos::RCP<const Ginla::State> state = this->createState( x );
+//     Teuchos::RCP<ComplexVector> psi = komplex_->real2complex ( x );
 
     // update to the latest psi vector before retrieving the Jacobian
-    glOperator_->updatePsi ( psi );
+//     glOperator_->updatePsi ( psi );
     
     // loop over the rows and fill the matrix
     int numMyElements = komplex_->getComplexMap()->getNodeNumElements();
@@ -110,7 +123,8 @@ computeJacobian ( const Epetra_Vector & x,
     {
         int globalRow = komplex_->getComplexMap()->getGlobalElement ( row );
         // get the values from the operator
-        glOperator_->getJacobianRow ( globalRow,
+        glOperator_->getJacobianRow ( state,
+                                      globalRow,
                                       indicesA, valuesA,
                                       indicesB, valuesB );
         // ... and fill them into glKomplex_

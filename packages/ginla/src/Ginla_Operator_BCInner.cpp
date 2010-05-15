@@ -28,9 +28,11 @@
 // =============================================================================
 Ginla::Operator::BCInner::
 BCInner ( const Teuchos::RCP<Recti::Grid::Uniform>                     & grid,
-          const Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> & A
+          const Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> & A,
+          const Teuchos::RCP<const ComplexMap>                         & domainMap,
+          const Teuchos::RCP<const ComplexMap>                         & rangeMap
         ) :
-        Ginla::Operator::Virtual ( grid, A )
+        Ginla::Operator::Virtual ( grid, A, domainMap, rangeMap )
 {
 }
 // =============================================================================
@@ -38,8 +40,34 @@ Ginla::Operator::BCInner::~BCInner()
 {
 }
 // =============================================================================
+Teuchos::RCP<Ginla::State>
+Ginla::Operator::BCInner::
+getF( const Teuchos::RCP<const Ginla::State> & state ) const
+{
+  // initialize F
+  Teuchos::RCP<Ginla::State> F =
+      Teuchos::rcp( new Ginla::State( state->getValuesConst()->getMap(),
+                                      state->getGrid() ) );
+                                      
+  Teuchos::ArrayRCP<double_complex> FView = F->getValuesNonConst()->get1dViewNonConst();
+  
+  // loop over the nodes
+  unsigned int localLength = F->getValuesConst()->getLocalLength();
+  
+  for ( unsigned int k=0; k<localLength; k++ )
+  {
+      int globalIndex = rangeMap_->getGlobalElement ( k );
+      FView[k] = this->getFEntry ( state, globalIndex );
+  }
+  
+  return F;
+}
+// =============================================================================
 double_complex
-Ginla::Operator::BCInner::getEntry ( const int k ) const
+Ginla::Operator::BCInner::
+getFEntry ( const Teuchos::RCP<const Ginla::State> & state,
+            const int k
+          ) const
 {
     double_complex res;
     double_complex psiK, psiKRight, psiKLeft, psiKAbove, psiKBelow;
@@ -56,7 +84,8 @@ Ginla::Operator::BCInner::getEntry ( const int k ) const
 
     // Get a view of the whole vector.
     // Remember: This only works with one core.
-    Teuchos::ArrayRCP<const double_complex> psiView = psi_->get1dView();
+    Teuchos::ArrayRCP<const double_complex> psiView = state->getValuesConst()->get1dView();
+    double chi = state->getChi();
 
     psiK = psiView[k];
 
@@ -84,7 +113,7 @@ Ginla::Operator::BCInner::getEntry ( const int k ) const
                 + psiKLeft*  exp ( IM*ALeft *h ) + psiKRight* exp ( -IM*ARight*h )
                 + psiKBelow* exp ( IM*ABelow*h ) + psiKAbove* exp ( -IM*AAbove*h ) ) / ( h*h )
               + psiK * ( 1-norm ( psiK ) );
-        res *= exp ( IM*chi_ );
+        res *= exp ( IM*chi );
 
         break;
 
@@ -103,7 +132,7 @@ Ginla::Operator::BCInner::getEntry ( const int k ) const
         res = ( - psiK      * 2.0
                 + psiKRight * exp ( -IM*ARight*h )
                 + psiKAbove * exp ( -IM*AAbove*h ) ) * IM/ ( sqrt ( 2 ) *h );
-        res *= exp ( IM*chi_ );
+        res *= exp ( IM*chi );
         // -------------------------------------------------------------------
         break;
 
@@ -140,7 +169,7 @@ Ginla::Operator::BCInner::getEntry ( const int k ) const
         res = ( - psiK      * 2.0
                 + psiKLeft  * exp ( IM*ALeft *h )
                 + psiKBelow * exp ( IM*ABelow*h ) ) * IM/ ( sqrt ( 2 ) *h );
-        res *= exp ( IM*chi_ );
+        res *= exp ( IM*chi );
         // -----------------------------------------------------------------------
 
         break;
@@ -160,7 +189,7 @@ Ginla::Operator::BCInner::getEntry ( const int k ) const
         res = ( - psiK      * 2.0
                 + psiKRight * exp ( -IM*ARight*h )
                 + psiKBelow * exp ( IM*ABelow*h ) ) * IM/ ( sqrt ( 2 ) *h );
-        res *= exp ( IM*chi_ );
+        res *= exp ( IM*chi );
         // -----------------------------------------------------------------------
         break;
 
@@ -174,7 +203,7 @@ Ginla::Operator::BCInner::getEntry ( const int k ) const
 
         res = ( - psiK
                 + psiKAbove * exp ( -IM*AAbove*h ) ) * IM/h;
-        res *= exp ( IM*chi_ );
+        res *= exp ( IM*chi );
         // -------------------------------------------------------------------
         break;
 
@@ -188,7 +217,7 @@ Ginla::Operator::BCInner::getEntry ( const int k ) const
 
         res = ( - psiK
                 + psiKLeft * exp ( IM*ALeft*h ) ) * IM/h;
-        res *= exp ( IM*chi_ );
+        res *= exp ( IM*chi );
         // -------------------------------------------------------------------
         break;
 
@@ -202,7 +231,7 @@ Ginla::Operator::BCInner::getEntry ( const int k ) const
 
         res = ( - psiK
                 + psiKBelow * exp ( IM*ABelow*h ) ) * IM/h;
-        res *= exp ( IM*chi_ );
+        res *= exp ( IM*chi );
         // -------------------------------------------------------------------
         break;
 
@@ -216,7 +245,7 @@ Ginla::Operator::BCInner::getEntry ( const int k ) const
 
         res = ( - psiK
                 + psiKRight * exp ( -IM*ARight*h ) ) * IM/h;
-        res *= exp ( IM*chi_ );
+        res *= exp ( IM*chi );
         // -------------------------------------------------------------------
         break;
 
@@ -231,12 +260,14 @@ Ginla::Operator::BCInner::getEntry ( const int k ) const
 }
 // =============================================================================
 void
-Ginla::Operator::BCInner::getJacobianRow ( const int                        k,
-                                    Teuchos::Array<int>            & columnIndicesPsi,
-                                    Teuchos::Array<double_complex> & valuesPsi,
-                                    Teuchos::Array<int>            & columnIndicesPsiConj,
-                                    Teuchos::Array<double_complex> & valuesPsiConj
-                                  ) const
+Ginla::Operator::BCInner::
+getJacobianRow ( const Teuchos::RCP<const Ginla::State> & state,
+                 const int                                k,
+                 Teuchos::Array<int>                    & columnIndicesPsi,
+                 Teuchos::Array<double_complex>         & valuesPsi,
+                 Teuchos::Array<int>                    & columnIndicesPsiConj,
+                 Teuchos::Array<double_complex>         & valuesPsiConj
+               ) const
 {
     int kLeft, kRight, kBelow, kAbove;
     int numEntriesPsi, numEntriesPsiConj;
@@ -249,7 +280,8 @@ Ginla::Operator::BCInner::getJacobianRow ( const int                        k,
     Teuchos::RCP<DoubleTuple> xAbove = Teuchos::rcp ( new DoubleTuple() );
     Teuchos::RCP<DoubleTuple> xBelow = Teuchos::rcp ( new DoubleTuple() );
 
-    Teuchos::ArrayRCP<const double_complex> psiView = psi_->get1dView();
+    Teuchos::ArrayRCP<const double_complex> psiView = state->getValuesConst()->get1dView();
+    double chi = state->getChi();
 
     Recti::Grid::Abstract::nodeType nt = grid_->getNodeType(k);
     switch ( nt )

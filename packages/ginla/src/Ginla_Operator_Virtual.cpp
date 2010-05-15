@@ -1,6 +1,6 @@
 /*
     <one line to give the program's name and a brief idea of what it does.>
-    Copyright (C) <year>  <name of author>
+    Copyright (C) 2010  Nico Schl\"omer
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -25,12 +25,17 @@
 
 #include <Teuchos_RCP.hpp>
 
+#include <Tpetra_Map.hpp>
+
 // =============================================================================
 Ginla::Operator::Virtual::
 Virtual ( const Teuchos::RCP<Recti::Grid::Uniform>                     & grid,
-          const Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> & A ) :
-        psi_ ( Teuchos::null ),
-        chi_ ( 0.0 ),
+          const Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> & A,
+          const Teuchos::RCP<const ComplexMap>                         & domainMap,
+          const Teuchos::RCP<const ComplexMap>                         & rangeMap
+          ) :
+        domainMap_(domainMap),
+        rangeMap_(rangeMap),
         grid_ ( grid ),
         A_ ( A )
 {
@@ -41,16 +46,8 @@ Ginla::Operator::Virtual::~Virtual()
 }
 // =============================================================================
 void
-Ginla::Operator::Virtual::updatePsi ( const Teuchos::RCP<const ComplexVector> psi )
-{
-    psi_ = psi;
-}
-// =============================================================================
-void
 Ginla::Operator::Virtual::setParameters ( const LOCA::ParameterVector & p )
 {
-    chi_ = p.getValue ( "chi" );
-
     A_->setParameters ( p );
     grid_->updateScaling ( p );
     
@@ -65,8 +62,6 @@ Ginla::Operator::Virtual::getParameters () const
   
   Teuchos::RCP<LOCA::ParameterVector> pMerge =
       Ginla::Helpers::mergeLocaParameterVectors( *pA, *pG );
-      
-  pMerge->addParameter( "chi", chi_ );
 
   return pMerge;
 }

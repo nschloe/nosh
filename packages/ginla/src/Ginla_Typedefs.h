@@ -7,6 +7,7 @@
 
 
 typedef std::complex<double> double_complex;
+typedef Tpetra::Map<Thyra::Ordinal> ComplexMap;
 typedef Tpetra::Vector<double_complex,Thyra::Ordinal> ComplexVector;
 typedef Tpetra::MultiVector<double_complex,Thyra::Ordinal> ComplexMultiVector;
 

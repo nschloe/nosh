@@ -236,7 +236,7 @@ main ( int argc, char *argv[] )
 
     // create the operator
     Teuchos::RCP<Ginla::Operator::Virtual> glOperator =
-        Teuchos::rcp ( new Ginla::Operator::BCCentral ( grid, A ) );
+        Teuchos::rcp ( new Ginla::Operator::BCCentral ( grid, A, psi->getMap(), psi->getMap() ) );
 
         
     std::string fn = outputDirectory.string() + "/" + contDataFileName;
