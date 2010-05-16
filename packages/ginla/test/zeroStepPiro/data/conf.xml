@@ -10,6 +10,13 @@
       <Parameter name="Eigenstate file name appendix" type="string" value="eigenstate"/>
   </ParameterList>
 
+  <ParameterList name="Overwrite parameter list">
+      <Parameter name="Overwrite parameters" type="bool" value="true"/>
+      <ParameterList name="Parameters">
+          <Parameter name="scaling" type="double" value="7.0"/>
+      </ParameterList>
+  </ParameterList>
+
   <ParameterList name="GL">
       <Parameter name="Nx" type="int" value="60"/>
       <Parameter name="H0" type="double" value="0.0"/>
