@@ -5,8 +5,8 @@
  *      Author: Nico Schl\"omer
  */
 
-#ifndef GRIDUNIFORMSQUARE_H_
-#define GRIDUNIFORMSQUARE_H_
+#ifndef GRID_UNIFORMSQUARE_H_
+#define GRID_UNIFORMSQUARE_H_
 
 #include "Recti_Grid_UniformAbstract.h"
 #include "Recti_Grid_Square.h"
@@ -67,4 +67,4 @@ private:
   } // namespace Grid
 } // namespace Recti
 
-#endif /* GRIDUNIFORMSQUARE_H_ */
+#endif /* GRID_UNIFORMSQUARE_H_ */

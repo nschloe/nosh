@@ -46,7 +46,8 @@ Ginla::LocaSystem::Default::~Default()
 // =============================================================================
 Teuchos::RCP<Ginla::State>
 Ginla::LocaSystem::Default::
-createState(  const Epetra_Vector & x )
+createState( const Epetra_Vector & x
+           ) const
 {
     const Teuchos::RCP<ComplexVector> psi = komplex_->real2complex ( x );
     return Teuchos::rcp( new Ginla::State( psi, glOperator_->getGrid() ) );
@@ -246,8 +247,7 @@ printSolution ( const  Epetra_Vector &x,
               )
 {
     // define vector
-    const Teuchos::RCP<ComplexVector> psi =
-        komplex_->real2complex ( x );
+    const Teuchos::RCP<const Ginla::State> state = this->createState( x );
 
     // The switch hack is necessary as different continuation algorithms
     // call printSolution() a different number of times per step, e.g.,
@@ -255,10 +255,10 @@ printSolution ( const  Epetra_Vector &x,
     switch ( continuationType_ )
     {
     case ONEPARAMETER:
-        printSolutionOneParameterContinuation ( psi );
+        this->printSolutionOneParameterContinuation ( state );
         break;
     case TURNINGPOINT:
-        printSolutionTurningPointContinuation ( psi );
+        this->printSolutionTurningPointContinuation ( state );
         break;
     default:
         TEST_FOR_EXCEPTION ( true,
@@ -286,16 +286,15 @@ printSolution ( const Epetra_Vector & x,
 // =============================================================================
 void
 Ginla::LocaSystem::Default::
-printSolutionOneParameterContinuation ( const Teuchos::RCP<const ComplexVector> & psi
-                                      )
+printSolutionOneParameterContinuation ( const Teuchos::RCP<const Ginla::State> & state )
 {
-    stateWriter_->write( psi,
+    stateWriter_->write( state->getValuesConst(),
                          glOperator_->getGrid(),
                          stepper_->getStepNumber(),
                          *(glOperator_->getParameters())
                          );
 
-    writeContinuationStats ( psi );
+    writeContinuationStats ( state );
     return;
 }
 // =============================================================================
@@ -308,8 +307,7 @@ printSolutionOneParameterContinuation ( const Teuchos::RCP<const ComplexVector> 
 // The method gets called subsequently in this order.
 void
 Ginla::LocaSystem::Default::
-printSolutionTurningPointContinuation ( const Teuchos::RCP<const ComplexVector> & psi
-                                      )
+printSolutionTurningPointContinuation ( const Teuchos::RCP<const Ginla::State> & state )
 {
     static bool isSolution = false;
 
@@ -320,17 +318,17 @@ printSolutionTurningPointContinuation ( const Teuchos::RCP<const ComplexVector> 
     stringstream baseName;
     if ( isSolution )
     {
-        stateWriter_->write( psi,
+        stateWriter_->write( state->getValuesConst(),
                              glOperator_->getGrid(),
                              stepper_->getStepNumber(),
                              "-state",
                              *(glOperator_->getParameters())
                            );
-        writeContinuationStats ( psi );
+        writeContinuationStats ( state );
     }
     else
     {
-        stateWriter_->write( psi,
+        stateWriter_->write( state->getValuesConst(),
                              glOperator_->getGrid(),
                              stepper_->getStepNumber(),
                              "-nullvector"
@@ -342,7 +340,7 @@ printSolutionTurningPointContinuation ( const Teuchos::RCP<const ComplexVector> 
 // =============================================================================
 void
 Ginla::LocaSystem::Default::
-writeContinuationStats ( const Teuchos::RCP<const ComplexVector> & psi )
+writeContinuationStats ( const Teuchos::RCP<const Ginla::State> & state )
 {   
     TEUCHOS_ASSERT( statsWriter_.is_valid_ptr()
                     && !statsWriter_.is_null() );
@@ -361,11 +359,11 @@ writeContinuationStats ( const Teuchos::RCP<const ComplexVector> & psi )
                                                   *(glOperator_->getParameters()),
                                                   labelPrepend );
 
-    TEUCHOS_ASSERT( psi.is_valid_ptr() && !psi.is_null() );
+    TEUCHOS_ASSERT( state.is_valid_ptr() && !state.is_null() );
     
-    paramList->set( "2free energy", Ginla::Helpers::freeEnergy ( *psi, *(glOperator_->getGrid()) ) );
-    paramList->set( "2||x||_2 scaled", Ginla::Helpers::normalizedScaledL2Norm ( *psi, *(glOperator_->getGrid()) ) );
-    paramList->set( "2vorticity", Ginla::Helpers::getVorticity ( *psi, *(glOperator_->getGrid()) ) );
+    paramList->set( "2free energy", state->freeEnergy() );
+    paramList->set( "2||x||_2 scaled", state->normalizedScaledL2Norm() );
+    paramList->set( "2vorticity", state->getVorticity() );
 
     // actually print the data
     statsWriter_->print();
@@ -429,12 +427,5 @@ Teuchos::RCP<const Ginla::Komplex>
 Ginla::LocaSystem::Default::getKomplex() const
 {
     return komplex_;
-}
-// =============================================================================
-Teuchos::RCP<ComplexVector>
-Ginla::LocaSystem::Default::
-extractPsi( const Epetra_Vector & x ) const
-{
-    return komplex_->real2complex( x );
 }
 // =============================================================================

@@ -22,11 +22,11 @@
 // Default constructor
 Ginla::Komplex::
 Komplex ( const Teuchos::RCP<const Epetra_Comm>                  eComm,
-          const Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> > ComplexMap ) :
+          const Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> > complexMap ) :
         EComm_ ( eComm ),
         TComm_ ( create_CommInt ( eComm ) ),
-        RealMap_ ( createRealMap ( ComplexMap ) ),
-        ComplexMap_ ( ComplexMap ),
+        RealMap_ ( createRealMap ( complexMap ) ),
+        ComplexMap_ ( complexMap ),
         realMatrix_ ( new Epetra_CrsMatrix (Copy,*RealMap_,0) )
 {
 }

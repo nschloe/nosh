@@ -168,6 +168,16 @@ normalizedScaledL2Norm () const
     return l2norm;
 }
 // =============================================================================
+void
+Ginla::State::
+update( const double alpha,
+        const Ginla::State b,
+        const double beta  )
+{
+  psi_->update( alpha, *(b.getValuesConst()), beta );
+  chi_ = alpha*chi_ + beta * b.getChi();
+}
+// =============================================================================
 // Count the number of vortices by the total phase change along the boundary
 // of the domain.
 // TODO Make this work in multicore environments.

@@ -489,14 +489,26 @@ createInterfaceState( const Teuchos::RCP<const ComplexVector> & psi,
     return x;
 }
 // =============================================================================
-Teuchos::RCP<ComplexVector>
+Teuchos::RCP<Ginla::State>
 Ginla::LocaSystem::Bordered::
-extractPsi( const Epetra_Vector & x ) const
+createState( const Epetra_Vector & x ) const
 {
-    // strip off the phase constraint
-    Epetra_Vector tmp ( *regularMap_ );
-    tmp.Import( x, importFromExtendedMap_, Insert );
+  // TODO Use chi as well!
   
-    return glSystem_.extractPsi( tmp );
+  Epetra_Vector tmp ( *regularMap_ );
+  tmp.Import( x, importFromExtendedMap_, Insert );
+  
+  return glSystem_.createState( tmp );
 }
+// =============================================================================
+// Teuchos::RCP<ComplexVector>
+// Ginla::LocaSystem::Bordered::
+// extractPsi( const Epetra_Vector & x ) const
+// {
+//     // strip off the phase constraint
+//     Epetra_Vector tmp ( *regularMap_ );
+//     tmp.Import( x, importFromExtendedMap_, Insert );
+//   
+//     return glSystem_.extractPsi( tmp );
+// }
 // =============================================================================

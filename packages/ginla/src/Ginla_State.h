@@ -57,6 +57,13 @@ public:
   //! \f$L^2(\Omega)\f$-norm.
   double
   normalizedScaledL2Norm () const;
+  
+  //! Updates the values of the state according to
+  //! \f$a \leftarrow \alpha a + \beta b \f$.
+  void
+  update( const double alpha,
+          const Ginla::State b,
+          const double beta  );
 
   /** Calcuate the grid approximation of the Gibbs free energy
     * \f[

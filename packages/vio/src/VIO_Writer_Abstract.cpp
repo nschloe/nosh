@@ -130,7 +130,6 @@ setImageData ( const Epetra_MultiVector              & x,
     vtkSmartPointer<vtkDoubleArray> scalars =
         vtkSmartPointer<vtkDoubleArray>::New();
 
-    double dummy = 0.0;
     bool isScrambled = !p.empty();
 
     if ( isScrambled )
@@ -141,6 +140,8 @@ setImageData ( const Epetra_MultiVector              & x,
 
     // fill the scalars vector and add it to imageData_
     if ( isScrambled )
+    {
+        double dummy = 0.0;
         for ( int vec=0; vec<numVecs; vec++ )
         {
             scalars->SetName ( scNames[vec].c_str() );
@@ -148,6 +149,7 @@ setImageData ( const Epetra_MultiVector              & x,
                 scalars->InsertNextValue ( p[k]>=0 ? x[vec][p[k]] : dummy );
             imageData_->GetPointData()->AddArray ( scalars );
         }
+    }
     else
         for ( int vec=0; vec<numVecs; vec++ )
         {

@@ -281,7 +281,6 @@ getJacobianRow ( const Teuchos::RCP<const Ginla::State> & state,
     Teuchos::RCP<DoubleTuple> xBelow = Teuchos::rcp ( new DoubleTuple() );
 
     Teuchos::ArrayRCP<const double_complex> psiView = state->getValuesConst()->get1dView();
-    double chi = state->getChi();
 
     Recti::Grid::Abstract::nodeType nt = grid_->getNodeType(k);
     switch ( nt )

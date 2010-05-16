@@ -135,8 +135,12 @@ public:
     //! equation system.
     //! Can be used to tranform eigenvalues into states from within
     //! other classes.
-    Teuchos::RCP<ComplexVector>
-    extractPsi( const Epetra_Vector & x ) const;
+//     Teuchos::RCP<ComplexVector>
+//     extractPsi( const Epetra_Vector & x ) const;
+
+    //! Creates a valid state from a raw real-valued EpetraVector.
+    Teuchos::RCP<Ginla::State>
+    createState( const Epetra_Vector & x ) const;
 
 private:
 

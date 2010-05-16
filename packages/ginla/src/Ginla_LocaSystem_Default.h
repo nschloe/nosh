@@ -125,8 +125,11 @@ public:
     Teuchos::RCP<const Ginla::Komplex>
     getKomplex() const;
     
-    Teuchos::RCP<ComplexVector>
-    extractPsi( const Epetra_Vector & x ) const;
+//     Teuchos::RCP<ComplexVector>
+//     extractPsi( const Epetra_Vector & x ) const;
+
+    Teuchos::RCP<Ginla::State>
+    createState(  const Epetra_Vector & x ) const;
 
 private:
 
@@ -136,9 +139,6 @@ private:
         TURNINGPOINT
     };
     
-    Teuchos::RCP<Ginla::State>
-    createState(  const Epetra_Vector & x );
-    
     Teuchos::RCP<Epetra_Vector>
     createX(  const Ginla::State & state );
 
@@ -147,18 +147,16 @@ private:
 
     //! Print method for the continuation in one parameter.
     void
-    printSolutionOneParameterContinuation ( const Teuchos::RCP<const ComplexVector> & psi
-                                          );
+    printSolutionOneParameterContinuation ( const Teuchos::RCP<const Ginla::State> & state );
 
     //! Print method for turning point continuation continuation.
     void
-    printSolutionTurningPointContinuation ( const Teuchos::RCP<const ComplexVector> & psi
-                                          );
+    printSolutionTurningPointContinuation ( const Teuchos::RCP<const Ginla::State> & state );
 
     //! Write statistics about the current continuation step to the file
     //! \c outputDataFileName_ .
     void
-    writeContinuationStats ( const Teuchos::RCP<const ComplexVector> & psi );
+    writeContinuationStats ( const Teuchos::RCP<const Ginla::State> & state );
 
     //! Translate an Epetra_Comm into a Teuchos::Comm<int>,
     //! no matter the Thyra::Ordinal.

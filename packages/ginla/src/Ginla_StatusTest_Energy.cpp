@@ -32,6 +32,7 @@ Ginla::StatusTest::Energy::
 Energy( const Teuchos::RCP<const Ginla::LocaSystem::Bordered> & glSystem,
         const Teuchos::RCP<const Recti::Grid::General>        & grid
       ) :
+  freeEnergy_( 0.0 ),
   tol_( 1.0e-6 ),
   status_( LOCA::StatusTest::Unevaluated ),
   glSystem_( glSystem ),
@@ -79,9 +80,9 @@ computeFreeEnergy( const LOCA::Stepper & stepper )
     const Epetra_Vector & x =
         ( Teuchos::dyn_cast<const NOX::Epetra::Vector> ( solGroup->getX() ) ).getEpetraVector();
     
-    Teuchos::RCP<ComplexVector> psi = glSystem_->extractPsi( x );
+    const Teuchos::RCP<const Ginla::State> state = glSystem_->createState( x );
 
-    freeEnergy_ = Ginla::Helpers::freeEnergy( *psi, *grid_ );
+    freeEnergy_ = state->freeEnergy();
     
     return;
 }

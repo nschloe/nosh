@@ -5,8 +5,8 @@
  *      Author: Nico Schl\"omer
  */
 
-#ifndef GRIDVIRTUAL_H_
-#define GRIDVIRTUAL_H_
+#ifndef RECTI_GRID_ABSTRACT_H_
+#define RECTI_GRID_ABSTRACT_H_
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Array.hpp>
@@ -179,4 +179,4 @@ private:
   } // namespace Grid
 } // namespace Recti
 
-#endif /* GRIDVIRTUAL_H_ */
+#endif /* RECTI_GRID_ABSTRACT_H_ */

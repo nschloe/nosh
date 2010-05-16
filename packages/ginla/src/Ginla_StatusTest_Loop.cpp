@@ -40,7 +40,7 @@ Loop(  const Teuchos::RCP<const Ginla::LocaSystem::Bordered> & glSystem,
     glSystem_( glSystem ),
     grid_( grid ),
     status_( LOCA::StatusTest::Unevaluated ),
-    referencePoint_( Teuchos::null )
+    referenceState_( Teuchos::null )
 {
 }
 // ============================================================================
@@ -101,7 +101,7 @@ setReferencePoint( const LOCA::Stepper & stepper )
     const Epetra_Vector & x =
         ( Teuchos::dyn_cast<const NOX::Epetra::Vector> ( solGroup->getX() ) ).getEpetraVector();
     
-    referencePoint_ = glSystem_->extractPsi( x );
+    referenceState_ = glSystem_->createState( x );
 
     return;
 }
@@ -115,12 +115,12 @@ computeDiffNorm( const LOCA::Stepper & stepper )
     const Epetra_Vector & x =
         ( Teuchos::dyn_cast<const NOX::Epetra::Vector> ( solGroup->getX() ) ).getEpetraVector();
     
-    Teuchos::RCP<ComplexVector> psi = glSystem_->extractPsi( x );
+    const Teuchos::RCP<Ginla::State> state = glSystem_->createState( x );
     
-    TEUCHOS_ASSERT( !referencePoint_.is_null() );
+    TEUCHOS_ASSERT( !referenceState_.is_null() );
     
-    psi->update( 1.0, *referencePoint_, -1.0 );
-    diffNorm_ = Ginla::Helpers::normalizedScaledL2Norm( *psi, *grid_ );
+    state->update( 1.0, *referenceState_, -1.0 );
+    diffNorm_ = state->normalizedScaledL2Norm();
 
     return;
 }

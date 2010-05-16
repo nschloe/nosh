@@ -21,6 +21,7 @@
 #define GINLA_STATUSTEST_LOOP_H
 
 #include "Ginla_Typedefs.h"
+#include "Ginla_State.h"
 
 #include <Teuchos_RCP.hpp>
 #include <LOCA_StatusTest_Abstract.H>
@@ -91,7 +92,7 @@ private:
   const Teuchos::RCP<const Ginla::LocaSystem::Bordered> glSystem_;
   const Teuchos::RCP<const Recti::Grid::General> grid_;
   LOCA::StatusTest::StatusType status_;
-  Teuchos::RCP<const ComplexVector> referencePoint_;
+  Teuchos::RCP<const Ginla::State> referenceState_;
   
 };
 

@@ -5,8 +5,8 @@
  *      Author: Nico Schl\"omer
  */
 
-#ifndef GRIDUNIFORMVIRTUAL_H_
-#define GRIDUNIFORMVIRTUAL_H_
+#ifndef GRID_UNIFORM_ABSTRACT_H_
+#define GRID_UNIFORM_ABSTRACT_H_
 
 #include "Recti_Grid_Abstract.h"
 
@@ -40,4 +40,4 @@ private:
   } // namespace Grid
 } // namespace Recti
 
-#endif /* GRIDUNIFORMVIRTUAL_H_ */
+#endif /* GRID_UNIFORM_ABSTRACT_H_ */

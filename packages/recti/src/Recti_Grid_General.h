@@ -5,8 +5,8 @@
  *      Author: Nico Schl\"omer
  */
 
-#ifndef GRID_H_
-#define GRID_H_
+#ifndef GRID_GENERAL_H_
+#define GRID_GENERAL_H_
 
 #include "Recti_Domain_Abstract.h"
 #include "Recti_Grid_Abstract.h"
@@ -211,4 +211,4 @@ private:
   } // namespace Grid
 } // namespace Recti
 
-#endif /* GRID_H_ */
+#endif /* GRID_GENERAL_H_ */
