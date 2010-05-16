@@ -203,7 +203,7 @@ computeF_ ( const Epetra_Vector & x,
           ) const
 {
     // convert from x to psi
-    const Teuchos::RCP<const Ginla::State> state = this->createState_( x );
+    const Teuchos::RCP<const Ginla::State> state = this->createState( x );
 
     // compute the GL residual
     const Teuchos::RCP<const Ginla::State> res = glOperator_->getF( state );
@@ -226,7 +226,7 @@ computeJacobian_ ( const Epetra_Vector & x,
 
     komplex_->zeroOutMatrix();
 
-    const Teuchos::RCP<const Ginla::State> state = this->createState_( x );
+    const Teuchos::RCP<const Ginla::State> state = this->createState( x );
     
     // loop over the rows and fill the matrix
     int numMyElements = komplex_->getComplexMap()->getNodeNumElements();
@@ -263,7 +263,7 @@ getKomplex() const
 // ============================================================================
 Teuchos::RCP<Ginla::State>
 Ginla::ModelEvaluator::Default::
-createState_( const Epetra_Vector & x ) const
+createState( const Epetra_Vector & x ) const
 {
     const Teuchos::RCP<ComplexVector> psi = komplex_->real2complex ( x );
     return Teuchos::rcp( new Ginla::State( psi, glOperator_->getGrid() ) );

@@ -102,6 +102,9 @@ public:
   getKomplex() const;
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
+  Teuchos::RCP<Ginla::State>
+  createState( const Epetra_Vector & x ) const;
+
 protected:
 private:
   
@@ -125,9 +128,6 @@ private:
     void
     computeJacobian_ ( const Epetra_Vector & x,
                        Epetra_Operator     & Jac ) const;
-                       
-    Teuchos::RCP<Ginla::State>
-    createState_( const Epetra_Vector & x ) const;
     
     Teuchos::RCP<Epetra_Vector>
     createX_(  const Ginla::State & state ) const;

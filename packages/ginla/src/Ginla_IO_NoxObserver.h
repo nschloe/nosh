@@ -30,6 +30,9 @@ namespace Ginla {
   namespace IO {
     class StateWriter;
   }
+  namespace ModelEvaluator{
+    class Default;
+  }
 }
 namespace Recti {
   namespace Grid {
@@ -47,9 +50,8 @@ class NoxObserver:
 {
 public:
   //! Constructor
-  NoxObserver ( const Teuchos::RCP<const Ginla::IO::StateWriter> & stateWriter,
-                const Teuchos::RCP<const Recti::Grid::General>   & grid,
-                const Teuchos::RCP<const Ginla::Komplex>         & komplex
+  NoxObserver ( const Teuchos::RCP<const Ginla::IO::StateWriter>         & stateWriter,
+                const Teuchos::RCP<const Ginla::ModelEvaluator::Default> & modelEvaluator
               );
   
   //! Destructor
@@ -62,9 +64,8 @@ public:
   
 protected:
 private:
-    const Teuchos::RCP<const Ginla::IO::StateWriter> stateWriter_;
-    const Teuchos::RCP<const Recti::Grid::General>   grid_;
-    const Teuchos::RCP<const Ginla::Komplex>         komplex_;
+    const Teuchos::RCP<const Ginla::IO::StateWriter>          stateWriter_;
+    const Teuchos::RCP<const Ginla::ModelEvaluator::Default>  modelEvaluator_;
 };
 
 } // namespace IO

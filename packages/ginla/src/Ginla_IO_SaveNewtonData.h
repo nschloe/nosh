@@ -4,13 +4,10 @@
 #include <Teuchos_RCP.hpp>
 #include <NOX_Abstract_PrePostOperator.H>
 
+#include "Ginla_LocaSystem_Bordered.h"
+#include "Ginla_IO_StateWriter.h"
+
 // foward declarations
-namespace Ginla {
-  class Komplex;
-  namespace IO {
-      class StateWriter;
-  }
-}
 namespace Recti{
   namespace Grid {
     class General;
@@ -26,9 +23,8 @@ class SaveNewtonData:
 public:
 
   //! Constructor.
-  SaveNewtonData ( const Teuchos::RCP<const Ginla::IO::StateWriter> & stateWriter,
-                   const Teuchos::RCP<const Recti::Grid::General>   & grid,
-                   const Teuchos::RCP<const Ginla::Komplex>         & komplex
+  SaveNewtonData ( const Teuchos::RCP<const Ginla::IO::StateWriter>       & stateWriter,
+                   const Teuchos::RCP<const Ginla::LocaSystem::Bordered > & system
                  );
 
   //! Destructor.
@@ -45,9 +41,8 @@ private:
   //! How ofter the function has been invoked yet.
   int numRunPreIterate;
 
-  const Teuchos::RCP<const Ginla::IO::StateWriter> stateWriter_;
-  const Teuchos::RCP<const Recti::Grid::General>   grid_;
-  const Teuchos::RCP<const Ginla::Komplex>         komplex_;
+  const Teuchos::RCP<const Ginla::IO::StateWriter>      stateWriter_;
+  const Teuchos::RCP<const Ginla::LocaSystem::Bordered> system_;
 };
 
   } // namespace IO

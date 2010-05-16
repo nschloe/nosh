@@ -273,11 +273,9 @@ printSolution ( const Epetra_Vector & x,
                 const std::string   & filenameAppendix
               ) const
 {
-    const Teuchos::RCP<ComplexVector> psi =
-        komplex_->real2complex ( x );
+    const Teuchos::RCP<const Ginla::State> state = this->createState( x );
 
-    stateWriter_->write( psi,
-                         glOperator_->getGrid(),
+    stateWriter_->write( state,
                          stepper_->getStepNumber(),
                          "-" + filenameAppendix
                        );
@@ -288,8 +286,7 @@ void
 Ginla::LocaSystem::Default::
 printSolutionOneParameterContinuation ( const Teuchos::RCP<const Ginla::State> & state )
 {
-    stateWriter_->write( state->getValuesConst(),
-                         glOperator_->getGrid(),
+    stateWriter_->write( state,
                          stepper_->getStepNumber(),
                          *(glOperator_->getParameters())
                          );
@@ -318,8 +315,7 @@ printSolutionTurningPointContinuation ( const Teuchos::RCP<const Ginla::State> &
     stringstream baseName;
     if ( isSolution )
     {
-        stateWriter_->write( state->getValuesConst(),
-                             glOperator_->getGrid(),
+        stateWriter_->write( state,
                              stepper_->getStepNumber(),
                              "-state",
                              *(glOperator_->getParameters())
@@ -328,8 +324,7 @@ printSolutionTurningPointContinuation ( const Teuchos::RCP<const Ginla::State> &
     }
     else
     {
-        stateWriter_->write( state->getValuesConst(),
-                             glOperator_->getGrid(),
+        stateWriter_->write( state,
                              stepper_->getStepNumber(),
                              "-nullvector"
                            );

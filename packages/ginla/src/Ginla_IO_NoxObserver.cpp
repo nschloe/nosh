@@ -1,6 +1,6 @@
 /*
     <one line to give the program's name and a brief idea of what it does.>
-    Copyright (C) 2010 Nico Schl\"omer
+    Copyright (C) 2010  Nico Schl\"omer
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -20,18 +20,15 @@
 #include "Ginla_IO_NoxObserver.h"
 
 #include "Ginla_IO_StateWriter.h"
-#include "Ginla_Komplex.h"
-
+#include "Ginla_ModelEvaluator_Default.h"
 
 // ============================================================================
 Ginla::IO::NoxObserver::
-NoxObserver ( const Teuchos::RCP<const Ginla::IO::StateWriter> & stateWriter,
-              const Teuchos::RCP<const Recti::Grid::General>   & grid,
-              const Teuchos::RCP<const Ginla::Komplex>         & komplex
+NoxObserver ( const Teuchos::RCP<const Ginla::IO::StateWriter>         & stateWriter,
+              const Teuchos::RCP<const Ginla::ModelEvaluator::Default> & modelEvaluator
             ) :
   stateWriter_ ( stateWriter ),
-  grid_ ( grid ),
-  komplex_( komplex )
+  modelEvaluator_ ( modelEvaluator )
 {
 }
 // ============================================================================  
@@ -46,8 +43,7 @@ observeSolution( const Epetra_Vector& soln )
 { 
     static int index = 0;
     index++;
-    stateWriter_->write( komplex_->real2complex(soln),
-                         grid_,
+    stateWriter_->write( modelEvaluator_->createState(soln),
                          index
                        );
     return;

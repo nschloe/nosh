@@ -54,11 +54,10 @@ setOutputDir ( const string & directory )
 // ============================================================================
 void
 Ginla::IO::StateWriter::
-write ( const Teuchos::RCP<const ComplexVector>        & psi,
-        const Teuchos::RCP<const Recti::Grid::General> & grid,
-        const unsigned int                             & index,
-        const std::string                              & filenameAppend,
-        LOCA::ParameterVector                          & params
+write ( const Teuchos::RCP<const Ginla::State> & state,
+        const unsigned int                     & index,
+        const std::string                      & filenameAppend,
+        LOCA::ParameterVector                  & params
       ) const
 {
     // get the parameter list
@@ -73,47 +72,44 @@ write ( const Teuchos::RCP<const ComplexVector>        & psi,
     << filenameAppend << "." << filenameExtension_;
 
     // write the file
-    grid->writeWithGrid ( *psi, *p, fileName.str() );
+    state->getGrid()->writeWithGrid ( *(state->getValuesConst()), *p, fileName.str() );
 
     return;
 }
 // ============================================================================
 void
 Ginla::IO::StateWriter::
-write ( const Teuchos::RCP<const ComplexVector>        & psi,
-        const Teuchos::RCP<const Recti::Grid::General> & grid,
-        const unsigned int                             & index,
-        const std::string                              & filenameAppend
+write ( const Teuchos::RCP<const Ginla::State> & state,
+        const unsigned int                     & index,
+        const std::string                      & filenameAppend
       ) const
 {
   LOCA::ParameterVector empty;
-  write ( psi, grid, index, filenameAppend, empty );
+  write ( state, index, filenameAppend, empty );
   return;
 }
 // ============================================================================
 void
 Ginla::IO::StateWriter::
-write ( const Teuchos::RCP<const ComplexVector>        & psi,
-        const Teuchos::RCP<const Recti::Grid::General> & grid,
-        const unsigned int                             & index,
-        LOCA::ParameterVector                          & params
+write ( const Teuchos::RCP<const Ginla::State> & state,
+        const unsigned int                     & index,
+        LOCA::ParameterVector                  & params
       ) const
 {
   std::string filenameAppend = "";
-  write ( psi, grid, index, filenameAppend, params );
+  write ( state, index, filenameAppend, params );
   return;
 }
 // ============================================================================
 void
 Ginla::IO::StateWriter::
-write ( const Teuchos::RCP<const ComplexVector>        & psi,
-        const Teuchos::RCP<const Recti::Grid::General> & grid,
-        const unsigned int                             & index
+write ( const Teuchos::RCP<const Ginla::State> & state,
+        const unsigned int                     & index
       ) const
 {
   std::string filenameAppend = "";
   LOCA::ParameterVector empty;
-  write ( psi, grid, index, filenameAppend, empty );
+  write ( state, index, filenameAppend, empty );
   return;
 }
 // ============================================================================

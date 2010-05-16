@@ -154,10 +154,6 @@ int main ( int argc, char *argv[] )
                                                   "solution",
                                                   "VTI",
                                                   1000 ) );
-    Teuchos::RCP<Ginla::IO::NoxObserver> observer =
-        Teuchos::rcp( new Ginla::IO::NoxObserver( stateWriter,
-                                                  grid,
-                                                  komplex ) );
                                                                       
     // create the operator
     Teuchos::RCP<Ginla::Operator::Virtual> glOperator =
@@ -168,10 +164,14 @@ int main ( int argc, char *argv[] )
 
     // Create the interface between NOX and the application
     // This object is derived from NOX::Epetra::Interface
-    Teuchos::RCP<EpetraExt::ModelEvaluator> glModel = 
+    Teuchos::RCP<Ginla::ModelEvaluator::Default> glModel = 
               Teuchos::rcp(new Ginla::ModelEvaluator::Default( glOperator,
                                                                komplex ) );
 
+    Teuchos::RCP<Ginla::IO::NoxObserver> observer =
+        Teuchos::rcp( new Ginla::IO::NoxObserver( stateWriter,
+                                                  glModel ) );
+                                                               
     Teuchos::RCP<Teuchos::ParameterList> piroParams =
         Teuchos::rcp(new Teuchos::ParameterList("Piro Parameters"));
     Teuchos::updateParametersFromXmlFile(xmlInputFileName, piroParams.get());

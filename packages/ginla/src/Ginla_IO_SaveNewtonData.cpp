@@ -3,18 +3,13 @@
 #include <NOX_Solver_Generic.H>
 #include <NOX_Epetra_Group.H>
 
-#include "Ginla_IO_StateWriter.h"
-#include "Ginla_Komplex.h"
-
 // =============================================================================
 Ginla::IO::SaveNewtonData::
-SaveNewtonData ( const Teuchos::RCP<const Ginla::IO::StateWriter> & stateWriter,
-                 const Teuchos::RCP<const Recti::Grid::General>   & grid,
-                 const Teuchos::RCP<const Ginla::Komplex>         & komplex
+SaveNewtonData ( const Teuchos::RCP<const Ginla::IO::StateWriter>      & stateWriter,
+                 const Teuchos::RCP<const Ginla::LocaSystem::Bordered> & system
                ) :
         stateWriter_ ( stateWriter ),
-        grid_ ( grid ),
-        komplex_( komplex )
+        system_ ( system )
 {
 }
 // =============================================================================
@@ -35,8 +30,7 @@ runPostIterate ( const NOX::Solver::Generic& solver )
     const Epetra_Vector& currentSol =
         ( dynamic_cast<const NOX::Epetra::Vector&> ( solGrp.getX() ) ).getEpetraVector();
 
-    stateWriter_->write( komplex_->real2complex(currentSol),
-                         grid_,
+    stateWriter_->write( system_->createState(currentSol),
                          solver.getNumIterations() );
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     TEST_FOR_EXCEPTION ( !solGrp.isF(),
@@ -45,8 +39,7 @@ runPostIterate ( const NOX::Solver::Generic& solver )
     const Epetra_Vector& currentResidual =
         ( dynamic_cast<const NOX::Epetra::Vector&> ( solGrp.getF() ) ).getEpetraVector();
 
-    stateWriter_->write( komplex_->real2complex(currentResidual),
-                         grid_,
+    stateWriter_->write( system_->createState(currentResidual),
                          solver.getNumIterations(),
                          "-residual" );
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -

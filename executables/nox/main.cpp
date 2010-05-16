@@ -122,12 +122,12 @@ int main ( int argc, char *argv[] )
         if ( !inputGuessFile.empty() )
         {
             glNoxHelpers::createGlSystem ( Comm,
-                                          eComm,
-                                          inputGuessFile.string(),
-                                          problemParameters,
-                                          glSystem,
-                                          initialPsi,
-                                          grid );
+                                           eComm,
+                                           inputGuessFile.string(),
+                                           problemParameters,
+                                           glSystem,
+                                           initialPsi,
+                                           grid );
         }
         else
         {
@@ -165,8 +165,7 @@ int main ( int argc, char *argv[] )
                         
             Teuchos::RCP<NOX::Abstract::PrePostOperator> ppo =
                 Teuchos::rcp ( new Ginla::IO::SaveNewtonData ( stateWriter,
-                                                              grid,
-                                                              glSystem->getKomplex() ) );
+                                                               glSystem ) );
             nlParamsPtr->sublist ( "Solver Options" )
                         .set ( "User Defined Pre/Post Operator", ppo );
         }
@@ -186,10 +185,10 @@ int main ( int argc, char *argv[] )
         // create solver object
         Teuchos::RCP<NOX::Solver::Generic> solver =
             glNoxHelpers::createSolver ( grpPtr, statusTest, nlParamsPtr );
-
+            
         // solve the system
         NOX::StatusTest::StatusType solvStatus = solver->solve();
-
+        
         // compute the condition number
         if ( computeConditionNumbers )
         {
@@ -213,10 +212,9 @@ int main ( int argc, char *argv[] )
         glNoxHelpers::printSolutionToFile ( solver,
                                             glSystem,
                                             solFileBasename );
-
+                                            
         // check the convergence status
         int status = glNoxHelpers::checkConvergence ( solver );
-        
     }
     catch ( std::exception & e )
     {
