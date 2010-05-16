@@ -72,7 +72,7 @@ write ( const Teuchos::RCP<const Ginla::State> & state,
     << filenameAppend << "." << filenameExtension_;
 
     // write the file
-    state->getGrid()->writeWithGrid ( *(state->getValuesConst()), *p, fileName.str() );
+    state->save( fileName.str(), *p );
 
     return;
 }

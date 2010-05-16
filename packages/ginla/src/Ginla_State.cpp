@@ -78,6 +78,24 @@ getChi () const
   return chi_;
 }
 // =============================================================================
+void
+Ginla::State::
+save( const std::string            & fileName,
+      const Teuchos::ParameterList & p
+    ) const
+{
+    grid_->writeWithGrid( *psi_, p, fileName );
+}
+// =============================================================================
+void
+Ginla::State::
+save( const std::string & fileName
+    ) const
+{
+    Teuchos::ParameterList empty;
+    this->save( fileName, empty );
+}
+// =============================================================================
 double
 Ginla::State::
 freeEnergy () const

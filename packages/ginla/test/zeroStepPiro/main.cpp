@@ -213,10 +213,12 @@ BOOST_AUTO_TEST_CASE( zero_step_piro_test )
     Teuchos::RCP<Ginla::State> refState
         = Teuchos::rcp( new Ginla::State( psiMRef->getVectorNonConst ( 0 ),
                                           grid ) );
+                                          
+    refState->save( "test.vti" );
     // ------------------------------------------------------------------------
     // compare the results:
     // get final solution
-    Teuchos::RCP<Ginla::State> diff =  Teuchos::rcp( new Ginla::State( initState->getValuesNonConst(), grid ) );
+    Teuchos::RCP<Ginla::State> diff = initState;
     
     diff->update( -1.0, *refState, 1.0 );    
     
