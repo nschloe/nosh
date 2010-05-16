@@ -23,10 +23,14 @@ Ginla::MagneticVectorPotential::Centered::
 // ============================================================================
 void
 Ginla::MagneticVectorPotential::Centered::
-setParameters( const LOCA::ParameterVector & p)
+setParameters( const LOCA::ParameterVector & p )
 {
-    h0_ = p.getValue ( "H0" );
-    edgeLength_ = p.getValue ( "scaling" );
+    if (p.isParameter( "H0" ))
+        h0_ = p.getValue ( "H0" );
+    
+    if ( p.isParameter("scaling") )
+        edgeLength_ = p.getValue ( "scaling" );
+
     return;
 }
 // ============================================================================

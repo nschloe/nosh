@@ -34,7 +34,7 @@ Default ( const Teuchos::RCP<Ginla::Operator::Virtual> & glOperator,
         x_(  Teuchos::rcp( new Epetra_Vector( *komplex_->getRealMap(), true ) ) ),
         firstTime_ ( true ),
         numParameters_( 1 )
-{
+{ 
 //   x_->Random();
 
   Teuchos::RCP<ComplexVector> psi =
@@ -49,9 +49,9 @@ Default ( const Teuchos::RCP<Ginla::Operator::Virtual> & glOperator,
 
   p_init_ = Teuchos::rcp(new Epetra_Vector(*p_map_));
   for (int i=0; i<numParameters_; i++)
-      (*p_init_)[i]= 3.14;
+      (*p_init_)[i]= 0.0;
   
-  Teuchos::Tuple<std::string,1> t = Teuchos::tuple<std::string>( "Parameter 0" );
+  Teuchos::Tuple<std::string,1> t = Teuchos::tuple<std::string>( "H0" );
   p_names_ = Teuchos::rcp( new Teuchos::Array<std::string>( t ) );
 
   return;
@@ -68,8 +68,20 @@ Default ( const Teuchos::RCP<Ginla::Operator::Virtual> & glOperator,
         firstTime_ ( true ),
         numParameters_( 1 )
 {
+  // set up parameters
+  p_map_ = Teuchos::rcp(new Epetra_LocalMap( numParameters_,
+                                             0,
+                                             komplex_->getRealMap()->Comm() ) );
+
+  p_init_ = Teuchos::rcp(new Epetra_Vector(*p_map_));
+  for (int i=0; i<numParameters_; i++)
+      (*p_init_)[i]= 0.0;
+  
   // make sure the maps are compatible
   TEUCHOS_ASSERT( state->getValuesConst()->getMap()->isSameAs( *komplex->getComplexMap()) );
+  
+  Teuchos::Tuple<std::string,1> t = Teuchos::tuple<std::string>( "H0" );
+  p_names_ = Teuchos::rcp( new Teuchos::Array<std::string>( t ) );
 }
 // ============================================================================
 Ginla::ModelEvaluator::Default::
@@ -146,10 +158,10 @@ Ginla::ModelEvaluator::Default::
 createOutArgs() const
 {
   EpetraExt::ModelEvaluator::OutArgsSetup outArgs;
-  outArgs.setModelEvalDescription("Ginzburg--Landau extreme type-II on a square");
+  outArgs.setModelEvalDescription( "Ginzburg--Landau extreme type-II on a square" );
   outArgs.setSupports( OUT_ARG_f, true );
   outArgs.setSupports( OUT_ARG_W, true );
-  outArgs.set_Np_Ng( 1 , 0 );
+  outArgs.set_Np_Ng( 1 , 0 ); // return parameters p and solution g
   outArgs.set_W_properties( DerivativeProperties( DERIV_LINEARITY_NONCONST,
                                                   DERIV_RANK_FULL,
                                                   false // supportsAdjoint
@@ -164,7 +176,7 @@ evalModel( const InArgs  & inArgs,
            const OutArgs & outArgs
          ) const
 { 
-  const Teuchos::RCP<const Epetra_Vector> & x = inArgs.get_x();
+  const Teuchos::RCP<const Epetra_Vector> & x_in = inArgs.get_x();
   
   Teuchos::RCP<Epetra_Vector>   f_out = outArgs.get_f();
   Teuchos::RCP<Epetra_Operator> W_out = outArgs.get_W();
@@ -174,24 +186,19 @@ evalModel( const InArgs  & inArgs,
   
   TEUCHOS_ASSERT( !p_in.is_null() );
   
-  // create the LOCA parameter vector of it
+  // build a LOCA::ParameterVector list to feed glOperator_.
   LOCA::ParameterVector locaParams;
-  locaParams.addParameter( "H0", (*p_in)[0] );
-  locaParams.addParameter( "chi", 0.0 );
-  locaParams.addParameter( "scaling", 3.0 );
+  for ( int k=0; k<p_names_->length(); k++ )
+      locaParams.addParameter( (*p_names_)[k], (*p_in)[k] );
   glOperator_->setParameters( locaParams );
   
   // compute F
-  if (!f_out.is_null())
-      this->computeF_( *x, *f_out ); 
+  if ( !f_out.is_null() )
+      this->computeF_( *x_in, *f_out ); 
 
+  // fill jacobian
   if( !W_out.is_null() )
-  {
-      // fill jacobian
-      Teuchos::RCP<Epetra_RowMatrix> tmp =
-             Teuchos::rcp_dynamic_cast<Epetra_RowMatrix>(W_out);
-      this->computeJacobian_( *x, *W_out );
-  }
+      this->computeJacobian_( *x_in, *W_out );
 
   return;
 }
@@ -202,7 +209,7 @@ computeF_ ( const Epetra_Vector & x,
             Epetra_Vector       & FVec
           ) const
 {
-    // convert from x to psi
+    // convert from x to state
     const Teuchos::RCP<const Ginla::State> state = this->createState( x );
 
     // compute the GL residual

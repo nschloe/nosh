@@ -14,6 +14,7 @@
       <Parameter name="Overwrite parameters" type="bool" value="true"/>
       <ParameterList name="Parameters">
           <Parameter name="scaling" type="double" value="7.0"/>
+          <Parameter name="H0" type="double" value="0.9"/>
       </ParameterList>
   </ParameterList>
 

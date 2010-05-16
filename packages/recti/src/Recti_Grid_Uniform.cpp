@@ -22,7 +22,7 @@
 // =============================================================================
 Recti::Grid::Uniform::
 Uniform ( const Teuchos::RCP<const Domain::Abstract> & domain,
-          const double                              h
+          const double                                  h
         ) :
         General ( domain, Teuchos::tuple ( h,h ) )
 {

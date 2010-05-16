@@ -131,25 +131,32 @@ BOOST_AUTO_TEST_CASE( zero_step_piro_test )
     Teuchos::ParameterList             problemParameters;
     Teuchos::RCP<ComplexMultiVector>   psiM;
     Teuchos::RCP<Recti::Grid::Uniform> grid = Teuchos::null;
-
+    
     Recti::Grid::Reader::read ( Comm,
                                 inputGuessFile.string(),
                                 psiM,
                                 grid,
                                 problemParameters );
-
-    Recti::Grid::Reader::read ( Comm, expSolFileName, psiM, grid, problemParameters );
     TEUCHOS_ASSERT_EQUALITY ( psiM->getNumVectors(), 1 );
     Teuchos::RCP<Ginla::State> initState
         = Teuchos::rcp( new Ginla::State( psiM->getVectorNonConst ( 0 ),
                                           grid ) );
 
-    double h0      = 0.8; //problemParameters.get<double> ( "H0" );
-    double scaling = 7.0; //problemParameters.get<double> ( "scaling" );
+    // possibly overwrite the parameters
+    Teuchos::ParameterList & overwriteParamsList = paramList->sublist ( "Overwrite parameter list", true ); 
+    bool overwriteParameters = overwriteParamsList.get<bool> ( "Overwrite parameters" );
+    if ( overwriteParameters )
+    {
+        Teuchos::ParameterList & overwritePList = overwriteParamsList.sublist( "Parameters", true );
+        problemParameters.setParameters( overwritePList );
+        
+        // possibly update the scaling of the grid
+        grid->updateScaling( problemParameters.get<double>("scaling") );
+    }
     
     Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> A =
-        Teuchos::rcp ( new Ginla::MagneticVectorPotential::Centered ( h0,
-                                                                      scaling ) );
+        Teuchos::rcp ( new Ginla::MagneticVectorPotential::Centered ( problemParameters.get<double> ( "H0" ),
+                                                                      problemParameters.get<double> ( "scaling" ) ) );
 
     Teuchos::RCP<Ginla::Komplex> komplex =
         Teuchos::rcp( new Ginla::Komplex( eComm, initState->getValuesConst()->getMap() ) );
@@ -172,7 +179,8 @@ BOOST_AUTO_TEST_CASE( zero_step_piro_test )
     // This object is derived from NOX::Epetra::Interface
     Teuchos::RCP<Ginla::ModelEvaluator::Default> glModel = 
               Teuchos::rcp(new Ginla::ModelEvaluator::Default( glOperator,
-                                                               komplex ) );
+                                                               komplex,
+                                                               initState ) );
                                                               
     Teuchos::RCP<Ginla::IO::NoxObserver> observer =
         Teuchos::rcp( new Ginla::IO::NoxObserver( stateWriter,
@@ -190,21 +198,31 @@ BOOST_AUTO_TEST_CASE( zero_step_piro_test )
                                                     observer ));
 
     // Now the (somewhat cumbersome) setting of inputs and outputs
-    EpetraExt::ModelEvaluator::InArgs inArgs = piro->createInArgs();
-    int num_p = inArgs.Np();     // Number of *vectors* of parameters
+    EpetraExt::ModelEvaluator::InArgs inArgs = glModel->createInArgs();
 
     Teuchos::RCP<Epetra_Vector> p1 =
-        Teuchos::rcp(new Epetra_Vector(*(piro->get_p_init(0))));
-    int numParams = p1->MyLength(); // Number of parameters in p1 vector
-    inArgs.set_p(0,p1);
+        Teuchos::rcp( new Epetra_Vector(*(piro->get_p_init(0))) );
+//     int numParams = p1->MyLength(); // Number of parameters in p1 vector
+    (*p1)[0] = problemParameters.get<double> ( "H0" );
+    inArgs.set_p( 0, p1 );
 
     // Set output arguments to evalModel call
     EpetraExt::ModelEvaluator::OutArgs outArgs = piro->createOutArgs();
-    
-    piro->evalModel(inArgs, outArgs);
 
+    // Solution vector is returned as extra response vector
+    Teuchos::RCP<Epetra_Vector> gx = Teuchos::rcp(new Epetra_Vector(*(piro->get_g_map(0))));
+    outArgs.set_g( 0, gx );
+    
+    // evaluate the model: go, go!
+    piro->evalModel( inArgs, outArgs );
+    
     // ------------------------------------------------------------------------
-    // read expected solution from file
+    // fetch the solution
+    // outArgs.get_g(0) must be gx
+    BOOST_ASSERT( !outArgs.get_g(0).is_null() ); 
+    Teuchos::RCP<Ginla::State> solutionState = glModel->createState( *(outArgs.get_g(0)) );
+    // ------------------------------------------------------------------------
+    // read reference solution from file
     // For technical reasons, the reader can only accept ComplexMultiVectors.
     Teuchos::RCP<ComplexMultiVector> psiMRef;
     Recti::Grid::Reader::read ( Comm, expSolFileName, psiMRef, grid, problemParameters );
@@ -213,16 +231,17 @@ BOOST_AUTO_TEST_CASE( zero_step_piro_test )
     Teuchos::RCP<Ginla::State> refState
         = Teuchos::rcp( new Ginla::State( psiMRef->getVectorNonConst ( 0 ),
                                           grid ) );
-                                          
-    refState->save( "test.vti" );
     // ------------------------------------------------------------------------
     // compare the results:
     // get final solution
-    Teuchos::RCP<Ginla::State> diff = initState;
+    solutionState->save( "test.vti" );
+    
+    Teuchos::RCP<Ginla::State> diff = solutionState;
     
     diff->update( -1.0, *refState, 1.0 );    
     
-    BOOST_CHECK_SMALL( diff->normalizedScaledL2Norm(), 1.0e-12 );
+    // don't be as strict here: 10^{-5} is enough
+    BOOST_CHECK_SMALL( diff->normalizedScaledL2Norm(), 1.0e-5 );
     // ------------------------------------------------------------------------
 
 #ifdef HAVE_MPI

@@ -110,7 +110,6 @@ private:
   
    const Teuchos::RCP<Ginla::Operator::Virtual> glOperator_;
    const Teuchos::RCP<Ginla::Komplex> komplex_;
-//    const Teuchos::RCP<const Epetra_Vector> x_;
    const Teuchos::RCP<Epetra_Vector> x_;
    mutable bool firstTime_;
    

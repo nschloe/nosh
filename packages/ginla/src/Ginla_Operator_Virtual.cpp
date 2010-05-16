@@ -50,7 +50,7 @@ Ginla::Operator::Virtual::setParameters ( const LOCA::ParameterVector & p )
 {
     A_->setParameters ( p );
     grid_->updateScaling ( p );
-    
+
     return;
 }
 // =============================================================================

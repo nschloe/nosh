@@ -63,13 +63,13 @@ updateScaling ( const double scaling )
 // ============================================================================
 void
 Recti::Grid::Abstract::
-updateScaling ( const LOCA::ParameterVector & p)
+updateScaling ( const LOCA::ParameterVector & p )
 {    
-    TEST_FOR_EXCEPTION ( !p.isParameter ( "scaling" ),
-                         std::logic_error,
-                         "Label \"scaling\" not valid." );
-    double scaling = p.getValue ( "scaling" );
-    updateScaling(scaling);
+    if ( p.isParameter("scaling") )
+    {
+        double scaling = p.getValue ( "scaling" );
+        updateScaling( scaling );
+    }
     return;
 }
 // ============================================================================
