@@ -49,7 +49,7 @@ public:
   //! Constructor with initial guess.
   Default ( const Teuchos::RCP<Ginla::Operator::Virtual> & glOperator,
             const Teuchos::RCP<Ginla::Komplex>           & komplex,
-            const Teuchos::RCP<const ComplexVector>      & psi
+            const Teuchos::RCP<const Ginla::State>       & state
           );
   
   // Destructor

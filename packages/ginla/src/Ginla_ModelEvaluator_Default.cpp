@@ -60,16 +60,16 @@ Default ( const Teuchos::RCP<Ginla::Operator::Virtual> & glOperator,
 Ginla::ModelEvaluator::Default::
 Default ( const Teuchos::RCP<Ginla::Operator::Virtual> & glOperator,
           const Teuchos::RCP<Ginla::Komplex>           & komplex,
-          const Teuchos::RCP<const ComplexVector>      & psi
+          const Teuchos::RCP<const Ginla::State>       & state
         ) :
         glOperator_ ( glOperator ),
         komplex_ ( komplex ),
-        x_( komplex_->complex2real( psi ) ),
+        x_( this->createX_( *state ) ),
         firstTime_ ( true ),
         numParameters_( 1 )
 {
   // make sure the maps are compatible
-  TEUCHOS_ASSERT( psi->getMap()->isSameAs( *komplex->getComplexMap()) );
+  TEUCHOS_ASSERT( state->getValuesConst()->getMap()->isSameAs( *komplex->getComplexMap()) );
 }
 // ============================================================================
 Ginla::ModelEvaluator::Default::

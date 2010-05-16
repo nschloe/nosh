@@ -1,3 +1,4 @@
-ADD_SUBDIRECTORY( oneStepComparison )
+ADD_SUBDIRECTORY( zeroStep )
+ADD_SUBDIRECTORY( zeroStepPiro )
 ADD_SUBDIRECTORY( freeEnergy )
 ADD_SUBDIRECTORY( vorticity )
