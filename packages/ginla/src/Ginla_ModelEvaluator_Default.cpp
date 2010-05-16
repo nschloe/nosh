@@ -1,6 +1,6 @@
 /*
     <one line to give the program's name and a brief idea of what it does.>
-    Copyright (C) 2010 Nico Sch\"omer
+    Copyright (C) 2010  Nico Sch\"omer
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -163,7 +163,7 @@ Ginla::ModelEvaluator::Default::
 evalModel( const InArgs  & inArgs, 
            const OutArgs & outArgs
          ) const
-{
+{ 
   const Teuchos::RCP<const Epetra_Vector> & x = inArgs.get_x();
   
   Teuchos::RCP<Epetra_Vector>   f_out = outArgs.get_f();
@@ -171,6 +171,7 @@ evalModel( const InArgs  & inArgs,
   
   // Parse InArgs
   Teuchos::RCP<const Epetra_Vector> p_in = inArgs.get_p(0);
+  
   TEUCHOS_ASSERT( !p_in.is_null() );
   
   // create the LOCA parameter vector of it
@@ -201,27 +202,16 @@ computeF_ ( const Epetra_Vector & x,
             Epetra_Vector       & FVec
           ) const
 {
-    // ------------------------------------------------------------------------
     // convert from x to psi
-//     const Teuchos::RCP<ComplexVector> psi = komplex_->real2complex ( x );
     const Teuchos::RCP<const Ginla::State> state = this->createState_( x );
-    // ------------------------------------------------------------------------
+
     // compute the GL residual
-    // setup output vector with the same map as psi
-    
-    // TODO not really necessary?
-//     glOperator_->updatePsi ( psi );
-    
     const Teuchos::RCP<const Ginla::State> res = glOperator_->getF( state );
 
-    // ------------------------------------------------------------------------
     // TODO Avoid this explicit copy?
     // transform back to fully real equation
-//     FVec = * ( komplex_->complex2real ( *res ) );
-    
     FVec = *(this->createX_( *res ));
-    // ------------------------------------------------------------------------
-    
+
     return;
 }
 // ============================================================================

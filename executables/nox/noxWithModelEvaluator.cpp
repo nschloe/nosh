@@ -161,13 +161,16 @@ int main ( int argc, char *argv[] )
                                                                       
     // create the operator
     Teuchos::RCP<Ginla::Operator::Virtual> glOperator =
-        Teuchos::rcp ( new Ginla::Operator::BCCentral ( grid, A, psi->getMap(), psi->getMap() ) );
+        Teuchos::rcp ( new Ginla::Operator::BCCentral ( grid,
+                                                        A,
+                                                        psi->getMap(),
+                                                        psi->getMap() ) );
 
     // Create the interface between NOX and the application
     // This object is derived from NOX::Epetra::Interface
     Teuchos::RCP<EpetraExt::ModelEvaluator> glModel = 
               Teuchos::rcp(new Ginla::ModelEvaluator::Default( glOperator,
-                                                                komplex ) );
+                                                               komplex ) );
 
     Teuchos::RCP<Teuchos::ParameterList> piroParams =
         Teuchos::rcp(new Teuchos::ParameterList("Piro Parameters"));
@@ -177,12 +180,14 @@ int main ( int argc, char *argv[] )
     //   EpetraExt::ModelEvaluator is  base class of all Piro::Epetra solvers
     Teuchos::RCP<EpetraExt::ModelEvaluator> piro;
 
-    std::string& solver = piroParams->get( "Piro Solver", "" );
+    std::string & solver = piroParams->get( "Piro Solver", "" );
+    
+    std::cout << "Solver " << solver << std::endl;
 
 //     if (solver=="NOX")
     piro = Teuchos::rcp(new Piro::Epetra::NOXSolver( piroParams,
-                                                       glModel,
-                                                       observer ));
+                                                     glModel,
+                                                     observer ));
       
 //       bool computeSens = piroParams->get("Compute Sensitivities", false);
 
@@ -190,10 +195,10 @@ int main ( int argc, char *argv[] )
       EpetraExt::ModelEvaluator::InArgs inArgs = piro->createInArgs();
       int num_p = inArgs.Np();     // Number of *vectors* of parameters
 
-//       Teuchos::RCP<Epetra_Vector> p1 =
-//           Teuchos::rcp(new Epetra_Vector(*(piro->get_p_init(0))));
-//       int numParams = p1->MyLength(); // Number of parameters in p1 vector
-//       inArgs.set_p(0,p1);
+      Teuchos::RCP<Epetra_Vector> p1 =
+          Teuchos::rcp(new Epetra_Vector(*(piro->get_p_init(0))));
+      int numParams = p1->MyLength(); // Number of parameters in p1 vector
+      inArgs.set_p(0,p1);
 
       // Set output arguments to evalModel call
       EpetraExt::ModelEvaluator::OutArgs outArgs = piro->createOutArgs();
