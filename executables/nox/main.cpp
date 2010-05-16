@@ -205,13 +205,15 @@ int main ( int argc, char *argv[] )
         // compute the eigenvalues of the Jacobian
         if ( computeEigenvalues )
             glNoxHelpers::computeJacobianEigenvalues ( solver, grpPtr, Comm->getRank() );
-
-        // print the solution to a file
-        std::string solFileBasename = ( outputDirectory / "solution" ).string();
         
-        glNoxHelpers::printSolutionToFile ( solver,
-                                            glSystem,
-                                            solFileBasename );
+        // print the solution to a file
+        const std::string fileBaseName = "solution";
+        
+        glNoxHelpers::printSolutionToFile ( outputDirectory.string(),
+                                            fileBaseName,
+                                            "VTI",
+                                            solver,
+                                            glSystem );
                                             
         // check the convergence status
         int status = glNoxHelpers::checkConvergence ( solver );

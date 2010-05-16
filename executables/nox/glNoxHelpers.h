@@ -68,9 +68,12 @@ computeJacobianEigenvalues ( const Teuchos::RCP<const NOX::Solver::Generic> solv
                              const int MyPID );
 
 void
-printSolutionToFile ( const Teuchos::RCP<const NOX::Solver::Generic> solver,
-                      const Teuchos::RCP<const Ginla::LocaSystem::Bordered> glSystem,
-                      const std::string & fileName );
+printSolutionToFile ( const std::string                                     & outputDir,
+                      const std::string                                     & fileBaseName,
+                      const std::string                                     & outputFormat,
+                      const Teuchos::RCP<const NOX::Solver::Generic>        & solver,
+                      const Teuchos::RCP<const Ginla::LocaSystem::Bordered> & glSystem
+                    );
 
 int
 checkConvergence ( const Teuchos::RCP<const NOX::Solver::Generic> solver );

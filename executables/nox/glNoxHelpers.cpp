@@ -423,9 +423,12 @@ computeJacobianEigenvalues ( const Teuchos::RCP<const NOX::Solver::Generic> solv
 }
 // =========================================================================
 void
-printSolutionToFile ( const Teuchos::RCP<const NOX::Solver::Generic> solver,
-                      const Teuchos::RCP<const Ginla::LocaSystem::Bordered> glSystem,
-                      const std::string & fileName )
+printSolutionToFile ( const std::string                                     & outputDir,
+                      const std::string                                     & fileBaseName,
+                      const std::string                                     & outputFormat,
+                      const Teuchos::RCP<const NOX::Solver::Generic>        & solver,
+                      const Teuchos::RCP<const Ginla::LocaSystem::Bordered> & glSystem
+                    )
 {
     const NOX::Epetra::Group & finalGroup =
         dynamic_cast<const NOX::Epetra::Group&> ( solver->getSolutionGroup() );
@@ -433,8 +436,16 @@ printSolutionToFile ( const Teuchos::RCP<const NOX::Solver::Generic> solver,
     const Epetra_Vector & finalSolution =
         ( dynamic_cast<const NOX::Epetra::Vector&> ( finalGroup.getX() ) ).getEpetraVector();
 
-//     glSystem->writeSolutionToFile ( finalSolution,
-//                                     fileName );
+    Teuchos::RCP<Ginla::State> state = glSystem->createState( finalSolution );
+        
+    unsigned int maxIndex = 0;
+    Teuchos::RCP<Ginla::IO::StateWriter> stateWriter
+        = Teuchos::rcp( new Ginla::IO::StateWriter( outputDir,
+                                                    fileBaseName,
+                                                    outputFormat ,
+                                                    maxIndex ) );
+
+    stateWriter->write( state, 0 );
 
     return;
 }
