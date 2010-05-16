@@ -234,8 +234,6 @@ BOOST_AUTO_TEST_CASE( zero_step_piro_test )
     // ------------------------------------------------------------------------
     // compare the results:
     // get final solution
-    solutionState->save( "test.vti" );
-    
     Teuchos::RCP<Ginla::State> diff = solutionState;
     
     diff->update( -1.0, *refState, 1.0 );    
