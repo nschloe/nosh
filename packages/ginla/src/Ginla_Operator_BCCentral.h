@@ -40,16 +40,12 @@ public:
     //! Destructor
     virtual
     ~BCCentral();
-
-    //! Return the value of the Ginzburg-Landau equations for the equation
-    //! at eqType.
-    virtual double_complex
-    getFEntry ( const Teuchos::RCP<const Ginla::State> & state,
-                const int k
-              ) const;
     
     virtual Teuchos::RCP<Ginla::State>
     getF( const Teuchos::RCP<const Ginla::State> & state ) const;
+    
+    virtual Teuchos::RCP<Ginla::State>
+    getDFDh0( const Teuchos::RCP<const Ginla::State> & state ) const;
 
     //! Returns entries and positions of the Jacobian matrix belonging to the
     //! boundary conditions.
@@ -63,6 +59,21 @@ public:
                    ) const;
 
 protected:
+  
+    //! Return the value of the Ginzburg-Landau equations for the equation
+    //! at eqType.
+    virtual double_complex
+    getFEntry_ ( const Teuchos::RCP<const Ginla::State> & state,
+                 const int k
+               ) const;
+              
+    //! Return the value of the Ginzburg-Landau equations for the equation
+    //! at eqType.
+    virtual double_complex
+    getDFDh0Entry_ ( const Teuchos::RCP<const Ginla::State> & state,
+                     const int k
+                   ) const;
+  
 private:
 
 };

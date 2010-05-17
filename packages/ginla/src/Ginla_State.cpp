@@ -41,6 +41,21 @@ State( const Teuchos::RCP<const ComplexMap>           & map,
    psi_ = Teuchos::rcp( new ComplexVector( map, zeroOut ) );
 }
 // =============================================================================
+Ginla::State::
+State( const Teuchos::RCP<const Teuchos::Comm<int> >  & comm,
+       const Teuchos::RCP<const Recti::Grid::General> & grid ):
+       chi_( 0.0 ),
+       grid_( grid )
+{  
+   int n = grid->getNumGridPoints();
+   int indexBase = 0;   
+   const Teuchos::RCP<const ComplexMap> map
+       = Teuchos::rcp( new ComplexMap( n, indexBase, comm ) );
+   
+   bool zeroOut = true;
+   psi_ = Teuchos::rcp( new ComplexVector( map, zeroOut ) );
+}
+// =============================================================================
 Teuchos::RCP<const ComplexVector>
 Ginla::State::
 getValuesConst () const

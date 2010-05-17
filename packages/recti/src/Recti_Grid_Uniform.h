@@ -31,10 +31,18 @@ class Uniform:
             virtual public General
 {
 public:
+    //! Generic constructor for a uniform grid. Provide a domain, and have it automatically meshed.
     Uniform ( const Teuchos::RCP<const Domain::Abstract> & domain,
               const double                                 h
             );
 
+    //! Manual constructor for a uniform grid.
+    //! @param h             Mesh size.
+    //! @param numCells      Number of cells in each spatial direction.
+    //! @param kBB
+    //! @param boundaryNodes Vector containing the indices of the boundary nodes.
+    //! @param scaling       Initial scaling of the grid.
+    //! @param origin        The origin of the grid (usually \f$(0,0)^{\text{T}}\f$).
     Uniform ( const double                h,
               const UIntTuple           & numCells,
               const Teuchos::Array<int> & kBB,
@@ -43,6 +51,7 @@ public:
               const DoubleTuple         & origin
             );
 
+    //! Getter for the uniform mesh size \f$h\f$.
     double
     getUniformH() const;
 

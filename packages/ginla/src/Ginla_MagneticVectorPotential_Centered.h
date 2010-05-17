@@ -38,6 +38,15 @@ public:
 
   double
   getAy(const Teuchos::Array<double> & x) const;
+  
+  Teuchos::RCP<Teuchos::Array<double> >
+  getDADh0(const Teuchos::Array<double> & x ) const;
+
+  double
+  getDAxDh0(const Teuchos::Array<double> & x) const;
+
+  double
+  getDAyDh0(const Teuchos::Array<double> & x) const;
 
 protected:
 

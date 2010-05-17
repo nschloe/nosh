@@ -146,8 +146,11 @@ Ginla::ModelEvaluator::Default::
 createInArgs() const
 {
   EpetraExt::ModelEvaluator::InArgsSetup inArgs;
+  
   inArgs.setModelEvalDescription( "Ginzburg--Landau extreme type-II on a square" );
+  
   inArgs.set_Np( 1 );
+  
   inArgs.setSupports( IN_ARG_x, true );
   
   return inArgs;
@@ -158,10 +161,15 @@ Ginla::ModelEvaluator::Default::
 createOutArgs() const
 {
   EpetraExt::ModelEvaluator::OutArgsSetup outArgs;
+  
   outArgs.setModelEvalDescription( "Ginzburg--Landau extreme type-II on a square" );
-  outArgs.setSupports( OUT_ARG_f, true );
-  outArgs.setSupports( OUT_ARG_W, true );
+  
   outArgs.set_Np_Ng( 1 , 0 ); // return parameters p and solution g
+  
+  outArgs.setSupports( OUT_ARG_f, true );
+  outArgs.setSupports( OUT_ARG_DfDp, 0, DerivativeSupport(DERIV_MV_BY_COL) );
+  outArgs.setSupports( OUT_ARG_W, true );
+  
   outArgs.set_W_properties( DerivativeProperties( DERIV_LINEARITY_NONCONST,
                                                   DERIV_RANK_FULL,
                                                   false // supportsAdjoint
@@ -180,6 +188,10 @@ evalModel( const InArgs  & inArgs,
   
   Teuchos::RCP<Epetra_Vector>   f_out = outArgs.get_f();
   Teuchos::RCP<Epetra_Operator> W_out = outArgs.get_W();
+
+  Teuchos::RCP<Epetra_MultiVector> dfdp_out;
+  if ( outArgs.Np() > 0 )
+      dfdp_out = outArgs.get_DfDp(0).getMultiVector();
   
   // Parse InArgs
   Teuchos::RCP<const Epetra_Vector> p_in = inArgs.get_p(0);
@@ -199,6 +211,10 @@ evalModel( const InArgs  & inArgs,
   // fill jacobian
   if( !W_out.is_null() )
       this->computeJacobian_( *x_in, *W_out );
+  
+  // dF / dH_0
+  if ( !dfdp_out.is_null() )
+      this->computeDFDh0_( *x_in, *((*dfdp_out)(0)) );
 
   return;
 }
@@ -214,6 +230,25 @@ computeF_ ( const Epetra_Vector & x,
 
     // compute the GL residual
     const Teuchos::RCP<const Ginla::State> res = glOperator_->getF( state );
+
+    // TODO Avoid this explicit copy?
+    // transform back to fully real equation
+    FVec = *(this->createX_( *res ));
+
+    return;
+}
+// ============================================================================
+void
+Ginla::ModelEvaluator::Default::
+computeDFDh0_ ( const Epetra_Vector & x,
+                Epetra_Vector       & FVec
+              ) const
+{
+    // convert from x to state
+    const Teuchos::RCP<const Ginla::State> state = this->createState( x );
+
+    // compute the GL residual
+    const Teuchos::RCP<const Ginla::State> res = glOperator_->getDFDh0( state );
 
     // TODO Avoid this explicit copy?
     // transform back to fully real equation

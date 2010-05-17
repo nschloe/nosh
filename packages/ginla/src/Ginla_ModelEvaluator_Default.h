@@ -122,7 +122,11 @@ private:
 private:
     void
     computeF_ ( const Epetra_Vector & x,
-                Epetra_Vector       & FVec ) const;
+                      Epetra_Vector & FVec ) const;
+                
+    void
+    computeDFDh0_ ( const Epetra_Vector & x,
+                          Epetra_Vector & FVec ) const;
                 
     void
     computeJacobian_ ( const Epetra_Vector & x,

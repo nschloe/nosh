@@ -31,7 +31,9 @@ class Circle:
             public Ellipse
 {
 public:
-    //! Constructor.
+
+    //! Constructor for circular domain centered at the origin.
+    //! @param radius The radius of the circle.
     Circle ( double radius );
 
     //! Destructor.

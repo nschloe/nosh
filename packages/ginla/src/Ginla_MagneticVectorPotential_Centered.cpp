@@ -75,3 +75,31 @@ getAy(const Teuchos::Array<double> & x) const
          - 0.5 * h0_ * 0.5*edgeLength_;
 }
 // ============================================================================
+Teuchos::RCP<Teuchos::Array<double> >
+Ginla::MagneticVectorPotential::Centered::
+getDADh0(const Teuchos::Array<double> & x) const
+{
+  Teuchos::RCP<Teuchos::Array<double> >  A = Teuchos::rcp( new Teuchos::Array<double>(2) );
+
+  (*A)[0] = getDAxDh0(x);
+  (*A)[1] = getDAyDh0(x);
+
+  return A;
+}
+// ============================================================================
+double
+Ginla::MagneticVectorPotential::Centered::
+getDAxDh0(const Teuchos::Array<double> & x) const
+{
+  return - 0.5 * x[1]
+         + 0.5 * 0.5*edgeLength_;
+}
+// ============================================================================
+double
+Ginla::MagneticVectorPotential::Centered::
+getDAyDh0(const Teuchos::Array<double> & x) const
+{
+  return   0.5 * x[0]
+         - 0.5 * 0.5*edgeLength_;
+}
+// ============================================================================

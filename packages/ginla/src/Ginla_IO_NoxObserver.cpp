@@ -39,7 +39,7 @@ Ginla::IO::NoxObserver::
 // ============================================================================
 void
 Ginla::IO::NoxObserver::
-observeSolution( const Epetra_Vector& soln )
+observeSolution( const Epetra_Vector & soln )
 { 
     static int index = 0;
     index++;

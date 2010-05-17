@@ -58,6 +58,9 @@ public:
     
     virtual Teuchos::RCP<Ginla::State>
     getF( const Teuchos::RCP<const Ginla::State> & state ) const = 0; // purely virtual
+    
+    virtual Teuchos::RCP<Ginla::State>
+    getDFDh0( const Teuchos::RCP<const Ginla::State> & state ) const = 0; // purely virtual
 
     virtual void
     getJacobianRow ( const Teuchos::RCP<const Ginla::State> & state,

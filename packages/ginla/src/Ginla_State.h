@@ -36,6 +36,10 @@ public:
   //! Constructor without \f$\psi\f$. The values will be initialized to 0.
   State( const Teuchos::RCP<const ComplexMap>           & map,
          const Teuchos::RCP<const Recti::Grid::General> & grid );
+         
+  //! Constructor solely with comminicator and grid. The values will be initialized to 0.
+  State( const Teuchos::RCP<const Teuchos::Comm<int> >  & comm,
+         const Teuchos::RCP<const Recti::Grid::General> & grid );
   
   //! Const getter.
   Teuchos::RCP<const ComplexVector>
@@ -70,7 +74,7 @@ public:
   normalizedScaledL2Norm () const;
   
   //! Updates the values of the state according to
-  //! \f$a \leftarrow \alpha a + \beta b \f$.
+  //! \f$a \leftarrow \alpha b + \beta a \f$.
   void
   update( const double alpha,
           const Ginla::State b,
