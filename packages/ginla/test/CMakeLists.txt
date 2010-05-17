@@ -1,4 +1,5 @@
 ADD_SUBDIRECTORY( zeroStep )
+ADD_SUBDIRECTORY( fiveStep )
 ADD_SUBDIRECTORY( zeroStepPiro )
 ADD_SUBDIRECTORY( freeEnergy )
 ADD_SUBDIRECTORY( vorticity )
