@@ -76,8 +76,8 @@ private:
   computeFreeEnergy( const LOCA::Stepper & stepper );
   
 private:
-  double tol_;
   double freeEnergy_;
+  double tol_;
   LOCA::StatusTest::StatusType status_;
   const Teuchos::RCP<const Ginla::LocaSystem::Bordered> glSystem_;
   const Teuchos::RCP<const Recti::Grid::General> grid_;

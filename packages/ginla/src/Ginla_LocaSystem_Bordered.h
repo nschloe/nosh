@@ -194,7 +194,7 @@ private:
 
 private:
 
-    Default::Default glSystem_;
+    Ginla::LocaSystem::Default glSystem_;
 
     Teuchos::RCP<const Epetra_BlockMap> regularMap_;
     Teuchos::RCP<Epetra_Map> extendedMap_;
