@@ -66,18 +66,16 @@ int main ( int argc, char *argv[] )
         parseReturn = My_CLP.parse ( argc, argv );
 
         if ( parseReturn == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED )
-        {
             return 0;
-        }
+
         if ( parseReturn != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL )
-        {
             return 1; // Error!
-        }
 
         Teuchos::RCP<Teuchos::ParameterList> paramList =
             Teuchos::rcp ( new Teuchos::ParameterList );
-        std::cout << "Reading parameter list from \"" << xmlInputFileName << "\"."
-                  << std::endl;
+        if ( Comm->getRank()==0 )
+            std::cout << "Reading parameter list from \"" << xmlInputFileName << "\"."
+                      << std::endl;
                   
         Teuchos::updateParametersFromXmlFile ( xmlInputFileName, paramList.get() );
         // =========================================================================

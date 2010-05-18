@@ -136,15 +136,15 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
     Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> A =
         Teuchos::rcp ( new Ginla::MagneticVectorPotential::Centered ( H0, scaling ) );
 
-    // create the operator
-    Teuchos::RCP<Ginla::Operator::Virtual> glOperator =
-        Teuchos::rcp ( new Ginla::Operator::BCCentral ( grid, A, initialPsi->getMap(), initialPsi->getMap() ) );
-    
     // create an initial guess
     int numGlobalElements = grid->getNumGridPoints();
     int indexBase = 0;
     Teuchos::RCP<Tpetra::Map<Thyra::Ordinal> > map =
         Teuchos::rcp( new Tpetra::Map<Thyra::Ordinal>(numGlobalElements, indexBase, comm ) );
+        
+    // create the operator
+    Teuchos::RCP<Ginla::Operator::Virtual> glOperator =
+        Teuchos::rcp ( new Ginla::Operator::BCCentral ( grid, A, map, map ) );
 
     initialPsi = Teuchos::rcp( new ComplexVector(map) );
     initialPsi->putScalar( double_complex(0.5,0.0) );
