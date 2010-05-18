@@ -25,7 +25,7 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
                  const Teuchos::RCP<const Epetra_Comm>         & eComm,
                  const std::string                             & fileName,
                  Teuchos::ParameterList                        & problemParameters,
-                 Teuchos::RCP<Ginla::LocaSystem::Bordered>     & glSystem,
+                 Teuchos::RCP<Ginla::LocaSystem::Virtual>      & glSystem,
                  Teuchos::RCP<ComplexVector>                   & initialPsi,
                  Teuchos::RCP<Recti::Grid::Uniform>            & grid
                );
@@ -38,15 +38,15 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
                  const double H0,
                  const Teuchos::ParameterList               & domainParameters,
                  Teuchos::ParameterList                     & problemParameters,
-                 Teuchos::RCP<Ginla::LocaSystem::Bordered>  & glSystem,
+                 Teuchos::RCP<Ginla::LocaSystem::Virtual>   & glSystem,
                  Teuchos::RCP<ComplexVector>                & initialPsi,
                  Teuchos::RCP<Recti::Grid::Uniform>         & grid
                );
 
 Teuchos::RCP<NOX::Epetra::Group>
-createSolverGroup ( const Teuchos::RCP<Ginla::LocaSystem::Bordered> & glSystem,
-                    const Teuchos::RCP<Teuchos::ParameterList>      & nlParamsPtr,
-                    const Teuchos::RCP<ComplexVector>               & initialPsi
+createSolverGroup ( const Teuchos::RCP<Ginla::LocaSystem::Virtual> & glSystem,
+                    const Teuchos::RCP<Teuchos::ParameterList>     & nlParamsPtr,
+                    const Teuchos::RCP<ComplexVector>              & initialPsi
                   );
 
 Teuchos::RCP<NOX::StatusTest::Generic>
@@ -68,11 +68,11 @@ computeJacobianEigenvalues ( const Teuchos::RCP<const NOX::Solver::Generic> solv
                              const int MyPID );
 
 void
-printSolutionToFile ( const std::string                                     & outputDir,
-                      const std::string                                     & fileBaseName,
-                      const std::string                                     & outputFormat,
-                      const Teuchos::RCP<const NOX::Solver::Generic>        & solver,
-                      const Teuchos::RCP<const Ginla::LocaSystem::Bordered> & glSystem
+printSolutionToFile ( const std::string                                    & outputDir,
+                      const std::string                                    & fileBaseName,
+                      const std::string                                    & outputFormat,
+                      const Teuchos::RCP<const NOX::Solver::Generic>       & solver,
+                      const Teuchos::RCP<const Ginla::LocaSystem::Virtual> & glSystem
                     );
 
 int

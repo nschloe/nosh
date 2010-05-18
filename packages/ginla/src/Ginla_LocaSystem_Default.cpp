@@ -413,14 +413,25 @@ create_CommInt ( const Teuchos::RCP<const Epetra_Comm> & epetraComm )
 }
 // =============================================================================
 Teuchos::RCP<const Epetra_Map>
-Ginla::LocaSystem::Default::getRealMap() const
+Ginla::LocaSystem::Default::
+getMap() const
 {
     return komplex_->getRealMap();
 }
 // =============================================================================
 Teuchos::RCP<const Ginla::Komplex>
-Ginla::LocaSystem::Default::getKomplex() const
+Ginla::LocaSystem::Default::
+getKomplex() const
 {
     return komplex_;
+}
+// =============================================================================
+Teuchos::RCP<Epetra_Vector>
+Ginla::LocaSystem::Default::
+createSystemVector( const Teuchos::ParameterList & p )
+{
+   TEST_FOR_EXCEPTION( true,
+                       std::logic_error,
+                       "Not yet implemented." );
 }
 // =============================================================================

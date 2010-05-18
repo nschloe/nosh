@@ -5,8 +5,8 @@
 
 // =============================================================================
 Ginla::IO::SaveNewtonData::
-SaveNewtonData ( const Teuchos::RCP<const Ginla::IO::StateWriter>      & stateWriter,
-                 const Teuchos::RCP<const Ginla::LocaSystem::Bordered> & system
+SaveNewtonData ( const Teuchos::RCP<const Ginla::IO::StateWriter>     & stateWriter,
+                 const Teuchos::RCP<const Ginla::LocaSystem::Virtual> & system
                ) :
         stateWriter_ ( stateWriter ),
         system_ ( system )

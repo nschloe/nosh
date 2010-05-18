@@ -114,7 +114,7 @@ int main ( int argc, char *argv[] )
 
         // set problemParameters and glSystem
         Teuchos::ParameterList                    problemParameters;
-        Teuchos::RCP<Ginla::LocaSystem::Bordered> glSystem = Teuchos::null;
+        Teuchos::RCP<Ginla::LocaSystem::Virtual>  glSystem = Teuchos::null;
         Teuchos::RCP<Recti::Grid::Uniform>        grid = Teuchos::null;
         Teuchos::RCP<ComplexVector> initialPsi = Teuchos::null;
         if ( !inputGuessFile.empty() )
@@ -132,21 +132,22 @@ int main ( int argc, char *argv[] )
             int    Nx      = paramList->sublist ( "GL",true ).get<int> ( "Nx" );
             double scaling = paramList->sublist ( "GL",true ).get<double> ( "scaling" );
             double H0      = paramList->sublist ( "GL",true ).get<double> ( "H0" );
+
             paramList->sublist ( "GL",true ).get ( "chi",0.0 );
             Teuchos::ParameterList & domainParameters =
                     paramList->sublist ( "Domain",true );
             glNoxHelpers::createGlSystem ( Comm,
-                                          eComm,
-                                          Nx,
-                                          scaling,
-                                          H0,
-                                          domainParameters,
-                                          problemParameters,
-                                          glSystem,
-                                          initialPsi,
-                                          grid );
+                                           eComm,
+                                           Nx,
+                                           scaling,
+                                           H0,
+                                           domainParameters,
+                                           problemParameters,
+                                           glSystem,
+                                           initialPsi,
+                                           grid );
         }
-
+    
         Teuchos::RCP<Teuchos::ParameterList> nlParamsPtr =
             Teuchos::rcpFromRef ( paramList->sublist ( "NOX",true ) );
 
@@ -219,6 +220,11 @@ int main ( int argc, char *argv[] )
     catch ( std::exception & e )
     {
         std::cerr << e.what() << std::endl;
+        status += 10;
+    }
+    catch ( int & e )
+    {
+        std::cerr << "Caught error code \"" << e << "\"." << std::endl;
         status += 10;
     }
     catch (...)

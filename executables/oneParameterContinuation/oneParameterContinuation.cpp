@@ -268,7 +268,7 @@ main ( int argc, char *argv[] )
 //  Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys = Teuchos::rcp(
 //      new NOX::Epetra::LinearSystemAztecOO(nlPrintParams, lsParams, iJac, J, iPrec, M, *soln));
 
-    NOX::Epetra::Vector cloneVector( Epetra_Vector( *glsystem->getExtendedMap() ) );
+    NOX::Epetra::Vector cloneVector( Epetra_Vector( *glsystem->getMap() ) );
     Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys =
         Teuchos::rcp ( new NOX::Epetra::LinearSystemAztecOO ( nlPrintParams,
                                                               lsParams,
@@ -290,8 +290,10 @@ main ( int argc, char *argv[] )
           *(Ginla::Helpers::teuchosParameterList2locaParameterVector( glParameters ));
 
     // get initial guess
-    double chi = 0.0;
-    NOX::Epetra::Vector initialGuess ( glsystem->createInterfaceState( psi, chi ),
+    Teuchos::ParameterList p;
+    p.set( "psi", psi );
+    p.set( "chi", 0.0 );
+    NOX::Epetra::Vector initialGuess ( glsystem->createSystemVector( p ),
                                        NOX::Epetra::Vector::CreateView
                                      );
 

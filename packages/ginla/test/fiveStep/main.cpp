@@ -240,7 +240,7 @@ BOOST_AUTO_TEST_CASE( zero_step_loca_test )
                   .sublist ( "Newton" )
                   .sublist ( "Linear Solver" );
 
-    NOX::Epetra::Vector cloneVector( Epetra_Vector( *glsystem->getExtendedMap() ) );
+    NOX::Epetra::Vector cloneVector( Epetra_Vector( *glsystem->getMap() ) );
     Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys =
         Teuchos::rcp ( new NOX::Epetra::LinearSystemAztecOO ( nlPrintParams,
                                                               lsParams,
@@ -260,8 +260,10 @@ BOOST_AUTO_TEST_CASE( zero_step_loca_test )
           *(Ginla::Helpers::teuchosParameterList2locaParameterVector( glParameters ));
 
     // get initial guess
-    double chi = 0.0;
-    NOX::Epetra::Vector initialGuess ( glsystem->createInterfaceState( psi, chi ),
+    Teuchos::ParameterList p;
+    p.set( "psi", psi );
+    p.set( "chi", 0.0 );
+    NOX::Epetra::Vector initialGuess ( glsystem->createSystemVector( p ),
                                        NOX::Epetra::Vector::CreateView
                                      );
 

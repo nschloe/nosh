@@ -44,7 +44,7 @@ Bordered ( const Teuchos::RCP<Ginla::Operator::Virtual>           & glOperator,
                     complexMap,
                     statsWriter,
                     stateWriter ),
-        regularMap_ (  glSystem_.getRealMap() ),
+        regularMap_ (  glSystem_.getMap() ),
         extendedMap_ ( createExtendedRealMap ( *regularMap_ ) ),
         jacobian_ ( new Epetra_CrsMatrix ( Copy, *extendedMap_, 0 ) ),
         firstTime_ ( true ),
@@ -375,14 +375,14 @@ create_CommInt ( const Teuchos::RCP<const Epetra_Comm> &epetraComm )
 }
 // =============================================================================
 // TODO delete?
-const Teuchos::RCP<const Ginla::Komplex>
+Teuchos::RCP<const Ginla::Komplex>
 Ginla::LocaSystem::Bordered::getKomplex() const
 {
     return glSystem_.getKomplex();
 }
 // =============================================================================
-const Teuchos::RCP<const Epetra_Map>
-Ginla::LocaSystem::Bordered::getExtendedMap() const
+Teuchos::RCP<const Epetra_Map>
+Ginla::LocaSystem::Bordered::getMap() const
 {
     return extendedMap_;
 }
@@ -473,11 +473,13 @@ PutRow ( const Teuchos::RCP<Epetra_CrsMatrix> A,
 // =============================================================================
 Teuchos::RCP<Epetra_Vector>
 Ginla::LocaSystem::Bordered::
-createInterfaceState( const Teuchos::RCP<const ComplexVector> & psi,
-                      const double                              chi )
-{
+createSystemVector( const Teuchos::ParameterList & p )
+{ 
     Teuchos::RCP<Epetra_Vector> x =
         Teuchos::rcp( new Epetra_Vector( *extendedMap_ ) );
+        
+    Teuchos::RCP<ComplexVector> psi = p.get<Teuchos::RCP<ComplexVector> >( "psi" );
+    double chi = p.get<double>( "chi" );
   
     x->Import( *glSystem_.getKomplex()->complex2real(psi),
                importFromRegularMap_,

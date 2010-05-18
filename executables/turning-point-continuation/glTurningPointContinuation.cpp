@@ -340,7 +340,7 @@ main ( int argc, char *argv[] )
                   .sublist ( "Newton" )
                   .sublist ( "Linear Solver" );
 
-    NOX::Epetra::Vector cloneVector( Epetra_Vector( *glsystem->getExtendedMap() ) );
+    NOX::Epetra::Vector cloneVector( Epetra_Vector( *glsystem->getMap() ) );
     Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys =
         Teuchos::rcp ( new NOX::Epetra::LinearSystemAztecOO ( nlPrintParams,
                                                               lsParams,
@@ -360,8 +360,10 @@ main ( int argc, char *argv[] )
           *(Ginla::Helpers::teuchosParameterList2locaParameterVector( glParameters ));
 
     // get initial guess
-    double chi = 0.0;
-    NOX::Epetra::Vector initialGuess ( glsystem->createInterfaceState( psi, chi ),
+    Teuchos::ParameterList p;
+    p.set( "psi", psi );
+    p.set( "chi", 0.0 );
+    NOX::Epetra::Vector initialGuess ( glsystem->createSystemVector( p ),
                                        NOX::Epetra::Vector::CreateView
                                      );
     Teuchos::RCP<LOCA::Epetra::Group> grp =
@@ -431,7 +433,7 @@ main ( int argc, char *argv[] )
         
     // create extended vectors
     Teuchos::RCP<const Epetra_BlockMap> regularMap = Teuchos::rcpFromRef ( glsystemInitialNullVector->Map() );
-    Teuchos::RCP<const Epetra_Map> extendedMap = glsystem->getExtendedMap();
+    Teuchos::RCP<const Epetra_Map> extendedMap = glsystem->getMap();
     Teuchos::RCP<Epetra_Vector> glsystemInitialNullVectorExt =
         Teuchos::rcp( new Epetra_Vector( *extendedMap, true ) );
     Teuchos::RCP<Epetra_Import> importFromRegularMap =

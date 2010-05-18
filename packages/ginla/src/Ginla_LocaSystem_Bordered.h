@@ -7,17 +7,13 @@
 #ifndef GINLA_LOCASYSTEM_BORDERED_H
 #define GINLA_LOCASYSTEM_BORDERED_H
 
-#include "Ginla_Komplex.h"
-#include "Ginla_LocaSystem_Default.h"
-#include "Ginla_IO_EigenSaver_Abstract.h"
+#include "Ginla_LocaSystem_Virtual.h"
 
 #include <Epetra_Import.h>
 
-// #include <NOX_Epetra_Interface_Required.H> // NOX base class
-#include <NOX_Epetra_Interface_Jacobian.H> // NOX base class
-#include <NOX_Epetra_Interface_Preconditioner.H> // NOX base class
-// #include <LOCA_Epetra_Interface_Required.H> // LOCA base class
-#include <LOCA_Epetra_Interface_TimeDependent.H> // LOCA base class
+#include "Ginla_LocaSystem_Default.h"
+
+
 
 // forward declarations
 namespace Ginla {
@@ -38,10 +34,7 @@ namespace Ginla {
   namespace LocaSystem {
 
 class Bordered:
-            public Ginla::IO::EigenSaver::Abstract,
-            public NOX::Epetra::Interface::Jacobian,
-            public NOX::Epetra::Interface::Preconditioner,
-            public LOCA::Epetra::Interface::TimeDependent
+            public Ginla::LocaSystem::Virtual
 {
 public:
 
@@ -105,31 +98,30 @@ public:
                     double conParam );
         
     //! Used to print eigenvectors.
-    void
+    virtual void
     printSolution ( const Epetra_Vector & x,
                     const std::string   & filenameAppendix
                   ) const;
 
-    void
+    virtual void
     setLocaStepper ( const Teuchos::RCP<const LOCA::Stepper> stepper );
 
     // This function is necessary to break the circular dependency with the
     // LOCA_Stepper object to allow for a clean termination
-    void
+    virtual void
     releaseLocaStepper();
 
-    const Teuchos::RCP<const Komplex>
+    virtual Teuchos::RCP<const Komplex>
     getKomplex() const;
 
-    const Teuchos::RCP<const Epetra_Map>
-    getExtendedMap() const;
+    virtual Teuchos::RCP<const Epetra_Map>
+    getMap() const;
 
     //! Creates a state suitable for usage in the present interface.
     //! This function can be used, for example, to create an initial guess for
     //! the system.
-    Teuchos::RCP<Epetra_Vector>
-    createInterfaceState( const Teuchos::RCP<const ComplexVector> & psi,
-                          const double                              chi );
+    virtual Teuchos::RCP<Epetra_Vector>
+    createSystemVector( const Teuchos::ParameterList & p );
                           
     //! Extracts a complex-valued state from a vector of the linear
     //! equation system.

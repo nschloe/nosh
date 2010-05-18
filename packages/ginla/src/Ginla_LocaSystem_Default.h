@@ -4,15 +4,7 @@
 #ifndef GINLA_LOCASYSTEM_DEFAULT_H
 #define GINLA_LOCASYSTEM_DEFAULT_H
 
-#include "Ginla_Komplex.h"
-#include "Ginla_State.h"
-#include "Ginla_IO_EigenSaver_Abstract.h"
-
-// #include <NOX_Epetra_Interface_Required.H> // NOX base class
-#include <NOX_Epetra_Interface_Jacobian.H> // NOX base class
-#include <NOX_Epetra_Interface_Preconditioner.H> // NOX base class
-// #include <LOCA_Epetra_Interface_Required.H> // LOCA base class
-#include <LOCA_Epetra_Interface_TimeDependent.H> // LOCA base class
+#include "Ginla_LocaSystem_Virtual.h"
 
 // forward declarations
 namespace Ginla {
@@ -36,10 +28,7 @@ namespace Ginla {
   namespace LocaSystem {
 
 class Default:
-            public Ginla::IO::EigenSaver::Abstract,
-            public NOX::Epetra::Interface::Jacobian,
-            public NOX::Epetra::Interface::Preconditioner,
-            public LOCA::Epetra::Interface::TimeDependent
+            public Ginla::LocaSystem::Virtual
 {
 public:
 
@@ -119,14 +108,17 @@ public:
     releaseLocaStepper();
 
     // needed, e.g., to allocate the linear system in the main file
-    Teuchos::RCP<const Epetra_Map>
-    getRealMap() const;
+    virtual Teuchos::RCP<const Epetra_Map>
+    getMap() const;
 
-    Teuchos::RCP<const Ginla::Komplex>
+    virtual Teuchos::RCP<const Ginla::Komplex>
     getKomplex() const;
     
 //     Teuchos::RCP<ComplexVector>
 //     extractPsi( const Epetra_Vector & x ) const;
+
+    virtual Teuchos::RCP<Epetra_Vector>
+    createSystemVector( const Teuchos::ParameterList & p );
 
     Teuchos::RCP<Ginla::State>
     createState(  const Epetra_Vector & x ) const;

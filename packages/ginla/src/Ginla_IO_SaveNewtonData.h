@@ -4,7 +4,7 @@
 #include <Teuchos_RCP.hpp>
 #include <NOX_Abstract_PrePostOperator.H>
 
-#include "Ginla_LocaSystem_Bordered.h"
+#include "Ginla_LocaSystem_Virtual.h"
 #include "Ginla_IO_StateWriter.h"
 
 // foward declarations
@@ -23,8 +23,8 @@ class SaveNewtonData:
 public:
 
   //! Constructor.
-  SaveNewtonData ( const Teuchos::RCP<const Ginla::IO::StateWriter>       & stateWriter,
-                   const Teuchos::RCP<const Ginla::LocaSystem::Bordered > & system
+  SaveNewtonData ( const Teuchos::RCP<const Ginla::IO::StateWriter>     & stateWriter,
+                   const Teuchos::RCP<const Ginla::LocaSystem::Virtual> & system
                  );
 
   //! Destructor.
@@ -41,8 +41,8 @@ private:
   //! How ofter the function has been invoked yet.
   int numRunPreIterate;
 
-  const Teuchos::RCP<const Ginla::IO::StateWriter>      stateWriter_;
-  const Teuchos::RCP<const Ginla::LocaSystem::Bordered> system_;
+  const Teuchos::RCP<const Ginla::IO::StateWriter>     stateWriter_;
+  const Teuchos::RCP<const Ginla::LocaSystem::Virtual> system_;
 };
 
   } // namespace IO

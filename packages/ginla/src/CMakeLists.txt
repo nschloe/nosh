@@ -12,6 +12,7 @@ SET ( ginla_SRCS
       Ginla_IO_StateWriter.cpp
       Ginla_IO_NoxObserver.cpp
       Ginla_Komplex.cpp
+      Ginla_LocaSystem_Virtual.cpp
       Ginla_LocaSystem_Default.cpp
       Ginla_LocaSystem_Bordered.cpp
       Ginla_ModelEvaluator_Default.cpp
