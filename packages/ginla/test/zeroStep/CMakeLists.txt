@@ -7,6 +7,7 @@ LINK_DIRECTORIES( ${Trilinos_LIBRARY_DIRS}
 FIND_PACKAGE( Boost
               COMPONENTS system filesystem unit_test_framework
               REQUIRED )
+
 # SET(Boost_USE_STATIC_LIBS   ON)
 SET(Boost_USE_MULTITHREADED ON)
 INCLUDE_DIRECTORIES ( ${Boost_INCLUDE_DIRS} )
@@ -22,6 +23,13 @@ SET( MY_EXECUTABLE
 #INCLUDE( CTest )
 ADD_TEST( zeroStepLoca
           ${MY_EXECUTABLE}
+          "--xml-input-file=${CMAKE_CURRENT_SOURCE_DIR}/data/conf.xml"
+          "--expected-solution-file=${CMAKE_CURRENT_SOURCE_DIR}/data/expected-solution.vti"
+        )
+
+ADD_TEST( zeroStepLocaMultiproc
+          "/usr/bin/env" "mpirun" "-n" "2"
+          "./${MY_EXECUTABLE}"
           "--xml-input-file=${CMAKE_CURRENT_SOURCE_DIR}/data/conf.xml"
           "--expected-solution-file=${CMAKE_CURRENT_SOURCE_DIR}/data/expected-solution.vti"
         )
