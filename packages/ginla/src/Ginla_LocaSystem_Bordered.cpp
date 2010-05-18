@@ -101,9 +101,9 @@ computeF ( const Epetra_Vector & x,
     glSystem_.computeF ( tmp, shortFVec, fillFlag );
 
     // add -i\eta\psi
-    Teuchos::RCP<ComplexVector> psi = glSystem_.getKomplex()->real2complex( tmp );
-    psi->scale( -IM*eta );
-    TEUCHOS_ASSERT_EQUALITY( 0, tmp.Update( 1.0, *glSystem_.getKomplex()->complex2real(psi), 1.0 ) );
+    Teuchos::RCP<Ginla::State> state = glSystem_.createState( tmp );
+    state->getValuesNonConst()->scale( -IM*eta );
+    TEUCHOS_ASSERT_EQUALITY( 0, tmp.Update( 1.0, *glSystem_.createSystemVector( *state ), 1.0 ) );
     
     // copy over and add phase condition
     FVec.Import( shortFVec, importFromRegularMap_, Insert );
@@ -192,7 +192,7 @@ void
 Ginla::LocaSystem::Bordered::
 createJacobian ( const Epetra_Vector & x )
 {
-    const Ginla::Komplex & komplex = *glSystem_.getKomplex();
+//     const Ginla::Komplex & komplex = *glSystem_.getKomplex();
   
     TEST_FOR_EXCEPTION ( !extendedMap_.is_valid_ptr() || extendedMap_.is_null(),
                          std::logic_error,
@@ -205,8 +205,8 @@ createJacobian ( const Epetra_Vector & x )
     double eta = x[ x.GlobalLength()-1 ];
 
     // TODO don't explicitly construct psi? get1dCopy on the rhs
-    Teuchos::RCP<ComplexVector>             psi     = komplex.real2complex ( tmp );
-    Teuchos::ArrayRCP<const double_complex> psiView = psi->get1dView();
+    Teuchos::RCP<Ginla::State>              state   = glSystem_.createState( tmp );
+//     Teuchos::ArrayRCP<const double_complex> psiView = psi->get1dView();
 
     // get the unbordered Jacobian
     Teuchos::RCP<Epetra_CrsMatrix> regularJacobian = glSystem_.getJacobian();
@@ -214,21 +214,31 @@ createJacobian ( const Epetra_Vector & x )
     // add -i*eta on the diagonal
     Epetra_Vector newDiag ( tmp );
     regularJacobian->ExtractDiagonalCopy( newDiag );
-    Teuchos::RCP<ComplexVector> diag = komplex.real2complex( newDiag );
-    diag->putScalar( -IM*eta );
-    newDiag.Update( 1.0, *komplex.complex2real(*diag), 1.0 );
+    Teuchos::RCP<Ginla::State> diag = glSystem_.createState( newDiag );
+    diag->getValuesNonConst()->putScalar( -IM*eta );
+    newDiag.Update( 1.0, *glSystem_.createSystemVector(*diag), 1.0 );
     regularJacobian->ReplaceDiagonalValues( newDiag );
     
     // TODO: Conversion to real-valued vector in one go?
     // right bordering: (phi:=) -i*psi
-    ComplexVector phi = *psi;
-    phi.scale ( -IM );
-    Teuchos::RCP<Epetra_Vector> rightBorder =
-        glSystem_.getKomplex()->complex2real ( phi );
+    Ginla::State phi = *state;
+    phi.getValuesNonConst()->scale ( -IM );
+    Teuchos::RCP<Epetra_Vector> rightBorder = glSystem_.createSystemVector( phi );
 
-    // Get the lower bordering  Im( psi_{old}^H, dpsi ).
-    Teuchos::RCP<Epetra_Vector> lowerBorder =
-        glSystem_.getKomplex()->imagScalarProductCoeff ( psi );
+    // Get the lower bordering
+    //     
+    //    Im( psi_{old}^H, dpsi ) 
+    //  = \Im( \sum_{k=1}^n \psi^*_k dpsi_k )
+    //  = \sum_{k=1}^n ( -Im(\psi_k) Re(dpsi_k) + Re(\psi_k) Im(dpsi_k)
+    //
+    // Hence, the bordering tranlates into
+    //
+    //  lb = IM*psi_{old}
+    //
+    // in the complex state notation.
+    Ginla::State lb_state = *state;
+    lb_state.getValuesNonConst()->scale( IM );
+    Teuchos::RCP<Epetra_Vector> lowerBorder = glSystem_.createSystemVector( lb_state );
 
     // corner element
     double d = 0.0;
@@ -374,13 +384,6 @@ create_CommInt ( const Teuchos::RCP<const Epetra_Comm> &epetraComm )
     return Teuchos::null;
 }
 // =============================================================================
-// TODO delete?
-Teuchos::RCP<const Ginla::Komplex>
-Ginla::LocaSystem::Bordered::getKomplex() const
-{
-    return glSystem_.getKomplex();
-}
-// =============================================================================
 Teuchos::RCP<const Epetra_Map>
 Ginla::LocaSystem::Bordered::getMap() const
 {
@@ -473,20 +476,17 @@ PutRow ( const Teuchos::RCP<Epetra_CrsMatrix> A,
 // =============================================================================
 Teuchos::RCP<Epetra_Vector>
 Ginla::LocaSystem::Bordered::
-createSystemVector( const Teuchos::ParameterList & p )
+createSystemVector( const Ginla::State & state ) const
 { 
     Teuchos::RCP<Epetra_Vector> x =
         Teuchos::rcp( new Epetra_Vector( *extendedMap_ ) );
-        
-    Teuchos::RCP<ComplexVector> psi = p.get<Teuchos::RCP<ComplexVector> >( "psi" );
-    double chi = p.get<double>( "chi" );
-  
-    x->Import( *glSystem_.getKomplex()->complex2real(psi),
+
+    x->Import( *glSystem_.createSystemVector( state ),
                importFromRegularMap_,
                Insert );
 
     // set last entry
-    x->ReplaceGlobalValue ( x->GlobalLength()-1, 0, chi );
+    x->ReplaceGlobalValue ( x->GlobalLength()-1, 0, state.getChi() );
                 
     return x;
 }
@@ -502,15 +502,4 @@ createState( const Epetra_Vector & x ) const
   
   return glSystem_.createState( tmp );
 }
-// =============================================================================
-// Teuchos::RCP<ComplexVector>
-// Ginla::LocaSystem::Bordered::
-// extractPsi( const Epetra_Vector & x ) const
-// {
-//     // strip off the phase constraint
-//     Epetra_Vector tmp ( *regularMap_ );
-//     tmp.Import( x, importFromExtendedMap_, Insert );
-//   
-//     return glSystem_.extractPsi( tmp );
-// }
 // =============================================================================

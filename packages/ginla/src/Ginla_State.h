@@ -43,7 +43,7 @@ public:
   
   //! Const getter.
   Teuchos::RCP<const ComplexVector>
-  getValuesConst () const;
+  getValues () const;
   
   //! Nonconst getter for the values.
   Teuchos::RCP<ComplexVector>

@@ -111,14 +111,8 @@ public:
     virtual Teuchos::RCP<const Epetra_Map>
     getMap() const;
 
-    virtual Teuchos::RCP<const Ginla::Komplex>
-    getKomplex() const;
-    
-//     Teuchos::RCP<ComplexVector>
-//     extractPsi( const Epetra_Vector & x ) const;
-
     virtual Teuchos::RCP<Epetra_Vector>
-    createSystemVector( const Teuchos::ParameterList & p );
+    createSystemVector( const Ginla::State & state ) const;
 
     Teuchos::RCP<Ginla::State>
     createState(  const Epetra_Vector & x ) const;

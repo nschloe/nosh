@@ -116,11 +116,11 @@ public:
     //! can be written as a scalar product \f$v^{\mathrm{T}} w\f$,
     //! where \f$w\in\mathbb{R}^{2n}\f$ is the real-valued representation
     //! of \f$z\f$.
-    //! For given \f$\psi\f$, this function returns the corresponding
+    //! For given \f$\psi\in\mathbb{C}^n\f$, this function returns the corresponding
     //! \f$v\in\mathbb{R}^{2n}\f$.
-    Teuchos::RCP<Epetra_Vector>
-    imagScalarProductCoeff ( const Teuchos::RCP<const ComplexVector> a
-                           ) const;
+//     Teuchos::RCP<Epetra_Vector>
+//     imagScalarProductCoeff ( const Teuchos::RCP<const ComplexVector> a
+//                            ) const;
 
 private:
 

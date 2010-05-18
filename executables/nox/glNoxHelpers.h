@@ -46,7 +46,7 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
 Teuchos::RCP<NOX::Epetra::Group>
 createSolverGroup ( const Teuchos::RCP<Ginla::LocaSystem::Virtual> & glSystem,
                     const Teuchos::RCP<Teuchos::ParameterList>     & nlParamsPtr,
-                    const Teuchos::RCP<ComplexVector>              & initialPsi
+                    const Teuchos::RCP<Ginla::State>               & initialState
                   );
 
 Teuchos::RCP<NOX::StatusTest::Generic>

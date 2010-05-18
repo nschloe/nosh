@@ -416,22 +416,22 @@ Ginla::Komplex::getMatrix() const
 //      return compound;
 //}
 // =============================================================================
-Teuchos::RCP<Epetra_Vector>
-Ginla::Komplex::
-imagScalarProductCoeff ( const Teuchos::RCP<const ComplexVector> a ) const
-{
-    TEUCHOS_ASSERT ( a.is_valid_ptr() && !a.is_null() );
-    TEUCHOS_ASSERT ( a->getMap()->isSameAs ( *ComplexMap_ ) );
-
-    Teuchos::RCP<Epetra_Vector> compound = Teuchos::rcp ( new Epetra_Vector ( *RealMap_ ) );
-
-    Teuchos::ArrayRCP<const double_complex> aView = a->get1dView();
-    for ( unsigned int k=0; k<ComplexMap_->getNodeNumElements(); k++ )
-    {
-        ( *compound ) [2*k]   = -std::imag ( aView[k] );
-        ( *compound ) [2*k+1] =  std::real ( aView[k] );
-    }
-
-    return compound;
-}
+// Teuchos::RCP<Epetra_Vector>
+// Ginla::Komplex::
+// imagScalarProductCoeff ( const Teuchos::RCP<const ComplexVector> a ) const
+// {
+//     TEUCHOS_ASSERT ( a.is_valid_ptr() && !a.is_null() );
+//     TEUCHOS_ASSERT ( a->getMap()->isSameAs ( *ComplexMap_ ) );
+// 
+//     Teuchos::RCP<Epetra_Vector> compound = Teuchos::rcp ( new Epetra_Vector ( *RealMap_ ) );
+// 
+//     Teuchos::ArrayRCP<const double_complex> aView = a->get1dView();
+//     for ( unsigned int k=0; k<ComplexMap_->getNodeNumElements(); k++ )
+//     {
+//         ( *compound ) [2*k]   = -std::imag ( aView[k] );
+//         ( *compound ) [2*k+1] =  std::real ( aView[k] );
+//     }
+// 
+//     return compound;
+// }
 // =============================================================================

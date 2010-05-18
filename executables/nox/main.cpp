@@ -170,10 +170,12 @@ int main ( int argc, char *argv[] )
         }
 
         // create NOX group
+        Teuchos::RCP<Ginla::State> initialState
+            = Teuchos::rcp( new Ginla::State( initialPsi, grid ) );
         Teuchos::RCP<NOX::Epetra::Group> grpPtr =
             glNoxHelpers::createSolverGroup ( glSystem,
                                               nlParamsPtr,
-                                              initialPsi
+                                              initialState
                                             );
 
         // create convergence test from sublist

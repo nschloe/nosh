@@ -58,7 +58,7 @@ State( const Teuchos::RCP<const Teuchos::Comm<int> >  & comm,
 // =============================================================================
 Teuchos::RCP<const ComplexVector>
 Ginla::State::
-getValuesConst () const
+getValues () const
 {
     return psi_; 
 }
@@ -207,7 +207,7 @@ update( const double alpha,
         const Ginla::State b,
         const double beta  )
 {
-  psi_->update( alpha, *(b.getValuesConst()), beta );
+  psi_->update( alpha, *(b.getValues()), beta );
   chi_ = alpha*chi_ + beta * b.getChi();
 }
 // =============================================================================

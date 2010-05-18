@@ -177,7 +177,7 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
 Teuchos::RCP<NOX::Epetra::Group>
 createSolverGroup ( const Teuchos::RCP<Ginla::LocaSystem::Virtual>  & glSystem,
                     const Teuchos::RCP<Teuchos::ParameterList>      & nlParamsPtr,
-                    const Teuchos::RCP<ComplexVector>               & initialPsi
+                    const Teuchos::RCP<Ginla::State>                & initialState
                   )
 {
     // Create all possible Epetra_Operators.
@@ -203,12 +203,8 @@ createSolverGroup ( const Teuchos::RCP<Ginla::LocaSystem::Virtual>  & glSystem,
                                                               Analytic,
                                                               cloneVector ) );
 
-
     // get initial guess
-    Teuchos::ParameterList p;
-    p.set( "psi", initialPsi );
-    p.set( "chi", 0.0 );
-    NOX::Epetra::Vector initialGuess ( glSystem->createSystemVector( p ),
+    NOX::Epetra::Vector initialGuess ( glSystem->createSystemVector( *initialState ),
                                        NOX::Epetra::Vector::CreateView
                                      );
 

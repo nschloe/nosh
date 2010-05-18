@@ -44,20 +44,11 @@ Ginla::LocaSystem::Default::~Default()
     return;
 }
 // =============================================================================
-Teuchos::RCP<Ginla::State>
-Ginla::LocaSystem::Default::
-createState( const Epetra_Vector & x
-           ) const
-{
-    const Teuchos::RCP<ComplexVector> psi = komplex_->real2complex ( x );
-    return Teuchos::rcp( new Ginla::State( psi, glOperator_->getGrid() ) );
-}
-// =============================================================================
 Teuchos::RCP<Epetra_Vector>
 Ginla::LocaSystem::Default::
 createX(  const Ginla::State & state )
 {
-    return komplex_->complex2real ( state.getValuesConst() );
+    return komplex_->complex2real ( state.getValues() );
 }
 // =============================================================================
 bool
@@ -87,9 +78,9 @@ computeF ( const Epetra_Vector & x,
     {
         Teuchos::ArrayRCP<double_complex> resView = res->getValuesNonConst()->get1dViewNonConst();
         // loop over the nodes
-        for ( unsigned int k=0; k<state->getValuesConst()->getLocalLength(); k++ )
+        for ( unsigned int k=0; k<state->getValues()->getLocalLength(); k++ )
         {
-            int globalIndex = state->getValuesConst()->getMap()->getGlobalElement ( k );
+            int globalIndex = state->getValues()->getMap()->getGlobalElement ( k );
             resView[k] += perturbation_->computePerturbation ( globalIndex );
         }
     }
@@ -419,19 +410,19 @@ getMap() const
     return komplex_->getRealMap();
 }
 // =============================================================================
-Teuchos::RCP<const Ginla::Komplex>
+Teuchos::RCP<Ginla::State>
 Ginla::LocaSystem::Default::
-getKomplex() const
+createState( const Epetra_Vector & x
+           ) const
 {
-    return komplex_;
+    const Teuchos::RCP<ComplexVector> psi = komplex_->real2complex ( x );
+    return Teuchos::rcp( new Ginla::State( psi, glOperator_->getGrid() ) );
 }
 // =============================================================================
 Teuchos::RCP<Epetra_Vector>
 Ginla::LocaSystem::Default::
-createSystemVector( const Teuchos::ParameterList & p )
+createSystemVector( const Ginla::State & state ) const
 {
-   TEST_FOR_EXCEPTION( true,
-                       std::logic_error,
-                       "Not yet implemented." );
+    return komplex_->complex2real( state.getValues() );
 }
 // =============================================================================

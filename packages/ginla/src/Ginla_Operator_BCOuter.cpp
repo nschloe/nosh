@@ -45,13 +45,13 @@ getF( const Teuchos::RCP<const Ginla::State> & state ) const
 {
   // initialize F
   Teuchos::RCP<Ginla::State> F =
-      Teuchos::rcp( new Ginla::State( state->getValuesConst()->getMap(),
+      Teuchos::rcp( new Ginla::State( state->getValues()->getMap(),
                                       state->getGrid() ) );
                                       
   Teuchos::ArrayRCP<double_complex> FView = F->getValuesNonConst()->get1dViewNonConst();
   
   // loop over the nodes
-  unsigned int localLength = F->getValuesConst()->getLocalLength();
+  unsigned int localLength = F->getValues()->getLocalLength();
   
   for ( unsigned int k=0; k<localLength; k++ )
   {
@@ -83,7 +83,7 @@ getFEntry ( const Teuchos::RCP<const Ginla::State> & state,
 
     // Get a view of the whole vector.
     // Remember: This only works with one core.
-    Teuchos::ArrayRCP<const double_complex> psiView = state->getValuesConst()->get1dView();
+    Teuchos::ArrayRCP<const double_complex> psiView = state->getValues()->get1dView();
     double chi = state->getChi();
 
     psiK = psiView[k];
@@ -312,7 +312,7 @@ getJacobianRow ( const Teuchos::RCP<const Ginla::State> & state,
     Teuchos::RCP<DoubleTuple> xAbove = Teuchos::rcp ( new DoubleTuple() );
     Teuchos::RCP<DoubleTuple> xBelow = Teuchos::rcp ( new DoubleTuple() );
 
-    Teuchos::ArrayRCP<const double_complex> psiView = state->getValuesConst()->get1dView();
+    Teuchos::ArrayRCP<const double_complex> psiView = state->getValues()->get1dView();
     double chi = state->getChi();
 
     Recti::Grid::Abstract::nodeType nt = grid_->getNodeType ( k );

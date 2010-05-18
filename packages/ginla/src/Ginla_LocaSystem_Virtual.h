@@ -129,21 +129,18 @@ public:
     // LOCA_Stepper object to allow for a clean termination
     virtual void
     releaseLocaStepper() = 0;
-
-    virtual Teuchos::RCP<const Ginla::Komplex>
-    getKomplex() const = 0;
     
     virtual Teuchos::RCP<const Epetra_Map>
     getMap() const = 0;
     
     virtual Teuchos::RCP<Epetra_Vector>
-    createSystemVector( const Teuchos::ParameterList & p ) = 0;
+    createSystemVector( const Ginla::State & state ) const = 0;
     
 //     Teuchos::RCP<ComplexVector>
 //     extractPsi( const Epetra_Vector & x ) const;
 
     virtual Teuchos::RCP<Ginla::State>
-    createState(  const Epetra_Vector & x ) const = 0;;
+    createState( const Epetra_Vector & x ) const = 0;;
 
   protected:
   private:

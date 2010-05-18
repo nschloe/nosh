@@ -78,7 +78,7 @@ Default ( const Teuchos::RCP<Ginla::Operator::Virtual> & glOperator,
       (*p_init_)[i]= 0.0;
   
   // make sure the maps are compatible
-  TEUCHOS_ASSERT( state->getValuesConst()->getMap()->isSameAs( *komplex->getComplexMap()) );
+  TEUCHOS_ASSERT( state->getValues()->getMap()->isSameAs( *komplex->getComplexMap()) );
   
   Teuchos::Tuple<std::string,1> t = Teuchos::tuple<std::string>( "H0" );
   p_names_ = Teuchos::rcp( new Teuchos::Array<std::string>( t ) );
@@ -315,6 +315,6 @@ Teuchos::RCP<Epetra_Vector>
 Ginla::ModelEvaluator::Default::
 createX_(  const Ginla::State & state ) const
 {
-    return komplex_->complex2real ( state.getValuesConst() );
+    return komplex_->complex2real ( state.getValues() );
 }
 // =============================================================================

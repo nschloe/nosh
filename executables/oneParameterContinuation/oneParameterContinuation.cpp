@@ -290,10 +290,8 @@ main ( int argc, char *argv[] )
           *(Ginla::Helpers::teuchosParameterList2locaParameterVector( glParameters ));
 
     // get initial guess
-    Teuchos::ParameterList p;
-    p.set( "psi", psi );
-    p.set( "chi", 0.0 );
-    NOX::Epetra::Vector initialGuess ( glsystem->createSystemVector( p ),
+    Ginla::State state( psi, grid );
+    NOX::Epetra::Vector initialGuess ( glsystem->createSystemVector( state ),
                                        NOX::Epetra::Vector::CreateView
                                      );
 

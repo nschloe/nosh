@@ -159,7 +159,7 @@ BOOST_AUTO_TEST_CASE( zero_step_piro_test )
                                                                       problemParameters.get<double> ( "scaling" ) ) );
 
     Teuchos::RCP<Ginla::Komplex> komplex =
-        Teuchos::rcp( new Ginla::Komplex( eComm, initState->getValuesConst()->getMap() ) );
+        Teuchos::rcp( new Ginla::Komplex( eComm, initState->getValues()->getMap() ) );
         
     // setup the data output
     Teuchos::RCP<Ginla::IO::StateWriter> stateWriter =
@@ -172,8 +172,8 @@ BOOST_AUTO_TEST_CASE( zero_step_piro_test )
     Teuchos::RCP<Ginla::Operator::Virtual> glOperator =
         Teuchos::rcp ( new Ginla::Operator::BCCentral ( grid,
                                                         A,
-                                                        initState->getValuesConst()->getMap(),
-                                                        initState->getValuesConst()->getMap() ) );
+                                                        initState->getValues()->getMap(),
+                                                        initState->getValues()->getMap() ) );
 
     // Create the interface between NOX and the application
     // This object is derived from NOX::Epetra::Interface

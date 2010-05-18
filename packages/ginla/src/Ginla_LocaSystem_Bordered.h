@@ -111,9 +111,6 @@ public:
     virtual void
     releaseLocaStepper();
 
-    virtual Teuchos::RCP<const Komplex>
-    getKomplex() const;
-
     virtual Teuchos::RCP<const Epetra_Map>
     getMap() const;
 
@@ -121,7 +118,7 @@ public:
     //! This function can be used, for example, to create an initial guess for
     //! the system.
     virtual Teuchos::RCP<Epetra_Vector>
-    createSystemVector( const Teuchos::ParameterList & p );
+    createSystemVector( const Ginla::State & state ) const;
                           
     //! Extracts a complex-valued state from a vector of the linear
     //! equation system.
