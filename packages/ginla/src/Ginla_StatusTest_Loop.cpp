@@ -35,7 +35,7 @@ Loop(  const Teuchos::RCP<const Ginla::LocaSystem::Bordered> & glSystem,
        const Teuchos::RCP<const Recti::Grid::General>        & grid ):
     firstTime_( true ),
     wasAway_( false ),
-    tol_( 1.0e-2 ), // TODO make this depend on the maximum step size
+    tol_( 1.0e-3 ), // TODO make this depend on the maximum step size
     diffNorm_( 0.0 ),
     glSystem_( glSystem ),
     grid_( grid ),
