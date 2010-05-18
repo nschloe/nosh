@@ -19,6 +19,21 @@
 
 #include "Ginla_State.h"
 
+#include "Recti_Grid_General.h"
+
+#include <LOCA_Parameter_Vector.H>
+
+// =============================================================================
+Ginla::State::
+State( const Teuchos::RCP<ComplexMultiVector>         & psi,
+       const Teuchos::RCP<const Recti::Grid::General> & grid ):
+       psi_( psi ),
+       chi_( 0.0 ),
+       grid_( grid )
+{
+    TEUCHOS_ASSERT_EQUALITY( psi->getGlobalLength(),
+                             grid->getNumGridPoints() );
+}
 // =============================================================================
 Ginla::State::
 State( const Teuchos::RCP<ComplexVector>              & psi,
@@ -38,7 +53,7 @@ State( const Teuchos::RCP<const ComplexMap>           & map,
        grid_( grid )
 {
    bool zeroOut = true;
-   psi_ = Teuchos::rcp( new ComplexVector( map, zeroOut ) );
+   psi_ = Teuchos::rcp( new ComplexMultiVector( map, 1, zeroOut ) );
 }
 // =============================================================================
 Ginla::State::
@@ -53,30 +68,21 @@ State( const Teuchos::RCP<const Teuchos::Comm<int> >  & comm,
        = Teuchos::rcp( new ComplexMap( n, indexBase, comm ) );
    
    bool zeroOut = true;
-   psi_ = Teuchos::rcp( new ComplexVector( map, zeroOut ) );
+   psi_ = Teuchos::rcp( new ComplexMultiVector( map, 1, zeroOut ) );
 }
 // =============================================================================
 Teuchos::RCP<const ComplexVector>
 Ginla::State::
-getValues () const
+getPsi () const
 {
-    return psi_; 
+    return psi_->getVector(0); 
 }
 // =============================================================================
 Teuchos::RCP<ComplexVector>
 Ginla::State::
-getValuesNonConst ()
+getPsiNonConst ()
 {
-    return psi_; 
-}
-// =============================================================================
-void
-Ginla::State::
-setValues ( Teuchos::RCP<ComplexVector> & psi )
-{
-    TEUCHOS_ASSERT_EQUALITY( psi->getGlobalLength(),
-                             grid_->getNumGridPoints() );
-    psi_ = psi; 
+    return psi_->getVectorNonConst(0); 
 }
 // =============================================================================
 const Teuchos::RCP<const Recti::Grid::General>
@@ -207,7 +213,7 @@ update( const double alpha,
         const Ginla::State b,
         const double beta  )
 {
-  psi_->update( alpha, *(b.getValues()), beta );
+  psi_->update( alpha, *(b.getPsi()), beta );
   chi_ = alpha*chi_ + beta * b.getChi();
 }
 // =============================================================================

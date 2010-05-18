@@ -26,7 +26,7 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
                  const std::string                             & fileName,
                  Teuchos::ParameterList                        & problemParameters,
                  Teuchos::RCP<Ginla::LocaSystem::Virtual>      & glSystem,
-                 Teuchos::RCP<ComplexVector>                   & initialPsi,
+                 Teuchos::RCP<Ginla::State>                    & initialState,
                  Teuchos::RCP<Recti::Grid::Uniform>            & grid
                );
 
@@ -39,7 +39,7 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
                  const Teuchos::ParameterList               & domainParameters,
                  Teuchos::ParameterList                     & problemParameters,
                  Teuchos::RCP<Ginla::LocaSystem::Virtual>   & glSystem,
-                 Teuchos::RCP<ComplexVector>                & initialPsi,
+                 Teuchos::RCP<Ginla::State>                 & initialState,
                  Teuchos::RCP<Recti::Grid::Uniform>         & grid
                );
 

@@ -116,7 +116,7 @@ int main ( int argc, char *argv[] )
         Teuchos::ParameterList                    problemParameters;
         Teuchos::RCP<Ginla::LocaSystem::Virtual>  glSystem = Teuchos::null;
         Teuchos::RCP<Recti::Grid::Uniform>        grid = Teuchos::null;
-        Teuchos::RCP<ComplexVector> initialPsi = Teuchos::null;
+        Teuchos::RCP<Ginla::State> initialState = Teuchos::null;
         if ( !inputGuessFile.empty() )
         {
             glNoxHelpers::createGlSystem ( Comm,
@@ -124,7 +124,7 @@ int main ( int argc, char *argv[] )
                                            inputGuessFile.string(),
                                            problemParameters,
                                            glSystem,
-                                           initialPsi,
+                                           initialState,
                                            grid );
         }
         else
@@ -144,7 +144,7 @@ int main ( int argc, char *argv[] )
                                            domainParameters,
                                            problemParameters,
                                            glSystem,
-                                           initialPsi,
+                                           initialState,
                                            grid );
         }
     
@@ -169,9 +169,6 @@ int main ( int argc, char *argv[] )
                         .set ( "User Defined Pre/Post Operator", ppo );
         }
 
-        // create NOX group
-        Teuchos::RCP<Ginla::State> initialState
-            = Teuchos::rcp( new Ginla::State( initialPsi, grid ) );
         Teuchos::RCP<NOX::Epetra::Group> grpPtr =
             glNoxHelpers::createSolverGroup ( glSystem,
                                               nlParamsPtr,

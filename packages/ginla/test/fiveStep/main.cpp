@@ -112,10 +112,6 @@ BOOST_AUTO_TEST_CASE( zero_step_loca_test )
     std::string contDataFileName =
         outputList.get<string> ( "Continuation data file name" );
     // ------------------------------------------------------------------------
-    Teuchos::ParameterList glParameters;
-    Teuchos::RCP<ComplexVector> psi;
-    Teuchos::RCP<Recti::Grid::Uniform> grid;
-
     Teuchos::ParameterList initialGuessList;
     initialGuessList = paramList->sublist ( "Initial guess", true );
 
@@ -126,10 +122,11 @@ BOOST_AUTO_TEST_CASE( zero_step_loca_test )
     BOOST_REQUIRE( !inputGuessFile.empty() );
     
     // For technical reasons, the reader can only accept ComplexMultiVectors.
-    Teuchos::RCP<ComplexMultiVector> psiM;
-    Recti::Grid::Reader::read ( Comm, inputGuessFile.string(), psiM, grid, glParameters );
-    TEUCHOS_ASSERT_EQUALITY ( psiM->getNumVectors(), 1 );
-    psi = psiM->getVectorNonConst ( 0 );
+    Teuchos::RCP<Ginla::State> state;
+    Teuchos::RCP<Recti::Grid::Uniform> grid;
+    Teuchos::ParameterList glParameters;
+    
+    Recti::Grid::Reader::read ( Comm, inputGuessFile.string(), state, grid, glParameters );
 
     // possibly overwrite the parameters
     Teuchos::ParameterList & overwriteParamsList = paramList->sublist ( "Overwrite parameter list", true ); 
@@ -149,8 +146,9 @@ BOOST_AUTO_TEST_CASE( zero_step_loca_test )
                                                                       glParameters.get<double> ( "scaling" ) ) );
 
     // create the operator
+    Teuchos::RCP<const ComplexMap> map = state->getPsi()->getMap();
     Teuchos::RCP<Ginla::Operator::Virtual> glOperator =
-        Teuchos::rcp ( new Ginla::Operator::BCCentral ( grid, A, psi->getMap(), psi->getMap() ) );
+        Teuchos::rcp ( new Ginla::Operator::BCCentral ( grid, A, map, map ) );
 
     std::string fn = outputDirectory.string() + "/" + contDataFileName;
     Teuchos::RCP<Ginla::IO::StatsWriter> statsWriter = 
@@ -168,7 +166,7 @@ BOOST_AUTO_TEST_CASE( zero_step_loca_test )
     Teuchos::RCP<Ginla::LocaSystem::Bordered> glsystem =
                Teuchos::rcp ( new Ginla::LocaSystem::Bordered ( glOperator,
                                                                 eComm,
-                                                                psi->getMap(),
+                                                                map,
                                                                 statsWriter,
                                                                 stateWriter ) );
     
@@ -260,8 +258,7 @@ BOOST_AUTO_TEST_CASE( zero_step_loca_test )
           *(Ginla::Helpers::teuchosParameterList2locaParameterVector( glParameters ));
 
     // get initial guess
-    Ginla::State state( psi, grid );
-    NOX::Epetra::Vector initialGuess ( glsystem->createSystemVector( state ),
+    NOX::Epetra::Vector initialGuess ( glsystem->createSystemVector( *state ),
                                        NOX::Epetra::Vector::CreateView
                                      );
 
@@ -318,22 +315,18 @@ BOOST_AUTO_TEST_CASE( zero_step_loca_test )
     // ------------------------------------------------------------------------
     // read expected solution from file
     // For technical reasons, the reader can only accept ComplexMultiVectors.
-    Teuchos::RCP<ComplexMultiVector> psiMSol;
-    Recti::Grid::Reader::read ( Comm, expSolFileName, psiMSol, grid, glParameters );
-    TEUCHOS_ASSERT_EQUALITY ( psiM->getNumVectors(), 1 );
-    
-    Teuchos::RCP<ComplexVector> psiRefSol = psiM->getVectorNonConst ( 0 );
+    Teuchos::RCP<Ginla::State> solutionState;
+    Recti::Grid::Reader::read ( Comm, expSolFileName, solutionState, grid, glParameters );
     // ------------------------------------------------------------------------
     // compare the results:
     // get final solution
-    Teuchos::RCP<ComplexVector> diff =  Teuchos::rcp( new ComplexVector( *psi ) );
+    Teuchos::RCP<Ginla::State> diff = state;
 
-    diff->update( -1.0, *psiRefSol, 1.0 );
+    diff->update( -1.0, *solutionState, 1.0 );
     
-    Teuchos::Tuple<double,1> nrm;
-    diff->normInf( nrm );
+    double nrm = diff->normalizedScaledL2Norm();
     
-    BOOST_CHECK_SMALL( nrm[0], 1.0e-12 );
+    BOOST_CHECK_SMALL( nrm, 1.0e-12 );
     // ------------------------------------------------------------------------
     // clean up
     LOCA::destroyGlobalData ( globalData );

@@ -48,7 +48,7 @@ Teuchos::RCP<Epetra_Vector>
 Ginla::LocaSystem::Default::
 createX(  const Ginla::State & state )
 {
-    return komplex_->complex2real ( state.getValues() );
+    return komplex_->complex2real ( state.getPsi() );
 }
 // =============================================================================
 bool
@@ -76,11 +76,11 @@ computeF ( const Epetra_Vector & x,
     // add perturbation
     if ( !perturbation_.is_null() )
     {
-        Teuchos::ArrayRCP<double_complex> resView = res->getValuesNonConst()->get1dViewNonConst();
+        Teuchos::ArrayRCP<double_complex> resView = res->getPsiNonConst()->get1dViewNonConst();
         // loop over the nodes
-        for ( unsigned int k=0; k<state->getValues()->getLocalLength(); k++ )
+        for ( unsigned int k=0; k<state->getPsi()->getLocalLength(); k++ )
         {
-            int globalIndex = state->getValues()->getMap()->getGlobalElement ( k );
+            int globalIndex = state->getPsi()->getMap()->getGlobalElement ( k );
             resView[k] += perturbation_->computePerturbation ( globalIndex );
         }
     }
@@ -415,7 +415,7 @@ Ginla::LocaSystem::Default::
 createState( const Epetra_Vector & x
            ) const
 {
-    const Teuchos::RCP<ComplexVector> psi = komplex_->real2complex ( x );
+    Teuchos::RCP<ComplexVector> psi = komplex_->real2complex ( x );
     return Teuchos::rcp( new Ginla::State( psi, glOperator_->getGrid() ) );
 }
 // =============================================================================
@@ -423,6 +423,6 @@ Teuchos::RCP<Epetra_Vector>
 Ginla::LocaSystem::Default::
 createSystemVector( const Ginla::State & state ) const
 {
-    return komplex_->complex2real( state.getValues() );
+    return komplex_->complex2real( state.getPsi() );
 }
 // =============================================================================

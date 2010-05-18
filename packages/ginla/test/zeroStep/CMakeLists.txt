@@ -27,12 +27,12 @@ ADD_TEST( zeroStepLoca
           "--expected-solution-file=${CMAKE_CURRENT_SOURCE_DIR}/data/expected-solution.vti"
         )
 
-ADD_TEST( zeroStepLocaMultiproc
-          "/usr/bin/env" "mpirun" "-n" "2"
-          "./${MY_EXECUTABLE}"
-          "--xml-input-file=${CMAKE_CURRENT_SOURCE_DIR}/data/conf.xml"
-          "--expected-solution-file=${CMAKE_CURRENT_SOURCE_DIR}/data/expected-solution.vti"
-        )
+# ADD_TEST( zeroStepLocaMultiproc
+#           "/usr/bin/env" "mpirun" "-n" "2"
+#           "./${MY_EXECUTABLE}"
+#           "--xml-input-file=${CMAKE_CURRENT_SOURCE_DIR}/data/conf.xml"
+#           "--expected-solution-file=${CMAKE_CURRENT_SOURCE_DIR}/data/expected-solution.vti"
+#         )
 
 ADD_EXECUTABLE ( ${MY_EXECUTABLE}
                  main.cpp )

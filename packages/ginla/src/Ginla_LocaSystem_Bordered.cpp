@@ -102,7 +102,7 @@ computeF ( const Epetra_Vector & x,
 
     // add -i\eta\psi
     Teuchos::RCP<Ginla::State> state = glSystem_.createState( tmp );
-    state->getValuesNonConst()->scale( -IM*eta );
+    state->getPsiNonConst()->scale( -IM*eta );
     TEUCHOS_ASSERT_EQUALITY( 0, tmp.Update( 1.0, *glSystem_.createSystemVector( *state ), 1.0 ) );
     
     // copy over and add phase condition
@@ -215,14 +215,14 @@ createJacobian ( const Epetra_Vector & x )
     Epetra_Vector newDiag ( tmp );
     regularJacobian->ExtractDiagonalCopy( newDiag );
     Teuchos::RCP<Ginla::State> diag = glSystem_.createState( newDiag );
-    diag->getValuesNonConst()->putScalar( -IM*eta );
+    diag->getPsiNonConst()->putScalar( -IM*eta );
     newDiag.Update( 1.0, *glSystem_.createSystemVector(*diag), 1.0 );
     regularJacobian->ReplaceDiagonalValues( newDiag );
     
     // TODO: Conversion to real-valued vector in one go?
     // right bordering: (phi:=) -i*psi
     Ginla::State phi = *state;
-    phi.getValuesNonConst()->scale ( -IM );
+    phi.getPsiNonConst()->scale ( -IM );
     Teuchos::RCP<Epetra_Vector> rightBorder = glSystem_.createSystemVector( phi );
 
     // Get the lower bordering
@@ -237,7 +237,7 @@ createJacobian ( const Epetra_Vector & x )
     //
     // in the complex state notation.
     Ginla::State lb_state = *state;
-    lb_state.getValuesNonConst()->scale( IM );
+    lb_state.getPsiNonConst()->scale( IM );
     Teuchos::RCP<Epetra_Vector> lowerBorder = glSystem_.createSystemVector( lb_state );
 
     // corner element

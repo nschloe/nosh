@@ -112,10 +112,6 @@ BOOST_AUTO_TEST_CASE( zero_step_loca_test )
     std::string contDataFileName =
         outputList.get<string> ( "Continuation data file name" );
     // ------------------------------------------------------------------------
-    Teuchos::ParameterList glParameters;
-    Teuchos::RCP<ComplexVector> psi;
-    Teuchos::RCP<Recti::Grid::Uniform> grid;
-
     Teuchos::ParameterList initialGuessList;
     initialGuessList = paramList->sublist ( "Initial guess", true );
 
@@ -125,11 +121,18 @@ BOOST_AUTO_TEST_CASE( zero_step_loca_test )
 
     BOOST_REQUIRE( !inputGuessFile.empty() );
     
+    std::cout << "\n\n >>> alpha\n\n" << std::endl;
+    
     // For technical reasons, the reader can only accept ComplexMultiVectors.
-    Teuchos::RCP<ComplexMultiVector> psiM;
-    Recti::Grid::Reader::read ( Comm, inputGuessFile.string(), psiM, grid, glParameters );
-    TEUCHOS_ASSERT_EQUALITY ( psiM->getNumVectors(), 1 );
-    psi = psiM->getVectorNonConst ( 0 );
+    Teuchos::RCP<Ginla::State>         state;
+    Teuchos::RCP<Recti::Grid::Uniform> grid;
+    Teuchos::ParameterList             glParameters;
+    
+    std::cout << "\n\n >>> beta\n\n" << std::endl;
+    
+    Recti::Grid::Reader::read ( Comm, inputGuessFile.string(), state, grid, glParameters );
+    
+    std::cout << "\n\n >>> gamma\n\n" << std::endl;
 
     // possibly overwrite the parameters
     Teuchos::ParameterList & overwriteParamsList = paramList->sublist ( "Overwrite parameter list", true ); 
@@ -143,14 +146,17 @@ BOOST_AUTO_TEST_CASE( zero_step_loca_test )
         grid->updateScaling( glParameters.get<double>("scaling") );
     }
     // ------------------------------------------------------------------------
+    
+    std::cout << "\n\n >>> rho\n\n" << " " << glParameters.get<double> ( "H0" ) << std::endl;
 
     Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> A =
         Teuchos::rcp ( new Ginla::MagneticVectorPotential::Centered ( glParameters.get<double> ( "H0" ),
                                                                       glParameters.get<double> ( "scaling" ) ) );
 
     // create the operator
+    Teuchos::RCP<const ComplexMap> map = state->getPsi()->getMap();
     Teuchos::RCP<Ginla::Operator::Virtual> glOperator =
-        Teuchos::rcp ( new Ginla::Operator::BCCentral ( grid, A, psi->getMap(), psi->getMap() ) );
+        Teuchos::rcp ( new Ginla::Operator::BCCentral ( grid, A, map, map ) );
 
     std::string fn = outputDirectory.string() + "/" + contDataFileName;
     Teuchos::RCP<Ginla::IO::StatsWriter> statsWriter = 
@@ -165,10 +171,12 @@ BOOST_AUTO_TEST_CASE( zero_step_loca_test )
                                                   outputFormat,
                                                   maxLocaSteps ) );
     
+    std::cout << "\n\n >>> omega\n\n" << std::endl;
+                                                  
     Teuchos::RCP<Ginla::LocaSystem::Bordered> glsystem =
                Teuchos::rcp ( new Ginla::LocaSystem::Bordered ( glOperator,
                                                                 eComm,
-                                                                psi->getMap(),
+                                                                map,
                                                                 statsWriter,
                                                                 stateWriter ) );
     
@@ -260,8 +268,7 @@ BOOST_AUTO_TEST_CASE( zero_step_loca_test )
           *(Ginla::Helpers::teuchosParameterList2locaParameterVector( glParameters ));
 
     // get initial guess
-    Ginla::State state( psi, grid );
-    NOX::Epetra::Vector initialGuess ( glsystem->createSystemVector( state ),
+    NOX::Epetra::Vector initialGuess ( glsystem->createSystemVector( *state ),
                                        NOX::Epetra::Vector::CreateView
                                      );
 
@@ -310,30 +317,31 @@ BOOST_AUTO_TEST_CASE( zero_step_loca_test )
     status = stepper->run();
     // ------------------------------------------------------------------------
     // retrieve solution
-//     const NOX::Epetra::Group & finalGroup =
-//         dynamic_cast<const NOX::Epetra::Group&> ( stepper->getSolutionGroup() );
-// 
-//     const Epetra_Vector & finalSolution =
-//         ( dynamic_cast<const NOX::Epetra::Vector&> ( finalGroup.getX() ) ).getEpetraVector();
+    const NOX::Epetra::Group & finalGroup =
+        Teuchos::dyn_cast<const NOX::Epetra::Group> ( *stepper->getSolutionGroup() );
+
+    const Epetra_Vector & finalSolution =
+        ( Teuchos::dyn_cast<const NOX::Epetra::Vector> ( finalGroup.getX() ) ).getEpetraVector();
+    Teuchos::RCP<Ginla::State> solutionState = glsystem->createState( finalSolution );
+    solutionState->save( "solution.vti" );
     // ------------------------------------------------------------------------
     // read expected solution from file
     // For technical reasons, the reader can only accept ComplexMultiVectors.
-    Teuchos::RCP<ComplexMultiVector> psiMSol;
-    Recti::Grid::Reader::read ( Comm, expSolFileName, psiMSol, grid, glParameters );
-    TEUCHOS_ASSERT_EQUALITY ( psiM->getNumVectors(), 1 );
-    
-    Teuchos::RCP<ComplexVector> psiRefSol = psiM->getVectorNonConst ( 0 );
+    Teuchos::RCP<Ginla::State> referenceState;
+    Recti::Grid::Reader::read ( Comm, expSolFileName, referenceState, grid, glParameters );
+    referenceState->save( "reference.vti" );
     // ------------------------------------------------------------------------
     // compare the results:
     // get final solution
-    Teuchos::RCP<ComplexVector> diff =  Teuchos::rcp( new ComplexVector( *psi ) );
+    state->save( "state.vti" );
 
-    diff->update( -1.0, *psiRefSol, 1.0 );
+    solutionState->update( -1.0, *referenceState, 1.0 );
     
-    Teuchos::Tuple<double,1> nrm;
-    diff->normInf( nrm );
+    solutionState->save( "error.vti" );
     
-    BOOST_CHECK_SMALL( nrm[0], 1.0e-12 );
+    double nrm = solutionState->normalizedScaledL2Norm();
+    
+    BOOST_CHECK_SMALL( nrm, 1.0e-12 );
     // ------------------------------------------------------------------------
     // clean up
     LOCA::destroyGlobalData ( globalData );

@@ -64,7 +64,7 @@ Default ( const Teuchos::RCP<Ginla::Operator::Virtual> & glOperator,
         ) :
         glOperator_ ( glOperator ),
         komplex_ ( komplex ),
-        x_( this->createX_( *state ) ),
+        x_( this->createSystemVector_( *state ) ),
         firstTime_ ( true ),
         numParameters_( 1 )
 {
@@ -78,7 +78,7 @@ Default ( const Teuchos::RCP<Ginla::Operator::Virtual> & glOperator,
       (*p_init_)[i]= 0.0;
   
   // make sure the maps are compatible
-  TEUCHOS_ASSERT( state->getValues()->getMap()->isSameAs( *komplex->getComplexMap()) );
+  TEUCHOS_ASSERT( state->getPsi()->getMap()->isSameAs( *komplex->getComplexMap()) );
   
   Teuchos::Tuple<std::string,1> t = Teuchos::tuple<std::string>( "H0" );
   p_names_ = Teuchos::rcp( new Teuchos::Array<std::string>( t ) );
@@ -233,7 +233,7 @@ computeF_ ( const Epetra_Vector & x,
 
     // TODO Avoid this explicit copy?
     // transform back to fully real equation
-    FVec = *(this->createX_( *res ));
+    FVec = *(this->createSystemVector_( *res ));
 
     return;
 }
@@ -252,7 +252,7 @@ computeDFDh0_ ( const Epetra_Vector & x,
 
     // TODO Avoid this explicit copy?
     // transform back to fully real equation
-    FVec = *(this->createX_( *res ));
+    FVec = *(this->createSystemVector_( *res ));
 
     return;
 }
@@ -313,8 +313,8 @@ createState( const Epetra_Vector & x ) const
 // =============================================================================
 Teuchos::RCP<Epetra_Vector>
 Ginla::ModelEvaluator::Default::
-createX_(  const Ginla::State & state ) const
+createSystemVector_(  const Ginla::State & state ) const
 {
-    return komplex_->complex2real ( state.getValues() );
+    return komplex_->complex2real ( state.getPsi() );
 }
 // =============================================================================

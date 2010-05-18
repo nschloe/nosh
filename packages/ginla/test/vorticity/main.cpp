@@ -88,8 +88,7 @@ BOOST_AUTO_TEST_CASE( vorticity_test )
     // ------------------------------------------------------------------------
     // iterate through the list of example solutions, calculate their energies,
     // and compare with the given value
-    Teuchos::RCP<ComplexMultiVector> psiM;
-    Teuchos::RCP<ComplexVector> psi;
+    Teuchos::RCP<Ginla::State> state;
     Teuchos::RCP<Recti::Grid::Uniform> grid;
     Teuchos::ParameterList glParameters;
     for ( Teuchos::ParameterList::ConstIterator k=paramList->begin(); k!=paramList->end(); ++k )
@@ -103,13 +102,8 @@ BOOST_AUTO_TEST_CASE( vorticity_test )
         int vorticityRef = stateSublist.get<int>( "Vorticity" );
         
         // read the state
-        Recti::Grid::Reader::read ( Comm, filePath.string(), psiM, grid, glParameters );
-        TEUCHOS_ASSERT_EQUALITY ( psiM->getNumVectors(), 1 );
-        psi = psiM->getVectorNonConst ( 0 );
-        
-        Teuchos::RCP<Ginla::State> state = 
-            Teuchos::rcp( new Ginla::State( psiM->getVectorNonConst(0),
-                                            grid ) );       
+        Recti::Grid::Reader::read ( Comm, filePath.string(), state, grid, glParameters );
+
         double vorticity = state->getVorticity();
 
         BOOST_CHECK_EQUAL( vorticity, vorticityRef );

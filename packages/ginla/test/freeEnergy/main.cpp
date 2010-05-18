@@ -89,7 +89,6 @@ BOOST_AUTO_TEST_CASE( free_energy_test )
     // ------------------------------------------------------------------------
     // iterate through the list of example solutions, calculate their energies,
     // and compare with the given value
-    Teuchos::RCP<ComplexMultiVector> psiM;
     Teuchos::RCP<Ginla::State> state;
     Teuchos::RCP<Recti::Grid::Uniform> grid;
     Teuchos::ParameterList glParameters;
@@ -104,10 +103,7 @@ BOOST_AUTO_TEST_CASE( free_energy_test )
         double energyRef = stateSublist.get<double>( "Energy" );
         
         // read the state
-        Recti::Grid::Reader::read ( Comm, filePath.string(), psiM, grid, glParameters );
-        TEUCHOS_ASSERT_EQUALITY ( psiM->getNumVectors(), 1 );
-        state = Teuchos::rcp( new Ginla::State( psiM->getVectorNonConst(0),
-                                                grid ) );
+        Recti::Grid::Reader::read ( Comm, filePath.string(), state, grid, glParameters );
         double energy = state->freeEnergy();
         
         // TODO replace by  BOOST_CHECK_CLOSE( energy, energyRef, 1.0e-15 );

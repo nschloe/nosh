@@ -128,19 +128,15 @@ BOOST_AUTO_TEST_CASE( five_step_piro_test )
         outputDirectory = xmlPath / outputDirectory;
     // =========================================================================
 
+    Teuchos::RCP<Ginla::State>         initState;
+    Teuchos::RCP<Recti::Grid::Uniform> grid;
     Teuchos::ParameterList             problemParameters;
-    Teuchos::RCP<ComplexMultiVector>   psiM;
-    Teuchos::RCP<Recti::Grid::Uniform> grid = Teuchos::null;
     
     Recti::Grid::Reader::read ( Comm,
                                 inputGuessFile.string(),
-                                psiM,
+                                initState,
                                 grid,
                                 problemParameters );
-    TEUCHOS_ASSERT_EQUALITY ( psiM->getNumVectors(), 1 );
-    Teuchos::RCP<Ginla::State> initState
-        = Teuchos::rcp( new Ginla::State( psiM->getVectorNonConst ( 0 ),
-                                          grid ) );
 
     // possibly overwrite the parameters
     Teuchos::ParameterList & overwriteParamsList = paramList->sublist ( "Overwrite parameter list", true ); 
@@ -159,7 +155,7 @@ BOOST_AUTO_TEST_CASE( five_step_piro_test )
                                                                       problemParameters.get<double> ( "scaling" ) ) );
 
     Teuchos::RCP<Ginla::Komplex> komplex =
-        Teuchos::rcp( new Ginla::Komplex( eComm, initState->getValues()->getMap() ) );
+        Teuchos::rcp( new Ginla::Komplex( eComm, initState->getPsi()->getMap() ) );
         
     // setup the data output
     Teuchos::RCP<Ginla::IO::StateWriter> stateWriter =
@@ -172,8 +168,8 @@ BOOST_AUTO_TEST_CASE( five_step_piro_test )
     Teuchos::RCP<Ginla::Operator::Virtual> glOperator =
         Teuchos::rcp ( new Ginla::Operator::BCCentral ( grid,
                                                         A,
-                                                        initState->getValues()->getMap(),
-                                                        initState->getValues()->getMap() ) );
+                                                        initState->getPsi()->getMap(),
+                                                        initState->getPsi()->getMap() ) );
 
     // Create the interface between NOX and the application
     // This object is derived from NOX::Epetra::Interface
@@ -226,13 +222,8 @@ BOOST_AUTO_TEST_CASE( five_step_piro_test )
     // ------------------------------------------------------------------------
     // read reference solution from file
     // For technical reasons, the reader can only accept ComplexMultiVectors.
-    Teuchos::RCP<ComplexMultiVector> psiMRef;
-    Recti::Grid::Reader::read ( Comm, expSolFileName, psiMRef, grid, problemParameters );
-    TEUCHOS_ASSERT_EQUALITY ( psiMRef->getNumVectors(), 1 );
-    
-    Teuchos::RCP<Ginla::State> refState
-        = Teuchos::rcp( new Ginla::State( psiMRef->getVectorNonConst ( 0 ),
-                                          grid ) );
+    Teuchos::RCP<Ginla::State> refState;
+    Recti::Grid::Reader::read ( Comm, expSolFileName, refState, grid, problemParameters );
     // ------------------------------------------------------------------------
     // compare the results:
     // get final solution

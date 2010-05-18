@@ -61,7 +61,7 @@ BOOST_AUTO_TEST_CASE( operator_test )
     // create state on the grid
     Teuchos::RCP<Ginla::State> state
         = Teuchos::rcp( new Ginla::State( Comm, grid ) );
-    state->getValuesNonConst()->putScalar( 1.0 );
+    state->getPsiNonConst()->putScalar( 1.0 );
     // ------------------------------------------------------------------------
     // create operator
     double h0 = 1.0;
@@ -73,8 +73,8 @@ BOOST_AUTO_TEST_CASE( operator_test )
     Teuchos::RCP<Ginla::Operator::BCCentral> glOperator
         = Teuchos::rcp( new Ginla::Operator::BCCentral( grid,
                                                         A,
-                                                        state->getValues()->getMap(),
-                                                        state->getValues()->getMap() ) );
+                                                        state->getPsi()->getMap(),
+                                                        state->getPsi()->getMap() ) );
     // ------------------------------------------------------------------------
     // get dF/dh0 at state
     Teuchos::RCP<Ginla::State> dFState = glOperator->getDFDh0( state );

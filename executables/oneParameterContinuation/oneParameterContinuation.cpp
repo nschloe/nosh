@@ -134,14 +134,12 @@ main ( int argc, char *argv[] )
     TEUCHOS_ASSERT( !inputGuessFile.empty() );
     
     // For technical reasons, the reader can only accept ComplexMultiVectors.
-    Teuchos::RCP<ComplexMultiVector> psiM;
+    Teuchos::RCP<Ginla::State> state;
     Recti::Grid::Reader::read ( Comm,
                                 inputGuessFile.string(),
-                                psiM,
+                                state,
                                 grid,
                                 glParameters );
-    TEUCHOS_ASSERT_EQUALITY ( psiM->getNumVectors(), 1 );
-    psi = psiM->getVectorNonConst ( 0 );
 
     // possibly overwrite the parameters
     Teuchos::ParameterList & overwriteParamsList = paramList->sublist ( "Overwrite parameter list", true ); 
@@ -290,8 +288,7 @@ main ( int argc, char *argv[] )
           *(Ginla::Helpers::teuchosParameterList2locaParameterVector( glParameters ));
 
     // get initial guess
-    Ginla::State state( psi, grid );
-    NOX::Epetra::Vector initialGuess ( glsystem->createSystemVector( state ),
+    NOX::Epetra::Vector initialGuess ( glsystem->createSystemVector( *state ),
                                        NOX::Epetra::Vector::CreateView
                                      );
 

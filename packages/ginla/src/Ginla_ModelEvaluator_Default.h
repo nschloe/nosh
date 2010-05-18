@@ -133,7 +133,7 @@ private:
                        Epetra_Operator     & Jac ) const;
     
     Teuchos::RCP<Epetra_Vector>
-    createX_(  const Ginla::State & state ) const;
+    createSystemVector_( const Ginla::State & state ) const;
 
 };
 } // namespace ModelEvaluator

@@ -7,6 +7,8 @@
 
 #include "Recti_Grid_Reader.h"
 
+#include "Ginla_State.h"
+
 #include "VIO_Reader_Factory.h"
 
 // =============================================================================
@@ -14,38 +16,15 @@ void
 Recti::Grid::Reader::
 read( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
       const std::string                             & filePath,
-            Teuchos::RCP<DoubleMultiVector>         & x,
-            Teuchos::RCP<Uniform>                   & grid,
-            Teuchos::ParameterList                  & params
-    )
-{
-  TEST_FOR_EXCEPTION ( true,
-                       std::logic_error,
-                       "Not yet implemented." );
-
-//   Teuchos::RCP<GridUniformSquare> tmpGridUniformSquare = Teuchos::rcp( new GridUniformSquare() );
-//   tmpGridUniformSquare->read( Comm, filePath, x, params );
-//   grid = tmpGridUniformSquare; // slice
-
-//   Teuchos::RCP<VtiReader> reader = Teuchos::rcp( new VtiReader( filePath ) );
-//   reader->read();
-//   
-//   return;
-}
-// =============================================================================
-void
-Recti::Grid::Reader::
-read( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
-      const std::string                             & filePath,
-            Teuchos::RCP<ComplexMultiVector>        & z,
-            Teuchos::RCP<Uniform>                   & grid,
+            Teuchos::RCP<Ginla::State>              & state,
+            Teuchos::RCP<Recti::Grid::Uniform>      & grid,
             Teuchos::ParameterList                  & fieldData
     )
 {
-  
   Teuchos::RCP<VIO::Reader::Abstract> reader = VIO::Reader::Factory::create( filePath );
   
   // read all the values
+  Teuchos::RCP<ComplexMultiVector> z;
   UIntTuple dims;
   DoubleTuple origin;
   DoubleTuple spacing; // see note below
@@ -73,6 +52,8 @@ read( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
   UIntTuple numCells = Teuchos::tuple(  dims[0]-1, dims[1]-1 );
   grid = Teuchos::rcp( new Uniform ( hh, numCells, bbIndex, boundaryIndices,
                                      scaling, origin ) );
+                                     
+  state = Teuchos::rcp( new Ginla::State( z, grid ) );
 
   return;
 }

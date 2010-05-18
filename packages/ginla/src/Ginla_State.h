@@ -21,13 +21,27 @@
 #define GINLA_STATE_H
 
 #include "Ginla_Typedefs.h"
-#include "Recti_Grid_General.h"
+
+// forward declarations
+namespace Recti {
+  namespace Grid {
+    class General;
+  }
+}
+
+namespace LOCA {
+  class ParameterVector;
+}
 
 namespace Ginla {
 
 class State
 {
 public:
+
+  //! Constructor.
+  State( const Teuchos::RCP<ComplexMultiVector>         & psi,
+         const Teuchos::RCP<const Recti::Grid::General> & grid );
   
   //! Constructor.
   State( const Teuchos::RCP<ComplexVector>              & psi,
@@ -43,17 +57,14 @@ public:
   
   //! Const getter.
   Teuchos::RCP<const ComplexVector>
-  getValues () const;
+  getPsi () const;
   
   //! Nonconst getter for the values.
   Teuchos::RCP<ComplexVector>
-  getValuesNonConst ();
+  getPsiNonConst ();
   
   double
   getChi () const;
-  
-  void
-  setValues ( Teuchos::RCP<ComplexVector> & psi );
   
   const Teuchos::RCP<const Recti::Grid::General>
   getGrid () const;
@@ -106,7 +117,7 @@ protected:
 private:
   
   //! Numerical values.
-  Teuchos::RCP<ComplexVector> psi_;
+  Teuchos::RCP<ComplexMultiVector> psi_;
   
 
   double chi_;

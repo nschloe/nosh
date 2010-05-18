@@ -5,10 +5,13 @@
  *      Author: Nico Schl\"omer
  */
 
-#ifndef GRIDREADER_H_
-#define GRIDREADER_H_
+#ifndef RECTI_GRID_READER_H_
+#define RECTI_GRID_READER_H_
 
 #include "Recti_Grid_Uniform.h"
+namespace Ginla {
+  class State;
+};
 
 #include <Tpetra_Vector.hpp>
 #include <LOCA_Parameter_Vector.H>
@@ -22,16 +25,8 @@ namespace Reader
 void
 read ( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
        const std::string                             & filePath,
-       Teuchos::RCP<DoubleMultiVector>               & x,
-       Teuchos::RCP<Uniform>                         & grid,
-       Teuchos::ParameterList                        & params
-     );
-
-void
-read ( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
-       const std::string                             & filePath,
-       Teuchos::RCP<ComplexMultiVector>              & z,
-       Teuchos::RCP<Uniform>                         & grid,
+       Teuchos::RCP<Ginla::State>                    & state,
+       Teuchos::RCP<Recti::Grid::Uniform>            & grid,
        Teuchos::ParameterList                        & params
      );
 };
@@ -39,4 +34,4 @@ read ( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
   } // namespace Grid
 } // namespace Reader
 
-#endif /* GRIDREADER_H_ */
+#endif /* RECTI_GRID_READER_H_ */

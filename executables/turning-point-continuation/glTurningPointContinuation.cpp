@@ -131,7 +131,7 @@ main ( int argc, char *argv[] )
 
         // ---------------------------------------------------------------------------
         Teuchos::ParameterList glParameters;
-        Teuchos::RCP<ComplexVector> psi;
+        Teuchos::RCP<Ginla::State> state;
         Teuchos::RCP<Recti::Grid::Uniform> grid;
 
         Teuchos::ParameterList initialGuessList;
@@ -144,10 +144,7 @@ main ( int argc, char *argv[] )
         if ( !inputGuessFile.empty() )
         {
             // For technical reasons, the reader can only accept ComplexMultiVectors.
-            Teuchos::RCP<ComplexMultiVector> psiM;
-            Recti::Grid::Reader::read ( Comm, inputGuessFile.string(), psiM, grid, glParameters );
-            TEUCHOS_ASSERT_EQUALITY ( psiM->getNumVectors(), 1 );
-            psi = psiM->getVectorNonConst ( 0 );
+            Recti::Grid::Reader::read ( Comm, inputGuessFile.string(), state, grid, glParameters );
 
             if ( initialGuessList.isParameter ( "Nx" ) )
             {
@@ -187,12 +184,12 @@ main ( int argc, char *argv[] )
 
             // set initial guess
             int numComplexUnknowns = grid->getNumGridPoints();
-            Teuchos::RCP<Tpetra::Map<Thyra::Ordinal> > complexMap =
-                Teuchos::rcp ( new Tpetra::Map<Thyra::Ordinal> ( numComplexUnknowns, 0, Comm ) );
+            const Teuchos::RCP<const ComplexMap> complexMap =
+                Teuchos::rcp ( new ComplexMap( numComplexUnknowns, 0, Comm ) );
 
-            psi = Teuchos::rcp ( new ComplexVector ( complexMap ) );
+            state = Teuchos::rcp ( new Ginla::State ( complexMap, grid ) );
             double_complex alpha ( 1.0, 0.0 );
-            psi->putScalar ( alpha );
+            state->getPsiNonConst()->putScalar( alpha );
         }
         // ---------------------------------------------------------------------------
 
@@ -203,7 +200,10 @@ main ( int argc, char *argv[] )
 
         // create the operator
         Teuchos::RCP<Ginla::Operator::Virtual> glOperator =
-            Teuchos::rcp ( new Ginla::Operator::BCCentral ( grid, A, psi->getMap(), psi->getMap() ) );
+            Teuchos::rcp ( new Ginla::Operator::BCCentral ( grid,
+                                                            A,
+                                                            state->getPsi()->getMap(),
+                                                            state->getPsi()->getMap() ) );
 
             
         std::string fn = outputDirectory.string() + "/" + contDataFileName;
@@ -224,7 +224,7 @@ main ( int argc, char *argv[] )
                                                       
         glsystem = Teuchos::rcp ( new Ginla::LocaSystem::Bordered ( glOperator,
                                                                     eComm,
-                                                                    psi->getMap(),
+                                                                    state->getPsi()->getMap(),
                                                                     statsWriter,
                                                                     stateWriter ) );
 
@@ -319,18 +319,17 @@ main ( int argc, char *argv[] )
               *(Ginla::Helpers::teuchosParameterList2locaParameterVector( glParameters ));
 
         // get initial guess
-        Ginla::State state( psi, grid );
-        NOX::Epetra::Vector initialGuess ( glsystem->createSystemVector( state ),
-                                          NOX::Epetra::Vector::CreateView
-                                        );
+        NOX::Epetra::Vector initialGuess ( glsystem->createSystemVector( *state ),
+                                           NOX::Epetra::Vector::CreateView
+                                         );
         Teuchos::RCP<LOCA::Epetra::Group> grp =
             Teuchos::rcp ( new LOCA::Epetra::Group ( globalData,
-                                                    nlPrintParams,
-                                                    iTime,
-                                                    initialGuess,
-                                                    linSys,
-                                                    linSys,
-                                                    locaParams ) );
+                                                     nlPrintParams,
+                                                     iTime,
+                                                     initialGuess,
+                                                     linSys,
+                                                     linSys,
+                                                     locaParams ) );
 
         grp->setParams ( locaParams );
         // ---------------------------------------------------------------------------
@@ -356,14 +355,15 @@ main ( int argc, char *argv[] )
         if ( !initialNullVectorFile.empty() && initialNullVectorFile.root_directory().empty() ) // if initialNullVectorFile is a relative path
             initialNullVectorFile = xmlPath / initialNullVectorFile;
         
-        Teuchos::RCP<ComplexVector> initialNullVector;
-        Teuchos::RCP<ComplexMultiVector> initialNullVectorM;
-        Recti::Grid::Reader::read ( Comm, initialNullVectorFile.string(), initialNullVectorM, grid, glParameters );
-        TEUCHOS_ASSERT_EQUALITY ( initialNullVectorM->getNumVectors(), 1 );
-        initialNullVector = initialNullVectorM->getVectorNonConst ( 0 );
+        Teuchos::RCP<Ginla::State> initialNullVectorState;
+        Recti::Grid::Reader::read ( Comm,
+                                    initialNullVectorFile.string(),
+                                    initialNullVectorState,
+                                    grid,
+                                    glParameters );
+
         // convert the complex vector into a (real-valued) GlSystem-compliant vector
-        Ginla::State initialNullVectorState( initialNullVector, grid );
-        Teuchos::RCP<Epetra_Vector> glsystemInitialNullVector = glsystem->createSystemVector( initialNullVectorState );
+        Teuchos::RCP<Epetra_Vector> glsystemInitialNullVector = glsystem->createSystemVector( *initialNullVectorState );
         // ---------------------------------------------------------------------------
         // add LOCA options which cannot be provided in the XML file
         Teuchos::ParameterList & bifList =
@@ -378,7 +378,6 @@ main ( int argc, char *argv[] )
             Teuchos::rcp (new Epetra_Import(*extendedMap,*regularMap)); 
         glsystemInitialNullVectorExt->Import( *glsystemInitialNullVector,*importFromRegularMap,Insert );
         
-            
         Teuchos::RCP<NOX::Abstract::Vector> lengthNormVec =
             Teuchos::rcp ( new NOX::Epetra::Vector ( *glsystemInitialNullVectorExt ) );
     //     lengthNormVec->init(1.0);
@@ -419,7 +418,6 @@ main ( int argc, char *argv[] )
 #ifdef HAVE_LOCA_ANASAZI
         glEigenSaver->releaseLocaStepper();
 #endif
-
     }
     catch ( std::exception & e )
     {

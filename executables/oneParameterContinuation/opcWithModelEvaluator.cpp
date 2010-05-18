@@ -128,12 +128,12 @@ int main ( int argc, char *argv[] )
     // =========================================================================
 
     Teuchos::ParameterList             problemParameters;
-    Teuchos::RCP<ComplexMultiVector>   psi;
+    Teuchos::RCP<Ginla::State>         state;
     Teuchos::RCP<Recti::Grid::Uniform> grid = Teuchos::null;
 
     Recti::Grid::Reader::read ( Comm,
                                 inputGuessFile.string(),
-                                psi,
+                                state,
                                 grid,
                                 problemParameters );
 
@@ -145,7 +145,7 @@ int main ( int argc, char *argv[] )
                                                                       scaling ) );
 
     Teuchos::RCP<Ginla::Komplex> komplex =
-        Teuchos::rcp( new Ginla::Komplex( eComm, psi->getMap() ) );
+        Teuchos::rcp( new Ginla::Komplex( eComm, state->getPsi()->getMap() ) );
         
     // setup the data output
     Teuchos::RCP<Ginla::IO::StateWriter> stateWriter =
@@ -156,7 +156,10 @@ int main ( int argc, char *argv[] )
 
     // create the operator
     Teuchos::RCP<Ginla::Operator::Virtual> glOperator =
-        Teuchos::rcp ( new Ginla::Operator::BCCentral ( grid, A, psi->getMap(), psi->getMap() ) );
+        Teuchos::rcp ( new Ginla::Operator::BCCentral ( grid,
+                                                        A,
+                                                        state->getPsi()->getMap(),
+                                                        state->getPsi()->getMap() ) );
 
     // create the mode evaluator
     Teuchos::RCP<Ginla::ModelEvaluator::Default> glModel = 
