@@ -27,7 +27,7 @@
 Ginla::State::
 State( const Teuchos::RCP<ComplexMultiVector>         & psi,
        const Teuchos::RCP<const Recti::Grid::General> & grid ):
-       psi_( psi ),
+       psi_( *psi ),
        chi_( 0.0 ),
        grid_( grid )
 {
@@ -38,7 +38,7 @@ State( const Teuchos::RCP<ComplexMultiVector>         & psi,
 Ginla::State::
 State( const Teuchos::RCP<ComplexVector>              & psi,
        const Teuchos::RCP<const Recti::Grid::General> & grid ):
-       psi_( psi ),
+       psi_( *psi ),
        chi_( 0.0 ),
        grid_( grid )
 {
@@ -49,40 +49,35 @@ State( const Teuchos::RCP<ComplexVector>              & psi,
 Ginla::State::
 State( const Teuchos::RCP<const ComplexMap>           & map,
        const Teuchos::RCP<const Recti::Grid::General> & grid ):
+       psi_( ComplexMultiVector( map, 1, true ) ),
        chi_( 0.0 ),
        grid_( grid )
 {
-   bool zeroOut = true;
-   psi_ = Teuchos::rcp( new ComplexMultiVector( map, 1, zeroOut ) );
 }
 // =============================================================================
 Ginla::State::
 State( const Teuchos::RCP<const Teuchos::Comm<int> >  & comm,
        const Teuchos::RCP<const Recti::Grid::General> & grid ):
+       psi_( ComplexMultiVector( Teuchos::rcp( new ComplexMap( grid->getNumGridPoints(), 0, comm ) ),
+                                 1,
+                                 true ) ),
        chi_( 0.0 ),
        grid_( grid )
 {  
-   int n = grid->getNumGridPoints();
-   int indexBase = 0;   
-   const Teuchos::RCP<const ComplexMap> map
-       = Teuchos::rcp( new ComplexMap( n, indexBase, comm ) );
-   
-   bool zeroOut = true;
-   psi_ = Teuchos::rcp( new ComplexMultiVector( map, 1, zeroOut ) );
 }
 // =============================================================================
 Teuchos::RCP<const ComplexVector>
 Ginla::State::
 getPsi () const
 {
-    return psi_->getVector(0); 
+    return psi_.getVector(0); 
 }
 // =============================================================================
 Teuchos::RCP<ComplexVector>
 Ginla::State::
 getPsiNonConst ()
 {
-    return psi_->getVectorNonConst(0); 
+    return psi_.getVectorNonConst(0); 
 }
 // =============================================================================
 const Teuchos::RCP<const Recti::Grid::General>
@@ -105,7 +100,7 @@ save( const std::string            & fileName,
       const Teuchos::ParameterList & p
     ) const
 {
-    grid_->writeWithGrid( *psi_, p, fileName );
+    grid_->writeWithGrid( psi_, p, fileName );
 }
 // =============================================================================
 void
@@ -123,12 +118,12 @@ freeEnergy () const
 {
     double localEnergy = 0.0;
 
-    Teuchos::ArrayRCP<const double_complex> psiView = psi_->get1dView();
+    Teuchos::ArrayRCP<const double_complex> psiView = psi_.get1dView();
 
     // sum up the energy on each processor
-    for ( unsigned int k=0; k<psi_->getLocalLength(); k++ )
+    for ( unsigned int k=0; k<psi_.getLocalLength(); k++ )
     {
-        int kGlobal = psi_->getMap()->getGlobalElement ( k );
+        int kGlobal = psi_.getMap()->getGlobalElement ( k );
         double area = grid_->cellArea ( kGlobal );
         localEnergy -= area * pow ( norm ( psiView[k] ),2 );
     }
@@ -136,7 +131,7 @@ freeEnergy () const
     // reduce and scatter such that energy is available on
     // all cores
     int count = 1; // send *one* integer
-    int numProcs =  psi_->getMap()->getComm()->getSize();
+    int numProcs =  psi_.getMap()->getComm()->getSize();
     Teuchos::Array<double> sendBuff ( count ), recvBuff ( count );
 
     // fill send buffer
@@ -147,7 +142,7 @@ freeEnergy () const
     int numItemsPerProcess = 1;
     std::fill ( recvCounts.begin(), recvCounts.end(), numItemsPerProcess );
 
-    Teuchos::reduceAllAndScatter ( * ( psi_->getMap()->getComm() ),
+    Teuchos::reduceAllAndScatter ( * ( psi_.getMap()->getComm() ),
                                    Teuchos::REDUCE_SUM,
                                    count,
                                    &sendBuff[0],
@@ -168,12 +163,12 @@ normalizedScaledL2Norm () const
 {
     double localSum = 0.0;
 
-    Teuchos::ArrayRCP<const double_complex> psiView = psi_->get1dView();
+    Teuchos::ArrayRCP<const double_complex> psiView = psi_.get1dView();
 
     // sum up on each processor
-    for ( unsigned int k=0; k<psi_->getLocalLength(); k++ )
+    for ( unsigned int k=0; k<psi_.getLocalLength(); k++ )
     {
-        int kGlobal = psi_->getMap()->getGlobalElement ( k );
+        int kGlobal = psi_.getMap()->getGlobalElement ( k );
         double area = grid_->cellArea ( kGlobal );
         localSum += area * norm ( psiView[k] );
     }
@@ -186,13 +181,13 @@ normalizedScaledL2Norm () const
     // fill send buffer
     sendBuff[0] = localSum;
 
-    int numProcs =  psi_->getMap()->getComm()->getSize();
+    int numProcs =  psi_.getMap()->getComm()->getSize();
     Teuchos::Array<int> recvCounts ( numProcs );
 // fill recvCounts with {1,...,1}
     int numItemsPerProcess = 1;
     std::fill ( recvCounts.begin(), recvCounts.end(), numItemsPerProcess );
 
-    Teuchos::reduceAllAndScatter ( * ( psi_->getMap()->getComm() ),
+    Teuchos::reduceAllAndScatter ( * ( psi_.getMap()->getComm() ),
                                    Teuchos::REDUCE_SUM,
                                    count,
                                    &sendBuff[0],
@@ -213,7 +208,7 @@ update( const double alpha,
         const Ginla::State b,
         const double beta  )
 {
-  psi_->update( alpha, *(b.getPsi()), beta );
+  psi_.update( alpha, *(b.getPsi()), beta );
   chi_ = alpha*chi_ + beta * b.getChi();
 }
 // =============================================================================
@@ -227,11 +222,11 @@ int
 Ginla::State::
 getVorticity () const
 {
-    int numProcs = psi_->getMap()->getComm()->getSize();
+    int numProcs = psi_.getMap()->getComm()->getSize();
     if ( numProcs!=1 )
         return -1;
 
-    Teuchos::ArrayRCP<const double_complex> psiView = psi_->get1dView();
+    Teuchos::ArrayRCP<const double_complex> psiView = psi_.get1dView();
 
     Teuchos::Array<int> boundaryIndices = grid_->getBoundaryIndices();
 

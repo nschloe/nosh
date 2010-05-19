@@ -29,7 +29,6 @@
 #include "Ginla_IO_SaveEigenData.h"
 #include "Ginla_Helpers.h"
 
-#include "Ginla_LocaSystem_Default.h"
 #include "Ginla_LocaSystem_Bordered.h"
 
 #include "Recti_Grid_Uniform.h"
@@ -175,8 +174,8 @@ BOOST_AUTO_TEST_CASE( zero_step_loca_test )
     
     std::cout << "\n\n >>> omega\n\n" << std::endl;
                                                   
-    Teuchos::RCP<Ginla::LocaSystem::Default> glsystem =
-               Teuchos::rcp ( new Ginla::LocaSystem::Default ( glOperator,
+    Teuchos::RCP<Ginla::LocaSystem::Bordered> glsystem =
+               Teuchos::rcp ( new Ginla::LocaSystem::Bordered ( glOperator,
                                                                 eComm,
                                                                 map,
                                                                 statsWriter,

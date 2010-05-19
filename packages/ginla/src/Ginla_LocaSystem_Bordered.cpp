@@ -191,9 +191,7 @@ Ginla::LocaSystem::Bordered::getPreconditioner() const
 void
 Ginla::LocaSystem::Bordered::
 createJacobian ( const Epetra_Vector & x )
-{
-//     const Ginla::Komplex & komplex = *glSystem_.getKomplex();
-  
+{ 
     TEST_FOR_EXCEPTION ( !extendedMap_.is_valid_ptr() || extendedMap_.is_null(),
                          std::logic_error,
                          "extendedMap_ not properly initialized." );
@@ -205,8 +203,9 @@ createJacobian ( const Epetra_Vector & x )
     double eta = x[ x.GlobalLength()-1 ];
 
     // TODO don't explicitly construct psi? get1dCopy on the rhs
-    Teuchos::RCP<Ginla::State>              state   = glSystem_.createState( tmp );
-//     Teuchos::ArrayRCP<const double_complex> psiView = psi->get1dView();
+    Teuchos::RCP<Ginla::State> state = glSystem_.createState( tmp );
+    
+    Teuchos::RCP<const ComplexVector> psi = state->getPsi();
 
     // get the unbordered Jacobian
     Teuchos::RCP<Epetra_CrsMatrix> regularJacobian = glSystem_.getJacobian();
@@ -221,9 +220,9 @@ createJacobian ( const Epetra_Vector & x )
     
     // TODO: Conversion to real-valued vector in one go?
     // right bordering: (phi:=) -i*psi
-    Ginla::State phi = *state;
-    phi.getPsiNonConst()->scale ( -IM );
-    Teuchos::RCP<Epetra_Vector> rightBorder = glSystem_.createSystemVector( phi );
+    Ginla::State phiState = *state;
+    phiState.getPsiNonConst()->scale ( -IM );
+    Teuchos::RCP<Epetra_Vector> rightBorder = glSystem_.createSystemVector( phiState );
 
     // Get the lower bordering
     //     

@@ -117,9 +117,8 @@ protected:
 private:
   
   //! Numerical values.
-  Teuchos::RCP<ComplexMultiVector> psi_;
+  ComplexMultiVector psi_;
   
-
   double chi_;
   
   //! The grid on which the state exists.
