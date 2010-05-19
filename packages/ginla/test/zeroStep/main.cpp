@@ -335,8 +335,6 @@ BOOST_AUTO_TEST_CASE( zero_step_loca_test )
     // get final solution
     solutionState->update( -1.0, *referenceState, 1.0 );
     
-    solutionState->save( "error.vti" );
-    
     double nrm = solutionState->normalizedScaledL2Norm();
     
     BOOST_CHECK_SMALL( nrm, 1.0e-8 );

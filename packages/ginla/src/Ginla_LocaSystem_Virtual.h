@@ -140,7 +140,7 @@ public:
 //     extractPsi( const Epetra_Vector & x ) const;
 
     virtual Teuchos::RCP<Ginla::State>
-    createState( const Epetra_Vector & x ) const = 0;;
+    createState( const Epetra_Vector & x ) const = 0;
 
   protected:
   private:

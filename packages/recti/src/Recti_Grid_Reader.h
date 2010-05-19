@@ -11,7 +11,7 @@
 #include "Recti_Grid_Uniform.h"
 namespace Ginla {
   class State;
-};
+}
 
 #include <Tpetra_Vector.hpp>
 #include <LOCA_Parameter_Vector.H>
@@ -29,7 +29,7 @@ read ( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
        Teuchos::RCP<Recti::Grid::Uniform>            & grid,
        Teuchos::ParameterList                        & params
      );
-};
+}
 
   } // namespace Grid
 } // namespace Reader

@@ -54,7 +54,7 @@ namespace Helpers
   unsigned int
   numDigits ( const int i );
 
-};
+}
 
 }
 
