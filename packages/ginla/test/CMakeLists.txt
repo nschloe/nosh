@@ -1,6 +1,6 @@
 ADD_SUBDIRECTORY( zeroStep )
 ADD_SUBDIRECTORY( zeroStepBordered )
-#ADD_SUBDIRECTORY( fiveStep )
+ADD_SUBDIRECTORY( fiveStep )
 ADD_SUBDIRECTORY( zeroStepPiro )
 #ADD_SUBDIRECTORY( fiveStepPiro )
 ADD_SUBDIRECTORY( freeEnergy )

@@ -307,26 +307,25 @@ BOOST_AUTO_TEST_CASE( zero_step_loca_test )
     status = stepper->run();
     // ------------------------------------------------------------------------
     // retrieve solution
-//     const NOX::Epetra::Group & finalGroup =
-//         dynamic_cast<const NOX::Epetra::Group&> ( stepper->getSolutionGroup() );
-// 
-//     const Epetra_Vector & finalSolution =
-//         ( dynamic_cast<const NOX::Epetra::Vector&> ( finalGroup.getX() ) ).getEpetraVector();
+    const NOX::Epetra::Group & finalGroup =
+        Teuchos::dyn_cast<const NOX::Epetra::Group> ( *stepper->getSolutionGroup() );
+
+    const Epetra_Vector & finalSolution =
+        ( Teuchos::dyn_cast<const NOX::Epetra::Vector> ( finalGroup.getX() ) ).getEpetraVector();
+    Teuchos::RCP<Ginla::State> solutionState = glsystem->createState( finalSolution );
     // ------------------------------------------------------------------------
     // read expected solution from file
     // For technical reasons, the reader can only accept ComplexMultiVectors.
-    Teuchos::RCP<Ginla::State> solutionState;
-    Recti::Grid::Reader::read ( Comm, expSolFileName, solutionState, grid, glParameters );
+    Teuchos::RCP<Ginla::State> referenceState;
+    Recti::Grid::Reader::read ( Comm, expSolFileName, referenceState, grid, glParameters );
     // ------------------------------------------------------------------------
     // compare the results:
     // get final solution
-    Teuchos::RCP<Ginla::State> diff = state;
+    solutionState->update( -1.0, *referenceState, 1.0 );
+    
+    double nrm = solutionState->normalizedScaledL2Norm();
 
-    diff->update( -1.0, *solutionState, 1.0 );
-    
-    double nrm = diff->normalizedScaledL2Norm();
-    
-    BOOST_CHECK_SMALL( nrm, 1.0e-12 );
+    BOOST_CHECK_SMALL( nrm, 1.0e-10 );
     // ------------------------------------------------------------------------
     // clean up
     LOCA::destroyGlobalData ( globalData );
