@@ -1,3 +1,4 @@
+ADD_SUBDIRECTORY( evalGL )
 ADD_SUBDIRECTORY( zeroStep )
 ADD_SUBDIRECTORY( zeroStepBordered )
 ADD_SUBDIRECTORY( fiveStep )
