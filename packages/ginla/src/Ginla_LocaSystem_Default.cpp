@@ -45,13 +45,6 @@ Ginla::LocaSystem::Default::~Default()
     return;
 }
 // =============================================================================
-Teuchos::RCP<Epetra_Vector>
-Ginla::LocaSystem::Default::
-createX(  const Ginla::State & state )
-{
-    return komplex_->complex2real ( state.getPsi() );
-}
-// =============================================================================
 bool
 Ginla::LocaSystem::Default::
 computeF ( const Epetra_Vector & x,
@@ -87,7 +80,7 @@ computeF ( const Epetra_Vector & x,
     // ------------------------------------------------------------------------
     // TODO Avoid this explicit copy.
     // transform back to fully real equation
-    FVec = *( this->createX( *res ) );
+    FVec = *( this->createSystemVector( *res ) );
     // ------------------------------------------------------------------------
     
     return true;

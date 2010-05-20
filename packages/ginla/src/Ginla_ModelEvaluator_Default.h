@@ -98,9 +98,6 @@ public:
   evalModel( const InArgs  & inArgs,
              const OutArgs & outArgs ) const;
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -              
-  Teuchos::RCP<const Ginla::Komplex::LinearProblem>
-  getKomplex() const;
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
   Teuchos::RCP<Ginla::State>
   createState( const Epetra_Vector & x ) const;

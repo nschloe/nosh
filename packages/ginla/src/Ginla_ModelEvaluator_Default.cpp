@@ -281,13 +281,6 @@ computeJacobian_ ( const Epetra_Vector & x,
     return;
 }
 // ============================================================================
-Teuchos::RCP<const Ginla::Komplex::LinearProblem>
-Ginla::ModelEvaluator::Default::
-getKomplex() const
-{
-    return komplex_; 
-}
-// ============================================================================
 Teuchos::RCP<Ginla::State>
 Ginla::ModelEvaluator::Default::
 createState( const Epetra_Vector & x ) const

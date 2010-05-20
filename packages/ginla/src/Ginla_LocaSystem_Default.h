@@ -124,9 +124,6 @@ private:
         ONEPARAMETER,
         TURNINGPOINT
     };
-    
-    Teuchos::RCP<Epetra_Vector>
-    createX(  const Ginla::State & state );
 
     int
     numDigits ( const int i );
