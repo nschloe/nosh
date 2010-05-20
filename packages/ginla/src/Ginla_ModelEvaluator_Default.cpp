@@ -26,8 +26,8 @@
 
 // ============================================================================
 Ginla::ModelEvaluator::Default::
-Default ( const Teuchos::RCP<Ginla::Operator::Virtual> & glOperator,
-          const Teuchos::RCP<Ginla::Komplex>           & komplex
+Default ( const Teuchos::RCP<Ginla::Operator::Virtual>      & glOperator,
+          const Teuchos::RCP<Ginla::Komplex::LinearProblem> & komplex
         ) :
         glOperator_ ( glOperator ),
         komplex_ ( komplex ),
@@ -58,9 +58,9 @@ Default ( const Teuchos::RCP<Ginla::Operator::Virtual> & glOperator,
 }
 // ============================================================================
 Ginla::ModelEvaluator::Default::
-Default ( const Teuchos::RCP<Ginla::Operator::Virtual> & glOperator,
-          const Teuchos::RCP<Ginla::Komplex>           & komplex,
-          const Teuchos::RCP<const Ginla::State>       & state
+Default ( const Teuchos::RCP<Ginla::Operator::Virtual>      & glOperator,
+          const Teuchos::RCP<Ginla::Komplex::LinearProblem> & komplex,
+          const Teuchos::RCP<const Ginla::State>            & state
         ) :
         glOperator_ ( glOperator ),
         komplex_ ( komplex ),
@@ -263,29 +263,14 @@ computeJacobian_ ( const Epetra_Vector & x,
                    Epetra_Operator     & Jac
                  ) const
 {
-    Teuchos::Array<int> indicesA, indicesB;
-    Teuchos::Array<double_complex> valuesA, valuesB;
-
+    // In Ginla::Komplex, the values are merely sumIntoLocalValue'd,
+    // so make sure we set this to zero from the start.
     komplex_->zeroOutMatrix();
 
     const Teuchos::RCP<const Ginla::State> state = this->createState( x );
     
-    // loop over the rows and fill the matrix
-    int numMyElements = komplex_->getComplexMap()->getNodeNumElements();
-    for ( int row = 0; row < numMyElements; row++ )
-    {
-        int globalRow = komplex_->getComplexMap()->getGlobalElement ( row );
-        // get the values from the operator
-        glOperator_->getJacobianRow ( state,
-                                      globalRow,
-                                      indicesA, valuesA,
-                                      indicesB, valuesB );
-        // ... and fill them into glKomplex_
-        komplex_->updateRow ( globalRow,
-                              indicesA, valuesA,
-                              indicesB, valuesB,
-                              firstTime_ );
-    }
+    // create a real-valued matrix of the AB-Jacobian
+    komplex_->update( glOperator_->getJacobian( state ), firstTime_ );
 
     if ( firstTime_ )
     {
@@ -296,7 +281,7 @@ computeJacobian_ ( const Epetra_Vector & x,
     return;
 }
 // ============================================================================
-Teuchos::RCP<const Ginla::Komplex>
+Teuchos::RCP<const Ginla::Komplex::LinearProblem>
 Ginla::ModelEvaluator::Default::
 getKomplex() const
 {

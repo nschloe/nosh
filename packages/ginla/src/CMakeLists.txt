@@ -3,15 +3,16 @@ SET ( ginla_SRCS
       Ginla_MagneticVectorPotential_Centered.cpp
       Ginla_State.cpp
       Ginla_Operator_Virtual.cpp
-      Ginla_Operator_BCInner.cpp
-      Ginla_Operator_BCOuter.cpp
+#       Ginla_Operator_BCInner.cpp
+#       Ginla_Operator_BCOuter.cpp
       Ginla_Operator_BCCentral.cpp
       Ginla_IO_SaveNewtonData.cpp
       Ginla_IO_SaveEigenData.cpp
       Ginla_IO_StatsWriter.cpp
       Ginla_IO_StateWriter.cpp
       Ginla_IO_NoxObserver.cpp
-      Ginla_Komplex.cpp
+      Ginla_Komplex_DoubleMatrix.cpp
+      Ginla_Komplex_LinearProblem.cpp
       Ginla_LocaSystem_Virtual.cpp
       Ginla_LocaSystem_Default.cpp
       Ginla_LocaSystem_Bordered.cpp

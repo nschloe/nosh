@@ -23,6 +23,7 @@
 
 #include "Recti_Grid_Uniform.h"
 #include "Ginla_MagneticVectorPotential_Centered.h"
+#include "Ginla_Komplex_DoubleMatrix.h"
 
 // =============================================================================
 Ginla::Operator::BCCentral::
@@ -51,13 +52,31 @@ getF( const Teuchos::RCP<const Ginla::State> & state ) const
                                       
   Teuchos::ArrayRCP<double_complex> FView = F->getPsiNonConst()->get1dViewNonConst();
   
+  Teuchos::ArrayRCP<const double> ALeftView  = ALeft_->get1dView();
+  Teuchos::ArrayRCP<const double> ARightView = ARight_->get1dView();
+  Teuchos::ArrayRCP<const double> ABelowView = ABelow_->get1dView();
+  Teuchos::ArrayRCP<const double> AAboveView = AAbove_->get1dView();
+  
+  Teuchos::ArrayRCP<const double_complex> psiView = state->getPsi()->get1dView();
+  double chi = state->getChi();
+  
+  double h = grid_->getUniformH();
+  
   // loop over the nodes
   unsigned int localLength = F->getPsi()->getLocalLength();
   
-  for ( unsigned int k=0; k<localLength; k++ )
+  for ( unsigned int localIndex=0; localIndex<localLength; localIndex++ )
   {
-      int globalIndex = rangeMap_->getGlobalElement ( k );
-      FView[k] = this->getFEntry_ ( state, globalIndex );
+      int globalIndex = rangeMap_->getGlobalElement ( localIndex );
+      FView[localIndex] = this->getFEntry_ ( psiView,
+                                             chi,
+                                             localIndex,
+                                             globalIndex,
+                                             ALeftView,
+                                             ARightView,
+                                             ABelowView,
+                                             AAboveView,
+                                             h );
   }
   
   return F;
@@ -65,53 +84,37 @@ getF( const Teuchos::RCP<const Ginla::State> & state ) const
 // =============================================================================
 double_complex
 Ginla::Operator::BCCentral::
-getFEntry_ ( const Teuchos::RCP<const Ginla::State> & state,
-             const int k
+getFEntry_ ( Teuchos::ArrayRCP<const double_complex> & psiView,
+             const double                              chi,
+             const int localIndex,
+             const int globalIndex,
+             Teuchos::ArrayRCP<const double> & ALeftView,
+             Teuchos::ArrayRCP<const double> & ARightView,
+             Teuchos::ArrayRCP<const double> & ABelowView,
+             Teuchos::ArrayRCP<const double> & AAboveView,
+             const double                      h
            ) const
 {
     double_complex res;
     double_complex psiK, psiKRight, psiKLeft, psiKAbove, psiKBelow;
-    double ARight, ALeft, AAbove, ABelow;
-
-    double h = grid_->getUniformH();
-
-    Teuchos::RCP<DoubleTuple> xRight = Teuchos::rcp ( new DoubleTuple() );
-    Teuchos::RCP<DoubleTuple> xLeft  = Teuchos::rcp ( new DoubleTuple() );
-    Teuchos::RCP<DoubleTuple> xAbove = Teuchos::rcp ( new DoubleTuple() );
-    Teuchos::RCP<DoubleTuple> xBelow = Teuchos::rcp ( new DoubleTuple() );
       
-    Recti::Grid::Abstract::nodeType nt = grid_->getNodeType ( k );
+    Recti::Grid::Abstract::nodeType nt = grid_->getNodeType ( globalIndex );
     
-    // Get a view of the whole vector.
-    // Remember: This only works with one core.
-    Teuchos::ArrayRCP<const double_complex> psiView = state->getPsi()->get1dView();
-    double chi = state->getChi();
-    
-    psiK = psiView[k];
+    psiK = psiView[ localIndex ];
     
     switch ( nt )
     {
     case Recti::Grid::Abstract::INTERIOR:
         // TODO Gets the local index. ==> Only works on one core.
-        psiKLeft  = psiView[ grid_->getKLeft ( k ) ];
-        psiKRight = psiView[ grid_->getKRight ( k ) ];
-        psiKBelow = psiView[ grid_->getKBelow ( k ) ];
-        psiKAbove = psiView[ grid_->getKAbove ( k ) ];
-
-        xLeft  = grid_->getXLeft ( k );
-        xRight = grid_->getXRight ( k );
-        xBelow = grid_->getXBelow ( k );
-        xAbove = grid_->getXAbove ( k );
-
-        ALeft  = A_->getAx ( *xLeft );
-        ARight = A_->getAx ( *xRight );
-        ABelow = A_->getAy ( *xBelow );
-        AAbove = A_->getAy ( *xAbove );
+        psiKLeft  = psiView[ grid_->getKLeft ( globalIndex ) ];
+        psiKRight = psiView[ grid_->getKRight ( globalIndex ) ];
+        psiKBelow = psiView[ grid_->getKBelow ( globalIndex ) ];
+        psiKAbove = psiView[ grid_->getKAbove ( globalIndex ) ];
 
         // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         res = ( psiK* ( -4.0 )
-                + psiKLeft*  exp ( IM*ALeft *h ) + psiKRight* exp ( -IM*ARight*h )
-                + psiKBelow* exp ( IM*ABelow*h ) + psiKAbove* exp ( -IM*AAbove*h ) ) / ( h*h )
+                + psiKLeft*  exp ( IM*ALeftView[localIndex] *h ) + psiKRight* exp ( -IM*ARightView[localIndex]*h )
+                + psiKBelow* exp ( IM*ABelowView[localIndex]*h ) + psiKAbove* exp ( -IM*AAboveView[localIndex]*h ) ) / ( h*h )
               + psiK * ( 1-norm ( psiK ) );
               
         res *= exp ( IM*chi );
@@ -120,17 +123,12 @@ getFEntry_ ( const Teuchos::RCP<const Ginla::State> & state,
     case Recti::Grid::Abstract::BOUNDARY_BOTTOMLEFTCONVEX:
         // -------------------------------------------------------------------
         // interior equation, then outward derivative substituted
-        psiKRight = psiView[ grid_->getKRight ( k ) ];
-        psiKAbove = psiView[ grid_->getKAbove ( k ) ];
-
-        xRight = grid_->getXRight ( k );
-        xAbove = grid_->getXAbove ( k );
-        ARight = A_->getAx ( *xRight );
-        AAbove = A_->getAy ( *xAbove );
+        psiKRight = psiView[ grid_->getKRight ( globalIndex ) ];
+        psiKAbove = psiView[ grid_->getKAbove ( globalIndex ) ];
 
         res = ( - psiK      * 4.0
-                + psiKRight * 2.0 * exp ( -IM*ARight*h )
-                + psiKAbove * 2.0 * exp ( -IM*AAbove*h ) ) / ( h*h )
+                + psiKRight * 2.0 * exp ( -IM*ARightView[localIndex]*h )
+                + psiKAbove * 2.0 * exp ( -IM*AAboveView[localIndex]*h ) ) / ( h*h )
               + psiK * ( 1-norm ( psiK ) );
         res *= exp ( IM*chi );
         // -------------------------------------------------------------------
@@ -138,17 +136,12 @@ getFEntry_ ( const Teuchos::RCP<const Ginla::State> & state,
 
     case Recti::Grid::Abstract::BOUNDARY_BOTTOMRIGHTCONVEX:
         // -----------------------------------------------------------------------
-        psiKLeft  = psiView[ grid_->getKLeft ( k ) ];
-        psiKAbove = psiView[ grid_->getKAbove ( k ) ];
-
-        xLeft  = grid_->getXLeft ( k );
-        xAbove = grid_->getXAbove ( k );
-        ALeft  = A_->getAx ( *xLeft );
-        AAbove = A_->getAy ( *xAbove );
+        psiKLeft  = psiView[ grid_->getKLeft ( globalIndex ) ];
+        psiKAbove = psiView[ grid_->getKAbove ( globalIndex ) ];
 
         res = ( - psiK      * 4.0
-                + psiKLeft  * 2.0 * exp ( IM*ALeft *h )
-                + psiKAbove * 2.0 * exp ( -IM*AAbove*h ) ) / ( h*h )
+                + psiKLeft  * 2.0 * exp ( IM*ALeftView[localIndex] *h )
+                + psiKAbove * 2.0 * exp ( -IM*AAboveView[localIndex]*h ) ) / ( h*h )
               + psiK * ( 1-norm ( psiK ) );
         res *= exp ( IM*chi );
         // -----------------------------------------------------------------------
@@ -156,17 +149,12 @@ getFEntry_ ( const Teuchos::RCP<const Ginla::State> & state,
 
     case Recti::Grid::Abstract::BOUNDARY_TOPRIGHTCONVEX:
         // -----------------------------------------------------------------------
-        psiKLeft  = psiView[ grid_->getKLeft ( k ) ];
-        psiKBelow = psiView[ grid_->getKBelow ( k ) ];
-
-        xLeft  = grid_->getXLeft ( k );
-        xBelow = grid_->getXBelow ( k );
-        ALeft  = A_->getAx ( *xLeft );
-        ABelow = A_->getAy ( *xBelow );
+        psiKLeft  = psiView[ grid_->getKLeft ( globalIndex ) ];
+        psiKBelow = psiView[ grid_->getKBelow ( globalIndex ) ];
 
         res = ( - psiK      * 4.0
-                + psiKLeft  * 2.0 * exp ( IM*ALeft *h )
-                + psiKBelow * 2.0 * exp ( IM*ABelow*h ) ) / ( h*h )
+                + psiKLeft  * 2.0 * exp ( IM*ALeftView[localIndex] *h )
+                + psiKBelow * 2.0 * exp ( IM*ABelowView[localIndex]*h ) ) / ( h*h )
               + psiK * ( 1-norm ( psiK ) );
         res *= exp ( IM*chi );
         // -----------------------------------------------------------------------
@@ -175,17 +163,12 @@ getFEntry_ ( const Teuchos::RCP<const Ginla::State> & state,
 
     case Recti::Grid::Abstract::BOUNDARY_TOPLEFTCONVEX:
         // -----------------------------------------------------------------------
-        psiKRight = psiView[ grid_->getKRight ( k ) ];
-        psiKBelow = psiView[ grid_->getKBelow ( k ) ];
-
-        xRight = grid_->getXRight ( k );
-        xBelow = grid_->getXBelow ( k );
-        ARight = A_->getAx ( *xRight );
-        ABelow = A_->getAy ( *xBelow );
+        psiKRight = psiView[ grid_->getKRight ( globalIndex ) ];
+        psiKBelow = psiView[ grid_->getKBelow ( globalIndex ) ];
 
         res = ( - psiK      * 4.0
-                + psiKRight * 2.0 * exp ( -IM*ARight*h )
-                + psiKBelow * 2.0 * exp ( IM*ABelow*h ) ) / ( h*h )
+                + psiKRight * 2.0 * exp ( -IM*ARightView[localIndex]*h )
+                + psiKBelow * 2.0 * exp ( IM*ABelowView[localIndex]*h ) ) / ( h*h )
               + psiK * ( 1-norm ( psiK ) );
         res *= exp ( IM*chi );
         // -----------------------------------------------------------------------
@@ -193,21 +176,13 @@ getFEntry_ ( const Teuchos::RCP<const Ginla::State> & state,
 
     case Recti::Grid::Abstract::BOUNDARY_BOTTOM:
         // -------------------------------------------------------------------
-        psiKLeft  = psiView[ grid_->getKLeft ( k ) ];
-        psiKRight = psiView[ grid_->getKRight ( k ) ];
-        psiKAbove = psiView[ grid_->getKAbove ( k ) ];
-
-        xLeft  = grid_->getXLeft ( k );
-        xRight = grid_->getXRight ( k );
-        xAbove = grid_->getXAbove ( k );
-
-        ALeft  = A_->getAx ( *xLeft );
-        ARight = A_->getAx ( *xRight );
-        AAbove = A_->getAy ( *xAbove );
+        psiKLeft  = psiView[ grid_->getKLeft ( globalIndex ) ];
+        psiKRight = psiView[ grid_->getKRight ( globalIndex ) ];
+        psiKAbove = psiView[ grid_->getKAbove ( globalIndex ) ];
 
         res = ( - psiK      * 4.0
-                + psiKLeft  *       exp ( IM*ALeft *h ) + psiKRight       * exp ( -IM*ARight*h )
-                + psiKAbove * 2.0 * exp ( -IM*AAbove*h ) )
+                + psiKLeft  *       exp ( IM*ALeftView[localIndex] *h ) + psiKRight       * exp ( -IM*ARightView[localIndex]*h )
+                + psiKAbove * 2.0 * exp ( -IM*AAboveView[localIndex]*h ) )
               / ( h*h )
               + psiK * ( 1-norm ( psiK ) );
         res *= exp ( IM*chi );
@@ -216,21 +191,13 @@ getFEntry_ ( const Teuchos::RCP<const Ginla::State> & state,
 
     case Recti::Grid::Abstract::BOUNDARY_RIGHT:
         // -------------------------------------------------------------------
-        psiKLeft  = psiView[ grid_->getKLeft ( k ) ];
-        psiKBelow = psiView[ grid_->getKBelow ( k ) ];
-        psiKAbove = psiView[ grid_->getKAbove ( k ) ];
-
-        xLeft  = grid_->getXLeft ( k );
-        xBelow = grid_->getXBelow ( k );
-        xAbove = grid_->getXAbove ( k );
-
-        ALeft  = A_->getAx ( *xLeft );
-        ABelow = A_->getAy ( *xBelow );
-        AAbove = A_->getAy ( *xAbove );
+        psiKLeft  = psiView[ grid_->getKLeft ( globalIndex ) ];
+        psiKBelow = psiView[ grid_->getKBelow ( globalIndex ) ];
+        psiKAbove = psiView[ grid_->getKAbove ( globalIndex ) ];
 
         res = ( - psiK      * 4.0
-                + psiKLeft  * 2.0 * exp ( IM*ALeft *h )
-                + psiKBelow       * exp ( IM*ABelow*h ) + psiKAbove * exp ( -IM*AAbove*h ) )
+                + psiKLeft  * 2.0 * exp ( IM*ALeftView[localIndex] *h )
+                + psiKBelow       * exp ( IM*ABelowView[localIndex]*h ) + psiKAbove * exp ( -IM*AAboveView[localIndex]*h ) )
               / ( h*h )
               + psiK * ( 1-norm ( psiK ) );
         res *= exp ( IM*chi );
@@ -239,21 +206,13 @@ getFEntry_ ( const Teuchos::RCP<const Ginla::State> & state,
 
     case Recti::Grid::Abstract::BOUNDARY_TOP:
         // -------------------------------------------------------------------
-        psiKLeft  = psiView[ grid_->getKLeft ( k ) ];
-        psiKRight = psiView[ grid_->getKRight ( k ) ];
-        psiKBelow = psiView[ grid_->getKBelow ( k ) ];
-
-        xLeft  = grid_->getXLeft ( k );
-        xRight = grid_->getXRight ( k );
-        xBelow = grid_->getXBelow ( k );
-        
-        ALeft  = A_->getAx ( *xLeft );
-        ARight = A_->getAx ( *xRight );
-        ABelow = A_->getAy ( *xBelow );
+        psiKLeft  = psiView[ grid_->getKLeft ( globalIndex ) ];
+        psiKRight = psiView[ grid_->getKRight ( globalIndex ) ];
+        psiKBelow = psiView[ grid_->getKBelow ( globalIndex ) ];
 
         res = ( - psiK      * 4.0
-                + psiKLeft        * exp ( IM*ALeft *h ) + psiKRight * exp ( -IM*ARight*h )
-                + psiKBelow * 2.0 * exp ( IM*ABelow*h ) )
+                + psiKLeft        * exp ( IM*ALeftView[localIndex] *h ) + psiKRight * exp ( -IM*ARightView[localIndex]*h )
+                + psiKBelow * 2.0 * exp ( IM*ABelowView[localIndex]*h ) )
               / ( h*h )
               + psiK * ( 1-norm ( psiK ) );
         res *= exp ( IM*chi );
@@ -262,21 +221,13 @@ getFEntry_ ( const Teuchos::RCP<const Ginla::State> & state,
 
     case Recti::Grid::Abstract::BOUNDARY_LEFT:
         // -------------------------------------------------------------------
-        psiKRight = psiView[ grid_->getKRight ( k ) ];
-        psiKBelow = psiView[ grid_->getKBelow ( k ) ];
-        psiKAbove = psiView[ grid_->getKAbove ( k ) ];
-
-        xRight = grid_->getXRight ( k );
-        xBelow = grid_->getXBelow ( k );
-        xAbove = grid_->getXAbove ( k );
-        
-        ARight = A_->getAx ( *xRight );
-        ABelow = A_->getAy ( *xBelow );
-        AAbove = A_->getAy ( *xAbove );
+        psiKRight = psiView[ grid_->getKRight ( globalIndex ) ];
+        psiKBelow = psiView[ grid_->getKBelow ( globalIndex ) ];
+        psiKAbove = psiView[ grid_->getKAbove ( globalIndex ) ];
 
         res = ( - psiK      * 4.0
-                + psiKRight * 2.0 * exp ( -IM*ARight*h )
-                + psiKBelow * exp ( IM*AAbove*h ) + psiKAbove       * exp ( -IM*AAbove*h ) )
+                + psiKRight * 2.0 * exp ( -IM*ARightView[localIndex]*h )
+                + psiKBelow * exp ( IM*AAboveView[localIndex]*h ) + psiKAbove       * exp ( -IM*AAboveView[localIndex]*h ) )
               / ( h*h )
               + psiK * ( 1-norm ( psiK ) );
         res *= exp ( IM*chi );
@@ -285,24 +236,15 @@ getFEntry_ ( const Teuchos::RCP<const Ginla::State> & state,
 
     case Recti::Grid::Abstract::BOUNDARY_BOTTOMRIGHTCONCAVE:
         // -------------------------------------------------------------------
-        psiKLeft  = psiView[ grid_->getKLeft ( k ) ];
-        psiKRight = psiView[ grid_->getKRight ( k ) ];
-        psiKBelow = psiView[ grid_->getKBelow ( k ) ];
-        psiKAbove = psiView[ grid_->getKAbove ( k ) ];
+        psiKLeft  = psiView[ grid_->getKLeft ( globalIndex ) ];
+        psiKRight = psiView[ grid_->getKRight ( globalIndex ) ];
+        psiKBelow = psiView[ grid_->getKBelow ( globalIndex ) ];
+        psiKAbove = psiView[ grid_->getKAbove ( globalIndex ) ];
 
-        xLeft  = grid_->getXLeft ( k );
-        xRight = grid_->getXRight ( k );
-        xBelow = grid_->getXBelow ( k );
-        xAbove = grid_->getXAbove ( k );
-        ALeft  = A_->getAx ( *xLeft );
-        ARight = A_->getAx ( *xRight );
-        ABelow = A_->getAy ( *xBelow );
-        AAbove = A_->getAy ( *xAbove );
-
-        res = ( + psiKLeft  * exp ( IM*ALeft *h )
-                - psiKRight * exp ( -IM*ARight*h )
-                - psiKBelow * exp ( IM*ABelow*h )
-                + psiKAbove * exp ( -IM*AAbove*h ) ) * IM/ ( sqrt ( 2 ) *2*h );
+        res = ( + psiKLeft  * exp ( IM*ALeftView[localIndex] *h )
+                - psiKRight * exp ( -IM*ARightView[localIndex]*h )
+                - psiKBelow * exp ( IM*ABelowView[localIndex]*h )
+                + psiKAbove * exp ( -IM*AAboveView[localIndex]*h ) ) * IM/ ( sqrt ( 2 ) *2*h );
 
         res *= exp ( IM*chi );
         // -------------------------------------------------------------------
@@ -310,24 +252,15 @@ getFEntry_ ( const Teuchos::RCP<const Ginla::State> & state,
 
     case Recti::Grid::Abstract::BOUNDARY_BOTTOMLEFTCONCAVE:
         // -------------------------------------------------------------------
-        psiKLeft  = psiView[ grid_->getKLeft ( k ) ];
-        psiKRight = psiView[ grid_->getKRight ( k ) ];
-        psiKBelow = psiView[ grid_->getKBelow ( k ) ];
-        psiKAbove = psiView[ grid_->getKAbove ( k ) ];
+        psiKLeft  = psiView[ grid_->getKLeft ( globalIndex ) ];
+        psiKRight = psiView[ grid_->getKRight ( globalIndex ) ];
+        psiKBelow = psiView[ grid_->getKBelow ( globalIndex ) ];
+        psiKAbove = psiView[ grid_->getKAbove ( globalIndex ) ];
 
-        xLeft  = grid_->getXLeft ( k );
-        xRight = grid_->getXRight ( k );
-        xBelow = grid_->getXBelow ( k );
-        xAbove = grid_->getXAbove ( k );
-        ALeft  = A_->getAx ( *xLeft );
-        ARight = A_->getAx ( *xRight );
-        ABelow = A_->getAy ( *xBelow );
-        AAbove = A_->getAy ( *xAbove );
-
-        res = ( - psiKLeft  * exp ( IM*ALeft *h )
-                + psiKRight * exp ( -IM*ARight*h )
-                - psiKBelow * exp ( IM*ABelow*h )
-                + psiKAbove * exp ( -IM*AAbove*h ) ) * IM/ ( sqrt ( 2 ) *2*h );
+        res = ( - psiKLeft  * exp ( IM*ALeftView[localIndex] *h )
+                + psiKRight * exp ( -IM*ARightView[localIndex]*h )
+                - psiKBelow * exp ( IM*ABelowView[localIndex]*h )
+                + psiKAbove * exp ( -IM*AAboveView[localIndex]*h ) ) * IM/ ( sqrt ( 2 ) *2*h );
 
         res *= exp ( IM*chi );
         // -------------------------------------------------------------------
@@ -335,24 +268,15 @@ getFEntry_ ( const Teuchos::RCP<const Ginla::State> & state,
 
     case Recti::Grid::Abstract::BOUNDARY_TOPRIGHTCONCAVE:
         // -------------------------------------------------------------------
-        psiKLeft  = psiView[ grid_->getKLeft ( k ) ];
-        psiKRight = psiView[ grid_->getKRight ( k ) ];
-        psiKBelow = psiView[ grid_->getKBelow ( k ) ];
-        psiKAbove = psiView[ grid_->getKAbove ( k ) ];
+        psiKLeft  = psiView[ grid_->getKLeft ( globalIndex ) ];
+        psiKRight = psiView[ grid_->getKRight ( globalIndex ) ];
+        psiKBelow = psiView[ grid_->getKBelow ( globalIndex ) ];
+        psiKAbove = psiView[ grid_->getKAbove ( globalIndex ) ];
 
-        xLeft  = grid_->getXLeft ( k );
-        xRight = grid_->getXRight ( k );
-        xBelow = grid_->getXBelow ( k );
-        xAbove = grid_->getXAbove ( k );
-        ALeft  = A_->getAx ( *xLeft );
-        ARight = A_->getAx ( *xRight );
-        ABelow = A_->getAy ( *xBelow );
-        AAbove = A_->getAy ( *xAbove );
-
-        res = ( + psiKLeft  * exp ( IM*ALeft *h )
-                - psiKRight * exp ( -IM*ARight*h )
-                + psiKBelow * exp ( IM*ABelow*h )
-                - psiKAbove * exp ( -IM*AAbove*h ) ) * IM/ ( sqrt ( 2 ) *2*h );
+        res = ( + psiKLeft  * exp ( IM*ALeftView[localIndex] *h )
+                - psiKRight * exp ( -IM*ARightView[localIndex]*h )
+                + psiKBelow * exp ( IM*ABelowView[localIndex]*h )
+                - psiKAbove * exp ( -IM*AAboveView[localIndex]*h ) ) * IM/ ( sqrt ( 2 ) *2*h );
 
         res *= exp ( IM*chi );
         // -------------------------------------------------------------------
@@ -360,30 +284,22 @@ getFEntry_ ( const Teuchos::RCP<const Ginla::State> & state,
 
     case Recti::Grid::Abstract::BOUNDARY_TOPLEFTCONCAVE:
         // -------------------------------------------------------------------
-        psiKLeft  = psiView[ grid_->getKLeft ( k ) ];
-        psiKRight = psiView[ grid_->getKRight ( k ) ];
-        psiKBelow = psiView[ grid_->getKBelow ( k ) ];
-        psiKAbove = psiView[ grid_->getKAbove ( k ) ];
+        psiKLeft  = psiView[ grid_->getKLeft ( globalIndex ) ];
+        psiKRight = psiView[ grid_->getKRight ( globalIndex ) ];
+        psiKBelow = psiView[ grid_->getKBelow ( globalIndex ) ];
+        psiKAbove = psiView[ grid_->getKAbove ( globalIndex ) ];
 
-        xLeft  = grid_->getXLeft ( k );
-        xRight = grid_->getXRight ( k );
-        xBelow = grid_->getXBelow ( k );
-        xAbove = grid_->getXAbove ( k );
-        ALeft  = A_->getAx ( *xLeft );
-        ARight = A_->getAx ( *xRight );
-        ABelow = A_->getAy ( *xBelow );
-        AAbove = A_->getAy ( *xAbove );
-
-        res = ( - psiKLeft  * exp ( IM*ALeft *h )
-                + psiKRight * exp ( -IM*ARight*h )
-                + psiKBelow * exp ( IM*ABelow*h )
-                - psiKAbove * exp ( -IM*AAbove*h ) ) * IM/ ( sqrt ( 2 ) *2*h );
+        res = ( - psiKLeft  * exp ( IM*ALeftView[localIndex] *h )
+                + psiKRight * exp ( -IM*ARightView[localIndex]*h )
+                + psiKBelow * exp ( IM*ABelowView[localIndex]*h )
+                - psiKAbove * exp ( -IM*AAboveView[localIndex]*h ) ) * IM/ ( sqrt ( 2 ) *2*h );
 
         res *= exp ( IM*chi );
         // -------------------------------------------------------------------
         break;
     default:
         TEST_FOR_EXCEPTION ( true,
+#include "Ginla_Komplex_DoubleMatrix.h"
                              std::logic_error,
                              "Illegal not type \"" << nt << "\"." );
     }
@@ -392,7 +308,7 @@ getFEntry_ ( const Teuchos::RCP<const Ginla::State> & state,
     return res;
 }
 // =============================================================================
-Teuchos::RCP<Ginla::State>
+Teuchos::RCP<const Ginla::State>
 Ginla::Operator::BCCentral::
 getDFDh0( const Teuchos::RCP<const Ginla::State> & state ) const
 { 
@@ -402,14 +318,42 @@ getDFDh0( const Teuchos::RCP<const Ginla::State> & state ) const
                                       state->getGrid() ) );
                                       
   Teuchos::ArrayRCP<double_complex> FView = F->getPsiNonConst()->get1dViewNonConst();
+
+  Teuchos::ArrayRCP<const double> ALeftView  = ALeft_->get1dView();
+  Teuchos::ArrayRCP<const double> ARightView = ARight_->get1dView();
+  Teuchos::ArrayRCP<const double> ABelowView = ABelow_->get1dView();
+  Teuchos::ArrayRCP<const double> AAboveView = AAbove_->get1dView();
+  Teuchos::ArrayRCP<const double> dAdH0LeftView  = dAdH0Left_->get1dView();
+  Teuchos::ArrayRCP<const double> dAdH0RightView = dAdH0Right_->get1dView();
+  Teuchos::ArrayRCP<const double> dAdH0BelowView = dAdH0Below_->get1dView();
+  Teuchos::ArrayRCP<const double> dAdH0AboveView = dAdH0Above_->get1dView();
+  
+  Teuchos::ArrayRCP<const double_complex> psiView = state->getPsi()->get1dView();
+  double chi = state->getChi();
+  
+  double h = grid_->getUniformH();
   
   // loop over the nodes
   unsigned int localLength = F->getPsi()->getLocalLength();
   
-  for ( unsigned int k=0; k<localLength; k++ )
+  for ( unsigned int localIndex=0; localIndex<localLength; localIndex++ )
   {
-      int globalIndex = rangeMap_->getGlobalElement ( k );
-      FView[k] = this->getDFDh0Entry_ ( state, globalIndex );
+      int globalIndex = rangeMap_->getGlobalElement ( localIndex );
+      
+      FView[localIndex] = this->getDFDh0Entry_( psiView,
+                                                chi,
+                                                localIndex,
+                                                globalIndex,
+                                                ALeftView,
+                                                ARightView,
+                                                ABelowView,
+                                                AAboveView,
+                                                dAdH0LeftView,
+                                                dAdH0RightView,
+                                                dAdH0BelowView,
+                                                dAdH0AboveView,
+                                                h
+                                              );
   }
   
   return F;
@@ -417,58 +361,41 @@ getDFDh0( const Teuchos::RCP<const Ginla::State> & state ) const
 // =============================================================================
 double_complex
 Ginla::Operator::BCCentral::
-getDFDh0Entry_( const Teuchos::RCP<const Ginla::State> & state,
-                const int k
+getDFDh0Entry_( Teuchos::ArrayRCP<const double_complex> & psiView,
+                const double                              chi,
+                const int localIndex,
+                const int globalIndex,
+                Teuchos::ArrayRCP<const double> & ALeftView,
+                Teuchos::ArrayRCP<const double> & ARightView,
+                Teuchos::ArrayRCP<const double> & ABelowView,
+                Teuchos::ArrayRCP<const double> & AAboveView,
+                Teuchos::ArrayRCP<const double> & dAdH0LeftView,
+                Teuchos::ArrayRCP<const double> & dAdH0RightView,
+                Teuchos::ArrayRCP<const double> & dAdH0BelowView,
+                Teuchos::ArrayRCP<const double> & dAdH0AboveView,
+                const double                      h
               ) const
 {
     double_complex res;
     double_complex psiK, psiKRight, psiKLeft, psiKAbove, psiKBelow;
-    double ARight, ALeft, AAbove, ABelow;
-    double DARightDh0, DALeftDh0, DAAboveDh0, DABelowDh0;
 
-    double h = grid_->getUniformH();
-
-    Teuchos::RCP<DoubleTuple> xRight = Teuchos::rcp ( new DoubleTuple() );
-    Teuchos::RCP<DoubleTuple> xLeft  = Teuchos::rcp ( new DoubleTuple() );
-    Teuchos::RCP<DoubleTuple> xAbove = Teuchos::rcp ( new DoubleTuple() );
-    Teuchos::RCP<DoubleTuple> xBelow = Teuchos::rcp ( new DoubleTuple() );
-      
-    Recti::Grid::Abstract::nodeType nt = grid_->getNodeType ( k );
+    Recti::Grid::Abstract::nodeType nt = grid_->getNodeType ( globalIndex );    
     
-    // Get a view of the whole vector.
-    // Remember: This only works with one core.
-    Teuchos::ArrayRCP<const double_complex> psiView = state->getPsi()->get1dView();
-    double chi = state->getChi();
-    
-    psiK = psiView[k];
+    psiK = psiView[localIndex];
     
     switch ( nt )
     {
     case Recti::Grid::Abstract::INTERIOR:
         // TODO Gets the local index. ==> Only works on one core.
-        psiKLeft  = psiView[ grid_->getKLeft ( k ) ];
-        psiKRight = psiView[ grid_->getKRight ( k ) ];
-        psiKBelow = psiView[ grid_->getKBelow ( k ) ];
-        psiKAbove = psiView[ grid_->getKAbove ( k ) ];
-
-        xLeft  = grid_->getXLeft ( k );
-        xRight = grid_->getXRight ( k );
-        xBelow = grid_->getXBelow ( k );
-        xAbove = grid_->getXAbove ( k );
-
-        ALeft  = A_->getAx ( *xLeft );
-        ARight = A_->getAx ( *xRight );
-        ABelow = A_->getAy ( *xBelow );
-        AAbove = A_->getAy ( *xAbove );
-        
-        DALeftDh0  = A_->getDAxDh0( *xLeft );
-        DARightDh0 = A_->getDAxDh0( *xRight );
-        DABelowDh0 = A_->getDAyDh0( *xBelow );
-        DAAboveDh0 = A_->getDAyDh0( *xAbove );
+        psiKLeft  = psiView[ grid_->getKLeft ( globalIndex ) ];
+        psiKRight = psiView[ grid_->getKRight ( globalIndex ) ];
+        psiKBelow = psiView[ grid_->getKBelow ( globalIndex ) ];
+        psiKAbove = psiView[ grid_->getKAbove ( globalIndex ) ];
 
         // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        res = ( + psiKLeft * IM*DALeftDh0 *h * exp ( IM*ALeft *h ) - psiKRight* IM*DARightDh0*h * exp ( -IM*ARight*h )
-                + psiKBelow* IM*DABelowDh0*h * exp ( IM*ABelow*h ) - psiKAbove* IM*DAAboveDh0*h * exp ( -IM*AAbove*h ) ) / ( h*h );
+        res = ( + psiKLeft * IM*dAdH0LeftView[localIndex] *h * exp ( IM*ALeftView[localIndex] *h ) - psiKRight* IM*dAdH0RightView[localIndex]*h * exp ( -IM*ARightView[localIndex]*h )
+                + psiKBelow* IM*dAdH0BelowView[localIndex]*h * exp ( IM*ABelowView[localIndex]*h ) - psiKAbove* IM*dAdH0AboveView[localIndex]*h * exp ( -IM*AAboveView[localIndex]*h )
+              ) / ( h*h );
 
         res *= exp ( IM*chi );
         break;
@@ -476,61 +403,39 @@ getDFDh0Entry_( const Teuchos::RCP<const Ginla::State> & state,
     case Recti::Grid::Abstract::BOUNDARY_BOTTOMLEFTCONVEX:
         // -------------------------------------------------------------------
         // interior equation, then outward derivative substituted
-        psiKRight = psiView[ grid_->getKRight ( k ) ];
-        psiKAbove = psiView[ grid_->getKAbove ( k ) ];
-
-        xRight = grid_->getXRight ( k );
-        xAbove = grid_->getXAbove ( k );
-        ARight = A_->getAx ( *xRight );
-        AAbove = A_->getAy ( *xAbove );
-
-        DARightDh0 = A_->getDAxDh0( *xRight );
-        DAAboveDh0 = A_->getDAyDh0( *xAbove );
+        psiKRight = psiView[ grid_->getKRight ( globalIndex ) ];
+        psiKAbove = psiView[ grid_->getKAbove ( globalIndex ) ];
 
         // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        res = ( - psiKRight* 2.0 * IM*DARightDh0*h * exp ( -IM*ARight*h )
-                - psiKAbove* 2.0 * IM*DAAboveDh0*h * exp ( -IM*AAbove*h ) ) / ( h*h );
+        res = ( - psiKRight* 2.0 * IM*dAdH0RightView[localIndex]*h * exp ( -IM*ARightView[localIndex]*h )
+                - psiKAbove* 2.0 * IM*dAdH0AboveView[localIndex]*h * exp ( -IM*AAboveView[localIndex]*h )
+              ) / ( h*h );
         res *= exp ( IM*chi );
         // -------------------------------------------------------------------
         break;
 
     case Recti::Grid::Abstract::BOUNDARY_BOTTOMRIGHTCONVEX:
         // -----------------------------------------------------------------------
-        psiKLeft  = psiView[ grid_->getKLeft ( k ) ];
-        psiKAbove = psiView[ grid_->getKAbove ( k ) ];
-
-        xLeft  = grid_->getXLeft ( k );
-        xAbove = grid_->getXAbove ( k );
-        ALeft  = A_->getAx ( *xLeft );
-        AAbove = A_->getAy ( *xAbove );
-
-        DALeftDh0  = A_->getDAxDh0( *xLeft );
-        DAAboveDh0 = A_->getDAyDh0( *xAbove );
+        psiKLeft  = psiView[ grid_->getKLeft ( globalIndex ) ];
+        psiKAbove = psiView[ grid_->getKAbove ( globalIndex ) ];
 
         // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        res = ( + psiKLeft * 2.0 * IM*DALeftDh0 *h * exp ( IM*ALeft *h )
-                - psiKAbove* 2.0 * IM*DAAboveDh0*h * exp ( -IM*AAbove*h ) ) / ( h*h );
+        res = ( + psiKLeft * 2.0 * IM*dAdH0LeftView[localIndex] *h * exp ( IM*ALeftView[localIndex] *h )
+                - psiKAbove* 2.0 * IM*dAdH0AboveView[localIndex]*h * exp ( -IM*AAboveView[localIndex]*h )
+              ) / ( h*h );
         res *= exp ( IM*chi );
         // -----------------------------------------------------------------------
         break;
 
     case Recti::Grid::Abstract::BOUNDARY_TOPRIGHTCONVEX:
         // -----------------------------------------------------------------------
-        psiKLeft  = psiView[ grid_->getKLeft ( k ) ];
-        psiKBelow = psiView[ grid_->getKBelow ( k ) ];
-
-        xLeft  = grid_->getXLeft ( k );
-        xBelow = grid_->getXBelow ( k );
-        ALeft  = A_->getAx ( *xLeft );
-        ABelow = A_->getAy ( *xBelow );
-
-        
-        DALeftDh0  = A_->getDAxDh0( *xLeft );
-        DABelowDh0 = A_->getDAyDh0( *xBelow );
+        psiKLeft  = psiView[ grid_->getKLeft ( globalIndex ) ];
+        psiKBelow = psiView[ grid_->getKBelow ( globalIndex ) ];
 
         // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        res = ( + psiKLeft * 2.0 * IM*DALeftDh0 *h * exp ( IM*ALeft *h ) 
-                + psiKBelow* 2.0 * IM*DABelowDh0*h * exp ( IM*ABelow*h ) ) / ( h*h );
+        res = ( + psiKLeft * 2.0 * IM*dAdH0LeftView[localIndex] *h * exp ( IM*ALeftView[localIndex] *h ) 
+                + psiKBelow* 2.0 * IM*dAdH0BelowView[localIndex]*h * exp ( IM*ABelowView[localIndex]*h )
+              ) / ( h*h );
         res *= exp ( IM*chi );
         // -----------------------------------------------------------------------
 
@@ -538,157 +443,86 @@ getDFDh0Entry_( const Teuchos::RCP<const Ginla::State> & state,
 
     case Recti::Grid::Abstract::BOUNDARY_TOPLEFTCONVEX:
         // -----------------------------------------------------------------------
-        psiKRight = psiView[ grid_->getKRight ( k ) ];
-        psiKBelow = psiView[ grid_->getKBelow ( k ) ];
-
-        xRight = grid_->getXRight ( k );
-        xBelow = grid_->getXBelow ( k );
-        
-        ARight = A_->getAx ( *xRight );
-        ABelow = A_->getAy ( *xBelow );
-
-        DARightDh0 = A_->getDAxDh0( *xRight );
-        DABelowDh0 = A_->getDAyDh0( *xBelow );
+        psiKRight = psiView[ grid_->getKRight ( globalIndex ) ];
+        psiKBelow = psiView[ grid_->getKBelow ( globalIndex ) ];
 
         // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        res = ( - psiKRight* 2.0 * IM*DARightDh0*h * exp ( -IM*ARight*h )
-                + psiKBelow* 2.0 * IM*DABelowDh0*h * exp ( IM*ABelow*h )  ) / ( h*h );
+        res = ( - psiKRight* 2.0 * IM*dAdH0RightView[localIndex]*h * exp ( -IM*ARightView[localIndex]*h )
+                + psiKBelow* 2.0 * IM*dAdH0BelowView[localIndex]*h * exp (  IM*ABelowView[localIndex]*h )
+              ) / ( h*h );
         res *= exp ( IM*chi );
         // -----------------------------------------------------------------------
         break;
 
     case Recti::Grid::Abstract::BOUNDARY_BOTTOM:
         // -------------------------------------------------------------------
-        psiKLeft  = psiView[ grid_->getKLeft ( k ) ];
-        psiKRight = psiView[ grid_->getKRight ( k ) ];
-        psiKAbove = psiView[ grid_->getKAbove ( k ) ];
-
-        xLeft  = grid_->getXLeft ( k );
-        xRight = grid_->getXRight ( k );
-        xAbove = grid_->getXAbove ( k );
-
-        ALeft  = A_->getAx ( *xLeft );
-        ARight = A_->getAx ( *xRight );
-        AAbove = A_->getAy ( *xAbove );
-
-        DALeftDh0  = A_->getDAxDh0( *xLeft );
-        DARightDh0 = A_->getDAxDh0( *xRight );
-        DAAboveDh0 = A_->getDAyDh0( *xAbove );
+        psiKLeft  = psiView[ grid_->getKLeft ( globalIndex ) ];
+        psiKRight = psiView[ grid_->getKRight ( globalIndex ) ];
+        psiKAbove = psiView[ grid_->getKAbove ( globalIndex ) ];
 
         // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        res = ( + psiKLeft *       IM*DALeftDh0 *h * exp ( IM*ALeft *h ) - psiKRight       * IM*DARightDh0*h * exp ( -IM*ARight*h )
-                - psiKAbove* 2.0 * IM*DAAboveDh0*h * exp ( -IM*AAbove*h ) )
-              / ( h*h );
+        res = ( + psiKLeft *       IM*dAdH0LeftView[localIndex] *h * exp (  IM*ALeftView[localIndex] *h ) - psiKRight       * IM*dAdH0RightView[localIndex]*h * exp ( -IM*ARightView[localIndex]*h )
+                - psiKAbove* 2.0 * IM*dAdH0AboveView[localIndex]*h * exp ( -IM*AAboveView[localIndex]*h )
+              ) / ( h*h );
         res *= exp ( IM*chi );
         // -------------------------------------------------------------------
         break;
 
     case Recti::Grid::Abstract::BOUNDARY_RIGHT:
         // -------------------------------------------------------------------
-        psiKLeft  = psiView[ grid_->getKLeft ( k ) ];
-        psiKBelow = psiView[ grid_->getKBelow ( k ) ];
-        psiKAbove = psiView[ grid_->getKAbove ( k ) ];
-
-        xLeft  = grid_->getXLeft ( k );
-        xBelow = grid_->getXBelow ( k );
-        xAbove = grid_->getXAbove ( k );
-        
-        ALeft  = A_->getAx ( *xLeft );
-        ABelow = A_->getAy ( *xBelow );
-        AAbove = A_->getAy ( *xAbove );
-        
-        DALeftDh0  = A_->getDAxDh0( *xLeft );
-        DABelowDh0 = A_->getDAyDh0( *xBelow );
-        DAAboveDh0 = A_->getDAyDh0( *xAbove );
+        psiKLeft  = psiView[ grid_->getKLeft ( globalIndex ) ];
+        psiKBelow = psiView[ grid_->getKBelow ( globalIndex ) ];
+        psiKAbove = psiView[ grid_->getKAbove ( globalIndex ) ];
 
         // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        res = ( + psiKLeft * 2.0 * IM*DALeftDh0 *h * exp ( IM*ALeft *h )
-                + psiKBelow      * IM*DABelowDh0*h * exp ( IM*ABelow*h ) - psiKAbove * IM*DAAboveDh0*h * exp ( -IM*AAbove*h ) )
-              / ( h*h );
+        res = ( + psiKLeft * 2.0 * IM*dAdH0LeftView[localIndex] *h * exp ( IM*ALeftView[localIndex] *h )
+                + psiKBelow      * IM*dAdH0BelowView[localIndex]*h * exp ( IM*ABelowView[localIndex]*h ) - psiKAbove * IM*dAdH0AboveView[localIndex]*h * exp ( -IM*AAboveView[localIndex]*h )
+              ) / ( h*h );
         res *= exp ( IM*chi );
         // -------------------------------------------------------------------
         break;
 
     case Recti::Grid::Abstract::BOUNDARY_TOP:
         // -------------------------------------------------------------------
-        psiKLeft  = psiView[ grid_->getKLeft ( k ) ];
-        psiKRight = psiView[ grid_->getKRight ( k ) ];
-        psiKBelow = psiView[ grid_->getKBelow ( k ) ];
-
-        xLeft  = grid_->getXLeft ( k );
-        xRight = grid_->getXRight ( k );
-        xBelow = grid_->getXBelow ( k );
-        
-        ALeft  = A_->getAx ( *xLeft );
-        ARight = A_->getAx ( *xRight );
-        ABelow = A_->getAy ( *xBelow );
-
-        DALeftDh0  = A_->getDAxDh0( *xLeft );
-        DARightDh0 = A_->getDAxDh0( *xRight );
-        DABelowDh0 = A_->getDAyDh0( *xBelow );
+        psiKLeft  = psiView[ grid_->getKLeft ( globalIndex ) ];
+        psiKRight = psiView[ grid_->getKRight ( globalIndex ) ];
+        psiKBelow = psiView[ grid_->getKBelow ( globalIndex ) ];
 
         // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        res = ( + psiKLeft *       IM*DALeftDh0 *h * exp ( IM*ALeft *h ) - psiKRight* IM*DARightDh0*h * exp ( -IM*ARight*h )
-                + psiKBelow* 2.0 * IM*DABelowDh0*h * exp ( IM*ABelow*h ) )
-              / ( h*h );
+        res = ( + psiKLeft *       IM*dAdH0LeftView[localIndex] *h * exp ( IM*ALeftView[localIndex] *h ) - psiKRight* IM*dAdH0RightView[localIndex]*h * exp ( -IM*ARightView[localIndex]*h )
+                + psiKBelow* 2.0 * IM*dAdH0BelowView[localIndex]*h * exp ( IM*ABelowView[localIndex]*h )
+              ) / ( h*h );
         res *= exp ( IM*chi );
         // -------------------------------------------------------------------
         break;
 
     case Recti::Grid::Abstract::BOUNDARY_LEFT:
         // -------------------------------------------------------------------
-        psiKRight = psiView[ grid_->getKRight ( k ) ];
-        psiKBelow = psiView[ grid_->getKBelow ( k ) ];
-        psiKAbove = psiView[ grid_->getKAbove ( k ) ];
-
-        xRight = grid_->getXRight ( k );
-        xBelow = grid_->getXBelow ( k );
-        xAbove = grid_->getXAbove ( k );
-        
-        ARight = A_->getAx ( *xRight );
-        ABelow = A_->getAy ( *xBelow );
-        AAbove = A_->getAy ( *xAbove );
-
-        DALeftDh0  = A_->getDAxDh0( *xLeft );
-        DARightDh0 = A_->getDAxDh0( *xRight );
-        DABelowDh0 = A_->getDAyDh0( *xBelow );
-        DAAboveDh0 = A_->getDAyDh0( *xAbove );
+        psiKRight = psiView[ grid_->getKRight ( globalIndex ) ];
+        psiKBelow = psiView[ grid_->getKBelow ( globalIndex ) ];
+        psiKAbove = psiView[ grid_->getKAbove ( globalIndex ) ];
 
         // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        res = ( - psiKRight* 2.0 * IM*DARightDh0*h * exp ( -IM*ARight*h )
-                + psiKBelow*       IM*DABelowDh0*h * exp (  IM*ABelow*h ) - psiKAbove* IM*DAAboveDh0*h * exp ( -IM*AAbove*h ) )
-              / ( h*h );
+        res = ( - psiKRight* 2.0 * IM*dAdH0RightView[localIndex]*h * exp ( -IM*ARightView[localIndex]*h )
+                + psiKBelow*       IM*dAdH0BelowView[localIndex]*h * exp (  IM*ABelowView[localIndex]*h ) - psiKAbove* IM*dAdH0AboveView[localIndex]*h * exp ( -IM*AAboveView[localIndex]*h )
+              ) / ( h*h );
         res *= exp ( IM*chi );
         // -------------------------------------------------------------------
         break;
 
     case Recti::Grid::Abstract::BOUNDARY_BOTTOMRIGHTCONCAVE:
         // -------------------------------------------------------------------
-        psiKLeft  = psiView[ grid_->getKLeft ( k ) ];
-        psiKRight = psiView[ grid_->getKRight ( k ) ];
-        psiKBelow = psiView[ grid_->getKBelow ( k ) ];
-        psiKAbove = psiView[ grid_->getKAbove ( k ) ];
-
-        xLeft  = grid_->getXLeft ( k );
-        xRight = grid_->getXRight ( k );
-        xBelow = grid_->getXBelow ( k );
-        xAbove = grid_->getXAbove ( k );
-        
-        ALeft  = A_->getAx ( *xLeft );
-        ARight = A_->getAx ( *xRight );
-        ABelow = A_->getAy ( *xBelow );
-        AAbove = A_->getAy ( *xAbove );
-        
-        DALeftDh0  = A_->getDAxDh0( *xLeft );
-        DARightDh0 = A_->getDAxDh0( *xRight );
-        DABelowDh0 = A_->getDAyDh0( *xBelow );
-        DAAboveDh0 = A_->getDAyDh0( *xAbove );
+        psiKLeft  = psiView[ grid_->getKLeft ( globalIndex ) ];
+        psiKRight = psiView[ grid_->getKRight ( globalIndex ) ];
+        psiKBelow = psiView[ grid_->getKBelow ( globalIndex ) ];
+        psiKAbove = psiView[ grid_->getKAbove ( globalIndex ) ];
 
         // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        res = ( + psiKLeft  * IM*DALeftDh0 *h * exp ( IM*ALeft *h )
-                + psiKRight * IM*DARightDh0*h * exp ( -IM*ARight*h )
-                - psiKBelow * IM*DABelowDh0*h * exp ( IM*ABelow*h )
-                - psiKAbove * IM*DAAboveDh0*h * exp ( -IM*AAbove*h ) ) * IM/ ( sqrt ( 2 ) *2*h );
+        res = ( + psiKLeft  * IM*dAdH0LeftView[localIndex] *h * exp ( IM*ALeftView[localIndex] *h )
+                + psiKRight * IM*dAdH0RightView[localIndex]*h * exp ( -IM*ARightView[localIndex]*h )
+                - psiKBelow * IM*dAdH0BelowView[localIndex]*h * exp ( IM*ABelowView[localIndex]*h )
+                - psiKAbove * IM*dAdH0AboveView[localIndex]*h * exp ( -IM*AAboveView[localIndex]*h )
+              ) * IM/ ( sqrt ( 2 ) *2*h );
 
         res *= exp ( IM*chi );
         // -------------------------------------------------------------------
@@ -696,62 +530,34 @@ getDFDh0Entry_( const Teuchos::RCP<const Ginla::State> & state,
 
     case Recti::Grid::Abstract::BOUNDARY_BOTTOMLEFTCONCAVE:
         // -------------------------------------------------------------------
-        psiKLeft  = psiView[ grid_->getKLeft ( k ) ];
-        psiKRight = psiView[ grid_->getKRight ( k ) ];
-        psiKBelow = psiView[ grid_->getKBelow ( k ) ];
-        psiKAbove = psiView[ grid_->getKAbove ( k ) ];
-
-        xLeft  = grid_->getXLeft ( k );
-        xRight = grid_->getXRight ( k );
-        xBelow = grid_->getXBelow ( k );
-        xAbove = grid_->getXAbove ( k );
-
-        ALeft  = A_->getAx ( *xLeft );
-        ARight = A_->getAx ( *xRight );
-        ABelow = A_->getAy ( *xBelow );
-        AAbove = A_->getAy ( *xAbove );
-
-        DALeftDh0  = A_->getDAxDh0( *xLeft );
-        DARightDh0 = A_->getDAxDh0( *xRight );
-        DABelowDh0 = A_->getDAyDh0( *xBelow );
-        DAAboveDh0 = A_->getDAyDh0( *xAbove );
+        psiKLeft  = psiView[ grid_->getKLeft ( globalIndex ) ];
+        psiKRight = psiView[ grid_->getKRight ( globalIndex ) ];
+        psiKBelow = psiView[ grid_->getKBelow ( globalIndex ) ];
+        psiKAbove = psiView[ grid_->getKAbove ( globalIndex ) ];
 
         // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        res = ( - psiKLeft  * IM*DALeftDh0 *h * exp ( IM*ALeft *h )
-                - psiKRight * IM*DARightDh0*h * exp ( -IM*ARight*h )
-                - psiKBelow * IM*DABelowDh0*h * exp ( IM*ABelow*h )
-                - psiKAbove * IM*DAAboveDh0*h * exp ( -IM*AAbove*h ) ) * IM/ ( sqrt ( 2 ) *2*h );
+        res = ( - psiKLeft  * IM*dAdH0LeftView[localIndex] *h * exp ( IM*ALeftView[localIndex] *h )
+                - psiKRight * IM*dAdH0RightView[localIndex]*h * exp ( -IM*ARightView[localIndex]*h )
+                - psiKBelow * IM*dAdH0BelowView[localIndex]*h * exp ( IM*ABelowView[localIndex]*h )
+                - psiKAbove * IM*dAdH0AboveView[localIndex]*h * exp ( -IM*AAboveView[localIndex]*h )
+              ) * IM/ ( sqrt ( 2 ) *2*h );
         res *= exp ( IM*chi );
         // -------------------------------------------------------------------
         break;
 
     case Recti::Grid::Abstract::BOUNDARY_TOPRIGHTCONCAVE:
         // -------------------------------------------------------------------
-        psiKLeft  = psiView[ grid_->getKLeft ( k ) ];
-        psiKRight = psiView[ grid_->getKRight ( k ) ];
-        psiKBelow = psiView[ grid_->getKBelow ( k ) ];
-        psiKAbove = psiView[ grid_->getKAbove ( k ) ];
-
-        xLeft  = grid_->getXLeft ( k );
-        xRight = grid_->getXRight ( k );
-        xBelow = grid_->getXBelow ( k );
-        xAbove = grid_->getXAbove ( k );
-        
-        ALeft  = A_->getAx ( *xLeft );
-        ARight = A_->getAx ( *xRight );
-        ABelow = A_->getAy ( *xBelow );
-        AAbove = A_->getAy ( *xAbove );
-
-        DALeftDh0  = A_->getDAxDh0( *xLeft );
-        DARightDh0 = A_->getDAxDh0( *xRight );
-        DABelowDh0 = A_->getDAyDh0( *xBelow );
-        DAAboveDh0 = A_->getDAyDh0( *xAbove );
+        psiKLeft  = psiView[ grid_->getKLeft ( globalIndex ) ];
+        psiKRight = psiView[ grid_->getKRight ( globalIndex ) ];
+        psiKBelow = psiView[ grid_->getKBelow ( globalIndex ) ];
+        psiKAbove = psiView[ grid_->getKAbove ( globalIndex ) ];
 
         // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        res = ( + psiKLeft  * IM*DALeftDh0 *h * exp ( IM*ALeft *h )
-                + psiKRight * IM*DARightDh0*h * exp ( -IM*ARight*h )
-                + psiKBelow * IM*DABelowDh0*h * exp ( IM*ABelow*h )
-                + psiKAbove * IM*DAAboveDh0*h * exp ( -IM*AAbove*h ) ) * IM/ ( sqrt ( 2 ) *2*h );
+        res = ( + psiKLeft  * IM*dAdH0LeftView[localIndex] *h * exp ( IM*ALeftView[localIndex] *h )
+                + psiKRight * IM*dAdH0RightView[localIndex]*h * exp ( -IM*ARightView[localIndex]*h )
+                + psiKBelow * IM*dAdH0BelowView[localIndex]*h * exp ( IM*ABelowView[localIndex]*h )
+                + psiKAbove * IM*dAdH0AboveView[localIndex]*h * exp ( -IM*AAboveView[localIndex]*h )
+              ) * IM/ ( sqrt ( 2 ) *2*h );
 
         res *= exp ( IM*chi );
         // -------------------------------------------------------------------
@@ -759,31 +565,17 @@ getDFDh0Entry_( const Teuchos::RCP<const Ginla::State> & state,
 
     case Recti::Grid::Abstract::BOUNDARY_TOPLEFTCONCAVE:
         // -------------------------------------------------------------------
-        psiKLeft  = psiView[ grid_->getKLeft ( k ) ];
-        psiKRight = psiView[ grid_->getKRight ( k ) ];
-        psiKBelow = psiView[ grid_->getKBelow ( k ) ];
-        psiKAbove = psiView[ grid_->getKAbove ( k ) ];
-
-        xLeft  = grid_->getXLeft ( k );
-        xRight = grid_->getXRight ( k );
-        xBelow = grid_->getXBelow ( k );
-        xAbove = grid_->getXAbove ( k );
-        
-        ALeft  = A_->getAx ( *xLeft );
-        ARight = A_->getAx ( *xRight );
-        ABelow = A_->getAy ( *xBelow );
-        AAbove = A_->getAy ( *xAbove );
-
-        DALeftDh0  = A_->getDAxDh0( *xLeft );
-        DARightDh0 = A_->getDAxDh0( *xRight );
-        DABelowDh0 = A_->getDAyDh0( *xBelow );
-        DAAboveDh0 = A_->getDAyDh0( *xAbove );
+        psiKLeft  = psiView[ grid_->getKLeft ( globalIndex ) ];
+        psiKRight = psiView[ grid_->getKRight ( globalIndex ) ];
+        psiKBelow = psiView[ grid_->getKBelow ( globalIndex ) ];
+        psiKAbove = psiView[ grid_->getKAbove ( globalIndex ) ];
 
         // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        res = ( - psiKLeft  * IM*DALeftDh0 *h * exp ( IM*ALeft *h )
-                - psiKRight * IM*DARightDh0*h * exp ( -IM*ARight*h )
-                + psiKBelow * IM*DABelowDh0*h * exp ( IM*ABelow*h )
-                + psiKAbove * IM*DAAboveDh0*h * exp ( -IM*AAbove*h ) ) * IM/ ( sqrt ( 2 ) *2*h );
+        res = ( - psiKLeft  * IM*dAdH0LeftView[localIndex] *h * exp ( IM*ALeftView[localIndex] *h )
+                - psiKRight * IM*dAdH0RightView[localIndex]*h * exp ( -IM*ARightView[localIndex]*h )
+                + psiKBelow * IM*dAdH0BelowView[localIndex]*h * exp ( IM*ABelowView[localIndex]*h )
+                + psiKAbove * IM*dAdH0AboveView[localIndex]*h * exp ( -IM*AAboveView[localIndex]*h )
+              ) * IM/ ( sqrt ( 2 ) *2*h );
 
         res *= exp ( IM*chi );
         // -------------------------------------------------------------------
@@ -798,357 +590,357 @@ getDFDh0Entry_( const Teuchos::RCP<const Ginla::State> & state,
     return res;
 }
 // =============================================================================
+Teuchos::RCP<const Ginla::Komplex::DoubleMatrix>
+Ginla::Operator::BCCentral::
+getJacobian ( const Teuchos::RCP<const Ginla::State> & state
+            )
+{ 
+  if ( firstTime_ )
+  {
+      const Teuchos::RCP<const ComplexMap> map = state->getPsi()->getMap();
+      AB_ = Teuchos::rcp( new Ginla::Komplex::DoubleMatrix( map, map ) );
+  }
+  
+  Teuchos::ArrayRCP<const double> ALeftView  = ALeft_->get1dView();
+  Teuchos::ArrayRCP<const double> ARightView = ARight_->get1dView();
+  Teuchos::ArrayRCP<const double> ABelowView = ABelow_->get1dView();
+  Teuchos::ArrayRCP<const double> AAboveView = AAbove_->get1dView();
+  
+  Teuchos::ArrayRCP<const double_complex> psiView = state->getPsi()->get1dView();
+  double chi = state->getChi();
+  
+  double h = grid_->getUniformH();
+  
+  // loop over the nodes
+  unsigned int localLength = state->getPsi()->getLocalLength();
+  
+  Teuchos::Array<Thyra::Ordinal> columnIndicesPsi;
+  Teuchos::Array<double_complex> valuesPsi;
+  Teuchos::Array<Thyra::Ordinal> columnIndicesPsiConj;
+  Teuchos::Array<double_complex> valuesPsiConj;
+  
+  for ( unsigned int localRow=0; localRow<localLength; localRow++ )
+  {
+      int globalRow= rangeMap_->getGlobalElement ( localRow );
+
+      this->getJacobianRow_ ( psiView,
+                              chi,
+                              localRow,
+                              globalRow,
+                              ALeftView, ARightView, ABelowView, AAboveView,
+                              h,
+                              columnIndicesPsi, valuesPsi,
+                              columnIndicesPsiConj, valuesPsiConj
+                            );
+
+      // add the rows to the Jacobian
+      AB_->putALocalValues( localRow,
+                            columnIndicesPsi(),
+                            valuesPsi() );
+                            
+      AB_->putBLocalValues( localRow,
+                            columnIndicesPsiConj(),
+                            valuesPsiConj() );
+  }
+
+  if ( firstTime_ )
+  {
+    AB_->finalize();
+    firstTime_ = false;
+  }
+  
+  return AB_;
+}
+// =============================================================================
 void
 Ginla::Operator::BCCentral::
-getJacobianRow ( const Teuchos::RCP<const Ginla::State> & state,
-                 const int                                k,
-                 Teuchos::Array<int>                    & columnIndicesPsi,
-                 Teuchos::Array<double_complex>         & valuesPsi,
-                 Teuchos::Array<int>                    & columnIndicesPsiConj,
-                 Teuchos::Array<double_complex>         & valuesPsiConj
-               ) const
+getJacobianRow_ ( Teuchos::ArrayRCP<const double_complex> & psiView,
+                  const double                              chi,
+                  const int localIndex,
+                  const int globalIndex,
+                  Teuchos::ArrayRCP<const double> & ALeftView,
+                  Teuchos::ArrayRCP<const double> & ARightView,
+                  Teuchos::ArrayRCP<const double> & ABelowView,
+                  Teuchos::ArrayRCP<const double> & AAboveView,
+                  const double                      h,
+                  Teuchos::Array<Thyra::Ordinal>  & columnIndicesPsi,
+                  Teuchos::Array<double_complex>  & valuesPsi,
+                  Teuchos::Array<Thyra::Ordinal>  & columnIndicesPsiConj,
+                  Teuchos::Array<double_complex>  & valuesPsiConj
+                ) const
 {
     int kLeft, kRight, kBelow, kAbove;
     int numEntriesPsi, numEntriesPsiConj;
-    double ARight, ALeft, AAbove, ABelow;
-
-    double h = grid_->getUniformH();
-
-    Teuchos::RCP<DoubleTuple> xRight = Teuchos::rcp ( new DoubleTuple() );
-    Teuchos::RCP<DoubleTuple> xLeft  = Teuchos::rcp ( new DoubleTuple() );
-    Teuchos::RCP<DoubleTuple> xAbove = Teuchos::rcp ( new DoubleTuple() );
-    Teuchos::RCP<DoubleTuple> xBelow = Teuchos::rcp ( new DoubleTuple() );
-
-    Teuchos::ArrayRCP<const double_complex> psiView = state->getPsi()->get1dView();
-    double chi = state->getChi();
     
-    Recti::Grid::Abstract::nodeType nt = grid_->getNodeType ( k );
+    Recti::Grid::Abstract::nodeType nt = grid_->getNodeType ( globalIndex );
     
     switch ( nt )
     {
     case Recti::Grid::Abstract::INTERIOR:
         // ---------------------------------------------------------------------
-        kRight = grid_->getKRight ( k );
-        kLeft  = grid_->getKLeft ( k );
-        kAbove = grid_->getKAbove ( k );
-        kBelow = grid_->getKBelow ( k );
+        kRight = grid_->getKRight ( globalIndex );
+        kLeft  = grid_->getKLeft ( globalIndex );
+        kAbove = grid_->getKAbove ( globalIndex );
+        kBelow = grid_->getKBelow ( globalIndex );
 
         numEntriesPsi = 5;
         columnIndicesPsi.resize ( numEntriesPsi );
-        columnIndicesPsi[0] = k;
+        columnIndicesPsi[0] = globalIndex;
         columnIndicesPsi[1] = kLeft;
         columnIndicesPsi[2] = kRight;
         columnIndicesPsi[3] = kBelow;
         columnIndicesPsi[4] = kAbove;
 
-        xLeft  = grid_->getXLeft ( k );
-        xRight = grid_->getXRight ( k );
-        xBelow = grid_->getXBelow ( k );
-        xAbove = grid_->getXAbove ( k );
-        ALeft  = A_->getAx ( *xLeft );
-        ARight = A_->getAx ( *xRight );
-        ABelow = A_->getAy ( *xBelow );
-        AAbove = A_->getAy ( *xAbove );
-
         valuesPsi.resize ( numEntriesPsi );
         valuesPsi[0] = - 4.0            / ( h*h )
-                       + ( 1 - 2.0*norm ( psiView[k] ) );
-        valuesPsi[1] = exp ( IM*ALeft *h ) / ( h*h );
-        valuesPsi[2] = exp ( -IM*ARight*h ) / ( h*h );
-        valuesPsi[3] = exp ( IM*ABelow*h ) / ( h*h );
-        valuesPsi[4] = exp ( -IM*AAbove*h ) / ( h*h );
+                       + ( 1 - 2.0*norm ( psiView[localIndex] ) );
+        valuesPsi[1] = exp ( IM*ALeftView[localIndex] *h ) / ( h*h );
+        valuesPsi[2] = exp ( -IM*ARightView[localIndex]*h ) / ( h*h );
+        valuesPsi[3] = exp ( IM*ABelowView[localIndex]*h ) / ( h*h );
+        valuesPsi[4] = exp ( -IM*AAboveView[localIndex]*h ) / ( h*h );
 
         numEntriesPsiConj = 1;
         columnIndicesPsiConj.resize ( numEntriesPsiConj );
-        columnIndicesPsiConj[0] = k;
+        columnIndicesPsiConj[0] = globalIndex;
 
         valuesPsiConj.resize ( numEntriesPsiConj );
-        valuesPsiConj[0] = -psiView[k]*psiView[k];
+        valuesPsiConj[0] = -psiView[localIndex]*psiView[localIndex];
 
         break;
     case Recti::Grid::Abstract::BOUNDARY_BOTTOMLEFTCONVEX:
         // -------------------------------------------------------------------
-        kRight = grid_->getKRight ( k );
-        kAbove = grid_->getKAbove ( k );
+        kRight = grid_->getKRight ( globalIndex );
+        kAbove = grid_->getKAbove ( globalIndex );
 
         numEntriesPsi = 3;
         columnIndicesPsi.resize ( numEntriesPsi );
-        columnIndicesPsi[0] = k;
+        columnIndicesPsi[0] = globalIndex;
         columnIndicesPsi[1] = kRight;
         columnIndicesPsi[2] = kAbove;
 
-        xRight = grid_->getXRight ( k );
-        xAbove = grid_->getXAbove ( k );
-        ARight = A_->getAx ( *xRight );
-        AAbove = A_->getAy ( *xAbove );
-
         valuesPsi.resize ( numEntriesPsi );
         valuesPsi[0] = - 4.0 / ( h*h )
-                       + ( 1 - 2.0*norm ( psiView[k] ) );
-        valuesPsi[1] = 2.0 * exp ( -IM*ARight*h ) / ( h*h );
-        valuesPsi[2] = 2.0 * exp ( -IM*AAbove*h ) / ( h*h );
+                       + ( 1 - 2.0*norm ( psiView[localIndex] ) );
+        valuesPsi[1] = 2.0 * exp ( -IM*ARightView[localIndex]*h ) / ( h*h );
+        valuesPsi[2] = 2.0 * exp ( -IM*AAboveView[localIndex]*h ) / ( h*h );
 
         numEntriesPsiConj = 1;
         columnIndicesPsiConj.resize ( numEntriesPsiConj );
-        columnIndicesPsiConj[0] = k;
+        columnIndicesPsiConj[0] = globalIndex;
 
         valuesPsiConj.resize ( numEntriesPsiConj );
-        valuesPsiConj[0] = -psiView[k]*psiView[k];
+        valuesPsiConj[0] = -psiView[localIndex]*psiView[localIndex];
         valuesPsiConj[0] *= exp ( IM*chi*2.0 );
         // -------------------------------------------------------------------
         break;
 
     case Recti::Grid::Abstract::BOUNDARY_BOTTOMRIGHTCONVEX:
         // -----------------------------------------------------------------------
-        kLeft  = grid_->getKLeft ( k );
-        kAbove = grid_->getKAbove ( k );
+        kLeft  = grid_->getKLeft ( globalIndex );
+        kAbove = grid_->getKAbove ( globalIndex );
 
         numEntriesPsi = 3;
         columnIndicesPsi.resize ( numEntriesPsi );
-        columnIndicesPsi[0] = k;
+        columnIndicesPsi[0] = globalIndex;
         columnIndicesPsi[1] = kLeft;
         columnIndicesPsi[2] = kAbove;
 
-        xLeft  = grid_->getXLeft ( k );
-        xAbove = grid_->getXAbove ( k );
-        ALeft  = A_->getAx ( *xLeft );
-        AAbove = A_->getAy ( *xAbove );
-
         valuesPsi.resize ( numEntriesPsi );
         valuesPsi[0] = -4.0 / ( h*h )
-                       + ( 1 - 2.0*norm ( psiView[k] ) );
-        valuesPsi[1] = 2.0 * exp ( IM*ALeft *h ) / ( h*h );
-        valuesPsi[2] = 2.0 * exp ( -IM*AAbove*h ) / ( h*h );
+                       + ( 1 - 2.0*norm ( psiView[localIndex] ) );
+        valuesPsi[1] = 2.0 * exp ( IM*ALeftView[localIndex] *h ) / ( h*h );
+        valuesPsi[2] = 2.0 * exp ( -IM*AAboveView[localIndex]*h ) / ( h*h );
 
         numEntriesPsiConj = 1;
         columnIndicesPsiConj.resize ( numEntriesPsiConj );
-        columnIndicesPsiConj[0] = k;
+        columnIndicesPsiConj[0] = globalIndex;
 
         valuesPsiConj.resize ( numEntriesPsiConj );
-        valuesPsiConj[0] = -psiView[k]*psiView[k];
+        valuesPsiConj[0] = -psiView[localIndex]*psiView[localIndex];
         valuesPsiConj[0] *= exp ( IM*chi*2.0 );
         // -----------------------------------------------------------------------
         break;
 
     case Recti::Grid::Abstract::BOUNDARY_TOPRIGHTCONVEX:
         // -----------------------------------------------------------------------
-        kLeft  = grid_->getKLeft ( k );
-        kBelow = grid_->getKBelow ( k );
+        kLeft  = grid_->getKLeft ( globalIndex );
+        kBelow = grid_->getKBelow ( globalIndex );
 
         numEntriesPsi = 3;
         columnIndicesPsi.resize ( numEntriesPsi );
-        columnIndicesPsi[0] = k;
+        columnIndicesPsi[0] = globalIndex;
         columnIndicesPsi[1] = kLeft;
         columnIndicesPsi[2] = kBelow;
 
-        xLeft  = grid_->getXLeft ( k );
-        xBelow = grid_->getXBelow ( k );
-        ALeft  = A_->getAx ( *xLeft );
-        ABelow = A_->getAy ( *xBelow );
-
         valuesPsi.resize ( numEntriesPsi );
         valuesPsi[0] = -4.0 / ( h*h )
-                       + ( 1 - 2.0*norm ( psiView[k] ) );
-        valuesPsi[1] = 2.0 * exp ( IM*ALeft *h ) / ( h*h );
-        valuesPsi[2] = 2.0 * exp ( IM*ABelow*h ) / ( h*h );
+                       + ( 1 - 2.0*norm ( psiView[localIndex] ) );
+        valuesPsi[1] = 2.0 * exp ( IM*ALeftView[localIndex] *h ) / ( h*h );
+        valuesPsi[2] = 2.0 * exp ( IM*ABelowView[localIndex]*h ) / ( h*h );
 
         numEntriesPsiConj = 1;
         columnIndicesPsiConj.resize ( numEntriesPsiConj );
-        columnIndicesPsiConj[0] = k;
+        columnIndicesPsiConj[0] = globalIndex;
 
         valuesPsiConj.resize ( numEntriesPsiConj );
-        valuesPsiConj[0] = -psiView[k]*psiView[k];
+        valuesPsiConj[0] = -psiView[localIndex]*psiView[localIndex];
         valuesPsiConj[0] *= exp ( IM*chi*2.0 );
         // -----------------------------------------------------------------------
         break;
 
     case Recti::Grid::Abstract::BOUNDARY_TOPLEFTCONVEX:
         // -----------------------------------------------------------------------
-        kRight = grid_->getKRight ( k );
-        kBelow = grid_->getKBelow ( k );
+        kRight = grid_->getKRight ( globalIndex );
+        kBelow = grid_->getKBelow ( globalIndex );
 
         numEntriesPsi = 3;
         columnIndicesPsi.resize ( numEntriesPsi );
-        columnIndicesPsi[0] = k;
+        columnIndicesPsi[0] = globalIndex;
         columnIndicesPsi[1] = kRight;
         columnIndicesPsi[2] = kBelow;
 
-        xRight = grid_->getXRight ( k );
-        xBelow = grid_->getXBelow ( k );
-        ARight = A_->getAx ( *xRight );
-        ABelow = A_->getAy ( *xBelow );
-
         valuesPsi.resize ( numEntriesPsi );
         valuesPsi[0] = -4.0 / ( h*h )
-                       + ( 1 - 2.0*norm ( psiView[k] ) );
-        valuesPsi[1] = 2.0 * exp ( -IM*ARight*h ) / ( h*h );
-        valuesPsi[2] = 2.0 * exp ( IM*ABelow*h ) / ( h*h );
+                       + ( 1 - 2.0*norm ( psiView[localIndex] ) );
+        valuesPsi[1] = 2.0 * exp ( -IM*ARightView[localIndex]*h ) / ( h*h );
+        valuesPsi[2] = 2.0 * exp ( IM*ABelowView[localIndex]*h ) / ( h*h );
 
         numEntriesPsiConj = 1;
         columnIndicesPsiConj.resize ( numEntriesPsiConj );
-        columnIndicesPsiConj[0] = k;
+        columnIndicesPsiConj[0] = globalIndex;
 
         valuesPsiConj.resize ( numEntriesPsiConj );
-        valuesPsiConj[0] = -psiView[k]*psiView[k];
+        valuesPsiConj[0] = -psiView[localIndex]*psiView[localIndex];
         valuesPsiConj[0] *= exp ( IM*chi*2.0 );
         // -----------------------------------------------------------------------
         break;
 
     case Recti::Grid::Abstract::BOUNDARY_BOTTOM:
         // -------------------------------------------------------------------
-        kLeft  = grid_->getKLeft ( k );
-        kRight = grid_->getKRight ( k );
-        kAbove = grid_->getKAbove ( k );
+        kLeft  = grid_->getKLeft ( globalIndex );
+        kRight = grid_->getKRight ( globalIndex );
+        kAbove = grid_->getKAbove ( globalIndex );
 
         numEntriesPsi = 4;
         columnIndicesPsi.resize ( numEntriesPsi );
-        columnIndicesPsi[0] = k;
+        columnIndicesPsi[0] = globalIndex;
         columnIndicesPsi[1] = kLeft;
         columnIndicesPsi[2] = kRight;
         columnIndicesPsi[3] = kAbove;
 
-        xLeft  = grid_->getXLeft ( k );
-        xRight = grid_->getXRight ( k );
-        xAbove = grid_->getXAbove ( k );
-        ALeft  = A_->getAx ( *xLeft );
-        ARight = A_->getAx ( *xRight );
-        AAbove = A_->getAy ( *xAbove );
-
         valuesPsi.resize ( numEntriesPsi );
         valuesPsi[0] = - 4.0            / ( h*h )
-                       + ( 1.0 - 2.0*norm ( psiView[k] ) );
-        valuesPsi[1] =       exp ( IM*ALeft *h ) / ( h*h );
-        valuesPsi[2] =       exp ( -IM*ARight*h ) / ( h*h );
-        valuesPsi[3] = 2.0 * exp ( -IM*AAbove*h ) / ( h*h );
+                       + ( 1.0 - 2.0*norm ( psiView[localIndex] ) );
+        valuesPsi[1] =       exp ( IM*ALeftView[localIndex] *h ) / ( h*h );
+        valuesPsi[2] =       exp ( -IM*ARightView[localIndex]*h ) / ( h*h );
+        valuesPsi[3] = 2.0 * exp ( -IM*AAboveView[localIndex]*h ) / ( h*h );
 
         numEntriesPsiConj = 1;
         columnIndicesPsiConj.resize ( numEntriesPsiConj );
-        columnIndicesPsiConj[0] = k;
+        columnIndicesPsiConj[0] = globalIndex;
 
         valuesPsiConj.resize ( numEntriesPsiConj );
-        valuesPsiConj[0] = -psiView[k]*psiView[k];
+        valuesPsiConj[0] = -psiView[localIndex]*psiView[localIndex];
         valuesPsiConj[0] *= exp ( IM*chi*2.0 );
         // -------------------------------------------------------------------
         break;
 
     case Recti::Grid::Abstract::BOUNDARY_RIGHT:
         // -------------------------------------------------------------------
-        kBelow = grid_->getKBelow ( k );
-        kAbove = grid_->getKAbove ( k );
-        kLeft  = grid_->getKLeft ( k );
+        kBelow = grid_->getKBelow ( globalIndex );
+        kAbove = grid_->getKAbove ( globalIndex );
+        kLeft  = grid_->getKLeft ( globalIndex );
 
         numEntriesPsi = 4;
         columnIndicesPsi.resize ( numEntriesPsi );
-        columnIndicesPsi[0] = k;
+        columnIndicesPsi[0] = globalIndex;
         columnIndicesPsi[1] = kBelow;
         columnIndicesPsi[2] = kAbove;
         columnIndicesPsi[3] = kLeft;
 
-        xLeft  = grid_->getXLeft ( k );
-        xBelow = grid_->getXBelow ( k );
-        xAbove = grid_->getXAbove ( k );
-        
-        ALeft  = A_->getAx ( *xLeft );
-        ABelow = A_->getAy ( *xBelow );
-        AAbove = A_->getAy ( *xAbove );
-
         valuesPsi.resize ( numEntriesPsi );
         valuesPsi[0] = - 4.0            / ( h*h )
-                       + ( 1.0 - 2.0*norm ( psiView[k] ) );
-        valuesPsi[1] =       exp ( IM*ABelow*h ) / ( h*h );
-        valuesPsi[2] =       exp ( -IM*AAbove*h ) / ( h*h );
-        valuesPsi[3] = 2.0 * exp ( IM*ALeft *h ) / ( h*h );
+                       + ( 1.0 - 2.0*norm ( psiView[localIndex] ) );
+        valuesPsi[1] =       exp ( IM*ABelowView[localIndex]*h ) / ( h*h );
+        valuesPsi[2] =       exp ( -IM*AAboveView[localIndex]*h ) / ( h*h );
+        valuesPsi[3] = 2.0 * exp ( IM*ALeftView[localIndex] *h ) / ( h*h );
 
         numEntriesPsiConj = 1;
         columnIndicesPsiConj.resize ( numEntriesPsiConj );
-        columnIndicesPsiConj[0] = k;
+        columnIndicesPsiConj[0] = globalIndex;
 
         valuesPsiConj.resize ( numEntriesPsiConj );
-        valuesPsiConj[0] = -psiView[k]*psiView[k];
+        valuesPsiConj[0] = -psiView[localIndex]*psiView[localIndex];
         valuesPsiConj[0] *= exp ( IM*chi*2.0 );
         // -------------------------------------------------------------------
         break;
 
     case Recti::Grid::Abstract::BOUNDARY_TOP:
         // -------------------------------------------------------------------
-        kBelow = grid_->getKBelow ( k );
-        kRight = grid_->getKRight ( k );
-        kLeft  = grid_->getKLeft ( k );
+        kBelow = grid_->getKBelow ( globalIndex );
+        kRight = grid_->getKRight ( globalIndex );
+        kLeft  = grid_->getKLeft ( globalIndex );
 
         numEntriesPsi = 4;
         columnIndicesPsi.resize ( numEntriesPsi );
-        columnIndicesPsi[0] = k;
+        columnIndicesPsi[0] = globalIndex;
         columnIndicesPsi[1] = kBelow;
         columnIndicesPsi[2] = kLeft;
         columnIndicesPsi[3] = kRight;
 
-        xLeft  = grid_->getXLeft ( k );
-        xRight = grid_->getXRight ( k );
-        xBelow = grid_->getXBelow ( k );
-        ALeft  = A_->getAx ( *xLeft );
-        ARight = A_->getAx ( *xRight );
-        ABelow = A_->getAy ( *xBelow );
-
         valuesPsi.resize ( numEntriesPsi );
         valuesPsi[0] = - 4.0             / ( h*h )
-                       + ( 1.0 - 2.0*norm ( psiView[k] ) );
-        valuesPsi[1] = 2.0 * exp ( IM*ABelow*h ) / ( h*h );
-        valuesPsi[2] =       exp ( IM*ALeft *h ) / ( h*h );
-        valuesPsi[3] =       exp ( -IM*ARight*h ) / ( h*h );
+                       + ( 1.0 - 2.0*norm ( psiView[localIndex] ) );
+        valuesPsi[1] = 2.0 * exp ( IM*ABelowView[localIndex]*h ) / ( h*h );
+        valuesPsi[2] =       exp ( IM*ALeftView[localIndex] *h ) / ( h*h );
+        valuesPsi[3] =       exp ( -IM*ARightView[localIndex]*h ) / ( h*h );
 
         numEntriesPsiConj = 1;
         columnIndicesPsiConj.resize ( numEntriesPsiConj );
-        columnIndicesPsiConj[0] = k;
+        columnIndicesPsiConj[0] = globalIndex;
 
         valuesPsiConj.resize ( numEntriesPsiConj );
-        valuesPsiConj[0] = -psiView[k]*psiView[k];
+        valuesPsiConj[0] = -psiView[localIndex]*psiView[localIndex];
         valuesPsiConj[0] *= exp ( IM*chi*2.0 );
         // -------------------------------------------------------------------
         break;
 
     case Recti::Grid::Abstract::BOUNDARY_LEFT:
         // -------------------------------------------------------------------
-        kBelow = grid_->getKBelow ( k );
-        kAbove = grid_->getKAbove ( k );
-        kRight = grid_->getKRight ( k );
+        kBelow = grid_->getKBelow ( globalIndex );
+        kAbove = grid_->getKAbove ( globalIndex );
+        kRight = grid_->getKRight ( globalIndex );
 
         numEntriesPsi = 4;
         columnIndicesPsi.resize ( numEntriesPsi );
-        columnIndicesPsi[0] = k;
+        columnIndicesPsi[0] = globalIndex;
         columnIndicesPsi[1] = kBelow;
         columnIndicesPsi[2] = kAbove;
         columnIndicesPsi[3] = kRight;
 
-        xRight = grid_->getXRight ( k );
-        xBelow = grid_->getXBelow ( k );
-        xAbove = grid_->getXAbove ( k );
-        ARight = A_->getAx ( *xRight );
-        ABelow = A_->getAy ( *xBelow );
-        AAbove = A_->getAy ( *xAbove );
-
         valuesPsi.resize ( numEntriesPsi );
         valuesPsi[0] = - 4.0            / ( h*h )
-                       + ( 1.0 - 2.0*norm ( psiView[k] ) );
-        valuesPsi[1] =       exp ( IM*ABelow*h ) / ( h*h );
-        valuesPsi[2] =       exp ( -IM*AAbove*h ) / ( h*h );
-        valuesPsi[3] = 2.0 * exp ( -IM*ARight*h ) / ( h*h );
+                       + ( 1.0 - 2.0*norm ( psiView[localIndex] ) );
+        valuesPsi[1] =       exp ( IM*ABelowView[localIndex]*h ) / ( h*h );
+        valuesPsi[2] =       exp ( -IM*AAboveView[localIndex]*h ) / ( h*h );
+        valuesPsi[3] = 2.0 * exp ( -IM*ARightView[localIndex]*h ) / ( h*h );
 
         numEntriesPsiConj = 1;
         columnIndicesPsiConj.resize ( numEntriesPsiConj );
-        columnIndicesPsiConj[0] = k;
+        columnIndicesPsiConj[0] = globalIndex;
 
         valuesPsiConj.resize ( numEntriesPsiConj );
-        valuesPsiConj[0] = -psiView[k]*psiView[k];
+        valuesPsiConj[0] = -psiView[localIndex]*psiView[localIndex];
         valuesPsiConj[0] *= exp ( IM*chi*2.0 );
         // -------------------------------------------------------------------
         break;
 
     case Recti::Grid::Abstract::BOUNDARY_BOTTOMRIGHTCONCAVE:
         // -----------------------------------------------------------------------
-        kRight = grid_->getKRight ( k );
-        kLeft  = grid_->getKLeft ( k );
-        kAbove = grid_->getKAbove ( k );
-        kBelow = grid_->getKBelow ( k );
+        kRight = grid_->getKRight ( globalIndex );
+        kLeft  = grid_->getKLeft ( globalIndex );
+        kAbove = grid_->getKAbove ( globalIndex );
+        kBelow = grid_->getKBelow ( globalIndex );
 
         numEntriesPsi = 4;
         columnIndicesPsi.resize ( numEntriesPsi );
@@ -1157,20 +949,11 @@ getJacobianRow ( const Teuchos::RCP<const Ginla::State> & state,
         columnIndicesPsi[2] = kBelow;
         columnIndicesPsi[3] = kAbove;
 
-        xLeft  = grid_->getXLeft ( k );
-        xRight = grid_->getXRight ( k );
-        xBelow = grid_->getXBelow ( k );
-        xAbove = grid_->getXAbove ( k );
-        ALeft  = A_->getAx ( *xLeft );
-        ARight = A_->getAx ( *xRight );
-        ABelow = A_->getAy ( *xBelow );
-        AAbove = A_->getAy ( *xAbove );
-
         valuesPsi.resize ( numEntriesPsi );
-        valuesPsi[0] =  exp ( IM*ALeft  *h ) * IM/ ( sqrt ( 2 ) *2*h );
-        valuesPsi[1] = -exp ( -IM*ARight *h ) * IM/ ( sqrt ( 2 ) *2*h );
-        valuesPsi[2] = -exp ( IM*ABelow *h ) * IM/ ( sqrt ( 2 ) *2*h );
-        valuesPsi[3] =  exp ( -IM*AAbove *h ) * IM/ ( sqrt ( 2 ) *2*h );
+        valuesPsi[0] =  exp ( IM*ALeftView[localIndex]  *h ) * IM/ ( sqrt ( 2 ) *2*h );
+        valuesPsi[1] = -exp ( -IM*ARightView[localIndex] *h ) * IM/ ( sqrt ( 2 ) *2*h );
+        valuesPsi[2] = -exp ( IM*ABelowView[localIndex] *h ) * IM/ ( sqrt ( 2 ) *2*h );
+        valuesPsi[3] =  exp ( -IM*AAboveView[localIndex] *h ) * IM/ ( sqrt ( 2 ) *2*h );
 
         numEntriesPsiConj = 0;
         columnIndicesPsiConj.resize ( numEntriesPsiConj );
@@ -1180,10 +963,10 @@ getJacobianRow ( const Teuchos::RCP<const Ginla::State> & state,
 
     case Recti::Grid::Abstract::BOUNDARY_BOTTOMLEFTCONCAVE:
         // -----------------------------------------------------------------------
-        kRight = grid_->getKRight ( k );
-        kLeft  = grid_->getKLeft ( k );
-        kAbove = grid_->getKAbove ( k );
-        kBelow = grid_->getKBelow ( k );
+        kRight = grid_->getKRight ( globalIndex );
+        kLeft  = grid_->getKLeft ( globalIndex );
+        kAbove = grid_->getKAbove ( globalIndex );
+        kBelow = grid_->getKBelow ( globalIndex );
 
         numEntriesPsi = 4;
         columnIndicesPsi.resize ( numEntriesPsi );
@@ -1192,20 +975,11 @@ getJacobianRow ( const Teuchos::RCP<const Ginla::State> & state,
         columnIndicesPsi[2] = kBelow;
         columnIndicesPsi[3] = kAbove;
 
-        xLeft  = grid_->getXLeft ( k );
-        xRight = grid_->getXRight ( k );
-        xBelow = grid_->getXBelow ( k );
-        xAbove = grid_->getXAbove ( k );
-        ALeft  = A_->getAx ( *xLeft );
-        ARight = A_->getAx ( *xRight );
-        ABelow = A_->getAy ( *xBelow );
-        AAbove = A_->getAy ( *xAbove );
-
         valuesPsi.resize ( numEntriesPsi );
-        valuesPsi[0] = -exp ( IM*ALeft  *h ) * IM/ ( sqrt ( 2 ) *2*h );
-        valuesPsi[1] =  exp ( -IM*ARight *h ) * IM/ ( sqrt ( 2 ) *2*h );
-        valuesPsi[2] = -exp ( IM*ABelow *h ) * IM/ ( sqrt ( 2 ) *2*h );
-        valuesPsi[3] =  exp ( -IM*AAbove *h ) * IM/ ( sqrt ( 2 ) *2*h );
+        valuesPsi[0] = -exp ( IM*ALeftView[localIndex]  *h ) * IM/ ( sqrt ( 2 ) *2*h );
+        valuesPsi[1] =  exp ( -IM*ARightView[localIndex] *h ) * IM/ ( sqrt ( 2 ) *2*h );
+        valuesPsi[2] = -exp ( IM*ABelowView[localIndex] *h ) * IM/ ( sqrt ( 2 ) *2*h );
+        valuesPsi[3] =  exp ( -IM*AAboveView[localIndex] *h ) * IM/ ( sqrt ( 2 ) *2*h );
 
         numEntriesPsiConj = 0;
         columnIndicesPsiConj.resize ( numEntriesPsiConj );
@@ -1215,10 +989,10 @@ getJacobianRow ( const Teuchos::RCP<const Ginla::State> & state,
 
     case Recti::Grid::Abstract::BOUNDARY_TOPRIGHTCONCAVE:
         // -----------------------------------------------------------------------
-        kRight = grid_->getKRight ( k );
-        kLeft  = grid_->getKLeft ( k );
-        kAbove = grid_->getKAbove ( k );
-        kBelow = grid_->getKBelow ( k );
+        kRight = grid_->getKRight ( globalIndex );
+        kLeft  = grid_->getKLeft ( globalIndex );
+        kAbove = grid_->getKAbove ( globalIndex );
+        kBelow = grid_->getKBelow ( globalIndex );
 
         numEntriesPsi = 4;
         columnIndicesPsi.resize ( numEntriesPsi );
@@ -1227,20 +1001,11 @@ getJacobianRow ( const Teuchos::RCP<const Ginla::State> & state,
         columnIndicesPsi[2] = kBelow;
         columnIndicesPsi[3] = kAbove;
 
-        xLeft  = grid_->getXLeft ( k );
-        xRight = grid_->getXRight ( k );
-        xBelow = grid_->getXBelow ( k );
-        xAbove = grid_->getXAbove ( k );
-        ALeft  = A_->getAx ( *xLeft );
-        ARight = A_->getAx ( *xRight );
-        ABelow = A_->getAy ( *xBelow );
-        AAbove = A_->getAy ( *xAbove );
-
         valuesPsi.resize ( numEntriesPsi );
-        valuesPsi[0] =  exp ( IM*ALeft  *h ) * IM/ ( sqrt ( 2 ) *2*h );
-        valuesPsi[1] = -exp ( -IM*ARight *h ) * IM/ ( sqrt ( 2 ) *2*h );
-        valuesPsi[2] =  exp ( IM*ABelow *h ) * IM/ ( sqrt ( 2 ) *2*h );
-        valuesPsi[3] = -exp ( -IM*AAbove *h ) * IM/ ( sqrt ( 2 ) *2*h );
+        valuesPsi[0] =  exp ( IM*ALeftView[localIndex]  *h ) * IM/ ( sqrt ( 2 ) *2*h );
+        valuesPsi[1] = -exp ( -IM*ARightView[localIndex] *h ) * IM/ ( sqrt ( 2 ) *2*h );
+        valuesPsi[2] =  exp ( IM*ABelowView[localIndex] *h ) * IM/ ( sqrt ( 2 ) *2*h );
+        valuesPsi[3] = -exp ( -IM*AAboveView[localIndex] *h ) * IM/ ( sqrt ( 2 ) *2*h );
 
         numEntriesPsiConj = 0;
         columnIndicesPsiConj.resize ( numEntriesPsiConj );
@@ -1250,10 +1015,10 @@ getJacobianRow ( const Teuchos::RCP<const Ginla::State> & state,
 
     case Recti::Grid::Abstract::BOUNDARY_TOPLEFTCONCAVE:
         // -----------------------------------------------------------------------
-        kRight = grid_->getKRight ( k );
-        kLeft  = grid_->getKLeft ( k );
-        kAbove = grid_->getKAbove ( k );
-        kBelow = grid_->getKBelow ( k );
+        kRight = grid_->getKRight ( globalIndex );
+        kLeft  = grid_->getKLeft ( globalIndex );
+        kAbove = grid_->getKAbove ( globalIndex );
+        kBelow = grid_->getKBelow ( globalIndex );
 
         numEntriesPsi = 4;
         columnIndicesPsi.resize ( numEntriesPsi );
@@ -1262,20 +1027,11 @@ getJacobianRow ( const Teuchos::RCP<const Ginla::State> & state,
         columnIndicesPsi[2] = kBelow;
         columnIndicesPsi[3] = kAbove;
 
-        xLeft  = grid_->getXLeft ( k );
-        xRight = grid_->getXRight ( k );
-        xBelow = grid_->getXBelow ( k );
-        xAbove = grid_->getXAbove ( k );
-        ALeft  = A_->getAx ( *xLeft );
-        ARight = A_->getAx ( *xRight );
-        ABelow = A_->getAy ( *xBelow );
-        AAbove = A_->getAy ( *xAbove );
-
         valuesPsi.resize ( numEntriesPsi );
-        valuesPsi[0] = -exp ( IM*ALeft  *h ) * IM/ ( sqrt ( 2 ) *2*h );
-        valuesPsi[1] =  exp ( -IM*ARight *h ) * IM/ ( sqrt ( 2 ) *2*h );
-        valuesPsi[2] =  exp ( IM*ABelow *h ) * IM/ ( sqrt ( 2 ) *2*h );
-        valuesPsi[3] = -exp ( -IM*AAbove *h ) * IM/ ( sqrt ( 2 ) *2*h );
+        valuesPsi[0] = -exp ( IM*ALeftView[localIndex]  *h ) * IM/ ( sqrt ( 2 ) *2*h );
+        valuesPsi[1] =  exp ( -IM*ARightView[localIndex] *h ) * IM/ ( sqrt ( 2 ) *2*h );
+        valuesPsi[2] =  exp ( IM*ABelowView[localIndex] *h ) * IM/ ( sqrt ( 2 ) *2*h );
+        valuesPsi[3] = -exp ( -IM*AAboveView[localIndex] *h ) * IM/ ( sqrt ( 2 ) *2*h );
 
         numEntriesPsiConj = 0;
         columnIndicesPsiConj.resize ( numEntriesPsiConj );

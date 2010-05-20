@@ -34,9 +34,13 @@ namespace Ginla {
   namespace MagneticVectorPotential{
     class Centered;
   }
+  namespace Komplex {
+    class DoubleMatrix; 
+  }
 }
 
 #include <Teuchos_Array.hpp>
+#include <Epetra_Vector.h>
 #include <LOCA_Parameter_Vector.H>
 
 namespace Ginla {
@@ -59,17 +63,11 @@ public:
     virtual Teuchos::RCP<Ginla::State>
     getF( const Teuchos::RCP<const Ginla::State> & state ) const = 0; // purely virtual
     
-    virtual Teuchos::RCP<Ginla::State>
+    virtual Teuchos::RCP<const Ginla::State>
     getDFDh0( const Teuchos::RCP<const Ginla::State> & state ) const = 0; // purely virtual
 
-    virtual void
-    getJacobianRow ( const Teuchos::RCP<const Ginla::State> & state,
-                     const int                                k,
-                     Teuchos::Array<int>                    & columnIndicesPsi,
-                     Teuchos::Array<double_complex>         & valuesPsi,
-                     Teuchos::Array<int>                    & columnIndicesPsiConj,
-                     Teuchos::Array<double_complex>         & valuesPsiCon
-                   ) const = 0; // purely virtual
+    virtual Teuchos::RCP<const Ginla::Komplex::DoubleMatrix>
+    getJacobian ( const Teuchos::RCP<const Ginla::State> & state ) = 0; // purely virtual
 
     Teuchos::RCP<const Recti::Grid::General>
     getGrid() const;
@@ -84,9 +82,31 @@ protected:
     const Teuchos::RCP<const ComplexMap> domainMap_;
     const Teuchos::RCP<const ComplexMap> rangeMap_;
     const Teuchos::RCP<Recti::Grid::Uniform> grid_;
+    
+    // cache for the queries to A
+    const Teuchos::RCP<RealVector> ALeft_;
+    const Teuchos::RCP<RealVector> ARight_;
+    const Teuchos::RCP<RealVector> AAbove_;
+    const Teuchos::RCP<RealVector> ABelow_;
+    
+    // cache for the queries to dAdH0
+    const Teuchos::RCP<RealVector> dAdH0Left_;
+    const Teuchos::RCP<RealVector> dAdH0Right_;
+    const Teuchos::RCP<RealVector> dAdH0Above_;
+    const Teuchos::RCP<RealVector> dAdH0Below_;
+
+    //! Data for building the double matrix A/B, corresponding to \f$\psi\f$ and \f$\overline{\psi}\f$, respectively.
+    bool firstTime_;
+    Teuchos::RCP<Ginla::Komplex::DoubleMatrix> AB_;
+    
+private:
+  
+    //! Builds the cache for values of \f$A\f$ and \f$\frac{\text{d}A}{\text{d}H0}\f$.
+    void
+    buildACache_();
+  
     const Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> A_;
 
-private:
 };
 
   } // namespace Virtual

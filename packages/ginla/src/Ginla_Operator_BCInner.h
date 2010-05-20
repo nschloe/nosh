@@ -60,9 +60,9 @@ public:
 protected:
 private:
     double_complex
-    getFEntry ( const Teuchos::RCP<const Ginla::State> & state,
-                const int k
-              ) const;
+    getFEntry_ ( const Teuchos::RCP<const Ginla::State> & state,
+                 const int k
+               ) const;
 };
 
   } // namespace Operator

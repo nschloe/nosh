@@ -177,10 +177,10 @@ BOOST_AUTO_TEST_CASE( zero_step_loca_test )
                                                   
     Teuchos::RCP<Ginla::LocaSystem::Default> glsystem =
                Teuchos::rcp ( new Ginla::LocaSystem::Default ( glOperator,
-                                                                eComm,
-                                                                map,
-                                                                statsWriter,
-                                                                stateWriter ) );
+                                                               eComm,
+                                                               map,
+                                                               statsWriter,
+                                                               stateWriter ) );
     
     // set the initial value from glParameters
     std::string contParam = stepperList.get<string> ( "Continuation Parameter" );

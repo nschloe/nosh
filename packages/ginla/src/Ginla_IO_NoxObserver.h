@@ -26,7 +26,9 @@
 
 // forward declarations
 namespace Ginla {
-  class Komplex;
+  namespace Komplex {
+    class LinearProblem;
+  }
   namespace IO {
     class StateWriter;
   }

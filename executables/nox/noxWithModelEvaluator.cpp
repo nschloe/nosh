@@ -145,8 +145,8 @@ int main ( int argc, char *argv[] )
         Teuchos::rcp ( new Ginla::MagneticVectorPotential::Centered ( h0,
                                                                       scaling ) );
 
-    Teuchos::RCP<Ginla::Komplex> komplex =
-        Teuchos::rcp( new Ginla::Komplex( eComm, state->getPsiNonConst()->getMap() ) );
+    Teuchos::RCP<Ginla::Komplex::LinearProblem> komplex =
+        Teuchos::rcp( new Ginla::Komplex::LinearProblem( eComm, state->getPsiNonConst()->getMap() ) );
         
     // setup the data output
     Teuchos::RCP<Ginla::IO::StateWriter> stateWriter =

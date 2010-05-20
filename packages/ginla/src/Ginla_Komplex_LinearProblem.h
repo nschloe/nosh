@@ -5,8 +5,8 @@
  *      Author: Nico Schl\"omer
  */
 
-#ifndef GLKOMPLEX_H_
-#define GLKOMPLEX_H_
+#ifndef GINLA_KOMPLEX_LINEARPROBLEM_H_
+#define GINLA_KOMPLEX_LINEARPROBLEM_H_
 
 #include "Ginla_Typedefs.h"
 
@@ -17,18 +17,26 @@ class Epetra_CrsMatrix;
 class Epetra_Vector;
 
 namespace Ginla {
+  namespace Komplex {
+    class DoubleMatrix;
+  }
+}
 
-class Komplex
+namespace Ginla {
+
+namespace Komplex {
+  
+class LinearProblem
 {
 public:
 
     // Default constructor
-    Komplex ( const Teuchos::RCP<const Epetra_Comm>                  eComm,
-              const Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> > ComplexMap );
+    LinearProblem ( const Teuchos::RCP<const Epetra_Comm>                  eComm,
+                    const Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> > ComplexMap );
 
     // Destructor
     virtual
-    ~Komplex();
+    ~LinearProblem();
 
     Teuchos::RCP<Epetra_Map>
     getRealMap() const;
@@ -58,6 +66,12 @@ public:
     //! Get read/write access to the matrix from outside.
     Teuchos::RCP<Epetra_CrsMatrix>
     getMatrix() const;
+    
+    //! Essentially does the same thing as \c updateRow, just that the input argument
+    //! is a whole \c DoubleMatrix.
+    void
+    update ( const Teuchos::RCP<const Ginla::Komplex::DoubleMatrix> AB,
+             bool firstTime );
 
     /** \param row       row of the matrix that gets updated
       * \param indicesA  column indices of matrix \f$A\f$
@@ -89,12 +103,12 @@ public:
       * \f].
       */
     void
-    updateRow ( const unsigned int                      row,
-                const Teuchos::Array<int>             & indicesA,
-                const Teuchos::Array<double_complex>  & valuesA,
-                const Teuchos::Array<int>             & indicesB,
-                const Teuchos::Array<double_complex>  & valuesB,
-                const bool                              firstTime
+    updateRow ( const unsigned int                               row,
+                const Teuchos::ArrayRCP<const Thyra::Ordinal>  & indicesA,
+                const Teuchos::ArrayRCP<const double_complex>  & valuesA,
+                const Teuchos::ArrayRCP<const Thyra::Ordinal>  & indicesB,
+                const Teuchos::ArrayRCP<const double_complex>  & valuesB,
+                const bool                                       firstTime
               );
 
     /** Considering the term \f$a \psi + b \psi^*\f$ with
@@ -125,17 +139,17 @@ public:
 private:
 
     Teuchos::RCP<Epetra_Map>
-    createRealMap ( const Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> > & ComplexMap ) const;
+    createRealMap_ ( const Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> > & ComplexMap ) const;
 
     Teuchos::RCP<const Teuchos::Comm<int> >
-    create_CommInt ( const Teuchos::RCP<const Epetra_Comm> &epetraComm );
+    create_CommInt_ ( const Teuchos::RCP<const Epetra_Comm> &epetraComm );
 
     int
-    PutRow ( int      Row,
-             int    & numIndices,
-             double * values,
-             int    * indices,
-             bool     firstTime );
+    PutRow_ ( int      Row,
+              int    & numIndices,
+              double * values,
+              int    * indices,
+              bool     firstTime );
 
 private:
 
@@ -144,12 +158,14 @@ private:
     const Teuchos::RCP<const Teuchos::Comm<int> > TComm_;
 
     //! Maps for real- and complex-valued vectors.
-    Teuchos::RCP<Epetra_Map>                         RealMap_;
-    Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> > ComplexMap_;
+    Teuchos::RCP<Epetra_Map>       RealMap_;
+    Teuchos::RCP<const ComplexMap> ComplexMap_;
 
     Teuchos::RCP<Epetra_CrsMatrix> realMatrix_;
 
 };
 
 }
-#endif /* GLKOMPLEX_H_ */
+
+}
+#endif /* GINLA_KOMPLEX_LINEARPROBLEM_H_ */

@@ -77,7 +77,7 @@ BOOST_AUTO_TEST_CASE( operator_test )
                                                         state->getPsi()->getMap() ) );
     // ------------------------------------------------------------------------
     // get dF/dh0 at state
-    Teuchos::RCP<Ginla::State> dFState = glOperator->getDFDh0( state );
+    Teuchos::RCP<const Ginla::State> dFState = glOperator->getDFDh0( state );
     // ------------------------------------------------------------------------
     // compute the finite difference
     double eps = 1.0e-05;

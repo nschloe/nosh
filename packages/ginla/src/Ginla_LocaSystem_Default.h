@@ -157,7 +157,7 @@ private:
 
     Teuchos::RCP<const LOCA::Stepper> stepper_;
 
-    const Teuchos::RCP<Ginla::Komplex> komplex_;
+    const Teuchos::RCP<Ginla::Komplex::LinearProblem> komplex_;
     
     const Teuchos::RCP<Ginla::IO::StatsWriter> statsWriter_;
     const Teuchos::RCP<Ginla::IO::StateWriter> stateWriter_;

@@ -24,7 +24,9 @@ public:
   virtual
   ~Centered();
 
-  void
+  //! Sets the parameters in this module.
+  //! @return Indicates whether the internal values have changed.
+  bool
   setParameters( const LOCA::ParameterVector & p );
   
   Teuchos::RCP<LOCA::ParameterVector>

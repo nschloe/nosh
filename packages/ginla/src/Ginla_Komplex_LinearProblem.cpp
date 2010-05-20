@@ -5,7 +5,8 @@
  *      Author: Nico Schl\"omer
  */
 
-#include "Ginla_Komplex.h"
+#include "Ginla_Komplex_LinearProblem.h"
+#include "Ginla_Komplex_DoubleMatrix.h"
 
 #include <Epetra_Map.h>
 #include <Teuchos_DefaultComm.hpp> // for Teuchos::SerialComm
@@ -20,36 +21,40 @@
 
 // =============================================================================
 // Default constructor
-Ginla::Komplex::
-Komplex ( const Teuchos::RCP<const Epetra_Comm>                  eComm,
-          const Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> > complexMap ) :
+Ginla::Komplex::LinearProblem::
+LinearProblem ( const Teuchos::RCP<const Epetra_Comm>                  eComm,
+                const Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> > complexMap ) :
         EComm_ ( eComm ),
-        TComm_ ( create_CommInt ( eComm ) ),
-        RealMap_ ( createRealMap ( complexMap ) ),
+        TComm_ ( this->create_CommInt_ ( eComm ) ),
+        RealMap_ ( this->createRealMap_ ( complexMap ) ),
         ComplexMap_ ( complexMap ),
         realMatrix_ ( new Epetra_CrsMatrix (Copy,*RealMap_,0) )
 {
 }
 // =============================================================================
-Ginla::Komplex::~Komplex()
+Ginla::Komplex::LinearProblem::
+~LinearProblem()
 {
 }
 // =============================================================================
 Teuchos::RCP<Epetra_Map>
-Ginla::Komplex::getRealMap() const
+Ginla::Komplex::LinearProblem::
+getRealMap() const
 {
     return RealMap_;
 }
 // =============================================================================
-Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> >
-Ginla::Komplex::getComplexMap() const
+Teuchos::RCP<const ComplexMap>
+Ginla::Komplex::LinearProblem::
+getComplexMap() const
 {
     return ComplexMap_;
 }
 // =============================================================================
 // converts a real-valued vector to a complex-valued psi vector
 Teuchos::RCP<ComplexVector>
-Ginla::Komplex::real2complex ( const Epetra_Vector & x ) const
+Ginla::Komplex::LinearProblem::
+real2complex ( const Epetra_Vector & x ) const
 {
     TEST_FOR_EXCEPTION ( !RealMap_.is_valid_ptr() || RealMap_.is_null(),
                          std::logic_error,
@@ -103,7 +108,7 @@ Ginla::Komplex::real2complex ( const Epetra_Vector & x ) const
 // =============================================================================
 // converts a real-valued vector to a complex-valued psi vector
 Teuchos::RCP<Epetra_Vector>
-Ginla::Komplex::
+Ginla::Komplex::LinearProblem::
 complex2real ( const ComplexVector & complexVec ) const
 {
     TEUCHOS_ASSERT ( ComplexMap_.is_valid_ptr()
@@ -123,7 +128,7 @@ complex2real ( const ComplexVector & complexVec ) const
 }
 // =============================================================================
 Teuchos::RCP<Epetra_Vector>
-Ginla::Komplex::
+Ginla::Komplex::LinearProblem::
 complex2real ( const Teuchos::RCP<const ComplexVector> & complexVecPtr ) const
 {
   
@@ -132,8 +137,9 @@ complex2real ( const Teuchos::RCP<const ComplexVector> & complexVecPtr ) const
 }
 // =============================================================================
 Teuchos::RCP<Epetra_Map>
-Ginla::Komplex::
-createRealMap ( const Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> > & ComplexMap ) const
+Ginla::Komplex::LinearProblem::
+createRealMap_ ( const Teuchos::RCP<const ComplexMap> & ComplexMap
+               ) const
 {
     TEST_FOR_EXCEPTION ( !ComplexMap.is_valid_ptr() || ComplexMap.is_null(),
                          std::logic_error,
@@ -164,8 +170,8 @@ createRealMap ( const Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> > & Complex
 }
 // =============================================================================
 Teuchos::RCP<const Teuchos::Comm<int> >
-Ginla::Komplex::
-create_CommInt ( const Teuchos::RCP<const Epetra_Comm> &epetraComm )
+Ginla::Komplex::LinearProblem::
+create_CommInt_ ( const Teuchos::RCP<const Epetra_Comm> &epetraComm )
 {
     using Teuchos::RCP;
     using Teuchos::rcp;
@@ -201,26 +207,56 @@ create_CommInt ( const Teuchos::RCP<const Epetra_Comm> &epetraComm )
 }
 // =============================================================================
 void
-Ginla::Komplex::finalizeMatrix()
+Ginla::Komplex::LinearProblem::finalizeMatrix()
 {
     TEUCHOS_ASSERT_EQUALITY ( 0, realMatrix_->FillComplete() );
     TEUCHOS_ASSERT_EQUALITY ( 0, realMatrix_->OptimizeStorage() );
 }
 // =============================================================================
 void
-Ginla::Komplex::zeroOutMatrix()
+Ginla::Komplex::LinearProblem::zeroOutMatrix()
 {
     TEUCHOS_ASSERT_EQUALITY ( 0, realMatrix_->PutScalar ( 0.0 ) );
 }
 // =============================================================================
 void
-Ginla::Komplex::
-updateRow ( const unsigned int                      row,
-            const Teuchos::Array<int>             & indicesA,
-            const Teuchos::Array<double_complex>  & valuesA,
-            const Teuchos::Array<int>             & indicesB,
-            const Teuchos::Array<double_complex>  & valuesB,
-            const bool                              firstTime
+Ginla::Komplex::LinearProblem::
+update ( const Teuchos::RCP<const Ginla::Komplex::DoubleMatrix> AB,
+         bool firstTime )
+{ 
+    int numMyElements = ComplexMap_->getNodeNumElements();
+    Teuchos::ArrayRCP<const Thyra::Ordinal> indicesA;
+    Teuchos::ArrayRCP<const double_complex> valuesA;
+    Teuchos::ArrayRCP<const Thyra::Ordinal> indicesB;
+    Teuchos::ArrayRCP<const double_complex> valuesB;
+    
+    for ( int row = 0; row < numMyElements; row++ )
+    {
+        Thyra::Ordinal globalRow = ComplexMap_->getGlobalElement ( row );
+        
+        AB->getMatrixA()->getLocalRowView( row,
+                                           indicesA,
+                                           valuesA );
+                                            
+        AB->getMatrixB()->getLocalRowView( row,
+                                           indicesB,
+                                           valuesB );
+        
+        this->updateRow ( globalRow,
+                          indicesA, valuesA,
+                          indicesB, valuesB,
+                          firstTime ); 
+    }
+}
+// =============================================================================
+void
+Ginla::Komplex::LinearProblem::
+updateRow ( const unsigned int                               row,
+            const Teuchos::ArrayRCP<const Thyra::Ordinal>  & indicesA,
+            const Teuchos::ArrayRCP<const double_complex>  & valuesA,
+            const Teuchos::ArrayRCP<const Thyra::Ordinal>  & indicesB,
+            const Teuchos::ArrayRCP<const double_complex>  & valuesB,
+            const bool                                       firstTime
           )
 {
     TEUCHOS_ASSERT ( realMatrix_.is_valid_ptr() && !realMatrix_.is_null() );
@@ -248,7 +284,7 @@ updateRow ( const unsigned int                      row,
     for ( int k = 0; k < numEntries; k++ )
         valuesAReal[k] = std::real ( valuesA[k] );
 
-    TEUCHOS_ASSERT_INEQUALITY ( 0, <=, PutRow ( realRow, numEntries, valuesAReal, indicesAReal, firstTime ) );
+    TEUCHOS_ASSERT_INEQUALITY ( 0, <=, this->PutRow_ ( realRow, numEntries, valuesAReal, indicesAReal, firstTime ) );
     delete[] valuesAReal;
     valuesAReal = NULL;
     delete[] indicesAReal;
@@ -263,7 +299,7 @@ updateRow ( const unsigned int                      row,
     for ( int k = 0; k < numEntries; k++ )
         valuesBReal[k] = std::real ( valuesB[k] );
 
-    TEUCHOS_ASSERT_INEQUALITY ( 0, <=, PutRow ( realRow, numEntries, valuesBReal, indicesBReal, firstTime ) );
+    TEUCHOS_ASSERT_INEQUALITY ( 0, <=, this->PutRow_ ( realRow, numEntries, valuesBReal, indicesBReal, firstTime ) );
 
     delete[] valuesBReal;
     valuesBReal = NULL;
@@ -279,7 +315,7 @@ updateRow ( const unsigned int                      row,
     for ( int k = 0; k < numEntries; k++ )
         valuesAImag[k] = -std::imag ( valuesA[k] );
 
-    TEUCHOS_ASSERT_INEQUALITY ( 0, <=, PutRow ( realRow, numEntries, valuesAImag, indicesAImag, firstTime ) );
+    TEUCHOS_ASSERT_INEQUALITY ( 0, <=, this->PutRow_ ( realRow, numEntries, valuesAImag, indicesAImag, firstTime ) );
 
     delete[] valuesAImag;
     valuesAImag = NULL;
@@ -295,7 +331,7 @@ updateRow ( const unsigned int                      row,
     for ( int k = 0; k < numEntries; k++ )
         valuesBImag[k] = std::imag ( valuesB[k] );
 
-    TEUCHOS_ASSERT_INEQUALITY ( 0, <=, PutRow ( realRow, numEntries, valuesBImag, indicesBImag, firstTime ) );
+    TEUCHOS_ASSERT_INEQUALITY ( 0, <=, this->PutRow_ ( realRow, numEntries, valuesBImag, indicesBImag, firstTime ) );
 
     delete[] valuesBImag;
     valuesBImag = NULL;
@@ -315,7 +351,7 @@ updateRow ( const unsigned int                      row,
     for ( int k = 0; k < numEntries; k++ )
         valuesAImag[k] = std::imag ( valuesA[k] );
 
-    TEUCHOS_ASSERT_INEQUALITY ( 0, <=, PutRow ( imagRow, numEntries, valuesAImag, indicesAReal, firstTime ) );
+    TEUCHOS_ASSERT_INEQUALITY ( 0, <=, this->PutRow_ ( imagRow, numEntries, valuesAImag, indicesAReal, firstTime ) );
 
     delete[] valuesAImag;
     valuesAImag = NULL;
@@ -331,7 +367,7 @@ updateRow ( const unsigned int                      row,
     for ( int k = 0; k < numEntries; k++ )
         valuesBImag[k] = std::imag ( valuesB[k] );
 
-    TEUCHOS_ASSERT_INEQUALITY ( 0, <=, PutRow ( imagRow, numEntries, valuesBImag, indicesBReal, firstTime ) );
+    TEUCHOS_ASSERT_INEQUALITY ( 0, <=, this->PutRow_ ( imagRow, numEntries, valuesBImag, indicesBReal, firstTime ) );
 
     delete[] valuesBImag;
     valuesBImag = NULL;
@@ -347,7 +383,7 @@ updateRow ( const unsigned int                      row,
     for ( int k = 0; k < numEntries; k++ )
         valuesAReal[k] = std::real ( valuesA[k] );
 
-    TEUCHOS_ASSERT_INEQUALITY ( 0, <=, PutRow ( imagRow, numEntries, valuesAReal, indicesAImag, firstTime ) );
+    TEUCHOS_ASSERT_INEQUALITY ( 0, <=, this->PutRow_ ( imagRow, numEntries, valuesAReal, indicesAImag, firstTime ) );
 
     delete[] valuesAReal;
     valuesAReal = NULL;
@@ -363,7 +399,7 @@ updateRow ( const unsigned int                      row,
     for ( int k = 0; k < numEntries; k++ )
         valuesBReal[k] = -std::real ( valuesB[k] );
 
-    TEUCHOS_ASSERT_INEQUALITY ( 0, <=, PutRow ( imagRow, numEntries, valuesBReal, indicesBImag, firstTime ) );
+    TEUCHOS_ASSERT_INEQUALITY ( 0, <=, this->PutRow_ ( imagRow, numEntries, valuesBReal, indicesBImag, firstTime ) );
 
     delete[] valuesBReal;
     valuesBReal = NULL;
@@ -373,12 +409,12 @@ updateRow ( const unsigned int                      row,
 }
 // =============================================================================
 int
-Ginla::Komplex::
-PutRow ( int Row,
-         int & numIndices,
-         double * values,
-         int * indices,
-         bool firstTime )
+Ginla::Komplex::LinearProblem::
+PutRow_ ( int Row,
+          int & numIndices,
+          double * values,
+          int * indices,
+          bool firstTime )
 {
     if ( firstTime )
         return realMatrix_->InsertGlobalValues ( Row, numIndices, values, indices );
@@ -387,7 +423,7 @@ PutRow ( int Row,
 }
 // =============================================================================
 Teuchos::RCP<Epetra_CrsMatrix>
-Ginla::Komplex::getMatrix() const
+Ginla::Komplex::LinearProblem::getMatrix() const
 {
     return realMatrix_;
 }
@@ -417,7 +453,7 @@ Ginla::Komplex::getMatrix() const
 //}
 // =============================================================================
 // Teuchos::RCP<Epetra_Vector>
-// Ginla::Komplex::
+// Ginla::Komplex::LinearProblem::
 // imagScalarProductCoeff ( const Teuchos::RCP<const ComplexVector> a ) const
 // {
 //     TEUCHOS_ASSERT ( a.is_valid_ptr() && !a.is_null() );

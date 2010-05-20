@@ -21,7 +21,7 @@
 #define GINLA_LOCASYSTEM_VIRTUAL_H
 
 
-#include "Ginla_Komplex.h"
+#include "Ginla_Komplex_LinearProblem.h"
 #include "Ginla_State.h"
 #include "Ginla_IO_EigenSaver_Abstract.h"
 

@@ -44,38 +44,64 @@ public:
     virtual Teuchos::RCP<Ginla::State>
     getF( const Teuchos::RCP<const Ginla::State> & state ) const;
     
-    virtual Teuchos::RCP<Ginla::State>
+    virtual Teuchos::RCP<const Ginla::State>
     getDFDh0( const Teuchos::RCP<const Ginla::State> & state ) const;
 
-    //! Returns entries and positions of the Jacobian matrix belonging to the
-    //! boundary conditions.
-    virtual void
-    getJacobianRow ( const Teuchos::RCP<const Ginla::State> & state,
-                     const int                                k,
-                     Teuchos::Array<int>                    & columnIndicesPsi,
-                     Teuchos::Array<double_complex>         & valuesPsi,
-                     Teuchos::Array<int>                    & columnIndicesPsiConj,
-                     Teuchos::Array<double_complex>         & valuesPsiCon
-                   ) const;
+    virtual Teuchos::RCP<const Ginla::Komplex::DoubleMatrix>
+    getJacobian ( const Teuchos::RCP<const Ginla::State> & state );
 
 protected:
-  
+private:
     //! Return the value of the Ginzburg-Landau equations for the equation
     //! at eqType.
-    virtual double_complex
-    getFEntry_ ( const Teuchos::RCP<const Ginla::State> & state,
-                 const int k
+    double_complex
+    getFEntry_ ( Teuchos::ArrayRCP<const double_complex> & psiView,
+                 const double                              chi,
+                 const int localIndex,
+                 const int globalIndex,
+                 Teuchos::ArrayRCP<const double> & ALeftView,
+                 Teuchos::ArrayRCP<const double> & ARightView,
+                 Teuchos::ArrayRCP<const double> & ABelowView,
+                 Teuchos::ArrayRCP<const double> & AAboveView,
+                 const double                      h
                ) const;
               
     //! Return the value of the Ginzburg-Landau equations for the equation
     //! at eqType.
-    virtual double_complex
-    getDFDh0Entry_ ( const Teuchos::RCP<const Ginla::State> & state,
-                     const int k
-                   ) const;
-  
-private:
-
+    double_complex
+    getDFDh0Entry_( Teuchos::ArrayRCP<const double_complex> & psiView,
+                    const double                              chi,
+                    const int localIndex,
+                    const int globalIndex,
+                    Teuchos::ArrayRCP<const double> & ALeftView,
+                    Teuchos::ArrayRCP<const double> & ARightView,
+                    Teuchos::ArrayRCP<const double> & ABelowView,
+                    Teuchos::ArrayRCP<const double> & AAboveView,
+                    Teuchos::ArrayRCP<const double> & dAdH0LeftView,
+                    Teuchos::ArrayRCP<const double> & dAdH0RightView,
+                    Teuchos::ArrayRCP<const double> & dAdH0BelowView,
+                    Teuchos::ArrayRCP<const double> & dAdH0AboveView,
+                    const double                      h
+                  ) const;
+               
+    //! Returns entries and positions of the Jacobian matrix belonging to the
+    //! boundary conditions.
+    void
+    getJacobianRow_ ( Teuchos::ArrayRCP<const double_complex> & psiView,
+                      const double                              chi,
+                      const int localIndex,
+                      const int globalIndex,
+                      Teuchos::ArrayRCP<const double> & ALeftView,
+                      Teuchos::ArrayRCP<const double> & ARightView,
+                      Teuchos::ArrayRCP<const double> & ABelowView,
+                      Teuchos::ArrayRCP<const double> & AAboveView,
+                      const double                      h,
+                      Teuchos::Array<Thyra::Ordinal>  & columnIndicesPsi,
+                      Teuchos::Array<double_complex>  & valuesPsi,
+                      Teuchos::Array<Thyra::Ordinal>  & columnIndicesPsiConj,
+                      Teuchos::Array<double_complex>  & valuesPsiConj
+                    ) const;
+              
 };
 
   } // namespace Operator

@@ -22,7 +22,7 @@
 
 #include <EpetraExt_ModelEvaluator.h>
 
-#include "Ginla_Komplex.h"
+#include "Ginla_Komplex_LinearProblem.h"
 #include "Ginla_State.h"
 
 // forward declarations
@@ -42,14 +42,14 @@ class Default:
 public:
 
   //! Constructor without initial guess.
-  Default ( const Teuchos::RCP<Ginla::Operator::Virtual> & glOperator,
-            const Teuchos::RCP<Ginla::Komplex>           & komplex
+  Default ( const Teuchos::RCP<Ginla::Operator::Virtual>      & glOperator,
+            const Teuchos::RCP<Ginla::Komplex::LinearProblem> & komplex
           );
 
   //! Constructor with initial guess.
-  Default ( const Teuchos::RCP<Ginla::Operator::Virtual> & glOperator,
-            const Teuchos::RCP<Ginla::Komplex>           & komplex,
-            const Teuchos::RCP<const Ginla::State>       & state
+  Default ( const Teuchos::RCP<Ginla::Operator::Virtual>      & glOperator,
+            const Teuchos::RCP<Ginla::Komplex::LinearProblem> & komplex,
+            const Teuchos::RCP<const Ginla::State>            & state
           );
   
   // Destructor
@@ -98,7 +98,7 @@ public:
   evalModel( const InArgs  & inArgs,
              const OutArgs & outArgs ) const;
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -              
-  Teuchos::RCP<const Ginla::Komplex>
+  Teuchos::RCP<const Ginla::Komplex::LinearProblem>
   getKomplex() const;
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
@@ -109,7 +109,7 @@ protected:
 private:
   
    const Teuchos::RCP<Ginla::Operator::Virtual> glOperator_;
-   const Teuchos::RCP<Ginla::Komplex> komplex_;
+   const Teuchos::RCP<Ginla::Komplex::LinearProblem> komplex_;
    const Teuchos::RCP<Epetra_Vector> x_;
    mutable bool firstTime_;
    

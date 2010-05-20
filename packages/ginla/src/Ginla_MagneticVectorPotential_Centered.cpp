@@ -21,17 +21,28 @@ Ginla::MagneticVectorPotential::Centered::
 {
 }
 // ============================================================================
-void
+bool
 Ginla::MagneticVectorPotential::Centered::
 setParameters( const LOCA::ParameterVector & p )
 {
+    bool valuesChanged = false;
+  
     if (p.isParameter( "H0" ))
-        h0_ = p.getValue ( "H0" );
+        if ( h0_ != p.getValue ( "H0" ) )
+        {
+            h0_ = p.getValue ( "H0" );
+            valuesChanged = true;
+        }
+           
     
     if ( p.isParameter("scaling") )
-        edgeLength_ = p.getValue ( "scaling" );
+        if ( edgeLength_ != p.getValue ( "scaling" ) )
+        {
+            edgeLength_ = p.getValue ( "scaling" );
+            valuesChanged = true;
+        }
 
-    return;
+    return valuesChanged;
 }
 // ============================================================================
 Teuchos::RCP<LOCA::ParameterVector>

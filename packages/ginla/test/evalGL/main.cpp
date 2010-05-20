@@ -238,7 +238,7 @@ BOOST_AUTO_TEST_CASE( eval_locasystem_test )
        jacobian->ExtractMyRowView( row, numRowEntries, values, indices );
        referenceJacobian->ExtractMyRowView( row, refNumRowEntries, refValues, refIndices );
        // compare the entries
-       BOOST_CHECK_EQUAL( numRowEntries, refNumRowEntries );
+       BOOST_REQUIRE_EQUAL( numRowEntries, refNumRowEntries );
        for ( int k=0; k<numRowEntries; k++ )
        {
          BOOST_REQUIRE_EQUAL( indices[k], refIndices[k] );
