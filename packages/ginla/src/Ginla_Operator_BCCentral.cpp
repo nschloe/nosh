@@ -52,6 +52,10 @@ getF( const Teuchos::RCP<const Ginla::State> & state ) const
                                       
   Teuchos::ArrayRCP<double_complex> FView = F->getPsiNonConst()->get1dViewNonConst();
   
+  // rebuild cache for A?
+  if ( cacheNeedsUpdating_ )
+    this->buildACache_();
+  
   Teuchos::ArrayRCP<const double> ALeftView  = ALeft_->get1dView();
   Teuchos::ArrayRCP<const double> ARightView = ARight_->get1dView();
   Teuchos::ArrayRCP<const double> ABelowView = ABelow_->get1dView();
@@ -319,6 +323,10 @@ getDFDh0( const Teuchos::RCP<const Ginla::State> & state ) const
                                       
   Teuchos::ArrayRCP<double_complex> FView = F->getPsiNonConst()->get1dViewNonConst();
 
+  // rebuild cache for A?
+  if ( cacheNeedsUpdating_ )
+    this->buildACache_();
+  
   Teuchos::ArrayRCP<const double> ALeftView  = ALeft_->get1dView();
   Teuchos::ArrayRCP<const double> ARightView = ARight_->get1dView();
   Teuchos::ArrayRCP<const double> ABelowView = ABelow_->get1dView();
@@ -600,6 +608,10 @@ getJacobian ( const Teuchos::RCP<const Ginla::State> & state
       const Teuchos::RCP<const ComplexMap> map = state->getPsi()->getMap();
       AB_ = Teuchos::rcp( new Ginla::Komplex::DoubleMatrix( map, map ) );
   }
+  
+  // rebuild cache for A?
+  if ( cacheNeedsUpdating_ )
+    this->buildACache_();
   
   Teuchos::ArrayRCP<const double> ALeftView  = ALeft_->get1dView();
   Teuchos::ArrayRCP<const double> ARightView = ARight_->get1dView();

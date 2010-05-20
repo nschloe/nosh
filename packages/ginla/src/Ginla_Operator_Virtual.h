@@ -83,6 +83,12 @@ protected:
     const Teuchos::RCP<const ComplexMap> rangeMap_;
     const Teuchos::RCP<Recti::Grid::Uniform> grid_;
     
+    //! Builds the cache for values of \f$A\f$ and \f$\frac{\text{d}A}{\text{d}H0}\f$.
+    void
+    buildACache_() const;
+    
+    mutable bool cacheNeedsUpdating_;
+    
     // cache for the queries to A
     const Teuchos::RCP<RealVector> ALeft_;
     const Teuchos::RCP<RealVector> ARight_;
@@ -100,10 +106,6 @@ protected:
     Teuchos::RCP<Ginla::Komplex::DoubleMatrix> AB_;
     
 private:
-  
-    //! Builds the cache for values of \f$A\f$ and \f$\frac{\text{d}A}{\text{d}H0}\f$.
-    void
-    buildACache_();
   
     const Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> A_;
 

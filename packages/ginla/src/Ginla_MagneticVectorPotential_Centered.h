@@ -5,11 +5,16 @@
  *      Author: nico
  */
 
-#ifndef MAGNETICVECTORPOTENTIAL_H_
-#define MAGNETICVECTORPOTENTIAL_H_
+#ifndef GINLA_MAGNETICVECTORPOTENTIAL_CENTERED_H_
+#define GINLA_MAGNETICVECTORPOTENTIAL_CENTERED_H_
 
-#include <Teuchos_Array.hpp>
+#include <Teuchos_RCP.hpp>
+#include <Teuchos_Tuple.hpp>
 #include <LOCA_Parameter_Vector.H>
+
+// typedef just like in Recti
+typedef Teuchos::Tuple<double,2> DoubleTuple;
+
 
 namespace Ginla {
   namespace MagneticVectorPotential {
@@ -32,23 +37,23 @@ public:
   Teuchos::RCP<LOCA::ParameterVector>
   getParameters() const;
 
-  Teuchos::RCP<Teuchos::Array<double> >
-  getA(const Teuchos::Array<double> & x ) const;
+  Teuchos::RCP<DoubleTuple>
+  getA(const DoubleTuple & x ) const;
 
   double
-  getAx(const Teuchos::Array<double> & x) const;
+  getAx(const DoubleTuple & x) const;
 
   double
-  getAy(const Teuchos::Array<double> & x) const;
+  getAy(const DoubleTuple & x) const;
   
-  Teuchos::RCP<Teuchos::Array<double> >
-  getDADh0(const Teuchos::Array<double> & x ) const;
+  Teuchos::RCP<DoubleTuple>
+  getDADh0(const DoubleTuple & x ) const;
 
   double
-  getDAxDh0(const Teuchos::Array<double> & x) const;
+  getDAxDh0(const DoubleTuple & x ) const;
 
   double
-  getDAyDh0(const Teuchos::Array<double> & x) const;
+  getDAyDh0(const DoubleTuple & x ) const;
 
 protected:
 
@@ -61,4 +66,4 @@ private:
 
   } // namespace MagneticVectorPotential
 } // namespace GL
-#endif /* MAGNETICVECTORPOTENTIAL_H_ */
+#endif /* GINLA_MAGNETICVECTORPOTENTIAL_CENTERED_H_ */

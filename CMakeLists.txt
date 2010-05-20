@@ -16,11 +16,13 @@ ENABLE_TESTING()
 SET(CMAKE_BUILD_TYPE Profile)
 
 SET(CMAKE_CXX_FLAGS_RELEASE "-O2" )
+SET(CMAKE_Fortran_FLAGS_RELEASE "-O2" )
 
 SET(CMAKE_CXX_FLAGS_DEBUG "-g -ggdb -Wall -fbounds-check -pedantic -Wextra -Wno-unused -std=c++0x -Wstrict-null-sentinel" )
+SET(CMAKE_Fortran_FLAGS_DEBUG "-g -ggdb -Wall -fbounds-check -pedantic -Wextra -Wno-unused -std=c++0x -Wstrict-null-sentinel" )
 
-SET(CMAKE_CXX_FLAGS_PROFILE "-pg" )
-SET(CMAKE_Fortran_FLAGS_PROFILE "-pg" )
+SET(CMAKE_CXX_FLAGS_PROFILE "-pg -O2" )
+SET(CMAKE_Fortran_FLAGS_PROFILE "-pg -O2" )
 
 
 add_subdirectory ( packages )

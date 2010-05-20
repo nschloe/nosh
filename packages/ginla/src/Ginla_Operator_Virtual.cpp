@@ -38,6 +38,7 @@ Virtual ( const Teuchos::RCP<Recti::Grid::Uniform>                     & grid,
         rangeMap_(rangeMap),
         grid_ ( grid ),
         A_ ( A ),
+        cacheNeedsUpdating_( false ),
         ALeft_( Teuchos::rcp( new RealVector(domainMap) ) ),
         ARight_( Teuchos::rcp( new RealVector(domainMap) ) ),
         AAbove_( Teuchos::rcp( new RealVector(domainMap) ) ),
@@ -60,12 +61,8 @@ Ginla::Operator::Virtual::~Virtual()
 void
 Ginla::Operator::Virtual::setParameters ( const LOCA::ParameterVector & p )
 {
-    // Set the paramters in A_ and query whether the values have changed.
-    bool hasChanged = A_->setParameters ( p );
-    
-    // instantly rebuild the A-cache
-    if ( hasChanged )
-        this->buildACache_();
+    // Set the paramters in A_ and mark the cache obsolete if something changed.
+    cacheNeedsUpdating_ = A_->setParameters ( p );
     
     // update the grid
     grid_->updateScaling ( p );
@@ -94,7 +91,7 @@ getGrid() const
 // =============================================================================
 void
 Ginla::Operator::Virtual::
-buildACache_()
+buildACache_() const
 {                                     
   Teuchos::ArrayRCP<double> ALeftView  = ALeft_->get1dViewNonConst();
   Teuchos::ArrayRCP<double> ARightView = ARight_->get1dViewNonConst();
@@ -209,5 +206,7 @@ buildACache_()
                              "Illegal not type \"" << grid_->getNodeType ( globalIndex ) << "\"." );
     }
   }
+  
+  cacheNeedsUpdating_ = false;
 }
 // =============================================================================
