@@ -24,19 +24,22 @@ SET( MY_EXECUTABLE
 ADD_TEST( evalGl0
           ${MY_EXECUTABLE}
           "--input-state-file=${CMAKE_CURRENT_SOURCE_DIR}/data/input0.vti"
-          "--expected-solution-file=${CMAKE_CURRENT_SOURCE_DIR}/data/reference0.vti"
+          "--reference-residual-file=${CMAKE_CURRENT_SOURCE_DIR}/data/reference0.vti"
+          "--reference-jacobian-file=${CMAKE_CURRENT_SOURCE_DIR}/data/jacobian0.h5"
         )
 
 ADD_TEST( evalGl1
           ${MY_EXECUTABLE}
           "--input-state-file=${CMAKE_CURRENT_SOURCE_DIR}/data/input1.vti"
-          "--expected-solution-file=${CMAKE_CURRENT_SOURCE_DIR}/data/reference1.vti"
+          "--reference-residual-file=${CMAKE_CURRENT_SOURCE_DIR}/data/reference1.vti"
+          "--reference-jacobian-file=${CMAKE_CURRENT_SOURCE_DIR}/data/jacobian1.h5"
         )
 
 ADD_TEST( evalGl2
           ${MY_EXECUTABLE}
           "--input-state-file=${CMAKE_CURRENT_SOURCE_DIR}/data/input2.vti"
-          "--expected-solution-file=${CMAKE_CURRENT_SOURCE_DIR}/data/reference2.vti"
+          "--reference-residual-file=${CMAKE_CURRENT_SOURCE_DIR}/data/reference2.vti"
+          "--reference-jacobian-file=${CMAKE_CURRENT_SOURCE_DIR}/data/jacobian2.h5"
         )
 
 # ADD_TEST( zeroStepLocaMultiproc
