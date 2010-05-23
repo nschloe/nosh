@@ -22,18 +22,23 @@
 
 #include <Teuchos_RCP.hpp>
 #include <Epetra_Vector.h>
-#include <Piro_Epetra_NOXObserver.hpp>
+#include <NOX_Epetra_Observer.H>
 
 // forward declarations
 namespace Ginla {
+  class State;
   namespace Komplex {
     class LinearProblem;
   }
   namespace IO {
     class StateWriter;
+    class StatsWriter;
   }
   namespace ModelEvaluator{
     class Default;
+  }
+  namespace Operator {
+    class Virtual;
   }
 }
 namespace Recti {
@@ -48,12 +53,18 @@ namespace Ginla {
 namespace IO {
 
 class NoxObserver:
-    public Piro::Epetra::NOXObserver
+    public NOX::Epetra::Observer
 {
+public:
+    enum ProblemType { NONLINEAR,
+                       CONTINUATION,
+                       TURNING_POINT };
+
 public:
   //! Constructor
   NoxObserver ( const Teuchos::RCP<const Ginla::IO::StateWriter>         & stateWriter,
-                const Teuchos::RCP<const Ginla::ModelEvaluator::Default> & modelEvaluator
+                const Teuchos::RCP<const Ginla::ModelEvaluator::Default> & modelEvaluator,
+                const NoxObserver::ProblemType                           & problemType
               );
   
   //! Destructor
@@ -64,10 +75,33 @@ public:
   void
   observeSolution(const Epetra_Vector& soln);
   
+  void
+  setStatisticsWriter( const Teuchos::RCP<Ginla::IO::StatsWriter>   & statsWriter,
+                       const Teuchos::RCP<const Ginla::Operator::Virtual> & glOperator );
+                       
 protected:
 private:
+  void
+  observeContinuation( const Teuchos::RCP<const Ginla::State> & state
+                     );
+  void
+  observeTurningPointContinuation( const Teuchos::RCP<const Ginla::State> & state
+                                 );
+
+  void
+  saveContinuationStatistics( const int stepIndex,
+                              const Teuchos::RCP<const Ginla::State> & state
+                            );
+                                 
+private:
+private:
+
+    const ProblemType problemType_;
     const Teuchos::RCP<const Ginla::IO::StateWriter>          stateWriter_;
     const Teuchos::RCP<const Ginla::ModelEvaluator::Default>  modelEvaluator_;
+    
+    Teuchos::RCP<Ginla::IO::StatsWriter>   statsWriter_;
+    Teuchos::RCP<const Ginla::Operator::Virtual> glOperator_;
 };
 
 } // namespace IO

@@ -39,7 +39,7 @@ public:
   
   //! Non-const getter.
   Teuchos::RCP<Teuchos::ParameterList>
-  getList();
+  getListNonConst();
   
   void
   setList( const Teuchos::ParameterList & statisticsList );

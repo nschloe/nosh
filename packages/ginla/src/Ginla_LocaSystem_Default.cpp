@@ -276,9 +276,7 @@ printSolutionTurningPointContinuation ( const Teuchos::RCP<const Ginla::State> &
 
     // alternate between solution and nullvector
     isSolution = !isSolution;
-
-    // determine file name
-    stringstream baseName;
+  
     if ( isSolution )
     {
         stateWriter_->write( state,
@@ -303,20 +301,18 @@ void
 Ginla::LocaSystem::Default::
 writeContinuationStats ( const Teuchos::RCP<const Ginla::State> & state )
 {   
-    TEUCHOS_ASSERT( statsWriter_.is_valid_ptr()
-                    && !statsWriter_.is_null() );
+    TEUCHOS_ASSERT( !statsWriter_.is_null() );
+    
+    Teuchos::RCP<Teuchos::ParameterList> paramList = statsWriter_->getListNonConst();
 
-    TEUCHOS_ASSERT( statsWriter_->getList().is_valid_ptr()
-                    && !statsWriter_->getList().is_null() );
-
-    Teuchos::RCP<Teuchos::ParameterList> paramList = statsWriter_->getList();
+    TEUCHOS_ASSERT( !paramList.is_null() );
                     
     paramList->set( "0step", stepper_->getStepNumber() );
     paramList->set( "2#nonlinear steps", stepper_->getSolver()->getNumIterations() );
   
     // put the parameter list into statsWriter_
     std::string labelPrepend = "1";
-    Ginla::Helpers::appendToTeuchosParameterList( *(statsWriter_->getList()),
+    Ginla::Helpers::appendToTeuchosParameterList( *paramList,
                                                   *(glOperator_->getParameters()),
                                                   labelPrepend );
 

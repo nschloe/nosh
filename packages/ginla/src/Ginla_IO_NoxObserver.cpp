@@ -20,15 +20,22 @@
 #include "Ginla_IO_NoxObserver.h"
 
 #include "Ginla_IO_StateWriter.h"
+#include "Ginla_IO_StatsWriter.h"
 #include "Ginla_ModelEvaluator_Default.h"
+#include "Ginla_Helpers.h"
+#include "Ginla_Operator_Virtual.h"
 
 // ============================================================================
 Ginla::IO::NoxObserver::
 NoxObserver ( const Teuchos::RCP<const Ginla::IO::StateWriter>         & stateWriter,
-              const Teuchos::RCP<const Ginla::ModelEvaluator::Default> & modelEvaluator
+              const Teuchos::RCP<const Ginla::ModelEvaluator::Default> & modelEvaluator,
+              const ProblemType                                        & problemType
             ) :
   stateWriter_ ( stateWriter ),
-  modelEvaluator_ ( modelEvaluator )
+  modelEvaluator_ ( modelEvaluator ),
+  problemType_( problemType ),
+  statsWriter_ ( Teuchos::null ),
+  glOperator_ ( Teuchos::null )
 {
 }
 // ============================================================================  
@@ -39,13 +46,108 @@ Ginla::IO::NoxObserver::
 // ============================================================================
 void
 Ginla::IO::NoxObserver::
+setStatisticsWriter( const Teuchos::RCP<Ginla::IO::StatsWriter>   & statsWriter,
+                     const Teuchos::RCP<const Ginla::Operator::Virtual> & glOperator )
+{
+  statsWriter_ = statsWriter;
+  glOperator_  = glOperator;
+}
+// ============================================================================
+void
+Ginla::IO::NoxObserver::
 observeSolution( const Epetra_Vector & soln )
 { 
-    static int index = 0;
-    index++;
-    stateWriter_->write( modelEvaluator_->createState(soln),
-                         index
-                       );
+    // define state
+    const Teuchos::RCP<const Ginla::State> state = modelEvaluator_->createState(soln);
+
+    // The switch hack is necessary as different continuation algorithms
+    // call printSolution() a different number of times per step, e.g.,
+    // to store solutions, null vectors, and so forth.
+    switch ( problemType_ )
+    {
+      case NONLINEAR:
+          if (!stateWriter_.is_null())
+              stateWriter_->write( state, 0 );
+          break;
+      case CONTINUATION:
+          this->observeContinuation( state );
+          break;
+      case TURNING_POINT:
+          this->observeTurningPointContinuation( state );
+          break;
+      default:
+          TEST_FOR_EXCEPTION ( true,
+                               std::logic_error,
+                               "Illegal problem type " << problemType_ );
+    }
+
     return;
+}
+// ============================================================================
+void
+Ginla::IO::NoxObserver::
+observeContinuation( const Teuchos::RCP<const Ginla::State> & state
+                   )
+{
+  static int index = 0;
+  index++;
+
+  if ( !stateWriter_.is_null() )
+      stateWriter_->write( state, index );
+  
+  this->saveContinuationStatistics( index, state );
+}
+// ============================================================================
+void
+Ginla::IO::NoxObserver::
+observeTurningPointContinuation( const Teuchos::RCP<const Ginla::State> & state
+                               )
+{
+    static int index = 0;
+    static bool isSolution = false;
+
+    // alternate between solution and nullvector
+    isSolution = !isSolution;
+
+    if ( isSolution )
+    {
+        index++;
+        if ( !stateWriter_.is_null() )
+            stateWriter_->write( state, index, "-state" );
+
+        this->saveContinuationStatistics( index, state );
+    }
+    else
+        if ( !stateWriter_.is_null() )
+            stateWriter_->write( state, index, "-nullvector" );
+
+}
+// ============================================================================
+void
+Ginla::IO::NoxObserver::
+saveContinuationStatistics( const int stepIndex,
+                            const Teuchos::RCP<const Ginla::State> & state
+                          )
+{
+    TEUCHOS_ASSERT( !state.is_null() );
+    TEUCHOS_ASSERT( !statsWriter_.is_null() );
+    TEUCHOS_ASSERT( !glOperator_.is_null() );
+    
+    Teuchos::RCP<Teuchos::ParameterList> paramList = statsWriter_->getListNonConst();
+
+    paramList->set( "0step", stepIndex );
+  
+    // put the parameter list into statsWriter_
+    std::string labelPrepend = "1";
+    Ginla::Helpers::appendToTeuchosParameterList( *paramList,
+                                                  *(glOperator_->getParameters()),
+                                                  labelPrepend );
+    
+    paramList->set( "2free energy", state->freeEnergy() );
+    paramList->set( "2||x||_2 scaled", state->normalizedScaledL2Norm() );
+    paramList->set( "2vorticity", state->getVorticity() );
+    
+    // actually print the data
+    statsWriter_->print();
 }
 // ============================================================================

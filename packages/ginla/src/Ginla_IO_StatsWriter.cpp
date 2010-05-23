@@ -41,7 +41,7 @@ Ginla::IO::StatsWriter::~StatsWriter()
 // ============================================================================
 Teuchos::RCP<Teuchos::ParameterList>
 Ginla::IO::StatsWriter::
-getList()
+getListNonConst()
 {
     return statisticsList_; 
 }

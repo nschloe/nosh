@@ -41,6 +41,7 @@
 #include "Ginla_Operator_BCOuter.h"
 #include "Ginla_MagneticVectorPotential_Centered.h"
 #include "Ginla_IO_StateWriter.h"
+#include "Ginla_IO_StatsWriter.h"
 
 // =============================================================================
 int main ( int argc, char *argv[] )
@@ -116,7 +117,7 @@ int main ( int argc, char *argv[] )
         outputList.get<string> ( "Continuation file base name" );
     std::string outputFormat =
         outputList.get<string> ( "Output format" );
-    std::string contDataFileName =
+    boost::filesystem::path contDataFile =
         outputList.get<string> ( "Continuation data file name" );
         
     Teuchos::ParameterList initialGuessList;
@@ -168,7 +169,13 @@ int main ( int argc, char *argv[] )
                                                                
     Teuchos::RCP<Ginla::IO::NoxObserver> observer =
         Teuchos::rcp( new Ginla::IO::NoxObserver( stateWriter,
-                                                  glModel ) );
+                                                  glModel,
+                                                  Ginla::IO::NoxObserver::CONTINUATION ) );
+                                                  
+    std::string contFilePath = (outputDirectory / contDataFile).string();
+    Teuchos::RCP<Ginla::IO::StatsWriter> statsWriter =
+        Teuchos::rcp( new Ginla::IO::StatsWriter( contFilePath ) );
+    observer->setStatisticsWriter( statsWriter, glOperator );
 
     Teuchos::RCP<Teuchos::ParameterList> piroParams =
         Teuchos::rcp(new Teuchos::ParameterList("Piro Parameters"));

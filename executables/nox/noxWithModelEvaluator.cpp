@@ -170,7 +170,8 @@ int main ( int argc, char *argv[] )
 
     Teuchos::RCP<Ginla::IO::NoxObserver> observer =
         Teuchos::rcp( new Ginla::IO::NoxObserver( stateWriter,
-                                                  glModel ) );
+                                                  glModel,
+                                                  Ginla::IO::NoxObserver::NONLINEAR ) );
                                                                
     Teuchos::RCP<Teuchos::ParameterList> piroParams =
         Teuchos::rcp(new Teuchos::ParameterList("Piro Parameters"));
