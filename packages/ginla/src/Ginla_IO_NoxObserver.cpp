@@ -89,7 +89,7 @@ Ginla::IO::NoxObserver::
 observeContinuation( const Teuchos::RCP<const Ginla::State> & state
                    )
 {
-  static int index = 0;
+  static int index = -1;
   index++;
 
   if ( !stateWriter_.is_null() )
@@ -103,7 +103,7 @@ Ginla::IO::NoxObserver::
 observeTurningPointContinuation( const Teuchos::RCP<const Ginla::State> & state
                                )
 {
-    static int index = 0;
+    static int index = -1;
     static bool isSolution = false;
 
     // alternate between solution and nullvector
@@ -129,25 +129,26 @@ saveContinuationStatistics( const int stepIndex,
                             const Teuchos::RCP<const Ginla::State> & state
                           )
 {
-    TEUCHOS_ASSERT( !state.is_null() );
-    TEUCHOS_ASSERT( !statsWriter_.is_null() );
-    TEUCHOS_ASSERT( !glOperator_.is_null() );
-    
-    Teuchos::RCP<Teuchos::ParameterList> paramList = statsWriter_->getListNonConst();
+    if ( !statsWriter_.is_null() )
+    {
+        TEUCHOS_ASSERT( !state.is_null() );
+        Teuchos::RCP<Teuchos::ParameterList> paramList = statsWriter_->getListNonConst();
 
-    paramList->set( "0step", stepIndex );
-  
-    // put the parameter list into statsWriter_
-    std::string labelPrepend = "1";
-    Ginla::Helpers::appendToTeuchosParameterList( *paramList,
-                                                  *(glOperator_->getParameters()),
-                                                  labelPrepend );
-    
-    paramList->set( "2free energy", state->freeEnergy() );
-    paramList->set( "2||x||_2 scaled", state->normalizedScaledL2Norm() );
-    paramList->set( "2vorticity", state->getVorticity() );
-    
-    // actually print the data
-    statsWriter_->print();
+        paramList->set( "0step", stepIndex );
+         
+        // put the parameter list into statsWriter_
+        std::string labelPrepend = "1";
+        TEUCHOS_ASSERT( !glOperator_.is_null() );
+        Ginla::Helpers::appendToTeuchosParameterList( *paramList,
+                                                      *(glOperator_->getParameters()),
+                                                      labelPrepend );
+        
+        paramList->set( "2free energy", state->freeEnergy() );
+        paramList->set( "2||x||_2 scaled", state->normalizedScaledL2Norm() );
+        paramList->set( "2vorticity", state->getVorticity() );
+        
+        // actually print the data
+        statsWriter_->print();
+    }
 }
 // ============================================================================

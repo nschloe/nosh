@@ -154,8 +154,8 @@ BOOST_AUTO_TEST_CASE( five_step_piro_test )
         Teuchos::rcp ( new Ginla::MagneticVectorPotential::Centered ( problemParameters.get<double> ( "H0" ),
                                                                       problemParameters.get<double> ( "scaling" ) ) );
 
-    Teuchos::RCP<Ginla::Komplex> komplex =
-        Teuchos::rcp( new Ginla::Komplex( eComm, initState->getPsi()->getMap() ) );
+    Teuchos::RCP<Ginla::Komplex::LinearProblem> komplex =
+        Teuchos::rcp( new Ginla::Komplex::LinearProblem( eComm, initState->getPsi()->getMap() ) );
         
     // setup the data output
     Teuchos::RCP<Ginla::IO::StateWriter> stateWriter =
@@ -178,9 +178,7 @@ BOOST_AUTO_TEST_CASE( five_step_piro_test )
                                                                komplex,
                                                                initState ) );
                                                               
-    Teuchos::RCP<Ginla::IO::NoxObserver> observer =
-        Teuchos::rcp( new Ginla::IO::NoxObserver( stateWriter,
-                                                  glModel ) );
+    Teuchos::RCP<Ginla::IO::NoxObserver> observer = Teuchos::null;
 
     Teuchos::RCP<Teuchos::ParameterList> piroParams =
         Teuchos::rcp(new Teuchos::ParameterList("Piro Parameters"));
