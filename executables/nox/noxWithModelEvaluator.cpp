@@ -166,7 +166,8 @@ int main ( int argc, char *argv[] )
     // This object is derived from NOX::Epetra::Interface
     Teuchos::RCP<Ginla::ModelEvaluator::Default> glModel = 
               Teuchos::rcp(new Ginla::ModelEvaluator::Default( glOperator,
-                                                               komplex ) );
+                                                               komplex,
+                                                               problemParameters ) );
 
     Teuchos::RCP<Ginla::IO::NoxObserver> observer =
         Teuchos::rcp( new Ginla::IO::NoxObserver( stateWriter,

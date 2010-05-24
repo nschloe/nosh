@@ -24,6 +24,7 @@
 
 #include "Ginla_Komplex_LinearProblem.h"
 #include "Ginla_State.h"
+#include "Ginla_StateTranslator.h"
 
 // forward declarations
 namespace Ginla {
@@ -37,19 +38,22 @@ namespace Ginla {
 namespace ModelEvaluator {
 
 class Default:
-    public EpetraExt::ModelEvaluator
+    public EpetraExt::ModelEvaluator,
+    public Ginla::StateTranslator
 {
 public:
 
   //! Constructor without initial guess.
   Default ( const Teuchos::RCP<Ginla::Operator::Virtual>      & glOperator,
-            const Teuchos::RCP<Ginla::Komplex::LinearProblem> & komplex
+            const Teuchos::RCP<Ginla::Komplex::LinearProblem> & komplex,
+            const Teuchos::ParameterList                      & params
           );
 
   //! Constructor with initial guess.
   Default ( const Teuchos::RCP<Ginla::Operator::Virtual>      & glOperator,
             const Teuchos::RCP<Ginla::Komplex::LinearProblem> & komplex,
-            const Teuchos::RCP<const Ginla::State>            & state
+            const Teuchos::RCP<const Ginla::State>            & state,
+            const Teuchos::ParameterList                      & params
           );
   
   // Destructor
@@ -99,8 +103,13 @@ public:
              const OutArgs & outArgs ) const;
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -              
 
+  virtual
   Teuchos::RCP<Ginla::State>
   createState( const Epetra_Vector & x ) const;
+  
+  virtual
+  Teuchos::RCP<Epetra_Vector>
+  createSystemVector( const Ginla::State & state ) const;
 
 protected:
 private:
@@ -110,13 +119,16 @@ private:
    const Teuchos::RCP<Epetra_Vector> x_;
    mutable bool firstTime_;
    
-   const int numParameters_;
+   int numParams_;
    
    Teuchos::RCP<Epetra_Map> p_map_;
    Teuchos::RCP<Epetra_Vector> p_init_;
    Teuchos::RCP<const Teuchos::Array<std::string> > p_names_;
    
 private:
+    void
+    setupParameters_( const Teuchos::ParameterList & params );
+
     void
     computeF_ ( const Epetra_Vector & x,
                       Epetra_Vector & FVec ) const;
@@ -128,9 +140,6 @@ private:
     void
     computeJacobian_ ( const Epetra_Vector & x,
                        Epetra_Operator     & Jac ) const;
-    
-    Teuchos::RCP<Epetra_Vector>
-    createSystemVector_( const Ginla::State & state ) const;
 
 };
 } // namespace ModelEvaluator

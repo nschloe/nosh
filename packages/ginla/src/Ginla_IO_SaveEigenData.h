@@ -14,6 +14,14 @@
 #include "Ginla_IO_EigenSaver_Abstract.h"
 #include "Ginla_IO_StatsWriter.h"
 
+// forward declarations
+namespace Ginla{
+  namespace IO {
+    class StateWriter;
+  }
+  class StateTranslator;
+}
+
 namespace Ginla {
   namespace IO {
 
@@ -30,9 +38,10 @@ class SaveEigenData:
 //      const Teuchos::RCP<Teuchos::ParameterList>& eigenParams      );
 
    // Constructor
-   SaveEigenData ( Teuchos::RCP<Teuchos::ParameterList>           & eigenParamList,
-                   const Teuchos::RCP<const EigenSaver::Abstract> & eigenSaver,
-                   const Teuchos::RCP<Ginla::IO::StatsWriter>     & statsWriter
+   SaveEigenData ( Teuchos::RCP<Teuchos::ParameterList>             & eigenParamList,
+                   const Teuchos::RCP<const Ginla::StateTranslator> & stateTranslator,
+                   const Teuchos::RCP<const Ginla::IO::StateWriter> & stateWriter,
+                   const Teuchos::RCP<Ginla::IO::StatsWriter>       & statsWriter
                  );
               
    virtual
@@ -49,15 +58,16 @@ class SaveEigenData:
    void
    setLocaStepper( const Teuchos::RCP<LOCA::Stepper> locaStepper );
 
-        // This function is necessary to break the circular dependency with the
-        // LOCA_Stepper object to allow for a clean termination
-        void
-        releaseLocaStepper();
+   // This function is necessary to break the circular dependency with the
+   // LOCA_Stepper object to allow for a clean termination
+   void
+   releaseLocaStepper();
 
   protected:
   private:
     Teuchos::RCP<Teuchos::ParameterList> eigenParamList_;
-    const Teuchos::RCP<const EigenSaver::Abstract> eigenSaver_;
+    const Teuchos::RCP<const Ginla::StateTranslator> stateTranslator_;
+    const Teuchos::RCP<const Ginla::IO::StateWriter> stateWriter_;
     const Teuchos::RCP<const Ginla::Komplex::LinearProblem> komplex_;
     Teuchos::RCP<Ginla::IO::StatsWriter> statsWriter_;
     Teuchos::RCP<LOCA::Stepper> locaStepper_;

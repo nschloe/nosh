@@ -85,7 +85,7 @@ write ( const Teuchos::RCP<const Ginla::State> & state,
       ) const
 {
   LOCA::ParameterVector empty;
-  write ( state, index, filenameAppend, empty );
+  this->write ( state, index, filenameAppend, empty );
   return;
 }
 // ============================================================================
@@ -97,7 +97,7 @@ write ( const Teuchos::RCP<const Ginla::State> & state,
       ) const
 {
   std::string filenameAppend = "";
-  write ( state, index, filenameAppend, params );
+  this->write ( state, index, filenameAppend, params );
   return;
 }
 // ============================================================================
@@ -109,7 +109,7 @@ write ( const Teuchos::RCP<const Ginla::State> & state,
 {
   std::string filenameAppend = "";
   LOCA::ParameterVector empty;
-  write ( state, index, filenameAppend, empty );
+  this->write ( state, index, filenameAppend, empty );
   return;
 }
 // ============================================================================

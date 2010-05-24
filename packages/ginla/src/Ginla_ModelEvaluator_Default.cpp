@@ -24,16 +24,19 @@
 
 #include "Ginla_Operator_Virtual.h"
 
+#include <Teuchos_ParameterList.hpp>
+
 // ============================================================================
 Ginla::ModelEvaluator::Default::
 Default ( const Teuchos::RCP<Ginla::Operator::Virtual>      & glOperator,
-          const Teuchos::RCP<Ginla::Komplex::LinearProblem> & komplex
+          const Teuchos::RCP<Ginla::Komplex::LinearProblem> & komplex,
+          const Teuchos::ParameterList                      & params
         ) :
         glOperator_ ( glOperator ),
         komplex_ ( komplex ),
         x_(  Teuchos::rcp( new Epetra_Vector( *komplex_->getRealMap(), true ) ) ),
         firstTime_ ( true ),
-        numParameters_( 1 )
+        numParams_( 2 )
 { 
 //   x_->Random();
 
@@ -42,51 +45,57 @@ Default ( const Teuchos::RCP<Ginla::Operator::Virtual>      & glOperator,
   psi->putScalar( double_complex(1.0,0.0) );
   *x_ = *(komplex_->complex2real( psi ));
   
-  // set up parameters
-  p_map_ = Teuchos::rcp(new Epetra_LocalMap( numParameters_,
-                                             0,
-                                             komplex_->getRealMap()->Comm() ) );
-
-  p_init_ = Teuchos::rcp(new Epetra_Vector(*p_map_));
-  for (int i=0; i<numParameters_; i++)
-      (*p_init_)[i]= 0.0;
+  this->setupParameters_( params );
   
-  Teuchos::Tuple<std::string,1> t = Teuchos::tuple<std::string>( "H0" );
-  p_names_ = Teuchos::rcp( new Teuchos::Array<std::string>( t ) );
-
   return;
 }
 // ============================================================================
 Ginla::ModelEvaluator::Default::
 Default ( const Teuchos::RCP<Ginla::Operator::Virtual>      & glOperator,
           const Teuchos::RCP<Ginla::Komplex::LinearProblem> & komplex,
-          const Teuchos::RCP<const Ginla::State>            & state
+          const Teuchos::RCP<const Ginla::State>            & state,
+          const Teuchos::ParameterList                      & params
         ) :
         glOperator_ ( glOperator ),
         komplex_ ( komplex ),
-        x_( this->createSystemVector_( *state ) ),
+        x_( this->createSystemVector( *state ) ),
         firstTime_ ( true ),
-        numParameters_( 1 )
+        numParams_( 2 )
 {
-  // set up parameters
-  p_map_ = Teuchos::rcp(new Epetra_LocalMap( numParameters_,
-                                             0,
-                                             komplex_->getRealMap()->Comm() ) );
-
-  p_init_ = Teuchos::rcp(new Epetra_Vector(*p_map_));
-  for (int i=0; i<numParameters_; i++)
-      (*p_init_)[i]= 0.0;
-  
   // make sure the maps are compatible
   TEUCHOS_ASSERT( state->getPsi()->getMap()->isSameAs( *komplex->getComplexMap()) );
   
-  Teuchos::Tuple<std::string,1> t = Teuchos::tuple<std::string>( "H0" );
-  p_names_ = Teuchos::rcp( new Teuchos::Array<std::string>( t ) );
+  this->setupParameters_( params );
+  
+  return;
 }
 // ============================================================================
 Ginla::ModelEvaluator::Default::
 ~Default()
 {
+}
+// ============================================================================
+void
+Ginla::ModelEvaluator::Default::
+setupParameters_( const Teuchos::ParameterList & params )
+{
+    // setup parameter names
+  Teuchos::RCP<Teuchos::Array<std::string> > p_names = Teuchos::rcp( new Teuchos::Array<std::string>() );
+  for ( Teuchos::ParameterList::ConstIterator i=params.begin(); i!=params.end(); i++ )
+      if ( params.name( i ) == "H0" || params.name( i ) == "scaling" )
+          p_names->append( params.name( i ) );
+  p_names_ = p_names;
+  
+  // setup parameter values
+  int numParams_ = p_names_->length();
+  p_map_ = Teuchos::rcp(new Epetra_LocalMap( numParams_,
+                                             0,
+                                             komplex_->getRealMap()->Comm() ) );
+  p_init_ = Teuchos::rcp(new Epetra_Vector(*p_map_));
+  for ( int k=0; k<numParams_; k++ )
+      (*p_init_)[k] = params.get<double>( (*p_names_)[k] );
+  
+  return;
 }
 // ============================================================================
 Teuchos::RCP<const Epetra_Map>
@@ -149,9 +158,13 @@ createInArgs() const
   
   inArgs.setModelEvalDescription( "Ginzburg--Landau extreme type-II on a square" );
   
-  inArgs.set_Np( 1 );
+  inArgs.set_Np( numParams_ );
   
   inArgs.setSupports( IN_ARG_x, true );
+  
+  // for shifted matrix
+  inArgs.setSupports(IN_ARG_alpha,true);
+  inArgs.setSupports(IN_ARG_beta,true);
   
   return inArgs;
 }
@@ -164,7 +177,7 @@ createOutArgs() const
   
   outArgs.setModelEvalDescription( "Ginzburg--Landau extreme type-II on a square" );
   
-  outArgs.set_Np_Ng( 1 , 0 ); // return parameters p and solution g
+  outArgs.set_Np_Ng( numParams_, 0 ); // return parameters p and solution g
   
   outArgs.setSupports( OUT_ARG_f, true );
   outArgs.setSupports( OUT_ARG_DfDp, 0, DerivativeSupport(DERIV_MV_BY_COL) );
@@ -184,6 +197,9 @@ evalModel( const InArgs  & inArgs,
            const OutArgs & outArgs
          ) const
 { 
+  double alpha = inArgs.get_alpha();
+  double beta  = inArgs.get_beta();
+  
   const Teuchos::RCP<const Epetra_Vector> & x_in = inArgs.get_x();
   
   Teuchos::RCP<Epetra_Vector>   f_out = outArgs.get_f();
@@ -210,7 +226,16 @@ evalModel( const InArgs  & inArgs,
 
   // fill jacobian
   if( !W_out.is_null() )
+  {
       this->computeJacobian_( *x_in, *W_out );
+      Teuchos::RCP<Epetra_CrsMatrix> W_out_crs =
+          Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(W_out, true);
+      W_out_crs->Scale(beta);
+
+      double diag = -alpha;
+      for (int i=0; i<x_in->MyLength(); i++)
+          W_out_crs->SumIntoMyValues(i, 1, &diag, &i);
+  }
   
   // dF / dH_0
   if ( !dfdp_out.is_null() )
@@ -233,7 +258,7 @@ computeF_ ( const Epetra_Vector & x,
 
     // TODO Avoid this explicit copy?
     // transform back to fully real equation
-    FVec = *(this->createSystemVector_( *res ));
+    FVec = *(this->createSystemVector( *res ));
 
     return;
 }
@@ -252,7 +277,7 @@ computeDFDh0_ ( const Epetra_Vector & x,
 
     // TODO Avoid this explicit copy?
     // transform back to fully real equation
-    FVec = *(this->createSystemVector_( *res ));
+    FVec = *(this->createSystemVector( *res ));
 
     return;
 }
@@ -291,7 +316,7 @@ createState( const Epetra_Vector & x ) const
 // =============================================================================
 Teuchos::RCP<Epetra_Vector>
 Ginla::ModelEvaluator::Default::
-createSystemVector_(  const Ginla::State & state ) const
+createSystemVector(  const Ginla::State & state ) const
 {
     return komplex_->complex2real ( state.getPsi() );
 }

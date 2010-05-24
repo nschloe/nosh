@@ -56,15 +56,15 @@ class NoxObserver:
     public NOX::Epetra::Observer
 {
 public:
-    enum ProblemType { NONLINEAR,
-                       CONTINUATION,
-                       TURNING_POINT };
+    enum ObserverType { NONLINEAR,
+                        CONTINUATION,
+                        TURNING_POINT };
 
 public:
   //! Constructor
   NoxObserver ( const Teuchos::RCP<const Ginla::IO::StateWriter>         & stateWriter,
                 const Teuchos::RCP<const Ginla::ModelEvaluator::Default> & modelEvaluator,
-                const NoxObserver::ProblemType                           & problemType
+                const NoxObserver::ObserverType                          & problemType
               );
   
   //! Destructor
@@ -82,21 +82,21 @@ public:
 protected:
 private:
   void
-  observeContinuation( const Teuchos::RCP<const Ginla::State> & state
-                     );
+  observeContinuation_( const Teuchos::RCP<const Ginla::State> & state
+                      );
   void
-  observeTurningPointContinuation( const Teuchos::RCP<const Ginla::State> & state
-                                 );
+  observeTurningPointContinuation_( const Teuchos::RCP<const Ginla::State> & state
+                                  );
 
   void
-  saveContinuationStatistics( const int stepIndex,
-                              const Teuchos::RCP<const Ginla::State> & state
-                            );
+  saveContinuationStatistics_( const int stepIndex,
+                               const Teuchos::RCP<const Ginla::State> & state
+                             );
                                  
 private:
 private:
 
-    const ProblemType problemType_;
+    const ObserverType observerType_;
     const Teuchos::RCP<const Ginla::IO::StateWriter>          stateWriter_;
     const Teuchos::RCP<const Ginla::ModelEvaluator::Default>  modelEvaluator_;
     

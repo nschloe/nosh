@@ -237,6 +237,7 @@ main ( int argc, char *argv[] )
     Teuchos::RCP<Ginla::IO::SaveEigenData> glEigenSaver =    
         Teuchos::RCP<Ginla::IO::SaveEigenData> ( new Ginla::IO::SaveEigenData ( eigenListPtr,
                                                                                 glsystem,
+                                                                                stateWriter,
                                                                                 eigenStatsWriter ) );
 
     Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> glSaveEigenDataStrategy =

@@ -29,11 +29,11 @@
 Ginla::IO::NoxObserver::
 NoxObserver ( const Teuchos::RCP<const Ginla::IO::StateWriter>         & stateWriter,
               const Teuchos::RCP<const Ginla::ModelEvaluator::Default> & modelEvaluator,
-              const ProblemType                                        & problemType
+              const ObserverType                                       & observerType
             ) :
   stateWriter_ ( stateWriter ),
   modelEvaluator_ ( modelEvaluator ),
-  problemType_( problemType ),
+  observerType_( observerType ),
   statsWriter_ ( Teuchos::null ),
   glOperator_ ( Teuchos::null )
 {
@@ -63,22 +63,22 @@ observeSolution( const Epetra_Vector & soln )
     // The switch hack is necessary as different continuation algorithms
     // call printSolution() a different number of times per step, e.g.,
     // to store solutions, null vectors, and so forth.
-    switch ( problemType_ )
+    switch ( observerType_ )
     {
       case NONLINEAR:
           if (!stateWriter_.is_null())
               stateWriter_->write( state, 0 );
           break;
       case CONTINUATION:
-          this->observeContinuation( state );
+          this->observeContinuation_( state );
           break;
       case TURNING_POINT:
-          this->observeTurningPointContinuation( state );
+          this->observeTurningPointContinuation_( state );
           break;
       default:
           TEST_FOR_EXCEPTION ( true,
                                std::logic_error,
-                               "Illegal problem type " << problemType_ );
+                               "Illegal observer type " << observerType_ );
     }
 
     return;
@@ -86,8 +86,8 @@ observeSolution( const Epetra_Vector & soln )
 // ============================================================================
 void
 Ginla::IO::NoxObserver::
-observeContinuation( const Teuchos::RCP<const Ginla::State> & state
-                   )
+observeContinuation_( const Teuchos::RCP<const Ginla::State> & state
+                    )
 {
   static int index = -1;
   index++;
@@ -95,13 +95,13 @@ observeContinuation( const Teuchos::RCP<const Ginla::State> & state
   if ( !stateWriter_.is_null() )
       stateWriter_->write( state, index );
   
-  this->saveContinuationStatistics( index, state );
+  this->saveContinuationStatistics_( index, state );
 }
 // ============================================================================
 void
 Ginla::IO::NoxObserver::
-observeTurningPointContinuation( const Teuchos::RCP<const Ginla::State> & state
-                               )
+observeTurningPointContinuation_( const Teuchos::RCP<const Ginla::State> & state
+                                )
 {
     static int index = -1;
     static bool isSolution = false;
@@ -115,7 +115,7 @@ observeTurningPointContinuation( const Teuchos::RCP<const Ginla::State> & state
         if ( !stateWriter_.is_null() )
             stateWriter_->write( state, index, "-state" );
 
-        this->saveContinuationStatistics( index, state );
+        this->saveContinuationStatistics_( index, state );
     }
     else
         if ( !stateWriter_.is_null() )
@@ -125,9 +125,9 @@ observeTurningPointContinuation( const Teuchos::RCP<const Ginla::State> & state
 // ============================================================================
 void
 Ginla::IO::NoxObserver::
-saveContinuationStatistics( const int stepIndex,
-                            const Teuchos::RCP<const Ginla::State> & state
-                          )
+saveContinuationStatistics_( const int stepIndex,
+                             const Teuchos::RCP<const Ginla::State> & state
+                           )
 {
     if ( !statsWriter_.is_null() )
     {

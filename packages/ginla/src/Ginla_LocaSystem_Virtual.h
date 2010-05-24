@@ -23,6 +23,7 @@
 
 #include "Ginla_Komplex_LinearProblem.h"
 #include "Ginla_State.h"
+#include "Ginla_StateTranslator.h"
 #include "Ginla_IO_EigenSaver_Abstract.h"
 
 #include <NOX_Epetra_Interface_Jacobian.H> // NOX base class
@@ -54,6 +55,7 @@ namespace LocaSystem {
 
 class Virtual:
             public Ginla::IO::EigenSaver::Abstract,
+            public Ginla::StateTranslator,
             public NOX::Epetra::Interface::Jacobian,
             public NOX::Epetra::Interface::Preconditioner,
             public LOCA::Epetra::Interface::TimeDependent

@@ -20,17 +20,23 @@
 #include "Ginla_IO_SaveEigenData.h"
 
 #include "Ginla_Helpers.h"
+#include "Ginla_IO_StateWriter.h"
+#include "Ginla_StateTranslator.h"
 
 #include <NOX_Abstract_MultiVector.H>
 
+#include <AnasaziSortManager.hpp>
+
 // =============================================================================
 Ginla::IO::SaveEigenData::
-SaveEigenData ( Teuchos::RCP<Teuchos::ParameterList>           & eigenParamList,
-                const Teuchos::RCP<const EigenSaver::Abstract> & eigenSaver,
-                const Teuchos::RCP<Ginla::IO::StatsWriter>     & statsWriter
+SaveEigenData ( Teuchos::RCP<Teuchos::ParameterList>             & eigenParamList,
+                const Teuchos::RCP<const Ginla::StateTranslator> & stateTranslator,
+                const Teuchos::RCP<const Ginla::IO::StateWriter> & stateWriter,
+                const Teuchos::RCP<Ginla::IO::StatsWriter>       & statsWriter
               ) :
         eigenParamList_ ( eigenParamList ),
-        eigenSaver_ ( eigenSaver ),
+        stateTranslator_ ( stateTranslator ),
+        stateWriter_ ( stateWriter ),
         statsWriter_ ( statsWriter ),
         locaStepper_ ( Teuchos::null ),
         numComputeStableEigenvalues_ ( 3 ),
@@ -63,8 +69,14 @@ save ( Teuchos::RCP<std::vector<double> >       & evals_r,
        Teuchos::RCP<NOX::Abstract::MultiVector> & evecs_r,
        Teuchos::RCP<NOX::Abstract::MultiVector> & evecs_i
      )
-{    
-    unsigned int step = locaStepper_->getStepNumber();
+{
+    // Can't fetch step index now, so rely on the function's
+    // being called exactly once per step.
+    static unsigned int step = -1;
+    if ( !locaStepper_.is_null() )
+        step = locaStepper_->getStepNumber();
+    else
+        step++;
 
     unsigned int numEigenValues = evals_r->size();
 
@@ -83,23 +95,27 @@ save ( Teuchos::RCP<std::vector<double> >       & evals_r,
                 Teuchos::rcp_dynamic_cast<NOX::Epetra::Vector> ( realPart, true );
                                                      
             stringstream eigenstateFileNameAppendix;
-            eigenstateFileNameAppendix << "eigenvalue" << k;
-            eigenSaver_->printSolution( realPartE->getEpetraVector(),
-                                        eigenstateFileNameAppendix.str() );
+            eigenstateFileNameAppendix << "-eigenvalue" << k;
+            Teuchos::RCP<Ginla::State> eigenstate = stateTranslator_->createState( realPartE->getEpetraVector() );
+            stateWriter_->write( eigenstate,
+                                 step,
+                                 eigenstateFileNameAppendix.str() );
                                         
             // The matrix and the eigenvalue is supposedly purely real,
-            // so the eigenvector's real an imaginary parts are eigenvectors
+            // so the eigenvector's real and imaginary parts are eigenvectors
             // in their own right. Check here for the imaginary part,
             // and print it, too, if it's nonzero.
             Teuchos::RCP<NOX::Abstract::Vector> imagPart =
                 Teuchos::rcpFromRef ( ( *evecs_i ) [k] );
-            if ( imagPart->norm()>1.0e-15 )
+            if ( imagPart->norm() > 1.0e-15 )
             {
                 Teuchos::RCP<NOX::Epetra::Vector> imagPartE =
                     Teuchos::rcp_dynamic_cast<NOX::Epetra::Vector> ( imagPart, true );
                 eigenstateFileNameAppendix << "-im";
-                eigenSaver_->printSolution( imagPartE->getEpetraVector(),
-                                            eigenstateFileNameAppendix.str() );
+                Teuchos::RCP<Ginla::State> eigenstate = stateTranslator_->createState( imagPartE->getEpetraVector() );
+                stateWriter_->write( eigenstate,
+                                     step,
+                                     eigenstateFileNameAppendix.str() );
             }
         }
     }
@@ -149,23 +165,42 @@ save ( Teuchos::RCP<std::vector<double> >       & evals_r,
 //     eigenFileStream << std::endl;
 //     eigenFileStream.close();
 
-    // Adapt the computation for the next step.
-    // Make sure that approximately \c numComputeStableEigenvalues_ stable eigenvalues
-    // will be computed in the next step.
-    int nextNumEigenvalues = numUnstableEigenvalues + numComputeStableEigenvalues_;
-    eigenParamList_->set ( "Num Eigenvalues", nextNumEigenvalues );
-
-    // Make sure that the shift SIGMA (if using Shift-Invert) sits THRESHOLD above
-    // the rightmost eigenvalue.
-    if ( eigenParamList_->get<string> ( "Operator" ).compare ( "Shift-Invert" ) == 0 )
+    if ( !locaStepper_.is_null() )
     {
-        double maxEigenval = *std::max_element ( evals_r->begin(), evals_r->end() );
-        double threshold = 0.5;
-        eigenParamList_->set ( "Shift", maxEigenval + threshold );
-    }
+        // Adapt the computation for the next step.
+        // Make sure that approximately \c numComputeStableEigenvalues_ stable eigenvalues
+        // will be computed in the next step.
+        // TODO Remove +1. This was introduced as a mere work-around the exception
+        // /home/nico/software/trilinos/dev/source/piro-observer-improvements/packages/anasazi/src/AnasaziBlockKrylovSchur.hpp:1247:
+        // 
+        // Throw number = 1
+        // 
+        // Throw test that evaluated to true: ritzIndex_[numRitzVecs_-1]==1
+        // 
+        // Anasazi::BlockKrylovSchur::computeRitzVectors(): the number of required Ritz vectors splits a complex conjugate pair.
+        int nextNumEigenvalues = numUnstableEigenvalues + numComputeStableEigenvalues_;
+        eigenParamList_->set ( "Num Eigenvalues", nextNumEigenvalues );
 
-    // reset the eigensolver to take notice of the new values
-    locaStepper_->eigensolverReset ( eigenParamList_ );
+        // Make sure that the shift SIGMA (if using Shift-Invert) sits THRESHOLD above
+        // the rightmost eigenvalue.
+        if ( eigenParamList_->get<string> ( "Operator" ).compare ( "Shift-Invert" ) == 0 )
+        {
+            double maxEigenval = *std::max_element ( evals_r->begin(), evals_r->end() );
+            double threshold = 0.5;
+            eigenParamList_->set ( "Shift", maxEigenval + threshold );
+        }
+    
+        // preserve the sort manager
+        Teuchos::RCP<Anasazi::SortManager<double> > d =
+            eigenParamList_->get<Teuchos::RCP<Anasazi::SortManager<double> > >( "Sort Manager" );
+        
+        // TODO For some reason, the  call to eigensolverReset destroys teh "Sort Manager" entry.
+        //      No idea why. This is a potentially serious bug in Trilinos.
+        // reset the eigensolver to take notice of the new values
+        locaStepper_->eigensolverReset ( eigenParamList_ );
+        
+        eigenParamList_->set( "Sort Manager", d );
+    }
 
     return NOX::Abstract::Group::Ok;
 }

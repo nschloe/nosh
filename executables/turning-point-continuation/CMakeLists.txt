@@ -8,9 +8,6 @@ SET(Boost_USE_STATIC_LIBS   ON)
 SET(Boost_USE_MULTITHREADED ON)
 INCLUDE_DIRECTORIES ( ${Boost_INCLUDE_DIRS} )
 
-SET ( ginzburg_landau_SRCS
-      glTurningPointContinuation.cpp )
-
 SET ( internal_LIBS
       ginla
       recti
@@ -29,14 +26,27 @@ LINK_DIRECTORIES( ${Boost_LIBRARY_DIRS}
                   ${Trilinos_LIBRARY_DIRS}
                   ${Trilinos_TPL_LIBRARY_DIRS} )
 
-SET( MY_EXECUTABLE "glTurningPointContinuation.out" )
-
+SET ( opc_SRCS
+      glTurningPointContinuation.cpp  )
+SET( MY_EXECUTABLE
+     "glTurningPointContinuation.out" )
 ADD_EXECUTABLE( ${MY_EXECUTABLE}
-                ${ginzburg_landau_SRCS})
-
+                ${opc_SRCS} )
 SET_TARGET_PROPERTIES( ${MY_EXECUTABLE}
                        PROPERTIES LINKER_LANGUAGE Fortran )
+TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
+                       ${internal_LIBS}
+                       ${Trilinos_LIBRARIES}
+                       ${Trilinos_TPL_LIBRARIES}
+                       ${Boost_LIBRARIES} )
 
+SET ( piro_SRCS
+      glTurningPointContinuationPiro.cpp )
+SET( MY_EXECUTABLE "glTurningPointContinuationPiro.out" )
+ADD_EXECUTABLE( ${MY_EXECUTABLE}
+                ${piro_SRCS})
+SET_TARGET_PROPERTIES( ${MY_EXECUTABLE}
+                       PROPERTIES LINKER_LANGUAGE Fortran )
 TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
                        ${internal_LIBS}
                        ${Trilinos_LIBRARIES}
