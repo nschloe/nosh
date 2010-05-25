@@ -80,6 +80,10 @@ public:
   save( const std::string & fileName
       ) const;
          
+  //! \f$L^2(\Omega)\f$-inner product with state \c state.
+  double_complex
+  innerProduct( const Ginla::State & state ) const;
+      
   //! \f$L^2(\Omega)\f$-norm.
   double
   normalizedScaledL2Norm () const;

@@ -184,6 +184,23 @@ int main ( int argc, char *argv[] )
         Teuchos::rcp(new Teuchos::ParameterList("Piro Parameters"));
     Teuchos::updateParametersFromXmlFile(xmlInputFileName, piroParams.get());
 
+    
+    // set the initial value from glParameters
+    Teuchos::ParameterList & stepperList = piroParams->sublist ( "LOCA" ).sublist ( "Stepper" );
+    std::string contParam = stepperList.get<string> ( "Continuation Parameter" );
+    TEST_FOR_EXCEPTION ( !problemParameters.isParameter ( contParam ),
+                         std::logic_error,
+                         "Parameter \"" << contParam << "\" given as continuation parameter, but doesn't exist"
+                         << "in the glParameters list." );
+
+    // check if the initial value was given (will be unused anyway)
+    if ( stepperList.isParameter ( "Initial Value" ) )
+        std::cerr << "Warning: Parameter 'LOCA->Stepper->Initial Value' given, but will not be used."
+                  << std::endl;
+
+    // TODO Get rid of the explicit "double".
+    stepperList.set ( "Initial Value", problemParameters.get<double> ( contParam ) );
+    
     // Use these two objects to construct a Piro solved application 
     //   EpetraExt::ModelEvaluator is  base class of all Piro::Epetra solvers
     Teuchos::RCP<EpetraExt::ModelEvaluator> piro;

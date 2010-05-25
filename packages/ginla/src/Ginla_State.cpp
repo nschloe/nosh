@@ -157,26 +157,27 @@ freeEnergy () const
     return globalEnergy;
 }
 // =============================================================================
-double
+double_complex
 Ginla::State::
-normalizedScaledL2Norm () const
+innerProduct( const Ginla::State & state ) const
 {
-    double localSum = 0.0;
+    double_complex localSum = double_complex( 0.0, 0.0 );
 
     Teuchos::ArrayRCP<const double_complex> psiView = psi_.get1dView();
+    Teuchos::ArrayRCP<const double_complex> psi2View = state.getPsi()->get1dView();
 
-    // sum up on each processor
+    // sum up the energy on each processor
     for ( unsigned int k=0; k<psi_.getLocalLength(); k++ )
     {
         int kGlobal = psi_.getMap()->getGlobalElement ( k );
         double area = grid_->cellArea ( kGlobal );
-        localSum += area * norm ( psiView[k] );
+        localSum += area * psiView[k]*psi2View[k];
     }
-
+    
     // reduce and scatter such that energy is available on
     // all cores
     int count = 1; // send *one* integer
-    Teuchos::Array<double> sendBuff ( count ), recvBuff ( count );
+    Teuchos::Array<double_complex> sendBuff ( count ), recvBuff ( count );
 
     // fill send buffer
     sendBuff[0] = localSum;
@@ -194,10 +195,20 @@ normalizedScaledL2Norm () const
                                    &recvCounts[0],
                                    &recvBuff[0]
                                  );
-
+                                 
+    return recvBuff[0];
+}
+// ============================================================================
+double
+Ginla::State::
+normalizedScaledL2Norm () const
+{
+    // imaginary part of alpha should be 0
+    double_complex alpha = this->innerProduct( *this );
+    
     // normalize
     double domainArea = grid_->getGridDomainArea();
-    double l2norm = sqrt ( recvBuff[0] ) / domainArea;
+    double l2norm = sqrt ( alpha.real() ) / domainArea;
 
     return l2norm;
 }

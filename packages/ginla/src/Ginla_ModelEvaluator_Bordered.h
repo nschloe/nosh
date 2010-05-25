@@ -133,9 +133,6 @@ private:
     const Teuchos::RCP<Epetra_Vector> x_;
    
 private:
-  
-    void
-    setupParameters_( const Teuchos::ParameterList & params );
 
     void
     computeF_ ( const Epetra_Vector & x,

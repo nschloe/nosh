@@ -242,7 +242,7 @@ computeF_ ( const Epetra_Vector & x,
     Epetra_Vector shortFVec ( *regularMap_ );
     modelEvaluatorDefault_->computeF ( tmp, shortFVec );
 
-    // add -i\eta\psi
+    // \psi += -i\eta\psi
     Teuchos::RCP<Ginla::State> state = modelEvaluatorDefault_->createState( tmp );
     state->getPsiNonConst()->scale( -IM*eta );
     TEUCHOS_ASSERT_EQUALITY( 0, tmp.Update( 1.0, *modelEvaluatorDefault_->createSystemVector( *state ), 1.0 ) );
@@ -251,7 +251,9 @@ computeF_ ( const Epetra_Vector & x,
     FVec.Import( shortFVec, importFromRegularMap_, Insert );
 
     // set last entry
-    FVec.ReplaceGlobalValue ( shortFVec.GlobalLength(), 0, 0.0 );
+    FVec.ReplaceGlobalValue ( shortFVec.GlobalLength(),
+                              0,
+                              0.0 );
 
     return;
 }
