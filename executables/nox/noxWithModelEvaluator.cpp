@@ -167,6 +167,7 @@ int main ( int argc, char *argv[] )
     Teuchos::RCP<Ginla::ModelEvaluator::Default> glModel = 
               Teuchos::rcp(new Ginla::ModelEvaluator::Default( glOperator,
                                                                komplex,
+                                                               *state,
                                                                problemParameters ) );
 
     Teuchos::RCP<Ginla::IO::NoxObserver> observer =

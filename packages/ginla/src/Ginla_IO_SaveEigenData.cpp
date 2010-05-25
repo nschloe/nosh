@@ -80,11 +80,16 @@ save ( Teuchos::RCP<std::vector<double> >       & evals_r,
 
     unsigned int numEigenValues = evals_r->size();
 
+    // Consider eigenvalues below tol to be not unstable, hence not contributing to numUnstableEigenvalues.
+    // This is important for notoriously 0-eigenvalues; the numerical process only delivers approximations
+    // of those.
+    const double tol = 1.0e-5;
+    
     // store the unstable eigenstate into files
     unsigned int numUnstableEigenvalues = 0;
     for ( unsigned int k = 0; k < numEigenValues; k++ )
     {
-        if ( ( *evals_r ) [k] > 0.0 )
+        if ( ( *evals_r ) [k] > tol )
         {
             numUnstableEigenvalues++;
 
@@ -170,14 +175,6 @@ save ( Teuchos::RCP<std::vector<double> >       & evals_r,
         // Adapt the computation for the next step.
         // Make sure that approximately \c numComputeStableEigenvalues_ stable eigenvalues
         // will be computed in the next step.
-        // TODO Remove +1. This was introduced as a mere work-around the exception
-        // /home/nico/software/trilinos/dev/source/piro-observer-improvements/packages/anasazi/src/AnasaziBlockKrylovSchur.hpp:1247:
-        // 
-        // Throw number = 1
-        // 
-        // Throw test that evaluated to true: ritzIndex_[numRitzVecs_-1]==1
-        // 
-        // Anasazi::BlockKrylovSchur::computeRitzVectors(): the number of required Ritz vectors splits a complex conjugate pair.
         int nextNumEigenvalues = numUnstableEigenvalues + numComputeStableEigenvalues_;
         eigenParamList_->set ( "Num Eigenvalues", nextNumEigenvalues );
 

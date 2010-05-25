@@ -27,15 +27,13 @@
 // forward declarations
 namespace Ginla {
   class State;
+  class StateTranslator;
   namespace Komplex {
     class LinearProblem;
   }
   namespace IO {
     class StateWriter;
     class StatsWriter;
-  }
-  namespace ModelEvaluator{
-    class Default;
   }
   namespace Operator {
     class Virtual;
@@ -62,9 +60,9 @@ public:
 
 public:
   //! Constructor
-  NoxObserver ( const Teuchos::RCP<const Ginla::IO::StateWriter>         & stateWriter,
-                const Teuchos::RCP<const Ginla::ModelEvaluator::Default> & modelEvaluator,
-                const NoxObserver::ObserverType                          & problemType
+  NoxObserver ( const Teuchos::RCP<const Ginla::IO::StateWriter> & stateWriter,
+                const Teuchos::RCP<const Ginla::StateTranslator> & stateTranslator,
+                const NoxObserver::ObserverType                  & problemType
               );
   
   //! Destructor
@@ -97,8 +95,8 @@ private:
 private:
 
     const ObserverType observerType_;
-    const Teuchos::RCP<const Ginla::IO::StateWriter>          stateWriter_;
-    const Teuchos::RCP<const Ginla::ModelEvaluator::Default>  modelEvaluator_;
+    const Teuchos::RCP<const Ginla::IO::StateWriter>  stateWriter_;
+    const Teuchos::RCP<const Ginla::StateTranslator>  stateTranslator_;
     
     Teuchos::RCP<Ginla::IO::StatsWriter>   statsWriter_;
     Teuchos::RCP<const Ginla::Operator::Virtual> glOperator_;

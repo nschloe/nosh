@@ -176,7 +176,7 @@ BOOST_AUTO_TEST_CASE( zero_step_piro_test )
     Teuchos::RCP<Ginla::ModelEvaluator::Default> glModel = 
               Teuchos::rcp(new Ginla::ModelEvaluator::Default( glOperator,
                                                                komplex,
-                                                               initState,
+                                                               *initState,
                                                                problemParameters ) );
                                                               
     Teuchos::RCP<Ginla::IO::NoxObserver> observer =

@@ -18,6 +18,7 @@
 // #include "Ginla_IO_SaveNewtonData.h"
 #include "Ginla_IO_NoxObserver.h"
 #include "Ginla_ModelEvaluator_Default.h"
+#include "Ginla_ModelEvaluator_Bordered.h"
 #include "Recti_Grid_Uniform.h"
 #include "Recti_Grid_Reader.h"
 #include "Ginla_Komplex_LinearProblem.h"
@@ -158,10 +159,16 @@ int main ( int argc, char *argv[] )
                                                         state->getPsi()->getMap() ) );
 
     // create the mode evaluator
-    Teuchos::RCP<Ginla::ModelEvaluator::Default> glModel = 
-              Teuchos::rcp(new Ginla::ModelEvaluator::Default( glOperator,
-                                                               komplex,
-                                                               problemParameters ) );
+//     Teuchos::RCP<Ginla::ModelEvaluator::Default> glModel = 
+//               Teuchos::rcp(new Ginla::ModelEvaluator::Default( glOperator,
+//                                                                komplex,
+//                                                                *state,
+//                                                                problemParameters ) );
+    Teuchos::RCP<Ginla::ModelEvaluator::Bordered> glModel = 
+              Teuchos::rcp(new Ginla::ModelEvaluator::Bordered( glOperator,
+                                                                komplex,
+                                                                *state,
+                                                                problemParameters ) );
                                                                
     Teuchos::RCP<Ginla::IO::NoxObserver> observer =
         Teuchos::rcp( new Ginla::IO::NoxObserver( stateWriter,

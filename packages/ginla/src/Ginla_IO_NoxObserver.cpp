@@ -21,18 +21,18 @@
 
 #include "Ginla_IO_StateWriter.h"
 #include "Ginla_IO_StatsWriter.h"
-#include "Ginla_ModelEvaluator_Default.h"
 #include "Ginla_Helpers.h"
 #include "Ginla_Operator_Virtual.h"
+#include "Ginla_StateTranslator.h"
 
 // ============================================================================
 Ginla::IO::NoxObserver::
-NoxObserver ( const Teuchos::RCP<const Ginla::IO::StateWriter>         & stateWriter,
-              const Teuchos::RCP<const Ginla::ModelEvaluator::Default> & modelEvaluator,
-              const ObserverType                                       & observerType
+NoxObserver ( const Teuchos::RCP<const Ginla::IO::StateWriter> & stateWriter,
+              const Teuchos::RCP<const Ginla::StateTranslator> & stateTranslator,
+              const ObserverType                               & observerType
             ) :
   stateWriter_ ( stateWriter ),
-  modelEvaluator_ ( modelEvaluator ),
+  stateTranslator_ ( stateTranslator ),
   observerType_( observerType ),
   statsWriter_ ( Teuchos::null ),
   glOperator_ ( Teuchos::null )
@@ -58,7 +58,7 @@ Ginla::IO::NoxObserver::
 observeSolution( const Epetra_Vector & soln )
 { 
     // define state
-    const Teuchos::RCP<const Ginla::State> state = modelEvaluator_->createState(soln);
+    const Teuchos::RCP<const Ginla::State> state = stateTranslator_->createState(soln);
 
     // The switch hack is necessary as different continuation algorithms
     // call printSolution() a different number of times per step, e.g.,
@@ -93,7 +93,10 @@ observeContinuation_( const Teuchos::RCP<const Ginla::State> & state
   index++;
 
   if ( !stateWriter_.is_null() )
-      stateWriter_->write( state, index );
+  {
+      Teuchos::RCP<LOCA::ParameterVector> p = glOperator_->getParameters();
+      stateWriter_->write( state, index, *p );
+  }
   
   this->saveContinuationStatistics_( index, state );
 }
@@ -113,7 +116,10 @@ observeTurningPointContinuation_( const Teuchos::RCP<const Ginla::State> & state
     {
         index++;
         if ( !stateWriter_.is_null() )
-            stateWriter_->write( state, index, "-state" );
+        {
+            Teuchos::RCP<LOCA::ParameterVector> p = glOperator_->getParameters();
+            stateWriter_->write( state, index, "-state", *p );
+        }
 
         this->saveContinuationStatistics_( index, state );
     }

@@ -25,6 +25,7 @@
 #include "Ginla_Komplex_LinearProblem.h"
 #include "Ginla_State.h"
 #include "Ginla_StateTranslator.h"
+#include "Recti_Grid_General.h"
 
 // forward declarations
 namespace Ginla {
@@ -46,13 +47,14 @@ public:
   //! Constructor without initial guess.
   Default ( const Teuchos::RCP<Ginla::Operator::Virtual>      & glOperator,
             const Teuchos::RCP<Ginla::Komplex::LinearProblem> & komplex,
+            const Teuchos::RCP<Recti::Grid::General>          & grid,
             const Teuchos::ParameterList                      & params
           );
 
   //! Constructor with initial guess.
   Default ( const Teuchos::RCP<Ginla::Operator::Virtual>      & glOperator,
             const Teuchos::RCP<Ginla::Komplex::LinearProblem> & komplex,
-            const Teuchos::RCP<const Ginla::State>            & state,
+            const Ginla::State                                & state,
             const Teuchos::ParameterList                      & params
           );
   
@@ -111,6 +113,33 @@ public:
   Teuchos::RCP<Epetra_Vector>
   createSystemVector( const Ginla::State & state ) const;
 
+  Teuchos::RCP<const Epetra_Map>
+  getMap() const;
+  
+public:
+  // TODO move the following functions to private as soon as Ginla::ModelEvaluator::Bordered doesn't
+  //      use them anymore
+  void
+  computeF ( const Epetra_Vector & x,
+                   Epetra_Vector & FVec ) const;
+              
+  void
+  computeDFDh0 ( const Epetra_Vector & x,
+                       Epetra_Vector & FVec ) const;
+              
+  void
+  computeJacobian ( const Epetra_Vector & x,
+                    Epetra_Operator     & Jac ) const;
+                    
+  Teuchos::RCP<Epetra_CrsMatrix>
+  getJacobianNonConst();
+                     
+public:
+  // TODO remove the following functions as soon as Ginla::ModelEvaluator::Bordered doesn't
+  //      use them anymore
+  Teuchos::RCP<Ginla::Operator::Virtual>
+  getOperator();
+  
 protected:
 private:
   
@@ -128,18 +157,6 @@ private:
 private:
     void
     setupParameters_( const Teuchos::ParameterList & params );
-
-    void
-    computeF_ ( const Epetra_Vector & x,
-                      Epetra_Vector & FVec ) const;
-                
-    void
-    computeDFDh0_ ( const Epetra_Vector & x,
-                          Epetra_Vector & FVec ) const;
-                
-    void
-    computeJacobian_ ( const Epetra_Vector & x,
-                       Epetra_Operator     & Jac ) const;
 
 };
 } // namespace ModelEvaluator

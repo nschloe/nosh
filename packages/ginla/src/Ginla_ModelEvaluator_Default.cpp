@@ -30,6 +30,7 @@
 Ginla::ModelEvaluator::Default::
 Default ( const Teuchos::RCP<Ginla::Operator::Virtual>      & glOperator,
           const Teuchos::RCP<Ginla::Komplex::LinearProblem> & komplex,
+          const Teuchos::RCP<Recti::Grid::General>          & grid,
           const Teuchos::ParameterList                      & params
         ) :
         glOperator_ ( glOperator ),
@@ -38,12 +39,15 @@ Default ( const Teuchos::RCP<Ginla::Operator::Virtual>      & glOperator,
         firstTime_ ( true ),
         numParams_( 2 )
 { 
-//   x_->Random();
-
-  Teuchos::RCP<ComplexVector> psi =
-      Teuchos::rcp( new ComplexVector( komplex_->getComplexMap() ) );
-  psi->putScalar( double_complex(1.0,0.0) );
-  *x_ = *(komplex_->complex2real( psi ));
+  Teuchos::RCP<Ginla::State> initialState =
+      Teuchos::rcp( new Ginla::State( komplex->getComplexMap()->getComm(),
+                                      grid ) );
+                                      
+  TEUCHOS_ASSERT( initialState->getPsi()->getMap()->isSameAs( *komplex->getComplexMap()) );
+                                      
+  initialState->getPsiNonConst()->putScalar( double_complex(1.0,0.0) );
+  
+  *x_ = *(this->createSystemVector( *initialState ));
   
   this->setupParameters_( params );
   
@@ -53,17 +57,17 @@ Default ( const Teuchos::RCP<Ginla::Operator::Virtual>      & glOperator,
 Ginla::ModelEvaluator::Default::
 Default ( const Teuchos::RCP<Ginla::Operator::Virtual>      & glOperator,
           const Teuchos::RCP<Ginla::Komplex::LinearProblem> & komplex,
-          const Teuchos::RCP<const Ginla::State>            & state,
+          const Ginla::State                                & state,
           const Teuchos::ParameterList                      & params
         ) :
         glOperator_ ( glOperator ),
         komplex_ ( komplex ),
-        x_( this->createSystemVector( *state ) ),
+        x_( this->createSystemVector( state ) ),
         firstTime_ ( true ),
         numParams_( 2 )
 {
   // make sure the maps are compatible
-  TEUCHOS_ASSERT( state->getPsi()->getMap()->isSameAs( *komplex->getComplexMap()) );
+  TEUCHOS_ASSERT( state.getPsi()->getMap()->isSameAs( *komplex->getComplexMap()) );
   
   this->setupParameters_( params );
   
@@ -79,7 +83,7 @@ void
 Ginla::ModelEvaluator::Default::
 setupParameters_( const Teuchos::ParameterList & params )
 {
-    // setup parameter names
+  // setup parameter names
   Teuchos::RCP<Teuchos::Array<std::string> > p_names = Teuchos::rcp( new Teuchos::Array<std::string>() );
   for ( Teuchos::ParameterList::ConstIterator i=params.begin(); i!=params.end(); i++ )
       if ( params.name( i ) == "H0" || params.name( i ) == "scaling" )
@@ -163,8 +167,8 @@ createInArgs() const
   inArgs.setSupports( IN_ARG_x, true );
   
   // for shifted matrix
-  inArgs.setSupports(IN_ARG_alpha,true);
-  inArgs.setSupports(IN_ARG_beta,true);
+  inArgs.setSupports( IN_ARG_alpha, true );
+  inArgs.setSupports( IN_ARG_beta, true );
   
   return inArgs;
 }
@@ -196,7 +200,7 @@ Ginla::ModelEvaluator::Default::
 evalModel( const InArgs  & inArgs, 
            const OutArgs & outArgs
          ) const
-{ 
+{
   double alpha = inArgs.get_alpha();
   double beta  = inArgs.get_beta();
   
@@ -222,12 +226,12 @@ evalModel( const InArgs  & inArgs,
   
   // compute F
   if ( !f_out.is_null() )
-      this->computeF_( *x_in, *f_out ); 
+      this->computeF( *x_in, *f_out ); 
 
   // fill jacobian
   if( !W_out.is_null() )
   {
-      this->computeJacobian_( *x_in, *W_out );
+      this->computeJacobian( *x_in, *W_out );
       Teuchos::RCP<Epetra_CrsMatrix> W_out_crs =
           Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(W_out, true);
       W_out_crs->Scale(beta);
@@ -239,16 +243,16 @@ evalModel( const InArgs  & inArgs,
   
   // dF / dH_0
   if ( !dfdp_out.is_null() )
-      this->computeDFDh0_( *x_in, *((*dfdp_out)(0)) );
+      this->computeDFDh0( *x_in, *((*dfdp_out)(0)) );
 
   return;
 }
 // ============================================================================
 void
 Ginla::ModelEvaluator::Default::
-computeF_ ( const Epetra_Vector & x,
-            Epetra_Vector       & FVec
-          ) const
+computeF ( const Epetra_Vector & x,
+           Epetra_Vector       & FVec
+         ) const
 {
     // convert from x to state
     const Teuchos::RCP<const Ginla::State> state = this->createState( x );
@@ -265,9 +269,9 @@ computeF_ ( const Epetra_Vector & x,
 // ============================================================================
 void
 Ginla::ModelEvaluator::Default::
-computeDFDh0_ ( const Epetra_Vector & x,
-                Epetra_Vector       & FVec
-              ) const
+computeDFDh0 ( const Epetra_Vector & x,
+               Epetra_Vector       & FVec
+             ) const
 {
     // convert from x to state
     const Teuchos::RCP<const Ginla::State> state = this->createState( x );
@@ -284,9 +288,9 @@ computeDFDh0_ ( const Epetra_Vector & x,
 // ============================================================================
 void
 Ginla::ModelEvaluator::Default::
-computeJacobian_ ( const Epetra_Vector & x,
-                   Epetra_Operator     & Jac
-                 ) const
+computeJacobian ( const Epetra_Vector & x,
+                  Epetra_Operator     & Jac
+                ) const
 {
     // In Ginla::Komplex, the values are merely sumIntoLocalValue'd,
     // so make sure we set this to zero from the start.
@@ -319,5 +323,26 @@ Ginla::ModelEvaluator::Default::
 createSystemVector(  const Ginla::State & state ) const
 {
     return komplex_->complex2real ( state.getPsi() );
+}
+// =============================================================================
+Teuchos::RCP<const Epetra_Map>
+Ginla::ModelEvaluator::Default::
+getMap() const
+{
+    return komplex_->getRealMap();
+}
+// =============================================================================
+Teuchos::RCP<Ginla::Operator::Virtual>
+Ginla::ModelEvaluator::Default::
+getOperator()
+{
+  return glOperator_;
+}
+// =============================================================================
+Teuchos::RCP<Epetra_CrsMatrix>
+Ginla::ModelEvaluator::Default::
+getJacobianNonConst()
+{
+  return komplex_->getMatrix();
 }
 // =============================================================================

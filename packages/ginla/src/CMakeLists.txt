@@ -17,6 +17,7 @@ SET ( ginla_SRCS
       Ginla_LocaSystem_Default.cpp
       Ginla_LocaSystem_Bordered.cpp
       Ginla_ModelEvaluator_Default.cpp
+      Ginla_ModelEvaluator_Bordered.cpp
       Ginla_Constraint_MinDist.cpp
 #       Ginla_Constraint_MinDistReal.cpp
       Ginla_Perturbation_Quadrants.cpp
