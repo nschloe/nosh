@@ -245,8 +245,6 @@ int main ( int argc, char *argv[] )
         eigenList->set ( "glSaveEigenDataStrategy", glSaveEigenDataStrategy );
 #endif
 
-        std::cout << *piroParams << std::endl;
-
         // fetch the stepper
         Teuchos::RCP<Piro::Epetra::LOCASolver> piroLOCASolver = 
             Teuchos::rcp(new Piro::Epetra::LOCASolver( piroParams,
@@ -259,7 +257,71 @@ int main ( int argc, char *argv[] )
           glEigenSaver->setLocaStepper ( stepper );
 #endif
 
-        piro = piroLOCASolver; 
+        piro = piroLOCASolver;
+      }
+      // ---------------------------------------------------------------------------
+      else if ( solver == "Predictor Step" )
+      {
+          observer = Teuchos::rcp( new Ginla::IO::NoxObserver( stateWriter,
+                                                               glModel,
+                                                               Ginla::IO::NoxObserver::CONTINUATION ) );
+          observer->setStatisticsWriter( statsWriter, glOperator );
+          
+          // Create a temporary stepper; this one is really only used to get
+          // access to the the globalData.
+          Teuchos::RCP<Piro::Epetra::LOCASolver> piroLOCASolver = 
+              Teuchos::rcp(new Piro::Epetra::LOCASolver( piroParams,
+                                                         glModel,
+                                                         observer ));
+
+          // get stepper and inject it into the eigensaver
+          Teuchos::RCP<LOCA::Stepper> stepper = piroLOCASolver->getLOCAStepperNonConst();
+        
+          // prepare the restart vector
+          boost::filesystem::path inputPredictorFile = initialGuessList.get<string> ( "Predictor" );
+          if ( !inputPredictorFile.empty() && inputPredictorFile.root_directory().empty() ) // if inputGuessFile is a relative path
+              inputPredictorFile = xmlPath / inputPredictorFile;
+          TEUCHOS_ASSERT( !inputPredictorFile.empty() );
+          
+          // read the predictor state
+          Teuchos::ParameterList             voidParameters;
+          Teuchos::RCP<Ginla::State>         predictorState;
+          Teuchos::RCP<Recti::Grid::Uniform> grid = Teuchos::null;
+          Recti::Grid::Reader::read ( Comm,
+                                      inputPredictorFile.string(),
+                                      predictorState,
+                                      grid,
+                                      voidParameters );
+                                      
+          // transform to system vector
+          Teuchos::RCP<Epetra_Vector> predictorV = glModel->createSystemVector( *predictorState );
+          
+          // Create the LOCA::MultiContinuation::ExtendedVector;
+          // that's the predictor vector with a prediction for the parameter appended
+          // -- 0 in the case of a pitchfork.
+          NOX::Epetra::Vector vx( predictorV );
+          Teuchos::RCP<LOCA::GlobalData> globalData = piroLOCASolver->getGlobalDataNonConst();
+          Teuchos::RCP<LOCA::MultiContinuation::ExtendedVector> restartVector =
+              Teuchos::rcp(new LOCA::MultiContinuation::ExtendedVector(globalData, vx, 1) );
+          double vp = 0.0;
+          restartVector->setScalar(0, vp);
+          
+          // adapt the method parameter list list
+          Teuchos::ParameterList & predictorList = piroParams->sublist ( "LOCA" )
+                                                              .sublist ( "Predictor" );
+          predictorList.set( "Method", "Secant" );
+          
+          // Do only one actual step.
+          piroParams->sublist ( "LOCA" ).sublist( "Stepper" ).set( "Max Steps", 1 );
+          
+          Teuchos::ParameterList & fspList = predictorList.sublist ( "First Step Predictor" );
+          fspList.set( "Method", "Restart" );
+          fspList.set( "Restart Vector", restartVector );
+          
+          // TODO Don't recreate the same solver.
+          piro = Teuchos::rcp(new Piro::Epetra::LOCASolver( piroParams,
+                                                            glModel,
+                                                            observer ));
       }
       // ----------------------------------------------------------------------
       else if ( solver=="Turning Point" )
