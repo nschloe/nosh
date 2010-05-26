@@ -26,6 +26,7 @@
 
 #include "Recti_Domain_Square.h"
 
+#include "Ginla_LocaSystem_Default.h"
 #include "Ginla_LocaSystem_Bordered.h"
 #include "Ginla_IO_SaveEigenData.h"
 
@@ -210,7 +211,7 @@ main ( int argc, char *argv[] )
         Teuchos::RCP<Ginla::IO::StatsWriter> statsWriter =
             Teuchos::rcp( new Ginla::IO::StatsWriter( fn ) );
 
-        Teuchos::RCP<Ginla::LocaSystem::Bordered> glsystem;
+        Teuchos::RCP<Ginla::LocaSystem::Virtual> glsystem;
 
         Teuchos::ParameterList & stepperList = paramList->sublist ( "LOCA" ).sublist ( "Stepper" );
         int maxLocaSteps = stepperList.get<int> ( "Max Steps" );
@@ -365,6 +366,7 @@ main ( int argc, char *argv[] )
 
         // convert the complex vector into a (real-valued) GlSystem-compliant vector
         Teuchos::RCP<Epetra_Vector> glsystemInitialNullVector = glsystem->createSystemVector( *initialNullVectorState );
+        
         // ---------------------------------------------------------------------------
         // add LOCA options which cannot be provided in the XML file
         Teuchos::ParameterList & bifList =
@@ -389,14 +391,15 @@ main ( int argc, char *argv[] )
             Teuchos::rcp ( new NOX::Epetra::Vector ( *glsystemInitialNullVectorExt ) );
     //     initialNullAbstractVec->init(1.0);
         bifList.set ( "Initial Null Vector", initialNullAbstractVec );
+        
         // ---------------------------------------------------------------------------
         // Create the stepper
         Teuchos::RCP<LOCA::Stepper> stepper;
         stepper = Teuchos::rcp ( new LOCA::Stepper ( globalData,
-                                                      grp,
-                                                      maxLocaStepsTest,
-                                                      comboOR,
-                                                      paramList ) );
+                                                     grp,
+                                                     maxLocaStepsTest,
+                                                     comboOR,
+                                                     paramList ) );
         // ---------------------------------------------------------------------------
 
         // make sure that the stepper starts off with the correct starting value
