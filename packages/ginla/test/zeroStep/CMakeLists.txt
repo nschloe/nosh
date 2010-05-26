@@ -8,8 +8,6 @@ FIND_PACKAGE( Boost
               COMPONENTS system filesystem unit_test_framework
               REQUIRED )
 
-# SET(Boost_USE_STATIC_LIBS   ON)
-SET(Boost_USE_MULTITHREADED ON)
 INCLUDE_DIRECTORIES ( ${Boost_INCLUDE_DIRS} )
 
 INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/packages/vio/src

@@ -7,8 +7,6 @@ INCLUDE_DIRECTORIES ( ${Trilinos_INCLUDE_DIRS}
                       ${Trilinos_TPL_INCLUDE_DIRS} )
                       
 FIND_PACKAGE( Boost COMPONENTS system filesystem REQUIRED )
-SET(Boost_USE_STATIC_LIBS   ON)
-SET(Boost_USE_MULTITHREADED ON)
 INCLUDE_DIRECTORIES ( ${Boost_INCLUDE_DIRS} )
 LINK_DIRECTORIES( ${Boost_LIBRARY_DIRS} )
 
