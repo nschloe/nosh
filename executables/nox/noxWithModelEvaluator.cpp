@@ -139,7 +139,7 @@ int main ( int argc, char *argv[] )
                                 problemParameters );
 
     double h0      = 0.8; //problemParameters.get<double> ( "H0" );
-    double scaling = 7.0; //problemParameters.get<double> ( "scaling" );
+    double scaling = 3.0; //problemParameters.get<double> ( "scaling" );
     
     Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> A =
         Teuchos::rcp ( new Ginla::MagneticVectorPotential::Centered ( h0,
@@ -201,7 +201,10 @@ int main ( int argc, char *argv[] )
       Teuchos::RCP<Epetra_Vector> p1 =
           Teuchos::rcp(new Epetra_Vector(*(piro->get_p_init(0))));
       int numParams = p1->MyLength(); // Number of parameters in p1 vector
+      (*p1)[0] = 0.8;
       inArgs.set_p(0,p1);
+      
+      std::cout << *p1 << std::endl;
 
       // Set output arguments to evalModel call
       EpetraExt::ModelEvaluator::OutArgs outArgs = piro->createOutArgs();
