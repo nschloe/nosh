@@ -152,7 +152,7 @@ Ginla::ModelEvaluator::Bordered::
 evalModel( const InArgs  & inArgs, 
            const OutArgs & outArgs
          ) const
-{ 
+{
   double alpha = inArgs.get_alpha();
   double beta  = inArgs.get_beta();
   
@@ -174,18 +174,18 @@ evalModel( const InArgs  & inArgs,
   LOCA::ParameterVector locaParams;
   
   Teuchos::RCP<const Teuchos::Array<std::string> > p_names = modelEvaluatorDefault_->get_p_names( 0 );
-
+  
   for ( int k=0; k<p_in->GlobalLength(); k++ )
       locaParams.addParameter( (*p_names)[k] , (*p_in)[k] ); 
   modelEvaluatorDefault_->getOperator()->setParameters( locaParams );
-  
+    
   // compute F
   if ( !f_out.is_null() )
-      this->computeF_( *x_in, *f_out ); 
+      this->computeF_( *x_in, *f_out );
 
   // fill jacobian
   if( !W_out.is_null() )
-  {
+  { 
       this->computeJacobian_( *x_in, *W_out );
       Teuchos::RCP<Epetra_CrsMatrix> W_out_crs =
           Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(W_out, true);
@@ -263,17 +263,47 @@ Ginla::ModelEvaluator::Bordered::
 computeDFDh0_ ( const Epetra_Vector & x,
                 Epetra_Vector       & FVec
               ) const
-{
-//     // convert from x to state
-//     const Teuchos::RCP<const Ginla::State> state = this->createState( x );
-// 
-//     // compute the GL residual
-//     const Teuchos::RCP<const Ginla::State> res = glOperator_->getDFDh0( state );
-// 
-//     // TODO Avoid this explicit copy?
-//     // transform back to fully real equation
-//     FVec = *(this->createSystemVector( *res ));
+{   
+    TEST_FOR_EXCEPTION ( regularMap_.is_null(),
+                         std::logic_error,
+                         "regularMap_ not properly initialized." );
 
+    TEST_FOR_EXCEPTION ( extendedMap_.is_null(),
+                         std::logic_error,
+                         "extendedMap_ not properly initialized." );
+
+    // make sure that the input and output vectors are correctly mapped
+    TEST_FOR_EXCEPTION ( !x.Map().SameAs ( *extendedMap_ ),
+                         std::logic_error,
+                         "Maps of x and the computed real-valued map do not coincide. "
+                         << "Check, for example, the number of elements "
+                         << "(" << x.Map().NumGlobalElements() << " for x vs. "
+                         << extendedMap_->NumGlobalElements() << " for extendedMap_)." );
+
+    TEST_FOR_EXCEPTION ( !FVec.Map().SameAs ( *extendedMap_ ),
+                         std::logic_error,
+                         "Maps of FVec and the computed real-valued map do not coincide."
+                         << "Check, for example, the number of elements "
+                         << "(" << FVec.Map().NumGlobalElements() << " for FVec vs. "
+                         << extendedMap_->NumGlobalElements() << " for extendedMap_)." );
+    
+    // strip off the phase constraint variable
+    Epetra_Vector tmp ( *regularMap_ );
+    tmp.Import( x, importFromExtendedMap_, Insert );
+
+    double eta = x[ x.GlobalLength()-1 ];
+
+    // compute GL in the default model
+    Epetra_Vector shortFVec ( *regularMap_ );
+    modelEvaluatorDefault_->computeDFDh0 ( tmp, shortFVec );
+    
+    // copy over and add phase condition
+    FVec.Import( shortFVec, importFromRegularMap_, Insert );
+
+    // set last entry
+    FVec.ReplaceGlobalValue ( shortFVec.GlobalLength(),
+                              0,
+                              0.0 );
     return;
 }
 // ============================================================================

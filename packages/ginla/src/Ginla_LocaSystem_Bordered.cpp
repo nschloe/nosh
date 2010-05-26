@@ -24,6 +24,8 @@
 
 #include <Teuchos_DefaultComm.hpp>
 
+#include <LOCA_Parameter_Vector.H>
+
 #ifdef HAVE_MPI
 #include <Epetra_MpiComm.h>
 #else
@@ -294,7 +296,7 @@ computeShiftedMatrix ( double alpha,
 // function used by LOCA
 void
 Ginla::LocaSystem::Bordered::setParameters ( const LOCA::ParameterVector &p )
-{
+{ 
     glSystem_.setParameters ( p );
 }
 // =============================================================================
