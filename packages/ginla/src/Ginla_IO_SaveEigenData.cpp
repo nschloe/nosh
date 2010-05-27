@@ -34,7 +34,7 @@ SaveEigenData ( Teuchos::ParameterList                           & eigenParamLis
                 const Teuchos::RCP<const Ginla::IO::StateWriter> & stateWriter,
                 const Teuchos::RCP<Ginla::IO::StatsWriter>       & statsWriter
               ) :
-        eigenParamListPtr_ ( Teuchos::rcp<Teuchos::ParameterList>( &eigenParamList ) ),
+        eigenParamListPtr_ ( Teuchos::rcpFromRef<Teuchos::ParameterList>( eigenParamList ) ),
         stateTranslator_ ( stateTranslator ),
         stateWriter_ ( stateWriter ),
         statsWriter_ ( statsWriter ),
