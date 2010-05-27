@@ -228,100 +228,87 @@ int main ( int argc, char *argv[] )
       else if ( solver == "LOCA" )
       {
           observer = Teuchos::rcp( new Ginla::IO::NoxObserver( stateWriter,
-                                                              glModel,
-                                                              Ginla::IO::NoxObserver::CONTINUATION ) );
+                                                               glModel,
+                                                               Ginla::IO::NoxObserver::CONTINUATION ) );
           observer->setStatisticsWriter( statsWriter, glOperator );
         
-        // setup eingen saver
+          // setup eingen saver
 #ifdef HAVE_LOCA_ANASAZI
-        Teuchos::RCP<Teuchos::ParameterList> eigenList = Teuchos::rcpFromRef ( piroParams->sublist ( "LOCA" ).sublist ( "Stepper" ) .sublist ( "Eigensolver" ) );
-        std::string eigenvaluesFileName =
-            outputDirectory.string()  + "/" + outputList.get<std::string> ( "Eigenvalues file name" );
-        std::string eigenstateFileNameAppendix =
-            outputList.get<std::string> ( "Eigenstate file name appendix" );
+          Teuchos::RCP<Teuchos::ParameterList> eigenList = Teuchos::rcpFromRef ( piroParams->sublist ( "LOCA" ).sublist ( "Stepper" ) .sublist ( "Eigensolver" ) );
+          std::string eigenvaluesFileName =
+              outputDirectory.string()  + "/" + outputList.get<std::string> ( "Eigenvalues file name" );
+          std::string eigenstateFileNameAppendix =
+              outputList.get<std::string> ( "Eigenstate file name appendix" );
 
-        Teuchos::RCP<Ginla::IO::StatsWriter> eigenStatsWriter =
-            Teuchos::rcp( new Ginla::IO::StatsWriter( eigenvaluesFileName ) );
+          Teuchos::RCP<Ginla::IO::StatsWriter> eigenStatsWriter =
+              Teuchos::rcp( new Ginla::IO::StatsWriter( eigenvaluesFileName ) );
 
-      glEigenSaver = Teuchos::RCP<Ginla::IO::SaveEigenData> ( new Ginla::IO::SaveEigenData ( eigenList,
-                                                                                              glModel,
-                                                                                              stateWriter,
-                                                                                              eigenStatsWriter ) );
+          glEigenSaver = Teuchos::RCP<Ginla::IO::SaveEigenData> ( new Ginla::IO::SaveEigenData ( eigenList,
+                                                                                                 glModel,
+                                                                                                 stateWriter,
+                                                                                                 eigenStatsWriter ) );
 
-        Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> glSaveEigenDataStrategy = glEigenSaver;
-        eigenList->set ( "Save Eigen Data Method", "User-Defined" );
-        eigenList->set ( "User-Defined Save Eigen Data Name", "glSaveEigenDataStrategy" );
-        eigenList->set ( "glSaveEigenDataStrategy", glSaveEigenDataStrategy );
+          Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> glSaveEigenDataStrategy = glEigenSaver;
+          eigenList->set ( "Save Eigen Data Method", "User-Defined" );
+          eigenList->set ( "User-Defined Save Eigen Data Name", "glSaveEigenDataStrategy" );
+          eigenList->set ( "glSaveEigenDataStrategy", glSaveEigenDataStrategy );
 #endif
 
-        // fetch the stepper
-        Teuchos::RCP<Piro::Epetra::LOCASolver> piroLOCASolver = 
-            Teuchos::rcp(new Piro::Epetra::LOCASolver( piroParams,
-                                                      glModel,
-                                                      observer ));
+          // feed in restart predictor vector
+          Teuchos::ParameterList & predictorList = piroParams->sublist ( "LOCA" )
+                                                              .sublist ( "Predictor" );
+          if ( predictorList.get<std::string>("Method") == "Secant" )
+          {
+              Teuchos::ParameterList & fspList = predictorList.sublist ( "First Step Predictor" );
+              if ( fspList.get<std::string>("Method") == "Restart" )
+              {
+                  // Get restart vector.
+                  // read the predictor state
+                  Teuchos::ParameterList             voidParameters;
+                  Teuchos::RCP<Ginla::State>         predictorState;
+                  Teuchos::RCP<Recti::Grid::Uniform> grid = Teuchos::null;
+                  Recti::Grid::Reader::read ( Comm,
+                                              getAbsolutePath(initialGuessList.get<std::string> ( "Predictor" ), xmlPath),
+                                              predictorState,
+                                              grid,
+                                              voidParameters );
+                                              
+                  // transform to system vector
+                  Teuchos::RCP<Epetra_Vector> predictorV = glModel->createSystemVector( *predictorState );
+                                                                
+                  // Create the LOCA::MultiContinuation::ExtendedVector;
+                  // that's the predictor vector with a prediction for the parameter appended
+                  // -- 0 in the case of a pitchfork.
+                  NOX::Epetra::Vector vx( predictorV );
+                  
+                  // Note that the globalData element is here the null pointer. It would be work-aroundish to
+                  // artificially create one here, and after all, all that's it's used for is error and warning
+                  // message printing.
+                  Teuchos::RCP<LOCA::MultiContinuation::ExtendedVector> restartVector =
+                      Teuchos::rcp( new LOCA::MultiContinuation::ExtendedVector( Teuchos::null,
+                                                                                 vx,
+                                                                                 1 )
+                                  );
+                  double vp = 0.0;
+                  restartVector->setScalar(0, vp);
+                  
+                  fspList.set( "Restart Vector", restartVector );
+              }
+          }
 
-        // get stepper and inject it into the eigensaver
-        Teuchos::RCP<LOCA::Stepper> stepper = piroLOCASolver->getLOCAStepperNonConst();
+          // fetch the stepper
+          Teuchos::RCP<Piro::Epetra::LOCASolver> piroLOCASolver = 
+              Teuchos::rcp(new Piro::Epetra::LOCASolver( piroParams,
+                                                        glModel,
+                                                        observer ));
+
+          // get stepper and inject it into the eigensaver
+          Teuchos::RCP<LOCA::Stepper> stepper = piroLOCASolver->getLOCAStepperNonConst();
 #ifdef HAVE_LOCA_ANASAZI
           glEigenSaver->setLocaStepper ( stepper );
 #endif
 
-        piro = piroLOCASolver;
-      }
-      // ---------------------------------------------------------------------------
-      else if ( solver == "Predictor Step" )
-      {
-          observer = Teuchos::rcp( new Ginla::IO::NoxObserver( stateWriter,
-                                                               glModel,
-                                                               Ginla::IO::NoxObserver::CONTINUATION ) );
-          observer->setStatisticsWriter( statsWriter, glOperator );
-          
-          // read the predictor state
-          Teuchos::ParameterList             voidParameters;
-          Teuchos::RCP<Ginla::State>         predictorState;
-          Teuchos::RCP<Recti::Grid::Uniform> grid = Teuchos::null;
-          Recti::Grid::Reader::read ( Comm,
-                                      getAbsolutePath(initialGuessList.get<string> ( "Predictor" ), xmlPath),
-                                      predictorState,
-                                      grid,
-                                      voidParameters );
-                                      
-          // transform to system vector
-          Teuchos::RCP<Epetra_Vector> predictorV = glModel->createSystemVector( *predictorState );
-          
-          // Create a temporary stepper; this one is really only used to get
-          // access to the the globalData.
-          Teuchos::RCP<Piro::Epetra::LOCASolver> piroLOCASolver = 
-              Teuchos::rcp(new Piro::Epetra::LOCASolver( piroParams,
-                                                         glModel,
-                                                         observer ));
-          Teuchos::RCP<LOCA::GlobalData> globalData = piroLOCASolver->getGlobalDataNonConst();
-                                                         
-          // Create the LOCA::MultiContinuation::ExtendedVector;
-          // that's the predictor vector with a prediction for the parameter appended
-          // -- 0 in the case of a pitchfork.
-          NOX::Epetra::Vector vx( predictorV );
-          Teuchos::RCP<LOCA::MultiContinuation::ExtendedVector> restartVector =
-              Teuchos::rcp(new LOCA::MultiContinuation::ExtendedVector(globalData, vx, 1) );
-          double vp = 0.0;
-          restartVector->setScalar(0, vp);
-          
-          // adapt the method parameter list list
-          Teuchos::ParameterList & predictorList = piroParams->sublist ( "LOCA" )
-                                                              .sublist ( "Predictor" );
-          predictorList.set( "Method", "Secant" );
-          
-          // Do only one actual step.
-          piroParams->sublist ( "LOCA" ).sublist( "Stepper" ).set( "Max Steps", 1 );
-          
-          Teuchos::ParameterList & fspList = predictorList.sublist ( "First Step Predictor" );
-          fspList.set( "Method", "Restart" );
-          fspList.set( "Restart Vector", restartVector );
-          
-          // (Re)create the solver with proper piroParams.
-          piro = Teuchos::rcp(new Piro::Epetra::LOCASolver( piroParams,
-                                                            glModel,
-                                                            observer ));
+          piro = piroLOCASolver;
       }
       // ----------------------------------------------------------------------
       else if ( solver=="Turning Point" )
@@ -418,6 +405,11 @@ int main ( int argc, char *argv[] )
     catch ( std::string & e )
     {
         std::cerr << e << std::endl;
+        status += 10;
+    }
+    catch ( int e )
+    {
+        std::cerr << "Caught unknown exception no. \"" << e <<  "\"." << std::endl;
         status += 10;
     }
     catch (...)

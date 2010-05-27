@@ -210,6 +210,7 @@ evalModel( const InArgs  & inArgs,
   Teuchos::RCP<Epetra_Operator> W_out = outArgs.get_W();
 
   Teuchos::RCP<Epetra_MultiVector> dfdp_out;
+
   if ( outArgs.Np() > 0 )
       dfdp_out = outArgs.get_DfDp(0).getMultiVector();
   
