@@ -173,8 +173,8 @@ int main ( int argc, char *argv[] )
           Teuchos::rcp( new Ginla::Komplex::LinearProblem( eComm, state->getPsi()->getMap() ) );
 
       // create the mode evaluator
-      Teuchos::RCP<Ginla::ModelEvaluator::Default> glModel = 
-                Teuchos::rcp(new Ginla::ModelEvaluator::Default( glOperator,
+      Teuchos::RCP<Ginla::ModelEvaluator::Bordered> glModel = 
+                Teuchos::rcp(new Ginla::ModelEvaluator::Bordered( glOperator,
                                                                   komplex,
                                                                   *state,
                                                                   problemParameters ) );

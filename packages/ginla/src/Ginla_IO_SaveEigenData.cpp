@@ -34,7 +34,7 @@ SaveEigenData ( Teuchos::ParameterList                           & eigenParamLis
                 const Teuchos::RCP<const Ginla::IO::StateWriter> & stateWriter,
                 const Teuchos::RCP<Ginla::IO::StatsWriter>       & statsWriter
               ) :
-        eigenParamList_ ( eigenParamList ),
+        eigenParamListPtr_ ( Teuchos::rcp<Teuchos::ParameterList>( &eigenParamList ) ),
         stateTranslator_ ( stateTranslator ),
         stateWriter_ ( stateWriter ),
         statsWriter_ ( statsWriter ),
@@ -80,56 +80,63 @@ save ( Teuchos::RCP<std::vector<double> >       & evals_r,
 
     unsigned int numEigenValues = evals_r->size();
 
-    // Consider eigenvalues below tol to be not unstable, hence not contributing to numUnstableEigenvalues.
-    // This is important for notoriously 0-eigenvalues; the numerical process only delivers approximations
-    // of those.
+    // Consider eigenvalue above tol to be unstable, and between -tol and tol to be nullstable.
     const double tol = 1.0e-5;
     
     // store the unstable eigenstate into files
     unsigned int numUnstableEigenvalues = 0;
+    unsigned int numNullvalues = 0;
     for ( unsigned int k = 0; k < numEigenValues; k++ )
     {
-        if ( ( *evals_r ) [k] > tol )
-        {
-            numUnstableEigenvalues++;
+        double eigenvalue = ( *evals_r ) [k];
+        stringstream eigenstateFileNameAppendix;
+        if ( eigenvalue  < -tol )
+          // don't consider stable values
+          continue;
+        else if ( eigenvalue  > tol )
+            eigenstateFileNameAppendix << "-ueigenstate" << numUnstableEigenvalues++;
+        else
+            eigenstateFileNameAppendix << "-nullstate" << numNullvalues++;
 
-            // transform the real part of the eigenvector into psi
-            Teuchos::RCP<NOX::Abstract::Vector> realPart =
-                Teuchos::rcpFromRef ( ( *evecs_r ) [k] );
-            Teuchos::RCP<NOX::Epetra::Vector> realPartE =
-                Teuchos::rcp_dynamic_cast<NOX::Epetra::Vector> ( realPart, true );
-                                                     
-            stringstream eigenstateFileNameAppendix;
-            eigenstateFileNameAppendix << "-eigenvalue" << k;
-            Teuchos::RCP<Ginla::State> eigenstate = stateTranslator_->createState( realPartE->getEpetraVector() );
+        // transform the real part of the eigenvector into psi
+        Teuchos::RCP<NOX::Abstract::Vector> realPart =
+            Teuchos::rcpFromRef ( ( *evecs_r ) [k] );
+        Teuchos::RCP<NOX::Epetra::Vector> realPartE =
+            Teuchos::rcp_dynamic_cast<NOX::Epetra::Vector> ( realPart, true );
+                                                  
+        Teuchos::RCP<Ginla::State> eigenstate = stateTranslator_->createState( realPartE->getEpetraVector() );
+        std::cout << "a0" << std::endl;
+        stateWriter_->write( eigenstate,
+                             step,
+                             eigenstateFileNameAppendix.str() );
+        std::cout << "a1" << std::endl;
+                                    
+        // The matrix and the eigenvalue is supposedly purely real,
+        // so the eigenvector's real and imaginary parts are eigenvectors
+        // in their own right. Check here for the imaginary part,
+        // and print it, too, if it's nonzero.
+        Teuchos::RCP<NOX::Abstract::Vector> imagPart =
+            Teuchos::rcpFromRef ( ( *evecs_i ) [k] );
+        if ( imagPart->norm() > 1.0e-15 )
+        {
+            Teuchos::RCP<NOX::Epetra::Vector> imagPartE =
+                Teuchos::rcp_dynamic_cast<NOX::Epetra::Vector> ( imagPart, true );
+            eigenstateFileNameAppendix << "-im";
+            Teuchos::RCP<Ginla::State> eigenstate = stateTranslator_->createState( imagPartE->getEpetraVector() );
+            std::cout << "b0" << std::endl;
             stateWriter_->write( eigenstate,
                                  step,
                                  eigenstateFileNameAppendix.str() );
-                                        
-            // The matrix and the eigenvalue is supposedly purely real,
-            // so the eigenvector's real and imaginary parts are eigenvectors
-            // in their own right. Check here for the imaginary part,
-            // and print it, too, if it's nonzero.
-            Teuchos::RCP<NOX::Abstract::Vector> imagPart =
-                Teuchos::rcpFromRef ( ( *evecs_i ) [k] );
-            if ( imagPart->norm() > 1.0e-15 )
-            {
-                Teuchos::RCP<NOX::Epetra::Vector> imagPartE =
-                    Teuchos::rcp_dynamic_cast<NOX::Epetra::Vector> ( imagPart, true );
-                eigenstateFileNameAppendix << "-im";
-                Teuchos::RCP<Ginla::State> eigenstate = stateTranslator_->createState( imagPartE->getEpetraVector() );
-                stateWriter_->write( eigenstate,
-                                     step,
-                                     eigenstateFileNameAppendix.str() );
-            }
+            std::cout << "b1" << std::endl;
         }
     }
 
     // Create Teuchos::ParameterList containing the data to be put into the
     // stats file.
     Teuchos::ParameterList eigenvaluesList;
-    eigenvaluesList.set( "#step", step );
+    eigenvaluesList.set( "##step", step );
     eigenvaluesList.set( "#unstable", numUnstableEigenvalues );
+    eigenvaluesList.set( "#null", numNullvalues );
     for ( unsigned int k = 0; k < maxEigenvaluesSave_; k++ )
     {
         std::stringstream label;
@@ -175,29 +182,30 @@ save ( Teuchos::RCP<std::vector<double> >       & evals_r,
         // Adapt the computation for the next step.
         // Make sure that approximately \c numComputeStableEigenvalues_ stable eigenvalues
         // will be computed in the next step.
-        int nextNumEigenvalues = numUnstableEigenvalues + numComputeStableEigenvalues_;
-        eigenParamList_.set ( "Num Eigenvalues", nextNumEigenvalues );
+        int nextNumEigenvalues = numUnstableEigenvalues
+                               + numNullvalues
+                               + numComputeStableEigenvalues_;
+        eigenParamListPtr_->set ( "Num Eigenvalues", nextNumEigenvalues );
 
         // Make sure that the shift SIGMA (if using Shift-Invert) sits THRESHOLD above
         // the rightmost eigenvalue.
-        if ( eigenParamList_.get<string> ( "Operator" ).compare ( "Shift-Invert" ) == 0 )
+        if ( eigenParamListPtr_->get<string> ( "Operator" ).compare ( "Shift-Invert" ) == 0 )
         {
             double maxEigenval = *std::max_element ( evals_r->begin(), evals_r->end() );
             double threshold = 0.5;
-            eigenParamList_.set ( "Shift", maxEigenval + threshold );
+            eigenParamListPtr_->set ( "Shift", maxEigenval + threshold );
         }
     
         // Preserve the sort manager.
         // TODO For some reason, the  call to eigensolverReset destroys the "Sort Manager" entry.
         //      No idea why. This is a potentially serious bug in Trilinos.
         Teuchos::RCP<Anasazi::SortManager<double> > d =
-            eigenParamList_.get<Teuchos::RCP<Anasazi::SortManager<double> > >( "Sort Manager" );
+            eigenParamListPtr_->get<Teuchos::RCP<Anasazi::SortManager<double> > >( "Sort Manager" );
         
         // reset the eigensolver to take notice of the new values
-        Teuchos::RCP<Teuchos::ParameterList> eigenParamListPtr = Teuchos::rcp<Teuchos::ParameterList>( &eigenParamList_ );
-        locaStepper_->eigensolverReset ( eigenParamListPtr );
+        locaStepper_->eigensolverReset ( eigenParamListPtr_ );
         
-        eigenParamList_.set( "Sort Manager", d );
+        eigenParamListPtr_->set( "Sort Manager", d );
     }
 
     return NOX::Abstract::Group::Ok;

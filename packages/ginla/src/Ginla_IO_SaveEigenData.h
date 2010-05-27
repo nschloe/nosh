@@ -65,7 +65,7 @@ class SaveEigenData:
 
   protected:
   private:
-    Teuchos::ParameterList & eigenParamList_;
+    Teuchos::RCP<Teuchos::ParameterList> eigenParamListPtr_;
     const Teuchos::RCP<const Ginla::StateTranslator> stateTranslator_;
     const Teuchos::RCP<const Ginla::IO::StateWriter> stateWriter_;
     const Teuchos::RCP<const Ginla::Komplex::LinearProblem> komplex_;
