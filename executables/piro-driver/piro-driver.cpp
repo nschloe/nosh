@@ -32,6 +32,19 @@
 #include "Ginla_IO_StatsWriter.h"
 
 // =============================================================================
+// declarations (definitions below)
+std::string
+getAbsolutePath(       boost::filesystem::path   filepath,
+                 const boost::filesystem::path & xmlPath
+               )
+{
+    if ( !filepath.empty() && filepath.root_directory().empty() ) // filepath is a relative path
+        filepath = xmlPath / filepath;
+    TEUCHOS_ASSERT( !filepath.empty() );
+ 
+    return filepath.string();
+}
+// =============================================================================
 int main ( int argc, char *argv[] )
 {
   // Initialize MPI and timer
@@ -109,10 +122,6 @@ int main ( int argc, char *argv[] )
           
       Teuchos::ParameterList initialGuessList;
       initialGuessList = piroParams->sublist ( "Initial guess", true );
-      boost::filesystem::path inputGuessFile = initialGuessList.get<std::string> ( "State" );
-      if ( !inputGuessFile.empty() && inputGuessFile.root_directory().empty() ) // if inputGuessFile is a relative path
-          inputGuessFile = xmlPath / inputGuessFile;
-      TEUCHOS_ASSERT( !inputGuessFile.empty() );
       // =========================================================================
 
       Teuchos::ParameterList             problemParameters;
@@ -120,7 +129,7 @@ int main ( int argc, char *argv[] )
       Teuchos::RCP<Recti::Grid::Uniform> grid = Teuchos::null;
 
       Recti::Grid::Reader::read ( Comm,
-                                  inputGuessFile.string(),
+                                  getAbsolutePath( initialGuessList.get<std::string> ( "State" ), xmlPath ),
                                   state,
                                   grid,
                                   problemParameters );
@@ -165,8 +174,8 @@ int main ( int argc, char *argv[] )
           Teuchos::rcp( new Ginla::Komplex::LinearProblem( eComm, state->getPsi()->getMap() ) );
 
       // create the mode evaluator
-      Teuchos::RCP<Ginla::ModelEvaluator::Bordered> glModel = 
-                Teuchos::rcp(new Ginla::ModelEvaluator::Bordered( glOperator,
+      Teuchos::RCP<Ginla::ModelEvaluator::Default> glModel = 
+                Teuchos::rcp(new Ginla::ModelEvaluator::Default( glOperator,
                                                                   komplex,
                                                                   *state,
                                                                   problemParameters ) );
@@ -267,28 +276,12 @@ int main ( int argc, char *argv[] )
                                                                Ginla::IO::NoxObserver::CONTINUATION ) );
           observer->setStatisticsWriter( statsWriter, glOperator );
           
-          // Create a temporary stepper; this one is really only used to get
-          // access to the the globalData.
-          Teuchos::RCP<Piro::Epetra::LOCASolver> piroLOCASolver = 
-              Teuchos::rcp(new Piro::Epetra::LOCASolver( piroParams,
-                                                         glModel,
-                                                         observer ));
-
-          // get stepper and inject it into the eigensaver
-          Teuchos::RCP<LOCA::Stepper> stepper = piroLOCASolver->getLOCAStepperNonConst();
-        
-          // prepare the restart vector
-          boost::filesystem::path inputPredictorFile = initialGuessList.get<string> ( "Predictor" );
-          if ( !inputPredictorFile.empty() && inputPredictorFile.root_directory().empty() ) // if inputGuessFile is a relative path
-              inputPredictorFile = xmlPath / inputPredictorFile;
-          TEUCHOS_ASSERT( !inputPredictorFile.empty() );
-          
           // read the predictor state
           Teuchos::ParameterList             voidParameters;
           Teuchos::RCP<Ginla::State>         predictorState;
           Teuchos::RCP<Recti::Grid::Uniform> grid = Teuchos::null;
           Recti::Grid::Reader::read ( Comm,
-                                      inputPredictorFile.string(),
+                                      getAbsolutePath(initialGuessList.get<string> ( "Predictor" ), xmlPath),
                                       predictorState,
                                       grid,
                                       voidParameters );
@@ -296,11 +289,18 @@ int main ( int argc, char *argv[] )
           // transform to system vector
           Teuchos::RCP<Epetra_Vector> predictorV = glModel->createSystemVector( *predictorState );
           
+          // Create a temporary stepper; this one is really only used to get
+          // access to the the globalData.
+          Teuchos::RCP<Piro::Epetra::LOCASolver> piroLOCASolver = 
+              Teuchos::rcp(new Piro::Epetra::LOCASolver( piroParams,
+                                                         glModel,
+                                                         observer ));
+          Teuchos::RCP<LOCA::GlobalData> globalData = piroLOCASolver->getGlobalDataNonConst();
+                                                         
           // Create the LOCA::MultiContinuation::ExtendedVector;
           // that's the predictor vector with a prediction for the parameter appended
           // -- 0 in the case of a pitchfork.
           NOX::Epetra::Vector vx( predictorV );
-          Teuchos::RCP<LOCA::GlobalData> globalData = piroLOCASolver->getGlobalDataNonConst();
           Teuchos::RCP<LOCA::MultiContinuation::ExtendedVector> restartVector =
               Teuchos::rcp(new LOCA::MultiContinuation::ExtendedVector(globalData, vx, 1) );
           double vp = 0.0;
@@ -318,7 +318,7 @@ int main ( int argc, char *argv[] )
           fspList.set( "Method", "Restart" );
           fspList.set( "Restart Vector", restartVector );
           
-          // TODO Don't recreate the same solver.
+          // (Re)create the solver with proper piroParams.
           piro = Teuchos::rcp(new Piro::Epetra::LOCASolver( piroParams,
                                                             glModel,
                                                             observer ));
@@ -327,24 +327,20 @@ int main ( int argc, char *argv[] )
       else if ( solver=="Turning Point" )
       {
           observer = Teuchos::rcp( new Ginla::IO::NoxObserver( stateWriter,
-                                                              glModel,
-                                                              Ginla::IO::NoxObserver::TURNING_POINT ) );
+                                                               glModel,
+                                                               Ginla::IO::NoxObserver::TURNING_POINT ) );
           observer->setStatisticsWriter( statsWriter, glOperator );
 
           // get the initial null state file
           initialGuessList = piroParams->sublist ( "Initial guess", true );
-          boost::filesystem::path nullstateFile = initialGuessList.get<string> ( "Null state" );
-          if ( !nullstateFile.empty() && nullstateFile.root_directory().empty() ) // nullstateFile is a relative path
-              nullstateFile = xmlPath / nullstateFile;
-          TEUCHOS_ASSERT( !nullstateFile.empty() );
-          
+
           // read the initial null state
           Teuchos::ParameterList             voidParameters;
           Teuchos::RCP<Ginla::State>         nullstate;
           Teuchos::RCP<Recti::Grid::Uniform> grid = Teuchos::null;
 
           Recti::Grid::Reader::read ( Comm,
-                                      nullstateFile.string(),
+                                      getAbsolutePath( initialGuessList.get<string> ( "Null state" ), xmlPath),
                                       nullstate,
                                       grid,
                                       voidParameters );
@@ -438,3 +434,4 @@ int main ( int argc, char *argv[] )
       return status;
 }
 // =========================================================================
+
