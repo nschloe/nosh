@@ -38,7 +38,7 @@ class SaveEigenData:
 //      const Teuchos::RCP<Teuchos::ParameterList>& eigenParams      );
 
    // Constructor
-   SaveEigenData ( Teuchos::RCP<Teuchos::ParameterList>             & eigenParamList,
+   SaveEigenData ( Teuchos::ParameterList                           & eigenParamList,
                    const Teuchos::RCP<const Ginla::StateTranslator> & stateTranslator,
                    const Teuchos::RCP<const Ginla::IO::StateWriter> & stateWriter,
                    const Teuchos::RCP<Ginla::IO::StatsWriter>       & statsWriter
@@ -65,7 +65,7 @@ class SaveEigenData:
 
   protected:
   private:
-    Teuchos::RCP<Teuchos::ParameterList> eigenParamList_;
+    Teuchos::ParameterList & eigenParamList_;
     const Teuchos::RCP<const Ginla::StateTranslator> stateTranslator_;
     const Teuchos::RCP<const Ginla::IO::StateWriter> stateWriter_;
     const Teuchos::RCP<const Ginla::Komplex::LinearProblem> komplex_;

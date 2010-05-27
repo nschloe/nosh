@@ -29,7 +29,7 @@
 
 // =============================================================================
 Ginla::IO::SaveEigenData::
-SaveEigenData ( Teuchos::RCP<Teuchos::ParameterList>             & eigenParamList,
+SaveEigenData ( Teuchos::ParameterList                           & eigenParamList,
                 const Teuchos::RCP<const Ginla::StateTranslator> & stateTranslator,
                 const Teuchos::RCP<const Ginla::IO::StateWriter> & stateWriter,
                 const Teuchos::RCP<Ginla::IO::StatsWriter>       & statsWriter
@@ -176,27 +176,28 @@ save ( Teuchos::RCP<std::vector<double> >       & evals_r,
         // Make sure that approximately \c numComputeStableEigenvalues_ stable eigenvalues
         // will be computed in the next step.
         int nextNumEigenvalues = numUnstableEigenvalues + numComputeStableEigenvalues_;
-        eigenParamList_->set ( "Num Eigenvalues", nextNumEigenvalues );
+        eigenParamList_.set ( "Num Eigenvalues", nextNumEigenvalues );
 
         // Make sure that the shift SIGMA (if using Shift-Invert) sits THRESHOLD above
         // the rightmost eigenvalue.
-        if ( eigenParamList_->get<string> ( "Operator" ).compare ( "Shift-Invert" ) == 0 )
+        if ( eigenParamList_.get<string> ( "Operator" ).compare ( "Shift-Invert" ) == 0 )
         {
             double maxEigenval = *std::max_element ( evals_r->begin(), evals_r->end() );
             double threshold = 0.5;
-            eigenParamList_->set ( "Shift", maxEigenval + threshold );
+            eigenParamList_.set ( "Shift", maxEigenval + threshold );
         }
     
-        // preserve the sort manager
-        Teuchos::RCP<Anasazi::SortManager<double> > d =
-            eigenParamList_->get<Teuchos::RCP<Anasazi::SortManager<double> > >( "Sort Manager" );
-        
-        // TODO For some reason, the  call to eigensolverReset destroys teh "Sort Manager" entry.
+        // Preserve the sort manager.
+        // TODO For some reason, the  call to eigensolverReset destroys the "Sort Manager" entry.
         //      No idea why. This is a potentially serious bug in Trilinos.
-        // reset the eigensolver to take notice of the new values
-        locaStepper_->eigensolverReset ( eigenParamList_ );
+        Teuchos::RCP<Anasazi::SortManager<double> > d =
+            eigenParamList_.get<Teuchos::RCP<Anasazi::SortManager<double> > >( "Sort Manager" );
         
-        eigenParamList_->set( "Sort Manager", d );
+        // reset the eigensolver to take notice of the new values
+        Teuchos::RCP<Teuchos::ParameterList> eigenParamListPtr = Teuchos::rcp<Teuchos::ParameterList>( &eigenParamList_ );
+        locaStepper_->eigensolverReset ( eigenParamListPtr );
+        
+        eigenParamList_.set( "Sort Manager", d );
     }
 
     return NOX::Abstract::Group::Ok;

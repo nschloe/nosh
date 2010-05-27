@@ -261,8 +261,6 @@ main ( int argc, char *argv[] )
 #ifdef HAVE_LOCA_ANASAZI
         Teuchos::ParameterList& eigenList =
             paramList->sublist ( "LOCA" ).sublist ( "Stepper" ) .sublist ( "Eigensolver" );
-        Teuchos::RCP<Teuchos::ParameterList> eigenListPtr =
-            Teuchos::rcpFromRef ( ( eigenList ) );
         std::string eigenvaluesFileName =
             outputList.get<string> ( "Eigenvalues file name" );
         std::string eigenstateFileNameAppendix =
@@ -272,7 +270,7 @@ main ( int argc, char *argv[] )
             Teuchos::rcp( new Ginla::IO::StatsWriter( eigenvaluesFileName ) );
 
         Teuchos::RCP<Ginla::IO::SaveEigenData> glEigenSaver =    
-            Teuchos::RCP<Ginla::IO::SaveEigenData> ( new Ginla::IO::SaveEigenData ( eigenListPtr,
+            Teuchos::RCP<Ginla::IO::SaveEigenData> ( new Ginla::IO::SaveEigenData ( eigenList,
                                                                                     glsystem,
                                                                                     stateWriter,
                                                                                     eigenStatsWriter ) );

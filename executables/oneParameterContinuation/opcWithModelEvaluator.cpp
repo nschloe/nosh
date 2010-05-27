@@ -215,7 +215,7 @@ int main ( int argc, char *argv[] )
 
     // handle eigendata stuff
 #ifdef HAVE_LOCA_ANASAZI
-    Teuchos::RCP<Teuchos::ParameterList> eigenList = Teuchos::rcpFromRef ( piroParams->sublist ( "LOCA" ).sublist ( "Stepper" ) .sublist ( "Eigensolver" ) );
+    Teuchos::ParameterList & eigenList = piroParams->sublist ( "LOCA" ).sublist ( "Stepper" ) .sublist ( "Eigensolver" );
     std::string eigenvaluesFileName =
         outputDirectory.string()  + "/" + outputList.get<string> ( "Eigenvalues file name" );
     std::string eigenstateFileNameAppendix =
@@ -232,9 +232,9 @@ int main ( int argc, char *argv[] )
 
     Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> glSaveEigenDataStrategy =
         glEigenSaver;
-    eigenList->set ( "Save Eigen Data Method", "User-Defined" );
-    eigenList->set ( "User-Defined Save Eigen Data Name", "glSaveEigenDataStrategy" );
-    eigenList->set ( "glSaveEigenDataStrategy", glSaveEigenDataStrategy );
+    eigenList.set ( "Save Eigen Data Method", "User-Defined" );
+    eigenList.set ( "User-Defined Save Eigen Data Name", "glSaveEigenDataStrategy" );
+    eigenList.set ( "glSaveEigenDataStrategy", glSaveEigenDataStrategy );
 #endif
 
       // fetch the stepper

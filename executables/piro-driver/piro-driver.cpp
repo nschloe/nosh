@@ -13,7 +13,6 @@
 #include <Piro_Epetra_NOXSolver.hpp>
 #include <Piro_Epetra_LOCASolver.hpp>
 
-// 
 #include <boost/filesystem.hpp>
 
 // #include "Ginla_IO_SaveNewtonData.h"
@@ -193,11 +192,12 @@ int main ( int argc, char *argv[] )
                           "Parameter \"" << contParam << "\" given as continuation parameter, but doesn't exist"
                           << "in the glParameters list." );
                           
-      // check if the initial value was given (will be unused anyway)
+      // check if the initial value was given (won't be unused anyway)
       if ( stepperList.isParameter ( "Initial Value" ) )
           std::cerr << "Warning: Parameter 'LOCA->Stepper->Initial Value' given, but will not be used."
                     << std::endl;
 
+      // Set initial value appropriately.
       // TODO Get rid of the explicit "double".
       stepperList.set ( "Initial Value", problemParameters.get<double> ( contParam ) );
 
@@ -216,13 +216,13 @@ int main ( int argc, char *argv[] )
       if ( solver == "NOX" )
       {
           observer = Teuchos::rcp( new Ginla::IO::NoxObserver( stateWriter,
-                                                              glModel,
-                                                              Ginla::IO::NoxObserver::NONLINEAR ) );
+                                                               glModel,
+                                                               Ginla::IO::NoxObserver::NONLINEAR ) );
           observer->setStatisticsWriter( statsWriter, glOperator );
         
           piro = Teuchos::rcp(new Piro::Epetra::NOXSolver( piroParams,
-                                                          glModel,
-                                                          observer )); 
+                                                           glModel,
+                                                           observer )); 
       }
       // ----------------------------------------------------------------------
       else if ( solver == "LOCA" )
@@ -234,7 +234,7 @@ int main ( int argc, char *argv[] )
         
           // setup eingen saver
 #ifdef HAVE_LOCA_ANASAZI
-          Teuchos::RCP<Teuchos::ParameterList> eigenList = Teuchos::rcpFromRef ( piroParams->sublist ( "LOCA" ).sublist ( "Stepper" ) .sublist ( "Eigensolver" ) );
+          Teuchos::ParameterList & eigenList = piroParams->sublist ( "LOCA" ).sublist ( "Stepper" ) .sublist ( "Eigensolver" );
           std::string eigenvaluesFileName =
               outputDirectory.string()  + "/" + outputList.get<std::string> ( "Eigenvalues file name" );
           std::string eigenstateFileNameAppendix =
@@ -249,9 +249,9 @@ int main ( int argc, char *argv[] )
                                                                                                  eigenStatsWriter ) );
 
           Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> glSaveEigenDataStrategy = glEigenSaver;
-          eigenList->set ( "Save Eigen Data Method", "User-Defined" );
-          eigenList->set ( "User-Defined Save Eigen Data Name", "glSaveEigenDataStrategy" );
-          eigenList->set ( "glSaveEigenDataStrategy", glSaveEigenDataStrategy );
+          eigenList.set ( "Save Eigen Data Method", "User-Defined" );
+          eigenList.set ( "User-Defined Save Eigen Data Name", "glSaveEigenDataStrategy" );
+          eigenList.set ( "glSaveEigenDataStrategy", glSaveEigenDataStrategy );
 #endif
 
           // feed in restart predictor vector
@@ -299,8 +299,8 @@ int main ( int argc, char *argv[] )
           // fetch the stepper
           Teuchos::RCP<Piro::Epetra::LOCASolver> piroLOCASolver = 
               Teuchos::rcp(new Piro::Epetra::LOCASolver( piroParams,
-                                                        glModel,
-                                                        observer ));
+                                                         glModel,
+                                                         observer ));
 
           // get stepper and inject it into the eigensaver
           Teuchos::RCP<LOCA::Stepper> stepper = piroLOCASolver->getLOCAStepperNonConst();
@@ -311,7 +311,7 @@ int main ( int argc, char *argv[] )
           piro = piroLOCASolver;
       }
       // ----------------------------------------------------------------------
-      else if ( solver=="Turning Point" )
+      else if ( solver == "Turning Point" )
       {
           observer = Teuchos::rcp( new Ginla::IO::NoxObserver( stateWriter,
                                                                glModel,
@@ -332,15 +332,13 @@ int main ( int argc, char *argv[] )
                                       grid,
                                       voidParameters );
           
+          Teuchos::ParameterList & bifList =
+              piroParams->sublist ( "LOCA" ).sublist ( "Bifurcation" );
+
           // set the length normalization vector to be the initial null vector
           Teuchos::RCP<NOX::Abstract::Vector> lengthNormVec =
               Teuchos::rcp ( new NOX::Epetra::Vector ( *(glModel->createSystemVector( *nullstate )) ) );
   //         lengthNormVec->init(1.0);
-
-          Teuchos::ParameterList & bifList =
-              piroParams->sublist ( "LOCA" ).sublist ( "Bifurcation" );
-
-          // set it in the bifurcation list
           bifList.set ( "Length Normalization Vector", lengthNormVec );
           
           // set the initial null vector
@@ -348,23 +346,6 @@ int main ( int argc, char *argv[] )
               Teuchos::rcp ( new NOX::Epetra::Vector ( *glModel->createSystemVector( *nullstate )  ) );
       //     initialNullAbstractVec->init(1.0);
           bifList.set ( "Initial Null Vector", initialNullAbstractVec );
-          
-          // set the initial value from glParameters
-          Teuchos::ParameterList & stepperList = piroParams->sublist ( "LOCA" ).sublist ( "Stepper" );
-          std::string contParam = stepperList.get<string> ( "Continuation Parameter" );
-          
-          TEST_FOR_EXCEPTION ( !problemParameters.isParameter ( contParam ),
-                              std::logic_error,
-                              "Parameter \"" << contParam << "\" given as continuation parameter, but doesn't exist"
-                              << "in the glParameters list." );
-
-          // check if the initial value was given (will be unused anyway)
-          if ( stepperList.isParameter ( "Initial Value" ) )
-              std::cerr << "Warning: Parameter 'LOCA->Stepper->Initial Value' given, but will not be used."
-                        << std::endl;
-
-          // TODO Get rid of the explicit "double".
-          stepperList.set ( "Initial Value", problemParameters.get<double> ( contParam ) );
           
           piro = Teuchos::rcp(new Piro::Epetra::LOCASolver( piroParams,
                                                             glModel,
@@ -392,10 +373,9 @@ int main ( int argc, char *argv[] )
       
       // manually release LOCA stepper
 #ifdef HAVE_LOCA_ANASAZI
-       if ( !glEigenSaver.is_null() )
-            glEigenSaver->releaseLocaStepper ();
+      if ( !glEigenSaver.is_null() )
+          glEigenSaver->releaseLocaStepper ();
 #endif
-      
     }
     catch ( std::exception & e )
     {
@@ -426,4 +406,3 @@ int main ( int argc, char *argv[] )
       return status;
 }
 // =========================================================================
-
