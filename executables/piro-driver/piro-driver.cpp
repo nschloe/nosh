@@ -29,6 +29,7 @@
 #include "Ginla_MagneticVectorPotential_Centered.h"
 #include "Ginla_IO_StateWriter.h"
 #include "Ginla_IO_StatsWriter.h"
+#include "Ginla_StatusTest_MaxAcceptedSteps.h"
 
 // =============================================================================
 // declarations (definitions below)
@@ -46,15 +47,10 @@ getAbsolutePath(       boost::filesystem::path   filepath,
 // =============================================================================
 int main ( int argc, char *argv[] )
 {
-  // Initialize MPI and timer
+  // Initialize MPI
   int Proc=0;
 #ifdef HAVE_MPI
-  MPI_Init(&argc,&argv);
-  double total_time = -MPI_Wtime();
-  (void) MPI_Comm_rank(MPI_COMM_WORLD, &Proc);
-  MPI_Comm appComm = MPI_COMM_WORLD;
-#else
-  int appComm=0;
+  MPI_Init( &argc, &argv );
 #endif
 
     // Create a communicator for Tpetra objects
@@ -173,15 +169,15 @@ int main ( int argc, char *argv[] )
           Teuchos::rcp( new Ginla::Komplex::LinearProblem( eComm, state->getPsi()->getMap() ) );
 
       // create the mode evaluator
-      Teuchos::RCP<Ginla::ModelEvaluator::Bordered> glModel = 
-                Teuchos::rcp(new Ginla::ModelEvaluator::Bordered( glOperator,
+      Teuchos::RCP<Ginla::ModelEvaluator::Default> glModel = 
+                Teuchos::rcp(new Ginla::ModelEvaluator::Default( glOperator,
                                                                   komplex,
                                                                   *state,
                                                                   problemParameters ) );
                                                                 
       Teuchos::RCP<Ginla::IO::NoxObserver> observer;
                                                     
-      std::string contFilePath = (outputDirectory / contDataFile).string();
+      std::string contFilePath = getAbsolutePath( contDataFile, xmlPath );
       Teuchos::RCP<Ginla::IO::StatsWriter> statsWriter =
           Teuchos::rcp( new Ginla::IO::StatsWriter( contFilePath ) );
       
@@ -231,12 +227,12 @@ int main ( int argc, char *argv[] )
                                                                glModel,
                                                                Ginla::IO::NoxObserver::CONTINUATION ) );
           observer->setStatisticsWriter( statsWriter, glOperator );
-        
+
           // setup eingen saver
 #ifdef HAVE_LOCA_ANASAZI
           Teuchos::ParameterList & eigenList = piroParams->sublist ( "LOCA" ).sublist ( "Stepper" ) .sublist ( "Eigensolver" );
           std::string eigenvaluesFileName =
-              outputDirectory.string()  + "/" + outputList.get<std::string> ( "Eigenvalues file name" );
+              getAbsolutePath( outputList.get<std::string> ( "Eigenvalues file name" ), xmlPath );
           std::string eigenstateFileNameAppendix =
               outputList.get<std::string> ( "Eigenstate file name appendix" );
 
@@ -254,6 +250,8 @@ int main ( int argc, char *argv[] )
           eigenList.set ( "glSaveEigenDataStrategy", glSaveEigenDataStrategy );
 #endif
 
+          Teuchos::RCP<LOCA::StatusTest::Abstract> locaTest = Teuchos::null;
+          
           // feed in restart predictor vector
           Teuchos::ParameterList & predictorList = piroParams->sublist ( "LOCA" )
                                                               .sublist ( "Predictor" );
@@ -293,6 +291,12 @@ int main ( int argc, char *argv[] )
                   restartVector->setScalar(0, vp);
                   
                   fspList.set( "Restart Vector", restartVector );
+                  
+                  // Make only one LOCA step when branch switching.
+                  bool return_failed_on_max_steps = false;
+                  locaTest = Teuchos::rcp( new Ginla::StatusTest::MaxAcceptedSteps( 2,
+                                                                                    return_failed_on_max_steps
+                                                                                  ) );
               }
           }
 
@@ -300,7 +304,10 @@ int main ( int argc, char *argv[] )
           Teuchos::RCP<Piro::Epetra::LOCASolver> piroLOCASolver = 
               Teuchos::rcp(new Piro::Epetra::LOCASolver( piroParams,
                                                          glModel,
-                                                         observer ));
+                                                         observer,
+                                                         Teuchos::null,
+                                                         locaTest
+                                                        ));
 
           // get stepper and inject it into the eigensaver
           Teuchos::RCP<LOCA::Stepper> stepper = piroLOCASolver->getLOCAStepperNonConst();

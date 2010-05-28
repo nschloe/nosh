@@ -83,15 +83,19 @@ void
 Ginla::ModelEvaluator::Default::
 setupParameters_( const Teuchos::ParameterList & params )
 {
-  // setup parameter names
-  Teuchos::RCP<Teuchos::Array<std::string> > p_names = Teuchos::rcp( new Teuchos::Array<std::string>() );
-  for ( Teuchos::ParameterList::ConstIterator i=params.begin(); i!=params.end(); i++ )
-      if ( params.name( i ) == "H0" || params.name( i ) == "scaling" )
-          p_names->append( params.name( i ) );
-  p_names_ = p_names;
+//   // setup parameter names
+//   Teuchos::RCP<Teuchos::Array<std::string> > p_names = Teuchos::rcp( new Teuchos::Array<std::string>() );
+//   for ( Teuchos::ParameterList::ConstIterator i=params.begin(); i!=params.end(); i++ )
+//       if ( params.name( i ) == "H0" || params.name( i ) == "scaling" )
+//           p_names->append( params.name( i ) );
+//   p_names_ = p_names;
+  p_names_ = Teuchos::rcp( new Teuchos::Array<std::string>() );
+  p_names_->append( "H0" );
+  p_names_->append( "scaling" );
   
   // setup parameter values
-  int numParams_ = p_names_->length();
+  numParams_ = p_names_->length();
+  
   p_map_ = Teuchos::rcp(new Epetra_LocalMap( numParams_,
                                              0,
                                              komplex_->getRealMap()->Comm() ) );

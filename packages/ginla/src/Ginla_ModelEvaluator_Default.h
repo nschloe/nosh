@@ -152,7 +152,7 @@ private:
    
    Teuchos::RCP<Epetra_Map> p_map_;
    Teuchos::RCP<Epetra_Vector> p_init_;
-   Teuchos::RCP<const Teuchos::Array<std::string> > p_names_;
+   Teuchos::RCP<Teuchos::Array<std::string> > p_names_;
    
 private:
     void

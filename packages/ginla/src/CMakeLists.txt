@@ -25,6 +25,7 @@ SET ( ginla_SRCS
       Ginla_StatusTest_Energy.cpp
       Ginla_StatusTest_Loop.cpp
       Ginla_StatusTest_Turnaround.cpp
+      Ginla_StatusTest_MaxAcceptedSteps.cpp
 #      Ginla_BranchExplorer_Driver.cpp
 #      Ginla_BranchExplorer_ProcessEigenData.cpp
     )
