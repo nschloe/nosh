@@ -1,6 +1,6 @@
 /*
     <one line to give the program's name and a brief idea of what it does.>
-    Copyright (C) 2010 Nico Schl\"omer
+    Copyright (C) 2010  Nico Schl\"omer
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -19,7 +19,8 @@
 
 #include "Ginla_StatusTest_Energy.h"
 
-#include "Ginla_LocaSystem_Bordered.h"
+#include "Ginla_State.h"
+#include "Ginla_StateTranslator.h"
 #include "Ginla_Helpers.h"
 
 #include <LOCA_Stepper.H>
@@ -29,13 +30,13 @@
 
 // ============================================================================
 Ginla::StatusTest::Energy::
-Energy( const Teuchos::RCP<const Ginla::LocaSystem::Bordered> & glSystem,
-        const Teuchos::RCP<const Recti::Grid::General>        & grid
+Energy( const Teuchos::RCP<const Ginla::StateTranslator> & stateTranslator,
+        const Teuchos::RCP<const Recti::Grid::General>   & grid
       ) :
   freeEnergy_( 0.0 ),
   tol_( 1.0e-6 ),
   status_( LOCA::StatusTest::Unevaluated ),
-  glSystem_( glSystem ),
+  stateTranslator_( stateTranslator ),
   grid_( grid )
 {
 }
@@ -56,7 +57,7 @@ checkStatus( const LOCA::Stepper& stepper,
   case LOCA::StatusTest::Complete:
   case LOCA::StatusTest::Minimal:
     computeFreeEnergy( stepper );
-    if ( abs(freeEnergy_) < tol_ )
+    if ( fabs(freeEnergy_) < tol_ )
       status_ = LOCA::StatusTest::Failed; // LOCA::StatusTest::Finished;
     else
       status_ = LOCA::StatusTest::NotFinished;
@@ -80,9 +81,7 @@ computeFreeEnergy( const LOCA::Stepper & stepper )
     const Epetra_Vector & x =
         ( Teuchos::dyn_cast<const NOX::Epetra::Vector> ( solGroup->getX() ) ).getEpetraVector();
     
-    const Teuchos::RCP<const Ginla::State> state = glSystem_->createState( x );
-
-    freeEnergy_ = state->freeEnergy();
+    freeEnergy_ = stateTranslator_->createState( x )->freeEnergy();
     
     return;
 }

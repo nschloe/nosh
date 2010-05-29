@@ -29,7 +29,10 @@
 #include "Ginla_MagneticVectorPotential_Centered.h"
 #include "Ginla_IO_StateWriter.h"
 #include "Ginla_IO_StatsWriter.h"
+
 #include "Ginla_StatusTest_MaxAcceptedSteps.h"
+#include "Ginla_StatusTest_Energy.h"
+#include "LOCA_StatusTest_Combo.H"
 
 // =============================================================================
 // declarations (definitions below)
@@ -249,8 +252,11 @@ int main ( int argc, char *argv[] )
           eigenList.set ( "User-Defined Save Eigen Data Name", "glSaveEigenDataStrategy" );
           eigenList.set ( "glSaveEigenDataStrategy", glSaveEigenDataStrategy );
 #endif
-
-          Teuchos::RCP<LOCA::StatusTest::Abstract> locaTest = Teuchos::null;
+          
+          Teuchos::RCP<LOCA::StatusTest::Abstract> freeEnergyTest =
+              Teuchos::rcp( new Ginla::StatusTest::Energy( glModel, grid ) );
+              
+          Teuchos::RCP<LOCA::StatusTest::Abstract> extraTest = Teuchos::null;
           
           // feed in restart predictor vector
           Teuchos::ParameterList & predictorList = piroParams->sublist ( "LOCA" )
@@ -294,20 +300,31 @@ int main ( int argc, char *argv[] )
                   
                   // Make only one LOCA step when branch switching.
                   bool return_failed_on_max_steps = false;
-                  locaTest = Teuchos::rcp( new Ginla::StatusTest::MaxAcceptedSteps( 2,
-                                                                                    return_failed_on_max_steps
-                                                                                  ) );
+                  extraTest = Teuchos::rcp( new Ginla::StatusTest::MaxAcceptedSteps( 2,
+                                                                                     return_failed_on_max_steps
+                                                                                    ) );
               }
           }
+          
+          
+          Teuchos::RCP<LOCA::StatusTest::Abstract> locaTest;
+
+          if ( extraTest.is_null() )
+              locaTest = freeEnergyTest;
+          else
+              locaTest = Teuchos::rcp( new LOCA::StatusTest::Combo( LOCA::StatusTest::Combo::OR,
+                                                                    freeEnergyTest,
+                                                                    extraTest
+                                                                  ) );
 
           // fetch the stepper
           Teuchos::RCP<Piro::Epetra::LOCASolver> piroLOCASolver = 
-              Teuchos::rcp(new Piro::Epetra::LOCASolver( piroParams,
-                                                         glModel,
-                                                         observer,
-                                                         Teuchos::null,
-                                                         locaTest
-                                                        ));
+              Teuchos::rcp( new Piro::Epetra::LOCASolver( piroParams,
+                                                          glModel,
+                                                          observer,
+                                                          Teuchos::null,
+                                                          locaTest
+                                                         ) );
 
           // get stepper and inject it into the eigensaver
           Teuchos::RCP<LOCA::Stepper> stepper = piroLOCASolver->getLOCAStepperNonConst();

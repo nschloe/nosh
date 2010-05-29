@@ -1,6 +1,6 @@
 /*
     <one line to give the program's name and a brief idea of what it does.>
-    Copyright (C) <year>  <name of author>
+    Copyright (C) 2010  Nico Schl\"omer
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -25,9 +25,7 @@
 
 // forward declarations
 namespace Ginla {
-  namespace LocaSystem {
-    class Bordered;
-  }
+  class StateTranslator;
 }
 namespace Recti {
   namespace Grid {
@@ -45,8 +43,8 @@ class Energy:
 {
 public:
   //! Constructor.
-  Energy( const Teuchos::RCP<const Ginla::LocaSystem::Bordered> & glSystem,
-          const Teuchos::RCP<const Recti::Grid::General>        & grid
+  Energy( const Teuchos::RCP<const Ginla::StateTranslator> & glSystem,
+          const Teuchos::RCP<const Recti::Grid::General>   & grid
         );
 
   //! Destructor.
@@ -79,7 +77,7 @@ private:
   double freeEnergy_;
   double tol_;
   LOCA::StatusTest::StatusType status_;
-  const Teuchos::RCP<const Ginla::LocaSystem::Bordered> glSystem_;
+  const Teuchos::RCP<const Ginla::StateTranslator> stateTranslator_;
   const Teuchos::RCP<const Recti::Grid::General> grid_;
 
 };
