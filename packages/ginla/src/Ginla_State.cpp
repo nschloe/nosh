@@ -171,7 +171,7 @@ innerProduct( const Ginla::State & state ) const
     {
         int kGlobal = psi_.getMap()->getGlobalElement ( k );
         double area = grid_->cellArea ( kGlobal );
-        localSum += area * psiView[k]*psi2View[k];
+        localSum += area * conj(psiView[k]) * psi2View[k];
     }
     
     // reduce and scatter such that energy is available on
@@ -205,6 +205,9 @@ normalizedScaledL2Norm () const
 {
     // imaginary part of alpha should be 0
     double_complex alpha = this->innerProduct( *this );
+
+    // make sure that we actually got a norm here
+    TEUCHOS_ASSERT_INEQUALITY( alpha.imag(), <, 1.0e-10 );
     
     // normalize
     double domainArea = grid_->getGridDomainArea();
