@@ -337,6 +337,8 @@ int main ( int argc, char *argv[] )
       // ----------------------------------------------------------------------
       else if ( solver == "Turning Point" )
       {
+          // TODO make sure the turning point continuation doesn't technically fail by default
+          
           observer = Teuchos::rcp( new Ginla::IO::NoxObserver( stateWriter,
                                                                glModel,
                                                                Ginla::IO::NoxObserver::TURNING_POINT ) );
@@ -395,6 +397,9 @@ int main ( int argc, char *argv[] )
       // Now, solve the problem and return the responses
       piro->evalModel(inArgs, outArgs);
       
+      if ( outArgs.isFailed() )
+          status += 10;
+      
       // manually release LOCA stepper
 #ifdef HAVE_LOCA_ANASAZI
       if ( !glEigenSaver.is_null() )
@@ -426,7 +431,6 @@ int main ( int argc, char *argv[] )
       MPI_Finalize();
 #endif
 
-      // Final return value (0 = successfull, non-zero = failure)
-      return status;
+    exit( status==0 ? EXIT_SUCCESS : EXIT_FAILURE );
 }
 // =========================================================================

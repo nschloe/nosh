@@ -58,7 +58,7 @@ checkStatus( const LOCA::Stepper& stepper,
   case LOCA::StatusTest::Minimal:
     computeFreeEnergy( stepper );
     if ( fabs(freeEnergy_) < tol_ )
-      status_ = LOCA::StatusTest::Failed; // LOCA::StatusTest::Finished;
+      status_ = LOCA::StatusTest::Finished; // LOCA::StatusTest::Failed
     else
       status_ = LOCA::StatusTest::NotFinished;
     break;

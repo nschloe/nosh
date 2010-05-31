@@ -81,7 +81,10 @@ save ( Teuchos::RCP<std::vector<double> >       & evals_r,
     unsigned int numEigenValues = evals_r->size();
 
     // Consider eigenvalue above tol to be unstable, and between -tol and tol to be nullstable.
-    const double tol = 1.0e-5;
+    // This is really loose here, and this makes sure that we get most actual nullvalues.
+    // Sometimes they are really hard to approach using regular continuation, but if tol
+    // flags an approximate nullvector, turning point continuation may help nailing it down.
+    const double tol = 2.5e-2;
     
     // store the unstable eigenstate into files
     unsigned int numUnstableEigenvalues = 0;
