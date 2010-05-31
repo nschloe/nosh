@@ -32,6 +32,7 @@
 
 #include "Ginla_StatusTest_MaxAcceptedSteps.h"
 #include "Ginla_StatusTest_Energy.h"
+#include "Ginla_StatusTest_ParameterLimits.h"
 #include "LOCA_StatusTest_Combo.H"
 
 // =============================================================================
@@ -306,16 +307,19 @@ int main ( int argc, char *argv[] )
               }
           }
           
-          
-          Teuchos::RCP<LOCA::StatusTest::Abstract> locaTest;
+          double lowerLimit = stepperList.get<double> ( "Min Value" );
+          double upperLimit = stepperList.get<double> ( "Max Value" );
+          Teuchos::RCP<Ginla::StatusTest::ParameterLimits> paramLimitsTest =
+              Teuchos::rcp( new Ginla::StatusTest::ParameterLimits( lowerLimit, upperLimit, false ) );
 
-          if ( extraTest.is_null() )
-              locaTest = freeEnergyTest;
-          else
-              locaTest = Teuchos::rcp( new LOCA::StatusTest::Combo( LOCA::StatusTest::Combo::OR,
-                                                                    freeEnergyTest,
-                                                                    extraTest
-                                                                  ) );
+          Teuchos::RCP<LOCA::StatusTest::Combo> locaTest =
+              Teuchos::rcp( new LOCA::StatusTest::Combo( LOCA::StatusTest::Combo::OR ) );
+
+          locaTest->addStatusTest( paramLimitsTest );
+          locaTest->addStatusTest( freeEnergyTest );
+              
+          if ( !extraTest.is_null() )
+              locaTest->addStatusTest( extraTest );
 
           // fetch the stepper
           Teuchos::RCP<Piro::Epetra::LOCASolver> piroLOCASolver = 

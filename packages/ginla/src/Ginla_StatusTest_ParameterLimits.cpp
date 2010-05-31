@@ -17,52 +17,58 @@
 
 */
 
-#include "Ginla_StatusTest_Energy.h"
+#include "Ginla_StatusTest_ParameterLimits.h"
 
-#include "Ginla_State.h"
-#include "Ginla_StateTranslator.h"
-#include "Ginla_Helpers.h"
+// #include "Ginla_Helpers.h"
 
 #include <LOCA_Stepper.H>
-#include <NOX_Epetra_Group.H>
-#include <LOCA_MultiContinuation_AbstractGroup.H>
+#include <NOX_Utils.H>
+// #include <NOX_Epetra_Group.H>
+// #include <LOCA_MultiContinuation_AbstractGroup.H>
 
 
 // ============================================================================
-Ginla::StatusTest::Energy::
-Energy( const Teuchos::RCP<const Ginla::StateTranslator> & stateTranslator,
-        const Teuchos::RCP<const Recti::Grid::General>   & grid
-      ) :
-  freeEnergy_( 0.0 ),
-  tol_( 1.0e-6 ),
-  status_( LOCA::StatusTest::Unevaluated ),
-  stateTranslator_( stateTranslator ),
-  grid_( grid )
+Ginla::StatusTest::ParameterLimits::
+ParameterLimits( double lowerLimit,
+                 double upperLimit,
+                 bool return_failed_on_max_steps
+               ) :
+  lowerLimit_( lowerLimit ),
+  upperLimit_( upperLimit ),
+  tol_( 1.0e-10 ),
+  value_( 0.0 ),
+  return_failed_on_max_steps_( return_failed_on_max_steps ),
+  status_( LOCA::StatusTest::Unevaluated )
 {
 }
 // ============================================================================
-Ginla::StatusTest::Energy::
-~Energy()
+Ginla::StatusTest::ParameterLimits::
+~ParameterLimits()
 {
 }
 // ============================================================================
 LOCA::StatusTest::StatusType
-Ginla::StatusTest::Energy::
+Ginla::StatusTest::ParameterLimits::
 checkStatus( const LOCA::Stepper& stepper,
                    LOCA::StatusTest::CheckType checkType )
 {
-  
   switch (checkType)
   {
   case LOCA::StatusTest::Complete:
   case LOCA::StatusTest::Minimal:
-    computeFreeEnergy( stepper );
-    if ( fabs(freeEnergy_) < tol_ )
-      status_ = LOCA::StatusTest::Finished; // LOCA::StatusTest::Failed
+    value_ = stepper.getContinuationParameter();
+    if ( value_ < lowerLimit_ + tol_ || value_ > upperLimit_ - tol_ )
+    {
+      if ( return_failed_on_max_steps_ )
+        status_ = LOCA::StatusTest::Failed;
+      else
+        status_ = LOCA::StatusTest::Finished;
+    }
     else
+    {
       status_ = LOCA::StatusTest::NotFinished;
+    }
     break;
-
   case LOCA::StatusTest::None:
   default:
     status_ = LOCA::StatusTest::Unevaluated;
@@ -72,37 +78,26 @@ checkStatus( const LOCA::Stepper& stepper,
   return status_;
 }
 // ============================================================================
-void
-Ginla::StatusTest::Energy::
-computeFreeEnergy( const LOCA::Stepper & stepper )
-{
-    Teuchos::RCP<const NOX::Abstract::Group> solGroup =
-        Teuchos::rcp_dynamic_cast<const NOX::Abstract::Group> ( stepper.getSolutionGroup() );
-    const Epetra_Vector & x =
-        ( Teuchos::dyn_cast<const NOX::Epetra::Vector> ( solGroup->getX() ) ).getEpetraVector();
-        
-    freeEnergy_ = stateTranslator_->createState( x )->freeEnergy();
-    
-    return;
-}
-// ============================================================================
 LOCA::StatusTest::StatusType
-Ginla::StatusTest::Energy::
+Ginla::StatusTest::ParameterLimits::
 getStatus() const
 {
   return status_;
 }
 // ============================================================================
 ostream&
-Ginla::StatusTest::Energy::
+Ginla::StatusTest::ParameterLimits::
 print(ostream& stream, int indent) const
 {
   for (int j = 0; j < indent; j ++)
     stream << ' ';
   stream << status_;
-  stream << "|Free energy| = " << NOX::Utils::sciformat(fabs(freeEnergy_),3);
-  stream << " > " << NOX::Utils::sciformat(tol_,3);
-  stream << std::endl;
+  stream << NOX::Utils::sciformat(lowerLimit_,3)
+         << " < "
+         << "Parameter value = " << NOX::Utils::sciformat(value_,3)
+         << " < "
+         << NOX::Utils::sciformat(upperLimit_,3)
+         << std::endl;
  return stream;
 }
 // ============================================================================
