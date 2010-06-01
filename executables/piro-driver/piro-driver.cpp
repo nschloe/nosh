@@ -299,11 +299,11 @@ int main ( int argc, char *argv[] )
                   
                   fspList.set( "Restart Vector", restartVector );
                   
-                  // Make only one LOCA step when branch switching.
-                  bool return_failed_on_max_steps = false;
-                  extraTest = Teuchos::rcp( new Ginla::StatusTest::MaxAcceptedSteps( 2,
-                                                                                     return_failed_on_max_steps
-                                                                                    ) );
+//                   // Make only one LOCA step when branch switching.
+//                   bool return_failed_on_max_steps = false;
+//                   extraTest = Teuchos::rcp( new Ginla::StatusTest::MaxAcceptedSteps( 2,
+//                                                                                      return_failed_on_max_steps
+//                                                                                     ) );
               }
           }
           
@@ -328,7 +328,7 @@ int main ( int argc, char *argv[] )
                                                           observer,
                                                           Teuchos::null,
                                                           locaTest
-                                                         ) );
+                                                        ) );
 
           // get stepper and inject it into the eigensaver
           Teuchos::RCP<LOCA::Stepper> stepper = piroLOCASolver->getLOCAStepperNonConst();
@@ -342,7 +342,7 @@ int main ( int argc, char *argv[] )
       else if ( solver == "Turning Point" )
       {
           // TODO make sure the turning point continuation doesn't technically fail by default
-          
+
           observer = Teuchos::rcp( new Ginla::IO::NoxObserver( stateWriter,
                                                                glModel,
                                                                Ginla::IO::NoxObserver::TURNING_POINT ) );

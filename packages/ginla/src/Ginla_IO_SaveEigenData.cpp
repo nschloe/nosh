@@ -84,9 +84,10 @@ save ( Teuchos::RCP<std::vector<double> >       & evals_r,
     // This is really loose here, and this makes sure that we get most actual nullvalues.
     // Sometimes they are really hard to approach using regular continuation, but if tol
     // flags an approximate nullvector, turning point continuation may help nailing it down.
-    const double tol = 2.5e-2;
+    const double tol = 1.0e-5;
     
     // store the unstable eigenstate into files
+    unsigned int numStableEigenvalues = 0;
     unsigned int numUnstableEigenvalues = 0;
     unsigned int numNullvalues = 0;
     for ( unsigned int k = 0; k < numEigenValues; k++ )
@@ -95,7 +96,7 @@ save ( Teuchos::RCP<std::vector<double> >       & evals_r,
         stringstream eigenstateFileNameAppendix;
         if ( eigenvalue  < -tol )
           // don't consider stable values
-          continue;
+          eigenstateFileNameAppendix << "-seigenstate" << numStableEigenvalues++;
         else if ( eigenvalue  > tol )
             eigenstateFileNameAppendix << "-ueigenstate" << numUnstableEigenvalues++;
         else
@@ -108,11 +109,11 @@ save ( Teuchos::RCP<std::vector<double> >       & evals_r,
             Teuchos::rcp_dynamic_cast<NOX::Epetra::Vector> ( realPart, true );
                                                   
         Teuchos::RCP<Ginla::State> eigenstate = stateTranslator_->createState( realPartE->getEpetraVector() );
-        std::cout << "a0" << std::endl;
+
         stateWriter_->write( eigenstate,
                              step,
                              eigenstateFileNameAppendix.str() );
-        std::cout << "a1" << std::endl;
+
                                     
         // The matrix and the eigenvalue is supposedly purely real,
         // so the eigenvector's real and imaginary parts are eigenvectors
@@ -126,11 +127,9 @@ save ( Teuchos::RCP<std::vector<double> >       & evals_r,
                 Teuchos::rcp_dynamic_cast<NOX::Epetra::Vector> ( imagPart, true );
             eigenstateFileNameAppendix << "-im";
             Teuchos::RCP<Ginla::State> eigenstate = stateTranslator_->createState( imagPartE->getEpetraVector() );
-            std::cout << "b0" << std::endl;
             stateWriter_->write( eigenstate,
                                  step,
                                  eigenstateFileNameAppendix.str() );
-            std::cout << "b1" << std::endl;
         }
     }
 
@@ -138,8 +137,9 @@ save ( Teuchos::RCP<std::vector<double> >       & evals_r,
     // stats file.
     Teuchos::ParameterList eigenvaluesList;
     eigenvaluesList.set( "##step", step );
-    eigenvaluesList.set( "#unstable", numUnstableEigenvalues );
-    eigenvaluesList.set( "#null", numNullvalues );
+    eigenvaluesList.set( "#0unstable", numUnstableEigenvalues );
+    eigenvaluesList.set( "#1null", numNullvalues );
+    eigenvaluesList.set( "#2stable", numStableEigenvalues );
     for ( unsigned int k = 0; k < maxEigenvaluesSave_; k++ )
     {
         std::stringstream label;
