@@ -57,7 +57,8 @@ checkStatus( const LOCA::Stepper& stepper,
   case LOCA::StatusTest::Complete:
   case LOCA::StatusTest::Minimal:
     value_ = stepper.getContinuationParameter();
-    if ( value_ < lowerLimit_ + tol_ || value_ > upperLimit_ - tol_ )
+    if ( stepper.getStepNumber() > 0 && // don't test on the first step
+         (value_ < lowerLimit_ - tol_ || value_ > upperLimit_ + tol_) )
     {
       if ( return_failed_on_max_steps_ )
         status_ = LOCA::StatusTest::Failed;
