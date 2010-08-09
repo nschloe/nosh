@@ -46,7 +46,7 @@ public:
     //! @param  x Point that is checked
     //! @return   Whether or not \c x sits in the domain.
     virtual bool
-    isInDomain ( const DoubleTuple & x ) const;
+    isInDomain ( const Point & x ) const;
 
 protected:
 private:

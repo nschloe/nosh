@@ -321,11 +321,10 @@ main ( int argc, char *argv[] )
 
     Teuchos::RCP<LOCA::StatusTest::Abstract> zeroEnergyTest =
                      Teuchos::rcp ( new Ginla::StatusTest::Energy ( glsystem,
-                                                                    grid ) );
+                                                                    0.0 ) );
                                                                         
     Teuchos::RCP<LOCA::StatusTest::Abstract> loopTest =
-                     Teuchos::rcp ( new Ginla::StatusTest::Loop ( glsystem,
-                                                                  grid ) );
+                     Teuchos::rcp ( new Ginla::StatusTest::Loop ( glsystem ) );
                                                                   
     Teuchos::RCP<LOCA::StatusTest::Abstract> turnaroundTest =
                      Teuchos::rcp ( new Ginla::StatusTest::Turnaround () );

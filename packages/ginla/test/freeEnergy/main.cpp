@@ -19,9 +19,9 @@
 #include <NOX_StatusTest_MaxIters.H>
 #include <NOX_StatusTest_Combo.H>
 
-#include "Ginla_State.h"
+#include "Ginla_FDM_State.h"
 
-#include "Ginla_LocaSystem_Bordered.h"
+#include "Ginla_FDM_LocaSystem_Bordered.h"
 
 #include "Recti_Grid_Uniform.h"
 #include "Recti_Grid_Reader.h"
@@ -89,7 +89,7 @@ BOOST_AUTO_TEST_CASE( free_energy_test )
     // ------------------------------------------------------------------------
     // iterate through the list of example solutions, calculate their energies,
     // and compare with the given value
-    Teuchos::RCP<Ginla::State> state;
+    Teuchos::RCP<Ginla::FDM::State> state;
     Teuchos::RCP<Recti::Grid::Uniform> grid;
     Teuchos::ParameterList glParameters;
     for ( Teuchos::ParameterList::ConstIterator k=paramList->begin(); k!=paramList->end(); ++k )

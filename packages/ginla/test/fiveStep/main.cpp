@@ -23,12 +23,12 @@
 // #include <NOX_Epetra_Group.H>
 
 #include "Ginla_MagneticVectorPotential_Centered.h"
-#include "Ginla_Operator_BCCentral.h"
+#include "Ginla_FDM_Operator_BCCentral.h"
 #include "Ginla_IO_StatsWriter.h"
 #include "Ginla_IO_StateWriter.h"
 #include "Ginla_IO_SaveEigenData.h"
 #include "Ginla_Helpers.h"
-#include "Ginla_LocaSystem_Bordered.h"
+#include "Ginla_FDM_LocaSystem_Bordered.h"
 
 #include "Recti_Grid_Uniform.h"
 #include "Recti_Grid_Reader.h"
@@ -122,7 +122,7 @@ BOOST_AUTO_TEST_CASE( zero_step_loca_test )
     BOOST_REQUIRE( !inputGuessFile.empty() );
     
     // For technical reasons, the reader can only accept ComplexMultiVectors.
-    Teuchos::RCP<Ginla::State> state;
+    Teuchos::RCP<Ginla::FDM::State> state;
     Teuchos::RCP<Recti::Grid::Uniform> grid;
     Teuchos::ParameterList glParameters;
     
@@ -142,13 +142,12 @@ BOOST_AUTO_TEST_CASE( zero_step_loca_test )
     // ------------------------------------------------------------------------
 
     Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> A =
-        Teuchos::rcp ( new Ginla::MagneticVectorPotential::Centered ( glParameters.get<double> ( "H0" ),
-                                                                      glParameters.get<double> ( "scaling" ) ) );
+        Teuchos::rcp ( new Ginla::MagneticVectorPotential::Centered ( glParameters.get<double> ( "H0" ) ) );
 
     // create the operator
     Teuchos::RCP<const ComplexMap> map = state->getPsi()->getMap();
-    Teuchos::RCP<Ginla::Operator::Virtual> glOperator =
-        Teuchos::rcp ( new Ginla::Operator::BCCentral ( grid, A, map, map ) );
+    Teuchos::RCP<Ginla::FDM::Operator::Virtual> glOperator =
+        Teuchos::rcp ( new Ginla::FDM::Operator::BCCentral ( grid, A, map, map ) );
 
     std::string fn = outputDirectory.string() + "/" + contDataFileName;
     Teuchos::RCP<Ginla::IO::StatsWriter> statsWriter = 
@@ -163,8 +162,8 @@ BOOST_AUTO_TEST_CASE( zero_step_loca_test )
                                                   outputFormat,
                                                   maxLocaSteps ) );
     
-    Teuchos::RCP<Ginla::LocaSystem::Bordered> glsystem =
-               Teuchos::rcp ( new Ginla::LocaSystem::Bordered ( glOperator,
+    Teuchos::RCP<Ginla::FDM::LocaSystem::Bordered> glsystem =
+               Teuchos::rcp ( new Ginla::FDM::LocaSystem::Bordered ( glOperator,
                                                                 eComm,
                                                                 map,
                                                                 statsWriter,
@@ -311,11 +310,11 @@ BOOST_AUTO_TEST_CASE( zero_step_loca_test )
 
     const Epetra_Vector & finalSolution =
         ( Teuchos::dyn_cast<const NOX::Epetra::Vector> ( finalGroup.getX() ) ).getEpetraVector();
-    Teuchos::RCP<Ginla::State> solutionState = glsystem->createState( finalSolution );
+    Teuchos::RCP<Ginla::State::Virtual> solutionState = glsystem->createState( finalSolution );
     // ------------------------------------------------------------------------
     // read expected solution from file
     // For technical reasons, the reader can only accept ComplexMultiVectors.
-    Teuchos::RCP<Ginla::State> referenceState;
+    Teuchos::RCP<Ginla::FDM::State> referenceState;
     Recti::Grid::Reader::read ( Comm, expSolFileName, referenceState, grid, glParameters );
     // ------------------------------------------------------------------------
     // compare the results:

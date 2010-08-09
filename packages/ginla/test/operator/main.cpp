@@ -8,8 +8,8 @@
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 #include <Teuchos_DefaultComm.hpp>
 
-#include "Ginla_State.h"
-#include "Ginla_Operator_BCCentral.h"
+#include "Ginla_FDM_State.h"
+#include "Ginla_FDM_Operator_BCCentral.h"
 #include "Ginla_MagneticVectorPotential_Centered.h"
 
 #include "Recti_Domain_Circle.h"
@@ -59,25 +59,24 @@ BOOST_AUTO_TEST_CASE( operator_test )
          = Teuchos::rcp( new Recti::Grid::Uniform( Omega, h ) );
     // ------------------------------------------------------------------------
     // create state on the grid
-    Teuchos::RCP<Ginla::State> state
-        = Teuchos::rcp( new Ginla::State( Comm, grid ) );
+    Teuchos::RCP<Ginla::FDM::State> state
+        = Teuchos::rcp( new Ginla::FDM::State( Comm, grid ) );
     state->getPsiNonConst()->putScalar( 1.0 );
     // ------------------------------------------------------------------------
     // create operator
     double h0 = 1.0;
     double edgeLength = 1.0;
     Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> A
-        = Teuchos::rcp( new Ginla::MagneticVectorPotential::Centered( h0,
-                                                                      edgeLength ) );
+        = Teuchos::rcp( new Ginla::MagneticVectorPotential::Centered( h0 ) );
                                                                       
-    Teuchos::RCP<Ginla::Operator::BCCentral> glOperator
-        = Teuchos::rcp( new Ginla::Operator::BCCentral( grid,
-                                                        A,
-                                                        state->getPsi()->getMap(),
-                                                        state->getPsi()->getMap() ) );
+    Teuchos::RCP<Ginla::FDM::Operator::BCCentral> glOperator
+        = Teuchos::rcp( new Ginla::FDM::Operator::BCCentral( grid,
+                                                             A,
+                                                             state->getPsi()->getMap(),
+                                                             state->getPsi()->getMap() ) );
     // ------------------------------------------------------------------------
     // get dF/dh0 at state
-    Teuchos::RCP<const Ginla::State> dFState = glOperator->getDFDh0( state );
+    Teuchos::RCP<const Ginla::State::Virtual> dFState = glOperator->getDFDh0( state );
     // ------------------------------------------------------------------------
     // compute the finite difference
     double eps = 1.0e-05;
@@ -86,11 +85,11 @@ BOOST_AUTO_TEST_CASE( operator_test )
     
     p[0] = h0 + eps;
     glOperator->setParameters( p );
-    Teuchos::RCP<Ginla::State> statePlus = glOperator->getF( state );
+    Teuchos::RCP<Ginla::State::Virtual> statePlus = glOperator->getF( state );
     
     p[0] = h0 - eps;
     glOperator->setParameters( p );
-    Teuchos::RCP<Ginla::State> stateMinus = glOperator->getF( state );
+    Teuchos::RCP<Ginla::State::Virtual> stateMinus = glOperator->getF( state );
     
     // store the finite difference in statePlus
     statePlus->update( -0.5/eps, *stateMinus, 0.5/eps );

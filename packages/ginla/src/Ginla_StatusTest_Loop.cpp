@@ -21,7 +21,7 @@
 
 #include "Ginla_StatusTest_Energy.h"
 
-#include "Ginla_LocaSystem_Bordered.h"
+// #include "Ginla_LocaSystem_Bordered.h"
 #include "Ginla_Helpers.h"
 
 #include <LOCA_Stepper.H>
@@ -31,14 +31,12 @@
 
 // ============================================================================
 Ginla::StatusTest::Loop::
-Loop(  const Teuchos::RCP<const Ginla::LocaSystem::Bordered> & glSystem,
-       const Teuchos::RCP<const Recti::Grid::General>        & grid ):
+Loop( const Teuchos::RCP<const Ginla::StateTranslator> & stateTranslator ):
     firstTime_( true ),
     wasAway_( false ),
     tol_( 1.0e-3 ), // TODO make this depend on the maximum step size
     diffNorm_( 0.0 ),
-    glSystem_( glSystem ),
-    grid_( grid ),
+    stateTranslator_( stateTranslator ),
     status_( LOCA::StatusTest::Unevaluated ),
     referenceState_( Teuchos::null )
 {
@@ -51,8 +49,8 @@ Ginla::StatusTest::Loop::
 // ============================================================================
 LOCA::StatusTest::StatusType
 Ginla::StatusTest::Loop::
-checkStatus( const LOCA::Stepper& stepper,
-                   LOCA::StatusTest::CheckType checkType )
+checkStatus( const LOCA::Stepper               & stepper,
+                   LOCA::StatusTest::CheckType   checkType )
 { 
   // store the reference solution
   if ( firstTime_ )
@@ -62,7 +60,6 @@ checkStatus( const LOCA::Stepper& stepper,
       firstTime_ = false;
       return status_;
   }
-  
   
   switch (checkType)
   {
@@ -101,7 +98,7 @@ setReferencePoint( const LOCA::Stepper & stepper )
     const Epetra_Vector & x =
         ( Teuchos::dyn_cast<const NOX::Epetra::Vector> ( solGroup->getX() ) ).getEpetraVector();
     
-    referenceState_ = glSystem_->createState( x );
+    referenceState_ = stateTranslator_->createState( x );
 
     return;
 }
@@ -115,7 +112,7 @@ computeDiffNorm( const LOCA::Stepper & stepper )
     const Epetra_Vector & x =
         ( Teuchos::dyn_cast<const NOX::Epetra::Vector> ( solGroup->getX() ) ).getEpetraVector();
     
-    const Teuchos::RCP<Ginla::State> state = glSystem_->createState( x );
+    const Teuchos::RCP<Ginla::State::Virtual> state = stateTranslator_->createState( x );
     
     TEUCHOS_ASSERT( !referenceState_.is_null() );
     
@@ -134,10 +131,13 @@ getStatus() const
 // ============================================================================
 ostream&
 Ginla::StatusTest::Loop::
-print(ostream& stream, int indent) const
+print( ostream& stream,
+       int indent
+     ) const
 {
   for (int j = 0; j < indent; j ++)
-    stream << ' ';
+      stream << ' ';
+
   stream << status_;
   stream << "||psi-ref||_L2 = " << NOX::Utils::sciformat(fabs(diffNorm_),3);
   stream << " > " << NOX::Utils::sciformat(tol_,3);

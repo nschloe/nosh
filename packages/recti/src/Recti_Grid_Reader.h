@@ -10,7 +10,9 @@
 
 #include "Recti_Grid_Uniform.h"
 namespace Ginla {
-  class State;
+  namespace FDM {
+    class State;
+  }
 }
 
 #include <Tpetra_Vector.hpp>
@@ -25,7 +27,7 @@ namespace Reader
 void
 read ( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
        const std::string                             & filePath,
-       Teuchos::RCP<Ginla::State>                    & state,
+       Teuchos::RCP<Ginla::FDM::State>               & state,
        Teuchos::RCP<Recti::Grid::Uniform>            & grid,
        Teuchos::ParameterList                        & params
      );

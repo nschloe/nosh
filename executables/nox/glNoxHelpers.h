@@ -14,7 +14,7 @@
 #include <Epetra_Comm.h>
 #include <NOX_Epetra.H>
 
-#include "Ginla_LocaSystem_Bordered.h"
+#include "Ginla_FDM_LocaSystem_Bordered.h"
 #include "Recti_Grid_Uniform.h"
 
 namespace glNoxHelpers
@@ -25,8 +25,8 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
                  const Teuchos::RCP<const Epetra_Comm>         & eComm,
                  const std::string                             & fileName,
                  Teuchos::ParameterList                        & problemParameters,
-                 Teuchos::RCP<Ginla::LocaSystem::Virtual>      & glSystem,
-                 Teuchos::RCP<Ginla::State>                    & initialState,
+                 Teuchos::RCP<Ginla::FDM::LocaSystem::Virtual>      & glSystem,
+                 Teuchos::RCP<Ginla::FDM::State>                    & initialState,
                  Teuchos::RCP<Recti::Grid::Uniform>            & grid
                );
 
@@ -38,15 +38,15 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
                  const double H0,
                  const Teuchos::ParameterList               & domainParameters,
                  Teuchos::ParameterList                     & problemParameters,
-                 Teuchos::RCP<Ginla::LocaSystem::Virtual>   & glSystem,
-                 Teuchos::RCP<Ginla::State>                 & initialState,
+                 Teuchos::RCP<Ginla::FDM::LocaSystem::Virtual>   & glSystem,
+                 Teuchos::RCP<Ginla::FDM::State>                 & initialState,
                  Teuchos::RCP<Recti::Grid::Uniform>         & grid
                );
 
 Teuchos::RCP<NOX::Epetra::Group>
-createSolverGroup ( const Teuchos::RCP<Ginla::LocaSystem::Virtual> & glSystem,
+createSolverGroup ( const Teuchos::RCP<Ginla::FDM::LocaSystem::Virtual> & glSystem,
                     const Teuchos::RCP<Teuchos::ParameterList>     & nlParamsPtr,
-                    const Teuchos::RCP<Ginla::State>               & initialState
+                    const Teuchos::RCP<Ginla::FDM::State>               & initialState
                   );
 
 Teuchos::RCP<NOX::StatusTest::Generic>
@@ -72,7 +72,7 @@ printSolutionToFile ( const std::string                                    & out
                       const std::string                                    & fileBaseName,
                       const std::string                                    & outputFormat,
                       const Teuchos::RCP<const NOX::Solver::Generic>       & solver,
-                      const Teuchos::RCP<const Ginla::LocaSystem::Virtual> & glSystem
+                      const Teuchos::RCP<const Ginla::FDM::LocaSystem::Virtual> & glSystem
                     );
 
 int

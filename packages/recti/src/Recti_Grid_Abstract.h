@@ -26,7 +26,7 @@ typedef Tpetra::MultiVector<std::complex<double>,Thyra::Ordinal> ComplexMultiVec
 
 typedef Teuchos::Tuple<int,2>           IntTuple;
 typedef Teuchos::Tuple<unsigned int,2>  UIntTuple;
-typedef Teuchos::Tuple<double,2>        DoubleTuple;
+typedef Teuchos::Tuple<double,3>        Point;
 
 namespace Recti
 {
@@ -44,7 +44,7 @@ public:
       @param[in] numGridPoints   Total number of grid points.
       @param[in] scaling         Scaling of the grid with the given \c h. Defaults to \c 1.0.
     */
-    Abstract ( const DoubleTuple  & h,
+    Abstract ( const Point  & h,
                const double         gridDomainArea,
                const unsigned int   numGridPoints,
                const double         scaling=1.0
@@ -73,7 +73,7 @@ public:
     virtual unsigned int
     getNumGridPoints() const ; //!< Returns the number of grid points.
 
-    virtual DoubleTuple
+    virtual Point
     getH() const; //!< Returns mesh sizes \f$h\f$.
 
     //! Returns the measure of the discretized domain.
@@ -116,19 +116,19 @@ public:
     virtual double
     cellArea ( unsigned int k ) const = 0;
 
-    virtual Teuchos::RCP<DoubleTuple>
+    virtual Teuchos::RCP<Point>
     getX ( unsigned int k ) const = 0; //!< Returns the value of \f$x\f$.
 
-    virtual Teuchos::RCP<DoubleTuple>
+    virtual Teuchos::RCP<Point>
     getXLeft ( unsigned int k ) const = 0; //!< Returns the value of \f$x\f$ left of point i.
 
-    virtual Teuchos::RCP<DoubleTuple>
+    virtual Teuchos::RCP<Point>
     getXRight ( unsigned int k ) const = 0; //!< Returns the value of \f$x\f$ right of point i.
 
-    virtual Teuchos::RCP<DoubleTuple>
+    virtual Teuchos::RCP<Point>
     getXBelow ( unsigned int k ) const = 0 ; //!< Returns the value of \f$x\f$ below point i.
 
-    virtual Teuchos::RCP<DoubleTuple>
+    virtual Teuchos::RCP<Point>
     getXAbove ( unsigned int k ) const = 0; //!< Returns the value of \f$x\f$ above point i.
 
     virtual unsigned int
@@ -168,7 +168,7 @@ public:
 
 protected:
 
-    DoubleTuple h_;
+    Point h_;
     double scaling_; //! scaling factor
     double gridDomainArea_;
     unsigned int numGridPoints_;

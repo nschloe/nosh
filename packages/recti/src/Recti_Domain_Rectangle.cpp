@@ -43,7 +43,7 @@ getBoundingBox () const
 // ============================================================================
 bool
 Recti::Domain::Rectangle::
-isInDomain ( const DoubleTuple & x ) const
+isInDomain ( const Point & x ) const
 {
     return    x[0]>=-tolerance_ && x[0]<=a_+tolerance_
            && x[1]>=-tolerance_ && x[1]<=b_+tolerance_;

@@ -25,23 +25,13 @@
 Ginla::IO::StateWriter::
 StateWriter( const std::string & outputDir,
              const std::string & fileBaseName,
-             const std::string & outputFormat,
+             const std::string & filenameExtension,
              const unsigned int maxIndex ):
     outputDir_( outputDir ),
-    fileBaseName_( fileBaseName )
+    fileBaseName_( fileBaseName ),
+    filenameExtension_( filenameExtension ),
+    maxNumDigits_( Ginla::Helpers::numDigits( maxIndex ) )
 {
-  if ( outputFormat.compare("VTI")==0 )
-    filenameExtension_ = "vti";
-  else if ( outputFormat.compare("VTK")==0 )
-    filenameExtension_ = "vtk";
-  else
-    TEST_FOR_EXCEPTION( true,
-                        std::runtime_error,
-                        "outputFormat_ (\"" << outputFormat
-                        << "\") must be either one of \"VTI\", \"VTK\"" );
-
-  maxNumDigits_ = Ginla::Helpers::numDigits( maxIndex );
-  return;
 }
 // ============================================================================
 void
@@ -54,10 +44,10 @@ setOutputDir ( const string & directory )
 // ============================================================================
 void
 Ginla::IO::StateWriter::
-write ( const Teuchos::RCP<const Ginla::State> & state,
-        const unsigned int                     & index,
-        const std::string                      & filenameAppend,
-        LOCA::ParameterVector                  & params
+write ( const Teuchos::RCP<const Ginla::State::Virtual> & state,
+        const unsigned int                              & index,
+        const std::string                               & filenameAppend,
+        LOCA::ParameterVector                           & params
       ) const
 {
     // get the parameter list
@@ -79,9 +69,9 @@ write ( const Teuchos::RCP<const Ginla::State> & state,
 // ============================================================================
 void
 Ginla::IO::StateWriter::
-write ( const Teuchos::RCP<const Ginla::State> & state,
-        const unsigned int                     & index,
-        const std::string                      & filenameAppend
+write ( const Teuchos::RCP<const Ginla::State::Virtual> & state,
+        const unsigned int                              & index,
+        const std::string                               & filenameAppend
       ) const
 {
   LOCA::ParameterVector empty;
@@ -91,9 +81,9 @@ write ( const Teuchos::RCP<const Ginla::State> & state,
 // ============================================================================
 void
 Ginla::IO::StateWriter::
-write ( const Teuchos::RCP<const Ginla::State> & state,
-        const unsigned int                     & index,
-        LOCA::ParameterVector                  & params
+write ( const Teuchos::RCP<const Ginla::State::Virtual> & state,
+        const unsigned int                              & index,
+        LOCA::ParameterVector                           & params
       ) const
 {
   std::string filenameAppend = "";
@@ -103,8 +93,8 @@ write ( const Teuchos::RCP<const Ginla::State> & state,
 // ============================================================================
 void
 Ginla::IO::StateWriter::
-write ( const Teuchos::RCP<const Ginla::State> & state,
-        const unsigned int                     & index
+write ( const Teuchos::RCP<const Ginla::State::Virtual> & state,
+        const unsigned int                              & index
       ) const
 {
   std::string filenameAppend = "";

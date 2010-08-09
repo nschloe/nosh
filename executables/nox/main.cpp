@@ -114,9 +114,9 @@ int main ( int argc, char *argv[] )
 
         // set problemParameters and glSystem
         Teuchos::ParameterList                    problemParameters;
-        Teuchos::RCP<Ginla::LocaSystem::Virtual>  glSystem = Teuchos::null;
+        Teuchos::RCP<Ginla::FDM::LocaSystem::Virtual>  glSystem = Teuchos::null;
         Teuchos::RCP<Recti::Grid::Uniform>        grid = Teuchos::null;
-        Teuchos::RCP<Ginla::State> initialState = Teuchos::null;
+        Teuchos::RCP<Ginla::FDM::State> initialState = Teuchos::null;
         if ( !inputGuessFile.empty() )
         {
             glNoxHelpers::createGlSystem ( Comm,

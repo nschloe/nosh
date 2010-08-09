@@ -21,7 +21,8 @@
 #define GINLA_STATUSTEST_LOOP_H
 
 #include "Ginla_Typedefs.h"
-#include "Ginla_State.h"
+#include "Ginla_State_Virtual.h"
+#include "Ginla_StateTranslator.h"
 
 #include <Teuchos_RCP.hpp>
 #include <LOCA_StatusTest_Abstract.H>
@@ -32,12 +33,6 @@ namespace Ginla {
     class Bordered;
   }
 }
-namespace Recti {
-  namespace Grid {
-    class General;
-  }
-}
-
 
 namespace Ginla {
 
@@ -48,8 +43,7 @@ class Loop:
 {
 public:
   //! Constructor.
-  Loop( const Teuchos::RCP<const Ginla::LocaSystem::Bordered> & glSystem,
-        const Teuchos::RCP<const Recti::Grid::General>        & grid );
+  Loop( const Teuchos::RCP<const Ginla::StateTranslator> & stateTranslator );
 
   //! Destructor.
   virtual
@@ -89,10 +83,9 @@ private:
   
   double tol_;
   double diffNorm_;
-  const Teuchos::RCP<const Ginla::LocaSystem::Bordered> glSystem_;
-  const Teuchos::RCP<const Recti::Grid::General> grid_;
+  const Teuchos::RCP<const Ginla::StateTranslator> stateTranslator_;
   LOCA::StatusTest::StatusType status_;
-  Teuchos::RCP<const Ginla::State> referenceState_;
+  Teuchos::RCP<const Ginla::State::Virtual> referenceState_;
   
 };
 

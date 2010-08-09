@@ -17,12 +17,12 @@
 
 */
 
-#ifndef GEOMETRY_H
-#define GEOMETRY_H
+#ifndef RECTI_DOMAIN_ABSTRACT_H
+#define RECTI_DOMAIN_ABSTRACT_H
 
 #include<Teuchos_Tuple.hpp>
 
-typedef Teuchos::Tuple<double,2> DoubleTuple;
+typedef Teuchos::Tuple<double,3> Point;
 
 namespace Recti
 {
@@ -46,7 +46,7 @@ public:
     //! @param  x Point that is checked
     //! @return   Whether or not \c x sits in the domain.
     virtual bool
-    isInDomain ( const DoubleTuple & x ) const = 0;
+    isInDomain ( const Point & x ) const = 0;
 
 protected:
     double tolerance_;
@@ -57,4 +57,4 @@ private:
   } // namespace Domain
 } // namespace Recti
 
-#endif // GEOMETRY_H
+#endif // RECTI_DOMAIN_ABSTRACT_H

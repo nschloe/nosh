@@ -7,27 +7,28 @@
 
 #include "Recti_Grid_Reader.h"
 
-#include "Ginla_State.h"
+#include "Ginla_FDM_State.h"
 
-#include "VIO_Reader_Factory.h"
+#include "VIO_Image_Reader_Factory.h"
 
 // =============================================================================
 void
 Recti::Grid::Reader::
 read( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
       const std::string                             & filePath,
-            Teuchos::RCP<Ginla::State>              & state,
+            Teuchos::RCP<Ginla::FDM::State>         & state,
             Teuchos::RCP<Recti::Grid::Uniform>      & grid,
             Teuchos::ParameterList                  & fieldData
     )
 {
-  Teuchos::RCP<VIO::Reader::Abstract> reader = VIO::Reader::Factory::create( filePath );
+  Teuchos::RCP<VIO::Image::Reader::Abstract> reader =
+      VIO::Image::Reader::Factory::create( filePath );
   
   // read all the values
   Teuchos::RCP<ComplexMultiVector> z;
   UIntTuple dims;
-  DoubleTuple origin;
-  DoubleTuple spacing; // see note below
+  Point origin;
+  Point spacing; // see note below
   Teuchos::Array<int> bbIndex;
   reader->read( z, bbIndex, dims, origin, spacing, fieldData, Comm );
   
@@ -53,7 +54,7 @@ read( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
   grid = Teuchos::rcp( new Uniform ( hh, numCells, bbIndex, boundaryIndices,
                                      scaling, origin ) );
                                      
-  state = Teuchos::rcp( new Ginla::State( z, grid ) );
+  state = Teuchos::rcp( new Ginla::FDM::State( z, grid ) );
 
   return;
 }

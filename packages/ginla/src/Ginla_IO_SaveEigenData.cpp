@@ -42,9 +42,11 @@ SaveEigenData ( Teuchos::ParameterList                           & eigenParamLis
         numComputeStableEigenvalues_ ( 3 ),
         maxEigenvaluesSave_ ( 20 )
 {
+  statsWriter_->getListNonConst()->set<double>( "SaveEigenData constructor", 2.718281828 );
 }
 // =============================================================================
-Ginla::IO::SaveEigenData::~SaveEigenData()
+Ginla::IO::SaveEigenData::
+~SaveEigenData()
 {
 }
 // =============================================================================
@@ -108,13 +110,13 @@ save ( Teuchos::RCP<std::vector<double> >       & evals_r,
         Teuchos::RCP<NOX::Epetra::Vector> realPartE =
             Teuchos::rcp_dynamic_cast<NOX::Epetra::Vector> ( realPart, true );
                                                   
-        Teuchos::RCP<Ginla::State> eigenstate = stateTranslator_->createState( realPartE->getEpetraVector() );
+        Teuchos::RCP<Ginla::State::Virtual> eigenstate =
+            stateTranslator_->createState( realPartE->getEpetraVector() );
 
         stateWriter_->write( eigenstate,
                              step,
                              eigenstateFileNameAppendix.str() );
 
-                                    
         // The matrix and the eigenvalue is supposedly purely real,
         // so the eigenvector's real and imaginary parts are eigenvectors
         // in their own right. Check here for the imaginary part,
@@ -126,7 +128,8 @@ save ( Teuchos::RCP<std::vector<double> >       & evals_r,
             Teuchos::RCP<NOX::Epetra::Vector> imagPartE =
                 Teuchos::rcp_dynamic_cast<NOX::Epetra::Vector> ( imagPart, true );
             eigenstateFileNameAppendix << "-im";
-            Teuchos::RCP<Ginla::State> eigenstate = stateTranslator_->createState( imagPartE->getEpetraVector() );
+            Teuchos::RCP<Ginla::State::Virtual> eigenstate =
+                stateTranslator_->createState( imagPartE->getEpetraVector() );
             stateWriter_->write( eigenstate,
                                  step,
                                  eigenstateFileNameAppendix.str() );

@@ -42,7 +42,7 @@ public:
     getBoundingBox () const;
 
     virtual bool
-    isInDomain ( const DoubleTuple & x ) const;
+    isInDomain ( const Point & x ) const;
 
 protected:
 private:

@@ -23,8 +23,6 @@
 #include <LOCA_Parameter_Vector.H>
 #include <Teuchos_ParameterList.hpp>
 
-#include "Recti_Grid_General.h"
-
 namespace Ginla {
 
 namespace Helpers

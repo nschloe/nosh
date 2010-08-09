@@ -10,8 +10,8 @@
 #include <Teuchos_CommandLineProcessor.hpp>
 
 #include "Ginla_MagneticVectorPotential_Centered.h"
-#include "Ginla_Operator_BCCentral.h"
-#include "Ginla_LocaSystem_Default.h"
+#include "Ginla_FDM_Operator_BCCentral.h"
+#include "Ginla_FDM_LocaSystem_Default.h"
 
 #include "Recti_Grid_Reader.h"
 
@@ -79,7 +79,7 @@ BOOST_AUTO_TEST_CASE( eval_operator_test )
                                  boost::unit_test::framework::master_test_suite().argv );
     // ------------------------------------------------------------------------
     // read the input state
-    Teuchos::RCP<Ginla::State>         state;
+    Teuchos::RCP<Ginla::FDM::State>    state;
     Teuchos::RCP<Recti::Grid::Uniform> grid;
     Teuchos::ParameterList             glParameters;
     Recti::Grid::Reader::read ( Comm, inputStateFile, state, grid, glParameters );
@@ -89,18 +89,18 @@ BOOST_AUTO_TEST_CASE( eval_operator_test )
     double scaling = 7.0;
     
     Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> A =
-        Teuchos::rcp ( new Ginla::MagneticVectorPotential::Centered ( h0, scaling ) );
+        Teuchos::rcp ( new Ginla::MagneticVectorPotential::Centered ( h0 ) );
 
     // create the operator
     Teuchos::RCP<const ComplexMap> map = state->getPsi()->getMap();
-    Teuchos::RCP<Ginla::Operator::Virtual> glOperator =
-        Teuchos::rcp ( new Ginla::Operator::BCCentral ( grid, A, map, map ) );
+    Teuchos::RCP<Ginla::FDM::Operator::Virtual> glOperator =
+        Teuchos::rcp ( new Ginla::FDM::Operator::BCCentral ( grid, A, map, map ) );
     // ------------------------------------------------------------------------
     // evaluate
-    Teuchos::RCP<Ginla::State> residual = glOperator->getF( state );
+    Teuchos::RCP<Ginla::State::Virtual> residual = glOperator->getF( state );
     // ------------------------------------------------------------------------    
     // read the reference state
-    Teuchos::RCP<Ginla::State> referenceResidual;
+    Teuchos::RCP<Ginla::FDM::State> referenceResidual;
     Recti::Grid::Reader::read ( Comm, expSolFileName, referenceResidual, grid, glParameters );
     // ------------------------------------------------------------------------
     // and compare
@@ -108,7 +108,7 @@ BOOST_AUTO_TEST_CASE( eval_operator_test )
     
     double nrm = residual->normalizedScaledL2Norm();
     
-    BOOST_CHECK_SMALL( nrm, 1.0e-10 );  
+    BOOST_CHECK_SMALL( nrm, 1.0e-10 );
     // ------------------------------------------------------------------------
 #ifdef HAVE_MPI
     MPI_Finalize();
@@ -166,7 +166,7 @@ BOOST_AUTO_TEST_CASE( eval_locasystem_test )
                                  boost::unit_test::framework::master_test_suite().argv );
     // ------------------------------------------------------------------------
     // read the input state
-    Teuchos::RCP<Ginla::State>         state;
+    Teuchos::RCP<Ginla::FDM::State>         state;
     Teuchos::RCP<Recti::Grid::Uniform> grid;
     Teuchos::ParameterList             glParameters;
     Recti::Grid::Reader::read ( Comm, inputStateFile, state, grid, glParameters );
@@ -176,20 +176,20 @@ BOOST_AUTO_TEST_CASE( eval_locasystem_test )
     double scaling = 7.0;
     
     Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> A =
-        Teuchos::rcp ( new Ginla::MagneticVectorPotential::Centered ( h0, scaling ) );
+        Teuchos::rcp ( new Ginla::MagneticVectorPotential::Centered ( h0 ) );
 
     // create the operator
     Teuchos::RCP<const ComplexMap> map = state->getPsi()->getMap();
-    Teuchos::RCP<Ginla::Operator::Virtual> glOperator =
-        Teuchos::rcp ( new Ginla::Operator::BCCentral ( grid, A, map, map ) );
+    Teuchos::RCP<Ginla::FDM::Operator::Virtual> glOperator =
+        Teuchos::rcp ( new Ginla::FDM::Operator::BCCentral ( grid, A, map, map ) );
     // ------------------------------------------------------------------------
     // create some dummy writers
     Teuchos::RCP<Ginla::IO::StatsWriter> statsWriter;
     Teuchos::RCP<Ginla::IO::StateWriter> stateWriter;
     // ------------------------------------------------------------------------
     // create the system
-    Teuchos::RCP<Ginla::LocaSystem::Default> system
-        = Teuchos::rcp( new Ginla::LocaSystem::Default ( glOperator,
+    Teuchos::RCP<Ginla::FDM::LocaSystem::Default> system
+        = Teuchos::rcp( new Ginla::FDM::LocaSystem::Default ( glOperator,
                                                          eComm,
                                                          map,
                                                          statsWriter,
@@ -201,10 +201,10 @@ BOOST_AUTO_TEST_CASE( eval_locasystem_test )
 
     system->computeF( *x, *F );
     
-    Teuchos::RCP<Ginla::State> residual = system->createState( *F );
+    Teuchos::RCP<Ginla::State::Virtual> residual = system->createState( *F );
     // ------------------------------------------------------------------------    
     // read the reference state
-    Teuchos::RCP<Ginla::State> referenceResidual;
+    Teuchos::RCP<Ginla::FDM::State> referenceResidual;
     Recti::Grid::Reader::read ( Comm, expSolFileName, referenceResidual, grid, glParameters );
     // ------------------------------------------------------------------------
     // and compare

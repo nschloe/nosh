@@ -7,14 +7,14 @@
 
 #include "Recti_Grid_General.h"
 
-#include "VIO_Writer_Factory.h"
+#include "VIO_Image_Writer_Factory.h"
 
 #include <Teuchos_ArrayView.hpp>
 
 // ============================================================================
 Recti::Grid::General::
 General ( const Teuchos::RCP<const Recti::Domain::Abstract> & domain,
-          const DoubleTuple                                 & h
+          const Point                                 & h
         ) :
         Recti::Grid::Abstract ( h, 0.0, 0 ),
         numCells_ ( Teuchos::tuple ( ( unsigned int ) 0, ( unsigned int ) 0 ) ),
@@ -22,12 +22,12 @@ General ( const Teuchos::RCP<const Recti::Domain::Abstract> & domain,
         nodes_ ( Teuchos::Array<UIntTuple>() ),
         boundaryIndices_ ( Teuchos::Array<int>() ),
         nodeTypes_ ( Teuchos::Array<nodeType>() ),
-        origin_ ( Teuchos::tuple ( 0.0, 0.0 ) )
+        origin_ ( Teuchos::tuple ( 0.0, 0.0, 0.0 ) )
 {
     // get the boundary box
     Teuchos::Tuple<double,4> bb = domain->getBoundingBox();
 
-    origin_ = Teuchos::tuple ( bb[0], bb[1] );
+    origin_ = Teuchos::tuple ( bb[0], bb[1], 0.0 );
     
     // lay a grid over the box
     numCells_[0] = ceil ( ( bb[2]-bb[0] ) / h_[0] );
@@ -164,12 +164,12 @@ General ( const Teuchos::RCP<const Recti::Domain::Abstract> & domain,
 }
 // ============================================================================
 Recti::Grid::General::
-General ( const DoubleTuple         & h,
+General ( const Point         & h,
           const UIntTuple           & numCells,
           const Teuchos::Array<int> & kBB,
           const Teuchos::Array<int> & boundaryNodes,
           const double                scaling,
-          const DoubleTuple         & origin
+          const Point         & origin
         ) :
         Abstract ( h, 0.0, 0, scaling ),
         numCells_ ( numCells ),
@@ -296,83 +296,83 @@ getDirection ( const UIntTuple & node0,
                          << " do not sit next to each other." );
 }
 // =============================================================================
-Teuchos::RCP<DoubleTuple>
+Teuchos::RCP<Point>
 Recti::Grid::General::
 getX( const unsigned int k ) const
 {
     return getX( nodes_[k] );
 }
 // =============================================================================
-Teuchos::RCP<DoubleTuple>
+Teuchos::RCP<Point>
 Recti::Grid::General::
 getX ( const UIntTuple & i ) const
 {
-    Teuchos::RCP<DoubleTuple> x = Teuchos::rcp ( new DoubleTuple() );
+    Teuchos::RCP<Point> x = Teuchos::rcp ( new Point() );
     ( *x ) [0] = i[0] * h_[0] + origin_[0];
     ( *x ) [1] = i[1] * h_[1] + origin_[1];
     return x;
 }
 // =============================================================================
-Teuchos::RCP<DoubleTuple>
+Teuchos::RCP<Point>
 Recti::Grid::General::
 getXLeft ( const unsigned int k ) const
 {
     return getXLeft ( nodes_[k] );
 }
 // =============================================================================
-Teuchos::RCP<DoubleTuple>
+Teuchos::RCP<Point>
 Recti::Grid::General::
 getXLeft ( const UIntTuple & i ) const
 {
-    Teuchos::RCP<DoubleTuple> x ( getX ( i ) );
+    Teuchos::RCP<Point> x ( getX ( i ) );
     ( *x ) [0] -= 0.5 * h_[0];
     return x;
 }
 // =============================================================================
-Teuchos::RCP<DoubleTuple>
+Teuchos::RCP<Point>
 Recti::Grid::General::
 getXRight ( const unsigned int k ) const
 {
     return getXRight ( nodes_[k] );
 }
 // =============================================================================
-Teuchos::RCP<DoubleTuple>
+Teuchos::RCP<Point>
 Recti::Grid::General::
 getXRight ( const UIntTuple & i ) const
 {
-    Teuchos::RCP<DoubleTuple> x ( getX ( i ) );
+    Teuchos::RCP<Point> x ( getX ( i ) );
     ( *x ) [0] += 0.5 * h_[0];
     return x;
 }
 // =============================================================================
-Teuchos::RCP<DoubleTuple>
+Teuchos::RCP<Point>
 Recti::Grid::General::
 getXBelow ( const unsigned int k ) const
 {
     return getXBelow ( nodes_[k] );
 }
 // =============================================================================
-Teuchos::RCP<DoubleTuple>
+Teuchos::RCP<Point>
 Recti::Grid::General::
 getXBelow ( const UIntTuple & i ) const
 {
-    Teuchos::RCP<DoubleTuple> x ( getX ( i ) );
+    Teuchos::RCP<Point> x ( getX ( i ) );
     ( *x ) [1] -= 0.5 * h_[1];
     return x;
 }
 // =============================================================================
-Teuchos::RCP<DoubleTuple>
+Teuchos::RCP<Point>
 Recti::Grid::General::
 getXAbove ( const unsigned int k ) const
 {
     return getXAbove ( nodes_[k] );
 }
 // =============================================================================
-Teuchos::RCP<DoubleTuple>
+Teuchos::RCP<Point>
 Recti::Grid::General::
 getXAbove ( const UIntTuple & i ) const
 {
-    Teuchos::RCP<DoubleTuple> x ( getX ( i ) );
+    Teuchos::RCP<Point> x ( getX ( i ) );
     ( *x ) [1] += 0.5 * h_[1];
     return x;
 }
@@ -698,8 +698,8 @@ writeWithGrid ( const Epetra_MultiVector     & x,
                       const std::string            & filePath
                     ) const
 {
-    Teuchos::RCP<VIO::Writer::Abstract> writer =
-        VIO::Writer::Factory::createImageWriter ( filePath );
+    Teuchos::RCP<VIO::Image::Writer::Abstract> writer =
+        VIO::Image::Writer::Factory::createImageWriter ( filePath );
 
     // append grid parameters
     Teuchos::ParameterList extendedParams ( params );
@@ -724,8 +724,8 @@ writeWithGrid ( const DoubleMultiVector      & x,
                       const std::string            & filePath
                     ) const
 {
-    Teuchos::RCP<VIO::Writer::Abstract> writer =
-        VIO::Writer::Factory::createImageWriter ( filePath );
+    Teuchos::RCP<VIO::Image::Writer::Abstract> writer =
+        VIO::Image::Writer::Factory::createImageWriter ( filePath );
 
     // append grid parameters
     Teuchos::ParameterList extendedParams ( params );
@@ -750,8 +750,8 @@ writeWithGrid ( const ComplexMultiVector     & z,
                       const std::string            & filePath
                     ) const
 {
-    Teuchos::RCP<VIO::Writer::Abstract> writer =
-        VIO::Writer::Factory::createImageWriter ( filePath );
+    Teuchos::RCP<VIO::Image::Writer::Abstract> writer =
+        VIO::Image::Writer::Factory::createImageWriter ( filePath );
 
     // append grid parameters
     Teuchos::ParameterList extendedParams ( params );

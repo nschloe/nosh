@@ -9,7 +9,7 @@
 
 // ============================================================================
 Recti::Grid::Abstract::
-Abstract ( const DoubleTuple  & h,
+Abstract ( const Point        & h,
            const double         gridDomainArea,
            const unsigned int   numGridPoints,
            const double         scaling ) :
@@ -22,7 +22,7 @@ Abstract ( const DoubleTuple  & h,
 // ============================================================================
 Recti::Grid::Abstract::
 Abstract() :
-        h_ ( Teuchos::tuple<double> ( 0.0,0.0 ) ),
+        h_ ( Teuchos::tuple(0.0,0.0,0.0) ),
         scaling_ ( 1.0 ),
         gridDomainArea_ ( 0.0 ),
         numGridPoints_ ( 0 )
@@ -73,7 +73,7 @@ updateScaling ( const LOCA::ParameterVector & p )
     return;
 }
 // ============================================================================
-DoubleTuple
+Point
 Recti::Grid::Abstract::
 getH() const
 {

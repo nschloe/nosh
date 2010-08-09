@@ -39,16 +39,16 @@ public:
     virtual
     ~Square();
 
-    virtual Teuchos::RCP<DoubleTuple>
+    virtual Teuchos::RCP<Point>
     getXLeft ( unsigned int k ) const; //!< Returns the value of \f$x\f$ left of point i.
 
-    virtual Teuchos::RCP<DoubleTuple>
+    virtual Teuchos::RCP<Point>
     getXRight ( unsigned int k ) const; //!< Returns the value of \f$x\f$ right of point i.
 
-    virtual Teuchos::RCP<DoubleTuple>
+    virtual Teuchos::RCP<Point>
     getXBelow ( unsigned int k ) const; //!< Returns the value of \f$x\f$ below point i.
 
-    virtual Teuchos::RCP<DoubleTuple>
+    virtual Teuchos::RCP<Point>
     getXAbove ( unsigned int k ) const; //!< Returns the value of \f$x\f$ above point i.
 
 
@@ -124,7 +124,7 @@ private:
     Teuchos::RCP<IntTuple>
     boundaryPosition ( unsigned int l ) const;
 
-    Teuchos::RCP<DoubleTuple>
+    Teuchos::RCP<Point>
     getX ( IntTuple & i ) const;
 
     Teuchos::RCP<IntTuple>

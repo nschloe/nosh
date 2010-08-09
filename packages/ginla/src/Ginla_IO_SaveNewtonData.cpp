@@ -1,15 +1,18 @@
 #include "Ginla_IO_SaveNewtonData.h"
 
+#include "Ginla_IO_StateWriter.h"
+#include "Ginla_StateTranslator.h"
+
 #include <NOX_Solver_Generic.H>
 #include <NOX_Epetra_Group.H>
 
 // =============================================================================
 Ginla::IO::SaveNewtonData::
-SaveNewtonData ( const Teuchos::RCP<const Ginla::IO::StateWriter>     & stateWriter,
-                 const Teuchos::RCP<const Ginla::LocaSystem::Virtual> & system
+SaveNewtonData ( const Teuchos::RCP<const Ginla::IO::StateWriter> & stateWriter,
+                 const Teuchos::RCP<const Ginla::StateTranslator> & translator
                ) :
         stateWriter_ ( stateWriter ),
-        system_ ( system )
+        translator_ ( translator )
 {
 }
 // =============================================================================
@@ -30,7 +33,7 @@ runPostIterate ( const NOX::Solver::Generic& solver )
     const Epetra_Vector& currentSol =
         ( dynamic_cast<const NOX::Epetra::Vector&> ( solGrp.getX() ) ).getEpetraVector();
 
-    stateWriter_->write( system_->createState(currentSol),
+    stateWriter_->write( translator_->createState(currentSol),
                          solver.getNumIterations() );
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     TEST_FOR_EXCEPTION ( !solGrp.isF(),
@@ -39,7 +42,7 @@ runPostIterate ( const NOX::Solver::Generic& solver )
     const Epetra_Vector& currentResidual =
         ( dynamic_cast<const NOX::Epetra::Vector&> ( solGrp.getF() ) ).getEpetraVector();
 
-    stateWriter_->write( system_->createState(currentResidual),
+    stateWriter_->write( translator_->createState(currentResidual),
                          solver.getNumIterations(),
                          "-residual" );
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -

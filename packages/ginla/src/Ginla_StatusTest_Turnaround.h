@@ -50,8 +50,9 @@ public:
 
   virtual
   LOCA::StatusTest::StatusType
-  checkStatus(const LOCA::Stepper& stepper,
-                    LOCA::StatusTest::CheckType checkType);
+  checkStatus( const LOCA::Stepper& stepper,
+                     LOCA::StatusTest::CheckType checkType
+             );
 
   //! Return the result of the most recent checkStatus call
   virtual

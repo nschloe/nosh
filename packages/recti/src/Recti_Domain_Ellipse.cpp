@@ -41,7 +41,7 @@ getBoundingBox () const
 // ============================================================================
 bool
 Recti::Domain::Ellipse::
-isInDomain ( const DoubleTuple & x ) const
+isInDomain ( const Point & x ) const
 {
     return x[0]*x[0]/ ( a_*a_ ) + x[1]*x[1] / ( b_*b_ ) <= 1.0;
 }

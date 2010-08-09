@@ -31,16 +31,16 @@ public:
 
     //! Default constructor.
     General ( const Teuchos::RCP<const Recti::Domain::Abstract> & domain,
-              const DoubleTuple                                 & h
+              const Point                                 & h
             );
          
     //! Constructor for information gotten from a file read.
-    General ( const DoubleTuple         & h,
+    General ( const Point         & h,
               const UIntTuple           & numCells,
               const Teuchos::Array<int> & kBB,
               const Teuchos::Array<int> & boundaryNodes,
               const double                scaling,
-              const DoubleTuple         & origin
+              const Point         & origin
             );
 
     //! Empty constructor.
@@ -66,31 +66,31 @@ public:
     virtual double
     cellArea ( unsigned int k ) const;
 
-    virtual Teuchos::RCP<DoubleTuple>
+    virtual Teuchos::RCP<Point>
     getX ( unsigned int k ) const; //!< Returns the value of \f$x\f$. */
 
-    virtual Teuchos::RCP<DoubleTuple>
+    virtual Teuchos::RCP<Point>
     getXLeft ( unsigned int k ) const; //!< Returns the value of \f$x\f$ left of point i.
 
-    Teuchos::RCP<DoubleTuple>
+    Teuchos::RCP<Point>
     getXLeft ( const UIntTuple & i ) const;
 
-    virtual Teuchos::RCP<DoubleTuple>
+    virtual Teuchos::RCP<Point>
     getXRight ( unsigned int k ) const; //!< Returns the value of \f$x\f$ right of point i.
 
-    Teuchos::RCP<DoubleTuple>
+    Teuchos::RCP<Point>
     getXRight ( const UIntTuple & i ) const;
 
-    virtual Teuchos::RCP<DoubleTuple>
+    virtual Teuchos::RCP<Point>
     getXBelow ( unsigned int k ) const ; //!< Returns the value of \f$x\f$ below point i.
 
-    Teuchos::RCP<DoubleTuple>
+    Teuchos::RCP<Point>
     getXBelow ( const UIntTuple & i ) const;
 
-    virtual Teuchos::RCP<DoubleTuple>
+    virtual Teuchos::RCP<Point>
     getXAbove ( unsigned int k ) const; //!< Returns the value of \f$x\f$ above point i.
 
-    Teuchos::RCP<DoubleTuple>
+    Teuchos::RCP<Point>
     getXAbove ( const UIntTuple & i ) const;
 
     virtual unsigned int
@@ -135,7 +135,7 @@ private:
     Teuchos::Array<UIntTuple> nodes_;
     Teuchos::Array<int> boundaryIndices_;
     Teuchos::Array<nodeType> nodeTypes_;
-    DoubleTuple origin_;
+    Point origin_;
 
 private:
     //! Indicates directions when traversing the boundary of a
@@ -162,7 +162,7 @@ private:
     void
     updateGridDomainArea();
 
-    Teuchos::RCP<DoubleTuple>
+    Teuchos::RCP<Point>
     getX ( const UIntTuple & i ) const;
 
     bool

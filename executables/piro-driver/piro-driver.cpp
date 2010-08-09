@@ -33,6 +33,7 @@
 #include "Ginla_StatusTest_MaxAcceptedSteps.h"
 #include "Ginla_StatusTest_Energy.h"
 #include "Ginla_StatusTest_ParameterLimits.h"
+#include "Ginla_StatusTest_StabilityChange.h"
 #include "LOCA_StatusTest_Combo.H"
 
 // =============================================================================
@@ -232,6 +233,9 @@ int main ( int argc, char *argv[] )
                                                                Ginla::IO::NoxObserver::CONTINUATION ) );
           observer->setStatisticsWriter( statsWriter, glOperator );
 
+          Teuchos::RCP<LOCA::StatusTest::Combo> locaTest =
+              Teuchos::rcp( new LOCA::StatusTest::Combo( LOCA::StatusTest::Combo::OR ) );
+          
           // setup eingen saver
 #ifdef HAVE_LOCA_ANASAZI
           Teuchos::ParameterList & eigenList = piroParams->sublist ( "LOCA" ).sublist ( "Stepper" ) .sublist ( "Eigensolver" );
@@ -242,12 +246,21 @@ int main ( int argc, char *argv[] )
 
           Teuchos::RCP<Ginla::IO::StatsWriter> eigenStatsWriter =
               Teuchos::rcp( new Ginla::IO::StatsWriter( eigenvaluesFileName ) );
+              
+          // initialize the stability change test with a pointer to the eigenvalue information
+          int stabilityChangeTreshold = 1; // stop when the stability changes by multiplicity 1
+          Teuchos::RCP<const Teuchos::ParameterList> eigendataList = eigenStatsWriter->getList();
+          Teuchos::RCP<LOCA::StatusTest::Abstract> stabilityChangeTest =
+              Teuchos::rcp( new Ginla::StatusTest::StabilityChange( eigendataList,
+                                                                    stabilityChangeTreshold ) );
+
+          locaTest->addStatusTest( stabilityChangeTest );
 
           glEigenSaver = Teuchos::RCP<Ginla::IO::SaveEigenData> ( new Ginla::IO::SaveEigenData ( eigenList,
                                                                                                  glModel,
                                                                                                  stateWriter,
                                                                                                  eigenStatsWriter ) );
-
+          
           Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> glSaveEigenDataStrategy = glEigenSaver;
           eigenList.set ( "Save Eigen Data Method", "User-Defined" );
           eigenList.set ( "User-Defined Save Eigen Data Name", "glSaveEigenDataStrategy" );
@@ -255,9 +268,8 @@ int main ( int argc, char *argv[] )
 #endif
           
           Teuchos::RCP<LOCA::StatusTest::Abstract> freeEnergyTest =
-              Teuchos::rcp( new Ginla::StatusTest::Energy( glModel, grid ) );
-              
-          Teuchos::RCP<LOCA::StatusTest::Abstract> extraTest = Teuchos::null;
+              Teuchos::rcp( new Ginla::StatusTest::Energy( glModel, 0.0 ) );
+          locaTest->addStatusTest( freeEnergyTest );
           
           // feed in restart predictor vector
           Teuchos::ParameterList & predictorList = piroParams->sublist ( "LOCA" )
@@ -312,14 +324,7 @@ int main ( int argc, char *argv[] )
           Teuchos::RCP<Ginla::StatusTest::ParameterLimits> paramLimitsTest =
               Teuchos::rcp( new Ginla::StatusTest::ParameterLimits( lowerLimit, upperLimit, false ) );
 
-          Teuchos::RCP<LOCA::StatusTest::Combo> locaTest =
-              Teuchos::rcp( new LOCA::StatusTest::Combo( LOCA::StatusTest::Combo::OR ) );
-
           locaTest->addStatusTest( paramLimitsTest );
-          locaTest->addStatusTest( freeEnergyTest );
-              
-          if ( !extraTest.is_null() )
-              locaTest->addStatusTest( extraTest );
 
           // fetch the stepper
           Teuchos::RCP<Piro::Epetra::LOCASolver> piroLOCASolver = 
@@ -335,7 +340,6 @@ int main ( int argc, char *argv[] )
 #ifdef HAVE_LOCA_ANASAZI
           glEigenSaver->setLocaStepper ( stepper );
 #endif
-
           piro = piroLOCASolver;
       }
       // ----------------------------------------------------------------------

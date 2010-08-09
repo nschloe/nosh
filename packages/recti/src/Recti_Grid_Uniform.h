@@ -17,8 +17,8 @@
 
 */
 
-#ifndef GRIDUNIFORM_H
-#define GRIDUNIFORM_H
+#ifndef RECTI_GRID_UNIFORM_H
+#define RECTI_GRID_UNIFORM_H
 
 #include "Recti_Grid_General.h"
 
@@ -48,7 +48,7 @@ public:
               const Teuchos::Array<int> & kBB,
               const Teuchos::Array<int> & boundaryNodes,
               const double                scaling,
-              const DoubleTuple         & origin
+              const Point               & origin
             );
 
     //! Getter for the uniform mesh size \f$h\f$.
@@ -60,4 +60,4 @@ private:
   } // namespace Grid
 } // namespace Recti
 
-#endif // GRIDUNIFORM_H
+#endif // RECTI_GRID_UNIFORM_H

@@ -27,11 +27,6 @@
 namespace Ginla {
   class StateTranslator;
 }
-namespace Recti {
-  namespace Grid {
-    class General;
-  }
-}
 
 
 namespace Ginla {
@@ -43,8 +38,8 @@ class Energy:
 {
 public:
   //! Constructor.
-  Energy( const Teuchos::RCP<const Ginla::StateTranslator> & glSystem,
-          const Teuchos::RCP<const Recti::Grid::General>   & grid
+  Energy( const Teuchos::RCP<const Ginla::StateTranslator> & stateTranslator,
+          const double                                       maxFreeEnergy
         );
 
   //! Destructor.
@@ -75,10 +70,9 @@ private:
   
 private:
   double freeEnergy_;
-  double tol_;
+  double maxFreeEnergy_;
   LOCA::StatusTest::StatusType status_;
   const Teuchos::RCP<const Ginla::StateTranslator> stateTranslator_;
-  const Teuchos::RCP<const Recti::Grid::General> grid_;
 
 };
 

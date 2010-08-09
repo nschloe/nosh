@@ -1,12 +1,16 @@
 SET ( vio_SRCS
-      VIO_Writer_Factory.cpp
-      VIO_Writer_Abstract.cpp
-      VIO_Writer_VTI.cpp
-      VIO_Writer_legacyVTK.cpp
-      VIO_Reader_Factory.cpp
       VIO_Reader_Abstract.cpp
-      VIO_Reader_VTI.cpp
-      VIO_Reader_legacyVTK.cpp
+      VIO_Image_Writer_Factory.cpp
+      VIO_Image_Writer_Abstract.cpp
+      VIO_Image_Writer_VTI.cpp
+      VIO_Image_Writer_legacyVTK.cpp
+      VIO_Image_Reader_Factory.cpp
+      VIO_Image_Reader_Abstract.cpp
+      VIO_Image_Reader_VTI.cpp
+      VIO_Image_Reader_legacyVTK.cpp
+      VIO_Mesh_Mesh.cpp
+      VIO_Mesh_Reader.cpp
+      VIO_Mesh_Writer.cpp
     )
 
 FIND_PACKAGE( Trilinos REQUIRED )

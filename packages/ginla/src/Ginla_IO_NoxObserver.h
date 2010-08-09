@@ -26,7 +26,9 @@
 
 // forward declarations
 namespace Ginla {
-  class State;
+  namespace State {
+    class Virtual;
+  }
   class StateTranslator;
   namespace Komplex {
     class LinearProblem;
@@ -35,13 +37,8 @@ namespace Ginla {
     class StateWriter;
     class StatsWriter;
   }
-  namespace Operator {
+  namespace ParameterHost {
     class Virtual;
-  }
-}
-namespace Recti {
-  namespace Grid {
-    class General;
   }
 }
 
@@ -74,21 +71,22 @@ public:
   observeSolution(const Epetra_Vector& soln);
   
   void
-  setStatisticsWriter( const Teuchos::RCP<Ginla::IO::StatsWriter>   & statsWriter,
-                       const Teuchos::RCP<const Ginla::Operator::Virtual> & glOperator );
+  setStatisticsWriter( const Teuchos::RCP<Ginla::IO::StatsWriter>              & statsWriter,
+                       const Teuchos::RCP<const Ginla::ParameterHost::Virtual> & parameterHost
+                     );
                        
 protected:
 private:
   void
-  observeContinuation_( const Teuchos::RCP<const Ginla::State> & state
+  observeContinuation_( const Teuchos::RCP<const Ginla::State::Virtual> & state
                       );
   void
-  observeTurningPointContinuation_( const Teuchos::RCP<const Ginla::State> & state
+  observeTurningPointContinuation_( const Teuchos::RCP<const Ginla::State::Virtual> & state
                                   );
 
   void
   saveContinuationStatistics_( const int stepIndex,
-                               const Teuchos::RCP<const Ginla::State> & state
+                               const Teuchos::RCP<const Ginla::State::Virtual> & state
                              );
                                  
 private:
@@ -99,7 +97,7 @@ private:
     const Teuchos::RCP<const Ginla::StateTranslator>  stateTranslator_;
     
     Teuchos::RCP<Ginla::IO::StatsWriter>   statsWriter_;
-    Teuchos::RCP<const Ginla::Operator::Virtual> glOperator_;
+    Teuchos::RCP<const Ginla::ParameterHost::Virtual> parameterHost_;
 };
 
 } // namespace IO

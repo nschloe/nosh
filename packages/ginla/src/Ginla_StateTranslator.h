@@ -24,7 +24,9 @@
 
 // forward declarations
 namespace Ginla {
-  class State;
+  namespace State {
+    class Virtual;
+  }
 }
 class Epetra_Vector;
 
@@ -37,11 +39,11 @@ class StateTranslator
     //! Translates a state into a system vector.
     virtual
     Teuchos::RCP<Epetra_Vector>
-    createSystemVector( const Ginla::State & state ) const = 0;
+    createSystemVector( const Ginla::State::Virtual & state ) const = 0;
 
     //! Translates a system vector into a state.
     virtual
-    Teuchos::RCP<Ginla::State>
+    Teuchos::RCP<Ginla::State::Virtual>
     createState(  const Epetra_Vector & x ) const = 0;
     
   protected:

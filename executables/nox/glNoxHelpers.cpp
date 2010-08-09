@@ -40,9 +40,9 @@
 #include "Recti_Grid_UniformSquare.h"
 #include "Recti_Grid_Square.h"
 
-#include "Ginla_LocaSystem_Virtual.h"
-#include "Ginla_LocaSystem_Default.h"
-#include "Ginla_LocaSystem_Bordered.h"
+#include "Ginla_FDM_LocaSystem_Virtual.h"
+#include "Ginla_FDM_LocaSystem_Default.h"
+#include "Ginla_FDM_LocaSystem_Bordered.h"
 
 #include "Ginla_MagneticVectorPotential_Centered.h"
 
@@ -50,9 +50,9 @@
 
 #include "Ginla_IO_StatsWriter.h"
 
-#include "Ginla_Operator_BCInner.h"
-#include "Ginla_Operator_BCOuter.h"
-#include "Ginla_Operator_BCCentral.h"
+// #include "Ginla_FDM_Operator_BCInner.h"
+// #include "Ginla_FDM_Operator_BCOuter.h"
+#include "Ginla_FDM_Operator_BCCentral.h"
 
 typedef Tpetra::Vector<std::complex<double>, Thyra::Ordinal> ComplexVector;
 
@@ -64,8 +64,8 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
                  const Teuchos::RCP<const Epetra_Comm>         & eComm,
                  const std::string                             & fileName,
                  Teuchos::ParameterList                        & problemParameters,
-                 Teuchos::RCP<Ginla::LocaSystem::Virtual>      & glSystem,
-                 Teuchos::RCP<Ginla::State>                    & initialState,
+                 Teuchos::RCP<Ginla::FDM::LocaSystem::Virtual> & glSystem,
+                 Teuchos::RCP<Ginla::FDM::State>                    & initialState,
                  Teuchos::RCP<Recti::Grid::Uniform>            & grid
                )
 {
@@ -77,14 +77,14 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
     double scaling = problemParameters.get<double> ( "scaling" );
 
     Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> A =
-        Teuchos::rcp ( new Ginla::MagneticVectorPotential::Centered ( h0, scaling ) );
+        Teuchos::rcp ( new Ginla::MagneticVectorPotential::Centered ( h0 ) );
 
     // create the operator
-    Teuchos::RCP<Ginla::Operator::Virtual> glOperator =
-        Teuchos::rcp ( new Ginla::Operator::BCCentral ( grid,
-                                                        A,
-                                                        initialState->getPsi()->getMap(),
-                                                        initialState->getPsi()->getMap() ) );
+    Teuchos::RCP<Ginla::FDM::Operator::Virtual> glOperator =
+        Teuchos::rcp ( new Ginla::FDM::Operator::BCCentral ( grid,
+                                                             A,
+                                                             initialState->getPsi()->getMap(),
+                                                             initialState->getPsi()->getMap() ) );
     
     std::string outputDirectory = "";
     std::string contDataFileName = "continuationData.dat";
@@ -98,7 +98,7 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
                                                   outputFormat,
                                                   maxIndex ) );
     
-    glSystem = Teuchos::rcp ( new Ginla::LocaSystem::Default ( glOperator,
+    glSystem = Teuchos::rcp ( new Ginla::FDM::LocaSystem::Default ( glOperator,
                                                                eComm,
                                                                initialState->getPsi()->getMap(),
                                                                statsWriter,
@@ -115,8 +115,8 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
                  const double H0,
                  const Teuchos::ParameterList                & domainParameters,
                  Teuchos::ParameterList                      & problemParameters,
-                 Teuchos::RCP<Ginla::LocaSystem::Virtual>    & glSystem,
-                 Teuchos::RCP<Ginla::State>                  & initialState,
+                 Teuchos::RCP<Ginla::FDM::LocaSystem::Virtual>    & glSystem,
+                 Teuchos::RCP<Ginla::FDM::State>                  & initialState,
                  Teuchos::RCP<Recti::Grid::Uniform>          & grid
                )
 { 
@@ -136,7 +136,7 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
     grid->updateScaling ( scaling );
     
     Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> A =
-        Teuchos::rcp ( new Ginla::MagneticVectorPotential::Centered ( H0, scaling ) );
+        Teuchos::rcp ( new Ginla::MagneticVectorPotential::Centered ( H0 ) );
 
     // create an initial guess
     int numGlobalElements = grid->getNumGridPoints();
@@ -145,10 +145,10 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
         Teuchos::rcp( new ComplexMap(numGlobalElements, indexBase, comm ) );
 
     // create the operator
-    Teuchos::RCP<Ginla::Operator::Virtual> glOperator =
-        Teuchos::rcp ( new Ginla::Operator::BCCentral ( grid, A, map, map ) );
+    Teuchos::RCP<Ginla::FDM::Operator::Virtual> glOperator =
+        Teuchos::rcp ( new Ginla::FDM::Operator::BCCentral ( grid, A, map, map ) );
         
-    initialState = Teuchos::rcp( new Ginla::State( map, grid ) );
+    initialState = Teuchos::rcp( new Ginla::FDM::State( map, grid ) );
     initialState->getPsiNonConst()->putScalar( double_complex(0.5,0.0) );
     
     std::string outputDirectory = "";
@@ -164,7 +164,7 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
                                                   outputFormat,
                                                   maxIndex ) );
             
-    glSystem = Teuchos::rcp ( new Ginla::LocaSystem::Default ( glOperator,
+    glSystem = Teuchos::rcp ( new Ginla::FDM::LocaSystem::Default ( glOperator,
                                                                 eComm,
                                                                 map,
                                                                 statsWriter,
@@ -173,9 +173,9 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
 }
 // =========================================================================
 Teuchos::RCP<NOX::Epetra::Group>
-createSolverGroup ( const Teuchos::RCP<Ginla::LocaSystem::Virtual>  & glSystem,
+createSolverGroup ( const Teuchos::RCP<Ginla::FDM::LocaSystem::Virtual>  & glSystem,
                     const Teuchos::RCP<Teuchos::ParameterList>      & nlParamsPtr,
-                    const Teuchos::RCP<Ginla::State>                & initialState
+                    const Teuchos::RCP<Ginla::FDM::State>                & initialState
                   )
 {
     // Create all possible Epetra_Operators.
@@ -429,7 +429,7 @@ printSolutionToFile ( const std::string                                     & ou
                       const std::string                                     & fileBaseName,
                       const std::string                                     & outputFormat,
                       const Teuchos::RCP<const NOX::Solver::Generic>        & solver,
-                      const Teuchos::RCP<const Ginla::LocaSystem::Virtual>  & glSystem
+                      const Teuchos::RCP<const Ginla::FDM::LocaSystem::Virtual>  & glSystem
                     )                    
 {
     const NOX::Epetra::Group & finalGroup =
@@ -438,7 +438,7 @@ printSolutionToFile ( const std::string                                     & ou
     const Epetra_Vector & finalSolution =
         ( dynamic_cast<const NOX::Epetra::Vector&> ( finalGroup.getX() ) ).getEpetraVector();
 
-    Teuchos::RCP<Ginla::State> state = glSystem->createState( finalSolution );
+    Teuchos::RCP<Ginla::State::Virtual> state = glSystem->createState( finalSolution );
         
     unsigned int maxIndex = 0;
     Teuchos::RCP<Ginla::IO::StateWriter> stateWriter

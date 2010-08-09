@@ -12,14 +12,16 @@ FIND_PACKAGE( Boost COMPONENTS system filesystem REQUIRED )
 INCLUDE_DIRECTORIES ( ${Boost_INCLUDE_DIRS} )
 
 SET ( internal_LIBS
-      ginla
       recti
+      ginlafdm
+      ginla
       vio
     )
 
 INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/packages/vio/src
                       ${ginzburg-landau_SOURCE_DIR}/packages/recti/src
                       ${ginzburg-landau_SOURCE_DIR}/packages/ginla/src
+                      ${ginzburg-landau_SOURCE_DIR}/packages/ginla/src-fdm
                       ${VTK_INCLUDE_DIRS} )
 
 LINK_DIRECTORIES( ${Boost_LIBRARY_DIRS}

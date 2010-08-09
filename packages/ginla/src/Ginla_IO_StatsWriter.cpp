@@ -1,6 +1,6 @@
 /*
     <one line to give the program's name and a brief idea of what it does.>
-    Copyright (C) 2010 Nico Schl\"omer
+    Copyright (C) 2010  Nico Schl\"omer
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -20,7 +20,8 @@
 #include "Ginla_IO_StatsWriter.h"
 
 // ============================================================================
-Ginla::IO::StatsWriter::StatsWriter( std::string & fileName ):
+Ginla::IO::StatsWriter::
+StatsWriter( std::string & fileName ):
     fileStream_(),
     statisticsList_( Teuchos::rcp( new Teuchos::ParameterList() ) ),
     printHeader_( true )
@@ -34,9 +35,17 @@ Ginla::IO::StatsWriter::StatsWriter( std::string & fileName ):
     return;
 }
 // ============================================================================
-Ginla::IO::StatsWriter::~StatsWriter()
+Ginla::IO::StatsWriter::
+~StatsWriter()
 {
   fileStream_.close();
+}
+// ============================================================================
+Teuchos::RCP<const Teuchos::ParameterList>
+Ginla::IO::StatsWriter::
+getList()
+{
+    return statisticsList_; 
 }
 // ============================================================================
 Teuchos::RCP<Teuchos::ParameterList>
@@ -50,7 +59,7 @@ void
 Ginla::IO::StatsWriter::
 setList( const Teuchos::ParameterList & statisticsList )
 {
-    statisticsList_ = Teuchos::rcp( new Teuchos::ParameterList( statisticsList ) );
+    *statisticsList_ = statisticsList;
     return;
 }
 // ============================================================================
@@ -58,7 +67,7 @@ void
 Ginla::IO::StatsWriter::
 setList( const Teuchos::RCP<Teuchos::ParameterList> & statisticsList )
 {
-    statisticsList_ = statisticsList;
+    *statisticsList_ = *statisticsList;
     return;
 }
 // ============================================================================
@@ -98,7 +107,7 @@ print()
          else
            TEST_FOR_EXCEPTION( true,
                                std::logic_error,
-                               "Invalid data type for item \"" << statisticsList_->get( label, "" ) << "\"." );
+                               "Invalid data type for item \"" << label << "\"." );
            
          strstream << statisticsList_->name(k);
          fileStream_ << strstream.str() << columnSep;
@@ -148,7 +157,7 @@ print()
        else
            TEST_FOR_EXCEPTION( true,
                                std::logic_error,
-                               "Invalid data type for item \"" << statisticsList_->get( label, "" ) << "\"." );
+                               "Invalid data type for item \"" << label << "\"." );
 
        fileStream_ << strstream.str() << columnSep;
   }

@@ -98,17 +98,17 @@ int main ( int argc, char *argv[] )
 //     double bb = 2.0;
 //     Teuchos::RCP<Recti::Domain::Abstract> domain = Teuchos::rcp( new DomainEllipse(aa,bb) );
 
-    Teuchos::Array<DoubleTuple> P( Teuchos::tuple( Teuchos::tuple(0.0,0.0),
-                                                   Teuchos::tuple(4.0,0.0),
-                                                   Teuchos::tuple(2.0,2.0),
-                                                   Teuchos::tuple(4.0,4.0),
-                                                   Teuchos::tuple(0.0,4.0) ) );
+    Teuchos::Array<Point> P( Teuchos::tuple( Teuchos::tuple(0.0,0.0,0.0),
+                                             Teuchos::tuple(4.0,0.0,0.0),
+                                             Teuchos::tuple(2.0,2.0,0.0),
+                                             Teuchos::tuple(4.0,4.0,0.0),
+                                             Teuchos::tuple(0.0,4.0,0.0) ) );
     Teuchos::RCP<Recti::Domain::Abstract> domain =
             Teuchos::rcp( new Recti::Domain::Polygon(P) );
     
     // create a grid from the domain
     double hh = 0.1;
-    Teuchos::Tuple<double,2> h = Teuchos::tuple( hh, hh );
+    Point h = Teuchos::tuple( hh, hh, 0.0 );
     Recti::Grid::General grid( domain, h );
 
     // create Map for the domain

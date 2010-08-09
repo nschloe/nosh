@@ -12,7 +12,9 @@ INCLUDE_DIRECTORIES ( ${Boost_INCLUDE_DIRS} )
 
 INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/packages/vio/src
                       ${ginzburg-landau_SOURCE_DIR}/packages/recti/src
-                      ${ginzburg-landau_SOURCE_DIR}/packages/ginla/src )
+                      ${ginzburg-landau_SOURCE_DIR}/packages/ginla/src
+                      ${ginzburg-landau_SOURCE_DIR}/packages/ginla/src-fdm
+                    )
 
 SET( MY_EXECUTABLE
      "zeroStepLocaBordered.out" )
@@ -36,6 +38,7 @@ ADD_EXECUTABLE ( ${MY_EXECUTABLE}
                  main.cpp )
 
 SET ( internal_LIBS
+      ginlafdm
       ginla
       recti
       vio

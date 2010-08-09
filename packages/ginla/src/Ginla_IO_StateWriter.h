@@ -22,7 +22,7 @@
 
 #include <LOCA_Parameter_Vector.H>
 
-#include "Ginla_State.h"
+#include "Ginla_State_Virtual.h"
 
 namespace Ginla {
 
@@ -44,27 +44,27 @@ public:
     * may be interesting.
     */
   void
-  write ( const Teuchos::RCP<const Ginla::State> & state,
-          const unsigned int                     & index,
-          const std::string                      & filenameAppend,
-          LOCA::ParameterVector                  & params
+  write ( const Teuchos::RCP<const Ginla::State::Virtual> & state,
+          const unsigned int                              & index,
+          const std::string                               & filenameAppend,
+          LOCA::ParameterVector                           & params
         ) const;
         
   void
-  write ( const Teuchos::RCP<const Ginla::State> & state,
-          const unsigned int                     & index,
-          LOCA::ParameterVector                  & params
+  write ( const Teuchos::RCP<const Ginla::State::Virtual> & state,
+          const unsigned int                              & index,
+          LOCA::ParameterVector                           & params
         ) const;
         
   void
-  write ( const Teuchos::RCP<const Ginla::State> & state,
-          const unsigned int                     & index,
-          const std::string                      & filenameAppend
+  write ( const Teuchos::RCP<const Ginla::State::Virtual> & state,
+          const unsigned int                              & index,
+          const std::string                               & filenameAppend
         ) const;
         
   void
-  write ( const Teuchos::RCP<const Ginla::State> & state,
-          const unsigned int                     & index
+  write ( const Teuchos::RCP<const Ginla::State::Virtual> & state,
+          const unsigned int                              & index
         ) const;
                
   protected:

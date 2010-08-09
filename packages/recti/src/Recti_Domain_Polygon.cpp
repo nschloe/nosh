@@ -21,7 +21,7 @@
 
 // ============================================================================
 Recti::Domain::Polygon::
-Polygon ( const Teuchos::Array<DoubleTuple> & polygonPoints ) :
+Polygon ( const Teuchos::Array<Point> & polygonPoints ) :
         Recti::Domain::Abstract (),
         polygonPoints_ ( polygonPoints )
 {
@@ -58,7 +58,7 @@ getBoundingBox () const
 // ============================================================================
 bool
 Recti::Domain::Polygon::
-isInDomain ( const DoubleTuple & x ) const
+isInDomain ( const Point & x ) const
 {
     // winding number algorithm
     // http://www.google.be/url?sa=t&source=web&ct=res&cd=1&ved=0CAkQFjAA&url=http%3A%2F%2Fwww.engr.colostate.edu%2F~dga%2Fdga%2Fpapers%2Fpoint_in_polygon.pdf&ei=ntxvS6eyOYLI-Qao2vjoAQ&usg=AFQjCNF_btLpRhTfkUQt34nXfsRylaF95g&sig2=Hh8I-SjpWC6queaj3QMeZw
@@ -67,15 +67,25 @@ isInDomain ( const DoubleTuple & x ) const
 
     const double tol= 1.0e-15;
 
-    Teuchos::RCP<DoubleTuple> currentNode;
-    Teuchos::RCP<DoubleTuple> nextNode = Teuchos::rcp ( new DoubleTuple ( Teuchos::tuple ( polygonPoints_[0][0]-x[0], polygonPoints_[0][1]-x[1] ) ) );
+    Teuchos::RCP<Point> currentNode;
+    Teuchos::RCP<Point> nextNode =
+        Teuchos::rcp ( new Point ( Teuchos::tuple ( polygonPoints_[0][0]-x[0],
+                                                    polygonPoints_[0][1]-x[1],
+                                                    0.0
+                                                  )
+                                 )
+                     );
     for ( int k=0; k<polygonPoints_.length(); k++ )
     {
         currentNode = nextNode;
         if ( k<polygonPoints_.length()-1 )
-            nextNode = Teuchos::rcp ( new DoubleTuple ( Teuchos::tuple ( polygonPoints_[k+1][0]-x[0], polygonPoints_[k+1][1]-x[1] ) ) );
+            nextNode = Teuchos::rcp ( new Point ( Teuchos::tuple ( polygonPoints_[k+1][0]-x[0],
+                                                                   polygonPoints_[k+1][1]-x[1],
+                                                                   0.0 ) ) );
         else
-            nextNode = Teuchos::rcp ( new DoubleTuple ( Teuchos::tuple ( polygonPoints_[0][0]-x[0], polygonPoints_[0][1]-x[1] ) ) );
+            nextNode = Teuchos::rcp ( new Point ( Teuchos::tuple ( polygonPoints_[0][0]-x[0],
+                                                                   polygonPoints_[0][1]-x[1],
+                                                                   0.0 ) ) );
 
         bool isK0Neg = ( *currentNode ) [1] < 0;
         bool isK1Neg = ( *nextNode ) [1] < 0;

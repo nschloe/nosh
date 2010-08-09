@@ -46,8 +46,8 @@ getMatrixB() const
 void
 Ginla::Komplex::DoubleMatrix::
 putALocalValues( unsigned int localRow,
-                 const Teuchos::ArrayView<Thyra::Ordinal> & columnIndices,
-                 const Teuchos::ArrayView<double_complex> & values
+                 const Teuchos::ArrayView<const Thyra::Ordinal> & columnIndices,
+                 const Teuchos::ArrayView<const double_complex> & values
                )
 {
   if ( A_->isFillComplete() )  
@@ -58,15 +58,41 @@ putALocalValues( unsigned int localRow,
 // ============================================================================
 void
 Ginla::Komplex::DoubleMatrix::
+AsumIntoGlobalValues( unsigned int localRow,
+                     const Teuchos::ArrayView<const Thyra::Ordinal> & columnIndices,
+                     const Teuchos::ArrayView<const double_complex> & values
+                   )
+{
+  if ( A_->isFillComplete() )  
+     A_->sumIntoGlobalValues( localRow, columnIndices, values );
+  else
+     A_->insertGlobalValues( localRow, columnIndices, values );
+}
+// ============================================================================
+void
+Ginla::Komplex::DoubleMatrix::
 putBLocalValues( unsigned int localRow,
-                 const Teuchos::ArrayView<Thyra::Ordinal> & columnIndices,
-                 const Teuchos::ArrayView<double_complex> & values
+                 const Teuchos::ArrayView<const Thyra::Ordinal> & columnIndices,
+                 const Teuchos::ArrayView<const double_complex> & values
                )
 {
   if ( B_->isFillComplete() )  
      B_->replaceLocalValues( localRow, columnIndices, values );
   else
      B_->insertLocalValues( localRow, columnIndices, values );
+}
+// ============================================================================
+void
+Ginla::Komplex::DoubleMatrix::
+BsumIntoGlobalValues( unsigned int localRow,
+                     const Teuchos::ArrayView<const Thyra::Ordinal> & columnIndices,
+                     const Teuchos::ArrayView<const double_complex> & values
+                   )
+{
+  if ( B_->isFillComplete() )  
+     B_->sumIntoGlobalValues( localRow, columnIndices, values );
+  else
+     B_->insertGlobalValues( localRow, columnIndices, values );
 }
 // ============================================================================
 void

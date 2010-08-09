@@ -22,7 +22,7 @@
 #include "Ginla_IO_StateWriter.h"
 #include "Ginla_IO_StatsWriter.h"
 #include "Ginla_Helpers.h"
-#include "Ginla_Operator_Virtual.h"
+#include "Ginla_ParameterHost_Virtual.h"
 #include "Ginla_StateTranslator.h"
 
 // ============================================================================
@@ -35,7 +35,7 @@ NoxObserver ( const Teuchos::RCP<const Ginla::IO::StateWriter> & stateWriter,
   stateTranslator_ ( stateTranslator ),
   observerType_( observerType ),
   statsWriter_ ( Teuchos::null ),
-  glOperator_ ( Teuchos::null )
+  parameterHost_ ( Teuchos::null )
 {
 }
 // ============================================================================  
@@ -46,19 +46,20 @@ Ginla::IO::NoxObserver::
 // ============================================================================
 void
 Ginla::IO::NoxObserver::
-setStatisticsWriter( const Teuchos::RCP<Ginla::IO::StatsWriter>   & statsWriter,
-                     const Teuchos::RCP<const Ginla::Operator::Virtual> & glOperator )
+setStatisticsWriter( const Teuchos::RCP<Ginla::IO::StatsWriter>              & statsWriter,
+                     const Teuchos::RCP<const Ginla::ParameterHost::Virtual> & parameterHost
+                   )
 {
-  statsWriter_ = statsWriter;
-  glOperator_  = glOperator;
+  statsWriter_    = statsWriter;
+  parameterHost_  = parameterHost;
 }
 // ============================================================================
 void
 Ginla::IO::NoxObserver::
 observeSolution( const Epetra_Vector & soln )
-{ 
+{
     // define state
-    const Teuchos::RCP<const Ginla::State> state = stateTranslator_->createState(soln);
+    const Teuchos::RCP<const Ginla::State::Virtual> state = stateTranslator_->createState(soln);
 
     // The switch hack is necessary as different continuation algorithms
     // call printSolution() a different number of times per step, e.g.,
@@ -86,7 +87,7 @@ observeSolution( const Epetra_Vector & soln )
 // ============================================================================
 void
 Ginla::IO::NoxObserver::
-observeContinuation_( const Teuchos::RCP<const Ginla::State> & state
+observeContinuation_( const Teuchos::RCP<const Ginla::State::Virtual> & state
                     )
 {
   static int index = -1;
@@ -94,7 +95,7 @@ observeContinuation_( const Teuchos::RCP<const Ginla::State> & state
 
   if ( !stateWriter_.is_null() )
   {
-      Teuchos::RCP<LOCA::ParameterVector> p = glOperator_->getParameters();
+      Teuchos::RCP<LOCA::ParameterVector> p = parameterHost_->getParameters();
       stateWriter_->write( state, index, *p );
   }
   
@@ -103,7 +104,7 @@ observeContinuation_( const Teuchos::RCP<const Ginla::State> & state
 // ============================================================================
 void
 Ginla::IO::NoxObserver::
-observeTurningPointContinuation_( const Teuchos::RCP<const Ginla::State> & state
+observeTurningPointContinuation_( const Teuchos::RCP<const Ginla::State::Virtual> & state
                                 )
 {
     static int index = -1;
@@ -117,7 +118,7 @@ observeTurningPointContinuation_( const Teuchos::RCP<const Ginla::State> & state
         index++;
         if ( !stateWriter_.is_null() )
         {
-            Teuchos::RCP<LOCA::ParameterVector> p = glOperator_->getParameters();
+            Teuchos::RCP<LOCA::ParameterVector> p = parameterHost_->getParameters();
             stateWriter_->write( state, index, "-state", *p );
         }
 
@@ -132,7 +133,7 @@ observeTurningPointContinuation_( const Teuchos::RCP<const Ginla::State> & state
 void
 Ginla::IO::NoxObserver::
 saveContinuationStatistics_( const int stepIndex,
-                             const Teuchos::RCP<const Ginla::State> & state
+                             const Teuchos::RCP<const Ginla::State::Virtual> & state
                            )
 {
     if ( !statsWriter_.is_null() )
@@ -144,9 +145,9 @@ saveContinuationStatistics_( const int stepIndex,
          
         // put the parameter list into statsWriter_
         std::string labelPrepend = "1";
-        TEUCHOS_ASSERT( !glOperator_.is_null() );
+        TEUCHOS_ASSERT( !parameterHost_.is_null() );
         Ginla::Helpers::appendToTeuchosParameterList( *paramList,
-                                                      *(glOperator_->getParameters()),
+                                                      *(parameterHost_->getParameters()),
                                                       labelPrepend );
         
         paramList->set( "2free energy", state->freeEnergy() );

@@ -8,6 +8,7 @@
 
 
 typedef Tpetra::Vector<double,Thyra::Ordinal> RealVector;
+typedef Teuchos::Tuple<double,3> Point;
 
 typedef std::complex<double> double_complex;
 typedef Tpetra::Map<Thyra::Ordinal> ComplexMap;

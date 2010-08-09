@@ -1,6 +1,6 @@
 /*
     <one line to give the program's name and a brief idea of what it does.>
-    Copyright (C) 2010 Nico Schl\"omer
+    Copyright (C) 2010  Nico Schl\"omer
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -37,6 +37,10 @@ public:
   virtual
   ~StatsWriter();
   
+  //! Const getter.
+  Teuchos::RCP<const Teuchos::ParameterList>
+  getList();
+  
   //! Non-const getter.
   Teuchos::RCP<Teuchos::ParameterList>
   getListNonConst();
@@ -57,7 +61,7 @@ private:
   std::ofstream fileStream_;
   
   //! Stores the scalar statisticsList values
-  Teuchos::RCP<Teuchos::ParameterList> statisticsList_;
+  const Teuchos::RCP<Teuchos::ParameterList> statisticsList_;
   
   //! Whether or not to print the header in the stats file.
   bool printHeader_;

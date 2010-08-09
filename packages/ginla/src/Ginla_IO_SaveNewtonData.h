@@ -23,27 +23,25 @@
 #include <Teuchos_RCP.hpp>
 #include <NOX_Abstract_PrePostOperator.H>
 
-#include "Ginla_LocaSystem_Virtual.h"
-#include "Ginla_IO_StateWriter.h"
-
 // foward declarations
-namespace Recti{
-  namespace Grid {
-    class General;
+namespace Ginla {
+  namespace IO {
+    class StateWriter;
   }
+  class StateTranslator;
 }
 
 namespace Ginla { 
-  namespace IO {
-class SaveNewtonData:
+namespace IO {
+      class SaveNewtonData:
         public NOX::Abstract::PrePostOperator
 {
 
 public:
 
   //! Constructor.
-  SaveNewtonData ( const Teuchos::RCP<const Ginla::IO::StateWriter>     & stateWriter,
-                   const Teuchos::RCP<const Ginla::LocaSystem::Virtual> & system
+  SaveNewtonData ( const Teuchos::RCP<const Ginla::IO::StateWriter> & stateWriter,
+                   const Teuchos::RCP<const Ginla::StateTranslator> & translator
                  );
 
   //! Destructor.
@@ -60,8 +58,8 @@ private:
   //! How ofter the function has been invoked yet.
   int numRunPreIterate;
 
-  const Teuchos::RCP<const Ginla::IO::StateWriter>     stateWriter_;
-  const Teuchos::RCP<const Ginla::LocaSystem::Virtual> system_;
+  const Teuchos::RCP<const Ginla::IO::StateWriter> stateWriter_;
+  const Teuchos::RCP<const Ginla::StateTranslator> translator_;
 };
 
   } // namespace IO

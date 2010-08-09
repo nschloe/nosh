@@ -10,11 +10,11 @@
 // ============================================================================
 Recti::Grid::UniformAbstract::
 UniformAbstract( double h,
-                    double gridDomainArea,
-                    unsigned int numGridPoints ) :
-Abstract( Teuchos::tuple<double>(h,h),
-             gridDomainArea,
-             numGridPoints )
+                 double gridDomainArea,
+                 unsigned int numGridPoints ) :
+Abstract( Teuchos::tuple( h,h,h ),
+          gridDomainArea,
+          numGridPoints )
 {
 }
 // ============================================================================

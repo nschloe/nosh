@@ -1,6 +1,6 @@
 /*
     <one line to give the program's name and a brief idea of what it does.>
-    Copyright (C) <year>  <name of author>
+    Copyright (C) 2010  Nico Schl\"omer
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
 
 #include "Ginla_StatusTest_Energy.h"
 
-#include "Ginla_LocaSystem_Bordered.h"
+// #include "Ginla_LocaSystem_Bordered.h"
 #include "Ginla_Helpers.h"
 
 #include <LOCA_Stepper.H>
@@ -101,7 +101,7 @@ computeUpdateProjection( const LOCA::Stepper & stepper )
 
     // normalize
     double alpha = upd->norm();
-    if ( fabs(alpha)>1.0e-15 )
+    if ( fabs(alpha) > 1.0e-15 )
         upd->scale( 1.0/alpha );
 
     // project update to previous update
@@ -128,11 +128,11 @@ Ginla::StatusTest::Turnaround::
 print(ostream& stream, int indent) const
 {
   for (int j = 0; j < indent; j ++)
-    stream << ' ';
+      stream << ' ';
+
   stream << status_;
   stream << "<upd,prevUpd>_2 = " << NOX::Utils::sciformat(updateProjection_,3);
   stream << std::endl;
  return stream;
 }
 // ============================================================================
-

@@ -1,10 +1,3 @@
-/*
- * MagneticVectorPotential.h
- *
- *  Created on: Nov 5, 2009
- *      Author: nico
- */
-
 #ifndef GINLA_MAGNETICVECTORPOTENTIAL_CENTERED_H_
 #define GINLA_MAGNETICVECTORPOTENTIAL_CENTERED_H_
 
@@ -12,9 +5,8 @@
 #include <Teuchos_Tuple.hpp>
 #include <LOCA_Parameter_Vector.H>
 
-// typedef just like in Recti
-typedef Teuchos::Tuple<double,2> DoubleTuple;
-
+// typedef just like in ...
+typedef Teuchos::Tuple<double,3> Point;
 
 namespace Ginla {
   namespace MagneticVectorPotential {
@@ -22,9 +14,7 @@ namespace Ginla {
 class Centered
 {
 public:
-  // TODO Remove edge length from this class.
-  Centered( double h0,
-            double edgeLength );
+  Centered( double h0 );
 
   virtual
   ~Centered();
@@ -34,33 +24,41 @@ public:
   bool
   setParameters( const LOCA::ParameterVector & p );
   
+  bool
+  setH0( const double mu );
+  
   Teuchos::RCP<LOCA::ParameterVector>
   getParameters() const;
 
-  Teuchos::RCP<DoubleTuple>
-  getA(const DoubleTuple & x ) const;
+  Teuchos::RCP<Point>
+  getA(const Point & x ) const;
 
   double
-  getAx(const DoubleTuple & x) const;
+  getAx(const Point & x) const;
 
   double
-  getAy(const DoubleTuple & x) const;
+  getAy(const Point & x) const;
   
-  Teuchos::RCP<DoubleTuple>
-  getDADh0(const DoubleTuple & x ) const;
+  double
+  getAz(const Point & x) const;
+  
+  Teuchos::RCP<Point>
+  getDADh0(const Point & x ) const;
 
   double
-  getDAxDh0(const DoubleTuple & x ) const;
+  getDAxDh0(const Point & x ) const;
 
   double
-  getDAyDh0(const DoubleTuple & x ) const;
+  getDAyDh0(const Point & x ) const;
+  
+  double
+  getDAzDh0(const Point & x ) const;
 
 protected:
 
 private:
 
   double h0_;
-  double edgeLength_; // TODO: Remove geometric info from magnetic vector potential
 
 };
 

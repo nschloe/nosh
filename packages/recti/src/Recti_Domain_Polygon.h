@@ -34,7 +34,7 @@ class Polygon:
 {
 public:
     //! Constructor.
-    Polygon ( const Teuchos::Array<DoubleTuple> & polygonPoints );
+    Polygon ( const Teuchos::Array<Point> & polygonPoints );
 
     //! Destructor.
     virtual
@@ -47,11 +47,11 @@ public:
     //! @param  x Point that is checked
     //! @return   Whether or not \c x sits in the domain.
     virtual bool
-    isInDomain ( const DoubleTuple & x ) const;
+    isInDomain ( const Point & x ) const;
 
 protected:
 private:
-    Teuchos::Array<DoubleTuple> polygonPoints_;
+    Teuchos::Array<Point> polygonPoints_;
 };
 
   } // namespace Domain

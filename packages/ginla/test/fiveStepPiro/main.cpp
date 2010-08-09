@@ -39,15 +39,19 @@
 
 #include <boost/filesystem.hpp>
 
+#include "Recti_Grid_Reader.h"
+
 // #include "Ginla_IO_SaveNewtonData.h"
 #include "Ginla_IO_NoxObserver.h"
-#include "Ginla_ModelEvaluator_Default.h"
-#include "Recti_Grid_Reader.h"
 #include "Ginla_MagneticVectorPotential_Centered.h"
-#include "Ginla_Operator_BCCentral.h"
-#include "Ginla_Operator_BCInner.h"
-#include "Ginla_Operator_BCOuter.h"
 #include "Ginla_IO_StateWriter.h"
+
+#include "Ginla_FDM_ModelEvaluator_Default.h"
+#include "Ginla_FDM_Operator_BCCentral.h"
+// #include "Ginla_FDM_Operator_BCInner.h"
+// #include "Ginla_FDM_Operator_BCOuter.h"
+
+
 
 #include <boost/filesystem.hpp>
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -129,7 +133,7 @@ BOOST_AUTO_TEST_CASE( five_step_piro_test )
         outputDirectory = xmlPath / outputDirectory;
     // =========================================================================
 
-    Teuchos::RCP<Ginla::State>         initState;
+    Teuchos::RCP<Ginla::FDM::State>    initState;
     Teuchos::RCP<Recti::Grid::Uniform> grid;
     Teuchos::ParameterList             problemParameters;
     
@@ -152,8 +156,7 @@ BOOST_AUTO_TEST_CASE( five_step_piro_test )
     }
     
     Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> A =
-        Teuchos::rcp ( new Ginla::MagneticVectorPotential::Centered ( problemParameters.get<double> ( "H0" ),
-                                                                      problemParameters.get<double> ( "scaling" ) ) );
+        Teuchos::rcp ( new Ginla::MagneticVectorPotential::Centered ( problemParameters.get<double> ( "H0" ) ) );
 
     Teuchos::RCP<Ginla::Komplex::LinearProblem> komplex =
         Teuchos::rcp( new Ginla::Komplex::LinearProblem( eComm, initState->getPsi()->getMap() ) );
@@ -166,16 +169,16 @@ BOOST_AUTO_TEST_CASE( five_step_piro_test )
                                                   1000 ) );
            
     // create the operator
-    Teuchos::RCP<Ginla::Operator::Virtual> glOperator =
-        Teuchos::rcp ( new Ginla::Operator::BCCentral ( grid,
+    Teuchos::RCP<Ginla::FDM::Operator::Virtual> glOperator =
+        Teuchos::rcp ( new Ginla::FDM::Operator::BCCentral ( grid,
                                                         A,
                                                         initState->getPsi()->getMap(),
                                                         initState->getPsi()->getMap() ) );
 
     // Create the interface between NOX and the application
     // This object is derived from NOX::Epetra::Interface
-    Teuchos::RCP<Ginla::ModelEvaluator::Default> glModel = 
-              Teuchos::rcp(new Ginla::ModelEvaluator::Default( glOperator,
+    Teuchos::RCP<Ginla::FDM::ModelEvaluator::Default> glModel = 
+              Teuchos::rcp(new Ginla::FDM::ModelEvaluator::Default( glOperator,
                                                                komplex,
                                                                *initState,
                                                                problemParameters ) );
@@ -218,11 +221,11 @@ BOOST_AUTO_TEST_CASE( five_step_piro_test )
     // fetch the solution
     // outArgs.get_g(0) must be gx
     BOOST_ASSERT( !outArgs.get_g(0).is_null() ); 
-    Teuchos::RCP<Ginla::State> solutionState = glModel->createState( *(outArgs.get_g(0)) );
+    Teuchos::RCP<Ginla::State::Virtual> solutionState = glModel->createState( *(outArgs.get_g(0)) );
     // ------------------------------------------------------------------------
     // read reference solution from file
     // For technical reasons, the reader can only accept ComplexMultiVectors.
-    Teuchos::RCP<Ginla::State> refState;
+    Teuchos::RCP<Ginla::FDM::State> refState;
     Recti::Grid::Reader::read ( Comm, expSolFileName, refState, grid, problemParameters );
     // ------------------------------------------------------------------------
     // compare the results:
@@ -230,7 +233,7 @@ BOOST_AUTO_TEST_CASE( five_step_piro_test )
     
     solutionState->save( "test.vti" );
     
-    Teuchos::RCP<Ginla::State> diff = solutionState;
+    Teuchos::RCP<Ginla::State::Virtual> diff = solutionState;
     
     diff->update( -1.0, *refState, 1.0 );    
     

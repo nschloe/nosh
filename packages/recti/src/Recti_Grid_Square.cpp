@@ -13,10 +13,12 @@
 Recti::Grid::Square::
 Square ( const UIntTuple & numCells,
          const double      edgeLength ) :
-        Abstract ( Teuchos::tuple<double> ( edgeLength/numCells[0],edgeLength/numCells[1] ),
-                      pow ( edgeLength, 2 ),
-                      ( numCells[0]+1 ) * ( numCells[1]+1 )
-                    ),
+        Abstract ( Teuchos::tuple ( edgeLength/numCells[0],
+                                    edgeLength/numCells[1],
+                                    0.0 ),
+                   pow ( edgeLength, 2 ),
+                   ( numCells[0]+1 ) * ( numCells[1]+1 )
+                 ),
         numCells_ ( numCells )
 {
 }

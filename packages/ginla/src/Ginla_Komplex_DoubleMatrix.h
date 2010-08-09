@@ -46,15 +46,27 @@ class DoubleMatrix
   
   void
   putALocalValues( unsigned int localRow,
-                   const Teuchos::ArrayView<Thyra::Ordinal> & columnIndices,
-                   const Teuchos::ArrayView<double_complex> & values
+                   const Teuchos::ArrayView<const Thyra::Ordinal> & columnIndices,
+                   const Teuchos::ArrayView<const double_complex> & values
                  );
                  
   void
+  AsumIntoGlobalValues( unsigned int localRow,
+                        const Teuchos::ArrayView<const Thyra::Ordinal> & columnIndices,
+                        const Teuchos::ArrayView<const double_complex> & values
+                      );
+                 
+  void
   putBLocalValues( unsigned int localRow,
-                   const Teuchos::ArrayView<Thyra::Ordinal> & columnIndices,
-                   const Teuchos::ArrayView<double_complex> & values
+                   const Teuchos::ArrayView<const Thyra::Ordinal> & columnIndices,
+                   const Teuchos::ArrayView<const double_complex> & values
                  );
+                 
+  void
+  BsumIntoGlobalValues( unsigned int localRow,
+                        const Teuchos::ArrayView<const Thyra::Ordinal> & columnIndices,
+                        const Teuchos::ArrayView<const double_complex> & values
+                      );
             
   void
   finalize();

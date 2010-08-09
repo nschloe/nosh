@@ -19,7 +19,7 @@
 
 #include "Ginla_StatusTest_Energy.h"
 
-#include "Ginla_State.h"
+#include "Ginla_State_Virtual.h"
 #include "Ginla_StateTranslator.h"
 #include "Ginla_Helpers.h"
 
@@ -31,13 +31,12 @@
 // ============================================================================
 Ginla::StatusTest::Energy::
 Energy( const Teuchos::RCP<const Ginla::StateTranslator> & stateTranslator,
-        const Teuchos::RCP<const Recti::Grid::General>   & grid
+        const double                                       maxFreeEnergy
       ) :
   freeEnergy_( 0.0 ),
-  tol_( 1.0e-6 ),
+  maxFreeEnergy_( maxFreeEnergy ),
   status_( LOCA::StatusTest::Unevaluated ),
-  stateTranslator_( stateTranslator ),
-  grid_( grid )
+  stateTranslator_( stateTranslator )
 {
 }
 // ============================================================================
@@ -57,7 +56,7 @@ checkStatus( const LOCA::Stepper& stepper,
   case LOCA::StatusTest::Complete:
   case LOCA::StatusTest::Minimal:
     computeFreeEnergy( stepper );
-    if ( fabs(freeEnergy_) < tol_ )
+    if ( freeEnergy_ > maxFreeEnergy_ )
       status_ = LOCA::StatusTest::Finished; // LOCA::StatusTest::Failed
     else
       status_ = LOCA::StatusTest::NotFinished;
@@ -98,10 +97,10 @@ Ginla::StatusTest::Energy::
 print(ostream& stream, int indent) const
 {
   for (int j = 0; j < indent; j ++)
-    stream << ' ';
+      stream << ' ';
   stream << status_;
-  stream << "|Free energy| = " << NOX::Utils::sciformat(fabs(freeEnergy_),3);
-  stream << " > " << NOX::Utils::sciformat(tol_,3);
+  stream << "Free energy = " << NOX::Utils::sciformat( freeEnergy_, 3 );
+  stream << " < " << NOX::Utils::sciformat(maxFreeEnergy_,3);
   stream << std::endl;
  return stream;
 }

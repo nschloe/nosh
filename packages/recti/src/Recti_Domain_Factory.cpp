@@ -83,7 +83,7 @@ buildPolygon() const
     const Teuchos::ParameterList & pointsList =
             pList_.sublist("Vertices");
     
-    Teuchos::Array<DoubleTuple> vertices;
+    Teuchos::Array<Point> vertices;
     
     Teuchos::ParameterList::ConstIterator k;
     for ( k=pointsList.begin(); k!=pointsList.end(); ++k )
@@ -95,8 +95,10 @@ buildPolygon() const
         const Teuchos::ParameterList & coordinates =
                 pointsList.sublist(label);
         
-        DoubleTuple X = Teuchos::tuple( coordinates.get<double>("x"),
-                                        coordinates.get<double>("y") );
+        Point X = Teuchos::tuple( coordinates.get<double>("x"),
+                                  coordinates.get<double>("y"),
+                                  0.0
+                                );
         vertices.push_back( X );
     }
     

@@ -12,12 +12,14 @@
 Recti::Grid::UniformSquare::
 UniformSquare ( const unsigned int  numCells,
                 const double        edgeLength ) :
-        Abstract ( Teuchos::tuple<double> ( edgeLength/numCells,edgeLength/numCells ),
+        Abstract ( Teuchos::tuple ( edgeLength/numCells,
+                                    edgeLength/numCells,
+                                    0.0 ),
                    pow ( edgeLength, 2 ),
                    pow ( numCells+1, 2 )
                  ),
         UniformAbstract(),
-        Square ( Teuchos::tuple<unsigned int> ( numCells,numCells ), edgeLength )
+        Square ( Teuchos::tuple( numCells,numCells ), edgeLength )
 {
 }
 // =============================================================================

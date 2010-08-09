@@ -24,7 +24,7 @@ Recti::Grid::Uniform::
 Uniform ( const Teuchos::RCP<const Domain::Abstract> & domain,
           const double                                  h
         ) :
-        General ( domain, Teuchos::tuple ( h,h ) )
+        General ( domain, Teuchos::tuple ( h,h,h ) )
 {
 }
 // =============================================================================
@@ -34,9 +34,9 @@ Uniform ( const double                h,
           const Teuchos::Array<int> & kBB,
           const Teuchos::Array<int> & boundaryNodes,
           const double                scaling,
-          const DoubleTuple         & origin
+          const Point               & origin
         ) :
-        General ( Teuchos::tuple ( h,h ), numCells, kBB, boundaryNodes, scaling, origin )
+        General ( Teuchos::tuple ( h,h,h ), numCells, kBB, boundaryNodes, scaling, origin )
 {
 }
 // =============================================================================
