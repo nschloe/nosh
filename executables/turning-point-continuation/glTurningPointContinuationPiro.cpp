@@ -15,17 +15,19 @@
 // 
 #include <boost/filesystem.hpp>
 
+#include "Ginla_FDM_ModelEvaluator_Default.h"
+#include "Ginla_FDM_ModelEvaluator_Bordered.h"
+#include "Ginla_FDM_Operator_BCCentral.h"
+
 // #include "Ginla_IO_SaveNewtonData.h"
 #include "Ginla_IO_NoxObserver.h"
-#include "Ginla_ModelEvaluator_Default.h"
-#include "Ginla_ModelEvaluator_Bordered.h"
 #include "Recti_Grid_Uniform.h"
 #include "Recti_Grid_Reader.h"
 #include "Ginla_Komplex_LinearProblem.h"
-#include "Ginla_Operator_BCCentral.h"
+
 // #include "Ginla_Operator_BCInner.h"
 // #include "Ginla_Operator_BCOuter.h"
-#include "Ginla_MagneticVectorPotential_Centered.h"
+#include "Ginla_MagneticVectorPotential_ZSquareSymmetric.h"
 #include "Ginla_IO_StateWriter.h"
 #include "Ginla_IO_StatsWriter.h"
 
@@ -115,7 +117,7 @@ int main ( int argc, char *argv[] )
     // =========================================================================
 
     Teuchos::ParameterList             problemParameters;
-    Teuchos::RCP<Ginla::State>         state;
+    Teuchos::RCP<Ginla::FDM::State>    state;
     Teuchos::RCP<Recti::Grid::Uniform> grid = Teuchos::null;
 
     Recti::Grid::Reader::read ( Comm,
@@ -127,9 +129,9 @@ int main ( int argc, char *argv[] )
     double h0      = problemParameters.get<double> ( "H0" );
     double scaling = problemParameters.get<double> ( "scaling" );
     
-    Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> A =
-        Teuchos::rcp ( new Ginla::MagneticVectorPotential::Centered ( h0,
-                                                                      scaling ) );
+    Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> A =
+        Teuchos::rcp ( new Ginla::MagneticVectorPotential::ZSquareSymmetric ( h0,
+                                                                              scaling ) );
 
     Teuchos::RCP<Ginla::Komplex::LinearProblem> komplex =
         Teuchos::rcp( new Ginla::Komplex::LinearProblem( eComm, state->getPsi()->getMap() ) );
@@ -145,18 +147,18 @@ int main ( int argc, char *argv[] )
                                                   maxLocaSteps ) );
 
     // create the operator
-    Teuchos::RCP<Ginla::Operator::Virtual> glOperator =
-        Teuchos::rcp ( new Ginla::Operator::BCCentral ( grid,
-                                                        A,
-                                                        state->getPsi()->getMap(),
-                                                        state->getPsi()->getMap() ) );
+    Teuchos::RCP<Ginla::FDM::Operator::Virtual> glOperator =
+        Teuchos::rcp ( new Ginla::FDM::Operator::BCCentral ( grid,
+                                                             A,
+                                                             state->getPsi()->getMap(),
+                                                             state->getPsi()->getMap() ) );
 
     // create the mode evaluator
-    Teuchos::RCP<Ginla::ModelEvaluator::Bordered> glModel = 
-              Teuchos::rcp(new Ginla::ModelEvaluator::Bordered( glOperator,
-                                                               komplex,
-                                                               *state,
-                                                               problemParameters ) );
+    Teuchos::RCP<Ginla::FDM::ModelEvaluator::Bordered> glModel = 
+              Teuchos::rcp(new Ginla::FDM::ModelEvaluator::Bordered( glOperator,
+                                                                     komplex,
+                                                                     *state,
+                                                                     problemParameters ) );
                                                                
     Teuchos::RCP<Ginla::IO::NoxObserver> observer =
         Teuchos::rcp( new Ginla::IO::NoxObserver( stateWriter,
@@ -196,7 +198,7 @@ int main ( int argc, char *argv[] )
         
         // read the initial null state
         Teuchos::ParameterList             voidParameters;
-        Teuchos::RCP<Ginla::State>         nullstate;
+        Teuchos::RCP<Ginla::FDM::State>    nullstate;
         Teuchos::RCP<Recti::Grid::Uniform> grid = Teuchos::null;
 
         Recti::Grid::Reader::read ( Comm,

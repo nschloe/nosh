@@ -179,7 +179,7 @@ main ( int argc, char *argv[] )
     Teuchos::RCP<Ginla::IO::StatsWriter> statsWriter = 
         Teuchos::rcp( new Ginla::IO::StatsWriter( fn ) );
 
-    Teuchos::RCP<Ginla::LocaSystem::Bordered> glsystem;
+    Teuchos::RCP<Ginla::FDM::LocaSystem::Bordered> glsystem;
 
     Teuchos::ParameterList & stepperList = paramList->sublist ( "LOCA" ).sublist ( "Stepper" );
     int maxLocaSteps = stepperList.get<int> ( "Max Steps" );

@@ -21,22 +21,22 @@
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_DefaultComm.hpp>
 
-#include "Ginla_Operator_BCCentral.h"
-#include "Ginla_Operator_BCInner.h"
+#include "Ginla_FDM_Operator_BCCentral.h"
+#include "Ginla_FDM_Operator_BCInner.h"
+#include "Ginla_FDM_LocaSystem_Default.h"
+#include "Ginla_FDM_LocaSystem_Bordered.h"
 
 #include "Recti_Domain_Square.h"
 
-#include "Ginla_LocaSystem_Default.h"
-#include "Ginla_LocaSystem_Bordered.h"
+
 #include "Ginla_IO_SaveEigenData.h"
 
 #include "Ginla_Helpers.h"
 #include "Ginla_IO_StatsWriter.h"
 #include "Ginla_IO_StateWriter.h"
-#include "Ginla_MagneticVectorPotential_Centered.h"
+#include "Ginla_MagneticVectorPotential_ZSquareSymmetric.h"
 
 #include "Recti_Grid_Reader.h"
-
 
 
 // =============================================================================
@@ -132,7 +132,7 @@ main ( int argc, char *argv[] )
 
         // ---------------------------------------------------------------------------
         Teuchos::ParameterList glParameters;
-        Teuchos::RCP<Ginla::State> state;
+        Teuchos::RCP<Ginla::FDM::State>    state;
         Teuchos::RCP<Recti::Grid::Uniform> grid;
 
         Teuchos::ParameterList initialGuessList;
@@ -188,7 +188,7 @@ main ( int argc, char *argv[] )
             const Teuchos::RCP<const ComplexMap> complexMap =
                 Teuchos::rcp ( new ComplexMap( numComplexUnknowns, 0, Comm ) );
 
-            state = Teuchos::rcp ( new Ginla::State ( complexMap, grid ) );
+            state = Teuchos::rcp ( new Ginla::FDM::State ( complexMap, grid ) );
             double_complex alpha ( 1.0, 0.0 );
             state->getPsiNonConst()->putScalar( alpha );
         }
@@ -196,22 +196,22 @@ main ( int argc, char *argv[] )
 
         double h0      = glParameters.get<double> ( "H0" );
         double scaling = glParameters.get<double> ( "scaling" );
-        Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> A =
-            Teuchos::rcp ( new Ginla::MagneticVectorPotential::Centered ( h0, scaling ) );
+        Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> A =
+            Teuchos::rcp ( new Ginla::MagneticVectorPotential::ZSquareSymmetric ( h0, scaling ) );
 
         // create the operator
-        Teuchos::RCP<Ginla::Operator::Virtual> glOperator =
-            Teuchos::rcp ( new Ginla::Operator::BCCentral ( grid,
-                                                            A,
-                                                            state->getPsi()->getMap(),
-                                                            state->getPsi()->getMap() ) );
+        Teuchos::RCP<Ginla::FDM::Operator::Virtual> glOperator =
+            Teuchos::rcp ( new Ginla::FDM::Operator::BCCentral ( grid,
+                                                                 A,
+                                                                 state->getPsi()->getMap(),
+                                                                 state->getPsi()->getMap() ) );
 
             
         std::string fn = outputDirectory.string() + "/" + contDataFileName;
         Teuchos::RCP<Ginla::IO::StatsWriter> statsWriter =
             Teuchos::rcp( new Ginla::IO::StatsWriter( fn ) );
 
-        Teuchos::RCP<Ginla::LocaSystem::Virtual> glsystem;
+        Teuchos::RCP<Ginla::FDM::LocaSystem::Virtual> glsystem;
 
         Teuchos::ParameterList & stepperList = paramList->sublist ( "LOCA" ).sublist ( "Stepper" );
         int maxLocaSteps = stepperList.get<int> ( "Max Steps" );
@@ -223,11 +223,11 @@ main ( int argc, char *argv[] )
                                                       outputFormat,
                                                       maxLocaSteps ) );
                                                       
-        glsystem = Teuchos::rcp ( new Ginla::LocaSystem::Bordered ( glOperator,
-                                                                    eComm,
-                                                                    state->getPsi()->getMap(),
-                                                                    statsWriter,
-                                                                    stateWriter ) );
+        glsystem = Teuchos::rcp ( new Ginla::FDM::LocaSystem::Bordered ( glOperator,
+                                                                         eComm,
+                                                                         state->getPsi()->getMap(),
+                                                                         statsWriter,
+                                                                         stateWriter ) );
 
         // set the initial value from glParameters
         std::string contParam = stepperList.get<string> ( "Continuation Parameter" );
@@ -355,7 +355,7 @@ main ( int argc, char *argv[] )
         if ( !initialNullVectorFile.empty() && initialNullVectorFile.root_directory().empty() ) // if initialNullVectorFile is a relative path
             initialNullVectorFile = xmlPath / initialNullVectorFile;
         
-        Teuchos::RCP<Ginla::State> initialNullVectorState;
+        Teuchos::RCP<Ginla::FDM::State> initialNullVectorState;
         Recti::Grid::Reader::read ( Comm,
                                     initialNullVectorFile.string(),
                                     initialNullVectorState,
