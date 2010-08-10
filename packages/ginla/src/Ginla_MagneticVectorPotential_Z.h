@@ -1,67 +1,70 @@
-#ifndef GINLA_MAGNETICVECTORPOTENTIAL_CENTERED_H_
-#define GINLA_MAGNETICVECTORPOTENTIAL_CENTERED_H_
+#ifndef GINLA_MAGNETICVECTORPOTENTIAL_Z_H_
+#define GINLA_MAGNETICVECTORPOTENTIAL_Z_H_
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Tuple.hpp>
 #include <LOCA_Parameter_Vector.H>
 
-// typedef just like in ...
-typedef Teuchos::Tuple<double,3> Point;
+#include "Ginla_MagneticVectorPotential_Virtual.h"
 
 namespace Ginla {
   namespace MagneticVectorPotential {
 
-class Centered
+class Z:
+  public Virtual
 {
 public:
-  Centered( double h0 );
+  Z( double mu );
 
   virtual
-  ~Centered();
+  ~Z();
 
   //! Sets the parameters in this module.
   //! @return Indicates whether the internal values have changed.
+  virtual
   bool
   setParameters( const LOCA::ParameterVector & p );
   
-  bool
-  setH0( const double mu );
-  
+  virtual
   Teuchos::RCP<LOCA::ParameterVector>
   getParameters() const;
 
+  virtual
   Teuchos::RCP<Point>
   getA(const Point & x ) const;
 
+  virtual
   double
   getAx(const Point & x) const;
 
+  virtual
   double
   getAy(const Point & x) const;
   
+  virtual
   double
   getAz(const Point & x) const;
   
+  virtual
   Teuchos::RCP<Point>
-  getDADh0(const Point & x ) const;
+  getDADMu(const Point & x ) const;
 
+  virtual
   double
-  getDAxDh0(const Point & x ) const;
+  getDAxDMu(const Point & x ) const;
 
+  virtual
   double
-  getDAyDh0(const Point & x ) const;
+  getDAyDMu(const Point & x ) const;
   
+  virtual
   double
-  getDAzDh0(const Point & x ) const;
+  getDAzDMu(const Point & x ) const;
 
 protected:
-
 private:
-
-  double h0_;
-
 };
 
   } // namespace MagneticVectorPotential
 } // namespace GL
-#endif /* GINLA_MAGNETICVECTORPOTENTIAL_CENTERED_H_ */
+#endif // GINLA_MAGNETICVECTORPOTENTIAL_Z_H_

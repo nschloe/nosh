@@ -37,7 +37,7 @@
 // #include "Ginla_Operator_BCInner.h"
 // #include "Ginla_Operator_BCOuter.h"
 
-#include "Ginla_MagneticVectorPotential_Centered.h"
+#include "Ginla_MagneticVectorPotential_ZSquareSymmetric.h"
 #include "Ginla_IO_StateWriter.h"
 #include "Ginla_IO_StatsWriter.h"
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -151,8 +151,8 @@ BOOST_AUTO_TEST_CASE( branch_switch_test )
     double h0      = problemParameters.get<double> ( "H0" );
     double scaling = problemParameters.get<double> ( "scaling" );
     
-    Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> A =
-        Teuchos::rcp ( new Ginla::MagneticVectorPotential::Centered ( h0 ) );
+    Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> A =
+        Teuchos::rcp ( new Ginla::MagneticVectorPotential::ZSquareSymmetric ( h0, scaling ) );
 
     Teuchos::ParameterList & stepperList = piroParams->sublist ( "LOCA" ).sublist ( "Stepper" );
     int maxLocaSteps = stepperList.get<int> ( "Max Steps" );

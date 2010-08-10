@@ -33,13 +33,15 @@
 
 // #include "Ginla_IO_SaveNewtonData.h"
 #include "Ginla_IO_NoxObserver.h"
-#include "Ginla_ModelEvaluator_Default.h"
+
 #include "Recti_Grid_Reader.h"
-#include "Ginla_MagneticVectorPotential_Centered.h"
-#include "Ginla_Operator_BCCentral.h"
-#include "Ginla_Operator_BCInner.h"
-#include "Ginla_Operator_BCOuter.h"
+#include "Ginla_MagneticVectorPotential_ZSquareSymmetric.h"
 #include "Ginla_IO_StateWriter.h"
+
+#include "Ginla_FDM_ModelEvaluator_Default.h"
+#include "Ginla_FDM_Operator_BCCentral.h"
+// #include "Ginla_FDM_Operator_BCInner.h"
+// #include "Ginla_FDM_Operator_BCOuter.h"
 
 // =============================================================================
 int main ( int argc, char *argv[] )
@@ -129,7 +131,7 @@ int main ( int argc, char *argv[] )
     // =========================================================================
 
     Teuchos::ParameterList             problemParameters;
-    Teuchos::RCP<Ginla::State>         state;
+    Teuchos::RCP<Ginla::FDM::State>    state;
     Teuchos::RCP<Recti::Grid::Uniform> grid = Teuchos::null;
 
     Recti::Grid::Reader::read ( Comm,
@@ -141,9 +143,8 @@ int main ( int argc, char *argv[] )
     double h0      = 0.8; //problemParameters.get<double> ( "H0" );
     double scaling = 3.0; //problemParameters.get<double> ( "scaling" );
     
-    Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> A =
-        Teuchos::rcp ( new Ginla::MagneticVectorPotential::Centered ( h0,
-                                                                      scaling ) );
+    Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> A =
+        Teuchos::rcp ( new Ginla::MagneticVectorPotential::ZSquareSymmetric ( h0, scaling ) );
 
     Teuchos::RCP<Ginla::Komplex::LinearProblem> komplex =
         Teuchos::rcp( new Ginla::Komplex::LinearProblem( eComm, state->getPsiNonConst()->getMap() ) );
@@ -152,23 +153,23 @@ int main ( int argc, char *argv[] )
     Teuchos::RCP<Ginla::IO::StateWriter> stateWriter =
         Teuchos::rcp( new Ginla::IO::StateWriter( outputDirectory.string(),
                                                   "solution",
-                                                  "VTI",
+                                                  "vti",
                                                   1000 ) );
                                                                       
     // create the operator
-    Teuchos::RCP<Ginla::Operator::Virtual> glOperator =
-        Teuchos::rcp ( new Ginla::Operator::BCCentral ( grid,
-                                                        A,
-                                                        state->getPsiNonConst()->getMap(),
-                                                        state->getPsiNonConst()->getMap() ) );
+    Teuchos::RCP<Ginla::FDM::Operator::Virtual> glOperator =
+        Teuchos::rcp ( new Ginla::FDM::Operator::BCCentral ( grid,
+                                                             A,
+                                                             state->getPsiNonConst()->getMap(),
+                                                             state->getPsiNonConst()->getMap() ) );
 
     // Create the interface between NOX and the application
     // This object is derived from NOX::Epetra::Interface
-    Teuchos::RCP<Ginla::ModelEvaluator::Default> glModel = 
-              Teuchos::rcp(new Ginla::ModelEvaluator::Default( glOperator,
-                                                               komplex,
-                                                               *state,
-                                                               problemParameters ) );
+    Teuchos::RCP<Ginla::FDM::ModelEvaluator::Default> glModel = 
+              Teuchos::rcp(new Ginla::FDM::ModelEvaluator::Default( glOperator,
+                                                                    komplex,
+                                                                    *state,
+                                                                    problemParameters ) );
 
     Teuchos::RCP<Ginla::IO::NoxObserver> observer =
         Teuchos::rcp( new Ginla::IO::NoxObserver( stateWriter,

@@ -312,12 +312,11 @@ computeJacobian ( const Epetra_Vector & x,
         firstTime_ = false;
     }
     
-    std::cout << "xxx" << std::endl;
-    std::cout << x << std::endl;
-    
-    std::cout << "The Jacobian:" << std::endl;
-    std::cout << komplex_->getMatrix() << std::endl;
-    
+//     std::cout << "xxx" << std::endl;
+//     std::cout << x << std::endl;
+//     
+//     std::cout << "The Jacobian:" << std::endl;
+//     std::cout << *komplex_->getMatrix() << std::endl;
 
     return;
 }

@@ -20,17 +20,17 @@
 #include "Ginla_FDM_Operator_BCInner.h"
 
 #include "Recti_Grid_Uniform.h"
-#include "Ginla_MagneticVectorPotential_Centered.h"
+#include "Ginla_MagneticVectorPotential_Virtual.h"
 
 #include <Teuchos_Array.hpp>
 
 
 // =============================================================================
 Ginla::FDM::Operator::BCInner::
-BCInner ( const Teuchos::RCP<Recti::Grid::Uniform>                     & grid,
-          const Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> & A,
-          const Teuchos::RCP<const ComplexMap>                         & domainMap,
-          const Teuchos::RCP<const ComplexMap>                         & rangeMap
+BCInner ( const Teuchos::RCP<Recti::Grid::Uniform>                    & grid,
+          const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & A,
+          const Teuchos::RCP<const ComplexMap>                        & domainMap,
+          const Teuchos::RCP<const ComplexMap>                        & rangeMap
         ) :
         Ginla::FDM::Operator::Virtual ( grid, A, domainMap, rangeMap )
 {

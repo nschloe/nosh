@@ -44,7 +44,7 @@
 #include "Ginla_FDM_LocaSystem_Default.h"
 #include "Ginla_FDM_LocaSystem_Bordered.h"
 
-#include "Ginla_MagneticVectorPotential_Centered.h"
+#include "Ginla_MagneticVectorPotential_ZSquareSymmetric.h"
 
 #include "Recti_Domain_Factory.h"
 
@@ -76,8 +76,8 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
     double h0      = problemParameters.get<double> ( "H0" );
     double scaling = problemParameters.get<double> ( "scaling" );
 
-    Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> A =
-        Teuchos::rcp ( new Ginla::MagneticVectorPotential::Centered ( h0 ) );
+    Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> A =
+        Teuchos::rcp ( new Ginla::MagneticVectorPotential::ZSquareSymmetric ( h0, scaling ) );
 
     // create the operator
     Teuchos::RCP<Ginla::FDM::Operator::Virtual> glOperator =
@@ -135,8 +135,8 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
     
     grid->updateScaling ( scaling );
     
-    Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> A =
-        Teuchos::rcp ( new Ginla::MagneticVectorPotential::Centered ( H0 ) );
+    Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> A =
+        Teuchos::rcp ( new Ginla::MagneticVectorPotential::ZSquareSymmetric ( H0, scaling ) );
 
     // create an initial guess
     int numGlobalElements = grid->getNumGridPoints();

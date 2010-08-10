@@ -12,6 +12,7 @@ LINK_DIRECTORIES( ${Boost_LIBRARY_DIRS} )
 
 
 SET ( internal_LIBS
+      ginlafdm
       ginla
       recti
       vio
@@ -19,7 +20,9 @@ SET ( internal_LIBS
 
 INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/packages/vio/src
                       ${ginzburg-landau_SOURCE_DIR}/packages/recti/src
-                      ${ginzburg-landau_SOURCE_DIR}/packages/ginla/src )
+                      ${ginzburg-landau_SOURCE_DIR}/packages/ginla/src
+                      ${ginzburg-landau_SOURCE_DIR}/packages/ginla/src-fdm
+                    )
 
 SET ( opc_SRCS
       oneParameterContinuation.cpp  )

@@ -22,7 +22,7 @@
 #include <NOX_StatusTest_Combo.H>
 // #include <NOX_Epetra_Group.H>
 
-#include "Ginla_MagneticVectorPotential_Centered.h"
+#include "Ginla_MagneticVectorPotential_ZSquareSymmetric.h"
 #include "Ginla_FDM_Operator_BCCentral.h"
 #include "Ginla_IO_StatsWriter.h"
 #include "Ginla_IO_StateWriter.h"
@@ -122,18 +122,12 @@ BOOST_AUTO_TEST_CASE( zero_step_loca_test )
 
     BOOST_REQUIRE( !inputGuessFile.empty() );
     
-    std::cout << "\n\n >>> alpha\n\n" << std::endl;
-    
     // For technical reasons, the reader can only accept ComplexMultiVectors.
     Teuchos::RCP<Ginla::FDM::State>    state;
     Teuchos::RCP<Recti::Grid::Uniform> grid;
     Teuchos::ParameterList             glParameters;
     
-    std::cout << "\n\n >>> beta\n\n" << std::endl;
-    
     Recti::Grid::Reader::read ( Comm, inputGuessFile.string(), state, grid, glParameters );
-    
-    std::cout << "\n\n >>> gamma\n\n" << std::endl;
 
     // possibly overwrite the parameters
     Teuchos::ParameterList & overwriteParamsList = paramList->sublist ( "Overwrite parameter list", true ); 
@@ -147,11 +141,13 @@ BOOST_AUTO_TEST_CASE( zero_step_loca_test )
         grid->updateScaling( glParameters.get<double>("scaling") );
     }
     // ------------------------------------------------------------------------
-    
-    std::cout << "\n\n >>> rho\n\n" << " " << glParameters.get<double> ( "H0" ) << std::endl;
 
-    Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> A =
-        Teuchos::rcp ( new Ginla::MagneticVectorPotential::Centered ( glParameters.get<double> ( "H0" ) ) );
+    Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> A =
+        Teuchos::rcp ( new Ginla::MagneticVectorPotential::ZSquareSymmetric
+                                  ( glParameters.get<double> ( "H0" ),
+                                    glParameters.get<double> ( "scaling" )
+                                  )
+                     );
 
     // create the operator
     Teuchos::RCP<const ComplexMap> map = state->getPsi()->getMap();

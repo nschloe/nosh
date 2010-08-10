@@ -33,7 +33,7 @@ namespace Recti {
 }
 namespace Ginla {
   namespace MagneticVectorPotential{
-    class Centered;
+    class Virtual;
   }
   namespace Komplex {
     class DoubleMatrix; 
@@ -53,10 +53,10 @@ class Virtual:
 {
 public:
     //! Default constructor.
-    Virtual ( const Teuchos::RCP<Recti::Grid::Uniform>                     & grid,
-              const Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> & A,
-              const Teuchos::RCP<const ComplexMap>                         & domainMap,
-              const Teuchos::RCP<const ComplexMap>                         & rangeMap
+    Virtual ( const Teuchos::RCP<Recti::Grid::Uniform>                    & grid,
+              const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & A,
+              const Teuchos::RCP<const ComplexMap>                        & domainMap,
+              const Teuchos::RCP<const ComplexMap>                        & rangeMap
             );
 
     //! Destructor
@@ -109,7 +109,7 @@ protected:
     
 private:
   
-    const Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> A_;
+    const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> A_;
 
 };
 

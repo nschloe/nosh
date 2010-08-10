@@ -46,17 +46,17 @@ processImageData ( const vtkSmartPointer<vtkImageData>           & imageData,
                    Teuchos::RCP<ComplexMultiVector>              & z,
                    Teuchos::Array<int>                           & p,
                    UIntTuple                                     & dims,
-                   DoubleTuple                                   & origin,
-                   DoubleTuple                                   & spacing,
+                   Point                                         & origin,
+                   Point                                         & spacing,
                    Teuchos::ParameterList                        & fieldData,
                    const Teuchos::RCP<const Teuchos::Comm<int> > & TComm
                  ) const
 {
     double *tmp;
     tmp = imageData->GetOrigin();
-    origin = Teuchos::tuple ( tmp[0], tmp[1] );
+    origin = Teuchos::tuple ( tmp[0], tmp[1], tmp[3] );
     tmp = imageData->GetSpacing();
-    spacing = Teuchos::tuple ( tmp[0], tmp[1] );
+    spacing = Teuchos::tuple ( tmp[0], tmp[1], tmp[3] );
     int *intTmp;
     intTmp = imageData->GetDimensions();
     dims = Teuchos::tuple ( ( unsigned int ) intTmp[0],

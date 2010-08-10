@@ -17,30 +17,30 @@
 
 */
 
-#include "Ginla_Operator_BCOuter.h"
+#include "Ginla_FDM_Operator_BCOuter.h"
 
 #include <Teuchos_Array.hpp>
 
 #include "Recti_Grid_Uniform.h"
-#include "Ginla_MagneticVectorPotential_Centered.h"
 
 // =============================================================================
-Ginla::Operator::BCOuter::
-BCOuter ( const Teuchos::RCP<Recti::Grid::Uniform>                     & grid,
-          const Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> & A,
-          const Teuchos::RCP<const ComplexMap>                         & domainMap,
-          const Teuchos::RCP<const ComplexMap>                         & rangeMap
+Ginla::FDM::Operator::BCOuter::
+BCOuter ( const Teuchos::RCP<Recti::Grid::Uniform>                    & grid,
+          const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & A,
+          const Teuchos::RCP<const ComplexMap>                        & domainMap,
+          const Teuchos::RCP<const ComplexMap>                        & rangeMap
         ) :
-        Ginla::Operator::Virtual ( grid, A, domainMap, rangeMap )
+        Ginla::FDM::Operator::Virtual ( grid, A, domainMap, rangeMap )
 {
 }
 // =============================================================================
-Ginla::Operator::BCOuter::~BCOuter()
+Ginla::FDM::Operator::BCOuter::
+~BCOuter()
 {
 }
 // =============================================================================
 Teuchos::RCP<Ginla::State>
-Ginla::Operator::BCOuter::
+Ginla::FDM::Operator::BCOuter::
 getF( const Teuchos::RCP<const Ginla::State> & state ) const
 {
   // initialize F
@@ -63,7 +63,7 @@ getF( const Teuchos::RCP<const Ginla::State> & state ) const
 }
 // =============================================================================
 double_complex
-Ginla::Operator::BCOuter::
+Ginla::FDM::Operator::BCOuter::
 getFEntry ( const Teuchos::RCP<const Ginla::State> & state,
             const int k
           ) const
@@ -292,7 +292,7 @@ getFEntry ( const Teuchos::RCP<const Ginla::State> & state,
 }
 // =============================================================================
 void
-Ginla::Operator::BCOuter::
+Ginla::FDM::Operator::BCOuter::
 getJacobianRow ( const Teuchos::RCP<const Ginla::State> & state,
                  const int                                k,
                  Teuchos::Array<int>                    & columnIndicesPsi,

@@ -2,7 +2,9 @@ SET ( ginla_SRCS
       Ginla_State_Virtual.cpp
       Ginla_ParameterHost_Virtual.cpp
       Ginla_Helpers.cpp
-      Ginla_MagneticVectorPotential_Centered.cpp
+      Ginla_MagneticVectorPotential_Virtual.cpp
+      Ginla_MagneticVectorPotential_Z.cpp
+      Ginla_MagneticVectorPotential_ZSquareSymmetric.cpp
       Ginla_IO_SaveNewtonData.cpp
       Ginla_IO_SaveEigenData.cpp
       Ginla_IO_StatsWriter.cpp

@@ -22,7 +22,7 @@
 #include <NOX_StatusTest_Combo.H>
 // #include <NOX_Epetra_Group.H>
 
-#include "Ginla_MagneticVectorPotential_Centered.h"
+#include "Ginla_MagneticVectorPotential_ZSquareSymmetric.h"
 #include "Ginla_FDM_Operator_BCCentral.h"
 #include "Ginla_IO_StatsWriter.h"
 #include "Ginla_IO_StateWriter.h"
@@ -141,8 +141,12 @@ BOOST_AUTO_TEST_CASE( zero_step_loca_test )
     }
     // ------------------------------------------------------------------------
 
-    Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> A =
-        Teuchos::rcp ( new Ginla::MagneticVectorPotential::Centered ( glParameters.get<double> ( "H0" ) ) );
+    Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> A =
+        Teuchos::rcp ( new Ginla::MagneticVectorPotential::ZSquareSymmetric
+                                  ( glParameters.get<double> ( "H0" ),
+                                    glParameters.get<double> ( "scaling" )
+                                  )
+                     );
 
     // create the operator
     Teuchos::RCP<const ComplexMap> map = state->getPsi()->getMap();

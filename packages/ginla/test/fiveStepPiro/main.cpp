@@ -43,7 +43,7 @@
 
 // #include "Ginla_IO_SaveNewtonData.h"
 #include "Ginla_IO_NoxObserver.h"
-#include "Ginla_MagneticVectorPotential_Centered.h"
+#include "Ginla_MagneticVectorPotential_ZSquareSymmetric.h"
 #include "Ginla_IO_StateWriter.h"
 
 #include "Ginla_FDM_ModelEvaluator_Default.h"
@@ -155,8 +155,12 @@ BOOST_AUTO_TEST_CASE( five_step_piro_test )
         grid->updateScaling( problemParameters.get<double>("scaling") );
     }
     
-    Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> A =
-        Teuchos::rcp ( new Ginla::MagneticVectorPotential::Centered ( problemParameters.get<double> ( "H0" ) ) );
+    Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> A =
+        Teuchos::rcp ( new Ginla::MagneticVectorPotential::ZSquareSymmetric
+                             ( problemParameters.get<double> ( "H0" ),
+                               problemParameters.get<double> ( "scaling" )
+                             )
+                     );
 
     Teuchos::RCP<Ginla::Komplex::LinearProblem> komplex =
         Teuchos::rcp( new Ginla::Komplex::LinearProblem( eComm, initState->getPsi()->getMap() ) );
@@ -230,11 +234,9 @@ BOOST_AUTO_TEST_CASE( five_step_piro_test )
     // ------------------------------------------------------------------------
     // compare the results:
     // get final solution
-    
-    solutionState->save( "test.vti" );
-    
-    Teuchos::RCP<Ginla::State::Virtual> diff = solutionState;
-    
+
+    Teuchos::RCP<Ginla::State::Virtual> & diff = solutionState;
+
     diff->update( -1.0, *refState, 1.0 );    
     
     // don't be as strict here: 10^{-5} is enough

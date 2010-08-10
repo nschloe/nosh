@@ -10,7 +10,7 @@
 
 #include "Ginla_FDM_State.h"
 #include "Ginla_FDM_Operator_BCCentral.h"
-#include "Ginla_MagneticVectorPotential_Centered.h"
+#include "Ginla_MagneticVectorPotential_ZSquareSymmetric.h"
 
 #include "Recti_Domain_Circle.h"
 #include "Recti_Domain_Square.h"
@@ -31,7 +31,8 @@ BOOST_AUTO_TEST_CASE( operator_test )
 {
     // Initialize MPI
 #ifdef HAVE_MPI
-    MPI_Init ( NULL, NULL );
+    MPI_Init ( boost::unit_test::framework::master_test_suite().argc,
+               boost::unit_test::framework::master_test_suite().argv );
 #endif
 
     // Create a communicator for Tpetra objects
@@ -66,10 +67,10 @@ BOOST_AUTO_TEST_CASE( operator_test )
     // create operator
     double h0 = 1.0;
     double edgeLength = 1.0;
-    Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> A
-        = Teuchos::rcp( new Ginla::MagneticVectorPotential::Centered( h0 ) );
+    Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> A
+        = Teuchos::rcp( new Ginla::MagneticVectorPotential::ZSquareSymmetric( h0, edgeLength ) );
                                                                       
-    Teuchos::RCP<Ginla::FDM::Operator::BCCentral> glOperator
+    Teuchos::RCP<Ginla::FDM::Operator::Virtual> glOperator
         = Teuchos::rcp( new Ginla::FDM::Operator::BCCentral( grid,
                                                              A,
                                                              state->getPsi()->getMap(),

@@ -22,12 +22,13 @@
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_DefaultComm.hpp>
 
-#include "Ginla_Operator_BCCentral.h"
-#include "Ginla_Operator_BCInner.h"
+#include "Ginla_FDM_Operator_BCCentral.h"
+#include "Ginla_FDM_Operator_BCInner.h"
+#include "Ginla_FDM_LocaSystem_Bordered.h"
 
 #include "Recti_Domain_Square.h"
 
-#include "Ginla_LocaSystem_Bordered.h"
+
 #include "Ginla_IO_SaveEigenData.h"
 #include "Ginla_Helpers.h"
 #include "Ginla_IO_StatsWriter.h"
@@ -35,11 +36,11 @@
 #include "Ginla_StatusTest_Energy.h"
 #include "Ginla_StatusTest_Loop.h"
 #include "Ginla_StatusTest_Turnaround.h"
-#include "Ginla_MagneticVectorPotential_Centered.h"
+#include "Ginla_MagneticVectorPotential_ZSquareSymmetric.h"
 
 #include "Recti_Grid_Reader.h"
 
-#include "Ginla_Perturbation_Quadrants.h"
+// #include "Ginla_Perturbation_Quadrants.h"
 
 #include <LOCA_Thyra_Group.H>
 
@@ -134,7 +135,7 @@ main ( int argc, char *argv[] )
     TEUCHOS_ASSERT( !inputGuessFile.empty() );
     
     // For technical reasons, the reader can only accept ComplexMultiVectors.
-    Teuchos::RCP<Ginla::State> state;
+    Teuchos::RCP<Ginla::FDM::State> state;
     Recti::Grid::Reader::read ( Comm,
                                 inputGuessFile.string(),
                                 state,
@@ -154,13 +155,16 @@ main ( int argc, char *argv[] )
     }
     // ---------------------------------------------------------------------------
 
-    Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> A =
-        Teuchos::rcp ( new Ginla::MagneticVectorPotential::Centered ( glParameters.get<double> ( "H0" ),
-                                                                      glParameters.get<double> ( "scaling" ) ) );
+    Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> A =
+        Teuchos::rcp ( new Ginla::MagneticVectorPotential::ZSquareSymmetric
+                               ( glParameters.get<double> ( "H0" ),
+                                 glParameters.get<double> ( "scaling" )
+                               )
+                     );
 
     // create the operator
-    Teuchos::RCP<Ginla::Operator::Virtual> glOperator =
-        Teuchos::rcp ( new Ginla::Operator::BCCentral ( grid, A, psi->getMap(), psi->getMap() ) );
+    Teuchos::RCP<Ginla::FDM::Operator::Virtual> glOperator =
+        Teuchos::rcp ( new Ginla::FDM::Operator::BCCentral ( grid, A, psi->getMap(), psi->getMap() ) );
 
 //     // create a perturbation
 //     Teuchos::RCP<GL::Perturbation::Virtual> quadrantsPerturbation =
@@ -186,11 +190,11 @@ main ( int argc, char *argv[] )
                                                   outputFormat,
                                                   maxLocaSteps ) );
 
-    glsystem = Teuchos::rcp ( new Ginla::LocaSystem::Bordered ( glOperator,
-                                                                eComm,
-                                                                psi->getMap(),
-                                                                statsWriter,
-                                                                stateWriter ) );
+    glsystem = Teuchos::rcp ( new Ginla::FDM::LocaSystem::Bordered ( glOperator,
+                                                                     eComm,
+                                                                     psi->getMap(),
+                                                                     statsWriter,
+                                                                     stateWriter ) );
     
     // set the initial value from glParameters
     std::string contParam = stepperList.get<string> ( "Continuation Parameter" );

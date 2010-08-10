@@ -30,6 +30,10 @@ createImageWriter ( const std::string & fileName )
     // analyze the file name for extension
     int         dotPos    = fileName.rfind ( "." );
     std::string extension = fileName.substr ( dotPos+1, fileName.size()-dotPos-1 );
+    // convert to lower case
+    std::transform( extension.begin(), extension.end(),
+                    extension.begin(), ::tolower
+                  );
 
     if ( extension.compare ( "vtk" ) == 0 )
     {

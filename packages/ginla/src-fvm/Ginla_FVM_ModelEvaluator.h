@@ -38,7 +38,7 @@ namespace Ginla
 {
   namespace MagneticVectorPotential
   {
-    class Centered;
+    class Virtual;
   }
   namespace Komplex
   {
@@ -62,10 +62,10 @@ class ModelEvaluator:
 public:
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
   //! Constructor without initial guess.
-  ModelEvaluator ( const Teuchos::RCP<VIO::Mesh::Mesh>                          & mesh,
-                   const Teuchos::ParameterList                                 & params,
-                   const Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> & mvp,
-                   const Teuchos::RCP<Ginla::Komplex::LinearProblem>            & komplex
+  ModelEvaluator ( const Teuchos::RCP<VIO::Mesh::Mesh>                         & mesh,
+                   const Teuchos::ParameterList                                & params,
+                   const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp,
+                   const Teuchos::RCP<Ginla::Komplex::LinearProblem>           & komplex
                  );
   
   // Destructor
@@ -143,7 +143,7 @@ private:
 //    Teuchos::RCP<const TMap>          tMap_;
 
    const Teuchos::RCP<Ginla::Komplex::LinearProblem> komplex_;
-   const Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> mvp_;
+   const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp_;
 
    Teuchos::RCP<Epetra_Vector> x_;
    mutable bool firstTime_;

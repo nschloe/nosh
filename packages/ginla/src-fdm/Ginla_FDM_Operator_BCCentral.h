@@ -17,8 +17,8 @@
 
 */
 
-#ifndef GLOPERATORBCCENTRAL_H
-#define GLOPERATORBCCENTRAL_H
+#ifndef GINLA_FDM_OPERATOR_BCCENTRAL_H
+#define GINLA_FDM_OPERATOR_BCCENTRAL_H
 
 #include "Ginla_FDM_Operator_Virtual.h"
 
@@ -32,10 +32,10 @@ class BCCentral:
 public:
 
     //! Default constructor.
-    BCCentral ( const Teuchos::RCP<Recti::Grid::Uniform>                     & grid,
-                const Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> & A,
-                const Teuchos::RCP<const ComplexMap>                         & domainMap,
-                const Teuchos::RCP<const ComplexMap>                         & rangeMap
+    BCCentral ( const Teuchos::RCP<Recti::Grid::Uniform>                    & grid,
+                const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & A,
+                const Teuchos::RCP<const ComplexMap>                        & domainMap,
+                const Teuchos::RCP<const ComplexMap>                        & rangeMap
               );
 
     //! Destructor
@@ -113,4 +113,4 @@ private:
   }
 } // namespace GL
 
-#endif // GLOPERATORBCCENTRAL_H
+#endif // GINLA_FDM_OPERATOR_BCCENTRAL_H

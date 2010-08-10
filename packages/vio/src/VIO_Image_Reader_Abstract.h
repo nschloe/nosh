@@ -53,8 +53,8 @@ protected:
                        Teuchos::RCP<ComplexMultiVector>              & z,
                        Teuchos::Array<int>                           & p,
                        UIntTuple                                     & dims,
-                       DoubleTuple                                   & origin,
-                       DoubleTuple                                   & spacing,
+                       Point                                         & origin,
+                       Point                                         & spacing,
                        Teuchos::ParameterList                        & fieldData,
                        const Teuchos::RCP<const Teuchos::Comm<int> > & TComm
                      ) const;

@@ -1,7 +1,7 @@
 <ParameterList>
   
   <ParameterList name="Initial guess">
-      <Parameter name="File name" type="string" value="init.vti"/>
+      <Parameter name="File name" type="string" value="perturbed.vti"/>
   </ParameterList>
 
   <ParameterList name="Output">

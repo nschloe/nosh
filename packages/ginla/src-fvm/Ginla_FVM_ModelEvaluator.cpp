@@ -22,7 +22,7 @@
 #include "Ginla_Komplex_LinearProblem.h"
 #include "Ginla_Komplex_DoubleMatrix.h"
 #include "Ginla_FVM_State.h"
-#include "Ginla_MagneticVectorPotential_Centered.h"
+#include "Ginla_MagneticVectorPotential_Virtual.h"
 
 #include <Epetra_Map.h>
 #include <Epetra_LocalMap.h>
@@ -31,10 +31,10 @@
 
 // ============================================================================
 Ginla::FVM::ModelEvaluator::
-ModelEvaluator ( const Teuchos::RCP<VIO::Mesh::Mesh>                          & mesh,
-                 const Teuchos::ParameterList                                 & params,
-                 const Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> & mvp,
-                 const Teuchos::RCP<Ginla::Komplex::LinearProblem>            & komplex
+ModelEvaluator ( const Teuchos::RCP<VIO::Mesh::Mesh>                         & mesh,
+                 const Teuchos::ParameterList                                & params,
+                 const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp,
+                 const Teuchos::RCP<Ginla::Komplex::LinearProblem>           & komplex
                ) :
         komplex_ ( komplex ),
         mvp_( mvp ),
@@ -346,7 +346,7 @@ assembleKineticEnergyOperators_( const double mu ) const
   kineticEnergyOperator_->setAllToScalar( 0.0 );
   dKineticEnergyDMuOperator_->setAllToScalar( 0.0 );
 
-  mvp_->setH0( mu );
+  mvp_->setMu( mu );
   
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   // Loop over the elements, create local load vector and mass matrix,
@@ -414,7 +414,7 @@ assembleKineticEnergyOperators_( const double mu ) const
           // -------------------------------------------------------------------
           // Derivative by \mu.
           // Project derivative onto the edge.
-          Teuchos::RCP<Point> Da = mvp_->getDADh0( midpoint );
+          Teuchos::RCP<Point> Da = mvp_->getDADMu( midpoint );
           double DaProj = 0.0;
           for (int i=0; i<midpoint.size(); i++ )
               DaProj += ( node1[i] - node0[i] ) * (*Da)[i];

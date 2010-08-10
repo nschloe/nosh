@@ -43,14 +43,13 @@
 #include "Ginla_IO_NoxObserver.h"
 
 #include "Recti_Grid_Reader.h"
-#include "Ginla_MagneticVectorPotential_Centered.h"
+#include "Ginla_MagneticVectorPotential_ZSquareSymmetric.h"
 #include "Ginla_IO_StateWriter.h"
 
 #include "Ginla_FDM_ModelEvaluator_Default.h"
 #include "Ginla_FDM_Operator_BCCentral.h"
 // #include "Ginla_FDM_Operator_BCInner.h"
 // #include "Ginla_FDM_Operator_BCOuter.h"
-
 
 #include <boost/filesystem.hpp>
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -61,7 +60,8 @@ BOOST_AUTO_TEST_CASE( zero_step_piro_test )
 {
     // Initialize MPI
 #ifdef HAVE_MPI
-    MPI_Init ( NULL, NULL );
+    MPI_Init( boost::unit_test::framework::master_test_suite().argc,
+              boost::unit_test::framework::master_test_suite().argv );
 #endif
 
     // Create a communicator for Tpetra objects
@@ -153,8 +153,11 @@ BOOST_AUTO_TEST_CASE( zero_step_piro_test )
         grid->updateScaling( problemParameters.get<double>("scaling") );
     }
     
-    Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> A =
-        Teuchos::rcp ( new Ginla::MagneticVectorPotential::Centered ( problemParameters.get<double> ( "H0" ) ) );
+    Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> A =
+        Teuchos::rcp ( new Ginla::MagneticVectorPotential::ZSquareSymmetric
+                                          ( problemParameters.get<double> ( "H0" ),
+                                            problemParameters.get<double> ( "scaling" ) )
+                     );
 
     Teuchos::RCP<Ginla::Komplex::LinearProblem> komplex =
         Teuchos::rcp( new Ginla::Komplex::LinearProblem( eComm, initState->getPsi()->getMap() ) );
@@ -165,26 +168,32 @@ BOOST_AUTO_TEST_CASE( zero_step_piro_test )
                                                   "solution",
                                                   "VTI",
                                                   1000 ) );
-           
+
     // create the operator
     Teuchos::RCP<Ginla::FDM::Operator::Virtual> glOperator =
         Teuchos::rcp ( new Ginla::FDM::Operator::BCCentral ( grid,
-                                                        A,
-                                                        initState->getPsi()->getMap(),
-                                                        initState->getPsi()->getMap() ) );
+                                                             A,
+                                                             initState->getPsi()->getMap(),
+                                                             initState->getPsi()->getMap()
+                                                           )
+                     );
 
     // Create the interface between NOX and the application
     // This object is derived from NOX::Epetra::Interface
     Teuchos::RCP<Ginla::FDM::ModelEvaluator::Default> glModel = 
-              Teuchos::rcp(new Ginla::FDM::ModelEvaluator::Default( glOperator,
-                                                               komplex,
-                                                               *initState,
-                                                               problemParameters ) );
-                                                              
+              Teuchos::rcp( new Ginla::FDM::ModelEvaluator::Default( glOperator,
+                                                                     komplex,
+                                                                     *initState,
+                                                                     problemParameters
+                                                                   )
+                          );
+                                         
     Teuchos::RCP<Ginla::IO::NoxObserver> observer =
         Teuchos::rcp( new Ginla::IO::NoxObserver( stateWriter,
                                                   glModel,
-                                                  Ginla::IO::NoxObserver::NONLINEAR ) );
+                                                  Ginla::IO::NoxObserver::NONLINEAR
+                                                )
+                    );
 
     Teuchos::RCP<Teuchos::ParameterList> piroParams =
         Teuchos::rcp(new Teuchos::ParameterList("Piro Parameters"));
@@ -193,9 +202,11 @@ BOOST_AUTO_TEST_CASE( zero_step_piro_test )
     // Use these two objects to construct a Piro solved application 
     //   EpetraExt::ModelEvaluator is  base class of all Piro::Epetra solvers
     Teuchos::RCP<EpetraExt::ModelEvaluator> piro
-        = Teuchos::rcp(new Piro::Epetra::NOXSolver( piroParams,
-                                                    glModel,
-                                                    observer ));
+        = Teuchos::rcp( new Piro::Epetra::NOXSolver( piroParams,
+                                                     glModel,
+                                                     observer
+                                                   )
+                      );
 
     // Now the (somewhat cumbersome) setting of inputs and outputs
     EpetraExt::ModelEvaluator::InArgs inArgs = glModel->createInArgs();

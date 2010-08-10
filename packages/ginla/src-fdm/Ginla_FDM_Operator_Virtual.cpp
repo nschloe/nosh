@@ -20,7 +20,7 @@
 #include "Ginla_FDM_Operator_Virtual.h"
 
 #include "Ginla_Helpers.h"
-#include "Ginla_MagneticVectorPotential_Centered.h"
+#include "Ginla_MagneticVectorPotential_Virtual.h"
 #include "Recti_Grid_Uniform.h"
 
 #include <Teuchos_RCP.hpp>
@@ -29,10 +29,10 @@
 
 // =============================================================================
 Ginla::FDM::Operator::Virtual::
-Virtual ( const Teuchos::RCP<Recti::Grid::Uniform>                     & grid,
-          const Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> & A,
-          const Teuchos::RCP<const ComplexMap>                         & domainMap,
-          const Teuchos::RCP<const ComplexMap>                         & rangeMap
+Virtual ( const Teuchos::RCP<Recti::Grid::Uniform>                    & grid,
+          const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & A,
+          const Teuchos::RCP<const ComplexMap>                        & domainMap,
+          const Teuchos::RCP<const ComplexMap>                        & rangeMap
         ) :
         domainMap_(domainMap),
         rangeMap_(rangeMap),
@@ -122,42 +122,42 @@ buildACache_() const
         ABelowView[k] = A_->getAy ( *grid_->getXBelow ( globalIndex ) );
         AAboveView[k] = A_->getAy ( *grid_->getXAbove ( globalIndex ) );
         
-        dAdH0LeftView[k]  = A_->getDAxDh0 ( *grid_->getXLeft ( globalIndex ) );
-        dAdH0RightView[k] = A_->getDAxDh0 ( *grid_->getXRight ( globalIndex ) );
-        dAdH0BelowView[k] = A_->getDAyDh0 ( *grid_->getXBelow ( globalIndex ) );
-        dAdH0AboveView[k] = A_->getDAyDh0 ( *grid_->getXAbove ( globalIndex ) );
+        dAdH0LeftView[k]  = A_->getDAxDMu ( *grid_->getXLeft ( globalIndex ) );
+        dAdH0RightView[k] = A_->getDAxDMu ( *grid_->getXRight ( globalIndex ) );
+        dAdH0BelowView[k] = A_->getDAyDMu ( *grid_->getXBelow ( globalIndex ) );
+        dAdH0AboveView[k] = A_->getDAyDMu ( *grid_->getXAbove ( globalIndex ) );
         break;
 
     case Recti::Grid::Abstract::BOUNDARY_BOTTOMLEFTCONVEX:
         ARightView[k] = A_->getAx ( *grid_->getXRight ( globalIndex ) );
         AAboveView[k] = A_->getAy ( *grid_->getXAbove ( globalIndex ) );
         
-        dAdH0RightView[k] = A_->getDAxDh0 ( *grid_->getXRight ( globalIndex ) );
-        dAdH0AboveView[k] = A_->getDAyDh0 ( *grid_->getXAbove ( globalIndex ) );
+        dAdH0RightView[k] = A_->getDAxDMu ( *grid_->getXRight ( globalIndex ) );
+        dAdH0AboveView[k] = A_->getDAyDMu ( *grid_->getXAbove ( globalIndex ) );
         break;
 
     case Recti::Grid::Abstract::BOUNDARY_BOTTOMRIGHTCONVEX:
         ALeftView[k]  = A_->getAx ( *grid_->getXLeft ( globalIndex ) );
         AAboveView[k] = A_->getAy ( *grid_->getXAbove ( globalIndex ) );
         
-        dAdH0LeftView[k]  = A_->getDAxDh0 ( *grid_->getXLeft ( globalIndex ) );
-        dAdH0AboveView[k] = A_->getDAyDh0 ( *grid_->getXAbove ( globalIndex ) );
+        dAdH0LeftView[k]  = A_->getDAxDMu ( *grid_->getXLeft ( globalIndex ) );
+        dAdH0AboveView[k] = A_->getDAyDMu ( *grid_->getXAbove ( globalIndex ) );
         break;
 
     case Recti::Grid::Abstract::BOUNDARY_TOPRIGHTCONVEX:
         ALeftView[k]  = A_->getAx ( *grid_->getXLeft ( globalIndex ) );
         ABelowView[k] = A_->getAy ( *grid_->getXBelow ( globalIndex ) );
         
-        dAdH0LeftView[k]  = A_->getDAxDh0 ( *grid_->getXLeft ( globalIndex ) );
-        dAdH0BelowView[k] = A_->getDAyDh0 ( *grid_->getXBelow ( globalIndex ) );
+        dAdH0LeftView[k]  = A_->getDAxDMu ( *grid_->getXLeft ( globalIndex ) );
+        dAdH0BelowView[k] = A_->getDAyDMu ( *grid_->getXBelow ( globalIndex ) );
         break;
 
     case Recti::Grid::Abstract::BOUNDARY_TOPLEFTCONVEX:
         ARightView[k] = A_->getAx ( *grid_->getXRight ( globalIndex ) );
         ABelowView[k] = A_->getAy ( *grid_->getXBelow ( globalIndex ) );
         
-        dAdH0RightView[k] = A_->getDAxDh0 ( *grid_->getXRight ( globalIndex ) );
-        dAdH0BelowView[k] = A_->getDAyDh0 ( *grid_->getXBelow ( globalIndex ) );
+        dAdH0RightView[k] = A_->getDAxDMu ( *grid_->getXRight ( globalIndex ) );
+        dAdH0BelowView[k] = A_->getDAyDMu ( *grid_->getXBelow ( globalIndex ) );
         break;
 
     case Recti::Grid::Abstract::BOUNDARY_BOTTOM:
@@ -165,9 +165,9 @@ buildACache_() const
         ARightView[k] = A_->getAx ( *grid_->getXRight ( globalIndex ) );
         AAboveView[k] = A_->getAy ( *grid_->getXAbove ( globalIndex ) );
         
-        dAdH0LeftView[k]  = A_->getDAxDh0 ( *grid_->getXLeft ( globalIndex ) );
-        dAdH0RightView[k] = A_->getDAxDh0 ( *grid_->getXRight ( globalIndex ) );
-        dAdH0AboveView[k] = A_->getDAyDh0 ( *grid_->getXAbove ( globalIndex ) );
+        dAdH0LeftView[k]  = A_->getDAxDMu ( *grid_->getXLeft ( globalIndex ) );
+        dAdH0RightView[k] = A_->getDAxDMu ( *grid_->getXRight ( globalIndex ) );
+        dAdH0AboveView[k] = A_->getDAyDMu ( *grid_->getXAbove ( globalIndex ) );
         break;
 
     case Recti::Grid::Abstract::BOUNDARY_RIGHT:
@@ -175,9 +175,9 @@ buildACache_() const
         ABelowView[k] = A_->getAy ( *grid_->getXBelow ( globalIndex ) );
         AAboveView[k] = A_->getAy ( *grid_->getXAbove ( globalIndex ) );
         
-        dAdH0LeftView[k]  = A_->getDAxDh0 ( *grid_->getXLeft ( globalIndex ) );
-        dAdH0BelowView[k] = A_->getDAyDh0 ( *grid_->getXBelow ( globalIndex ) );
-        dAdH0AboveView[k] = A_->getDAyDh0 ( *grid_->getXAbove ( globalIndex ) );
+        dAdH0LeftView[k]  = A_->getDAxDMu ( *grid_->getXLeft ( globalIndex ) );
+        dAdH0BelowView[k] = A_->getDAyDMu ( *grid_->getXBelow ( globalIndex ) );
+        dAdH0AboveView[k] = A_->getDAyDMu ( *grid_->getXAbove ( globalIndex ) );
         break;
 
     case Recti::Grid::Abstract::BOUNDARY_TOP:
@@ -185,9 +185,9 @@ buildACache_() const
         ARightView[k] = A_->getAx ( *grid_->getXRight ( globalIndex ) );
         ABelowView[k] = A_->getAy ( *grid_->getXBelow ( globalIndex ) );
         
-        dAdH0LeftView[k]  = A_->getDAxDh0 ( *grid_->getXLeft ( globalIndex ) );
-        dAdH0RightView[k] = A_->getDAxDh0 ( *grid_->getXRight ( globalIndex ) );
-        dAdH0BelowView[k] = A_->getDAyDh0 ( *grid_->getXBelow ( globalIndex ) );
+        dAdH0LeftView[k]  = A_->getDAxDMu ( *grid_->getXLeft ( globalIndex ) );
+        dAdH0RightView[k] = A_->getDAxDMu ( *grid_->getXRight ( globalIndex ) );
+        dAdH0BelowView[k] = A_->getDAyDMu ( *grid_->getXBelow ( globalIndex ) );
         break;
 
     case Recti::Grid::Abstract::BOUNDARY_LEFT:
@@ -195,9 +195,9 @@ buildACache_() const
         ABelowView[k] = A_->getAy ( *grid_->getXBelow ( globalIndex ) );
         AAboveView[k] = A_->getAy ( *grid_->getXAbove ( globalIndex ) );
         
-        dAdH0RightView[k] = A_->getDAxDh0 ( *grid_->getXRight ( globalIndex ) );
-        dAdH0BelowView[k] = A_->getDAyDh0 ( *grid_->getXBelow ( globalIndex ) );
-        dAdH0AboveView[k] = A_->getDAyDh0 ( *grid_->getXAbove ( globalIndex ) );
+        dAdH0RightView[k] = A_->getDAxDMu ( *grid_->getXRight ( globalIndex ) );
+        dAdH0BelowView[k] = A_->getDAyDMu ( *grid_->getXBelow ( globalIndex ) );
+        dAdH0AboveView[k] = A_->getDAyDMu ( *grid_->getXAbove ( globalIndex ) );
         break;
 
     default:

@@ -22,15 +22,14 @@
 #include <Teuchos_Array.hpp>
 
 #include "Recti_Grid_Uniform.h"
-#include "Ginla_MagneticVectorPotential_Centered.h"
 #include "Ginla_Komplex_DoubleMatrix.h"
 
 // =============================================================================
 Ginla::FDM::Operator::BCCentral::
-BCCentral ( const Teuchos::RCP<Recti::Grid::Uniform>                     & grid,
-            const Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> & A,
-            const Teuchos::RCP<const ComplexMap>                         & domainMap,
-            const Teuchos::RCP<const ComplexMap>                         & rangeMap
+BCCentral ( const Teuchos::RCP<Recti::Grid::Uniform>                    & grid,
+            const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & A,
+            const Teuchos::RCP<const ComplexMap>                        & domainMap,
+            const Teuchos::RCP<const ComplexMap>                        & rangeMap
           ) :
         Ginla::FDM::Operator::Virtual ( grid, A, domainMap, rangeMap )
 {

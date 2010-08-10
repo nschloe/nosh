@@ -9,7 +9,7 @@
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 
-#include "Ginla_MagneticVectorPotential_Centered.h"
+#include "Ginla_MagneticVectorPotential_ZSquareSymmetric.h"
 #include "Ginla_FDM_Operator_BCCentral.h"
 #include "Ginla_FDM_LocaSystem_Default.h"
 
@@ -26,6 +26,7 @@
 
 #include <boost/filesystem.hpp>
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+#include <Ginla_MagneticVectorPotential_Z.h>
 
 BOOST_AUTO_TEST_SUITE( eval_gl_test )
 // ===========================================================================
@@ -76,7 +77,8 @@ BOOST_AUTO_TEST_CASE( eval_operator_test )
     Teuchos::CommandLineProcessor::EParseCommandLineReturn parseReturn;
     
     parseReturn = My_CLP.parse ( boost::unit_test::framework::master_test_suite().argc,
-                                 boost::unit_test::framework::master_test_suite().argv );
+                                 boost::unit_test::framework::master_test_suite().argv
+                               );
     // ------------------------------------------------------------------------
     // read the input state
     Teuchos::RCP<Ginla::FDM::State>    state;
@@ -88,8 +90,8 @@ BOOST_AUTO_TEST_CASE( eval_operator_test )
     double h0 = 0.9;
     double scaling = 7.0;
     
-    Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> A =
-        Teuchos::rcp ( new Ginla::MagneticVectorPotential::Centered ( h0 ) );
+    Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> A =
+        Teuchos::rcp ( new Ginla::MagneticVectorPotential::ZSquareSymmetric ( h0, scaling ) );
 
     // create the operator
     Teuchos::RCP<const ComplexMap> map = state->getPsi()->getMap();
@@ -175,8 +177,8 @@ BOOST_AUTO_TEST_CASE( eval_locasystem_test )
     double h0 = 0.9;
     double scaling = 7.0;
     
-    Teuchos::RCP<Ginla::MagneticVectorPotential::Centered> A =
-        Teuchos::rcp ( new Ginla::MagneticVectorPotential::Centered ( h0 ) );
+    Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> A =
+        Teuchos::rcp ( new Ginla::MagneticVectorPotential::ZSquareSymmetric ( h0, scaling ) );
 
     // create the operator
     Teuchos::RCP<const ComplexMap> map = state->getPsi()->getMap();
