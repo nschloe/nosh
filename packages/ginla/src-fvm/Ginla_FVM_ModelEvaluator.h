@@ -24,6 +24,8 @@
 #include <EpetraExt_ModelEvaluator.h>
 
 #include "VIO_Mesh_Mesh.h"
+#include "Ginla_StateTranslator.h"
+#include "Ginla_ParameterHost_Virtual.h"
 
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_map.hpp>
@@ -56,7 +58,9 @@ namespace Ginla {
 namespace FVM {
   
 class ModelEvaluator:
-    public EpetraExt::ModelEvaluator
+    public EpetraExt::ModelEvaluator,
+    public Ginla::StateTranslator,
+    public Ginla::ParameterHost::Virtual
 {
 
 public:
@@ -114,6 +118,22 @@ public:
              const OutArgs & outArgs ) const;
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -              
   
+public:
+    Teuchos::RCP<Ginla::State::Virtual>
+    createState( const Epetra_Vector & x ) const;
+    
+    Teuchos::RCP<Epetra_Vector>
+    createSystemVector(  const Ginla::State::Virtual & state ) const;
+
+    void
+    createSystemVector( const Ginla::State::Virtual & state,
+                              Epetra_Vector         & x
+                      ) const;
+    
+    virtual
+    Teuchos::RCP<LOCA::ParameterVector>
+    getParameters() const;
+  
 private:
   void
   computeF_ ( const Epetra_Vector & x,
@@ -156,21 +176,15 @@ private:
    
    const Teuchos::RCP<VIO::Mesh::Mesh> mesh_;
    Teuchos::RCP<TCrsGraph> kineticEnergyOperatorGraph_;
-   Teuchos::RCP<ComplexMatrix> kineticEnergyOperator_;
-   Teuchos::RCP<ComplexMatrix> dKineticEnergyDMuOperator_;
+   mutable Teuchos::RCP<ComplexMatrix> kineticEnergyOperator_;
+   mutable Teuchos::RCP<ComplexMatrix> dKineticEnergyDMuOperator_;
    mutable double kineticEnergyOperatorsMu_;
    Teuchos::RCP<Ginla::Komplex::DoubleMatrix> jacobianOperator_;
 //    Teuchos::RCP<Epetra_CrsMatrix> fvmLaplacian_;
 //    Teuchos::RCP<Epetra_CrsMatrix> jacobian_;
    Teuchos::RCP<Epetra_CrsGraph> graph_;
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -       
-private:
-    Teuchos::RCP<Ginla::FVM::State>
-    createState_( const Epetra_Vector & x ) const;
-    
-    Teuchos::RCP<Epetra_Vector>
-    createSystemVector_(  const Ginla::FVM::State & state ) const;
-  
+private:  
     void
     setupParameters_( const Teuchos::ParameterList & params );
     
@@ -183,6 +197,9 @@ private:
     Teuchos::RCP<ComplexMatrix>
     deepCopy_ ( const Teuchos::RCP<const ComplexMatrix> & A
               ) const;
+              
+    // this value is really just for getParameters()
+    mutable double mu_;
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 };
 

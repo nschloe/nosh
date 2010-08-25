@@ -133,7 +133,7 @@ freeEnergy () const
        mesh_->getControlVolumes()->get1dView();
    Teuchos::ArrayRCP<const double_complex> psiView = psi_.get1dView();
    for ( int k=0; k<controlVolumes.size(); k++ )
-       globalEnergy += controlVolumes[k] * pow( norm( psiView[k] ), 2 );
+       globalEnergy -= controlVolumes[k] * pow( norm( psiView[k] ), 2 );
       
    globalEnergy /= mesh_->getDomainArea();
    
@@ -156,8 +156,6 @@ freeEnergy () const
 //         //    \int_{element} |psi|^4 = ?
 // 
 //    }
-   
- 
 
     return globalEnergy;
 }
@@ -218,13 +216,14 @@ normalizedScaledL2Norm () const
 // =============================================================================
 void
 Ginla::FVM::State::
-update( const double              alpha,
-        const Ginla::FVM::State & b,
-        const double              beta
+update( const double                  alpha,
+        const Ginla::State::Virtual & b,
+        const double                  beta
       )
 {
   psi_.update( alpha, *(b.getPsi()), beta );
   chi_ = alpha*chi_ + beta * b.getChi();
+  return;
 }
 // =============================================================================
 // Count the number of vortices by the total phase change along the boundary
@@ -237,10 +236,10 @@ int
 Ginla::FVM::State::
 getVorticity () const
 {
-  TEST_FOR_EXCEPTION( true,
-                      std::logic_error,
-                      "Method \"getVorticity()\" not yet implemented."
-                    );
+//   TEST_FOR_EXCEPTION( true,
+//                       std::logic_error,
+//                       "Method \"getVorticity()\" not yet implemented."
+//                     );
 
   return 0;
 }

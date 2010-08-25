@@ -21,6 +21,7 @@
 #define GINLA_FVM_STATE_H
 
 #include "VIO_Mesh_Mesh.h"
+#include "Ginla_State_Virtual.h"
 
 namespace LOCA {
   class ParameterVector;
@@ -28,7 +29,8 @@ namespace LOCA {
 
 namespace Ginla {
 namespace FVM {
-class State
+class State:
+  public Ginla::State::Virtual
 {
 public:
 
@@ -88,9 +90,9 @@ public:
   //! Updates the values of the state according to
   //! \f$a \leftarrow \alpha b + \beta a \f$.
   void
-  update( const double              alpha,
-          const Ginla::FVM::State & b,
-          const double beta
+  update( const double                  alpha,
+          const Ginla::State::Virtual & b,
+          const double                  beta
         );
 
   /** Calcuate the grid approximation of the Gibbs free energy
