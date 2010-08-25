@@ -42,15 +42,15 @@ VIO::Image::Reader::Abstract::
 // =============================================================================
 void
 VIO::Image::Reader::Abstract::
-processImageData ( const vtkSmartPointer<vtkImageData>           & imageData,
-                   Teuchos::RCP<ComplexMultiVector>              & z,
-                   Teuchos::Array<int>                           & p,
-                   UIntTuple                                     & dims,
-                   Point                                         & origin,
-                   Point                                         & spacing,
-                   Teuchos::ParameterList                        & fieldData,
-                   const Teuchos::RCP<const Teuchos::Comm<int> > & TComm
-                 ) const
+processImageData_ ( const vtkSmartPointer<vtkImageData>           & imageData,
+                    Teuchos::RCP<ComplexMultiVector>              & z,
+                    Teuchos::Array<int>                           & p,
+                    UIntTuple                                     & dims,
+                    Point                                         & origin,
+                    Point                                         & spacing,
+                    Teuchos::ParameterList                        & fieldData,
+                    const Teuchos::RCP<const Teuchos::Comm<int> > & TComm
+                  ) const
 {
     double *tmp;
     tmp = imageData->GetOrigin();
@@ -62,7 +62,7 @@ processImageData ( const vtkSmartPointer<vtkImageData>           & imageData,
     dims = Teuchos::tuple ( ( unsigned int ) intTmp[0],
                             ( unsigned int ) intTmp[1] );
 
-    fieldData = readFieldData ( imageData );
+    fieldData = this->readFieldData_ ( imageData );
 
     // deep copy the permutation vector out, and delete the entry in the
     // parameter list

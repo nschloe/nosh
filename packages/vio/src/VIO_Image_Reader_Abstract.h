@@ -49,15 +49,15 @@ public:
 
 protected:
     void
-    processImageData ( const vtkSmartPointer<vtkImageData>           & imageData,
-                       Teuchos::RCP<ComplexMultiVector>              & z,
-                       Teuchos::Array<int>                           & p,
-                       UIntTuple                                     & dims,
-                       Point                                         & origin,
-                       Point                                         & spacing,
-                       Teuchos::ParameterList                        & fieldData,
-                       const Teuchos::RCP<const Teuchos::Comm<int> > & TComm
-                     ) const;
+    processImageData_ ( const vtkSmartPointer<vtkImageData>           & imageData,
+                        Teuchos::RCP<ComplexMultiVector>              & z,
+                        Teuchos::Array<int>                           & p,
+                        UIntTuple                                     & dims,
+                        Point                                         & origin,
+                        Point                                         & spacing,
+                        Teuchos::ParameterList                        & fieldData,
+                        const Teuchos::RCP<const Teuchos::Comm<int> > & TComm
+                      ) const;
 
 private:
 };

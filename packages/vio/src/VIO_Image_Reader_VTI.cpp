@@ -50,8 +50,8 @@ read ( Teuchos::RCP<ComplexMultiVector>              & z,
     reader->SetFileName ( filePath_.c_str() );
     reader->Update();
 
-    processImageData ( reader->GetOutput(),
-                       z, p, dims, origin, spacing, fieldData, TComm );
+    this->processImageData_ ( reader->GetOutput(),
+                              z, p, dims, origin, spacing, fieldData, TComm );
 
     return;
 }

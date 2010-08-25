@@ -32,10 +32,13 @@ FIND_LIBRARY( VTKIO_LIBRARY vtkIO ${VTK_LIBRARY_DIRS} )
 FIND_LIBRARY( VTKFILTERING_LIBRARY vtkFiltering ${VTK_LIBRARY_DIRS} )
 FIND_LIBRARY( VTKCOMMON_LIBRARY vtkCommon ${VTK_LIBRARY_DIRS} )
 FIND_LIBRARY( VTKIMAGING_LIBRARY vtkImaging ${VTK_LIBRARY_DIRS} )
+FIND_LIBRARY( VTKGRAPHICS_LIBRARY vtkGraphics ${VTK_LIBRARY_DIRS} ) # for vtkFeatureEdges
 
 # list the libraries against which libio must be linked here
 TARGET_LINK_LIBRARIES ( vio
                         ${VTKIO_LIBRARY}
                         ${VTKFILTERING_LIBRARY}
                         ${VTKCOMMON_LIBRARY}
-                        ${VTKIMAGING_LIBRARY} )
+                        ${VTKIMAGING_LIBRARY}
+                        ${VTKGRAPHICS_LIBRARY}
+                      )

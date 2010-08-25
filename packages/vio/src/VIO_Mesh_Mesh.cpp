@@ -127,14 +127,6 @@ getControlVolumes() const
   return controlVolumes_;
 }
 // =============================================================================
-Teuchos::ArrayRCP<Point>
-VIO::Mesh::Mesh::
-getCircumcenters() const
-{
-  TEUCHOS_ASSERT( !circumcenters_.is_null() );
-  return circumcenters_;
-}
-// =============================================================================
 Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >
 VIO::Mesh::Mesh::
 getEdgeLengths() const
@@ -160,10 +152,19 @@ void
 VIO::Mesh::Mesh::
 computeDomainArea_()
 {
-  TEUCHOS_ASSERT( !controlVolumes_.is_null() );
+  // break it down into a non-overlapping map
+  Teuchos::RCP<Tpetra::Map<ORD> > nonoverlapMap =
+      Teuchos::rcp( new Tpetra::Map<ORD>( controlVolumes_->getGlobalLength(), 0, comm_ ) );
+  Teuchos::RCP<DoubleVector> tmp =
+      Teuchos::rcp( new DoubleVector( nonoverlapMap ) );
+  // merge the stuff into a non-overlapping vector
+  Tpetra::Export<ORD> exporter( controlVolumes_->getMap(),
+                                nonoverlapMap
+                              );
+  tmp->doExport( *controlVolumes_, exporter, Tpetra::REPLACE );
 
-  // sum over the control volumes
-  area_ = controlVolumes_->norm1();
+  // sum over all entries
+  area_ = tmp->norm1();
 
   return;
 }
@@ -176,73 +177,114 @@ computeFvmEntities()
   TEUCHOS_ASSERT( !elems_.is_null() );
   int numElems = elems_.size();
   
-  TEUCHOS_ASSERT( !nodes_.is_null() );
-  int numNodes = nodes_.size();
-  Teuchos::RCP<Tpetra::Map<ORD> > map =
-      Teuchos::rcp( new Tpetra::Map<ORD>( numNodes, 0, comm_ ) );
-
-  controlVolumes_ = Teuchos::rcp( new DoubleVector( map ) );
+  Teuchos::RCP<Tpetra::Map<ORD> > map = this->getElemsToNodesMap_();
+  controlVolumes_ = Teuchos::rcp( new DoubleVector( map ) );  
+  edgeLengths_    = Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >( numElems );
+  coedgeLengths_  = Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >( numElems );
   
-  Teuchos::ArrayRCP<double> controlVolumesView = controlVolumes_->get1dViewNonConst();
-  
-  circumcenters_ = Teuchos::ArrayRCP<Point>( numElems );
-  edgeLengths_   = Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >( numElems );
-  coedgeLengths_ = Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >( numElems );
+//   Teuchos::ArrayRCP<double> controlVolumesView = controlVolumes_->get1dViewNonConst();
   
   // Run over the elements and calculate their contributions to the
   // control volumes.
+  Teuchos::ArrayRCP<double> cvView = controlVolumes_->get1dViewNonConst();
   for ( int k=0; k<numElems; k++ )
   {
     Teuchos::ArrayRCP<ORD> & elem = elems_[k];
     
     TEST_FOR_EXCEPTION( elems_[k].size() != 3,
                         std::runtime_error,
-                        "Control volumes can only be constructed consistently with triangular elements." );
+                        "Control volumes can only be constructed consistently with triangular elements."
+                      );
     
-    // extract the points for short-hand notation
-    Point & x0 = nodes_[ elem[0] ];
-    Point & x1 = nodes_[ elem[1] ];
-    Point & x2 = nodes_[ elem[2] ];
+    // compute the circumcenter
+    Point cc = this->computeCircumcenter_( nodes_[elem[0]], 
+                                           nodes_[elem[1]],
+                                           nodes_[elem[2]]
+                                         );
     
-    // compute the circumcenter    
-    circumcenters_[k] = this->computeCircumcenter_( x0, x1, x2 );    
-    Point & cc = circumcenters_[k];
-    
-    // midpoints of the adjacent edges
-    Point mp0 = this->add_( 0.5, x0, 0.5, x1 );
-    Point mp1 = this->add_( 0.5, x1, 0.5, x2 );
-    Point mp2 = this->add_( 0.5, x2, 0.5, x0 );
-    
-    double localContributions[3];
-    localContributions[0] = this->getTriangleArea_( x0, cc, mp0 )
-                          + this->getTriangleArea_( x0, cc, mp2 );
-    localContributions[1] = this->getTriangleArea_( x1, cc, mp1 )
-                          + this->getTriangleArea_( x1, cc, mp0 );
-    localContributions[2] = this->getTriangleArea_( x2, cc, mp2 )
-                          + this->getTriangleArea_( x2, cc, mp1 );
-                          
-    controlVolumesView[ elem[0] ] += localContributions[0];
-    controlVolumesView[ elem[1] ] += localContributions[1];
-    controlVolumesView[ elem[2] ] += localContributions[2];
-                                 
-    // add the lengths of the edges
-    edgeLengths_[k] = Teuchos::ArrayRCP<double>( 3 );
-    edgeLengths_[k][0] = this->norm2_( this->add_( 1.0, x1, -1.0, x0 ) );
-    edgeLengths_[k][1] = this->norm2_( this->add_( 1.0, x2, -1.0, x1 ) );
-    edgeLengths_[k][2] = this->norm2_( this->add_( 1.0, x0, -1.0, x2 ) );
-    
-    // add the length of the part of the coedge in the current element
+    edgeLengths_[k]   = Teuchos::ArrayRCP<double>( 3 );
     coedgeLengths_[k] = Teuchos::ArrayRCP<double>( 3 );
-    coedgeLengths_[k][0] = this->norm2_( this->add_( 1.0, mp0, -1.0, cc ) );
-    coedgeLengths_[k][1] = this->norm2_( this->add_( 1.0, mp1, -1.0, cc ) );
-    coedgeLengths_[k][2] = this->norm2_( this->add_( 1.0, mp2, -1.0, cc ) );
+    // iterate over the edges
+    for ( int l=0; l<3; l++ )
+    {
+        int i0 = elem[ l ];
+        int i1 = elem[ (l+1)%3 ];
+        
+        Point & x0 = nodes_[i0];
+        Point & x1 = nodes_[i1];
+        
+        // edge midpoint
+        Point mp = this->add_( 0.5, x0, 0.5, x1 );
 
+        cvView[ map->getLocalElement(i0) ] += this->getTriangleArea_( x0, cc, mp );
+        cvView[ map->getLocalElement(i1) ] += this->getTriangleArea_( x1, cc, mp );
+        
+        coedgeLengths_[k][l] = this->norm2_( this->add_( 1.0, mp, -1.0, cc ) );
+        edgeLengths_[k][l]   = this->norm2_( this->add_( 1.0, x1, -1.0, x0 ) );
+    }
   }
-  
+
+  // sum up the overlapping entries and make sure they're
+  // available on all processes
+  this->sumInOverlapMap_( controlVolumes_ );
+
   // TODO move this to another spot
   this->computeDomainArea_();
 
   return;
+}
+// =============================================================================
+void
+VIO::Mesh::Mesh::
+sumInOverlapMap_( Teuchos::RCP<DoubleVector> x )
+{
+  Teuchos::RCP<Tpetra::Map<ORD> > nonoverlapMap =
+      Teuchos::rcp( new Tpetra::Map<ORD>( x->getGlobalLength(), 0, comm_ ) );
+  Teuchos::RCP<DoubleVector> tmp =
+      Teuchos::rcp( new DoubleVector( nonoverlapMap ) );
+
+  // merge the stuff into a non-overlapping vector
+  Tpetra::Export<ORD> exporter( x->getMap(),
+                                nonoverlapMap
+                              );
+  tmp->doExport( *x, exporter, Tpetra::ADD );
+  
+  // map it back out to x
+  x->doImport( *tmp, exporter, Tpetra::REPLACE );
+  
+  return;
+}
+// =============================================================================
+Teuchos::RCP<Tpetra::Map<ORD> >
+VIO::Mesh::Mesh::
+getElemsToNodesMap_()
+{
+  // create list of elements that need to be accessible from this process
+  
+  
+  // Make sure that *all entries that belong to any of the elements in
+  // this core are accessible.
+  // First mark all the nodes that need to be accessible:
+  TEUCHOS_ASSERT( !elems_.is_null() );
+  TEUCHOS_ASSERT( !nodes_.is_null() );
+  int numNodes = nodes_.size();
+  Teuchos::Array<bool> mustBeAccessible( numNodes );
+  for ( int k=0; k<elems_.size(); k++ )
+      for ( int l=0; l<elems_[k].size(); l++ )
+          mustBeAccessible[ elems_[k][l] ] = true;
+  // now create the list
+  Teuchos::Array<ORD> entryList;
+  for ( int k=0; k<numNodes; k++ )
+      if ( mustBeAccessible[k] )
+          entryList.append( k );
+
+//   std::cout << "This is core " << comm_->getRank() << " this is my nodes list " << entryList << std::endl;
+      
+  Teuchos::RCP<Tpetra::Map<ORD> > map =
+      Teuchos::rcp( new Tpetra::Map<ORD>( Teuchos::OrdinalTraits<ORD>::invalid(), entryList(), 0, comm_ )
+                  );
+
+  return map;
 }
 // =============================================================================
 Point

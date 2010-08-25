@@ -21,6 +21,7 @@
 #define VIO_MESH_READER_H
 
 #include "VIO_Reader_Abstract.h"
+#include "VIO_Typedefs.h"
 
 #include <string>
 #include <Teuchos_RCP.hpp>
@@ -47,19 +48,36 @@ class Reader:
       ~Reader ();
 
       void
-      read ( Teuchos::RCP<Mesh> & mesh
+      read ( Teuchos::RCP<ComplexMultiVector>              & z,
+             Teuchos::RCP<Mesh>                            & mesh,
+             Teuchos::ParameterList                        & fieldData,
+             const Teuchos::RCP<const Teuchos::Comm<int> > & TComm
            );
            
   protected:
   private:
     
-    void
-    processVtkData_( const vtkSmartPointer<vtkUnstructuredGrid> & vtkMesh,
-                     Teuchos::RCP<Mesh>                         & mesh
-                   );
+    Teuchos::RCP<VIO::Mesh::Mesh>
+    extractMeshData_( const vtkSmartPointer<vtkUnstructuredGrid>    & vtkMesh,
+                      const Teuchos::RCP<const Teuchos::Comm<int> > & TComm
+                    ) const;
+                   
+    Teuchos::RCP<ComplexMultiVector>
+    extractStateData_ ( const vtkSmartPointer<vtkDataSet>             & vtkData,
+                        const Teuchos::RCP<const Teuchos::Comm<int> > & TComm
+                      ) const;
     
   private:
 };
+
+  // non-member function
+  void
+  read ( const Teuchos::RCP<const Teuchos::Comm<int> > & TComm,
+         const std::string                             & filePath,
+         Teuchos::RCP<ComplexMultiVector>              & z,
+         Teuchos::RCP<Mesh>                            & mesh,
+         Teuchos::ParameterList                        & fieldData
+        );
 }
 }
 

@@ -95,9 +95,6 @@ class Mesh
     
     Teuchos::RCP<DoubleVector>
     getControlVolumes() const;
-        
-    Teuchos::ArrayRCP<Point>
-    getCircumcenters() const;
     
     Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >
     getEdgeLengths() const;
@@ -114,6 +111,9 @@ class Mesh
   protected:
     
   private:
+    
+      Teuchos::RCP<Tpetra::Map<ORD> >
+      getElemsToNodesMap_();
     
       void
       computeDomainArea_();
@@ -150,14 +150,21 @@ class Mesh
       double
       norm2_( const Point & x
             ) const;
+          
+      //! Takes a vector \c x with an overlay map and makes sure that
+      //! all the overlapping entries are summed up across all processes.
+      void
+      sumInOverlapMap_( Teuchos::RCP<DoubleVector> x );
     
   private:
+    // Needs to be "int" as Tpetra::Map only accepts int-communicators.
+    // <http://trilinos.sandia.gov/packages/docs/dev/packages/tpetra/doc/html/classTpetra_1_1Map.html>
     const Teuchos::RCP<const Teuchos::Comm<int> > & comm_;
+    
     Teuchos::ArrayRCP<Teuchos::ArrayRCP<ORD> > elems_;
     Teuchos::ArrayRCP<ElementType> elemTypes_;
     Teuchos::ArrayRCP<Point> nodes_;
     Teuchos::ArrayRCP<bool> isBoundaryNode_;
-    Teuchos::ArrayRCP<Point> circumcenters_;
     Teuchos::RCP<DoubleVector> controlVolumes_;
     Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > edgeLengths_;
     Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > coedgeLengths_;

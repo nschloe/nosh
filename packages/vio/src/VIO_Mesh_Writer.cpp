@@ -26,6 +26,8 @@
 
 #include <vtkXMLUnstructuredGridWriter.h>
 #include <vtkUnstructuredGridWriter.h>
+#include <vtkXMLPUnstructuredGridWriter.h>
+
 #include <vtkTriangle.h>
 #include <vtkPoints.h>
 #include <vtkDoubleArray.h>
@@ -38,6 +40,34 @@ Writer ( const std::string & filePath ) :
            vtkMesh_( vtkSmartPointer<vtkUnstructuredGrid>::New() ),
            mesh_( Teuchos::null )
 {
+  // analyze the file name for extension
+  int         dotPos    = filePath.rfind ( "." );
+  std::string extension = filePath.substr ( dotPos+1, filePath.size()-dotPos-1 );
+  // convert to lower case
+  std::transform( extension.begin(), extension.end(),
+                  extension.begin(), ::tolower
+                );
+
+  if ( extension.compare ( "vtk" ) == 0 )
+  {
+  }
+  else if ( extension.compare ( "vtu" ) == 0 )
+  {
+  }
+  else if ( extension.compare ( "pvtu" ) == 0 )
+  {
+  }
+  else
+  {
+      TEST_FOR_EXCEPTION ( true,
+                            std::logic_error,
+                            "Error when writing file \"" << filePath
+                            << "\". File name extension \"" << extension << "\" "
+                            << "not recognized. Must be one of \"vtk\", "
+                            << "\"vtu\"." );
+  }
+  
+  return;
 }
 // =============================================================================
 VIO::Mesh::Writer::
@@ -232,27 +262,24 @@ setValues( const ComplexMultiVector          & z,
   // fill the scalar field
   vtkSmartPointer<vtkDoubleArray> scalars =
       vtkSmartPointer<vtkDoubleArray>::New();
+      
+  // real and imaginary part
+  scalars->SetNumberOfComponents ( 2 );
 
-  std::stringstream strstream;
   for ( int vec=0; vec<numVecs; vec++ )
   {
       Teuchos::ArrayRCP<const std::complex<double> > zView =
           z.getVector(vec)->get1dView();
           
-      // real part
-      strstream << scNames[vec] << "_real";
-      scalars->SetName ( strstream.str().c_str() );
-      strstream.flush();
+      // fill the array
       for ( int k=0; k<numPoints; k++ )
+      {
           scalars->InsertNextValue ( zView[k].real() );
-      vtkMesh_->GetPointData()->AddArray ( scalars );
-      
-      // imaginary part
-      strstream << scNames[vec] << "_imag";
-      scalars->SetName ( strstream.str().c_str() );
-      strstream.flush();
-      for ( int k=0; k<numPoints; k++ )
           scalars->InsertNextValue ( zView[k].imag() );
+      }
+      
+      scalars->SetName ( scNames[vec].c_str() );
+      
       vtkMesh_->GetPointData()->AddArray ( scalars );
   }
   
@@ -512,12 +539,12 @@ VIO::Mesh::Writer::
 write () const
 {
     // write the file
-//     vtkSmartPointer<vtkXMLUnstructuredGridWriter> writer =
+//     vtkSmartPointer<vtkXMLWriter> writer =
 //         vtkSmartPointer<vtkXMLUnstructuredGridWriter>::New();
 
-    vtkSmartPointer<vtkXMLUnstructuredGridWriter> writer =
-        vtkSmartPointer<vtkXMLUnstructuredGridWriter>::New();
-
+    vtkSmartPointer<vtkXMLWriter> writer =
+        vtkSmartPointer<vtkXMLPUnstructuredGridWriter>::New();
+        
     writer->SetFileName ( filePath_.c_str() );
     writer->SetInput ( &*vtkMesh_ );
     writer->Write();
