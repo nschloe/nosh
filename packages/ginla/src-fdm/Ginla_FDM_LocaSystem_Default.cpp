@@ -82,9 +82,8 @@ computeF ( const Epetra_Vector & x,
         }
     }
     // ------------------------------------------------------------------------
-    // TODO Avoid this explicit copy.
     // transform back to fully real equation
-    FVec = *( this->createSystemVector( *res ) );
+    this->createSystemVector( *res, FVec );
     // ------------------------------------------------------------------------
     
     return true;
@@ -436,11 +435,22 @@ createFdmState_( const Epetra_Vector & x
     return Teuchos::rcp( new Ginla::FDM::State( psi, glOperator_->getGrid() ) );
 }
 // =============================================================================
+void
+Ginla::FDM::LocaSystem::Default::
+createSystemVector( const Ginla::State::Virtual & state,
+                          Epetra_Vector         & x
+                  ) const
+{
+    komplex_->complex2real( *state.getPsi(), x );
+    return;
+}
+// =============================================================================
 Teuchos::RCP<Epetra_Vector>
 Ginla::FDM::LocaSystem::Default::
 createSystemVector( const Ginla::State::Virtual & state
                   ) const
 {
-    return komplex_->complex2real( state.getPsi() );
+  Teuchos::RCP<Epetra_Vector> x = komplex_->complex2real( *state.getPsi() );
+  return x;
 }
 // =============================================================================

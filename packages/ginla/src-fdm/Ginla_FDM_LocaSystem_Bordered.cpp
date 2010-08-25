@@ -105,7 +105,9 @@ computeF ( const Epetra_Vector & x,
     // add -i\eta\psi
     Teuchos::RCP<Ginla::State::Virtual> state = glSystem_.createState( tmp );
     state->getPsiNonConst()->scale( -IM*eta );
-    TEUCHOS_ASSERT_EQUALITY( 0, tmp.Update( 1.0, *glSystem_.createSystemVector( *state ), 1.0 ) );
+    Epetra_Vector tmp2( *regularMap_ );
+    glSystem_.createSystemVector( *state, tmp2 );
+    TEUCHOS_ASSERT_EQUALITY( 0, tmp.Update( 1.0, tmp2, 1.0 ) );
     
     // copy over and add phase condition
     FVec.Import( shortFVec, importFromRegularMap_, Insert );
@@ -217,7 +219,9 @@ createJacobian ( const Epetra_Vector & x )
     regularJacobian->ExtractDiagonalCopy( newDiag );
     Teuchos::RCP<Ginla::State::Virtual> diag = glSystem_.createState( newDiag );
     diag->getPsiNonConst()->putScalar( -IM*eta );
-    newDiag.Update( 1.0, *glSystem_.createSystemVector(*diag), 1.0 );
+    Epetra_Vector tmp2 ( *regularMap_ );
+    glSystem_.createSystemVector( *diag, tmp2 );
+    newDiag.Update( 1.0, tmp2, 1.0 );
     regularJacobian->ReplaceDiagonalValues( newDiag );
     
     // TODO: Conversion to real-valued vector in one go?
@@ -226,7 +230,9 @@ createJacobian ( const Epetra_Vector & x )
         Teuchos::rcp_dynamic_cast<Ginla::FDM::State>( state );
     Ginla::FDM::State phiState = *stateFdm;
     phiState.getPsiNonConst()->scale ( -IM );
-    Teuchos::RCP<Epetra_Vector> rightBorder = glSystem_.createSystemVector( phiState );
+    Teuchos::RCP<Epetra_Vector> rightBorder =
+        Teuchos::rcp( new Epetra_Vector( *regularMap_) );
+    glSystem_.createSystemVector( phiState, *rightBorder );
 
     // Get the lower bordering
     //     
@@ -241,7 +247,9 @@ createJacobian ( const Epetra_Vector & x )
     // in the complex state notation.
     Ginla::FDM::State lb_state = *stateFdm;
     lb_state.getPsiNonConst()->scale( IM );
-    Teuchos::RCP<Epetra_Vector> lowerBorder = glSystem_.createSystemVector( lb_state );
+    Teuchos::RCP<Epetra_Vector> lowerBorder =
+        Teuchos::rcp( new Epetra_Vector( *regularMap_) );
+    glSystem_.createSystemVector( lb_state, *lowerBorder );
 
     // corner element
     double d = 0.0;
@@ -477,21 +485,39 @@ PutRow ( const Teuchos::RCP<Epetra_CrsMatrix> A,
         return A->ReplaceGlobalValues ( globalRow, numIndices, values, indices );
 }
 // =============================================================================
-Teuchos::RCP<Epetra_Vector>
+void
 Ginla::FDM::LocaSystem::Bordered::
-createSystemVector( const Ginla::State::Virtual & state ) const
+createSystemVector( const Ginla::State::Virtual & state,
+                          Epetra_Vector         & x
+                  ) const
 { 
-    Teuchos::RCP<Epetra_Vector> x =
-        Teuchos::rcp( new Epetra_Vector( *extendedMap_ ) );
+//     Teuchos::RCP<Epetra_Vector> x =
+//         Teuchos::rcp( new Epetra_Vector( *extendedMap_ ) );
 
-    x->Import( *glSystem_.createSystemVector( state ),
-               importFromRegularMap_,
-               Insert );
+    TEUCHOS_ASSERT( x.Map().SameAs( *extendedMap_ ) );
+
+    x.Import( *glSystem_.createSystemVector( state ),
+              importFromRegularMap_,
+              Insert
+            );
 
     // set last entry
-    x->ReplaceGlobalValue ( x->GlobalLength()-1, 0, state.getChi() );
+    x.ReplaceGlobalValue ( x.GlobalLength()-1, 0, state.getChi() );
                 
-    return x;
+    return;
+}
+// =============================================================================
+Teuchos::RCP<Epetra_Vector>
+Ginla::FDM::LocaSystem::Bordered::
+createSystemVector( const Ginla::State::Virtual & state
+                  ) const
+{
+  Teuchos::RCP<Epetra_Vector> x =
+      Teuchos::rcp( new Epetra_Vector( *extendedMap_ ) );
+      
+  this->createSystemVector( state, *x );
+  
+  return x;
 }
 // =============================================================================
 Teuchos::RCP<Ginla::State::Virtual>

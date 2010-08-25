@@ -118,8 +118,15 @@ public:
     //! Creates a state suitable for usage in the present interface.
     //! This function can be used, for example, to create an initial guess for
     //! the system.
-    virtual Teuchos::RCP<Epetra_Vector>
-    createSystemVector( const Ginla::State::Virtual & state ) const;
+    virtual
+    void
+    createSystemVector( const Ginla::State::Virtual & state,
+                              Epetra_Vector         & x
+                      ) const;
+    virtual
+    Teuchos::RCP<Epetra_Vector>
+    createSystemVector( const Ginla::State::Virtual & state
+                      ) const;
                           
     //! Extracts a complex-valued state from a vector of the linear
     //! equation system.

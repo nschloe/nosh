@@ -140,7 +140,14 @@ public:
     virtual Teuchos::RCP<const Epetra_Map>
     getMap() const = 0;
     
-    virtual Teuchos::RCP<Epetra_Vector>
+    virtual
+    void
+    createSystemVector( const Ginla::State::Virtual & state,
+                              Epetra_Vector         & x
+                      ) const = 0;
+                      
+    virtual
+    Teuchos::RCP<Epetra_Vector>
     createSystemVector( const Ginla::State::Virtual & state
                       ) const = 0;
     

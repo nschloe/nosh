@@ -115,6 +115,10 @@ public:
     getMap() const;
 
     virtual
+    void
+    createSystemVector( const Ginla::State::Virtual & state,
+                              Epetra_Vector         & x
+                      ) const;
     Teuchos::RCP<Epetra_Vector>
     createSystemVector( const Ginla::State::Virtual & state
                       ) const;

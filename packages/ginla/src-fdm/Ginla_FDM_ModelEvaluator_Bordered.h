@@ -115,6 +115,12 @@ public:
   virtual
   Teuchos::RCP<Epetra_Vector>
   createSystemVector( const Ginla::State::Virtual & state ) const;
+  
+  virtual
+  void
+  createSystemVector( const Ginla::State::Virtual & state,
+                            Epetra_Vector         & x
+                    ) const;
 
 protected:
 private:

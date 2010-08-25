@@ -403,22 +403,34 @@ createState( const Epetra_Vector & x ) const
 // =============================================================================
 Teuchos::RCP<Epetra_Vector>
 Ginla::FDM::ModelEvaluator::Bordered::
-createSystemVector(  const Ginla::State::Virtual & state ) const
+createSystemVector( const Ginla::State::Virtual & state ) const
 {
     TEUCHOS_ASSERT( !extendedMap_.is_null() );
-    TEUCHOS_ASSERT( !modelEvaluatorDefault_.is_null() );
-  
     Teuchos::RCP<Epetra_Vector> x =
         Teuchos::rcp( new Epetra_Vector( *extendedMap_ ) );
 
-    x->Import( *modelEvaluatorDefault_->createSystemVector( state ),
-               importFromRegularMap_,
-               Insert );
-
-    // set last entry
-    x->ReplaceGlobalValue ( x->GlobalLength()-1, 0, state.getChi() );
+    this->createSystemVector( state, *x );
                 
     return x;
+}
+// =============================================================================
+void
+Ginla::FDM::ModelEvaluator::Bordered::
+createSystemVector( const Ginla::State::Virtual & state,
+                          Epetra_Vector         & x
+                  ) const
+{
+    TEUCHOS_ASSERT( x.Map().SameAs( *extendedMap_ ) );
+    TEUCHOS_ASSERT( !modelEvaluatorDefault_.is_null() );
+
+    x.Import( *modelEvaluatorDefault_->createSystemVector( state ),
+              importFromRegularMap_,
+              Insert );
+
+    // set last entry
+    x.ReplaceGlobalValue ( x.GlobalLength()-1, 0, state.getChi() );
+                
+    return;
 }
 // =============================================================================
 Teuchos::RCP<Epetra_Map>

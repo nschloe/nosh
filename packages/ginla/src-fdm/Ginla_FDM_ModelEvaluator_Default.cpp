@@ -345,6 +345,16 @@ createSystemVector(  const Ginla::State::Virtual & state ) const
     return komplex_->complex2real ( state.getPsi() );
 }
 // =============================================================================
+void
+Ginla::FDM::ModelEvaluator::Default::
+createSystemVector( const Ginla::State::Virtual & state,
+                          Epetra_Vector         & x
+                  ) const
+{
+  komplex_->complex2real( *state.getPsi(), x );
+  return;
+}
+// =============================================================================
 Teuchos::RCP<const Epetra_Map>
 Ginla::FDM::ModelEvaluator::Default::
 getMap() const
