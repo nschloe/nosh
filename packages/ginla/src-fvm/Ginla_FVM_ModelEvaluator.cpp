@@ -288,16 +288,25 @@ computeF_ ( const Epetra_Vector & x,
   kineticEnergyOperator_->apply( *(state->getPsi()),
                                  *(res->getPsiNonConst())
                                );
+
+                             
+  // show me what you got
+  std::cout.precision(10);
+//   std::cout << "HHH " << state->normalizedScaledL2Norm() << std::endl;
+  std::cout << "HHH " << state->freeEnergy() << std::endl;
   
-//   // show me what you got
 //   Teuchos::RCP<Teuchos::FancyOStream> out =
 //       Teuchos::fancyOStream( Teuchos::rcpFromRef(std::cout) );
-  std::cout.precision(10);
-  std::cout << "HHH " << state->normalizedScaledL2Norm() << std::endl;
 //   state->getPsi()->describe( *out, Teuchos::VERB_EXTREME );
+
+  throw -99;
+  
+//   if ( komplex_->getComplexMap()->getComm()->getRank() == 0 )
+//         std::cout << "JJJ " << res->normalizedScaledL2Norm() << std::endl;
+  
 //   std::cout << "III" << std::endl;
 //   kineticEnergyOperator_->describe( *out, Teuchos::VERB_EXTREME );
-  std::cout << "JJJ " << res->normalizedScaledL2Norm() << std::endl;
+
 //   res->getPsi()->describe( *out, Teuchos::VERB_EXTREME );
 
   // add nonlinear part (mass lumping)

@@ -128,15 +128,36 @@ double
 Ginla::FVM::State::
 freeEnergy () const
 {
-   double globalEnergy = 0.0;
-   Teuchos::ArrayRCP<const double> controlVolumes =
+   double myGlobalEnergy = 0.0;
+   Teuchos::ArrayRCP<const double> cvView =
        mesh_->getControlVolumes()->get1dView();
    Teuchos::ArrayRCP<const double_complex> psiView = psi_.get1dView();
-   for ( int k=0; k<controlVolumes.size(); k++ )
-       globalEnergy -= controlVolumes[k] * pow( norm( psiView[k] ), 2 );
+   for ( int k=0; k<psiView.size(); k++ )
+   {
+       // get the local index for the control volumes
+       ORD globalIndex = psi_.getMap()->getGlobalElement( k );
+       TEUCHOS_ASSERT( globalIndex != Teuchos::OrdinalTraits<ORD>::invalid() );
+       ORD k2 = mesh_->getControlVolumes()->getMap()->getLocalElement( globalIndex );
+       TEUCHOS_ASSERT( k2 != Teuchos::OrdinalTraits<ORD>::invalid() );
       
-   globalEnergy /= mesh_->getDomainArea();
+       myGlobalEnergy -= cvView[k2] * pow( norm( psiView[k] ), 2 );
+   }
+
+   // sum over all processes
+   int count = 1; // send *one* integer
+   Teuchos::Array<double> sendBuff ( count );
+   sendBuff[0] = myGlobalEnergy;
+   Teuchos::Array<double> recvBuff ( count );
+   Teuchos::reduceAll ( * ( psi_.getMap()->getComm() ),
+                        Teuchos::REDUCE_SUM,
+                        count,
+                        sendBuff.getRawPtr(),
+                        recvBuff.getRawPtr()
+                      );
    
+   recvBuff[0] /= mesh_->getDomainArea();
+   
+
 //    // FEM calculations
 //    double energy = 0.0;
 //    Teuchos::ArrayRCP<Teuchos::ArrayRCP<int> > & elems = mesh_->getElems();
@@ -157,42 +178,46 @@ freeEnergy () const
 // 
 //    }
 
-    return globalEnergy;
+    return recvBuff[0];
 }
 // =============================================================================
 double_complex
 Ginla::FVM::State::
 innerProduct( const Ginla::FVM::State & state ) const
-{
+{ 
     Teuchos::ArrayRCP<const double_complex> psiView = psi_.get1dView();
-    Teuchos::ArrayRCP<const double_complex> psi2View = state.getPsi()->get1dView();
+    Teuchos::ArrayRCP<const double_complex> phiView = state.getPsi()->get1dView();
+    
+    // make sure the maps are the same
+    TEUCHOS_ASSERT( state.getPsi()->getMap()->isSameAs( *psi_.getMap() ) );
   
+    // TODO replace by Tpetra::weighted inner product when available
     double_complex localSum = double_complex( 0.0, 0.0 );
-    Teuchos::ArrayRCP<const double> controlVolumes = mesh_->getControlVolumes()->get1dView();
-    for ( int k=0; k<controlVolumes.size(); k++ )
-        localSum += controlVolumes[k] * conj(psiView[k]) * psi2View[k];
+    Teuchos::ArrayRCP<const double> controlVolumes =
+        mesh_->getControlVolumes()->get1dView();
+    for ( int k=0; k<psiView.size(); k++ )
+    {
+        int globalIndex = psi_.getMap()->getGlobalElement( k );
+        // translate into controlVolumes local index
+        int k2 = mesh_->getControlVolumes()->getMap()->getLocalElement( globalIndex );
+        localSum += controlVolumes[k2] * conj(psiView[k]) * phiView[k];
+    }
     
     // reduce and scatter such that energy is available on
     // all cores
     int count = 1; // send *one* integer
-    Teuchos::Array<double_complex> sendBuff ( count ), recvBuff ( count );
-
-    // fill send buffer
+    
+    Teuchos::Array<double_complex> sendBuff ( count );
     sendBuff[0] = localSum;
-
-    int numProcs =  psi_.getMap()->getComm()->getSize();
-    Teuchos::Array<int> recvCounts ( numProcs );
-// fill recvCounts with {1,...,1}
-    int numItemsPerProcess = 1;
-    std::fill ( recvCounts.begin(), recvCounts.end(), numItemsPerProcess );
-
-    Teuchos::reduceAllAndScatter ( * ( psi_.getMap()->getComm() ),
-                                   Teuchos::REDUCE_SUM,
-                                   count,
-                                   &sendBuff[0],
-                                   &recvCounts[0],
-                                   &recvBuff[0]
-                                 );
+    
+    Teuchos::Array<double_complex> recvBuff ( count );
+    
+    Teuchos::reduceAll ( * ( psi_.getMap()->getComm() ),
+                         Teuchos::REDUCE_SUM,
+                         count,
+                         sendBuff.getRawPtr(),
+                         recvBuff.getRawPtr()
+                       );
                                  
     return recvBuff[0];
 }
@@ -201,6 +226,8 @@ double
 Ginla::FVM::State::
 normalizedScaledL2Norm () const
 {
+    // TODO replace by Tpetra::weighted norm as soon as available
+  
     // imaginary part of alpha should be 0
     double_complex alpha = this->innerProduct( *this );
 
@@ -208,9 +235,9 @@ normalizedScaledL2Norm () const
     TEUCHOS_ASSERT_INEQUALITY( alpha.imag(), <, 1.0e-10 );
     
     // normalize
-    double domainArea = mesh_->getDomainArea();
+    double domainArea = mesh_->getDomainArea();    
     double l2norm = sqrt ( alpha.real() ) / domainArea;
-
+    
     return l2norm;
 }
 // =============================================================================
