@@ -23,12 +23,13 @@
 // Default constructor
 Ginla::Komplex::LinearProblem::
 LinearProblem ( const Teuchos::RCP<const Epetra_Comm>                  eComm,
-                const Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> > complexMap ) :
+                const Teuchos::RCP<const Tpetra::Map<Thyra::Ordinal> > complexRowMap
+              ) :
         EComm_ ( eComm ),
         TComm_ ( this->create_CommInt_ ( eComm ) ),
-        RealMap_ ( this->createRealMap_ ( complexMap ) ),
-        ComplexMap_ ( complexMap ),
-        realMatrix_ ( new Epetra_CrsMatrix (Copy,*RealMap_,0) )
+        RealMap_ ( this->createRealMap_ ( complexRowMap ) ),
+        ComplexMap_ ( complexRowMap ),
+        realMatrix_ ( Teuchos::rcp( new Epetra_CrsMatrix (Copy,*RealMap_,0) ) )
 {
 }
 // =============================================================================
@@ -111,20 +112,33 @@ Teuchos::RCP<Epetra_Vector>
 Ginla::Komplex::LinearProblem::
 complex2real ( const ComplexVector & complexVec ) const
 {
+    Teuchos::RCP<Epetra_Vector> x = Teuchos::rcp ( new Epetra_Vector ( *RealMap_ ) );
+    this->complex2real( complexVec, *x );
+    return x;
+}
+// =============================================================================
+// converts a real-valued vector to a complex-valued psi vector
+void
+Ginla::Komplex::LinearProblem::
+complex2real ( const ComplexVector & complexVec,
+                     Epetra_Vector & x
+             ) const
+{
     TEUCHOS_ASSERT ( ComplexMap_.is_valid_ptr()
                      && !ComplexMap_.is_null()
                      && complexVec.getMap()->isSameAs ( *ComplexMap_ ) );
 
-    Teuchos::RCP<Epetra_Vector> x = Teuchos::rcp ( new Epetra_Vector ( *RealMap_ ) );
+    TEUCHOS_ASSERT( !RealMap_.is_null()
+                    && x.Map().SameAs( *RealMap_ ) );
 
-    Teuchos::ArrayRCP<const double_complex> complexVecView = complexVec.get1dView();
-
+    Teuchos::ArrayRCP<const double_complex> complexVecView =
+        complexVec.get1dView();
     for ( unsigned int k = 0; k < ComplexMap_->getNodeNumElements(); k++ )
     {
-        ( *x ) [2*k]   = std::real ( complexVecView[k] );
-        ( *x ) [2*k+1] = std::imag ( complexVecView[k] );
+        x[2*k]   = std::real ( complexVecView[k] );
+        x[2*k+1] = std::imag ( complexVecView[k] );
     }
-    return x;
+    return;
 }
 // =============================================================================
 Teuchos::RCP<Epetra_Vector>
@@ -133,7 +147,7 @@ complex2real ( const Teuchos::RCP<const ComplexVector> & complexVecPtr ) const
 {
   
     TEUCHOS_ASSERT ( complexVecPtr.is_valid_ptr() && !complexVecPtr.is_null() );
-    return complex2real ( *complexVecPtr );
+    return this->complex2real ( *complexVecPtr );
 }
 // =============================================================================
 Teuchos::RCP<Epetra_Map>
@@ -154,18 +168,19 @@ createRealMap_ ( const Teuchos::RCP<const ComplexMap> & ComplexMap
     // processor K again.
     unsigned int numMyComplexElements = myComplexGIDs.size();
     unsigned int numMyRealElements    = 2*numMyComplexElements;
-    Teuchos::Array<int> myRealGIDs ( numMyRealElements );
+    Teuchos::ArrayRCP<int> myRealGIDs ( numMyRealElements );
     for ( unsigned int k = 0; k < numMyComplexElements; k++ )
     {
         myRealGIDs[2*k  ] = 2 * myComplexGIDs[k];
         myRealGIDs[2*k+1] = 2 * myComplexGIDs[k] + 1;
     }
-
-    return Teuchos::rcp ( new Epetra_Map ( numMyRealElements,
+    
+    return Teuchos::rcp ( new Epetra_Map ( -1,
                                            myRealGIDs.size(),
                                            myRealGIDs.getRawPtr(),
                                            ComplexMap->getIndexBase(),
-                                           *EComm_ )
+                                           *EComm_
+                                         )
                         );
 }
 // =============================================================================
@@ -207,14 +222,16 @@ create_CommInt_ ( const Teuchos::RCP<const Epetra_Comm> &epetraComm )
 }
 // =============================================================================
 void
-Ginla::Komplex::LinearProblem::finalizeMatrix()
+Ginla::Komplex::LinearProblem::
+finalizeMatrix()
 {
     TEUCHOS_ASSERT_EQUALITY ( 0, realMatrix_->FillComplete() );
-    TEUCHOS_ASSERT_EQUALITY ( 0, realMatrix_->OptimizeStorage() );
+    return;
 }
 // =============================================================================
 void
-Ginla::Komplex::LinearProblem::zeroOutMatrix()
+Ginla::Komplex::LinearProblem::
+zeroOutMatrix()
 {
     TEUCHOS_ASSERT_EQUALITY ( 0, realMatrix_->PutScalar ( 0.0 ) );
 }
@@ -223,7 +240,12 @@ void
 Ginla::Komplex::LinearProblem::
 update ( const Teuchos::RCP<const Ginla::Komplex::DoubleMatrix> AB,
          bool firstTime )
-{ 
+{
+    TEST_FOR_EXCEPTION( true,
+                        std::logic_error,
+                        "Function needs to be checked for mistakes -- there may be bugs."
+                      );
+  
     int numMyElements = ComplexMap_->getNodeNumElements();
     Teuchos::ArrayRCP<const Thyra::Ordinal> indicesA;
     Teuchos::ArrayRCP<const double_complex> valuesA;
@@ -234,196 +256,240 @@ update ( const Teuchos::RCP<const Ginla::Komplex::DoubleMatrix> AB,
     {
         Thyra::Ordinal globalRow = ComplexMap_->getGlobalElement ( row );
         
-        AB->getMatrixA()->getLocalRowView( row,
-                                           indicesA,
-                                           valuesA );
+        AB->getMatrixA()->getGlobalRowView( row,
+                                            indicesA,
+                                            valuesA
+                                          );
                                             
-        AB->getMatrixB()->getLocalRowView( row,
-                                           indicesB,
-                                           valuesB );
+        AB->getMatrixB()->getGlobalRowView( row,
+                                            indicesB,
+                                            valuesB
+                                          );
         
-        this->updateRow ( globalRow,
-                          indicesA, valuesA,
-                          indicesB, valuesB,
-                          firstTime ); 
+        this->updateGlobalRow ( globalRow,
+                                indicesA(), valuesA(),
+                                indicesB(), valuesB(),
+                                firstTime
+                              ); 
     }
+    
+    return;
 }
 // =============================================================================
 void
 Ginla::Komplex::LinearProblem::
-updateRow ( const unsigned int                               row,
-            const Teuchos::ArrayRCP<const Thyra::Ordinal>  & indicesA,
-            const Teuchos::ArrayRCP<const double_complex>  & valuesA,
-            const Teuchos::ArrayRCP<const Thyra::Ordinal>  & indicesB,
-            const Teuchos::ArrayRCP<const double_complex>  & valuesB,
-            const bool                                       firstTime
-          )
+updateGlobalRowA ( const unsigned int                                globalRow,
+                   const Teuchos::ArrayView<const Thyra::Ordinal>  & indicesA,
+                   const Teuchos::ArrayView<const double_complex>  & valuesA,
+                   const bool                                        firstTime
+                 )
 {
     TEUCHOS_ASSERT ( realMatrix_.is_valid_ptr() && !realMatrix_.is_null() );
-    TEUCHOS_ASSERT_INEQUALITY ( row, <, ComplexMap_->getGlobalNumElements() );
+    TEUCHOS_ASSERT_INEQUALITY ( globalRow, <, ComplexMap_->getGlobalNumElements() );
 
-    int numEntries;
-    int * indicesAReal;
-    double * valuesAReal;
-    int * indicesAImag;
-    double * valuesAImag;
-    int * indicesBReal;
-    double * valuesBReal;
-    int * indicesBImag;
-    double * valuesBImag;
+    int numEntries = indicesA.size();
+    Teuchos::ArrayRCP<int>    indicesReal( numEntries );
+    Teuchos::ArrayRCP<double> valuesReal( numEntries );
 
-    int realRow = 2*row;
+    int realRow = 2*globalRow;
     // -------------------------------------------------------------------
     // insert the coefficients Re(A) of Re(z)
-    numEntries = indicesA.size();
-    indicesAReal = new int[numEntries];
     for ( int k = 0; k < numEntries; k++ )
-        indicesAReal[k] = 2 * indicesA[k];
+    {
+        indicesReal[k] = 2 * indicesA[k];
+        valuesReal[k]  = std::real ( valuesA[k] );
+    }
 
-    valuesAReal = new double[numEntries];
-    for ( int k = 0; k < numEntries; k++ )
-        valuesAReal[k] = std::real ( valuesA[k] );
-
-    TEUCHOS_ASSERT_INEQUALITY ( 0, <=, this->PutRow_ ( realRow, numEntries, valuesAReal, indicesAReal, firstTime ) );
-    delete[] valuesAReal;
-    valuesAReal = NULL;
-    delete[] indicesAReal;
-    indicesAReal = NULL;
+    TEUCHOS_ASSERT_INEQUALITY ( 0, <=, this->PutGlobalRow_ ( realRow,
+                                                             valuesReal(),
+                                                             indicesReal(),
+                                                             firstTime
+                                                           )
+                              );
     // -------------------------------------------------------------------
-    // insert the coefficients Re(B) of Re(z)
-    numEntries = indicesB.size();
-    indicesBReal = new int[numEntries];
+    // insert the coefficients -Im(A) of Im(z)    
     for ( int k = 0; k < numEntries; k++ )
-        indicesBReal[k] = 2 * indicesB[k];
-    valuesBReal = new double[numEntries];
-    for ( int k = 0; k < numEntries; k++ )
-        valuesBReal[k] = std::real ( valuesB[k] );
+    {
+        indicesReal[k] = 2 * indicesA[k] + 1;
+        valuesReal[k]  = -std::imag ( valuesA[k] );
+    }
 
-    TEUCHOS_ASSERT_INEQUALITY ( 0, <=, this->PutRow_ ( realRow, numEntries, valuesBReal, indicesBReal, firstTime ) );
-
-    delete[] valuesBReal;
-    valuesBReal = NULL;
-    delete[] indicesBReal;
-    indicesBReal = NULL;
-    // -------------------------------------------------------------------
-    // insert the coefficients -Im(A) of Im(z)
-    numEntries = indicesA.size();
-    indicesAImag = new int[numEntries];
-    for ( int k = 0; k < numEntries; k++ )
-        indicesAImag[k] = 2 * indicesA[k] + 1;
-    valuesAImag = new double[numEntries];
-    for ( int k = 0; k < numEntries; k++ )
-        valuesAImag[k] = -std::imag ( valuesA[k] );
-
-    TEUCHOS_ASSERT_INEQUALITY ( 0, <=, this->PutRow_ ( realRow, numEntries, valuesAImag, indicesAImag, firstTime ) );
-
-    delete[] valuesAImag;
-    valuesAImag = NULL;
-    delete[] indicesAImag;
-    indicesAImag = NULL;
-    // -------------------------------------------------------------------
-    // insert the coefficients Im(B) of Im(z)
-    numEntries = indicesB.size();
-    indicesBImag = new int[numEntries];
-    for ( int k = 0; k < numEntries; k++ )
-        indicesBImag[k] = 2 * indicesB[k] + 1;
-    valuesBImag = new double[numEntries];
-    for ( int k = 0; k < numEntries; k++ )
-        valuesBImag[k] = std::imag ( valuesB[k] );
-
-    TEUCHOS_ASSERT_INEQUALITY ( 0, <=, this->PutRow_ ( realRow, numEntries, valuesBImag, indicesBImag, firstTime ) );
-
-    delete[] valuesBImag;
-    valuesBImag = NULL;
-    delete[] indicesBImag;
-    indicesBImag = NULL;
+    TEUCHOS_ASSERT_INEQUALITY ( 0, <=, this->PutGlobalRow_ ( realRow,
+                                                             valuesReal(),
+                                                             indicesReal(),
+                                                             firstTime
+                                                           )
+                              );
     // -------------------------------------------------------------------
 
-
-    int imagRow = 2*row+1;
+    int imagRow = 2*globalRow+1;
     // -------------------------------------------------------------------
     // insert the coefficients Im(A) of Re(z)
-    numEntries = indicesA.size();
-    indicesAReal = new int[numEntries];
     for ( int k = 0; k < numEntries; k++ )
-        indicesAReal[k] = 2 * indicesA[k];
-    valuesAImag = new double[numEntries];
+    {
+        indicesReal[k] = 2 * indicesA[k];
+        valuesReal[k]  = std::imag ( valuesA[k] );
+    }
+
+    TEUCHOS_ASSERT_INEQUALITY ( 0, <=, this->PutGlobalRow_ ( imagRow,
+                                                             valuesReal(),
+                                                             indicesReal(),
+                                                             firstTime
+                                                           )
+                              );
+    // -------------------------------------------------------------------
+    // insert the coefficients Re(A) of Im(z)    
     for ( int k = 0; k < numEntries; k++ )
-        valuesAImag[k] = std::imag ( valuesA[k] );
+    {
+        indicesReal[k] = 2 * indicesA[k] + 1;
+        valuesReal[k]  = std::real ( valuesA[k] );
+    }
 
-    TEUCHOS_ASSERT_INEQUALITY ( 0, <=, this->PutRow_ ( imagRow, numEntries, valuesAImag, indicesAReal, firstTime ) );
+    TEUCHOS_ASSERT_INEQUALITY ( 0, <=, this->PutGlobalRow_ ( imagRow,
+                                                             valuesReal(),
+                                                             indicesReal(),
+                                                             firstTime
+                                                           )
+                              );
+    // -------------------------------------------------------------------
+    
+    return;
+}
+// =============================================================================
+void
+Ginla::Komplex::LinearProblem::
+updateGlobalRowB ( const unsigned int                                globalRow,
+                   const Teuchos::ArrayView<const Thyra::Ordinal>  & indicesB,
+                   const Teuchos::ArrayView<const double_complex>  & valuesB,
+                   const bool                                        firstTime
+                 )
+{
+    TEUCHOS_ASSERT ( realMatrix_.is_valid_ptr() && !realMatrix_.is_null() );
+    TEUCHOS_ASSERT_INEQUALITY ( globalRow, <, ComplexMap_->getGlobalNumElements() );
 
-    delete[] valuesAImag;
-    valuesAImag = NULL;
-    delete[] indicesAReal;
-    indicesAReal = NULL;
+    int numEntries = indicesB.size();
+    Teuchos::ArrayRCP<int>    indicesReal( numEntries );
+    Teuchos::ArrayRCP<double> valuesReal( numEntries );
+
+    int realRow = 2*globalRow;
+    // -------------------------------------------------------------------
+    // insert the coefficients Re(B) of Re(z)
+    for ( int k = 0; k < numEntries; k++ )
+    {
+        indicesReal[k] = 2 * indicesB[k];
+        valuesReal[k]  = std::real ( valuesB[k] );
+    }
+
+    TEUCHOS_ASSERT_INEQUALITY ( 0, <=, this->PutGlobalRow_ ( realRow,
+                                                             valuesReal(),
+                                                             indicesReal(),
+                                                             firstTime
+                                                           )
+                              );
+    // -------------------------------------------------------------------
+    // insert the coefficients Im(B) of Im(z)
+    for ( int k = 0; k < numEntries; k++ )
+    {
+        indicesReal[k] = 2 * indicesB[k] + 1;
+        valuesReal[k]  = std::imag ( valuesB[k] );
+    }
+
+    TEUCHOS_ASSERT_INEQUALITY ( 0, <=, this->PutGlobalRow_ ( realRow, 
+                                                             valuesReal(),
+                                                             indicesReal(),
+                                                             firstTime
+                                                           )
+                              );
+    // -------------------------------------------------------------------
+
+    int imagRow = 2*globalRow+1;
     // -------------------------------------------------------------------
     // insert the coefficients Im(B) of Re(z)
-    numEntries = indicesB.size();
-    indicesBReal = new int[numEntries];
     for ( int k = 0; k < numEntries; k++ )
-        indicesBReal[k] = 2 * indicesB[k];
-    valuesBImag = new double[numEntries];
-    for ( int k = 0; k < numEntries; k++ )
-        valuesBImag[k] = std::imag ( valuesB[k] );
+    {
+        indicesReal[k] = 2 * indicesB[k];
+        valuesReal[k]  = std::imag ( valuesB[k] );
+    }
 
-    TEUCHOS_ASSERT_INEQUALITY ( 0, <=, this->PutRow_ ( imagRow, numEntries, valuesBImag, indicesBReal, firstTime ) );
-
-    delete[] valuesBImag;
-    valuesBImag = NULL;
-    delete[] indicesBReal;
-    indicesBReal = NULL;
-    // -------------------------------------------------------------------
-    // insert the coefficients Re(A) of Im(z)
-    numEntries = indicesA.size();
-    indicesAImag = new int[numEntries];
-    for ( int k = 0; k < numEntries; k++ )
-        indicesAImag[k] = 2 * indicesA[k] + 1;
-    valuesAReal = new double[numEntries];
-    for ( int k = 0; k < numEntries; k++ )
-        valuesAReal[k] = std::real ( valuesA[k] );
-
-    TEUCHOS_ASSERT_INEQUALITY ( 0, <=, this->PutRow_ ( imagRow, numEntries, valuesAReal, indicesAImag, firstTime ) );
-
-    delete[] valuesAReal;
-    valuesAReal = NULL;
-    delete[] indicesAImag;
-    indicesAImag = NULL;
+    TEUCHOS_ASSERT_INEQUALITY ( 0, <=, this->PutGlobalRow_ ( imagRow,
+                                                             valuesReal(),
+                                                             indicesReal(),
+                                                             firstTime
+                                                           )
+                              );
     // -------------------------------------------------------------------
     // insert the coefficients -Re(B) of Im(z)
-    numEntries = indicesB.size();
-    indicesBImag = new int[numEntries];
     for ( int k = 0; k < numEntries; k++ )
-        indicesBImag[k] = 2 * indicesB[k] + 1;
-    valuesBReal = new double[numEntries];
-    for ( int k = 0; k < numEntries; k++ )
-        valuesBReal[k] = -std::real ( valuesB[k] );
+    {
+        indicesReal[k] = 2 * indicesB[k] + 1;
+        valuesReal[k]  = -std::real ( valuesB[k] );
+    }
 
-    TEUCHOS_ASSERT_INEQUALITY ( 0, <=, this->PutRow_ ( imagRow, numEntries, valuesBReal, indicesBImag, firstTime ) );
-
-    delete[] valuesBReal;
-    valuesBReal = NULL;
-    delete[] indicesBImag;
-    indicesBImag = NULL;
+    TEUCHOS_ASSERT_INEQUALITY ( 0, <=, this->PutGlobalRow_ ( imagRow,
+                                                             valuesReal(),
+                                                             indicesReal(),
+                                                             firstTime
+                                                           )
+                              );
     // -------------------------------------------------------------------
+    
+    return;
+}
+// =============================================================================
+void
+Ginla::Komplex::LinearProblem::
+updateGlobalRow ( const unsigned int                                globalRow,
+                  const Teuchos::ArrayView<const Thyra::Ordinal>  & indicesA,
+                  const Teuchos::ArrayView<const double_complex>  & valuesA,
+                  const Teuchos::ArrayView<const Thyra::Ordinal>  & indicesB,
+                  const Teuchos::ArrayView<const double_complex>  & valuesB,
+                  const bool                                        firstTime
+                )
+{
+    this->updateGlobalRowA( globalRow,
+                            indicesA, valuesA,
+                            firstTime
+                          );
+                          
+    this->updateGlobalRowB( globalRow,
+                            indicesB, valuesB,
+                            firstTime
+                          );
+
+    return;
 }
 // =============================================================================
 int
 Ginla::Komplex::LinearProblem::
-PutRow_ ( int Row,
-          int & numIndices,
-          double * values,
-          int * indices,
-          bool firstTime )
-{
+PutGlobalRow_ ( int                                    globalRow,
+                const Teuchos::ArrayView<const double> values,
+                const Teuchos::ArrayView<const int>    globalIndices,
+                bool                                   firstTime
+              )
+{ 
+    // We *need* to use the global variant here as the column map
+    // of the real matrix is only determined at the first FillComplete(),
+    // so InsertLocalValues() does not have any meaning.
+    // This would usually work on one core, but inspecting the matrix
+    // (,e.g., by Print()), shows invalid column indices.
+    int numIndices = values.size();
     if ( firstTime )
-        return realMatrix_->InsertGlobalValues ( Row, numIndices, values, indices );
+        return realMatrix_->InsertGlobalValues ( globalRow,
+                                                 numIndices,
+                                                 values.getRawPtr(),
+                                                 globalIndices.getRawPtr()
+                                               );
     else
-        return realMatrix_->SumIntoGlobalValues ( Row, numIndices, values, indices );
+        return realMatrix_->SumIntoGlobalValues ( globalRow,
+                                                  numIndices,
+                                                  values.getRawPtr(),
+                                                  globalIndices.getRawPtr()
+                                                );
 }
 // =============================================================================
 Teuchos::RCP<Epetra_CrsMatrix>
-Ginla::Komplex::LinearProblem::getMatrix() const
+Ginla::Komplex::LinearProblem::
+getMatrix() const
 {
     return realMatrix_;
 }

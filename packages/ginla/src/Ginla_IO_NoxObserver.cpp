@@ -57,10 +57,11 @@ setStatisticsWriter( const Teuchos::RCP<Ginla::IO::StatsWriter>              & s
 void
 Ginla::IO::NoxObserver::
 observeSolution( const Epetra_Vector & soln )
-{
+{ 
     // define state
-    const Teuchos::RCP<const Ginla::State::Virtual> state = stateTranslator_->createState(soln);
-
+    const Teuchos::RCP<const Ginla::State::Virtual> state =
+        stateTranslator_->createState(soln);
+        
     // The switch hack is necessary as different continuation algorithms
     // call printSolution() a different number of times per step, e.g.,
     // to store solutions, null vectors, and so forth.
@@ -95,11 +96,15 @@ observeContinuation_( const Teuchos::RCP<const Ginla::State::Virtual> & state
 
   if ( !stateWriter_.is_null() )
   {
+      TEUCHOS_ASSERT( !parameterHost_.is_null() );
+      parameterHost_->getParameters();
       Teuchos::RCP<LOCA::ParameterVector> p = parameterHost_->getParameters();
       stateWriter_->write( state, index, *p );
   }
   
   this->saveContinuationStatistics_( index, state );
+  
+  return;
 }
 // ============================================================================
 void

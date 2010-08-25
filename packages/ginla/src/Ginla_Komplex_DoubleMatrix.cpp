@@ -59,14 +59,14 @@ putALocalValues( unsigned int localRow,
 void
 Ginla::Komplex::DoubleMatrix::
 AsumIntoGlobalValues( unsigned int localRow,
-                     const Teuchos::ArrayView<const Thyra::Ordinal> & columnIndices,
-                     const Teuchos::ArrayView<const double_complex> & values
-                   )
+                      const Teuchos::ArrayView<const Thyra::Ordinal> & columnIndices,
+                      const Teuchos::ArrayView<const double_complex> & values
+                    )
 {
-  if ( A_->isFillComplete() )  
+  if ( A_->isFillComplete() )
      A_->sumIntoGlobalValues( localRow, columnIndices, values );
   else
-     A_->insertGlobalValues( localRow, columnIndices, values );
+     A_->insertLocalValues( localRow, columnIndices, values );
 }
 // ============================================================================
 void
@@ -92,7 +92,7 @@ BsumIntoGlobalValues( unsigned int localRow,
   if ( B_->isFillComplete() )  
      B_->sumIntoGlobalValues( localRow, columnIndices, values );
   else
-     B_->insertGlobalValues( localRow, columnIndices, values );
+     B_->insertLocalValues( localRow, columnIndices, values );
 }
 // ============================================================================
 void

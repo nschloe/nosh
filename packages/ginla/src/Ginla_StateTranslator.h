@@ -36,10 +36,22 @@ class StateTranslator
 {
   public:
     
+    StateTranslator();
+    
+    virtual
+    ~StateTranslator();
+    
     //! Translates a state into a system vector.
     virtual
+    void
+    createSystemVector( const Ginla::State::Virtual & state,
+                              Epetra_Vector         & x
+                      ) const = 0;
+                      
+    virtual
     Teuchos::RCP<Epetra_Vector>
-    createSystemVector( const Ginla::State::Virtual & state ) const = 0;
+    createSystemVector( const Ginla::State::Virtual & state
+                      ) const = 0;
 
     //! Translates a system vector into a state.
     virtual

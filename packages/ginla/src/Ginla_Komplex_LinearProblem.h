@@ -52,6 +52,10 @@ public:
 //     real2complex ( const Epetra_MultiVector & x ) const;
     
     //! Converts a complex-valued vector to a real-valued vector.
+    void
+    complex2real ( const ComplexVector & complexVecPtr,
+                   Epetra_Vector       & x
+                 ) const;
     Teuchos::RCP<Epetra_Vector>
     complex2real ( const ComplexVector &complexVec ) const;
     Teuchos::RCP<Epetra_Vector>
@@ -103,13 +107,27 @@ public:
       * \f].
       */
     void
-    updateRow ( const unsigned int                               row,
-                const Teuchos::ArrayRCP<const Thyra::Ordinal>  & indicesA,
-                const Teuchos::ArrayRCP<const double_complex>  & valuesA,
-                const Teuchos::ArrayRCP<const Thyra::Ordinal>  & indicesB,
-                const Teuchos::ArrayRCP<const double_complex>  & valuesB,
-                const bool                                       firstTime
-              );
+    updateGlobalRow ( const unsigned int                                row,
+                      const Teuchos::ArrayView<const Thyra::Ordinal>  & indicesA,
+                      const Teuchos::ArrayView<const double_complex>  & valuesA,
+                      const Teuchos::ArrayView<const Thyra::Ordinal>  & indicesB,
+                      const Teuchos::ArrayView<const double_complex>  & valuesB,
+                      const bool                                        firstTime
+                    );
+
+    void
+    updateGlobalRowA ( const unsigned int                                globalRow,
+                       const Teuchos::ArrayView<const Thyra::Ordinal>  & indicesB,
+                       const Teuchos::ArrayView<const double_complex>  & valuesB,
+                       const bool                                        firstTime
+                     );
+                    
+    void
+    updateGlobalRowB ( const unsigned int                                globalRow,
+                       const Teuchos::ArrayView<const Thyra::Ordinal>  & indicesB,
+                       const Teuchos::ArrayView<const double_complex>  & valuesB,
+                       const bool                                        firstTime
+                     );
 
     /** Considering the term \f$a \psi + b \psi^*\f$ with
       * \f$a,b,\psi\in\mathbb{C}\f$, one has
@@ -145,11 +163,11 @@ private:
     create_CommInt_ ( const Teuchos::RCP<const Epetra_Comm> &epetraComm );
 
     int
-    PutRow_ ( int      Row,
-              int    & numIndices,
-              double * values,
-              int    * indices,
-              bool     firstTime );
+    PutGlobalRow_ ( int                                    globalRow,
+                    const Teuchos::ArrayView<const double> values,
+                    const Teuchos::ArrayView<const int>    globalIndices,
+                    bool                                   firstTime
+                  );
 
 private:
 
