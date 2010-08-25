@@ -41,7 +41,9 @@ BOOST_AUTO_TEST_CASE( free_energy_test )
 {
     // Initialize MPI
 #ifdef HAVE_MPI
-    MPI_Init ( NULL, NULL );
+    MPI_Init ( &boost::unit_test::framework::master_test_suite().argc,
+               &boost::unit_test::framework::master_test_suite().argv
+             );
 #endif
 
     // Create a communicator for Tpetra objects
