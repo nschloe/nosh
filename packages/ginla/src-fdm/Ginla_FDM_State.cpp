@@ -60,7 +60,8 @@ State( const Teuchos::RCP<const ComplexMap>           & map,
 // =============================================================================
 Ginla::FDM::State::
 State( const Teuchos::RCP<const Teuchos::Comm<int> >  & comm,
-       const Teuchos::RCP<const Recti::Grid::General> & grid ):
+       const Teuchos::RCP<const Recti::Grid::General> & grid
+     ):
        psi_( ComplexMultiVector( Teuchos::rcp( new ComplexMap( grid->getNumGridPoints(), 0, comm ) ),
                                  1,
                                  true ) ),
