@@ -43,7 +43,7 @@ write () const
     vtkSmartPointer<vtkXMLImageDataWriter> writer =
         vtkSmartPointer<vtkXMLImageDataWriter>::New();
     writer->SetFileName ( filePath_.c_str() );
-    writer->SetInput ( imageData_ );
+    writer->SetInput ( vtkDataSet_ );
     writer->Write();
 
     return;

@@ -29,7 +29,9 @@ Mesh( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ):
     nodes_( Teuchos::null ),
     isBoundaryNode_( Teuchos::null ),
     controlVolumes_( Teuchos::null ),
-    area_( 0.0 )
+    area_( 0.0 ),
+    scaling_( Teuchos::tuple( 1.0, 1.0, 1.0 ) ),
+    fvmEntitiesUpToDate_( false )
 {
 }
 // =============================================================================
@@ -123,7 +125,11 @@ Teuchos::RCP<DoubleVector>
 VIO::Mesh::Mesh::
 getControlVolumes() const
 {
+  if ( !fvmEntitiesUpToDate_ )
+      this->computeFvmEntities_();
+  
   TEUCHOS_ASSERT( !controlVolumes_.is_null() );
+
   return controlVolumes_;
 }
 // =============================================================================
@@ -131,6 +137,9 @@ Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >
 VIO::Mesh::Mesh::
 getEdgeLengths() const
 {
+  if ( !fvmEntitiesUpToDate_ )
+      this->computeFvmEntities_();
+
   return edgeLengths_;
 }
 // =============================================================================
@@ -138,6 +147,9 @@ Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >
 VIO::Mesh::Mesh::
 getCoedgeLengths() const
 {
+  if ( !fvmEntitiesUpToDate_ )
+      this->computeFvmEntities_();
+
   return coedgeLengths_;
 }
 // =============================================================================
@@ -145,12 +157,47 @@ double
 VIO::Mesh::Mesh::
 getDomainArea() const
 {
+  if ( !fvmEntitiesUpToDate_ )
+      this->computeFvmEntities_();
+
   return area_; 
 }
 // =============================================================================
 void
 VIO::Mesh::Mesh::
-computeDomainArea_()
+scale( double alpha )
+{
+   this->scale( Teuchos::tuple( alpha, alpha, alpha ) );
+   return;
+}
+// =============================================================================
+void
+VIO::Mesh::Mesh::
+scale( const Teuchos::Tuple<double,3> & newScaling )
+{
+   // adapt the position of the nodes
+   for ( int i=0; i<3; i++ )
+   {
+       if ( newScaling[i] != scaling_[i] )
+       {
+          double ratio = newScaling[i] / scaling_[i];
+          for ( int k=0; k<nodes_.size(); k++ )
+              nodes_[k][i] *= ratio;
+          
+          // store the new scaling
+          scaling_[i] = newScaling[i];
+          
+          // make sure the FVM entities get updated properly
+          fvmEntitiesUpToDate_ = false;
+       }
+   }
+
+   return;
+}
+// =============================================================================
+double
+VIO::Mesh::Mesh::
+computeDomainArea_() const
 {
   // break it down into a non-overlapping map
   Teuchos::RCP<Tpetra::Map<ORD> > nonoverlapMap =
@@ -164,14 +211,12 @@ computeDomainArea_()
   tmp->doExport( *controlVolumes_, exporter, Tpetra::REPLACE );
 
   // sum over all entries
-  area_ = tmp->norm1();
-
-  return;
+  return tmp->norm1();
 }
 // =============================================================================
 void
 VIO::Mesh::Mesh::
-computeFvmEntities()
+computeFvmEntities_() const
 { 
   // Compute the volume of the (Voronoi) control cells for each point.
   TEUCHOS_ASSERT( !elems_.is_null() );
@@ -229,14 +274,16 @@ computeFvmEntities()
   this->sumInOverlapMap_( controlVolumes_ );
 
   // TODO move this to another spot
-  this->computeDomainArea_();
+  area_ = this->computeDomainArea_();
+  
+  fvmEntitiesUpToDate_ = true;
 
   return;
 }
 // =============================================================================
 void
 VIO::Mesh::Mesh::
-sumInOverlapMap_( Teuchos::RCP<DoubleVector> x )
+sumInOverlapMap_( Teuchos::RCP<DoubleVector> x ) const
 {
   Teuchos::RCP<Tpetra::Map<ORD> > nonoverlapMap =
       Teuchos::rcp( new Tpetra::Map<ORD>( x->getGlobalLength(), 0, comm_ ) );
@@ -257,7 +304,7 @@ sumInOverlapMap_( Teuchos::RCP<DoubleVector> x )
 // =============================================================================
 Teuchos::RCP<Tpetra::Map<ORD> >
 VIO::Mesh::Mesh::
-getElemsToNodesMap_()
+getElemsToNodesMap_() const
 {
   // create list of elements that need to be accessible from this process
   
@@ -277,8 +324,6 @@ getElemsToNodesMap_()
   for ( int k=0; k<numNodes; k++ )
       if ( mustBeAccessible[k] )
           entryList.append( k );
-
-//   std::cout << "This is core " << comm_->getRank() << " this is my nodes list " << entryList << std::endl;
       
   Teuchos::RCP<Tpetra::Map<ORD> > map =
       Teuchos::rcp( new Tpetra::Map<ORD>( Teuchos::OrdinalTraits<ORD>::invalid(), entryList(), 0, comm_ )
@@ -325,7 +370,15 @@ computeCircumcenter_( const Point & x0, const Point & x1, const Point & x2
                                         ), 2 );
   
   // don't divide by 0
-  TEUCHOS_ASSERT( fabs(omega) > 1.0e-10 );
+  TEST_FOR_EXCEPTION( fabs(omega) < 1.0e-10,
+                      std::runtime_error,
+                      "It seems that the vectors \n\n"
+                      << "   " << x0 << "\n"
+                      << "   " << x1 << "\n"
+                      << "   " << x2 << "\n"
+                      << "\ndo not form a proper triangle. Abort."
+                      << std::endl
+                    );
   
   double alpha = this->dot_( this->add_( 1.0, x1, -1.0, x2 ), this->add_( 1.0, x1, -1.0, x2 ) )
                * this->dot_( this->add_( 1.0, x0, -1.0, x1 ), this->add_( 1.0, x0, -1.0, x2 ) )

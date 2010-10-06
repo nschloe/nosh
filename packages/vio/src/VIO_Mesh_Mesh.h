@@ -106,17 +106,23 @@ class Mesh
     getDomainArea() const;
     
     void
-    computeFvmEntities();
+    scale( double alpha );
+    
+    void
+    scale( const Teuchos::Tuple<double,3> & alpha );
     
   protected:
     
   private:
     
-      Teuchos::RCP<Tpetra::Map<ORD> >
-      getElemsToNodesMap_();
-    
       void
-      computeDomainArea_();
+      computeFvmEntities_() const;
+    
+      Teuchos::RCP<Tpetra::Map<ORD> >
+      getElemsToNodesMap_() const;
+    
+      double
+      computeDomainArea_() const;
     
       Point
       add_( double alpha, const Point & x,
@@ -154,7 +160,7 @@ class Mesh
       //! Takes a vector \c x with an overlay map and makes sure that
       //! all the overlapping entries are summed up across all processes.
       void
-      sumInOverlapMap_( Teuchos::RCP<DoubleVector> x );
+      sumInOverlapMap_( Teuchos::RCP<DoubleVector> x ) const;
     
   private:
     // Needs to be "int" as Tpetra::Map only accepts int-communicators.
@@ -165,10 +171,12 @@ class Mesh
     Teuchos::ArrayRCP<ElementType> elemTypes_;
     Teuchos::ArrayRCP<Point> nodes_;
     Teuchos::ArrayRCP<bool> isBoundaryNode_;
-    Teuchos::RCP<DoubleVector> controlVolumes_;
-    Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > edgeLengths_;
-    Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > coedgeLengths_;
-    double area_;
+    mutable Teuchos::RCP<DoubleVector> controlVolumes_;
+    mutable Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > edgeLengths_;
+    mutable Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > coedgeLengths_;
+    mutable double area_;
+    Teuchos::Tuple<double,3> scaling_;
+    mutable bool fvmEntitiesUpToDate_;
 };
 }
 }

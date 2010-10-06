@@ -22,6 +22,8 @@
 // =============================================================================
 #include "VIO_Typedefs.h"
 
+#include "VIO_Writer_Abstract.h"
+
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_XMLObject.hpp>
@@ -40,7 +42,8 @@ namespace VIO {
 // =============================================================================
 namespace VIO {
 namespace Mesh {
-class Writer
+class Writer:
+  public VIO::Writer::Abstract
 {
 public:
     Writer ( const std::string & filePath );
@@ -79,9 +82,8 @@ public:
 //                    const std::string         & name );
   protected:
   private:
-    const std::string filePath_;
-    vtkSmartPointer<vtkUnstructuredGrid> vtkMesh_;
     Teuchos::RCP<VIO::Mesh::Mesh> mesh_;
+    Teuchos::RCP<const Teuchos::Comm<int> > comm_;
 };
 }
 }

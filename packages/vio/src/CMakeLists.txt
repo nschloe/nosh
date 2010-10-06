@@ -1,5 +1,6 @@
 SET ( vio_SRCS
       VIO_Reader_Abstract.cpp
+      VIO_Writer_Abstract.cpp
       VIO_Image_Writer_Factory.cpp
       VIO_Image_Writer_Abstract.cpp
       VIO_Image_Writer_VTI.cpp

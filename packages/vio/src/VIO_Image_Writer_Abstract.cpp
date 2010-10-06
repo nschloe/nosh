@@ -28,76 +28,14 @@
 // =============================================================================
 VIO::Image::Writer::Abstract::
 Abstract ( const std::string & filePath ) :
-        filePath_ ( filePath ),
-        imageData_ ( vtkSmartPointer<vtkImageData>::New() )
+        VIO::Writer::Abstract ( filePath )
 {
+    vtkDataSet_ = vtkSmartPointer<vtkImageData>::New();
 }
 // =============================================================================
 VIO::Image::Writer::Abstract::
 ~Abstract()
 {
-}
-// =============================================================================
-void
-VIO::Image::Writer::Abstract::
-addFieldData ( const Teuchos::Array<int> & array,
-               const std::string         & name )
-{
-    // create field data
-    vtkSmartPointer<vtkIntArray> fieldData = vtkSmartPointer<vtkIntArray>::New();
-
-    fieldData->SetName ( name.c_str() );
-
-    // fill the field
-    for ( int k=0; k<array.length(); k++ )
-        fieldData->InsertNextValue ( array[k] );
-
-    imageData_->GetFieldData()->AddArray ( fieldData );
-
-    return;
-}
-// =============================================================================
-void
-VIO::Image::Writer::Abstract::
-addParameterList ( const Teuchos::ParameterList & problemParams )
-{
-    // add to imageData_
-    Teuchos::map<std::string, Teuchos::ParameterEntry>::const_iterator k;
-    for ( k = problemParams.begin(); k != problemParams.end(); ++k )
-    {
-        std::string paramName = problemParams.name ( k );
-        if ( problemParams.isType<int> ( paramName ) )
-        {
-            vtkSmartPointer<vtkIntArray> fieldData = vtkSmartPointer<vtkIntArray>::New();
-            fieldData->InsertNextValue ( problemParams.get<int> ( paramName ) );
-            fieldData->SetName ( paramName.c_str() );
-            imageData_->GetFieldData()->AddArray ( fieldData );
-        }
-        else if ( problemParams.isType<double> ( paramName ) )
-        {
-            vtkSmartPointer<vtkDoubleArray> fieldData = vtkSmartPointer<vtkDoubleArray>::New();
-            fieldData->InsertNextValue ( problemParams.get<double> ( paramName ) );
-            fieldData->SetName ( paramName.c_str() );
-            imageData_->GetFieldData()->AddArray ( fieldData );
-        }
-        else if ( problemParams.isType<Teuchos::Array<double> > ( paramName ) )
-        {
-            vtkSmartPointer<vtkDoubleArray> fieldData = vtkSmartPointer<vtkDoubleArray>::New();
-            const Teuchos::Array<double> & arr = problemParams.get<Teuchos::Array<double> > ( paramName );
-            for ( int k=0; k<arr.length(); k++ )
-                fieldData->InsertNextValue ( arr[k] );
-            fieldData->SetName ( paramName.c_str() );
-            imageData_->GetFieldData()->AddArray ( fieldData );
-        }
-        else
-        {
-            TEST_FOR_EXCEPTION ( true,
-                                 std::runtime_error,
-                                 "Illegal type of parameter \"" << paramName << "\"." );
-        }
-    }
-
-    return;
 }
 // =============================================================================
 void
@@ -121,10 +59,15 @@ setImageData ( const Epetra_MultiVector              & x,
             scNames[vec] = "x" + EpetraExt::toString ( vec );
     }
 
+    // cast into vtkImageData
+    vtkSmartPointer<vtkImageData> imageData =
+        dynamic_cast<vtkImageData*> ( vtkDataSet_.GetPointer() );
+    TEUCHOS_ASSERT_INEQUALITY( 0, !=, imageData );
+
     // set other image data
-    imageData_->SetDimensions ( Nx[0]+1, Nx[1]+1, 1 );
-    imageData_->SetOrigin ( 0.0, 0.0, 0.0 );
-    imageData_->SetSpacing ( h[0], h[1], 0.0 );
+    imageData->SetDimensions ( Nx[0]+1, Nx[1]+1, 1 );
+    imageData->SetOrigin ( 0.0, 0.0, 0.0 );
+    imageData->SetSpacing ( h[0], h[1], 0.0 );
 
     // fill the scalar field
     vtkSmartPointer<vtkDoubleArray> scalars =
@@ -147,7 +90,7 @@ setImageData ( const Epetra_MultiVector              & x,
             scalars->SetName ( scNames[vec].c_str() );
             for ( int k=0; k<numPoints; k++ )
                 scalars->InsertNextValue ( p[k]>=0 ? x[vec][p[k]] : dummy );
-            imageData_->GetPointData()->AddArray ( scalars );
+            imageData->GetPointData()->AddArray ( scalars );
         }
     }
     else
@@ -156,7 +99,7 @@ setImageData ( const Epetra_MultiVector              & x,
             scalars->SetName ( scNames[vec].c_str() );
             for ( int k=0; k<numPoints; k++ )
                 scalars->InsertNextValue ( x[vec][k] );
-            imageData_->GetPointData()->AddArray ( scalars );
+            imageData->GetPointData()->AddArray ( scalars );
         }
 
     return;
@@ -182,11 +125,16 @@ setImageData ( const DoubleMultiVector               & x,
         for ( int vec=0; vec<numVecs; vec++ )
             scNames[vec] = "x" + EpetraExt::toString ( vec );
     }
+    
+    // cast into vtkImageData
+    vtkSmartPointer<vtkImageData> imageData =
+        dynamic_cast<vtkImageData*> ( vtkDataSet_.GetPointer() );
+    TEUCHOS_ASSERT_INEQUALITY( 0, !=, imageData );
 
     // set other image data
-    imageData_->SetDimensions ( Nx[0]+1, Nx[1]+1, 1 );
-    imageData_->SetOrigin ( 0.0, 0.0, 0.0 );
-    imageData_->SetSpacing ( h[0], h[1], 0.0 );
+    imageData->SetDimensions ( Nx[0]+1, Nx[1]+1, 1 );
+    imageData->SetOrigin ( 0.0, 0.0, 0.0 );
+    imageData->SetSpacing ( h[0], h[1], 0.0 );
 
     // fill the scalar field
     vtkSmartPointer<vtkDoubleArray> scalars =
@@ -213,7 +161,7 @@ setImageData ( const DoubleMultiVector               & x,
             else
                 scalars->InsertNextValue ( xView[k] );
         }
-        imageData_->GetPointData()->AddArray ( scalars );
+        imageData->GetPointData()->AddArray ( scalars );
     }
 
     return;
@@ -239,11 +187,16 @@ setImageData ( const ComplexMultiVector              & x,
         for ( int vec=0; vec<numVecs; vec++ )
             scNames[vec] = "z" + EpetraExt::toString ( vec );
     }
+    
+    // cast into vtkImageData
+    vtkSmartPointer<vtkImageData> imageData =
+        dynamic_cast<vtkImageData*> ( vtkDataSet_.GetPointer() );
+    TEUCHOS_ASSERT_INEQUALITY( 0, !=, imageData );
 
     // set other image data
-    imageData_->SetDimensions ( Nx[0]+1, Nx[1]+1, 1 );
-    imageData_->SetOrigin ( 0.0, 0.0, 0.0 );
-    imageData_->SetSpacing ( h[0], h[1], 0.0 );
+    imageData->SetDimensions ( Nx[0]+1, Nx[1]+1, 1 );
+    imageData->SetOrigin ( 0.0, 0.0, 0.0 );
+    imageData->SetSpacing ( h[0], h[1], 0.0 );
 
     // fill the scalar field
     vtkSmartPointer<vtkDoubleArray> scalars =
@@ -280,7 +233,7 @@ setImageData ( const ComplexMultiVector              & x,
                 scalars->InsertNextValue ( std::imag ( xView[k] ) );
             }
         }
-        imageData_->GetPointData()->AddArray ( scalars );
+        imageData->GetPointData()->AddArray ( scalars );
     }
 
     return;

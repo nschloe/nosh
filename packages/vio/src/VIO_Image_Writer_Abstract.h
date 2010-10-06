@@ -20,6 +20,8 @@
 #ifndef VIO_IMAGE_WRITER_ABSTRACT_H
 #define VIO_IMAGE_WRITER_ABSTRACT_H
 
+#include "VIO_Writer_Abstract.h"
+
 #include "VIO_Typedefs.h"
 
 #include <Teuchos_RCP.hpp>
@@ -36,7 +38,8 @@ namespace VIO {
 namespace Image {
 namespace Writer {
 
-class Abstract
+class Abstract:
+  public VIO::Writer::Abstract
 {
 public:
     //! Default constructor.
@@ -72,19 +75,7 @@ public:
                    const Teuchos::Array<std::string>    & scalarsNames = Teuchos::Array<std::string>()
                  );
 
-    //! Add a parameter list to be stored in the field data section of the file.
-    void
-    addParameterList ( const Teuchos::ParameterList & problemParams );
-
-    //! Add extra field data to be stored in the file.
-    void
-    addFieldData ( const Teuchos::Array<int> & array,
-                   const std::string         & name );
-
 protected:
-    const std::string filePath_;
-    const vtkSmartPointer<vtkImageData>   imageData_;
-
 private:
 };
 
