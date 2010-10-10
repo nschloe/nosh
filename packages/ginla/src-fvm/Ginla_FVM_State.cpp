@@ -26,7 +26,8 @@
 // =============================================================================
 Ginla::FVM::State::
 State( const Teuchos::RCP<ComplexMultiVector>    & psi,
-       const Teuchos::RCP<const VIO::Mesh::Mesh> & mesh ):
+       const Teuchos::RCP<const VIO::Mesh::Mesh> & mesh
+     ):
        psi_( *psi ),
        chi_( 0.0 ),
        mesh_( mesh )
@@ -37,7 +38,8 @@ State( const Teuchos::RCP<ComplexMultiVector>    & psi,
 // =============================================================================
 Ginla::FVM::State::
 State( const Teuchos::RCP<ComplexVector>         & psi,
-       const Teuchos::RCP<const VIO::Mesh::Mesh> & mesh ):
+       const Teuchos::RCP<const VIO::Mesh::Mesh> & mesh
+     ):
        psi_( *psi ),
        chi_( 0.0 ),
        mesh_( mesh )
@@ -48,7 +50,8 @@ State( const Teuchos::RCP<ComplexVector>         & psi,
 // =============================================================================
 Ginla::FVM::State::
 State( const Teuchos::RCP<const ComplexMap>      & map,
-       const Teuchos::RCP<const VIO::Mesh::Mesh> & mesh ):
+       const Teuchos::RCP<const VIO::Mesh::Mesh> & mesh
+     ):
        psi_( ComplexMultiVector( map, 1, true ) ),
        chi_( 0.0 ),
        mesh_( mesh )
@@ -105,10 +108,10 @@ save( const std::string            & fileName,
   
     Teuchos::RCP<VIO::Mesh::Writer> writer =
         Teuchos::rcp( new VIO::Mesh::Writer( fileName ) );
-        
+
     writer->setMesh( *mesh_ );
     writer->setValues( psi_ );
-    // TODO set Teuchos::ParameterList
+    writer->addParameterList( p );
     
     writer->write();
     

@@ -35,7 +35,8 @@ Ginla::FVM::ModelEvaluator::
 ModelEvaluator ( const Teuchos::RCP<VIO::Mesh::Mesh>                         & mesh,
                  const Teuchos::ParameterList                                & params,
                  const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp,
-                 const Teuchos::RCP<Ginla::Komplex::LinearProblem>           & komplex
+                 const Teuchos::RCP<Ginla::Komplex::LinearProblem>           & komplex,
+                 const Teuchos::RCP<Ginla::FVM::State>                       & initialState
                ) :
         komplex_ ( komplex ),
         mvp_( mvp ),
@@ -49,34 +50,34 @@ ModelEvaluator ( const Teuchos::RCP<VIO::Mesh::Mesh>                         & m
         kineticEnergyOperatorGraph_( Teuchos::null ),
         kineticEnergyOperator_( Teuchos::null ),
         dKineticEnergyDMuOperator_( Teuchos::null ),
+        kineticEnergyOperatorsAssembled_( false ),
         kineticEnergyOperatorsMu_( 0.0 ),
+        kineticEnergyOperatorsScaling_( Teuchos::tuple( 0.0, 0.0, 0.0 ) ),
         jacobianOperator_( Teuchos::rcp( new Ginla::Komplex::DoubleMatrix( komplex_->getComplexMap(),
                                                                            komplex_->getComplexMap()
                                                                          )
                                        )
                          ),
         graph_( Teuchos::null ),
-        mu_( 0.0 )
-{
-  mesh_->computeFvmEntities();
-  
+        mu_( 0.0 ),
+        scaling_( 1.0 ),
+        scalingX_( Teuchos::tuple( 1.0, 1.0, 1.0 ) )
+{ 
   this->setupParameters_( params );
   
   // compute stiffness matrix and load vector
   this->createKineticEnergyOperatorGraph_();
-
   kineticEnergyOperator_     = Teuchos::rcp( new ComplexMatrix( kineticEnergyOperatorGraph_ ) );
   dKineticEnergyDMuOperator_ = Teuchos::rcp( new ComplexMatrix( kineticEnergyOperatorGraph_ ) );
-  
-  this->assembleKineticEnergyOperators_( 0.0 );
  
   // prepare initial guess
-  Teuchos::RCP<Ginla::FVM::State> initialState =
-      Teuchos::rcp( new Ginla::FVM::State( komplex_->getComplexMap(), mesh_) );
+//   Teuchos::RCP<Ginla::FVM::State> initialState =
+//       Teuchos::rcp( new Ginla::FVM::State( komplex_->getComplexMap(), mesh_) );
 
-  initialState->getPsiNonConst()->putScalar( double_complex(1.0,0.0) );
- 
+//   initialState->getPsiNonConst()->putScalar( double_complex(1.0,0.0) );
+//   initialState = state;
 //   initialState->getPsiNonConst()->randomize();
+
   x_ = this->createSystemVector( *initialState );
   
   return;
@@ -90,22 +91,50 @@ Ginla::FVM::ModelEvaluator::
 void
 Ginla::FVM::ModelEvaluator::
 setupParameters_( const Teuchos::ParameterList & params )
-{
+{ 
   p_names_ = Teuchos::rcp( new Teuchos::Array<std::string>() );
   p_names_->append( "mu" );
+  p_names_->append( "scaling" );
+  p_names_->append( "scaling x" );
+  p_names_->append( "scaling y" );
+  p_names_->append( "scaling z" );
   
   // setup parameter values
   numParams_ = p_names_->length();
   
+  const Epetra_Comm & comm = komplex_->getRealMap()->Comm();
   p_map_ = Teuchos::rcp( new Epetra_LocalMap( numParams_,
                                               0,
-                                              komplex_->getRealMap()->Comm()
+                                              comm
                                             )
                        );
-  p_init_ = Teuchos::rcp(new Epetra_Vector(*p_map_));
-  for ( int k=0; k<numParams_; k++ )
-      (*p_init_)[k] = params.get<double>( (*p_names_)[k] );
+                       
+  p_init_ = Teuchos::rcp( new Epetra_Vector(*p_map_) );
   
+  // insist on "mu"
+  TEUCHOS_ASSERT( params.isParameter( "mu" ) );
+  (*p_init_)[0] = params.get<double>( "mu" );
+  
+  if ( params.isParameter( "scaling" ) )
+      (*p_init_)[1] = params.get<double>( "scaling" );
+  else
+      (*p_init_)[1] = 1.0;
+
+  if ( params.isParameter( "scaling x" ) )
+      (*p_init_)[2] = params.get<double>( "scaling x" );
+  else
+      (*p_init_)[2] = 1.0;
+  
+  if ( params.isParameter( "scaling y" ) )
+      (*p_init_)[3] = params.get<double>( "scaling y" );
+  else
+      (*p_init_)[3] = 1.0;
+  
+  if ( params.isParameter( "scaling z" ) )
+      (*p_init_)[4] = params.get<double>( "scaling z" );
+  else
+      (*p_init_)[4] = 1.0;
+
   return;
 }
 // ============================================================================
@@ -216,11 +245,18 @@ evalModel( const InArgs  & inArgs,
   
   const Teuchos::RCP<const Epetra_Vector> & x_in = inArgs.get_x();
 
-  // Parse InArgs
+  // get input arguments and make sure they are all right
   Teuchos::RCP<const Epetra_Vector> p_in = inArgs.get_p(0);
   TEUCHOS_ASSERT( !p_in.is_null() );
+  for ( int k=0; k<p_in->MyLength(); k++ )
+      TEUCHOS_ASSERT( !isnan( (*p_in)[k] ) );
+  
   const double mu = (*p_in)[0];
-  TEUCHOS_ASSERT( !isnan( mu ) );
+  const double scaling = (*p_in)[1];
+  const Teuchos::Tuple<double,3> scalingX = Teuchos::tuple( (*p_in)[2],
+                                                            (*p_in)[3],
+                                                            (*p_in)[4]
+                                                          );
 
   // mu_ is used in getParameters.
   // setting mu_=mu here is really just an arbitrarty choice.
@@ -228,13 +264,20 @@ evalModel( const InArgs  & inArgs,
   // used is the "current" parameter value,
   // but there's actually no guarantee for it:
   // The evaluator could have been used for *anything.
+  // Anyway, mu_/scaling{X}_ is only used in this->getParameters().
   mu_ = mu;
+  scaling_ = scaling;
+  scalingX_ = scalingX;
+
+  Teuchos::Tuple<double,3> scalingCombined = Teuchos::tuple( scaling * scalingX[0],
+                                                             scaling * scalingX[1],
+                                                             scaling * scalingX[2]
+                                                           );
   
   // compute F
   const Teuchos::RCP<Epetra_Vector> f_out = outArgs.get_f();
   if ( !f_out.is_null() )
-      this->computeF_( *x_in, mu, *f_out );
-
+      this->computeF_( *x_in, mu, scalingCombined, *f_out );
   
   // fill jacobian
   const Teuchos::RCP<Epetra_Operator> W_out = outArgs.get_W();
@@ -242,7 +285,7 @@ evalModel( const InArgs  & inArgs,
   { 
       Teuchos::RCP<Epetra_CrsMatrix> W_out_crs =
           Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>( W_out, true );
-      this->computeJacobian_( *x_in, mu, *W_out_crs );
+      this->computeJacobian_( *x_in, mu, scalingCombined, *W_out_crs );
       
 //       W_out_crs->Scale( beta );
 //       
@@ -257,7 +300,7 @@ evalModel( const InArgs  & inArgs,
   {
       dfdp_out = outArgs.get_DfDp(0).getMultiVector();
       if ( !dfdp_out.is_null() )
-          this->computeDFDp_( *x_in, mu, *((*dfdp_out)(0)) );
+          this->computeDFDp_( *x_in, mu, scalingCombined, *((*dfdp_out)(0)) );
   }
 
   return;
@@ -265,11 +308,16 @@ evalModel( const InArgs  & inArgs,
 // ============================================================================
 void
 Ginla::FVM::ModelEvaluator::
-computeF_ ( const Epetra_Vector & x,
-            const double          mu,
-            Epetra_Vector       & FVec
+computeF_ ( const Epetra_Vector            & x,
+            const double                     mu,
+            const Teuchos::Tuple<double,3> & scaling,
+            Epetra_Vector                  & FVec
           ) const
-{  
+{
+  std::cout.precision(10);
+  std::cout << "computeF_ " << mu << std::endl;
+  std::cout << "computeF_ " << scaling << std::endl;
+  
   // convert from x to state
   const Teuchos::RCP<Ginla::State::Virtual> state = this->createState( x );
 
@@ -281,33 +329,13 @@ computeF_ ( const Epetra_Vector & x,
                   );
   
   // reassemble linear operator if necessary
-  if ( kineticEnergyOperatorsMu_ != mu )
-      this->assembleKineticEnergyOperators_( mu );
-  
+  if ( !this->kineticEnergyOperatorsUpToDate_( mu, scaling ) )
+      this->assembleKineticEnergyOperators_( mu, scaling );
+      
   // compute r = K*psi
   kineticEnergyOperator_->apply( *(state->getPsi()),
                                  *(res->getPsiNonConst())
                                );
-
-                             
-  // show me what you got
-  std::cout.precision(10);
-//   std::cout << "HHH " << state->normalizedScaledL2Norm() << std::endl;
-  std::cout << "HHH " << state->freeEnergy() << std::endl;
-  
-//   Teuchos::RCP<Teuchos::FancyOStream> out =
-//       Teuchos::fancyOStream( Teuchos::rcpFromRef(std::cout) );
-//   state->getPsi()->describe( *out, Teuchos::VERB_EXTREME );
-
-  throw -99;
-  
-//   if ( komplex_->getComplexMap()->getComm()->getRank() == 0 )
-//         std::cout << "JJJ " << res->normalizedScaledL2Norm() << std::endl;
-  
-//   std::cout << "III" << std::endl;
-//   kineticEnergyOperator_->describe( *out, Teuchos::VERB_EXTREME );
-
-//   res->getPsi()->describe( *out, Teuchos::VERB_EXTREME );
 
   // add nonlinear part (mass lumping)
   Teuchos::ArrayRCP<const double_complex> psiView = state->getPsi()->get1dView();
@@ -331,6 +359,10 @@ computeF_ ( const Epetra_Vector & x,
   // transform back to fully real equation
   this->createSystemVector( *res, FVec );
   
+//   // show me what you got!
+//   Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream( Teuchos::rcpFromRef(std::cout) );
+//   res->getPsi()->describe( *out, Teuchos::VERB_EXTREME );
+
   return;
 }
 // ============================================================================
@@ -361,8 +393,10 @@ createSystemVector( const Ginla::State::Virtual & state,
 // =============================================================================
 void
 Ginla::FVM::ModelEvaluator::
-assembleKineticEnergyOperators_( const double mu ) const
-{  
+assembleKineticEnergyOperators_( const double                     mu,
+                                 const Teuchos::Tuple<double,3> & scaling
+                               ) const
+{
   // TODO Don't throw away the old matrix.
   // This whole things could be treated more elegantly with an FEMatrixBuilder class.
   // Chris Baker, Aug 22, 2010:
@@ -383,11 +417,14 @@ assembleKineticEnergyOperators_( const double mu ) const
                                                               )
                                            );
   
+  // zero out the operators
   kineticEnergyOperator_->setAllToScalar( 0.0 );
   dKineticEnergyDMuOperator_->setAllToScalar( 0.0 );
 
+  // set scaling and external magnetic field
+  mesh_->scale( scaling );
   mvp_->setMu( mu );
-  
+
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   // Loop over the elements, create local load vector and mass matrix,
   // and insert them into the global matrix.
@@ -499,7 +536,9 @@ assembleKineticEnergyOperators_( const double mu ) const
 //   Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream( Teuchos::rcpFromRef(std::cout) );
 //   kineticEnergyOperator_->describe( *out, Teuchos::VERB_EXTREME );
 
+  kineticEnergyOperatorsAssembled_ = true;
   kineticEnergyOperatorsMu_ = mu;
+  kineticEnergyOperatorsScaling_ = scaling;
   
   return;
 }
@@ -538,14 +577,15 @@ createKineticEnergyOperatorGraph_()
 // ============================================================================
 void
 Ginla::FVM::ModelEvaluator::
-computeDFDp_ ( const Epetra_Vector & x,
-               const double          mu,
-                     Epetra_Vector & FVec
+computeDFDp_ ( const Epetra_Vector            & x,
+               const double                     mu,
+               const Teuchos::Tuple<double,3> & scaling,
+                     Epetra_Vector            & FVec
              ) const
 {
   // reassemble linear operator if necessary
-  if ( kineticEnergyOperatorsMu_ != mu )
-      this->assembleKineticEnergyOperators_( mu );
+  if ( !this->kineticEnergyOperatorsUpToDate_( mu, scaling ) )
+      this->assembleKineticEnergyOperators_( mu, scaling );
   
   // convert from x to state
   const Teuchos::RCP<const Ginla::State::Virtual> state = this->createState( x );
@@ -570,14 +610,19 @@ computeDFDp_ ( const Epetra_Vector & x,
 // ============================================================================
 void
 Ginla::FVM::ModelEvaluator::
-computeJacobian_ ( const Epetra_Vector & x,
-                   const double          mu,
-                   Epetra_CrsMatrix    & Jac
+computeJacobian_ ( const Epetra_Vector            & x,
+                   const double                     mu,
+                   const Teuchos::Tuple<double,3> & scaling,
+                   Epetra_CrsMatrix               & Jac
                  ) const
 {
+  std::cout.precision(10);
+  std::cout << "computeJacobian_ " << mu << std::endl;
+  std::cout << "computeJacobian_ " << scaling << std::endl;
+  
   // reassemble linear operator if necessary
-  if ( kineticEnergyOperatorsMu_ != mu )
-      this->assembleKineticEnergyOperators_( mu );
+  if ( !this->kineticEnergyOperatorsUpToDate_( mu, scaling ) )
+      this->assembleKineticEnergyOperators_( mu, scaling );
   
   // convert from x to state
   const Teuchos::RCP<const Ginla::State::Virtual> state = this->createState( x );
@@ -677,7 +722,24 @@ getParameters() const
       Teuchos::rcp( new LOCA::ParameterVector() );
 
   p->addParameter( (*p_names_)[0], mu_ );
+  p->addParameter( (*p_names_)[1], scaling_ );
+  p->addParameter( (*p_names_)[2], scalingX_[0] );
+  p->addParameter( (*p_names_)[3], scalingX_[1] );
+  p->addParameter( (*p_names_)[4], scalingX_[2] );
   
   return p;
+}
+// =============================================================================
+bool
+Ginla::FVM::ModelEvaluator::
+kineticEnergyOperatorsUpToDate_( const double                     mu,
+                                 const Teuchos::Tuple<double,3> & scaling
+                               ) const
+{
+    return    kineticEnergyOperatorsAssembled_
+           && kineticEnergyOperatorsMu_         == mu
+           && kineticEnergyOperatorsScaling_[0] == scaling[0]
+           && kineticEnergyOperatorsScaling_[1] == scaling[1]
+           && kineticEnergyOperatorsScaling_[2] == scaling[2];
 }
 // =============================================================================

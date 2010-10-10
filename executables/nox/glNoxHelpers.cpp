@@ -174,7 +174,7 @@ createGlSystem ( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
 // =========================================================================
 Teuchos::RCP<NOX::Epetra::Group>
 createSolverGroup ( const Teuchos::RCP<Ginla::FDM::LocaSystem::Virtual>  & glSystem,
-                    const Teuchos::RCP<Teuchos::ParameterList>      & nlParamsPtr,
+                    const Teuchos::RCP<Teuchos::ParameterList>           & nlParamsPtr,
                     const Teuchos::RCP<Ginla::FDM::State>                & initialState
                   )
 {

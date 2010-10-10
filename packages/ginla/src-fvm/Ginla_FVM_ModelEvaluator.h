@@ -69,7 +69,8 @@ public:
   ModelEvaluator ( const Teuchos::RCP<VIO::Mesh::Mesh>                         & mesh,
                    const Teuchos::ParameterList                                & params,
                    const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp,
-                   const Teuchos::RCP<Ginla::Komplex::LinearProblem>           & komplex
+                   const Teuchos::RCP<Ginla::Komplex::LinearProblem>           & komplex,
+                   const Teuchos::RCP<Ginla::FVM::State>                       & initialState
                  );
   
   // Destructor
@@ -136,21 +137,24 @@ public:
   
 private:
   void
-  computeF_ ( const Epetra_Vector & x,
-              const double          lambda,
-                    Epetra_Vector & FVec
+  computeF_ ( const Epetra_Vector            & x,
+              const double                     lambda,
+              const Teuchos::Tuple<double,3> & scaling,
+                    Epetra_Vector            & FVec
             ) const;
               
   void
-  computeDFDp_ ( const Epetra_Vector & x,
-                 const double          mu,
-                       Epetra_Vector & FVec
+  computeDFDp_ ( const Epetra_Vector            & x,
+                 const double                     mu,
+                 const Teuchos::Tuple<double,3> & scaling,
+                       Epetra_Vector            & FVec
                ) const;
               
   void
-  computeJacobian_ ( const Epetra_Vector     & x,
-                     const double              lambda,
-                           Epetra_CrsMatrix  & Jac
+  computeJacobian_ ( const Epetra_Vector            & x,
+                     const double                     lambda,
+                     const Teuchos::Tuple<double,3> & scaling,
+                           Epetra_CrsMatrix         & Jac
                    ) const;
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 protected:
@@ -178,7 +182,9 @@ private:
    Teuchos::RCP<TCrsGraph> kineticEnergyOperatorGraph_;
    mutable Teuchos::RCP<ComplexMatrix> kineticEnergyOperator_;
    mutable Teuchos::RCP<ComplexMatrix> dKineticEnergyDMuOperator_;
+   mutable bool kineticEnergyOperatorsAssembled_;
    mutable double kineticEnergyOperatorsMu_;
+   mutable Teuchos::Tuple<double,3> kineticEnergyOperatorsScaling_;
    Teuchos::RCP<Ginla::Komplex::DoubleMatrix> jacobianOperator_;
 //    Teuchos::RCP<Epetra_CrsMatrix> fvmLaplacian_;
 //    Teuchos::RCP<Epetra_CrsMatrix> jacobian_;
@@ -189,7 +195,9 @@ private:
     setupParameters_( const Teuchos::ParameterList & params );
     
     void
-    assembleKineticEnergyOperators_( double mu ) const;
+    assembleKineticEnergyOperators_( double                           mu,
+                                     const Teuchos::Tuple<double,3> & scaling
+                                   ) const;
 
     void
     createKineticEnergyOperatorGraph_();
@@ -198,8 +206,15 @@ private:
     deepCopy_ ( const Teuchos::RCP<const ComplexMatrix> & A
               ) const;
               
+    bool
+    kineticEnergyOperatorsUpToDate_( const double                     mu,
+                                     const Teuchos::Tuple<double,3> & scaling
+                                   ) const;
+              
     // this value is really just for getParameters()
     mutable double mu_;
+    mutable double scaling_;
+    mutable Teuchos::Tuple<double,3> scalingX_;
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 };
 

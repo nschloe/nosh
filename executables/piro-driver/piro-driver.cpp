@@ -15,6 +15,7 @@
 
 #include <boost/filesystem.hpp>
 
+#include "Ginla_FVM_ModelEvaluator.h"
 #include "Ginla_FDM_ModelEvaluator_Default.h"
 #include "Ginla_FDM_ModelEvaluator_Bordered.h"
 #include "Ginla_FDM_Operator_BCCentral.h"
