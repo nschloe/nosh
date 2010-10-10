@@ -5,7 +5,7 @@
 #include "Ginla_FDM_Perturbation_Virtual.h"
 #include "Ginla_IO_StateWriter.h"
 #include "Ginla_IO_StatsWriter.h"
-#include "Ginla_Komplex_DoubleMatrix.h"
+#include "Komplex2_DoubleMatrix.h"
 
 #include <Epetra_Map.h>
 #include <LOCA_Stepper.H>
@@ -31,7 +31,7 @@ Default ( const Teuchos::RCP<Ginla::FDM::Operator::Virtual>      & glOperator,
         perturbation_ ( Teuchos::null ),
         preconditioner_( Teuchos::null ),
         stepper_ ( Teuchos::null ),
-        komplex_ ( Teuchos::rcp ( new Ginla::Komplex::LinearProblem ( eComm, complexMap ) ) ),
+        komplex_ ( Teuchos::rcp ( new Komplex2::LinearProblem ( eComm, complexMap ) ) ),
         statsWriter_( statsWriter ),
         stateWriter_( stateWriter ),
         firstTime_ ( true )
@@ -104,7 +104,7 @@ computeJacobian ( const Epetra_Vector & x,
     // create a real-valued matrix of the AB-Jacobian
     komplex_->update( glOperator_->getJacobian( state ), firstTime_ );
 
-    Teuchos::RCP<const Ginla::Komplex::DoubleMatrix> AB = glOperator_->getJacobian( state );
+    Teuchos::RCP<const Komplex2::DoubleMatrix> AB = glOperator_->getJacobian( state );
     Teuchos::RCP<const ComplexMatrix> A = AB->getMatrixA();
     Teuchos::RCP<const ComplexMatrix> B = AB->getMatrixB();
     

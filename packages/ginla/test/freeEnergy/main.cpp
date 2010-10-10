@@ -21,8 +21,6 @@
 
 #include "Ginla_FDM_State.h"
 
-#include "Ginla_FDM_LocaSystem_Bordered.h"
-
 #include "Recti_Grid_Uniform.h"
 #include "Recti_Grid_Reader.h"
 

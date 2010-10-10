@@ -22,7 +22,7 @@
 #include <Teuchos_Array.hpp>
 
 #include "Recti_Grid_Uniform.h"
-#include "Ginla_Komplex_DoubleMatrix.h"
+#include "Komplex2_DoubleMatrix.h"
 
 // =============================================================================
 Ginla::FDM::Operator::BCCentral::
@@ -302,7 +302,6 @@ getFEntry_ ( Teuchos::ArrayRCP<const double_complex> & psiView,
         break;
     default:
         TEST_FOR_EXCEPTION ( true,
-#include "Ginla_Komplex_DoubleMatrix.h"
                              std::logic_error,
                              "Illegal not type \"" << nt << "\"." );
     }
@@ -597,7 +596,7 @@ getDFDh0Entry_( Teuchos::ArrayRCP<const double_complex> & psiView,
     return res;
 }
 // =============================================================================
-Teuchos::RCP<const Ginla::Komplex::DoubleMatrix>
+Teuchos::RCP<const Komplex2::DoubleMatrix>
 Ginla::FDM::Operator::BCCentral::
 getJacobian ( const Teuchos::RCP<const Ginla::FDM::State> & state
             )
@@ -605,7 +604,7 @@ getJacobian ( const Teuchos::RCP<const Ginla::FDM::State> & state
   if ( firstTime_ )
   {
       const Teuchos::RCP<const ComplexMap> map = state->getPsi()->getMap();
-      AB_ = Teuchos::rcp( new Ginla::Komplex::DoubleMatrix( map, map ) );
+      AB_ = Teuchos::rcp( new Komplex2::DoubleMatrix( map, map ) );
   }
 
   // rebuild cache for A?

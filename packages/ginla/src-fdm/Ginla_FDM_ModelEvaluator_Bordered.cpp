@@ -23,7 +23,7 @@
 #include <Epetra_CrsMatrix.h>
 
 #include "Ginla_FDM_Operator_Virtual.h"
-#include "Ginla_Komplex_LinearProblem.h"
+#include "Komplex2_LinearProblem.h"
 
 #include <Teuchos_ParameterList.hpp>
 #include <Epetra_Comm.h>
@@ -33,7 +33,7 @@
 // ============================================================================
 Ginla::FDM::ModelEvaluator::Bordered::
 Bordered ( const Teuchos::RCP<Ginla::FDM::Operator::Virtual> & glOperator,
-           const Teuchos::RCP<Ginla::Komplex::LinearProblem> & komplex,
+           const Teuchos::RCP<Komplex2::LinearProblem>       & komplex,
            const Teuchos::RCP<Recti::Grid::General>          & grid,
            const Teuchos::ParameterList                      & params
          ) :
@@ -61,7 +61,7 @@ Bordered ( const Teuchos::RCP<Ginla::FDM::Operator::Virtual> & glOperator,
 // ============================================================================
 Ginla::FDM::ModelEvaluator::Bordered::
 Bordered ( const Teuchos::RCP<Ginla::FDM::Operator::Virtual> & glOperator,
-           const Teuchos::RCP<Ginla::Komplex::LinearProblem> & komplex,
+           const Teuchos::RCP<Komplex2::LinearProblem>       & komplex,
            const Ginla::State::Virtual                       & state,
            const Teuchos::ParameterList                      & params
          ) :

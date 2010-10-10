@@ -1,10 +1,5 @@
 SET ( ginlafdm_SRCS
       Ginla_FDM_State.cpp
-      Ginla_FDM_Constraint_MinDist.cpp
-#       Ginla_FDM_Constraint_MinDistReal.cpp
-      Ginla_FDM_LocaSystem_Virtual.cpp
-      Ginla_FDM_LocaSystem_Default.cpp
-      Ginla_FDM_LocaSystem_Bordered.cpp
       Ginla_FDM_ModelEvaluator_Default.cpp
       Ginla_FDM_ModelEvaluator_Bordered.cpp
       Ginla_FDM_Operator_Virtual.cpp
@@ -21,6 +16,7 @@ FIND_PACKAGE( Trilinos REQUIRED )
 INCLUDE_DIRECTORIES( ${Trilinos_INCLUDE_DIRS} )
 
 INCLUDE_DIRECTORIES( ${ginzburg-landau_SOURCE_DIR}/packages/ginla/src
+                     ${ginzburg-landau_SOURCE_DIR}/packages/komplex2/src
                      ${ginzburg-landau_SOURCE_DIR}/packages/recti/src
                      ${ginzburg-landau_SOURCE_DIR}/packages/vio/src
                    )

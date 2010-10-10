@@ -13,8 +13,6 @@ SET ( ginla_SRCS
       Ginla_IO_StatsWriter.cpp
       Ginla_IO_StateWriter.cpp
       Ginla_IO_NoxObserver.cpp
-      Ginla_Komplex_DoubleMatrix.cpp
-      Ginla_Komplex_LinearProblem.cpp
       Ginla_StatusTest_Energy.cpp
       Ginla_StatusTest_Loop.cpp
       Ginla_StatusTest_Turnaround.cpp
@@ -25,11 +23,12 @@ SET ( ginla_SRCS
     )
 
 FIND_PACKAGE( Trilinos REQUIRED )
-INCLUDE_DIRECTORIES( ${Trilinos_INCLUDE_DIRS} )
+INCLUDE_DIRECTORIES( ${Trilinos_INCLUDE_DIRS}
+                      ${ginzburg-landau_SOURCE_DIR}/packages/komplex2/src
+                   )
 
 #INCLUDE_DIRECTORIES( ${ginzburg-landau_SOURCE_DIR}/packages/recti/src
 #                     ${ginzburg-landau_SOURCE_DIR}/packages/vio/src )
 
-#ADD_LIBRARY ( ginla STATIC
 ADD_LIBRARY ( ginla
               ${ginla_SRCS} )

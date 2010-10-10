@@ -23,7 +23,7 @@
 #include <EpetraExt_ModelEvaluator.h>
 
 #include "Ginla_FDM_Operator_Virtual.h"
-#include "Ginla_Komplex_LinearProblem.h"
+#include "Komplex2_LinearProblem.h"
 #include "Ginla_StateTranslator.h"
 #include "Recti_Grid_General.h"
 
@@ -46,14 +46,14 @@ public:
 
   //! Constructor without initial guess.
   Default ( const Teuchos::RCP<Ginla::FDM::Operator::Virtual> & glOperator,
-            const Teuchos::RCP<Ginla::Komplex::LinearProblem> & komplex,
+            const Teuchos::RCP<Komplex2::LinearProblem>       & komplex,
             const Teuchos::RCP<Recti::Grid::General>          & grid,
             const Teuchos::ParameterList                      & params
           );
 
   //! Constructor with initial guess.
   Default ( const Teuchos::RCP<Ginla::FDM::Operator::Virtual> & glOperator,
-            const Teuchos::RCP<Ginla::Komplex::LinearProblem> & komplex,
+            const Teuchos::RCP<Komplex2::LinearProblem>       & komplex,
             const Ginla::State::Virtual                       & state,
             const Teuchos::ParameterList                      & params
           );
@@ -150,7 +150,7 @@ protected:
 private:
   
    const Teuchos::RCP<Ginla::FDM::Operator::Virtual> glOperator_;
-   const Teuchos::RCP<Ginla::Komplex::LinearProblem> komplex_;
+   const Teuchos::RCP<Komplex2::LinearProblem>       komplex_;
    const Teuchos::RCP<Epetra_Vector> x_;
    mutable bool firstTime_;
    

@@ -1,5 +1,5 @@
-#ifndef GL_IO_SAVEEIGENDATA_H
-#define GL_IO_SAVEEIGENDATA_H
+#ifndef GINLA_IO_SAVEEIGENDATA_H
+#define GINLA_IO_SAVEEIGENDATA_H
 
 #include <Teuchos_RCP.hpp>
 
@@ -10,12 +10,13 @@
 
 #include <Teuchos_ParameterList.hpp>
 
-#include "Ginla_Komplex_LinearProblem.h"
+#include "Komplex2_LinearProblem.h"
+
 #include "Ginla_IO_EigenSaver_Abstract.h"
 #include "Ginla_IO_StatsWriter.h"
 
 // forward declarations
-namespace Ginla{
+namespace Ginla {
   namespace IO {
     class StateWriter;
   }
@@ -68,7 +69,7 @@ class SaveEigenData:
     Teuchos::RCP<Teuchos::ParameterList> eigenParamListPtr_;
     const Teuchos::RCP<const Ginla::StateTranslator> stateTranslator_;
     const Teuchos::RCP<const Ginla::IO::StateWriter> stateWriter_;
-    const Teuchos::RCP<const Ginla::Komplex::LinearProblem> komplex_;
+    const Teuchos::RCP<const Komplex2::LinearProblem> komplex_;
     Teuchos::RCP<Ginla::IO::StatsWriter> statsWriter_;
     Teuchos::RCP<LOCA::Stepper> locaStepper_;
 
@@ -83,4 +84,4 @@ class SaveEigenData:
   } // namespace IO
 } // namespace GL
 
-#endif // GL_IO_SAVEEIGENDATA_H
+#endif // GINLA_IO_SAVEEIGENDATA_H

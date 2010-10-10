@@ -1,7 +1,4 @@
 # ADD_SUBDIRECTORY( evalGL ) #problems with HDF5 on multicore
-ADD_SUBDIRECTORY( zeroStep )
-ADD_SUBDIRECTORY( zeroStepBordered )
-ADD_SUBDIRECTORY( fiveStep )
 ADD_SUBDIRECTORY( zeroStepPiro )
 ADD_SUBDIRECTORY( fiveStepPiro )
 ADD_SUBDIRECTORY( freeEnergy )

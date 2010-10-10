@@ -10,6 +10,7 @@ FIND_PACKAGE( VTK REQUIRED )
 INCLUDE_DIRECTORIES( ${VTK_INCLUDE_DIRS} )
 
 INCLUDE_DIRECTORIES( ${ginzburg-landau_SOURCE_DIR}/packages/ginla/src
+                     ${ginzburg-landau_SOURCE_DIR}/packages/komplex2/src
                      ${ginzburg-landau_SOURCE_DIR}/packages/vio/src
                    )
 

@@ -19,8 +19,9 @@
 
 #include "Ginla_FVM_ModelEvaluator.h"
 
-#include "Ginla_Komplex_LinearProblem.h"
-#include "Ginla_Komplex_DoubleMatrix.h"
+#include "Komplex2_LinearProblem.h"
+#include "Komplex2_DoubleMatrix.h"
+
 #include "Ginla_FVM_State.h"
 #include "Ginla_State_Virtual.h"
 #include "Ginla_MagneticVectorPotential_Virtual.h"
@@ -35,7 +36,7 @@ Ginla::FVM::ModelEvaluator::
 ModelEvaluator ( const Teuchos::RCP<VIO::Mesh::Mesh>                         & mesh,
                  const Teuchos::ParameterList                                & params,
                  const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp,
-                 const Teuchos::RCP<Ginla::Komplex::LinearProblem>           & komplex,
+                 const Teuchos::RCP<Komplex2::LinearProblem>                 & komplex,
                  const Teuchos::RCP<Ginla::FVM::State>                       & initialState
                ) :
         komplex_ ( komplex ),
@@ -53,9 +54,9 @@ ModelEvaluator ( const Teuchos::RCP<VIO::Mesh::Mesh>                         & m
         kineticEnergyOperatorsAssembled_( false ),
         kineticEnergyOperatorsMu_( 0.0 ),
         kineticEnergyOperatorsScaling_( Teuchos::tuple( 0.0, 0.0, 0.0 ) ),
-        jacobianOperator_( Teuchos::rcp( new Ginla::Komplex::DoubleMatrix( komplex_->getComplexMap(),
-                                                                           komplex_->getComplexMap()
-                                                                         )
+        jacobianOperator_( Teuchos::rcp( new Komplex2::DoubleMatrix( komplex_->getComplexMap(),
+                                                                     komplex_->getComplexMap()
+                                                                   )
                                        )
                          ),
         graph_( Teuchos::null ),

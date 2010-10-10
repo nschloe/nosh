@@ -26,9 +26,9 @@
 // =============================================================================
 // Default constructor
 Ginla::FDM::Constraint::MinDist::
-MinDist ( const Teuchos::RCP<const Ginla::Komplex::LinearProblem> & komplex,
-          const Teuchos::RCP<ComplexVector>                       & psi,
-          const LOCA::ParameterVector                             & paramsVector
+MinDist ( const Teuchos::RCP<const Komplex2::LinearProblem> & komplex,
+          const Teuchos::RCP<ComplexVector>                 & psi,
+          const LOCA::ParameterVector                       & paramsVector
         ):
   komplex_( komplex ),
   constraints_(1,1),
@@ -58,7 +58,7 @@ Ginla::FDM::Constraint::MinDist::
 MinDist( const Ginla::FDM::Constraint::MinDist & source,
          NOX::CopyType                           type
        ) :
-  komplex_( Teuchos::rcp( new Ginla::Komplex::LinearProblem(*source.komplex_) ) ),
+  komplex_( Teuchos::rcp( new Komplex2::LinearProblem(*source.komplex_) ) ),
   constraints_(source.constraints_),
   isValidConstraints_(false),
   paramsVector_( source.paramsVector_ ),

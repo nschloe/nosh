@@ -29,7 +29,8 @@
 // #include "Ginla_IO_SaveNewtonData.h"
 #include "Ginla_IO_SaveEigenData.h"
 #include "Ginla_IO_NoxObserver.h"
-#include "Ginla_Komplex_LinearProblem.h"
+
+#include "Komplex2_LinearProblem.h"
 
 #include "Ginla_FDM_ModelEvaluator_Default.h"
 #include "Ginla_FDM_ModelEvaluator_Bordered.h"
@@ -172,8 +173,8 @@ BOOST_AUTO_TEST_CASE( branch_switch_test )
                                                         state->getPsi()->getMap(),
                                                         state->getPsi()->getMap() ) );
                                                         
-    Teuchos::RCP<Ginla::Komplex::LinearProblem> komplex =
-        Teuchos::rcp( new Ginla::Komplex::LinearProblem( eComm, state->getPsi()->getMap() ) );
+    Teuchos::RCP<Komplex2::LinearProblem> komplex =
+        Teuchos::rcp( new Komplex2::LinearProblem( eComm, state->getPsi()->getMap() ) );
 
     // create the mode evaluator
     Teuchos::RCP<Ginla::FDM::ModelEvaluator::Default> glModel = 

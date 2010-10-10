@@ -25,14 +25,14 @@
 #include <NOX_Epetra_Observer.H>
 
 // forward declarations
+namespace Komplex2 {
+  class LinearProblem;
+}
 namespace Ginla {
   namespace State {
     class Virtual;
   }
   class StateTranslator;
-  namespace Komplex {
-    class LinearProblem;
-  }
   namespace IO {
     class StateWriter;
     class StatsWriter;

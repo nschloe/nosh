@@ -25,7 +25,8 @@
 #include "Ginla_IO_NoxObserver.h"
 #include "Recti_Grid_Uniform.h"
 #include "Recti_Grid_Reader.h"
-#include "Ginla_Komplex_LinearProblem.h"
+
+#include "Komplex2_LinearProblem.h"
 
 // #include "Ginla_Operator_BCInner.h"
 // #include "Ginla_Operator_BCOuter.h"
@@ -172,8 +173,8 @@ int main ( int argc, char *argv[] )
                                                                state->getPsi()->getMap(),
                                                                state->getPsi()->getMap() ) );
                                                           
-      Teuchos::RCP<Ginla::Komplex::LinearProblem> komplex =
-          Teuchos::rcp( new Ginla::Komplex::LinearProblem( eComm, state->getPsi()->getMap() ) );
+      Teuchos::RCP<Komplex2::LinearProblem> komplex =
+          Teuchos::rcp( new Komplex2::LinearProblem( eComm, state->getPsi()->getMap() ) );
 
       // create the mode evaluator
       Teuchos::RCP<Ginla::FDM::ModelEvaluator::Default> glModel = 

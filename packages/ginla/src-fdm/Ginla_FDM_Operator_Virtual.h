@@ -35,9 +35,9 @@ namespace Ginla {
   namespace MagneticVectorPotential{
     class Virtual;
   }
-  namespace Komplex {
-    class DoubleMatrix; 
-  }
+}
+namespace Komplex2 {
+  class DoubleMatrix;
 }
 
 #include <Teuchos_Array.hpp>
@@ -68,7 +68,7 @@ public:
     virtual Teuchos::RCP<const Ginla::State::Virtual>
     getDFDh0( const Teuchos::RCP<const Ginla::FDM::State> & state ) const = 0; // purely virtual
 
-    virtual Teuchos::RCP<const Ginla::Komplex::DoubleMatrix>
+    virtual Teuchos::RCP<const Komplex2::DoubleMatrix>
     getJacobian ( const Teuchos::RCP<const Ginla::FDM::State> & state ) = 0; // purely virtual
 
     Teuchos::RCP<const Recti::Grid::General>
@@ -105,7 +105,7 @@ protected:
 
     //! Data for building the double matrix A/B, corresponding to \f$\psi\f$ and \f$\overline{\psi}\f$, respectively.
     bool firstTime_;
-    Teuchos::RCP<Ginla::Komplex::DoubleMatrix> AB_;
+    Teuchos::RCP<Komplex2::DoubleMatrix> AB_;
     
 private:
   

@@ -7,6 +7,7 @@ FIND_PACKAGE( Boost COMPONENTS system filesystem REQUIRED )
 INCLUDE_DIRECTORIES ( ${Boost_INCLUDE_DIRS} )
 
 INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/packages/vio/src
+                      ${ginzburg-landau_SOURCE_DIR}/packages/komplex2/src
                       ${ginzburg-landau_SOURCE_DIR}/packages/recti/src
                       ${ginzburg-landau_SOURCE_DIR}/packages/ginla/src
                       ${ginzburg-landau_SOURCE_DIR}/packages/ginla/src-fdm
@@ -25,6 +26,7 @@ SET ( pirodriver_SRCS
 SET ( pirodriver_LIBS
       ginlafdm
       ginla
+      komplex2
       recti
       vio
     )
@@ -40,23 +42,23 @@ TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
                        ${Trilinos_TPL_LIBRARIES}
                        ${Boost_LIBRARIES} )
 # ------------------------------------------------------------------------------
-SET ( pirodriverfvm_SRCS
-      piro-driver-fvm.cpp  )
-SET ( pirodriverfvm_LIBS
-      ginlafvm
-      ginla
-      recti
-      vio
-    )
-SET( MY_EXECUTABLE
-     "piro-driver-fvm.exe" )
-ADD_EXECUTABLE( ${MY_EXECUTABLE}
-                ${pirodriverfvm_SRCS} )
-SET_TARGET_PROPERTIES( ${MY_EXECUTABLE}
-                       PROPERTIES LINKER_LANGUAGE Fortran )
-TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
-                       ${pirodriverfvm_LIBS}
-                       ${Trilinos_LIBRARIES}
-                       ${Trilinos_TPL_LIBRARIES}
-                       ${Boost_LIBRARIES} )
+# SET ( pirodriverfvm_SRCS
+#       piro-driver-fvm.cpp  )
+# SET ( pirodriverfvm_LIBS
+#       ginlafvm
+#       ginla
+#       recti
+#       vio
+#     )
+# SET( MY_EXECUTABLE
+#      "piro-driver-fvm.exe" )
+# ADD_EXECUTABLE( ${MY_EXECUTABLE}
+#                 ${pirodriverfvm_SRCS} )
+# SET_TARGET_PROPERTIES( ${MY_EXECUTABLE}
+#                        PROPERTIES LINKER_LANGUAGE Fortran )
+# TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
+#                        ${pirodriverfvm_LIBS}
+#                        ${Trilinos_LIBRARIES}
+#                        ${Trilinos_TPL_LIBRARIES}
+#                        ${Boost_LIBRARIES} )
 # ------------------------------------------------------------------------------

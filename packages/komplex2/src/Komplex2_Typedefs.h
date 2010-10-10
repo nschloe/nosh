@@ -1,5 +1,5 @@
-#ifndef GINLA_TYPEDEFS_H
-#define GINLA_TYPEDEFS_H
+#ifndef KOMPLEX2_TYPEDEFS_H
+#define KOMPLEX2_TYPEDEFS_H
 
 #include <complex>
 #include <Tpetra_Vector.hpp>
@@ -17,6 +17,6 @@ typedef Tpetra::Vector<double_complex,ORD> ComplexVector;
 typedef Tpetra::MultiVector<double_complex,ORD> ComplexMultiVector;
 typedef Tpetra::CrsMatrix<double_complex,ORD> ComplexMatrix;
 
-//const double_complex IM = double_complex( 0.0, 1.0 );
+const double_complex IM = double_complex( 0.0, 1.0 );
 
-#endif // GINLA_TYPEDEFS_H
+#endif // KOMPLEX2_TYPEDEFS_H

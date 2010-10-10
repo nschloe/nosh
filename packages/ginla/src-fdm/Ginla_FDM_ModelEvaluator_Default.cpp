@@ -28,8 +28,8 @@
 
 // ============================================================================
 Ginla::FDM::ModelEvaluator::Default::
-Default ( const Teuchos::RCP<Ginla::FDM::Operator::Virtual>      & glOperator,
-          const Teuchos::RCP<Ginla::Komplex::LinearProblem> & komplex,
+Default ( const Teuchos::RCP<Ginla::FDM::Operator::Virtual> & glOperator,
+          const Teuchos::RCP<Komplex2::LinearProblem>       & komplex,
           const Teuchos::RCP<Recti::Grid::General>          & grid,
           const Teuchos::ParameterList                      & params
         ) :
@@ -55,8 +55,8 @@ Default ( const Teuchos::RCP<Ginla::FDM::Operator::Virtual>      & glOperator,
 }
 // ============================================================================
 Ginla::FDM::ModelEvaluator::Default::
-Default ( const Teuchos::RCP<Ginla::FDM::Operator::Virtual>      & glOperator,
-          const Teuchos::RCP<Ginla::Komplex::LinearProblem> & komplex,
+Default ( const Teuchos::RCP<Ginla::FDM::Operator::Virtual> & glOperator,
+          const Teuchos::RCP<Komplex2::LinearProblem>       & komplex,
           const Ginla::State::Virtual                       & state,
           const Teuchos::ParameterList                      & params
         ) :

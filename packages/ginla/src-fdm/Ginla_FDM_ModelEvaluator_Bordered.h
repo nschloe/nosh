@@ -49,14 +49,14 @@ public:
 
   //! Constructor without initial guess.
   Bordered ( const Teuchos::RCP<Ginla::FDM::Operator::Virtual> & glOperator,
-             const Teuchos::RCP<Ginla::Komplex::LinearProblem> & komplex,
+             const Teuchos::RCP<Komplex2::LinearProblem>       & komplex,
              const Teuchos::RCP<Recti::Grid::General>          & grid,
              const Teuchos::ParameterList                      & params
            );
 
   //! Constructor with initial guess.
   Bordered ( const Teuchos::RCP<Ginla::FDM::Operator::Virtual> & glOperator,
-             const Teuchos::RCP<Ginla::Komplex::LinearProblem> & komplex,
+             const Teuchos::RCP<Komplex2::LinearProblem>       & komplex,
              const Ginla::State::Virtual                       & state,
              const Teuchos::ParameterList                      & params
            );

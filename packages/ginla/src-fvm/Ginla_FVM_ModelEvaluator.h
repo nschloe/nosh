@@ -42,14 +42,14 @@ namespace Ginla
   {
     class Virtual;
   }
-  namespace Komplex
-  {
-    class LinearProblem;
-    class DoubleMatrix;
-  }
   namespace FVM {
     class State;
   }
+}
+namespace Komplex2
+{
+  class LinearProblem;
+  class DoubleMatrix;
 }
 
 class Epetra_CrsGraph;
@@ -69,7 +69,7 @@ public:
   ModelEvaluator ( const Teuchos::RCP<VIO::Mesh::Mesh>                         & mesh,
                    const Teuchos::ParameterList                                & params,
                    const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp,
-                   const Teuchos::RCP<Ginla::Komplex::LinearProblem>           & komplex,
+                   const Teuchos::RCP<Komplex2::LinearProblem>                 & komplex,
                    const Teuchos::RCP<Ginla::FVM::State>                       & initialState
                  );
   
@@ -166,7 +166,7 @@ private:
 //    const Teuchos::RCP<const TComm> & tComm_;
 //    Teuchos::RCP<const TMap>          tMap_;
 
-   const Teuchos::RCP<Ginla::Komplex::LinearProblem> komplex_;
+   const Teuchos::RCP<Komplex2::LinearProblem> komplex_;
    const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp_;
 
    Teuchos::RCP<Epetra_Vector> x_;
@@ -185,7 +185,7 @@ private:
    mutable bool kineticEnergyOperatorsAssembled_;
    mutable double kineticEnergyOperatorsMu_;
    mutable Teuchos::Tuple<double,3> kineticEnergyOperatorsScaling_;
-   Teuchos::RCP<Ginla::Komplex::DoubleMatrix> jacobianOperator_;
+   Teuchos::RCP<Komplex2::DoubleMatrix> jacobianOperator_;
 //    Teuchos::RCP<Epetra_CrsMatrix> fvmLaplacian_;
 //    Teuchos::RCP<Epetra_CrsMatrix> jacobian_;
    Teuchos::RCP<Epetra_CrsGraph> graph_;

@@ -17,7 +17,7 @@
 
 */
 
-#include "Ginla_Constraint_MinDist.h"
+#include "Ginla_Constraint_MinDistReal.h"
 
 #include "Ginla_LocaSystem_Default.h"
 
@@ -25,22 +25,19 @@
 
 // =============================================================================
 // Default constructor
-Ginla::Constraint::MinDist::
-MinDist ( const Teuchos::RCP<const Komplex2::LinearProblem> & komplex,
-          const Teuchos::RCP<ComplexVector>                 & psi,
-          const LOCA::ParameterVector                       & paramsVector
-        ):
-  komplex_( komplex ),
+Ginla::Constraint::MinDistReal::
+MinDistReal ( const Teuchos::RCP<const Epetra_Vector>  & x,
+              const LOCA::ParameterVector              & paramsVector
+            ):
   constraints_(1,1),
   isValidConstraints_(false),
-  // TODO: note that paramsVector must be a LOCA::ParameterVector containing all
-  // parameters, and it should include chi
   paramsVector_( paramsVector ),
   // Set the initial guess.
   // psiRef_ is adapted accordingly before the first continuation step
   // (see preProcessContinuationStep()).
-  psi_( psi ),
-  psiRef_( Teuchos::rcp( new ComplexVector( psi->getMap() ) ) )
+  x_( Teuchos::rcp( new NOX::Epetra::Vector( Epetra_Vector(*x) ) ) ),
+  xRef_( Teuchos::rcp( new NOX::Epetra::Vector( Epetra_Vector(x->Map()) ) ) ),
+  xRefDot_( Teuchos::rcp( new NOX::Epetra::MultiVector( Epetra_Vector(x->Map(),1) ) ) )
 { 
   // Initialize constraint
   constraints_.putScalar(0.0);
@@ -48,22 +45,22 @@ MinDist ( const Teuchos::RCP<const Komplex2::LinearProblem> & komplex,
 }
 // =============================================================================
 // Destructor
-Ginla::Constraint::MinDist::
-~MinDist()
+Ginla::Constraint::MinDistReal::
+~MinDistReal()
 {
 }
 // =============================================================================
 // TODO what does this function do? deep copy?
-Ginla::Constraint::MinDist::
-MinDist( const Ginla::Constraint::MinDist & source,
-         NOX::CopyType                      type
-       ) :
-  komplex_( Teuchos::rcp( new Komplex2::LinearProblem(*source.komplex_) ) ),
+Ginla::Constraint::MinDistReal::
+MinDistReal( const Ginla::Constraint::MinDistReal & source,
+             NOX::CopyType                          type
+           ) :
   constraints_(source.constraints_),
   isValidConstraints_(false),
   paramsVector_( source.paramsVector_ ),
-  psi_( Teuchos::rcp( new ComplexVector(*source.psi_) ) ),
-  psiRef_( Teuchos::rcp( new ComplexVector(*source.psiRef_) ) )
+  x_( Teuchos::rcp( new NOX::Abstract::Vector(*source.x_) ) ),
+  xRef_( Teuchos::rcp( new NOX::Epetra::Vector(*source.xRef_) ) ),
+  xRefDot_( Teuchos::rcp( new NOX::Epetra::MultiVector(*source.xRefDot_) ) )
 {
   if (source.isValidConstraints_ && type == NOX::DeepCopy)
     isValidConstraints_ = true;
@@ -71,67 +68,61 @@ MinDist( const Ginla::Constraint::MinDist & source,
 }
 // =============================================================================
 void
-Ginla::Constraint::MinDist::
+Ginla::Constraint::MinDistReal::
 copy( const LOCA::MultiContinuation::ConstraintInterface & src )
 { 
-  const MinDist & source = Teuchos::dyn_cast<const MinDist>( src );
+  const MinDistReal & source = Teuchos::dyn_cast<const MinDistReal>( src );
 
   if (this != &source)
   {
-    // No deep copy needed as only
-    //   komplex_->real2complex()
-    // is used.
-    komplex_ = source.komplex_;
     // deep copies:
     constraints_ = source.constraints_;
     isValidConstraints_ = source.isValidConstraints_;
     paramsVector_ = source.paramsVector_;
-    *psi_ = *source.psi_;
-    *psiRef_ = *source.psiRef_;
+    *x_ = *source.x_;
+    *xRef_ = *source.xRef_;
+    *xRefDot_ = *source.xRefDot_;
   }
 
   return;
 }
 // =============================================================================
 Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface>
-Ginla::Constraint::MinDist::
+Ginla::Constraint::MinDistReal::
 clone(NOX::CopyType type) const
 {
-  return Teuchos::rcp(new Ginla::Constraint::MinDist(*this, type));
+  return Teuchos::rcp(new Ginla::Constraint::MinDistReal(*this, type));
 }
 // =============================================================================
 void
-Ginla::Constraint::MinDist::
+Ginla::Constraint::MinDistReal::
 preProcessContinuationStep( LOCA::Abstract::Iterator::StepStatus stepStatus )
 {
   // deep copy the current guess as a reference solution
-  *psiRef_ = *psi_;
+  *xRef_ = *x_;
+
+  isValidDx_ = false;
   isValidConstraints_ = false;
   return;
 }
 // =============================================================================
 int
-Ginla::Constraint::MinDist::
+Ginla::Constraint::MinDistReal::
 numConstraints() const
 {
   return constraints_.numRows();
 }
 // =============================================================================
 void
-Ginla::Constraint::MinDist::
+Ginla::Constraint::MinDistReal::
 setX(const NOX::Abstract::Vector & y)
 { 
-  TEUCHOS_ASSERT( komplex_.is_valid_ptr() && !komplex_.is_null() );
-
-  const Epetra_Vector & yE =
-          Teuchos::dyn_cast<const NOX::Epetra::Vector>( y ).getEpetraVector();
-  psi_ = komplex_->real2complex( yE );
-
+  *x_ = y;
   return;
 }
 // =============================================================================
 void
-Ginla::Constraint::MinDist::
+Ginla::Constraint::MinDistReal::
 setParam( int paramID, double val )
 {
   paramsVector_[paramID] = val;
@@ -145,7 +136,7 @@ setParam( int paramID, double val )
 }
 // =============================================================================
 void
-Ginla::Constraint::MinDist::
+Ginla::Constraint::MinDistReal::
 setParams( const vector<int>                             & paramIDs,
            const NOX::Abstract::MultiVector::DenseMatrix & vals )
 {
@@ -161,24 +152,57 @@ setParams( const vector<int>                             & paramIDs,
 }
 // =============================================================================
 NOX::Abstract::Group::ReturnType
-Ginla::Constraint::MinDist::
+Ginla::Constraint::MinDistReal:: 
 computeConstraints()
 {
   if (!isValidConstraints_)
   {
-    // the dot() method is indeed smart enough to compute
-    // conjugate the first complex vector psiRef_
-    constraints_(0,0) = std::imag( psiRef_->dot(*psi_) );
+    computeDX(); // update xRefDot_
+
+    
+    std::cout  << "111" << std::endl;
+//     NOX::Epetra::Vector x = Teuchos::dyn_cast<NOX::Epetra::Vector>((*xRefDot_)[0]);
+    xRefDot_->print( std::cout );
+    std::cout  << "1b" << std::endl;
+    constraints_(0,0) =  (*xRefDot_)[0].innerProduct( x_ );
+    std::cout << "222" << std::endl;
     isValidConstraints_ = true;
   }
 
   return NOX::Abstract::Group::Ok;
 }
 // =============================================================================
+const NOX::Abstract::MultiVector*
+Ginla::Constraint::MinDistReal::
+getDX () const
+{
+    return xRefDot_.get();
+}
+// =============================================================================
 NOX::Abstract::Group::ReturnType
-Ginla::Constraint::MinDist::
+Ginla::Constraint::MinDistReal::
 computeDX()
 {
+  if (!isValidDx_)
+  {
+      // \Im( psi0^H psi ) = [-Im(psi0),Re(psi0)] [ Re(psi); Im(psi) ].
+   
+      // Get the underlying Epetra_Vectors to gain access to the elements.
+      Epetra_Vector & xRefE    = xRef_->getEpetraVector();
+      Teuchos::RCP<Epetra_Vector> xRefDotE = Teuchos::rcp( (xRefDot_->getEpetraMultiVector())(0) );
+      
+      TEUCHOS_ASSERT( xRefE.GlobalLength() % 2 == 0 );
+
+      int N = xRefE.GlobalLength()/2;
+      for ( int k=0; k<N; k++ )
+      {
+          (*xRefDotE)[2*k]   = -xRefE[2*k+1]; // -Im(psi0)
+          (*xRefDotE)[2*k+1] =  xRefE[2*k];   //  Re(psi_0)
+      }
+
+      isValidDx_ = true;
+  }
+
   return NOX::Abstract::Group::Ok;
 }
 // =============================================================================
@@ -186,7 +210,7 @@ computeDX()
 // residuals g if isValidG is false.
 // If isValidG is true, then the dgdp contains g on input.
 NOX::Abstract::Group::ReturnType
-Ginla::Constraint::MinDist::
+Ginla::Constraint::MinDistReal::
 computeDP( const vector<int> & paramIDs,
            NOX::Abstract::MultiVector::DenseMatrix & dgdp, 
            bool isValidG
@@ -202,21 +226,21 @@ computeDP( const vector<int> & paramIDs,
 }
 // =============================================================================
 bool
-Ginla::Constraint::MinDist::
+Ginla::Constraint::MinDistReal::
 isConstraints() const
 {
   return isValidConstraints_;
 }
 // =============================================================================
 bool
-Ginla::Constraint::MinDist::
+Ginla::Constraint::MinDistReal::
 isDX() const
 {
-  return true;
+  return isValidDx_;
 }
 // =============================================================================
 const NOX::Abstract::MultiVector::DenseMatrix &
-Ginla::Constraint::MinDist::
+Ginla::Constraint::MinDistReal::
 getConstraints() const
 {
   return constraints_;
@@ -224,49 +248,9 @@ getConstraints() const
 // =============================================================================
 // Return true if solution component of constraint derivatives is zero.
 bool
-Ginla::Constraint::MinDist::
+Ginla::Constraint::MinDistReal::
 isDXZero() const
 {
   return false;
-}
-// =============================================================================
-// Compute result_p = alpha * dg/dx * input_x.
-NOX::Abstract::Group::ReturnType
-Ginla::Constraint::MinDist::
-multiplyDX ( double                                    alpha,
-             const NOX::Abstract::MultiVector        & input_x,
-             NOX::Abstract::MultiVector::DenseMatrix & result_p
-           ) const
-{ 
-  TEUCHOS_ASSERT( komplex_.is_valid_ptr() && !komplex_.is_null() );
-  
-  TEUCHOS_ASSERT_EQUALITY( result_p.numCols(), input_x.numVectors() );
-  
-  for ( int k=0; k<input_x.numVectors(); k++ )
-  {
-      const Epetra_Vector & xE =
-              Teuchos::dyn_cast<const NOX::Epetra::Vector>( input_x[0] ).getEpetraVector();
-      Teuchos::RCP<ComplexVector> xPsi = komplex_->real2complex( xE );
-
-      result_p(0,k) = alpha * std::imag( psiRef_->dot(*xPsi) );
-  }
-  
-  return NOX::Abstract::Group::Ok;
-}
-// =============================================================================
-NOX::Abstract::Group::ReturnType
-Ginla::Constraint::MinDist::
-addDX ( Teuchos::ETransp transb,
-        double alpha,
-        const NOX::Abstract::MultiVector::DenseMatrix &b,
-        double beta,
-        NOX::Abstract::MultiVector &result_x
-      ) const
-{
-  TEST_FOR_EXCEPTION( true,
-                      std::logic_error,
-                      "Not yet implemented." );
-
-  return NOX::Abstract::Group::Failed;
 }
 // =============================================================================

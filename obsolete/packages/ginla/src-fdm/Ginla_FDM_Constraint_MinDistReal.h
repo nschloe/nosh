@@ -16,7 +16,6 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 */
-
 //! This class implements the \c LOCA::MultiContinuation::ConstraintInterfaceMVDX
 //! constraint interface for the phase constraint
 //! \f[
@@ -26,42 +25,37 @@
 //! reference solution.
 //! This constraint does not depend upon the constrained parameter \f$\mu\f$.
 
-#ifndef GLMINDISTCONSTRAINT
-#define GLMINDISTCONSTRAINT
+#ifndef GINLA_CONSTRAINT_MINDISTREAL
+#define GINLA_CONSTRAINT_MINDISTREAL
 
-#include <LOCA_MultiContinuation_ConstraintInterface.H>
+#include <LOCA_MultiContinuation_ConstraintInterfaceMVDX.H>
+
+#include <NOX_Epetra_MultiVector.H>
 
 #include "Ginla_LocaSystem_Default.h"
-
-#include <LOCA_Parameter_Vector.H>
 
 namespace Ginla {
 
   namespace Constraint {
 
-class MinDist:
-            // Can't use LOCA::MultiContinuation::ConstraintInterfaceMVDX
-            // as the multiplication with the constraint is calculated
-            // incorrectly, i.e., there's no way to define a vector
-            // such that multiplication with it equals our phase condition.
-            public LOCA::MultiContinuation::ConstraintInterface
+class MinDistReal:
+            public LOCA::MultiContinuation::ConstraintInterfaceMVDX
 {
   public:
 
   // Constructor
-  MinDist( const Teuchos::RCP<const Komplex2::LinearProblem> & komplex,
-           const Teuchos::RCP<ComplexVector>                 & psi,
-           const LOCA::ParameterVector                       & paramsVector
-         );
+  MinDistReal( const Teuchos::RCP<const Epetra_Vector> & x,
+               const LOCA::ParameterVector             & paramsVector
+             );
 
   // Copy constructor
-  MinDist( const Ginla::Constraint::MinDist & source,
-                 NOX::CopyType             type = NOX::DeepCopy
-         );
+  MinDistReal( const Ginla::Constraint::MinDistReal & source,
+               NOX::CopyType                        type = NOX::DeepCopy
+             );
 
   // Destructor
   virtual
-  ~MinDist();
+  ~MinDistReal();
 
   // Copy
   virtual void 
@@ -110,6 +104,10 @@ class MinDist:
   virtual bool
   isConstraints() const;
   
+  //! Return solution component of constraint derivatives. 
+  virtual const NOX::Abstract::MultiVector*
+  getDX () const;
+  
   // Return true if derivative of constraint w.r.t. x is valid
   virtual bool
   isDX() const;
@@ -122,49 +120,37 @@ class MinDist:
   //! derivatives is zero.
   virtual bool
   isDXZero() const;
-  
-  //! Compute result_p = alpha * dg/dx * input_x.
-  virtual NOX::Abstract::Group::ReturnType
-  multiplyDX ( double                                    alpha,
-               const NOX::Abstract::MultiVector        & input_x,
-               NOX::Abstract::MultiVector::DenseMatrix & result_p
-             ) const;
-             
-  //! Compute result_x = alpha * dg/dx^T * op(b) + beta * result_x.
-  virtual NOX::Abstract::Group::ReturnType        
-  addDX ( Teuchos::ETransp transb,
-          double alpha,
-          const NOX::Abstract::MultiVector::DenseMatrix &b,
-          double beta,
-          NOX::Abstract::MultiVector &result_x
-        ) const;
-  
+
 private:
 
   // Prohibit generation and use of operator=()
-  MinDist& operator=(const MinDist& source);
+  MinDistReal& operator=(const MinDistReal& source);
 
 private:
-  
-  //! ProblemLOCAPrototype problem
-  Teuchos::RCP<const Komplex2::LinearProblem> komplex_;
 
   //! Constraint values
   NOX::Abstract::MultiVector::DenseMatrix constraints_;
 
   //! Flag indicating whether constraints are valid (up-to-date)
   bool isValidConstraints_;
+  
+  //! Flag indicating whether \f$dg/dx\f$ is valid (up-to-date)
+  bool isValidDx_;
 
   //! LOCA parameter vector
   LOCA::ParameterVector paramsVector_;
 
   //! Solution vector
-  Teuchos::RCP<ComplexVector> psi_;
+  Teuchos::RCP<NOX::Abstract::Vector> x_;
 
   //! Reference Solution vector
-  const Teuchos::RCP<ComplexVector> psiRef_;
+  const Teuchos::RCP<NOX::Epetra::Vector> xRef_;
+  
+  //! Reference Solution vector
+  const Teuchos::RCP<NOX::Epetra::MultiVector> xRefDot_;
+  
 };
 
   } // namespace Constraint
 } // namespace GL
-#endif // GLMINDISTCONSTRAINT
+#endif // GINLA_CONSTRAINT_MINDISTREAL

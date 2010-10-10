@@ -160,8 +160,8 @@ BOOST_AUTO_TEST_CASE( zero_step_piro_test )
                                             problemParameters.get<double> ( "scaling" ) )
                      );
 
-    Teuchos::RCP<Ginla::Komplex::LinearProblem> komplex =
-        Teuchos::rcp( new Ginla::Komplex::LinearProblem( eComm, initState->getPsi()->getMap() ) );
+    Teuchos::RCP<Komplex2::LinearProblem> komplex =
+        Teuchos::rcp( new Komplex2::LinearProblem( eComm, initState->getPsi()->getMap() ) );
         
     // setup the data output
     Teuchos::RCP<Ginla::IO::StateWriter> stateWriter =

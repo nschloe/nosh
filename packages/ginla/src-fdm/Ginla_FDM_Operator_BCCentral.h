@@ -52,7 +52,7 @@ public:
     getDFDh0( const Teuchos::RCP<const Ginla::FDM::State> & state
             ) const;
 
-    virtual Teuchos::RCP<const Ginla::Komplex::DoubleMatrix>
+    virtual Teuchos::RCP<const Komplex2::DoubleMatrix>
     getJacobian ( const Teuchos::RCP<const Ginla::FDM::State> & state );
 
 protected:

@@ -10,6 +10,7 @@ FIND_PACKAGE( Boost
 INCLUDE_DIRECTORIES ( ${Boost_INCLUDE_DIRS} )
 
 INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/packages/vio/src
+                      ${ginzburg-landau_SOURCE_DIR}/packages/komplex2/src
                       ${ginzburg-landau_SOURCE_DIR}/packages/recti/src
                       ${ginzburg-landau_SOURCE_DIR}/packages/ginla/src
                       ${ginzburg-landau_SOURCE_DIR}/packages/ginla/src-fdm
@@ -33,6 +34,7 @@ SET ( internal_LIBS
       recti
       ginlafdm
       ginla
+      komplex2
       vio
     )
 
