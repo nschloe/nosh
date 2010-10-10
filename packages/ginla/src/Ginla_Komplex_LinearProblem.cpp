@@ -241,38 +241,38 @@ Ginla::Komplex::LinearProblem::
 update ( const Teuchos::RCP<const Ginla::Komplex::DoubleMatrix> AB,
          bool firstTime )
 {
-    TEST_FOR_EXCEPTION( true,
-                        std::logic_error,
-                        "Function needs to be checked for mistakes -- there may be bugs."
-                      );
-  
+//     TEST_FOR_EXCEPTION( true,
+//                         std::logic_error,
+//                         "Function needs to be checked for mistakes -- there may be bugs."
+//                       );
+
     int numMyElements = ComplexMap_->getNodeNumElements();
     Teuchos::ArrayRCP<const Thyra::Ordinal> indicesA;
     Teuchos::ArrayRCP<const double_complex> valuesA;
     Teuchos::ArrayRCP<const Thyra::Ordinal> indicesB;
     Teuchos::ArrayRCP<const double_complex> valuesB;
-    
+
     for ( int row = 0; row < numMyElements; row++ )
     {
-        Thyra::Ordinal globalRow = ComplexMap_->getGlobalElement ( row );
-        
-        AB->getMatrixA()->getGlobalRowView( row,
-                                            indicesA,
-                                            valuesA
-                                          );
-                                            
-        AB->getMatrixB()->getGlobalRowView( row,
-                                            indicesB,
-                                            valuesB
-                                          );
-        
+         Thyra::Ordinal globalRow = ComplexMap_->getGlobalElement ( row );
+
+         AB->getMatrixA()->getLocalRowView( row,
+                                             indicesA,
+                                             valuesA
+                                           );
+
+         AB->getMatrixB()->getLocalRowView( row,
+                                             indicesB,
+                                             valuesB
+                                           );
+
         this->updateGlobalRow ( globalRow,
                                 indicesA(), valuesA(),
                                 indicesB(), valuesB(),
                                 firstTime
                               ); 
     }
-    
+
     return;
 }
 // =============================================================================
@@ -432,7 +432,7 @@ updateGlobalRowB ( const unsigned int                                globalRow,
                                                            )
                               );
     // -------------------------------------------------------------------
-    
+
     return;
 }
 // =============================================================================
@@ -450,7 +450,7 @@ updateGlobalRow ( const unsigned int                                globalRow,
                             indicesA, valuesA,
                             firstTime
                           );
-                          
+
     this->updateGlobalRowB( globalRow,
                             indicesB, valuesB,
                             firstTime

@@ -179,6 +179,9 @@ BOOST_AUTO_TEST_CASE( zero_step_loca_test )
     // set the initial value from glParameters
     std::string contParam = stepperList.get<string> ( "Continuation Parameter" );
 
+    std::cout << "1" << std::endl;
+
+
     BOOST_REQUIRE( glParameters.isParameter ( contParam ) );
 
     // check if the initial value was given (will be unused anyway)
@@ -187,6 +190,8 @@ BOOST_AUTO_TEST_CASE( zero_step_loca_test )
         std::cerr << "Warning: Parameter 'LOCA->Stepper->Initial Value' given, but will not be used."
                   << std::endl;
     }
+
+    std::cout << "2" << std::endl;
 
     stepperList.set ( "Initial Value", glParameters.get<double> ( contParam ) );
 
@@ -221,6 +226,8 @@ BOOST_AUTO_TEST_CASE( zero_step_loca_test )
     Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> glSaveEigenDataStrategy = glEigenSaver;
     eigenList.set ( "glSaveEigenDataStrategy", glSaveEigenDataStrategy );
 #endif
+
+    std::cout << "3" << std::endl;
 
     // ------------------------------------------------------------------------
     // Create all possible Epetra_Operators.
@@ -277,6 +284,8 @@ BOOST_AUTO_TEST_CASE( zero_step_loca_test )
                                                  locaParams ) );
 
     grp->setParams ( locaParams );
+
+    std::cout << "4" << std::endl;
     // ------------------------------------------------------------------------
     // Set up the NOX status tests
     Teuchos::ParameterList& noxList = paramList->sublist ( "NOX", true );
@@ -308,8 +317,10 @@ BOOST_AUTO_TEST_CASE( zero_step_loca_test )
 #endif
     // ------------------------------------------------------------------------
     // Perform continuation run
+    std::cout << "5" << std::endl;
     LOCA::Abstract::Iterator::IteratorStatus status;
     status = stepper->run();
+    std::cout << "6" << std::endl;
     // ------------------------------------------------------------------------
     // retrieve solution
     const NOX::Epetra::Group & finalGroup =

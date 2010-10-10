@@ -100,10 +100,10 @@ computeJacobian ( const Epetra_Vector & x,
 
     const Teuchos::RCP<const Ginla::FDM::State> state =
         this->createFdmState_( x );
-    
+
     // create a real-valued matrix of the AB-Jacobian
     komplex_->update( glOperator_->getJacobian( state ), firstTime_ );
-    
+
     Teuchos::RCP<const Ginla::Komplex::DoubleMatrix> AB = glOperator_->getJacobian( state );
     Teuchos::RCP<const ComplexMatrix> A = AB->getMatrixA();
     Teuchos::RCP<const ComplexMatrix> B = AB->getMatrixB();
@@ -128,8 +128,6 @@ computeJacobian ( const Epetra_Vector & x,
 //       std::cout << endl;
 //   }
   
-  
-
     if ( firstTime_ )
     {
         komplex_->finalizeMatrix();

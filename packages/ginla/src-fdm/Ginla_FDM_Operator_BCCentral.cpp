@@ -601,13 +601,13 @@ Teuchos::RCP<const Ginla::Komplex::DoubleMatrix>
 Ginla::FDM::Operator::BCCentral::
 getJacobian ( const Teuchos::RCP<const Ginla::FDM::State> & state
             )
-{ 
+{
   if ( firstTime_ )
   {
       const Teuchos::RCP<const ComplexMap> map = state->getPsi()->getMap();
       AB_ = Teuchos::rcp( new Ginla::Komplex::DoubleMatrix( map, map ) );
   }
-  
+
   // rebuild cache for A?
   if ( cacheNeedsUpdating_ )
     this->buildACache_();
@@ -616,12 +616,12 @@ getJacobian ( const Teuchos::RCP<const Ginla::FDM::State> & state
   Teuchos::ArrayRCP<const double> ARightView = ARight_->get1dView();
   Teuchos::ArrayRCP<const double> ABelowView = ABelow_->get1dView();
   Teuchos::ArrayRCP<const double> AAboveView = AAbove_->get1dView();
-  
+
   Teuchos::ArrayRCP<const double_complex> psiView = state->getPsi()->get1dView();
   double chi = state->getChi();
-  
+
   double h = grid_->getUniformH();
-  
+
   // loop over the nodes
   unsigned int localLength = state->getPsi()->getLocalLength();
   
@@ -629,7 +629,7 @@ getJacobian ( const Teuchos::RCP<const Ginla::FDM::State> & state
   Teuchos::Array<double_complex> valuesPsi;
   Teuchos::Array<Thyra::Ordinal> columnIndicesPsiConj;
   Teuchos::Array<double_complex> valuesPsiConj;
-  
+
   for ( unsigned int localRow=0; localRow<localLength; localRow++ )
   {
       int globalRow= rangeMap_->getGlobalElement ( localRow );
@@ -648,7 +648,7 @@ getJacobian ( const Teuchos::RCP<const Ginla::FDM::State> & state
       AB_->putALocalValues( localRow,
                             columnIndicesPsi(),
                             valuesPsi() );
-                            
+
       AB_->putBLocalValues( localRow,
                             columnIndicesPsiConj(),
                             valuesPsiConj() );
@@ -659,7 +659,7 @@ getJacobian ( const Teuchos::RCP<const Ginla::FDM::State> & state
     AB_->finalize();
     firstTime_ = false;
   }
-  
+
   return AB_;
 }
 // =============================================================================
