@@ -42,23 +42,24 @@ TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
                        ${Trilinos_TPL_LIBRARIES}
                        ${Boost_LIBRARIES} )
 # ------------------------------------------------------------------------------
-# SET ( pirodriverfvm_SRCS
-#       piro-driver-fvm.cpp  )
-# SET ( pirodriverfvm_LIBS
-#       ginlafvm
-#       ginla
-#       recti
-#       vio
-#     )
-# SET( MY_EXECUTABLE
-#      "piro-driver-fvm.exe" )
-# ADD_EXECUTABLE( ${MY_EXECUTABLE}
-#                 ${pirodriverfvm_SRCS} )
-# SET_TARGET_PROPERTIES( ${MY_EXECUTABLE}
-#                        PROPERTIES LINKER_LANGUAGE Fortran )
-# TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
-#                        ${pirodriverfvm_LIBS}
-#                        ${Trilinos_LIBRARIES}
-#                        ${Trilinos_TPL_LIBRARIES}
-#                        ${Boost_LIBRARIES} )
+SET ( pirodriverfvm_SRCS
+      piro-driver-fvm.cpp  )
+SET ( pirodriverfvm_LIBS
+      ginlafvm
+      ginla
+      komplex2
+      recti
+      vio
+    )
+SET( MY_EXECUTABLE
+     "piro-driver-fvm.exe" )
+ADD_EXECUTABLE( ${MY_EXECUTABLE}
+                ${pirodriverfvm_SRCS} )
+SET_TARGET_PROPERTIES( ${MY_EXECUTABLE}
+                       PROPERTIES LINKER_LANGUAGE Fortran )
+TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
+                       ${pirodriverfvm_LIBS}
+                       ${Trilinos_LIBRARIES}
+                       ${Trilinos_TPL_LIBRARIES}
+                       ${Boost_LIBRARIES} )
 # ------------------------------------------------------------------------------
