@@ -23,7 +23,7 @@ read( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
 {
   Teuchos::RCP<VIO::Image::Reader::Abstract> reader =
       VIO::Image::Reader::Factory::create( filePath );
-  
+
   // read all the values
   Teuchos::RCP<ComplexMultiVector> z;
   UIntTuple dims;
@@ -31,19 +31,19 @@ read( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
   Point spacing; // see note below
   Teuchos::Array<int> bbIndex;
   reader->read( z, bbIndex, dims, origin, spacing, fieldData, Comm );
-  
+
   // extract the necessary values
   double scaling = fieldData.get<double>( "scaling" );
 
   Teuchos::Array<int> boundaryIndices = fieldData.get<Teuchos::Array<int> >( "boundary indices" );
-  
+
   // h and spacing should essentially deliver the same values, where SPACING is less reliable
   // as it may be stored with little precision in the file, depending on the file type.
   Teuchos::Array<double> hArray = fieldData.get<Teuchos::Array<double> >( "h" );
 
-  TEUCHOS_ASSERT_EQUALITY( hArray.length(), 2 );
+  TEUCHOS_ASSERT_INEQUALITY( hArray.length(), >=, 2 );
   DoubleTuple h = Teuchos::tuple( hArray[0], hArray[1] );
-  
+
   TEST_FOR_EXCEPTION( fabs( h[0]-h[1] ) > 1.e-15,
                       std::logic_error,
                       "Spacing not uniform accross spatial dimensions: h = " << h << "." );
@@ -53,7 +53,7 @@ read( const Teuchos::RCP<const Teuchos::Comm<int> > & Comm,
   UIntTuple numCells = Teuchos::tuple(  dims[0]-1, dims[1]-1 );
   grid = Teuchos::rcp( new Uniform ( hh, numCells, bbIndex, boundaryIndices,
                                      scaling, origin ) );
-                                     
+
   state = Teuchos::rcp( new Ginla::FDM::State( z, grid ) );
 
   return;

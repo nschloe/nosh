@@ -57,11 +57,12 @@ public:
 
 public:
   //! Constructor
-  NoxObserver ( const Teuchos::RCP<const Ginla::IO::StateWriter> & stateWriter,
-                const Teuchos::RCP<const Ginla::StateTranslator> & stateTranslator,
-                const NoxObserver::ObserverType                  & problemType
+  NoxObserver ( const Teuchos::RCP<const Ginla::IO::StateWriter>        & stateWriter,
+                const Teuchos::RCP<const Ginla::StateTranslator>        & stateTranslator,
+                const NoxObserver::ObserverType                         & problemType,
+                const Teuchos::RCP<const Ginla::ParameterHost::Virtual> & parameterHost = Teuchos::null
               );
-  
+
   //! Destructor
   virtual
   ~NoxObserver ();
@@ -69,12 +70,10 @@ public:
   virtual
   void
   observeSolution(const Epetra_Vector& soln);
-  
+
   void
-  setStatisticsWriter( const Teuchos::RCP<Ginla::IO::StatsWriter>              & statsWriter,
-                       const Teuchos::RCP<const Ginla::ParameterHost::Virtual> & parameterHost
-                     );
-                       
+  setStatisticsWriter( const Teuchos::RCP<Ginla::IO::StatsWriter> & statsWriter );
+
 protected:
 private:
   void
@@ -88,14 +87,14 @@ private:
   saveContinuationStatistics_( const int stepIndex,
                                const Teuchos::RCP<const Ginla::State::Virtual> & state
                              );
-                                 
+
 private:
 private:
 
     const ObserverType observerType_;
     const Teuchos::RCP<const Ginla::IO::StateWriter>  stateWriter_;
     const Teuchos::RCP<const Ginla::StateTranslator>  stateTranslator_;
-    
+
     Teuchos::RCP<Ginla::IO::StatsWriter>   statsWriter_;
     Teuchos::RCP<const Ginla::ParameterHost::Virtual> parameterHost_;
 };

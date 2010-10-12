@@ -35,14 +35,14 @@
 
 #include <EpetraExt_RowMatrixOut.h>
 
-#include <Piro_Epetra_NOXSolver.hpp>
+//#include <Piro_Epetra_NOXSolver.hpp>
+#include <Piro_Epetra_LOCASolver.hpp>
 
-#include <boost/filesystem.hpp>
+#include "Recti_Grid_Reader.h"
 
 // #include "Ginla_IO_SaveNewtonData.h"
 #include "Ginla_IO_NoxObserver.h"
 
-#include "Recti_Grid_Reader.h"
 #include "Ginla_MagneticVectorPotential_ZSquareSymmetric.h"
 #include "Ginla_IO_StateWriter.h"
 
@@ -93,7 +93,7 @@ BOOST_AUTO_TEST_CASE( zero_step_piro_test )
     std::string expSolFileName = "";
     My_CLP.setOption ( "expected-solution-file", &expSolFileName,
                       "VTK/VTI file containing the expected solution", true );
-                      
+
     // print warning for unrecognized arguments
     My_CLP.recogniseAllOptions ( true );
 
@@ -124,7 +124,7 @@ BOOST_AUTO_TEST_CASE( zero_step_piro_test )
         inputGuessFile = xmlPath / inputGuessFile;
 
     const std::string outputFormat = ioList.get<string> ( "Output format" );
-    
+
     // set default directory to be the directory of the XML file itself
     boost::filesystem::path outputDirectory = ioList.get<string> ( "Output directory" );
     if ( outputDirectory.root_directory().empty() )
@@ -143,26 +143,27 @@ BOOST_AUTO_TEST_CASE( zero_step_piro_test )
                                 problemParameters );
 
     // possibly overwrite the parameters
-    Teuchos::ParameterList & overwriteParamsList = paramList->sublist ( "Overwrite parameter list", true ); 
+    Teuchos::ParameterList & overwriteParamsList = paramList->sublist ( "Overwrite parameter list", true );
     bool overwriteParameters = overwriteParamsList.get<bool> ( "Overwrite parameters" );
     if ( overwriteParameters )
     {
         Teuchos::ParameterList & overwritePList = overwriteParamsList.sublist( "Parameters", true );
         problemParameters.setParameters( overwritePList );
-        
+
         // possibly update the scaling of the grid
         grid->updateScaling( problemParameters.get<double>("scaling") );
     }
-    
+
     Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> A =
         Teuchos::rcp ( new Ginla::MagneticVectorPotential::ZSquareSymmetric
-                                          ( problemParameters.get<double> ( "H0" ),
-                                            problemParameters.get<double> ( "scaling" ) )
+                             ( problemParameters.get<double> ( "H0" ),
+                               problemParameters.get<double> ( "scaling" )
+                             )
                      );
 
     Teuchos::RCP<Komplex2::LinearProblem> komplex =
         Teuchos::rcp( new Komplex2::LinearProblem( eComm, initState->getPsi()->getMap() ) );
-        
+
     // setup the data output
     Teuchos::RCP<Ginla::IO::StateWriter> stateWriter =
         Teuchos::rcp( new Ginla::IO::StateWriter( outputDirectory.string(),
@@ -181,32 +182,34 @@ BOOST_AUTO_TEST_CASE( zero_step_piro_test )
 
     // Create the interface between NOX and the application
     // This object is derived from NOX::Epetra::Interface
-    Teuchos::RCP<Ginla::FDM::ModelEvaluator::Default> glModel = 
+    Teuchos::RCP<Ginla::FDM::ModelEvaluator::Default> glModel =
               Teuchos::rcp( new Ginla::FDM::ModelEvaluator::Default( glOperator,
                                                                      komplex,
                                                                      *initState,
                                                                      problemParameters
                                                                    )
                           );
-                                         
-    Teuchos::RCP<Ginla::IO::NoxObserver> observer =
-        Teuchos::rcp( new Ginla::IO::NoxObserver( stateWriter,
-                                                  glModel,
-                                                  Ginla::IO::NoxObserver::NONLINEAR
-                                                )
-                    );
+
+    Teuchos::RCP<Ginla::IO::NoxObserver> observer = Teuchos::null;
+//    Teuchos::rcp( new Ginla::IO::NoxObserver( stateWriter,
+//                                              glModel,
+//                                              Ginla::IO::NoxObserver::CONTINUATION,
+//                                              glOperator
+//                                            )
+//                );
+
 
     Teuchos::RCP<Teuchos::ParameterList> piroParams =
         Teuchos::rcp(new Teuchos::ParameterList("Piro Parameters"));
     Teuchos::updateParametersFromXmlFile(xmlInputFileName, piroParams.get());
 
-    // Use these two objects to construct a Piro solved application 
+    // Use these two objects to construct a Piro solved application
     //   EpetraExt::ModelEvaluator is  base class of all Piro::Epetra solvers
     Teuchos::RCP<EpetraExt::ModelEvaluator> piro
-        = Teuchos::rcp( new Piro::Epetra::NOXSolver( piroParams,
-                                                     glModel,
-                                                     observer
-                                                   )
+            = Teuchos::rcp( new Piro::Epetra::LOCASolver( piroParams,
+                                                          glModel,
+                                                          observer
+                                                        )
                       );
 
     // Now the (somewhat cumbersome) setting of inputs and outputs
@@ -224,14 +227,14 @@ BOOST_AUTO_TEST_CASE( zero_step_piro_test )
     // Solution vector is returned as extra response vector
     Teuchos::RCP<Epetra_Vector> gx = Teuchos::rcp(new Epetra_Vector(*(piro->get_g_map(0))));
     outArgs.set_g( 0, gx );
-    
+
     // evaluate the model: go, go!
     piro->evalModel( inArgs, outArgs );
-    
+
     // ------------------------------------------------------------------------
     // fetch the solution
     // outArgs.get_g(0) must be gx
-    BOOST_ASSERT( !outArgs.get_g(0).is_null() ); 
+    BOOST_ASSERT( !outArgs.get_g(0).is_null() );
     Teuchos::RCP<Ginla::State::Virtual> solutionState = glModel->createState( *(outArgs.get_g(0)) );
     // ------------------------------------------------------------------------
     // read reference solution from file
@@ -242,9 +245,9 @@ BOOST_AUTO_TEST_CASE( zero_step_piro_test )
     // compare the results:
     // get final solution
     Teuchos::RCP<Ginla::State::Virtual> & diff = solutionState;
-    
-    diff->update( -1.0, *refState, 1.0 );    
-    
+
+    diff->update( -1.0, *refState, 1.0 );
+
     // don't be as strict here: 10^{-5} is enough
     BOOST_CHECK_SMALL( diff->normalizedScaledL2Norm(), 1.0e-5 );
     // ------------------------------------------------------------------------
