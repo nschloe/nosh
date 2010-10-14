@@ -145,12 +145,6 @@ int main ( int argc, char *argv[] )
       Teuchos::RCP<Ginla::FVM::State> state =
           Teuchos::rcp( new Ginla::FVM::State( z, mesh ) );
 
-//       Recti::Grid::Reader::read ( Comm,
-//                                   getAbsolutePath( initialGuessList.get<std::string> ( "State" ), xmlPath ),
-//                                   state,
-//                                   grid,
-//                                   problemParameters );
-
       // possibly overwrite the parameters
       Teuchos::ParameterList & overwriteParamsList = piroParams->sublist ( "Overwrite parameter list", true );
       bool overwriteParameters = overwriteParamsList.get<bool> ( "Overwrite parameters" );
@@ -165,15 +159,6 @@ int main ( int argc, char *argv[] )
       Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> A =
           Teuchos::rcp ( new Ginla::MagneticVectorPotential::Z ( mu ) );
 
-      Teuchos::ParameterList & stepperList = piroParams->sublist ( "LOCA" ).sublist ( "Stepper" );
-      int maxLocaSteps = stepperList.get<int> ( "Max Steps" );
-
-      // setup the data output
-      Teuchos::RCP<Ginla::IO::StateWriter> stateWriter =
-          Teuchos::rcp( new Ginla::IO::StateWriter( outputDirectory.string(),
-                                                    "solution",
-                                                    "pvtu",
-                                                    maxLocaSteps ) );
 
       Teuchos::RCP<Komplex2::LinearProblem> komplex =
           Teuchos::rcp( new Komplex2::LinearProblem( eComm, state->getPsi()->getMap() ) );
@@ -195,20 +180,24 @@ int main ( int argc, char *argv[] )
           Teuchos::rcp( new Ginla::IO::StatsWriter( contFilePath ) );
 
       // set the initial value from glParameters
-      std::string contParam = stepperList.get<std::string> ( "Continuation Parameter" );
+      std::string contParam = piroParams->sublist ( "LOCA" )
+                                         .sublist ( "Stepper" )
+                                         .get<std::string> ( "Continuation Parameter" );
       TEST_FOR_EXCEPTION ( !problemParameters.isParameter ( contParam ),
                           std::logic_error,
                           "Parameter \"" << contParam << "\" given as continuation parameter, but doesn't exist"
                           << "in the glParameters list." );
 
       // check if the initial value was given (won't be unused anyway)
-      if ( stepperList.isParameter ( "Initial Value" ) )
+      if ( piroParams->sublist ( "LOCA" ).sublist( "Stepper" ).isParameter ( "Initial Value" ) )
           std::cerr << "Warning: Parameter 'LOCA->Stepper->Initial Value' given, but will not be used."
                     << std::endl;
 
       // Set initial value appropriately.
       // TODO Get rid of the explicit "double".
-      stepperList.set ( "Initial Value", problemParameters.get<double> ( contParam ) );
+      piroParams->sublist ( "LOCA" )
+                 .sublist ( "Stepper" )
+                 .set ( "Initial Value", problemParameters.get<double> ( contParam ) );
 
       // Use these two objects to construct a Piro solved application
       //   EpetraExt::ModelEvaluator is  base class of all Piro::Epetra solvers
@@ -217,9 +206,20 @@ int main ( int argc, char *argv[] )
       // Declare the eigensaver; it will be used only for LOCA solvers, though.
       Teuchos::RCP<Ginla::IO::SaveEigenData> glEigenSaver;
 
+      // Setup the data output.
+      int maxLocaSteps = piroParams->sublist ( "LOCA" )
+                                    .sublist ( "Stepper" )
+                                    .get<int> ( "Max Steps" );
+      Teuchos::RCP<Ginla::IO::StateWriter> stateWriter =
+          Teuchos::rcp( new Ginla::IO::StateWriter( outputDirectory.string(),
+                                                    "solution",
+                                                    "vtu",
+                                                    maxLocaSteps
+                                                  )
+                      );
+
       // switch by solver type
       std::string & solver = piroParams->get( "Piro Solver", "" );
-
       // ----------------------------------------------------------------------
       if ( solver == "NOX" )
       {
