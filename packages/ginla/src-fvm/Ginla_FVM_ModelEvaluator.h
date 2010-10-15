@@ -56,7 +56,7 @@ class Epetra_CrsGraph;
 // -----------------------------------------------------------------------------
 namespace Ginla {
 namespace FVM {
-  
+
 class ModelEvaluator:
     public EpetraExt::ModelEvaluator,
     public Ginla::StateTranslator,
@@ -64,7 +64,7 @@ class ModelEvaluator:
 {
 
 public:
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   //! Constructor without initial guess.
   ModelEvaluator ( const Teuchos::RCP<VIO::Mesh::Mesh>                         & mesh,
                    const Teuchos::ParameterList                                & params,
@@ -72,7 +72,7 @@ public:
                    const Teuchos::RCP<Komplex2::LinearProblem>                 & komplex,
                    const Teuchos::RCP<Ginla::FVM::State>                       & initialState
                  );
-  
+
   // Destructor
   virtual
   ~ModelEvaluator();
@@ -88,21 +88,21 @@ public:
   virtual
   Teuchos::RCP<const Epetra_Vector>
   get_x_init () const;
-  
+
   virtual
   Teuchos::RCP<const Epetra_Vector>
   get_p_init ( int l ) const;
-  
+
   virtual
   Teuchos::RCP<const Epetra_Map>
   get_p_map(int l) const;
-  
+
   virtual
   Teuchos::RCP<const Teuchos::Array<std::string> >
   get_p_names (int l) const;
-  
+
   virtual
-  Teuchos::RCP<Epetra_Operator> 
+  Teuchos::RCP<Epetra_Operator>
   create_W() const;
 
   virtual
@@ -117,12 +117,12 @@ public:
   void
   evalModel( const InArgs  & inArgs,
              const OutArgs & outArgs ) const;
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -              
-  
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 public:
     Teuchos::RCP<Ginla::State::Virtual>
     createState( const Epetra_Vector & x ) const;
-    
+
     Teuchos::RCP<Epetra_Vector>
     createSystemVector(  const Ginla::State::Virtual & state ) const;
 
@@ -130,11 +130,11 @@ public:
     createSystemVector( const Ginla::State::Virtual & state,
                               Epetra_Vector         & x
                       ) const;
-    
+
     virtual
     Teuchos::RCP<LOCA::ParameterVector>
     getParameters() const;
-  
+
 private:
   void
   computeF_ ( const Epetra_Vector            & x,
@@ -142,14 +142,14 @@ private:
               const Teuchos::Tuple<double,3> & scaling,
                     Epetra_Vector            & FVec
             ) const;
-              
+
   void
   computeDFDp_ ( const Epetra_Vector            & x,
                  const double                     mu,
                  const Teuchos::Tuple<double,3> & scaling,
                        Epetra_Vector            & FVec
                ) const;
-              
+
   void
   computeJacobian_ ( const Epetra_Vector            & x,
                      const double                     lambda,
@@ -162,7 +162,7 @@ protected:
 private:
 //    const Teuchos::RCP<const Epetra_Comm> & eComm_;
 //    Teuchos::RCP<const Epetra_Map>          eMap_;
-// 
+//
 //    const Teuchos::RCP<const TComm> & tComm_;
 //    Teuchos::RCP<const TMap>          tMap_;
 
@@ -171,13 +171,16 @@ private:
 
    Teuchos::RCP<Epetra_Vector> x_;
    mutable bool firstTime_;
-   
+
    int numParams_;
-   
+
    Teuchos::RCP<Epetra_Map> p_map_;
    Teuchos::RCP<Epetra_Vector> p_init_;
    Teuchos::RCP<Teuchos::Array<std::string> > p_names_;
-   
+
+   // for get_parameters()
+   Teuchos::RCP<Epetra_Vector> p_current_;
+
    const Teuchos::RCP<VIO::Mesh::Mesh> mesh_;
    Teuchos::RCP<TCrsGraph> kineticEnergyOperatorGraph_;
    mutable Teuchos::RCP<ComplexMatrix> kineticEnergyOperator_;
@@ -186,14 +189,11 @@ private:
    mutable double kineticEnergyOperatorsMu_;
    mutable Teuchos::Tuple<double,3> kineticEnergyOperatorsScaling_;
    Teuchos::RCP<Komplex2::DoubleMatrix> jacobianOperator_;
-//    Teuchos::RCP<Epetra_CrsMatrix> fvmLaplacian_;
-//    Teuchos::RCP<Epetra_CrsMatrix> jacobian_;
-   Teuchos::RCP<Epetra_CrsGraph> graph_;
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -       
-private:  
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+private:
     void
     setupParameters_( const Teuchos::ParameterList & params );
-    
+
     void
     assembleKineticEnergyOperators_( double                           mu,
                                      const Teuchos::Tuple<double,3> & scaling
@@ -201,16 +201,16 @@ private:
 
     void
     createKineticEnergyOperatorGraph_();
-    
+
     Teuchos::RCP<ComplexMatrix>
     deepCopy_ ( const Teuchos::RCP<const ComplexMatrix> & A
               ) const;
-              
+
     bool
     kineticEnergyOperatorsUpToDate_( const double                     mu,
                                      const Teuchos::Tuple<double,3> & scaling
                                    ) const;
-              
+
     // this value is really just for getParameters()
     mutable double mu_;
     mutable double scaling_;

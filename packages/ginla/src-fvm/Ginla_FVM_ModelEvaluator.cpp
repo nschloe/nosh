@@ -34,7 +34,7 @@
 // ============================================================================
 Ginla::FVM::ModelEvaluator::
 ModelEvaluator ( const Teuchos::RCP<VIO::Mesh::Mesh>                         & mesh,
-                 const Teuchos::ParameterList                                & params,
+                 const Teuchos::ParameterList                                & problemParams,
                  const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp,
                  const Teuchos::RCP<Komplex2::LinearProblem>                 & komplex,
                  const Teuchos::RCP<Ginla::FVM::State>                       & initialState
@@ -47,30 +47,21 @@ ModelEvaluator ( const Teuchos::RCP<VIO::Mesh::Mesh>                         & m
         p_map_( Teuchos::null ),
         p_init_( Teuchos::null ),
         p_names_( Teuchos::null ),
+        p_current_( Teuchos::null ),
         mesh_( mesh ),
         kineticEnergyOperatorGraph_( Teuchos::null ),
         kineticEnergyOperator_( Teuchos::null ),
         dKineticEnergyDMuOperator_( Teuchos::null ),
-        kineticEnergyOperatorsAssembled_( false ),
         kineticEnergyOperatorsMu_( 0.0 ),
         kineticEnergyOperatorsScaling_( Teuchos::tuple( 0.0, 0.0, 0.0 ) ),
         jacobianOperator_( Teuchos::rcp( new Komplex2::DoubleMatrix( komplex_->getComplexMap(),
                                                                      komplex_->getComplexMap()
                                                                    )
                                        )
-                         ),
-        graph_( Teuchos::null ),
-        mu_( 0.0 ),
-        scaling_( 1.0 ),
-        scalingX_( Teuchos::tuple( 1.0, 1.0, 1.0 ) )
-{ 
-  this->setupParameters_( params );
-  
-  // compute stiffness matrix and load vector
-  this->createKineticEnergyOperatorGraph_();
-  kineticEnergyOperator_     = Teuchos::rcp( new ComplexMatrix( kineticEnergyOperatorGraph_ ) );
-  dKineticEnergyDMuOperator_ = Teuchos::rcp( new ComplexMatrix( kineticEnergyOperatorGraph_ ) );
- 
+                         )
+{
+  this->setupParameters_( problemParams );
+
   // prepare initial guess
 //   Teuchos::RCP<Ginla::FVM::State> initialState =
 //       Teuchos::rcp( new Ginla::FVM::State( komplex_->getComplexMap(), mesh_) );
@@ -80,7 +71,7 @@ ModelEvaluator ( const Teuchos::RCP<VIO::Mesh::Mesh>                         & m
 //   initialState->getPsiNonConst()->randomize();
 
   x_ = this->createSystemVector( *initialState );
-  
+
   return;
 }
 // ============================================================================
@@ -92,49 +83,55 @@ Ginla::FVM::ModelEvaluator::
 void
 Ginla::FVM::ModelEvaluator::
 setupParameters_( const Teuchos::ParameterList & params )
-{ 
+{
   p_names_ = Teuchos::rcp( new Teuchos::Array<std::string>() );
   p_names_->append( "mu" );
   p_names_->append( "scaling" );
   p_names_->append( "scaling x" );
   p_names_->append( "scaling y" );
   p_names_->append( "scaling z" );
-  
-  // setup parameter values
+
+  // these are local variables
+  Teuchos::RCP<Teuchos::Array<double> > p_default_values = Teuchos::rcp( new Teuchos::Array<double>() );
+  p_default_values->append( 0.0 );
+  p_default_values->append( 1.0 );
+  p_default_values->append( 1.0 );
+  p_default_values->append( 1.0 );
+  p_default_values->append( 1.0 );
+
+  // setup parameter map
   numParams_ = p_names_->length();
-  
   const Epetra_Comm & comm = komplex_->getRealMap()->Comm();
   p_map_ = Teuchos::rcp( new Epetra_LocalMap( numParams_,
                                               0,
                                               comm
                                             )
                        );
-                       
-  p_init_ = Teuchos::rcp( new Epetra_Vector(*p_map_) );
-  
-  // insist on "mu"
-  TEUCHOS_ASSERT( params.isParameter( "mu" ) );
-  (*p_init_)[0] = params.get<double>( "mu" );
-  
-  if ( params.isParameter( "scaling" ) )
-      (*p_init_)[1] = params.get<double>( "scaling" );
-  else
-      (*p_init_)[1] = 1.0;
 
-  if ( params.isParameter( "scaling x" ) )
-      (*p_init_)[2] = params.get<double>( "scaling x" );
-  else
-      (*p_init_)[2] = 1.0;
-  
-  if ( params.isParameter( "scaling y" ) )
-      (*p_init_)[3] = params.get<double>( "scaling y" );
-  else
-      (*p_init_)[3] = 1.0;
-  
-  if ( params.isParameter( "scaling z" ) )
-      (*p_init_)[4] = params.get<double>( "scaling z" );
-  else
-      (*p_init_)[4] = 1.0;
+  // run through the p_init and fill it with either what's given in params,
+  // or the default value
+  p_init_ = Teuchos::rcp( new Epetra_Vector(*p_map_) );
+  for ( int k=0; k<numParams_; k++ )
+      if ( params.isParameter( (*p_names_)[k] ) )
+          (*p_init_)[k] = params.get<double>( (*p_names_)[k] );
+      else
+      {
+          (*p_init_)[k] = (*p_default_values)[k];
+          std::cerr << "Parameter \"" << (*p_names_)[k]
+                    << "\" initialized with default value \""
+                    << (*p_default_values)[k] << "\"."
+                    << std::endl;
+      }
+
+  // TODO warn if there are unused entries in params
+//  for ( Teuchos::ParameterList::ConstIterator k=params.begin(); k!=params.end(); ++k )
+//  {
+//      if ( !p_names_)
+//      std::cout << "Parameter " << params.name(k) << std::endl;
+//  }
+
+  // also initialize p_current_
+  p_current_ = Teuchos::rcp( new Epetra_Vector(*p_map_) );
 
   return;
 }
@@ -196,19 +193,20 @@ create_W() const
 EpetraExt::ModelEvaluator::InArgs
 Ginla::FVM::ModelEvaluator::
 createInArgs() const
-{ 
+{
   EpetraExt::ModelEvaluator::InArgsSetup inArgs;
-  
+
   inArgs.setModelEvalDescription( "FVM Ginzburg-Landau" );
-  
+
+  // TODO is this actually correct?
   inArgs.set_Np( numParams_ );
-  
+
   inArgs.setSupports( IN_ARG_x, true );
-  
+
 //   // for shifted matrix
 //   inArgs.setSupports( IN_ARG_alpha, true );
 //   inArgs.setSupports( IN_ARG_beta, true );
-  
+
   return inArgs;
 }
 // ============================================================================
@@ -217,17 +215,17 @@ Ginla::FVM::ModelEvaluator::
 createOutArgs() const
 {
   EpetraExt::ModelEvaluator::OutArgsSetup outArgs;
-  
+
   outArgs.setModelEvalDescription( "FVM Ginzburg-Landau" );
-  
+
   outArgs.set_Np_Ng( numParams_, 0 ); // return parameters p and solution g
-  
+
   outArgs.setSupports( OUT_ARG_f, true );
-  outArgs.setSupports( OUT_ARG_DfDp, 0, DerivativeSupport(DERIV_MV_BY_COL) );
+//  outArgs.setSupports( OUT_ARG_DfDp, 0, DerivativeSupport(DERIV_MV_BY_COL) );
   outArgs.setSupports( OUT_ARG_W, true );
-  
+
   outArgs.set_W_properties( DerivativeProperties( DERIV_LINEARITY_NONCONST,
-                                                  DERIV_RANK_FULL,
+                                                  DERIV_RANK_DEFICIENT, // DERIV_RANK_FULL
                                                   false // supportsAdjoint
                                                 )
                           );
@@ -237,13 +235,13 @@ createOutArgs() const
 // ============================================================================
 void
 Ginla::FVM::ModelEvaluator::
-evalModel( const InArgs  & inArgs, 
+evalModel( const InArgs  & inArgs,
            const OutArgs & outArgs
          ) const
 {
 //   double alpha = inArgs.get_alpha();
 //   double beta  = inArgs.get_beta();
-  
+
   const Teuchos::RCP<const Epetra_Vector> & x_in = inArgs.get_x();
 
   // get input arguments and make sure they are all right
@@ -251,7 +249,7 @@ evalModel( const InArgs  & inArgs,
   TEUCHOS_ASSERT( !p_in.is_null() );
   for ( int k=0; k<p_in->MyLength(); k++ )
       TEUCHOS_ASSERT( !isnan( (*p_in)[k] ) );
-  
+
   const double mu = (*p_in)[0];
   const double scaling = (*p_in)[1];
   const Teuchos::Tuple<double,3> scalingX = Teuchos::tuple( (*p_in)[2],
@@ -259,50 +257,51 @@ evalModel( const InArgs  & inArgs,
                                                             (*p_in)[4]
                                                           );
 
-  // mu_ is used in getParameters.
-  // setting mu_=mu here is really just an arbitrarty choice.
-  // The rationale is that the mu-value which was last
-  // used is the "current" parameter value,
+  // p_current_ is used in getParameters.
+  // Setting p_current_=p_in here is really a somewhat arbitrary choice.
+  // The rationale is that the p-values which were last
+  // used here are the "current" parameter values,
   // but there's actually no guarantee for it:
   // The evaluator could have been used for *anything.
-  // Anyway, mu_/scaling{X}_ is only used in this->getParameters().
-  mu_ = mu;
-  scaling_ = scaling;
-  scalingX_ = scalingX;
+  // Anyway, current_p_ is only used in this->getParameters().
+  *p_current_ = *p_in;
 
   Teuchos::Tuple<double,3> scalingCombined = Teuchos::tuple( scaling * scalingX[0],
                                                              scaling * scalingX[1],
                                                              scaling * scalingX[2]
                                                            );
-  
+
   // compute F
   const Teuchos::RCP<Epetra_Vector> f_out = outArgs.get_f();
   if ( !f_out.is_null() )
       this->computeF_( *x_in, mu, scalingCombined, *f_out );
-  
+
   // fill jacobian
   const Teuchos::RCP<Epetra_Operator> W_out = outArgs.get_W();
   if( !W_out.is_null() )
-  { 
+  {
       Teuchos::RCP<Epetra_CrsMatrix> W_out_crs =
           Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>( W_out, true );
       this->computeJacobian_( *x_in, mu, scalingCombined, *W_out_crs );
-      
+
 //       W_out_crs->Scale( beta );
-//       
+//
 //       double diag = -alpha;
 //       for ( int i=0; i<x_in->MyLength(); i++ )
 //           W_out_crs->SumIntoMyValues( i, 1, &diag, &i );
   }
 
-  // dF / dmu
-  Teuchos::RCP<Epetra_MultiVector> dfdp_out;
-  if ( outArgs.Np() > 0 )
-  {
-      dfdp_out = outArgs.get_DfDp(0).getMultiVector();
-      if ( !dfdp_out.is_null() )
-          this->computeDFDp_( *x_in, mu, scalingCombined, *((*dfdp_out)(0)) );
-  }
+//  // dF / dp
+//  Teuchos::RCP<Epetra_MultiVector> dfdp_out;
+//  if ( outArgs.Np() > 0 )
+//  {
+//      dfdp_out = outArgs.get_DfDp(0).getMultiVector();
+//      if ( !dfdp_out.is_null() )
+//      {
+//          std::cout << "Look at this " << dfdp_out->NumVectors() << std::endl;
+//          this->computeDFDp_( *x_in, mu, scalingCombined, *((*dfdp_out)(0)) );
+//      }
+//  }
 
   return;
 }
@@ -318,21 +317,21 @@ computeF_ ( const Epetra_Vector            & x,
   std::cout.precision(10);
   std::cout << "computeF_ " << mu << std::endl;
   std::cout << "computeF_ " << scaling << std::endl;
-  
+
   // convert from x to state
   const Teuchos::RCP<Ginla::State::Virtual> state = this->createState( x );
 
   // compute the GL residual
-  Teuchos::RCP<Ginla::FVM::State> res = 
+  Teuchos::RCP<Ginla::FVM::State> res =
       Teuchos::rcp( new Ginla::FVM::State( komplex_->getComplexMap()->getComm(),
                                            mesh_
                                          )
                   );
-  
+
   // reassemble linear operator if necessary
   if ( !this->kineticEnergyOperatorsUpToDate_( mu, scaling ) )
       this->assembleKineticEnergyOperators_( mu, scaling );
-      
+
   // compute r = K*psi
   kineticEnergyOperator_->apply( *(state->getPsi()),
                                  *(res->getPsiNonConst())
@@ -352,14 +351,14 @@ computeF_ ( const Epetra_Vector            & x,
       TEUCHOS_ASSERT( globalIndex != Teuchos::OrdinalTraits<ORD>::invalid() );
       ORD k2 = mesh_->getControlVolumes()->getMap()->getLocalElement( globalIndex );
       TEUCHOS_ASSERT( k2 != Teuchos::OrdinalTraits<ORD>::invalid() );
-      
+
       resView[k] -= cvView[k2] * psiView[k] * ( 1.0 - std::norm(psiView[k]) );
   }
-  
+
   // TODO Avoid this explicit copy?
   // transform back to fully real equation
   this->createSystemVector( *res, FVec );
-  
+
 //   // show me what you got!
 //   Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream( Teuchos::rcpFromRef(std::cout) );
 //   res->getPsi()->describe( *out, Teuchos::VERB_EXTREME );
@@ -398,6 +397,11 @@ assembleKineticEnergyOperators_( const double                     mu,
                                  const Teuchos::Tuple<double,3> & scaling
                                ) const
 {
+//  if ( kineticEnergyOperatorGraph_->is_null() )
+//      this->createKineticEnergyOperatorGraph_();
+//  kineticEnergyOperator_     = Teuchos::rcp( new ComplexMatrix( kineticEnergyOperatorGraph_ ) );
+//  dKineticEnergyDMuOperator_ = Teuchos::rcp( new ComplexMatrix( kineticEnergyOperatorGraph_ ) );
+
   // TODO Don't throw away the old matrix.
   // This whole things could be treated more elegantly with an FEMatrixBuilder class.
   // Chris Baker, Aug 22, 2010:
@@ -417,7 +421,7 @@ assembleKineticEnergyOperators_( const double                     mu,
                                                                 maxNumEntriesPerRow
                                                               )
                                            );
-  
+
   // zero out the operators
   kineticEnergyOperator_->setAllToScalar( 0.0 );
   dKineticEnergyDMuOperator_->setAllToScalar( 0.0 );
@@ -433,30 +437,30 @@ assembleKineticEnergyOperators_( const double                     mu,
   Teuchos::ArrayRCP<Point> nodes = mesh_->getNodes();
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > edgeLengths = mesh_->getEdgeLengths();
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > coedgeLengths = mesh_->getCoedgeLengths();
-  
+
   TEUCHOS_ASSERT( !elems.is_null() );
   TEUCHOS_ASSERT( !nodes.is_null() );
   TEUCHOS_ASSERT( !edgeLengths.is_null() );
   TEUCHOS_ASSERT( !coedgeLengths.is_null() );
-  
+
   // loop over the local elements
   for ( int k=0; k<elems.size(); k++ )
   {
       Teuchos::ArrayRCP<ORD> & elem = elems[k];
-      
+
 //       if ( komplex_->getComplexMap()->getComm()->getRank() == 0 )
 //         std::cout << "This is core " << komplex_->getComplexMap()->getComm()->getRank()
 //                   << " with element " << k << std::endl;
-      
+
       // loop over the edges
       int n = elem.size();
       for ( int l=0; l<n; l++ )
-      { 
+      {
           // two subsequent indices determine an edge
           Teuchos::Tuple<ORD,2> nodeIndices;
           nodeIndices[0] = elem[l];
           nodeIndices[1] = elem[(l+1)%n];
-          
+
           // co-edge / edge ratio
           double alpha = coedgeLengths[k][l]
                        / edgeLengths[k][l];
@@ -483,7 +487,7 @@ assembleKineticEnergyOperators_( const double                     mu,
           double aProj = 0.0;
           for (int i=0; i<midpoint.size(); i++ )
               aProj += ( node1[i] - node0[i] ) * (*a)[i];
-          
+
           const double aInt = aProj * edgeLengths[k][l];
 
           values[0] =   alpha;
@@ -492,11 +496,11 @@ assembleKineticEnergyOperators_( const double                     mu,
 //                                    << nodeIndices[0] << " " << nodeIndices[1] << std::endl;
 //           kineticEnergyOperator_->insertGlobalValues( nodeIndices[0], nodeIndices, values );
           kineticEnergyOperator_->insertGlobalValues( nodeIndices[0], nodeIndices, values );
-                                  
+
           values[0] = - alpha * exp(  IM * aInt ); // integration the other way around
           values[1] =   alpha;
           kineticEnergyOperator_->insertGlobalValues( nodeIndices[1], nodeIndices, values );
-          
+
           // -------------------------------------------------------------------
           // Derivative by \mu.
           // Project derivative onto the edge.
@@ -504,13 +508,13 @@ assembleKineticEnergyOperators_( const double                     mu,
           double DaProj = 0.0;
           for (int i=0; i<midpoint.size(); i++ )
               DaProj += ( node1[i] - node0[i] ) * (*Da)[i];
-          
+
           const double DaInt = DaProj * edgeLengths[k][l];
 
           values[0] =   0.0;
           values[1] = - alpha * (-IM * DaInt ) * exp( -IM * aInt );
           dKineticEnergyDMuOperator_->insertGlobalValues( nodeIndices[0], nodeIndices, values );
-          
+
           values[0] = - alpha * ( IM * DaInt ) * exp( IM * aInt );
           values[1] =   0.0;
           dKineticEnergyDMuOperator_->insertGlobalValues( nodeIndices[1], nodeIndices, values );
@@ -520,27 +524,26 @@ assembleKineticEnergyOperators_( const double                     mu,
 
   kineticEnergyOperator_->globalAssemble();
   dKineticEnergyDMuOperator_->globalAssemble();
-  
+
   kineticEnergyOperator_->fillComplete();
   dKineticEnergyDMuOperator_->fillComplete();
-  
+
 //   // let's see the column map
 //   for ( ORD j=0; j<kineticEnergyOperator_->getNodeNumCols(); j++ )
 //   {
 //       std::cout << "core " << kineticEnergyOperator_->getRowMap()->getComm()->getRank()
-//                 << "  local "  << j 
+//                 << "  local "  << j
 //                 << "  global " << kineticEnergyOperator_->getColMap()->getGlobalElement( j )
 //                 << std::endl;
-//   }   
+//   }
 
 //   // show me what you got!
 //   Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream( Teuchos::rcpFromRef(std::cout) );
 //   kineticEnergyOperator_->describe( *out, Teuchos::VERB_EXTREME );
 
-  kineticEnergyOperatorsAssembled_ = true;
   kineticEnergyOperatorsMu_ = mu;
   kineticEnergyOperatorsScaling_ = scaling;
-  
+
   return;
 }
 // =============================================================================
@@ -549,7 +552,7 @@ Ginla::FVM::ModelEvaluator::
 createKineticEnergyOperatorGraph_()
 {
   TEUCHOS_ASSERT( !komplex_.is_null() );
-    
+
   // allocate the graph
   // TODO don't allocate that huge a graph
   // This is a bug in Trilinos, wait unti this is fixed.
@@ -562,12 +565,12 @@ createKineticEnergyOperatorGraph_()
 
   TEUCHOS_ASSERT( !mesh_.is_null() );
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<ORD> > elems = mesh_->getElems();
-  
+
   // connect all nodes with all other nodes in each element
   for ( int k=0; k<elems.size(); k++ )
   {
       Teuchos::ArrayRCP<ORD> & elem = elems[k];
-      for ( int l=0; l<elem.size(); l++ )          
+      for ( int l=0; l<elem.size(); l++ )
           kineticEnergyOperatorGraph_->insertGlobalIndices( elem[l], elem() );
   }
 
@@ -584,25 +587,25 @@ computeDFDp_ ( const Epetra_Vector            & x,
                      Epetra_Vector            & FVec
              ) const
 {
-  // reassemble linear operator if necessary
-  if ( !this->kineticEnergyOperatorsUpToDate_( mu, scaling ) )
-      this->assembleKineticEnergyOperators_( mu, scaling );
-  
   // convert from x to state
   const Teuchos::RCP<const Ginla::State::Virtual> state = this->createState( x );
 
   // initialize the sensitivity
-  Teuchos::RCP<Ginla::FVM::State> sens = 
+  Teuchos::RCP<Ginla::FVM::State> sens =
       Teuchos::rcp( new Ginla::FVM::State( komplex_->getComplexMap()->getComm(),
                                            mesh_
                                          )
                   );
 
+  // reassemble linear operator if necessary
+  if ( !this->kineticEnergyOperatorsUpToDate_( mu, scaling ) )
+      this->assembleKineticEnergyOperators_( mu, scaling );
+
   // compute r = K*psi
   dKineticEnergyDMuOperator_->apply( *(state->getPsi()),
                                      *(sens->getPsiNonConst())
                                    );
-  
+
   // transform back to fully real equation
   this->createSystemVector( *sens, FVec );
 
@@ -620,16 +623,16 @@ computeJacobian_ ( const Epetra_Vector            & x,
   std::cout.precision(10);
   std::cout << "computeJacobian_ " << mu << std::endl;
   std::cout << "computeJacobian_ " << scaling << std::endl;
-  
+
   // reassemble linear operator if necessary
   if ( !this->kineticEnergyOperatorsUpToDate_( mu, scaling ) )
       this->assembleKineticEnergyOperators_( mu, scaling );
-  
+
   // convert from x to state
   const Teuchos::RCP<const Ginla::State::Virtual> state = this->createState( x );
-  
+
   // construct parts A and B of the linear operator part
-  
+
   // A = K + I * ( 1 - 2*|psi|^2 )
   // B = diag( -psi^2 )
   Teuchos::ArrayRCP<const double_complex> psiView = state->getPsi()->get1dView();
@@ -639,26 +642,26 @@ computeJacobian_ ( const Epetra_Vector            & x,
   Teuchos::ArrayRCP<ORD> globalIndices;
   Teuchos::ArrayRCP<const double_complex> values;
   komplex_->zeroOutMatrix();
-  
+
   // make sure the maps coincide
   TEUCHOS_ASSERT( state->getPsi()->getMap()->isSameAs( *(kineticEnergyOperator_->getRowMap()) ) );
   ORD n = psiView.size();
-    
+
   for ( ORD i=0; i<n; i++ )
   {
       ORD globalRow = kineticEnergyOperator_->getRowMap()->getGlobalElement( i );
       TEUCHOS_ASSERT( globalRow != Teuchos::OrdinalTraits<ORD>::invalid() );
-      
+
       // get the global row view of the kinetic energy operator
       kineticEnergyOperator_->getLocalRowView( i, indices, values );
-      
+
       // Convert those into global indices.
       // It would be nice to call getGlobalRowView() in the first place,
       // but at this moment the (row?) indices are already in local indexing.
       globalIndices.resize( indices.size() );
       for ( ORD k=0; k<indices.size(); k++ )
           globalIndices[k] = kineticEnergyOperator_->getColMap()->getGlobalElement( indices[k] );
-    
+
       komplex_->updateGlobalRowA( globalRow,
                                   globalIndices(), values(),
                                   firstTime_
@@ -667,28 +670,28 @@ computeJacobian_ ( const Epetra_Vector            & x,
       // get the local index for the control volumes
       ORD i2 = mesh_->getControlVolumes()->getMap()->getLocalElement( globalRow );
       TEUCHOS_ASSERT( i2 != Teuchos::OrdinalTraits<ORD>::invalid() );
-      
+
       // Update the diagonals.
       double_complex alpha = - (1.0 - 2.0*norm(psiView[i])) * cvView[i2];
       double_complex beta  = psiView[i]*psiView[i] * cvView[i2];
-      
+
       komplex_->updateGlobalRow ( globalRow,
                                   Teuchos::tuple<ORD>( globalRow ), Teuchos::tuple( alpha ),
                                   Teuchos::tuple<ORD>( globalRow ), Teuchos::tuple( beta  ),
                                   firstTime_
                                 );
   }
-  
+
   if ( firstTime_ )
   {
-      komplex_->finalizeMatrix(); 
+      komplex_->finalizeMatrix();
       firstTime_ = false;
   }
 
   // TODO
   // avoid this explicit copy?
   Jac = *(komplex_->getMatrix());
-  
+
   return;
 }
 // =============================================================================
@@ -699,7 +702,7 @@ deepCopy_ ( const Teuchos::RCP<const ComplexMatrix> & A
 {
   Teuchos::RCP<ComplexMatrix> B =
       Teuchos::rcp( new ComplexMatrix( A->getCrsGraph() ) );
-      
+
   // copy row by row
   Teuchos::ArrayRCP<const ORD> indices;
   Teuchos::ArrayRCP<const double_complex> values;
@@ -708,7 +711,7 @@ deepCopy_ ( const Teuchos::RCP<const ComplexMatrix> & A
       A->getLocalRowView( k, indices, values );
       B->replaceLocalValues( k, indices(), values() );
   }
-  
+
   return B;
 }
 // =============================================================================
@@ -716,18 +719,15 @@ Teuchos::RCP<LOCA::ParameterVector>
 Ginla::FVM::ModelEvaluator::
 getParameters() const
 {
-  TEUCHOS_ASSERT( !p_names_.is_null() );
-  TEUCHOS_ASSERT( !p_init_.is_null() );
-
+  // construct a LOCA::ParameterVector of the parameters
   Teuchos::RCP<LOCA::ParameterVector> p =
       Teuchos::rcp( new LOCA::ParameterVector() );
 
-  p->addParameter( (*p_names_)[0], mu_ );
-  p->addParameter( (*p_names_)[1], scaling_ );
-  p->addParameter( (*p_names_)[2], scalingX_[0] );
-  p->addParameter( (*p_names_)[3], scalingX_[1] );
-  p->addParameter( (*p_names_)[4], scalingX_[2] );
-  
+  TEUCHOS_ASSERT( !p_names_.is_null() );
+  TEUCHOS_ASSERT( !p_current_.is_null() );
+  for ( int k=0; k<numParams_; k++ )
+      p->addParameter( (*p_names_)[k], (*p_current_)[k] );
+
   return p;
 }
 // =============================================================================
@@ -737,7 +737,8 @@ kineticEnergyOperatorsUpToDate_( const double                     mu,
                                  const Teuchos::Tuple<double,3> & scaling
                                ) const
 {
-    return    kineticEnergyOperatorsAssembled_
+    return    !kineticEnergyOperator_.is_null()
+           && !dKineticEnergyDMuOperator_.is_null()
            && kineticEnergyOperatorsMu_         == mu
            && kineticEnergyOperatorsScaling_[0] == scaling[0]
            && kineticEnergyOperatorsScaling_[1] == scaling[1]

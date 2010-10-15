@@ -26,13 +26,11 @@
 #include "Recti_Grid_Reader.h"
 #include "Komplex2_LinearProblem.h"
 
-// #include "Ginla_Operator_BCInner.h"
-// #include "Ginla_Operator_BCOuter.h"
 #include "Ginla_MagneticVectorPotential_X.h"
 #include "Ginla_MagneticVectorPotential_Y.h"
 #include "Ginla_MagneticVectorPotential_Z.h"
-
 // #include "Ginla_MagneticVectorPotential_ZSquareSymmetric.h"
+
 #include "Ginla_IO_StateWriter.h"
 #include "Ginla_IO_StatsWriter.h"
 
@@ -157,7 +155,7 @@ int main ( int argc, char *argv[] )
       double mu = problemParameters.get<double> ( "mu" );
 
       Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> A =
-          Teuchos::rcp ( new Ginla::MagneticVectorPotential::Z ( mu ) );
+              Teuchos::rcp ( new Ginla::MagneticVectorPotential::Z ( mu ) );
 
 
       Teuchos::RCP<Komplex2::LinearProblem> komplex =
@@ -179,25 +177,15 @@ int main ( int argc, char *argv[] )
       Teuchos::RCP<Ginla::IO::StatsWriter> statsWriter =
           Teuchos::rcp( new Ginla::IO::StatsWriter( contFilePath ) );
 
-      // set the initial value from glParameters
+      // warn if initial value was given twice
       std::string contParam = piroParams->sublist ( "LOCA" )
                                          .sublist ( "Stepper" )
                                          .get<std::string> ( "Continuation Parameter" );
-      TEST_FOR_EXCEPTION ( !problemParameters.isParameter ( contParam ),
-                          std::logic_error,
-                          "Parameter \"" << contParam << "\" given as continuation parameter, but doesn't exist"
-                          << "in the glParameters list." );
-
-      // check if the initial value was given (won't be unused anyway)
-      if ( piroParams->sublist ( "LOCA" ).sublist( "Stepper" ).isParameter ( "Initial Value" ) )
-          std::cerr << "Warning: Parameter 'LOCA->Stepper->Initial Value' given, but will not be used."
+      if ( problemParameters.isParameter ( contParam ) )
+          std::cerr << "Warning: Continuation parameter \""
+                    << contParam
+                    << "\" explicitly given. Initial value will be overwritten by 'LOCA->Stepper->Initial Value', though."
                     << std::endl;
-
-      // Set initial value appropriately.
-      // TODO Get rid of the explicit "double".
-      piroParams->sublist ( "LOCA" )
-                 .sublist ( "Stepper" )
-                 .set ( "Initial Value", problemParameters.get<double> ( contParam ) );
 
       // Use these two objects to construct a Piro solved application
       //   EpetraExt::ModelEvaluator is  base class of all Piro::Epetra solvers
@@ -417,7 +405,7 @@ int main ( int argc, char *argv[] )
       int num_p = inArgs.Np();     // Number of *vectors* of parameters
       Teuchos::RCP<Epetra_Vector> p1 =
           Teuchos::rcp(new Epetra_Vector(*(piro->get_p_init(0))));
-      inArgs.set_p(0,p1);
+      inArgs.set_p( 0, p1 );
 
       // Set output arguments to evalModel call
       EpetraExt::ModelEvaluator::OutArgs outArgs = piro->createOutArgs();
