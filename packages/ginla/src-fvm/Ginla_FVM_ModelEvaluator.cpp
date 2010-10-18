@@ -218,14 +218,19 @@ createOutArgs() const
 
   outArgs.setModelEvalDescription( "FVM Ginzburg-Landau" );
 
-  outArgs.set_Np_Ng( numParams_, 0 ); // return parameters p and solution g
+  outArgs.set_Np_Ng( 1, 0 ); // one parameter vector, no objective function
+
+  // support derivatives with respect to all parameters
+  outArgs.setSupports( OUT_ARG_DfDp,
+                       0,
+                       DerivativeSupport(DERIV_MV_BY_COL)
+                     );
 
   outArgs.setSupports( OUT_ARG_f, true );
-//  outArgs.setSupports( OUT_ARG_DfDp, 0, DerivativeSupport(DERIV_MV_BY_COL) );
   outArgs.setSupports( OUT_ARG_W, true );
 
-  outArgs.set_W_properties( DerivativeProperties( DERIV_LINEARITY_NONCONST,
-                                                  DERIV_RANK_DEFICIENT, // DERIV_RANK_FULL
+  outArgs.set_W_properties( DerivativeProperties( DERIV_LINEARITY_UNKNOWN, // DERIV_LINEARITY_NONCONST
+                                                  DERIV_RANK_UNKNOWN, // DERIV_RANK_FULL, DERIV_RANK_DEFICIENT
                                                   false // supportsAdjoint
                                                 )
                           );
@@ -298,6 +303,12 @@ evalModel( const InArgs  & inArgs,
 //      dfdp_out = outArgs.get_DfDp(0).getMultiVector();
 //      if ( !dfdp_out.is_null() )
 //      {
+//          Teuchos::Array<int> p_indexes =
+//                  outArgs.get_DfDp(0).getDerivativeMultiVector().getParamIndexes();
+//          for ( int ii=0; ii<p_indexes.size(); ii++ )
+//              std::cout << p_indexes[ii] << std::endl;
+//          std::cout << "num vectors" << dfdp_out->NumVectors() << std::endl;
+//          throw std::string( "dfdp_out fail" );
 //          std::cout << "Look at this " << dfdp_out->NumVectors() << std::endl;
 //          this->computeDFDp_( *x_in, mu, scalingCombined, *((*dfdp_out)(0)) );
 //      }

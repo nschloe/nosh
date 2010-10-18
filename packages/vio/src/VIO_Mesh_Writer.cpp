@@ -69,7 +69,7 @@ Writer ( const std::string & filePath ) :
                             << "not recognized. Must be one of \"vtk\", "
                             << "\"vtu\"." );
   }
-  
+
   return;
 }
 // =============================================================================
@@ -83,12 +83,12 @@ VIO::Mesh::Writer::
 setMesh( const VIO::Mesh::Mesh & mesh )
 {
   mesh_ = Teuchos::rcp( new VIO::Mesh::Mesh( mesh ) );
-  
+
   // cast into a vtkUnstructuredGrid
   vtkSmartPointer<vtkUnstructuredGrid> vtkMesh =
       dynamic_cast<vtkUnstructuredGrid*> ( vtkDataSet_.GetPointer() );
   TEUCHOS_ASSERT_INEQUALITY( 0, !=, vtkMesh );
-  
+
   // ---------------------------------------------------------------------------
   // set points
   vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
@@ -175,7 +175,7 @@ setMesh( const VIO::Mesh::Mesh & mesh )
       vtkMesh->InsertNextCell( celltype, pts.GetPointer() );
   }
   // ---------------------------------------------------------------------------
-  return; 
+  return;
 }
 // =============================================================================
 void
@@ -186,12 +186,12 @@ setValues( const Epetra_MultiVector          & x,
 {
   unsigned int numVecs = x.NumVectors();
   unsigned int numPoints = x.GlobalLength();
-  
+
   // cast into a vtkUnstructuredGrid
   vtkSmartPointer<vtkUnstructuredGrid> vtkMesh =
       dynamic_cast<vtkUnstructuredGrid*> ( vtkDataSet_.GetPointer() );
   TEUCHOS_ASSERT_INEQUALITY( 0, !=, vtkMesh );
-  
+
   // get scalarsNames, and insert default names if empty
   Teuchos::Array<std::string> scNames ( scalarsNames );
   if ( scNames.empty() )
@@ -200,13 +200,13 @@ setValues( const Epetra_MultiVector          & x,
       for ( int vec=0; vec<numVecs; vec++ )
           scNames[vec] = "x" + EpetraExt::toString ( vec );
   }
-  
+
   // fill the scalar field
   vtkSmartPointer<vtkDoubleArray> scalars =
       vtkSmartPointer<vtkDoubleArray>::New();
 
   for ( int vec=0; vec<numVecs; vec++ )
-  { 
+  {
       scalars->SetName ( scNames[vec].c_str() );
       for ( int k=0; k<numPoints; k++ )
       {
@@ -215,7 +215,7 @@ setValues( const Epetra_MultiVector          & x,
       }
       vtkMesh->GetPointData()->AddArray ( scalars );
   }
-  
+
   return;
 }
 // =============================================================================
@@ -226,12 +226,12 @@ setValues( const Tpetra::MultiVector<double> & x,
 {
   unsigned int numVecs = x.getNumVectors();
   unsigned int numPoints = x.getGlobalLength();
-  
+
   // cast into a vtkUnstructuredGrid
   vtkSmartPointer<vtkUnstructuredGrid> vtkMesh =
       dynamic_cast<vtkUnstructuredGrid*> ( vtkDataSet_.GetPointer() );
   TEUCHOS_ASSERT_INEQUALITY( 0, !=, vtkMesh );
-  
+
   // get scalarsNames, and insert default names if empty
   Teuchos::Array<std::string> scNames ( scalarsNames );
   if ( scNames.empty() )
@@ -240,14 +240,14 @@ setValues( const Tpetra::MultiVector<double> & x,
       for ( int vec=0; vec<numVecs; vec++ )
           scNames[vec] = "x" + EpetraExt::toString ( vec );
   }
-  
+
   // fill the scalar field
   vtkSmartPointer<vtkDoubleArray> scalars =
       vtkSmartPointer<vtkDoubleArray>::New();
 
   for ( int vec=0; vec<numVecs; vec++ )
   {
-      Teuchos::ArrayRCP<const double> xView = x.getVector(vec)->get1dView(); 
+      Teuchos::ArrayRCP<const double> xView = x.getVector(vec)->get1dView();
       scalars->SetName ( scNames[vec].c_str() );
       for ( int k=0; k<numPoints; k++ )
       {
@@ -256,7 +256,7 @@ setValues( const Tpetra::MultiVector<double> & x,
       }
       vtkMesh->GetPointData()->AddArray ( scalars );
   }
-  
+
   return;
 }
 // =============================================================================
@@ -267,14 +267,14 @@ setValues( const ComplexMultiVector          & z,
          )
 {
   unsigned int numVecs = z.getNumVectors();
-  
+
   // cast into a vtkUnstructuredGrid
   vtkSmartPointer<vtkUnstructuredGrid> vtkMesh =
       dynamic_cast<vtkUnstructuredGrid*> ( vtkDataSet_.GetPointer() );
   TEUCHOS_ASSERT_INEQUALITY( 0, !=, vtkMesh );
-  
+
   comm_ = z.getMap()->getComm();
-  
+
   // get scalarsNames, and insert default names if empty
   Teuchos::Array<std::string> scNames ( scalarsNames );
   if ( scNames.empty() )
@@ -283,11 +283,11 @@ setValues( const ComplexMultiVector          & z,
       for ( int vec=0; vec<numVecs; vec++ )
           scNames[vec] = "z" + EpetraExt::toString ( vec );
   }
-  
+
   // fill the scalar field
   vtkSmartPointer<vtkDoubleArray> scalars =
       vtkSmartPointer<vtkDoubleArray>::New();
-      
+
   // real and imaginary part
   scalars->SetNumberOfComponents ( 2 );
 
@@ -295,21 +295,21 @@ setValues( const ComplexMultiVector          & z,
   {
       Teuchos::ArrayRCP<const std::complex<double> > zView =
           z.getVector(vec)->get1dView();
-          
+
       // fill the array
       for ( int k=0; k<zView.size(); k++ )
       {
           scalars->InsertNextValue ( zView[k].real() );
           scalars->InsertNextValue ( zView[k].imag() );
       }
-      
+
       scalars->SetName ( scNames[vec].c_str() );
-      
+
 //       scalars->Print( std::cout );
-      
+
       vtkMesh->GetPointData()->AddArray ( scalars );
   }
-  
+
   return;
 }
 // =============================================================================
@@ -317,38 +317,46 @@ void
 VIO::Mesh::Writer::
 write () const
 {
-    // write the file
-//     vtkSmartPointer<vtkXMLWriter> writer =
-//         vtkSmartPointer<vtkXMLUnstructuredGridWriter>::New();
-
-    vtkSmartPointer<vtkXMLPUnstructuredGridWriter> writer =
-        vtkSmartPointer<vtkXMLPUnstructuredGridWriter>::New();
-
-    // cast into a vtkUnstructuredGrid      
+    // cast mesh into a vtkUnstructuredGrid
     vtkSmartPointer<vtkUnstructuredGrid> vtkMesh =
         dynamic_cast<vtkUnstructuredGrid*> ( vtkDataSet_.GetPointer() );
     TEUCHOS_ASSERT_INEQUALITY( 0, !=, vtkMesh );
-        
-    writer->SetFileName ( filePath_.c_str() );
-    writer->SetInput ( &*vtkMesh );
+
 
     TEUCHOS_ASSERT( !comm_.is_null() );
-    
-//     if ( comm_->getRank() == 0 )
-//     {
-//       writer->SetNumberOfPieces( comm_->getSize() );
-//     }
-//     else
-//     {
-      writer->SetNumberOfPieces( comm_->getSize() );
-//       writer->SetCompressor( 0 );
-//       writer->SetDataModeToAscii();
-//       writer->SetDebug( 'a' );
-      writer->SetStartPiece( comm_->getRank() );
-      writer->SetEndPiece( comm_->getRank() );
-//     }
 
-    writer->Write();
+    // write the file
+    if ( comm_->getSize() == 1 )
+    {
+        // serial writer
+        vtkSmartPointer<vtkXMLUnstructuredGridWriter> writer
+                = vtkSmartPointer<vtkXMLUnstructuredGridWriter>::New();
+        writer->SetFileName ( filePath_.c_str() );
+        writer->SetInput ( &*vtkMesh );
+        writer->Write();
+   }
+   else
+   {
+       // parallel writer
+       vtkSmartPointer<vtkXMLPUnstructuredGridWriter> writer
+               = vtkSmartPointer<vtkXMLPUnstructuredGridWriter>::New();
+       //     if ( comm_->getRank() == 0 )
+       //     {
+       //       writer->SetNumberOfPieces( comm_->getSize() );
+       //     }
+       //     else
+       //     {
+       writer->SetNumberOfPieces( comm_->getSize() );
+       //       writer->SetCompressor( 0 );
+       //       writer->SetDataModeToAscii();
+       //       writer->SetDebug( 'a' );
+       writer->SetStartPiece( comm_->getRank() );
+       writer->SetEndPiece( comm_->getRank() );
+       //     }
+       writer->SetFileName ( filePath_.c_str() );
+       writer->SetInput ( &*vtkMesh );
+       writer->Write();
+   }
 
     return;
 }

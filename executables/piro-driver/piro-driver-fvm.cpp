@@ -171,6 +171,9 @@ int main ( int argc, char *argv[] )
                                                             )
                             );
 
+//      // check out args
+//      std::cout << "FFF " << glModel->createOutArgs().supports( EpetraExt::ModelEvaluator::OUT_ARG_DfDp, 0 ).none() << std::endl;
+
       Teuchos::RCP<Ginla::IO::NoxObserver> observer;
 
       std::string contFilePath = getAbsolutePath( contDataFile, xmlPath );
