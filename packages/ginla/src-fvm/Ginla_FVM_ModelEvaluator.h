@@ -140,20 +140,22 @@ private:
   computeF_ ( const Epetra_Vector            & x,
               const double                     lambda,
               const Teuchos::Tuple<double,3> & scaling,
+              const double                     temperature,
                     Epetra_Vector            & FVec
             ) const;
 
-  void
-  computeDFDp_ ( const Epetra_Vector            & x,
-                 const double                     mu,
-                 const Teuchos::Tuple<double,3> & scaling,
-                       Epetra_Vector            & FVec
-               ) const;
+//  void
+//  computeDFDp_ ( const Epetra_Vector            & x,
+//                 const double                     mu,
+//                 const Teuchos::Tuple<double,3> & scaling,
+//                       Epetra_Vector            & FVec
+//               ) const;
 
   void
   computeJacobian_ ( const Epetra_Vector            & x,
                      const double                     lambda,
                      const Teuchos::Tuple<double,3> & scaling,
+                     const double                     temperature,
                            Epetra_CrsMatrix         & Jac
                    ) const;
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -

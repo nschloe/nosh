@@ -90,6 +90,7 @@ setupParameters_( const Teuchos::ParameterList & params )
   p_names_->append( "scaling x" );
   p_names_->append( "scaling y" );
   p_names_->append( "scaling z" );
+  p_names_->append( "temperature" );
 
   // these are local variables
   Teuchos::RCP<Teuchos::Array<double> > p_default_values = Teuchos::rcp( new Teuchos::Array<double>() );
@@ -98,6 +99,7 @@ setupParameters_( const Teuchos::ParameterList & params )
   p_default_values->append( 1.0 );
   p_default_values->append( 1.0 );
   p_default_values->append( 1.0 );
+  p_default_values->append( 0.0 );
 
   // setup parameter map
   numParams_ = p_names_->length();
@@ -261,6 +263,7 @@ evalModel( const InArgs  & inArgs,
                                                             (*p_in)[3],
                                                             (*p_in)[4]
                                                           );
+  const double temperature = (*p_in)[5];
 
   // p_current_ is used in getParameters.
   // Setting p_current_=p_in here is really a somewhat arbitrary choice.
@@ -279,7 +282,7 @@ evalModel( const InArgs  & inArgs,
   // compute F
   const Teuchos::RCP<Epetra_Vector> f_out = outArgs.get_f();
   if ( !f_out.is_null() )
-      this->computeF_( *x_in, mu, scalingCombined, *f_out );
+      this->computeF_( *x_in, mu, scalingCombined, temperature, *f_out );
 
   // fill jacobian
   const Teuchos::RCP<Epetra_Operator> W_out = outArgs.get_W();
@@ -287,7 +290,7 @@ evalModel( const InArgs  & inArgs,
   {
       Teuchos::RCP<Epetra_CrsMatrix> W_out_crs =
           Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>( W_out, true );
-      this->computeJacobian_( *x_in, mu, scalingCombined, *W_out_crs );
+      this->computeJacobian_( *x_in, mu, scalingCombined, temperature, *W_out_crs );
 
 //       W_out_crs->Scale( beta );
 //
@@ -322,6 +325,7 @@ Ginla::FVM::ModelEvaluator::
 computeF_ ( const Epetra_Vector            & x,
             const double                     mu,
             const Teuchos::Tuple<double,3> & scaling,
+            const double                     temperature,
             Epetra_Vector                  & FVec
           ) const
 {
@@ -363,7 +367,7 @@ computeF_ ( const Epetra_Vector            & x,
       ORD k2 = mesh_->getControlVolumes()->getMap()->getLocalElement( globalIndex );
       TEUCHOS_ASSERT( k2 != Teuchos::OrdinalTraits<ORD>::invalid() );
 
-      resView[k] -= cvView[k2] * psiView[k] * ( 1.0 - std::norm(psiView[k]) );
+      resView[k] -= cvView[k2] * psiView[k] * ( (1.0-temperature) - std::norm(psiView[k]) );
   }
 
   // TODO Avoid this explicit copy?
@@ -590,44 +594,45 @@ createKineticEnergyOperatorGraph_()
   return;
 }
 // ============================================================================
-void
-Ginla::FVM::ModelEvaluator::
-computeDFDp_ ( const Epetra_Vector            & x,
-               const double                     mu,
-               const Teuchos::Tuple<double,3> & scaling,
-                     Epetra_Vector            & FVec
-             ) const
-{
-  // convert from x to state
-  const Teuchos::RCP<const Ginla::State::Virtual> state = this->createState( x );
-
-  // initialize the sensitivity
-  Teuchos::RCP<Ginla::FVM::State> sens =
-      Teuchos::rcp( new Ginla::FVM::State( komplex_->getComplexMap()->getComm(),
-                                           mesh_
-                                         )
-                  );
-
-  // reassemble linear operator if necessary
-  if ( !this->kineticEnergyOperatorsUpToDate_( mu, scaling ) )
-      this->assembleKineticEnergyOperators_( mu, scaling );
-
-  // compute r = K*psi
-  dKineticEnergyDMuOperator_->apply( *(state->getPsi()),
-                                     *(sens->getPsiNonConst())
-                                   );
-
-  // transform back to fully real equation
-  this->createSystemVector( *sens, FVec );
-
-  return;
-}
+//void
+//Ginla::FVM::ModelEvaluator::
+//computeDFDp_ ( const Epetra_Vector            & x,
+//               const double                     mu,
+//               const Teuchos::Tuple<double,3> & scaling,
+//                     Epetra_Vector            & FVec
+//             ) const
+//{
+//  // convert from x to state
+//  const Teuchos::RCP<const Ginla::State::Virtual> state = this->createState( x );
+//
+//  // initialize the sensitivity
+//  Teuchos::RCP<Ginla::FVM::State> sens =
+//      Teuchos::rcp( new Ginla::FVM::State( komplex_->getComplexMap()->getComm(),
+//                                           mesh_
+//                                         )
+//                  );
+//
+//  // reassemble linear operator if necessary
+//  if ( !this->kineticEnergyOperatorsUpToDate_( mu, scaling ) )
+//      this->assembleKineticEnergyOperators_( mu, scaling );
+//
+//  // compute r = K*psi
+//  dKineticEnergyDMuOperator_->apply( *(state->getPsi()),
+//                                     *(sens->getPsiNonConst())
+//                                   );
+//
+//  // transform back to fully real equation
+//  this->createSystemVector( *sens, FVec );
+//
+//  return;
+//}
 // ============================================================================
 void
 Ginla::FVM::ModelEvaluator::
 computeJacobian_ ( const Epetra_Vector            & x,
                    const double                     mu,
                    const Teuchos::Tuple<double,3> & scaling,
+                   const double                     temperature,
                    Epetra_CrsMatrix               & Jac
                  ) const
 {
@@ -683,7 +688,7 @@ computeJacobian_ ( const Epetra_Vector            & x,
       TEUCHOS_ASSERT( i2 != Teuchos::OrdinalTraits<ORD>::invalid() );
 
       // Update the diagonals.
-      double_complex alpha = - (1.0 - 2.0*norm(psiView[i])) * cvView[i2];
+      double_complex alpha = - ( (1.0-temperature) - 2.0*norm(psiView[i])) * cvView[i2];
       double_complex beta  = psiView[i]*psiView[i] * cvView[i2];
 
       komplex_->updateGlobalRow ( globalRow,
