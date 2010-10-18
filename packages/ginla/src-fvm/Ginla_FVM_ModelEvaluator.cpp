@@ -428,18 +428,33 @@ assembleKineticEnergyOperators_( const double                     mu,
   // functionality. The graph is only rebuilt if necessary (e.g., because the set of
   // occupied columns grows).
   int maxNumEntriesPerRow = komplex_->getComplexMap()->getGlobalNumElements();
-  kineticEnergyOperator_     = Teuchos::rcp( new ComplexMatrix( komplex_->getComplexMap(),
-                                                                maxNumEntriesPerRow
-                                                              )
-                                           );
-  dKineticEnergyDMuOperator_ = Teuchos::rcp( new ComplexMatrix( komplex_->getComplexMap(),
-                                                                maxNumEntriesPerRow
-                                                              )
-                                           );
+//  if ( kineticEnergyOperator_.is_null() )
+//  {
+      kineticEnergyOperator_     = Teuchos::rcp( new ComplexMatrix( komplex_->getComplexMap(),
+                                                                    maxNumEntriesPerRow
+                                                                    )
+                                                 );
+//  }
+//  else
+//  {
+      // zero out the operators
+      kineticEnergyOperator_->setAllToScalar( 0.0 );
+//      kineticEnergyOperator_->resumeFill();
+//  }
 
-  // zero out the operators
-  kineticEnergyOperator_->setAllToScalar( 0.0 );
-  dKineticEnergyDMuOperator_->setAllToScalar( 0.0 );
+//  if ( dKineticEnergyDMuOperator_.is_null() )
+//  {
+      dKineticEnergyDMuOperator_ = Teuchos::rcp( new ComplexMatrix( komplex_->getComplexMap(),
+                                                                    maxNumEntriesPerRow
+                                                                    )
+                                                 );
+//  }
+//  else
+//  {
+//      // zero out the operators
+      dKineticEnergyDMuOperator_->setAllToScalar( 0.0 );
+//      dKineticEnergyDMuOperator_->resumeFill();
+//  }
 
   // set scaling and external magnetic field
   mesh_->scale( scaling );
@@ -636,10 +651,6 @@ computeJacobian_ ( const Epetra_Vector            & x,
                    Epetra_CrsMatrix               & Jac
                  ) const
 {
-  std::cout.precision(10);
-  std::cout << "computeJacobian_ " << mu << std::endl;
-  std::cout << "computeJacobian_ " << scaling << std::endl;
-
   // reassemble linear operator if necessary
   if ( !this->kineticEnergyOperatorsUpToDate_( mu, scaling ) )
       this->assembleKineticEnergyOperators_( mu, scaling );
@@ -654,9 +665,9 @@ computeJacobian_ ( const Epetra_Vector            & x,
   Teuchos::ArrayRCP<const double_complex> psiView = state->getPsi()->get1dView();
   Teuchos::ArrayRCP<const double>         cvView  = mesh_->getControlVolumes()->get1dView();
   // update the diagonal values
-  Teuchos::ArrayRCP<const ORD> indices;
+  Teuchos::ArrayView<const ORD> indices;
   Teuchos::ArrayRCP<ORD> globalIndices;
-  Teuchos::ArrayRCP<const double_complex> values;
+  Teuchos::ArrayView<const double_complex> values;
   komplex_->zeroOutMatrix();
 
   // make sure the maps coincide
@@ -679,7 +690,7 @@ computeJacobian_ ( const Epetra_Vector            & x,
           globalIndices[k] = kineticEnergyOperator_->getColMap()->getGlobalElement( indices[k] );
 
       komplex_->updateGlobalRowA( globalRow,
-                                  globalIndices(), values(),
+                                  globalIndices(), values,
                                   firstTime_
                                 );
 
@@ -720,12 +731,12 @@ deepCopy_ ( const Teuchos::RCP<const ComplexMatrix> & A
       Teuchos::rcp( new ComplexMatrix( A->getCrsGraph() ) );
 
   // copy row by row
-  Teuchos::ArrayRCP<const ORD> indices;
-  Teuchos::ArrayRCP<const double_complex> values;
+  Teuchos::ArrayView<const ORD> indices;
+  Teuchos::ArrayView<const double_complex> values;
   for ( ORD k; k<A->getRowMap()->getNodeNumElements(); k++ )
   {
       A->getLocalRowView( k, indices, values );
-      B->replaceLocalValues( k, indices(), values() );
+      B->replaceLocalValues( k, indices, values );
   }
 
   return B;
