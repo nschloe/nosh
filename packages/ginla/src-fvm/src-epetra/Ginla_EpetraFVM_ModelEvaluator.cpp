@@ -83,8 +83,8 @@ setupParameters_( const Teuchos::ParameterList & params )
 
   // setup parameter map
   numParams_ = p_names_->length();
-  TEUCHOS_ASSERT( !x_.is_null() );
-  const Epetra_Comm & comm = x_->Comm();
+  TEUCHOS_ASSERT( !mesh_.is_null() );
+  const Epetra_Comm & comm = mesh_->getNodesMap()->Comm();
   p_map_ = Teuchos::rcp( new Epetra_LocalMap( numParams_,
                                               0,
                                               comm

@@ -144,18 +144,16 @@ const Epetra_Map &
 Ginla::EpetraFVM::JacobianOperator::
 OperatorDomainMap () const
 {
-    TEST_FOR_EXCEPTION( true,
-                        std::logic_error,
-                        "Not yet implemented." );
+    TEUCHOS_ASSERT( !keo_.is_null() );
+    return keo_->OperatorDomainMap();
 }
 // =============================================================================
 const Epetra_Map &
 Ginla::EpetraFVM::JacobianOperator::
 OperatorRangeMap () const
 {
-    TEST_FOR_EXCEPTION( true,
-                        std::logic_error,
-                        "Not yet implemented." );
+    TEUCHOS_ASSERT( !keo_.is_null() );
+    return keo_->OperatorRangeMap();
 }
 // =============================================================================
 void
