@@ -1,7 +1,6 @@
 SET ( ginla_SRCS
       Ginla_FVM_State.cpp
       Ginla_FVM_ModelEvaluator.cpp
-      Ginla_FVM_EpetraModelEvaluator.cpp
     )
 
 FIND_PACKAGE( Trilinos REQUIRED )
