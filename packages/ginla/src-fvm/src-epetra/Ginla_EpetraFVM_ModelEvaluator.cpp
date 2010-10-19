@@ -1,6 +1,6 @@
 /*
     <one line to give the program's name and a brief idea of what it does.>
-    Copyright (C) 2010  Nico Schl\"omer
+    Copyright (C) 2010  Nico Schll\"omer
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -19,9 +19,6 @@
 
 #include "Ginla_EpetraFVM_ModelEvaluator.h"
 
-#include "Komplex2_LinearProblem.h"
-#include "Komplex2_DoubleMatrix.h"
-
 #include "Ginla_EpetraFVM_State.h"
 #include "Ginla_State_Virtual.h"
 #include "Ginla_MagneticVectorPotential_Virtual.h"
@@ -37,12 +34,10 @@ Ginla::EpetraFVM::ModelEvaluator::
 ModelEvaluator ( const Teuchos::RCP<VIO::EpetraMesh::Mesh>                   & mesh,
                  const Teuchos::ParameterList                                & problemParams,
                  const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp,
-                 const Teuchos::RCP<Komplex2::LinearProblem>                 & komplex,
                  const Teuchos::RCP<Ginla::EpetraFVM::State>                 & initialState
                ) :
         mesh_ ( mesh ),
-        komplex_ ( komplex ),
-        x_(  Teuchos::null ),
+        x_( Teuchos::null ),
         firstTime_ ( true ),
         numParams_( 1 ),
         p_map_( Teuchos::null ),
@@ -55,13 +50,6 @@ ModelEvaluator ( const Teuchos::RCP<VIO::EpetraMesh::Mesh>                   & m
   this->setupParameters_( problemParams );
 
   // prepare initial guess
-//   Teuchos::RCP<Ginla::EpetraFVM::State> initialState =
-//       Teuchos::rcp( new Ginla::EpetraFVM::State( komplex_->getComplexMap(), mesh_) );
-
-//   initialState->getPsiNonConst()->putScalar( double_complex(1.0,0.0) );
-//   initialState = state;
-//   initialState->getPsiNonConst()->randomize();
-
   x_ = initialState->getPsiNonConst();
 
   return;
@@ -95,7 +83,7 @@ setupParameters_( const Teuchos::ParameterList & params )
 
   // setup parameter map
   numParams_ = p_names_->length();
-  const Epetra_Comm & comm = komplex_->getRealMap()->Comm();
+  const Epetra_Comm & comm = x_->Comm();
   p_map_ = Teuchos::rcp( new Epetra_LocalMap( numParams_,
                                               0,
                                               comm
@@ -134,14 +122,16 @@ Teuchos::RCP<const Epetra_Map>
 Ginla::EpetraFVM::ModelEvaluator::
 get_x_map() const
 {
-  return komplex_->getRealMap();
+  TEUCHOS_ASSERT( !mesh_.is_null() );
+  return mesh_->getComplexValuesMap();
 }
 // ============================================================================
 Teuchos::RCP<const Epetra_Map>
 Ginla::EpetraFVM::ModelEvaluator::
 get_f_map() const
 {
-  return komplex_->getRealMap();
+    TEUCHOS_ASSERT( !mesh_.is_null() );
+    return mesh_->getComplexValuesMap();
 }
 // ============================================================================
 Teuchos::RCP<const Epetra_Vector>
@@ -180,8 +170,8 @@ Teuchos::RCP<Epetra_Operator>
 Ginla::EpetraFVM::ModelEvaluator::
 create_W() const
 {
-  TEUCHOS_ASSERT( !komplex_.is_null() );
-  return komplex_->getMatrix();
+  TEUCHOS_ASSERT( !jacobianOperator_.is_null() );
+  return jacobianOperator_;
 }
 // ============================================================================
 EpetraExt::ModelEvaluator::InArgs
@@ -282,7 +272,7 @@ evalModel( const InArgs  & inArgs,
   {
 //      Teuchos::RCP<Epetra_CrsMatrix> W_out_crs =
 //          Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>( W_out, true );
-      this->computeJacobian_( *x_in, mu, scalingCombined, temperature, *W_out );
+      this->computeJacobian_( x_in, mu, scalingCombined, temperature, *W_out );
 
 //       W_out_crs->Scale( beta );
 //
@@ -333,11 +323,11 @@ computeF_ ( const Epetra_Vector            & x,
 // ============================================================================
 void
 Ginla::EpetraFVM::ModelEvaluator::
-computeJacobian_ ( const Epetra_Vector            & x,
-                   const double                     mu,
-                   const Teuchos::Tuple<double,3> & scaling,
-                   const double                     temperature,
-                   Epetra_Operator                & Jac
+computeJacobian_ ( const Teuchos::RCP<const Epetra_Vector> & x,
+                   const double                              mu,
+                   const Teuchos::Tuple<double,3>          & scaling,
+                   const double                              temperature,
+                   Epetra_Operator                         & Jac
                  ) const
 {
   jacobianOperator_->setParameters( mu, scaling, temperature );

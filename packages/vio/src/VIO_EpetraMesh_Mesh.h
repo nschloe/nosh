@@ -36,8 +36,7 @@ class Mesh
   public:
 
     // constructor
-    Mesh( const Teuchos::RCP<const Epetra_Comm> & comm,
-          const Teuchos::RCP<const Epetra_Map>  & nodesMap,
+    Mesh( const Teuchos::RCP<const Epetra_Map>  & nodesMap,
           const Teuchos::RCP<const Epetra_Map>  & complexValuesMap
         );
 
@@ -172,7 +171,7 @@ class Mesh
 
   private:
 
-    const Teuchos::RCP<const Epetra_Comm> & comm_;
+    const Epetra_Comm & comm_;
     const Teuchos::RCP<const Epetra_Map>  & nodesMap_;
     const Teuchos::RCP<const Epetra_Map>  & complexValuesMap_;
 

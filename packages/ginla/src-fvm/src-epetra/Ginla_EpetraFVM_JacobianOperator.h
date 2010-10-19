@@ -35,8 +35,7 @@ namespace EpetraFVM {
 class JacobianOperator : public Epetra_Operator
 {
 public:
-    JacobianOperator( const Epetra_Comm                                           & comm,
-                      const Teuchos::RCP<VIO::EpetraMesh::Mesh>                   & mesh,
+    JacobianOperator( const Teuchos::RCP<VIO::EpetraMesh::Mesh>                   & mesh,
                       const Teuchos::RCP<Ginla::EpetraFVM::KineticEnergyOperator> & keo
                     );
 

@@ -12,6 +12,7 @@ INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/packages/vio/src
                       ${ginzburg-landau_SOURCE_DIR}/packages/ginla/src
                       ${ginzburg-landau_SOURCE_DIR}/packages/ginla/src-fdm
                       ${ginzburg-landau_SOURCE_DIR}/packages/ginla/src-fvm/src-tpetra
+                      ${ginzburg-landau_SOURCE_DIR}/packages/ginla/src-fvm/src-epetra
                       ${VTK_INCLUDE_DIRS}
                       ${Trilinos_INCLUDE_DIRS}
                       ${Trilinos_TPL_INCLUDE_DIRS} )
@@ -48,7 +49,6 @@ SET ( pirodriverfvm_LIBS
       ginlafvm-tpetra
       ginla
       komplex2
-      recti
       vio
     )
 SET( MY_EXECUTABLE
@@ -59,6 +59,26 @@ SET_TARGET_PROPERTIES( ${MY_EXECUTABLE}
                        PROPERTIES LINKER_LANGUAGE Fortran )
 TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
                        ${pirodriverfvm_LIBS}
+                       ${Trilinos_LIBRARIES}
+                       ${Trilinos_TPL_LIBRARIES}
+                       ${Boost_LIBRARIES} )
+# ------------------------------------------------------------------------------
+SET ( pirodriverfvmepetra_SRCS
+      piro-driver-fvm-epetra.cpp  )
+SET ( pirodriverfvmepetra_LIBS
+      ginlafvm-epetra
+      ginla
+      komplex2
+      vio
+    )
+SET( MY_EXECUTABLE
+     "piro-driver-fvm-epetra.exe" )
+ADD_EXECUTABLE( ${MY_EXECUTABLE}
+                ${pirodriverfvmepetra_SRCS} )
+SET_TARGET_PROPERTIES( ${MY_EXECUTABLE}
+                       PROPERTIES LINKER_LANGUAGE Fortran )
+TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
+                       ${pirodriverfvmepetra_LIBS}
                        ${Trilinos_LIBRARIES}
                        ${Trilinos_TPL_LIBRARIES}
                        ${Boost_LIBRARIES} )

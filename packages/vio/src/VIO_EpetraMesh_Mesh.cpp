@@ -23,11 +23,10 @@
 
 // =============================================================================
 VIO::EpetraMesh::Mesh::
-Mesh( const Teuchos::RCP<const Epetra_Comm> & comm,
-      const Teuchos::RCP<const Epetra_Map>  & nodesMap,
+Mesh( const Teuchos::RCP<const Epetra_Map>  & nodesMap,
       const Teuchos::RCP<const Epetra_Map>  & complexValuesMap
     ):
-    comm_( comm ),
+    comm_( nodesMap->Comm() ),
     nodesMap_( nodesMap ),
     complexValuesMap_( complexValuesMap ),
     elems_( Teuchos::null ),
@@ -221,7 +220,7 @@ computeDomainArea_() const
 {
   // break it down into a non-overlapping map
   Teuchos::RCP<Epetra_Map> nonoverlapMap =
-          Teuchos::rcp( new Epetra_Map( controlVolumes_->GlobalLength(), 0, *comm_ ) );
+          Teuchos::rcp( new Epetra_Map( controlVolumes_->GlobalLength(), 0, comm_ ) );
 
 
   Teuchos::RCP<Epetra_Vector> tmp =
@@ -315,7 +314,7 @@ VIO::EpetraMesh::Mesh::
 sumInOverlapMap_( Teuchos::RCP<Epetra_Vector> x ) const
 {
   Teuchos::RCP<Epetra_Map> nonoverlapMap =
-      Teuchos::rcp( new Epetra_Map( x->GlobalLength(), 0, *comm_ ) );
+      Teuchos::rcp( new Epetra_Map( x->GlobalLength(), 0, comm_ ) );
   Teuchos::RCP<Epetra_Vector> tmp =
       Teuchos::rcp( new Epetra_Vector( *nonoverlapMap ) );
 
@@ -358,7 +357,7 @@ getElemsToNodesMap_() const
                                     entryList.size(),
                                     entryList.getRawPtr(),
                                     0,
-                                    *comm_
+                                    comm_
                                   )
                   );
 

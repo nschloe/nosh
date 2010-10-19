@@ -76,7 +76,7 @@ class Reader:
 
   // non-member function
   void
-  read ( const Teuchos::RCP<const Epetra_Comm> & TComm,
+  read ( const Teuchos::RCP<const Epetra_Comm> & comm,
          const std::string                     & filePath,
          Teuchos::RCP<Epetra_Vector>           & z,
          Teuchos::RCP<EpetraMesh::Mesh>        & mesh,

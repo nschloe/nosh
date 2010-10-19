@@ -1,6 +1,6 @@
 /*
     <one line to give the program's name and a brief idea of what it does.>
-    Copyright (C) 2010  Nico Schl\"omer
+    Copyright (C) 2010  Nico Schll\"omer
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -44,11 +44,6 @@ namespace Ginla
     class State;
   }
 }
-namespace Komplex2
-{
-  class LinearProblem;
-  class DoubleMatrix;
-}
 
 class Epetra_CrsGraph;
 // -----------------------------------------------------------------------------
@@ -66,7 +61,6 @@ public:
   ModelEvaluator ( const Teuchos::RCP<VIO::EpetraMesh::Mesh>                   & mesh,
                    const Teuchos::ParameterList                                & params,
                    const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp,
-                   const Teuchos::RCP<Komplex2::LinearProblem>                 & komplex,
                    const Teuchos::RCP<Ginla::EpetraFVM::State>                 & initialState
                  );
 
@@ -139,11 +133,11 @@ private:
 //               ) const;
 
   void
-  computeJacobian_ ( const Epetra_Vector            & x,
-                     const double                     lambda,
-                     const Teuchos::Tuple<double,3> & scaling,
-                     const double                     temperature,
-                           Epetra_Operator          & Jac
+  computeJacobian_ ( const Teuchos::RCP<const Epetra_Vector> & x,
+                     const double                              lambda,
+                     const Teuchos::Tuple<double,3>          & scaling,
+                     const double                              temperature,
+                           Epetra_Operator                   & Jac
                    ) const;
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 protected:
@@ -156,9 +150,6 @@ private:
 //    Teuchos::RCP<const TMap>          tMap_;
 
    const Teuchos::RCP<VIO::EpetraMesh::Mesh> mesh_;
-
-   const Teuchos::RCP<Komplex2::LinearProblem> komplex_;
-
 
    Teuchos::RCP<Epetra_Vector> x_;
    mutable bool firstTime_;

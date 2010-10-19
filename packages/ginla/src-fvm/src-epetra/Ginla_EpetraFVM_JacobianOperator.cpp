@@ -23,12 +23,11 @@
 
 // =============================================================================
 Ginla::EpetraFVM::JacobianOperator::
-JacobianOperator( const Epetra_Comm                                           & comm,
-                  const Teuchos::RCP<VIO::EpetraMesh::Mesh>                   & mesh,
+JacobianOperator( const Teuchos::RCP<VIO::EpetraMesh::Mesh>                   & mesh,
                   const Teuchos::RCP<Ginla::EpetraFVM::KineticEnergyOperator> & keo
                 ):
         useTranspose_( false ),
-        comm_( comm ),
+        comm_( mesh->getNodesMap()->Comm() ),
         mesh_( mesh ),
         keo_( keo ),
         currentX_ ( Teuchos::null ),

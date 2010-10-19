@@ -133,8 +133,7 @@ extractMeshData_( const vtkSmartPointer<vtkUnstructuredGrid> & vtkMesh,
   Teuchos::RCP<Epetra_Map> nodesMap = Teuchos::rcp( new Epetra_Map( numPoints, 0, *comm ) );
   Teuchos::RCP<Epetra_Map> complexValuesMap = createComplexValuesMap_ ( *nodesMap );
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  Teuchos::RCP<Mesh> mesh = Teuchos::rcp( new Mesh( comm,
-                                                    nodesMap,
+  Teuchos::RCP<Mesh> mesh = Teuchos::rcp( new Mesh( nodesMap,
                                                     complexValuesMap
                                                   )
                                         );

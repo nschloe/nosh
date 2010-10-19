@@ -35,8 +35,7 @@ namespace EpetraFVM {
 class KineticEnergyOperator : public Epetra_Operator
 {
 public:
-    KineticEnergyOperator( const Epetra_Comm                                           & comm,
-                           const Teuchos::RCP<VIO::EpetraMesh::Mesh>                   & mesh,
+    KineticEnergyOperator( const Teuchos::RCP<VIO::EpetraMesh::Mesh>                   & mesh,
                            const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp
                          );
 

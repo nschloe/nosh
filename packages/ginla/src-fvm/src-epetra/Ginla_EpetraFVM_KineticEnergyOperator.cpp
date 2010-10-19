@@ -23,12 +23,11 @@
 
 // =============================================================================
 Ginla::EpetraFVM::KineticEnergyOperator::
-KineticEnergyOperator( const Epetra_Comm                                           & comm,
-                       const Teuchos::RCP<VIO::EpetraMesh::Mesh>                   & mesh,
+KineticEnergyOperator( const Teuchos::RCP<VIO::EpetraMesh::Mesh>                   & mesh,
                        const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp
                      ):
         useTranspose_ ( false ),
-        comm_( comm ),
+        comm_( mesh->getNodesMap()->Comm() ),
         mesh_ ( mesh ),
         mvp_( mvp ),
         keoGraph_( Teuchos::null ),
@@ -162,7 +161,7 @@ assembleKeo_() const
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   // Loop over the elements, create local load vector and mass matrix,
   // and insert them into the global matrix.
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<ORD> > elems = mesh_->getElems();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<int> > elems = mesh_->getElems();
   Teuchos::ArrayRCP<Point> nodes = mesh_->getNodes();
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > edgeLengths = mesh_->getEdgeLengths();
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > coedgeLengths = mesh_->getCoedgeLengths();
@@ -175,7 +174,7 @@ assembleKeo_() const
   // loop over the local elements
   for ( int k=0; k<elems.size(); k++ )
   {
-      Teuchos::ArrayRCP<ORD> & elem = elems[k];
+      Teuchos::ArrayRCP<int> & elem = elems[k];
 
       // loop over the edges
       int n = elem.size();
@@ -276,11 +275,11 @@ createKeoGraph_() const
   keoGraph_ = Teuchos::rcp( new Epetra_FECrsGraph( Copy, *(mesh_->getComplexValuesMap()), 0 ) );
 
   TEUCHOS_ASSERT( !mesh_.is_null() );
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<ORD> > elems = mesh_->getElems();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<int> > elems = mesh_->getElems();
 
   for ( int k=0; k<elems.size(); k++ )
   {
-      Teuchos::ArrayRCP<ORD> & elem = elems[k];
+      Teuchos::ArrayRCP<int> & elem = elems[k];
 
       // loop over the edges
       int n = elem.size();

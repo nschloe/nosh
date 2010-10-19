@@ -53,19 +53,19 @@ State( const Teuchos::RCP<const Epetra_Comm>           & comm,
 {
 }
 // =============================================================================
-//Teuchos::RCP<const Epetra_Vector>
-//Ginla::EpetraFVM::State::
-//getPsi () const
-//{
-//    return psi_;
-//}
-//// =============================================================================
-//Teuchos::RCP<Epetra_Vector>
-//Ginla::EpetraFVM::State::
-//getPsiNonConst ()
-//{
-//    return psi_;
-//}
+Teuchos::RCP<const Epetra_Vector>
+Ginla::EpetraFVM::State::
+getPsi () const
+{
+    return Teuchos::rcpFromRef( psi_ );
+}
+// =============================================================================
+Teuchos::RCP<Epetra_Vector>
+Ginla::EpetraFVM::State::
+getPsiNonConst ()
+{
+return Teuchos::rcpFromRef( psi_ );
+}
 // =============================================================================
 const Teuchos::RCP<const VIO::EpetraMesh::Mesh>
 Ginla::EpetraFVM::State::
