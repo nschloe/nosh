@@ -55,21 +55,33 @@ Apply ( const Epetra_MultiVector & X,
       ) const
 {
     // Add the terms corresponding to the nonlinear terms.
-    // A = K + I * ( 1 - 2*|psi|^2 )
-    // B = diag( -psi^2 )
+    // A = K - I * ( (1-temp) - 2*|psi|^2 )
+    // B = diag( psi^2 )
 
     // K*psi
     TEUCHOS_ASSERT_EQUALITY( 0, keo_->Apply( X, Y ) )
 
-//    TEUCHOS_ASSERT_EQUALITY( 0, 0 );
+    int numMyPoints = mesh_->getNodesMap()->NumMyPoints();
+    TEUCHOS_ASSERT_EQUALITY( 2*numMyPoints, X.MyLength() );
+
+    const Epetra_Vector & controlVolumes =  *(mesh_->getControlVolumes());
+//    TEUCHOS_ASSERT( controlVolumes.Map().SameAs( X.Map() ) );
 
     for ( int vec=0; vec<X.NumVectors(); vec++ )
     {
-        for ( int k=0; k<X.MyLength(); k++ )
+        for ( int k=0; k<numMyPoints; k++ )
         {
-            // terms corresponding to  I * ( (1-T) - 2*|psi|^2 )
-            double alpha = (1.0-temperature_)
-                           - 2.0 * ( (*currentX_)[2*k]*(*currentX_)[2*k] + (*currentX_)[2*k+1]*(*currentX_)[2*k+1] );
+            // get the local ID in the controlVolumes
+            int globalId = X.Map().GID( k );
+            TEUCHOS_ASSERT_INEQUALITY( globalId, !=, X.Map().IndexBase()-1 );
+            int l = controlVolumes.Map().LID( globalId );
+            TEUCHOS_ASSERT_INEQUALITY( l, !=, -1 );
+
+            double alpha = - controlVolumes[l] * (
+                           1.0 - temperature_
+                           - 2.0 * ( (*currentX_)[2*k]*(*currentX_)[2*k] + (*currentX_)[2*k+1]*(*currentX_)[2*k+1] )
+                           );
+
             // real part
             Y.SumIntoMyValue( 2*k, vec, alpha * X[vec][2*k] );
             // imaginary part
@@ -77,13 +89,17 @@ Apply ( const Epetra_MultiVector & X,
 
             // terms corresponding to  B = diag( -psi^2 )
             // Re(phi^2)
-            double rePhiSquare = (*currentX_)[2*k]*(*currentX_)[2*k] - (*currentX_)[2*k+1]*(*currentX_)[2*k+1];
+            double rePhiSquare = controlVolumes[l] * (
+                                 (*currentX_)[2*k]*(*currentX_)[2*k] - (*currentX_)[2*k+1]*(*currentX_)[2*k+1]
+                                 );
             // Im(phi^2)
-            double imPhiSquare = 2.0*(*currentX_)[2*k]*(*currentX_)[2*k+1];
+            double imPhiSquare = controlVolumes[l] * (
+                                 2.0*(*currentX_)[2*k]*(*currentX_)[2*k+1]
+                                 );
             // real part
-            Y.SumIntoMyValue( 2*k,   vec, - rePhiSquare * X[vec][2*k] + imPhiSquare * X[vec][2*k+1] );
+            Y.SumIntoMyValue( 2*k,   vec, rePhiSquare * X[vec][2*k] - imPhiSquare * X[vec][2*k+1] );
             // imaginary part
-            Y.SumIntoMyValue( 2*k+1, vec, - imPhiSquare * X[vec][2*k] - rePhiSquare * X[vec][2*k+1] );
+            Y.SumIntoMyValue( 2*k+1, vec, imPhiSquare * X[vec][2*k] + rePhiSquare * X[vec][2*k+1] );
         }
     }
 
@@ -173,6 +189,7 @@ Ginla::EpetraFVM::JacobianOperator::
 setCurrentX( const Teuchos::RCP<const Epetra_Vector> & currentX )
 {
     currentX_ = currentX;
+
     return;
 }
 // =============================================================================
