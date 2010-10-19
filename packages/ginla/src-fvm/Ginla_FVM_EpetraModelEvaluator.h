@@ -1,6 +1,6 @@
 /*
     <one line to give the program's name and a brief idea of what it does.>
-    Copyright (C) <year>  <name of author>
+    Copyright (C) 2010  Nico Schl\"omer
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,23 +17,21 @@
 
 */
 
-#ifndef GINLA_FVM_MODELEVALUATOR_H
-#define GINLA_FVM_MODELEVALUATOR_H
+#ifndef GINLA_FVM_EPETRAMODELEVALUATOR_H
+#define GINLA_FVM_EPETRAMODELEVALUATOR_H
 // -----------------------------------------------------------------------------
 // includes
 #include <EpetraExt_ModelEvaluator.h>
+#include <Epetra_Vector.h>
+
 
 #include "VIO_Mesh_Mesh.h"
 #include "Ginla_StateTranslator.h"
 #include "Ginla_ParameterHost_Virtual.h"
-
-#include <Teuchos_Comm.hpp>
-#include <Teuchos_map.hpp>
-#include <Tpetra_CrsGraph.hpp>
-#include <Tpetra_CrsMatrix.hpp>
+#include "Ginla_FVM_JacobianOperator.h"
 // -----------------------------------------------------------------------------
-typedef Tpetra::CrsGraph<ORD> TCrsGraph;
-typedef Tpetra::CrsMatrix<double_complex,ORD> ComplexMatrix;
+//typedef Tpetra::CrsGraph<ORD> TCrsGraph;
+//typedef Tpetra::CrsMatrix<double_complex,ORD> ComplexMatrix;
 // -----------------------------------------------------------------------------
 // forward declarations
 namespace Ginla
@@ -168,8 +166,10 @@ private:
 //    const Teuchos::RCP<const TComm> & tComm_;
 //    Teuchos::RCP<const TMap>          tMap_;
 
+   const Teuchos::RCP<VIO::Mesh::Mesh> mesh_;
+
    const Teuchos::RCP<Komplex2::LinearProblem> komplex_;
-   const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp_;
+
 
    Teuchos::RCP<Epetra_Vector> x_;
    mutable bool firstTime_;
@@ -184,34 +184,10 @@ private:
    Teuchos::RCP<Epetra_Vector> p_current_;
 
    const Teuchos::RCP<VIO::Mesh::Mesh> mesh_;
-   mutable Teuchos::RCP<TCrsGraph> kineticEnergyOperatorGraph_;
-   mutable Teuchos::RCP<ComplexMatrix> kineticEnergyOperator_;
-   mutable Teuchos::RCP<ComplexMatrix> dKineticEnergyDMuOperator_;
-   mutable bool kineticEnergyOperatorsAssembled_;
-   mutable double kineticEnergyOperatorsMu_;
-   mutable Teuchos::Tuple<double,3> kineticEnergyOperatorsScaling_;
-   Teuchos::RCP<Komplex2::DoubleMatrix> jacobianOperator_;
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 private:
     void
     setupParameters_( const Teuchos::ParameterList & params );
-
-    void
-    assembleKineticEnergyOperators_( double                           mu,
-                                     const Teuchos::Tuple<double,3> & scaling
-                                   ) const;
-
-    void
-    createKineticEnergyOperatorGraph_() const;
-
-    Teuchos::RCP<ComplexMatrix>
-    deepCopy_ ( const Teuchos::RCP<const ComplexMatrix> & A
-              ) const;
-
-    bool
-    kineticEnergyOperatorsUpToDate_( const double                     mu,
-                                     const Teuchos::Tuple<double,3> & scaling
-                                   ) const;
 
     // this value is really just for getParameters()
     mutable double mu_;
@@ -224,4 +200,4 @@ private:
 
 }
 
-#endif // GINLA_FVM_MODELEVALUATOR_H
+#endif // GINLA_FVM_EPETRAMODELEVALUATOR_H

@@ -412,7 +412,7 @@ assembleKineticEnergyOperators_( const double                     mu,
                                  const Teuchos::Tuple<double,3> & scaling
                                ) const
 {
-//  if ( kineticEnergyOperatorGraph_->is_null() )
+//  if ( kineticEnergyOperatorGraph_.is_null() )
 //      this->createKineticEnergyOperatorGraph_();
 //  kineticEnergyOperator_     = Teuchos::rcp( new ComplexMatrix( kineticEnergyOperatorGraph_ ) );
 //  dKineticEnergyDMuOperator_ = Teuchos::rcp( new ComplexMatrix( kineticEnergyOperatorGraph_ ) );
@@ -428,19 +428,12 @@ assembleKineticEnergyOperators_( const double                     mu,
   // functionality. The graph is only rebuilt if necessary (e.g., because the set of
   // occupied columns grows).
   int maxNumEntriesPerRow = komplex_->getComplexMap()->getGlobalNumElements();
-//  if ( kineticEnergyOperator_.is_null() )
-//  {
-      kineticEnergyOperator_     = Teuchos::rcp( new ComplexMatrix( komplex_->getComplexMap(),
-                                                                    maxNumEntriesPerRow
-                                                                    )
-                                                 );
-//  }
-//  else
-//  {
-      // zero out the operators
-      kineticEnergyOperator_->setAllToScalar( 0.0 );
-//      kineticEnergyOperator_->resumeFill();
-//  }
+
+  kineticEnergyOperator_ = Teuchos::rcp( new ComplexMatrix( komplex_->getComplexMap(),
+                                                                maxNumEntriesPerRow
+                                                                )
+                                             );
+  kineticEnergyOperator_->setAllToScalar( 0.0 );
 
 //  if ( dKineticEnergyDMuOperator_.is_null() )
 //  {
@@ -579,19 +572,16 @@ assembleKineticEnergyOperators_( const double                     mu,
 // =============================================================================
 void
 Ginla::FVM::ModelEvaluator::
-createKineticEnergyOperatorGraph_()
+createKineticEnergyOperatorGraph_() const
 {
   TEUCHOS_ASSERT( !komplex_.is_null() );
 
   // allocate the graph
   // TODO don't allocate that huge a graph
-  // This is a bug in Trilinos, wait unti this is fixed.
-  int maxNumEntriesPerRow = komplex_->getComplexMap()->getGlobalNumElements();
+  // This is a bug in Trilinos, wait until this is fixed.
+//  int maxNumEntriesPerRow = komplex_->getComplexMap()->getGlobalNumElements();
 
-  kineticEnergyOperatorGraph_ = Teuchos::rcp( new TCrsGraph( komplex_->getComplexMap(),
-                                                             maxNumEntriesPerRow
-                                                           )
-                                            );
+  kineticEnergyOperatorGraph_ = Teuchos::rcp( new TCrsGraph( komplex_->getComplexMap(), 0 ) );
 
   TEUCHOS_ASSERT( !mesh_.is_null() );
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<ORD> > elems = mesh_->getElems();
