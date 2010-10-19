@@ -21,13 +21,14 @@
 
 #include <Epetra_SerialDenseMatrix.h>
 
+#include <Epetra_Comm.h>
 // =============================================================================
 Ginla::EpetraFVM::KineticEnergyOperator::
 KineticEnergyOperator( const Teuchos::RCP<VIO::EpetraMesh::Mesh>                   & mesh,
                        const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp
                      ):
         useTranspose_ ( false ),
-        comm_( mesh->getNodesMap()->Comm() ),
+        comm_( Teuchos::rcpFromRef(mesh->getNodesMap()->Comm()) ),
         mesh_ ( mesh ),
         mvp_( mvp ),
         keoGraph_( Teuchos::null ),
@@ -114,7 +115,8 @@ const Epetra_Comm &
 Ginla::EpetraFVM::KineticEnergyOperator::
 Comm () const
 {
-    return comm_;
+    TEUCHOS_ASSERT( !comm_.is_null() );
+    return *comm_;
 }
 // =============================================================================
 const Epetra_Map &

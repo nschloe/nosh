@@ -32,6 +32,7 @@
 #include <vtkCellArray.h>
 
 #include <Epetra_Comm.h>
+#include <Epetra_Map.h>
 
 // =============================================================================
 VIO::EpetraMesh::Reader::
@@ -53,18 +54,11 @@ read ( Teuchos::RCP<Epetra_Vector>           & z,
        const Teuchos::RCP<const Epetra_Comm> & comm
      )
 {
-
-  if ( comm->MyPID() == 1 ) std::cout << "a" << std::endl;
-
     // check the filename extension
     int         dotPos    = filePath_.rfind ( "." );
     std::string extension = filePath_.substr ( dotPos+1, filePath_.size()-dotPos-1 );
 
-  if (  comm->MyPID() == 1 ) std::cout << "b" << std::endl;
-
     vtkSmartPointer<vtkUnstructuredGrid> vtkMesh;
-
-  if ( comm->MyPID() == 1 ) std::cout << "c" << std::endl;
 
     if ( extension.compare ( "vtk" ) == 0 )
     {
@@ -77,17 +71,11 @@ read ( Teuchos::RCP<Epetra_Vector>           & z,
     }
     else if ( extension.compare ( "vtu" ) == 0 )
     {
-
-      if ( comm->MyPID() == 1 ) std::cout << "d" << std::endl;
         vtkSmartPointer<vtkXMLUnstructuredGridReader> reader =
-            vtkSmartPointer<vtkXMLUnstructuredGridReader>::New();
-            if ( comm->MyPID()== 1 ) std::cout << "e" << std::endl;
+                vtkSmartPointer<vtkXMLUnstructuredGridReader>::New();
         reader->SetFileName ( filePath_.c_str() );
-      if ( comm->MyPID() == 1 ) std::cout << "f" << std::endl;
         reader->Update();
-      if ( comm->MyPID() == 1 ) std::cout << "g" << std::endl;
         vtkMesh = reader->GetOutput();
-      if ( comm->MyPID() == 1 ) std::cout << "h" << std::endl;
     }
     else if ( extension.compare ( "pvtu" ) == 0 )
     {
@@ -107,15 +95,11 @@ read ( Teuchos::RCP<Epetra_Vector>           & z,
                              << "\"vtu\"." );
     }
 
-
-    if ( comm->MyPID() == 1 ) std::cout << "i" << std::endl;
     // read the data
     z         = this->extractStateData_ ( vtkMesh, comm );
-    if ( comm->MyPID() == 1 ) std::cout << "j" << std::endl;
     mesh      = this->extractMeshData_ ( vtkMesh, comm );
-    if ( comm->MyPID() == 1 ) std::cout << "k" << std::endl;
+
     fieldData = this->readFieldData_ ( vtkMesh );
-    if ( comm->MyPID() == 1 ) std::cout << "l" << std::endl;
 
     return;
 }
@@ -324,6 +308,7 @@ extractMeshData_( const vtkSmartPointer<vtkUnstructuredGrid> & vtkMesh,
 
   mesh->setElemTypes( elemTypes );
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
   return mesh;
 }
 // =============================================================================

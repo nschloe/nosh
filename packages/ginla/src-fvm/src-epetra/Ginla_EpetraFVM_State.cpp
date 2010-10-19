@@ -32,7 +32,7 @@ State( const Teuchos::RCP<Epetra_Vector>               & psi,
        mesh_( mesh )
 {
     TEUCHOS_ASSERT_EQUALITY( psi->GlobalLength(),
-                             mesh->getNumNodes() );
+                             2 * mesh->getNumNodes() );
 }
 // =============================================================================
 Ginla::EpetraFVM::State::

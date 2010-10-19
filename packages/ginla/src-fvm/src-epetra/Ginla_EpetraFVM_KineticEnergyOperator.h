@@ -32,7 +32,7 @@
 namespace Ginla {
 namespace EpetraFVM {
 // =============================================================================
-class KineticEnergyOperator : public Epetra_Operator
+class KineticEnergyOperator: public Epetra_Operator
 {
 public:
     KineticEnergyOperator( const Teuchos::RCP<VIO::EpetraMesh::Mesh>                   & mesh,
@@ -94,7 +94,7 @@ private:
 
 private:
     bool useTranspose_;
-    const Epetra_Comm & comm_;
+    const Teuchos::RCP<const Epetra_Comm> comm_;
     const Teuchos::RCP<VIO::EpetraMesh::Mesh> mesh_;
 
     const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp_;

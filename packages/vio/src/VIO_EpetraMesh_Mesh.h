@@ -172,8 +172,8 @@ class Mesh
   private:
 
     const Epetra_Comm & comm_;
-    const Teuchos::RCP<const Epetra_Map>  & nodesMap_;
-    const Teuchos::RCP<const Epetra_Map>  & complexValuesMap_;
+    const Teuchos::RCP<const Epetra_Map>  nodesMap_;
+    const Teuchos::RCP<const Epetra_Map>  complexValuesMap_;
 
     Teuchos::ArrayRCP<Teuchos::ArrayRCP<int> > elems_;
     Teuchos::ArrayRCP<ElementType> elemTypes_;
