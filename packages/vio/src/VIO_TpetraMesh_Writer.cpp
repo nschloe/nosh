@@ -17,9 +17,9 @@
 
 */
 
-#include "VIO_Mesh_Writer.h"
+#include "VIO_TpetraMesh_Writer.h"
 
-#include "VIO_Mesh_Mesh.h"
+#include "VIO_TpetraMesh_Mesh.h"
 
 #include <EpetraExt_Utils.h> // to_string
 #include <Tpetra_Vector.hpp>
@@ -35,7 +35,7 @@
 #include <vtkPointData.h>
 
 // =============================================================================
-VIO::Mesh::Writer::
+VIO::TpetraMesh::Writer::
 Writer ( const std::string & filePath ) :
            VIO::Writer::Abstract( filePath ),
            mesh_( Teuchos::null ),
@@ -73,16 +73,16 @@ Writer ( const std::string & filePath ) :
   return;
 }
 // =============================================================================
-VIO::Mesh::Writer::
+VIO::TpetraMesh::Writer::
 ~Writer ()
 {
 }
 // =============================================================================
 void
-VIO::Mesh::Writer::
-setMesh( const VIO::Mesh::Mesh & mesh )
+VIO::TpetraMesh::Writer::
+setMesh( const VIO::TpetraMesh::Mesh & mesh )
 {
-  mesh_ = Teuchos::rcp( new VIO::Mesh::Mesh( mesh ) );
+  mesh_ = Teuchos::rcp( new VIO::TpetraMesh::Mesh( mesh ) );
 
   // cast into a vtkUnstructuredGrid
   vtkSmartPointer<vtkUnstructuredGrid> vtkMesh =
@@ -107,54 +107,54 @@ setMesh( const VIO::Mesh::Mesh & mesh )
 //         MeshBase::const_element_iterator el     = mesh.elements_begin();
 //   const MeshBase::const_element_iterator end_el = mesh.elements_end();
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<ORD> >   elems = mesh.getElems();
-  Teuchos::ArrayRCP<const VIO::Mesh::Mesh::ElementType> elemTypes = mesh.getElemTypes();
+  Teuchos::ArrayRCP<const VIO::TpetraMesh::Mesh::ElementType> elemTypes = mesh.getElemTypes();
   for ( int k=0; k<elems.size(); k++ )
   {
       vtkIdType celltype = VTK_EMPTY_CELL; // initialize to something to avoid compiler warning
 
       switch( elemTypes[k] )
       {
-              case VIO::Mesh::Mesh::EDGE2:
+              case VIO::TpetraMesh::Mesh::EDGE2:
                       celltype = VTK_LINE;
                       break;
-              case VIO::Mesh::Mesh::EDGE3:
+              case VIO::TpetraMesh::Mesh::EDGE3:
                       celltype = VTK_QUADRATIC_EDGE;
                       break;// 1
-              case VIO::Mesh::Mesh::TRI3:
+              case VIO::TpetraMesh::Mesh::TRI3:
                       celltype = VTK_TRIANGLE;
                       break;// 3
-              case VIO::Mesh::Mesh::TRI6:
+              case VIO::TpetraMesh::Mesh::TRI6:
                       celltype = VTK_QUADRATIC_TRIANGLE;
                       break;// 4
-              case VIO::Mesh::Mesh::QUAD4:
+              case VIO::TpetraMesh::Mesh::QUAD4:
                       celltype = VTK_QUAD;
                       break;// 5
-              case VIO::Mesh::Mesh::QUAD8:
+              case VIO::TpetraMesh::Mesh::QUAD8:
                       celltype = VTK_QUADRATIC_QUAD;
                       break;// 6
-              case VIO::Mesh::Mesh::TET4:
+              case VIO::TpetraMesh::Mesh::TET4:
                       celltype = VTK_TETRA;
                       break;// 8
-              case VIO::Mesh::Mesh::TET10:
+              case VIO::TpetraMesh::Mesh::TET10:
                       celltype = VTK_QUADRATIC_TETRA;
                       break;// 9
-              case VIO::Mesh::Mesh::HEX8:
+              case VIO::TpetraMesh::Mesh::HEX8:
                       celltype = VTK_HEXAHEDRON;
                       break;// 10
-              case VIO::Mesh::Mesh::HEX20:
+              case VIO::TpetraMesh::Mesh::HEX20:
                       celltype = VTK_QUADRATIC_HEXAHEDRON;
                       break;// 12
-              case VIO::Mesh::Mesh::PRISM6:
+              case VIO::TpetraMesh::Mesh::PRISM6:
                       celltype = VTK_WEDGE;
                       break;// 13
-              case VIO::Mesh::Mesh::PRISM15:
+              case VIO::TpetraMesh::Mesh::PRISM15:
                       celltype = VTK_HIGHER_ORDER_WEDGE;
                       break;// 14
-              case VIO::Mesh::Mesh::PYRAMID5:
+              case VIO::TpetraMesh::Mesh::PYRAMID5:
                       celltype = VTK_PYRAMID;
                       break;// 16
 #if VTK_MAJOR_VERSION > 5 || (VTK_MAJOR_VERSION == 5 && VTK_MINOR_VERSION > 0)
-              case VIO::Mesh::Mesh::QUAD9:
+              case VIO::TpetraMesh::Mesh::QUAD9:
                       celltype = VTK_BIQUADRATIC_QUAD;
                       break;
 #else
@@ -179,7 +179,7 @@ setMesh( const VIO::Mesh::Mesh & mesh )
 }
 // =============================================================================
 void
-VIO::Mesh::Writer::
+VIO::TpetraMesh::Writer::
 setValues( const Epetra_MultiVector          & x,
            const Teuchos::Array<std::string> & scalarsNames
          )
@@ -220,7 +220,7 @@ setValues( const Epetra_MultiVector          & x,
 }
 // =============================================================================
 void
-VIO::Mesh::Writer::
+VIO::TpetraMesh::Writer::
 setValues( const Tpetra::MultiVector<double> & x,
            const Teuchos::Array<std::string> & scalarsNames )
 {
@@ -261,7 +261,7 @@ setValues( const Tpetra::MultiVector<double> & x,
 }
 // =============================================================================
 void
-VIO::Mesh::Writer::
+VIO::TpetraMesh::Writer::
 setValues( const ComplexMultiVector          & z,
            const Teuchos::Array<std::string> & scalarsNames
          )
@@ -314,7 +314,7 @@ setValues( const ComplexMultiVector          & z,
 }
 // =============================================================================
 void
-VIO::Mesh::Writer::
+VIO::TpetraMesh::Writer::
 write () const
 {
     // cast mesh into a vtkUnstructuredGrid

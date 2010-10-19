@@ -17,8 +17,8 @@
 
 */
 
-#ifndef GINLA_FVM_JACOBIANOPERATOR_H
-#define GINLA_FVM_JACOBIANOPERATOR_H
+#ifndef GINLA_EPETRAFVM_KINETICENERGYOPERATOR_H
+#define GINLA_EPETRAFVM_KINETICENERGYOPERATOR_H
 // =============================================================================
 #include <Epetra_Operator.h>
 #include <Teuchos_RCP.hpp>
@@ -26,37 +26,34 @@
 #include <Epetra_FECrsGraph.h>
 #include <Epetra_FECrsMatrix.h>
 
-#include "Ginla_FVM_KineticEnergyOperator.h"
+#include "Ginla_MagneticVectorPotential_Virtual.h"
+#include "VIO_EpetraMesh_Mesh.h"
 // =============================================================================
 namespace Ginla {
-namespace FVM {
-
-class JacobianOperator : public Epetra_Operator
+namespace EpetraFVM {
+// =============================================================================
+class KineticEnergyOperator : public Epetra_Operator
 {
 public:
-    JacobianOperator( const Teuchos::RCP<VIO::Mesh::Mesh> & mesh,
-                      const Teuchos::RCP<Ginla::FVM::KineticEnergyOperator> & keo
-                    );
+    KineticEnergyOperator( const Epetra_Comm                                           & comm,
+                           const Teuchos::RCP<VIO::EpetraMesh::Mesh>                   & mesh,
+                           const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp
+                         );
 
     // Destructor.
-    ~JacobianOperator ();
+    ~KineticEnergyOperator();
 
     virtual int
     SetUseTranspose( bool UseTranspose );
 
     virtual int
-    Apply ( const Epetra_MultiVector &X,
-            Epetra_MultiVector &Y
+    Apply ( const Epetra_MultiVector & X,
+                  Epetra_MultiVector & Y
           ) const;
 
-    int
-    ApplyKeo ( const Epetra_MultiVector &X,
-               Epetra_MultiVector &Y
-             ) const;
-
     virtual int
-    ApplyInverse ( const Epetra_MultiVector &X,
-                   Epetra_MultiVector &Y
+    ApplyInverse ( const Epetra_MultiVector & X,
+                         Epetra_MultiVector & Y
                  ) const;
 
     virtual double
@@ -80,39 +77,40 @@ public:
 
     void
     setParameters( const double mu,
-                   const Teuchos::Tuple<double,3> & scaling,
-                   const double temperature
+                   const Teuchos::Tuple<double,3> & scaling
                  );
-
-    void
-    setCurrentX( const Epetra_Vector & currentX );
 
 protected:
 
 private:
+
     void
-    assembleKeo_( const double                     mu,
-                  const Teuchos::Tuple<double,3> & scaling
-                ) const;
+    assembleKeo_() const;
 
     void
     createKeoGraph_() const;
 
     bool
-    keoUpToDate_( const double                     mu,
-                  const Teuchos::Tuple<double,3> & scaling
-                ) const;
+    keoUpToDate_() const;
 
 private:
     bool useTranspose_;
     const Epetra_Comm & comm_;
+    const Teuchos::RCP<VIO::EpetraMesh::Mesh> mesh_;
 
-    const Epetra_Vector & currentX_;
+    const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp_;
 
-    const Teuchos::RCP<VIO::Mesh::Mesh> mesh_;
+    mutable Teuchos::RCP<Epetra_FECrsGraph> keoGraph_;
+    mutable Teuchos::RCP<Epetra_FECrsMatrix> keo_;
+
+    double mu_;
+    Teuchos::Tuple<double,3> scaling_;
+
+    mutable double keoMu_;
+    mutable Teuchos::Tuple<double,3> keoScaling_;
 };
-
+// =============================================================================
 } // namespace FVM
 } // namespace Ginla
-// =============================================================================
-#endif // GINLA_FVM_JACOBIANOPERATOR_H
+
+#endif // GINLA_EPETRAFVM_KINETICENERGYOPERATOR_H

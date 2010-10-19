@@ -17,7 +17,7 @@
 
 #include "Ginla_FVM_ModelEvaluator.h"
 #include "Ginla_FVM_State.h"
-#include "VIO_Mesh_Reader.h"
+#include "VIO_TpetraMesh_Reader.h"
 
 // #include "Ginla_IO_SaveNewtonData.h"
 #include "Ginla_IO_SaveEigenData.h"
@@ -128,16 +128,16 @@ int main ( int argc, char *argv[] )
       initialGuessList = piroParams->sublist ( "Initial guess", true );
       // =========================================================================
 
-      Teuchos::ParameterList           problemParameters;
-      Teuchos::RCP<ComplexMultiVector> z = Teuchos::null;
-      Teuchos::RCP<VIO::Mesh::Mesh>    mesh = Teuchos::null;
+      Teuchos::ParameterList              problemParameters;
+      Teuchos::RCP<ComplexMultiVector>    z = Teuchos::null;
+      Teuchos::RCP<VIO::TpetraMesh::Mesh> mesh = Teuchos::null;
 
-      VIO::Mesh::read( Comm,
-                       getAbsolutePath( initialGuessList.get<std::string> ( "State" ), xmlPath ),
-                       z,
-                       mesh,
-                       problemParameters
-                     );
+      VIO::TpetraMesh::read( Comm,
+                             getAbsolutePath( initialGuessList.get<std::string> ( "State" ), xmlPath ),
+                             z,
+                             mesh,
+                             problemParameters
+                           );
 
       // create the state
       Teuchos::RCP<Ginla::FVM::State> state =
@@ -365,13 +365,13 @@ int main ( int argc, char *argv[] )
           // read the initial null state
           Teuchos::ParameterList           voidParameters;
           Teuchos::RCP<ComplexMultiVector> z = Teuchos::null;
-          Teuchos::RCP<VIO::Mesh::Mesh>    mesh = Teuchos::null;
-          VIO::Mesh::read( Comm,
-                           getAbsolutePath( initialGuessList.get<string> ( "Null state" ), xmlPath),
-                           z,
-                           mesh,
-                           voidParameters
-                         );
+          Teuchos::RCP<VIO::TpetraMesh::Mesh>    mesh = Teuchos::null;
+          VIO::TpetraMesh::read( Comm,
+                                 getAbsolutePath( initialGuessList.get<string> ( "Null state" ), xmlPath),
+                                 z,
+                                 mesh,
+                                 voidParameters
+                               );
 
           Teuchos::RCP<Ginla::FVM::State> nullstate =
               Teuchos::rcp( new Ginla::FVM::State( z, mesh ) );

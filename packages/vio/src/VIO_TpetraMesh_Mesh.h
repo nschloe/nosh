@@ -17,8 +17,8 @@
 
 */
 
-#ifndef VIO_MESH_MESH_H
-#define VIO_MESH_MESH_H
+#ifndef VIO_TPETRAMESH_MESH_H
+#define VIO_TPETRAMESH_MESH_H
 
 #include "VIO_Typedefs.h"
 
@@ -30,7 +30,7 @@
 #include <Tpetra_Vector.hpp>
 
 namespace VIO {
-namespace Mesh {
+namespace TpetraMesh {
 class Mesh
 {
   public:
@@ -181,4 +181,4 @@ class Mesh
 }
 }
 
-#endif // VIO_MESH_MESH_H
+#endif // VIO_TPETRAMESH_MESH_H

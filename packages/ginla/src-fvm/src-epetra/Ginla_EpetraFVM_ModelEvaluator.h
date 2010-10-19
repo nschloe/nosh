@@ -17,18 +17,18 @@
 
 */
 
-#ifndef GINLA_FVM_EPETRAMODELEVALUATOR_H
-#define GINLA_FVM_EPETRAMODELEVALUATOR_H
+#ifndef GINLA_EPETRAFVM_EVALUATOR_H
+#define GINLA_EPETRAFVM_EVALUATOR_H
 // -----------------------------------------------------------------------------
 // includes
 #include <EpetraExt_ModelEvaluator.h>
 #include <Epetra_Vector.h>
 
 
-#include "VIO_Mesh_Mesh.h"
+#include "VIO_EpetraMesh_Mesh.h"
 #include "Ginla_StateTranslator.h"
 #include "Ginla_ParameterHost_Virtual.h"
-#include "Ginla_FVM_JacobianOperator.h"
+#include "Ginla_EpetraFVM_JacobianOperator.h"
 // -----------------------------------------------------------------------------
 //typedef Tpetra::CrsGraph<ORD> TCrsGraph;
 //typedef Tpetra::CrsMatrix<double_complex,ORD> ComplexMatrix;
@@ -40,7 +40,7 @@ namespace Ginla
   {
     class Virtual;
   }
-  namespace FVM {
+  namespace EpetraFVM {
     class State;
   }
 }
@@ -53,22 +53,21 @@ namespace Komplex2
 class Epetra_CrsGraph;
 // -----------------------------------------------------------------------------
 namespace Ginla {
-namespace FVM {
+namespace EpetraFVM {
 
 class ModelEvaluator:
     public EpetraExt::ModelEvaluator,
-    public Ginla::StateTranslator,
     public Ginla::ParameterHost::Virtual
 {
 
 public:
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   //! Constructor without initial guess.
-  ModelEvaluator ( const Teuchos::RCP<VIO::Mesh::Mesh>                         & mesh,
+  ModelEvaluator ( const Teuchos::RCP<VIO::EpetraMesh::Mesh>                   & mesh,
                    const Teuchos::ParameterList                                & params,
                    const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp,
                    const Teuchos::RCP<Komplex2::LinearProblem>                 & komplex,
-                   const Teuchos::RCP<Ginla::FVM::State>                       & initialState
+                   const Teuchos::RCP<Ginla::EpetraFVM::State>                 & initialState
                  );
 
   // Destructor
@@ -118,16 +117,6 @@ public:
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 public:
-    Teuchos::RCP<Ginla::State::Virtual>
-    createState( const Epetra_Vector & x ) const;
-
-    Teuchos::RCP<Epetra_Vector>
-    createSystemVector(  const Ginla::State::Virtual & state ) const;
-
-    void
-    createSystemVector( const Ginla::State::Virtual & state,
-                              Epetra_Vector         & x
-                      ) const;
 
     virtual
     Teuchos::RCP<LOCA::ParameterVector>
@@ -154,7 +143,7 @@ private:
                      const double                     lambda,
                      const Teuchos::Tuple<double,3> & scaling,
                      const double                     temperature,
-                           Epetra_CrsMatrix         & Jac
+                           Epetra_Operator          & Jac
                    ) const;
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 protected:
@@ -166,7 +155,7 @@ private:
 //    const Teuchos::RCP<const TComm> & tComm_;
 //    Teuchos::RCP<const TMap>          tMap_;
 
-   const Teuchos::RCP<VIO::Mesh::Mesh> mesh_;
+   const Teuchos::RCP<VIO::EpetraMesh::Mesh> mesh_;
 
    const Teuchos::RCP<Komplex2::LinearProblem> komplex_;
 
@@ -183,7 +172,8 @@ private:
    // for get_parameters()
    Teuchos::RCP<Epetra_Vector> p_current_;
 
-   const Teuchos::RCP<VIO::Mesh::Mesh> mesh_;
+   Teuchos::RCP<Ginla::EpetraFVM::KineticEnergyOperator> keo_;
+   Teuchos::RCP<Ginla::EpetraFVM::JacobianOperator> jacobianOperator_;
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 private:
     void
@@ -200,4 +190,4 @@ private:
 
 }
 
-#endif // GINLA_FVM_EPETRAMODELEVALUATOR_H
+#endif // GINLA_EPETRAFVM_EVALUATOR_H

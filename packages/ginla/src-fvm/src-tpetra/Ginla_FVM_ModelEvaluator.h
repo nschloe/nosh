@@ -23,7 +23,7 @@
 // includes
 #include <EpetraExt_ModelEvaluator.h>
 
-#include "VIO_Mesh_Mesh.h"
+#include "VIO_TpetraMesh_Mesh.h"
 #include "Ginla_StateTranslator.h"
 #include "Ginla_ParameterHost_Virtual.h"
 
@@ -66,7 +66,7 @@ class ModelEvaluator:
 public:
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   //! Constructor without initial guess.
-  ModelEvaluator ( const Teuchos::RCP<VIO::Mesh::Mesh>                         & mesh,
+  ModelEvaluator ( const Teuchos::RCP<VIO::TpetraMesh::Mesh>                         & mesh,
                    const Teuchos::ParameterList                                & params,
                    const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp,
                    const Teuchos::RCP<Komplex2::LinearProblem>                 & komplex,
@@ -183,7 +183,7 @@ private:
    // for get_parameters()
    Teuchos::RCP<Epetra_Vector> p_current_;
 
-   const Teuchos::RCP<VIO::Mesh::Mesh> mesh_;
+   const Teuchos::RCP<VIO::TpetraMesh::Mesh> mesh_;
    mutable Teuchos::RCP<TCrsGraph> kineticEnergyOperatorGraph_;
    mutable Teuchos::RCP<ComplexMatrix> kineticEnergyOperator_;
    mutable Teuchos::RCP<ComplexMatrix> dKineticEnergyDMuOperator_;

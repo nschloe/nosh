@@ -17,13 +17,18 @@
 
 */
 
-#include "Ginla_FVM_KineticEnergyOperator.h"
+#include "Ginla_EpetraFVM_KineticEnergyOperator.h"
+
+#include <Epetra_SerialDenseMatrix.h>
 
 // =============================================================================
-Ginla::FVM::KineticEnergyOperator::
-KineticEnergyOperator( const Teuchos::RCP<VIO::Mesh::Mesh>                         & mesh,
+Ginla::EpetraFVM::KineticEnergyOperator::
+KineticEnergyOperator( const Epetra_Comm                                           & comm,
+                       const Teuchos::RCP<VIO::EpetraMesh::Mesh>                   & mesh,
                        const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp
                      ):
+        useTranspose_ ( false ),
+        comm_( comm ),
         mesh_ ( mesh ),
         mvp_( mvp ),
         keoGraph_( Teuchos::null ),
@@ -35,13 +40,13 @@ KineticEnergyOperator( const Teuchos::RCP<VIO::Mesh::Mesh>                      
 {
 }
 // =============================================================================
-Ginla::FVM::KineticEnergyOperator::
+Ginla::EpetraFVM::KineticEnergyOperator::
 ~KineticEnergyOperator()
 {
 }
 // =============================================================================
 int
-Ginla::FVM::KineticEnergyOperator::
+Ginla::EpetraFVM::KineticEnergyOperator::
 SetUseTranspose( bool UseTranspose )
 {
     useTranspose_ = UseTranspose;
@@ -49,7 +54,7 @@ SetUseTranspose( bool UseTranspose )
 }
 // =============================================================================
 int
-Ginla::FVM::KineticEnergyOperator::
+Ginla::EpetraFVM::KineticEnergyOperator::
 Apply ( const Epetra_MultiVector & X,
               Epetra_MultiVector & Y
       ) const
@@ -64,75 +69,73 @@ Apply ( const Epetra_MultiVector & X,
 }
 // =============================================================================
 int
-Ginla::FVM::KineticEnergyOperator::
+Ginla::EpetraFVM::KineticEnergyOperator::
 ApplyInverse ( const Epetra_MultiVector & X,
                      Epetra_MultiVector & Y
              ) const
 {
     TEST_FOR_EXCEPTION( true,
-                        std::logic,
+                        std::logic_error,
                         "Not yet implemented." );
     return -1;
 }
 // =============================================================================
 double
-Ginla::FVM::KineticEnergyOperator::
+Ginla::EpetraFVM::KineticEnergyOperator::
 NormInf () const
 {
     TEST_FOR_EXCEPTION( true,
-                        std::logic,
+                        std::logic_error,
                         "Not yet implemented." );
     return 0.0;
 }
 // =============================================================================
 const char *
-Ginla::FVM::KineticEnergyOperator::
+Ginla::EpetraFVM::KineticEnergyOperator::
 Label () const
 {
     return "Kinetic energy operator for Ginzburg--Landau";
 }
 // =============================================================================
 bool
-Ginla::FVM::KineticEnergyOperator::
+Ginla::EpetraFVM::KineticEnergyOperator::
 UseTranspose () const
 {
     return useTranspose_;
 }
 // =============================================================================
 bool
-Ginla::FVM::KineticEnergyOperator::
+Ginla::EpetraFVM::KineticEnergyOperator::
 HasNormInf () const
 {
     return false;
 }
 // =============================================================================
 const Epetra_Comm &
-Ginla::FVM::KineticEnergyOperator::
+Ginla::EpetraFVM::KineticEnergyOperator::
 Comm () const
 {
     return comm_;
 }
 // =============================================================================
 const Epetra_Map &
-Ginla::FVM::KineticEnergyOperator::
+Ginla::EpetraFVM::KineticEnergyOperator::
 OperatorDomainMap () const
 {
-    TEST_FOR_EXCEPTION( true,
-                        std::logic,
-                        "Not yet implemented." );
+    TEUCHOS_ASSERT( !keo_.is_null() );
+    return keo_->DomainMap();
 }
 // =============================================================================
 const Epetra_Map &
-Ginla::FVM::KineticEnergyOperator::
+Ginla::EpetraFVM::KineticEnergyOperator::
 OperatorRangeMap () const
 {
-    TEST_FOR_EXCEPTION( true,
-                        std::logic,
-                        "Not yet implemented." );
+    TEUCHOS_ASSERT( !keo_.is_null() );
+    return keo_->RangeMap();
 }
 // =============================================================================
 void
-Ginla::FVM::KineticEnergyOperator::
+Ginla::EpetraFVM::KineticEnergyOperator::
 setParameters( const double mu,
                const Teuchos::Tuple<double,3> & scaling
              )
@@ -143,7 +146,7 @@ setParameters( const double mu,
 }
 // =============================================================================
 void
-Ginla::FVM::KineticEnergyOperator::
+Ginla::EpetraFVM::KineticEnergyOperator::
 assembleKeo_() const
 {
   if ( keoGraph_.is_null() )
@@ -260,17 +263,17 @@ assembleKeo_() const
   keo_->GlobalAssemble();
   keo_->FillComplete();
 
-  keoMu_ = mu;
-  keoScaling_ = scaling;
+  keoMu_ = mu_;
+  keoScaling_ = scaling_;
 
   return;
 }
 // =============================================================================
 void
-Ginla::FVM::KineticEnergyOperator::
+Ginla::EpetraFVM::KineticEnergyOperator::
 createKeoGraph_() const
 {
-  keoGraph_ = Teuchos::rcp( new Epetra_FECrsGraph( Copy, *(komplex_->getRealMap()), 0 ) );
+  keoGraph_ = Teuchos::rcp( new Epetra_FECrsGraph( Copy, *(mesh_->getComplexValuesMap()), 0 ) );
 
   TEUCHOS_ASSERT( !mesh_.is_null() );
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<ORD> > elems = mesh_->getElems();
@@ -308,7 +311,7 @@ createKeoGraph_() const
 }
 // =============================================================================
 bool
-Ginla::FVM::KineticEnergyOperator::
+Ginla::EpetraFVM::KineticEnergyOperator::
 keoUpToDate_() const
 {
     return    !keo_.is_null()

@@ -17,8 +17,8 @@
 
 */
 
-#ifndef VIO_MESH_MESH_H
-#define VIO_MESH_MESH_H
+#ifndef VIO_EPETRAMESH_MESH_H
+#define VIO_EPETRAMESH_MESH_H
 
 #include "VIO_Typedefs.h"
 
@@ -26,48 +26,56 @@
 #include <Teuchos_Tuple.hpp>
 #include <Teuchos_SerialDenseVector.hpp>
 
-#include <Teuchos_Comm.hpp>
-#include <Tpetra_Vector.hpp>
+#include <Epetra_Map.h>
+#include <Epetra_Vector.h>
 
 namespace VIO {
-namespace Mesh {
+namespace EpetraMesh {
 class Mesh
 {
   public:
-    
+
     // constructor
-    Mesh( const Teuchos::RCP<const Teuchos::Comm<int> > & comm );
-    
+    Mesh( const Teuchos::RCP<const Epetra_Comm> & comm,
+          const Teuchos::RCP<const Epetra_Map>  & nodesMap,
+          const Teuchos::RCP<const Epetra_Map>  & complexValuesMap
+        );
+
     // destructor
     ~Mesh();
-    
+
     unsigned int
     getNumNodes() const;
-    
+
+    const Teuchos::RCP<const Epetra_Map>
+    getNodesMap() const;
+
+    const Teuchos::RCP<const Epetra_Map>
+    getComplexValuesMap() const;
+
     const Teuchos::ArrayRCP<Point>
     getNodes() const;
 
     Teuchos::ArrayRCP<Point>
     getNodesNonConst();
-    
+
     void
     setNodes( const Teuchos::ArrayRCP<Point> nodes );
-    
+
     void
     setBoundaryNodes( const Teuchos::ArrayRCP<bool> );
-    
+
     const Teuchos::ArrayRCP<const bool>
     getBoundaryNodes() const;
-    
-    const Teuchos::ArrayRCP<Teuchos::ArrayRCP<ORD> >
+
+    const Teuchos::ArrayRCP<Teuchos::ArrayRCP<int> >
     getElems() const;
 
-    Teuchos::ArrayRCP<Teuchos::ArrayRCP<ORD> >
+    Teuchos::ArrayRCP<Teuchos::ArrayRCP<int> >
     getElemsNonConst();
-    
-    void
-    setElems( const Teuchos::ArrayRCP<Teuchos::ArrayRCP<ORD> > elems );
 
+    void
+    setElems( const Teuchos::ArrayRCP<Teuchos::ArrayRCP<int> > elems );
 
     // these are (approximately?) the valid VTK element types
     enum ElementType { EDGE2,    // line
@@ -86,49 +94,49 @@ class Mesh
                        PYRAMID5, // pyramid
                        INVALID
                      };
-    
+
     void
     setElemTypes( const Teuchos::ArrayRCP<Mesh::ElementType> elemTypes );
-    
+
     const Teuchos::ArrayRCP<const Mesh::ElementType>
     getElemTypes() const;
-    
-    Teuchos::RCP<DoubleVector>
+
+    Teuchos::RCP<Epetra_Vector>
     getControlVolumes() const;
-    
+
     Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >
     getEdgeLengths() const;
-    
+
     Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >
     getCoedgeLengths() const;
-    
+
     double
     getDomainArea() const;
-    
+
     void
     scale( double alpha );
-    
+
     void
     scale( const Teuchos::Tuple<double,3> & alpha );
-    
+
   protected:
-    
+
   private:
-    
+
       void
       computeFvmEntities_() const;
-    
-      Teuchos::RCP<Tpetra::Map<ORD> >
+
+      Teuchos::RCP<Epetra_Map>
       getElemsToNodesMap_() const;
-    
+
       double
       computeDomainArea_() const;
-    
+
       Point
       add_( double alpha, const Point & x,
             double beta,  const Point & y
           ) const;
-    
+
       //! Compute the area of a triangle given by
       //! \c x0, \c x1, and \c x2.
       double
@@ -136,42 +144,43 @@ class Mesh
                         const Point & x1,
                         const Point & x2
                       ) const;
-    
+
       //! Compute the circumcenter of a triangle given by
       //! \c x0, \c x1, and \c x2.
       Point
       computeCircumcenter_( const Point & x0, const Point & x1, const Point & x2
                           ) const;
-                          
+
       double
       dot_( const Point & v, const Point & w
           ) const;
-    
+
       //! Compute the cross product of two vectors
       //! \c v and \c w.
       Point
       cross_( const Point & v, const Point & w
             ) const;
-            
+
       double
       norm2_( const Point & x
             ) const;
-          
+
       //! Takes a vector \c x with an overlay map and makes sure that
       //! all the overlapping entries are summed up across all processes.
       void
-      sumInOverlapMap_( Teuchos::RCP<DoubleVector> x ) const;
-    
+      sumInOverlapMap_( Teuchos::RCP<Epetra_Vector> x ) const;
+
   private:
-    // Needs to be "int" as Tpetra::Map only accepts int-communicators.
-    // <http://trilinos.sandia.gov/packages/docs/dev/packages/tpetra/doc/html/classTpetra_1_1Map.html>
-    const Teuchos::RCP<const Teuchos::Comm<int> > & comm_;
-    
-    Teuchos::ArrayRCP<Teuchos::ArrayRCP<ORD> > elems_;
+
+    const Teuchos::RCP<const Epetra_Comm> & comm_;
+    const Teuchos::RCP<const Epetra_Map>  & nodesMap_;
+    const Teuchos::RCP<const Epetra_Map>  & complexValuesMap_;
+
+    Teuchos::ArrayRCP<Teuchos::ArrayRCP<int> > elems_;
     Teuchos::ArrayRCP<ElementType> elemTypes_;
     Teuchos::ArrayRCP<Point> nodes_;
     Teuchos::ArrayRCP<bool> isBoundaryNode_;
-    mutable Teuchos::RCP<DoubleVector> controlVolumes_;
+    mutable Teuchos::RCP<Epetra_Vector> controlVolumes_;
     mutable Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > edgeLengths_;
     mutable Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > coedgeLengths_;
     mutable double area_;
@@ -181,4 +190,4 @@ class Mesh
 }
 }
 
-#endif // VIO_MESH_MESH_H
+#endif // VIO_EPETRAMESH_MESH_H

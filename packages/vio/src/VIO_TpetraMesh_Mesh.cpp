@@ -17,11 +17,11 @@
 
 */
 
-#include "VIO_Mesh_Mesh.h"
+#include "VIO_TpetraMesh_Mesh.h"
 #include <Epetra_Map.h>
 
 // =============================================================================
-VIO::Mesh::Mesh::
+VIO::TpetraMesh::Mesh::
 Mesh( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ):
     comm_( comm ),
     elems_( Teuchos::null ),
@@ -35,34 +35,34 @@ Mesh( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ):
 {
 }
 // =============================================================================
-VIO::Mesh::Mesh::
+VIO::TpetraMesh::Mesh::
 ~Mesh()
 {
 }
 // =============================================================================
 unsigned int
-VIO::Mesh::Mesh::
+VIO::TpetraMesh::Mesh::
 getNumNodes() const
 {
   return nodes_.size();
 }
 // =============================================================================
 const Teuchos::ArrayRCP<Point>
-VIO::Mesh::Mesh::
+VIO::TpetraMesh::Mesh::
 getNodes() const
 {
   return nodes_;
 }
 // =============================================================================
 Teuchos::ArrayRCP<Point>
-VIO::Mesh::Mesh::
+VIO::TpetraMesh::Mesh::
 getNodesNonConst()
 {
   return nodes_;
 }
 // =============================================================================
 void
-VIO::Mesh::Mesh::
+VIO::TpetraMesh::Mesh::
 setNodes( const Teuchos::ArrayRCP<Point> nodes )
 {
   nodes_ = nodes;
@@ -70,7 +70,7 @@ setNodes( const Teuchos::ArrayRCP<Point> nodes )
 }
 // =============================================================================
 void
-VIO::Mesh::Mesh::
+VIO::TpetraMesh::Mesh::
 setBoundaryNodes( const Teuchos::ArrayRCP<bool> isBoundaryNode )
 {
   isBoundaryNode_ = isBoundaryNode;
@@ -78,28 +78,28 @@ setBoundaryNodes( const Teuchos::ArrayRCP<bool> isBoundaryNode )
 }
 // =============================================================================
 const Teuchos::ArrayRCP<const bool>
-VIO::Mesh::Mesh::
+VIO::TpetraMesh::Mesh::
 getBoundaryNodes() const
 {
   return isBoundaryNode_;
 }
 // =============================================================================
 const Teuchos::ArrayRCP<Teuchos::ArrayRCP<ORD> >
-VIO::Mesh::Mesh::
+VIO::TpetraMesh::Mesh::
 getElems() const
 {
   return elems_;
 }
 // =============================================================================
 Teuchos::ArrayRCP<Teuchos::ArrayRCP<ORD> >
-VIO::Mesh::Mesh::
+VIO::TpetraMesh::Mesh::
 getElemsNonConst()
 {
   return elems_;
 }
 // =============================================================================
 void
-VIO::Mesh::Mesh::
+VIO::TpetraMesh::Mesh::
 setElems( const Teuchos::ArrayRCP<Teuchos::ArrayRCP<ORD> > elems )
 {
   elems_ = elems;
@@ -107,22 +107,22 @@ setElems( const Teuchos::ArrayRCP<Teuchos::ArrayRCP<ORD> > elems )
 }
 // =============================================================================
 void
-VIO::Mesh::Mesh::
+VIO::TpetraMesh::Mesh::
 setElemTypes( const Teuchos::ArrayRCP<Mesh::ElementType> elemTypes )
 {
   elemTypes_ = elemTypes;
   return;
 }
 // =============================================================================
-const Teuchos::ArrayRCP<const VIO::Mesh::Mesh::ElementType>
-VIO::Mesh::Mesh::
+const Teuchos::ArrayRCP<const VIO::TpetraMesh::Mesh::ElementType>
+VIO::TpetraMesh::Mesh::
 getElemTypes() const
 {
   return elemTypes_;
 }
 // =============================================================================
 Teuchos::RCP<DoubleVector>
-VIO::Mesh::Mesh::
+VIO::TpetraMesh::Mesh::
 getControlVolumes() const
 {
   if ( !fvmEntitiesUpToDate_ )
@@ -134,7 +134,7 @@ getControlVolumes() const
 }
 // =============================================================================
 Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >
-VIO::Mesh::Mesh::
+VIO::TpetraMesh::Mesh::
 getEdgeLengths() const
 {
   if ( !fvmEntitiesUpToDate_ )
@@ -144,7 +144,7 @@ getEdgeLengths() const
 }
 // =============================================================================
 Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >
-VIO::Mesh::Mesh::
+VIO::TpetraMesh::Mesh::
 getCoedgeLengths() const
 {
   if ( !fvmEntitiesUpToDate_ )
@@ -154,7 +154,7 @@ getCoedgeLengths() const
 }
 // =============================================================================
 double
-VIO::Mesh::Mesh::
+VIO::TpetraMesh::Mesh::
 getDomainArea() const
 {
   if ( !fvmEntitiesUpToDate_ )
@@ -164,7 +164,7 @@ getDomainArea() const
 }
 // =============================================================================
 void
-VIO::Mesh::Mesh::
+VIO::TpetraMesh::Mesh::
 scale( double alpha )
 {
    this->scale( Teuchos::tuple( alpha, alpha, alpha ) );
@@ -172,7 +172,7 @@ scale( double alpha )
 }
 // =============================================================================
 void
-VIO::Mesh::Mesh::
+VIO::TpetraMesh::Mesh::
 scale( const Teuchos::Tuple<double,3> & newScaling )
 {
    // adapt the position of the nodes
@@ -196,7 +196,7 @@ scale( const Teuchos::Tuple<double,3> & newScaling )
 }
 // =============================================================================
 double
-VIO::Mesh::Mesh::
+VIO::TpetraMesh::Mesh::
 computeDomainArea_() const
 {
   // break it down into a non-overlapping map
@@ -215,7 +215,7 @@ computeDomainArea_() const
 }
 // =============================================================================
 void
-VIO::Mesh::Mesh::
+VIO::TpetraMesh::Mesh::
 computeFvmEntities_() const
 { 
   // Compute the volume of the (Voronoi) control cells for each point.
@@ -282,7 +282,7 @@ computeFvmEntities_() const
 }
 // =============================================================================
 void
-VIO::Mesh::Mesh::
+VIO::TpetraMesh::Mesh::
 sumInOverlapMap_( Teuchos::RCP<DoubleVector> x ) const
 {
   Teuchos::RCP<Tpetra::Map<ORD> > nonoverlapMap =
@@ -303,7 +303,7 @@ sumInOverlapMap_( Teuchos::RCP<DoubleVector> x ) const
 }
 // =============================================================================
 Teuchos::RCP<Tpetra::Map<ORD> >
-VIO::Mesh::Mesh::
+VIO::TpetraMesh::Mesh::
 getElemsToNodesMap_() const
 {
   // create list of elements that need to be accessible from this process
@@ -333,7 +333,7 @@ getElemsToNodesMap_() const
 }
 // =============================================================================
 Point
-VIO::Mesh::Mesh::
+VIO::TpetraMesh::Mesh::
 add_( double alpha, const Point & x,
       double beta,  const Point & y
     ) const
@@ -346,7 +346,7 @@ add_( double alpha, const Point & x,
 }
 // =============================================================================
 double
-VIO::Mesh::Mesh::
+VIO::TpetraMesh::Mesh::
 getTriangleArea_( const Point & x0,
                   const Point & x1,
                   const Point & x2
@@ -359,7 +359,7 @@ getTriangleArea_( const Point & x0,
 }
 // =============================================================================
 Point
-VIO::Mesh::Mesh::
+VIO::TpetraMesh::Mesh::
 computeCircumcenter_( const Point & x0, const Point & x1, const Point & x2
                     ) const
 { 
@@ -397,7 +397,7 @@ computeCircumcenter_( const Point & x0, const Point & x1, const Point & x2
 }
 // =============================================================================
 double
-VIO::Mesh::Mesh::
+VIO::TpetraMesh::Mesh::
 dot_( const Point & v, const Point & w
     ) const
 {
@@ -408,7 +408,7 @@ dot_( const Point & v, const Point & w
 }
 // =============================================================================
 Point
-VIO::Mesh::Mesh::
+VIO::TpetraMesh::Mesh::
 cross_( const Point & v, const Point & w
       ) const
 { 
@@ -422,7 +422,7 @@ cross_( const Point & v, const Point & w
 }
 // =============================================================================
 double
-VIO::Mesh::Mesh::
+VIO::TpetraMesh::Mesh::
 norm2_( const Point & x
       ) const
 {

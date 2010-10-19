@@ -9,9 +9,12 @@ SET ( vio_SRCS
       VIO_Image_Reader_Abstract.cpp
       VIO_Image_Reader_VTI.cpp
       VIO_Image_Reader_legacyVTK.cpp
-      VIO_Mesh_Mesh.cpp
-      VIO_Mesh_Reader.cpp
-      VIO_Mesh_Writer.cpp
+      VIO_TpetraMesh_Mesh.cpp
+      VIO_TpetraMesh_Reader.cpp
+      VIO_TpetraMesh_Writer.cpp
+      VIO_EpetraMesh_Mesh.cpp
+      VIO_EpetraMesh_Reader.cpp
+      VIO_EpetraMesh_Writer.cpp
     )
 
 FIND_PACKAGE( Trilinos REQUIRED )

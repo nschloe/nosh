@@ -87,23 +87,23 @@ real2complex ( const Epetra_Vector & x ) const
 //     TEST_FOR_EXCEPTION ( !RealMap_.is_valid_ptr() || RealMap_.is_null(),
 //                          std::logic_error,
 //                          "RealMap_ not properly initialized." );
-// 
+//
 //     TEST_FOR_EXCEPTION ( !x.Map().SameAs ( *RealMap_ ),
 //                          std::logic_error,
 //                          "Maps for real-valued vectors do not coincide. "
 //                          << "Check, for example, the number of elements "
 //                          << "(" << x.Map().NumGlobalElements() << " for x vs. "
 //                          << RealMap_->NumGlobalElements() << " for RealMap_)." );
-// 
+//
 //     TEST_FOR_EXCEPTION ( !ComplexMap_.is_valid_ptr() || ComplexMap_.is_null(),
 //                          std::logic_error,
 //                          "ComplexMap_ has not been properly initialized." );
-// 
+//
 //     Teuchos::RCP<ComplexVector> z = Teuchos::rcp ( new ComplexVector ( ComplexMap_ ) );
 //     Teuchos::ArrayRCP<double_complex> zView = z->get1dViewNonConst();
 //     for ( unsigned int k=0; k < z->getLocalLength(); k++ )
 //         zView[k] = double_complex ( x[2*k], x[2*k+1] );
-// 
+//
 //     return z;
 // }
 // =============================================================================
@@ -145,7 +145,7 @@ Teuchos::RCP<Epetra_Vector>
 Komplex2::LinearProblem::
 complex2real ( const Teuchos::RCP<const ComplexVector> & complexVecPtr ) const
 {
-  
+
     TEUCHOS_ASSERT ( complexVecPtr.is_valid_ptr() && !complexVecPtr.is_null() );
     return this->complex2real ( *complexVecPtr );
 }
@@ -174,7 +174,7 @@ createRealMap_ ( const Teuchos::RCP<const ComplexMap> & ComplexMap
         myRealGIDs[2*k  ] = 2 * myComplexGIDs[k];
         myRealGIDs[2*k+1] = 2 * myComplexGIDs[k] + 1;
     }
-    
+
     return Teuchos::rcp ( new Epetra_Map ( -1,
                                            myRealGIDs.size(),
                                            myRealGIDs.getRawPtr(),
@@ -257,20 +257,20 @@ update ( const Teuchos::RCP<const Komplex2::DoubleMatrix> AB,
          Thyra::Ordinal globalRow = ComplexMap_->getGlobalElement ( row );
 
          AB->getMatrixA()->getLocalRowView( row,
-                                             indicesA,
-                                             valuesA
-                                           );
+                                            indicesA,
+                                            valuesA
+                                          );
 
          AB->getMatrixB()->getLocalRowView( row,
-                                             indicesB,
-                                             valuesB
-                                           );
+                                            indicesB,
+                                            valuesB
+                                          );
 
         this->updateGlobalRow ( globalRow,
                                 indicesA(), valuesA(),
                                 indicesB(), valuesB(),
                                 firstTime
-                              ); 
+                              );
     }
 
     return;
@@ -307,7 +307,7 @@ updateGlobalRowA ( const unsigned int                                globalRow,
                                                            )
                               );
     // -------------------------------------------------------------------
-    // insert the coefficients -Im(A) of Im(z)    
+    // insert the coefficients -Im(A) of Im(z)
     for ( int k = 0; k < numEntries; k++ )
     {
         indicesReal[k] = 2 * indicesA[k] + 1;
@@ -338,7 +338,7 @@ updateGlobalRowA ( const unsigned int                                globalRow,
                                                            )
                               );
     // -------------------------------------------------------------------
-    // insert the coefficients Re(A) of Im(z)    
+    // insert the coefficients Re(A) of Im(z)
     for ( int k = 0; k < numEntries; k++ )
     {
         indicesReal[k] = 2 * indicesA[k] + 1;
@@ -352,7 +352,7 @@ updateGlobalRowA ( const unsigned int                                globalRow,
                                                            )
                               );
     // -------------------------------------------------------------------
-    
+
     return;
 }
 // =============================================================================
@@ -394,7 +394,7 @@ updateGlobalRowB ( const unsigned int                                globalRow,
         valuesReal[k]  = std::imag ( valuesB[k] );
     }
 
-    TEUCHOS_ASSERT_INEQUALITY ( 0, <=, this->PutGlobalRow_ ( realRow, 
+    TEUCHOS_ASSERT_INEQUALITY ( 0, <=, this->PutGlobalRow_ ( realRow,
                                                              valuesReal(),
                                                              indicesReal(),
                                                              firstTime
@@ -466,7 +466,7 @@ PutGlobalRow_ ( int                                    globalRow,
                 const Teuchos::ArrayView<const int>    globalIndices,
                 bool                                   firstTime
               )
-{ 
+{
     // We *need* to use the global variant here as the column map
     // of the real matrix is only determined at the first FillComplete(),
     // so InsertLocalValues() does not have any meaning.
@@ -524,16 +524,16 @@ getMatrix() const
 // {
 //     TEUCHOS_ASSERT ( a.is_valid_ptr() && !a.is_null() );
 //     TEUCHOS_ASSERT ( a->getMap()->isSameAs ( *ComplexMap_ ) );
-// 
+//
 //     Teuchos::RCP<Epetra_Vector> compound = Teuchos::rcp ( new Epetra_Vector ( *RealMap_ ) );
-// 
+//
 //     Teuchos::ArrayRCP<const double_complex> aView = a->get1dView();
 //     for ( unsigned int k=0; k<ComplexMap_->getNodeNumElements(); k++ )
 //     {
 //         ( *compound ) [2*k]   = -std::imag ( aView[k] );
 //         ( *compound ) [2*k+1] =  std::real ( aView[k] );
 //     }
-// 
+//
 //     return compound;
 // }
 // =============================================================================

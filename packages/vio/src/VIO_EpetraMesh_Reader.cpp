@@ -17,9 +17,9 @@
 
 */
 
-#include "VIO_Mesh_Reader.h"
+#include "VIO_EpetraMesh_Reader.h"
 
-#include "VIO_Mesh_Mesh.h"
+#include "VIO_EpetraMesh_Mesh.h"
 
 #include <vtkUnstructuredGridReader.h>
 #include <vtkXMLUnstructuredGridReader.h>
@@ -31,39 +31,41 @@
 #include <vtkPointData.h>
 #include <vtkCellArray.h>
 
+#include <Epetra_Comm.h>
+
 // =============================================================================
-VIO::Mesh::Reader::
+VIO::EpetraMesh::Reader::
 Reader ( const std::string & filePath ):
   VIO::Reader::Abstract( filePath )
 {
 }
 // =============================================================================
-VIO::Mesh::Reader::
+VIO::EpetraMesh::Reader::
 ~Reader ()
 {
 }
 // =============================================================================
 void
-VIO::Mesh::Reader::
-read ( Teuchos::RCP<ComplexMultiVector>              & z,
-       Teuchos::RCP<Mesh>                            & mesh,
-       Teuchos::ParameterList                        & fieldData,
-       const Teuchos::RCP<const Teuchos::Comm<int> > & TComm
+VIO::EpetraMesh::Reader::
+read ( Teuchos::RCP<Epetra_Vector>           & z,
+       Teuchos::RCP<EpetraMesh::Mesh>        & mesh,
+       Teuchos::ParameterList                & fieldData,
+       const Teuchos::RCP<const Epetra_Comm> & comm
      )
 {
-  
-  if ( TComm->getRank() == 1 ) std::cout << "a" << std::endl;
+
+  if ( comm->MyPID() == 1 ) std::cout << "a" << std::endl;
 
     // check the filename extension
     int         dotPos    = filePath_.rfind ( "." );
     std::string extension = filePath_.substr ( dotPos+1, filePath_.size()-dotPos-1 );
-  
-  if ( TComm->getRank() == 1 ) std::cout << "b" << std::endl;
-  
+
+  if (  comm->MyPID() == 1 ) std::cout << "b" << std::endl;
+
     vtkSmartPointer<vtkUnstructuredGrid> vtkMesh;
-  
-  if ( TComm->getRank() == 1 ) std::cout << "c" << std::endl;
-    
+
+  if ( comm->MyPID() == 1 ) std::cout << "c" << std::endl;
+
     if ( extension.compare ( "vtk" ) == 0 )
     {
         vtkSmartPointer<vtkUnstructuredGridReader> reader =
@@ -75,17 +77,17 @@ read ( Teuchos::RCP<ComplexMultiVector>              & z,
     }
     else if ( extension.compare ( "vtu" ) == 0 )
     {
-      
-      if ( TComm->getRank() == 1 ) std::cout << "d" << std::endl;
+
+      if ( comm->MyPID() == 1 ) std::cout << "d" << std::endl;
         vtkSmartPointer<vtkXMLUnstructuredGridReader> reader =
             vtkSmartPointer<vtkXMLUnstructuredGridReader>::New();
-            if ( TComm->getRank() == 1 ) std::cout << "e" << std::endl;
+            if ( comm->MyPID()== 1 ) std::cout << "e" << std::endl;
         reader->SetFileName ( filePath_.c_str() );
-      if ( TComm->getRank() == 1 ) std::cout << "f" << std::endl;
+      if ( comm->MyPID() == 1 ) std::cout << "f" << std::endl;
         reader->Update();
-      if ( TComm->getRank() == 1 ) std::cout << "g" << std::endl;
+      if ( comm->MyPID() == 1 ) std::cout << "g" << std::endl;
         vtkMesh = reader->GetOutput();
-      if ( TComm->getRank() == 1 ) std::cout << "h" << std::endl;
+      if ( comm->MyPID() == 1 ) std::cout << "h" << std::endl;
     }
     else if ( extension.compare ( "pvtu" ) == 0 )
     {
@@ -104,50 +106,59 @@ read ( Teuchos::RCP<ComplexMultiVector>              & z,
                              << "not recognized. Must be one of \"vtk\", "
                              << "\"vtu\"." );
     }
-    
-    
-    if ( TComm->getRank() == 1 ) std::cout << "i" << std::endl;
+
+
+    if ( comm->MyPID() == 1 ) std::cout << "i" << std::endl;
     // read the data
-    z         = this->extractStateData_ ( vtkMesh, TComm );
-    if ( TComm->getRank() == 1 ) std::cout << "j" << std::endl;
-    mesh      = this->extractMeshData_ ( vtkMesh, TComm );
-    if ( TComm->getRank() == 1 ) std::cout << "k" << std::endl;
+    z         = this->extractStateData_ ( vtkMesh, comm );
+    if ( comm->MyPID() == 1 ) std::cout << "j" << std::endl;
+    mesh      = this->extractMeshData_ ( vtkMesh, comm );
+    if ( comm->MyPID() == 1 ) std::cout << "k" << std::endl;
     fieldData = this->readFieldData_ ( vtkMesh );
-    if ( TComm->getRank() == 1 ) std::cout << "l" << std::endl;
-    
+    if ( comm->MyPID() == 1 ) std::cout << "l" << std::endl;
+
     return;
 }
 // =============================================================================
-Teuchos::RCP<VIO::Mesh::Mesh>
-VIO::Mesh::Reader::
-extractMeshData_( const vtkSmartPointer<vtkUnstructuredGrid>    & vtkMesh,
-                  const Teuchos::RCP<const Teuchos::Comm<int> > & TComm
+Teuchos::RCP<VIO::EpetraMesh::Mesh>
+VIO::EpetraMesh::Reader::
+extractMeshData_( const vtkSmartPointer<vtkUnstructuredGrid> & vtkMesh,
+                  const Teuchos::RCP<const Epetra_Comm>      & comm
                 ) const
-{ 
-  Teuchos::RCP<Mesh> mesh = Teuchos::rcp( new Mesh( TComm ) );
+{
 
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
-  // get points
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  // create the maps based on the number of points
   int numPoints = vtkMesh->GetNumberOfPoints();
+  Teuchos::RCP<Epetra_Map> nodesMap = Teuchos::rcp( new Epetra_Map( numPoints, 0, *comm ) );
+  Teuchos::RCP<Epetra_Map> complexValuesMap = createComplexValuesMap_ ( *nodesMap );
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  Teuchos::RCP<Mesh> mesh = Teuchos::rcp( new Mesh( comm,
+                                                    nodesMap,
+                                                    complexValuesMap
+                                                  )
+                                        );
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  // get points
   Teuchos::ArrayRCP<Point> points( numPoints );
   for ( unsigned int k=0; k<numPoints; k++ )
       vtkMesh->GetPoint( k, points[k].getRawPtr() );
 
   mesh->setNodes( points );
 
-  
+
 //   for ( int k=0; k<points.size(); k++ )
 //       std::cout << points[k] << std::endl;
-//   
+//
 //   std::cout << "VVV" << std::endl;
 //   vtkMesh->Print( std::cout );
-  
+
   // determine the boundary points
   // transform vtkMesh into vtkPolyData
-  vtkSmartPointer<vtkDataSetSurfaceFilter> surfaceFilter = 
+  vtkSmartPointer<vtkDataSetSurfaceFilter> surfaceFilter =
       vtkSmartPointer<vtkDataSetSurfaceFilter>::New();
   surfaceFilter->SetInput(vtkMesh);
-  surfaceFilter->Update(); 
+  surfaceFilter->Update();
 //   vtkPolyData* polydata = surfaceFilter->GetOutput();
 
   // filter out the boundary edges
@@ -158,12 +169,12 @@ extractMeshData_( const vtkSmartPointer<vtkUnstructuredGrid>    & vtkMesh,
   pEdges->NonManifoldEdgesOff();
   pEdges->ManifoldEdgesOff();
   pEdges->Update();
-  
+
   vtkPolyData * poly = pEdges->GetOutput();
-  
+
 //   pEdges->ColoringOff();
 // //   pEdges->GetOutput()->BuildCells();
-//   
+//
 //   std::cout << "V1" << std::endl;
 //   std::cout << pEdges->GetOutput()->GetNumberOfCells() << std::endl;
 //   std::cout << pEdges->GetOutput()->GetNumberOfLines() << std::endl;
@@ -173,12 +184,12 @@ extractMeshData_( const vtkSmartPointer<vtkUnstructuredGrid>    & vtkMesh,
 //   std::cout << pEdges->GetOutput()->GetNumberOfVerts() << std::endl;
 //   std::cout << pEdges->GetOutput()->GetNumberOfPoints() << std::endl;
 // //   std::cout << pEdges->GetOutput()->GetNumberOfElements() << std::endl;
-//   
+//
 // //   pEdges->GetOutput()->GetLines()->GetCell(0)->Print( std::cout );
-//   
+//
 // //   pEdges->GetOutput()->BuildCells();
 //   TEUCHOS_ASSERT_EQUALITY( 0, pEdges->GetErrorCode() );
-// 
+//
 //   std::cout << "W-1" << std::endl;
 //   int numLines = poly->GetNumberOfLines();
 //   vtkIdType * pts;
@@ -188,7 +199,7 @@ extractMeshData_( const vtkSmartPointer<vtkUnstructuredGrid>    & vtkMesh,
 //       vtkIdType numPoints;
 //       pEdges->GetOutput()->GetLines()->GetCell( lineId, numPoints, pts );
 // //       pEdges->GetOutput()->GetCellPoints( cellId, pts2 );
-//       
+//
 //       if ( numPoints!=2 )
 //       {
 //         std::cout << "AAAAAAAAH!" << std::endl;
@@ -198,13 +209,13 @@ extractMeshData_( const vtkSmartPointer<vtkUnstructuredGrid>    & vtkMesh,
 //       TEUCHOS_ASSERT_EQUALITY( numPoints, 2 );
 //       std::cout << pts[0] << " " << pts[1] << std::endl;
 //   }
-  
+
 //   std::cout << "W0" << std::endl;
 //   poly->GetLines()->Print( std::cout );
-//   
+//
 //   std::cout << "W1" << std::endl;
 //   poly->GetPoints()->Print( std::cout );
-//   
+//
 //   std::cout << "W2" << std::endl;
 
   double x[3];
@@ -217,24 +228,24 @@ extractMeshData_( const vtkSmartPointer<vtkUnstructuredGrid>    & vtkMesh,
       isBoundaryNodes[ ptId ] = true;
   }
   mesh->setBoundaryNodes( isBoundaryNodes );
-  
+
 //   for ( int k=0; k<boundaryPoints.size(); k++ )
 //     std::cout << boundaryPoints[k] << std::endl;
-  
+
 //   std::cout << "WWW" << std::endl;
 //   poly->Print( std::cout );
 //   vtkCellArray * verts = poly->GetVerts();
 //   verts->Print( std::cout );
-  
+
 //   std::cout << "XXX" << std::endl;
 //   poly->GetData()->Print( std::cout );
-  
+
 //   int numBoundaryPoints = poly->GetNumberOfPoints();
 //   Teuchos::ArrayRCP<Teuchos::Tuple<double,3> > boundaryPoints( numBoundaryPoints );
 //   for ( unsigned int k=0; k<numBoundaryPoints; k++ )
 //       poly->GetPoint( k, boundaryPoints[k].getRawPtr() );
 //   mesh->setBoundaryNodes( boundaryPoints );
-  
+
 //   for ( int k=0; k<points.size(); k++ )
 //       std::cout << boundaryPoints[k] << std::endl;
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -242,20 +253,20 @@ extractMeshData_( const vtkSmartPointer<vtkUnstructuredGrid>    & vtkMesh,
   int globalNumElems = vtkMesh->GetNumberOfCells();
 
   // create an appropriate map
-  Teuchos::RCP<const Tpetra::Map<ORD> > elemsMap =
-      Teuchos::rcp ( new Tpetra::Map<ORD> ( globalNumElems, 0, TComm ) );
-  
-  int localNumElems = elemsMap->getNodeNumElements();
-        
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<ORD> > elems( localNumElems );
+  Teuchos::RCP<const Epetra_Map> elemsMap =
+      Teuchos::rcp ( new Epetra_Map ( globalNumElems, 0, *comm ) );
+
+  int localNumElems = elemsMap->NumMyElements();
+
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<int> > elems( localNumElems );
   Teuchos::ArrayRCP<Mesh::ElementType>       elemTypes( localNumElems );
-  
+
   for ( unsigned int k=0; k<localNumElems; k++ )
   {
       // set the connectivity table
-      vtkCell * cell = vtkMesh->GetCell( elemsMap->getGlobalElement(k) );
+      vtkCell * cell = vtkMesh->GetCell( elemsMap->GID(k) );
       int numPoints = cell->GetNumberOfPoints();
-      elems[k] = Teuchos::ArrayRCP<ORD>( numPoints );
+      elems[k] = Teuchos::ArrayRCP<int>( numPoints );
       for ( unsigned int l=0; l<numPoints; l++ )
           elems[k][l] = cell->GetPointId( l );
 
@@ -311,63 +322,94 @@ extractMeshData_( const vtkSmartPointer<vtkUnstructuredGrid>    & vtkMesh,
       }
   }
   mesh->setElems( elems );
-  
+
   mesh->setElemTypes( elemTypes );
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   return mesh;
 }
 // =============================================================================
-Teuchos::RCP<ComplexMultiVector>
-VIO::Mesh::Reader::
-extractStateData_ ( const vtkSmartPointer<vtkDataSet>             & vtkData,
-                    const Teuchos::RCP<const Teuchos::Comm<int> > & TComm
+Teuchos::RCP<Epetra_Vector>
+VIO::EpetraMesh::Reader::
+extractStateData_ ( const vtkSmartPointer<vtkDataSet>     & vtkData,
+                    const Teuchos::RCP<const Epetra_Comm> & comm
                   ) const
-{ 
+{
     vtkIdType numArrays = vtkData->GetPointData()->GetNumberOfArrays();
 
     TEUCHOS_ASSERT_EQUALITY ( numArrays, 1 );
 
-    const vtkSmartPointer<vtkDataArray> & array = 
+    const vtkSmartPointer<vtkDataArray> & array =
         vtkData->GetPointData()->GetArray(0);
-    
+
     vtkIdType numComponents = array->GetNumberOfComponents();
 
     TEUCHOS_ASSERT_EQUALITY ( numComponents, 2 );    // for *complex* values
-    
+
     // this is the total number of grid points
     vtkIdType numPoints = array->GetNumberOfTuples();
 
-    // create an appropriate map
-    Teuchos::RCP<const Tpetra::Map<ORD> > ComplexMap =
-        Teuchos::rcp ( new Tpetra::Map<ORD> ( numPoints, 0, TComm ) );
+    // Create maps.
+    // TODO They are created at another spot already. Avoid the work.
+    Teuchos::RCP<Epetra_Map> nodesMap = Teuchos::rcp( new Epetra_Map( numPoints, 0, *comm ) );
+    Teuchos::RCP<Epetra_Map> complexValuesMap = createComplexValuesMap_ ( *nodesMap );
 
-    Teuchos::RCP<ComplexMultiVector> z =
-        Teuchos::rcp ( new ComplexVector ( ComplexMap ) );
+    Teuchos::RCP<Epetra_Vector> z =
+        Teuchos::rcp ( new Epetra_Vector ( *complexValuesMap ) );
 
     // fill z
-    Teuchos::ArrayRCP<std::complex<double> > zLocalView = z->get1dViewNonConst();
     double val[2];
-    for ( int k = 0; k < zLocalView.size(); k++ )
+    for ( int k = 0; k < nodesMap->NumMyElements(); k++ )
     {
-        array->GetTuple( ComplexMap->getGlobalElement(k), val );
-        zLocalView[k] = double_complex( val[0], val[1] );
+        array->GetTuple( nodesMap->GID(k), val );
+        z->ReplaceMyValue( 2*k  , 0, val[0] );
+        z->ReplaceMyValue( 2*k+1, 0, val[1] );
     }
 
     return z;
 }
 // =============================================================================
+Teuchos::RCP<Epetra_Map>
+VIO::EpetraMesh::Reader::
+createComplexValuesMap_ ( const Epetra_Map  & nodesMap
+                        ) const
+{
+    // get view for the global indices of the global elements
+    int numMyElements = nodesMap.NumMyElements();
+    Teuchos::ArrayRCP<int> myGlobalElements( numMyElements );
+    nodesMap.MyGlobalElements( myGlobalElements.getRawPtr() );
+
+    // Construct the map in such a way that all complex entries on processor K
+    // are split up into real and imaginary part, which will both reside on
+    // processor K again.
+    int numMyComplexElements = 2*numMyElements;
+    Teuchos::ArrayRCP<int> myComplexGlobalElements ( numMyComplexElements );
+    for ( int k = 0; k < numMyElements; k++ )
+    {
+        myComplexGlobalElements[2*k  ] = 2 * myGlobalElements[k];
+        myComplexGlobalElements[2*k+1] = 2 * myGlobalElements[k] + 1;
+    }
+
+    return Teuchos::rcp ( new Epetra_Map ( -1,
+                                           myComplexGlobalElements.size(),
+                                           myComplexGlobalElements.getRawPtr(),
+                                           nodesMap.IndexBase(),
+                                           nodesMap.Comm()
+                                         )
+                        );
+}
+// =============================================================================
 // non-member function
 void
-VIO::Mesh::
-read ( const Teuchos::RCP<const Teuchos::Comm<int> > & TComm,
-       const std::string                             & filePath,
-       Teuchos::RCP<ComplexMultiVector>              & z,
-       Teuchos::RCP<VIO::Mesh::Mesh>                 & mesh,
-       Teuchos::ParameterList                        & fieldData
+VIO::EpetraMesh::
+read ( const Teuchos::RCP<const Epetra_Comm> & comm,
+       const std::string                     & filePath,
+       Teuchos::RCP<Epetra_Vector>           & z,
+       Teuchos::RCP<VIO::EpetraMesh::Mesh>   & mesh,
+       Teuchos::ParameterList                & fieldData
      )
 {
-  VIO::Mesh::Reader reader( filePath );
-  reader.read( z, mesh, fieldData, TComm );
+  VIO::EpetraMesh::Reader reader( filePath );
+  reader.read( z, mesh, fieldData, comm );
   return;
 }
 // =============================================================================

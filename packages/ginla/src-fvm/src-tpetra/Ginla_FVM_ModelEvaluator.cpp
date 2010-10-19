@@ -33,7 +33,7 @@
 
 // ============================================================================
 Ginla::FVM::ModelEvaluator::
-ModelEvaluator ( const Teuchos::RCP<VIO::Mesh::Mesh>                         & mesh,
+ModelEvaluator ( const Teuchos::RCP<VIO::TpetraMesh::Mesh>                         & mesh,
                  const Teuchos::ParameterList                                & problemParams,
                  const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp,
                  const Teuchos::RCP<Komplex2::LinearProblem>                 & komplex,

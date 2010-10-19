@@ -17,8 +17,8 @@
 
 */
 
-#ifndef VIO_MESH_WRITER_H
-#define VIO_MESH_WRITER_H
+#ifndef VIO_TPETRAMESH_WRITER_H
+#define VIO_TPETRAMESH_WRITER_H
 // =============================================================================
 #include "VIO_Typedefs.h"
 
@@ -35,13 +35,13 @@
 #include <vtkUnstructuredGrid.h>
 // =============================================================================
 namespace VIO {
-  namespace Mesh {
+  namespace TpetraMesh {
     class Mesh;
   }
 }
 // =============================================================================
 namespace VIO {
-namespace Mesh {
+namespace TpetraMesh {
 class Writer:
   public VIO::Writer::Abstract
 {
@@ -55,18 +55,18 @@ public:
     write () const; // pure virtual
 
     void
-    setMesh( const VIO::Mesh::Mesh & mesh );
+    setMesh( const VIO::TpetraMesh::Mesh & mesh );
 
     void
     setValues( const Epetra_MultiVector          & x,
                const Teuchos::Array<std::string> & scalarsNames = Teuchos::Array<std::string>()
              );
-               
+
     void
     setValues( const Tpetra::MultiVector<double> & x,
                const Teuchos::Array<std::string> & scalarsNames = Teuchos::Array<std::string>()
              );
-             
+
     void
     setValues( const ComplexMultiVector          & z,
                const Teuchos::Array<std::string> & scalarsNames = Teuchos::Array<std::string>()
@@ -75,17 +75,17 @@ public:
 //    //! Add a parameter list to be stored in the field data section of the file.
 //     void
 //     addParameterList ( const Teuchos::ParameterList & problemParams );
-// 
+//
 //     //! Add extra field data to be stored in the file.
 //     void
 //     addFieldData ( const Teuchos::Array<int> & array,
 //                    const std::string         & name );
   protected:
   private:
-    Teuchos::RCP<VIO::Mesh::Mesh> mesh_;
+    Teuchos::RCP<VIO::TpetraMesh::Mesh> mesh_;
     Teuchos::RCP<const Teuchos::Comm<int> > comm_;
 };
 }
 }
 // =============================================================================
-#endif // VIO_MESH_WRITER_H
+#endif // VIO_TPETRAMESH_WRITER_H

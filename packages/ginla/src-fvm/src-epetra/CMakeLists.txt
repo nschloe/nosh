@@ -1,8 +1,8 @@
 SET ( ginla_SRCS
-      Ginla_FVM_State.cpp
-      Ginla_FVM_ModelEvaluator.cpp
-      Ginla_FVM_JacobianOperator.cpp
-      Ginla_FVM_KineticEnergy.cpp
+      Ginla_EpetraFVM_State.cpp
+      Ginla_EpetraFVM_ModelEvaluator.cpp
+      Ginla_EpetraFVM_JacobianOperator.cpp
+      Ginla_EpetraFVM_KineticEnergyOperator.cpp
     )
 
 FIND_PACKAGE( Trilinos REQUIRED )
@@ -16,5 +16,5 @@ INCLUDE_DIRECTORIES( ${ginzburg-landau_SOURCE_DIR}/packages/ginla/src
                      ${ginzburg-landau_SOURCE_DIR}/packages/vio/src
                    )
 
-ADD_LIBRARY ( ginlafvm
+ADD_LIBRARY ( ginlafvm-epetra
               ${ginla_SRCS} )

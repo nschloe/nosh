@@ -11,7 +11,7 @@ INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/packages/vio/src
                       ${ginzburg-landau_SOURCE_DIR}/packages/recti/src
                       ${ginzburg-landau_SOURCE_DIR}/packages/ginla/src
                       ${ginzburg-landau_SOURCE_DIR}/packages/ginla/src-fdm
-                      ${ginzburg-landau_SOURCE_DIR}/packages/ginla/src-fvm
+                      ${ginzburg-landau_SOURCE_DIR}/packages/ginla/src-fvm/src-tpetra
                       ${VTK_INCLUDE_DIRS}
                       ${Trilinos_INCLUDE_DIRS}
                       ${Trilinos_TPL_INCLUDE_DIRS} )
@@ -45,7 +45,7 @@ TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
 SET ( pirodriverfvm_SRCS
       piro-driver-fvm.cpp  )
 SET ( pirodriverfvm_LIBS
-      ginlafvm
+      ginlafvm-tpetra
       ginla
       komplex2
       recti

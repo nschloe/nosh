@@ -17,12 +17,12 @@
 
 */
 
-#include "Ginla_FVM_EpetraModelEvaluator.h"
+#include "Ginla_EpetraFVM_ModelEvaluator.h"
 
 #include "Komplex2_LinearProblem.h"
 #include "Komplex2_DoubleMatrix.h"
 
-#include "Ginla_FVM_State.h"
+#include "Ginla_EpetraFVM_State.h"
 #include "Ginla_State_Virtual.h"
 #include "Ginla_MagneticVectorPotential_Virtual.h"
 
@@ -33,51 +33,47 @@
 #include <Epetra_SerialDenseMatrix.h>
 
 // ============================================================================
-Ginla::FVM::ModelEvaluator::
-ModelEvaluator ( const Teuchos::RCP<VIO::Mesh::Mesh>                         & mesh,
+Ginla::EpetraFVM::ModelEvaluator::
+ModelEvaluator ( const Teuchos::RCP<VIO::EpetraMesh::Mesh>                   & mesh,
                  const Teuchos::ParameterList                                & problemParams,
                  const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp,
                  const Teuchos::RCP<Komplex2::LinearProblem>                 & komplex,
-                 const Teuchos::RCP<Ginla::FVM::State>                       & initialState
+                 const Teuchos::RCP<Ginla::EpetraFVM::State>                 & initialState
                ) :
         mesh_ ( mesh ),
         komplex_ ( komplex ),
-        mvp_( mvp ),
         x_(  Teuchos::null ),
         firstTime_ ( true ),
         numParams_( 1 ),
         p_map_( Teuchos::null ),
         p_init_( Teuchos::null ),
         p_names_( Teuchos::null ),
-        p_current_( Teuchos::null )
-//        jacobianOperator_( Teuchos::rcp( new Komplex2::DoubleMatrix( komplex_->getComplexMap(),
-//                                                                     komplex_->getComplexMap()
-//                                                                   )
-//                                       )
-//                         )
+        p_current_( Teuchos::null ),
+        keo_( Teuchos::rcp( new Ginla::EpetraFVM::KineticEnergyOperator( mesh, mvp ) ) ),
+        jacobianOperator_( Teuchos::rcp( new Ginla::EpetraFVM::JacobianOperator( mesh, keo_ ) ) )
 {
   this->setupParameters_( problemParams );
 
   // prepare initial guess
-//   Teuchos::RCP<Ginla::FVM::State> initialState =
-//       Teuchos::rcp( new Ginla::FVM::State( komplex_->getComplexMap(), mesh_) );
+//   Teuchos::RCP<Ginla::EpetraFVM::State> initialState =
+//       Teuchos::rcp( new Ginla::EpetraFVM::State( komplex_->getComplexMap(), mesh_) );
 
 //   initialState->getPsiNonConst()->putScalar( double_complex(1.0,0.0) );
 //   initialState = state;
 //   initialState->getPsiNonConst()->randomize();
 
-  x_ = this->createSystemVector( *initialState );
+  x_ = initialState->getPsiNonConst();
 
   return;
 }
 // ============================================================================
-Ginla::FVM::ModelEvaluator::
+Ginla::EpetraFVM::ModelEvaluator::
 ~ModelEvaluator()
 {
 }
 // ============================================================================
 void
-Ginla::FVM::ModelEvaluator::
+Ginla::EpetraFVM::ModelEvaluator::
 setupParameters_( const Teuchos::ParameterList & params )
 {
   p_names_ = Teuchos::rcp( new Teuchos::Array<std::string>() );
@@ -135,21 +131,21 @@ setupParameters_( const Teuchos::ParameterList & params )
 }
 // ============================================================================
 Teuchos::RCP<const Epetra_Map>
-Ginla::FVM::ModelEvaluator::
+Ginla::EpetraFVM::ModelEvaluator::
 get_x_map() const
 {
   return komplex_->getRealMap();
 }
 // ============================================================================
 Teuchos::RCP<const Epetra_Map>
-Ginla::FVM::ModelEvaluator::
+Ginla::EpetraFVM::ModelEvaluator::
 get_f_map() const
 {
   return komplex_->getRealMap();
 }
 // ============================================================================
 Teuchos::RCP<const Epetra_Vector>
-Ginla::FVM::ModelEvaluator::
+Ginla::EpetraFVM::ModelEvaluator::
 get_x_init () const
 {
   TEUCHOS_ASSERT( !x_.is_null() );
@@ -157,7 +153,7 @@ get_x_init () const
 }
 // ============================================================================
 Teuchos::RCP<const Epetra_Vector>
-Ginla::FVM::ModelEvaluator::
+Ginla::EpetraFVM::ModelEvaluator::
 get_p_init ( int l ) const
 {
   TEUCHOS_ASSERT_EQUALITY( 0, l );
@@ -165,7 +161,7 @@ get_p_init ( int l ) const
 }
 // ============================================================================
 Teuchos::RCP<const Epetra_Map>
-Ginla::FVM::ModelEvaluator::
+Ginla::EpetraFVM::ModelEvaluator::
 get_p_map(int l) const
 {
   TEUCHOS_ASSERT_EQUALITY( 0, l );
@@ -173,7 +169,7 @@ get_p_map(int l) const
 }
 // ============================================================================
 Teuchos::RCP<const Teuchos::Array<std::string> >
-Ginla::FVM::ModelEvaluator::
+Ginla::EpetraFVM::ModelEvaluator::
 get_p_names (int l) const
 {
   TEUCHOS_ASSERT_EQUALITY( 0, l );
@@ -181,7 +177,7 @@ get_p_names (int l) const
 }
 // ============================================================================
 Teuchos::RCP<Epetra_Operator>
-Ginla::FVM::ModelEvaluator::
+Ginla::EpetraFVM::ModelEvaluator::
 create_W() const
 {
   TEUCHOS_ASSERT( !komplex_.is_null() );
@@ -189,7 +185,7 @@ create_W() const
 }
 // ============================================================================
 EpetraExt::ModelEvaluator::InArgs
-Ginla::FVM::ModelEvaluator::
+Ginla::EpetraFVM::ModelEvaluator::
 createInArgs() const
 {
   EpetraExt::ModelEvaluator::InArgsSetup inArgs;
@@ -209,7 +205,7 @@ createInArgs() const
 }
 // ============================================================================
 EpetraExt::ModelEvaluator::OutArgs
-Ginla::FVM::ModelEvaluator::
+Ginla::EpetraFVM::ModelEvaluator::
 createOutArgs() const
 {
   EpetraExt::ModelEvaluator::OutArgsSetup outArgs;
@@ -237,7 +233,7 @@ createOutArgs() const
 }
 // ============================================================================
 void
-Ginla::FVM::ModelEvaluator::
+Ginla::EpetraFVM::ModelEvaluator::
 evalModel( const InArgs  & inArgs,
            const OutArgs & outArgs
          ) const
@@ -286,7 +282,7 @@ evalModel( const InArgs  & inArgs,
   {
 //      Teuchos::RCP<Epetra_CrsMatrix> W_out_crs =
 //          Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>( W_out, true );
-      this->computeJacobian_( *x_in, mu, scalingCombined, temperature, *W_out_crs );
+      this->computeJacobian_( *x_in, mu, scalingCombined, temperature, *W_out );
 
 //       W_out_crs->Scale( beta );
 //
@@ -299,7 +295,7 @@ evalModel( const InArgs  & inArgs,
 }
 // ============================================================================
 void
-Ginla::FVM::ModelEvaluator::
+Ginla::EpetraFVM::ModelEvaluator::
 computeF_ ( const Epetra_Vector            & x,
             const double                     mu,
             const Teuchos::Tuple<double,3> & scaling,
@@ -313,6 +309,8 @@ computeF_ ( const Epetra_Vector            & x,
 
   // add the nonlinear part (mass lumping)
   TEUCHOS_ASSERT( FVec.Map().SameAs( x.Map() ) );
+
+  Epetra_Vector & controlVolumes = *(mesh_->getControlVolumes());
 
   for ( int k=0; k<controlVolumes.MyLength(); k++ )
   {
@@ -334,47 +332,25 @@ computeF_ ( const Epetra_Vector            & x,
 }
 // ============================================================================
 void
-Ginla::FVM::ModelEvaluator::
+Ginla::EpetraFVM::ModelEvaluator::
 computeJacobian_ ( const Epetra_Vector            & x,
                    const double                     mu,
                    const Teuchos::Tuple<double,3> & scaling,
                    const double                     temperature,
-                   Epetra_CrsMatrix               & Jac
+                   Epetra_Operator                & Jac
                  ) const
 {
   jacobianOperator_->setParameters( mu, scaling, temperature );
   jacobianOperator_->setCurrentX( x );
 
-  return;
-}
-// ============================================================================
-Teuchos::RCP<Ginla::State::Virtual>
-Ginla::FVM::ModelEvaluator::
-createState( const Epetra_Vector & x ) const
-{
-    const Teuchos::RCP<ComplexVector> psi = komplex_->real2complex ( x );
-    return Teuchos::rcp( new Ginla::FVM::State( psi, mesh_ ) );
-}
-// =============================================================================
-Teuchos::RCP<Epetra_Vector>
-Ginla::FVM::ModelEvaluator::
-createSystemVector(  const Ginla::State::Virtual & state ) const
-{
-    return komplex_->complex2real ( state.getPsi() );
-}
-// =============================================================================
-void
-Ginla::FVM::ModelEvaluator::
-createSystemVector( const Ginla::State::Virtual & state,
-                          Epetra_Vector         & x
-                  ) const
-{
-  komplex_->complex2real( *state.getPsi(), x );
+  // TODO avoid this explicit copy
+  Jac = *(jacobianOperator_);
+
   return;
 }
 // =============================================================================
 Teuchos::RCP<LOCA::ParameterVector>
-Ginla::FVM::ModelEvaluator::
+Ginla::EpetraFVM::ModelEvaluator::
 getParameters() const
 {
   // construct a LOCA::ParameterVector of the parameters

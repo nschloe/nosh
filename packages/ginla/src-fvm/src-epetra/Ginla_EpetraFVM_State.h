@@ -1,6 +1,6 @@
 /*
     <one line to give the program's name and a brief idea of what it does.>
-    Copyright (C) 2010 Nico Schl"omer
+    Copyright (C) 2010  Nico Schl"omer
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,82 +17,72 @@
 
 */
 
-#ifndef GINLA_FVM_STATE_H
-#define GINLA_FVM_STATE_H
+#ifndef GINLA_EPETRAFVM_STATE_H
+#define GINLA_EPETRAFVM_STATE_H
 
-#include "VIO_Mesh_Mesh.h"
-#include "Ginla_State_Virtual.h"
+#include "VIO_EpetraMesh_Mesh.h"
 
 namespace LOCA {
   class ParameterVector;
 }
 
 namespace Ginla {
-namespace FVM {
-class State:
-  public Ginla::State::Virtual
+namespace EpetraFVM {
+class State
 {
 public:
 
   //! Constructor.
-  State( const Teuchos::RCP<ComplexMultiVector>    & psi,
-         const Teuchos::RCP<const VIO::Mesh::Mesh> & mesh
-       );
-  
-  //! Constructor.
-  State( const Teuchos::RCP<ComplexVector>         & psi,
-         const Teuchos::RCP<const VIO::Mesh::Mesh> & mesh
+  State( const Teuchos::RCP<Epetra_Vector>               & psi,
+         const Teuchos::RCP<const VIO::EpetraMesh::Mesh> & mesh
        );
 
   //! Constructor without \f$\psi\f$. The values will be initialized to 0.
-  State( const Teuchos::RCP<const ComplexMap>      & map,
-         const Teuchos::RCP<const VIO::Mesh::Mesh> & mesh
+  State( const Teuchos::RCP<const Epetra_Map>            & map,
+         const Teuchos::RCP<const VIO::EpetraMesh::Mesh> & mesh
        );
-         
+
   //! Constructor solely with comminicator and grid. The values will be initialized to 0.
-  State( const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
-         const Teuchos::RCP<const VIO::Mesh::Mesh>     & mesh
+  State( const Teuchos::RCP<const Epetra_Comm>           & comm,
+         const Teuchos::RCP<const VIO::EpetraMesh::Mesh> & mesh
        );
-  
+
   //! Const getter.
-  Teuchos::RCP<const ComplexVector>
+  Teuchos::RCP<const Epetra_Vector>
   getPsi () const;
-  
+
   //! Nonconst getter for the values.
-  Teuchos::RCP<ComplexVector>
+  Teuchos::RCP<Epetra_Vector>
   getPsiNonConst ();
-  
-  double
-  getChi () const;
-  
-  const Teuchos::RCP<const VIO::Mesh::Mesh>
+
+  const Teuchos::RCP<const VIO::EpetraMesh::Mesh>
   getMesh () const;
-  
+
   //! Save the state to file \c fileName together with the parameters \c p.
   void
   save( const std::string            & fileName,
         const Teuchos::ParameterList & p
       ) const;
-  
+
   //! Just plain save the file to \c fileName.
   void
   save( const std::string & fileName
       ) const;
-         
+
   //! \f$L^2(\Omega)\f$-inner product with state \c state.
   double_complex
-  innerProduct( const Ginla::FVM::State & state ) const;
-      
+  innerProduct( const Ginla::EpetraFVM::State & state ) const;
+
   //! \f$L^2(\Omega)\f$-norm.
   double
   normalizedScaledL2Norm () const;
-  
+
   //! Updates the values of the state according to
   //! \f$a \leftarrow \alpha b + \beta a \f$.
   void
-  update( const double                  alpha,
-          const Ginla::State::Virtual & b,
-          const double                  beta
+  update( const double                    alpha,
+          const Ginla::EpetraFVM::State & b,
+          const double                    beta
         );
 
   /** Calcuate the grid approximation of the Gibbs free energy
@@ -107,7 +97,7 @@ public:
   /*! Calculate the vorticity of the current solution. */
   int
   getVorticity () const;
-                 
+
   /** Writes a solution \c psi to a file with all parameters that
     * may be interesting.
     */
@@ -119,19 +109,17 @@ public:
 
 protected:
 private:
-  
+
   //! Numerical values.
-  ComplexMultiVector psi_;
-  
-  double chi_;
-  
+  Epetra_Vector psi_;
+
   //! The grid on which the state exists.
-  const Teuchos::RCP<const VIO::Mesh::Mesh> mesh_;
-  
+  const Teuchos::RCP<const VIO::EpetraMesh::Mesh> mesh_;
+
 };
 
 }
 
 }
 
-#endif // GINLA_FVM_STATE_H
+#endif // GINLA_EPETRAFVM_STATE_H

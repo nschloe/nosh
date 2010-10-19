@@ -19,14 +19,14 @@
 
 #include "Ginla_FVM_State.h"
 
-#include "VIO_Mesh_Writer.h"
+#include "VIO_TpetraMesh_Writer.h"
 
 #include <LOCA_Parameter_Vector.H>
 
 // =============================================================================
 Ginla::FVM::State::
 State( const Teuchos::RCP<ComplexMultiVector>    & psi,
-       const Teuchos::RCP<const VIO::Mesh::Mesh> & mesh
+       const Teuchos::RCP<const VIO::TpetraMesh::Mesh> & mesh
      ):
        psi_( *psi ),
        chi_( 0.0 ),
@@ -38,7 +38,7 @@ State( const Teuchos::RCP<ComplexMultiVector>    & psi,
 // =============================================================================
 Ginla::FVM::State::
 State( const Teuchos::RCP<ComplexVector>         & psi,
-       const Teuchos::RCP<const VIO::Mesh::Mesh> & mesh
+       const Teuchos::RCP<const VIO::TpetraMesh::Mesh> & mesh
      ):
        psi_( *psi ),
        chi_( 0.0 ),
@@ -50,7 +50,7 @@ State( const Teuchos::RCP<ComplexVector>         & psi,
 // =============================================================================
 Ginla::FVM::State::
 State( const Teuchos::RCP<const ComplexMap>      & map,
-       const Teuchos::RCP<const VIO::Mesh::Mesh> & mesh
+       const Teuchos::RCP<const VIO::TpetraMesh::Mesh> & mesh
      ):
        psi_( ComplexMultiVector( map, 1, true ) ),
        chi_( 0.0 ),
@@ -60,35 +60,35 @@ State( const Teuchos::RCP<const ComplexMap>      & map,
 // =============================================================================
 Ginla::FVM::State::
 State( const Teuchos::RCP<const Teuchos::Comm<int> >  & comm,
-       const Teuchos::RCP<const VIO::Mesh::Mesh>      & mesh
+       const Teuchos::RCP<const VIO::TpetraMesh::Mesh>      & mesh
      ):
        psi_( ComplexMultiVector( Teuchos::rcp( new ComplexMap( mesh->getNumNodes(), 0, comm ) ),
                                  1,
                                  true ) ),
        chi_( 0.0 ),
        mesh_( mesh )
-{  
+{
 }
 // =============================================================================
 Teuchos::RCP<const ComplexVector>
 Ginla::FVM::State::
 getPsi () const
 {
-    return psi_.getVector(0); 
+    return psi_.getVector(0);
 }
 // =============================================================================
 Teuchos::RCP<ComplexVector>
 Ginla::FVM::State::
 getPsiNonConst ()
 {
-    return psi_.getVectorNonConst(0); 
+    return psi_.getVectorNonConst(0);
 }
 // =============================================================================
-const Teuchos::RCP<const VIO::Mesh::Mesh>
+const Teuchos::RCP<const VIO::TpetraMesh::Mesh>
 Ginla::FVM::State::
 getMesh () const
 {
-    return mesh_; 
+    return mesh_;
 }
 // =============================================================================
 double
@@ -105,16 +105,16 @@ save( const std::string            & fileName,
     ) const
 {
     TEUCHOS_ASSERT( !mesh_.is_null() );
-  
-    Teuchos::RCP<VIO::Mesh::Writer> writer =
-        Teuchos::rcp( new VIO::Mesh::Writer( fileName ) );
+
+    Teuchos::RCP<VIO::TpetraMesh::Writer> writer =
+        Teuchos::rcp( new VIO::TpetraMesh::Writer( fileName ) );
 
     writer->setMesh( *mesh_ );
     writer->setValues( psi_ );
     writer->addParameterList( p );
-    
+
     writer->write();
-    
+
     return;
 }
 // =============================================================================
@@ -142,7 +142,7 @@ freeEnergy () const
        TEUCHOS_ASSERT( globalIndex != Teuchos::OrdinalTraits<ORD>::invalid() );
        ORD k2 = mesh_->getControlVolumes()->getMap()->getLocalElement( globalIndex );
        TEUCHOS_ASSERT( k2 != Teuchos::OrdinalTraits<ORD>::invalid() );
-      
+
        myGlobalEnergy -= cvView[k2] * pow( norm( psiView[k] ), 2 );
    }
 
@@ -157,9 +157,9 @@ freeEnergy () const
                         sendBuff.getRawPtr(),
                         recvBuff.getRawPtr()
                       );
-   
+
    recvBuff[0] /= mesh_->getDomainArea();
-   
+
 
 //    // FEM calculations
 //    double energy = 0.0;
@@ -167,7 +167,7 @@ freeEnergy () const
 //    for ( int k=0; k<elems.size(); k++ )
 //    {
 //        Teuchos::ArrayRCP<int> & elem = elems[k];
-//        
+//
 //        TEST_FOR_EXCEPTION( elem.size() != 3,
 //                            std::runtime_error,
 //                            "At the moment, the free energy of a state "
@@ -178,7 +178,7 @@ freeEnergy () const
 //         // and the result is
 //         //    \int_{element} psi     = |detJ| * 1/6 * ( y0 + y1 + y2 )
 //         //    \int_{element} |psi|^4 = ?
-// 
+//
 //    }
 
     return recvBuff[0];
@@ -187,13 +187,13 @@ freeEnergy () const
 double_complex
 Ginla::FVM::State::
 innerProduct( const Ginla::FVM::State & state ) const
-{ 
+{
     Teuchos::ArrayRCP<const double_complex> psiView = psi_.get1dView();
     Teuchos::ArrayRCP<const double_complex> phiView = state.getPsi()->get1dView();
-    
+
     // make sure the maps are the same
     TEUCHOS_ASSERT( state.getPsi()->getMap()->isSameAs( *psi_.getMap() ) );
-  
+
     // TODO replace by Tpetra::weighted inner product when available
     double_complex localSum = double_complex( 0.0, 0.0 );
     Teuchos::ArrayRCP<const double> controlVolumes =
@@ -205,23 +205,23 @@ innerProduct( const Ginla::FVM::State & state ) const
         int k2 = mesh_->getControlVolumes()->getMap()->getLocalElement( globalIndex );
         localSum += controlVolumes[k2] * conj(psiView[k]) * phiView[k];
     }
-    
+
     // reduce and scatter such that energy is available on
     // all cores
     int count = 1; // send *one* integer
-    
+
     Teuchos::Array<double_complex> sendBuff ( count );
     sendBuff[0] = localSum;
-    
+
     Teuchos::Array<double_complex> recvBuff ( count );
-    
+
     Teuchos::reduceAll ( * ( psi_.getMap()->getComm() ),
                          Teuchos::REDUCE_SUM,
                          count,
                          sendBuff.getRawPtr(),
                          recvBuff.getRawPtr()
                        );
-                                 
+
     return recvBuff[0];
 }
 // ============================================================================
@@ -230,17 +230,17 @@ Ginla::FVM::State::
 normalizedScaledL2Norm () const
 {
     // TODO replace by Tpetra::weighted norm as soon as available
-  
+
     // imaginary part of alpha should be 0
     double_complex alpha = this->innerProduct( *this );
 
     // make sure that we actually got a norm here
     TEUCHOS_ASSERT_INEQUALITY( alpha.imag(), <, 1.0e-10 );
-    
+
     // normalize
-    double domainArea = mesh_->getDomainArea();    
+    double domainArea = mesh_->getDomainArea();
     double l2norm = sqrt ( alpha.real() ) / domainArea;
-    
+
     return l2norm;
 }
 // =============================================================================

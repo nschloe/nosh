@@ -17,8 +17,8 @@
 
 */
 
-#ifndef VIO_MESH_READER_H
-#define VIO_MESH_READER_H
+#ifndef VIO_TPETRAMESH_READER_H
+#define VIO_TPETRAMESH_READER_H
 
 #include "VIO_Reader_Abstract.h"
 #include "VIO_Typedefs.h"
@@ -31,42 +31,42 @@
 
 // forward declarations
 namespace VIO {
-  namespace Mesh {
+  namespace TpetraMesh {
       class Mesh;
   }
 }
 
 namespace VIO {
- namespace Mesh {
+ namespace TpetraMesh {
 class Reader:
    public VIO::Reader::Abstract
 {
   public:
       Reader ( const std::string & filePath
              );
-      
+
       ~Reader ();
 
       void
       read ( Teuchos::RCP<ComplexMultiVector>              & z,
-             Teuchos::RCP<Mesh>                            & mesh,
+             Teuchos::RCP<TpetraMesh::Mesh>                & mesh,
              Teuchos::ParameterList                        & fieldData,
              const Teuchos::RCP<const Teuchos::Comm<int> > & TComm
            );
-           
+
   protected:
   private:
-    
-    Teuchos::RCP<VIO::Mesh::Mesh>
+
+    Teuchos::RCP<VIO::TpetraMesh::Mesh>
     extractMeshData_( const vtkSmartPointer<vtkUnstructuredGrid>    & vtkMesh,
                       const Teuchos::RCP<const Teuchos::Comm<int> > & TComm
                     ) const;
-                   
+
     Teuchos::RCP<ComplexMultiVector>
     extractStateData_ ( const vtkSmartPointer<vtkDataSet>             & vtkData,
                         const Teuchos::RCP<const Teuchos::Comm<int> > & TComm
                       ) const;
-    
+
   private:
 };
 
@@ -75,10 +75,10 @@ class Reader:
   read ( const Teuchos::RCP<const Teuchos::Comm<int> > & TComm,
          const std::string                             & filePath,
          Teuchos::RCP<ComplexMultiVector>              & z,
-         Teuchos::RCP<Mesh>                            & mesh,
+         Teuchos::RCP<TpetraMesh::Mesh>                & mesh,
          Teuchos::ParameterList                        & fieldData
         );
 }
 }
 
-#endif // VIO_MESH_READER_H
+#endif // VIO_TPETRAMESH_READER_H

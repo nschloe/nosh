@@ -17,8 +17,8 @@
 
 */
 
-#ifndef VIO_MESH_WRITER_H
-#define VIO_MESH_WRITER_H
+#ifndef VIO_EPETRAMESH_WRITER_H
+#define VIO_EPETRAMESH_WRITER_H
 // =============================================================================
 #include "VIO_Typedefs.h"
 
@@ -27,7 +27,6 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_XMLObject.hpp>
-#include <Tpetra_MultiVector.hpp>
 
 #include <Epetra_Vector.h>
 
@@ -35,13 +34,13 @@
 #include <vtkUnstructuredGrid.h>
 // =============================================================================
 namespace VIO {
-  namespace Mesh {
+  namespace EpetraMesh {
     class Mesh;
   }
 }
 // =============================================================================
 namespace VIO {
-namespace Mesh {
+namespace EpetraMesh {
 class Writer:
   public VIO::Writer::Abstract
 {
@@ -55,18 +54,18 @@ public:
     write () const; // pure virtual
 
     void
-    setMesh( const VIO::Mesh::Mesh & mesh );
+    setMesh( const VIO::EpetraMesh::Mesh & mesh );
 
     void
     setValues( const Epetra_MultiVector          & x,
                const Teuchos::Array<std::string> & scalarsNames = Teuchos::Array<std::string>()
              );
-               
+
     void
     setValues( const Tpetra::MultiVector<double> & x,
                const Teuchos::Array<std::string> & scalarsNames = Teuchos::Array<std::string>()
              );
-             
+
     void
     setValues( const ComplexMultiVector          & z,
                const Teuchos::Array<std::string> & scalarsNames = Teuchos::Array<std::string>()
@@ -75,17 +74,17 @@ public:
 //    //! Add a parameter list to be stored in the field data section of the file.
 //     void
 //     addParameterList ( const Teuchos::ParameterList & problemParams );
-// 
+//
 //     //! Add extra field data to be stored in the file.
 //     void
 //     addFieldData ( const Teuchos::Array<int> & array,
 //                    const std::string         & name );
   protected:
   private:
-    Teuchos::RCP<VIO::Mesh::Mesh> mesh_;
+    Teuchos::RCP<VIO::EpetraMesh::Mesh> mesh_;
     Teuchos::RCP<const Teuchos::Comm<int> > comm_;
 };
 }
 }
 // =============================================================================
-#endif // VIO_MESH_WRITER_H
+#endif // VIO_TPETRAMESH_WRITER_H
