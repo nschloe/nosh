@@ -123,7 +123,9 @@ const Epetra_Map &
 Ginla::EpetraFVM::KineticEnergyOperator::
 OperatorDomainMap () const
 {
-    TEUCHOS_ASSERT( !keo_.is_null() );
+    if ( keo_.is_null() )
+        this->assembleKeo_();
+
     return keo_->DomainMap();
 }
 // =============================================================================
@@ -131,7 +133,9 @@ const Epetra_Map &
 Ginla::EpetraFVM::KineticEnergyOperator::
 OperatorRangeMap () const
 {
-    TEUCHOS_ASSERT( !keo_.is_null() );
+    if ( keo_.is_null() )
+        this->assembleKeo_();
+
     return keo_->RangeMap();
 }
 // =============================================================================
