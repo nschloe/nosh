@@ -93,7 +93,7 @@ setMesh( const VIO::EpetraMesh::Mesh & mesh )
   // set points
   vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
 //   std::cout << "\n\nPoint order in VTK:" << std::endl;
-  Teuchos::ArrayRCP<Point> nodes = mesh.getNodes();
+  Teuchos::ArrayRCP<const Point> nodes = mesh.getNodes();
   for ( int k=0; k<nodes.size(); k++ )
   {
       points->InsertNextPoint( nodes[k].getRawPtr()  );

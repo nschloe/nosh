@@ -66,14 +66,15 @@ getComplexValuesMap() const
     return complexValuesMap_;
 }
 // =============================================================================
-const Teuchos::ArrayRCP<Point>
+const Teuchos::ArrayRCP<const Point>
 VIO::EpetraMesh::Mesh::
 getNodes() const
 {
+  TEUCHOS_ASSERT( !nodes_.is_null() );
   return nodes_;
 }
 // =============================================================================
-Teuchos::ArrayRCP<Point>
+Teuchos::ArrayRCP<const Point>
 VIO::EpetraMesh::Mesh::
 getNodesNonConst()
 {
@@ -82,7 +83,7 @@ getNodesNonConst()
 // =============================================================================
 void
 VIO::EpetraMesh::Mesh::
-setNodes( const Teuchos::ArrayRCP<Point> nodes )
+setNodes( const Teuchos::ArrayRCP<const Point> & nodes )
 {
   nodes_ = nodes;
   return;
@@ -194,6 +195,14 @@ void
 VIO::EpetraMesh::Mesh::
 scale( const Teuchos::Tuple<double,3> & newScaling )
 {
+   // Prevent insanely small values.
+   TEST_FOR_EXCEPTION( abs(newScaling[0]) < 1.0e-5
+                       || abs(newScaling[1]) < 1.0e-5
+                       || abs(newScaling[2]) < 1.0e-5,
+                       std::runtime_error,
+                       "Trying to scale with " << newScaling << ". This is not what you want to do."
+                     );
+
    // adapt the position of the nodes
    for ( int i=0; i<3; i++ )
    {
@@ -241,6 +250,8 @@ void
 VIO::EpetraMesh::Mesh::
 computeFvmEntities_() const
 {
+  TEUCHOS_ASSERT( !nodes_.is_null() );
+
   // Compute the volume of the (Voronoi) control cells for each point.
   TEUCHOS_ASSERT( !elems_.is_null() );
   int numElems = elems_.size();
@@ -249,8 +260,6 @@ computeFvmEntities_() const
   controlVolumes_ = Teuchos::rcp( new Epetra_Vector( *map ) );
   edgeLengths_    = Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >( numElems );
   coedgeLengths_  = Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >( numElems );
-
-//   Teuchos::ArrayRCP<double> controlVolumesView = controlVolumes_->get1dViewNonConst();
 
   // Run over the elements and calculate their contributions to the
   // control volumes.
@@ -277,8 +286,8 @@ computeFvmEntities_() const
         int i0 = elem[ l ];
         int i1 = elem[ (l+1)%3 ];
 
-        Point & x0 = nodes_[i0];
-        Point & x1 = nodes_[i1];
+        const Point & x0 = nodes_[i0];
+        const Point & x1 = nodes_[i1];
 
         // edge midpoint
         Point mp = this->add_( 0.5, x0, 0.5, x1 );

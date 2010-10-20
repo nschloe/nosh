@@ -25,19 +25,6 @@
 //#include "Ginla_IO_StatsWriter.h"
 
 // =============================================================================
-// declarations (definitions below)
-std::string
-getAbsolutePath(       boost::filesystem::path   filepath,
-                 const boost::filesystem::path & xmlPath
-               )
-{
-    if ( !filepath.empty() && filepath.root_directory().empty() ) // filepath is a relative path
-        filepath = xmlPath / filepath;
-    TEUCHOS_ASSERT( !filepath.empty() );
-
-    return filepath.string();
-}
-// =============================================================================
 int main ( int argc, char *argv[] )
 {
   // Initialize MPI
@@ -66,9 +53,9 @@ int main ( int argc, char *argv[] )
           "Linear solver testbed for KEO and Jacobian operator.\n"
       );
 
-      std::string xmlInputFileName = "";
-      My_CLP.setOption ( "xml-input-file", &xmlInputFileName,
-                         "XML file containing the parameter list", true
+      std::string inputFileName = "";
+      My_CLP.setOption ( "input", &inputFileName,
+                         "Input state file", true
                        );
 
       // print warning for unrecognized arguments
@@ -78,35 +65,7 @@ int main ( int argc, char *argv[] )
       My_CLP.throwExceptions ( true );
 
       // finally, parse the command line
-      Teuchos::CommandLineProcessor::EParseCommandLineReturn parseReturn;
       My_CLP.parse ( argc, argv );
-
-      Teuchos::RCP<Teuchos::ParameterList> piroParams =
-          Teuchos::rcp ( new Teuchos::ParameterList );
-      if ( eComm->MyPID() == 0 )
-          std::cout << "Reading parameter list from \"" << xmlInputFileName << "\"."
-                    << std::endl;
-
-      Teuchos::updateParametersFromXmlFile ( xmlInputFileName, piroParams.get() );
-
-      // =========================================================================
-      // extract data of the parameter list
-      Teuchos::ParameterList outputList = piroParams->sublist ( "Output", true );
-
-      // set default directory to be the directory of the XML file itself
-      std::string xmlPath = boost::filesystem::path ( xmlInputFileName ).branch_path().string();
-      boost::filesystem::path outputDirectory = outputList.get<string> ( "Output directory" );
-      if ( outputDirectory.root_directory().empty() ) // outputDirectory is empty or is a relative directory.
-          outputDirectory = xmlPath / outputDirectory;
-      std::string contFileBaseName =
-          outputList.get<std::string> ( "Continuation file base name" );
-      std::string outputFormat =
-          outputList.get<std::string> ( "Output format" );
-      boost::filesystem::path contDataFile =
-          outputList.get<std::string> ( "Continuation data file name" );
-
-      Teuchos::ParameterList initialGuessList;
-      initialGuessList = piroParams->sublist ( "Initial guess", true );
       // =========================================================================
 
       Teuchos::ParameterList              problemParameters;
@@ -114,7 +73,7 @@ int main ( int argc, char *argv[] )
       Teuchos::RCP<VIO::EpetraMesh::Mesh> mesh = Teuchos::null;
 
       VIO::EpetraMesh::read( eComm,
-                             getAbsolutePath( initialGuessList.get<std::string> ( "State" ), xmlPath ),
+                             inputFileName,
                              z,
                              mesh,
                              problemParameters
@@ -130,7 +89,7 @@ int main ( int argc, char *argv[] )
       // -----------------------------------------------------------------------
       // create initial guess and right-hand side
       Epetra_Vector x( keo->OperatorDomainMap() );
-      Epetra_Vector b ( keo->OperatorRangeMap() );
+      Epetra_Vector b( keo->OperatorRangeMap() );
 
       // build the AztecOO problem
       Epetra_LinearProblem problem( &*keo, &x, &b );

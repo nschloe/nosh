@@ -132,7 +132,6 @@ extractMeshData_( const vtkSmartPointer<vtkUnstructuredGrid> & vtkMesh,
 
 //   for ( int k=0; k<points.size(); k++ )
 //       std::cout << points[k] << std::endl;
-//
 //   std::cout << "VVV" << std::endl;
 //   vtkMesh->Print( std::cout );
 

@@ -52,14 +52,14 @@ class Mesh
     const Teuchos::RCP<const Epetra_Map>
     getComplexValuesMap() const;
 
-    const Teuchos::ArrayRCP<Point>
+    const Teuchos::ArrayRCP<const Point>
     getNodes() const;
 
-    Teuchos::ArrayRCP<Point>
+    Teuchos::ArrayRCP<const Point>
     getNodesNonConst();
 
     void
-    setNodes( const Teuchos::ArrayRCP<Point> nodes );
+    setNodes( const Teuchos::ArrayRCP<const Point> & nodes );
 
     void
     setBoundaryNodes( const Teuchos::ArrayRCP<bool> );
@@ -177,7 +177,7 @@ class Mesh
 
     Teuchos::ArrayRCP<Teuchos::ArrayRCP<int> > elems_;
     Teuchos::ArrayRCP<ElementType> elemTypes_;
-    Teuchos::ArrayRCP<Point> nodes_;
+    Teuchos::ArrayRCP<const Point> nodes_;
     Teuchos::ArrayRCP<bool> isBoundaryNode_;
     mutable Teuchos::RCP<Epetra_Vector> controlVolumes_;
     mutable Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > edgeLengths_;

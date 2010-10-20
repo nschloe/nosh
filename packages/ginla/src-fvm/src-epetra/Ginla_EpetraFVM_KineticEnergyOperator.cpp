@@ -34,9 +34,9 @@ KineticEnergyOperator( const Teuchos::RCP<VIO::EpetraMesh::Mesh>                
         keoGraph_( Teuchos::null ),
         keo_( Teuchos::null ),
         mu_ ( 0.0 ),
-        scaling_( Teuchos::tuple( 0.0, 0.0, 0.0 ) ),
+        scaling_( Teuchos::tuple( 1.0, 1.0, 1.0 ) ),
         keoMu_( 0.0 ),
-        keoScaling_( Teuchos::tuple( 0.0, 0.0, 0.0 ) )
+        keoScaling_( Teuchos::tuple( 1.0, 1.0, 1.0 ) )
 {
 }
 // =============================================================================
@@ -157,8 +157,7 @@ assembleKeo_() const
   if ( keoGraph_.is_null() )
       this->createKeoGraph_();
 
-  keo_  = Teuchos::rcp( new Epetra_FECrsMatrix( Copy, *keoGraph_ ) );
-  keo_->PutScalar( 0.0 );
+  keo_ = Teuchos::rcp( new Epetra_FECrsMatrix( Copy, *keoGraph_, true ) );
 
   // set scaling and external magnetic field
   mesh_->scale( scaling_ );
@@ -168,7 +167,8 @@ assembleKeo_() const
   // Loop over the elements, create local load vector and mass matrix,
   // and insert them into the global matrix.
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<int> > elems = mesh_->getElems();
-  Teuchos::ArrayRCP<Point> nodes = mesh_->getNodes();
+  Teuchos::ArrayRCP<const Point> nodes = mesh_->getNodes();
+
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > edgeLengths = mesh_->getEdgeLengths();
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > coedgeLengths = mesh_->getCoedgeLengths();
 
@@ -206,8 +206,8 @@ assembleKeo_() const
           //    I ~ |xj-x0| * (xj-x0) . A( 0.5*(xj+x0) ).
           //
           Point midpoint; // get A(midpoint)
-          Point & node0 = nodes[ nodeIndices[0] ];
-          Point & node1 = nodes[ nodeIndices[1] ];
+          const Point & node0 = nodes[ nodeIndices[0] ];
+          const Point & node1 = nodes[ nodeIndices[1] ];
           for (int i=0; i<midpoint.size(); i++ )
               midpoint[i] = 0.5 * ( node0[i] + node1[i] );
 
