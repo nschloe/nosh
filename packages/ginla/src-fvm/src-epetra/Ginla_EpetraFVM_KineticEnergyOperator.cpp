@@ -33,8 +33,6 @@ KineticEnergyOperator( const Teuchos::RCP<VIO::EpetraMesh::Mesh>                
         mvp_( mvp ),
         keoGraph_( Teuchos::null ),
         keo_( Teuchos::null ),
-        mu_ ( 0.0 ),
-        scaling_( Teuchos::tuple( 1.0, 1.0, 1.0 ) ),
         keoMu_( 0.0 ),
         keoScaling_( Teuchos::tuple( 1.0, 1.0, 1.0 ) )
 {
@@ -145,8 +143,8 @@ setParameters( const double mu,
                const Teuchos::Tuple<double,3> & scaling
              )
 {
-    mu_ = mu;
-    scaling_ = scaling;
+    mvp_->setMu( mu );
+    mesh_->scale( scaling );
     return;
 }
 // =============================================================================
@@ -158,10 +156,6 @@ assembleKeo_() const
       this->createKeoGraph_();
 
   keo_ = Teuchos::rcp( new Epetra_FECrsMatrix( Copy, *keoGraph_, true ) );
-
-  // set scaling and external magnetic field
-  mesh_->scale( scaling_ );
-  mvp_->setMu( mu_ );
 
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   // Loop over the elements, create local load vector and mass matrix,
@@ -268,8 +262,8 @@ assembleKeo_() const
   keo_->GlobalAssemble();
   keo_->FillComplete();
 
-  keoMu_ = mu_;
-  keoScaling_ = scaling_;
+  keoMu_ = mvp_->getMu();
+  keoScaling_ = mesh_->getScaling();
 
   return;
 }
@@ -319,10 +313,21 @@ bool
 Ginla::EpetraFVM::KineticEnergyOperator::
 keoUpToDate_() const
 {
+    const Teuchos::Tuple<double,3> & scaling  = mesh_->getScaling();
+
     return    !keo_.is_null()
-           && keoMu_         == mu_
-           && keoScaling_[0] == scaling_[0]
-           && keoScaling_[1] == scaling_[1]
-           && keoScaling_[2] == scaling_[2];
+           && keoMu_         == mvp_->getMu()
+           && keoScaling_[0] == scaling[0]
+           && keoScaling_[1] == scaling[1]
+           && keoScaling_[2] == scaling[2];
+}
+// =============================================================================
+Teuchos::RCP<Epetra_FECrsMatrix>
+Ginla::EpetraFVM::KineticEnergyOperator::
+getKeo() const
+{
+    if ( keo_.is_null() )
+        this->assembleKeo_();
+    return keo_;
 }
 // =============================================================================

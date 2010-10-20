@@ -21,7 +21,10 @@ public:
 
   bool
   setMu( const double mu );
-  
+
+  double
+  getMu() const;
+
   //! Sets the parameters in this module.
   //! @return Indicates whether the internal values have changed.
   virtual
@@ -43,11 +46,11 @@ public:
   virtual
   double
   getAy(const Point & x) const = 0;
-  
+
   virtual
   double
   getAz(const Point & x) const = 0;
-  
+
   virtual
   Teuchos::RCP<Point>
   getDADMu(const Point & x ) const = 0;
@@ -59,7 +62,7 @@ public:
   virtual
   double
   getDAyDMu(const Point & x ) const = 0;
-  
+
   virtual
   double
   getDAzDMu(const Point & x ) const = 0;

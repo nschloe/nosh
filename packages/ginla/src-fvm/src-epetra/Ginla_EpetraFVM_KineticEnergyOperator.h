@@ -79,6 +79,9 @@ public:
                    const Teuchos::Tuple<double,3> & scaling
                  );
 
+    Teuchos::RCP<Epetra_FECrsMatrix>
+    getKeo() const;
+
 protected:
 
 private:
@@ -101,9 +104,6 @@ private:
 
     mutable Teuchos::RCP<Epetra_FECrsGraph> keoGraph_;
     mutable Teuchos::RCP<Epetra_FECrsMatrix> keo_;
-
-    double mu_;
-    Teuchos::Tuple<double,3> scaling_;
 
     mutable double keoMu_;
     mutable Teuchos::Tuple<double,3> keoScaling_;

@@ -24,7 +24,7 @@ public:
   virtual
   bool
   setParameters( const LOCA::ParameterVector & p );
-  
+
   virtual
   Teuchos::RCP<LOCA::ParameterVector>
   getParameters() const;
@@ -40,11 +40,11 @@ public:
   virtual
   double
   getAy(const Point & x) const;
-  
+
   virtual
   double
   getAz(const Point & x) const;
-  
+
   virtual
   Teuchos::RCP<Point>
   getDADMu(const Point & x ) const;
@@ -56,7 +56,7 @@ public:
   virtual
   double
   getDAyDMu(const Point & x ) const;
-  
+
   virtual
   double
   getDAzDMu(const Point & x ) const;

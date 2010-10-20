@@ -223,6 +223,13 @@ scale( const Teuchos::Tuple<double,3> & newScaling )
    return;
 }
 // =============================================================================
+Teuchos::Tuple<double,3>
+VIO::EpetraMesh::Mesh::
+getScaling() const
+{
+    return scaling_;
+}
+// =============================================================================
 double
 VIO::EpetraMesh::Mesh::
 computeDomainArea_() const

@@ -24,6 +24,14 @@
 //#include "Ginla_IO_StateWriter.h"
 //#include "Ginla_IO_StatsWriter.h"
 
+#include "Stratimikos_DefaultLinearSolverBuilder.hpp"
+#include "EpetraExt_readEpetraLinearSystem.h"
+#include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_VerboseObject.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
+#include "Teuchos_CommandLineProcessor.hpp"
+#include "Teuchos_StandardCatchMacros.hpp"
+
 // =============================================================================
 int main ( int argc, char *argv[] )
 {
@@ -79,64 +87,103 @@ int main ( int argc, char *argv[] )
                              problemParameters
                            );
 
-      double mu = 1.0;
+      double mu = 1.0e-0;
       Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp =
               Teuchos::rcp ( new Ginla::MagneticVectorPotential::Z ( mu ) );
 
       // create the kinetic energy operator
       Teuchos::RCP<Ginla::EpetraFVM::KineticEnergyOperator> keo =
               Teuchos::rcp( new  Ginla::EpetraFVM::KineticEnergyOperator( mesh,  mvp ) );
-      // -----------------------------------------------------------------------
-      // create initial guess and right-hand side
-      Epetra_Vector x( keo->OperatorDomainMap() );
-      Epetra_Vector b( keo->OperatorRangeMap() );
 
+      // create initial guess and right-hand side
+      Teuchos::RCP<Epetra_Vector> epetra_x = Teuchos::rcp( new Epetra_Vector( keo->OperatorDomainMap() ) );
+      Teuchos::RCP<Epetra_Vector> epetra_b = Teuchos::rcp( new Epetra_Vector( keo->OperatorRangeMap() ) );
+      epetra_b->Random();
+
+      // -----------------------------------------------------------------------
+//      // Stratimikos.
+//      // Thyra glue
+//      Teuchos::RCP<const Thyra::LinearOpBase<double> > A = Thyra::epetraLinearOp( keo );
+//      Teuchos::RCP<Thyra::VectorBase<double> > x = Thyra::create_Vector( epetra_x, A->domain() );
+//      Teuchos::RCP<const Thyra::VectorBase<double> > b = Thyra::create_Vector( epetra_b, A->range() );
+//
+//      Teuchos::RCP<Teuchos::FancyOStream>
+//        out = Teuchos::VerboseObjectBase::getDefaultOStream();
+//
+//      Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
+//
+//      std::cout << "a" << std::endl;
+//
+//      // read parameters from file
+//      Teuchos::updateParametersFromXmlFile( "./stratimikos.xml", &*linearSolverBuilder.getNonconstParameterList() );
+//
+//      std::cout << "b" << std::endl;
+//
+//      // Create a linear solver factory given information read from the
+//      // parameter list.
+//      Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory =
+//        linearSolverBuilder.createLinearSolveStrategy("");
+//
+//      // Setup output stream and the verbosity level
+//      lowsFactory->setOStream( out );
+//      lowsFactory->setVerbLevel( Teuchos::VERB_LOW );
+//
+//      // Create a linear solver based on the forward operator A
+//      Teuchos::RCP<Thyra::LinearOpWithSolveBase<double> > lows =
+//        Thyra::linearOpWithSolve(*lowsFactory, A);
+//
+//      // Solve the linear system (note: the initial guess in 'x' is critical)
+//      Thyra::SolveStatus<double> status =
+//        Thyra::solve<double>(*lows, Thyra::NOTRANS, *b, x.ptr());
+//      *out << "\nSolve status:\n" << status;
+
+
+
+      // -----------------------------------------------------------------------
       // build the AztecOO problem
-      Epetra_LinearProblem problem( &*keo, &x, &b );
+      Epetra_LinearProblem problem( &*keo, &*epetra_x, &*epetra_b );
       AztecOO solver( problem );
       // make sure the problem is symmetric
       problem.AssertSymmetric();
 
-      //solver.SetAztecOption(AZ_precond, AZ_none);
+      solver.SetAztecOption(AZ_precond, AZ_none);
       //solver.SetAztecOption(AZ_precond, AZ_dom_decomp);
       //solver.SetAztecOption(AZ_solver, AZ_gmres);
       solver.SetAztecOption(AZ_solver, AZ_cg);
-      //solver.SetAztecOption(AZ_precond, AZ_dom_decomp);
-      solver.SetAztecOption(AZ_precond, AZ_none);
       //solver.SetAztecOption(AZ_scaling, 8);
-      ///solver.SetAztecOption(AZ_subdomain_solve, AZ_ilut);
+      //solver.SetAztecOption(AZ_subdomain_solve, AZ_ilut);
       //solver.SetAztecOption(AZ_output, 1);
       //solver.SetAztecOption(AZ_reorder, 0);
-      solver.SetAztecOption(AZ_graph_fill, 3);
-      solver.SetAztecOption(AZ_overlap, 0);
+      //solver.SetAztecOption(AZ_graph_fill, 3);
+      //solver.SetAztecOption(AZ_overlap, 0);
       //solver.SetAztecOption(AZ_poly_ord, 9);
-      solver.SetAztecParam(AZ_ilut_fill, 4.0);
-      solver.SetAztecParam(AZ_drop, 0.0);
+      //solver.SetAztecParam(AZ_ilut_fill, 4.0);
+      //solver.SetAztecParam(AZ_drop, 0.0);
       //double rthresh = 1.4;
       //cout << "Rel threshold = " << rthresh << endl;
       //solver.SetAztecParam(AZ_rthresh, rthresh);
       //double athresh = 10.0;
       //cout << "Abs threshold = " << athresh << endl;
       //solver.SetAztecParam(AZ_athresh, athresh);
-      solver.SetAztecParam(AZ_ill_cond_thresh, 1.0e200);
+      //solver.SetAztecParam(AZ_ill_cond_thresh, 1.0e200);
 
-      int Niters = 320;
-      solver.SetAztecOption(AZ_kspace, Niters);
+      int Niters = 500;
+      //solver.SetAztecOption(AZ_kspace, Niters);
 
       // do the iteration
       solver.Iterate(Niters, 1.0e-14);
 
       // compute the residual
       Epetra_Vector bcomp( keo->OperatorRangeMap() );
-      TEUCHOS_ASSERT_EQUALITY( 0, keo->Apply(x, bcomp) );
+      TEUCHOS_ASSERT_EQUALITY( 0, keo->Apply(*epetra_x, bcomp) );
 
       Epetra_Vector resid( keo->OperatorRangeMap() );
-      TEUCHOS_ASSERT_EQUALITY( 0, resid.Update(1.0, b, -1.0, bcomp, 0.0 ) );
+      TEUCHOS_ASSERT_EQUALITY( 0, resid.Update(1.0, *epetra_b, -1.0, bcomp, 0.0 ) );
 
       double residual;
       TEUCHOS_ASSERT_EQUALITY( 0, resid.Norm2(&residual) );
       if (eComm->MyPID()==0) cout << "Residual    = " << residual << endl;
-
+      // -----------------------------------------------------------------------
     }
     catch ( std::exception & e )
     {

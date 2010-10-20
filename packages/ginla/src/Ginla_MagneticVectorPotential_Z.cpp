@@ -1,7 +1,5 @@
 #include "Ginla_MagneticVectorPotential_Z.h"
 
-
-
 // ============================================================================
 Ginla::MagneticVectorPotential::Z::
 Z( double mu ) :
@@ -19,11 +17,11 @@ Ginla::MagneticVectorPotential::Z::
 setParameters( const LOCA::ParameterVector & p )
 {
     bool valuesChanged = false;
-  
-    if (p.isParameter( "H0" ))
-        if ( mu_ != p.getValue ( "H0" ) )
+
+    if (p.isParameter( "mu" ))
+        if ( mu_ != p.getValue ( "mu" ) )
         {
-            mu_ = p.getValue ( "H0" );
+            mu_ = p.getValue ( "mu" );
             valuesChanged = true;
         }
 
@@ -36,9 +34,9 @@ getParameters() const
 {
   Teuchos::RCP<LOCA::ParameterVector> p =
           Teuchos::rcp( new LOCA::ParameterVector() );
-          
-  p->addParameter( "H0", mu_ );
-          
+
+  p->addParameter( "mu", mu_ );
+
   return p;
 }
 // ============================================================================

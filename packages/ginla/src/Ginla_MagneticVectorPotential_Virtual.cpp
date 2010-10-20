@@ -29,3 +29,10 @@ setMu( const double mu )
   return valuesChanged;
 }
 // ============================================================================
+double
+Ginla::MagneticVectorPotential::Virtual::
+getMu() const
+{
+    return mu_;
+}
+// ============================================================================

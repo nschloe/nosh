@@ -118,6 +118,9 @@ class Mesh
     void
     scale( const Teuchos::Tuple<double,3> & alpha );
 
+    Teuchos::Tuple<double,3>
+    getScaling() const;
+
   protected:
 
   private:
