@@ -10,6 +10,8 @@
 #include <Epetra_LinearProblem.h>
 #include <AztecOO.h>
 
+#include <ml_epetra_preconditioner.h>
+
 #include <boost/filesystem.hpp>
 
 #include "Ginla_EpetraFVM_ModelEvaluator.h"
@@ -87,13 +89,15 @@ int main ( int argc, char *argv[] )
                              problemParameters
                            );
 
-      double mu = 1.0e-0;
+      double mu = 1.0e-4;
       Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp =
               Teuchos::rcp ( new Ginla::MagneticVectorPotential::Z ( mu ) );
 
       // create the kinetic energy operator
       Teuchos::RCP<Ginla::EpetraFVM::KineticEnergyOperator> keo =
               Teuchos::rcp( new  Ginla::EpetraFVM::KineticEnergyOperator( mesh,  mvp ) );
+
+      Teuchos::RCP<Epetra_FECrsMatrix> keoMatrix = keo->getKeo();
 
       // create initial guess and right-hand side
       Teuchos::RCP<Epetra_Vector> epetra_x = Teuchos::rcp( new Epetra_Vector( keo->OperatorDomainMap() ) );
@@ -137,8 +141,6 @@ int main ( int argc, char *argv[] )
 //        Thyra::solve<double>(*lows, Thyra::NOTRANS, *b, x.ptr());
 //      *out << "\nSolve status:\n" << status;
 
-
-
       // -----------------------------------------------------------------------
       // build the AztecOO problem
       Epetra_LinearProblem problem( &*keo, &*epetra_x, &*epetra_b );
@@ -146,8 +148,26 @@ int main ( int argc, char *argv[] )
       // make sure the problem is symmetric
       problem.AssertSymmetric();
 
+      // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+      // ML part
+      Teuchos::ParameterList MLList;
+      ML_Epetra::SetDefaults( "SA", MLList );
+      MLList.set("ML output", 10);
+      MLList.set("max levels",5);
+      MLList.set("increasing or decreasing","increasing");
+      MLList.set("aggregation: type", "Uncoupled");
+      MLList.set("smoother: type","Chebyshev");
+      MLList.set("smoother: sweeps",3);
+      MLList.set("smoother: pre or post", "both");
+      MLList.set("coarse: type","Amesos-KLU");
+      Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> MLPrec =
+                  Teuchos::rcp( new ML_Epetra::MultiLevelPreconditioner(*keoMatrix, MLList) );
+      MLPrec->PrintUnused(0);
+      // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
       solver.SetAztecOption(AZ_precond, AZ_none);
       //solver.SetAztecOption(AZ_precond, AZ_dom_decomp);
+      //solver.SetPrecOperator( MLPrec.getRawPtr() );
       //solver.SetAztecOption(AZ_solver, AZ_gmres);
       solver.SetAztecOption(AZ_solver, AZ_cg);
       //solver.SetAztecOption(AZ_scaling, 8);
@@ -159,6 +179,7 @@ int main ( int argc, char *argv[] )
       //solver.SetAztecOption(AZ_poly_ord, 9);
       //solver.SetAztecParam(AZ_ilut_fill, 4.0);
       //solver.SetAztecParam(AZ_drop, 0.0);
+      solver.SetAztecOption(AZ_output, 32);
       //double rthresh = 1.4;
       //cout << "Rel threshold = " << rthresh << endl;
       //solver.SetAztecParam(AZ_rthresh, rthresh);
@@ -167,11 +188,11 @@ int main ( int argc, char *argv[] )
       //solver.SetAztecParam(AZ_athresh, athresh);
       //solver.SetAztecParam(AZ_ill_cond_thresh, 1.0e200);
 
-      int Niters = 500;
+      int Niters = 10000;
       //solver.SetAztecOption(AZ_kspace, Niters);
 
       // do the iteration
-      solver.Iterate(Niters, 1.0e-14);
+      solver.Iterate(Niters, 1.0e-8);
 
       // compute the residual
       Epetra_Vector bcomp( keo->OperatorRangeMap() );
