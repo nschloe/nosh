@@ -183,6 +183,13 @@ getDomainArea() const
   return area_;
 }
 // =============================================================================
+const Epetra_Comm &
+VIO::EpetraMesh::Mesh::
+getComm() const
+{
+    return comm_;
+}
+// =============================================================================
 void
 VIO::EpetraMesh::Mesh::
 scale( double alpha )

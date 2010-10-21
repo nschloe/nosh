@@ -107,10 +107,10 @@ double
 Ginla::EpetraFVM::State::
 freeEnergy () const
 {
-    TEST_FOR_EXCEPTION( true,
-                        std::logic_error,
-                        "Not yet implemented."
-                      );
+//    TEST_FOR_EXCEPTION( true,
+//                        std::logic_error,
+//                        "Not yet implemented."
+//                      );
 
 //   double myGlobalEnergy = 0.0;
 //   Teuchos::ArrayRCP<const double> cvView =
@@ -150,10 +150,10 @@ double_complex
 Ginla::EpetraFVM::State::
 innerProduct( const Ginla::EpetraFVM::State & state ) const
 {
-    TEST_FOR_EXCEPTION( true,
-                        std::logic_error,
-                        "Not yet implemented."
-                      );
+//    TEST_FOR_EXCEPTION( true,
+//                        std::logic_error,
+//                        "Not yet implemented."
+//                      );
 
 //    Teuchos::ArrayRCP<const double_complex> psiView = psi_.get1dView();
 //    Teuchos::ArrayRCP<const double_complex> phiView = state.getPsi()->get1dView();

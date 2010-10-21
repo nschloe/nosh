@@ -61,16 +61,6 @@ public:
                const Teuchos::Array<std::string> & scalarsNames = Teuchos::Array<std::string>()
              );
 
-    void
-    setValues( const Tpetra::MultiVector<double> & x,
-               const Teuchos::Array<std::string> & scalarsNames = Teuchos::Array<std::string>()
-             );
-
-    void
-    setValues( const ComplexMultiVector          & z,
-               const Teuchos::Array<std::string> & scalarsNames = Teuchos::Array<std::string>()
-             );
-
 //    //! Add a parameter list to be stored in the field data section of the file.
 //     void
 //     addParameterList ( const Teuchos::ParameterList & problemParams );
@@ -82,7 +72,6 @@ public:
   protected:
   private:
     Teuchos::RCP<VIO::EpetraMesh::Mesh> mesh_;
-    Teuchos::RCP<const Teuchos::Comm<int> > comm_;
 };
 }
 }

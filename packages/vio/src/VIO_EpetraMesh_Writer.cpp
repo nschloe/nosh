@@ -22,8 +22,7 @@
 #include "VIO_EpetraMesh_Mesh.h"
 
 #include <EpetraExt_Utils.h> // to_string
-#include <Tpetra_Vector.hpp>
-#include <Teuchos_Comm.hpp>
+#include <Epetra_Comm.h>
 
 #include <vtkXMLUnstructuredGridWriter.h>
 #include <vtkUnstructuredGridWriter.h>
@@ -38,8 +37,7 @@
 VIO::EpetraMesh::Writer::
 Writer ( const std::string & filePath ) :
            VIO::Writer::Abstract( filePath ),
-           mesh_( Teuchos::null ),
-           comm_( Teuchos::null )
+           mesh_( Teuchos::null )
 {
   vtkDataSet_ = vtkSmartPointer<vtkUnstructuredGrid>::New();
 
@@ -185,7 +183,13 @@ setValues( const Epetra_MultiVector          & x,
          )
 {
   unsigned int numVecs = x.NumVectors();
-  unsigned int numPoints = x.GlobalLength();
+  unsigned int numVariables = x.GlobalLength();
+
+  unsigned int numNodes = mesh_->getNodesMap()->NumGlobalElements();
+
+  // make sure the sizes match the mesh
+  if ( !mesh_.is_null() )
+      TEUCHOS_ASSERT_EQUALITY( numVariables, 2*numNodes );
 
   // cast into a vtkUnstructuredGrid
   vtkSmartPointer<vtkUnstructuredGrid> vtkMesh =
@@ -199,89 +203,6 @@ setValues( const Epetra_MultiVector          & x,
       scNames.resize ( numVecs );
       for ( int vec=0; vec<numVecs; vec++ )
           scNames[vec] = "x" + EpetraExt::toString ( vec );
-  }
-
-  // fill the scalar field
-  vtkSmartPointer<vtkDoubleArray> scalars =
-      vtkSmartPointer<vtkDoubleArray>::New();
-
-  for ( int vec=0; vec<numVecs; vec++ )
-  {
-      scalars->SetName ( scNames[vec].c_str() );
-      for ( int k=0; k<numPoints; k++ )
-      {
-//           const unsigned int dof_id = libmeshMesh_->node(k).dof_number(0,k,0);
-          scalars->InsertNextValue ( x[vec][k] );
-      }
-      vtkMesh->GetPointData()->AddArray ( scalars );
-  }
-
-  return;
-}
-// =============================================================================
-void
-VIO::EpetraMesh::Writer::
-setValues( const Tpetra::MultiVector<double> & x,
-           const Teuchos::Array<std::string> & scalarsNames )
-{
-  unsigned int numVecs = x.getNumVectors();
-  unsigned int numPoints = x.getGlobalLength();
-
-  // cast into a vtkUnstructuredGrid
-  vtkSmartPointer<vtkUnstructuredGrid> vtkMesh =
-      dynamic_cast<vtkUnstructuredGrid*> ( vtkDataSet_.GetPointer() );
-  TEUCHOS_ASSERT_INEQUALITY( 0, !=, vtkMesh );
-
-  // get scalarsNames, and insert default names if empty
-  Teuchos::Array<std::string> scNames ( scalarsNames );
-  if ( scNames.empty() )
-  {
-      scNames.resize ( numVecs );
-      for ( int vec=0; vec<numVecs; vec++ )
-          scNames[vec] = "x" + EpetraExt::toString ( vec );
-  }
-
-  // fill the scalar field
-  vtkSmartPointer<vtkDoubleArray> scalars =
-      vtkSmartPointer<vtkDoubleArray>::New();
-
-  for ( int vec=0; vec<numVecs; vec++ )
-  {
-      Teuchos::ArrayRCP<const double> xView = x.getVector(vec)->get1dView();
-      scalars->SetName ( scNames[vec].c_str() );
-      for ( int k=0; k<numPoints; k++ )
-      {
-//           const unsigned int dof_id = libmeshMesh_->node(k).dof_number(0,k,0);
-          scalars->InsertNextValue ( xView[k] );
-      }
-      vtkMesh->GetPointData()->AddArray ( scalars );
-  }
-
-  return;
-}
-// =============================================================================
-void
-VIO::EpetraMesh::Writer::
-setValues( const ComplexMultiVector          & z,
-           const Teuchos::Array<std::string> & scalarsNames
-         )
-{
-  unsigned int numVecs = z.getNumVectors();
-
-  // cast into a vtkUnstructuredGrid
-  vtkSmartPointer<vtkUnstructuredGrid> vtkMesh =
-      dynamic_cast<vtkUnstructuredGrid*> ( vtkDataSet_.GetPointer() );
-  TEUCHOS_ASSERT_INEQUALITY( 0, !=, vtkMesh );
-
-  comm_ = z.getMap()->getComm();
-
-  // get scalarsNames, and insert default names if empty
-  Teuchos::Array<std::string> scNames ( scalarsNames );
-  if ( scNames.empty() )
-  {
-      scNames.resize ( numVecs );
-      for ( int vec=0; vec<numVecs; vec++ )
-          scNames[vec] = "z" + EpetraExt::toString ( vec );
   }
 
   // fill the scalar field
@@ -293,20 +214,13 @@ setValues( const ComplexMultiVector          & z,
 
   for ( int vec=0; vec<numVecs; vec++ )
   {
-      Teuchos::ArrayRCP<const std::complex<double> > zView =
-          z.getVector(vec)->get1dView();
-
-      // fill the array
-      for ( int k=0; k<zView.size(); k++ )
-      {
-          scalars->InsertNextValue ( zView[k].real() );
-          scalars->InsertNextValue ( zView[k].imag() );
-      }
-
       scalars->SetName ( scNames[vec].c_str() );
-
-//       scalars->Print( std::cout );
-
+      for ( int k=0; k<numNodes; k++ )
+      {
+//           const unsigned int dof_id = libmeshMesh_->node(k).dof_number(0,k,0);
+          scalars->InsertNextValue ( x[vec][2*k] );
+          scalars->InsertNextValue ( x[vec][2*k+1] );
+      }
       vtkMesh->GetPointData()->AddArray ( scalars );
   }
 
@@ -322,11 +236,10 @@ write () const
         dynamic_cast<vtkUnstructuredGrid*> ( vtkDataSet_.GetPointer() );
     TEUCHOS_ASSERT_INEQUALITY( 0, !=, vtkMesh );
 
-
-    TEUCHOS_ASSERT( !comm_.is_null() );
+    const Epetra_Comm & comm = mesh_->getComm();
 
     // write the file
-    if ( comm_->getSize() == 1 )
+    if ( comm.NumProc() == 1 )
     {
         // serial writer
         vtkSmartPointer<vtkXMLUnstructuredGridWriter> writer
@@ -346,12 +259,12 @@ write () const
        //     }
        //     else
        //     {
-       writer->SetNumberOfPieces( comm_->getSize() );
+       writer->SetNumberOfPieces( comm.NumProc() );
        //       writer->SetCompressor( 0 );
        //       writer->SetDataModeToAscii();
        //       writer->SetDebug( 'a' );
-       writer->SetStartPiece( comm_->getRank() );
-       writer->SetEndPiece( comm_->getRank() );
+       writer->SetStartPiece( comm.MyPID() );
+       writer->SetEndPiece( comm.MyPID() );
        //     }
        writer->SetFileName ( filePath_.c_str() );
        writer->SetInput ( &*vtkMesh );

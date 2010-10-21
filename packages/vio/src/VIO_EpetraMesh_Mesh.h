@@ -121,6 +121,9 @@ class Mesh
     Teuchos::Tuple<double,3>
     getScaling() const;
 
+    const Epetra_Comm &
+    getComm() const;
+
   protected:
 
   private:
