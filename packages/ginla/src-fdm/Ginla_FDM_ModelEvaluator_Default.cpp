@@ -39,7 +39,7 @@ Default ( const Teuchos::RCP<Ginla::FDM::Operator::Virtual> & glOperator,
         firstTime_ ( true ),
         numParams_( 2 )
 {
-  Teuchos::RCP<Ginla::State::Virtual> initialState =
+  Teuchos::RCP<Ginla::State::Updatable> initialState =
       Teuchos::rcp( new Ginla::FDM::State( komplex->getComplexMap()->getComm(),
                                            grid ) );
 
@@ -57,7 +57,7 @@ Default ( const Teuchos::RCP<Ginla::FDM::Operator::Virtual> & glOperator,
 Ginla::FDM::ModelEvaluator::Default::
 Default ( const Teuchos::RCP<Ginla::FDM::Operator::Virtual> & glOperator,
           const Teuchos::RCP<Komplex2::LinearProblem>       & komplex,
-          const Ginla::State::Virtual                       & state,
+          const Ginla::State::Updatable                     & state,
           const Teuchos::ParameterList                      & params
         ) :
         glOperator_ ( glOperator ),
@@ -263,7 +263,7 @@ computeF ( const Epetra_Vector & x,
     const Teuchos::RCP<const Ginla::FDM::State> state = this->createFdmState_( x );
 
     // compute the GL residual
-    const Teuchos::RCP<const Ginla::State::Virtual> res = glOperator_->getF( state );
+    const Teuchos::RCP<const Ginla::State::Updatable> res = glOperator_->getF( state );
 
     // TODO Avoid this explicit copy?
     // transform back to fully real equation
@@ -282,7 +282,7 @@ computeDFDh0 ( const Epetra_Vector & x,
     const Teuchos::RCP<const Ginla::FDM::State> state = this->createFdmState_( x );
 
     // compute the GL residual
-    const Teuchos::RCP<const Ginla::State::Virtual> res = glOperator_->getDFDh0( state );
+    const Teuchos::RCP<const Ginla::State::Updatable> res = glOperator_->getDFDh0( state );
 
     // TODO Avoid this explicit copy?
     // transform back to fully real equation
@@ -321,12 +321,19 @@ computeJacobian ( const Epetra_Vector & x,
     return;
 }
 // ============================================================================
-Teuchos::RCP<Ginla::State::Virtual>
+Teuchos::RCP<Ginla::State::Updatable>
 Ginla::FDM::ModelEvaluator::Default::
 createState( const Epetra_Vector & x
            ) const
 {
     return this->createFdmState_( x );
+}
+// ============================================================================
+Teuchos::RCP<Ginla::State::Virtual>
+Ginla::FDM::ModelEvaluator::Default::
+createSavable( const Epetra_Vector & x ) const
+{
+    return this->createState( x );
 }
 // ============================================================================
 Teuchos::RCP<Ginla::FDM::State>
@@ -340,15 +347,15 @@ createFdmState_( const Epetra_Vector & x
 // =============================================================================
 Teuchos::RCP<Epetra_Vector>
 Ginla::FDM::ModelEvaluator::Default::
-createSystemVector(  const Ginla::State::Virtual & state ) const
+createSystemVector(  const Ginla::State::Updatable & state ) const
 {
     return komplex_->complex2real ( state.getPsi() );
 }
 // =============================================================================
 void
 Ginla::FDM::ModelEvaluator::Default::
-createSystemVector( const Ginla::State::Virtual & state,
-                          Epetra_Vector         & x
+createSystemVector( const Ginla::State::Updatable & state,
+                          Epetra_Vector           & x
                   ) const
 {
   komplex_->complex2real( *state.getPsi(), x );

@@ -23,17 +23,17 @@
 #include "Ginla_IO_StatsWriter.h"
 #include "Ginla_Helpers.h"
 #include "Ginla_ParameterHost_Virtual.h"
-#include "Ginla_StateTranslator.h"
+#include "Ginla_CreateSavable_Virtual.h"
 
 // ============================================================================
 Ginla::IO::NoxObserver::
 NoxObserver ( const Teuchos::RCP<const Ginla::IO::StateWriter>        & stateWriter,
-              const Teuchos::RCP<const Ginla::StateTranslator>        & stateTranslator,
+              const Teuchos::RCP<const Ginla::CreateSavable::Virtual> & createSavable,
               const ObserverType                                      & observerType,
               const Teuchos::RCP<const Ginla::ParameterHost::Virtual> & parameterHost
             ) :
   stateWriter_ ( stateWriter ),
-  stateTranslator_ ( stateTranslator ),
+  createSavable_ ( createSavable ),
   observerType_( observerType ),
   statsWriter_ ( Teuchos::null ),
   parameterHost_ ( parameterHost )
@@ -59,8 +59,8 @@ Ginla::IO::NoxObserver::
 observeSolution( const Epetra_Vector & soln )
 {
     // define state
-    const Teuchos::RCP<const Ginla::State::Virtual> state =
-        stateTranslator_->createState(soln);
+    const Teuchos::RCP<const Ginla::State::Virtual> savable =
+        createSavable_->createSavable( soln );
 
     // The switch hack is necessary as different continuation algorithms
     // call printSolution() a different number of times per step, e.g.,
@@ -69,13 +69,13 @@ observeSolution( const Epetra_Vector & soln )
     {
       case NONLINEAR:
           if (!stateWriter_.is_null())
-              stateWriter_->write( state, 0 );
+              stateWriter_->write( savable, 0 );
           break;
       case CONTINUATION:
-          this->observeContinuation_( state );
+          this->observeContinuation_( savable );
           break;
       case TURNING_POINT:
-          this->observeTurningPointContinuation_( state );
+          this->observeTurningPointContinuation_( savable );
           break;
       default:
           TEST_FOR_EXCEPTION ( true,

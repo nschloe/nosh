@@ -334,7 +334,7 @@ computeF_ ( const Epetra_Vector            & x,
   std::cout << "computeF_ " << scaling << std::endl;
 
   // convert from x to state
-  const Teuchos::RCP<Ginla::State::Virtual> state = this->createState( x );
+  const Teuchos::RCP<Ginla::State::Updatable> state = this->createState( x );
 
   // compute the GL residual
   Teuchos::RCP<Ginla::FVM::State> res =
@@ -381,7 +381,7 @@ computeF_ ( const Epetra_Vector            & x,
   return;
 }
 // ============================================================================
-Teuchos::RCP<Ginla::State::Virtual>
+Teuchos::RCP<Ginla::State::Updatable>
 Ginla::FVM::ModelEvaluator::
 createState( const Epetra_Vector & x ) const
 {
@@ -389,16 +389,23 @@ createState( const Epetra_Vector & x ) const
     return Teuchos::rcp( new Ginla::FVM::State( psi, mesh_ ) );
 }
 // =============================================================================
+Teuchos::RCP<Ginla::State::Virtual>
+Ginla::FVM::ModelEvaluator::
+createSavable( const Epetra_Vector & x ) const
+{
+    return this->createState( x );
+}
+// =============================================================================
 Teuchos::RCP<Epetra_Vector>
 Ginla::FVM::ModelEvaluator::
-createSystemVector(  const Ginla::State::Virtual & state ) const
+createSystemVector(  const Ginla::State::Updatable & state ) const
 {
     return komplex_->complex2real ( state.getPsi() );
 }
 // =============================================================================
 void
 Ginla::FVM::ModelEvaluator::
-createSystemVector( const Ginla::State::Virtual & state,
+createSystemVector( const Ginla::State::Updatable & state,
                           Epetra_Vector         & x
                   ) const
 {
@@ -646,7 +653,7 @@ computeJacobian_ ( const Epetra_Vector            & x,
       this->assembleKineticEnergyOperators_( mu, scaling );
 
   // convert from x to state
-  const Teuchos::RCP<const Ginla::State::Virtual> state = this->createState( x );
+  const Teuchos::RCP<const Ginla::State::Updatable> state = this->createState( x );
 
   // construct parts A and B of the linear operator part
 

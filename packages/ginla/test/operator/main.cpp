@@ -56,7 +56,7 @@ BOOST_AUTO_TEST_CASE( operator_test )
          = Teuchos::rcp( new Recti::Domain::Circle(1.0) );
 
     double h = 5.0e-2;
-    
+
     Teuchos::RCP<Recti::Grid::Uniform> grid
          = Teuchos::rcp( new Recti::Grid::Uniform( Omega, h ) );
     // ------------------------------------------------------------------------
@@ -70,7 +70,7 @@ BOOST_AUTO_TEST_CASE( operator_test )
     double edgeLength = 1.0;
     Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> A
         = Teuchos::rcp( new Ginla::MagneticVectorPotential::ZSquareSymmetric( h0, edgeLength ) );
-                                                                      
+
     Teuchos::RCP<Ginla::FDM::Operator::Virtual> glOperator
         = Teuchos::rcp( new Ginla::FDM::Operator::BCCentral( grid,
                                                              A,
@@ -78,27 +78,27 @@ BOOST_AUTO_TEST_CASE( operator_test )
                                                              state->getPsi()->getMap() ) );
     // ------------------------------------------------------------------------
     // get dF/dh0 at state
-    Teuchos::RCP<const Ginla::State::Virtual> dFState = glOperator->getDFDh0( state );
+    Teuchos::RCP<const Ginla::State::Updatable> dFState = glOperator->getDFDh0( state );
     // ------------------------------------------------------------------------
     // compute the finite difference
     double eps = 1.0e-05;
     LOCA::ParameterVector p;
     p.addParameter( "H0", h0 );
-    
+
     p[0] = h0 + eps;
     glOperator->setParameters( p );
-    Teuchos::RCP<Ginla::State::Virtual> statePlus = glOperator->getF( state );
-    
+    Teuchos::RCP<Ginla::State::Updatable> statePlus = glOperator->getF( state );
+
     p[0] = h0 - eps;
     glOperator->setParameters( p );
-    Teuchos::RCP<Ginla::State::Virtual> stateMinus = glOperator->getF( state );
-    
+    Teuchos::RCP<Ginla::State::Updatable> stateMinus = glOperator->getF( state );
+
     // store the finite difference in statePlus
     statePlus->update( -0.5/eps, *stateMinus, 0.5/eps );
     // ------------------------------------------------------------------------
     // check that the finite difference is somewhere near the analytic expression
     statePlus->update( -1.0, *dFState, 1.0 );
-    
+
     BOOST_CHECK_SMALL( statePlus->normalizedScaledL2Norm(), 1.0e-05 );
     // ------------------------------------------------------------------------
     // clean up

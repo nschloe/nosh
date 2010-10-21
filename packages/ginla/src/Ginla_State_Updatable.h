@@ -1,6 +1,6 @@
 /*
     <one line to give the program's name and a brief idea of what it does.>
-    Copyright (C) 2010  Nico Schl\"omer
+    Copyright (C) 2010 Nico Schl\"omer
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,16 +17,54 @@
 
 */
 
-#include "Ginla_State_Virtual.h"
+#ifndef GINLA_STATE_UPDATABLE_H
+#define GINLA_STATE_UPDATABLE_H
 
-// =============================================================================
-Ginla::State::Virtual::
-Virtual()
-{
+#include "Ginla_State_Virtual.h"
+#include "Ginla_Typedefs.h"
+
+namespace LOCA {
+  class ParameterVector;
 }
-// =============================================================================
-Ginla::State::Virtual::
-~Virtual()
+
+namespace Ginla {
+namespace State {
+    class Updatable: public Ginla::State::Virtual
 {
+public:
+
+  //! Constructor.
+  Updatable();
+
+  virtual
+  ~Updatable();
+
+  virtual
+  void
+  update( const double                  alpha,
+          const Ginla::State::Updatable & b,
+          const double                  beta
+        ) = 0;
+
+  virtual
+  Teuchos::RCP<const ComplexVector>
+  getPsi () const = 0;
+
+  virtual
+  Teuchos::RCP<ComplexVector>
+  getPsiNonConst () = 0;
+
+  virtual
+  double
+  getChi () const = 0;
+
+
+protected:
+private:
+
+};
+
 }
-// =============================================================================
+}
+
+#endif // GINLA_STATE_UPDATABLE_H

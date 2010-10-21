@@ -45,14 +45,14 @@ setOutputDir ( const string & directory )
 void
 Ginla::IO::StateWriter::
 write ( const Teuchos::RCP<const Ginla::State::Virtual> & state,
-        const unsigned int                              & index,
-        const std::string                               & filenameAppend,
-        LOCA::ParameterVector                           & params
+        const unsigned int                                & index,
+        const std::string                                 & filenameAppend,
+        LOCA::ParameterVector                             & params
       ) const
 {
     // get the parameter list
     Teuchos::RCP<Teuchos::ParameterList> p =
-        Ginla::Helpers::locaParameterVector2teuchosParameterList( params );        
+        Ginla::Helpers::locaParameterVector2teuchosParameterList( params );
 
     // create the file name
     stringstream fileName;
@@ -70,8 +70,8 @@ write ( const Teuchos::RCP<const Ginla::State::Virtual> & state,
 void
 Ginla::IO::StateWriter::
 write ( const Teuchos::RCP<const Ginla::State::Virtual> & state,
-        const unsigned int                              & index,
-        const std::string                               & filenameAppend
+        const unsigned int                                & index,
+        const std::string                                 & filenameAppend
       ) const
 {
   LOCA::ParameterVector empty;
@@ -82,8 +82,8 @@ write ( const Teuchos::RCP<const Ginla::State::Virtual> & state,
 void
 Ginla::IO::StateWriter::
 write ( const Teuchos::RCP<const Ginla::State::Virtual> & state,
-        const unsigned int                              & index,
-        LOCA::ParameterVector                           & params
+        const unsigned int                                & index,
+        LOCA::ParameterVector                             & params
       ) const
 {
   std::string filenameAppend = "";
@@ -94,7 +94,7 @@ write ( const Teuchos::RCP<const Ginla::State::Virtual> & state,
 void
 Ginla::IO::StateWriter::
 write ( const Teuchos::RCP<const Ginla::State::Virtual> & state,
-        const unsigned int                              & index
+        const unsigned int                                & index
       ) const
 {
   std::string filenameAppend = "";

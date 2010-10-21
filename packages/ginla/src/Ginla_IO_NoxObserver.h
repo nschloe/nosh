@@ -32,7 +32,9 @@ namespace Ginla {
   namespace State {
     class Virtual;
   }
-  class StateTranslator;
+  namespace CreateSavable {
+      class Virtual;
+  }
   namespace IO {
     class StateWriter;
     class StatsWriter;
@@ -58,7 +60,7 @@ public:
 public:
   //! Constructor
   NoxObserver ( const Teuchos::RCP<const Ginla::IO::StateWriter>        & stateWriter,
-                const Teuchos::RCP<const Ginla::StateTranslator>        & stateTranslator,
+                const Teuchos::RCP<const Ginla::CreateSavable::Virtual> & createSavable,
                 const NoxObserver::ObserverType                         & problemType,
                 const Teuchos::RCP<const Ginla::ParameterHost::Virtual> & parameterHost = Teuchos::null
               );
@@ -92,8 +94,8 @@ private:
 private:
 
     const ObserverType observerType_;
-    const Teuchos::RCP<const Ginla::IO::StateWriter>  stateWriter_;
-    const Teuchos::RCP<const Ginla::StateTranslator>  stateTranslator_;
+    const Teuchos::RCP<const Ginla::IO::StateWriter> stateWriter_;
+    const Teuchos::RCP<const Ginla::CreateSavable::Virtual> createSavable_;
 
     Teuchos::RCP<Ginla::IO::StatsWriter>   statsWriter_;
     Teuchos::RCP<const Ginla::ParameterHost::Virtual> parameterHost_;

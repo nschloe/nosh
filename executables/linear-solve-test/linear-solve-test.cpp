@@ -153,13 +153,13 @@ int main ( int argc, char *argv[] )
       Teuchos::ParameterList MLList;
       ML_Epetra::SetDefaults( "SA", MLList );
       MLList.set("ML output", 10);
-      MLList.set("max levels",5);
-      MLList.set("increasing or decreasing","increasing");
+      MLList.set("max levels", 10);
+      MLList.set("increasing or decreasing", "increasing");
       MLList.set("aggregation: type", "Uncoupled");
-      MLList.set("smoother: type","Chebyshev");
-      MLList.set("smoother: sweeps",3);
+      MLList.set("smoother: type", "Chebyshev");
+      MLList.set("smoother: sweeps", 3);
       MLList.set("smoother: pre or post", "both");
-      MLList.set("coarse: type","Amesos-KLU");
+      MLList.set("coarse: type", "Amesos-KLU");
       Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> MLPrec =
                   Teuchos::rcp( new ML_Epetra::MultiLevelPreconditioner(*keoMatrix, MLList) );
       MLPrec->PrintUnused(0);

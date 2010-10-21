@@ -1,6 +1,8 @@
 SET ( ginla_SRCS
       Ginla_State_Virtual.cpp
-      Ginla_StateTranslator.cpp
+      Ginla_CreateSavable_Virtual.cpp
+      Ginla_State_Updatable.cpp
+      Ginla_StateTranslator_Virtual.cpp
       Ginla_ParameterHost_Virtual.cpp
       Ginla_Helpers.cpp
       Ginla_MagneticVectorPotential_Virtual.cpp

@@ -20,7 +20,9 @@ namespace Ginla {
   namespace IO {
     class StateWriter;
   }
-  class StateTranslator;
+  namespace StateTranslator {
+      class Virtual;
+  }
 }
 
 namespace Ginla {
@@ -39,12 +41,12 @@ class SaveEigenData:
 //      const Teuchos::RCP<Teuchos::ParameterList>& eigenParams      );
 
    // Constructor
-   SaveEigenData ( Teuchos::ParameterList                           & eigenParamList,
-                   const Teuchos::RCP<const Ginla::StateTranslator> & stateTranslator,
-                   const Teuchos::RCP<const Ginla::IO::StateWriter> & stateWriter,
-                   const Teuchos::RCP<Ginla::IO::StatsWriter>       & statsWriter
+   SaveEigenData ( Teuchos::ParameterList                                    & eigenParamList,
+                   const Teuchos::RCP<const Ginla::StateTranslator::Virtual> & stateTranslator,
+                   const Teuchos::RCP<const Ginla::IO::StateWriter>          & stateWriter,
+                   const Teuchos::RCP<Ginla::IO::StatsWriter>                & statsWriter
                  );
-              
+
    virtual
    ~SaveEigenData();
 
@@ -67,7 +69,7 @@ class SaveEigenData:
   protected:
   private:
     Teuchos::RCP<Teuchos::ParameterList> eigenParamListPtr_;
-    const Teuchos::RCP<const Ginla::StateTranslator> stateTranslator_;
+    const Teuchos::RCP<const Ginla::StateTranslator::Virtual> stateTranslator_;
     const Teuchos::RCP<const Ginla::IO::StateWriter> stateWriter_;
     const Teuchos::RCP<const Komplex2::LinearProblem> komplex_;
     Teuchos::RCP<Ginla::IO::StatsWriter> statsWriter_;

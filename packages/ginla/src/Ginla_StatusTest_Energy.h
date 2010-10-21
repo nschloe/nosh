@@ -25,7 +25,9 @@
 
 // forward declarations
 namespace Ginla {
-  class StateTranslator;
+    namespace StateTranslator {
+        class Virtual;
+    }
 }
 
 
@@ -38,8 +40,8 @@ class Energy:
 {
 public:
   //! Constructor.
-  Energy( const Teuchos::RCP<const Ginla::StateTranslator> & stateTranslator,
-          const double                                       maxFreeEnergy
+    Energy( const Teuchos::RCP<const Ginla::StateTranslator::Virtual> & stateTranslator,
+            const double                                                maxFreeEnergy
         );
 
   //! Destructor.
@@ -63,16 +65,16 @@ public:
          int indent = 0) const;
 
 protected:
-  
+
 private:
   void
   computeFreeEnergy( const LOCA::Stepper & stepper );
-  
+
 private:
   double freeEnergy_;
   double maxFreeEnergy_;
   LOCA::StatusTest::StatusType status_;
-  const Teuchos::RCP<const Ginla::StateTranslator> stateTranslator_;
+  const Teuchos::RCP<const Ginla::StateTranslator::Virtual> stateTranslator_;
 
 };
 

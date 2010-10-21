@@ -22,7 +22,7 @@
 
 #include "Ginla_Typedefs.h"
 #include "Ginla_State_Virtual.h"
-#include "Ginla_StateTranslator.h"
+#include "Ginla_StateTranslator_Virtual.h"
 
 #include <Teuchos_RCP.hpp>
 #include <LOCA_StatusTest_Abstract.H>
@@ -43,7 +43,7 @@ class Loop:
 {
 public:
   //! Constructor.
-  Loop( const Teuchos::RCP<const Ginla::StateTranslator> & stateTranslator );
+    Loop( const Teuchos::RCP<const Ginla::StateTranslator::Virtual> & stateTranslator );
 
   //! Destructor.
   virtual
@@ -70,23 +70,23 @@ protected:
 private:
   void
   computeDiffNorm( const LOCA::Stepper & stepper );
-  
+
   void
   setReferencePoint( const LOCA::Stepper & stepper );
-  
+
 private:
   bool firstTime_;
-  
+
   //! Whether the continuation has ever left the \c tol_ ball around
   //! the reference solution. If not, tests are not conducted.
   bool wasAway_;
-  
+
   double tol_;
   double diffNorm_;
-  const Teuchos::RCP<const Ginla::StateTranslator> stateTranslator_;
+  const Teuchos::RCP<const Ginla::StateTranslator::Virtual> stateTranslator_;
   LOCA::StatusTest::StatusType status_;
-  Teuchos::RCP<const Ginla::State::Virtual> referenceState_;
-  
+  Teuchos::RCP<const Ginla::State::Updatable> referenceState_;
+
 };
 
 }

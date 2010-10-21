@@ -24,7 +24,7 @@
 #include <Teuchos_ParameterList.hpp>
 #include <Epetra_Import.h>
 
-#include "Ginla_StateTranslator.h"
+#include "Ginla_StateTranslator_Virtual.h"
 #include "Ginla_FDM_ModelEvaluator_Default.h"
 
 // forward declarations
@@ -43,7 +43,7 @@ namespace ModelEvaluator {
 
 class Bordered:
     public EpetraExt::ModelEvaluator,
-    public Ginla::StateTranslator
+    public Ginla::StateTranslator::Virtual
 {
 public:
 
@@ -57,10 +57,10 @@ public:
   //! Constructor with initial guess.
   Bordered ( const Teuchos::RCP<Ginla::FDM::Operator::Virtual> & glOperator,
              const Teuchos::RCP<Komplex2::LinearProblem>       & komplex,
-             const Ginla::State::Virtual                       & state,
+             const Ginla::State::Updatable                     & state,
              const Teuchos::ParameterList                      & params
            );
-  
+
   // Destructor
   virtual
   ~Bordered();
@@ -77,21 +77,21 @@ public:
   virtual
   Teuchos::RCP<const Epetra_Vector>
   get_x_init () const;
-  
+
   virtual
   Teuchos::RCP<const Epetra_Vector>
   get_p_init ( int l ) const;
-  
+
   virtual
   Teuchos::RCP<const Epetra_Map>
   get_p_map(int l) const;
-  
+
   virtual
   Teuchos::RCP<const Teuchos::Array<std::string> >
   get_p_names (int l) const;
-  
+
   virtual
-  Teuchos::RCP<Epetra_Operator> 
+  Teuchos::RCP<Epetra_Operator>
   create_W() const;
 
   virtual
@@ -106,56 +106,56 @@ public:
   void
   evalModel( const InArgs  & inArgs,
              const OutArgs & outArgs ) const;
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -              
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
   virtual
-  Teuchos::RCP<Ginla::State::Virtual>
+  Teuchos::RCP<Ginla::State::Updatable>
   createState( const Epetra_Vector & x ) const;
-  
+
   virtual
   Teuchos::RCP<Epetra_Vector>
-  createSystemVector( const Ginla::State::Virtual & state ) const;
-  
+  createSystemVector( const Ginla::State::Updatable & state ) const;
+
   virtual
   void
-  createSystemVector( const Ginla::State::Virtual & state,
-                            Epetra_Vector         & x
+  createSystemVector( const Ginla::State::Updatable & state,
+                            Epetra_Vector           & x
                     ) const;
 
 protected:
 private:
-  
+
    const Teuchos::RCP<Ginla::FDM::ModelEvaluator::Default> modelEvaluatorDefault_;
 
    mutable bool firstTime_;
-   
+
     Teuchos::RCP<const Epetra_BlockMap> regularMap_;
     Teuchos::RCP<Epetra_Map> extendedMap_;
-    
+
     const Epetra_Import importFromExtendedMap_;
     const Epetra_Import importFromRegularMap_;
-    
+
     const Teuchos::RCP<Epetra_CrsMatrix> jacobian_;
     const Teuchos::RCP<Epetra_Vector> x_;
-   
+
 private:
 
     void
     computeF_ ( const Epetra_Vector & x,
                       Epetra_Vector & FVec ) const;
-                
+
     void
     computeDFDh0_ ( const Epetra_Vector & x,
                           Epetra_Vector & FVec ) const;
-                
+
     void
     computeJacobian_ ( const Epetra_Vector & x,
                        Epetra_Operator     & Jac ) const;
-                       
+
     Teuchos::RCP<Epetra_Map>
     createExtendedMap_ ( const Epetra_BlockMap & realMap ) const;
-    
-    
+
+
     void
     fillBorderedMatrix_ ( const Teuchos::RCP<      Epetra_CrsMatrix> & extendedMatrix,
                           const Teuchos::RCP<const Epetra_CrsMatrix> & regularMatrix,
@@ -165,7 +165,7 @@ private:
                           double                                       d,
                           bool                                         firstTime
                         ) const;
-                        
+
     int
     PutRow_ ( const Teuchos::RCP<Epetra_CrsMatrix> A,
               const int                            globalRow,

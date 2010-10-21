@@ -40,34 +40,34 @@ Ginla::FDM::Operator::BCCentral::
 {
 }
 // =============================================================================
-Teuchos::RCP<Ginla::State::Virtual>
+Teuchos::RCP<Ginla::State::Updatable>
 Ginla::FDM::Operator::BCCentral::
 getF( const Teuchos::RCP<const Ginla::FDM::State> & state ) const
-{ 
+{
   // initialize F
-  Teuchos::RCP<Ginla::State::Virtual> F =
+  Teuchos::RCP<Ginla::State::Updatable> F =
       Teuchos::rcp( new Ginla::FDM::State( state->getPsi()->getMap(),
                                            state->getGrid() ) );
-                                      
+
   Teuchos::ArrayRCP<double_complex> FView = F->getPsiNonConst()->get1dViewNonConst();
-  
+
   // rebuild cache for A?
   if ( cacheNeedsUpdating_ )
     this->buildACache_();
-  
+
   Teuchos::ArrayRCP<const double> ALeftView  = ALeft_->get1dView();
   Teuchos::ArrayRCP<const double> ARightView = ARight_->get1dView();
   Teuchos::ArrayRCP<const double> ABelowView = ABelow_->get1dView();
   Teuchos::ArrayRCP<const double> AAboveView = AAbove_->get1dView();
-  
+
   Teuchos::ArrayRCP<const double_complex> psiView = state->getPsi()->get1dView();
   double chi = state->getChi();
-  
+
   double h = grid_->getUniformH();
-  
+
   // loop over the nodes
   unsigned int localLength = F->getPsi()->getLocalLength();
-  
+
   for ( unsigned int localIndex=0; localIndex<localLength; localIndex++ )
   {
       int globalIndex = rangeMap_->getGlobalElement ( localIndex );
@@ -81,7 +81,7 @@ getF( const Teuchos::RCP<const Ginla::FDM::State> & state ) const
                                              AAboveView,
                                              h );
   }
-  
+
   return F;
 }
 // =============================================================================
@@ -100,11 +100,11 @@ getFEntry_ ( Teuchos::ArrayRCP<const double_complex> & psiView,
 {
     double_complex res;
     double_complex psiK, psiKRight, psiKLeft, psiKAbove, psiKBelow;
-      
+
     Recti::Grid::Abstract::nodeType nt = grid_->getNodeType ( globalIndex );
-    
+
     psiK = psiView[ localIndex ];
-    
+
     switch ( nt )
     {
     case Recti::Grid::Abstract::INTERIOR:
@@ -119,7 +119,7 @@ getFEntry_ ( Teuchos::ArrayRCP<const double_complex> & psiView,
                 + psiKLeft*  exp ( IM*ALeftView[localIndex] *h ) + psiKRight* exp ( -IM*ARightView[localIndex]*h )
                 + psiKBelow* exp ( IM*ABelowView[localIndex]*h ) + psiKAbove* exp ( -IM*AAboveView[localIndex]*h ) ) / ( h*h )
               + psiK * ( 1-norm ( psiK ) );
-              
+
         res *= exp ( IM*chi );
         break;
 
@@ -310,21 +310,21 @@ getFEntry_ ( Teuchos::ArrayRCP<const double_complex> & psiView,
     return res;
 }
 // =============================================================================
-Teuchos::RCP<const Ginla::State::Virtual>
+Teuchos::RCP<const Ginla::State::Updatable>
 Ginla::FDM::Operator::BCCentral::
 getDFDh0( const Teuchos::RCP<const Ginla::FDM::State> & state ) const
-{ 
+{
   // initialize F
-  Teuchos::RCP<Ginla::State::Virtual> F =
+  Teuchos::RCP<Ginla::State::Updatable> F =
       Teuchos::rcp( new Ginla::FDM::State( state->getPsi()->getMap(),
                                            state->getGrid() ) );
-                                      
+
   Teuchos::ArrayRCP<double_complex> FView = F->getPsiNonConst()->get1dViewNonConst();
 
   // rebuild cache for A?
   if ( cacheNeedsUpdating_ )
     this->buildACache_();
-  
+
   Teuchos::ArrayRCP<const double> ALeftView  = ALeft_->get1dView();
   Teuchos::ArrayRCP<const double> ARightView = ARight_->get1dView();
   Teuchos::ArrayRCP<const double> ABelowView = ABelow_->get1dView();
@@ -333,19 +333,19 @@ getDFDh0( const Teuchos::RCP<const Ginla::FDM::State> & state ) const
   Teuchos::ArrayRCP<const double> dAdH0RightView = dAdH0Right_->get1dView();
   Teuchos::ArrayRCP<const double> dAdH0BelowView = dAdH0Below_->get1dView();
   Teuchos::ArrayRCP<const double> dAdH0AboveView = dAdH0Above_->get1dView();
-  
+
   Teuchos::ArrayRCP<const double_complex> psiView = state->getPsi()->get1dView();
   double chi = state->getChi();
-  
+
   double h = grid_->getUniformH();
-  
+
   // loop over the nodes
   unsigned int localLength = F->getPsi()->getLocalLength();
-  
+
   for ( unsigned int localIndex=0; localIndex<localLength; localIndex++ )
   {
       int globalIndex = rangeMap_->getGlobalElement ( localIndex );
-      
+
       FView[localIndex] = this->getDFDh0Entry_( psiView,
                                                 chi,
                                                 localIndex,
@@ -361,7 +361,7 @@ getDFDh0( const Teuchos::RCP<const Ginla::FDM::State> & state ) const
                                                 h
                                               );
   }
-  
+
   return F;
 }
 // =============================================================================
@@ -385,10 +385,10 @@ getDFDh0Entry_( Teuchos::ArrayRCP<const double_complex> & psiView,
     double_complex res;
     double_complex psiK, psiKRight, psiKLeft, psiKAbove, psiKBelow;
 
-    Recti::Grid::Abstract::nodeType nt = grid_->getNodeType ( globalIndex );    
-    
+    Recti::Grid::Abstract::nodeType nt = grid_->getNodeType ( globalIndex );
+
     psiK = psiView[localIndex];
-    
+
     switch ( nt )
     {
     case Recti::Grid::Abstract::INTERIOR:
@@ -439,7 +439,7 @@ getDFDh0Entry_( Teuchos::ArrayRCP<const double_complex> & psiView,
         psiKBelow = psiView[ grid_->getKBelow ( globalIndex ) ];
 
         // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        res = ( + psiKLeft * 2.0 * IM*dAdH0LeftView[localIndex] *h * exp ( IM*ALeftView[localIndex] *h ) 
+        res = ( + psiKLeft * 2.0 * IM*dAdH0LeftView[localIndex] *h * exp ( IM*ALeftView[localIndex] *h )
                 + psiKBelow* 2.0 * IM*dAdH0BelowView[localIndex]*h * exp ( IM*ABelowView[localIndex]*h )
               ) / ( h*h );
         res *= exp ( IM*chi );
@@ -610,7 +610,7 @@ getJacobian ( const Teuchos::RCP<const Ginla::FDM::State> & state
   // rebuild cache for A?
   if ( cacheNeedsUpdating_ )
     this->buildACache_();
-  
+
   Teuchos::ArrayRCP<const double> ALeftView  = ALeft_->get1dView();
   Teuchos::ArrayRCP<const double> ARightView = ARight_->get1dView();
   Teuchos::ArrayRCP<const double> ABelowView = ABelow_->get1dView();
@@ -623,7 +623,7 @@ getJacobian ( const Teuchos::RCP<const Ginla::FDM::State> & state
 
   // loop over the nodes
   unsigned int localLength = state->getPsi()->getLocalLength();
-  
+
   Teuchos::Array<Thyra::Ordinal> columnIndicesPsi;
   Teuchos::Array<double_complex> valuesPsi;
   Teuchos::Array<Thyra::Ordinal> columnIndicesPsiConj;
@@ -681,9 +681,9 @@ getJacobianRow_ ( Teuchos::ArrayRCP<const double_complex> & psiView,
 {
     int kLeft, kRight, kBelow, kAbove;
     int numEntriesPsi, numEntriesPsiConj;
-    
+
     Recti::Grid::Abstract::nodeType nt = grid_->getNodeType ( globalIndex );
-    
+
     switch ( nt )
     {
     case Recti::Grid::Abstract::INTERIOR:

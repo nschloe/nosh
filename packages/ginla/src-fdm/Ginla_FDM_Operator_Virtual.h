@@ -61,11 +61,11 @@ public:
 
     //! Destructor
     virtual ~Virtual();
-    
-    virtual Teuchos::RCP<Ginla::State::Virtual>
+
+    virtual Teuchos::RCP<Ginla::State::Updatable>
     getF( const Teuchos::RCP<const Ginla::FDM::State> & state ) const = 0; // purely virtual
-    
-    virtual Teuchos::RCP<const Ginla::State::Virtual>
+
+    virtual Teuchos::RCP<const Ginla::State::Updatable>
     getDFDh0( const Teuchos::RCP<const Ginla::FDM::State> & state ) const = 0; // purely virtual
 
     virtual Teuchos::RCP<const Komplex2::DoubleMatrix>
@@ -76,7 +76,7 @@ public:
 
     void
     setParameters( const LOCA::ParameterVector & p );
-    
+
     Teuchos::RCP<LOCA::ParameterVector>
     getParameters() const;
 
@@ -84,19 +84,19 @@ protected:
     const Teuchos::RCP<const ComplexMap> domainMap_;
     const Teuchos::RCP<const ComplexMap> rangeMap_;
     const Teuchos::RCP<Recti::Grid::Uniform> grid_;
-    
+
     //! Builds the cache for values of \f$A\f$ and \f$\frac{\text{d}A}{\text{d}H0}\f$.
     void
     buildACache_() const;
-    
+
     mutable bool cacheNeedsUpdating_;
-    
+
     // cache for the queries to A
     const Teuchos::RCP<RealVector> ALeft_;
     const Teuchos::RCP<RealVector> ARight_;
     const Teuchos::RCP<RealVector> AAbove_;
     const Teuchos::RCP<RealVector> ABelow_;
-    
+
     // cache for the queries to dAdH0
     const Teuchos::RCP<RealVector> dAdH0Left_;
     const Teuchos::RCP<RealVector> dAdH0Right_;
@@ -106,9 +106,9 @@ protected:
     //! Data for building the double matrix A/B, corresponding to \f$\psi\f$ and \f$\overline{\psi}\f$, respectively.
     bool firstTime_;
     Teuchos::RCP<Komplex2::DoubleMatrix> AB_;
-    
+
 private:
-  
+
     const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> A_;
 
 };

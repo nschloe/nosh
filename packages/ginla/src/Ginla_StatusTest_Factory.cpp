@@ -48,14 +48,14 @@ Ginla::StatusTest::Factory::
 Teuchos::RCP<LOCA::StatusTest::Abstract>
 Ginla::StatusTest::Factory::
 buildStatusTests( const std::string& file_name ,
-                  const Teuchos::RCP<const Ginla::StateTranslator> & stateTranslator,
+                  const Teuchos::RCP<const Ginla::StateTranslator::Virtual> & stateTranslator,
                   const Teuchos::RCP<const Teuchos::ParameterList> & eigenInfo,
                   const Teuchos::RCP<const LOCA::GlobalData> & globalData,
                   std::map<std::string, Teuchos::RCP<LOCA::StatusTest::Abstract> >* tagged_tests
                 ) const
-{   
+{
   Teuchos::RCP<LOCA::StatusTest::Abstract> status_tests;
-  
+
 #ifdef HAVE_TEUCHOS_EXTENDED
   Teuchos::ParameterList param_list;
   Teuchos::updateParametersFromXmlFile("input.xml", &param_list);
@@ -71,12 +71,12 @@ buildStatusTests( const std::string& file_name ,
 Teuchos::RCP<LOCA::StatusTest::Abstract>
 Ginla::StatusTest::Factory::
 buildStatusTests( Teuchos::ParameterList& p,
-                  const Teuchos::RCP<const Ginla::StateTranslator> & stateTranslator,
+                  const Teuchos::RCP<const Ginla::StateTranslator::Virtual> & stateTranslator,
                   const Teuchos::RCP<const Teuchos::ParameterList> & eigenInfo,
                   const Teuchos::RCP<const LOCA::GlobalData> & globalData,
                   std::map<std::string, Teuchos::RCP<LOCA::StatusTest::Abstract> >* tagged_tests
                 ) const
-{ 
+{
   Teuchos::RCP<LOCA::StatusTest::Abstract> status_test;
 
   std::string test_type = "???";
@@ -86,7 +86,7 @@ buildStatusTests( Teuchos::ParameterList& p,
   else {
     std::string msg = "Error - The \"Test Type\" is a required parameter in the Ginla::StatusTest::Factory!";
     TEST_FOR_EXCEPTION(true, std::logic_error, msg);
-  }  
+  }
 
   if (test_type == "Combo")
     status_test = this->buildComboTest(p, stateTranslator, eigenInfo, globalData, tagged_tests);
@@ -114,15 +114,15 @@ buildStatusTests( Teuchos::ParameterList& p,
 Teuchos::RCP<LOCA::StatusTest::Abstract>
 Ginla::StatusTest::Factory::
 buildComboTest( Teuchos::ParameterList& p,
-                const Teuchos::RCP<const Ginla::StateTranslator> & stateTranslator,
+                const Teuchos::RCP<const Ginla::StateTranslator::Virtual> & stateTranslator,
                 const Teuchos::RCP<const Teuchos::ParameterList> & eigenInfo,
                 const Teuchos::RCP<const LOCA::GlobalData> & globalData,
                 std::map<std::string, Teuchos::RCP<LOCA::StatusTest::Abstract> >* tagged_tests
               ) const
-{ 
+{
 
   int number_of_tests = Teuchos::get<int>(p, "Number of Tests");
-  
+
   std::string combo_type_string = Teuchos::get<std::string>(p, "Combo Type");
   LOCA::StatusTest::Combo::ComboType combo_type;
   if (combo_type_string == "AND")
@@ -131,37 +131,37 @@ buildComboTest( Teuchos::ParameterList& p,
     combo_type = LOCA::StatusTest::Combo::OR;
   else
   {
-    std::string msg = 
+    std::string msg =
       "Error - The \"Combo Type\" must be \"AND\" or \"OR\"!";
     TEST_FOR_EXCEPTION(true, std::logic_error, msg);
   }
-  
+
   Teuchos::RCP<LOCA::StatusTest::Combo> combo_test =
     Teuchos::rcp(new LOCA::StatusTest::Combo(combo_type, globalData));
-  
+
   for (int i=0; i < number_of_tests; ++i)
   {
     ostringstream subtest_name;
     subtest_name << "Test " << i;
     Teuchos::ParameterList& subtest_list = p.sublist(subtest_name.str(), true);
-    
+
     Teuchos::RCP<LOCA::StatusTest::Abstract> subtest =
       this->buildStatusTests(subtest_list, stateTranslator, eigenInfo, globalData, tagged_tests);
-    
+
     combo_test->addStatusTest(subtest);
   }
-  
+
   return combo_test;
 }
 // =============================================================================
 Teuchos::RCP<LOCA::StatusTest::Abstract>
 Ginla::StatusTest::Factory::
 buildEnergyTest( Teuchos::ParameterList & p,
-                 const Teuchos::RCP<const Ginla::StateTranslator> & stateTranslator
+                 const Teuchos::RCP<const Ginla::StateTranslator::Virtual> & stateTranslator
                ) const
 {
   double maxFreeEnergy = Teuchos::get<double>( p, "Maximum free energy" );
-  
+
   Teuchos::RCP<Ginla::StatusTest::Energy> status_test =
     Teuchos::rcp( new Ginla::StatusTest::Energy( stateTranslator, maxFreeEnergy ) );
 
@@ -171,9 +171,9 @@ buildEnergyTest( Teuchos::ParameterList & p,
 Teuchos::RCP<LOCA::StatusTest::Abstract>
 Ginla::StatusTest::Factory::
 buildLoopTest( Teuchos::ParameterList & p,
-               const Teuchos::RCP<const Ginla::StateTranslator> & stateTranslator
+               const Teuchos::RCP<const Ginla::StateTranslator::Virtual> & stateTranslator
              ) const
-{  
+{
   Teuchos::RCP<Ginla::StatusTest::Loop> status_test =
     Teuchos::rcp( new Ginla::StatusTest::Loop( stateTranslator ) );
 
@@ -186,7 +186,7 @@ buildMaxAcceptedStepsTest( Teuchos::ParameterList & p
                          ) const
 {
   int maxAcceptedSteps = Teuchos::get<int>( p, "Max accepted steps" );
-  
+
   Teuchos::RCP<Ginla::StatusTest::MaxAcceptedSteps> status_test =
     Teuchos::rcp( new Ginla::StatusTest::MaxAcceptedSteps( maxAcceptedSteps ) );
 
@@ -240,7 +240,7 @@ checkAndTagTest( const Teuchos::ParameterList& p,
 Teuchos::RCP<LOCA::StatusTest::Abstract>
 Ginla::StatusTest::
 buildStatusTests( const std::string& file_name,
-                  const Teuchos::RCP<const Ginla::StateTranslator> & stateTranslator,
+                  const Teuchos::RCP<const Ginla::StateTranslator::Virtual> & stateTranslator,
                   const Teuchos::RCP<const Teuchos::ParameterList> & eigenInfo,
                   const Teuchos::RCP<const LOCA::GlobalData> & globalData,
                   std::map<std::string, Teuchos::RCP<LOCA::StatusTest::Abstract> >* tagged_tests
@@ -254,7 +254,7 @@ buildStatusTests( const std::string& file_name,
 Teuchos::RCP<LOCA::StatusTest::Abstract>
 Ginla::StatusTest::
 buildStatusTests( Teuchos::ParameterList& p,
-                  const Teuchos::RCP<const Ginla::StateTranslator> & stateTranslator,
+                  const Teuchos::RCP<const Ginla::StateTranslator::Virtual> & stateTranslator,
                   const Teuchos::RCP<const Teuchos::ParameterList> & eigenInfo,
                   const Teuchos::RCP<const LOCA::GlobalData> & globalData,
                   std::map<std::string, Teuchos::RCP<LOCA::StatusTest::Abstract> >* tagged_tests

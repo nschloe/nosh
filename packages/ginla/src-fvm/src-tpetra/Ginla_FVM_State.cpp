@@ -246,9 +246,9 @@ normalizedScaledL2Norm () const
 // =============================================================================
 void
 Ginla::FVM::State::
-update( const double                  alpha,
-        const Ginla::State::Virtual & b,
-        const double                  beta
+update( const double                    alpha,
+        const Ginla::State::Updatable & b,
+        const double                    beta
       )
 {
   psi_.update( alpha, *(b.getPsi()), beta );

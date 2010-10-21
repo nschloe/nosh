@@ -46,7 +46,7 @@ Bordered ( const Teuchos::RCP<Ginla::FDM::Operator::Virtual> & glOperator,
          jacobian_ ( new Epetra_CrsMatrix ( Copy, *extendedMap_, 0 ) ),
          x_(  Teuchos::null )
 { 
-  Teuchos::RCP<Ginla::State::Virtual> initialState =
+  Teuchos::RCP<Ginla::State::Updatable> initialState =
       Teuchos::rcp( new Ginla::FDM::State( komplex->getComplexMap()->getComm(),
                                            grid ) );
                                       
@@ -62,7 +62,7 @@ Bordered ( const Teuchos::RCP<Ginla::FDM::Operator::Virtual> & glOperator,
 Ginla::FDM::ModelEvaluator::Bordered::
 Bordered ( const Teuchos::RCP<Ginla::FDM::Operator::Virtual> & glOperator,
            const Teuchos::RCP<Komplex2::LinearProblem>       & komplex,
-           const Ginla::State::Virtual                       & state,
+           const Ginla::State::Updatable                       & state,
            const Teuchos::ParameterList                      & params
          ) :
          modelEvaluatorDefault_ ( Teuchos::rcp( new Ginla::FDM::ModelEvaluator::Default( glOperator, komplex, state, params ) ) ),
@@ -243,7 +243,7 @@ computeF_ ( const Epetra_Vector & x,
     modelEvaluatorDefault_->computeF ( tmp, shortFVec );
 
     // \psi += -i\eta\psi
-    Teuchos::RCP<Ginla::State::Virtual> state = modelEvaluatorDefault_->createState( tmp );
+    Teuchos::RCP<Ginla::State::Updatable> state = modelEvaluatorDefault_->createState( tmp );
     state->getPsiNonConst()->scale( -IM*eta );
     TEUCHOS_ASSERT_EQUALITY( 0, tmp.Update( 1.0, *modelEvaluatorDefault_->createSystemVector( *state ), 1.0 ) );
     
@@ -330,7 +330,7 @@ computeJacobian_ ( const Epetra_Vector & x,
     double eta = x[ x.GlobalLength()-1 ];
 
     // TODO don't explicitly construct psi? get1dCopy on the rhs
-    Teuchos::RCP<Ginla::State::Virtual> state = modelEvaluatorDefault_->createState( tmp );
+    Teuchos::RCP<Ginla::State::Updatable> state = modelEvaluatorDefault_->createState( tmp );
     
     Teuchos::RCP<const ComplexVector> psi = state->getPsi();
 
@@ -340,7 +340,7 @@ computeJacobian_ ( const Epetra_Vector & x,
     // add "-i*eta" on the diagonal
     Epetra_Vector newDiag ( tmp );
     regularJacobian->ExtractDiagonalCopy( newDiag );
-    Teuchos::RCP<Ginla::State::Virtual> diag = modelEvaluatorDefault_->createState( newDiag );
+    Teuchos::RCP<Ginla::State::Updatable> diag = modelEvaluatorDefault_->createState( newDiag );
     diag->getPsiNonConst()->putScalar( -IM*eta );
     newDiag.Update( 1.0, *modelEvaluatorDefault_->createSystemVector(*diag), 1.0 );
     regularJacobian->ReplaceDiagonalValues( newDiag );
@@ -389,7 +389,7 @@ computeJacobian_ ( const Epetra_Vector & x,
     return;
 }
 // ============================================================================
-Teuchos::RCP<Ginla::State::Virtual>
+Teuchos::RCP<Ginla::State::Updatable>
 Ginla::FDM::ModelEvaluator::Bordered::
 createState( const Epetra_Vector & x ) const
 {
@@ -403,7 +403,7 @@ createState( const Epetra_Vector & x ) const
 // =============================================================================
 Teuchos::RCP<Epetra_Vector>
 Ginla::FDM::ModelEvaluator::Bordered::
-createSystemVector( const Ginla::State::Virtual & state ) const
+createSystemVector( const Ginla::State::Updatable & state ) const
 {
     TEUCHOS_ASSERT( !extendedMap_.is_null() );
     Teuchos::RCP<Epetra_Vector> x =
@@ -416,7 +416,7 @@ createSystemVector( const Ginla::State::Virtual & state ) const
 // =============================================================================
 void
 Ginla::FDM::ModelEvaluator::Bordered::
-createSystemVector( const Ginla::State::Virtual & state,
+createSystemVector( const Ginla::State::Updatable & state,
                           Epetra_Vector         & x
                   ) const
 {

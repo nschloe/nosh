@@ -67,28 +67,28 @@ State( const Teuchos::RCP<const Teuchos::Comm<int> >  & comm,
                                  true ) ),
        chi_( 0.0 ),
        grid_( grid )
-{  
+{
 }
 // =============================================================================
 Teuchos::RCP<const ComplexVector>
 Ginla::FDM::State::
 getPsi () const
 {
-    return psi_.getVector(0); 
+    return psi_.getVector(0);
 }
 // =============================================================================
 Teuchos::RCP<ComplexVector>
 Ginla::FDM::State::
 getPsiNonConst ()
 {
-    return psi_.getVectorNonConst(0); 
+    return psi_.getVectorNonConst(0);
 }
 // =============================================================================
 const Teuchos::RCP<const Recti::Grid::General>
 Ginla::FDM::State::
 getGrid () const
 {
-    return grid_; 
+    return grid_;
 }
 // =============================================================================
 double
@@ -177,7 +177,7 @@ innerProduct( const Ginla::FDM::State & state ) const
         double area = grid_->cellArea ( kGlobal );
         localSum += area * conj(psiView[k]) * psi2View[k];
     }
-    
+
     // reduce and scatter such that energy is available on
     // all cores
     int count = 1; // send *one* integer
@@ -199,7 +199,7 @@ innerProduct( const Ginla::FDM::State & state ) const
                                    &recvCounts[0],
                                    &recvBuff[0]
                                  );
-                                 
+
     return recvBuff[0];
 }
 // ============================================================================
@@ -212,7 +212,7 @@ normalizedScaledL2Norm () const
 
     // make sure that we actually got a norm here
     TEUCHOS_ASSERT_INEQUALITY( alpha.imag(), <, 1.0e-10 );
-    
+
     // normalize
     double domainArea = grid_->getGridDomainArea();
     double l2norm = sqrt ( alpha.real() ) / domainArea;
@@ -223,7 +223,7 @@ normalizedScaledL2Norm () const
 void
 Ginla::FDM::State::
 update( const double                  alpha,
-        const Ginla::State::Virtual & b,
+        const Ginla::State::Updatable & b,
         const double                  beta
       )
 {

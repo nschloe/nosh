@@ -26,7 +26,6 @@
 
 
 #include "VIO_EpetraMesh_Mesh.h"
-#include "Ginla_StateTranslator.h"
 #include "Ginla_ParameterHost_Virtual.h"
 #include "Ginla_EpetraFVM_JacobianOperator.h"
 // -----------------------------------------------------------------------------

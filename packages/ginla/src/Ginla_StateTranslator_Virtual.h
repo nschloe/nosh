@@ -17,52 +17,47 @@
 
 */
 
-#ifndef GINLA_STATE_VIRTUAL_H
-#define GINLA_STATE_VIRTUAL_H
+#ifndef GINLA_STATETRANSLATOR_VIRTUAL_H
+#define GINLA_STATETRANSLATOR_VIRTUAL_H
 
-#include <Teuchos_ParameterList.hpp>
+#include <Teuchos_RCP.hpp>
+#include "Ginla_State_Updatable.h"
+
+// forward declarations
+class Epetra_Vector;
 
 namespace Ginla {
-namespace State
-{
+namespace StateTranslator {
 class Virtual
 {
-public:
-    //! Constructor
+  public:
+
     Virtual();
 
-    //! Destructor.
     virtual
     ~Virtual();
 
-    //! Save the state to file \c fileName together with the parameters \c p.
+    //! Translates a state into a system vector.
     virtual
     void
-    save( const std::string            & fileName,
-          const Teuchos::ParameterList & p
-        ) const = 0;
-
-    //! Just plain save the file to \c fileName.
-    virtual
-    void
-    save( const std::string & fileName
-        ) const = 0;
+    createSystemVector( const Ginla::State::Updatable & state,
+                              Epetra_Vector           & x
+                      ) const = 0;
 
     virtual
-    double
-    freeEnergy () const = 0;
+    Teuchos::RCP<Epetra_Vector>
+    createSystemVector( const Ginla::State::Updatable & state
+                      ) const = 0;
 
+    //! Translates a system vector into a state.
     virtual
-    double
-    normalizedScaledL2Norm () const = 0;
+    Teuchos::RCP<Ginla::State::Updatable>
+    createState(  const Epetra_Vector & x ) const = 0;
 
-    virtual
-    int
-    getVorticity () const = 0;
-
+  protected:
+  private:
 };
-
-} // namespace State
+} // namespace StateTranslator
 } // namespace Ginla
 
-#endif // GINLA_STATE_VIRTUAL_H
+#endif // GINLA_STATETRANSLATOR_VIRTUAL_H

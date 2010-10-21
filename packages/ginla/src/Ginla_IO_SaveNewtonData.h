@@ -28,10 +28,12 @@ namespace Ginla {
   namespace IO {
     class StateWriter;
   }
-  class StateTranslator;
+  namespace StateTranslator {
+      class Virtual;
+  }
 }
 
-namespace Ginla { 
+namespace Ginla {
 namespace IO {
       class SaveNewtonData:
         public NOX::Abstract::PrePostOperator
@@ -40,8 +42,8 @@ namespace IO {
 public:
 
   //! Constructor.
-  SaveNewtonData ( const Teuchos::RCP<const Ginla::IO::StateWriter> & stateWriter,
-                   const Teuchos::RCP<const Ginla::StateTranslator> & translator
+  SaveNewtonData ( const Teuchos::RCP<const Ginla::IO::StateWriter>          & stateWriter,
+                   const Teuchos::RCP<const Ginla::StateTranslator::Virtual> & translator
                  );
 
   //! Destructor.
@@ -58,8 +60,8 @@ private:
   //! How ofter the function has been invoked yet.
   int numRunPreIterate;
 
-  const Teuchos::RCP<const Ginla::IO::StateWriter> stateWriter_;
-  const Teuchos::RCP<const Ginla::StateTranslator> translator_;
+  const Teuchos::RCP<const Ginla::IO::StateWriter>          stateWriter_;
+  const Teuchos::RCP<const Ginla::StateTranslator::Virtual> translator_;
 };
 
   } // namespace IO

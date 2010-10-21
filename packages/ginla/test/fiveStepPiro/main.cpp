@@ -227,7 +227,7 @@ BOOST_AUTO_TEST_CASE( five_step_piro_test )
     // fetch the solution
     // outArgs.get_g(0) must be gx
     BOOST_ASSERT( !outArgs.get_g(0).is_null() );
-    Teuchos::RCP<Ginla::State::Virtual> solutionState = glModel->createState( *(outArgs.get_g(0)) );
+    Teuchos::RCP<Ginla::State::Updatable> solutionState = glModel->createState( *(outArgs.get_g(0)) );
     // ------------------------------------------------------------------------
     // read reference solution from file
     // For technical reasons, the reader can only accept ComplexMultiVectors.
@@ -236,7 +236,7 @@ BOOST_AUTO_TEST_CASE( five_step_piro_test )
     // ------------------------------------------------------------------------
     // compare the results:
     // get final solution
-    Teuchos::RCP<Ginla::State::Virtual> & diff = solutionState;
+    Teuchos::RCP<Ginla::State::Updatable> & diff = solutionState;
 
     diff->update( -1.0, *refState, 1.0 );
 

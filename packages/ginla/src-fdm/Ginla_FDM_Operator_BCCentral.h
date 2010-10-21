@@ -41,14 +41,14 @@ public:
     //! Destructor
     virtual
     ~BCCentral();
-    
+
     virtual
-    Teuchos::RCP<Ginla::State::Virtual>
+    Teuchos::RCP<Ginla::State::Updatable>
     getF( const Teuchos::RCP<const Ginla::FDM::State> & state
         ) const;
-    
+
     virtual
-    Teuchos::RCP<const Ginla::State::Virtual>
+    Teuchos::RCP<const Ginla::State::Updatable>
     getDFDh0( const Teuchos::RCP<const Ginla::FDM::State> & state
             ) const;
 
@@ -70,7 +70,7 @@ private:
                  Teuchos::ArrayRCP<const double> & AAboveView,
                  const double                      h
                ) const;
-              
+
     //! Return the value of the Ginzburg-Landau equations for the equation
     //! at eqType.
     double_complex
@@ -88,7 +88,7 @@ private:
                     Teuchos::ArrayRCP<const double> & dAdH0AboveView,
                     const double                      h
                   ) const;
-               
+
     //! Returns entries and positions of the Jacobian matrix belonging to the
     //! boundary conditions.
     void
@@ -106,7 +106,7 @@ private:
                       Teuchos::Array<Thyra::Ordinal>  & columnIndicesPsiConj,
                       Teuchos::Array<double_complex>  & valuesPsiConj
                     ) const;
-              
+
 };
 
     } // namespace Operator

@@ -17,16 +17,16 @@
 
 */
 
-#include "Ginla_State_Virtual.h"
+#include "Ginla_State_Updatable.h"
 
 // =============================================================================
-Ginla::State::Virtual::
-Virtual()
+Ginla::State::Updatable::
+Updatable ()
 {
 }
 // =============================================================================
-Ginla::State::Virtual::
-~Virtual()
+Ginla::State::Updatable::
+~Updatable ()
 {
 }
 // =============================================================================

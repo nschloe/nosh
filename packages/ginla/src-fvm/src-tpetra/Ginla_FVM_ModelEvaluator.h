@@ -24,8 +24,10 @@
 #include <EpetraExt_ModelEvaluator.h>
 
 #include "VIO_TpetraMesh_Mesh.h"
-#include "Ginla_StateTranslator.h"
+#include "Ginla_StateTranslator_Virtual.h"
+#include "Ginla_CreateSavable_Virtual.h"
 #include "Ginla_ParameterHost_Virtual.h"
+#include "Ginla_State_Updatable.h"
 
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_map.hpp>
@@ -59,14 +61,15 @@ namespace FVM {
 
 class ModelEvaluator:
     public EpetraExt::ModelEvaluator,
-    public Ginla::StateTranslator,
+    public Ginla::StateTranslator::Virtual,
+    public Ginla::CreateSavable::Virtual,
     public Ginla::ParameterHost::Virtual
 {
 
 public:
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   //! Constructor without initial guess.
-  ModelEvaluator ( const Teuchos::RCP<VIO::TpetraMesh::Mesh>                         & mesh,
+  ModelEvaluator ( const Teuchos::RCP<VIO::TpetraMesh::Mesh>                   & mesh,
                    const Teuchos::ParameterList                                & params,
                    const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp,
                    const Teuchos::RCP<Komplex2::LinearProblem>                 & komplex,
@@ -120,15 +123,19 @@ public:
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 public:
-    Teuchos::RCP<Ginla::State::Virtual>
+    Teuchos::RCP<Ginla::State::Updatable>
     createState( const Epetra_Vector & x ) const;
 
+    //! Does the same thing as \c createState, but C++ makes it hard to combine the two.
+    Teuchos::RCP<Ginla::State::Virtual>
+    createSavable( const Epetra_Vector & x ) const;
+
     Teuchos::RCP<Epetra_Vector>
-    createSystemVector(  const Ginla::State::Virtual & state ) const;
+    createSystemVector(  const Ginla::State::Updatable & state ) const;
 
     void
-    createSystemVector( const Ginla::State::Virtual & state,
-                              Epetra_Vector         & x
+    createSystemVector( const Ginla::State::Updatable & state,
+                              Epetra_Vector           & x
                       ) const;
 
     virtual

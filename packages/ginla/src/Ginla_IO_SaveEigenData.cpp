@@ -21,7 +21,9 @@
 
 #include "Ginla_Helpers.h"
 #include "Ginla_IO_StateWriter.h"
-#include "Ginla_StateTranslator.h"
+#include "Ginla_StateTranslator_Virtual.h"
+
+#include "Ginla_State_Updatable.h"
 
 #include <NOX_Abstract_MultiVector.H>
 
@@ -29,10 +31,10 @@
 
 // =============================================================================
 Ginla::IO::SaveEigenData::
-SaveEigenData ( Teuchos::ParameterList                           & eigenParamList,
-                const Teuchos::RCP<const Ginla::StateTranslator> & stateTranslator,
-                const Teuchos::RCP<const Ginla::IO::StateWriter> & stateWriter,
-                const Teuchos::RCP<Ginla::IO::StatsWriter>       & statsWriter
+SaveEigenData ( Teuchos::ParameterList                                    & eigenParamList,
+                const Teuchos::RCP<const Ginla::StateTranslator::Virtual> & stateTranslator,
+                const Teuchos::RCP<const Ginla::IO::StateWriter>          & stateWriter,
+                const Teuchos::RCP<Ginla::IO::StatsWriter>                & statsWriter
               ) :
         eigenParamListPtr_ ( Teuchos::rcpFromRef<Teuchos::ParameterList>( eigenParamList ) ),
         stateTranslator_ ( stateTranslator ),
@@ -87,7 +89,7 @@ save ( Teuchos::RCP<std::vector<double> >       & evals_r,
     // Sometimes they are really hard to approach using regular continuation, but if tol
     // flags an approximate nullvector, turning point continuation may help nailing it down.
     const double tol = 1.0e-5;
-    
+
     // store the unstable eigenstate into files
     unsigned int numStableEigenvalues = 0;
     unsigned int numUnstableEigenvalues = 0;
@@ -109,8 +111,8 @@ save ( Teuchos::RCP<std::vector<double> >       & evals_r,
             Teuchos::rcpFromRef ( ( *evecs_r ) [k] );
         Teuchos::RCP<NOX::Epetra::Vector> realPartE =
             Teuchos::rcp_dynamic_cast<NOX::Epetra::Vector> ( realPart, true );
-                                                  
-        Teuchos::RCP<Ginla::State::Virtual> eigenstate =
+
+        Teuchos::RCP<Ginla::State::Updatable> eigenstate =
             stateTranslator_->createState( realPartE->getEpetraVector() );
 
         stateWriter_->write( eigenstate,
@@ -128,7 +130,7 @@ save ( Teuchos::RCP<std::vector<double> >       & evals_r,
             Teuchos::RCP<NOX::Epetra::Vector> imagPartE =
                 Teuchos::rcp_dynamic_cast<NOX::Epetra::Vector> ( imagPart, true );
             eigenstateFileNameAppendix << "-im";
-            Teuchos::RCP<Ginla::State::Virtual> eigenstate =
+            Teuchos::RCP<Ginla::State::Updatable> eigenstate =
                 stateTranslator_->createState( imagPartE->getEpetraVector() );
             stateWriter_->write( eigenstate,
                                  step,
@@ -151,10 +153,10 @@ save ( Teuchos::RCP<std::vector<double> >       & evals_r,
             eigenvaluesList.set( label.str(), ( *evals_r ) [k] );
         else
             eigenvaluesList.set( label.str(), "----------------------" );
-        
+
         // empty the stringstream
         label.str(std::string());
-        
+
         label << setw( Ginla::Helpers::numDigits(maxEigenvaluesSave_) ) << setfill( '0' ) <<  k<< "-1Im()";
         if ( k<numEigenValues )
             eigenvaluesList.set( label.str(), ( *evals_i ) [k] );
@@ -166,20 +168,20 @@ save ( Teuchos::RCP<std::vector<double> >       & evals_r,
 
 //     eigenFileStream << step << "\t";
 //     eigenFileStream << numUnstableEigenvalues << "\t";
-// 
+//
 //     // Set the output format
 //     // TODO Think about replacing this with NOX::Utils::Sci.
 //     eigenFileStream.setf ( std::ios::scientific );
 //     eigenFileStream.precision ( 15 );
-// 
+//
 //     for ( unsigned int k = 0; k < min ( numEigenValues,maxEigenvaluesSave_ ); k++ )
 //         eigenFileStream << "\t" << ( *evals_r ) [k] << "\t" << ( *evals_i ) [k];
-// 
+//
 //     // print "NaN" as fill-ins if there are more columns than eigenvalues
 //     if ( maxEigenvaluesSave_>numEigenValues )
 //         for ( unsigned int k = 0; k < 2* ( maxEigenvaluesSave_-numEigenValues ); k++ )
 //             eigenFileStream << "\tNaN                   ";
-// 
+//
 //     eigenFileStream << std::endl;
 //     eigenFileStream.close();
 
@@ -201,16 +203,16 @@ save ( Teuchos::RCP<std::vector<double> >       & evals_r,
             double threshold = 0.5;
             eigenParamListPtr_->set ( "Shift", maxEigenval + threshold );
         }
-    
+
         // Preserve the sort manager.
         // TODO For some reason, the  call to eigensolverReset destroys the "Sort Manager" entry.
         //      No idea why. This is a potentially serious bug in Trilinos.
         Teuchos::RCP<Anasazi::SortManager<double> > d =
             eigenParamListPtr_->get<Teuchos::RCP<Anasazi::SortManager<double> > >( "Sort Manager" );
-        
+
         // reset the eigensolver to take notice of the new values
         locaStepper_->eigensolverReset ( eigenParamListPtr_ );
-        
+
         eigenParamListPtr_->set( "Sort Manager", d );
     }
 

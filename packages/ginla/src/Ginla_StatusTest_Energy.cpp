@@ -20,18 +20,17 @@
 #include "Ginla_StatusTest_Energy.h"
 
 #include "Ginla_State_Virtual.h"
-#include "Ginla_StateTranslator.h"
+#include "Ginla_StateTranslator_Virtual.h"
 #include "Ginla_Helpers.h"
 
 #include <LOCA_Stepper.H>
 #include <NOX_Epetra_Group.H>
 #include <LOCA_MultiContinuation_AbstractGroup.H>
 
-
 // ============================================================================
 Ginla::StatusTest::Energy::
-Energy( const Teuchos::RCP<const Ginla::StateTranslator> & stateTranslator,
-        const double                                       maxFreeEnergy
+        Energy( const Teuchos::RCP<const Ginla::StateTranslator::Virtual> & stateTranslator,
+        const double                                                        maxFreeEnergy
       ) :
   freeEnergy_( 0.0 ),
   maxFreeEnergy_( maxFreeEnergy ),
@@ -50,7 +49,7 @@ Ginla::StatusTest::Energy::
 checkStatus( const LOCA::Stepper& stepper,
                    LOCA::StatusTest::CheckType checkType )
 {
-  
+
   switch (checkType)
   {
   case LOCA::StatusTest::Complete:
@@ -79,9 +78,9 @@ computeFreeEnergy( const LOCA::Stepper & stepper )
         Teuchos::rcp_dynamic_cast<const NOX::Abstract::Group> ( stepper.getSolutionGroup() );
     const Epetra_Vector & x =
         ( Teuchos::dyn_cast<const NOX::Epetra::Vector> ( solGroup->getX() ) ).getEpetraVector();
-        
+
     freeEnergy_ = stateTranslator_->createState( x )->freeEnergy();
-    
+
     return;
 }
 // ============================================================================

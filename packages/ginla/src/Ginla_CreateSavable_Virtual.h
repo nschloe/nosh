@@ -17,51 +17,33 @@
 
 */
 
-#ifndef GINLA_STATETRANSLATOR_H
-#define GINLA_STATETRANSLATOR_H
+#ifndef GINLA_CREATESAVABLE_VIRTUAL_H
+#define GINLA_CREATESAVABLE_VIRTUAL_H
 
-#include <Teuchos_RCP.hpp>
-
-// forward declarations
-namespace Ginla {
-  namespace State {
-    class Virtual;
-  }
-}
-class Epetra_Vector;
+#include "Ginla_State_Virtual.h"
+#include <Epetra_Vector.h>
 
 namespace Ginla {
+namespace CreateSavable {
 
-class StateTranslator
+class Virtual
 {
-  public:
-    
-    StateTranslator();
-    
+public:
+    Virtual();
+
     virtual
-    ~StateTranslator();
-    
-    //! Translates a state into a system vector.
-    virtual
-    void
-    createSystemVector( const Ginla::State::Virtual & state,
-                              Epetra_Vector         & x
-                      ) const = 0;
-                      
-    virtual
-    Teuchos::RCP<Epetra_Vector>
-    createSystemVector( const Ginla::State::Virtual & state
-                      ) const = 0;
+    ~Virtual();
 
     //! Translates a system vector into a state.
     virtual
     Teuchos::RCP<Ginla::State::Virtual>
-    createState(  const Epetra_Vector & x ) const = 0;
-    
-  protected:
-  private:
+    createSavable( const Epetra_Vector & x ) const = 0;
+
+protected:
+private:
 };
 
-}
+} // namespace CreateSavable
+} // namespace Ginla
 
-#endif // GINLA_STATETRANSLATOR_H
+#endif // GINLA_CREATESAVABLE_VIRTUAL_H

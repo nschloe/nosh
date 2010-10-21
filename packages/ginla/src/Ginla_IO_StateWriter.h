@@ -17,8 +17,8 @@
 
 */
 
-#ifndef GINLA_IO_GINLA_IO_STATEWRITER_H
-#define GINLA_IO_GINLA_IO_STATEWRITER_H
+#ifndef GINLA_IO_STATEWRITER_H
+#define GINLA_IO_STATEWRITER_H
 
 #include <LOCA_Parameter_Vector.H>
 
@@ -35,50 +35,50 @@ public:
   StateWriter( const std::string & outputDir,
                const std::string & fileBaseName,
                const std::string & outputFormat,
-               const unsigned int  maxIndex );  
-               
+               const unsigned int  maxIndex );
+
   void
   setOutputDir ( const string & directory );
-               
+
   /** Writes a solution \c psi to a file with all parameters that
     * may be interesting.
     */
   void
   write ( const Teuchos::RCP<const Ginla::State::Virtual> & state,
-          const unsigned int                              & index,
-          const std::string                               & filenameAppend,
-          LOCA::ParameterVector                           & params
+          const unsigned int                                & index,
+          const std::string                                 & filenameAppend,
+          LOCA::ParameterVector                             & params
         ) const;
-        
+
   void
   write ( const Teuchos::RCP<const Ginla::State::Virtual> & state,
-          const unsigned int                              & index,
-          LOCA::ParameterVector                           & params
+          const unsigned int                                & index,
+          LOCA::ParameterVector                             & params
         ) const;
-        
+
   void
   write ( const Teuchos::RCP<const Ginla::State::Virtual> & state,
-          const unsigned int                              & index,
-          const std::string                               & filenameAppend
+          const unsigned int                                & index,
+          const std::string                                 & filenameAppend
         ) const;
-        
+
   void
   write ( const Teuchos::RCP<const Ginla::State::Virtual> & state,
-          const unsigned int                              & index
+          const unsigned int                                & index
         ) const;
-               
+
   protected:
   private:
-    
+
   private:
     std::string outputDir_;
     std::string fileBaseName_;
     std::string filenameExtension_;
-    unsigned int maxNumDigits_; 
+    unsigned int maxNumDigits_;
 };
 
 }
 
 }
 
-#endif // GINLA_IO_GINLA_IO_STATEWRITER_H
+#endif // GINLA_IO_STATEWRITER_H

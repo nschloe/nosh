@@ -31,7 +31,7 @@
 
 // ============================================================================
 Ginla::StatusTest::Loop::
-Loop( const Teuchos::RCP<const Ginla::StateTranslator> & stateTranslator ):
+        Loop( const Teuchos::RCP<const Ginla::StateTranslator::Virtual> & stateTranslator ):
     firstTime_( true ),
     wasAway_( false ),
     tol_( 1.0e-3 ), // TODO make this depend on the maximum step size
@@ -51,7 +51,7 @@ LOCA::StatusTest::StatusType
 Ginla::StatusTest::Loop::
 checkStatus( const LOCA::Stepper               & stepper,
                    LOCA::StatusTest::CheckType   checkType )
-{ 
+{
   // store the reference solution
   if ( firstTime_ )
   {
@@ -60,7 +60,7 @@ checkStatus( const LOCA::Stepper               & stepper,
       firstTime_ = false;
       return status_;
   }
-  
+
   switch (checkType)
   {
   case LOCA::StatusTest::Complete:
@@ -68,7 +68,7 @@ checkStatus( const LOCA::Stepper               & stepper,
     computeDiffNorm( stepper );
     if ( diffNorm_ > tol_ )
         wasAway_ = true;
-    
+
     if ( !wasAway_ )
         status_ = LOCA::StatusTest::Unevaluated;
     else
@@ -97,7 +97,7 @@ setReferencePoint( const LOCA::Stepper & stepper )
         Teuchos::rcp_dynamic_cast<const NOX::Abstract::Group> ( stepper.getSolutionGroup() );
     const Epetra_Vector & x =
         ( Teuchos::dyn_cast<const NOX::Epetra::Vector> ( solGroup->getX() ) ).getEpetraVector();
-    
+
     referenceState_ = stateTranslator_->createState( x );
 
     return;
@@ -111,11 +111,11 @@ computeDiffNorm( const LOCA::Stepper & stepper )
         Teuchos::rcp_dynamic_cast<const NOX::Abstract::Group> ( stepper.getSolutionGroup() );
     const Epetra_Vector & x =
         ( Teuchos::dyn_cast<const NOX::Epetra::Vector> ( solGroup->getX() ) ).getEpetraVector();
-    
-    const Teuchos::RCP<Ginla::State::Virtual> state = stateTranslator_->createState( x );
-    
+
+    const Teuchos::RCP<Ginla::State::Updatable> state = stateTranslator_->createState( x );
+
     TEUCHOS_ASSERT( !referenceState_.is_null() );
-    
+
     state->update( 1.0, *referenceState_, -1.0 );
     diffNorm_ = state->normalizedScaledL2Norm();
 

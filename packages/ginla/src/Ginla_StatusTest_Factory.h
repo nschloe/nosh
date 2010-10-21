@@ -24,7 +24,7 @@
 #include <LOCA_StatusTest_Abstract.H>
 #include <LOCA_GlobalData.H>
 
-#include "Ginla_StateTranslator.h"
+#include "Ginla_StateTranslator_Virtual.h"
 
 namespace Ginla {
 
@@ -32,7 +32,7 @@ namespace StatusTest {
 
 class Factory
 {
-  
+
 public:
 
   //! Constructor.
@@ -43,89 +43,89 @@ public:
 
   //! Returns a status test set from a parameter list xml file.
   Teuchos::RCP<LOCA::StatusTest::Abstract>
-  buildStatusTests( const std::string                          & file_name,
-                    const Teuchos::RCP<const Ginla::StateTranslator> & stateTranslator,
-                    const Teuchos::RCP<const Teuchos::ParameterList> & eigenInfo,
-                    const Teuchos::RCP<const LOCA::GlobalData> & globalData,
+  buildStatusTests( const std::string                                         & file_name,
+                    const Teuchos::RCP<const Ginla::StateTranslator::Virtual> & stateTranslator,
+                    const Teuchos::RCP<const Teuchos::ParameterList>          & eigenInfo,
+                    const Teuchos::RCP<const LOCA::GlobalData>                & globalData,
                     std::map<std::string, Teuchos::RCP<LOCA::StatusTest::Abstract> >* tagged_tests = 0
                   ) const;
 
   //! Returns a status test set from a parameter list.
   Teuchos::RCP<LOCA::StatusTest::Abstract>
-  buildStatusTests( Teuchos::ParameterList                     & p,
-                    const Teuchos::RCP<const Ginla::StateTranslator> & stateTranslator,
-                    const Teuchos::RCP<const Teuchos::ParameterList> & eigenInfo,
-                    const Teuchos::RCP<const LOCA::GlobalData> & globalData,
+  buildStatusTests( Teuchos::ParameterList                                    & p,
+                    const Teuchos::RCP<const Ginla::StateTranslator::Virtual> & stateTranslator,
+                    const Teuchos::RCP<const Teuchos::ParameterList>          & eigenInfo,
+                    const Teuchos::RCP<const LOCA::GlobalData>                & globalData,
                     std::map<std::string, Teuchos::RCP<LOCA::StatusTest::Abstract> >* tagged_tests=0
                   ) const;
 
 private:
 
   Teuchos::RCP<LOCA::StatusTest::Abstract>
-  buildComboTest( Teuchos::ParameterList                     & p,
-                  const Teuchos::RCP<const Ginla::StateTranslator> & stateTranslator,
-                  const Teuchos::RCP<const Teuchos::ParameterList> & eigenInfo,
-                  const Teuchos::RCP<const LOCA::GlobalData> & globalData,
+  buildComboTest( Teuchos::ParameterList                                    & p,
+                  const Teuchos::RCP<const Ginla::StateTranslator::Virtual> & stateTranslator,
+                  const Teuchos::RCP<const Teuchos::ParameterList>          & eigenInfo,
+                  const Teuchos::RCP<const LOCA::GlobalData>                & globalData,
                   std::map<std::string, Teuchos::RCP<LOCA::StatusTest::Abstract> >* tagged_tests=0
                 ) const;
 
   Teuchos::RCP<LOCA::StatusTest::Abstract>
   buildEnergyTest( Teuchos::ParameterList & p,
-                   const Teuchos::RCP<const Ginla::StateTranslator> & stateTranslator
+                   const Teuchos::RCP<const Ginla::StateTranslator::Virtual> & stateTranslator
                  ) const;
 
   Teuchos::RCP<LOCA::StatusTest::Abstract>
   buildLoopTest( Teuchos::ParameterList& p,
-                 const Teuchos::RCP<const Ginla::StateTranslator> & stateTranslator
+                 const Teuchos::RCP<const Ginla::StateTranslator::Virtual> & stateTranslator
                ) const;
-                   
+
   Teuchos::RCP<LOCA::StatusTest::Abstract>
   buildMaxAcceptedStepsTest( Teuchos::ParameterList & p
                            ) const;
-                             
+
   Teuchos::RCP<LOCA::StatusTest::Abstract>
   buildStabilityChangeTest( Teuchos::ParameterList & p,
                             const Teuchos::RCP<const Teuchos::ParameterList> & eigenInfo
                           ) const;
-                            
+
   Teuchos::RCP<LOCA::StatusTest::Abstract>
   buildTurnaroundTest( Teuchos::ParameterList & p
                      ) const;
 
-  //! Checks if a tag is present in the param list and adds the test to the tagged_test std::map if true.  Returns true if a tag was present. 
+  //! Checks if a tag is present in the param list and adds the test to the tagged_test std::map if true.  Returns true if a tag was present.
   bool checkAndTagTest( const Teuchos::ParameterList                   & p,
                         const Teuchos::RCP<LOCA::StatusTest::Abstract> & test,
                         std::map<std::string, Teuchos::RCP<LOCA::StatusTest::Abstract> >* tagged_tests
                       ) const;
 };
-  
+
 /*! \brief Nonmember helper function for the NOX::StatusTest::Factory.
-  
+
 \relates NOX::StatusTest::Factory
-  
+
 */
 Teuchos::RCP<LOCA::StatusTest::Abstract>
 buildStatusTests( const std::string& file_name,
-                  const Teuchos::RCP<const Ginla::StateTranslator> & stateTranslator,
+                  const Teuchos::RCP<const Ginla::StateTranslator::Virtual> & stateTranslator,
                   const Teuchos::RCP<const Teuchos::ParameterList> & eigenInfo,
                   const Teuchos::RCP<const LOCA::GlobalData> & globalData,
                   std::map<std::string, Teuchos::RCP<LOCA::StatusTest::Abstract> >* tagged_tests=0
                 );
-  
+
 /*! \brief Nonmember helper function for the NOX::StatusTest::Factory.
-  
+
 \relates NOX::StatusTest::Factory
-  
+
 */
 Teuchos::RCP<LOCA::StatusTest::Abstract>
 buildStatusTests( Teuchos::ParameterList& p,
-                  const Teuchos::RCP<const Ginla::StateTranslator> & stateTranslator,
+                  const Teuchos::RCP<const Ginla::StateTranslator::Virtual> & stateTranslator,
                   const Teuchos::RCP<const Teuchos::ParameterList> & eigenInfo,
                   const Teuchos::RCP<const LOCA::GlobalData> & globalData,
                   std::map<std::string, Teuchos::RCP<LOCA::StatusTest::Abstract> >* tagged_tests=0
                 );
-  
-  
+
+
 };
 
 }

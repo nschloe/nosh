@@ -21,6 +21,7 @@
 #define GINLA_EPETRAFVM_STATE_H
 
 #include "VIO_EpetraMesh_Mesh.h"
+#include "Ginla_State_Virtual.h"
 
 namespace LOCA {
   class ParameterVector;
@@ -28,7 +29,7 @@ namespace LOCA {
 
 namespace Ginla {
 namespace EpetraFVM {
-class State
+    class State: public Ginla::State::Virtual
 {
 public:
 
