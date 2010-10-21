@@ -87,19 +87,19 @@ Apply ( const Epetra_MultiVector & X,
             // imaginary part
             Y.SumIntoMyValue( 2*k+1, vec, alpha * X[vec][2*k+1] );
 
-            // terms corresponding to  B = diag( -psi^2 )
+            // terms corresponding to  B = diag( psi^2 )
             // Re(phi^2)
             double rePhiSquare = controlVolumes[l] * (
                                  (*currentX_)[2*k]*(*currentX_)[2*k] - (*currentX_)[2*k+1]*(*currentX_)[2*k+1]
                                  );
             // Im(phi^2)
             double imPhiSquare = controlVolumes[l] * (
-                                 2.0*(*currentX_)[2*k]*(*currentX_)[2*k+1]
+                                 2.0 * (*currentX_)[2*k] * (*currentX_)[2*k+1]
                                  );
             // real part
-            Y.SumIntoMyValue( 2*k,   vec, rePhiSquare * X[vec][2*k] - imPhiSquare * X[vec][2*k+1] );
+            Y.SumIntoMyValue( 2*k,   vec, rePhiSquare * X[vec][2*k] + imPhiSquare * X[vec][2*k+1] );
             // imaginary part
-            Y.SumIntoMyValue( 2*k+1, vec, imPhiSquare * X[vec][2*k] + rePhiSquare * X[vec][2*k+1] );
+            Y.SumIntoMyValue( 2*k+1, vec, imPhiSquare * X[vec][2*k] - rePhiSquare * X[vec][2*k+1] );
         }
     }
 
