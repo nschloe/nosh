@@ -141,6 +141,12 @@ private:
                            Epetra_Operator                   & Jac
                    ) const;
 
+  void
+  computePreconditioner_ ( const double                     mu,
+                           const Teuchos::Tuple<double,3> & scaling,
+                           Epetra_Operator                & Prec
+                         ) const;
+
   virtual
   Teuchos::RCP<Ginla::State::Virtual>
   createSavable( const Epetra_Vector & x ) const ;

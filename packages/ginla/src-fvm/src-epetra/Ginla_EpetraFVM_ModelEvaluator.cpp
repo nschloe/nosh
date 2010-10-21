@@ -205,7 +205,8 @@ createOutArgs() const
 
   outArgs.set_Np_Ng( 1, 0 ); // one parameter vector, no objective function
 
-  // support derivatives with respect to all parameters
+  // support derivatives with respect to all parameters;
+  // this is then handles by LOCA's finite differencing
   outArgs.setSupports( OUT_ARG_DfDp,
                        0,
                        DerivativeSupport(DERIV_MV_BY_COL)
@@ -213,12 +214,18 @@ createOutArgs() const
 
   outArgs.setSupports( OUT_ARG_f, true );
   outArgs.setSupports( OUT_ARG_W, true );
-
   outArgs.set_W_properties( DerivativeProperties( DERIV_LINEARITY_UNKNOWN, // DERIV_LINEARITY_NONCONST
-                                                  DERIV_RANK_UNKNOWN, // DERIV_RANK_FULL, DERIV_RANK_DEFICIENT
+                                                  DERIV_RANK_DEFICIENT, // DERIV_RANK_FULL, DERIV_RANK_DEFICIENT
                                                   false // supportsAdjoint
                                                 )
                           );
+
+  outArgs.setSupports( OUT_ARG_WPrec, true );
+  outArgs.set_WPrec_properties( DerivativeProperties( DERIV_LINEARITY_UNKNOWN,
+                                                      DERIV_RANK_FULL,
+                                                      false
+                                                    )
+                              );
 
   return outArgs;
 }
@@ -282,6 +289,13 @@ evalModel( const InArgs  & inArgs,
 //           W_out_crs->SumIntoMyValues( i, 1, &diag, &i );
   }
 
+  // fill preconditioner
+  const Teuchos::RCP<Epetra_Operator> WPrec_out = outArgs.get_WPrec();
+  if( !WPrec_out.is_null() )
+  {
+      this->computeJacobian_( x_in, mu, scalingCombined, temperature, *W_out );
+  }
+
   return;
 }
 // ============================================================================
@@ -342,7 +356,22 @@ computeJacobian_ ( const Teuchos::RCP<const Epetra_Vector> & x,
   jacobianOperator_->setCurrentX( x );
 
   // TODO avoid this explicit copy
-  Jac = *(jacobianOperator_);
+  Jac = *jacobianOperator_;
+
+  return;
+}
+// ============================================================================
+void
+Ginla::EpetraFVM::ModelEvaluator::
+computePreconditioner_ ( const double                              mu,
+                         const Teuchos::Tuple<double,3>          & scaling,
+                         Epetra_Operator                         & Prec
+                       ) const
+{
+  keo_->setParameters( mu, scaling );
+
+  // TODO avoid this explicit copy
+  Prec = *keo_;
 
   return;
 }
