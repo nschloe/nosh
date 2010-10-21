@@ -20,8 +20,8 @@
 #include "Ginla_EpetraFVM_KineticEnergyOperator.h"
 
 #include <Epetra_SerialDenseMatrix.h>
-
 #include <Epetra_Comm.h>
+
 // =============================================================================
 Ginla::EpetraFVM::KineticEnergyOperator::
 KineticEnergyOperator( const Teuchos::RCP<VIO::EpetraMesh::Mesh>                   & mesh,
@@ -34,7 +34,9 @@ KineticEnergyOperator( const Teuchos::RCP<VIO::EpetraMesh::Mesh>                
         keoGraph_( Teuchos::null ),
         keo_( Teuchos::null ),
         keoMu_( 0.0 ),
-        keoScaling_( Teuchos::tuple( 1.0, 1.0, 1.0 ) )
+        keoScaling_( Teuchos::tuple( 1.0, 1.0, 1.0 ) ),
+        keoProblem_( Teuchos::rcp( new Epetra_LinearProblem() ) ),
+        keoSolver_( Teuchos::null )
 {
 }
 // =============================================================================
@@ -72,10 +74,32 @@ ApplyInverse ( const Epetra_MultiVector & X,
                      Epetra_MultiVector & Y
              ) const
 {
-    TEST_FOR_EXCEPTION( true,
-                        std::logic_error,
-                        "Not yet implemented." );
-    return -1;
+    if ( keoSolver_.is_null() )
+    {
+        if ( !this->keoUpToDate_() )
+            this->assembleKeo_();
+
+        // set the matrix the linear problem
+        keoProblem_->SetOperator( &*keo_ );
+
+        // do the factorizations
+        Amesos Factory;
+        keoSolver_ = Teuchos::rcp( Factory.Create( "Klu", *keoProblem_ ) );
+
+        // do symbolic and numerical factorizations
+        // TODO reuse symbolic factorization
+        keoSolver_->SymbolicFactorization();
+        keoSolver_->NumericFactorization();
+    }
+
+    // set left- and right-hand side
+    TEUCHOS_ASSERT( !keoProblem_.is_null() );
+    keoProblem_->SetLHS( &Y );
+    Epetra_MultiVector T = X;
+    keoProblem_->SetRHS( &T );
+
+    // solve and return error code
+    return keoSolver_->Solve();
 }
 // =============================================================================
 double

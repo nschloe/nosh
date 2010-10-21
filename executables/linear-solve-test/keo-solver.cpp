@@ -9,6 +9,7 @@
 #include <Teuchos_XMLParameterListHelpers.hpp>
 #include <Epetra_LinearProblem.h>
 #include <AztecOO.h>
+#include <Amesos.h>
 
 #include <ml_epetra_preconditioner.h>
 
@@ -104,6 +105,9 @@ int main ( int argc, char *argv[] )
       Teuchos::RCP<Epetra_Vector> epetra_b = Teuchos::rcp( new Epetra_Vector( keo->OperatorRangeMap() ) );
       epetra_b->Random();
 
+      // build the problem
+      Epetra_LinearProblem problem( &*keoMatrix, &*epetra_x, &*epetra_b );
+
       // -----------------------------------------------------------------------
 //      // Stratimikos.
 //      // Thyra glue
@@ -142,8 +146,7 @@ int main ( int argc, char *argv[] )
 //      *out << "\nSolve status:\n" << status;
 
       // -----------------------------------------------------------------------
-      // build the AztecOO problem
-      Epetra_LinearProblem problem( &*keo, &*epetra_x, &*epetra_b );
+      // build the AztecOO solver
       AztecOO solver( problem );
       // make sure the problem is symmetric
       problem.AssertSymmetric();
@@ -203,7 +206,30 @@ int main ( int argc, char *argv[] )
 
       double residual;
       TEUCHOS_ASSERT_EQUALITY( 0, resid.Norm2(&residual) );
-      if (eComm->MyPID()==0) cout << "Residual    = " << residual << endl;
+      if (eComm->MyPID()==0) cout << "Residual    = " << residual << "\n\n" << endl;
+      // -----------------------------------------------------------------------
+      // direct solver
+      Amesos Factory;
+      std::string SolverType = "Klu";
+      Teuchos::RCP<Amesos_BaseSolver> Solver =
+              Teuchos::rcp( Factory.Create( SolverType, problem ) );
+      TEUCHOS_ASSERT( !Solver.is_null() );
+
+      Teuchos::ParameterList List;
+      List.set("PrintTiming", true);
+      List.set("PrintStatus", true);
+      Solver->SetParameters(List);
+
+      if (eComm->MyPID() == 0)
+        std::cout << "Starting symbolic factorization..." << std::endl;
+      Solver->SymbolicFactorization();
+      if (eComm->MyPID() == 0)
+        std::cout << "Starting numeric factorization..." << std::endl;
+      Solver->NumericFactorization();
+      if (eComm->MyPID() == 0)
+        std::cout << "Starting solution phase..." << std::endl;
+      // solve!
+      Solver->Solve();
       // -----------------------------------------------------------------------
     }
     catch ( std::exception & e )

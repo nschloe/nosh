@@ -25,9 +25,11 @@
 #include <Teuchos_Tuple.hpp>
 #include <Epetra_FECrsGraph.h>
 #include <Epetra_FECrsMatrix.h>
+#include <Epetra_LinearProblem.h>
 
 #include "Ginla_MagneticVectorPotential_Virtual.h"
 #include "VIO_EpetraMesh_Mesh.h"
+#include <Amesos.h>
 // =============================================================================
 namespace Ginla {
 namespace EpetraFVM {
@@ -107,6 +109,9 @@ private:
 
     mutable double keoMu_;
     mutable Teuchos::Tuple<double,3> keoScaling_;
+
+    Teuchos::RCP<Epetra_LinearProblem> keoProblem_;
+    mutable Teuchos::RCP<Amesos_BaseSolver> keoSolver_;
 };
 // =============================================================================
 } // namespace FVM
