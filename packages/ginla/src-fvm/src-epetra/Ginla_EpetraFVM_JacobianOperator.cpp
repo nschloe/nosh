@@ -58,6 +58,9 @@ Apply ( const Epetra_MultiVector & X,
     // A = K - I * ( (1-temp) - 2*|psi|^2 )
     // B = diag( psi^2 )
 
+    TEUCHOS_ASSERT( !keo_.is_null() );
+    TEUCHOS_ASSERT( !currentX_.is_null() );
+
     // K*psi
     TEUCHOS_ASSERT_EQUALITY( 0, keo_->Apply( X, Y ) )
 

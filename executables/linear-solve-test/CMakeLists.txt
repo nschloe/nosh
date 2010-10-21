@@ -19,21 +19,40 @@ LINK_DIRECTORIES( ${Boost_LIBRARY_DIRS}
                   ${Trilinos_LIBRARY_DIRS}
                   ${Trilinos_TPL_LIBRARY_DIRS} )
 # ------------------------------------------------------------------------------
-SET ( linearsolvetest_SRCS
-      linear-solve-test.cpp  )
-SET ( linearsolvetest_LIBS
+SET ( keosolver_SRCS
+      keo-solver.cpp  )
+SET ( keosolver_LIBS
       ginlafvm-epetra
       ginla
       vio
     )
 SET( MY_EXECUTABLE
-     "linear-solve-test.exe" )
+     "keo-solver.exe" )
 ADD_EXECUTABLE( ${MY_EXECUTABLE}
-                ${linearsolvetest_SRCS} )
+                ${keosolver_SRCS} )
 SET_TARGET_PROPERTIES( ${MY_EXECUTABLE}
                        PROPERTIES LINKER_LANGUAGE Fortran )
 TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
-                       ${linearsolvetest_LIBS}
+                       ${keosolver_LIBS}
+                       ${Trilinos_LIBRARIES}
+                       ${Trilinos_TPL_LIBRARIES}
+                       ${Boost_LIBRARIES} )
+# ------------------------------------------------------------------------------
+SET ( jacobiansolver_SRCS
+      jacobian-solver.cpp  )
+SET ( jacobiansolver_LIBS
+      ginlafvm-epetra
+      ginla
+      vio
+    )
+SET( MY_EXECUTABLE
+     "jacobian-solver.exe" )
+ADD_EXECUTABLE( ${MY_EXECUTABLE}
+                ${jacobiansolver_SRCS} )
+SET_TARGET_PROPERTIES( ${MY_EXECUTABLE}
+                       PROPERTIES LINKER_LANGUAGE Fortran )
+TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
+                       ${jacobiansolver_LIBS}
                        ${Trilinos_LIBRARIES}
                        ${Trilinos_TPL_LIBRARIES}
                        ${Boost_LIBRARIES} )
