@@ -22,6 +22,7 @@
 #include "VIO_EpetraMesh_Writer.h"
 
 #include <LOCA_Parameter_Vector.H>
+#include <Epetra_Comm.h>
 
 // =============================================================================
 Ginla::EpetraFVM::State::
@@ -107,109 +108,55 @@ double
 Ginla::EpetraFVM::State::
 freeEnergy () const
 {
-//    TEST_FOR_EXCEPTION( true,
-//                        std::logic_error,
-//                        "Not yet implemented."
-//                      );
+    double myGlobalEnergy[1];
 
-//   double myGlobalEnergy = 0.0;
-//   Teuchos::ArrayRCP<const double> cvView =
-//       mesh_->getControlVolumes()->get1dView();
-//   Teuchos::ArrayRCP<const double_complex> psiView = psi_.get1dView();
-//   for ( int k=0; k<mesh_->getControlVolumes()-> psiView.size(); k++ )
-//   {
-//       // get the local index for the control volumes
-//       ORD globalIndex = psi_.getMap()->getGlobalElement( k );
-//       TEUCHOS_ASSERT( globalIndex != Teuchos::OrdinalTraits<ORD>::invalid() );
-//       ORD k2 = mesh_->getControlVolumes()->getMap()->getLocalElement( globalIndex );
-//       TEUCHOS_ASSERT( k2 != Teuchos::OrdinalTraits<ORD>::invalid() );
-//
-//       myGlobalEnergy -= cvView[k2] * pow( norm( psiView[k] ), 2 );
-//   }
-//
-//   // sum over all processes
-//   int count = 1; // send *one* integer
-//   Teuchos::Array<double> sendBuff ( count );
-//   sendBuff[0] = myGlobalEnergy;
-//   Teuchos::Array<double> recvBuff ( count );
-//   Teuchos::reduceAll ( * ( psi_.Map()->getComm() ),
-//                        Teuchos::REDUCE_SUM,
-//                        count,
-//                        sendBuff.getRawPtr(),
-//                        recvBuff.getRawPtr()
-//                      );
-//
-//   recvBuff[0] /= mesh_->getDomainArea();
-//
-//    return recvBuff[0];
+    int numMyPoints = mesh_->getNodesMap()->NumMyPoints();
+    TEUCHOS_ASSERT_EQUALITY( 2*numMyPoints, psi_.MyLength() );
 
-    return 0.0;
+    const Epetra_Vector & controlVolumes =  *(mesh_->getControlVolumes());
+
+    for ( int k=0; k<numMyPoints; k++ )
+        myGlobalEnergy[0] -= controlVolumes[k] * pow( psi_[2*k]*psi_[2*k] + psi_[2*k+1]*psi_[2*k+1], 2 );
+
+    // Sum over all processors.
+    const Epetra_Comm & comm = psi_.Comm();
+    double globalEnergy[1];
+    TEUCHOS_ASSERT_EQUALITY( 0, comm.SumAll( myGlobalEnergy, globalEnergy, 1 ) );
+
+    globalEnergy[0] /= mesh_->getDomainArea();
+
+    return globalEnergy[0];
 }
 // =============================================================================
-double_complex
+double
 Ginla::EpetraFVM::State::
 innerProduct( const Ginla::EpetraFVM::State & state ) const
 {
-//    TEST_FOR_EXCEPTION( true,
-//                        std::logic_error,
-//                        "Not yet implemented."
-//                      );
+    double res[1];
 
-//    Teuchos::ArrayRCP<const double_complex> psiView = psi_.get1dView();
-//    Teuchos::ArrayRCP<const double_complex> phiView = state.getPsi()->get1dView();
-//
-//    // make sure the maps are the same
-//    TEUCHOS_ASSERT( state.getPsi()->Map()->isSameAs( *psi_.getMap() ) );
-//
-//    // TODO replace by Tpetra::weighted inner product when available
-//    double_complex localSum = double_complex( 0.0, 0.0 );
-//    Teuchos::ArrayRCP<const double> controlVolumes =
-//        mesh_->getControlVolumes()->get1dView();
-//    for ( int k=0; k<psiView.size(); k++ )
-//    {
-//        int globalIndex = psi_.Map()->getGlobalElement( k );
-//        // translate into controlVolumes local index
-//        int k2 = mesh_->getControlVolumes()->getMap()->getLocalElement( globalIndex );
-//        localSum += controlVolumes[k2] * conj(psiView[k]) * phiView[k];
-//    }
-//
-//    // reduce and scatter such that energy is available on
-//    // all cores
-//    int count = 1; // send *one* integer
-//
-//    Teuchos::Array<double_complex> sendBuff ( count );
-//    sendBuff[0] = localSum;
-//
-//    Teuchos::Array<double_complex> recvBuff ( count );
-//
-//    Teuchos::reduceAll ( * ( psi_.getMap()->getComm() ),
-//                         Teuchos::REDUCE_SUM,
-//                         count,
-//                         sendBuff.getRawPtr(),
-//                         recvBuff.getRawPtr()
-//                       );
-//
-//    return recvBuff[0];
-    return 0.0;
+    int numMyPoints = mesh_->getNodesMap()->NumMyPoints();
+    TEUCHOS_ASSERT_EQUALITY( 2*numMyPoints, psi_.MyLength() );
+
+    const Epetra_Vector & controlVolumes = *(mesh_->getControlVolumes());
+    const Epetra_Vector & psi2 =  *(state.getPsi());
+
+    for ( int k=0; k<numMyPoints; k++ )
+        res[0] += controlVolumes[k] * ( psi_[2*k]*psi2[2*k] + psi_[2*k+1]*psi2[2*k+1]  );
+
+    // Sum over all processors.
+    const Epetra_Comm & comm = psi_.Comm();
+    double globalRes[1];
+    TEUCHOS_ASSERT_EQUALITY( 0, comm.SumAll( res, globalRes, 1 ) );
+
+    // normalize and return
+    return globalRes[0] / mesh_->getDomainArea();
 }
 //// ============================================================================
 double
 Ginla::EpetraFVM::State::
 normalizedScaledL2Norm () const
 {
-    // TODO replace by Tpetra::weighted norm as soon as available
-
-    // imaginary part of alpha should be 0
-    double_complex alpha = this->innerProduct( *this );
-
-    // make sure that we actually got a norm here
-    TEUCHOS_ASSERT_INEQUALITY( alpha.imag(), <, 1.0e-10 );
-
-    // normalize
-    double domainArea = mesh_->getDomainArea();
-    double l2norm = sqrt ( alpha.real() ) / domainArea;
-
-    return l2norm;
+    return sqrt ( this->innerProduct( *this ) );
 }
 // =============================================================================
 void

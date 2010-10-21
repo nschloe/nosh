@@ -71,7 +71,7 @@ public:
       ) const;
 
   //! \f$L^2(\Omega)\f$-inner product with state \c state.
-  double_complex
+  double
   innerProduct( const Ginla::EpetraFVM::State & state ) const;
 
   //! \f$L^2(\Omega)\f$-norm.
