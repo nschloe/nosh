@@ -322,6 +322,13 @@ computeF_ ( const Epetra_Vector            & x,
   return;
 }
 // ============================================================================
+Teuchos::RCP<Ginla::State::Virtual>
+Ginla::EpetraFVM::ModelEvaluator::
+createSavable( const Epetra_Vector & x ) const
+{
+    return Teuchos::rcp( new Ginla::EpetraFVM::State( x, mesh_ ) );
+}
+// ============================================================================
 void
 Ginla::EpetraFVM::ModelEvaluator::
 computeJacobian_ ( const Teuchos::RCP<const Epetra_Vector> & x,

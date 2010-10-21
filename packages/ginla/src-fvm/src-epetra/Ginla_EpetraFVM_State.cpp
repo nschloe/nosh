@@ -25,13 +25,13 @@
 
 // =============================================================================
 Ginla::EpetraFVM::State::
-State( const Teuchos::RCP<Epetra_Vector>               & psi,
+State( const Epetra_Vector                             & psi,
        const Teuchos::RCP<const VIO::EpetraMesh::Mesh> & mesh
      ):
-       psi_( *psi ),
+       psi_( psi ),
        mesh_( mesh )
 {
-    TEUCHOS_ASSERT_EQUALITY( psi->GlobalLength(),
+    TEUCHOS_ASSERT_EQUALITY( psi.GlobalLength(),
                              2 * mesh->getNumNodes() );
 }
 // =============================================================================

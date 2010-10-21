@@ -34,7 +34,7 @@ namespace EpetraFVM {
 public:
 
   //! Constructor.
-  State( const Teuchos::RCP<Epetra_Vector>               & psi,
+  State( const Epetra_Vector                             & psi,
          const Teuchos::RCP<const VIO::EpetraMesh::Mesh> & mesh
        );
 

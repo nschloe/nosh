@@ -135,8 +135,9 @@ int main ( int argc, char *argv[] )
                            );
 
       // create the state
+      TEUCHOS_ASSERT( !z.is_null() );
       Teuchos::RCP<Ginla::EpetraFVM::State> state =
-              Teuchos::rcp( new Ginla::EpetraFVM::State( z, mesh ) );
+              Teuchos::rcp( new Ginla::EpetraFVM::State( *z, mesh ) );
 
       // possibly overwrite the parameters
       Teuchos::ParameterList & overwriteParamsList = piroParams->sublist ( "Overwrite parameter list", true );
@@ -220,13 +221,13 @@ int main ( int argc, char *argv[] )
       else if ( solver == "LOCA" )
       {
           observer = Teuchos::null;
-//          observer =Teuchos::rcp( new Ginla::IO::NoxObserver( stateWriter,
-//                                                               glModel,
-//                                                               Ginla::IO::NoxObserver::CONTINUATION,
-//                                                               glModel
-//                                                             )
-//                                 );
-//          observer->setStatisticsWriter( statsWriter );
+          observer = Teuchos::rcp( new Ginla::IO::NoxObserver( stateWriter,
+                                                               glModel,
+                                                               Ginla::IO::NoxObserver::CONTINUATION,
+                                                               glModel
+                                                             )
+                                 );
+          observer->setStatisticsWriter( statsWriter );
 
           Teuchos::RCP<LOCA::StatusTest::Combo> locaTest =
               Teuchos::rcp( new LOCA::StatusTest::Combo( LOCA::StatusTest::Combo::OR ) );
@@ -365,8 +366,9 @@ int main ( int argc, char *argv[] )
                                  voidParameters
                                );
 
+          TEUCHOS_ASSERT( !z.is_null() );
           Teuchos::RCP<Ginla::EpetraFVM::State> nullstate =
-              Teuchos::rcp( new Ginla::EpetraFVM::State( z, mesh ) );
+              Teuchos::rcp( new Ginla::EpetraFVM::State( *z, mesh ) );
 
           Teuchos::ParameterList & bifList =
               piroParams->sublist ( "LOCA" ).sublist ( "Bifurcation" );

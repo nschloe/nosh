@@ -28,6 +28,7 @@
 #include "VIO_EpetraMesh_Mesh.h"
 #include "Ginla_ParameterHost_Virtual.h"
 #include "Ginla_EpetraFVM_JacobianOperator.h"
+#include "Ginla_CreateSavable_Virtual.h"
 // -----------------------------------------------------------------------------
 //typedef Tpetra::CrsGraph<ORD> TCrsGraph;
 //typedef Tpetra::CrsMatrix<double_complex,ORD> ComplexMatrix;
@@ -51,7 +52,8 @@ namespace EpetraFVM {
 
 class ModelEvaluator:
     public EpetraExt::ModelEvaluator,
-    public Ginla::ParameterHost::Virtual
+    public Ginla::ParameterHost::Virtual,
+    public Ginla::CreateSavable::Virtual
 {
 
 public:
@@ -138,6 +140,10 @@ private:
                      const double                              temperature,
                            Epetra_Operator                   & Jac
                    ) const;
+
+  virtual
+  Teuchos::RCP<Ginla::State::Virtual>
+  createSavable( const Epetra_Vector & x ) const ;
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 protected:
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
