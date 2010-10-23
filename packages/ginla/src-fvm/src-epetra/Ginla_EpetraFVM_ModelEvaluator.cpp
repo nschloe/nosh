@@ -293,7 +293,7 @@ evalModel( const InArgs  & inArgs,
   const Teuchos::RCP<Epetra_Operator> WPrec_out = outArgs.get_WPrec();
   if( !WPrec_out.is_null() )
   {
-      this->computeJacobian_( x_in, mu, scalingCombined, temperature, *W_out );
+      this->computePreconditioner_( mu, scalingCombined, *WPrec_out );
   }
 
   return;
