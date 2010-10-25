@@ -176,10 +176,16 @@ void
 Ginla::EpetraFVM::KineticEnergyOperator::
 assembleKeo_() const
 {
-  if ( keoGraph_.is_null() )
-      this->createKeoGraph_();
-
-  keo_ = Teuchos::rcp( new Epetra_FECrsMatrix( Copy, *keoGraph_, true ) );
+  if ( keo_.is_null() )
+  {
+      if ( keoGraph_.is_null() )
+          this->createKeoGraph_();
+      keo_ = Teuchos::rcp( new Epetra_FECrsMatrix( Copy, *keoGraph_, true ) );
+  }
+  else
+  {
+      keo_->PutScalar( 0.0 );
+  }
 
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   // Loop over the elements, create local load vector and mass matrix,
@@ -217,11 +223,11 @@ assembleKeo_() const
           // -------------------------------------------------------------------
           // Compute the integral
           //
-          //    I = \int_{x0}^{xj} (xj-x0).A(x) dx
+          //    I = \int_{x0}^{xj} (xj-x0).A(x) / |xj-x0| dx
           //
           // numerically by the midpoint rule, i.e.,
           //
-          //    I ~ |xj-x0| * (xj-x0) . A( 0.5*(xj+x0) ).
+          //    I ~ |xj-x0| * (xj-x0) . A( 0.5*(xj+x0) ) / |xj-x0|.
           //
           Point midpoint; // get A(midpoint)
           const Point & node0 = nodes[ nodeIndices[0] ];
@@ -232,11 +238,12 @@ assembleKeo_() const
           // -------------------------------------------------------------------
           // Project vector field onto the edge.
           Teuchos::RCP<Point> a = mvp_->getA( midpoint );
-          double aProj = 0.0;
+          // Instead of first computing the projection over the normalized edge
+          // and then multiply it with the edge length, don't normalize the
+          // edge vector.
+          double aInt = 0.0;
           for (int i=0; i<midpoint.size(); i++ )
-              aProj += ( node1[i] - node0[i] ) * (*a)[i];
-
-          const double aInt = aProj * edgeLengths[k][l];
+              aInt += ( node1[i] - node0[i] ) * (*a)[i];
 
           // We'd like to insert the 2x2 matrix
           //
@@ -348,10 +355,11 @@ keoUpToDate_() const
 // =============================================================================
 Teuchos::RCP<Epetra_FECrsMatrix>
 Ginla::EpetraFVM::KineticEnergyOperator::
-getKeo() const
+getMatrix() const
 {
     if ( keo_.is_null() )
         this->assembleKeo_();
+
     return keo_;
 }
 // =============================================================================

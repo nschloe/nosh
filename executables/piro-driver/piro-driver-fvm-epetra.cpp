@@ -22,8 +22,6 @@
 // #include "Ginla_IO_SaveNewtonData.h"
 #include "Ginla_IO_SaveEigenData.h"
 #include "Ginla_IO_NoxObserver.h"
-#include "Recti_Grid_Uniform.h"
-#include "Recti_Grid_Reader.h"
 
 #include "Ginla_MagneticVectorPotential_X.h"
 #include "Ginla_MagneticVectorPotential_Y.h"
@@ -150,14 +148,14 @@ int main ( int argc, char *argv[] )
 
       double mu = problemParameters.get<double> ( "mu" );
 
-      Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> A =
+      Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp =
               Teuchos::rcp ( new Ginla::MagneticVectorPotential::Z ( mu ) );
 
       // create the mode evaluator
       Teuchos::RCP<Ginla::EpetraFVM::ModelEvaluator> glModel =
                 Teuchos::rcp( new Ginla::EpetraFVM::ModelEvaluator( mesh,
                                                                     problemParameters,
-                                                                    A,
+                                                                    mvp,
                                                                     state
                                                                   )
                             );

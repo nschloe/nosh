@@ -98,6 +98,10 @@ public:
   create_W() const;
 
   virtual
+  Teuchos::RCP<EpetraExt::ModelEvaluator::Preconditioner>
+  create_WPrec() const;
+
+  virtual
   InArgs
   createInArgs() const;
 
@@ -174,8 +178,8 @@ private:
    // for get_parameters()
    Teuchos::RCP<Epetra_Vector> p_current_;
 
-   Teuchos::RCP<Ginla::EpetraFVM::KineticEnergyOperator> keo_;
-   Teuchos::RCP<Ginla::EpetraFVM::JacobianOperator> jacobianOperator_;
+   const Teuchos::RCP<Ginla::EpetraFVM::KineticEnergyOperator> keo_;
+   const Teuchos::RCP<Ginla::EpetraFVM::JacobianOperator> jacobianOperator_;
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 private:
     void

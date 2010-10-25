@@ -10,8 +10,6 @@
 
 #include <Teuchos_ParameterList.hpp>
 
-#include "Komplex2_LinearProblem.h"
-
 #include "Ginla_IO_EigenSaver_Abstract.h"
 #include "Ginla_IO_StatsWriter.h"
 
@@ -71,7 +69,6 @@ class SaveEigenData:
     Teuchos::RCP<Teuchos::ParameterList> eigenParamListPtr_;
     const Teuchos::RCP<const Ginla::StateTranslator::Virtual> stateTranslator_;
     const Teuchos::RCP<const Ginla::IO::StateWriter> stateWriter_;
-    const Teuchos::RCP<const Komplex2::LinearProblem> komplex_;
     Teuchos::RCP<Ginla::IO::StatsWriter> statsWriter_;
     Teuchos::RCP<LOCA::Stepper> locaStepper_;
 

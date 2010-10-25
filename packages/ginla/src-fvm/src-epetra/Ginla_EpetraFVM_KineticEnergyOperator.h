@@ -82,7 +82,7 @@ public:
                  );
 
     Teuchos::RCP<Epetra_FECrsMatrix>
-    getKeo() const;
+    getMatrix() const;
 
 protected:
 

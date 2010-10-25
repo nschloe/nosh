@@ -114,7 +114,7 @@ setupParameters_( const Teuchos::ParameterList & params )
 //  }
 
   // also initialize p_current_
-  p_current_ = Teuchos::rcp( new Epetra_Vector(*p_map_) );
+  p_current_ = Teuchos::rcp( new Epetra_Vector(*p_init_) );
 
   return;
 }
@@ -153,7 +153,7 @@ get_p_init ( int l ) const
 // ============================================================================
 Teuchos::RCP<const Epetra_Map>
 Ginla::EpetraFVM::ModelEvaluator::
-get_p_map(int l) const
+get_p_map( int l ) const
 {
   TEUCHOS_ASSERT_EQUALITY( 0, l );
   return p_map_;
@@ -161,18 +161,34 @@ get_p_map(int l) const
 // ============================================================================
 Teuchos::RCP<const Teuchos::Array<std::string> >
 Ginla::EpetraFVM::ModelEvaluator::
-get_p_names (int l) const
+get_p_names( int l ) const
 {
   TEUCHOS_ASSERT_EQUALITY( 0, l );
   return p_names_;
 }
-// ============================================================================
+// =============================================================================
 Teuchos::RCP<Epetra_Operator>
 Ginla::EpetraFVM::ModelEvaluator::
 create_W() const
 {
   TEUCHOS_ASSERT( !jacobianOperator_.is_null() );
   return jacobianOperator_;
+}
+// =============================================================================
+Teuchos::RCP<EpetraExt::ModelEvaluator::Preconditioner>
+Ginla::EpetraFVM::ModelEvaluator::
+create_WPrec() const
+{
+  Teuchos::RCP<Epetra_Operator> precOp = keo_->getMatrix();
+  TEUCHOS_ASSERT( !precOp.is_null() );
+
+  // bool is answer to: "Prec is already inverted?"
+  Teuchos::RCP<EpetraExt::ModelEvaluator::Preconditioner> myPrec =
+          Teuchos::rcp( new EpetraExt::ModelEvaluator::Preconditioner( precOp,
+                                                                       false
+                                                                     )
+                      );
+  return myPrec;
 }
 // ============================================================================
 EpetraExt::ModelEvaluator::InArgs
@@ -356,7 +372,7 @@ computeJacobian_ ( const Teuchos::RCP<const Epetra_Vector> & x,
   jacobianOperator_->setCurrentX( x );
 
   // TODO avoid this explicit copy
-  Jac = *jacobianOperator_;
+  // Jac = *jacobianOperator_;
 
   return;
 }
@@ -371,7 +387,7 @@ computePreconditioner_ ( const double                              mu,
   keo_->setParameters( mu, scaling );
 
   // TODO avoid this explicit copy
-  Prec = *keo_;
+  // Prec = *keo_;
 
   return;
 }

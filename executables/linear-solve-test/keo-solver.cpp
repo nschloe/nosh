@@ -98,7 +98,7 @@ int main ( int argc, char *argv[] )
       Teuchos::RCP<Ginla::EpetraFVM::KineticEnergyOperator> keo =
               Teuchos::rcp( new  Ginla::EpetraFVM::KineticEnergyOperator( mesh,  mvp ) );
 
-      Teuchos::RCP<Epetra_FECrsMatrix> keoMatrix = keo->getKeo();
+      Teuchos::RCP<Epetra_FECrsMatrix> keoMatrix = keo->getMatrix();
 
       // create initial guess and right-hand side
       Teuchos::RCP<Epetra_Vector> epetra_x = Teuchos::rcp( new Epetra_Vector( keo->OperatorDomainMap() ) );

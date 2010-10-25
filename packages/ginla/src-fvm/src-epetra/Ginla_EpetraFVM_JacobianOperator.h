@@ -83,6 +83,9 @@ public:
     void
     setCurrentX( const Teuchos::RCP<const Epetra_Vector> & currentX );
 
+    const Teuchos::RCP<Ginla::EpetraFVM::KineticEnergyOperator>
+    getKeo() const;
+
 protected:
 
 private:

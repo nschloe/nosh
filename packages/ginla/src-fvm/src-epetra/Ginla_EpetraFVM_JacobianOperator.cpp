@@ -196,3 +196,10 @@ setCurrentX( const Teuchos::RCP<const Epetra_Vector> & currentX )
     return;
 }
 // =============================================================================
+const Teuchos::RCP<Ginla::EpetraFVM::KineticEnergyOperator>
+Ginla::EpetraFVM::JacobianOperator::
+getKeo() const
+{
+    return keo_;
+}
+// =============================================================================
