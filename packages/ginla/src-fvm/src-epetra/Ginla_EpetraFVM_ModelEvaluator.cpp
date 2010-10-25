@@ -179,7 +179,7 @@ Teuchos::RCP<EpetraExt::ModelEvaluator::Preconditioner>
 Ginla::EpetraFVM::ModelEvaluator::
 create_WPrec() const
 {
-  Teuchos::RCP<Epetra_Operator> precOp = keo_->getMatrix();
+  Teuchos::RCP<Epetra_Operator> precOp = keo_;
   TEUCHOS_ASSERT( !precOp.is_null() );
 
   // bool is answer to: "Prec is already inverted?"
