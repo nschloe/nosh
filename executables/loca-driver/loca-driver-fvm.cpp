@@ -250,15 +250,6 @@ main ( int argc, char *argv[] )
         Teuchos::RCP<Epetra_Operator> J = glModel->create_W();
         Teuchos::RCP<Epetra_Operator> M = glModel->create_WPrec()->PrecOp;
 
-
-        Epetra_Vector X( z->Map() );
-        X.Random();
-        Epetra_Vector Y( X );
-        M->Apply( X, Y );
-        std::cout << "M successfully applied" << std::endl;
-        M->ApplyInverse( X, Y );
-        std::cout << "M successfully ApplyInversed" << std::endl;
-
         // Create the linear system.
         // Use the TimeDependent interface for computation of shifted matrices.
         //Teuchos::RCP<LOCA::Epetra::Interface::Required> iReq = locaModelEvaluatorInterface;
