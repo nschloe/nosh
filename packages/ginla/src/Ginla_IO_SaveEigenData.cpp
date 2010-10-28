@@ -21,7 +21,7 @@
 
 #include "Ginla_Helpers.h"
 #include "Ginla_IO_StateWriter.h"
-#include "Ginla_StateTranslator_Virtual.h"
+#include "Ginla_CreateSavable_Virtual.h"
 
 #include "Ginla_State_Updatable.h"
 
@@ -31,10 +31,10 @@
 
 // =============================================================================
 Ginla::IO::SaveEigenData::
-SaveEigenData ( Teuchos::ParameterList                                    & eigenParamList,
-                const Teuchos::RCP<const Ginla::StateTranslator::Virtual> & stateTranslator,
-                const Teuchos::RCP<const Ginla::IO::StateWriter>          & stateWriter,
-                const Teuchos::RCP<Ginla::IO::StatsWriter>                & statsWriter
+SaveEigenData ( Teuchos::ParameterList                                  & eigenParamList,
+                const Teuchos::RCP<const Ginla::CreateSavable::Virtual> & stateTranslator,
+                const Teuchos::RCP<const Ginla::IO::StateWriter>        & stateWriter,
+                const Teuchos::RCP<Ginla::IO::StatsWriter>              & statsWriter
               ) :
         eigenParamListPtr_ ( Teuchos::rcpFromRef<Teuchos::ParameterList>( eigenParamList ) ),
         stateTranslator_ ( stateTranslator ),
@@ -112,8 +112,8 @@ save ( Teuchos::RCP<std::vector<double> >       & evals_r,
         Teuchos::RCP<NOX::Epetra::Vector> realPartE =
             Teuchos::rcp_dynamic_cast<NOX::Epetra::Vector> ( realPart, true );
 
-        Teuchos::RCP<Ginla::State::Updatable> eigenstate =
-            stateTranslator_->createState( realPartE->getEpetraVector() );
+        Teuchos::RCP<Ginla::State::Virtual> eigenstate =
+            stateTranslator_->createSavable( realPartE->getEpetraVector() );
 
         stateWriter_->write( eigenstate,
                              step,
@@ -130,8 +130,8 @@ save ( Teuchos::RCP<std::vector<double> >       & evals_r,
             Teuchos::RCP<NOX::Epetra::Vector> imagPartE =
                 Teuchos::rcp_dynamic_cast<NOX::Epetra::Vector> ( imagPart, true );
             eigenstateFileNameAppendix << "-im";
-            Teuchos::RCP<Ginla::State::Updatable> eigenstate =
-                stateTranslator_->createState( imagPartE->getEpetraVector() );
+            Teuchos::RCP<Ginla::State::Virtual> eigenstate =
+                stateTranslator_->createSavable( imagPartE->getEpetraVector() );
             stateWriter_->write( eigenstate,
                                  step,
                                  eigenstateFileNameAppendix.str() );
@@ -149,7 +149,7 @@ save ( Teuchos::RCP<std::vector<double> >       & evals_r,
     {
         std::stringstream label;
         label << setw( Ginla::Helpers::numDigits(maxEigenvaluesSave_) ) << setfill( '0' ) << k << "-0Re()";
-        if ( k<numEigenValues )
+        if ( k < numEigenValues )
             eigenvaluesList.set( label.str(), ( *evals_r ) [k] );
         else
             eigenvaluesList.set( label.str(), "----------------------" );
@@ -158,7 +158,7 @@ save ( Teuchos::RCP<std::vector<double> >       & evals_r,
         label.str(std::string());
 
         label << setw( Ginla::Helpers::numDigits(maxEigenvaluesSave_) ) << setfill( '0' ) <<  k<< "-1Im()";
-        if ( k<numEigenValues )
+        if ( k < numEigenValues )
             eigenvaluesList.set( label.str(), ( *evals_i ) [k] );
         else
             eigenvaluesList.set( label.str(), "----------------------" );
