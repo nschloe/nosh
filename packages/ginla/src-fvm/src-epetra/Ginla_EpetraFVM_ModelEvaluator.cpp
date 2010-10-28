@@ -336,8 +336,8 @@ computeF_ ( const Epetra_Vector            & x,
   for ( int k=0; k<controlVolumes.MyLength(); k++ )
   {
       // Do the equivalent of
-      //   res[k] += controlVolumes[k] * psi[k] * ( (1.0-temperature) - std::norm(psi[k]) );
-      double alpha = controlVolumes[k]
+      //   res[k] -= controlVolumes[k] * psi[k] * ( (1.0-temperature) - std::norm(psi[k]) );
+      double alpha = - controlVolumes[k]
                      * ( (1.0-temperature) - x[2*k]*x[2*k] - x[2*k+1]*x[2*k+1] );
       // real part
       FVec.SumIntoMyValue( 2*k,

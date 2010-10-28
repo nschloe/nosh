@@ -37,6 +37,7 @@
 #include "Ginla_MagneticVectorPotential_X.h"
 #include "Ginla_MagneticVectorPotential_Y.h"
 #include "Ginla_MagneticVectorPotential_Z.h"
+#include "Ginla_MagneticVectorPotential_MagneticDot.h"
 
 #include "Ginla_IO_StateWriter.h"
 #include "Ginla_IO_StatsWriter.h"
@@ -163,6 +164,8 @@ main ( int argc, char *argv[] )
 
         Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp =
                 Teuchos::rcp ( new Ginla::MagneticVectorPotential::Z ( mu ) );
+//        Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp =
+//                Teuchos::rcp ( new Ginla::MagneticVectorPotential::MagneticDot ( mu ) );
 
         // create the mode evaluator
         Teuchos::RCP<Ginla::EpetraFVM::ModelEvaluator> glModel =

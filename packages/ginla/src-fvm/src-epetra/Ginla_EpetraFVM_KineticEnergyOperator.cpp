@@ -260,28 +260,28 @@ assembleKeo_() const
           indices[3] = 2*nodeIndices[1]+1;
 
           Epetra_SerialDenseMatrix values( 4, 4 );
-          values(0,0) = - alpha;
+          values(0,0) = alpha;
           values(0,1) = 0.0;
           values(1,0) = 0.0;
-          values(1,1) = - alpha;
+          values(1,1) = alpha;
 
           double alphaCosAInt = alpha * cos(aInt);
           double alphaSinAInt = alpha * sin(aInt);
 
-          values(0,2) =   alphaCosAInt;
-          values(0,3) =   alphaSinAInt;
-          values(1,2) = - alphaSinAInt;
-          values(1,3) =   alphaCosAInt;
+          values(0,2) = - alphaCosAInt;
+          values(0,3) = - alphaSinAInt;
+          values(1,2) =   alphaSinAInt;
+          values(1,3) = - alphaCosAInt;
 
-          values(2,0) =   alphaCosAInt;
-          values(2,1) = - alphaSinAInt;
-          values(3,0) =   alphaSinAInt;
-          values(3,1) =   alphaCosAInt;
+          values(2,0) = - alphaCosAInt;
+          values(2,1) =   alphaSinAInt;
+          values(3,0) = - alphaSinAInt;
+          values(3,1) = - alphaCosAInt;
 
-          values(2,2) = - alpha;
+          values(2,2) = alpha;
           values(2,3) = 0.0;
           values(3,2) = 0.0;
-          values(3,3) = - alpha;
+          values(3,3) = alpha;
 
           // sum it all in!
           keo_->SumIntoGlobalValues ( indices, values );

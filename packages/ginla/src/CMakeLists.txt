@@ -9,6 +9,7 @@ SET ( ginla_SRCS
       Ginla_MagneticVectorPotential_X.cpp
       Ginla_MagneticVectorPotential_Y.cpp
       Ginla_MagneticVectorPotential_Z.cpp
+      Ginla_MagneticVectorPotential_MagneticDot.cpp
       Ginla_MagneticVectorPotential_ZSquareSymmetric.cpp
       Ginla_IO_SaveNewtonData.cpp
       Ginla_IO_SaveEigenData.cpp
