@@ -55,8 +55,8 @@ Apply ( const Epetra_MultiVector & X,
       ) const
 {
     // Add the terms corresponding to the nonlinear terms.
-    // A = K - I * ( (1-temp) - 2*|psi|^2 )
-    // B = diag( psi^2 )
+    // A = K + I * ( (1-temp) - 2*|psi|^2 )
+    // B = - diag( psi^2 )
 
     TEUCHOS_ASSERT( !keo_.is_null() );
     TEUCHOS_ASSERT( !currentX_.is_null() );
@@ -80,7 +80,7 @@ Apply ( const Epetra_MultiVector & X,
             int l = controlVolumes.Map().LID( globalId );
             TEUCHOS_ASSERT_INEQUALITY( l, !=, -1 );
 
-            double alpha = - controlVolumes[l] * (
+            double alpha = controlVolumes[l] * (
                            1.0 - temperature_
                            - 2.0 * ( (*currentX_)[2*k]*(*currentX_)[2*k] + (*currentX_)[2*k+1]*(*currentX_)[2*k+1] )
                            );
@@ -100,9 +100,9 @@ Apply ( const Epetra_MultiVector & X,
                                  2.0 * (*currentX_)[2*k] * (*currentX_)[2*k+1]
                                  );
             // real part
-            Y.SumIntoMyValue( 2*k,   vec, rePhiSquare * X[vec][2*k] + imPhiSquare * X[vec][2*k+1] );
+            Y.SumIntoMyValue( 2*k,   vec, - rePhiSquare * X[vec][2*k] - imPhiSquare * X[vec][2*k+1] );
             // imaginary part
-            Y.SumIntoMyValue( 2*k+1, vec, imPhiSquare * X[vec][2*k] - rePhiSquare * X[vec][2*k+1] );
+            Y.SumIntoMyValue( 2*k+1, vec, - imPhiSquare * X[vec][2*k] + rePhiSquare * X[vec][2*k+1] );
         }
     }
 

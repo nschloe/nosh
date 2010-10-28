@@ -199,24 +199,24 @@ main ( int argc, char *argv[] )
 
 
 //         setup eigen saver
-//#ifdef HAVE_LOCA_ANASAZI
-//          Teuchos::ParameterList & eigenList = piroParams->sublist ( "LOCA" ).sublist ( "Stepper" ) .sublist ( "Eigensolver" );
-//          std::string eigenvaluesFileName =
-//              getAbsolutePath( outputList.get<std::string> ( "Eigenvalues file name" ), xmlPath );
-////          std::string eigenstateFileNameAppendix =
-////              outputList.get<std::string> ( "Eigenstate file name appendix" );
-//          Teuchos::RCP<Ginla::IO::StatsWriter> eigenStatsWriter =
-//              Teuchos::rcp( new Ginla::IO::StatsWriter( eigenvaluesFileName ) );
-//
-//          Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> glSaveEigenDataStrategy =
-//                  Teuchos::RCP<Ginla::IO::SaveEigenData> ( new Ginla::IO::SaveEigenData ( eigenList,
-//                                                                                          glModel,
-//                                                                                          stateWriter,
-//                                                                                          eigenStatsWriter ) );
-//          eigenList.set ( "Save Eigen Data Method", "User-Defined" );
-//          eigenList.set ( "User-Defined Save Eigen Data Name", "glSaveEigenDataStrategy" );
-//          eigenList.set ( "glSaveEigenDataStrategy", glSaveEigenDataStrategy );
-//#endif
+#ifdef HAVE_LOCA_ANASAZI
+          Teuchos::ParameterList & eigenList = piroParams->sublist ( "LOCA" ).sublist ( "Stepper" ) .sublist ( "Eigensolver" );
+          std::string eigenvaluesFileName =
+              getAbsolutePath( outputList.get<std::string> ( "Eigenvalues file name" ), xmlPath );
+//          std::string eigenstateFileNameAppendix =
+//              outputList.get<std::string> ( "Eigenstate file name appendix" );
+          Teuchos::RCP<Ginla::IO::StatsWriter> eigenStatsWriter =
+              Teuchos::rcp( new Ginla::IO::StatsWriter( eigenvaluesFileName ) );
+
+          Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> glSaveEigenDataStrategy =
+                  Teuchos::RCP<Ginla::IO::SaveEigenData> ( new Ginla::IO::SaveEigenData ( eigenList,
+                                                                                          glModel,
+                                                                                          stateWriter,
+                                                                                          eigenStatsWriter ) );
+          eigenList.set ( "Save Eigen Data Method", "User-Defined" );
+          eigenList.set ( "User-Defined Save Eigen Data Name", "glSaveEigenDataStrategy" );
+          eigenList.set ( "glSaveEigenDataStrategy", glSaveEigenDataStrategy );
+#endif
 
         // explicitly copy the parameter list as LOCA::createGlobalData needs a non-const
         Teuchos::RCP<Teuchos::ParameterList> locaParams =
