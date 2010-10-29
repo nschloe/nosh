@@ -74,10 +74,6 @@ class SaveEigenData:
 
     //! The minimum number of stable eigenvalues that is to be computed in each step.
     unsigned int numComputeStableEigenvalues_;
-
-    //! Maximum number of eigenvalues that are stored in \c eigenvaluesFilePath_.
-    unsigned int maxEigenvaluesSave_;
-    unsigned int maxNumDigits_;
 };
 
   } // namespace IO

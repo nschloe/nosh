@@ -34,19 +34,20 @@
       <Parameter  name="Continuation Method" type="string" value="Arc Length"/>
       <Parameter  name="Initial Value" type="double" value="0.0"/>
       <Parameter  name="Continuation Parameter" type="string" value="mu"/>
-      <Parameter  name="Max Steps" type="int" value="10"/>
+      <Parameter  name="Max Steps" type="int" value="1000"/>
       <Parameter  name="Max Value" type="double" value="100.0"/>
       <Parameter  name="Min Value" type="double" value="0.0"/>
-      <Parameter  name="Compute Eigenvalues" type="bool" value="false"/>
+      <Parameter  name="Compute Eigenvalues" type="bool" value="true"/>
       <ParameterList name="Eigensolver">
         <Parameter name="Maximum Restarts" type="int" value="3"/>
         <Parameter name="Method" type="string" value="Anasazi"/>
+        <Parameter name="Symmetric" type="bool" value="true"/>
         <Parameter name="Num Blocks" type="int" value="30"/>
-        <Parameter name="Block Size" type="int" value="5"/>
-        <Parameter name="Num Eigenvalues" type="int" value="5"/>
-        <Parameter name="Operator" type="string" value="Shift-Invert"/>
-        <!--Parameter name="Operator" type="string" value="Jacobian Inverse"/-->
-        <Parameter name="Shift" type="double" value="0.5"/>
+        <Parameter name="Block Size" type="int" value="2"/>
+        <Parameter name="Num Eigenvalues" type="int" value="9"/>
+        <-Parameter name="Operator" type="string" value="Jacobian Inverse"/>
+        <!--Parameter name="Operator" type="string" value="Shift-Invert"/-->
+        <Parameter name="Shift" type="double" value="0.0"/>
         <Parameter name="Save Eigen Data Method" type="string" value="Default"/>
         <Parameter name="Cayley Pole" type="double" value="0.5"/>
         <Parameter name="Cayley Zero" type="double" value="1.0"/>

@@ -41,8 +41,7 @@ SaveEigenData ( Teuchos::ParameterList                                  & eigenP
         stateWriter_ ( stateWriter ),
         statsWriter_ ( statsWriter ),
         locaStepper_ ( Teuchos::null ),
-        numComputeStableEigenvalues_ ( 3 ),
-        maxEigenvaluesSave_ ( 20 )
+        numComputeStableEigenvalues_ ( 6 )
 {
   statsWriter_->getListNonConst()->set<double>( "SaveEigenData constructor", 2.718281828 );
 }
@@ -145,23 +144,14 @@ save ( Teuchos::RCP<std::vector<double> >       & evals_r,
     eigenvaluesList.set( "#0unstable", numUnstableEigenvalues );
     eigenvaluesList.set( "#1null", numNullvalues );
     eigenvaluesList.set( "#2stable", numStableEigenvalues );
-    for ( unsigned int k = 0; k < maxEigenvaluesSave_; k++ )
+    for ( unsigned int k = 0; k < numEigenValues; k++ )
     {
         std::stringstream label;
-        label << setw( Ginla::Helpers::numDigits(maxEigenvaluesSave_) ) << setfill( '0' ) << k << "-0Re()";
-        if ( k < numEigenValues )
-            eigenvaluesList.set( label.str(), ( *evals_r ) [k] );
-        else
-            eigenvaluesList.set( label.str(), "----------------------" );
+        label << setw( 2 ) << setfill( '0' ) << k << "-0Re()";
+        eigenvaluesList.set( label.str(), ( *evals_r ) [k] );
 
-        // empty the stringstream
-        label.str(std::string());
-
-        label << setw( Ginla::Helpers::numDigits(maxEigenvaluesSave_) ) << setfill( '0' ) <<  k<< "-1Im()";
-        if ( k < numEigenValues )
-            eigenvaluesList.set( label.str(), ( *evals_i ) [k] );
-        else
-            eigenvaluesList.set( label.str(), "----------------------" );
+        // make sure that the imaginary part is indeed 0
+        TEUCHOS_ASSERT( fabs( ( *evals_i ) [k] ) < 1.0e-15 );
     }
     statsWriter_->setList( eigenvaluesList );
     statsWriter_->print();
