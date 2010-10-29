@@ -45,7 +45,7 @@ getParameters() const
 // ============================================================================
 Teuchos::RCP<Point>
 Ginla::MagneticVectorPotential::MagneticDot::
-getA(const Point & x) const
+getA( const Point & x ) const
 {
     // Span a cartesian grid over the sample, and integrate over it.
 
@@ -73,14 +73,14 @@ getA(const Point & x) const
                 double yy = x[1] - yi;
                 // r distance between grid point X to magnetic point (xi,yi)
                 double r = xx * xx + yy * yy;
-                // 3D distance to point on upper edge (xi,yi,zz1)
-                double r_3D1 = sqrt( r + zz1_ * zz1_);
-                // 3D distance to point on lower edge (xi,yi,zz2)
-                double r_3D2 = sqrt( r + zz2_ * zz2_);
 
-                if ( fabs(r) > 1.0e-15 )
+                if ( r > 1.0e-15 )
                 {
-                    double alpha = ( zz2_ / r_3D2 - zz1_ / r_3D1 ) / r * dx * dx;
+                    // 3D distance to point on upper edge (xi,yi,zz1)
+                    double r_3D1 = sqrt( r + zz1_ * zz1_);
+                    // 3D distance to point on lower edge (xi,yi,zz2)
+                    double r_3D2 = sqrt( r + zz2_ * zz2_);
+                    double alpha = ( zz2_ / r_3D2 - zz1_ / r_3D1 ) * dx * dx / r;
                     ax += yy * alpha;
                     ay -= xx * alpha;
                 }
