@@ -45,7 +45,7 @@
         <Parameter name="Num Blocks" type="int" value="30"/>
         <Parameter name="Block Size" type="int" value="2"/>
         <Parameter name="Num Eigenvalues" type="int" value="9"/>
-        <-Parameter name="Operator" type="string" value="Jacobian Inverse"/>
+        <Parameter name="Operator" type="string" value="Jacobian Inverse"/>
         <!--Parameter name="Operator" type="string" value="Shift-Invert"/-->
         <Parameter name="Shift" type="double" value="0.0"/>
         <Parameter name="Save Eigen Data Method" type="string" value="Default"/>
