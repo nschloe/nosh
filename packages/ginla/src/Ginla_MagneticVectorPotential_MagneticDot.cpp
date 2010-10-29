@@ -65,7 +65,7 @@ getA(const Point & x) const
         {
             double yi = iy*dx - magnetRadius_;
             // circular shape magnetic dot
-            if ( xi*xi + iy*iy <= magnetRadius_*magnetRadius_ )
+            if ( xi*xi + yi*yi <= magnetRadius_*magnetRadius_ )
             {
                 // x distance between grid point x to magnetic point xi
                 double xx = x[0] - xi;
@@ -78,7 +78,7 @@ getA(const Point & x) const
                 // 3D distance to point on lower edge (xi,yi,zz2)
                 double r_3D2 = sqrt( r + zz2_ * zz2_);
 
-                if ( abs(r) > 1.0e-15 )
+                if ( fabs(r) > 1.0e-15 )
                 {
                     double alpha = ( zz2_ / r_3D2 - zz1_ / r_3D1 ) / r * dx * dx;
                     ax += yy * alpha;
