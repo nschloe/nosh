@@ -81,6 +81,11 @@ public:
                  );
 
     void
+    setShiftParameters( const double alpha,
+                        const double beta
+                      );
+
+    void
     setCurrentX( const Teuchos::RCP<const Epetra_Vector> & currentX );
 
     const Teuchos::RCP<Ginla::EpetraFVM::KineticEnergyOperator>
@@ -98,6 +103,9 @@ private:
     const Teuchos::RCP<Ginla::EpetraFVM::KineticEnergyOperator> keo_;
 
     double temperature_;
+
+    double alpha_;
+    double beta_;
 };
 
 } // namespace FVM

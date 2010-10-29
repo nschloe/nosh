@@ -31,7 +31,9 @@ JacobianOperator( const Teuchos::RCP<VIO::EpetraMesh::Mesh>                   & 
         mesh_( mesh ),
         keo_( keo ),
         currentX_ ( Teuchos::null ),
-        temperature_( 0.0 )
+        temperature_( 0.0 ),
+        alpha_( 0.0 ),
+        beta_( 1.0 )
 {
 }
 // =============================================================================
@@ -80,7 +82,7 @@ Apply ( const Epetra_MultiVector & X,
             int l = controlVolumes.Map().LID( globalId );
             TEUCHOS_ASSERT_INEQUALITY( l, !=, -1 );
 
-            double alpha = - controlVolumes[l] * (
+            double alpha = controlVolumes[l] * (
                            1.0 - temperature_
                            - 2.0 * ( (*currentX_)[2*k]*(*currentX_)[2*k] + (*currentX_)[2*k+1]*(*currentX_)[2*k+1] )
                            );
@@ -100,11 +102,15 @@ Apply ( const Epetra_MultiVector & X,
                                  2.0 * (*currentX_)[2*k] * (*currentX_)[2*k+1]
                                  );
             // real part
-            Y.SumIntoMyValue( 2*k,   vec, rePhiSquare * X[vec][2*k] + imPhiSquare * X[vec][2*k+1] );
+            Y.SumIntoMyValue( 2*k,   vec, - rePhiSquare * X[vec][2*k] - imPhiSquare * X[vec][2*k+1] );
             // imaginary part
-            Y.SumIntoMyValue( 2*k+1, vec, imPhiSquare * X[vec][2*k] - rePhiSquare * X[vec][2*k+1] );
+            Y.SumIntoMyValue( 2*k+1, vec, - imPhiSquare * X[vec][2*k] + rePhiSquare * X[vec][2*k+1] );
         }
     }
+
+//    // take care of the shifting
+//    if ( alpha_ != 0.0 || beta_ != -1.0 )
+//    TEUCHOS_ASSERT_EQUALITY( 0, Y.Update( alpha_, X, -beta_ ) );
 
     return 0;
 }
@@ -184,6 +190,18 @@ setParameters( const double mu,
 {
     keo_->setParameters( mu, scaling );
     temperature_ = temperature;
+    return;
+}
+// =============================================================================
+void
+Ginla::EpetraFVM::JacobianOperator::
+setShiftParameters( const double alpha,
+                    const double beta
+                  )
+{
+    alpha_ = alpha;
+    beta_ = beta;
+    std::cout << "Set alpha, beta to " << alpha << " " << beta << std::endl;
     return;
 }
 // =============================================================================

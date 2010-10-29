@@ -130,27 +130,6 @@ private:
                     Epetra_Vector            & FVec
             ) const;
 
-//  void
-//  computeDFDp_ ( const Epetra_Vector            & x,
-//                 const double                     mu,
-//                 const Teuchos::Tuple<double,3> & scaling,
-//                       Epetra_Vector            & FVec
-//               ) const;
-
-  void
-  computeJacobian_ ( const Teuchos::RCP<const Epetra_Vector> & x,
-                     const double                              lambda,
-                     const Teuchos::Tuple<double,3>          & scaling,
-                     const double                              temperature,
-                           Epetra_Operator                   & Jac
-                   ) const;
-
-  void
-  computePreconditioner_ ( const double                     mu,
-                           const Teuchos::Tuple<double,3> & scaling,
-                           Epetra_Operator                & Prec
-                         ) const;
-
   virtual
   Teuchos::RCP<Ginla::State::Virtual>
   createSavable( const Epetra_Vector & x ) const ;
@@ -167,7 +146,6 @@ private:
    const Teuchos::RCP<VIO::EpetraMesh::Mesh> mesh_;
 
    Teuchos::RCP<Epetra_Vector> x_;
-   mutable bool firstTime_;
 
    int numParams_;
 
@@ -179,7 +157,6 @@ private:
    Teuchos::RCP<Epetra_Vector> p_current_;
 
    const Teuchos::RCP<Ginla::EpetraFVM::KineticEnergyOperator> keo_;
-   const Teuchos::RCP<Ginla::EpetraFVM::JacobianOperator> jacobianOperator_;
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 private:
     void

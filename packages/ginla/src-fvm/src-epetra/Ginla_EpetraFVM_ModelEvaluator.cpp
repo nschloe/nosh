@@ -1,6 +1,6 @@
 /*
     <one line to give the program's name and a brief idea of what it does.>
-    Copyright (C) 2010  Nico Schll\"omer
+    Copyright (C) 2010  Nico Schl\"omer
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -38,14 +38,12 @@ ModelEvaluator ( const Teuchos::RCP<VIO::EpetraMesh::Mesh>                   & m
                ) :
         mesh_ ( mesh ),
         x_( Teuchos::null ),
-        firstTime_ ( true ),
         numParams_( 1 ),
         p_map_( Teuchos::null ),
         p_init_( Teuchos::null ),
         p_names_( Teuchos::null ),
         p_current_( Teuchos::null ),
-        keo_( Teuchos::rcp( new Ginla::EpetraFVM::KineticEnergyOperator( mesh, mvp ) ) ),
-        jacobianOperator_( Teuchos::rcp( new Ginla::EpetraFVM::JacobianOperator( mesh, keo_ ) ) )
+        keo_( Teuchos::rcp( new Ginla::EpetraFVM::KineticEnergyOperator( mesh, mvp ) ) )
 {
   this->setupParameters_( problemParams );
 
@@ -171,24 +169,20 @@ Teuchos::RCP<Epetra_Operator>
 Ginla::EpetraFVM::ModelEvaluator::
 create_W() const
 {
-  TEUCHOS_ASSERT( !jacobianOperator_.is_null() );
-  return jacobianOperator_;
+  return Teuchos::rcp( new Ginla::EpetraFVM::JacobianOperator( mesh_, keo_ ) );
 }
 // =============================================================================
 Teuchos::RCP<EpetraExt::ModelEvaluator::Preconditioner>
 Ginla::EpetraFVM::ModelEvaluator::
 create_WPrec() const
 {
-  Teuchos::RCP<Epetra_Operator> precOp = keo_;
-  TEUCHOS_ASSERT( !precOp.is_null() );
+  TEUCHOS_ASSERT( !keo_.is_null() );
 
   // bool is answer to: "Prec is already inverted?"
-  Teuchos::RCP<EpetraExt::ModelEvaluator::Preconditioner> myPrec =
-          Teuchos::rcp( new EpetraExt::ModelEvaluator::Preconditioner( precOp,
-                                                                       false
-                                                                     )
-                      );
-  return myPrec;
+  return Teuchos::rcp( new EpetraExt::ModelEvaluator::Preconditioner( keo_,
+                                                                      false
+                                                                    )
+                     );
 }
 // ============================================================================
 EpetraExt::ModelEvaluator::InArgs
@@ -204,9 +198,9 @@ createInArgs() const
 
   inArgs.setSupports( IN_ARG_x, true );
 
-//   // for shifted matrix
-//   inArgs.setSupports( IN_ARG_alpha, true );
-//   inArgs.setSupports( IN_ARG_beta, true );
+  // for shifted matrix
+  inArgs.setSupports( IN_ARG_alpha, true );
+  inArgs.setSupports( IN_ARG_beta, true );
 
   return inArgs;
 }
@@ -252,8 +246,8 @@ evalModel( const InArgs  & inArgs,
            const OutArgs & outArgs
          ) const
 {
-//   double alpha = inArgs.get_alpha();
-//   double beta  = inArgs.get_beta();
+  const double alpha = inArgs.get_alpha();
+  const double beta  = inArgs.get_beta();
 
   const Teuchos::RCP<const Epetra_Vector> & x_in = inArgs.get_x();
 
@@ -294,22 +288,23 @@ evalModel( const InArgs  & inArgs,
   const Teuchos::RCP<Epetra_Operator> W_out = outArgs.get_W();
   if( !W_out.is_null() )
   {
-//      Teuchos::RCP<Epetra_CrsMatrix> W_out_crs =
-//          Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>( W_out, true );
-      this->computeJacobian_( x_in, mu, scalingCombined, temperature, *W_out );
+      std::cout << "alpha, beta " << alpha << " " << beta << std::endl;
 
-//       W_out_crs->Scale( beta );
-//
-//       double diag = -alpha;
-//       for ( int i=0; i<x_in->MyLength(); i++ )
-//           W_out_crs->SumIntoMyValues( i, 1, &diag, &i );
+      Teuchos::RCP<Ginla::EpetraFVM::JacobianOperator> jac =
+          Teuchos::rcp_dynamic_cast<Ginla::EpetraFVM::JacobianOperator>( W_out, true );
+
+      jac->setParameters( mu, scalingCombined, temperature );
+      jac->setShiftParameters( alpha, beta );
+      jac->setCurrentX( x_in );
   }
 
   // fill preconditioner
   const Teuchos::RCP<Epetra_Operator> WPrec_out = outArgs.get_WPrec();
   if( !WPrec_out.is_null() )
   {
-      this->computePreconditioner_( mu, scalingCombined, *WPrec_out );
+      Teuchos::RCP<Ginla::EpetraFVM::KineticEnergyOperator> keo =
+          Teuchos::rcp_dynamic_cast<Ginla::EpetraFVM::KineticEnergyOperator>( WPrec_out, true );
+      keo->setParameters( mu, scalingCombined );
   }
 
   return;
@@ -337,7 +332,7 @@ computeF_ ( const Epetra_Vector            & x,
   {
       // Do the equivalent of
       //   res[k] -= controlVolumes[k] * psi[k] * ( (1.0-temperature) - std::norm(psi[k]) );
-      double alpha = - controlVolumes[k]
+      double alpha = controlVolumes[k]
                      * ( (1.0-temperature) - x[2*k]*x[2*k] - x[2*k+1]*x[2*k+1] );
       // real part
       FVec.SumIntoMyValue( 2*k,
@@ -357,39 +352,6 @@ Ginla::EpetraFVM::ModelEvaluator::
 createSavable( const Epetra_Vector & x ) const
 {
     return Teuchos::rcp( new Ginla::EpetraFVM::State( x, mesh_ ) );
-}
-// ============================================================================
-void
-Ginla::EpetraFVM::ModelEvaluator::
-computeJacobian_ ( const Teuchos::RCP<const Epetra_Vector> & x,
-                   const double                              mu,
-                   const Teuchos::Tuple<double,3>          & scaling,
-                   const double                              temperature,
-                   Epetra_Operator                         & Jac
-                 ) const
-{
-  jacobianOperator_->setParameters( mu, scaling, temperature );
-  jacobianOperator_->setCurrentX( x );
-
-  // TODO avoid this explicit copy
-  // Jac = *jacobianOperator_;
-
-  return;
-}
-// ============================================================================
-void
-Ginla::EpetraFVM::ModelEvaluator::
-computePreconditioner_ ( const double                              mu,
-                         const Teuchos::Tuple<double,3>          & scaling,
-                         Epetra_Operator                         & Prec
-                       ) const
-{
-  keo_->setParameters( mu, scaling );
-
-  // TODO avoid this explicit copy
-  // Prec = *keo_;
-
-  return;
 }
 // =============================================================================
 Teuchos::RCP<LOCA::ParameterVector>
