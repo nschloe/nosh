@@ -163,7 +163,7 @@ main ( int argc, char *argv[] )
         double mu = problemParameters.get<double> ( "mu" );
 
         Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp =
-                Teuchos::rcp ( new Ginla::MagneticVectorPotential::Z ( mu ) );
+                Teuchos::rcp ( new Ginla::MagneticVectorPotential::Y ( mu ) );
 //        Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp =
 //                Teuchos::rcp ( new Ginla::MagneticVectorPotential::MagneticDot ( mu ) );
 

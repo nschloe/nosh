@@ -90,7 +90,7 @@ int main ( int argc, char *argv[] )
                              problemParameters
                            );
 
-      double mu = 1.0e-4;
+      double mu = problemParameters.get<double>( "mu" );
       Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp =
               Teuchos::rcp ( new Ginla::MagneticVectorPotential::Z ( mu ) );
 
@@ -163,16 +163,18 @@ int main ( int argc, char *argv[] )
       MLList.set("smoother: sweeps", 3);
       MLList.set("smoother: pre or post", "both");
       MLList.set("coarse: type", "Amesos-KLU");
+      MLList.set("PDE equations", 2);
       Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> MLPrec =
                   Teuchos::rcp( new ML_Epetra::MultiLevelPreconditioner(*keoMatrix, MLList) );
       MLPrec->PrintUnused(0);
       // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-      solver.SetAztecOption(AZ_precond, AZ_none);
+      //solver.SetAztecOption(AZ_precond, AZ_none);
       //solver.SetAztecOption(AZ_precond, AZ_dom_decomp);
-      //solver.SetPrecOperator( MLPrec.getRawPtr() );
+      solver.SetPrecOperator( MLPrec.getRawPtr() );
       //solver.SetAztecOption(AZ_solver, AZ_gmres);
-      solver.SetAztecOption(AZ_solver, AZ_cg);
+      solver.SetAztecOption(AZ_solver, AZ_bicgstab);
+      //solver.SetAztecOption(AZ_solver, AZ_cg);
       //solver.SetAztecOption(AZ_scaling, 8);
       //solver.SetAztecOption(AZ_subdomain_solve, AZ_ilut);
       //solver.SetAztecOption(AZ_output, 1);
@@ -182,7 +184,7 @@ int main ( int argc, char *argv[] )
       //solver.SetAztecOption(AZ_poly_ord, 9);
       //solver.SetAztecParam(AZ_ilut_fill, 4.0);
       //solver.SetAztecParam(AZ_drop, 0.0);
-      solver.SetAztecOption(AZ_output, 32);
+      solver.SetAztecOption(AZ_output, 5);
       //double rthresh = 1.4;
       //cout << "Rel threshold = " << rthresh << endl;
       //solver.SetAztecParam(AZ_rthresh, rthresh);
@@ -195,7 +197,7 @@ int main ( int argc, char *argv[] )
       //solver.SetAztecOption(AZ_kspace, Niters);
 
       // do the iteration
-      solver.Iterate(Niters, 1.0e-8);
+      solver.Iterate(Niters, 1.0e-10);
 
       // compute the residual
       Epetra_Vector bcomp( keo->OperatorRangeMap() );
