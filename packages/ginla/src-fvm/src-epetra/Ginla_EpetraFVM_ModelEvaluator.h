@@ -156,6 +156,7 @@ private:
    // for get_parameters()
    Teuchos::RCP<Epetra_Vector> p_current_;
 
+   const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp_;
    const Teuchos::RCP<Ginla::EpetraFVM::KineticEnergyOperator> keo_;
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 private:

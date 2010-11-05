@@ -17,8 +17,8 @@
 
 */
 
-#ifndef GINLA_EPETRAFVM_KINETICENERGYOPERATOR_H
-#define GINLA_EPETRAFVM_KINETICENERGYOPERATOR_H
+#ifndef GINLA_EPETRAFVM_KEOPRECONDITIONER_H
+#define GINLA_EPETRAFVM_KEOPRECONDITIONER_H
 // =============================================================================
 #include <Epetra_Operator.h>
 #include <Teuchos_RCP.hpp>
@@ -29,20 +29,25 @@
 
 #include "Ginla_MagneticVectorPotential_Virtual.h"
 #include "VIO_EpetraMesh_Mesh.h"
-#include <Amesos.h>
+// =============================================================================
+namespace Ginla {
+    namespace EpetraFVM {
+        class KineticEnergyOperator;
+    }
+}
 // =============================================================================
 namespace Ginla {
 namespace EpetraFVM {
 // =============================================================================
-class KineticEnergyOperator: public Epetra_Operator
+class KeoPreconditioner: public Epetra_Operator
 {
 public:
-    KineticEnergyOperator( const Teuchos::RCP<VIO::EpetraMesh::Mesh>                   & mesh,
-                           const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp
-                         );
+    KeoPreconditioner( const Teuchos::RCP<VIO::EpetraMesh::Mesh>                   & mesh,
+                       const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp
+                     );
 
     // Destructor.
-    ~KineticEnergyOperator();
+    ~KeoPreconditioner();
 
     virtual int
     SetUseTranspose( bool UseTranspose );
@@ -81,35 +86,26 @@ public:
 
     virtual const Epetra_Map & 	OperatorRangeMap () const;
 
+public:
     void
-    setParameters( const double mu,
-                   const Teuchos::Tuple<double,3> & scaling
-                 );
-
-    void
-    assembleMatrix() const;
-
-    Teuchos::RCP<Epetra_FECrsMatrix>
-    getMatrix() const;
+    rebuild( const double mu,
+             const Teuchos::Tuple<double,3> & scaling
+           );
 
 protected:
-
-private:
-
-    const Epetra_FECrsGraph
-    createKeoGraph_( const Teuchos::RCP<const VIO::EpetraMesh::Mesh> & mesh ) const;
-
 private:
     bool useTranspose_;
     const Teuchos::RCP<const Epetra_Comm> comm_;
-    const Teuchos::RCP<VIO::EpetraMesh::Mesh> mesh_;
 
-    const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp_;
+    Teuchos::RCP<Ginla::EpetraFVM::KineticEnergyOperator> keo_;
 
-    const Teuchos::RCP<Epetra_FECrsMatrix> keoMatrix_;
+    bool isKeoIllConditioned_;
+
+//    Teuchos::RCP<Epetra_LinearProblem> keoProblem_;
+//    mutable Teuchos::RCP<Amesos_BaseSolver> keoSolver_;
 };
 // =============================================================================
 } // namespace FVM
 } // namespace Ginla
 
-#endif // GINLA_EPETRAFVM_KINETICENERGYOPERATOR_H
+#endif // GINLA_EPETRAFVM_KEOPRECONDITIONER_H

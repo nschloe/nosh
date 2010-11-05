@@ -24,16 +24,14 @@
 // =============================================================================
 Ginla::EpetraFVM::JacobianOperator::
 JacobianOperator( const Teuchos::RCP<VIO::EpetraMesh::Mesh>                   & mesh,
-                  const Teuchos::RCP<Ginla::EpetraFVM::KineticEnergyOperator> & keo
+                  const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp
                 ):
         useTranspose_( false ),
         comm_( mesh->getNodesMap()->Comm() ),
         mesh_( mesh ),
-        keo_( keo ),
+        keo_( Teuchos::rcp( new Ginla::EpetraFVM::KineticEnergyOperator( mesh, mvp ) ) ),
         currentX_ ( Teuchos::null ),
-        temperature_( 0.0 ),
-        alpha_( 0.0 ),
-        beta_( 1.0 )
+        temperature_( 0.0 )
 {
 }
 // =============================================================================
@@ -183,41 +181,53 @@ OperatorRangeMap () const
 // =============================================================================
 void
 Ginla::EpetraFVM::JacobianOperator::
-setParameters( const double mu,
-               const Teuchos::Tuple<double,3> & scaling,
-               const double temperature
-             )
+rebuild( const double mu,
+         const Teuchos::Tuple<double,3> & scaling,
+         const double temperature,
+         const Teuchos::RCP<const Epetra_Vector> & currentX
+       )
 {
-    keo_->setParameters( mu, scaling );
+    // set the entities for the operator
     temperature_ = temperature;
-    return;
-}
-// =============================================================================
-void
-Ginla::EpetraFVM::JacobianOperator::
-setShiftParameters( const double alpha,
-                    const double beta
-                  )
-{
-    alpha_ = alpha;
-    beta_ = beta;
-    std::cout << "Set alpha, beta to " << alpha << " " << beta << std::endl;
-    return;
-}
-// =============================================================================
-void
-Ginla::EpetraFVM::JacobianOperator::
-setCurrentX( const Teuchos::RCP<const Epetra_Vector> & currentX )
-{
     currentX_ = currentX;
+
+    // rebuild the keo
+    keo_->setParameters( mu, scaling );
+    keo_->assembleMatrix();
 
     return;
 }
 // =============================================================================
-const Teuchos::RCP<Ginla::EpetraFVM::KineticEnergyOperator>
-Ginla::EpetraFVM::JacobianOperator::
-getKeo() const
-{
-    return keo_;
-}
+//void
+//Ginla::EpetraFVM::JacobianOperator::
+//setParameters( const double mu,
+//               const Teuchos::Tuple<double,3> & scaling,
+//               const double temperature
+//             )
+//{
+//    keo_->setParameters( mu, scaling );
+//    temperature_ = temperature;
+//    return;
+//}
+//// =============================================================================
+//void
+//Ginla::EpetraFVM::JacobianOperator::
+//setShiftParameters( const double alpha,
+//                    const double beta
+//                  )
+//{
+//    alpha_ = alpha;
+//    beta_ = beta;
+//    std::cout << "Set alpha, beta to " << alpha << " " << beta << std::endl;
+//    return;
+//}
+//// =============================================================================
+//void
+//Ginla::EpetraFVM::JacobianOperator::
+//setCurrentX( const Teuchos::RCP<const Epetra_Vector> & currentX )
+//{
+//    currentX_ = currentX;
+//
+//    return;
+//}
 // =============================================================================

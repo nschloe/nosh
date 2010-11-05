@@ -43,6 +43,7 @@ ModelEvaluator ( const Teuchos::RCP<VIO::EpetraMesh::Mesh>                   & m
         p_init_( Teuchos::null ),
         p_names_( Teuchos::null ),
         p_current_( Teuchos::null ),
+        mvp_( mvp ),
         keo_( Teuchos::rcp( new Ginla::EpetraFVM::KineticEnergyOperator( mesh, mvp ) ) )
 {
   this->setupParameters_( problemParams );
@@ -169,7 +170,7 @@ Teuchos::RCP<Epetra_Operator>
 Ginla::EpetraFVM::ModelEvaluator::
 create_W() const
 {
-  return Teuchos::rcp( new Ginla::EpetraFVM::JacobianOperator( mesh_, keo_ ) );
+  return Teuchos::rcp( new Ginla::EpetraFVM::JacobianOperator( mesh_, mvp_ ) );
 }
 // =============================================================================
 Teuchos::RCP<EpetraExt::ModelEvaluator::Preconditioner>
@@ -288,14 +289,13 @@ evalModel( const InArgs  & inArgs,
   const Teuchos::RCP<Epetra_Operator> W_out = outArgs.get_W();
   if( !W_out.is_null() )
   {
-      std::cout << "alpha, beta " << alpha << " " << beta << std::endl;
-
       Teuchos::RCP<Ginla::EpetraFVM::JacobianOperator> jac =
           Teuchos::rcp_dynamic_cast<Ginla::EpetraFVM::JacobianOperator>( W_out, true );
-
-      jac->setParameters( mu, scalingCombined, temperature );
-      jac->setShiftParameters( alpha, beta );
-      jac->setCurrentX( x_in );
+      jac->rebuild( mu,
+                    scalingCombined,
+                    temperature,
+                    x_in
+                  );
   }
 
   // fill preconditioner

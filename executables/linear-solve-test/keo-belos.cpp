@@ -155,14 +155,7 @@ int main ( int argc, char *argv[] )
 //      std::cout << "Matrix appears to be symmetric" << std::endl;
       // -----------------------------------------------------------------------
       // Belos part
-      const int NumGlobalElements = epetra_b->GlobalLength();
-      int maxiters = NumGlobalElements - 1; // maximum number of iterations to run
-      //
       ParameterList belosList;
-      belosList.set( "Num Blocks", 30);             // Maximum number of blocks in Krylov factorization
-      belosList.set( "Block Size", 30 );              // Blocksize to be used by iterative solver
-      belosList.set( "Maximum Iterations", maxiters );   // Maximum number of iterations allowed
-      belosList.set( "Maximum Restarts", 10 );      // Maximum number of restarts allowed
       belosList.set( "Convergence Tolerance", 1.0e-10 );         // Relative convergence tolerance requested
       if (verbose) {
         belosList.set( "Verbosity", Belos::Errors + Belos::Warnings +

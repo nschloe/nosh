@@ -36,7 +36,7 @@ class JacobianOperator : public Epetra_Operator
 {
 public:
     JacobianOperator( const Teuchos::RCP<VIO::EpetraMesh::Mesh>                   & mesh,
-                      const Teuchos::RCP<Ginla::EpetraFVM::KineticEnergyOperator> & keo
+                      const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp
                     );
 
     // Destructor.
@@ -74,22 +74,30 @@ public:
 
     virtual const Epetra_Map & 	OperatorRangeMap () const;
 
+public:
     void
-    setParameters( const double mu,
-                   const Teuchos::Tuple<double,3> & scaling,
-                   const double temperature
-                 );
+    rebuild( const double mu,
+             const Teuchos::Tuple<double,3> & scaling,
+             const double temperature,
+             const Teuchos::RCP<const Epetra_Vector> & currentX
+           );
 
-    void
-    setShiftParameters( const double alpha,
-                        const double beta
-                      );
-
-    void
-    setCurrentX( const Teuchos::RCP<const Epetra_Vector> & currentX );
-
-    const Teuchos::RCP<Ginla::EpetraFVM::KineticEnergyOperator>
-    getKeo() const;
+//    void
+//    setParameters( const double mu,
+//                   const Teuchos::Tuple<double,3> & scaling,
+//                   const double temperature
+//                 );
+//
+//    void
+//    setShiftParameters( const double alpha,
+//                        const double beta
+//                      );
+//
+//    void
+//    setCurrentX( const Teuchos::RCP<const Epetra_Vector> & currentX );
+//
+//    const Teuchos::RCP<Ginla::EpetraFVM::KineticEnergyOperator>
+//    getKeo() const;
 
 protected:
 
@@ -103,9 +111,6 @@ private:
     const Teuchos::RCP<Ginla::EpetraFVM::KineticEnergyOperator> keo_;
 
     double temperature_;
-
-    double alpha_;
-    double beta_;
 };
 
 } // namespace FVM

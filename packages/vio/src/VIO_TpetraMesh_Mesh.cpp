@@ -1,6 +1,6 @@
 /*
     <one line to give the program's name and a brief idea of what it does.>
-    Copyright (C) 2010  Nico Sch\"omer
+    Copyright (C) 2010  Nico Schl\"omer
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -74,7 +74,7 @@ VIO::TpetraMesh::Mesh::
 setBoundaryNodes( const Teuchos::ArrayRCP<bool> isBoundaryNode )
 {
   isBoundaryNode_ = isBoundaryNode;
-  return; 
+  return;
 }
 // =============================================================================
 const Teuchos::ArrayRCP<const bool>
@@ -127,7 +127,7 @@ getControlVolumes() const
 {
   if ( !fvmEntitiesUpToDate_ )
       this->computeFvmEntities_();
-  
+
   TEUCHOS_ASSERT( !controlVolumes_.is_null() );
 
   return controlVolumes_;
@@ -160,7 +160,7 @@ getDomainArea() const
   if ( !fvmEntitiesUpToDate_ )
       this->computeFvmEntities_();
 
-  return area_; 
+  return area_;
 }
 // =============================================================================
 void
@@ -183,10 +183,10 @@ scale( const Teuchos::Tuple<double,3> & newScaling )
           double ratio = newScaling[i] / scaling_[i];
           for ( int k=0; k<nodes_.size(); k++ )
               nodes_[k][i] *= ratio;
-          
+
           // store the new scaling
           scaling_[i] = newScaling[i];
-          
+
           // make sure the FVM entities get updated properly
           fvmEntitiesUpToDate_ = false;
        }
@@ -217,36 +217,36 @@ computeDomainArea_() const
 void
 VIO::TpetraMesh::Mesh::
 computeFvmEntities_() const
-{ 
+{
   // Compute the volume of the (Voronoi) control cells for each point.
   TEUCHOS_ASSERT( !elems_.is_null() );
   int numElems = elems_.size();
-  
+
   Teuchos::RCP<Tpetra::Map<ORD> > map = this->getElemsToNodesMap_();
-  controlVolumes_ = Teuchos::rcp( new DoubleVector( map ) );  
+  controlVolumes_ = Teuchos::rcp( new DoubleVector( map ) );
   edgeLengths_    = Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >( numElems );
   coedgeLengths_  = Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >( numElems );
-  
+
 //   Teuchos::ArrayRCP<double> controlVolumesView = controlVolumes_->get1dViewNonConst();
-  
+
   // Run over the elements and calculate their contributions to the
   // control volumes.
   Teuchos::ArrayRCP<double> cvView = controlVolumes_->get1dViewNonConst();
   for ( int k=0; k<numElems; k++ )
   {
     Teuchos::ArrayRCP<ORD> & elem = elems_[k];
-    
+
     TEST_FOR_EXCEPTION( elems_[k].size() != 3,
                         std::runtime_error,
                         "Control volumes can only be constructed consistently with triangular elements."
                       );
-    
+
     // compute the circumcenter
-    Point cc = this->computeCircumcenter_( nodes_[elem[0]], 
+    Point cc = this->computeCircumcenter_( nodes_[elem[0]],
                                            nodes_[elem[1]],
                                            nodes_[elem[2]]
                                          );
-    
+
     edgeLengths_[k]   = Teuchos::ArrayRCP<double>( 3 );
     coedgeLengths_[k] = Teuchos::ArrayRCP<double>( 3 );
     // iterate over the edges
@@ -254,16 +254,16 @@ computeFvmEntities_() const
     {
         int i0 = elem[ l ];
         int i1 = elem[ (l+1)%3 ];
-        
+
         Point & x0 = nodes_[i0];
         Point & x1 = nodes_[i1];
-        
+
         // edge midpoint
         Point mp = this->add_( 0.5, x0, 0.5, x1 );
 
         cvView[ map->getLocalElement(i0) ] += this->getTriangleArea_( x0, cc, mp );
         cvView[ map->getLocalElement(i1) ] += this->getTriangleArea_( x1, cc, mp );
-        
+
         coedgeLengths_[k][l] = this->norm2_( this->add_( 1.0, mp, -1.0, cc ) );
         edgeLengths_[k][l]   = this->norm2_( this->add_( 1.0, x1, -1.0, x0 ) );
     }
@@ -275,7 +275,7 @@ computeFvmEntities_() const
 
   // TODO move this to another spot
   area_ = this->computeDomainArea_();
-  
+
   fvmEntitiesUpToDate_ = true;
 
   return;
@@ -295,10 +295,10 @@ sumInOverlapMap_( Teuchos::RCP<DoubleVector> x ) const
                                 nonoverlapMap
                               );
   tmp->doExport( *x, exporter, Tpetra::ADD );
-  
+
   // map it back out to x
   x->doImport( *tmp, exporter, Tpetra::REPLACE );
-  
+
   return;
 }
 // =============================================================================
@@ -307,8 +307,8 @@ VIO::TpetraMesh::Mesh::
 getElemsToNodesMap_() const
 {
   // create list of elements that need to be accessible from this process
-  
-  
+
+
   // Make sure that *all entries that belong to any of the elements in
   // this core are accessible.
   // First mark all the nodes that need to be accessible:
@@ -324,7 +324,7 @@ getElemsToNodesMap_() const
   for ( int k=0; k<numNodes; k++ )
       if ( mustBeAccessible[k] )
           entryList.append( k );
-      
+
   Teuchos::RCP<Tpetra::Map<ORD> > map =
       Teuchos::rcp( new Tpetra::Map<ORD>( Teuchos::OrdinalTraits<ORD>::invalid(), entryList(), 0, comm_ )
                   );
@@ -341,7 +341,7 @@ add_( double alpha, const Point & x,
   Point z;
   for ( int k=0; k<z.size(); k++ )
       z[k] = alpha*x[k] + beta*y[k];
-  
+
   return z;
 }
 // =============================================================================
@@ -362,13 +362,13 @@ Point
 VIO::TpetraMesh::Mesh::
 computeCircumcenter_( const Point & x0, const Point & x1, const Point & x2
                     ) const
-{ 
+{
   Point cc;
-  
+
   double omega = 2.0 * pow( this->norm2_( this->cross_( this->add_( 1.0, x0, -1.0, x1 ),
                                                         this->add_( 1.0, x1, -1.0, x2 ) )
                                         ), 2 );
-  
+
   // don't divide by 0
   TEST_FOR_EXCEPTION( fabs(omega) < 1.0e-10,
                       std::runtime_error,
@@ -379,7 +379,7 @@ computeCircumcenter_( const Point & x0, const Point & x1, const Point & x2
                       << "\ndo not form a proper triangle. Abort."
                       << std::endl
                     );
-  
+
   double alpha = this->dot_( this->add_( 1.0, x1, -1.0, x2 ), this->add_( 1.0, x1, -1.0, x2 ) )
                * this->dot_( this->add_( 1.0, x0, -1.0, x1 ), this->add_( 1.0, x0, -1.0, x2 ) )
                / omega;
@@ -389,10 +389,10 @@ computeCircumcenter_( const Point & x0, const Point & x1, const Point & x2
   double gamma = this->dot_( this->add_( 1.0, x0, -1.0, x1 ), this->add_( 1.0, x0, -1.0, x1 ) )
                * this->dot_( this->add_( 1.0, x2, -1.0, x0 ), this->add_( 1.0, x2, -1.0, x1 ) )
                / omega;
-               
+
   cc = this->add_( alpha, x0, beta, x1 );
   cc = this->add_( 1.0, cc, gamma, x2 );
-  
+
   return cc;
 }
 // =============================================================================
@@ -411,13 +411,13 @@ Point
 VIO::TpetraMesh::Mesh::
 cross_( const Point & v, const Point & w
       ) const
-{ 
+{
   Point z;
-  
+
   z[0] = v[1]*w[2] - v[2]*w[1];
   z[1] = v[2]*w[0] - v[0]*w[2];
   z[2] = v[0]*w[1] - v[1]*w[0];
-  
+
   return z;
 }
 // =============================================================================

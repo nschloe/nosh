@@ -86,8 +86,11 @@ int main ( int argc, char *argv[] )
               Teuchos::rcp( new  Ginla::EpetraFVM::KineticEnergyOperator( mesh,  mvp ) );
 
       Teuchos::RCP<Ginla::EpetraFVM::JacobianOperator> jacobian =
-              Teuchos::rcp( new Ginla::EpetraFVM::JacobianOperator( mesh, keo ) );
-      jacobian->setCurrentX( z );
+              Teuchos::rcp( new Ginla::EpetraFVM::JacobianOperator( mesh, mvp ) );
+
+      Teuchos::Tuple<double,3> scaling = Teuchos::tuple( 1.0, 1.0, 1.0 );
+      double temperature = 1.0;
+      jacobian->rebuild( mu, scaling, temperature, z );
 
       // create initial guess and right-hand side
       Teuchos::RCP<Epetra_Vector> epetra_x = Teuchos::rcp( new Epetra_Vector( keo->OperatorDomainMap() ) );
