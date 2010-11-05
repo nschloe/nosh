@@ -19,21 +19,40 @@ LINK_DIRECTORIES( ${Boost_LIBRARY_DIRS}
                   ${Trilinos_LIBRARY_DIRS}
                   ${Trilinos_TPL_LIBRARY_DIRS} )
 # ------------------------------------------------------------------------------
-SET ( keosolver_SRCS
-      keo-solver.cpp  )
-SET ( keosolver_LIBS
+SET ( keoaztecoo_SRCS
+      keo-aztecoo.cpp  )
+SET ( keoaztecoo_LIBS
       ginlafvm-epetra
       ginla
       vio
     )
 SET( MY_EXECUTABLE
-     "keo-solver.exe" )
+     "keo-aztecoo.exe" )
 ADD_EXECUTABLE( ${MY_EXECUTABLE}
-                ${keosolver_SRCS} )
+                ${keoaztecoo_SRCS} )
 SET_TARGET_PROPERTIES( ${MY_EXECUTABLE}
                        PROPERTIES LINKER_LANGUAGE Fortran )
 TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
-                       ${keosolver_LIBS}
+                       ${keoaztecoo_LIBS}
+                       ${Trilinos_LIBRARIES}
+                       ${Trilinos_TPL_LIBRARIES}
+                       ${Boost_LIBRARIES} )
+# ------------------------------------------------------------------------------
+SET ( keobelos_SRCS
+      keo-belos.cpp  )
+SET ( keobelos_LIBS
+      ginlafvm-epetra
+      ginla
+      vio
+    )
+SET( MY_EXECUTABLE
+     "keo-belos.exe" )
+ADD_EXECUTABLE( ${MY_EXECUTABLE}
+                ${keobelos_SRCS} )
+SET_TARGET_PROPERTIES( ${MY_EXECUTABLE}
+                       PROPERTIES LINKER_LANGUAGE Fortran )
+TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
+                       ${keobelos_LIBS}
                        ${Trilinos_LIBRARIES}
                        ${Trilinos_TPL_LIBRARIES}
                        ${Boost_LIBRARIES} )

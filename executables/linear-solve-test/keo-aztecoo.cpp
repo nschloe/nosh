@@ -169,9 +169,9 @@ int main ( int argc, char *argv[] )
       MLPrec->PrintUnused(0);
       // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-      //solver.SetAztecOption(AZ_precond, AZ_none);
+      solver.SetAztecOption(AZ_precond, AZ_none);
       //solver.SetAztecOption(AZ_precond, AZ_dom_decomp);
-      solver.SetPrecOperator( MLPrec.getRawPtr() );
+      //solver.SetPrecOperator( MLPrec.getRawPtr() );
       //solver.SetAztecOption(AZ_solver, AZ_gmres);
       solver.SetAztecOption(AZ_solver, AZ_bicgstab);
       //solver.SetAztecOption(AZ_solver, AZ_cg);

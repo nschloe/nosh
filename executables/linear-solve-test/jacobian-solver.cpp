@@ -105,8 +105,8 @@ int main ( int argc, char *argv[] )
 
 
 
-      //solver.SetAztecOption(AZ_precond, AZ_none);
-      solver.SetPrecOperator( &*keo );
+      solver.SetAztecOption(AZ_precond, AZ_none);
+      //solver.SetPrecOperator( &*keo );
 
       //solver.SetAztecOption(AZ_precond, AZ_dom_decomp);
       //solver.SetAztecOption(AZ_solver, AZ_gmres);
