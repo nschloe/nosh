@@ -221,28 +221,28 @@ rebuild( const double mu,
         keoPrec_->ReplaceDiagonalValues( diag );
     }
     // -------------------------------------------------------------------------
-    // rebuild ML structure
-    Teuchos::ParameterList MLList;
-    ML_Epetra::SetDefaults( "SA", MLList );
-//    MLList.set("ML output", 0);
-    MLList.set("max levels", 10);
-    MLList.set("increasing or decreasing", "increasing");
-    MLList.set("aggregation: type", "Uncoupled");
-    MLList.set("smoother: type", "Chebyshev"); // "block Gauss-Seidel" "Chebyshev"
-//      MLList.set("aggregation: threshold", 0.0);
-    MLList.set("smoother: sweeps", 3);
-    MLList.set("smoother: pre or post", "both");
-    MLList.set("coarse: type", "Amesos-KLU");
-    MLList.set("PDE equations", 2);
-    Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> MLPrec =
-            Teuchos::rcp( new ML_Epetra::MultiLevelPreconditioner(*keoPrec_, MLList) );
-    TEUCHOS_ASSERT( !MLPrec.is_null() );
-//    MLPrec->PrintUnused(0);
-
-    // Create the Belos preconditioned operator from the preconditioner.
-    // NOTE:  This is necessary because Belos expects an operator to apply the
-    //        preconditioner with Apply() NOT ApplyInverse().
-    belosPrec_ = Teuchos::rcp( new Belos::EpetraPrecOp( MLPrec ) );
+//    // rebuild ML structure
+//    Teuchos::ParameterList MLList;
+//    ML_Epetra::SetDefaults( "SA", MLList );
+////    MLList.set("ML output", 0);
+//    MLList.set("max levels", 10);
+//    MLList.set("increasing or decreasing", "increasing");
+//    MLList.set("aggregation: type", "Uncoupled");
+//    MLList.set("smoother: type", "Chebyshev"); // "block Gauss-Seidel" "Chebyshev"
+////      MLList.set("aggregation: threshold", 0.0);
+//    MLList.set("smoother: sweeps", 3);
+//    MLList.set("smoother: pre or post", "both");
+//    MLList.set("coarse: type", "Amesos-KLU");
+//    MLList.set("PDE equations", 2);
+//    Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> MLPrec =
+//            Teuchos::rcp( new ML_Epetra::MultiLevelPreconditioner(*keoPrec_, MLList) );
+//    TEUCHOS_ASSERT( !MLPrec.is_null() );
+////    MLPrec->PrintUnused(0);
+//
+//    // Create the Belos preconditioned operator from the preconditioner.
+//    // NOTE:  This is necessary because Belos expects an operator to apply the
+//    //        preconditioner with Apply() NOT ApplyInverse().
+//    belosPrec_ = Teuchos::rcp( new Belos::EpetraPrecOp( MLPrec ) );
     // -------------------------------------------------------------------------
     // set the matrix the linear problem
     keoProblem_->SetOperator( &*keoPrec_ );

@@ -199,36 +199,3 @@ rebuild( const double mu,
     return;
 }
 // =============================================================================
-//void
-//Ginla::EpetraFVM::JacobianOperator::
-//setParameters( const double mu,
-//               const Teuchos::Tuple<double,3> & scaling,
-//               const double temperature
-//             )
-//{
-//    keo_->setParameters( mu, scaling );
-//    temperature_ = temperature;
-//    return;
-//}
-//// =============================================================================
-//void
-//Ginla::EpetraFVM::JacobianOperator::
-//setShiftParameters( const double alpha,
-//                    const double beta
-//                  )
-//{
-//    alpha_ = alpha;
-//    beta_ = beta;
-//    std::cout << "Set alpha, beta to " << alpha << " " << beta << std::endl;
-//    return;
-//}
-//// =============================================================================
-//void
-//Ginla::EpetraFVM::JacobianOperator::
-//setCurrentX( const Teuchos::RCP<const Epetra_Vector> & currentX )
-//{
-//    currentX_ = currentX;
-//
-//    return;
-//}
-// =============================================================================

@@ -48,8 +48,6 @@
 #include "Ginla_StatusTest_ParameterLimits.h"
 #include "Ginla_StatusTest_StabilityChange.h"
 
-
-
 // =============================================================================
 // declarations (definitions below)
 std::string
@@ -251,14 +249,6 @@ main ( int argc, char *argv[] )
         // Create all possible Epetra_Operators.
         Teuchos::RCP<Epetra_Operator> J = glModel->create_W();
         Teuchos::RCP<Epetra_Operator> M = glModel->create_WPrec()->PrecOp;
-
-        // TODO remove this useless code; right now it seems to be crucial for
-        // some reason to initialise M
-        Epetra_Vector X( z->Map() );
-        X.Random();
-        Epetra_Vector Y( X );
-        M->ApplyInverse( X, Y );
-        std::cout << "M successfully ApplyInversed" << std::endl;
 
         // Create the linear system.
         // Use the TimeDependent interface for computation of shifted matrices.

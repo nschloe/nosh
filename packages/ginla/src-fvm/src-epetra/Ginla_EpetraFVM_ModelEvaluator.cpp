@@ -180,10 +180,9 @@ Ginla::EpetraFVM::ModelEvaluator::
 create_WPrec() const
 {
   Teuchos::RCP<Epetra_Operator> keoPrec =
-          Teuchos::rcp( new Ginla::EpetraFVM::JacobianOperator( mesh_, mvp_ ) );
+          Teuchos::rcp( new Ginla::EpetraFVM::KeoPreconditioner( mesh_, mvp_ ) );
   // bool is answer to: "Prec is already inverted?"
-  return Teuchos::rcp( new EpetraExt::ModelEvaluator::Preconditioner( keoPrec, false )
-                     );
+  return Teuchos::rcp( new EpetraExt::ModelEvaluator::Preconditioner( keoPrec, false ) );
 }
 // ============================================================================
 EpetraExt::ModelEvaluator::InArgs
