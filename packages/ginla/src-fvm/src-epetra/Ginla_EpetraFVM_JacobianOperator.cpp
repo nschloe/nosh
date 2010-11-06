@@ -88,9 +88,9 @@ Apply ( const Epetra_MultiVector & X,
                            );
 
             // real part
-            Y.SumIntoMyValue( 2*k, vec, alpha * X[vec][2*k] );
+            TEUCHOS_ASSERT_EQUALITY( 0, Y.SumIntoMyValue( 2*k, vec, alpha * X[vec][2*k] ) );
             // imaginary part
-            Y.SumIntoMyValue( 2*k+1, vec, alpha * X[vec][2*k+1] );
+            TEUCHOS_ASSERT_EQUALITY( 0, Y.SumIntoMyValue( 2*k+1, vec, alpha * X[vec][2*k+1] ) );
 
             // terms corresponding to  B = diag( psi^2 )
             // Re(phi^2)
@@ -102,9 +102,9 @@ Apply ( const Epetra_MultiVector & X,
                                  2.0 * (*currentX_)[2*k] * (*currentX_)[2*k+1]
                                  );
             // real part
-            Y.SumIntoMyValue( 2*k,   vec, - rePhiSquare * X[vec][2*k] - imPhiSquare * X[vec][2*k+1] );
+            TEUCHOS_ASSERT_EQUALITY( 0, Y.SumIntoMyValue( 2*k,   vec, - rePhiSquare * X[vec][2*k] - imPhiSquare * X[vec][2*k+1] ) );
             // imaginary part
-            Y.SumIntoMyValue( 2*k+1, vec, - imPhiSquare * X[vec][2*k] + rePhiSquare * X[vec][2*k+1] );
+            TEUCHOS_ASSERT_EQUALITY( 0, Y.SumIntoMyValue( 2*k+1, vec, - imPhiSquare * X[vec][2*k] + rePhiSquare * X[vec][2*k+1] ) );
         }
     }
 
