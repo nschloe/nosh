@@ -2,7 +2,7 @@ SET ( ginla_SRCS
       Ginla_EpetraFVM_State.cpp
       Ginla_EpetraFVM_ModelEvaluator.cpp
       Ginla_EpetraFVM_JacobianOperator.cpp
-      Ginla_EpetraFVM_KineticEnergyOperator.cpp
+      Ginla_EpetraFVM_KeoFactory.cpp
       Ginla_EpetraFVM_KeoPreconditioner.cpp
     )
 

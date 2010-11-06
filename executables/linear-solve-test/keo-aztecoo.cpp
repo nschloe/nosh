@@ -18,7 +18,7 @@
 #include "Ginla_EpetraFVM_ModelEvaluator.h"
 #include "Ginla_EpetraFVM_State.h"
 #include "VIO_EpetraMesh_Reader.h"
-#include "Ginla_EpetraFVM_KineticEnergyOperator.h"
+#include "Ginla_EpetraFVM_KeoFactory.h"
 
 #include "Ginla_MagneticVectorPotential_X.h"
 #include "Ginla_MagneticVectorPotential_Y.h"
@@ -95,18 +95,19 @@ int main ( int argc, char *argv[] )
               Teuchos::rcp ( new Ginla::MagneticVectorPotential::Z ( mu ) );
 
       // create the kinetic energy operator
-      Teuchos::RCP<Ginla::EpetraFVM::KineticEnergyOperator> keo =
-              Teuchos::rcp( new  Ginla::EpetraFVM::KineticEnergyOperator( mesh,  mvp ) );
-
-      Teuchos::RCP<Epetra_FECrsMatrix> keoMatrix = keo->getMatrix();
+      Teuchos::RCP<Ginla::EpetraFVM::KeoFactory> keoFactory =
+              Teuchos::rcp( new Ginla::EpetraFVM::KeoFactory( mesh, mvp ) );
+      Epetra_FECrsMatrix keoMatrix( Copy, keoFactory->buildKeoGraph() );
+      Teuchos::Tuple<double,3> scaling( Teuchos::tuple(1.0,1.0,1.0) );
+      keoFactory->buildKeo( keoMatrix, mu, scaling );
 
       // create initial guess and right-hand side
-      Teuchos::RCP<Epetra_Vector> epetra_x = Teuchos::rcp( new Epetra_Vector( keo->OperatorDomainMap() ) );
-      Teuchos::RCP<Epetra_Vector> epetra_b = Teuchos::rcp( new Epetra_Vector( keo->OperatorRangeMap() ) );
+      Teuchos::RCP<Epetra_Vector> epetra_x = Teuchos::rcp( new Epetra_Vector( keoMatrix.OperatorDomainMap() ) );
+      Teuchos::RCP<Epetra_Vector> epetra_b = Teuchos::rcp( new Epetra_Vector( keoMatrix.OperatorRangeMap() ) );
       epetra_b->Random();
 
       // build the problem
-      Epetra_LinearProblem problem( &*keoMatrix, &*epetra_x, &*epetra_b );
+      Epetra_LinearProblem problem( &keoMatrix, &*epetra_x, &*epetra_b );
 
       // -----------------------------------------------------------------------
 //      // Stratimikos.
@@ -165,7 +166,7 @@ int main ( int argc, char *argv[] )
       MLList.set("coarse: type", "Amesos-KLU");
       MLList.set("PDE equations", 2);
       Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> MLPrec =
-                  Teuchos::rcp( new ML_Epetra::MultiLevelPreconditioner(*keoMatrix, MLList) );
+                  Teuchos::rcp( new ML_Epetra::MultiLevelPreconditioner(keoMatrix, MLList) );
       MLPrec->PrintUnused(0);
       // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -200,10 +201,10 @@ int main ( int argc, char *argv[] )
       solver.Iterate(Niters, 1.0e-10);
 
       // compute the residual
-      Epetra_Vector bcomp( keo->OperatorRangeMap() );
-      TEUCHOS_ASSERT_EQUALITY( 0, keo->Apply(*epetra_x, bcomp) );
+      Epetra_Vector bcomp( keoMatrix.OperatorRangeMap() );
+      TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix.Apply(*epetra_x, bcomp) );
 
-      Epetra_Vector resid( keo->OperatorRangeMap() );
+      Epetra_Vector resid( keoMatrix.OperatorRangeMap() );
       TEUCHOS_ASSERT_EQUALITY( 0, resid.Update(1.0, *epetra_b, -1.0, bcomp, 0.0 ) );
 
       double residual;

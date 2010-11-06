@@ -15,7 +15,7 @@
 #include "Ginla_EpetraFVM_ModelEvaluator.h"
 #include "Ginla_EpetraFVM_State.h"
 #include "VIO_EpetraMesh_Reader.h"
-#include "Ginla_EpetraFVM_KineticEnergyOperator.h"
+#include "Ginla_EpetraFVM_KeoPreconditioner.h"
 #include "Ginla_EpetraFVM_JacobianOperator.h"
 
 #include "Ginla_MagneticVectorPotential_X.h"
@@ -78,23 +78,25 @@ int main ( int argc, char *argv[] )
                            );
 
       double mu = 1.0e-0;
+      Teuchos::Tuple<double,3> scaling = Teuchos::tuple( 1.0, 1.0, 1.0 );
+      double temperature = 1.0;
+
       Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp =
               Teuchos::rcp ( new Ginla::MagneticVectorPotential::Z ( mu ) );
 
-      // create the kinetic energy operator
-      Teuchos::RCP<Ginla::EpetraFVM::KineticEnergyOperator> keo =
-              Teuchos::rcp( new  Ginla::EpetraFVM::KineticEnergyOperator( mesh,  mvp ) );
+      // create the preconditioner
+      Teuchos::RCP<Ginla::EpetraFVM::KeoPreconditioner> keoPrec =
+              Teuchos::rcp( new  Ginla::EpetraFVM::KeoPreconditioner( mesh,  mvp ) );
+      keoPrec->rebuild( mu, scaling );
 
+      // create the jacobian
       Teuchos::RCP<Ginla::EpetraFVM::JacobianOperator> jacobian =
               Teuchos::rcp( new Ginla::EpetraFVM::JacobianOperator( mesh, mvp ) );
-
-      Teuchos::Tuple<double,3> scaling = Teuchos::tuple( 1.0, 1.0, 1.0 );
-      double temperature = 1.0;
       jacobian->rebuild( mu, scaling, temperature, z );
 
       // create initial guess and right-hand side
-      Teuchos::RCP<Epetra_Vector> epetra_x = Teuchos::rcp( new Epetra_Vector( keo->OperatorDomainMap() ) );
-      Teuchos::RCP<Epetra_Vector> epetra_b = Teuchos::rcp( new Epetra_Vector( keo->OperatorRangeMap() ) );
+      Teuchos::RCP<Epetra_Vector> epetra_x = Teuchos::rcp( new Epetra_Vector( jacobian->OperatorDomainMap() ) );
+      Teuchos::RCP<Epetra_Vector> epetra_b = Teuchos::rcp( new Epetra_Vector( jacobian->OperatorRangeMap() ) );
       epetra_b->PutScalar( 1.0 );
 
       // -----------------------------------------------------------------------
@@ -106,10 +108,8 @@ int main ( int argc, char *argv[] )
       AztecOO solver( problem );
       // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-
-
-      solver.SetAztecOption(AZ_precond, AZ_none);
-      //solver.SetPrecOperator( &*keo );
+      //solver.SetAztecOption(AZ_precond, AZ_none);
+      solver.SetPrecOperator( &*keoPrec );
 
       //solver.SetAztecOption(AZ_precond, AZ_dom_decomp);
       //solver.SetAztecOption(AZ_solver, AZ_gmres);
@@ -124,7 +124,7 @@ int main ( int argc, char *argv[] )
       //solver.SetAztecOption(AZ_poly_ord, 9);
       //solver.SetAztecParam(AZ_ilut_fill, 4.0);
       //solver.SetAztecParam(AZ_drop, 0.0);
-      solver.SetAztecOption(AZ_output, 10);
+      solver.SetAztecOption(AZ_output, 1);
       //double rthresh = 1.4;
       //cout << "Rel threshold = " << rthresh << endl;
       //solver.SetAztecParam(AZ_rthresh, rthresh);
@@ -140,10 +140,10 @@ int main ( int argc, char *argv[] )
       solver.Iterate(Niters, 1.0e-8);
 
       // compute the residual
-      Epetra_Vector bcomp( keo->OperatorRangeMap() );
-      TEUCHOS_ASSERT_EQUALITY( 0, keo->Apply(*epetra_x, bcomp) );
+      Epetra_Vector bcomp( jacobian->OperatorRangeMap() );
+      TEUCHOS_ASSERT_EQUALITY( 0, jacobian->Apply(*epetra_x, bcomp) );
 
-      Epetra_Vector resid( keo->OperatorRangeMap() );
+      Epetra_Vector resid( jacobian->OperatorRangeMap() );
       TEUCHOS_ASSERT_EQUALITY( 0, resid.Update(1.0, *epetra_b, -1.0, bcomp, 0.0 ) );
 
       double residual;

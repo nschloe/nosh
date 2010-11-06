@@ -22,6 +22,8 @@
 #include "Ginla_EpetraFVM_State.h"
 #include "Ginla_State_Virtual.h"
 #include "Ginla_MagneticVectorPotential_Virtual.h"
+#include "Ginla_EpetraFVM_KeoFactory.h"
+#include "Ginla_EpetraFVM_KeoPreconditioner.h"
 
 #include <Epetra_Map.h>
 #include <Epetra_LocalMap.h>
@@ -44,7 +46,7 @@ ModelEvaluator ( const Teuchos::RCP<VIO::EpetraMesh::Mesh>                   & m
         p_names_( Teuchos::null ),
         p_current_( Teuchos::null ),
         mvp_( mvp ),
-        keo_( Teuchos::rcp( new Ginla::EpetraFVM::KineticEnergyOperator( mesh, mvp ) ) )
+        keoFactory_( Teuchos::rcp( new Ginla::EpetraFVM::KeoFactory( mesh, mvp ) ) )
 {
   this->setupParameters_( problemParams );
 
@@ -177,12 +179,10 @@ Teuchos::RCP<EpetraExt::ModelEvaluator::Preconditioner>
 Ginla::EpetraFVM::ModelEvaluator::
 create_WPrec() const
 {
-  TEUCHOS_ASSERT( !keo_.is_null() );
-
+  Teuchos::RCP<Epetra_Operator> keoPrec =
+          Teuchos::rcp( new Ginla::EpetraFVM::JacobianOperator( mesh_, mvp_ ) );
   // bool is answer to: "Prec is already inverted?"
-  return Teuchos::rcp( new EpetraExt::ModelEvaluator::Preconditioner( keo_,
-                                                                      false
-                                                                    )
+  return Teuchos::rcp( new EpetraExt::ModelEvaluator::Preconditioner( keoPrec, false )
                      );
 }
 // ============================================================================
@@ -302,9 +302,9 @@ evalModel( const InArgs  & inArgs,
   const Teuchos::RCP<Epetra_Operator> WPrec_out = outArgs.get_WPrec();
   if( !WPrec_out.is_null() )
   {
-      Teuchos::RCP<Ginla::EpetraFVM::KineticEnergyOperator> keo =
-          Teuchos::rcp_dynamic_cast<Ginla::EpetraFVM::KineticEnergyOperator>( WPrec_out, true );
-      keo->setParameters( mu, scalingCombined );
+      Teuchos::RCP<Ginla::EpetraFVM::KeoPreconditioner> keoPrec =
+          Teuchos::rcp_dynamic_cast<Ginla::EpetraFVM::KeoPreconditioner>( WPrec_out, true );
+      keoPrec->rebuild( mu, scalingCombined );
   }
 
   return;
@@ -319,9 +319,12 @@ computeF_ ( const Epetra_Vector            & x,
             Epetra_Vector                  & FVec
           ) const
 {
+  // build the KEO
+  Epetra_FECrsMatrix keoMatrix( Copy, keoFactory_->buildKeoGraph() );
+  keoFactory_->buildKeo( keoMatrix, mu, scaling );
+
   // compute FVec = K*x
-  keo_->setParameters( mu, scaling );
-  TEUCHOS_ASSERT_EQUALITY( 0, keo_->Apply( x, FVec ) );
+  TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix.Apply( x, FVec ) );
 
   // add the nonlinear part (mass lumping)
   TEUCHOS_ASSERT( FVec.Map().SameAs( x.Map() ) );
@@ -335,13 +338,15 @@ computeF_ ( const Epetra_Vector            & x,
       double alpha = controlVolumes[k]
                      * ( (1.0-temperature) - x[2*k]*x[2*k] - x[2*k+1]*x[2*k+1] );
       // real part
-      FVec.SumIntoMyValue( 2*k,
-                           0,
-                           alpha * x[2*k] );
+      TEUCHOS_ASSERT_EQUALITY( 0, FVec.SumIntoMyValue( 2*k,
+                                                       0,
+                                                       alpha * x[2*k] )
+                             );
       // imaginary part
-      FVec.SumIntoMyValue( 2*k+1,
-                           0,
-                           alpha * x[2*k+1] );
+      TEUCHOS_ASSERT_EQUALITY( 0, FVec.SumIntoMyValue( 2*k+1,
+                                                       0,
+                                                       alpha * x[2*k+1] )
+                             );
   }
 
   return;

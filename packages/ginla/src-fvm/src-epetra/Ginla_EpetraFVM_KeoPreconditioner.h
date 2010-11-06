@@ -32,9 +32,14 @@
 // =============================================================================
 namespace Ginla {
     namespace EpetraFVM {
-        class KineticEnergyOperator;
+        class KeoFactory;
     }
 }
+namespace Belos {
+    class EpetraPrecOp;
+}
+class Amesos_BaseSolver;
+class Epetra_LinearProblem;
 // =============================================================================
 namespace Ginla {
 namespace EpetraFVM {
@@ -97,12 +102,13 @@ private:
     bool useTranspose_;
     const Teuchos::RCP<const Epetra_Comm> comm_;
 
-    Teuchos::RCP<Ginla::EpetraFVM::KineticEnergyOperator> keo_;
+    Teuchos::RCP<Ginla::EpetraFVM::KeoFactory> keoFactory_;
+    Teuchos::RCP<Epetra_FECrsMatrix> keoPrec_;
 
-    bool isKeoIllConditioned_;
+    Teuchos::RCP<Belos::EpetraPrecOp> belosPrec_;
 
-//    Teuchos::RCP<Epetra_LinearProblem> keoProblem_;
-//    mutable Teuchos::RCP<Amesos_BaseSolver> keoSolver_;
+    Teuchos::RCP<Epetra_LinearProblem> keoProblem_;
+    Teuchos::RCP<Amesos_BaseSolver> keoSolver_;
 };
 // =============================================================================
 } // namespace FVM

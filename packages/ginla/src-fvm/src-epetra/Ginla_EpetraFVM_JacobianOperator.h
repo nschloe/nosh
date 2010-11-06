@@ -26,8 +26,14 @@
 #include <Epetra_FECrsGraph.h>
 #include <Epetra_FECrsMatrix.h>
 
-#include "Ginla_EpetraFVM_KineticEnergyOperator.h"
+#include "Ginla_MagneticVectorPotential_Virtual.h"
 #include "VIO_EpetraMesh_Mesh.h"
+// =============================================================================
+namespace Ginla {
+    namespace EpetraFVM {
+        class KeoFactory;
+    }
+}
 // =============================================================================
 namespace Ginla {
 namespace EpetraFVM {
@@ -108,7 +114,8 @@ private:
     Teuchos::RCP<const Epetra_Vector> currentX_;
 
     const Teuchos::RCP<VIO::EpetraMesh::Mesh> mesh_;
-    const Teuchos::RCP<Ginla::EpetraFVM::KineticEnergyOperator> keo_;
+    const Teuchos::RCP<Ginla::EpetraFVM::KeoFactory> keoFactory_;
+    const Teuchos::RCP<Epetra_FECrsMatrix> keoMatrix_;
 
     double temperature_;
 };

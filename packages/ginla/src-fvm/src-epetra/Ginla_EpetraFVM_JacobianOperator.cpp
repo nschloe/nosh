@@ -18,6 +18,7 @@
 */
 
 #include "Ginla_EpetraFVM_JacobianOperator.h"
+#include "Ginla_EpetraFVM_KeoFactory.h"
 
 #include <Teuchos_ArrayRCP.hpp>
 
@@ -29,7 +30,8 @@ JacobianOperator( const Teuchos::RCP<VIO::EpetraMesh::Mesh>                   & 
         useTranspose_( false ),
         comm_( mesh->getNodesMap()->Comm() ),
         mesh_( mesh ),
-        keo_( Teuchos::rcp( new Ginla::EpetraFVM::KineticEnergyOperator( mesh, mvp ) ) ),
+        keoFactory_( Teuchos::rcp( new Ginla::EpetraFVM::KeoFactory( mesh, mvp ) ) ),
+        keoMatrix_( Teuchos::rcp( new Epetra_FECrsMatrix( Copy, keoFactory_->buildKeoGraph() ) ) ),
         currentX_ ( Teuchos::null ),
         temperature_( 0.0 )
 {
@@ -58,11 +60,11 @@ Apply ( const Epetra_MultiVector & X,
     // A = K - I * ( (1-temp) - 2*|psi|^2 )
     // B = diag( psi^2 )
 
-    TEUCHOS_ASSERT( !keo_.is_null() );
+    TEUCHOS_ASSERT( !keoMatrix_.is_null() );
     TEUCHOS_ASSERT( !currentX_.is_null() );
 
     // K*psi
-    TEUCHOS_ASSERT_EQUALITY( 0, keo_->Apply( X, Y ) )
+    TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix_->Apply( X, Y ) )
 
     int numMyPoints = mesh_->getNodesMap()->NumMyPoints();
     TEUCHOS_ASSERT_EQUALITY( 2*numMyPoints, X.MyLength() );
@@ -167,16 +169,16 @@ const Epetra_Map &
 Ginla::EpetraFVM::JacobianOperator::
 OperatorDomainMap () const
 {
-    TEUCHOS_ASSERT( !keo_.is_null() );
-    return keo_->OperatorDomainMap();
+    TEUCHOS_ASSERT( !keoMatrix_.is_null() );
+    return keoMatrix_->OperatorDomainMap();
 }
 // =============================================================================
 const Epetra_Map &
 Ginla::EpetraFVM::JacobianOperator::
 OperatorRangeMap () const
 {
-    TEUCHOS_ASSERT( !keo_.is_null() );
-    return keo_->OperatorRangeMap();
+    TEUCHOS_ASSERT( !keoMatrix_.is_null() );
+    return keoMatrix_->OperatorRangeMap();
 }
 // =============================================================================
 void
@@ -192,8 +194,7 @@ rebuild( const double mu,
     currentX_ = currentX;
 
     // rebuild the keo
-    keo_->setParameters( mu, scaling );
-    keo_->assembleMatrix();
+    keoFactory_->buildKeo( *keoMatrix_, mu, scaling );
 
     return;
 }

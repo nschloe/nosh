@@ -157,7 +157,7 @@ private:
    Teuchos::RCP<Epetra_Vector> p_current_;
 
    const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp_;
-   const Teuchos::RCP<Ginla::EpetraFVM::KineticEnergyOperator> keo_;
+   const Teuchos::RCP<Ginla::EpetraFVM::KeoFactory> keoFactory_;
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 private:
     void

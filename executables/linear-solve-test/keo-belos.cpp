@@ -24,7 +24,7 @@
 #include "Ginla_EpetraFVM_ModelEvaluator.h"
 #include "Ginla_EpetraFVM_State.h"
 #include "VIO_EpetraMesh_Reader.h"
-#include "Ginla_EpetraFVM_KineticEnergyOperator.h"
+#include "Ginla_EpetraFVM_KeoFactory.h"
 
 #include "Ginla_MagneticVectorPotential_X.h"
 #include "Ginla_MagneticVectorPotential_Y.h"
@@ -102,10 +102,12 @@ int main ( int argc, char *argv[] )
               Teuchos::rcp ( new Ginla::MagneticVectorPotential::Z ( mu ) );
 
       // create the kinetic energy operator
-      Teuchos::RCP<Ginla::EpetraFVM::KineticEnergyOperator> keo =
-              Teuchos::rcp( new  Ginla::EpetraFVM::KineticEnergyOperator( mesh,  mvp ) );
-
-      Teuchos::RCP<Epetra_CrsMatrix> keoMatrix = keo->getMatrix();
+      Teuchos::RCP<Ginla::EpetraFVM::KeoFactory> keoFactory =
+              Teuchos::rcp( new Ginla::EpetraFVM::KeoFactory( mesh, mvp ) );
+      Teuchos::RCP<Epetra_FECrsMatrix> keoMatrix =
+              Teuchos::rcp( new Epetra_FECrsMatrix( Copy, keoFactory->buildKeoGraph() ) );
+      Teuchos::Tuple<double,3> scaling( Teuchos::tuple(1.0,1.0,1.0) );
+      keoFactory->buildKeo( *keoMatrix, mu, scaling );
 
       // Make sure the matrix is indeed positive definite, and not
       // negative definite. Belos needs that (2010-11-05).
@@ -113,9 +115,9 @@ int main ( int argc, char *argv[] )
 
       // create initial guess and right-hand side
       Teuchos::RCP<Epetra_Vector> epetra_x =
-              Teuchos::rcp( new Epetra_Vector( keo->OperatorDomainMap() ) );
+              Teuchos::rcp( new Epetra_Vector( keoMatrix->OperatorDomainMap() ) );
       Teuchos::RCP<Epetra_MultiVector> epetra_b =
-              Teuchos::rcp( new Epetra_Vector( keo->OperatorRangeMap(), 1 ) );
+              Teuchos::rcp( new Epetra_Vector( keoMatrix->OperatorRangeMap(), 1 ) );
       epetra_b->Random();
 
 //      // check that the matrix is indeed symmetric
@@ -219,8 +221,8 @@ int main ( int argc, char *argv[] )
       bool badRes = false;
       std::vector<double> actual_resids( 1 );
       std::vector<double> rhs_norm( 1 );
-      Epetra_Vector resid( keo->OperatorRangeMap() );
-      OPT::Apply( *keo, *epetra_x, resid );
+      Epetra_Vector resid( keoMatrix->OperatorRangeMap() );
+      OPT::Apply( *keoMatrix, *epetra_x, resid );
       MVT::MvAddMv( -1.0, resid, 1.0, *epetra_b, resid );
       MVT::MvNorm( resid, actual_resids );
       MVT::MvNorm( *epetra_b, rhs_norm );

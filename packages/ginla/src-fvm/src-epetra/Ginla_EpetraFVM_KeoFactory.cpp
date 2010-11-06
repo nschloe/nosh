@@ -17,7 +17,7 @@
 
 */
 
-#include "Ginla_EpetraFVM_KineticEnergyOperator.h"
+#include "Ginla_EpetraFVM_KeoFactory.h"
 
 #include <Epetra_SerialDenseMatrix.h>
 #include <Epetra_Comm.h>
@@ -36,124 +36,32 @@ typedef Epetra_Operator                  OP;
 typedef Belos::MultiVecTraits<ST,MV>     MVT;
 typedef Belos::OperatorTraits<ST,MV,OP>  OPT;
 // =============================================================================
-Ginla::EpetraFVM::KineticEnergyOperator::
-KineticEnergyOperator( const Teuchos::RCP<VIO::EpetraMesh::Mesh>                   & mesh,
-                       const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp
-                     ):
-        useTranspose_ ( false ),
-        comm_( Teuchos::rcpFromRef(mesh->getNodesMap()->Comm()) ),
+Ginla::EpetraFVM::KeoFactory::
+KeoFactory( const Teuchos::RCP<VIO::EpetraMesh::Mesh>                   & mesh,
+            const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp
+          ):
         mesh_ ( mesh ),
-        mvp_( mvp ),
-        keoMatrix_( Teuchos::rcp( new Epetra_FECrsMatrix(Copy, createKeoGraph_( mesh ) ) ) )
+        mvp_( mvp )
 {
 }
 // =============================================================================
-Ginla::EpetraFVM::KineticEnergyOperator::
-~KineticEnergyOperator()
+Ginla::EpetraFVM::KeoFactory::
+~KeoFactory()
 {
-}
-// =============================================================================
-int
-Ginla::EpetraFVM::KineticEnergyOperator::
-SetUseTranspose( bool UseTranspose )
-{
-    useTranspose_ = UseTranspose;
-    return 0;
-}
-// =============================================================================
-int
-Ginla::EpetraFVM::KineticEnergyOperator::
-Apply ( const Epetra_MultiVector & X,
-              Epetra_MultiVector & Y
-      ) const
-{
-    return keoMatrix_->Apply( X, Y );
-}
-// =============================================================================
-int
-Ginla::EpetraFVM::KineticEnergyOperator::
-ApplyInverse ( const Epetra_MultiVector & X,
-                     Epetra_MultiVector & Y
-             ) const
-{
-    TEST_FOR_EXCEPTION( true,
-                        std::logic_error,
-                        "Not yet implemented." );
-    return -1;
-}
-// =============================================================================
-double
-Ginla::EpetraFVM::KineticEnergyOperator::
-NormInf () const
-{
-    TEST_FOR_EXCEPTION( true,
-                        std::logic_error,
-                        "Not yet implemented." );
-    return 0.0;
-}
-// =============================================================================
-const char *
-Ginla::EpetraFVM::KineticEnergyOperator::
-Label () const
-{
-    return "Kinetic energy operator for Ginzburg--Landau";
-}
-// =============================================================================
-bool
-Ginla::EpetraFVM::KineticEnergyOperator::
-UseTranspose () const
-{
-    return useTranspose_;
-}
-// =============================================================================
-bool
-Ginla::EpetraFVM::KineticEnergyOperator::
-HasNormInf () const
-{
-    return false;
-}
-// =============================================================================
-const Epetra_Comm &
-Ginla::EpetraFVM::KineticEnergyOperator::
-Comm () const
-{
-    TEUCHOS_ASSERT( !comm_.is_null() );
-    return *comm_;
-}
-// =============================================================================
-const Epetra_Map &
-Ginla::EpetraFVM::KineticEnergyOperator::
-OperatorDomainMap () const
-{
-    TEUCHOS_ASSERT( !keoMatrix_.is_null() );
-    return keoMatrix_->DomainMap();
-}
-// =============================================================================
-const Epetra_Map &
-Ginla::EpetraFVM::KineticEnergyOperator::
-OperatorRangeMap () const
-{
-    TEUCHOS_ASSERT( !keoMatrix_.is_null() );
-    return keoMatrix_->RangeMap();
 }
 // =============================================================================
 void
-Ginla::EpetraFVM::KineticEnergyOperator::
-setParameters( const double mu,
-               const Teuchos::Tuple<double,3> & scaling
-             )
+Ginla::EpetraFVM::KeoFactory::
+buildKeo( Epetra_FECrsMatrix & keoMatrix,
+          const double mu,
+          const Teuchos::Tuple<double,3> & scaling
+        ) const
 {
-    mvp_->setMu( mu );
-    mesh_->scale( scaling );
-    return;
-}
-// =============================================================================
-void
-Ginla::EpetraFVM::KineticEnergyOperator::
-assembleMatrix() const
-{
-  TEUCHOS_ASSERT( !keoMatrix_.is_null() );
-  keoMatrix_->PutScalar( 0.0 );
+  keoMatrix.PutScalar( 0.0 );
+
+  // set teh parameters
+  mvp_->setMu( mu );
+  mesh_->scale( scaling );
 
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   // Loop over the elements, create local load vector and mass matrix,
@@ -252,26 +160,24 @@ assembleMatrix() const
           values(3,3) = - alpha;
 
           // sum it all in!
-          TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix_->SumIntoGlobalValues ( indices, values ) );
+          TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix.SumIntoGlobalValues ( indices, values ) );
           // -------------------------------------------------------------------
       }
   }
 
   // calls FillComplete by default
-  keoMatrix_->GlobalAssemble();
+  TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix.GlobalAssemble() );
 
   return;
 }
 // =============================================================================
 const Epetra_FECrsGraph
-Ginla::EpetraFVM::KineticEnergyOperator::
-createKeoGraph_( const Teuchos::RCP<const VIO::EpetraMesh::Mesh> & mesh
-               ) const
+Ginla::EpetraFVM::KeoFactory::
+buildKeoGraph() const
 {
-  Epetra_FECrsGraph keoGraph( Copy, *(mesh->getComplexValuesMap()), 0 );
-
-  TEUCHOS_ASSERT( !mesh.is_null() );
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<int> > elems = mesh->getElems();
+  TEUCHOS_ASSERT( !mesh_.is_null() );
+  Epetra_FECrsGraph keoGraph( Copy, *(mesh_->getComplexValuesMap()), 0 );
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<int> > elems = mesh_->getElems();
 
   for ( int k=0; k<elems.size(); k++ )
   {
@@ -304,25 +210,5 @@ createKeoGraph_( const Teuchos::RCP<const VIO::EpetraMesh::Mesh> & mesh
   TEUCHOS_ASSERT_EQUALITY( 0, keoGraph.GlobalAssemble() );
 
   return keoGraph;
-}
-// =============================================================================
-//bool
-//Ginla::EpetraFVM::KineticEnergyOperator::
-//keoUpToDate_() const
-//{
-//    const Teuchos::Tuple<double,3> & scaling  = mesh_->getScaling();
-//
-//    return    !keoMatrix_.is_null()
-//           && keoMu_         == mvp_->getMu()
-//           && keoScaling_[0] == scaling[0]
-//           && keoScaling_[1] == scaling[1]
-//           && keoScaling_[2] == scaling[2];
-//}
-// =============================================================================
-Teuchos::RCP<Epetra_FECrsMatrix>
-Ginla::EpetraFVM::KineticEnergyOperator::
-getMatrix() const
-{
-    return keoMatrix_;
 }
 // =============================================================================
