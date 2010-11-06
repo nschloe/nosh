@@ -162,11 +162,6 @@ private:
 private:
     void
     setupParameters_( const Teuchos::ParameterList & params );
-
-    // this value is really just for getParameters()
-    mutable double mu_;
-    mutable double scaling_;
-    mutable Teuchos::Tuple<double,3> scalingX_;
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 };
 
