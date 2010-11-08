@@ -1,52 +1,40 @@
-#include <Teuchos_DefaultComm.hpp>
+#include <Teuchos_RCP.hpp>
+#include <Teuchos_CommandLineProcessor.hpp>
+#include <Teuchos_ParameterList.hpp>
+#include <Teuchos_XMLParameterListHelpers.hpp>
 
 #ifdef HAVE_MPI
 #include <Epetra_MpiComm.h>
 #else
 #include <Epetra_SerialComm.h>
 #endif
+#include <Epetra_Vector.h>
 
-#include <Teuchos_CommandLineProcessor.hpp>
-#include <Teuchos_ParameterList.hpp>
-#include <Teuchos_XMLParameterListHelpers.hpp>
-
-//#include <Piro_Epetra_NOXSolver.hpp>
-//#include <Piro_Epetra_LOCASolver.hpp>
-#include <LOCA_Epetra_Group.H>
-#include <LOCA_Thyra_Group.H>
-#include <NOX_Epetra_LinearSystem_AztecOO.H>
-#include <LOCA_Epetra_ModelEvaluatorInterface.H>
+#include <LOCA_SaveEigenData_AbstractStrategy.H>
+#include <LOCA_Abstract_Factory.H>
 #include <LOCA_Epetra_Factory.H>
-#include <NOX_StatusTest_Generic.H>
-#include <NOX_StatusTest_Factory.H>
+#include <LOCA_Epetra_ModelEvaluatorInterface.H>
+#include <LOCA_Epetra_Group.H>
 #include <LOCA_StatusTest_Combo.H>
 #include <LOCA_StatusTest_MaxIters.H>
+#include <NOX_Epetra_LinearSystem_Stratimikos.H>
+#include <NOX_StatusTest_Generic.H>
+#include <NOX_StatusTest_Factory.H>
 
 #include <boost/filesystem.hpp>
 
-#include "Ginla_EpetraFVM_ModelEvaluator.h"
-#include "Ginla_EpetraFVM_State.h"
+#include "VIO_EpetraMesh_Mesh.h"
 #include "VIO_EpetraMesh_Reader.h"
-
-// #include "Ginla_IO_SaveNewtonData.h"
-#include "Ginla_IO_SaveEigenData.h"
+#include "Ginla_EpetraFVM_State.h"
+#include "Ginla_EpetraFVM_ModelEvaluator.h"
+#include "Ginla_IO_StateWriter.h"
+#include "Ginla_IO_StatsWriter.h"
 #include "Ginla_IO_NoxObserver.h"
-
-#include "Ginla_Helpers.h"
-
+#include "Ginla_IO_SaveEigenData.h"
 #include "Ginla_MagneticVectorPotential_X.h"
 #include "Ginla_MagneticVectorPotential_Y.h"
 #include "Ginla_MagneticVectorPotential_Z.h"
 #include "Ginla_MagneticVectorPotential_MagneticDot.h"
-
-#include "Ginla_IO_StateWriter.h"
-#include "Ginla_IO_StatsWriter.h"
-
-#include "Ginla_StatusTest_MaxAcceptedSteps.h"
-#include "Ginla_StatusTest_Energy.h"
-#include "Ginla_StatusTest_Loop.h"
-#include "Ginla_StatusTest_ParameterLimits.h"
-#include "Ginla_StatusTest_StabilityChange.h"
 
 // =============================================================================
 // declarations (definitions below)
@@ -259,21 +247,38 @@ main ( int argc, char *argv[] )
         Teuchos::ParameterList& nlPrintParams =
                 piroParams->sublist ( "NOX" ) .sublist ( "Printing", true );
 
-        Teuchos::ParameterList& lsParams =
-                piroParams->sublist ( "NOX" ) .sublist ( "Direction" ) .sublist ( "Newton" ) .sublist ( "Linear Solver", true );
-
         //  Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys = Teuchos::rcp(
         //      new NOX::Epetra::LinearSystemAztecOO(nlPrintParams, lsParams, iJac, J, iPrec, M, *soln));
 
         NOX::Epetra::Vector cloneVector( Epetra_Vector( *glModel->get_x_map() ) );
-        Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys =
-                Teuchos::rcp ( new NOX::Epetra::LinearSystemAztecOO ( nlPrintParams,
-                                                                      lsParams,
-                                                                      iJac,
-                                                                      J,
-                                                                      iPrec,
-                                                                      M,
-                                                                      cloneVector ) );
+
+//        // AztecOO system
+//        Teuchos::ParameterList& lsParams =  piroParams->sublist ( "NOX" )
+//                                                       .sublist ( "Direction" )
+//                                                       .sublist ( "Newton" )
+//                                                       .sublist ( "Linear Solver", true );
+//        Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys =
+//                Teuchos::rcp ( new NOX::Epetra::LinearSystemAztecOO ( nlPrintParams,
+//                                                                      lsParams,
+//                                                                      iJac,
+//                                                                      J,
+//                                                                      iPrec,
+//                                                                      M,
+//                                                                      cloneVector ) );
+
+        // Stratimikos system
+        Teuchos::ParameterList& lsParams = piroParams->sublist ( "NOX" )
+                                                      .sublist ( "Direction" )
+                                                      .sublist ( "Newton" )
+                                                      .sublist ( "Stratimikos Linear Solver", true );
+        Teuchos::RCP<NOX::Epetra::LinearSystemStratimikos> linSys =
+                Teuchos::rcp ( new NOX::Epetra::LinearSystemStratimikos ( nlPrintParams,
+                                                                          lsParams,
+                                                                          iJac,
+                                                                          J,
+                                                                          iPrec,
+                                                                          M,
+                                                                          cloneVector ) );
 
         Teuchos::RCP<LOCA::Epetra::Interface::TimeDependent> iTime = locaModelEvaluatorInterface;
         // ---------------------------------------------------------------------

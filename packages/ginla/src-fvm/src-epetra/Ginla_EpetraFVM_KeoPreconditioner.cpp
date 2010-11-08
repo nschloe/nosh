@@ -213,12 +213,12 @@ rebuild( const double mu,
     {
         // Add a regularization to the diagonal.
         Epetra_Vector e( keoPrec_->DomainMap() );
-        e.PutScalar( 1.0 );
+        TEUCHOS_ASSERT_EQUALITY( 0, e.PutScalar( 1.0 ) );
 
         Epetra_Vector diag( keoPrec_->DomainMap() );
-        keoPrec_->ExtractDiagonalCopy( diag );
-        diag.Update( 1.0e-3, e, 1.0 );
-        keoPrec_->ReplaceDiagonalValues( diag );
+        TEUCHOS_ASSERT_EQUALITY( 0, keoPrec_->ExtractDiagonalCopy( diag ) );
+        TEUCHOS_ASSERT_EQUALITY( 0, diag.Update( 1.0e-3, e, 1.0 ) );
+        TEUCHOS_ASSERT_EQUALITY( 0, keoPrec_->ReplaceDiagonalValues( diag ) );
     }
     // -------------------------------------------------------------------------
 //    // rebuild ML structure
@@ -253,8 +253,8 @@ rebuild( const double mu,
 
     // do symbolic and numerical factorizations
     // TODO reuse symbolic factorization
-    keoSolver_->SymbolicFactorization();
-    keoSolver_->NumericFactorization();
+    TEUCHOS_ASSERT_EQUALITY( 0, keoSolver_->SymbolicFactorization() );
+    TEUCHOS_ASSERT_EQUALITY( 0, keoSolver_->NumericFactorization() );
     // -------------------------------------------------------------------------
     return;
 }
