@@ -271,6 +271,7 @@ main ( int argc, char *argv[] )
                                                       .sublist ( "Direction" )
                                                       .sublist ( "Newton" )
                                                       .sublist ( "Stratimikos Linear Solver", true );
+        bool isAlreadyInverted = true;
         Teuchos::RCP<NOX::Epetra::LinearSystemStratimikos> linSys =
                 Teuchos::rcp ( new NOX::Epetra::LinearSystemStratimikos ( nlPrintParams,
                                                                           lsParams,
@@ -278,7 +279,8 @@ main ( int argc, char *argv[] )
                                                                           J,
                                                                           iPrec,
                                                                           M,
-                                                                          cloneVector ) );
+                                                                          cloneVector,
+                                                                          isAlreadyInverted ) );
 
         Teuchos::RCP<LOCA::Epetra::Interface::TimeDependent> iTime = locaModelEvaluatorInterface;
         // ---------------------------------------------------------------------
