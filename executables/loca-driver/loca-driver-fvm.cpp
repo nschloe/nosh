@@ -23,6 +23,8 @@
 
 #include <boost/filesystem.hpp>
 
+#include "Ginla_EpetraFVM_StkMeshReader.h"
+
 #include "VIO_EpetraMesh_Mesh.h"
 #include "VIO_EpetraMesh_Reader.h"
 #include "Ginla_EpetraFVM_State.h"
@@ -123,15 +125,22 @@ main ( int argc, char *argv[] )
 
         Teuchos::ParameterList              problemParameters;
         Teuchos::RCP<Epetra_Vector>         z = Teuchos::null;
-        Teuchos::RCP<VIO::EpetraMesh::Mesh> mesh = Teuchos::null;
+        Teuchos::RCP<Ginla::EpetraFVM::StkMesh> mesh = Teuchos::null;
 
-        VIO::EpetraMesh::read( eComm,
-                               getAbsolutePath( initialGuessList.get<std::string> ( "State" ), xmlPath ),
-                               z,
-                               mesh,
-                               problemParameters
-                               );
+        Ginla::EpetraFVM::StkMeshRead( *eComm,
+                                       getAbsolutePath( initialGuessList.get<std::string> ( "State" ), xmlPath ),
+                                       z,
+                                       mesh,
+                                       problemParameters
+                                     );
 
+//         VIO::EpetraMesh::read( eComm,
+//                                getAbsolutePath( initialGuessList.get<std::string> ( "State" ), xmlPath ),
+//                                z,
+//                                mesh,
+//                                problemParameters
+//                                );
+// 
         // create the state
         TEUCHOS_ASSERT( !z.is_null() );
         Teuchos::RCP<Ginla::EpetraFVM::State> state =
@@ -348,7 +357,9 @@ main ( int argc, char *argv[] )
 //        locaModelEvaluatorInterface->setLocaStepper ( stepper );
         // ---------------------------------------------------------------------
         // Perform continuation run
+        std::cout << "aa" << std::endl;
         status = stepper->run();
+        std::cout << "zz" << std::endl;
         // ---------------------------------------------------------------------
         // clean up
         LOCA::destroyGlobalData ( globalData );

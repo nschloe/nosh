@@ -24,6 +24,7 @@
 #include "Ginla_MagneticVectorPotential_Virtual.h"
 #include "Ginla_EpetraFVM_KeoFactory.h"
 #include "Ginla_EpetraFVM_KeoPreconditioner.h"
+#include "Ginla_EpetraFVM_StkMesh.h"
 
 #include <Epetra_Map.h>
 #include <Epetra_LocalMap.h>
@@ -33,13 +34,13 @@
 
 // ============================================================================
 Ginla::EpetraFVM::ModelEvaluator::
-ModelEvaluator ( const Teuchos::RCP<VIO::EpetraMesh::Mesh>                   & mesh,
+ModelEvaluator ( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>               & mesh,
                  const Teuchos::ParameterList                                & problemParams,
                  const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp,
                  const Teuchos::RCP<Ginla::EpetraFVM::State>                 & initialState
                ) :
         mesh_ ( mesh ),
-        x_( Teuchos::null ),
+        x_( initialState->getPsiNonConst() ),
         numParams_( 1 ),
         p_map_( Teuchos::null ),
         p_init_( Teuchos::null ),
@@ -49,9 +50,6 @@ ModelEvaluator ( const Teuchos::RCP<VIO::EpetraMesh::Mesh>                   & m
         keoFactory_( Teuchos::rcp( new Ginla::EpetraFVM::KeoFactory( mesh, mvp ) ) )
 {
   this->setupParameters_( problemParams );
-
-  // prepare initial guess
-  x_ = initialState->getPsiNonConst();
 
   return;
 }
@@ -85,7 +83,7 @@ setupParameters_( const Teuchos::ParameterList & params )
   // setup parameter map
   numParams_ = p_names_->length();
   TEUCHOS_ASSERT( !mesh_.is_null() );
-  const Epetra_Comm & comm = mesh_->getNodesMap()->Comm();
+  const Epetra_Comm & comm = mesh_->getComm();
   p_map_ = Teuchos::rcp( new Epetra_LocalMap( numParams_,
                                               0,
                                               comm
@@ -125,7 +123,7 @@ Ginla::EpetraFVM::ModelEvaluator::
 get_x_map() const
 {
   TEUCHOS_ASSERT( !mesh_.is_null() );
-  return mesh_->getComplexValuesMap();
+  return mesh_->getComplexMap();
 }
 // ============================================================================
 Teuchos::RCP<const Epetra_Map>
@@ -133,7 +131,7 @@ Ginla::EpetraFVM::ModelEvaluator::
 get_f_map() const
 {
     TEUCHOS_ASSERT( !mesh_.is_null() );
-    return mesh_->getComplexValuesMap();
+    return mesh_->getComplexMap();
 }
 // ============================================================================
 Teuchos::RCP<const Epetra_Vector>
@@ -328,7 +326,10 @@ computeF_ ( const Epetra_Vector            & x,
   // add the nonlinear part (mass lumping)
   TEUCHOS_ASSERT( FVec.Map().SameAs( x.Map() ) );
 
-  Epetra_Vector & controlVolumes = *(mesh_->getControlVolumes());
+  const Epetra_Vector & controlVolumes = *(mesh_->getControlVolumes());
+
+  // Make sure control volumes and state still match.
+  TEUCHOS_ASSERT_EQUALITY( 2*controlVolumes.MyLength(), x.MyLength() );
 
   for ( int k=0; k<controlVolumes.MyLength(); k++ )
   {

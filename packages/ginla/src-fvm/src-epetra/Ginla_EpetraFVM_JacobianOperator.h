@@ -27,11 +27,11 @@
 #include <Epetra_FECrsMatrix.h>
 
 #include "Ginla_MagneticVectorPotential_Virtual.h"
-#include "VIO_EpetraMesh_Mesh.h"
 // =============================================================================
 namespace Ginla {
     namespace EpetraFVM {
         class KeoFactory;
+        class StkMesh;
     }
 }
 // =============================================================================
@@ -41,7 +41,7 @@ namespace EpetraFVM {
 class JacobianOperator : public Epetra_Operator
 {
 public:
-    JacobianOperator( const Teuchos::RCP<VIO::EpetraMesh::Mesh>                   & mesh,
+    JacobianOperator( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>               & mesh,
                       const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp
                     );
 
@@ -113,7 +113,7 @@ private:
 
     Teuchos::RCP<const Epetra_Vector> currentX_;
 
-    const Teuchos::RCP<VIO::EpetraMesh::Mesh> mesh_;
+    const Teuchos::RCP<Ginla::EpetraFVM::StkMesh> mesh_;
     const Teuchos::RCP<Ginla::EpetraFVM::KeoFactory> keoFactory_;
     const Teuchos::RCP<Epetra_FECrsMatrix> keoMatrix_;
 

@@ -16,18 +16,17 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 */
-
+// =============================================================================
 #include "Ginla_EpetraFVM_State.h"
-
-#include "VIO_EpetraMesh_Writer.h"
+#include "Ginla_EpetraFVM_StkMesh.h"
 
 #include <LOCA_Parameter_Vector.H>
 #include <Epetra_Comm.h>
-
+#include <Epetra_Map.h>
 // =============================================================================
 Ginla::EpetraFVM::State::
-State( const Epetra_Vector                             & psi,
-       const Teuchos::RCP<const VIO::EpetraMesh::Mesh> & mesh
+State( const Epetra_Vector                                 & psi,
+       const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh
      ):
        psi_( psi ),
        mesh_( mesh )
@@ -37,8 +36,8 @@ State( const Epetra_Vector                             & psi,
 }
 // =============================================================================
 Ginla::EpetraFVM::State::
-State( const Teuchos::RCP<const Epetra_Map>            & map,
-       const Teuchos::RCP<const VIO::EpetraMesh::Mesh> & mesh
+State( const Teuchos::RCP<const Epetra_Map>                & map,
+       const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh
      ):
        psi_( Epetra_Vector( *map, true ) ),
        mesh_( mesh )
@@ -46,8 +45,8 @@ State( const Teuchos::RCP<const Epetra_Map>            & map,
 }
 // =============================================================================
 Ginla::EpetraFVM::State::
-State( const Teuchos::RCP<const Epetra_Comm>           & comm,
-       const Teuchos::RCP<const VIO::EpetraMesh::Mesh> & mesh
+State( const Teuchos::RCP<const Epetra_Comm>               & comm,
+       const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh
      ):
        psi_( Epetra_Vector( Epetra_Map( 2*mesh->getNumNodes(), 0, *comm ) ) ),
        mesh_( mesh )
@@ -68,7 +67,7 @@ getPsiNonConst ()
 return Teuchos::rcpFromRef( psi_ );
 }
 // =============================================================================
-const Teuchos::RCP<const VIO::EpetraMesh::Mesh>
+const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh>
 Ginla::EpetraFVM::State::
 getMesh () const
 {
@@ -81,16 +80,23 @@ save( const std::string            & fileName,
       const Teuchos::ParameterList & p
     ) const
 {
-    TEUCHOS_ASSERT( !mesh_.is_null() );
+    std::cout << "\n\n\t\tHere I'd normally write file \"" << fileName << "\".\n\n" << std::endl;
 
-    Teuchos::RCP<VIO::EpetraMesh::Writer> writer =
-        Teuchos::rcp( new VIO::EpetraMesh::Writer( fileName ) );
-
-    writer->setMesh( *mesh_ );
-    writer->setValues( psi_ );
-    writer->addParameterList( p );
-
-    writer->write();
+//     TEST_FOR_EXCEPTION( true,
+//                         std::runtime_error,
+//                         "Not yet implemented."
+//                       );
+    
+//     TEUCHOS_ASSERT( !mesh_.is_null() );
+// 
+//     Teuchos::RCP<VIO::EpetraMesh::Writer> writer =
+//         Teuchos::rcp( new VIO::EpetraMesh::Writer( fileName ) );
+// 
+//     writer->setMesh( *mesh_ );
+//     writer->setValues( psi_ );
+//     writer->addParameterList( p );
+// 
+//     writer->write();
 
     return;
 }
@@ -110,10 +116,10 @@ freeEnergy () const
 {
     double myGlobalEnergy[1];
 
-    int numMyPoints = mesh_->getNodesMap()->NumMyPoints();
-    TEUCHOS_ASSERT_EQUALITY( 2*numMyPoints, psi_.MyLength() );
-
     const Epetra_Vector & controlVolumes =  *(mesh_->getControlVolumes());
+
+    int numMyPoints = controlVolumes.Map().NumMyPoints();
+    TEUCHOS_ASSERT_EQUALITY( 2*numMyPoints, psi_.MyLength() );
 
     for ( int k=0; k<numMyPoints; k++ )
         myGlobalEnergy[0] -= controlVolumes[k] * pow( psi_[2*k]*psi_[2*k] + psi_[2*k+1]*psi_[2*k+1], 2 );
@@ -134,10 +140,11 @@ innerProduct( const Ginla::EpetraFVM::State & state ) const
 {
     double res[1];
 
-    int numMyPoints = mesh_->getNodesMap()->NumMyPoints();
+    const Epetra_Vector & controlVolumes = *(mesh_->getControlVolumes());
+
+    int numMyPoints = controlVolumes.Map().NumMyPoints();
     TEUCHOS_ASSERT_EQUALITY( 2*numMyPoints, psi_.MyLength() );
 
-    const Epetra_Vector & controlVolumes = *(mesh_->getControlVolumes());
     const Epetra_Vector & psi2 =  *(state.getPsi());
 
     for ( int k=0; k<numMyPoints; k++ )

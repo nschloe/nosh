@@ -28,11 +28,11 @@
 #include <Epetra_LinearProblem.h>
 
 #include "Ginla_MagneticVectorPotential_Virtual.h"
-#include "VIO_EpetraMesh_Mesh.h"
 // =============================================================================
 namespace Ginla {
     namespace EpetraFVM {
         class KeoFactory;
+        class StkMesh;
     }
 }
 namespace Belos {
@@ -47,7 +47,7 @@ namespace EpetraFVM {
 class KeoPreconditioner: public Epetra_Operator
 {
 public:
-    KeoPreconditioner( const Teuchos::RCP<VIO::EpetraMesh::Mesh>                   & mesh,
+    KeoPreconditioner( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>               & mesh,
                        const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp
                      );
 

@@ -19,16 +19,17 @@
 
 #include "Ginla_EpetraFVM_JacobianOperator.h"
 #include "Ginla_EpetraFVM_KeoFactory.h"
+#include "Ginla_EpetraFVM_StkMesh.h"
 
 #include <Teuchos_ArrayRCP.hpp>
 
 // =============================================================================
 Ginla::EpetraFVM::JacobianOperator::
-JacobianOperator( const Teuchos::RCP<VIO::EpetraMesh::Mesh>                   & mesh,
+JacobianOperator( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>               & mesh,
                   const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp
                 ):
         useTranspose_( false ),
-        comm_( mesh->getNodesMap()->Comm() ),
+        comm_( mesh->getComm() ),
         mesh_( mesh ),
         keoFactory_( Teuchos::rcp( new Ginla::EpetraFVM::KeoFactory( mesh, mvp ) ) ),
         keoMatrix_( Teuchos::rcp( new Epetra_FECrsMatrix( Copy, keoFactory_->buildKeoGraph() ) ) ),
@@ -66,11 +67,10 @@ Apply ( const Epetra_MultiVector & X,
     // K*psi
     TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix_->Apply( X, Y ) )
 
-    int numMyPoints = mesh_->getNodesMap()->NumMyPoints();
-    TEUCHOS_ASSERT_EQUALITY( 2*numMyPoints, X.MyLength() );
-
     const Epetra_Vector & controlVolumes =  *(mesh_->getControlVolumes());
-//    TEUCHOS_ASSERT( controlVolumes.Map().SameAs( X.Map() ) );
+    int numMyPoints = controlVolumes.MyLength();
+
+    TEUCHOS_ASSERT_EQUALITY( 2*numMyPoints, X.MyLength() );
 
     for ( int vec=0; vec<X.NumVectors(); vec++ )
     {

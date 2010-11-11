@@ -19,14 +19,22 @@
 
 #ifndef GINLA_EPETRAFVM_STATE_H
 #define GINLA_EPETRAFVM_STATE_H
-
-#include "VIO_EpetraMesh_Mesh.h"
+// =============================================================================
+// includes
 #include "Ginla_State_Virtual.h"
 
+#include <Epetra_Vector.h>
+// =============================================================================
+// forward declarations
 namespace LOCA {
   class ParameterVector;
 }
-
+namespace Ginla {
+  namespace EpetraFVM {
+    class StkMesh;
+  }
+}
+// =============================================================================
 namespace Ginla {
 namespace EpetraFVM {
     class State: public Ginla::State::Virtual
@@ -34,18 +42,18 @@ namespace EpetraFVM {
 public:
 
   //! Constructor.
-  State( const Epetra_Vector                             & psi,
-         const Teuchos::RCP<const VIO::EpetraMesh::Mesh> & mesh
+  State( const Epetra_Vector                                 & psi,
+         const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh
        );
 
   //! Constructor without \f$\psi\f$. The values will be initialized to 0.
-  State( const Teuchos::RCP<const Epetra_Map>            & map,
-         const Teuchos::RCP<const VIO::EpetraMesh::Mesh> & mesh
+  State( const Teuchos::RCP<const Epetra_Map>                & map,
+         const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh
        );
 
   //! Constructor solely with comminicator and grid. The values will be initialized to 0.
-  State( const Teuchos::RCP<const Epetra_Comm>           & comm,
-         const Teuchos::RCP<const VIO::EpetraMesh::Mesh> & mesh
+  State( const Teuchos::RCP<const Epetra_Comm>               & comm,
+         const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh
        );
 
   //! Const getter.
@@ -56,7 +64,7 @@ public:
   Teuchos::RCP<Epetra_Vector>
   getPsiNonConst ();
 
-  const Teuchos::RCP<const VIO::EpetraMesh::Mesh>
+  const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh>
   getMesh () const;
 
   //! Save the state to file \c fileName together with the parameters \c p.
@@ -115,7 +123,7 @@ private:
   Epetra_Vector psi_;
 
   //! The grid on which the state exists.
-  const Teuchos::RCP<const VIO::EpetraMesh::Mesh> mesh_;
+  const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> mesh_;
 
 };
 

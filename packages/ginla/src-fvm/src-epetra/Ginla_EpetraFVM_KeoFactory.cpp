@@ -16,8 +16,11 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 */
-
+// =============================================================================
+// includes
 #include "Ginla_EpetraFVM_KeoFactory.h"
+
+#include "Ginla_EpetraFVM_StkMesh.h"
 
 #include <Epetra_SerialDenseMatrix.h>
 #include <Epetra_Comm.h>
@@ -27,17 +30,9 @@
 #include <BelosBlockCGSolMgr.hpp>
 
 #include <ml_epetra_preconditioner.h>
-
-// =============================================================================
-// some typdefs for Belos
-typedef double                           ST;
-typedef Epetra_MultiVector               MV;
-typedef Epetra_Operator                  OP;
-typedef Belos::MultiVecTraits<ST,MV>     MVT;
-typedef Belos::OperatorTraits<ST,MV,OP>  OPT;
 // =============================================================================
 Ginla::EpetraFVM::KeoFactory::
-KeoFactory( const Teuchos::RCP<VIO::EpetraMesh::Mesh>                   & mesh,
+KeoFactory( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>               & mesh,
             const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp
           ):
         mesh_ ( mesh ),
@@ -64,37 +59,35 @@ buildKeo( Epetra_FECrsMatrix & keoMatrix,
   mesh_->scale( scaling );
 
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  // Loop over the elements, create local load vector and mass matrix,
+  // Loop over the cells, create local load vector and mass matrix,
   // and insert them into the global matrix.
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<int> > elems = mesh_->getElems();
-  Teuchos::ArrayRCP<const Point> nodes = mesh_->getNodes();
+  // get owned cells
+  std::vector<stk::mesh::Entity*> cells = mesh_->getOwnedCells();
 
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > edgeLengths = mesh_->getEdgeLengths();
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > coedgeLengths = mesh_->getCoedgeLengths();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > coedgeEdgeRatios = mesh_->getCoedgeEdgeRatios();
+  TEUCHOS_ASSERT( !coedgeEdgeRatios.is_null() );
 
-  TEUCHOS_ASSERT( !elems.is_null() );
-  TEUCHOS_ASSERT( !nodes.is_null() );
-  TEUCHOS_ASSERT( !edgeLengths.is_null() );
-  TEUCHOS_ASSERT( !coedgeLengths.is_null() );
-
-  // loop over the local elements
-  for ( int k=0; k<elems.size(); k++ )
+  // loop over the local cells
+  for ( int k=0; k<cells.size(); k++ )
   {
-      Teuchos::ArrayRCP<int> & elem = elems[k];
+      // get the nodes local to the cell
+      stk::mesh::PairIterRelation rel = (*cells[k]).relations();
+
+      TEUCHOS_ASSERT_EQUALITY( 3, rel.size() );
+
+      // extract the nodal coordinates
+      Teuchos::Tuple<Point,3> localNodes = mesh_->getNodeCoordinates( rel );
 
       // loop over the edges
-      int n = elem.size();
-      for ( int l=0; l<n; l++ )
+      for ( int l=0; l<3; l++ )
       {
-
-          // two subsequent indices determine an edge
+          // global indices of subsequent nodes
           Teuchos::Tuple<ORD,2> nodeIndices;
-          nodeIndices[0] = elem[l];
-          nodeIndices[1] = elem[(l+1)%n];
+          nodeIndices[0] = (*rel[ l       ].entity()).identifier() - 1;
+          nodeIndices[1] = (*rel[ (l+1)%3 ].entity()).identifier() - 1;
 
           // co-edge / edge ratio
-          double alpha = coedgeLengths[k][l]
-                       / edgeLengths[k][l];
+          double alpha = coedgeEdgeRatios[k][l];
 
           // -------------------------------------------------------------------
           // Compute the integral
@@ -106,8 +99,8 @@ buildKeo( Epetra_FECrsMatrix & keoMatrix,
           //    I ~ |xj-x0| * (xj-x0) . A( 0.5*(xj+x0) ) / |xj-x0|.
           //
           Point midpoint; // get A(midpoint)
-          const Point & node0 = nodes[ nodeIndices[0] ];
-          const Point & node1 = nodes[ nodeIndices[1] ];
+          const Point & node0 = localNodes[ l       ];
+          const Point & node1 = localNodes[ (l+1)%3 ];
           for (int i=0; i<midpoint.size(); i++ )
               midpoint[i] = 0.5 * ( node0[i] + node1[i] );
 
@@ -176,21 +169,27 @@ Ginla::EpetraFVM::KeoFactory::
 buildKeoGraph() const
 {
   TEUCHOS_ASSERT( !mesh_.is_null() );
-  Epetra_FECrsGraph keoGraph( Copy, *(mesh_->getComplexValuesMap()), 0 );
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<int> > elems = mesh_->getElems();
+  Epetra_FECrsGraph keoGraph( Copy, *mesh_->getComplexMap(), 0 );
 
-  for ( int k=0; k<elems.size(); k++ )
+  std::vector<stk::mesh::Entity*> cells = mesh_->getOwnedCells();
+
+  for ( int k=0; k<cells.size(); k++ )
   {
-      Teuchos::ArrayRCP<int> & elem = elems[k];
+      // get the nodes local to the cell
+      stk::mesh::PairIterRelation rel = (*cells[k]).relations();
+
+      TEUCHOS_ASSERT_EQUALITY( 3, rel.size() );
+
+      // extract the nodal coordinates
+      Teuchos::Tuple<Point,3> localNodes = mesh_->getNodeCoordinates( rel );
 
       // loop over the edges
-      int n = elem.size();
-      for ( int l=0; l<n; l++ )
+      for ( int l=0; l<3; l++ )
       {
-          // two subsequent indices determine an edge
+          // global indices of subsequent nodes
           Teuchos::Tuple<ORD,2> nodeIndices;
-          nodeIndices[0] = elem[l];
-          nodeIndices[1] = elem[(l+1)%n];
+          nodeIndices[0] = (*rel[ l       ].entity()).identifier() - 1;
+          nodeIndices[1] = (*rel[ (l+1)%3 ].entity()).identifier() - 1;
 
           Epetra_IntSerialDenseVector indices(4);
           indices[0] = 2*nodeIndices[0];

@@ -24,8 +24,6 @@
 #include <EpetraExt_ModelEvaluator.h>
 #include <Epetra_Vector.h>
 
-
-#include "VIO_EpetraMesh_Mesh.h"
 #include "Ginla_ParameterHost_Virtual.h"
 #include "Ginla_EpetraFVM_JacobianOperator.h"
 #include "Ginla_CreateSavable_Virtual.h"
@@ -42,6 +40,7 @@ namespace Ginla
   }
   namespace EpetraFVM {
     class State;
+    class StkMesh;
   }
 }
 
@@ -59,7 +58,7 @@ class ModelEvaluator:
 public:
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   //! Constructor without initial guess.
-  ModelEvaluator ( const Teuchos::RCP<VIO::EpetraMesh::Mesh>                   & mesh,
+  ModelEvaluator ( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>               & mesh,
                    const Teuchos::ParameterList                                & params,
                    const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp,
                    const Teuchos::RCP<Ginla::EpetraFVM::State>                 & initialState
@@ -143,9 +142,9 @@ private:
 //    const Teuchos::RCP<const TComm> & tComm_;
 //    Teuchos::RCP<const TMap>          tMap_;
 
-   const Teuchos::RCP<VIO::EpetraMesh::Mesh> mesh_;
+   const Teuchos::RCP<Ginla::EpetraFVM::StkMesh> mesh_;
 
-   Teuchos::RCP<Epetra_Vector> x_;
+   const Teuchos::RCP<Epetra_Vector> x_;
 
    int numParams_;
 

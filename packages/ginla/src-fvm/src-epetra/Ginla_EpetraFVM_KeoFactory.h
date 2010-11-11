@@ -31,13 +31,20 @@
 #include "VIO_EpetraMesh_Mesh.h"
 #include <Amesos.h>
 // =============================================================================
+// forward declarations
+namespace Ginla {
+  namespace EpetraFVM {
+    class StkMesh;
+  }
+}
+// =============================================================================
 namespace Ginla {
 namespace EpetraFVM {
 // =============================================================================
 class KeoFactory
 {
 public:
-    KeoFactory( const Teuchos::RCP<VIO::EpetraMesh::Mesh>                   & mesh,
+    KeoFactory( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>               & mesh,
                 const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp
               );
 
@@ -55,7 +62,7 @@ public:
 
 protected:
 private:
-    const Teuchos::RCP<VIO::EpetraMesh::Mesh> mesh_;
+    const Teuchos::RCP<Ginla::EpetraFVM::StkMesh> mesh_;
     const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp_;
 };
 // =============================================================================
