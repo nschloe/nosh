@@ -60,6 +60,12 @@ public:
     virtual
     ~StkMesh();
 
+    const Teuchos::RCP<stk::mesh::MetaData>
+    getMetaData() const;
+
+    const Teuchos::RCP<stk::mesh::BulkData>
+    getBulkData() const;
+
     unsigned int
     getNumNodes() const;
 

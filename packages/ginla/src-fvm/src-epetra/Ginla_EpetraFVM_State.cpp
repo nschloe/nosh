@@ -18,7 +18,9 @@
 */
 // =============================================================================
 #include "Ginla_EpetraFVM_State.h"
+
 #include "Ginla_EpetraFVM_StkMesh.h"
+#include "Ginla_EpetraFVM_StkMeshWriter.h"
 
 #include <LOCA_Parameter_Vector.H>
 #include <Epetra_Comm.h>
@@ -80,13 +82,16 @@ save( const std::string            & fileName,
       const Teuchos::ParameterList & p
     ) const
 {
-    std::cout << "\n\n\t\tHere I'd normally write file \"" << fileName << "\".\n\n" << std::endl;
+    TEUCHOS_ASSERT( !mesh_.is_null() );
+    Ginla::EpetraFVM::StkMeshWrite( fileName, psi_, mesh_, p );
+  
+//     std::cout << "\n\n\t\tHere I'd normally write file \"" << fileName << "\".\n\n" << std::endl;
 
 //     TEST_FOR_EXCEPTION( true,
 //                         std::runtime_error,
 //                         "Not yet implemented."
 //                       );
-    
+
 //     TEUCHOS_ASSERT( !mesh_.is_null() );
 // 
 //     Teuchos::RCP<VIO::EpetraMesh::Writer> writer =

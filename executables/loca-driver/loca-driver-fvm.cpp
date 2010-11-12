@@ -178,7 +178,7 @@ main ( int argc, char *argv[] )
         Teuchos::RCP<Ginla::IO::StateWriter> stateWriter =
             Teuchos::rcp( new Ginla::IO::StateWriter( outputDirectory.string(),
                                                       "solution",
-                                                      "vtu",
+                                                      "exo",
                                                       maxLocaSteps
                                                     )
                         );
@@ -357,9 +357,7 @@ main ( int argc, char *argv[] )
 //        locaModelEvaluatorInterface->setLocaStepper ( stepper );
         // ---------------------------------------------------------------------
         // Perform continuation run
-        std::cout << "aa" << std::endl;
         status = stepper->run();
-        std::cout << "zz" << std::endl;
         // ---------------------------------------------------------------------
         // clean up
         LOCA::destroyGlobalData ( globalData );
@@ -373,6 +371,12 @@ main ( int argc, char *argv[] )
         status += 10;
     }
     catch ( std::string & e )
+    {
+        if ( eComm->MyPID() == 0 )
+            std::cerr << e << std::endl;
+        status += 10;
+    }
+    catch ( char * e )
     {
         if ( eComm->MyPID() == 0 )
             std::cerr << e << std::endl;

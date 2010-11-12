@@ -6,6 +6,7 @@ SET ( ginla_SRCS
       Ginla_EpetraFVM_KeoPreconditioner.cpp
       Ginla_EpetraFVM_StkMesh.cpp
       Ginla_EpetraFVM_StkMeshReader.cpp
+      Ginla_EpetraFVM_StkMeshWriter.cpp
     )
 
 FIND_PACKAGE( Trilinos REQUIRED )

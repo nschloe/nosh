@@ -65,6 +65,20 @@ Ginla::EpetraFVM::StkMesh::
 {
 }
 // =============================================================================
+const Teuchos::RCP<stk::mesh::MetaData>
+Ginla::EpetraFVM::StkMesh::
+getMetaData() const
+{
+  return metaData_;
+}
+// =============================================================================
+const Teuchos::RCP<stk::mesh::BulkData>
+Ginla::EpetraFVM::StkMesh::
+getBulkData() const
+{
+  return bulkData_;
+}
+// =============================================================================
 unsigned int
 Ginla::EpetraFVM::StkMesh::
 getNumNodes() const
