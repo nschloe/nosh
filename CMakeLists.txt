@@ -24,6 +24,4 @@ SET(CMAKE_Fortran_FLAGS_DEBUG "-g -ggdb -Wall -pedantic -ansi -fbounds-check -We
 SET(CMAKE_CXX_FLAGS_PROFILE     "-pg -O2" )
 SET(CMAKE_Fortran_FLAGS_PROFILE "-pg -O2" )
 
-
 add_subdirectory ( packages )
-add_subdirectory ( executables )

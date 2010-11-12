@@ -1,0 +1,5 @@
+add_subdirectory ( src )
+add_subdirectory ( src-komplex2 )
+add_subdirectory ( src-recti )
+add_subdirectory ( src-vio )
+add_subdirectory ( test )
