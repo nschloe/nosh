@@ -73,19 +73,19 @@ read( const Epetra_Comm & comm,
     // read the coordinates of the nodes
     Teuchos::RCP<VectorFieldType> coordinates_field =
         Teuchos::rcpFromRef( metaData->declare_field< VectorFieldType >( "coordinates" ) );
-    stk::io::set_field_role(*coordinates_field, Ioss::Field::ATTRIBUTE);
+    stk::io::set_field_role(*coordinates_field, Ioss::Field::ATTRIBUTE); // doesn't change for different time steps
 
     // read the real part
     Teuchos::RCP<VectorFieldType> psiR_field =
         Teuchos::rcpFromRef( metaData->declare_field< VectorFieldType >( "psi_R" ) );
-    stk::io::set_field_role(*psiR_field, Ioss::Field::TRANSIENT);
     stk::mesh::put_field( *psiR_field , stk::mesh::Node , metaData->universal_part() , neq );
+    stk::io::set_field_role(*psiR_field, Ioss::Field::TRANSIENT); // changes with steps
 
     // read the imaginary part
     Teuchos::RCP<VectorFieldType> psiI_field =
         Teuchos::rcpFromRef( metaData->declare_field< VectorFieldType >( "psi_Z" ) );
     stk::mesh::put_field( *psiI_field , stk::mesh::Node , metaData->universal_part() , neq );
-    stk::io::set_field_role(*psiI_field, Ioss::Field::TRANSIENT);
+    stk::io::set_field_role(*psiI_field, Ioss::Field::TRANSIENT); // changes with steps
 
     Teuchos::RCP<stk::io::util::MeshData> mesh_data = Teuchos::rcp( new stk::io::util::MeshData() );
 

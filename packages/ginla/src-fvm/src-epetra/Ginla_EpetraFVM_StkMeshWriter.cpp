@@ -40,7 +40,8 @@ typedef stk::mesh::Field<double>                      ScalarFieldType ;
 // =============================================================================
 Ginla::EpetraFVM::StkMeshWriter::
 StkMeshWriter( const std::string & fileName ):
-fileName_( fileName )
+fileName_( fileName ),
+time_( 0 )
 {
 }
 // =============================================================================
@@ -56,11 +57,7 @@ write( const Epetra_Vector & psi,
        const Teuchos::ParameterList & parameterList
      )
 {
-    std::string meshExtension = "";
-    std::string workingDirectory = "";
-
     // create dummy mesh data
-//     stk::io::util::MeshData meshData();
     Teuchos::RCP<stk::io::util::MeshData> meshData =
         Teuchos::rcp( new stk::io::util::MeshData() );
 
@@ -72,6 +69,8 @@ write( const Epetra_Vector & psi,
     int mcomm = 1;
 #endif
 
+    std::string meshExtension = "";
+    std::string workingDirectory = "";
     // prepare the data for output
     stk::io::util::create_output_mesh( fileName_,
                                        meshExtension,
@@ -79,20 +78,16 @@ write( const Epetra_Vector & psi,
                                        mcomm,
                                        *mesh->getBulkData(),
                                        *mesh->getMetaData(),
-                                       *meshData,
-                                       true,
-                                       true
+                                       *meshData
                                      );
-
 
     // Merge the state into the mesh.
     this->mergePsi_(  mesh->getMetaData(), mesh->getBulkData(), psi );
 
     // Write it.
-    int time = 1;
     int out_step = stk::io::util::process_output_request( *meshData,
                                                           *mesh->getBulkData(),
-                                                          time
+                                                          time_++
                                                         );
 
     std::cout << "Ginla::EpetraFVM::StkMeshWriter::write:\n"

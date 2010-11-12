@@ -51,6 +51,7 @@ public:
 protected:
 private:
     const std::string fileName_;
+    int time_;
 
 private:
     void
