@@ -97,7 +97,7 @@ main ( int argc, char *argv[] )
                 Teuchos::rcp ( new Teuchos::ParameterList );
         if ( eComm->MyPID() == 0 )
             std::cout << "Reading parameter list from \"" << xmlInputFileName << "\"."
-                    << std::endl;
+                      << std::endl;
 
         Teuchos::updateParametersFromXmlFile ( xmlInputFileName, piroParams.get() );
 
@@ -308,7 +308,8 @@ main ( int argc, char *argv[] )
                                                          linSys,
                                                          myLocaParams ) );
 
-        std::cout << myLocaParams << std::endl;
+        if ( eComm->MyPID() == 0 )
+              std::cout << myLocaParams << std::endl;
         grp->setParams ( myLocaParams );
         // ---------------------------------------------------------------------
         // Set up the NOX status tests
