@@ -96,7 +96,7 @@ main ( int argc, char *argv[] )
         Teuchos::RCP<Teuchos::ParameterList> piroParams =
                 Teuchos::rcp ( new Teuchos::ParameterList );
         if ( eComm->MyPID() == 0 )
-            std::cout << "Reading parameter list from \"" << xmlInputFileName << "\"."
+            std::cout << "\n\n\tReading parameter list from \"" << xmlInputFileName << "\".\n\n"
                       << std::endl;
 
         Teuchos::updateParametersFromXmlFile ( xmlInputFileName, piroParams.get() );

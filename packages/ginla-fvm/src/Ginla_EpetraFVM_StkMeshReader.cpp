@@ -22,6 +22,11 @@
 
 #include <Epetra_Map.h>
 #include <Epetra_Vector.h>
+#ifdef HAVE_MPI
+#include <Epetra_MpiComm.h>
+#else
+#include <Epetra_SerialComm.h>
+#endif
 
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Field.hpp>
@@ -89,12 +94,20 @@ read( const Epetra_Comm & comm,
 
     Teuchos::RCP<stk::io::util::MeshData> mesh_data = Teuchos::rcp( new stk::io::util::MeshData() );
 
+#ifdef HAVE_MPI
+    const Epetra_MpiComm& mpicomm = Teuchos::dyn_cast<const Epetra_MpiComm>( comm );
+    MPI_Comm mcomm = mpicomm.Comm();
+#else
+    int mcomm = 1;
+#endif
+
     // read the mesh and meta data from file
     Ioss::Init::Initializer io;
+    std::string workingDirectory = "";
     stk::io::util::create_input_mesh( "exodusii",
                                       fileName_,
-                                      "",
-                                      MPI_COMM_WORLD,
+                                      workingDirectory,
+                                      mcomm,
                                       *metaData,
                                       *mesh_data,
                                       false
