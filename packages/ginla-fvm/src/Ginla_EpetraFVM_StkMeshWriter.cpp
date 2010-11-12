@@ -23,6 +23,11 @@
 #include <Epetra_Map.h>
 #include <Epetra_Comm.h>
 #include <Epetra_Vector.h>
+#ifdef HAVE_MPI
+#include <Epetra_MpiComm.h>
+#else
+#include <Epetra_SerialComm.h>
+#endif
 
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Field.hpp>
@@ -63,7 +68,7 @@ write( const Epetra_Vector                                 & psi,
 
     // Get a native MPI comminicator object.
 #ifdef HAVE_MPI
-    const Epetra_MpiComm& mpicomm = Teuchos::dyn_cast<const Epetra_MpiComm&>( psi.Comm() );
+    const Epetra_MpiComm& mpicomm = Teuchos::dyn_cast<const Epetra_MpiComm>( psi.Map().Comm() );
     MPI_Comm mcomm = mpicomm.Comm();
 #else
     int mcomm = 1;
