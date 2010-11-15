@@ -14,16 +14,10 @@ namespace Ginla {
 class Virtual
 {
 public:
-  Virtual( double mu );
+  Virtual();
 
   virtual
   ~Virtual();
-
-  bool
-  setMu( const double mu );
-
-  double
-  getMu() const;
 
   //! Sets the parameters in this module.
   //! @return Indicates whether the internal values have changed.
@@ -68,8 +62,6 @@ public:
   getDAzDMu(const Point & x ) const = 0;
 
 protected:
-  double mu_;
-
 private:
 };
 

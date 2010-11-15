@@ -184,7 +184,7 @@ OperatorRangeMap () const
 // =============================================================================
 void
 Ginla::EpetraFVM::JacobianOperator::
-rebuild( const double mu,
+rebuild( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
          const Teuchos::Tuple<double,3> & scaling,
          const double temperature,
          const Teuchos::RCP<const Epetra_Vector> & currentX
@@ -195,7 +195,7 @@ rebuild( const double mu,
     currentX_ = currentX;
 
     // rebuild the keo
-    keoFactory_->buildKeo( *keoMatrix_, mu, scaling );
+    keoFactory_->buildKeo( *keoMatrix_, mvpParams, scaling );
 
     return;
 }

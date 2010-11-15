@@ -40,11 +40,11 @@ public:
   virtual
   double
   getAy(const Point & x) const;
-  
+
   virtual
   double
   getAz(const Point & x) const;
-  
+
   virtual
   Teuchos::RCP<Point>
   getDADMu(const Point & x ) const;
@@ -56,13 +56,16 @@ public:
   virtual
   double
   getDAyDMu(const Point & x ) const;
-  
+
   virtual
   double
   getDAzDMu(const Point & x ) const;
 
 protected:
 private:
+
+  double mu_;
+
 };
 
   } // namespace MagneticVectorPotential

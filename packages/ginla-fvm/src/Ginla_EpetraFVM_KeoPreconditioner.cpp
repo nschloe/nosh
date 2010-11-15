@@ -203,15 +203,15 @@ OperatorRangeMap () const
 // =============================================================================
 void
 Ginla::EpetraFVM::KeoPreconditioner::
-rebuild( const double mu,
+rebuild( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
          const Teuchos::Tuple<double,3> & scaling
        )
 {
     // -------------------------------------------------------------------------
     // rebuild the keo
-    keoFactory_->buildKeo( *keoPrec_, mu, scaling );
+    keoFactory_->buildKeo( *keoPrec_, mvpParams, scaling );
     // -------------------------------------------------------------------------
-    if ( fabs(mu) < 1.0e-5 )
+    if ( fabs( mvpParams->getValue("mu") ) < 1.0e-5 )
     {
         // Add a regularization to the diagonal.
         Epetra_Vector e( keoPrec_->DomainMap() );

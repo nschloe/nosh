@@ -47,15 +47,16 @@ Ginla::EpetraFVM::KeoFactory::
 // =============================================================================
 void
 Ginla::EpetraFVM::KeoFactory::
-buildKeo( Epetra_FECrsMatrix & keoMatrix,
-          const double mu,
-          const Teuchos::Tuple<double,3> & scaling
+buildKeo( Epetra_FECrsMatrix                              & keoMatrix,
+          const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
+          const Teuchos::Tuple<double,3>                  & scaling
         ) const
 {
   keoMatrix.PutScalar( 0.0 );
 
-  // set teh parameters
-  mvp_->setMu( mu );
+  // set the parameters
+  TEUCHOS_ASSERT( !mvpParams.is_null() );
+  mvp_->setParameters( *mvpParams );
   mesh_->scale( scaling );
 
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -

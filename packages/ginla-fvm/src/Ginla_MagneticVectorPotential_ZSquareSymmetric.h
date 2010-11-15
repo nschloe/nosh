@@ -60,9 +60,10 @@ public:
 
 protected:
 private:
-  
+
+  double mu_;
   double edgeLength_;
-  
+
 };
 
   } // namespace MagneticVectorPotential

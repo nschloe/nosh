@@ -52,7 +52,7 @@ public:
 
     void
     buildKeo( Epetra_FECrsMatrix & keoMatrix,
-              const double mu,
+              const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
               const Teuchos::Tuple<double,3> & scaling
             ) const;
 

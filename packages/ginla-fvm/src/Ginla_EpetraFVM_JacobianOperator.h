@@ -84,28 +84,11 @@ public:
 
 public:
     void
-    rebuild( const double mu,
+    rebuild( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
              const Teuchos::Tuple<double,3> & scaling,
              const double temperature,
              const Teuchos::RCP<const Epetra_Vector> & currentX
            );
-
-//    void
-//    setParameters( const double mu,
-//                   const Teuchos::Tuple<double,3> & scaling,
-//                   const double temperature
-//                 );
-//
-//    void
-//    setShiftParameters( const double alpha,
-//                        const double beta
-//                      );
-//
-//    void
-//    setCurrentX( const Teuchos::RCP<const Epetra_Vector> & currentX );
-//
-//    const Teuchos::RCP<Ginla::EpetraFVM::KineticEnergyOperator>
-//    getKeo() const;
 
 protected:
 

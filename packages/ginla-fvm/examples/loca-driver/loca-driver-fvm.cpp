@@ -132,6 +132,8 @@ main ( int argc, char *argv[] )
                                        mesh,
                                        problemParameters
                                      );
+       problemParameters.set<double>( "phi", 0.5 * M_PI );
+       problemParameters.set<double>( "theta", 0.0 );
 
 //         VIO::EpetraMesh::read( eComm,
 //                                getAbsolutePath( initialGuessList.get<std::string> ( "State" ), xmlPath ),
@@ -155,9 +157,11 @@ main ( int argc, char *argv[] )
         }
 
         double mu = problemParameters.get<double> ( "mu" );
+        double phi = problemParameters.get<double> ( "phi" );
+        double theta = problemParameters.get<double> ( "theta" );
         // double phi = 0.0; double theta = 0.0; // X
         // double phi = 0.5 * M_PI; double theta = 0.0; // Y
-        double phi = 0.0; double theta = 0.5 * M_PI; // Z
+        // double phi = 0.0; double theta = 0.5 * M_PI; // Z
         Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp =
                 Teuchos::rcp ( new Ginla::MagneticVectorPotential::Spherical ( mu, phi, theta ) );
 //        Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp =

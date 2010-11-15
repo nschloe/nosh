@@ -63,6 +63,7 @@ public:
 
 protected:
 private:
+  double mu_;
 };
 
   } // namespace MagneticVectorPotential

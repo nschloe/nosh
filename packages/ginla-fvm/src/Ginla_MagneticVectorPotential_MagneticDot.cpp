@@ -3,7 +3,7 @@
 // ============================================================================
 Ginla::MagneticVectorPotential::MagneticDot::
 MagneticDot( double mu ) :
-  Ginla::MagneticVectorPotential::Virtual( mu ),
+  mu_( mu ),
   magnetRadius_( 4.5315 ),
   zz1_ ( 0.1 ),
   zz2_ ( 1.1 )

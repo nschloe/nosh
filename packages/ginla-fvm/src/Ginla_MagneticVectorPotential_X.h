@@ -56,13 +56,16 @@ public:
   virtual
   double
   getDAyDMu(const Point & x ) const;
-  
+
   virtual
   double
   getDAzDMu(const Point & x ) const;
 
 protected:
 private:
+
+  double mu_;
+
 };
 
   } // namespace MagneticVectorPotential

@@ -63,6 +63,9 @@ public:
 
 protected:
 private:
+
+  double mu_;
+
   //! Radius of the magnetic dot.
   const double magnetRadius_;
 

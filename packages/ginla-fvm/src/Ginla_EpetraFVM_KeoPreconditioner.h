@@ -93,7 +93,7 @@ public:
 
 public:
     void
-    rebuild( const double mu,
+    rebuild( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
              const Teuchos::Tuple<double,3> & scaling
            );
 

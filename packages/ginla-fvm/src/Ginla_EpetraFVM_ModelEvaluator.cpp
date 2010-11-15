@@ -64,6 +64,8 @@ setupParameters_( const Teuchos::ParameterList & params )
 {
   p_names_ = Teuchos::rcp( new Teuchos::Array<std::string>() );
   p_names_->append( "mu" );
+  p_names_->append( "phi" );
+  p_names_->append( "theta" );
   p_names_->append( "scaling" );
   p_names_->append( "scaling x" );
   p_names_->append( "scaling y" );
@@ -72,12 +74,14 @@ setupParameters_( const Teuchos::ParameterList & params )
 
   // these are local variables
   Teuchos::RCP<Teuchos::Array<double> > p_default_values = Teuchos::rcp( new Teuchos::Array<double>() );
-  p_default_values->append( 0.0 );
-  p_default_values->append( 1.0 );
-  p_default_values->append( 1.0 );
-  p_default_values->append( 1.0 );
-  p_default_values->append( 1.0 );
-  p_default_values->append( 0.0 );
+  p_default_values->append( 0.0 ); // mu
+  p_default_values->append( 0.0 ); // phi
+  p_default_values->append( 0.0 ); // theta
+  p_default_values->append( 1.0 ); // scaling
+  p_default_values->append( 1.0 ); // scaling x
+  p_default_values->append( 1.0 ); // scaling y
+  p_default_values->append( 1.0 ); // scaling z
+  p_default_values->append( 0.0 ); // temperature
 
   // setup parameter map
   numParams_ = p_names_->length();
@@ -254,14 +258,6 @@ evalModel( const InArgs  & inArgs,
   for ( int k=0; k<p_in->MyLength(); k++ )
       TEUCHOS_ASSERT( !isnan( (*p_in)[k] ) );
 
-  const double mu = (*p_in)[0];
-  const double scaling = (*p_in)[1];
-  const Teuchos::Tuple<double,3> scalingX = Teuchos::tuple( (*p_in)[2],
-                                                            (*p_in)[3],
-                                                            (*p_in)[4]
-                                                          );
-  const double temperature = (*p_in)[5];
-
   // p_current_ is used in getParameters.
   // Setting p_current_=p_in here is really a somewhat arbitrary choice.
   // The rationale is that the p-values which were last
@@ -271,6 +267,15 @@ evalModel( const InArgs  & inArgs,
   // Anyway, current_p_ is only used in this->getParameters().
   *p_current_ = *p_in;
 
+  Teuchos::RCP<LOCA::ParameterVector> mvpParams = this->getParameters();
+
+  const double scaling = (*p_in)[3];
+  const Teuchos::Tuple<double,3> scalingX = Teuchos::tuple( (*p_in)[4],
+                                                            (*p_in)[5],
+                                                            (*p_in)[6]
+                                                          );
+  const double temperature = (*p_in)[7];
+
   Teuchos::Tuple<double,3> scalingCombined = Teuchos::tuple( scaling * scalingX[0],
                                                              scaling * scalingX[1],
                                                              scaling * scalingX[2]
@@ -279,7 +284,7 @@ evalModel( const InArgs  & inArgs,
   // compute F
   const Teuchos::RCP<Epetra_Vector> f_out = outArgs.get_f();
   if ( !f_out.is_null() )
-      this->computeF_( *x_in, mu, scalingCombined, temperature, *f_out );
+      this->computeF_( *x_in, mvpParams, scalingCombined, temperature, *f_out );
 
   // fill jacobian
   const Teuchos::RCP<Epetra_Operator> W_out = outArgs.get_W();
@@ -287,7 +292,7 @@ evalModel( const InArgs  & inArgs,
   {
       Teuchos::RCP<Ginla::EpetraFVM::JacobianOperator> jac =
           Teuchos::rcp_dynamic_cast<Ginla::EpetraFVM::JacobianOperator>( W_out, true );
-      jac->rebuild( mu,
+      jac->rebuild( mvpParams,
                     scalingCombined,
                     temperature,
                     x_in
@@ -300,7 +305,7 @@ evalModel( const InArgs  & inArgs,
   {
       Teuchos::RCP<Ginla::EpetraFVM::KeoPreconditioner> keoPrec =
           Teuchos::rcp_dynamic_cast<Ginla::EpetraFVM::KeoPreconditioner>( WPrec_out, true );
-      keoPrec->rebuild( mu, scalingCombined );
+      keoPrec->rebuild( mvpParams, scalingCombined );
   }
 
   return;
@@ -308,16 +313,16 @@ evalModel( const InArgs  & inArgs,
 // ============================================================================
 void
 Ginla::EpetraFVM::ModelEvaluator::
-computeF_ ( const Epetra_Vector            & x,
-            const double                     mu,
-            const Teuchos::Tuple<double,3> & scaling,
-            const double                     temperature,
-            Epetra_Vector                  & FVec
+computeF_ ( const Epetra_Vector                             & x,
+            const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
+            const Teuchos::Tuple<double,3>                  & scaling,
+            const double                                      temperature,
+            Epetra_Vector                                   & FVec
           ) const
 {
   // build the KEO
   Epetra_FECrsMatrix keoMatrix( Copy, keoFactory_->buildKeoGraph() );
-  keoFactory_->buildKeo( keoMatrix, mu, scaling );
+  keoFactory_->buildKeo( keoMatrix, mvpParams, scaling );
 
   // compute FVec = K*x
   TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix.Apply( x, FVec ) );

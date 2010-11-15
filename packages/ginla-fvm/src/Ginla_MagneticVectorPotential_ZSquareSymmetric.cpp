@@ -6,7 +6,7 @@
 Ginla::MagneticVectorPotential::ZSquareSymmetric::
 ZSquareSymmetric( double mu,
                   double edgeLength ) :
-  Ginla::MagneticVectorPotential::Virtual( mu ),
+  mu_( mu ),
   edgeLength_( edgeLength )
 {
 }
