@@ -9,6 +9,7 @@ SET ( ginla_SRCS
       Ginla_EpetraFVM_StkMeshReader.cpp
       Ginla_EpetraFVM_StkMeshWriter.cpp
       Ginla_MagneticVectorPotential_Virtual.cpp
+      Ginla_MagneticVectorPotential_Spherical.cpp
       Ginla_MagneticVectorPotential_X.cpp
       Ginla_MagneticVectorPotential_Y.cpp
       Ginla_MagneticVectorPotential_Z.cpp

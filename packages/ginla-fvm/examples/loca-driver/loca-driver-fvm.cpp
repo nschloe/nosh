@@ -31,10 +31,11 @@
 #include "Ginla_IO_StatsWriter.h"
 #include "Ginla_IO_NoxObserver.h"
 #include "Ginla_IO_SaveEigenData.h"
-#include "Ginla_MagneticVectorPotential_X.h"
-#include "Ginla_MagneticVectorPotential_Y.h"
-#include "Ginla_MagneticVectorPotential_Z.h"
+#include "Ginla_MagneticVectorPotential_Spherical.h"
 #include "Ginla_MagneticVectorPotential_MagneticDot.h"
+
+// get pi
+#define _USE_MATH_DEFINES
 
 // =============================================================================
 // declarations (definitions below)
@@ -154,9 +155,11 @@ main ( int argc, char *argv[] )
         }
 
         double mu = problemParameters.get<double> ( "mu" );
-
+        // double phi = 0.0; double theta = 0.0; // X
+        // double phi = 0.5 * M_PI; double theta = 0.0; // Y
+        double phi = 0.0; double theta = 0.5 * M_PI; // Z
         Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp =
-                Teuchos::rcp ( new Ginla::MagneticVectorPotential::Y ( mu ) );
+                Teuchos::rcp ( new Ginla::MagneticVectorPotential::Spherical ( mu, phi, theta ) );
 //        Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp =
 //                Teuchos::rcp ( new Ginla::MagneticVectorPotential::MagneticDot ( mu ) );
 
