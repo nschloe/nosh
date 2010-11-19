@@ -252,6 +252,10 @@ evalModel( const InArgs  & inArgs,
 
   const Teuchos::RCP<const Epetra_Vector> & x_in = inArgs.get_x();
 
+//   double norm1;
+//   x_in->Norm1( &norm1 );
+//   std::cout << "\n\n\t\tnorm1 = " << norm1 << "\n\n" << std::endl;
+
   // get input arguments and make sure they are all right
   Teuchos::RCP<const Epetra_Vector> p_in = inArgs.get_p(0);
   TEUCHOS_ASSERT( !p_in.is_null() );
@@ -281,15 +285,21 @@ evalModel( const InArgs  & inArgs,
                                                              scaling * scalingX[2]
                                                            );
 
+//   std::cout << "mvpParams " << *mvpParams << std::endl;
+
   // compute F
   const Teuchos::RCP<Epetra_Vector> f_out = outArgs.get_f();
   if ( !f_out.is_null() )
+  {
+//     std::cout << "computeF_" << std::endl;
       this->computeF_( *x_in, mvpParams, scalingCombined, temperature, *f_out );
+  }
 
   // fill jacobian
   const Teuchos::RCP<Epetra_Operator> W_out = outArgs.get_W();
   if( !W_out.is_null() )
   {
+//     std::cout << "W_out_" << std::endl;
       Teuchos::RCP<Ginla::EpetraFVM::JacobianOperator> jac =
           Teuchos::rcp_dynamic_cast<Ginla::EpetraFVM::JacobianOperator>( W_out, true );
       jac->rebuild( mvpParams,
@@ -303,6 +313,7 @@ evalModel( const InArgs  & inArgs,
   const Teuchos::RCP<Epetra_Operator> WPrec_out = outArgs.get_WPrec();
   if( !WPrec_out.is_null() )
   {
+//     std::cout << "WPrec_out_" << std::endl;
       Teuchos::RCP<Ginla::EpetraFVM::KeoPreconditioner> keoPrec =
           Teuchos::rcp_dynamic_cast<Ginla::EpetraFVM::KeoPreconditioner>( WPrec_out, true );
       keoPrec->rebuild( mvpParams, scalingCombined );
@@ -338,9 +349,17 @@ computeF_ ( const Epetra_Vector                             & x,
   for ( int k=0; k<controlVolumes.MyLength(); k++ )
   {
       // Do the equivalent of
-      //   res[k] -= controlVolumes[k] * psi[k] * ( (1.0-temperature) - std::norm(psi[k]) );
+      //   res[k] += controlVolumes[k] * psi[k] * ( (1.0-temperature) - std::norm(psi[k]) );
       double alpha = controlVolumes[k]
                      * ( (1.0-temperature) - x[2*k]*x[2*k] - x[2*k+1]*x[2*k+1] );
+
+//       std::cout << "controlVolumes[" << k << "] = " << controlVolumes[k] << std::endl;
+//       std::cout << "temperature = " << temperature << std::endl;
+//       std::cout << "x[" << 2*k << "] = " << x[2*k] << std::endl;
+//       std::cout << "x[" << 2*k+1 << "] = " << x[2*k+1] << std::endl;
+//       std::cout << "alpha = " << alpha << std::endl;
+//       std::cout << std::endl;
+
       // real part
       TEUCHOS_ASSERT_EQUALITY( 0, FVec.SumIntoMyValue( 2*k,
                                                        0,
@@ -351,6 +370,9 @@ computeF_ ( const Epetra_Vector                             & x,
                                                        0,
                                                        alpha * x[2*k+1] )
                              );
+
+//       std::cout << "F(" << 2*k << ") = " << FVec[2*k] << std::endl;
+//       std::cout << "F(" << 2*k+1 << ") = " << FVec[2*k+1] << std::endl;
   }
 
   return;

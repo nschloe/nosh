@@ -35,8 +35,7 @@
 // #include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 
-// #include <stk_io/IossBridge.hpp>
-#include <stk_io/util/UseCase_mesh.hpp>
+#include <stk_io/IossBridge.hpp>
 // #include <Ionit_Initializer.h>
 // =============================================================================
 // typedefs
@@ -45,7 +44,8 @@ typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorFieldType;
 Ginla::EpetraFVM::StkMeshWriter::
 StkMeshWriter( const std::string & fileNameBase ):
 fileNameBase_( fileNameBase ),
-time_( 0 )
+time_( 0 ),
+meshData_( Teuchos::rcp( new stk::io::util::MeshData() ) )
 {
 }
 // =============================================================================
@@ -57,15 +57,11 @@ Ginla::EpetraFVM::StkMeshWriter::
 void
 Ginla::EpetraFVM::StkMeshWriter::
 write( const Epetra_Vector                                 & psi,
-       const int                                             index,
+       const int                                             step,
        const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
        const Teuchos::ParameterList                        & parameterList
      )
 {
-    // create dummy mesh data
-    Teuchos::RCP<stk::io::util::MeshData> meshData =
-        Teuchos::rcp( new stk::io::util::MeshData() );
-
     // Get a native MPI comminicator object.
 #ifdef HAVE_MPI
     const Epetra_MpiComm& mpicomm = Teuchos::dyn_cast<const Epetra_MpiComm>( psi.Map().Comm() );
@@ -74,35 +70,42 @@ write( const Epetra_Vector                                 & psi,
     int mcomm = 1;
 #endif
 
-    // create file name
-    std::stringstream fileName;
-    fileName << fileNameBase_ << index << ".exo";
+    // Create file name.
+    // For ParaView to read the files as a sequence, they must have this exact format;
+    // see <http://www.paraview.org/Wiki/Restarted_Simulation_Readers#Exodus>.
 
-    std::string meshExtension = "";
+    std::stringstream meshExtension;
+    if ( step==0 )
+        meshExtension << "e";
+    else
+        meshExtension << "e-s." << std::setw(4) << std::setfill('0') << step;
+
     std::string workingDirectory = "";
     // prepare the data for output
-    stk::io::util::create_output_mesh( fileName.str(),
-                                       meshExtension,
+    stk::io::util::create_output_mesh( fileNameBase_,
+                                       meshExtension.str(),
                                        workingDirectory,
                                        mcomm,
                                        *mesh->getBulkData(),
                                        *mesh->getMetaData(),
-                                       *meshData
+                                       *meshData_
                                      );
 
     // Merge the state into the mesh.
-    this->mergePsi_(  mesh->getMetaData(), mesh->getBulkData(), psi );
+//     mesh->getBulkData()->modification_begin();
+    this->mergePsi_( mesh->getMetaData(), mesh->getBulkData(), psi );
+//     mesh->getBulkData()->modification_end();
 
     // Write it.
-    int out_step = stk::io::util::process_output_request( *meshData,
+    int out_step = stk::io::util::process_output_request( *meshData_,
                                                           *mesh->getBulkData(),
-                                                          index // "time"
+                                                          step
                                                         );
 
     std::cout << "Ginla::EpetraFVM::StkMeshWriter::write:\n"
-              << "\twriting time " << index << "\n"
+              << "\twriting time " << step << "\n"
               << "\tindex " << out_step << "\n"
-              << "\tto file "<< fileName.str()
+              << "\tto file " //<< fileName.str()
               << std::endl;
 
     return;
@@ -139,6 +142,98 @@ mergePsi_( const Teuchos::RCP<stk::mesh::MetaData> & metaData,
     }
 
     return;
+}
+// =============================================================================
+// This is a copy of $TRILINOS/packages/stk/stk_io/stk_io/util/UseCase_mesh.cpp,
+// enhanced with parameter handling
+int
+Ginla::EpetraFVM::StkMeshWriter::
+process_output_request_( stk::io::util::MeshData &mesh_data,
+                         stk::mesh::BulkData &bulk,
+                         double time,
+                         const Teuchos::ParameterList & parameterList,
+                         bool output_all_fields
+                       )
+{
+   Ioss::Region &region = *(mesh_data.m_region);
+
+   region.begin_mode(Ioss::STATE_TRANSIENT);
+
+   int out_step = region.add_state(time);
+
+//    // add the parameters
+//    for ( Teuchos::ParameterList::ConstIterator item = parameterList.begin();
+//          item != parameterList.end();
+//          ++item )
+//    {
+//        std::string name =  parameterList.name(item);
+//        std::vector<double>  val(1);
+//        parameterList.entry(item).getValue( &val[0] );
+//        std::cout << "Writing \"" << name << "\" with value \"" << val[0] << "\"." << std::endl;
+//        region.put_field_data( name, val );
+//    }
+
+  this->process_output_request_(region, bulk, out_step, output_all_fields);
+  region.end_mode(Ioss::STATE_TRANSIENT);
+
+  return out_step;
+}
+// =============================================================================
+// This is a copy of $TRILINOS/packages/stk/stk_io/stk_io/util/UseCase_mesh.cpp,
+// enhanced with parameter handling
+void
+Ginla::EpetraFVM::StkMeshWriter::
+process_output_request_( Ioss::Region &region,
+                         stk::mesh::BulkData &bulk,
+                         int step,
+                         bool output_all_fields
+                       )
+{
+  std::cout << "A" << std::endl;
+
+  region.begin_state(step);
+  // Special processing for nodeblock (all nodes in model)...
+  const stk::mesh::MetaData & meta = bulk.mesh_meta_data();
+
+  std::cout << "B" << std::endl;
+  
+  stk::io::util::put_field_data( bulk,
+                                 meta.universal_part(),
+                                 stk::mesh::Node,
+                                 region.get_node_blocks()[0],
+                                 Ioss::Field::Field::TRANSIENT,
+                                 output_all_fields
+                               );
+
+  std::cout << "C" << std::endl;
+
+  const stk::mesh::PartVector & all_parts = meta.get_parts();
+  for ( stk::mesh::PartVector::const_iterator
+          ip = all_parts.begin(); ip != all_parts.end(); ++ip ) {
+
+    std::cout << "D" << std::endl;
+
+    stk::mesh::Part * const part = *ip;
+
+    // Check whether this part should be output to results database.
+    if (stk::io::is_part_io_part(*part)) {
+      // Get Ioss::GroupingEntity corresponding to this part...
+      Ioss::GroupingEntity *entity = region.get_entity(part->name());
+      if (entity != NULL) {
+        if (entity->type() == Ioss::ELEMENTBLOCK) {
+          stk::io::util::put_field_data( bulk,
+                                         *part,
+                                         stk::mesh::fem_entity_rank( part->primary_entity_rank()),
+                                         entity,
+                                         Ioss::Field::Field::TRANSIENT,
+                                         output_all_fields
+                                       );
+        }
+      }
+    }
+  }
+  std::cout << "E" << std::endl;
+  region.end_state(step);
 }
 // =============================================================================
 //

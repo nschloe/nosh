@@ -103,7 +103,7 @@ double
 Ginla::MagneticVectorPotential::Spherical::
 getDAxDMu(const Point & x) const
 {
-return -0.5 * sin(theta_) * x[1] + 0.5 * cos(theta_) * sin(phi_) * x[2];
+    return -0.5 * sin(theta_) * x[1] + 0.5 * cos(theta_) * sin(phi_) * x[2];
 }
 // ============================================================================
 double

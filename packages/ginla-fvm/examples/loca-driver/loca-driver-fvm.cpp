@@ -132,8 +132,9 @@ main ( int argc, char *argv[] )
                                        mesh,
                                        problemParameters
                                      );
-       problemParameters.set<double>( "phi", 0.5 * M_PI );
-       problemParameters.set<double>( "theta", 0.0 );
+//        problemParameters.set<double>( "mu", 2.979541915949315e-01 );
+//        problemParameters.set<double>( "phi", 1.57079633 );
+//        problemParameters.set<double>( "theta", 0.0 );
 
 //         VIO::EpetraMesh::read( eComm,
 //                                getAbsolutePath( initialGuessList.get<std::string> ( "State" ), xmlPath ),
@@ -156,9 +157,12 @@ main ( int argc, char *argv[] )
             problemParameters.setParameters( overwritePList );
         }
 
+        std::cout << problemParameters << std::endl;
+
         double mu = problemParameters.get<double> ( "mu" );
         double phi = problemParameters.get<double> ( "phi" );
         double theta = problemParameters.get<double> ( "theta" );
+        std::cout << "mu, phi, theta" << mu << " " <<  phi << " " << theta << std::endl;
         // double phi = 0.0; double theta = 0.0; // X
         // double phi = 0.5 * M_PI; double theta = 0.0; // Y
         // double phi = 0.0; double theta = 0.5 * M_PI; // Z

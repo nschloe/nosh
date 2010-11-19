@@ -29,6 +29,9 @@
 #include <Epetra_Vector.h>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
+
+#include <Ioss_SubSystem.h>
+#include <stk_io/util/UseCase_mesh.hpp>
 // =============================================================================
 namespace Ginla {
 namespace EpetraFVM {
@@ -52,6 +55,7 @@ protected:
 private:
     const std::string fileNameBase_;
     int time_;
+    Teuchos::RCP<stk::io::util::MeshData> meshData_;
 
 private:
     void
@@ -59,6 +63,22 @@ private:
                const Teuchos::RCP<stk::mesh::BulkData> & bulkData,
                const Epetra_Vector                     & psi
              ) const;
+
+    int
+    process_output_request_( stk::io::util::MeshData &mesh_data,
+                             stk::mesh::BulkData &bulk,
+                             double time,
+                             const Teuchos::ParameterList & parameterList,
+                             bool output_all_fields
+                           );
+
+    void
+    process_output_request_( Ioss::Region &region,
+                             stk::mesh::BulkData &bulk,
+                             int step,
+                             bool add_all_fields = false
+                           );
+
 };
 // -----------------------------------------------------------------------------
 // helper function

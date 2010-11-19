@@ -94,6 +94,12 @@ read( const Epetra_Comm & comm,
 
     Teuchos::RCP<stk::io::util::MeshData> mesh_data = Teuchos::rcp( new stk::io::util::MeshData() );
 
+    // add fields for parameters
+//     Ioss::Field("mu", Ioss::Field::REAL, "scalar", Ioss::Field::REDUCTION, 1);
+//     mesh_data->m_region->field_add(  );
+//     Ioss::Field::ATTRIBUTE
+
+
 #ifdef HAVE_MPI
     const Epetra_MpiComm& mpicomm = Teuchos::dyn_cast<const Epetra_MpiComm>( comm );
     MPI_Comm mcomm = mpicomm.Comm();
