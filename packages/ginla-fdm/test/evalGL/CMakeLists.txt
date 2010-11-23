@@ -53,7 +53,6 @@ ADD_EXECUTABLE ( ${MY_EXECUTABLE}
 
 SET ( internal_LIBS
       ginlafdm
-      ginla
       recti
       vio
     )

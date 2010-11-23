@@ -100,20 +100,27 @@ getChi () const
 // =============================================================================
 void
 Ginla::FDM::State::
-save( const std::string            & fileName,
+save( const std::string            & fileBaseName,
+      const std::string            & filenameExtension,
+      const int                      index,
       const Teuchos::ParameterList & p
     ) const
 {
-    grid_->writeWithGrid( psi_, p, fileName );
+    std::stringstream fileName;
+    fileName << fileBaseName << std::setw(4) << std::setfill('0') << index << "." << filenameExtension;
+
+    grid_->writeWithGrid( psi_, p, fileName.str() );
 }
 // =============================================================================
 void
 Ginla::FDM::State::
-save( const std::string & fileName
+save( const std::string            & fileBaseName,
+      const std::string            & filenameExtension,
+      const int                      index
     ) const
 {
     Teuchos::ParameterList empty;
-    this->save( fileName, empty );
+    this->save( fileBaseName, filenameExtension, index, empty );
 }
 // =============================================================================
 double

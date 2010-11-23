@@ -49,5 +49,4 @@ INCLUDE_DIRECTORIES( ${ginzburg-landau_SOURCE_DIR}/packages/ginla-fdm/src
 ADD_LIBRARY ( ginlafdm
               ${ginlafdm_SRCS} )
 
-TARGET_LINK_LIBRARIES ( ginlafdm
-                        ginla )
+TARGET_LINK_LIBRARIES ( ginlafdm )

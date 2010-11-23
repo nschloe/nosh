@@ -21,10 +21,8 @@ INCLUDE_DIRECTORIES( ${Trilinos_INCLUDE_DIRS} )
 FIND_PACKAGE( VTK REQUIRED )
 INCLUDE_DIRECTORIES( ${VTK_INCLUDE_DIRS} )
 
-INCLUDE_DIRECTORIES( ${ginzburg-landau_SOURCE_DIR}/packages/vio/src
-                     ${ginzburg-landau_SOURCE_DIR}/packages/ginla/src
-                     ${ginzburg-landau_SOURCE_DIR}/packages/ginla/src-fdm )
+INCLUDE_DIRECTORIES( ${ginzburg-landau_SOURCE_DIR}/packages/ginla-fdm/src-vio
+                     ${ginzburg-landau_SOURCE_DIR}/packages/ginla-fdm/src )
 
-#ADD_LIBRARY ( recti STATIC
 ADD_LIBRARY ( recti
               ${recti_SRCS} )

@@ -9,10 +9,8 @@ FIND_PACKAGE( Boost
               REQUIRED )
 INCLUDE_DIRECTORIES ( ${Boost_INCLUDE_DIRS} )
 
-INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/packages/vio/src
-                      ${ginzburg-landau_SOURCE_DIR}/packages/recti/src
-                      ${ginzburg-landau_SOURCE_DIR}/packages/ginla/src
-                      ${ginzburg-landau_SOURCE_DIR}/packages/ginla/src-fdm
+INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/packages/ginla-fdm/src
+                      ${ginzburg-landau_SOURCE_DIR}/packages/ginla-fdm/src-recti
                     )
 
 SET( MY_EXECUTABLE
@@ -31,7 +29,6 @@ ADD_EXECUTABLE ( ${MY_EXECUTABLE}
 SET ( internal_LIBS
       recti
       ginlafdm
-      ginla
       vio
     )
 

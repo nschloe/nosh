@@ -100,14 +100,19 @@ getChi () const
 // =============================================================================
 void
 Ginla::FVM::State::
-save( const std::string            & fileName,
+save( const std::string            & fileBaseName,
+      const std::string            & filenameExtension,
+      const int                      index,
       const Teuchos::ParameterList & p
     ) const
 {
     TEUCHOS_ASSERT( !mesh_.is_null() );
 
+    std::stringstream fileName;
+    fileName << fileBaseName << std::setw(4) << std::setfill('0') << index << "." << filenameExtension;
+
     Teuchos::RCP<VIO::TpetraMesh::Writer> writer =
-        Teuchos::rcp( new VIO::TpetraMesh::Writer( fileName ) );
+        Teuchos::rcp( new VIO::TpetraMesh::Writer( fileName.str() ) );
 
     writer->setMesh( *mesh_ );
     writer->setValues( psi_ );
@@ -120,11 +125,13 @@ save( const std::string            & fileName,
 // =============================================================================
 void
 Ginla::FVM::State::
-save( const std::string & fileName
+save( const std::string & fileBaseName,
+      const std::string & filenameExtension,
+      const int           index
     ) const
 {
     Teuchos::ParameterList empty;
-    this->save( fileName, empty );
+    this->save( fileBaseName, filenameExtension, index, empty );
 }
 // =============================================================================
 double
