@@ -44,10 +44,10 @@ public:
     ~StkMeshReader();
 
     void
-    read( const Epetra_Comm & comm,
-          Teuchos::RCP<Epetra_Vector> & psi,
+    read( const Epetra_Comm                       & comm,
+          Teuchos::RCP<Epetra_Vector>             & psi,
           Teuchos::RCP<Ginla::EpetraFVM::StkMesh> & mesh,
-          Teuchos::ParameterList & parameterList
+          Teuchos::ParameterList                  & parameterList
         );
 
 protected:
@@ -57,7 +57,8 @@ private:
 private:
     Teuchos::RCP<Epetra_Vector>
     createPsi_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
-                const Teuchos::RCP<VectorFieldType>                 & psi_field
+                const Teuchos::RCP<VectorFieldType>                 & psir_field,
+                const Teuchos::RCP<VectorFieldType>                 & psii_field
               ) const;
 };
 // -----------------------------------------------------------------------------

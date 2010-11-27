@@ -61,7 +61,11 @@ read( const Epetra_Comm & comm,
             Teuchos::ParameterList & parameterList
     )
 {
-  const unsigned int neq = 2;
+  // Take two different fields with one component
+  // instead of one field with two components. This works around
+  // Ioss's inability to properly read psi_R, psi_Z as a complex variable.
+  // (It can handle data_X, data_Y, data_Z though.)
+  const unsigned int neq = 1;
 
   Teuchos::RCP<stk::mesh::MetaData> metaData =
       Teuchos::rcp( new stk::mesh::MetaData( stk::mesh::fem_entity_rank_names() ) );
@@ -73,10 +77,17 @@ read( const Epetra_Comm & comm,
        Teuchos::rcpFromRef( metaData->declare_field< VectorFieldType >( "coordinates" ) );
   stk::io::set_field_role(*coordinatesField, Ioss::Field::ATTRIBUTE);
 
-  Teuchos::RCP<VectorFieldType> solution_field =
-      Teuchos::rcpFromRef( metaData->declare_field< VectorFieldType >( "psi" ) );
-  stk::mesh::put_field( *solution_field , stk::mesh::Node , metaData->universal_part(), neq );
-  stk::io::set_field_role(*solution_field, Ioss::Field::TRANSIENT);
+  // real part
+  Teuchos::RCP<VectorFieldType> psir_field =
+      Teuchos::rcpFromRef( metaData->declare_field< VectorFieldType >( "psi_R" ) );
+  stk::mesh::put_field( *psir_field , stk::mesh::Node , metaData->universal_part(), neq );
+  stk::io::set_field_role(*psir_field, Ioss::Field::TRANSIENT);
+
+  // imaginary part
+  Teuchos::RCP<VectorFieldType> psii_field =
+      Teuchos::rcpFromRef( metaData->declare_field< VectorFieldType >( "psi_Z" ) );
+  stk::mesh::put_field( *psii_field , stk::mesh::Node , metaData->universal_part(), neq );
+  stk::io::set_field_role(*psii_field, Ioss::Field::TRANSIENT);
 
   Teuchos::RCP<stk::io::util::MeshData> mesh_data =
       Teuchos::rcp( new stk::io::util::MeshData() );
@@ -140,7 +151,8 @@ read( const Epetra_Comm & comm,
   metaData->commit();
 
   // Restart index to read solution from exodus file.
-  int index = -1; // Default to no restart
+//   int index = -1; // Default to no restart
+  int index = 1; // restart from the first step
   if ( index<1 )
     std::cout << "Restart Index not set. Not reading solution from exodus (" << index << ")"<< endl;
   else
@@ -160,7 +172,7 @@ read( const Epetra_Comm & comm,
     mesh = Teuchos::rcp( new Ginla::EpetraFVM::StkMesh( comm, metaData, bulkData, coordinatesField ) );
 
     // create the state
-    psi = this->createPsi_( mesh, solution_field );
+    psi = this->createPsi_( mesh, psir_field, psii_field );
 
     // Add some dummy data.
     // TODO Replace by proper values.
@@ -173,7 +185,8 @@ read( const Epetra_Comm & comm,
 Teuchos::RCP<Epetra_Vector>
 Ginla::EpetraFVM::StkMeshReader::
 createPsi_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
-            const Teuchos::RCP<VectorFieldType>                 & psi_field
+            const Teuchos::RCP<VectorFieldType>                 & psir_field,
+            const Teuchos::RCP<VectorFieldType>                 & psii_field
           ) const
 {
     // Get owned nodes.
@@ -183,16 +196,18 @@ createPsi_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
     Teuchos::RCP<Epetra_Vector> psi = Teuchos::rcp( new Epetra_Vector( *mesh->getComplexMap() ) );
 
     // Fill the vector with data from the file
+    int ind;
     for ( int k=0; k<ownedNodes.size(); k++ )
     {
-        double* psiVals = stk::mesh::field_data( *psi_field, *ownedNodes[k] );
+        // real part
+        double* psirVal = stk::mesh::field_data( *psir_field, *ownedNodes[k] );
+        ind = 2*k;
+        psi->ReplaceMyValues( 1, psirVal, &ind );
 
-        // TODO remove this hardcode
-        psiVals[0] = 1.0;
-        psiVals[1] = 0.0;
-
-        int ind[2] = { 2*k, 2*k+1 };
-        psi->ReplaceMyValues( 2, psiVals, ind );
+        // imaginary part
+        double* psiiVal = stk::mesh::field_data( *psii_field, *ownedNodes[k] );
+        ind = 2*k+1;
+        psi->ReplaceMyValues( 1, psiiVal, &ind );
     }
 
     return psi;

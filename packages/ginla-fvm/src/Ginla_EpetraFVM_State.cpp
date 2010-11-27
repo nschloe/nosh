@@ -217,22 +217,28 @@ mergePsi_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
     // Get owned nodes.
     const std::vector<stk::mesh::Entity*> & ownedNodes =  mesh->getOwnedNodes();
 
-    VectorFieldType * psi_field = mesh->getMetaData()->get_field<VectorFieldType>( "psi" );
-    TEUCHOS_ASSERT( psi_field != 0 );
+    VectorFieldType * psir_field = mesh->getMetaData()->get_field<VectorFieldType>( "psi_R" );
+    TEUCHOS_ASSERT( psir_field != 0 );
+
+    VectorFieldType * psii_field = mesh->getMetaData()->get_field<VectorFieldType>( "psi_Z" );
+    TEUCHOS_ASSERT( psii_field != 0 );
 
     // Merge psi into the mesh.
     for (int k=0; k < ownedNodes.size(); k++)
     {
         // Extract real and imaginary part.
-        double* localPsi = stk::mesh::field_data( *psi_field, *ownedNodes[k] );
-        localPsi[0] = psi[2*k];
-        localPsi[1] = psi[2*k+1];
+        double* localPsiR = stk::mesh::field_data( *psir_field, *ownedNodes[k] );
+        localPsiR[0] = psi[2*k];
+
+        double* localPsiI = stk::mesh::field_data( *psii_field, *ownedNodes[k] );
+        localPsiI[0] = psi[2*k+1];
     }
 
     // This communication updates the field values on un-owned nodes
     // it is correct because the zeroSolutionField above zeros them all
     // and the getSolutionField only sets the owned nodes.
-    stk::mesh::parallel_reduce( *mesh->getBulkData() , stk::mesh::sum(*psi_field));
+    stk::mesh::parallel_reduce( *mesh->getBulkData() , stk::mesh::sum(*psir_field));
+    stk::mesh::parallel_reduce( *mesh->getBulkData() , stk::mesh::sum(*psii_field));
 
     return;
 }
