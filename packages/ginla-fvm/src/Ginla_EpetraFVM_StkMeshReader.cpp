@@ -64,10 +64,10 @@ read( const Epetra_Comm & comm,
   const unsigned int neq = 2;
 
   Teuchos::RCP<stk::mesh::MetaData> metaData =
-      Teuchos::rcp( new stk::mesh::MetaData(stk::mesh::fem_entity_rank_names() ) );
+      Teuchos::rcp( new stk::mesh::MetaData( stk::mesh::fem_entity_rank_names() ) );
   unsigned int field_data_chunk_size = 1001;
   Teuchos::RCP<stk::mesh::BulkData> bulkData =
-      Teuchos::rcp( new stk::mesh::BulkData(*metaData , MPI_COMM_WORLD , field_data_chunk_size ) );
+      Teuchos::rcp( new stk::mesh::BulkData( *metaData , MPI_COMM_WORLD , field_data_chunk_size ) );
 
   Teuchos::RCP<VectorFieldType> coordinatesField =
        Teuchos::rcpFromRef( metaData->declare_field< VectorFieldType >( "coordinates" ) );
@@ -75,7 +75,7 @@ read( const Epetra_Comm & comm,
 
   Teuchos::RCP<VectorFieldType> solution_field =
       Teuchos::rcpFromRef( metaData->declare_field< VectorFieldType >( "psi" ) );
-  stk::mesh::put_field( *solution_field , stk::mesh::Node , metaData->universal_part() , neq );  
+  stk::mesh::put_field( *solution_field , stk::mesh::Node , metaData->universal_part(), neq );
   stk::io::set_field_role(*solution_field, Ioss::Field::TRANSIENT);
 
   Teuchos::RCP<stk::io::util::MeshData> mesh_data =
@@ -83,10 +83,8 @@ read( const Epetra_Comm & comm,
 
   Ioss::Init::Initializer io;
 
-  std::string fileName = "init.e";
-
   stk::io::util::create_input_mesh( "exodusii",
-                                    fileName,
+                                    fileName_,
                                     "",
                                     MPI_COMM_WORLD,
                                     *metaData,
