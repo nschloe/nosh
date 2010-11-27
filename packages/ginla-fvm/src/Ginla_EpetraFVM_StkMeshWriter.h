@@ -55,7 +55,6 @@ protected:
 private:
     const std::string fileNameBase_;
     int time_;
-    Teuchos::RCP<stk::io::util::MeshData> meshData_;
 
 private:
     void

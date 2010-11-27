@@ -56,11 +56,8 @@ private:
 
 private:
     Teuchos::RCP<Epetra_Vector>
-    createPsi_( const Epetra_Comm & comm,
-                const Teuchos::RCP<const stk::mesh::MetaData> & metaData,
-                const Teuchos::RCP<const stk::mesh::BulkData> & bulkData,
-                const Teuchos::RCP<VectorFieldType> & psiR_field,
-                const Teuchos::RCP<VectorFieldType> & psiI_field
+    createPsi_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
+                const Teuchos::RCP<VectorFieldType>                 & psi_field
               ) const;
 };
 // -----------------------------------------------------------------------------

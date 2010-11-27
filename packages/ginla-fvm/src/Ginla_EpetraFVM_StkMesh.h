@@ -38,6 +38,11 @@ namespace stk {
         class MetaData;
         class BulkData;
     }
+    namespace io {
+        namespace util {
+            class MeshData;
+        }
+    }
 }
 class Epetra_Vector;
 class Epetra_Map;
@@ -63,6 +68,9 @@ public:
 
     const Teuchos::RCP<stk::mesh::MetaData>
     getMetaData() const;
+
+    const Teuchos::RCP<stk::io::util::MeshData>
+    getMeshData() const;
 
     const Teuchos::RCP<stk::mesh::BulkData>
     getBulkData() const;
@@ -91,6 +99,9 @@ public:
     std::vector<stk::mesh::Entity*>
     getOwnedCells() const;
 
+    std::vector<stk::mesh::Entity*>
+    getOwnedNodes() const;
+
     Teuchos::Tuple<Point,3>
     getNodeCoordinates( const stk::mesh::PairIterRelation & relation ) const;
 
@@ -102,13 +113,15 @@ private:
 
     const Epetra_Comm & comm_;
 
-    const Teuchos::RCP<stk::mesh::MetaData> metaData_;
-    const Teuchos::RCP<stk::mesh::BulkData> bulkData_;
-    const Teuchos::RCP<VectorFieldType>     coordinatesField_;
+    const Teuchos::RCP<stk::mesh::MetaData>     metaData_;
+    const Teuchos::RCP<stk::io::util::MeshData> meshData_;
+    const Teuchos::RCP<stk::mesh::BulkData>     bulkData_;
+    const Teuchos::RCP<VectorFieldType>         coordinatesField_;
 
     const Teuchos::RCP<Epetra_Map> nodesMap_;
     const Teuchos::RCP<Epetra_Map> nodesOverlapMap_;
     const Teuchos::RCP<Epetra_Map> complexMap_;
+    const Teuchos::RCP<Epetra_Map> complexOverlapMap_;
 
     Teuchos::Tuple<double,3> scaling_;
 
@@ -121,16 +134,13 @@ private:
 
 private:
     std::vector<stk::mesh::Entity*>
-    getOwnedNodes_() const;
-
-    std::vector<stk::mesh::Entity*>
     getOverlapNodes_() const;
 
     Teuchos::RCP<Epetra_Map>
-    createMap_( const std::vector<stk::mesh::Entity*> & nodesList ) const;
+    createNodesMap_( const std::vector<stk::mesh::Entity*> & nodesList ) const;
 
     Teuchos::RCP<Epetra_Map>
-    createComplexMap_() const;
+    createComplexMap_( const std::vector<stk::mesh::Entity*> & nodeList ) const;
 
     double
     computeDomainArea_() const;

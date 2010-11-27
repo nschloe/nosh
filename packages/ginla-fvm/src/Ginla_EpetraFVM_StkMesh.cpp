@@ -47,17 +47,36 @@ StkMesh( const Epetra_Comm                       & comm,
        ):
 comm_( comm ),
 metaData_( metaData ),
+meshData_( Teuchos::rcp( new stk::io::util::MeshData() ) ),
 bulkData_( bulkData ),
 coordinatesField_ ( coordinatesField ),
-nodesMap_       ( this->createMap_( this->getOwnedNodes_()   ) ),
-nodesOverlapMap_( this->createMap_( this->getOverlapNodes_() ) ),
-complexMap_( this->createComplexMap_() ),
+nodesMap_       ( this->createNodesMap_( this->getOwnedNodes()   ) ),
+nodesOverlapMap_( this->createNodesMap_( this->getOverlapNodes_() ) ),
+complexMap_       ( this->createComplexMap_( this->getOwnedNodes()   ) ),
+complexOverlapMap_( this->createComplexMap_( this->getOverlapNodes_() ) ),
 scaling_ ( Teuchos::tuple( 1.0, 1.0, 1.0 ) ),
 fvmEntitiesUpToDate_( false ),
 controlVolumes_( Teuchos::rcp( new Epetra_Vector( *nodesOverlapMap_ ) ) ),
 coedgeEdgeRatio_( Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >(  3*this->getOwnedCells().size() ) ),
 area_( 0.0 )
 {
+    // prepare the data for output
+#ifdef HAVE_MPI
+    const Epetra_MpiComm& mpicomm = Teuchos::dyn_cast<const Epetra_MpiComm>( comm_ );
+    MPI_Comm mcomm = mpicomm.Comm();
+#else
+    int mcomm = 1;
+#endif
+
+    stk::io::util::create_output_mesh( "solution", // filename base
+                                       "e", // extension
+                                       "", // working directoru
+                                       mcomm,
+                                       *bulkData_,
+                                       *metaData_,
+                                       *meshData_
+                                     );
+  return;
 }
 // =============================================================================
 Ginla::EpetraFVM::StkMesh::
@@ -70,6 +89,13 @@ Ginla::EpetraFVM::StkMesh::
 getMetaData() const
 {
   return metaData_;
+}
+// =============================================================================
+const Teuchos::RCP<stk::io::util::MeshData>
+Ginla::EpetraFVM::StkMesh::
+getMeshData() const
+{
+  return meshData_;
 }
 // =============================================================================
 const Teuchos::RCP<stk::mesh::BulkData>
@@ -120,7 +146,7 @@ scale( const Teuchos::Tuple<double,3> & newScaling )
                         "Trying to scale with " << newScaling << ". This is not what you want to do."
                       );
 
-    std::vector<stk::mesh::Entity*> ownedNodes = this->getOwnedNodes_();
+    std::vector<stk::mesh::Entity*> ownedNodes = this->getOwnedNodes();
 
     // adapt the position of the nodes component by component
     for ( int i=0; i<3; i++ )
@@ -200,7 +226,7 @@ getComplexMap() const
 // =============================================================================
 std::vector<stk::mesh::Entity*>
 Ginla::EpetraFVM::StkMesh::
-getOwnedNodes_() const
+getOwnedNodes() const
 {
     stk::mesh::Selector select_owned_in_part = stk::mesh::Selector( metaData_->universal_part() )
                                              & stk::mesh::Selector( metaData_->locally_owned_part() );
@@ -233,7 +259,7 @@ getOverlapNodes_() const
 // =============================================================================
 Teuchos::RCP<Epetra_Map>
 Ginla::EpetraFVM::StkMesh::
-createMap_( const std::vector<stk::mesh::Entity*> & nodeList ) const
+createNodesMap_( const std::vector<stk::mesh::Entity*> & nodeList ) const
 {
     int numNodes = nodeList.size();
     std::vector<int> indices(numNodes);
@@ -245,16 +271,14 @@ createMap_( const std::vector<stk::mesh::Entity*> & nodeList ) const
 // =============================================================================
 Teuchos::RCP<Epetra_Map>
 Ginla::EpetraFVM::StkMesh::
-createComplexMap_() const
+createComplexMap_( const std::vector<stk::mesh::Entity*> & nodeList ) const
 {
-    std::vector<stk::mesh::Entity*> ownedNodes = this->getOwnedNodes_();
-
     // Create a map for real/imaginary out of this.
-    int numDof = 2 * ownedNodes.size();
+    int numDof = 2 * nodeList.size();
     std::vector<int> indices(numDof);
-    for (int k=0; k < ownedNodes.size(); k++)
+    for (int k=0; k < nodeList.size(); k++)
     {
-        int globalNodeId = ownedNodes[k]->identifier() - 1;
+        int globalNodeId = nodeList[k]->identifier() - 1;
         indices[2*k]   = 2*globalNodeId;
         indices[2*k+1] = 2*globalNodeId + 1;
     }

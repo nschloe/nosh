@@ -34,6 +34,12 @@ namespace Ginla {
     class StkMesh;
   }
 }
+namespace stk {
+  namespace mesh {
+    class MetaData;
+    class BulkData;
+  }
+}
 // =============================================================================
 namespace Ginla {
 namespace EpetraFVM {
@@ -126,6 +132,13 @@ private:
 
   //! The grid on which the state exists.
   const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> mesh_;
+
+private:
+
+  void
+  mergePsi_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
+             const Epetra_Vector                                 & psi
+           ) const;
 
 };
 

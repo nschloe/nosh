@@ -44,8 +44,7 @@ typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorFieldType;
 Ginla::EpetraFVM::StkMeshWriter::
 StkMeshWriter( const std::string & fileNameBase ):
 fileNameBase_( fileNameBase ),
-time_( 0 ),
-meshData_( Teuchos::rcp( new stk::io::util::MeshData() ) )
+time_( 0 )
 {
 }
 // =============================================================================
@@ -62,6 +61,7 @@ write( const Epetra_Vector                                 & psi,
        const Teuchos::ParameterList                        & parameterList
      )
 {
+
     // Get a native MPI comminicator object.
 #ifdef HAVE_MPI
     const Epetra_MpiComm& mpicomm = Teuchos::dyn_cast<const Epetra_MpiComm>( psi.Map().Comm() );
@@ -88,7 +88,7 @@ write( const Epetra_Vector                                 & psi,
                                        mcomm,
                                        *mesh->getBulkData(),
                                        *mesh->getMetaData(),
-                                       *meshData_
+                                       *mesh->getMeshData()
                                      );
 
     // Merge the state into the mesh.
@@ -97,7 +97,7 @@ write( const Epetra_Vector                                 & psi,
 //     mesh->getBulkData()->modification_end();
 
     // Write it.
-    int out_step = stk::io::util::process_output_request( *meshData_,
+    int out_step = stk::io::util::process_output_request( *mesh->getMeshData(),
                                                           *mesh->getBulkData(),
                                                           step
                                                         );

@@ -22,6 +22,10 @@
 #include "Ginla_EpetraFVM_StkMesh.h"
 #include "Ginla_EpetraFVM_StkMeshWriter.h"
 
+#include <stk_mesh/base/GetEntities.hpp>
+#include <stk_mesh/base/FieldData.hpp>
+#include <stk_mesh/base/FieldParallel.hpp>
+
 #include <LOCA_Parameter_Vector.H>
 #include <Epetra_Comm.h>
 #include <Epetra_Map.h>
@@ -35,6 +39,8 @@ State( const Epetra_Vector                                 & psi,
 {
     TEUCHOS_ASSERT_EQUALITY( psi.GlobalLength(),
                              2 * mesh->getNumNodes() );
+
+    return;
 }
 // =============================================================================
 Ginla::EpetraFVM::State::
@@ -83,7 +89,27 @@ save( const std::string            & fileBaseName,
       const Teuchos::ParameterList & p
     ) const
 {
-    Ginla::EpetraFVM::StkMeshWrite( fileBaseName, index,  psi_, mesh_, p );
+
+    // Merge the state into the mesh.
+//     mesh_->getBulkData()->modification_begin();
+    this->mergePsi_( mesh_, psi_ );
+//     mesh_->getBulkData()->modification_end();
+
+
+    // Write it out to the file that's been specified previously.
+    int out_step = stk::io::util::process_output_request( *mesh_->getMeshData(),
+                                                          *mesh_->getBulkData(),
+                                                          index
+                                                        );
+
+    std::cout << "Ginla::EpetraFVM::StkMeshWriter::write:\n"
+              << "\twriting time " << index << "\n"
+              << "\tindex " << out_step << "\n"
+              << "\tto file " //<< fileName.str()
+              << std::endl;
+
+//     Ginla::EpetraFVM::StkMeshWrite( fileBaseName, index,  psi_, mesh_, p );
+
     return;
 }
 // =============================================================================
@@ -180,5 +206,34 @@ getVorticity () const
 //                     );
 
   return 0;
+}
+// =============================================================================
+void
+Ginla::EpetraFVM::State::
+mergePsi_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
+           const Epetra_Vector                                 & psi
+         ) const
+{
+    // Get owned nodes.
+    const std::vector<stk::mesh::Entity*> & ownedNodes =  mesh->getOwnedNodes();
+
+    VectorFieldType * psi_field = mesh->getMetaData()->get_field<VectorFieldType>( "psi" );
+    TEUCHOS_ASSERT( psi_field != 0 );
+
+    // Merge psi into the mesh.
+    for (int k=0; k < ownedNodes.size(); k++)
+    {
+        // Extract real and imaginary part.
+        double* localPsi = stk::mesh::field_data( *psi_field, *ownedNodes[k] );
+        localPsi[0] = psi[2*k];
+        localPsi[1] = psi[2*k+1];
+    }
+
+    // This communication updates the field values on un-owned nodes
+    // it is correct because the zeroSolutionField above zeros them all
+    // and the getSolutionField only sets the owned nodes.
+    stk::mesh::parallel_reduce( *mesh->getBulkData() , stk::mesh::sum(*psi_field));
+
+    return;
 }
 // ============================================================================

@@ -42,4 +42,5 @@ TARGET_LINK_LIBRARIES ( ${MY_EXECUTABLE}
                         ${Trilinos_LIBRARIES}
                         ${Trilinos_TPL_LIBRARIES}
                         ${Boost_LIBRARIES}
+                        bfd
                       )
