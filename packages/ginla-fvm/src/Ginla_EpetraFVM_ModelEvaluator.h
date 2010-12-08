@@ -36,7 +36,7 @@ namespace Ginla
   }
   namespace EpetraFVM {
     class State;
-    class StkMesh;
+    class StkMesh3d;
   }
 }
 
@@ -51,7 +51,7 @@ class ModelEvaluator: public EpetraExt::ModelEvaluator
 public:
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   //! Constructor without initial guess.
-  ModelEvaluator ( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>               & mesh,
+  ModelEvaluator ( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh3d>               & mesh,
                    const Teuchos::ParameterList                                & params,
                    const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp,
                    const Teuchos::RCP<Ginla::EpetraFVM::State>                 & initialState
@@ -135,7 +135,7 @@ private:
 //    const Teuchos::RCP<const TComm> & tComm_;
 //    Teuchos::RCP<const TMap>          tMap_;
 
-   const Teuchos::RCP<Ginla::EpetraFVM::StkMesh> mesh_;
+   const Teuchos::RCP<Ginla::EpetraFVM::StkMesh3d> mesh_;
 
    const Teuchos::RCP<Epetra_Vector> x_;
 
@@ -149,7 +149,7 @@ private:
    Teuchos::RCP<Epetra_Vector> p_current_;
 
    const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp_;
-   const Teuchos::RCP<Ginla::EpetraFVM::KeoFactory> keoFactory_;
+   const Teuchos::RCP<Ginla::EpetraFVM::KeoFactory3d> keoFactory_;
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 private:
     void

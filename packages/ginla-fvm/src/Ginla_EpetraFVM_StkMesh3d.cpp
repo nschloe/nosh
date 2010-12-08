@@ -208,7 +208,7 @@ getOwnedCells() const
                                            & stk::mesh::Selector( metaData_->locally_owned_part() );
   std::vector<stk::mesh::Entity*> cells;
   stk::mesh::get_selected_entities( select_owned_in_part,
-                                    bulkData_->buckets( stk::mesh::Face ),
+                                    bulkData_->buckets( stk::mesh::Element ),
                                     cells
                                   );
   return cells;
@@ -348,11 +348,11 @@ computeFvmEntities_() const
       controlVolumes_->ReplaceMap( *nodesOverlapMap_ );
   controlVolumes_->PutScalar( 0.0 );
 
-//   TEUCHOS_ASSERT( !coedgeEdgeRatio_.is_null() );
-//   TEUCHOS_ASSERT_EQUALITY( coedgeEdgeRatio_.size(), 3*cells.size() );
-
   std::vector<stk::mesh::Entity*> cells = this->getOwnedCells();
   unsigned int numCells = cells.size();
+
+  TEUCHOS_ASSERT( !coareaEdgeRatio_.is_null() );
+  TEUCHOS_ASSERT_EQUALITY( coareaEdgeRatio_.size(), 6*numCells );
 
   // Calculate the contributions to the finite volumes and the finite volume boundary areas cell by cell.
   for (int k=0; k < cells.size(); k++)
@@ -387,11 +387,6 @@ computeFvmEntities_() const
               const Point & x1 = localNodes[e1];
               int gid1 = (*rel[e1].entity()).identifier() - 1;
 
-              double edgeLength = this->norm2_( this->add_( 1.0, x1, -1.0, x0 ) );
-
-              // edge midpoint
-              Point mp = this->add_( 0.5, x0, 0.5, x1 );
-
               // Get the two other nodes.
               Teuchos::Tuple<unsigned int,2> other = this->getOtherIndices_( e0, e1 );
 
@@ -400,8 +395,12 @@ computeFvmEntities_() const
               Point ccFace0 = this->computeTriangleCircumcenter_( x0, x1, localNodes[other[0]] );
               Point ccFace1 = this->computeTriangleCircumcenter_( x0, x1, localNodes[other[1]] );
 
+              // edge midpoint
+              Point mp = this->add_( 0.5, x0, 0.5, x1 );
               // Compute the coarea.
               double coarea = this->getQuadrilateralArea_( mp, ccFace0, cc, ccFace1 );
+
+              double edgeLength = this->norm2_( this->add_( 1.0, x1, -1.0, x0 ) );
 
               coareaEdgeRatio_[k][edgeIndex++] = coarea / edgeLength;
 
@@ -477,19 +476,21 @@ getQuadrilateralArea_( const Point & node0,
 {
     // Nodes are expected to be provided in order.
 
-    // squared length of the diagonals
+    // squared lengths of the diagonals
     double p = this->norm2squared_( this->add_( 1.0, node3, -1.0, node1 ) );
     double q = this->norm2squared_( this->add_( 1.0, node2, -1.0, node0 ) );
 
-    // square length 
-    double a = this->norm2squared_( node0 );
-    double b = this->norm2squared_( node1 );
-    double c = this->norm2squared_( node2 );
-    double d = this->norm2squared_( node3 );
+    // square lengths or the sides
+    double a = this->norm2squared_( this->add_( 1.0, node1, -1.0, node0 ) );
+    double b = this->norm2squared_( this->add_( 1.0, node2, -1.0, node1 ) );
+    double c = this->norm2squared_( this->add_( 1.0, node3, -1.0, node2 ) );
+    double d = this->norm2squared_( this->add_( 1.0, node0, -1.0, node3 ) );
 
     // http://mathworld.wolfram.com/Quadrilateral.html
-    double alpha = b+d-a-c;
-    return sqrt( 4.0*p*q - alpha*alpha ) / 4.0;
+    double alpha = b + d - a - c;
+    double beta  = 4.0*p*q - alpha*alpha;
+    TEUCHOS_ASSERT_INEQUALITY( beta, >=, 0.0 );
+    return sqrt( beta ) / 4.0;
 }
 // =============================================================================
 Point

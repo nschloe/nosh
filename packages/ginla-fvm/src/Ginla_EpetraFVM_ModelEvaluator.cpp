@@ -21,9 +21,9 @@
 
 #include "Ginla_EpetraFVM_State.h"
 #include "Ginla_MagneticVectorPotential_Virtual.h"
-#include "Ginla_EpetraFVM_KeoFactory.h"
+#include "Ginla_EpetraFVM_KeoFactory3d.h"
 #include "Ginla_EpetraFVM_KeoPreconditioner.h"
-#include "Ginla_EpetraFVM_StkMesh.h"
+#include "Ginla_EpetraFVM_StkMesh3d.h"
 
 #include <Epetra_Map.h>
 #include <Epetra_LocalMap.h>
@@ -33,7 +33,7 @@
 
 // ============================================================================
 Ginla::EpetraFVM::ModelEvaluator::
-ModelEvaluator ( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>               & mesh,
+ModelEvaluator ( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh3d>               & mesh,
                  const Teuchos::ParameterList                                & problemParams,
                  const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp,
                  const Teuchos::RCP<Ginla::EpetraFVM::State>                 & initialState
@@ -46,7 +46,7 @@ ModelEvaluator ( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>               & m
         p_names_( Teuchos::null ),
         p_current_( Teuchos::null ),
         mvp_( mvp ),
-        keoFactory_( Teuchos::rcp( new Ginla::EpetraFVM::KeoFactory( mesh, mvp ) ) )
+        keoFactory_( Teuchos::rcp( new Ginla::EpetraFVM::KeoFactory3d( mesh, mvp ) ) )
 {
   this->setupParameters_( problemParams );
 
@@ -346,6 +346,9 @@ computeF_ ( const Epetra_Vector                             & x,
 
   // Make sure control volumes and state still match.
   TEUCHOS_ASSERT_EQUALITY( 2*controlVolumes.MyLength(), x.MyLength() );
+
+  std::cout << controlVolumes.GlobalLength() << std::endl;
+  controlVolumes.Print( std::cout );
 
   for ( int k=0; k<controlVolumes.MyLength(); k++ )
   {

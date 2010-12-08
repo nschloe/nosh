@@ -29,8 +29,8 @@
 // forward declarations
 namespace Ginla {
     namespace EpetraFVM {
-        class KeoFactory;
-        class StkMesh;
+        class KeoFactory3d;
+        class StkMesh3d;
     }
 }
 class Epetra_FECrsGraph;
@@ -43,7 +43,7 @@ namespace EpetraFVM {
 class JacobianOperator : public Epetra_Operator
 {
 public:
-    JacobianOperator( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>               & mesh,
+    JacobianOperator( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh3d>               & mesh,
                       const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp
                     );
 
@@ -98,8 +98,8 @@ private:
 
     Teuchos::RCP<const Epetra_Vector> currentX_;
 
-    const Teuchos::RCP<Ginla::EpetraFVM::StkMesh> mesh_;
-    const Teuchos::RCP<Ginla::EpetraFVM::KeoFactory> keoFactory_;
+    const Teuchos::RCP<Ginla::EpetraFVM::StkMesh3d> mesh_;
+    const Teuchos::RCP<Ginla::EpetraFVM::KeoFactory3d> keoFactory_;
     const Teuchos::RCP<Epetra_FECrsMatrix> keoMatrix_;
 
     double temperature_;

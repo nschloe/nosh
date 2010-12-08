@@ -31,8 +31,8 @@
 // =============================================================================
 namespace Ginla {
     namespace EpetraFVM {
-        class KeoFactory;
-        class StkMesh;
+        class KeoFactory3d;
+        class StkMesh3d;
     }
 }
 namespace Belos {
@@ -47,7 +47,7 @@ namespace EpetraFVM {
 class KeoPreconditioner: public Epetra_Operator
 {
 public:
-    KeoPreconditioner( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>               & mesh,
+    KeoPreconditioner( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh3d>               & mesh,
                        const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp
                      );
 
@@ -102,7 +102,7 @@ private:
     bool useTranspose_;
     const Teuchos::RCP<const Epetra_Comm> comm_;
 
-    Teuchos::RCP<Ginla::EpetraFVM::KeoFactory> keoFactory_;
+    Teuchos::RCP<Ginla::EpetraFVM::KeoFactory3d> keoFactory_;
     Teuchos::RCP<Epetra_FECrsMatrix> keoPrec_;
 
     Teuchos::RCP<Belos::EpetraPrecOp> belosPrec_;

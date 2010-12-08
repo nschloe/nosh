@@ -18,21 +18,21 @@
 */
 // =============================================================================
 #include "Ginla_EpetraFVM_JacobianOperator.h"
-#include "Ginla_EpetraFVM_KeoFactory.h"
-#include "Ginla_EpetraFVM_StkMesh.h"
+#include "Ginla_EpetraFVM_KeoFactory3d.h"
+#include "Ginla_EpetraFVM_StkMesh3d.h"
 
 #include <Teuchos_ArrayRCP.hpp>
 #include <Epetra_Vector.h>
 
 // =============================================================================
 Ginla::EpetraFVM::JacobianOperator::
-JacobianOperator( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>               & mesh,
+JacobianOperator( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh3d>               & mesh,
                   const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp
                 ):
         useTranspose_( false ),
         comm_( mesh->getComm() ),
         mesh_( mesh ),
-        keoFactory_( Teuchos::rcp( new Ginla::EpetraFVM::KeoFactory( mesh, mvp ) ) ),
+        keoFactory_( Teuchos::rcp( new Ginla::EpetraFVM::KeoFactory3d( mesh, mvp ) ) ),
         keoMatrix_( Teuchos::rcp( new Epetra_FECrsMatrix( Copy, keoFactory_->buildKeoGraph() ) ) ),
         currentX_ ( Teuchos::null ),
         temperature_( 0.0 )
