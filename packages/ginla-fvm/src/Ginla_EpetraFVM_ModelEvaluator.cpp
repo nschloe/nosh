@@ -342,6 +342,7 @@ computeF_ ( const Epetra_Vector                             & x,
   TEUCHOS_ASSERT( FVec.Map().SameAs( x.Map() ) );
 
   const Epetra_Vector & controlVolumes = *(mesh_->getControlVolumes());
+//   const Epetra_Vector & thickness      = *(mesh_->getThickness());
 
   // Make sure control volumes and state still match.
   TEUCHOS_ASSERT_EQUALITY( 2*controlVolumes.MyLength(), x.MyLength() );
@@ -350,15 +351,8 @@ computeF_ ( const Epetra_Vector                             & x,
   {
       // Do the equivalent of
       //   res[k] += controlVolumes[k] * psi[k] * ( (1.0-temperature) - std::norm(psi[k]) );
-      double alpha = controlVolumes[k]
+      double alpha = controlVolumes[k] //* thickness[k] *
                      * ( (1.0-temperature) - x[2*k]*x[2*k] - x[2*k+1]*x[2*k+1] );
-
-//       std::cout << "controlVolumes[" << k << "] = " << controlVolumes[k] << std::endl;
-//       std::cout << "temperature = " << temperature << std::endl;
-//       std::cout << "x[" << 2*k << "] = " << x[2*k] << std::endl;
-//       std::cout << "x[" << 2*k+1 << "] = " << x[2*k+1] << std::endl;
-//       std::cout << "alpha = " << alpha << std::endl;
-//       std::cout << std::endl;
 
       // real part
       TEUCHOS_ASSERT_EQUALITY( 0, FVec.SumIntoMyValue( 2*k,
@@ -370,9 +364,6 @@ computeF_ ( const Epetra_Vector                             & x,
                                                        0,
                                                        alpha * x[2*k+1] )
                              );
-
-//       std::cout << "F(" << 2*k << ") = " << FVec[2*k] << std::endl;
-//       std::cout << "F(" << 2*k+1 << ") = " << FVec[2*k+1] << std::endl;
   }
 
   return;

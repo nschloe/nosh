@@ -77,7 +77,12 @@ buildKeo( Epetra_FECrsMatrix                              & keoMatrix,
       TEUCHOS_ASSERT_EQUALITY( 3, rel.size() );
 
       // extract the nodal coordinates
-      Teuchos::Tuple<Point,3> localNodes = mesh_->getNodeCoordinates( rel );
+      Teuchos::Array<Point> localNodes = mesh_->getNodeCoordinates( rel );
+
+      TEUCHOS_ASSERT_EQUALITY( localNodes.size(), 3 );
+
+      // extract local thickness
+//       Teuchos::Tuple<Point,3> localThickness = mesh_->getThickness( rel );
 
       // loop over the edges
       for ( int l=0; l<3; l++ )
@@ -117,8 +122,8 @@ buildKeo( Epetra_FECrsMatrix                              & keoMatrix,
 
           // We'd like to insert the 2x2 matrix
           //
-          //     [ alpha                     , - alpha * exp( -IM * aInt ) ]
-          //     [ - alpha * exp( IM * aInt ), alpha                       ]
+          //     [   alpha                   , - alpha * exp( -IM * aInt ) ]
+          //     [ - alpha * exp( IM * aInt ),   alpha                       ]
           //
           // at the indices   [ nodeIndices[0], nodeIndices[1] ] for every index pair
           // that shares and edge.
@@ -180,9 +185,6 @@ buildKeoGraph() const
       stk::mesh::PairIterRelation rel = (*cells[k]).relations();
 
       TEUCHOS_ASSERT_EQUALITY( 3, rel.size() );
-
-      // extract the nodal coordinates
-      Teuchos::Tuple<Point,3> localNodes = mesh_->getNodeCoordinates( rel );
 
       // loop over the edges
       for ( int l=0; l<3; l++ )

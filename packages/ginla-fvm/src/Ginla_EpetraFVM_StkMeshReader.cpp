@@ -77,6 +77,10 @@ read( const Epetra_Comm & comm,
        Teuchos::rcpFromRef( metaData->declare_field< VectorFieldType >( "coordinates" ) );
   stk::io::set_field_role(*coordinatesField, Ioss::Field::ATTRIBUTE);
 
+//   Teuchos::RCP<VectorFieldType> thicknessField =
+//        Teuchos::rcpFromRef( metaData->declare_field< VectorFieldType >( "thickness" ) );
+//   stk::io::set_field_role(*thicknessField, Ioss::Field::ATTRIBUTE);
+
   // real part
   Teuchos::RCP<VectorFieldType> psir_field =
       Teuchos::rcpFromRef( metaData->declare_field< VectorFieldType >( "psi_R" ) );
@@ -89,7 +93,7 @@ read( const Epetra_Comm & comm,
   stk::mesh::put_field( *psii_field , stk::mesh::Node , metaData->universal_part(), neq );
   stk::io::set_field_role(*psii_field, Ioss::Field::TRANSIENT);
 
-  Teuchos::RCP<stk::io::util::MeshData> mesh_data =
+  Teuchos::RCP<stk::io::util::MeshData> meshData =
       Teuchos::rcp( new stk::io::util::MeshData() );
 
   Ioss::Init::Initializer io;
@@ -99,7 +103,7 @@ read( const Epetra_Comm & comm,
                                     "",
                                     MPI_COMM_WORLD,
                                     *metaData,
-                                    *mesh_data,
+                                    *meshData,
                                     false
                                   );
 
@@ -159,10 +163,19 @@ read( const Epetra_Comm & comm,
     std::cout << "Restart Index set, reading solution time step: " << index << endl;
 
   stk::io::util::populate_bulk_data( *bulkData,
-                                     *mesh_data,
+                                     *meshData,
                                      "exodusii",
                                      index
                                    );
+
+  // add parameter
+  meshData->m_region->field_add( Ioss::Field( "mu",
+                                              Ioss::Field::REAL,
+                                              "scalar",
+                                              Ioss::Field::REDUCTION,
+                                              1
+                                            )
+                               );
 
   bulkData->modification_end();
 

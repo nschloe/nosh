@@ -95,6 +95,10 @@ save( const std::string            & fileBaseName,
     this->mergePsi_( mesh_, psi_ );
 //     mesh_->getBulkData()->modification_end();
 
+    // handle parameters
+    std::vector<double>  mu(1);
+    mu[0] = 0.0;
+    mesh_->getMeshData()->m_region->put_field_data( "mu", mu );
 
     // Write it out to the file that's been specified previously.
     int out_step = stk::io::util::process_output_request( *mesh_->getMeshData(),
