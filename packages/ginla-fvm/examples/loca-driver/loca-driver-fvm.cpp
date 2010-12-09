@@ -124,7 +124,7 @@ main ( int argc, char *argv[] )
 
         Teuchos::ParameterList              problemParameters;
         Teuchos::RCP<Epetra_Vector>         z = Teuchos::null;
-        Teuchos::RCP<Ginla::EpetraFVM::StkMesh> mesh = Teuchos::null;
+        Teuchos::RCP<Ginla::EpetraFVM::StkMesh3d> mesh = Teuchos::null;
 
         Ginla::EpetraFVM::StkMeshRead( *eComm,
                                        getAbsolutePath( initialGuessList.get<std::string> ( "State" ), xmlPath ),
@@ -132,6 +132,7 @@ main ( int argc, char *argv[] )
                                        mesh,
                                        problemParameters
                                      );
+
 //        problemParameters.set<double>( "mu", 2.979541915949315e-01 );
 //        problemParameters.set<double>( "phi", 1.57079633 );
 //        problemParameters.set<double>( "theta", 0.0 );
@@ -142,7 +143,8 @@ main ( int argc, char *argv[] )
 //                                mesh,
 //                                problemParameters
 //                                );
-// 
+//
+
         // create the state
         TEUCHOS_ASSERT( !z.is_null() );
         Teuchos::RCP<Ginla::EpetraFVM::State> state =
@@ -384,7 +386,7 @@ main ( int argc, char *argv[] )
             std::cerr << e << std::endl;
         status += 10;
     }
-    catch ( char * e )
+    catch ( const char * e )
     {
         if ( eComm->MyPID() == 0 )
             std::cerr << e << std::endl;

@@ -26,8 +26,6 @@ SET( MY_EXECUTABLE
      "piro-driver.exe" )
 ADD_EXECUTABLE( ${MY_EXECUTABLE}
                 ${pirodriver_SRCS} )
-SET_TARGET_PROPERTIES( ${MY_EXECUTABLE}
-                       PROPERTIES LINKER_LANGUAGE Fortran )
 TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
                        ${pirodriver_LIBS}
                        ${Trilinos_LIBRARIES}
@@ -46,8 +44,6 @@ SET( MY_EXECUTABLE
      "piro-driver-fvm.exe" )
 ADD_EXECUTABLE( ${MY_EXECUTABLE}
                 ${pirodriverfvm_SRCS} )
-SET_TARGET_PROPERTIES( ${MY_EXECUTABLE}
-                       PROPERTIES LINKER_LANGUAGE Fortran )
 TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
                        ${pirodriverfvm_LIBS}
                        ${Trilinos_LIBRARIES}
@@ -66,8 +62,6 @@ SET( MY_EXECUTABLE
      "piro-driver-fvm-epetra.exe" )
 ADD_EXECUTABLE( ${MY_EXECUTABLE}
                 ${pirodriverfvmepetra_SRCS} )
-SET_TARGET_PROPERTIES( ${MY_EXECUTABLE}
-                       PROPERTIES LINKER_LANGUAGE Fortran )
 TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
                        ${pirodriverfvmepetra_LIBS}
                        ${Trilinos_LIBRARIES}

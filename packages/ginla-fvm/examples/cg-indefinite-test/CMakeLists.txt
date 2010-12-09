@@ -15,8 +15,6 @@ SET( MY_EXECUTABLE
      "cg-indefinite-test.exe" )
 ADD_EXECUTABLE( ${MY_EXECUTABLE}
                 cg-indefinite-test.cpp )
-SET_TARGET_PROPERTIES( ${MY_EXECUTABLE}
-                       PROPERTIES LINKER_LANGUAGE Fortran )
 TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
                        ${Trilinos_LIBRARIES}
                        ${Trilinos_TPL_LIBRARIES}

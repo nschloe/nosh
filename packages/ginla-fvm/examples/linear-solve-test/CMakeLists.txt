@@ -30,8 +30,6 @@ SET( MY_EXECUTABLE
      "keo-aztecoo.exe" )
 ADD_EXECUTABLE( ${MY_EXECUTABLE}
                 ${keoaztecoo_SRCS} )
-SET_TARGET_PROPERTIES( ${MY_EXECUTABLE}
-                       PROPERTIES LINKER_LANGUAGE Fortran )
 TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
                        ${keoaztecoo_LIBS}
                        ${Trilinos_LIBRARIES}
@@ -49,8 +47,6 @@ SET( MY_EXECUTABLE
      "keo-belos.exe" )
 ADD_EXECUTABLE( ${MY_EXECUTABLE}
                 ${keobelos_SRCS} )
-SET_TARGET_PROPERTIES( ${MY_EXECUTABLE}
-                       PROPERTIES LINKER_LANGUAGE Fortran )
 TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
                        ${keobelos_LIBS}
                        ${Trilinos_LIBRARIES}
@@ -68,8 +64,6 @@ SET( MY_EXECUTABLE
      "jacobian-solver.exe" )
 ADD_EXECUTABLE( ${MY_EXECUTABLE}
                 ${jacobiansolver_SRCS} )
-SET_TARGET_PROPERTIES( ${MY_EXECUTABLE}
-                       PROPERTIES LINKER_LANGUAGE Fortran )
 TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
                        ${jacobiansolver_LIBS}
                        ${Trilinos_LIBRARIES}
