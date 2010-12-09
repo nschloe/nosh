@@ -18,7 +18,7 @@
 */
 // =============================================================================
 #include "Ginla_EpetraFVM_StkMeshReader.h"
-#include "Ginla_EpetraFVM_StkMesh3d.h"
+#include "Ginla_EpetraFVM_StkMesh.h"
 
 #include <Epetra_Map.h>
 #include <Epetra_Vector.h>
@@ -57,7 +57,7 @@ void
 Ginla::EpetraFVM::StkMeshReader::
 read( const Epetra_Comm & comm,
             Teuchos::RCP<Epetra_Vector> & psi,
-            Teuchos::RCP<Ginla::EpetraFVM::StkMesh3d> & mesh,
+            Teuchos::RCP<Ginla::EpetraFVM::StkMesh> & mesh,
             Teuchos::ParameterList & parameterList
     )
 {
@@ -182,7 +182,7 @@ read( const Epetra_Comm & comm,
   //   coordinatesField = Teuchos::rcpFromRef( metaData->get_field<VectorFieldType>( std::string("coordinates") ) );
 
     // create the mesh with these specifications
-    mesh = Teuchos::rcp( new Ginla::EpetraFVM::StkMesh3d( comm, metaData, bulkData, coordinatesField ) );
+    mesh = Teuchos::rcp( new Ginla::EpetraFVM::StkMesh( comm, metaData, bulkData, coordinatesField ) );
 
     // create the state
     psi = this->createPsi_( mesh, psir_field, psii_field );
@@ -197,7 +197,7 @@ read( const Epetra_Comm & comm,
 // =============================================================================
 Teuchos::RCP<Epetra_Vector>
 Ginla::EpetraFVM::StkMeshReader::
-createPsi_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh3d> & mesh,
+createPsi_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
             const Teuchos::RCP<VectorFieldType>                 & psir_field,
             const Teuchos::RCP<VectorFieldType>                 & psii_field
           ) const
@@ -234,7 +234,7 @@ Ginla::EpetraFVM::
 StkMeshRead ( const Epetra_Comm & comm,
               const std::string & fileName,
               Teuchos::RCP<Epetra_Vector> & psi,
-              Teuchos::RCP<Ginla::EpetraFVM::StkMesh3d> & mesh,
+              Teuchos::RCP<Ginla::EpetraFVM::StkMesh> & mesh,
               Teuchos::ParameterList & parameterList
             )
 {

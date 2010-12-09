@@ -32,9 +32,9 @@
 #include <ml_epetra_preconditioner.h>
 // =============================================================================
 Ginla::EpetraFVM::KeoFactory::
-KeoFactory( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>               & mesh,
-            const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp
-          ):
+KeoFactory( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>                 & mesh,
+              const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp
+            ):
         mesh_ ( mesh ),
         mvp_( mvp )
 {
@@ -65,102 +65,102 @@ buildKeo( Epetra_FECrsMatrix                              & keoMatrix,
   // get owned cells
   std::vector<stk::mesh::Entity*> cells = mesh_->getOwnedCells();
 
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > coedgeEdgeRatios = mesh_->getCoedgeEdgeRatios();
-  TEUCHOS_ASSERT( !coedgeEdgeRatios.is_null() );
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > coareaEdgeRatios = mesh_->getCoareaEdgeRatios();
+  TEUCHOS_ASSERT( !coareaEdgeRatios.is_null() );
 
-  // loop over the local cells
+  // Loop over all edges.
+  // To this end, loop over all cells and the edges within the cell.
   for ( int k=0; k<cells.size(); k++ )
   {
       // get the nodes local to the cell
       stk::mesh::PairIterRelation rel = (*cells[k]).relations();
 
-      TEUCHOS_ASSERT_EQUALITY( 3, rel.size() );
-
+      unsigned int numLocalNodes = rel.size();
       // extract the nodal coordinates
       Teuchos::Array<Point> localNodes = mesh_->getNodeCoordinates( rel );
 
-      TEUCHOS_ASSERT_EQUALITY( localNodes.size(), 3 );
 
-      // extract local thickness
-//       Teuchos::Tuple<Point,3> localThickness = mesh_->getThickness( rel );
-
-      // loop over the edges
-      for ( int l=0; l<3; l++ )
+      // In a simplex, the edges are exactly the connection between each pair
+      // of nodes. Hence, loop over pairs of nodes.
+      unsigned int edgeIndex = 0;
+      Teuchos::Tuple<int,2> gid;
+      for ( unsigned int e0 = 0; e0 < numLocalNodes; e0++ )
       {
-          // global indices of subsequent nodes
-          Teuchos::Tuple<int,2> nodeIndices;
-          nodeIndices[0] = (*rel[ l       ].entity()).identifier() - 1;
-          nodeIndices[1] = (*rel[ (l+1)%3 ].entity()).identifier() - 1;
+          const Point & node0 = localNodes[e0];
+          gid[0] = (*rel[e0].entity()).identifier() - 1;
+          for ( unsigned int e1 = e0+1; e1 < numLocalNodes; e1++ )
+          {
+              const Point & node1 = localNodes[e1];
+              gid[1] = (*rel[e1].entity()).identifier() - 1;
 
-          // co-edge / edge ratio
-          double alpha = coedgeEdgeRatios[k][l];
+              // coarea / edge ratio
+              double alpha = coareaEdgeRatios[k][edgeIndex++];
 
-          // -------------------------------------------------------------------
-          // Compute the integral
-          //
-          //    I = \int_{x0}^{xj} (xj-x0).A(x) / |xj-x0| dx
-          //
-          // numerically by the midpoint rule, i.e.,
-          //
-          //    I ~ |xj-x0| * (xj-x0) . A( 0.5*(xj+x0) ) / |xj-x0|.
-          //
-          Point midpoint; // get A(midpoint)
-          const Point & node0 = localNodes[ l       ];
-          const Point & node1 = localNodes[ (l+1)%3 ];
-          for (int i=0; i<midpoint.size(); i++ )
-              midpoint[i] = 0.5 * ( node0[i] + node1[i] );
+              // ---------------------------------------------------------------
+              // Compute the integral
+              //
+              //    I = \int_{x0}^{xj} (xj-x0).A(x) / |xj-x0| dx
+              //
+              // numerically by the midpoint rule, i.e.,
+              //
+              //    I ~ |xj-x0| * (xj-x0) . A( 0.5*(xj+x0) ) / |xj-x0|.
+              //
+              Point midpoint; // get A(midpoint)
+              for (int i=0; i<midpoint.size(); i++ )
+                  midpoint[i] = 0.5 * ( node0[i] + node1[i] );
 
-          // -------------------------------------------------------------------
-          // Project vector field onto the edge.
-          Teuchos::RCP<Point> a = mvp_->getA( midpoint );
-          // Instead of first computing the projection over the normalized edge
-          // and then multiply it with the edge length, don't normalize the
-          // edge vector.
-          double aInt = 0.0;
-          for (int i=0; i<midpoint.size(); i++ )
-              aInt += ( node1[i] - node0[i] ) * (*a)[i];
+              // -------------------------------------------------------------------
+              // Project vector field onto the edge.
+              Teuchos::RCP<Point> a = mvp_->getA( midpoint );
+              // Instead of first computing the projection over the normalized edge
+              // and then multiply it with the edge length, don't normalize the
+              // edge vector.
+              double aInt = 0.0;
+              for (int i=0; i<midpoint.size(); i++ )
+                  aInt += ( node1[i] - node0[i] ) * (*a)[i];
 
-          // We'd like to insert the 2x2 matrix
-          //
-          //     [   alpha                   , - alpha * exp( -IM * aInt ) ]
-          //     [ - alpha * exp( IM * aInt ),   alpha                       ]
-          //
-          // at the indices   [ nodeIndices[0], nodeIndices[1] ] for every index pair
-          // that shares and edge.
-          // Do that now, just blockwise for real and imaginary part.
-          Epetra_IntSerialDenseVector indices(4);
-          indices[0] = 2*nodeIndices[0];
-          indices[1] = 2*nodeIndices[0]+1;
-          indices[2] = 2*nodeIndices[1];
-          indices[3] = 2*nodeIndices[1]+1;
+              // We'd like to insert the 2x2 matrix
+              //
+              //     [   alpha                   , - alpha * exp( -IM * aInt ) ]
+              //     [ - alpha * exp( IM * aInt ),   alpha                       ]
+              //
+              // at the indices   [ nodeIndices[0], nodeIndices[1] ] for every index pair
+              // that shares and edge.
+              // Do that now, just blockwise for real and imaginary part.
+              Epetra_IntSerialDenseVector indices(4);
+              indices[0] = 2*gid[0];
+              indices[1] = 2*gid[0]+1;
+              indices[2] = 2*gid[1];
+              indices[3] = 2*gid[1]+1;
 
-          Epetra_SerialDenseMatrix values( 4, 4 );
-          values(0,0) = - alpha;
-          values(0,1) = 0.0;
-          values(1,0) = 0.0;
-          values(1,1) = - alpha;
+              Epetra_SerialDenseMatrix values( 4, 4 );
+              values(0,0) = - alpha;
+              values(0,1) = 0.0;
+              values(1,0) = 0.0;
+              values(1,1) = - alpha;
 
-          double alphaCosAInt = alpha * cos(aInt);
-          double alphaSinAInt = alpha * sin(aInt);
+              double alphaCosAInt = alpha * cos(aInt);
+              double alphaSinAInt = alpha * sin(aInt);
 
-          values(0,2) =   alphaCosAInt;
-          values(0,3) =   alphaSinAInt;
-          values(1,2) = - alphaSinAInt;
-          values(1,3) =   alphaCosAInt;
+              values(0,2) =   alphaCosAInt;
+              values(0,3) =   alphaSinAInt;
+              values(1,2) = - alphaSinAInt;
+              values(1,3) =   alphaCosAInt;
 
-          values(2,0) =   alphaCosAInt;
-          values(2,1) = - alphaSinAInt;
-          values(3,0) =   alphaSinAInt;
-          values(3,1) =   alphaCosAInt;
+              values(2,0) =   alphaCosAInt;
+              values(2,1) = - alphaSinAInt;
+              values(3,0) =   alphaSinAInt;
+              values(3,1) =   alphaCosAInt;
 
-          values(2,2) = - alpha;
-          values(2,3) = 0.0;
-          values(3,2) = 0.0;
-          values(3,3) = - alpha;
+              values(2,2) = - alpha;
+              values(2,3) = 0.0;
+              values(3,2) = 0.0;
+              values(3,3) = - alpha;
 
-          // sum it all in!
-          TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix.SumIntoGlobalValues ( indices, values ) );
-          // -------------------------------------------------------------------
+              // sum it all in!
+              TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix.SumIntoGlobalValues ( indices, values ) );
+              // -------------------------------------------------------------------
+          }
       }
   }
 
@@ -179,34 +179,39 @@ buildKeoGraph() const
 
   std::vector<stk::mesh::Entity*> cells = mesh_->getOwnedCells();
 
+  // Loop over all edges and put entries whereever two nodes are connected.
   for ( int k=0; k<cells.size(); k++ )
   {
       // get the nodes local to the cell
       stk::mesh::PairIterRelation rel = (*cells[k]).relations();
 
-      TEUCHOS_ASSERT_EQUALITY( 3, rel.size() );
-
-      // loop over the edges
-      for ( int l=0; l<3; l++ )
+      // In a simplex, the edges are exactly the connection between each pair
+      // of nodes. Hence, loop over pairs of nodes.
+      unsigned int edgeIndex = 0;
+      Teuchos::Tuple<int,2> gid;
+      for ( unsigned int e0=0; e0<rel.size(); e0++ )
       {
-          // global indices of subsequent nodes
-          Teuchos::Tuple<int,2> nodeIndices;
-          nodeIndices[0] = (*rel[ l       ].entity()).identifier() - 1;
-          nodeIndices[1] = (*rel[ (l+1)%3 ].entity()).identifier() - 1;
+          gid[0] = (*rel[e0].entity()).identifier() - 1;
+          for ( unsigned int e1=e0+1; e1<rel.size(); e1++ )
+          {
+              gid[1] = (*rel[e1].entity()).identifier() - 1;
 
-          Epetra_IntSerialDenseVector indices(4);
-          indices[0] = 2*nodeIndices[0];
-          indices[1] = 2*nodeIndices[0]+1;
-          indices[2] = 2*nodeIndices[1];
-          indices[3] = 2*nodeIndices[1]+1;
+              Epetra_IntSerialDenseVector indices(4);
+              indices[0] = 2*gid[0];
+              indices[1] = 2*gid[0]+1;
+              indices[2] = 2*gid[1];
+              indices[3] = 2*gid[1]+1;
 
-          // sum it all in!
-          TEUCHOS_ASSERT_EQUALITY( 0, keoGraph.InsertGlobalIndices( indices.Length(), indices.Values(),
-                                                                    indices.Length(), indices.Values()
-                                                                  )
-                                 );
-          // -------------------------------------------------------------------
+              // sum it all in!
+              TEUCHOS_ASSERT_EQUALITY( 0, keoGraph.InsertGlobalIndices( indices.Length(), indices.Values(), // rows
+                                                                        indices.Length(), indices.Values()  // cols
+                                                                      )
+                                     );
+
+          }
+
       }
+
   }
 
   TEUCHOS_ASSERT_EQUALITY( 0, keoGraph.GlobalAssemble() );

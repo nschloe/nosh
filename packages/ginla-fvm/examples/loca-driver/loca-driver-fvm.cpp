@@ -124,7 +124,7 @@ main ( int argc, char *argv[] )
 
         Teuchos::ParameterList              problemParameters;
         Teuchos::RCP<Epetra_Vector>         z = Teuchos::null;
-        Teuchos::RCP<Ginla::EpetraFVM::StkMesh3d> mesh = Teuchos::null;
+        Teuchos::RCP<Ginla::EpetraFVM::StkMesh> mesh = Teuchos::null;
 
         Ginla::EpetraFVM::StkMeshRead( *eComm,
                                        getAbsolutePath( initialGuessList.get<std::string> ( "State" ), xmlPath ),

@@ -19,9 +19,6 @@ SET( MY_EXECUTABLE
 ADD_EXECUTABLE ( ${MY_EXECUTABLE}
                  ${poisson_SRCS} )
 
-SET_TARGET_PROPERTIES( ${MY_EXECUTABLE}
-                       PROPERTIES LINKER_LANGUAGE Fortran )
-
 SET ( internal_LIBS
       recti
       vio

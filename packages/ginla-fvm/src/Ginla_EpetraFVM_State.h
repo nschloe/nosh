@@ -31,7 +31,7 @@ namespace LOCA {
 }
 namespace Ginla {
   namespace EpetraFVM {
-    class StkMesh3d;
+    class StkMesh;
   }
 }
 namespace stk {
@@ -49,17 +49,17 @@ public:
 
   //! Constructor.
   State( const Epetra_Vector                                 & psi,
-         const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh3d> & mesh
+         const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh
        );
 
   //! Constructor without \f$\psi\f$. The values will be initialized to 0.
   State( const Teuchos::RCP<const Epetra_Map>                & map,
-         const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh3d> & mesh
+         const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh
        );
 
   //! Constructor solely with comminicator and grid. The values will be initialized to 0.
   State( const Teuchos::RCP<const Epetra_Comm>               & comm,
-         const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh3d> & mesh
+         const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh
        );
 
   //! Const getter.
@@ -70,7 +70,7 @@ public:
   Teuchos::RCP<Epetra_Vector>
   getPsiNonConst ();
 
-  const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh3d>
+  const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh>
   getMesh () const;
 
   //! Save the state to file \c fileName together with the parameters \c p.
@@ -131,12 +131,12 @@ private:
   Epetra_Vector psi_;
 
   //! The grid on which the state exists.
-  const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh3d> mesh_;
+  const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> mesh_;
 
 private:
 
   void
-  mergePsi_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh3d> & mesh,
+  mergePsi_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
              const Epetra_Vector                                 & psi
            ) const;
 

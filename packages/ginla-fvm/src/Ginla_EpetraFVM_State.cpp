@@ -19,7 +19,7 @@
 // =============================================================================
 #include "Ginla_EpetraFVM_State.h"
 
-#include "Ginla_EpetraFVM_StkMesh3d.h"
+#include "Ginla_EpetraFVM_StkMesh.h"
 #include "Ginla_EpetraFVM_StkMeshWriter.h"
 
 #include <stk_mesh/base/GetEntities.hpp>
@@ -32,7 +32,7 @@
 // =============================================================================
 Ginla::EpetraFVM::State::
 State( const Epetra_Vector                                 & psi,
-       const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh3d> & mesh
+       const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh
      ):
        psi_( psi ),
        mesh_( mesh )
@@ -45,7 +45,7 @@ State( const Epetra_Vector                                 & psi,
 // =============================================================================
 Ginla::EpetraFVM::State::
 State( const Teuchos::RCP<const Epetra_Map>                & map,
-       const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh3d> & mesh
+       const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh
      ):
        psi_( Epetra_Vector( *map, true ) ),
        mesh_( mesh )
@@ -54,7 +54,7 @@ State( const Teuchos::RCP<const Epetra_Map>                & map,
 // =============================================================================
 Ginla::EpetraFVM::State::
 State( const Teuchos::RCP<const Epetra_Comm>               & comm,
-       const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh3d> & mesh
+       const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh
      ):
        psi_( Epetra_Vector( Epetra_Map( 2*mesh->getNumNodes(), 0, *comm ) ) ),
        mesh_( mesh )
@@ -75,7 +75,7 @@ getPsiNonConst ()
 return Teuchos::rcpFromRef( psi_ );
 }
 // =============================================================================
-const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh3d>
+const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh>
 Ginla::EpetraFVM::State::
 getMesh () const
 {
@@ -214,7 +214,7 @@ getVorticity () const
 // =============================================================================
 void
 Ginla::EpetraFVM::State::
-mergePsi_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh3d> & mesh,
+mergePsi_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
            const Epetra_Vector                                 & psi
          ) const
 {

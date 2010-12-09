@@ -17,8 +17,8 @@
 
 */
 
-#ifndef GINLA_EPETRAFVM_STKMESH_H
-#define GINLA_EPETRAFVM_STKMESH_H
+#ifndef GINLA_EPETRAFVM_STKMESH3D_H
+#define GINLA_EPETRAFVM_STKMESH3D_H
 // =============================================================================
 // includes
 // #include "Ginla_Typedefs.h"
@@ -28,6 +28,7 @@
 #include <Epetra_Comm.h>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Tuple.hpp>
+#include <Teuchos_Array.hpp>
 
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/fem/CoordinateSystems.hpp>
@@ -58,10 +59,10 @@ class StkMesh
 {
 public:
     StkMesh( const Epetra_Comm                       & comm,
-             const Teuchos::RCP<stk::mesh::MetaData> & metaData,
-             const Teuchos::RCP<stk::mesh::BulkData> & bulkData,
-             const Teuchos::RCP<VectorFieldType>     & coordinatesField
-           );
+               const Teuchos::RCP<stk::mesh::MetaData> & metaData,
+               const Teuchos::RCP<stk::mesh::BulkData> & bulkData,
+               const Teuchos::RCP<VectorFieldType>     & coordinatesField
+             );
 
     virtual
     ~StkMesh();
@@ -94,19 +95,28 @@ public:
     getScaling() const;
 
     Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >
-    getCoedgeEdgeRatios() const;
+    getCoareaEdgeRatios() const;
 
     std::vector<stk::mesh::Entity*>
     getOwnedCells() const;
 
     std::vector<stk::mesh::Entity*>
+    getOwnedEdges() const;
+
+    std::vector<stk::mesh::Entity*>
     getOwnedNodes() const;
 
-    Teuchos::Tuple<Point,3>
+    Teuchos::Array<Point>
     getNodeCoordinates( const stk::mesh::PairIterRelation & relation ) const;
+
+    double
+    getThickness( const stk::mesh::PairIterRelation & relation ) const;
 
     Teuchos::RCP<Epetra_Map>
     getComplexMap() const;
+
+    void
+    computeFvmEntities_() const;
 
 protected:
 private:
@@ -117,6 +127,7 @@ private:
     const Teuchos::RCP<stk::io::util::MeshData> meshData_;
     const Teuchos::RCP<stk::mesh::BulkData>     bulkData_;
     const Teuchos::RCP<VectorFieldType>         coordinatesField_;
+//     const Teuchos::RCP<VectorFieldType>         thicknessField_;
 
     const Teuchos::RCP<Epetra_Map> nodesMap_;
     const Teuchos::RCP<Epetra_Map> nodesOverlapMap_;
@@ -128,7 +139,7 @@ private:
     mutable bool fvmEntitiesUpToDate_;
 
     const Teuchos::RCP<Epetra_Vector> controlVolumes_;
-    const Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > coedgeEdgeRatio_;
+    const Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > coareaEdgeRatio_;
 
     mutable double area_;
 
@@ -142,11 +153,8 @@ private:
     Teuchos::RCP<Epetra_Map>
     createComplexMap_( const std::vector<stk::mesh::Entity*> & nodeList ) const;
 
-    double
-    computeDomainArea_() const;
-
-    void
-    computeFvmEntities_() const;
+    Teuchos::Tuple<unsigned int,2>
+    getOtherIndices_( unsigned int e0, unsigned int e1 ) const;
 
     Point
     add_( double alpha, const Point & x,
@@ -160,7 +168,12 @@ private:
                     ) const;
 
     Point
-    computeCircumcenter_( const Teuchos::Tuple<Point,3> & nodes ) const;
+    computeTriangleCircumcenter_( const Point & node0, const Point & node1, const Point & node2 ) const;
+    Point
+    computeTriangleCircumcenter_( const Teuchos::Array<Point> & nodes ) const;
+
+    Point
+    computeTetrahedronCircumcenter_( const Teuchos::Array<Point> & nodes ) const;
 
     double
     dot_( const Point & v, const Point & w
@@ -173,6 +186,10 @@ private:
     double
     norm2_( const Point & x
           ) const;
+
+    double
+    norm2squared_( const Point & x
+                ) const;
 };
 } // namespace EpetraFVM
 } // namespace Ginla

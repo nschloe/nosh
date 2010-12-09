@@ -17,8 +17,8 @@
 
 */
 
-#ifndef GINLA_EPETRAFVM_KEOFACTORY_H
-#define GINLA_EPETRAFVM_KEOFACTORY_H
+#ifndef GINLA_EPETRAFVM_KEOFACTORY3D_H
+#define GINLA_EPETRAFVM_KEOFACTORY3D_H
 // =============================================================================
 #include <Epetra_Operator.h>
 #include <Teuchos_RCP.hpp>
@@ -43,9 +43,9 @@ namespace EpetraFVM {
 class KeoFactory
 {
 public:
-    KeoFactory( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>               & mesh,
-                const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp
-              );
+    KeoFactory( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>             & mesh,
+                  const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp
+                );
 
     // Destructor.
     ~KeoFactory();
@@ -68,4 +68,4 @@ private:
 } // namespace FVM
 } // namespace Ginla
 
-#endif // GINLA_EPETRAFVM_KEOFACTORY_H
+#endif // GINLA_EPETRAFVM_KEOFACTORY3D_H

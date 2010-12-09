@@ -19,8 +19,8 @@
 
 #include "Ginla_EpetraFVM_KeoPreconditioner.h"
 
-#include "Ginla_EpetraFVM_KeoFactory3d.h"
-#include "Ginla_EpetraFVM_StkMesh3d.h"
+#include "Ginla_EpetraFVM_KeoFactory.h"
+#include "Ginla_EpetraFVM_StkMesh.h"
 
 #include <Epetra_SerialDenseMatrix.h>
 #include <Epetra_Comm.h>
@@ -43,12 +43,12 @@ typedef Belos::MultiVecTraits<ST,MV>     MVT;
 typedef Belos::OperatorTraits<ST,MV,OP>  OPT;
 // =============================================================================
 Ginla::EpetraFVM::KeoPreconditioner::
-KeoPreconditioner( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh3d>               & mesh,
+KeoPreconditioner( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>               & mesh,
                    const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp
                  ):
         useTranspose_ ( false ),
         comm_( Teuchos::rcpFromRef(mesh->getComm() ) ),
-        keoFactory_( Teuchos::rcp( new Ginla::EpetraFVM::KeoFactory3d(mesh, mvp) ) ),
+        keoFactory_( Teuchos::rcp( new Ginla::EpetraFVM::KeoFactory(mesh, mvp) ) ),
         keoPrec_( Teuchos::rcp( new Epetra_FECrsMatrix( Copy, keoFactory_->buildKeoGraph() ) ) ),
         belosPrec_ ( Teuchos::null ),
         keoProblem_( Teuchos::rcp( new Epetra_LinearProblem() ) ),

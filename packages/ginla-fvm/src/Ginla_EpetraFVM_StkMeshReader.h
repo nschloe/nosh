@@ -21,7 +21,7 @@
 #define GINLA_EPETRAFVM_STKMESHREADER_H
 // =============================================================================
 // includes
-#include "Ginla_EpetraFVM_StkMesh3d.h"
+#include "Ginla_EpetraFVM_StkMesh.h"
 
 #include <string>
 
@@ -46,7 +46,7 @@ public:
     void
     read( const Epetra_Comm                       & comm,
           Teuchos::RCP<Epetra_Vector>             & psi,
-          Teuchos::RCP<Ginla::EpetraFVM::StkMesh3d> & mesh,
+          Teuchos::RCP<Ginla::EpetraFVM::StkMesh> & mesh,
           Teuchos::ParameterList                  & parameterList
         );
 
@@ -56,7 +56,7 @@ private:
 
 private:
     Teuchos::RCP<Epetra_Vector>
-    createPsi_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh3d> & mesh,
+    createPsi_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
                 const Teuchos::RCP<VectorFieldType>                 & psir_field,
                 const Teuchos::RCP<VectorFieldType>                 & psii_field
               ) const;
@@ -67,7 +67,7 @@ void
 StkMeshRead ( const Epetra_Comm & comm,
               const std::string & fileName,
               Teuchos::RCP<Epetra_Vector> & psi,
-              Teuchos::RCP<Ginla::EpetraFVM::StkMesh3d> & mesh,
+              Teuchos::RCP<Ginla::EpetraFVM::StkMesh> & mesh,
               Teuchos::ParameterList & parameterList
             );
 // -----------------------------------------------------------------------------
