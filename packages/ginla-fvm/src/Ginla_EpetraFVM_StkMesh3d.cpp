@@ -135,6 +135,9 @@ double
 Ginla::EpetraFVM::StkMesh3d::
 getDomainArea() const
 {
+  if ( !fvmEntitiesUpToDate_)
+        this->computeFvmEntities_();
+
   return area_;
 }
 // =============================================================================
@@ -326,16 +329,6 @@ createComplexMap_( const std::vector<stk::mesh::Entity*> & nodeList ) const
     return Teuchos::rcp(new Epetra_Map( -1, numDof, &(indices[0]), 0, comm_) );
 }
 // =============================================================================
-double
-Ginla::EpetraFVM::StkMesh3d::
-computeDomainArea_() const
-{
-  // Sum over all entries: The controlVolumes is non-overlapping.
-  double norm1;
-  controlVolumes_->Norm1( &norm1 );
-  return norm1;
-}
-// =============================================================================
 void
 Ginla::EpetraFVM::StkMesh3d::
 computeFvmEntities_() const
@@ -390,18 +383,60 @@ computeFvmEntities_() const
               // Get the two other nodes.
               Teuchos::Tuple<unsigned int,2> other = this->getOtherIndices_( e0, e1 );
 
+              const Point & other0 = localNodes[other[0]];
+              const Point & other1 = localNodes[other[1]];
+
               // Compute the circumcenters of the adjacent faces.
               // This could be precomputed as well.
-              Point ccFace0 = this->computeTriangleCircumcenter_( x0, x1, localNodes[other[0]] );
-              Point ccFace1 = this->computeTriangleCircumcenter_( x0, x1, localNodes[other[1]] );
+              Point ccFace0 = this->computeTriangleCircumcenter_( x0, x1, other0 );
+              Point ccFace1 = this->computeTriangleCircumcenter_( x0, x1, other1 );
 
               // edge midpoint
               Point mp = this->add_( 0.5, x0, 0.5, x1 );
-              // Compute the coarea.
-              double coarea = this->getQuadrilateralArea_( mp, ccFace0, cc, ccFace1 );
+
+              // Compute the area of the quadrilateral.
+              // There are some really tricky degenerate cases here, i.e., combinations
+              // of when ccFace{0,1}, cc, sit outside of the tetrahedron.
+              double coarea = 0.0;
+
+              // Use the triangle (MP, localNodes[other[0]], localNodes[other[1]] ) (in this order)
+              // to gauge the orientation of the two triangles that compose the quadrilateral.
+              Point gauge = this->cross_( this->add_( 1.0, other0, -1.0, mp ),
+                                          this->add_( 1.0, other1, -1.0, mp )
+                                        );
+
+              // Add the area of the first triangle (MP,ccFace0,cc).
+              // This makes use of the right angles.
+              double triangleHeight0 = this->norm2_( this->add_( 1.0, mp, -1.0, ccFace0 ) );
+              double triangleArea0 = 0.5
+                                   * triangleHeight0
+                                   * this->norm2_( this->add_( 1.0, ccFace0, -1.0, cc ) );
+
+              // Check if the orientation of the triangle (MP,ccFace0,cc) coincides with
+              // the orientation of the gauge triangle. If yes, add the area, subtract otherwise.
+              Point triangleNormal0 = this->cross_( this->add_( 1.0, ccFace0, -1.0, mp ),
+                                                    this->add_( 1.0, cc,      -1.0, mp )
+                                                  );
+              // copysign takes the absolute value of the first argument and the sign of the second.
+              coarea += copysign( triangleArea0, this->dot_( triangleNormal0, gauge ) );
+
+              // Add the area of the second triangle (MP,cc,ccFace1).
+              // This makes use of the right angles.
+              double triangleHeight1 = this->norm2_( this->add_( 1.0, mp, -1.0, ccFace1 ) );
+              double triangleArea1 = 0.5
+                                   * triangleHeight1
+                                   * this->norm2_( this->add_( 1.0, ccFace1, -1.0, cc ) );
+
+              // Check if the orientation of the triangle (MP,cc,ccFace1) coincides with
+              // the orientation of the gauge triangle. If yes, add the area, subtract otherwise.
+              Point triangleNormal1 = this->cross_( this->add_( 1.0, cc,      -1.0, mp ),
+                                                    this->add_( 1.0, ccFace1, -1.0, mp )
+                                                  );
+              // copysign takes the absolute value of the first argument and the sign of the second.
+              coarea += copysign( triangleArea1, this->dot_( triangleNormal1, gauge ) );
+
 
               double edgeLength = this->norm2_( this->add_( 1.0, x1, -1.0, x0 ) );
-
               coareaEdgeRatio_[k][edgeIndex++] = coarea / edgeLength;
 
               // Compute the contributions to the finite volumes of the adjacent edges.
@@ -416,8 +451,8 @@ computeFvmEntities_() const
   Epetra_Export exporter( *nodesOverlapMap_, *nodesMap_ );
   controlVolumes_->Export( *controlVolumes_, exporter, Add );
 
-  // TODO move this to another spot
-  area_ = this->computeDomainArea_();
+  // update the domain area value
+  controlVolumes_->Norm1( &area_ );
 
   fvmEntitiesUpToDate_ = true;
 
@@ -464,33 +499,6 @@ getTriangleArea_( const Point & node0,
                                              this->add_( 1.0, node2, -1.0, node0 )
                                            )
                              );
-}
-// =============================================================================
-double
-Ginla::EpetraFVM::StkMesh3d::
-getQuadrilateralArea_( const Point & node0,
-                       const Point & node1,
-                       const Point & node2,
-                       const Point & node3
-                     ) const
-{
-    // Nodes are expected to be provided in order.
-
-    // squared lengths of the diagonals
-    double p = this->norm2squared_( this->add_( 1.0, node3, -1.0, node1 ) );
-    double q = this->norm2squared_( this->add_( 1.0, node2, -1.0, node0 ) );
-
-    // square lengths or the sides
-    double a = this->norm2squared_( this->add_( 1.0, node1, -1.0, node0 ) );
-    double b = this->norm2squared_( this->add_( 1.0, node2, -1.0, node1 ) );
-    double c = this->norm2squared_( this->add_( 1.0, node3, -1.0, node2 ) );
-    double d = this->norm2squared_( this->add_( 1.0, node0, -1.0, node3 ) );
-
-    // http://mathworld.wolfram.com/Quadrilateral.html
-    double alpha = b + d - a - c;
-    double beta  = 4.0*p*q - alpha*alpha;
-    TEUCHOS_ASSERT_INEQUALITY( beta, >=, 0.0 );
-    return sqrt( beta ) / 4.0;
 }
 // =============================================================================
 Point

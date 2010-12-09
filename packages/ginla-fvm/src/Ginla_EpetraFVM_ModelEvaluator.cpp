@@ -347,9 +347,6 @@ computeF_ ( const Epetra_Vector                             & x,
   // Make sure control volumes and state still match.
   TEUCHOS_ASSERT_EQUALITY( 2*controlVolumes.MyLength(), x.MyLength() );
 
-  std::cout << controlVolumes.GlobalLength() << std::endl;
-  controlVolumes.Print( std::cout );
-
   for ( int k=0; k<controlVolumes.MyLength(); k++ )
   {
       // Do the equivalent of

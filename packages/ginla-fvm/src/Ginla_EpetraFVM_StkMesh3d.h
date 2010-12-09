@@ -153,9 +153,6 @@ private:
     Teuchos::RCP<Epetra_Map>
     createComplexMap_( const std::vector<stk::mesh::Entity*> & nodeList ) const;
 
-    double
-    computeDomainArea_() const;
-
     Teuchos::Tuple<unsigned int,2>
     getOtherIndices_( unsigned int e0, unsigned int e1 ) const;
 
@@ -169,13 +166,6 @@ private:
                       const Point & x1,
                       const Point & x2
                     ) const;
-
-    double
-    getQuadrilateralArea_( const Point & x0,
-                           const Point & x1,
-                           const Point & x2,
-                           const Point & x3
-                         ) const;
 
     Point
     computeTriangleCircumcenter_( const Point & node0, const Point & node1, const Point & node2 ) const;
