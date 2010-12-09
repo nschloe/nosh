@@ -20,6 +20,8 @@ SET( MY_EXECUTABLE
      "loca-driver-fvm.exe" )
 ADD_EXECUTABLE( ${MY_EXECUTABLE}
                 ${locadriver_SRCS} )
+SET_TARGET_PROPERTIES( ${MY_EXECUTABLE}
+                       PROPERTIES LINKER_LANGUAGE Fortran )
 TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
                        ${locadriver_LIBS}
                        ${Trilinos_LIBRARIES}
