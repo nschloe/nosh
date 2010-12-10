@@ -2,7 +2,9 @@
 
 // ============================================================================
 Ginla::MagneticVectorPotential::Y::
-Y( double mu ) :
+Y( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh> & mesh,
+   double mu ) :
+  Virtual( mesh ),
   mu_( mu )
 {
 }

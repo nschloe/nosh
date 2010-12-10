@@ -115,8 +115,11 @@ public:
     Teuchos::RCP<Epetra_Map>
     getComplexMap() const;
 
-    void
-    computeFvmEntities_() const;
+    unsigned int
+    getNumEdgesPerCell( unsigned int cellDimension ) const;
+
+    unsigned int
+    getCellDimension( unsigned int k ) const;
 
 protected:
 private:
@@ -144,6 +147,10 @@ private:
     mutable double area_;
 
 private:
+
+    void
+    computeFvmEntities_() const;
+
     std::vector<stk::mesh::Entity*>
     getOverlapNodes_() const;
 

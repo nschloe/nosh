@@ -14,7 +14,8 @@ class Z:
   public Virtual
 {
 public:
-  Z( double mu );
+  Z( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh> & mesh,
+     double mu );
 
   virtual
   ~Z();

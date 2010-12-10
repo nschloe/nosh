@@ -41,11 +41,11 @@ typedef stk::mesh::Field<double>                      ScalarFieldType ;
 // =============================================================================
 Ginla::EpetraFVM::StkMesh::
 StkMesh( const Epetra_Comm                       & comm,
-           const Teuchos::RCP<stk::mesh::MetaData> & metaData,
-           const Teuchos::RCP<stk::mesh::BulkData> & bulkData,
-           const Teuchos::RCP<VectorFieldType>     & coordinatesField
-//            const Teuchos::RCP<VectorFieldType>     & thicknessField
-         ):
+         const Teuchos::RCP<stk::mesh::MetaData> & metaData,
+         const Teuchos::RCP<stk::mesh::BulkData> & bulkData,
+         const Teuchos::RCP<VectorFieldType>     & coordinatesField
+//          const Teuchos::RCP<VectorFieldType>     & thicknessField
+       ):
 comm_( comm ),
 metaData_( metaData ),
 meshData_( Teuchos::rcp( new stk::io::util::MeshData() ) ),
@@ -59,7 +59,7 @@ complexOverlapMap_( this->createComplexMap_( this->getOverlapNodes_() ) ),
 scaling_ ( Teuchos::tuple( 1.0, 1.0, 1.0 ) ),
 fvmEntitiesUpToDate_( false ),
 controlVolumes_( Teuchos::rcp( new Epetra_Vector( *nodesOverlapMap_ ) ) ),
-coareaEdgeRatio_( Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >(  6*this->getOwnedCells().size() ) ),
+coareaEdgeRatio_( Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >( this->getOwnedCells().size() ) ),
 area_( 0.0 )
 {
     // prepare the data for output
@@ -329,6 +329,45 @@ createComplexMap_( const std::vector<stk::mesh::Entity*> & nodeList ) const
     return Teuchos::rcp(new Epetra_Map( -1, numDof, &(indices[0]), 0, comm_) );
 }
 // =============================================================================
+unsigned int
+Ginla::EpetraFVM::StkMesh::
+getCellDimension( unsigned int k ) const
+{
+  // See what kind of element we're dealing with here.
+  std::vector<stk::mesh::Entity*> cells = this->getOwnedCells();
+
+  unsigned int cellDimension;
+  stk::mesh::PairIterRelation rel = (*cells[k]).relations();
+  switch ( rel.size() )
+  {
+    case 3: // triangles
+        cellDimension = 2;
+        break;
+    case 4: // tetrahedra
+        cellDimension = 3;
+        break;
+    default:
+        TEST_FOR_EXCEPTION( true,
+                            std::runtime_error,
+                            "Control volumes can only be constructed consistently with triangular or tetrahedral elements."
+                          );
+  }
+  return cellDimension;
+}
+// =============================================================================
+unsigned int
+Ginla::EpetraFVM::StkMesh::
+getNumEdgesPerCell( unsigned int cellDimension ) const
+{
+  // In n-simplices, all nodes are connected with all other nodesMap.
+  // Hence, numEdges==sum_{i=1}^(numLocalNodes-1) i.
+  unsigned int numEdgesPerCell = 0;
+  for ( unsigned int i=1; i<cellDimension+1; i++ )
+      numEdgesPerCell += i;
+
+  return numEdgesPerCell;
+}
+// =============================================================================
 void
 Ginla::EpetraFVM::StkMesh::
 computeFvmEntities_() const
@@ -345,32 +384,17 @@ computeFvmEntities_() const
   unsigned int numCells = cells.size();
 
   TEUCHOS_ASSERT( !coareaEdgeRatio_.is_null() );
-  TEUCHOS_ASSERT_EQUALITY( coareaEdgeRatio_.size(), 6*numCells );
+  TEUCHOS_ASSERT_EQUALITY( coareaEdgeRatio_.size(), numCells );
 
   // Calculate the contributions to the finite volumes and the finite volume boundary areas cell by cell.
-  for (int k=0; k < cells.size(); k++)
+  for (unsigned int k=0; k < cells.size(); k++)
   {
       stk::mesh::PairIterRelation rel = (*cells[k]).relations();
-
       unsigned int numLocalNodes = rel.size();
+      unsigned int cellDimension = this->getCellDimension( k );
 
-      // See what kind of element we're dealing with here.
-      unsigned int cellDimension = 0;
-      switch ( numLocalNodes )
-      {
-        case 3: // triangle
-            cellDimension = 2;
-            break;
-        case 4: // tetrahedron
-            cellDimension = 3;
-            break;
-        default:
-            TEST_FOR_EXCEPTION( true,
-                                std::runtime_error,
-                                "Control volumes can only be constructed consistently with triangular or tetrahedral elements."
-                              );
-      }
-
+      // Confirm that we always have the same simplices.
+      TEUCHOS_ASSERT_EQUALITY( numLocalNodes, cellDimension+1 );
 
       // Fetch the nodal positions into 'localNodes'.
       const Teuchos::Array<Point> localNodes = this->getNodeCoordinates( rel );
@@ -387,13 +411,7 @@ computeFvmEntities_() const
                               "Control volumes can only be constructed consistently with triangular or tetrahedral elements."
                             );
 
-      // In n-simplices, all nodes are connected with all other nodesMap.
-      // Hence, numEdges==sum_{i=1}^(numLocalNodes-1) i.
-      unsigned int numEdges = 0;
-      for ( unsigned int i=1; i<numLocalNodes; i++ )
-         numEdges += i;
-
-      coareaEdgeRatio_[k] = Teuchos::ArrayRCP<double>( numEdges );
+      coareaEdgeRatio_[k] = Teuchos::ArrayRCP<double>( this->getNumEdgesPerCell( cellDimension ) );
 
       // Iterate over the edges.
       // As true edge entities are not available here, loop over all pairs of nodes.

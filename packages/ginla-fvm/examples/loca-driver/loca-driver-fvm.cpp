@@ -169,9 +169,9 @@ main ( int argc, char *argv[] )
         // double phi = 0.5 * M_PI; double theta = 0.0; // Y
         // double phi = 0.0; double theta = 0.5 * M_PI; // Z
         Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp =
-                Teuchos::rcp ( new Ginla::MagneticVectorPotential::Spherical ( mu, phi, theta ) );
+                Teuchos::rcp ( new Ginla::MagneticVectorPotential::Spherical ( mesh, mu, phi, theta ) );
 //        Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp =
-//                Teuchos::rcp ( new Ginla::MagneticVectorPotential::MagneticDot ( mu ) );
+//               Teuchos::rcp ( new Ginla::MagneticVectorPotential::MagneticDot ( mesh, mu ) );
 
         // create the mode evaluator
         Teuchos::RCP<Ginla::EpetraFVM::ModelEvaluator> glModel =

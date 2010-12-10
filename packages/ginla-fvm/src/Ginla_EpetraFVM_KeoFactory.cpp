@@ -94,7 +94,7 @@ buildKeo( Epetra_FECrsMatrix                              & keoMatrix,
               gid[1] = (*rel[e1].entity()).identifier() - 1;
 
               // coarea / edge ratio
-              double alpha = coareaEdgeRatios[k][edgeIndex++];
+              double alpha = coareaEdgeRatios[k][edgeIndex];
 
               // ---------------------------------------------------------------
               // Compute the integral
@@ -105,19 +105,21 @@ buildKeo( Epetra_FECrsMatrix                              & keoMatrix,
               //
               //    I ~ |xj-x0| * (xj-x0) . A( 0.5*(xj+x0) ) / |xj-x0|.
               //
-              Point midpoint; // get A(midpoint)
-              for (int i=0; i<midpoint.size(); i++ )
-                  midpoint[i] = 0.5 * ( node0[i] + node1[i] );
+//               Point midpoint; // get A(midpoint)
+//               for (int i=0; i<midpoint.size(); i++ )
+//                   midpoint[i] = 0.5 * ( node0[i] + node1[i] );
 
               // -------------------------------------------------------------------
               // Project vector field onto the edge.
-              Teuchos::RCP<Point> a = mvp_->getA( midpoint );
+//               Teuchos::RCP<Point> a = mvp_->getA( midpoint );
               // Instead of first computing the projection over the normalized edge
               // and then multiply it with the edge length, don't normalize the
               // edge vector.
-              double aInt = 0.0;
-              for (int i=0; i<midpoint.size(); i++ )
-                  aInt += ( node1[i] - node0[i] ) * (*a)[i];
+//               double aInt = 0.0;
+//               for (int i=0; i<midpoint.size(); i++ )
+//                   aInt += ( node1[i] - node0[i] ) * (*a)[i];
+
+              double aInt = mvp_->getAEdgeMidpointProjection( k, edgeIndex );
 
               // We'd like to insert the 2x2 matrix
               //
@@ -159,6 +161,8 @@ buildKeo( Epetra_FECrsMatrix                              & keoMatrix,
 
               // sum it all in!
               TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix.SumIntoGlobalValues ( indices, values ) );
+
+              edgeIndex++;
               // -------------------------------------------------------------------
           }
       }

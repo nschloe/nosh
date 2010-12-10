@@ -5,7 +5,13 @@
 #include <Teuchos_Tuple.hpp>
 #include <LOCA_Parameter_Vector.H>
 
-// typedef just like in ...
+// forward declarations
+namespace Ginla {
+  namespace EpetraFVM {
+    class StkMesh;
+  }
+}
+
 typedef Teuchos::Tuple<double,3> Point;
 
 namespace Ginla {
@@ -14,7 +20,7 @@ namespace Ginla {
 class Virtual
 {
 public:
-  Virtual();
+  Virtual( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh> & mesh );
 
   virtual
   ~Virtual();
@@ -33,35 +39,16 @@ public:
   Teuchos::RCP<Point>
   getA(const Point & x ) const = 0;
 
+  //! Return the projection of the magnetic vector potential onto the
+  //! edge with index \c edgeIndex at the midpoint of the edge.
   virtual
   double
-  getAx(const Point & x) const = 0;
-
-  virtual
-  double
-  getAy(const Point & x) const = 0;
-
-  virtual
-  double
-  getAz(const Point & x) const = 0;
-
-  virtual
-  Teuchos::RCP<Point>
-  getDADMu(const Point & x ) const = 0;
-
-  virtual
-  double
-  getDAxDMu(const Point & x ) const = 0;
-
-  virtual
-  double
-  getDAyDMu(const Point & x ) const = 0;
-
-  virtual
-  double
-  getDAzDMu(const Point & x ) const = 0;
+  getAEdgeMidpointProjection( const unsigned int cellIndex,
+                              const unsigned int edgeIndex
+                            ) const = 0;
 
 protected:
+  const Teuchos::RCP<Ginla::EpetraFVM::StkMesh> mesh_;
 private:
 };
 

@@ -1,12 +1,18 @@
 #include "Ginla_MagneticVectorPotential_MagneticDot.h"
 
+#include "Ginla_EpetraFVM_StkMesh.h"
+
 // ============================================================================
 Ginla::MagneticVectorPotential::MagneticDot::
-MagneticDot( double mu ) :
+MagneticDot( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh> & mesh,
+             double mu ) :
+  Virtual( mesh ),
   mu_( mu ),
   magnetRadius_( 4.5315 ),
   zz1_ ( 0.1 ),
-  zz2_ ( 1.1 )
+  zz2_ ( 1.1 ),
+  edgeMidpointProjectionCache_( Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >( mesh->getOwnedCells().size() ) ),
+  edgeMidpointProjectionCacheUpToDate_( false )
 {
 }
 // =============================================================================
@@ -45,7 +51,18 @@ getParameters() const
 // ============================================================================
 Teuchos::RCP<Point>
 Ginla::MagneticVectorPotential::MagneticDot::
-getA( const Point & x ) const
+getA(const Point & x) const
+{
+  Teuchos::RCP<Point> a = this->getRawA_( x );
+  (*a)[0] *= mu_;
+  (*a)[1] *= mu_;
+  (*a)[2] *= mu_;
+  return a;
+}
+// ============================================================================
+Teuchos::RCP<Point>
+Ginla::MagneticVectorPotential::MagneticDot::
+getRawA_( const Point & x ) const
 {
     // Span a cartesian grid over the sample, and integrate over it.
 
@@ -88,73 +105,73 @@ getA( const Point & x ) const
         }
     }
 
-    ax *= mu_;
-    ay *= mu_;
-
     return Teuchos::rcp( new Point( Teuchos::tuple<double>( ax, ay, 0.0 ) ) );
 }
 // ============================================================================
 double
 Ginla::MagneticVectorPotential::MagneticDot::
-getAx(const Point & x) const
+getAEdgeMidpointProjection( const unsigned int cellIndex,
+                            const unsigned int edgeIndex
+                          ) const
 {
-    Teuchos::RCP<Point> a = this->getA( x );
-    return (*a)[0];
+  if ( !edgeMidpointProjectionCacheUpToDate_ )
+      this->initializeEdgeMidpointProjectionCache_();
+
+  return mu_ * edgeMidpointProjectionCache_[cellIndex][edgeIndex];
 }
 // ============================================================================
-double
+void
 Ginla::MagneticVectorPotential::MagneticDot::
-getAy(const Point & x) const
+initializeEdgeMidpointProjectionCache_() const
 {
-    Teuchos::RCP<Point> a = this->getA( x );
-    return (*a)[1];
-}
-// ============================================================================
-double
-Ginla::MagneticVectorPotential::MagneticDot::
-getAz(const Point & x) const
-{
-    Teuchos::RCP<Point> a = this->getA( x );
-    return (*a)[2];
-}
-// ============================================================================
-Teuchos::RCP<Point>
-Ginla::MagneticVectorPotential::MagneticDot::
-getDADMu(const Point & x) const
-{
-    TEST_FOR_EXCEPTION( true,
-                        std::logic_error,
-                        "Not yet implemented." );
-    return Teuchos::rcp( new Point( Teuchos::tuple<double>( this->getDAxDMu(x),
-                                                            this->getDAyDMu(x),
-                                                            this->getDAzDMu(x)
-                                                            ) ) );
-}
-// ============================================================================
-double
-Ginla::MagneticVectorPotential::MagneticDot::
-getDAxDMu(const Point & x) const
-{
-    TEST_FOR_EXCEPTION( true,
-                        std::logic_error,
-                        "Not yet implemented." );
-    return - 0.5 * x[1];
-}
-// ============================================================================
-double
-Ginla::MagneticVectorPotential::MagneticDot::
-getDAyDMu(const Point & x) const
-{
-    TEST_FOR_EXCEPTION( true,
-                        std::logic_error,
-                        "Not yet implemented." );
-    return 0.5 * x[0];
-}
-// ============================================================================
-double
-Ginla::MagneticVectorPotential::MagneticDot::
-getDAzDMu(const Point & x) const
-{
-    return 0.0;
+  std::vector<stk::mesh::Entity*> cells = mesh_->getOwnedCells();
+
+  // Loop over all edges and create the cache.
+  // To this end, loop over all cells and the edges within the cell.
+  for ( int k=0; k<cells.size(); k++ )
+  {
+      // get the nodes local to the cell
+      stk::mesh::PairIterRelation rel = (*cells[k]).relations();
+
+      unsigned int numLocalNodes = rel.size();
+      unsigned int cellDimension = mesh_->getCellDimension( k );
+      // extract the nodal coordinates
+      Teuchos::Array<Point> localNodes = mesh_->getNodeCoordinates( rel );
+
+      edgeMidpointProjectionCache_[k] = Teuchos::ArrayRCP<double>( mesh_->getNumEdgesPerCell( cellDimension ) );
+
+      // In a simplex, the edges are exactly the connection between each pair
+      // of nodes. Hence, loop over pairs of nodes.
+      unsigned int edgeIndex = 0;
+      Teuchos::Tuple<int,2> gid;
+      for ( unsigned int e0 = 0; e0 < numLocalNodes; e0++ )
+      {
+          const Point & node0 = localNodes[e0];
+          gid[0] = (*rel[e0].entity()).identifier() - 1;
+          for ( unsigned int e1 = e0+1; e1 < numLocalNodes; e1++ )
+          {
+              const Point & node1 = localNodes[e1];
+              gid[1] = (*rel[e1].entity()).identifier() - 1;
+
+              // Get the midpoint of the edge.
+              Point midpoint; // get A(midpoint)
+              for (int i=0; i<midpoint.size(); i++ )
+                  midpoint[i] = 0.5 * ( node0[i] + node1[i] );
+
+              Teuchos::RCP<Point> a = this->getRawA_( midpoint );
+
+              // Instead of first computing the projection over the normalized edge
+              // and then multiply it with the edge length, don't normalize the
+              // edge vector.
+              edgeMidpointProjectionCache_[k][edgeIndex] = 0.0;
+              for (int i=0; i<midpoint.size(); i++ )
+                  edgeMidpointProjectionCache_[k][edgeIndex] += ( node1[i] - node0[i] ) * (*a)[i];
+              edgeIndex++;
+          }
+      }
+  }
+
+  edgeMidpointProjectionCacheUpToDate_ = true;
+  return;
 }
 // ============================================================================
