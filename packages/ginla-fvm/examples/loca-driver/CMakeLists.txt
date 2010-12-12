@@ -26,6 +26,5 @@ TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
                        ${locadriver_LIBS}
                        ${Trilinos_LIBRARIES}
                        ${Trilinos_TPL_LIBRARIES}
-                       ${Boost_LIBRARIES}
-                       bfd )
+                       ${Boost_LIBRARIES} )
 # ------------------------------------------------------------------------------

@@ -62,48 +62,91 @@ getA(const Point & x) const
 // ============================================================================
 Teuchos::RCP<Point>
 Ginla::MagneticVectorPotential::MagneticDot::
-getRawA_( const Point & x ) const
+getRawA_( const Point & X ) const
 {
+    const double pi = 3.14159265358979323846264338327950288419716939937510;
+
     // Span a cartesian grid over the sample, and integrate over it.
 
-    // The number of grids within the diameter of the magnetic dot, counting
-    // the boundary nodes in.
-    int n_mag = 101;
-    // grid width
-    double dx = 2.0 * magnetRadius_ / (n_mag - 1);
+    // For symmetry, choose something that
+    // choose a number that is divided by 4.
+    int nPhi = 100;
+
+    // Choose such that the quads in at radius/2 are approximately squared.
+    int nRadius = 1.0 / sin(pi/nPhi);
+
+    double dr = magnetRadius_ / nRadius;
 
     double ax = 0.0;
     double ay = 0.0;
-
-    for ( int ix=0; ix < n_mag; ix++ )
+    for ( int iPhi=0; iPhi<nPhi; iPhi++ )
     {
-        double xi = ix*dx - magnetRadius_ ;
-        for ( int iy=0; iy < n_mag; iy++ )
-        {
-            double yi = iy*dx - magnetRadius_;
-            // circular shape magnetic dot
-            if ( xi*xi + yi*yi <= magnetRadius_*magnetRadius_ )
-            {
-                // x distance between grid point x to magnetic point xi
-                double xx = x[0] - xi;
-                // y distance between grid point y to magnetic point yi
-                double yy = x[1] - yi;
-                // r distance between grid point X to magnetic point (xi,yi)
-                double r = xx * xx + yy * yy;
+        double x0 = cos( 2.0*pi/nPhi * iPhi  );
+        double y0 = sin( 2.0*pi/nPhi * iPhi  );
 
-                if ( r > 1.0e-15 )
-                {
-                    // 3D distance to point on upper edge (xi,yi,zz1)
-                    double r_3D1 = sqrt( r + zz1_ * zz1_);
-                    // 3D distance to point on lower edge (xi,yi,zz2)
-                    double r_3D2 = sqrt( r + zz2_ * zz2_);
-                    double alpha = ( zz2_ / r_3D2 - zz1_ / r_3D1 ) * dx * dx / r;
-                    ax += yy * alpha;
-                    ay -= xx * alpha;
-                }
+        for ( int iRadius=0; iRadius<nRadius; iRadius++ )
+        {
+            double rad = magnetRadius_ / nRadius * (iRadius + 0.5);
+            double x = rad * x0;
+            double y = rad * y0;
+
+            // r = squared distance between grid point X to magnetic point (x,y)
+            double xDist = X[0] - x;
+            double yDist = X[1] - y;
+            double r = xDist*xDist + yDist*yDist;
+
+            if ( r > 1.0e-15 )
+            {
+                // 3D distance to point on lower edge (xi,yi,zz1)
+                double r_3D1 = sqrt( r + zz1_ * zz1_);
+                // 3D distance to point on upper edge (xi,yi,zz2)
+                double r_3D2 = sqrt( r + zz2_ * zz2_);
+                double vol = pi / nPhi * (2.0*rad*dr) ; // pi/nPhi * [(r+h/2)^2 - (r-h/2)^2]
+                double alpha = ( zz2_ / r_3D2 - zz1_ / r_3D1 ) * vol / r;
+                ax += yDist * alpha;
+                ay -= xDist * alpha;
             }
         }
     }
+
+//     // The number of grids within the diameter of the magnetic dot, counting
+//     // the boundary nodes in.
+//     int n_mag = 101;
+//     // grid width
+//     double dx = 2.0 * magnetRadius_ / (n_mag - 1);
+// 
+//     double ax = 0.0;
+//     double ay = 0.0;
+// 
+//     for ( int ix=0; ix < n_mag; ix++ )
+//     {
+//         double xi = ix*dx - magnetRadius_ ;
+//         for ( int iy=0; iy < n_mag; iy++ )
+//         {
+//             double yi = iy*dx - magnetRadius_;
+//             // circular shape magnetic dot
+//             if ( xi*xi + yi*yi <= magnetRadius_*magnetRadius_ )
+//             {
+//                 // x distance between grid point x to magnetic point xi
+//                 double xx = x[0] - xi;
+//                 // y distance between grid point y to magnetic point yi
+//                 double yy = x[1] - yi;
+//                 // r distance between grid point X to magnetic point (xi,yi)
+//                 double r = xx * xx + yy * yy;
+// 
+//                 if ( r > 1.0e-15 )
+//                 {
+//                     // 3D distance to point on upper edge (xi,yi,zz1)
+//                     double r_3D1 = sqrt( r + zz1_ * zz1_);
+//                     // 3D distance to point on lower edge (xi,yi,zz2)
+//                     double r_3D2 = sqrt( r + zz2_ * zz2_);
+//                     double alpha = ( zz2_ / r_3D2 - zz1_ / r_3D1 ) * dx * dx / r;
+//                     ax += yy * alpha;
+//                     ay -= xx * alpha;
+//                 }
+//             }
+//         }
+//     }
 
     return Teuchos::rcp( new Point( Teuchos::tuple<double>( ax, ay, 0.0 ) ) );
 }
