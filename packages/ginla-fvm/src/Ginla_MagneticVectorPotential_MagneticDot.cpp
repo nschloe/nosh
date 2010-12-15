@@ -73,7 +73,7 @@ getRawA_( const Point & X ) const
     int nPhi = 100;
 
     // Choose such that the quads in at radius/2 are approximately squared.
-    int nRadius = 1.0 / sin(pi/nPhi);
+    int nRadius = nPhi / pi;
 
     double dr = magnetRadius_ / nRadius;
 

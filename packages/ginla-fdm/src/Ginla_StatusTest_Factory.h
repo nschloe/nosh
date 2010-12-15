@@ -126,7 +126,7 @@ buildStatusTests( Teuchos::ParameterList& p,
                 );
 
 
-};
+}
 
 }
 

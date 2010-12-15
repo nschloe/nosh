@@ -28,7 +28,10 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/FieldData.hpp>
+#include <stk_mesh/base/Comm.hpp> // for comm_mesh_counts
 #include <stk_mesh/fem/EntityRanks.hpp>
+#include <stk_mesh/fem/CreateAdjacentEntities.hpp>
+#include <stk_mesh/fem/FEMInterface.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 
 #include <stk_io/IossBridge.hpp>
@@ -372,6 +375,23 @@ void
 Ginla::EpetraFVM::StkMesh::
 computeFvmEntities_() const
 {
+
+//   stk::mesh::fem::FEMInterface &fem = stk::mesh::fem::get_fem_interface( *bulkData_ );
+// //   stk::mesh::fem::FEMInterface &fem = stk::mesh::fem::get_fem_interface( *metaData_ );
+// 
+//   stk::mesh::PartVector empty_add_parts;
+//   stk::mesh::create_adjacent_entities( *bulkData_, empty_add_parts );
+// 
+//   // count the entities for the fun of it
+//   std::vector<size_t> counts ;
+//   stk::mesh::comm_mesh_counts( *bulkData_ , counts );
+//   std::cout << counts[0] << std::endl; // nodes
+//   std::cout << counts[1] << std::endl;
+//   std::cout << counts[2] << std::endl;
+//   std::cout << counts[3] << std::endl; // elements
+//   std::cout << counts[4] << std::endl;
+//   std::cout << counts[5] << std::endl;
+
   TEUCHOS_ASSERT( !controlVolumes_.is_null() );
   TEUCHOS_ASSERT( !nodesOverlapMap_.is_null() );
 

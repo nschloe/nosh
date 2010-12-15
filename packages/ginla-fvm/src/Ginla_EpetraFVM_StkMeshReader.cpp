@@ -32,6 +32,7 @@
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/fem/EntityRanks.hpp>
+#include <stk_mesh/fem/DefaultFEM.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 
 #include <stk_io/IossBridge.hpp>
@@ -69,6 +70,11 @@ read( const Epetra_Comm & comm,
 
   Teuchos::RCP<stk::mesh::MetaData> metaData =
       Teuchos::rcp( new stk::mesh::MetaData( stk::mesh::fem_entity_rank_names() ) );
+
+//   // attach fem data
+//   size_t spatial_dimension = 3;
+//   stk::mesh::DefaultFEM fem( *metaData, spatial_dimension );
+
   unsigned int field_data_chunk_size = 1001;
   Teuchos::RCP<stk::mesh::BulkData> bulkData =
       Teuchos::rcp( new stk::mesh::BulkData( *metaData , MPI_COMM_WORLD , field_data_chunk_size ) );

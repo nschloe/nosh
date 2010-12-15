@@ -37,7 +37,6 @@ Virtual ( const Teuchos::RCP<Recti::Grid::Uniform>                    & grid,
         domainMap_(domainMap),
         rangeMap_(rangeMap),
         grid_ ( grid ),
-        A_ ( A ),
         cacheNeedsUpdating_( false ),
         ALeft_( Teuchos::rcp( new RealVector(domainMap) ) ),
         ARight_( Teuchos::rcp( new RealVector(domainMap) ) ),
@@ -48,7 +47,8 @@ Virtual ( const Teuchos::RCP<Recti::Grid::Uniform>                    & grid,
         dAdH0Above_( Teuchos::rcp( new RealVector(domainMap) ) ),
         dAdH0Below_( Teuchos::rcp( new RealVector(domainMap) ) ),
         firstTime_( true ),
-        AB_( Teuchos::null )
+        AB_( Teuchos::null ),
+        A_ ( A )
 {
   // Build the cache for queries to the magnetic vector potential A.
   this->buildACache_();

@@ -228,7 +228,7 @@ mergePsi_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
     TEUCHOS_ASSERT( psii_field != 0 );
 
     // Merge psi into the mesh.
-    for (int k=0; k < ownedNodes.size(); k++)
+    for (unsigned int k=0; k < ownedNodes.size(); k++)
     {
         // Extract real and imaginary part.
         double* localPsiR = stk::mesh::field_data( *psir_field, *ownedNodes[k] );

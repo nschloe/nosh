@@ -18,8 +18,8 @@ SET(CMAKE_BUILD_TYPE Release)
 SET(CMAKE_CXX_FLAGS_RELEASE     "-O2" )
 SET(CMAKE_Fortran_FLAGS_RELEASE "-O2" )
 
-SET(CMAKE_CXX_FLAGS_DEBUG     "-g -ggdb -Wall -pedantic -ansi -fbounds-check -Wextra -Wno-unused -std=c++0x -Wstrict-null-sentinel" )
-SET(CMAKE_Fortran_FLAGS_DEBUG "-g -ggdb -Wall -pedantic -ansi -fbounds-check -Wextra -Wno-unused -std=c++0x -Wstrict-null-sentinel" )
+SET(CMAKE_CXX_FLAGS_DEBUG     "-g -ggdb -Wall -pedantic -ansi -fbounds-check -Wextra -Wno-unused -Wstrict-null-sentinel -std=c++0x" )
+SET(CMAKE_Fortran_FLAGS_DEBUG "-g -ggdb -Wall -pedantic -ansi -fbounds-check -Wextra -Wno-unused -Wstrict-null-sentinel" )
 
 SET(CMAKE_CXX_FLAGS_PROFILE     "-pg -O2" )
 SET(CMAKE_Fortran_FLAGS_PROFILE "-pg -O2" )

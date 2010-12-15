@@ -70,7 +70,7 @@ buildKeo( Epetra_FECrsMatrix                              & keoMatrix,
 
   // Loop over all edges.
   // To this end, loop over all cells and the edges within the cell.
-  for ( int k=0; k<cells.size(); k++ )
+  for ( unsigned int k=0; k<cells.size(); k++ )
   {
       // get the nodes local to the cell
       stk::mesh::PairIterRelation rel = (*cells[k]).relations();
@@ -184,7 +184,7 @@ buildKeoGraph() const
   std::vector<stk::mesh::Entity*> cells = mesh_->getOwnedCells();
 
   // Loop over all edges and put entries whereever two nodes are connected.
-  for ( int k=0; k<cells.size(); k++ )
+  for ( unsigned int k=0; k<cells.size(); k++ )
   {
       // get the nodes local to the cell
       stk::mesh::PairIterRelation rel = (*cells[k]).relations();

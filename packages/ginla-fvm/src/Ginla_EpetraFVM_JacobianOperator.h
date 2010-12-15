@@ -96,11 +96,11 @@ private:
     bool useTranspose_;
     const Epetra_Comm & comm_;
 
-    Teuchos::RCP<const Epetra_Vector> currentX_;
-
     const Teuchos::RCP<Ginla::EpetraFVM::StkMesh> mesh_;
     const Teuchos::RCP<Ginla::EpetraFVM::KeoFactory> keoFactory_;
     const Teuchos::RCP<Epetra_FECrsMatrix> keoMatrix_;
+
+    Teuchos::RCP<const Epetra_Vector> currentX_;
 
     double temperature_;
 };

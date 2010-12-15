@@ -17,8 +17,8 @@
 
 */
 
-#ifndef GINLA_EPETRAFVM_STKMESH3D_H
-#define GINLA_EPETRAFVM_STKMESH3D_H
+#ifndef GINLA_EPETRAFVM_STKMESH_H
+#define GINLA_EPETRAFVM_STKMESH_H
 // =============================================================================
 // includes
 // #include "Ginla_Typedefs.h"

@@ -93,9 +93,9 @@ private:
 private:
 private:
 
-    const ObserverType observerType_;
     const Teuchos::RCP<const Ginla::IO::StateWriter> stateWriter_;
     const Teuchos::RCP<const Ginla::CreateSavable::Virtual> createSavable_;
+    const ObserverType observerType_;
 
     Teuchos::RCP<Ginla::IO::StatsWriter>   statsWriter_;
     Teuchos::RCP<const Ginla::ParameterHost::Virtual> parameterHost_;
