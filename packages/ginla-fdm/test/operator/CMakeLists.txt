@@ -26,6 +26,9 @@ ADD_TEST( operatorTest
 ADD_EXECUTABLE ( ${MY_EXECUTABLE}
                  main.cpp )
 
+SET_TARGET_PROPERTIES( ${MY_EXECUTABLE}
+                       PROPERTIES LINKER_LANGUAGE Fortran )
+
 SET ( internal_LIBS
       ginlafdm
       komplex2
