@@ -32,11 +32,16 @@
 #include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/CreateAdjacentEntities.hpp>
 #include <stk_mesh/fem/FEMInterface.hpp>
+#include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 
 #include <stk_io/IossBridge.hpp>
 #include <stk_io/util/UseCase_mesh.hpp>
 #include <Ionit_Initializer.h>
+
+#ifdef HAVE_MPI
+#include <Epetra_MpiComm.h>
+#endif
 // =============================================================================
 // typedefs
 typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorFieldType ;
@@ -376,21 +381,27 @@ Ginla::EpetraFVM::StkMesh::
 computeFvmEntities_() const
 {
 
-//   stk::mesh::fem::FEMInterface &fem = stk::mesh::fem::get_fem_interface( *bulkData_ );
-// //   stk::mesh::fem::FEMInterface &fem = stk::mesh::fem::get_fem_interface( *metaData_ );
-// 
-//   stk::mesh::PartVector empty_add_parts;
-//   stk::mesh::create_adjacent_entities( *bulkData_, empty_add_parts );
-// 
-//   // count the entities for the fun of it
-//   std::vector<size_t> counts ;
-//   stk::mesh::comm_mesh_counts( *bulkData_ , counts );
-//   std::cout << counts[0] << std::endl; // nodes
-//   std::cout << counts[1] << std::endl;
-//   std::cout << counts[2] << std::endl;
-//   std::cout << counts[3] << std::endl; // elements
-//   std::cout << counts[4] << std::endl;
-//   std::cout << counts[5] << std::endl;
+  std::cout << "a" << std::endl;
+  stk::mesh::fem::FEMInterface &fem = stk::mesh::fem::get_fem_interface( *bulkData_ );
+
+  std::cout << "b0" << std::endl;
+//   stk::mesh::fem::FEMInterface &fem = stk::mesh::fem::get_fem_interface( *metaData_ );
+  std::cout << "b1" << std::endl;
+
+  stk::mesh::PartVector empty_add_parts;
+  std::cout << "c" << std::endl;
+  stk::mesh::create_adjacent_entities( *bulkData_, empty_add_parts );
+  std::cout << "d" << std::endl;
+
+  // count the entities for the fun of it
+  std::vector<size_t> counts ;
+  stk::mesh::comm_mesh_counts( *bulkData_ , counts );
+  std::cout << counts[0] << std::endl; // nodes
+  std::cout << counts[1] << std::endl;
+  std::cout << counts[2] << std::endl;
+  std::cout << counts[3] << std::endl; // elements
+  std::cout << counts[4] << std::endl;
+  std::cout << counts[5] << std::endl;
 
   TEUCHOS_ASSERT( !controlVolumes_.is_null() );
   TEUCHOS_ASSERT( !nodesOverlapMap_.is_null() );
