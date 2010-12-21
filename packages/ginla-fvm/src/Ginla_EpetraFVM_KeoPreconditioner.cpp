@@ -52,7 +52,8 @@ KeoPreconditioner( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>               &
         keoPrec_( Teuchos::rcp( new Epetra_FECrsMatrix( Copy, keoFactory_->buildKeoGraph() ) ) ),
         belosPrec_ ( Teuchos::null ),
         keoProblem_( Teuchos::rcp( new Epetra_LinearProblem() ) ),
-        keoSolver_( Teuchos::null )
+        keoSolver_( Teuchos::null ),
+        invType_( Ml )
 {
 }
 // =============================================================================
@@ -78,61 +79,85 @@ Apply ( const Epetra_MultiVector & X,
     return keoPrec_->Apply( X, Y );
 }
 // =============================================================================
-// int
-// Ginla::EpetraFVM::KeoPreconditioner::
-// ApplyInverse ( const Epetra_MultiVector & X,
-//                      Epetra_MultiVector & Y
-//             ) const
-// {
-//    bool verbose = false;
-//    int frequency = 10;
-//    bool proc_verbose = verbose && (X.Comm().MyPID()==0);
-// 
-//    // Belos part
-//    ParameterList belosList;
-//    belosList.set( "Convergence Tolerance", 1.0e-5 ); // Relative convergence tolerance requested
-//    if (verbose) {
-//      belosList.set( "Verbosity", Belos::Errors + Belos::Warnings +
-//                     Belos::TimingDetails + Belos::StatusTestDetails );
-//      if (frequency > 0)
-//        belosList.set( "Output Frequency", frequency );
-//    }
-//    else
-//      belosList.set( "Verbosity", Belos::Errors + Belos::Warnings );
-// 
-//    // Construct an unpreconditioned linear problem instance.
-//    Teuchos::RCP<const Epetra_MultiVector> Xptr = Teuchos::rcpFromRef( X );
-//    Teuchos::RCP<Epetra_MultiVector> Yptr = Teuchos::rcpFromRef( Y );
-//    Belos::LinearProblem<double,MV,OP> problem( keoPrec_, Yptr, Xptr );
-//    bool set = problem.setProblem();
-//    if (set == false) {
-//      if (proc_verbose)
-//        std::cerr << "\nERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
-//      return -1;
-//    }
-//    // -------------------------------------------------------------------------
-//    // add preconditioner
-//    TEUCHOS_ASSERT( !belosPrec_.is_null() );
-//    problem.setLeftPrec( belosPrec_ );
-//    // -------------------------------------------------------------------------
-//    // Create an iterative solver manager.
-//    Teuchos::RCP<Belos::SolverManager<double,MV,OP> > newSolver =
-//            Teuchos::rcp( new Belos::PseudoBlockCGSolMgr<double,MV,OP>( rcp(&problem,false),
-//                                                                        rcp(&belosList,false)
-//                                                                      )
-//                        );
-// 
-//    // Perform solve
-//    Belos::ReturnType ret = newSolver->solve();
-// 
-//    return ret==Belos::Converged ? 0 : -1;
-// }
+int
+Ginla::EpetraFVM::KeoPreconditioner::
+ApplyInverse( const Epetra_MultiVector & X,
+                    Epetra_MultiVector & Y
+            ) const
+{
+  switch ( invType_ )
+  {
+    case Ilu:
+        return this->ApplyInverseIlu_( X, Y );
+        break;
+    case Ml:
+        return this->ApplyInverseMl_( X, Y );
+        break;
+    default:
+        TEST_FOR_EXCEPTION( true,
+                            std::invalid_argument,
+                            "Illegal value of the invType \"" << invType_ << "\"."
+                          );
+        break;
+  }
+  return -1;
+}
 // =============================================================================
 int
 Ginla::EpetraFVM::KeoPreconditioner::
-ApplyInverse ( const Epetra_MultiVector & X,
-                     Epetra_MultiVector & Y
-             ) const
+ApplyInverseMl_( const Epetra_MultiVector & X,
+                       Epetra_MultiVector & Y
+               ) const
+{
+   bool verbose = false;
+   int frequency = 10;
+   bool proc_verbose = verbose && (X.Comm().MyPID()==0);
+
+   // Belos part
+   ParameterList belosList;
+   belosList.set( "Convergence Tolerance", 1.0e-5 ); // Relative convergence tolerance requested
+   if (verbose) {
+     belosList.set( "Verbosity", Belos::Errors + Belos::Warnings +
+                    Belos::TimingDetails + Belos::StatusTestDetails );
+     if (frequency > 0)
+       belosList.set( "Output Frequency", frequency );
+   }
+   else
+     belosList.set( "Verbosity", Belos::Errors + Belos::Warnings );
+
+   // Construct an unpreconditioned linear problem instance.
+   Teuchos::RCP<const Epetra_MultiVector> Xptr = Teuchos::rcpFromRef( X );
+   Teuchos::RCP<Epetra_MultiVector> Yptr = Teuchos::rcpFromRef( Y );
+   Belos::LinearProblem<double,MV,OP> problem( keoPrec_, Yptr, Xptr );
+   bool set = problem.setProblem();
+   if (set == false) {
+     if (proc_verbose)
+       std::cerr << "\nERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
+     return -1;
+   }
+   // -------------------------------------------------------------------------
+   // add preconditioner
+   TEUCHOS_ASSERT( !belosPrec_.is_null() );
+   problem.setLeftPrec( belosPrec_ );
+   // -------------------------------------------------------------------------
+   // Create an iterative solver manager.
+   Teuchos::RCP<Belos::SolverManager<double,MV,OP> > newSolver =
+           Teuchos::rcp( new Belos::PseudoBlockCGSolMgr<double,MV,OP>( rcp(&problem,false),
+                                                                       rcp(&belosList,false)
+                                                                     )
+                       );
+
+   // Perform solve
+   Belos::ReturnType ret = newSolver->solve();
+
+   return ret==Belos::Converged ? 0 : -1;
+}
+// =============================================================================
+int
+Ginla::EpetraFVM::KeoPreconditioner::
+ApplyInverseIlu_ ( const Epetra_MultiVector & X,
+                         Epetra_MultiVector & Y
+                 ) const
 {
     TEUCHOS_ASSERT( !keoProblem_.is_null() );
     TEUCHOS_ASSERT( !keoSolver_.is_null() );
@@ -223,30 +248,62 @@ rebuild( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
         TEUCHOS_ASSERT_EQUALITY( 0, diag.Update( 1.0e-3, e, 1.0 ) );
         TEUCHOS_ASSERT_EQUALITY( 0, keoPrec_->ReplaceDiagonalValues( diag ) );
     }
-//     // -------------------------------------------------------------------------
-//    // rebuild ML structure
-//    Teuchos::ParameterList MLList;
-//    ML_Epetra::SetDefaults( "SA", MLList );
-// //    MLList.set("ML output", 0);
-//    MLList.set("max levels", 10);
-//    MLList.set("increasing or decreasing", "increasing");
-//    MLList.set("aggregation: type", "Uncoupled");
-//    MLList.set("smoother: type", "Chebyshev"); // "block Gauss-Seidel" "Chebyshev"
-// //      MLList.set("aggregation: threshold", 0.0);
-//    MLList.set("smoother: sweeps", 3);
-//    MLList.set("smoother: pre or post", "both");
-//    MLList.set("coarse: type", "Amesos-KLU");
-//    MLList.set("PDE equations", 2);
-//    Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> MLPrec =
-//            Teuchos::rcp( new ML_Epetra::MultiLevelPreconditioner(*keoPrec_, MLList) );
-//    TEUCHOS_ASSERT( !MLPrec.is_null() );
-// //    MLPrec->PrintUnused(0);
-// 
-//    // Create the Belos preconditioned operator from the preconditioner.
-//    // NOTE:  This is necessary because Belos expects an operator to apply the
-//    //        preconditioner with Apply() NOT ApplyInverse().
-//    belosPrec_ = Teuchos::rcp( new Belos::EpetraPrecOp( MLPrec ) );
     // -------------------------------------------------------------------------
+    // Rebuild.
+    switch ( invType_ )
+    {
+      case Ilu:
+          return this->rebuildMl_();
+          break;
+      case Ml:
+          return this->rebuildIlu_();
+          break;
+      default:
+          TEST_FOR_EXCEPTION( true,
+                              std::invalid_argument,
+                              "Illegal value of the invType \"" << invType_ << "\"."
+                            );
+          break;
+    }
+    // -------------------------------------------------------------------------
+
+    return;
+}
+// =============================================================================
+void
+Ginla::EpetraFVM::KeoPreconditioner::
+rebuildMl_()
+{
+    // rebuild ML structure
+    Teuchos::ParameterList MLList;
+    ML_Epetra::SetDefaults( "SA", MLList );
+//     MLList.set("ML output", 0);
+    MLList.set("max levels", 10);
+    MLList.set("increasing or decreasing", "increasing");
+    MLList.set("aggregation: type", "Uncoupled");
+    MLList.set("smoother: type", "Chebyshev"); // "block Gauss-Seidel" "Chebyshev"
+//     MLList.set("aggregation: threshold", 0.0);
+    MLList.set("smoother: sweeps", 3);
+    MLList.set("smoother: pre or post", "both");
+    MLList.set("coarse: type", "Amesos-KLU");
+    MLList.set("PDE equations", 2);
+    Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> MLPrec =
+        Teuchos::rcp( new ML_Epetra::MultiLevelPreconditioner(*keoPrec_, MLList) );
+    TEUCHOS_ASSERT( !MLPrec.is_null() );
+//     MLPrec->PrintUnused(0);
+
+    // Create the Belos preconditioned operator from the preconditioner.
+    // NOTE:  This is necessary because Belos expects an operator to apply the
+    //        preconditioner with Apply() NOT ApplyInverse().
+    belosPrec_ = Teuchos::rcp( new Belos::EpetraPrecOp( MLPrec ) );
+
+    return;
+}
+// =============================================================================
+void
+Ginla::EpetraFVM::KeoPreconditioner::
+rebuildIlu_()
+{
     // set the matrix the linear problem
     keoProblem_->SetOperator( &*keoPrec_ );
 
@@ -258,7 +315,7 @@ rebuild( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
     // TODO reuse symbolic factorization
     TEUCHOS_ASSERT_EQUALITY( 0, keoSolver_->SymbolicFactorization() );
     TEUCHOS_ASSERT_EQUALITY( 0, keoSolver_->NumericFactorization() );
-    // -------------------------------------------------------------------------
+
     return;
 }
 // =============================================================================

@@ -99,6 +99,27 @@ public:
 
 protected:
 private:
+    int
+    ApplyInverseMl_( const Epetra_MultiVector & X,
+                           Epetra_MultiVector & Y
+                   ) const;
+
+    int
+    ApplyInverseIlu_ ( const Epetra_MultiVector & X,
+                             Epetra_MultiVector & Y
+                     ) const;
+
+    void
+    rebuildMl_();
+
+    void
+    rebuildIlu_();
+
+private:
+
+    enum InversionType { Ilu, Ml };
+
+private:
     bool useTranspose_;
     const Teuchos::RCP<const Epetra_Comm> comm_;
 
@@ -109,6 +130,8 @@ private:
 
     Teuchos::RCP<Epetra_LinearProblem> keoProblem_;
     Teuchos::RCP<Amesos_BaseSolver> keoSolver_;
+
+    InversionType invType_;
 };
 // =============================================================================
 } // namespace FVM
