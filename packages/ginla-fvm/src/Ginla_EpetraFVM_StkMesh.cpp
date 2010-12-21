@@ -544,7 +544,6 @@ computeFvmEntities_() const
                     );
               }
 
-
               double edgeLength = this->norm2_( this->add_( 1.0, x1, -1.0, x0 ) );
               coareaEdgeRatio_[k][edgeIndex++] = coedgeVolume / edgeLength;
 

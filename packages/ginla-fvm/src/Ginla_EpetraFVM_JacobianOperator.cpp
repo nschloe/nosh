@@ -77,13 +77,7 @@ Apply ( const Epetra_MultiVector & X,
     {
         for ( int k=0; k<numMyPoints; k++ )
         {
-            // get the local ID in the controlVolumes
-            int globalId = X.Map().GID( k );
-            TEUCHOS_ASSERT_INEQUALITY( globalId, !=, X.Map().IndexBase()-1 );
-            int l = controlVolumes.Map().LID( globalId );
-            TEUCHOS_ASSERT_INEQUALITY( l, !=, -1 );
-
-            double alpha = controlVolumes[l] * (
+            double alpha = controlVolumes[k] * (
                            1.0 - temperature_
                            - 2.0 * ( (*currentX_)[2*k]*(*currentX_)[2*k] + (*currentX_)[2*k+1]*(*currentX_)[2*k+1] )
                            );
@@ -95,11 +89,11 @@ Apply ( const Epetra_MultiVector & X,
 
             // terms corresponding to  B = diag( psi^2 )
             // Re(phi^2)
-            double rePhiSquare = controlVolumes[l] * (
+            double rePhiSquare = controlVolumes[k] * (
                                  (*currentX_)[2*k]*(*currentX_)[2*k] - (*currentX_)[2*k+1]*(*currentX_)[2*k+1]
                                  );
             // Im(phi^2)
-            double imPhiSquare = controlVolumes[l] * (
+            double imPhiSquare = controlVolumes[k] * (
                                  2.0 * (*currentX_)[2*k] * (*currentX_)[2*k+1]
                                  );
             // real part
