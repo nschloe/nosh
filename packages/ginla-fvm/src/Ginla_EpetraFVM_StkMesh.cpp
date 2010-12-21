@@ -66,7 +66,7 @@ complexMap_       ( this->createComplexMap_( this->getOwnedNodes()   ) ),
 complexOverlapMap_( this->createComplexMap_( this->getOverlapNodes_() ) ),
 scaling_ ( Teuchos::tuple( 1.0, 1.0, 1.0 ) ),
 fvmEntitiesUpToDate_( false ),
-controlVolumes_( Teuchos::rcp( new Epetra_Vector( *nodesOverlapMap_ ) ) ),
+controlVolumes_( Teuchos::rcp( new Epetra_Vector( *nodesMap_ ) ) ),
 coareaEdgeRatio_( Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >( this->getOwnedCells().size() ) ),
 area_( 0.0 )
 {
@@ -381,35 +381,39 @@ Ginla::EpetraFVM::StkMesh::
 computeFvmEntities_() const
 {
 
-  std::cout << "a" << std::endl;
-  stk::mesh::fem::FEMInterface &fem = stk::mesh::fem::get_fem_interface( *bulkData_ );
-
-  std::cout << "b0" << std::endl;
-//   stk::mesh::fem::FEMInterface &fem = stk::mesh::fem::get_fem_interface( *metaData_ );
-  std::cout << "b1" << std::endl;
-
-  stk::mesh::PartVector empty_add_parts;
-  std::cout << "c" << std::endl;
-  stk::mesh::create_adjacent_entities( *bulkData_, empty_add_parts );
-  std::cout << "d" << std::endl;
-
-  // count the entities for the fun of it
-  std::vector<size_t> counts ;
-  stk::mesh::comm_mesh_counts( *bulkData_ , counts );
-  std::cout << counts[0] << std::endl; // nodes
-  std::cout << counts[1] << std::endl;
-  std::cout << counts[2] << std::endl;
-  std::cout << counts[3] << std::endl; // elements
-  std::cout << counts[4] << std::endl;
-  std::cout << counts[5] << std::endl;
+//   std::cout << "a" << std::endl;
+//   stk::mesh::fem::FEMInterface &fem = stk::mesh::fem::get_fem_interface( *bulkData_ );
+// 
+//   std::cout << "b0" << std::endl;
+// //   stk::mesh::fem::FEMInterface &fem = stk::mesh::fem::get_fem_interface( *metaData_ );
+//   std::cout << "b1" << std::endl;
+// 
+//   stk::mesh::PartVector empty_add_parts;
+//   std::cout << "c" << std::endl;
+//   stk::mesh::create_adjacent_entities( *bulkData_, empty_add_parts );
+//   std::cout << "d" << std::endl;
+// 
+//   // count the entities for the fun of it
+//   std::vector<size_t> counts ;
+//   stk::mesh::comm_mesh_counts( *bulkData_ , counts );
+//   std::cout << counts[0] << std::endl; // nodes
+//   std::cout << counts[1] << std::endl;
+//   std::cout << counts[2] << std::endl;
+//   std::cout << counts[3] << std::endl; // elements
+//   std::cout << counts[4] << std::endl;
+//   std::cout << counts[5] << std::endl;
 
   TEUCHOS_ASSERT( !controlVolumes_.is_null() );
   TEUCHOS_ASSERT( !nodesOverlapMap_.is_null() );
 
   // Compute the volume of the (Voronoi) control cells for each point.
-  if ( !controlVolumes_->Map().SameAs( *nodesOverlapMap_ ) )
-      controlVolumes_->ReplaceMap( *nodesOverlapMap_ );
-  controlVolumes_->PutScalar( 0.0 );
+  if ( !controlVolumes_->Map().SameAs( *nodesMap_ ) )
+      TEUCHOS_ASSERT_EQUALITY( 0, controlVolumes_->ReplaceMap( *nodesMap_ ) );
+  TEUCHOS_ASSERT_EQUALITY( 0, controlVolumes_->PutScalar( 0.0 ) );
+
+  // create a temporary to hold the overlap values
+  Teuchos::RCP<Epetra_Vector> cvOverlap =
+      Teuchos::rcp( new Epetra_Vector( *nodesOverlapMap_ ) );
 
   std::vector<stk::mesh::Entity*> cells = this->getOwnedCells();
   unsigned int numCells = cells.size();
@@ -546,18 +550,18 @@ computeFvmEntities_() const
 
               // Compute the contributions to the finite volumes of the adjacent edges.
               double pyramidVolume = 0.5*edgeLength * coedgeVolume / cellDimension;
-              TEUCHOS_ASSERT_EQUALITY( 0, controlVolumes_->SumIntoGlobalValues( 1, &pyramidVolume, &gid0 ) );
-              TEUCHOS_ASSERT_EQUALITY( 0, controlVolumes_->SumIntoGlobalValues( 1, &pyramidVolume, &gid1 ) );
+              TEUCHOS_ASSERT_EQUALITY( 0, cvOverlap->SumIntoGlobalValues( 1, &pyramidVolume, &gid0 ) );
+              TEUCHOS_ASSERT_EQUALITY( 0, cvOverlap->SumIntoGlobalValues( 1, &pyramidVolume, &gid1 ) );
           }
       }
   }
 
   // Export control volumes to a non-overlapping map, and sum the entries.
   Epetra_Export exporter( *nodesOverlapMap_, *nodesMap_ );
-  controlVolumes_->Export( *controlVolumes_, exporter, Add );
+  TEUCHOS_ASSERT_EQUALITY( 0, controlVolumes_->Export( *cvOverlap, exporter, Add ) );
 
   // update the domain area value
-  controlVolumes_->Norm1( &area_ );
+  TEUCHOS_ASSERT_EQUALITY( 0, controlVolumes_->Norm1( &area_ ) );
 
   fvmEntitiesUpToDate_ = true;
 

@@ -57,9 +57,9 @@ Ginla::EpetraFVM::StkMeshReader::
 void
 Ginla::EpetraFVM::StkMeshReader::
 read( const Epetra_Comm & comm,
-            Teuchos::RCP<Epetra_Vector> & psi,
-            Teuchos::RCP<Ginla::EpetraFVM::StkMesh> & mesh,
-            Teuchos::ParameterList & parameterList
+      Teuchos::RCP<Epetra_Vector> & psi,
+      Teuchos::RCP<Ginla::EpetraFVM::StkMesh> & mesh,
+      Teuchos::ParameterList & parameterList
     )
 {
   // Take two different fields with one component
@@ -163,10 +163,11 @@ read( const Epetra_Comm & comm,
   // Restart index to read solution from exodus file.
 //   int index = -1; // Default to no restart
   int index = 1; // restart from the first step
-  if ( index<1 )
-    std::cout << "Restart Index not set. Not reading solution from exodus (" << index << ")"<< endl;
-  else
-    std::cout << "Restart Index set, reading solution time step: " << index << endl;
+  if ( comm.MyPID() == 0 )
+      if ( index<1 )
+        std::cout << "Restart Index not set. Not reading solution from exodus (" << index << ")"<< endl;
+      else
+        std::cout << "Restart Index set, reading solution time step: " << index << endl;
 
   stk::io::util::populate_bulk_data( *bulkData,
                                      *meshData,

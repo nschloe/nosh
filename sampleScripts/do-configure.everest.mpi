@@ -1,3 +1,3 @@
 cmake \
-    -D Trilinos_DIR:PATH=/opt/trilinos/dev/master/openmpi/1.4.2/gcc/4.4.4/include \
+    -D Trilinos_DIR:PATH=/opt/trilinos/dev/master/openmpi/1.4.3/gcc/4.5.1/include \
     ../../source

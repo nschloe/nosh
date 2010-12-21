@@ -102,10 +102,11 @@ setupParameters_( const Teuchos::ParameterList & params )
       else
       {
           (*p_init_)[k] = (*p_default_values)[k];
-          std::cerr << "Parameter \"" << (*p_names_)[k]
-                    << "\" initialized with default value \""
-                    << (*p_default_values)[k] << "\"."
-                    << std::endl;
+          if ( comm.MyPID() == 0 )
+              std::cerr << "Parameter \"" << (*p_names_)[k]
+                        << "\" initialized with default value \""
+                        << (*p_default_values)[k] << "\"."
+                        << std::endl;
       }
 
   // TODO warn if there are unused entries in params

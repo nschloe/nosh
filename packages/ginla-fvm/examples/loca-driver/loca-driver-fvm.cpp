@@ -164,7 +164,8 @@ main ( int argc, char *argv[] )
         double mu = problemParameters.get<double> ( "mu" );
         double phi = problemParameters.get<double> ( "phi" );
         double theta = problemParameters.get<double> ( "theta" );
-        std::cout << "mu, phi, theta" << mu << " " <<  phi << " " << theta << std::endl;
+        if ( eComm->MyPID() == 0 )
+            std::cout << "mu, phi, theta" << mu << " " <<  phi << " " << theta << std::endl;
         // double phi = 0.0; double theta = 0.0; // X
         // double phi = 0.5 * M_PI; double theta = 0.0; // Y
         // double phi = 0.0; double theta = 0.5 * M_PI; // Z
@@ -232,7 +233,7 @@ main ( int argc, char *argv[] )
         std::string contParam = piroParams->sublist ( "LOCA" )
                                 .sublist ( "Stepper" )
                                 .get<std::string> ( "Continuation Parameter" );
-        if ( problemParameters.isParameter ( contParam ) )
+        if ( eComm->MyPID() == 0 && problemParameters.isParameter ( contParam ) )
             std::cerr << "Warning: Continuation parameter \""
                     << contParam
                     << "\" explicitly given. Initial value will be overwritten by 'LOCA->Stepper->Initial Value', though."
