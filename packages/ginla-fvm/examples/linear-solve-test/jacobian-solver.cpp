@@ -1,9 +1,3 @@
-#ifdef HAVE_MPI
-#include <Epetra_MpiComm.h>
-#else
-#include <Epetra_SerialComm.h>
-#endif
-
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_XMLParameterListHelpers.hpp>
@@ -12,15 +6,24 @@
 
 #include <boost/filesystem.hpp>
 
-#include "Ginla_EpetraFVM_ModelEvaluator.h"
-#include "Ginla_EpetraFVM_State.h"
-#include "VIO_EpetraMesh_Reader.h"
-#include "Ginla_EpetraFVM_KeoPreconditioner.h"
-#include "Ginla_EpetraFVM_JacobianOperator.h"
+#include "Ginla_EpetraFVM_StkMeshReader.h"
 
-#include "Ginla_MagneticVectorPotential_X.h"
-#include "Ginla_MagneticVectorPotential_Y.h"
+#include "Ginla_EpetraFVM_State.h"
+#include "Ginla_EpetraFVM_ModelEvaluator.h"
+#include "Ginla_EpetraFVM_KeoPreconditioner.h"
+#include "Ginla_IO_StateWriter.h"
+#include "Ginla_IO_StatsWriter.h"
+#include "Ginla_IO_NoxObserver.h"
+#include "Ginla_IO_SaveEigenData.h"
+#include "Ginla_MagneticVectorPotential_Spherical.h"
 #include "Ginla_MagneticVectorPotential_Z.h"
+#include "Ginla_MagneticVectorPotential_MagneticDot.h"
+
+#ifdef HAVE_MPI
+#include <Epetra_MpiComm.h>
+#else
+#include <Epetra_SerialComm.h>
+#endif
 
 // =============================================================================
 int main ( int argc, char *argv[] )
@@ -68,31 +71,34 @@ int main ( int argc, char *argv[] )
 
       Teuchos::ParameterList              problemParameters;
       Teuchos::RCP<Epetra_Vector>         z = Teuchos::null;
-      Teuchos::RCP<VIO::EpetraMesh::Mesh> mesh = Teuchos::null;
+      Teuchos::RCP<Ginla::EpetraFVM::StkMesh> mesh = Teuchos::null;
 
-      VIO::EpetraMesh::read( eComm,
-                             inputFileName,
-                             z,
-                             mesh,
-                             problemParameters
-                           );
+      Ginla::EpetraFVM::StkMeshRead( *eComm,
+                                      inputFileName,
+                                      z,
+                                      mesh,
+                                      problemParameters
+                                    );
+      double mu = problemParameters.get<double> ( "mu" );
 
-      double mu = 1.0e-0;
+      Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp =
+              Teuchos::rcp ( new Ginla::MagneticVectorPotential::Z ( mesh, mu ) );
+
+      Teuchos::RCP<LOCA::ParameterVector> mvpParameters =
+          Teuchos::rcp( new LOCA::ParameterVector() );
+      mvpParameters->addParameter( "mu", mu );
       Teuchos::Tuple<double,3> scaling = Teuchos::tuple( 1.0, 1.0, 1.0 );
       double temperature = 1.0;
 
-      Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp =
-              Teuchos::rcp ( new Ginla::MagneticVectorPotential::Z ( mu ) );
-
       // create the preconditioner
       Teuchos::RCP<Ginla::EpetraFVM::KeoPreconditioner> keoPrec =
-              Teuchos::rcp( new  Ginla::EpetraFVM::KeoPreconditioner( mesh,  mvp ) );
-      keoPrec->rebuild( mu, scaling );
+              Teuchos::rcp( new  Ginla::EpetraFVM::KeoPreconditioner( mesh, mvp ) );
+      keoPrec->rebuild( mvpParameters, scaling );
 
       // create the jacobian
       Teuchos::RCP<Ginla::EpetraFVM::JacobianOperator> jacobian =
               Teuchos::rcp( new Ginla::EpetraFVM::JacobianOperator( mesh, mvp ) );
-      jacobian->rebuild( mu, scaling, temperature, z );
+      jacobian->rebuild( mvpParameters, scaling, temperature, z );
 
       // create initial guess and right-hand side
       Teuchos::RCP<Epetra_Vector> epetra_x = Teuchos::rcp( new Epetra_Vector( jacobian->OperatorDomainMap() ) );
@@ -158,6 +164,12 @@ int main ( int argc, char *argv[] )
         status += 10;
     }
     catch ( std::string & e )
+    {
+        if ( eComm->MyPID() == 0 )
+            std::cerr << e << std::endl;
+        status += 10;
+    }
+    catch ( const char * e )
     {
         if ( eComm->MyPID() == 0 )
             std::cerr << e << std::endl;

@@ -156,4 +156,3 @@ initializeEdgeMidpointProjectionCache_() const
   return;
 }
 // ============================================================================
-

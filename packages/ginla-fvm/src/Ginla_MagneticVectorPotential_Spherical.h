@@ -37,6 +37,7 @@ public:
   Teuchos::RCP<Point>
   getA(const Point & x ) const;
 
+  virtual
   double
   getAEdgeMidpointProjection( const unsigned int cellIndex,
                               const unsigned int edgeIndex
@@ -50,27 +51,6 @@ private:
 
   void
   initializeEdgeMidpointProjectionCache_() const;
-
-  double
-  getAx(const Point & x) const;
-
-  double
-  getAy(const Point & x) const;
-
-  double
-  getAz(const Point & x) const;
-
-  Teuchos::RCP<Point>
-  getDADMu(const Point & x) const;
-
-  double
-  getDAxDMu(const Point & x) const;
-
-  double
-  getDAyDMu(const Point & x) const;
-
-  double
-  getDAzDMu(const Point & x) const;
 
 private:
 

@@ -53,7 +53,7 @@ TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
 SET ( pirodriverfvmepetra_SRCS
       piro-driver-fvm-epetra.cpp  )
 SET ( pirodriverfvmepetra_LIBS
-      ginlafvm-epetra
+      ginlafvm
       ginla
       komplex2
       vio

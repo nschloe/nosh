@@ -1,15 +1,10 @@
-#ifdef HAVE_MPI
-#include <Epetra_MpiComm.h>
-#else
-#include <Epetra_SerialComm.h>
-#endif
-
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_XMLParameterListHelpers.hpp>
 #include <Epetra_LinearProblem.h>
+#include <AztecOO.h>
 
-//#include <ml_epetra_preconditioner.h>
+#include <ml_epetra_preconditioner.h>
 
 //#include "BelosConfigDefs.hpp"
 #include <BelosLinearProblem.hpp>
@@ -17,18 +12,26 @@
 //#include <BelosPseudoBlockGmresSolMgr.hpp>
 #include <BelosBlockCGSolMgr.hpp>
 
-#include <ml_epetra_preconditioner.h>
-
 #include <boost/filesystem.hpp>
 
-#include "Ginla_EpetraFVM_ModelEvaluator.h"
-#include "Ginla_EpetraFVM_State.h"
-#include "VIO_EpetraMesh_Reader.h"
-#include "Ginla_EpetraFVM_KeoFactory.h"
+#include "Ginla_EpetraFVM_StkMeshReader.h"
 
-#include "Ginla_MagneticVectorPotential_X.h"
-#include "Ginla_MagneticVectorPotential_Y.h"
+#include "Ginla_EpetraFVM_State.h"
+#include "Ginla_EpetraFVM_ModelEvaluator.h"
+#include "Ginla_EpetraFVM_KeoFactory.h"
+#include "Ginla_IO_StateWriter.h"
+#include "Ginla_IO_StatsWriter.h"
+#include "Ginla_IO_NoxObserver.h"
+#include "Ginla_IO_SaveEigenData.h"
+#include "Ginla_MagneticVectorPotential_Spherical.h"
 #include "Ginla_MagneticVectorPotential_Z.h"
+#include "Ginla_MagneticVectorPotential_MagneticDot.h"
+
+#ifdef HAVE_MPI
+#include <Epetra_MpiComm.h>
+#else
+#include <Epetra_SerialComm.h>
+#endif
 
 // =============================================================================
 typedef double                           ST;
@@ -88,18 +91,22 @@ int main ( int argc, char *argv[] )
 
       Teuchos::ParameterList              problemParameters;
       Teuchos::RCP<Epetra_Vector>         z = Teuchos::null;
-      Teuchos::RCP<VIO::EpetraMesh::Mesh> mesh = Teuchos::null;
+      Teuchos::RCP<Ginla::EpetraFVM::StkMesh> mesh = Teuchos::null;
 
-      VIO::EpetraMesh::read( eComm,
-                             inputFileName,
-                             z,
-                             mesh,
-                             problemParameters
-                           );
+      Ginla::EpetraFVM::StkMeshRead( *eComm,
+                                      inputFileName,
+                                      z,
+                                      mesh,
+                                      problemParameters
+                                    );
 
-      double mu = problemParameters.get<double>( "mu" );
+      double mu = problemParameters.get<double> ( "mu" );
       Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp =
-              Teuchos::rcp ( new Ginla::MagneticVectorPotential::Z ( mu ) );
+              Teuchos::rcp ( new Ginla::MagneticVectorPotential::Z ( mesh, mu ) );
+
+      Teuchos::RCP<LOCA::ParameterVector> mvpParameters =
+          Teuchos::rcp( new LOCA::ParameterVector() );
+      mvpParameters->addParameter( "mu", mu );
 
       // create the kinetic energy operator
       Teuchos::RCP<Ginla::EpetraFVM::KeoFactory> keoFactory =
@@ -107,7 +114,7 @@ int main ( int argc, char *argv[] )
       Teuchos::RCP<Epetra_FECrsMatrix> keoMatrix =
               Teuchos::rcp( new Epetra_FECrsMatrix( Copy, keoFactory->buildKeoGraph() ) );
       Teuchos::Tuple<double,3> scaling( Teuchos::tuple(1.0,1.0,1.0) );
-      keoFactory->buildKeo( *keoMatrix, mu, scaling );
+      keoFactory->buildKeo( *keoMatrix, mvpParameters, scaling );
 
       // Make sure the matrix is indeed positive definite, and not
       // negative definite. Belos needs that (2010-11-05).
@@ -243,6 +250,12 @@ int main ( int argc, char *argv[] )
         status += 10;
     }
     catch ( std::string & e )
+    {
+        if ( eComm->MyPID() == 0 )
+            std::cerr << e << std::endl;
+        status += 10;
+    }
+    catch ( const char * e )
     {
         if ( eComm->MyPID() == 0 )
             std::cerr << e << std::endl;

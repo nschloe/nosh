@@ -14,7 +14,7 @@ LINK_DIRECTORIES( ${Boost_LIBRARY_DIRS}
 SET ( locadriver_SRCS
       loca-driver-fvm.cpp  )
 SET ( locadriver_LIBS
-      ginlafvm-epetra
+      ginlafvm
     )
 SET( MY_EXECUTABLE
      "loca-driver-fvm.exe" )

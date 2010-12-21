@@ -31,5 +31,5 @@ INCLUDE_DIRECTORIES( ${ginzburg-landau_SOURCE_DIR}/packages/ginla/src
                      ${ginzburg-landau_SOURCE_DIR}/packages/vio/src
                    )
 
-ADD_LIBRARY ( ginlafvm-epetra
+ADD_LIBRARY ( ginlafvm
               ${ginla_SRCS} )
