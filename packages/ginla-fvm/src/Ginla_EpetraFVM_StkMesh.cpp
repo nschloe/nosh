@@ -61,9 +61,9 @@ bulkData_( bulkData ),
 coordinatesField_ ( coordinatesField ),
 // thicknessField_ ( thicknessField ),
 nodesMap_       ( this->createNodesMap_( this->getOwnedNodes()   ) ),
-nodesOverlapMap_( this->createNodesMap_( this->getOverlapNodes_() ) ),
+nodesOverlapMap_( this->createNodesMap_( this->getOverlapNodes() ) ),
 complexMap_       ( this->createComplexMap_( this->getOwnedNodes()   ) ),
-complexOverlapMap_( this->createComplexMap_( this->getOverlapNodes_() ) ),
+complexOverlapMap_( this->createComplexMap_( this->getOverlapNodes() ) ),
 scaling_ ( Teuchos::tuple( 1.0, 1.0, 1.0 ) ),
 fvmEntitiesUpToDate_( false ),
 controlVolumes_( Teuchos::rcp( new Epetra_Vector( *nodesMap_ ) ) ),
@@ -293,7 +293,7 @@ getOwnedNodes() const
 // =============================================================================
 std::vector<stk::mesh::Entity*>
 Ginla::EpetraFVM::StkMesh::
-getOverlapNodes_() const
+getOverlapNodes() const
 {
     //  overlapnodes used for overlap map -- stored for changing coords
     stk::mesh::Selector select_overlap_in_part = stk::mesh::Selector( metaData_->universal_part() )

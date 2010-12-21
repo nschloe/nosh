@@ -106,6 +106,9 @@ public:
     std::vector<stk::mesh::Entity*>
     getOwnedNodes() const;
 
+    std::vector<stk::mesh::Entity*>
+    getOverlapNodes() const;
+
     Teuchos::Array<Point>
     getNodeCoordinates( const stk::mesh::PairIterRelation & relation ) const;
 
@@ -150,9 +153,6 @@ private:
 
     void
     computeFvmEntities_() const;
-
-    std::vector<stk::mesh::Entity*>
-    getOverlapNodes_() const;
 
     Teuchos::RCP<Epetra_Map>
     createNodesMap_( const std::vector<stk::mesh::Entity*> & nodesList ) const;

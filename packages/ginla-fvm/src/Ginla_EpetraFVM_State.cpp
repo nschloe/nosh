@@ -93,6 +93,7 @@ save( const std::string            & fileBaseName,
     // Merge the state into the mesh.
 //     mesh_->getBulkData()->modification_begin();
     this->mergePsi_( mesh_, psi_ );
+
 //     mesh_->getBulkData()->modification_end();
 
     // handle parameters
@@ -105,12 +106,12 @@ save( const std::string            & fileBaseName,
                                                           *mesh_->getBulkData(),
                                                           index
                                                         );
-
-    std::cout << "Ginla::EpetraFVM::StkMeshWriter::write:\n"
-              << "\twriting time " << index << "\n"
-              << "\tindex " << out_step << "\n"
-              << "\tto file " //<< fileName.str()
-              << std::endl;
+    if ( psi_.Comm().MyPID() == 0 )
+        std::cout << "Ginla::EpetraFVM::StkMeshWriter::write:\n"
+                  << "\twriting time " << index << "\n"
+                  << "\tindex " << out_step << "\n"
+                  << "\tto file " //<< fileName.str()
+                  << std::endl;
 
 //     Ginla::EpetraFVM::StkMeshWrite( fileBaseName, index,  psi_, mesh_, p );
 
@@ -125,6 +126,7 @@ save( const std::string            & fileBaseName,
 {
     Teuchos::ParameterList empty;
     this->save( fileBaseName, index, empty );
+    return;
 }
 // =============================================================================
 double
@@ -218,22 +220,29 @@ mergePsi_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
            const Epetra_Vector                                 & psi
          ) const
 {
-    // Get owned nodes.
-    const std::vector<stk::mesh::Entity*> & ownedNodes =  mesh->getOwnedNodes();
-
     VectorFieldType * psir_field = mesh->getMetaData()->get_field<VectorFieldType>( "psi_R" );
-    TEUCHOS_ASSERT( psir_field != 0 );
+    TEUCHOS_ASSERT( psir_field != NULL );
 
     VectorFieldType * psii_field = mesh->getMetaData()->get_field<VectorFieldType>( "psi_Z" );
-    TEUCHOS_ASSERT( psii_field != 0 );
+    TEUCHOS_ASSERT( psii_field != NULL );
 
-    // Merge psi into the mesh.
+    // Zero out all nodal values.
+    const std::vector<stk::mesh::Entity*> & overlapNodes = mesh->getOverlapNodes();
+    for (unsigned int k=0; k < overlapNodes.size(); k++)  {
+        // Extract real and imaginary part.
+        double* localPsiR = stk::mesh::field_data( *psir_field, *overlapNodes[k] );
+        localPsiR[0] = 0.0;
+        double* localPsiI = stk::mesh::field_data( *psii_field, *overlapNodes[k] );
+        localPsiI[0] = 0.0;
+    }
+
+    // Set owned nodes.
+    const std::vector<stk::mesh::Entity*> & ownedNodes = mesh->getOwnedNodes();
     for (unsigned int k=0; k < ownedNodes.size(); k++)
     {
         // Extract real and imaginary part.
         double* localPsiR = stk::mesh::field_data( *psir_field, *ownedNodes[k] );
         localPsiR[0] = psi[2*k];
-
         double* localPsiI = stk::mesh::field_data( *psii_field, *ownedNodes[k] );
         localPsiI[0] = psi[2*k+1];
     }
@@ -241,8 +250,8 @@ mergePsi_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
     // This communication updates the field values on un-owned nodes
     // it is correct because the zeroSolutionField above zeros them all
     // and the getSolutionField only sets the owned nodes.
-    stk::mesh::parallel_reduce( *mesh->getBulkData() , stk::mesh::sum(*psir_field));
-    stk::mesh::parallel_reduce( *mesh->getBulkData() , stk::mesh::sum(*psii_field));
+    stk::mesh::parallel_reduce( *mesh->getBulkData(), stk::mesh::sum(*psir_field) );
+    stk::mesh::parallel_reduce( *mesh->getBulkData(), stk::mesh::sum(*psii_field) );
 
     return;
 }

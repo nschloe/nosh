@@ -1,13 +1,14 @@
 #!/bin/bash
 
-basename="rect"
+basename="$1"
 
-nem_slice.exe -v -e -m mesh=2x1 -l multikl "$basename.e"
+output="$basename-balanced.nemI"
+nem_slice.exe -v -o "$output" -e -m mesh=1x1 -l multikl "$basename.e"
 
 mkdir tmp1
 echo "
 Input FEM file          = $basename.e
-LB file                 = $basename-m2-bKL.nemI
+LB file                 = $output
 Debug                   = 1
 Restart Time list       = off
 Reserve space           = nodal=1, elemental=0, global=0
