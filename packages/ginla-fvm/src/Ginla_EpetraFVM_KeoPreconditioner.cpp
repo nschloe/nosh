@@ -117,8 +117,12 @@ ApplyInverseMl_( const Epetra_MultiVector & X,
    ParameterList belosList;
    belosList.set( "Convergence Tolerance", 1.0e-5 ); // Relative convergence tolerance requested
    if (verbose) {
-     belosList.set( "Verbosity", Belos::Errors + Belos::Warnings +
-                    Belos::TimingDetails + Belos::StatusTestDetails );
+     belosList.set( "Verbosity",
+                    Belos::Errors +
+                    Belos::Warnings +
+                    Belos::TimingDetails +
+                    Belos::StatusTestDetails
+                  );
      if (frequency > 0)
        belosList.set( "Output Frequency", frequency );
    }

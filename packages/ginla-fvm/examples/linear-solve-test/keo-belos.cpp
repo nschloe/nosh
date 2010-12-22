@@ -86,9 +86,6 @@ int main ( int argc, char *argv[] )
                                Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL
                              );
       // =========================================================================
-      // Only print on the zero processor
-      bool proc_verbose = verbose && (eComm->MyPID()==0);
-
       Teuchos::ParameterList              problemParameters;
       Teuchos::RCP<Epetra_Vector>         z = Teuchos::null;
       Teuchos::RCP<Ginla::EpetraFVM::StkMesh> mesh = Teuchos::null;
@@ -101,6 +98,7 @@ int main ( int argc, char *argv[] )
                                     );
 
       double mu = problemParameters.get<double> ( "mu" );
+      mu = 1.0e-3;
       Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp =
               Teuchos::rcp ( new Ginla::MagneticVectorPotential::Z ( mesh, mu ) );
 
@@ -165,64 +163,75 @@ int main ( int argc, char *argv[] )
       // -----------------------------------------------------------------------
       // Belos part
       ParameterList belosList;
-      belosList.set( "Convergence Tolerance", 1.0e-10 );         // Relative convergence tolerance requested
+      belosList.set( "Convergence Tolerance", 1.0e-15 );  // Relative convergence tolerance requested
       if (verbose) {
-        belosList.set( "Verbosity", Belos::Errors + Belos::Warnings +
-                       Belos::TimingDetails + Belos::StatusTestDetails );
+        belosList.set( "Verbosity",
+                       Belos::Errors +
+                       Belos::Warnings +
+                       Belos::IterationDetails +
+                       Belos::FinalSummary +
+                       Belos::Debug +
+                       Belos::TimingDetails +
+                       Belos::StatusTestDetails
+                     );
         if (frequency > 0)
           belosList.set( "Output Frequency", frequency );
       }
       else
         belosList.set( "Verbosity", Belos::Errors + Belos::Warnings );
 
+      // Only print on the zero processor
+      const bool proc_verbose = verbose && (eComm->MyPID()==0);
+
       // Construct an unpreconditioned linear problem instance.
       Belos::LinearProblem<double,MV,OP> problem( keoMatrix, epetra_x, epetra_b );
       bool set = problem.setProblem();
-      if (set == false) {
-        if (proc_verbose)
-          std::cout << std::endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
-        return -1;
+      if (set == false)
+      {
+          if (proc_verbose)
+              std::cout << "\nERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
+          return -1;
       }
       // -----------------------------------------------------------------------
-      // create preconditioner
-      Teuchos::ParameterList MLList;
-      ML_Epetra::SetDefaults( "SA", MLList );
-      MLList.set("ML output", 0);
-      MLList.set("max levels", 10);
-      MLList.set("increasing or decreasing", "increasing");
-      MLList.set("aggregation: type", "Uncoupled");
-      MLList.set("smoother: type", "Chebyshev"); // "block Gauss-Seidel" "Chebyshev"
-//      MLList.set("aggregation: threshold", 0.0);
-      MLList.set("smoother: sweeps", 3);
-      MLList.set("smoother: pre or post", "both");
-      MLList.set("coarse: type", "Amesos-KLU");
-      MLList.set("PDE equations", 2);
-      Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> MLPrec =
-                  Teuchos::rcp( new ML_Epetra::MultiLevelPreconditioner(*keoMatrix, MLList) );
-      MLPrec->PrintUnused(0);
-
-      //
-      Teuchos::RCP<Epetra_Operator> Prec =
-              Teuchos::rcp(  new ML_Epetra::MultiLevelPreconditioner(*keoMatrix, MLList) );
-      TEUCHOS_ASSERT( !Prec.is_null() );
-
-      // Create the Belos preconditioned operator from the preconditioner.
-      // NOTE:  This is necessary because Belos expects an operator to apply the
-      //        preconditioner with Apply() NOT ApplyInverse().
-      RCP<Belos::EpetraPrecOp> belosPrec = rcp( new Belos::EpetraPrecOp( Prec ) );
-      problem.setLeftPrec( belosPrec );
+//       // create preconditioner
+//       Teuchos::ParameterList MLList;
+//       ML_Epetra::SetDefaults( "SA", MLList );
+//       MLList.set("ML output", 0);
+//       MLList.set("max levels", 10);
+//       MLList.set("increasing or decreasing", "increasing");
+//       MLList.set("aggregation: type", "Uncoupled");
+//       MLList.set("smoother: type", "Chebyshev"); // "block Gauss-Seidel" "Chebyshev"
+// //      MLList.set("aggregation: threshold", 0.0);
+//       MLList.set("smoother: sweeps", 3);
+//       MLList.set("smoother: pre or post", "both");
+//       MLList.set("coarse: type", "Amesos-KLU");
+//       MLList.set("PDE equations", 2);
+//       Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> MLPrec =
+//                   Teuchos::rcp( new ML_Epetra::MultiLevelPreconditioner(*keoMatrix, MLList) );
+//       MLPrec->PrintUnused(0);
+// 
+//       //
+//       Teuchos::RCP<Epetra_Operator> Prec =
+//               Teuchos::rcp(  new ML_Epetra::MultiLevelPreconditioner(*keoMatrix, MLList) );
+//       TEUCHOS_ASSERT( !Prec.is_null() );
+// 
+//       // Create the Belos preconditioned operator from the preconditioner.
+//       // NOTE:  This is necessary because Belos expects an operator to apply the
+//       //        preconditioner with Apply() NOT ApplyInverse().
+//       RCP<Belos::EpetraPrecOp> belosPrec = rcp( new Belos::EpetraPrecOp( Prec ) );
+//       problem.setLeftPrec( belosPrec );
       // -----------------------------------------------------------------------
       // Create an iterative solver manager.
-//       RCP< Belos::SolverManager<double,MV,OP> > newSolver
-//               = rcp( new Belos::PseudoBlockCGSolMgr<double,MV,OP>( rcp(&problem,false),
-//                                                              rcp(&belosList,false)
-//                                                            )
-//                    );
       RCP< Belos::SolverManager<double,MV,OP> > newSolver
-              = rcp( new Belos::PseudoBlockGmresSolMgr<double,MV,OP>( rcp(&problem,false),
-                                                                      rcp(&belosList,false)
-                                                                    )
+              = rcp( new Belos::PseudoBlockCGSolMgr<double,MV,OP>( rcp(&problem,false),
+                                                                   rcp(&belosList,false)
+                                                                 )
                    );
+//       RCP< Belos::SolverManager<double,MV,OP> > newSolver
+//               = rcp( new Belos::PseudoBlockGmresSolMgr<double,MV,OP>( rcp(&problem,false),
+//                                                                       rcp(&belosList,false)
+//                                                                     )
+//                    );
 
       // Perform solve
       ret = newSolver->solve();
