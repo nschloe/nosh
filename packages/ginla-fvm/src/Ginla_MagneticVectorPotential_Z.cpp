@@ -7,7 +7,9 @@ Ginla::MagneticVectorPotential::Z::
 Z( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh> & mesh,
    double mu ) :
   Virtual( mesh ),
-  mu_( mu )
+  mu_( mu ),
+  edgeMidpointProjectionCache_( Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >( mesh->getOwnedCells().size() ) ),
+  edgeMidpointProjectionCacheUpToDate_( false )
 {
 }
 // ============================================================================

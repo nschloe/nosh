@@ -9,8 +9,8 @@
 //#include "BelosConfigDefs.hpp"
 #include <BelosLinearProblem.hpp>
 #include <BelosEpetraAdapter.hpp>
-//#include <BelosPseudoBlockGmresSolMgr.hpp>
-#include <BelosBlockCGSolMgr.hpp>
+#include <BelosPseudoBlockGmresSolMgr.hpp>
+#include <BelosPseudoBlockCGSolMgr.hpp>
 
 #include <boost/filesystem.hpp>
 
@@ -213,10 +213,15 @@ int main ( int argc, char *argv[] )
       problem.setLeftPrec( belosPrec );
       // -----------------------------------------------------------------------
       // Create an iterative solver manager.
+//       RCP< Belos::SolverManager<double,MV,OP> > newSolver
+//               = rcp( new Belos::PseudoBlockCGSolMgr<double,MV,OP>( rcp(&problem,false),
+//                                                              rcp(&belosList,false)
+//                                                            )
+//                    );
       RCP< Belos::SolverManager<double,MV,OP> > newSolver
-              = rcp( new Belos::BlockCGSolMgr<double,MV,OP>( rcp(&problem,false),
-                                                             rcp(&belosList,false)
-                                                           )
+              = rcp( new Belos::PseudoBlockGmresSolMgr<double,MV,OP>( rcp(&problem,false),
+                                                                      rcp(&belosList,false)
+                                                                    )
                    );
 
       // Perform solve

@@ -114,13 +114,13 @@ int main ( int argc, char *argv[] )
       AztecOO solver( problem );
       // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-      //solver.SetAztecOption(AZ_precond, AZ_none);
-      solver.SetPrecOperator( &*keoPrec );
+      solver.SetAztecOption(AZ_precond, AZ_none);
+//       solver.SetPrecOperator( &*keoPrec );
 
       //solver.SetAztecOption(AZ_precond, AZ_dom_decomp);
-      //solver.SetAztecOption(AZ_solver, AZ_gmres);
+      solver.SetAztecOption(AZ_solver, AZ_gmres);
       //solver.SetAztecOption(AZ_solver, AZ_cg);
-      solver.SetAztecOption(AZ_solver, AZ_bicgstab);
+//       solver.SetAztecOption(AZ_solver, AZ_bicgstab);
       //solver.SetAztecOption(AZ_scaling, 8);
       //solver.SetAztecOption(AZ_subdomain_solve, AZ_ilut);
       //solver.SetAztecOption(AZ_output, 1);
