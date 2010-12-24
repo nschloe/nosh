@@ -56,3 +56,18 @@ TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
                        ${Trilinos_TPL_LIBRARIES}
                        ${Boost_LIBRARIES} )
 # ------------------------------------------------------------------------------
+SET ( matvec_SRCS
+      keo-matvec.cpp  )
+SET ( matvec_LIBS
+      ginlafvm
+    )
+SET( MY_EXECUTABLE
+     "keo-matvec.exe" )
+ADD_EXECUTABLE( ${MY_EXECUTABLE}
+                ${matvec_SRCS} )
+TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
+                       ${matvec_LIBS}
+                       ${Trilinos_LIBRARIES}
+                       ${Trilinos_TPL_LIBRARIES}
+                       ${Boost_LIBRARIES} )
+# ------------------------------------------------------------------------------
