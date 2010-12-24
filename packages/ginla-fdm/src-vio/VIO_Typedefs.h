@@ -1,6 +1,12 @@
 #ifndef VIO_TYPEDEFS_H
 #define VIO_TYPEDEFS_H
 
+// Workaround for icpc's error "Include mpi.h before stdio.h"
+#include <Teuchos_config.h>
+#ifdef HAVE_MPI
+    #include <mpi.h>
+#endif
+
 #include <Tpetra_Vector.hpp>
 #include <Thyra_OperatorVectorTypes.hpp> // For Thyra::Ordinal
 

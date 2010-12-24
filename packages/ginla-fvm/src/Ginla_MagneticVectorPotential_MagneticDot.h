@@ -1,12 +1,12 @@
 #ifndef GINLA_MAGNETICVECTORPOTENTIAL_MAGNETICDOT_H_
 #define GINLA_MAGNETICVECTORPOTENTIAL_MAGNETICDOT_H_
 
+#include "Ginla_MagneticVectorPotential_Virtual.h"
+
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Tuple.hpp>
 #include <Teuchos_Array.hpp>
 #include <LOCA_Parameter_Vector.H>
-
-#include "Ginla_MagneticVectorPotential_Virtual.h"
 
 namespace Ginla {
   namespace MagneticVectorPotential {

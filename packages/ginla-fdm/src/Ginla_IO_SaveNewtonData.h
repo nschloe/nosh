@@ -20,6 +20,12 @@
 #ifndef GINLA_IO_SAVENEWTONDATA_H_
 #define GINLA_IO_SAVENEWTONDATA_H_
 
+// Workaround for icpc's error "Include mpi.h before stdio.h"
+#include <Teuchos_config.h>
+#ifdef HAVE_MPI
+    #include <mpi.h>
+#endif
+
 #include <Teuchos_RCP.hpp>
 #include <NOX_Abstract_PrePostOperator.H>
 

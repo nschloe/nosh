@@ -20,6 +20,12 @@
 #ifndef GINLA_STATUSTEST_FACTORY_H
 #define GINLA_STATUSTEST_FACTORY_H
 
+// Workaround for icpc's error "Include mpi.h before stdio.h"
+#include <Teuchos_config.h>
+#ifdef HAVE_MPI
+    #include <mpi.h>
+#endif
+
 #include <Teuchos_RCP.hpp>
 #include <LOCA_StatusTest_Abstract.H>
 #include <LOCA_GlobalData.H>

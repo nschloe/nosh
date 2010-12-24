@@ -15,8 +15,8 @@ UniformSquare ( const unsigned int  numCells,
         Abstract ( Teuchos::tuple ( edgeLength/numCells,
                                     edgeLength/numCells,
                                     0.0 ),
-                   pow ( edgeLength, 2 ),
-                   pow ( numCells+1, 2 )
+                   edgeLength * edgeLength,
+                   (numCells+1) * (numCells+1)
                  ),
         UniformAbstract(),
         Square ( Teuchos::tuple( numCells,numCells ), edgeLength )

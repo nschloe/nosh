@@ -1,3 +1,9 @@
+// Workaround for icpc's error "Include mpi.h before stdio.h"
+#include <Teuchos_config.h>
+#ifdef HAVE_MPI
+    #include <mpi.h>
+#endif
+
 // see <http://old.nabble.com/Undefined-reference-to-%27main%27-with-Boost-Test.-Why--td15986217.html>
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MODULE GRNN zeroStepPiroTest

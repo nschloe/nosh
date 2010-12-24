@@ -20,6 +20,12 @@
 #ifndef GINLA_FDM_MODELEVALUATOR_DEFAULT_H
 #define GINLA_FDM_MODELEVALUATOR_DEFAULT_H
 
+// Workaround for icpc's error "Include mpi.h before stdio.h"
+#include <Teuchos_config.h>
+#ifdef HAVE_MPI
+    #include <mpi.h>
+#endif
+
 #include <EpetraExt_ModelEvaluator.h>
 
 #include "Ginla_FDM_Operator_Virtual.h"

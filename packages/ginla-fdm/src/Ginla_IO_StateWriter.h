@@ -20,6 +20,12 @@
 #ifndef GINLA_IO_STATEWRITER_H
 #define GINLA_IO_STATEWRITER_H
 
+// Workaround for icpc's error "Include mpi.h before stdio.h"
+#include <Teuchos_config.h>
+#ifdef HAVE_MPI
+    #include <mpi.h>
+#endif
+
 #include <LOCA_Parameter_Vector.H>
 
 #include "Ginla_State_Virtual.h"

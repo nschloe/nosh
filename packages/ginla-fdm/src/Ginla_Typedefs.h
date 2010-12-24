@@ -1,6 +1,11 @@
 #ifndef GINLA_TYPEDEFS_H
 #define GINLA_TYPEDEFS_H
 
+#include <Teuchos_config.h>
+#ifdef HAVE_MPI
+    #include <mpi.h>
+#endif
+
 #include <complex>
 #include <Tpetra_Vector.hpp>
 #include <Tpetra_CrsMatrix.hpp>

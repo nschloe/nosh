@@ -4,9 +4,9 @@
  *  Created on: Nov 5, 2009
  *      Author: Nico Schl\"omer
  */
-#include <Epetra_Vector.h>
-
 #include "Recti_Grid_Square.h"
+
+#include <Epetra_Vector.h>
 
 // =============================================================================
 // Class constructor

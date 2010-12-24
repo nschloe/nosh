@@ -75,7 +75,7 @@ save ( Teuchos::RCP<std::vector<double> >       & evals_r,
 {
     // Can't fetch step index now, so rely on the function's
     // being called exactly once per step.
-    static unsigned int step = -1;
+    static unsigned int step = 0;
     if ( !locaStepper_.is_null() )
         step = locaStepper_->getStepNumber();
     else

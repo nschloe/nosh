@@ -21,6 +21,11 @@
 #define GINLA_EPETRAFVM_STATE_H
 // =============================================================================
 // includes
+// Workaround for icpc's error "Include mpi.h before stdio.h"
+#include <Teuchos_config.h>
+#ifdef HAVE_MPI
+    #include <mpi.h>
+#endif
 #include <Epetra_Vector.h>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>

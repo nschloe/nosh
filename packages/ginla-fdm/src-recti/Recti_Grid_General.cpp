@@ -585,10 +585,11 @@ step ( const UIntTuple                         & node,
     }
 
     // check of the new node sits in the domain, and throw exception if not
-    if ( newNode[0]<0 || newNode[0]>numCells_[0]
-         || newNode[1]<0 || newNode[1]>numCells_[1]
-         ||  !domain->isInDomain ( *getX ( newNode ) ) )
-        throw std::exception();
+    TEST_FOR_EXCEPTION( newNode[0]>numCells_[0]
+                        || newNode[1]>numCells_[1]
+                        || !domain->isInDomain ( *getX ( newNode ) ),
+                        std::logic_error,
+                        "newNode " << newNode << " does not sit in the domain." );
 
     return newNode;
 }

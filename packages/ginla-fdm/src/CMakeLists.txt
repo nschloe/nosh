@@ -45,6 +45,10 @@ INCLUDE_DIRECTORIES( ${ginzburg-landau_SOURCE_DIR}/packages/ginla-fdm/src
                      ${ginzburg-landau_SOURCE_DIR}/packages/ginla-fdm/src-vio
                    )
 
+# workaround for Teuchos not appending Boost INCLUDES
+FIND_PACKAGE( Boost REQUIRED )
+INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIRS} )
+
 #ADD_LIBRARY ( ginlafdm STATIC
 ADD_LIBRARY ( ginlafdm
               ${ginlafdm_SRCS} )

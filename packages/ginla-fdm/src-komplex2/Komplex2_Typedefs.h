@@ -1,6 +1,12 @@
 #ifndef KOMPLEX2_TYPEDEFS_H
 #define KOMPLEX2_TYPEDEFS_H
 
+// Workaround for icpc's error "Include mpi.h before stdio.h"
+#include <Teuchos_config.h>
+#ifdef HAVE_MPI
+    #include <mpi.h>
+#endif
+
 #include <complex>
 #include <Tpetra_Vector.hpp>
 #include <Tpetra_CrsMatrix.hpp>
