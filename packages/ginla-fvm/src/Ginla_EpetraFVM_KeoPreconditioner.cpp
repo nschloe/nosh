@@ -257,10 +257,10 @@ rebuild( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
     switch ( invType_ )
     {
       case Ilu:
-          return this->rebuildMl_();
+          return this->rebuildIlu_();
           break;
       case Ml:
-          return this->rebuildIlu_();
+          return this->rebuildMl_();
           break;
       default:
           TEST_FOR_EXCEPTION( true,
