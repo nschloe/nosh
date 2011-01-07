@@ -3,7 +3,8 @@
 basename="$1"
 
 output="$basename-balanced.nemI"
-nem_slice.exe -v -o "$output" -e -m mesh=4x12 -l multikl "$basename.e"
+#nem_slice.exe -v -o "$output" -e -m mesh=2x2 -l multikl "$basename.e"
+nem_slice.exe -v -o "$output" -e -m mesh=1x1 -l spectral "$basename.e"
 
 mkdir tmp1
 echo "

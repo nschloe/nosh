@@ -165,7 +165,8 @@ main ( int argc, char *argv[] )
             problemParameters.setParameters( overwritePList );
         }
 
-        std::cout << problemParameters << std::endl;
+        if ( eComm->MyPID() == 0 )
+            std::cout << problemParameters << std::endl;
 
         double mu = problemParameters.get<double> ( "mu" );
         double phi = problemParameters.get<double> ( "phi" );
