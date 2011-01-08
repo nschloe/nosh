@@ -33,7 +33,7 @@
 #include <Epetra_SerialComm.h>
 #endif
 
-#include <time.h>
+#include <Teuchos_TimeMonitor.hpp>
 
 // =============================================================================
 typedef double                           ST;
@@ -41,20 +41,6 @@ typedef Epetra_MultiVector               MV;
 typedef Epetra_Operator                  OP;
 typedef Belos::MultiVecTraits<ST,MV>     MVT;
 typedef Belos::OperatorTraits<ST,MV,OP>  OPT;
-// =============================================================================
-timespec
-diff(timespec start, timespec end)
-{
-    timespec temp;
-    if ( (end.tv_nsec-start.tv_nsec) < 0 ) {
-            temp.tv_sec  = end.tv_sec - start.tv_sec - 1;
-            temp.tv_nsec = 1000000000 + end.tv_nsec - start.tv_nsec;
-    } else {
-            temp.tv_sec  = end.tv_sec  - start.tv_sec;
-            temp.tv_nsec = end.tv_nsec - start.tv_nsec;
-    }
-    return temp;
-}
 // =============================================================================
 int main ( int argc, char *argv[] )
 {
@@ -106,22 +92,21 @@ int main ( int argc, char *argv[] )
       Teuchos::RCP<Epetra_Vector>         z = Teuchos::null;
       Teuchos::RCP<Ginla::EpetraFVM::StkMesh> mesh = Teuchos::null;
 
+      Teuchos::RCP<Teuchos::Time> readTime = Teuchos::TimeMonitor::getNewTimer("Data I/O");
+      Teuchos::RCP<Teuchos::Time> mvTime = Teuchos::TimeMonitor::getNewTimer("Matrix-vector multiplication");
+
       if ( eComm->MyPID() == 0 )
           std::cout << "Reading..." << std::endl;
-      timespec time1, time2;
-      int temp;
-      clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &time1);
 
+      {
+      Teuchos::TimeMonitor tm(*readTime);
       Ginla::EpetraFVM::StkMeshRead( *eComm,
                                       inputFileName,
                                       z,
                                       mesh,
                                       problemParameters
                                     );
-
-      clock_gettime( CLOCK_PROCESS_CPUTIME_ID, &time2 );
-      if ( eComm->MyPID() == 0 )
-          std::cout << "Done. " << diff(time1,time2).tv_sec << "." << setw(9) << setfill('0') << diff(time1,time2).tv_nsec << "s" << std::endl;
+      }
 
       double mu = problemParameters.get<double> ( "mu" );
       mu = 1.0e-3;
@@ -155,17 +140,15 @@ int main ( int argc, char *argv[] )
 
       if ( eComm->MyPID() == 0 )
           std::cout << "MV product..." << std::endl;
-      clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &time1);
 
-      for ( unsigned int k=0; k<2e3; k++ )
+      for ( unsigned int k=0; k<1e4; k++ )
+      {
+          Teuchos::TimeMonitor tm(*mvTime);
           keoMatrix->Apply( *epetra_x, *epetra_b );
+      }
 
-      clock_gettime( CLOCK_PROCESS_CPUTIME_ID, &time2 );
-      if ( eComm->MyPID() == 0 )
-          std::cout << "Done. " << diff(time1,time2).tv_sec << "." << setw(9) << setfill('0') << diff(time1,time2).tv_nsec << "s" << std::endl;
-
-//       clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &tS);
-//       std::cout << "Done. Time taken is: " << tS.tv_sec << "s, " << tS.tv_nsec << "ns" << std::endl;
+      // print timing data
+      Teuchos::TimeMonitor::summarize();
       // -----------------------------------------------------------------------
     }
     catch ( std::exception & e )

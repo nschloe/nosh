@@ -71,6 +71,8 @@ SET( MY_EXECUTABLE
      "keo-matvec.exe" )
 ADD_EXECUTABLE( ${MY_EXECUTABLE}
                 ${matvec_SRCS} )
+SET_TARGET_PROPERTIES( ${MY_EXECUTABLE}
+                       PROPERTIES LINKER_LANGUAGE Fortran )
 TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
                        ${matvec_LIBS}
                        ${Trilinos_LIBRARIES}

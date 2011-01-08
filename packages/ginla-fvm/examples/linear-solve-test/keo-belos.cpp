@@ -75,7 +75,7 @@ int main ( int argc, char *argv[] )
       bool verbose = true;
       My_CLP.setOption("verbose","quiet",&verbose,"Print messages and results.");
 
-      int frequency = 5;
+      int frequency = 10;
       My_CLP.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
 
       // print warning for unrecognized arguments
@@ -171,8 +171,8 @@ int main ( int argc, char *argv[] )
                        Belos::IterationDetails +
                        Belos::FinalSummary +
                        Belos::Debug +
-                       Belos::TimingDetails +
-                       Belos::StatusTestDetails
+                       Belos::TimingDetails //+
+//                       Belos::StatusTestDetails
                      );
         if (frequency > 0)
           belosList.set( "Output Frequency", frequency );
