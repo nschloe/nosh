@@ -75,6 +75,9 @@ int main ( int argc, char *argv[] )
       bool verbose = true;
       My_CLP.setOption("verbose","quiet",&verbose,"Print messages and results.");
 
+      bool isPrec = true;
+      My_CLP.setOption("prec","noprec",&isPrec,"Use a preconditioner.");
+
       int frequency = 10;
       My_CLP.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
 
@@ -90,30 +93,63 @@ int main ( int argc, char *argv[] )
       Teuchos::RCP<Epetra_Vector>         z = Teuchos::null;
       Teuchos::RCP<Ginla::EpetraFVM::StkMesh> mesh = Teuchos::null;
 
+      if ( eComm->MyPID() == 0 )
+          std::cout << "Reading..." << std::endl;
+
+      Teuchos::RCP<Teuchos::Time> readTime = Teuchos::TimeMonitor::getNewTimer("Data I/O");
+      {
+      Teuchos::TimeMonitor tm(*readTime);
       Ginla::EpetraFVM::StkMeshRead( *eComm,
                                       inputFileName,
                                       z,
                                       mesh,
                                       problemParameters
                                     );
+      }
 
-      double mu = problemParameters.get<double> ( "mu" );
-      mu = 1.0e-3;
-      Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp =
-              Teuchos::rcp ( new Ginla::MagneticVectorPotential::Z ( mesh, mu ) );
+      Teuchos::RCP<Ginla::MagneticVectorPotential::Z> mvp;
+      double mu;
+      Teuchos::RCP<Teuchos::Time> mvpConstructTime = Teuchos::TimeMonitor::getNewTimer("MVP construction");
+      {
+          Teuchos::TimeMonitor tm(*mvpConstructTime);
+          mu = problemParameters.get<double> ( "mu" );
+          mu = 1.0e-2;
+          mvp = Teuchos::rcp ( new Ginla::MagneticVectorPotential::Z ( mesh, mu ) );
+          mvp->initializeEdgeMidpointProjectionCache_();
+      }
 
       Teuchos::RCP<LOCA::ParameterVector> mvpParameters =
           Teuchos::rcp( new LOCA::ParameterVector() );
       mvpParameters->addParameter( "mu", mu );
 
-      // create the kinetic energy operator
       Teuchos::RCP<Ginla::EpetraFVM::KeoFactory> keoFactory =
-              Teuchos::rcp( new Ginla::EpetraFVM::KeoFactory( mesh, mvp ) );
-      Teuchos::RCP<Epetra_FECrsMatrix> keoMatrix =
-              Teuchos::rcp( new Epetra_FECrsMatrix( Copy, keoFactory->buildKeoGraph() ) );
-      Teuchos::Tuple<double,3> scaling( Teuchos::tuple(1.0,1.0,1.0) );
-      keoFactory->buildKeo( *keoMatrix, mvpParameters, scaling );
+          Teuchos::rcp( new Ginla::EpetraFVM::KeoFactory( mesh, mvp ) );
 
+      // Precompute FVM entities. Not actually necessary as it's triggered automatically
+      // when needed, but for timing purposes put it here.
+      Teuchos::RCP<Teuchos::Time> fvmEntitiesConstructTime = Teuchos::TimeMonitor::getNewTimer("FVM entities construction");
+      {
+          Teuchos::TimeMonitor tm(*fvmEntitiesConstructTime);
+          mesh->computeFvmEntities_();
+      }
+
+      Teuchos::RCP<Epetra_FECrsGraph> keoGraph;
+      Teuchos::RCP<Teuchos::Time> graphConstructTime = Teuchos::TimeMonitor::getNewTimer("Graph construction");
+      {
+          Teuchos::TimeMonitor tm(*graphConstructTime);
+          keoGraph = Teuchos::rcp( new Epetra_FECrsGraph( keoFactory->buildKeoGraph() ) );
+      }
+
+
+      // create the kinetic energy operator
+      Teuchos::RCP<Epetra_FECrsMatrix> keoMatrix;
+      keoMatrix = Teuchos::rcp( new Epetra_FECrsMatrix( Copy, *keoGraph ) );
+      Teuchos::Tuple<double,3> scaling( Teuchos::tuple(1.0,1.0,1.0) );
+      Teuchos::RCP<Teuchos::Time> keoConstructTime = Teuchos::TimeMonitor::getNewTimer("Matrix construction");
+      {
+          Teuchos::TimeMonitor tm(*keoConstructTime);
+          keoFactory->buildKeo( *keoMatrix, mvpParameters, scaling );
+      }
       // Make sure the matrix is indeed positive definite, and not
       // negative definite. Belos needs that (2010-11-05).
       keoMatrix->Scale( -1.0 );
@@ -193,39 +229,43 @@ int main ( int argc, char *argv[] )
           return -1;
       }
       // -----------------------------------------------------------------------
-//       // create preconditioner
-//       Teuchos::ParameterList MLList;
-//       ML_Epetra::SetDefaults( "SA", MLList );
-//       MLList.set("ML output", 0);
-//       MLList.set("max levels", 10);
-//       MLList.set("increasing or decreasing", "increasing");
-//       MLList.set("aggregation: type", "Uncoupled");
-//       MLList.set("smoother: type", "Chebyshev"); // "block Gauss-Seidel" "Chebyshev"
-// //      MLList.set("aggregation: threshold", 0.0);
-//       MLList.set("smoother: sweeps", 3);
-//       MLList.set("smoother: pre or post", "both");
-//       MLList.set("coarse: type", "Amesos-KLU");
-//       MLList.set("PDE equations", 2);
-//       Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> MLPrec =
-//                   Teuchos::rcp( new ML_Epetra::MultiLevelPreconditioner(*keoMatrix, MLList) );
-//       MLPrec->PrintUnused(0);
-// 
-//       //
-//       Teuchos::RCP<Epetra_Operator> Prec =
-//               Teuchos::rcp(  new ML_Epetra::MultiLevelPreconditioner(*keoMatrix, MLList) );
-//       TEUCHOS_ASSERT( !Prec.is_null() );
-// 
-//       // Create the Belos preconditioned operator from the preconditioner.
-//       // NOTE:  This is necessary because Belos expects an operator to apply the
-//       //        preconditioner with Apply() NOT ApplyInverse().
-//       RCP<Belos::EpetraPrecOp> belosPrec = rcp( new Belos::EpetraPrecOp( Prec ) );
-//       problem.setLeftPrec( belosPrec );
+      // create preconditioner
+      Teuchos::RCP<Teuchos::Time> precConstructTime = Teuchos::TimeMonitor::getNewTimer("Create preconditioner");
+      if ( isPrec )
+      {
+          Teuchos::TimeMonitor tm(*precConstructTime);
+          Teuchos::ParameterList MLList;
+          ML_Epetra::SetDefaults( "SA", MLList );
+          MLList.set("ML output", 0);
+          MLList.set("max levels", 10);
+          MLList.set("increasing or decreasing", "increasing");
+          MLList.set("aggregation: type", "Uncoupled");
+          MLList.set("smoother: type", "Chebyshev"); // "block Gauss-Seidel" "Chebyshev"
+//           MLList.set("aggregation: threshold", 0.0);
+          MLList.set("smoother: sweeps", 3);
+          MLList.set("smoother: pre or post", "both");
+          MLList.set("coarse: type", "Amesos-KLU");
+          MLList.set("PDE equations", 2);
+          Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> MLPrec =
+                      Teuchos::rcp( new ML_Epetra::MultiLevelPreconditioner(*keoMatrix, MLList) );
+          MLPrec->PrintUnused(0);
+
+          Teuchos::RCP<Epetra_Operator> Prec =
+                  Teuchos::rcp(  new ML_Epetra::MultiLevelPreconditioner(*keoMatrix, MLList) );
+          TEUCHOS_ASSERT( !Prec.is_null() );
+
+          // Create the Belos preconditioned operator from the preconditioner.
+          // NOTE:  This is necessary because Belos expects an operator to apply the
+          //        preconditioner with Apply() NOT ApplyInverse().
+          Teuchos::RCP<Belos::EpetraPrecOp> belosPrec = Teuchos::rcp( new Belos::EpetraPrecOp( Prec ) );
+          problem.setLeftPrec( belosPrec );
+      }
       // -----------------------------------------------------------------------
       // Create an iterative solver manager.
-      RCP< Belos::SolverManager<double,MV,OP> > newSolver
-              = rcp( new Belos::PseudoBlockCGSolMgr<double,MV,OP>( rcp(&problem,false),
-                                                                   rcp(&belosList,false)
-                                                                 )
+      Teuchos::RCP<Belos::SolverManager<double,MV,OP> > newSolver
+              = Teuchos::rcp( new Belos::PseudoBlockCGSolMgr<double,MV,OP>( Teuchos::rcp(&problem,false),
+                                                                            Teuchos::rcp(&belosList,false)
+                                                                          )
                    );
 //       RCP< Belos::SolverManager<double,MV,OP> > newSolver
 //               = rcp( new Belos::PseudoBlockGmresSolMgr<double,MV,OP>( rcp(&problem,false),

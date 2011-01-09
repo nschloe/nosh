@@ -93,6 +93,7 @@ int main ( int argc, char *argv[] )
       Teuchos::RCP<Ginla::EpetraFVM::StkMesh> mesh = Teuchos::null;
 
       Teuchos::RCP<Teuchos::Time> readTime = Teuchos::TimeMonitor::getNewTimer("Data I/O");
+      Teuchos::RCP<Teuchos::Time> fvmEntitiesConstructTime = Teuchos::TimeMonitor::getNewTimer("FVM entities construction");
       Teuchos::RCP<Teuchos::Time> mvpConstructTime = Teuchos::TimeMonitor::getNewTimer("MVP construction");
       Teuchos::RCP<Teuchos::Time> graphConstructTime = Teuchos::TimeMonitor::getNewTimer("Graph construction");
       Teuchos::RCP<Teuchos::Time> keoConstructTime = Teuchos::TimeMonitor::getNewTimer("Matrix construction");
@@ -128,6 +129,13 @@ int main ( int argc, char *argv[] )
       Teuchos::RCP<Ginla::EpetraFVM::KeoFactory> keoFactory =
           Teuchos::rcp( new Ginla::EpetraFVM::KeoFactory( mesh, mvp ) );
 
+      // Precompute FVM entities. Not actually necessary as it's triggered automatically
+      // when needed, but for timing purposes put it here.
+      {
+          Teuchos::TimeMonitor tm(*fvmEntitiesConstructTime);
+          mesh->computeFvmEntities_();
+      }
+
       Teuchos::RCP<Epetra_FECrsGraph> keoGraph;
       {
           Teuchos::TimeMonitor tm(*graphConstructTime);
@@ -135,19 +143,17 @@ int main ( int argc, char *argv[] )
       }
 
 
+      // create the kinetic energy operator
       Teuchos::RCP<Epetra_FECrsMatrix> keoMatrix;
+      keoMatrix = Teuchos::rcp( new Epetra_FECrsMatrix( Copy, *keoGraph ) );
+      Teuchos::Tuple<double,3> scaling( Teuchos::tuple(1.0,1.0,1.0) );
       {
           Teuchos::TimeMonitor tm(*keoConstructTime);
-
-          // create the kinetic energy operator
-          keoMatrix = Teuchos::rcp( new Epetra_FECrsMatrix( Copy, *keoGraph ) );
-          Teuchos::Tuple<double,3> scaling( Teuchos::tuple(1.0,1.0,1.0) );
           keoFactory->buildKeo( *keoMatrix, mvpParameters, scaling );
-
-          // Make sure the matrix is indeed positive definite, and not
-          // negative definite. Belos needs that (2010-11-05).
-          keoMatrix->Scale( -1.0 );
       }
+      // Make sure the matrix is indeed positive definite, and not
+      // negative definite. Belos needs that (2010-11-05).
+      keoMatrix->Scale( -1.0 );
 
       // create initial guess and right-hand side
       Teuchos::RCP<Epetra_Vector> epetra_x =

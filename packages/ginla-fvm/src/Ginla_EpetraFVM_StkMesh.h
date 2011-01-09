@@ -130,6 +130,10 @@ public:
     unsigned int
     getCellDimension( unsigned int k ) const;
 
+    // Doesn't actually need to be public.
+    void
+    computeFvmEntities_() const;
+
 protected:
 private:
 
@@ -156,9 +160,6 @@ private:
     mutable double area_;
 
 private:
-
-    void
-    computeFvmEntities_() const;
 
     Teuchos::RCP<Epetra_Map>
     createNodesMap_( const std::vector<stk::mesh::Entity*> & nodesList ) const;

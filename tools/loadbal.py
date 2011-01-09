@@ -13,7 +13,7 @@ def _main():
 
         # slice it
         min_slices = 1
-        max_slices = 48
+        max_slices = 2
         for num_slices in xrange( min_slices, max_slices+1 ):
             _slice( filename, output, num_slices )
 

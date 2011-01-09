@@ -30,6 +30,8 @@
 #include <BelosBlockCGSolMgr.hpp>
 
 #include <ml_epetra_preconditioner.h>
+
+#include <Teuchos_TimeMonitor.hpp>
 // =============================================================================
 Ginla::EpetraFVM::KeoFactory::
 KeoFactory( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>                 & mesh,
@@ -52,7 +54,8 @@ buildKeo( Epetra_FECrsMatrix                              & keoMatrix,
           const Teuchos::Tuple<double,3>                  & scaling
         ) const
 {
-  keoMatrix.PutScalar( 0.0 );
+  // zero out the matrix
+  TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix.PutScalar( 0.0 ) );
 
   // set the parameters
   TEUCHOS_ASSERT( !mvpParams.is_null() );
@@ -65,6 +68,7 @@ buildKeo( Epetra_FECrsMatrix                              & keoMatrix,
   // get owned cells
   std::vector<stk::mesh::Entity*> cells = mesh_->getOwnedCells();
 
+  // This takes about 50% of the time in this whole function.
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > coareaEdgeRatios = mesh_->getCoareaEdgeRatios();
   TEUCHOS_ASSERT( !coareaEdgeRatios.is_null() );
 
@@ -77,8 +81,9 @@ buildKeo( Epetra_FECrsMatrix                              & keoMatrix,
 
       unsigned int numLocalNodes = rel.size();
       // extract the nodal coordinates
-      Teuchos::Array<Point> localNodes = mesh_->getNodeCoordinates( rel );
+      Teuchos::Array<Point> localNodes;
 
+      localNodes = mesh_->getNodeCoordinates( rel );
 
       // In a simplex, the edges are exactly the connection between each pair
       // of nodes. Hence, loop over pairs of nodes.
@@ -105,20 +110,13 @@ buildKeo( Epetra_FECrsMatrix                              & keoMatrix,
               //
               //    I ~ |xj-x0| * (xj-x0) . A( 0.5*(xj+x0) ) / |xj-x0|.
               //
-//               Point midpoint; // get A(midpoint)
-//               for (int i=0; i<midpoint.size(); i++ )
-//                   midpoint[i] = 0.5 * ( node0[i] + node1[i] );
-
               // -------------------------------------------------------------------
               // Project vector field onto the edge.
-//               Teuchos::RCP<Point> a = mvp_->getA( midpoint );
               // Instead of first computing the projection over the normalized edge
               // and then multiply it with the edge length, don't normalize the
               // edge vector.
-//               double aInt = 0.0;
-//               for (int i=0; i<midpoint.size(); i++ )
-//                   aInt += ( node1[i] - node0[i] ) * (*a)[i];
 
+              // Filling the MVP cache takes another 50% of the time in this whole function.
               double aInt = mvp_->getAEdgeMidpointProjection( k, edgeIndex );
 
               // We'd like to insert the 2x2 matrix
