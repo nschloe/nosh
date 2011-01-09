@@ -23,6 +23,7 @@ def _slice( filename, output, num_slices ):
 
         nemslice_command = "nem_slice.exe"
         nemspread_command = "nem_spread.exe"
+        tmp_nemspreadinp = "nem_spread.inp"
         slice_method = "spectral"
 
         slice_command = "%s -v -o \"%s\" -e -m mesh=1x%d -l %s \"%s\"" % \
@@ -35,9 +36,8 @@ def _slice( filename, output, num_slices ):
         os.mkdir( tmpdir )
 
         # create a temporary file; nem_spread.inp
-        file_handle = open( tmpdir + "/nem_spread.inp",
+        file_handle = open( tmp_nemspreadinp,
                             mode = "w" )
-        #
         file_handle.write( "Input FEM file          = %s\n\
 LB file                 = %s\n\
 Debug                   = 1\n\
@@ -45,11 +45,13 @@ Restart Time list       = off\n\
 Reserve space           = nodal=1, elemental=0, global=0\n\
 Parallel Disk Info = number=1\n\
 Parallel file location = root=tmp,subdir=.." % ( filename, output ) )
+        file_handle.close()
 
         _run( nemspread_command )
 
-        # remove the directories
+        # clean up
 	shutil.rmtree( tmpdir )
+        os.remove( tmp_nemspreadinp )
 
         return
 # ==============================================================================
