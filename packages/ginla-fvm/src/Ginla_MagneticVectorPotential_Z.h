@@ -40,14 +40,14 @@ public:
                               const unsigned int edgeIndex
                             ) const;
 
+  void
+  initializeEdgeMidpointProjectionCache_() const;
+
 protected:
 private:
 
   Teuchos::RCP<Point>
   getRawA_(const Point & x) const;
-
-  void
-  initializeEdgeMidpointProjectionCache_() const;
 
 private:
 

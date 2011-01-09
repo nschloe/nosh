@@ -93,6 +93,9 @@ int main ( int argc, char *argv[] )
       Teuchos::RCP<Ginla::EpetraFVM::StkMesh> mesh = Teuchos::null;
 
       Teuchos::RCP<Teuchos::Time> readTime = Teuchos::TimeMonitor::getNewTimer("Data I/O");
+      Teuchos::RCP<Teuchos::Time> mvpConstructTime = Teuchos::TimeMonitor::getNewTimer("MVP construction");
+      Teuchos::RCP<Teuchos::Time> graphConstructTime = Teuchos::TimeMonitor::getNewTimer("Graph construction");
+      Teuchos::RCP<Teuchos::Time> keoConstructTime = Teuchos::TimeMonitor::getNewTimer("Matrix construction");
       Teuchos::RCP<Teuchos::Time> mvTime = Teuchos::TimeMonitor::getNewTimer("Matrix-vector multiplication");
 
       if ( eComm->MyPID() == 0 )
@@ -108,26 +111,43 @@ int main ( int argc, char *argv[] )
                                     );
       }
 
-      double mu = problemParameters.get<double> ( "mu" );
-      mu = 1.0e-3;
-      Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp =
-              Teuchos::rcp ( new Ginla::MagneticVectorPotential::Z ( mesh, mu ) );
+      Teuchos::RCP<Ginla::MagneticVectorPotential::Z> mvp;
+      double mu;
+      {
+          Teuchos::TimeMonitor tm(*mvpConstructTime);
+          mu = problemParameters.get<double> ( "mu" );
+          mu = 1.0e-3;
+          mvp = Teuchos::rcp ( new Ginla::MagneticVectorPotential::Z ( mesh, mu ) );
+          mvp->initializeEdgeMidpointProjectionCache_();
+      }
 
       Teuchos::RCP<LOCA::ParameterVector> mvpParameters =
           Teuchos::rcp( new LOCA::ParameterVector() );
       mvpParameters->addParameter( "mu", mu );
 
-      // create the kinetic energy operator
       Teuchos::RCP<Ginla::EpetraFVM::KeoFactory> keoFactory =
-              Teuchos::rcp( new Ginla::EpetraFVM::KeoFactory( mesh, mvp ) );
-      Teuchos::RCP<Epetra_FECrsMatrix> keoMatrix =
-              Teuchos::rcp( new Epetra_FECrsMatrix( Copy, keoFactory->buildKeoGraph() ) );
-      Teuchos::Tuple<double,3> scaling( Teuchos::tuple(1.0,1.0,1.0) );
-      keoFactory->buildKeo( *keoMatrix, mvpParameters, scaling );
+          Teuchos::rcp( new Ginla::EpetraFVM::KeoFactory( mesh, mvp ) );
 
-      // Make sure the matrix is indeed positive definite, and not
-      // negative definite. Belos needs that (2010-11-05).
-      keoMatrix->Scale( -1.0 );
+      Teuchos::RCP<Epetra_FECrsGraph> keoGraph;
+      {
+          Teuchos::TimeMonitor tm(*graphConstructTime);
+          keoGraph = Teuchos::rcp( new Epetra_FECrsGraph( keoFactory->buildKeoGraph() ) );
+      }
+
+
+      Teuchos::RCP<Epetra_FECrsMatrix> keoMatrix;
+      {
+          Teuchos::TimeMonitor tm(*keoConstructTime);
+
+          // create the kinetic energy operator
+          keoMatrix = Teuchos::rcp( new Epetra_FECrsMatrix( Copy, *keoGraph ) );
+          Teuchos::Tuple<double,3> scaling( Teuchos::tuple(1.0,1.0,1.0) );
+          keoFactory->buildKeo( *keoMatrix, mvpParameters, scaling );
+
+          // Make sure the matrix is indeed positive definite, and not
+          // negative definite. Belos needs that (2010-11-05).
+          keoMatrix->Scale( -1.0 );
+      }
 
       // create initial guess and right-hand side
       Teuchos::RCP<Epetra_Vector> epetra_x =
