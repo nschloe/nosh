@@ -30,7 +30,7 @@ def _slice( filename, output, num_slices ):
 
         _run( slice_command )
 
-        # create a temporary directory in the current directory
+       # create a temporary directory in the current directory
         tmpdir = "tmp1"
         os.mkdir( tmpdir )
 
@@ -38,14 +38,13 @@ def _slice( filename, output, num_slices ):
         file_handle = open( tmpdir + "/nem_spread.inp",
                             mode = "w" )
         #
-        file_handle.write( "Input FEM file          = %s \
-	LB file                 = %s \
-	Debug                   = 1 \
-	Restart Time list       = off \
-	Reserve space           = nodal=1, elemental=0, global=0 \
-	Parallel Disk Info = number=1 \
-	Parallel file location = root=tmp,subdir=.. \
-	" % ( filename, output ) )
+        file_handle.write( "Input FEM file          = %s\n\
+LB file                 = %s\n\
+Debug                   = 1\n\
+Restart Time list       = off\n\
+Reserve space           = nodal=1, elemental=0, global=0\n\
+Parallel Disk Info = number=1\n\
+Parallel file location = root=tmp,subdir=.." % ( filename, output ) )
 
         _run( nemspread_command )
 
