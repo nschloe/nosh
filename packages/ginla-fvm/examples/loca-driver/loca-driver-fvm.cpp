@@ -40,6 +40,8 @@
 #include "Ginla_MagneticVectorPotential_Spherical.h"
 #include "Ginla_MagneticVectorPotential_MagneticDot.h"
 
+#include <Teuchos_TimeMonitor.hpp>
+
 // get pi
 #define _USE_MATH_DEFINES
 
@@ -375,11 +377,18 @@ main ( int argc, char *argv[] )
 //        locaModelEvaluatorInterface->setLocaStepper ( stepper );
         // ---------------------------------------------------------------------
         // Perform continuation run
-        status = stepper->run();
+        Teuchos::RCP<Teuchos::Time> locarunTime = Teuchos::TimeMonitor::getNewTimer("LOCA runtime");
+        {
+            Teuchos::TimeMonitor tm(*locarunTime);
+            status = stepper->run();
+        }
         // ---------------------------------------------------------------------
         // clean up
         LOCA::destroyGlobalData ( globalData );
 //        locaModelEvaluatorInterface->releaseLocaStepper();
+        // ---------------------------------------------------------------------
+        // print timing data
+        Teuchos::TimeMonitor::summarize();
         // ---------------------------------------------------------------------
     }
     catch ( std::exception & e )
