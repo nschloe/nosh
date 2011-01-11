@@ -140,7 +140,6 @@ int main ( int argc, char *argv[] )
           keoGraph = Teuchos::rcp( new Epetra_FECrsGraph( keoFactory->buildKeoGraph() ) );
       }
 
-
       // create the kinetic energy operator
       Teuchos::RCP<Epetra_FECrsMatrix> keoMatrix;
       keoMatrix = Teuchos::rcp( new Epetra_FECrsMatrix( Copy, *keoGraph ) );

@@ -339,28 +339,21 @@ createComplexMap_( const std::vector<stk::mesh::Entity*> & nodeList ) const
 // =============================================================================
 unsigned int
 Ginla::EpetraFVM::StkMesh::
-getCellDimension( unsigned int k ) const
+getCellDimension( const unsigned int numLocalNodes ) const
 {
-  // See what kind of element we're dealing with here.
-  std::vector<stk::mesh::Entity*> cells = this->getOwnedCells();
-
-  unsigned int cellDimension;
-  stk::mesh::PairIterRelation rel = (*cells[k]).relations();
-  switch ( rel.size() )
+  switch ( numLocalNodes )
   {
     case 3: // triangles
-        cellDimension = 2;
-        break;
+        return 2;
     case 4: // tetrahedra
-        cellDimension = 3;
-        break;
+        return 3;
     default:
         TEST_FOR_EXCEPTION( true,
                             std::runtime_error,
                             "Control volumes can only be constructed consistently with triangular or tetrahedral elements."
                           );
   }
-  return cellDimension;
+  return 0;
 }
 // =============================================================================
 unsigned int
@@ -426,7 +419,7 @@ computeFvmEntities_() const
   {
       stk::mesh::PairIterRelation rel = (*cells[k]).relations();
       unsigned int numLocalNodes = rel.size();
-      unsigned int cellDimension = this->getCellDimension( k );
+      unsigned int cellDimension = this->getCellDimension( numLocalNodes );
 
       // Confirm that we always have the same simplices.
       TEUCHOS_ASSERT_EQUALITY( numLocalNodes, cellDimension+1 );

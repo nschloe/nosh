@@ -128,7 +128,7 @@ public:
     getNumEdgesPerCell( unsigned int cellDimension ) const;
 
     unsigned int
-    getCellDimension( unsigned int k ) const;
+    getCellDimension( const unsigned int numLocalNodes ) const;
 
     // Doesn't actually need to be public.
     void

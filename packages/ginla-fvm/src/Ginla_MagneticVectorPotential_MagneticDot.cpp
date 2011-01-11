@@ -177,7 +177,7 @@ initializeEdgeMidpointProjectionCache_() const
       stk::mesh::PairIterRelation rel = (*cells[k]).relations();
 
       unsigned int numLocalNodes = rel.size();
-      unsigned int cellDimension = mesh_->getCellDimension( k );
+      unsigned int cellDimension = mesh_->getCellDimension( numLocalNodes );
       // extract the nodal coordinates
       Teuchos::Array<Point> localNodes = mesh_->getNodeCoordinates( rel );
 

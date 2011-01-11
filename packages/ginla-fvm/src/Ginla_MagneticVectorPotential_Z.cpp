@@ -95,7 +95,8 @@ initializeEdgeMidpointProjectionCache_() const
       stk::mesh::PairIterRelation rel = (*cells[k]).relations();
 
       unsigned int numLocalNodes = rel.size();
-      unsigned int cellDimension = mesh_->getCellDimension( k );
+      unsigned int cellDimension = mesh_->getCellDimension( numLocalNodes );
+
       // extract the nodal coordinates
       Teuchos::Array<Point> localNodes = mesh_->getNodeCoordinates( rel );
 
@@ -105,6 +106,7 @@ initializeEdgeMidpointProjectionCache_() const
       // of nodes. Hence, loop over pairs of nodes.
       unsigned int edgeIndex = 0;
       Teuchos::Tuple<int,2> gid;
+
       for ( unsigned int e0 = 0; e0 < numLocalNodes; e0++ )
       {
           const Point & node0 = localNodes[e0];
