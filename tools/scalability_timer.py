@@ -6,62 +6,72 @@ would store timings then of course.'''
 import sys, subprocess, re
 # ==============================================================================
 def _main():
-        filename = "scalingdata.dat"
-        f = open( filename, "w" )
+    filename = "scalingdata.dat"
+    f = open( filename, "w" )
 
-        # run over the number of procs
-        min_numprocs = 2
-        max_numprocs = 6
+    # run over the number of procs
+    min_numprocs = 1
+    max_numprocs = 48
 
-        num_runs = 5
+    num_runs = 20
 
-        # write header
-        header_string = "#\t"
+    # write header
+    header_string = "#\t"
+    for num_procs in xrange( min_numprocs, max_numprocs+1 ):
+        header_string += "%d\t\t" % num_procs
+    header_string += "\n"
+    f.write( header_string )
+
+    # perform the test runs
+    for k in xrange( 0, num_runs ):
         for num_procs in xrange( min_numprocs, max_numprocs+1 ):
-            header_string += "%d\t\t" % num_procs
-        header_string += "\n"
-        f.write( header_string )
+            max_time = _testrun( num_procs )
+            f.write( "\t%e" % max_time )
+        f.write( "\n" )
 
+    f.close()
 
-        for k in xrange( 0, num_runs ):
-            for num_procs in xrange( min_numprocs, max_numprocs+1 ):
-                max_time = _testrun( num_procs )
-                f.write( "\t%e" % max_time )
-            f.write( "\n" )
-
-        f.close()
-
-	return
+    return
 # ==============================================================================
 def _testrun( num_procs ):
 
-        #mpiexec_cmd = "mpiexec"
-        #test_exe = "/home/nico/ginla/build/mpi/packages/ginla-fvm/examples/linear-solve-test/keo-belos.exe"
-        #test_options = "--input=cutcircle300-balanced.par"
+    test_exe = "/home/nschloe/ginla/build/mpi/packages/ginla-fvm/examples/linear-solve-test/keo-belos.exe"
+    basename = "cutcircle1000"
 
-        #cmd = [ mpiexec_cmd, "-n %d" % num_procs, test_exe, test_options ]
-        cmd = "mpiexec -n %d /home/nico/ginla/build/mpi/packages/ginla-fvm/examples/linear-solve-test/keo-belos.exe --input=cutcircle300-balanced.par" % num_procs
+    key = "Belos: PseudoBlockCGSolMgr total solve time"
 
-        # run the test
-        output = _run( cmd )
+    if num_procs == 1:
+        data_file = "%s.e" % basename
+        cmd = "%s --input=%s" % ( test_exe, data_file )
+        # "Belos: PseudoBlockCGSolMgr total solve time    0.3433 (1)  "
+        regex = "%s\s*(\d+\.\d+)" % key
+    elif num_procs > 1:
+        data_file = "%s-balanced.par" % basename
+        cmd = "mpiexec -n %d %s --input=%s" % ( num_procs, test_exe, data_file )
+        # "Belos: PseudoBlockCGSolMgr total solve time    0.3433 (1)  0.3434 (1)  0.03435 (1)   "
+        # Enclose the *last* timing (i.e., the max across all processors) in parentheses
+        regex = "%s\s*\d+\.\d+\s*\(\d+\)\s*\d+\.\d+\s*\(\d+\)\s*(\d+\.\d+)\s*\(\d+\)" % key
+    else:
+        sys.exit( "Illegal number of processors \"%d\"." % num_procs )
 
-        # Parse the output, get the maximum execution time over all processes.
-        # Find something of the kind
-        # "Belos: PseudoBlockCGSolMgr total solve time    0.3433 (1)        0.3433 (1)        0.3434 (1)        "
-        # Enclose the three timings at the in parentheses
-        key = "Belos: PseudoBlockCGSolMgr total solve time"
-        regex = "%s\s*(\d\.\d+)\s*\(\d+\)\s*(\d\.\d+)\s*\(\d+\)\s*(\d\.\d+)\s\(\d+\)\s*" % key
-        match_obj = re.search( regex, output )
-        if match_obj:
-            max_time = float( match_obj.group( 3 ) )
-        else:
-            sys.exit( "Could not find regex in string." )
+    # run the test
+    output = _run( cmd )
 
-        return max_time
+    # Parse the output, get the maximum execution time over all processes.
+    # Find something of the kind
+    match_obj = re.search( regex, output )
+    if match_obj:
+        max_time = float( match_obj.group( 1 ) )
+    else:
+        error_message = "Could not find the regex \n\n%s\n\n in the string \n\n%s\n\n." \
+                      % ( regex, repr(output) )
+        sys.exit( error_message )
+
+    return max_time
 # ==============================================================================
 def _parse_options():
     '''Parse input options.'''
-    import optparse, sys
+    import optparse
 
     usage = "usage: %prog filename"
 
