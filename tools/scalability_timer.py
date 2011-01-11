@@ -7,13 +7,14 @@ import sys, subprocess, re
 # ==============================================================================
 def _main():
     filename = "scalingdata.dat"
-    f = open( filename, "w" )
+    bufsize = 0 # write out the data immediately
+    f = open( filename, "w", bufsize )
 
     # run over the number of procs
     min_numprocs = 1
     max_numprocs = 48
 
-    num_runs = 20
+    num_runs = 10000
 
     # write header
     header_string = "#\t"
