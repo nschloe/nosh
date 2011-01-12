@@ -12,7 +12,7 @@ def _main():
 
     # run over the number of procs
     min_numprocs = 1
-    max_numprocs = 48
+    max_numprocs = 47
 
     num_runs = 10000
 
@@ -45,13 +45,13 @@ def _testrun( num_procs ):
         data_file = "%s.e" % basename
         cmd = "%s --input=%s" % ( test_exe, data_file )
         # "Belos: PseudoBlockCGSolMgr total solve time    0.3433 (1)  "
-        regex = "%s\s*(\d+\.\d+)" % key
+        regex = "%s\s*(\d+\.?\d*)" % key
     elif num_procs > 1:
         data_file = "%s-balanced.par" % basename
         cmd = "mpiexec -n %d %s --input=%s" % ( num_procs, test_exe, data_file )
         # "Belos: PseudoBlockCGSolMgr total solve time    0.3433 (1)  0.3434 (1)  0.03435 (1)   "
         # Enclose the *last* timing (i.e., the max across all processors) in parentheses
-        regex = "%s\s*\d+\.\d+\s*\(\d+\)\s*\d+\.\d+\s*\(\d+\)\s*(\d+\.\d+)\s*\(\d+\)" % key
+        regex = "%s\s*\d+\.?\d*\s*\(\d+\)\s*\d+\.?\d*\s*\(\d+\)\s*(\d+\.?\d*)\s*\(\d+\)" % key
     else:
         sys.exit( "Illegal number of processors \"%d\"." % num_procs )
 
