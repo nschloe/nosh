@@ -7,7 +7,7 @@ import sys, subprocess, re
 # ==============================================================================
 def _main():
     # set the data file
-    filename = "scaling-nox.dat"
+    timing_file = "scaling-nox.dat"
     bufsize = 0 # write out the data immediately
     timingfile_handle = open( timing_file, "w", bufsize )
 
@@ -45,9 +45,12 @@ def _main():
             timingfile_handle.write( "%e\t" % max_time )
 
             # write stdout
-            outputfile_handle.write( 80*"=" + "\n"
-                                     + "Run on %d cores:\n\n" % num_procs )
+            outputfile_handle.write( 2*(80*"#" + "\n")
+                                     + "Run on %d cores, loop no. %d\n" \
+                                       % ( num_procs, k )
+                                     + 80*"=" + "\n\n" )
             outputfile_handle.write( output )
+            outputfile_handle.write( "\n" )
         # ----------------------------------------------------------------------
         timingfile_handle.write( "\n" )
 
@@ -64,15 +67,21 @@ def _testrun( num_procs ):
 
     #test_exe = "/home/nschloe/ginla/build/mpi/packages/ginla-fvm/examples/loca-driver/loca-driver.exe"
     #basename = "cutcircle1000"
-    #if num_procs == 1:
-        #options = "--input=%s.e" % basename
-    #elif num_procs > 1:
-        #options = "--input=%s-balanced.par" % basename
     #key = "Belos: PseudoBlockCGSolMgr total solve time"
 
-    test_exe = "/home/nschloe/ginla/build/mpi/packages/ginla-fvm/examples/loca-driver/loca-driver-fvm.exe"
-    options = "--xml-input-file=./conf.xml"
-    key = "LOCA runtime"
+    test_exe = "/home/nico/ginla/build/mpi/packages/ginla-fvm/examples/linear-solve-test/keo-belos.exe"
+    basename = "cutcircle300"
+    key = "Belos: PseudoBlockCGSolMgr total solve time"
+
+    if num_procs == 1:
+        options = "--input=%s.e" % basename
+    elif num_procs > 1:
+        options = "--input=%s-balanced.par" % basename
+
+
+    #test_exe = "/home/nschloe/ginla/build/mpi/packages/ginla-fvm/examples/loca-driver/loca-driver-fvm.exe"
+    #options = "--xml-input-file=./conf.xml"
+    #key = "LOCA runtime"
 
     if num_procs == 1:
         cmd = "%s %s" % ( test_exe, options )
