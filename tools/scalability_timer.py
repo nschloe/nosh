@@ -3,7 +3,7 @@
 with various X, parses the output and stores it in a file. Typically, one
 would store timings then of course.'''
 # ==============================================================================
-import sys, subprocess, re
+import sys, subprocess, re, datetime, os
 # ==============================================================================
 def _main():
     # set the data file
@@ -24,15 +24,17 @@ def _main():
     #comment = "Timings of Belos solves with a Jacobian system, preconditioned with KEO (solved with ML)"
     comment = "Timings of one full LOCA step"
 
-    # write header
-    timingfile_handle.write( "# %s\n" % comment )
+    # write header to both files
+    hostname = os.uname()[1]
+    time = datetime.datetime.now().isoformat(' ')
+    header = "# %s, %s, %s\n" % ( comment, hostname, time )
+    timingfile_handle.write( header )
+    outputfile_handle.write( header )
 
-    # write number of processors
-    header_string = ""
+    # write number of processors to timingfile
     for num_procs in xrange( min_numprocs, max_numprocs+1 ):
-        header_string += "%d\t\t" % num_procs
-    header_string += "\n"
-    timingfile_handle.write( header_string )
+        timingfile_handle.write( "%d\t\t" % num_procs )
+    timingfile_handle.write( "\n" )
 
     # perform the test runs
     for k in xrange( 0, num_runs ):
