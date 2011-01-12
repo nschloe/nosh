@@ -85,7 +85,7 @@ main ( int argc, char *argv[] )
         Teuchos::CommandLineProcessor My_CLP;
 
         My_CLP.setDocString (
-                "This program solves the Ginzburg--Landau problem with a Piro LOCA interface.\n"
+                "This program solves the Ginzburg--Landau problem using LOCA.\n"
                 );
 
         std::string xmlInputFileName = "";

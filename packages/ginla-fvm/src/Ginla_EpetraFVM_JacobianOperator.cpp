@@ -27,14 +27,15 @@
 // =============================================================================
 Ginla::EpetraFVM::JacobianOperator::
 JacobianOperator( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>               & mesh,
-                  const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp
+                  const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp,
+                  const Teuchos::RCP<Epetra_Vector>                           & currentX
                 ):
         useTranspose_( false ),
         comm_( mesh->getComm() ),
         mesh_( mesh ),
         keoFactory_( Teuchos::rcp( new Ginla::EpetraFVM::KeoFactory( mesh, mvp ) ) ),
         keoMatrix_( Teuchos::rcp( new Epetra_FECrsMatrix( Copy, keoFactory_->buildKeoGraph() ) ) ),
-        currentX_ ( Teuchos::null ),
+        currentX_ ( currentX ),
         temperature_( 0.0 )
 {
 }
