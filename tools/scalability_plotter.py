@@ -57,7 +57,7 @@ def _read_data( filename ):
     data_reader.next()
 
     # Read num_procs and remove empty entries by filter.
-    num_procs = filter(None, data_reader.next())
+    num_procs = filter( None, data_reader.next() )
 
     num_entries = len( num_procs )
 

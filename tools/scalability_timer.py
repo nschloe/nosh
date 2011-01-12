@@ -6,36 +6,52 @@ would store timings then of course.'''
 import sys, subprocess, re
 # ==============================================================================
 def _main():
-    filename = "scalingdata.dat"
+    # set the data file
+    timing_file = "scalingdata.dat"
     bufsize = 0 # write out the data immediately
-    f = open( filename, "w", bufsize )
+    timingfile_handle = open( timing_file, "w", bufsize )
+
+    # set the file for stdout
+    output_file = "output.log"
+    outputfile_handle = open( output_file, "w" )
 
     # run over the number of procs
     min_numprocs = 1
-    max_numprocs = 47
+    max_numprocs = 6
 
     num_runs = 10000
 
     comment = "Timings of Belos solves with a Jacobian system, preconditioned with KEO (solved with ML)"
 
     # write header
-    f.write( "# %s" % comment )
+    timingfile_handle.write( "# %s" % comment )
 
     # write number of processors
     header_string = ""
     for num_procs in xrange( min_numprocs, max_numprocs+1 ):
         header_string += "%d\t\t" % num_procs
     header_string += "\n"
-    f.write( header_string )
+    timingfile_handle.write( header_string )
 
     # perform the test runs
     for k in xrange( 0, num_runs ):
+        # ----------------------------------------------------------------------
         for num_procs in xrange( min_numprocs, max_numprocs+1 ):
-            max_time = _testrun( num_procs )
-            f.write( "%e\t" % max_time )
-        f.write( "\n" )
+            # run the test
+            output, max_time = _testrun( num_procs )
 
-    f.close()
+            # write timing data
+            timingfile_handle.write( "%e\t" % max_time )
+
+            # write stdout
+            outputfile_handle.write( 80*"=" + "\n"
+                                     + "Run on %d cores:\n\n" % num_procs )
+            outputfile_handle.write( output )
+        # ----------------------------------------------------------------------
+        timingfile_handle.write( "\n" )
+
+    timingfile_handle.close()
+    outputfile_handle.close()
 
     return
 # ==============================================================================
@@ -43,7 +59,6 @@ def _testrun( num_procs ):
 
     test_exe = "/home/nschloe/ginla/build/mpi/packages/ginla-fvm/examples/linear-solve-test/keo-belos.exe"
     basename = "cutcircle1000"
-
     key = "Belos: PseudoBlockCGSolMgr total solve time"
 
     if num_procs == 1:
@@ -73,7 +88,7 @@ def _testrun( num_procs ):
                       % ( regex, repr(output) )
         sys.exit( error_message )
 
-    return max_time
+    return output, max_time
 # ==============================================================================
 def _parse_options():
     '''Parse input options.'''
