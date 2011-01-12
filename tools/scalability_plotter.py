@@ -58,12 +58,11 @@ def _read_data( filename ):
 
     # Read num_procs and remove empty entries by filter.
     num_procs = filter( None, data_reader.next() )
-
-    num_entries = len( num_procs )
-
     # convert them into int
     num_procs = np.array( num_procs, dtype = int )
 
+    # Allocate space for the values.
+    num_entries = len( num_procs )
     max_numrows = 1000
     values = np.empty( (max_numrows,num_entries), dtype = float )
 
@@ -71,7 +70,8 @@ def _read_data( filename ):
     try:
         k = 0
         for row in data_reader:
-            values[k,:] = row
+            # 'filter' out empty values
+            values[k,:] = filter( None, row )
             k += 1
     except csv.Error, e:
         sys.exit('file %s, line %d: %s' % (filename, reader.line_num, e))
