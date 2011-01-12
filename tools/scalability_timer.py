@@ -6,20 +6,21 @@ would store timings then of course.'''
 import sys, subprocess, re
 # ==============================================================================
 def _main():
-    filename = "scalingdata.dat"
+    filename = "scaling-nox.dat"
     bufsize = 0 # write out the data immediately
     f = open( filename, "w", bufsize )
 
     # run over the number of procs
-    min_numprocs = 1
+    min_numprocs = 2
     max_numprocs = 47
 
     num_runs = 10000
 
-    comment = "Timings of Belos solves with a Jacobian system, preconditioned with KEO (solved with ML)"
+    #comment = "Timings of Belos solves with a Jacobian system, preconditioned with KEO (solved with ML)"
+    comment = "Timings of one full LOCA step"
 
     # write header
-    f.write( "# %s" % comment )
+    f.write( "# %s\n" % comment )
 
     # write number of processors
     header_string = ""
@@ -41,19 +42,24 @@ def _main():
 # ==============================================================================
 def _testrun( num_procs ):
 
-    test_exe = "/home/nschloe/ginla/build/mpi/packages/ginla-fvm/examples/linear-solve-test/keo-belos.exe"
-    basename = "cutcircle1000"
+    #test_exe = "/home/nschloe/ginla/build/mpi/packages/ginla-fvm/examples/loca-driver/loca-driver.exe"
+    #basename = "cutcircle1000"
+    #if num_procs == 1:
+        #options = "--input=%s.e" % basename
+    #elif num_procs > 1:
+        #options = "--input=%s-balanced.par" % basename
+    #key = "Belos: PseudoBlockCGSolMgr total solve time"
 
-    key = "Belos: PseudoBlockCGSolMgr total solve time"
+    test_exe = "/home/nschloe/ginla/build/mpi/packages/ginla-fvm/examples/loca-driver/loca-driver-fvm.exe"
+    options = "--xml-input-file=./conf.xml"
+    key = "LOCA runtime"
 
     if num_procs == 1:
-        data_file = "%s.e" % basename
-        cmd = "%s --input=%s" % ( test_exe, data_file )
+        cmd = "%s %s" % ( test_exe, options )
         # "Belos: PseudoBlockCGSolMgr total solve time    0.3433 (1)  "
         regex = "%s\s*(\d+\.?\d*)" % key
     elif num_procs > 1:
-        data_file = "%s-balanced.par" % basename
-        cmd = "mpiexec -n %d %s --input=%s" % ( num_procs, test_exe, data_file )
+        cmd = "mpiexec -n %d %s %s" % ( num_procs, test_exe, options )
         # "Belos: PseudoBlockCGSolMgr total solve time    0.3433 (1)  0.3434 (1)  0.03435 (1)   "
         # Enclose the *last* timing (i.e., the max across all processors) in parentheses
         regex = "%s\s*\d+\.?\d*\s*\(\d+\)\s*\d+\.?\d*\s*\(\d+\)\s*(\d+\.?\d*)\s*\(\d+\)" % key
