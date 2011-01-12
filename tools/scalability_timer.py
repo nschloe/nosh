@@ -17,7 +17,7 @@ def _main():
     num_runs = 10000
 
     # write header
-    header_string = "#\t"
+    header_string = ""
     for num_procs in xrange( min_numprocs, max_numprocs+1 ):
         header_string += "%d\t\t" % num_procs
     header_string += "\n"
@@ -27,7 +27,7 @@ def _main():
     for k in xrange( 0, num_runs ):
         for num_procs in xrange( min_numprocs, max_numprocs+1 ):
             max_time = _testrun( num_procs )
-            f.write( "\t%e" % max_time )
+            f.write( "%e\t" % max_time )
         f.write( "\n" )
 
     f.close()

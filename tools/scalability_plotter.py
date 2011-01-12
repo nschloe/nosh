@@ -16,18 +16,31 @@ def _main():
     num_procs, min_vals = _read_data( filename )
 
     # plot the data
-    pp.plot( num_procs, min_vals[0] / min_vals * num_procs[0], 'ok' )
+
+    # speedup
+    speedup = min_vals[0] / min_vals * num_procs[0]
+    pp.plot( num_procs, speedup, 'ok' )
     pp.plot( [0,50], [0,50], '-k' )
-    pp.title( "Speedup for matrix-vector product" )
+    pp.title( "Speedup" )
     pp.xlabel( "Number of processors" )
     pp.ylabel( "speedup" )
     pp.show()
     #matplotlib2tikz.save( "speedup.tikz" )
 
-    pp.plot( num_procs,  min_vals[0] / min_vals * num_procs[0] / num_procs, 'ok' )
+    # efficiency
+    efficiency = speedup / num_procs
+    pp.plot( num_procs,  efficiency, 'ok' )
     pp.plot( [0,50], [1,1], '-k' )
+    pp.title( "Efficiency" )
     pp.show()
     #matplotlib2tikz.save( "efficiency.tikz" )
+
+    # serial fraction
+    serial_fraction = (1.0/speedup - 1.0/num_procs) / (1.0 - 1.0/num_procs)
+    pp.plot( num_procs,  serial_fraction, 'ok' )
+    #pp.plot( [0,50], [1,1], '-k' )
+    pp.title( "Serial fraction" )
+    pp.show()
 
     return
 # ==============================================================================
@@ -49,7 +62,7 @@ def _read_data( filename ):
     num_procs = np.empty( num_entries, dtype = int )
     num_procs[:] = header
 
-    max_numrows = 100
+    max_numrows = 1000
     values = np.empty( (max_numrows,num_entries), dtype = float )
 
     # read all the data into an array
