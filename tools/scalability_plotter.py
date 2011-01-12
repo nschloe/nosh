@@ -53,14 +53,16 @@ def _read_data( filename ):
                               skipinitialspace = True
                             )
 
-    # Read header and remove empty entries by filter.
-    header = filter(None, data_reader.next())
+    # skip the header
+    data_reader.next()
 
-    num_entries = len( header )
+    # Read num_procs and remove empty entries by filter.
+    num_procs = filter(None, data_reader.next())
+
+    num_entries = len( num_procs )
 
     # convert them into int
-    num_procs = np.empty( num_entries, dtype = int )
-    num_procs[:] = header
+    num_procs = np.array( num_procs, dtype = int )
 
     max_numrows = 1000
     values = np.empty( (max_numrows,num_entries), dtype = float )

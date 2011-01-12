@@ -16,7 +16,12 @@ def _main():
 
     num_runs = 10000
 
+    comment = "Timings of Belos solves with a Jacobian system, preconditioned with KEO (solved with ML)"
+
     # write header
+    f.write( "# %s" % comment )
+
+    # write number of processors
     header_string = ""
     for num_procs in xrange( min_numprocs, max_numprocs+1 ):
         header_string += "%d\t\t" % num_procs
