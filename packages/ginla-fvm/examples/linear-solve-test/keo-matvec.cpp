@@ -1,3 +1,9 @@
+// Workaround for icpc's error "Include mpi.h before stdio.h"
+#include <Teuchos_config.h>
+#ifdef HAVE_MPI
+    #include <mpi.h>
+#endif
+
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_XMLParameterListHelpers.hpp>
@@ -212,7 +218,7 @@ int main ( int argc, char *argv[] )
       MPI_Finalize();
 #endif
 
-    return ret==Belos::Converged ? EXIT_SUCCESS : EXIT_FAILURE;
+    return status==0 ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 // =========================================================================
 
