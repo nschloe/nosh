@@ -1,4 +1,5 @@
 SET ( ginlafdm_SRCS
+      dummy.f
       Ginla_FDM_State.cpp
       Ginla_FDM_ModelEvaluator_Default.cpp
       Ginla_FDM_ModelEvaluator_Bordered.cpp

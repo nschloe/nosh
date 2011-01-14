@@ -1,4 +1,5 @@
 SET ( ginla_SRCS
+      dummy.f
       Ginla_Helpers.cpp
       Ginla_EpetraFVM_State.cpp
       Ginla_EpetraFVM_ModelEvaluator.cpp
