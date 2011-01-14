@@ -43,6 +43,7 @@ TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
                        ${keobelos_LIBS}
                        ${Trilinos_LIBRARIES}
                        ${Trilinos_TPL_LIBRARIES}
+                       gfortran
                        ${Boost_LIBRARIES} )
 # ------------------------------------------------------------------------------
 SET ( jacobiansolver_SRCS
@@ -60,6 +61,7 @@ TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
                        ${jacobiansolver_LIBS}
                        ${Trilinos_LIBRARIES}
                        ${Trilinos_TPL_LIBRARIES}
+                       gfortran
                        ${Boost_LIBRARIES} )
 # ------------------------------------------------------------------------------
 SET ( matvec_SRCS

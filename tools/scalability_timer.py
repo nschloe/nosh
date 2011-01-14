@@ -13,11 +13,12 @@ def _main():
 
     # set the file for stdout
     output_file = "output.log"
-    outputfile_handle = open( output_file, "w" )
+    bufsize = 1
+    outputfile_handle = open( output_file, "w", bufsize )
 
     # run over the number of procs
-    min_numprocs = 1
-    max_numprocs = 6
+    min_numprocs = 2
+    max_numprocs = 47
 
     num_runs = 10000
 
@@ -71,19 +72,19 @@ def _testrun( num_procs ):
     #basename = "cutcircle1000"
     #key = "Belos: PseudoBlockCGSolMgr total solve time"
 
-    test_exe = "/home/nico/ginla/build/mpi/packages/ginla-fvm/examples/linear-solve-test/keo-belos.exe"
-    basename = "cutcircle300"
-    key = "Belos: PseudoBlockCGSolMgr total solve time"
+    #test_exe = "/home/nico/ginla/build/mpi/packages/ginla-fvm/examples/linear-solve-test/keo-belos.exe"
+    #basename = "cutcircle300"
+    #key = "Belos: PseudoBlockCGSolMgr total solve time"
 
-    if num_procs == 1:
-        options = "--input=%s.e" % basename
-    elif num_procs > 1:
-        options = "--input=%s-balanced.par" % basename
+    #if num_procs == 1:
+        #options = "--input=%s.e" % basename
+    #elif num_procs > 1:
+        #options = "--input=%s-balanced.par" % basename
 
 
-    #test_exe = "/home/nschloe/ginla/build/mpi/packages/ginla-fvm/examples/loca-driver/loca-driver-fvm.exe"
-    #options = "--xml-input-file=./conf.xml"
-    #key = "LOCA runtime"
+    test_exe = "/home/nschloe/ginla/build/mpi/packages/ginla-fvm/examples/loca-driver/loca-driver-fvm.exe"
+    options = "--xml-input-file=./conf.xml"
+    key = "LOCA runtime"
 
     if num_procs == 1:
         cmd = "%s %s" % ( test_exe, options )
