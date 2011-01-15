@@ -30,8 +30,6 @@ SET( MY_EXECUTABLE
      "oneParameterContinuation.out" )
 ADD_EXECUTABLE( ${MY_EXECUTABLE}
                 ${opc_SRCS} )
-SET_TARGET_PROPERTIES( ${MY_EXECUTABLE}
-                       PROPERTIES LINKER_LANGUAGE Fortran )
 TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
                        ${internal_LIBS}
                        ${Trilinos_LIBRARIES}
@@ -44,8 +42,6 @@ SET( MY_EXECUTABLE
      "opcWithModelEvaluator.out" )
 ADD_EXECUTABLE( ${MY_EXECUTABLE}
                 ${opc_SRCS} )
-SET_TARGET_PROPERTIES( ${MY_EXECUTABLE}
-                       PROPERTIES LINKER_LANGUAGE Fortran )
 TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
                        ${internal_LIBS}
                        ${Trilinos_LIBRARIES}
@@ -58,8 +54,6 @@ TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
 #      "opcConstraintInterface.out" )
 # ADD_EXECUTABLE( ${MY_EXECUTABLE}
 #                 ${opcConstraintInterface_SRCS} )
-# SET_TARGET_PROPERTIES( ${MY_EXECUTABLE}
-#                        PROPERTIES LINKER_LANGUAGE Fortran )
 # TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
 #                        ${internal_LIBS}
 #                        ${Trilinos_LIBRARIES}
@@ -72,8 +66,6 @@ TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
 #      "opcModelEvaluator.out" )
 # ADD_EXECUTABLE( ${MY_EXECUTABLE}
 #                 ${opcModelEvaluator_SRCS} )
-# SET_TARGET_PROPERTIES( ${MY_EXECUTABLE}
-#                        PROPERTIES LINKER_LANGUAGE Fortran )
 # TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
 #                        ${internal_LIBS}
 #                        ${Trilinos_LIBRARIES}

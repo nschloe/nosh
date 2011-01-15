@@ -32,8 +32,6 @@ SET( MY_EXECUTABLE
      "glTurningPointContinuation.out" )
 ADD_EXECUTABLE( ${MY_EXECUTABLE}
                 ${opc_SRCS} )
-SET_TARGET_PROPERTIES( ${MY_EXECUTABLE}
-                       PROPERTIES LINKER_LANGUAGE Fortran )
 TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
                        ${internal_LIBS}
                        ${Trilinos_LIBRARIES}
@@ -45,8 +43,6 @@ SET ( piro_SRCS
 SET( MY_EXECUTABLE "glTurningPointContinuationPiro.out" )
 ADD_EXECUTABLE( ${MY_EXECUTABLE}
                 ${piro_SRCS})
-SET_TARGET_PROPERTIES( ${MY_EXECUTABLE}
-                       PROPERTIES LINKER_LANGUAGE Fortran )
 TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
                        ${internal_LIBS}
                        ${Trilinos_LIBRARIES}

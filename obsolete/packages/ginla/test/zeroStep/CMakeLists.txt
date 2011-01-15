@@ -44,9 +44,6 @@ SET ( internal_LIBS
       vio
     )
 
-SET_TARGET_PROPERTIES( ${MY_EXECUTABLE}
-                       PROPERTIES LINKER_LANGUAGE Fortran )
-
 # Set executable linking information.
 TARGET_LINK_LIBRARIES ( ${MY_EXECUTABLE}
                         ${internal_LIBS}

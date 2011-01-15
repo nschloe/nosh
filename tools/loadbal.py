@@ -12,9 +12,9 @@ def _main():
 	output = "%s-balanced.nemI" % basename
 
         # slice it
-        min_slices = 2
-        max_slices = 6
-        for num_slices in xrange( min_slices, max_slices+1 ):
+        slices_list = [ 1 ]
+        slices_list.extend( range(8, 257, 16) )
+        for num_slices in slices_list:
             _slice( filename, output, num_slices )
 
 	return

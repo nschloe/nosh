@@ -35,9 +35,6 @@ SET ( glNOX_SRCS
 ADD_EXECUTABLE( ${MY_EXECUTABLE}
                 ${glNOX_SRCS})
 
-SET_TARGET_PROPERTIES( ${MY_EXECUTABLE}
-                       PROPERTIES LINKER_LANGUAGE Fortran )
-
 TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
                        ${internal_LIBS}
                        ${Trilinos_LIBRARIES}
@@ -50,8 +47,6 @@ SET ( glNOXModelEvaluator_SRCS
       noxWithModelEvaluator.cpp )
 ADD_EXECUTABLE( ${MY_EXECUTABLE}
                 ${glNOXModelEvaluator_SRCS})
-SET_TARGET_PROPERTIES( ${MY_EXECUTABLE}
-                       PROPERTIES LINKER_LANGUAGE Fortran )
 TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
                        ${internal_LIBS}
                        ${Trilinos_LIBRARIES}
