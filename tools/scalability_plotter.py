@@ -21,23 +21,25 @@ def _main():
 
     # speedup
     speedup = min_vals[0] / min_vals * num_procs[0]
-    pp.plot( num_procs, speedup, 'ok' )
-    pp.plot( [0,max_procs+1], [0,max_procs+1], '-k' )
+    pp.plot( num_procs, speedup, 'ok', label="speedup" )
+    pp.plot( [0,max_procs+1], [0,max_procs+1], '-k', label="ideal" )
     pp.title( "Speedup" )
     pp.xlabel( "Number of processors" )
     pp.ylabel( "speedup" )
     pp.xlim( 0, max_procs+1 )
     pp.ylim( 0, max_procs+1 )
+    pp.legend()
     pp.show()
     #matplotlib2tikz.save( "speedup.tikz" )
 
     # efficiency
     efficiency = speedup / num_procs
-    pp.plot( num_procs,  efficiency, 'ok' )
-    pp.plot( [0,max_procs+1], [1,1], '-k' )
+    pp.plot( num_procs,  efficiency, 'ok', label="efficiency" )
+    pp.plot( [0,max_procs+1], [1,1], '-k', label="ideal" )
     pp.title( "Efficiency" )
     pp.xlim( 0, max_procs+1 )
     pp.ylim( 0, 1.1 )
+    pp.legend()
     pp.show()
     #matplotlib2tikz.save( "efficiency.tikz" )
 
