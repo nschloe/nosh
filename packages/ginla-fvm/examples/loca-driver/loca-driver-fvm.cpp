@@ -24,6 +24,7 @@
 #include <LOCA_StatusTest_Combo.H>
 #include <LOCA_StatusTest_MaxIters.H>
 #include <NOX_Epetra_LinearSystem_Stratimikos.H>
+#include <NOX_Epetra_LinearSystem_AztecOO.H>
 #include <NOX_StatusTest_Generic.H>
 #include <NOX_StatusTest_Factory.H>
 
@@ -299,7 +300,14 @@ main ( int argc, char *argv[] )
                                                       .sublist ( "Direction" )
                                                       .sublist ( "Newton" )
                                                       .sublist ( "Stratimikos Linear Solver", true );
+        // is this really needed?
+        lsParams.set( "Preconditioner", "User Defined" );
+
         bool isAlreadyInverted = true;
+
+//         std::cout << "is null" << std::endl;
+//         std::cout << iJac.is_null() << " " << J.is_null() << " " << iPrec.is_null() << " " << M.is_null() << std::endl;
+
         Teuchos::RCP<NOX::Epetra::LinearSystemStratimikos> linSys =
                 Teuchos::rcp ( new NOX::Epetra::LinearSystemStratimikos ( nlPrintParams,
                                                                           lsParams,
