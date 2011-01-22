@@ -98,16 +98,10 @@ int main ( int argc, char *argv[] )
       Teuchos::RCP<Epetra_Vector>         z = Teuchos::null;
       Teuchos::RCP<Ginla::EpetraFVM::StkMesh> mesh = Teuchos::null;
 
-      Teuchos::RCP<Teuchos::Time> readTime = Teuchos::TimeMonitor::getNewTimer("Data I/O");
-      Teuchos::RCP<Teuchos::Time> fvmEntitiesConstructTime = Teuchos::TimeMonitor::getNewTimer("FVM entities construction");
-      Teuchos::RCP<Teuchos::Time> mvpConstructTime = Teuchos::TimeMonitor::getNewTimer("MVP construction");
-      Teuchos::RCP<Teuchos::Time> graphConstructTime = Teuchos::TimeMonitor::getNewTimer("Graph construction");
-      Teuchos::RCP<Teuchos::Time> keoConstructTime = Teuchos::TimeMonitor::getNewTimer("Matrix construction");
-      Teuchos::RCP<Teuchos::Time> mvTime = Teuchos::TimeMonitor::getNewTimer("Matrix-vector multiplication");
-
       if ( eComm->MyPID() == 0 )
           std::cout << "Reading..." << std::endl;
 
+      Teuchos::RCP<Teuchos::Time> readTime = Teuchos::TimeMonitor::getNewTimer("Data I/O");
       {
       Teuchos::TimeMonitor tm(*readTime);
       Ginla::EpetraFVM::StkMeshRead( *eComm,
@@ -118,6 +112,7 @@ int main ( int argc, char *argv[] )
                                     );
       }
 
+      Teuchos::RCP<Teuchos::Time> mvpConstructTime = Teuchos::TimeMonitor::getNewTimer("MVP construction");
       Teuchos::RCP<Ginla::MagneticVectorPotential::Z> mvp;
       double mu;
       {
@@ -137,11 +132,13 @@ int main ( int argc, char *argv[] )
 
       // Precompute FVM entities. Not actually necessary as it's triggered automatically
       // when needed, but for timing purposes put it here.
+      Teuchos::RCP<Teuchos::Time> fvmEntitiesConstructTime = Teuchos::TimeMonitor::getNewTimer("FVM entities construction");
       {
           Teuchos::TimeMonitor tm(*fvmEntitiesConstructTime);
           mesh->computeFvmEntities_();
       }
 
+      Teuchos::RCP<Teuchos::Time> graphConstructTime = Teuchos::TimeMonitor::getNewTimer("Graph construction");
       Teuchos::RCP<Epetra_FECrsGraph> keoGraph;
       {
           Teuchos::TimeMonitor tm(*graphConstructTime);
@@ -153,30 +150,55 @@ int main ( int argc, char *argv[] )
       Teuchos::RCP<Epetra_FECrsMatrix> keoMatrix;
       keoMatrix = Teuchos::rcp( new Epetra_FECrsMatrix( Copy, *keoGraph ) );
       Teuchos::Tuple<double,3> scaling( Teuchos::tuple(1.0,1.0,1.0) );
+      Teuchos::RCP<Teuchos::Time> keoConstructTime = Teuchos::TimeMonitor::getNewTimer("Matrix construction");
       {
           Teuchos::TimeMonitor tm(*keoConstructTime);
           keoFactory->buildKeo( *keoMatrix, mvpParameters, scaling );
       }
       // Make sure the matrix is indeed positive definite, and not
       // negative definite. Belos needs that (2010-11-05).
-      keoMatrix->Scale( -1.0 );
+      TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->Scale( -1.0 ) );
 
       // create initial guess and right-hand side
       Teuchos::RCP<Epetra_Vector> epetra_x =
               Teuchos::rcp( new Epetra_Vector( keoMatrix->OperatorDomainMap() ) );
       Teuchos::RCP<Epetra_MultiVector> epetra_b =
               Teuchos::rcp( new Epetra_Vector( keoMatrix->OperatorRangeMap(), 1 ) );
-      epetra_b->Random();
+      TEUCHOS_ASSERT_EQUALITY( 0, epetra_x->Random() );
+
       // -----------------------------------------------------------------------
       // perform matrix-vector products
 
       if ( eComm->MyPID() == 0 )
           std::cout << "MV product..." << std::endl;
 
-      for ( unsigned int k=0; k<1e4; k++ )
+      Teuchos::RCP<Teuchos::Time> mvTime = Teuchos::TimeMonitor::getNewTimer("Matrix-vector multiplication");
       {
           Teuchos::TimeMonitor tm(*mvTime);
-          keoMatrix->Apply( *epetra_x, *epetra_b );
+          TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->Apply( *epetra_x, *epetra_b ) );
+      }
+
+      Teuchos::RCP<Teuchos::Time> normTime = Teuchos::TimeMonitor::getNewTimer("2-norm calculation");
+      {
+          Teuchos::TimeMonitor tm(*normTime);
+          double norm2;
+          TEUCHOS_ASSERT_EQUALITY( 0, epetra_b->Norm2( &norm2 ) );
+      }
+
+      Teuchos::RCP<Teuchos::Time> inprodTime = Teuchos::TimeMonitor::getNewTimer("inner product");
+      {
+          Teuchos::TimeMonitor tm(*inprodTime);
+          double inProd;
+          TEUCHOS_ASSERT_EQUALITY( 0, epetra_b->Dot( *epetra_x, &inProd ) );
+      }
+
+      Teuchos::RCP<Teuchos::Time> multTime = Teuchos::TimeMonitor::getNewTimer("element-wise multiplication");
+      Teuchos::RCP<Epetra_Vector> epetra_u =
+              Teuchos::rcp( new Epetra_Vector( keoMatrix->OperatorDomainMap() ) );
+      {
+          Teuchos::TimeMonitor tm(*multTime);
+          double multVal;
+          TEUCHOS_ASSERT_EQUALITY( 0, epetra_u->Multiply( 1.0, *epetra_x, *epetra_b, 0.0 ) );
       }
 
       // print timing data
