@@ -18,24 +18,45 @@ def _main():
     min_vals = []
     max_procs = []
     for filename in filenames:
-        np, mv = _read_data( filename )
-        num_procs.append( np )
+        num_p, mv = _read_data( filename )
+        num_procs.append( num_p )
         min_vals.append( mv )
-        max_procs.append( max( np ) )
+        max_procs.append( max( num_p ) )
 
     # get the overall maximum
     max_procs = max( max_procs )
 
-    labels = [ 'Apply()', 'Norm2()', 'Dot()', 'Multiply()' ]
+    labels = [ 'FECrsMatrix::Apply()', 'Vector::Norm2()', 'Vector::Dot()', 'Vector::Multiply()' ]
 
     # plot the data
     marker_styles = [ '+', '*', '1', '.', ',', '2', '3', '4', '<', '>', 'D',
                       'H', '^', '_', 'd', 'h', 'o', 'p', 's', 'v', 'x', '|'
                     ]
     # --------------------------------------------------------------------------
+    # times
+    proc_range = range(1,max_procs+1)
+    pp.plot( proc_range, 1.0/np.array(proc_range), '-k', label="ideal speedup" )
+    pp.title( "Epetra timing for shared-memory, MPI" )
+    pp.xlabel( "Number of processes" )
+    pp.xlim( 0, max_procs+1 )
+    k = 0
+    speedups = []
+    for min_val, num_proc, label  in zip( min_vals, num_procs, labels ):
+        pp.semilogy( num_proc, min_val,
+                     linestyle = '-',
+                     marker    = marker_styles[k],
+                     label     = label
+                   )
+        k += 1
+    pp.legend()
+    if is_tikz:
+        matplotlib2tikz.save( "timing.tikz" )
+    else:
+        pp.show()
+    # --------------------------------------------------------------------------
     # speedup
     pp.plot( [0,max_procs+1], [0,max_procs+1], '-k', label="ideal" )
-    pp.title( "Speedup" )
+    pp.title( "Epetra speedup for shared-memory, MPI" )
     pp.xlabel( "Number of processes" )
     pp.xlim( 0, max_procs+1 )
     pp.ylim( 0, max_procs+1 )
