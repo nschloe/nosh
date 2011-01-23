@@ -5,13 +5,13 @@ of the value and the value of the first column.
 Strong scaling.
 '''
 # ==============================================================================
-import csv
 import numpy as np
-import matplotlib.pyplot as pp
-import matplotlib2tikz
 # ==============================================================================
 def _main():
-    filename = _parse_options()
+    import matplotlib.pyplot as pp
+    import matplotlib2tikz
+
+    filename, is_tikz = _parse_options()
 
     num_procs, min_vals = _read_data( filename )
 
@@ -29,8 +29,10 @@ def _main():
     pp.xlim( 0, max_procs+1 )
     pp.ylim( 0, max_procs+1 )
     pp.legend()
-    pp.show()
-    #matplotlib2tikz.save( "speedup.tikz" )
+    if is_tikz:
+        matplotlib2tikz.save( "speedup.tikz" )
+    else:
+        pp.show()
 
     # efficiency
     efficiency = speedup / num_procs
@@ -40,19 +42,24 @@ def _main():
     pp.xlim( 0, max_procs+1 )
     pp.ylim( 0, 1.1 )
     pp.legend()
-    pp.show()
-    #matplotlib2tikz.save( "efficiency.tikz" )
+    if is_tikz:
+        matplotlib2tikz.save( "efficiency.tikz" )
+    else:
+        pp.show()
 
     # serial fraction
     serial_fraction = (1.0/speedup - 1.0/num_procs) / (1.0 - 1.0/num_procs)
     pp.plot( num_procs,  serial_fraction, 'ok' )
-    #pp.plot( [0,50], [1,1], '-k' )
     pp.title( "Serial fraction" )
-    pp.show()
+    if is_tikz:
+        matplotlib2tikz.save( "serial-fraction.tikz" )
+    else:
+        pp.show()
 
     return
 # ==============================================================================
 def _read_data( filename ):
+    import csv
 
     # initialize csv reader
     data_reader = csv.reader( open(filename, 'r'),
@@ -71,7 +78,7 @@ def _read_data( filename ):
 
     # Allocate space for the values.
     num_entries = len( num_procs )
-    max_numrows = 1000
+    max_numrows = 10000
     values = np.empty( (max_numrows,num_entries), dtype = float )
 
     # read all the data into an array
@@ -100,13 +107,21 @@ def _parse_options():
 
     parser = optparse.OptionParser( usage = usage )
 
+    parser.add_option( "-t", "--tikz",
+                       action  = "store_true",
+                       dest    = "is_tikz",
+                       default = False,
+                       help    = "Plot the figures as TikZ files",
+                       metavar = "TIKZFILE"
+                     )
+
     (options, args) = parser.parse_args()
 
     if not args  or  len(args) != 1:
         parser.print_help()
         sys.exit( "\nProvide a file to be read." )
 
-    return args[0]
+    return args[0], options.is_tikz
 # ==============================================================================
 if __name__ == "__main__":
     _main()
