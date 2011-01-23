@@ -77,10 +77,13 @@ def _main():
             outputfile_handle.write( output )
             outputfile_handle.write( "\n" )
         # ----------------------------------------------------------------------
-        timingfile_handle.write( "\n" )
+        for handle in timingfile_handles:
+            handle.write( "\n" )
 
-    timingfile_handle.close()
+    # close all files
     outputfile_handle.close()
+    for handle in timingfile_handles:
+        handle.close()
 
     return
 # ==============================================================================
