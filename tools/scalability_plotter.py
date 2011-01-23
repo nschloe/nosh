@@ -6,55 +6,95 @@ Strong scaling.
 '''
 # ==============================================================================
 import numpy as np
+import sys
 # ==============================================================================
 def _main():
     import matplotlib.pyplot as pp
     import matplotlib2tikz
 
-    filename, is_tikz = _parse_options()
+    filenames, is_tikz = _parse_options()
 
-    num_procs, min_vals = _read_data( filename )
+    num_procs = []
+    min_vals = []
+    max_procs = []
+    for filename in filenames:
+        np, mv = _read_data( filename )
+        num_procs.append( np )
+        min_vals.append( mv )
+        max_procs.append( max( np ) )
 
-    max_procs = max( num_procs )
+    # get the overall maximum
+    max_procs = max( max_procs )
+
+    labels = [ 'Apply()', 'Norm2()', 'Dot()', 'Multiply()' ]
 
     # plot the data
-
+    marker_styles = [ '+', '*', '1', '.', ',', '2', '3', '4', '<', '>', 'D',
+                      'H', '^', '_', 'd', 'h', 'o', 'p', 's', 'v', 'x', '|'
+                    ]
+    # --------------------------------------------------------------------------
     # speedup
-    speedup = min_vals[0] / min_vals * num_procs[0]
-    pp.plot( num_procs, speedup, 'ok', label="speedup" )
     pp.plot( [0,max_procs+1], [0,max_procs+1], '-k', label="ideal" )
     pp.title( "Speedup" )
-    pp.xlabel( "Number of processors" )
-    pp.ylabel( "speedup" )
+    pp.xlabel( "Number of processes" )
     pp.xlim( 0, max_procs+1 )
     pp.ylim( 0, max_procs+1 )
-    pp.legend()
+    k = 0
+    speedups = []
+    for min_val, num_proc, label  in zip( min_vals, num_procs, labels ):
+        speedup = min_val[0] / min_val * num_proc[0]
+        speedups.append( speedup )
+        pp.plot( num_proc, speedup,
+                 linestyle = '-',
+                 marker    = marker_styles[k],
+                 label     = label
+               )
+        k += 1
+    pp.legend( loc='upper left' )
     if is_tikz:
         matplotlib2tikz.save( "speedup.tikz" )
     else:
         pp.show()
-
+    # --------------------------------------------------------------------------
     # efficiency
-    efficiency = speedup / num_procs
-    pp.plot( num_procs,  efficiency, 'ok', label="efficiency" )
     pp.plot( [0,max_procs+1], [1,1], '-k', label="ideal" )
     pp.title( "Efficiency" )
     pp.xlim( 0, max_procs+1 )
     pp.ylim( 0, 1.1 )
+    k = 0
+    for speedup, num_proc, label  in zip( speedups, num_procs, labels ):
+        efficiency = speedup / num_proc
+        pp.plot( num_proc, efficiency,
+                 linestyle = '-',
+                 marker    = marker_styles[k],
+                 label     = label
+               )
+        k += 1
     pp.legend()
     if is_tikz:
         matplotlib2tikz.save( "efficiency.tikz" )
     else:
         pp.show()
-
+    # --------------------------------------------------------------------------
     # serial fraction
-    serial_fraction = (1.0/speedup - 1.0/num_procs) / (1.0 - 1.0/num_procs)
-    pp.plot( num_procs,  serial_fraction, 'ok' )
     pp.title( "Serial fraction" )
+    pp.xlim( 0, max_procs+1 )
+    pp.ylim( 0, 1.1 )
+    k = 0
+    for speedup, num_proc, label  in zip( speedups, num_procs, labels ):
+        serial_fraction = (1.0/speedup - 1.0/num_proc) / (1.0 - 1.0/num_proc)
+        pp.plot( num_proc, serial_fraction,
+                 linestyle = '-',
+                 marker    = marker_styles[k],
+                 label     = label
+               )
+        k += 1
+    pp.legend()
     if is_tikz:
         matplotlib2tikz.save( "serial-fraction.tikz" )
     else:
         pp.show()
+    # --------------------------------------------------------------------------
 
     return
 # ==============================================================================
@@ -86,7 +126,11 @@ def _read_data( filename ):
         k = 0
         for row in data_reader:
             # 'filter' out empty values
-            values[k,:] = filter( None, row )
+            data = filter( None, row )
+            values[k,:len(data)] = data
+            if len( data ) < num_entries:
+                # pad with inf
+                values[k,len(data):] = np.inf
             k += 1
     except csv.Error, e:
         sys.exit('file %s, line %d: %s' % (filename, reader.line_num, e))
@@ -103,7 +147,7 @@ def _parse_options():
     '''Parse input options.'''
     import optparse
 
-    usage = "usage: %prog filename"
+    usage = "usage: %prog datafile(s)"
 
     parser = optparse.OptionParser( usage = usage )
 
@@ -117,11 +161,11 @@ def _parse_options():
 
     (options, args) = parser.parse_args()
 
-    if not args  or  len(args) != 1:
+    if not args:
         parser.print_help()
-        sys.exit( "\nProvide a file to be read." )
+        sys.exit( "\nNo file(s) provided." )
 
-    return args[0], options.is_tikz
+    return args, options.is_tikz
 # ==============================================================================
 if __name__ == "__main__":
     _main()
