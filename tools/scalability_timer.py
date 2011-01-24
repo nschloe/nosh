@@ -36,7 +36,8 @@ def _main():
 
     num_runs = 10000
 
-    #comment = "Timings of Belos solves with a Jacobian system, preconditioned with KEO (solved with ML)"
+    #comment = "Timings of Belos solves with a Jacobian system, preconditioned
+               #with KEO (solved with ML)"
     #comment = "Timings of one full LOCA step"
 
     # write header to timing files
@@ -123,11 +124,14 @@ def _testrun( num_procs, keys ):
             regexs.append( "%s\s*(\d+\.?\d*)" % key )
     elif num_procs > 1:
         cmd = "mpiexec -n %d %s %s" % ( num_procs, test_exe, options )
-        # "Belos: PseudoBlockCGSolMgr total solve time    0.3433 (1)  0.3434 (1)  0.03435 (1)   "
-        # Enclose the *last* timing (i.e., the max across all processors) in parentheses
+        # "Some random keyword    0.3433 (1)  0.3434 (1)  0.03435 (1)   "
+        # Store the *last* timing (i.e., the max across all processors)
         regexs = []
+        decimal_regex = '\d+\.?\d*' # regular expression for a decimal number
         for key in keys:
-            regexs.append( "%s\s*\d+\.?\d*\s*\(\d+\)\s*\d+\.?\d*\s*\(\d+\)\s*(\d+\.?\d*)\s*\(\d+\)" % key )
+            regexs.append( "%s\s*%s\s*\(\d+\)\s*%s\s*\(\d+\)\s*(%s)\s*\(\d+\)" \
+                           % (key, decimal_regex, decimal_regex, decimal_regex)
+                         )
     else:
         sys.exit( "Illegal number of processors \"%d\"." % num_procs )
 
@@ -142,7 +146,8 @@ def _testrun( num_procs, keys ):
         if match_obj:
             max_times.append( float( match_obj.group( 1 ) ) )
         else:
-            error_message = "Could not find the regex \n\n%s\n\n in the string \n\n%s\n\n." \
+            error_message = "Could not find the regex \n\n%s\n\n " \
+                            "in the string \n\n%s\n\n." \
                           % ( regex, repr(output) )
             sys.exit( error_message )
 
@@ -157,10 +162,6 @@ def _parse_options():
     parser = optparse.OptionParser( usage = usage )
 
     (options, args) = parser.parse_args()
-
-    #if not args  or  len(args) != 1:
-        #parser.print_help()
-        #sys.exit( "\nProvide a file to be split." )
 
     return args[0]
 # ==============================================================================

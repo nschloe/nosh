@@ -26,7 +26,9 @@ def _main():
     # get the overall maximum
     max_procs = max( max_procs )
 
-    labels = [ 'FECrsMatrix::Apply()', 'Vector::Norm2()', 'Vector::Dot()', 'Vector::Multiply()' ]
+    labels = [ 'FECrsMatrix::Apply()', 'Vector::Norm2()',
+               'Vector::Dot()', 'Vector::Multiply()'
+             ]
 
     # plot the data
     marker_styles = [ '+', '*', '1', '.', ',', '2', '3', '4', '<', '>', 'D',
@@ -34,13 +36,12 @@ def _main():
                     ]
     # --------------------------------------------------------------------------
     # times
-    proc_range = range(1,max_procs+1)
+    proc_range = range( 1, max_procs+1 )
     pp.plot( proc_range, 1.0/np.array(proc_range), '-k', label="ideal speedup" )
     pp.title( "Epetra timing for shared-memory, MPI" )
     pp.xlabel( "Number of processes" )
     pp.xlim( 0, max_procs+1 )
     k = 0
-    speedups = []
     for min_val, num_proc, label  in zip( min_vals, num_procs, labels ):
         pp.semilogy( num_proc, min_val,
                      linestyle = '-',
@@ -55,7 +56,7 @@ def _main():
         pp.show()
     # --------------------------------------------------------------------------
     # speedup
-    pp.plot( [0,max_procs+1], [0,max_procs+1], '-k', label="ideal" )
+    pp.plot( [0, max_procs+1], [0, max_procs+1], '-k', label="ideal" )
     pp.title( "Epetra speedup for shared-memory, MPI" )
     pp.xlabel( "Number of processes" )
     pp.xlim( 0, max_procs+1 )
@@ -78,7 +79,7 @@ def _main():
         pp.show()
     # --------------------------------------------------------------------------
     # efficiency
-    pp.plot( [0,max_procs+1], [1,1], '-k', label="ideal" )
+    pp.plot( [0, max_procs+1], [1, 1], '-k', label="ideal" )
     pp.title( "Efficiency" )
     pp.xlim( 0, max_procs+1 )
     pp.ylim( 0, 1.1 )
@@ -120,6 +121,7 @@ def _main():
     return
 # ==============================================================================
 def _read_data( filename ):
+    '''Reads the CSV data from a file and returns the processed data.'''
     import csv
 
     # initialize csv reader
@@ -132,32 +134,32 @@ def _read_data( filename ):
     # skip the header
     data_reader.next()
 
-    # Read num_procs and remove empty entries by filter.
-    num_procs = filter( None, data_reader.next() )
+    # Read num_procs and remove empty entries by list comprehension
+    num_procs = [x for x in data_reader.next() if x]
+
     # convert them into int
     num_procs = np.array( num_procs, dtype = int )
 
     # Allocate space for the values.
     num_entries = len( num_procs )
     max_numrows = 10000
-    values = np.empty( (max_numrows,num_entries), dtype = float )
+    values = np.empty( (max_numrows, num_entries), dtype = float )
 
     # read all the data into an array
     try:
         k = 0
         for row in data_reader:
-            # 'filter' out empty values
-            data = filter( None, row )
-            values[k,:len(data)] = data
+            data = [x for x in row if x] # filter out empty values
+            values[ k, :len(data) ] = data
             if len( data ) < num_entries:
                 # pad with inf
-                values[k,len(data):] = np.inf
+                values[ k, len(data): ] = np.inf
             k += 1
     except csv.Error, e:
-        sys.exit('file %s, line %d: %s' % (filename, reader.line_num, e))
+        sys.exit( 'file %s, line %d: %s' % (filename, data_reader.line_num, e) )
 
     # trim the values
-    values = values[:k,:]
+    values = values[ :k, : ]
 
     # take the minimum along all rows
     min_values = np.amin( values, 0 )
