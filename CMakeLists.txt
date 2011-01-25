@@ -25,3 +25,4 @@ SET(CMAKE_CXX_FLAGS_PROFILE     "-pg -O2" )
 SET(CMAKE_Fortran_FLAGS_PROFILE "-pg -O2" )
 
 add_subdirectory ( packages )
+add_subdirectory ( scalability-tests )
