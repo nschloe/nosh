@@ -73,12 +73,8 @@ save ( Teuchos::RCP<std::vector<double> >       & evals_r,
 {
     // Can't fetch step index now, so rely on the function's
     // being called exactly once per step.
-    static unsigned int step = -1;
-    if ( !locaStepper_.is_null() )
-        step = locaStepper_->getStepNumber();
-    else
-        step++;
-
+    // Step number updated at teh end of teh function.
+    static unsigned int step = 0;
     unsigned int numEigenValues = evals_r->size();
 
     // Consider eigenvalue above tol to be unstable, and between -tol and tol to be nullstable.
@@ -203,6 +199,13 @@ save ( Teuchos::RCP<std::vector<double> >       & evals_r,
 
         eigenParamListPtr_->set( "Sort Manager", d );
     }
+
+    // update the step index for the next run
+    if ( !locaStepper_.is_null() )
+        step = locaStepper_->getStepNumber();
+    else
+        step++;
+
 
     return NOX::Abstract::Group::Ok;
 }
