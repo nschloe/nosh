@@ -42,7 +42,7 @@ int main ( int argc, char *argv[] )
       // Create map.
       // Do strong scaling tests, so keep numGlobalElements independent of
       // the number of processes.
-      int numGlobalElements = 1e5;
+      int numGlobalElements = 2e8;
       int indexBase = 0;
       Teuchos::RCP<Epetra_Map> map =
           Teuchos::rcp( new Epetra_Map ( numGlobalElements, indexBase, *eComm ) );
@@ -122,7 +122,7 @@ int main ( int argc, char *argv[] )
       Teuchos::RCP<Teuchos::Time> multiplyTime =
           Teuchos::TimeMonitor::getNewTimer("Vector::Multiply");
       {
-          Teuchos::TimeMonitor tm(*dotTime);
+          Teuchos::TimeMonitor tm(*multiplyTime);
           TEUCHOS_ASSERT_EQUALITY( 0, u->Multiply( 1.0, *u, *v, 1.0 ) );
       }
 
