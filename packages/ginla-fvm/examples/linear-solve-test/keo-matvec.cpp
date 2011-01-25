@@ -70,6 +70,9 @@ int main ( int argc, char *argv[] )
     try
     {
       // ===========================================================================
+      if ( eComm->MyPID() == 0 )
+          std::cout << "# " << eComm->NumProc() << " processes" << std::endl;
+      // ===========================================================================
       // handle command line arguments
       Teuchos::CommandLineProcessor My_CLP;
 
@@ -98,9 +101,7 @@ int main ( int argc, char *argv[] )
       Teuchos::RCP<Epetra_Vector>         z = Teuchos::null;
       Teuchos::RCP<Ginla::EpetraFVM::StkMesh> mesh = Teuchos::null;
 
-      if ( eComm->MyPID() == 0 )
-          std::cout << "Reading..." << std::endl;
-
+      // read the file
       Teuchos::RCP<Teuchos::Time> readTime = Teuchos::TimeMonitor::getNewTimer("Data I/O");
       {
       Teuchos::TimeMonitor tm(*readTime);
@@ -167,10 +168,8 @@ int main ( int argc, char *argv[] )
       TEUCHOS_ASSERT_EQUALITY( 0, epetra_x->Random() );
 
       // -----------------------------------------------------------------------
-      // perform matrix-vector products
-
-      if ( eComm->MyPID() == 0 )
-          std::cout << "MV product..." << std::endl;
+      // perform several tests
+      std::cout << "Process " << eComm->MyPID() << " has " << keoMatrix->NumMyNonzeros() << " nonzeros." << std::endl;
 
       Teuchos::RCP<Teuchos::Time> mvTime = Teuchos::TimeMonitor::getNewTimer("Matrix-vector multiplication");
       {
