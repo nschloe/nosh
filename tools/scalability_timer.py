@@ -73,7 +73,7 @@ def _main():
             output, max_times = _testrun( num_procs, keys )
 
             # write timing data
-            for handle, maxtime in zip( timingfile_handles, maxtimes ):
+            for handle, max_time in zip( timingfile_handles, max_times ):
                 handle.write( "%e\t" % max_time )
 
             # write stdout

@@ -10,39 +10,23 @@ import sys
 # ==============================================================================
 def _main():
     import matplotlib.pyplot as pp
-    import matplotlib2tikz
+#    import matplotlib2tikz
 
     filenames, is_tikz = _parse_options()
 
     num_procs = []
-    min_vals = []
+    labels    = []
+    min_vals  = []
     max_procs = []
     for filename in filenames:
-        num_p, mv = _read_data( filename )
+        label, num_p, mv = _read_data( filename )
+        labels.append( label )
         num_procs.append( num_p )
         min_vals.append( mv )
         max_procs.append( max( num_p ) )
 
     # get the overall maximum
     max_procs = max( max_procs )
-
-    labels = [ "Vector::MeanValue",
-             "Vector::MinValue",
-             "Vector::MaxValue",
-             "Vector::Norm1",
-             "Vector::Norm2",
-             "Vector::NormInf",
-             "Vector::Scale",
-             "Vector::Dot",
-             "Vector::Multiply",
-             "Vector::Update",
-             "CrsMatrix::Norm1",
-             "CrsMatrix::NormInf",
-             "CrsMatrix::NormFrobenius",
-             "CrsMatrix::Scale",
-             "CrsMatrix::LeftScale",
-             "CrsMatrix::RightScale",
-             "CrsMatrix::Apply" ]
 
     # plot the data
     marker_styles = [ '+', '*', '1', '.', ',', '2', '3', '4', '<', '>', 'D',
@@ -145,8 +129,11 @@ def _read_data( filename ):
                               skipinitialspace = True
                             )
 
-    # skip the header
-    data_reader.next()
+    # read the
+    header = data_reader.next()[0]
+    # strip the initial "#" and split by ';'
+    header = header.lstrip( '#' ).split( ';' )
+    label = header[0].strip()
 
     # Read num_procs and remove empty entries by list comprehension
     num_procs = [x for x in data_reader.next() if x]
@@ -178,7 +165,7 @@ def _read_data( filename ):
     # take the minimum along all rows
     min_values = np.amin( values, 0 )
 
-    return num_procs, min_values
+    return label, num_procs, min_values
 # ==============================================================================
 def _parse_options():
     '''Parse input options.'''
