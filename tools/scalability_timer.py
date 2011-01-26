@@ -7,15 +7,42 @@ import sys, subprocess, re, datetime, os
 # ==============================================================================
 def _main():
 
-    keys = [ "Matrix-vector multiplication",
-             "2-norm calculation",
-             "inner product",
-             "element-wise multiplication"
+    keys = [ "Vector::MeanValue",
+             "Vector::MinValue",
+             "Vector::MaxValue",
+             "Vector::Norm1",
+             "Vector::Norm2",
+             "Vector::NormInf",
+             "Vector::Scale",
+             "Vector::Dot",
+             "Vector::Multiply",
+             "Vector::Update",
+             "CrsMatrix::Norm1",
+             "CrsMatrix::NormInf",
+             "CrsMatrix::NormFrobenius",
+             "CrsMatrix::Scale",
+             "CrsMatrix::LeftScale",
+             "CrsMatrix::RightScale",
+             "CrsMatrix::Apply"
            ]
     comments = [ "Timings of one matrix-vector product with KEO, Cube 3D",
                  "Timings of one 2-norm calculation, Cube 3D",
                  "Timings of one inner product calculation, Cube 3D",
                  "Timings of one element-wise vector-multiplication, Cube 3D"
+                 "Timings of one inner product calculation, Cube 3D",
+                 "Timings of one inner product calculation, Cube 3D",
+                 "Timings of one inner product calculation, Cube 3D",
+                 "Timings of one inner product calculation, Cube 3D",
+                 "Timings of one inner product calculation, Cube 3D",
+                 "Timings of one inner product calculation, Cube 3D",
+                 "Timings of one inner product calculation, Cube 3D",
+                 "Timings of one inner product calculation, Cube 3D",
+                 "Timings of one inner product calculation, Cube 3D",
+                 "Timings of one inner product calculation, Cube 3D",
+                 "Timings of one inner product calculation, Cube 3D",
+                 "Timings of one inner product calculation, Cube 3D",
+                 "Timings of one inner product calculation, Cube 3D",
+                 "Timings of one inner product calculation, Cube 3D"
                ]
 
     # set the data file
@@ -90,8 +117,11 @@ def _main():
 # ==============================================================================
 def _testrun( num_procs, keys ):
 
-    test_exe = "/home/nschloe/ginla/build/mpi/packages/ginla-fvm/examples/linear-solve-test/keo-matvec.exe"
-    basename = "cube"
+    test_exe = "/home/nschloe/ginla/build/mpi/scalability-tests/scaltest.exe"
+    options = ""
+
+    # test_exe = "/home/nschloe/ginla/build/mpi/packages/ginla-fvm/examples/linear-solve-test/keo-matvec.exe"
+    # basename = "cube"
 
     #test_exe = "/home/nschloe/ginla/build/mpi/packages/ginla-fvm/examples/linear-solve-test/keo-belos.exe"
     #basename = "cutcircle1000"
@@ -105,32 +135,32 @@ def _testrun( num_procs, keys ):
     #basename = "cutcircle300"
     #key = "Belos: PseudoBlockCGSolMgr total solve time"
 
-    if num_procs == 1:
-        options = "--input=%s.e" % basename
-    elif num_procs > 1:
-        options = "--input=%s-balanced.par" % basename
-    else:
-        sys.exit( "Illegal number of processors \"%d\"." % num_procs )
+#    if num_procs == 1:
+#        options = "--input=%s.e" % basename
+#    elif num_procs > 1:
+#        options = "--input=%s-balanced.par" % basename
+#    else:
+#        sys.exit( "Illegal number of processors \"%d\"." % num_procs )
 
     #test_exe = "/home/nschloe/ginla/build/mpi/packages/ginla-fvm/examples/loca-driver/loca-driver-fvm.exe"
     #options = "--xml-input-file=./conf.xml"
     #key = "LOCA runtime"
 
+    fp_regex = '\d+\.?\d*(?:[eE][+-]\d+)?' # regular expression for a floating point number
     if num_procs == 1:
         cmd = "%s %s" % ( test_exe, options )
         # "Belos: PseudoBlockCGSolMgr total solve time    0.3433 (1)  "
         regexs = []
         for key in keys:
-            regexs.append( "%s\s*(\d+\.?\d*)" % key )
+            regexs.append( "%s\s*(%s)" % ( key, fp_regex ) )
     elif num_procs > 1:
         cmd = "mpiexec -n %d %s %s" % ( num_procs, test_exe, options )
         # "Some random keyword    0.3433 (1)  0.3434 (1)  0.03435 (1)   "
         # Store the *last* timing (i.e., the max across all processors)
         regexs = []
-        decimal_regex = '\d+\.?\d*' # regular expression for a decimal number
         for key in keys:
             regexs.append( "%s\s*%s\s*\(\d+\)\s*%s\s*\(\d+\)\s*(%s)\s*\(\d+\)" \
-                           % (key, decimal_regex, decimal_regex, decimal_regex)
+                           % (key, fp_regex, fp_regex, fp_regex)
                          )
     else:
         sys.exit( "Illegal number of processors \"%d\"." % num_procs )
