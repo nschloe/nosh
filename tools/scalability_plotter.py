@@ -26,9 +26,23 @@ def _main():
     # get the overall maximum
     max_procs = max( max_procs )
 
-    labels = [ 'FECrsMatrix::Apply()', 'Vector::Norm2()',
-               'Vector::Dot()', 'Vector::Multiply()'
-             ]
+    labels = [ "Vector::MeanValue",
+             "Vector::MinValue",
+             "Vector::MaxValue",
+             "Vector::Norm1",
+             "Vector::Norm2",
+             "Vector::NormInf",
+             "Vector::Scale",
+             "Vector::Dot",
+             "Vector::Multiply",
+             "Vector::Update",
+             "CrsMatrix::Norm1",
+             "CrsMatrix::NormInf",
+             "CrsMatrix::NormFrobenius",
+             "CrsMatrix::Scale",
+             "CrsMatrix::LeftScale",
+             "CrsMatrix::RightScale",
+             "CrsMatrix::Apply" ]
 
     # plot the data
     marker_styles = [ '+', '*', '1', '.', ',', '2', '3', '4', '<', '>', 'D',

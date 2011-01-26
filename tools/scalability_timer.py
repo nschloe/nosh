@@ -25,25 +25,6 @@ def _main():
              "CrsMatrix::RightScale",
              "CrsMatrix::Apply"
            ]
-    comments = [ "Timings of one matrix-vector product with KEO, Cube 3D",
-                 "Timings of one 2-norm calculation, Cube 3D",
-                 "Timings of one inner product calculation, Cube 3D",
-                 "Timings of one element-wise vector-multiplication, Cube 3D"
-                 "Timings of one inner product calculation, Cube 3D",
-                 "Timings of one inner product calculation, Cube 3D",
-                 "Timings of one inner product calculation, Cube 3D",
-                 "Timings of one inner product calculation, Cube 3D",
-                 "Timings of one inner product calculation, Cube 3D",
-                 "Timings of one inner product calculation, Cube 3D",
-                 "Timings of one inner product calculation, Cube 3D",
-                 "Timings of one inner product calculation, Cube 3D",
-                 "Timings of one inner product calculation, Cube 3D",
-                 "Timings of one inner product calculation, Cube 3D",
-                 "Timings of one inner product calculation, Cube 3D",
-                 "Timings of one inner product calculation, Cube 3D",
-                 "Timings of one inner product calculation, Cube 3D",
-                 "Timings of one inner product calculation, Cube 3D"
-               ]
 
     # set the data file
     timingfile_handles = []
@@ -70,11 +51,9 @@ def _main():
     # write header to timing files
     hostname = os.uname()[1]
     time = datetime.datetime.now().isoformat(' ')
-    k = 0
-    for handle in timingfile_handles:
-        header = "# %s, %s, %s\n" % ( comments[k], hostname, time )
+    for handle, key in zip( timingfile_handles, keys ):
+        header = "# %s; %s; %s\n" % ( key, hostname, time )
         handle.write( header )
-        k += 1
 
     # write header to stdout file
     header = "# %s, %s\n" % ( hostname, time )
@@ -94,8 +73,8 @@ def _main():
             output, max_times = _testrun( num_procs, keys )
 
             # write timing data
-            for kk in xrange( len(max_times) ):
-                timingfile_handles[kk].write( "%e\t" % max_times[kk] )
+            for handle, maxtime in zip( timingfile_handles, maxtimes ):
+                handle.write( "%e\t" % max_time )
 
             # write stdout
             outputfile_handle.write( 2*(80*"#" + "\n")
@@ -146,18 +125,19 @@ def _testrun( num_procs, keys ):
     #options = "--xml-input-file=./conf.xml"
     #key = "LOCA runtime"
 
-    fp_regex = '\d+\.?\d*(?:[eE][+-]\d+)?' # regular expression for a floating point number
+    # regular expression for a floating point number
+    fp_regex = '\d+\.?\d*(?:[eE][+-]\d+)?'
+
+    regexs = []
     if num_procs == 1:
         cmd = "%s %s" % ( test_exe, options )
         # "Belos: PseudoBlockCGSolMgr total solve time    0.3433 (1)  "
-        regexs = []
         for key in keys:
             regexs.append( "%s\s*(%s)" % ( key, fp_regex ) )
     elif num_procs > 1:
         cmd = "mpiexec -n %d %s %s" % ( num_procs, test_exe, options )
         # "Some random keyword    0.3433 (1)  0.3434 (1)  0.03435 (1)   "
         # Store the *last* timing (i.e., the max across all processors)
-        regexs = []
         for key in keys:
             regexs.append( "%s\s*%s\s*\(\d+\)\s*%s\s*\(\d+\)\s*(%s)\s*\(\d+\)" \
                            % (key, fp_regex, fp_regex, fp_regex)
