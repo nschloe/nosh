@@ -43,7 +43,7 @@ int main ( int argc, char *argv[] )
       // Create map.
       // Do strong scaling tests, so keep numGlobalElements independent of
       // the number of processes.
-      int numGlobalElements = 2e8;
+      int numGlobalElements = 1e7;
       int indexBase = 0;
       Teuchos::RCP<Epetra_Map> map =
           Teuchos::rcp( new Epetra_Map ( numGlobalElements, indexBase, *eComm ) );
@@ -139,7 +139,13 @@ int main ( int argc, char *argv[] )
       // diagonal test matrix
       Teuchos::RCP<Epetra_CrsMatrix> D =
           Teuchos::rcp( new Epetra_CrsMatrix( Copy, *map, 1 ) );
-      TEUCHOS_ASSERT_EQUALITY( 0, D->ReplaceDiagonalValues( *v ) );
+      for ( int k=0; k < map->NumMyElements(); k++ )
+      {
+          int col = map->GID(k);
+          double val = 1.0 / (col+1);
+//          TEUCHOS_ASSERT_EQUALITY( 0, D->InsertMyValues( k, 1, &val, &col ) );
+          TEUCHOS_ASSERT_EQUALITY( 0, D->InsertGlobalValues( col, 1, &val, &col ) );
+      }
       TEUCHOS_ASSERT_EQUALITY( 0, D->FillComplete() );
 
       // tridiagonal test matrix
@@ -147,28 +153,32 @@ int main ( int argc, char *argv[] )
           Teuchos::rcp( new Epetra_CrsMatrix( Copy, *map, 3 ) );
       for ( int k=0; k < map->NumMyElements(); k++ )
       {
-          int row = map->GID(row);
+          int row = map->GID(k);
           if ( row > 0 )
           {
               int col = row-1;
-              double val = 1.0 / col;
-              TEUCHOS_ASSERT_EQUALITY( 0, T->InsertMyValues( k, 1, &val, &col ) );
+              double val = 1.0 / (col+1);
+//              TEUCHOS_ASSERT_EQUALITY( 0, T->InsertMyValues( k, 1, &val, &col ) );
+              TEUCHOS_ASSERT_EQUALITY( 0, T->InsertGlobalValues( row, 1, &val, &col ) );
           }
           {
               int col = row;
-              double val = 1.0 / col;
-              TEUCHOS_ASSERT_EQUALITY( 0, T->InsertMyValues( k, 1, &val, &col ) );
+              double val = 1.0 / (col+1);
+//              TEUCHOS_ASSERT_EQUALITY( 0, T->InsertMyValues( k, 1, &val, &col ) );
+              TEUCHOS_ASSERT_EQUALITY( 0, T->InsertGlobalValues( row, 1, &val, &col ) );
           }
           if ( row < numGlobalElements-1 )
           {
               int col = row+1;
-              double val = 1.0 / col;
-              TEUCHOS_ASSERT_EQUALITY( 0, T->InsertMyValues( k, 1, &val, &col ) );
+              double val = 1.0 / (col+1);
+//              TEUCHOS_ASSERT_EQUALITY( 0, T->InsertMyValues( k, 1, &val, &col ) );
+              TEUCHOS_ASSERT_EQUALITY( 0, T->InsertGlobalValues( row, 1, &val, &col ) );
           }
 
       }
       TEUCHOS_ASSERT_EQUALITY( 0, D->FillComplete() );
 
+      // start timings
       Teuchos::RCP<Teuchos::Time> mNorm1Time =
           Teuchos::TimeMonitor::getNewTimer("CrsMatrix::Norm1");
       {
@@ -206,7 +216,7 @@ int main ( int argc, char *argv[] )
       {
           Teuchos::TimeMonitor tm(*leftScaleTime);
           TEUCHOS_ASSERT_EQUALITY( 0, D->LeftScale( *v ) );
-          TEUCHOS_ASSERT_EQUALITY( 0, T->LeftScale( *v ) );
+//          TEUCHOS_ASSERT_EQUALITY( 0, T->LeftScale( *v ) );
       }
 
       Teuchos::RCP<Teuchos::Time> rightScaleTime =
@@ -214,7 +224,7 @@ int main ( int argc, char *argv[] )
       {
           Teuchos::TimeMonitor tm(*rightScaleTime);
           TEUCHOS_ASSERT_EQUALITY( 0, D->RightScale( *v ) );
-          TEUCHOS_ASSERT_EQUALITY( 0, T->RightScale( *v ) );
+//          TEUCHOS_ASSERT_EQUALITY( 0, T->RightScale( *v ) );
       }
 
       Teuchos::RCP<Teuchos::Time> applyTime =
@@ -222,7 +232,7 @@ int main ( int argc, char *argv[] )
       {
           Teuchos::TimeMonitor tm(*applyTime);
           TEUCHOS_ASSERT_EQUALITY( 0, D->Apply( *u, *v ) );
-          TEUCHOS_ASSERT_EQUALITY( 0, T->Apply( *u, *v ) );
+//          TEUCHOS_ASSERT_EQUALITY( 0, T->Apply( *u, *v ) );
       }
       // =======================================================================
       // print timing data
