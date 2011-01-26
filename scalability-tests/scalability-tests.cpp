@@ -43,10 +43,43 @@ int main ( int argc, char *argv[] )
       // Create map.
       // Do strong scaling tests, so keep numGlobalElements independent of
       // the number of processes.
-      int numGlobalElements = 1e7;
+      int numGlobalElements = 1e6;
       int indexBase = 0;
       Teuchos::RCP<Epetra_Map> map =
           Teuchos::rcp( new Epetra_Map ( numGlobalElements, indexBase, *eComm ) );
+      // =======================================================================
+//       // Create map with overlay.
+//       int numMyOverlapNodes = 3;
+// 
+//       // Get an approximation of my nodes.
+//       int numMyElements = numGlobalElements / eComm->NumProc();
+//       int startIndex = eComm->MyPID() * numMyElements;
+//       // Calculate the resulting number of total nodes.
+//       int numTotalNodes = numMyElements * eComm->NumProc();
+//       // Add one node to the first numGlobalElements-numTotalNodes processes.
+//       if ( eComm->MyPID() < numGlobalElements - numTotalNodes )
+//       {
+//           numMyElements++;
+//           startIndex += eComm->MyPID();
+//       }
+//       else
+//       {
+//           startIndex += numGlobalElements - numTotalNodes;
+//       }
+// 
+//       Teuchos::Array<int> indices( numMyElements );
+//       for ( int k = 0;  k<numMyElements; k++ )
+//           indices[k] = startIndex + k;
+// 
+//       std::cout << numGlobalElements << std::endl;
+//       std::cout << numMyElements << std::endl;
+// 
+//       Teuchos::RCP<Epetra_Map> overlapMap =
+//           Teuchos::rcp( new Epetra_Map ( numGlobalElements, numMyElements, indices.getRawPtr(), indexBase, *eComm ) );
+// 
+//       overlapMap->Print( std::cout );
+// 
+//       throw 1;
       // =======================================================================
       // tests on one vector
       Teuchos::RCP<Epetra_Vector> u = Teuchos::rcp( new Epetra_Vector( *map ) );
@@ -157,26 +190,26 @@ int main ( int argc, char *argv[] )
           if ( row > 0 )
           {
               int col = row-1;
-              double val = 1.0 / (col+1);
+              double val = -1.0;
 //              TEUCHOS_ASSERT_EQUALITY( 0, T->InsertMyValues( k, 1, &val, &col ) );
               TEUCHOS_ASSERT_EQUALITY( 0, T->InsertGlobalValues( row, 1, &val, &col ) );
           }
           {
               int col = row;
-              double val = 1.0 / (col+1);
+              double val = 2.0;
 //              TEUCHOS_ASSERT_EQUALITY( 0, T->InsertMyValues( k, 1, &val, &col ) );
               TEUCHOS_ASSERT_EQUALITY( 0, T->InsertGlobalValues( row, 1, &val, &col ) );
           }
           if ( row < numGlobalElements-1 )
           {
               int col = row+1;
-              double val = 1.0 / (col+1);
+              double val = -1.0;
 //              TEUCHOS_ASSERT_EQUALITY( 0, T->InsertMyValues( k, 1, &val, &col ) );
               TEUCHOS_ASSERT_EQUALITY( 0, T->InsertGlobalValues( row, 1, &val, &col ) );
           }
 
       }
-      TEUCHOS_ASSERT_EQUALITY( 0, D->FillComplete() );
+      TEUCHOS_ASSERT_EQUALITY( 0, T->FillComplete() );
 
       // start timings
       Teuchos::RCP<Teuchos::Time> mNorm1Time =
@@ -216,7 +249,7 @@ int main ( int argc, char *argv[] )
       {
           Teuchos::TimeMonitor tm(*leftScaleTime);
           TEUCHOS_ASSERT_EQUALITY( 0, D->LeftScale( *v ) );
-//          TEUCHOS_ASSERT_EQUALITY( 0, T->LeftScale( *v ) );
+          TEUCHOS_ASSERT_EQUALITY( 0, T->LeftScale( *v ) );
       }
 
       Teuchos::RCP<Teuchos::Time> rightScaleTime =
@@ -224,7 +257,7 @@ int main ( int argc, char *argv[] )
       {
           Teuchos::TimeMonitor tm(*rightScaleTime);
           TEUCHOS_ASSERT_EQUALITY( 0, D->RightScale( *v ) );
-//          TEUCHOS_ASSERT_EQUALITY( 0, T->RightScale( *v ) );
+          TEUCHOS_ASSERT_EQUALITY( 0, T->RightScale( *v ) );
       }
 
       Teuchos::RCP<Teuchos::Time> applyTime =
@@ -232,7 +265,7 @@ int main ( int argc, char *argv[] )
       {
           Teuchos::TimeMonitor tm(*applyTime);
           TEUCHOS_ASSERT_EQUALITY( 0, D->Apply( *u, *v ) );
-//          TEUCHOS_ASSERT_EQUALITY( 0, T->Apply( *u, *v ) );
+          TEUCHOS_ASSERT_EQUALITY( 0, T->Apply( *u, *v ) );
       }
       // =======================================================================
       // print timing data
