@@ -7,6 +7,7 @@ LINK_DIRECTORIES( ${Trilinos_LIBRARY_DIRS}
                   ${Trilinos_TPL_LIBRARY_DIRS} )
 # ------------------------------------------------------------------------------
 SET ( scaltest_SRCS
+      dummy.f
       scalability-tests.cpp  )
 SET( MY_EXECUTABLE
      "scaltest.exe" )
