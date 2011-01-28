@@ -21,17 +21,29 @@ def _main():
         for numprocs in value.keys():
             value[numprocs] = min( value[numprocs] )
 
+    # get smallest and largest number of cores used
+    min_procs = np.inf
+    max_procs = -np.inf
+    for key, value in data.iteritems():
+        min_procs = min( min_procs, min(value.keys()) )
+        max_procs = max( max_procs, max(value.keys()) )
+
     # plot the data
     marker_styles = [ '+', '*', '1', '.', ',', '2', '3', '4', '<', '>', 'D',
                       'H', '^', '_', 'd', 'h', 'o', 'p', 's', 'v', 'x', '|'
                     ]
     # --------------------------------------------------------------------------
     # times
-    #proc_range = range( 1,  )
-    #pp.plot( proc_range, 1.0/np.array(proc_range), '-k', label="ideal speedup" )
+    proc_range = range( 1, max_procs+1 )
+    pp.plot( proc_range,
+             1.0 / np.array(proc_range),
+             '-k',
+             linewidth = 2,
+             label = "ideal speedup"
+           )
     #pp.title( "Epetra timing for shared-memory, MPI" )
     pp.xlabel( "Number of processes" )
-    #pp.xlim( 0, max_procs+1 )
+    pp.xlim( 0, max_procs+1 )
     k = 0
 
     for label, value in data.iteritems():
@@ -60,8 +72,13 @@ def _main():
     pp.ylim( 0, max_procs+1 )
     k = 0
     speedups = []
-    for min_val, num_proc, label  in zip( min_vals, num_procs, labels ):
-        speedup = min_val[0] / min_val * num_proc[0]
+    for label, value in data.iteritems():
+        # sort by num_procs
+        numprocs = value.keys()
+        numprocs.sort()
+        minvals = map( value.get, numprocs )
+
+        speedup = minvals[0] / minvals * num_proc[0]
         speedups.append( speedup )
         pp.plot( num_proc, speedup,
                  linestyle = '-',
