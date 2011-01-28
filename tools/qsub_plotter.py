@@ -5,6 +5,7 @@ with a very specific format. Intended to be used with output from CalcUA.
 # ==============================================================================
 import numpy as np
 import sys
+import re
 # ==============================================================================
 def _main():
     import matplotlib.pyplot as pp
@@ -12,25 +13,13 @@ def _main():
 
     filenames, is_tikz = _parse_options()
 
-    # determine labels and matching regex keys
-    labels = [ 'FECrsMatrix::Apply()',
-               'Vector::Norm2()',
-               'Vector::Dot()',
-               'Vector::Multiply()',
-             ]
-    keys = [ "Matrix-vector multiplication",
-             "2-norm calculation",
-             "inner product",
-             "element-wise multiplication"
-           ]
-
     # get the data
-    data = _parse_data( filenames, labels, keys )
+    data = _parse_data( filenames )
 
     # reduce times to minimal value
     for key, value in data.iteritems():
-        for numprocs in value['times'].keys():
-            value['times'][numprocs] = min( value['times'][numprocs] )
+        for numprocs in value.keys():
+            value[numprocs] = min( value[numprocs] )
 
     # plot the data
     marker_styles = [ '+', '*', '1', '.', ',', '2', '3', '4', '<', '>', 'D',
@@ -40,16 +29,16 @@ def _main():
     # times
     #proc_range = range( 1,  )
     #pp.plot( proc_range, 1.0/np.array(proc_range), '-k', label="ideal speedup" )
-    pp.title( "Epetra timing for shared-memory, MPI" )
+    #pp.title( "Epetra timing for shared-memory, MPI" )
     pp.xlabel( "Number of processes" )
     #pp.xlim( 0, max_procs+1 )
     k = 0
 
     for label, value in data.iteritems():
         # sort by num_procs
-        numprocs = value['times'].keys()
+        numprocs = value.keys()
         numprocs.sort()
-        minvals = map( value['times'].get, numprocs )
+        minvals = map( value.get, numprocs )
 
         pp.semilogy( numprocs, minvals,
                      linestyle = '-',
@@ -128,7 +117,7 @@ def _main():
 
     return
 # ==============================================================================
-def _parse_data( filenames, labels, keys ):
+def _parse_data( filenames ):
     '''Parses Trilinos output of the form
 
 # 8 processes
@@ -157,15 +146,17 @@ Matrix-vector multiplication    0.002726 (1)      0.006423 (1)      0.00735 (1)
 element-wise multiplication     0.0001121 (1)     0.0001621 (1)     0.000211 (1)
 inner product                   0.005177 (1)      0.00518 (1)       0.005183 (1)
 ======================================================================================
-'''
-    import re
 
-    # initialize the data structure
+The timer names are used as keys, and associated with the Max over procs,
+split by the number of processes.
+'''
+
+    ## initialize the data structure
     data = {}
-    for (label,key) in zip(labels,keys):
-        data[ label ] = {}
-        data[ label ][ 'key' ]   = key
-        data[ label ][ 'times' ] = {}
+    #for (label,key) in zip(labels,keys):
+        #data[ label ] = {}
+        #data[ label ][ 'key' ]   = key
+        #data[ label ][ 'times' ] = {}
 
     # loop over the files
     for filename in filenames:
@@ -175,50 +166,29 @@ inner product                   0.005177 (1)      0.00518 (1)       0.005183 (1)
         # prepare for iterating through the file
         content = file_handle.read()
 
-        # generate regex for number of processes
-        regex0 = "# (\d+) processes"
-
         # parse for num_procs
-
-        match_obj = re.search( regex0, content )
-        if match_obj:
-            num_procs = int( match_obj.group( 1 ) )
-        else:
-            error_message = "Could not find the regex \n\n%s\n\n " \
-                            "in the string \n\n%s\n\n." \
-                          % ( regex, repr(output) )
-            sys.exit( error_message )
+        num_procs = get_numprocs( content )
 
         # generate regular expressions for keys
-        regexs = []
-        if num_procs == 1:
-            # "Belos: PseudoBlockCGSolMgr total solve time    0.3433 (1)  "
-            for key in keys:
-                regexs.append( "%s\s*(\d+\.?\d*)" % key )
-        elif num_procs > 1:
-            # "Some random keyword    0.3433 (1)  0.3434 (1)  0.03435 (1)   "
-            # Store the *last* timing (i.e., the max across all processors)
+        regex = generate_regex( num_procs )
 
-            # regular expression for a floating point number:
-            fp_regex = '[-+]?\d*\.?\d*(?:e[-+]?\d+)?'
-            #fp_regex = '\d*\.?\d*'
-            for key in keys:
-                regexs.append( "%s\s*%s\s*\(\d+\)\s*%s\s*\(\d+\)\s*(%s)\s*\(\d+\)" \
-                              % (key, fp_regex, fp_regex, fp_regex)
-                            )
-        else:
-            sys.exit( "Illegal number of processors \"%d\"." % num_procs )
+        # Make ^ and $ match the beginning and end of a line, respectively.
+        match_obj_iter = re.finditer( regex, content, re.MULTILINE )
 
-        # parse the output for the keys
-        for regex, label in zip(regexs, labels):
-            # initialize list
-            if not num_procs in data[label]['times'].keys():
-                data[label]['times'][num_procs] = []
-            match_obj = re.search( regex, content )
+        for match_obj in match_obj_iter:
             if match_obj:
+                # get key and time value
+                key = match_obj.group( 1 )
+                time = float( match_obj.group( 2 ) )
+
+                # add data structure
+                if key not in data.keys():
+                    data[key] = {}
+                if num_procs not in data[key].keys():
+                    data[key][num_procs] = []
+
                 # append time value
-                time = float( match_obj.group( 1 ) )
-                data[label]['times'][num_procs].append( time )
+                data[key][num_procs].append( time )
             else:
                 error_message = "Could not find the regex \n\n%s\n\n " \
                                 "in the string \n\n%s\n\n." \
@@ -226,6 +196,48 @@ inner product                   0.005177 (1)      0.00518 (1)       0.005183 (1)
                 sys.exit( error_message )
 
     return data
+# ==============================================================================
+def get_numprocs( content ):
+    '''Parse a string for "# 8 processes" and extract the number of procs.'''
+    regex = "# (\d+) processes"
+
+    match_obj = re.search( regex, content )
+    if match_obj:
+        num_procs = int( match_obj.group( 1 ) )
+    else:
+        error_message = "Could not find the regex \n\n%s\n\n " \
+                        "in the string \n\n%s\n\n." \
+                      % ( regex, repr(content) )
+        sys.exit( error_message )
+
+    return num_procs
+# ==============================================================================
+def generate_regex( num_procs ):
+    '''Generate regular expressions for the parsing of lines as
+        Data I/O    4.871 (1)         5.27 (1)          5.573 (1)
+    '''
+    regexs = []
+
+    # regular expression for a floating point number:
+    fp_regex = '[-+]?\d*\.?\d*(?:e[-+]?\d+)?'
+
+    # regex for " 0.3433 (1)"
+    timing_regex       = "(?:%s)\s*\(\d+\)" % fp_regex
+    timing_regex_store = "(%s)\s*\(\d+\)" % fp_regex
+
+    if num_procs == 1:
+        # "Belos: PseudoBlockCGSolMgr total solve time    0.3433 (1)  "
+        regex = "^([^(?:%s)])*\s*(%s)\s*\(\d+\)$" \
+                % (fp_regex, fp_regex)
+    elif num_procs > 1:
+        # "Some random keyword    0.3433 (1)  0.3434 (1)  0.03435 (1)   "
+        # Store the *last* timing (i.e., the max across all processors)
+        regex = "^(.*?)%s\s*%s\s*%s\s*$" \
+                % ( timing_regex, timing_regex, timing_regex_store )
+    else:
+        sys.exit( "Illegal number of processors \"%d\"." % num_procs )
+
+    return regex
 # ==============================================================================
 def _parse_options():
     '''Parse input options.'''
