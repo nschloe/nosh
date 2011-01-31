@@ -6,13 +6,13 @@ import sys, os
 # ==============================================================================
 def _main():
 
-    import datetime, math
+    import datetime, math, socket
 
     numprocs_range = [1]
     numprocs_range.extend( range( 8, 257, 8 ) )
 
     queue       = "qshort"
-    walltime    = "0:02:00"
+    walltime    = "0:05:00"
     executable  = "$HOME/code/ginla/build/mpi/scalability-tests/scaltest.exe"
     options     = "" #"--input=init/cutcircle1000-balanced.par"
     name        = "epetra-generic" # "belos-timer"
@@ -21,10 +21,10 @@ def _main():
     # Create the submit scripts.
     # This could possibly be done with a command line call too, but
     # this way it is possible to check up on the parameters.
-    hostname = os.uname()[1]
+    hostname = socket.gethostbyaddr(socket.gethostname())[0]
     date = datetime.datetime.now().isoformat(' ')
     submit_files = []
-    num_cores_per_node = 24
+    num_cores_per_node = 8
     for numprocs in numprocs_range:
 
         # Compute the number of nodes needed to fir numprocs processes.
@@ -73,7 +73,9 @@ module load ictce
 module load scripts
 
 # Prepend some info to the output file
-echo "%s" >> "%s"
+echo "# host: %s"
+echo "# arch: %s"
+echo "# numprocs: %d"
 
 mympirun %s %s''' \
 % ( hostname, date,
@@ -83,7 +85,9 @@ mympirun %s %s''' \
     stdout_file,
     stderr_file,
     resource_list,
-    "# " + resource_list, stdout_file,
+    hostname,
+    resource_list,
+    numprocs,
     executable, options
   )
 )
