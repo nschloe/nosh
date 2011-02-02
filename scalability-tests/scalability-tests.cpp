@@ -37,13 +37,10 @@ int main ( int argc, char *argv[] )
     try
     {
       // =======================================================================
-      if ( eComm->MyPID() == 0 )
-          std::cout << "# " << eComm->NumProc() << " processes" << std::endl;
-      // =======================================================================
       // Create map.
       // Do strong scaling tests, so keep numGlobalElements independent of
       // the number of processes.
-      int numGlobalElements = 1e6;
+      int numGlobalElements = 5e7;
       int indexBase = 0;
       Teuchos::RCP<Epetra_Map> map =
           Teuchos::rcp( new Epetra_Map ( numGlobalElements, indexBase, *eComm ) );

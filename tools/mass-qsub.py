@@ -6,27 +6,34 @@ import sys, os
 # ==============================================================================
 def _main():
 
-    import datetime
+    import datetime, math, socket
 
-    numprocs_range = range( 8, 257, 8 )
+    numprocs_range = [1]
+    numprocs_range.extend( range( 8, 257, 8 ) )
 
     queue       = "qshort"
     walltime    = "0:05:00"
-    executable  = "$HOME/code/ginla/build/mpi/packages/ginla-fvm/examples/linear-solve-test/keo-matvec.exe"
-    options     = "--input=init/cutcircle1000-balanced.par"
+    executable  = "$HOME/code/ginla/build/mpi/scalability-tests/scaltest.exe"
+    options     = "" #"--input=init/cutcircle1000-balanced.par"
+    name        = "epetra-generic" # "belos-timer"
    
     # --------------------------------------------------------------------------
     # Create the submit scripts.
     # This could possibly be done with a command line call too, but
     # this way it is possible to check up on the parameters.
-    hostname = os.uname()[1]
+    hostname = socket.gethostbyaddr(socket.gethostname())[0]
     date = datetime.datetime.now().isoformat(' ')
     submit_files = []
+    num_cores_per_node = 8
     for numprocs in numprocs_range:
-        num_nodes          = numprocs / 8
-        num_cores_per_node = 8
 
-        jobname = "belos-timer-core%03d" % numprocs
+        # Compute the number of nodes needed to fir numprocs processes.
+        if numprocs % num_cores_per_node == 0:
+            num_nodes = numprocs / num_cores_per_node
+        else:
+            num_nodes = math.ceil( numprocs / float(num_cores_per_node) )
+
+        jobname = "%s-core%03d-nodes%03d-ppn%02d" % ( name, numprocs, num_nodes, num_cores_per_node )
 
         # Open the submit file.
         submitfile_name = "%s.pbs" % jobname
@@ -36,6 +43,9 @@ def _main():
 
         stdout_file = "out/%s.o$PBS_JOBID" % jobname
         stderr_file = "out/%s.e$PBS_JOBID" % jobname
+
+        resource_list = "nodes=%d:ppn=%d:westmere:ib" \
+                        % ( num_nodes, num_cores_per_node )
 
         # Write contents.
         file_handle.write( '''#/bin/bash
@@ -53,7 +63,7 @@ def _main():
   # Specify number of cores.
   # Use Westmere here b/c as of now (Jan 25 2011) they represent the largest
   # homogenous set of processes on CalcUA.
-#PBS -l nodes=%d:ppn=%d:ib:westmere
+#PBS -l %s
 
   # make sure we are in the right directory in case writing files 
 cd $PBS_O_WORKDIR
@@ -62,6 +72,11 @@ cd $PBS_O_WORKDIR
 module load ictce
 module load scripts
 
+# Prepend some info to the output file
+echo "# host: %s"
+echo "# arch: %s"
+echo "# numprocs: %d"
+
 mympirun %s %s''' \
 % ( hostname, date,
     jobname,
@@ -69,7 +84,10 @@ mympirun %s %s''' \
     walltime,
     stdout_file,
     stderr_file,
-    num_nodes, num_cores_per_node,
+    resource_list,
+    hostname,
+    resource_list,
+    numprocs,
     executable, options
   )
 )
@@ -78,7 +96,7 @@ mympirun %s %s''' \
         file_handle.close()
     # --------------------------------------------------------------------------
     # submit the jobs
-    num_samples = 1
+    num_samples = 10
     for submit_file in submit_files:
         for k in xrange( num_samples ):
             output = _run( "qsub %s" % submit_file )
