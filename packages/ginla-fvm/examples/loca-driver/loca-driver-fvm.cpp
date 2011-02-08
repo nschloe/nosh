@@ -174,15 +174,16 @@ main ( int argc, char *argv[] )
         double mu = problemParameters.get<double> ( "mu" );
         double phi = problemParameters.get<double> ( "phi" );
         double theta = problemParameters.get<double> ( "theta" );
+        double magneticDotRadius = problemParameters.get<double> ( "magneticDotRadius" );
         if ( eComm->MyPID() == 0 )
             std::cout << "mu, phi, theta" << mu << " " <<  phi << " " << theta << std::endl;
         // double phi = 0.0; double theta = 0.0; // X
         // double phi = 0.5 * M_PI; double theta = 0.0; // Y
         // double phi = 0.0; double theta = 0.5 * M_PI; // Z
-        Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp =
-                Teuchos::rcp ( new Ginla::MagneticVectorPotential::Spherical ( mesh, mu, phi, theta ) );
 //        Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp =
-//               Teuchos::rcp ( new Ginla::MagneticVectorPotential::MagneticDot ( mesh, mu ) );
+//                Teuchos::rcp ( new Ginla::MagneticVectorPotential::Spherical ( mesh, mu, phi, theta ) );
+        Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp =
+               Teuchos::rcp ( new Ginla::MagneticVectorPotential::MagneticDot ( mesh, magneticDotRadius, mu ) );
 
         // create the mode evaluator
         Teuchos::RCP<Ginla::EpetraFVM::ModelEvaluator> glModel =
