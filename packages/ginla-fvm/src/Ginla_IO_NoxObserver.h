@@ -62,8 +62,7 @@ public:
 
 public:
   //! Constructor
-  NoxObserver ( const Teuchos::RCP<const Ginla::IO::StateWriter>           & stateWriter,
-                const Teuchos::RCP<const Ginla::EpetraFVM::ModelEvaluator> & modelEval,
+  NoxObserver ( const Teuchos::RCP<const Ginla::EpetraFVM::ModelEvaluator> & modelEval,
                 const NoxObserver::ObserverType                            & problemType
               );
 
@@ -96,10 +95,9 @@ private:
 private:
 
     const ObserverType observerType_;
-    const Teuchos::RCP<const Ginla::IO::StateWriter> stateWriter_;
     const Teuchos::RCP<const Ginla::EpetraFVM::ModelEvaluator> modelEval_;
 
-    Teuchos::RCP<Ginla::IO::StatsWriter>   statsWriter_;;
+    Teuchos::RCP<Ginla::IO::StatsWriter> statsWriter_;;
 };
 
 } // namespace IO

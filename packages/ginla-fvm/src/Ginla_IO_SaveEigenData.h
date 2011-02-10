@@ -45,7 +45,6 @@ class SaveEigenData:
    // Constructor
    SaveEigenData ( Teuchos::ParameterList                                     & eigenParamList,
                    const Teuchos::RCP<const Ginla::EpetraFVM::ModelEvaluator> & modelEval,
-                   const Teuchos::RCP<const Ginla::IO::StateWriter>           & stateWriter,
                    const Teuchos::RCP<Ginla::IO::StatsWriter>                 & statsWriter
                  );
 
@@ -72,7 +71,6 @@ class SaveEigenData:
   private:
     Teuchos::RCP<Teuchos::ParameterList> eigenParamListPtr_;
     const Teuchos::RCP<const Ginla::EpetraFVM::ModelEvaluator> modelEval_;
-    const Teuchos::RCP<const Ginla::IO::StateWriter> stateWriter_;
     Teuchos::RCP<Ginla::IO::StatsWriter> statsWriter_;
     Teuchos::RCP<LOCA::Stepper> locaStepper_;
 
