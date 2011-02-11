@@ -75,7 +75,14 @@ def _main():
 
             # start continuation as a background process
             opt = "--xml-input-file=%s" % conf_file
-            cmd = 'screen -d -m %s %s' % ( exe, opt )
+            # This following screen construct is to make sure we start the process
+            # in a detached screen, and that the output is properly tee'ed to
+            # a log file.
+            # The "-d -m" options make sure that the session is started detached,
+            # and the full command to be executed in the screen is given by an
+            # sh string. "-c" for sh makes sure that the string is interpreted
+            # as a command.
+            cmd = 'screen -d -m sh -c "%s %s | tee %s"' % ( exe, opt, output_file )
             _run( cmd )
 
 
