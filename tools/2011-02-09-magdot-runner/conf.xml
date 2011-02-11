@@ -78,7 +78,7 @@
             <Parameter name="Convergence Test" type="string" value="r0"/>
             <Parameter name="Size of Krylov Subspace" type="int" value="200"/>
             <Parameter name="Output Frequency" type="int" value="10"/>
-            <Parameter name="Max Iterations" type="int" value="1000"/>
+            <Parameter name="Max Iterations" type="int" value="10000"/>
             <Parameter name="Tolerance" type="double" value="1e-7"/>
         </ParameterList>
         <ParameterList name="Stratimikos Linear Solver">
