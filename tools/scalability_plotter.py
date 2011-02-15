@@ -35,17 +35,22 @@ def _main():
     # --------------------------------------------------------------------------
     # times
     proc_range = range( 1, max_procs+1 )
-    pp.plot( proc_range, 1.0/np.array(proc_range), '-k', label="ideal speedup" )
+    pp.plot( proc_range,
+             1.0/np.array(proc_range),
+             '-k',
+             linewidth = 2,
+             label = "ideal speedup"
+           )
     pp.title( "Epetra timing for shared-memory, MPI" )
     pp.xlabel( "Number of processes" )
-    pp.xlim( 0, max_procs+1 )
+    pp.xlim( 1, max_procs+1 )
     k = 0
     for min_val, num_proc, label  in zip( min_vals, num_procs, labels ):
-        pp.semilogy( num_proc, min_val,
-                     linestyle = '-',
-                     marker    = marker_styles[k],
-                     label     = label
-                   )
+        pp.loglog( num_proc, min_val,
+                   linestyle = '-',
+                   marker    = marker_styles[k],
+                   label     = label
+                 )
         k += 1
     pp.legend()
     if is_tikz:
