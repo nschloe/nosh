@@ -84,8 +84,7 @@ getMesh () const
 // =============================================================================
 void
 Ginla::EpetraFVM::State::
-save( const std::string            & fileBaseName,
-      const int                      index,
+save( const int                      index,
       const Teuchos::ParameterList & p
     ) const
 {
@@ -110,7 +109,6 @@ save( const std::string            & fileBaseName,
         std::cout << "Ginla::EpetraFVM::StkMeshWriter::write:\n"
                   << "\twriting time " << index << "\n"
                   << "\tindex " << out_step << "\n"
-                  << "\tto file " //<< fileName.str()
                   << std::endl;
 
 //     Ginla::EpetraFVM::StkMeshWrite( fileBaseName, index,  psi_, mesh_, p );
@@ -120,12 +118,11 @@ save( const std::string            & fileBaseName,
 // =============================================================================
 void
 Ginla::EpetraFVM::State::
-save( const std::string            & fileBaseName,
-      const int                      index
+save( const int index
     ) const
 {
     Teuchos::ParameterList empty;
-    this->save( fileBaseName, index, empty );
+    this->save( index, empty );
     return;
 }
 // =============================================================================

@@ -31,12 +31,10 @@
 Ginla::IO::SaveEigenData::
 SaveEigenData ( Teuchos::ParameterList                                     & eigenParamList,
                 const Teuchos::RCP<const Ginla::EpetraFVM::ModelEvaluator> & modelEval,
-                const Teuchos::RCP<const Ginla::IO::StateWriter>           & stateWriter,
                 const Teuchos::RCP<Ginla::IO::StatsWriter>                 & statsWriter
               ) :
         eigenParamListPtr_ ( Teuchos::rcpFromRef<Teuchos::ParameterList>( eigenParamList ) ),
         modelEval_ ( modelEval ),
-        stateWriter_ ( stateWriter ),
         statsWriter_ ( statsWriter ),
         locaStepper_ ( Teuchos::null ),
         numComputeStableEigenvalues_ ( 6 )
@@ -108,9 +106,7 @@ save ( Teuchos::RCP<std::vector<double> >       & evals_r,
         Teuchos::RCP<Ginla::EpetraFVM::State> eigenstate =
             modelEval_->createSavable( realPartE->getEpetraVector() );
 
-        stateWriter_->write( eigenstate,
-                             step,
-                             eigenstateFileNameAppendix.str() );
+        eigenstate->save( step );  //  eigenstateFileNameAppendix.str();
 
         // The matrix and the eigenvalue is supposedly purely real,
         // so the eigenvector's real and imaginary parts are eigenvectors
@@ -125,9 +121,7 @@ save ( Teuchos::RCP<std::vector<double> >       & evals_r,
             eigenstateFileNameAppendix << "-im";
             Teuchos::RCP<Ginla::EpetraFVM::State> eigenstate =
                 modelEval_->createSavable( imagPartE->getEpetraVector() );
-            stateWriter_->write( eigenstate,
-                                 step,
-                                 eigenstateFileNameAppendix.str() );
+            eigenstate->save( step ); //eigenstateFileNameAppendix.str()
         }
     }
 

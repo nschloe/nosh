@@ -16,6 +16,7 @@ class MagneticDot:
 {
 public:
   MagneticDot( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh> & mesh,
+               double magnetRadius,
                double mu
              );
 

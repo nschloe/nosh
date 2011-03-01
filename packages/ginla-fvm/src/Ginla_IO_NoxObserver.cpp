@@ -26,11 +26,9 @@
 
 // ============================================================================
 Ginla::IO::NoxObserver::
-NoxObserver ( const Teuchos::RCP<const Ginla::IO::StateWriter>           & stateWriter,
-              const Teuchos::RCP<const Ginla::EpetraFVM::ModelEvaluator> & modelEval,
+NoxObserver ( const Teuchos::RCP<const Ginla::EpetraFVM::ModelEvaluator> & modelEval,
               const NoxObserver::ObserverType                            & observerType
             ) :
-  stateWriter_ ( stateWriter ),
   modelEval_ ( modelEval ),
   observerType_( observerType ),
   statsWriter_ ( Teuchos::null )
@@ -65,8 +63,7 @@ observeSolution( const Epetra_Vector & soln )
     switch ( observerType_ )
     {
       case NONLINEAR:
-          if (!stateWriter_.is_null())
-              stateWriter_->write( savable, 0 );
+          savable->save( 0 );
           break;
       case CONTINUATION:
           this->observeContinuation_( savable );
@@ -85,51 +82,46 @@ observeSolution( const Epetra_Vector & soln )
 // ============================================================================
 void
 Ginla::IO::NoxObserver::
-observeContinuation_( const Teuchos::RCP<const Ginla::EpetraFVM::State> & state
-                    )
+observeContinuation_( const Teuchos::RCP<const Ginla::EpetraFVM::State> & state )
 {
   static int index = -1;
   index++;
 
-  if ( !stateWriter_.is_null() )
-  {
-      TEUCHOS_ASSERT( !modelEval_.is_null() );
-      modelEval_->getParameters();
-      Teuchos::RCP<LOCA::ParameterVector> p = modelEval_->getParameters();
-      stateWriter_->write( state, index, *p );
-  }
-
   this->saveContinuationStatistics_( index, state );
+
+  TEUCHOS_ASSERT( !modelEval_.is_null() );
+  Teuchos::RCP<LOCA::ParameterVector> p = modelEval_->getParameters();
+
+  Teuchos::RCP<Teuchos::ParameterList> tp = Ginla::Helpers::locaParameterVector2teuchosParameterList( *p );
+  state->save( index, *tp );
 
   return;
 }
 // ============================================================================
 void
 Ginla::IO::NoxObserver::
-observeTurningPointContinuation_( const Teuchos::RCP<const Ginla::EpetraFVM::State> & state
-                                )
+observeTurningPointContinuation_( const Teuchos::RCP<const Ginla::EpetraFVM::State> & state )
 {
     static int index = -1;
     static bool isSolution = false;
 
     // alternate between solution and nullvector
     isSolution = !isSolution;
-
     if ( isSolution )
     {
         index++;
-        if ( !stateWriter_.is_null() )
-        {
-            Teuchos::RCP<LOCA::ParameterVector> p = modelEval_->getParameters();
-            stateWriter_->write( state, index, "-state", *p );
-        }
-
         this->saveContinuationStatistics_( index, state );
+
+        state->save( index );
     }
     else
-        if ( !stateWriter_.is_null() )
-            stateWriter_->write( state, index, "-nullvector" );
-
+        TEST_FOR_EXCEPTION( true,
+                            std::logic_error,
+                            "Not yet implemented." <<
+                            "This part of the code used to write state and null vector alternately for turning point continuation" <<
+                            "but because of how StkMesh is organized, it seems impossible to first write to one file, then to" <<
+                            "another with with the same mesh. Need to investigate." );
+    return;
 }
 // ============================================================================
 void

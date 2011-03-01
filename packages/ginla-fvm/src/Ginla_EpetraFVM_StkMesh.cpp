@@ -70,13 +70,6 @@ controlVolumes_( Teuchos::rcp( new Epetra_Vector( *nodesMap_ ) ) ),
 coareaEdgeRatio_( Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >( this->getOwnedCells().size() ) ),
 area_( 0.0 )
 {
-    // prepare the data for output
-#ifdef HAVE_MPI
-    const Epetra_MpiComm& mpicomm = Teuchos::dyn_cast<const Epetra_MpiComm>( comm_ );
-    MPI_Comm mcomm = mpicomm.Comm();
-#else
-    int mcomm = 1;
-#endif
 
 //   meshData_->m_region->field_add( Ioss::Field( "mu",
 //                                                Ioss::Field::REAL,
@@ -86,21 +79,42 @@ area_( 0.0 )
 //                                              )
 //                                 );
 
-    stk::io::util::create_output_mesh( "solution", // filename base
-                                       "e", // extension
-                                       "", // working directoru
-                                       mcomm,
-                                       *bulkData_,
-                                       *metaData_,
-                                       *meshData_
-                                     );
-
   return;
 }
 // =============================================================================
 Ginla::EpetraFVM::StkMesh::
 ~StkMesh()
 {
+}
+// =============================================================================
+void
+Ginla::EpetraFVM::StkMesh::
+setOutputFile( const string & outputDir,
+               const string & fileBaseName
+             )
+{
+    // prepare the data for output
+#ifdef HAVE_MPI
+    const Epetra_MpiComm& mpicomm = Teuchos::dyn_cast<const Epetra_MpiComm>( comm_ );
+    MPI_Comm mcomm = mpicomm.Comm();
+#else
+    int mcomm = 1;
+#endif
+
+    // Make sure the outputDir ends in "/".
+    // Dir and filename are not concatenated properly in stk::mesh,
+    std::stringstream saveOutputDir;
+    saveOutputDir << outputDir << "/";
+
+    stk::io::util::create_output_mesh( fileBaseName, // filename base
+                                       "e", // extension
+                                       saveOutputDir.str(), // working directoru
+                                       mcomm,
+                                       *bulkData_,
+                                       *metaData_,
+                                       *meshData_
+                                     );
+    return;
 }
 // =============================================================================
 const Teuchos::RCP<stk::mesh::MetaData>

@@ -73,6 +73,12 @@ public:
     virtual
     ~StkMesh();
 
+    void
+    setOutputFile( const string & outputDir,
+                   const string & fileBaseName
+                 );
+
+
     const Teuchos::RCP<stk::mesh::MetaData>
     getMetaData() const;
 
