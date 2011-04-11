@@ -38,6 +38,7 @@
 
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/fem/CoordinateSystems.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 // =============================================================================
 // forward declarations
 namespace stk {
@@ -64,16 +65,22 @@ namespace EpetraFVM {
 class StkMesh
 {
 public:
-    StkMesh( const Epetra_Comm                       & comm,
-               const Teuchos::RCP<stk::mesh::MetaData> & metaData,
-               const Teuchos::RCP<stk::mesh::BulkData> & bulkData,
-               const Teuchos::RCP<VectorFieldType>     & coordinatesField
-             );
+    StkMesh( const Epetra_Comm                               & comm,
+             const Teuchos::RCP<stk::mesh::fem::FEMMetaData> & metaData,
+             const Teuchos::RCP<stk::mesh::BulkData>         & bulkData,
+             const Teuchos::RCP<VectorFieldType>             & coordinatesField
+           );
 
     virtual
     ~StkMesh();
 
-    const Teuchos::RCP<stk::mesh::MetaData>
+    void
+    setOutputFile( const string & outputDir,
+                   const string & fileBaseName
+                 );
+
+
+    const Teuchos::RCP<stk::mesh::fem::FEMMetaData>
     getMetaData() const;
 
     const Teuchos::RCP<stk::io::util::MeshData>
@@ -139,10 +146,10 @@ private:
 
     const Epetra_Comm & comm_;
 
-    const Teuchos::RCP<stk::mesh::MetaData>     metaData_;
-    const Teuchos::RCP<stk::io::util::MeshData> meshData_;
-    const Teuchos::RCP<stk::mesh::BulkData>     bulkData_;
-    const Teuchos::RCP<VectorFieldType>         coordinatesField_;
+    const Teuchos::RCP<stk::mesh::fem::FEMMetaData> metaData_;
+    const Teuchos::RCP<stk::io::util::MeshData>     meshData_;
+    const Teuchos::RCP<stk::mesh::BulkData>         bulkData_;
+    const Teuchos::RCP<VectorFieldType>             coordinatesField_;
 //     const Teuchos::RCP<VectorFieldType>         thicknessField_;
 
     const Teuchos::RCP<Epetra_Map> nodesMap_;

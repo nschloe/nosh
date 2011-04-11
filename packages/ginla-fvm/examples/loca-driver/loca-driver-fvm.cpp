@@ -142,6 +142,9 @@ main ( int argc, char *argv[] )
                                        problemParameters
                                      );
 
+        // set the output directory for later plotting with this
+        mesh->setOutputFile( outputDirectory.string(), "solution" );
+
 //        problemParameters.set<double>( "mu", 2.979541915949315e-01 );
 //        problemParameters.set<double>( "phi", 1.57079633 );
 //        problemParameters.set<double>( "theta", 0.0 );
@@ -174,15 +177,16 @@ main ( int argc, char *argv[] )
         double mu = problemParameters.get<double> ( "mu" );
         double phi = problemParameters.get<double> ( "phi" );
         double theta = problemParameters.get<double> ( "theta" );
+        double magneticDotRadius = problemParameters.get<double> ( "magneticDotRadius" );
         if ( eComm->MyPID() == 0 )
-            std::cout << "mu, phi, theta" << mu << " " <<  phi << " " << theta << std::endl;
+            std::cout << "mu, phi, theta, magdotRadius" << mu << " " <<  phi << " " << theta << " " << magneticDotRadius << std::endl;
         // double phi = 0.0; double theta = 0.0; // X
         // double phi = 0.5 * M_PI; double theta = 0.0; // Y
         // double phi = 0.0; double theta = 0.5 * M_PI; // Z
         Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp =
                 Teuchos::rcp ( new Ginla::MagneticVectorPotential::Spherical ( mesh, mu, phi, theta ) );
 //        Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp =
-//               Teuchos::rcp ( new Ginla::MagneticVectorPotential::MagneticDot ( mesh, mu ) );
+//               Teuchos::rcp ( new Ginla::MagneticVectorPotential::MagneticDot ( mesh, magneticDotRadius, mu ) );
 
         // create the mode evaluator
         Teuchos::RCP<Ginla::EpetraFVM::ModelEvaluator> glModel =
@@ -197,15 +201,14 @@ main ( int argc, char *argv[] )
         int maxLocaSteps = piroParams->sublist ( "LOCA" )
                                       .sublist ( "Stepper" )
                                       .get<int> ( "Max Steps" );
-        Teuchos::RCP<Ginla::IO::StateWriter> stateWriter =
-            Teuchos::rcp( new Ginla::IO::StateWriter( outputDirectory.string(),
-                                                      "solution"
-                                                    )
-                        );
+//        Teuchos::RCP<Ginla::IO::StateWriter> stateWriter =
+//            Teuchos::rcp( new Ginla::IO::StateWriter( outputDirectory.string(),
+//                                                      "solution"
+//                                                    )
+//                        );
 
         Teuchos::RCP<Ginla::IO::NoxObserver> observer =
-                Teuchos::rcp( new Ginla::IO::NoxObserver( stateWriter,
-                                                          glModel,
+                Teuchos::rcp( new Ginla::IO::NoxObserver( glModel,
                                                           Ginla::IO::NoxObserver::CONTINUATION
                                                         )
                             );
@@ -229,7 +232,6 @@ main ( int argc, char *argv[] )
           Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> glSaveEigenDataStrategy =
                   Teuchos::RCP<Ginla::IO::SaveEigenData> ( new Ginla::IO::SaveEigenData ( eigenList,
                                                                                           glModel,
-                                                                                          stateWriter,
                                                                                           eigenStatsWriter ) );
           eigenList.set ( "Save Eigen Data Method", "User-Defined" );
           eigenList.set ( "User-Defined Save Eigen Data Name", "glSaveEigenDataStrategy" );

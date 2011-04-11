@@ -24,7 +24,18 @@ def _main():
     hostname = socket.gethostbyaddr(socket.gethostname())[0]
     date = datetime.datetime.now().isoformat(' ')
     submit_files = []
-    num_cores_per_node = 8
+
+    # Use either
+    # harpertown:ib (that's 4 cores per CPU times 2 for hyperthreading)
+    # or
+    # westmere (that's 12 cores per CPU times 2 for hyperthreading).
+    # All westmere nodes are InfiniBand (ib) anyways.
+    # node_type = "harpertown:ib"
+    # num_cores_per_node = 8
+    # Prefer Westmere b/c as of now (Jan 25 2011) they represent the largest
+    # homogenous set of processes on CalcUA.
+    node_type = "westmere"
+    num_cores_per_node = 24
     for numprocs in numprocs_range:
 
         # Compute the number of nodes needed to fir numprocs processes.
@@ -44,8 +55,8 @@ def _main():
         stdout_file = "out/%s.o$PBS_JOBID" % jobname
         stderr_file = "out/%s.e$PBS_JOBID" % jobname
 
-        resource_list = "nodes=%d:ppn=%d:westmere:ib" \
-                        % ( num_nodes, num_cores_per_node )
+        resource_list = "nodes=%d:ppn=%d:%s" \
+                        % ( num_nodes, num_cores_per_node, node_type )
 
         # Write contents.
         file_handle.write( '''#/bin/bash
@@ -61,8 +72,6 @@ def _main():
 #PBS -e %s
 
   # Specify number of cores.
-  # Use Westmere here b/c as of now (Jan 25 2011) they represent the largest
-  # homogenous set of processes on CalcUA.
 #PBS -l %s
 
   # make sure we are in the right directory in case writing files 

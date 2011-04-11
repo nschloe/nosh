@@ -5,10 +5,11 @@
 // ============================================================================
 Ginla::MagneticVectorPotential::MagneticDot::
 MagneticDot( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh> & mesh,
+             double magnetRadius,
              double mu ) :
   Virtual( mesh ),
   mu_( mu ),
-  magnetRadius_( 4.5315 ),
+  magnetRadius_( magnetRadius ),
   zz1_ ( 0.1 ),
   zz2_ ( 1.1 ),
   edgeMidpointProjectionCache_( Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >( mesh->getOwnedCells().size() ) ),

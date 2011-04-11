@@ -54,13 +54,12 @@ write ( const Teuchos::RCP<const Ginla::EpetraFVM::State> & state,
 
 //     // create the file name
 //     stringstream fileName;
-//     fileName
-//     << outputDir_ << "/" << fileBaseName_
+//     fileName  << outputDir_ << "/" << fileBaseName_;
 //     << setw ( maxNumDigits_ ) << setfill ( '0' ) << index
 //     << filenameAppend << "." << filenameExtension_;
 
     // write the file
-    state->save( fileBaseName_, index, *p );
+    state->save( index, *p );
 
     return;
 }

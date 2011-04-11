@@ -31,7 +31,7 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/FieldData.hpp>
-#include <stk_mesh/fem/EntityRanks.hpp>
+//#include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/DefaultFEM.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 
@@ -68,8 +68,12 @@ read( const Epetra_Comm & comm,
   // (It can handle data_X, data_Y, data_Z though.)
   const unsigned int neq = 1;
 
-  Teuchos::RCP<stk::mesh::MetaData> metaData =
-      Teuchos::rcp( new stk::mesh::MetaData( stk::mesh::fem_entity_rank_names() ) );
+  Teuchos::RCP<stk::mesh::fem::FEMMetaData> metaData =
+      Teuchos::rcp( new stk::mesh::fem::FEMMetaData() );
+
+  int numDim = 3;
+  if (! metaData->is_FEM_initialized())
+      metaData->FEM_initialize(numDim);
 
 //   // attach fem data
 //   size_t spatial_dimension = 3;
@@ -77,7 +81,11 @@ read( const Epetra_Comm & comm,
 
   unsigned int field_data_chunk_size = 1001;
   Teuchos::RCP<stk::mesh::BulkData> bulkData =
-      Teuchos::rcp( new stk::mesh::BulkData( *metaData , MPI_COMM_WORLD , field_data_chunk_size ) );
+      Teuchos::rcp( new stk::mesh::BulkData( stk::mesh::fem::FEMMetaData::get_meta_data(*metaData),
+                                             MPI_COMM_WORLD,
+                                             field_data_chunk_size
+                                           )
+                  );
 
   Teuchos::RCP<VectorFieldType> coordinatesField =
        Teuchos::rcpFromRef( metaData->declare_field< VectorFieldType >( "coordinates" ) );
@@ -90,13 +98,13 @@ read( const Epetra_Comm & comm,
   // real part
   Teuchos::RCP<VectorFieldType> psir_field =
       Teuchos::rcpFromRef( metaData->declare_field< VectorFieldType >( "psi_R" ) );
-  stk::mesh::put_field( *psir_field , stk::mesh::Node , metaData->universal_part(), neq );
+  stk::mesh::put_field( *psir_field , metaData->node_rank() , metaData->universal_part(), neq );
   stk::io::set_field_role(*psir_field, Ioss::Field::TRANSIENT);
 
   // imaginary part
   Teuchos::RCP<VectorFieldType> psii_field =
       Teuchos::rcpFromRef( metaData->declare_field< VectorFieldType >( "psi_Z" ) );
-  stk::mesh::put_field( *psii_field , stk::mesh::Node , metaData->universal_part(), neq );
+  stk::mesh::put_field( *psii_field , metaData->node_rank() , metaData->universal_part(), neq );
   stk::io::set_field_role(*psii_field, Ioss::Field::TRANSIENT);
 
   Teuchos::RCP<stk::io::util::MeshData> meshData =

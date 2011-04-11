@@ -80,15 +80,13 @@ public:
 
   //! Save the state to file \c fileName together with the parameters \c p.
   void
-  save( const std::string            & fileBaseName,
-        const int                      index,
+  save( const int                      index,
         const Teuchos::ParameterList & p
       ) const;
 
   //! Just plain save the file to \c fileName.
   void
-  save( const std::string            & fileBaseName,
-        const int                      index
+  save( const int index
       ) const;
 
   //! \f$L^2(\Omega)\f$-inner product with state \c state.

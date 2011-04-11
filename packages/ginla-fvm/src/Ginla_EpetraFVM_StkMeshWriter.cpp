@@ -29,7 +29,7 @@
 #include <Epetra_SerialComm.h>
 #endif
 
-#include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/FieldData.hpp>
 // #include <stk_mesh/fem/EntityRanks.hpp>
@@ -113,9 +113,9 @@ write( const Epetra_Vector                                 & psi,
 // =============================================================================
 void
 Ginla::EpetraFVM::StkMeshWriter::
-mergePsi_( const Teuchos::RCP<stk::mesh::MetaData> & metaData,
-           const Teuchos::RCP<stk::mesh::BulkData> & bulkData,
-           const Epetra_Vector                     & psi
+mergePsi_( const Teuchos::RCP<stk::mesh::fem::FEMMetaData> & metaData,
+           const Teuchos::RCP<stk::mesh::BulkData>         & bulkData,
+           const Epetra_Vector                             & psi
          ) const
 {
     // Get owned nodes.
@@ -123,7 +123,7 @@ mergePsi_( const Teuchos::RCP<stk::mesh::MetaData> & metaData,
     stk::mesh::Selector select_owned_in_part = stk::mesh::Selector( metaData->universal_part() )
                                              & stk::mesh::Selector( metaData->locally_owned_part() );
     stk::mesh::get_selected_entities( select_owned_in_part,
-                                      bulkData->buckets( stk::mesh::Node ),
+                                      bulkData->buckets( metaData->node_rank() ),
                                       ownedNodes
                                     );
 
@@ -146,95 +146,95 @@ mergePsi_( const Teuchos::RCP<stk::mesh::MetaData> & metaData,
 // =============================================================================
 // This is a copy of $TRILINOS/packages/stk/stk_io/stk_io/util/UseCase_mesh.cpp,
 // enhanced with parameter handling
-int
-Ginla::EpetraFVM::StkMeshWriter::
-process_output_request_( stk::io::util::MeshData &mesh_data,
-                         stk::mesh::BulkData &bulk,
-                         double time,
-                         const Teuchos::ParameterList & parameterList,
-                         bool output_all_fields
-                       )
-{
-   Ioss::Region &region = *(mesh_data.m_region);
-
-   region.begin_mode(Ioss::STATE_TRANSIENT);
-
-   int out_step = region.add_state(time);
-
-//    // add the parameters
-//    for ( Teuchos::ParameterList::ConstIterator item = parameterList.begin();
-//          item != parameterList.end();
-//          ++item )
-//    {
-//        std::string name =  parameterList.name(item);
-//        std::vector<double>  val(1);
-//        parameterList.entry(item).getValue( &val[0] );
-//        std::cout << "Writing \"" << name << "\" with value \"" << val[0] << "\"." << std::endl;
-//        region.put_field_data( name, val );
+//int
+//Ginla::EpetraFVM::StkMeshWriter::
+//process_output_request_( stk::io::util::MeshData &mesh_data,
+//                         stk::mesh::BulkData &bulk,
+//                         double time,
+//                         const Teuchos::ParameterList & parameterList,
+//                         bool output_all_fields
+//                       )
+//{
+//   Ioss::Region &region = *(mesh_data.m_region);
+//
+//   region.begin_mode(Ioss::STATE_TRANSIENT);
+//
+//   int out_step = region.add_state(time);
+//
+////    // add the parameters
+////    for ( Teuchos::ParameterList::ConstIterator item = parameterList.begin();
+////          item != parameterList.end();
+////          ++item )
+////    {
+////        std::string name =  parameterList.name(item);
+////        std::vector<double>  val(1);
+////        parameterList.entry(item).getValue( &val[0] );
+////        std::cout << "Writing \"" << name << "\" with value \"" << val[0] << "\"." << std::endl;
+////        region.put_field_data( name, val );
+////    }
+//
+//  this->process_output_request_(region, bulk, out_step, output_all_fields);
+//  region.end_mode(Ioss::STATE_TRANSIENT);
+//
+//  return out_step;
+//}
+//// =============================================================================
+//// This is a copy of $TRILINOS/packages/stk/stk_io/stk_io/util/UseCase_mesh.cpp,
+//// enhanced with parameter handling
+//void
+//Ginla::EpetraFVM::StkMeshWriter::
+//process_output_request_( Ioss::Region &region,
+//                         stk::mesh::BulkData &bulk,
+//                         int step,
+//                         bool output_all_fields
+//                       )
+//{
+//  std::cout << "A" << std::endl;
+//
+//  region.begin_state(step);
+//  // Special processing for nodeblock (all nodes in model)...
+//  const stk::mesh::MetaData & meta = bulk.mesh_meta_data();
+//
+//  std::cout << "B" << std::endl;
+//  
+//  stk::io::util::put_field_data( bulk,
+//                                 meta.universal_part(),
+//                                 stk::mesh::Node,
+//                                 region.get_node_blocks()[0],
+//                                 Ioss::Field::Field::TRANSIENT,
+//                                 output_all_fields
+//                               );
+//
+//  std::cout << "C" << std::endl;
+//
+//  const stk::mesh::PartVector & all_parts = meta.get_parts();
+//  for ( stk::mesh::PartVector::const_iterator
+//          ip = all_parts.begin(); ip != all_parts.end(); ++ip ) {
+//
+//    std::cout << "D" << std::endl;
+//
+//    stk::mesh::Part * const part = *ip;
+//
+//    // Check whether this part should be output to results database.
+//    if (stk::io::is_part_io_part(*part)) {
+//      // Get Ioss::GroupingEntity corresponding to this part...
+//      Ioss::GroupingEntity *entity = region.get_entity(part->name());
+//      if (entity != NULL) {
+//        if (entity->type() == Ioss::ELEMENTBLOCK) {
+//          stk::io::util::put_field_data( bulk,
+//                                         *part,
+//                                         stk::mesh::fem_entity_rank( part->primary_entity_rank()),
+//                                         entity,
+//                                         Ioss::Field::Field::TRANSIENT,
+//                                         output_all_fields
+//                                       );
+//        }
+//      }
 //    }
-
-  this->process_output_request_(region, bulk, out_step, output_all_fields);
-  region.end_mode(Ioss::STATE_TRANSIENT);
-
-  return out_step;
-}
-// =============================================================================
-// This is a copy of $TRILINOS/packages/stk/stk_io/stk_io/util/UseCase_mesh.cpp,
-// enhanced with parameter handling
-void
-Ginla::EpetraFVM::StkMeshWriter::
-process_output_request_( Ioss::Region &region,
-                         stk::mesh::BulkData &bulk,
-                         int step,
-                         bool output_all_fields
-                       )
-{
-  std::cout << "A" << std::endl;
-
-  region.begin_state(step);
-  // Special processing for nodeblock (all nodes in model)...
-  const stk::mesh::MetaData & meta = bulk.mesh_meta_data();
-
-  std::cout << "B" << std::endl;
-  
-  stk::io::util::put_field_data( bulk,
-                                 meta.universal_part(),
-                                 stk::mesh::Node,
-                                 region.get_node_blocks()[0],
-                                 Ioss::Field::Field::TRANSIENT,
-                                 output_all_fields
-                               );
-
-  std::cout << "C" << std::endl;
-
-  const stk::mesh::PartVector & all_parts = meta.get_parts();
-  for ( stk::mesh::PartVector::const_iterator
-          ip = all_parts.begin(); ip != all_parts.end(); ++ip ) {
-
-    std::cout << "D" << std::endl;
-
-    stk::mesh::Part * const part = *ip;
-
-    // Check whether this part should be output to results database.
-    if (stk::io::is_part_io_part(*part)) {
-      // Get Ioss::GroupingEntity corresponding to this part...
-      Ioss::GroupingEntity *entity = region.get_entity(part->name());
-      if (entity != NULL) {
-        if (entity->type() == Ioss::ELEMENTBLOCK) {
-          stk::io::util::put_field_data( bulk,
-                                         *part,
-                                         stk::mesh::fem_entity_rank( part->primary_entity_rank()),
-                                         entity,
-                                         Ioss::Field::Field::TRANSIENT,
-                                         output_all_fields
-                                       );
-        }
-      }
-    }
-  }
-  std::cout << "E" << std::endl;
-  region.end_state(step);
-}
+//  }
+//  std::cout << "E" << std::endl;
+//  region.end_state(step);
+//}
 // =============================================================================
 //
 // Helper functions

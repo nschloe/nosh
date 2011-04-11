@@ -6,13 +6,27 @@ INCLUDE_DIRECTORIES ( ${Trilinos_INCLUDE_DIRS}
 LINK_DIRECTORIES( ${Trilinos_LIBRARY_DIRS}
                   ${Trilinos_TPL_LIBRARY_DIRS} )
 # ------------------------------------------------------------------------------
-SET ( scaltest_SRCS
+SET ( medley_SRCS
       dummy.f
-      scalability-tests.cpp  )
+      strong-scaling-medley.cpp
+    )
 SET( MY_EXECUTABLE
-     "scaltest.exe" )
+     "medley.exe" )
 ADD_EXECUTABLE( ${MY_EXECUTABLE}
-                ${scaltest_SRCS} )
+                ${medley_SRCS} )
+TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
+                       ${Trilinos_LIBRARIES}
+                       ${Trilinos_TPL_LIBRARIES}
+                    )
+# ------------------------------------------------------------------------------
+SET ( dot_SRCS
+      dummy.f
+      strong-scaling-dotproduct.cpp
+    )
+SET( MY_EXECUTABLE
+     "dot.exe" )
+ADD_EXECUTABLE( ${MY_EXECUTABLE}
+                ${dot_SRCS} )
 TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
                        ${Trilinos_LIBRARIES}
                        ${Trilinos_TPL_LIBRARIES}

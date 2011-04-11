@@ -114,7 +114,7 @@ ApplyInverseMl_( const Epetra_MultiVector & X,
    bool proc_verbose = verbose && (X.Comm().MyPID()==0);
 
    // Belos part
-   ParameterList belosList;
+   Teuchos::ParameterList belosList;
    belosList.set( "Convergence Tolerance", 1.0e-5 ); // Relative convergence tolerance requested
    if (verbose) {
      belosList.set( "Verbosity",
@@ -148,8 +148,8 @@ ApplyInverseMl_( const Epetra_MultiVector & X,
    // -------------------------------------------------------------------------
    // Create an iterative solver manager.
    Teuchos::RCP<Belos::SolverManager<double,MV,OP> > newSolver =
-           Teuchos::rcp( new Belos::PseudoBlockCGSolMgr<double,MV,OP>( rcp(&problem,false),
-                                                                       rcp(&belosList,false)
+           Teuchos::rcp( new Belos::PseudoBlockCGSolMgr<double,MV,OP>( Teuchos::rcp(&problem,false),
+                                                                       Teuchos::rcp(&belosList,false)
                                                                      )
                        );
 
