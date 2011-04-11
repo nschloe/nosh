@@ -204,7 +204,7 @@ int main ( int argc, char *argv[] )
 //      std::cout << "Matrix appears to be symmetric" << std::endl;
       // -----------------------------------------------------------------------
       // Belos part
-      ParameterList belosList;
+      Teuchos::ParameterList belosList;
       belosList.set( "Convergence Tolerance", 1.0e-15 );  // Relative convergence tolerance requested
       belosList.set( "Maximum Iterations", 10000 );
       if (verbose) {

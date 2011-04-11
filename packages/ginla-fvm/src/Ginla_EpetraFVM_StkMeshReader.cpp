@@ -32,7 +32,7 @@
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/FieldData.hpp>
 //#include <stk_mesh/fem/EntityRanks.hpp>
-#include <stk_mesh/fem/DefaultFEM.hpp>
+//#include <stk_mesh/fem/DefaultFEM.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 
 #include <stk_io/IossBridge.hpp>

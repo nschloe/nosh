@@ -166,7 +166,7 @@ int main ( int argc, char *argv[] )
 
       // -----------------------------------------------------------------------
       // Belos part
-      ParameterList belosList;
+      Teuchos::ParameterList belosList;
       belosList.set( "Convergence Tolerance", 1.0e-15 );  // Relative convergence tolerance requested
       if (verbose) {
         belosList.set( "Verbosity",
