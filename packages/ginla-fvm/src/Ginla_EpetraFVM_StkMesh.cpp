@@ -25,14 +25,13 @@
 #include <Teuchos_ArrayRCP.hpp>
 #include <Teuchos_Tuple.hpp>
 
-#include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/Comm.hpp> // for comm_mesh_counts
-#include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/CreateAdjacentEntities.hpp>
 #include <stk_mesh/fem/FEMInterface.hpp>
-#include <stk_mesh/fem/EntityRanks.hpp>
+//#include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 
 #include <stk_io/IossBridge.hpp>
@@ -48,10 +47,10 @@ typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorFieldType ;
 typedef stk::mesh::Field<double>                      ScalarFieldType ;
 // =============================================================================
 Ginla::EpetraFVM::StkMesh::
-StkMesh( const Epetra_Comm                       & comm,
-         const Teuchos::RCP<stk::mesh::MetaData> & metaData,
-         const Teuchos::RCP<stk::mesh::BulkData> & bulkData,
-         const Teuchos::RCP<VectorFieldType>     & coordinatesField
+StkMesh( const Epetra_Comm                               & comm,
+         const Teuchos::RCP<stk::mesh::fem::FEMMetaData> & metaData,
+         const Teuchos::RCP<stk::mesh::BulkData>         & bulkData,
+         const Teuchos::RCP<VectorFieldType>             & coordinatesField
 //          const Teuchos::RCP<VectorFieldType>     & thicknessField
        ):
 comm_( comm ),
@@ -108,7 +107,7 @@ setOutputFile( const string & outputDir,
 
     stk::io::util::create_output_mesh( fileBaseName, // filename base
                                        "e", // extension
-                                       saveOutputDir.str(), // working directoru
+                                       saveOutputDir.str(), // working directory
                                        mcomm,
                                        *bulkData_,
                                        *metaData_,
@@ -117,7 +116,7 @@ setOutputFile( const string & outputDir,
     return;
 }
 // =============================================================================
-const Teuchos::RCP<stk::mesh::MetaData>
+const Teuchos::RCP<stk::mesh::fem::FEMMetaData>
 Ginla::EpetraFVM::StkMesh::
 getMetaData() const
 {
@@ -233,7 +232,7 @@ getOwnedCells() const
                                            & stk::mesh::Selector( metaData_->locally_owned_part() );
   std::vector<stk::mesh::Entity*> cells;
   stk::mesh::get_selected_entities( select_owned_in_part,
-                                    bulkData_->buckets( stk::mesh::Element ),
+                                    bulkData_->buckets( metaData_->element_rank() ),
                                     cells
                                   );
   return cells;
@@ -248,7 +247,7 @@ getOwnedEdges() const
                                            & stk::mesh::Selector( metaData_->locally_owned_part() );
   std::vector<stk::mesh::Entity*> edges;
   stk::mesh::get_selected_entities( select_owned_in_part,
-                                    bulkData_->buckets( stk::mesh::Edge ),
+                                    bulkData_->buckets( metaData_->edge_rank() ),
                                     edges
                                   );
   return edges;
@@ -299,7 +298,7 @@ getOwnedNodes() const
 
     std::vector<stk::mesh::Entity*> ownedNodes;
     stk::mesh::get_selected_entities( select_owned_in_part,
-                                      bulkData_->buckets( stk::mesh::Node ),
+                                      bulkData_->buckets( metaData_->node_rank() ),
                                       ownedNodes
                                     );
     return ownedNodes;
@@ -317,7 +316,7 @@ getOverlapNodes() const
 
     std::vector<stk::mesh::Entity*> overlapNodes;
     stk::mesh::get_selected_entities( select_overlap_in_part,
-                                      bulkData_->buckets( stk::mesh::Node ),
+                                      bulkData_->buckets( metaData_->node_rank() ),
                                       overlapNodes
                                     );
     return overlapNodes;
