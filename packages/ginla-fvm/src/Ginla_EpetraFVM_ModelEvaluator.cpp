@@ -181,6 +181,7 @@ Teuchos::RCP<EpetraExt::ModelEvaluator::Preconditioner>
 Ginla::EpetraFVM::ModelEvaluator::
 create_WPrec() const
 {
+  std::cout << "XXXXXXXXXXXXXXXXXXXXXXXXXX create_WPrec" << std::endl;
   Teuchos::RCP<Epetra_Operator> keoPrec =
           Teuchos::rcp( new Ginla::EpetraFVM::KeoPreconditioner( mesh_, mvp_ ) );
   // bool is answer to: "Prec is already inverted?"
@@ -300,7 +301,7 @@ evalModel( const InArgs  & inArgs,
   const Teuchos::RCP<Epetra_Operator> W_out = outArgs.get_W();
   if( !W_out.is_null() )
   {
-//     std::cout << "W_out_" << std::endl;
+      std::cout << "if W_out_" << std::endl;
       Teuchos::RCP<Ginla::EpetraFVM::JacobianOperator> jac =
           Teuchos::rcp_dynamic_cast<Ginla::EpetraFVM::JacobianOperator>( W_out, true );
       jac->rebuild( mvpParams,
@@ -314,10 +315,11 @@ evalModel( const InArgs  & inArgs,
   const Teuchos::RCP<Epetra_Operator> WPrec_out = outArgs.get_WPrec();
   if( !WPrec_out.is_null() )
   {
-//     std::cout << "WPrec_out_" << std::endl;
+      std::cout << "XXXXXXXX if WPrec_out_" << std::endl;
       Teuchos::RCP<Ginla::EpetraFVM::KeoPreconditioner> keoPrec =
           Teuchos::rcp_dynamic_cast<Ginla::EpetraFVM::KeoPreconditioner>( WPrec_out, true );
-      keoPrec->rebuild( mvpParams, scalingCombined );
+      keoPrec->updateParameters( mvpParams, scalingCombined );
+      keoPrec->rebuild();
   }
 
   return;
@@ -334,7 +336,8 @@ computeF_ ( const Epetra_Vector                             & x,
 {
   // build the KEO
   Epetra_FECrsMatrix keoMatrix( Copy, keoFactory_->buildKeoGraph() );
-  keoFactory_->buildKeo( keoMatrix, mvpParams, scaling );
+  keoFactory_->updateParameters( mvpParams, scaling );
+  keoFactory_->buildKeo( keoMatrix );
 
   // compute FVec = K*x
   TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix.Apply( x, FVec ) );

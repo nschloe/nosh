@@ -17,6 +17,7 @@
 #include <BelosEpetraAdapter.hpp>
 #include <BelosPseudoBlockGmresSolMgr.hpp>
 #include <BelosPseudoBlockCGSolMgr.hpp>
+#include <BelosMinresSolMgr.hpp>
 
 #include <boost/filesystem.hpp>
 
@@ -120,7 +121,7 @@ int main ( int argc, char *argv[] )
       {
           Teuchos::TimeMonitor tm(*mvpConstructTime);
           mu = problemParameters.get<double> ( "mu" );
-          mu = 1.0e-2;
+          mu = 1.0e-1;
           mvp = Teuchos::rcp ( new Ginla::MagneticVectorPotential::Z ( mesh, mu ) );
           mvp->initializeEdgeMidpointProjectionCache_();
       }
@@ -163,7 +164,6 @@ int main ( int argc, char *argv[] )
               Teuchos::rcp( new Epetra_Vector( jac->OperatorRangeMap(), 1 ) );
       epetra_b->Random();
 
-
       // -----------------------------------------------------------------------
       // Belos part
       ParameterList belosList;
@@ -184,6 +184,8 @@ int main ( int argc, char *argv[] )
       else
         belosList.set( "Verbosity", Belos::Errors + Belos::Warnings );
 
+      belosList.set( "Maximum Iterations", 2000 );
+
       // Only print on the zero processor
       const bool proc_verbose = verbose && (eComm->MyPID()==0);
 
@@ -198,7 +200,6 @@ int main ( int argc, char *argv[] )
       }
       // -----------------------------------------------------------------------
       // create preconditioner
-      // create preconditioner
       Teuchos::RCP<Teuchos::Time> precConstructTime = Teuchos::TimeMonitor::getNewTimer("Prec construction");
       if ( isPrec )
       {
@@ -206,6 +207,9 @@ int main ( int argc, char *argv[] )
           // create the jacobian operator
           Teuchos::RCP<Ginla::EpetraFVM::KeoPreconditioner> prec =
               Teuchos::rcp( new Ginla::EpetraFVM::KeoPreconditioner( mesh, mvp ) );
+
+          // actually fill it with values
+          prec->rebuild();
 
           // Create the Belos preconditioned operator from the preconditioner.
           // NOTE:  This is necessary because Belos expects an operator to apply the
@@ -215,11 +219,19 @@ int main ( int argc, char *argv[] )
       }
       // -----------------------------------------------------------------------
       // Create an iterative solver manager.
+
+      belosList.set( "Assert Positive Definiteness", false );
       Teuchos::RCP<Belos::SolverManager<double,MV,OP> > newSolver
               = Teuchos::rcp( new Belos::PseudoBlockCGSolMgr<double,MV,OP>( Teuchos::rcp(&problem,false),
                                                                             Teuchos::rcp(&belosList,false)
                                                                           )
-                   );
+                            );
+
+//       Teuchos::RCP<Belos::SolverManager<double,MV,OP> > newSolver
+//               = Teuchos::rcp( new Belos::MinresSolMgr<double,MV,OP>( Teuchos::rcp(&problem,false),
+//                                                                      Teuchos::rcp(&belosList,false)
+//                                                                    )
+//                             );
 //       RCP< Belos::SolverManager<double,MV,OP> > newSolver
 //               = rcp( new Belos::PseudoBlockGmresSolMgr<double,MV,OP>( rcp(&problem,false),
 //                                                                       rcp(&belosList,false)

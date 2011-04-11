@@ -84,7 +84,6 @@ int main ( int argc, char *argv[] )
       // finally, parse the command line
       My_CLP.parse ( argc, argv );
       // =========================================================================
-
       Teuchos::ParameterList              problemParameters;
       Teuchos::RCP<Epetra_Vector>         z = Teuchos::null;
       Teuchos::RCP<Ginla::EpetraFVM::StkMesh> mesh = Teuchos::null;
@@ -109,7 +108,8 @@ int main ( int argc, char *argv[] )
               Teuchos::rcp( new Ginla::EpetraFVM::KeoFactory( mesh, mvp ) );
       Epetra_FECrsMatrix keoMatrix( Copy, keoFactory->buildKeoGraph() );
       Teuchos::Tuple<double,3> scaling( Teuchos::tuple(1.0,1.0,1.0) );
-      keoFactory->buildKeo( keoMatrix, mvpParameters, scaling );
+      keoFactory->updateParameters( mvpParameters, scaling );
+      keoFactory->buildKeo( keoMatrix );
 
       // create initial guess and right-hand side
       Teuchos::RCP<Epetra_Vector> epetra_x = Teuchos::rcp( new Epetra_Vector( keoMatrix.OperatorDomainMap() ) );

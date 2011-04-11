@@ -53,7 +53,7 @@ KeoPreconditioner( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>               &
         belosPrec_ ( Teuchos::null ),
         keoProblem_( Teuchos::rcp( new Epetra_LinearProblem() ) ),
         keoSolver_( Teuchos::null ),
-        invType_( Ml )
+        invType_( Ilu )
 {
 }
 // =============================================================================
@@ -134,15 +134,17 @@ ApplyInverseMl_( const Epetra_MultiVector & X,
    Teuchos::RCP<Epetra_MultiVector> Yptr = Teuchos::rcpFromRef( Y );
    Belos::LinearProblem<double,MV,OP> problem( keoPrec_, Yptr, Xptr );
    bool set = problem.setProblem();
-   if (set == false) {
+
+   if ( !set )
+   {
      if (proc_verbose)
        std::cerr << "\nERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
      return -1;
    }
    // -------------------------------------------------------------------------
    // add preconditioner
-   TEUCHOS_ASSERT( !belosPrec_.is_null() );
-   problem.setLeftPrec( belosPrec_ );
+//    TEUCHOS_ASSERT( !belosPrec_.is_null() );
+//    problem.setLeftPrec( belosPrec_ );
    // -------------------------------------------------------------------------
    // Create an iterative solver manager.
    Teuchos::RCP<Belos::SolverManager<double,MV,OP> > newSolver =
@@ -172,7 +174,7 @@ ApplyInverseIlu_ ( const Epetra_MultiVector & X,
     keoProblem_->SetRHS( &T );
 
     // solve and return error code
-    return keoSolver_->Solve();
+    return keoSolver_->Solve();;
 }
 // =============================================================================
 double
@@ -232,16 +234,26 @@ OperatorRangeMap () const
 // =============================================================================
 void
 Ginla::EpetraFVM::KeoPreconditioner::
-rebuild( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
-         const Teuchos::Tuple<double,3> & scaling
-       )
+updateParameters( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
+                  const Teuchos::Tuple<double,3> & scaling
+                )
+{
+    keoFactory_->updateParameters( mvpParams, scaling );
+    return;
+}
+// =============================================================================
+void
+Ginla::EpetraFVM::KeoPreconditioner::
+rebuild()
 {
     // -------------------------------------------------------------------------
     // rebuild the keo
-    keoFactory_->buildKeo( *keoPrec_, mvpParams, scaling );
+    keoFactory_->buildKeo( *keoPrec_ );
+    keoPrec_->Scale( -1.0 );
     // -------------------------------------------------------------------------
     // regularization
-    if ( fabs( mvpParams->getValue("mu") ) < 1.0e-5 )
+    double mu = keoFactory_->getMvpParameters()->getValue( "mu" );
+    if ( fabs( mu ) < 1.0e-5 )
     {
         // Add a regularization to the diagonal.
         Epetra_Vector e( keoPrec_->DomainMap() );
@@ -253,7 +265,8 @@ rebuild( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
         TEUCHOS_ASSERT_EQUALITY( 0, keoPrec_->ReplaceDiagonalValues( diag ) );
     }
     // -------------------------------------------------------------------------
-    // Rebuild.
+    // Rebuild preconditioner for this object. Not to be mistaken for the
+    // object itself.
     switch ( invType_ )
     {
       case Ilu:
@@ -278,6 +291,8 @@ void
 Ginla::EpetraFVM::KeoPreconditioner::
 rebuildMl_()
 {
+    std::cout << "rebuildMl_" << std::endl;
+
     // rebuild ML structure
     Teuchos::ParameterList MLList;
     ML_Epetra::SetDefaults( "SA", MLList );

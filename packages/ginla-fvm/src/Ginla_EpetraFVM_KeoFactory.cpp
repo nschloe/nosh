@@ -49,18 +49,30 @@ Ginla::EpetraFVM::KeoFactory::
 // =============================================================================
 void
 Ginla::EpetraFVM::KeoFactory::
-buildKeo( Epetra_FECrsMatrix                              & keoMatrix,
-          const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
-          const Teuchos::Tuple<double,3>                  & scaling
-        ) const
+updateParameters( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
+                  const Teuchos::Tuple<double,3>                  & scaling
+                ) const
 {
-  // zero out the matrix
-  TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix.PutScalar( 0.0 ) );
-
   // set the parameters
   TEUCHOS_ASSERT( !mvpParams.is_null() );
   mvp_->setParameters( *mvpParams );
   mesh_->scale( scaling );
+  return;
+}
+// =============================================================================
+const Teuchos::RCP<const LOCA::ParameterVector>
+Ginla::EpetraFVM::KeoFactory::
+getMvpParameters() const
+{
+  return mvp_->getParameters();
+}
+// =============================================================================
+void
+Ginla::EpetraFVM::KeoFactory::
+buildKeo( Epetra_FECrsMatrix & keoMatrix ) const
+{
+  // zero out the matrix
+  TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix.PutScalar( 0.0 ) );
 
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   // Loop over the cells, create local load vector and mass matrix,

@@ -119,7 +119,7 @@ ApplyInverse ( const Epetra_MultiVector & X,
 {
     TEST_FOR_EXCEPTION( true,
                         std::logic_error,
-                        "Not yet implemented." );
+                        "Not implemented." );
     return -1;
 }
 // =============================================================================
@@ -190,7 +190,8 @@ rebuild( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
     currentX_ = currentX;
 
     // rebuild the keo
-    keoFactory_->buildKeo( *keoMatrix_, mvpParams, scaling );
+    keoFactory_->updateParameters( mvpParams, scaling );
+    keoFactory_->buildKeo( *keoMatrix_ );
 
     return;
 }

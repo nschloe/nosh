@@ -146,7 +146,6 @@ int main ( int argc, char *argv[] )
           keoGraph = Teuchos::rcp( new Epetra_FECrsGraph( keoFactory->buildKeoGraph() ) );
       }
 
-
       // create the kinetic energy operator
       Teuchos::RCP<Epetra_FECrsMatrix> keoMatrix;
       keoMatrix = Teuchos::rcp( new Epetra_FECrsMatrix( Copy, *keoGraph ) );
@@ -154,7 +153,8 @@ int main ( int argc, char *argv[] )
       Teuchos::RCP<Teuchos::Time> keoConstructTime = Teuchos::TimeMonitor::getNewTimer("Matrix construction");
       {
           Teuchos::TimeMonitor tm(*keoConstructTime);
-          keoFactory->buildKeo( *keoMatrix, mvpParameters, scaling );
+          keoFactory->updateParameters( mvpParameters, scaling );
+          keoFactory->buildKeo( *keoMatrix );
       }
       // Make sure the matrix is indeed positive definite, and not
       // negative definite. Belos needs that (2010-11-05).
@@ -175,29 +175,6 @@ int main ( int argc, char *argv[] )
       {
           Teuchos::TimeMonitor tm(*mvTime);
           TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->Apply( *epetra_x, *epetra_b ) );
-      }
-
-      Teuchos::RCP<Teuchos::Time> normTime = Teuchos::TimeMonitor::getNewTimer("2-norm calculation");
-      {
-          Teuchos::TimeMonitor tm(*normTime);
-          double norm2;
-          TEUCHOS_ASSERT_EQUALITY( 0, epetra_b->Norm2( &norm2 ) );
-      }
-
-      Teuchos::RCP<Teuchos::Time> inprodTime = Teuchos::TimeMonitor::getNewTimer("inner product");
-      {
-          Teuchos::TimeMonitor tm(*inprodTime);
-          double inProd;
-          TEUCHOS_ASSERT_EQUALITY( 0, epetra_b->Dot( *epetra_x, &inProd ) );
-      }
-
-      Teuchos::RCP<Teuchos::Time> multTime = Teuchos::TimeMonitor::getNewTimer("element-wise multiplication");
-      Teuchos::RCP<Epetra_Vector> epetra_u =
-              Teuchos::rcp( new Epetra_Vector( keoMatrix->OperatorDomainMap() ) );
-      {
-          Teuchos::TimeMonitor tm(*multTime);
-          double multVal;
-          TEUCHOS_ASSERT_EQUALITY( 0, epetra_u->Multiply( 1.0, *epetra_x, *epetra_b, 0.0 ) );
       }
 
       // print timing data

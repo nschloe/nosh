@@ -57,9 +57,15 @@ public:
     ~KeoFactory();
 
     void
-    buildKeo( Epetra_FECrsMatrix & keoMatrix,
-              const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
-              const Teuchos::Tuple<double,3> & scaling
+    updateParameters( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
+                      const Teuchos::Tuple<double,3>                  & scaling
+                    ) const;
+
+    const Teuchos::RCP<const LOCA::ParameterVector>
+    getMvpParameters() const;
+
+    void
+    buildKeo( Epetra_FECrsMatrix & keoMatrix
             ) const;
 
     const Epetra_FECrsGraph

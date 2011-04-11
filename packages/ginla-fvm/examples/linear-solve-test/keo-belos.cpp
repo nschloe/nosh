@@ -153,7 +153,8 @@ int main ( int argc, char *argv[] )
       Teuchos::RCP<Teuchos::Time> keoConstructTime = Teuchos::TimeMonitor::getNewTimer("Matrix construction");
       {
           Teuchos::TimeMonitor tm(*keoConstructTime);
-          keoFactory->buildKeo( *keoMatrix, mvpParameters, scaling );
+          keoFactory->updateParameters( mvpParameters, scaling );
+          keoFactory->buildKeo( *keoMatrix );
       }
       // Make sure the matrix is indeed positive definite, and not
       // negative definite. Belos needs that (2010-11-05).
@@ -205,6 +206,7 @@ int main ( int argc, char *argv[] )
       // Belos part
       ParameterList belosList;
       belosList.set( "Convergence Tolerance", 1.0e-15 );  // Relative convergence tolerance requested
+      belosList.set( "Maximum Iterations", 10000 );
       if (verbose) {
         belosList.set( "Verbosity",
                        Belos::Errors +
