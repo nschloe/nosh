@@ -50,8 +50,9 @@ class KeoFactory
 {
 public:
     KeoFactory( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>             & mesh,
-                  const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp
-                );
+                const Teuchos::RCP<const Epetra_Vector>                     & thickness,
+                const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp
+              );
 
     // Destructor.
     ~KeoFactory();
@@ -74,6 +75,7 @@ public:
 protected:
 private:
     const Teuchos::RCP<Ginla::EpetraFVM::StkMesh> mesh_;
+    const Teuchos::RCP<const Epetra_Vector>       thickness_;
     const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp_;
 };
 // =============================================================================

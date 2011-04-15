@@ -129,6 +129,9 @@ public:
     getThickness( const stk::mesh::PairIterRelation & relation ) const;
 
     Teuchos::RCP<Epetra_Map>
+    getNodesMap() const;
+
+    Teuchos::RCP<Epetra_Map>
     getComplexMap() const;
 
     unsigned int
@@ -162,6 +165,7 @@ private:
     mutable bool fvmEntitiesUpToDate_;
 
     const Teuchos::RCP<Epetra_Vector> controlVolumes_;
+    const Teuchos::RCP<Epetra_Vector> averageThickness_;
     const Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > coareaEdgeRatio_;
 
     mutable double area_;
@@ -173,6 +177,21 @@ private:
 
     Teuchos::RCP<Epetra_Map>
     createComplexMap_( const std::vector<stk::mesh::Entity*> & nodeList ) const;
+
+    double
+    computeCoedgeVolume2d_( const Point & cc,
+                            const Point & x0,
+                            const Point & x1,
+                            const Point & other0
+                          ) const;
+
+    double
+    computeCoedgeVolume3d_( const Point & cc,
+                            const Point & x0,
+                            const Point & x1,
+                            const Point & other0,
+                            const Point & other1
+                          ) const;
 
     Teuchos::Tuple<unsigned int,2>
     getOtherIndices_( unsigned int e0, unsigned int e1 ) const;

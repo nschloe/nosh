@@ -50,6 +50,7 @@ class JacobianOperator : public Epetra_Operator
 {
 public:
     JacobianOperator( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>               & mesh,
+                      const Teuchos::RCP<const Epetra_Vector>                     & thickness,
                       const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp,
                       const Teuchos::RCP<Epetra_Vector>                           & currentX = Teuchos::null
                     );

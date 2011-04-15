@@ -133,11 +133,13 @@ main ( int argc, char *argv[] )
 
         Teuchos::ParameterList              problemParameters;
         Teuchos::RCP<Epetra_Vector>         z = Teuchos::null;
+        Teuchos::RCP<Epetra_Vector>         thickness = Teuchos::null;
         Teuchos::RCP<Ginla::EpetraFVM::StkMesh> mesh = Teuchos::null;
 
         Ginla::EpetraFVM::StkMeshRead( *eComm,
                                        getAbsolutePath( initialGuessList.get<std::string> ( "State" ), xmlPath ),
                                        z,
+                                       thickness,
                                        mesh,
                                        problemParameters
                                      );
@@ -192,6 +194,7 @@ main ( int argc, char *argv[] )
         Teuchos::RCP<Ginla::EpetraFVM::ModelEvaluator> glModel =
                 Teuchos::rcp( new Ginla::EpetraFVM::ModelEvaluator( mesh,
                                                                     problemParameters,
+                                                                    thickness,
                                                                     mvp,
                                                                     state
                                                                   )

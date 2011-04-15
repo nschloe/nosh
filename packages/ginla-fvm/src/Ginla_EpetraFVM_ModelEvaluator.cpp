@@ -35,10 +35,12 @@
 Ginla::EpetraFVM::ModelEvaluator::
 ModelEvaluator ( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>               & mesh,
                  const Teuchos::ParameterList                                & problemParams,
+                 const Teuchos::RCP<const Epetra_Vector>                     & thickness,
                  const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp,
                  const Teuchos::RCP<Ginla::EpetraFVM::State>                 & initialState
                ) :
         mesh_ ( mesh ),
+        thickness_( thickness ),
         x_( initialState->getPsiNonConst() ),
         numParams_( 1 ),
         p_map_( Teuchos::null ),
@@ -46,7 +48,7 @@ ModelEvaluator ( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>               & m
         p_names_( Teuchos::null ),
         p_current_( Teuchos::null ),
         mvp_( mvp ),
-        keoFactory_( Teuchos::rcp( new Ginla::EpetraFVM::KeoFactory( mesh, mvp ) ) )
+        keoFactory_( Teuchos::rcp( new Ginla::EpetraFVM::KeoFactory( mesh, thickness, mvp ) ) )
 {
   this->setupParameters_( problemParams );
 
@@ -174,16 +176,15 @@ Teuchos::RCP<Epetra_Operator>
 Ginla::EpetraFVM::ModelEvaluator::
 create_W() const
 {
-  return Teuchos::rcp( new Ginla::EpetraFVM::JacobianOperator( mesh_, mvp_ ) );
+  return Teuchos::rcp( new Ginla::EpetraFVM::JacobianOperator( mesh_, thickness_, mvp_ ) );
 }
 // =============================================================================
 Teuchos::RCP<EpetraExt::ModelEvaluator::Preconditioner>
 Ginla::EpetraFVM::ModelEvaluator::
 create_WPrec() const
 {
-  std::cout << "XXXXXXXXXXXXXXXXXXXXXXXXXX create_WPrec" << std::endl;
   Teuchos::RCP<Epetra_Operator> keoPrec =
-          Teuchos::rcp( new Ginla::EpetraFVM::KeoPreconditioner( mesh_, mvp_ ) );
+          Teuchos::rcp( new Ginla::EpetraFVM::KeoPreconditioner( mesh_, thickness_, mvp_ ) );
   // bool is answer to: "Prec is already inverted?"
   return Teuchos::rcp( new EpetraExt::ModelEvaluator::Preconditioner( keoPrec, false ) );
 }
@@ -287,13 +288,10 @@ evalModel( const InArgs  & inArgs,
                                                              scaling * scalingX[2]
                                                            );
 
-//   std::cout << "mvpParams " << *mvpParams << std::endl;
-
   // compute F
   const Teuchos::RCP<Epetra_Vector> f_out = outArgs.get_f();
   if ( !f_out.is_null() )
   {
-//     std::cout << "computeF_" << std::endl;
       this->computeF_( *x_in, mvpParams, scalingCombined, temperature, *f_out );
   }
 
@@ -301,7 +299,6 @@ evalModel( const InArgs  & inArgs,
   const Teuchos::RCP<Epetra_Operator> W_out = outArgs.get_W();
   if( !W_out.is_null() )
   {
-      std::cout << "if W_out_" << std::endl;
       Teuchos::RCP<Ginla::EpetraFVM::JacobianOperator> jac =
           Teuchos::rcp_dynamic_cast<Ginla::EpetraFVM::JacobianOperator>( W_out, true );
       jac->rebuild( mvpParams,
@@ -315,11 +312,10 @@ evalModel( const InArgs  & inArgs,
   const Teuchos::RCP<Epetra_Operator> WPrec_out = outArgs.get_WPrec();
   if( !WPrec_out.is_null() )
   {
-      std::cout << "XXXXXXXX if WPrec_out_" << std::endl;
       Teuchos::RCP<Ginla::EpetraFVM::KeoPreconditioner> keoPrec =
           Teuchos::rcp_dynamic_cast<Ginla::EpetraFVM::KeoPreconditioner>( WPrec_out, true );
-      keoPrec->updateParameters( mvpParams, scalingCombined );
-      keoPrec->rebuild();
+      keoPrec->rebuild( mvpParams,
+                        scalingCombined );
   }
 
   return;
@@ -353,8 +349,34 @@ computeF_ ( const Epetra_Vector                             & x,
 
   for ( int k=0; k<controlVolumes.MyLength(); k++ )
   {
-      // Do the equivalent of
-      //   res[k] += controlVolumes[k] * psi[k] * ( (1.0-temperature) - std::norm(psi[k]) );
+      // In principle, mass lumping here suggests to take
+      //
+      //   \int_{control volume}  thickness * f(psi).
+      //
+      // with f(psi) = psi[k] * ( (1.0-temperature) - std::norm(psi[k]) ).
+      // A possible approximation for this is
+      //
+      //    |control volume| * average(thicknesses) * f(psi).
+      //
+      // This is loosely derived from the midpoint quadrature rule for
+      // triangles, i.e.,
+      //
+      //  \int_{triangle} f(x) ~= |triangle| *  \sum_{edge midpoint} 1/3 * f(midpoint).
+      //
+      // so all the values at the midpoints have the same weight (independent of
+      // whether the edge is long or short). This is then "generalized to
+      //
+      //  \int_{triangle} f(x)*a(x) ~= |triangle| *  \sum_{edge midpoint} 1/3 * f(midpoint)*a(midpoint),
+      //
+      // or, as f(midpoint) is not available,
+      //
+      //  \int_{triangle} f(x)*a(x) ~= |triangle| * f(center of gravity)  \sum_{edge midpoint} 1/3 * a(midpoint).
+      //
+      // For general polynomals, this is then the above expression.
+      // Hence, do the equivalent of
+      //
+      //   res[k] += controlVolumes[k] * average(thicknesses) * psi[k] * ( (1.0-temperature) - std::norm(psi[k]) );
+      //
       double alpha = controlVolumes[k] //* thickness[k] *
                      * ( (1.0-temperature) - x[2*k]*x[2*k] - x[2*k+1]*x[2*k+1] );
 

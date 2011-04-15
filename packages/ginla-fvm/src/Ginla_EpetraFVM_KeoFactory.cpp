@@ -24,6 +24,7 @@
 
 #include <Epetra_SerialDenseMatrix.h>
 #include <Epetra_Comm.h>
+#include <Epetra_Vector.h>
 
 #include <BelosLinearProblem.hpp>
 #include <BelosEpetraAdapter.hpp>
@@ -34,10 +35,12 @@
 #include <Teuchos_TimeMonitor.hpp>
 // =============================================================================
 Ginla::EpetraFVM::KeoFactory::
-KeoFactory( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>                 & mesh,
-              const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp
-            ):
+KeoFactory( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>               & mesh,
+            const Teuchos::RCP<const Epetra_Vector>                     & thickness,
+            const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp
+          ):
         mesh_ ( mesh ),
+        thickness_( thickness ),
         mvp_( mvp )
 {
 }
@@ -101,17 +104,26 @@ buildKeo( Epetra_FECrsMatrix & keoMatrix ) const
       // of nodes. Hence, loop over pairs of nodes.
       unsigned int edgeIndex = 0;
       Teuchos::Tuple<int,2> gid;
+      Teuchos::Tuple<int,2> lid;
       for ( unsigned int e0 = 0; e0 < numLocalNodes; e0++ )
       {
           const Point & node0 = localNodes[e0];
           gid[0] = (*rel[e0].entity()).identifier() - 1;
+          lid[0] = thickness_->Map().LID( gid[0] );
           for ( unsigned int e1 = e0+1; e1 < numLocalNodes; e1++ )
           {
               const Point & node1 = localNodes[e1];
               gid[1] = (*rel[e1].entity()).identifier() - 1;
+              lid[1] = thickness_->Map().LID( gid[1] );
 
               // coarea / edge ratio
               double alpha = coareaEdgeRatios[k][edgeIndex];
+
+              // Multiply by the thickness value of the midpoint. As this is not available,
+              // take the mean between the values at the nodes.
+              double thickness = 0.5 * ( (*thickness_)[lid[0]] + (*thickness_)[lid[1]] );
+
+              alpha *= thickness;
 
               // ---------------------------------------------------------------
               // Compute the integral

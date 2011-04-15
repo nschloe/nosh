@@ -54,6 +54,7 @@ class KeoPreconditioner: public Epetra_Operator
 {
 public:
     KeoPreconditioner( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>               & mesh,
+                       const Teuchos::RCP<const Epetra_Vector>                     & thickness,
                        const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp
                      );
 
@@ -100,12 +101,9 @@ public:
 public:
 
     void
-    updateParameters( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
-                      const Teuchos::Tuple<double,3> & scaling
-                    );
-
-    void
-    rebuild();
+    rebuild( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
+             const Teuchos::Tuple<double,3>                  & scaling
+           );
 
 protected:
 private:

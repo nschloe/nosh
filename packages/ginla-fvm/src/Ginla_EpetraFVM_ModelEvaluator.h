@@ -59,6 +59,7 @@ public:
   //! Constructor without initial guess.
   ModelEvaluator ( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>               & mesh,
                    const Teuchos::ParameterList                                & params,
+                   const Teuchos::RCP<const Epetra_Vector>                     & thickness,
                    const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp,
                    const Teuchos::RCP<Ginla::EpetraFVM::State>                 & initialState
                  );
@@ -142,6 +143,8 @@ private:
 //    Teuchos::RCP<const TMap>          tMap_;
 
    const Teuchos::RCP<Ginla::EpetraFVM::StkMesh> mesh_;
+
+   const Teuchos::RCP<const Epetra_Vector> thickness_;
 
    const Teuchos::RCP<Epetra_Vector> x_;
 

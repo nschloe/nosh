@@ -44,11 +44,12 @@ typedef Belos::OperatorTraits<ST,MV,OP>  OPT;
 // =============================================================================
 Ginla::EpetraFVM::KeoPreconditioner::
 KeoPreconditioner( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>               & mesh,
+                   const Teuchos::RCP<const Epetra_Vector>                     & thickness,
                    const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp
                  ):
         useTranspose_ ( false ),
         comm_( Teuchos::rcpFromRef(mesh->getComm() ) ),
-        keoFactory_( Teuchos::rcp( new Ginla::EpetraFVM::KeoFactory(mesh, mvp) ) ),
+        keoFactory_( Teuchos::rcp( new Ginla::EpetraFVM::KeoFactory(mesh, thickness, mvp) ) ),
         keoPrec_( Teuchos::rcp( new Epetra_FECrsMatrix( Copy, keoFactory_->buildKeoGraph() ) ) ),
         belosPrec_ ( Teuchos::null ),
         keoProblem_( Teuchos::rcp( new Epetra_LinearProblem() ) ),
@@ -174,7 +175,7 @@ ApplyInverseIlu_ ( const Epetra_MultiVector & X,
     keoProblem_->SetRHS( &T );
 
     // solve and return error code
-    return keoSolver_->Solve();;
+    return keoSolver_->Solve();
 }
 // =============================================================================
 double
@@ -234,20 +235,13 @@ OperatorRangeMap () const
 // =============================================================================
 void
 Ginla::EpetraFVM::KeoPreconditioner::
-updateParameters( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
-                  const Teuchos::Tuple<double,3> & scaling
-                )
-{
-    keoFactory_->updateParameters( mvpParams, scaling );
-    return;
-}
-// =============================================================================
-void
-Ginla::EpetraFVM::KeoPreconditioner::
-rebuild()
+rebuild( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
+         const Teuchos::Tuple<double,3>                  & scaling
+       )
 {
     // -------------------------------------------------------------------------
     // rebuild the keo
+    keoFactory_->updateParameters( mvpParams, scaling );
     keoFactory_->buildKeo( *keoPrec_ );
     keoPrec_->Scale( -1.0 );
     // -------------------------------------------------------------------------
@@ -291,8 +285,6 @@ void
 Ginla::EpetraFVM::KeoPreconditioner::
 rebuildMl_()
 {
-    std::cout << "rebuildMl_" << std::endl;
-
     // rebuild ML structure
     Teuchos::ParameterList MLList;
     ML_Epetra::SetDefaults( "SA", MLList );

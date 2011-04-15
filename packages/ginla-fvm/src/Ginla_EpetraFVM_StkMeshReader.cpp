@@ -31,8 +31,6 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/FieldData.hpp>
-//#include <stk_mesh/fem/EntityRanks.hpp>
-//#include <stk_mesh/fem/DefaultFEM.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 
 #include <stk_io/IossBridge.hpp>
@@ -58,6 +56,7 @@ void
 Ginla::EpetraFVM::StkMeshReader::
 read( const Epetra_Comm & comm,
       Teuchos::RCP<Epetra_Vector> & psi,
+      Teuchos::RCP<Epetra_Vector> & thickness,
       Teuchos::RCP<Ginla::EpetraFVM::StkMesh> & mesh,
       Teuchos::ParameterList & parameterList
     )
@@ -91,10 +90,6 @@ read( const Epetra_Comm & comm,
        Teuchos::rcpFromRef( metaData->declare_field< VectorFieldType >( "coordinates" ) );
   stk::io::set_field_role(*coordinatesField, Ioss::Field::ATTRIBUTE);
 
-//   Teuchos::RCP<VectorFieldType> thicknessField =
-//        Teuchos::rcpFromRef( metaData->declare_field< VectorFieldType >( "thickness" ) );
-//   stk::io::set_field_role(*thicknessField, Ioss::Field::ATTRIBUTE);
-
   // real part
   Teuchos::RCP<VectorFieldType> psir_field =
       Teuchos::rcpFromRef( metaData->declare_field< VectorFieldType >( "psi_R" ) );
@@ -106,6 +101,11 @@ read( const Epetra_Comm & comm,
       Teuchos::rcpFromRef( metaData->declare_field< VectorFieldType >( "psi_Z" ) );
   stk::mesh::put_field( *psii_field , metaData->node_rank() , metaData->universal_part(), neq );
   stk::io::set_field_role(*psii_field, Ioss::Field::TRANSIENT);
+
+  Teuchos::RCP<VectorFieldType> thicknessField =
+       Teuchos::rcpFromRef( metaData->declare_field< VectorFieldType >( "thickness" ) );
+  stk::mesh::put_field( *thicknessField , metaData->node_rank() , metaData->universal_part(), neq );
+  stk::io::set_field_role(*thicknessField, Ioss::Field::ATTRIBUTE);
 
   Teuchos::RCP<stk::io::util::MeshData> meshData =
       Teuchos::rcp( new stk::io::util::MeshData() );
@@ -201,6 +201,18 @@ read( const Epetra_Comm & comm,
 
     // create the state
     psi = this->createPsi_( mesh, psir_field, psii_field );
+    thickness = this->createThickness_( mesh, thicknessField );
+
+    // These are vain attempts to find out whether thicknessField is actually empty.
+//     const stk::mesh::FieldBase::RestrictionVector & restrictions = thicknessField->restrictions();
+//     TEUCHOS_ASSERT( !restrictions.empty() );
+//     std::cout << "max_size " << thicknessField->max_size(metaData->node_rank()) << std::endl;
+
+    // Check of the thickness data is of any value. If not: ditch it.
+    double norminf;
+    thickness->NormInf( &norminf );
+    if ( norminf < 1.0e-15 )
+        thickness->PutScalar( 1.0 );
 
     // Add some dummy data.
     // TODO Replace by proper values.
@@ -241,20 +253,54 @@ createPsi_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
     return psi;
 }
 // =============================================================================
+Teuchos::RCP<Epetra_Vector>
+Ginla::EpetraFVM::StkMeshReader::
+createThickness_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
+                  const Teuchos::RCP<VectorFieldType>                 & thickness_field
+                ) const
+{
+    // Get owned nodes.
+    const std::vector<stk::mesh::Entity*> & ownedNodes = mesh->getOwnedNodes();
+
+    // Create vector with this respective map.
+    Teuchos::RCP<Epetra_Vector> thickness = Teuchos::rcp( new Epetra_Vector( *mesh->getNodesMap() ) );
+
+    TEUCHOS_ASSERT( !thickness_field.is_null() );
+
+    // Fill the vector with data from the file
+    for ( int k=0; k<ownedNodes.size(); k++ )
+    {
+        double* thicknessVal = stk::mesh::field_data( *thickness_field, *ownedNodes[k] );
+        // Check if the field is actually there.
+        if (thicknessVal == NULL)
+        {
+            std::cerr << "WARNING: Thickness value for node " << k << " not found.\n"
+                      << "Probably there is no thickness field given with the state. Using default."
+                      << std::endl;
+            return Teuchos::null;
+        }
+        thickness->ReplaceMyValues( 1, thicknessVal, &k );
+    }
+
+    return thickness;
+}
+// =============================================================================
 //
 // Helper functions
 //
 void
 Ginla::EpetraFVM::
-StkMeshRead ( const Epetra_Comm & comm,
-              const std::string & fileName,
-              Teuchos::RCP<Epetra_Vector> & psi,
+StkMeshRead ( const Epetra_Comm                       & comm,
+              const std::string                       & fileName,
+              Teuchos::RCP<Epetra_Vector>             & psi,
+              Teuchos::RCP<Epetra_Vector>             & thickness,
               Teuchos::RCP<Ginla::EpetraFVM::StkMesh> & mesh,
-              Teuchos::ParameterList & parameterList
+              Teuchos::ParameterList                  & parameterList
             )
 {
     StkMeshReader reader( fileName );
-    reader.read( comm, psi, mesh, parameterList );
+
+    reader.read( comm, psi, thickness, mesh, parameterList );
 
     return;
 }

@@ -27,13 +27,14 @@
 // =============================================================================
 Ginla::EpetraFVM::JacobianOperator::
 JacobianOperator( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>               & mesh,
+                  const Teuchos::RCP<const Epetra_Vector>                     & thickness,
                   const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp,
                   const Teuchos::RCP<Epetra_Vector>                           & currentX
                 ):
         useTranspose_( false ),
         comm_( mesh->getComm() ),
         mesh_( mesh ),
-        keoFactory_( Teuchos::rcp( new Ginla::EpetraFVM::KeoFactory( mesh, mvp ) ) ),
+        keoFactory_( Teuchos::rcp( new Ginla::EpetraFVM::KeoFactory( mesh, thickness, mvp ) ) ),
         keoMatrix_( Teuchos::rcp( new Epetra_FECrsMatrix( Copy, keoFactory_->buildKeoGraph() ) ) ),
         currentX_ ( currentX ),
         temperature_( 0.0 )
@@ -67,7 +68,7 @@ Apply ( const Epetra_MultiVector & X,
     TEUCHOS_ASSERT( !currentX_.is_null() );
 
     // K*psi
-    TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix_->Apply( X, Y ) )
+    TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix_->Apply( X, Y ) );
 
     const Epetra_Vector & controlVolumes =  *(mesh_->getControlVolumes());
     int numMyPoints = controlVolumes.MyLength();

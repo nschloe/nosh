@@ -66,6 +66,7 @@ complexOverlapMap_( this->createComplexMap_( this->getOverlapNodes() ) ),
 scaling_ ( Teuchos::tuple( 1.0, 1.0, 1.0 ) ),
 fvmEntitiesUpToDate_( false ),
 controlVolumes_( Teuchos::rcp( new Epetra_Vector( *nodesMap_ ) ) ),
+averageThickness_( Teuchos::rcp( new Epetra_Vector( *nodesMap_ ) ) ),
 coareaEdgeRatio_( Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >( this->getOwnedCells().size() ) ),
 area_( 0.0 )
 {
@@ -283,6 +284,14 @@ getThickness( const stk::mesh::PairIterRelation & relation ) const
 // =============================================================================
 Teuchos::RCP<Epetra_Map>
 Ginla::EpetraFVM::StkMesh::
+getNodesMap() const
+{
+    TEUCHOS_ASSERT( !nodesMap_.is_null() );
+    return nodesMap_;
+}
+// =============================================================================
+Teuchos::RCP<Epetra_Map>
+Ginla::EpetraFVM::StkMesh::
 getComplexMap() const
 {
     TEUCHOS_ASSERT( !complexMap_.is_null() );
@@ -386,30 +395,22 @@ void
 Ginla::EpetraFVM::StkMesh::
 computeFvmEntities_() const
 {
-
-//   std::cout << "a" << std::endl;
-//   stk::mesh::fem::FEMInterface &fem = stk::mesh::fem::get_fem_interface( *bulkData_ );
-// 
-//   std::cout << "b0" << std::endl;
-// //   stk::mesh::fem::FEMInterface &fem = stk::mesh::fem::get_fem_interface( *metaData_ );
-//   std::cout << "b1" << std::endl;
-// 
+//
+// For edge generation an looping, refer to e-mail communication with Eric Cyr and Alan Williams
+// in April 2011.
+//
 //   stk::mesh::PartVector empty_add_parts;
 //   std::cout << "c" << std::endl;
 //   stk::mesh::create_adjacent_entities( *bulkData_, empty_add_parts );
 //   std::cout << "d" << std::endl;
 // 
-//   // count the entities for the fun of it
-//   std::vector<size_t> counts ;
-//   stk::mesh::comm_mesh_counts( *bulkData_ , counts );
-//   std::cout << counts[0] << std::endl; // nodes
-//   std::cout << counts[1] << std::endl;
-//   std::cout << counts[2] << std::endl;
-//   std::cout << counts[3] << std::endl; // elements
-//   std::cout << counts[4] << std::endl;
-//   std::cout << counts[5] << std::endl;
+//   std::vector<stk::mesh::Entity*> edges = this->getOwnedEdges();
+// 
+//   std::cout << "My edges: " << edges.size() << std::endl;
+
 
   TEUCHOS_ASSERT( !controlVolumes_.is_null() );
+  TEUCHOS_ASSERT( !averageThickness_.is_null() );
   TEUCHOS_ASSERT( !nodesOverlapMap_.is_null() );
 
   // Compute the volume of the (Voronoi) control cells for each point.
@@ -417,9 +418,17 @@ computeFvmEntities_() const
       TEUCHOS_ASSERT_EQUALITY( 0, controlVolumes_->ReplaceMap( *nodesMap_ ) );
   TEUCHOS_ASSERT_EQUALITY( 0, controlVolumes_->PutScalar( 0.0 ) );
 
-  // create a temporary to hold the overlap values
+  // Compute the average thickness for each control volume.
+  if ( !averageThickness_->Map().SameAs( *nodesMap_ ) )
+      TEUCHOS_ASSERT_EQUALITY( 0, averageThickness_->ReplaceMap( *nodesMap_ ) );
+  TEUCHOS_ASSERT_EQUALITY( 0, averageThickness_->PutScalar( 0.0 ) );
+
+  // Create temporaries to hold the overlap values for control volumes and
+  // average thickness.
   Teuchos::RCP<Epetra_Vector> cvOverlap =
       Teuchos::rcp( new Epetra_Vector( *nodesOverlapMap_ ) );
+//   Teuchos::RCP<Epetra_Vector> atOverlap =
+//       Teuchos::rcp( new Epetra_Vector( *nodesOverlapMap_ ) );
 
   std::vector<stk::mesh::Entity*> cells = this->getOwnedCells();
   unsigned int numCells = cells.size();
@@ -428,7 +437,7 @@ computeFvmEntities_() const
   TEUCHOS_ASSERT_EQUALITY( coareaEdgeRatio_.size(), numCells );
 
   // Calculate the contributions to the finite volumes and the finite volume boundary areas cell by cell.
-  for (unsigned int k=0; k < cells.size(); k++)
+  for (unsigned int k=0; k < numCells; k++)
   {
       stk::mesh::PairIterRelation rel = (*cells[k]).relations();
       unsigned int numLocalNodes = rel.size();
@@ -455,99 +464,69 @@ computeFvmEntities_() const
       coareaEdgeRatio_[k] = Teuchos::ArrayRCP<double>( this->getNumEdgesPerCell( cellDimension ) );
 
       // Iterate over the edges.
-      // As true edge entities are not available here, loop over all pairs of nodes.
+      // As true edge entities are not available here, loop over all pairs of local nodes.
       unsigned int edgeIndex = 0;
       for ( unsigned int e0=0; e0<numLocalNodes; e0++ )
       {
           const Point & x0 = localNodes[e0];
           const int gid0 = (*rel[e0].entity()).identifier() - 1;
+          const int lid0 = nodesMap_->LID( gid0 );
           for ( unsigned int e1=e0+1; e1<numLocalNodes; e1++ )
           {
               const Point & x1 = localNodes[e1];
               const int gid1 = (*rel[e1].entity()).identifier() - 1;
-
-              // edge midpoint
-              Point mp = this->add_( 0.5, x0, 0.5, x1 );
+              const int lid1 = nodesMap_->LID( gid1 );
 
               // Get the other nodes.
               Teuchos::Tuple<unsigned int,2> other = this->getOtherIndices_( e0, e1 );
 
               // Compute the (n-1)-dimensional coedgeVolume.
-              double coedgeVolume = 0.0;
+              double coedgeVolume;
               if ( cellDimension==2 ) // triangle
               {
                   const Point & other0 = localNodes[other[0]];
-                  double coedgeLength = this->norm2_( this->add_( 1.0, mp, -1.0, cc ) );
+                  coedgeVolume = this->computeCoedgeVolume2d_( cc, x0, x1, other0 );
 
-                  // The only difficulty here is to determine whether the length of coedge
-                  // is to be taken positive or negative.
-                  // To this end, make sure that the order (x0, cc, mp) is of the same
-                  // orientation as (x0, other0, mp).
-                  Point cellNormal = this->cross_( this->add_( 1.0, other0, -1.0, x0 ),
-                                                   this->add_( 1.0, mp,     -1.0, x0 )
-                                                 );
-                  Point ccNormal = this->cross_( this->add_( 1.0, cc, -1.0, x0 ),
-                                                 this->add_( 1.0, mp, -1.0, x0 )
-                                               );
-
-                  coedgeVolume = copysign( coedgeLength, this->dot_( ccNormal, cellNormal ) );
+                  // The problem with counting the average thickness in 2D is the following.
+                  // Ideally, one would want to loop over all edges, add the midpoint value
+                  // of the thickness to both of the edge end points, and eventually loop over
+                  // all endpoints and divide by the number of edges (connections) they have
+                  // with neighboring nodes).
+                  // Unfortunately, this is impossible now b/c there's no edge generation
+                  // for shells in Trilinos yet (2011-04-15).
+                  // As a workaround, one could loop over all cells, and then all pairs of
+                  // nodes to retrieve the edges. In 2D, almost all of the edges would be
+                  // counted twice this way as they belong to two cells. This is true for
+                  // all but the boundary edges. Again, it is difficult (impossible?) to
+                  // know what the boundary edges are, and hence which values to divide by
+                  // 2. Dividing them all by two would result in an artificially lower
+                  // thickness near the boundaries. This is not what we want.
               }
               else if ( cellDimension==3 ) // tetrahedron
               {
                   const Point & other0 = localNodes[other[0]];
                   const Point & other1 = localNodes[other[1]];
+                  coedgeVolume = this->computeCoedgeVolume3d_( cc, x0, x1, other0, other1 );
 
-                  // Compute the circumcenters of the adjacent faces.
-                  // This could be precomputed as well.
-                  Point ccFace0 = this->computeTriangleCircumcenter_( x0, x1, other0 );
-                  Point ccFace1 = this->computeTriangleCircumcenter_( x0, x1, other1 );
-
-                  // Compute the area of the quadrilateral.
-                  // There are some really tricky degenerate cases here, i.e., combinations
-                  // of when ccFace{0,1}, cc, sit outside of the tetrahedron.
-
-                  // Use the triangle (MP, localNodes[other[0]], localNodes[other[1]] ) (in this order)
-                  // to gauge the orientation of the two triangles that compose the quadrilateral.
-                  Point gauge = this->cross_( this->add_( 1.0, other0, -1.0, mp ),
-                                              this->add_( 1.0, other1, -1.0, mp )
-                                            );
-
-                  // Add the area of the first triangle (MP,ccFace0,cc).
-                  // This makes use of the right angles.
-                  double triangleHeight0 = this->norm2_( this->add_( 1.0, mp, -1.0, ccFace0 ) );
-                  double triangleArea0 = 0.5
-                                      * triangleHeight0
-                                      * this->norm2_( this->add_( 1.0, ccFace0, -1.0, cc ) );
-
-                  // Check if the orientation of the triangle (MP,ccFace0,cc) coincides with
-                  // the orientation of the gauge triangle. If yes, add the area, subtract otherwise.
-                  Point triangleNormal0 = this->cross_( this->add_( 1.0, ccFace0, -1.0, mp ),
-                                                        this->add_( 1.0, cc,      -1.0, mp )
-                                                      );
-                  // copysign takes the absolute value of the first argument and the sign of the second.
-                  coedgeVolume += copysign( triangleArea0, this->dot_( triangleNormal0, gauge ) );
-
-                  // Add the area of the second triangle (MP,cc,ccFace1).
-                  // This makes use of the right angles.
-                  double triangleHeight1 = this->norm2_( this->add_( 1.0, mp, -1.0, ccFace1 ) );
-                  double triangleArea1 = 0.5
-                                      * triangleHeight1
-                                      * this->norm2_( this->add_( 1.0, ccFace1, -1.0, cc ) );
-
-                  // Check if the orientation of the triangle (MP,cc,ccFace1) coincides with
-                  // the orientation of the gauge triangle. If yes, add the area, subtract otherwise.
-                  Point triangleNormal1 = this->cross_( this->add_( 1.0, cc,      -1.0, mp ),
-                                                        this->add_( 1.0, ccFace1, -1.0, mp )
-                                                      );
-                  // copysign takes the absolute value of the first argument and the sign of the second.
-                  coedgeVolume += copysign( triangleArea1, this->dot_( triangleNormal1, gauge ) );
+                  // Throw an exception for 3D volumes.
+                  // To compute the average of the thicknesses of a control volume, one has to loop
+                  // over all the edges and add the thickness value to both endpoints.
+                  // Then eventually, for each node, divide the resulting sum by the number of connections
+                  // (=number of faces of the finite volume).
+                  // However, looping over edges is not (yet) possible. Hence, we loop over all the
+                  // cells here. This way, the edges are counted several times, but it is difficult
+                  // to determine how many times exactly.
+//                   TEST_FOR_EXCEPTION( true,
+//                                       std::runtime_error,
+//                                       "Cannot calculate the average thickness in a 3D control volume yet."
+//                                     );
               }
               else
               {
                   TEST_FOR_EXCEPTION( true,
-                      std::runtime_error,
-                      "Control volumes can only be constructed consistently with triangular or tetrahedral elements."
-                    );
+                                      std::runtime_error,
+                                      "Control volumes can only be constructed consistently with triangular or tetrahedral elements."
+                                    );
               }
 
               double edgeLength = this->norm2_( this->add_( 1.0, x1, -1.0, x0 ) );
@@ -564,6 +543,12 @@ computeFvmEntities_() const
   // Export control volumes to a non-overlapping map, and sum the entries.
   Epetra_Export exporter( *nodesOverlapMap_, *nodesMap_ );
   TEUCHOS_ASSERT_EQUALITY( 0, controlVolumes_->Export( *cvOverlap, exporter, Add ) );
+//   TEUCHOS_ASSERT_EQUALITY( 0, averageThickness_->Export( *atOverlap, exporter, Add ) );
+
+  // Up until this point, averageThickness_ contains the sum of the thickness at the
+  // edges. Fix this to be the average thickness.
+//   for ( controlvolumes )
+//       averageThickness_[k] /= number of edges;
 
   // update the domain area value
   TEUCHOS_ASSERT_EQUALITY( 0, controlVolumes_->Norm1( &area_ ) );
@@ -571,6 +556,96 @@ computeFvmEntities_() const
   fvmEntitiesUpToDate_ = true;
 
   return;
+}
+// =============================================================================
+double
+Ginla::EpetraFVM::StkMesh::
+computeCoedgeVolume2d_( const Point & cc,
+                        const Point & x0,
+                        const Point & x1,
+                        const Point & other0
+                      ) const
+{
+    // edge midpoint
+    Point mp = this->add_( 0.5, x0, 0.5, x1 );
+
+    double coedgeLength = this->norm2_( this->add_( 1.0, mp, -1.0, cc ) );
+
+    // The only difficulty here is to determine whether the length of coedge
+    // is to be taken positive or negative.
+    // To this end, make sure that the order (x0, cc, mp) is of the same
+    // orientation as (x0, other0, mp).
+    Point cellNormal = this->cross_( this->add_( 1.0, other0, -1.0, x0 ),
+                                     this->add_( 1.0, mp,     -1.0, x0 )
+                                   );
+    Point ccNormal = this->cross_( this->add_( 1.0, cc, -1.0, x0 ),
+                                   this->add_( 1.0, mp, -1.0, x0 )
+                                 );
+
+    // copysign takes the absolute value of the first argument and the sign of the second.
+    return copysign( coedgeLength, this->dot_( ccNormal, cellNormal ) );
+}
+// =============================================================================
+double
+Ginla::EpetraFVM::StkMesh::
+computeCoedgeVolume3d_( const Point & cc,
+                        const Point & x0,
+                        const Point & x1,
+                        const Point & other0,
+                        const Point & other1
+                      ) const
+{
+    double coedgeVolume = 0.0;
+
+    // edge midpoint
+    Point mp = this->add_( 0.5, x0, 0.5, x1 );
+
+    // Compute the circumcenters of the adjacent faces.
+    // This could be precomputed as well.
+    Point ccFace0 = this->computeTriangleCircumcenter_( x0, x1, other0 );
+    Point ccFace1 = this->computeTriangleCircumcenter_( x0, x1, other1 );
+
+    // Compute the area of the quadrilateral.
+    // There are some really tricky degenerate cases here, i.e., combinations
+    // of when ccFace{0,1}, cc, sit outside of the tetrahedron.
+
+    // Use the triangle (MP, localNodes[other[0]], localNodes[other[1]] ) (in this order)
+    // to gauge the orientation of the two triangles that compose the quadrilateral.
+    Point gauge = this->cross_( this->add_( 1.0, other0, -1.0, mp ),
+                                this->add_( 1.0, other1, -1.0, mp )
+                              );
+
+    // Add the area of the first triangle (MP,ccFace0,cc).
+    // This makes use of the right angles.
+    double triangleHeight0 = this->norm2_( this->add_( 1.0, mp, -1.0, ccFace0 ) );
+    double triangleArea0 = 0.5
+                        * triangleHeight0
+                        * this->norm2_( this->add_( 1.0, ccFace0, -1.0, cc ) );
+
+    // Check if the orientation of the triangle (MP,ccFace0,cc) coincides with
+    // the orientation of the gauge triangle. If yes, add the area, subtract otherwise.
+    Point triangleNormal0 = this->cross_( this->add_( 1.0, ccFace0, -1.0, mp ),
+                                          this->add_( 1.0, cc,      -1.0, mp )
+                                        );
+    // copysign takes the absolute value of the first argument and the sign of the second.
+    coedgeVolume += copysign( triangleArea0, this->dot_( triangleNormal0, gauge ) );
+
+    // Add the area of the second triangle (MP,cc,ccFace1).
+    // This makes use of the right angles.
+    double triangleHeight1 = this->norm2_( this->add_( 1.0, mp, -1.0, ccFace1 ) );
+    double triangleArea1 = 0.5
+                        * triangleHeight1
+                        * this->norm2_( this->add_( 1.0, ccFace1, -1.0, cc ) );
+
+    // Check if the orientation of the triangle (MP,cc,ccFace1) coincides with
+    // the orientation of the gauge triangle. If yes, add the area, subtract otherwise.
+    Point triangleNormal1 = this->cross_( this->add_( 1.0, cc,      -1.0, mp ),
+                                          this->add_( 1.0, ccFace1, -1.0, mp )
+                                        );
+    // copysign takes the absolute value of the first argument and the sign of the second.
+    coedgeVolume += copysign( triangleArea1, this->dot_( triangleNormal1, gauge ) );
+
+    return coedgeVolume;
 }
 // =============================================================================
 Teuchos::Tuple<unsigned int,2>
