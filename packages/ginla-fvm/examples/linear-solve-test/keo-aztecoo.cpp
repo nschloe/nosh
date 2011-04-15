@@ -86,11 +86,13 @@ int main ( int argc, char *argv[] )
       // =========================================================================
       Teuchos::ParameterList              problemParameters;
       Teuchos::RCP<Epetra_Vector>         z = Teuchos::null;
+      Teuchos::RCP<Epetra_Vector>         thickness = Teuchos::null;
       Teuchos::RCP<Ginla::EpetraFVM::StkMesh> mesh = Teuchos::null;
 
       Ginla::EpetraFVM::StkMeshRead( *eComm,
                                       inputFileName,
                                       z,
+                                      thickness,
                                       mesh,
                                       problemParameters
                                     );
@@ -105,7 +107,7 @@ int main ( int argc, char *argv[] )
 
       // create the kinetic energy operator
       Teuchos::RCP<Ginla::EpetraFVM::KeoFactory> keoFactory =
-              Teuchos::rcp( new Ginla::EpetraFVM::KeoFactory( mesh, mvp ) );
+              Teuchos::rcp( new Ginla::EpetraFVM::KeoFactory( mesh, thickness, mvp ) );
       Epetra_FECrsMatrix keoMatrix( Copy, keoFactory->buildKeoGraph() );
       Teuchos::Tuple<double,3> scaling( Teuchos::tuple(1.0,1.0,1.0) );
       keoFactory->updateParameters( mvpParameters, scaling );

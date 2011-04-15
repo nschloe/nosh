@@ -101,6 +101,9 @@ public:
 public:
 
     void
+    rebuild();
+
+    void
     rebuild( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
              const Teuchos::Tuple<double,3>                  & scaling
            );

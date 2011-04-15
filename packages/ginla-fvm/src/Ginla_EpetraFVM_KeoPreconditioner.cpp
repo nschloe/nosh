@@ -235,13 +235,10 @@ OperatorRangeMap () const
 // =============================================================================
 void
 Ginla::EpetraFVM::KeoPreconditioner::
-rebuild( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
-         const Teuchos::Tuple<double,3>                  & scaling
-       )
+rebuild()
 {
     // -------------------------------------------------------------------------
     // rebuild the keo
-    keoFactory_->updateParameters( mvpParams, scaling );
     keoFactory_->buildKeo( *keoPrec_ );
     keoPrec_->Scale( -1.0 );
     // -------------------------------------------------------------------------
@@ -278,6 +275,18 @@ rebuild( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
     }
     // -------------------------------------------------------------------------
 
+    return;
+}
+// =============================================================================
+void
+Ginla::EpetraFVM::KeoPreconditioner::
+rebuild( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
+         const Teuchos::Tuple<double,3>                  & scaling
+       )
+{
+
+    keoFactory_->updateParameters( mvpParams, scaling );
+    this->rebuild();
     return;
 }
 // =============================================================================

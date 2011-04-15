@@ -99,6 +99,7 @@ int main ( int argc, char *argv[] )
       // =========================================================================
       Teuchos::ParameterList              problemParameters;
       Teuchos::RCP<Epetra_Vector>         z = Teuchos::null;
+      Teuchos::RCP<Epetra_Vector>         thickness = Teuchos::null;
       Teuchos::RCP<Ginla::EpetraFVM::StkMesh> mesh = Teuchos::null;
 
       if ( eComm->MyPID() == 0 )
@@ -110,6 +111,7 @@ int main ( int argc, char *argv[] )
       Ginla::EpetraFVM::StkMeshRead( *eComm,
                                       inputFileName,
                                       z,
+                                      thickness,
                                       mesh,
                                       problemParameters
                                     );
@@ -139,7 +141,7 @@ int main ( int argc, char *argv[] )
       }
 
       Teuchos::RCP<Ginla::EpetraFVM::KeoFactory> keoFactory =
-          Teuchos::rcp( new Ginla::EpetraFVM::KeoFactory( mesh, mvp ) );
+          Teuchos::rcp( new Ginla::EpetraFVM::KeoFactory( mesh, thickness, mvp ) );
 
       Teuchos::RCP<Epetra_FECrsGraph> keoGraph;
       Teuchos::RCP<Teuchos::Time> graphConstructTime = Teuchos::TimeMonitor::getNewTimer("Graph construction");
@@ -154,7 +156,7 @@ int main ( int argc, char *argv[] )
       {
           Teuchos::TimeMonitor tm(*jacobianConstructTime);
           // create the jacobian operator
-          jac = Teuchos::rcp( new Ginla::EpetraFVM::JacobianOperator( mesh, mvp, z ) );
+          jac = Teuchos::rcp( new Ginla::EpetraFVM::JacobianOperator( mesh, thickness, mvp, z ) );
       }
 
       // create initial guess and right-hand side
@@ -206,7 +208,7 @@ int main ( int argc, char *argv[] )
           Teuchos::TimeMonitor tm(*precConstructTime);
           // create the jacobian operator
           Teuchos::RCP<Ginla::EpetraFVM::KeoPreconditioner> prec =
-              Teuchos::rcp( new Ginla::EpetraFVM::KeoPreconditioner( mesh, mvp ) );
+              Teuchos::rcp( new Ginla::EpetraFVM::KeoPreconditioner( mesh, thickness, mvp ) );
 
           // actually fill it with values
           prec->rebuild();

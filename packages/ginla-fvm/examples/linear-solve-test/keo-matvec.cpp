@@ -99,6 +99,7 @@ int main ( int argc, char *argv[] )
       // =========================================================================
       Teuchos::ParameterList              problemParameters;
       Teuchos::RCP<Epetra_Vector>         z = Teuchos::null;
+      Teuchos::RCP<Epetra_Vector>         thickness = Teuchos::null;
       Teuchos::RCP<Ginla::EpetraFVM::StkMesh> mesh = Teuchos::null;
 
       // read the file
@@ -108,6 +109,7 @@ int main ( int argc, char *argv[] )
       Ginla::EpetraFVM::StkMeshRead( *eComm,
                                       inputFileName,
                                       z,
+                                      thickness,
                                       mesh,
                                       problemParameters
                                     );
@@ -129,7 +131,7 @@ int main ( int argc, char *argv[] )
       mvpParameters->addParameter( "mu", mu );
 
       Teuchos::RCP<Ginla::EpetraFVM::KeoFactory> keoFactory =
-          Teuchos::rcp( new Ginla::EpetraFVM::KeoFactory( mesh, mvp ) );
+          Teuchos::rcp( new Ginla::EpetraFVM::KeoFactory( mesh, thickness, mvp ) );
 
       // Precompute FVM entities. Not actually necessary as it's triggered automatically
       // when needed, but for timing purposes put it here.
