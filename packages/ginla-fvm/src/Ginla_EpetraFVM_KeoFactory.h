@@ -49,7 +49,7 @@ namespace EpetraFVM {
 class KeoFactory
 {
 public:
-    KeoFactory( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>             & mesh,
+    KeoFactory( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>               & mesh,
                 const Teuchos::RCP<const Epetra_Vector>                     & thickness,
                 const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp
               );

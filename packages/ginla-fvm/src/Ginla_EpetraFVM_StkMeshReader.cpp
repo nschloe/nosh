@@ -54,11 +54,12 @@ Ginla::EpetraFVM::StkMeshReader::
 // =============================================================================
 void
 Ginla::EpetraFVM::StkMeshReader::
-read( const Epetra_Comm & comm,
-      Teuchos::RCP<Epetra_Vector> & psi,
-      Teuchos::RCP<Epetra_Vector> & thickness,
+read( const Epetra_Comm                       & comm,
+      Teuchos::RCP<Epetra_Vector>             & psi,
+      Teuchos::RCP<Epetra_MultiVector>        & mvp,
+      Teuchos::RCP<Epetra_Vector>             & thickness,
       Teuchos::RCP<Ginla::EpetraFVM::StkMesh> & mesh,
-      Teuchos::ParameterList & parameterList
+      Teuchos::ParameterList                  & parameterList
     )
 {
   // Take two different fields with one component
@@ -101,6 +102,22 @@ read( const Epetra_Comm & comm,
       Teuchos::rcpFromRef( metaData->declare_field< VectorFieldType >( "psi_Z" ) );
   stk::mesh::put_field( *psii_field , metaData->node_rank() , metaData->universal_part(), neq );
   stk::io::set_field_role(*psii_field, Ioss::Field::TRANSIENT);
+
+  // magnetic vector potential
+  Teuchos::RCP<VectorFieldType> mvpXField =
+       Teuchos::rcpFromRef( metaData->declare_field< VectorFieldType >( "AX" ) );
+  stk::mesh::put_field( *mvpXField , metaData->node_rank() , metaData->universal_part(), neq );
+  stk::io::set_field_role(*mvpXField, Ioss::Field::ATTRIBUTE);
+
+  Teuchos::RCP<VectorFieldType> mvpYField =
+       Teuchos::rcpFromRef( metaData->declare_field< VectorFieldType >( "AY" ) );
+  stk::mesh::put_field( *mvpYField , metaData->node_rank() , metaData->universal_part(), neq );
+  stk::io::set_field_role(*mvpYField, Ioss::Field::ATTRIBUTE);
+
+  Teuchos::RCP<VectorFieldType> mvpZField =
+       Teuchos::rcpFromRef( metaData->declare_field< VectorFieldType >( "AZ" ) );
+  stk::mesh::put_field( *mvpZField , metaData->node_rank() , metaData->universal_part(), neq );
+  stk::io::set_field_role(*mvpZField, Ioss::Field::ATTRIBUTE);
 
   Teuchos::RCP<VectorFieldType> thicknessField =
        Teuchos::rcpFromRef( metaData->declare_field< VectorFieldType >( "thickness" ) );
@@ -200,7 +217,8 @@ read( const Epetra_Comm & comm,
     mesh = Teuchos::rcp( new Ginla::EpetraFVM::StkMesh( comm, metaData, bulkData, coordinatesField ) );
 
     // create the state
-    psi = this->createPsi_( mesh, psir_field, psii_field );
+    psi       = this->createPsi_( mesh, psir_field, psii_field );
+    mvp       = this->createMvp_( mesh, mvpXField, mvpYField, mvpZField );
     thickness = this->createThickness_( mesh, thicknessField );
 
     // These are vain attempts to find out whether thicknessField is actually empty.
@@ -285,6 +303,39 @@ createThickness_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
     return thickness;
 }
 // =============================================================================
+Teuchos::RCP<Epetra_MultiVector>
+Ginla::EpetraFVM::StkMeshReader::
+createMvp_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
+            const Teuchos::RCP<const VectorFieldType>           & mvpXField,
+            const Teuchos::RCP<const VectorFieldType>           & mvpYField,
+            const Teuchos::RCP<const VectorFieldType>           & mvpZField
+          ) const
+{
+    // Get owned nodes.
+    const std::vector<stk::mesh::Entity*> & ownedNodes = mesh->getOwnedNodes();
+
+    // Create vector with this respective map.
+    int numComponents = 3;
+    Teuchos::RCP<Epetra_MultiVector> mvp = Teuchos::rcp( new Epetra_MultiVector( *mesh->getNodesMap(), numComponents ) );
+
+    TEUCHOS_ASSERT( !mvpXField.is_null() );
+    TEUCHOS_ASSERT( !mvpYField.is_null() );
+    TEUCHOS_ASSERT( !mvpZField.is_null() );
+
+    // Fill the vector with data from the file
+    for ( int k=0; k<ownedNodes.size(); k++ )
+    {
+        double* mvpXVal = stk::mesh::field_data( *mvpXField, *ownedNodes[k] );
+        double* mvpYVal = stk::mesh::field_data( *mvpYField, *ownedNodes[k] );
+        double* mvpZVal = stk::mesh::field_data( *mvpZField, *ownedNodes[k] );
+        mvp->ReplaceMyValue( k, 0, *mvpXVal );
+        mvp->ReplaceMyValue( k, 1, *mvpYVal );
+        mvp->ReplaceMyValue( k, 2, *mvpZVal );
+    }
+
+    return mvp;
+}
+// =============================================================================
 //
 // Helper functions
 //
@@ -293,6 +344,7 @@ Ginla::EpetraFVM::
 StkMeshRead ( const Epetra_Comm                       & comm,
               const std::string                       & fileName,
               Teuchos::RCP<Epetra_Vector>             & psi,
+              Teuchos::RCP<Epetra_MultiVector>        & mvp,
               Teuchos::RCP<Epetra_Vector>             & thickness,
               Teuchos::RCP<Ginla::EpetraFVM::StkMesh> & mesh,
               Teuchos::ParameterList                  & parameterList
@@ -300,7 +352,7 @@ StkMeshRead ( const Epetra_Comm                       & comm,
 {
     StkMeshReader reader( fileName );
 
-    reader.read( comm, psi, thickness, mesh, parameterList );
+    reader.read( comm, psi, mvp, thickness, mesh, parameterList );
 
     return;
 }

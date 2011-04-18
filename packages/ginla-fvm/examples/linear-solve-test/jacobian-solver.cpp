@@ -99,6 +99,7 @@ int main ( int argc, char *argv[] )
       // =========================================================================
       Teuchos::ParameterList              problemParameters;
       Teuchos::RCP<Epetra_Vector>         z = Teuchos::null;
+      Teuchos::RCP<Epetra_MultiVector>    mvpValues = Teuchos::null;
       Teuchos::RCP<Epetra_Vector>         thickness = Teuchos::null;
       Teuchos::RCP<Ginla::EpetraFVM::StkMesh> mesh = Teuchos::null;
 
@@ -111,6 +112,7 @@ int main ( int argc, char *argv[] )
       Ginla::EpetraFVM::StkMeshRead( *eComm,
                                       inputFileName,
                                       z,
+                                      mvpValues,
                                       thickness,
                                       mesh,
                                       problemParameters

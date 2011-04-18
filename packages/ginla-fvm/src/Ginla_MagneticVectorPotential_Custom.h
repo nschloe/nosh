@@ -1,27 +1,28 @@
-#ifndef GINLA_MAGNETICVECTORPOTENTIAL_SPHERICAL_H_
-#define GINLA_MAGNETICVECTORPOTENTIAL_SPHERICAL_H_
+#ifndef GINLA_MAGNETICVECTORPOTENTIAL_CUSTOM_H_
+#define GINLA_MAGNETICVECTORPOTENTIAL_CUSTOM_H_
 
 #include "Ginla_MagneticVectorPotential_Virtual.h"
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Tuple.hpp>
+#include <Epetra_MultiVector.h>
 #include <Teuchos_Array.hpp>
 #include <LOCA_Parameter_Vector.H>
 
 namespace Ginla {
   namespace MagneticVectorPotential {
 
-class Spherical:
+class Custom:
   public Virtual
 {
 public:
-  Spherical( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh> & mesh,
-             double mu,
-             double phi,
-             double theta );
+  Custom( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh> & mesh,
+          const Teuchos::RCP<const Epetra_MultiVector>  & mvp,
+          double mu
+        );
 
   virtual
-  ~Spherical();
+  ~Custom();
 
   //! Sets the parameters in this module.
   //! @return Indicates whether the internal values have changed.
@@ -46,17 +47,14 @@ public:
 protected:
 private:
 
-  Teuchos::RCP<Point>
-  getRawA_(const Point & x) const;
-
   void
   initializeEdgeMidpointProjectionCache_() const;
 
 private:
 
   double mu_;
-  double phi_;
-  double theta_;
+
+  const Teuchos::RCP<const Epetra_MultiVector> mvp_;
 
   const Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > edgeMidpointProjectionCache_;
   mutable bool edgeMidpointProjectionCacheUpToDate_;
@@ -65,4 +63,4 @@ private:
 
   } // namespace MagneticVectorPotential
 } // namespace GL
-#endif // GINLA_MAGNETICVECTORPOTENTIAL_SPHERICAL_H_
+#endif // GINLA_MAGNETICVECTORPOTENTIAL_CUSTOM_H_

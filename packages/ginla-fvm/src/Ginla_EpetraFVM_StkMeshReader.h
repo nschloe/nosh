@@ -26,6 +26,7 @@
 #include <string>
 
 #include <Epetra_Comm.h>
+#include <Epetra_MultiVector.h>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
 // =============================================================================
@@ -46,6 +47,7 @@ public:
     void
     read( const Epetra_Comm                       & comm,
           Teuchos::RCP<Epetra_Vector>             & psi,
+          Teuchos::RCP<Epetra_MultiVector>        & mvp,
           Teuchos::RCP<Epetra_Vector>             & thickness,
           Teuchos::RCP<Ginla::EpetraFVM::StkMesh> & mesh,
           Teuchos::ParameterList                  & parameterList
@@ -66,6 +68,13 @@ private:
     createThickness_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
                       const Teuchos::RCP<VectorFieldType>                 & thickness_field
                     ) const;
+
+    Teuchos::RCP<Epetra_MultiVector>
+    createMvp_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
+                const Teuchos::RCP<const VectorFieldType>           & mvpXField,
+                const Teuchos::RCP<const VectorFieldType>           & mvpYField,
+                const Teuchos::RCP<const VectorFieldType>           & mvpZField
+              ) const;
 };
 // -----------------------------------------------------------------------------
 // helper function
@@ -73,6 +82,7 @@ void
 StkMeshRead ( const Epetra_Comm                       & comm,
               const std::string                       & fileName,
               Teuchos::RCP<Epetra_Vector>             & psi,
+              Teuchos::RCP<Epetra_MultiVector>        & mvp,
               Teuchos::RCP<Epetra_Vector>             & thickness,
               Teuchos::RCP<Ginla::EpetraFVM::StkMesh> & mesh,
               Teuchos::ParameterList                  & parameterList
