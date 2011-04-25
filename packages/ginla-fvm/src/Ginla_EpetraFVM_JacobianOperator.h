@@ -105,6 +105,7 @@ private:
     const Epetra_Comm & comm_;
 
     const Teuchos::RCP<Ginla::EpetraFVM::StkMesh> mesh_;
+    const Teuchos::RCP<const Epetra_Vector> thickness_;
     const Teuchos::RCP<Ginla::EpetraFVM::KeoFactory> keoFactory_;
     const Teuchos::RCP<Epetra_FECrsMatrix> keoMatrix_;
 

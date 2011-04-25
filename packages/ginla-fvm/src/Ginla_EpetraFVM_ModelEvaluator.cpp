@@ -342,7 +342,6 @@ computeF_ ( const Epetra_Vector                             & x,
   TEUCHOS_ASSERT( FVec.Map().SameAs( x.Map() ) );
 
   const Epetra_Vector & controlVolumes = *(mesh_->getControlVolumes());
-//   const Epetra_Vector & thickness      = *(mesh_->getThickness());
 
   // Make sure control volumes and state still match.
   TEUCHOS_ASSERT_EQUALITY( 2*controlVolumes.MyLength(), x.MyLength() );
@@ -354,30 +353,36 @@ computeF_ ( const Epetra_Vector                             & x,
       //   \int_{control volume}  thickness * f(psi).
       //
       // with f(psi) = psi[k] * ( (1.0-temperature) - std::norm(psi[k]) ).
-      // A possible approximation for this is
+      // (a) A possible approximation for this is
       //
-      //    |control volume| * average(thicknesses) * f(psi).
+      //        |control volume| * average(thicknesses) * f(psi(x_k)).
       //
-      // This is loosely derived from the midpoint quadrature rule for
-      // triangles, i.e.,
+      //     This is loosely derived from the midpoint quadrature rule for
+      //     triangles, i.e.,
       //
-      //  \int_{triangle} f(x) ~= |triangle| *  \sum_{edge midpoint} 1/3 * f(midpoint).
+      //      \int_{triangle} f(x) ~= |triangle| *  \sum_{edge midpoint} 1/3 * f(midpoint).
       //
-      // so all the values at the midpoints have the same weight (independent of
-      // whether the edge is long or short). This is then "generalized to
+      //     so all the values at the midpoints have the same weight (independent of
+      //     whether the edge is long or short). This is then "generalized to
       //
-      //  \int_{triangle} f(x)*a(x) ~= |triangle| *  \sum_{edge midpoint} 1/3 * f(midpoint)*a(midpoint),
+      //      \int_{triangle} f(x)*a(x) ~= |triangle| *  \sum_{edge midpoint} 1/3 * f(midpoint)*a(midpoint),
       //
-      // or, as f(midpoint) is not available,
+      //     or, as f(midpoint) is not available,
       //
-      //  \int_{triangle} f(x)*a(x) ~= |triangle| * f(center of gravity)  \sum_{edge midpoint} 1/3 * a(midpoint).
+      //      \int_{triangle} f(x)*a(x) ~= |triangle| * f(center of gravity)  \sum_{edge midpoint} 1/3 * a(midpoint).
       //
-      // For general polynomals, this is then the above expression.
-      // Hence, do the equivalent of
+      //     For general polynomals, this is then the above expression.
+      //     Hence, do the equivalent of
       //
-      //   res[k] += controlVolumes[k] * average(thicknesses) * psi[k] * ( (1.0-temperature) - std::norm(psi[k]) );
+      //       res[k] += controlVolumes[k] * average(thicknesses) * psi[k] * ( (1.0-temperature) - std::norm(psi[k]) );
       //
-      double alpha = controlVolumes[k] //* thickness[k] *
+      // (b) Another possible approximation is 
+      //
+      //        |control volume| * thickness(x_k) * f(psi(x_k))
+      //
+      //     as suggested by mass lumping. This works if if thickness(x_k) is available.
+      //
+      double alpha = controlVolumes[k] * (*thickness_)[k]
                      * ( (1.0-temperature) - x[2*k]*x[2*k] - x[2*k+1]*x[2*k+1] );
 
       // real part

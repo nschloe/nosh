@@ -34,6 +34,7 @@ JacobianOperator( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>               & 
         useTranspose_( false ),
         comm_( mesh->getComm() ),
         mesh_( mesh ),
+        thickness_( thickness ),
         keoFactory_( Teuchos::rcp( new Ginla::EpetraFVM::KeoFactory( mesh, thickness, mvp ) ) ),
         keoMatrix_( Teuchos::rcp( new Epetra_FECrsMatrix( Copy, keoFactory_->buildKeoGraph() ) ) ),
         currentX_ ( currentX ),
@@ -61,8 +62,8 @@ Apply ( const Epetra_MultiVector & X,
       ) const
 {
     // Add the terms corresponding to the nonlinear terms.
-    // A = K - I * ( (1-temp) - 2*|psi|^2 )
-    // B = diag( psi^2 )
+    // A = K - I * thickness * ( (1-temp) - 2*|psi|^2 )
+    // B = diag( thickness * psi^2 )
 
     TEUCHOS_ASSERT( !keoMatrix_.is_null() );
     TEUCHOS_ASSERT( !currentX_.is_null() );
@@ -79,7 +80,7 @@ Apply ( const Epetra_MultiVector & X,
     {
         for ( int k=0; k<numMyPoints; k++ )
         {
-            double alpha = controlVolumes[k] * (
+            double alpha = controlVolumes[k] * (*thickness_)[k] * (
                            1.0 - temperature_
                            - 2.0 * ( (*currentX_)[2*k]*(*currentX_)[2*k] + (*currentX_)[2*k+1]*(*currentX_)[2*k+1] )
                            );
@@ -91,11 +92,11 @@ Apply ( const Epetra_MultiVector & X,
 
             // terms corresponding to  B = diag( psi^2 )
             // Re(phi^2)
-            double rePhiSquare = controlVolumes[k] * (
+            double rePhiSquare = controlVolumes[k] * (*thickness_)[k] * (
                                  (*currentX_)[2*k]*(*currentX_)[2*k] - (*currentX_)[2*k+1]*(*currentX_)[2*k+1]
                                  );
             // Im(phi^2)
-            double imPhiSquare = controlVolumes[k] * (
+            double imPhiSquare = controlVolumes[k] * (*thickness_)[k] * (
                                  2.0 * (*currentX_)[2*k] * (*currentX_)[2*k+1]
                                  );
             // real part
