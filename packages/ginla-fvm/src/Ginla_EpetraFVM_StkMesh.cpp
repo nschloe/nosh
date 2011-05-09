@@ -30,8 +30,6 @@
 #include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/Comm.hpp> // for comm_mesh_counts
 #include <stk_mesh/fem/CreateAdjacentEntities.hpp>
-#include <stk_mesh/fem/FEMInterface.hpp>
-//#include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 
 #include <stk_io/IossBridge.hpp>
