@@ -103,26 +103,41 @@ read( const Epetra_Comm                       & comm,
   stk::mesh::put_field( *psii_field , metaData->node_rank() , metaData->universal_part(), neq );
   stk::io::set_field_role(*psii_field, Ioss::Field::TRANSIENT);
 
-  // magnetic vector potential
+  // Magnetic vector potential.
+  // Declare those fields as TRANSIENT to make sure they are written out to the
+  // exodus file. Note, however, that this creates a large data overhead as the
+  // same data is written out in each step although the data don't change.
+  //
+  // On 05/11/2011 02:44 PM, Gregory Sjaardema wrote:
+  // For now, the B and C fields will have to be declared as TRANSIENT fields
+  // since they are nodal fields on the universal set which currently doesn't
+  // support attributes.  One of the stories I was supposed to work on for
+  // this sprint was increasing the exodus capabilities supported by Ioss
+  // (used underneath stk_io) and attributes on nodeblocks is one of the
+  // things supported by exodus, but not by Ioss.  However, I got bogged down
+  // by some big debugging and didn't finish that story.  Hopefully, it will
+  // be done in June at which time you could use attribute fields on the
+  // universal set...
   Teuchos::RCP<VectorFieldType> mvpXField =
        Teuchos::rcpFromRef( metaData->declare_field< VectorFieldType >( "AX" ) );
   stk::mesh::put_field( *mvpXField , metaData->node_rank() , metaData->universal_part(), neq );
-  stk::io::set_field_role(*mvpXField, Ioss::Field::ATTRIBUTE);
+  stk::io::set_field_role(*mvpXField, Ioss::Field::TRANSIENT);
 
   Teuchos::RCP<VectorFieldType> mvpYField =
        Teuchos::rcpFromRef( metaData->declare_field< VectorFieldType >( "AY" ) );
   stk::mesh::put_field( *mvpYField , metaData->node_rank() , metaData->universal_part(), neq );
-  stk::io::set_field_role(*mvpYField, Ioss::Field::ATTRIBUTE);
+  stk::io::set_field_role(*mvpYField, Ioss::Field::TRANSIENT);
 
   Teuchos::RCP<VectorFieldType> mvpZField =
        Teuchos::rcpFromRef( metaData->declare_field< VectorFieldType >( "AZ" ) );
   stk::mesh::put_field( *mvpZField , metaData->node_rank() , metaData->universal_part(), neq );
-  stk::io::set_field_role(*mvpZField, Ioss::Field::ATTRIBUTE);
+  stk::io::set_field_role(*mvpZField, Ioss::Field::TRANSIENT);
 
+  // Thickness fields. Same as above.
   Teuchos::RCP<VectorFieldType> thicknessField =
        Teuchos::rcpFromRef( metaData->declare_field< VectorFieldType >( "thickness" ) );
   stk::mesh::put_field( *thicknessField , metaData->node_rank() , metaData->universal_part(), neq );
-  stk::io::set_field_role(*thicknessField, Ioss::Field::ATTRIBUTE);
+  stk::io::set_field_role(*thicknessField, Ioss::Field::TRANSIENT);
 
   Teuchos::RCP<stk::io::util::MeshData> meshData =
       Teuchos::rcp( new stk::io::util::MeshData() );
@@ -146,7 +161,7 @@ read( const Epetra_Comm                       & comm,
 //   for (stk::mesh::PartVector::const_iterator i = all_parts.begin(); i != all_parts.end(); ++i)
 //   {
 //     stk::mesh::Part * const part = *i ;
-// 
+//
 //     switch( part->primary_entity_rank() )
 //     {
 //       case stk::mesh::Element:
@@ -180,7 +195,7 @@ read( const Epetra_Comm                       & comm,
 //         break ;
 //     }
 //   }
-// 
+//
 //   std::cout << "IOSS-STK: number of node sets = " << nsPartVec.size() << endl;
 
   metaData->commit();

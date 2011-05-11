@@ -32,11 +32,10 @@
 #include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/FieldData.hpp>
-// #include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 
 #include <stk_io/IossBridge.hpp>
-// #include <Ionit_Initializer.h>
+
 // =============================================================================
 // typedefs
 typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorFieldType;
@@ -71,7 +70,8 @@ write( const Epetra_Vector                                 & psi,
 #endif
 
     // Create file name.
-    // For ParaView to read the files as a sequence, they must have this exact format;
+    // For ParaView to read the files as a sequence, they must have this exact
+    // format;
     // see <http://www.paraview.org/Wiki/Restarted_Simulation_Readers#Exodus>.
 
     std::stringstream meshExtension;
@@ -196,7 +196,7 @@ mergePsi_( const Teuchos::RCP<stk::mesh::fem::FEMMetaData> & metaData,
 //  const stk::mesh::MetaData & meta = bulk.mesh_meta_data();
 //
 //  std::cout << "B" << std::endl;
-//  
+//
 //  stk::io::util::put_field_data( bulk,
 //                                 meta.universal_part(),
 //                                 stk::mesh::Node,
