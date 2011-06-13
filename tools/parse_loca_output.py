@@ -31,17 +31,13 @@ def _main():
 
     # Go through the contents of the file search for matches.
     print 0, 0 # For the 0th step (where the regex doesn't catch on).
-    for ( k, match )  in enumerate( regex.finditer( loca_file_content ) ):
+    for ( k, match ) in enumerate( regex.finditer( loca_file_content ) ):
         print k+1, match.group( 1 )
-    
-    #print loca_output_file
 
-    #for line in loca_output_file:
-        #matches = regex.findall( line )
-        #for match in matches:
-            #print match
-
-    #print re.search( regex, loca_output_file )
+    # TODO The list of regex.finditer( loca_file_content ) should have as many
+    # entries as there are continuation steps. Unfortunately, this does not
+    # always seem to be the case; there'l likely l be edge cases which the regex
+    # doesn't catch. Fix that.
 
     return
 # ==============================================================================
