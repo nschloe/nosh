@@ -21,23 +21,22 @@ def _main():
     # http://www.regular-expressions.info/floatingpoint.html
     #floating_point_regex = '[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?'
     floating_point_regex = '[0-9]+\.[0-9]+e[-+][0-9]+'
+    belos_already_converged_message = r'Warning: NOX::Solver::LineSearchBased::init\(\) - The solution passed into the solver \(either through constructor or reset method\) is already converged!  The solver wil not attempt to solve this system since status is flagged as converged.'
+    belos_converged_message = r'The Belos solver of type "Belos::PseudoBlockCGSolMgr<...,double>{}" returned a solve status of "SOLVE_STATUS_CONVERGED" in (\d+) iterations with total CPU time of %s sec' % real_number_regex
     # Create the monster of regular expression.
-    regex = re.compile( r'''The Belos solver of type "Belos::PseudoBlockCGSolMgr<...,double>{}" returned a solve status of "SOLVE_STATUS_CONVERGED" in (\d+) iterations with total CPU time of %s sec
+    regex = re.compile( r'''(%s|%s)
 
 \*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*
 -- Nonlinear Solver Step \d+ -- 
 \|\|F\|\| = (%s)  step = (%s)  dx = (%s) \(Converged!\)
-\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*''' % ( real_number_regex, floating_point_regex, floating_point_regex, floating_point_regex ), re.MULTILINE )
+\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*''' % ( belos_already_converged_message, belos_converged_message, floating_point_regex, floating_point_regex, floating_point_regex ), re.MULTILINE )
 
     # Go through the contents of the file search for matches.
-    print 0, 0 # For the 0th step (where the regex doesn't catch on).
     for ( k, match ) in enumerate( regex.finditer( loca_file_content ) ):
-        print k+1, match.group( 1 )
-
-    # TODO The list of regex.finditer( loca_file_content ) should have as many
-    # entries as there are continuation steps. Unfortunately, this does not
-    # always seem to be the case; there'l likely l be edge cases which the regex
-    # doesn't catch. Fix that.
+        if match.group( 2 ): # linear iteration was performed
+            print k, match.group( 2 )
+        else: # already converged => no linear iteration
+            print k, 0
 
     return
 # ==============================================================================
