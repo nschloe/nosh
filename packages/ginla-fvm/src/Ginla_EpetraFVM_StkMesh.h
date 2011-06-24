@@ -170,6 +170,8 @@ private:
 
     mutable double area_;
 
+    bool isOutputFileSet_;
+
 private:
 
     Teuchos::RCP<Epetra_Map>

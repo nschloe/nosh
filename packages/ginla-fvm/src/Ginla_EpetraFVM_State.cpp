@@ -105,11 +105,11 @@ save( const int                      index,
                                                           *mesh_->getBulkData(),
                                                           index
                                                         );
-    if ( psi_.Comm().MyPID() == 0 )
-        std::cout << "Ginla::EpetraFVM::StkMeshWriter::write:\n"
-                  << "\twriting time " << index << "\n"
-                  << "\tindex " << out_step << "\n"
-                  << std::endl;
+//    if ( psi_.Comm().MyPID() == 0 )
+//        std::cout << "Ginla::EpetraFVM::StkMeshWriter::write:\n"
+//                  << "\twriting time " << index << "\n"
+//                  << "\tindex " << out_step << "\n"
+//                  << std::endl;
 
 //     Ginla::EpetraFVM::StkMeshWrite( fileBaseName, index,  psi_, mesh_, p );
 

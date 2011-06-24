@@ -91,8 +91,8 @@ observeContinuation_( const Teuchos::RCP<const Ginla::EpetraFVM::State> & state 
 
   TEUCHOS_ASSERT( !modelEval_.is_null() );
   Teuchos::RCP<LOCA::ParameterVector> p = modelEval_->getParameters();
-
   Teuchos::RCP<Teuchos::ParameterList> tp = Ginla::Helpers::locaParameterVector2teuchosParameterList( *p );
+
   state->save( index, *tp );
 
   return;

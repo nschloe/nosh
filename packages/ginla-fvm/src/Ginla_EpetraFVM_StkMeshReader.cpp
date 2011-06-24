@@ -226,33 +226,33 @@ read( const Epetra_Comm                       & comm,
 
   bulkData->modification_end();
 
-  //   coordinatesField = Teuchos::rcpFromRef( metaData->get_field<VectorFieldType>( std::string("coordinates") ) );
+  // coordinatesField = Teuchos::rcpFromRef( metaData->get_field<VectorFieldType>( std::string("coordinates") ) );
 
-    // create the mesh with these specifications
-    mesh = Teuchos::rcp( new Ginla::EpetraFVM::StkMesh( comm, metaData, bulkData, coordinatesField ) );
+  // create the mesh with these specifications
+  mesh = Teuchos::rcp( new Ginla::EpetraFVM::StkMesh( comm, metaData, bulkData, coordinatesField ) );
 
-    // create the state
-    psi       = this->createPsi_( mesh, psir_field, psii_field );
-    mvp       = this->createMvp_( mesh, mvpXField, mvpYField, mvpZField );
-    thickness = this->createThickness_( mesh, thicknessField );
+  // create the state
+  psi       = this->createPsi_( mesh, psir_field, psii_field );
+  mvp       = this->createMvp_( mesh, mvpXField, mvpYField, mvpZField );
+  thickness = this->createThickness_( mesh, thicknessField );
 
-    // These are vain attempts to find out whether thicknessField is actually empty.
+  // These are vain attempts to find out whether thicknessField is actually empty.
 //     const stk::mesh::FieldBase::RestrictionVector & restrictions = thicknessField->restrictions();
 //     TEUCHOS_ASSERT( !restrictions.empty() );
 //     std::cout << "max_size " << thicknessField->max_size(metaData->node_rank()) << std::endl;
 
-    // Check of the thickness data is of any value. If not: ditch it.
-    double norminf;
-    thickness->NormInf( &norminf );
-    if ( norminf < 1.0e-15 )
-        thickness->PutScalar( 1.0 );
+  // Check of the thickness data is of any value. If not: ditch it.
+  double norminf;
+  thickness->NormInf( &norminf );
+  if ( norminf < 1.0e-15 )
+      thickness->PutScalar( 1.0 );
 
-    // Add some dummy data.
-    // TODO Replace by proper values.
-    parameterList.set<double>( "mu", 0.0 );
-    parameterList.set<double>( "scaling", 1.0 );
+  // Add some dummy data.
+  // TODO Replace by proper values.
+  parameterList.set<double>( "mu", 0.0 );
+  parameterList.set<double>( "scaling", 1.0 );
 
-    return;
+  return;
 }
 // =============================================================================
 Teuchos::RCP<Epetra_Vector>

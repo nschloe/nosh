@@ -74,10 +74,12 @@ class SaveEigenData:
     Teuchos::RCP<Ginla::IO::StatsWriter> statsWriter_;
     Teuchos::RCP<LOCA::Stepper> locaStepper_;
 
+    //! If \c true, then the number of eigenvalues is computed adaptively.
+    //! See \c numComputeStableEigenvalues_.
+    bool numEigenvaluesAdaptive_;
     //! The minimum number of stable eigenvalues that is to be computed in each step.
     unsigned int numComputeStableEigenvalues_;
 };
-
   } // namespace IO
 } // namespace GL
 

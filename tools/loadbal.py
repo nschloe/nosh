@@ -13,7 +13,7 @@ def _main():
 
         # slice it
         slices_list = []
-        slices_list.extend( range(8, 257, 8) )
+        slices_list.extend( range(8, 17, 8) )
         print "Cutting the input data into slices of ", slices_list, "."
         for num_slices in slices_list:
             _slice( filename, output, num_slices )
@@ -22,8 +22,8 @@ def _main():
 # ==============================================================================
 def _slice( filename, output, num_slices ):
 
-        nemslice_command = "nem_slice.exe"
-        nemspread_command = "nem_spread.exe"
+        nemslice_command = "/opt/trilinos/dev/master/openmpi/1.5.3/gcc/4.5.2/bin/nem_slice"
+        nemspread_command = "/opt/trilinos/dev/master/openmpi/1.5.3/gcc/4.5.2/bin/nem_spread"
         tmp_nemspreadinp = "nem_spread.inp"
         slice_method = "spectral"
 

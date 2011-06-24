@@ -49,14 +49,12 @@ StkMesh( const Epetra_Comm                               & comm,
          const Teuchos::RCP<stk::mesh::fem::FEMMetaData> & metaData,
          const Teuchos::RCP<stk::mesh::BulkData>         & bulkData,
          const Teuchos::RCP<VectorFieldType>             & coordinatesField
-//          const Teuchos::RCP<VectorFieldType>     & thicknessField
        ):
 comm_( comm ),
 metaData_( metaData ),
 meshData_( Teuchos::rcp( new stk::io::util::MeshData() ) ),
 bulkData_( bulkData ),
 coordinatesField_ ( coordinatesField ),
-// thicknessField_ ( thicknessField ),
 nodesMap_       ( this->createNodesMap_( this->getOwnedNodes()   ) ),
 nodesOverlapMap_( this->createNodesMap_( this->getOverlapNodes() ) ),
 complexMap_       ( this->createComplexMap_( this->getOwnedNodes()   ) ),
@@ -401,9 +399,9 @@ computeFvmEntities_() const
 //   std::cout << "c" << std::endl;
 //   stk::mesh::create_adjacent_entities( *bulkData_, empty_add_parts );
 //   std::cout << "d" << std::endl;
-// 
+//
 //   std::vector<stk::mesh::Entity*> edges = this->getOwnedEdges();
-// 
+//
 //   std::cout << "My edges: " << edges.size() << std::endl;
 
 
