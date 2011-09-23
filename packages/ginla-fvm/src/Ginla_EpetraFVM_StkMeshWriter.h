@@ -29,9 +29,6 @@
 #include <Epetra_Vector.h>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
-
-#include <Ioss_SubSystem.h>
-#include <stk_io/util/UseCase_mesh.hpp>
 // =============================================================================
 namespace Ginla {
 namespace EpetraFVM {

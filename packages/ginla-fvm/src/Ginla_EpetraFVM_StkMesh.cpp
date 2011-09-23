@@ -33,7 +33,6 @@
 #include <stk_mesh/base/GetEntities.hpp>
 
 #include <stk_io/IossBridge.hpp>
-#include <stk_io/util/UseCase_mesh.hpp>
 #include <Ionit_Initializer.h>
 
 #ifdef HAVE_MPI
@@ -52,7 +51,7 @@ StkMesh( const Epetra_Comm                               & comm,
        ):
 comm_( comm ),
 metaData_( metaData ),
-meshData_( Teuchos::rcp( new stk::io::util::MeshData() ) ),
+meshData_( Teuchos::rcp( new stk::io::MeshData() ) ),
 bulkData_( bulkData ),
 coordinatesField_ ( coordinatesField ),
 nodesMap_       ( this->createNodesMap_( this->getOwnedNodes()   ) ),
@@ -99,17 +98,19 @@ setOutputFile( const string & outputDir,
 
     // Make sure the outputDir ends in "/".
     // Dir and filename are not concatenated properly in stk::mesh,
-    std::stringstream saveOutputDir;
-    saveOutputDir << outputDir << "/";
+    std::stringstream outputFile;
+    outputFile << outputDir << "/" << fileBaseName << ".e";
 
-    stk::io::util::create_output_mesh( fileBaseName, // filename base
-                                       "e", // extension
-                                       saveOutputDir.str(), // working directory
-                                       mcomm,
-                                       *bulkData_,
-                                       *metaData_,
-                                       *meshData_
-                                     );
+    stk::io::create_output_mesh( outputFile.str(),
+                                 mcomm,
+                                 *bulkData_,
+                                 *meshData_
+                               );
+
+    stk::io::define_output_fields( *meshData_,
+                                   *metaData_
+                                 );
+
     return;
 }
 // =============================================================================
@@ -120,7 +121,7 @@ getMetaData() const
   return metaData_;
 }
 // =============================================================================
-const Teuchos::RCP<stk::io::util::MeshData>
+const Teuchos::RCP<stk::io::MeshData>
 Ginla::EpetraFVM::StkMesh::
 getMeshData() const
 {

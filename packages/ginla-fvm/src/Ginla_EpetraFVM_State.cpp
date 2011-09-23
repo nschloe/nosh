@@ -25,6 +25,7 @@
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/FieldParallel.hpp>
+#include <stk_io/MeshReadWriteUtils.hpp>
 
 #include <LOCA_Parameter_Vector.H>
 #include <Epetra_Comm.h>
@@ -101,10 +102,11 @@ save( const int                      index,
 //     mesh_->getMeshData()->m_region->put_field_data( "mu", mu );
 
     // Write it out to the file that's been specified previously.
-    int out_step = stk::io::util::process_output_request( *mesh_->getMeshData(),
-                                                          *mesh_->getBulkData(),
-                                                          index
-                                                        );
+    double time = index;
+    int out_step = stk::io::process_output_request( *mesh_->getMeshData(),
+                                                    *mesh_->getBulkData(),
+                                                    time
+                                                  );
 //    if ( psi_.Comm().MyPID() == 0 )
 //        std::cout << "Ginla::EpetraFVM::StkMeshWriter::write:\n"
 //                  << "\twriting time " << index << "\n"

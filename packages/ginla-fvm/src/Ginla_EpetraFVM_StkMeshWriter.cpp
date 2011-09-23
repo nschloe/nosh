@@ -81,15 +81,20 @@ write( const Epetra_Vector                                 & psi,
         meshExtension << "e-s." << std::setw(4) << std::setfill('0') << step;
 
     std::string workingDirectory = "";
+
+    std::stringstream fileName;
+    fileName << fileNameBase_ << "." << meshExtension.str();
+
     // prepare the data for output
-    stk::io::util::create_output_mesh( fileNameBase_,
-                                       meshExtension.str(),
-                                       workingDirectory,
-                                       mcomm,
-                                       *mesh->getBulkData(),
-                                       *mesh->getMetaData(),
-                                       *mesh->getMeshData()
-                                     );
+    stk::io::create_output_mesh( fileName.str(),
+                                 mcomm,
+                                 *mesh->getBulkData(),
+                                 *mesh->getMeshData()
+                               );
+
+    stk::io::define_output_fields( *mesh->getMeshData(),
+                                   *mesh->getMetaData()
+                                 );
 
     // Merge the state into the mesh.
 //     mesh->getBulkData()->modification_begin();
@@ -97,10 +102,11 @@ write( const Epetra_Vector                                 & psi,
 //     mesh->getBulkData()->modification_end();
 
     // Write it.
-    int out_step = stk::io::util::process_output_request( *mesh->getMeshData(),
-                                                          *mesh->getBulkData(),
-                                                          step
-                                                        );
+    double time = step;
+    int out_step = stk::io::process_output_request( *mesh->getMeshData(),
+                                                    *mesh->getBulkData(),
+                                                    time
+                                                  );
 
     std::cout << "Ginla::EpetraFVM::StkMeshWriter::write:\n"
               << "\twriting time " << step << "\n"

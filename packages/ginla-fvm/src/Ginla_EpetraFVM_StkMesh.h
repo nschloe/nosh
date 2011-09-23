@@ -39,6 +39,7 @@
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/fem/CoordinateSystems.hpp>
 #include <stk_mesh/fem/FEMMetaData.hpp>
+#include <stk_io/MeshReadWriteUtils.hpp>
 // =============================================================================
 // forward declarations
 namespace stk {
@@ -83,7 +84,7 @@ public:
     const Teuchos::RCP<stk::mesh::fem::FEMMetaData>
     getMetaData() const;
 
-    const Teuchos::RCP<stk::io::util::MeshData>
+    const Teuchos::RCP<stk::io::MeshData>
     getMeshData() const;
 
     const Teuchos::RCP<stk::mesh::BulkData>
@@ -150,7 +151,7 @@ private:
     const Epetra_Comm & comm_;
 
     const Teuchos::RCP<stk::mesh::fem::FEMMetaData> metaData_;
-    const Teuchos::RCP<stk::io::util::MeshData>     meshData_;
+    const Teuchos::RCP<stk::io::MeshData>           meshData_;
     const Teuchos::RCP<stk::mesh::BulkData>         bulkData_;
     const Teuchos::RCP<VectorFieldType>             coordinatesField_;
 //     const Teuchos::RCP<VectorFieldType>         thicknessField_;
