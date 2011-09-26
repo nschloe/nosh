@@ -37,10 +37,6 @@
 #include <stk_io/util/UseCase_mesh.hpp>
 #include <Ionit_Initializer.h>
 // =============================================================================
-// typedefs
-typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorFieldType ;
-typedef stk::mesh::Field<double>                      ScalarFieldType ;
-// =============================================================================
 Ginla::EpetraFVM::StkMeshReader::
 StkMeshReader( const std::string & fileName ):
 fileName_( fileName )
@@ -92,15 +88,15 @@ read( const Epetra_Comm                       & comm,
   stk::io::set_field_role(*coordinatesField, Ioss::Field::ATTRIBUTE);
 
   // real part
-  Teuchos::RCP<VectorFieldType> psir_field =
-      Teuchos::rcpFromRef( metaData->declare_field< VectorFieldType >( "psi_R" ) );
-  stk::mesh::put_field( *psir_field , metaData->node_rank() , metaData->universal_part(), neq );
+  Teuchos::RCP<ScalarFieldType> psir_field =
+      Teuchos::rcpFromRef( metaData->declare_field< ScalarFieldType >( "psi_R" ) );
+  stk::mesh::put_field( *psir_field , metaData->node_rank() , metaData->universal_part() );
   stk::io::set_field_role(*psir_field, Ioss::Field::TRANSIENT);
 
   // imaginary part
-  Teuchos::RCP<VectorFieldType> psii_field =
-      Teuchos::rcpFromRef( metaData->declare_field< VectorFieldType >( "psi_Z" ) );
-  stk::mesh::put_field( *psii_field , metaData->node_rank() , metaData->universal_part(), neq );
+  Teuchos::RCP<ScalarFieldType> psii_field =
+      Teuchos::rcpFromRef( metaData->declare_field< ScalarFieldType >( "psi_Z" ) );
+  stk::mesh::put_field( *psii_field , metaData->node_rank() , metaData->universal_part() );
   stk::io::set_field_role(*psii_field, Ioss::Field::TRANSIENT);
 
   // Magnetic vector potential.
@@ -118,25 +114,25 @@ read( const Epetra_Comm                       & comm,
   // by some big debugging and didn't finish that story.  Hopefully, it will
   // be done in June at which time you could use attribute fields on the
   // universal set...
-  Teuchos::RCP<VectorFieldType> mvpXField =
-       Teuchos::rcpFromRef( metaData->declare_field< VectorFieldType >( "AX" ) );
-  stk::mesh::put_field( *mvpXField , metaData->node_rank() , metaData->universal_part(), neq );
+  Teuchos::RCP<ScalarFieldType> mvpXField =
+       Teuchos::rcpFromRef( metaData->declare_field< ScalarFieldType >( "AX" ) );
+  stk::mesh::put_field( *mvpXField , metaData->node_rank() , metaData->universal_part() );
   stk::io::set_field_role(*mvpXField, Ioss::Field::TRANSIENT);
 
-  Teuchos::RCP<VectorFieldType> mvpYField =
-       Teuchos::rcpFromRef( metaData->declare_field< VectorFieldType >( "AY" ) );
-  stk::mesh::put_field( *mvpYField , metaData->node_rank() , metaData->universal_part(), neq );
+  Teuchos::RCP<ScalarFieldType> mvpYField =
+       Teuchos::rcpFromRef( metaData->declare_field< ScalarFieldType >( "AY" ) );
+  stk::mesh::put_field( *mvpYField , metaData->node_rank() , metaData->universal_part() );
   stk::io::set_field_role(*mvpYField, Ioss::Field::TRANSIENT);
 
-  Teuchos::RCP<VectorFieldType> mvpZField =
-       Teuchos::rcpFromRef( metaData->declare_field< VectorFieldType >( "AZ" ) );
-  stk::mesh::put_field( *mvpZField , metaData->node_rank() , metaData->universal_part(), neq );
+  Teuchos::RCP<ScalarFieldType> mvpZField =
+       Teuchos::rcpFromRef( metaData->declare_field< ScalarFieldType >( "AZ" ) );
+  stk::mesh::put_field( *mvpZField , metaData->node_rank() , metaData->universal_part() );
   stk::io::set_field_role(*mvpZField, Ioss::Field::TRANSIENT);
 
   // Thickness fields. Same as above.
-  Teuchos::RCP<VectorFieldType> thicknessField =
-       Teuchos::rcpFromRef( metaData->declare_field< VectorFieldType >( "thickness" ) );
-  stk::mesh::put_field( *thicknessField , metaData->node_rank() , metaData->universal_part(), neq );
+  Teuchos::RCP<ScalarFieldType> thicknessField =
+       Teuchos::rcpFromRef( metaData->declare_field< ScalarFieldType >( "thickness" ) );
+  stk::mesh::put_field( *thicknessField , metaData->node_rank() , metaData->universal_part() );
   stk::io::set_field_role(*thicknessField, Ioss::Field::TRANSIENT);
 
   Teuchos::RCP<stk::io::util::MeshData> meshData =
@@ -258,8 +254,8 @@ read( const Epetra_Comm                       & comm,
 Teuchos::RCP<Epetra_Vector>
 Ginla::EpetraFVM::StkMeshReader::
 createPsi_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
-            const Teuchos::RCP<VectorFieldType>                 & psir_field,
-            const Teuchos::RCP<VectorFieldType>                 & psii_field
+            const Teuchos::RCP<ScalarFieldType>                 & psir_field,
+            const Teuchos::RCP<ScalarFieldType>                 & psii_field
           ) const
 {
     // Get owned nodes.
@@ -289,7 +285,7 @@ createPsi_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
 Teuchos::RCP<Epetra_Vector>
 Ginla::EpetraFVM::StkMeshReader::
 createThickness_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
-                  const Teuchos::RCP<VectorFieldType>                 & thickness_field
+                  const Teuchos::RCP<ScalarFieldType>                 & thickness_field
                 ) const
 {
     // Get owned nodes.
@@ -321,9 +317,9 @@ createThickness_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
 Teuchos::RCP<Epetra_MultiVector>
 Ginla::EpetraFVM::StkMeshReader::
 createMvp_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
-            const Teuchos::RCP<const VectorFieldType>           & mvpXField,
-            const Teuchos::RCP<const VectorFieldType>           & mvpYField,
-            const Teuchos::RCP<const VectorFieldType>           & mvpZField
+            const Teuchos::RCP<const ScalarFieldType>           & mvpXField,
+            const Teuchos::RCP<const ScalarFieldType>           & mvpYField,
+            const Teuchos::RCP<const ScalarFieldType>           & mvpZField
           ) const
 {
     // Get owned nodes.

@@ -30,6 +30,10 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
 // =============================================================================
+// typedefs
+typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorFieldType ;
+typedef stk::mesh::Field<double>                      ScalarFieldType ;
+// =============================================================================
 // forward declarations
 class Epetra_Vector;
 // =============================================================================
@@ -60,20 +64,20 @@ private:
 private:
     Teuchos::RCP<Epetra_Vector>
     createPsi_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
-                const Teuchos::RCP<VectorFieldType>                 & psir_field,
-                const Teuchos::RCP<VectorFieldType>                 & psii_field
+                const Teuchos::RCP<ScalarFieldType>                 & psir_field,
+                const Teuchos::RCP<ScalarFieldType>                 & psii_field
               ) const;
 
     Teuchos::RCP<Epetra_Vector>
     createThickness_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
-                      const Teuchos::RCP<VectorFieldType>                 & thickness_field
+                      const Teuchos::RCP<ScalarFieldType>                 & thickness_field
                     ) const;
 
     Teuchos::RCP<Epetra_MultiVector>
     createMvp_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
-                const Teuchos::RCP<const VectorFieldType>           & mvpXField,
-                const Teuchos::RCP<const VectorFieldType>           & mvpYField,
-                const Teuchos::RCP<const VectorFieldType>           & mvpZField
+                const Teuchos::RCP<const ScalarFieldType>           & mvpXField,
+                const Teuchos::RCP<const ScalarFieldType>           & mvpYField,
+                const Teuchos::RCP<const ScalarFieldType>           & mvpZField
               ) const;
 };
 // -----------------------------------------------------------------------------
