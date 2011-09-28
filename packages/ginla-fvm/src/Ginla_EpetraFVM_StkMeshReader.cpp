@@ -321,6 +321,13 @@ createMvp_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
     for ( int k=0; k<ownedNodes.size(); k++ )
     {
         double* mvpVal = stk::mesh::field_data( *mvpField, *ownedNodes[k] );
+        // Check if the field is actually there.
+        TEST_FOR_EXCEPTION( mvpVal == NULL,
+                            std::runtime_error,
+                            "MVP value for node " << k << " not found.\n"
+                            << "Probably there is no MVP field given with the state."
+                          );
+
         mvp->ReplaceMyValue( k, 0, mvpVal[0] );
         mvp->ReplaceMyValue( k, 1, mvpVal[1] );
         mvp->ReplaceMyValue( k, 2, mvpVal[2] );
