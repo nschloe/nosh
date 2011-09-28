@@ -34,7 +34,7 @@
 #include <stk_mesh/base/GetEntities.hpp>
 
 #include <stk_io/IossBridge.hpp>
-#include <stk_io/util/UseCase_mesh.hpp>
+#include <stk_io/MeshReadWriteUtils.hpp>
 #include <Ionit_Initializer.h>
 // =============================================================================
 Ginla::EpetraFVM::StkMeshReader::
@@ -135,66 +135,41 @@ read( const Epetra_Comm                       & comm,
   stk::mesh::put_field( *thicknessField , metaData->node_rank() , metaData->universal_part() );
   stk::io::set_field_role(*thicknessField, Ioss::Field::TRANSIENT);
 
-  Teuchos::RCP<stk::io::util::MeshData> meshData =
-      Teuchos::rcp( new stk::io::util::MeshData() );
+  Teuchos::RCP<stk::io::MeshData> meshData =
+      Teuchos::rcp( new stk::io::MeshData() );
 
   Ioss::Init::Initializer io;
 
-  stk::io::util::create_input_mesh( "exodusii",
-                                    fileName_,
-                                    "",
-                                    MPI_COMM_WORLD,
-                                    *metaData,
-                                    *meshData,
-                                    false
-                                  );
+  stk::io::create_input_mesh( "exodusii",
+                              fileName_,
+                              MPI_COMM_WORLD,
+                              *metaData,
+                              *meshData
+                            );
 
-  stk::io::put_io_part_attribute( metaData->universal_part() );
+  stk::io::define_input_fields( *meshData,
+                                *metaData
+                              );
 
-//   // Set node sets
-//   const stk::mesh::PartVector & all_parts = metaData->get_parts();
-//   int eb = 0;
-//   for (stk::mesh::PartVector::const_iterator i = all_parts.begin(); i != all_parts.end(); ++i)
-//   {
-//     stk::mesh::Part * const part = *i ;
-//
-//     switch( part->primary_entity_rank() )
-//     {
-//       case stk::mesh::Element:
-//       {
-//           std::cout << "IOSS-STK: Element part found " << endl;
-//           partVec[eb++] = part;
-//           // Since Cubit likes to define numDim=3 always, use vertex
-//           // count on top element block to figure out quad(tri) vs hex.
-//           //   Needs to be fixed for Tets ro Shells
-//           int numVerts = stk::mesh::get_cell_topology(*part)->vertex_count;
-//           if (numVerts==4 || numVerts==3)
-//               numDim=2;
-//           else if (numVerts==8)
-//               numDim=3;
-//           else
-//               TEST_FOR_EXCEPTION( true,
-//                                   Teuchos::Exceptions::InvalidParameter,
-//                                   std::endl << "Error!  IossSTKMeshStruct:  " <<
-//                                   "Invalid vertex count from exodus mesh: " << numVerts << std::endl
-//                                 );
-//           std::cout << "IOSS-STK:  numDim =  " << numDim << endl;
-//       }
-//       break;
-//       case stk::mesh::Node:
-//           {
-//             std:cout << "Mesh has Node Set ID: " << part->name() << endl;
-//             nsPartVec[part->name()]=part;
-//           }
-//         break;
-//       default:
-//         break ;
-//     }
-//   }
-//
-//   std::cout << "IOSS-STK: number of node sets = " << nsPartVec.size() << endl;
+//  stk::io::put_io_part_attribute( metaData->universal_part() );
 
   metaData->commit();
+
+  stk::io::populate_bulk_data( *bulkData,
+                               *meshData
+                             );
+
+//  // add parameter
+//  meshData->m_region->field_add( Ioss::Field( "mu",
+//                                              Ioss::Field::REAL,
+//                                              "scalar",
+//                                              Ioss::Field::REDUCTION,
+//                                              1
+//                                            )
+//                               );
+
+  bulkData->modification_end();
+
 
   // Restart index to read solution from exodus file.
 //   int index = -1; // Default to no restart
@@ -205,22 +180,10 @@ read( const Epetra_Comm                       & comm,
       else
         std::cout << "Restart Index set, reading solution time step: " << index << endl;
 
-  stk::io::util::populate_bulk_data( *bulkData,
-                                     *meshData,
-                                     "exodusii",
-                                     index
-                                   );
-
-  // add parameter
-  meshData->m_region->field_add( Ioss::Field( "mu",
-                                              Ioss::Field::REAL,
-                                              "scalar",
-                                              Ioss::Field::REDUCTION,
-                                              1
-                                            )
-                               );
-
-  bulkData->modification_end();
+  stk::io::process_input_request( *meshData,
+                                  *bulkData,
+                                  index
+                                );
 
   // coordinatesField = Teuchos::rcpFromRef( metaData->get_field<VectorFieldType>( std::string("coordinates") ) );
 
@@ -342,6 +305,7 @@ createMvp_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
         mvp->ReplaceMyValue( k, 0, *mvpXVal );
         mvp->ReplaceMyValue( k, 1, *mvpYVal );
         mvp->ReplaceMyValue( k, 2, *mvpZVal );
+//        std::cout << mvpXVal[0] << " " << mvpYVal[0] << " " << mvpZVal[0] << std::endl;
     }
 
     return mvp;
