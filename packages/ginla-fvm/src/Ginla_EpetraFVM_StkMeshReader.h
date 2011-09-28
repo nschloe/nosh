@@ -75,9 +75,7 @@ private:
 
     Teuchos::RCP<Epetra_MultiVector>
     createMvp_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
-                const Teuchos::RCP<const ScalarFieldType>           & mvpXField,
-                const Teuchos::RCP<const ScalarFieldType>           & mvpYField,
-                const Teuchos::RCP<const ScalarFieldType>           & mvpZField
+                const Teuchos::RCP<const VectorFieldType>           & mvpField
               ) const;
 };
 // -----------------------------------------------------------------------------

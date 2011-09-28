@@ -36,6 +36,8 @@
 #include <stk_io/IossBridge.hpp>
 #include <stk_io/MeshReadWriteUtils.hpp>
 #include <Ionit_Initializer.h>
+#include <Ioss_IOFactory.h>
+#include <Ioss_Region.h>
 // =============================================================================
 Ginla::EpetraFVM::StkMeshReader::
 StkMeshReader( const std::string & fileName ):
@@ -114,20 +116,10 @@ read( const Epetra_Comm                       & comm,
   // by some big debugging and didn't finish that story.  Hopefully, it will
   // be done in June at which time you could use attribute fields on the
   // universal set...
-  Teuchos::RCP<ScalarFieldType> mvpXField =
-       Teuchos::rcpFromRef( metaData->declare_field< ScalarFieldType >( "AX" ) );
-  stk::mesh::put_field( *mvpXField , metaData->node_rank() , metaData->universal_part() );
-  stk::io::set_field_role(*mvpXField, Ioss::Field::TRANSIENT);
-
-  Teuchos::RCP<ScalarFieldType> mvpYField =
-       Teuchos::rcpFromRef( metaData->declare_field< ScalarFieldType >( "AY" ) );
-  stk::mesh::put_field( *mvpYField , metaData->node_rank() , metaData->universal_part() );
-  stk::io::set_field_role(*mvpYField, Ioss::Field::TRANSIENT);
-
-  Teuchos::RCP<ScalarFieldType> mvpZField =
-       Teuchos::rcpFromRef( metaData->declare_field< ScalarFieldType >( "AZ" ) );
-  stk::mesh::put_field( *mvpZField , metaData->node_rank() , metaData->universal_part() );
-  stk::io::set_field_role(*mvpZField, Ioss::Field::TRANSIENT);
+  Teuchos::RCP<VectorFieldType> mvpField =
+       Teuchos::rcpFromRef( metaData->declare_field< VectorFieldType >( "A" ) );
+  stk::mesh::put_field( *mvpField , metaData->node_rank() , metaData->universal_part() );
+  stk::io::set_field_role(*mvpField, Ioss::Field::TRANSIENT);
 
   // Thickness fields. Same as above.
   Teuchos::RCP<ScalarFieldType> thicknessField =
@@ -135,12 +127,42 @@ read( const Epetra_Comm                       & comm,
   stk::mesh::put_field( *thicknessField , metaData->node_rank() , metaData->universal_part() );
   stk::io::set_field_role(*thicknessField, Ioss::Field::TRANSIENT);
 
-  Teuchos::RCP<stk::io::MeshData> meshData =
-      Teuchos::rcp( new stk::io::MeshData() );
-
+  // initialize database communication
   Ioss::Init::Initializer io;
 
-  stk::io::create_input_mesh( "exodusii",
+  // ---------------------------------------------------------------------------
+  // The database is manually initialized to get explicit access to it
+  // to be able to call set_field_separator(). This tells the database to
+  // recognize 'AX', 'AY', 'AZ', as components of one vector field.
+  // By default, the separator is '_' such that only fields 'A_*' would be
+  // recognized as such.
+  // 2011-09-26, Greg's mail:
+  // "It is possible to manually open the database and create the Ioss::Region,
+  // put that in the MeshData object and then call create_input_mesh(), but that
+  // gets ugly.  I will try to come up with a better option... "
+  std::string meshType = "exodusii";
+  Ioss::DatabaseIO *dbi = Ioss::IOFactory::create( meshType,
+                                                   fileName_,
+                                                   Ioss::READ_MODEL,
+                                                   MPI_COMM_WORLD
+                                                 );
+  TEST_FOR_EXCEPTION( dbi == NULL || !dbi->ok(),
+                      std::runtime_error,
+                      "ERROR: Could not open database '" << fileName_ << "' of type '" << meshType << "'."
+                    );
+
+  // set the vector field label separator
+  dbi->set_field_separator(0);
+
+  // create region to feed into meshData
+  Ioss::Region *in_region = new Ioss::Region( dbi, "input_model" );
+  // ---------------------------------------------------------------------------
+
+  Teuchos::RCP<stk::io::MeshData> meshData =
+      Teuchos::rcp( new stk::io::MeshData() );
+  meshData->m_input_region = in_region;
+
+  stk::io::create_input_mesh( meshType,
                               fileName_,
                               MPI_COMM_WORLD,
                               *metaData,
@@ -167,8 +189,8 @@ read( const Epetra_Comm                       & comm,
 //                                              1
 //                                            )
 //                               );
-
-  bulkData->modification_end();
+//
+//  bulkData->modification_end();
 
 
   // Restart index to read solution from exodus file.
@@ -176,23 +198,26 @@ read( const Epetra_Comm                       & comm,
   int index = 1; // restart from the first step
   if ( comm.MyPID() == 0 )
       if ( index<1 )
-        std::cout << "Restart Index not set. Not reading solution from exodus (" << index << ")"<< endl;
+          std::cout << "Restart Index not set. Not reading solution from exodus (" << index << ")"<< endl;
       else
-        std::cout << "Restart Index set, reading solution time step: " << index << endl;
+          std::cout << "Restart Index set, reading solution time step: " << index << endl;
 
   stk::io::process_input_request( *meshData,
                                   *bulkData,
                                   index
                                 );
 
-  // coordinatesField = Teuchos::rcpFromRef( metaData->get_field<VectorFieldType>( std::string("coordinates") ) );
-
   // create the mesh with these specifications
-  mesh = Teuchos::rcp( new Ginla::EpetraFVM::StkMesh( comm, metaData, bulkData, coordinatesField ) );
+  mesh = Teuchos::rcp( new Ginla::EpetraFVM::StkMesh( comm,
+                                                      metaData,
+                                                      bulkData,
+                                                      coordinatesField
+                                                    )
+                     );
 
   // create the state
   psi       = this->createPsi_( mesh, psir_field, psii_field );
-  mvp       = this->createMvp_( mesh, mvpXField, mvpYField, mvpZField );
+  mvp       = this->createMvp_( mesh, mvpField );
   thickness = this->createThickness_( mesh, thicknessField );
 
   // These are vain attempts to find out whether thicknessField is actually empty.
@@ -280,9 +305,7 @@ createThickness_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
 Teuchos::RCP<Epetra_MultiVector>
 Ginla::EpetraFVM::StkMeshReader::
 createMvp_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
-            const Teuchos::RCP<const ScalarFieldType>           & mvpXField,
-            const Teuchos::RCP<const ScalarFieldType>           & mvpYField,
-            const Teuchos::RCP<const ScalarFieldType>           & mvpZField
+            const Teuchos::RCP<const VectorFieldType>           & mvpField
           ) const
 {
     // Get owned nodes.
@@ -292,20 +315,15 @@ createMvp_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
     int numComponents = 3;
     Teuchos::RCP<Epetra_MultiVector> mvp = Teuchos::rcp( new Epetra_MultiVector( *mesh->getNodesMap(), numComponents ) );
 
-    TEUCHOS_ASSERT( !mvpXField.is_null() );
-    TEUCHOS_ASSERT( !mvpYField.is_null() );
-    TEUCHOS_ASSERT( !mvpZField.is_null() );
+    TEUCHOS_ASSERT( !mvpField.is_null() );
 
     // Fill the vector with data from the file
     for ( int k=0; k<ownedNodes.size(); k++ )
     {
-        double* mvpXVal = stk::mesh::field_data( *mvpXField, *ownedNodes[k] );
-        double* mvpYVal = stk::mesh::field_data( *mvpYField, *ownedNodes[k] );
-        double* mvpZVal = stk::mesh::field_data( *mvpZField, *ownedNodes[k] );
-        mvp->ReplaceMyValue( k, 0, *mvpXVal );
-        mvp->ReplaceMyValue( k, 1, *mvpYVal );
-        mvp->ReplaceMyValue( k, 2, *mvpZVal );
-//        std::cout << mvpXVal[0] << " " << mvpYVal[0] << " " << mvpZVal[0] << std::endl;
+        double* mvpVal = stk::mesh::field_data( *mvpField, *ownedNodes[k] );
+        mvp->ReplaceMyValue( k, 0, mvpVal[0] );
+        mvp->ReplaceMyValue( k, 1, mvpVal[1] );
+        mvp->ReplaceMyValue( k, 2, mvpVal[2] );
     }
 
     return mvp;
