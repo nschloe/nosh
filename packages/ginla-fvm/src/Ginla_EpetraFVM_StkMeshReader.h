@@ -31,8 +31,8 @@
 #include <Teuchos_ParameterList.hpp>
 // =============================================================================
 // typedefs
-typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorFieldType ;
-typedef stk::mesh::Field<double>                      ScalarFieldType ;
+typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorFieldType;
+typedef stk::mesh::Field<double>                      ScalarFieldType;
 // =============================================================================
 // forward declarations
 class Epetra_Vector;

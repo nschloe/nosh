@@ -48,9 +48,7 @@ namespace stk {
         class BulkData;
     }
     namespace io {
-        namespace util {
-            class MeshData;
-        }
+        class MeshData;
     }
 }
 class Epetra_Vector;

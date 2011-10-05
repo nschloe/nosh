@@ -38,7 +38,7 @@
 
 // =============================================================================
 // typedefs
-typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorFieldType;
+typedef stk::mesh::Field<double> ScalarFieldType;
 // =============================================================================
 Ginla::EpetraFVM::StkMeshWriter::
 StkMeshWriter( const std::string & fileNameBase ):
@@ -133,8 +133,8 @@ mergePsi_( const Teuchos::RCP<stk::mesh::fem::FEMMetaData> & metaData,
                                       ownedNodes
                                     );
 
-    VectorFieldType * psiR_field = metaData->get_field<VectorFieldType>( "psi_R" );
-    VectorFieldType * psiI_field = metaData->get_field<VectorFieldType>( "psi_Z" );
+    ScalarFieldType * psiR_field = metaData->get_field<ScalarFieldType>( "psi_R" );
+    ScalarFieldType * psiI_field = metaData->get_field<ScalarFieldType>( "psi_Z" );
 
     // Merge psi into the mesh.
     for (int k=0; k < ownedNodes.size(); k++)

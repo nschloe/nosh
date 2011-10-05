@@ -86,20 +86,20 @@ read( const Epetra_Comm                       & comm,
                   );
 
   Teuchos::RCP<VectorFieldType> coordinatesField =
-       Teuchos::rcpFromRef( metaData->declare_field< VectorFieldType >( "coordinates" ) );
+       Teuchos::rcpFromRef( metaData->declare_field<VectorFieldType>( "coordinates" ) );
   stk::io::set_field_role(*coordinatesField, Ioss::Field::ATTRIBUTE);
 
   // real part
   Teuchos::RCP<ScalarFieldType> psir_field =
-      Teuchos::rcpFromRef( metaData->declare_field< ScalarFieldType >( "psi_R" ) );
-  stk::mesh::put_field( *psir_field , metaData->node_rank() , metaData->universal_part() );
-  stk::io::set_field_role(*psir_field, Ioss::Field::TRANSIENT);
+      Teuchos::rcpFromRef( metaData->declare_field<ScalarFieldType>( "psi_R" ) );
+  stk::mesh::put_field( *psir_field , metaData->node_rank(), metaData->universal_part() );
+  stk::io::set_field_role( *psir_field, Ioss::Field::TRANSIENT );
 
   // imaginary part
   Teuchos::RCP<ScalarFieldType> psii_field =
-      Teuchos::rcpFromRef( metaData->declare_field< ScalarFieldType >( "psi_Z" ) );
-  stk::mesh::put_field( *psii_field , metaData->node_rank() , metaData->universal_part() );
-  stk::io::set_field_role(*psii_field, Ioss::Field::TRANSIENT);
+      Teuchos::rcpFromRef( metaData->declare_field<ScalarFieldType>( "psi_Z" ) );
+  stk::mesh::put_field( *psii_field , metaData->node_rank(), metaData->universal_part() );
+  stk::io::set_field_role( *psii_field, Ioss::Field::TRANSIENT );
 
   // Magnetic vector potential.
   // Declare those fields as TRANSIENT to make sure they are written out to the
@@ -118,13 +118,13 @@ read( const Epetra_Comm                       & comm,
   // universal set...
   Teuchos::RCP<VectorFieldType> mvpField =
        Teuchos::rcpFromRef( metaData->declare_field< VectorFieldType >( "A" ) );
-  stk::mesh::put_field( *mvpField , metaData->node_rank() , metaData->universal_part() );
+  stk::mesh::put_field( *mvpField, metaData->node_rank(), metaData->universal_part() );
   stk::io::set_field_role(*mvpField, Ioss::Field::TRANSIENT);
 
   // Thickness fields. Same as above.
   Teuchos::RCP<ScalarFieldType> thicknessField =
        Teuchos::rcpFromRef( metaData->declare_field< ScalarFieldType >( "thickness" ) );
-  stk::mesh::put_field( *thicknessField , metaData->node_rank() , metaData->universal_part() );
+  stk::mesh::put_field( *thicknessField, metaData->node_rank(), metaData->universal_part() );
   stk::io::set_field_role(*thicknessField, Ioss::Field::TRANSIENT);
 
   // initialize database communication
