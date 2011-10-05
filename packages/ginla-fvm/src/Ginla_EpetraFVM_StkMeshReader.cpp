@@ -119,13 +119,13 @@ read( const Epetra_Comm                       & comm,
   Teuchos::RCP<VectorFieldType> mvpField =
        Teuchos::rcpFromRef( metaData->declare_field< VectorFieldType >( "A" ) );
   stk::mesh::put_field( *mvpField, metaData->node_rank(), metaData->universal_part() );
-  stk::io::set_field_role(*mvpField, Ioss::Field::TRANSIENT);
+  stk::io::set_field_role( *mvpField, Ioss::Field::ATTRIBUTE );
 
   // Thickness fields. Same as above.
   Teuchos::RCP<ScalarFieldType> thicknessField =
        Teuchos::rcpFromRef( metaData->declare_field< ScalarFieldType >( "thickness" ) );
   stk::mesh::put_field( *thicknessField, metaData->node_rank(), metaData->universal_part() );
-  stk::io::set_field_role(*thicknessField, Ioss::Field::TRANSIENT);
+  stk::io::set_field_role( *thicknessField, Ioss::Field::ATTRIBUTE );
 
   // initialize database communication
   Ioss::Init::Initializer io;
@@ -169,9 +169,11 @@ read( const Epetra_Comm                       & comm,
                               *meshData
                             );
 
-  stk::io::define_input_fields( *meshData,
-                                *metaData
-                              );
+  // define_input_fields() doesn't like the ATTRIBUTE fields; disable.
+  // What was it good for anyways?
+//  stk::io::define_input_fields( *meshData,
+//                                *metaData
+//                              );
 
 //  stk::io::put_io_part_attribute( metaData->universal_part() );
 
