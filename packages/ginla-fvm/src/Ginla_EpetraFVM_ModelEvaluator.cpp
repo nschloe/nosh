@@ -376,7 +376,7 @@ computeF_ ( const Epetra_Vector                             & x,
       //
       //       res[k] += controlVolumes[k] * average(thicknesses) * psi[k] * ( (1.0-temperature) - std::norm(psi[k]) );
       //
-      // (b) Another possible approximation is 
+      // (b) Another possible approximation is
       //
       //        |control volume| * thickness(x_k) * f(psi(x_k))
       //

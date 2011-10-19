@@ -38,9 +38,6 @@
 #include "Ginla_IO_StatsWriter.h"
 #include "Ginla_IO_NoxObserver.h"
 #include "Ginla_IO_SaveEigenData.h"
-#include "Ginla_MagneticVectorPotential_Spherical.h"
-#include "Ginla_MagneticVectorPotential_Z.h"
-#include "Ginla_MagneticVectorPotential_MagneticDot.h"
 #include "Ginla_MagneticVectorPotential_Custom.h"
 
 #include <Teuchos_TimeMonitor.hpp>
@@ -181,22 +178,9 @@ main ( int argc, char *argv[] )
             std::cout << problemParameters << std::endl;
 
         double mu = problemParameters.get<double> ( "mu" );
-        double phi = problemParameters.get<double> ( "phi" );
-        double theta = problemParameters.get<double> ( "theta" );
-        double magneticDotRadius = problemParameters.get<double> ( "magneticDotRadius" );
-        if ( eComm->MyPID() == 0 )
-            std::cout << "mu, phi, theta, magdotRadius" << mu << " " <<  phi << " " << theta << " " << magneticDotRadius << std::endl;
-        // double phi = 0.0; double theta = 0.0; // X
-        // double phi = 0.5 * M_PI; double theta = 0.0; // Y
-        // double phi = 0.0; double theta = 0.5 * M_PI; // Z
+
         Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp =
                 Teuchos::rcp ( new Ginla::MagneticVectorPotential::Custom ( mesh, mvpValues, mu ) );
-//         Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp =
-//                 Teuchos::rcp ( new Ginla::MagneticVectorPotential::Spherical ( mesh, mu, phi, theta ) );
-//        Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp =
-//               Teuchos::rcp ( new Ginla::MagneticVectorPotential::MagneticDot ( mesh, magneticDotRadius, mu ) );
-//        Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp =
-//               Teuchos::rcp ( new Ginla::MagneticVectorPotential::Z ( mesh, mu ) );
 
         // create the mode evaluator
         Teuchos::RCP<Ginla::EpetraFVM::ModelEvaluator> glModel =

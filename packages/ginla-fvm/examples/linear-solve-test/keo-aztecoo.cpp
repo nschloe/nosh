@@ -23,9 +23,7 @@
 #include "Ginla_IO_StatsWriter.h"
 #include "Ginla_IO_NoxObserver.h"
 #include "Ginla_IO_SaveEigenData.h"
-#include "Ginla_MagneticVectorPotential_Spherical.h"
-#include "Ginla_MagneticVectorPotential_Z.h"
-#include "Ginla_MagneticVectorPotential_MagneticDot.h"
+#include "Ginla_MagneticVectorPotential_Custom.h"
 
 #ifdef HAVE_MPI
 #include <Epetra_MpiComm.h>
@@ -101,7 +99,7 @@ int main ( int argc, char *argv[] )
 
       double mu = problemParameters.get<double> ( "mu" );
       Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp =
-              Teuchos::rcp ( new Ginla::MagneticVectorPotential::Z ( mesh, mu ) );
+          Teuchos::rcp ( new Ginla::MagneticVectorPotential::Custom ( mesh, mvpValues, mu ) );
 
       Teuchos::RCP<LOCA::ParameterVector> mvpParameters =
           Teuchos::rcp( new LOCA::ParameterVector() );
