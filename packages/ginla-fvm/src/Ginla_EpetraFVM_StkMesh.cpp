@@ -24,6 +24,8 @@
 #include <Epetra_Export.h>
 #include <Teuchos_ArrayRCP.hpp>
 #include <Teuchos_Tuple.hpp>
+#include <Teuchos_SerialDenseVector.hpp>
+#include <Teuchos_SerialDenseSolver.hpp>
 
 #include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/base/Field.hpp>
@@ -62,7 +64,7 @@ scaling_ ( Teuchos::tuple( 1.0, 1.0, 1.0 ) ),
 fvmEntitiesUpToDate_( false ),
 controlVolumes_( Teuchos::rcp( new Epetra_Vector( *nodesMap_ ) ) ),
 averageThickness_( Teuchos::rcp( new Epetra_Vector( *nodesMap_ ) ) ),
-coareaEdgeRatio_( Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >( this->getOwnedCells().size() ) ),
+edgeCoefficients_( Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >( this->getOwnedCells().size() ) ),
 area_( 0.0 )
 {
 
@@ -213,12 +215,12 @@ getScaling() const
 // =============================================================================
 Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >
 Ginla::EpetraFVM::StkMesh::
-getCoareaEdgeRatios() const
+getEdgeCoefficients() const
 {
     if ( !fvmEntitiesUpToDate_)
         this->computeFvmEntities_();
 
-    return coareaEdgeRatio_;
+    return edgeCoefficients_;
 }
 // =============================================================================
 std::vector<stk::mesh::Entity*>
@@ -430,8 +432,8 @@ computeFvmEntities_() const
   std::vector<stk::mesh::Entity*> cells = this->getOwnedCells();
   unsigned int numCells = cells.size();
 
-  TEUCHOS_ASSERT( !coareaEdgeRatio_.is_null() );
-  TEUCHOS_ASSERT_EQUALITY( coareaEdgeRatio_.size(), numCells );
+  TEUCHOS_ASSERT( !edgeCoefficients_.is_null() );
+  TEUCHOS_ASSERT_EQUALITY( edgeCoefficients_.size(), numCells );
 
   // Calculate the contributions to the finite volumes and the finite volume boundary areas cell by cell.
   for (unsigned int k=0; k < numCells; k++)
@@ -458,7 +460,9 @@ computeFvmEntities_() const
                               "Control volumes can only be constructed consistently with triangular or tetrahedral elements."
                             );
 
-      coareaEdgeRatio_[k] = Teuchos::ArrayRCP<double>( this->getNumEdgesPerCell( cellDimension ) );
+//      edgeCoefficients_[k] = Teuchos::ArrayRCP<double>( this->getNumEdgesPerCell( cellDimension ) );
+
+      edgeCoefficients_[k] = getEdgeCoefficientsNumerically_( localNodes );
 
       // Iterate over the edges.
       // As true edge entities are not available here, loop over all pairs of local nodes.
@@ -467,22 +471,36 @@ computeFvmEntities_() const
       {
           const Point & x0 = localNodes[e0];
           const int gid0 = (*rel[e0].entity()).identifier() - 1;
-          const int lid0 = nodesMap_->LID( gid0 );
+//          const int lid0 = nodesMap_->LID( gid0 );
           for ( unsigned int e1=e0+1; e1<numLocalNodes; e1++ )
           {
               const Point & x1 = localNodes[e1];
               const int gid1 = (*rel[e1].entity()).identifier() - 1;
-              const int lid1 = nodesMap_->LID( gid1 );
+//              const int lid1 = nodesMap_->LID( gid1 );
 
               // Get the other nodes.
               Teuchos::Tuple<unsigned int,2> other = this->getOtherIndices_( e0, e1 );
 
-              // Compute the (n-1)-dimensional coedgeVolume.
-              double coedgeVolume;
+              double edgeLength = this->norm2_( this->add_( 1.0, x1, -1.0, x0 ) );
+
+              // Compute the (n-1)-dimensional covolume.
+              double covolume;
               if ( cellDimension==2 ) // triangle
               {
                   const Point & other0 = localNodes[other[0]];
-                  coedgeVolume = this->computeCoedgeVolume2d_( cc, x0, x1, other0 );
+                  covolume = this->computeCovolume2d_( cc, x0, x1, other0 );
+
+//                  std::cout << edgeCoefficients_[k][edgeIndex]
+//                            << " " << covolume/edgeLength
+//                            << " "  << fabs(edgeCoefficients_[k][edgeIndex]-covolume/edgeLength)
+//                            << std::endl;
+                  // For testing:
+                  // Check if the computed coefficients actually coincide with
+                  // what is computed analytically.
+                  TEUCHOS_ASSERT_INEQUALITY( fabs(edgeCoefficients_[k][edgeIndex]-covolume/edgeLength),
+                                             <,
+                                             1.0e-12 );
+                  edgeCoefficients_[k][edgeIndex++] = covolume / edgeLength;
 
                   // The problem with counting the average thickness in 2D is the following.
                   // Ideally, one would want to loop over all edges, add the midpoint value
@@ -503,7 +521,16 @@ computeFvmEntities_() const
               {
                   const Point & other0 = localNodes[other[0]];
                   const Point & other1 = localNodes[other[1]];
-                  coedgeVolume = this->computeCoedgeVolume3d_( cc, x0, x1, other0, other1 );
+                  covolume = this->computeCovolume3d_( cc, x0, x1, other0, other1 );
+
+
+//                  // The 3d-calculation of the edge coefficients as covolume-
+//                  // edge length ratio is wrong.
+//                  std::cout << edgeCoefficients_[k][edgeIndex] << " " << covolume/edgeLength << std::endl;
+//                  TEUCHOS_ASSERT_INEQUALITY( fabs(edgeCoefficients_[k][edgeIndex]-covolume/edgeLength),
+//                                             <,
+//                                             1.0e-12 );
+//                  edgeCoefficients_[k][edgeIndex++] = covolume / edgeLength;
 
                   // Throw an exception for 3D volumes.
                   // To compute the average of the thicknesses of a control volume, one has to loop
@@ -526,11 +553,8 @@ computeFvmEntities_() const
                                     );
               }
 
-              double edgeLength = this->norm2_( this->add_( 1.0, x1, -1.0, x0 ) );
-              coareaEdgeRatio_[k][edgeIndex++] = coedgeVolume / edgeLength;
-
               // Compute the contributions to the finite volumes of the adjacent edges.
-              double pyramidVolume = 0.5*edgeLength * coedgeVolume / cellDimension;
+              double pyramidVolume = 0.5*edgeLength * covolume / cellDimension;
               TEUCHOS_ASSERT_EQUALITY( 0, cvOverlap->SumIntoGlobalValues( 1, &pyramidVolume, &gid0 ) );
               TEUCHOS_ASSERT_EQUALITY( 0, cvOverlap->SumIntoGlobalValues( 1, &pyramidVolume, &gid1 ) );
           }
@@ -555,13 +579,121 @@ computeFvmEntities_() const
   return;
 }
 // =============================================================================
+Teuchos::ArrayRCP<double>
+Ginla::EpetraFVM::StkMesh::
+getEdgeCoefficientsNumerically_( const Teuchos::Array<Point> localNodes ) const
+{
+    // Build an equation system for the edge coefficients alpha_k.
+    // They fulfill
+    //
+    //    |simplex| * <u,v> = \sum_{edges e_i} alpha_i <u,e_i> <e_i,v>
+    //
+    // for any pair of vectors u, v in the plane of the triangle.
+    //
+    double vol;
+    int numEdges;
+    unsigned int numLocalNodes = localNodes.size();
+    if (localNodes.size()==3)
+    {
+        vol = getTriangleArea_( localNodes[0], localNodes[1], localNodes[2] );
+        numEdges = 3;
+    }
+    else if (localNodes.size()==4)
+    {
+        vol = getTetrahedronVolume_( localNodes[0], localNodes[1], localNodes[2], localNodes[3] );
+        numEdges = 6;
+    }
+    else
+        TEST_FOR_EXCEPTION( true,
+                            std::runtime_error,
+                            "Can only handle triangles and tetrahedra." );
+
+//    std::cout << "\nTriangle is \n";
+//    for ( int i=0; i<localNodes.size(); i++ )
+//    {
+//        for ( int j=0; j<3; j++ )
+//            std::cout << " " << localNodes[i][j];
+//        std::cout << std::endl;
+//    }
+
+    Teuchos::RCP<Teuchos::SerialDenseMatrix<int, double> > A =
+            Teuchos::rcp( new Teuchos::SerialDenseMatrix<int, double>(numEdges,numEdges) );
+    Teuchos::RCP<Teuchos::SerialDenseMatrix<int, double> > rhs =
+        Teuchos::rcp( new Teuchos::SerialDenseMatrix<int, double>(numEdges,1) );
+    Teuchos::RCP<Teuchos::SerialDenseMatrix<int, double> > alpha =
+        Teuchos::rcp( new Teuchos::SerialDenseMatrix<int, double>(numEdges,1) );
+
+    // Gather the edges.
+    Teuchos::ArrayRCP<Teuchos::SerialDenseVector<int, double> > edges(numEdges);
+    unsigned int i = 0;
+    for ( unsigned int e0=0; e0<numLocalNodes; e0++ )
+    {
+        for ( unsigned int e1=e0+1; e1<numLocalNodes; e1++ )
+        {
+            edges[i] = Teuchos::SerialDenseVector<int, double>(3);
+            for ( int k=0; k<3; k++ )
+                edges[i][k] = localNodes[e1][k] - localNodes[e0][k];
+            i++;
+        }
+    }
+
+    // Build the equation system:
+    // The equation
+    //
+    //    |simplex| ||u||^2 = \sum_i \alpha_i <u,e_i> <e_i,u>
+    //
+    // has to hold for all vectors u in the plane spanned by the edges,
+    // particularly by the edges themselves.
+    //
+    for ( int i=0; i<numEdges; i++ )
+    {
+        (*rhs)(i,0) = vol * edges[i].dot(edges[i]);
+        for ( int j=0; j<numEdges; j++ )
+            (*A)(i,j) = edges[i].dot(edges[j]) * edges[j].dot(edges[i]);
+    }
+
+//    A->print( std::cout );
+//    rhs->print( std::cout );
+
+    // solve the equation system for the alpha_i
+    Teuchos::SerialDenseSolver<int,double> solver;
+    TEUCHOS_ASSERT_EQUALITY( 0, solver.setMatrix( A ) );
+    TEUCHOS_ASSERT_EQUALITY( 0, solver.setVectors( alpha, rhs ) );
+    if ( false ) // ( solver.shouldEquilibrate() ) // reactivate when equilibration works in trilinos
+    {
+//        std::cout << "no equi" << std::endl;
+//        TEUCHOS_ASSERT_EQUALITY( 0, solver.computeEquilibrateScaling() );
+        TEUCHOS_ASSERT_EQUALITY( 0, solver.equilibrateMatrix() );
+        TEUCHOS_ASSERT_EQUALITY( 0, solver.equilibrateRHS() );
+        TEUCHOS_ASSERT_EQUALITY( 0, solver.solve() );
+        TEUCHOS_ASSERT_EQUALITY( 0, solver.unequilibrateLHS() );
+    }
+    else
+    {
+//        std::cout << "no equi" << std::endl;
+        TEUCHOS_ASSERT_EQUALITY( 0, solver.solve() );
+    }
+
+
+    Teuchos::ArrayRCP<double> alphaArrayRCP( numEdges );
+    for ( int k=0; k<numEdges; k++ )
+        alphaArrayRCP[k] = (*alpha)(k,0);
+
+//    std::cout << "Got coefficients";
+//    for ( int k=0; k<numEdges; k++ )
+//        std::cout << " " << alphaArrayRCP[k];
+//    std::cout << std::endl;
+
+    return alphaArrayRCP;
+}
+// =============================================================================
 double
 Ginla::EpetraFVM::StkMesh::
-computeCoedgeVolume2d_( const Point & cc,
-                        const Point & x0,
-                        const Point & x1,
-                        const Point & other0
-                      ) const
+computeCovolume2d_( const Point & cc,
+                    const Point & x0,
+                    const Point & x1,
+                    const Point & other0
+                  ) const
 {
     // edge midpoint
     Point mp = this->add_( 0.5, x0, 0.5, x1 );
@@ -585,14 +717,14 @@ computeCoedgeVolume2d_( const Point & cc,
 // =============================================================================
 double
 Ginla::EpetraFVM::StkMesh::
-computeCoedgeVolume3d_( const Point & cc,
-                        const Point & x0,
-                        const Point & x1,
-                        const Point & other0,
-                        const Point & other1
-                      ) const
+computeCovolume3d_( const Point & cc,
+                    const Point & x0,
+                    const Point & x1,
+                    const Point & other0,
+                    const Point & other1
+                  ) const
 {
-    double coedgeVolume = 0.0;
+    double covolume = 0.0;
 
     // edge midpoint
     Point mp = this->add_( 0.5, x0, 0.5, x1 );
@@ -625,7 +757,7 @@ computeCoedgeVolume3d_( const Point & cc,
                                           this->add_( 1.0, cc,      -1.0, mp )
                                         );
     // copysign takes the absolute value of the first argument and the sign of the second.
-    coedgeVolume += copysign( triangleArea0, this->dot_( triangleNormal0, gauge ) );
+    covolume += copysign( triangleArea0, this->dot_( triangleNormal0, gauge ) );
 
     // Add the area of the second triangle (MP,cc,ccFace1).
     // This makes use of the right angles.
@@ -640,9 +772,9 @@ computeCoedgeVolume3d_( const Point & cc,
                                           this->add_( 1.0, ccFace1, -1.0, mp )
                                         );
     // copysign takes the absolute value of the first argument and the sign of the second.
-    coedgeVolume += copysign( triangleArea1, this->dot_( triangleNormal1, gauge ) );
+    covolume += copysign( triangleArea1, this->dot_( triangleNormal1, gauge ) );
 
-    return coedgeVolume;
+    return covolume;
 }
 // =============================================================================
 Teuchos::Tuple<unsigned int,2>
@@ -685,6 +817,21 @@ getTriangleArea_( const Point & node0,
                                              this->add_( 1.0, node2, -1.0, node0 )
                                            )
                              );
+}
+// =============================================================================
+double
+Ginla::EpetraFVM::StkMesh::
+getTetrahedronVolume_( const Point & node0,
+                       const Point & node1,
+                       const Point & node2,
+                       const Point & node3
+                     ) const
+{
+    return fabs( this->dot_( this->add_( 1.0, node1, -1.0, node0 ),
+                             this->cross_( this->add_( 1.0, node2, -1.0, node0 ),
+                                           this->add_( 1.0, node3, -1.0, node0 ) )
+                           )
+               ) / 6.0;
 }
 // =============================================================================
 Point

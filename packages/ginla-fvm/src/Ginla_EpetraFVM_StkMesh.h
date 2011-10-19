@@ -35,6 +35,7 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Tuple.hpp>
 #include <Teuchos_Array.hpp>
+#include <Teuchos_SerialDenseMatrix.hpp>
 
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/fem/CoordinateSystems.hpp>
@@ -107,7 +108,7 @@ public:
     getScaling() const;
 
     Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >
-    getCoareaEdgeRatios() const;
+    getEdgeCoefficients() const;
 
     std::vector<stk::mesh::Entity*>
     getOwnedCells() const;
@@ -165,7 +166,7 @@ private:
 
     const Teuchos::RCP<Epetra_Vector> controlVolumes_;
     const Teuchos::RCP<Epetra_Vector> averageThickness_;
-    const Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > coareaEdgeRatio_;
+    const Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > edgeCoefficients_;
 
     mutable double area_;
 
@@ -180,19 +181,19 @@ private:
     createComplexMap_( const std::vector<stk::mesh::Entity*> & nodeList ) const;
 
     double
-    computeCoedgeVolume2d_( const Point & cc,
-                            const Point & x0,
-                            const Point & x1,
-                            const Point & other0
-                          ) const;
+    computeCovolume2d_( const Point & cc,
+                        const Point & x0,
+                        const Point & x1,
+                        const Point & other0
+                      ) const;
 
     double
-    computeCoedgeVolume3d_( const Point & cc,
-                            const Point & x0,
-                            const Point & x1,
-                            const Point & other0,
-                            const Point & other1
-                          ) const;
+    computeCovolume3d_( const Point & cc,
+                        const Point & x0,
+                        const Point & x1,
+                        const Point & other0,
+                        const Point & other1
+                      ) const;
 
     Teuchos::Tuple<unsigned int,2>
     getOtherIndices_( unsigned int e0, unsigned int e1 ) const;
@@ -208,6 +209,13 @@ private:
                       const Point & x2
                     ) const;
 
+    double
+    getTetrahedronVolume_( const Point & node0,
+                           const Point & node1,
+                           const Point & node2,
+                           const Point & node3
+                         ) const;
+
     Point
     computeTriangleCircumcenter_( const Point & node0, const Point & node1, const Point & node2 ) const;
     Point
@@ -215,6 +223,9 @@ private:
 
     Point
     computeTetrahedronCircumcenter_( const Teuchos::Array<Point> & nodes ) const;
+
+    Teuchos::ArrayRCP<double>
+    getEdgeCoefficientsNumerically_( const Teuchos::Array<Point> localNodes ) const;
 
     double
     dot_( const Point & v, const Point & w

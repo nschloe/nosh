@@ -84,8 +84,8 @@ buildKeo( Epetra_FECrsMatrix & keoMatrix ) const
   std::vector<stk::mesh::Entity*> cells = mesh_->getOwnedCells();
 
   // This takes about 50% of the time in this whole function.
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > coareaEdgeRatios = mesh_->getCoareaEdgeRatios();
-  TEUCHOS_ASSERT( !coareaEdgeRatios.is_null() );
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > edgeCoefficients = mesh_->getEdgeCoefficients();
+  TEUCHOS_ASSERT( !edgeCoefficients.is_null() );
 
   // Loop over all edges.
   // To this end, loop over all cells and the edges within the cell.
@@ -117,7 +117,7 @@ buildKeo( Epetra_FECrsMatrix & keoMatrix ) const
               lid[1] = thickness_->Map().LID( gid[1] );
 
               // coarea / edge ratio
-              double alpha = coareaEdgeRatios[k][edgeIndex];
+              double alpha = edgeCoefficients[k][edgeIndex];
 
               // Multiply by the thickness value of the midpoint. As this is not available,
               // take the mean between the values at the nodes.
