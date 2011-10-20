@@ -13,7 +13,7 @@ def _main():
 
     # slice it
     slices_list = []
-    slices_list.extend( range(8, 17, 8) )
+    slices_list.extend( range(4, 5, 4) )
     print "Cutting the input data into slices of ", slices_list, "."
     for num_slices in slices_list:
         _slice( filename, output, num_slices )
