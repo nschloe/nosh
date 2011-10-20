@@ -1,76 +1,75 @@
 #!/usr/bin/env python
 # ==============================================================================
-import sys, os, subprocess, shutil
+import argparse, sys, os, subprocess, shutil
 # ==============================================================================
 def _main():
-        filename = _parse_options()
+    filename = _parse_options()
 
-        # get basename of input file
-        basename, extension = os.path.splitext( filename )
+    # get basename of input file
+    basename, = os.path.splitext( filename )
 
-        # define output filename(s)
-	output = "%s-balanced.nemI" % basename
+    # define output filename(s)
+    output = "%s-balanced.nemI" % basename
 
-        # slice it
-        slices_list = []
-        slices_list.extend( range(8, 17, 8) )
-        print "Cutting the input data into slices of ", slices_list, "."
-        for num_slices in slices_list:
-            _slice( filename, output, num_slices )
+    # slice it
+    slices_list = []
+    slices_list.extend( range(8, 17, 8) )
+    print "Cutting the input data into slices of ", slices_list, "."
+    for num_slices in slices_list:
+        _slice( filename, output, num_slices )
 
-	return
+    return
 # ==============================================================================
 def _slice( filename, output, num_slices ):
 
-        nemslice_command = "/opt/trilinos/dev/master/openmpi/1.5.3/gcc/4.5.2/bin/nem_slice"
-        nemspread_command = "/opt/trilinos/dev/master/openmpi/1.5.3/gcc/4.5.2/bin/nem_spread"
-        tmp_nemspreadinp = "nem_spread.inp"
-        slice_method = "spectral"
+    nemslice_command = "/opt/trilinos/dev/master/gcc/4.6.1/bin/nem_slice"
+    nemspread_command = "/opt/trilinos/dev/master/gcc/4.6.1/bin/nem_spread"
+    tmp_nemspreadinp = "nem_spread.inp"
+    slice_method = "spectral"
 
-        slice_command = "%s -v -o \"%s\" -e -m mesh=1x%d -l %s \"%s\"" % \
-                        ( nemslice_command, output, num_slices, slice_method, filename )
+    slice_command = "%s -v -o \"%s\" -e -m mesh=1x%d -l %s \"%s\"" % \
+                    ( nemslice_command, output, num_slices, slice_method, filename )
 
-        _run( slice_command )
+    _run( slice_command )
 
-       # create a temporary directory in the current directory
-        tmpdir = "tmp1"
-        os.mkdir( tmpdir )
+    # create a temporary directory in the current directory
+    tmpdir = "tmp1"
+    os.mkdir( tmpdir )
 
-        # create a temporary file; nem_spread.inp
-        file_handle = open( tmp_nemspreadinp,
-                            mode = "w" )
-        file_handle.write( "Input FEM file          = %s\n\
+    # create a temporary file; nem_spread.inp
+    file_handle = open( tmp_nemspreadinp,
+                        mode = "w" )
+    file_handle.write( "Input FEM file          = %s\n\
 LB file                 = %s\n\
 Debug                   = 1\n\
 Restart Time list       = off\n\
 Reserve space           = nodal=1, elemental=0, global=0\n\
 Parallel Disk Info = number=1\n\
 Parallel file location = root=tmp,subdir=.." % ( filename, output ) )
-        file_handle.close()
+    file_handle.close()
 
-        _run( nemspread_command )
+    _run( nemspread_command )
 
-        # clean up
-	shutil.rmtree( tmpdir )
-        os.remove( tmp_nemspreadinp )
+    # clean up
+    shutil.rmtree( tmpdir )
+    os.remove( tmp_nemspreadinp )
 
-        return
+    return
 # ==============================================================================
 def _parse_options():
     '''Parse input options.'''
-    import optparse, sys
 
-    usage = "usage: %prog filename"
+    parser = argparse.ArgumentParser( description = 'Split an ExodusII file into loadbalanced chunks.' )
 
-    parser = optparse.OptionParser( usage = usage )
+    parser.add_argument( 'filename',
+                         metavar='FILE',
+                         type=str,
+                         nargs=1,
+                         help='the file to read from')
 
-    (options, args) = parser.parse_args()
+    args = parser.parse_args()
 
-    if not args  or  len(args) != 1:
-        parser.print_help()
-        sys.exit( "\nProvide a file to be split." )
-
-    return args[0]
+    return args.filename[0]
 # ==============================================================================
 def _run( command ):
     """Runs a given command on the command line and returns its output.
