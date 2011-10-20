@@ -41,7 +41,8 @@ KeoFactory( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>               & mesh,
           ):
         mesh_ ( mesh ),
         thickness_( thickness ),
-        mvp_( mvp )
+        mvp_( mvp ),
+        buildKeoTime_( Teuchos::TimeMonitor::getNewTimer("KeoFactory::buildKeo") )
 {
 }
 // =============================================================================
@@ -74,6 +75,8 @@ void
 Ginla::EpetraFVM::KeoFactory::
 buildKeo( Epetra_FECrsMatrix & keoMatrix ) const
 {
+  Teuchos::TimeMonitor tm(*buildKeoTime_);
+
   // zero out the matrix
   TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix.PutScalar( 0.0 ) );
 

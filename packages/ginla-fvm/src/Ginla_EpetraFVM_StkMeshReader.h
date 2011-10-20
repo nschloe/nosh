@@ -28,6 +28,7 @@
 #include <Epetra_Comm.h>
 #include <Epetra_MultiVector.h>
 #include <Teuchos_RCP.hpp>
+#include <Teuchos_Time.hpp>
 #include <Teuchos_ParameterList.hpp>
 // =============================================================================
 // typedefs
@@ -60,6 +61,7 @@ public:
 protected:
 private:
     const std::string fileName_;
+    const Teuchos::RCP<Teuchos::Time> readTime_;
 
 private:
     Teuchos::RCP<Epetra_Vector>

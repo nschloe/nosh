@@ -31,6 +31,8 @@
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_SerialDenseMatrix.h>
 
+#include <Teuchos_TimeMonitor.hpp>
+
 // ============================================================================
 Ginla::EpetraFVM::ModelEvaluator::
 ModelEvaluator ( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>               & mesh,
@@ -48,7 +50,11 @@ ModelEvaluator ( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>               & m
         p_names_( Teuchos::null ),
         p_current_( Teuchos::null ),
         mvp_( mvp ),
-        keoFactory_( Teuchos::rcp( new Ginla::EpetraFVM::KeoFactory( mesh, thickness, mvp ) ) )
+        keoFactory_( Teuchos::rcp( new Ginla::EpetraFVM::KeoFactory( mesh, thickness, mvp ) ) ),
+        evalModelTime_( Teuchos::TimeMonitor::getNewTimer("ModelEvaluator::evalModel") ),
+        computeFTime_( Teuchos::TimeMonitor::getNewTimer("ModelEvaluator::evalModel:compute F") ),
+        fillJacobianTime_( Teuchos::TimeMonitor::getNewTimer("ModelEvaluator::evalModel:fill Jacobian") ),
+        fillPreconditionerTime_( Teuchos::TimeMonitor::getNewTimer("ModelEvaluator::fill preconditioner") )
 {
   this->setupParameters_( problemParams );
 
@@ -250,6 +256,8 @@ evalModel( const InArgs  & inArgs,
            const OutArgs & outArgs
          ) const
 {
+  Teuchos::TimeMonitor tm(*evalModelTime_);
+
   const double alpha = inArgs.get_alpha();
   const double beta  = inArgs.get_beta();
 
@@ -292,6 +300,7 @@ evalModel( const InArgs  & inArgs,
   const Teuchos::RCP<Epetra_Vector> f_out = outArgs.get_f();
   if ( !f_out.is_null() )
   {
+      Teuchos::TimeMonitor tm(*computeFTime_);
       this->computeF_( *x_in, mvpParams, scalingCombined, temperature, *f_out );
   }
 
@@ -299,6 +308,7 @@ evalModel( const InArgs  & inArgs,
   const Teuchos::RCP<Epetra_Operator> W_out = outArgs.get_W();
   if( !W_out.is_null() )
   {
+      Teuchos::TimeMonitor tm(*fillJacobianTime_);
       Teuchos::RCP<Ginla::EpetraFVM::JacobianOperator> jac =
           Teuchos::rcp_dynamic_cast<Ginla::EpetraFVM::JacobianOperator>( W_out, true );
       jac->rebuild( mvpParams,
@@ -312,6 +322,7 @@ evalModel( const InArgs  & inArgs,
   const Teuchos::RCP<Epetra_Operator> WPrec_out = outArgs.get_WPrec();
   if( !WPrec_out.is_null() )
   {
+      Teuchos::TimeMonitor tm(*fillPreconditionerTime_);
       Teuchos::RCP<Ginla::EpetraFVM::KeoPreconditioner> keoPrec =
           Teuchos::rcp_dynamic_cast<Ginla::EpetraFVM::KeoPreconditioner>( WPrec_out, true );
       keoPrec->rebuild( mvpParams,

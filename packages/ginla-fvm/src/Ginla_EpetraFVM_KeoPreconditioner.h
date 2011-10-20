@@ -29,6 +29,7 @@
 #include <Epetra_Operator.h>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Tuple.hpp>
+#include <Teuchos_Time.hpp>
 #include <Epetra_FECrsGraph.h>
 #include <Epetra_FECrsMatrix.h>
 #include <Epetra_LinearProblem.h>
@@ -143,6 +144,11 @@ private:
     Teuchos::RCP<Amesos_BaseSolver> keoSolver_;
 
     InversionType invType_;
+
+    const Teuchos::RCP<Teuchos::Time> rebuildTime_;
+    const Teuchos::RCP<Teuchos::Time> rebuildMlTime_;
+    const Teuchos::RCP<Teuchos::Time> rebuildIluTime_;
+    const Teuchos::RCP<Teuchos::Time> regularizationTime_;
 };
 // =============================================================================
 } // namespace FVM

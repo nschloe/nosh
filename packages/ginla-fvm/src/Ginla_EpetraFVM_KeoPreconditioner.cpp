@@ -54,7 +54,11 @@ KeoPreconditioner( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>               &
         belosPrec_ ( Teuchos::null ),
         keoProblem_( Teuchos::rcp( new Epetra_LinearProblem() ) ),
         keoSolver_( Teuchos::null ),
-        invType_( Ilu )
+        invType_( Ml ),
+        rebuildTime_( Teuchos::TimeMonitor::getNewTimer("KeoPreconditioner::rebuild") ),
+        rebuildMlTime_( Teuchos::TimeMonitor::getNewTimer("KeoPreconditioner::rebuildMl") ),
+        rebuildIluTime_( Teuchos::TimeMonitor::getNewTimer("KeoPreconditioner::rebuildIlu") ),
+        regularizationTime_( Teuchos::TimeMonitor::getNewTimer("KeoPreconditioner::rebuild:regularization") )
 {
 }
 // =============================================================================
@@ -116,7 +120,7 @@ ApplyInverseMl_( const Epetra_MultiVector & X,
 
    // Belos part
    Teuchos::ParameterList belosList;
-   belosList.set( "Convergence Tolerance", 1.0e-5 ); // Relative convergence tolerance requested
+   belosList.set( "Convergence Tolerance", 1.0e-10 ); // Relative convergence tolerance requested
    if (verbose) {
      belosList.set( "Verbosity",
                     Belos::Errors +
@@ -144,8 +148,8 @@ ApplyInverseMl_( const Epetra_MultiVector & X,
    }
    // -------------------------------------------------------------------------
    // add preconditioner
-//    TEUCHOS_ASSERT( !belosPrec_.is_null() );
-//    problem.setLeftPrec( belosPrec_ );
+   TEUCHOS_ASSERT( !belosPrec_.is_null() );
+   problem.setLeftPrec( belosPrec_ );
    // -------------------------------------------------------------------------
    // Create an iterative solver manager.
    Teuchos::RCP<Belos::SolverManager<double,MV,OP> > newSolver =
@@ -237,6 +241,7 @@ void
 Ginla::EpetraFVM::KeoPreconditioner::
 rebuild()
 {
+    Teuchos::TimeMonitor tm(*rebuildTime_);
     // -------------------------------------------------------------------------
     // rebuild the keo
     keoFactory_->buildKeo( *keoPrec_ );
@@ -246,6 +251,7 @@ rebuild()
     double mu = keoFactory_->getMvpParameters()->getValue( "mu" );
     if ( fabs( mu ) < 1.0e-5 )
     {
+        Teuchos::TimeMonitor tm(*regularizationTime_);
         // Add a regularization to the diagonal.
         Epetra_Vector e( keoPrec_->DomainMap() );
         TEUCHOS_ASSERT_EQUALITY( 0, e.PutScalar( 1.0 ) );
@@ -294,6 +300,7 @@ void
 Ginla::EpetraFVM::KeoPreconditioner::
 rebuildMl_()
 {
+    Teuchos::TimeMonitor tm(*rebuildMlTime_);
     // rebuild ML structure
     Teuchos::ParameterList MLList;
     ML_Epetra::SetDefaults( "SA", MLList );
@@ -324,6 +331,7 @@ void
 Ginla::EpetraFVM::KeoPreconditioner::
 rebuildIlu_()
 {
+    Teuchos::TimeMonitor tm(*rebuildIluTime_);
     // set the matrix the linear problem
     keoProblem_->SetOperator( &*keoPrec_ );
 

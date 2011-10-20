@@ -33,6 +33,8 @@
 #include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 
+#include <Teuchos_TimeMonitor.hpp>
+
 #include <stk_io/IossBridge.hpp>
 #include <stk_io/MeshReadWriteUtils.hpp>
 #include <Ionit_Initializer.h>
@@ -41,7 +43,8 @@
 // =============================================================================
 Ginla::EpetraFVM::StkMeshReader::
 StkMeshReader( const std::string & fileName ):
-fileName_( fileName )
+fileName_( fileName ),
+readTime_( Teuchos::TimeMonitor::getNewTimer("StkMeshReader::read") )
 {
 }
 // =============================================================================
@@ -60,6 +63,9 @@ read( const Epetra_Comm                       & comm,
       Teuchos::ParameterList                  & parameterList
     )
 {
+  // timer for this routine
+  Teuchos::TimeMonitor tm(*readTime_);
+
   // Take two different fields with one component
   // instead of one field with two components. This works around
   // Ioss's inability to properly read psi_R, psi_Z as a complex variable.

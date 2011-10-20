@@ -28,6 +28,7 @@
 
 #include <Epetra_Operator.h>
 #include <Teuchos_RCP.hpp>
+#include <Teuchos_Time.hpp>
 #include <Teuchos_Tuple.hpp>
 #include <Epetra_FECrsGraph.h>
 #include <Epetra_FECrsMatrix.h>
@@ -77,6 +78,7 @@ private:
     const Teuchos::RCP<Ginla::EpetraFVM::StkMesh> mesh_;
     const Teuchos::RCP<const Epetra_Vector>       thickness_;
     const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp_;
+    const Teuchos::RCP<Teuchos::Time> buildKeoTime_;
 };
 // =============================================================================
 } // namespace FVM

@@ -30,6 +30,7 @@
 #include <EpetraExt_ModelEvaluator.h>
 #include <Epetra_Vector.h>
 #include <Teuchos_ParameterList.hpp>
+#include <Teuchos_Time.hpp>
 
 #include "Ginla_EpetraFVM_JacobianOperator.h"
 // -----------------------------------------------------------------------------
@@ -159,6 +160,11 @@ private:
 
    const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp_;
    const Teuchos::RCP<Ginla::EpetraFVM::KeoFactory> keoFactory_;
+
+   const Teuchos::RCP<Teuchos::Time> evalModelTime_;
+   const Teuchos::RCP<Teuchos::Time> computeFTime_;
+   const Teuchos::RCP<Teuchos::Time> fillJacobianTime_;
+   const Teuchos::RCP<Teuchos::Time> fillPreconditionerTime_;
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 private:
     void
