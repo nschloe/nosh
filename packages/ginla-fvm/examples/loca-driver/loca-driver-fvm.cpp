@@ -28,8 +28,6 @@
 #include <NOX_StatusTest_Generic.H>
 #include <NOX_StatusTest_Factory.H>
 
-#include <boost/filesystem.hpp>
-
 #include "Ginla_EpetraFVM_StkMeshReader.h"
 
 #include "Ginla_EpetraFVM_State.h"
@@ -42,26 +40,24 @@
 
 #include <Teuchos_TimeMonitor.hpp>
 
+//#include<fenv.h>
+
 // get pi
 #define _USE_MATH_DEFINES
 
 // =============================================================================
-// declarations (definitions below)
 std::string
-getAbsolutePath(       boost::filesystem::path   filepath,
-                 const boost::filesystem::path & xmlPath
-               )
+extractDirectory( const std::string& path )
 {
-    if ( !filepath.empty() && filepath.root_directory().empty() ) // filepath is a relative path
-        filepath = xmlPath / filepath;
-    TEUCHOS_ASSERT( !filepath.empty() );
-
-    return filepath.string();
+    return path.substr( 0, path.find_last_of( '/' ) +1 );
 }
 // =============================================================================
 int
 main ( int argc, char *argv[] )
 {
+//feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
+//feenableexcept(FE_DIVBYZERO);
+
   // Initialize MPI
 #ifdef HAVE_MPI
     MPI_Init( &argc, &argv );
@@ -115,19 +111,16 @@ main ( int argc, char *argv[] )
         Teuchos::ParameterList outputList = piroParams->sublist ( "Output", true );
 
         // set default directory to be the directory of the XML file itself
-        std::string xmlPath = boost::filesystem::path ( xmlInputFileName ).branch_path().string();
-        boost::filesystem::path outputDirectory = outputList.get<string> ( "Output directory" );
-        if ( outputDirectory.root_directory().empty() ) // outputDirectory is empty or is a relative directory.
-            outputDirectory = xmlPath / outputDirectory;
-        std::string contFileBaseName =
-                outputList.get<std::string> ( "Continuation file base name" );
-        std::string outputFormat =
-                outputList.get<std::string> ( "Output format" );
-        boost::filesystem::path contDataFile =
-                outputList.get<std::string> ( "Continuation data file name" );
+        std::string xmlDirectory = extractDirectory( xmlInputFileName );
+
+        std::string & outputDirectory = xmlDirectory;
+
+        std::string contFilePath        = xmlDirectory + '/' + outputList.get<std::string> ( "Continuation data file name" );
+        std::string eigenvaluesFilePath = xmlDirectory + '/' + outputList.get<std::string> ( "Eigenvalues file name" );
 
         Teuchos::ParameterList initialGuessList;
         initialGuessList = piroParams->sublist ( "Initial guess", true );
+	std::string inputFilePath = xmlDirectory + '/' + initialGuessList.get<std::string> ( "State" );
         // =====================================================================
 
         Teuchos::ParameterList              problemParameters;
@@ -137,7 +130,7 @@ main ( int argc, char *argv[] )
         Teuchos::RCP<Ginla::EpetraFVM::StkMesh> mesh = Teuchos::null;
 
         Ginla::EpetraFVM::StkMeshRead( *eComm,
-                                       getAbsolutePath( initialGuessList.get<std::string> ( "State" ), xmlPath ),
+                                       inputFilePath,
                                        z,
                                        mvpValues,
                                        thickness,
@@ -146,19 +139,7 @@ main ( int argc, char *argv[] )
                                      );
 
         // set the output directory for later plotting with this
-        mesh->setOutputFile( outputDirectory.string(), "solution" );
-
-//        problemParameters.set<double>( "mu", 2.979541915949315e-01 );
-//        problemParameters.set<double>( "phi", 1.57079633 );
-//        problemParameters.set<double>( "theta", 0.0 );
-
-//         VIO::EpetraMesh::read( eComm,
-//                                getAbsolutePath( initialGuessList.get<std::string> ( "State" ), xmlPath ),
-//                                z,
-//                                mesh,
-//                                problemParameters
-//                                );
-//
+        mesh->setOutputFile( outputDirectory, "solution" );
 
         // create the state
         TEUCHOS_ASSERT( !z.is_null() );
@@ -208,7 +189,6 @@ main ( int argc, char *argv[] )
                                                         )
                             );
 
-        std::string contFilePath = getAbsolutePath( contDataFile, xmlPath );
         Teuchos::RCP<Ginla::IO::StatsWriter> statsWriter =
                 Teuchos::rcp( new Ginla::IO::StatsWriter( contFilePath ) );
         observer->setStatisticsWriter( statsWriter );
@@ -217,12 +197,10 @@ main ( int argc, char *argv[] )
 //         setup eigen saver
 #ifdef HAVE_LOCA_ANASAZI
           Teuchos::ParameterList & eigenList = piroParams->sublist ( "LOCA" ).sublist ( "Stepper" ) .sublist ( "Eigensolver" );
-          std::string eigenvaluesFileName =
-              getAbsolutePath( outputList.get<std::string> ( "Eigenvalues file name" ), xmlPath );
 //          std::string eigenstateFileNameAppendix =
 //              outputList.get<std::string> ( "Eigenstate file name appendix" );
           Teuchos::RCP<Ginla::IO::StatsWriter> eigenStatsWriter =
-              Teuchos::rcp( new Ginla::IO::StatsWriter( eigenvaluesFileName ) );
+              Teuchos::rcp( new Ginla::IO::StatsWriter( eigenvaluesFilePath ) );
 
           Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> glSaveEigenDataStrategy =
                   Teuchos::RCP<Ginla::IO::SaveEigenData> ( new Ginla::IO::SaveEigenData ( eigenList,
