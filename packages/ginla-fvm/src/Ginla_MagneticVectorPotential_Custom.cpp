@@ -54,10 +54,10 @@ Teuchos::RCP<Point>
 Ginla::MagneticVectorPotential::Custom::
 getA(const Point & x) const
 {
-  TEST_FOR_EXCEPTION( true,
-                      std::runtime_error,
-                      "getA(x) for general 'x' cannot be implemented as no general MVP info is provided to this class."
-                    );
+  TEUCHOS_TEST_FOR_EXCEPTION( true,
+                              std::runtime_error,
+                              "getA(x) for general 'x' cannot be implemented as no general MVP info is provided to this class."
+                            );
   Teuchos::RCP<Point> a;;
   return a;
 }

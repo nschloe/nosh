@@ -119,9 +119,9 @@ ApplyInverse ( const Epetra_MultiVector & X,
                      Epetra_MultiVector & Y
              ) const
 {
-    TEST_FOR_EXCEPTION( true,
-                        std::logic_error,
-                        "Not implemented." );
+    TEUCHOS_TEST_FOR_EXCEPTION( true,
+                                std::logic_error,
+                                "Not implemented." );
     return -1;
 }
 // =============================================================================
@@ -129,9 +129,9 @@ double
 Ginla::EpetraFVM::JacobianOperator::
 NormInf () const
 {
-    TEST_FOR_EXCEPTION( true,
-                        std::logic_error,
-                        "Not yet implemented." );
+    TEUCHOS_TEST_FOR_EXCEPTION( true,
+                                std::logic_error,
+                                "Not yet implemented." );
     return 0.0;
 }
 // =============================================================================

@@ -105,9 +105,9 @@ print()
          else if ( statisticsList_->isType<std::string>( label ) )
              strstream.width( statisticsList_->get<std::string>( label ).length() );
          else
-           TEST_FOR_EXCEPTION( true,
-                               std::logic_error,
-                               "Invalid data type for item \"" << label << "\"." );
+           TEUCHOS_TEST_FOR_EXCEPTION( true,
+                                       std::logic_error,
+                                       "Invalid data type for item \"" << label << "\"." );
            
          strstream << statisticsList_->name(k);
          fileStream_ << strstream.str() << columnSep;
@@ -155,9 +155,9 @@ print()
            strstream << statisticsList_->get<std::string>( label );
        }
        else
-           TEST_FOR_EXCEPTION( true,
-                               std::logic_error,
-                               "Invalid data type for item \"" << label << "\"." );
+           TEUCHOS_TEST_FOR_EXCEPTION( true,
+                                       std::logic_error,
+                                       "Invalid data type for item \"" << label << "\"." );
 
        fileStream_ << strstream.str() << columnSep;
   }

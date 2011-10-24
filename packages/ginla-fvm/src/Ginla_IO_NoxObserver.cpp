@@ -72,9 +72,9 @@ observeSolution( const Epetra_Vector & soln )
           this->observeTurningPointContinuation_( savable );
           break;
       default:
-          TEST_FOR_EXCEPTION ( true,
-                               std::logic_error,
-                               "Illegal observer type " << observerType_ );
+          TEUCHOS_TEST_FOR_EXCEPTION ( true,
+                                       std::logic_error,
+                                       "Illegal observer type " << observerType_ );
     }
 
     return;
@@ -115,12 +115,12 @@ observeTurningPointContinuation_( const Teuchos::RCP<const Ginla::EpetraFVM::Sta
         state->save( index );
     }
     else
-        TEST_FOR_EXCEPTION( true,
-                            std::logic_error,
-                            "Not yet implemented." <<
-                            "This part of the code used to write state and null vector alternately for turning point continuation" <<
-                            "but because of how StkMesh is organized, it seems impossible to first write to one file, then to" <<
-                            "another with with the same mesh. Need to investigate." );
+        TEUCHOS_TEST_FOR_EXCEPTION( true,
+                                    std::logic_error,
+                                    "Not yet implemented." <<
+                                    "This part of the code used to write state and null vector alternately for turning point continuation" <<
+                                    "but because of how StkMesh is organized, it seems impossible to first write to one file, then to" <<
+                                    "another with with the same mesh. Need to investigate." );
     return;
 }
 // ============================================================================

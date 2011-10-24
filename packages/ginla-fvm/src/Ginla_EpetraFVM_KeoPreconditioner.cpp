@@ -34,6 +34,8 @@
 #include <Amesos_BaseSolver.h>
 #include <Epetra_LinearProblem.h>
 
+#include <Teuchos_VerboseObject.hpp>
+
 // =============================================================================
 // some typdefs for Belos
 typedef double                           ST;
@@ -55,6 +57,7 @@ KeoPreconditioner( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>               &
         keoProblem_( Teuchos::rcp( new Epetra_LinearProblem() ) ),
         keoSolver_( Teuchos::null ),
         invType_( Ml ),
+        out_( Teuchos::VerboseObjectBase::getDefaultOStream() ),
         rebuildTime_( Teuchos::TimeMonitor::getNewTimer("KeoPreconditioner::rebuild") ),
         rebuildMlTime_( Teuchos::TimeMonitor::getNewTimer("KeoPreconditioner::rebuildMl") ),
         rebuildIluTime_( Teuchos::TimeMonitor::getNewTimer("KeoPreconditioner::rebuildIlu") ),
@@ -90,22 +93,25 @@ ApplyInverse( const Epetra_MultiVector & X,
                     Epetra_MultiVector & Y
             ) const
 {
+  int err;
+
   switch ( invType_ )
   {
     case Ilu:
-        return this->ApplyInverseIlu_( X, Y );
+        err = this->ApplyInverseIlu_( X, Y );
         break;
     case Ml:
-        return this->ApplyInverseMl_( X, Y );
+        err = this->ApplyInverseMl_( X, Y );
         break;
     default:
-        TEST_FOR_EXCEPTION( true,
-                            std::invalid_argument,
-                            "Illegal value of the invType \"" << invType_ << "\"."
-                          );
+        TEUCHOS_TEST_FOR_EXCEPTION( true,
+                                    std::invalid_argument,
+                                    "Illegal value of the invType \"" << invType_ << "\"."
+                                  );
         break;
   }
-  return -1;
+
+  return err;
 }
 // =============================================================================
 int
@@ -134,6 +140,12 @@ ApplyInverseMl_( const Epetra_MultiVector & X,
    else
      belosList.set( "Verbosity", Belos::Errors + Belos::Warnings );
 
+   // check for NaNs in the initial guess
+   double r[1];
+   Y.Norm1( r );
+   if ( r[0]!=r[0] )
+       Y.PutScalar( 0.0 );
+
    // Construct an unpreconditioned linear problem instance.
    Teuchos::RCP<const Epetra_MultiVector> Xptr = Teuchos::rcpFromRef( X );
    Teuchos::RCP<Epetra_MultiVector> Yptr = Teuchos::rcpFromRef( Y );
@@ -142,8 +154,7 @@ ApplyInverseMl_( const Epetra_MultiVector & X,
 
    if ( !set )
    {
-     if (proc_verbose)
-       std::cerr << "\nERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
+     *out_ << "\nERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
      return -1;
    }
    // -------------------------------------------------------------------------
@@ -186,9 +197,9 @@ double
 Ginla::EpetraFVM::KeoPreconditioner::
 NormInf () const
 {
-    TEST_FOR_EXCEPTION( true,
-                        std::logic_error,
-                        "Not yet implemented." );
+    TEUCHOS_TEST_FOR_EXCEPTION( true,
+                                std::logic_error,
+                                "Not yet implemented." );
     return 0.0;
 }
 // =============================================================================
@@ -273,10 +284,10 @@ rebuild()
           return this->rebuildMl_();
           break;
       default:
-          TEST_FOR_EXCEPTION( true,
-                              std::invalid_argument,
-                              "Illegal value of the invType \"" << invType_ << "\"."
-                            );
+          TEUCHOS_TEST_FOR_EXCEPTION( true,
+                                      std::invalid_argument,
+                                      "Illegal value of the invType \"" << invType_ << "\"."
+                                    );
           break;
     }
     // -------------------------------------------------------------------------

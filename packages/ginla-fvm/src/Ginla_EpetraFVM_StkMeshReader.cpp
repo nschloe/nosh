@@ -152,10 +152,10 @@ read( const Epetra_Comm                       & comm,
                                                    Ioss::READ_MODEL,
                                                    MPI_COMM_WORLD
                                                  );
-  TEST_FOR_EXCEPTION( dbi == NULL || !dbi->ok(),
-                      std::runtime_error,
-                      "ERROR: Could not open database '" << fileName_ << "' of type '" << meshType << "'."
-                    );
+  TEUCHOS_TEST_FOR_EXCEPTION( dbi == NULL || !dbi->ok(),
+                              std::runtime_error,
+                              "ERROR: Could not open database '" << fileName_ << "' of type '" << meshType << "'."
+                            );
 
   // set the vector field label separator
   dbi->set_field_separator(0);
@@ -330,11 +330,11 @@ createMvp_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
     {
         double* mvpVal = stk::mesh::field_data( *mvpField, *ownedNodes[k] );
         // Check if the field is actually there.
-        TEST_FOR_EXCEPTION( mvpVal == NULL,
-                            std::runtime_error,
-                            "MVP value for node " << k << " not found.\n"
-                            << "Probably there is no MVP field given with the state."
-                          );
+        TEUCHOS_TEST_FOR_EXCEPTION( mvpVal == NULL,
+                                    std::runtime_error,
+                                    "MVP value for node " << k << " not found.\n"
+                                    << "Probably there is no MVP field given with the state."
+                                  );
 
         mvp->ReplaceMyValue( k, 0, mvpVal[0] );
         mvp->ReplaceMyValue( k, 1, mvpVal[1] );
