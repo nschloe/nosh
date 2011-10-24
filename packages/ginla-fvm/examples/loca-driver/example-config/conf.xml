@@ -16,9 +16,6 @@
   </ParameterList>
 
   <ParameterList name="Output">
-      <Parameter name="Output directory" type="string" value="."/>
-      <Parameter name="Output format" type="string" value="VTI"/>
-      <Parameter name="Continuation file base name" type="string" value="continuationStep"/>
       <Parameter name="Continuation data file name" type="string" value="continuationData.dat"/>
       <Parameter name="Eigenvalues file name" type="string" value="eigenvalues.dat"/>
       <Parameter name="Eigenstate file name appendix" type="string" value="eigenstate"/>
