@@ -76,11 +76,6 @@ public:
                          Epetra_MultiVector & Y
                  ) const;
 
-    int
-    ApplyInverse2 ( const Epetra_MultiVector & X,
-                         Epetra_MultiVector & Y
-                 ) const;
-
     virtual double
     NormInf () const;
 
