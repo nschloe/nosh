@@ -97,21 +97,24 @@ initializeEdgeMidpointProjectionCache_() const
       // In a simplex, the edges are exactly the connection between each pair
       // of nodes. Hence, loop over pairs of nodes.
       unsigned int edgeIndex = 0;
-      Teuchos::Tuple<int,2> gid;
+      Teuchos::Tuple<int,2> gid, lid;
       for ( unsigned int e0 = 0; e0 < numLocalNodes; e0++ )
       {
           const Point & node0 = localNodes[e0];
           gid[0] = (*rel[e0].entity()).identifier() - 1;
+          lid[0] = mvp_->Map().LID( gid[0] );
+
           for ( unsigned int e1 = e0+1; e1 < numLocalNodes; e1++ )
           {
               const Point & node1 = localNodes[e1];
               gid[1] = (*rel[e1].entity()).identifier() - 1;
+              lid[1] = mvp_->Map().LID( gid[1] );
 
               // Approximate the value at the midpoint of the edge
               // by the average of the values at the adjacent nodes.
               Point a;
               for (int i=0; i<a.size(); i++ )
-                  a[i] = 0.5 * ( (*(*mvp_)(i))[gid[0]] + (*(*mvp_)(i))[gid[1]] );
+                  a[i] = 0.5 * ( (*(*mvp_)(i))[lid[0]] + (*(*mvp_)(i))[lid[1]] );
 
               // Instead of first computing the projection over the normalized edge
               // and then multiply it with the edge length, don't normalize the
