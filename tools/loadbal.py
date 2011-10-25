@@ -22,8 +22,9 @@ def _main():
 # ==============================================================================
 def _slice( filename, output, num_slices ):
 
-    nemslice_command = "/opt/trilinos/dev/master/gcc/4.6.1/bin/nem_slice"
-    nemspread_command = "/opt/trilinos/dev/master/gcc/4.6.1/bin/nem_spread"
+    bin_dir = "/opt/trilinos/dev/master/gcc/4.4.5/bin/"
+    nemslice_command = bin_dir + "nem_slice"
+    nemspread_command = bin_dir + "nem_spread"
     tmp_nemspreadinp = "nem_spread.inp"
     slice_method = "inertial"
     #slice_method = "spectral"
