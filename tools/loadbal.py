@@ -6,7 +6,7 @@ def _main():
     filename = _parse_options()
 
     # get basename of input file
-    basename, = os.path.splitext( filename )
+    basename, extension = os.path.splitext( filename )
 
     # define output filename(s)
     output = "%s-balanced.nemI" % basename
@@ -25,7 +25,9 @@ def _slice( filename, output, num_slices ):
     nemslice_command = "/opt/trilinos/dev/master/gcc/4.6.1/bin/nem_slice"
     nemspread_command = "/opt/trilinos/dev/master/gcc/4.6.1/bin/nem_spread"
     tmp_nemspreadinp = "nem_spread.inp"
-    slice_method = "spectral"
+    slice_method = "inertial"
+    #slice_method = "spectral"
+    #slice_method = "multikl"
 
     slice_command = "%s -v -o \"%s\" -e -m mesh=1x%d -l %s \"%s\"" % \
                     ( nemslice_command, output, num_slices, slice_method, filename )
