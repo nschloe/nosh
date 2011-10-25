@@ -7,8 +7,9 @@
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_XMLParameterListHelpers.hpp>
+#include <Teuchos_VerboseObject.hpp>
+#include <Teuchos_StandardCatchMacros.hpp>
 #include <Epetra_LinearProblem.h>
-#include <AztecOO.h>
 
 #include <ml_epetra_preconditioner.h>
 
@@ -17,8 +18,6 @@
 #include <BelosEpetraAdapter.hpp>
 #include <BelosPseudoBlockGmresSolMgr.hpp>
 #include <BelosPseudoBlockCGSolMgr.hpp>
-
-#include <boost/filesystem.hpp>
 
 #include "Ginla_EpetraFVM_StkMeshReader.hpp"
 
@@ -62,14 +61,14 @@ int main ( int argc, char *argv[] )
            Teuchos::rcp<Epetra_SerialComm> ( new Epetra_SerialComm() );
 #endif
 
-    int status = 0;
-    Belos::ReturnType ret;
+    const Teuchos::RCP<Teuchos::FancyOStream> out =
+        Teuchos::VerboseObjectBase::getDefaultOStream();
 
+    bool success = true;
     try
     {
       // ===========================================================================
-      if ( eComm->MyPID() == 0 )
-          std::cout << "# " << eComm->NumProc() << " processes" << std::endl;
+      *out << "# " << eComm->NumProc() << " processes" << std::endl;
       // ===========================================================================
       // handle command line arguments
       Teuchos::CommandLineProcessor My_CLP;
@@ -183,42 +182,13 @@ int main ( int argc, char *argv[] )
       Teuchos::TimeMonitor::summarize();
       // -----------------------------------------------------------------------
     }
-    catch ( std::exception & e )
-    {
-        if ( eComm->MyPID() == 0 )
-            std::cerr << e.what() << std::endl;
-        status += 10;
-    }
-    catch ( std::string & e )
-    {
-        if ( eComm->MyPID() == 0 )
-            std::cerr << e << std::endl;
-        status += 10;
-    }
-    catch ( const char * e )
-    {
-        if ( eComm->MyPID() == 0 )
-            std::cerr << e << std::endl;
-        status += 10;
-    }
-    catch ( int e )
-    {
-        if ( eComm->MyPID() == 0 )
-            std::cerr << "Caught unknown exception code " << e <<  "." << std::endl;
-        status += 10;
-    }
-    catch (...)
-    {
-        if ( eComm->MyPID() == 0 )
-            std::cerr << "Caught unknown exception." << std::endl;
-        status += 10;
-    }
+    TEUCHOS_STANDARD_CATCH_STATEMENTS(true, *out, success);
 
 #ifdef HAVE_MPI
       MPI_Finalize();
 #endif
 
-    return status==0 ? EXIT_SUCCESS : EXIT_FAILURE;
+    return success ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 // =========================================================================
 

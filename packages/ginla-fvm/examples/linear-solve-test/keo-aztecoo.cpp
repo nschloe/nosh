@@ -12,8 +12,6 @@
 
 #include <ml_epetra_preconditioner.h>
 
-#include <boost/filesystem.hpp>
-
 #include "Ginla_EpetraFVM_StkMeshReader.hpp"
 
 #include "Ginla_EpetraFVM_State.hpp"
@@ -37,7 +35,8 @@
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
-#include "Teuchos_StandardCatchMacros.hpp"
+#include <Teuchos_VerboseObject.hpp>
+#include <Teuchos_StandardCatchMacros.hpp>
 
 // =============================================================================
 int main ( int argc, char *argv[] )
@@ -56,8 +55,10 @@ int main ( int argc, char *argv[] )
            Teuchos::rcp<Epetra_SerialComm> ( new Epetra_SerialComm() );
 #endif
 
-    int status = 0;
+    const Teuchos::RCP<Teuchos::FancyOStream> out =
+        Teuchos::VerboseObjectBase::getDefaultOStream();
 
+    bool success = true;
     try
     {
       // ===========================================================================
@@ -221,7 +222,7 @@ int main ( int argc, char *argv[] )
 
       double residual;
       TEUCHOS_ASSERT_EQUALITY( 0, resid.Norm2(&residual) );
-      if (eComm->MyPID()==0) cout << "Residual    = " << residual << "\n\n" << endl;
+      *out << "Residual    = " << residual << "\n\n" << endl;
       // -----------------------------------------------------------------------
       // direct solver
       Amesos Factory;
@@ -235,53 +236,22 @@ int main ( int argc, char *argv[] )
       List.set("PrintStatus", true);
       Solver->SetParameters(List);
 
-      if (eComm->MyPID() == 0)
-        std::cout << "Starting symbolic factorization..." << std::endl;
+      *out << "Starting symbolic factorization..." << std::endl;
       Solver->SymbolicFactorization();
-      if (eComm->MyPID() == 0)
-        std::cout << "Starting numeric factorization..." << std::endl;
+      *out << "Starting numeric factorization..." << std::endl;
       Solver->NumericFactorization();
-      if (eComm->MyPID() == 0)
-        std::cout << "Starting solution phase..." << std::endl;
+      *out << "Starting solution phase..." << std::endl;
       // solve!
-      Solver->Solve();
+      int ierr = Solver->Solve();
+      success = ierr==0;
       // -----------------------------------------------------------------------
     }
-    catch ( std::exception & e )
-    {
-        if ( eComm->MyPID() == 0 )
-            std::cerr << e.what() << std::endl;
-        status += 10;
-    }
-    catch ( std::string & e )
-    {
-        if ( eComm->MyPID() == 0 )
-            std::cerr << e << std::endl;
-        status += 10;
-    }
-    catch ( const char * e )
-    {
-        if ( eComm->MyPID() == 0 )
-            std::cerr << e << std::endl;
-        status += 10;
-    }
-    catch ( int e )
-    {
-        if ( eComm->MyPID() == 0 )
-            std::cerr << "Caught unknown exception code " << e <<  "." << std::endl;
-        status += 10;
-    }
-    catch (...)
-    {
-        if ( eComm->MyPID() == 0 )
-            std::cerr << "Caught unknown exception." << std::endl;
-        status += 10;
-    }
+    TEUCHOS_STANDARD_CATCH_STATEMENTS(true, *out, success);
 
 #ifdef HAVE_MPI
       MPI_Finalize();
 #endif
 
-    return status==0 ? EXIT_SUCCESS : EXIT_FAILURE;
+    return success ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 // =========================================================================

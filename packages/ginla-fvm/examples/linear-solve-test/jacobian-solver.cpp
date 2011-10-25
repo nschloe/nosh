@@ -7,8 +7,9 @@
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_XMLParameterListHelpers.hpp>
+#include <Teuchos_VerboseObject.hpp>
+#include <Teuchos_StandardCatchMacros.hpp>
 #include <Epetra_LinearProblem.h>
-#include <AztecOO.h>
 
 #include <ml_epetra_preconditioner.h>
 
@@ -18,8 +19,6 @@
 #include <BelosPseudoBlockGmresSolMgr.hpp>
 #include <BelosPseudoBlockCGSolMgr.hpp>
 #include <BelosMinresSolMgr.hpp>
-
-#include <boost/filesystem.hpp>
 
 #include "Ginla_EpetraFVM_StkMeshReader.hpp"
 
@@ -62,9 +61,10 @@ int main ( int argc, char *argv[] )
            Teuchos::rcp<Epetra_SerialComm> ( new Epetra_SerialComm() );
 #endif
 
-    int status = 0;
-    Belos::ReturnType ret;
+    const Teuchos::RCP<Teuchos::FancyOStream> out =
+        Teuchos::VerboseObjectBase::getDefaultOStream();
 
+    bool success = true;
     try
     {
       // ===========================================================================
@@ -101,8 +101,7 @@ int main ( int argc, char *argv[] )
       Teuchos::RCP<Epetra_Vector>         thickness = Teuchos::null;
       Teuchos::RCP<Ginla::EpetraFVM::StkMesh> mesh = Teuchos::null;
 
-      if ( eComm->MyPID() == 0 )
-          std::cout << "Reading..." << std::endl;
+      *out << "Reading..." << std::endl;
 
       Teuchos::RCP<Teuchos::Time> readTime = Teuchos::TimeMonitor::getNewTimer("Data I/O");
       {
@@ -194,12 +193,9 @@ int main ( int argc, char *argv[] )
       // Construct an unpreconditioned linear problem instance.
       Belos::LinearProblem<double,MV,OP> problem( jac, epetra_x, epetra_b );
       bool set = problem.setProblem();
-      if (set == false)
-      {
-          if (proc_verbose)
-              std::cout << "\nERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
-          return -1;
-      }
+      TEUCHOS_TEST_FOR_EXCEPTION( !set,
+                                  std::logic_error,
+                                  "ERROR:  Belos::LinearProblem failed to set up correctly!" );
       // -----------------------------------------------------------------------
       // create preconditioner
       Teuchos::RCP<Teuchos::Time> precConstructTime = Teuchos::TimeMonitor::getNewTimer("Prec construction");
@@ -244,7 +240,8 @@ int main ( int argc, char *argv[] )
       Teuchos::RCP<Teuchos::Time> solveTime = Teuchos::TimeMonitor::getNewTimer("Jacobian solve");
       {
           Teuchos::TimeMonitor tm(*solveTime);
-          ret = newSolver->solve();
+          Belos::ReturnType ret = newSolver->solve();
+          success = ret==Belos::Converged;
       }
       // -----------------------------------------------------------------------
       //
@@ -268,41 +265,12 @@ int main ( int argc, char *argv[] )
 //       }
       // -----------------------------------------------------------------------
     }
-    catch ( std::exception & e )
-    {
-        if ( eComm->MyPID() == 0 )
-            std::cerr << e.what() << std::endl;
-        status += 10;
-    }
-    catch ( std::string & e )
-    {
-        if ( eComm->MyPID() == 0 )
-            std::cerr << e << std::endl;
-        status += 10;
-    }
-    catch ( const char * e )
-    {
-        if ( eComm->MyPID() == 0 )
-            std::cerr << e << std::endl;
-        status += 10;
-    }
-    catch ( int e )
-    {
-        if ( eComm->MyPID() == 0 )
-            std::cerr << "Caught unknown exception code " << e <<  "." << std::endl;
-        status += 10;
-    }
-    catch (...)
-    {
-        if ( eComm->MyPID() == 0 )
-            std::cerr << "Caught unknown exception." << std::endl;
-        status += 10;
-    }
+    TEUCHOS_STANDARD_CATCH_STATEMENTS(true, *out, success);
 
 #ifdef HAVE_MPI
       MPI_Finalize();
 #endif
 
-    return ret==Belos::Converged ? EXIT_SUCCESS : EXIT_FAILURE;
+    return success ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 // =========================================================================

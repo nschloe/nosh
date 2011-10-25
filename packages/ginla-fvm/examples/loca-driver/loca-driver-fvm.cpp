@@ -8,6 +8,8 @@
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_XMLParameterListHelpers.hpp>
+#include <Teuchos_VerboseObject.hpp>
+#include <Teuchos_StandardCatchMacros.hpp>
 
 #ifdef HAVE_MPI
 #include <Epetra_MpiComm.h>
@@ -72,8 +74,10 @@ main ( int argc, char *argv[] )
            Teuchos::rcp<Epetra_SerialComm> ( new Epetra_SerialComm() );
 #endif
 
-    int status = 0;
+    const Teuchos::RCP<Teuchos::FancyOStream> out =
+        Teuchos::VerboseObjectBase::getDefaultOStream();
 
+    bool success = true;
     try
     {
         // =====================================================================
@@ -100,9 +104,8 @@ main ( int argc, char *argv[] )
 
         Teuchos::RCP<Teuchos::ParameterList> piroParams =
                 Teuchos::rcp ( new Teuchos::ParameterList );
-        if ( eComm->MyPID() == 0 )
-            std::cout << "\n\n\tReading parameter list from \"" << xmlInputFileName << "\".\n\n"
-                      << std::endl;
+        *out << "\n\n\tReading parameter list from \"" << xmlInputFileName << "\".\n\n"
+             << std::endl;
 
         Teuchos::updateParametersFromXmlFile ( xmlInputFileName, piroParams.get() );
 
@@ -155,8 +158,7 @@ main ( int argc, char *argv[] )
             problemParameters.setParameters( overwritePList );
         }
 
-        if ( eComm->MyPID() == 0 )
-            std::cout << problemParameters << std::endl;
+        *out << problemParameters << std::endl;
 
         double mu = problemParameters.get<double> ( "mu" );
 
@@ -280,9 +282,6 @@ main ( int argc, char *argv[] )
 
         bool isAlreadyInverted = true;
 
-//         std::cout << "is null" << std::endl;
-//         std::cout << iJac.is_null() << " " << J.is_null() << " " << iPrec.is_null() << " " << M.is_null() << std::endl;
-
         Teuchos::RCP<NOX::Epetra::LinearSystemStratimikos> linSys =
                 Teuchos::rcp ( new NOX::Epetra::LinearSystemStratimikos ( nlPrintParams,
                                                                           lsParams,
@@ -314,8 +313,7 @@ main ( int argc, char *argv[] )
                                                          linSys,
                                                          myLocaParams ) );
 
-        if ( eComm->MyPID() == 0 )
-              std::cout << myLocaParams << std::endl;
+        *out << myLocaParams << std::endl;
         grp->setParams ( myLocaParams );
         // ---------------------------------------------------------------------
         // Set up the NOX status tests
@@ -363,7 +361,9 @@ main ( int argc, char *argv[] )
         Teuchos::RCP<Teuchos::Time> locarunTime = Teuchos::TimeMonitor::getNewTimer("LOCA runtime");
         {
             Teuchos::TimeMonitor tm(*locarunTime);
-            status = stepper->run();
+            int ierr = stepper->run();
+            if ( ierr!=0 )
+                success = false;
         }
         // ---------------------------------------------------------------------
         // clean up
@@ -374,41 +374,12 @@ main ( int argc, char *argv[] )
         Teuchos::TimeMonitor::summarize();
         // ---------------------------------------------------------------------
     }
-    catch ( std::exception & e )
-    {
-        if ( eComm->MyPID() == 0 )
-            std::cerr << e.what() << std::endl;
-        status += 10;
-    }
-    catch ( std::string & e )
-    {
-        if ( eComm->MyPID() == 0 )
-            std::cerr << e << std::endl;
-        status += 10;
-    }
-    catch ( const char * e )
-    {
-        if ( eComm->MyPID() == 0 )
-            std::cerr << e << std::endl;
-        status += 10;
-    }
-    catch ( int e )
-    {
-        if ( eComm->MyPID() == 0 )
-            std::cerr << "Caught unknown exception code " << e <<  "." << std::endl;
-        status += 10;
-    }
-    catch (...)
-    {
-        if ( eComm->MyPID() == 0 )
-            std::cerr << "Caught unknown exception." << std::endl;
-        status += 10;
-    }
+    TEUCHOS_STANDARD_CATCH_STATEMENTS(true, *out, success);
 
 #ifdef HAVE_MPI
       MPI_Finalize();
 #endif
 
-    return status==0 ? EXIT_SUCCESS : EXIT_FAILURE;
+    return success ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 // =========================================================================
