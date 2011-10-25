@@ -238,17 +238,15 @@ int main ( int argc, char *argv[] )
       int numVecs = anasaziSolution.numVecs;
       *out << "Number of computed eigenpairs: " << numVecs << std::endl;
 
-      Teuchos::RCP<std::vector<double> > evals_r =
-               Teuchos::rcp(new std::vector<double>(numVecs));
-      Teuchos::RCP<std::vector<double> > evals_i =
-              Teuchos::rcp(new std::vector<double>(numVecs));
+      Teuchos::ArrayRCP<double> evals_r( numVecs );
+      Teuchos::ArrayRCP<double> evals_i( numVecs );
       *out << "\n\nEigenvalues:" << std::endl;
       for (int i=0; i<numVecs; i++)
       {
-          (*evals_r)[i] = anasaziSolution.Evals[i].realpart;
-          (*evals_i)[i] = anasaziSolution.Evals[i].imagpart;
+          evals_r[i] = anasaziSolution.Evals[i].realpart;
+          evals_i[i] = anasaziSolution.Evals[i].imagpart;
 
-          *out << (*evals_r)[i] << " + I " << (*evals_i)[i] << std::endl;
+          *out << evals_r[i] << " + I " << evals_i[i] << std::endl;
       }
       // -----------------------------------------------------------------------
     }

@@ -248,8 +248,8 @@ int main ( int argc, char *argv[] )
       // Compute actual residuals.
       //
 //       bool badRes = false;
-//       std::vector<double> actual_resids( 1 );
-//       std::vector<double> rhs_norm( 1 );
+//       Teuchos::Array<double> actual_resids( 1 );
+//       Teuchos::Array<double> rhs_norm( 1 );
 //       Epetra_Vector resid( keoMatrix->OperatorRangeMap() );
 //       OPT::Apply( *keoMatrix, *epetra_x, resid );
 //       MVT::MvAddMv( -1.0, resid, 1.0, *epetra_b, resid );
