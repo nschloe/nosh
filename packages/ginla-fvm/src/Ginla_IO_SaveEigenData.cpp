@@ -146,7 +146,6 @@ save ( Teuchos::RCP<std::vector<double> >       & evals_r,
     eigenvaluesList.set( "#0unstable", numUnstableEigenvalues );
     eigenvaluesList.set( "#1null", numNullvalues );
     eigenvaluesList.set( "#2stable", numStableEigenvalues );
-    std::cout << "SSS " << evals_r->size() << std::endl;
     for ( unsigned int k = 0; k < numEigenValues; k++ )
     {
         std::stringstream label;
@@ -178,7 +177,6 @@ save ( Teuchos::RCP<std::vector<double> >       & evals_r,
 //     eigenFileStream << std::endl;
 //     eigenFileStream.close();
 
-    std::cout << "TTT " << eigenParamListPtr_->get<int>( "Num Eigenvalues" ) << std::endl;
     if ( !locaStepper_.is_null() )
     {
         if ( numEigenvaluesAdaptive_ )

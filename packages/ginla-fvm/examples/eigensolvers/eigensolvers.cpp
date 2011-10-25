@@ -9,6 +9,8 @@
 #include <Teuchos_ParameterList.hpp>
 #include <Epetra_LinearProblem.h>
 #include <Teuchos_TimeMonitor.hpp>
+#include <Teuchos_VerboseObject.hpp>
+#include <Teuchos_StandardCatchMacros.hpp>
 #include <Epetra_FECrsGraph.h>
 
 #include "Ginla_EpetraFVM_StkMeshReader.hpp"
@@ -52,9 +54,10 @@ int main ( int argc, char *argv[] )
            Teuchos::rcp<Epetra_SerialComm> ( new Epetra_SerialComm() );
 #endif
 
-    int status = 0;
-    Anasazi::ReturnType returnCode;
+    const Teuchos::RCP<Teuchos::FancyOStream> out =
+        Teuchos::VerboseObjectBase::getDefaultOStream();
 
+    bool success = true;
     try
     {
       // ===========================================================================
@@ -91,8 +94,7 @@ int main ( int argc, char *argv[] )
       Teuchos::RCP<Epetra_Vector>         thickness = Teuchos::null;
       Teuchos::RCP<Ginla::EpetraFVM::StkMesh> mesh = Teuchos::null;
 
-      if ( eComm->MyPID() == 0 )
-          std::cout << "Reading..." << std::endl;
+      *out << "Reading..." << std::endl;
 
       Teuchos::RCP<Teuchos::Time> readTime = Teuchos::TimeMonitor::getNewTimer("Data I/O");
       {
@@ -226,64 +228,36 @@ int main ( int argc, char *argv[] )
 
       // Solve the problem
       //
-      returnCode = MySolverMan.solve();
+      Anasazi::ReturnType returnCode = MySolverMan.solve();
+      success = returnCode==Anasazi::Converged;
 
       // get the solution
       const Anasazi::Eigensolution<double,MV>& anasaziSolution =
               MyProblem->getSolution();
 
       int numVecs = anasaziSolution.numVecs;
-      std::cout << "Number of computed eigenpairs: " << numVecs << std::endl;
+      *out << "Number of computed eigenpairs: " << numVecs << std::endl;
 
       Teuchos::RCP<std::vector<double> > evals_r =
                Teuchos::rcp(new std::vector<double>(numVecs));
       Teuchos::RCP<std::vector<double> > evals_i =
               Teuchos::rcp(new std::vector<double>(numVecs));
-      std::cout << "\n\nEigenvalues:" << std::endl;
+      *out << "\n\nEigenvalues:" << std::endl;
       for (int i=0; i<numVecs; i++)
       {
           (*evals_r)[i] = anasaziSolution.Evals[i].realpart;
           (*evals_i)[i] = anasaziSolution.Evals[i].imagpart;
 
-          std::cout << (*evals_r)[i] << " + I " << (*evals_i)[i] << std::endl;
+          *out << (*evals_r)[i] << " + I " << (*evals_i)[i] << std::endl;
       }
       // -----------------------------------------------------------------------
     }
-    catch ( std::exception & e )
-    {
-        if ( eComm->MyPID() == 0 )
-            std::cerr << e.what() << std::endl;
-        status += 10;
-    }
-    catch ( std::string & e )
-    {
-        if ( eComm->MyPID() == 0 )
-            std::cerr << e << std::endl;
-        status += 10;
-    }
-    catch ( const char * e )
-    {
-        if ( eComm->MyPID() == 0 )
-            std::cerr << e << std::endl;
-        status += 10;
-    }
-    catch ( int e )
-    {
-        if ( eComm->MyPID() == 0 )
-            std::cerr << "Caught unknown exception code " << e <<  "." << std::endl;
-        status += 10;
-    }
-    catch (...)
-    {
-        if ( eComm->MyPID() == 0 )
-            std::cerr << "Caught unknown exception." << std::endl;
-        status += 10;
-    }
+    TEUCHOS_STANDARD_CATCH_STATEMENTS(true, *out, success);
 
 #ifdef HAVE_MPI
       MPI_Finalize();
 #endif
 
-    return returnCode==Anasazi::Converged ? EXIT_SUCCESS : EXIT_FAILURE;
+    return success ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 // =========================================================================

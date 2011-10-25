@@ -399,9 +399,7 @@ computeFvmEntities_() const
 // in April 2011.
 //
 //   stk::mesh::PartVector empty_add_parts;
-//   std::cout << "c" << std::endl;
 //   stk::mesh::create_adjacent_entities( *bulkData_, empty_add_parts );
-//   std::cout << "d" << std::endl;
 //
 //   std::vector<stk::mesh::Entity*> edges = this->getOwnedEdges();
 //

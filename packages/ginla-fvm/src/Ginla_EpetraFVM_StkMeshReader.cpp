@@ -33,6 +33,7 @@
 #include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 
+#include <Teuchos_VerboseObject.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 
 #include <stk_io/IossBridge.hpp>
@@ -44,7 +45,8 @@
 Ginla::EpetraFVM::StkMeshReader::
 StkMeshReader( const std::string & fileName ):
 fileName_( fileName ),
-readTime_( Teuchos::TimeMonitor::getNewTimer("StkMeshReader::read") )
+readTime_( Teuchos::TimeMonitor::getNewTimer("StkMeshReader::read") ),
+out_( Teuchos::VerboseObjectBase::getDefaultOStream() )
 {
 }
 // =============================================================================
@@ -204,11 +206,10 @@ read( const Epetra_Comm                       & comm,
   // Restart index to read solution from exodus file.
 //   int index = -1; // Default to no restart
   int index = 1; // restart from the first step
-  if ( comm.MyPID() == 0 )
-      if ( index<1 )
-          std::cout << "Restart Index not set. Not reading solution from exodus (" << index << ")"<< endl;
-      else
-          std::cout << "Restart Index set, reading solution time step: " << index << endl;
+  if ( index<1 )
+      *out_ << "Restart Index not set. Not reading solution from exodus (" << index << ")"<< endl;
+  else
+      *out_ << "Restart Index set, reading solution time step: " << index << endl;
 
   stk::io::process_input_request( *meshData,
                                   *bulkData,
@@ -231,7 +232,7 @@ read( const Epetra_Comm                       & comm,
   // These are vain attempts to find out whether thicknessField is actually empty.
 //     const stk::mesh::FieldBase::RestrictionVector & restrictions = thicknessField->restrictions();
 //     TEUCHOS_ASSERT( !restrictions.empty() );
-//     std::cout << "max_size " << thicknessField->max_size(metaData->node_rank()) << std::endl;
+//     *out << "max_size " << thicknessField->max_size(metaData->node_rank()) << std::endl;
 
   // Check of the thickness data is of any value. If not: ditch it.
   double norminf;
@@ -299,9 +300,9 @@ createThickness_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
         // Check if the field is actually there.
         if (thicknessVal == NULL)
         {
-            std::cerr << "WARNING: Thickness value for node " << k << " not found.\n"
-                      << "Probably there is no thickness field given with the state. Using default."
-                      << std::endl;
+            *out_ << "WARNING: Thickness value for node " << k << " not found.\n"
+                  << "Probably there is no thickness field given with the state. Using default."
+                  << std::endl;
             return Teuchos::null;
         }
         thickness->ReplaceMyValues( 1, thicknessVal, &k );

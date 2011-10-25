@@ -52,6 +52,7 @@ protected:
 private:
     const std::string fileNameBase_;
     int time_;
+    const Teuchos::RCP<Teuchos::FancyOStream> out_;
 
 private:
     void

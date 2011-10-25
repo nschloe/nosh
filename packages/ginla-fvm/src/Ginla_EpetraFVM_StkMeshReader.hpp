@@ -62,6 +62,7 @@ protected:
 private:
     const std::string fileName_;
     const Teuchos::RCP<Teuchos::Time> readTime_;
+    const Teuchos::RCP<Teuchos::FancyOStream> out_;
 
 private:
     Teuchos::RCP<Epetra_Vector>

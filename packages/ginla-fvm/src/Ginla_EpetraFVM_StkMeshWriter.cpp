@@ -29,6 +29,8 @@
 #include <Epetra_SerialComm.h>
 #endif
 
+#include <Teuchos_VerboseObject.hpp>
+
 #include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/FieldData.hpp>
@@ -43,7 +45,8 @@ typedef stk::mesh::Field<double> ScalarFieldType;
 Ginla::EpetraFVM::StkMeshWriter::
 StkMeshWriter( const std::string & fileNameBase ):
 fileNameBase_( fileNameBase ),
-time_( 0 )
+time_( 0 ),
+out_( Teuchos::VerboseObjectBase::getDefaultOStream() )
 {
 }
 // =============================================================================
@@ -108,11 +111,11 @@ write( const Epetra_Vector                                 & psi,
                                                     time
                                                   );
 
-    std::cout << "Ginla::EpetraFVM::StkMeshWriter::write:\n"
-              << "\twriting time " << step << "\n"
-              << "\tindex " << out_step << "\n"
-              << "\tto file " //<< fileName.str()
-              << std::endl;
+    *out_ << "Ginla::EpetraFVM::StkMeshWriter::write:\n"
+          << "\twriting time " << step << "\n"
+          << "\tindex " << out_step << "\n"
+          << "\tto file " //<< fileName.str()
+          << std::endl;
 
     return;
 }
@@ -175,7 +178,7 @@ mergePsi_( const Teuchos::RCP<stk::mesh::fem::FEMMetaData> & metaData,
 ////        std::string name =  parameterList.name(item);
 ////        std::vector<double>  val(1);
 ////        parameterList.entry(item).getValue( &val[0] );
-////        std::cout << "Writing \"" << name << "\" with value \"" << val[0] << "\"." << std::endl;
+////        *out << "Writing \"" << name << "\" with value \"" << val[0] << "\"." << std::endl;
 ////        region.put_field_data( name, val );
 ////    }
 //
@@ -195,13 +198,10 @@ mergePsi_( const Teuchos::RCP<stk::mesh::fem::FEMMetaData> & metaData,
 //                         bool output_all_fields
 //                       )
 //{
-//  std::cout << "A" << std::endl;
 //
 //  region.begin_state(step);
 //  // Special processing for nodeblock (all nodes in model)...
 //  const stk::mesh::MetaData & meta = bulk.mesh_meta_data();
-//
-//  std::cout << "B" << std::endl;
 //
 //  stk::io::util::put_field_data( bulk,
 //                                 meta.universal_part(),
@@ -211,13 +211,9 @@ mergePsi_( const Teuchos::RCP<stk::mesh::fem::FEMMetaData> & metaData,
 //                                 output_all_fields
 //                               );
 //
-//  std::cout << "C" << std::endl;
-//
 //  const stk::mesh::PartVector & all_parts = meta.get_parts();
 //  for ( stk::mesh::PartVector::const_iterator
 //          ip = all_parts.begin(); ip != all_parts.end(); ++ip ) {
-//
-//    std::cout << "D" << std::endl;
 //
 //    stk::mesh::Part * const part = *ip;
 //
@@ -238,7 +234,6 @@ mergePsi_( const Teuchos::RCP<stk::mesh::fem::FEMMetaData> & metaData,
 //      }
 //    }
 //  }
-//  std::cout << "E" << std::endl;
 //  region.end_state(step);
 //}
 // =============================================================================
