@@ -17,8 +17,8 @@
 
 */
 // =============================================================================
-#include "Ginla_EpetraFVM_StkMeshReader.h"
-#include "Ginla_EpetraFVM_StkMesh.h"
+#include "Ginla_EpetraFVM_StkMeshReader.hpp"
+#include "Ginla_EpetraFVM_StkMesh.hpp"
 
 #include <Epetra_Map.h>
 #include <Epetra_Vector.h>

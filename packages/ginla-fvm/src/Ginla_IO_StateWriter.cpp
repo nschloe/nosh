@@ -17,9 +17,9 @@
 
 */
 
-#include "Ginla_IO_StateWriter.h"
+#include "Ginla_IO_StateWriter.hpp"
 
-#include "Ginla_Helpers.h"
+#include "Ginla_Helpers.hpp"
 
 // ============================================================================
 Ginla::IO::StateWriter::

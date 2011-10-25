@@ -15,7 +15,7 @@
 #include <LOCA_Stepper.H>
 #include <NOX_Epetra_Vector.H>
 
-#include "Ginla_IO_StatsWriter.h"
+#include "Ginla_IO_StatsWriter.hpp"
 // =============================================================================
 // forward declarations
 namespace Ginla {

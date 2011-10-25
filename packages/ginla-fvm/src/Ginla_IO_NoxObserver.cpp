@@ -17,12 +17,12 @@
 
 */
 
-#include "Ginla_IO_NoxObserver.h"
+#include "Ginla_IO_NoxObserver.hpp"
 
-#include "Ginla_IO_StateWriter.h"
-#include "Ginla_IO_StatsWriter.h"
-#include "Ginla_Helpers.h"
-#include "Ginla_EpetraFVM_ModelEvaluator.h"
+#include "Ginla_IO_StateWriter.hpp"
+#include "Ginla_IO_StatsWriter.hpp"
+#include "Ginla_Helpers.hpp"
+#include "Ginla_EpetraFVM_ModelEvaluator.hpp"
 
 // ============================================================================
 Ginla::IO::NoxObserver::

@@ -17,13 +17,13 @@
 
 */
 
-#include "Ginla_EpetraFVM_ModelEvaluator.h"
+#include "Ginla_EpetraFVM_ModelEvaluator.hpp"
 
-#include "Ginla_EpetraFVM_State.h"
-#include "Ginla_MagneticVectorPotential_Virtual.h"
-#include "Ginla_EpetraFVM_KeoFactory.h"
-#include "Ginla_EpetraFVM_KeoPreconditioner.h"
-#include "Ginla_EpetraFVM_StkMesh.h"
+#include "Ginla_EpetraFVM_State.hpp"
+#include "Ginla_MagneticVectorPotential_Virtual.hpp"
+#include "Ginla_EpetraFVM_KeoFactory.hpp"
+#include "Ginla_EpetraFVM_KeoPreconditioner.hpp"
+#include "Ginla_EpetraFVM_StkMesh.hpp"
 
 #include <Epetra_Map.h>
 #include <Epetra_LocalMap.h>

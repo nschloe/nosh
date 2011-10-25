@@ -32,7 +32,7 @@
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_Time.hpp>
 
-#include "Ginla_EpetraFVM_JacobianOperator.h"
+#include "Ginla_EpetraFVM_JacobianOperator.hpp"
 // -----------------------------------------------------------------------------
 // forward declarations
 namespace Ginla

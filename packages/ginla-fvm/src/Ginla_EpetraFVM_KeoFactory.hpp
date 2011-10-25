@@ -34,7 +34,7 @@
 #include <Epetra_FECrsMatrix.h>
 #include <Epetra_LinearProblem.h>
 
-#include "Ginla_MagneticVectorPotential_Virtual.h"
+#include "Ginla_MagneticVectorPotential_Virtual.hpp"
 #include <Amesos.h>
 // =============================================================================
 // forward declarations

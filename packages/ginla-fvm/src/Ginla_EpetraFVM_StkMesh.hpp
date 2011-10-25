@@ -27,8 +27,6 @@
     #include <mpi.h>
 #endif
 
-// #include "Ginla_Typedefs.h"
-
 #include <string>
 
 #include <Epetra_Comm.h>

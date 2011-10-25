@@ -17,10 +17,10 @@
 
 */
 // =============================================================================
-#include "Ginla_EpetraFVM_State.h"
+#include "Ginla_EpetraFVM_State.hpp"
 
-#include "Ginla_EpetraFVM_StkMesh.h"
-#include "Ginla_EpetraFVM_StkMeshWriter.h"
+#include "Ginla_EpetraFVM_StkMesh.hpp"
+#include "Ginla_EpetraFVM_StkMeshWriter.hpp"
 
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/FieldData.hpp>

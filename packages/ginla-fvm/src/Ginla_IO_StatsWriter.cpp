@@ -17,7 +17,7 @@
 
 */
 
-#include "Ginla_IO_StatsWriter.h"
+#include "Ginla_IO_StatsWriter.hpp"
 
 // ============================================================================
 Ginla::IO::StatsWriter::

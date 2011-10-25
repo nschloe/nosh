@@ -17,11 +17,11 @@
 
 */
 // =============================================================================
-#include "Ginla_IO_SaveEigenData.h"
+#include "Ginla_IO_SaveEigenData.hpp"
 
-#include "Ginla_Helpers.h"
-#include "Ginla_IO_StateWriter.h"
-#include "Ginla_EpetraFVM_ModelEvaluator.h"
+#include "Ginla_Helpers.hpp"
+#include "Ginla_IO_StateWriter.hpp"
+#include "Ginla_EpetraFVM_ModelEvaluator.hpp"
 
 #include <NOX_Abstract_MultiVector.H>
 
@@ -146,6 +146,7 @@ save ( Teuchos::RCP<std::vector<double> >       & evals_r,
     eigenvaluesList.set( "#0unstable", numUnstableEigenvalues );
     eigenvaluesList.set( "#1null", numNullvalues );
     eigenvaluesList.set( "#2stable", numStableEigenvalues );
+    std::cout << "SSS " << evals_r->size() << std::endl;
     for ( unsigned int k = 0; k < numEigenValues; k++ )
     {
         std::stringstream label;
@@ -177,6 +178,7 @@ save ( Teuchos::RCP<std::vector<double> >       & evals_r,
 //     eigenFileStream << std::endl;
 //     eigenFileStream.close();
 
+    std::cout << "TTT " << eigenParamListPtr_->get<int>( "Num Eigenvalues" ) << std::endl;
     if ( !locaStepper_.is_null() )
     {
         if ( numEigenvaluesAdaptive_ )

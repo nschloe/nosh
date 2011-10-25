@@ -18,9 +18,8 @@
 */
 // =============================================================================
 // includes
-#include "Ginla_EpetraFVM_KeoFactory.h"
-
-#include "Ginla_EpetraFVM_StkMesh.h"
+#include "Ginla_EpetraFVM_KeoFactory.hpp"
+#include "Ginla_EpetraFVM_StkMesh.hpp"
 
 #include <Epetra_SerialDenseMatrix.h>
 #include <Epetra_Comm.h>

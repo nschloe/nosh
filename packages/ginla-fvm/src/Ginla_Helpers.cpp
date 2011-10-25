@@ -17,7 +17,7 @@
 
 */
 
-#include "Ginla_Helpers.h"
+#include "Ginla_Helpers.hpp"
 
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Epetra_Vector.H"

@@ -21,7 +21,7 @@
 #define GINLA_EPETRAFVM_STKMESHWRITER_H
 // =============================================================================
 // includes
-#include "Ginla_EpetraFVM_StkMesh.h"
+#include "Ginla_EpetraFVM_StkMesh.hpp"
 
 #include <string>
 

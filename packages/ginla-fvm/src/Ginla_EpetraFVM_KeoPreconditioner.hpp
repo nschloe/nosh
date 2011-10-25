@@ -35,7 +35,7 @@
 #include <Epetra_FECrsMatrix.h>
 #include <Epetra_LinearProblem.h>
 
-#include "Ginla_MagneticVectorPotential_Virtual.h"
+#include "Ginla_MagneticVectorPotential_Virtual.hpp"
 // =============================================================================
 namespace Ginla {
     namespace EpetraFVM {

@@ -20,16 +20,16 @@
 
 #include <boost/filesystem.hpp>
 
-#include "Ginla_EpetraFVM_StkMeshReader.h"
+#include "Ginla_EpetraFVM_StkMeshReader.hpp"
 
-#include "Ginla_EpetraFVM_State.h"
-#include "Ginla_EpetraFVM_ModelEvaluator.h"
-#include "Ginla_EpetraFVM_KeoFactory.h"
-#include "Ginla_IO_StateWriter.h"
-#include "Ginla_IO_StatsWriter.h"
-#include "Ginla_IO_NoxObserver.h"
-#include "Ginla_IO_SaveEigenData.h"
-#include "Ginla_MagneticVectorPotential_Custom.h"
+#include "Ginla_EpetraFVM_State.hpp"
+#include "Ginla_EpetraFVM_ModelEvaluator.hpp"
+#include "Ginla_EpetraFVM_KeoFactory.hpp"
+#include "Ginla_IO_StateWriter.hpp"
+#include "Ginla_IO_StatsWriter.hpp"
+#include "Ginla_IO_NoxObserver.hpp"
+#include "Ginla_IO_SaveEigenData.hpp"
+#include "Ginla_MagneticVectorPotential_Custom.hpp"
 
 #ifdef HAVE_MPI
 #include <Epetra_MpiComm.h>
@@ -163,11 +163,13 @@ int main ( int argc, char *argv[] )
       keoMatrix->Scale( -1.0 );
 
       // create initial guess and right-hand side
+      bool zeroOut = true;
       Teuchos::RCP<Epetra_Vector> epetra_x =
-              Teuchos::rcp( new Epetra_Vector( keoMatrix->OperatorDomainMap() ) );
+              Teuchos::rcp( new Epetra_Vector( keoMatrix->OperatorDomainMap(), zeroOut ) );
       Teuchos::RCP<Epetra_MultiVector> epetra_b =
               Teuchos::rcp( new Epetra_Vector( keoMatrix->OperatorRangeMap(), 1 ) );
-      epetra_b->Random();
+      //epetra_b->Random();
+      epetra_b->PutScalar( 1.0 );
 
 //      // check that the matrix is indeed symmetric
 //      for ( int i=0; i<epetra_b->GlobalLength(); i++ )

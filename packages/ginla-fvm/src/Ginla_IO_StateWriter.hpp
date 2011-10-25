@@ -28,7 +28,7 @@
 
 #include <LOCA_Parameter_Vector.H>
 
-#include "Ginla_EpetraFVM_State.h"
+#include "Ginla_EpetraFVM_State.hpp"
 
 namespace Ginla {
 

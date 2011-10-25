@@ -30,7 +30,7 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Tuple.hpp>
 
-#include "Ginla_MagneticVectorPotential_Virtual.h"
+#include "Ginla_MagneticVectorPotential_Virtual.hpp"
 // =============================================================================
 // forward declarations
 namespace Ginla {

@@ -11,12 +11,11 @@
 #include <Teuchos_TimeMonitor.hpp>
 #include <Epetra_FECrsGraph.h>
 
-#include "Ginla_EpetraFVM_StkMeshReader.h"
-
-#include "Ginla_EpetraFVM_KeoFactory.h"
-#include "Ginla_EpetraFVM_JacobianOperator.h"
-#include "Ginla_EpetraFVM_KeoPreconditioner.h"
-#include "Ginla_MagneticVectorPotential_Custom.h"
+#include "Ginla_EpetraFVM_StkMeshReader.hpp"
+#include "Ginla_EpetraFVM_KeoFactory.hpp"
+#include "Ginla_EpetraFVM_JacobianOperator.hpp"
+#include "Ginla_EpetraFVM_KeoPreconditioner.hpp"
+#include "Ginla_MagneticVectorPotential_Custom.hpp"
 
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziBasicEigenproblem.hpp"

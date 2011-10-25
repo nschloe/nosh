@@ -17,9 +17,9 @@
 
 */
 // =============================================================================
-#include "Ginla_EpetraFVM_JacobianOperator.h"
-#include "Ginla_EpetraFVM_KeoFactory.h"
-#include "Ginla_EpetraFVM_StkMesh.h"
+#include "Ginla_EpetraFVM_JacobianOperator.hpp"
+#include "Ginla_EpetraFVM_KeoFactory.hpp"
+#include "Ginla_EpetraFVM_StkMesh.hpp"
 
 #include <Teuchos_ArrayRCP.hpp>
 #include <Epetra_Vector.h>
