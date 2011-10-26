@@ -40,6 +40,8 @@ JacobianOperator( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>               & 
         currentX_ ( currentX ),
         temperature_( 0.0 )
 {
+    // Fill the matrix immediately.
+    keoFactory_->buildKeo( *keoMatrix_ );
 }
 // =============================================================================
 Ginla::EpetraFVM::JacobianOperator::

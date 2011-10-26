@@ -112,6 +112,7 @@ private:
     Teuchos::RCP<const Epetra_Vector> currentX_;
 
     double temperature_;
+
 };
 
 } // namespace FVM
