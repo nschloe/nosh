@@ -140,10 +140,12 @@ ApplyInverseMl_( const Epetra_MultiVector & X,
      belosList.set( "Verbosity", Belos::Errors + Belos::Warnings );
 
    // check for NaNs in the initial guess
-   double r[1];
+   double r[ Y.NumVectors() ];
    Y.Norm1( r );
-   if ( r[0]!=r[0] )
-       Y.PutScalar( 0.0 );
+   for ( int k=0; k<Y.NumVectors(); k++ )
+       TEUCHOS_TEST_FOR_EXCEPTION( r[k]!=r[k],
+                                   std::runtime_error,
+                                   "The input guess appears to contain NaNs." );
 
    // Construct an unpreconditioned linear problem instance.
    Teuchos::RCP<const Epetra_MultiVector> Xptr = Teuchos::rcpFromRef( X );
