@@ -255,13 +255,14 @@ createPsi_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
             const Teuchos::RCP<ScalarFieldType>                 & psii_field
           ) const
 {
-    // Get owned nodes.
+    // Psi needs to have unique node IDs to be able to compute Norm2().
+    // This is required in Belos.
     const std::vector<stk::mesh::Entity*> & ownedNodes = mesh->getOwnedNodes();
 
     // Create vector with this respective map.
     Teuchos::RCP<Epetra_Vector> psi = Teuchos::rcp( new Epetra_Vector( *mesh->getComplexMap() ) );
 
-    // Fill the vector with data from the file
+    // Fill the vector with data from the file.
     int ind;
     for ( int k=0; k<ownedNodes.size(); k++ )
     {
@@ -293,7 +294,7 @@ createThickness_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
 
     TEUCHOS_ASSERT( !thickness_field.is_null() );
 
-    // Fill the vector with data from the file
+    // Fill the vector with data from the file.
     for ( int k=0; k<overlapNodes.size(); k++ )
     {
         double* thicknessVal = stk::mesh::field_data( *thickness_field, *overlapNodes[k] );
@@ -326,7 +327,7 @@ createMvp_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
 
     TEUCHOS_ASSERT( !mvpField.is_null() );
 
-    // Fill the vector with data from the file
+    // Fill the vector with data from the file.
     for ( int k=0; k<overlapNodes.size(); k++ )
     {
         double* mvpVal = stk::mesh::field_data( *mvpField, *overlapNodes[k] );

@@ -209,6 +209,12 @@ Ginla::EpetraFVM::KeoFactory::
 buildKeoGraph() const
 {
   TEUCHOS_ASSERT( !mesh_.is_null() );
+
+  // TODO It may be interesting to switch to the overlap map here
+  // as it best represents the mesh. This would mean that also the
+  // state psi is stored in an overlapping map which makes several
+  // Epetra methods fail (such as Norm2, Multiply).
+//  Epetra_FECrsGraph keoGraph( Copy, *mesh_->getComplexOverlapMap(), 0 );
   Epetra_FECrsGraph keoGraph( Copy, *mesh_->getComplexMap(), 0 );
 
   std::vector<stk::mesh::Entity*> cells = mesh_->getOwnedCells();

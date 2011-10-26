@@ -135,6 +135,9 @@ public:
     Teuchos::RCP<Epetra_Map>
     getComplexMap() const;
 
+    Teuchos::RCP<Epetra_Map>
+    getComplexOverlapMap() const;
+
     unsigned int
     getNumEdgesPerCell( unsigned int cellDimension ) const;
 

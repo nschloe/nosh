@@ -305,6 +305,14 @@ getComplexMap() const
     return complexMap_;
 }
 // =============================================================================
+Teuchos::RCP<Epetra_Map>
+Ginla::EpetraFVM::StkMesh::
+getComplexOverlapMap() const
+{
+    TEUCHOS_ASSERT( !complexOverlapMap_.is_null() );
+    return complexOverlapMap_;
+}
+// =============================================================================
 std::vector<stk::mesh::Entity*>
 Ginla::EpetraFVM::StkMesh::
 getOwnedNodes() const
@@ -317,6 +325,7 @@ getOwnedNodes() const
                                       bulkData_->buckets( metaData_->node_rank() ),
                                       ownedNodes
                                     );
+
     return ownedNodes;
 }
 // =============================================================================
@@ -335,6 +344,7 @@ getOverlapNodes() const
                                       bulkData_->buckets( metaData_->node_rank() ),
                                       overlapNodes
                                     );
+
     return overlapNodes;
 }
 // =============================================================================
@@ -343,11 +353,11 @@ Ginla::EpetraFVM::StkMesh::
 createNodesMap_( const std::vector<stk::mesh::Entity*> & nodeList ) const
 {
     int numNodes = nodeList.size();
-    std::vector<int> indices(numNodes);
+    Teuchos::Array<int> indices(numNodes);
     for (int i=0; i < numNodes; i++)
         indices[i] = nodeList[i]->identifier() - 1;
 
-    return Teuchos::rcp(new Epetra_Map( -1, numNodes, &(indices[0]), 0, comm_) );
+    return Teuchos::rcp(new Epetra_Map( -1, numNodes, indices.getRawPtr(), 0, comm_) );
 }
 // =============================================================================
 Teuchos::RCP<Epetra_Map>
@@ -356,14 +366,14 @@ createComplexMap_( const std::vector<stk::mesh::Entity*> & nodeList ) const
 {
     // Create a map for real/imaginary out of this.
     int numDof = 2 * nodeList.size();
-    std::vector<int> indices(numDof);
+    Teuchos::Array<int> indices(numDof);
     for (int k=0; k < nodeList.size(); k++)
     {
         int globalNodeId = nodeList[k]->identifier() - 1;
         indices[2*k]   = 2*globalNodeId;
         indices[2*k+1] = 2*globalNodeId + 1;
     }
-    return Teuchos::rcp(new Epetra_Map( -1, numDof, &(indices[0]), 0, comm_) );
+    return Teuchos::rcp(new Epetra_Map( -1, numDof, indices.getRawPtr(), 0, comm_) );
 }
 // =============================================================================
 unsigned int
