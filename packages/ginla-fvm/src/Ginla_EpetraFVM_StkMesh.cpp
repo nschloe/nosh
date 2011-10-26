@@ -291,6 +291,14 @@ getNodesMap() const
 // =============================================================================
 Teuchos::RCP<Epetra_Map>
 Ginla::EpetraFVM::StkMesh::
+getNodesOverlapMap() const
+{
+    TEUCHOS_ASSERT( !nodesOverlapMap_.is_null() );
+    return nodesOverlapMap_;
+}
+// =============================================================================
+Teuchos::RCP<Epetra_Map>
+Ginla::EpetraFVM::StkMesh::
 getComplexMap() const
 {
     TEUCHOS_ASSERT( !complexMap_.is_null() );

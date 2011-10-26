@@ -285,18 +285,18 @@ createThickness_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
                   const Teuchos::RCP<ScalarFieldType>                 & thickness_field
                 ) const
 {
-    // Get owned nodes.
-    const std::vector<stk::mesh::Entity*> & ownedNodes = mesh->getOwnedNodes();
+    // Get overlap nodes.
+    const std::vector<stk::mesh::Entity*> & overlapNodes = mesh->getOverlapNodes();
 
     // Create vector with this respective map.
-    Teuchos::RCP<Epetra_Vector> thickness = Teuchos::rcp( new Epetra_Vector( *mesh->getNodesMap() ) );
+    Teuchos::RCP<Epetra_Vector> thickness = Teuchos::rcp( new Epetra_Vector( *mesh->getNodesOverlapMap() ) );
 
     TEUCHOS_ASSERT( !thickness_field.is_null() );
 
     // Fill the vector with data from the file
-    for ( int k=0; k<ownedNodes.size(); k++ )
+    for ( int k=0; k<overlapNodes.size(); k++ )
     {
-        double* thicknessVal = stk::mesh::field_data( *thickness_field, *ownedNodes[k] );
+        double* thicknessVal = stk::mesh::field_data( *thickness_field, *overlapNodes[k] );
         // Check if the field is actually there.
         if (thicknessVal == NULL)
         {
@@ -317,19 +317,19 @@ createMvp_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
             const Teuchos::RCP<const VectorFieldType>           & mvpField
           ) const
 {
-    // Get owned nodes.
-    const std::vector<stk::mesh::Entity*> & ownedNodes = mesh->getOwnedNodes();
+    // Get overlap nodes.
+    const std::vector<stk::mesh::Entity*> & overlapNodes = mesh->getOverlapNodes();
 
     // Create vector with this respective map.
     int numComponents = 3;
-    Teuchos::RCP<Epetra_MultiVector> mvp = Teuchos::rcp( new Epetra_MultiVector( *mesh->getNodesMap(), numComponents ) );
+    Teuchos::RCP<Epetra_MultiVector> mvp = Teuchos::rcp( new Epetra_MultiVector( *mesh->getNodesOverlapMap(), numComponents ) );
 
     TEUCHOS_ASSERT( !mvpField.is_null() );
 
     // Fill the vector with data from the file
-    for ( int k=0; k<ownedNodes.size(); k++ )
+    for ( int k=0; k<overlapNodes.size(); k++ )
     {
-        double* mvpVal = stk::mesh::field_data( *mvpField, *ownedNodes[k] );
+        double* mvpVal = stk::mesh::field_data( *mvpField, *overlapNodes[k] );
         // Check if the field is actually there.
         TEUCHOS_TEST_FOR_EXCEPTION( mvpVal == NULL,
                                     std::runtime_error,

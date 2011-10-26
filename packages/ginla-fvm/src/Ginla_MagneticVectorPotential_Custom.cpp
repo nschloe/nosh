@@ -122,12 +122,17 @@ initializeEdgeMidpointProjectionCache_() const
           const Point & node0 = localNodes[e0];
           gid[0] = (*rel[e0].entity()).identifier() - 1;
           lid[0] = mvp_->Map().LID( gid[0] );
-
+          TEUCHOS_TEST_FOR_EXCEPTION( lid[0] < 0,
+                                      std::runtime_error,
+                                      "The global index " << gid[0] << " does not seem to be present on this node." );
           for ( unsigned int e1 = e0+1; e1 < numLocalNodes; e1++ )
           {
               const Point & node1 = localNodes[e1];
               gid[1] = (*rel[e1].entity()).identifier() - 1;
               lid[1] = mvp_->Map().LID( gid[1] );
+              TEUCHOS_TEST_FOR_EXCEPTION( lid[1] < 0,
+                                          std::runtime_error,
+                                          "The global index " << gid[1] << " does not seem to be present on this node." );
 
               // Approximate the value at the midpoint of the edge
               // by the average of the values at the adjacent nodes.
