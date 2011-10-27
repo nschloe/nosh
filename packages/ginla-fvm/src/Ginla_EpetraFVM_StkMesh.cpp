@@ -174,12 +174,11 @@ Ginla::EpetraFVM::StkMesh::
 scale( const Teuchos::Tuple<double,3> & newScaling )
 {
     // Prevent insanely small values.
-    TEUCHOS_TEST_FOR_EXCEPTION( abs(newScaling[0]) < 1.0e-5
-                             || abs(newScaling[1]) < 1.0e-5
-                             || abs(newScaling[2]) < 1.0e-5,
-                                std::runtime_error,
-                                "Trying to scale with " << newScaling << ". This is not what you want to do."
-                              );
+    TEUCHOS_TEST_FOR_EXCEPT_MSG( abs(newScaling[0]) < 1.0e-5
+                              || abs(newScaling[1]) < 1.0e-5
+                              || abs(newScaling[2]) < 1.0e-5,
+                                 "Trying to scale with " << newScaling << ". This is not what you want to do."
+                               );
 
     std::vector<stk::mesh::Entity*> ownedNodes = this->getOwnedNodes();
 
@@ -387,10 +386,11 @@ getCellDimension( const unsigned int numLocalNodes ) const
     case 4: // tetrahedra
         return 3;
     default:
-        TEUCHOS_TEST_FOR_EXCEPTION( true,
-                                    std::runtime_error,
-                                    "Control volumes can only be constructed consistently with triangular or tetrahedral elements."
-                                  );
+        TEUCHOS_TEST_FOR_EXCEPT_MSG( true,
+                                     "Control volumes can only be constructed "
+                                     << "consistently with triangular or "
+                                     << "tetrahedral elements."
+                                   );
   }
   return 0;
 }
@@ -471,10 +471,11 @@ computeFvmEntities_() const
       else if ( cellDimension==3 ) // tetrahedron
           cc = this->computeTetrahedronCircumcenter_( localNodes );
       else
-          TEUCHOS_TEST_FOR_EXCEPTION( true,
-                                      std::runtime_error,
-                                      "Control volumes can only be constructed consistently with triangular or tetrahedral elements."
-                                    );
+          TEUCHOS_TEST_FOR_EXCEPT_MSG( true,
+                                       "Control volumes can only be constructed "
+                                       << "consistently with triangular or "
+                                       << "tetrahedral elements."
+                                     );
 
 //      edgeCoefficients_[k] = Teuchos::ArrayRCP<double>( this->getNumEdgesPerCell( cellDimension ) );
 
@@ -563,10 +564,11 @@ computeFvmEntities_() const
               }
               else
               {
-                  TEUCHOS_TEST_FOR_EXCEPTION( true,
-                                              std::runtime_error,
-                                              "Control volumes can only be constructed consistently with triangular or tetrahedral elements."
-                                            );
+                  TEUCHOS_TEST_FOR_EXCEPT_MSG( true,
+                                               "Control volumes can only be constructed "
+                                               << "consistently with triangular or "
+                                               << "tetrahedral elements."
+                                             );
               }
 
               // Compute the contributions to the finite volumes of the adjacent edges.
@@ -620,9 +622,8 @@ getEdgeCoefficientsNumerically_( const Teuchos::Array<Point> localNodes ) const
         numEdges = 6;
     }
     else
-        TEUCHOS_TEST_FOR_EXCEPTION( true,
-                                    std::runtime_error,
-                                    "Can only handle triangles and tetrahedra." );
+        TEUCHOS_TEST_FOR_EXCEPT_MSG( true,
+                                     "Can only handle triangles and tetrahedra." );
 
 //    std::cout << "\nTriangle is \n";
 //    for ( int i=0; i<localNodes.size(); i++ )
@@ -872,15 +873,14 @@ computeTriangleCircumcenter_( const Point & node0,
                                           );
 
   // don't divide by 0
-  TEUCHOS_TEST_FOR_EXCEPTION( fabs(omega) < 1.0e-10,
-                              std::runtime_error,
-                              "It seems that the nodes \n\n"
-                              << "   " << node0 << "\n"
-                              << "   " << node1 << "\n"
-                              << "   " << node2 << "\n"
-                              << "\ndo not form a proper triangle. Abort."
-                              << std::endl
-                            );
+  TEUCHOS_TEST_FOR_EXCEPT_MSG( fabs(omega) < 1.0e-10,
+                               "It seems that the nodes \n\n"
+                               << "   " << node0 << "\n"
+                               << "   " << node1 << "\n"
+                               << "   " << node2 << "\n"
+                               << "\ndo not form a proper triangle. Abort."
+                               << std::endl
+                             );
 
   double alpha = this->dot_( this->add_( 1.0, node1, -1.0, node2 ), this->add_( 1.0, node1, -1.0, node2 ) )
                * this->dot_( this->add_( 1.0, node0, -1.0, node1 ), this->add_( 1.0, node0, -1.0, node2 ) )
@@ -914,16 +914,15 @@ computeTetrahedronCircumcenter_( const Teuchos::Array<Point> & nodes ) const
   double omega = 2.0 * this->dot_( relNodes[0], this->cross_( relNodes[1], relNodes[2] ) );
 
   // don't divide by 0
-  TEUCHOS_TEST_FOR_EXCEPTION( fabs(omega) < 1.0e-10,
-                              std::runtime_error,
-                              "It seems that the nodes \n\n"
-                              << "   " << nodes[0] << "\n"
-                              << "   " << nodes[1] << "\n"
-                              << "   " << nodes[2] << "\n"
-                              << "   " << nodes[3] << "\n"
-                              << "\ndo not form a proper tetrahedron. Abort."
-                              << std::endl
-                           );
+  TEUCHOS_TEST_FOR_EXCEPT_MSG( fabs(omega) < 1.0e-10,
+                               "It seems that the nodes \n\n"
+                               << "   " << nodes[0] << "\n"
+                               << "   " << nodes[1] << "\n"
+                               << "   " << nodes[2] << "\n"
+                               << "   " << nodes[3] << "\n"
+                               << "\ndo not form a proper tetrahedron. Abort."
+                               << std::endl
+                             );
   double alpha = this->norm2squared_( relNodes[0] ) / omega;
   double beta  = this->norm2squared_( relNodes[1] ) / omega;
   double gamma = this->norm2squared_( relNodes[2] ) / omega;

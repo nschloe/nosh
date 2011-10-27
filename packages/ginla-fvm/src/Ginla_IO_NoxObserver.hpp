@@ -56,14 +56,14 @@ class NoxObserver:
     public NOX::Epetra::Observer
 {
 public:
-    enum ObserverType { NONLINEAR,
-                        CONTINUATION,
-                        TURNING_POINT };
+    enum EObserverType { OBSERVER_TYPE_NONLINEAR,
+                         OBSERVER_TYPE_CONTINUATION,
+                         OBSERVER_TYPE_TURNING_POINT };
 
 public:
   //! Constructor
   NoxObserver ( const Teuchos::RCP<const Ginla::EpetraFVM::ModelEvaluator> & modelEval,
-                const NoxObserver::ObserverType                            & problemType
+                const NoxObserver::EObserverType                           & problemType
               );
 
   //! Destructor
@@ -94,7 +94,7 @@ private:
 private:
 private:
 
-    const ObserverType observerType_;
+    const EObserverType observerType_;
     const Teuchos::RCP<const Ginla::EpetraFVM::ModelEvaluator> modelEval_;
 
     Teuchos::RCP<Ginla::IO::StatsWriter> statsWriter_;;

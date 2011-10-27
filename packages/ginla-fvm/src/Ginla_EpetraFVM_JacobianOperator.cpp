@@ -29,7 +29,7 @@ Ginla::EpetraFVM::JacobianOperator::
 JacobianOperator( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>               & mesh,
                   const Teuchos::RCP<const Epetra_Vector>                     & thickness,
                   const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp,
-                  const Teuchos::RCP<Epetra_Vector>                           & currentX
+                  const Teuchos::RCP<Epetra_Vector>                           & current_X
                 ):
         useTranspose_( false ),
         comm_( mesh->getComm() ),
@@ -37,7 +37,7 @@ JacobianOperator( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>               & 
         thickness_( thickness ),
         keoFactory_( Teuchos::rcp( new Ginla::EpetraFVM::KeoFactory( mesh, thickness, mvp ) ) ),
         keoMatrix_( Teuchos::rcp( new Epetra_FECrsMatrix( Copy, keoFactory_->buildKeoGraph() ) ) ),
-        currentX_ ( currentX ),
+        current_X_ ( current_X ),
         temperature_( 0.0 )
 {
     // Fill the matrix immediately.
@@ -68,7 +68,7 @@ Apply ( const Epetra_MultiVector & X,
     // B = diag( thickness * psi^2 )
 
     TEUCHOS_ASSERT( !keoMatrix_.is_null() );
-    TEUCHOS_ASSERT( !currentX_.is_null() );
+    TEUCHOS_ASSERT( !current_X_.is_null() );
 
     // K*psi
     TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix_->Apply( X, Y ) );
@@ -84,7 +84,7 @@ Apply ( const Epetra_MultiVector & X,
         {
             double alpha = controlVolumes[k] * (*thickness_)[k] * (
                            1.0 - temperature_
-                           - 2.0 * ( (*currentX_)[2*k]*(*currentX_)[2*k] + (*currentX_)[2*k+1]*(*currentX_)[2*k+1] )
+                           - 2.0 * ( (*current_X_)[2*k]*(*current_X_)[2*k] + (*current_X_)[2*k+1]*(*current_X_)[2*k+1] )
                            );
 
             // real part
@@ -95,11 +95,11 @@ Apply ( const Epetra_MultiVector & X,
             // terms corresponding to  B = diag( psi^2 )
             // Re(phi^2)
             double rePhiSquare = controlVolumes[k] * (*thickness_)[k] * (
-                                 (*currentX_)[2*k]*(*currentX_)[2*k] - (*currentX_)[2*k+1]*(*currentX_)[2*k+1]
+                                 (*current_X_)[2*k]*(*current_X_)[2*k] - (*current_X_)[2*k+1]*(*current_X_)[2*k+1]
                                  );
             // Im(phi^2)
             double imPhiSquare = controlVolumes[k] * (*thickness_)[k] * (
-                                 2.0 * (*currentX_)[2*k] * (*currentX_)[2*k+1]
+                                 2.0 * (*current_X_)[2*k] * (*current_X_)[2*k+1]
                                  );
             // real part
             TEUCHOS_ASSERT_EQUALITY( 0, Y.SumIntoMyValue( 2*k,   vec, - rePhiSquare * X[vec][2*k] - imPhiSquare * X[vec][2*k+1] ) );
@@ -121,9 +121,7 @@ ApplyInverse ( const Epetra_MultiVector & X,
                      Epetra_MultiVector & Y
              ) const
 {
-    TEUCHOS_TEST_FOR_EXCEPTION( true,
-                                std::logic_error,
-                                "Not implemented." );
+    TEUCHOS_TEST_FOR_EXCEPT( "Not implemented." );
     return -1;
 }
 // =============================================================================
@@ -131,9 +129,7 @@ double
 Ginla::EpetraFVM::JacobianOperator::
 NormInf () const
 {
-    TEUCHOS_TEST_FOR_EXCEPTION( true,
-                                std::logic_error,
-                                "Not yet implemented." );
+    TEUCHOS_TEST_FOR_EXCEPT( "Not yet implemented." );
     return 0.0;
 }
 // =============================================================================
@@ -186,12 +182,12 @@ Ginla::EpetraFVM::JacobianOperator::
 rebuild( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
          const Teuchos::Tuple<double,3> & scaling,
          const double temperature,
-         const Teuchos::RCP<const Epetra_Vector> & currentX
+         const Teuchos::RCP<const Epetra_Vector> & current_X
        )
 {
     // set the entities for the operator
     temperature_ = temperature;
-    currentX_ = currentX;
+    current_X_ = current_X;
 
     // rebuild the keo
     keoFactory_->updateParameters( mvpParams, scaling );

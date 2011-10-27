@@ -27,7 +27,7 @@
 // ============================================================================
 Ginla::IO::NoxObserver::
 NoxObserver ( const Teuchos::RCP<const Ginla::EpetraFVM::ModelEvaluator> & modelEval,
-              const NoxObserver::ObserverType                            & observerType
+              const NoxObserver::EObserverType                           & observerType
             ) :
   modelEval_ ( modelEval ),
   observerType_( observerType ),
@@ -62,18 +62,17 @@ observeSolution( const Epetra_Vector & soln )
     // to store solutions, null vectors, and so forth.
     switch ( observerType_ )
     {
-      case NONLINEAR:
+      case OBSERVER_TYPE_NONLINEAR:
           savable->save( 0 );
           break;
-      case CONTINUATION:
+      case OBSERVER_TYPE_CONTINUATION:
           this->observeContinuation_( savable );
           break;
-      case TURNING_POINT:
+      case OBSERVER_TYPE_TURNING_POINT:
           this->observeTurningPointContinuation_( savable );
           break;
       default:
-          TEUCHOS_TEST_FOR_EXCEPTION ( true,
-                                       std::logic_error,
+          TEUCHOS_TEST_FOR_EXCEPT_MSG( true,
                                        "Illegal observer type " << observerType_ );
     }
 
@@ -115,12 +114,11 @@ observeTurningPointContinuation_( const Teuchos::RCP<const Ginla::EpetraFVM::Sta
         state->save( index );
     }
     else
-        TEUCHOS_TEST_FOR_EXCEPTION( true,
-                                    std::logic_error,
-                                    "Not yet implemented." <<
-                                    "This part of the code used to write state and null vector alternately for turning point continuation" <<
-                                    "but because of how StkMesh is organized, it seems impossible to first write to one file, then to" <<
-                                    "another with with the same mesh. Need to investigate." );
+        TEUCHOS_TEST_FOR_EXCEPT_MSG( true, "Not yet implemented." );
+        // This part of the code used to write state and null vector alternately
+        // for turning point continuation, but because of how StkMesh is
+        // organized, it seems impossible to first write to one file, then to
+        // another with with the same mesh. Need to investigate.
     return;
 }
 // ============================================================================

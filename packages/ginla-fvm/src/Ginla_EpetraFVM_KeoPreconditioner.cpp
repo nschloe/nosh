@@ -55,7 +55,7 @@ KeoPreconditioner( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>               &
         keoMlPrec_ ( Teuchos::null ),
         keoIluProblem_( Teuchos::null ),
         keoIluSolver_( Teuchos::null ),
-        invType_( Ml ),
+        invType_( INVERT_ML ),
         out_( Teuchos::VerboseObjectBase::getDefaultOStream() ),
         rebuildTime_( Teuchos::TimeMonitor::getNewTimer("KeoPreconditioner::rebuild") ),
         rebuildMlTime_( Teuchos::TimeMonitor::getNewTimer("KeoPreconditioner::rebuildMl") ),
@@ -97,17 +97,16 @@ ApplyInverse( const Epetra_MultiVector & X,
 
   switch ( invType_ )
   {
-    case Ilu:
+    case INVERT_ILU:
         err = this->ApplyInverseIlu_( X, Y );
         break;
-    case Ml:
+    case INVERT_ML:
         err = this->ApplyInverseMl_( X, Y );
         break;
     default:
-        TEUCHOS_TEST_FOR_EXCEPTION( true,
-                                    std::invalid_argument,
-                                    "Illegal value of the invType \"" << invType_ << "\"."
-                                  );
+        TEUCHOS_TEST_FOR_EXCEPT_MSG( true,
+                                     "Illegal value of the invType \""
+                                     << invType_ << "\"." );
         break;
   }
 
@@ -210,9 +209,7 @@ double
 Ginla::EpetraFVM::KeoPreconditioner::
 NormInf () const
 {
-    TEUCHOS_TEST_FOR_EXCEPTION( true,
-                                std::logic_error,
-                                "Not yet implemented." );
+    TEUCHOS_TEST_FOR_EXCEPT( "Not yet implemented." );
     return 0.0;
 }
 // =============================================================================
@@ -292,17 +289,17 @@ rebuild()
     // object itself.
     switch ( invType_ )
     {
-      case Ilu:
+      case INVERT_ILU:
           return this->rebuildIlu_();
           break;
-      case Ml:
+      case INVERT_ML:
           return this->rebuildMl_();
           break;
       default:
-          TEUCHOS_TEST_FOR_EXCEPTION( true,
-                                      std::invalid_argument,
-                                      "Illegal value of the invType \"" << invType_ << "\"."
-                                    );
+          TEUCHOS_TEST_FOR_EXCEPT_MSG( true,
+                                       "Illegal value of the invType \""
+                                       << invType_ << "\"."
+                                     );
           break;
     }
     // -------------------------------------------------------------------------

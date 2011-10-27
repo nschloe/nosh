@@ -125,7 +125,7 @@ private:
 
 private:
 
-    enum InversionType { Ilu, Ml };
+    enum EInversionType { INVERT_ILU, INVERT_ML };
 
 private:
     bool useTranspose_;
@@ -139,7 +139,7 @@ private:
     Teuchos::RCP<Epetra_LinearProblem> keoIluProblem_;
     Teuchos::RCP<Amesos_BaseSolver> keoIluSolver_;
 
-    InversionType invType_;
+    EInversionType invType_;
 
     Teuchos::RCP<Teuchos::FancyOStream> out_;
 

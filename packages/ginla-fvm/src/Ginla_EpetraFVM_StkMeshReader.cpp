@@ -154,10 +154,10 @@ read( const Epetra_Comm                       & comm,
                                                    Ioss::READ_MODEL,
                                                    MPI_COMM_WORLD
                                                  );
-  TEUCHOS_TEST_FOR_EXCEPTION( dbi == NULL || !dbi->ok(),
-                              std::runtime_error,
-                              "ERROR: Could not open database '" << fileName_ << "' of type '" << meshType << "'."
-                            );
+  TEUCHOS_TEST_FOR_EXCEPT_MSG( dbi == NULL || !dbi->ok(),
+                               "ERROR: Could not open database '" << fileName_
+                               << "' of type '" << meshType << "'."
+                             );
 
   // set the vector field label separator
   dbi->set_field_separator(0);
@@ -279,9 +279,8 @@ createPsi_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
 
     double r[1];
     psi->Norm1( r );
-    TEUCHOS_TEST_FOR_EXCEPTION( r[0]!=r[0] || r[0]>1.0e100,
-                                std::runtime_error,
-                                "The input data seems flawed. Abort." );
+    TEUCHOS_TEST_FOR_EXCEPT_MSG( r[0]!=r[0] || r[0]>1.0e100,
+                                 "The input data seems flawed. Abort." );
 
     return psi;
 }
@@ -317,9 +316,8 @@ createThickness_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
 
     double r[1];
     thickness->Norm1( r );
-    TEUCHOS_TEST_FOR_EXCEPTION( r[0]!=r[0] || r[0]>1.0e100,
-                                std::runtime_error,
-                                "The input data seems flawed. Abort." );
+    TEUCHOS_TEST_FOR_EXCEPT_MSG( r[0]!=r[0] || r[0]>1.0e100,
+                                 "The input data seems flawed. Abort." );
 
     return thickness;
 }
@@ -344,11 +342,10 @@ createMvp_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
     {
         double* mvpVal = stk::mesh::field_data( *mvpField, *overlapNodes[k] );
         // Check if the field is actually there.
-        TEUCHOS_TEST_FOR_EXCEPTION( mvpVal == NULL,
-                                    std::runtime_error,
-                                    "MVP value for node " << k << " not found.\n"
-                                    << "Probably there is no MVP field given with the state."
-                                  );
+        TEUCHOS_TEST_FOR_EXCEPT_MSG( mvpVal == NULL,
+                                     "MVP value for node " << k << " not found.\n"
+                                     << "Probably there is no MVP field given with the state."
+                                   );
 
         mvp->ReplaceMyValue( k, 0, mvpVal[0] );
         mvp->ReplaceMyValue( k, 1, mvpVal[1] );
@@ -357,9 +354,10 @@ createMvp_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
 
     double r[3];
     mvp->Norm1( r );
-    TEUCHOS_TEST_FOR_EXCEPTION( r[0]!=r[0] || r[0]>1.0e100 || r[1]!=r[1] || r[1]>1.0e100 || r[2]!=r[2] || r[2]>1.0e100,
-                                std::runtime_error,
-                                "The input data seems flawed. Abort." );
+    TEUCHOS_TEST_FOR_EXCEPT_MSG( r[0]!=r[0] || r[0]>1.0e100
+                              || r[1]!=r[1] || r[1]>1.0e100
+                              || r[2]!=r[2] || r[2]>1.0e100,
+                                 "The input data seems flawed. Abort." );
 
     return mvp;
 }

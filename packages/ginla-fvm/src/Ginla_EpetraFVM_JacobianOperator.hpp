@@ -52,7 +52,7 @@ public:
     JacobianOperator( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>               & mesh,
                       const Teuchos::RCP<const Epetra_Vector>                     & thickness,
                       const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp,
-                      const Teuchos::RCP<Epetra_Vector>                           & currentX = Teuchos::null
+                      const Teuchos::RCP<Epetra_Vector>                           & current_X = Teuchos::null
                     );
 
     // Destructor.
@@ -95,7 +95,7 @@ public:
     rebuild( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
              const Teuchos::Tuple<double,3> & scaling,
              const double temperature,
-             const Teuchos::RCP<const Epetra_Vector> & currentX
+             const Teuchos::RCP<const Epetra_Vector> & current_X
            );
 
 protected:
@@ -109,7 +109,7 @@ private:
     const Teuchos::RCP<Ginla::EpetraFVM::KeoFactory> keoFactory_;
     const Teuchos::RCP<Epetra_FECrsMatrix> keoMatrix_;
 
-    Teuchos::RCP<const Epetra_Vector> currentX_;
+    Teuchos::RCP<const Epetra_Vector> current_X_;
 
     double temperature_;
 
