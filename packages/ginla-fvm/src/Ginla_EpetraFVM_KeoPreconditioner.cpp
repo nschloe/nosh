@@ -121,7 +121,6 @@ ApplyInverseMl_( const Epetra_MultiVector & X,
 {
    bool verbose = false;
    int frequency = 10;
-   bool proc_verbose = verbose && (X.Comm().MyPID()==0);
 
    // Belos part
    Teuchos::ParameterList belosList;
@@ -143,9 +142,9 @@ ApplyInverseMl_( const Epetra_MultiVector & X,
    double r[ Y.NumVectors() ];
    Y.Norm1( r );
    for ( int k=0; k<Y.NumVectors(); k++ )
-       TEUCHOS_TEST_FOR_EXCEPTION( r[k]!=r[k],
+       TEUCHOS_TEST_FOR_EXCEPTION( r[k]!=r[k] || r[k] > 1.0e100,
                                    std::runtime_error,
-                                   "The input guess appears to contain NaNs." );
+                                   "The input guess appears to be flawed." );
 
    // Construct an unpreconditioned linear problem instance.
    Teuchos::RCP<const Epetra_MultiVector> Xptr = Teuchos::rcpFromRef( X );

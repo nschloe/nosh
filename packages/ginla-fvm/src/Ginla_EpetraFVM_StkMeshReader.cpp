@@ -277,6 +277,12 @@ createPsi_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
         psi->ReplaceMyValues( 1, psiiVal, &ind );
     }
 
+    double r[1];
+    psi->Norm1( r );
+    TEUCHOS_TEST_FOR_EXCEPTION( r[0]!=r[0] || r[0]>1.0e100,
+                                std::runtime_error,
+                                "The input data seems flawed. Abort." );
+
     return psi;
 }
 // =============================================================================
@@ -308,6 +314,12 @@ createThickness_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
         }
         thickness->ReplaceMyValues( 1, thicknessVal, &k );
     }
+
+    double r[1];
+    thickness->Norm1( r );
+    TEUCHOS_TEST_FOR_EXCEPTION( r[0]!=r[0] || r[0]>1.0e100,
+                                std::runtime_error,
+                                "The input data seems flawed. Abort." );
 
     return thickness;
 }
@@ -342,6 +354,12 @@ createMvp_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
         mvp->ReplaceMyValue( k, 1, mvpVal[1] );
         mvp->ReplaceMyValue( k, 2, mvpVal[2] );
     }
+
+    double r[3];
+    mvp->Norm1( r );
+    TEUCHOS_TEST_FOR_EXCEPTION( r[0]!=r[0] || r[0]>1.0e100 || r[1]!=r[1] || r[1]>1.0e100 || r[2]!=r[2] || r[2]>1.0e100,
+                                std::runtime_error,
+                                "The input data seems flawed. Abort." );
 
     return mvp;
 }
