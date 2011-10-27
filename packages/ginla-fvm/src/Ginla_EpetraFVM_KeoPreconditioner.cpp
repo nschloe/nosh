@@ -51,10 +51,10 @@ KeoPreconditioner( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>               &
         useTranspose_ ( false ),
         comm_( Teuchos::rcpFromRef(mesh->getComm() ) ),
         keoFactory_( Teuchos::rcp( new Ginla::EpetraFVM::KeoFactory(mesh, thickness, mvp) ) ),
-        keoPrec_( Teuchos::rcp( new Epetra_FECrsMatrix( Copy, keoFactory_->buildKeoGraph() ) ) ),
-        belosPrec_ ( Teuchos::null ),
-        keoProblem_( Teuchos::rcp( new Epetra_LinearProblem() ) ),
-        keoSolver_( Teuchos::null ),
+        keoRegularized_( Teuchos::null ),
+        keoMlPrec_ ( Teuchos::null ),
+        keoIluProblem_( Teuchos::null ),
+        keoIluSolver_( Teuchos::null ),
         invType_( Ml ),
         out_( Teuchos::VerboseObjectBase::getDefaultOStream() ),
         rebuildTime_( Teuchos::TimeMonitor::getNewTimer("KeoPreconditioner::rebuild") ),
@@ -83,7 +83,8 @@ Apply ( const Epetra_MultiVector & X,
               Epetra_MultiVector & Y
       ) const
 {
-    return keoPrec_->Apply( X, Y );
+    TEUCHOS_ASSERT( !keoRegularized_.is_null() );
+    return keoRegularized_->Apply( X, Y );
 }
 // =============================================================================
 int
@@ -142,14 +143,18 @@ ApplyInverseMl_( const Epetra_MultiVector & X,
    double r[ Y.NumVectors() ];
    Y.Norm1( r );
    for ( int k=0; k<Y.NumVectors(); k++ )
-       TEUCHOS_TEST_FOR_EXCEPTION( r[k]!=r[k] || r[k] > 1.0e100,
-                                   std::runtime_error,
-                                   "The input guess appears to be flawed." );
+       if ( r[k]!=r[k] || r[k] > 1.0e100 )
+           // The input guess appears flawed. This is nothing unusual as, e.g., Belos
+           // doesn't zero out the left-hand side of the preconditioned system.
+           // Reconcile.
+           Y(k)->PutScalar( 0.0 );
+
+   TEUCHOS_ASSERT( !keoRegularized_.is_null() );
 
    // Construct an unpreconditioned linear problem instance.
    Teuchos::RCP<const Epetra_MultiVector> Xptr = Teuchos::rcpFromRef( X );
    Teuchos::RCP<Epetra_MultiVector> Yptr = Teuchos::rcpFromRef( Y );
-   Belos::LinearProblem<double,MV,OP> problem( keoPrec_, Yptr, Xptr );
+   Belos::LinearProblem<double,MV,OP> problem( keoRegularized_, Yptr, Xptr );
    bool set = problem.setProblem();
 
    if ( !set )
@@ -159,8 +164,8 @@ ApplyInverseMl_( const Epetra_MultiVector & X,
    }
    // -------------------------------------------------------------------------
    // add preconditioner
-   TEUCHOS_ASSERT( !belosPrec_.is_null() );
-   problem.setLeftPrec( belosPrec_ );
+   TEUCHOS_ASSERT( !keoMlPrec_.is_null() );
+   problem.setLeftPrec( keoMlPrec_ );
    // -------------------------------------------------------------------------
    // Create an iterative solver manager.
    Teuchos::RCP<Belos::SolverManager<double,MV,OP> > newSolver =
@@ -172,6 +177,14 @@ ApplyInverseMl_( const Epetra_MultiVector & X,
    // Perform solve
    Belos::ReturnType ret = newSolver->solve();
 
+   /* // compute the residual explicitly
+   Epetra_MultiVector R( Y.Map(), Y.NumVectors() );
+   keoRegularized_->Apply( Y, R );
+   R.Update( 1.0, X, -1.0 );
+   double s[1];
+   R.Norm2( s );
+   std::cout << " PRECON RES = " << s[0] << " in " << newSolver->getNumIters() << " iters" << std::endl;*/
+
    return ret==Belos::Converged ? 0 : -1;
 }
 // =============================================================================
@@ -181,16 +194,16 @@ ApplyInverseIlu_ ( const Epetra_MultiVector & X,
                          Epetra_MultiVector & Y
                  ) const
 {
-    TEUCHOS_ASSERT( !keoProblem_.is_null() );
-    TEUCHOS_ASSERT( !keoSolver_.is_null() );
+    TEUCHOS_ASSERT( !keoIluProblem_.is_null() );
+    TEUCHOS_ASSERT( !keoIluSolver_.is_null() );
 
     // set left- and right-hand side
-    keoProblem_->SetLHS( &Y );
+    keoIluProblem_->SetLHS( &Y );
     Epetra_MultiVector T = X;
-    keoProblem_->SetRHS( &T );
+    keoIluProblem_->SetRHS( &T );
 
     // solve and return error code
-    return keoSolver_->Solve();
+    return keoIluSolver_->Solve();
 }
 // =============================================================================
 double
@@ -236,16 +249,16 @@ const Epetra_Map &
 Ginla::EpetraFVM::KeoPreconditioner::
 OperatorDomainMap () const
 {
-    TEUCHOS_ASSERT( !keoPrec_.is_null() );
-    return keoPrec_->OperatorDomainMap();
+    TEUCHOS_ASSERT( !keoRegularized_.is_null() );
+    return keoRegularized_->OperatorDomainMap();
 }
 // =============================================================================
 const Epetra_Map &
 Ginla::EpetraFVM::KeoPreconditioner::
 OperatorRangeMap () const
 {
-    TEUCHOS_ASSERT( !keoPrec_.is_null() );
-    return keoPrec_->OperatorRangeMap();
+    TEUCHOS_ASSERT( !keoRegularized_.is_null() );
+    return keoRegularized_->OperatorRangeMap();
 }
 // =============================================================================
 void
@@ -255,8 +268,10 @@ rebuild()
     Teuchos::TimeMonitor tm(*rebuildTime_);
     // -------------------------------------------------------------------------
     // rebuild the keo
-    keoFactory_->buildKeo( *keoPrec_ );
-    keoPrec_->Scale( -1.0 );
+    if ( keoRegularized_.is_null() );
+        keoRegularized_ = Teuchos::rcp( new Epetra_FECrsMatrix( Copy, keoFactory_->buildKeoGraph() ) );
+    keoFactory_->buildKeo( *keoRegularized_ );
+    keoRegularized_->Scale( -1.0 );
     // -------------------------------------------------------------------------
     // regularization
     double mu = keoFactory_->getMvpParameters()->getValue( "mu" );
@@ -264,13 +279,13 @@ rebuild()
     {
         Teuchos::TimeMonitor tm(*regularizationTime_);
         // Add a regularization to the diagonal.
-        Epetra_Vector e( keoPrec_->DomainMap() );
+        Epetra_Vector e( keoRegularized_->DomainMap() );
         TEUCHOS_ASSERT_EQUALITY( 0, e.PutScalar( 1.0 ) );
 
-        Epetra_Vector diag( keoPrec_->DomainMap() );
-        TEUCHOS_ASSERT_EQUALITY( 0, keoPrec_->ExtractDiagonalCopy( diag ) );
+        Epetra_Vector diag( keoRegularized_->DomainMap() );
+        TEUCHOS_ASSERT_EQUALITY( 0, keoRegularized_->ExtractDiagonalCopy( diag ) );
         TEUCHOS_ASSERT_EQUALITY( 0, diag.Update( 1.0e-3, e, 1.0 ) );
-        TEUCHOS_ASSERT_EQUALITY( 0, keoPrec_->ReplaceDiagonalValues( diag ) );
+        TEUCHOS_ASSERT_EQUALITY( 0, keoRegularized_->ReplaceDiagonalValues( diag ) );
     }
     // -------------------------------------------------------------------------
     // Rebuild preconditioner for this object. Not to be mistaken for the
@@ -325,15 +340,18 @@ rebuildMl_()
     MLList.set("smoother: pre or post", "both");
     MLList.set("coarse: type", "Amesos-KLU");
     MLList.set("PDE equations", 2);
+
+    TEUCHOS_ASSERT( !keoRegularized_.is_null() );
+
     Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> MLPrec =
-        Teuchos::rcp( new ML_Epetra::MultiLevelPreconditioner(*keoPrec_, MLList) );
+        Teuchos::rcp( new ML_Epetra::MultiLevelPreconditioner(*keoRegularized_, MLList) );
     TEUCHOS_ASSERT( !MLPrec.is_null() );
 //     MLPrec->PrintUnused(0);
 
     // Create the Belos preconditioned operator from the preconditioner.
     // NOTE:  This is necessary because Belos expects an operator to apply the
     //        preconditioner with Apply() NOT ApplyInverse().
-    belosPrec_ = Teuchos::rcp( new Belos::EpetraPrecOp( MLPrec ) );
+    keoMlPrec_ = Teuchos::rcp( new Belos::EpetraPrecOp( MLPrec ) );
 
     return;
 }
@@ -344,16 +362,19 @@ rebuildIlu_()
 {
     Teuchos::TimeMonitor tm(*rebuildIluTime_);
     // set the matrix the linear problem
-    keoProblem_->SetOperator( &*keoPrec_ );
+    TEUCHOS_ASSERT( !keoRegularized_.is_null() );
+    if ( keoIluProblem_.is_null() )
+        keoIluProblem_ = Teuchos::rcp( new Epetra_LinearProblem() );
+    keoIluProblem_->SetOperator( &*keoRegularized_ );
 
-    // do the factorizations
+    // do the factorization
     Amesos Factory;
-    keoSolver_ = Teuchos::rcp( Factory.Create( "Klu", *keoProblem_ ) );
+    keoIluSolver_ = Teuchos::rcp( Factory.Create( "Klu", *keoIluProblem_ ) );
 
     // do symbolic and numerical factorizations
     // TODO reuse symbolic factorization
-    TEUCHOS_ASSERT_EQUALITY( 0, keoSolver_->SymbolicFactorization() );
-    TEUCHOS_ASSERT_EQUALITY( 0, keoSolver_->NumericFactorization() );
+    TEUCHOS_ASSERT_EQUALITY( 0, keoIluSolver_->SymbolicFactorization() );
+    TEUCHOS_ASSERT_EQUALITY( 0, keoIluSolver_->NumericFactorization() );
 
     return;
 }

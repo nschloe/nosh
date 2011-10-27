@@ -132,12 +132,12 @@ private:
     const Teuchos::RCP<const Epetra_Comm> comm_;
 
     Teuchos::RCP<Ginla::EpetraFVM::KeoFactory> keoFactory_;
-    Teuchos::RCP<Epetra_FECrsMatrix> keoPrec_;
+    Teuchos::RCP<Epetra_FECrsMatrix> keoRegularized_;
 
-    Teuchos::RCP<Belos::EpetraPrecOp> belosPrec_;
+    Teuchos::RCP<Belos::EpetraPrecOp> keoMlPrec_;
 
-    Teuchos::RCP<Epetra_LinearProblem> keoProblem_;
-    Teuchos::RCP<Amesos_BaseSolver> keoSolver_;
+    Teuchos::RCP<Epetra_LinearProblem> keoIluProblem_;
+    Teuchos::RCP<Amesos_BaseSolver> keoIluSolver_;
 
     InversionType invType_;
 
