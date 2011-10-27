@@ -187,7 +187,7 @@ main ( int argc, char *argv[] )
 
         Teuchos::RCP<Ginla::IO::NoxObserver> observer =
                 Teuchos::rcp( new Ginla::IO::NoxObserver( glModel,
-                                                          Ginla::IO::NoxObserver::CONTINUATION
+                                                          Ginla::IO::NoxObserver::OBSERVER_TYPE_CONTINUATION
                                                         )
                             );
 
