@@ -138,15 +138,9 @@ ApplyInverseMl_( const Epetra_MultiVector & X,
    else
      belosList.set( "Verbosity", Belos::Errors + Belos::Warnings );
 
-   // check for NaNs in the initial guess
-   double r[ Y.NumVectors() ];
-   Y.Norm1( r );
-   for ( int k=0; k<Y.NumVectors(); k++ )
-       if ( r[k]!=r[k] || r[k] > 1.0e100 )
-           // The input guess appears flawed. This is nothing unusual as, e.g., Belos
-           // doesn't zero out the left-hand side of the preconditioned system.
-           // Reconcile.
-           Y(k)->PutScalar( 0.0 );
+   // Make sure to have a solid initial guess.
+   // Belos, for example, does not initialze Y before passing it here.
+   Y.PutScalar( 0.0 );
 
    TEUCHOS_ASSERT( !keoRegularized_.is_null() );
 
