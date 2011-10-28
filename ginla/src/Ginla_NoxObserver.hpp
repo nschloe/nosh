@@ -85,10 +85,10 @@ private:
 private:
 private:
 
-    const EObserverType observerType_;
     const Teuchos::RCP<const Ginla::ModelEvaluator> modelEval_;
+    const EObserverType observerType_;
 
-    Teuchos::RCP<Ginla::StatsWriter> statsWriter_;;
+    Teuchos::RCP<Ginla::StatsWriter> statsWriter_;
 };
 
 } // namespace Ginla

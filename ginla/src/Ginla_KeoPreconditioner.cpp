@@ -261,7 +261,7 @@ rebuild()
     Teuchos::TimeMonitor tm(*rebuildTime_);
     // -------------------------------------------------------------------------
     // rebuild the keo
-    if ( keoRegularized_.is_null() );
+    if ( keoRegularized_.is_null() )
         keoRegularized_ = Teuchos::rcp( new Epetra_FECrsMatrix( Copy, keoFactory_->buildKeoGraph() ) );
     keoFactory_->buildKeo( *keoRegularized_ );
     keoRegularized_->Scale( -1.0 );

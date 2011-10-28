@@ -272,7 +272,7 @@ evalModel( const InArgs  & inArgs,
   Teuchos::RCP<const Epetra_Vector> p_in = inArgs.get_p(0);
   TEUCHOS_ASSERT( !p_in.is_null() );
   for ( int k=0; k<p_in->MyLength(); k++ )
-      TEUCHOS_ASSERT( !isnan( (*p_in)[k] ) );
+      TEUCHOS_ASSERT( !std::isnan( (*p_in)[k] ) );
 
   // p_current_ is used in getParameters.
   // Setting p_current_=p_in here is really a somewhat arbitrary choice.

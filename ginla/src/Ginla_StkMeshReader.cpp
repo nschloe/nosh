@@ -266,7 +266,7 @@ createPsi_( const Teuchos::RCP<const Ginla::StkMesh> & mesh,
 
     // Fill the vector with data from the file.
     int ind;
-    for ( int k=0; k<ownedNodes.size(); k++ )
+    for ( unsigned int k=0; k<ownedNodes.size(); k++ )
     {
         // real part
         double* psirVal = stk::mesh::field_data( *psir_field, *ownedNodes[k] );
@@ -302,7 +302,7 @@ createThickness_( const Teuchos::RCP<const Ginla::StkMesh> & mesh,
     TEUCHOS_ASSERT( !thickness_field.is_null() );
 
     // Fill the vector with data from the file.
-    for ( int k=0; k<overlapNodes.size(); k++ )
+    for ( unsigned int k=0; k<overlapNodes.size(); k++ )
     {
         double* thicknessVal = stk::mesh::field_data( *thickness_field, *overlapNodes[k] );
         // Check if the field is actually there.
@@ -313,7 +313,8 @@ createThickness_( const Teuchos::RCP<const Ginla::StkMesh> & mesh,
                   << std::endl;
             return Teuchos::null;
         }
-        thickness->ReplaceMyValues( 1, thicknessVal, &k );
+        int kk = int(k);
+        thickness->ReplaceMyValues( 1, thicknessVal, &kk );
     }
 
     double r[1];
@@ -340,7 +341,7 @@ createMvp_( const Teuchos::RCP<const Ginla::StkMesh> & mesh,
     TEUCHOS_ASSERT( !mvpField.is_null() );
 
     // Fill the vector with data from the file.
-    for ( int k=0; k<overlapNodes.size(); k++ )
+    for ( unsigned int k=0; k<overlapNodes.size(); k++ )
     {
         double* mvpVal = stk::mesh::field_data( *mvpField, *overlapNodes[k] );
         // Check if the field is actually there.

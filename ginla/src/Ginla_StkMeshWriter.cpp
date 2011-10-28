@@ -142,7 +142,7 @@ mergePsi_( const Teuchos::RCP<stk::mesh::fem::FEMMetaData> & metaData,
     ScalarFieldType * psiI_field = metaData->get_field<ScalarFieldType>( "psi_Z" );
 
     // Merge psi into the mesh.
-    for (int k=0; k < ownedNodes.size(); k++)
+    for ( unsigned int k=0; k < ownedNodes.size(); k++ )
     {
         // Extract real and imaginary part.
         double* psiR = stk::mesh::field_data( *psiR_field, *ownedNodes[k] );

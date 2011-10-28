@@ -190,7 +190,7 @@ scale( const Teuchos::Tuple<double,3> & newScaling )
         if ( newScaling[i] != scaling_[i] )
         {
            double ratio = newScaling[i] / scaling_[i];
-           for ( int k=0; k<ownedNodes.size(); k++ )
+           for ( unsigned int k=0; k<ownedNodes.size(); k++ )
            {
                double* node = stk::mesh::field_data( *coordinatesField_, *ownedNodes[k] );
                node[i] *= ratio;
@@ -260,7 +260,7 @@ getNodeCoordinates( const stk::mesh::PairIterRelation & relation ) const
 {
     unsigned int n = relation.size();
     Teuchos::Array<Point> localNodes( n );
-    for ( int i=0; i<n; i++ )
+    for ( unsigned int i=0; i<n; i++ )
     {
         double * node = stk::mesh::field_data( *coordinatesField_, *relation[i].entity() );
         localNodes[i] = Teuchos::tuple( node[0], node[1], node[2] );
@@ -370,7 +370,7 @@ createComplexMap_( const std::vector<stk::mesh::Entity*> & nodeList ) const
     // Create a map for real/imaginary out of this.
     int numDof = 2 * nodeList.size();
     Teuchos::Array<int> indices(numDof);
-    for (int k=0; k < nodeList.size(); k++)
+    for ( unsigned int k=0; k < nodeList.size(); k++ )
     {
         int globalNodeId = nodeList[k]->identifier() - 1;
         indices[2*k]   = 2*globalNodeId;

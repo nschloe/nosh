@@ -102,7 +102,7 @@ initializeEdgeMidpointProjectionCache_() const
 
   // Loop over all edges and create the cache.
   // To this end, loop over all cells and the edges within the cell.
-  for ( int k=0; k<cells.size(); k++ )
+  for ( unsigned int k=0; k<cells.size(); k++ )
   {
       // get the nodes local to the cell
       stk::mesh::PairIterRelation rel = (*cells[k]).relations();
