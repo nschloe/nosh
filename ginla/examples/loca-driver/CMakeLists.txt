@@ -1,6 +1,6 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
-INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/ginla/src
+INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/src
                       ${Trilinos_INCLUDE_DIRS}
                       ${Trilinos_TPL_INCLUDE_DIRS} )
 
