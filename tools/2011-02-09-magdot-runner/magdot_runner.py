@@ -11,9 +11,9 @@ import numpy as np
 # ==============================================================================
 def _main():
 
-    exe = "/import/home/nschloe/ginla/build/wind-mpi/packages/ginla-fvm/examples/loca-driver/loca-driver-fvm.exe"
+    exe = "/home/nschloe/ginla/build/mpi/packages/ginla-fvm/examples/loca-driver/loca-driver-fvm.exe"
 
-    experiments_base_dir = '/import/home/nschloe/scratch-wind/2011-02-09-magdot-enters-how'
+    experiments_base_dir = '/home/nschloe/scratch/2011-02-14-magdot-enters-how'
 
     init_files = [ 'retangle-01.00.e',
                    'retangle-02.00.e',

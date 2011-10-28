@@ -12,8 +12,8 @@ def _main():
     output = "%s-balanced.nemI" % basename
 
     # slice it
-    slices_list = []
-    slices_list.extend( range(4, 5, 4) )
+    slices_list = range( 2, 49 );
+    #slices_list.extend( range(32, 33, 32) )
     print "Cutting the input data into slices of ", slices_list, "."
     for num_slices in slices_list:
         _slice( filename, output, num_slices )

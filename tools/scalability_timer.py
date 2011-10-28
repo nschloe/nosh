@@ -78,6 +78,9 @@ def _main():
         for handle in timingfile_handles:
             handle.write( "\n" )
 
+    outputfile_handle.write( 2*(80*"#" + "\n")
+                             + "EOF" )
+
     # close all files
     outputfile_handle.close()
     for handle in timingfile_handles:
