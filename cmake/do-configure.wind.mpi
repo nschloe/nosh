@@ -1,5 +1,6 @@
 export CMAKE_PREFIX_PATH=/opt/trilinos/dev/master/openmpi/1.4.1/gcc/4.4.5/:$CMAKE_PREFIX_PATH
 cmake \
-    ../../source
+    -DCMAKE_BUILD_TYPE=Release \
+    ../../source/ginla
 
 #    -D BOOST_ROOT:PATH=/opt/boost/1.43.0/gcc/4.5.0/ \
