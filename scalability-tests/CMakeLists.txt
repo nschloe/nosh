@@ -32,3 +32,16 @@ TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
                        ${Trilinos_TPL_LIBRARIES}
                     )
 # ------------------------------------------------------------------------------
+SET ( matvec_SRCS
+      dummy.f
+      strong-scaling-matvec.cpp
+    )
+SET( MY_EXECUTABLE
+     "matvec.exe" )
+ADD_EXECUTABLE( ${MY_EXECUTABLE}
+                ${matvec_SRCS} )
+TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
+                       ${Trilinos_LIBRARIES}
+                       ${Trilinos_TPL_LIBRARIES}
+                    )
+# ------------------------------------------------------------------------------
