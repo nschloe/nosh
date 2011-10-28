@@ -1,4 +1,0 @@
-cmake \
-    -D Trilinos_DIR:PATH=/opt/trilinos/dev/gcc/4.3.4/ \
-    -D NOX_DIR:PATH=/opt/trilinos/dev/gcc/4.3.4/ \
-    ../../trunk
