@@ -7,25 +7,20 @@ import sys, subprocess, re, datetime, os
 # ==============================================================================
 def _main():
 
-    keys = [ "Vector::MeanValue",
-             "Vector::MinValue",
-             "Vector::MaxValue",
-             "Vector::Norm1",
-             "Vector::Norm2",
-             "Vector::NormInf",
-             "Vector::Scale",
-             "Vector::Dot",
-             "Vector::Multiply",
-             "Vector::Update",
-             "CrsMatrix::Norm1",
-             "CrsMatrix::NormInf",
-             "CrsMatrix::NormFrobenius",
-             "CrsMatrix::Scale",
-             "CrsMatrix::LeftScale",
-             "CrsMatrix::RightScale",
-             "CrsMatrix::Apply"
-           ]
+    # define the command to execute
+    cmd_serial = "/home/nschloe/ginla/build/mpi/examples/linear-solve-test/keo-belos.exe --input=./cube.e"
+    cmd_parallel = "mpiexec -n NUMPROCS /home/nschloe/ginla/build/mpi/examples/linear-solve-test/keo-belos.exe --input=./cube-balanced.par"
+    # specify the keys to look for in timing outputs
+    keys = [ "Belos: PseudoBlockCGSolMgr total solve time" ]
+    # specify the number of procs to run this problem on
+    num_procs = range( 1, 49 )
+    # specify how many runs to do for each individual num_proc
+    num_runs = 10
+    # provide a comment to be included in the logs
+    comment = "Timings of Belos solves with a Jacobian system, preconditioned" \
+            + " with KEO (solved with ML)"
 
+    # --------------------------------------------------------------------------
     # set the data file
     timingfile_handles = []
     for k in xrange( len(keys) ):
@@ -38,16 +33,6 @@ def _main():
     bufsize = 1
     outputfile_handle = open( output_file, "w", bufsize )
 
-    # run over the number of procs
-    min_numprocs = 1
-    max_numprocs = 48
-
-    num_runs = 10000
-
-    #comment = "Timings of Belos solves with a Jacobian system, preconditioned
-               #with KEO (solved with ML)"
-    #comment = "Timings of one full LOCA step"
-
     # write header to timing files
     hostname = os.uname()[1]
     time = datetime.datetime.now().isoformat(' ')
@@ -59,18 +44,24 @@ def _main():
     header = "# %s, %s\n" % ( hostname, time )
     outputfile_handle.write( header )
 
-    # write number of processors to timingfiles
+    # write number of processors to timing files
     for handle in timingfile_handles:
-        for num_procs in xrange( min_numprocs, max_numprocs+1 ):
-            handle.write( "%d\t\t" % num_procs )
+        for np in num_procs:
+            handle.write( "%d\t\t" % np )
         handle.write( "\n" )
 
     # perform the test runs
     for k in xrange( 0, num_runs ):
         # ----------------------------------------------------------------------
-        for num_procs in xrange( min_numprocs, max_numprocs+1 ):
+        for np in num_procs:
             # run the test
-            output, max_times = _testrun( num_procs, keys )
+            if np == 1:
+                output, max_times = _testrun( cmd_serial, np, keys )
+            elif np > 1:
+                cmd = cmd_parallel.replace( "NUMPROCS", str(np) )
+                output, max_times = _testrun( cmd, np, keys )
+            else:
+                sys.exit( "Illegal number of processors \"%d\"." % np )
 
             # write timing data
             for handle, max_time in zip( timingfile_handles, max_times ):
@@ -79,7 +70,7 @@ def _main():
             # write stdout
             outputfile_handle.write( 2*(80*"#" + "\n")
                                      + "Run on %d cores, loop no. %d\n" \
-                                       % ( num_procs, k )
+                                       % ( np, k )
                                      + 80*"=" + "\n\n" )
             outputfile_handle.write( output )
             outputfile_handle.write( "\n" )
@@ -94,48 +85,17 @@ def _main():
 
     return
 # ==============================================================================
-def _testrun( num_procs, keys ):
-
-    test_exe = "/home/nschloe/ginla/build/mpi/scalability-tests/scaltest.exe"
-    options = ""
-
-    # test_exe = "/home/nschloe/ginla/build/mpi/packages/ginla-fvm/examples/linear-solve-test/keo-matvec.exe"
-    # basename = "cube"
-
-    #test_exe = "/home/nschloe/ginla/build/mpi/packages/ginla-fvm/examples/linear-solve-test/keo-belos.exe"
-    #basename = "cutcircle1000"
-    #key = "Belos: PseudoBlockCGSolMgr total solve time"
-
-    #test_exe = "/home/nschloe/ginla/build/mpi/packages/ginla-fvm/examples/loca-driver/loca-driver.exe"
-    #basename = "cutcircle1000"
-    #key = "Belos: PseudoBlockCGSolMgr total solve time"
-
-    #test_exe = "/home/nico/ginla/build/mpi/packages/ginla-fvm/examples/linear-solve-test/keo-belos.exe"
-    #basename = "cutcircle300"
-    #key = "Belos: PseudoBlockCGSolMgr total solve time"
-
-#    if num_procs == 1:
-#        options = "--input=%s.e" % basename
-#    elif num_procs > 1:
-#        options = "--input=%s-balanced.par" % basename
-#    else:
-#        sys.exit( "Illegal number of processors \"%d\"." % num_procs )
-
-    #test_exe = "/home/nschloe/ginla/build/mpi/packages/ginla-fvm/examples/loca-driver/loca-driver-fvm.exe"
-    #options = "--xml-input-file=./conf.xml"
-    #key = "LOCA runtime"
+def _testrun( cmd, num_procs, keys ):
 
     # regular expression for a floating point number
     fp_regex = '\d+\.?\d*(?:[eE][+-]\d+)?'
 
     regexs = []
     if num_procs == 1:
-        cmd = "%s %s" % ( test_exe, options )
         # "Belos: PseudoBlockCGSolMgr total solve time    0.3433 (1)  "
         for key in keys:
             regexs.append( "%s\s*(%s)" % ( key, fp_regex ) )
     elif num_procs > 1:
-        cmd = "mpiexec -n %d %s %s" % ( num_procs, test_exe, options )
         # "Some random keyword    0.3433 (1)  0.3434 (1)  0.03435 (1)   "
         # Store the *last* timing (i.e., the max across all processors)
         for key in keys:
