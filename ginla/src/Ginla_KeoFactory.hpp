@@ -17,8 +17,8 @@
 
 */
 
-#ifndef GINLA_EPETRAFVM_KEOFACTORY3D_H
-#define GINLA_EPETRAFVM_KEOFACTORY3D_H
+#ifndef GINLA_KEOFACTORY3D_H
+#define GINLA_KEOFACTORY3D_H
 // =============================================================================
 // Workaround for icpc's error "Include mpi.h before stdio.h"
 #include <Teuchos_config.h>
@@ -39,18 +39,15 @@
 // =============================================================================
 // forward declarations
 namespace Ginla {
-  namespace EpetraFVM {
     class StkMesh;
-  }
 }
 // =============================================================================
 namespace Ginla {
-namespace EpetraFVM {
 // =============================================================================
 class KeoFactory
 {
 public:
-    KeoFactory( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>      & mesh,
+    KeoFactory( const Teuchos::RCP<Ginla::StkMesh>      & mesh,
                 const Teuchos::RCP<const Epetra_Vector>            & thickness,
                 const Teuchos::RCP<Ginla::MagneticVectorPotential> & mvp
               );
@@ -75,13 +72,12 @@ public:
 
 protected:
 private:
-    const Teuchos::RCP<Ginla::EpetraFVM::StkMesh> mesh_;
+    const Teuchos::RCP<Ginla::StkMesh> mesh_;
     const Teuchos::RCP<const Epetra_Vector>       thickness_;
     const Teuchos::RCP<Ginla::MagneticVectorPotential> mvp_;
     const Teuchos::RCP<Teuchos::Time> buildKeoTime_;
 };
 // =============================================================================
-} // namespace FVM
 } // namespace Ginla
 
-#endif // GINLA_EPETRAFVM_KEOFACTORY3D_H
+#endif // GINLA_KEOFACTORY3D_H

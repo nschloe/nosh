@@ -17,18 +17,17 @@
 
 */
 // =============================================================================
-#include "Ginla_EpetraFVM_JacobianOperator.hpp"
-#include "Ginla_EpetraFVM_KeoFactory.hpp"
-#include "Ginla_EpetraFVM_StkMesh.hpp"
+#include "Ginla_JacobianOperator.hpp"
+#include "Ginla_KeoFactory.hpp"
+#include "Ginla_StkMesh.hpp"
 
 #include <Teuchos_ArrayRCP.hpp>
 #include <Epetra_Vector.h>
 
 namespace Ginla {
-namespace EpetraFVM {
 // =============================================================================
 JacobianOperator::
-JacobianOperator( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>      & mesh,
+JacobianOperator( const Teuchos::RCP<Ginla::StkMesh>      & mesh,
                   const Teuchos::RCP<const Epetra_Vector>            & thickness,
                   const Teuchos::RCP<Ginla::MagneticVectorPotential> & mvp,
                   const Teuchos::RCP<Epetra_Vector>                  & current_X
@@ -37,7 +36,7 @@ JacobianOperator( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>      & mesh,
         comm_( mesh->getComm() ),
         mesh_( mesh ),
         thickness_( thickness ),
-        keoFactory_( Teuchos::rcp( new Ginla::EpetraFVM::KeoFactory( mesh, thickness, mvp ) ) ),
+        keoFactory_( Teuchos::rcp( new Ginla::KeoFactory( mesh, thickness, mvp ) ) ),
         keoMatrix_( Teuchos::rcp( new Epetra_FECrsMatrix( Copy, keoFactory_->buildKeoGraph() ) ) ),
         current_X_ ( current_X ),
         temperature_( 0.0 )
@@ -198,5 +197,4 @@ rebuild( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
     return;
 }
 // =============================================================================
-} // namespace EpetraFVM
 } // namespace Ginla

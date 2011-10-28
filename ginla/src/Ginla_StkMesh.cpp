@@ -17,7 +17,7 @@
 
 */
 // =============================================================================
-#include "Ginla_EpetraFVM_StkMesh.hpp"
+#include "Ginla_StkMesh.hpp"
 
 #include <Epetra_Map.h>
 #include <Epetra_Vector.h>
@@ -46,7 +46,6 @@ typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorFieldType ;
 typedef stk::mesh::Field<double>                      ScalarFieldType ;
 // =============================================================================
 namespace Ginla {
-namespace EpetraFVM {
 // =============================================================================
 StkMesh::
 StkMesh( const Epetra_Comm                               & comm,
@@ -988,5 +987,4 @@ norm2squared_( const Point & x
     return this->dot_( x, x );
 }
 // =============================================================================
-} // namespace EpetraFVM
 } // namespace Ginla

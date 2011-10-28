@@ -18,8 +18,8 @@
 */
 // =============================================================================
 // includes
-#include "Ginla_EpetraFVM_KeoFactory.hpp"
-#include "Ginla_EpetraFVM_StkMesh.hpp"
+#include "Ginla_KeoFactory.hpp"
+#include "Ginla_StkMesh.hpp"
 
 #include <Epetra_SerialDenseMatrix.h>
 #include <Epetra_Comm.h>
@@ -34,10 +34,9 @@
 #include <Teuchos_TimeMonitor.hpp>
 
 namespace Ginla {
-namespace EpetraFVM {
 // =============================================================================
 KeoFactory::
-KeoFactory( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>      & mesh,
+KeoFactory( const Teuchos::RCP<Ginla::StkMesh>      & mesh,
             const Teuchos::RCP<const Epetra_Vector>            & thickness,
             const Teuchos::RCP<Ginla::MagneticVectorPotential> & mvp
           ):
@@ -262,5 +261,4 @@ buildKeoGraph() const
   return keoGraph;
 }
 // =============================================================================
-} // namespace EpetraFVM
 } // namespace Ginla

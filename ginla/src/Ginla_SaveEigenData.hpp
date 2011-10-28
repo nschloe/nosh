@@ -1,5 +1,5 @@
-#ifndef GINLA_IO_SAVEEIGENDATA_H
-#define GINLA_IO_SAVEEIGENDATA_H
+#ifndef GINLA_SAVEEIGENDATA_H
+#define GINLA_SAVEEIGENDATA_H
 // =============================================================================
 // Workaround for icpc's error "Include mpi.h before stdio.h"
 #include <Teuchos_config.h>
@@ -15,20 +15,15 @@
 #include <LOCA_Stepper.H>
 #include <NOX_Epetra_Vector.H>
 
-#include "Ginla_IO_StatsWriter.hpp"
+#include "Ginla_StatsWriter.hpp"
 // =============================================================================
 // forward declarations
 namespace Ginla {
-  namespace IO {
-    class StateWriter;
-  }
-  namespace EpetraFVM {
-    class ModelEvaluator;
-  }
+  class StateWriter;
+  class ModelEvaluator;
 }
 // =============================================================================
 namespace Ginla {
-  namespace IO {
 
 class SaveEigenData:
         public LOCA::SaveEigenData::AbstractStrategy
@@ -39,13 +34,13 @@ class SaveEigenData:
 // Actually suggested interface:
 //    EigenSaver(
 //      const Teuchos::RCP<LOCA::GlobalData>& global_data,
-//      const Teuchos::RCP<LOCA::P#ifndef GL_IO_SAVEEIGENDATA_Harameter::SublistParser>& topParams,
+//      const Teuchos::RCP<LOCA::P#ifndef GL_SAVEEIGENDATA_Harameter::SublistParser>& topParams,
 //      const Teuchos::RCP<Teuchos::ParameterList>& eigenParams      );
 
    // Constructor
    SaveEigenData ( Teuchos::ParameterList                                     & eigenParamList,
-                   const Teuchos::RCP<const Ginla::EpetraFVM::ModelEvaluator> & modelEval,
-                   const Teuchos::RCP<Ginla::IO::StatsWriter>                 & statsWriter
+                   const Teuchos::RCP<const Ginla::ModelEvaluator> & modelEval,
+                   const Teuchos::RCP<Ginla::StatsWriter>                 & statsWriter
                  );
 
    virtual
@@ -70,8 +65,8 @@ class SaveEigenData:
   protected:
   private:
     Teuchos::RCP<Teuchos::ParameterList> eigenParamListPtr_;
-    const Teuchos::RCP<const Ginla::EpetraFVM::ModelEvaluator> modelEval_;
-    Teuchos::RCP<Ginla::IO::StatsWriter> statsWriter_;
+    const Teuchos::RCP<const Ginla::ModelEvaluator> modelEval_;
+    Teuchos::RCP<Ginla::StatsWriter> statsWriter_;
     Teuchos::RCP<LOCA::Stepper> locaStepper_;
 
     //! If \c true, then the number of eigenvalues is computed adaptively.
@@ -80,7 +75,6 @@ class SaveEigenData:
     //! The minimum number of stable eigenvalues that is to be computed in each step.
     unsigned int numComputeStableEigenvalues_;
 };
-  } // namespace IO
 } // namespace GL
 
-#endif // GINLA_IO_SAVEEIGENDATA_H
+#endif // GINLA_SAVEEIGENDATA_H

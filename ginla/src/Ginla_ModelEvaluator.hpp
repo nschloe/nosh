@@ -17,8 +17,8 @@
 
 */
 
-#ifndef GINLA_EPETRAFVM_EVALUATOR_H
-#define GINLA_EPETRAFVM_EVALUATOR_H
+#ifndef GINLA_EVALUATOR_H
+#define GINLA_EVALUATOR_H
 // -----------------------------------------------------------------------------
 // includes
 // Workaround for icpc's error "Include mpi.h before stdio.h"
@@ -32,22 +32,19 @@
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_Time.hpp>
 
-#include "Ginla_EpetraFVM_JacobianOperator.hpp"
+#include "Ginla_JacobianOperator.hpp"
 // -----------------------------------------------------------------------------
 // forward declarations
 namespace Ginla
 {
   class MagneticVectorPotential;
-  namespace EpetraFVM {
-    class State;
-    class StkMesh;
-  }
+  class State;
+  class StkMesh;
 }
 
 class Epetra_CrsGraph;
 // -----------------------------------------------------------------------------
 namespace Ginla {
-namespace EpetraFVM {
 
 class ModelEvaluator: public EpetraExt::ModelEvaluator
 {
@@ -55,11 +52,11 @@ class ModelEvaluator: public EpetraExt::ModelEvaluator
 public:
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   //! Constructor without initial guess.
-  ModelEvaluator ( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>      & mesh,
+  ModelEvaluator ( const Teuchos::RCP<Ginla::StkMesh>      & mesh,
                    const Teuchos::ParameterList                       & params,
                    const Teuchos::RCP<const Epetra_Vector>            & thickness,
                    const Teuchos::RCP<Ginla::MagneticVectorPotential> & mvp,
-                   const Teuchos::RCP<Ginla::EpetraFVM::State>        & initialState
+                   const Teuchos::RCP<Ginla::State>        & initialState
                  );
 
   // Destructor
@@ -112,7 +109,7 @@ public:
              const OutArgs & outArgs ) const;
 
   virtual
-  Teuchos::RCP<Ginla::EpetraFVM::State>
+  Teuchos::RCP<Ginla::State>
   createSavable( const Epetra_Vector & x ) const ;
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -140,7 +137,7 @@ private:
 //    const Teuchos::RCP<const TComm> & tComm_;
 //    Teuchos::RCP<const TMap>          tMap_;
 
-   const Teuchos::RCP<Ginla::EpetraFVM::StkMesh> mesh_;
+   const Teuchos::RCP<Ginla::StkMesh> mesh_;
 
    const Teuchos::RCP<const Epetra_Vector> thickness_;
 
@@ -156,7 +153,7 @@ private:
    Teuchos::RCP<Epetra_Vector> p_current_;
 
    const Teuchos::RCP<Ginla::MagneticVectorPotential> mvp_;
-   const Teuchos::RCP<Ginla::EpetraFVM::KeoFactory> keoFactory_;
+   const Teuchos::RCP<Ginla::KeoFactory> keoFactory_;
 
    const Teuchos::RCP<Teuchos::Time> evalModelTime_;
    const Teuchos::RCP<Teuchos::Time> computeFTime_;
@@ -171,6 +168,4 @@ private:
 
 }
 
-}
-
-#endif // GINLA_EPETRAFVM_EVALUATOR_H
+#endif // GINLA_EVALUATOR_H

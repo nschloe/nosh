@@ -17,9 +17,9 @@
 
 */
 
-#include "Ginla_EpetraFVM_KeoPreconditioner.hpp"
-#include "Ginla_EpetraFVM_KeoFactory.hpp"
-#include "Ginla_EpetraFVM_StkMesh.hpp"
+#include "Ginla_KeoPreconditioner.hpp"
+#include "Ginla_KeoFactory.hpp"
+#include "Ginla_StkMesh.hpp"
 
 #include <Epetra_SerialDenseMatrix.h>
 #include <Epetra_Comm.h>
@@ -44,16 +44,15 @@ typedef Belos::MultiVecTraits<ST,MV>     MVT;
 typedef Belos::OperatorTraits<ST,MV,OP>  OPT;
 // =============================================================================
 namespace Ginla {
-namespace EpetraFVM {
 // =============================================================================
 KeoPreconditioner::
-KeoPreconditioner( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>      & mesh,
+KeoPreconditioner( const Teuchos::RCP<Ginla::StkMesh>      & mesh,
                    const Teuchos::RCP<const Epetra_Vector>            & thickness,
                    const Teuchos::RCP<Ginla::MagneticVectorPotential> & mvp
                  ):
         useTranspose_ ( false ),
         comm_( Teuchos::rcpFromRef(mesh->getComm() ) ),
-        keoFactory_( Teuchos::rcp( new Ginla::EpetraFVM::KeoFactory(mesh, thickness, mvp) ) ),
+        keoFactory_( Teuchos::rcp( new Ginla::KeoFactory(mesh, thickness, mvp) ) ),
         keoRegularized_( Teuchos::null ),
         keoMlPrec_ ( Teuchos::null ),
         keoIluProblem_( Teuchos::null ),
@@ -373,5 +372,4 @@ rebuildIlu_()
     return;
 }
 // =============================================================================
-} // namespace EpetraFVM
 } // namespace Ginla

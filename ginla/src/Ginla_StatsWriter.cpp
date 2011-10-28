@@ -17,10 +17,9 @@
 
 */
 
-#include "Ginla_IO_StatsWriter.hpp"
+#include "Ginla_StatsWriter.hpp"
 
 namespace Ginla {
-namespace IO {
 // ============================================================================
 StatsWriter::
 StatsWriter( std::string & fileName ):
@@ -170,5 +169,4 @@ print()
   return;
 }
 // ============================================================================
-} // namespace IO
 } // namespace Ginla

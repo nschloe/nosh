@@ -17,8 +17,8 @@
 
 */
 
-#ifndef GINLA_EPETRAFVM_STATE_H
-#define GINLA_EPETRAFVM_STATE_H
+#ifndef GINLA_STATE_H
+#define GINLA_STATE_H
 // =============================================================================
 // includes
 // Workaround for icpc's error "Include mpi.h before stdio.h"
@@ -35,9 +35,7 @@ namespace LOCA {
   class ParameterVector;
 }
 namespace Ginla {
-  namespace EpetraFVM {
     class StkMesh;
-  }
 }
 namespace stk {
   namespace mesh {
@@ -47,24 +45,23 @@ namespace stk {
 }
 // =============================================================================
 namespace Ginla {
-namespace EpetraFVM {
-    class State
+class State
 {
 public:
 
   //! Constructor.
   State( const Epetra_Vector                                 & psi,
-         const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh
+         const Teuchos::RCP<const Ginla::StkMesh> & mesh
        );
 
   //! Constructor without \f$\psi\f$. The values will be initialized to 0.
   State( const Teuchos::RCP<const Epetra_Map>                & map,
-         const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh
+         const Teuchos::RCP<const Ginla::StkMesh> & mesh
        );
 
   //! Constructor solely with comminicator and grid. The values will be initialized to 0.
   State( const Teuchos::RCP<const Epetra_Comm>               & comm,
-         const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh
+         const Teuchos::RCP<const Ginla::StkMesh> & mesh
        );
 
   //! Const getter.
@@ -75,7 +72,7 @@ public:
   Teuchos::RCP<Epetra_Vector>
   getPsiNonConst ();
 
-  const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh>
+  const Teuchos::RCP<const Ginla::StkMesh>
   getMesh () const;
 
   //! Save the state to file \c fileName together with the parameters \c p.
@@ -91,7 +88,7 @@ public:
 
   //! \f$L^2(\Omega)\f$-inner product with state \c state.
   double
-  innerProduct( const Ginla::EpetraFVM::State & state ) const;
+  innerProduct( const Ginla::State & state ) const;
 
   //! \f$L^2(\Omega)\f$-norm.
   double
@@ -101,7 +98,7 @@ public:
   //! \f$a \leftarrow \alpha b + \beta a \f$.
   void
   update( const double                    alpha,
-          const Ginla::EpetraFVM::State & b,
+          const Ginla::State & b,
           const double                    beta
         );
 
@@ -134,12 +131,12 @@ private:
   Epetra_Vector psi_;
 
   //! The grid on which the state exists.
-  const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> mesh_;
+  const Teuchos::RCP<const Ginla::StkMesh> mesh_;
 
 private:
 
   void
-  mergePsi_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
+  mergePsi_( const Teuchos::RCP<const Ginla::StkMesh> & mesh,
              const Epetra_Vector                                 & psi
            ) const;
 
@@ -147,6 +144,4 @@ private:
 
 }
 
-}
-
-#endif // GINLA_EPETRAFVM_STATE_H
+#endif // GINLA_STATE_H

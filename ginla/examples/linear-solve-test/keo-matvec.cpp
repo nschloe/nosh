@@ -19,15 +19,11 @@
 #include <BelosPseudoBlockGmresSolMgr.hpp>
 #include <BelosPseudoBlockCGSolMgr.hpp>
 
-#include "Ginla_EpetraFVM_StkMeshReader.hpp"
+#include "Ginla_StkMeshReader.hpp"
 
-#include "Ginla_EpetraFVM_State.hpp"
-#include "Ginla_EpetraFVM_ModelEvaluator.hpp"
-#include "Ginla_EpetraFVM_KeoFactory.hpp"
-#include "Ginla_IO_StateWriter.hpp"
-#include "Ginla_IO_StatsWriter.hpp"
-#include "Ginla_IO_NoxObserver.hpp"
-#include "Ginla_IO_SaveEigenData.hpp"
+#include "Ginla_State.hpp"
+#include "Ginla_ModelEvaluator.hpp"
+#include "Ginla_KeoFactory.hpp"
 #include "Ginla_MagneticVectorPotential.hpp"
 
 #ifdef HAVE_MPI
@@ -98,20 +94,20 @@ int main ( int argc, char *argv[] )
       Teuchos::RCP<Epetra_Vector>         z = Teuchos::null;
       Teuchos::RCP<Epetra_MultiVector>    mvpValues = Teuchos::null;
       Teuchos::RCP<Epetra_Vector>         thickness = Teuchos::null;
-      Teuchos::RCP<Ginla::EpetraFVM::StkMesh> mesh = Teuchos::null;
+      Teuchos::RCP<Ginla::StkMesh> mesh = Teuchos::null;
 
       // read the file
       Teuchos::RCP<Teuchos::Time> readTime = Teuchos::TimeMonitor::getNewTimer("Data I/O");
       {
       Teuchos::TimeMonitor tm(*readTime);
-      Ginla::EpetraFVM::StkMeshRead( *eComm,
-                                      inputFileName,
-                                      z,
-                                      mvpValues,
-                                      thickness,
-                                      mesh,
-                                      problemParameters
-                                    );
+      Ginla::StkMeshRead( *eComm,
+                          inputFileName,
+                          z,
+                          mvpValues,
+                          thickness,
+                          mesh,
+                          problemParameters
+                       );
       }
 
       Teuchos::RCP<Teuchos::Time> mvpConstructTime = Teuchos::TimeMonitor::getNewTimer("MVP construction");
@@ -129,8 +125,8 @@ int main ( int argc, char *argv[] )
           Teuchos::rcp( new LOCA::ParameterVector() );
       mvpParameters->addParameter( "mu", mu );
 
-      Teuchos::RCP<Ginla::EpetraFVM::KeoFactory> keoFactory =
-          Teuchos::rcp( new Ginla::EpetraFVM::KeoFactory( mesh, thickness, mvp ) );
+      Teuchos::RCP<Ginla::KeoFactory> keoFactory =
+          Teuchos::rcp( new Ginla::KeoFactory( mesh, thickness, mvp ) );
 
       // Precompute FVM entities. Not actually necessary as it's triggered automatically
       // when needed, but for timing purposes put it here.

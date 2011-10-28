@@ -17,23 +17,22 @@
 
 */
 // =============================================================================
-#include "Ginla_IO_SaveEigenData.hpp"
+#include "Ginla_SaveEigenData.hpp"
 
 #include "Ginla_Helpers.hpp"
-#include "Ginla_IO_StateWriter.hpp"
-#include "Ginla_EpetraFVM_ModelEvaluator.hpp"
+#include "Ginla_StateWriter.hpp"
+#include "Ginla_ModelEvaluator.hpp"
 
 #include <NOX_Abstract_MultiVector.H>
 
 #include <AnasaziSortManager.hpp>
 
 namespace Ginla {
-namespace IO {
 // =============================================================================
 SaveEigenData::
-SaveEigenData ( Teuchos::ParameterList                                     & eigenParamList,
-                const Teuchos::RCP<const Ginla::EpetraFVM::ModelEvaluator> & modelEval,
-                const Teuchos::RCP<Ginla::IO::StatsWriter>                 & statsWriter
+SaveEigenData ( Teuchos::ParameterList                          & eigenParamList,
+                const Teuchos::RCP<const Ginla::ModelEvaluator> & modelEval,
+                const Teuchos::RCP<Ginla::StatsWriter>          & statsWriter
               ) :
         eigenParamListPtr_ ( Teuchos::rcpFromRef<Teuchos::ParameterList>( eigenParamList ) ),
         modelEval_ ( modelEval ),
@@ -119,7 +118,7 @@ save ( Teuchos::RCP<std::vector<double> >       & evals_r,
         //   3) A mix of the two first options: Keep the solution states
         //      separate and put all the eigenstates into one file.
         //
-        //Teuchos::RCP<Ginla::EpetraFVM::State> eigenstate =
+        //Teuchos::RCP<Ginla::State> eigenstate =
         //    modelEval_->createSavable( realPartE->getEpetraVector() );
         //eigenstate->save( step );  //  eigenstateFileNameAppendix.str();
 
@@ -135,7 +134,7 @@ save ( Teuchos::RCP<std::vector<double> >       & evals_r,
 //            Teuchos::RCP<NOX::Epetra::Vector> imagPartE =
 //                Teuchos::rcp_dynamic_cast<NOX::Epetra::Vector> ( imagPart, true );
 //            eigenstateFileNameAppendix << "-im";
-//            Teuchos::RCP<Ginla::EpetraFVM::State> eigenstate =
+//            Teuchos::RCP<Ginla::State> eigenstate =
 //                modelEval_->createSavable( imagPartE->getEpetraVector() );
 //            eigenstate->save( step ); //eigenstateFileNameAppendix.str()
 //        }
@@ -223,5 +222,4 @@ save ( Teuchos::RCP<std::vector<double> >       & evals_r,
     return NOX::Abstract::Group::Ok;
 }
 // =============================================================================
-} // namespace IO
 } // namespace Ginla

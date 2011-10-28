@@ -17,11 +17,11 @@
 
 */
 
-#ifndef GINLA_EPETRAFVM_STKMESHWRITER_H
-#define GINLA_EPETRAFVM_STKMESHWRITER_H
+#ifndef GINLA_STKMESHWRITER_H
+#define GINLA_STKMESHWRITER_H
 // =============================================================================
 // includes
-#include "Ginla_EpetraFVM_StkMesh.hpp"
+#include "Ginla_StkMesh.hpp"
 
 #include <string>
 
@@ -31,7 +31,6 @@
 #include <Teuchos_ParameterList.hpp>
 // =============================================================================
 namespace Ginla {
-namespace EpetraFVM {
 
 class StkMeshWriter
 {
@@ -44,7 +43,7 @@ public:
     void
     write( const Epetra_Vector & psi,
            const int             index,
-           const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
+           const Teuchos::RCP<const Ginla::StkMesh> & mesh,
            const Teuchos::ParameterList & parameterList
          );
 
@@ -83,11 +82,10 @@ void
 StkMeshWrite ( const std::string & fileNameBase,
                const int           index,
                const Epetra_Vector & psi,
-               const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
+               const Teuchos::RCP<const Ginla::StkMesh> & mesh,
                const Teuchos::ParameterList & parameterList
             );
 // -----------------------------------------------------------------------------
-} // namespace EpetraFVM
 } // namespace Ginla
 // =============================================================================
-#endif // GINLA_EPETRAFVM_STKMESHWRITER_H
+#endif // GINLA_STKMESHWRITER_H

@@ -17,8 +17,8 @@
 
 */
 // =============================================================================
-#include "Ginla_EpetraFVM_StkMeshWriter.hpp"
-#include "Ginla_EpetraFVM_StkMesh.hpp"
+#include "Ginla_StkMeshWriter.hpp"
+#include "Ginla_StkMesh.hpp"
 
 #include <Epetra_Map.h>
 #include <Epetra_Comm.h>
@@ -43,7 +43,6 @@
 typedef stk::mesh::Field<double> ScalarFieldType;
 // =============================================================================
 namespace Ginla {
-namespace EpetraFVM {
 // =============================================================================
 StkMeshWriter::
 StkMeshWriter( const std::string & fileNameBase ):
@@ -62,7 +61,7 @@ void
 StkMeshWriter::
 write( const Epetra_Vector                                 & psi,
        const int                                             step,
-       const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
+       const Teuchos::RCP<const Ginla::StkMesh> & mesh,
        const Teuchos::ParameterList                        & parameterList
      )
 {
@@ -114,7 +113,7 @@ write( const Epetra_Vector                                 & psi,
                                                     time
                                                   );
 
-    *out_ << "Ginla::EpetraFVM::StkMeshWriter::write:\n"
+    *out_ << "Ginla::StkMeshWriter::write:\n"
           << "\twriting time " << step << "\n"
           << "\tindex " << out_step << "\n"
           << "\tto file " //<< fileName.str()
@@ -159,7 +158,7 @@ mergePsi_( const Teuchos::RCP<stk::mesh::fem::FEMMetaData> & metaData,
 // This is a copy of $TRILINOS/packages/stk/stk_io/stk_io/util/UseCase_mesh.cpp,
 // enhanced with parameter handling
 //int
-//Ginla::EpetraFVM::StkMeshWriter::
+//Ginla::StkMeshWriter::
 //process_output_request_( stk::io::util::MeshData &mesh_data,
 //                         stk::mesh::BulkData &bulk,
 //                         double time,
@@ -194,7 +193,7 @@ mergePsi_( const Teuchos::RCP<stk::mesh::fem::FEMMetaData> & metaData,
 //// This is a copy of $TRILINOS/packages/stk/stk_io/stk_io/util/UseCase_mesh.cpp,
 //// enhanced with parameter handling
 //void
-//Ginla::EpetraFVM::StkMeshWriter::
+//Ginla::StkMeshWriter::
 //process_output_request_( Ioss::Region &region,
 //                         stk::mesh::BulkData &bulk,
 //                         int step,
@@ -240,17 +239,16 @@ mergePsi_( const Teuchos::RCP<stk::mesh::fem::FEMMetaData> & metaData,
 //  region.end_state(step);
 //}
 // =============================================================================
-} // namespace EpetraFVM
 } // namespace Ginla
 //
 // Helper functions
 //
 void
-Ginla::EpetraFVM::
+Ginla::
 StkMeshWrite ( const std::string   & fileNameBase,
                const int             index,
                const Epetra_Vector & psi,
-               const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
+               const Teuchos::RCP<const Ginla::StkMesh> & mesh,
                const Teuchos::ParameterList & parameterList
              )
 {

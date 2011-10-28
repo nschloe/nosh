@@ -17,12 +17,11 @@
 
 */
 
-#include "Ginla_IO_StateWriter.hpp"
+#include "Ginla_StateWriter.hpp"
 
 #include "Ginla_Helpers.hpp"
 
 namespace Ginla {
-namespace IO {
 // ============================================================================
 StateWriter::
 StateWriter( const std::string & outputDir,
@@ -44,7 +43,7 @@ setOutputDir ( const string & directory )
 // ============================================================================
 void
 StateWriter::
-write ( const Teuchos::RCP<const Ginla::EpetraFVM::State> & state,
+write ( const Teuchos::RCP<const Ginla::State> & state,
         const unsigned int                                & index,
         const std::string                                 & filenameAppend,
         LOCA::ParameterVector                             & params
@@ -68,7 +67,7 @@ write ( const Teuchos::RCP<const Ginla::EpetraFVM::State> & state,
 // ============================================================================
 void
 StateWriter::
-write ( const Teuchos::RCP<const Ginla::EpetraFVM::State> & state,
+write ( const Teuchos::RCP<const Ginla::State> & state,
         const unsigned int                                & index,
         const std::string                                 & filenameAppend
       ) const
@@ -80,7 +79,7 @@ write ( const Teuchos::RCP<const Ginla::EpetraFVM::State> & state,
 // ============================================================================
 void
 StateWriter::
-write ( const Teuchos::RCP<const Ginla::EpetraFVM::State> & state,
+write ( const Teuchos::RCP<const Ginla::State> & state,
         const unsigned int                                & index,
         LOCA::ParameterVector                             & params
       ) const
@@ -92,7 +91,7 @@ write ( const Teuchos::RCP<const Ginla::EpetraFVM::State> & state,
 // ============================================================================
 void
 StateWriter::
-write ( const Teuchos::RCP<const Ginla::EpetraFVM::State> & state,
+write ( const Teuchos::RCP<const Ginla::State> & state,
         const unsigned int                                & index
       ) const
 {
@@ -102,5 +101,4 @@ write ( const Teuchos::RCP<const Ginla::EpetraFVM::State> & state,
   return;
 }
 // ============================================================================
-} // namespace IO
 } // namespace Ginla

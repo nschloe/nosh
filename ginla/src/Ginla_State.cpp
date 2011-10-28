@@ -17,10 +17,10 @@
 
 */
 // =============================================================================
-#include "Ginla_EpetraFVM_State.hpp"
+#include "Ginla_State.hpp"
 
-#include "Ginla_EpetraFVM_StkMesh.hpp"
-#include "Ginla_EpetraFVM_StkMeshWriter.hpp"
+#include "Ginla_StkMesh.hpp"
+#include "Ginla_StkMeshWriter.hpp"
 
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/FieldData.hpp>
@@ -32,11 +32,10 @@
 #include <Epetra_Map.h>
 
 namespace Ginla {
-namespace EpetraFVM {
 // =============================================================================
 State::
 State( const Epetra_Vector                                 & psi,
-       const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh
+       const Teuchos::RCP<const Ginla::StkMesh> & mesh
      ):
        psi_( psi ),
        mesh_( mesh )
@@ -49,7 +48,7 @@ State( const Epetra_Vector                                 & psi,
 // =============================================================================
 State::
 State( const Teuchos::RCP<const Epetra_Map>                & map,
-       const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh
+       const Teuchos::RCP<const Ginla::StkMesh> & mesh
      ):
        psi_( Epetra_Vector( *map, true ) ),
        mesh_( mesh )
@@ -58,7 +57,7 @@ State( const Teuchos::RCP<const Epetra_Map>                & map,
 // =============================================================================
 State::
 State( const Teuchos::RCP<const Epetra_Comm>               & comm,
-       const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh
+       const Teuchos::RCP<const Ginla::StkMesh> & mesh
      ):
        psi_( Epetra_Vector( Epetra_Map( 2*mesh->getNumNodes(), 0, *comm ) ) ),
        mesh_( mesh )
@@ -79,7 +78,7 @@ getPsiNonConst ()
 return Teuchos::rcpFromRef( psi_ );
 }
 // =============================================================================
-const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh>
+const Teuchos::RCP<const Ginla::StkMesh>
 State::
 getMesh () const
 {
@@ -111,12 +110,12 @@ save( const int                      index,
                                                     time
                                                   );
 //    if ( psi_.Comm().MyPID() == 0 )
-//        std::cout << "Ginla::EpetraFVM::StkMeshWriter::write:\n"
+//        std::cout << "Ginla::StkMeshWriter::write:\n"
 //                  << "\twriting time " << index << "\n"
 //                  << "\tindex " << out_step << "\n"
 //                  << std::endl;
 
-//     Ginla::EpetraFVM::StkMeshWrite( fileBaseName, index,  psi_, mesh_, p );
+//     Ginla::StkMeshWrite( fileBaseName, index,  psi_, mesh_, p );
 
     return;
 }
@@ -157,7 +156,7 @@ freeEnergy () const
 // =============================================================================
 double
 State::
-innerProduct( const Ginla::EpetraFVM::State & state ) const
+innerProduct( const Ginla::State & state ) const
 {
     double res[1];
 
@@ -190,7 +189,7 @@ normalizedScaledL2Norm () const
 void
 State::
 update( const double                    alpha,
-        const Ginla::EpetraFVM::State & b,
+        const Ginla::State & b,
         const double                    beta
       )
 {
@@ -218,7 +217,7 @@ getVorticity () const
 // =============================================================================
 void
 State::
-mergePsi_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
+mergePsi_( const Teuchos::RCP<const Ginla::StkMesh> & mesh,
            const Epetra_Vector                                 & psi
          ) const
 {
@@ -258,5 +257,4 @@ mergePsi_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
     return;
 }
 // ============================================================================
-} // namespace EpetraFVM
 } // namespace Ginla

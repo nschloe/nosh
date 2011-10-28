@@ -17,8 +17,8 @@
 
 */
 
-#ifndef GINLA_IO_STATEWRITER_H
-#define GINLA_IO_STATEWRITER_H
+#ifndef GINLA_STATEWRITER_H
+#define GINLA_STATEWRITER_H
 
 // Workaround for icpc's error "Include mpi.h before stdio.h"
 #include <Teuchos_config.h>
@@ -28,11 +28,9 @@
 
 #include <LOCA_Parameter_Vector.H>
 
-#include "Ginla_EpetraFVM_State.hpp"
+#include "Ginla_State.hpp"
 
 namespace Ginla {
-
-namespace IO {
 
 class StateWriter
 {
@@ -49,26 +47,26 @@ public:
     * may be interesting.
     */
   void
-  write ( const Teuchos::RCP<const Ginla::EpetraFVM::State> & state,
+  write ( const Teuchos::RCP<const Ginla::State> & state,
           const unsigned int                                & index,
           const std::string                                 & filenameAppend,
           LOCA::ParameterVector                             & params
         ) const;
 
   void
-  write ( const Teuchos::RCP<const Ginla::EpetraFVM::State> & state,
+  write ( const Teuchos::RCP<const Ginla::State> & state,
           const unsigned int                                & index,
           LOCA::ParameterVector                             & params
         ) const;
 
   void
-  write ( const Teuchos::RCP<const Ginla::EpetraFVM::State> & state,
+  write ( const Teuchos::RCP<const Ginla::State> & state,
           const unsigned int                                & index,
           const std::string                                 & filenameAppend
         ) const;
 
   void
-  write ( const Teuchos::RCP<const Ginla::EpetraFVM::State> & state,
+  write ( const Teuchos::RCP<const Ginla::State> & state,
           const unsigned int                                & index
         ) const;
 
@@ -84,6 +82,4 @@ public:
 
 }
 
-}
-
-#endif // GINLA_IO_STATEWRITER_H
+#endif // GINLA_STATEWRITER_H

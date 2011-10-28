@@ -17,18 +17,17 @@
 
 */
 
-#include "Ginla_IO_NoxObserver.hpp"
+#include "Ginla_NoxObserver.hpp"
 
-#include "Ginla_IO_StateWriter.hpp"
-#include "Ginla_IO_StatsWriter.hpp"
+#include "Ginla_StateWriter.hpp"
+#include "Ginla_StatsWriter.hpp"
 #include "Ginla_Helpers.hpp"
-#include "Ginla_EpetraFVM_ModelEvaluator.hpp"
+#include "Ginla_ModelEvaluator.hpp"
 
 namespace Ginla {
-namespace IO {
 // ============================================================================
 NoxObserver::
-NoxObserver ( const Teuchos::RCP<const Ginla::EpetraFVM::ModelEvaluator> & modelEval,
+NoxObserver ( const Teuchos::RCP<const Ginla::ModelEvaluator> & modelEval,
               const NoxObserver::EObserverType                           & observerType
             ) :
   modelEval_ ( modelEval ),
@@ -44,7 +43,7 @@ NoxObserver::
 // ============================================================================
 void
 NoxObserver::
-setStatisticsWriter( const Teuchos::RCP<Ginla::IO::StatsWriter> & statsWriter
+setStatisticsWriter( const Teuchos::RCP<Ginla::StatsWriter> & statsWriter
                    )
 {
   statsWriter_   = statsWriter;
@@ -56,7 +55,7 @@ NoxObserver::
 observeSolution( const Epetra_Vector & soln )
 {
     // define state
-    const Teuchos::RCP<const Ginla::EpetraFVM::State> savable =
+    const Teuchos::RCP<const Ginla::State> savable =
         modelEval_->createSavable( soln );
 
     // The switch hack is necessary as different continuation algorithms
@@ -83,7 +82,7 @@ observeSolution( const Epetra_Vector & soln )
 // ============================================================================
 void
 NoxObserver::
-observeContinuation_( const Teuchos::RCP<const Ginla::EpetraFVM::State> & state )
+observeContinuation_( const Teuchos::RCP<const Ginla::State> & state )
 {
   static int index = -1;
   index++;
@@ -101,7 +100,7 @@ observeContinuation_( const Teuchos::RCP<const Ginla::EpetraFVM::State> & state 
 // ============================================================================
 void
 NoxObserver::
-observeTurningPointContinuation_( const Teuchos::RCP<const Ginla::EpetraFVM::State> & state )
+observeTurningPointContinuation_( const Teuchos::RCP<const Ginla::State> & state )
 {
     static int index = -1;
     static bool isSolution = false;
@@ -127,7 +126,7 @@ observeTurningPointContinuation_( const Teuchos::RCP<const Ginla::EpetraFVM::Sta
 void
 NoxObserver::
 saveContinuationStatistics_( const int stepIndex,
-                             const Teuchos::RCP<const Ginla::EpetraFVM::State> & state
+                             const Teuchos::RCP<const Ginla::State> & state
                            )
 {
     if ( !statsWriter_.is_null() )
@@ -154,5 +153,4 @@ saveContinuationStatistics_( const int stepIndex,
     }
 }
 // ============================================================================
-} // namespace IO
 } // namespace Ginla

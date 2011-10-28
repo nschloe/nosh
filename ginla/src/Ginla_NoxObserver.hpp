@@ -17,8 +17,8 @@
 
 */
 
-#ifndef GINLA_IO_NOXOBSERVER_H
-#define GINLA_IO_NOXOBSERVER_H
+#ifndef GINLA_NOXOBSERVER_H
+#define GINLA_NOXOBSERVER_H
 
 // Workaround for icpc's error "Include mpi.h before stdio.h"
 #include <Teuchos_config.h>
@@ -35,22 +35,13 @@ namespace Komplex2 {
   class LinearProblem;
 }
 namespace Ginla {
-  namespace State {
-    class Virtual;
-  }
-  namespace IO {
-    class StateWriter;
-    class StatsWriter;
-  }
-  namespace EpetraFVM {
-    class ModelEvaluator;
-    class State;
-  }
+  class StateWriter;
+  class StatsWriter;
+  class ModelEvaluator;
+  class State;
 }
 // =============================================================================
 namespace Ginla {
-
-namespace IO {
 
 class NoxObserver:
     public NOX::Epetra::Observer
@@ -62,7 +53,7 @@ public:
 
 public:
   //! Constructor
-  NoxObserver ( const Teuchos::RCP<const Ginla::EpetraFVM::ModelEvaluator> & modelEval,
+  NoxObserver ( const Teuchos::RCP<const Ginla::ModelEvaluator> & modelEval,
                 const NoxObserver::EObserverType                           & problemType
               );
 
@@ -75,32 +66,31 @@ public:
   observeSolution(const Epetra_Vector& soln);
 
   void
-  setStatisticsWriter( const Teuchos::RCP<Ginla::IO::StatsWriter> & statsWriter );
+  setStatisticsWriter( const Teuchos::RCP<Ginla::StatsWriter> & statsWriter );
 
 protected:
 private:
   void
-  observeContinuation_( const Teuchos::RCP<const Ginla::EpetraFVM::State> & state
+  observeContinuation_( const Teuchos::RCP<const Ginla::State> & state
                       );
   void
-  observeTurningPointContinuation_( const Teuchos::RCP<const Ginla::EpetraFVM::State> & state
+  observeTurningPointContinuation_( const Teuchos::RCP<const Ginla::State> & state
                                   );
 
   void
   saveContinuationStatistics_( const int stepIndex,
-                               const Teuchos::RCP<const Ginla::EpetraFVM::State> & state
+                               const Teuchos::RCP<const Ginla::State> & state
                              );
 
 private:
 private:
 
     const EObserverType observerType_;
-    const Teuchos::RCP<const Ginla::EpetraFVM::ModelEvaluator> modelEval_;
+    const Teuchos::RCP<const Ginla::ModelEvaluator> modelEval_;
 
-    Teuchos::RCP<Ginla::IO::StatsWriter> statsWriter_;;
+    Teuchos::RCP<Ginla::StatsWriter> statsWriter_;;
 };
 
-} // namespace IO
 } // namespace Ginla
 
-#endif // GINLA_IO_NOXOBSERVER_H
+#endif // GINLA_NOXOBSERVER_H

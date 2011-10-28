@@ -30,14 +30,14 @@
 #include <NOX_StatusTest_Generic.H>
 #include <NOX_StatusTest_Factory.H>
 
-#include "Ginla_EpetraFVM_StkMeshReader.hpp"
+#include "Ginla_StkMeshReader.hpp"
 
-#include "Ginla_EpetraFVM_State.hpp"
-#include "Ginla_EpetraFVM_ModelEvaluator.hpp"
-#include "Ginla_IO_StateWriter.hpp"
-#include "Ginla_IO_StatsWriter.hpp"
-#include "Ginla_IO_NoxObserver.hpp"
-#include "Ginla_IO_SaveEigenData.hpp"
+#include "Ginla_State.hpp"
+#include "Ginla_ModelEvaluator.hpp"
+#include "Ginla_StateWriter.hpp"
+#include "Ginla_StatsWriter.hpp"
+#include "Ginla_NoxObserver.hpp"
+#include "Ginla_SaveEigenData.hpp"
 #include "Ginla_MagneticVectorPotential.hpp"
 
 #include <Teuchos_TimeMonitor.hpp>
@@ -130,24 +130,24 @@ main ( int argc, char *argv[] )
         Teuchos::RCP<Epetra_Vector>         z = Teuchos::null;
         Teuchos::RCP<Epetra_Vector>         thickness = Teuchos::null;
         Teuchos::RCP<Epetra_MultiVector>    mvpValues = Teuchos::null;
-        Teuchos::RCP<Ginla::EpetraFVM::StkMesh> mesh = Teuchos::null;
+        Teuchos::RCP<Ginla::StkMesh> mesh = Teuchos::null;
 
-        Ginla::EpetraFVM::StkMeshRead( *eComm,
-                                       inputFilePath,
-                                       z,
-                                       mvpValues,
-                                       thickness,
-                                       mesh,
-                                       problemParameters
-                                     );
+        Ginla::StkMeshRead( *eComm,
+                            inputFilePath,
+                            z,
+                            mvpValues,
+                            thickness,
+                            mesh,
+                            problemParameters
+                          );
 
         // set the output directory for later plotting with this
         mesh->setOutputFile( outputDirectory, "solution" );
 
         // create the state
         TEUCHOS_ASSERT( !z.is_null() );
-        Teuchos::RCP<Ginla::EpetraFVM::State> state =
-                Teuchos::rcp( new Ginla::EpetraFVM::State( *z, mesh ) );
+        Teuchos::RCP<Ginla::State> state =
+                Teuchos::rcp( new Ginla::State( *z, mesh ) );
 
         // possibly overwrite the parameters
         Teuchos::ParameterList & overwriteParamsList = piroParams->sublist ( "Overwrite parameter list", true );
@@ -166,33 +166,33 @@ main ( int argc, char *argv[] )
                 Teuchos::rcp ( new Ginla::MagneticVectorPotential ( mesh, mvpValues, mu ) );
 
         // create the mode evaluator
-        Teuchos::RCP<Ginla::EpetraFVM::ModelEvaluator> glModel =
-                Teuchos::rcp( new Ginla::EpetraFVM::ModelEvaluator( mesh,
-                                                                    problemParameters,
-                                                                    thickness,
-                                                                    mvp,
-                                                                    state
-                                                                  )
+        Teuchos::RCP<Ginla::ModelEvaluator> glModel =
+                Teuchos::rcp( new Ginla::ModelEvaluator( mesh,
+                                                         problemParameters,
+                                                         thickness,
+                                                         mvp,
+                                                         state
+                                                       )
                             );
 
         // set I/O routines
         int maxLocaSteps = piroParams->sublist ( "LOCA" )
                                       .sublist ( "Stepper" )
                                       .get<int> ( "Max Steps" );
-//        Teuchos::RCP<Ginla::IO::StateWriter> stateWriter =
-//            Teuchos::rcp( new Ginla::IO::StateWriter( outputDirectory.string(),
-//                                                      "solution"
-//                                                    )
+//        Teuchos::RCP<Ginla::StateWriter> stateWriter =
+//            Teuchos::rcp( new Ginla::StateWriter( outputDirectory.string(),
+//                                                  "solution"
+//                                                )
 //                        );
 
-        Teuchos::RCP<Ginla::IO::NoxObserver> observer =
-                Teuchos::rcp( new Ginla::IO::NoxObserver( glModel,
-                                                          Ginla::IO::NoxObserver::OBSERVER_TYPE_CONTINUATION
-                                                        )
+        Teuchos::RCP<Ginla::NoxObserver> observer =
+                Teuchos::rcp( new Ginla::NoxObserver( glModel,
+                                                      Ginla::NoxObserver::OBSERVER_TYPE_CONTINUATION
+                                                    )
                             );
 
-        Teuchos::RCP<Ginla::IO::StatsWriter> statsWriter =
-                Teuchos::rcp( new Ginla::IO::StatsWriter( contFilePath ) );
+        Teuchos::RCP<Ginla::StatsWriter> statsWriter =
+                Teuchos::rcp( new Ginla::StatsWriter( contFilePath ) );
         observer->setStatisticsWriter( statsWriter );
 
 
@@ -201,13 +201,13 @@ main ( int argc, char *argv[] )
           Teuchos::ParameterList & eigenList = piroParams->sublist ( "LOCA" ).sublist ( "Stepper" ) .sublist ( "Eigensolver" );
 //          std::string eigenstateFileNameAppendix =
 //              outputList.get<std::string> ( "Eigenstate file name appendix" );
-          Teuchos::RCP<Ginla::IO::StatsWriter> eigenStatsWriter =
-              Teuchos::rcp( new Ginla::IO::StatsWriter( eigenvaluesFilePath ) );
+          Teuchos::RCP<Ginla::StatsWriter> eigenStatsWriter =
+              Teuchos::rcp( new Ginla::StatsWriter( eigenvaluesFilePath ) );
 
           Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> glSaveEigenDataStrategy =
-                  Teuchos::RCP<Ginla::IO::SaveEigenData> ( new Ginla::IO::SaveEigenData ( eigenList,
-                                                                                          glModel,
-                                                                                          eigenStatsWriter ) );
+                  Teuchos::RCP<Ginla::SaveEigenData> ( new Ginla::SaveEigenData ( eigenList,
+                                                                                  glModel,
+                                                                                  eigenStatsWriter ) );
           eigenList.set ( "Save Eigen Data Method", "User-Defined" );
           eigenList.set ( "User-Defined Save Eigen Data Name", "glSaveEigenDataStrategy" );
           eigenList.set ( "glSaveEigenDataStrategy", glSaveEigenDataStrategy );

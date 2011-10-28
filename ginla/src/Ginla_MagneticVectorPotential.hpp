@@ -26,14 +26,14 @@
 #include <Teuchos_Array.hpp>
 #include <LOCA_Parameter_Vector.H>
 
-#include "Ginla_EpetraFVM_StkMesh.hpp"
+#include "Ginla_StkMesh.hpp"
 
 namespace Ginla {
 
 class MagneticVectorPotential
 {
 public:
-  MagneticVectorPotential( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh> & mesh,
+  MagneticVectorPotential( const Teuchos::RCP<Ginla::StkMesh> & mesh,
                            const Teuchos::RCP<const Epetra_MultiVector>  & mvp,
                            double mu
                          );
@@ -62,7 +62,7 @@ private:
   initializeEdgeMidpointProjectionCache_() const;
 
 private:
-  const Teuchos::RCP<Ginla::EpetraFVM::StkMesh> mesh_;
+  const Teuchos::RCP<Ginla::StkMesh> mesh_;
   const Teuchos::RCP<const Epetra_MultiVector> mvp_;
   double mu_;
 

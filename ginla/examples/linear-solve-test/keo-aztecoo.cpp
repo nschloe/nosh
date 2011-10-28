@@ -12,15 +12,11 @@
 
 #include <ml_epetra_preconditioner.h>
 
-#include "Ginla_EpetraFVM_StkMeshReader.hpp"
+#include "Ginla_StkMeshReader.hpp"
 
-#include "Ginla_EpetraFVM_State.hpp"
-#include "Ginla_EpetraFVM_ModelEvaluator.hpp"
-#include "Ginla_EpetraFVM_KeoFactory.hpp"
-#include "Ginla_IO_StateWriter.hpp"
-#include "Ginla_IO_StatsWriter.hpp"
-#include "Ginla_IO_NoxObserver.hpp"
-#include "Ginla_IO_SaveEigenData.hpp"
+#include "Ginla_State.hpp"
+#include "Ginla_ModelEvaluator.hpp"
+#include "Ginla_KeoFactory.hpp"
 #include "Ginla_MagneticVectorPotential.hpp"
 
 #ifdef HAVE_MPI
@@ -87,16 +83,16 @@ int main ( int argc, char *argv[] )
       Teuchos::RCP<Epetra_Vector>         z = Teuchos::null;
       Teuchos::RCP<Epetra_MultiVector>    mvpValues = Teuchos::null;
       Teuchos::RCP<Epetra_Vector>         thickness = Teuchos::null;
-      Teuchos::RCP<Ginla::EpetraFVM::StkMesh> mesh = Teuchos::null;
+      Teuchos::RCP<Ginla::StkMesh> mesh = Teuchos::null;
 
-      Ginla::EpetraFVM::StkMeshRead( *eComm,
-                                      inputFileName,
-                                      z,
-                                      mvpValues,
-                                      thickness,
-                                      mesh,
-                                      problemParameters
-                                    );
+      Ginla::StkMeshRead( *eComm,
+                          inputFileName,
+                          z,
+                          mvpValues,
+                          thickness,
+                          mesh,
+                          problemParameters
+                        );
 
       double mu = problemParameters.get<double> ( "mu" );
       Teuchos::RCP<Ginla::MagneticVectorPotential> mvp =
@@ -107,8 +103,8 @@ int main ( int argc, char *argv[] )
       mvpParameters->addParameter( "mu", mu );
 
       // create the kinetic energy operator
-      Teuchos::RCP<Ginla::EpetraFVM::KeoFactory> keoFactory =
-              Teuchos::rcp( new Ginla::EpetraFVM::KeoFactory( mesh, thickness, mvp ) );
+      Teuchos::RCP<Ginla::KeoFactory> keoFactory =
+              Teuchos::rcp( new Ginla::KeoFactory( mesh, thickness, mvp ) );
       Epetra_FECrsMatrix keoMatrix( Copy, keoFactory->buildKeoGraph() );
       Teuchos::Tuple<double,3> scaling( Teuchos::tuple(1.0,1.0,1.0) );
       keoFactory->updateParameters( mvpParameters, scaling );

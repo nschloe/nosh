@@ -17,8 +17,8 @@
 
 */
 
-#ifndef GINLA_EPETRAFVM_JACOBIANOPERATOR_H
-#define GINLA_EPETRAFVM_JACOBIANOPERATOR_H
+#ifndef GINLA_JACOBIANOPERATOR_H
+#define GINLA_JACOBIANOPERATOR_H
 // =============================================================================
 // Workaround for icpc's error "Include mpi.h before stdio.h"
 #include <Teuchos_config.h>
@@ -34,22 +34,19 @@
 // =============================================================================
 // forward declarations
 namespace Ginla {
-    namespace EpetraFVM {
-        class KeoFactory;
-        class StkMesh;
-    }
+    class KeoFactory;
+    class StkMesh;
 }
 class Epetra_FECrsGraph;
 class Epetra_FECrsMatrix;
 class Epetra_Vector;
 // =============================================================================
 namespace Ginla {
-namespace EpetraFVM {
 
 class JacobianOperator : public Epetra_Operator
 {
 public:
-    JacobianOperator( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>      & mesh,
+    JacobianOperator( const Teuchos::RCP<Ginla::StkMesh>      & mesh,
                       const Teuchos::RCP<const Epetra_Vector>            & thickness,
                       const Teuchos::RCP<Ginla::MagneticVectorPotential> & mvp,
                       const Teuchos::RCP<Epetra_Vector>                  & current_X = Teuchos::null
@@ -104,9 +101,9 @@ private:
     bool useTranspose_;
     const Epetra_Comm & comm_;
 
-    const Teuchos::RCP<Ginla::EpetraFVM::StkMesh> mesh_;
+    const Teuchos::RCP<Ginla::StkMesh> mesh_;
     const Teuchos::RCP<const Epetra_Vector> thickness_;
-    const Teuchos::RCP<Ginla::EpetraFVM::KeoFactory> keoFactory_;
+    const Teuchos::RCP<Ginla::KeoFactory> keoFactory_;
     const Teuchos::RCP<Epetra_FECrsMatrix> keoMatrix_;
 
     Teuchos::RCP<const Epetra_Vector> current_X_;
@@ -115,7 +112,6 @@ private:
 
 };
 
-} // namespace FVM
 } // namespace Ginla
 // =============================================================================
-#endif // GINLA_EPETRAFVM_JACOBIANOPERATOR_H
+#endif // GINLA_JACOBIANOPERATOR_H

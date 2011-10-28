@@ -17,8 +17,8 @@
 
 */
 
-#ifndef GINLA_EPETRAFVM_KEOPRECONDITIONER_H
-#define GINLA_EPETRAFVM_KEOPRECONDITIONER_H
+#ifndef GINLA_KEOPRECONDITIONER_H
+#define GINLA_KEOPRECONDITIONER_H
 // =============================================================================
 // Workaround for icpc's error "Include mpi.h before stdio.h"
 #include <Teuchos_config.h>
@@ -38,10 +38,8 @@
 #include "Ginla_MagneticVectorPotential.hpp"
 // =============================================================================
 namespace Ginla {
-    namespace EpetraFVM {
-        class KeoFactory;
-        class StkMesh;
-    }
+    class KeoFactory;
+    class StkMesh;
 }
 namespace Belos {
     class EpetraPrecOp;
@@ -50,12 +48,11 @@ class Amesos_BaseSolver;
 class Epetra_LinearProblem;
 // =============================================================================
 namespace Ginla {
-namespace EpetraFVM {
 // =============================================================================
 class KeoPreconditioner: public Epetra_Operator
 {
 public:
-    KeoPreconditioner( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>      & mesh,
+    KeoPreconditioner( const Teuchos::RCP<Ginla::StkMesh>      & mesh,
                        const Teuchos::RCP<const Epetra_Vector>            & thickness,
                        const Teuchos::RCP<Ginla::MagneticVectorPotential> & mvp
                      );
@@ -131,7 +128,7 @@ private:
     bool useTranspose_;
     const Teuchos::RCP<const Epetra_Comm> comm_;
 
-    Teuchos::RCP<Ginla::EpetraFVM::KeoFactory> keoFactory_;
+    Teuchos::RCP<Ginla::KeoFactory> keoFactory_;
     Teuchos::RCP<Epetra_FECrsMatrix> keoRegularized_;
 
     Teuchos::RCP<Belos::EpetraPrecOp> keoMlPrec_;
@@ -149,7 +146,6 @@ private:
     const Teuchos::RCP<Teuchos::Time> regularizationTime_;
 };
 // =============================================================================
-} // namespace FVM
 } // namespace Ginla
 
-#endif // GINLA_EPETRAFVM_KEOPRECONDITIONER_H
+#endif // GINLA_KEOPRECONDITIONER_H

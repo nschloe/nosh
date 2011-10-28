@@ -20,16 +20,16 @@
 #include <BelosPseudoBlockCGSolMgr.hpp>
 #include <BelosMinresSolMgr.hpp>
 
-#include "Ginla_EpetraFVM_StkMeshReader.hpp"
+#include "Ginla_StkMeshReader.hpp"
 
-#include "Ginla_EpetraFVM_State.hpp"
-#include "Ginla_EpetraFVM_ModelEvaluator.hpp"
-#include "Ginla_EpetraFVM_KeoFactory.hpp"
-#include "Ginla_EpetraFVM_KeoPreconditioner.hpp"
-#include "Ginla_IO_StateWriter.hpp"
-#include "Ginla_IO_StatsWriter.hpp"
-#include "Ginla_IO_NoxObserver.hpp"
-#include "Ginla_IO_SaveEigenData.hpp"
+#include "Ginla_State.hpp"
+#include "Ginla_ModelEvaluator.hpp"
+#include "Ginla_KeoFactory.hpp"
+#include "Ginla_KeoPreconditioner.hpp"
+#include "Ginla_StateWriter.hpp"
+#include "Ginla_StatsWriter.hpp"
+#include "Ginla_NoxObserver.hpp"
+#include "Ginla_SaveEigenData.hpp"
 #include "Ginla_MagneticVectorPotential.hpp"
 
 #ifdef HAVE_MPI
@@ -99,21 +99,21 @@ int main ( int argc, char *argv[] )
       Teuchos::RCP<Epetra_Vector>         z = Teuchos::null;
       Teuchos::RCP<Epetra_MultiVector>    mvpValues = Teuchos::null;
       Teuchos::RCP<Epetra_Vector>         thickness = Teuchos::null;
-      Teuchos::RCP<Ginla::EpetraFVM::StkMesh> mesh = Teuchos::null;
+      Teuchos::RCP<Ginla::StkMesh> mesh = Teuchos::null;
 
       *out << "Reading..." << std::endl;
 
       Teuchos::RCP<Teuchos::Time> readTime = Teuchos::TimeMonitor::getNewTimer("Data I/O");
       {
       Teuchos::TimeMonitor tm(*readTime);
-      Ginla::EpetraFVM::StkMeshRead( *eComm,
-                                      inputFileName,
-                                      z,
-                                      mvpValues,
-                                      thickness,
-                                      mesh,
-                                      problemParameters
-                                    );
+      Ginla::StkMeshRead( *eComm,
+                          inputFileName,
+                          z,
+                          mvpValues,
+                          thickness,
+                          mesh,
+                          problemParameters
+                        );
       }
 
       Teuchos::RCP<Ginla::MagneticVectorPotential> mvp;
@@ -139,8 +139,8 @@ int main ( int argc, char *argv[] )
           mesh->computeFvmEntities_();
       }
 
-      Teuchos::RCP<Ginla::EpetraFVM::KeoFactory> keoFactory =
-          Teuchos::rcp( new Ginla::EpetraFVM::KeoFactory( mesh, thickness, mvp ) );
+      Teuchos::RCP<Ginla::KeoFactory> keoFactory =
+          Teuchos::rcp( new Ginla::KeoFactory( mesh, thickness, mvp ) );
 
       Teuchos::RCP<Epetra_FECrsGraph> keoGraph;
       Teuchos::RCP<Teuchos::Time> graphConstructTime = Teuchos::TimeMonitor::getNewTimer("Graph construction");
@@ -151,11 +151,11 @@ int main ( int argc, char *argv[] )
 
       // create Jacobian
       Teuchos::RCP<Teuchos::Time> jacobianConstructTime = Teuchos::TimeMonitor::getNewTimer("Jacobian construction");
-      Teuchos::RCP<Ginla::EpetraFVM::JacobianOperator> jac;
+      Teuchos::RCP<Ginla::JacobianOperator> jac;
       {
           Teuchos::TimeMonitor tm(*jacobianConstructTime);
           // create the jacobian operator
-          jac = Teuchos::rcp( new Ginla::EpetraFVM::JacobianOperator( mesh, thickness, mvp, z ) );
+          jac = Teuchos::rcp( new Ginla::JacobianOperator( mesh, thickness, mvp, z ) );
       }
 
       // create initial guess and right-hand side
@@ -203,8 +203,8 @@ int main ( int argc, char *argv[] )
       {
           Teuchos::TimeMonitor tm(*precConstructTime);
           // create the jacobian operator
-          Teuchos::RCP<Ginla::EpetraFVM::KeoPreconditioner> prec =
-              Teuchos::rcp( new Ginla::EpetraFVM::KeoPreconditioner( mesh, thickness, mvp ) );
+          Teuchos::RCP<Ginla::KeoPreconditioner> prec =
+              Teuchos::rcp( new Ginla::KeoPreconditioner( mesh, thickness, mvp ) );
 
           // actually fill it with values
           prec->rebuild();

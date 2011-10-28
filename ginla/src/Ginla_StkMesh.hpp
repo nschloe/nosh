@@ -17,8 +17,8 @@
 
 */
 
-#ifndef GINLA_EPETRAFVM_STKMESH_H
-#define GINLA_EPETRAFVM_STKMESH_H
+#ifndef GINLA_STKMESH_H
+#define GINLA_STKMESH_H
 // =============================================================================
 // includes
 // Workaround for icpc's error "Include mpi.h before stdio.h"
@@ -58,7 +58,6 @@ typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorFieldType;
 typedef Teuchos::Tuple<double,3>                      Point;
 // =============================================================================
 namespace Ginla {
-namespace EpetraFVM {
 
 class StkMesh
 {
@@ -247,7 +246,6 @@ private:
     norm2squared_( const Point & x
                 ) const;
 };
-} // namespace EpetraFVM
 } // namespace Ginla
 // =============================================================================
-#endif // GINLA_EPETRAFVM_STKMESH_H
+#endif // GINLA_STKMESH_H

@@ -17,13 +17,13 @@
 
 */
 
-#include "Ginla_EpetraFVM_ModelEvaluator.hpp"
+#include "Ginla_ModelEvaluator.hpp"
 
-#include "Ginla_EpetraFVM_State.hpp"
+#include "Ginla_State.hpp"
 #include "Ginla_MagneticVectorPotential.hpp"
-#include "Ginla_EpetraFVM_KeoFactory.hpp"
-#include "Ginla_EpetraFVM_KeoPreconditioner.hpp"
-#include "Ginla_EpetraFVM_StkMesh.hpp"
+#include "Ginla_KeoFactory.hpp"
+#include "Ginla_KeoPreconditioner.hpp"
+#include "Ginla_StkMesh.hpp"
 
 #include <Epetra_Map.h>
 #include <Epetra_LocalMap.h>
@@ -34,14 +34,13 @@
 #include <Teuchos_TimeMonitor.hpp>
 
 namespace Ginla {
-namespace EpetraFVM {
 // ============================================================================
 ModelEvaluator::
-ModelEvaluator ( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>      & mesh,
+ModelEvaluator ( const Teuchos::RCP<Ginla::StkMesh>      & mesh,
                  const Teuchos::ParameterList                       & problemParams,
                  const Teuchos::RCP<const Epetra_Vector>            & thickness,
                  const Teuchos::RCP<Ginla::MagneticVectorPotential> & mvp,
-                 const Teuchos::RCP<Ginla::EpetraFVM::State>        & initialState
+                 const Teuchos::RCP<Ginla::State>        & initialState
                ) :
         mesh_ ( mesh ),
         thickness_( thickness ),
@@ -52,7 +51,7 @@ ModelEvaluator ( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>      & mesh,
         p_names_( Teuchos::null ),
         p_current_( Teuchos::null ),
         mvp_( mvp ),
-        keoFactory_( Teuchos::rcp( new Ginla::EpetraFVM::KeoFactory( mesh, thickness, mvp ) ) ),
+        keoFactory_( Teuchos::rcp( new Ginla::KeoFactory( mesh, thickness, mvp ) ) ),
         evalModelTime_( Teuchos::TimeMonitor::getNewTimer("ModelEvaluator::evalModel") ),
         computeFTime_( Teuchos::TimeMonitor::getNewTimer("ModelEvaluator::evalModel:compute F") ),
         fillJacobianTime_( Teuchos::TimeMonitor::getNewTimer("ModelEvaluator::evalModel:fill Jacobian") ),
@@ -184,7 +183,7 @@ Teuchos::RCP<Epetra_Operator>
 ModelEvaluator::
 create_W() const
 {
-  return Teuchos::rcp( new Ginla::EpetraFVM::JacobianOperator( mesh_, thickness_, mvp_ ) );
+  return Teuchos::rcp( new Ginla::JacobianOperator( mesh_, thickness_, mvp_ ) );
 }
 // =============================================================================
 Teuchos::RCP<EpetraExt::ModelEvaluator::Preconditioner>
@@ -192,7 +191,7 @@ ModelEvaluator::
 create_WPrec() const
 {
   Teuchos::RCP<Epetra_Operator> keoPrec =
-          Teuchos::rcp( new Ginla::EpetraFVM::KeoPreconditioner( mesh_, thickness_, mvp_ ) );
+          Teuchos::rcp( new Ginla::KeoPreconditioner( mesh_, thickness_, mvp_ ) );
   // bool is answer to: "Prec is already inverted?"
   return Teuchos::rcp( new EpetraExt::ModelEvaluator::Preconditioner( keoPrec, false ) );
 }
@@ -203,7 +202,7 @@ createInArgs() const
 {
   EpetraExt::ModelEvaluator::InArgsSetup inArgs;
 
-  inArgs.setModelEvalDescription( "FVM Ginzburg-Landau" );
+  inArgs.setModelEvalDescription( "Ginzburg-Landau" );
 
   // TODO is this actually correct?
   inArgs.set_Np( numParams_ );
@@ -223,7 +222,7 @@ createOutArgs() const
 {
   EpetraExt::ModelEvaluator::OutArgsSetup outArgs;
 
-  outArgs.setModelEvalDescription( "FVM Ginzburg-Landau" );
+  outArgs.setModelEvalDescription( "Ginzburg-Landau" );
 
   outArgs.set_Np_Ng( 1, 0 ); // one parameter vector, no objective function
 
@@ -311,8 +310,8 @@ evalModel( const InArgs  & inArgs,
   if( !W_out.is_null() )
   {
       Teuchos::TimeMonitor tm(*fillJacobianTime_);
-      Teuchos::RCP<Ginla::EpetraFVM::JacobianOperator> jac =
-          Teuchos::rcp_dynamic_cast<Ginla::EpetraFVM::JacobianOperator>( W_out, true );
+      Teuchos::RCP<Ginla::JacobianOperator> jac =
+          Teuchos::rcp_dynamic_cast<Ginla::JacobianOperator>( W_out, true );
       jac->rebuild( mvpParams,
                     scalingCombined,
                     temperature,
@@ -325,8 +324,8 @@ evalModel( const InArgs  & inArgs,
   if( !WPrec_out.is_null() )
   {
       Teuchos::TimeMonitor tm(*fillPreconditionerTime_);
-      Teuchos::RCP<Ginla::EpetraFVM::KeoPreconditioner> keoPrec =
-          Teuchos::rcp_dynamic_cast<Ginla::EpetraFVM::KeoPreconditioner>( WPrec_out, true );
+      Teuchos::RCP<Ginla::KeoPreconditioner> keoPrec =
+          Teuchos::rcp_dynamic_cast<Ginla::KeoPreconditioner>( WPrec_out, true );
       keoPrec->rebuild( mvpParams,
                         scalingCombined );
   }
@@ -413,11 +412,11 @@ computeF_ ( const Epetra_Vector                             & x,
   return;
 }
 // ============================================================================
-Teuchos::RCP<Ginla::EpetraFVM::State>
+Teuchos::RCP<Ginla::State>
 ModelEvaluator::
 createSavable( const Epetra_Vector & x ) const
 {
-    return Teuchos::rcp( new Ginla::EpetraFVM::State( x, mesh_ ) );
+    return Teuchos::rcp( new Ginla::State( x, mesh_ ) );
 }
 // =============================================================================
 Teuchos::RCP<LOCA::ParameterVector>
@@ -436,5 +435,4 @@ getParameters() const
   return p;
 }
 // =============================================================================
-} // namespace EpetraFVM
 } // namespace Ginla

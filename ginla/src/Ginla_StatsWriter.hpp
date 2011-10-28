@@ -30,8 +30,6 @@
 
 namespace Ginla {
 
-  namespace IO {
-  
 class StatsWriter
 {
 public:
@@ -73,7 +71,6 @@ private:
   bool printHeader_;
   
 };
-  } // namespace IO
 } // namespace Ginla
 
 #endif // GL_STATSWRITER_H

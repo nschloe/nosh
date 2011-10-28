@@ -18,14 +18,14 @@
 */
 
 #include "Ginla_MagneticVectorPotential.hpp"
-#include "Ginla_EpetraFVM_StkMesh.hpp"
+#include "Ginla_StkMesh.hpp"
 
 #include <Epetra_Vector.h>
 
 namespace Ginla {
 // ============================================================================
 MagneticVectorPotential::
-MagneticVectorPotential( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh> & mesh,
+MagneticVectorPotential( const Teuchos::RCP<Ginla::StkMesh> & mesh,
                          const Teuchos::RCP<const Epetra_MultiVector>  & mvp,
                          double mu
                        ):
