@@ -20,7 +20,7 @@
 #include "Ginla_EpetraFVM_ModelEvaluator.hpp"
 
 #include "Ginla_EpetraFVM_State.hpp"
-#include "Ginla_MagneticVectorPotential_Virtual.hpp"
+#include "Ginla_MagneticVectorPotential.hpp"
 #include "Ginla_EpetraFVM_KeoFactory.hpp"
 #include "Ginla_EpetraFVM_KeoPreconditioner.hpp"
 #include "Ginla_EpetraFVM_StkMesh.hpp"
@@ -37,11 +37,11 @@ namespace Ginla {
 namespace EpetraFVM {
 // ============================================================================
 ModelEvaluator::
-ModelEvaluator ( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>               & mesh,
-                 const Teuchos::ParameterList                                & problemParams,
-                 const Teuchos::RCP<const Epetra_Vector>                     & thickness,
-                 const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp,
-                 const Teuchos::RCP<Ginla::EpetraFVM::State>                 & initialState
+ModelEvaluator ( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>      & mesh,
+                 const Teuchos::ParameterList                       & problemParams,
+                 const Teuchos::RCP<const Epetra_Vector>            & thickness,
+                 const Teuchos::RCP<Ginla::MagneticVectorPotential> & mvp,
+                 const Teuchos::RCP<Ginla::EpetraFVM::State>        & initialState
                ) :
         mesh_ ( mesh ),
         thickness_( thickness ),

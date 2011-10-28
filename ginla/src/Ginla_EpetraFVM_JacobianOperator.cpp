@@ -28,10 +28,10 @@ namespace Ginla {
 namespace EpetraFVM {
 // =============================================================================
 JacobianOperator::
-JacobianOperator( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>               & mesh,
-                  const Teuchos::RCP<const Epetra_Vector>                     & thickness,
-                  const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp,
-                  const Teuchos::RCP<Epetra_Vector>                           & current_X
+JacobianOperator( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>      & mesh,
+                  const Teuchos::RCP<const Epetra_Vector>            & thickness,
+                  const Teuchos::RCP<Ginla::MagneticVectorPotential> & mvp,
+                  const Teuchos::RCP<Epetra_Vector>                  & current_X
                 ):
         useTranspose_( false ),
         comm_( mesh->getComm() ),

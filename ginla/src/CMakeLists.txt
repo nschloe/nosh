@@ -6,8 +6,7 @@ SET ( ginla_SRCS
       Ginla_EpetraFVM_JacobianOperator.cpp
       Ginla_EpetraFVM_KeoFactory.cpp
       Ginla_EpetraFVM_KeoPreconditioner.cpp
-      Ginla_MagneticVectorPotential_Virtual.cpp
-      Ginla_MagneticVectorPotential_Custom.cpp
+      Ginla_MagneticVectorPotential.cpp
       Ginla_EpetraFVM_StkMesh.cpp
       Ginla_EpetraFVM_StkMeshReader.cpp
       Ginla_EpetraFVM_StkMeshWriter.cpp

@@ -35,7 +35,7 @@
 #include <Epetra_FECrsMatrix.h>
 #include <Epetra_LinearProblem.h>
 
-#include "Ginla_MagneticVectorPotential_Virtual.hpp"
+#include "Ginla_MagneticVectorPotential.hpp"
 // =============================================================================
 namespace Ginla {
     namespace EpetraFVM {
@@ -55,9 +55,9 @@ namespace EpetraFVM {
 class KeoPreconditioner: public Epetra_Operator
 {
 public:
-    KeoPreconditioner( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>               & mesh,
-                       const Teuchos::RCP<const Epetra_Vector>                     & thickness,
-                       const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp
+    KeoPreconditioner( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>      & mesh,
+                       const Teuchos::RCP<const Epetra_Vector>            & thickness,
+                       const Teuchos::RCP<Ginla::MagneticVectorPotential> & mvp
                      );
 
     // Destructor.

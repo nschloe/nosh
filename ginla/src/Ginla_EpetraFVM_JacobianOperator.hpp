@@ -30,7 +30,7 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Tuple.hpp>
 
-#include "Ginla_MagneticVectorPotential_Virtual.hpp"
+#include "Ginla_MagneticVectorPotential.hpp"
 // =============================================================================
 // forward declarations
 namespace Ginla {
@@ -49,10 +49,10 @@ namespace EpetraFVM {
 class JacobianOperator : public Epetra_Operator
 {
 public:
-    JacobianOperator( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>               & mesh,
-                      const Teuchos::RCP<const Epetra_Vector>                     & thickness,
-                      const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp,
-                      const Teuchos::RCP<Epetra_Vector>                           & current_X = Teuchos::null
+    JacobianOperator( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>      & mesh,
+                      const Teuchos::RCP<const Epetra_Vector>            & thickness,
+                      const Teuchos::RCP<Ginla::MagneticVectorPotential> & mvp,
+                      const Teuchos::RCP<Epetra_Vector>                  & current_X = Teuchos::null
                     );
 
     // Destructor.

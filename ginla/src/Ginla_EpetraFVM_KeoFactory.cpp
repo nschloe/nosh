@@ -37,9 +37,9 @@ namespace Ginla {
 namespace EpetraFVM {
 // =============================================================================
 KeoFactory::
-KeoFactory( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>               & mesh,
-            const Teuchos::RCP<const Epetra_Vector>                     & thickness,
-            const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp
+KeoFactory( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>      & mesh,
+            const Teuchos::RCP<const Epetra_Vector>            & thickness,
+            const Teuchos::RCP<Ginla::MagneticVectorPotential> & mvp
           ):
         mesh_ ( mesh ),
         thickness_( thickness ),

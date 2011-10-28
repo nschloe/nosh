@@ -38,7 +38,7 @@
 #include "Ginla_IO_StatsWriter.hpp"
 #include "Ginla_IO_NoxObserver.hpp"
 #include "Ginla_IO_SaveEigenData.hpp"
-#include "Ginla_MagneticVectorPotential_Custom.hpp"
+#include "Ginla_MagneticVectorPotential.hpp"
 
 #include <Teuchos_TimeMonitor.hpp>
 
@@ -162,8 +162,8 @@ main ( int argc, char *argv[] )
 
         double mu = problemParameters.get<double> ( "mu" );
 
-        Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp =
-                Teuchos::rcp ( new Ginla::MagneticVectorPotential::Custom ( mesh, mvpValues, mu ) );
+        Teuchos::RCP<Ginla::MagneticVectorPotential> mvp =
+                Teuchos::rcp ( new Ginla::MagneticVectorPotential ( mesh, mvpValues, mu ) );
 
         // create the mode evaluator
         Teuchos::RCP<Ginla::EpetraFVM::ModelEvaluator> glModel =

@@ -17,20 +17,19 @@
 
 */
 
-#include "Ginla_MagneticVectorPotential_Custom.hpp"
+#include "Ginla_MagneticVectorPotential.hpp"
 #include "Ginla_EpetraFVM_StkMesh.hpp"
 
 #include <Epetra_Vector.h>
 
 namespace Ginla {
-namespace MagneticVectorPotential {
 // ============================================================================
-Custom::
-Custom( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh> & mesh,
-        const Teuchos::RCP<const Epetra_MultiVector>  & mvp,
-        double mu
-      ):
-  Virtual( mesh ),
+MagneticVectorPotential::
+MagneticVectorPotential( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh> & mesh,
+                         const Teuchos::RCP<const Epetra_MultiVector>  & mvp,
+                         double mu
+                       ):
+  mesh_( mesh ),
   mvp_( mvp ),
   mu_( mu ),
   edgeMidpointProjectionCache_( Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >( mesh->getOwnedCells().size() ) ),
@@ -38,13 +37,13 @@ Custom( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh> & mesh,
 {
 }
 // ============================================================================
-Custom::
-~Custom()
+MagneticVectorPotential::
+~MagneticVectorPotential()
 {
 }
 // ============================================================================
 bool
-Custom::
+MagneticVectorPotential::
 setParameters( const LOCA::ParameterVector & p )
 {
     bool valuesChanged = false;
@@ -60,7 +59,7 @@ setParameters( const LOCA::ParameterVector & p )
 }
 // ============================================================================
 Teuchos::RCP<LOCA::ParameterVector>
-Custom::
+MagneticVectorPotential::
 getParameters() const
 {
   Teuchos::RCP<LOCA::ParameterVector> p =
@@ -72,7 +71,7 @@ getParameters() const
 }
 // ============================================================================
 Teuchos::RCP<Point>
-Custom::
+MagneticVectorPotential::
 getA(const Point & x) const
 {
   TEUCHOS_TEST_FOR_EXCEPT_MSG( true,
@@ -84,7 +83,7 @@ getA(const Point & x) const
 }
 // ============================================================================
 double
-Custom::
+MagneticVectorPotential::
 getAEdgeMidpointProjection( const unsigned int cellIndex,
                             const unsigned int edgeIndex
                           ) const
@@ -96,7 +95,7 @@ getAEdgeMidpointProjection( const unsigned int cellIndex,
 }
 // ============================================================================
 void
-Custom::
+MagneticVectorPotential::
 initializeEdgeMidpointProjectionCache_() const
 {
   std::vector<stk::mesh::Entity*> cells = mesh_->getOwnedCells();
@@ -158,5 +157,4 @@ initializeEdgeMidpointProjectionCache_() const
   return;
 }
 // ============================================================================
-} // namespace MagneticVectorPotential
 } // namespace Ginla

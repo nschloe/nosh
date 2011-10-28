@@ -34,7 +34,7 @@
 #include <Epetra_FECrsMatrix.h>
 #include <Epetra_LinearProblem.h>
 
-#include "Ginla_MagneticVectorPotential_Virtual.hpp"
+#include "Ginla_MagneticVectorPotential.hpp"
 #include <Amesos.h>
 // =============================================================================
 // forward declarations
@@ -50,9 +50,9 @@ namespace EpetraFVM {
 class KeoFactory
 {
 public:
-    KeoFactory( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>               & mesh,
-                const Teuchos::RCP<const Epetra_Vector>                     & thickness,
-                const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp
+    KeoFactory( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>      & mesh,
+                const Teuchos::RCP<const Epetra_Vector>            & thickness,
+                const Teuchos::RCP<Ginla::MagneticVectorPotential> & mvp
               );
 
     // Destructor.
@@ -77,7 +77,7 @@ protected:
 private:
     const Teuchos::RCP<Ginla::EpetraFVM::StkMesh> mesh_;
     const Teuchos::RCP<const Epetra_Vector>       thickness_;
-    const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp_;
+    const Teuchos::RCP<Ginla::MagneticVectorPotential> mvp_;
     const Teuchos::RCP<Teuchos::Time> buildKeoTime_;
 };
 // =============================================================================
