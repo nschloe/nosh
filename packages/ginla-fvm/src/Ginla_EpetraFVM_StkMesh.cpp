@@ -45,7 +45,10 @@
 typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorFieldType ;
 typedef stk::mesh::Field<double>                      ScalarFieldType ;
 // =============================================================================
-Ginla::EpetraFVM::StkMesh::
+namespace Ginla {
+namespace EpetraFVM {
+// =============================================================================
+StkMesh::
 StkMesh( const Epetra_Comm                               & comm,
          const Teuchos::RCP<stk::mesh::fem::FEMMetaData> & metaData,
          const Teuchos::RCP<stk::mesh::BulkData>         & bulkData,
@@ -79,13 +82,13 @@ area_( 0.0 )
   return;
 }
 // =============================================================================
-Ginla::EpetraFVM::StkMesh::
+StkMesh::
 ~StkMesh()
 {
 }
 // =============================================================================
 void
-Ginla::EpetraFVM::StkMesh::
+StkMesh::
 setOutputFile( const string & outputDir,
                const string & fileBaseName
              )
@@ -117,35 +120,35 @@ setOutputFile( const string & outputDir,
 }
 // =============================================================================
 const Teuchos::RCP<stk::mesh::fem::FEMMetaData>
-Ginla::EpetraFVM::StkMesh::
+StkMesh::
 getMetaData() const
 {
   return metaData_;
 }
 // =============================================================================
 const Teuchos::RCP<stk::io::MeshData>
-Ginla::EpetraFVM::StkMesh::
+StkMesh::
 getMeshData() const
 {
   return meshData_;
 }
 // =============================================================================
 const Teuchos::RCP<stk::mesh::BulkData>
-Ginla::EpetraFVM::StkMesh::
+StkMesh::
 getBulkData() const
 {
   return bulkData_;
 }
 // =============================================================================
 unsigned int
-Ginla::EpetraFVM::StkMesh::
+StkMesh::
 getNumNodes() const
 {
   return nodesMap_->NumGlobalElements();
 }
 // =============================================================================
 Teuchos::RCP<const Epetra_Vector>
-Ginla::EpetraFVM::StkMesh::
+StkMesh::
 getControlVolumes() const
 {
   TEUCHOS_ASSERT( !controlVolumes_.is_null() );
@@ -153,7 +156,7 @@ getControlVolumes() const
 }
 // =============================================================================
 double
-Ginla::EpetraFVM::StkMesh::
+StkMesh::
 getDomainArea() const
 {
   if ( !fvmEntitiesUpToDate_)
@@ -163,14 +166,14 @@ getDomainArea() const
 }
 // =============================================================================
 const Epetra_Comm &
-Ginla::EpetraFVM::StkMesh::
+StkMesh::
 getComm() const
 {
     return comm_;
 }
 // =============================================================================
 void
-Ginla::EpetraFVM::StkMesh::
+StkMesh::
 scale( const Teuchos::Tuple<double,3> & newScaling )
 {
     // Prevent insanely small values.
@@ -206,14 +209,14 @@ scale( const Teuchos::Tuple<double,3> & newScaling )
 }
 // =============================================================================
 Teuchos::Tuple<double,3>
-Ginla::EpetraFVM::StkMesh::
+StkMesh::
 getScaling() const
 {
     return scaling_;
 }
 // =============================================================================
 Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >
-Ginla::EpetraFVM::StkMesh::
+StkMesh::
 getEdgeCoefficients() const
 {
     if ( !fvmEntitiesUpToDate_)
@@ -223,7 +226,7 @@ getEdgeCoefficients() const
 }
 // =============================================================================
 std::vector<stk::mesh::Entity*>
-Ginla::EpetraFVM::StkMesh::
+StkMesh::
 getOwnedCells() const
 {
   // get owned elements
@@ -238,7 +241,7 @@ getOwnedCells() const
 }
 // =============================================================================
 std::vector<stk::mesh::Entity*>
-Ginla::EpetraFVM::StkMesh::
+StkMesh::
 getOwnedEdges() const
 {
   // get owned elements
@@ -253,7 +256,7 @@ getOwnedEdges() const
 }
 // =============================================================================
 Teuchos::Array<Point>
-Ginla::EpetraFVM::StkMesh::
+StkMesh::
 getNodeCoordinates( const stk::mesh::PairIterRelation & relation ) const
 {
     unsigned int n = relation.size();
@@ -267,7 +270,7 @@ getNodeCoordinates( const stk::mesh::PairIterRelation & relation ) const
 }
 // =============================================================================
 double
-Ginla::EpetraFVM::StkMesh::
+StkMesh::
 getThickness( const stk::mesh::PairIterRelation & relation ) const
 {
 //     Teuchos::Tuple<double,3> thickness;
@@ -277,11 +280,13 @@ getThickness( const stk::mesh::PairIterRelation & relation ) const
 //         thickness[i] = node[0];
 //     }
 //     return thickness;
-  return 0.0;
+    TEUCHOS_TEST_FOR_EXCEPT_MSG( true,
+                                 "Not yet implemented." );
+    return 0.0;
 }
 // =============================================================================
 Teuchos::RCP<Epetra_Map>
-Ginla::EpetraFVM::StkMesh::
+StkMesh::
 getNodesMap() const
 {
     TEUCHOS_ASSERT( !nodesMap_.is_null() );
@@ -289,7 +294,7 @@ getNodesMap() const
 }
 // =============================================================================
 Teuchos::RCP<Epetra_Map>
-Ginla::EpetraFVM::StkMesh::
+StkMesh::
 getNodesOverlapMap() const
 {
     TEUCHOS_ASSERT( !nodesOverlapMap_.is_null() );
@@ -297,7 +302,7 @@ getNodesOverlapMap() const
 }
 // =============================================================================
 Teuchos::RCP<Epetra_Map>
-Ginla::EpetraFVM::StkMesh::
+StkMesh::
 getComplexMap() const
 {
     TEUCHOS_ASSERT( !complexMap_.is_null() );
@@ -305,7 +310,7 @@ getComplexMap() const
 }
 // =============================================================================
 Teuchos::RCP<Epetra_Map>
-Ginla::EpetraFVM::StkMesh::
+StkMesh::
 getComplexOverlapMap() const
 {
     TEUCHOS_ASSERT( !complexOverlapMap_.is_null() );
@@ -313,7 +318,7 @@ getComplexOverlapMap() const
 }
 // =============================================================================
 std::vector<stk::mesh::Entity*>
-Ginla::EpetraFVM::StkMesh::
+StkMesh::
 getOwnedNodes() const
 {
     stk::mesh::Selector select_owned_in_part = stk::mesh::Selector( metaData_->universal_part() )
@@ -329,7 +334,7 @@ getOwnedNodes() const
 }
 // =============================================================================
 std::vector<stk::mesh::Entity*>
-Ginla::EpetraFVM::StkMesh::
+StkMesh::
 getOverlapNodes() const
 {
     //  overlapnodes used for overlap map -- stored for changing coords
@@ -348,7 +353,7 @@ getOverlapNodes() const
 }
 // =============================================================================
 Teuchos::RCP<Epetra_Map>
-Ginla::EpetraFVM::StkMesh::
+StkMesh::
 createNodesMap_( const std::vector<stk::mesh::Entity*> & nodeList ) const
 {
     int numNodes = nodeList.size();
@@ -360,7 +365,7 @@ createNodesMap_( const std::vector<stk::mesh::Entity*> & nodeList ) const
 }
 // =============================================================================
 Teuchos::RCP<Epetra_Map>
-Ginla::EpetraFVM::StkMesh::
+StkMesh::
 createComplexMap_( const std::vector<stk::mesh::Entity*> & nodeList ) const
 {
     // Create a map for real/imaginary out of this.
@@ -376,7 +381,7 @@ createComplexMap_( const std::vector<stk::mesh::Entity*> & nodeList ) const
 }
 // =============================================================================
 unsigned int
-Ginla::EpetraFVM::StkMesh::
+StkMesh::
 getCellDimension( const unsigned int numLocalNodes ) const
 {
   switch ( numLocalNodes )
@@ -396,7 +401,7 @@ getCellDimension( const unsigned int numLocalNodes ) const
 }
 // =============================================================================
 unsigned int
-Ginla::EpetraFVM::StkMesh::
+StkMesh::
 getNumEdgesPerCell( unsigned int cellDimension ) const
 {
   // In n-simplices, all nodes are connected with all other nodesMap.
@@ -409,7 +414,7 @@ getNumEdgesPerCell( unsigned int cellDimension ) const
 }
 // =============================================================================
 void
-Ginla::EpetraFVM::StkMesh::
+StkMesh::
 computeFvmEntities_() const
 {
 //
@@ -598,7 +603,7 @@ computeFvmEntities_() const
 }
 // =============================================================================
 Teuchos::ArrayRCP<double>
-Ginla::EpetraFVM::StkMesh::
+StkMesh::
 getEdgeCoefficientsNumerically_( const Teuchos::Array<Point> localNodes ) const
 {
     // Build an equation system for the edge coefficients alpha_k.
@@ -705,7 +710,7 @@ getEdgeCoefficientsNumerically_( const Teuchos::Array<Point> localNodes ) const
 }
 // =============================================================================
 double
-Ginla::EpetraFVM::StkMesh::
+StkMesh::
 computeCovolume2d_( const Point & cc,
                     const Point & x0,
                     const Point & x1,
@@ -733,7 +738,7 @@ computeCovolume2d_( const Point & cc,
 }
 // =============================================================================
 double
-Ginla::EpetraFVM::StkMesh::
+StkMesh::
 computeCovolume3d_( const Point & cc,
                     const Point & x0,
                     const Point & x1,
@@ -795,7 +800,7 @@ computeCovolume3d_( const Point & cc,
 }
 // =============================================================================
 Teuchos::Tuple<unsigned int,2>
-Ginla::EpetraFVM::StkMesh::
+StkMesh::
 getOtherIndices_( unsigned int e0, unsigned int e1 ) const
 {
   // Get the two indices in [0,1,2,3] which are not e0, e1.
@@ -811,7 +816,7 @@ getOtherIndices_( unsigned int e0, unsigned int e1 ) const
 }
 // =============================================================================
 Point
-Ginla::EpetraFVM::StkMesh::
+StkMesh::
 add_( double alpha, const Point & x,
       double beta,  const Point & y
     ) const
@@ -824,7 +829,7 @@ add_( double alpha, const Point & x,
 }
 // =============================================================================
 double
-Ginla::EpetraFVM::StkMesh::
+StkMesh::
 getTriangleArea_( const Point & node0,
                   const Point & node1,
                   const Point & node2
@@ -837,7 +842,7 @@ getTriangleArea_( const Point & node0,
 }
 // =============================================================================
 double
-Ginla::EpetraFVM::StkMesh::
+StkMesh::
 getTetrahedronVolume_( const Point & node0,
                        const Point & node1,
                        const Point & node2,
@@ -852,7 +857,7 @@ getTetrahedronVolume_( const Point & node0,
 }
 // =============================================================================
 Point
-Ginla::EpetraFVM::StkMesh::
+StkMesh::
 computeTriangleCircumcenter_( const Teuchos::Array<Point> & nodes ) const
 {
   TEUCHOS_ASSERT_EQUALITY( nodes.size(), 3 );
@@ -860,7 +865,7 @@ computeTriangleCircumcenter_( const Teuchos::Array<Point> & nodes ) const
 }
 // =============================================================================
 Point
-Ginla::EpetraFVM::StkMesh::
+StkMesh::
 computeTriangleCircumcenter_( const Point & node0,
                               const Point & node1,
                               const Point & node2
@@ -899,7 +904,7 @@ computeTriangleCircumcenter_( const Point & node0,
 }
 // =============================================================================
 Point
-Ginla::EpetraFVM::StkMesh::
+StkMesh::
 computeTetrahedronCircumcenter_( const Teuchos::Array<Point> & nodes ) const
 {
   // http://www.cgafaq.info/wiki/Tetrahedron_Circumsphere
@@ -940,7 +945,7 @@ computeTetrahedronCircumcenter_( const Teuchos::Array<Point> & nodes ) const
 }
 // =============================================================================
 double
-Ginla::EpetraFVM::StkMesh::
+StkMesh::
 dot_( const Point & v, const Point & w
     ) const
 {
@@ -951,7 +956,7 @@ dot_( const Point & v, const Point & w
 }
 // =============================================================================
 Point
-Ginla::EpetraFVM::StkMesh::
+StkMesh::
 cross_( const Point & v, const Point & w
       ) const
 {
@@ -965,7 +970,7 @@ cross_( const Point & v, const Point & w
 }
 // =============================================================================
 double
-Ginla::EpetraFVM::StkMesh::
+StkMesh::
 norm2_( const Point & x
       ) const
 {
@@ -976,10 +981,12 @@ norm2_( const Point & x
 }
 // =============================================================================
 double
-Ginla::EpetraFVM::StkMesh::
+StkMesh::
 norm2squared_( const Point & x
              ) const
 {
     return this->dot_( x, x );
 }
 // =============================================================================
+} // namespace EpetraFVM
+} // namespace Ginla

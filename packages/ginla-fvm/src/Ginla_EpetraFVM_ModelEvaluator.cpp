@@ -33,8 +33,10 @@
 
 #include <Teuchos_TimeMonitor.hpp>
 
+namespace Ginla {
+namespace EpetraFVM {
 // ============================================================================
-Ginla::EpetraFVM::ModelEvaluator::
+ModelEvaluator::
 ModelEvaluator ( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>               & mesh,
                  const Teuchos::ParameterList                                & problemParams,
                  const Teuchos::RCP<const Epetra_Vector>                     & thickness,
@@ -61,13 +63,13 @@ ModelEvaluator ( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>               & m
   return;
 }
 // ============================================================================
-Ginla::EpetraFVM::ModelEvaluator::
+ModelEvaluator::
 ~ModelEvaluator()
 {
 }
 // ============================================================================
 void
-Ginla::EpetraFVM::ModelEvaluator::
+ModelEvaluator::
 setupParameters_( const Teuchos::ParameterList & params )
 {
   p_names_ = Teuchos::rcp( new Teuchos::Array<std::string>() );
@@ -131,7 +133,7 @@ setupParameters_( const Teuchos::ParameterList & params )
 }
 // ============================================================================
 Teuchos::RCP<const Epetra_Map>
-Ginla::EpetraFVM::ModelEvaluator::
+ModelEvaluator::
 get_x_map() const
 {
   TEUCHOS_ASSERT( !mesh_.is_null() );
@@ -139,7 +141,7 @@ get_x_map() const
 }
 // ============================================================================
 Teuchos::RCP<const Epetra_Map>
-Ginla::EpetraFVM::ModelEvaluator::
+ModelEvaluator::
 get_f_map() const
 {
     TEUCHOS_ASSERT( !mesh_.is_null() );
@@ -147,7 +149,7 @@ get_f_map() const
 }
 // ============================================================================
 Teuchos::RCP<const Epetra_Vector>
-Ginla::EpetraFVM::ModelEvaluator::
+ModelEvaluator::
 get_x_init () const
 {
   TEUCHOS_ASSERT( !x_.is_null() );
@@ -155,7 +157,7 @@ get_x_init () const
 }
 // ============================================================================
 Teuchos::RCP<const Epetra_Vector>
-Ginla::EpetraFVM::ModelEvaluator::
+ModelEvaluator::
 get_p_init ( int l ) const
 {
   TEUCHOS_ASSERT_EQUALITY( 0, l );
@@ -163,7 +165,7 @@ get_p_init ( int l ) const
 }
 // ============================================================================
 Teuchos::RCP<const Epetra_Map>
-Ginla::EpetraFVM::ModelEvaluator::
+ModelEvaluator::
 get_p_map( int l ) const
 {
   TEUCHOS_ASSERT_EQUALITY( 0, l );
@@ -171,7 +173,7 @@ get_p_map( int l ) const
 }
 // ============================================================================
 Teuchos::RCP<const Teuchos::Array<std::string> >
-Ginla::EpetraFVM::ModelEvaluator::
+ModelEvaluator::
 get_p_names( int l ) const
 {
   TEUCHOS_ASSERT_EQUALITY( 0, l );
@@ -179,14 +181,14 @@ get_p_names( int l ) const
 }
 // =============================================================================
 Teuchos::RCP<Epetra_Operator>
-Ginla::EpetraFVM::ModelEvaluator::
+ModelEvaluator::
 create_W() const
 {
   return Teuchos::rcp( new Ginla::EpetraFVM::JacobianOperator( mesh_, thickness_, mvp_ ) );
 }
 // =============================================================================
 Teuchos::RCP<EpetraExt::ModelEvaluator::Preconditioner>
-Ginla::EpetraFVM::ModelEvaluator::
+ModelEvaluator::
 create_WPrec() const
 {
   Teuchos::RCP<Epetra_Operator> keoPrec =
@@ -196,7 +198,7 @@ create_WPrec() const
 }
 // ============================================================================
 EpetraExt::ModelEvaluator::InArgs
-Ginla::EpetraFVM::ModelEvaluator::
+ModelEvaluator::
 createInArgs() const
 {
   EpetraExt::ModelEvaluator::InArgsSetup inArgs;
@@ -216,7 +218,7 @@ createInArgs() const
 }
 // ============================================================================
 EpetraExt::ModelEvaluator::OutArgs
-Ginla::EpetraFVM::ModelEvaluator::
+ModelEvaluator::
 createOutArgs() const
 {
   EpetraExt::ModelEvaluator::OutArgsSetup outArgs;
@@ -251,7 +253,7 @@ createOutArgs() const
 }
 // ============================================================================
 void
-Ginla::EpetraFVM::ModelEvaluator::
+ModelEvaluator::
 evalModel( const InArgs  & inArgs,
            const OutArgs & outArgs
          ) const
@@ -333,7 +335,7 @@ evalModel( const InArgs  & inArgs,
 }
 // ============================================================================
 void
-Ginla::EpetraFVM::ModelEvaluator::
+ModelEvaluator::
 computeF_ ( const Epetra_Vector                             & x,
             const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
             const Teuchos::Tuple<double,3>                  & scaling,
@@ -412,14 +414,14 @@ computeF_ ( const Epetra_Vector                             & x,
 }
 // ============================================================================
 Teuchos::RCP<Ginla::EpetraFVM::State>
-Ginla::EpetraFVM::ModelEvaluator::
+ModelEvaluator::
 createSavable( const Epetra_Vector & x ) const
 {
     return Teuchos::rcp( new Ginla::EpetraFVM::State( x, mesh_ ) );
 }
 // =============================================================================
 Teuchos::RCP<LOCA::ParameterVector>
-Ginla::EpetraFVM::ModelEvaluator::
+ModelEvaluator::
 getParameters() const
 {
   // construct a LOCA::ParameterVector of the parameters
@@ -434,3 +436,5 @@ getParameters() const
   return p;
 }
 // =============================================================================
+} // namespace EpetraFVM
+} // namespace Ginla

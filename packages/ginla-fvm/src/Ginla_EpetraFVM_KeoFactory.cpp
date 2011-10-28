@@ -32,8 +32,11 @@
 #include <ml_epetra_preconditioner.h>
 
 #include <Teuchos_TimeMonitor.hpp>
+
+namespace Ginla {
+namespace EpetraFVM {
 // =============================================================================
-Ginla::EpetraFVM::KeoFactory::
+KeoFactory::
 KeoFactory( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>               & mesh,
             const Teuchos::RCP<const Epetra_Vector>                     & thickness,
             const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp
@@ -45,13 +48,13 @@ KeoFactory( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>               & mesh,
 {
 }
 // =============================================================================
-Ginla::EpetraFVM::KeoFactory::
+KeoFactory::
 ~KeoFactory()
 {
 }
 // =============================================================================
 void
-Ginla::EpetraFVM::KeoFactory::
+KeoFactory::
 updateParameters( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
                   const Teuchos::Tuple<double,3>                  & scaling
                 ) const
@@ -64,14 +67,14 @@ updateParameters( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
 }
 // =============================================================================
 const Teuchos::RCP<const LOCA::ParameterVector>
-Ginla::EpetraFVM::KeoFactory::
+KeoFactory::
 getMvpParameters() const
 {
   return mvp_->getParameters();
 }
 // =============================================================================
 void
-Ginla::EpetraFVM::KeoFactory::
+KeoFactory::
 buildKeo( Epetra_FECrsMatrix & keoMatrix ) const
 {
   Teuchos::TimeMonitor tm(*buildKeoTime_);
@@ -205,7 +208,7 @@ buildKeo( Epetra_FECrsMatrix & keoMatrix ) const
 }
 // =============================================================================
 const Epetra_FECrsGraph
-Ginla::EpetraFVM::KeoFactory::
+KeoFactory::
 buildKeoGraph() const
 {
   TEUCHOS_ASSERT( !mesh_.is_null() );
@@ -259,3 +262,5 @@ buildKeoGraph() const
   return keoGraph;
 }
 // =============================================================================
+} // namespace EpetraFVM
+} // namespace Ginla

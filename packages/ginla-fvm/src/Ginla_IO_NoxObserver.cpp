@@ -24,8 +24,10 @@
 #include "Ginla_Helpers.hpp"
 #include "Ginla_EpetraFVM_ModelEvaluator.hpp"
 
+namespace Ginla {
+namespace IO {
 // ============================================================================
-Ginla::IO::NoxObserver::
+NoxObserver::
 NoxObserver ( const Teuchos::RCP<const Ginla::EpetraFVM::ModelEvaluator> & modelEval,
               const NoxObserver::EObserverType                           & observerType
             ) :
@@ -35,13 +37,13 @@ NoxObserver ( const Teuchos::RCP<const Ginla::EpetraFVM::ModelEvaluator> & model
 {
 }
 // ============================================================================
-Ginla::IO::NoxObserver::
+NoxObserver::
 ~NoxObserver ()
 {
 }
 // ============================================================================
 void
-Ginla::IO::NoxObserver::
+NoxObserver::
 setStatisticsWriter( const Teuchos::RCP<Ginla::IO::StatsWriter> & statsWriter
                    )
 {
@@ -50,7 +52,7 @@ setStatisticsWriter( const Teuchos::RCP<Ginla::IO::StatsWriter> & statsWriter
 }
 // ============================================================================
 void
-Ginla::IO::NoxObserver::
+NoxObserver::
 observeSolution( const Epetra_Vector & soln )
 {
     // define state
@@ -80,7 +82,7 @@ observeSolution( const Epetra_Vector & soln )
 }
 // ============================================================================
 void
-Ginla::IO::NoxObserver::
+NoxObserver::
 observeContinuation_( const Teuchos::RCP<const Ginla::EpetraFVM::State> & state )
 {
   static int index = -1;
@@ -98,7 +100,7 @@ observeContinuation_( const Teuchos::RCP<const Ginla::EpetraFVM::State> & state 
 }
 // ============================================================================
 void
-Ginla::IO::NoxObserver::
+NoxObserver::
 observeTurningPointContinuation_( const Teuchos::RCP<const Ginla::EpetraFVM::State> & state )
 {
     static int index = -1;
@@ -123,7 +125,7 @@ observeTurningPointContinuation_( const Teuchos::RCP<const Ginla::EpetraFVM::Sta
 }
 // ============================================================================
 void
-Ginla::IO::NoxObserver::
+NoxObserver::
 saveContinuationStatistics_( const int stepIndex,
                              const Teuchos::RCP<const Ginla::EpetraFVM::State> & state
                            )
@@ -152,3 +154,5 @@ saveContinuationStatistics_( const int stepIndex,
     }
 }
 // ============================================================================
+} // namespace IO
+} // namespace Ginla

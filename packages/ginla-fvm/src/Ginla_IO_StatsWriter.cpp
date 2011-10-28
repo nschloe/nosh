@@ -19,8 +19,10 @@
 
 #include "Ginla_IO_StatsWriter.hpp"
 
+namespace Ginla {
+namespace IO {
 // ============================================================================
-Ginla::IO::StatsWriter::
+StatsWriter::
 StatsWriter( std::string & fileName ):
     fileStream_(),
     statisticsList_( Teuchos::rcp( new Teuchos::ParameterList() ) ),
@@ -35,28 +37,28 @@ StatsWriter( std::string & fileName ):
     return;
 }
 // ============================================================================
-Ginla::IO::StatsWriter::
+StatsWriter::
 ~StatsWriter()
 {
   fileStream_.close();
 }
 // ============================================================================
 Teuchos::RCP<const Teuchos::ParameterList>
-Ginla::IO::StatsWriter::
+StatsWriter::
 getList()
 {
     return statisticsList_; 
 }
 // ============================================================================
 Teuchos::RCP<Teuchos::ParameterList>
-Ginla::IO::StatsWriter::
+StatsWriter::
 getListNonConst()
 {
     return statisticsList_; 
 }
 // ============================================================================
 void
-Ginla::IO::StatsWriter::
+StatsWriter::
 setList( const Teuchos::ParameterList & statisticsList )
 {
     *statisticsList_ = statisticsList;
@@ -64,7 +66,7 @@ setList( const Teuchos::ParameterList & statisticsList )
 }
 // ============================================================================
 void
-Ginla::IO::StatsWriter::
+StatsWriter::
 setList( const Teuchos::RCP<Teuchos::ParameterList> & statisticsList )
 {
     *statisticsList_ = *statisticsList;
@@ -72,7 +74,7 @@ setList( const Teuchos::RCP<Teuchos::ParameterList> & statisticsList )
 }
 // ============================================================================
 void
-Ginla::IO::StatsWriter::
+StatsWriter::
 print()
 { 
    unsigned int doublePrec = 15;
@@ -168,3 +170,5 @@ print()
   return;
 }
 // ============================================================================
+} // namespace IO
+} // namespace Ginla

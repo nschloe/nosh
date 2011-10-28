@@ -24,8 +24,10 @@
 #include <Teuchos_ArrayRCP.hpp>
 #include <Epetra_Vector.h>
 
+namespace Ginla {
+namespace EpetraFVM {
 // =============================================================================
-Ginla::EpetraFVM::JacobianOperator::
+JacobianOperator::
 JacobianOperator( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>               & mesh,
                   const Teuchos::RCP<const Epetra_Vector>                     & thickness,
                   const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp,
@@ -44,13 +46,13 @@ JacobianOperator( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>               & 
     keoFactory_->buildKeo( *keoMatrix_ );
 }
 // =============================================================================
-Ginla::EpetraFVM::JacobianOperator::
+JacobianOperator::
 ~JacobianOperator ()
 {
 }
 // =============================================================================
 int
-Ginla::EpetraFVM::JacobianOperator::
+JacobianOperator::
 SetUseTranspose( bool UseTranspose )
 {
     useTranspose_ = UseTranspose;
@@ -58,7 +60,7 @@ SetUseTranspose( bool UseTranspose )
 }
 // =============================================================================
 int
-Ginla::EpetraFVM::JacobianOperator::
+JacobianOperator::
 Apply ( const Epetra_MultiVector & X,
               Epetra_MultiVector & Y
       ) const
@@ -116,7 +118,7 @@ Apply ( const Epetra_MultiVector & X,
 }
 // =============================================================================
 int
-Ginla::EpetraFVM::JacobianOperator::
+JacobianOperator::
 ApplyInverse ( const Epetra_MultiVector & X,
                      Epetra_MultiVector & Y
              ) const
@@ -126,7 +128,7 @@ ApplyInverse ( const Epetra_MultiVector & X,
 }
 // =============================================================================
 double
-Ginla::EpetraFVM::JacobianOperator::
+JacobianOperator::
 NormInf () const
 {
     TEUCHOS_TEST_FOR_EXCEPT( "Not yet implemented." );
@@ -134,35 +136,35 @@ NormInf () const
 }
 // =============================================================================
 const char *
-Ginla::EpetraFVM::JacobianOperator::
+JacobianOperator::
 Label () const
 {
     return "Jacobian operator for Ginzburg--Landau";
 }
 // =============================================================================
 bool
-Ginla::EpetraFVM::JacobianOperator::
+JacobianOperator::
 UseTranspose () const
 {
     return useTranspose_;
 }
 // =============================================================================
 bool
-Ginla::EpetraFVM::JacobianOperator::
+JacobianOperator::
 HasNormInf () const
 {
     return false;
 }
 // =============================================================================
 const Epetra_Comm &
-Ginla::EpetraFVM::JacobianOperator::
+JacobianOperator::
 Comm () const
 {
     return comm_;
 }
 // =============================================================================
 const Epetra_Map &
-Ginla::EpetraFVM::JacobianOperator::
+JacobianOperator::
 OperatorDomainMap () const
 {
     TEUCHOS_ASSERT( !keoMatrix_.is_null() );
@@ -170,7 +172,7 @@ OperatorDomainMap () const
 }
 // =============================================================================
 const Epetra_Map &
-Ginla::EpetraFVM::JacobianOperator::
+JacobianOperator::
 OperatorRangeMap () const
 {
     TEUCHOS_ASSERT( !keoMatrix_.is_null() );
@@ -178,7 +180,7 @@ OperatorRangeMap () const
 }
 // =============================================================================
 void
-Ginla::EpetraFVM::JacobianOperator::
+JacobianOperator::
 rebuild( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
          const Teuchos::Tuple<double,3> & scaling,
          const double temperature,
@@ -196,3 +198,5 @@ rebuild( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
     return;
 }
 // =============================================================================
+} // namespace EpetraFVM
+} // namespace Ginla

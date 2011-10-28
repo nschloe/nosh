@@ -122,7 +122,7 @@ int main ( int argc, char *argv[] )
       {
           Teuchos::TimeMonitor tm(*mvpConstructTime);
           mu = problemParameters.get<double> ( "mu" );
-          mu = 1.0e-1;
+          mu = 2.0e-1;
           mvp = Teuchos::rcp ( new Ginla::MagneticVectorPotential::Custom ( mesh, mvpValues, mu ) );
 //          mvp->initializeEdgeMidpointProjectionCache_();
       }

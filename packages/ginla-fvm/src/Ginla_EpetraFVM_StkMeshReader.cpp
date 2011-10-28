@@ -41,8 +41,11 @@
 #include <Ionit_Initializer.h>
 #include <Ioss_IOFactory.h>
 #include <Ioss_Region.h>
+
+namespace Ginla {
+namespace EpetraFVM {
 // =============================================================================
-Ginla::EpetraFVM::StkMeshReader::
+StkMeshReader::
 StkMeshReader( const std::string & fileName ):
 fileName_( fileName ),
 readTime_( Teuchos::TimeMonitor::getNewTimer("StkMeshReader::read") ),
@@ -50,13 +53,13 @@ out_( Teuchos::VerboseObjectBase::getDefaultOStream() )
 {
 }
 // =============================================================================
-Ginla::EpetraFVM::StkMeshReader::
+StkMeshReader::
 ~StkMeshReader()
 {
 }
 // =============================================================================
 void
-Ginla::EpetraFVM::StkMeshReader::
+StkMeshReader::
 read( const Epetra_Comm                       & comm,
       Teuchos::RCP<Epetra_Vector>             & psi,
       Teuchos::RCP<Epetra_MultiVector>        & mvp,
@@ -249,7 +252,7 @@ read( const Epetra_Comm                       & comm,
 }
 // =============================================================================
 Teuchos::RCP<Epetra_Vector>
-Ginla::EpetraFVM::StkMeshReader::
+StkMeshReader::
 createPsi_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
             const Teuchos::RCP<ScalarFieldType>                 & psir_field,
             const Teuchos::RCP<ScalarFieldType>                 & psii_field
@@ -286,7 +289,7 @@ createPsi_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
 }
 // =============================================================================
 Teuchos::RCP<Epetra_Vector>
-Ginla::EpetraFVM::StkMeshReader::
+StkMeshReader::
 createThickness_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
                   const Teuchos::RCP<ScalarFieldType>                 & thickness_field
                 ) const
@@ -323,7 +326,7 @@ createThickness_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
 }
 // =============================================================================
 Teuchos::RCP<Epetra_MultiVector>
-Ginla::EpetraFVM::StkMeshReader::
+StkMeshReader::
 createMvp_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
             const Teuchos::RCP<const VectorFieldType>           & mvpField
           ) const
@@ -361,6 +364,9 @@ createMvp_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
 
     return mvp;
 }
+// =============================================================================
+} // namespace EpetraFVM
+} // namespace Ginla
 // =============================================================================
 //
 // Helper functions

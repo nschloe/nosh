@@ -27,8 +27,10 @@
 
 #include <AnasaziSortManager.hpp>
 
+namespace Ginla {
+namespace IO {
 // =============================================================================
-Ginla::IO::SaveEigenData::
+SaveEigenData::
 SaveEigenData ( Teuchos::ParameterList                                     & eigenParamList,
                 const Teuchos::RCP<const Ginla::EpetraFVM::ModelEvaluator> & modelEval,
                 const Teuchos::RCP<Ginla::IO::StatsWriter>                 & statsWriter
@@ -43,27 +45,27 @@ SaveEigenData ( Teuchos::ParameterList                                     & eig
   statsWriter_->getListNonConst()->set<double>( "SaveEigenData constructor", 2.718281828 );
 }
 // =============================================================================
-Ginla::IO::SaveEigenData::
+SaveEigenData::
 ~SaveEigenData()
 {
 }
 // =============================================================================
 void
-Ginla::IO::SaveEigenData::
+SaveEigenData::
 setLocaStepper ( const Teuchos::RCP<LOCA::Stepper> locaStepper )
 {
     locaStepper_ = locaStepper;
 }
 // =============================================================================
 void
-Ginla::IO::SaveEigenData::
+SaveEigenData::
 releaseLocaStepper()
 {
     locaStepper_ = Teuchos::null;
 }
 // =============================================================================
 NOX::Abstract::Group::ReturnType
-Ginla::IO::SaveEigenData::
+SaveEigenData::
 save ( Teuchos::RCP<std::vector<double> >       & evals_r,
        Teuchos::RCP<std::vector<double> >       & evals_i,
        Teuchos::RCP<NOX::Abstract::MultiVector> & evecs_r,
@@ -221,3 +223,5 @@ save ( Teuchos::RCP<std::vector<double> >       & evals_r,
     return NOX::Abstract::Group::Ok;
 }
 // =============================================================================
+} // namespace IO
+} // namespace Ginla

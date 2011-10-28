@@ -42,7 +42,10 @@
 // typedefs
 typedef stk::mesh::Field<double> ScalarFieldType;
 // =============================================================================
-Ginla::EpetraFVM::StkMeshWriter::
+namespace Ginla {
+namespace EpetraFVM {
+// =============================================================================
+StkMeshWriter::
 StkMeshWriter( const std::string & fileNameBase ):
 fileNameBase_( fileNameBase ),
 time_( 0 ),
@@ -50,13 +53,13 @@ out_( Teuchos::VerboseObjectBase::getDefaultOStream() )
 {
 }
 // =============================================================================
-Ginla::EpetraFVM::StkMeshWriter::
+StkMeshWriter::
 ~StkMeshWriter()
 {
 }
 // =============================================================================
 void
-Ginla::EpetraFVM::StkMeshWriter::
+StkMeshWriter::
 write( const Epetra_Vector                                 & psi,
        const int                                             step,
        const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
@@ -121,7 +124,7 @@ write( const Epetra_Vector                                 & psi,
 }
 // =============================================================================
 void
-Ginla::EpetraFVM::StkMeshWriter::
+StkMeshWriter::
 mergePsi_( const Teuchos::RCP<stk::mesh::fem::FEMMetaData> & metaData,
            const Teuchos::RCP<stk::mesh::BulkData>         & bulkData,
            const Epetra_Vector                             & psi
@@ -237,6 +240,8 @@ mergePsi_( const Teuchos::RCP<stk::mesh::fem::FEMMetaData> & metaData,
 //  region.end_state(step);
 //}
 // =============================================================================
+} // namespace EpetraFVM
+} // namespace Ginla
 //
 // Helper functions
 //

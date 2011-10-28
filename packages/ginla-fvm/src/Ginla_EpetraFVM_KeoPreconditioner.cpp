@@ -43,7 +43,10 @@ typedef Epetra_Operator                  OP;
 typedef Belos::MultiVecTraits<ST,MV>     MVT;
 typedef Belos::OperatorTraits<ST,MV,OP>  OPT;
 // =============================================================================
-Ginla::EpetraFVM::KeoPreconditioner::
+namespace Ginla {
+namespace EpetraFVM {
+// =============================================================================
+KeoPreconditioner::
 KeoPreconditioner( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>               & mesh,
                    const Teuchos::RCP<const Epetra_Vector>                     & thickness,
                    const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp
@@ -64,13 +67,13 @@ KeoPreconditioner( const Teuchos::RCP<Ginla::EpetraFVM::StkMesh>               &
 {
 }
 // =============================================================================
-Ginla::EpetraFVM::KeoPreconditioner::
+KeoPreconditioner::
 ~KeoPreconditioner()
 {
 }
 // =============================================================================
 int
-Ginla::EpetraFVM::KeoPreconditioner::
+KeoPreconditioner::
 SetUseTranspose( bool UseTranspose )
 {
     useTranspose_ = UseTranspose;
@@ -78,7 +81,7 @@ SetUseTranspose( bool UseTranspose )
 }
 // =============================================================================
 int
-Ginla::EpetraFVM::KeoPreconditioner::
+KeoPreconditioner::
 Apply ( const Epetra_MultiVector & X,
               Epetra_MultiVector & Y
       ) const
@@ -88,7 +91,7 @@ Apply ( const Epetra_MultiVector & X,
 }
 // =============================================================================
 int
-Ginla::EpetraFVM::KeoPreconditioner::
+KeoPreconditioner::
 ApplyInverse( const Epetra_MultiVector & X,
                     Epetra_MultiVector & Y
             ) const
@@ -114,7 +117,7 @@ ApplyInverse( const Epetra_MultiVector & X,
 }
 // =============================================================================
 int
-Ginla::EpetraFVM::KeoPreconditioner::
+KeoPreconditioner::
 ApplyInverseMl_( const Epetra_MultiVector & X,
                        Epetra_MultiVector & Y
                ) const
@@ -182,7 +185,7 @@ ApplyInverseMl_( const Epetra_MultiVector & X,
 }
 // =============================================================================
 int
-Ginla::EpetraFVM::KeoPreconditioner::
+KeoPreconditioner::
 ApplyInverseIlu_ ( const Epetra_MultiVector & X,
                          Epetra_MultiVector & Y
                  ) const
@@ -200,7 +203,7 @@ ApplyInverseIlu_ ( const Epetra_MultiVector & X,
 }
 // =============================================================================
 double
-Ginla::EpetraFVM::KeoPreconditioner::
+KeoPreconditioner::
 NormInf () const
 {
     TEUCHOS_TEST_FOR_EXCEPT( "Not yet implemented." );
@@ -208,28 +211,28 @@ NormInf () const
 }
 // =============================================================================
 const char *
-Ginla::EpetraFVM::KeoPreconditioner::
+KeoPreconditioner::
 Label () const
 {
     return "Kinetic energy operator for Ginzburg--Landau";
 }
 // =============================================================================
 bool
-Ginla::EpetraFVM::KeoPreconditioner::
+KeoPreconditioner::
 UseTranspose () const
 {
     return useTranspose_;
 }
 // =============================================================================
 bool
-Ginla::EpetraFVM::KeoPreconditioner::
+KeoPreconditioner::
 HasNormInf () const
 {
     return false;
 }
 // =============================================================================
 const Epetra_Comm &
-Ginla::EpetraFVM::KeoPreconditioner::
+KeoPreconditioner::
 Comm () const
 {
     TEUCHOS_ASSERT( !comm_.is_null() );
@@ -237,7 +240,7 @@ Comm () const
 }
 // =============================================================================
 const Epetra_Map &
-Ginla::EpetraFVM::KeoPreconditioner::
+KeoPreconditioner::
 OperatorDomainMap () const
 {
     TEUCHOS_ASSERT( !keoRegularized_.is_null() );
@@ -245,7 +248,7 @@ OperatorDomainMap () const
 }
 // =============================================================================
 const Epetra_Map &
-Ginla::EpetraFVM::KeoPreconditioner::
+KeoPreconditioner::
 OperatorRangeMap () const
 {
     TEUCHOS_ASSERT( !keoRegularized_.is_null() );
@@ -253,7 +256,7 @@ OperatorRangeMap () const
 }
 // =============================================================================
 void
-Ginla::EpetraFVM::KeoPreconditioner::
+KeoPreconditioner::
 rebuild()
 {
     Teuchos::TimeMonitor tm(*rebuildTime_);
@@ -302,7 +305,7 @@ rebuild()
 }
 // =============================================================================
 void
-Ginla::EpetraFVM::KeoPreconditioner::
+KeoPreconditioner::
 rebuild( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
          const Teuchos::Tuple<double,3>                  & scaling
        )
@@ -314,7 +317,7 @@ rebuild( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
 }
 // =============================================================================
 void
-Ginla::EpetraFVM::KeoPreconditioner::
+KeoPreconditioner::
 rebuildMl_()
 {
     Teuchos::TimeMonitor tm(*rebuildMlTime_);
@@ -348,7 +351,7 @@ rebuildMl_()
 }
 // =============================================================================
 void
-Ginla::EpetraFVM::KeoPreconditioner::
+KeoPreconditioner::
 rebuildIlu_()
 {
     Teuchos::TimeMonitor tm(*rebuildIluTime_);
@@ -370,3 +373,5 @@ rebuildIlu_()
     return;
 }
 // =============================================================================
+} // namespace EpetraFVM
+} // namespace Ginla

@@ -26,9 +26,10 @@
 
 typedef std::complex<double> double_complex;
 
+namespace Ginla {
 // ============================================================================
 Teuchos::RCP<LOCA::ParameterVector>
-Ginla::Helpers::
+Helpers::
 teuchosParameterList2locaParameterVector( const Teuchos::ParameterList & p
                                         )
 {
@@ -49,7 +50,7 @@ teuchosParameterList2locaParameterVector( const Teuchos::ParameterList & p
 }
 // ============================================================================
 Teuchos::RCP<Teuchos::ParameterList>
-Ginla::Helpers::
+Helpers::
 locaParameterVector2teuchosParameterList( const LOCA::ParameterVector & pL )
 {
     Teuchos::RCP<Teuchos::ParameterList> p =
@@ -61,7 +62,7 @@ locaParameterVector2teuchosParameterList( const LOCA::ParameterVector & pL )
 }
 // ============================================================================
 Teuchos::RCP<LOCA::ParameterVector>
-Ginla::Helpers::
+Helpers::
 mergeLocaParameterVectors( const LOCA::ParameterVector & p0,
                            const LOCA::ParameterVector & p1
                          )
@@ -91,7 +92,7 @@ mergeLocaParameterVectors( const LOCA::ParameterVector & p0,
 }
 // ============================================================================
 void
-Ginla::Helpers::
+Helpers::
 appendToTeuchosParameterList( Teuchos::ParameterList      & p,
                               const LOCA::ParameterVector & pL,
                               const std::string           & labelPrepend
@@ -105,7 +106,7 @@ appendToTeuchosParameterList( Teuchos::ParameterList      & p,
 }
 // ============================================================================
 unsigned int
-Ginla::Helpers::
+Helpers::
 numDigits ( const int i )
 {
     int numDigits = 0;
@@ -121,3 +122,4 @@ numDigits ( const int i )
     return numDigits;
 }
 // ============================================================================
+} // namespace Ginla

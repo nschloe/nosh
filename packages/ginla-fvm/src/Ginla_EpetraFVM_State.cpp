@@ -30,8 +30,11 @@
 #include <LOCA_Parameter_Vector.H>
 #include <Epetra_Comm.h>
 #include <Epetra_Map.h>
+
+namespace Ginla {
+namespace EpetraFVM {
 // =============================================================================
-Ginla::EpetraFVM::State::
+State::
 State( const Epetra_Vector                                 & psi,
        const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh
      ):
@@ -44,7 +47,7 @@ State( const Epetra_Vector                                 & psi,
     return;
 }
 // =============================================================================
-Ginla::EpetraFVM::State::
+State::
 State( const Teuchos::RCP<const Epetra_Map>                & map,
        const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh
      ):
@@ -53,7 +56,7 @@ State( const Teuchos::RCP<const Epetra_Map>                & map,
 {
 }
 // =============================================================================
-Ginla::EpetraFVM::State::
+State::
 State( const Teuchos::RCP<const Epetra_Comm>               & comm,
        const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh
      ):
@@ -63,28 +66,28 @@ State( const Teuchos::RCP<const Epetra_Comm>               & comm,
 }
 // =============================================================================
 Teuchos::RCP<const Epetra_Vector>
-Ginla::EpetraFVM::State::
+State::
 getPsi () const
 {
     return Teuchos::rcpFromRef( psi_ );
 }
 // =============================================================================
 Teuchos::RCP<Epetra_Vector>
-Ginla::EpetraFVM::State::
+State::
 getPsiNonConst ()
 {
 return Teuchos::rcpFromRef( psi_ );
 }
 // =============================================================================
 const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh>
-Ginla::EpetraFVM::State::
+State::
 getMesh () const
 {
     return mesh_;
 }
 // =============================================================================
 void
-Ginla::EpetraFVM::State::
+State::
 save( const int                      index,
       const Teuchos::ParameterList & p
     ) const
@@ -119,7 +122,7 @@ save( const int                      index,
 }
 // =============================================================================
 void
-Ginla::EpetraFVM::State::
+State::
 save( const int index
     ) const
 {
@@ -129,7 +132,7 @@ save( const int index
 }
 // =============================================================================
 double
-Ginla::EpetraFVM::State::
+State::
 freeEnergy () const
 {
     double myGlobalEnergy[1];
@@ -153,7 +156,7 @@ freeEnergy () const
 }
 // =============================================================================
 double
-Ginla::EpetraFVM::State::
+State::
 innerProduct( const Ginla::EpetraFVM::State & state ) const
 {
     double res[1];
@@ -178,14 +181,14 @@ innerProduct( const Ginla::EpetraFVM::State & state ) const
 }
 //// ============================================================================
 double
-Ginla::EpetraFVM::State::
+State::
 normalizedScaledL2Norm () const
 {
     return sqrt ( this->innerProduct( *this ) );
 }
 // =============================================================================
 void
-Ginla::EpetraFVM::State::
+State::
 update( const double                    alpha,
         const Ginla::EpetraFVM::State & b,
         const double                    beta
@@ -202,7 +205,7 @@ update( const double                    alpha,
 //       Numerically difficult when too close to origin (rather: points
 //       closest to and furthest from origin too far apart).
 int
-Ginla::EpetraFVM::State::
+State::
 getVorticity () const
 {
 //   TEST_FOR_EXCEPTION( true,
@@ -214,7 +217,7 @@ getVorticity () const
 }
 // =============================================================================
 void
-Ginla::EpetraFVM::State::
+State::
 mergePsi_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
            const Epetra_Vector                                 & psi
          ) const
@@ -255,3 +258,5 @@ mergePsi_( const Teuchos::RCP<const Ginla::EpetraFVM::StkMesh> & mesh,
     return;
 }
 // ============================================================================
+} // namespace EpetraFVM
+} // namespace Ginla
