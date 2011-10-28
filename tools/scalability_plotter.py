@@ -6,6 +6,7 @@ Strong scaling.
 '''
 # ==============================================================================
 import numpy as np
+import math
 import sys
 # ==============================================================================
 def _main():
@@ -33,16 +34,23 @@ def _main():
                       'H', '^', '_', 'd', 'h', 'o', 'p', 's', 'v', 'x', '|'
                     ]
     # --------------------------------------------------------------------------
-    # times
+    # Plot the times.
+    # First plot a reference line of ideal speedup.
+    # Center this line at the log-average of all other plots.
+    log10_average = 0
+    for min_val in min_vals:
+        log10_average = log10_average + math.log10( min_val[0] )
+    log10_average = log10_average / len(min_vals)
     proc_range = range( 1, max_procs+1 )
     pp.plot( proc_range,
-             1.0/np.array(proc_range),
+             10**log10_average/np.array(proc_range),
              '-k',
              linewidth = 2,
              label = "ideal speedup"
            )
     pp.title( "Epetra timing for shared-memory, MPI" )
     pp.xlabel( "Number of processes" )
+    pp.ylabel( "time (s)" )
     pp.xlim( 1, max_procs+1 )
     k = 0
     for min_val, num_proc, label  in zip( min_vals, num_procs, labels ):
@@ -84,6 +92,7 @@ def _main():
     # efficiency
     pp.plot( [0, max_procs+1], [1, 1], '-k', label="ideal" )
     pp.title( "Efficiency" )
+    pp.xlabel( "Number of processes" )
     pp.xlim( 0, max_procs+1 )
     pp.ylim( 0, 1.1 )
     k = 0
@@ -103,6 +112,7 @@ def _main():
     # --------------------------------------------------------------------------
     # serial fraction
     pp.title( "Serial fraction" )
+    pp.xlabel( "Number of processes" )
     pp.xlim( 0, max_procs+1 )
     pp.ylim( 0, 1.1 )
     k = 0
@@ -174,27 +184,28 @@ def _read_data( filename ):
 # ==============================================================================
 def _parse_options():
     '''Parse input options.'''
-    import optparse
+    import argparse
 
-    usage = "usage: %prog datafile(s)"
+    parser = argparse.ArgumentParser( description = 'Plot scalability data as '
+                                            + 'produced by scalability_timer.' )
 
-    parser = optparse.OptionParser( usage = usage )
+    parser.add_argument( 'filenames',
+                         metavar = 'FILE',
+                         nargs   = '+',
+                         type    = str,
+                         help    = 'file to be read from'
+                       )
 
-    parser.add_option( "-t", "--tikz",
-                       action  = "store_true",
-                       dest    = "is_tikz",
-                       default = False,
-                       help    = "Plot the figures as TikZ files",
-                       metavar = "TIKZFILE"
-                     )
+    parser.add_argument( '--tikz',
+                         dest    = 'is_tikz',
+                         action  = 'store_const',
+                         const   = True,
+                         default = False,
+                         help='produce TikZ/Pgfplots output (default: show on screen)')
 
-    (options, args) = parser.parse_args()
+    args = parser.parse_args()
 
-    if not args:
-        parser.print_help()
-        sys.exit( "\nNo file(s) provided." )
-
-    return args, options.is_tikz
+    return args.filenames, args.is_tikz
 # ==============================================================================
 if __name__ == "__main__":
     _main()
