@@ -20,5 +20,5 @@ SET ( ginla_SRCS
 FIND_PACKAGE( Trilinos REQUIRED )
 INCLUDE_DIRECTORIES( ${Trilinos_INCLUDE_DIRS} )
 
-ADD_LIBRARY ( ginlafvm
+ADD_LIBRARY ( ginla
               ${ginla_SRCS} )

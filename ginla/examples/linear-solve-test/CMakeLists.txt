@@ -10,7 +10,7 @@ LINK_DIRECTORIES( ${Trilinos_LIBRARY_DIRS}
 SET ( keoaztecoo_SRCS
       keo-aztecoo.cpp  )
 SET ( keoaztecoo_LIBS
-      ginlafvm
+      ginla
     )
 SET( MY_EXECUTABLE
      "keo-aztecoo.exe" )
@@ -24,7 +24,7 @@ TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
 SET ( keobelos_SRCS
       keo-belos.cpp  )
 SET ( keobelos_LIBS
-      ginlafvm
+      ginla
     )
 SET( MY_EXECUTABLE
      "keo-belos.exe" )
@@ -38,7 +38,7 @@ TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
 SET ( jacobiansolver_SRCS
       jacobian-solver.cpp  )
 SET ( jacobiansolver_LIBS
-      ginlafvm
+      ginla
     )
 SET( MY_EXECUTABLE
      "jacobian-solver.exe" )
@@ -52,7 +52,7 @@ TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
 SET ( matvec_SRCS
       keo-matvec.cpp  )
 SET ( matvec_LIBS
-      ginlafvm
+      ginla
     )
 SET( MY_EXECUTABLE
      "keo-matvec.exe" )

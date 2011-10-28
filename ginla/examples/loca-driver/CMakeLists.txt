@@ -8,12 +8,12 @@ LINK_DIRECTORIES( ${Trilinos_LIBRARY_DIRS}
                   ${Trilinos_TPL_LIBRARY_DIRS} )
 # ------------------------------------------------------------------------------
 SET ( locadriver_SRCS
-      loca-driver-fvm.cpp  )
+      loca-driver.cpp  )
 SET ( locadriver_LIBS
-      ginlafvm
+      ginla
     )
 SET( MY_EXECUTABLE
-     "loca-driver-fvm.exe" )
+     "loca-driver.exe" )
 ADD_EXECUTABLE( ${MY_EXECUTABLE}
                 ${locadriver_SRCS} )
 TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
