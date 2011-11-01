@@ -681,10 +681,8 @@ getEdgeCoefficientsNumerically_( const Teuchos::Array<Point> localNodes ) const
     Teuchos::SerialDenseSolver<int,double> solver;
     TEUCHOS_ASSERT_EQUALITY( 0, solver.setMatrix( A ) );
     TEUCHOS_ASSERT_EQUALITY( 0, solver.setVectors( alpha, rhs ) );
-    if ( false ) // ( solver.shouldEquilibrate() ) // reactivate when equilibration works in trilinos
+    if ( solver.shouldEquilibrate() )
     {
-//        std::cout << "no equi" << std::endl;
-//        TEUCHOS_ASSERT_EQUALITY( 0, solver.computeEquilibrateScaling() );
         TEUCHOS_ASSERT_EQUALITY( 0, solver.equilibrateMatrix() );
         TEUCHOS_ASSERT_EQUALITY( 0, solver.equilibrateRHS() );
         TEUCHOS_ASSERT_EQUALITY( 0, solver.solve() );
@@ -692,7 +690,6 @@ getEdgeCoefficientsNumerically_( const Teuchos::Array<Point> localNodes ) const
     }
     else
     {
-//        std::cout << "no equi" << std::endl;
         TEUCHOS_ASSERT_EQUALITY( 0, solver.solve() );
     }
 

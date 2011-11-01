@@ -26,10 +26,6 @@
 #include <Epetra_Comm.h>
 #include <Epetra_Vector.h>
 
-#include <BelosLinearProblem.hpp>
-#include <BelosEpetraAdapter.hpp>
-#include <BelosBlockCGSolMgr.hpp>
-
 #include <ml_epetra_preconditioner.h>
 
 #include <Teuchos_TimeMonitor.hpp>
