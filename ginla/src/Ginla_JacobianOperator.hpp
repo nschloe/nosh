@@ -102,6 +102,9 @@ private:
     void
     rebuildDiag0_() const;
 
+    void
+    rebuildDiag1_() const;
+
 private:
     bool useTranspose_;
     const Epetra_Comm & comm_;
@@ -117,6 +120,10 @@ private:
 
     mutable bool isDiag0UpToDate_;
     const Teuchos::RCP<Epetra_Vector> diag0_;
+
+    mutable bool isDiag1UpToDate_;
+    const Teuchos::RCP<Epetra_Vector> diag1a_;
+    const Teuchos::RCP<Epetra_Vector> diag1b_;
 
 };
 
