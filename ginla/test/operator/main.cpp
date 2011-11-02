@@ -41,7 +41,6 @@ BOOST_AUTO_TEST_CASE( keo_test )
     Teuchos::RCP<Epetra_SerialComm>  eComm =
             Teuchos::rcp<Epetra_SerialComm> ( new Epetra_SerialComm() );
 #endif
-
     // handle command line arguments
     Teuchos::CommandLineProcessor My_CLP;
 

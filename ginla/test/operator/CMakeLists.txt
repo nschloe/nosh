@@ -12,17 +12,21 @@ INCLUDE_DIRECTORIES ( ${Boost_INCLUDE_DIRS} )
 INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/src )
 
 SET( MY_EXECUTABLE
-     "operatorTest.exe" )
-
-# see http://www.docstoc.com/docs/14857835/CTest-and-Dashboard-_Slides-by-J
-#INCLUDE( CTest )
-ADD_TEST( operatorTest
-          ${MY_EXECUTABLE}
-          "--input=${CMAKE_CURRENT_SOURCE_DIR}/data/cubesmall.e"
-        )
+     "keoTest.exe" )
 
 ADD_EXECUTABLE ( ${MY_EXECUTABLE}
                  main.cpp )
+
+# see http://www.docstoc.com/docs/14857835/CTest-and-Dashboard-_Slides-by-J
+ADD_TEST( keoTest
+          ${MY_EXECUTABLE}
+          --input=${CMAKE_CURRENT_SOURCE_DIR}/data/cubesmall.e
+        )
+
+ADD_TEST( keoTestMpi2
+          mpiexec -n 2 ${MY_EXECUTABLE}
+          --input=${CMAKE_CURRENT_SOURCE_DIR}/data/cubesmall-balanced.par
+        )
 
 SET ( internal_LIBS
       ginla
