@@ -1,0 +1,3 @@
+# ADD_SUBDIRECTORY( evalGL )
+# ADD_SUBDIRECTORY( freeEnergy )
+ADD_SUBDIRECTORY( operator )
