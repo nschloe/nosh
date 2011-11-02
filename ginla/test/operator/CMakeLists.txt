@@ -11,20 +11,36 @@ INCLUDE_DIRECTORIES ( ${Boost_INCLUDE_DIRS} )
 
 INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/src )
 
-SET( MY_EXECUTABLE
+SET( KEOTEST_EXECUTABLE
      "keoTest.exe" )
 
-ADD_EXECUTABLE ( ${MY_EXECUTABLE}
-                 main.cpp )
+SET( JACTEST_EXECUTABLE
+     "jacTest.exe" )
+
+ADD_EXECUTABLE ( ${KEOTEST_EXECUTABLE}
+                 keoTest.cpp )
+
+ADD_EXECUTABLE ( ${JACTEST_EXECUTABLE}
+                 jacTest.cpp )
 
 # see http://www.docstoc.com/docs/14857835/CTest-and-Dashboard-_Slides-by-J
 ADD_TEST( keoTest
-          ${MY_EXECUTABLE}
+          ${KEOTEST_EXECUTABLE}
           --input=${CMAKE_CURRENT_SOURCE_DIR}/data/cubesmall.e
         )
 
 ADD_TEST( keoTestMpi2
-          mpiexec -n 2 ${MY_EXECUTABLE}
+          mpiexec -n 2 ${KEOTEST_EXECUTABLE}
+          --input=${CMAKE_CURRENT_SOURCE_DIR}/data/cubesmall-balanced.par
+        )
+
+ADD_TEST( jacTest
+          ${JACTEST_EXECUTABLE}
+          --input=${CMAKE_CURRENT_SOURCE_DIR}/data/cubesmall.e
+        )
+
+ADD_TEST( jacTestMpi2
+          mpiexec -n 2 ${JACTEST_EXECUTABLE}
           --input=${CMAKE_CURRENT_SOURCE_DIR}/data/cubesmall-balanced.par
         )
 
@@ -33,7 +49,14 @@ SET ( internal_LIBS
     )
 
 # Set executable linking information.
-TARGET_LINK_LIBRARIES ( ${MY_EXECUTABLE}
+TARGET_LINK_LIBRARIES ( ${KEOTEST_EXECUTABLE}
+                        ${internal_LIBS}
+                        ${Trilinos_LIBRARIES}
+                        ${Trilinos_TPL_LIBRARIES}
+                        ${Boost_LIBRARIES}
+                      )
+
+TARGET_LINK_LIBRARIES ( ${JACTEST_EXECUTABLE}
                         ${internal_LIBS}
                         ${Trilinos_LIBRARIES}
                         ${Trilinos_TPL_LIBRARIES}
