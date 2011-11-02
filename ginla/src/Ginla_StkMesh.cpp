@@ -26,7 +26,7 @@
 #include <Teuchos_ArrayRCP.hpp>
 #include <Teuchos_Tuple.hpp>
 #include <Teuchos_SerialDenseVector.hpp>
-#include <Teuchos_SerialDenseSolver.hpp>
+#include <Teuchos_SerialSpdDenseSolver.hpp>
 
 #include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/base/Field.hpp>
@@ -638,8 +638,8 @@ getEdgeCoefficientsNumerically_( const Teuchos::Array<Point> localNodes ) const
 //        std::cout << std::endl;
 //    }
 
-    Teuchos::RCP<Teuchos::SerialDenseMatrix<int, double> > A =
-            Teuchos::rcp( new Teuchos::SerialDenseMatrix<int, double>(numEdges,numEdges) );
+    Teuchos::RCP<Teuchos::SerialSymDenseMatrix<int, double> > A =
+            Teuchos::rcp( new Teuchos::SerialSymDenseMatrix<int, double>(numEdges) );
     Teuchos::RCP<Teuchos::SerialDenseMatrix<int, double> > rhs =
         Teuchos::rcp( new Teuchos::SerialDenseMatrix<int, double>(numEdges,1) );
     Teuchos::RCP<Teuchos::SerialDenseMatrix<int, double> > alpha =
@@ -667,18 +667,19 @@ getEdgeCoefficientsNumerically_( const Teuchos::Array<Point> localNodes ) const
     // has to hold for all vectors u in the plane spanned by the edges,
     // particularly by the edges themselves.
     //
+    // Only fill the upper part of the Hermitian matrix.
+    //
     for ( int i=0; i<numEdges; i++ )
     {
         (*rhs)(i,0) = vol * edges[i].dot(edges[i]);
-        for ( int j=0; j<numEdges; j++ )
+        for ( int j=i; j<numEdges; j++ )
             (*A)(i,j) = edges[i].dot(edges[j]) * edges[j].dot(edges[i]);
     }
 
-//    A->print( std::cout );
-//    rhs->print( std::cout );
-
-    // solve the equation system for the alpha_i
-    Teuchos::SerialDenseSolver<int,double> solver;
+    // Solve the equation system for the alpha_i.
+    // The system is symmetric and, if the simplex is
+    // not degenerate, positive definite.
+    Teuchos::SerialSpdDenseSolver<int,double> solver;
     TEUCHOS_ASSERT_EQUALITY( 0, solver.setMatrix( A ) );
     TEUCHOS_ASSERT_EQUALITY( 0, solver.setVectors( alpha, rhs ) );
     if ( solver.shouldEquilibrate() )
