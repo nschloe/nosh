@@ -28,7 +28,7 @@
 namespace Ginla {
 // =============================================================================
 JacobianOperator::
-JacobianOperator( const Teuchos::RCP<Ginla::StkMesh>      & mesh,
+JacobianOperator( const Teuchos::RCP<Ginla::StkMesh>                 & mesh,
                   const Teuchos::RCP<const Epetra_Vector>            & thickness,
                   const Teuchos::RCP<Ginla::MagneticVectorPotential> & mvp,
                   const Teuchos::RCP<Epetra_Vector>                  & current_X
@@ -40,6 +40,8 @@ JacobianOperator( const Teuchos::RCP<Ginla::StkMesh>      & mesh,
         keoFactory_( Teuchos::rcp( new Ginla::KeoFactory( mesh, thickness, mvp ) ) ),
         keoMatrix_( Teuchos::rcp( new Epetra_FECrsMatrix( Copy, keoFactory_->buildKeoGraph() ) ) ),
         current_X_ ( current_X ),
+        isDiag0UpToDate_( false ),
+        diag0_( Teuchos::rcp( new Epetra_Vector( current_X->Map() ) ) ),
         temperature_( 0.0 )
 {
     // Fill the matrix immediately.
@@ -80,22 +82,17 @@ Apply ( const Epetra_MultiVector & X,
 
     TEUCHOS_ASSERT_EQUALITY( 2*numMyPoints, X.MyLength() );
 
+    // add terms corresponding to (1-T-2*|psi|^2) * phi
+    if ( !isDiag0UpToDate_ )
+        this->rebuildDiag0_();
+    for ( int vec=0; vec<X.NumVectors(); vec++ )
+        TEUCHOS_ASSERT_EQUALITY( 0, Y(vec)->Multiply( 1.0, *diag0_, *(X(vec)), 1.0 ) );
+
+    // add terms corresponding to  diag( psi^2 ) * \conj{phi}
     for ( int vec=0; vec<X.NumVectors(); vec++ )
     {
         for ( int k=0; k<numMyPoints; k++ )
         {
-            double alpha = controlVolumes[k] * (*thickness_)[k] * (
-                           1.0 - temperature_
-                           - 2.0 * ( (*current_X_)[2*k]*(*current_X_)[2*k] + (*current_X_)[2*k+1]*(*current_X_)[2*k+1] )
-                           );
-
-            // real part
-            TEUCHOS_ASSERT_EQUALITY( 0, Y.SumIntoMyValue( 2*k, vec, alpha * X[vec][2*k] ) );
-            // imaginary part
-            TEUCHOS_ASSERT_EQUALITY( 0, Y.SumIntoMyValue( 2*k+1, vec, alpha * X[vec][2*k+1] ) );
-
-            // terms corresponding to  B = diag( psi^2 )
-            // Re(phi^2)
             double rePhiSquare = controlVolumes[k] * (*thickness_)[k] * (
                                  (*current_X_)[2*k]*(*current_X_)[2*k] - (*current_X_)[2*k+1]*(*current_X_)[2*k+1]
                                  );
@@ -190,10 +187,37 @@ rebuild( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
     // set the entities for the operator
     temperature_ = temperature;
     current_X_ = current_X;
+    isDiag0UpToDate_ = false;
 
     // rebuild the keo
     keoFactory_->updateParameters( mvpParams, scaling );
     keoFactory_->buildKeo( *keoMatrix_ );
+
+    return;
+}
+// =============================================================================
+void
+JacobianOperator::
+rebuildDiag0_() const
+{
+    const Epetra_Vector & controlVolumes = *(mesh_->getControlVolumes());
+    int numMyPoints = controlVolumes.MyLength();
+
+    // build scaling vector
+    for ( int k=0; k<numMyPoints; k++ )
+    {
+        int numEntries = 2;
+        double alpha = controlVolumes[k] * (*thickness_)[k] * (
+                       1.0 - temperature_
+                       - 2.0 * ( (*current_X_)[2*k]*(*current_X_)[2*k] + (*current_X_)[2*k+1]*(*current_X_)[2*k+1] )
+                       );
+        double vals[2];
+        vals[0] = alpha; vals[1] = alpha;
+        int indices[2];
+        indices[0] = 2*k; indices[1] = 2*k+1;
+        TEUCHOS_ASSERT_EQUALITY( 0, diag0_->ReplaceMyValues( numEntries, vals, indices ) );
+    }
+    isDiag0UpToDate_ = true;
 
     return;
 }

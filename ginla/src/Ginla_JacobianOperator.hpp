@@ -47,7 +47,7 @@ namespace Ginla {
 class JacobianOperator : public Epetra_Operator
 {
 public:
-    JacobianOperator( const Teuchos::RCP<Ginla::StkMesh>      & mesh,
+    JacobianOperator( const Teuchos::RCP<Ginla::StkMesh>                 & mesh,
                       const Teuchos::RCP<const Epetra_Vector>            & thickness,
                       const Teuchos::RCP<Ginla::MagneticVectorPotential> & mvp,
                       const Teuchos::RCP<Epetra_Vector>                  & current_X = Teuchos::null
@@ -99,6 +99,10 @@ public:
 protected:
 
 private:
+    void
+    rebuildDiag0_() const;
+
+private:
     bool useTranspose_;
     const Epetra_Comm & comm_;
 
@@ -110,6 +114,9 @@ private:
     Teuchos::RCP<const Epetra_Vector> current_X_;
 
     double temperature_;
+
+    mutable bool isDiag0UpToDate_;
+    const Teuchos::RCP<Epetra_Vector> diag0_;
 
 };
 
