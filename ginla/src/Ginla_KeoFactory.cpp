@@ -51,14 +51,12 @@ KeoFactory::
 // =============================================================================
 void
 KeoFactory::
-updateParameters( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
-                  const Teuchos::Tuple<double,3>                  & scaling
+updateParameters( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams
                 ) const
 {
   // set the parameters
   TEUCHOS_ASSERT( !mvpParams.is_null() );
   mvp_->setParameters( *mvpParams );
-  mesh_->scale( scaling );
   return;
 }
 // =============================================================================

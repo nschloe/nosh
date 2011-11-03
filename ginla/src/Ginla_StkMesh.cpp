@@ -63,7 +63,6 @@ nodesMap_       ( this->createNodesMap_( this->getOwnedNodes()   ) ),
 nodesOverlapMap_( this->createNodesMap_( this->getOverlapNodes() ) ),
 complexMap_       ( this->createComplexMap_( this->getOwnedNodes()   ) ),
 complexOverlapMap_( this->createComplexMap_( this->getOverlapNodes() ) ),
-scaling_ ( Teuchos::tuple( 1.0, 1.0, 1.0 ) ),
 fvmEntitiesUpToDate_( false ),
 controlVolumes_( Teuchos::rcp( new Epetra_Vector( *nodesMap_ ) ) ),
 averageThickness_( Teuchos::rcp( new Epetra_Vector( *nodesMap_ ) ) ),
@@ -170,49 +169,6 @@ StkMesh::
 getComm() const
 {
     return comm_;
-}
-// =============================================================================
-void
-StkMesh::
-scale( const Teuchos::Tuple<double,3> & newScaling )
-{
-    // Prevent insanely small values.
-    TEUCHOS_TEST_FOR_EXCEPT_MSG( abs(newScaling[0]) < 1.0e-5
-                              || abs(newScaling[1]) < 1.0e-5
-                              || abs(newScaling[2]) < 1.0e-5,
-                                 "Trying to scale with " << newScaling << ". This is not what you want to do."
-                               );
-
-    std::vector<stk::mesh::Entity*> ownedNodes = this->getOwnedNodes();
-
-    // adapt the position of the nodes component by component
-    for ( int i=0; i<3; i++ )
-    {
-        if ( newScaling[i] != scaling_[i] )
-        {
-           double ratio = newScaling[i] / scaling_[i];
-           for ( unsigned int k=0; k<ownedNodes.size(); k++ )
-           {
-               double* node = stk::mesh::field_data( *coordinatesField_, *ownedNodes[k] );
-               node[i] *= ratio;
-           }
-
-           // store the new scaling
-           scaling_[i] = newScaling[i];
-
-           // make sure the FVM entities get updated properly
-           fvmEntitiesUpToDate_ = false;
-        }
-    }
-
-    return;
-}
-// =============================================================================
-Teuchos::Tuple<double,3>
-StkMesh::
-getScaling() const
-{
-    return scaling_;
 }
 // =============================================================================
 Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >

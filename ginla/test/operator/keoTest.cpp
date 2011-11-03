@@ -90,8 +90,7 @@ BOOST_AUTO_TEST_CASE( keo_test )
     // create the kinetic energy operator
     Teuchos::RCP<Epetra_FECrsMatrix> keoMatrix;
     keoMatrix = Teuchos::rcp( new Epetra_FECrsMatrix( Copy, *keoGraph ) );
-    Teuchos::Tuple<double,3> scaling( Teuchos::tuple(1.0,1.0,1.0) );
-    keoFactory->updateParameters( mvpParameters, scaling );
+    keoFactory->updateParameters( mvpParameters );
     keoFactory->buildKeo( *keoMatrix );
 
     // Make sure the matrix is indeed positive definite, and not

@@ -98,12 +98,6 @@ public:
     const Epetra_Comm &
     getComm() const;
 
-    void
-    scale( const Teuchos::Tuple<double,3> & newScaling );
-
-    Teuchos::Tuple<double,3>
-    getScaling() const;
-
     Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >
     getEdgeCoefficients() const;
 
@@ -162,8 +156,6 @@ private:
     const Teuchos::RCP<Epetra_Map> nodesOverlapMap_;
     const Teuchos::RCP<Epetra_Map> complexMap_;
     const Teuchos::RCP<Epetra_Map> complexOverlapMap_;
-
-    Teuchos::Tuple<double,3> scaling_;
 
     mutable bool fvmEntitiesUpToDate_;
 

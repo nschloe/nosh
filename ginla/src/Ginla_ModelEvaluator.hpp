@@ -123,7 +123,6 @@ private:
   void
   computeF_ ( const Epetra_Vector                             & x,
               const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
-              const Teuchos::Tuple<double,3>                  & scaling,
               const double                                      temperature,
                     Epetra_Vector                             & FVec
             ) const;

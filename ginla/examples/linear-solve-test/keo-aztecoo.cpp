@@ -106,8 +106,7 @@ int main ( int argc, char *argv[] )
       Teuchos::RCP<Ginla::KeoFactory> keoFactory =
               Teuchos::rcp( new Ginla::KeoFactory( mesh, thickness, mvp ) );
       Epetra_FECrsMatrix keoMatrix( Copy, keoFactory->buildKeoGraph() );
-      Teuchos::Tuple<double,3> scaling( Teuchos::tuple(1.0,1.0,1.0) );
-      keoFactory->updateParameters( mvpParameters, scaling );
+      keoFactory->updateParameters( mvpParameters );
       keoFactory->buildKeo( keoMatrix );
 
       // create initial guess and right-hand side

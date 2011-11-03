@@ -76,10 +76,6 @@ setupParameters_( const Teuchos::ParameterList & params )
   p_names_->append( "mu" );
   p_names_->append( "phi" );
   p_names_->append( "theta" );
-  p_names_->append( "scaling" );
-  p_names_->append( "scaling x" );
-  p_names_->append( "scaling y" );
-  p_names_->append( "scaling z" );
   p_names_->append( "temperature" );
 
   // these are local variables
@@ -87,10 +83,6 @@ setupParameters_( const Teuchos::ParameterList & params )
   p_default_values->append( 0.0 ); // mu
   p_default_values->append( 0.0 ); // phi
   p_default_values->append( 0.0 ); // theta
-  p_default_values->append( 1.0 ); // scaling
-  p_default_values->append( 1.0 ); // scaling x
-  p_default_values->append( 1.0 ); // scaling y
-  p_default_values->append( 1.0 ); // scaling z
   p_default_values->append( 0.0 ); // temperature
 
   // setup parameter map
@@ -286,24 +278,14 @@ evalModel( const InArgs  & inArgs,
 
   Teuchos::RCP<LOCA::ParameterVector> mvpParams = this->getParameters();
 
-  const double scaling = (*p_in)[3];
-  const Teuchos::Tuple<double,3> scalingX = Teuchos::tuple( (*p_in)[4],
-                                                            (*p_in)[5],
-                                                            (*p_in)[6]
-                                                          );
-  const double temperature = (*p_in)[7];
-
-  Teuchos::Tuple<double,3> scalingCombined = Teuchos::tuple( scaling * scalingX[0],
-                                                             scaling * scalingX[1],
-                                                             scaling * scalingX[2]
-                                                           );
+  const double temperature = (*p_in)[3];
 
   // compute F
   const Teuchos::RCP<Epetra_Vector> f_out = outArgs.get_f();
   if ( !f_out.is_null() )
   {
       Teuchos::TimeMonitor tm(*computeFTime_);
-      this->computeF_( *x_in, mvpParams, scalingCombined, temperature, *f_out );
+      this->computeF_( *x_in, mvpParams, temperature, *f_out );
   }
 
   // fill jacobian
@@ -314,7 +296,6 @@ evalModel( const InArgs  & inArgs,
       Teuchos::RCP<Ginla::JacobianOperator> jac =
           Teuchos::rcp_dynamic_cast<Ginla::JacobianOperator>( W_out, true );
       jac->rebuild( mvpParams,
-                    scalingCombined,
                     temperature,
                     x_in
                   );
@@ -327,8 +308,7 @@ evalModel( const InArgs  & inArgs,
       Teuchos::TimeMonitor tm(*fillPreconditionerTime_);
       Teuchos::RCP<Ginla::KeoPreconditioner> keoPrec =
           Teuchos::rcp_dynamic_cast<Ginla::KeoPreconditioner>( WPrec_out, true );
-      keoPrec->rebuild( mvpParams,
-                        scalingCombined );
+      keoPrec->rebuild( mvpParams );
   }
 
   return;
@@ -338,14 +318,13 @@ void
 ModelEvaluator::
 computeF_ ( const Epetra_Vector                             & x,
             const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
-            const Teuchos::Tuple<double,3>                  & scaling,
             const double                                      temperature,
             Epetra_Vector                                   & FVec
           ) const
 {
   // build the KEO
   Epetra_FECrsMatrix keoMatrix( Copy, keoFactory_->buildKeoGraph() );
-  keoFactory_->updateParameters( mvpParams, scaling );
+  keoFactory_->updateParameters( mvpParams );
   keoFactory_->buildKeo( keoMatrix );
 
   // compute FVec = K*x

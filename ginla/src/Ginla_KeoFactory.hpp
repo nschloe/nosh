@@ -57,8 +57,7 @@ public:
     ~KeoFactory();
 
     void
-    updateParameters( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
-                      const Teuchos::Tuple<double,3>                  & scaling
+    updateParameters( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams
                     ) const;
 
     const Teuchos::RCP<const LOCA::ParameterVector>

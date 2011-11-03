@@ -246,7 +246,6 @@ read( const Epetra_Comm                       & comm,
   // Add some dummy data.
   // TODO Replace by proper values.
   parameterList.set<double>( "mu", 0.0 );
-  parameterList.set<double>( "scaling", 1.0 );
 
   return;
 }

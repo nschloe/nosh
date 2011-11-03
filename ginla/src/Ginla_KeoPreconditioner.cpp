@@ -306,12 +306,11 @@ rebuild()
 // =============================================================================
 void
 KeoPreconditioner::
-rebuild( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
-         const Teuchos::Tuple<double,3>                  & scaling
+rebuild( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams
        )
 {
 
-    keoFactory_->updateParameters( mvpParams, scaling );
+    keoFactory_->updateParameters( mvpParams );
     this->rebuild();
     return;
 }

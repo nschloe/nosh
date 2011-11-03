@@ -139,16 +139,6 @@ int main ( int argc, char *argv[] )
           mesh->computeFvmEntities_();
       }
 
-      Teuchos::RCP<Ginla::KeoFactory> keoFactory =
-          Teuchos::rcp( new Ginla::KeoFactory( mesh, thickness, mvp ) );
-
-      Teuchos::RCP<Epetra_FECrsGraph> keoGraph;
-      Teuchos::RCP<Teuchos::Time> graphConstructTime = Teuchos::TimeMonitor::getNewTimer("Graph construction");
-      {
-          Teuchos::TimeMonitor tm(*graphConstructTime);
-          keoGraph = Teuchos::rcp( new Epetra_FECrsGraph( keoFactory->buildKeoGraph() ) );
-      }
-
       // create Jacobian
       Teuchos::RCP<Teuchos::Time> jacobianConstructTime = Teuchos::TimeMonitor::getNewTimer("Jacobian construction");
       Teuchos::RCP<Ginla::JacobianOperator> jac;

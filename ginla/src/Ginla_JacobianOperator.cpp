@@ -201,7 +201,6 @@ OperatorRangeMap () const
 void
 JacobianOperator::
 rebuild( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
-         const Teuchos::Tuple<double,3> & scaling,
          const double temperature,
          const Teuchos::RCP<const Epetra_Vector> & current_X
        )
@@ -213,7 +212,7 @@ rebuild( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
     isDiag1UpToDate_ = false;
 
     // rebuild the keo
-    keoFactory_->updateParameters( mvpParams, scaling );
+    keoFactory_->updateParameters( mvpParams );
     keoFactory_->buildKeo( *keoMatrix_ );
 
     return;
