@@ -259,7 +259,7 @@ getNodesOverlapMap() const
 // =============================================================================
 Teuchos::RCP<Epetra_Map>
 StkMesh::
-getComplexMap() const
+getComplexNonOverlapMap() const
 {
     TEUCHOS_ASSERT( !complexMap_.is_null() );
     return complexMap_;

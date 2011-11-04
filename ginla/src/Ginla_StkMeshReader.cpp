@@ -262,7 +262,7 @@ createPsi_( const Teuchos::RCP<const Ginla::StkMesh> & mesh,
     const std::vector<stk::mesh::Entity*> & ownedNodes = mesh->getOwnedNodes();
 
     // Create vector with this respective map.
-    Teuchos::RCP<Epetra_Vector> psi = Teuchos::rcp( new Epetra_Vector( *mesh->getComplexMap() ) );
+    Teuchos::RCP<Epetra_Vector> psi = Teuchos::rcp( new Epetra_Vector( *mesh->getComplexNonOverlapMap() ) );
 
     // Fill the vector with data from the file.
     int ind;

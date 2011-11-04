@@ -129,7 +129,7 @@ ModelEvaluator::
 get_x_map() const
 {
   TEUCHOS_ASSERT( !mesh_.is_null() );
-  return mesh_->getComplexMap();
+  return mesh_->getComplexNonOverlapMap();
 }
 // ============================================================================
 Teuchos::RCP<const Epetra_Map>
@@ -137,7 +137,7 @@ ModelEvaluator::
 get_f_map() const
 {
     TEUCHOS_ASSERT( !mesh_.is_null() );
-    return mesh_->getComplexMap();
+    return mesh_->getComplexNonOverlapMap();
 }
 // ============================================================================
 Teuchos::RCP<const Epetra_Vector>

@@ -126,7 +126,7 @@ public:
     getNodesOverlapMap() const;
 
     Teuchos::RCP<Epetra_Map>
-    getComplexMap() const;
+    getComplexNonOverlapMap() const;
 
     Teuchos::RCP<Epetra_Map>
     getComplexOverlapMap() const;
