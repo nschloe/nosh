@@ -40,12 +40,12 @@ JacobianOperator( const Teuchos::RCP<Ginla::StkMesh>                 & mesh,
         keoFactory_( Teuchos::rcp( new Ginla::KeoFactory( mesh, thickness, mvp ) ) ),
         keoMatrix_( Teuchos::rcp( new Epetra_FECrsMatrix( Copy, keoFactory_->buildKeoGraph() ) ) ),
         current_X_ ( current_X ),
+        temperature_( 0.0 ),
         isDiag0UpToDate_( false ),
-        diag0_( Teuchos::rcp( new Epetra_Vector( current_X->Map() ) ) ),
+        diag0_ ( Teuchos::rcp( new Epetra_Vector(mesh->getControlVolumes()->Map()) ) ),
         isDiag1UpToDate_( false ),
         diag1a_( Teuchos::rcp( new Epetra_Vector(mesh->getControlVolumes()->Map()) ) ),
-        diag1b_( Teuchos::rcp( new Epetra_Vector(mesh->getControlVolumes()->Map()) ) ),
-        temperature_( 0.0 )
+        diag1b_( Teuchos::rcp( new Epetra_Vector(mesh->getControlVolumes()->Map()) ) )
 {
     // Fill the matrix immediately.
     keoFactory_->buildKeo( *keoMatrix_ );
