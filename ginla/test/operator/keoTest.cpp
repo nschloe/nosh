@@ -97,20 +97,67 @@ BOOST_AUTO_TEST_CASE( keo_test )
     // negative definite. Belos needs that (2010-11-05).
     keoMatrix->Scale( -1.0 );
 
-    // compute matrix norms as hashes
+    // Compute matrix norms as hashes.
+    // Don't check for NormFrobenius() as this one doesn't work for matrices
+    // with overlapping maps.
     double normOne = keoMatrix->NormOne();
     double normInf = keoMatrix->NormInf();
-    double normFro = keoMatrix->NormFrobenius();
 
     // control values
     double controlNormOne = 60.0;
     double controlNormInf = 60.0;
-    double controlNormFro = 71.414284285428437;
     
     // check the values
     BOOST_CHECK_SMALL( normOne-controlNormOne, 1.0e-13 );
     BOOST_CHECK_SMALL( normInf-controlNormInf, 1.0e-13 );
-    BOOST_CHECK_SMALL( normFro-controlNormFro, 1.0e-13 );
+
+    const Epetra_Map & map = keoMatrix->DomainMap();
+
+    // Add up all the entries of the matrix.
+    Epetra_Vector e( map );
+    e.PutScalar( 1.0 );
+    Epetra_Vector Ke( map );
+    keoMatrix->Apply( e, Ke );
+    double sum[1];
+    e.Dot( Ke, sum );
+    double controlSum = 1.14407161349788;
+    BOOST_CHECK_SMALL( sum[0]-controlSum, 1.0e-13 );
+
+    // Sum over all the "real parts" of the matrix.
+    // Remember that a 2x2 block corresponding to z is composed as
+    // [ Re(z) -Im(z) ]
+    // [ Im(z)  Re(z) ].
+    // Build vector [ 1, 0, 1, 0, ... ]:
+    double one  = 1.0;
+    double zero = 0.0;
+    Epetra_Vector s0( map );
+    for ( int k=0; k<map.NumMyPoints(); k++ )
+    {
+        if ( map.GID(k) % 2 )
+            s0.ReplaceMyValues( 1, &one, &k );
+        else
+            s0.ReplaceMyValues( 1, &zero, &k );
+    }
+    Epetra_Vector t0( map );
+    keoMatrix->Apply( s0, t0 );
+    s0.Dot( t0, sum );
+    double controlSumReal = 0.57203580674894;
+    BOOST_CHECK_SMALL( sum[0]-controlSumReal, 1.0e-13 );
+
+    // Sum over all the "imaginary parts" of the matrix.
+    Epetra_Vector s1( map );
+    for ( int k=0; k<map.NumMyPoints(); k++ )
+    {
+        if ( map.GID(k) % 2 )
+            s1.ReplaceMyValues( 1, &zero, &k );
+        else
+            s1.ReplaceMyValues( 1, &one, &k );
+    }
+    Epetra_Vector t1( map );
+    keoMatrix->Apply( s0, t1 );
+    s1.Dot( t0, sum );
+    double controlSumImag = 0.0; // Matrix is Hermitian
+    BOOST_CHECK_SMALL( sum[0]-controlSumImag, 1.0e-13 );
 
     // clean up
 #ifdef HAVE_MPI

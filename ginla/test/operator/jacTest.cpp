@@ -85,13 +85,15 @@ BOOST_AUTO_TEST_CASE( jac_test )
     Teuchos::RCP<Ginla::JacobianOperator> jac =
         Teuchos::rcp( new Ginla::JacobianOperator( mesh, thickness, mvp, z ) );
 
-    // create test vectors
+    // Create test vectors.
+    // (a) vector os ones
     const Epetra_Map & map = jac->OperatorDomainMap();
     Teuchos::RCP<Epetra_Vector> s0 = Teuchos::rcp( new Epetra_Vector(map) );
     s0->PutScalar( 1.0 );
     Teuchos::RCP<Epetra_Vector> t0 = Teuchos::rcp( new Epetra_Vector(map) );
     jac->Apply( *s0, *t0 );
 
+    // (b) [ 1, 0, 1, 0, ... ]
     Teuchos::RCP<Epetra_Vector> s1 = Teuchos::rcp( new Epetra_Vector(map) );
     Teuchos::RCP<Epetra_Vector> t1 = Teuchos::rcp( new Epetra_Vector(map) );
     double one  = 1.0;
@@ -105,6 +107,7 @@ BOOST_AUTO_TEST_CASE( jac_test )
     }
     jac->Apply( *s1, *t1 );
 
+    // (b) [ 0, 1, 0, 1, ... ]
     Teuchos::RCP<Epetra_Vector> s2 = Teuchos::rcp( new Epetra_Vector(map) );
     Teuchos::RCP<Epetra_Vector> t2 = Teuchos::rcp( new Epetra_Vector(map) );
     for ( int k=0; k<map.NumMyPoints(); k++ )
