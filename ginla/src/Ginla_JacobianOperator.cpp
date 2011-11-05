@@ -107,16 +107,12 @@ Apply ( const Epetra_MultiVector & X,
             TEUCHOS_ASSERT_EQUALITY( 0, Y.SumIntoMyValue( 2*k,   vec, - (*diag1a_)[k] * X[vec][2*k] - (*diag1b_)[k] * X[vec][2*k+1] ) );
             // imaginary part
             TEUCHOS_ASSERT_EQUALITY( 0, Y.SumIntoMyValue( 2*k+1, vec, - (*diag1b_)[k] * X[vec][2*k] + (*diag1a_)[k] * X[vec][2*k+1] ) );
-            // There is virtually no difference in speed between calling one or
-            // two SumIntoMyValue()s per iteration. Hence, prefer the version
-            // with less code. The one-call version is kept for reference.
-//            int indices[2];
-//            double values[2];
-//            indices[0] = 2*k;
-//            indices[1] = 2*k+1;
-//            values[0] = - (*diag1a_)[k] * X[vec][2*k] - (*diag1b_)[k] * X[vec][2*k+1];
-//            values[1] = - (*diag1b_)[k] * X[vec][2*k] + (*diag1a_)[k] * X[vec][2*k+1];
-//            TEUCHOS_ASSERT_EQUALITY( 0, Y(vec)->SumIntoMyValues( 2, values, indices )  );
+            // It's possible to implement the same thing with just one call to
+            // SumIntoMyValues(),
+            // TEUCHOS_ASSERT_EQUALITY( 0, Y(vec)->SumIntoMyValues( 2, values, indices )  ),
+            // but the overhead of constructing values and
+            // indices is higher than the speedup gained by this.
+            // Hence, stay with the two-call version.
         }
     }
 
