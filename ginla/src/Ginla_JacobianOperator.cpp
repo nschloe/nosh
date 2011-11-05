@@ -44,7 +44,7 @@ JacobianOperator( const Teuchos::RCP<Ginla::StkMesh>                 & mesh,
         isDiag0UpToDate_( false ),
         diag0_ ( Teuchos::rcp( new Epetra_Vector(*mesh->getComplexNonOverlapMap()) ) ),
         isDiag1UpToDate_( false ),
-        diag1a_( Teuchos::rcp( new Epetra_Vector(mesh->getControlVolumes()->Map()) ) ),
+        diag1a_( Teuchos::rcp( new Epetra_Vector(*mesh->getComplexNonOverlapMap()) ) ),
         diag1b_( Teuchos::rcp( new Epetra_Vector(mesh->getControlVolumes()->Map()) ) )
 {
     // Fill the matrix immediately.
@@ -101,12 +101,18 @@ Apply ( const Epetra_MultiVector & X,
     // setup (below).
     for ( int vec=0; vec<X.NumVectors(); vec++ )
     {
+        // Get the "diagonal" part done (Re(psi)Re(phi), Im(psi)Im(phi)).
+        TEUCHOS_ASSERT_EQUALITY( 0, Y(vec)->Multiply( 1.0, *diag1a_, *(X(vec)), 1.0 ) );
+        // For the parts Re(psi)Im(phi), Im(psi)Re(phi), the (2*k+1)th
+        // component of X needs to be summed into the (2k)th component of Y,
+        // likewise for (2k) -> (2k+1).
+        // The Epetra class cannot currently handle this situation, so we
+        // need to access the vector entries one-by-one. This is, unfortunately,
+        // rather costly.
         for ( int k=0; k<numMyPoints; k++ )
         {
-            // real part
-            TEUCHOS_ASSERT_EQUALITY( 0, Y.SumIntoMyValue( 2*k,   vec, - (*diag1a_)[k] * X[vec][2*k] - (*diag1b_)[k] * X[vec][2*k+1] ) );
-            // imaginary part
-            TEUCHOS_ASSERT_EQUALITY( 0, Y.SumIntoMyValue( 2*k+1, vec, - (*diag1b_)[k] * X[vec][2*k] + (*diag1a_)[k] * X[vec][2*k+1] ) );
+            TEUCHOS_ASSERT_EQUALITY( 0, Y.SumIntoMyValue( 2*k,   vec, - (*diag1b_)[k] * X[vec][2*k+1] ) );
+            TEUCHOS_ASSERT_EQUALITY( 0, Y.SumIntoMyValue( 2*k+1, vec, - (*diag1b_)[k] * X[vec][2*k]   ) );
             // It's possible to implement the same thing with just one call to
             // SumIntoMyValues(),
             // TEUCHOS_ASSERT_EQUALITY( 0, Y(vec)->SumIntoMyValues( 2, values, indices )  ),
@@ -257,17 +263,26 @@ rebuildDiag1_() const
     const Epetra_Vector & controlVolumes = *(mesh_->getControlVolumes());
     int numMyPoints = controlVolumes.MyLength();
 
+    int kk;
+    double val;
     for ( int k=0; k<numMyPoints; k++ )
     {
         double rePhiSquare = controlVolumes[k] * (*thickness_)[k] * (
                              (*current_X_)[2*k]*(*current_X_)[2*k] - (*current_X_)[2*k+1]*(*current_X_)[2*k+1]
                              );
-        TEUCHOS_ASSERT_EQUALITY( 0, diag1a_->ReplaceMyValues( 1, &rePhiSquare, &k ) );
+        kk = 2*k;
+        val = -rePhiSquare;
+        TEUCHOS_ASSERT_EQUALITY( 0, diag1a_->ReplaceMyValues( 1, &val, &kk ) );
+        kk = 2*k+1;
+        val = rePhiSquare;
+        TEUCHOS_ASSERT_EQUALITY( 0, diag1a_->ReplaceMyValues( 1, &val, &kk ) );
+
         // Im(phi^2)
         double imPhiSquare = controlVolumes[k] * (*thickness_)[k] * (
                              2.0 * (*current_X_)[2*k] * (*current_X_)[2*k+1]
                              );
         TEUCHOS_ASSERT_EQUALITY( 0, diag1b_->ReplaceMyValues( 1, &imPhiSquare, &k ) );
+
     }
     isDiag1UpToDate_ = true;
     return;

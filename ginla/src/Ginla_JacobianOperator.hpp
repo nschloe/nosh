@@ -123,7 +123,6 @@ private:
     mutable bool isDiag1UpToDate_;
     const Teuchos::RCP<Epetra_Vector> diag1a_;
     const Teuchos::RCP<Epetra_Vector> diag1b_;
-
 };
 
 } // namespace Ginla
