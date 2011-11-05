@@ -88,16 +88,16 @@ Apply ( const Epetra_MultiVector & X,
     if ( !isDiagsUpToDate_ )
         this->rebuildDiags_();
 
-    // add terms corresponding to (1-T-2*|psi|^2) * phi
-    for ( int vec=0; vec<X.NumVectors(); vec++ )
-        TEUCHOS_ASSERT_EQUALITY( 0, Y(vec)->Multiply( 1.0, *diag0_, *(X(vec)), 1.0 ) );
-
-    // Add terms corresponding to  diag( psi^2 ) * \conj{phi}.
-    // There's no (visible) speedup when compared to computing the coefficients in every step,
-    // but there is the cost of two additional vectors. Think about going back to the old
-    // setup (below).
     for ( int vec=0; vec<X.NumVectors(); vec++ )
     {
+        // add terms corresponding to (1-T-2*|psi|^2) * phi
+        TEUCHOS_ASSERT_EQUALITY( 0, Y(vec)->Multiply( 1.0, *diag0_, *(X(vec)), 1.0 ) );
+
+        // Add terms corresponding to  diag( psi^2 ) * \conj{phi}.
+        // There's no (visible) speedup when compared to computing the
+        // coefficients in every step (instead of caching them in diags),
+        // but there is the cost of two additional vectors. Think about
+        // going back to the old setup.
         // Get the "diagonal" part done (Re(psi)Re(phi), Im(psi)Im(phi)).
         TEUCHOS_ASSERT_EQUALITY( 0, Y(vec)->Multiply( 1.0, *diag1a_, *(X(vec)), 1.0 ) );
         // For the parts Re(psi)Im(phi), Im(psi)Re(phi), the (2*k+1)th
@@ -240,14 +240,13 @@ rebuildDiags_() const
     for ( int k=0; k<numMyPoints; k++ )
     {
         // rebuild diag0
-        int numEntries = 2;
         double alpha = controlVolumes[k] * (*thickness_)[k] * (
                        1.0 - temperature_
                        - 2.0 * ( (*current_X_)[2*k]*(*current_X_)[2*k] + (*current_X_)[2*k+1]*(*current_X_)[2*k+1] )
                        );
         vals[0]    = alpha; vals[1]    = alpha;
         indices[0] = 2*k;   indices[1] = 2*k+1;
-        TEUCHOS_ASSERT_EQUALITY( 0, diag0_->ReplaceMyValues( numEntries, vals, indices ) );
+        TEUCHOS_ASSERT_EQUALITY( 0, diag0_->ReplaceMyValues( 2, vals, indices ) );
 
         // rebuild diag1a
         double rePhiSquare = controlVolumes[k] * (*thickness_)[k] * (
