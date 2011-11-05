@@ -109,7 +109,7 @@ Apply ( const Epetra_MultiVector & X,
             TEUCHOS_ASSERT_EQUALITY( 0, Y.SumIntoMyValue( 2*k+1, vec, - (*diag1b_)[k] * X[vec][2*k] + (*diag1a_)[k] * X[vec][2*k+1] ) );
             // There is virtually no difference in speed between calling one or
             // two SumIntoMyValue()s per iteration. Hence, prefer the version
-            // with less code. The one-call version is kept 
+            // with less code. The one-call version is kept for reference.
 //            int indices[2];
 //            double values[2];
 //            indices[0] = 2*k;
