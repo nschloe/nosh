@@ -41,9 +41,8 @@ JacobianOperator( const Teuchos::RCP<Ginla::StkMesh>                 & mesh,
         keoMatrix_( Teuchos::rcp( new Epetra_FECrsMatrix( Copy, keoFactory_->buildKeoGraph() ) ) ),
         current_X_ ( current_X ),
         temperature_( 0.0 ),
-        isDiag0UpToDate_( false ),
+        isDiagsUpToDate_( false ),
         diag0_ ( Teuchos::rcp( new Epetra_Vector(*mesh->getComplexNonOverlapMap()) ) ),
-        isDiag1UpToDate_( false ),
         diag1a_( Teuchos::rcp( new Epetra_Vector(*mesh->getComplexNonOverlapMap()) ) ),
         diag1b_( Teuchos::rcp( new Epetra_Vector(mesh->getControlVolumes()->Map()) ) )
 {
@@ -85,15 +84,13 @@ Apply ( const Epetra_MultiVector & X,
 
     TEUCHOS_ASSERT_EQUALITY( 2*numMyPoints, X.MyLength() );
 
+    // rebuild diagonals cache
+    if ( !isDiagsUpToDate_ )
+        this->rebuildDiags_();
+
     // add terms corresponding to (1-T-2*|psi|^2) * phi
-    if ( !isDiag0UpToDate_ )
-        this->rebuildDiag0_();
     for ( int vec=0; vec<X.NumVectors(); vec++ )
         TEUCHOS_ASSERT_EQUALITY( 0, Y(vec)->Multiply( 1.0, *diag0_, *(X(vec)), 1.0 ) );
-
-    // cache rePhiSquare, imPhiSquare
-    if ( !isDiag1UpToDate_ )
-        this->rebuildDiag1_();
 
     // Add terms corresponding to  diag( psi^2 ) * \conj{phi}.
     // There's no (visible) speedup when compared to computing the coefficients in every step,
@@ -220,8 +217,7 @@ rebuild( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
     // set the entities for the operator
     temperature_ = temperature;
     current_X_ = current_X;
-    isDiag0UpToDate_ = false;
-    isDiag1UpToDate_ = false;
+    isDiagsUpToDate_ = false;
 
     // rebuild the keo
     keoFactory_->updateParameters( mvpParams );
@@ -232,41 +228,28 @@ rebuild( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
 // =============================================================================
 void
 JacobianOperator::
-rebuildDiag0_() const
-{
-    const Epetra_Vector & controlVolumes = *(mesh_->getControlVolumes());
-    int numMyPoints = controlVolumes.MyLength();
-
-    // build scaling vector
-    for ( int k=0; k<numMyPoints; k++ )
-    {
-        int numEntries = 2;
-        double alpha = controlVolumes[k] * (*thickness_)[k] * (
-                       1.0 - temperature_
-                       - 2.0 * ( (*current_X_)[2*k]*(*current_X_)[2*k] + (*current_X_)[2*k+1]*(*current_X_)[2*k+1] )
-                       );
-        double vals[2];
-        vals[0] = alpha; vals[1] = alpha;
-        int indices[2];
-        indices[0] = 2*k; indices[1] = 2*k+1;
-        TEUCHOS_ASSERT_EQUALITY( 0, diag0_->ReplaceMyValues( numEntries, vals, indices ) );
-    }
-    isDiag0UpToDate_ = true;
-
-    return;
-}
-// =============================================================================
-void
-JacobianOperator::
-rebuildDiag1_() const
+rebuildDiags_() const
 {
     const Epetra_Vector & controlVolumes = *(mesh_->getControlVolumes());
     int numMyPoints = controlVolumes.MyLength();
 
     int kk;
     double val;
+    int indices[2];
+    double vals[2];
     for ( int k=0; k<numMyPoints; k++ )
     {
+        // rebuild diag0
+        int numEntries = 2;
+        double alpha = controlVolumes[k] * (*thickness_)[k] * (
+                       1.0 - temperature_
+                       - 2.0 * ( (*current_X_)[2*k]*(*current_X_)[2*k] + (*current_X_)[2*k+1]*(*current_X_)[2*k+1] )
+                       );
+        vals[0]    = alpha; vals[1]    = alpha;
+        indices[0] = 2*k;   indices[1] = 2*k+1;
+        TEUCHOS_ASSERT_EQUALITY( 0, diag0_->ReplaceMyValues( numEntries, vals, indices ) );
+
+        // rebuild diag1a
         double rePhiSquare = controlVolumes[k] * (*thickness_)[k] * (
                              (*current_X_)[2*k]*(*current_X_)[2*k] - (*current_X_)[2*k+1]*(*current_X_)[2*k+1]
                              );
@@ -277,14 +260,14 @@ rebuildDiag1_() const
         val = rePhiSquare;
         TEUCHOS_ASSERT_EQUALITY( 0, diag1a_->ReplaceMyValues( 1, &val, &kk ) );
 
-        // Im(phi^2)
+        // rebuild diag1b
         double imPhiSquare = controlVolumes[k] * (*thickness_)[k] * (
                              2.0 * (*current_X_)[2*k] * (*current_X_)[2*k+1]
                              );
         TEUCHOS_ASSERT_EQUALITY( 0, diag1b_->ReplaceMyValues( 1, &imPhiSquare, &k ) );
-
     }
-    isDiag1UpToDate_ = true;
+    isDiagsUpToDate_ = true;
+
     return;
 }
 // =============================================================================

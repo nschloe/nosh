@@ -99,10 +99,7 @@ protected:
 
 private:
     void
-    rebuildDiag0_() const;
-
-    void
-    rebuildDiag1_() const;
+    rebuildDiags_() const;
 
 private:
     bool useTranspose_;
@@ -117,10 +114,8 @@ private:
 
     double temperature_;
 
-    mutable bool isDiag0UpToDate_;
+    mutable bool isDiagsUpToDate_;
     const Teuchos::RCP<Epetra_Vector> diag0_;
-
-    mutable bool isDiag1UpToDate_;
     const Teuchos::RCP<Epetra_Vector> diag1a_;
     const Teuchos::RCP<Epetra_Vector> diag1b_;
 };
