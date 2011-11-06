@@ -97,7 +97,7 @@ Apply ( const Epetra_MultiVector & X,
         // There's no (visible) speedup when compared to computing the
         // coefficients in every step (instead of caching them in diags),
         // but there is the cost of two additional vectors. Think about
-        // going back to the old setup.
+        // going back to the old setup (see below).
         // Get the "diagonal" part done (Re(psi)Re(phi), Im(psi)Im(phi)).
         TEUCHOS_ASSERT_EQUALITY( 0, Y(vec)->Multiply( 1.0, *diag1a_, *(X(vec)), 1.0 ) );
         // For the parts Re(psi)Im(phi), Im(psi)Re(phi), the (2*k+1)th
@@ -117,11 +117,8 @@ Apply ( const Epetra_MultiVector & X,
             // indices is higher than the speedup gained by this.
             // Hence, stay with the two-call version.
         }
-    }
 
-//    // add terms corresponding to  diag( psi^2 ) * \conj{phi}
-//    for ( int vec=0; vec<X.NumVectors(); vec++ )
-//    {
+//        // add terms corresponding to  diag( psi^2 ) * \conj{phi}
 //        for ( int k=0; k<numMyPoints; k++ )
 //        {
 //            double rePhiSquare = controlVolumes[k] * (*thickness_)[k] * (
@@ -136,7 +133,7 @@ Apply ( const Epetra_MultiVector & X,
 //            // imaginary part
 //            TEUCHOS_ASSERT_EQUALITY( 0, Y.SumIntoMyValue( 2*k+1, vec, - imPhiSquare * X[vec][2*k] + rePhiSquare * X[vec][2*k+1] ) );
 //        }
-//    }
+    }
 
 //    // take care of the shifting
 //    if ( alpha_ != 0.0 || beta_ != -1.0 )
