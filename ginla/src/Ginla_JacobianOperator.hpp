@@ -116,7 +116,6 @@ private:
 
     mutable bool isDiagsUpToDate_;
     const Teuchos::RCP<Epetra_Vector> diag0_;
-    const Teuchos::RCP<Epetra_Vector> diag1a_;
     const Teuchos::RCP<Epetra_Vector> diag1b_;
 };
 

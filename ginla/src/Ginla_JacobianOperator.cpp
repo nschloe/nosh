@@ -43,7 +43,6 @@ JacobianOperator( const Teuchos::RCP<Ginla::StkMesh>                 & mesh,
         temperature_( 0.0 ),
         isDiagsUpToDate_( false ),
         diag0_ ( Teuchos::rcp( new Epetra_Vector(*mesh->getComplexNonOverlapMap()) ) ),
-        diag1a_( Teuchos::rcp( new Epetra_Vector(*mesh->getComplexNonOverlapMap()) ) ),
         diag1b_( Teuchos::rcp( new Epetra_Vector(mesh->getControlVolumes()->Map()) ) )
 {
     // Fill the matrix immediately.
@@ -90,32 +89,19 @@ Apply ( const Epetra_MultiVector & X,
 
     for ( int vec=0; vec<X.NumVectors(); vec++ )
     {
-        // add terms corresponding to (1-T-2*|psi|^2) * phi
+        // Add terms corresponding to (1-T-2*|psi|^2) * phi, and the "diagonal"
+        // part of diag( psi^2 ) * \conj{phi}.
         TEUCHOS_ASSERT_EQUALITY( 0, Y(vec)->Multiply( 1.0, *diag0_, *(X(vec)), 1.0 ) );
 
-        // Add terms corresponding to  diag( psi^2 ) * \conj{phi}.
-        // There's no (visible) speedup when compared to computing the
-        // coefficients in every step (instead of caching them in diags),
-        // but there is the cost of two additional vectors. Think about
-        // going back to the old setup (see below).
-        // Get the "diagonal" part done (Re(psi)Re(phi), Im(psi)Im(phi)).
-        TEUCHOS_ASSERT_EQUALITY( 0, Y(vec)->Multiply( 1.0, *diag1a_, *(X(vec)), 1.0 ) );
         // For the parts Re(psi)Im(phi), Im(psi)Re(phi), the (2*k+1)th
         // component of X needs to be summed into the (2k)th component of Y,
         // likewise for (2k) -> (2k+1).
         // The Epetra class cannot currently handle this situation, so we
-        // need to access the vector entries one-by-one. This is, unfortunately,
-        // rather costly.
+        // need to access the vector entries one-by-one.
         for ( int k=0; k<numMyPoints; k++ )
         {
-            TEUCHOS_ASSERT_EQUALITY( 0, Y.SumIntoMyValue( 2*k,   vec, - (*diag1b_)[k] * X[vec][2*k+1] ) );
-            TEUCHOS_ASSERT_EQUALITY( 0, Y.SumIntoMyValue( 2*k+1, vec, - (*diag1b_)[k] * X[vec][2*k]   ) );
-            // It's possible to implement the same thing with just one call to
-            // SumIntoMyValues(),
-            // TEUCHOS_ASSERT_EQUALITY( 0, Y(vec)->SumIntoMyValues( 2, values, indices )  ),
-            // but the overhead of constructing values and
-            // indices is higher than the speedup gained by this.
-            // Hence, stay with the two-call version.
+            (*Y(vec))[2*k]   -= (*diag1b_)[k] * X[vec][2*k+1];
+            (*Y(vec))[2*k+1] -= (*diag1b_)[k] * X[vec][2*k];
         }
 
 //        // add terms corresponding to  diag( psi^2 ) * \conj{phi}
@@ -241,20 +227,14 @@ rebuildDiags_() const
                        1.0 - temperature_
                        - 2.0 * ( (*current_X_)[2*k]*(*current_X_)[2*k] + (*current_X_)[2*k+1]*(*current_X_)[2*k+1] )
                        );
-        vals[0]    = alpha; vals[1]    = alpha;
-        indices[0] = 2*k;   indices[1] = 2*k+1;
-        TEUCHOS_ASSERT_EQUALITY( 0, diag0_->ReplaceMyValues( 2, vals, indices ) );
-
-        // rebuild diag1a
         double rePhiSquare = controlVolumes[k] * (*thickness_)[k] * (
                              (*current_X_)[2*k]*(*current_X_)[2*k] - (*current_X_)[2*k+1]*(*current_X_)[2*k+1]
                              );
-        kk = 2*k;
-        val = -rePhiSquare;
-        TEUCHOS_ASSERT_EQUALITY( 0, diag1a_->ReplaceMyValues( 1, &val, &kk ) );
-        kk = 2*k+1;
-        val = rePhiSquare;
-        TEUCHOS_ASSERT_EQUALITY( 0, diag1a_->ReplaceMyValues( 1, &val, &kk ) );
+        vals[0]    = alpha - rePhiSquare;
+        vals[1]    = alpha + rePhiSquare;
+        indices[0] = 2*k;
+        indices[1] = 2*k+1;
+        TEUCHOS_ASSERT_EQUALITY( 0, diag0_->ReplaceMyValues( 2, vals, indices ) );
 
         // rebuild diag1b
         double imPhiSquare = controlVolumes[k] * (*thickness_)[k] * (
