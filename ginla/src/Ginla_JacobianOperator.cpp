@@ -89,19 +89,21 @@ Apply ( const Epetra_MultiVector & X,
 
     for ( int vec=0; vec<X.NumVectors(); vec++ )
     {
-        // Add terms corresponding to (1-T-2*|psi|^2) * phi, and the "diagonal"
-        // part of diag( psi^2 ) * \conj{phi}.
-        TEUCHOS_ASSERT_EQUALITY( 0, Y(vec)->Multiply( 1.0, *diag0_, *(X(vec)), 1.0 ) );
-
         // For the parts Re(psi)Im(phi), Im(psi)Re(phi), the (2*k+1)th
         // component of X needs to be summed into the (2k)th component of Y,
         // likewise for (2k) -> (2k+1).
-        // The Epetra class cannot currently handle this situation, so we
-        // need to access the vector entries one-by-one.
+        // The Epetra class cannot currently handle this situation
+        // (e.g., by Epetra_Vector::Multiply()), so we
+        // need to access the vector entries one-by-one. And then, while
+        // we're at it, let's include all the other terms in the loop
+        // too. (It would actually be possible to have the terms
+        // 2k/2k and 2k+1/2k+1 handled by Multiply().
         for ( int k=0; k<numMyPoints; k++ )
         {
-            (*Y(vec))[2*k]   -= (*diag1b_)[k] * X[vec][2*k+1];
-            (*Y(vec))[2*k+1] -= (*diag1b_)[k] * X[vec][2*k];
+            (*Y(vec))[2*k]   +=  (*diag0_) [2*k]  * X[vec][2*k]
+                                -(*diag1b_)[k]    * X[vec][2*k+1];
+            (*Y(vec))[2*k+1] += -(*diag1b_)[k]    * X[vec][2*k]
+                                +(*diag0_)[2*k+1] * X[vec][2*k+1];
         }
 
 //        // add terms corresponding to  diag( psi^2 ) * \conj{phi}
