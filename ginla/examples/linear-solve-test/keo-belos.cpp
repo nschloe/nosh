@@ -227,7 +227,7 @@ int main ( int argc, char *argv[] )
       // Construct an unpreconditioned linear problem instance.
       Belos::LinearProblem<double,MV,OP> problem( keoMatrix, epetra_x, epetra_b );
       bool set = problem.setProblem();
-      TEUCHOS_TEST_FOR_EXCEPTION( !set,
+      TEST_FOR_EXCEPTION( !set,
                                   std::runtime_error,
                                   "ERROR:  Belos::LinearProblem failed to set up correctly!" );
       // -----------------------------------------------------------------------

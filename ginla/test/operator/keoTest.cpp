@@ -104,8 +104,8 @@ BOOST_AUTO_TEST_CASE( keo_test )
     double normInf = keoMatrix->NormInf();
 
     // control values
-    double controlNormOne = 60.0;
-    double controlNormInf = 60.0;
+    double controlNormOne = 10.1456474156918;
+    double controlNormInf = 10.1456474156918;
     
     // check the values
     BOOST_CHECK_SMALL( normOne-controlNormOne, 1.0e-13 );
@@ -120,7 +120,7 @@ BOOST_AUTO_TEST_CASE( keo_test )
     keoMatrix->Apply( e, Ke );
     double sum[1];
     e.Dot( Ke, sum );
-    double controlSum = 1.14407161349788;
+    double controlSum = 0.00844428504187249;
     BOOST_CHECK_SMALL( sum[0]-controlSum, 1.0e-13 );
 
     // Sum over all the "real parts" of the matrix.
@@ -141,7 +141,7 @@ BOOST_AUTO_TEST_CASE( keo_test )
     Epetra_Vector t0( map );
     keoMatrix->Apply( s0, t0 );
     s0.Dot( t0, sum );
-    double controlSumReal = 0.57203580674894;
+    double controlSumReal = 0.0042221425209367988;
     BOOST_CHECK_SMALL( sum[0]-controlSumReal, 1.0e-13 );
 
     // Sum over all the "imaginary parts" of the matrix.

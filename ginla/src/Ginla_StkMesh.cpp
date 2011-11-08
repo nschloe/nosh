@@ -236,7 +236,7 @@ getThickness( const stk::mesh::PairIterRelation & relation ) const
 //         thickness[i] = node[0];
 //     }
 //     return thickness;
-    TEUCHOS_TEST_FOR_EXCEPT_MSG( true,
+    TEST_FOR_EXCEPT_MSG( true,
                                  "Not yet implemented." );
     return 0.0;
 }
@@ -347,7 +347,7 @@ getCellDimension( const unsigned int numLocalNodes ) const
     case 4: // tetrahedra
         return 3;
     default:
-        TEUCHOS_TEST_FOR_EXCEPT_MSG( true,
+        TEST_FOR_EXCEPT_MSG( true,
                                      "Control volumes can only be constructed "
                                      << "consistently with triangular or "
                                      << "tetrahedral elements."
@@ -432,7 +432,7 @@ computeFvmEntities_() const
       else if ( cellDimension==3 ) // tetrahedron
           cc = this->computeTetrahedronCircumcenter_( localNodes );
       else
-          TEUCHOS_TEST_FOR_EXCEPT_MSG( true,
+          TEST_FOR_EXCEPT_MSG( true,
                                        "Control volumes can only be constructed "
                                        << "consistently with triangular or "
                                        << "tetrahedral elements."
@@ -525,7 +525,7 @@ computeFvmEntities_() const
               }
               else
               {
-                  TEUCHOS_TEST_FOR_EXCEPT_MSG( true,
+                  TEST_FOR_EXCEPT_MSG( true,
                                                "Control volumes can only be constructed "
                                                << "consistently with triangular or "
                                                << "tetrahedral elements."
@@ -583,7 +583,7 @@ getEdgeCoefficientsNumerically_( const Teuchos::Array<Point> localNodes ) const
         numEdges = 6;
     }
     else
-        TEUCHOS_TEST_FOR_EXCEPT_MSG( true,
+        TEST_FOR_EXCEPT_MSG( true,
                                      "Can only handle triangles and tetrahedra." );
 
 //    std::cout << "\nTriangle is \n";
@@ -832,7 +832,7 @@ computeTriangleCircumcenter_( const Point & node0,
                                           );
 
   // don't divide by 0
-  TEUCHOS_TEST_FOR_EXCEPT_MSG( fabs(omega) < 1.0e-10,
+  TEST_FOR_EXCEPT_MSG( fabs(omega) < 1.0e-10,
                                "It seems that the nodes \n\n"
                                << "   " << node0 << "\n"
                                << "   " << node1 << "\n"
@@ -873,7 +873,7 @@ computeTetrahedronCircumcenter_( const Teuchos::Array<Point> & nodes ) const
   double omega = 2.0 * this->dot_( relNodes[0], this->cross_( relNodes[1], relNodes[2] ) );
 
   // don't divide by 0
-  TEUCHOS_TEST_FOR_EXCEPT_MSG( fabs(omega) < 1.0e-10,
+  TEST_FOR_EXCEPT_MSG( fabs(omega) < 1.0e-10,
                                "It seems that the nodes \n\n"
                                << "   " << nodes[0] << "\n"
                                << "   " << nodes[1] << "\n"

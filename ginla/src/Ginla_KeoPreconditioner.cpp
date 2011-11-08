@@ -107,7 +107,7 @@ ApplyInverse( const Epetra_MultiVector & X,
         err = this->ApplyInverseMl_( X, Y );
         break;
     default:
-        TEUCHOS_TEST_FOR_EXCEPT_MSG( true,
+        TEST_FOR_EXCEPT_MSG( true,
                                      "Illegal value of the invType \""
                                      << invType_ << "\"." );
         break;
@@ -206,7 +206,7 @@ double
 KeoPreconditioner::
 NormInf () const
 {
-    TEUCHOS_TEST_FOR_EXCEPT( "Not yet implemented." );
+    TEST_FOR_EXCEPT( "Not yet implemented." );
     return 0.0;
 }
 // =============================================================================
@@ -293,7 +293,7 @@ rebuild()
           return this->rebuildMl_();
           break;
       default:
-          TEUCHOS_TEST_FOR_EXCEPT_MSG( true,
+          TEST_FOR_EXCEPT_MSG( true,
                                        "Illegal value of the invType \""
                                        << invType_ << "\"."
                                      );

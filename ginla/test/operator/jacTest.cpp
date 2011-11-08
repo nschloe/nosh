@@ -128,10 +128,10 @@ BOOST_AUTO_TEST_CASE( jac_test )
     t2->Norm1( &normT2 );
 
     // control values
-    double controlNormT0 = 2001.1440716134971;
-    double controlNormT1 = 0.57433309448246694;
-    double controlNormT2 = 2000.574333094482;
-    
+    double controlNormT0 = 20.2913968894543;
+    double controlNormT1 = 0.289990630357596;
+    double controlNormT2 = 20.2899906303576;
+
     // check the values
     BOOST_CHECK_SMALL( normT0-controlNormT0, 1.0e-12 );
     BOOST_CHECK_SMALL( normT1-controlNormT1, 1.0e-12 );
