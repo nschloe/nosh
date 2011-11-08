@@ -20,6 +20,8 @@
 // =============================================================================
 #include "Ginla_StkMesh.hpp"
 
+#include <Trilinos_version.h>
+
 #include <Epetra_Map.h>
 #include <Epetra_Vector.h>
 #include <Epetra_Export.h>
@@ -640,16 +642,30 @@ getEdgeCoefficientsNumerically_( const Teuchos::Array<Point> localNodes ) const
     TEUCHOS_ASSERT_EQUALITY( 0, solver.setVectors( alpha, rhs ) );
     if ( solver.shouldEquilibrate() )
     {
-        TEUCHOS_ASSERT_EQUALITY( 0, solver.equilibrateMatrix() );
         TEUCHOS_ASSERT_EQUALITY( 0, solver.equilibrateRHS() );
+#if TRILINOS_MAJOR_MINOR_VERSION > 100803
+        TEUCHOS_ASSERT_EQUALITY( 0, solver.equilibrateMatrix() );
         TEUCHOS_ASSERT_EQUALITY( 0, solver.solve() );
         TEUCHOS_ASSERT_EQUALITY( 0, solver.unequilibrateLHS() );
+#else
+        // A bug in Trilinos<=10.8.3 makes unequilibrateLHS() fail.
+        // Workaround by doing the unequilibration manually.
+        // Note that this relies on the scaling being
+        // s(i) = 1 / sqrt(A(i,i)).
+        Teuchos::RCP<Teuchos::SerialDenseMatrix<int, double> > diagA =
+            Teuchos::rcp( new Teuchos::SerialDenseMatrix<int, double>(numEdges,1) );
+        for ( int k=0; k<numEdges; k++ )
+            (*diagA)(k,0) = (*A)(k,k);
+        TEUCHOS_ASSERT_EQUALITY( 0, solver.equilibrateMatrix() );
+        TEUCHOS_ASSERT_EQUALITY( 0, solver.solve() );
+        for ( int k=0; k<numEdges; k++ )
+            (*alpha)(k,0) = (*alpha)(k,0) / sqrt( (*diagA)(k,0) );
+#endif
     }
     else
     {
         TEUCHOS_ASSERT_EQUALITY( 0, solver.solve() );
     }
-
 
     Teuchos::ArrayRCP<double> alphaArrayRCP( numEdges );
     for ( int k=0; k<numEdges; k++ )
