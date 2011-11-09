@@ -198,24 +198,6 @@ update( const double                    alpha,
   return;
 }
 // =============================================================================
-// Count the number of vortices by the total phase change along the boundary
-// of the domain.
-// TODO Make this work in multicore environments.
-// Idea: Cauchy's integral formula: just caluculate the integral.
-//       Numerically difficult when too close to origin (rather: points
-//       closest to and furthest from origin too far apart).
-int
-State::
-getVorticity () const
-{
-//   TEST_FOR_EXCEPTION( true,
-//                       std::logic_error,
-//                       "Method \"getVorticity()\" not yet implemented."
-//                     );
-
-  return 0;
-}
-// =============================================================================
 void
 State::
 mergePsi_( const Teuchos::RCP<const Ginla::StkMesh> & mesh,

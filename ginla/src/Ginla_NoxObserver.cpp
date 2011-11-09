@@ -63,7 +63,7 @@ observeSolution( const Epetra_Vector & soln )
     // to store solutions, null vectors, and so forth.
     switch ( observerType_ )
     {
-      case OBSERVER_TYPE_NONLINEAR:
+      case OBSERVER_TYPE_NEWTON:
           savable->save( 0 );
           break;
       case OBSERVER_TYPE_CONTINUATION:
@@ -146,7 +146,6 @@ saveContinuationStatistics_( const int stepIndex,
 
         paramList->set( "2free energy", state->freeEnergy() );
         paramList->set( "2||x||_2 scaled", state->normalizedScaledL2Norm() );
-        paramList->set( "2vorticity", state->getVorticity() );
 
         // actually print the data
         statsWriter_->print();

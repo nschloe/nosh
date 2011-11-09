@@ -47,7 +47,7 @@ class NoxObserver:
     public NOX::Epetra::Observer
 {
 public:
-    enum EObserverType { OBSERVER_TYPE_NONLINEAR,
+    enum EObserverType { OBSERVER_TYPE_NEWTON,
                          OBSERVER_TYPE_CONTINUATION,
                          OBSERVER_TYPE_TURNING_POINT };
 

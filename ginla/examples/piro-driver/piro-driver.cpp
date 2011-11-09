@@ -112,7 +112,7 @@ int main ( int argc, char *argv[] )
       Ginla::StkMeshRead( *eComm, inputFilePath, data );
 
       // Cast the data into something more accessible.
-      Teuchos::RCP<Ginla::StkMesh>     &  mesh = data.get( "mesh", Teuchos::RCP<Ginla::StkMesh>() );
+      Teuchos::RCP<Ginla::StkMesh>     & mesh = data.get( "mesh", Teuchos::RCP<Ginla::StkMesh>() );
       Teuchos::RCP<Epetra_Vector>      & z = data.get( "psi", Teuchos::RCP<Epetra_Vector>() );
       Teuchos::RCP<Epetra_MultiVector> & mvpValues = data.get( "A", Teuchos::RCP<Epetra_MultiVector>() );
       Teuchos::RCP<Epetra_Vector>      & thickness = data.get( "thickness", Teuchos::RCP<Epetra_Vector>() );
@@ -135,8 +135,6 @@ int main ( int argc, char *argv[] )
           problemParameters.setParameters( overwritePList );
       }
 
-      *out << problemParameters << std::endl;
-
       double mu = problemParameters.get<double> ( "mu" );
 
       Teuchos::RCP<Ginla::MagneticVectorPotential> mvp =
@@ -145,11 +143,11 @@ int main ( int argc, char *argv[] )
       // create the mode evaluator
       Teuchos::RCP<Ginla::ModelEvaluator> glModel =
               Teuchos::rcp( new Ginla::ModelEvaluator( mesh,
-                                                      problemParameters,
-                                                      thickness,
-                                                      mvp,
-                                                      state
-                                                    )
+                                                       problemParameters,
+                                                       thickness,
+                                                       mvp,
+                                                       state
+                                                     )
                           );
 
       Teuchos::RCP<Ginla::NoxObserver> observer;
@@ -189,17 +187,15 @@ int main ( int argc, char *argv[] )
       // ----------------------------------------------------------------------
       if ( solver == "NOX" )
       {
-//          observer = Teuchos::rcp( new Ginla::NoxObserver( stateWriter,
-//                                                               glModel,
-//                                                               Ginla::NoxObserver::NONLINEAR,
-//                                                               glModel
-//                                                             )
-//                                 );
-//          observer->setStatisticsWriter( statsWriter );
-//
-//          piro = Teuchos::rcp(new Piro::Epetra::NOXSolver( piroParams,
-//                                                           glModel,
-//                                                           observer ));
+          observer = Teuchos::rcp( new Ginla::NoxObserver( glModel,
+                                                           Ginla::NoxObserver::OBSERVER_TYPE_NEWTON
+                                                         )
+                                 );
+          observer->setStatisticsWriter( statsWriter );
+
+          piro = Teuchos::rcp(new Piro::Epetra::NOXSolver( piroParams,
+                                                           glModel,
+                                                           observer ));
       }
       // ----------------------------------------------------------------------
       else if ( solver == "LOCA" )
@@ -309,8 +305,7 @@ int main ( int argc, char *argv[] )
           Teuchos::RCP<Piro::Epetra::LOCASolver> piroLOCASolver =
               Teuchos::rcp( new Piro::Epetra::LOCASolver( piroParams,
                                                           glModel,
-                                                          observer
-//                                                           ,
+                                                          observer//,
 //                                                           Teuchos::null,
 //                                                           locaTest
                                                         ) );
@@ -342,8 +337,8 @@ int main ( int argc, char *argv[] )
           Ginla::StkMeshRead( *eComm, nullstateFilePath, data );
 
           // Cast the data into something more accessible.
-          Teuchos::RCP<Ginla::StkMesh>     & mesh = data.get( "mesh", Teuchos::RCP<Ginla::StkMesh>() );
-          Teuchos::RCP<Epetra_Vector>      & z = data.get( "psi", Teuchos::RCP<Epetra_Vector>() );
+          Teuchos::RCP<Ginla::StkMesh> & mesh = data.get( "mesh", Teuchos::RCP<Ginla::StkMesh>() );
+          Teuchos::RCP<Epetra_Vector>  & z = data.get( "psi", Teuchos::RCP<Epetra_Vector>() );
 
           TEUCHOS_ASSERT( !z.is_null() );
           Teuchos::RCP<Ginla::State> nullstate =

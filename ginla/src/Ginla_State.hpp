@@ -111,10 +111,6 @@ public:
   double
   freeEnergy () const;
 
-  /*! Calculate the vorticity of the current solution. */
-  int
-  getVorticity () const;
-
   /** Writes a solution \c psi to a file with all parameters that
     * may be interesting.
     */
