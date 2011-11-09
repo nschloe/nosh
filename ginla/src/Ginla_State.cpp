@@ -135,51 +135,54 @@ double
 State::
 freeEnergy () const
 {
-    double myGlobalEnergy[1];
-
-    const Epetra_Vector & controlVolumes =  *(mesh_->getControlVolumes());
-
-    int numMyPoints = controlVolumes.Map().NumMyPoints();
-    TEUCHOS_ASSERT_EQUALITY( 2*numMyPoints, psi_.MyLength() );
-
-    for ( int k=0; k<numMyPoints; k++ )
-        myGlobalEnergy[0] -= controlVolumes[k] * pow( psi_[2*k]*psi_[2*k] + psi_[2*k+1]*psi_[2*k+1], 2 );
-
-    // Sum over all processors.
-    const Epetra_Comm & comm = psi_.Comm();
-    double globalEnergy[1];
-    TEUCHOS_ASSERT_EQUALITY( 0, comm.SumAll( myGlobalEnergy, globalEnergy, 1 ) );
-
-    globalEnergy[0] /= mesh_->getDomainArea();
-
-    return globalEnergy[0];
-}
-// =============================================================================
-double
-State::
-innerProduct( const Ginla::State & state ) const
-{
-    double res[1];
+    double myEnergy = 0.0;
 
     const Epetra_Vector & controlVolumes = *(mesh_->getControlVolumes());
 
     int numMyPoints = controlVolumes.Map().NumMyPoints();
     TEUCHOS_ASSERT_EQUALITY( 2*numMyPoints, psi_.MyLength() );
 
-    const Epetra_Vector & psi2 =  *(state.getPsi());
-
+    double alpha;
     for ( int k=0; k<numMyPoints; k++ )
-        res[0] += controlVolumes[k] * ( psi_[2*k]*psi2[2*k] + psi_[2*k+1]*psi2[2*k+1]  );
+    {
+        alpha = psi_[2*k]*psi_[2*k] + psi_[2*k+1]*psi_[2*k+1];
+        myEnergy -= controlVolumes[k] * alpha * alpha;
+    }
 
     // Sum over all processors.
     const Epetra_Comm & comm = psi_.Comm();
-    double globalRes[1];
-    TEUCHOS_ASSERT_EQUALITY( 0, comm.SumAll( res, globalRes, 1 ) );
+    double globalEnergy;
+    TEUCHOS_ASSERT_EQUALITY( 0, comm.SumAll( &myEnergy, &globalEnergy, 1 ) );
 
     // normalize and return
-    return globalRes[0] / mesh_->getDomainArea();
+    return globalEnergy / mesh_->getDomainArea();
 }
-//// ============================================================================
+// =============================================================================
+double
+State::
+innerProduct( const Ginla::State & state ) const
+{
+    double res = 0;
+
+    const Epetra_Vector & controlVolumes = *(mesh_->getControlVolumes());
+
+    int numMyPoints = controlVolumes.Map().NumMyPoints();
+    TEUCHOS_ASSERT_EQUALITY( 2*numMyPoints, psi_.MyLength() );
+
+    const Epetra_Vector & psi2 = *(state.getPsi());
+
+    for ( int k=0; k<numMyPoints; k++ )
+        res += controlVolumes[k] * ( psi_[2*k]*psi2[2*k] + psi_[2*k+1]*psi2[2*k+1]  );
+
+    // Sum over all processors.
+    const Epetra_Comm & comm = psi_.Comm();
+    double globalRes;
+    TEUCHOS_ASSERT_EQUALITY( 0, comm.SumAll( &res, &globalRes, 1 ) );
+
+    // normalize and return
+    return globalRes / mesh_->getDomainArea();
+}
+// ============================================================================
 double
 State::
 normalizedScaledL2Norm () const
