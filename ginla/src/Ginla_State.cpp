@@ -35,7 +35,7 @@
 namespace Ginla {
 // =============================================================================
 State::
-State( const Epetra_Vector                                 & psi,
+State( const Epetra_Vector                      & psi,
        const Teuchos::RCP<const Ginla::StkMesh> & mesh
      ):
        psi_( psi ),
@@ -48,7 +48,7 @@ State( const Epetra_Vector                                 & psi,
 }
 // =============================================================================
 State::
-State( const Teuchos::RCP<const Epetra_Map>                & map,
+State( const Teuchos::RCP<const Epetra_Map>     & map,
        const Teuchos::RCP<const Ginla::StkMesh> & mesh
      ):
        psi_( Epetra_Vector( *map, true ) ),
@@ -57,7 +57,7 @@ State( const Teuchos::RCP<const Epetra_Map>                & map,
 }
 // =============================================================================
 State::
-State( const Teuchos::RCP<const Epetra_Comm>               & comm,
+State( const Teuchos::RCP<const Epetra_Comm>    & comm,
        const Teuchos::RCP<const Ginla::StkMesh> & mesh
      ):
        psi_( Epetra_Vector( Epetra_Map( 2*mesh->getNumNodes(), 0, *comm ) ) ),
@@ -162,7 +162,7 @@ double
 State::
 innerProduct( const Ginla::State & state ) const
 {
-    double res = 0;
+    double res = 0.0;
 
     const Epetra_Vector & controlVolumes = *(mesh_->getControlVolumes());
 
@@ -192,9 +192,9 @@ normalizedScaledL2Norm () const
 // =============================================================================
 void
 State::
-update( const double                    alpha,
+update( const double         alpha,
         const Ginla::State & b,
-        const double                    beta
+        const double         beta
       )
 {
   psi_.Update( alpha, *(b.getPsi()), beta );
@@ -204,7 +204,7 @@ update( const double                    alpha,
 void
 State::
 mergePsi_( const Teuchos::RCP<const Ginla::StkMesh> & mesh,
-           const Epetra_Vector                                 & psi
+           const Epetra_Vector                      & psi
          ) const
 {
     VectorFieldType * psir_field = mesh->getMetaData()->get_field<VectorFieldType>( "psi_R" );

@@ -100,8 +100,7 @@ int main ( int argc, char *argv[] )
 
       std::string & outputDirectory = xmlDirectory;
 
-      std::string contFilePath        = xmlDirectory + "/" + outputList.get<std::string> ( "Continuation data file name" );
-      std::string eigenvaluesFilePath = xmlDirectory + "/" + outputList.get<std::string> ( "Eigenvalues file name" );
+      std::string contFilePath = xmlDirectory + "/" + outputList.get<std::string> ( "Continuation data file name" );
 
       Teuchos::ParameterList initialGuessList;
       initialGuessList = piroParams->sublist ( "Initial guess", true );
@@ -112,7 +111,7 @@ int main ( int argc, char *argv[] )
       Ginla::StkMeshRead( *eComm, inputFilePath, data );
 
       // Cast the data into something more accessible.
-      Teuchos::RCP<Ginla::StkMesh>     & mesh = data.get( "mesh", Teuchos::RCP<Ginla::StkMesh>() );
+      Teuchos::RCP<Ginla::StkMesh>     & mesh = data.get<Teuchos::RCP<Ginla::StkMesh> >( "mesh" );
       Teuchos::RCP<Epetra_Vector>      & z = data.get( "psi", Teuchos::RCP<Epetra_Vector>() );
       Teuchos::RCP<Epetra_MultiVector> & mvpValues = data.get( "A", Teuchos::RCP<Epetra_MultiVector>() );
       Teuchos::RCP<Epetra_Vector>      & thickness = data.get( "thickness", Teuchos::RCP<Epetra_Vector>() );
@@ -206,39 +205,39 @@ int main ( int argc, char *argv[] )
                                  );
           observer->setStatisticsWriter( statsWriter );
 
-          Teuchos::RCP<LOCA::StatusTest::Combo> locaTest =
-              Teuchos::rcp( new LOCA::StatusTest::Combo( LOCA::StatusTest::Combo::OR ) );
+//          Teuchos::RCP<LOCA::StatusTest::Combo> locaTest =
+//              Teuchos::rcp( new LOCA::StatusTest::Combo( LOCA::StatusTest::Combo::OR ) );
 
           // setup eingen saver
-// #ifdef HAVE_LOCA_ANASAZI
-//           Teuchos::ParameterList & eigenList = piroParams->sublist ( "LOCA" ).sublist ( "Stepper" ) .sublist ( "Eigensolver" );
-//           std::string eigenvaluesFileName =
-//               getAbsolutePath( outputList.get<std::string> ( "Eigenvalues file name" ), xmlPath );
-//           std::string eigenstateFileNameAppendix =
-//               outputList.get<std::string> ( "Eigenstate file name appendix" );
-//
-//           Teuchos::RCP<Ginla::StatsWriter> eigenStatsWriter =
-//               Teuchos::rcp( new Ginla::StatsWriter( eigenvaluesFileName ) );
-//
-//           // initialize the stability change test with a pointer to the eigenvalue information
-//           int stabilityChangeTreshold = 1; // stop when the stability changes by multiplicity 1
-//           Teuchos::RCP<const Teuchos::ParameterList> eigendataList = eigenStatsWriter->getList();
-//           Teuchos::RCP<LOCA::StatusTest::Abstract> stabilityChangeTest =
-//               Teuchos::rcp( new Ginla::StatusTest::StabilityChange( eigendataList,
-//                                                                     stabilityChangeTreshold ) );
-//
-//           locaTest->addStatusTest( stabilityChangeTest );
-//
-//           glEigenSaver = Teuchos::RCP<Ginla::SaveEigenData> ( new Ginla::SaveEigenData ( eigenList,
-//                                                                                                  glModel,
-//                                                                                                  stateWriter,
-//                                                                                                  eigenStatsWriter ) );
-//
-//           Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> glSaveEigenDataStrategy = glEigenSaver;
-//           eigenList.set ( "Save Eigen Data Method", "User-Defined" );
-//           eigenList.set ( "User-Defined Save Eigen Data Name", "glSaveEigenDataStrategy" );
-//           eigenList.set ( "glSaveEigenDataStrategy", glSaveEigenDataStrategy );
-// #endif
+#ifdef HAVE_LOCA_ANASAZI
+           Teuchos::ParameterList & eigenList = piroParams->sublist( "LOCA" )
+                                                           .sublist( "Stepper" )
+                                                           .sublist( "Eigensolver" );
+           std::string eigenvaluesFilePath = xmlDirectory
+                                           + "/"
+                                           + outputList.get<std::string> ( "Eigenvalues file name" );
+
+           Teuchos::RCP<Ginla::StatsWriter> eigenStatsWriter =
+               Teuchos::rcp( new Ginla::StatsWriter( eigenvaluesFilePath ) );
+
+           // initialize the stability change test with a pointer to the eigenvalue information
+           int stabilityChangeTreshold = 1; // stop when the stability changes by multiplicity 1
+           Teuchos::RCP<const Teuchos::ParameterList> eigendataList = eigenStatsWriter->getList();
+
+           //Teuchos::RCP<LOCA::StatusTest::Abstract> stabilityChangeTest =
+           //    Teuchos::rcp( new Ginla::StatusTest::StabilityChange( eigendataList,
+           //                                                          stabilityChangeTreshold ) );
+           //locaTest->addStatusTest( stabilityChangeTest );
+
+           glEigenSaver = Teuchos::RCP<Ginla::SaveEigenData> ( new Ginla::SaveEigenData ( eigenList,
+                                                                                          glModel,
+                                                                                          eigenStatsWriter ) );
+
+           Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> glSaveEigenDataStrategy = glEigenSaver;
+           eigenList.set ( "Save Eigen Data Method", "User-Defined" );
+           eigenList.set ( "User-Defined Save Eigen Data Name", "glSaveEigenDataStrategy" );
+           eigenList.set ( "glSaveEigenDataStrategy", glSaveEigenDataStrategy );
+#endif
 
 //           Teuchos::RCP<LOCA::StatusTest::Abstract> freeEnergyTest =
 //               Teuchos::rcp( new Ginla::StatusTest::Energy( glModel, 0.0 ) );
@@ -310,11 +309,11 @@ int main ( int argc, char *argv[] )
 //                                                           locaTest
                                                         ) );
 
-//           // get stepper and inject it into the eigensaver
-//           Teuchos::RCP<LOCA::Stepper> stepper = piroLOCASolver->getLOCAStepperNonConst();
-// #ifdef HAVE_LOCA_ANASAZI
-//           glEigenSaver->setLocaStepper ( stepper );
-// #endif
+           // get stepper and inject it into the eigensaver
+           Teuchos::RCP<LOCA::Stepper> stepper = piroLOCASolver->getLOCAStepperNonConst();
+ #ifdef HAVE_LOCA_ANASAZI
+           glEigenSaver->setLocaStepper ( stepper );
+ #endif
           piro = piroLOCASolver;
       }
       // ----------------------------------------------------------------------
@@ -390,7 +389,7 @@ int main ( int argc, char *argv[] )
       // manually release LOCA stepper
 #ifdef HAVE_LOCA_ANASAZI
       if ( !glEigenSaver.is_null() )
-          glEigenSaver->releaseLocaStepper ();
+          glEigenSaver->releaseLocaStepper();
 #endif
     }
     TEUCHOS_STANDARD_CATCH_STATEMENTS(true, *out, success);

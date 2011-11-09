@@ -39,10 +39,8 @@ SaveEigenData ( Teuchos::ParameterList                          & eigenParamList
         modelEval_ ( modelEval ),
         statsWriter_ ( statsWriter ),
         locaStepper_ ( Teuchos::null ),
-        numEigenvaluesAdaptive_( false ),
         numComputeStableEigenvalues_ ( 6 )
 {
-  statsWriter_->getListNonConst()->set<double>( "SaveEigenData constructor", 2.718281828 );
 }
 // =============================================================================
 SaveEigenData::
@@ -72,7 +70,7 @@ save ( Teuchos::RCP<std::vector<double> >       & evals_r,
        Teuchos::RCP<NOX::Abstract::MultiVector> & evecs_i
      )
 {
-    // Can't fetch step index now, so rely on the function's
+    // Can't fetch step index now, so rely on the function
     // being called exactly once per step.
     // Step number updated at the end of the function.
     static unsigned int step = 0;
@@ -179,37 +177,22 @@ save ( Teuchos::RCP<std::vector<double> >       & evals_r,
 //     eigenFileStream << std::endl;
 //     eigenFileStream.close();
 
-    if ( !locaStepper_.is_null() )
+    // Make sure that the shift SIGMA (if using Shift-Invert) sits THRESHOLD above
+    // the rightmost eigenvalue.
+    std::string & op = eigenParamListPtr_->get<string> ( "Operator" );
+    if ( !locaStepper_.is_null() && op.compare( "Shift-Invert" ) == 0 )
     {
-        if ( numEigenvaluesAdaptive_ )
-        {
-            // Adapt the computation for the next step.
-            // Make sure that approximately \c numComputeStableEigenvalues_ stable eigenvalues
-            // will be computed in the next step.
-            int nextNumEigenvalues = numUnstableEigenvalues
-                                   + numNullvalues
-                                   + numComputeStableEigenvalues_;
-            eigenParamListPtr_->set ( "Num Eigenvalues", nextNumEigenvalues );
-        }
-
-        // Make sure that the shift SIGMA (if using Shift-Invert) sits THRESHOLD above
-        // the rightmost eigenvalue.
-        if ( eigenParamListPtr_->get<string> ( "Operator" ).compare ( "Shift-Invert" ) == 0 )
-        {
-            double maxEigenval = *std::max_element ( evals_r->begin(), evals_r->end() );
-            double threshold = 0.5;
-            eigenParamListPtr_->set ( "Shift", maxEigenval + threshold );
-        }
+        double maxEigenval = *std::max_element ( evals_r->begin(), evals_r->end() );
+        double threshold = 0.5;
+        eigenParamListPtr_->set ( "Shift", maxEigenval + threshold );
 
         // Preserve the sort manager.
         // TODO For some reason, the call to eigensolverReset destroys the "Sort Manager" entry.
-        //      No idea why. This is a potentially serious bug in Trilinos.
+        //      No idea why. This is potentially a bug in Trilinos.
         Teuchos::RCP<Anasazi::SortManager<double> > d =
-            eigenParamListPtr_->get<Teuchos::RCP<Anasazi::SortManager<double> > >( "Sort Manager" );
-
+           eigenParamListPtr_->get<Teuchos::RCP<Anasazi::SortManager<double> > >( "Sort Manager" );
         // reset the eigensolver to take notice of the new values
         locaStepper_->eigensolverReset( eigenParamListPtr_ );
-
         eigenParamListPtr_->set( "Sort Manager", d );
     }
 
@@ -218,7 +201,6 @@ save ( Teuchos::RCP<std::vector<double> >       & evals_r,
         step = locaStepper_->getStepNumber();
     else
         step++;
-
 
     return NOX::Abstract::Group::Ok;
 }

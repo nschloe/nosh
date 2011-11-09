@@ -57,9 +57,9 @@ class SaveEigenData:
 //      const Teuchos::RCP<Teuchos::ParameterList>& eigenParams      );
 
    // Constructor
-   SaveEigenData ( Teuchos::ParameterList                                     & eigenParamList,
+   SaveEigenData ( Teuchos::ParameterList                          & eigenParamList,
                    const Teuchos::RCP<const Ginla::ModelEvaluator> & modelEval,
-                   const Teuchos::RCP<Ginla::StatsWriter>                 & statsWriter
+                   const Teuchos::RCP<Ginla::StatsWriter>          & statsWriter
                  );
 
    virtual
