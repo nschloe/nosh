@@ -66,7 +66,7 @@ private:
   const Teuchos::RCP<const Epetra_MultiVector> mvp_;
   double mu_;
 
-  const Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > edgeMidpointProjectionCache_;
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > edgeMidpointProjectionCache_;
   mutable bool edgeMidpointProjectionCacheUpToDate_;
 
 };

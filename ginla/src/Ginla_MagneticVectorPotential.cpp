@@ -26,16 +26,19 @@
 namespace Ginla {
 // ============================================================================
 MagneticVectorPotential::
-MagneticVectorPotential( const Teuchos::RCP<Ginla::StkMesh> & mesh,
-                         const Teuchos::RCP<const Epetra_MultiVector>  & mvp,
+MagneticVectorPotential( const Teuchos::RCP<Ginla::StkMesh>           & mesh,
+                         const Teuchos::RCP<const Epetra_MultiVector> & mvp,
                          double mu
                        ):
   mesh_( mesh ),
   mvp_( mvp ),
   mu_( mu ),
-  edgeMidpointProjectionCache_( Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >( mesh->getOwnedCells().size() ) ),
+  edgeMidpointProjectionCache_( Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >() ),
   edgeMidpointProjectionCacheUpToDate_( false )
 {
+    TEUCHOS_ASSERT( !mesh_.is_null() );
+    edgeMidpointProjectionCache_ = Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >( mesh_->getOwnedCells().size() );
+    return;
 }
 // ============================================================================
 MagneticVectorPotential::
@@ -99,10 +102,12 @@ void
 MagneticVectorPotential::
 initializeEdgeMidpointProjectionCache_() const
 {
+  TEUCHOS_ASSERT( !mesh_.is_null() );
   std::vector<stk::mesh::Entity*> cells = mesh_->getOwnedCells();
 
   // Loop over all edges and create the cache.
   // To this end, loop over all cells and the edges within the cell.
+  TEUCHOS_ASSERT( !mvp_.is_null() );
   for ( unsigned int k=0; k<cells.size(); k++ )
   {
       // get the nodes local to the cell

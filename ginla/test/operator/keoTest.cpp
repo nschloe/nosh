@@ -57,21 +57,16 @@ BOOST_AUTO_TEST_CASE( keo_test )
                              Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL
                            );
     // =========================================================================
-    Teuchos::ParameterList              problemParameters;
-    Teuchos::RCP<Epetra_Vector>         z = Teuchos::null;
-    Teuchos::RCP<Epetra_MultiVector>    mvpValues = Teuchos::null;
-    Teuchos::RCP<Epetra_Vector>         thickness = Teuchos::null;
-    Teuchos::RCP<Ginla::StkMesh> mesh = Teuchos::null;
+    // Read the data from the file.
+    Teuchos::ParameterList data;
+    Ginla::StkMeshRead( *eComm, inputFileName, data );
 
-    // read the state
-    Ginla::StkMeshRead( *eComm,
-                        inputFileName,
-                        z,
-                        mvpValues,
-                        thickness,
-                        mesh,
-                        problemParameters
-                    );
+    // Cast the data into something more accessible.
+    Teuchos::RCP<Ginla::StkMesh>     & mesh = data.get( "mesh", Teuchos::RCP<Ginla::StkMesh>() );
+    Teuchos::RCP<Epetra_Vector>      & z = data.get( "psi", Teuchos::RCP<Epetra_Vector>() );
+    Teuchos::RCP<Epetra_MultiVector> & mvpValues = data.get( "A", Teuchos::RCP<Epetra_MultiVector>() );
+    Teuchos::RCP<Epetra_Vector>      & thickness = data.get( "thickness", Teuchos::RCP<Epetra_Vector>() );
+    Teuchos::ParameterList           & problemParameters = data.get( "Problem parameters", Teuchos::ParameterList() );
 
     Teuchos::RCP<Ginla::MagneticVectorPotential> mvp;
     double mu = 1.0e-2;

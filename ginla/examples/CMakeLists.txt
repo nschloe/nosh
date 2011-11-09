@@ -1,4 +1,4 @@
-#add_subdirectory ( piro-driver )
+add_subdirectory ( piro-driver )
 add_subdirectory ( loca-driver )
 #add_subdirectory ( eigensolvers )
 add_subdirectory ( linear-solve-test )

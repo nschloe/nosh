@@ -75,6 +75,7 @@ buildKeo( Epetra_FECrsMatrix & keoMatrix ) const
 
   // zero out the matrix
   TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix.PutScalar( 0.0 ) );
+  TEUCHOS_ASSERT( !mesh_.is_null() );
 
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   // Loop over the cells, create local load vector and mass matrix,
@@ -88,6 +89,8 @@ buildKeo( Epetra_FECrsMatrix & keoMatrix ) const
 
   // Loop over all edges.
   // To this end, loop over all cells and the edges within the cell.
+  TEUCHOS_ASSERT( !thickness_.is_null() );
+  TEUCHOS_ASSERT( !mvp_.is_null() );
   for ( unsigned int k=0; k<cells.size(); k++ )
   {
       // get the nodes local to the cell

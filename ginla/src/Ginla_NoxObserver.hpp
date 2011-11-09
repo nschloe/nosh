@@ -54,7 +54,7 @@ public:
 public:
   //! Constructor
   NoxObserver ( const Teuchos::RCP<const Ginla::ModelEvaluator> & modelEval,
-                const NoxObserver::EObserverType                           & problemType
+                const NoxObserver::EObserverType                & problemType
               );
 
   //! Destructor

@@ -49,12 +49,8 @@ public:
     ~StkMeshReader();
 
     void
-    read( const Epetra_Comm                       & comm,
-          Teuchos::RCP<Epetra_Vector>             & psi,
-          Teuchos::RCP<Epetra_MultiVector>        & mvp,
-          Teuchos::RCP<Epetra_Vector>             & thickness,
-          Teuchos::RCP<Ginla::StkMesh> & mesh,
-          Teuchos::ParameterList                  & parameterList
+    read( const Epetra_Comm      & comm,
+          Teuchos::ParameterList & data
         );
 
 protected:
@@ -83,13 +79,9 @@ private:
 // -----------------------------------------------------------------------------
 // helper function
 void
-StkMeshRead ( const Epetra_Comm                       & comm,
-              const std::string                       & fileName,
-              Teuchos::RCP<Epetra_Vector>             & psi,
-              Teuchos::RCP<Epetra_MultiVector>        & mvp,
-              Teuchos::RCP<Epetra_Vector>             & thickness,
-              Teuchos::RCP<Ginla::StkMesh> & mesh,
-              Teuchos::ParameterList                  & parameterList
+StkMeshRead ( const Epetra_Comm      & comm,
+              const std::string      & fileName,
+              Teuchos::ParameterList & data
             );
 // -----------------------------------------------------------------------------
 } // namespace Ginla

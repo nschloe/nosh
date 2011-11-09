@@ -60,12 +60,8 @@ StkMeshReader::
 // =============================================================================
 void
 StkMeshReader::
-read( const Epetra_Comm                       & comm,
-      Teuchos::RCP<Epetra_Vector>             & psi,
-      Teuchos::RCP<Epetra_MultiVector>        & mvp,
-      Teuchos::RCP<Epetra_Vector>             & thickness,
-      Teuchos::RCP<Ginla::StkMesh> & mesh,
-      Teuchos::ParameterList                  & parameterList
+read( const Epetra_Comm      & comm,
+      Teuchos::ParameterList & data
     )
 {
   // timer for this routine
@@ -81,7 +77,7 @@ read( const Epetra_Comm                       & comm,
       Teuchos::rcp( new stk::mesh::fem::FEMMetaData() );
 
   int numDim = 3;
-  if (! metaData->is_FEM_initialized())
+  if ( !metaData->is_FEM_initialized() )
       metaData->FEM_initialize(numDim);
 
 //   // attach fem data
@@ -220,32 +216,41 @@ read( const Epetra_Comm                       & comm,
                                 );
 
   // create the mesh with these specifications
-  mesh = Teuchos::rcp( new Ginla::StkMesh( comm,
+  Teuchos::RCP<Ginla::StkMesh> mesh = Teuchos::rcp( new Ginla::StkMesh( comm,
                                                       metaData,
                                                       bulkData,
                                                       coordinatesField
                                                     )
                      );
 
+  data.setName( "data" );
+
+  // add the mesh to the data list
+  data.set( "mesh", mesh );
+
   // create the state
-  psi       = this->createPsi_( mesh, psir_field, psii_field );
-  mvp       = this->createMvp_( mesh, mvpField );
-  thickness = this->createThickness_( mesh, thicknessField );
+  data.set( "psi", this->createPsi_( mesh, psir_field, psii_field ) );
+  data.set( "A", this->createMvp_( mesh, mvpField ) );
+
+  // Check of the thickness data is of any value. If not: ditch it.
+  Teuchos::RCP<Epetra_Vector> thickness = this->createThickness_( mesh, thicknessField );
+  double norminf;
+  thickness->NormInf( &norminf );
+  if ( norminf < 1.0e-15 ) // assume that thickness wasn't present, fill with default value
+      thickness->PutScalar( 1.0 );
+  data.set( "thickness", thickness );
+
+  // Add some dummy data.
+  // TODO Replace by proper values.
+  Teuchos::ParameterList problemParams;
+  problemParams.setName( "Problem parameters" );
+  problemParams.set( "mu", 0.0 );
+  data.set( "Problem parameters", problemParams );
 
   // These are vain attempts to find out whether thicknessField is actually empty.
 //     const stk::mesh::FieldBase::RestrictionVector & restrictions = thicknessField->restrictions();
 //     TEUCHOS_ASSERT( !restrictions.empty() );
 //     *out << "max_size " << thicknessField->max_size(metaData->node_rank()) << std::endl;
-
-  // Check of the thickness data is of any value. If not: ditch it.
-  double norminf;
-  thickness->NormInf( &norminf );
-  if ( norminf < 1.0e-15 )
-      thickness->PutScalar( 1.0 );
-
-  // Add some dummy data.
-  // TODO Replace by proper values.
-  parameterList.set<double>( "mu", 0.0 );
 
   return;
 }
@@ -372,19 +377,13 @@ createMvp_( const Teuchos::RCP<const Ginla::StkMesh> & mesh,
 //
 void
 Ginla::
-StkMeshRead ( const Epetra_Comm                       & comm,
-              const std::string                       & fileName,
-              Teuchos::RCP<Epetra_Vector>             & psi,
-              Teuchos::RCP<Epetra_MultiVector>        & mvp,
-              Teuchos::RCP<Epetra_Vector>             & thickness,
-              Teuchos::RCP<Ginla::StkMesh> & mesh,
-              Teuchos::ParameterList                  & parameterList
+StkMeshRead ( const Epetra_Comm      & comm,
+              const std::string      & fileName,
+              Teuchos::ParameterList & data
             )
 {
     StkMeshReader reader( fileName );
-
-    reader.read( comm, psi, mvp, thickness, mesh, parameterList );
-
+    reader.read( comm, data );
     return;
 }
 // =============================================================================

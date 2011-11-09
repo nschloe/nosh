@@ -28,7 +28,7 @@ namespace Ginla {
 // ============================================================================
 NoxObserver::
 NoxObserver ( const Teuchos::RCP<const Ginla::ModelEvaluator> & modelEval,
-              const NoxObserver::EObserverType                           & observerType
+              const NoxObserver::EObserverType                & observerType
             ) :
   modelEval_ ( modelEval ),
   observerType_( observerType ),

@@ -125,21 +125,16 @@ main ( int argc, char *argv[] )
         initialGuessList = piroParams->sublist ( "Initial guess", true );
 	std::string inputFilePath = xmlDirectory + '/' + initialGuessList.get<std::string> ( "State" );
         // =====================================================================
+        // Read the data from the file.
+        Teuchos::ParameterList data;
+        Ginla::StkMeshRead( *eComm, inputFilePath, data );
 
-        Teuchos::ParameterList              problemParameters;
-        Teuchos::RCP<Epetra_Vector>         z = Teuchos::null;
-        Teuchos::RCP<Epetra_Vector>         thickness = Teuchos::null;
-        Teuchos::RCP<Epetra_MultiVector>    mvpValues = Teuchos::null;
-        Teuchos::RCP<Ginla::StkMesh> mesh = Teuchos::null;
-
-        Ginla::StkMeshRead( *eComm,
-                            inputFilePath,
-                            z,
-                            mvpValues,
-                            thickness,
-                            mesh,
-                            problemParameters
-                          );
+        // Cast the data into something more accessible.
+        Teuchos::RCP<Ginla::StkMesh>     &  mesh = data.get( "mesh", Teuchos::RCP<Ginla::StkMesh>() );
+        Teuchos::RCP<Epetra_Vector>      & z = data.get( "psi", Teuchos::RCP<Epetra_Vector>() );
+        Teuchos::RCP<Epetra_MultiVector> & mvpValues = data.get( "A", Teuchos::RCP<Epetra_MultiVector>() );
+        Teuchos::RCP<Epetra_Vector>      & thickness = data.get( "thickness", Teuchos::RCP<Epetra_Vector>() );
+        Teuchos::ParameterList           & problemParameters = data.get( "Problem parameters", Teuchos::ParameterList() );
 
         // set the output directory for later plotting with this
         mesh->setOutputFile( outputDirectory, "solution" );
@@ -147,7 +142,7 @@ main ( int argc, char *argv[] )
         // create the state
         TEUCHOS_ASSERT( !z.is_null() );
         Teuchos::RCP<Ginla::State> state =
-                Teuchos::rcp( new Ginla::State( *z, mesh ) );
+            Teuchos::rcp( new Ginla::State( *z, mesh ) );
 
         // possibly overwrite the parameters
         Teuchos::ParameterList & overwriteParamsList = piroParams->sublist ( "Overwrite parameter list", true );
@@ -157,8 +152,6 @@ main ( int argc, char *argv[] )
             Teuchos::ParameterList & overwritePList = overwriteParamsList.sublist( "Parameters", true );
             problemParameters.setParameters( overwritePList );
         }
-
-        *out << problemParameters << std::endl;
 
         double mu = problemParameters.get<double> ( "mu" );
 
