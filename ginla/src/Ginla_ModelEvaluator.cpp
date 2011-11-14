@@ -208,8 +208,8 @@ createInArgs() const
 
   // for shifted matrix
   // TODO add support for operator shift
-  inArgs.setSupports( IN_ARG_alpha, false );
-  inArgs.setSupports( IN_ARG_beta, false );
+  inArgs.setSupports( IN_ARG_alpha, true );
+  inArgs.setSupports( IN_ARG_beta, true );
 
   return inArgs;
 }
@@ -261,6 +261,9 @@ evalModel( const InArgs  & inArgs,
 
   const double alpha = inArgs.get_alpha();
   const double beta  = inArgs.get_beta();
+
+  TEUCHOS_ASSERT( fabs(alpha) < 1.0e-15 );
+  TEUCHOS_ASSERT( fabs(beta-1.0) < 1.0e-15 );
 
   const Teuchos::RCP<const Epetra_Vector> & x_in = inArgs.get_x();
 

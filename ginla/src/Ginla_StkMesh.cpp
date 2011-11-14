@@ -649,7 +649,7 @@ getEdgeCoefficientsNumerically_( const Teuchos::Array<Point> localNodes ) const
         TEUCHOS_ASSERT_EQUALITY( 0, solver.unequilibrateLHS() );
 #else
         // A bug in Trilinos<=10.8.3 makes unequilibrateLHS() fail.
-        // Workaround by doing the unequilibration manually.
+        // Work around by doing the unequilibration manually.
         // Note that this relies on the scaling being
         // s(i) = 1 / sqrt(A(i,i)).
         Teuchos::RCP<Teuchos::SerialDenseMatrix<int, double> > diagA =
