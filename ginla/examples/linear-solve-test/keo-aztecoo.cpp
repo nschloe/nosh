@@ -25,14 +25,17 @@
 #include <Epetra_SerialComm.h>
 #endif
 
-#include "Stratimikos_DefaultLinearSolverBuilder.hpp"
-#include "EpetraExt_readEpetraLinearSystem.h"
-#include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_VerboseObject.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
-#include "Teuchos_CommandLineProcessor.hpp"
+#include <Stratimikos_DefaultLinearSolverBuilder.hpp>
+#include <EpetraExt_readEpetraLinearSystem.h>
+#include <Teuchos_GlobalMPISession.hpp>
+#include <Teuchos_VerboseObject.hpp>
+#include <Teuchos_XMLParameterListHelpers.hpp>
+#include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_VerboseObject.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
+
+#include <Amesos_BaseSolver.h>
+#include <Amesos.h>
 
 // =============================================================================
 int main ( int argc, char *argv[] )

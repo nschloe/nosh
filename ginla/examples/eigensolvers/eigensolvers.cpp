@@ -13,11 +13,11 @@
 #include <Teuchos_StandardCatchMacros.hpp>
 #include <Epetra_FECrsGraph.h>
 
-#include "Ginla_EpetraFVM_StkMeshReader.hpp"
-#include "Ginla_EpetraFVM_KeoFactory.hpp"
-#include "Ginla_EpetraFVM_JacobianOperator.hpp"
-#include "Ginla_EpetraFVM_KeoPreconditioner.hpp"
-#include "Ginla_MagneticVectorPotential_Custom.hpp"
+#include "Ginla_StkMeshReader.hpp"
+#include "Ginla_KeoFactory.hpp"
+#include "Ginla_JacobianOperator.hpp"
+#include "Ginla_KeoPreconditioner.hpp"
+#include "Ginla_MagneticVectorPotential.hpp"
 
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziBasicEigenproblem.hpp"
@@ -68,8 +68,8 @@ int main ( int argc, char *argv[] )
               "Linear solver testbed for KEO and Jacobian operator.\n"
       );
 
-      std::string inputFileName( "" );
-      My_CLP.setOption ( "input", &inputFileName, "Input state file", true );
+      std::string inputFilePath( "" );
+      My_CLP.setOption ( "input", &inputFilePath, "Input state file", true );
 
       bool verbose = true;
       My_CLP.setOption("verbose","quiet",&verbose,"Print messages and results.");
@@ -80,6 +80,10 @@ int main ( int argc, char *argv[] )
       int frequency = 10;
       My_CLP.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
 
+      std::string method = "lobpcg";
+      My_CLP.setOption("method",&method,"Method for solving the eigenproblem. (*lobpcg, krylovschur, davidson)");
+
+
       // print warning for unrecognized arguments
       My_CLP.recogniseAllOptions ( true );
 
@@ -88,35 +92,25 @@ int main ( int argc, char *argv[] )
                                Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL
                              );
       // =========================================================================
-      Teuchos::ParameterList              problemParameters;
-      Teuchos::RCP<Epetra_Vector>         z = Teuchos::null;
-      Teuchos::RCP<Epetra_MultiVector>    mvpValues = Teuchos::null;
-      Teuchos::RCP<Epetra_Vector>         thickness = Teuchos::null;
-      Teuchos::RCP<Ginla::EpetraFVM::StkMesh> mesh = Teuchos::null;
+      // Read the data from the file.
+      Teuchos::ParameterList data;
+      Ginla::StkMeshRead( *eComm, inputFilePath, data );
 
-      *out << "Reading..." << std::endl;
+      // Cast the data into something more accessible.
+      Teuchos::RCP<Ginla::StkMesh>     & mesh = data.get<Teuchos::RCP<Ginla::StkMesh> >( "mesh" );
+      Teuchos::RCP<Epetra_Vector>      & z = data.get( "psi", Teuchos::RCP<Epetra_Vector>() );
+      Teuchos::RCP<Epetra_MultiVector> & mvpValues = data.get( "A", Teuchos::RCP<Epetra_MultiVector>() );
+      Teuchos::RCP<Epetra_Vector>      & thickness = data.get( "thickness", Teuchos::RCP<Epetra_Vector>() );
+      Teuchos::ParameterList           & problemParameters = data.get( "Problem parameters", Teuchos::ParameterList() );
 
-      Teuchos::RCP<Teuchos::Time> readTime = Teuchos::TimeMonitor::getNewTimer("Data I/O");
-      {
-      Teuchos::TimeMonitor tm(*readTime);
-      Ginla::EpetraFVM::StkMeshRead( *eComm,
-                                      inputFileName,
-                                      z,
-                                      mvpValues,
-                                      thickness,
-                                      mesh,
-                                      problemParameters
-                                    );
-      }
-
-      Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp;
+      Teuchos::RCP<Ginla::MagneticVectorPotential> mvp;
       double mu;
       Teuchos::RCP<Teuchos::Time> mvpConstructTime = Teuchos::TimeMonitor::getNewTimer("MVP construction");
       {
           Teuchos::TimeMonitor tm(*mvpConstructTime);
           mu = problemParameters.get<double> ( "mu" );
           mu = 2.0e-1;
-          mvp = Teuchos::rcp ( new Ginla::MagneticVectorPotential::Custom ( mesh, mvpValues, mu ) );
+          mvp = Teuchos::rcp ( new Ginla::MagneticVectorPotential ( mesh, mvpValues, mu ) );
       }
 
       Teuchos::RCP<LOCA::ParameterVector> mvpParameters =
@@ -131,8 +125,8 @@ int main ( int argc, char *argv[] )
           mesh->computeFvmEntities_();
       }
 
-      Teuchos::RCP<Ginla::EpetraFVM::KeoFactory> keoFactory =
-          Teuchos::rcp( new Ginla::EpetraFVM::KeoFactory( mesh, thickness, mvp ) );
+      Teuchos::RCP<Ginla::KeoFactory> keoFactory =
+          Teuchos::rcp( new Ginla::KeoFactory( mesh, thickness, mvp ) );
 
       Teuchos::RCP<Epetra_FECrsGraph> keoGraph;
       Teuchos::RCP<Teuchos::Time> graphConstructTime = Teuchos::TimeMonitor::getNewTimer("Graph construction");
@@ -143,26 +137,25 @@ int main ( int argc, char *argv[] )
 
       // create Jacobian
       Teuchos::RCP<Teuchos::Time> jacobianConstructTime = Teuchos::TimeMonitor::getNewTimer("Jacobian construction");
-      Teuchos::RCP<Ginla::EpetraFVM::JacobianOperator> jac;
+      Teuchos::RCP<Ginla::JacobianOperator> jac;
       {
           Teuchos::TimeMonitor tm(*jacobianConstructTime);
           // create the jacobian operator
-          jac = Teuchos::rcp( new Ginla::EpetraFVM::JacobianOperator( mesh, thickness, mvp, z ) );
+          jac = Teuchos::rcp( new Ginla::JacobianOperator( mesh, thickness, mvp, z ) );
       }
 
       // create preconditioner
       Teuchos::RCP<Teuchos::Time> precConstructTime = Teuchos::TimeMonitor::getNewTimer("Prec construction");
-      Teuchos::RCP<Ginla::EpetraFVM::KeoPreconditioner> prec;
+      Teuchos::RCP<Ginla::KeoPreconditioner> prec;
       if ( isPrec )
       {
           Teuchos::TimeMonitor tm(*precConstructTime);
           // create the jacobian operator
-          prec = Teuchos::rcp( new Ginla::EpetraFVM::KeoPreconditioner( mesh, thickness, mvp ) );
+          prec = Teuchos::rcp( new Ginla::KeoPreconditioner( mesh, thickness, mvp ) );
 
           // actually fill it with values
           prec->rebuild();
       }
-
 
       // Create the eigensolver.
       const string which       = "LM";
@@ -220,15 +213,29 @@ int main ( int argc, char *argv[] )
                              Anasazi::Warnings +
                              Anasazi::FinalSummary
               );
-      //
-      // Create the solver manager
-      Anasazi::LOBPCGSolMgr<double, MV, OP> MySolverMan(MyProblem, MyPL);
-//      Anasazi::BlockDavidsonSolMgr<double, MV, OP> MySolverMan(MyProblem, MyPL);
-//      Anasazi::BlockKrylovSchurSolMgr<double, MV, OP> MySolverMan(MyProblem, MyPL);
 
-      // Solve the problem
+      // Create the solver manager and solve the problem.
       //
-      Anasazi::ReturnType returnCode = MySolverMan.solve();
+      Anasazi::ReturnType returnCode;
+      if ( method.compare("lobpcg") == 0 )
+      {
+          Anasazi::LOBPCGSolMgr<double, MV, OP> MySolverMan(MyProblem, MyPL);
+          returnCode = MySolverMan.solve();
+      }
+      else if ( method.compare("davidson") == 0 )
+      {
+          Anasazi::BlockDavidsonSolMgr<double, MV, OP> MySolverMan(MyProblem, MyPL);
+          returnCode = MySolverMan.solve();
+      }
+      else if ( method.compare("krylovschur") == 0 )
+      {
+          Anasazi::BlockKrylovSchurSolMgr<double, MV, OP> MySolverMan(MyProblem, MyPL);
+          returnCode = MySolverMan.solve();
+      }
+      else
+          TEST_FOR_EXCEPT_MSG( true, "Invalid eigensolver method \"" << method << "\"." );
+
+      // Check for success.
       success = returnCode==Anasazi::Converged;
 
       // get the solution
@@ -249,6 +256,8 @@ int main ( int argc, char *argv[] )
           *out << evals_r[i] << " + I " << evals_i[i] << std::endl;
       }
       // -----------------------------------------------------------------------
+      // print timing data
+      Teuchos::TimeMonitor::summarize();
     }
     TEUCHOS_STANDARD_CATCH_STATEMENTS(true, *out, success);
 
