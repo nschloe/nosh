@@ -28,19 +28,23 @@
 
 #include <ml_epetra_preconditioner.h>
 
-#include <Teuchos_TimeMonitor.hpp>
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
+  #include <Teuchos_TimeMonitor.hpp>
+#endif
 
 namespace Ginla {
 // =============================================================================
 KeoFactory::
-KeoFactory( const Teuchos::RCP<Ginla::StkMesh>      & mesh,
+KeoFactory( const Teuchos::RCP<Ginla::StkMesh>                 & mesh,
             const Teuchos::RCP<const Epetra_Vector>            & thickness,
             const Teuchos::RCP<Ginla::MagneticVectorPotential> & mvp
           ):
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
+        buildKeoTime_( Teuchos::TimeMonitor::getNewTimer("Ginla: KeoFactory::buildKeo") ),
+#endif
         mesh_ ( mesh ),
         thickness_( thickness ),
-        mvp_( mvp ),
-        buildKeoTime_( Teuchos::TimeMonitor::getNewTimer("KeoFactory::buildKeo") )
+        mvp_( mvp )
 {
 }
 // =============================================================================
@@ -71,7 +75,9 @@ void
 KeoFactory::
 buildKeo( Epetra_FECrsMatrix & keoMatrix ) const
 {
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
   Teuchos::TimeMonitor tm(*buildKeoTime_);
+#endif
 
   // zero out the matrix
   TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix.PutScalar( 0.0 ) );

@@ -27,10 +27,14 @@
     #include <mpi.h>
 #endif
 
+#include "Ginla_config.h"
+
 #include <EpetraExt_ModelEvaluator.h>
 #include <Epetra_Vector.h>
 #include <Teuchos_ParameterList.hpp>
-#include <Teuchos_Time.hpp>
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
+  #include <Teuchos_Time.hpp>
+#endif
 
 #include "Ginla_JacobianOperator.hpp"
 // -----------------------------------------------------------------------------
@@ -152,12 +156,15 @@ private:
    Teuchos::RCP<Epetra_Vector> p_current_;
 
    const Teuchos::RCP<Ginla::MagneticVectorPotential> mvp_;
-   const Teuchos::RCP<Ginla::KeoFactory> keoFactory_;
 
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
    const Teuchos::RCP<Teuchos::Time> evalModelTime_;
    const Teuchos::RCP<Teuchos::Time> computeFTime_;
    const Teuchos::RCP<Teuchos::Time> fillJacobianTime_;
    const Teuchos::RCP<Teuchos::Time> fillPreconditionerTime_;
+#endif
+
+   const Teuchos::RCP<Ginla::KeoFactory> keoFactory_;
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 private:
     void

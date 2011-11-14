@@ -27,16 +27,19 @@
     #include <mpi.h>
 #endif
 
+#include "Ginla_config.h"
+
 #include <Epetra_Operator.h>
 #include <Teuchos_RCP.hpp>
-#include <Teuchos_Time.hpp>
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
+  #include <Teuchos_Time.hpp>
+#endif
 #include <Teuchos_Tuple.hpp>
 #include <Epetra_FECrsGraph.h>
 #include <Epetra_FECrsMatrix.h>
 #include <Epetra_LinearProblem.h>
 
 #include "Ginla_MagneticVectorPotential.hpp"
-#include <Amesos.h>
 // =============================================================================
 // forward declarations
 namespace Ginla {
@@ -72,10 +75,12 @@ public:
 
 protected:
 private:
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
+    const Teuchos::RCP<Teuchos::Time> buildKeoTime_;
+#endif
     const Teuchos::RCP<Ginla::StkMesh> mesh_;
     const Teuchos::RCP<const Epetra_Vector>       thickness_;
     const Teuchos::RCP<Ginla::MagneticVectorPotential> mvp_;
-    const Teuchos::RCP<Teuchos::Time> buildKeoTime_;
 };
 // =============================================================================
 } // namespace Ginla

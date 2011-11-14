@@ -27,10 +27,14 @@
     #include <mpi.h>
 #endif
 
+#include "Ginla_config.h"
+
 #include <Epetra_Operator.h>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Tuple.hpp>
-#include <Teuchos_Time.hpp>
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
+  #include <Teuchos_Time.hpp>
+#endif
 #include <Teuchos_FancyOStream.hpp>
 #include <Epetra_FECrsGraph.h>
 #include <Epetra_FECrsMatrix.h>
@@ -137,12 +141,14 @@ private:
 
     EInversionType invType_;
 
-    Teuchos::RCP<Teuchos::FancyOStream> out_;
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
+    const Teuchos::RCP<Teuchos::Time> timerRebuild_;
+    const Teuchos::RCP<Teuchos::Time> timerRebuildMl_;
+    const Teuchos::RCP<Teuchos::Time> timerRebuildIlu_;
+    const Teuchos::RCP<Teuchos::Time> timerRegularization_;
+#endif
 
-    const Teuchos::RCP<Teuchos::Time> rebuildTime_;
-    const Teuchos::RCP<Teuchos::Time> rebuildMlTime_;
-    const Teuchos::RCP<Teuchos::Time> rebuildIluTime_;
-    const Teuchos::RCP<Teuchos::Time> regularizationTime_;
+    Teuchos::RCP<Teuchos::FancyOStream> out_;
 };
 // =============================================================================
 } // namespace Ginla

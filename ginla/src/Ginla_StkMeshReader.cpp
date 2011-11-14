@@ -35,7 +35,10 @@
 #include <stk_mesh/base/GetEntities.hpp>
 
 #include <Teuchos_VerboseObject.hpp>
-#include <Teuchos_TimeMonitor.hpp>
+
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
+  #include <Teuchos_TimeMonitor.hpp>
+#endif
 
 #include <stk_io/IossBridge.hpp>
 #include <stk_io/MeshReadWriteUtils.hpp>
@@ -48,7 +51,9 @@ namespace Ginla {
 StkMeshReader::
 StkMeshReader( const std::string & fileName ):
 fileName_( fileName ),
-readTime_( Teuchos::TimeMonitor::getNewTimer("StkMeshReader::read") ),
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
+readTime_( Teuchos::TimeMonitor::getNewTimer("Ginla: StkMeshReader::read") ),
+#endif
 out_( Teuchos::VerboseObjectBase::getDefaultOStream() )
 {
 }
@@ -64,8 +69,10 @@ read( const Epetra_Comm      & comm,
       Teuchos::ParameterList & data
     )
 {
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
   // timer for this routine
   Teuchos::TimeMonitor tm(*readTime_);
+#endif
 
   // Take two different fields with one component
   // instead of one field with two components. This works around

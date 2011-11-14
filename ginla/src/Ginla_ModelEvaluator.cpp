@@ -32,7 +32,9 @@
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_SerialDenseMatrix.h>
 
-#include <Teuchos_TimeMonitor.hpp>
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
+  #include <Teuchos_TimeMonitor.hpp>
+#endif
 
 namespace Ginla {
 // ============================================================================
@@ -52,11 +54,13 @@ ModelEvaluator ( const Teuchos::RCP<Ginla::StkMesh>      & mesh,
         p_names_( Teuchos::null ),
         p_current_( Teuchos::null ),
         mvp_( mvp ),
-        keoFactory_( Teuchos::rcp( new Ginla::KeoFactory( mesh, thickness, mvp ) ) ),
-        evalModelTime_( Teuchos::TimeMonitor::getNewTimer("ModelEvaluator::evalModel") ),
-        computeFTime_( Teuchos::TimeMonitor::getNewTimer("ModelEvaluator::evalModel:compute F") ),
-        fillJacobianTime_( Teuchos::TimeMonitor::getNewTimer("ModelEvaluator::evalModel:fill Jacobian") ),
-        fillPreconditionerTime_( Teuchos::TimeMonitor::getNewTimer("ModelEvaluator::fill preconditioner") )
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
+        evalModelTime_( Teuchos::TimeMonitor::getNewTimer("Ginla: ModelEvaluator::evalModel") ),
+        computeFTime_( Teuchos::TimeMonitor::getNewTimer("Ginla: ModelEvaluator::evalModel:compute F") ),
+        fillJacobianTime_( Teuchos::TimeMonitor::getNewTimer("Ginla: ModelEvaluator::evalModel:fill Jacobian") ),
+        fillPreconditionerTime_( Teuchos::TimeMonitor::getNewTimer("Ginla: ModelEvaluator::fill preconditioner") ),
+#endif
+        keoFactory_( Teuchos::rcp( new Ginla::KeoFactory( mesh, thickness, mvp ) ) )
 {
   this->setupParameters_( problemParams );
 
@@ -203,8 +207,9 @@ createInArgs() const
   inArgs.setSupports( IN_ARG_x, true );
 
   // for shifted matrix
-  inArgs.setSupports( IN_ARG_alpha, true );
-  inArgs.setSupports( IN_ARG_beta, true );
+  // TODO add support for operator shift
+  inArgs.setSupports( IN_ARG_alpha, false );
+  inArgs.setSupports( IN_ARG_beta, false );
 
   return inArgs;
 }
@@ -250,7 +255,9 @@ evalModel( const InArgs  & inArgs,
            const OutArgs & outArgs
          ) const
 {
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
   Teuchos::TimeMonitor tm(*evalModelTime_);
+#endif
 
   const double alpha = inArgs.get_alpha();
   const double beta  = inArgs.get_beta();
@@ -284,7 +291,9 @@ evalModel( const InArgs  & inArgs,
   const Teuchos::RCP<Epetra_Vector> f_out = outArgs.get_f();
   if ( !f_out.is_null() )
   {
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
       Teuchos::TimeMonitor tm(*computeFTime_);
+#endif
       this->computeF_( *x_in, mvpParams, temperature, *f_out );
   }
 
@@ -292,7 +301,9 @@ evalModel( const InArgs  & inArgs,
   const Teuchos::RCP<Epetra_Operator> W_out = outArgs.get_W();
   if( !W_out.is_null() )
   {
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
       Teuchos::TimeMonitor tm(*fillJacobianTime_);
+#endif
       Teuchos::RCP<Ginla::JacobianOperator> jac =
           Teuchos::rcp_dynamic_cast<Ginla::JacobianOperator>( W_out, true );
       jac->rebuild( mvpParams,
@@ -305,7 +316,9 @@ evalModel( const InArgs  & inArgs,
   const Teuchos::RCP<Epetra_Operator> WPrec_out = outArgs.get_WPrec();
   if( !WPrec_out.is_null() )
   {
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
       Teuchos::TimeMonitor tm(*fillPreconditionerTime_);
+#endif
       Teuchos::RCP<Ginla::KeoPreconditioner> keoPrec =
           Teuchos::rcp_dynamic_cast<Ginla::KeoPreconditioner>( WPrec_out, true );
       keoPrec->rebuild( mvpParams );

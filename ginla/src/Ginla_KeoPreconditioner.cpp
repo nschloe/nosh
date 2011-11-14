@@ -36,6 +36,8 @@
 
 #include <Teuchos_VerboseObject.hpp>
 
+#include <Amesos.h>
+
 // =============================================================================
 // some typdefs for Belos
 typedef double                           ST;
@@ -59,11 +61,13 @@ KeoPreconditioner( const Teuchos::RCP<Ginla::StkMesh>      & mesh,
         keoIluProblem_( Teuchos::null ),
         keoIluSolver_( Teuchos::null ),
         invType_( INVERT_ML ),
-        out_( Teuchos::VerboseObjectBase::getDefaultOStream() ),
-        rebuildTime_( Teuchos::TimeMonitor::getNewTimer("KeoPreconditioner::rebuild") ),
-        rebuildMlTime_( Teuchos::TimeMonitor::getNewTimer("KeoPreconditioner::rebuildMl") ),
-        rebuildIluTime_( Teuchos::TimeMonitor::getNewTimer("KeoPreconditioner::rebuildIlu") ),
-        regularizationTime_( Teuchos::TimeMonitor::getNewTimer("KeoPreconditioner::rebuild:regularization") )
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
+        timerRebuild_( Teuchos::TimeMonitor::getNewTimer("Ginla: KeoPreconditioner::rebuild") ),
+        timerRebuildMl_( Teuchos::TimeMonitor::getNewTimer("Ginla: KeoPreconditioner::rebuildMl") ),
+        timerRebuildIlu_( Teuchos::TimeMonitor::getNewTimer("Ginla: KeoPreconditioner::rebuildIlu") ),
+        timerRegularization_( Teuchos::TimeMonitor::getNewTimer("Ginla: KeoPreconditioner::rebuild:regularization") ),
+#endif
+        out_( Teuchos::VerboseObjectBase::getDefaultOStream() )
 {
 }
 // =============================================================================
@@ -259,7 +263,9 @@ void
 KeoPreconditioner::
 rebuild()
 {
-    Teuchos::TimeMonitor tm(*rebuildTime_);
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
+    Teuchos::TimeMonitor tm(*timerRebuild_);
+#endif
     // -------------------------------------------------------------------------
     // rebuild the keo
     if ( keoRegularized_.is_null() )
@@ -271,7 +277,9 @@ rebuild()
     double mu = keoFactory_->getMvpParameters()->getValue( "mu" );
     if ( fabs( mu ) < 1.0e-5 )
     {
-        Teuchos::TimeMonitor tm(*regularizationTime_);
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
+        Teuchos::TimeMonitor tm(*timerRegularization_);
+#endif
         // Add a regularization to the diagonal.
         Epetra_Vector e( keoRegularized_->DomainMap() );
         TEUCHOS_ASSERT_EQUALITY( 0, e.PutScalar( 1.0 ) );
@@ -319,7 +327,9 @@ void
 KeoPreconditioner::
 rebuildMl_()
 {
-    Teuchos::TimeMonitor tm(*rebuildMlTime_);
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
+    Teuchos::TimeMonitor tm(*timerRebuildMl_);
+#endif
     // rebuild ML structure
     Teuchos::ParameterList MLList;
     ML_Epetra::SetDefaults( "SA", MLList );
@@ -353,7 +363,9 @@ void
 KeoPreconditioner::
 rebuildIlu_()
 {
-    Teuchos::TimeMonitor tm(*rebuildIluTime_);
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
+    Teuchos::TimeMonitor tm(*timerRebuildIlu_);
+#endif
     // set the matrix the linear problem
     TEUCHOS_ASSERT( !keoRegularized_.is_null() );
     if ( keoIluProblem_.is_null() )

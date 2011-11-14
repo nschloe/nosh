@@ -21,6 +21,7 @@
 #define GINLA_STKMESHREADER_H
 // =============================================================================
 // includes
+#include "Ginla_config.h"
 #include "Ginla_StkMesh.hpp"
 
 #include <string>
@@ -28,7 +29,9 @@
 #include <Epetra_Comm.h>
 #include <Epetra_MultiVector.h>
 #include <Teuchos_RCP.hpp>
-#include <Teuchos_Time.hpp>
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
+  #include <Teuchos_Time.hpp>
+#endif
 #include <Teuchos_ParameterList.hpp>
 // =============================================================================
 // typedefs
@@ -56,7 +59,9 @@ public:
 protected:
 private:
     const std::string fileName_;
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
     const Teuchos::RCP<Teuchos::Time> readTime_;
+#endif
     const Teuchos::RCP<Teuchos::FancyOStream> out_;
 
 private:
