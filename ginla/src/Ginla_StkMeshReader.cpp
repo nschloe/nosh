@@ -212,10 +212,10 @@ read( const Epetra_Comm      & comm,
   // Restart index to read solution from exodus file.
 //   int index = -1; // Default to no restart
   int index = 1; // restart from the first step
-  if ( index<1 )
-      *out_ << "Restart Index not set. Not reading solution from exodus (" << index << ")"<< endl;
-  else
-      *out_ << "Restart Index set, reading solution time step: " << index << endl;
+//  if ( index<1 )
+//      *out_ << "Restart Index not set. Not reading solution from exodus (" << index << ")"<< endl;
+//  else
+//      *out_ << "Restart Index set, reading solution time step: " << index << endl;
 
   stk::io::process_input_request( *meshData,
                                   *bulkData,
