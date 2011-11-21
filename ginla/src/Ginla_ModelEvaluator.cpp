@@ -36,6 +36,8 @@
   #include <Teuchos_TimeMonitor.hpp>
 #endif
 
+#include <Teuchos_VerboseObject.hpp>
+
 namespace Ginla {
 // ============================================================================
 ModelEvaluator::
@@ -54,13 +56,14 @@ ModelEvaluator ( const Teuchos::RCP<Ginla::StkMesh>      & mesh,
         p_names_( Teuchos::null ),
         p_current_( Teuchos::null ),
         mvp_( mvp ),
+        keoFactory_( Teuchos::rcp( new Ginla::KeoFactory( mesh, thickness, mvp ) ) ),
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
         evalModelTime_( Teuchos::TimeMonitor::getNewTimer("Ginla: ModelEvaluator::evalModel") ),
         computeFTime_( Teuchos::TimeMonitor::getNewTimer("Ginla: ModelEvaluator::evalModel:compute F") ),
         fillJacobianTime_( Teuchos::TimeMonitor::getNewTimer("Ginla: ModelEvaluator::evalModel:fill Jacobian") ),
         fillPreconditionerTime_( Teuchos::TimeMonitor::getNewTimer("Ginla: ModelEvaluator::fill preconditioner") ),
 #endif
-        keoFactory_( Teuchos::rcp( new Ginla::KeoFactory( mesh, thickness, mvp ) ) )
+        out_( Teuchos::VerboseObjectBase::getDefaultOStream() )
 {
   this->setupParameters_( problemParams );
 
@@ -260,10 +263,17 @@ evalModel( const InArgs  & inArgs,
 #endif
 
   const double alpha = inArgs.get_alpha();
-  const double beta  = inArgs.get_beta();
+  double beta  = inArgs.get_beta();
 
-  TEUCHOS_ASSERT( fabs(alpha) < 1.0e-15 );
-  TEUCHOS_ASSERT( fabs(beta-1.0) < 1.0e-15 );
+  // From packages/piro/test/MockModelEval_A.cpp
+  if (alpha==0.0 && beta==0.0)
+  {
+      *out_ << "Ginla::ModelEvaluator Warning: alpha=beta=0 -- setting beta=1" << std::endl;
+      beta = 1.0;
+  }
+
+  TEUCHOS_ASSERT_EQUALITY( alpha, 0.0 );
+  TEUCHOS_ASSERT_EQUALITY( beta,  1.0 );
 
   const Teuchos::RCP<const Epetra_Vector> & x_in = inArgs.get_x();
 

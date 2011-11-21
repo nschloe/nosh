@@ -1,11 +1,3 @@
-// see <http://old.nabble.com/Undefined-reference-to-%27main%27-with-Boost-Test.-Why--td15986217.html>
-#define BOOST_TEST_DYN_LINK
-#define BOOST_TEST_MODULE GRNN keoTest
-
-#include <boost/test/unit_test.hpp>
-#include <boost/test/floating_point_comparison.hpp>
-
-#include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_ParameterList.hpp>
 
 #ifdef HAVE_MPI
@@ -22,40 +14,27 @@
 #include "Ginla_MagneticVectorPotential.hpp"
 #include "Ginla_KeoFactory.hpp"
 
-// ===========================================================================
-// <http://www.boost.org/doc/libs/1_42_0/libs/test/doc/html/tutorials/hello-the-testing-world.html>
-BOOST_AUTO_TEST_CASE( keo_test )
-{
-    // Initialize MPI
-#ifdef HAVE_MPI
-    MPI_Init ( &boost::unit_test::framework::master_test_suite().argc,
-               &boost::unit_test::framework::master_test_suite().argv
-             );
-#endif
+#include <Teuchos_UnitTestHarness.hpp>
 
+namespace {
+
+// ===========================================================================
+TEUCHOS_UNIT_TEST( Ginla, KeoHashes )
+{
     // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
     Teuchos::RCP<Epetra_MpiComm> eComm =
             Teuchos::rcp<Epetra_MpiComm> ( new Epetra_MpiComm ( MPI_COMM_WORLD ) );
 #else
-    Teuchos::RCP<Epetra_SerialComm>  eComm =
+    Teuchos::RCP<Epetra_SerialComm> eComm =
             Teuchos::rcp<Epetra_SerialComm> ( new Epetra_SerialComm() );
 #endif
-    // handle command line arguments
-    Teuchos::CommandLineProcessor My_CLP;
 
     std::string inputFileName( "" );
-    My_CLP.setOption ( "input", &inputFileName, "Input state file", true );
-
-    // print warning for unrecognized arguments
-    My_CLP.recogniseAllOptions ( true );
-
-    // finally, parse the command line
-    TEUCHOS_ASSERT_EQUALITY( My_CLP.parse ( boost::unit_test::framework::master_test_suite().argc,
-                                            boost::unit_test::framework::master_test_suite().argv
-                                          ),
-                             Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL
-                           );
+    if ( eComm->NumProc() == 1 )
+        inputFileName = "cubesmall.e";
+    else
+        inputFileName = "cubesmall-balanced.par";
     // =========================================================================
     // Read the data from the file.
     Teuchos::ParameterList data;
@@ -103,8 +82,8 @@ BOOST_AUTO_TEST_CASE( keo_test )
     double controlNormInf = 10.1456474156918;
     
     // check the values
-    BOOST_CHECK_SMALL( normOne-controlNormOne, 1.0e-13 );
-    BOOST_CHECK_SMALL( normInf-controlNormInf, 1.0e-13 );
+    TEST_FLOATING_EQUALITY( normOne, controlNormOne, 1.0e-12 );
+    TEST_FLOATING_EQUALITY( normInf, controlNormInf, 1.0e-12 );
 
     const Epetra_Map & map = keoMatrix->DomainMap();
 
@@ -116,7 +95,7 @@ BOOST_AUTO_TEST_CASE( keo_test )
     double sum[1];
     e.Dot( Ke, sum );
     double controlSum = 0.00844428504187249;
-    BOOST_CHECK_SMALL( sum[0]-controlSum, 1.0e-13 );
+    TEST_FLOATING_EQUALITY( sum[0], controlSum, 1.0e-12 );
 
     // Sum over all the "real parts" of the matrix.
     // Remember that a 2x2 block corresponding to z is composed as
@@ -137,7 +116,7 @@ BOOST_AUTO_TEST_CASE( keo_test )
     keoMatrix->Apply( s0, t0 );
     s0.Dot( t0, sum );
     double controlSumReal = 0.0042221425209367988;
-    BOOST_CHECK_SMALL( sum[0]-controlSumReal, 1.0e-13 );
+    TEST_FLOATING_EQUALITY( sum[0], controlSumReal, 1.0e-12 );
 
     // Sum over all the "imaginary parts" of the matrix.
     Epetra_Vector s1( map );
@@ -151,14 +130,11 @@ BOOST_AUTO_TEST_CASE( keo_test )
     Epetra_Vector t1( map );
     keoMatrix->Apply( s0, t1 );
     s1.Dot( t0, sum );
-    double controlSumImag = 0.0; // Matrix is Hermitian
-    BOOST_CHECK_SMALL( sum[0]-controlSumImag, 1.0e-13 );
-
-    // clean up
-#ifdef HAVE_MPI
-    MPI_Finalize();
-#endif
+    // The matrix is Hermitian, so just test that the sum of
+    // the imaginary parts is (close to) 0.
+    TEST_COMPARE( fabs(sum[0]), <, 1.0e-12 );
 
     return;
 }
 // ============================================================================
+} // namespace

@@ -4,44 +4,32 @@ INCLUDE_DIRECTORIES ( ${Trilinos_INCLUDE_DIRS}
 LINK_DIRECTORIES( ${Trilinos_LIBRARY_DIRS}
                   ${Trilinos_TPL_LIBRARY_DIRS} )
 
-FIND_PACKAGE( Boost
-              COMPONENTS unit_test_framework
-              REQUIRED )
-INCLUDE_DIRECTORIES ( ${Boost_INCLUDE_DIRS} )
-
 INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/src )
 
-SET( KEOTEST_EXECUTABLE
-     "keoTest.exe" )
+SET( OPERATORTEST_EXECUTABLE
+     "operatorTest.exe" )
 
-SET( JACTEST_EXECUTABLE
-     "jacTest.exe" )
+ADD_EXECUTABLE ( ${OPERATORTEST_EXECUTABLE}
+                 Ginla_KeoUnitTests.cpp
+                 Ginla_JacUnitTests.cpp
+                 unitTestMain.cpp )
 
-ADD_EXECUTABLE ( ${KEOTEST_EXECUTABLE}
-                 keoTest.cpp )
+# copy over the binary data
+if( NOT ${CMAKE_CURRENT_SOURCE_DIR} EQUAL ${CMAKE_CURRENT_BINARY_DIR} )
+    FILE( COPY "${CMAKE_CURRENT_SOURCE_DIR}/data/cubesmall.e"
+          DESTINATION ${CMAKE_CURRENT_BINARY_DIR} )
+    FILE( COPY "${CMAKE_CURRENT_SOURCE_DIR}/data/cubesmall-balanced.par.2.0"
+          DESTINATION ${CMAKE_CURRENT_BINARY_DIR} )
+    FILE( COPY "${CMAKE_CURRENT_SOURCE_DIR}/data/cubesmall-balanced.par.2.1"
+          DESTINATION ${CMAKE_CURRENT_BINARY_DIR} )
+endif()
 
-ADD_EXECUTABLE ( ${JACTEST_EXECUTABLE}
-                 jacTest.cpp )
-
-# see http://www.docstoc.com/docs/14857835/CTest-and-Dashboard-_Slides-by-J
-ADD_TEST( keoTest
-          ${KEOTEST_EXECUTABLE}
-          --input=${CMAKE_CURRENT_SOURCE_DIR}/data/cubesmall.e
+# add tests
+ADD_TEST( operatorTest
+          ${OPERATORTEST_EXECUTABLE}
         )
-
-ADD_TEST( keoTestMpi2
-          mpiexec -n 2 ${KEOTEST_EXECUTABLE}
-          --input=${CMAKE_CURRENT_SOURCE_DIR}/data/cubesmall-balanced.par
-        )
-
-ADD_TEST( jacTest
-          ${JACTEST_EXECUTABLE}
-          --input=${CMAKE_CURRENT_SOURCE_DIR}/data/cubesmall.e
-        )
-
-ADD_TEST( jacTestMpi2
-          mpiexec -n 2 ${JACTEST_EXECUTABLE}
-          --input=${CMAKE_CURRENT_SOURCE_DIR}/data/cubesmall-balanced.par
+ADD_TEST( operatorTestMpi2
+          mpiexec -n 2 ${OPERATORTEST_EXECUTABLE}
         )
 
 SET ( internal_LIBS
@@ -49,16 +37,8 @@ SET ( internal_LIBS
     )
 
 # Set executable linking information.
-TARGET_LINK_LIBRARIES ( ${KEOTEST_EXECUTABLE}
+TARGET_LINK_LIBRARIES ( ${OPERATORTEST_EXECUTABLE}
                         ${internal_LIBS}
                         ${Trilinos_LIBRARIES}
                         ${Trilinos_TPL_LIBRARIES}
-                        ${Boost_LIBRARIES}
-                      )
-
-TARGET_LINK_LIBRARIES ( ${JACTEST_EXECUTABLE}
-                        ${internal_LIBS}
-                        ${Trilinos_LIBRARIES}
-                        ${Trilinos_TPL_LIBRARIES}
-                        ${Boost_LIBRARIES}
                       )

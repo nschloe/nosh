@@ -1,11 +1,3 @@
-// see <http://old.nabble.com/Undefined-reference-to-%27main%27-with-Boost-Test.-Why--td15986217.html>
-#define BOOST_TEST_DYN_LINK
-#define BOOST_TEST_MODULE GRNN jacTest
-
-#include <boost/test/unit_test.hpp>
-#include <boost/test/floating_point_comparison.hpp>
-
-#include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_ParameterList.hpp>
 
 #ifdef HAVE_MPI
@@ -22,40 +14,27 @@
 #include "Ginla_MagneticVectorPotential.hpp"
 #include "Ginla_JacobianOperator.hpp"
 
-// ===========================================================================
-// <http://www.boost.org/doc/libs/1_42_0/libs/test/doc/html/tutorials/hello-the-testing-world.html>
-BOOST_AUTO_TEST_CASE( jac_test )
-{
-    // Initialize MPI
-#ifdef HAVE_MPI
-    MPI_Init ( &boost::unit_test::framework::master_test_suite().argc,
-               &boost::unit_test::framework::master_test_suite().argv
-             );
-#endif
+#include <Teuchos_UnitTestHarness.hpp>
 
+namespace {
+
+// ===========================================================================
+TEUCHOS_UNIT_TEST( Ginla, JacHashes )
+{
     // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
     Teuchos::RCP<Epetra_MpiComm> eComm =
             Teuchos::rcp<Epetra_MpiComm> ( new Epetra_MpiComm ( MPI_COMM_WORLD ) );
 #else
-    Teuchos::RCP<Epetra_SerialComm>  eComm =
+    Teuchos::RCP<Epetra_SerialComm> eComm =
             Teuchos::rcp<Epetra_SerialComm> ( new Epetra_SerialComm() );
 #endif
-    // handle command line arguments
-    Teuchos::CommandLineProcessor My_CLP;
 
     std::string inputFileName( "" );
-    My_CLP.setOption ( "input", &inputFileName, "Input state file", true );
-
-    // print warning for unrecognized arguments
-    My_CLP.recogniseAllOptions ( true );
-
-    // finally, parse the command line
-    TEUCHOS_ASSERT_EQUALITY( My_CLP.parse ( boost::unit_test::framework::master_test_suite().argc,
-                                            boost::unit_test::framework::master_test_suite().argv
-                                          ),
-                             Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL
-                           );
+    if ( eComm->NumProc() == 1 )
+        inputFileName = "cubesmall.e";
+    else
+        inputFileName = "cubesmall-balanced.par";
     // =========================================================================
     // Read the data from the file.
     Teuchos::ParameterList data;
@@ -128,15 +107,11 @@ BOOST_AUTO_TEST_CASE( jac_test )
     double controlNormT2 = 20.2899906303576;
 
     // check the values
-    BOOST_CHECK_SMALL( normT0-controlNormT0, 1.0e-12 );
-    BOOST_CHECK_SMALL( normT1-controlNormT1, 1.0e-12 );
-    BOOST_CHECK_SMALL( normT2-controlNormT2, 1.0e-12 );
-
-    // clean up
-#ifdef HAVE_MPI
-    MPI_Finalize();
-#endif
+    TEST_FLOATING_EQUALITY( normT0, controlNormT0, 1.0e-12 );
+    TEST_FLOATING_EQUALITY( normT1, controlNormT1, 1.0e-12 );
+    TEST_FLOATING_EQUALITY( normT2, controlNormT2, 1.0e-12 );
 
     return;
 }
 // ============================================================================
+} // namespace

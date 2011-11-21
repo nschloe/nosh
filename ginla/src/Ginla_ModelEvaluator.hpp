@@ -157,6 +157,8 @@ private:
 
    const Teuchos::RCP<Ginla::MagneticVectorPotential> mvp_;
 
+   const Teuchos::RCP<Ginla::KeoFactory> keoFactory_;
+
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
    const Teuchos::RCP<Teuchos::Time> evalModelTime_;
    const Teuchos::RCP<Teuchos::Time> computeFTime_;
@@ -164,7 +166,7 @@ private:
    const Teuchos::RCP<Teuchos::Time> fillPreconditionerTime_;
 #endif
 
-   const Teuchos::RCP<Ginla::KeoFactory> keoFactory_;
+  Teuchos::RCP<Teuchos::FancyOStream> out_;
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 private:
     void
