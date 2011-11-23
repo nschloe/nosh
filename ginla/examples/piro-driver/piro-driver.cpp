@@ -32,6 +32,8 @@
 #include "Ginla_SaveEigenData.hpp"
 #include "Ginla_StateWriter.hpp"
 
+#include <Teuchos_TimeMonitor.hpp>
+
 // =============================================================================
 std::string
 extractDirectory( const std::string& path )
@@ -382,7 +384,6 @@ int main ( int argc, char *argv[] )
 
       // Now, solve the problem and return the responses
       piro->evalModel(inArgs, outArgs);
-
       // Make sure it finsihsed without error.
       TEUCHOS_ASSERT( !outArgs.isFailed() );
 
@@ -391,6 +392,9 @@ int main ( int argc, char *argv[] )
       if ( !glEigenSaver.is_null() )
           glEigenSaver->releaseLocaStepper();
 #endif
+
+    // print timing data
+    Teuchos::TimeMonitor::summarize();
     }
     TEUCHOS_STANDARD_CATCH_STATEMENTS(true, *out, success);
 

@@ -204,8 +204,8 @@ createInArgs() const
 
   inArgs.setModelEvalDescription( "Ginzburg-Landau" );
 
-  // TODO is this actually correct?
-  inArgs.set_Np( numParams_ );
+  // We have *one* parameter vector with numParams_ parameters in it.
+  inArgs.set_Np( 1 );
 
   inArgs.setSupports( IN_ARG_x, true );
 
