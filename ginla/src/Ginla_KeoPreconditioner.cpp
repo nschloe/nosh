@@ -268,9 +268,7 @@ rebuild()
 #endif
     // -------------------------------------------------------------------------
     // rebuild the keo
-    if ( keoRegularized_.is_null() )
-        keoRegularized_ = Teuchos::rcp( new Epetra_FECrsMatrix( Copy, keoFactory_->buildKeoGraph() ) );
-    keoFactory_->buildKeo( *keoRegularized_ );
+    keoRegularized_ = keoFactory_->buildKeo();
     keoRegularized_->Scale( -1.0 );
     // -------------------------------------------------------------------------
     // regularization

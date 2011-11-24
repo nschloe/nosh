@@ -58,14 +58,9 @@ TEUCHOS_UNIT_TEST( Ginla, KeoHashes )
     Teuchos::RCP<Ginla::KeoFactory> keoFactory =
         Teuchos::rcp( new Ginla::KeoFactory( mesh, thickness, mvp ) );
 
-    Teuchos::RCP<Epetra_FECrsGraph> keoGraph =
-        Teuchos::rcp( new Epetra_FECrsGraph( keoFactory->buildKeoGraph() ) );
-
     // create the kinetic energy operator
-    Teuchos::RCP<Epetra_FECrsMatrix> keoMatrix;
-    keoMatrix = Teuchos::rcp( new Epetra_FECrsMatrix( Copy, *keoGraph ) );
     keoFactory->updateParameters( mvpParameters );
-    keoFactory->buildKeo( *keoMatrix );
+    Teuchos::RCP<Epetra_CrsMatrix> keoMatrix = keoFactory->buildKeo();
 
     // Make sure the matrix is indeed positive definite, and not
     // negative definite. Belos needs that (2010-11-05).

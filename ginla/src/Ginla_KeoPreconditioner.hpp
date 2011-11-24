@@ -36,8 +36,8 @@
   #include <Teuchos_Time.hpp>
 #endif
 #include <Teuchos_FancyOStream.hpp>
-#include <Epetra_FECrsGraph.h>
-#include <Epetra_FECrsMatrix.h>
+#include <Epetra_CrsGraph.h>
+#include <Epetra_CrsMatrix.h>
 #include <Epetra_LinearProblem.h>
 
 #include "Ginla_MagneticVectorPotential.hpp"
@@ -132,7 +132,7 @@ private:
     const Teuchos::RCP<const Epetra_Comm> comm_;
 
     Teuchos::RCP<Ginla::KeoFactory> keoFactory_;
-    Teuchos::RCP<Epetra_FECrsMatrix> keoRegularized_;
+    Teuchos::RCP<Epetra_CrsMatrix> keoRegularized_;
 
     Teuchos::RCP<Belos::EpetraPrecOp> keoMlPrec_;
 

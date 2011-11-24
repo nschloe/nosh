@@ -35,8 +35,8 @@
   #include <Teuchos_Time.hpp>
 #endif
 #include <Teuchos_Tuple.hpp>
-#include <Epetra_FECrsGraph.h>
-#include <Epetra_FECrsMatrix.h>
+#include <Epetra_CrsGraph.h>
+#include <Epetra_CrsMatrix.h>
 #include <Epetra_LinearProblem.h>
 
 #include "Ginla_MagneticVectorPotential.hpp"
@@ -51,7 +51,7 @@ namespace Ginla {
 class KeoFactory
 {
 public:
-    KeoFactory( const Teuchos::RCP<Ginla::StkMesh>      & mesh,
+    KeoFactory( const Teuchos::RCP<const Ginla::StkMesh>      & mesh,
                 const Teuchos::RCP<const Epetra_Vector>            & thickness,
                 const Teuchos::RCP<Ginla::MagneticVectorPotential> & mvp
               );
@@ -66,21 +66,30 @@ public:
     const Teuchos::RCP<const LOCA::ParameterVector>
     getMvpParameters() const;
 
-    void
-    buildKeo( Epetra_FECrsMatrix & keoMatrix
-            ) const;
-
-    const Epetra_FECrsGraph
-    buildKeoGraph() const;
+    Teuchos::RCP<Epetra_CrsMatrix>
+    buildKeo() const;
 
 protected:
+
+private:
+    const Teuchos::RCP<Epetra_CrsGraph>
+    buildKeoGraph_() const;
+
 private:
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
     const Teuchos::RCP<Teuchos::Time> buildKeoTime_;
+    const Teuchos::RCP<Teuchos::Time> buildKeoGraphTime_;
+    const Teuchos::RCP<Teuchos::Time> buildKeoTime1_;
+    const Teuchos::RCP<Teuchos::Time> buildKeoTime2_;
+    const Teuchos::RCP<Teuchos::Time> buildKeoTime3_;
+    const Teuchos::RCP<Teuchos::Time> buildKeoTime4_;
+    const Teuchos::RCP<Teuchos::Time> buildKeoTime5_;
+    const Teuchos::RCP<Teuchos::Time> buildKeoTime6_;
 #endif
-    const Teuchos::RCP<Ginla::StkMesh> mesh_;
-    const Teuchos::RCP<const Epetra_Vector>       thickness_;
+    const Teuchos::RCP<const Ginla::StkMesh> mesh_;
+    const Teuchos::RCP<const Epetra_Vector> thickness_;
     const Teuchos::RCP<Ginla::MagneticVectorPotential> mvp_;
+    const Teuchos::RCP<const Epetra_CrsGraph> keoGraph_;
 };
 // =============================================================================
 } // namespace Ginla

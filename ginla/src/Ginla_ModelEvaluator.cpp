@@ -41,11 +41,11 @@
 namespace Ginla {
 // ============================================================================
 ModelEvaluator::
-ModelEvaluator ( const Teuchos::RCP<Ginla::StkMesh>      & mesh,
+ModelEvaluator ( const Teuchos::RCP<Ginla::StkMesh>                 & mesh,
                  const Teuchos::ParameterList                       & problemParams,
                  const Teuchos::RCP<const Epetra_Vector>            & thickness,
                  const Teuchos::RCP<Ginla::MagneticVectorPotential> & mvp,
-                 const Teuchos::RCP<Ginla::State>        & initialState
+                 const Teuchos::RCP<Ginla::State>                   & initialState
                ) :
         mesh_ ( mesh ),
         thickness_( thickness ),
@@ -349,12 +349,11 @@ computeF_ ( const Epetra_Vector                             & x,
           ) const
 {
   // build the KEO
-  Epetra_FECrsMatrix keoMatrix( Copy, keoFactory_->buildKeoGraph() );
   keoFactory_->updateParameters( mvpParams );
-  keoFactory_->buildKeo( keoMatrix );
+  const Teuchos::RCP<const Epetra_CrsMatrix> keoMatrix = keoFactory_->buildKeo();
 
   // compute FVec = K*x
-  TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix.Apply( x, FVec ) );
+  TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->Apply( x, FVec ) );
 
   // add the nonlinear part (mass lumping)
   TEUCHOS_ASSERT( FVec.Map().SameAs( x.Map() ) );

@@ -38,8 +38,8 @@ namespace Ginla {
     class KeoFactory;
     class StkMesh;
 }
-class Epetra_FECrsGraph;
-class Epetra_FECrsMatrix;
+class Epetra_CrsGraph;
+class Epetra_CrsMatrix;
 class Epetra_Vector;
 // =============================================================================
 namespace Ginla {
@@ -108,7 +108,7 @@ private:
     const Teuchos::RCP<Ginla::StkMesh> mesh_;
     const Teuchos::RCP<const Epetra_Vector> thickness_;
     const Teuchos::RCP<Ginla::KeoFactory> keoFactory_;
-    const Teuchos::RCP<Epetra_FECrsMatrix> keoMatrix_;
+    Teuchos::RCP<const Epetra_CrsMatrix> keoMatrix_;
 
     Teuchos::RCP<const Epetra_Vector> current_X_;
 

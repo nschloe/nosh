@@ -24,6 +24,7 @@
 
 #include <Teuchos_ArrayRCP.hpp>
 #include <Epetra_Vector.h>
+#include <Epetra_Map.h>
 
 namespace Ginla {
 // =============================================================================
@@ -38,15 +39,13 @@ JacobianOperator( const Teuchos::RCP<Ginla::StkMesh>                 & mesh,
         mesh_( mesh ),
         thickness_( thickness ),
         keoFactory_( Teuchos::rcp( new Ginla::KeoFactory( mesh, thickness, mvp ) ) ),
-        keoMatrix_( Teuchos::rcp( new Epetra_FECrsMatrix( Copy, keoFactory_->buildKeoGraph() ) ) ),
+        keoMatrix_( keoFactory_->buildKeo() ),
         current_X_ ( current_X ),
         temperature_( 0.0 ),
         isDiagsUpToDate_( false ),
-        diag0_ ( Teuchos::rcp( new Epetra_Vector(*mesh->getComplexNonOverlapMap()) ) ),
+        diag0_ ( Teuchos::rcp( new Epetra_Vector(*(mesh->getComplexNonOverlapMap())) ) ),
         diag1b_( Teuchos::rcp( new Epetra_Vector(mesh->getControlVolumes()->Map()) ) )
 {
-    // Fill the matrix immediately.
-    keoFactory_->buildKeo( *keoMatrix_ );
 }
 // =============================================================================
 JacobianOperator::
@@ -206,7 +205,7 @@ rebuild( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
 
     // rebuild the keo
     keoFactory_->updateParameters( mvpParams );
-    keoFactory_->buildKeo( *keoMatrix_ );
+    keoMatrix_ = keoFactory_->buildKeo();
 
     return;
 }

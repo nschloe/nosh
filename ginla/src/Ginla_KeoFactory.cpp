@@ -26,6 +26,8 @@
 #include <Epetra_Comm.h>
 #include <Epetra_Vector.h>
 
+#include <Epetra_FECrsGraph.h>
+
 #include <ml_epetra_preconditioner.h>
 
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
@@ -35,16 +37,24 @@
 namespace Ginla {
 // =============================================================================
 KeoFactory::
-KeoFactory( const Teuchos::RCP<Ginla::StkMesh>                 & mesh,
+KeoFactory( const Teuchos::RCP<const Ginla::StkMesh>           & mesh,
             const Teuchos::RCP<const Epetra_Vector>            & thickness,
             const Teuchos::RCP<Ginla::MagneticVectorPotential> & mvp
           ):
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
         buildKeoTime_( Teuchos::TimeMonitor::getNewTimer("Ginla: KeoFactory::buildKeo") ),
+        buildKeoGraphTime_( Teuchos::TimeMonitor::getNewTimer("Ginla: KeoFactory::buildKeoGraph") ),
+        buildKeoTime1_( Teuchos::TimeMonitor::getNewTimer("Ginla: KeoFactory::buildKeo1") ),
+        buildKeoTime2_( Teuchos::TimeMonitor::getNewTimer("Ginla: KeoFactory::buildKeo2") ),
+        buildKeoTime3_( Teuchos::TimeMonitor::getNewTimer("Ginla: KeoFactory::buildKeo3") ),
+        buildKeoTime4_( Teuchos::TimeMonitor::getNewTimer("Ginla: KeoFactory::buildKeo4") ),
+        buildKeoTime5_( Teuchos::TimeMonitor::getNewTimer("Ginla: KeoFactory::buildKeo5") ),
+        buildKeoTime6_( Teuchos::TimeMonitor::getNewTimer("Ginla: KeoFactory::buildKeo5") ),
 #endif
         mesh_ ( mesh ),
         thickness_( thickness ),
-        mvp_( mvp )
+        mvp_( mvp ),
+        keoGraph_( this->buildKeoGraph_() ) // build the graph immediately
 {
 }
 // =============================================================================
@@ -71,58 +81,92 @@ getMvpParameters() const
   return mvp_->getParameters();
 }
 // =============================================================================
-void
+Teuchos::RCP<Epetra_CrsMatrix>
 KeoFactory::
-buildKeo( Epetra_FECrsMatrix & keoMatrix ) const
+buildKeo() const
 {
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
   Teuchos::TimeMonitor tm(*buildKeoTime_);
 #endif
 
+  TEUCHOS_ASSERT( !keoGraph_.is_null() );
+
+  Teuchos::RCP<Epetra_CrsMatrix> keoMatrix
+      = Teuchos::rcp( new Epetra_CrsMatrix( Copy, *keoGraph_ ) );
+
+  std::vector<stk::mesh::Entity*> cells;
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > edgeCoefficients;
+{
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
+  Teuchos::TimeMonitor tm(*buildKeoTime4_);
+#endif
   // zero out the matrix
-  TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix.PutScalar( 0.0 ) );
+  TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->PutScalar( 0.0 ) );
   TEUCHOS_ASSERT( !mesh_.is_null() );
 
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   // Loop over the cells, create local load vector and mass matrix,
   // and insert them into the global matrix.
   // get owned cells
-  std::vector<stk::mesh::Entity*> cells = mesh_->getOwnedCells();
+  cells = mesh_->getOwnedCells();
 
   // This takes about 50% of the time in this whole function.
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > edgeCoefficients = mesh_->getEdgeCoefficients();
+  edgeCoefficients = mesh_->getEdgeCoefficients();
   TEUCHOS_ASSERT( !edgeCoefficients.is_null() );
 
   // Loop over all edges.
   // To this end, loop over all cells and the edges within the cell.
   TEUCHOS_ASSERT( !thickness_.is_null() );
   TEUCHOS_ASSERT( !mvp_.is_null() );
+}
+
   for ( unsigned int k=0; k<cells.size(); k++ )
   {
-      // get the nodes local to the cell
-      stk::mesh::PairIterRelation rel = (*cells[k]).relations();
-
-      unsigned int numLocalNodes = rel.size();
+      unsigned int numLocalNodes;
       // extract the nodal coordinates
       Teuchos::Array<Point> localNodes;
+      stk::mesh::PairIterRelation rel;
+{
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
+  Teuchos::TimeMonitor tm(*buildKeoTime4_);
+#endif
+      // get the nodes local to the cell
+      rel = (*cells[k]).relations();
+
+      numLocalNodes = rel.size();
 
       localNodes = mesh_->getNodeCoordinates( rel );
-
+}
       // In a simplex, the edges are exactly the connection between each pair
       // of nodes. Hence, loop over pairs of nodes.
       unsigned int edgeIndex = 0;
       Teuchos::Tuple<int,2> gid;
       Teuchos::Tuple<int,2> lid;
+      int indices[4];
       for ( unsigned int e0 = 0; e0 < numLocalNodes; e0++ )
       {
+{
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
+  Teuchos::TimeMonitor tm(*buildKeoTime5_);
+#endif
           const Point & node0 = localNodes[e0];
           gid[0] = (*rel[e0].entity()).identifier() - 1;
           lid[0] = thickness_->Map().LID( gid[0] );
+          indices[0] = 2*gid[0];
+          indices[1] = 2*gid[0]+1;
           TEST_FOR_EXCEPT_MSG( lid[0] < 0,
                                        "The global index " << gid[0]
                                        << " does not seem to be present on this node." );
+}
           for ( unsigned int e1 = e0+1; e1 < numLocalNodes; e1++ )
           {
+double aInt;
+double alpha;
+{
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
+  Teuchos::TimeMonitor tm(*buildKeoTime1_);
+#endif
+
               const Point & node1 = localNodes[e1];
               gid[1] = (*rel[e1].entity()).identifier() - 1;
               lid[1] = thickness_->Map().LID( gid[1] );
@@ -130,8 +174,8 @@ buildKeo( Epetra_FECrsMatrix & keoMatrix ) const
                                            "The global index " << gid[1]
                                            << " does not seem to be present on this node." );
 
-              // coarea / edge ratio
-              double alpha = edgeCoefficients[k][edgeIndex];
+              // edge weights
+              alpha = edgeCoefficients[k][edgeIndex];
 
               // Multiply by the thickness value of the midpoint. As this is not available,
               // take the mean between the values at the nodes.
@@ -155,7 +199,16 @@ buildKeo( Epetra_FECrsMatrix & keoMatrix ) const
               // edge vector.
 
               // Filling the MVP cache takes another 50% of the time in this whole function.
-              double aInt = mvp_->getAEdgeMidpointProjection( k, edgeIndex );
+              aInt = mvp_->getAEdgeMidpointProjection( k, edgeIndex );
+}
+              Epetra_SerialDenseMatrix values( 4, 4 );
+              double alphaCosAInt = alpha * cos(aInt);
+              double alphaSinAInt = alpha * sin(aInt);
+
+{
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
+  Teuchos::TimeMonitor tm(*buildKeoTime2_);
+#endif
 
               // We'd like to insert the 2x2 matrix
               //
@@ -165,20 +218,13 @@ buildKeo( Epetra_FECrsMatrix & keoMatrix ) const
               // at the indices   [ nodeIndices[0], nodeIndices[1] ] for every index pair
               // that shares and edge.
               // Do that now, just blockwise for real and imaginary part.
-              Epetra_IntSerialDenseVector indices(4);
-              indices[0] = 2*gid[0];
-              indices[1] = 2*gid[0]+1;
               indices[2] = 2*gid[1];
               indices[3] = 2*gid[1]+1;
 
-              Epetra_SerialDenseMatrix values( 4, 4 );
-              values(0,0) = - alpha;
+/*              values(0,0) = - alpha;
               values(0,1) = 0.0;
               values(1,0) = 0.0;
               values(1,1) = - alpha;
-
-              double alphaCosAInt = alpha * cos(aInt);
-              double alphaSinAInt = alpha * sin(aInt);
 
               values(0,2) =   alphaCosAInt;
               values(0,3) =   alphaSinAInt;
@@ -193,10 +239,36 @@ buildKeo( Epetra_FECrsMatrix & keoMatrix ) const
               values(2,2) = - alpha;
               values(2,3) = 0.0;
               values(3,2) = 0.0;
-              values(3,3) = - alpha;
-
+              values(3,3) = - alpha;*/
+}
+{
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
+  Teuchos::TimeMonitor tm(*buildKeoTime3_);
+#endif
               // sum it all in!
-              TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix.SumIntoGlobalValues ( indices, values ) );
+//              TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->SumIntoGlobalValues ( indices, values ) );
+              double v[4];
+              v[0] = -alpha;
+              v[1] = 0.0;
+              v[2] = alphaCosAInt;
+              v[3] = alphaSinAInt;
+              TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->SumIntoGlobalValues ( 2*gid[0], 4, v, indices ) );
+              v[0] = 0.0;
+              v[1] = -alpha;
+              v[2] = - alphaSinAInt;
+              v[3] = alphaCosAInt;
+              TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->SumIntoGlobalValues ( 2*gid[0]+1, 4, v, indices ) );
+              v[0] = alphaCosAInt;
+              v[1] = -alphaSinAInt;
+              v[2] = - alpha;
+              v[3] = 0.0;
+              TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->SumIntoGlobalValues ( 2*gid[1], 4, v, indices ) );
+              v[0] = alphaSinAInt;
+              v[1] = alphaCosAInt;
+              v[2] = 0.0;
+              v[3] = -alpha;
+              TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->SumIntoGlobalValues ( 2*gid[1]+1, 4, v, indices ) );
+}
 
               edgeIndex++;
               // -------------------------------------------------------------------
@@ -205,15 +277,23 @@ buildKeo( Epetra_FECrsMatrix & keoMatrix ) const
   }
 
   // calls FillComplete by default
-  TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix.GlobalAssemble() );
+//  TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->GlobalAssemble() );
+  TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->FillComplete() );
 
-  return;
+  return keoMatrix;
 }
 // =============================================================================
-const Epetra_FECrsGraph
+const Teuchos::RCP<Epetra_CrsGraph>
 KeoFactory::
-buildKeoGraph() const
+buildKeoGraph_() const
 {
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
+  Teuchos::TimeMonitor tm(*buildKeoGraphTime_);
+#endif
+  // This method used to be implemented with Epetra_FECrsGraph,
+  // but it turns out that there's no gain in runtime performance
+  // compare to a regular Epetra_CrsGraph implementation.
+
   TEUCHOS_ASSERT( !mesh_.is_null() );
 
   // Which row/column map to use for the matrix?
@@ -225,7 +305,7 @@ buildKeoGraph() const
   //   [ 1 2 1 ]
   //   [   1 2 ].
   // Suppose subdomain 1 consists of node 1, subdomain 2 of node 3,
-  // and node 2 froms the boundary between them.
+  // and node 2 forms the boundary between them.
   // For two processes, if process 1 owns nodes 1 and 2, the matrix
   // will be split as
   //   [ 2 1   ]   [       ]
@@ -267,14 +347,16 @@ buildKeoGraph() const
   // computation times; if not, then scenario 2 will guarantee
   // equal computation times at the cost of higher total
   // storage and computation needs.
-  const Epetra_Map & noMap = *mesh_->getComplexNonOverlapMap();
-  Epetra_FECrsGraph keoGraph( Copy, noMap, 0 );
-//  Epetra_FECrsGraph keoGraph( Copy, *mesh_->getComplexOverlapMap(), 0 );
+  Teuchos::RCP<Epetra_CrsGraph> keoGraph
+      = Teuchos::rcp( new Epetra_CrsGraph( Copy, *mesh_->getComplexOverlapMap(), 0 ) );
+//  Teuchos::RCP<Epetra_CrsGraph> keoGraph
+//      = Teuchos::rcp( new Epetra_CrsGraph( Copy, *mesh_->getComplexNonOverlapMap(), 0 ) );
 
   std::vector<stk::mesh::Entity*> cells = mesh_->getOwnedCells();
 
-  // Loop over all edges and put entries whereever two nodes are connected.
+  // Loop over all edges and put entries wherever two nodes are connected.
   Teuchos::Tuple<int,2> gid;
+  int indices[4];
   for ( unsigned int k=0; k<cells.size(); k++ )
   {
       // get the nodes local to the cell
@@ -285,27 +367,31 @@ buildKeoGraph() const
       for ( unsigned int e0=0; e0<rel.size(); e0++ )
       {
           gid[0] = (*rel[e0].entity()).identifier() - 1;
+          indices[0] = 2*gid[0];
+          indices[1] = 2*gid[0]+1;
           for ( unsigned int e1=e0+1; e1<rel.size(); e1++ )
           {
               gid[1] = (*rel[e1].entity()).identifier() - 1;
-
-              Epetra_IntSerialDenseVector indices(4);
-              indices[0] = 2*gid[0];
-              indices[1] = 2*gid[0]+1;
               indices[2] = 2*gid[1];
               indices[3] = 2*gid[1]+1;
 
-              // sum it all in!
-              TEUCHOS_ASSERT_EQUALITY( 0, keoGraph.InsertGlobalIndices( indices.Length(), indices.Values(), // rows
-                                                                        indices.Length(), indices.Values()  // cols
-                                                                      )
-                                     );
+              // insert it all
+//              TEUCHOS_ASSERT_EQUALITY( 0, keoGraph.InsertGlobalIndices( 4, indices, // rows
+//                                                                        4, indices  // cols
+//                                                                      )
+//                                     );
+              TEUCHOS_ASSERT_EQUALITY( 0, keoGraph->InsertGlobalIndices( indices[0], 4, indices ) );
+              TEUCHOS_ASSERT_EQUALITY( 0, keoGraph->InsertGlobalIndices( indices[1], 4, indices ) );
+              TEUCHOS_ASSERT_EQUALITY( 0, keoGraph->InsertGlobalIndices( indices[2], 4, indices ) );
+              TEUCHOS_ASSERT_EQUALITY( 0, keoGraph->InsertGlobalIndices( indices[3], 4, indices ) );
           }
       }
   }
 
   // Make sure that domain and range map are non-overlapping.
-  TEUCHOS_ASSERT_EQUALITY( 0, keoGraph.GlobalAssemble(noMap,noMap) );
+  const Epetra_Map & noMap = *mesh_->getComplexNonOverlapMap();
+//  TEUCHOS_ASSERT_EQUALITY( 0, keoGraph.GlobalAssemble(noMap,noMap) );
+  TEUCHOS_ASSERT_EQUALITY( 0, keoGraph->FillComplete(noMap,noMap) );
 
   return keoGraph;
 }
