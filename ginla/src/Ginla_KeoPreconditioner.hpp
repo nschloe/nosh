@@ -57,10 +57,7 @@ namespace Ginla {
 class KeoPreconditioner: public Epetra_Operator
 {
 public:
-    KeoPreconditioner( const Teuchos::RCP<Ginla::StkMesh>      & mesh,
-                       const Teuchos::RCP<const Epetra_Vector>            & thickness,
-                       const Teuchos::RCP<Ginla::MagneticVectorPotential> & mvp
-                     );
+    KeoPreconditioner( const Teuchos::RCP<Ginla::KeoFactory> & keoFactory );
 
     // Destructor.
     ~KeoPreconditioner();

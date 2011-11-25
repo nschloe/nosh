@@ -49,13 +49,11 @@ typedef Belos::OperatorTraits<ST,MV,OP>  OPT;
 namespace Ginla {
 // =============================================================================
 KeoPreconditioner::
-KeoPreconditioner( const Teuchos::RCP<Ginla::StkMesh>      & mesh,
-                   const Teuchos::RCP<const Epetra_Vector>            & thickness,
-                   const Teuchos::RCP<Ginla::MagneticVectorPotential> & mvp
+KeoPreconditioner( const Teuchos::RCP<Ginla::KeoFactory> & keoFactory
                  ):
         useTranspose_ ( false ),
-        comm_( Teuchos::rcpFromRef(mesh->getComm() ) ),
-        keoFactory_( Teuchos::rcp( new Ginla::KeoFactory(mesh, thickness, mvp) ) ),
+        comm_( Teuchos::rcpFromRef( keoFactory->getMesh()->getComm() ) ),
+        keoFactory_( keoFactory ),
         keoRegularized_( Teuchos::null ),
         keoMlPrec_ ( Teuchos::null ),
         keoIluProblem_( Teuchos::null ),
@@ -155,13 +153,8 @@ ApplyInverseMl_( const Epetra_MultiVector & X,
    Teuchos::RCP<const Epetra_MultiVector> Xptr = Teuchos::rcpFromRef( X );
    Teuchos::RCP<Epetra_MultiVector> Yptr = Teuchos::rcpFromRef( Y );
    Belos::LinearProblem<double,MV,OP> problem( keoRegularized_, Yptr, Xptr );
-   bool set = problem.setProblem();
-
-   if ( !set )
-   {
-     *out_ << "\nERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
-     return -1;
-   }
+   // Make sure the problem sets up correctly.
+   TEUCHOS_ASSERT( problem.setProblem() );
    // -------------------------------------------------------------------------
    // add preconditioner
    TEUCHOS_ASSERT( !keoMlPrec_.is_null() );
@@ -315,7 +308,6 @@ KeoPreconditioner::
 rebuild( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams
        )
 {
-
     keoFactory_->updateParameters( mvpParams );
     this->rebuild();
     return;

@@ -59,6 +59,9 @@ public:
     // Destructor.
     ~KeoFactory();
 
+    const Teuchos::RCP<const Ginla::StkMesh>
+    getMesh() const;
+
     void
     updateParameters( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams
                     ) const;

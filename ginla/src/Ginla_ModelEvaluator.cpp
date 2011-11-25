@@ -191,7 +191,7 @@ ModelEvaluator::
 create_WPrec() const
 {
   Teuchos::RCP<Epetra_Operator> keoPrec =
-          Teuchos::rcp( new Ginla::KeoPreconditioner( mesh_, thickness_, mvp_ ) );
+          Teuchos::rcp( new Ginla::KeoPreconditioner( keoFactory_ ) );
   // bool is answer to: "Prec is already inverted?"
   return Teuchos::rcp( new EpetraExt::ModelEvaluator::Preconditioner( keoPrec, false ) );
 }

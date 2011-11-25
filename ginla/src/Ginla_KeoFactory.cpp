@@ -63,6 +63,13 @@ KeoFactory::
 {
 }
 // =============================================================================
+const Teuchos::RCP<const Ginla::StkMesh>
+KeoFactory::
+getMesh() const
+{
+    return mesh_;
+}
+// =============================================================================
 void
 KeoFactory::
 updateParameters( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams
@@ -70,7 +77,7 @@ updateParameters( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams
 {
   // set the parameters
   TEUCHOS_ASSERT( !mvpParams.is_null() );
-  mvp_->setParameters( *mvpParams );
+  bool valuesChanged = mvp_->setParameters( *mvpParams );
   return;
 }
 // =============================================================================
@@ -91,8 +98,11 @@ buildKeo() const
 
   TEUCHOS_ASSERT( !keoGraph_.is_null() );
 
+  // create an zeroed-out matrix
   Teuchos::RCP<Epetra_CrsMatrix> keoMatrix
       = Teuchos::rcp( new Epetra_CrsMatrix( Copy, *keoGraph_ ) );
+  // TODO is this really necessary
+  TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->PutScalar( 0.0 ) );
 
   std::vector<stk::mesh::Entity*> cells;
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > edgeCoefficients;
@@ -100,8 +110,6 @@ buildKeo() const
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
   Teuchos::TimeMonitor tm(*buildKeoTime4_);
 #endif
-  // zero out the matrix
-  TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->PutScalar( 0.0 ) );
   TEUCHOS_ASSERT( !mesh_.is_null() );
 
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -201,7 +209,7 @@ double alpha;
               // Filling the MVP cache takes another 50% of the time in this whole function.
               aInt = mvp_->getAEdgeMidpointProjection( k, edgeIndex );
 }
-              Epetra_SerialDenseMatrix values( 4, 4 );
+//              Epetra_SerialDenseMatrix values( 4, 4 );
               double alphaCosAInt = alpha * cos(aInt);
               double alphaSinAInt = alpha * sin(aInt);
 
@@ -252,22 +260,22 @@ double alpha;
               v[1] = 0.0;
               v[2] = alphaCosAInt;
               v[3] = alphaSinAInt;
-              TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->SumIntoGlobalValues ( 2*gid[0], 4, v, indices ) );
+              TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->SumIntoGlobalValues ( indices[0], 4, v, indices ) );
               v[0] = 0.0;
               v[1] = -alpha;
-              v[2] = - alphaSinAInt;
+              v[2] = -alphaSinAInt;
               v[3] = alphaCosAInt;
-              TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->SumIntoGlobalValues ( 2*gid[0]+1, 4, v, indices ) );
+              TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->SumIntoGlobalValues ( indices[1], 4, v, indices ) );
               v[0] = alphaCosAInt;
               v[1] = -alphaSinAInt;
-              v[2] = - alpha;
+              v[2] = -alpha;
               v[3] = 0.0;
-              TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->SumIntoGlobalValues ( 2*gid[1], 4, v, indices ) );
+              TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->SumIntoGlobalValues ( indices[2], 4, v, indices ) );
               v[0] = alphaSinAInt;
               v[1] = alphaCosAInt;
               v[2] = 0.0;
               v[3] = -alpha;
-              TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->SumIntoGlobalValues ( 2*gid[1]+1, 4, v, indices ) );
+              TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->SumIntoGlobalValues ( indices[3], 4, v, indices ) );
 }
 
               edgeIndex++;
