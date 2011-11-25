@@ -18,7 +18,7 @@
 //
 // @HEADER
 
-#include "Ginla_KeoPreconditioner.hpp"
+#include "Ginla_KeoRegularized.hpp"
 #include "Ginla_KeoFactory.hpp"
 #include "Ginla_StkMesh.hpp"
 
@@ -48,8 +48,8 @@ typedef Belos::OperatorTraits<ST,MV,OP>  OPT;
 // =============================================================================
 namespace Ginla {
 // =============================================================================
-KeoPreconditioner::
-KeoPreconditioner( const Teuchos::RCP<Ginla::KeoFactory> & keoFactory
+KeoRegularized::
+KeoRegularized( const Teuchos::RCP<Ginla::KeoFactory> & keoFactory
                  ):
         useTranspose_ ( false ),
         comm_( Teuchos::rcpFromRef( keoFactory->getMesh()->getComm() ) ),
@@ -60,22 +60,22 @@ KeoPreconditioner( const Teuchos::RCP<Ginla::KeoFactory> & keoFactory
         keoIluSolver_( Teuchos::null ),
         invType_( INVERT_ML ),
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
-        timerRebuild_( Teuchos::TimeMonitor::getNewTimer("Ginla: KeoPreconditioner::rebuild") ),
-        timerRebuildMl_( Teuchos::TimeMonitor::getNewTimer("Ginla: KeoPreconditioner::rebuildMl") ),
-        timerRebuildIlu_( Teuchos::TimeMonitor::getNewTimer("Ginla: KeoPreconditioner::rebuildIlu") ),
-        timerRegularization_( Teuchos::TimeMonitor::getNewTimer("Ginla: KeoPreconditioner::rebuild:regularization") ),
+        timerRebuild_( Teuchos::TimeMonitor::getNewTimer("Ginla: KeoRegularized::rebuild") ),
+        timerRebuildMl_( Teuchos::TimeMonitor::getNewTimer("Ginla: KeoRegularized::rebuildMl") ),
+        timerRebuildIlu_( Teuchos::TimeMonitor::getNewTimer("Ginla: KeoRegularized::rebuildIlu") ),
+        timerRegularization_( Teuchos::TimeMonitor::getNewTimer("Ginla: KeoRegularized::rebuild:regularization") ),
 #endif
         out_( Teuchos::VerboseObjectBase::getDefaultOStream() )
 {
 }
 // =============================================================================
-KeoPreconditioner::
-~KeoPreconditioner()
+KeoRegularized::
+~KeoRegularized()
 {
 }
 // =============================================================================
 int
-KeoPreconditioner::
+KeoRegularized::
 SetUseTranspose( bool UseTranspose )
 {
     useTranspose_ = UseTranspose;
@@ -83,7 +83,7 @@ SetUseTranspose( bool UseTranspose )
 }
 // =============================================================================
 int
-KeoPreconditioner::
+KeoRegularized::
 Apply ( const Epetra_MultiVector & X,
               Epetra_MultiVector & Y
       ) const
@@ -93,7 +93,7 @@ Apply ( const Epetra_MultiVector & X,
 }
 // =============================================================================
 int
-KeoPreconditioner::
+KeoRegularized::
 ApplyInverse( const Epetra_MultiVector & X,
                     Epetra_MultiVector & Y
             ) const
@@ -119,7 +119,7 @@ ApplyInverse( const Epetra_MultiVector & X,
 }
 // =============================================================================
 int
-KeoPreconditioner::
+KeoRegularized::
 ApplyInverseMl_( const Epetra_MultiVector & X,
                        Epetra_MultiVector & Y
                ) const
@@ -182,7 +182,7 @@ ApplyInverseMl_( const Epetra_MultiVector & X,
 }
 // =============================================================================
 int
-KeoPreconditioner::
+KeoRegularized::
 ApplyInverseIlu_ ( const Epetra_MultiVector & X,
                          Epetra_MultiVector & Y
                  ) const
@@ -200,7 +200,7 @@ ApplyInverseIlu_ ( const Epetra_MultiVector & X,
 }
 // =============================================================================
 double
-KeoPreconditioner::
+KeoRegularized::
 NormInf () const
 {
     TEST_FOR_EXCEPT( "Not yet implemented." );
@@ -208,28 +208,28 @@ NormInf () const
 }
 // =============================================================================
 const char *
-KeoPreconditioner::
+KeoRegularized::
 Label () const
 {
     return "Kinetic energy operator for Ginzburg--Landau";
 }
 // =============================================================================
 bool
-KeoPreconditioner::
+KeoRegularized::
 UseTranspose () const
 {
     return useTranspose_;
 }
 // =============================================================================
 bool
-KeoPreconditioner::
+KeoRegularized::
 HasNormInf () const
 {
     return false;
 }
 // =============================================================================
 const Epetra_Comm &
-KeoPreconditioner::
+KeoRegularized::
 Comm () const
 {
     TEUCHOS_ASSERT( !comm_.is_null() );
@@ -237,7 +237,7 @@ Comm () const
 }
 // =============================================================================
 const Epetra_Map &
-KeoPreconditioner::
+KeoRegularized::
 OperatorDomainMap () const
 {
     TEUCHOS_ASSERT( !keoRegularized_.is_null() );
@@ -245,7 +245,7 @@ OperatorDomainMap () const
 }
 // =============================================================================
 const Epetra_Map &
-KeoPreconditioner::
+KeoRegularized::
 OperatorRangeMap () const
 {
     TEUCHOS_ASSERT( !keoRegularized_.is_null() );
@@ -253,7 +253,7 @@ OperatorRangeMap () const
 }
 // =============================================================================
 void
-KeoPreconditioner::
+KeoRegularized::
 rebuild()
 {
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
@@ -304,7 +304,7 @@ rebuild()
 }
 // =============================================================================
 void
-KeoPreconditioner::
+KeoRegularized::
 rebuild( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams
        )
 {
@@ -314,7 +314,7 @@ rebuild( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams
 }
 // =============================================================================
 void
-KeoPreconditioner::
+KeoRegularized::
 rebuildMl_()
 {
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
@@ -350,7 +350,7 @@ rebuildMl_()
 }
 // =============================================================================
 void
-KeoPreconditioner::
+KeoRegularized::
 rebuildIlu_()
 {
 #ifdef GINLA_TEUCHOS_TIME_MONITOR

@@ -23,7 +23,7 @@
 #include "Ginla_State.hpp"
 #include "Ginla_MagneticVectorPotential.hpp"
 #include "Ginla_KeoFactory.hpp"
-#include "Ginla_KeoPreconditioner.hpp"
+#include "Ginla_KeoRegularized.hpp"
 #include "Ginla_StkMesh.hpp"
 
 #include <Epetra_Map.h>
@@ -191,7 +191,7 @@ ModelEvaluator::
 create_WPrec() const
 {
   Teuchos::RCP<Epetra_Operator> keoPrec =
-          Teuchos::rcp( new Ginla::KeoPreconditioner( keoFactory_ ) );
+          Teuchos::rcp( new Ginla::KeoRegularized( keoFactory_ ) );
   // bool is answer to: "Prec is already inverted?"
   return Teuchos::rcp( new EpetraExt::ModelEvaluator::Preconditioner( keoPrec, false ) );
 }
@@ -332,8 +332,8 @@ evalModel( const InArgs  & inArgs,
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
       Teuchos::TimeMonitor tm(*fillPreconditionerTime_);
 #endif
-      Teuchos::RCP<Ginla::KeoPreconditioner> keoPrec =
-          Teuchos::rcp_dynamic_cast<Ginla::KeoPreconditioner>( WPrec_out, true );
+      Teuchos::RCP<Ginla::KeoRegularized> keoPrec =
+          Teuchos::rcp_dynamic_cast<Ginla::KeoRegularized>( WPrec_out, true );
       keoPrec->rebuild( mvpParams );
   }
 

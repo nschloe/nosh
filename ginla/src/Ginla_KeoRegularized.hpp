@@ -54,13 +54,13 @@ class Epetra_LinearProblem;
 // =============================================================================
 namespace Ginla {
 // =============================================================================
-class KeoPreconditioner: public Epetra_Operator
+class KeoRegularized: public Epetra_Operator
 {
 public:
-    KeoPreconditioner( const Teuchos::RCP<Ginla::KeoFactory> & keoFactory );
+    KeoRegularized( const Teuchos::RCP<Ginla::KeoFactory> & keoFactory );
 
     // Destructor.
-    ~KeoPreconditioner();
+    ~KeoRegularized();
 
     virtual int
     SetUseTranspose( bool UseTranspose );

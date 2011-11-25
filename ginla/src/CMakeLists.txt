@@ -5,7 +5,7 @@ SET ( ginla_SRCS
       Ginla_ModelEvaluator.cpp
       Ginla_JacobianOperator.cpp
       Ginla_KeoFactory.cpp
-      Ginla_KeoPreconditioner.cpp
+      Ginla_KeoRegularized.cpp
       Ginla_MagneticVectorPotential.cpp
       Ginla_StkMesh.cpp
       Ginla_StkMeshReader.cpp
