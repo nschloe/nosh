@@ -183,7 +183,7 @@ Teuchos::RCP<Epetra_Operator>
 ModelEvaluator::
 create_W() const
 {
-  return Teuchos::rcp( new Ginla::JacobianOperator( mesh_, thickness_, mvp_ ) );
+  return Teuchos::rcp( new Ginla::JacobianOperator( mesh_, thickness_, keoFactory_ ) );
 }
 // =============================================================================
 Teuchos::RCP<EpetraExt::ModelEvaluator::Preconditioner>

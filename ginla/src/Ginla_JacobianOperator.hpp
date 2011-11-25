@@ -47,10 +47,10 @@ namespace Ginla {
 class JacobianOperator : public Epetra_Operator
 {
 public:
-    JacobianOperator( const Teuchos::RCP<Ginla::StkMesh>                 & mesh,
-                      const Teuchos::RCP<const Epetra_Vector>            & thickness,
-                      const Teuchos::RCP<Ginla::MagneticVectorPotential> & mvp,
-                      const Teuchos::RCP<Epetra_Vector>                  & current_X = Teuchos::null
+    JacobianOperator( const Teuchos::RCP<const Ginla::StkMesh> & mesh,
+                      const Teuchos::RCP<const Epetra_Vector>  & thickness,
+                      const Teuchos::RCP<Ginla::KeoFactory>    & keoFactory,
+                      const Teuchos::RCP<Epetra_Vector>        & current_X = Teuchos::null
                     );
 
     // Destructor.
@@ -105,7 +105,7 @@ private:
     bool useTranspose_;
     const Epetra_Comm & comm_;
 
-    const Teuchos::RCP<Ginla::StkMesh> mesh_;
+    const Teuchos::RCP<const Ginla::StkMesh> mesh_;
     const Teuchos::RCP<const Epetra_Vector> thickness_;
     const Teuchos::RCP<Ginla::KeoFactory> keoFactory_;
     Teuchos::RCP<const Epetra_CrsMatrix> keoMatrix_;

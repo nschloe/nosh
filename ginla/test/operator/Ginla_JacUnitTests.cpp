@@ -12,6 +12,7 @@
 #include "Ginla_StkMesh.hpp"
 #include "Ginla_StkMeshReader.hpp"
 #include "Ginla_MagneticVectorPotential.hpp"
+#include "Ginla_KeoFactory.hpp"
 #include "Ginla_JacobianOperator.hpp"
 
 #include <Teuchos_UnitTestHarness.hpp>
@@ -55,9 +56,13 @@ TEUCHOS_UNIT_TEST( Ginla, JacHashes )
         Teuchos::rcp( new LOCA::ParameterVector() );
     mvpParameters->addParameter( "mu", mu );
 
+    // create a keo factory
+    Teuchos::RCP<Ginla::KeoFactory> keoFactory =
+        Teuchos::rcp( new Ginla::KeoFactory( mesh, thickness, mvp ) );
+
     // create the jacobian operator
     Teuchos::RCP<Ginla::JacobianOperator> jac =
-        Teuchos::rcp( new Ginla::JacobianOperator( mesh, thickness, mvp, z ) );
+        Teuchos::rcp( new Ginla::JacobianOperator( mesh, thickness, keoFactory, z ) );
 
     // Create test vectors.
     // (a) vector os ones
