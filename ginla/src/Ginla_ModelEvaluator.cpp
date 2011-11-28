@@ -300,6 +300,10 @@ evalModel( const InArgs  & inArgs,
 
   const double temperature = (*p_in)[3];
 
+//  EpetraExt::ModelEvaluator::Derivative d = outArgs.get_DfDp(0);i
+//  const Teuchos::RCP<Epetra_MultiVector> d = outArgs.get_DfDp(0).getMultiVector();
+//  TEUCHOS_ASSERT( d.is_null() );
+
   // compute F
   const Teuchos::RCP<Epetra_Vector> f_out = outArgs.get_f();
   if ( !f_out.is_null() )
@@ -401,18 +405,11 @@ computeF_ ( const Epetra_Vector                             & x,
       //
       double alpha = controlVolumes[k] * (*thickness_)[k]
                      * ( (1.0-temperature) - x[2*k]*x[2*k] - x[2*k+1]*x[2*k+1] );
-
       // real part
-      TEUCHOS_ASSERT_EQUALITY( 0, FVec.SumIntoMyValue( 2*k,
-                                                       0,
-                                                       alpha * x[2*k] )
-                             );
+      FVec[2*k]   += alpha * x[2*k];
       // imaginary part
-      TEUCHOS_ASSERT_EQUALITY( 0, FVec.SumIntoMyValue( 2*k+1,
-                                                       0,
-                                                       alpha * x[2*k+1] )
-                             );
-  }
+      FVec[2*k+1] += alpha * x[2*k+1];
+}
 
   return;
 }
