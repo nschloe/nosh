@@ -29,9 +29,14 @@
 
 #include <string>
 
+#include "Ginla_config.h"
+
 #include <Epetra_Comm.h>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Tuple.hpp>
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
+  #include <Teuchos_Time.hpp>
+#endif
 #include <Teuchos_Array.hpp>
 #include <Teuchos_SerialDenseMatrix.hpp>
 
@@ -143,6 +148,10 @@ public:
 
 protected:
 private:
+
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
+    const Teuchos::RCP<Teuchos::Time> computeFvmEntitiesTime_;
+#endif
 
     const Epetra_Comm & comm_;
 

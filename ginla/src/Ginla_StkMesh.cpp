@@ -43,6 +43,10 @@
 #ifdef HAVE_MPI
 #include <Epetra_MpiComm.h>
 #endif
+
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
+  #include <Teuchos_TimeMonitor.hpp>
+#endif
 // =============================================================================
 // typedefs
 typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorFieldType ;
@@ -56,6 +60,9 @@ StkMesh( const Epetra_Comm                               & comm,
          const Teuchos::RCP<stk::mesh::BulkData>         & bulkData,
          const Teuchos::RCP<VectorFieldType>             & coordinatesField
        ):
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
+computeFvmEntitiesTime_( Teuchos::TimeMonitor::getNewTimer("Ginla: StkMesh::computeFvmEntities") ),
+#endif
 comm_( comm ),
 metaData_( metaData ),
 meshData_( Teuchos::rcp( new stk::io::MeshData() ) ),
@@ -375,6 +382,10 @@ void
 StkMesh::
 computeFvmEntities_() const
 {
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
+  Teuchos::TimeMonitor tm(*computeFvmEntitiesTime_);
+#endif
+
 //
 // For edge generation an looping, refer to e-mail communication with Eric Cyr and Alan Williams
 // in April 2011.
@@ -451,12 +462,14 @@ computeFvmEntities_() const
       {
           const Point & x0 = localNodes[e0];
           const int gid0 = (*rel[e0].entity()).identifier() - 1;
-//          const int lid0 = nodesMap_->LID( gid0 );
+          const int lid0 = nodesOverlapMap_->LID( gid0 );
+          TEUCHOS_ASSERT_INEQUALITY( lid0, >=, 0 );
           for ( unsigned int e1=e0+1; e1<numLocalNodes; e1++ )
           {
               const Point & x1 = localNodes[e1];
               const int gid1 = (*rel[e1].entity()).identifier() - 1;
-//              const int lid1 = nodesMap_->LID( gid1 );
+              const int lid1 = nodesOverlapMap_->LID( gid1 );
+              TEUCHOS_ASSERT_INEQUALITY( lid1, >=, 0 );
 
               // Get the other nodes.
               Teuchos::Tuple<unsigned int,2> other = this->getOtherIndices_( e0, e1 );
@@ -536,8 +549,8 @@ computeFvmEntities_() const
 
               // Compute the contributions to the finite volumes of the adjacent edges.
               double pyramidVolume = 0.5*edgeLength * covolume / cellDimension;
-              TEUCHOS_ASSERT_EQUALITY( 0, cvOverlap->SumIntoGlobalValues( 1, &pyramidVolume, &gid0 ) );
-              TEUCHOS_ASSERT_EQUALITY( 0, cvOverlap->SumIntoGlobalValues( 1, &pyramidVolume, &gid1 ) );
+              (*cvOverlap)[lid0] += pyramidVolume;
+              (*cvOverlap)[lid1] += pyramidVolume;
           }
       }
   }
