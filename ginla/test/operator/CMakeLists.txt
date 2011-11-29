@@ -12,6 +12,7 @@ SET( OPERATORTEST_EXECUTABLE
 ADD_EXECUTABLE ( ${OPERATORTEST_EXECUTABLE}
                  Ginla_KeoUnitTests.cpp
                  Ginla_JacUnitTests.cpp
+                 Ginla_dfdpUnitTests.cpp
                  unitTestMain.cpp )
 
 # copy over the binary data

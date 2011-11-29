@@ -60,7 +60,7 @@ TEUCHOS_UNIT_TEST( Ginla, KeoHashes )
 
     // create the kinetic energy operator
     keoFactory->updateParameters( mvpParameters );
-    Teuchos::RCP<Epetra_CrsMatrix> keoMatrix = keoFactory->buildKeo();
+    Teuchos::RCP<Epetra_CrsMatrix> keoMatrix = keoFactory->buildKeo( Ginla::KeoFactory::MATRIX_TYPE_REGULAR );
 
     // Make sure the matrix is indeed positive definite, and not
     // negative definite. Belos needs that (2010-11-05).
