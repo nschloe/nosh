@@ -88,21 +88,18 @@ getMvpParameters() const
   return mvp_->getParameters();
 }
 // =============================================================================
-Teuchos::RCP<Epetra_CrsMatrix>
+void
 KeoFactory::
-buildKeo() const
+fillKeo( const Teuchos::RCP<Epetra_CrsMatrix> keoMatrix ) const
 {
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
   Teuchos::TimeMonitor tm(*buildKeoTime_);
 #endif
-
-  TEUCHOS_ASSERT( !keoGraph_.is_null() );
-
-  // create an zeroed-out matrix
-  Teuchos::RCP<Epetra_CrsMatrix> keoMatrix
-      = Teuchos::rcp( new Epetra_CrsMatrix( Copy, *keoGraph_ ) );
-  // TODO is this really necessary
+  // Zero-out the matrix
   TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->PutScalar( 0.0 ) );
+
+std::cout << std::setprecision(16);
+std::cout << "XXX ship building " << mvp_->getParameters()->getValue("mu") << std::endl;
 
   std::vector<stk::mesh::Entity*> cells;
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > edgeCoefficients;
@@ -287,8 +284,30 @@ double alpha;
   // calls FillComplete by default
 //  TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->GlobalAssemble() );
   TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->FillComplete() );
+}
+// =============================================================================
+Teuchos::RCP<Epetra_CrsMatrix>
+KeoFactory::
+buildKeo() const
+{
+  TEUCHOS_ASSERT( !keoGraph_.is_null() );
+
+  // create an zeroed-out matrix
+  Teuchos::RCP<Epetra_CrsMatrix> keoMatrix
+      = Teuchos::rcp( new Epetra_CrsMatrix( Copy, *keoGraph_ ) );
+
+  // Fill the matrix.
+  this->fillKeo( keoMatrix );
 
   return keoMatrix;
+}
+// =============================================================================
+Teuchos::RCP<const Epetra_CrsGraph>
+KeoFactory::
+getKeoGraph() const
+{
+  TEUCHOS_ASSERT( !keoGraph_.is_null() );
+  return keoGraph_;
 }
 // =============================================================================
 const Teuchos::RCP<Epetra_CrsGraph>

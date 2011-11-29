@@ -54,8 +54,9 @@ KeoRegularized( const Teuchos::RCP<Ginla::KeoFactory> & keoFactory
         useTranspose_ ( false ),
         comm_( Teuchos::rcpFromRef( keoFactory->getMesh()->getComm() ) ),
         keoFactory_( keoFactory ),
-        keoRegularized_( Teuchos::null ),
+        keoRegularized_( Teuchos::rcp( new Epetra_CrsMatrix( Copy, *(keoFactory_->getKeoGraph() )) ) ),
         keoMlPrec_ ( Teuchos::null ),
+        MlPrec_( Teuchos::null),
         keoIluProblem_( Teuchos::null ),
         keoIluSolver_( Teuchos::null ),
         invType_( INVERT_ML ),
@@ -261,7 +262,8 @@ rebuild()
 #endif
     // -------------------------------------------------------------------------
     // rebuild the keo
-    keoRegularized_ = keoFactory_->buildKeo();
+    keoFactory_->fillKeo( keoRegularized_ );
+//    keoRegularized_ = keoFactory_->buildKeo();
     keoRegularized_->Scale( -1.0 );
     // -------------------------------------------------------------------------
     // regularization
@@ -320,31 +322,44 @@ rebuildMl_()
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor tm(*timerRebuildMl_);
 #endif
-    // rebuild ML structure
-    Teuchos::ParameterList MLList;
-    ML_Epetra::SetDefaults( "SA", MLList );
-//     MLList.set("ML output", 0);
-    MLList.set("max levels", 10);
-    MLList.set("increasing or decreasing", "increasing");
-    MLList.set("aggregation: type", "Uncoupled");
-    MLList.set("smoother: type", "Chebyshev"); // "block Gauss-Seidel" "Chebyshev"
-//     MLList.set("aggregation: threshold", 0.0);
-    MLList.set("smoother: sweeps", 3);
-    MLList.set("smoother: pre or post", "both");
-    MLList.set("coarse: type", "Amesos-KLU");
-    MLList.set("PDE equations", 2);
+    // For reusing the ML structure, see
+    //  <http://trilinos.sandia.gov/packages/docs/dev/packages/ml/doc/html/classML__Epetra_1_1MultiLevelPreconditioner.html>:
+    if ( MlPrec_.is_null() || MlPrec_->IsPreconditionerComputed()==false )
+    {
+        // build ML structure
+        Teuchos::ParameterList MLList;
+        ML_Epetra::SetDefaults( "SA", MLList );
+//         MLList.set("ML output", 0);
+        MLList.set("max levels", 10);
+        MLList.set("increasing or decreasing", "increasing");
+        MLList.set("aggregation: type", "Uncoupled");
+        MLList.set("smoother: type", "Chebyshev"); // "block Gauss-Seidel" "Chebyshev"
+//         MLList.set("aggregation: threshold", 0.0);
+        MLList.set("smoother: sweeps", 3);
+        MLList.set("smoother: pre or post", "both");
+        MLList.set("coarse: type", "Amesos-KLU");
+        MLList.set("PDE equations", 2);
+        // reuse the multilevel hierarchy
+        MLList.set("reuse: enable", true);
 
-    TEUCHOS_ASSERT( !keoRegularized_.is_null() );
+        TEUCHOS_ASSERT( !keoRegularized_.is_null() );
 
-    Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> MLPrec =
-        Teuchos::rcp( new ML_Epetra::MultiLevelPreconditioner(*keoRegularized_, MLList) );
-    TEUCHOS_ASSERT( !MLPrec.is_null() );
-//     MLPrec->PrintUnused(0);
+        MlPrec_ =
+            Teuchos::rcp( new ML_Epetra::MultiLevelPreconditioner(*keoRegularized_, MLList) );
+    }
+    else
+    {
+        bool checkFiltering = true;
+        TEUCHOS_ASSERT_EQUALITY( 0, MlPrec_->ComputePreconditioner(checkFiltering) );
+        //TEUCHOS_ASSERT_EQUALITY( 0, MlPrec_->ReComputePreconditioner() );
+    }
+
+//    MlPrec_->PrintUnused(0);
 
     // Create the Belos preconditioned operator from the preconditioner.
     // NOTE:  This is necessary because Belos expects an operator to apply the
     //        preconditioner with Apply() NOT ApplyInverse().
-    keoMlPrec_ = Teuchos::rcp( new Belos::EpetraPrecOp( MLPrec ) );
+    keoMlPrec_ = Teuchos::rcp( new Belos::EpetraPrecOp( MlPrec_ ) );
 
     return;
 }

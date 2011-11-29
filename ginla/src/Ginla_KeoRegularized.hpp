@@ -51,6 +51,9 @@ namespace Belos {
 }
 class Amesos_BaseSolver;
 class Epetra_LinearProblem;
+namespace ML_Epetra {
+    class MultiLevelPreconditioner;
+}
 // =============================================================================
 namespace Ginla {
 // =============================================================================
@@ -129,9 +132,13 @@ private:
     const Teuchos::RCP<const Epetra_Comm> comm_;
 
     Teuchos::RCP<Ginla::KeoFactory> keoFactory_;
+    // Make sure the matrix pointer is never changed; ML's
+    // preconditioner generation depends on that.
+    //const Teuchos::RCP<Epetra_CrsMatrix> keoRegularized_;
     Teuchos::RCP<Epetra_CrsMatrix> keoRegularized_;
 
     Teuchos::RCP<Belos::EpetraPrecOp> keoMlPrec_;
+    Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> MlPrec_;
 
     Teuchos::RCP<Epetra_LinearProblem> keoIluProblem_;
     Teuchos::RCP<Amesos_BaseSolver> keoIluSolver_;

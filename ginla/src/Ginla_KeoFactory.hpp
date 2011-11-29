@@ -69,8 +69,14 @@ public:
     const Teuchos::RCP<const LOCA::ParameterVector>
     getMvpParameters() const;
 
+    void
+    fillKeo( const Teuchos::RCP<Epetra_CrsMatrix> keoMatrix ) const;
+
     Teuchos::RCP<Epetra_CrsMatrix>
     buildKeo() const;
+
+    Teuchos::RCP<const Epetra_CrsGraph>
+    getKeoGraph() const;
 
 protected:
 
