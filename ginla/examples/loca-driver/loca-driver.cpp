@@ -130,7 +130,7 @@ main ( int argc, char *argv[] )
         Ginla::StkMeshRead( *eComm, inputFilePath, data );
 
         // Cast the data into something more accessible.
-        Teuchos::RCP<Ginla::StkMesh>     &  mesh = data.get( "mesh", Teuchos::RCP<Ginla::StkMesh>() );
+        Teuchos::RCP<Ginla::StkMesh>     & mesh = data.get( "mesh", Teuchos::RCP<Ginla::StkMesh>() );
         Teuchos::RCP<Epetra_Vector>      & z = data.get( "psi", Teuchos::RCP<Epetra_Vector>() );
         Teuchos::RCP<Epetra_MultiVector> & mvpValues = data.get( "A", Teuchos::RCP<Epetra_MultiVector>() );
         Teuchos::RCP<Epetra_Vector>      & thickness = data.get( "thickness", Teuchos::RCP<Epetra_Vector>() );
@@ -164,7 +164,7 @@ main ( int argc, char *argv[] )
                                                          problemParameters,
                                                          thickness,
                                                          mvp,
-                                                         state
+                                                         z
                                                        )
                             );
 

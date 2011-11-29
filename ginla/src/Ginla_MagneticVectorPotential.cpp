@@ -98,6 +98,18 @@ getAEdgeMidpointProjection( const unsigned int cellIndex,
   return mu_ * edgeMidpointProjectionCache_[cellIndex][edgeIndex];
 }
 // ============================================================================
+double
+MagneticVectorPotential::
+getdAdMuEdgeMidpointProjection( const unsigned int cellIndex,
+                                const unsigned int edgeIndex
+                              ) const
+{
+  if ( !edgeMidpointProjectionCacheUpToDate_ )
+      this->initializeEdgeMidpointProjectionCache_();
+
+  return edgeMidpointProjectionCache_[cellIndex][edgeIndex];
+}
+// ============================================================================
 void
 MagneticVectorPotential::
 initializeEdgeMidpointProjectionCache_() const

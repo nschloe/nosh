@@ -58,7 +58,7 @@ TEUCHOS_UNIT_TEST( Ginla, dfdpTests )
     mvp = Teuchos::rcp ( new Ginla::MagneticVectorPotential ( mesh, mvpValues, problemParameters.get<double>("mu") ) );
 
     Teuchos::RCP<Ginla::ModelEvaluator> modelEval =
-        Teuchos::rcp( new Ginla::ModelEvaluator( mesh, problemParameters, thickness, mvp ) );
+        Teuchos::rcp( new Ginla::ModelEvaluator( mesh, problemParameters, thickness, mvp, z ) );
 
     // Get a finite-difference approximation of df/dp.
     EpetraExt::ModelEvaluator::InArgs inArgs = modelEval->createInArgs();
@@ -72,9 +72,9 @@ TEUCHOS_UNIT_TEST( Ginla, dfdpTests )
         modelEval->get_p_names(0);
 
     // create parameter vector
-    double eps = 1.0e-9;
+    double eps = 1.0e-6;
     double mu = problemParameters.get<double>("mu");
-    problemParameters.set( "mu", mu+eps );
+    problemParameters.set( "mu", mu-eps );
     for ( int k=0; k<p->MyLength(); k++ )
        (*p)[k] = problemParameters.get<double>( (*pNames)[k] );
     inArgs.set_p( 0, p );
@@ -82,7 +82,7 @@ TEUCHOS_UNIT_TEST( Ginla, dfdpTests )
     outArgs.set_f( f0 );
     modelEval->evalModel( inArgs, outArgs );
 
-    problemParameters.set( "mu", mu-eps );
+    problemParameters.set( "mu", mu+eps );
     for ( int k=0; k<p->MyLength(); k++ )
        (*p)[k] = problemParameters.get<double>( (*pNames)[k] );
     inArgs.set_p( 0, p );
@@ -102,14 +102,16 @@ TEUCHOS_UNIT_TEST( Ginla, dfdpTests )
     Teuchos::RCP<Epetra_Vector> dfdp = Teuchos::rcp( new Epetra_Vector( z->Map() ) );
     EpetraExt::ModelEvaluator::Derivative deriv( dfdp, EpetraExt::ModelEvaluator::DERIV_MV_BY_COL );
     outArgs.set_DfDp( 0, deriv );
+    Teuchos::RCP<Epetra_Vector> nullV = Teuchos::null;
+    outArgs.set_f( nullV );
     modelEval->evalModel( inArgs, outArgs );
 
-    // compare the two!
+    // compare the two
     f1->Update( -1.0, *dfdp, 1.0 );
 
     double r[1];
     f1->NormInf( r );
-    TEST_COMPARE(r[0], <, 1.0e-12 );
+    TEST_COMPARE(r[0], <, 1.0e-9 );
 
     return;
 }

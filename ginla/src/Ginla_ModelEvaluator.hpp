@@ -56,11 +56,11 @@ class ModelEvaluator: public EpetraExt::ModelEvaluator
 public:
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   //! Constructor without initial guess.
-  ModelEvaluator ( const Teuchos::RCP<Ginla::StkMesh>      & mesh,
+  ModelEvaluator ( const Teuchos::RCP<Ginla::StkMesh>                 & mesh,
                    const Teuchos::ParameterList                       & params,
                    const Teuchos::RCP<const Epetra_Vector>            & thickness,
                    const Teuchos::RCP<Ginla::MagneticVectorPotential> & mvp,
-                   const Teuchos::RCP<Ginla::State>        & initialState
+                   const Teuchos::RCP<Epetra_Vector>                  & initialX
                  );
 
   // Destructor
@@ -130,6 +130,12 @@ private:
               const double                                      temperature,
                     Epetra_Vector                             & FVec
             ) const;
+
+  void
+  computedFdMu_ ( const Epetra_Vector                             & x,
+                  const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
+                  Epetra_MultiVector                              & FVec
+                ) const;
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 protected:
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -162,6 +168,7 @@ private:
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
    const Teuchos::RCP<Teuchos::Time> evalModelTime_;
    const Teuchos::RCP<Teuchos::Time> computeFTime_;
+   const Teuchos::RCP<Teuchos::Time> computedFdpTime_;
    const Teuchos::RCP<Teuchos::Time> fillJacobianTime_;
    const Teuchos::RCP<Teuchos::Time> fillPreconditionerTime_;
 #endif

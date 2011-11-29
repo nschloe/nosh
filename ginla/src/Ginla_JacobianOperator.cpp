@@ -29,17 +29,17 @@
 namespace Ginla {
 // =============================================================================
 JacobianOperator::
-JacobianOperator( const Teuchos::RCP<const Ginla::StkMesh>  & mesh,
-                  const Teuchos::RCP<const Epetra_Vector>   & thickness,
-                  const Teuchos::RCP<Ginla::KeoFactory>     & keoFactory,
-                  const Teuchos::RCP<Epetra_Vector>         & current_X
+JacobianOperator( const Teuchos::RCP<const Ginla::StkMesh> & mesh,
+                  const Teuchos::RCP<const Epetra_Vector>  & thickness,
+                  const Teuchos::RCP<Ginla::KeoFactory>    & keoFactory,
+                  const Teuchos::RCP<Epetra_Vector>        & current_X
                 ):
         useTranspose_( false ),
         comm_( mesh->getComm() ),
         mesh_( mesh ),
         thickness_( thickness ),
         keoFactory_( keoFactory ),
-        keoMatrix_( keoFactory_->buildKeo() ),
+        keoMatrix_( keoFactory_->buildKeo( KeoFactory::MATRIX_TYPE_REGULAR ) ),
         current_X_ ( current_X ),
         temperature_( 0.0 ),
         isDiagsUpToDate_( false ),
@@ -205,7 +205,7 @@ rebuild( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
 
     // rebuild the keo
     keoFactory_->updateParameters( mvpParams );
-    keoMatrix_ = keoFactory_->buildKeo();
+    keoMatrix_ = keoFactory_->buildKeo( KeoFactory::MATRIX_TYPE_REGULAR );
 
     return;
 }

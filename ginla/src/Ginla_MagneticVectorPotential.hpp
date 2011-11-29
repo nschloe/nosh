@@ -56,6 +56,11 @@ public:
                               const unsigned int edgeIndex
                             ) const;
 
+  double
+  getdAdMuEdgeMidpointProjection( const unsigned int cellIndex,
+                                  const unsigned int edgeIndex
+                                ) const;
+
 protected:
 private:
   void

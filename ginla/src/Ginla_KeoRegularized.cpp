@@ -262,7 +262,7 @@ rebuild()
 #endif
     // -------------------------------------------------------------------------
     // rebuild the keo
-    keoFactory_->fillKeo( keoRegularized_ );
+    keoFactory_->fillKeo( keoRegularized_, KeoFactory::MATRIX_TYPE_REGULAR );
 //    keoRegularized_ = keoFactory_->buildKeo();
     keoRegularized_->Scale( -1.0 );
     // -------------------------------------------------------------------------

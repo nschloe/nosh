@@ -147,7 +147,7 @@ int main ( int argc, char *argv[] )
                                                        problemParameters,
                                                        thickness,
                                                        mvp,
-                                                       state
+                                                       z
                                                      )
                           );
 
@@ -385,7 +385,7 @@ int main ( int argc, char *argv[] )
       // Now, solve the problem and return the responses
       piro->evalModel(inArgs, outArgs);
       // Make sure it finsihsed without error.
-      TEUCHOS_ASSERT( !outArgs.isFailed() );
+      //TEUCHOS_ASSERT( !outArgs.isFailed() );
 
       // manually release LOCA stepper
 #ifdef HAVE_LOCA_ANASAZI

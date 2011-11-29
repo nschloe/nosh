@@ -90,7 +90,9 @@ getMvpParameters() const
 // =============================================================================
 void
 KeoFactory::
-fillKeo( const Teuchos::RCP<Epetra_CrsMatrix> keoMatrix ) const
+fillKeo( const Teuchos::RCP<Epetra_CrsMatrix> keoMatrix,
+         const EMatrixType matrixType
+       ) const
 {
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
   Teuchos::TimeMonitor tm(*buildKeoTime_);
@@ -206,9 +208,30 @@ double alpha;
               // Filling the MVP cache takes another 50% of the time in this whole function.
               aInt = mvp_->getAEdgeMidpointProjection( k, edgeIndex );
 }
-//              Epetra_SerialDenseMatrix values( 4, 4 );
-              double alphaCosAInt = alpha * cos(aInt);
-              double alphaSinAInt = alpha * sin(aInt);
+              double c, s, d;
+              switch ( matrixType )
+              {
+                  case MATRIX_TYPE_REGULAR: // no derivative
+                  {
+                      c = alpha * cos(aInt);
+                      s = alpha * sin(aInt);
+                      d = - alpha;
+                      break;
+                  }
+                  case MATRIX_TYPE_DMU: // dK/dmu
+                  {
+                      double dAdMuInt = mvp_->getdAdMuEdgeMidpointProjection( k, edgeIndex );
+                      c = - alpha * dAdMuInt * sin(aInt);
+                      s =   alpha * dAdMuInt * cos(aInt);
+                      d = 0.0;
+                      break;
+                  }
+                  default:
+                      TEST_FOR_EXCEPT_MSG( true,
+                                           "Illegal matrix type \"" << matrixType << "\"."
+                                         );
+              }
+
 
 {
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
@@ -226,25 +249,6 @@ double alpha;
               indices[2] = 2*gid[1];
               indices[3] = 2*gid[1]+1;
 
-/*              values(0,0) = - alpha;
-              values(0,1) = 0.0;
-              values(1,0) = 0.0;
-              values(1,1) = - alpha;
-
-              values(0,2) =   alphaCosAInt;
-              values(0,3) =   alphaSinAInt;
-              values(1,2) = - alphaSinAInt;
-              values(1,3) =   alphaCosAInt;
-
-              values(2,0) =   alphaCosAInt;
-              values(2,1) = - alphaSinAInt;
-              values(3,0) =   alphaSinAInt;
-              values(3,1) =   alphaCosAInt;
-
-              values(2,2) = - alpha;
-              values(2,3) = 0.0;
-              values(3,2) = 0.0;
-              values(3,3) = - alpha;*/
 }
 {
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
@@ -253,25 +257,25 @@ double alpha;
               // sum it all in!
 //              TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->SumIntoGlobalValues ( indices, values ) );
               double v[4];
-              v[0] = -alpha;
+              v[0] = d;
               v[1] = 0.0;
-              v[2] = alphaCosAInt;
-              v[3] = alphaSinAInt;
+              v[2] = c;
+              v[3] = s;
               TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->SumIntoGlobalValues ( indices[0], 4, v, indices ) );
               v[0] = 0.0;
-              v[1] = -alpha;
-              v[2] = -alphaSinAInt;
-              v[3] = alphaCosAInt;
+              v[1] = d;
+              v[2] = -s;
+              v[3] = c;
               TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->SumIntoGlobalValues ( indices[1], 4, v, indices ) );
-              v[0] = alphaCosAInt;
-              v[1] = -alphaSinAInt;
-              v[2] = -alpha;
+              v[0] = c;
+              v[1] = -s;
+              v[2] = d;
               v[3] = 0.0;
               TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->SumIntoGlobalValues ( indices[2], 4, v, indices ) );
-              v[0] = alphaSinAInt;
-              v[1] = alphaCosAInt;
+              v[0] = s;
+              v[1] = c;
               v[2] = 0.0;
-              v[3] = -alpha;
+              v[3] = d;
               TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->SumIntoGlobalValues ( indices[3], 4, v, indices ) );
 }
 
@@ -288,7 +292,7 @@ double alpha;
 // =============================================================================
 Teuchos::RCP<Epetra_CrsMatrix>
 KeoFactory::
-buildKeo() const
+buildKeo( const EMatrixType matrixType ) const
 {
   TEUCHOS_ASSERT( !keoGraph_.is_null() );
 
@@ -297,7 +301,7 @@ buildKeo() const
       = Teuchos::rcp( new Epetra_CrsMatrix( Copy, *keoGraph_ ) );
 
   // Fill the matrix.
-  this->fillKeo( keoMatrix );
+  this->fillKeo( keoMatrix, matrixType );
 
   return keoMatrix;
 }

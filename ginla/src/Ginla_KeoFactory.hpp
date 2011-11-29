@@ -35,6 +35,7 @@
   #include <Teuchos_Time.hpp>
 #endif
 #include <Teuchos_Tuple.hpp>
+
 #include <Epetra_CrsGraph.h>
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_LinearProblem.h>
@@ -50,6 +51,11 @@ namespace Ginla {
 // =============================================================================
 class KeoFactory
 {
+public:
+    enum EMatrixType { MATRIX_TYPE_REGULAR,
+                       MATRIX_TYPE_DMU
+                     };
+
 public:
     KeoFactory( const Teuchos::RCP<const Ginla::StkMesh>      & mesh,
                 const Teuchos::RCP<const Epetra_Vector>            & thickness,
@@ -70,10 +76,12 @@ public:
     getMvpParameters() const;
 
     void
-    fillKeo( const Teuchos::RCP<Epetra_CrsMatrix> keoMatrix ) const;
+    fillKeo( const Teuchos::RCP<Epetra_CrsMatrix> keoMatrix,
+             const EMatrixType matrixType
+           ) const;
 
     Teuchos::RCP<Epetra_CrsMatrix>
-    buildKeo() const;
+    buildKeo( const EMatrixType matrixType ) const;
 
     Teuchos::RCP<const Epetra_CrsGraph>
     getKeoGraph() const;
