@@ -21,6 +21,7 @@
 // includes
 #include "Ginla_KeoFactory.hpp"
 #include "Ginla_StkMesh.hpp"
+#include "Ginla_Helpers.hpp"
 
 #include <Epetra_SerialDenseMatrix.h>
 #include <Epetra_Comm.h>
@@ -54,7 +55,11 @@ KeoFactory( const Teuchos::RCP<const Ginla::StkMesh>           & mesh,
         mesh_ ( mesh ),
         thickness_( thickness ),
         mvp_( mvp ),
-        keoGraph_( this->buildKeoGraph_() ) // build the graph immediately
+        keoGraph_( this->buildKeoGraph_() ), // build the graph immediately
+        keo_( Teuchos::rcp( new Epetra_CrsMatrix( Copy, *keoGraph_ ) ) ),
+        keoBuildParameters_( Teuchos::null ),
+        keoDMu_( Teuchos::rcp( new Epetra_CrsMatrix( Copy, *keoGraph_ ) ) ),
+        keoDMuBuildParameters_( Teuchos::null )
 {
 }
 // =============================================================================
@@ -77,7 +82,7 @@ updateParameters( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams
 {
   // set the parameters
   TEUCHOS_ASSERT( !mvpParams.is_null() );
-  bool valuesChanged = mvp_->setParameters( *mvpParams );
+  mvp_->setParameters( *mvpParams );
   return;
 }
 // =============================================================================
@@ -90,18 +95,15 @@ getMvpParameters() const
 // =============================================================================
 void
 KeoFactory::
-fillKeo( const Teuchos::RCP<Epetra_CrsMatrix> keoMatrix,
-         const EMatrixType matrixType
-       ) const
+fillKeo_( const Teuchos::RCP<Epetra_CrsMatrix> keoMatrix,
+          const EMatrixType matrixType
+        ) const
 {
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
   Teuchos::TimeMonitor tm(*buildKeoTime_);
 #endif
   // Zero-out the matrix
   TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->PutScalar( 0.0 ) );
-
-std::cout << std::setprecision(16);
-std::cout << "XXX ship building " << mvp_->getParameters()->getValue("mu") << std::endl;
 
   std::vector<stk::mesh::Entity*> cells;
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > edgeCoefficients;
@@ -286,24 +288,49 @@ double alpha;
   }
 
   // calls FillComplete by default
-//  TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->GlobalAssemble() );
   TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->FillComplete() );
+
+  return;
 }
 // =============================================================================
 Teuchos::RCP<Epetra_CrsMatrix>
 KeoFactory::
-buildKeo( const EMatrixType matrixType ) const
+buildKeo_( const EMatrixType matrixType ) const
 {
   TEUCHOS_ASSERT( !keoGraph_.is_null() );
 
   // create an zeroed-out matrix
-  Teuchos::RCP<Epetra_CrsMatrix> keoMatrix
-      = Teuchos::rcp( new Epetra_CrsMatrix( Copy, *keoGraph_ ) );
+  Teuchos::RCP<Epetra_CrsMatrix> keoMatrix =
+      Teuchos::rcp( new Epetra_CrsMatrix( Copy, *keoGraph_ ) );
 
   // Fill the matrix.
-  this->fillKeo( keoMatrix, matrixType );
+  this->fillKeo_( keoMatrix, matrixType );
 
   return keoMatrix;
+}
+// =============================================================================
+Teuchos::RCP<const Epetra_CrsMatrix>
+KeoFactory::
+getKeo() const
+{
+    if ( !Ginla::Helpers::locaParameterVectorsEqual( keoBuildParameters_, mvp_->getParameters() ) )
+    {
+        this->fillKeo_( keo_, MATRIX_TYPE_REGULAR );
+        keoBuildParameters_ = Teuchos::rcp( mvp_->getParameters()->clone() );
+    }
+    return keo_;
+}
+// =============================================================================
+Teuchos::RCP<const Epetra_CrsMatrix>
+KeoFactory::
+getKeoDMu() const
+{
+    if ( !Ginla::Helpers::locaParameterVectorsEqual( keoDMuBuildParameters_, mvp_->getParameters() ) )
+    {
+        this->fillKeo_( keoDMu_, MATRIX_TYPE_DMU );
+        keoDMuBuildParameters_ = Teuchos::rcp( mvp_->getParameters()->clone() );
+    }
+    return keoDMu_;
 }
 // =============================================================================
 Teuchos::RCP<const Epetra_CrsGraph>

@@ -46,20 +46,17 @@ MagneticVectorPotential::
 {
 }
 // ============================================================================
-bool
+void
 MagneticVectorPotential::
 setParameters( const LOCA::ParameterVector & p )
 {
-    bool valuesChanged = false;
-
     if (p.isParameter( "mu" ))
         if ( mu_ != p.getValue ( "mu" ) )
         {
             mu_ = p.getValue ( "mu" );
-            valuesChanged = true;
         }
 
-    return valuesChanged;
+    return;
 }
 // ============================================================================
 Teuchos::RCP<LOCA::ParameterVector>

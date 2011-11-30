@@ -56,6 +56,11 @@ namespace Helpers
                                 const std::string           & labelPrepend = ""
                               );
 
+  bool
+  locaParameterVectorsEqual( const Teuchos::RCP<const LOCA::ParameterVector> & a,
+                             const Teuchos::RCP<const LOCA::ParameterVector> & b
+                           );
+
   unsigned int
   numDigits ( const int i );
 

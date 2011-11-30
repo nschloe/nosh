@@ -106,6 +106,35 @@ appendToTeuchosParameterList( Teuchos::ParameterList      & p,
   return;
 }
 // ============================================================================
+bool
+Helpers::
+locaParameterVectorsEqual( const Teuchos::RCP<const LOCA::ParameterVector> & a,
+                           const Teuchos::RCP<const LOCA::ParameterVector> & b
+                         )
+{
+  if ( a.is_null() || b.is_null() )
+      return false;
+
+  int aLength = a->length();
+  int bLength = b->length();
+  if ( aLength != bLength )
+      return false;
+
+  double tol = 1.0e-15;
+  const std::vector<string> names = a->getNamesVector();
+  for( int k=0; k<aLength; k++ )
+  {
+      double aVal = a->getValue( k );
+      // If the parameter names[k] doesn't exist in b,
+      // this throws an exception.
+      double bVal = b->getValue( names[k] );
+      if ( fabs(aVal-bVal) > tol )
+          return false;
+  }
+
+  return true;
+}
+// ============================================================================
 unsigned int
 Helpers::
 numDigits ( const int i )

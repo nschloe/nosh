@@ -261,8 +261,8 @@ rebuild()
     Teuchos::TimeMonitor tm(*timerRebuild_);
 #endif
     // -------------------------------------------------------------------------
-    // rebuild the keo
-    keoFactory_->fillKeo( keoRegularized_, KeoFactory::MATRIX_TYPE_REGULAR );
+    // Copy over the matrix.
+    *keoRegularized_ = *(keoFactory_->getKeo());
 //    keoRegularized_ = keoFactory_->buildKeo();
     keoRegularized_->Scale( -1.0 );
     // -------------------------------------------------------------------------

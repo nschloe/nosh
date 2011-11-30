@@ -383,7 +383,12 @@ int main ( int argc, char *argv[] )
       EpetraExt::ModelEvaluator::OutArgs outArgs = piro->createOutArgs();
 
       // Now, solve the problem and return the responses
+      const Teuchos::RCP<Teuchos::Time> piroSolveTime =
+          Teuchos::TimeMonitor::getNewTimer("Piro total solve time");;
+      {
+      Teuchos::TimeMonitor tm(*piroSolveTime);
       piro->evalModel(inArgs, outArgs);
+      }
       // Make sure it finsihsed without error.
       //TEUCHOS_ASSERT( !outArgs.isFailed() );
 

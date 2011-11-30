@@ -75,22 +75,28 @@ public:
     const Teuchos::RCP<const LOCA::ParameterVector>
     getMvpParameters() const;
 
-    void
-    fillKeo( const Teuchos::RCP<Epetra_CrsMatrix> keoMatrix,
-             const EMatrixType matrixType
-           ) const;
-
-    Teuchos::RCP<Epetra_CrsMatrix>
-    buildKeo( const EMatrixType matrixType ) const;
-
     Teuchos::RCP<const Epetra_CrsGraph>
     getKeoGraph() const;
+
+    Teuchos::RCP<const Epetra_CrsMatrix>
+    getKeo() const;
+
+    Teuchos::RCP<const Epetra_CrsMatrix>
+    getKeoDMu() const;
 
 protected:
 
 private:
     const Teuchos::RCP<Epetra_CrsGraph>
     buildKeoGraph_() const;
+
+    Teuchos::RCP<Epetra_CrsMatrix>
+    buildKeo_( const EMatrixType matrixType ) const;
+
+    void
+    fillKeo_( const Teuchos::RCP<Epetra_CrsMatrix> keoMatrix,
+              const EMatrixType matrixType
+            ) const;
 
 private:
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
@@ -107,6 +113,10 @@ private:
     const Teuchos::RCP<const Epetra_Vector> thickness_;
     const Teuchos::RCP<Ginla::MagneticVectorPotential> mvp_;
     const Teuchos::RCP<const Epetra_CrsGraph> keoGraph_;
+    const Teuchos::RCP<Epetra_CrsMatrix> keo_;
+    mutable Teuchos::RCP<LOCA::ParameterVector> keoBuildParameters_;
+    const Teuchos::RCP<Epetra_CrsMatrix> keoDMu_;
+    mutable Teuchos::RCP<LOCA::ParameterVector> keoDMuBuildParameters_;
 };
 // =============================================================================
 } // namespace Ginla

@@ -358,7 +358,7 @@ computeF_ ( const Epetra_Vector                             & x,
 {
   // build the KEO
   keoFactory_->updateParameters( mvpParams );
-  const Teuchos::RCP<const Epetra_CrsMatrix> keoMatrix = keoFactory_->buildKeo( KeoFactory::MATRIX_TYPE_REGULAR );
+  const Teuchos::RCP<const Epetra_CrsMatrix> keoMatrix = keoFactory_->getKeo();
 
   // compute FVec = K*x
   TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->Apply( x, FVec ) );
@@ -429,7 +429,7 @@ computedFdMu_ ( const Epetra_Vector                             & x,
   // build the KEO
   keoFactory_->updateParameters( mvpParams );
   const Teuchos::RCP<const Epetra_CrsMatrix> dKdMuMatrix =
-      keoFactory_->buildKeo( KeoFactory::MATRIX_TYPE_DMU );
+      keoFactory_->getKeoDMu();
 
   // compute FVec = K*x
   TEUCHOS_ASSERT_EQUALITY( 0, dKdMuMatrix->Apply( x, FVec ) );

@@ -41,8 +41,7 @@ public:
   ~MagneticVectorPotential();
 
   //! Sets the parameters in this module.
-  //! @return Indicates whether the internal values have changed.
-  bool
+  void
   setParameters( const LOCA::ParameterVector & p );
 
   Teuchos::RCP<LOCA::ParameterVector>

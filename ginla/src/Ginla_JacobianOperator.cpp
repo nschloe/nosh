@@ -39,7 +39,7 @@ JacobianOperator( const Teuchos::RCP<const Ginla::StkMesh> & mesh,
         mesh_( mesh ),
         thickness_( thickness ),
         keoFactory_( keoFactory ),
-        keoMatrix_( keoFactory_->buildKeo( KeoFactory::MATRIX_TYPE_REGULAR ) ),
+        keoMatrix_( keoFactory_->getKeo() ),
         current_X_ ( current_X ),
         temperature_( 0.0 ),
         isDiagsUpToDate_( false ),
@@ -77,7 +77,7 @@ Apply ( const Epetra_MultiVector & X,
     // K*psi
     TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix_->Apply( X, Y ) );
 
-    const Epetra_Vector & controlVolumes =  *(mesh_->getControlVolumes());
+    const Epetra_Vector & controlVolumes = *(mesh_->getControlVolumes());
     int numMyPoints = controlVolumes.MyLength();
 
     TEUCHOS_ASSERT_EQUALITY( 2*numMyPoints, X.MyLength() );
@@ -205,7 +205,7 @@ rebuild( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
 
     // rebuild the keo
     keoFactory_->updateParameters( mvpParams );
-    keoMatrix_ = keoFactory_->buildKeo( KeoFactory::MATRIX_TYPE_REGULAR );
+    keoMatrix_ = keoFactory_->getKeo();
 
     return;
 }
