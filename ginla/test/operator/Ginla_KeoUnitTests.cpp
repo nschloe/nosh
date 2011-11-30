@@ -60,11 +60,7 @@ TEUCHOS_UNIT_TEST( Ginla, KeoHashes )
 
     // create the kinetic energy operator
     keoFactory->updateParameters( mvpParameters );
-    Teuchos::RCP<Epetra_CrsMatrix> keoMatrix = keoFactory->buildKeo( Ginla::KeoFactory::MATRIX_TYPE_REGULAR );
-
-    // Make sure the matrix is indeed positive definite, and not
-    // negative definite. Belos needs that (2010-11-05).
-    keoMatrix->Scale( -1.0 );
+    const Teuchos::RCP<const Epetra_CrsMatrix> keoMatrix = keoFactory->getKeo();
 
     // Compute matrix norms as hashes.
     // Don't check for NormFrobenius() as this one doesn't work for matrices
@@ -89,7 +85,7 @@ TEUCHOS_UNIT_TEST( Ginla, KeoHashes )
     keoMatrix->Apply( e, Ke );
     double sum[1];
     e.Dot( Ke, sum );
-    double controlSum = 0.00844428504187249;
+    double controlSum = -0.00844428504187249;
     TEST_FLOATING_EQUALITY( sum[0], controlSum, 1.0e-12 );
 
     // Sum over all the "real parts" of the matrix.
@@ -110,7 +106,7 @@ TEUCHOS_UNIT_TEST( Ginla, KeoHashes )
     Epetra_Vector t0( map );
     keoMatrix->Apply( s0, t0 );
     s0.Dot( t0, sum );
-    double controlSumReal = 0.0042221425209367988;
+    double controlSumReal = -0.0042221425209367988;
     TEST_FLOATING_EQUALITY( sum[0], controlSumReal, 1.0e-12 );
 
     // Sum over all the "imaginary parts" of the matrix.
