@@ -70,7 +70,7 @@ testKeo( const std::string & inputFileNameBase,
     // Cast the data into something more accessible.
     Teuchos::RCP<Ginla::StkMesh>     & mesh = data.get( "mesh", Teuchos::RCP<Ginla::StkMesh>() );
     Teuchos::RCP<Epetra_Vector>      & z = data.get( "psi", Teuchos::RCP<Epetra_Vector>() );
-    Teuchos::RCP<Epetra_MultiVector> & mvpValues = data.get( "A", Teuchos::RCP<Epetra_MultiVector>() );
+    Teuchos::RCP<const Epetra_MultiVector> & mvpValues = data.get( "A", Teuchos::RCP<const Epetra_MultiVector>() );
     Teuchos::RCP<Epetra_Vector>      & thickness = data.get( "thickness", Teuchos::RCP<Epetra_Vector>() );
     Teuchos::ParameterList           & problemParameters = data.get( "Problem parameters", Teuchos::ParameterList() );
 
@@ -150,6 +150,46 @@ testKeo( const std::string & inputFileNameBase,
     return;
 }
 // ===========================================================================
+TEUCHOS_UNIT_TEST( Ginla, KeoRectangleSmallHashes )
+{
+    std::string inputFileNameBase = "rectanglesmall";
+
+    double mu = 1.0e-2;
+    double controlNormOne = 10.2246588065616;
+    double controlNormInf = 10.2246588065616;
+    double controlSum     = -0.0126243424616103;
+    double controlSumReal = -0.00631217123080605;
+
+    testKeo( inputFileNameBase,
+             mu,
+             controlNormOne,
+             controlNormInf,
+             controlSum,
+             controlSumReal,
+             out,
+             success );
+}
+// ============================================================================
+TEUCHOS_UNIT_TEST( Ginla, KeoPacmanHashes )
+{
+    std::string inputFileNameBase = "pacman";
+
+    double mu = 1.0e-2;
+    double controlNormOne = 10.0005208574565;
+    double controlNormInf = 10.0005208574565;
+    double controlSum     = -0.740885289431222;
+    double controlSumReal = -0.370442644715617;
+
+    testKeo( inputFileNameBase,
+             mu,
+             controlNormOne,
+             controlNormInf,
+             controlSum,
+             controlSumReal,
+             out,
+             success );
+}
+// ============================================================================
 TEUCHOS_UNIT_TEST( Ginla, KeoCubeSmallHashes )
 {
     std::string inputFileNameBase = "cubesmall";

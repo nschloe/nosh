@@ -17,6 +17,18 @@ ADD_EXECUTABLE ( ${OPERATORTEST_EXECUTABLE}
 
 # copy over the binary data
 if( NOT ${CMAKE_CURRENT_SOURCE_DIR} EQUAL ${CMAKE_CURRENT_BINARY_DIR} )
+    FILE( COPY "${CMAKE_CURRENT_SOURCE_DIR}/data/rectanglesmall.e"
+          DESTINATION ${CMAKE_CURRENT_BINARY_DIR} )
+    FILE( COPY "${CMAKE_CURRENT_SOURCE_DIR}/data/rectanglesmall-balanced.par.2.0"
+          DESTINATION ${CMAKE_CURRENT_BINARY_DIR} )
+    FILE( COPY "${CMAKE_CURRENT_SOURCE_DIR}/data/rectanglesmall-balanced.par.2.1"
+          DESTINATION ${CMAKE_CURRENT_BINARY_DIR} )
+    FILE( COPY "${CMAKE_CURRENT_SOURCE_DIR}/data/pacman.e"
+          DESTINATION ${CMAKE_CURRENT_BINARY_DIR} )
+    FILE( COPY "${CMAKE_CURRENT_SOURCE_DIR}/data/pacman-balanced.par.2.0"
+          DESTINATION ${CMAKE_CURRENT_BINARY_DIR} )
+    FILE( COPY "${CMAKE_CURRENT_SOURCE_DIR}/data/pacman-balanced.par.2.1"
+          DESTINATION ${CMAKE_CURRENT_BINARY_DIR} )
     FILE( COPY "${CMAKE_CURRENT_SOURCE_DIR}/data/cubesmall.e"
           DESTINATION ${CMAKE_CURRENT_BINARY_DIR} )
     FILE( COPY "${CMAKE_CURRENT_SOURCE_DIR}/data/cubesmall-balanced.par.2.0"
