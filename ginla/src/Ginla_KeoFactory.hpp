@@ -108,6 +108,12 @@ private:
     const Teuchos::RCP<Teuchos::Time> buildKeoTime4_;
     const Teuchos::RCP<Teuchos::Time> buildKeoTime5_;
     const Teuchos::RCP<Teuchos::Time> buildKeoTime6_;
+    const Teuchos::RCP<Teuchos::Time> buildKeoTime7_;
+    const Teuchos::RCP<Teuchos::Time> buildKeoTime8_;
+    const Teuchos::RCP<Teuchos::Time> buildKeoTime9_;
+    const Teuchos::RCP<Teuchos::Time> buildKeoTime10_;
+    const Teuchos::RCP<Teuchos::Time> buildKeoTime11_;
+    const Teuchos::RCP<Teuchos::Time> buildKeoTime12_;
 #endif
     const Teuchos::RCP<const Ginla::StkMesh> mesh_;
     const Teuchos::RCP<const Epetra_Vector> thickness_;

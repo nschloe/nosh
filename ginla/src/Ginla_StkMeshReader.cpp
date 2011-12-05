@@ -237,7 +237,17 @@ read( const Epetra_Comm      & comm,
 
   // create the state
   data.set( "psi", this->createPsi_( mesh, psir_field, psii_field ) );
-  data.set( "A", this->createMvp_( mesh, mvpField ) );
+
+  const Teuchos::RCP<const Epetra_MultiVector> mvp
+      = this->createMvp_( mesh, mvpField );
+  // check that it's not overall 0
+  double r[3];
+  mvp->NormInf( r );
+  double tol=1.0e-9;
+  TEST_FOR_EXCEPT_MSG( r[0]<tol && r[1]<tol && r[2]<tol,
+                       "The magnetic vector potential in the file \""
+                       << fileName_ << "\" seems to be 0 throughout. Abort." );
+  data.set( "A", mvp );
 
   // Check of the thickness data is of any value. If not: ditch it.
   Teuchos::RCP<Epetra_Vector> thickness = this->createThickness_( mesh, thicknessField );
@@ -339,8 +349,8 @@ createThickness_( const Teuchos::RCP<const Ginla::StkMesh> & mesh,
 // =============================================================================
 Teuchos::RCP<Epetra_MultiVector>
 StkMeshReader::
-createMvp_( const Teuchos::RCP<const Ginla::StkMesh> & mesh,
-            const Teuchos::RCP<const VectorFieldType>           & mvpField
+createMvp_( const Teuchos::RCP<const Ginla::StkMesh>  & mesh,
+            const Teuchos::RCP<const VectorFieldType> & mvpField
           ) const
 {
     // Get overlap nodes.

@@ -103,8 +103,11 @@ public:
     const Epetra_Comm &
     getComm() const;
 
-    Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >
+    Teuchos::ArrayRCP<double>
     getEdgeCoefficients() const;
+
+    Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >
+    getEdgeCoefficientsFallback() const;
 
     std::vector<stk::mesh::Entity*>
     getOwnedCells() const;
@@ -150,7 +153,8 @@ protected:
 private:
 
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
-    const Teuchos::RCP<Teuchos::Time> computeFvmEntitiesTime_;
+    const Teuchos::RCP<Teuchos::Time> computeControlVolumesTime_;
+    const Teuchos::RCP<Teuchos::Time> computeEdgeCoefficientsTime_;
 #endif
 
     const Epetra_Comm & comm_;
@@ -169,14 +173,29 @@ private:
     mutable bool fvmEntitiesUpToDate_;
 
     const Teuchos::RCP<Epetra_Vector> controlVolumes_;
+    mutable bool controlVolumesUpToDate_;
+
     const Teuchos::RCP<Epetra_Vector> averageThickness_;
-    const Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > edgeCoefficients_;
+
+    mutable Teuchos::ArrayRCP<double> edgeCoefficients_;
+    mutable bool edgeCoefficientsUpToDate_;
+    mutable Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > edgeCoefficientsFallback_;
+    mutable bool edgeCoefficientsFallbackUpToDate_;
 
     mutable double area_;
 
     bool isOutputFileSet_;
 
 private:
+
+    void
+    computeEdgeCoefficients_() const;
+
+    void
+    computeEdgeCoefficientsFallback_() const;
+
+    void
+    computeControlVolumes_() const;
 
     Teuchos::RCP<Epetra_Map>
     createNodesMap_( const std::vector<stk::mesh::Entity*> & nodesList ) const;
@@ -214,10 +233,21 @@ private:
                     ) const;
 
     double
+    getTriangleArea_( const Teuchos::Tuple<double,3> & edge0,
+                      const Teuchos::Tuple<double,3> & edge1
+                    ) const;
+
+    double
     getTetrahedronVolume_( const Point & node0,
                            const Point & node1,
                            const Point & node2,
                            const Point & node3
+                         ) const;
+
+    double
+    getTetrahedronVolume_( const Teuchos::Tuple<double,3> & edge0,
+                           const Teuchos::Tuple<double,3> & edge1,
+                           const Teuchos::Tuple<double,3> & edge2
                          ) const;
 
     Point
