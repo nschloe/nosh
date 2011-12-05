@@ -81,8 +81,6 @@ testJac( const std::string & inputFileNameBase,
     double normT0;
     t0->Norm1( &normT0 );
     TEST_FLOATING_EQUALITY( normT0, controlNormT0, 1.0e-12 );
-    std::cout << std::setprecision(15);
-    std::cout << normT0 << std::endl;
 
     // (b) [ 1, 0, 1, 0, ... ]
     Teuchos::RCP<Epetra_Vector> s1 = Teuchos::rcp( new Epetra_Vector(map) );
@@ -101,7 +99,6 @@ testJac( const std::string & inputFileNameBase,
     double normT1;
     t1->Norm1( &normT1 );
     TEST_FLOATING_EQUALITY( normT1, controlNormT1, 1.0e-12 );
-    std::cout << normT1 << std::endl;
 
     // (b) [ 0, 1, 0, 1, ... ]
     Teuchos::RCP<Epetra_Vector> s2 = Teuchos::rcp( new Epetra_Vector(map) );
@@ -118,7 +115,6 @@ testJac( const std::string & inputFileNameBase,
     double normT2;
     t2->Norm1( &normT2 );
     TEST_FLOATING_EQUALITY( normT2, controlNormT2, 1.0e-12 );
-    std::cout << normT2 << std::endl;
 
     return;
 }

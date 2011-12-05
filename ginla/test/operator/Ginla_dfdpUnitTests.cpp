@@ -19,8 +19,12 @@
 
 namespace {
 
-// ===========================================================================
-TEUCHOS_UNIT_TEST( Ginla, dfdpTests )
+// =============================================================================
+void
+testDfdp( const std::string & inputFileNameBase,
+          const double mu,
+          Teuchos::FancyOStream & out,
+          bool & success )
 {
     // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
@@ -31,11 +35,11 @@ TEUCHOS_UNIT_TEST( Ginla, dfdpTests )
             Teuchos::rcp<Epetra_SerialComm> ( new Epetra_SerialComm() );
 #endif
 
-    std::string inputFileName( "" );
+    std::string inputFileName;
     if ( eComm->NumProc() == 1 )
-        inputFileName = "cubesmall.e";
+        inputFileName = inputFileNameBase + ".e";
     else
-        inputFileName = "cubesmall-balanced.par";
+        inputFileName = inputFileNameBase + "-balanced.par";
     // =========================================================================
     // Read the data from the file.
     Teuchos::ParameterList data;
@@ -49,7 +53,7 @@ TEUCHOS_UNIT_TEST( Ginla, dfdpTests )
     Teuchos::ParameterList           & problemParameters = data.get( "Problem parameters", Teuchos::ParameterList() );
 
     // create parameter vector
-    problemParameters.set( "mu", 1.0e-2 );
+    problemParameters.set( "mu", mu );
     problemParameters.set( "phi", 0.0 );
     problemParameters.set( "theta", 0.0 );
     problemParameters.set( "temperature", 0.0 );
@@ -73,7 +77,6 @@ TEUCHOS_UNIT_TEST( Ginla, dfdpTests )
 
     // create parameter vector
     double eps = 1.0e-6;
-    double mu = problemParameters.get<double>("mu");
     problemParameters.set( "mu", mu-eps );
     for ( int k=0; k<p->MyLength(); k++ )
        (*p)[k] = problemParameters.get<double>( (*pNames)[k] );
@@ -111,9 +114,57 @@ TEUCHOS_UNIT_TEST( Ginla, dfdpTests )
 
     double r[1];
     f1->NormInf( r );
-    TEST_COMPARE(r[0], <, 1.0e-9 );
+    TEST_COMPARE( r[0], <, 1.0e-9 );
 
     return;
+}
+// ===========================================================================
+TEUCHOS_UNIT_TEST( Ginla, DfdpRectangleSmallHashes )
+{
+    std::string inputFileNameBase = "rectanglesmall";
+
+    double mu = 1.0e-2;
+
+    testDfdp( inputFileNameBase,
+              mu,
+              out,
+              success );
+}
+// ============================================================================
+TEUCHOS_UNIT_TEST( Ginla, DfdpPacmanHashes )
+{
+    std::string inputFileNameBase = "pacman";
+
+    double mu = 1.0e-2;
+
+    testDfdp( inputFileNameBase,
+              mu,
+              out,
+              success );
+}
+// ============================================================================
+TEUCHOS_UNIT_TEST( Ginla, DfdpCubeSmallHashes )
+{
+    std::string inputFileNameBase = "cubesmall";
+
+    double mu = 1.0e-2;
+
+    testDfdp( inputFileNameBase,
+              mu,
+              out,
+              success );
+}
+// ============================================================================
+TEUCHOS_UNIT_TEST( Ginla, DfdpCubeLargeHashes )
+{
+    std::string inputFileNameBase = "cubelarge";
+
+    double mu = 1.0e-2;
+
+    testDfdp( inputFileNameBase,
+              mu,
+              out,
+              success );
 }
 // ============================================================================
 } // namespace
