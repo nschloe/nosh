@@ -19,8 +19,15 @@
 
 namespace {
 
-// ===========================================================================
-TEUCHOS_UNIT_TEST( Ginla, JacHashes )
+// =============================================================================
+void
+testJac( const std::string & inputFileNameBase,
+         const double mu,
+         const double controlNormT0,
+         const double controlNormT1,
+         const double controlNormT2,
+         Teuchos::FancyOStream & out,
+         bool & success )
 {
     // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
@@ -31,11 +38,11 @@ TEUCHOS_UNIT_TEST( Ginla, JacHashes )
             Teuchos::rcp<Epetra_SerialComm> ( new Epetra_SerialComm() );
 #endif
 
-    std::string inputFileName( "" );
+    std::string inputFileName;
     if ( eComm->NumProc() == 1 )
-        inputFileName = "cubesmall.e";
+        inputFileName = inputFileNameBase + ".e";
     else
-        inputFileName = "cubesmall-balanced.par";
+        inputFileName = inputFileNameBase + "-balanced.par";
     // =========================================================================
     // Read the data from the file.
     Teuchos::ParameterList data;
@@ -49,7 +56,6 @@ TEUCHOS_UNIT_TEST( Ginla, JacHashes )
     Teuchos::ParameterList           & problemParameters = data.get( "Problem parameters", Teuchos::ParameterList() );
 
     Teuchos::RCP<Ginla::MagneticVectorPotential> mvp;
-    double mu = 1.0e-2;
     mvp = Teuchos::rcp ( new Ginla::MagneticVectorPotential ( mesh, mvpValues, mu ) );
 
     Teuchos::RCP<LOCA::ParameterVector> mvpParameters =
@@ -71,6 +77,12 @@ TEUCHOS_UNIT_TEST( Ginla, JacHashes )
     s0->PutScalar( 1.0 );
     Teuchos::RCP<Epetra_Vector> t0 = Teuchos::rcp( new Epetra_Vector(map) );
     jac->Apply( *s0, *t0 );
+    // check norm
+    double normT0;
+    t0->Norm1( &normT0 );
+    TEST_FLOATING_EQUALITY( normT0, controlNormT0, 1.0e-12 );
+    std::cout << std::setprecision(15);
+    std::cout << normT0 << std::endl;
 
     // (b) [ 1, 0, 1, 0, ... ]
     Teuchos::RCP<Epetra_Vector> s1 = Teuchos::rcp( new Epetra_Vector(map) );
@@ -85,6 +97,11 @@ TEUCHOS_UNIT_TEST( Ginla, JacHashes )
             s1->ReplaceMyValues( 1, &zero, &k );
     }
     jac->Apply( *s1, *t1 );
+    // check norm
+    double normT1;
+    t1->Norm1( &normT1 );
+    TEST_FLOATING_EQUALITY( normT1, controlNormT1, 1.0e-12 );
+    std::cout << normT1 << std::endl;
 
     // (b) [ 0, 1, 0, 1, ... ]
     Teuchos::RCP<Epetra_Vector> s2 = Teuchos::rcp( new Epetra_Vector(map) );
@@ -97,26 +114,85 @@ TEUCHOS_UNIT_TEST( Ginla, JacHashes )
             s2->ReplaceMyValues( 1, &one, &k );
     }
     jac->Apply( *s2, *t2 );
-
-    // compute matrix norms as hashes
-    double normT0;
-    double normT1;
+    // check norm
     double normT2;
-    t0->Norm1( &normT0 );
-    t1->Norm1( &normT1 );
     t2->Norm1( &normT2 );
-
-    // control values
-    double controlNormT0 = 20.2913968894543;
-    double controlNormT1 = 0.289990630357596;
-    double controlNormT2 = 20.2899906303576;
-
-    // check the values
-    TEST_FLOATING_EQUALITY( normT0, controlNormT0, 1.0e-12 );
-    TEST_FLOATING_EQUALITY( normT1, controlNormT1, 1.0e-12 );
     TEST_FLOATING_EQUALITY( normT2, controlNormT2, 1.0e-12 );
+    std::cout << normT2 << std::endl;
 
     return;
+}
+// ===========================================================================
+TEUCHOS_UNIT_TEST( Ginla, JacRectangleSmallHashes )
+{
+    std::string inputFileNameBase = "rectanglesmall";
+
+    double mu = 1.0e-2;
+    double controlNormT0 = 20.5012606103421;
+    double controlNormT1 = 0.50126061034211;
+    double controlNormT2 = 20.5012606103421;
+
+    testJac( inputFileNameBase,
+             mu,
+             controlNormT0,
+             controlNormT1,
+             controlNormT2,
+             out,
+             success );
+}
+// ============================================================================
+TEUCHOS_UNIT_TEST( Ginla, JacPacmanHashes )
+{
+    std::string inputFileNameBase = "pacman";
+
+    double mu = 1.0e-2;
+    double controlNormT0 = 606.123970266964;
+    double controlNormT1 = 0.713664749303349;
+    double controlNormT2 = 605.759066191324;
+
+    testJac( inputFileNameBase,
+             mu,
+             controlNormT0,
+             controlNormT1,
+             controlNormT2,
+             out,
+             success );
+}
+// ============================================================================
+TEUCHOS_UNIT_TEST( Ginla, JacCubeSmallHashes )
+{
+    std::string inputFileNameBase = "cubesmall";
+
+    double mu = 1.0e-2;
+    double controlNormT0 = 20.2913968894543;
+    double controlNormT1 = 0.289990630357598;
+    double controlNormT2 = 20.2899906303576;
+
+    testJac( inputFileNameBase,
+             mu,
+             controlNormT0,
+             controlNormT1,
+             controlNormT2,
+             out,
+             success );
+}
+// ============================================================================
+TEUCHOS_UNIT_TEST( Ginla, JacCubeLargeHashes )
+{
+    std::string inputFileNameBase = "cubelarge";
+
+    double mu = 1.0e-2;
+    double controlNormT0 = 2006.09839315077;
+    double controlNormT1 = 5.74651996372481;
+    double controlNormT2 = 2005.74651996367;
+
+    testJac( inputFileNameBase,
+             mu,
+             controlNormT0,
+             controlNormT1,
+             controlNormT2,
+             out,
+             success );
 }
 // ============================================================================
 } // namespace
