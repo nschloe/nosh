@@ -13,6 +13,7 @@ ADD_EXECUTABLE ( ${OPERATORTEST_EXECUTABLE}
                  Ginla_KeoUnitTests.cpp
                  Ginla_JacUnitTests.cpp
                  Ginla_dfdpUnitTests.cpp
+                 Ginla_StkMeshTests.cpp
                  unitTestMain.cpp )
 
 # copy over the binary data
