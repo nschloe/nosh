@@ -274,11 +274,12 @@ rebuild()
         Teuchos::TimeMonitor tm(*timerRegularization_);
 #endif
         // Add a regularization to the diagonal.
-        Epetra_Vector e( keoRegularized_->DomainMap() );
+        Epetra_Vector e( keoRegularized_->RowMap() );
         TEUCHOS_ASSERT_EQUALITY( 0, e.PutScalar( 1.0 ) );
 
-        Epetra_Vector diag( keoRegularized_->DomainMap() );
+        Epetra_Vector diag( keoRegularized_->RowMap() );
         TEUCHOS_ASSERT_EQUALITY( 0, keoRegularized_->ExtractDiagonalCopy( diag ) );
+        // TODO Use a more sentive value according to out knowledge of the smallest eigenvalue.
         TEUCHOS_ASSERT_EQUALITY( 0, diag.Update( 1.0e-3, e, 1.0 ) );
         TEUCHOS_ASSERT_EQUALITY( 0, keoRegularized_->ReplaceDiagonalValues( diag ) );
     }

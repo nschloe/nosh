@@ -71,31 +71,27 @@ testMesh( const std::string & inputFileNameBase,
     Teuchos::RCP<Ginla::StkMesh> & mesh = data.get( "mesh", Teuchos::RCP<Ginla::StkMesh>() );
 
     const unsigned int numNodes = mesh->getNumNodes();
-    mesh->computeFvmEntities_();
+//    mesh->computeFvmEntities_();
     TEST_EQUALITY( numNodes, controlNumNodes );
 
-std::cout << std::setprecision( 16 );
     const Teuchos::RCP<const Epetra_Vector> controlVols = mesh->getControlVolumes();
     double r[1];
     controlVols->Norm1( r );
-std::cout << r[0] << std::endl;
     TEST_FLOATING_EQUALITY( r[0], controlVolNormOne, 1.0e-12 );
     controlVols->Norm2( r );
-std::cout << r[0] << std::endl;
     TEST_FLOATING_EQUALITY( r[0], controlVolNormTwo, 1.0e-12 );
     controlVols->NormInf( r );
-std::cout << r[0] << std::endl;
     TEST_FLOATING_EQUALITY( r[0], controlVolNormInf, 1.0e-12 );
 
     if ( eComm->NumProc() == 1 )
     {
-        const Teuchos::ArrayRCP<const Teuchos::ArrayRCP<double> > edgeCoeffs =
-            mesh->getEdgeCoefficients();
+        const Teuchos::ArrayRCP<DoubleVector> edgeCoeffs =
+            mesh->getEdgeCoefficientsFallback();
 
         // Cannot use TEST_COMPARE_FLOATING_ARRAYS() as some
         // array values are 0.0 which messes up the relative
         // error.
-        for (unsigned int k=0; k<edgeCoeffs[0].size(); k++ )
+        for (unsigned int k=0; k<edgeCoeffs[0].length(); k++ )
             TEST_COMPARE( fabs(edgeCoeffs[0][k]-controlEdgeCoeffs[k]), <, 1.0e-12 );
     }
 

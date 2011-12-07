@@ -47,31 +47,45 @@ public:
   Teuchos::RCP<LOCA::ParameterVector>
   getParameters() const;
 
-  Teuchos::RCP<Point>
-  getA(const Point & x ) const;
+  Teuchos::RCP<DoubleVector>
+  getA(const DoubleVector & x ) const;
 
   double
-  getAEdgeMidpointProjection( const unsigned int cellIndex,
-                              const unsigned int edgeIndex
+  getAEdgeMidpointProjection( const unsigned int edgeIndex
                             ) const;
 
   double
-  getdAdMuEdgeMidpointProjection( const unsigned int cellIndex,
-                                  const unsigned int edgeIndex
+  getdAdMuEdgeMidpointProjection( const unsigned int edgeIndex
                                 ) const;
+
+  double
+  getAEdgeMidpointProjectionFallback( const unsigned int cellIndex,
+                                      const unsigned int edgeIndex
+                                    ) const;
+
+  double
+  getdAdMuEdgeMidpointProjectionFallback( const unsigned int cellIndex,
+                                          const unsigned int edgeIndex
+                                        ) const;
 
 protected:
 private:
   void
   initializeEdgeMidpointProjectionCache_() const;
 
+  void
+  initializeEdgeMidpointProjectionFallbackCache_() const;
+
 private:
   const Teuchos::RCP<Ginla::StkMesh> mesh_;
   const Teuchos::RCP<const Epetra_MultiVector> mvp_;
   double mu_;
 
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > edgeMidpointProjectionCache_;
+  Teuchos::ArrayRCP<double> edgeMidpointProjectionCache_;
   mutable bool edgeMidpointProjectionCacheUpToDate_;
+
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > edgeMidpointProjectionFallbackCache_;
+  mutable bool edgeMidpointProjectionFallbackCacheUpToDate_;
 
 };
 } // namespace GL

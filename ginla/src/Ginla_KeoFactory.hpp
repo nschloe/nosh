@@ -94,9 +94,21 @@ private:
     buildKeo_( const EMatrixType matrixType ) const;
 
     void
-    fillKeo_( const Teuchos::RCP<Epetra_CrsMatrix> keoMatrix,
+    fillKeo_( const Teuchos::RCP<Epetra_CrsMatrix> & keoMatrix,
               const EMatrixType matrixType
             ) const;
+
+    void
+    fillKeoCellEdges_( const Teuchos::RCP<Epetra_CrsMatrix> & keoMatrix,
+                       const EMatrixType matrixType,
+                       const Teuchos::ArrayRCP<const DoubleVector> & edgeCoefficientsFallback
+                     ) const;
+
+    void
+    fillKeoEdges_( const Teuchos::RCP<Epetra_CrsMatrix> & keoMatrix,
+                   const EMatrixType matrixType,
+                   const Teuchos::ArrayRCP<const double> & edgeCoefficients
+                 ) const;
 
 private:
 #ifdef GINLA_TEUCHOS_TIME_MONITOR

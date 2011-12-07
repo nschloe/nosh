@@ -107,7 +107,7 @@ testKeo( const std::string & inputFileNameBase,
     keoMatrix->Apply( e, Ke );
     double sum[1];
     e.Dot( Ke, sum );
-    TEST_FLOATING_EQUALITY( sum[0], controlSum, 1.0e-12 );
+    TEST_FLOATING_EQUALITY( sum[0], controlSum, 1.0e-10 );
 
     // Sum over all the "real parts" of the matrix.
     // Remember that a 2x2 block corresponding to z is composed as
@@ -127,7 +127,7 @@ testKeo( const std::string & inputFileNameBase,
     Epetra_Vector t0( map );
     keoMatrix->Apply( s0, t0 );
     s0.Dot( t0, sum );
-    TEST_FLOATING_EQUALITY( sum[0], controlSumReal, 1.0e-12 );
+    TEST_FLOATING_EQUALITY( sum[0], controlSumReal, 1.0e-10 );
 
     // Sum over all the "imaginary parts" of the matrix.
     Epetra_Vector s1( map );

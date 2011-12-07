@@ -104,9 +104,9 @@ int main ( int argc, char *argv[] )
       // create the kinetic energy operator
       Teuchos::RCP<Ginla::KeoFactory> keoFactory =
               Teuchos::rcp( new Ginla::KeoFactory( mesh, thickness, mvp ) );
-      Epetra_FECrsMatrix keoMatrix( Copy, keoFactory->buildKeoGraph() );
       keoFactory->updateParameters( mvpParameters );
-      keoFactory->buildKeo( keoMatrix );
+      // Copy out the matrix
+      Epetra_CrsMatrix keoMatrix = *(keoFactory->getKeo());
 
       // create initial guess and right-hand side
       Teuchos::RCP<Epetra_Vector> epetra_x = Teuchos::rcp( new Epetra_Vector( keoMatrix.OperatorDomainMap() ) );

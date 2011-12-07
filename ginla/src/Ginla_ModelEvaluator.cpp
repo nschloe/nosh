@@ -270,7 +270,7 @@ evalModel( const InArgs  & inArgs,
   // From packages/piro/test/MockModelEval_A.cpp
   if (alpha==0.0 && beta==0.0)
   {
-      *out_ << "Ginla::ModelEvaluator Warning: alpha=beta=0 -- setting beta=1" << std::endl;
+      //*out_ << "Ginla::ModelEvaluator Warning: alpha=beta=0 -- setting beta=1" << std::endl;
       beta = 1.0;
   }
 

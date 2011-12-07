@@ -101,7 +101,7 @@ getMvpParameters() const
 // =============================================================================
 void
 KeoFactory::
-fillKeo_( const Teuchos::RCP<Epetra_CrsMatrix> keoMatrix,
+fillKeo_( const Teuchos::RCP<Epetra_CrsMatrix> & keoMatrix,
           const EMatrixType matrixType
         ) const
 {
@@ -111,8 +111,8 @@ fillKeo_( const Teuchos::RCP<Epetra_CrsMatrix> keoMatrix,
   // Zero-out the matrix
   TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->PutScalar( 0.0 ) );
 
-  std::vector<stk::mesh::Entity*> cells;
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > edgeCoefficients;
+  Teuchos::ArrayRCP<DoubleVector> edgeCoefficients;
+  Teuchos::ArrayRCP<DoubleVector> edgeCoefficientsFallback;
 {
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
   Teuchos::TimeMonitor tm(*buildKeoTime1_);
@@ -122,34 +122,263 @@ fillKeo_( const Teuchos::RCP<Epetra_CrsMatrix> keoMatrix,
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   // Loop over the cells, create local load vector and mass matrix,
   // and insert them into the global matrix.
-  // get owned cells
-  cells = mesh_->getOwnedCells();
 
-  edgeCoefficients = mesh_->getEdgeCoefficientsFallback();
-  //TEUCHOS_ASSERT( !edgeCoefficients.is_null() );
+  TEUCHOS_ASSERT( !thickness_.is_null() );
+  TEUCHOS_ASSERT( !mvp_.is_null() );
+
+  try
+  {
+      this->fillKeoEdges_( keoMatrix,
+                           matrixType,
+                           mesh_->getEdgeCoefficients()
+                         );
+  }
+  catch( ... )
+  {
+      this->fillKeoCellEdges_( keoMatrix,
+                               matrixType,
+                               mesh_->getEdgeCoefficientsFallback()
+                             );
+  }
+
+}
+
+{
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
+  Teuchos::TimeMonitor tm(*buildKeoTime12_);
+#endif
+  // calls FillComplete by default
+  TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->FillComplete() );
+}
+  return;
+}
+// =============================================================================
+void
+KeoFactory::
+fillKeoEdges_( const Teuchos::RCP<Epetra_CrsMatrix> & keoMatrix,
+               const EMatrixType matrixType,
+               const Teuchos::ArrayRCP<const double> & edgeCoefficients
+             ) const
+{
+  // get owned edges
+  std::vector<stk::mesh::Entity*> edges = mesh_->getOverlapEdges();
+
+  Teuchos::Tuple<int,2> gid;
+  Teuchos::Tuple<int,2> lid;
+  int gIndices[4];
+  int lIndices[4];
+  // Loop over all edges.
+  for ( unsigned int k=0; k<edges.size(); k++ )
+  {
+      // extract the nodal coordinates
+      stk::mesh::PairIterRelation endPoints;
+{
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
+  Teuchos::TimeMonitor tm(*buildKeoTime2_);
+#endif
+
+      endPoints = edges[k]->relations( mesh_->getMetaData()->node_rank() );
+}
+
+{
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
+  Teuchos::TimeMonitor tm(*buildKeoTime3_);
+#endif
+      gid[0] = (*endPoints[0].entity()).identifier() - 1;
+      gIndices[0] = 2*gid[0];
+      gIndices[1] = 2*gid[0]+1;
+      lIndices[0] = keoGraph_->ColMap().LID( gIndices[0] );
+//       TEST_FOR_EXCEPT_MSG( lIndices[0] < 0,
+//                           "The global index " << gIndices[0]
+//                           << " does not seem to be present on this node." );
+      lIndices[1] = keoGraph_->ColMap().LID( gIndices[1] );
+//       TEST_FOR_EXCEPT_MSG( lIndices[0] < 0,
+//                           "The global index " << gIndices[1]
+//                           << " does not seem to be present on this node." );
+}
+
+double aInt;
+double alpha;
+{
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
+  Teuchos::TimeMonitor tm(*buildKeoTime4_);
+#endif
+
+      gid[1] = (*endPoints[1].entity()).identifier() - 1;
+      gIndices[2] = 2*gid[1];
+      gIndices[3] = 2*gid[1]+1;
+      lIndices[2] = keoGraph_->ColMap().LID( gIndices[2] );
+//       TEST_FOR_EXCEPT_MSG( lIndices[2] < 0,
+//                           "The global index " << gIndices[2]
+//                           << " does not seem to be present on this node." );
+      lIndices[3] = keoGraph_->ColMap().LID( gIndices[3] );
+//       TEST_FOR_EXCEPT_MSG( lIndices[3] < 0,
+//                           "The global index " << gIndices[3]
+//                           << " does not seem to be present on this node." );
+}
+{
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
+  Teuchos::TimeMonitor tm(*buildKeoTime5_);
+#endif
+              // edge weights
+      alpha = edgeCoefficients[k];
+}
+{
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
+  Teuchos::TimeMonitor tm(*buildKeoTime6_);
+#endif
+      // Multiply by the thickness value of the midpoint. As this is not available,
+      // take the mean between the values at the nodes.
+      int tlid0 = thickness_->Map().LID( gid[0] );
+      TEST_FOR_EXCEPT_MSG( tlid0 < 0,
+                            "The global index " << gid[0]
+                            << " does not seem to be present on this node." );
+      int tlid1 = thickness_->Map().LID( gid[1] );
+      TEST_FOR_EXCEPT_MSG( tlid1 < 0,
+                            "The global index " << gid[1]
+                            << " does not seem to be present on this node." );
+      double thickness = 0.5 * ( (*thickness_)[tlid0] + (*thickness_)[tlid1] );
+
+      alpha *= thickness;
+}
+      // ---------------------------------------------------------------
+      // Compute the integral
+      //
+      //    I = \int_{x0}^{xj} (xj-x0).A(x) / |xj-x0| dx
+      //
+      // numerically by the midpoint rule, i.e.,
+      //
+      //    I ~ |xj-x0| * (xj-x0) . A( 0.5*(xj+x0) ) / |xj-x0|.
+      //
+      // -------------------------------------------------------------------
+      // Project vector field onto the edge.
+      // Instead of first computing the projection over the normalized edge
+      // and then multiply it with the edge length, don't normalize the
+      // edge vector.
+{
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
+  Teuchos::TimeMonitor tm(*buildKeoTime7_);
+#endif
+      aInt = mvp_->getAEdgeMidpointProjection( k );
+}
+      double c, s, d;
+{
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
+  Teuchos::TimeMonitor tm(*buildKeoTime8_);
+#endif
+      double sinAInt, cosAInt;
+      //sinAInt = sin(aInt);
+      //cosAInt = cos(aInt);
+      sincos( aInt, &sinAInt, &cosAInt );
+      switch ( matrixType )
+      {
+          case MATRIX_TYPE_REGULAR: // no derivative
+          {
+              c = alpha * cosAInt;
+              s = alpha * sinAInt;
+              d = - alpha;
+              break;
+          }
+          case MATRIX_TYPE_DMU: // dK/dmu
+          {
+              double dAdMuInt = mvp_->getdAdMuEdgeMidpointProjection( k );
+              c = - alpha * dAdMuInt * sinAInt;
+              s =   alpha * dAdMuInt * cosAInt;
+              d = 0.0;
+              break;
+          }
+          default:
+              TEST_FOR_EXCEPT_MSG( true,
+                                    "Illegal matrix type \"" << matrixType << "\"."
+                                  );
+      }
+}
+{
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
+  Teuchos::TimeMonitor tm(*buildKeoTime9_);
+#endif
+
+      // We'd like to insert the 2x2 matrix
+      //
+      //     [   alpha                   , - alpha * exp( -IM * aInt ) ]
+      //     [ - alpha * exp( IM * aInt ),   alpha                       ]
+      //
+      // at the indices   [ nodeIndices[0], nodeIndices[1] ] for every index pair
+      // that shares and edge.
+      // Do that now, just blockwise for real and imaginary part.
+      //indices[2] = 2*lid[1];
+      //indices[3] = 2*lid[1]+1;
+}
+      double v[4];
+      int ii[3];
+{
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
+  Teuchos::TimeMonitor tm(*buildKeoTime10_);
+#endif
+      // sum it all in!
+//       TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->SumIntoGlobalValues ( indices, values ) );
+      v[0] = d;
+      v[1] = 0.0;
+      v[2] = c;
+      v[3] = s;
+//       ii[0] = lIndices[0];
+//       ii[1] = lIndices[2];
+//       ii[2] = lIndices[3];
+}
+{
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
+  Teuchos::TimeMonitor tm(*buildKeoTime11_);
+#endif
+      int ddd = keoMatrix->RowMap().LID( gIndices[0] );
+      TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->SumIntoMyValues( ddd, 4, v, lIndices ) );
+//       TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->SumIntoGlobalValues( gIndices[0], 4, v, gIndices ) );
+}
+      v[0] = 0.0;
+      v[1] = d;
+      v[2] = -s;
+      v[3] = c;
+      TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->SumIntoGlobalValues( gIndices[1], 4, v, gIndices ) );
+      v[0] = c;
+      v[1] = -s;
+      v[2] = d;
+      v[3] = 0.0;
+      TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->SumIntoGlobalValues( gIndices[2], 4, v, gIndices ) );
+      v[0] = s;
+      v[1] = c;
+      v[2] = 0.0;
+      v[3] = d;
+      TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->SumIntoGlobalValues( gIndices[3], 4, v, gIndices ) );
+      // -------------------------------------------------------------------
+  }
+
+  return;
+}
+// =============================================================================
+void
+KeoFactory::
+fillKeoCellEdges_( const Teuchos::RCP<Epetra_CrsMatrix> & keoMatrix,
+                   const EMatrixType matrixType,
+                   const Teuchos::ArrayRCP<const DoubleVector> & edgeCoefficientsFallback
+                 ) const
+{
+  // get owned cells
+  std::vector<stk::mesh::Entity*> cells = mesh_->getOwnedCells();
 
   // Loop over all edges.
   // To this end, loop over all cells and the edges within the cell.
-  TEUCHOS_ASSERT( !thickness_.is_null() );
-  TEUCHOS_ASSERT( !mvp_.is_null() );
-}
-
   for ( unsigned int k=0; k<cells.size(); k++ )
   {
       unsigned int numLocalNodes;
       // extract the nodal coordinates
-      Teuchos::Array<Point> localNodes;
       stk::mesh::PairIterRelation rel;
 {
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
   Teuchos::TimeMonitor tm(*buildKeoTime2_);
 #endif
       // get the nodes local to the cell
-      rel = (*cells[k]).relations();
+      rel = cells[k]->relations( mesh_->getMetaData()->node_rank() );
 
       numLocalNodes = rel.size();
-
-      localNodes = mesh_->getNodeCoordinates( rel );
 }
       // In a simplex, the edges are exactly the connection between each pair
       // of nodes. Hence, loop over pairs of nodes.
@@ -164,7 +393,6 @@ fillKeo_( const Teuchos::RCP<Epetra_CrsMatrix> keoMatrix,
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
   Teuchos::TimeMonitor tm(*buildKeoTime3_);
 #endif
-          const Point & node0 = localNodes[e0];
           gid[0] = (*rel[e0].entity()).identifier() - 1;
           gIndices[0] = 2*gid[0];
           gIndices[1] = 2*gid[0]+1;
@@ -185,8 +413,6 @@ double alpha;
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
   Teuchos::TimeMonitor tm(*buildKeoTime4_);
 #endif
-
-              const Point & node1 = localNodes[e1];
               gid[1] = (*rel[e1].entity()).identifier() - 1;
               gIndices[2] = 2*gid[1];
               gIndices[3] = 2*gid[1]+1;
@@ -204,7 +430,7 @@ double alpha;
   Teuchos::TimeMonitor tm(*buildKeoTime5_);
 #endif
               // edge weights
-              alpha = edgeCoefficients[k][edgeIndex];
+              alpha = edgeCoefficientsFallback[k][edgeIndex];
 }
 {
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
@@ -244,7 +470,7 @@ double alpha;
 #endif
               // Filling the MVP cache takes another 50% of the time in this whole function.
 // TODO move this in the outer loop?
-              aInt = mvp_->getAEdgeMidpointProjection( k, edgeIndex );
+              aInt = mvp_->getAEdgeMidpointProjectionFallback( k, edgeIndex );
 }
               double c, s, d;
 {
@@ -266,7 +492,7 @@ double alpha;
                   }
                   case MATRIX_TYPE_DMU: // dK/dmu
                   {
-                      double dAdMuInt = mvp_->getdAdMuEdgeMidpointProjection( k, edgeIndex );
+                      double dAdMuInt = mvp_->getdAdMuEdgeMidpointProjectionFallback( k, edgeIndex );
                       c = - alpha * dAdMuInt * sinAInt;
                       s =   alpha * dAdMuInt * cosAInt;
                       d = 0.0;
@@ -341,14 +567,6 @@ double alpha;
           }
       }
   }
-
-{
-#ifdef GINLA_TEUCHOS_TIME_MONITOR
-  Teuchos::TimeMonitor tm(*buildKeoTime12_);
-#endif
-  // calls FillComplete by default
-  TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->FillComplete() );
-}
 
   return;
 }
@@ -479,7 +697,7 @@ buildKeoGraph_() const
   for ( unsigned int k=0; k<cells.size(); k++ )
   {
       // get the nodes local to the cell
-      stk::mesh::PairIterRelation rel = (*cells[k]).relations();
+      stk::mesh::PairIterRelation rel = cells[k]->relations( mesh_->getMetaData()->node_rank() );
 
       // In a simplex, the edges are exactly the connection between each pair
       // of nodes. Hence, loop over pairs of nodes.

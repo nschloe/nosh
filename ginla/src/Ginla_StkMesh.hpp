@@ -39,6 +39,7 @@
 #endif
 #include <Teuchos_Array.hpp>
 #include <Teuchos_SerialDenseMatrix.hpp>
+#include <Teuchos_SerialDenseVector.hpp>
 
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/fem/CoordinateSystems.hpp>
@@ -60,7 +61,7 @@ class Epetra_Map;
 // =============================================================================
 // typedefs
 typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorFieldType;
-typedef Teuchos::Tuple<double,3>                      Point;
+typedef Teuchos::SerialDenseVector<int,double>        DoubleVector;
 // =============================================================================
 namespace Ginla {
 
@@ -106,14 +107,14 @@ public:
     Teuchos::ArrayRCP<double>
     getEdgeCoefficients() const;
 
-    Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >
+    Teuchos::ArrayRCP<DoubleVector>
     getEdgeCoefficientsFallback() const;
 
     std::vector<stk::mesh::Entity*>
     getOwnedCells() const;
 
     std::vector<stk::mesh::Entity*>
-    getOwnedEdges() const;
+    getOverlapEdges() const;
 
     std::vector<stk::mesh::Entity*>
     getOwnedNodes() const;
@@ -121,33 +122,32 @@ public:
     std::vector<stk::mesh::Entity*>
     getOverlapNodes() const;
 
-    Teuchos::Array<Point>
+    Teuchos::ArrayRCP<DoubleVector>
     getNodeCoordinates( const stk::mesh::PairIterRelation & relation ) const;
 
     double
     getThickness( const stk::mesh::PairIterRelation & relation ) const;
 
-    Teuchos::RCP<Epetra_Map>
+    Teuchos::RCP<const Epetra_Map>
     getNodesMap() const;
 
-    Teuchos::RCP<Epetra_Map>
+    Teuchos::RCP<const Epetra_Map>
     getNodesOverlapMap() const;
 
-    Teuchos::RCP<Epetra_Map>
+    Teuchos::RCP<const Epetra_Map>
     getComplexNonOverlapMap() const;
 
-    Teuchos::RCP<Epetra_Map>
+    Teuchos::RCP<const Epetra_Map>
     getComplexOverlapMap() const;
+
+    Teuchos::RCP<const Epetra_Map>
+    getEdgesOverlapMap() const;
 
     unsigned int
     getNumEdgesPerCell( unsigned int cellDimension ) const;
 
     unsigned int
     getCellDimension( const unsigned int numLocalNodes ) const;
-
-    // Doesn't actually need to be public.
-    void
-    computeFvmEntities_() const;
 
 protected:
 private:
@@ -165,10 +165,11 @@ private:
     const Teuchos::RCP<VectorFieldType>             coordinatesField_;
 //     const Teuchos::RCP<VectorFieldType>         thicknessField_;
 
-    const Teuchos::RCP<Epetra_Map> nodesMap_;
-    const Teuchos::RCP<Epetra_Map> nodesOverlapMap_;
-    const Teuchos::RCP<Epetra_Map> complexMap_;
-    const Teuchos::RCP<Epetra_Map> complexOverlapMap_;
+    const Teuchos::RCP<const Epetra_Map> nodesMap_;
+    const Teuchos::RCP<const Epetra_Map> nodesOverlapMap_;
+    const Teuchos::RCP<const Epetra_Map> complexMap_;
+    const Teuchos::RCP<const Epetra_Map> complexOverlapMap_;
+    mutable Teuchos::RCP<const Epetra_Map> edgesOverlapMap_;
 
     mutable bool fvmEntitiesUpToDate_;
 
@@ -179,8 +180,10 @@ private:
 
     mutable Teuchos::ArrayRCP<double> edgeCoefficients_;
     mutable bool edgeCoefficientsUpToDate_;
-    mutable Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > edgeCoefficientsFallback_;
+    mutable Teuchos::ArrayRCP<DoubleVector> edgeCoefficientsFallback_;
     mutable bool edgeCoefficientsFallbackUpToDate_;
+
+    mutable bool createdAdjacentEntities_;
 
     mutable double area_;
 
@@ -198,83 +201,88 @@ private:
     computeControlVolumes_() const;
 
     Teuchos::RCP<Epetra_Map>
-    createNodesMap_( const std::vector<stk::mesh::Entity*> & nodesList ) const;
+    createEntitiesMap_( const std::vector<stk::mesh::Entity*> & entityList ) const;
 
     Teuchos::RCP<Epetra_Map>
     createComplexMap_( const std::vector<stk::mesh::Entity*> & nodeList ) const;
 
     double
-    computeCovolume2d_( const Point & cc,
-                        const Point & x0,
-                        const Point & x1,
-                        const Point & other0
+    computeCovolume2d_( const DoubleVector & cc,
+                        const DoubleVector & x0,
+                        const DoubleVector & x1,
+                        const DoubleVector & other0
                       ) const;
 
     double
-    computeCovolume3d_( const Point & cc,
-                        const Point & x0,
-                        const Point & x1,
-                        const Point & other0,
-                        const Point & other1
+    computeCovolume3d_( const DoubleVector & cc,
+                        const DoubleVector & x0,
+                        const DoubleVector & x1,
+                        const DoubleVector & other0,
+                        const DoubleVector & other1
                       ) const;
 
     Teuchos::Tuple<unsigned int,2>
     getOtherIndices_( unsigned int e0, unsigned int e1 ) const;
 
-    Point
-    add_( double alpha, const Point & x,
-          double beta,  const Point & y
+    DoubleVector
+    add_( double alpha, const DoubleVector & x,
+          double beta,  const DoubleVector & y
         ) const;
 
     double
-    getTriangleArea_( const Point & x0,
-                      const Point & x1,
-                      const Point & x2
+    getTriangleArea_( const DoubleVector & x0,
+                      const DoubleVector & x1,
+                      const DoubleVector & x2
                     ) const;
 
     double
-    getTriangleArea_( const Teuchos::Tuple<double,3> & edge0,
-                      const Teuchos::Tuple<double,3> & edge1
+    getTriangleArea_( const DoubleVector & edge0,
+                      const DoubleVector & edge1
                     ) const;
 
     double
-    getTetrahedronVolume_( const Point & node0,
-                           const Point & node1,
-                           const Point & node2,
-                           const Point & node3
+    getTetrahedronVolume_( const DoubleVector & node0,
+                           const DoubleVector & node1,
+                           const DoubleVector & node2,
+                           const DoubleVector & node3
                          ) const;
 
     double
-    getTetrahedronVolume_( const Teuchos::Tuple<double,3> & edge0,
-                           const Teuchos::Tuple<double,3> & edge1,
-                           const Teuchos::Tuple<double,3> & edge2
+    getTetrahedronVolume_( const DoubleVector & edge0,
+                           const DoubleVector & edge1,
+                           const DoubleVector & edge2
                          ) const;
 
-    Point
-    computeTriangleCircumcenter_( const Point & node0, const Point & node1, const Point & node2 ) const;
-    Point
-    computeTriangleCircumcenter_( const Teuchos::Array<Point> & nodes ) const;
+    DoubleVector
+    computeTriangleCircumcenter_( const DoubleVector & node0,
+                                  const DoubleVector & node1,
+                                  const DoubleVector & node2
+                                ) const;
+    DoubleVector
+    computeTriangleCircumcenter_( const Teuchos::ArrayRCP<const DoubleVector> & nodes ) const;
 
-    Point
-    computeTetrahedronCircumcenter_( const Teuchos::Array<Point> & nodes ) const;
+    DoubleVector
+    computeTetrahedronCircumcenter_( const Teuchos::ArrayRCP<const DoubleVector> & nodes ) const;
 
-    Teuchos::ArrayRCP<double>
-    getEdgeCoefficientsNumerically_( const Teuchos::Array<Point> localNodes ) const;
+    DoubleVector
+    getEdgeCoefficientsNumerically_( const Teuchos::ArrayRCP<const DoubleVector> edges
+                                   ) const;
 
     double
-    dot_( const Point & v, const Point & w
+    dot_( const DoubleVector & v, const DoubleVector & w
         ) const;
 
-    Point
-    cross_( const Point & v, const Point & w
+    DoubleVector
+    cross_( const DoubleVector & v,
+            const DoubleVector & w
           ) const;
 
     double
-    norm2_( const Point & x
+    norm2_( const DoubleVector & x
           ) const;
 
     double
-    norm2squared_( const Point & x
+    norm2squared_( const DoubleVector & x
                 ) const;
 };
 } // namespace Ginla

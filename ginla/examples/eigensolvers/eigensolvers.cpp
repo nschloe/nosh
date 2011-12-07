@@ -11,12 +11,12 @@
 #include <Teuchos_TimeMonitor.hpp>
 #include <Teuchos_VerboseObject.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
-#include <Epetra_FECrsGraph.h>
+#include <Epetra_CrsGraph.h>
 
 #include "Ginla_StkMeshReader.hpp"
 #include "Ginla_KeoFactory.hpp"
 #include "Ginla_JacobianOperator.hpp"
-#include "Ginla_KeoPreconditioner.hpp"
+#include "Ginla_KeoRegularized.hpp"
 #include "Ginla_MagneticVectorPotential.hpp"
 
 #include "AnasaziConfigDefs.hpp"
@@ -117,22 +117,14 @@ int main ( int argc, char *argv[] )
           Teuchos::rcp( new LOCA::ParameterVector() );
       mvpParameters->addParameter( "mu", mu );
 
-      // Precompute FVM entities. Not actually necessary as it's triggered automatically
-      // when needed, but for timing purposes put it here.
-      Teuchos::RCP<Teuchos::Time> fvmEntitiesConstructTime = Teuchos::TimeMonitor::getNewTimer("FVM entities construction");
-      {
-          Teuchos::TimeMonitor tm(*fvmEntitiesConstructTime);
-          mesh->computeFvmEntities_();
-      }
-
       Teuchos::RCP<Ginla::KeoFactory> keoFactory =
           Teuchos::rcp( new Ginla::KeoFactory( mesh, thickness, mvp ) );
 
-      Teuchos::RCP<Epetra_FECrsGraph> keoGraph;
+      Teuchos::RCP<const Epetra_CrsGraph> keoGraph;
       Teuchos::RCP<Teuchos::Time> graphConstructTime = Teuchos::TimeMonitor::getNewTimer("Graph construction");
       {
           Teuchos::TimeMonitor tm(*graphConstructTime);
-          keoGraph = Teuchos::rcp( new Epetra_FECrsGraph( keoFactory->buildKeoGraph() ) );
+          keoGraph = keoFactory->getKeoGraph();
       }
 
       // create Jacobian
@@ -141,20 +133,20 @@ int main ( int argc, char *argv[] )
       {
           Teuchos::TimeMonitor tm(*jacobianConstructTime);
           // create the jacobian operator
-          jac = Teuchos::rcp( new Ginla::JacobianOperator( mesh, thickness, mvp, z ) );
+          jac = Teuchos::rcp( new Ginla::JacobianOperator( mesh, thickness, keoFactory, z ) );
       }
 
       // create preconditioner
       Teuchos::RCP<Teuchos::Time> precConstructTime = Teuchos::TimeMonitor::getNewTimer("Prec construction");
-      Teuchos::RCP<Ginla::KeoPreconditioner> prec;
+      Teuchos::RCP<Ginla::KeoRegularized> keoReg;
       if ( isPrec )
       {
           Teuchos::TimeMonitor tm(*precConstructTime);
           // create the jacobian operator
-          prec = Teuchos::rcp( new Ginla::KeoPreconditioner( mesh, thickness, mvp ) );
+          keoReg = Teuchos::rcp( new Ginla::KeoRegularized( keoFactory ) );
 
           // actually fill it with values
-          prec->rebuild();
+          keoReg->rebuild();
       }
 
       // Create the eigensolver.
@@ -190,7 +182,7 @@ int main ( int argc, char *argv[] )
       MyProblem->setNEV( nev );
 
       // Set the preconditioner. (May be NULL and not used.)
-      MyProblem->setPrec( prec );
+      MyProblem->setPrec( keoReg );
 
       // Inform the eigenproblem that you are finishing passing it information
       //

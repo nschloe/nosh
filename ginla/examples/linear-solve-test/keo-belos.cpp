@@ -122,33 +122,25 @@ int main ( int argc, char *argv[] )
       Teuchos::RCP<Ginla::KeoFactory> keoFactory =
           Teuchos::rcp( new Ginla::KeoFactory( mesh, thickness, mvp ) );
 
-      // Precompute FVM entities. Not actually necessary as it's triggered automatically
-      // when needed, but for timing purposes put it here.
-      Teuchos::RCP<Teuchos::Time> fvmEntitiesConstructTime = Teuchos::TimeMonitor::getNewTimer("FVM entities construction");
-      {
-          Teuchos::TimeMonitor tm(*fvmEntitiesConstructTime);
-          mesh->computeFvmEntities_();
-      }
-
-      Teuchos::RCP<Epetra_FECrsGraph> keoGraph;
+      Teuchos::RCP<const Epetra_CrsGraph> keoGraph;
       Teuchos::RCP<Teuchos::Time> graphConstructTime = Teuchos::TimeMonitor::getNewTimer("Graph construction");
       {
           Teuchos::TimeMonitor tm(*graphConstructTime);
-          keoGraph = Teuchos::rcp( new Epetra_FECrsGraph( keoFactory->buildKeoGraph() ) );
+          keoGraph = keoFactory->getKeoGraph();
       }
 
       // create the kinetic energy operator
-      Teuchos::RCP<Epetra_FECrsMatrix> keoMatrix;
-      keoMatrix = Teuchos::rcp( new Epetra_FECrsMatrix( Copy, *keoGraph ) );
+      Teuchos::RCP<Epetra_CrsMatrix> keoMatrix;
       Teuchos::RCP<Teuchos::Time> keoConstructTime = Teuchos::TimeMonitor::getNewTimer("Matrix construction");
       {
           Teuchos::TimeMonitor tm(*keoConstructTime);
           keoFactory->updateParameters( mvpParameters );
-          keoFactory->buildKeo( *keoMatrix );
+          // Copy over the matrix
+          keoMatrix = Teuchos::rcp( new Epetra_CrsMatrix( *keoFactory->getKeo() ) );
       }
       // Make sure the matrix is indeed positive definite, and not
       // negative definite. Belos needs that (2010-11-05).
-      keoMatrix->Scale( -1.0 );
+      TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->Scale( -1.0 ) );
 
       // create initial guess and right-hand side
       bool zeroOut = true;
@@ -157,7 +149,7 @@ int main ( int argc, char *argv[] )
       Teuchos::RCP<Epetra_MultiVector> epetra_b =
               Teuchos::rcp( new Epetra_Vector( keoMatrix->OperatorRangeMap(), 1 ) );
       //epetra_b->Random();
-      epetra_b->PutScalar( 1.0 );
+      TEUCHOS_ASSERT_EQUALITY( 0, epetra_b->PutScalar( 1.0 ) );
 
 //      // check that the matrix is indeed symmetric
 //      for ( int i=0; i<epetra_b->GlobalLength(); i++ )
