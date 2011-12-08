@@ -65,7 +65,12 @@ KeoFactory( const Teuchos::RCP<const Ginla::StkMesh>           & mesh,
         keo_( Teuchos::rcp( new Epetra_CrsMatrix( Copy, *keoGraph_ ) ) ),
         keoBuildParameters_( Teuchos::null ),
         keoDMu_( Teuchos::rcp( new Epetra_CrsMatrix( Copy, *keoGraph_ ) ) ),
-        keoDMuBuildParameters_( Teuchos::null )
+        keoDMuBuildParameters_( Teuchos::null ),
+        localColIndexCache_( Teuchos::ArrayRCP<Teuchos::ArrayRCP<int> >() ),
+        localRowIndexCache_( Teuchos::ArrayRCP<Teuchos::ArrayRCP<int> >() ),
+        localIndexCacheUpToDate_( false ),
+        alphaCache_( Teuchos::ArrayRCP<double>() ),
+        alphaCacheUpToDate_( false )
 {
 }
 // =============================================================================
@@ -161,86 +166,17 @@ fillKeoEdges_( const Teuchos::RCP<Epetra_CrsMatrix> & keoMatrix,
              ) const
 {
   // get owned edges
-  std::vector<stk::mesh::Entity*> edges = mesh_->getOverlapEdges();
+  const std::vector<stk::mesh::Entity*> edges = mesh_->getOverlapEdges();
 
-  Teuchos::Tuple<int,2> gid;
-  Teuchos::Tuple<int,2> lid;
-  int gIndices[4];
-  int lIndices[4];
+  if ( !localIndexCacheUpToDate_ )
+      this->buildLocalIndexCache_( edges );
+
+  if ( !alphaCacheUpToDate_ )
+    this->buildAlphaCache_( edges, edgeCoefficients );
+
   // Loop over all edges.
   for ( unsigned int k=0; k<edges.size(); k++ )
   {
-      // extract the nodal coordinates
-      stk::mesh::PairIterRelation endPoints;
-{
-#ifdef GINLA_TEUCHOS_TIME_MONITOR
-  Teuchos::TimeMonitor tm(*buildKeoTime2_);
-#endif
-
-      endPoints = edges[k]->relations( mesh_->getMetaData()->node_rank() );
-}
-
-{
-#ifdef GINLA_TEUCHOS_TIME_MONITOR
-  Teuchos::TimeMonitor tm(*buildKeoTime3_);
-#endif
-      gid[0] = (*endPoints[0].entity()).identifier() - 1;
-      gIndices[0] = 2*gid[0];
-      gIndices[1] = 2*gid[0]+1;
-      lIndices[0] = keoGraph_->ColMap().LID( gIndices[0] );
-//       TEST_FOR_EXCEPT_MSG( lIndices[0] < 0,
-//                           "The global index " << gIndices[0]
-//                           << " does not seem to be present on this node." );
-      lIndices[1] = keoGraph_->ColMap().LID( gIndices[1] );
-//       TEST_FOR_EXCEPT_MSG( lIndices[0] < 0,
-//                           "The global index " << gIndices[1]
-//                           << " does not seem to be present on this node." );
-}
-
-double aInt;
-double alpha;
-{
-#ifdef GINLA_TEUCHOS_TIME_MONITOR
-  Teuchos::TimeMonitor tm(*buildKeoTime4_);
-#endif
-
-      gid[1] = (*endPoints[1].entity()).identifier() - 1;
-      gIndices[2] = 2*gid[1];
-      gIndices[3] = 2*gid[1]+1;
-      lIndices[2] = keoGraph_->ColMap().LID( gIndices[2] );
-//       TEST_FOR_EXCEPT_MSG( lIndices[2] < 0,
-//                           "The global index " << gIndices[2]
-//                           << " does not seem to be present on this node." );
-      lIndices[3] = keoGraph_->ColMap().LID( gIndices[3] );
-//       TEST_FOR_EXCEPT_MSG( lIndices[3] < 0,
-//                           "The global index " << gIndices[3]
-//                           << " does not seem to be present on this node." );
-}
-{
-#ifdef GINLA_TEUCHOS_TIME_MONITOR
-  Teuchos::TimeMonitor tm(*buildKeoTime5_);
-#endif
-              // edge weights
-      alpha = edgeCoefficients[k];
-}
-{
-#ifdef GINLA_TEUCHOS_TIME_MONITOR
-  Teuchos::TimeMonitor tm(*buildKeoTime6_);
-#endif
-      // Multiply by the thickness value of the midpoint. As this is not available,
-      // take the mean between the values at the nodes.
-      int tlid0 = thickness_->Map().LID( gid[0] );
-      TEST_FOR_EXCEPT_MSG( tlid0 < 0,
-                            "The global index " << gid[0]
-                            << " does not seem to be present on this node." );
-      int tlid1 = thickness_->Map().LID( gid[1] );
-      TEST_FOR_EXCEPT_MSG( tlid1 < 0,
-                            "The global index " << gid[1]
-                            << " does not seem to be present on this node." );
-      double thickness = 0.5 * ( (*thickness_)[tlid0] + (*thickness_)[tlid1] );
-
-      alpha *= thickness;
-}
       // ---------------------------------------------------------------
       // Compute the integral
       //
@@ -255,35 +191,27 @@ double alpha;
       // Instead of first computing the projection over the normalized edge
       // and then multiply it with the edge length, don't normalize the
       // edge vector.
-{
-#ifdef GINLA_TEUCHOS_TIME_MONITOR
-  Teuchos::TimeMonitor tm(*buildKeoTime7_);
-#endif
-      aInt = mvp_->getAEdgeMidpointProjection( k );
-}
+      double aInt = mvp_->getAEdgeMidpointProjection( k );
+
       double c, s, d;
-{
-#ifdef GINLA_TEUCHOS_TIME_MONITOR
-  Teuchos::TimeMonitor tm(*buildKeoTime8_);
-#endif
       double sinAInt, cosAInt;
-      //sinAInt = sin(aInt);
-      //cosAInt = cos(aInt);
+      //sinAInt = sin(aInt); cosAInt = cos(aInt);
       sincos( aInt, &sinAInt, &cosAInt );
+      // For a slight speedup, move this switch statement out of the loop.
       switch ( matrixType )
       {
           case MATRIX_TYPE_REGULAR: // no derivative
           {
-              c = alpha * cosAInt;
-              s = alpha * sinAInt;
-              d = - alpha;
+              c = alphaCache_[k] * cosAInt;
+              s = alphaCache_[k] * sinAInt;
+              d = - alphaCache_[k];
               break;
           }
           case MATRIX_TYPE_DMU: // dK/dmu
           {
               double dAdMuInt = mvp_->getdAdMuEdgeMidpointProjection( k );
-              c = - alpha * dAdMuInt * sinAInt;
-              s =   alpha * dAdMuInt * cosAInt;
+              c = - alphaCache_[k] * dAdMuInt * sinAInt;
+              s =   alphaCache_[k] * dAdMuInt * cosAInt;
               d = 0.0;
               break;
           }
@@ -292,12 +220,6 @@ double alpha;
                                     "Illegal matrix type \"" << matrixType << "\"."
                                   );
       }
-}
-{
-#ifdef GINLA_TEUCHOS_TIME_MONITOR
-  Teuchos::TimeMonitor tm(*buildKeoTime9_);
-#endif
-
       // We'd like to insert the 2x2 matrix
       //
       //     [   alpha                   , - alpha * exp( -IM * aInt ) ]
@@ -306,50 +228,148 @@ double alpha;
       // at the indices   [ nodeIndices[0], nodeIndices[1] ] for every index pair
       // that shares and edge.
       // Do that now, just blockwise for real and imaginary part.
-      //indices[2] = 2*lid[1];
-      //indices[3] = 2*lid[1]+1;
-}
-      double v[4];
-      int ii[3];
 {
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
-  Teuchos::TimeMonitor tm(*buildKeoTime10_);
+  Teuchos::TimeMonitor tm(*buildKeoTime6_);
 #endif
+      double v[4];
       // sum it all in!
-//       TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->SumIntoGlobalValues ( indices, values ) );
       v[0] = d;
       v[1] = 0.0;
       v[2] = c;
       v[3] = s;
-//       ii[0] = lIndices[0];
-//       ii[1] = lIndices[2];
-//       ii[2] = lIndices[3];
-}
-{
-#ifdef GINLA_TEUCHOS_TIME_MONITOR
-  Teuchos::TimeMonitor tm(*buildKeoTime11_);
-#endif
-      int ddd = keoMatrix->RowMap().LID( gIndices[0] );
-      TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->SumIntoMyValues( ddd, 4, v, lIndices ) );
-//       TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->SumIntoGlobalValues( gIndices[0], 4, v, gIndices ) );
-}
+      TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->SumIntoMyValues( localRowIndexCache_[k][0], 4, v, localColIndexCache_[k].getRawPtr() ) );
       v[0] = 0.0;
       v[1] = d;
       v[2] = -s;
       v[3] = c;
-      TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->SumIntoGlobalValues( gIndices[1], 4, v, gIndices ) );
+      TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->SumIntoMyValues( localRowIndexCache_[k][1], 4, v, localColIndexCache_[k].getRawPtr() ) );
       v[0] = c;
       v[1] = -s;
       v[2] = d;
       v[3] = 0.0;
-      TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->SumIntoGlobalValues( gIndices[2], 4, v, gIndices ) );
+      TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->SumIntoMyValues( localRowIndexCache_[k][2], 4, v, localColIndexCache_[k].getRawPtr() ) );
       v[0] = s;
       v[1] = c;
       v[2] = 0.0;
       v[3] = d;
-      TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->SumIntoGlobalValues( gIndices[3], 4, v, gIndices ) );
+      TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->SumIntoMyValues( localRowIndexCache_[k][3], 4, v, localColIndexCache_[k].getRawPtr() ) );
+}
       // -------------------------------------------------------------------
   }
+
+  return;
+}
+// =============================================================================
+void
+KeoFactory::
+buildLocalIndexCache_( const std::vector<stk::mesh::Entity*> & edges ) const
+{
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
+  Teuchos::TimeMonitor tm(*buildKeoTime2_);
+#endif
+
+  localColIndexCache_ = Teuchos::ArrayRCP<Teuchos::ArrayRCP<int> >(edges.size());
+  localRowIndexCache_ = Teuchos::ArrayRCP<Teuchos::ArrayRCP<int> >(edges.size());
+
+  Teuchos::Tuple<int,2> gid;
+  Teuchos::Tuple<int,2> lid;
+  int gIndices[4];
+  int localColIndices[4];
+  int localRowIndices[4];
+  const stk::mesh::EntityRank nodeRank = mesh_->getMetaData()->node_rank();
+  for ( unsigned int k=0; k<edges.size(); k++ )
+  {
+      stk::mesh::PairIterRelation endPoints;
+      endPoints = edges[k]->relations( nodeRank );
+
+      gid[0] = (*endPoints[0].entity()).identifier() - 1;
+      gid[1] = (*endPoints[1].entity()).identifier() - 1;
+
+      gIndices[0] = 2*gid[0];
+      gIndices[1] = 2*gid[0]+1;
+      gIndices[2] = 2*gid[1];
+      gIndices[3] = 2*gid[1]+1;
+
+      localColIndexCache_[k] = Teuchos::ArrayRCP<int>(4);
+      localColIndexCache_[k][0] = keoGraph_->ColMap().LID( gIndices[0] );
+//       TEST_FOR_EXCEPT_MSG( localColIndices[0] < 0,
+//                           "The global index " << gIndices[0]
+//                           << " does not seem to be present on this node." );
+      localColIndexCache_[k][1] = keoGraph_->ColMap().LID( gIndices[1] );
+//       TEST_FOR_EXCEPT_MSG( localColIndices[0] < 0,
+//                           "The global index " << gIndices[1]
+//                           << " does not seem to be present on this node." );
+      localColIndexCache_[k][2] = keoGraph_->ColMap().LID( gIndices[2] );
+//       TEST_FOR_EXCEPT_MSG( localColIndices[2] < 0,
+//                           "The global index " << gIndices[2]
+//                           << " does not seem to be present on this node." );
+      localColIndexCache_[k][3] = keoGraph_->ColMap().LID( gIndices[3] );
+//       TEST_FOR_EXCEPT_MSG( localColIndices[3] < 0,
+//                           "The global index " << gIndices[3]
+//                           << " does not seem to be present on this node." );
+
+      localRowIndexCache_[k] = Teuchos::ArrayRCP<int>(4);
+      localRowIndexCache_[k][0] = keoGraph_->RowMap().LID( gIndices[0] );
+//       TEST_FOR_EXCEPT_MSG( localRowIndices[0] < 0,
+//                           "The global index " << gIndices[0]
+//                           << " does not seem to be present on this node." );
+      localRowIndexCache_[k][1] = keoGraph_->RowMap().LID( gIndices[1] );
+//       TEST_FOR_EXCEPT_MSG( localRowIndices[0] < 0,
+//                           "The global index " << gIndices[1]
+//                           << " does not seem to be present on this node." );
+      localRowIndexCache_[k][2] = keoGraph_->RowMap().LID( gIndices[2] );
+//       TEST_FOR_EXCEPT_MSG( localRowIndices[2] < 0,
+//                           "The global index " << gIndices[2]
+//                           << " does not seem to be present on this node." );
+      localRowIndexCache_[k][3] = keoGraph_->RowMap().LID( gIndices[3] );
+//       TEST_FOR_EXCEPT_MSG( localRowIndices[3] < 0,
+//                           "The global index " << gIndices[3]
+//                           << " does not seem to be present on this node." );
+
+  }
+
+  localIndexCacheUpToDate_ = true;
+
+  return;
+}
+// =============================================================================
+void
+KeoFactory::
+buildAlphaCache_( const std::vector<stk::mesh::Entity*> & edges,
+                  const Teuchos::ArrayRCP<const double> & edgeCoefficients
+                ) const
+{
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
+  Teuchos::TimeMonitor tm(*buildKeoTime3_);
+#endif
+
+  alphaCache_ = Teuchos::ArrayRCP<double>( edges.size() );
+
+  Teuchos::Tuple<int,2> gid;
+  const stk::mesh::EntityRank nodeRank = mesh_->getMetaData()->node_rank();
+  for ( unsigned int k=0; k<edges.size(); k++ )
+  {
+      stk::mesh::PairIterRelation endPoints;
+      endPoints = edges[k]->relations( nodeRank );
+
+      gid[0] = (*endPoints[0].entity()).identifier() - 1;
+      gid[1] = (*endPoints[1].entity()).identifier() - 1;
+
+      int tlid0 = thickness_->Map().LID( gid[0] );
+      TEST_FOR_EXCEPT_MSG( tlid0 < 0,
+                           "The global index " << gid[0]
+                           << " does not seem to be present on this node." );
+      int tlid1 = thickness_->Map().LID( gid[1] );
+      TEST_FOR_EXCEPT_MSG( tlid1 < 0,
+                           "The global index " << gid[1]
+                           << " does not seem to be present on this node." );
+      double thickness = 0.5 * ( (*thickness_)[tlid0] + (*thickness_)[tlid1] );
+
+      alphaCache_[k] = edgeCoefficients[k] * thickness;
+  }
+
+  alphaCacheUpToDate_ = true;
 
   return;
 }

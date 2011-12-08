@@ -110,6 +110,14 @@ private:
                    const Teuchos::ArrayRCP<const double> & edgeCoefficients
                  ) const;
 
+    void
+    buildLocalIndexCache_( const std::vector<stk::mesh::Entity*> & edges ) const;
+
+    void
+    buildAlphaCache_( const std::vector<stk::mesh::Entity*> & edges,
+                      const Teuchos::ArrayRCP<const double> & edgeCoefficients
+                    ) const;
+
 private:
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
     const Teuchos::RCP<Teuchos::Time> buildKeoTime_;
@@ -135,6 +143,11 @@ private:
     mutable Teuchos::RCP<LOCA::ParameterVector> keoBuildParameters_;
     const Teuchos::RCP<Epetra_CrsMatrix> keoDMu_;
     mutable Teuchos::RCP<LOCA::ParameterVector> keoDMuBuildParameters_;
+    mutable Teuchos::ArrayRCP<Teuchos::ArrayRCP<int> > localColIndexCache_;
+    mutable Teuchos::ArrayRCP<Teuchos::ArrayRCP<int> > localRowIndexCache_;
+    mutable bool localIndexCacheUpToDate_;
+    mutable Teuchos::ArrayRCP<double> alphaCache_;
+    mutable bool alphaCacheUpToDate_;
 };
 // =============================================================================
 } // namespace Ginla
