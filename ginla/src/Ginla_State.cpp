@@ -133,7 +133,7 @@ save( const int index
 // =============================================================================
 double
 State::
-freeEnergy () const
+freeEnergy() const
 {
     double myEnergy = 0.0;
 

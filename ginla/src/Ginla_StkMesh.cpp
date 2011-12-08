@@ -176,11 +176,9 @@ StkMesh::
 getDomainArea() const
 {
   if ( !controlVolumesUpToDate_)
-  {
      this->computeControlVolumes_();
-     // update the domain area value
-     TEUCHOS_ASSERT_EQUALITY( 0, controlVolumes_->Norm1( &area_ ) );
-  }
+  // update the domain area value
+  TEUCHOS_ASSERT_EQUALITY( 0, controlVolumes_->Norm1( &area_ ) );
 
   return area_;
 }
