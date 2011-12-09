@@ -129,7 +129,7 @@ private:
 
 private:
     bool useTranspose_;
-    const Teuchos::RCP<const Epetra_Comm> comm_;
+    const Epetra_Comm & comm_;
 
     Teuchos::RCP<Ginla::KeoFactory> keoFactory_;
     // Make sure the matrix pointer is never changed; ML's

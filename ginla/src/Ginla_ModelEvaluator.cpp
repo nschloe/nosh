@@ -199,8 +199,8 @@ create_WPrec() const
   // This needs to be set to TRUE to make sure that the constructor of
   //    NOX::Epetra::LinearSystemStratimikos
   // chooses a user-defined preconditioner.
-  // Effectively, this boolean serves pretty well as a switch for the
-  // preconditioner.
+  // Effectively, this boolean serves pretty well as a quirky switch for the
+  // preconditioner if Piro is used.
   return Teuchos::rcp( new EpetraExt::ModelEvaluator::Preconditioner( keoPrec, true ) );
 }
 // ============================================================================

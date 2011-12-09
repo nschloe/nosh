@@ -449,7 +449,7 @@ computeEdgeCoefficients_() const
       // Get edge coordinates.
       unsigned int numLocalEdges = localEdges.size();
       Teuchos::ArrayRCP<DoubleVector> edges( numLocalEdges );
-      for ( int i=0; i<numLocalEdges; i++)
+      for ( unsigned int i=0; i<numLocalEdges; i++)
       {
           // Get the two end points.
           stk::mesh::PairIterRelation endPoints =
@@ -474,7 +474,7 @@ computeEdgeCoefficients_() const
           getEdgeCoefficientsNumerically_( edges );
 
       // Fill the edge coefficients into the vector.
-      for ( int i=0; i<numLocalEdges; i++ )
+      for ( unsigned int i=0; i<numLocalEdges; i++ )
       {
           const int gEdgeId = (*localEdges[i].entity()).identifier() - 1;
           const int lEdgeId = this->getEdgesOverlapMap()->LID( gEdgeId );

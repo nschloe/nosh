@@ -52,9 +52,9 @@ KeoRegularized::
 KeoRegularized( const Teuchos::RCP<Ginla::KeoFactory> & keoFactory
                  ):
         useTranspose_ ( false ),
-        comm_( Teuchos::rcpFromRef( keoFactory->getMesh()->getComm() ) ),
+        comm_( keoFactory->getComm() ),
         keoFactory_( keoFactory ),
-        keoRegularized_( Teuchos::rcp( new Epetra_CrsMatrix( Copy, *(keoFactory_->getKeoGraph() )) ) ),
+        keoRegularized_( Teuchos::null ),
         keoMlPrec_ ( Teuchos::null ),
         MlPrec_( Teuchos::null),
         keoIluProblem_( Teuchos::null ),
@@ -179,13 +179,13 @@ ApplyInverseMl_( const Epetra_MultiVector & X,
    // Perform solve
    Belos::ReturnType ret = newSolver->solve();
 
-   /* // compute the residual explicitly
-   Epetra_MultiVector R( Y.Map(), Y.NumVectors() );
-   keoRegularized_->Apply( Y, R );
-   R.Update( 1.0, X, -1.0 );
-   double s[1];
-   R.Norm2( s );
-   std::cout << " PRECON RES = " << s[0] << " in " << newSolver->getNumIters() << " iters" << std::endl;*/
+//    // compute the residual explicitly
+//    Epetra_MultiVector R( Y.Map(), Y.NumVectors() );
+//    keoRegularized_->Apply( Y, R );
+//    R.Update( 1.0, X, -1.0 );
+//    double s[1];
+//    R.Norm2( s );
+//    std::cout << " PRECON RES = " << s[0] << " in " << newSolver->getNumIters() << " iters" << std::endl;
 
    return ret==Belos::Converged ? 0 : -1;
 }
@@ -241,8 +241,7 @@ const Epetra_Comm &
 KeoRegularized::
 Comm () const
 {
-    TEUCHOS_ASSERT( !comm_.is_null() );
-    return *comm_;
+    return comm_;
 }
 // =============================================================================
 const Epetra_Map &
@@ -270,7 +269,8 @@ rebuild()
 #endif
     // -------------------------------------------------------------------------
     // Copy over the matrix.
-    *keoRegularized_ = *(keoFactory_->getKeo());
+    TEUCHOS_ASSERT( !keoFactory_.is_null() );
+    keoRegularized_ = Teuchos::rcp( new Epetra_CrsMatrix( *(keoFactory_->getKeo()) ) );
     keoRegularized_->Scale( -1.0 );
     // -------------------------------------------------------------------------
     // regularization
@@ -332,8 +332,8 @@ rebuildMl_()
 #endif
     // For reusing the ML structure, see
     //  <http://trilinos.sandia.gov/packages/docs/dev/packages/ml/doc/html/classML__Epetra_1_1MultiLevelPreconditioner.html>:
-    if ( MlPrec_.is_null() || MlPrec_->IsPreconditionerComputed()==false )
-    {
+//     if ( MlPrec_.is_null() || MlPrec_->IsPreconditionerComputed()==false )
+//     {
         // build ML structure
         Teuchos::ParameterList MLList;
         ML_Epetra::SetDefaults( "SA", MLList );
@@ -342,25 +342,36 @@ rebuildMl_()
         MLList.set("increasing or decreasing", "increasing");
         MLList.set("aggregation: type", "Uncoupled");
         MLList.set("smoother: type", "Chebyshev"); // "block Gauss-Seidel" "Chebyshev"
-//         MLList.set("aggregation: threshold", 0.0);
+        MLList.set("aggregation: threshold", 0.0);
         MLList.set("smoother: sweeps", 3);
         MLList.set("smoother: pre or post", "both");
         MLList.set("coarse: type", "Amesos-KLU");
         MLList.set("PDE equations", 2);
         // reuse the multilevel hierarchy
-        MLList.set("reuse: enable", true);
+//         MLList.set("reuse: enable", true);
 
         TEUCHOS_ASSERT( !keoRegularized_.is_null() );
 
+        // From http://trilinos.sandia.gov/packages/docs/r10.8/packages/ml/doc/html/classML__Epetra_1_1MultiLevelPreconditioner.html:
+        // "It is important to note that ML is more restrictive than Epetra for
+        //  the definition of maps. It is required that RowMatrixRowMap() is
+        //  equal to OperatorRangeMap(). This is because ML needs to perform
+        //  matrix-std::vector product, as well as getrow() functions, on the
+        //  same data distribution.
+        // "Also, for square matrices, OperatorDomainMap() must be as
+        //  OperatorRangeMap()."
+        // Make sure this is indeed the case.
+        TEUCHOS_ASSERT( keoRegularized_->OperatorRangeMap().SameAs( keoRegularized_->RowMatrixRowMap() ) );
+        TEUCHOS_ASSERT( keoRegularized_->OperatorDomainMap().SameAs( keoRegularized_->OperatorRangeMap() ) );
         MlPrec_ =
             Teuchos::rcp( new ML_Epetra::MultiLevelPreconditioner(*keoRegularized_, MLList) );
-    }
-    else
-    {
-        bool checkFiltering = true;
-        TEUCHOS_ASSERT_EQUALITY( 0, MlPrec_->ComputePreconditioner(checkFiltering) );
-        //TEUCHOS_ASSERT_EQUALITY( 0, MlPrec_->ReComputePreconditioner() );
-    }
+//     }
+//     else
+//     {
+//         bool checkFiltering = true;
+//         TEUCHOS_ASSERT_EQUALITY( 0, MlPrec_->ComputePreconditioner(checkFiltering) );
+//         //TEUCHOS_ASSERT_EQUALITY( 0, MlPrec_->ReComputePreconditioner() );
+//     }
 
 //    MlPrec_->PrintUnused(0);
 

@@ -36,9 +36,8 @@
 #endif
 #include <Teuchos_Tuple.hpp>
 
-#include <Epetra_CrsGraph.h>
-#include <Epetra_CrsMatrix.h>
-#include <Epetra_LinearProblem.h>
+#include <Epetra_FECrsGraph.h>
+#include <Epetra_FECrsMatrix.h>
 
 #include "Ginla_MagneticVectorPotential.hpp"
 // =============================================================================
@@ -57,7 +56,7 @@ public:
                      };
 
 public:
-    KeoFactory( const Teuchos::RCP<const Ginla::StkMesh>      & mesh,
+    KeoFactory( const Teuchos::RCP<const Ginla::StkMesh>           & mesh,
                 const Teuchos::RCP<const Epetra_Vector>            & thickness,
                 const Teuchos::RCP<Ginla::MagneticVectorPotential> & mvp
               );
@@ -65,8 +64,8 @@ public:
     // Destructor.
     ~KeoFactory();
 
-    const Teuchos::RCP<const Ginla::StkMesh>
-    getMesh() const;
+    const Epetra_Comm &
+    getComm() const;
 
     void
     updateParameters( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams
@@ -75,79 +74,81 @@ public:
     const Teuchos::RCP<const LOCA::ParameterVector>
     getMvpParameters() const;
 
-    Teuchos::RCP<const Epetra_CrsGraph>
-    getKeoGraph() const;
-
-    Teuchos::RCP<const Epetra_CrsMatrix>
+    Teuchos::RCP<const Epetra_FECrsMatrix>
     getKeo() const;
 
-    Teuchos::RCP<const Epetra_CrsMatrix>
+    Teuchos::RCP<const Epetra_FECrsMatrix>
     getKeoDMu() const;
 
 protected:
 
 private:
-    const Teuchos::RCP<Epetra_CrsGraph>
+    const Teuchos::RCP<Epetra_FECrsGraph>
     buildKeoGraph_() const;
 
-    Teuchos::RCP<Epetra_CrsMatrix>
-    buildKeo_( const EMatrixType matrixType ) const;
-
     void
-    fillKeo_( const Teuchos::RCP<Epetra_CrsMatrix> & keoMatrix,
+    fillKeo_( const Teuchos::RCP<Epetra_FECrsMatrix> & keoMatrix,
               const EMatrixType matrixType
             ) const;
 
     void
-    fillKeoCellEdges_( const Teuchos::RCP<Epetra_CrsMatrix> & keoMatrix,
-                       const EMatrixType matrixType,
-                       const Teuchos::ArrayRCP<const DoubleVector> & edgeCoefficientsFallback
-                     ) const;
+    buildKeoGraphEdges_( const Teuchos::RCP<Epetra_FECrsGraph> & keoGraph ) const;
 
     void
-    fillKeoEdges_( const Teuchos::RCP<Epetra_CrsMatrix> & keoMatrix,
+    fillKeoEdges_( const Teuchos::RCP<Epetra_FECrsMatrix> & keoMatrix,
                    const EMatrixType matrixType,
                    const Teuchos::ArrayRCP<const double> & edgeCoefficients
                  ) const;
 
     void
-    buildLocalIndexCache_( const std::vector<stk::mesh::Entity*> & edges ) const;
+    buildGlobalIndexCache_( const std::vector<stk::mesh::Entity*> & edges ) const;
 
     void
     buildAlphaCache_( const std::vector<stk::mesh::Entity*> & edges,
                       const Teuchos::ArrayRCP<const double> & edgeCoefficients
                     ) const;
 
+    void
+    buildKeoGraphCellEdges_( const Teuchos::RCP<Epetra_FECrsGraph> & keoGraph ) const;
+
+    void
+    fillKeoCellEdges_( const Teuchos::RCP<Epetra_FECrsMatrix> & keoMatrix,
+                       const EMatrixType matrixType,
+                       const Teuchos::ArrayRCP<const DoubleVector> & edgeCoefficientsFallback
+                     ) const;
+
+    void
+    buildGlobalIndexFallbackCache_( const std::vector<stk::mesh::Entity*> & cells ) const;
+
+    void
+    buildAlphaFallbackCache_( const std::vector<stk::mesh::Entity*> & cells,
+                              const Teuchos::ArrayRCP<const DoubleVector> & edgeCoefficientsFallback
+                            ) const;
+
 private:
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
-    const Teuchos::RCP<Teuchos::Time> buildKeoTime_;
+    const Teuchos::RCP<Teuchos::Time> keoFillTime_;
     const Teuchos::RCP<Teuchos::Time> buildKeoGraphTime_;
-    const Teuchos::RCP<Teuchos::Time> buildKeoTime1_;
-    const Teuchos::RCP<Teuchos::Time> buildKeoTime2_;
-    const Teuchos::RCP<Teuchos::Time> buildKeoTime3_;
-    const Teuchos::RCP<Teuchos::Time> buildKeoTime4_;
-    const Teuchos::RCP<Teuchos::Time> buildKeoTime5_;
-    const Teuchos::RCP<Teuchos::Time> buildKeoTime6_;
-    const Teuchos::RCP<Teuchos::Time> buildKeoTime7_;
-    const Teuchos::RCP<Teuchos::Time> buildKeoTime8_;
-    const Teuchos::RCP<Teuchos::Time> buildKeoTime9_;
-    const Teuchos::RCP<Teuchos::Time> buildKeoTime10_;
-    const Teuchos::RCP<Teuchos::Time> buildKeoTime11_;
-    const Teuchos::RCP<Teuchos::Time> buildKeoTime12_;
 #endif
     const Teuchos::RCP<const Ginla::StkMesh> mesh_;
     const Teuchos::RCP<const Epetra_Vector> thickness_;
     const Teuchos::RCP<Ginla::MagneticVectorPotential> mvp_;
-    const Teuchos::RCP<const Epetra_CrsGraph> keoGraph_;
-    const Teuchos::RCP<Epetra_CrsMatrix> keo_;
+
+    mutable Teuchos::ArrayRCP<Epetra_IntSerialDenseVector> globalIndexCache_;
+    mutable bool globalIndexCacheUpToDate_;
+    mutable Teuchos::ArrayRCP<Teuchos::ArrayRCP<Epetra_IntSerialDenseVector> > globalIndexFallbackCache_;
+    mutable bool globalIndexFallbackCacheUpToDate_;
+
+    const Teuchos::RCP<const Epetra_FECrsGraph> keoGraph_;
+    const Teuchos::RCP<Epetra_FECrsMatrix> keo_;
     mutable Teuchos::RCP<LOCA::ParameterVector> keoBuildParameters_;
-    const Teuchos::RCP<Epetra_CrsMatrix> keoDMu_;
+    const Teuchos::RCP<Epetra_FECrsMatrix> keoDMu_;
     mutable Teuchos::RCP<LOCA::ParameterVector> keoDMuBuildParameters_;
-    mutable Teuchos::ArrayRCP<Teuchos::ArrayRCP<int> > localColIndexCache_;
-    mutable Teuchos::ArrayRCP<Teuchos::ArrayRCP<int> > localRowIndexCache_;
-    mutable bool localIndexCacheUpToDate_;
+
     mutable Teuchos::ArrayRCP<double> alphaCache_;
     mutable bool alphaCacheUpToDate_;
+    mutable Teuchos::ArrayRCP<DoubleVector> alphaFallbackCache_;
+    mutable bool alphaFallbackCacheUpToDate_;
 };
 // =============================================================================
 } // namespace Ginla
