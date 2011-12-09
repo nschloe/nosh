@@ -136,7 +136,9 @@ ApplyInverseMl_( const Epetra_MultiVector & X,
 
    // Belos part
    Teuchos::ParameterList belosList;
-   belosList.set( "Convergence Tolerance", 1.0e-10 ); // Relative convergence tolerance requested
+   // Relative convergence tolerance requested
+   // TODO This could be replace by something adaptive in the future.
+   belosList.set( "Convergence Tolerance", 1.0e-10 );
    if (verbose) {
      belosList.set( "Verbosity",
                     Belos::Errors +
