@@ -196,7 +196,12 @@ create_WPrec() const
   Teuchos::RCP<Epetra_Operator> keoPrec =
           Teuchos::rcp( new Ginla::KeoRegularized( keoFactory_ ) );
   // bool is answer to: "Prec is already inverted?"
-  return Teuchos::rcp( new EpetraExt::ModelEvaluator::Preconditioner( keoPrec, false ) );
+  // This needs to be set to TRUE to make sure that the constructor of
+  //    NOX::Epetra::LinearSystemStratimikos
+  // chooses a user-defined preconditioner.
+  // Effectively, this boolean serves pretty well as a switch for the
+  // preconditioner.
+  return Teuchos::rcp( new EpetraExt::ModelEvaluator::Preconditioner( keoPrec, true ) );
 }
 // ============================================================================
 EpetraExt::ModelEvaluator::InArgs

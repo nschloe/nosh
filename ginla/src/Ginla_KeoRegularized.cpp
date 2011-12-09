@@ -89,6 +89,12 @@ Apply ( const Epetra_MultiVector & X,
               Epetra_MultiVector & Y
       ) const
 {
+    // This serves as a safeguard:
+    // Although this method in principle works, it isn't supposed to be used
+    // in the given context.
+    TEST_FOR_EXCEPT_MSG( true,
+                         "Not implemented."
+                       );
     TEUCHOS_ASSERT( !keoRegularized_.is_null() );
     return keoRegularized_->Apply( X, Y );
 }
@@ -111,8 +117,8 @@ ApplyInverse( const Epetra_MultiVector & X,
         break;
     default:
         TEST_FOR_EXCEPT_MSG( true,
-                                     "Illegal value of the invType \""
-                                     << invType_ << "\"." );
+                             "Illegal value of the invType \""
+                             << invType_ << "\"." );
         break;
   }
 
@@ -263,7 +269,6 @@ rebuild()
     // -------------------------------------------------------------------------
     // Copy over the matrix.
     *keoRegularized_ = *(keoFactory_->getKeo());
-//    keoRegularized_ = keoFactory_->buildKeo();
     keoRegularized_->Scale( -1.0 );
     // -------------------------------------------------------------------------
     // regularization
@@ -296,9 +301,9 @@ rebuild()
           break;
       default:
           TEST_FOR_EXCEPT_MSG( true,
-                                       "Illegal value of the invType \""
-                                       << invType_ << "\"."
-                                     );
+                               "Illegal value of the invType \""
+                               << invType_ << "\"."
+                             );
           break;
     }
     // -------------------------------------------------------------------------
