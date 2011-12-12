@@ -123,16 +123,8 @@ int main ( int argc, char *argv[] )
       Teuchos::RCP<Ginla::KeoFactory> keoFactory =
           Teuchos::rcp( new Ginla::KeoFactory( mesh, thickness, mvp ) );
 
-      Teuchos::RCP<Teuchos::Time> graphConstructTime = Teuchos::TimeMonitor::getNewTimer("Graph construction");
-      Teuchos::RCP<const Epetra_CrsGraph> keoGraph;
-      {
-          Teuchos::TimeMonitor tm(*graphConstructTime);
-          keoGraph = keoFactory->getKeoGraph();
-      }
-
       // create the kinetic energy operator
       Teuchos::RCP<Epetra_CrsMatrix> keoMatrix;
-      keoMatrix = Teuchos::rcp( new Epetra_CrsMatrix( Copy, *keoGraph ) );
       Teuchos::RCP<Teuchos::Time> keoConstructTime = Teuchos::TimeMonitor::getNewTimer("Matrix construction");
       {
           Teuchos::TimeMonitor tm(*keoConstructTime);

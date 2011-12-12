@@ -137,7 +137,7 @@ ApplyInverseMl_( const Epetra_MultiVector & X,
    // Belos part
    Teuchos::ParameterList belosList;
    // Relative convergence tolerance requested
-   // TODO This could be replace by something adaptive in the future.
+   // TODO This could be replaced by something adaptive in the future.
    belosList.set( "Convergence Tolerance", 1.0e-10 );
    if (verbose) {
      belosList.set( "Verbosity",
@@ -348,7 +348,7 @@ rebuildMl_()
         MLList.set("coarse: type", "Amesos-KLU");
         MLList.set("PDE equations", 2);
         // reuse the multilevel hierarchy
-//         MLList.set("reuse: enable", true);
+        // MLList.set("reuse: enable", true);
 
         TEUCHOS_ASSERT( !keoRegularized_.is_null() );
 

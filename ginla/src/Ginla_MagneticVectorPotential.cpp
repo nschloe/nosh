@@ -39,16 +39,14 @@ MagneticVectorPotential( const Teuchos::RCP<Ginla::StkMesh>           & mesh,
   edgeMidpointProjectionFallbackCacheUpToDate_( false )
 {
     TEUCHOS_ASSERT( !mesh_.is_null() );
-    // TODO remove one
     try
     {
         edgeMidpointProjectionCache_ = Teuchos::ArrayRCP<double>( mesh_->getOverlapEdges().size() );
     }
     catch( ... )
     {
-        edgeMidpointProjectionCache_ = Teuchos::ArrayRCP<double>();
+        edgeMidpointProjectionFallbackCache_ = Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >( mesh_->getOwnedCells().size() );
     }
-    edgeMidpointProjectionFallbackCache_ = Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >( mesh_->getOwnedCells().size() );
     return;
 }
 // ============================================================================

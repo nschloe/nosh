@@ -122,13 +122,6 @@ int main ( int argc, char *argv[] )
       Teuchos::RCP<Ginla::KeoFactory> keoFactory =
           Teuchos::rcp( new Ginla::KeoFactory( mesh, thickness, mvp ) );
 
-      Teuchos::RCP<const Epetra_CrsGraph> keoGraph;
-      Teuchos::RCP<Teuchos::Time> graphConstructTime = Teuchos::TimeMonitor::getNewTimer("Graph construction");
-      {
-          Teuchos::TimeMonitor tm(*graphConstructTime);
-          keoGraph = keoFactory->getKeoGraph();
-      }
-
       // create the kinetic energy operator
       Teuchos::RCP<Epetra_CrsMatrix> keoMatrix;
       Teuchos::RCP<Teuchos::Time> keoConstructTime = Teuchos::TimeMonitor::getNewTimer("Matrix construction");
@@ -136,6 +129,8 @@ int main ( int argc, char *argv[] )
           Teuchos::TimeMonitor tm(*keoConstructTime);
           keoFactory->updateParameters( mvpParameters );
           // Copy over the matrix
+          // TODO Well, we'll need to copy here as the KEO is otherwise negative
+          // deinite.
           keoMatrix = Teuchos::rcp( new Epetra_CrsMatrix( *keoFactory->getKeo() ) );
       }
       // Make sure the matrix is indeed positive definite, and not

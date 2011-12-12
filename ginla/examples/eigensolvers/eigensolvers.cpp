@@ -120,13 +120,6 @@ int main ( int argc, char *argv[] )
       Teuchos::RCP<Ginla::KeoFactory> keoFactory =
           Teuchos::rcp( new Ginla::KeoFactory( mesh, thickness, mvp ) );
 
-      Teuchos::RCP<const Epetra_CrsGraph> keoGraph;
-      Teuchos::RCP<Teuchos::Time> graphConstructTime = Teuchos::TimeMonitor::getNewTimer("Graph construction");
-      {
-          Teuchos::TimeMonitor tm(*graphConstructTime);
-          keoGraph = keoFactory->getKeoGraph();
-      }
-
       // create Jacobian
       Teuchos::RCP<Teuchos::Time> jacobianConstructTime = Teuchos::TimeMonitor::getNewTimer("Jacobian construction");
       Teuchos::RCP<Ginla::JacobianOperator> jac;
