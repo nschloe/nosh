@@ -99,15 +99,15 @@ testKeo( const std::string & inputFileNameBase,
     TEST_FLOATING_EQUALITY( normInf, controlNormInf, 1.0e-12 );
 
     const Epetra_Map & map = keoMatrix->DomainMap();
+    double sum;
+    Epetra_Vector u( map );
+    Epetra_Vector Ku( map );
 
     // Add up all the entries of the matrix.
-    Epetra_Vector e( map );
-    e.PutScalar( 1.0 );
-    Epetra_Vector Ke( map );
-    keoMatrix->Apply( e, Ke );
-    double sum[1];
-    e.Dot( Ke, sum );
-    TEST_FLOATING_EQUALITY( sum[0], controlSum, 1.0e-10 );
+    u.PutScalar( 1.0 );
+    keoMatrix->Apply( u, Ku );
+    u.Dot( Ku, &sum );
+    TEST_FLOATING_EQUALITY( sum, controlSum, 1.0e-10 );
 
     // Sum over all the "real parts" of the matrix.
     // Remember that a 2x2 block corresponding to z is composed as
@@ -116,36 +116,34 @@ testKeo( const std::string & inputFileNameBase,
     // Build vector [ 1, 0, 1, 0, ... ]:
     double one  = 1.0;
     double zero = 0.0;
-    Epetra_Vector s0( map );
     for ( int k=0; k<map.NumMyPoints(); k++ )
     {
-        if ( map.GID(k) % 2 )
-            s0.ReplaceMyValues( 1, &one, &k );
+        if ( map.GID(k) % 2 == 0 )
+            u.ReplaceMyValues( 1, &one, &k );
         else
-            s0.ReplaceMyValues( 1, &zero, &k );
+            u.ReplaceMyValues( 1, &zero, &k );
     }
-    Epetra_Vector t0( map );
-    keoMatrix->Apply( s0, t0 );
-    s0.Dot( t0, sum );
-    TEST_FLOATING_EQUALITY( sum[0], controlSumReal, 1.0e-10 );
+    keoMatrix->Apply( u, Ku );
+    u.Dot( Ku, &sum );
+    TEST_FLOATING_EQUALITY( sum, controlSumReal, 1.0e-10 );
 
     // Sum over all the "imaginary parts" of the matrix.
-    Epetra_Vector s1( map );
+    // Build vector [ 0, 1, 0, 1, ... ]:
+    Epetra_Vector v( map );
     for ( int k=0; k<map.NumMyPoints(); k++ )
     {
-        if ( map.GID(k) % 2 )
-            s1.ReplaceMyValues( 1, &zero, &k );
+        if ( map.GID(k) % 2 == 0 )
+            v.ReplaceMyValues( 1, &zero, &k );
         else
-            s1.ReplaceMyValues( 1, &one, &k );
+            v.ReplaceMyValues( 1, &one, &k );
     }
-    Epetra_Vector t1( map );
-    keoMatrix->Apply( s0, t1 );
-    s1.Dot( t0, sum );
+    keoMatrix->Apply( u, Ku );
+    v.Dot( Ku, &sum );
     // The matrix is Hermitian, so just test that the sum of
     // the imaginary parts is (close to) 0.
     // Don't use TEST_FLOATING_EQUALITY as this one checks
     // the *relative* error.
-    TEST_COMPARE( fabs(sum[0]), <, 1.0e-12 );
+    TEST_COMPARE( fabs(sum), <, 1.0e-12 );
 
     return;
 }
