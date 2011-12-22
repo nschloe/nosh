@@ -79,7 +79,7 @@ testJac( const std::string & inputFileNameBase,
     // (a) [ 1, 1, 1, ... ]
     s.PutScalar( 1.0 );
     jac->Apply( s, t );
-    t.Dot( t, &sum );
+    s.Dot( t, &sum );
     TEST_FLOATING_EQUALITY( sum, controlSumT0, 1.0e-12 );
 
     // (b) [ 1, 0, 1, 0, ... ]
@@ -87,25 +87,25 @@ testJac( const std::string & inputFileNameBase,
     double zero = 0.0;
     for ( int k=0; k<map.NumMyPoints(); k++ )
     {
-        if ( map.GID(k) % 2 )
+        if ( map.GID(k) % 2 == 0 )
             s.ReplaceMyValues( 1, &one, &k );
         else
             s.ReplaceMyValues( 1, &zero, &k );
     }
     jac->Apply( s, t );
-    t.Dot( t, &sum );
+    s.Dot( t, &sum );
     TEST_FLOATING_EQUALITY( sum, controlSumT1, 1.0e-12 );
 
     // (b) [ 0, 1, 0, 1, ... ]
     for ( int k=0; k<map.NumMyPoints(); k++ )
     {
-        if ( map.GID(k) % 2 )
+        if ( map.GID(k) % 2 == 0 )
             s.ReplaceMyValues( 1, &zero, &k );
         else
             s.ReplaceMyValues( 1, &one, &k );
     }
     jac->Apply( s, t );
-    t.Dot( t, &sum );
+    s.Dot( t, &sum );
     TEST_FLOATING_EQUALITY( sum, controlSumT2, 1.0e-12 );
 
     return;
@@ -116,9 +116,9 @@ TEUCHOS_UNIT_TEST( Ginla, JacRectangleSmallHashes )
     std::string inputFileNameBase = "rectanglesmall";
 
     double mu = 1.0e-2;
-    double controlSumT0 = 100.18562861275;
-    double controlSumT1 = 0.0612534502210909;
-    double controlSumT2 = 100.124375162529;
+    double controlSumT0 = -20.0126243424616;
+    double controlSumT1 = -20.0063121712308;
+    double controlSumT2 = -0.00631217123080606;
 
     testJac( inputFileNameBase,
              mu,
@@ -134,9 +134,9 @@ TEUCHOS_UNIT_TEST( Ginla, JacPacmanHashes )
     std::string inputFileNameBase = "pacman";
 
     double mu = 1.0e-2;
-    double controlSumT0 = 948.032444865317;
-    double controlSumT1 = 0.0157557887050421;
-    double controlSumT2 = 948.019892556299;
+    double controlSumT0 = -605.786286731452;
+    double controlSumT1 = -605.415844086736;
+    double controlSumT2 = -0.370442644715631;
 
     testJac( inputFileNameBase,
              mu,
@@ -152,9 +152,9 @@ TEUCHOS_UNIT_TEST( Ginla, JacCubeSmallHashes )
     std::string inputFileNameBase = "cubesmall";
 
     double mu = 1.0e-2;
-    double controlSumT0 = 50.0664847136865;
-    double controlSumT1 = 0.0226870005408938;
-    double controlSumT2 = 50.0437977131456;
+    double controlSumT0 = -20.0084442850419;
+    double controlSumT1 = -20.0042221425209;
+    double controlSumT2 = -0.00422214252093753;
 
     testJac( inputFileNameBase,
              mu,
@@ -170,9 +170,9 @@ TEUCHOS_UNIT_TEST( Ginla, JacCubeLargeHashes )
     std::string inputFileNameBase = "cubelarge";
 
     double mu = 1.0e-2;
-    double controlSumT0 = 155.752799704;
-    double controlSumT1 = 0.0097373986355898;
-    double controlSumT2 = 155.743062305368;
+    double controlSumT0 = -2000.83481552596;
+    double controlSumT1 = -2000.417407763;
+    double controlSumT2 = -0.417407762970538;
 
     testJac( inputFileNameBase,
              mu,
