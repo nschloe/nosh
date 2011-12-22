@@ -23,9 +23,9 @@ namespace {
 void
 testJac( const std::string & inputFileNameBase,
          const double mu,
-         const double controlNormT0,
-         const double controlNormT1,
-         const double controlNormT2,
+         const double controlSumT0,
+         const double controlSumT1,
+         const double controlSumT2,
          Teuchos::FancyOStream & out,
          bool & success )
 {
@@ -70,51 +70,43 @@ testJac( const std::string & inputFileNameBase,
     Teuchos::RCP<Ginla::JacobianOperator> jac =
         Teuchos::rcp( new Ginla::JacobianOperator( mesh, thickness, keoFactory, z ) );
 
-    // Create test vectors.
-    // (a) vector os ones
+    double sum;
     const Epetra_Map & map = jac->OperatorDomainMap();
-    Teuchos::RCP<Epetra_Vector> s0 = Teuchos::rcp( new Epetra_Vector(map) );
-    s0->PutScalar( 1.0 );
-    Teuchos::RCP<Epetra_Vector> t0 = Teuchos::rcp( new Epetra_Vector(map) );
-    jac->Apply( *s0, *t0 );
-    // check norm
-    double normT0;
-    t0->Norm1( &normT0 );
-    TEST_FLOATING_EQUALITY( normT0, controlNormT0, 1.0e-12 );
+    Epetra_Vector s(map);
+    Epetra_Vector t(map);
+
+    // Create test vectors.
+    // (a) [ 1, 1, 1, ... ]
+    s.PutScalar( 1.0 );
+    jac->Apply( s, t );
+    t.Dot( t, &sum );
+    TEST_FLOATING_EQUALITY( sum, controlSumT0, 1.0e-12 );
 
     // (b) [ 1, 0, 1, 0, ... ]
-    Teuchos::RCP<Epetra_Vector> s1 = Teuchos::rcp( new Epetra_Vector(map) );
-    Teuchos::RCP<Epetra_Vector> t1 = Teuchos::rcp( new Epetra_Vector(map) );
     double one  = 1.0;
     double zero = 0.0;
     for ( int k=0; k<map.NumMyPoints(); k++ )
     {
         if ( map.GID(k) % 2 )
-            s1->ReplaceMyValues( 1, &one, &k );
+            s.ReplaceMyValues( 1, &one, &k );
         else
-            s1->ReplaceMyValues( 1, &zero, &k );
+            s.ReplaceMyValues( 1, &zero, &k );
     }
-    jac->Apply( *s1, *t1 );
-    // check norm
-    double normT1;
-    t1->Norm1( &normT1 );
-    TEST_FLOATING_EQUALITY( normT1, controlNormT1, 1.0e-12 );
+    jac->Apply( s, t );
+    t.Dot( t, &sum );
+    TEST_FLOATING_EQUALITY( sum, controlSumT1, 1.0e-12 );
 
     // (b) [ 0, 1, 0, 1, ... ]
-    Teuchos::RCP<Epetra_Vector> s2 = Teuchos::rcp( new Epetra_Vector(map) );
-    Teuchos::RCP<Epetra_Vector> t2 = Teuchos::rcp( new Epetra_Vector(map) );
     for ( int k=0; k<map.NumMyPoints(); k++ )
     {
         if ( map.GID(k) % 2 )
-            s2->ReplaceMyValues( 1, &zero, &k );
+            s.ReplaceMyValues( 1, &zero, &k );
         else
-            s2->ReplaceMyValues( 1, &one, &k );
+            s.ReplaceMyValues( 1, &one, &k );
     }
-    jac->Apply( *s2, *t2 );
-    // check norm
-    double normT2;
-    t2->Norm1( &normT2 );
-    TEST_FLOATING_EQUALITY( normT2, controlNormT2, 1.0e-12 );
+    jac->Apply( s, t );
+    t.Dot( t, &sum );
+    TEST_FLOATING_EQUALITY( sum, controlSumT2, 1.0e-12 );
 
     return;
 }
@@ -124,15 +116,15 @@ TEUCHOS_UNIT_TEST( Ginla, JacRectangleSmallHashes )
     std::string inputFileNameBase = "rectanglesmall";
 
     double mu = 1.0e-2;
-    double controlNormT0 = 20.5012606103421;
-    double controlNormT1 = 0.50126061034211;
-    double controlNormT2 = 20.5012606103421;
+    double controlSumT0 = 100.18562861275;
+    double controlSumT1 = 0.0612534502210909;
+    double controlSumT2 = 100.124375162529;
 
     testJac( inputFileNameBase,
              mu,
-             controlNormT0,
-             controlNormT1,
-             controlNormT2,
+             controlSumT0,
+             controlSumT1,
+             controlSumT2,
              out,
              success );
 }
@@ -142,15 +134,15 @@ TEUCHOS_UNIT_TEST( Ginla, JacPacmanHashes )
     std::string inputFileNameBase = "pacman";
 
     double mu = 1.0e-2;
-    double controlNormT0 = 606.123970266964;
-    double controlNormT1 = 0.713664749303349;
-    double controlNormT2 = 605.759066191324;
+    double controlSumT0 = 948.032444865317;
+    double controlSumT1 = 0.0157557887050421;
+    double controlSumT2 = 948.019892556299;
 
     testJac( inputFileNameBase,
              mu,
-             controlNormT0,
-             controlNormT1,
-             controlNormT2,
+             controlSumT0,
+             controlSumT1,
+             controlSumT2,
              out,
              success );
 }
@@ -160,15 +152,15 @@ TEUCHOS_UNIT_TEST( Ginla, JacCubeSmallHashes )
     std::string inputFileNameBase = "cubesmall";
 
     double mu = 1.0e-2;
-    double controlNormT0 = 20.2913968894543;
-    double controlNormT1 = 0.289990630357598;
-    double controlNormT2 = 20.2899906303576;
+    double controlSumT0 = 50.0664847136865;
+    double controlSumT1 = 0.0226870005408938;
+    double controlSumT2 = 50.0437977131456;
 
     testJac( inputFileNameBase,
              mu,
-             controlNormT0,
-             controlNormT1,
-             controlNormT2,
+             controlSumT0,
+             controlSumT1,
+             controlSumT2,
              out,
              success );
 }
@@ -178,15 +170,15 @@ TEUCHOS_UNIT_TEST( Ginla, JacCubeLargeHashes )
     std::string inputFileNameBase = "cubelarge";
 
     double mu = 1.0e-2;
-    double controlNormT0 = 2006.09839315077;
-    double controlNormT1 = 5.74651996372481;
-    double controlNormT2 = 2005.74651996367;
+    double controlSumT0 = 155.752799704;
+    double controlSumT1 = 0.0097373986355898;
+    double controlSumT2 = 155.743062305368;
 
     testJac( inputFileNameBase,
              mu,
-             controlNormT0,
-             controlNormT1,
-             controlNormT2,
+             controlSumT0,
+             controlSumT1,
+             controlSumT2,
              out,
              success );
 }
