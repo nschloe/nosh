@@ -410,7 +410,7 @@ computeF_ ( const Epetra_Vector                             & x,
       //
       //        |control volume| * thickness(x_k) * f(psi(x_k))
       //
-      //     as suggested by mass lumping. This works if if thickness(x_k) is available.
+      //     as suggested by mass lumping. This works if thickness(x_k) is available.
       //
       double alpha = controlVolumes[k] * (*thickness_)[k]
                      * ( (1.0-temperature) - x[2*k]*x[2*k] - x[2*k+1]*x[2*k+1] );

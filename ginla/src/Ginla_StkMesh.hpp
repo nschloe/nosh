@@ -99,7 +99,7 @@ public:
     getControlVolumes() const;
 
     double
-    getDomainArea() const;
+    getDomainVolume() const;
 
     const Epetra_Comm &
     getComm() const;
@@ -184,8 +184,6 @@ private:
     mutable bool edgeCoefficientsFallbackUpToDate_;
 
     mutable bool createdAdjacentEntities_;
-
-    mutable double area_;
 
     bool isOutputFileSet_;
 

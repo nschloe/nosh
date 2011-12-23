@@ -106,7 +106,7 @@ int main ( int argc, char *argv[] )
       // Cast the data into something more accessible.
       Teuchos::RCP<Ginla::StkMesh>     & mesh = data.get( "mesh", Teuchos::RCP<Ginla::StkMesh>() );
       Teuchos::RCP<Epetra_Vector>      & z = data.get( "psi", Teuchos::RCP<Epetra_Vector>() );
-      Teuchos::RCP<Epetra_MultiVector> & mvpValues = data.get( "A", Teuchos::RCP<Epetra_MultiVector>() );
+      Teuchos::RCP<const Epetra_MultiVector> & mvpValues = data.get( "A", Teuchos::RCP<const Epetra_MultiVector>() );
       Teuchos::RCP<Epetra_Vector>      & thickness = data.get( "thickness", Teuchos::RCP<Epetra_Vector>() );
       Teuchos::ParameterList           & problemParameters = data.get( "Problem parameters", Teuchos::ParameterList() );
 
@@ -116,9 +116,8 @@ int main ( int argc, char *argv[] )
       {
           Teuchos::TimeMonitor tm(*mvpConstructTime);
           mu = problemParameters.get<double> ( "mu" );
-          mu = 2.0e-1;
+          mu = 1.0e-6;
           mvp = Teuchos::rcp ( new Ginla::MagneticVectorPotential ( mesh, mvpValues, mu ) );
-//          mvp->initializeEdgeMidpointProjectionCache_();
       }
 
       Teuchos::RCP<LOCA::ParameterVector> mvpParameters =
@@ -151,7 +150,7 @@ int main ( int argc, char *argv[] )
       // -----------------------------------------------------------------------
       // Belos part
       Teuchos::ParameterList belosList;
-      belosList.set( "Convergence Tolerance", 1.0e-15 );  // Relative convergence tolerance requested
+      belosList.set( "Convergence Tolerance", 1.0e-12 );  // Relative convergence tolerance requested
       if (verbose) {
         belosList.set( "Verbosity",
                        Belos::Errors +
@@ -168,7 +167,7 @@ int main ( int argc, char *argv[] )
       else
         belosList.set( "Verbosity", Belos::Errors + Belos::Warnings );
 
-      belosList.set( "Maximum Iterations", 2000 );
+      belosList.set( "Maximum Iterations", 10000 );
 
       // Only print on the zero processor
       const bool proc_verbose = verbose && (eComm->MyPID()==0);
@@ -177,8 +176,8 @@ int main ( int argc, char *argv[] )
       Belos::LinearProblem<double,MV,OP> problem( jac, epetra_x, epetra_b );
       bool set = problem.setProblem();
       TEST_FOR_EXCEPTION( !set,
-                                  std::logic_error,
-                                  "ERROR:  Belos::LinearProblem failed to set up correctly!" );
+                          std::logic_error,
+                          "ERROR:  Belos::LinearProblem failed to set up correctly!" );
       // -----------------------------------------------------------------------
       // create preconditioner
       Teuchos::RCP<Teuchos::Time> precConstructTime = Teuchos::TimeMonitor::getNewTimer("Prec construction");
@@ -202,9 +201,10 @@ int main ( int argc, char *argv[] )
       // -----------------------------------------------------------------------
       // Create an iterative solver manager.
 
-      belosList.set( "Assert Positive Definiteness", false );
+//      belosList.set( "Assert Positive Definiteness", false );
       Teuchos::RCP<Belos::SolverManager<double,MV,OP> > newSolver
-              = Teuchos::rcp( new Belos::PseudoBlockCGSolMgr<double,MV,OP>( Teuchos::rcp(&problem,false),
+//              = Teuchos::rcp( new Belos::PseudoBlockCGSolMgr<double,MV,OP>( Teuchos::rcp(&problem,false),
+              = Teuchos::rcp( new Belos::MinresSolMgr<double,MV,OP>( Teuchos::rcp(&problem,false),
                                                                             Teuchos::rcp(&belosList,false)
                                                                           )
                             );
@@ -227,6 +227,8 @@ int main ( int argc, char *argv[] )
           Belos::ReturnType ret = newSolver->solve();
           success = ret==Belos::Converged;
       }
+
+      *out << newSolver->getNumIters() << std::endl;
       // -----------------------------------------------------------------------
       //
       // Compute actual residuals.

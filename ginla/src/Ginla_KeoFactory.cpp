@@ -489,6 +489,7 @@ fillKeoCellEdges_( const Teuchos::RCP<Epetra_FECrsMatrix> & keoMatrix,
           // and then multiply it with the edge length, don't normalize the
           // edge vector.
           double aInt = mvp_->getAEdgeMidpointProjectionFallback( k, edgeIndex );
+          double alpha = alphaFallbackCache_[k][edgeIndex];
           double c, s, d;
           double sinAInt, cosAInt;
           //sinAInt = sin(aInt);
@@ -498,23 +499,23 @@ fillKeoCellEdges_( const Teuchos::RCP<Epetra_FECrsMatrix> & keoMatrix,
           {
               case MATRIX_TYPE_REGULAR: // no derivative
               {
-                  c = alphaFallbackCache_[k][edgeIndex] * cosAInt;
-                  s = alphaFallbackCache_[k][edgeIndex] * sinAInt;
-                  d = - alphaFallbackCache_[k][edgeIndex];
+                  c = alpha * cosAInt;
+                  s = alpha * sinAInt;
+                  d = - alpha;
                   break;
               }
               case MATRIX_TYPE_DMU: // dK/dmu
               {
                   double dAdMuInt = mvp_->getdAdMuEdgeMidpointProjectionFallback( k, edgeIndex );
-                  c = - alphaFallbackCache_[k][edgeIndex] * dAdMuInt * sinAInt;
-                  s =   alphaFallbackCache_[k][edgeIndex] * dAdMuInt * cosAInt;
+                  c = - alpha * dAdMuInt * sinAInt;
+                  s =   alpha * dAdMuInt * cosAInt;
                   d = 0.0;
                   break;
               }
               default:
                   TEST_FOR_EXCEPT_MSG( true,
-                                        "Illegal matrix type \"" << matrixType << "\"."
-                                      );
+                                       "Illegal matrix type \"" << matrixType << "\"."
+                                     );
           }
 
           // We'd like to insert the 2x2 matrix

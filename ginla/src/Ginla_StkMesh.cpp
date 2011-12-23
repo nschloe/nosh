@@ -82,8 +82,7 @@ edgeCoefficients_( Teuchos::ArrayRCP<double>() ),
 edgeCoefficientsUpToDate_( false ),
 edgeCoefficientsFallback_( Teuchos::ArrayRCP<DoubleVector>() ),
 edgeCoefficientsFallbackUpToDate_( false ),
-createdAdjacentEntities_( false ),
-area_( 0.0 )
+createdAdjacentEntities_( false )
 {
 
 //   meshData_->m_region->field_add( Ioss::Field( "mu",
@@ -173,14 +172,15 @@ getControlVolumes() const
 // =============================================================================
 double
 StkMesh::
-getDomainArea() const
+getDomainVolume() const
 {
   if ( !controlVolumesUpToDate_)
      this->computeControlVolumes_();
   // update the domain area value
-  TEUCHOS_ASSERT_EQUALITY( 0, controlVolumes_->Norm1( &area_ ) );
+  double volume;
+  TEUCHOS_ASSERT_EQUALITY( 0, controlVolumes_->Norm1( &volume ) );
 
-  return area_;
+  return volume;
 }
 // =============================================================================
 const Epetra_Comm &
@@ -497,7 +497,7 @@ computeEdgeCoefficients_() const
 
   return;
 }
-// =============================================================================
+// =============================================================================lvoid
 void
 StkMesh::
 computeEdgeCoefficientsFallback_() const
@@ -867,8 +867,8 @@ computeCovolume3d_( const DoubleVector & cc,
     // Use the triangle (MP, localNodes[other[0]], localNodes[other[1]] ) (in this order)
     // to gauge the orientation of the two triangles that compose the quadrilateral.
     DoubleVector gauge = this->cross_( this->add_( 1.0, other0, -1.0, mp ),
-                                this->add_( 1.0, other1, -1.0, mp )
-                              );
+                                       this->add_( 1.0, other1, -1.0, mp )
+                                     );
 
     // Add the area of the first triangle (MP,ccFace0,cc).
     // This makes use of the right angles.
@@ -880,8 +880,8 @@ computeCovolume3d_( const DoubleVector & cc,
     // Check if the orientation of the triangle (MP,ccFace0,cc) coincides with
     // the orientation of the gauge triangle. If yes, add the area, subtract otherwise.
     DoubleVector triangleNormal0 = this->cross_( this->add_( 1.0, ccFace0, -1.0, mp ),
-                                          this->add_( 1.0, cc,      -1.0, mp )
-                                        );
+                                                 this->add_( 1.0, cc,      -1.0, mp )
+                                               );
     // copysign takes the absolute value of the first argument and the sign of the second.
     covolume += copysign( triangleArea0, this->dot_( triangleNormal0, gauge ) );
 
@@ -895,8 +895,8 @@ computeCovolume3d_( const DoubleVector & cc,
     // Check if the orientation of the triangle (MP,cc,ccFace1) coincides with
     // the orientation of the gauge triangle. If yes, add the area, subtract otherwise.
     DoubleVector triangleNormal1 = this->cross_( this->add_( 1.0, cc,      -1.0, mp ),
-                                          this->add_( 1.0, ccFace1, -1.0, mp )
-                                        );
+                                                 this->add_( 1.0, ccFace1, -1.0, mp )
+                                               );
     // copysign takes the absolute value of the first argument and the sign of the second.
     covolume += copysign( triangleArea1, this->dot_( triangleNormal1, gauge ) );
 

@@ -73,15 +73,16 @@ testJac( const std::string & inputFileNameBase,
     double sum;
     const Epetra_Map & map = jac->OperatorDomainMap();
     Epetra_Vector s(map);
-    Epetra_Vector t(map);
+    Epetra_Vector Js(map);
 
-    // Create test vectors.
+    // -------------------------------------------------------------------------
     // (a) [ 1, 1, 1, ... ]
     s.PutScalar( 1.0 );
-    jac->Apply( s, t );
-    s.Dot( t, &sum );
+    jac->Apply( s, Js );
+    Js.Print(std::cout);
+    s.Dot( Js, &sum );
     TEST_FLOATING_EQUALITY( sum, controlSumT0, 1.0e-12 );
-
+    // -------------------------------------------------------------------------
     // (b) [ 1, 0, 1, 0, ... ]
     double one  = 1.0;
     double zero = 0.0;
@@ -92,10 +93,10 @@ testJac( const std::string & inputFileNameBase,
         else
             s.ReplaceMyValues( 1, &zero, &k );
     }
-    jac->Apply( s, t );
-    s.Dot( t, &sum );
+    jac->Apply( s, Js );
+    s.Dot( Js, &sum );
     TEST_FLOATING_EQUALITY( sum, controlSumT1, 1.0e-12 );
-
+    // -------------------------------------------------------------------------
     // (b) [ 0, 1, 0, 1, ... ]
     for ( int k=0; k<map.NumMyPoints(); k++ )
     {
@@ -104,10 +105,10 @@ testJac( const std::string & inputFileNameBase,
         else
             s.ReplaceMyValues( 1, &one, &k );
     }
-    jac->Apply( s, t );
-    s.Dot( t, &sum );
+    jac->Apply( s, Js );
+    s.Dot( Js, &sum );
     TEST_FLOATING_EQUALITY( sum, controlSumT2, 1.0e-12 );
-
+    // -------------------------------------------------------------------------
     return;
 }
 // ===========================================================================

@@ -155,7 +155,7 @@ freeEnergy() const
     TEUCHOS_ASSERT_EQUALITY( 0, comm.SumAll( &myEnergy, &globalEnergy, 1 ) );
 
     // normalize and return
-    return globalEnergy / mesh_->getDomainArea();
+    return globalEnergy / mesh_->getDomainVolume();
 }
 // =============================================================================
 double
@@ -180,7 +180,7 @@ innerProduct( const Ginla::State & state ) const
     TEUCHOS_ASSERT_EQUALITY( 0, comm.SumAll( &res, &globalRes, 1 ) );
 
     // normalize and return
-    return globalRes / mesh_->getDomainArea();
+    return globalRes / mesh_->getDomainVolume();
 }
 // ============================================================================
 double
