@@ -75,13 +75,13 @@ testMesh( const std::string & inputFileNameBase,
     TEST_EQUALITY( numNodes, controlNumNodes );
 
     const Teuchos::RCP<const Epetra_Vector> controlVols = mesh->getControlVolumes();
-    double r[1];
-    controlVols->Norm1( r );
-    TEST_FLOATING_EQUALITY( r[0], controlVolNormOne, 1.0e-12 );
-    controlVols->Norm2( r );
-    TEST_FLOATING_EQUALITY( r[0], controlVolNormTwo, 1.0e-12 );
-    controlVols->NormInf( r );
-    TEST_FLOATING_EQUALITY( r[0], controlVolNormInf, 1.0e-12 );
+    double r;
+    controlVols->Norm1( &r );
+    TEST_FLOATING_EQUALITY( r, controlVolNormOne, 1.0e-12 );
+    controlVols->Norm2( &r );
+    TEST_FLOATING_EQUALITY( r, controlVolNormTwo, 1.0e-12 );
+    controlVols->NormInf( &r );
+    TEST_FLOATING_EQUALITY( r, controlVolNormInf, 1.0e-12 );
 
     if ( eComm->NumProc() == 1 )
     {
@@ -170,21 +170,21 @@ TEUCHOS_UNIT_TEST( Ginla, MeshCubeSmallHashes )
               success );
 }
 // ============================================================================
-TEUCHOS_UNIT_TEST( Ginla, MeshCubeLargeHashes )
+TEUCHOS_UNIT_TEST( Ginla, MeshBrickWHoleHashes )
 {
-    std::string inputFileNameBase = "cubelarge";
+    std::string inputFileNameBase = "brick-w-hole";
 
-    unsigned int numNodes = 27000;
-    double controlVolNormOne = 999.9999999999114;
-    double controlVolNormTwo = 6.238401064581688;
-    double controlVolNormInf = 0.04100211456823565;
+    unsigned int numNodes = 744;
+    double controlVolNormOne = 388.686291694641;
+    double controlVolNormTwo = 16.6614019419857;
+    double controlVolNormInf = 1.46847345474977;
     Teuchos::ArrayRCP<double> edgeCoeffs0(6);
-    edgeCoeffs0[0] = 0.05747127532958986;
-    edgeCoeffs0[1] = 0.05747127532958986;
-    edgeCoeffs0[2] = 0.05747127532958986;
-    edgeCoeffs0[3] = 0.0;
-    edgeCoeffs0[4] = 0.0;
-    edgeCoeffs0[5] = 0.0;
+    edgeCoeffs0[0] = 0.0509112504788891;
+    edgeCoeffs0[1] = -0.00170834562699921;
+    edgeCoeffs0[2] = 0.0643396202379737;
+    edgeCoeffs0[3] = -0.00241147546134538;
+    edgeCoeffs0[4] = 0.139248040732853;
+    edgeCoeffs0[5] = 0.175027306845033;
 
     testMesh( inputFileNameBase,
               numNodes,

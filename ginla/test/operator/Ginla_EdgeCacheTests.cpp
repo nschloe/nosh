@@ -187,9 +187,9 @@ TEUCHOS_UNIT_TEST( Ginla, EdgeCacheCubeSmall )
                success );
 }
 // ============================================================================
-TEUCHOS_UNIT_TEST( Ginla, EdgeCacheCubeLargeHashes )
+TEUCHOS_UNIT_TEST( Ginla, EdgeCacheBrickWHoleHashes )
 {
-    std::string inputFileNameBase = "cubelarge";
+    std::string inputFileNameBase = "brick-w-hole";
 
     testCache( inputFileNameBase,
                out,

@@ -30,11 +30,11 @@ if( NOT ${CMAKE_CURRENT_SOURCE_DIR} EQUAL ${CMAKE_CURRENT_BINARY_DIR} )
           DESTINATION ${CMAKE_CURRENT_BINARY_DIR} )
     FILE( COPY "${CMAKE_CURRENT_SOURCE_DIR}/data/cubesmall-balanced.par.2.1"
           DESTINATION ${CMAKE_CURRENT_BINARY_DIR} )
-    FILE( COPY "${CMAKE_CURRENT_SOURCE_DIR}/data/cubelarge.e"
+    FILE( COPY "${CMAKE_CURRENT_SOURCE_DIR}/data/brick-w-hole.e"
           DESTINATION ${CMAKE_CURRENT_BINARY_DIR} )
-    FILE( COPY "${CMAKE_CURRENT_SOURCE_DIR}/data/cubelarge-balanced.par.2.0"
+    FILE( COPY "${CMAKE_CURRENT_SOURCE_DIR}/data/brick-w-hole-balanced.par.2.0"
           DESTINATION ${CMAKE_CURRENT_BINARY_DIR} )
-    FILE( COPY "${CMAKE_CURRENT_SOURCE_DIR}/data/cubelarge-balanced.par.2.1"
+    FILE( COPY "${CMAKE_CURRENT_SOURCE_DIR}/data/brick-w-hole-balanced.par.2.1"
           DESTINATION ${CMAKE_CURRENT_BINARY_DIR} )
 endif()
 # ------------------------------------------------------------------------------

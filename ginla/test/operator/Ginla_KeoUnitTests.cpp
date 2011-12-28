@@ -154,7 +154,7 @@ TEUCHOS_UNIT_TEST( Ginla, KeoRectangleSmallHashes )
 
     double mu = 1.0e-2;
     double controlNormOne = 10.2246588065616;
-    double controlNormInf = 10.2246588065616;
+    double controlNormInf = controlNormOne;
     double controlSum     = -0.0126243424616103;
     double controlSumReal = -0.00631217123080605;
 
@@ -174,7 +174,7 @@ TEUCHOS_UNIT_TEST( Ginla, KeoPacmanHashes )
 
     double mu = 1.0e-2;
     double controlNormOne = 10.0005208574565;
-    double controlNormInf = 10.0005208574565;
+    double controlNormInf = controlNormOne;
     double controlSum     = -0.740885289431222;
     double controlSumReal = -0.370442644715617;
 
@@ -194,7 +194,7 @@ TEUCHOS_UNIT_TEST( Ginla, KeoCubeSmallHashes )
 
     double mu = 1.0e-2;
     double controlNormOne = 10.1456474156918;
-    double controlNormInf = 10.1456474156918;
+    double controlNormInf = controlNormOne;
     double controlSum     = -0.00844428504187249;
     double controlSumReal = -0.0042221425209367988;
 
@@ -208,15 +208,15 @@ TEUCHOS_UNIT_TEST( Ginla, KeoCubeSmallHashes )
              success );
 }
 // ============================================================================
-TEUCHOS_UNIT_TEST( Ginla, KeoCubeLargeHashes )
+TEUCHOS_UNIT_TEST( Ginla, KeoBrickWHoleHashes )
 {
-    std::string inputFileNameBase = "cubelarge";
+    std::string inputFileNameBase = "brick-w-hole";
 
     double mu = 1.0e-2;
-    double controlNormOne = 4.15276626198951;
-    double controlNormInf = 4.15276626198951;
-    double controlSum     = -0.834815525936051;
-    double controlSumReal = -0.417407762968018;
+    double controlNormOne = 15.1311199050181;
+    double controlNormInf = controlNormOne;
+    double controlSum     = -0.335265520229311;
+    double controlSumReal = -0.167632760114663;
 
     testKeo( inputFileNameBase,
              mu,

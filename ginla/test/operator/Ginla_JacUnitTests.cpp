@@ -79,7 +79,6 @@ testJac( const std::string & inputFileNameBase,
     // (a) [ 1, 1, 1, ... ]
     s.PutScalar( 1.0 );
     jac->Apply( s, Js );
-    Js.Print(std::cout);
     s.Dot( Js, &sum );
     TEST_FLOATING_EQUALITY( sum, controlSumT0, 1.0e-12 );
     // -------------------------------------------------------------------------
@@ -166,14 +165,14 @@ TEUCHOS_UNIT_TEST( Ginla, JacCubeSmallHashes )
              success );
 }
 // ============================================================================
-TEUCHOS_UNIT_TEST( Ginla, JacCubeLargeHashes )
+TEUCHOS_UNIT_TEST( Ginla, JacBrickWHoleHashes )
 {
-    std::string inputFileNameBase = "cubelarge";
+    std::string inputFileNameBase = "brick-w-hole";
 
     double mu = 1.0e-2;
-    double controlSumT0 = -2000.83481552596;
-    double controlSumT1 = -2000.417407763;
-    double controlSumT2 = -0.417407762970538;
+    double controlSumT0 = -777.707848909512;
+    double controlSumT1 = -777.540216149396;
+    double controlSumT2 = -0.167632760114663;
 
     testJac( inputFileNameBase,
              mu,
