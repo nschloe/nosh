@@ -145,7 +145,8 @@ int main ( int argc, char *argv[] )
               Teuchos::rcp( new Epetra_Vector( jac->OperatorDomainMap() ) );
       Teuchos::RCP<Epetra_MultiVector> epetra_b =
               Teuchos::rcp( new Epetra_Vector( jac->OperatorRangeMap(), 1 ) );
-      epetra_b->Random();
+      // epetra_b->Random();
+      epetra_b->PutScalar( 1.0 );
 
       // -----------------------------------------------------------------------
       // Belos part
@@ -168,9 +169,6 @@ int main ( int argc, char *argv[] )
         belosList.set( "Verbosity", Belos::Errors + Belos::Warnings );
 
       belosList.set( "Maximum Iterations", 10000 );
-
-      // Only print on the zero processor
-      const bool proc_verbose = verbose && (eComm->MyPID()==0);
 
       // Construct an unpreconditioned linear problem instance.
       Belos::LinearProblem<double,MV,OP> problem( jac, epetra_x, epetra_b );
