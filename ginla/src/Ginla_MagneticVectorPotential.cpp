@@ -28,24 +28,36 @@ namespace Ginla {
 MagneticVectorPotential::
 MagneticVectorPotential( const Teuchos::RCP<Ginla::StkMesh>           & mesh,
                          const Teuchos::RCP<const Epetra_MultiVector> & mvp,
-                         double mu
+                         double mu,
+                         double thetaX,
+                         double thetaY,
+                         double thetaZ
                        ):
   mesh_( mesh ),
   mvp_( mvp ),
   mu_( mu ),
-  edgeMidpointProjectionCache_( Teuchos::ArrayRCP<double>() ),
-  edgeMidpointProjectionCacheUpToDate_( false ),
-  edgeMidpointProjectionFallbackCache_( Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >() ),
-  edgeMidpointProjectionFallbackCacheUpToDate_( false )
+  thetaX_( thetaX ),
+  thetaY_( thetaY ),
+  thetaZ_( thetaZ ),
+  mvpEdgeMidpoint_( Teuchos::ArrayRCP<DoubleVector>() ),
+  edges_( Teuchos::ArrayRCP<DoubleVector>() ),
+  mvpEdgeMidpointUpToDate_( false ),
+  mvpEdgeMidpointFallback_( Teuchos::ArrayRCP<Teuchos::ArrayRCP<DoubleVector> >() ),
+  edgesFallback_( Teuchos::ArrayRCP<Teuchos::ArrayRCP<DoubleVector> >() ),
+  mvpEdgeMidpointFallbackUpToDate_( false )
 {
     TEUCHOS_ASSERT( !mesh_.is_null() );
     try
     {
-        edgeMidpointProjectionCache_ = Teuchos::ArrayRCP<double>( mesh_->getOverlapEdges().size() );
+        mvpEdgeMidpoint_ = Teuchos::ArrayRCP<DoubleVector>( mesh_->getOverlapEdges().size() );
+        edges_ = Teuchos::ArrayRCP<DoubleVector>( mesh_->getOverlapEdges().size() );
     }
     catch( ... )
     {
-        edgeMidpointProjectionFallbackCache_ = Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >( mesh_->getOwnedCells().size() );
+        mvpEdgeMidpointFallback_ =
+            Teuchos::ArrayRCP<Teuchos::ArrayRCP<DoubleVector> >( mesh_->getOwnedCells().size() );
+        edgesFallback_ =
+            Teuchos::ArrayRCP<Teuchos::ArrayRCP<DoubleVector> >( mesh_->getOwnedCells().size() );
     }
     return;
 }
@@ -60,10 +72,16 @@ MagneticVectorPotential::
 setParameters( const LOCA::ParameterVector & p )
 {
     if (p.isParameter( "mu" ))
-        if ( mu_ != p.getValue ( "mu" ) )
-        {
             mu_ = p.getValue ( "mu" );
-        }
+
+    if (p.isParameter( "thetaX" ))
+            thetaX_ = p.getValue ( "thetaX" );
+
+    if (p.isParameter( "thetaY" ))
+            thetaY_ = p.getValue ( "thetaY" );
+
+    if (p.isParameter( "thetaZ" ))
+            thetaZ_ = p.getValue ( "thetaZ" );
 
     return;
 }
@@ -76,20 +94,11 @@ getParameters() const
           Teuchos::rcp( new LOCA::ParameterVector() );
 
   p->addParameter( "mu", mu_ );
+  p->addParameter( "thetaX", thetaX_ );
+  p->addParameter( "thetaY", thetaY_ );
+  p->addParameter( "thetaZ", thetaZ_ );
 
   return p;
-}
-// ============================================================================
-Teuchos::RCP<DoubleVector>
-MagneticVectorPotential::
-getA(const DoubleVector & x) const
-{
-  TEST_FOR_EXCEPT_MSG( true,
-                               "getA(x) for general 'x' cannot be implemented as "
-                               << "no general MVP info is provided to this class."
-                             );
-  Teuchos::RCP<DoubleVector> a;
-  return a;
 }
 // ============================================================================
 double
@@ -97,10 +106,10 @@ MagneticVectorPotential::
 getAEdgeMidpointProjection( const unsigned int edgeIndex
                           ) const
 {
-  if ( !edgeMidpointProjectionCacheUpToDate_ )
-      this->initializeEdgeMidpointProjectionCache_();
+  if ( !mvpEdgeMidpointUpToDate_ )
+      this->initializeMvpEdgeMidpointCache_();
 
-  return mu_ * edgeMidpointProjectionCache_[edgeIndex];
+  return mu_ * edges_[edgeIndex].dot( mvpEdgeMidpoint_[edgeIndex] );
 }
 // ============================================================================
 double
@@ -108,15 +117,15 @@ MagneticVectorPotential::
 getdAdMuEdgeMidpointProjection( const unsigned int edgeIndex
                               ) const
 {
-  if ( !edgeMidpointProjectionCacheUpToDate_ )
-      this->initializeEdgeMidpointProjectionCache_();
+  if ( !mvpEdgeMidpointUpToDate_ )
+      this->initializeMvpEdgeMidpointCache_();
 
-  return edgeMidpointProjectionCache_[edgeIndex];
+  return edges_[edgeIndex].dot( mvpEdgeMidpoint_[edgeIndex] );
 }
 // ============================================================================
 void
 MagneticVectorPotential::
-initializeEdgeMidpointProjectionCache_() const
+initializeMvpEdgeMidpointCache_() const
 {
   TEUCHOS_ASSERT( !mesh_.is_null() );
   std::vector<stk::mesh::Entity*> edges = mesh_->getOverlapEdges();
@@ -126,7 +135,7 @@ initializeEdgeMidpointProjectionCache_() const
   for ( unsigned int k=0; k<edges.size(); k++ )
   {
       // Get the two end points.
-      stk::mesh::PairIterRelation endPoints =
+      const stk::mesh::PairIterRelation endPoints =
           edges[k]->relations( mesh_->getMetaData()->node_rank() );
 
       // get the local ids
@@ -134,32 +143,30 @@ initializeEdgeMidpointProjectionCache_() const
       gid[0] = (*endPoints[0].entity()).identifier() - 1;
       lid[0] = mvp_->Map().LID( gid[0] );
       TEST_FOR_EXCEPT_MSG( lid[0] < 0,
-                            "The global index " << gid[0]
-                            << " does not seem to be present on this node." );
+                          "The global index " << gid[0]
+                          << " does not seem to be present on this node." );
       gid[1] = (*endPoints[1].entity()).identifier() - 1;
       lid[1] = mvp_->Map().LID( gid[1] );
       TEST_FOR_EXCEPT_MSG( lid[1] < 0,
-                            "The global index " << gid[1]
-                            << " does not seem to be present on this node." );
+                          "The global index " << gid[1]
+                          << " does not seem to be present on this node." );
 
       // Approximate the value at the midpoint of the edge
       // by the average of the values at the adjacent nodes.
-      Teuchos::SerialDenseVector<int,double> a(3);
+      mvpEdgeMidpoint_[k] = Teuchos::SerialDenseVector<int,double>(3);
       for (int i=0; i<3; i++ )
-          a[i] = 0.5 * ( (*(*mvp_)(i))[lid[0]] + (*(*mvp_)(i))[lid[1]] );
+          mvpEdgeMidpoint_[k][i] = 0.5 * ( (*(*mvp_)(i))[lid[0]]
+                                         + (*(*mvp_)(i))[lid[1]] );
 
       // extract the nodal coordinates
       Teuchos::ArrayRCP<Teuchos::SerialDenseVector<int,double> > localNodes =
           mesh_->getNodeCoordinates( endPoints );
       TEUCHOS_ASSERT_EQUALITY( localNodes.size(), 2 );
-      Teuchos::SerialDenseVector<int,double> edge = localNodes[1];
-      edge -= localNodes[0];
-
-      // Fill the cache.
-      edgeMidpointProjectionCache_[k] = edge.dot( a );
+      edges_[k] = localNodes[1];
+      edges_[k] -= localNodes[0];
   }
 
-  edgeMidpointProjectionCacheUpToDate_ = true;
+  mvpEdgeMidpointUpToDate_ = true;
   return;
 }
 // ============================================================================
@@ -169,10 +176,10 @@ getAEdgeMidpointProjectionFallback( const unsigned int cellIndex,
                                     const unsigned int edgeIndex
                                   ) const
 {
-  if ( !edgeMidpointProjectionFallbackCacheUpToDate_ )
-      this->initializeEdgeMidpointProjectionFallbackCache_();
+  if ( !mvpEdgeMidpointFallbackUpToDate_ )
+      this->initializeMvpEdgeMidpointFallback_();
 
-  return mu_ * edgeMidpointProjectionFallbackCache_[cellIndex][edgeIndex];
+  return mu_ * edgesFallback_[cellIndex][edgeIndex].dot( mvpEdgeMidpointFallback_[cellIndex][edgeIndex] );
 }
 // ============================================================================
 double
@@ -181,15 +188,15 @@ getdAdMuEdgeMidpointProjectionFallback( const unsigned int cellIndex,
                                         const unsigned int edgeIndex
                                       ) const
 {
-  if ( !edgeMidpointProjectionFallbackCacheUpToDate_ )
-      this->initializeEdgeMidpointProjectionFallbackCache_();
+  if ( !mvpEdgeMidpointFallbackUpToDate_ )
+      this->initializeMvpEdgeMidpointFallback_();
 
-  return edgeMidpointProjectionFallbackCache_[cellIndex][edgeIndex];
+  return edgesFallback_[cellIndex][edgeIndex].dot( mvpEdgeMidpointFallback_[cellIndex][edgeIndex] );
 }
 // ============================================================================
 void
 MagneticVectorPotential::
-initializeEdgeMidpointProjectionFallbackCache_() const
+initializeMvpEdgeMidpointFallback_() const
 {
   TEUCHOS_ASSERT( !mesh_.is_null() );
   std::vector<stk::mesh::Entity*> cells = mesh_->getOwnedCells();
@@ -200,16 +207,18 @@ initializeEdgeMidpointProjectionFallbackCache_() const
   for ( unsigned int k=0; k<cells.size(); k++ )
   {
       // get the nodes local to the cell
-      stk::mesh::PairIterRelation rel = (*cells[k]).relations( mesh_->getMetaData()->node_rank() );
+      stk::mesh::PairIterRelation localNodes = (*cells[k]).relations( mesh_->getMetaData()->node_rank() );
 
-      unsigned int numLocalNodes = rel.size();
+      unsigned int numLocalNodes = localNodes.size();
       unsigned int cellDimension = mesh_->getCellDimension( numLocalNodes );
       // extract the nodal coordinates
-      Teuchos::ArrayRCP<Teuchos::SerialDenseVector<int,double> > localNodes =
-          mesh_->getNodeCoordinates( rel );
+      Teuchos::ArrayRCP<Teuchos::SerialDenseVector<int,double> > localNodeCoords =
+          mesh_->getNodeCoordinates( localNodes );
 
-      edgeMidpointProjectionFallbackCache_[k] =
-          Teuchos::ArrayRCP<double>( mesh_->getNumEdgesPerCell( cellDimension ) );
+      mvpEdgeMidpointFallback_[k] =
+          Teuchos::ArrayRCP<DoubleVector>( mesh_->getNumEdgesPerCell( cellDimension ) );
+      edgesFallback_[k] =
+          Teuchos::ArrayRCP<DoubleVector>( mesh_->getNumEdgesPerCell( cellDimension ) );
 
       // In a simplex, the edges are exactly the connection between each pair
       // of nodes. Hence, loop over pairs of nodes.
@@ -217,14 +226,14 @@ initializeEdgeMidpointProjectionFallbackCache_() const
       Teuchos::Tuple<int,2> gid, lid;
       for ( unsigned int e0 = 0; e0 < numLocalNodes; e0++ )
       {
-          gid[0] = (*rel[e0].entity()).identifier() - 1;
+          gid[0] = (*localNodes[e0].entity()).identifier() - 1;
           lid[0] = mvp_->Map().LID( gid[0] );
           TEST_FOR_EXCEPT_MSG( lid[0] < 0,
                                "The global index " << gid[0]
                                << " does not seem to be present on this node." );
           for ( unsigned int e1 = e0+1; e1 < numLocalNodes; e1++ )
           {
-              gid[1] = (*rel[e1].entity()).identifier() - 1;
+              gid[1] = (*localNodes[e1].entity()).identifier() - 1;
               lid[1] = mvp_->Map().LID( gid[1] );
               TEST_FOR_EXCEPT_MSG( lid[1] < 0,
                                    "The global index " << gid[1]
@@ -232,19 +241,21 @@ initializeEdgeMidpointProjectionFallbackCache_() const
 
               // Approximate the value at the midpoint of the edge
               // by the average of the values at the adjacent nodes.
-              Teuchos::SerialDenseVector<int,double> a(3);
+              mvpEdgeMidpointFallback_[k][edgeIndex] = Teuchos::SerialDenseVector<int,double>(3);
               for (int i=0; i<3; i++ )
-                  a[i] = 0.5 * ( (*(*mvp_)(i))[lid[0]] + (*(*mvp_)(i))[lid[1]] );
+                  mvpEdgeMidpointFallback_[k][edgeIndex][i] = 0.5 * ( (*(*mvp_)(i))[lid[0]]
+                                                                    + (*(*mvp_)(i))[lid[1]] );
 
-              edgeMidpointProjectionFallbackCache_[k][edgeIndex] = 0.0;
-              Teuchos::SerialDenseVector<int,double> edge = localNodes[e1];
-              edge -= localNodes[e0];
-              edgeMidpointProjectionFallbackCache_[k][edgeIndex++] = edge.dot( a );
+              // Update edge cache.
+              edgesFallback_[k][edgeIndex] = localNodeCoords[e1];
+              edgesFallback_[k][edgeIndex] -= localNodeCoords[e0];
+
+              edgeIndex++;
           }
       }
   }
 
-  edgeMidpointProjectionFallbackCacheUpToDate_ = true;
+  mvpEdgeMidpointFallbackUpToDate_ = true;
   return;
 }
 // ============================================================================

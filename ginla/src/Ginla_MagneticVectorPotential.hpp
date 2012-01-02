@@ -22,11 +22,14 @@
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Tuple.hpp>
+#include <Teuchos_SerialDenseVector.hpp>
 #include <Epetra_MultiVector.h>
 #include <Teuchos_Array.hpp>
 #include <LOCA_Parameter_Vector.H>
 
 #include "Ginla_StkMesh.hpp"
+
+typedef Teuchos::SerialDenseVector<int,double> DoubleVector;
 
 namespace Ginla {
 
@@ -35,7 +38,10 @@ class MagneticVectorPotential
 public:
   MagneticVectorPotential( const Teuchos::RCP<Ginla::StkMesh> & mesh,
                            const Teuchos::RCP<const Epetra_MultiVector>  & mvp,
-                           double mu
+                           double mu = 0.0,
+                           double thetaX = 0.0,
+                           double thetaY = 0.0,
+                           double thetaZ = 0.0
                          );
 
   ~MagneticVectorPotential();
@@ -46,9 +52,6 @@ public:
 
   Teuchos::RCP<LOCA::ParameterVector>
   getParameters() const;
-
-  Teuchos::RCP<DoubleVector>
-  getA(const DoubleVector & x ) const;
 
   double
   getAEdgeMidpointProjection( const unsigned int edgeIndex
@@ -71,21 +74,26 @@ public:
 protected:
 private:
   void
-  initializeEdgeMidpointProjectionCache_() const;
+  initializeMvpEdgeMidpointCache_() const;
 
   void
-  initializeEdgeMidpointProjectionFallbackCache_() const;
+  initializeMvpEdgeMidpointFallback_() const;
 
 private:
   const Teuchos::RCP<Ginla::StkMesh> mesh_;
   const Teuchos::RCP<const Epetra_MultiVector> mvp_;
   double mu_;
+  double thetaX_;
+  double thetaY_;
+  double thetaZ_;
 
-  Teuchos::ArrayRCP<double> edgeMidpointProjectionCache_;
-  mutable bool edgeMidpointProjectionCacheUpToDate_;
+  Teuchos::ArrayRCP<DoubleVector> mvpEdgeMidpoint_;
+  Teuchos::ArrayRCP<DoubleVector> edges_;
+  mutable bool mvpEdgeMidpointUpToDate_;
 
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > edgeMidpointProjectionFallbackCache_;
-  mutable bool edgeMidpointProjectionFallbackCacheUpToDate_;
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<DoubleVector> > mvpEdgeMidpointFallback_;
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<DoubleVector> > edgesFallback_;
+  mutable bool mvpEdgeMidpointFallbackUpToDate_;
 
 };
 } // namespace GL
