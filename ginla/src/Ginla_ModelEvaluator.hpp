@@ -127,15 +127,28 @@ private:
   void
   computeF_ ( const Epetra_Vector                             & x,
               const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
-              const double                                      temperature,
+              const double                                      T,
                     Epetra_Vector                             & FVec
             ) const;
 
   void
-  computedFdMu_ ( const Epetra_Vector                             & x,
+  computeDFDMu_ ( const Epetra_Vector                             & x,
                   const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
-                  Epetra_MultiVector                              & FVec
+                  Epetra_Vector                                   & FVec
                 ) const;
+
+  void
+  computeDFDTheta_( const Epetra_Vector                             & x,
+                    const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
+                    Epetra_Vector                                   & FVec
+                  ) const;
+
+  void
+  computeDFDT_( const Epetra_Vector                             & x,
+                const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
+                const double                                      T,
+                Epetra_Vector                                   & FVec
+              ) const;
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 protected:
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -

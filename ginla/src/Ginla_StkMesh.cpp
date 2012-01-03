@@ -227,7 +227,7 @@ std::vector<stk::mesh::Entity*>
 StkMesh::
 getOverlapEdges() const
 {
-  // create_adjacent_entities first
+  // Create_adjacent_entities (edges) first.
   if ( !createdAdjacentEntities_ )
   {
       stk::mesh::PartVector empty_add_parts;
@@ -496,7 +496,7 @@ computeEdgeCoefficients_() const
   // wrong, fall back to constructing the entities via the edges of the cells.
   // This means less initialization cost, but at the costly construction of the
   // kinetic energy operator, in 2D, each each has to iterated twice (once per
-  // each cell that the edge is part of).
+  // each cell that the edge is part of). It'd be worse in the 3D.
 
   edgeCoefficientsUpToDate_ = true;
 

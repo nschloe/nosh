@@ -82,7 +82,7 @@ setupParameters_( const Teuchos::ParameterList & params )
   p_names_ = Teuchos::rcp( new Teuchos::Array<std::string>() );
   p_names_->append( "mu" );
   p_names_->append( "theta" );
-  p_names_->append( "temperature" );
+  p_names_->append( "T" );
 
   numParams_ = p_names_->length();
 
@@ -90,7 +90,7 @@ setupParameters_( const Teuchos::ParameterList & params )
   Teuchos::Array<double> p_default_values = Teuchos::Array<double>(numParams_);
   p_default_values[0] = 0.0; // mu
   p_default_values[1] = 0.0; // theta
-  p_default_values[2] = 0.0; // temperature
+  p_default_values[2] = 0.0; // T
 
   // setup parameter map
 #ifdef _DEBUG_
@@ -316,7 +316,7 @@ evalModel( const InArgs  & inArgs,
 
   Teuchos::RCP<LOCA::ParameterVector> mvpParams = this->getParameters();
 
-  const double temperature = (*p_in)[2];
+  const double T = (*p_in)[2];
 
   // compute F
   const Teuchos::RCP<Epetra_Vector> f_out = outArgs.get_f();
@@ -325,18 +325,44 @@ evalModel( const InArgs  & inArgs,
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
       Teuchos::TimeMonitor tm(*computeFTime_);
 #endif
-      this->computeF_( *x_in, mvpParams, temperature, *f_out );
+      this->computeF_( *x_in, mvpParams, T, *f_out );
   }
 
   // compute dF/dp
-  const Teuchos::RCP<Epetra_MultiVector> dfdp_out =
-      outArgs.get_DfDp(0).getMultiVector();
+  const EpetraExt::ModelEvaluator::DerivativeMultiVector & derivMv =
+      outArgs.get_DfDp(0).getDerivativeMultiVector();
+  const Teuchos::RCP<Epetra_MultiVector> dfdp_out = derivMv.getMultiVector();
   if ( !dfdp_out.is_null() )
   {
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
       Teuchos::TimeMonitor tm(*computedFdpTime_);
 #endif
-     this->computedFdMu_( *x_in, mvpParams, *dfdp_out );
+       Teuchos::Array<int> paramIndices = derivMv.getParamIndexes();
+       unsigned int numDerivs = paramIndices.size();
+#ifdef _DEBUG_
+       TEUCHOS_ASSERT_EQUALITY( numDerivs, dfdp_out->NumVectors() );
+#endif
+       for ( unsigned int k; k<numDerivs; k++ )
+       {
+           switch ( paramIndices[k] )
+           {
+             case 0: // mu
+                 this->computeDFDMu_( *x_in, mvpParams, *(*dfdp_out)(k) );
+                 break;
+             case 1: // theta
+                 this->computeDFDTheta_( *x_in, mvpParams, *(*dfdp_out)(k) );
+                 break;
+             case 2: // T
+                 this->computeDFDT_( *x_in, mvpParams, T, *(*dfdp_out)(k) );
+                 break;
+             default:
+                 TEST_FOR_EXCEPT_MSG( true,
+                                      "Unknown problem parameter "
+                                      << "\"" << (*p_names_)[paramIndices[k]] << "\". "
+                                      << "Abort." << std::endl;
+                                    )
+           }
+       }
   }
 
   // fill jacobian
@@ -349,7 +375,7 @@ evalModel( const InArgs  & inArgs,
       Teuchos::RCP<Ginla::JacobianOperator> jac =
           Teuchos::rcp_dynamic_cast<Ginla::JacobianOperator>( W_out, true );
       jac->rebuild( mvpParams,
-                    temperature,
+                    T,
                     x_in
                   );
   }
@@ -373,7 +399,7 @@ void
 ModelEvaluator::
 computeF_ ( const Epetra_Vector                             & x,
             const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
-            const double                                      temperature,
+            const double                                      T,
             Epetra_Vector                                   & FVec
           ) const
 {
@@ -387,6 +413,8 @@ computeF_ ( const Epetra_Vector                             & x,
   // add the nonlinear part (mass lumping)
 #ifdef _DEBUG_
   TEUCHOS_ASSERT( FVec.Map().SameAs( x.Map() ) );
+  TEUCHOS_ASSERT( !mesh_.is_null() );
+  TEUCHOS_ASSERT( !thickness_.is_null() );
 #endif
 
   const Epetra_Vector & controlVolumes = *(mesh_->getControlVolumes());
@@ -402,7 +430,7 @@ computeF_ ( const Epetra_Vector                             & x,
       //
       //   \int_{control volume}  thickness * f(psi).
       //
-      // with f(psi) = psi[k] * ( (1.0-temperature) - std::norm(psi[k]) ).
+      // with f(psi) = psi[k] * ( (1.0-T) - std::norm(psi[k]) ).
       // (a) A possible approximation for this is
       //
       //        |control volume| * average(thicknesses) * f(psi(x_k)).
@@ -424,7 +452,7 @@ computeF_ ( const Epetra_Vector                             & x,
       //     For general polynomals, this is then the above expression.
       //     Hence, do the equivalent of
       //
-      //       res[k] += controlVolumes[k] * average(thicknesses) * psi[k] * ( (1.0-temperature) - std::norm(psi[k]) );
+      //       res[k] += controlVolumes[k] * average(thicknesses) * psi[k] * ( (1.0-T) - std::norm(psi[k]) );
       //
       // (b) Another possible approximation is
       //
@@ -433,7 +461,7 @@ computeF_ ( const Epetra_Vector                             & x,
       //     as suggested by mass lumping. This works if thickness(x_k) is available.
       //
       double alpha = controlVolumes[k] * (*thickness_)[k]
-                     * ( (1.0-temperature) - x[2*k]*x[2*k] - x[2*k+1]*x[2*k+1] );
+                     * ( (1.0-T) - x[2*k]*x[2*k] - x[2*k+1]*x[2*k+1] );
       // real part
       FVec[2*k]   += alpha * x[2*k];
       // imaginary part
@@ -445,21 +473,66 @@ computeF_ ( const Epetra_Vector                             & x,
 // ============================================================================
 void
 ModelEvaluator::
-computedFdMu_ ( const Epetra_Vector                             & x,
-                const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
-                Epetra_MultiVector                              & FVec
-              ) const
+computeDFDMu_( const Epetra_Vector                             & x,
+               const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
+               Epetra_Vector                                   & FVec
+             ) const
 {
-#ifdef _DEBUG_
-  TEUCHOS_ASSERT_EQUALITY( 1, FVec.NumVectors() );
-#endif
   // build the KEO
   keoFactory_->updateParameters( mvpParams );
-  const Teuchos::RCP<const Epetra_CrsMatrix> dKdMuMatrix =
-      keoFactory_->getKeoDMu();
 
   // compute FVec = K*x
-  TEUCHOS_ASSERT_EQUALITY( 0, dKdMuMatrix->Apply( x, FVec ) );
+  TEUCHOS_ASSERT_EQUALITY( 0, keoFactory_->getKeoDMu()->Apply( x, FVec ) );
+
+  return;
+}
+// ============================================================================
+void
+ModelEvaluator::
+computeDFDTheta_( const Epetra_Vector                             & x,
+                  const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
+                  Epetra_Vector                                   & FVec
+                ) const
+{
+  // build the KEO
+  keoFactory_->updateParameters( mvpParams );
+
+  // compute FVec = K*x
+  TEUCHOS_ASSERT_EQUALITY( 0, keoFactory_->getKeoDTheta()->Apply( x, FVec ) );
+
+  return;
+}
+// ============================================================================
+void
+ModelEvaluator::
+computeDFDT_ ( const Epetra_Vector                             & x,
+               const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
+               const double                                      T,
+               Epetra_Vector                                   & FVec
+             ) const
+{
+  // add the nonlinear part (mass lumping)
+#ifdef _DEBUG_
+  TEUCHOS_ASSERT( FVec.Map().SameAs( x.Map() ) );
+  TEUCHOS_ASSERT( !mesh_.is_null() );
+  TEUCHOS_ASSERT( !thickness_.is_null() );
+#endif
+
+  const Epetra_Vector & controlVolumes = *(mesh_->getControlVolumes());
+
+#ifdef _DEBUG_
+  // Make sure control volumes and state still match.
+  TEUCHOS_ASSERT_EQUALITY( 2*controlVolumes.MyLength(), x.MyLength() );
+#endif
+
+  for ( int k=0; k<controlVolumes.MyLength(); k++ )
+  {
+      double alpha = - controlVolumes[k] * (*thickness_)[k] * T;
+      // real part
+      FVec[2*k]   = alpha * x[2*k];
+      // imaginary part
+      FVec[2*k+1] = alpha * x[2*k+1];
+  }
 
   return;
 }

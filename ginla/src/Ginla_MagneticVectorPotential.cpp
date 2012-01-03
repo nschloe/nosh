@@ -30,7 +30,7 @@ MagneticVectorPotential( const Teuchos::RCP<Ginla::StkMesh>           & mesh,
                          const Teuchos::RCP<const Epetra_MultiVector> & mvp,
                          double mu,
                          double theta,
-                         const DoubleVector u
+                         const Teuchos::RCP<DoubleVector> u
                        ):
   mesh_( mesh ),
   mvp_( mvp ),
@@ -49,10 +49,13 @@ MagneticVectorPotential( const Teuchos::RCP<Ginla::StkMesh>           & mesh,
     if ( theta_ != 0.0 )
         sincos( theta_, &sinTheta_, &cosTheta_ );
 
-    // Normalize u.
-    double uDotu = u_.dot(u_);
-    if ( uDotu != 0.0 && uDotu != 1.0 )
-        u_ *= 1.0 / sqrt(uDotu);
+    if ( !u_.is_null() )
+    {
+        // Normalize u.
+        double uDotu = u_->dot(*u_);
+        TEUCHOS_ASSERT_INEQUALITY( fabs(uDotu), >, 1.0e-12 );
+        *u_ *= 1.0 / sqrt(uDotu);
+    }
 
 #ifdef _DEBUG_
     TEUCHOS_ASSERT( !mesh_.is_null() );
@@ -125,7 +128,7 @@ getAEdgeMidpointProjection( const unsigned int edgeIndex
 DoubleVector
 MagneticVectorPotential::
 rotate_( const DoubleVector & v,
-         const DoubleVector & u,
+         const Teuchos::RCP<const DoubleVector> & u,
          const double sinTheta,
          const double cosTheta
        ) const
@@ -138,17 +141,29 @@ rotate_( const DoubleVector & v,
   DoubleVector r = v;
   if ( sinTheta != 0.0 )
   {
+      TEST_FOR_EXCEPT_MSG( u.is_null(),
+                           "Rotation requested, but rot normal vector not set."
+                         );
+#ifdef _DEBUG_
+      TEST_FOR_EXCEPT_MSG( u->dot(*u) != 1.0,
+                           "Rotation requested, but rot normal vector not "
+                           << "normalized: <u,u> = " << u->dot(*u) << "."
+                           << std::endl
+                         );
+#endif
+
       // cos(theta) * I * v
       r *= cosTheta;
 
       // + sin(theta) u\cross v
-      DoubleVector tmp = this->crossProduct_(u,v);
+      DoubleVector tmp = this->crossProduct_(*u,v);
       tmp *= sinTheta;
       r += tmp;
 
       // + (1-cos(theta)) (u*u^T) * v
-      tmp = u;
-      tmp *= (1.0-cosTheta) * u.dot( v );
+      tmp = *u;
+      tmp *= (1.0-cosTheta) * u->dot( v );
+
       r += tmp;
   }
 
@@ -161,7 +176,7 @@ crossProduct_( const DoubleVector u,
                const DoubleVector v
              ) const
 {
-    DoubleVector uXv;
+    DoubleVector uXv(3);
     uXv[0] = u[1]*v[2] - u[2]*v[1];
     uXv[1] = u[2]*v[0] - u[0]*v[2];
     uXv[2] = u[0]*v[1] - u[1]*v[0];
@@ -288,8 +303,8 @@ getdAdMuEdgeMidpointProjectionFallback( const unsigned int cellIndex,
 double
 MagneticVectorPotential::
 getdAdThetaEdgeMidpointProjectionFallback( const unsigned int cellIndex,
-                                            const unsigned int edgeIndex
-                                          ) const
+                                           const unsigned int edgeIndex
+                                         ) const
 {
   if ( !mvpEdgeMidpointFallbackUpToDate_ )
       this->initializeMvpEdgeMidpointFallback_();
@@ -306,10 +321,13 @@ void
 MagneticVectorPotential::
 initializeMvpEdgeMidpointFallback_() const
 {
-#ifdef _DEBUG_
+// #ifdef _DEBUG_
   TEUCHOS_ASSERT( !mesh_.is_null() );
   TEUCHOS_ASSERT( !mvp_.is_null() );
-#endif
+  TEUCHOS_ASSERT( !mvpEdgeMidpointFallback_.is_null() );
+  TEUCHOS_ASSERT( !edgesFallback_.is_null() );
+// #endif
+
   std::vector<stk::mesh::Entity*> cells = mesh_->getOwnedCells();
 
   // Loop over all edges and create the cache.

@@ -58,6 +58,8 @@ KeoFactory( const Teuchos::RCP<const Ginla::StkMesh>           & mesh,
         keoBuildParameters_( Teuchos::null ),
         keoDMu_( Teuchos::rcp( new Epetra_FECrsMatrix( Copy, *keoGraph_ ) ) ),
         keoDMuBuildParameters_( Teuchos::null ),
+        keoDTheta_( Teuchos::rcp( new Epetra_FECrsMatrix( Copy, *keoGraph_ ) ) ),
+        keoDThetaBuildParameters_( Teuchos::null ),
         alphaCache_( Teuchos::ArrayRCP<double>() ),
         alphaCacheUpToDate_( false ),
         alphaFallbackCache_( Teuchos::ArrayRCP<DoubleVector>() ),
@@ -119,6 +121,18 @@ getKeoDMu() const
         keoDMuBuildParameters_ = Teuchos::rcp( mvp_->getParameters()->clone() );
     }
     return keoDMu_;
+}
+// =============================================================================
+Teuchos::RCP<const Epetra_FECrsMatrix>
+KeoFactory::
+getKeoDTheta() const
+{
+    if ( !Ginla::Helpers::locaParameterVectorsEqual( keoDThetaBuildParameters_, mvp_->getParameters() ) )
+    {
+        this->fillKeo_( keoDTheta_, MATRIX_TYPE_DTHETA );
+        keoDThetaBuildParameters_ = Teuchos::rcp( mvp_->getParameters()->clone() );
+    }
+    return keoDTheta_;
 }
 // =============================================================================
 const Teuchos::RCP<Epetra_FECrsGraph>
@@ -239,7 +253,7 @@ fillKeo_( const Teuchos::RCP<Epetra_FECrsMatrix> & keoMatrix,
                            mesh_->getEdgeCoefficients()
                          );
   }
-  catch( ... )
+  catch( std::runtime_error )
   {
       this->fillKeoCellEdges_( keoMatrix,
                                matrixType,
@@ -329,6 +343,14 @@ fillKeoEdges_( const Teuchos::RCP<Epetra_FECrsMatrix> & keoMatrix,
               double dAdMuInt = mvp_->getdAdMuEdgeMidpointProjection( k );
               c = - alphaCache_[k] * dAdMuInt * sinAInt;
               s =   alphaCache_[k] * dAdMuInt * cosAInt;
+              d = 0.0;
+              break;
+          }
+          case MATRIX_TYPE_DTHETA: // dK/dtheta
+          {
+              double dAdThetaInt = mvp_->getdAdThetaEdgeMidpointProjection( k );
+              c = - alphaCache_[k] * dAdThetaInt * sinAInt;
+              s =   alphaCache_[k] * dAdThetaInt * cosAInt;
               d = 0.0;
               break;
           }
@@ -517,6 +539,14 @@ fillKeoCellEdges_( const Teuchos::RCP<Epetra_FECrsMatrix> & keoMatrix,
                   double dAdMuInt = mvp_->getdAdMuEdgeMidpointProjectionFallback( k, edgeIndex );
                   c = - alpha * dAdMuInt * sinAInt;
                   s =   alpha * dAdMuInt * cosAInt;
+                  d = 0.0;
+                  break;
+              }
+              case MATRIX_TYPE_DTHETA: // dK/dtheta
+              {
+                  double dAdThetaInt = mvp_->getdAdThetaEdgeMidpointProjectionFallback( k, edgeIndex );
+                  c = - alpha * dAdThetaInt * sinAInt;
+                  s =   alpha * dAdThetaInt * cosAInt;
                   d = 0.0;
                   break;
               }

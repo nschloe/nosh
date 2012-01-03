@@ -41,7 +41,7 @@ JacobianOperator( const Teuchos::RCP<const Ginla::StkMesh> & mesh,
         keoFactory_( keoFactory ),
         keoMatrix_( keoFactory_->getKeo() ),
         current_X_ ( current_X ),
-        temperature_( 0.0 ),
+        T_( 0.0 ),
         isDiagsUpToDate_( false ),
         diag0_ ( Teuchos::rcp( new Epetra_Vector(*(mesh->getComplexNonOverlapMap())) ) ),
         diag1b_( Teuchos::rcp( new Epetra_Vector(mesh->getControlVolumes()->Map()) ) )
@@ -202,12 +202,12 @@ OperatorRangeMap () const
 void
 JacobianOperator::
 rebuild( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
-         const double temperature,
+         const double T,
          const Teuchos::RCP<const Epetra_Vector> & current_X
        )
 {
     // set the entities for the operator
-    temperature_ = temperature;
+    T_ = T;
     current_X_ = current_X;
     isDiagsUpToDate_ = false;
 
@@ -233,7 +233,7 @@ rebuildDiags_() const
     {
         // rebuild diag0
         double alpha = controlVolumes[k] * (*thickness_)[k] * (
-                       1.0 - temperature_
+                       1.0 - T_
                        - 2.0 * ( (*current_X_)[2*k]*(*current_X_)[2*k] + (*current_X_)[2*k+1]*(*current_X_)[2*k+1] )
                        );
         double rePhiSquare = controlVolumes[k] * (*thickness_)[k] * (

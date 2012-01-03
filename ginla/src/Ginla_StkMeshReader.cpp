@@ -259,13 +259,6 @@ read( const Epetra_Comm      & comm,
       thickness->PutScalar( 1.0 );
   data.set( "thickness", thickness );
 
-  // Add some dummy data.
-  // TODO Replace by proper values.
-  Teuchos::ParameterList problemParams;
-  problemParams.setName( "Problem parameters" );
-  problemParams.set( "mu", 0.0 );
-  data.set( "Problem parameters", problemParams );
-
   // These are vain attempts to find out whether thicknessField is actually empty.
 //     const stk::mesh::FieldBase::RestrictionVector & restrictions = thicknessField->restrictions();
 //     TEUCHOS_ASSERT( !restrictions.empty() );

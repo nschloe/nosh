@@ -40,7 +40,7 @@ public:
                            const Teuchos::RCP<const Epetra_MultiVector>  & mvp,
                            double mu = 0.0,
                            double theta = 0.0,
-                           const DoubleVector u = DoubleVector(3)
+                           const Teuchos::RCP<DoubleVector> u = Teuchos::null
                          );
 
   ~MagneticVectorPotential();
@@ -87,7 +87,7 @@ private:
 
   DoubleVector
   rotate_( const DoubleVector & v,
-           const DoubleVector & u,
+           const Teuchos::RCP<const DoubleVector> & u,
            const double sinTheta,
            const double cosTheta
          ) const;
@@ -104,7 +104,7 @@ private:
   double theta_;
   double sinTheta_;
   double cosTheta_;
-  DoubleVector u_;
+  const Teuchos::RCP<DoubleVector> u_;
 
   Teuchos::ArrayRCP<DoubleVector> mvpEdgeMidpoint_;
   Teuchos::ArrayRCP<DoubleVector> edges_;

@@ -91,7 +91,7 @@ public:
 public:
     void
     rebuild( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
-             const double temperature,
+             const double T,
              const Teuchos::RCP<const Epetra_Vector> & current_X
            );
 
@@ -112,7 +112,7 @@ private:
 
     Teuchos::RCP<const Epetra_Vector> current_X_;
 
-    double temperature_;
+    double T_;
 
     mutable bool isDiagsUpToDate_;
     const Teuchos::RCP<Epetra_Vector> diag0_;

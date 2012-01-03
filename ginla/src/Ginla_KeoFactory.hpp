@@ -52,7 +52,8 @@ class KeoFactory
 {
 public:
     enum EMatrixType { MATRIX_TYPE_REGULAR,
-                       MATRIX_TYPE_DMU
+                       MATRIX_TYPE_DMU,
+                       MATRIX_TYPE_DTHETA
                      };
 
 public:
@@ -79,6 +80,9 @@ public:
 
     Teuchos::RCP<const Epetra_FECrsMatrix>
     getKeoDMu() const;
+
+    Teuchos::RCP<const Epetra_FECrsMatrix>
+    getKeoDTheta() const;
 
 protected:
 
@@ -144,6 +148,8 @@ private:
     mutable Teuchos::RCP<LOCA::ParameterVector> keoBuildParameters_;
     const Teuchos::RCP<Epetra_FECrsMatrix> keoDMu_;
     mutable Teuchos::RCP<LOCA::ParameterVector> keoDMuBuildParameters_;
+    const Teuchos::RCP<Epetra_FECrsMatrix> keoDTheta_;
+    mutable Teuchos::RCP<LOCA::ParameterVector> keoDThetaBuildParameters_;
 
     mutable Teuchos::ArrayRCP<double> alphaCache_;
     mutable bool alphaCacheUpToDate_;

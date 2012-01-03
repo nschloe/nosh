@@ -73,7 +73,7 @@ int main ( int argc, char *argv[] )
 
       std::string xmlInputFileName = "";
       My_CLP.setOption ( "xml-input-file", &xmlInputFileName,
-                        "XML file containing the parameter list", true );
+                         "XML file containing the parameter list", true );
 
       // print warning for unrecognized arguments
       My_CLP.recogniseAllOptions ( true );
@@ -91,7 +91,7 @@ int main ( int argc, char *argv[] )
           std::cout << "Reading parameter list from \"" << xmlInputFileName << "\"."
                     << std::endl;
 
-      Teuchos::updateParametersFromXmlFile ( xmlInputFileName, piroParams.get() );
+      Teuchos::updateParametersFromXmlFile( xmlInputFileName, piroParams.get() );
 
       // =======================================================================
       // extract data of the parameter list
@@ -102,11 +102,13 @@ int main ( int argc, char *argv[] )
 
       std::string & outputDirectory = xmlDirectory;
 
-      std::string contFilePath = xmlDirectory + "/" + outputList.get<std::string> ( "Continuation data file name" );
+      std::string contFilePath = xmlDirectory + "/"
+                               + outputList.get<std::string> ( "Continuation data file name" );
 
       Teuchos::ParameterList initialGuessList;
       initialGuessList = piroParams->sublist ( "Initial guess", true );
-      std::string inputFilePath = xmlDirectory + "/" + initialGuessList.get<std::string> ( "State" );
+      std::string inputFilePath = xmlDirectory + "/"
+                                + initialGuessList.get<std::string> ( "State" );
       // =======================================================================
       // Read the data from the file.
       Teuchos::ParameterList data;
@@ -117,7 +119,6 @@ int main ( int argc, char *argv[] )
       Teuchos::RCP<Epetra_Vector>      & z = data.get( "psi", Teuchos::RCP<Epetra_Vector>() );
       Teuchos::RCP<const Epetra_MultiVector> & mvpValues = data.get( "A", Teuchos::RCP<const Epetra_MultiVector>() );
       Teuchos::RCP<Epetra_Vector>      & thickness = data.get( "thickness", Teuchos::RCP<Epetra_Vector>() );
-      Teuchos::ParameterList           & problemParameters = data.get( "Problem parameters", Teuchos::ParameterList() );
 
       // set the output directory for later plotting with this
       mesh->setOutputFile( outputDirectory, "solution" );
@@ -127,19 +128,28 @@ int main ( int argc, char *argv[] )
       Teuchos::RCP<Ginla::State> state =
           Teuchos::rcp( new Ginla::State( *z, mesh ) );
 
-      // possibly overwrite the parameters
-      Teuchos::ParameterList & overwriteParamsList = piroParams->sublist ( "Overwrite parameter list", true );
-      bool overwriteParameters = overwriteParamsList.get<bool> ( "Overwrite parameters" );
-      if ( overwriteParameters )
+      // possibly override the parameters
+      Teuchos::ParameterList problemParameters = Teuchos::ParameterList();
+      Teuchos::ParameterList & OverrideParamsList =
+          piroParams->sublist( "Override parameter list", true );
+      problemParameters.setParameters( OverrideParamsList );
+
+      // Get the rotation vector.
+      Teuchos::RCP<Teuchos::SerialDenseVector<int,double> > u = Teuchos::null;
+      if ( piroParams->isSublist("Rotation vector") )
       {
-          Teuchos::ParameterList & overwritePList = overwriteParamsList.sublist( "Parameters", true );
-          problemParameters.setParameters( overwritePList );
+          u = Teuchos::rcp(new Teuchos::SerialDenseVector<int,double>(3) );
+          Teuchos::ParameterList & rotationVectorList =
+              piroParams->sublist( "Rotation vector", false );
+          (*u)[0] = rotationVectorList.get<double>("x");
+          (*u)[1] = rotationVectorList.get<double>("y");
+          (*u)[2] = rotationVectorList.get<double>("z");
       }
 
-      double mu = problemParameters.get<double> ( "mu" );
-
+      double mu = problemParameters.get<double>( "mu", 0.0 );
+      double theta = problemParameters.get<double>( "theta", 0.0 );
       Teuchos::RCP<Ginla::MagneticVectorPotential> mvp =
-              Teuchos::rcp ( new Ginla::MagneticVectorPotential ( mesh, mvpValues, mu ) );
+              Teuchos::rcp ( new Ginla::MagneticVectorPotential ( mesh, mvpValues, mu, theta, u ) );
 
       // create the mode evaluator
       Teuchos::RCP<Ginla::ModelEvaluator> glModel =
