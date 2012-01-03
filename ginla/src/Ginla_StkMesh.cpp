@@ -285,7 +285,9 @@ Teuchos::RCP<const Epetra_Map>
 StkMesh::
 getNodesMap() const
 {
+#ifdef _DEBUG_
     TEUCHOS_ASSERT( !nodesMap_.is_null() );
+#endif
     return nodesMap_;
 }
 // =============================================================================
@@ -293,7 +295,9 @@ Teuchos::RCP<const Epetra_Map>
 StkMesh::
 getNodesOverlapMap() const
 {
+#ifdef _DEBUG_
     TEUCHOS_ASSERT( !nodesOverlapMap_.is_null() );
+#endif
     return nodesOverlapMap_;
 }
 // =============================================================================
@@ -301,7 +305,9 @@ Teuchos::RCP<const Epetra_Map>
 StkMesh::
 getComplexNonOverlapMap() const
 {
+#ifdef _DEBUG_
     TEUCHOS_ASSERT( !complexMap_.is_null() );
+#endif
     return complexMap_;
 }
 // =============================================================================
@@ -309,7 +315,9 @@ Teuchos::RCP<const Epetra_Map>
 StkMesh::
 getComplexOverlapMap() const
 {
+#ifdef _DEBUG_
     TEUCHOS_ASSERT( !complexOverlapMap_.is_null() );
+#endif
     return complexOverlapMap_;
 }
 // =============================================================================
@@ -454,7 +462,9 @@ computeEdgeCoefficients_() const
           // Get the two end points.
           stk::mesh::PairIterRelation endPoints =
               (*localEdges[i].entity()).relations( metaData_->node_rank() );
+#ifdef _DEBUG_
           TEUCHOS_ASSERT_EQUALITY( endPoints.size(), 2 );
+#endif
 
           // Fetch the edge coordinates.
           const Teuchos::ArrayRCP<DoubleVector> localNodeCoords =
@@ -462,13 +472,6 @@ computeEdgeCoefficients_() const
           edges[i] = localNodeCoords[1];
           edges[i] -= localNodeCoords[0];
       }
-
-//       if ( k==0 )
-//       {
-//           std::cout << "The edges of cell #" << k << ": " << std::endl;
-//           for ( int jj=0; jj<numLocalEdges; jj++ )
-//               std::cout << "edge #" << jj << ": " << edges[jj] << std::endl;
-//       }
 
       const DoubleVector edgeCoeffs =
           getEdgeCoefficientsNumerically_( edges );
@@ -478,10 +481,12 @@ computeEdgeCoefficients_() const
       {
           const int gEdgeId = (*localEdges[i].entity()).identifier() - 1;
           const int lEdgeId = this->getEdgesOverlapMap()->LID( gEdgeId );
+#ifdef _DEBUG_
           TEST_FOR_EXCEPT_MSG( lEdgeId < 0,
                                "The global index " << gEdgeId
                                << " does not seem to be present on this node." );
           TEUCHOS_ASSERT_INEQUALITY( edgeCoefficients_.size(), >, lEdgeId );
+#endif
           edgeCoefficients_[lEdgeId] += edgeCoeffs[i];
       }
   }
@@ -515,10 +520,12 @@ computeEdgeCoefficientsFallback_() const
           cells[k]->relations( metaData_->node_rank() );
       unsigned int numLocalNodes = localNodes.size();
 
+#ifdef _DEBUG_
       // Confirm that we always have the same simplices.
       TEUCHOS_ASSERT_EQUALITY( numLocalNodes,
                                this->getCellDimension(numLocalNodes)+1
                              );
+#endif
 
       // Fetch the nodal positions into 'localNodes'.
       const Teuchos::ArrayRCP<const DoubleVector> localNodeCoords =
@@ -540,11 +547,6 @@ computeEdgeCoefficientsFallback_() const
 
       edgeCoefficientsFallback_[k] =
           this->getEdgeCoefficientsNumerically_( localEdgeCoords );
-
-//       if (k==0)
-//       {
-//           std::cout << "BBB coordinates for cell #" << k << ": " << edgeCoefficientsFallback_[k] << std::endl;
-//       }
   }
 
   edgeCoefficientsFallbackUpToDate_ = true;
@@ -652,11 +654,6 @@ getEdgeCoefficientsNumerically_( const Teuchos::ArrayRCP<const DoubleVector> edg
 //     for ( int k=0; k<numEdges; k++ )
 //         alphaArrayRCP[k] = (*alpha)(k,0);
 
-//    std::cout << "Got coefficients";
-//    for ( int k=0; k<numEdges; k++ )
-//        std::cout << " " << alphaArrayRCP[k];
-//    std::cout << std::endl;
-
     // TODO Don't explicitly copy alpha on return.
     return *alpha;
 }
@@ -669,9 +666,11 @@ computeControlVolumes_() const
   Teuchos::TimeMonitor tm(*computeControlVolumesTime_);
 #endif
 
+#ifdef _DEBUG_
   TEUCHOS_ASSERT( !controlVolumes_.is_null() );
 //   TEUCHOS_ASSERT( !averageThickness_.is_null() );
   TEUCHOS_ASSERT( !nodesOverlapMap_.is_null() );
+#endif
 
   // Compute the volume of the (Voronoi) control cells for each point.
   if ( !controlVolumes_->Map().SameAs( *nodesMap_ ) )
@@ -699,8 +698,10 @@ computeControlVolumes_() const
       unsigned int numLocalNodes = localNodes.size();
       unsigned int cellDimension = this->getCellDimension( numLocalNodes );
 
+#ifdef _DEBUG_
       // Confirm that we always have the same simplices.
       TEUCHOS_ASSERT_EQUALITY( numLocalNodes, cellDimension+1 );
+#endif
 
       // Fetch the nodal positions into 'localNodes'.
       const Teuchos::ArrayRCP<const DoubleVector> localNodeCoords =
@@ -727,13 +728,17 @@ computeControlVolumes_() const
           const DoubleVector & x0 = localNodeCoords[e0];
           const int gid0 = (*localNodes[e0].entity()).identifier() - 1;
           const int lid0 = nodesOverlapMap_->LID( gid0 );
+#ifdef _DEBUG_
           TEUCHOS_ASSERT_INEQUALITY( lid0, >=, 0 );
+#endif
           for ( unsigned int e1=e0+1; e1<numLocalNodes; e1++ )
           {
               const DoubleVector & x1 = localNodeCoords[e1];
               const int gid1 = (*localNodes[e1].entity()).identifier() - 1;
               const int lid1 = nodesOverlapMap_->LID( gid1 );
+#ifdef _DEBUG_
               TEUCHOS_ASSERT_INEQUALITY( lid1, >=, 0 );
+#endif
 
               // Get the other nodes.
               Teuchos::Tuple<unsigned int,2> other = this->getOtherIndices_( e0, e1 );
@@ -914,7 +919,9 @@ getOtherIndices_( unsigned int e0, unsigned int e1 ) const
   {
       if ( k!=e0 && k!=e1 )
           otherInd[count++] = k;
+#ifdef _DEBUG_
       TEUCHOS_ASSERT_INEQUALITY( count, <=, 2 );
+#endif
   }
   return otherInd;
 }
@@ -979,7 +986,9 @@ DoubleVector
 StkMesh::
 computeTriangleCircumcenter_( const Teuchos::ArrayRCP<const DoubleVector> & nodes ) const
 {
+#ifdef _DEBUG_
   TEUCHOS_ASSERT_EQUALITY( nodes.size(), 3 );
+#endif
   return this->computeTriangleCircumcenter_( nodes[0], nodes[1], nodes[2] );
 }
 // =============================================================================
@@ -1027,7 +1036,9 @@ StkMesh::
 computeTetrahedronCircumcenter_( const Teuchos::ArrayRCP<const DoubleVector> & nodes ) const
 {
   // http://www.cgafaq.info/wiki/Tetrahedron_Circumsphere
+#ifdef _DEBUG_
   TEUCHOS_ASSERT_EQUALITY( nodes.size(), 4 );
+#endif
 
   // Compute with respect to the first point.
   Teuchos::Array<DoubleVector> relNodes(3);
@@ -1069,8 +1080,10 @@ add_( double alpha, const DoubleVector & x,
       double beta,  const DoubleVector & y
     ) const
 {
+#ifdef _DEBUG_
   TEUCHOS_ASSERT_EQUALITY( x.length(), 3 );
   TEUCHOS_ASSERT_EQUALITY( y.length(), 3 );
+#endif
   DoubleVector z(3);
   for ( int k=0; k<z.length(); k++ )
       z[k] = alpha*x[k] + beta*y[k];

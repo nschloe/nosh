@@ -54,7 +54,9 @@ MagneticVectorPotential( const Teuchos::RCP<Ginla::StkMesh>           & mesh,
     if ( uDotu != 0.0 && uDotu != 1.0 )
         u_ *= 1.0 / sqrt(uDotu);
 
+#ifdef _DEBUG_
     TEUCHOS_ASSERT( !mesh_.is_null() );
+#endif
     try
     {
         mvpEdgeMidpoint_ = Teuchos::ArrayRCP<DoubleVector>( mesh_->getOverlapEdges().size() );
@@ -133,9 +135,6 @@ rotate_( const DoubleVector & v,
   // Refer to
   // http://en.wikipedia.org/wiki/Rotation_matrix#Rotation_matrix_from_axis_and_angle
 
-  std::cout << sinTheta << std::endl;
-  std::cout << u << std::endl;
-  std::cout << v << std::endl;
   DoubleVector r = v;
   if ( sinTheta != 0.0 )
   {
@@ -205,10 +204,12 @@ void
 MagneticVectorPotential::
 initializeMvpEdgeMidpointCache_() const
 {
+#ifdef _DEBUG_
   TEUCHOS_ASSERT( !mesh_.is_null() );
+  TEUCHOS_ASSERT( !mvp_.is_null() );
+#endif
   std::vector<stk::mesh::Entity*> edges = mesh_->getOverlapEdges();
 
-  TEUCHOS_ASSERT( !mvp_.is_null() );
   // Loop over all edges and create the cache.
   for ( unsigned int k=0; k<edges.size(); k++ )
   {
@@ -217,17 +218,17 @@ initializeMvpEdgeMidpointCache_() const
           edges[k]->relations( mesh_->getMetaData()->node_rank() );
 
       // get the local ids
-      Teuchos::Tuple<int,2> gid, lid;
-      gid[0] = (*endPoints[0].entity()).identifier() - 1;
-      lid[0] = mvp_->Map().LID( gid[0] );
+      Teuchos::Tuple<int,2> lid;
+      lid[0] = mvp_->Map().LID( (*endPoints[0].entity()).identifier() - 1 );
+      lid[1] = mvp_->Map().LID( (*endPoints[1].entity()).identifier() - 1 );
+#ifdef _DEBUG_
       TEST_FOR_EXCEPT_MSG( lid[0] < 0,
-                          "The global index " << gid[0]
+                          "The global index " << (*endPoints[0].entity()).identifier() - 1
                           << " does not seem to be present on this node." );
-      gid[1] = (*endPoints[1].entity()).identifier() - 1;
-      lid[1] = mvp_->Map().LID( gid[1] );
       TEST_FOR_EXCEPT_MSG( lid[1] < 0,
-                          "The global index " << gid[1]
+                          "The global index " << (*endPoints[1].entity()).identifier() - 1
                           << " does not seem to be present on this node." );
+#endif
 
       // Approximate the value at the midpoint of the edge
       // by the average of the values at the adjacent nodes.
@@ -239,7 +240,9 @@ initializeMvpEdgeMidpointCache_() const
       // extract the nodal coordinates
       Teuchos::ArrayRCP<DoubleVector> localNodes =
           mesh_->getNodeCoordinates( endPoints );
+#ifdef _DEBUG_
       TEUCHOS_ASSERT_EQUALITY( localNodes.size(), 2 );
+#endif
       edges_[k] = localNodes[1];
       edges_[k] -= localNodes[0];
   }
@@ -303,12 +306,14 @@ void
 MagneticVectorPotential::
 initializeMvpEdgeMidpointFallback_() const
 {
+#ifdef _DEBUG_
   TEUCHOS_ASSERT( !mesh_.is_null() );
+  TEUCHOS_ASSERT( !mvp_.is_null() );
+#endif
   std::vector<stk::mesh::Entity*> cells = mesh_->getOwnedCells();
 
   // Loop over all edges and create the cache.
   // To this end, loop over all cells and the edges within the cell.
-  TEUCHOS_ASSERT( !mvp_.is_null() );
   for ( unsigned int k=0; k<cells.size(); k++ )
   {
       // get the nodes local to the cell
@@ -328,21 +333,23 @@ initializeMvpEdgeMidpointFallback_() const
       // In a simplex, the edges are exactly the connection between each pair
       // of nodes. Hence, loop over pairs of nodes.
       unsigned int edgeIndex = 0;
-      Teuchos::Tuple<int,2> gid, lid;
+      Teuchos::Tuple<int,2> lid;
       for ( unsigned int e0 = 0; e0 < numLocalNodes; e0++ )
       {
-          gid[0] = (*localNodes[e0].entity()).identifier() - 1;
-          lid[0] = mvp_->Map().LID( gid[0] );
+          lid[0] = mvp_->Map().LID( (*localNodes[e0].entity()).identifier() - 1 );
+#ifdef _DEBUG_
           TEST_FOR_EXCEPT_MSG( lid[0] < 0,
-                               "The global index " << gid[0]
+                               "The global index " << (*localNodes[e0].entity()).identifier() - 1
                                << " does not seem to be present on this node." );
+#endif
           for ( unsigned int e1 = e0+1; e1 < numLocalNodes; e1++ )
           {
-              gid[1] = (*localNodes[e1].entity()).identifier() - 1;
-              lid[1] = mvp_->Map().LID( gid[1] );
+              lid[1] = mvp_->Map().LID( (*localNodes[e1].entity()).identifier() - 1 );
+#ifdef _DEBUG_
               TEST_FOR_EXCEPT_MSG( lid[1] < 0,
-                                   "The global index " << gid[1]
+                                   "The global index " << (*localNodes[e1].entity()).identifier() - 1
                                    << " does not seem to be present on this node." );
+#endif
 
               // Approximate the value at the midpoint of the edge
               // by the average of the values at the adjacent nodes.

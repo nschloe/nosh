@@ -41,8 +41,10 @@ State( const Epetra_Vector                      & psi,
        psi_( psi ),
        mesh_( mesh )
 {
+#ifdef _DEBUG_
     TEUCHOS_ASSERT_EQUALITY( psi.GlobalLength(),
                              2 * mesh->getNumNodes() );
+#endif
 
     return;
 }
@@ -140,7 +142,9 @@ freeEnergy() const
     const Epetra_Vector & controlVolumes = *(mesh_->getControlVolumes());
 
     int numMyPoints = controlVolumes.Map().NumMyPoints();
+#ifdef _DEBUG_
     TEUCHOS_ASSERT_EQUALITY( 2*numMyPoints, psi_.MyLength() );
+#endif
 
     double alpha;
     for ( int k=0; k<numMyPoints; k++ )
@@ -167,7 +171,9 @@ innerProduct( const Ginla::State & state ) const
     const Epetra_Vector & controlVolumes = *(mesh_->getControlVolumes());
 
     int numMyPoints = controlVolumes.Map().NumMyPoints();
+#ifdef _DEBUG_
     TEUCHOS_ASSERT_EQUALITY( 2*numMyPoints, psi_.MyLength() );
+#endif
 
     const Epetra_Vector & psi2 = *(state.getPsi());
 
@@ -208,10 +214,14 @@ mergePsi_( const Teuchos::RCP<const Ginla::StkMesh> & mesh,
          ) const
 {
     VectorFieldType * psir_field = mesh->getMetaData()->get_field<VectorFieldType>( "psi_R" );
+#ifdef _DEBUG_
     TEUCHOS_ASSERT( psir_field != NULL );
+#endif
 
     VectorFieldType * psii_field = mesh->getMetaData()->get_field<VectorFieldType>( "psi_Z" );
+#ifdef _DEBUG_
     TEUCHOS_ASSERT( psii_field != NULL );
+#endif
 
     // Zero out all nodal values.
     const std::vector<stk::mesh::Entity*> & overlapNodes = mesh->getOverlapNodes();

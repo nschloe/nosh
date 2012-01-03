@@ -244,9 +244,11 @@ read( const Epetra_Comm      & comm,
   double r[3];
   mvp->NormInf( r );
   double tol=1.0e-9;
+#ifdef _DEBUG_
   TEST_FOR_EXCEPT_MSG( r[0]<tol && r[1]<tol && r[2]<tol,
                        "The magnetic vector potential in the file \""
                        << fileName_ << "\" seems to be 0 throughout. Abort." );
+#endif
   data.set( "A", mvp );
 
   // Check of the thickness data is of any value. If not: ditch it.
@@ -301,10 +303,12 @@ createPsi_( const Teuchos::RCP<const Ginla::StkMesh> & mesh,
         psi->ReplaceMyValues( 1, psiiVal, &ind );
     }
 
-    double r[1];
-    psi->Norm1( r );
-    TEST_FOR_EXCEPT_MSG( r[0]!=r[0] || r[0]>1.0e100,
-                                 "The input data seems flawed. Abort." );
+#ifdef _DEBUG_
+    double r;
+    psi->Norm1( &r );
+    TEST_FOR_EXCEPT_MSG( r!=r || r>1.0e100,
+                         "The input data seems flawed. Abort." );
+#endif
 
     return psi;
 }
@@ -321,7 +325,9 @@ createThickness_( const Teuchos::RCP<const Ginla::StkMesh> & mesh,
     // Create vector with this respective map.
     Teuchos::RCP<Epetra_Vector> thickness = Teuchos::rcp( new Epetra_Vector( *mesh->getNodesOverlapMap() ) );
 
+#ifdef _DEBUG_
     TEUCHOS_ASSERT( !thickness_field.is_null() );
+#endif
 
     // Fill the vector with data from the file.
     for ( unsigned int k=0; k<overlapNodes.size(); k++ )
@@ -339,10 +345,12 @@ createThickness_( const Teuchos::RCP<const Ginla::StkMesh> & mesh,
         thickness->ReplaceMyValues( 1, thicknessVal, &kk );
     }
 
-    double r[1];
-    thickness->Norm1( r );
-    TEST_FOR_EXCEPT_MSG( r[0]!=r[0] || r[0]>1.0e100,
+#ifdef _DEBUG_
+    double r;
+    thickness->Norm1( &r );
+    TEST_FOR_EXCEPT_MSG( r!=r || r>1.0e100,
                                  "The input data seems flawed. Abort." );
+#endif
 
     return thickness;
 }
@@ -360,29 +368,35 @@ createMvp_( const Teuchos::RCP<const Ginla::StkMesh>  & mesh,
     int numComponents = 3;
     Teuchos::RCP<Epetra_MultiVector> mvp = Teuchos::rcp( new Epetra_MultiVector( *mesh->getNodesOverlapMap(), numComponents ) );
 
+#ifdef _DEBUG_
     TEUCHOS_ASSERT( !mvpField.is_null() );
+#endif
 
     // Fill the vector with data from the file.
     for ( unsigned int k=0; k<overlapNodes.size(); k++ )
     {
         double* mvpVal = stk::mesh::field_data( *mvpField, *overlapNodes[k] );
+#ifdef _DEBUG_
         // Check if the field is actually there.
         TEST_FOR_EXCEPT_MSG( mvpVal == NULL,
-                                     "MVP value for node " << k << " not found.\n"
-                                     << "Probably there is no MVP field given with the state."
-                                   );
+                             "MVP value for node " << k << " not found.\n"
+                             << "Probably there is no MVP field given with the state."
+                           );
+#endif
 
         mvp->ReplaceMyValue( k, 0, mvpVal[0] );
         mvp->ReplaceMyValue( k, 1, mvpVal[1] );
         mvp->ReplaceMyValue( k, 2, mvpVal[2] );
     }
 
+#ifdef _DEBUG_
     double r[3];
     mvp->Norm1( r );
     TEST_FOR_EXCEPT_MSG( r[0]!=r[0] || r[0]>1.0e100
                               || r[1]!=r[1] || r[1]>1.0e100
                               || r[2]!=r[2] || r[2]>1.0e100,
                                  "The input data seems flawed. Abort." );
+#endif
 
     return mvp;
 }

@@ -50,7 +50,7 @@ ModelEvaluator ( const Teuchos::RCP<Ginla::StkMesh>                 & mesh,
         mesh_ ( mesh ),
         thickness_( thickness ),
         x_( initialX ),
-        numParams_( 1 ),
+        numParams_( 0 ),
         p_map_( Teuchos::null ),
         p_init_( Teuchos::null ),
         p_names_( Teuchos::null ),
@@ -81,20 +81,21 @@ setupParameters_( const Teuchos::ParameterList & params )
 {
   p_names_ = Teuchos::rcp( new Teuchos::Array<std::string>() );
   p_names_->append( "mu" );
-  p_names_->append( "phi" );
   p_names_->append( "theta" );
   p_names_->append( "temperature" );
 
+  numParams_ = p_names_->length();
+
   // these are local variables
-  Teuchos::RCP<Teuchos::Array<double> > p_default_values = Teuchos::rcp( new Teuchos::Array<double>() );
-  p_default_values->append( 0.0 ); // mu
-  p_default_values->append( 0.0 ); // phi
-  p_default_values->append( 0.0 ); // theta
-  p_default_values->append( 0.0 ); // temperature
+  Teuchos::Array<double> p_default_values = Teuchos::Array<double>(numParams_);
+  p_default_values[0] = 0.0; // mu
+  p_default_values[1] = 0.0; // theta
+  p_default_values[2] = 0.0; // temperature
 
   // setup parameter map
-  numParams_ = p_names_->length();
+#ifdef _DEBUG_
   TEUCHOS_ASSERT( !mesh_.is_null() );
+#endif
   const Epetra_Comm & comm = mesh_->getComm();
   p_map_ = Teuchos::rcp( new Epetra_LocalMap( numParams_,
                                               0,
@@ -110,19 +111,18 @@ setupParameters_( const Teuchos::ParameterList & params )
           (*p_init_)[k] = params.get<double>( (*p_names_)[k] );
       else
       {
-          (*p_init_)[k] = (*p_default_values)[k];
-          if ( comm.MyPID() == 0 )
-              std::cerr << "Parameter \"" << (*p_names_)[k]
-                        << "\" initialized with default value \""
-                        << (*p_default_values)[k] << "\"."
-                        << std::endl;
+          (*p_init_)[k] = p_default_values[k];
+          *out_ << "Parameter \"" << (*p_names_)[k]
+                << "\" initialized with default value \""
+                << p_default_values[k] << "\"."
+                << std::endl;
       }
 
   // TODO warn if there are unused entries in params
 //  for ( Teuchos::ParameterList::ConstIterator k=params.begin(); k!=params.end(); ++k )
 //  {
 //      if ( !p_names_)
-//      std::cout << "Parameter " << params.name(k) << std::endl;
+//        *out_ << "Parameter " << params.name(k) << std::endl;
 //  }
 
   // also initialize p_current_
@@ -138,7 +138,9 @@ get_x_map() const
   // It is a bit of an assumption that x_ actually has this map, but
   // as Epetra_Vector::Map() only returns an Epetra_BlockMap which cannot be
   // cast into an Epetra_Map, this workaround is needed.
+#ifdef _DEBUG_
   TEUCHOS_ASSERT( !mesh_.is_null() );
+#endif
   return mesh_->getComplexNonOverlapMap();
 }
 // ============================================================================
@@ -146,7 +148,9 @@ Teuchos::RCP<const Epetra_Map>
 ModelEvaluator::
 get_f_map() const
 {
+#ifdef _DEBUG_
     TEUCHOS_ASSERT( !mesh_.is_null() );
+#endif
     return mesh_->getComplexNonOverlapMap();
 }
 // ============================================================================
@@ -154,7 +158,9 @@ Teuchos::RCP<const Epetra_Vector>
 ModelEvaluator::
 get_x_init () const
 {
+#ifdef _DEBUG_
   TEUCHOS_ASSERT( !x_.is_null() );
+#endif
   return x_;
 }
 // ============================================================================
@@ -162,7 +168,9 @@ Teuchos::RCP<const Epetra_Vector>
 ModelEvaluator::
 get_p_init ( int l ) const
 {
+#ifdef _DEBUG_
   TEUCHOS_ASSERT_EQUALITY( 0, l );
+#endif
   return p_init_;
 }
 // ============================================================================
@@ -170,7 +178,9 @@ Teuchos::RCP<const Epetra_Map>
 ModelEvaluator::
 get_p_map( int l ) const
 {
+#ifdef _DEBUG_
   TEUCHOS_ASSERT_EQUALITY( 0, l );
+#endif
   return p_map_;
 }
 // ============================================================================
@@ -178,7 +188,9 @@ Teuchos::RCP<const Teuchos::Array<std::string> >
 ModelEvaluator::
 get_p_names( int l ) const
 {
+#ifdef _DEBUG_
   TEUCHOS_ASSERT_EQUALITY( 0, l );
+#endif
   return p_names_;
 }
 // =============================================================================
@@ -278,17 +290,20 @@ evalModel( const InArgs  & inArgs,
       //*out_ << "Ginla::ModelEvaluator Warning: alpha=beta=0 -- setting beta=1" << std::endl;
       beta = 1.0;
   }
-
+#ifdef _DEBUG_
   TEUCHOS_ASSERT_EQUALITY( alpha, 0.0 );
   TEUCHOS_ASSERT_EQUALITY( beta,  1.0 );
+#endif
 
   const Teuchos::RCP<const Epetra_Vector> & x_in = inArgs.get_x();
 
   // get input arguments and make sure they are all right
   Teuchos::RCP<const Epetra_Vector> p_in = inArgs.get_p(0);
+#ifdef _DEBUG_
   TEUCHOS_ASSERT( !p_in.is_null() );
   for ( int k=0; k<p_in->MyLength(); k++ )
       TEUCHOS_ASSERT( !std::isnan( (*p_in)[k] ) );
+#endif
 
   // p_current_ is used in getParameters.
   // Setting p_current_=p_in here is really a somewhat arbitrary choice.
@@ -301,7 +316,7 @@ evalModel( const InArgs  & inArgs,
 
   Teuchos::RCP<LOCA::ParameterVector> mvpParams = this->getParameters();
 
-  const double temperature = (*p_in)[3];
+  const double temperature = (*p_in)[2];
 
   // compute F
   const Teuchos::RCP<Epetra_Vector> f_out = outArgs.get_f();
@@ -314,7 +329,8 @@ evalModel( const InArgs  & inArgs,
   }
 
   // compute dF/dp
-  const Teuchos::RCP<Epetra_MultiVector> dfdp_out = outArgs.get_DfDp(0).getMultiVector();
+  const Teuchos::RCP<Epetra_MultiVector> dfdp_out =
+      outArgs.get_DfDp(0).getMultiVector();
   if ( !dfdp_out.is_null() )
   {
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
@@ -369,12 +385,16 @@ computeF_ ( const Epetra_Vector                             & x,
   TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->Apply( x, FVec ) );
 
   // add the nonlinear part (mass lumping)
+#ifdef _DEBUG_
   TEUCHOS_ASSERT( FVec.Map().SameAs( x.Map() ) );
+#endif
 
   const Epetra_Vector & controlVolumes = *(mesh_->getControlVolumes());
 
+#ifdef _DEBUG_
   // Make sure control volumes and state still match.
   TEUCHOS_ASSERT_EQUALITY( 2*controlVolumes.MyLength(), x.MyLength() );
+#endif
 
   for ( int k=0; k<controlVolumes.MyLength(); k++ )
   {
@@ -430,7 +450,9 @@ computedFdMu_ ( const Epetra_Vector                             & x,
                 Epetra_MultiVector                              & FVec
               ) const
 {
+#ifdef _DEBUG_
   TEUCHOS_ASSERT_EQUALITY( 1, FVec.NumVectors() );
+#endif
   // build the KEO
   keoFactory_->updateParameters( mvpParams );
   const Teuchos::RCP<const Epetra_CrsMatrix> dKdMuMatrix =
@@ -457,8 +479,10 @@ getParameters() const
   Teuchos::RCP<LOCA::ParameterVector> p =
       Teuchos::rcp( new LOCA::ParameterVector() );
 
+#ifdef _DEBUG_
   TEUCHOS_ASSERT( !p_names_.is_null() );
   TEUCHOS_ASSERT( !p_current_.is_null() );
+#endif
   for ( int k=0; k<numParams_; k++ )
       p->addParameter( (*p_names_)[k], (*p_current_)[k] );
 

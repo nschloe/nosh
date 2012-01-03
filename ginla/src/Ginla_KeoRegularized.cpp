@@ -95,7 +95,9 @@ Apply ( const Epetra_MultiVector & X,
     TEST_FOR_EXCEPT_MSG( true,
                          "Not implemented."
                        );
+#ifdef _DEBUG_
     TEUCHOS_ASSERT( !keoRegularized_.is_null() );
+#endif
     return keoRegularized_->Apply( X, Y );
 }
 // =============================================================================
@@ -156,7 +158,9 @@ ApplyInverseMl_( const Epetra_MultiVector & X,
    // Belos, for example, does not initialze Y before passing it here.
    Y.PutScalar( 0.0 );
 
+#ifdef _DEBUG_
    TEUCHOS_ASSERT( !keoRegularized_.is_null() );
+#endif
 
    // Construct an unpreconditioned linear problem instance.
    Teuchos::RCP<const Epetra_MultiVector> Xptr = Teuchos::rcpFromRef( X );
@@ -166,7 +170,9 @@ ApplyInverseMl_( const Epetra_MultiVector & X,
    TEUCHOS_ASSERT( problem.setProblem() );
    // -------------------------------------------------------------------------
    // add preconditioner
+#ifdef _DEBUG_
    TEUCHOS_ASSERT( !keoMlPrec_.is_null() );
+#endif
    problem.setLeftPrec( keoMlPrec_ );
    // -------------------------------------------------------------------------
    // Create an iterative solver manager.
@@ -196,8 +202,10 @@ ApplyInverseIlu_ ( const Epetra_MultiVector & X,
                          Epetra_MultiVector & Y
                  ) const
 {
+#ifdef _DEBUG_
     TEUCHOS_ASSERT( !keoIluProblem_.is_null() );
     TEUCHOS_ASSERT( !keoIluSolver_.is_null() );
+#endif
 
     // set left- and right-hand side
     keoIluProblem_->SetLHS( &Y );
@@ -248,7 +256,9 @@ const Epetra_Map &
 KeoRegularized::
 OperatorDomainMap () const
 {
+#ifdef _DEBUG_
     TEUCHOS_ASSERT( !keoRegularized_.is_null() );
+#endif
     return keoRegularized_->OperatorDomainMap();
 }
 // =============================================================================
@@ -256,7 +266,9 @@ const Epetra_Map &
 KeoRegularized::
 OperatorRangeMap () const
 {
+#ifdef _DEBUG_
     TEUCHOS_ASSERT( !keoRegularized_.is_null() );
+#endif
     return keoRegularized_->OperatorRangeMap();
 }
 // =============================================================================
@@ -269,7 +281,9 @@ rebuild()
 #endif
     // -------------------------------------------------------------------------
     // Copy over the matrix.
+#ifdef _DEBUG_
     TEUCHOS_ASSERT( !keoFactory_.is_null() );
+#endif
     keoRegularized_ = Teuchos::rcp( new Epetra_CrsMatrix( *(keoFactory_->getKeo()) ) );
     keoRegularized_->Scale( -1.0 );
     // -------------------------------------------------------------------------
@@ -350,7 +364,9 @@ rebuildMl_()
         // reuse the multilevel hierarchy
         // MLList.set("reuse: enable", true);
 
+#ifdef _DEBUG_
         TEUCHOS_ASSERT( !keoRegularized_.is_null() );
+#endif
 
         // From http://trilinos.sandia.gov/packages/docs/r10.8/packages/ml/doc/html/classML__Epetra_1_1MultiLevelPreconditioner.html:
         // "It is important to note that ML is more restrictive than Epetra for
@@ -361,8 +377,10 @@ rebuildMl_()
         // "Also, for square matrices, OperatorDomainMap() must be as
         //  OperatorRangeMap()."
         // Make sure this is indeed the case.
+#ifdef _DEBUG_
         TEUCHOS_ASSERT( keoRegularized_->OperatorRangeMap().SameAs( keoRegularized_->RowMatrixRowMap() ) );
         TEUCHOS_ASSERT( keoRegularized_->OperatorDomainMap().SameAs( keoRegularized_->OperatorRangeMap() ) );
+#endif
         MlPrec_ =
             Teuchos::rcp( new ML_Epetra::MultiLevelPreconditioner(*keoRegularized_, MLList) );
 //     }
@@ -391,7 +409,9 @@ rebuildIlu_()
     Teuchos::TimeMonitor tm(*timerRebuildIlu_);
 #endif
     // set the matrix the linear problem
+#ifdef _DEBUG_
     TEUCHOS_ASSERT( !keoRegularized_.is_null() );
+#endif
     if ( keoIluProblem_.is_null() )
         keoIluProblem_ = Teuchos::rcp( new Epetra_LinearProblem() );
     keoIluProblem_->SetOperator( &*keoRegularized_ );

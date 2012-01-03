@@ -83,7 +83,9 @@ updateParameters( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams
                 ) const
 {
   // set the parameters
+#ifdef _DEBUG_
   TEUCHOS_ASSERT( !mvpParams.is_null() );
+#endif
   mvp_->setParameters( *mvpParams );
   return;
 }
@@ -184,7 +186,9 @@ buildKeoGraph_() const
   // OperatorRangeMap must be the same, and, if the matrix is square,
   // OperatorRangeMap and OperatorDomainMap must coincide too.
   //
+#ifdef _DEBUG_
   TEUCHOS_ASSERT( !mesh_.is_null() );
+#endif
   const Epetra_Map & noMap = *mesh_->getComplexNonOverlapMap();
   Teuchos::RCP<Epetra_FECrsGraph> keoGraph
       = Teuchos::rcp( new Epetra_FECrsGraph( Copy, noMap, 0 ) );
@@ -218,14 +222,16 @@ fillKeo_( const Teuchos::RCP<Epetra_FECrsMatrix> & keoMatrix,
   // Zero-out the matrix
   TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->PutScalar( 0.0 ) );
 
+#ifdef _DEBUG_
   TEUCHOS_ASSERT( !mesh_.is_null() );
+#endif
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   // Loop over the cells, create local load vector and mass matrix,
   // and insert them into the global matrix.
-
+#ifdef _DEBUG_
   TEUCHOS_ASSERT( !thickness_.is_null() );
   TEUCHOS_ASSERT( !mvp_.is_null() );
-
+#endif
   try
   {
       this->fillKeoEdges_( keoMatrix,
@@ -410,13 +416,15 @@ buildAlphaCache_( const std::vector<stk::mesh::Entity*> & edges,
       gid[1] = (*endPoints[1].entity()).identifier() - 1;
 
       int tlid0 = thickness_->Map().LID( gid[0] );
+      int tlid1 = thickness_->Map().LID( gid[1] );
+#ifdef _DEBUG_
       TEST_FOR_EXCEPT_MSG( tlid0 < 0,
                            "The global index " << gid[0]
                            << " does not seem to be present on this node." );
-      int tlid1 = thickness_->Map().LID( gid[1] );
       TEST_FOR_EXCEPT_MSG( tlid1 < 0,
                            "The global index " << gid[1]
                            << " does not seem to be present on this node." );
+#endif
       double thickness = 0.5 * ( (*thickness_)[tlid0] + (*thickness_)[tlid1] );
 
       alphaCache_[k] = edgeCoefficients[k] * thickness;
@@ -622,16 +630,20 @@ buildAlphaFallbackCache_( const std::vector<stk::mesh::Entity*> & cells,
       {
           gid0 = (*nodes[e0].entity()).identifier() - 1;
           int tlid0 = thickness_->Map().LID( gid0 );
+#ifdef _DEBUG_
           TEST_FOR_EXCEPT_MSG( tlid0 < 0,
                                "The global index " << gid0
                                << " does not seem to be present on this node." );
+#endif
           for ( unsigned int e1 = e0+1; e1 < numLocalNodes; e1++ )
           {
               gid1 = (*nodes[e1].entity()).identifier() - 1;
               int tlid1 = thickness_->Map().LID( gid1 );
+#ifdef _DEBUG_
               TEST_FOR_EXCEPT_MSG( tlid1 < 0,
                                    "The global index " << gid1
                                    << " does not seem to be present on this node." );
+#endif
               double thickness = 0.5 * ( (*thickness_)[tlid0] + (*thickness_)[tlid1] );
 
               // Multiply by the thickness value of the midpoint. As this is not

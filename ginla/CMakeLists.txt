@@ -21,6 +21,12 @@ options are: None(CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used) Debug Release
 RelWithDebInfo MinSizeRel.")
 ENDIF()
 
+# Add preprocessor definition "_DEBUG_" for debug builds.
+STRING(COMPARE EQUAL ${CMAKE_BUILD_TYPE} "Debug" IS_DEBUG_BUILD )
+IF( IS_DEBUG_BUILD )
+    ADD_DEFINITIONS( -D_DEBUG_ )
+ENDIF()
+
 #SET(CMAKE_CXX_FLAGS_RELEASE     "-O2" )
 #SET(CMAKE_Fortran_FLAGS_RELEASE "-O2" )
 

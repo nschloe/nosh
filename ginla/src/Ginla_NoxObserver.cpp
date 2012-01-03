@@ -89,7 +89,9 @@ observeContinuation_( const Teuchos::RCP<const Ginla::State> & state )
 
   this->saveContinuationStatistics_( index, state );
 
+#ifdef _DEBUG_
   TEUCHOS_ASSERT( !modelEval_.is_null() );
+#endif
   Teuchos::RCP<LOCA::ParameterVector> p = modelEval_->getParameters();
   Teuchos::RCP<Teuchos::ParameterList> tp = Ginla::Helpers::locaParameterVector2teuchosParameterList( *p );
 
@@ -131,14 +133,19 @@ saveContinuationStatistics_( const int stepIndex,
 {
     if ( !statsWriter_.is_null() )
     {
+#ifdef _DEBUG_
         TEUCHOS_ASSERT( !state.is_null() );
-        Teuchos::RCP<Teuchos::ParameterList> paramList = statsWriter_->getListNonConst();
+#endif
+        Teuchos::RCP<Teuchos::ParameterList> paramList =
+            statsWriter_->getListNonConst();
 
         paramList->set( "0step", stepIndex );
 
         // put the parameter list into statsWriter_
         std::string labelPrepend = "1";
+#ifdef _DEBUG_
         TEUCHOS_ASSERT( !modelEval_.is_null() );
+#endif
         Ginla::Helpers::appendToTeuchosParameterList( *paramList,
                                                       *(modelEval_->getParameters()),
                                                       labelPrepend

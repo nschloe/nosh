@@ -71,8 +71,10 @@ Apply ( const Epetra_MultiVector & X,
     // A = K - I * thickness * ( (1-temp) - 2*|psi|^2 )
     // B = diag( thickness * psi^2 )
 
+#ifdef _DEBUG_
     TEUCHOS_ASSERT( !keoMatrix_.is_null() );
     TEUCHOS_ASSERT( !current_X_.is_null() );
+#endif
 
     // K*psi
     TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix_->Apply( X, Y ) );
@@ -80,7 +82,9 @@ Apply ( const Epetra_MultiVector & X,
     const Epetra_Vector & controlVolumes = *(mesh_->getControlVolumes());
     int numMyPoints = controlVolumes.MyLength();
 
+#ifdef _DEBUG_
     TEUCHOS_ASSERT_EQUALITY( 2*numMyPoints, X.MyLength() );
+#endif
 
     // rebuild diagonals cache
     if ( !isDiagsUpToDate_ )
@@ -179,7 +183,9 @@ const Epetra_Map &
 JacobianOperator::
 OperatorDomainMap () const
 {
+#ifdef _DEBUG_
     TEUCHOS_ASSERT( !keoMatrix_.is_null() );
+#endif
     return keoMatrix_->OperatorDomainMap();
 }
 // =============================================================================
@@ -187,7 +193,9 @@ const Epetra_Map &
 JacobianOperator::
 OperatorRangeMap () const
 {
+#ifdef _DEBUG_
     TEUCHOS_ASSERT( !keoMatrix_.is_null() );
+#endif
     return keoMatrix_->OperatorRangeMap();
 }
 // =============================================================================
