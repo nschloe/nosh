@@ -39,9 +39,8 @@ public:
   MagneticVectorPotential( const Teuchos::RCP<Ginla::StkMesh> & mesh,
                            const Teuchos::RCP<const Epetra_MultiVector>  & mvp,
                            double mu = 0.0,
-                           double thetaX = 0.0,
-                           double thetaY = 0.0,
-                           double thetaZ = 0.0
+                           double theta = 0.0,
+                           const DoubleVector u = DoubleVector(3)
                          );
 
   ~MagneticVectorPotential();
@@ -60,6 +59,9 @@ public:
   double
   getdAdMuEdgeMidpointProjection( const unsigned int edgeIndex
                                 ) const;
+  double
+  getdAdThetaEdgeMidpointProjection( const unsigned int edgeIndex
+                                   ) const;
 
   double
   getAEdgeMidpointProjectionFallback( const unsigned int cellIndex,
@@ -70,6 +72,10 @@ public:
   getdAdMuEdgeMidpointProjectionFallback( const unsigned int cellIndex,
                                           const unsigned int edgeIndex
                                         ) const;
+  double
+  getdAdThetaEdgeMidpointProjectionFallback( const unsigned int cellIndex,
+                                             const unsigned int edgeIndex
+                                           ) const;
 
 protected:
 private:
@@ -79,13 +85,26 @@ private:
   void
   initializeMvpEdgeMidpointFallback_() const;
 
+  DoubleVector
+  rotate_( const DoubleVector & v,
+           const DoubleVector & u,
+           const double sinTheta,
+           const double cosTheta
+         ) const;
+
+  DoubleVector
+  crossProduct_( const DoubleVector u,
+                 const DoubleVector v
+               ) const;
+
 private:
   const Teuchos::RCP<Ginla::StkMesh> mesh_;
   const Teuchos::RCP<const Epetra_MultiVector> mvp_;
   double mu_;
-  double thetaX_;
-  double thetaY_;
-  double thetaZ_;
+  double theta_;
+  double sinTheta_;
+  double cosTheta_;
+  DoubleVector u_;
 
   Teuchos::ArrayRCP<DoubleVector> mvpEdgeMidpoint_;
   Teuchos::ArrayRCP<DoubleVector> edges_;
