@@ -108,7 +108,9 @@ setupParameters_( const Teuchos::ParameterList & params )
   p_init_ = Teuchos::rcp( new Epetra_Vector(*p_map_) );
   for ( int k=0; k<numParams_; k++ )
       if ( params.isParameter( (*p_names_)[k] ) )
+      {
           (*p_init_)[k] = params.get<double>( (*p_names_)[k] );
+      }
       else
       {
           (*p_init_)[k] = p_default_values[k];
@@ -353,7 +355,7 @@ evalModel( const InArgs  & inArgs,
                  this->computeDFDTheta_( *x_in, mvpParams, *(*dfdp_out)(k) );
                  break;
              case 2: // T
-                 this->computeDFDT_( *x_in, mvpParams, T, *(*dfdp_out)(k) );
+                 this->computeDFDT_( *x_in, mvpParams, *(*dfdp_out)(k) );
                  break;
              default:
                  TEST_FOR_EXCEPT_MSG( true,
@@ -505,13 +507,11 @@ computeDFDTheta_( const Epetra_Vector                             & x,
 // ============================================================================
 void
 ModelEvaluator::
-computeDFDT_ ( const Epetra_Vector                             & x,
-               const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
-               const double                                      T,
-               Epetra_Vector                                   & FVec
-             ) const
+computeDFDT_( const Epetra_Vector                             & x,
+              const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
+              Epetra_Vector                                   & FVec
+            ) const
 {
-  // add the nonlinear part (mass lumping)
 #ifdef _DEBUG_
   TEUCHOS_ASSERT( FVec.Map().SameAs( x.Map() ) );
   TEUCHOS_ASSERT( !mesh_.is_null() );
@@ -527,7 +527,7 @@ computeDFDT_ ( const Epetra_Vector                             & x,
 
   for ( int k=0; k<controlVolumes.MyLength(); k++ )
   {
-      double alpha = - controlVolumes[k] * (*thickness_)[k] * T;
+      double alpha = - controlVolumes[k] * (*thickness_)[k];
       // real part
       FVec[2*k]   = alpha * x[2*k];
       // imaginary part

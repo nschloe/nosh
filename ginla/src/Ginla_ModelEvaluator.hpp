@@ -146,7 +146,6 @@ private:
   void
   computeDFDT_( const Epetra_Vector                             & x,
                 const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
-                const double                                      T,
                 Epetra_Vector                                   & FVec
               ) const;
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -

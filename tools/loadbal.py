@@ -12,7 +12,7 @@ def _main():
     output = "%s-balanced.nemI" % basename
 
     # slice it
-    slices_list = range( 2, 49 );
+    slices_list = [12] #range( 2, 3 )
     #slices_list.extend( range(32, 33, 32) )
     print "Cutting the input data into slices of ", slices_list, "."
     for num_slices in slices_list:
@@ -22,7 +22,7 @@ def _main():
 # ==============================================================================
 def _slice( filename, output, num_slices ):
 
-    bin_dir = "/opt/trilinos/dev/master/gcc/4.4.5/bin/"
+    bin_dir = "/opt/trilinos/dev/master/openmpi/1.4.3/gcc/4.6.1/release/bin/"
     nemslice_command = bin_dir + "nem_slice"
     nemspread_command = bin_dir + "nem_spread"
     tmp_nemspreadinp = "nem_spread.inp"
