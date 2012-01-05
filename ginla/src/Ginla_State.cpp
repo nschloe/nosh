@@ -21,7 +21,6 @@
 #include "Ginla_State.hpp"
 
 #include "Ginla_StkMesh.hpp"
-#include "Ginla_StkMeshWriter.hpp"
 
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/FieldData.hpp>
@@ -32,12 +31,19 @@
 #include <Epetra_Comm.h>
 #include <Epetra_Map.h>
 
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
+  #include <Teuchos_TimeMonitor.hpp>
+#endif
+
 namespace Ginla {
 // =============================================================================
 State::
 State( const Epetra_Vector                      & psi,
        const Teuchos::RCP<const Ginla::StkMesh> & mesh
      ):
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
+       saveTime_( Teuchos::TimeMonitor::getNewTimer("Ginla: State::save") ),
+#endif
        psi_( psi ),
        mesh_( mesh )
 {
@@ -90,23 +96,20 @@ getMesh () const
 // =============================================================================
 void
 State::
-save( const int                      index,
-      const Teuchos::ParameterList & p
+save( const int index
     ) const
 {
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
+  // timer for this routine
+  Teuchos::TimeMonitor tm(*saveTime_);
+#endif
 
     // Merge the state into the mesh.
 //     mesh_->getBulkData()->modification_begin();
     this->mergePsi_( mesh_, psi_ );
-
 //     mesh_->getBulkData()->modification_end();
 
-    // handle parameters
-//     std::vector<double>  mu(1);
-//     mu[0] = 0.0;
-//     mesh_->getMeshData()->m_region->put_field_data( "mu", mu );
-
-    // Write it out to the file that's been specified previously.
+    // Write it out to the file that's been specified in mesh_.
     double time = index;
     int out_step = stk::io::process_output_request( *mesh_->getMeshData(),
                                                     *mesh_->getBulkData(),
@@ -120,16 +123,6 @@ save( const int                      index,
 
 //     Ginla::StkMeshWrite( fileBaseName, index,  psi_, mesh_, p );
 
-    return;
-}
-// =============================================================================
-void
-State::
-save( const int index
-    ) const
-{
-    Teuchos::ParameterList empty;
-    this->save( index, empty );
     return;
 }
 // =============================================================================
@@ -194,17 +187,6 @@ State::
 normalizedScaledL2Norm () const
 {
     return sqrt ( this->innerProduct( *this ) );
-}
-// =============================================================================
-void
-State::
-update( const double         alpha,
-        const Ginla::State & b,
-        const double         beta
-      )
-{
-  psi_.Update( alpha, *(b.getPsi()), beta );
-  return;
 }
 // =============================================================================
 void

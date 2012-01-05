@@ -21,6 +21,7 @@
 #define GINLA_STATE_H
 // =============================================================================
 // includes
+#include "Ginla_config.h"
 // Workaround for icpc's error "Include mpi.h before stdio.h"
 #include <Teuchos_config.h>
 #ifdef HAVE_MPI
@@ -29,6 +30,9 @@
 #include <Epetra_Vector.h>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
+  #include <Teuchos_Time.hpp>
+#endif
 // =============================================================================
 // forward declarations
 namespace LOCA {
@@ -72,14 +76,9 @@ public:
   Teuchos::RCP<Epetra_Vector>
   getPsiNonConst ();
 
+  //! Return the underlying \c Ginla::StkMesh.
   const Teuchos::RCP<const Ginla::StkMesh>
-  getMesh () const;
-
-  //! Save the state to file \c fileName together with the parameters \c p.
-  void
-  save( const int                      index,
-        const Teuchos::ParameterList & p
-      ) const;
+  getMesh() const;
 
   //! Just plain save the file to \c fileName.
   void
@@ -94,14 +93,6 @@ public:
   double
   normalizedScaledL2Norm () const;
 
-  //! Updates the values of the state according to
-  //! \f$a \leftarrow \alpha b + \beta a \f$.
-  void
-  update( const double                    alpha,
-          const Ginla::State & b,
-          const double                    beta
-        );
-
   /** Calcuate the grid approximation of the Gibbs free energy
     * \f[
     * \mathcal{G} = \int\nolimits_{\Omega} |\psi|^4 \,\mathrm{d}\omega
@@ -111,17 +102,12 @@ public:
   double
   freeEnergy () const;
 
-  /** Writes a solution \c psi to a file with all parameters that
-    * may be interesting.
-    */
-  void
-  writeStateToFile ( LOCA::ParameterVector & params,
-                     const std::string     & fileBaseName,
-                     const std::string     & outputFormat
-                   );
-
 protected:
 private:
+
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
+  const Teuchos::RCP<Teuchos::Time> saveTime_;
+#endif
 
   //! Numerical values.
   Epetra_Vector psi_;
@@ -133,7 +119,7 @@ private:
 
   void
   mergePsi_( const Teuchos::RCP<const Ginla::StkMesh> & mesh,
-             const Epetra_Vector                                 & psi
+             const Epetra_Vector                      & psi
            ) const;
 
 };

@@ -9,7 +9,6 @@ SET ( ginla_SRCS
       Ginla_MagneticVectorPotential.cpp
       Ginla_StkMesh.cpp
       Ginla_StkMeshReader.cpp
-      Ginla_StkMeshWriter.cpp
       Ginla_StatsWriter.cpp
       Ginla_NoxObserver.cpp
       Ginla_SaveEigenData.cpp

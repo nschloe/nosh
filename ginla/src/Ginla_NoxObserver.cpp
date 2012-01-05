@@ -91,14 +91,9 @@ observeContinuation_( const Teuchos::RCP<const Ginla::State> & state )
   this->saveContinuationStatistics_( index, state );
 
 #ifdef _DEBUG_
-  TEUCHOS_ASSERT( !modelEval_.is_null() );
+  TEUCHOS_ASSERT( !state.is_null() );
 #endif
-  Teuchos::RCP<LOCA::ParameterVector> p =
-      modelEval_->getParameters();
-  Teuchos::RCP<Teuchos::ParameterList> tp =
-      Ginla::Helpers::locaParameterVector2teuchosParameterList( *p );
-
-  state->save( index, *tp );
+  state->save( index );
 
   return;
 }
