@@ -1,7 +1,7 @@
 // @HEADER
 //
-//    <one line to give the program's name and a brief idea of what it does.>
-//    Copyright (C) 2010, 2011  Nico Schl\"omer
+//    Helper class for writing states to a file.
+//    Copyright (C) 2010--2012  Nico Schl\"omer
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -44,9 +44,9 @@ setOutputDir ( const string & directory )
 void
 StateWriter::
 write ( const Teuchos::RCP<const Ginla::State> & state,
-        const unsigned int                                & index,
-        const std::string                                 & filenameAppend,
-        LOCA::ParameterVector                             & params
+        const unsigned int                     & index,
+        const std::string                      & filenameAppend,
+        LOCA::ParameterVector                  & params
       ) const
 {
     // get the parameter list
@@ -68,8 +68,8 @@ write ( const Teuchos::RCP<const Ginla::State> & state,
 void
 StateWriter::
 write ( const Teuchos::RCP<const Ginla::State> & state,
-        const unsigned int                                & index,
-        const std::string                                 & filenameAppend
+        const unsigned int                     & index,
+        const std::string                      & filenameAppend
       ) const
 {
   LOCA::ParameterVector empty;
@@ -80,8 +80,8 @@ write ( const Teuchos::RCP<const Ginla::State> & state,
 void
 StateWriter::
 write ( const Teuchos::RCP<const Ginla::State> & state,
-        const unsigned int                                & index,
-        LOCA::ParameterVector                             & params
+        const unsigned int                     & index,
+        LOCA::ParameterVector                  & params
       ) const
 {
   std::string filenameAppend = "";
@@ -92,7 +92,7 @@ write ( const Teuchos::RCP<const Ginla::State> & state,
 void
 StateWriter::
 write ( const Teuchos::RCP<const Ginla::State> & state,
-        const unsigned int                                & index
+        const unsigned int                     & index
       ) const
 {
   std::string filenameAppend = "";

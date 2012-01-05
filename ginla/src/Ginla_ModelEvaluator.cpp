@@ -1,7 +1,7 @@
 // @HEADER
 //
-//    <one line to give the program's name and a brief idea of what it does.>
-//    Copyright (C) 2010, 2011  Nico Schl\"omer
+//    Ginla model evaluator.
+//    Copyright (C) 2010--2012  Nico Schl\"omer
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -62,7 +62,7 @@ ModelEvaluator ( const Teuchos::RCP<Ginla::StkMesh>                 & mesh,
         computeFTime_( Teuchos::TimeMonitor::getNewTimer("Ginla: ModelEvaluator::evalModel:compute F") ),
         computedFdpTime_( Teuchos::TimeMonitor::getNewTimer("Ginla: ModelEvaluator::evalModel:compute dF/dp") ),
         fillJacobianTime_( Teuchos::TimeMonitor::getNewTimer("Ginla: ModelEvaluator::evalModel:fill Jacobian") ),
-        fillPreconditionerTime_( Teuchos::TimeMonitor::getNewTimer("Ginla: ModelEvaluator::fill preconditioner") ),
+        fillPreconditionerTime_( Teuchos::TimeMonitor::getNewTimer("Ginla: ModelEvaluator::evalModel::fill preconditioner") ),
 #endif
         out_( Teuchos::VerboseObjectBase::getDefaultOStream() )
 {

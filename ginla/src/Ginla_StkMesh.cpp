@@ -1,7 +1,7 @@
 // @HEADER
 //
-//    <one line to give the program's name and a brief idea of what it does.>
-//    Copyright (C) 2010, 2011  Nico Schl\"omer
+//    Mesh class with compatibility to stk_mesh.
+//    Copyright (C) 2010--2012  Nico Schl\"omer
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -61,7 +61,6 @@ StkMesh( const Epetra_Comm                               & comm,
          const Teuchos::RCP<VectorFieldType>             & coordinatesField
        ):
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
-computeControlVolumesTime_( Teuchos::TimeMonitor::getNewTimer("Ginla: StkMesh::computeControlVolumes_") ),
 computeEdgeCoefficientsTime_( Teuchos::TimeMonitor::getNewTimer("Ginla: StkMesh::computeEdgeCoefficients") ),
 #endif
 comm_( comm ),
@@ -430,6 +429,11 @@ void
 StkMesh::
 computeEdgeCoefficients_() const
 {
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
+  // timer for this routine
+  Teuchos::TimeMonitor tm(*computeEdgeCoefficientsTime_);
+#endif
+  
   // For edge generation and looping, refer to e-mail communication with
   // Eric Cyr and Alan Williams in April 2011.
   if ( !createdAdjacentEntities_ )
@@ -662,13 +666,9 @@ void
 StkMesh::
 computeControlVolumes_() const
 {
-#ifdef GINLA_TEUCHOS_TIME_MONITOR
-  Teuchos::TimeMonitor tm(*computeControlVolumesTime_);
-#endif
-
 #ifdef _DEBUG_
   TEUCHOS_ASSERT( !controlVolumes_.is_null() );
-//   TEUCHOS_ASSERT( !averageThickness_.is_null() );
+  TEUCHOS_ASSERT( !averageThickness_.is_null() );
   TEUCHOS_ASSERT( !nodesOverlapMap_.is_null() );
 #endif
 

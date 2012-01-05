@@ -1,7 +1,7 @@
 // @HEADER
 //
-//    <one line to give the program's name and a brief idea of what it does.>
-//    Copyright (C) 2010, 2011  Nico Schl\"omer
+//    Writes stk_meshes.
+//    Copyright (C) 2010--2012  Nico Schl\"omer
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -29,6 +29,9 @@
 #else
 #include <Epetra_SerialComm.h>
 #endif
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
+  #include <Teuchos_TimeMonitor.hpp>
+#endif
 
 #include <Teuchos_VerboseObject.hpp>
 
@@ -49,6 +52,9 @@ StkMeshWriter::
 StkMeshWriter( const std::string & fileNameBase ):
 fileNameBase_( fileNameBase ),
 time_( 0 ),
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
+writeTime_( Teuchos::TimeMonitor::getNewTimer("Ginla: StkMeshWriter::write") ),
+#endif
 out_( Teuchos::VerboseObjectBase::getDefaultOStream() )
 {
 }
@@ -66,6 +72,10 @@ write( const Epetra_Vector                                 & psi,
        const Teuchos::ParameterList                        & parameterList
      )
 {
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
+  // timer for this routine
+  Teuchos::TimeMonitor tm(*writeTime_);
+#endif
 
     // Get a native MPI comminicator object.
 #ifdef HAVE_MPI

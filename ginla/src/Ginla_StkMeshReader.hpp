@@ -1,7 +1,7 @@
 // @HEADER
 //
-//    <one line to give the program's name and a brief idea of what it does.>
-//    Copyright (C) 2010, 2011  Nico Schl\"omer
+//    Reads stk_meshes.
+//    Copyright (C) 2010--2012  Nico Schl\"omer
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -59,9 +59,6 @@ public:
 protected:
 private:
     const std::string fileName_;
-#ifdef GINLA_TEUCHOS_TIME_MONITOR
-    const Teuchos::RCP<Teuchos::Time> readTime_;
-#endif
     const Teuchos::RCP<Teuchos::FancyOStream> out_;
 
 private:

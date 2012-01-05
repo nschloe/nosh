@@ -1,7 +1,7 @@
 // @HEADER
 //
-//    <one line to give the program's name and a brief idea of what it does.>
-//    Copyright (C) 2010, 2011  Nico Schl\"omer
+//    Reads stk_meshes.
+//    Copyright (C) 2010--2012  Nico Schl\"omer
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -51,9 +51,6 @@ namespace Ginla {
 StkMeshReader::
 StkMeshReader( const std::string & fileName ):
 fileName_( fileName ),
-#ifdef GINLA_TEUCHOS_TIME_MONITOR
-readTime_( Teuchos::TimeMonitor::getNewTimer("Ginla: StkMeshReader::read") ),
-#endif
 out_( Teuchos::VerboseObjectBase::getDefaultOStream() )
 {
 }
@@ -69,11 +66,6 @@ read( const Epetra_Comm      & comm,
       Teuchos::ParameterList & data
     )
 {
-#ifdef GINLA_TEUCHOS_TIME_MONITOR
-  // timer for this routine
-  Teuchos::TimeMonitor tm(*readTime_);
-#endif
-
   // Take two different fields with one component
   // instead of one field with two components. This works around
   // Ioss's inability to properly read psi_R, psi_Z as a complex variable.

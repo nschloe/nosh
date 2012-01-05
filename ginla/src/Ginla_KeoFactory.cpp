@@ -1,7 +1,7 @@
 // @HEADER
 //
-//    <one line to give the program's name and a brief idea of what it does.>
-//    Copyright (C) 2010, 2011  Nico Schl\"omer
+//    Factory class that hosts the kinetic energy operator.
+//    Copyright (C) 2010--2012  Nico Schl\"omer
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -44,7 +44,6 @@ KeoFactory( const Teuchos::RCP<const Ginla::StkMesh>           & mesh,
           ):
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
         keoFillTime_( Teuchos::TimeMonitor::getNewTimer("Ginla: KeoFactory::fillKeo_") ),
-        buildKeoGraphTime_( Teuchos::TimeMonitor::getNewTimer("Ginla: KeoFactory::buildKeoGraph_") ),
 #endif
         mesh_ ( mesh ),
         thickness_( thickness ),
@@ -139,9 +138,6 @@ const Teuchos::RCP<Epetra_FECrsGraph>
 KeoFactory::
 buildKeoGraph_() const
 {
-#ifdef GINLA_TEUCHOS_TIME_MONITOR
-  Teuchos::TimeMonitor tm(*buildKeoGraphTime_);
-#endif
   // Which row/column map to use for the matrix?
   // The two possibilites are the non-overlapping map fetched from
   // the ownedNodes map, and the overlapping one from the

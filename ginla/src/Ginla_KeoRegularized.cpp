@@ -1,7 +1,7 @@
 // @HEADER
 //
-//    <one line to give the program's name and a brief idea of what it does.>
-//    Copyright (C) 2010, 2011  Nico Schl\"omer
+//    Regularized kinetic energy operator.
+//    Copyright (C) 2010--2012  Nico Schl\"omer
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -62,9 +62,6 @@ KeoRegularized( const Teuchos::RCP<Ginla::KeoFactory> & keoFactory
         invType_( INVERT_ML ),
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
         timerRebuild_( Teuchos::TimeMonitor::getNewTimer("Ginla: KeoRegularized::rebuild") ),
-        timerRebuildMl_( Teuchos::TimeMonitor::getNewTimer("Ginla: KeoRegularized::rebuildMl") ),
-        timerRebuildIlu_( Teuchos::TimeMonitor::getNewTimer("Ginla: KeoRegularized::rebuildIlu") ),
-        timerRegularization_( Teuchos::TimeMonitor::getNewTimer("Ginla: KeoRegularized::rebuild:regularization") ),
 #endif
         out_( Teuchos::VerboseObjectBase::getDefaultOStream() )
 {
@@ -291,9 +288,6 @@ rebuild()
     double mu = keoFactory_->getMvpParameters()->getValue( "mu" );
     if ( fabs( mu ) < 1.0e-5 )
     {
-#ifdef GINLA_TEUCHOS_TIME_MONITOR
-        Teuchos::TimeMonitor tm(*timerRegularization_);
-#endif
         // Add a regularization to the diagonal.
         Epetra_Vector e( keoRegularized_->RowMap() );
         TEUCHOS_ASSERT_EQUALITY( 0, e.PutScalar( 1.0 ) );
@@ -341,9 +335,6 @@ void
 KeoRegularized::
 rebuildMl_()
 {
-#ifdef GINLA_TEUCHOS_TIME_MONITOR
-    Teuchos::TimeMonitor tm(*timerRebuildMl_);
-#endif
     // For reusing the ML structure, see
     //  <http://trilinos.sandia.gov/packages/docs/dev/packages/ml/doc/html/classML__Epetra_1_1MultiLevelPreconditioner.html>:
 //     if ( MlPrec_.is_null() || MlPrec_->IsPreconditionerComputed()==false )
@@ -405,9 +396,6 @@ void
 KeoRegularized::
 rebuildIlu_()
 {
-#ifdef GINLA_TEUCHOS_TIME_MONITOR
-    Teuchos::TimeMonitor tm(*timerRebuildIlu_);
-#endif
     // set the matrix the linear problem
 #ifdef _DEBUG_
     TEUCHOS_ASSERT( !keoRegularized_.is_null() );
