@@ -35,7 +35,6 @@ namespace Komplex2 {
   class LinearProblem;
 }
 namespace Ginla {
-  class StateWriter;
   class StatsWriter;
   class ModelEvaluator;
   class State;

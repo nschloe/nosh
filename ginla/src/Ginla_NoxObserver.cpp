@@ -17,9 +17,10 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 // @HEADER
+
 #include "Ginla_NoxObserver.hpp"
 
-#include "Ginla_StateWriter.hpp"
+#include "Ginla_State.hpp"
 #include "Ginla_StatsWriter.hpp"
 #include "Ginla_Helpers.hpp"
 #include "Ginla_ModelEvaluator.hpp"
@@ -46,7 +47,7 @@ NoxObserver::
 setStatisticsWriter( const Teuchos::RCP<Ginla::StatsWriter> & statsWriter
                    )
 {
-  statsWriter_   = statsWriter;
+  statsWriter_ = statsWriter;
   return;
 }
 // ============================================================================
@@ -92,8 +93,10 @@ observeContinuation_( const Teuchos::RCP<const Ginla::State> & state )
 #ifdef _DEBUG_
   TEUCHOS_ASSERT( !modelEval_.is_null() );
 #endif
-  Teuchos::RCP<LOCA::ParameterVector> p = modelEval_->getParameters();
-  Teuchos::RCP<Teuchos::ParameterList> tp = Ginla::Helpers::locaParameterVector2teuchosParameterList( *p );
+  Teuchos::RCP<LOCA::ParameterVector> p =
+      modelEval_->getParameters();
+  Teuchos::RCP<Teuchos::ParameterList> tp =
+      Ginla::Helpers::locaParameterVector2teuchosParameterList( *p );
 
   state->save( index, *tp );
 

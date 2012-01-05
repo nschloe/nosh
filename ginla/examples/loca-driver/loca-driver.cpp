@@ -34,7 +34,6 @@
 
 #include "Ginla_State.hpp"
 #include "Ginla_ModelEvaluator.hpp"
-#include "Ginla_StateWriter.hpp"
 #include "Ginla_StatsWriter.hpp"
 #include "Ginla_NoxObserver.hpp"
 #include "Ginla_SaveEigenData.hpp"
@@ -172,11 +171,6 @@ main ( int argc, char *argv[] )
         int maxLocaSteps = piroParams->sublist ( "LOCA" )
                                       .sublist ( "Stepper" )
                                       .get<int> ( "Max Steps" );
-//        Teuchos::RCP<Ginla::StateWriter> stateWriter =
-//            Teuchos::rcp( new Ginla::StateWriter( outputDirectory.string(),
-//                                                  "solution"
-//                                                )
-//                        );
 
         Teuchos::RCP<Ginla::NoxObserver> observer =
                 Teuchos::rcp( new Ginla::NoxObserver( glModel,

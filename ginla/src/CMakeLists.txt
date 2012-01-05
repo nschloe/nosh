@@ -10,7 +10,6 @@ SET ( ginla_SRCS
       Ginla_StkMesh.cpp
       Ginla_StkMeshReader.cpp
       Ginla_StkMeshWriter.cpp
-      Ginla_StateWriter.cpp
       Ginla_StatsWriter.cpp
       Ginla_NoxObserver.cpp
       Ginla_SaveEigenData.cpp

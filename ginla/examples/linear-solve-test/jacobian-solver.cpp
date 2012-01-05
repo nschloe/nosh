@@ -26,7 +26,6 @@
 #include "Ginla_ModelEvaluator.hpp"
 #include "Ginla_KeoFactory.hpp"
 #include "Ginla_KeoRegularized.hpp"
-#include "Ginla_StateWriter.hpp"
 #include "Ginla_StatsWriter.hpp"
 #include "Ginla_NoxObserver.hpp"
 #include "Ginla_SaveEigenData.hpp"

@@ -21,7 +21,6 @@
 #include "Ginla_SaveEigenData.hpp"
 
 #include "Ginla_Helpers.hpp"
-#include "Ginla_StateWriter.hpp"
 #include "Ginla_ModelEvaluator.hpp"
 
 #include <NOX_Abstract_MultiVector.H>

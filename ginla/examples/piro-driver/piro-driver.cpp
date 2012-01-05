@@ -30,7 +30,6 @@
 #include "Ginla_ModelEvaluator.hpp"
 #include "Ginla_NoxObserver.hpp"
 #include "Ginla_SaveEigenData.hpp"
-#include "Ginla_StateWriter.hpp"
 
 #include <Teuchos_TimeMonitor.hpp>
 
@@ -186,11 +185,6 @@ int main ( int argc, char *argv[] )
       int maxLocaSteps = piroParams->sublist ( "LOCA" )
                                     .sublist ( "Stepper" )
                                     .get<int> ( "Max Steps" );
-      Teuchos::RCP<Ginla::StateWriter> stateWriter =
-          Teuchos::rcp( new Ginla::StateWriter( outputDirectory,
-                                                "solution"
-                                              )
-                      );
 
       // switch by solver type
       std::string & solver = piroParams->get( "Piro Solver", "" );
