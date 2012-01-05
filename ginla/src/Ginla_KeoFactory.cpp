@@ -207,7 +207,7 @@ buildKeoGraph_() const
   {
       this->buildKeoGraphEdges_( keoGraph );
   }
-  catch( ... )
+  catch( std::runtime_error )
   {
       this->buildKeoGraphCellEdges_( keoGraph );
   }

@@ -108,7 +108,6 @@ private:
     const Teuchos::RCP<const Ginla::StkMesh> mesh_;
     const Teuchos::RCP<const Epetra_Vector> thickness_;
     const Teuchos::RCP<Ginla::KeoFactory> keoFactory_;
-    Teuchos::RCP<const Epetra_CrsMatrix> keoMatrix_;
 
     Teuchos::RCP<const Epetra_Vector> current_X_;
 

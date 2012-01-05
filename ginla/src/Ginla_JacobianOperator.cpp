@@ -39,7 +39,6 @@ JacobianOperator( const Teuchos::RCP<const Ginla::StkMesh> & mesh,
         mesh_( mesh ),
         thickness_( thickness ),
         keoFactory_( keoFactory ),
-        keoMatrix_( keoFactory_->getKeo() ),
         current_X_ ( current_X ),
         T_( 0.0 ),
         isDiagsUpToDate_( false ),
@@ -72,12 +71,12 @@ Apply ( const Epetra_MultiVector & X,
     // B = diag( thickness * psi^2 )
 
 #ifdef _DEBUG_
-    TEUCHOS_ASSERT( !keoMatrix_.is_null() );
-    TEUCHOS_ASSERT( !current_X_.is_null() );
+    TEUCHOS_ASSERT( !keoFactory_.is_null() );
+    TEUCHOS_ASSERT( !keoFactory_.>getKeo().is_null() );
 #endif
 
     // K*psi
-    TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix_->Apply( X, Y ) );
+    TEUCHOS_ASSERT_EQUALITY( 0, keoFactory_->getKeo()->Apply( X, Y ) );
 
     const Epetra_Vector & controlVolumes = *(mesh_->getControlVolumes());
     int numMyPoints = controlVolumes.MyLength();
@@ -184,9 +183,10 @@ JacobianOperator::
 OperatorDomainMap () const
 {
 #ifdef _DEBUG_
-    TEUCHOS_ASSERT( !keoMatrix_.is_null() );
+    TEUCHOS_ASSERT( !keoFactory_.is_null() );
+    TEUCHOS_ASSERT( !keoFactory_.>getKeo().is_null() );
 #endif
-    return keoMatrix_->OperatorDomainMap();
+    return keoFactory_->getKeo()->OperatorDomainMap();
 }
 // =============================================================================
 const Epetra_Map &
@@ -194,9 +194,10 @@ JacobianOperator::
 OperatorRangeMap () const
 {
 #ifdef _DEBUG_
-    TEUCHOS_ASSERT( !keoMatrix_.is_null() );
+    TEUCHOS_ASSERT( !keoFactory_.is_null() );
+    TEUCHOS_ASSERT( !keoFactory_.>getKeo().is_null() );
 #endif
-    return keoMatrix_->OperatorRangeMap();
+    return keoFactory_->getKeo()->OperatorRangeMap();
 }
 // =============================================================================
 void
@@ -213,7 +214,6 @@ rebuild( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
 
     // rebuild the keo
     keoFactory_->updateParameters( mvpParams );
-    keoMatrix_ = keoFactory_->getKeo();
 
     return;
 }
@@ -222,6 +222,10 @@ void
 JacobianOperator::
 rebuildDiags_() const
 {
+#ifdef _DEBUG_
+    TEUCHOS_ASSERT( !current_X_.is_null() );
+#endif
+
     const Epetra_Vector & controlVolumes = *(mesh_->getControlVolumes());
     int numMyPoints = controlVolumes.MyLength();
 
