@@ -71,7 +71,7 @@ Apply ( const Epetra_MultiVector & X,
 
 #ifdef _DEBUG_
     TEUCHOS_ASSERT( !keoFactory_.is_null() );
-    TEUCHOS_ASSERT( !keoFactory_.>getKeo().is_null() );
+    TEUCHOS_ASSERT( !keoFactory_->getKeo().is_null() );
 #endif
 
     // K*psi
@@ -183,7 +183,7 @@ OperatorDomainMap () const
 {
 #ifdef _DEBUG_
     TEUCHOS_ASSERT( !keoFactory_.is_null() );
-    TEUCHOS_ASSERT( !keoFactory_.>getKeo().is_null() );
+    TEUCHOS_ASSERT( !keoFactory_->getKeo().is_null() );
 #endif
     return keoFactory_->getKeo()->OperatorDomainMap();
 }
@@ -194,7 +194,7 @@ OperatorRangeMap () const
 {
 #ifdef _DEBUG_
     TEUCHOS_ASSERT( !keoFactory_.is_null() );
-    TEUCHOS_ASSERT( !keoFactory_.>getKeo().is_null() );
+    TEUCHOS_ASSERT( !keoFactory_->getKeo().is_null() );
 #endif
     return keoFactory_->getKeo()->OperatorRangeMap();
 }
