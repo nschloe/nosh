@@ -78,9 +78,9 @@ public:
     ~StkMesh();
 
     void
-    setOutputFile( const string & outputDir,
-                   const string & fileBaseName
-                 );
+    openOutputChannel( const string & outputDir,
+                       const string & fileBaseName
+                     );
 
     const Teuchos::RCP<stk::mesh::fem::FEMMetaData>
     getMetaData() const;

@@ -30,15 +30,15 @@
 #include <Teuchos_SerialDenseVector.hpp>
 #include <Teuchos_SerialSpdDenseSolver.hpp>
 
-#include <stk_mesh/fem/FEMMetaData.hpp>
-#include <stk_mesh/base/Field.hpp>
+// #include <stk_mesh/fem/FEMMetaData.hpp>
+// #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/FieldData.hpp>
-#include <stk_mesh/base/Comm.hpp> // for comm_mesh_counts
+// #include <stk_mesh/base/Comm.hpp> // for comm_mesh_counts
 #include <stk_mesh/fem/CreateAdjacentEntities.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 
-#include <stk_io/IossBridge.hpp>
-#include <Ionit_Initializer.h>
+// #include <stk_io/IossBridge.hpp>
+// #include <Ionit_Initializer.h>
 
 #ifdef HAVE_MPI
 #include <Epetra_MpiComm.h>
@@ -83,16 +83,6 @@ edgeCoefficientsFallback_( Teuchos::ArrayRCP<DoubleVector>() ),
 edgeCoefficientsFallbackUpToDate_( false ),
 createdAdjacentEntities_( false )
 {
-
-//   meshData_->m_region->field_add( Ioss::Field( "mu",
-//                                                Ioss::Field::REAL,
-//                                                "scalar",
-//                                                Ioss::Field::REDUCTION,
-//                                                1
-//                                              )
-//                                 );
-
-  return;
 }
 // =============================================================================
 StkMesh::
@@ -102,9 +92,9 @@ StkMesh::
 // =============================================================================
 void
 StkMesh::
-setOutputFile( const string & outputDir,
-               const string & fileBaseName
-             )
+openOutputChannel( const string & outputDir,
+                   const string & fileBaseName
+                 )
 {
     // prepare the data for output
 #ifdef HAVE_MPI

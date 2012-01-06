@@ -35,7 +35,6 @@ JacobianOperator( const Teuchos::RCP<const Ginla::StkMesh> & mesh,
                   const Teuchos::RCP<Epetra_Vector>        & current_X
                 ):
         useTranspose_( false ),
-        comm_( mesh->getComm() ),
         mesh_( mesh ),
         thickness_( thickness ),
         keoFactory_( keoFactory ),
@@ -175,7 +174,7 @@ const Epetra_Comm &
 JacobianOperator::
 Comm () const
 {
-    return comm_;
+    return current_X_->Comm();
 }
 // =============================================================================
 const Epetra_Map &

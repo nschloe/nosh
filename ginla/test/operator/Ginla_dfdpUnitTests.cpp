@@ -54,9 +54,8 @@ testDfdp( const std::string & inputFileNameBase,
 
     // create parameter vector
     problemParameters.set( "mu", mu );
-    problemParameters.set( "phi", 0.0 );
     problemParameters.set( "theta", 0.0 );
-    problemParameters.set( "temperature", 0.0 );
+    problemParameters.set( "T", 0.0 );
 
     Teuchos::RCP<Ginla::MagneticVectorPotential> mvp;
     mvp = Teuchos::rcp ( new Ginla::MagneticVectorPotential ( mesh, mvpValues, problemParameters.get<double>("mu") ) );
@@ -99,11 +98,16 @@ testDfdp( const std::string & inputFileNameBase,
 
     // Get the actual derivative.
     problemParameters.set( "mu", mu );
+    int muIndex = 0;
     for ( int k=0; k<p->MyLength(); k++ )
        (*p)[k] = problemParameters.get<double>( (*pNames)[k] );
     inArgs.set_p( 0, p );
     Teuchos::RCP<Epetra_Vector> dfdp = Teuchos::rcp( new Epetra_Vector( z->Map() ) );
-    EpetraExt::ModelEvaluator::Derivative deriv( dfdp, EpetraExt::ModelEvaluator::DERIV_MV_BY_COL );
+    Teuchos::Array<int> paramIndices( Teuchos::tuple(muIndex) );
+    EpetraExt::ModelEvaluator::DerivativeMultiVector deriv( dfdp,
+                                                 EpetraExt::ModelEvaluator::DERIV_MV_BY_COL,
+                                                 paramIndices
+                                               );
     outArgs.set_DfDp( 0, deriv );
     Teuchos::RCP<Epetra_Vector> nullV = Teuchos::null;
     outArgs.set_f( nullV );
@@ -114,7 +118,7 @@ testDfdp( const std::string & inputFileNameBase,
 
     double r[1];
     f1->NormInf( r );
-    TEST_COMPARE( r[0], <, 1.0e-9 );
+    TEST_COMPARE( r[0], <, 1.0e-8 );
 
     return;
 }
@@ -155,9 +159,9 @@ TEUCHOS_UNIT_TEST( Ginla, DfdpCubeSmallHashes )
               success );
 }
 // ============================================================================
-TEUCHOS_UNIT_TEST( Ginla, DfdpCubeLargeHashes )
+TEUCHOS_UNIT_TEST( Ginla, DfdpCubeLargeHtashes )
 {
-    std::string inputFileNameBase = "cubelarge";
+    std::string inputFileNameBase = "brick-w-hole";
 
     double mu = 1.0e-2;
 

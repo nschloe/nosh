@@ -119,7 +119,7 @@ int main ( int argc, char *argv[] )
       Teuchos::RCP<Epetra_Vector>      & thickness = data.get( "thickness", Teuchos::RCP<Epetra_Vector>() );
 
       // set the output directory for later plotting with this
-      mesh->setOutputFile( outputDirectory, "solution" );
+      mesh->openOutputChannel( outputDirectory, "solution" );
 
       // create the state
       TEUCHOS_ASSERT( !z.is_null() );

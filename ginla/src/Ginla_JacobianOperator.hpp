@@ -103,7 +103,6 @@ private:
 
 private:
     bool useTranspose_;
-    const Epetra_Comm & comm_;
 
     const Teuchos::RCP<const Ginla::StkMesh> mesh_;
     const Teuchos::RCP<const Epetra_Vector> thickness_;

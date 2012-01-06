@@ -94,12 +94,11 @@ setupParameters_( const Teuchos::ParameterList & params )
 
   // setup parameter map
 #ifdef _DEBUG_
-  TEUCHOS_ASSERT( !mesh_.is_null() );
+  TEUCHOS_ASSERT( !x_.is_null() );
 #endif
-  const Epetra_Comm & comm = mesh_->getComm();
   p_map_ = Teuchos::rcp( new Epetra_LocalMap( numParams_,
                                               0,
-                                              comm
+                                              x_->Comm()
                                             )
                        );
 

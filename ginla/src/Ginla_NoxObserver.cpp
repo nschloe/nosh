@@ -111,7 +111,6 @@ observeTurningPointContinuation_( const Teuchos::RCP<const Ginla::State> & state
     {
         index++;
         this->saveContinuationStatistics_( index, state );
-
         state->save( index );
     }
     else

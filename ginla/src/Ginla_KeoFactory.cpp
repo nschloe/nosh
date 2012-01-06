@@ -75,6 +75,9 @@ const Epetra_Comm &
 KeoFactory::
 getComm() const
 {
+#ifdef _DEBUG_
+  TEUCHOS_ASSERT( !mesh_.is_null() );
+#endif
     return mesh_->getComm();
 }
 // =============================================================================
@@ -86,6 +89,7 @@ updateParameters( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams
   // set the parameters
 #ifdef _DEBUG_
   TEUCHOS_ASSERT( !mvpParams.is_null() );
+  TEUCHOS_ASSERT( !mvp_.is_null() );
 #endif
   mvp_->setParameters( *mvpParams );
   return;
@@ -256,7 +260,6 @@ fillKeo_( const Teuchos::RCP<Epetra_FECrsMatrix> & keoMatrix,
                                mesh_->getEdgeCoefficientsFallback()
                              );
   }
-
 
   // calls FillComplete by default
   TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->GlobalAssemble() );
