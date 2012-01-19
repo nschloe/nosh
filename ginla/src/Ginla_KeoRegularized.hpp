@@ -39,8 +39,7 @@
 #include <Epetra_CrsGraph.h>
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_LinearProblem.h>
-
-#include "Ginla_MagneticVectorPotential.hpp"
+#include <LOCA_Parameter_Vector.H>
 // =============================================================================
 namespace Ginla {
     class KeoFactory;

@@ -41,9 +41,12 @@
 // forward declarations
 namespace Ginla
 {
-  class MagneticVectorPotential;
   class State;
   class StkMesh;
+  namespace MagneticVectorPotential
+  {
+    class Virtual;
+  }
 }
 
 class Epetra_CrsGraph;
@@ -59,7 +62,7 @@ public:
   ModelEvaluator ( const Teuchos::RCP<Ginla::StkMesh>                 & mesh,
                    const Teuchos::ParameterList                       & params,
                    const Teuchos::RCP<const Epetra_Vector>            & thickness,
-                   const Teuchos::RCP<Ginla::MagneticVectorPotential> & mvp,
+                   const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp,
                    const Teuchos::RCP<Epetra_Vector>                  & initialX
                  );
 
@@ -173,7 +176,7 @@ private:
    // for get_parameters()
    Teuchos::RCP<Epetra_Vector> p_current_;
 
-   const Teuchos::RCP<Ginla::MagneticVectorPotential> mvp_;
+   const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp_;
 
    const Teuchos::RCP<Ginla::KeoFactory> keoFactory_;
 

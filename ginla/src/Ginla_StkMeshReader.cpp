@@ -153,9 +153,9 @@ read( const Epetra_Comm      & comm,
                                                    MPI_COMM_WORLD
                                                  );
   TEST_FOR_EXCEPT_MSG( dbi == NULL || !dbi->ok(),
-                               "ERROR: Could not open database '" << fileName_
-                               << "' of type '" << meshType << "'."
-                             );
+                       "ERROR: Could not open database '" << fileName_
+                       << "' of type '" << meshType << "'."
+                     );
 
   // set the vector field label separator
   dbi->set_field_separator(0);

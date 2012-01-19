@@ -148,6 +148,9 @@ public:
     unsigned int
     getCellDimension( const unsigned int numLocalNodes ) const;
 
+    bool
+    supportsEdges() const;
+
 protected:
 private:
 
@@ -181,12 +184,11 @@ private:
     mutable Teuchos::ArrayRCP<DoubleVector> edgeCoefficientsFallback_;
     mutable bool edgeCoefficientsFallbackUpToDate_;
 
-    mutable bool createdAdjacentEntities_;
+    const bool supportsEdges_;
 
     bool isOutputFileSet_;
 
 private:
-
     void
     computeEdgeCoefficients_() const;
 
@@ -225,23 +227,11 @@ private:
           double beta,  const DoubleVector & y
         ) const;
 
-    double
-    getTriangleArea_( const DoubleVector & x0,
-                      const DoubleVector & x1,
-                      const DoubleVector & x2
-                    ) const;
 
     double
     getTriangleArea_( const DoubleVector & edge0,
                       const DoubleVector & edge1
                     ) const;
-
-    double
-    getTetrahedronVolume_( const DoubleVector & node0,
-                           const DoubleVector & node1,
-                           const DoubleVector & node2,
-                           const DoubleVector & node3
-                         ) const;
 
     double
     getTetrahedronVolume_( const DoubleVector & edge0,
@@ -281,6 +271,11 @@ private:
     norm2squared_( const DoubleVector & x
                 ) const;
 };
+// -----------------------------------------------------------------------------
+// helper functions
+bool
+createEdges( const Teuchos::RCP<stk::mesh::BulkData> & bulkData );
+// -----------------------------------------------------------------------------
 } // namespace Ginla
 // =============================================================================
 #endif // GINLA_STKMESH_H

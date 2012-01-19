@@ -11,8 +11,7 @@
 
 #include "Ginla_StkMesh.hpp"
 #include "Ginla_StkMeshReader.hpp"
-#include "Ginla_MagneticVectorPotential.hpp"
-//#include "Ginla_KeoFactory.hpp"
+#include "Ginla_MagneticVectorPotential_ExplicitValues.hpp"
 #include "Ginla_ModelEvaluator.hpp"
 
 #include <Teuchos_UnitTestHarness.hpp>
@@ -57,8 +56,8 @@ testDfdp( const std::string & inputFileNameBase,
     problemParameters.set( "theta", 0.0 );
     problemParameters.set( "T", 0.0 );
 
-    Teuchos::RCP<Ginla::MagneticVectorPotential> mvp;
-    mvp = Teuchos::rcp ( new Ginla::MagneticVectorPotential ( mesh, mvpValues, problemParameters.get<double>("mu") ) );
+    Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp;
+    mvp = Teuchos::rcp ( new Ginla::MagneticVectorPotential::ExplicitValues ( mesh, mvpValues, problemParameters.get<double>("mu") ) );
 
     Teuchos::RCP<Ginla::ModelEvaluator> modelEval =
         Teuchos::rcp( new Ginla::ModelEvaluator( mesh, problemParameters, thickness, mvp, z ) );
@@ -114,6 +113,8 @@ testDfdp( const std::string & inputFileNameBase,
     modelEval->evalModel( inArgs, outArgs );
 
     // compare the two
+    std::cout << "HHH " << (*f1)[0] << std::endl;
+    std::cout << "III " << (*dfdp)[0] << std::endl;
     f1->Update( -1.0, *dfdp, 1.0 );
 
     double r[1];
@@ -159,7 +160,7 @@ TEUCHOS_UNIT_TEST( Ginla, DfdpCubeSmallHashes )
               success );
 }
 // ============================================================================
-TEUCHOS_UNIT_TEST( Ginla, DfdpCubeLargeHtashes )
+TEUCHOS_UNIT_TEST( Ginla, DfdpBrickWithHoleHashes )
 {
     std::string inputFileNameBase = "brick-w-hole";
 

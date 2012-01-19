@@ -64,18 +64,18 @@ private:
 private:
     Teuchos::RCP<Epetra_Vector>
     createPsi_( const Teuchos::RCP<const Ginla::StkMesh> & mesh,
-                const Teuchos::RCP<ScalarFieldType>                 & psir_field,
-                const Teuchos::RCP<ScalarFieldType>                 & psii_field
+                const Teuchos::RCP<ScalarFieldType>      & psir_field,
+                const Teuchos::RCP<ScalarFieldType>      & psii_field
               ) const;
 
     Teuchos::RCP<Epetra_Vector>
     createThickness_( const Teuchos::RCP<const Ginla::StkMesh> & mesh,
-                      const Teuchos::RCP<ScalarFieldType>                 & thickness_field
+                      const Teuchos::RCP<ScalarFieldType>      & thickness_field
                     ) const;
 
     Teuchos::RCP<Epetra_MultiVector>
-    createMvp_( const Teuchos::RCP<const Ginla::StkMesh> & mesh,
-                const Teuchos::RCP<const VectorFieldType>           & mvpField
+    createMvp_( const Teuchos::RCP<const Ginla::StkMesh>  & mesh,
+                const Teuchos::RCP<const VectorFieldType> & mvpField
               ) const;
 };
 // -----------------------------------------------------------------------------

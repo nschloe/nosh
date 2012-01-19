@@ -21,7 +21,7 @@
 #include "Ginla_ModelEvaluator.hpp"
 
 #include "Ginla_State.hpp"
-#include "Ginla_MagneticVectorPotential.hpp"
+#include "Ginla_MagneticVectorPotential_Virtual.hpp"
 #include "Ginla_KeoFactory.hpp"
 #include "Ginla_KeoRegularized.hpp"
 #include "Ginla_StkMesh.hpp"
@@ -44,7 +44,7 @@ ModelEvaluator::
 ModelEvaluator ( const Teuchos::RCP<Ginla::StkMesh>                 & mesh,
                  const Teuchos::ParameterList                       & problemParams,
                  const Teuchos::RCP<const Epetra_Vector>            & thickness,
-                 const Teuchos::RCP<Ginla::MagneticVectorPotential> & mvp,
+                 const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp,
                  const Teuchos::RCP<Epetra_Vector>                  & initialX
                ) :
         mesh_ ( mesh ),
@@ -343,7 +343,7 @@ evalModel( const InArgs  & inArgs,
 #ifdef _DEBUG_
        TEUCHOS_ASSERT_EQUALITY( numDerivs, dfdp_out->NumVectors() );
 #endif
-       for ( unsigned int k; k<numDerivs; k++ )
+       for ( unsigned int k=0; k<numDerivs; k++ )
        {
            switch ( paramIndices[k] )
            {
@@ -479,6 +479,7 @@ computeDFDMu_( const Epetra_Vector                             & x,
                Epetra_Vector                                   & FVec
              ) const
 {
+  std::cout << "computeDFDMu_" << std::endl;
   // build the KEO
   keoFactory_->updateParameters( mvpParams );
 

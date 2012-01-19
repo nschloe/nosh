@@ -26,7 +26,7 @@
 #include "Ginla_StkMesh.hpp"
 #include "Ginla_StkMeshReader.hpp"
 #include "Ginla_State.hpp"
-#include "Ginla_MagneticVectorPotential.hpp"
+#include "Ginla_MagneticVectorPotential_ExplicitValues.hpp"
 #include "Ginla_ModelEvaluator.hpp"
 #include "Ginla_NoxObserver.hpp"
 #include "Ginla_SaveEigenData.hpp"
@@ -146,8 +146,9 @@ int main ( int argc, char *argv[] )
 
       double mu = problemParameters.get<double>( "mu", 0.0 );
       double theta = problemParameters.get<double>( "theta", 0.0 );
-      Teuchos::RCP<Ginla::MagneticVectorPotential> mvp =
-              Teuchos::rcp ( new Ginla::MagneticVectorPotential ( mesh, mvpValues, mu, theta, u ) );
+      Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp =
+              Teuchos::rcp ( new Ginla::MagneticVectorPotential::ExplicitValues( mesh, mvpValues, mu ) );
+//               Teuchos::rcp ( new Ginla::MagneticVectorPotential::ConstantInSpace( mesh, mvpValues, mu, theta, u ) );
 
       // create the mode evaluator
       Teuchos::RCP<Ginla::ModelEvaluator> glModel =

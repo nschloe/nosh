@@ -81,7 +81,7 @@ edgeCoefficients_( Teuchos::ArrayRCP<double>() ),
 edgeCoefficientsUpToDate_( false ),
 edgeCoefficientsFallback_( Teuchos::ArrayRCP<DoubleVector>() ),
 edgeCoefficientsFallbackUpToDate_( false ),
-createdAdjacentEntities_( false )
+supportsEdges_( Ginla::createEdges(bulkData) )
 {
 }
 // =============================================================================
@@ -212,17 +212,18 @@ getOwnedCells() const
   return cells;
 }
 // =============================================================================
+bool
+StkMesh::
+supportsEdges() const
+{
+  return supportsEdges_;
+}
+// =============================================================================
 std::vector<stk::mesh::Entity*>
 StkMesh::
 getOverlapEdges() const
 {
-  // Create_adjacent_entities (edges) first.
-  if ( !createdAdjacentEntities_ )
-  {
-      stk::mesh::PartVector empty_add_parts;
-      stk::mesh::create_adjacent_entities( *bulkData_, empty_add_parts );
-      createdAdjacentEntities_ = true;
-  }
+  TEUCHOS_ASSERT( supportsEdges_ );
 
   // get overlap edges
   stk::mesh::Selector select_overlap_in_part = stk::mesh::Selector( metaData_->universal_part() )
@@ -426,12 +427,7 @@ computeEdgeCoefficients_() const
   
   // For edge generation and looping, refer to e-mail communication with
   // Eric Cyr and Alan Williams in April 2011.
-  if ( !createdAdjacentEntities_ )
-  {
-      stk::mesh::PartVector empty_add_parts;
-      stk::mesh::create_adjacent_entities( *bulkData_, empty_add_parts );
-      createdAdjacentEntities_ = true;
-  }
+  TEUCHOS_ASSERT( supportsEdges_ );
 
   std::vector<stk::mesh::Entity*> cells = this->getOwnedCells();
   unsigned int numCells = cells.size();
@@ -918,37 +914,11 @@ getOtherIndices_( unsigned int e0, unsigned int e1 ) const
 // =============================================================================
 double
 StkMesh::
-getTriangleArea_( const DoubleVector & node0,
-                  const DoubleVector & node1,
-                  const DoubleVector & node2
-                ) const
-{
-    return this->getTriangleArea_( this->add_( 1.0, node1, -1.0, node0 ),
-                                   this->add_( 1.0, node2, -1.0, node0 )
-                                 );
-}
-// =============================================================================
-double
-StkMesh::
 getTriangleArea_( const DoubleVector & edge0,
                   const DoubleVector & edge1
                 ) const
 {
     return 0.5 * this->norm2_( this->cross_( edge0, edge1 ) );
-}
-// =============================================================================
-double
-StkMesh::
-getTetrahedronVolume_( const DoubleVector & node0,
-                       const DoubleVector & node1,
-                       const DoubleVector & node2,
-                       const DoubleVector & node3
-                     ) const
-{
-    return this->getTetrahedronVolume_( this->add_( 1.0, node1, -1.0, node0 ),
-                                        this->add_( 1.0, node2, -1.0, node0 ),
-                                        this->add_( 1.0, node3, -1.0, node0 )
-                                      );
 }
 // =============================================================================
 double
@@ -1122,6 +1092,25 @@ norm2squared_( const DoubleVector & x
              ) const
 {
     return this->dot_( x, x );
+}
+// =============================================================================
+// EXTERNAL HELPER FUNCTIONS
+// =============================================================================
+bool
+createEdges( const Teuchos::RCP<stk::mesh::BulkData> & bulkData )
+{
+  // Try creating adjacent mesh entites (aka edges).
+  bool supportsEdges = false;
+  try
+  {
+  stk::mesh::PartVector empty_add_parts;
+  stk::mesh::create_adjacent_entities( *bulkData, empty_add_parts );
+  supportsEdges = true;
+  }
+  catch ( std::runtime_error )
+  {
+  }
+  return supportsEdges;
 }
 // =============================================================================
 } // namespace Ginla

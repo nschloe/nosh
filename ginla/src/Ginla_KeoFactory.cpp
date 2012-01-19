@@ -22,6 +22,7 @@
 #include "Ginla_KeoFactory.hpp"
 #include "Ginla_StkMesh.hpp"
 #include "Ginla_Helpers.hpp"
+#include "Ginla_MagneticVectorPotential_Virtual.hpp"
 
 #include <Epetra_SerialDenseMatrix.h>
 #include <Epetra_Comm.h>
@@ -40,7 +41,7 @@ namespace Ginla {
 KeoFactory::
 KeoFactory( const Teuchos::RCP<const Ginla::StkMesh>           & mesh,
             const Teuchos::RCP<const Epetra_Vector>            & thickness,
-            const Teuchos::RCP<Ginla::MagneticVectorPotential> & mvp
+            const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp
           ):
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
         keoFillTime_( Teuchos::TimeMonitor::getNewTimer("Ginla: KeoFactory::fillKeo_") ),
@@ -207,14 +208,10 @@ buildKeoGraph_() const
   Teuchos::RCP<Epetra_FECrsGraph> keoGraph
       = Teuchos::rcp( new Epetra_FECrsGraph( Copy, noMap, 0 ) );
 
-  try
-  {
+  if ( mesh_->supportsEdges() )
       this->buildKeoGraphEdges_( keoGraph );
-  }
-  catch( std::runtime_error )
-  {
+  else
       this->buildKeoGraphCellEdges_( keoGraph );
-  }
 
   // Make sure that domain and range map are non-overlapping (to make sure that
   // states psi can compute norms) and equal (to make sure that the matrix works
@@ -246,14 +243,14 @@ fillKeo_( const Teuchos::RCP<Epetra_FECrsMatrix> & keoMatrix,
   TEUCHOS_ASSERT( !thickness_.is_null() );
   TEUCHOS_ASSERT( !mvp_.is_null() );
 #endif
-  try
+  if ( mesh_->supportsEdges() )
   {
       this->fillKeoEdges_( keoMatrix,
                            matrixType,
                            mesh_->getEdgeCoefficients()
                          );
   }
-  catch( std::runtime_error )
+  else
   {
       this->fillKeoCellEdges_( keoMatrix,
                                matrixType,

@@ -30,8 +30,7 @@
 #include <Epetra_Operator.h>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Tuple.hpp>
-
-#include "Ginla_MagneticVectorPotential.hpp"
+#include <LOCA_Parameter_Vector.H>
 // =============================================================================
 // forward declarations
 namespace Ginla {
@@ -84,9 +83,9 @@ public:
     virtual const Epetra_Comm &
     Comm () const;
 
-    virtual const Epetra_Map & 	OperatorDomainMap () const;
+    virtual const Epetra_Map & OperatorDomainMap () const;
 
-    virtual const Epetra_Map & 	OperatorRangeMap () const;
+    virtual const Epetra_Map & OperatorRangeMap () const;
 
 public:
     void

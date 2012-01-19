@@ -26,12 +26,9 @@
 #endif
 
 #include <Epetra_Vector.h>
-#include <LOCA_Parameter_Vector.H>
 
 #include "Ginla_StkMesh.hpp"
 #include "Ginla_StkMeshReader.hpp"
-#include "Ginla_MagneticVectorPotential.hpp"
-#include "Ginla_KeoFactory.hpp"
 
 #include <Teuchos_UnitTestHarness.hpp>
 
@@ -67,14 +64,14 @@ testCache( const std::string & inputFileNameBase,
 
     Teuchos::ArrayRCP<double> edgeCoefficients;
     Teuchos::ArrayRCP<DoubleVector> edgeCoefficientsFallback;
-    int numEdges;
-    try
+    unsigned int numEdges;
+    if ( mesh->supportsEdges() )
     {
         edgeCoefficients = mesh->getEdgeCoefficients();
         edgeCoefficientsFallback = mesh->getEdgeCoefficientsFallback();
         numEdges = mesh->getOverlapEdges().size();
     }
-    catch( ... )
+    else
     {
         // If we can't get the coefficients, there's nothing to compare.
         return;
@@ -110,7 +107,7 @@ testCache( const std::string & inputFileNameBase,
 
                 // Find the edge that has gid0, gid1 as endpoints.
                 bool edgeFound = false;
-                int j;
+                unsigned int j;
                 for ( j=0; j<localEdges.size(); j++ )
                 {
                     // Get the endpoints

@@ -35,15 +35,21 @@
   #include <Teuchos_Time.hpp>
 #endif
 #include <Teuchos_Tuple.hpp>
+#include <Teuchos_SerialDenseVector.hpp>
+#include <LOCA_Parameter_Vector.H>
 
 #include <Epetra_FECrsGraph.h>
 #include <Epetra_FECrsMatrix.h>
-
-#include "Ginla_MagneticVectorPotential.hpp"
+#include <stk_mesh/base/Entity.hpp>
+// =============================================================================
+typedef Teuchos::SerialDenseVector<int,double> DoubleVector;
 // =============================================================================
 // forward declarations
 namespace Ginla {
     class StkMesh;
+    namespace MagneticVectorPotential {
+      class Virtual;
+    }
 }
 // =============================================================================
 namespace Ginla {
@@ -59,7 +65,7 @@ public:
 public:
     KeoFactory( const Teuchos::RCP<const Ginla::StkMesh>           & mesh,
                 const Teuchos::RCP<const Epetra_Vector>            & thickness,
-                const Teuchos::RCP<Ginla::MagneticVectorPotential> & mvp
+                const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp
               );
 
     // Destructor.
@@ -136,7 +142,7 @@ private:
 #endif
     const Teuchos::RCP<const Ginla::StkMesh> mesh_;
     const Teuchos::RCP<const Epetra_Vector> thickness_;
-    const Teuchos::RCP<Ginla::MagneticVectorPotential> mvp_;
+    const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp_;
 
     mutable Teuchos::ArrayRCP<Epetra_IntSerialDenseVector> globalIndexCache_;
     mutable bool globalIndexCacheUpToDate_;

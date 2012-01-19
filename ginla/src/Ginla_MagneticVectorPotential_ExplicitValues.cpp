@@ -1,7 +1,7 @@
 // @HEADER
 //
 //    Query routines for the magnetic vector potential.
-//    Copyright (C) 2011, 2012  Nico Schl\"omer
+//    Copyright (C) 2012  Nico Schl\"omer
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -18,205 +18,105 @@
 //
 // @HEADER
 
-#include "Ginla_MagneticVectorPotential.hpp"
+#include "Ginla_MagneticVectorPotential_ExplicitValues.hpp"
 #include "Ginla_StkMesh.hpp"
 
 #include <Epetra_Vector.h>
 
 namespace Ginla {
+namespace MagneticVectorPotential {
 // ============================================================================
-MagneticVectorPotential::
-MagneticVectorPotential( const Teuchos::RCP<Ginla::StkMesh>           & mesh,
-                         const Teuchos::RCP<const Epetra_MultiVector> & mvp,
-                         double mu,
-                         double theta,
-                         const Teuchos::RCP<DoubleVector> u
-                       ):
+ExplicitValues::
+ExplicitValues( const Teuchos::RCP<Ginla::StkMesh>           & mesh,
+                const Teuchos::RCP<const Epetra_MultiVector> & mvp,
+                double mu
+              ):
   mesh_( mesh ),
   mvp_( mvp ),
   mu_( mu ),
-  theta_( theta ),
-  sinTheta_( 0.0 ),
-  cosTheta_( 1.0 ),
-  u_( u ),
-  mvpEdgeMidpoint_( Teuchos::ArrayRCP<DoubleVector>() ),
-  edges_( Teuchos::ArrayRCP<DoubleVector>() ),
-  mvpEdgeMidpointUpToDate_( false ),
-  mvpEdgeMidpointFallback_( Teuchos::ArrayRCP<Teuchos::ArrayRCP<DoubleVector> >() ),
-  edgesFallback_( Teuchos::ArrayRCP<Teuchos::ArrayRCP<DoubleVector> >() ),
-  mvpEdgeMidpointFallbackUpToDate_( false )
+  mvpEdgeMidpointProjectionCache_( Teuchos::ArrayRCP<double>() ),
+  mvpEdgeMidpointProjectionCacheUptodate_( false ),
+  mvpEdgeMidpointProjectionCacheFallback_( Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >() ),
+  mvpEdgeMidpointProjectionCacheFallbackUptodate_( false )
 {
-    if ( theta_ != 0.0 )
-        sincos( theta_, &sinTheta_, &cosTheta_ );
-
-    if ( !u_.is_null() )
-    {
-        // Normalize u.
-        double uDotu = u_->dot(*u_);
-        TEUCHOS_ASSERT_INEQUALITY( fabs(uDotu), >, 1.0e-12 );
-        *u_ *= 1.0 / sqrt(uDotu);
-    }
-
 #ifdef _DEBUG_
     TEUCHOS_ASSERT( !mesh_.is_null() );
 #endif
-    try
+
+    if ( mesh->supportsEdges() )
     {
-        mvpEdgeMidpoint_ = Teuchos::ArrayRCP<DoubleVector>( mesh_->getOverlapEdges().size() );
-        edges_ = Teuchos::ArrayRCP<DoubleVector>( mesh_->getOverlapEdges().size() );
+        mvpEdgeMidpointProjectionCache_ =
+            Teuchos::ArrayRCP<double>( mesh_->getOverlapEdges().size() );
     }
-    catch( ... )
+    else
     {
-        mvpEdgeMidpointFallback_ =
-            Teuchos::ArrayRCP<Teuchos::ArrayRCP<DoubleVector> >( mesh_->getOwnedCells().size() );
-        edgesFallback_ =
-            Teuchos::ArrayRCP<Teuchos::ArrayRCP<DoubleVector> >( mesh_->getOwnedCells().size() );
+        mvpEdgeMidpointProjectionCacheFallback_ =
+            Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >( mesh_->getOwnedCells().size() );
     }
+
     return;
 }
 // ============================================================================
-MagneticVectorPotential::
-~MagneticVectorPotential()
+ExplicitValues::
+~ExplicitValues()
 {
 }
 // ============================================================================
 void
-MagneticVectorPotential::
+ExplicitValues::
 setParameters( const LOCA::ParameterVector & p )
 {
     if (p.isParameter( "mu" ))
         mu_ = p.getValue ( "mu" );
 
-    if (p.isParameter( "theta" ))
-    {
-        theta_ = p.getValue ( "theta" );
-        sincos( theta_, &sinTheta_, &cosTheta_ );
-    }
-
     return;
 }
 // ============================================================================
 Teuchos::RCP<LOCA::ParameterVector>
-MagneticVectorPotential::
+ExplicitValues::
 getParameters() const
 {
   Teuchos::RCP<LOCA::ParameterVector> p =
           Teuchos::rcp( new LOCA::ParameterVector() );
 
   p->addParameter( "mu", mu_ );
-  p->addParameter( "theta", theta_ );
 
   return p;
 }
 // ============================================================================
 double
-MagneticVectorPotential::
+ExplicitValues::
 getAEdgeMidpointProjection( const unsigned int edgeIndex
                           ) const
 {
-  if ( !mvpEdgeMidpointUpToDate_ )
+  if ( !mvpEdgeMidpointProjectionCacheUptodate_ )
       this->initializeMvpEdgeMidpointCache_();
 
-  // perform rotation
-  DoubleVector x = this->rotate_( mvpEdgeMidpoint_[edgeIndex],
-                                  u_, sinTheta_, cosTheta_
-                                );
-
-  return mu_ * edges_[edgeIndex].dot( x );
-}
-// ============================================================================
-DoubleVector
-MagneticVectorPotential::
-rotate_( const DoubleVector & v,
-         const Teuchos::RCP<const DoubleVector> & u,
-         const double sinTheta,
-         const double cosTheta
-       ) const
-{
-  // Rotate a vector \c v by the angle \c theta in the plane perpendicular
-  // to the axis given by \c u.
-  // Refer to
-  // http://en.wikipedia.org/wiki/Rotation_matrix#Rotation_matrix_from_axis_and_angle
-
-  DoubleVector r = v;
-  if ( sinTheta != 0.0 )
-  {
-      TEST_FOR_EXCEPT_MSG( u.is_null(),
-                           "Rotation requested, but rot normal vector not set."
-                         );
-#ifdef _DEBUG_
-      TEST_FOR_EXCEPT_MSG( u->dot(*u) != 1.0,
-                           "Rotation requested, but rot normal vector not "
-                           << "normalized: <u,u> = " << u->dot(*u) << "."
-                           << std::endl
-                         );
-#endif
-
-      // cos(theta) * I * v
-      r *= cosTheta;
-
-      // + sin(theta) u\cross v
-      DoubleVector tmp = this->crossProduct_(*u,v);
-      tmp *= sinTheta;
-      r += tmp;
-
-      // + (1-cos(theta)) (u*u^T) * v
-      tmp = *u;
-      tmp *= (1.0-cosTheta) * u->dot( v );
-
-      r += tmp;
-  }
-
-  return r;
-}
-// ============================================================================
-DoubleVector
-MagneticVectorPotential::
-crossProduct_( const DoubleVector u,
-               const DoubleVector v
-             ) const
-{
-    DoubleVector uXv(3);
-    uXv[0] = u[1]*v[2] - u[2]*v[1];
-    uXv[1] = u[2]*v[0] - u[0]*v[2];
-    uXv[2] = u[0]*v[1] - u[1]*v[0];
-    return uXv;
+  return mu_ * mvpEdgeMidpointProjectionCache_[edgeIndex];
 }
 // ============================================================================
 double
-MagneticVectorPotential::
+ExplicitValues::
 getdAdMuEdgeMidpointProjection( const unsigned int edgeIndex
                               ) const
 {
-  if ( !mvpEdgeMidpointUpToDate_ )
+  if ( !mvpEdgeMidpointProjectionCacheUptodate_ )
       this->initializeMvpEdgeMidpointCache_();
 
-  // perform rotation
-  DoubleVector x = this->rotate_( mvpEdgeMidpoint_[edgeIndex],
-                                  u_, sinTheta_, cosTheta_
-                                );
-
-  return edges_[edgeIndex].dot( x );
+  return mvpEdgeMidpointProjectionCache_[edgeIndex];
 }
 // ============================================================================
 double
-MagneticVectorPotential::
+ExplicitValues::
 getdAdThetaEdgeMidpointProjection( const unsigned int edgeIndex
                                   ) const
 {
-  if ( !mvpEdgeMidpointUpToDate_ )
-      this->initializeMvpEdgeMidpointCache_();
-
-  // perform rotation
-  DoubleVector x = this->rotate_( mvpEdgeMidpoint_[edgeIndex],
-                                  u_, cosTheta_, -sinTheta_
-                                );
-
-  return mu_ * edges_[edgeIndex].dot( x );
+  TEST_FOR_EXCEPT_MSG( true,
+                       "Parameter \"theta\" not supported. Abort." );
 }
 // ============================================================================
 void
-MagneticVectorPotential::
+ExplicitValues::
 initializeMvpEdgeMidpointCache_() const
 {
 #ifdef _DEBUG_
@@ -247,10 +147,10 @@ initializeMvpEdgeMidpointCache_() const
 
       // Approximate the value at the midpoint of the edge
       // by the average of the values at the adjacent nodes.
-      mvpEdgeMidpoint_[k] = DoubleVector(3);
+      DoubleVector mvpEdgeMidpoint(3);
       for (int i=0; i<3; i++ )
-          mvpEdgeMidpoint_[k][i] = 0.5 * ( (*(*mvp_)(i))[lid[0]]
-                                         + (*(*mvp_)(i))[lid[1]] );
+          mvpEdgeMidpoint[i] = 0.5 * ( (*(*mvp_)(i))[lid[0]]
+                                     + (*(*mvp_)(i))[lid[1]] );
 
       // extract the nodal coordinates
       Teuchos::ArrayRCP<DoubleVector> localNodes =
@@ -258,74 +158,58 @@ initializeMvpEdgeMidpointCache_() const
 #ifdef _DEBUG_
       TEUCHOS_ASSERT_EQUALITY( localNodes.size(), 2 );
 #endif
-      edges_[k] = localNodes[1];
-      edges_[k] -= localNodes[0];
+      DoubleVector edge = localNodes[1];
+      edge -= localNodes[0];
+
+      mvpEdgeMidpointProjectionCache_[k] = edge.dot( mvpEdgeMidpoint );
   }
 
-  mvpEdgeMidpointUpToDate_ = true;
+  mvpEdgeMidpointProjectionCacheUptodate_ = true;
   return;
 }
 // ============================================================================
 double
-MagneticVectorPotential::
+ExplicitValues::
 getAEdgeMidpointProjectionFallback( const unsigned int cellIndex,
                                     const unsigned int edgeIndex
                                   ) const
 {
-  if ( !mvpEdgeMidpointFallbackUpToDate_ )
+  if ( !mvpEdgeMidpointProjectionCacheFallbackUptodate_ )
       this->initializeMvpEdgeMidpointFallback_();
 
-  // perform rotation
-  DoubleVector x = this->rotate_( mvpEdgeMidpointFallback_[cellIndex][edgeIndex],
-                                  u_, sinTheta_, cosTheta_
-                                );
-
-  return mu_ * edgesFallback_[cellIndex][edgeIndex].dot( x );
+  return mu_ * mvpEdgeMidpointProjectionCacheFallback_[cellIndex][edgeIndex];
 }
 // ============================================================================
 double
-MagneticVectorPotential::
+ExplicitValues::
 getdAdMuEdgeMidpointProjectionFallback( const unsigned int cellIndex,
                                         const unsigned int edgeIndex
                                       ) const
 {
-  if ( !mvpEdgeMidpointFallbackUpToDate_ )
+  if ( !mvpEdgeMidpointProjectionCacheFallbackUptodate_ )
       this->initializeMvpEdgeMidpointFallback_();
 
-  // perform rotation
-  DoubleVector x = this->rotate_( mvpEdgeMidpointFallback_[cellIndex][edgeIndex],
-                                  u_, sinTheta_, cosTheta_
-                                );
-
-  return edgesFallback_[cellIndex][edgeIndex].dot( x );
+  return mvpEdgeMidpointProjectionCacheFallback_[cellIndex][edgeIndex];
 }
 // ============================================================================
 double
-MagneticVectorPotential::
+ExplicitValues::
 getdAdThetaEdgeMidpointProjectionFallback( const unsigned int cellIndex,
                                            const unsigned int edgeIndex
                                          ) const
 {
-  if ( !mvpEdgeMidpointFallbackUpToDate_ )
-      this->initializeMvpEdgeMidpointFallback_();
-
-  // perform rotation
-  DoubleVector x = this->rotate_( mvpEdgeMidpoint_[edgeIndex],
-                                  u_, cosTheta_, -sinTheta_
-                                );
-
-  return mu_ * edgesFallback_[cellIndex][edgeIndex].dot( x );
+  TEST_FOR_EXCEPT_MSG( true,
+                       "Parameter \"theta\" not supported. Abort." );
 }
 // ============================================================================
 void
-MagneticVectorPotential::
+ExplicitValues::
 initializeMvpEdgeMidpointFallback_() const
 {
 // #ifdef _DEBUG_
   TEUCHOS_ASSERT( !mesh_.is_null() );
   TEUCHOS_ASSERT( !mvp_.is_null() );
-  TEUCHOS_ASSERT( !mvpEdgeMidpointFallback_.is_null() );
-  TEUCHOS_ASSERT( !edgesFallback_.is_null() );
+  TEUCHOS_ASSERT( !mvpEdgeMidpointProjectionCacheFallback_.is_null() );
 // #endif
 
   std::vector<stk::mesh::Entity*> cells = mesh_->getOwnedCells();
@@ -343,10 +227,8 @@ initializeMvpEdgeMidpointFallback_() const
       Teuchos::ArrayRCP<DoubleVector> localNodeCoords =
           mesh_->getNodeCoordinates( localNodes );
 
-      mvpEdgeMidpointFallback_[k] =
-          Teuchos::ArrayRCP<DoubleVector>( mesh_->getNumEdgesPerCell( cellDimension ) );
-      edgesFallback_[k] =
-          Teuchos::ArrayRCP<DoubleVector>( mesh_->getNumEdgesPerCell( cellDimension ) );
+      mvpEdgeMidpointProjectionCacheFallback_[k] =
+          Teuchos::ArrayRCP<double>( mesh_->getNumEdgesPerCell( cellDimension ) );
 
       // In a simplex, the edges are exactly the connection between each pair
       // of nodes. Hence, loop over pairs of nodes.
@@ -371,22 +253,26 @@ initializeMvpEdgeMidpointFallback_() const
 
               // Approximate the value at the midpoint of the edge
               // by the average of the values at the adjacent nodes.
-              mvpEdgeMidpointFallback_[k][edgeIndex] = DoubleVector(3);
+              DoubleVector mvpEdgeMidpoint(3);
               for (int i=0; i<3; i++ )
-                  mvpEdgeMidpointFallback_[k][edgeIndex][i] = 0.5 * ( (*(*mvp_)(i))[lid[0]]
-                                                                    + (*(*mvp_)(i))[lid[1]] );
+                  mvpEdgeMidpoint[i] =
+                      0.5 * ( (*(*mvp_)(i))[lid[0]] + (*(*mvp_)(i))[lid[1]] );
 
               // Update edge cache.
-              edgesFallback_[k][edgeIndex] = localNodeCoords[e1];
-              edgesFallback_[k][edgeIndex] -= localNodeCoords[e0];
+              DoubleVector edge = localNodeCoords[e1];
+              edge -= localNodeCoords[e0];
+
+              mvpEdgeMidpointProjectionCacheFallback_[k][edgeIndex] =
+                  edge.dot( mvpEdgeMidpoint );
 
               edgeIndex++;
           }
       }
   }
 
-  mvpEdgeMidpointFallbackUpToDate_ = true;
+  mvpEdgeMidpointProjectionCacheFallbackUptodate_ = true;
   return;
 }
 // ============================================================================
+} // namespace MagneticVectorPotential
 } // namespace Ginla

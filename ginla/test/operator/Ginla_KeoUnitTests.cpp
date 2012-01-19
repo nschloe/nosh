@@ -30,7 +30,7 @@
 
 #include "Ginla_StkMesh.hpp"
 #include "Ginla_StkMeshReader.hpp"
-#include "Ginla_MagneticVectorPotential.hpp"
+#include "Ginla_MagneticVectorPotential_ExplicitValues.hpp"
 #include "Ginla_KeoFactory.hpp"
 
 #include <Teuchos_UnitTestHarness.hpp>
@@ -74,8 +74,8 @@ testKeo( const std::string & inputFileNameBase,
     Teuchos::RCP<Epetra_Vector>      & thickness = data.get( "thickness", Teuchos::RCP<Epetra_Vector>() );
     Teuchos::ParameterList           & problemParameters = data.get( "Problem parameters", Teuchos::ParameterList() );
 
-    Teuchos::RCP<Ginla::MagneticVectorPotential> mvp;
-    mvp = Teuchos::rcp ( new Ginla::MagneticVectorPotential ( mesh, mvpValues, mu ) );
+    Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp;
+    mvp = Teuchos::rcp ( new Ginla::MagneticVectorPotential::ExplicitValues ( mesh, mvpValues, mu ) );
 
     Teuchos::RCP<LOCA::ParameterVector> mvpParameters =
         Teuchos::rcp( new LOCA::ParameterVector() );

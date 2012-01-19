@@ -26,12 +26,9 @@
 #endif
 
 #include <Epetra_Vector.h>
-#include <LOCA_Parameter_Vector.H>
 
 #include "Ginla_StkMesh.hpp"
 #include "Ginla_StkMeshReader.hpp"
-#include "Ginla_MagneticVectorPotential.hpp"
-#include "Ginla_KeoFactory.hpp"
 
 #include <Teuchos_UnitTestHarness.hpp>
 

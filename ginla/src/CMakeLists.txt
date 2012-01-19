@@ -6,7 +6,9 @@ SET ( ginla_SRCS
       Ginla_JacobianOperator.cpp
       Ginla_KeoFactory.cpp
       Ginla_KeoRegularized.cpp
-      Ginla_MagneticVectorPotential.cpp
+      Ginla_MagneticVectorPotential_Virtual.cpp
+      Ginla_MagneticVectorPotential_ExplicitValues.cpp
+      Ginla_MagneticVectorPotential_ConstantInSpace.cpp
       Ginla_StkMesh.cpp
       Ginla_StkMeshReader.cpp
       Ginla_StatsWriter.cpp
