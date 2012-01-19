@@ -26,6 +26,8 @@
 #include "Ginla_KeoRegularized.hpp"
 #include "Ginla_StkMesh.hpp"
 
+#include <string>
+
 #include <Epetra_Map.h>
 #include <Epetra_LocalMap.h>
 #include <Epetra_Vector.h>
@@ -479,7 +481,6 @@ computeDFDMu_( const Epetra_Vector                             & x,
                Epetra_Vector                                   & FVec
              ) const
 {
-  std::cout << "computeDFDMu_" << std::endl;
   // build the KEO
   keoFactory_->updateParameters( mvpParams );
 
@@ -556,7 +557,7 @@ getParameters() const
   TEUCHOS_ASSERT( !p_names_.is_null() );
   TEUCHOS_ASSERT( !p_current_.is_null() );
 #endif
-  for ( int k=0; k<numParams_; k++ )
+  for ( int k = 0; k < numParams_; k++ )
       p->addParameter( (*p_names_)[k], (*p_current_)[k] );
 
   return p;

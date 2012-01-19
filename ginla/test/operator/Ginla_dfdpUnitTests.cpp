@@ -113,8 +113,6 @@ testDfdp( const std::string & inputFileNameBase,
     modelEval->evalModel( inArgs, outArgs );
 
     // compare the two
-    std::cout << "HHH " << (*f1)[0] << std::endl;
-    std::cout << "III " << (*dfdp)[0] << std::endl;
     f1->Update( -1.0, *dfdp, 1.0 );
 
     double r[1];
