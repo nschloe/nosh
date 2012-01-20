@@ -34,42 +34,42 @@ class StatsWriter
 {
 public:
 
-  //! Default constructor.
-  StatsWriter( std::string & fileName );
-  
-  //! Destructor.
-  virtual
-  ~StatsWriter();
-  
-  //! Const getter.
-  Teuchos::RCP<const Teuchos::ParameterList>
-  getList();
-  
-  //! Non-const getter.
-  Teuchos::RCP<Teuchos::ParameterList>
-  getListNonConst();
-  
-  void
-  setList( const Teuchos::ParameterList & statisticsList );
-  
-  void
-  setList( const Teuchos::RCP<Teuchos::ParameterList> & statisticsList );
-  
-  void
-  print();
-  
+//! Default constructor.
+StatsWriter( std::string &fileName );
+
+//! Destructor.
+virtual
+~StatsWriter();
+
+//! Const getter.
+Teuchos::RCP<const Teuchos::ParameterList>
+getList();
+
+//! Non-const getter.
+Teuchos::RCP<Teuchos::ParameterList>
+getListNonConst();
+
+void
+setList( const Teuchos::ParameterList &statisticsList );
+
+void
+setList( const Teuchos::RCP<Teuchos::ParameterList> &statisticsList );
+
+void
+print();
+
 protected:
 private:
-  
-  //! File stream for the statistics.
-  std::ofstream fileStream_;
-  
-  //! Stores the scalar statisticsList values
-  const Teuchos::RCP<Teuchos::ParameterList> statisticsList_;
-  
-  //! Whether or not to print the header in the stats file.
-  bool printHeader_;
-  
+
+//! File stream for the statistics.
+std::ofstream fileStream_;
+
+//! Stores the scalar statisticsList values
+const Teuchos::RCP<Teuchos::ParameterList> statisticsList_;
+
+//! Whether or not to print the header in the stats file.
+bool printHeader_;
+
 };
 } // namespace Ginla
 

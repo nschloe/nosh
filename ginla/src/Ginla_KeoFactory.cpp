@@ -39,31 +39,33 @@
 namespace Ginla {
 // =============================================================================
 KeoFactory::
-KeoFactory( const Teuchos::RCP<const Ginla::StkMesh>           & mesh,
-            const Teuchos::RCP<const Epetra_Vector>            & thickness,
-            const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp
-          ):
+KeoFactory( const Teuchos::RCP<const Ginla::StkMesh> &mesh,
+            const Teuchos::RCP<const Epetra_Vector> &thickness,
+            const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> &mvp
+            ) :
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
-        keoFillTime_( Teuchos::TimeMonitor::getNewTimer("Ginla: KeoFactory::fillKeo_") ),
+  keoFillTime_( Teuchos::TimeMonitor::getNewTimer(
+                  "Ginla: KeoFactory::fillKeo_" ) ),
 #endif
-        mesh_ ( mesh ),
-        thickness_( thickness ),
-        mvp_( mvp ),
-        globalIndexCache_( Teuchos::ArrayRCP<Epetra_IntSerialDenseVector>() ),
-        globalIndexCacheUpToDate_( false ),
-        globalIndexFallbackCache_( Teuchos::ArrayRCP<Teuchos::ArrayRCP<Epetra_IntSerialDenseVector> >() ),
-        globalIndexFallbackCacheUpToDate_( false ),
-        keoGraph_( this->buildKeoGraph_() ), // build the graph immediately
-        keo_( Teuchos::rcp( new Epetra_FECrsMatrix( Copy, *keoGraph_ ) ) ),
-        keoBuildParameters_( Teuchos::null ),
-        keoDMu_( Teuchos::rcp( new Epetra_FECrsMatrix( Copy, *keoGraph_ ) ) ),
-        keoDMuBuildParameters_( Teuchos::null ),
-        keoDTheta_( Teuchos::rcp( new Epetra_FECrsMatrix( Copy, *keoGraph_ ) ) ),
-        keoDThetaBuildParameters_( Teuchos::null ),
-        alphaCache_( Teuchos::ArrayRCP<double>() ),
-        alphaCacheUpToDate_( false ),
-        alphaFallbackCache_( Teuchos::ArrayRCP<DoubleVector>() ),
-        alphaFallbackCacheUpToDate_( false )
+  mesh_( mesh ),
+  thickness_( thickness ),
+  mvp_( mvp ),
+  globalIndexCache_( Teuchos::ArrayRCP<Epetra_IntSerialDenseVector>() ),
+  globalIndexCacheUpToDate_( false ),
+  globalIndexFallbackCache_( Teuchos::ArrayRCP<Teuchos::ArrayRCP<
+                                                 Epetra_IntSerialDenseVector> >() ),
+  globalIndexFallbackCacheUpToDate_( false ),
+  keoGraph_( this->buildKeoGraph_() ),       // build the graph immediately
+  keo_( Teuchos::rcp( new Epetra_FECrsMatrix( Copy, *keoGraph_ ) ) ),
+  keoBuildParameters_( Teuchos::null ),
+  keoDMu_( Teuchos::rcp( new Epetra_FECrsMatrix( Copy, *keoGraph_ ) ) ),
+  keoDMuBuildParameters_( Teuchos::null ),
+  keoDTheta_( Teuchos::rcp( new Epetra_FECrsMatrix( Copy, *keoGraph_ ) ) ),
+  keoDThetaBuildParameters_( Teuchos::null ),
+  alphaCache_( Teuchos::ArrayRCP<double>() ),
+  alphaCacheUpToDate_( false ),
+  alphaFallbackCache_( Teuchos::ArrayRCP<DoubleVector>() ),
+  alphaFallbackCacheUpToDate_( false )
 {
 }
 // =============================================================================
@@ -79,13 +81,13 @@ getComm() const
 #ifdef _DEBUG_
   TEUCHOS_ASSERT( !mesh_.is_null() );
 #endif
-    return mesh_->getComm();
+  return mesh_->getComm();
 }
 // =============================================================================
 void
 KeoFactory::
-updateParameters( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams
-                ) const
+updateParameters( const Teuchos::RCP<const LOCA::ParameterVector> &mvpParams
+                  ) const
 {
   // set the parameters
 #ifdef _DEBUG_
@@ -107,36 +109,39 @@ Teuchos::RCP<const Epetra_FECrsMatrix>
 KeoFactory::
 getKeo() const
 {
-    if ( !Ginla::Helpers::locaParameterVectorsEqual( keoBuildParameters_, mvp_->getParameters() ) )
-    {
-        this->fillKeo_( keo_, MATRIX_TYPE_REGULAR );
-        keoBuildParameters_ = Teuchos::rcp( mvp_->getParameters()->clone() );
-    }
-    return keo_;
+  if ( !Ginla::Helpers::locaParameterVectorsEqual( keoBuildParameters_,
+                                                   mvp_->getParameters() ) )
+  {
+    this->fillKeo_( keo_, MATRIX_TYPE_REGULAR );
+    keoBuildParameters_ = Teuchos::rcp( mvp_->getParameters()->clone() );
+  }
+  return keo_;
 }
 // =============================================================================
 Teuchos::RCP<const Epetra_FECrsMatrix>
 KeoFactory::
 getKeoDMu() const
 {
-    if ( !Ginla::Helpers::locaParameterVectorsEqual( keoDMuBuildParameters_, mvp_->getParameters() ) )
-    {
-        this->fillKeo_( keoDMu_, MATRIX_TYPE_DMU );
-        keoDMuBuildParameters_ = Teuchos::rcp( mvp_->getParameters()->clone() );
-    }
-    return keoDMu_;
+  if ( !Ginla::Helpers::locaParameterVectorsEqual( keoDMuBuildParameters_,
+                                                   mvp_->getParameters() ) )
+  {
+    this->fillKeo_( keoDMu_, MATRIX_TYPE_DMU );
+    keoDMuBuildParameters_ = Teuchos::rcp( mvp_->getParameters()->clone() );
+  }
+  return keoDMu_;
 }
 // =============================================================================
 Teuchos::RCP<const Epetra_FECrsMatrix>
 KeoFactory::
 getKeoDTheta() const
 {
-    if ( !Ginla::Helpers::locaParameterVectorsEqual( keoDThetaBuildParameters_, mvp_->getParameters() ) )
-    {
-        this->fillKeo_( keoDTheta_, MATRIX_TYPE_DTHETA );
-        keoDThetaBuildParameters_ = Teuchos::rcp( mvp_->getParameters()->clone() );
-    }
-    return keoDTheta_;
+  if ( !Ginla::Helpers::locaParameterVectorsEqual( keoDThetaBuildParameters_,
+                                                   mvp_->getParameters() ) )
+  {
+    this->fillKeo_( keoDTheta_, MATRIX_TYPE_DTHETA );
+    keoDThetaBuildParameters_ = Teuchos::rcp( mvp_->getParameters()->clone() );
+  }
+  return keoDTheta_;
 }
 // =============================================================================
 const Teuchos::RCP<Epetra_FECrsGraph>
@@ -204,31 +209,31 @@ buildKeoGraph_() const
 #ifdef _DEBUG_
   TEUCHOS_ASSERT( !mesh_.is_null() );
 #endif
-  const Epetra_Map & noMap = *mesh_->getComplexNonOverlapMap();
+  const Epetra_Map &noMap = *mesh_->getComplexNonOverlapMap();
   Teuchos::RCP<Epetra_FECrsGraph> keoGraph
-      = Teuchos::rcp( new Epetra_FECrsGraph( Copy, noMap, 0 ) );
+    = Teuchos::rcp( new Epetra_FECrsGraph( Copy, noMap, 0 ) );
 
   if ( mesh_->supportsEdges() )
-      this->buildKeoGraphEdges_( keoGraph );
+    this->buildKeoGraphEdges_( keoGraph );
   else
-      this->buildKeoGraphCellEdges_( keoGraph );
+    this->buildKeoGraphCellEdges_( keoGraph );
 
   // Make sure that domain and range map are non-overlapping (to make sure that
   // states psi can compute norms) and equal (to make sure that the matrix works
   // with ML).
-  TEUCHOS_ASSERT_EQUALITY( 0, keoGraph->GlobalAssemble(noMap,noMap) );
+  TEUCHOS_ASSERT_EQUALITY( 0, keoGraph->GlobalAssemble( noMap,noMap ) );
 
   return keoGraph;
 }
 // =============================================================================
 void
 KeoFactory::
-fillKeo_( const Teuchos::RCP<Epetra_FECrsMatrix> & keoMatrix,
+fillKeo_( const Teuchos::RCP<Epetra_FECrsMatrix> &keoMatrix,
           const EMatrixType matrixType
-        ) const
+          ) const
 {
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
-  Teuchos::TimeMonitor tm(*keoFillTime_);
+  Teuchos::TimeMonitor tm( *keoFillTime_ );
 #endif
   // Zero-out the matrix
   TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->PutScalar( 0.0 ) );
@@ -245,16 +250,16 @@ fillKeo_( const Teuchos::RCP<Epetra_FECrsMatrix> & keoMatrix,
 #endif
   if ( mesh_->supportsEdges() )
   {
-      this->fillKeoEdges_( keoMatrix,
-                           matrixType,
-                           mesh_->getEdgeCoefficients()
+    this->fillKeoEdges_( keoMatrix,
+                         matrixType,
+                         mesh_->getEdgeCoefficients()
                          );
   }
   else
   {
-      this->fillKeoCellEdges_( keoMatrix,
-                               matrixType,
-                               mesh_->getEdgeCoefficientsFallback()
+    this->fillKeoCellEdges_( keoMatrix,
+                             matrixType,
+                             mesh_->getEdgeCoefficientsFallback()
                              );
   }
 
@@ -265,20 +270,25 @@ fillKeo_( const Teuchos::RCP<Epetra_FECrsMatrix> & keoMatrix,
 // =============================================================================
 void
 KeoFactory::
-buildKeoGraphEdges_( const Teuchos::RCP<Epetra_FECrsGraph> & keoGraph ) const
+buildKeoGraphEdges_( const Teuchos::RCP<Epetra_FECrsGraph> &keoGraph ) const
 {
   // Get owned edges. This might throw as edges are not available for shells
   // (aka surfaces).
   std::vector<stk::mesh::Entity*> edges = mesh_->getOverlapEdges();
 
   if ( !globalIndexCacheUpToDate_ )
-      this->buildGlobalIndexCache_( edges );
+    this->buildGlobalIndexCache_( edges );
 
   // Loop over all edges and put entries wherever two nodes are connected.
   for ( unsigned int k=0; k<edges.size(); k++ )
-      TEUCHOS_ASSERT_EQUALITY( 0, keoGraph->InsertGlobalIndices( 4, globalIndexCache_[k].Values(),
-                                                                 4, globalIndexCache_[k].Values()
-                                                               )
+    TEUCHOS_ASSERT_EQUALITY( 0,
+                             keoGraph->InsertGlobalIndices( 4,
+                                                            globalIndexCache_[k
+                                                            ].Values(),
+                                                            4,
+                                                            globalIndexCache_[k
+                                                            ].Values()
+                                                            )
                              );
 
   return;
@@ -286,25 +296,232 @@ buildKeoGraphEdges_( const Teuchos::RCP<Epetra_FECrsGraph> & keoGraph ) const
 // =============================================================================
 void
 KeoFactory::
-fillKeoEdges_( const Teuchos::RCP<Epetra_FECrsMatrix> & keoMatrix,
+fillKeoEdges_( const Teuchos::RCP<Epetra_FECrsMatrix> &keoMatrix,
                const EMatrixType matrixType,
-               const Teuchos::ArrayRCP<const double> & edgeCoefficients
-             ) const
+               const Teuchos::ArrayRCP<const double> &edgeCoefficients
+               ) const
 {
   // Get owned edges. This might throw as edges are not available for shells
   // (aka surfaces).
   const std::vector<stk::mesh::Entity*> edges = mesh_->getOverlapEdges();
 
   if ( !globalIndexCacheUpToDate_ )
-      this->buildGlobalIndexCache_( edges );
+    this->buildGlobalIndexCache_( edges );
 
   if ( !alphaCacheUpToDate_ )
-      this->buildAlphaCache_( edges, edgeCoefficients );
+    this->buildAlphaCache_( edges, edgeCoefficients );
 
   // Loop over all edges.
   for ( unsigned int k=0; k<edges.size(); k++ )
   {
-      // ---------------------------------------------------------------
+    // ---------------------------------------------------------------
+    // Compute the integral
+    //
+    //    I = \int_{x0}^{xj} (xj-x0).A(x) / |xj-x0| dx
+    //
+    // numerically by the midpoint rule, i.e.,
+    //
+    //    I ~ |xj-x0| * (xj-x0) . A( 0.5*(xj+x0) ) / |xj-x0|.
+    //
+    // -------------------------------------------------------------------
+    // Project vector field onto the edge.
+    // Instead of first computing the projection over the normalized edge
+    // and then multiply it with the edge length, don't normalize the
+    // edge vector.
+    double aInt = mvp_->getAEdgeMidpointProjection( k );
+
+    double c, s, d;
+    double sinAInt, cosAInt;
+    //sinAInt = sin(aInt); cosAInt = cos(aInt);
+    sincos( aInt, &sinAInt, &cosAInt );
+    // For a slight speedup, move this switch statement out of the loop.
+    switch ( matrixType )
+    {
+      case MATRIX_TYPE_REGULAR:     // no derivative
+      {
+        c = alphaCache_[k] * cosAInt;
+        s = alphaCache_[k] * sinAInt;
+        d = -alphaCache_[k];
+        break;
+      }
+      case MATRIX_TYPE_DMU:     // dK/dmu
+      {
+        double dAdMuInt = mvp_->getdAdMuEdgeMidpointProjection( k );
+        c = -alphaCache_[k] * dAdMuInt * sinAInt;
+        s =   alphaCache_[k] * dAdMuInt * cosAInt;
+        d = 0.0;
+        break;
+      }
+      case MATRIX_TYPE_DTHETA:     // dK/dtheta
+      {
+        double dAdThetaInt = mvp_->getdAdThetaEdgeMidpointProjection( k );
+        c = -alphaCache_[k] * dAdThetaInt * sinAInt;
+        s =   alphaCache_[k] * dAdThetaInt * cosAInt;
+        d = 0.0;
+        break;
+      }
+      default:
+        TEST_FOR_EXCEPT_MSG( true,
+                             "Illegal matrix type \"" << matrixType << "\"."
+                             );
+    }
+    // We'd like to insert the 2x2 matrix
+    //
+    //     [   alpha                   , - alpha * exp( -IM * aInt ) ]
+    //     [ - alpha * exp( IM * aInt ),   alpha                       ]
+    //
+    // at the indices   [ nodeIndices[0], nodeIndices[1] ] for every index pair
+    // that shares and edge.
+    // Do that now, just blockwise for real and imaginary part.
+    Epetra_SerialDenseMatrix A( 4,4 );
+    A( 0,0 ) = d;
+    A( 0,1 ) = 0.0;
+    A( 0,2 ) = c;
+    A( 0,3 ) = s;
+    A( 1,0 ) = 0.0;
+    A( 1,1 ) = d;
+    A( 1,2 ) = -s;
+    A( 1,3 ) = c;
+    A( 2,0 ) = c;
+    A( 2,1 ) = -s;
+    A( 2,2 ) = d;
+    A( 2,3 ) = 0.0;
+    A( 3,0 ) = s;
+    A( 3,1 ) = c;
+    A( 3,2 ) = 0.0;
+    A( 3,3 ) = d;
+    TEUCHOS_ASSERT_EQUALITY( 0,
+                             keoMatrix->SumIntoGlobalValues( globalIndexCache_[
+                                                               k], A ) );
+    // -------------------------------------------------------------------
+  }
+
+  return;
+}
+// =============================================================================
+void
+KeoFactory::
+buildGlobalIndexCache_( const std::vector<stk::mesh::Entity*> &edges ) const
+{
+  globalIndexCache_ = Teuchos::ArrayRCP<Epetra_IntSerialDenseVector>(
+      edges.size());
+
+  Teuchos::Tuple<int,2> gid;
+  const stk::mesh::EntityRank nodeRank = mesh_->getMetaData()->node_rank();
+  for ( unsigned int k=0; k<edges.size(); k++ )
+  {
+    stk::mesh::PairIterRelation endPoints;
+    endPoints = edges[k]->relations( nodeRank );
+
+    gid[0] = (*endPoints[0].entity()).identifier() - 1;
+    gid[1] = (*endPoints[1].entity()).identifier() - 1;
+
+    globalIndexCache_[k] = Epetra_IntSerialDenseVector( 4 );
+    globalIndexCache_[k][0] = 2*gid[0];
+    globalIndexCache_[k][1] = 2*gid[0]+1;
+    globalIndexCache_[k][2] = 2*gid[1];
+    globalIndexCache_[k][3] = 2*gid[1]+1;
+  }
+
+  globalIndexCacheUpToDate_ = true;
+
+  return;
+}
+// =============================================================================
+void
+KeoFactory::
+buildAlphaCache_( const std::vector<stk::mesh::Entity*> &edges,
+                  const Teuchos::ArrayRCP<const double> &edgeCoefficients
+                  ) const
+{
+  alphaCache_ = Teuchos::ArrayRCP<double>( edges.size() );
+
+  Teuchos::Tuple<int,2> gid;
+  const stk::mesh::EntityRank nodeRank = mesh_->getMetaData()->node_rank();
+  for ( unsigned int k=0; k<edges.size(); k++ )
+  {
+    stk::mesh::PairIterRelation endPoints;
+    endPoints = edges[k]->relations( nodeRank );
+
+    gid[0] = (*endPoints[0].entity()).identifier() - 1;
+    gid[1] = (*endPoints[1].entity()).identifier() - 1;
+
+    int tlid0 = thickness_->Map().LID( gid[0] );
+    int tlid1 = thickness_->Map().LID( gid[1] );
+#ifdef _DEBUG_
+    TEST_FOR_EXCEPT_MSG( tlid0 < 0,
+                         "The global index " << gid[0]
+                         << " does not seem to be present on this node." );
+    TEST_FOR_EXCEPT_MSG( tlid1 < 0,
+                         "The global index " << gid[1]
+                         << " does not seem to be present on this node." );
+#endif
+    double thickness = 0.5 * ( (*thickness_)[tlid0] + (*thickness_)[tlid1]);
+
+    alphaCache_[k] = edgeCoefficients[k] * thickness;
+  }
+
+  alphaCacheUpToDate_ = true;
+
+  return;
+}
+// =============================================================================
+void
+KeoFactory::
+buildKeoGraphCellEdges_( const Teuchos::RCP<Epetra_FECrsGraph> &keoGraph )
+const
+{
+  std::vector<stk::mesh::Entity*> cells = mesh_->getOwnedCells();
+
+  if (!globalIndexFallbackCacheUpToDate_)
+    this->buildGlobalIndexFallbackCache_( cells );
+
+  // The index sets per edge per cell have been created in
+  // buildGlobalIndexFallbackCache_().
+  // Now, just insert them all; the order doesn't matter.
+  for ( unsigned int k=0; k<cells.size(); k++ )
+    for ( unsigned int l=0; l<globalIndexFallbackCache_[k].size(); l++ )
+      TEUCHOS_ASSERT_EQUALITY( 0,
+                               keoGraph->InsertGlobalIndices( 4,
+                                                              globalIndexFallbackCache_
+                                                              [k][l].Values(),
+                                                              4,
+                                                              globalIndexFallbackCache_
+                                                              [k][l].Values()
+                                                              )
+                               );
+
+  return;
+}
+// =============================================================================
+void
+KeoFactory::
+fillKeoCellEdges_(
+  const Teuchos::RCP<Epetra_FECrsMatrix> &keoMatrix,
+  const EMatrixType matrixType,
+  const Teuchos::ArrayRCP<const DoubleVector> &
+  edgeCoefficientsFallback
+  ) const
+{
+  // get owned cells
+  std::vector<stk::mesh::Entity*> cells = mesh_->getOwnedCells();
+
+  if (!globalIndexFallbackCacheUpToDate_)
+    this->buildGlobalIndexFallbackCache_( cells );
+
+  if (!alphaFallbackCacheUpToDate_)
+    this->buildAlphaFallbackCache_( cells, edgeCoefficientsFallback );
+
+  // Loop over all edges.
+  // To this end, loop over all cells and the edges within the cell.
+  for ( unsigned int k=0; k<cells.size(); k++ )
+  {
+    // Assume that the number of edges is correctly given by
+    // globalIndexFallbackCache_.
+    unsigned int numLocalEdges = globalIndexFallbackCache_[k].size();
+    for ( unsigned int edgeIndex=0; edgeIndex < numLocalEdges; edgeIndex++ )
+    {
+      // -------------------------------------------------------------------
       // Compute the integral
       //
       //    I = \int_{x0}^{xj} (xj-x0).A(x) / |xj-x0| dx
@@ -318,43 +535,46 @@ fillKeoEdges_( const Teuchos::RCP<Epetra_FECrsMatrix> & keoMatrix,
       // Instead of first computing the projection over the normalized edge
       // and then multiply it with the edge length, don't normalize the
       // edge vector.
-      double aInt = mvp_->getAEdgeMidpointProjection( k );
-
+      double aInt = mvp_->getAEdgeMidpointProjectionFallback( k, edgeIndex );
+      double alpha = alphaFallbackCache_[k][edgeIndex];
       double c, s, d;
       double sinAInt, cosAInt;
-      //sinAInt = sin(aInt); cosAInt = cos(aInt);
+      //sinAInt = sin(aInt);
+      //cosAInt = cos(aInt);
       sincos( aInt, &sinAInt, &cosAInt );
-      // For a slight speedup, move this switch statement out of the loop.
       switch ( matrixType )
       {
-          case MATRIX_TYPE_REGULAR: // no derivative
-          {
-              c = alphaCache_[k] * cosAInt;
-              s = alphaCache_[k] * sinAInt;
-              d = - alphaCache_[k];
-              break;
-          }
-          case MATRIX_TYPE_DMU: // dK/dmu
-          {
-              double dAdMuInt = mvp_->getdAdMuEdgeMidpointProjection( k );
-              c = - alphaCache_[k] * dAdMuInt * sinAInt;
-              s =   alphaCache_[k] * dAdMuInt * cosAInt;
-              d = 0.0;
-              break;
-          }
-          case MATRIX_TYPE_DTHETA: // dK/dtheta
-          {
-              double dAdThetaInt = mvp_->getdAdThetaEdgeMidpointProjection( k );
-              c = - alphaCache_[k] * dAdThetaInt * sinAInt;
-              s =   alphaCache_[k] * dAdThetaInt * cosAInt;
-              d = 0.0;
-              break;
-          }
-          default:
-              TEST_FOR_EXCEPT_MSG( true,
-                                    "Illegal matrix type \"" << matrixType << "\"."
-                                  );
+        case MATRIX_TYPE_REGULAR:       // no derivative
+        {
+          c = alpha * cosAInt;
+          s = alpha * sinAInt;
+          d = -alpha;
+          break;
+        }
+        case MATRIX_TYPE_DMU:       // dK/dmu
+        {
+          double dAdMuInt = mvp_->getdAdMuEdgeMidpointProjectionFallback(
+              k, edgeIndex );
+          c = -alpha * dAdMuInt * sinAInt;
+          s =   alpha * dAdMuInt * cosAInt;
+          d = 0.0;
+          break;
+        }
+        case MATRIX_TYPE_DTHETA:       // dK/dtheta
+        {
+          double dAdThetaInt = mvp_->getdAdThetaEdgeMidpointProjectionFallback(
+              k, edgeIndex );
+          c = -alpha * dAdThetaInt * sinAInt;
+          s =   alpha * dAdThetaInt * cosAInt;
+          d = 0.0;
+          break;
+        }
+        default:
+          TEST_FOR_EXCEPT_MSG( true,
+                               "Illegal matrix type \"" << matrixType << "\"."
+                               );
       }
+
       // We'd like to insert the 2x2 matrix
       //
       //     [   alpha                   , - alpha * exp( -IM * aInt ) ]
@@ -363,25 +583,29 @@ fillKeoEdges_( const Teuchos::RCP<Epetra_FECrsMatrix> & keoMatrix,
       // at the indices   [ nodeIndices[0], nodeIndices[1] ] for every index pair
       // that shares and edge.
       // Do that now, just blockwise for real and imaginary part.
-      Epetra_SerialDenseMatrix A(4,4);
-      A(0,0) = d;
-      A(0,1) = 0.0;
-      A(0,2) = c;
-      A(0,3) = s;
-      A(1,0) = 0.0;
-      A(1,1) = d;
-      A(1,2) = -s;
-      A(1,3) = c;
-      A(2,0) = c;
-      A(2,1) = -s;
-      A(2,2) = d;
-      A(2,3) = 0.0;
-      A(3,0) = s;
-      A(3,1) = c;
-      A(3,2) = 0.0;
-      A(3,3) = d;
-      TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->SumIntoGlobalValues( globalIndexCache_[k], A ) );
+      Epetra_SerialDenseMatrix A( 4,4 );
+      A( 0,0 ) = d;
+      A( 0,1 ) = 0.0;
+      A( 0,2 ) = c;
+      A( 0,3 ) = s;
+      A( 1,0 ) = 0.0;
+      A( 1,1 ) = d;
+      A( 1,2 ) = -s;
+      A( 1,3 ) = c;
+      A( 2,0 ) = c;
+      A( 2,1 ) = -s;
+      A( 2,2 ) = d;
+      A( 2,3 ) = 0.0;
+      A( 3,0 ) = s;
+      A( 3,1 ) = c;
+      A( 3,2 ) = 0.0;
+      A( 3,3 ) = d;
+      TEUCHOS_ASSERT_EQUALITY( 0,
+                               keoMatrix->SumIntoGlobalValues(
+                                 globalIndexFallbackCache_[k][edgeIndex],
+                                 A ) );
       // -------------------------------------------------------------------
+    }
   }
 
   return;
@@ -389,239 +613,43 @@ fillKeoEdges_( const Teuchos::RCP<Epetra_FECrsMatrix> & keoMatrix,
 // =============================================================================
 void
 KeoFactory::
-buildGlobalIndexCache_( const std::vector<stk::mesh::Entity*> & edges ) const
-{
-  globalIndexCache_ = Teuchos::ArrayRCP<Epetra_IntSerialDenseVector>(edges.size());
-
-  Teuchos::Tuple<int,2> gid;
-  const stk::mesh::EntityRank nodeRank = mesh_->getMetaData()->node_rank();
-  for ( unsigned int k=0; k<edges.size(); k++ )
-  {
-      stk::mesh::PairIterRelation endPoints;
-      endPoints = edges[k]->relations( nodeRank );
-
-      gid[0] = (*endPoints[0].entity()).identifier() - 1;
-      gid[1] = (*endPoints[1].entity()).identifier() - 1;
-
-      globalIndexCache_[k] = Epetra_IntSerialDenseVector(4);
-      globalIndexCache_[k][0] = 2*gid[0];
-      globalIndexCache_[k][1] = 2*gid[0]+1;
-      globalIndexCache_[k][2] = 2*gid[1];
-      globalIndexCache_[k][3] = 2*gid[1]+1;
-  }
-
-  globalIndexCacheUpToDate_ = true;
-
-  return;
-}
-// =============================================================================
-void
-KeoFactory::
-buildAlphaCache_( const std::vector<stk::mesh::Entity*> & edges,
-                  const Teuchos::ArrayRCP<const double> & edgeCoefficients
-                ) const
-{
-  alphaCache_ = Teuchos::ArrayRCP<double>( edges.size() );
-
-  Teuchos::Tuple<int,2> gid;
-  const stk::mesh::EntityRank nodeRank = mesh_->getMetaData()->node_rank();
-  for ( unsigned int k=0; k<edges.size(); k++ )
-  {
-      stk::mesh::PairIterRelation endPoints;
-      endPoints = edges[k]->relations( nodeRank );
-
-      gid[0] = (*endPoints[0].entity()).identifier() - 1;
-      gid[1] = (*endPoints[1].entity()).identifier() - 1;
-
-      int tlid0 = thickness_->Map().LID( gid[0] );
-      int tlid1 = thickness_->Map().LID( gid[1] );
-#ifdef _DEBUG_
-      TEST_FOR_EXCEPT_MSG( tlid0 < 0,
-                           "The global index " << gid[0]
-                           << " does not seem to be present on this node." );
-      TEST_FOR_EXCEPT_MSG( tlid1 < 0,
-                           "The global index " << gid[1]
-                           << " does not seem to be present on this node." );
-#endif
-      double thickness = 0.5 * ( (*thickness_)[tlid0] + (*thickness_)[tlid1] );
-
-      alphaCache_[k] = edgeCoefficients[k] * thickness;
-  }
-
-  alphaCacheUpToDate_ = true;
-
-  return;
-}
-// =============================================================================
-void
-KeoFactory::
-buildKeoGraphCellEdges_( const Teuchos::RCP<Epetra_FECrsGraph> & keoGraph ) const
-{
-  std::vector<stk::mesh::Entity*> cells = mesh_->getOwnedCells();
-
-  if (!globalIndexFallbackCacheUpToDate_)
-      this->buildGlobalIndexFallbackCache_( cells );
-
-  // The index sets per edge per cell have been created in
-  // buildGlobalIndexFallbackCache_().
-  // Now, just insert them all; the order doesn't matter.
-  for ( unsigned int k=0; k<cells.size(); k++ )
-      for ( unsigned int l=0; l<globalIndexFallbackCache_[k].size(); l++ )
-          TEUCHOS_ASSERT_EQUALITY( 0, keoGraph->InsertGlobalIndices( 4, globalIndexFallbackCache_[k][l].Values(),
-                                                                     4, globalIndexFallbackCache_[k][l].Values()
-                                                                   )
-                                 );
-
-  return;
-}
-// =============================================================================
-void
-KeoFactory::
-fillKeoCellEdges_( const Teuchos::RCP<Epetra_FECrsMatrix> & keoMatrix,
-                   const EMatrixType matrixType,
-                   const Teuchos::ArrayRCP<const DoubleVector> & edgeCoefficientsFallback
-                 ) const
-{
-  // get owned cells
-  std::vector<stk::mesh::Entity*> cells = mesh_->getOwnedCells();
-
-  if (!globalIndexFallbackCacheUpToDate_)
-      this->buildGlobalIndexFallbackCache_( cells );
-
-  if (!alphaFallbackCacheUpToDate_)
-      this->buildAlphaFallbackCache_( cells, edgeCoefficientsFallback );
-
-  // Loop over all edges.
-  // To this end, loop over all cells and the edges within the cell.
-  for ( unsigned int k=0; k<cells.size(); k++ )
-  {
-      // Assume that the number of edges is correctly given by
-      // globalIndexFallbackCache_.
-      unsigned int numLocalEdges = globalIndexFallbackCache_[k].size();
-      for ( unsigned int edgeIndex=0; edgeIndex < numLocalEdges; edgeIndex++ )
-      {
-          // -------------------------------------------------------------------
-          // Compute the integral
-          //
-          //    I = \int_{x0}^{xj} (xj-x0).A(x) / |xj-x0| dx
-          //
-          // numerically by the midpoint rule, i.e.,
-          //
-          //    I ~ |xj-x0| * (xj-x0) . A( 0.5*(xj+x0) ) / |xj-x0|.
-          //
-          // -------------------------------------------------------------------
-          // Project vector field onto the edge.
-          // Instead of first computing the projection over the normalized edge
-          // and then multiply it with the edge length, don't normalize the
-          // edge vector.
-          double aInt = mvp_->getAEdgeMidpointProjectionFallback( k, edgeIndex );
-          double alpha = alphaFallbackCache_[k][edgeIndex];
-          double c, s, d;
-          double sinAInt, cosAInt;
-          //sinAInt = sin(aInt);
-          //cosAInt = cos(aInt);
-          sincos( aInt, &sinAInt, &cosAInt );
-          switch ( matrixType )
-          {
-              case MATRIX_TYPE_REGULAR: // no derivative
-              {
-                  c = alpha * cosAInt;
-                  s = alpha * sinAInt;
-                  d = - alpha;
-                  break;
-              }
-              case MATRIX_TYPE_DMU: // dK/dmu
-              {
-                  double dAdMuInt = mvp_->getdAdMuEdgeMidpointProjectionFallback( k, edgeIndex );
-                  c = - alpha * dAdMuInt * sinAInt;
-                  s =   alpha * dAdMuInt * cosAInt;
-                  d = 0.0;
-                  break;
-              }
-              case MATRIX_TYPE_DTHETA: // dK/dtheta
-              {
-                  double dAdThetaInt = mvp_->getdAdThetaEdgeMidpointProjectionFallback( k, edgeIndex );
-                  c = - alpha * dAdThetaInt * sinAInt;
-                  s =   alpha * dAdThetaInt * cosAInt;
-                  d = 0.0;
-                  break;
-              }
-              default:
-                  TEST_FOR_EXCEPT_MSG( true,
-                                       "Illegal matrix type \"" << matrixType << "\"."
-                                     );
-          }
-
-          // We'd like to insert the 2x2 matrix
-          //
-          //     [   alpha                   , - alpha * exp( -IM * aInt ) ]
-          //     [ - alpha * exp( IM * aInt ),   alpha                       ]
-          //
-          // at the indices   [ nodeIndices[0], nodeIndices[1] ] for every index pair
-          // that shares and edge.
-          // Do that now, just blockwise for real and imaginary part.
-          Epetra_SerialDenseMatrix A(4,4);
-          A(0,0) = d;
-          A(0,1) = 0.0;
-          A(0,2) = c;
-          A(0,3) = s;
-          A(1,0) = 0.0;
-          A(1,1) = d;
-          A(1,2) = -s;
-          A(1,3) = c;
-          A(2,0) = c;
-          A(2,1) = -s;
-          A(2,2) = d;
-          A(2,3) = 0.0;
-          A(3,0) = s;
-          A(3,1) = c;
-          A(3,2) = 0.0;
-          A(3,3) = d;
-          TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->SumIntoGlobalValues( globalIndexFallbackCache_[k][edgeIndex], A ) );
-          // -------------------------------------------------------------------
-      }
-  }
-
-  return;
-}
-// =============================================================================
-void
-KeoFactory::
-buildGlobalIndexFallbackCache_( const std::vector<stk::mesh::Entity*> & cells ) const
+buildGlobalIndexFallbackCache_( const std::vector<stk::mesh::Entity*> &cells )
+const
 {
   globalIndexFallbackCache_ =
-      Teuchos::ArrayRCP<Teuchos::ArrayRCP<Epetra_IntSerialDenseVector> >(cells.size());
+    Teuchos::ArrayRCP<Teuchos::ArrayRCP<Epetra_IntSerialDenseVector> >(
+      cells.size());
 
   int gid0, gid1;
-  Epetra_IntSerialDenseVector gIndices(4);
+  Epetra_IntSerialDenseVector gIndices( 4 );
   const stk::mesh::EntityRank nodeRank = mesh_->getMetaData()->node_rank();
   for ( unsigned int k=0; k<cells.size(); k++ )
   {
-      // get the nodes local to the cell
-      stk::mesh::PairIterRelation nodes = cells[k]->relations( nodeRank );
-      unsigned int numLocalNodes = nodes.size();
-      unsigned int numLocalEdges = numLocalNodes*(numLocalNodes-1) / 2;
-      unsigned int edgeIndex = 0;
+    // get the nodes local to the cell
+    stk::mesh::PairIterRelation nodes = cells[k]->relations( nodeRank );
+    unsigned int numLocalNodes = nodes.size();
+    unsigned int numLocalEdges = numLocalNodes*(numLocalNodes-1) / 2;
+    unsigned int edgeIndex = 0;
 
-      globalIndexFallbackCache_[k] =
-          Teuchos::ArrayRCP<Epetra_IntSerialDenseVector>(numLocalEdges);
+    globalIndexFallbackCache_[k] =
+      Teuchos::ArrayRCP<Epetra_IntSerialDenseVector>( numLocalEdges );
 
-      // In a simplex, the edges are exactly the connection between each pair
-      // of nodes. Hence, loop over pairs of nodes.
-      for ( unsigned int e0=0; e0<numLocalNodes; e0++ )
+    // In a simplex, the edges are exactly the connection between each pair
+    // of nodes. Hence, loop over pairs of nodes.
+    for ( unsigned int e0=0; e0<numLocalNodes; e0++ )
+    {
+      gid0 = (*nodes[e0].entity()).identifier() - 1;
+      gIndices[0] = 2*gid0;
+      gIndices[1] = 2*gid0+1;
+      for ( unsigned int e1=e0+1; e1<numLocalNodes; e1++ )
       {
-          gid0 = (*nodes[e0].entity()).identifier() - 1;
-          gIndices[0] = 2*gid0;
-          gIndices[1] = 2*gid0+1;
-          for ( unsigned int e1=e0+1; e1<numLocalNodes; e1++ )
-          {
-              gid1 = (*nodes[e1].entity()).identifier() - 1;
-              gIndices[2] = 2*gid1;
-              gIndices[3] = 2*gid1+1;
-              globalIndexFallbackCache_[k][edgeIndex] = gIndices;
-              edgeIndex++;
-          }
+        gid1 = (*nodes[e1].entity()).identifier() - 1;
+        gIndices[2] = 2*gid1;
+        gIndices[3] = 2*gid1+1;
+        globalIndexFallbackCache_[k][edgeIndex] = gIndices;
+        edgeIndex++;
       }
+    }
   }
 
   globalIndexFallbackCacheUpToDate_ = true;
@@ -631,9 +659,11 @@ buildGlobalIndexFallbackCache_( const std::vector<stk::mesh::Entity*> & cells ) 
 // =============================================================================
 void
 KeoFactory::
-buildAlphaFallbackCache_( const std::vector<stk::mesh::Entity*> & cells,
-                          const Teuchos::ArrayRCP<const DoubleVector> & edgeCoefficientsFallback
-                        ) const
+buildAlphaFallbackCache_(
+  const std::vector<stk::mesh::Entity*> &cells,
+  const Teuchos::ArrayRCP<const DoubleVector> &
+  edgeCoefficientsFallback
+  ) const
 {
   unsigned int numCells = cells.size();
   alphaFallbackCache_ = Teuchos::ArrayRCP<DoubleVector>( numCells );
@@ -642,45 +672,46 @@ buildAlphaFallbackCache_( const std::vector<stk::mesh::Entity*> & cells,
   const stk::mesh::EntityRank nodeRank = mesh_->getMetaData()->node_rank();
   for ( unsigned int k=0; k<numCells; k++ )
   {
-      // get the nodes local to the cell
-      stk::mesh::PairIterRelation nodes = cells[k]->relations( nodeRank );
+    // get the nodes local to the cell
+    stk::mesh::PairIterRelation nodes = cells[k]->relations( nodeRank );
 
-      unsigned int numLocalNodes = nodes.size();
-      unsigned int numLocalEdges = numLocalNodes * (numLocalNodes-1) / 2;
-      alphaFallbackCache_[k] = DoubleVector(numLocalEdges);
-      // In a simplex, the edges are exactly the connection between each pair
-      // of nodes. Hence, loop over pairs of nodes.
-      unsigned int edgeIndex = 0;
-      int gid0, gid1;
-      for ( unsigned int e0 = 0; e0 < numLocalNodes; e0++ )
+    unsigned int numLocalNodes = nodes.size();
+    unsigned int numLocalEdges = numLocalNodes * (numLocalNodes-1) / 2;
+    alphaFallbackCache_[k] = DoubleVector( numLocalEdges );
+    // In a simplex, the edges are exactly the connection between each pair
+    // of nodes. Hence, loop over pairs of nodes.
+    unsigned int edgeIndex = 0;
+    int gid0, gid1;
+    for ( unsigned int e0 = 0; e0 < numLocalNodes; e0++ )
+    {
+      gid0 = (*nodes[e0].entity()).identifier() - 1;
+      int tlid0 = thickness_->Map().LID( gid0 );
+#ifdef _DEBUG_
+      TEST_FOR_EXCEPT_MSG( tlid0 < 0,
+                           "The global index " << gid0
+                           << " does not seem to be present on this node." );
+#endif
+      for ( unsigned int e1 = e0+1; e1 < numLocalNodes; e1++ )
       {
-          gid0 = (*nodes[e0].entity()).identifier() - 1;
-          int tlid0 = thickness_->Map().LID( gid0 );
+        gid1 = (*nodes[e1].entity()).identifier() - 1;
+        int tlid1 = thickness_->Map().LID( gid1 );
 #ifdef _DEBUG_
-          TEST_FOR_EXCEPT_MSG( tlid0 < 0,
-                               "The global index " << gid0
-                               << " does not seem to be present on this node." );
+        TEST_FOR_EXCEPT_MSG( tlid1 < 0,
+                             "The global index " << gid1
+                             << " does not seem to be present on this node." );
 #endif
-          for ( unsigned int e1 = e0+1; e1 < numLocalNodes; e1++ )
-          {
-              gid1 = (*nodes[e1].entity()).identifier() - 1;
-              int tlid1 = thickness_->Map().LID( gid1 );
-#ifdef _DEBUG_
-              TEST_FOR_EXCEPT_MSG( tlid1 < 0,
-                                   "The global index " << gid1
-                                   << " does not seem to be present on this node." );
-#endif
-              double thickness = 0.5 * ( (*thickness_)[tlid0] + (*thickness_)[tlid1] );
+        double thickness = 0.5 * ( (*thickness_)[tlid0] + (*thickness_)[tlid1]);
 
-              // Multiply by the thickness value of the midpoint. As this is not
-              // available, take the mean between the values at the nodes.
-              alphaFallbackCache_[k][edgeIndex] = edgeCoefficientsFallback[k][edgeIndex]
-                                                * thickness;
+        // Multiply by the thickness value of the midpoint. As this is not
+        // available, take the mean between the values at the nodes.
+        alphaFallbackCache_[k][edgeIndex] =
+          edgeCoefficientsFallback[k][edgeIndex]
+          * thickness;
 
-              edgeIndex++;
-              // -------------------------------------------------------------------
-          }
+        edgeIndex++;
+        // -------------------------------------------------------------------
       }
+    }
   }
 
   alphaFallbackCacheUpToDate_ = true;

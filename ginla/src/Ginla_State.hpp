@@ -36,16 +36,16 @@
 // =============================================================================
 // forward declarations
 namespace LOCA {
-  class ParameterVector;
+class ParameterVector;
 }
 namespace Ginla {
-    class StkMesh;
+class StkMesh;
 }
 namespace stk {
-  namespace mesh {
-    class MetaData;
-    class BulkData;
-  }
+namespace mesh {
+class MetaData;
+class BulkData;
+}
 }
 // =============================================================================
 namespace Ginla {
@@ -53,73 +53,73 @@ class State
 {
 public:
 
-  //! Constructor.
-  State( const Epetra_Vector                                 & psi,
-         const Teuchos::RCP<const Ginla::StkMesh> & mesh
+//! Constructor.
+State( const Epetra_Vector &psi,
+       const Teuchos::RCP<const Ginla::StkMesh> &mesh
        );
 
-  //! Constructor without \f$\psi\f$. The values will be initialized to 0.
-  State( const Teuchos::RCP<const Epetra_Map>                & map,
-         const Teuchos::RCP<const Ginla::StkMesh> & mesh
+//! Constructor without \f$\psi\f$. The values will be initialized to 0.
+State( const Teuchos::RCP<const Epetra_Map> &map,
+       const Teuchos::RCP<const Ginla::StkMesh> &mesh
        );
 
-  //! Constructor solely with comminicator and grid. The values will be initialized to 0.
-  State( const Teuchos::RCP<const Epetra_Comm>               & comm,
-         const Teuchos::RCP<const Ginla::StkMesh> & mesh
+//! Constructor solely with comminicator and grid. The values will be initialized to 0.
+State( const Teuchos::RCP<const Epetra_Comm> &comm,
+       const Teuchos::RCP<const Ginla::StkMesh> &mesh
        );
 
-  //! Const getter.
-  Teuchos::RCP<const Epetra_Vector>
-  getPsi () const;
+//! Const getter.
+Teuchos::RCP<const Epetra_Vector>
+getPsi() const;
 
-  //! Nonconst getter for the values.
-  Teuchos::RCP<Epetra_Vector>
-  getPsiNonConst ();
+//! Nonconst getter for the values.
+Teuchos::RCP<Epetra_Vector>
+getPsiNonConst();
 
-  //! Return the underlying \c Ginla::StkMesh.
-  const Teuchos::RCP<const Ginla::StkMesh>
-  getMesh() const;
+//! Return the underlying \c Ginla::StkMesh.
+const Teuchos::RCP<const Ginla::StkMesh>
+getMesh() const;
 
-  //! Just plain save the file to \c fileName.
-  void
-  save( const int index
+//! Just plain save the file to \c fileName.
+void
+save( const int index
       ) const;
 
-  //! \f$L^2(\Omega)\f$-inner product with state \c state.
-  double
-  innerProduct( const Ginla::State & state ) const;
+//! \f$L^2(\Omega)\f$-inner product with state \c state.
+double
+innerProduct( const Ginla::State &state ) const;
 
-  //! \f$L^2(\Omega)\f$-norm.
-  double
-  normalizedScaledL2Norm () const;
+//! \f$L^2(\Omega)\f$-norm.
+double
+normalizedScaledL2Norm() const;
 
-  /** Calcuate the grid approximation of the Gibbs free energy
-    * \f[
-    * \mathcal{G} = \int\nolimits_{\Omega} |\psi|^4 \,\mathrm{d}\omega
-    * \f]
-    * of a given state \f$\psi\f$.
-    */
-  double
-  freeEnergy () const;
+/** Calcuate the grid approximation of the Gibbs free energy
+  * \f[
+  * \mathcal{G} = \int\nolimits_{\Omega} |\psi|^4 \,\mathrm{d}\omega
+  * \f]
+  * of a given state \f$\psi\f$.
+  */
+double
+freeEnergy() const;
 
 protected:
 private:
 
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
-  const Teuchos::RCP<Teuchos::Time> saveTime_;
+const Teuchos::RCP<Teuchos::Time> saveTime_;
 #endif
 
-  //! Numerical values.
-  Epetra_Vector psi_;
+//! Numerical values.
+Epetra_Vector psi_;
 
-  //! The grid on which the state exists.
-  const Teuchos::RCP<const Ginla::StkMesh> mesh_;
+//! The grid on which the state exists.
+const Teuchos::RCP<const Ginla::StkMesh> mesh_;
 
 private:
 
-  void
-  mergePsi_( const Teuchos::RCP<const Ginla::StkMesh> & mesh,
-             const Epetra_Vector                      & psi
+void
+mergePsi_( const Teuchos::RCP<const Ginla::StkMesh> &mesh,
+           const Epetra_Vector &psi
            ) const;
 
 };

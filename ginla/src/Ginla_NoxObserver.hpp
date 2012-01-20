@@ -32,62 +32,62 @@
 // =============================================================================
 // forward declarations
 namespace Komplex2 {
-  class LinearProblem;
+class LinearProblem;
 }
 namespace Ginla {
-  class StatsWriter;
-  class ModelEvaluator;
-  class State;
+class StatsWriter;
+class ModelEvaluator;
+class State;
 }
 // =============================================================================
 namespace Ginla {
 
-class NoxObserver:
-    public NOX::Epetra::Observer
+class NoxObserver :
+  public NOX::Epetra::Observer
 {
 public:
-    enum EObserverType { OBSERVER_TYPE_NEWTON,
-                         OBSERVER_TYPE_CONTINUATION,
-                         OBSERVER_TYPE_TURNING_POINT };
+enum EObserverType { OBSERVER_TYPE_NEWTON,
+                     OBSERVER_TYPE_CONTINUATION,
+                     OBSERVER_TYPE_TURNING_POINT };
 
 public:
-  //! Constructor
-  NoxObserver ( const Teuchos::RCP<const Ginla::ModelEvaluator> & modelEval,
-                const NoxObserver::EObserverType                & problemType
+//! Constructor
+NoxObserver ( const Teuchos::RCP<const Ginla::ModelEvaluator> &modelEval,
+              const NoxObserver::EObserverType &problemType
               );
 
-  //! Destructor
-  virtual
-  ~NoxObserver ();
+//! Destructor
+virtual
+~NoxObserver ();
 
-  virtual
-  void
-  observeSolution(const Epetra_Vector& soln);
+virtual
+void
+observeSolution( const Epetra_Vector &soln );
 
-  void
-  setStatisticsWriter( const Teuchos::RCP<Ginla::StatsWriter> & statsWriter );
+void
+setStatisticsWriter( const Teuchos::RCP<Ginla::StatsWriter> &statsWriter );
 
 protected:
 private:
-  void
-  observeContinuation_( const Teuchos::RCP<const Ginla::State> & state
+void
+observeContinuation_( const Teuchos::RCP<const Ginla::State> &state
                       );
-  void
-  observeTurningPointContinuation_( const Teuchos::RCP<const Ginla::State> & state
+void
+observeTurningPointContinuation_( const Teuchos::RCP<const Ginla::State> &state
                                   );
 
-  void
-  saveContinuationStatistics_( const int stepIndex,
-                               const Teuchos::RCP<const Ginla::State> & state
+void
+saveContinuationStatistics_( const int stepIndex,
+                             const Teuchos::RCP<const Ginla::State> &state
                              );
 
 private:
 private:
 
-    const Teuchos::RCP<const Ginla::ModelEvaluator> modelEval_;
-    const EObserverType observerType_;
+const Teuchos::RCP<const Ginla::ModelEvaluator> modelEval_;
+const EObserverType observerType_;
 
-    Teuchos::RCP<Ginla::StatsWriter> statsWriter_;
+Teuchos::RCP<Ginla::StatsWriter> statsWriter_;
 };
 
 } // namespace Ginla

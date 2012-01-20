@@ -27,34 +27,36 @@ namespace Ginla {
 namespace MagneticVectorPotential {
 // ============================================================================
 ExplicitValues::
-ExplicitValues( const Teuchos::RCP<Ginla::StkMesh>           & mesh,
-                const Teuchos::RCP<const Epetra_MultiVector> & mvp,
+ExplicitValues( const Teuchos::RCP<Ginla::StkMesh> &mesh,
+                const Teuchos::RCP<const Epetra_MultiVector> &mvp,
                 double mu
-              ):
+                ) :
   mesh_( mesh ),
   mvp_( mvp ),
   mu_( mu ),
   mvpEdgeMidpointProjectionCache_( Teuchos::ArrayRCP<double>() ),
   mvpEdgeMidpointProjectionCacheUptodate_( false ),
-  mvpEdgeMidpointProjectionCacheFallback_( Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >() ),
+  mvpEdgeMidpointProjectionCacheFallback_( Teuchos::ArrayRCP<Teuchos::ArrayRCP<
+                                                               double> >() ),
   mvpEdgeMidpointProjectionCacheFallbackUptodate_( false )
 {
 #ifdef _DEBUG_
-    TEUCHOS_ASSERT( !mesh_.is_null() );
+  TEUCHOS_ASSERT( !mesh_.is_null() );
 #endif
 
-    if ( mesh->supportsEdges() )
-    {
-        mvpEdgeMidpointProjectionCache_ =
-            Teuchos::ArrayRCP<double>( mesh_->getOverlapEdges().size() );
-    }
-    else
-    {
-        mvpEdgeMidpointProjectionCacheFallback_ =
-            Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >( mesh_->getOwnedCells().size() );
-    }
+  if ( mesh->supportsEdges() )
+  {
+    mvpEdgeMidpointProjectionCache_ =
+      Teuchos::ArrayRCP<double>( mesh_->getOverlapEdges().size() );
+  }
+  else
+  {
+    mvpEdgeMidpointProjectionCacheFallback_ =
+      Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >(
+        mesh_->getOwnedCells().size() );
+  }
 
-    return;
+  return;
 }
 // ============================================================================
 ExplicitValues::
@@ -64,12 +66,12 @@ ExplicitValues::
 // ============================================================================
 void
 ExplicitValues::
-setParameters( const LOCA::ParameterVector & p )
+setParameters( const LOCA::ParameterVector &p )
 {
-    if (p.isParameter( "mu" ))
-        mu_ = p.getValue ( "mu" );
+  if (p.isParameter( "mu" ))
+    mu_ = p.getValue( "mu" );
 
-    return;
+  return;
 }
 // ============================================================================
 Teuchos::RCP<LOCA::ParameterVector>
@@ -77,7 +79,7 @@ ExplicitValues::
 getParameters() const
 {
   Teuchos::RCP<LOCA::ParameterVector> p =
-          Teuchos::rcp( new LOCA::ParameterVector() );
+    Teuchos::rcp( new LOCA::ParameterVector() );
 
   p->addParameter( "mu", mu_ );
 
@@ -87,10 +89,10 @@ getParameters() const
 double
 ExplicitValues::
 getAEdgeMidpointProjection( const unsigned int edgeIndex
-                          ) const
+                            ) const
 {
   if ( !mvpEdgeMidpointProjectionCacheUptodate_ )
-      this->initializeMvpEdgeMidpointCache_();
+    this->initializeMvpEdgeMidpointCache_();
 
   return mu_ * mvpEdgeMidpointProjectionCache_[edgeIndex];
 }
@@ -98,10 +100,10 @@ getAEdgeMidpointProjection( const unsigned int edgeIndex
 double
 ExplicitValues::
 getdAdMuEdgeMidpointProjection( const unsigned int edgeIndex
-                              ) const
+                                ) const
 {
   if ( !mvpEdgeMidpointProjectionCacheUptodate_ )
-      this->initializeMvpEdgeMidpointCache_();
+    this->initializeMvpEdgeMidpointCache_();
 
   return mvpEdgeMidpointProjectionCache_[edgeIndex];
 }
@@ -109,7 +111,7 @@ getdAdMuEdgeMidpointProjection( const unsigned int edgeIndex
 double
 ExplicitValues::
 getdAdThetaEdgeMidpointProjection( const unsigned int edgeIndex
-                                  ) const
+                                   ) const
 {
   TEST_FOR_EXCEPT_MSG( true,
                        "Parameter \"theta\" not supported. Abort." );
@@ -128,40 +130,42 @@ initializeMvpEdgeMidpointCache_() const
   // Loop over all edges and create the cache.
   for ( unsigned int k=0; k<edges.size(); k++ )
   {
-      // Get the two end points.
-      const stk::mesh::PairIterRelation endPoints =
-          edges[k]->relations( mesh_->getMetaData()->node_rank() );
+    // Get the two end points.
+    const stk::mesh::PairIterRelation endPoints =
+      edges[k]->relations( mesh_->getMetaData()->node_rank() );
 
-      // get the local ids
-      Teuchos::Tuple<int,2> lid;
-      lid[0] = mvp_->Map().LID( (*endPoints[0].entity()).identifier() - 1 );
-      lid[1] = mvp_->Map().LID( (*endPoints[1].entity()).identifier() - 1 );
+    // get the local ids
+    Teuchos::Tuple<int,2> lid;
+    lid[0] = mvp_->Map().LID( (*endPoints[0].entity()).identifier() - 1 );
+    lid[1] = mvp_->Map().LID( (*endPoints[1].entity()).identifier() - 1 );
 #ifdef _DEBUG_
-      TEST_FOR_EXCEPT_MSG( lid[0] < 0,
-                          "The global index " << (*endPoints[0].entity()).identifier() - 1
-                          << " does not seem to be present on this node." );
-      TEST_FOR_EXCEPT_MSG( lid[1] < 0,
-                          "The global index " << (*endPoints[1].entity()).identifier() - 1
-                          << " does not seem to be present on this node." );
+    TEST_FOR_EXCEPT_MSG( lid[0] < 0,
+                         "The global index " <<
+                         (*endPoints[0].entity()).identifier() - 1
+                         << " does not seem to be present on this node." );
+    TEST_FOR_EXCEPT_MSG( lid[1] < 0,
+                         "The global index " <<
+                         (*endPoints[1].entity()).identifier() - 1
+                         << " does not seem to be present on this node." );
 #endif
 
-      // Approximate the value at the midpoint of the edge
-      // by the average of the values at the adjacent nodes.
-      DoubleVector mvpEdgeMidpoint(3);
-      for (int i=0; i<3; i++ )
-          mvpEdgeMidpoint[i] = 0.5 * ( (*(*mvp_)(i))[lid[0]]
-                                     + (*(*mvp_)(i))[lid[1]] );
+    // Approximate the value at the midpoint of the edge
+    // by the average of the values at the adjacent nodes.
+    DoubleVector mvpEdgeMidpoint( 3 );
+    for (int i=0; i<3; i++ )
+      mvpEdgeMidpoint[i] = 0.5 * ( (*(*mvp_)(i))[lid[0]]
+                                   + (*(*mvp_)(i))[lid[1]]);
 
-      // extract the nodal coordinates
-      Teuchos::ArrayRCP<DoubleVector> localNodes =
-          mesh_->getNodeCoordinates( endPoints );
+    // extract the nodal coordinates
+    Teuchos::ArrayRCP<DoubleVector> localNodes =
+      mesh_->getNodeCoordinates( endPoints );
 #ifdef _DEBUG_
-      TEUCHOS_ASSERT_EQUALITY( localNodes.size(), 2 );
+    TEUCHOS_ASSERT_EQUALITY( localNodes.size(), 2 );
 #endif
-      DoubleVector edge = localNodes[1];
-      edge -= localNodes[0];
+    DoubleVector edge = localNodes[1];
+    edge -= localNodes[0];
 
-      mvpEdgeMidpointProjectionCache_[k] = edge.dot( mvpEdgeMidpoint );
+    mvpEdgeMidpointProjectionCache_[k] = edge.dot( mvpEdgeMidpoint );
   }
 
   mvpEdgeMidpointProjectionCacheUptodate_ = true;
@@ -172,10 +176,10 @@ double
 ExplicitValues::
 getAEdgeMidpointProjectionFallback( const unsigned int cellIndex,
                                     const unsigned int edgeIndex
-                                  ) const
+                                    ) const
 {
   if ( !mvpEdgeMidpointProjectionCacheFallbackUptodate_ )
-      this->initializeMvpEdgeMidpointFallback_();
+    this->initializeMvpEdgeMidpointFallback_();
 
   return mu_ * mvpEdgeMidpointProjectionCacheFallback_[cellIndex][edgeIndex];
 }
@@ -184,10 +188,10 @@ double
 ExplicitValues::
 getdAdMuEdgeMidpointProjectionFallback( const unsigned int cellIndex,
                                         const unsigned int edgeIndex
-                                      ) const
+                                        ) const
 {
   if ( !mvpEdgeMidpointProjectionCacheFallbackUptodate_ )
-      this->initializeMvpEdgeMidpointFallback_();
+    this->initializeMvpEdgeMidpointFallback_();
 
   return mvpEdgeMidpointProjectionCacheFallback_[cellIndex][edgeIndex];
 }
@@ -196,7 +200,7 @@ double
 ExplicitValues::
 getdAdThetaEdgeMidpointProjectionFallback( const unsigned int cellIndex,
                                            const unsigned int edgeIndex
-                                         ) const
+                                           ) const
 {
   TEST_FOR_EXCEPT_MSG( true,
                        "Parameter \"theta\" not supported. Abort." );
@@ -218,56 +222,59 @@ initializeMvpEdgeMidpointFallback_() const
   // To this end, loop over all cells and the edges within the cell.
   for ( unsigned int k=0; k<cells.size(); k++ )
   {
-      // get the nodes local to the cell
-      stk::mesh::PairIterRelation localNodes = (*cells[k]).relations( mesh_->getMetaData()->node_rank() );
+    // get the nodes local to the cell
+    stk::mesh::PairIterRelation localNodes = (*cells[k]).relations(
+        mesh_->getMetaData()->node_rank() );
 
-      unsigned int numLocalNodes = localNodes.size();
-      unsigned int cellDimension = mesh_->getCellDimension( numLocalNodes );
-      // extract the nodal coordinates
-      Teuchos::ArrayRCP<DoubleVector> localNodeCoords =
-          mesh_->getNodeCoordinates( localNodes );
+    unsigned int numLocalNodes = localNodes.size();
+    unsigned int cellDimension = mesh_->getCellDimension( numLocalNodes );
+    // extract the nodal coordinates
+    Teuchos::ArrayRCP<DoubleVector> localNodeCoords =
+      mesh_->getNodeCoordinates( localNodes );
 
-      mvpEdgeMidpointProjectionCacheFallback_[k] =
-          Teuchos::ArrayRCP<double>( mesh_->getNumEdgesPerCell( cellDimension ) );
+    mvpEdgeMidpointProjectionCacheFallback_[k] =
+      Teuchos::ArrayRCP<double>( mesh_->getNumEdgesPerCell( cellDimension ) );
 
-      // In a simplex, the edges are exactly the connection between each pair
-      // of nodes. Hence, loop over pairs of nodes.
-      unsigned int edgeIndex = 0;
-      Teuchos::Tuple<int,2> lid;
-      for ( unsigned int e0 = 0; e0 < numLocalNodes; e0++ )
+    // In a simplex, the edges are exactly the connection between each pair
+    // of nodes. Hence, loop over pairs of nodes.
+    unsigned int edgeIndex = 0;
+    Teuchos::Tuple<int,2> lid;
+    for ( unsigned int e0 = 0; e0 < numLocalNodes; e0++ )
+    {
+      lid[0] = mvp_->Map().LID( (*localNodes[e0].entity()).identifier() - 1 );
+#ifdef _DEBUG_
+      TEST_FOR_EXCEPT_MSG( lid[0] < 0,
+                           "The global index " <<
+                           (*localNodes[e0].entity()).identifier() - 1
+                           << " does not seem to be present on this node." );
+#endif
+      for ( unsigned int e1 = e0+1; e1 < numLocalNodes; e1++ )
       {
-          lid[0] = mvp_->Map().LID( (*localNodes[e0].entity()).identifier() - 1 );
+        lid[1] = mvp_->Map().LID( (*localNodes[e1].entity()).identifier() - 1 );
 #ifdef _DEBUG_
-          TEST_FOR_EXCEPT_MSG( lid[0] < 0,
-                               "The global index " << (*localNodes[e0].entity()).identifier() - 1
-                               << " does not seem to be present on this node." );
-#endif
-          for ( unsigned int e1 = e0+1; e1 < numLocalNodes; e1++ )
-          {
-              lid[1] = mvp_->Map().LID( (*localNodes[e1].entity()).identifier() - 1 );
-#ifdef _DEBUG_
-              TEST_FOR_EXCEPT_MSG( lid[1] < 0,
-                                   "The global index " << (*localNodes[e1].entity()).identifier() - 1
-                                   << " does not seem to be present on this node." );
+        TEST_FOR_EXCEPT_MSG( lid[1] < 0,
+                             "The global index " <<
+                             (*localNodes[e1].entity()).identifier() - 1
+                             << " does not seem to be present on this node." );
 #endif
 
-              // Approximate the value at the midpoint of the edge
-              // by the average of the values at the adjacent nodes.
-              DoubleVector mvpEdgeMidpoint(3);
-              for (int i=0; i<3; i++ )
-                  mvpEdgeMidpoint[i] =
-                      0.5 * ( (*(*mvp_)(i))[lid[0]] + (*(*mvp_)(i))[lid[1]] );
+        // Approximate the value at the midpoint of the edge
+        // by the average of the values at the adjacent nodes.
+        DoubleVector mvpEdgeMidpoint( 3 );
+        for (int i=0; i<3; i++ )
+          mvpEdgeMidpoint[i] =
+            0.5 * ( (*(*mvp_)(i))[lid[0]] + (*(*mvp_)(i))[lid[1]]);
 
-              // Update edge cache.
-              DoubleVector edge = localNodeCoords[e1];
-              edge -= localNodeCoords[e0];
+        // Update edge cache.
+        DoubleVector edge = localNodeCoords[e1];
+        edge -= localNodeCoords[e0];
 
-              mvpEdgeMidpointProjectionCacheFallback_[k][edgeIndex] =
-                  edge.dot( mvpEdgeMidpoint );
+        mvpEdgeMidpointProjectionCacheFallback_[k][edgeIndex] =
+          edge.dot( mvpEdgeMidpoint );
 
-              edgeIndex++;
-          }
+        edgeIndex++;
       }
+    }
   }
 
   mvpEdgeMidpointProjectionCacheFallbackUptodate_ = true;

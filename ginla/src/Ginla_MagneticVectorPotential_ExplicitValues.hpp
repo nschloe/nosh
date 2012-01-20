@@ -34,70 +34,71 @@ typedef Teuchos::SerialDenseVector<int,double> DoubleVector;
 
 namespace Ginla {
 namespace MagneticVectorPotential {
-class ExplicitValues: public Virtual
+class ExplicitValues : public Virtual
 {
 public:
-  ExplicitValues( const Teuchos::RCP<Ginla::StkMesh> & mesh,
-                  const Teuchos::RCP<const Epetra_MultiVector> & mvp,
-                  double mu
+ExplicitValues( const Teuchos::RCP<Ginla::StkMesh> &mesh,
+                const Teuchos::RCP<const Epetra_MultiVector> &mvp,
+                double mu
                 );
 
-  ~ExplicitValues();
+~ExplicitValues();
 
-  //! Sets the parameters in this module.
-  void
-  setParameters( const LOCA::ParameterVector & p );
+//! Sets the parameters in this module.
+void
+setParameters( const LOCA::ParameterVector &p );
 
-  Teuchos::RCP<LOCA::ParameterVector>
-  getParameters() const;
+Teuchos::RCP<LOCA::ParameterVector>
+getParameters() const;
 
-  double
-  getAEdgeMidpointProjection( const unsigned int edgeIndex
+double
+getAEdgeMidpointProjection( const unsigned int edgeIndex
                             ) const;
 
-  double
-  getdAdMuEdgeMidpointProjection( const unsigned int edgeIndex
+double
+getdAdMuEdgeMidpointProjection( const unsigned int edgeIndex
                                 ) const;
-  double
-  getdAdThetaEdgeMidpointProjection( const unsigned int edgeIndex
+double
+getdAdThetaEdgeMidpointProjection( const unsigned int edgeIndex
                                    ) const;
 
-  double
-  getAEdgeMidpointProjectionFallback( const unsigned int cellIndex,
-                                      const unsigned int edgeIndex
+double
+getAEdgeMidpointProjectionFallback( const unsigned int cellIndex,
+                                    const unsigned int edgeIndex
                                     ) const;
 
-  double
-  getdAdMuEdgeMidpointProjectionFallback( const unsigned int cellIndex,
-                                          const unsigned int edgeIndex
+double
+getdAdMuEdgeMidpointProjectionFallback( const unsigned int cellIndex,
+                                        const unsigned int edgeIndex
                                         ) const;
-  double
-  getdAdThetaEdgeMidpointProjectionFallback( const unsigned int cellIndex,
-                                             const unsigned int edgeIndex
+double
+getdAdThetaEdgeMidpointProjectionFallback( const unsigned int cellIndex,
+                                           const unsigned int edgeIndex
                                            ) const;
 
 protected:
 private:
-  void
-  initializeMvpEdgeMidpointCache_() const;
+void
+initializeMvpEdgeMidpointCache_() const;
 
-  void
-  initializeMvpEdgeMidpointFallback_() const;
+void
+initializeMvpEdgeMidpointFallback_() const;
 
-  DoubleVector
-  crossProduct_( const DoubleVector u,
-                 const DoubleVector v
+DoubleVector
+crossProduct_( const DoubleVector u,
+               const DoubleVector v
                ) const;
 
 private:
-  const Teuchos::RCP<Ginla::StkMesh> mesh_;
-  const Teuchos::RCP<const Epetra_MultiVector> mvp_;
-  double mu_;
+const Teuchos::RCP<Ginla::StkMesh> mesh_;
+const Teuchos::RCP<const Epetra_MultiVector> mvp_;
+double mu_;
 
-  Teuchos::ArrayRCP<double> mvpEdgeMidpointProjectionCache_;
-  mutable bool mvpEdgeMidpointProjectionCacheUptodate_;
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > mvpEdgeMidpointProjectionCacheFallback_;
-  mutable bool mvpEdgeMidpointProjectionCacheFallbackUptodate_;
+Teuchos::ArrayRCP<double> mvpEdgeMidpointProjectionCache_;
+mutable bool mvpEdgeMidpointProjectionCacheUptodate_;
+Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >
+mvpEdgeMidpointProjectionCacheFallback_;
+mutable bool mvpEdgeMidpointProjectionCacheFallbackUptodate_;
 };
 } // namespace MagneticVectorPotential
 } // namespace Ginla

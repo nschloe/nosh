@@ -43,30 +43,37 @@
 namespace Ginla {
 // ============================================================================
 ModelEvaluator::
-ModelEvaluator ( const Teuchos::RCP<Ginla::StkMesh>                 & mesh,
-                 const Teuchos::ParameterList                       & problemParams,
-                 const Teuchos::RCP<const Epetra_Vector>            & thickness,
-                 const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> & mvp,
-                 const Teuchos::RCP<Epetra_Vector>                  & initialX
-               ) :
-        mesh_ ( mesh ),
-        thickness_( thickness ),
-        x_( initialX ),
-        numParams_( 0 ),
-        p_map_( Teuchos::null ),
-        p_init_( Teuchos::null ),
-        p_names_( Teuchos::null ),
-        p_current_( Teuchos::null ),
-        mvp_( mvp ),
-        keoFactory_( Teuchos::rcp( new Ginla::KeoFactory( mesh, thickness, mvp ) ) ),
+ModelEvaluator (
+  const Teuchos::RCP<Ginla::StkMesh> &mesh,
+  const Teuchos::ParameterList &problemParams,
+  const Teuchos::RCP<const Epetra_Vector> &thickness,
+  const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> &
+  mvp,
+  const Teuchos::RCP<Epetra_Vector> &initialX
+  ) :
+  mesh_( mesh ),
+  thickness_( thickness ),
+  x_( initialX ),
+  numParams_( 0 ),
+  p_map_( Teuchos::null ),
+  p_init_( Teuchos::null ),
+  p_names_( Teuchos::null ),
+  p_current_( Teuchos::null ),
+  mvp_( mvp ),
+  keoFactory_( Teuchos::rcp( new Ginla::KeoFactory( mesh, thickness, mvp ) ) ),
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
-        evalModelTime_( Teuchos::TimeMonitor::getNewTimer("Ginla: ModelEvaluator::evalModel") ),
-        computeFTime_( Teuchos::TimeMonitor::getNewTimer("Ginla: ModelEvaluator::evalModel:compute F") ),
-        computedFdpTime_( Teuchos::TimeMonitor::getNewTimer("Ginla: ModelEvaluator::evalModel:compute dF/dp") ),
-        fillJacobianTime_( Teuchos::TimeMonitor::getNewTimer("Ginla: ModelEvaluator::evalModel:fill Jacobian") ),
-        fillPreconditionerTime_( Teuchos::TimeMonitor::getNewTimer("Ginla: ModelEvaluator::evalModel::fill preconditioner") ),
+  evalModelTime_( Teuchos::TimeMonitor::getNewTimer(
+                    "Ginla: ModelEvaluator::evalModel" ) ),
+  computeFTime_( Teuchos::TimeMonitor::getNewTimer(
+                   "Ginla: ModelEvaluator::evalModel:compute F" ) ),
+  computedFdpTime_( Teuchos::TimeMonitor::getNewTimer(
+                      "Ginla: ModelEvaluator::evalModel:compute dF/dp" ) ),
+  fillJacobianTime_( Teuchos::TimeMonitor::getNewTimer(
+                       "Ginla: ModelEvaluator::evalModel:fill Jacobian" ) ),
+  fillPreconditionerTime_( Teuchos::TimeMonitor::getNewTimer(
+                             "Ginla: ModelEvaluator::evalModel::fill preconditioner" ) ),
 #endif
-        out_( Teuchos::VerboseObjectBase::getDefaultOStream() )
+  out_( Teuchos::VerboseObjectBase::getDefaultOStream() )
 {
   this->setupParameters_( problemParams );
   return;
@@ -79,7 +86,7 @@ ModelEvaluator::
 // ============================================================================
 void
 ModelEvaluator::
-setupParameters_( const Teuchos::ParameterList & params )
+setupParameters_( const Teuchos::ParameterList &params )
 {
   p_names_ = Teuchos::rcp( new Teuchos::Array<std::string>() );
   p_names_->append( "mu" );
@@ -89,7 +96,7 @@ setupParameters_( const Teuchos::ParameterList & params )
   numParams_ = p_names_->length();
 
   // these are local variables
-  Teuchos::Array<double> p_default_values = Teuchos::Array<double>(numParams_);
+  Teuchos::Array<double> p_default_values = Teuchos::Array<double>( numParams_ );
   p_default_values[0] = 0.0; // mu
   p_default_values[1] = 0.0; // theta
   p_default_values[2] = 0.0; // T
@@ -101,25 +108,25 @@ setupParameters_( const Teuchos::ParameterList & params )
   p_map_ = Teuchos::rcp( new Epetra_LocalMap( numParams_,
                                               0,
                                               x_->Comm()
-                                            )
-                       );
+                                              )
+                         );
 
   // run through the p_init and fill it with either what's given in params,
   // or the default value
-  p_init_ = Teuchos::rcp( new Epetra_Vector(*p_map_) );
+  p_init_ = Teuchos::rcp( new Epetra_Vector( *p_map_ ) );
   for ( int k=0; k<numParams_; k++ )
-      if ( params.isParameter( (*p_names_)[k] ) )
-      {
-          (*p_init_)[k] = params.get<double>( (*p_names_)[k] );
-      }
-      else
-      {
-          (*p_init_)[k] = p_default_values[k];
-          *out_ << "Parameter \"" << (*p_names_)[k]
-                << "\" initialized with default value \""
-                << p_default_values[k] << "\"."
-                << std::endl;
-      }
+    if ( params.isParameter( (*p_names_)[k] ) )
+    {
+      (*p_init_)[k] = params.get<double>( (*p_names_)[k] );
+    }
+    else
+    {
+      (*p_init_)[k] = p_default_values[k];
+      *out_ << "Parameter \"" << (*p_names_)[k]
+      << "\" initialized with default value \""
+      << p_default_values[k] << "\"."
+      << std::endl;
+    }
 
   // TODO warn if there are unused entries in params
 //  for ( Teuchos::ParameterList::ConstIterator k=params.begin(); k!=params.end(); ++k )
@@ -129,7 +136,7 @@ setupParameters_( const Teuchos::ParameterList & params )
 //  }
 
   // also initialize p_current_
-  p_current_ = Teuchos::rcp( new Epetra_Vector(*p_init_) );
+  p_current_ = Teuchos::rcp( new Epetra_Vector( *p_init_ ) );
 
   return;
 }
@@ -152,14 +159,14 @@ ModelEvaluator::
 get_f_map() const
 {
 #ifdef _DEBUG_
-    TEUCHOS_ASSERT( !mesh_.is_null() );
+  TEUCHOS_ASSERT( !mesh_.is_null() );
 #endif
-    return mesh_->getComplexNonOverlapMap();
+  return mesh_->getComplexNonOverlapMap();
 }
 // ============================================================================
 Teuchos::RCP<const Epetra_Vector>
 ModelEvaluator::
-get_x_init () const
+get_x_init() const
 {
 #ifdef _DEBUG_
   TEUCHOS_ASSERT( !x_.is_null() );
@@ -169,7 +176,7 @@ get_x_init () const
 // ============================================================================
 Teuchos::RCP<const Epetra_Vector>
 ModelEvaluator::
-get_p_init ( int l ) const
+get_p_init( int l ) const
 {
 #ifdef _DEBUG_
   TEUCHOS_ASSERT_EQUALITY( 0, l );
@@ -201,7 +208,8 @@ Teuchos::RCP<Epetra_Operator>
 ModelEvaluator::
 create_W() const
 {
-  return Teuchos::rcp( new Ginla::JacobianOperator( mesh_, thickness_, keoFactory_ ) );
+  return Teuchos::rcp( new Ginla::JacobianOperator( mesh_, thickness_,
+                                                    keoFactory_ ) );
 }
 // =============================================================================
 Teuchos::RCP<EpetraExt::ModelEvaluator::Preconditioner>
@@ -209,14 +217,15 @@ ModelEvaluator::
 create_WPrec() const
 {
   Teuchos::RCP<Epetra_Operator> keoPrec =
-          Teuchos::rcp( new Ginla::KeoRegularized( keoFactory_ ) );
+    Teuchos::rcp( new Ginla::KeoRegularized( keoFactory_ ) );
   // bool is answer to: "Prec is already inverted?"
   // This needs to be set to TRUE to make sure that the constructor of
   //    NOX::Epetra::LinearSystemStratimikos
   // chooses a user-defined preconditioner.
   // Effectively, this boolean serves pretty well as a quirky switch for the
   // preconditioner if Piro is used.
-  return Teuchos::rcp( new EpetraExt::ModelEvaluator::Preconditioner( keoPrec, true ) );
+  return Teuchos::rcp( new EpetraExt::ModelEvaluator::Preconditioner( keoPrec,
+                                                                      true ) );
 }
 // ============================================================================
 EpetraExt::ModelEvaluator::InArgs
@@ -253,59 +262,59 @@ createOutArgs() const
   // support derivatives with respect to all parameters;
   outArgs.setSupports( OUT_ARG_DfDp,
                        0,
-                       DerivativeSupport(DERIV_MV_BY_COL)
-                     );
+                       DerivativeSupport( DERIV_MV_BY_COL )
+                       );
 
   outArgs.setSupports( OUT_ARG_f, true );
   outArgs.setSupports( OUT_ARG_W, true );
   outArgs.set_W_properties( DerivativeProperties( DERIV_LINEARITY_UNKNOWN, // DERIV_LINEARITY_NONCONST
                                                   DERIV_RANK_DEFICIENT, // DERIV_RANK_FULL, DERIV_RANK_DEFICIENT
                                                   false // supportsAdjoint
-                                                )
-                          );
+                                                  )
+                            );
 
   outArgs.setSupports( OUT_ARG_WPrec, true );
   outArgs.set_WPrec_properties( DerivativeProperties( DERIV_LINEARITY_UNKNOWN,
                                                       DERIV_RANK_FULL,
                                                       false
-                                                    )
-                              );
+                                                      )
+                                );
 
   return outArgs;
 }
 // ============================================================================
 void
 ModelEvaluator::
-evalModel( const InArgs  & inArgs,
-           const OutArgs & outArgs
-         ) const
+evalModel( const InArgs &inArgs,
+           const OutArgs &outArgs
+           ) const
 {
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
-  Teuchos::TimeMonitor tm(*evalModelTime_);
+  Teuchos::TimeMonitor tm( *evalModelTime_ );
 #endif
 
   const double alpha = inArgs.get_alpha();
-        double beta  = inArgs.get_beta();
+  double beta  = inArgs.get_beta();
 
   // From packages/piro/test/MockModelEval_A.cpp
   if (alpha==0.0 && beta==0.0)
   {
-      //*out_ << "Ginla::ModelEvaluator Warning: alpha=beta=0 -- setting beta=1" << std::endl;
-      beta = 1.0;
+    //*out_ << "Ginla::ModelEvaluator Warning: alpha=beta=0 -- setting beta=1" << std::endl;
+    beta = 1.0;
   }
 #ifdef _DEBUG_
   TEUCHOS_ASSERT_EQUALITY( alpha, 0.0 );
   TEUCHOS_ASSERT_EQUALITY( beta,  1.0 );
 #endif
 
-  const Teuchos::RCP<const Epetra_Vector> & x_in = inArgs.get_x();
+  const Teuchos::RCP<const Epetra_Vector> &x_in = inArgs.get_x();
 
   // get input arguments and make sure they are all right
-  Teuchos::RCP<const Epetra_Vector> p_in = inArgs.get_p(0);
+  Teuchos::RCP<const Epetra_Vector> p_in = inArgs.get_p( 0 );
 #ifdef _DEBUG_
   TEUCHOS_ASSERT( !p_in.is_null() );
   for ( int k=0; k<p_in->MyLength(); k++ )
-      TEUCHOS_ASSERT( !std::isnan( (*p_in)[k] ) );
+    TEUCHOS_ASSERT( !std::isnan( (*p_in)[k] ) );
 #endif
 
   // p_current_ is used in getParameters.
@@ -326,46 +335,48 @@ evalModel( const InArgs  & inArgs,
   if ( !f_out.is_null() )
   {
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
-      Teuchos::TimeMonitor tm(*computeFTime_);
+    Teuchos::TimeMonitor tm( *computeFTime_ );
 #endif
-      this->computeF_( *x_in, mvpParams, T, *f_out );
+    this->computeF_( *x_in, mvpParams, T, *f_out );
   }
 
   // compute dF/dp
-  const EpetraExt::ModelEvaluator::DerivativeMultiVector & derivMv =
-      outArgs.get_DfDp(0).getDerivativeMultiVector();
+  const EpetraExt::ModelEvaluator::DerivativeMultiVector &derivMv =
+    outArgs.get_DfDp( 0 ).getDerivativeMultiVector();
   const Teuchos::RCP<Epetra_MultiVector> dfdp_out = derivMv.getMultiVector();
   if ( !dfdp_out.is_null() )
   {
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
-      Teuchos::TimeMonitor tm(*computedFdpTime_);
+    Teuchos::TimeMonitor tm( *computedFdpTime_ );
 #endif
-       Teuchos::Array<int> paramIndices = derivMv.getParamIndexes();
-       unsigned int numDerivs = paramIndices.size();
+    Teuchos::Array<int> paramIndices = derivMv.getParamIndexes();
+    unsigned int numDerivs = paramIndices.size();
 #ifdef _DEBUG_
-       TEUCHOS_ASSERT_EQUALITY( numDerivs, dfdp_out->NumVectors() );
+    TEUCHOS_ASSERT_EQUALITY( numDerivs, dfdp_out->NumVectors() );
 #endif
-       for ( unsigned int k=0; k<numDerivs; k++ )
-       {
-           switch ( paramIndices[k] )
-           {
-             case 0: // mu
-                 this->computeDFDMu_( *x_in, mvpParams, *(*dfdp_out)(k) );
-                 break;
-             case 1: // theta
-                 this->computeDFDTheta_( *x_in, mvpParams, *(*dfdp_out)(k) );
-                 break;
-             case 2: // T
-                 this->computeDFDT_( *x_in, mvpParams, *(*dfdp_out)(k) );
-                 break;
-             default:
-                 TEST_FOR_EXCEPT_MSG( true,
-                                      "Unknown problem parameter "
-                                      << "\"" << (*p_names_)[paramIndices[k]] << "\". "
-                                      << "Abort." << std::endl;
-                                    )
-           }
-       }
+    for ( unsigned int k=0; k<numDerivs; k++ )
+    {
+      switch ( paramIndices[k] )
+      {
+        case 0:      // mu
+          this->computeDFDMu_( *x_in, mvpParams, *(*dfdp_out)(k) );
+          break;
+        case 1:      // theta
+          this->computeDFDTheta_( *x_in, mvpParams, *(*dfdp_out)(k) );
+          break;
+        case 2:      // T
+          this->computeDFDT_( *x_in, mvpParams, *(*dfdp_out)(k) );
+          break;
+        default:
+          TEST_FOR_EXCEPT_MSG(
+            true,
+            "Unknown problem parameter "
+            << "\"" << (*p_names_)[paramIndices[k]] <<
+            "\". "
+            << "Abort." << std::endl;
+            )
+      }
+    }
   }
 
   // fill jacobian
@@ -373,13 +384,13 @@ evalModel( const InArgs  & inArgs,
   if( !W_out.is_null() )
   {
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
-      Teuchos::TimeMonitor tm(*fillJacobianTime_);
+    Teuchos::TimeMonitor tm( *fillJacobianTime_ );
 #endif
-      Teuchos::RCP<Ginla::JacobianOperator> jac =
-          Teuchos::rcp_dynamic_cast<Ginla::JacobianOperator>( W_out, true );
-      jac->rebuild( mvpParams,
-                    T,
-                    x_in
+    Teuchos::RCP<Ginla::JacobianOperator> jac =
+      Teuchos::rcp_dynamic_cast<Ginla::JacobianOperator>( W_out, true );
+    jac->rebuild( mvpParams,
+                  T,
+                  x_in
                   );
   }
 
@@ -388,11 +399,11 @@ evalModel( const InArgs  & inArgs,
   if( !WPrec_out.is_null() )
   {
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
-      Teuchos::TimeMonitor tm(*fillPreconditionerTime_);
+    Teuchos::TimeMonitor tm( *fillPreconditionerTime_ );
 #endif
-      Teuchos::RCP<Ginla::KeoRegularized> keoPrec =
-          Teuchos::rcp_dynamic_cast<Ginla::KeoRegularized>( WPrec_out, true );
-      keoPrec->rebuild( mvpParams );
+    Teuchos::RCP<Ginla::KeoRegularized> keoPrec =
+      Teuchos::rcp_dynamic_cast<Ginla::KeoRegularized>( WPrec_out, true );
+    keoPrec->rebuild( mvpParams );
   }
 
   return;
@@ -400,11 +411,11 @@ evalModel( const InArgs  & inArgs,
 // ============================================================================
 void
 ModelEvaluator::
-computeF_ ( const Epetra_Vector                             & x,
-            const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
-            const double                                      T,
-            Epetra_Vector                                   & FVec
-          ) const
+computeF_( const Epetra_Vector &x,
+           const Teuchos::RCP<const LOCA::ParameterVector> &mvpParams,
+           const double T,
+           Epetra_Vector &FVec
+           ) const
 {
   // build the KEO
   keoFactory_->updateParameters( mvpParams );
@@ -420,7 +431,7 @@ computeF_ ( const Epetra_Vector                             & x,
   TEUCHOS_ASSERT( !thickness_.is_null() );
 #endif
 
-  const Epetra_Vector & controlVolumes = *(mesh_->getControlVolumes());
+  const Epetra_Vector &controlVolumes = *(mesh_->getControlVolumes());
 
 #ifdef _DEBUG_
   // Make sure control volumes and state still match.
@@ -429,46 +440,46 @@ computeF_ ( const Epetra_Vector                             & x,
 
   for ( int k=0; k<controlVolumes.MyLength(); k++ )
   {
-      // In principle, mass lumping here suggests to take
-      //
-      //   \int_{control volume}  thickness * f(psi).
-      //
-      // with f(psi) = psi[k] * ( (1.0-T) - std::norm(psi[k]) ).
-      // (a) A possible approximation for this is
-      //
-      //        |control volume| * average(thicknesses) * f(psi(x_k)).
-      //
-      //     This is loosely derived from the midpoint quadrature rule for
-      //     triangles, i.e.,
-      //
-      //      \int_{triangle} f(x) ~= |triangle| *  \sum_{edge midpoint} 1/3 * f(midpoint).
-      //
-      //     so all the values at the midpoints have the same weight (independent of
-      //     whether the edge is long or short). This is then "generalized to
-      //
-      //      \int_{triangle} f(x)*a(x) ~= |triangle| *  \sum_{edge midpoint} 1/3 * f(midpoint)*a(midpoint),
-      //
-      //     or, as f(midpoint) is not available,
-      //
-      //      \int_{triangle} f(x)*a(x) ~= |triangle| * f(center of gravity)  \sum_{edge midpoint} 1/3 * a(midpoint).
-      //
-      //     For general polynomals, this is then the above expression.
-      //     Hence, do the equivalent of
-      //
-      //       res[k] += controlVolumes[k] * average(thicknesses) * psi[k] * ( (1.0-T) - std::norm(psi[k]) );
-      //
-      // (b) Another possible approximation is
-      //
-      //        |control volume| * thickness(x_k) * f(psi(x_k))
-      //
-      //     as suggested by mass lumping. This works if thickness(x_k) is available.
-      //
-      double alpha = controlVolumes[k] * (*thickness_)[k]
-                     * ( (1.0-T) - x[2*k]*x[2*k] - x[2*k+1]*x[2*k+1] );
-      // real part
-      FVec[2*k]   += alpha * x[2*k];
-      // imaginary part
-      FVec[2*k+1] += alpha * x[2*k+1];
+    // In principle, mass lumping here suggests to take
+    //
+    //   \int_{control volume}  thickness * f(psi).
+    //
+    // with f(psi) = psi[k] * ( (1.0-T) - std::norm(psi[k]) ).
+    // (a) A possible approximation for this is
+    //
+    //        |control volume| * average(thicknesses) * f(psi(x_k)).
+    //
+    //     This is loosely derived from the midpoint quadrature rule for
+    //     triangles, i.e.,
+    //
+    //      \int_{triangle} f(x) ~= |triangle| *  \sum_{edge midpoint} 1/3 * f(midpoint).
+    //
+    //     so all the values at the midpoints have the same weight (independent of
+    //     whether the edge is long or short). This is then "generalized to
+    //
+    //      \int_{triangle} f(x)*a(x) ~= |triangle| *  \sum_{edge midpoint} 1/3 * f(midpoint)*a(midpoint),
+    //
+    //     or, as f(midpoint) is not available,
+    //
+    //      \int_{triangle} f(x)*a(x) ~= |triangle| * f(center of gravity)  \sum_{edge midpoint} 1/3 * a(midpoint).
+    //
+    //     For general polynomals, this is then the above expression.
+    //     Hence, do the equivalent of
+    //
+    //       res[k] += controlVolumes[k] * average(thicknesses) * psi[k] * ( (1.0-T) - std::norm(psi[k]) );
+    //
+    // (b) Another possible approximation is
+    //
+    //        |control volume| * thickness(x_k) * f(psi(x_k))
+    //
+    //     as suggested by mass lumping. This works if thickness(x_k) is available.
+    //
+    double alpha = controlVolumes[k] * (*thickness_)[k]
+      * ( (1.0-T) - x[2*k]*x[2*k] - x[2*k+1]*x[2*k+1]);
+    // real part
+    FVec[2*k]   += alpha * x[2*k];
+    // imaginary part
+    FVec[2*k+1] += alpha * x[2*k+1];
   }
 
   return;
@@ -476,10 +487,10 @@ computeF_ ( const Epetra_Vector                             & x,
 // ============================================================================
 void
 ModelEvaluator::
-computeDFDMu_( const Epetra_Vector                             & x,
-               const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
-               Epetra_Vector                                   & FVec
-             ) const
+computeDFDMu_( const Epetra_Vector &x,
+               const Teuchos::RCP<const LOCA::ParameterVector> &mvpParams,
+               Epetra_Vector &FVec
+               ) const
 {
   // build the KEO
   keoFactory_->updateParameters( mvpParams );
@@ -492,10 +503,10 @@ computeDFDMu_( const Epetra_Vector                             & x,
 // ============================================================================
 void
 ModelEvaluator::
-computeDFDTheta_( const Epetra_Vector                             & x,
-                  const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
-                  Epetra_Vector                                   & FVec
-                ) const
+computeDFDTheta_( const Epetra_Vector &x,
+                  const Teuchos::RCP<const LOCA::ParameterVector> &mvpParams,
+                  Epetra_Vector &FVec
+                  ) const
 {
   // build the KEO
   keoFactory_->updateParameters( mvpParams );
@@ -508,10 +519,10 @@ computeDFDTheta_( const Epetra_Vector                             & x,
 // ============================================================================
 void
 ModelEvaluator::
-computeDFDT_( const Epetra_Vector                             & x,
-              const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
-              Epetra_Vector                                   & FVec
-            ) const
+computeDFDT_( const Epetra_Vector &x,
+              const Teuchos::RCP<const LOCA::ParameterVector> &mvpParams,
+              Epetra_Vector &FVec
+              ) const
 {
 #ifdef _DEBUG_
   TEUCHOS_ASSERT( FVec.Map().SameAs( x.Map() ) );
@@ -519,7 +530,7 @@ computeDFDT_( const Epetra_Vector                             & x,
   TEUCHOS_ASSERT( !thickness_.is_null() );
 #endif
 
-  const Epetra_Vector & controlVolumes = *(mesh_->getControlVolumes());
+  const Epetra_Vector &controlVolumes = *(mesh_->getControlVolumes());
 
 #ifdef _DEBUG_
   // Make sure control volumes and state still match.
@@ -528,11 +539,11 @@ computeDFDT_( const Epetra_Vector                             & x,
 
   for ( int k=0; k<controlVolumes.MyLength(); k++ )
   {
-      double alpha = - controlVolumes[k] * (*thickness_)[k];
-      // real part
-      FVec[2*k]   = alpha * x[2*k];
-      // imaginary part
-      FVec[2*k+1] = alpha * x[2*k+1];
+    double alpha = -controlVolumes[k] * (*thickness_)[k];
+    // real part
+    FVec[2*k]   = alpha * x[2*k];
+    // imaginary part
+    FVec[2*k+1] = alpha * x[2*k+1];
   }
 
   return;
@@ -540,9 +551,9 @@ computeDFDT_( const Epetra_Vector                             & x,
 // ============================================================================
 Teuchos::RCP<Ginla::State>
 ModelEvaluator::
-createSavable( const Epetra_Vector & x ) const
+createSavable( const Epetra_Vector &x ) const
 {
-    return Teuchos::rcp( new Ginla::State( x, mesh_ ) );
+  return Teuchos::rcp( new Ginla::State( x, mesh_ ) );
 }
 // =============================================================================
 Teuchos::RCP<LOCA::ParameterVector>
@@ -551,14 +562,14 @@ getParameters() const
 {
   // construct a LOCA::ParameterVector of the parameters
   Teuchos::RCP<LOCA::ParameterVector> p =
-      Teuchos::rcp( new LOCA::ParameterVector() );
+    Teuchos::rcp( new LOCA::ParameterVector() );
 
 #ifdef _DEBUG_
   TEUCHOS_ASSERT( !p_names_.is_null() );
   TEUCHOS_ASSERT( !p_current_.is_null() );
 #endif
   for ( int k = 0; k < numParams_; k++ )
-      p->addParameter( (*p_names_)[k], (*p_current_)[k] );
+    p->addParameter( (*p_names_)[k], (*p_current_)[k] );
 
   return p;
 }

@@ -34,96 +34,96 @@ typedef Teuchos::SerialDenseVector<int,double> DoubleVector;
 
 namespace Ginla {
 namespace MagneticVectorPotential {
-class ConstantInSpace: public Virtual
+class ConstantInSpace : public Virtual
 {
 public:
-  ConstantInSpace( const Teuchos::RCP<Ginla::StkMesh> & mesh,
-                   const Teuchos::RCP<DoubleVector> & p,
-                   double mu,
-                   double theta = 0.0,
-                   const Teuchos::RCP<DoubleVector> & u = Teuchos::null
+ConstantInSpace( const Teuchos::RCP<Ginla::StkMesh> &mesh,
+                 const Teuchos::RCP<DoubleVector> &p,
+                 double mu,
+                 double theta = 0.0,
+                 const Teuchos::RCP<DoubleVector> &u = Teuchos::null
                  );
 
-  ~ConstantInSpace();
+~ConstantInSpace();
 
-  //! Sets the parameters in this module.
-  void
-  setParameters( const LOCA::ParameterVector & p );
+//! Sets the parameters in this module.
+void
+setParameters( const LOCA::ParameterVector &p );
 
-  Teuchos::RCP<LOCA::ParameterVector>
-  getParameters() const;
+Teuchos::RCP<LOCA::ParameterVector>
+getParameters() const;
 
-  double
-  getAEdgeMidpointProjection( const unsigned int edgeIndex
+double
+getAEdgeMidpointProjection( const unsigned int edgeIndex
                             ) const;
 
-  double
-  getdAdMuEdgeMidpointProjection( const unsigned int edgeIndex
+double
+getdAdMuEdgeMidpointProjection( const unsigned int edgeIndex
                                 ) const;
-  double
-  getdAdThetaEdgeMidpointProjection( const unsigned int edgeIndex
+double
+getdAdThetaEdgeMidpointProjection( const unsigned int edgeIndex
                                    ) const;
 
-  double
-  getAEdgeMidpointProjectionFallback( const unsigned int cellIndex,
-                                      const unsigned int edgeIndex
+double
+getAEdgeMidpointProjectionFallback( const unsigned int cellIndex,
+                                    const unsigned int edgeIndex
                                     ) const;
 
-  double
-  getdAdMuEdgeMidpointProjectionFallback( const unsigned int cellIndex,
-                                          const unsigned int edgeIndex
+double
+getdAdMuEdgeMidpointProjectionFallback( const unsigned int cellIndex,
+                                        const unsigned int edgeIndex
                                         ) const;
-  double
-  getdAdThetaEdgeMidpointProjectionFallback( const unsigned int cellIndex,
-                                             const unsigned int edgeIndex
+double
+getdAdThetaEdgeMidpointProjectionFallback( const unsigned int cellIndex,
+                                           const unsigned int edgeIndex
                                            ) const;
 
 protected:
 private:
-  DoubleVector
-  getRawA_(const DoubleVector & x) const;
+DoubleVector
+getRawA_( const DoubleVector &x ) const;
 
-  DoubleVector
-  getRawDADTheta_(const DoubleVector & x) const;
+DoubleVector
+getRawDADTheta_( const DoubleVector &x ) const;
 
-  void
-  initializeEdgeCache_() const;
+void
+initializeEdgeCache_() const;
 
-  void
-  initializeEdgeCacheFallback_() const;
+void
+initializeEdgeCacheFallback_() const;
 
-  DoubleVector
-  rotate_( const DoubleVector & v,
-           const DoubleVector & u,
-           const double sinTheta,
-           const double cosTheta
+DoubleVector
+rotate_( const DoubleVector &v,
+         const DoubleVector &u,
+         const double sinTheta,
+         const double cosTheta
          ) const;
 
-  DoubleVector
-  dRotateDTheta_( const DoubleVector & v,
-                  const DoubleVector & u,
-                  const double sinTheta,
-                  const double cosTheta
+DoubleVector
+dRotateDTheta_( const DoubleVector &v,
+                const DoubleVector &u,
+                const double sinTheta,
+                const double cosTheta
                 ) const;
 
-  DoubleVector
-  crossProduct_( const DoubleVector u,
-                 const DoubleVector v
+DoubleVector
+crossProduct_( const DoubleVector u,
+               const DoubleVector v
                ) const;
 
 private:
-  const Teuchos::RCP<Ginla::StkMesh> mesh_;
-  const Teuchos::RCP<const DoubleVector> b_;
-  DoubleVector rotatedB_;
-  DoubleVector dRotatedBDTheta_;
-  double mu_;
-  double theta_;
-  const Teuchos::RCP<const DoubleVector> u_;
+const Teuchos::RCP<Ginla::StkMesh> mesh_;
+const Teuchos::RCP<const DoubleVector> b_;
+DoubleVector rotatedB_;
+DoubleVector dRotatedBDTheta_;
+double mu_;
+double theta_;
+const Teuchos::RCP<const DoubleVector> u_;
 
-  Teuchos::ArrayRCP<DoubleVector> edgeCache_;
-  mutable bool edgeCacheUptodate_;
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<DoubleVector> > edgeCacheFallback_;
-  mutable bool edgeCacheFallbackUptodate_;
+Teuchos::ArrayRCP<DoubleVector> edgeCache_;
+mutable bool edgeCacheUptodate_;
+Teuchos::ArrayRCP<Teuchos::ArrayRCP<DoubleVector> > edgeCacheFallback_;
+mutable bool edgeCacheFallbackUptodate_;
 };
 } // namespace MagneticVectorPotential
 } // namespace Ginla

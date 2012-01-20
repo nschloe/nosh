@@ -27,16 +27,16 @@ namespace Ginla {
 namespace MagneticVectorPotential {
 // ============================================================================
 ConstantInSpace::
-ConstantInSpace( const Teuchos::RCP<Ginla::StkMesh> & mesh,
-                 const Teuchos::RCP<DoubleVector> & b,
+ConstantInSpace( const Teuchos::RCP<Ginla::StkMesh> &mesh,
+                 const Teuchos::RCP<DoubleVector> &b,
                  double mu,
                  double theta,
-                 const Teuchos::RCP<DoubleVector> & u
-               ):
+                 const Teuchos::RCP<DoubleVector> &u
+                 ) :
   mesh_( mesh ),
   b_( b ),
   rotatedB_( *b ),
-  dRotatedBDTheta_( DoubleVector(3) ),
+  dRotatedBDTheta_( DoubleVector( 3 ) ),
   mu_( mu ),
   theta_( theta ),
   u_( u ),
@@ -46,39 +46,40 @@ ConstantInSpace( const Teuchos::RCP<Ginla::StkMesh> & mesh,
   edgeCacheFallbackUptodate_( false )
 {
 #ifdef _DEBUG_
-    TEUCHOS_ASSERT( !mesh_.is_null() );
-    TEUCHOS_ASSERT( !b_.is_null() );
+  TEUCHOS_ASSERT( !mesh_.is_null() );
+  TEUCHOS_ASSERT( !b_.is_null() );
 #endif
-    TEST_FOR_EXCEPT_MSG( b_->dot(*b_) != 1.0,
-                        "Magnetic field vector not normalized: "
-                        << "<b,b> = " << b->dot(*b) << "."
-                        << std::endl
-                      );
-    if ( !u_.is_null() )
-    {
-        TEST_FOR_EXCEPT_MSG( u_->dot(*u_) != 1.0,
-                            "Rotation vector not normalized: "
-                            << "<u,u> = " << u_->dot(*u_) << "."
-                            << std::endl
-                          );
-        double sinTheta, cosTheta;
-        sincos( theta_, &sinTheta, &cosTheta );
-        rotatedB_ = this->rotate_( *b_, *u_, sinTheta, cosTheta );
-        dRotatedBDTheta_ = this->dRotateDTheta_( *b_, *u_, sinTheta, cosTheta );
-    }
+  TEST_FOR_EXCEPT_MSG( b_->dot( *b_ ) != 1.0,
+                       "Magnetic field vector not normalized: "
+                       << "<b,b> = " << b->dot( *b ) << "."
+                       << std::endl
+                       );
+  if ( !u_.is_null() )
+  {
+    TEST_FOR_EXCEPT_MSG( u_->dot( *u_ ) != 1.0,
+                         "Rotation vector not normalized: "
+                         << "<u,u> = " << u_->dot( *u_ ) << "."
+                         << std::endl
+                         );
+    double sinTheta, cosTheta;
+    sincos( theta_, &sinTheta, &cosTheta );
+    rotatedB_ = this->rotate_( *b_, *u_, sinTheta, cosTheta );
+    dRotatedBDTheta_ = this->dRotateDTheta_( *b_, *u_, sinTheta, cosTheta );
+  }
 
 
-    if ( mesh->supportsEdges() )
-    {
-        edgeCache_ =
-            Teuchos::ArrayRCP<DoubleVector>( mesh_->getOverlapEdges().size() );
-    }
-    else
-    {
-        edgeCacheFallback_ =
-            Teuchos::ArrayRCP<Teuchos::ArrayRCP<DoubleVector> >( mesh_->getOwnedCells().size() );
-    }
-    return;
+  if ( mesh->supportsEdges() )
+  {
+    edgeCache_ =
+      Teuchos::ArrayRCP<DoubleVector>( mesh_->getOverlapEdges().size() );
+  }
+  else
+  {
+    edgeCacheFallback_ =
+      Teuchos::ArrayRCP<Teuchos::ArrayRCP<DoubleVector> >( mesh_->getOwnedCells(
+                                                             ).size() );
+  }
+  return;
 }
 // ============================================================================
 ConstantInSpace::
@@ -88,11 +89,11 @@ ConstantInSpace::
 // ============================================================================
 DoubleVector
 ConstantInSpace::
-rotate_( const DoubleVector & v,
-         const DoubleVector & u,
+rotate_( const DoubleVector &v,
+         const DoubleVector &u,
          const double sinTheta,
          const double cosTheta
-       ) const
+         ) const
 {
   // Rotate a vector \c v by the angle \c theta in the plane perpendicular
   // to the axis given by \c u.
@@ -102,19 +103,19 @@ rotate_( const DoubleVector & v,
   DoubleVector r = v;
   if ( sinTheta != 0.0 )
   {
-      // cos(theta) * I * v
-      r *= cosTheta;
+    // cos(theta) * I * v
+    r *= cosTheta;
 
-      // + sin(theta) u\cross v
-      DoubleVector tmp = this->crossProduct_(u, v);
-      tmp *= sinTheta;
-      r += tmp;
+    // + sin(theta) u\cross v
+    DoubleVector tmp = this->crossProduct_( u, v );
+    tmp *= sinTheta;
+    r += tmp;
 
-      // + (1-cos(theta)) (u*u^T) * v
-      tmp = u;
-      tmp *= (1.0-cosTheta) * u.dot( v );
+    // + (1-cos(theta)) (u*u^T) * v
+    tmp = u;
+    tmp *= (1.0-cosTheta) * u.dot( v );
 
-      r += tmp;
+    r += tmp;
   }
 
   return r;
@@ -122,18 +123,18 @@ rotate_( const DoubleVector & v,
 // ============================================================================
 DoubleVector
 ConstantInSpace::
-dRotateDTheta_( const DoubleVector & v,
-                const DoubleVector & u,
+dRotateDTheta_( const DoubleVector &v,
+                const DoubleVector &u,
                 const double sinTheta,
                 const double cosTheta
-              ) const
+                ) const
 {
   DoubleVector r = v;
 
   // cos(theta) * I * v
   r *= -sinTheta;
   // + sin(theta) u\cross v
-  DoubleVector tmp = this->crossProduct_(u, v);
+  DoubleVector tmp = this->crossProduct_( u, v );
   tmp *= cosTheta;
   r += tmp;
   // + (1-cos(theta)) (u*u^T) * v
@@ -148,32 +149,32 @@ DoubleVector
 ConstantInSpace::
 crossProduct_( const DoubleVector u,
                const DoubleVector v
-             ) const
+               ) const
 {
-    DoubleVector uXv(3);
-    uXv[0] = u[1]*v[2] - u[2]*v[1];
-    uXv[1] = u[2]*v[0] - u[0]*v[2];
-    uXv[2] = u[0]*v[1] - u[1]*v[0];
-    return uXv;
+  DoubleVector uXv( 3 );
+  uXv[0] = u[1]*v[2] - u[2]*v[1];
+  uXv[1] = u[2]*v[0] - u[0]*v[2];
+  uXv[2] = u[0]*v[1] - u[1]*v[0];
+  return uXv;
 }
 // ============================================================================
 void
 ConstantInSpace::
-setParameters( const LOCA::ParameterVector & p )
+setParameters( const LOCA::ParameterVector &p )
 {
-    if (p.isParameter( "mu" ))
-        mu_ = p.getValue ( "mu" );
+  if (p.isParameter( "mu" ))
+    mu_ = p.getValue( "mu" );
 
-    if (p.isParameter( "theta" ))
-    {
-        theta_ = p.getValue ( "theta" );
-        double sinTheta, cosTheta;
-        sincos( theta_, &sinTheta, &cosTheta );
-        rotatedB_ = this->rotate_( *b_, *u_, sinTheta, cosTheta );
-        dRotatedBDTheta_ = this->dRotateDTheta_( *b_, *u_, sinTheta, cosTheta );
-    }
+  if (p.isParameter( "theta" ))
+  {
+    theta_ = p.getValue( "theta" );
+    double sinTheta, cosTheta;
+    sincos( theta_, &sinTheta, &cosTheta );
+    rotatedB_ = this->rotate_( *b_, *u_, sinTheta, cosTheta );
+    dRotatedBDTheta_ = this->dRotateDTheta_( *b_, *u_, sinTheta, cosTheta );
+  }
 
-    return;
+  return;
 }
 // ============================================================================
 Teuchos::RCP<LOCA::ParameterVector>
@@ -181,7 +182,7 @@ ConstantInSpace::
 getParameters() const
 {
   Teuchos::RCP<LOCA::ParameterVector> p =
-          Teuchos::rcp( new LOCA::ParameterVector() );
+    Teuchos::rcp( new LOCA::ParameterVector() );
 
   p->addParameter( "mu", mu_ );
   p->addParameter( "theta", theta_ );
@@ -192,7 +193,7 @@ getParameters() const
 double
 ConstantInSpace::
 getAEdgeMidpointProjection( const unsigned int edgeIndex
-                          ) const
+                            ) const
 {
   // A vector potential associated with the constant magnetic field RB is
   //
@@ -209,7 +210,7 @@ getAEdgeMidpointProjection( const unsigned int edgeIndex
   // This saves caching e and the edge midpoint separately and also avoids
   // computing the cross-products more than once if B changes.
   if ( !edgeCacheUptodate_ )
-      this->initializeEdgeCache_();
+    this->initializeEdgeCache_();
 
   return mu_ * rotatedB_.dot( edgeCache_[edgeIndex] );
 }
@@ -217,10 +218,10 @@ getAEdgeMidpointProjection( const unsigned int edgeIndex
 double
 ConstantInSpace::
 getdAdMuEdgeMidpointProjection( const unsigned int edgeIndex
-                              ) const
+                                ) const
 {
   if ( !edgeCacheUptodate_ )
-      this->initializeEdgeCache_();
+    this->initializeEdgeCache_();
 
   return rotatedB_.dot( edgeCache_[edgeIndex] );
 }
@@ -228,10 +229,10 @@ getdAdMuEdgeMidpointProjection( const unsigned int edgeIndex
 double
 ConstantInSpace::
 getdAdThetaEdgeMidpointProjection( const unsigned int edgeIndex
-                                  ) const
+                                   ) const
 {
   if ( !edgeCacheUptodate_ )
-      this->initializeEdgeCache_();
+    this->initializeEdgeCache_();
 
   return mu_ * dRotatedBDTheta_.dot( edgeCache_[edgeIndex] );
 }
@@ -248,25 +249,25 @@ initializeEdgeCache_() const
   // Loop over all edges and create the cache.
   for ( unsigned int k=0; k<edges.size(); k++ )
   {
-      // Get the two end points.
-      const stk::mesh::PairIterRelation endPoints =
-          edges[k]->relations( mesh_->getMetaData()->node_rank() );
+    // Get the two end points.
+    const stk::mesh::PairIterRelation endPoints =
+      edges[k]->relations( mesh_->getMetaData()->node_rank() );
 
-      // extract the nodal coordinates
-      Teuchos::ArrayRCP<DoubleVector> localNodeCoords =
-          mesh_->getNodeCoordinates( endPoints );
+    // extract the nodal coordinates
+    Teuchos::ArrayRCP<DoubleVector> localNodeCoords =
+      mesh_->getNodeCoordinates( endPoints );
 #ifdef _DEBUG_
-      TEUCHOS_ASSERT_EQUALITY( localNodeCoords.size(), 2 );
+    TEUCHOS_ASSERT_EQUALITY( localNodeCoords.size(), 2 );
 #endif
-      DoubleVector edge = localNodeCoords[1];
-      edge -= localNodeCoords[0];
-      DoubleVector edgeMidpoint = localNodeCoords[1];
-      edgeMidpoint += localNodeCoords[0];
-      TEUCHOS_ASSERT_EQUALITY(0, edgeMidpoint.scale(0.5));
+    DoubleVector edge = localNodeCoords[1];
+    edge -= localNodeCoords[0];
+    DoubleVector edgeMidpoint = localNodeCoords[1];
+    edgeMidpoint += localNodeCoords[0];
+    TEUCHOS_ASSERT_EQUALITY( 0, edgeMidpoint.scale( 0.5 ));
 
-      // Compute the cross product.
-      edgeCache_[k] = this->crossProduct_( edgeMidpoint, edge );
-      edgeCache_[k].scale( 0.5 );
+    // Compute the cross product.
+    edgeCache_[k] = this->crossProduct_( edgeMidpoint, edge );
+    edgeCache_[k].scale( 0.5 );
   }
 
   edgeCacheUptodate_ = true;
@@ -278,10 +279,10 @@ double
 ConstantInSpace::
 getAEdgeMidpointProjectionFallback( const unsigned int cellIndex,
                                     const unsigned int edgeIndex
-                                  ) const
+                                    ) const
 {
   if ( !edgeCacheFallbackUptodate_ )
-      this->initializeEdgeCacheFallback_();
+    this->initializeEdgeCacheFallback_();
 
   return mu_ * rotatedB_.dot( edgeCacheFallback_[cellIndex][edgeIndex] );
 }
@@ -290,10 +291,10 @@ double
 ConstantInSpace::
 getdAdMuEdgeMidpointProjectionFallback( const unsigned int cellIndex,
                                         const unsigned int edgeIndex
-                                      ) const
+                                        ) const
 {
   if ( !edgeCacheFallbackUptodate_ )
-      this->initializeEdgeCacheFallback_();
+    this->initializeEdgeCacheFallback_();
 
   return rotatedB_.dot( edgeCacheFallback_[cellIndex][edgeIndex] );
 }
@@ -302,10 +303,10 @@ double
 ConstantInSpace::
 getdAdThetaEdgeMidpointProjectionFallback( const unsigned int cellIndex,
                                            const unsigned int edgeIndex
-                                         ) const
+                                           ) const
 {
   if ( !edgeCacheFallbackUptodate_ )
-      this->initializeEdgeCacheFallback_();
+    this->initializeEdgeCacheFallback_();
 
   return mu_ * dRotatedBDTheta_.dot( edgeCacheFallback_[cellIndex][edgeIndex] );
 }
@@ -325,39 +326,40 @@ initializeEdgeCacheFallback_() const
   // To this end, loop over all cells and the edges within the cell.
   for ( unsigned int k=0; k<cells.size(); k++ )
   {
-      // get the nodes local to the cell
-      stk::mesh::PairIterRelation localNodes = (*cells[k]).relations( mesh_->getMetaData()->node_rank() );
+    // get the nodes local to the cell
+    stk::mesh::PairIterRelation localNodes = (*cells[k]).relations(
+        mesh_->getMetaData()->node_rank() );
 
-      unsigned int numLocalNodes = localNodes.size();
-      unsigned int cellDimension = mesh_->getCellDimension( numLocalNodes );
-      // extract the nodal coordinates
-      Teuchos::ArrayRCP<DoubleVector> localNodeCoords =
-          mesh_->getNodeCoordinates( localNodes );
+    unsigned int numLocalNodes = localNodes.size();
+    unsigned int cellDimension = mesh_->getCellDimension( numLocalNodes );
+    // extract the nodal coordinates
+    Teuchos::ArrayRCP<DoubleVector> localNodeCoords =
+      mesh_->getNodeCoordinates( localNodes );
 
-      edgeCacheFallback_[k] =
-          Teuchos::ArrayRCP<DoubleVector>( mesh_->getNumEdgesPerCell( cellDimension ) );
+    edgeCacheFallback_[k] =
+      Teuchos::ArrayRCP<DoubleVector>( mesh_->getNumEdgesPerCell( cellDimension ) );
 
-      // In a simplex, the edges are exactly the connection between each pair
-      // of nodes. Hence, loop over pairs of nodes.
-      unsigned int edgeIndex = 0;
-      for ( unsigned int e0 = 0; e0 < numLocalNodes; e0++ )
+    // In a simplex, the edges are exactly the connection between each pair
+    // of nodes. Hence, loop over pairs of nodes.
+    unsigned int edgeIndex = 0;
+    for ( unsigned int e0 = 0; e0 < numLocalNodes; e0++ )
+    {
+      for ( unsigned int e1 = e0+1; e1 < numLocalNodes; e1++ )
       {
-          for ( unsigned int e1 = e0+1; e1 < numLocalNodes; e1++ )
-          {
-              DoubleVector edge = localNodeCoords[1];
-              edge -= localNodeCoords[0];
-              DoubleVector edgeMidpoint = localNodeCoords[1];
-              edgeMidpoint += localNodeCoords[0];
-              TEUCHOS_ASSERT_EQUALITY(0, edgeMidpoint.scale(0.5));
+        DoubleVector edge = localNodeCoords[1];
+        edge -= localNodeCoords[0];
+        DoubleVector edgeMidpoint = localNodeCoords[1];
+        edgeMidpoint += localNodeCoords[0];
+        TEUCHOS_ASSERT_EQUALITY( 0, edgeMidpoint.scale( 0.5 ));
 
-              // Compute the cross product.
-              edgeCacheFallback_[k][edgeIndex] =
-                  this->crossProduct_( edgeMidpoint, edge );
-              edgeCacheFallback_[k][edgeIndex].scale( 0.5 );
+        // Compute the cross product.
+        edgeCacheFallback_[k][edgeIndex] =
+          this->crossProduct_( edgeMidpoint, edge );
+        edgeCacheFallback_[k][edgeIndex].scale( 0.5 );
 
-              edgeIndex++;
-          }
+        edgeIndex++;
       }
+    }
   }
 
   edgeCacheFallbackUptodate_ = true;

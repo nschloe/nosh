@@ -46,45 +46,45 @@ namespace Ginla {
 class StkMeshReader
 {
 public:
-    StkMeshReader( const std::string & fileName );
+StkMeshReader( const std::string &fileName );
 
-    virtual
-    ~StkMeshReader();
+virtual
+~StkMeshReader();
 
-    void
-    read( const Epetra_Comm      & comm,
-          Teuchos::ParameterList & data
-        );
+void
+read( const Epetra_Comm &comm,
+      Teuchos::ParameterList &data
+      );
 
 protected:
 private:
-    const std::string fileName_;
-    const Teuchos::RCP<Teuchos::FancyOStream> out_;
+const std::string fileName_;
+const Teuchos::RCP<Teuchos::FancyOStream> out_;
 
 private:
-    Teuchos::RCP<Epetra_Vector>
-    createPsi_( const Teuchos::RCP<const Ginla::StkMesh> & mesh,
-                const Teuchos::RCP<ScalarFieldType>      & psir_field,
-                const Teuchos::RCP<ScalarFieldType>      & psii_field
-              ) const;
+Teuchos::RCP<Epetra_Vector>
+createPsi_( const Teuchos::RCP<const Ginla::StkMesh> &mesh,
+            const Teuchos::RCP<ScalarFieldType> &psir_field,
+            const Teuchos::RCP<ScalarFieldType> &psii_field
+            ) const;
 
-    Teuchos::RCP<Epetra_Vector>
-    createThickness_( const Teuchos::RCP<const Ginla::StkMesh> & mesh,
-                      const Teuchos::RCP<ScalarFieldType>      & thickness_field
-                    ) const;
+Teuchos::RCP<Epetra_Vector>
+createThickness_( const Teuchos::RCP<const Ginla::StkMesh> &mesh,
+                  const Teuchos::RCP<ScalarFieldType> &thickness_field
+                  ) const;
 
-    Teuchos::RCP<Epetra_MultiVector>
-    createMvp_( const Teuchos::RCP<const Ginla::StkMesh>  & mesh,
-                const Teuchos::RCP<const VectorFieldType> & mvpField
-              ) const;
+Teuchos::RCP<Epetra_MultiVector>
+createMvp_( const Teuchos::RCP<const Ginla::StkMesh> &mesh,
+            const Teuchos::RCP<const VectorFieldType> &mvpField
+            ) const;
 };
 // -----------------------------------------------------------------------------
 // helper function
 void
-StkMeshRead ( const Epetra_Comm      & comm,
-              const std::string      & fileName,
-              Teuchos::ParameterList & data
-            );
+StkMeshRead( const Epetra_Comm &comm,
+             const std::string &fileName,
+             Teuchos::ParameterList &data
+             );
 // -----------------------------------------------------------------------------
 } // namespace Ginla
 // =============================================================================

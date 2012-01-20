@@ -29,20 +29,20 @@
 namespace Ginla {
 // =============================================================================
 JacobianOperator::
-JacobianOperator( const Teuchos::RCP<const Ginla::StkMesh> & mesh,
-                  const Teuchos::RCP<const Epetra_Vector>  & thickness,
-                  const Teuchos::RCP<Ginla::KeoFactory>    & keoFactory,
-                  const Teuchos::RCP<Epetra_Vector>        & current_X
-                ):
-        useTranspose_( false ),
-        mesh_( mesh ),
-        thickness_( thickness ),
-        keoFactory_( keoFactory ),
-        current_X_ ( current_X ),
-        T_( 0.0 ),
-        isDiagsUpToDate_( false ),
-        diag0_ ( Teuchos::rcp( new Epetra_Vector(*(mesh->getComplexNonOverlapMap())) ) ),
-        diag1b_( Teuchos::rcp( new Epetra_Vector(mesh->getControlVolumes()->Map()) ) )
+JacobianOperator( const Teuchos::RCP<const Ginla::StkMesh> &mesh,
+                  const Teuchos::RCP<const Epetra_Vector> &thickness,
+                  const Teuchos::RCP<Ginla::KeoFactory> &keoFactory,
+                  const Teuchos::RCP<Epetra_Vector> &current_X
+                  ) :
+  useTranspose_( false ),
+  mesh_( mesh ),
+  thickness_( thickness ),
+  keoFactory_( keoFactory ),
+  current_X_( current_X ),
+  T_( 0.0 ),
+  isDiagsUpToDate_( false ),
+  diag0_( Teuchos::rcp( new Epetra_Vector( *(mesh->getComplexNonOverlapMap())) ) ),
+  diag1b_( Teuchos::rcp( new Epetra_Vector( mesh->getControlVolumes()->Map()) ) )
 {
 }
 // =============================================================================
@@ -55,57 +55,57 @@ int
 JacobianOperator::
 SetUseTranspose( bool UseTranspose )
 {
-    useTranspose_ = UseTranspose;
-    return 0;
+  useTranspose_ = UseTranspose;
+  return 0;
 }
 // =============================================================================
 int
 JacobianOperator::
-Apply ( const Epetra_MultiVector & X,
-              Epetra_MultiVector & Y
-      ) const
+Apply( const Epetra_MultiVector &X,
+       Epetra_MultiVector &Y
+       ) const
 {
-    // Add the terms corresponding to the nonlinear terms.
-    // A = K - I * thickness * ( (1-temp) - 2*|psi|^2 )
-    // B = diag( thickness * psi^2 )
+  // Add the terms corresponding to the nonlinear terms.
+  // A = K - I * thickness * ( (1-temp) - 2*|psi|^2 )
+  // B = diag( thickness * psi^2 )
 
 #ifdef _DEBUG_
-    TEUCHOS_ASSERT( !keoFactory_.is_null() );
-    TEUCHOS_ASSERT( !keoFactory_->getKeo().is_null() );
+  TEUCHOS_ASSERT( !keoFactory_.is_null() );
+  TEUCHOS_ASSERT( !keoFactory_->getKeo().is_null() );
 #endif
 
-    // K*psi
-    TEUCHOS_ASSERT_EQUALITY( 0, keoFactory_->getKeo()->Apply( X, Y ) );
+  // K*psi
+  TEUCHOS_ASSERT_EQUALITY( 0, keoFactory_->getKeo()->Apply( X, Y ) );
 
-    const Epetra_Vector & controlVolumes = *(mesh_->getControlVolumes());
-    int numMyPoints = controlVolumes.MyLength();
+  const Epetra_Vector &controlVolumes = *(mesh_->getControlVolumes());
+  int numMyPoints = controlVolumes.MyLength();
 
 #ifdef _DEBUG_
-    TEUCHOS_ASSERT_EQUALITY( 2*numMyPoints, X.MyLength() );
+  TEUCHOS_ASSERT_EQUALITY( 2*numMyPoints, X.MyLength() );
 #endif
 
-    // rebuild diagonals cache
-    if ( !isDiagsUpToDate_ )
-        this->rebuildDiags_();
+  // rebuild diagonals cache
+  if ( !isDiagsUpToDate_ )
+    this->rebuildDiags_();
 
-    for ( int vec=0; vec<X.NumVectors(); vec++ )
+  for ( int vec=0; vec<X.NumVectors(); vec++ )
+  {
+    // For the parts Re(psi)Im(phi), Im(psi)Re(phi), the (2*k+1)th
+    // component of X needs to be summed into the (2k)th component of Y,
+    // likewise for (2k) -> (2k+1).
+    // The Epetra class cannot currently handle this situation
+    // (e.g., by Epetra_Vector::Multiply()), so we
+    // need to access the vector entries one-by-one. And then, while
+    // we're at it, let's include all the other terms in the loop
+    // too. (It would actually be possible to have the terms
+    // 2k/2k and 2k+1/2k+1 handled by Multiply().
+    for ( int k=0; k<numMyPoints; k++ )
     {
-        // For the parts Re(psi)Im(phi), Im(psi)Re(phi), the (2*k+1)th
-        // component of X needs to be summed into the (2k)th component of Y,
-        // likewise for (2k) -> (2k+1).
-        // The Epetra class cannot currently handle this situation
-        // (e.g., by Epetra_Vector::Multiply()), so we
-        // need to access the vector entries one-by-one. And then, while
-        // we're at it, let's include all the other terms in the loop
-        // too. (It would actually be possible to have the terms
-        // 2k/2k and 2k+1/2k+1 handled by Multiply().
-        for ( int k=0; k<numMyPoints; k++ )
-        {
-            (*Y(vec))[2*k]   +=  (*diag0_) [2*k]  * X[vec][2*k]
-                                -(*diag1b_)[k]    * X[vec][2*k+1];
-            (*Y(vec))[2*k+1] += -(*diag1b_)[k]    * X[vec][2*k]
-                                +(*diag0_)[2*k+1] * X[vec][2*k+1];
-        }
+      (*Y( vec ))[2*k]   +=  (*diag0_) [2*k]  * X[vec][2*k]
+        -(*diag1b_)[k]    * X[vec][2*k+1];
+      (*Y( vec ))[2*k+1] += -(*diag1b_)[k]    * X[vec][2*k]
+        +(*diag0_)[2*k+1] * X[vec][2*k+1];
+    }
 
 //        // add terms corresponding to  diag( psi^2 ) * \conj{phi}
 //        for ( int k=0; k<numMyPoints; k++ )
@@ -122,99 +122,99 @@ Apply ( const Epetra_MultiVector & X,
 //            // imaginary part
 //            TEUCHOS_ASSERT_EQUALITY( 0, Y.SumIntoMyValue( 2*k+1, vec, - imPhiSquare * X[vec][2*k] + rePhiSquare * X[vec][2*k+1] ) );
 //        }
-    }
+  }
 
 //    // take care of the shifting
 //    if ( alpha_ != 0.0 || beta_ != -1.0 )
 //    TEUCHOS_ASSERT_EQUALITY( 0, Y.Update( alpha_, X, -beta_ ) );
 
-    return 0;
+  return 0;
 }
 // =============================================================================
 int
 JacobianOperator::
-ApplyInverse ( const Epetra_MultiVector & X,
-                     Epetra_MultiVector & Y
-             ) const
+ApplyInverse( const Epetra_MultiVector &X,
+              Epetra_MultiVector &Y
+              ) const
 {
-    TEST_FOR_EXCEPT( "Not implemented." );
-    return -1;
+  TEST_FOR_EXCEPT( "Not implemented." );
+  return -1;
 }
 // =============================================================================
 double
 JacobianOperator::
-NormInf () const
+NormInf() const
 {
-    TEST_FOR_EXCEPT( "Not yet implemented." );
-    return 0.0;
+  TEST_FOR_EXCEPT( "Not yet implemented." );
+  return 0.0;
 }
 // =============================================================================
 const char *
 JacobianOperator::
-Label () const
+Label() const
 {
-    return "Jacobian operator for Ginzburg--Landau";
+  return "Jacobian operator for Ginzburg--Landau";
 }
 // =============================================================================
 bool
 JacobianOperator::
-UseTranspose () const
+UseTranspose() const
 {
-    return useTranspose_;
+  return useTranspose_;
 }
 // =============================================================================
 bool
 JacobianOperator::
-HasNormInf () const
+HasNormInf() const
 {
-    return false;
+  return false;
 }
 // =============================================================================
 const Epetra_Comm &
 JacobianOperator::
-Comm () const
+Comm() const
 {
-    return current_X_->Comm();
+  return current_X_->Comm();
 }
 // =============================================================================
 const Epetra_Map &
 JacobianOperator::
-OperatorDomainMap () const
+OperatorDomainMap() const
 {
 #ifdef _DEBUG_
-    TEUCHOS_ASSERT( !keoFactory_.is_null() );
-    TEUCHOS_ASSERT( !keoFactory_->getKeo().is_null() );
+  TEUCHOS_ASSERT( !keoFactory_.is_null() );
+  TEUCHOS_ASSERT( !keoFactory_->getKeo().is_null() );
 #endif
-    return keoFactory_->getKeo()->OperatorDomainMap();
+  return keoFactory_->getKeo()->OperatorDomainMap();
 }
 // =============================================================================
 const Epetra_Map &
 JacobianOperator::
-OperatorRangeMap () const
+OperatorRangeMap() const
 {
 #ifdef _DEBUG_
-    TEUCHOS_ASSERT( !keoFactory_.is_null() );
-    TEUCHOS_ASSERT( !keoFactory_->getKeo().is_null() );
+  TEUCHOS_ASSERT( !keoFactory_.is_null() );
+  TEUCHOS_ASSERT( !keoFactory_->getKeo().is_null() );
 #endif
-    return keoFactory_->getKeo()->OperatorRangeMap();
+  return keoFactory_->getKeo()->OperatorRangeMap();
 }
 // =============================================================================
 void
 JacobianOperator::
-rebuild( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
+rebuild( const Teuchos::RCP<const LOCA::ParameterVector> &mvpParams,
          const double T,
-         const Teuchos::RCP<const Epetra_Vector> & current_X
-       )
+         const Teuchos::RCP<const Epetra_Vector> &current_X
+         )
 {
-    // set the entities for the operator
-    T_ = T;
-    current_X_ = current_X;
-    isDiagsUpToDate_ = false;
+  // set the entities for the operator
+  T_ = T;
+  current_X_ = current_X;
+  isDiagsUpToDate_ = false;
 
-    // rebuild the keo
-    keoFactory_->updateParameters( mvpParams );
+  // rebuild the keo
+  keoFactory_->updateParameters( mvpParams );
 
-    return;
+  return;
 }
 // =============================================================================
 void
@@ -222,41 +222,46 @@ JacobianOperator::
 rebuildDiags_() const
 {
 #ifdef _DEBUG_
-    TEUCHOS_ASSERT( !current_X_.is_null() );
+  TEUCHOS_ASSERT( !current_X_.is_null() );
 #endif
 
-    const Epetra_Vector & controlVolumes = *(mesh_->getControlVolumes());
-    int numMyPoints = controlVolumes.MyLength();
+  const Epetra_Vector &controlVolumes = *(mesh_->getControlVolumes());
+  int numMyPoints = controlVolumes.MyLength();
 
-    int kk;
-    double val;
-    int indices[2];
-    double vals[2];
-    for ( int k=0; k<numMyPoints; k++ )
-    {
-        // rebuild diag0
-        double alpha = controlVolumes[k] * (*thickness_)[k] * (
-                       1.0 - T_
-                       - 2.0 * ( (*current_X_)[2*k]*(*current_X_)[2*k] + (*current_X_)[2*k+1]*(*current_X_)[2*k+1] )
-                       );
-        double rePhiSquare = controlVolumes[k] * (*thickness_)[k] * (
-                             (*current_X_)[2*k]*(*current_X_)[2*k] - (*current_X_)[2*k+1]*(*current_X_)[2*k+1]
-                             );
-        vals[0]    = alpha - rePhiSquare;
-        vals[1]    = alpha + rePhiSquare;
-        indices[0] = 2*k;
-        indices[1] = 2*k+1;
-        TEUCHOS_ASSERT_EQUALITY( 0, diag0_->ReplaceMyValues( 2, vals, indices ) );
+  int kk;
+  double val;
+  int indices[2];
+  double vals[2];
+  for ( int k=0; k<numMyPoints; k++ )
+  {
+    // rebuild diag0
+    double alpha = controlVolumes[k] * (*thickness_)[k] * (
+        1.0 - T_
+        - 2.0 *
+        ( (*current_X_)[2*
+                        k]*
+          (*current_X_)[2*k] + (*current_X_)[2*k+1]*(*current_X_)[2*k+1])
+        );
+    double rePhiSquare = controlVolumes[k] * (*thickness_)[k] * (
+        (*current_X_)[2*
+                      k]*
+        (*current_X_)[2*k] - (*current_X_)[2*k+1]*(*current_X_)[2*k+1]
+        );
+    vals[0]    = alpha - rePhiSquare;
+    vals[1]    = alpha + rePhiSquare;
+    indices[0] = 2*k;
+    indices[1] = 2*k+1;
+    TEUCHOS_ASSERT_EQUALITY( 0, diag0_->ReplaceMyValues( 2, vals, indices ) );
 
-        // rebuild diag1b
-        double imPhiSquare = controlVolumes[k] * (*thickness_)[k] * (
-                             2.0 * (*current_X_)[2*k] * (*current_X_)[2*k+1]
-                             );
-        TEUCHOS_ASSERT_EQUALITY( 0, diag1b_->ReplaceMyValues( 1, &imPhiSquare, &k ) );
-    }
-    isDiagsUpToDate_ = true;
+    // rebuild diag1b
+    double imPhiSquare = controlVolumes[k] * (*thickness_)[k] * (
+        2.0 * (*current_X_)[2*k] * (*current_X_)[2*k+1]
+        );
+    TEUCHOS_ASSERT_EQUALITY( 0, diag1b_->ReplaceMyValues( 1, &imPhiSquare, &k ) );
+  }
+  isDiagsUpToDate_ = true;
 
-    return;
+  return;
 }
 // =============================================================================
 } // namespace Ginla

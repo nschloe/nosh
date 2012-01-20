@@ -32,37 +32,36 @@
 
 namespace Ginla {
 
-namespace Helpers
-{
-  //! Method that reads a given Teuchos::ParameterList and puts all \c double
-  //! entries into a LOCA::ParameterVector.
-  Teuchos::RCP<LOCA::ParameterVector>
-  teuchosParameterList2locaParameterVector( const Teuchos::ParameterList & p
+namespace Helpers {
+//! Method that reads a given Teuchos::ParameterList and puts all \c double
+//! entries into a LOCA::ParameterVector.
+Teuchos::RCP<LOCA::ParameterVector>
+teuchosParameterList2locaParameterVector( const Teuchos::ParameterList &p
                                           );
 
-  Teuchos::RCP<Teuchos::ParameterList>
-  locaParameterVector2teuchosParameterList( const LOCA::ParameterVector & pL );
-                                          
-  //! Merges two \c LOCA::ParameterLists into one, checking for discrepancies
-  //! in the entries.
-  Teuchos::RCP<LOCA::ParameterVector>
-  mergeLocaParameterVectors( const LOCA::ParameterVector & p0,
-                             const LOCA::ParameterVector & p1
+Teuchos::RCP<Teuchos::ParameterList>
+locaParameterVector2teuchosParameterList( const LOCA::ParameterVector &pL );
+
+//! Merges two \c LOCA::ParameterLists into one, checking for discrepancies
+//! in the entries.
+Teuchos::RCP<LOCA::ParameterVector>
+mergeLocaParameterVectors( const LOCA::ParameterVector &p0,
+                           const LOCA::ParameterVector &p1
                            );
-                           
-  void
-  appendToTeuchosParameterList( Teuchos::ParameterList      & p,
-                                const LOCA::ParameterVector & pL,
-                                const std::string           & labelPrepend = ""
+
+void
+appendToTeuchosParameterList( Teuchos::ParameterList &p,
+                              const LOCA::ParameterVector &pL,
+                              const std::string &labelPrepend = ""
                               );
 
-  bool
-  locaParameterVectorsEqual( const Teuchos::RCP<const LOCA::ParameterVector> & a,
-                             const Teuchos::RCP<const LOCA::ParameterVector> & b
+bool
+locaParameterVectorsEqual( const Teuchos::RCP<const LOCA::ParameterVector> &a,
+                           const Teuchos::RCP<const LOCA::ParameterVector> &b
                            );
 
-  unsigned int
-  numDigits ( const int i );
+unsigned int
+numDigits( const int i );
 
 }
 

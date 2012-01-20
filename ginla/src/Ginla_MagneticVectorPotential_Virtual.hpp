@@ -28,40 +28,40 @@ namespace MagneticVectorPotential {
 class Virtual
 {
 public:
-  Virtual();
+Virtual();
 
-  ~Virtual();
+~Virtual();
 
-  //! Sets the parameters in this module.
-  virtual void
-  setParameters( const LOCA::ParameterVector & p ) = 0;
+//! Sets the parameters in this module.
+virtual void
+setParameters( const LOCA::ParameterVector &p ) = 0;
 
-  virtual Teuchos::RCP<LOCA::ParameterVector>
-  getParameters() const = 0;
+virtual Teuchos::RCP<LOCA::ParameterVector>
+getParameters() const = 0;
 
-  virtual double
-  getAEdgeMidpointProjection( const unsigned int edgeIndex
+virtual double
+getAEdgeMidpointProjection( const unsigned int edgeIndex
                             ) const = 0;
 
-  virtual double
-  getdAdMuEdgeMidpointProjection( const unsigned int edgeIndex
+virtual double
+getdAdMuEdgeMidpointProjection( const unsigned int edgeIndex
                                 ) const = 0;
-  virtual double
-  getdAdThetaEdgeMidpointProjection( const unsigned int edgeIndex
+virtual double
+getdAdThetaEdgeMidpointProjection( const unsigned int edgeIndex
                                    ) const = 0;
 
-  virtual double
-  getAEdgeMidpointProjectionFallback( const unsigned int cellIndex,
-                                      const unsigned int edgeIndex
+virtual double
+getAEdgeMidpointProjectionFallback( const unsigned int cellIndex,
+                                    const unsigned int edgeIndex
                                     ) const = 0;
 
-  virtual double
-  getdAdMuEdgeMidpointProjectionFallback( const unsigned int cellIndex,
-                                          const unsigned int edgeIndex
+virtual double
+getdAdMuEdgeMidpointProjectionFallback( const unsigned int cellIndex,
+                                        const unsigned int edgeIndex
                                         ) const = 0;
-  virtual double
-  getdAdThetaEdgeMidpointProjectionFallback( const unsigned int cellIndex,
-                                             const unsigned int edgeIndex
+virtual double
+getdAdThetaEdgeMidpointProjectionFallback( const unsigned int cellIndex,
+                                           const unsigned int edgeIndex
                                            ) const = 0;
 
 protected:

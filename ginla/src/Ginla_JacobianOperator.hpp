@@ -34,8 +34,8 @@
 // =============================================================================
 // forward declarations
 namespace Ginla {
-    class KeoFactory;
-    class StkMesh;
+class KeoFactory;
+class StkMesh;
 }
 class Epetra_CrsGraph;
 class Epetra_CrsMatrix;
@@ -46,74 +46,74 @@ namespace Ginla {
 class JacobianOperator : public Epetra_Operator
 {
 public:
-    JacobianOperator( const Teuchos::RCP<const Ginla::StkMesh> & mesh,
-                      const Teuchos::RCP<const Epetra_Vector>  & thickness,
-                      const Teuchos::RCP<Ginla::KeoFactory>    & keoFactory,
-                      const Teuchos::RCP<Epetra_Vector>        & current_X = Teuchos::null
-                    );
+JacobianOperator( const Teuchos::RCP<const Ginla::StkMesh> &mesh,
+                  const Teuchos::RCP<const Epetra_Vector> &thickness,
+                  const Teuchos::RCP<Ginla::KeoFactory> &keoFactory,
+                  const Teuchos::RCP<Epetra_Vector> &current_X = Teuchos::null
+                  );
 
-    // Destructor.
-    ~JacobianOperator ();
+// Destructor.
+~JacobianOperator ();
 
-    virtual int
-    SetUseTranspose( bool UseTranspose );
+virtual int
+SetUseTranspose( bool UseTranspose );
 
-    virtual int
-    Apply ( const Epetra_MultiVector &X,
-            Epetra_MultiVector &Y
-          ) const;
+virtual int
+Apply( const Epetra_MultiVector &X,
+       Epetra_MultiVector &Y
+       ) const;
 
-    virtual int
-    ApplyInverse ( const Epetra_MultiVector &X,
-                   Epetra_MultiVector &Y
-                 ) const;
+virtual int
+ApplyInverse( const Epetra_MultiVector &X,
+              Epetra_MultiVector &Y
+              ) const;
 
-    virtual double
-    NormInf () const;
+virtual double
+NormInf() const;
 
-    virtual const char *
-    Label () const;
+virtual const char *
+Label() const;
 
-    virtual bool
-    UseTranspose () const;
+virtual bool
+UseTranspose() const;
 
-    virtual bool
-    HasNormInf () const;
+virtual bool
+HasNormInf() const;
 
-    virtual const Epetra_Comm &
-    Comm () const;
+virtual const Epetra_Comm &
+Comm() const;
 
-    virtual const Epetra_Map & OperatorDomainMap () const;
+virtual const Epetra_Map &OperatorDomainMap() const;
 
-    virtual const Epetra_Map & OperatorRangeMap () const;
+virtual const Epetra_Map &OperatorRangeMap() const;
 
 public:
-    void
-    rebuild( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams,
-             const double T,
-             const Teuchos::RCP<const Epetra_Vector> & current_X
-           );
+void
+rebuild( const Teuchos::RCP<const LOCA::ParameterVector> &mvpParams,
+         const double T,
+         const Teuchos::RCP<const Epetra_Vector> &current_X
+         );
 
 protected:
 
 private:
-    void
-    rebuildDiags_() const;
+void
+rebuildDiags_() const;
 
 private:
-    bool useTranspose_;
+bool useTranspose_;
 
-    const Teuchos::RCP<const Ginla::StkMesh> mesh_;
-    const Teuchos::RCP<const Epetra_Vector> thickness_;
-    const Teuchos::RCP<Ginla::KeoFactory> keoFactory_;
+const Teuchos::RCP<const Ginla::StkMesh> mesh_;
+const Teuchos::RCP<const Epetra_Vector> thickness_;
+const Teuchos::RCP<Ginla::KeoFactory> keoFactory_;
 
-    Teuchos::RCP<const Epetra_Vector> current_X_;
+Teuchos::RCP<const Epetra_Vector> current_X_;
 
-    double T_;
+double T_;
 
-    mutable bool isDiagsUpToDate_;
-    const Teuchos::RCP<Epetra_Vector> diag0_;
-    const Teuchos::RCP<Epetra_Vector> diag1b_;
+mutable bool isDiagsUpToDate_;
+const Teuchos::RCP<Epetra_Vector> diag0_;
+const Teuchos::RCP<Epetra_Vector> diag1b_;
 };
 
 } // namespace Ginla

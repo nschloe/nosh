@@ -31,105 +31,105 @@ namespace Ginla {
 // ============================================================================
 Teuchos::RCP<LOCA::ParameterVector>
 Helpers::
-teuchosParameterList2locaParameterVector( const Teuchos::ParameterList & p
-                                        )
+teuchosParameterList2locaParameterVector( const Teuchos::ParameterList &p
+                                          )
 {
   Teuchos::RCP<LOCA::ParameterVector> pL =
-      Teuchos::rcp( new LOCA::ParameterVector() );
-        
+    Teuchos::rcp( new LOCA::ParameterVector() );
+
   Teuchos::ParameterList::ConstIterator k;
   double * dummy = NULL;
   for ( k=p.begin(); k!=p.end(); ++k )
   {
-    Teuchos::ParameterEntry e = p.entry(k);
+    Teuchos::ParameterEntry e = p.entry( k );
     if ( e.isType<double>() )
-      pL->addParameter( p.name(k),
-                        e.getValue<double>(dummy) );
+      pL->addParameter( p.name( k ),
+                        e.getValue<double>( dummy ) );
   }
-  
+
   return pL;
 }
 // ============================================================================
 Teuchos::RCP<Teuchos::ParameterList>
 Helpers::
-locaParameterVector2teuchosParameterList( const LOCA::ParameterVector & pL )
+locaParameterVector2teuchosParameterList( const LOCA::ParameterVector &pL )
 {
-    Teuchos::RCP<Teuchos::ParameterList> p =
-      Teuchos::rcp( new Teuchos::ParameterList() );
-      
-    appendToTeuchosParameterList(  *p, pL );
+  Teuchos::RCP<Teuchos::ParameterList> p =
+    Teuchos::rcp( new Teuchos::ParameterList() );
 
-    return p;
+  appendToTeuchosParameterList( *p, pL );
+
+  return p;
 }
 // ============================================================================
 Teuchos::RCP<LOCA::ParameterVector>
 Helpers::
-mergeLocaParameterVectors( const LOCA::ParameterVector & p0,
-                           const LOCA::ParameterVector & p1
-                         )
+mergeLocaParameterVectors( const LOCA::ParameterVector &p0,
+                           const LOCA::ParameterVector &p1
+                           )
 {
   // intialize p with p0
-  Teuchos::RCP<LOCA::ParameterVector> p = 
-          Teuchos::rcp( new LOCA::ParameterVector( p0 ) );
+  Teuchos::RCP<LOCA::ParameterVector> p =
+    Teuchos::rcp( new LOCA::ParameterVector( p0 ) );
 
   // add elements from p1
   for( int k=0; k<p1.length(); k++ )
   {
-    double value = p1.getValue(k);
-    std::string label = p1.getLabel(k);
-    if( p->isParameter(label) )
+    double value = p1.getValue( k );
+    std::string label = p1.getLabel( k );
+    if( p->isParameter( label ) )
     {
-        // If the entry already exists, make sure the values
-        // coincide.
-        TEUCHOS_ASSERT_EQUALITY( p->getValue(label), value );
+      // If the entry already exists, make sure the values
+      // coincide.
+      TEUCHOS_ASSERT_EQUALITY( p->getValue( label ), value );
     }
     else
     {
-        p->addParameter( label, value );
+      p->addParameter( label, value );
     }
   }
-  
+
   return p;
 }
 // ============================================================================
 void
 Helpers::
-appendToTeuchosParameterList( Teuchos::ParameterList      & p,
-                              const LOCA::ParameterVector & pL,
-                              const std::string           & labelPrepend
-                            )
-{       
+appendToTeuchosParameterList( Teuchos::ParameterList &p,
+                              const LOCA::ParameterVector &pL,
+                              const std::string &labelPrepend
+                              )
+{
   Teuchos::ParameterList::ConstIterator k;
   for ( int k=0; k<pL.length(); k++ )
-     p.set<double>( labelPrepend + pL.getLabel(k), pL[k] );  
-  
+    p.set<double>( labelPrepend + pL.getLabel( k ), pL[k] );
+
   return;
 }
 // ============================================================================
 bool
 Helpers::
-locaParameterVectorsEqual( const Teuchos::RCP<const LOCA::ParameterVector> & a,
-                           const Teuchos::RCP<const LOCA::ParameterVector> & b
-                         )
+locaParameterVectorsEqual( const Teuchos::RCP<const LOCA::ParameterVector> &a,
+                           const Teuchos::RCP<const LOCA::ParameterVector> &b
+                           )
 {
   if ( a.is_null() || b.is_null() )
-      return false;
+    return false;
 
   int aLength = a->length();
   int bLength = b->length();
   if ( aLength != bLength )
-      return false;
+    return false;
 
   double tol = 1.0e-15;
   const std::vector<string> names = a->getNamesVector();
   for( int k=0; k<aLength; k++ )
   {
-      double aVal = a->getValue( k );
-      // If the parameter names[k] doesn't exist in b,
-      // this throws an exception.
-      double bVal = b->getValue( names[k] );
-      if ( fabs(aVal-bVal) > tol )
-          return false;
+    double aVal = a->getValue( k );
+    // If the parameter names[k] doesn't exist in b,
+    // this throws an exception.
+    double bVal = b->getValue( names[k] );
+    if ( fabs( aVal-bVal ) > tol )
+      return false;
   }
 
   return true;
@@ -137,19 +137,19 @@ locaParameterVectorsEqual( const Teuchos::RCP<const LOCA::ParameterVector> & a,
 // ============================================================================
 unsigned int
 Helpers::
-numDigits ( const int i )
+numDigits( const int i )
 {
-    int numDigits = 0;
-    int ii = i;
-    if ( ii < 0 )
-        ii = -ii;
+  int numDigits = 0;
+  int ii = i;
+  if ( ii < 0 )
+    ii = -ii;
 
-    while ( ii > 0 )
-    {
-        numDigits++;
-        ii/=10;
-    }
-    return numDigits;
+  while ( ii > 0 )
+  {
+    numDigits++;
+    ii/=10;
+  }
+  return numDigits;
 }
 // ============================================================================
 } // namespace Ginla

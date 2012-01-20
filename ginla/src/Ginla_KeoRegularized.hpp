@@ -42,113 +42,113 @@
 #include <LOCA_Parameter_Vector.H>
 // =============================================================================
 namespace Ginla {
-    class KeoFactory;
-    class StkMesh;
+class KeoFactory;
+class StkMesh;
 }
 namespace Belos {
-    class EpetraPrecOp;
+class EpetraPrecOp;
 }
 class Amesos_BaseSolver;
 class Epetra_LinearProblem;
 namespace ML_Epetra {
-    class MultiLevelPreconditioner;
+class MultiLevelPreconditioner;
 }
 // =============================================================================
 namespace Ginla {
 // =============================================================================
-class KeoRegularized: public Epetra_Operator
+class KeoRegularized : public Epetra_Operator
 {
 public:
-    KeoRegularized( const Teuchos::RCP<Ginla::KeoFactory> & keoFactory );
+KeoRegularized( const Teuchos::RCP<Ginla::KeoFactory> &keoFactory );
 
-    // Destructor.
-    ~KeoRegularized();
+// Destructor.
+~KeoRegularized();
 
-    virtual int
-    SetUseTranspose( bool UseTranspose );
+virtual int
+SetUseTranspose( bool UseTranspose );
 
-    virtual int
-    Apply ( const Epetra_MultiVector & X,
-                  Epetra_MultiVector & Y
-          ) const;
+virtual int
+Apply( const Epetra_MultiVector &X,
+       Epetra_MultiVector &Y
+       ) const;
 
-    virtual int
-    ApplyInverse ( const Epetra_MultiVector & X,
-                         Epetra_MultiVector & Y
-                 ) const;
+virtual int
+ApplyInverse( const Epetra_MultiVector &X,
+              Epetra_MultiVector &Y
+              ) const;
 
-    virtual double
-    NormInf () const;
+virtual double
+NormInf() const;
 
-    virtual const char *
-    Label () const;
+virtual const char *
+Label() const;
 
-    virtual bool
-    UseTranspose () const;
+virtual bool
+UseTranspose() const;
 
-    virtual bool
-    HasNormInf () const;
+virtual bool
+HasNormInf() const;
 
-    virtual const Epetra_Comm &
-    Comm () const;
+virtual const Epetra_Comm &
+Comm() const;
 
-    virtual const Epetra_Map & 	OperatorDomainMap () const;
+virtual const Epetra_Map &OperatorDomainMap() const;
 
-    virtual const Epetra_Map & 	OperatorRangeMap () const;
+virtual const Epetra_Map &OperatorRangeMap() const;
 
 public:
 
-    void
-    rebuild();
+void
+rebuild();
 
-    void
-    rebuild( const Teuchos::RCP<const LOCA::ParameterVector> & mvpParams );
+void
+rebuild( const Teuchos::RCP<const LOCA::ParameterVector> &mvpParams );
 
 protected:
 private:
-    int
-    ApplyInverseMl_( const Epetra_MultiVector & X,
-                           Epetra_MultiVector & Y
-                   ) const;
+int
+ApplyInverseMl_( const Epetra_MultiVector &X,
+                 Epetra_MultiVector &Y
+                 ) const;
 
-    int
-    ApplyInverseIlu_ ( const Epetra_MultiVector & X,
-                             Epetra_MultiVector & Y
-                     ) const;
+int
+ApplyInverseIlu_( const Epetra_MultiVector &X,
+                  Epetra_MultiVector &Y
+                  ) const;
 
-    void
-    rebuildMl_();
+void
+rebuildMl_();
 
-    void
-    rebuildIlu_();
-
-private:
-
-    enum EInversionType { INVERT_ILU, INVERT_ML };
+void
+rebuildIlu_();
 
 private:
-    bool useTranspose_;
-    const Epetra_Comm & comm_;
 
-    Teuchos::RCP<Ginla::KeoFactory> keoFactory_;
-    // Make sure the matrix pointer is never changed; ML's
-    // preconditioner generation depends on that.
-    //const Teuchos::RCP<Epetra_CrsMatrix> keoRegularized_;
-    Teuchos::RCP<Epetra_CrsMatrix> keoRegularized_;
+enum EInversionType { INVERT_ILU, INVERT_ML };
 
-    Teuchos::RCP<Belos::EpetraPrecOp> keoMlPrec_;
-    Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> MlPrec_;
+private:
+bool useTranspose_;
+const Epetra_Comm &comm_;
 
-    Teuchos::RCP<Epetra_LinearProblem> keoIluProblem_;
-    Teuchos::RCP<Amesos_BaseSolver> keoIluSolver_;
+Teuchos::RCP<Ginla::KeoFactory> keoFactory_;
+// Make sure the matrix pointer is never changed; ML's
+// preconditioner generation depends on that.
+//const Teuchos::RCP<Epetra_CrsMatrix> keoRegularized_;
+Teuchos::RCP<Epetra_CrsMatrix> keoRegularized_;
 
-    EInversionType invType_;
+Teuchos::RCP<Belos::EpetraPrecOp> keoMlPrec_;
+Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> MlPrec_;
+
+Teuchos::RCP<Epetra_LinearProblem> keoIluProblem_;
+Teuchos::RCP<Amesos_BaseSolver> keoIluSolver_;
+
+EInversionType invType_;
 
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
-    const Teuchos::RCP<Teuchos::Time> timerRebuild_;
+const Teuchos::RCP<Teuchos::Time> timerRebuild_;
 #endif
 
-    Teuchos::RCP<Teuchos::FancyOStream> out_;
+Teuchos::RCP<Teuchos::FancyOStream> out_;
 };
 // =============================================================================
 } // namespace Ginla
