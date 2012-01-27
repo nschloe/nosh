@@ -30,7 +30,7 @@ ENDIF()
 #SET(CMAKE_CXX_FLAGS_RELEASE     "-O2" )
 #SET(CMAKE_Fortran_FLAGS_RELEASE "-O2" )
 
-SET(CMAKE_CXX_FLAGS_DEBUG     "-g -ggdb -Wall -pedantic -fbounds-check -Wextra -Wno-unused -Wstrict-null-sentinel -ansi -std=c++0x" )
+SET(CMAKE_CXX_FLAGS_DEBUG     "-g -ggdb -Wall -pedantic -fbounds-check -Wextra -Wno-unused -Wstrict-null-sentinel -Wshadow -Woverloaded-virtual -ansi -std=c++0x" )
 SET(CMAKE_Fortran_FLAGS_DEBUG "-g -ggdb -Wall -pedantic -fbounds-check -Wextra -Wno-unused" )
 
 SET(CMAKE_CXX_FLAGS_PROFILE     "-pg -O2" )
