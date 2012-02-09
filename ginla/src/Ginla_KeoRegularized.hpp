@@ -141,8 +141,8 @@ const Epetra_Comm &comm_;
 Teuchos::RCP<Ginla::KeoFactory> keoFactory_;
 // Make sure the matrix pointer is never changed; ML's
 // preconditioner generation depends on that.
-//const Teuchos::RCP<Epetra_CrsMatrix> keoRegularized_;
-Teuchos::RCP<Epetra_CrsMatrix> keoRegularized_;
+const Teuchos::RCP<Epetra_CrsMatrix> keoRegularized_;
+// Teuchos::RCP<Epetra_CrsMatrix> keoRegularized_;
 
 Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> MlPrec_;
 
@@ -152,7 +152,8 @@ Teuchos::RCP<Amesos_BaseSolver> keoIluSolver_;
 EInversionType invType_;
 
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
-const Teuchos::RCP<Teuchos::Time> timerRebuild_;
+const Teuchos::RCP<Teuchos::Time> timerRebuild0_;
+const Teuchos::RCP<Teuchos::Time> timerRebuild1_;
 #endif
 
 Teuchos::RCP<Teuchos::FancyOStream> out_;

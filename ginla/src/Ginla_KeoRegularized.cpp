@@ -58,14 +58,16 @@ KeoRegularized( const Teuchos::RCP<const Ginla::StkMesh> &mesh,
   thickness_( thickness ),
   comm_( keoFactory->getComm() ),
   keoFactory_( keoFactory ),
-  keoRegularized_( Teuchos::null ),
+  keoRegularized_(Teuchos::rcp(new Epetra_CrsMatrix(Copy, keoFactory_->getKeo()->Graph()))),
   MlPrec_( Teuchos::null ),
   keoIluProblem_( Teuchos::null ),
   keoIluSolver_( Teuchos::null ),
   invType_( INVERT_ML ),
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
-  timerRebuild_( Teuchos::TimeMonitor::getNewTimer(
-                   "Ginla: KeoRegularized::rebuild" ) ),
+  timerRebuild0_( Teuchos::TimeMonitor::getNewTimer(
+                   "Ginla: KeoRegularized::rebuild::ML init" ) ),
+  timerRebuild1_( Teuchos::TimeMonitor::getNewTimer(
+                   "Ginla: KeoRegularized::rebuild::ML rebuild" ) ),
 #endif
   out_( Teuchos::VerboseObjectBase::getDefaultOStream() )
 {
@@ -288,15 +290,12 @@ void
 KeoRegularized::
 rebuild(const Teuchos::RCP<const Epetra_Vector> & psi)
 {
-#ifdef GINLA_TEUCHOS_TIME_MONITOR
-  Teuchos::TimeMonitor tm( *timerRebuild_ );
-#endif
   // -------------------------------------------------------------------------
   // Copy over the matrix.
 #ifdef _DEBUG_
   TEUCHOS_ASSERT( !keoFactory_.is_null() );
 #endif
-  keoRegularized_ = Teuchos::rcp( new Epetra_CrsMatrix( *(keoFactory_->getKeo()) ) );
+  *keoRegularized_ = *(keoFactory_->getKeo());
   keoRegularized_->Scale( -1.0 );
   // -------------------------------------------------------------------------
   // Add 2*|psi|^2 to the diagonal.
@@ -351,55 +350,63 @@ KeoRegularized::
 rebuildMl_()
 {
   // For reusing the ML structure, see
-  //  <http://trilinos.sandia.gov/packages/docs/dev/packages/ml/doc/html/classML__Epetra_1_1MultiLevelPreconditioner.html>:
-//     if ( MlPrec_.is_null() || MlPrec_->IsPreconditionerComputed()==false )
-//     {
-  // build ML structure
-  Teuchos::ParameterList MLList;
-  ML_Epetra::SetDefaults( "SA", MLList );
-//         MLList.set("ML output", 0);
-  MLList.set( "max levels", 10 );
-  MLList.set( "increasing or decreasing", "increasing" );
-  MLList.set( "aggregation: type", "Uncoupled" );
-  MLList.set( "smoother: type", "Chebyshev" );     // "block Gauss-Seidel" "Chebyshev"
-  MLList.set( "aggregation: threshold", 0.0 );
-  MLList.set( "smoother: sweeps", 3 );
-  MLList.set( "smoother: pre or post", "both" );
-  MLList.set( "coarse: type", "Amesos-KLU" );
-  MLList.set( "PDE equations", 2 );
-  // reuse the multilevel hierarchy
-  // MLList.set("reuse: enable", true);
+  // http://trilinos.sandia.gov/packages/docs/dev/packages/ml/doc/html/classML__Epetra_1_1MultiLevelPreconditioner.html#a0a5c1d47c6938d2ec1cb9bb710723c1e
+  if ( MlPrec_.is_null() )
+  {
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
+  Teuchos::TimeMonitor tm( *timerRebuild0_ );
+#endif
+    // build ML structure
+    Teuchos::ParameterList MLList;
+    ML_Epetra::SetDefaults( "SA", MLList );
+//     MLList.set("ML output", 0);
+    MLList.set( "max levels", 10 );
+    MLList.set( "increasing or decreasing", "increasing" );
+    MLList.set( "aggregation: type", "Uncoupled" );
+    MLList.set( "smoother: type", "Chebyshev" );     // "block Gauss-Seidel" "Chebyshev"
+    MLList.set( "aggregation: threshold", 0.0 );
+    MLList.set( "smoother: sweeps", 3 );
+    MLList.set( "smoother: pre or post", "both" );
+    MLList.set( "coarse: type", "Amesos-KLU" );
+    MLList.set( "PDE equations", 2 );
+    // reuse the multilevel hierarchy
+    MLList.set("reuse: enable", true);
 
 #ifdef _DEBUG_
-  TEUCHOS_ASSERT( !keoRegularized_.is_null() );
+    TEUCHOS_ASSERT( !keoRegularized_.is_null() );
 #endif
 
-  // From http://trilinos.sandia.gov/packages/docs/r10.8/packages/ml/doc/html/classML__Epetra_1_1MultiLevelPreconditioner.html:
-  // "It is important to note that ML is more restrictive than Epetra for
-  //  the definition of maps. It is required that RowMatrixRowMap() is
-  //  equal to OperatorRangeMap(). This is because ML needs to perform
-  //  matrix-std::vector product, as well as getrow() functions, on the
-  //  same data distribution.
-  // "Also, for square matrices, OperatorDomainMap() must be as
-  //  OperatorRangeMap()."
-  // Make sure this is indeed the case.
+    // From http://trilinos.sandia.gov/packages/docs/r10.8/packages/ml/doc/html/classML__Epetra_1_1MultiLevelPreconditioner.html:
+    // "It is important to note that ML is more restrictive than Epetra for
+    //  the definition of maps. It is required that RowMatrixRowMap() is
+    //  equal to OperatorRangeMap(). This is because ML needs to perform
+    //  matrix-std::vector product, as well as getrow() functions, on the
+    //  same data distribution.
+    // "Also, for square matrices, OperatorDomainMap() must be as
+    //  OperatorRangeMap()."
+    // Make sure this is indeed the case.
 #ifdef _DEBUG_
-  TEUCHOS_ASSERT( keoRegularized_->OperatorRangeMap().SameAs( keoRegularized_->
-                                                              RowMatrixRowMap() ) );
-  TEUCHOS_ASSERT( keoRegularized_->OperatorDomainMap().SameAs( keoRegularized_
-                                                               ->
-                                                               OperatorRangeMap() ) );
+    TEUCHOS_ASSERT( keoRegularized_->OperatorRangeMap().
+                    SameAs( keoRegularized_->RowMatrixRowMap() )
+                  );
+    TEUCHOS_ASSERT( keoRegularized_->OperatorDomainMap().
+                    SameAs( keoRegularized_->OperatorRangeMap() )
+                  );
 #endif
-  MlPrec_ =
-    Teuchos::rcp( new ML_Epetra::MultiLevelPreconditioner( *keoRegularized_,
-                                                           MLList ) );
-//     }
-//     else
-//     {
-//         bool checkFiltering = true;
-//         TEUCHOS_ASSERT_EQUALITY( 0, MlPrec_->ComputePreconditioner(checkFiltering) );
-//         //TEUCHOS_ASSERT_EQUALITY( 0, MlPrec_->ReComputePreconditioner() );
-//     }
+    MlPrec_ =
+      Teuchos::rcp( new ML_Epetra::MultiLevelPreconditioner( *keoRegularized_,
+                                                            MLList ) );
+  }
+  else
+  {
+#ifdef GINLA_TEUCHOS_TIME_MONITOR
+  Teuchos::TimeMonitor tm( *timerRebuild1_ );
+#endif
+
+    bool checkFiltering = true;
+    TEUCHOS_ASSERT_EQUALITY( 0, MlPrec_->ComputePreconditioner(checkFiltering) );
+    //TEUCHOS_ASSERT_EQUALITY( 0, MlPrec_->ReComputePreconditioner() );
+  }
 
 //    MlPrec_->PrintUnused(0);
 
