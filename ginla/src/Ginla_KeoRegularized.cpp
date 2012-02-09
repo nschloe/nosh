@@ -49,9 +49,13 @@ typedef Belos::OperatorTraits<ST,MV,OP>  OPT;
 namespace Ginla {
 // =============================================================================
 KeoRegularized::
-KeoRegularized( const Teuchos::RCP<Ginla::KeoFactory> &keoFactory
-                ) :
+KeoRegularized( const Teuchos::RCP<const Ginla::StkMesh> &mesh,
+                const Teuchos::RCP<const Epetra_Vector> &thickness,
+                const Teuchos::RCP<Ginla::KeoFactory> &keoFactory
+              ) :
   useTranspose_( false ),
+  mesh_( mesh ),
+  thickness_( thickness ),
   comm_( keoFactory->getComm() ),
   keoFactory_( keoFactory ),
   keoRegularized_( Teuchos::null ),
@@ -276,7 +280,7 @@ OperatorRangeMap() const
 // =============================================================================
 void
 KeoRegularized::
-rebuild()
+rebuild(const Teuchos::RCP<const Epetra_Vector> & psi)
 {
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
   Teuchos::TimeMonitor tm( *timerRebuild_ );
@@ -289,20 +293,19 @@ rebuild()
   keoRegularized_ = Teuchos::rcp( new Epetra_CrsMatrix( *(keoFactory_->getKeo()) ) );
   keoRegularized_->Scale( -1.0 );
   // -------------------------------------------------------------------------
-  // regularization
-  double mu = keoFactory_->getMvpParameters()->getValue( "mu" );
-  if ( fabs( mu ) < 1.0e-5 )
+  // Add 2*|psi|^2 to the diagonal.
+  Epetra_Vector diag( keoRegularized_->RowMap() );
+  TEUCHOS_ASSERT_EQUALITY( 0, keoRegularized_->ExtractDiagonalCopy( diag ) );
+  const Epetra_Vector &controlVolumes = *(mesh_->getControlVolumes());
+  int numMyPoints = controlVolumes.MyLength();
+  for ( int k=0; k<numMyPoints; k++ )
   {
-    // Add a regularization to the diagonal.
-    Epetra_Vector e( keoRegularized_->RowMap() );
-    TEUCHOS_ASSERT_EQUALITY( 0, e.PutScalar( 1.0 ) );
-
-    Epetra_Vector diag( keoRegularized_->RowMap() );
-    TEUCHOS_ASSERT_EQUALITY( 0, keoRegularized_->ExtractDiagonalCopy( diag ) );
-    // TODO Use a more sentive value according to out knowledge of the smallest eigenvalue.
-    TEUCHOS_ASSERT_EQUALITY( 0, diag.Update( 1.0e-3, e, 1.0 ) );
-    TEUCHOS_ASSERT_EQUALITY( 0, keoRegularized_->ReplaceDiagonalValues( diag ) );
+    double alpha = 2.0 * controlVolumes[k] * (*thickness_)[k]
+                 * ((*psi)[2*k]*(*psi)[2*k] + (*psi)[2*k+1]*(*psi)[2*k+1]);
+    diag[2*k] += alpha;
+    diag[2*k+1] += alpha;
   }
+  TEUCHOS_ASSERT_EQUALITY( 0, keoRegularized_->ReplaceDiagonalValues( diag ) );
   // -------------------------------------------------------------------------
   // Rebuild preconditioner for this object. Not to be mistaken for the
   // object itself.
@@ -328,11 +331,12 @@ rebuild()
 // =============================================================================
 void
 KeoRegularized::
-rebuild( const Teuchos::RCP<const LOCA::ParameterVector> &mvpParams
-         )
+rebuild(const Teuchos::RCP<const LOCA::ParameterVector> &mvpParams,
+        const Teuchos::RCP<const Epetra_Vector> & psi
+        )
 {
   keoFactory_->updateParameters( mvpParams );
-  this->rebuild();
+  this->rebuild( psi );
   return;
 }
 // =============================================================================

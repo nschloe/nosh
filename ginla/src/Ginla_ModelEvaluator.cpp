@@ -217,7 +217,7 @@ ModelEvaluator::
 create_WPrec() const
 {
   Teuchos::RCP<Epetra_Operator> keoPrec =
-    Teuchos::rcp( new Ginla::KeoRegularized( keoFactory_ ) );
+    Teuchos::rcp( new Ginla::KeoRegularized( mesh_, thickness_, keoFactory_ ) );
   // bool is answer to: "Prec is already inverted?"
   // This needs to be set to TRUE to make sure that the constructor of
   //    NOX::Epetra::LinearSystemStratimikos
@@ -388,10 +388,7 @@ evalModel( const InArgs &inArgs,
 #endif
     Teuchos::RCP<Ginla::JacobianOperator> jac =
       Teuchos::rcp_dynamic_cast<Ginla::JacobianOperator>( W_out, true );
-    jac->rebuild( mvpParams,
-                  T,
-                  x_in
-                  );
+    jac->rebuild( mvpParams, T, x_in );
   }
 
   // fill preconditioner
@@ -403,7 +400,7 @@ evalModel( const InArgs &inArgs,
 #endif
     Teuchos::RCP<Ginla::KeoRegularized> keoPrec =
       Teuchos::rcp_dynamic_cast<Ginla::KeoRegularized>( WPrec_out, true );
-    keoPrec->rebuild( mvpParams );
+    keoPrec->rebuild( mvpParams, x_in );
   }
 
   return;

@@ -238,14 +238,13 @@ rebuildDiags_() const
     double alpha = controlVolumes[k] * (*thickness_)[k] * (
         1.0 - T_
         - 2.0 *
-        ( (*current_X_)[2*
-                        k]*
-          (*current_X_)[2*k] + (*current_X_)[2*k+1]*(*current_X_)[2*k+1])
+        ( (*current_X_)[2*k] * (*current_X_)[2*k]
+        + (*current_X_)[2*k+1]*(*current_X_)[2*k+1]
+        )
         );
     double rePhiSquare = controlVolumes[k] * (*thickness_)[k] * (
-        (*current_X_)[2*
-                      k]*
-        (*current_X_)[2*k] - (*current_X_)[2*k+1]*(*current_X_)[2*k+1]
+          (*current_X_)[2*k]  *(*current_X_)[2*k]
+        - (*current_X_)[2*k+1]*(*current_X_)[2*k+1]
         );
     vals[0]    = alpha - rePhiSquare;
     vals[1]    = alpha + rePhiSquare;

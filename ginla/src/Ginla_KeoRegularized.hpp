@@ -59,7 +59,10 @@ namespace Ginla {
 class KeoRegularized : public Epetra_Operator
 {
 public:
-KeoRegularized( const Teuchos::RCP<Ginla::KeoFactory> &keoFactory );
+KeoRegularized( const Teuchos::RCP<const Ginla::StkMesh> &mesh,
+                const Teuchos::RCP<const Epetra_Vector> &thickness,
+                const Teuchos::RCP<Ginla::KeoFactory> &keoFactory
+              );
 
 // Destructor.
 ~KeoRegularized();
@@ -99,10 +102,12 @@ virtual const Epetra_Map &OperatorRangeMap() const;
 public:
 
 void
-rebuild();
+rebuild(const Teuchos::RCP<const Epetra_Vector> &psi);
 
 void
-rebuild( const Teuchos::RCP<const LOCA::ParameterVector> &mvpParams );
+rebuild(const Teuchos::RCP<const LOCA::ParameterVector> &mvpParams,
+        const Teuchos::RCP<const Epetra_Vector> &psi
+        );
 
 protected:
 private:
@@ -128,6 +133,9 @@ enum EInversionType { INVERT_ILU, INVERT_ML };
 
 private:
 bool useTranspose_;
+const Teuchos::RCP<const Ginla::StkMesh> mesh_;
+const Teuchos::RCP<const Epetra_Vector> thickness_;
+
 const Epetra_Comm &comm_;
 
 Teuchos::RCP<Ginla::KeoFactory> keoFactory_;
