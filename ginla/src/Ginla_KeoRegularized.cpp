@@ -59,7 +59,6 @@ KeoRegularized( const Teuchos::RCP<const Ginla::StkMesh> &mesh,
   comm_( keoFactory->getComm() ),
   keoFactory_( keoFactory ),
   keoRegularized_( Teuchos::null ),
-  keoMlPrec_( Teuchos::null ),
   MlPrec_( Teuchos::null ),
   keoIluProblem_( Teuchos::null ),
   keoIluSolver_( Teuchos::null ),
@@ -131,75 +130,82 @@ ApplyInverse( const Epetra_MultiVector &X,
 // =============================================================================
 int
 KeoRegularized::
-ApplyInverseMl_( const Epetra_MultiVector &X,
-                 Epetra_MultiVector &Y
-                 ) const
+ApplyInverseMl_(const Epetra_MultiVector &X,
+                Epetra_MultiVector &Y
+                ) const
 {
-  bool verbose = false;
-  int frequency = 10;
+  // Just apply one (inverse) AMG cycle.
+  return MlPrec_->ApplyInverse(X, Y);
 
-  // Belos part
-  Teuchos::ParameterList belosList;
-  // Relative convergence tolerance requested
-  // TODO This could be replaced by something adaptive in the future.
-  belosList.set( "Convergence Tolerance", 1.0e-10 );
-  if (verbose) {
-    belosList.set( "Verbosity",
-                   Belos::Errors +
-                   Belos::Warnings +
-                   Belos::TimingDetails +
-                   Belos::StatusTestDetails
-                   );
-    if (frequency > 0)
-      belosList.set( "Output Frequency", frequency );
-  }
-  else
-    belosList.set( "Verbosity", Belos::Errors + Belos::Warnings );
-
-  // Make sure to have a solid initial guess.
-  // Belos, for example, does not initialze Y before passing it here.
-  Y.PutScalar( 0.0 );
-
-#ifdef _DEBUG_
-  TEUCHOS_ASSERT( !keoRegularized_.is_null() );
-#endif
-
-  // Construct an unpreconditioned linear problem instance.
-  Teuchos::RCP<const Epetra_MultiVector> Xptr = Teuchos::rcpFromRef( X );
-  Teuchos::RCP<Epetra_MultiVector> Yptr = Teuchos::rcpFromRef( Y );
-  Belos::LinearProblem<double,MV,OP> problem( keoRegularized_, Yptr, Xptr );
-  // Make sure the problem sets up correctly.
-  TEUCHOS_ASSERT( problem.setProblem() );
-  // -------------------------------------------------------------------------
-  // add preconditioner
-#ifdef _DEBUG_
-  TEUCHOS_ASSERT( !keoMlPrec_.is_null() );
-#endif
-  problem.setLeftPrec( keoMlPrec_ );
-  // -------------------------------------------------------------------------
-  // Create an iterative solver manager.
-  Teuchos::RCP<Belos::SolverManager<double,MV,OP> > newSolver =
-    Teuchos::rcp( new Belos::PseudoBlockCGSolMgr<double,MV,
-                                                 OP>( Teuchos::rcp( &problem,
-                                                                    false ),
-                                                      Teuchos::rcp( &
-                                                                    belosList,
-                                                                    false )
-                                                      )
-                  );
-
-  // Perform solve
-  Belos::ReturnType ret = newSolver->solve();
-
-//    // compute the residual explicitly
-//    Epetra_MultiVector R( Y.Map(), Y.NumVectors() );
-//    keoRegularized_->Apply( Y, R );
-//    R.Update( 1.0, X, -1.0 );
-//    double s[1];
-//    R.Norm2( s );
-//    std::cout << " PRECON RES = " << s[0] << " in " << newSolver->getNumIters() << " iters" << std::endl;
-
-  return ret==Belos::Converged ? 0 : -1;
+//   bool verbose = false;
+//   int frequency = 10;
+// 
+//   // Belos part
+//   Teuchos::ParameterList belosList;
+//   // Relative convergence tolerance requested
+//   // TODO This could be replaced by something adaptive in the future.
+//   belosList.set( "Convergence Tolerance", 1.0e-10 );
+//   if (verbose) {
+//     belosList.set( "Verbosity",
+//                    Belos::Errors +
+//                    Belos::Warnings +
+//                    Belos::TimingDetails +
+//                    Belos::StatusTestDetails
+//                    );
+//     if (frequency > 0)
+//       belosList.set( "Output Frequency", frequency );
+//   }
+//   else
+//     belosList.set( "Verbosity", Belos::Errors + Belos::Warnings );
+// 
+//   // Make sure to have a solid initial guess.
+//   // Belos, for example, does not initialze Y before passing it here.
+//   Y.PutScalar( 0.0 );
+// 
+// #ifdef _DEBUG_
+//   TEUCHOS_ASSERT( !keoRegularized_.is_null() );
+// #endif
+// 
+//   // Construct an unpreconditioned linear problem instance.
+//   Teuchos::RCP<const Epetra_MultiVector> Xptr = Teuchos::rcpFromRef( X );
+//   Teuchos::RCP<Epetra_MultiVector> Yptr = Teuchos::rcpFromRef( Y );
+//   Belos::LinearProblem<double,MV,OP> problem( keoRegularized_, Yptr, Xptr );
+//   // Make sure the problem sets up correctly.
+//   TEUCHOS_ASSERT( problem.setProblem() );
+//   // -------------------------------------------------------------------------
+//   // add preconditioner
+// #ifdef _DEBUG_
+//   TEUCHOS_ASSERT( !keoMlPrec_.is_null() );
+// #endif
+//   // Create the Belos preconditioned operator from the preconditioner.
+//   // NOTE:  This is necessary because Belos expects an operator to apply the
+//   //        preconditioner with Apply() NOT ApplyInverse().
+//   keoMlPrec = Teuchos::rcp( new Belos::EpetraPrecOp( MlPrec_ ) );
+//   problem.setLeftPrec( keoMlPrec );
+//   // -------------------------------------------------------------------------
+//   // Create an iterative solver manager.
+//   Teuchos::RCP<Belos::SolverManager<double,MV,OP> > newSolver =
+//     Teuchos::rcp( new Belos::PseudoBlockCGSolMgr<double,MV,
+//                                                  OP>( Teuchos::rcp( &problem,
+//                                                                     false ),
+//                                                       Teuchos::rcp( &
+//                                                                     belosList,
+//                                                                     false )
+//                                                       )
+//                   );
+// 
+//   // Perform solve
+//   Belos::ReturnType ret = newSolver->solve();
+// 
+// //    // compute the residual explicitly
+// //    Epetra_MultiVector R( Y.Map(), Y.NumVectors() );
+// //    keoRegularized_->Apply( Y, R );
+// //    R.Update( 1.0, X, -1.0 );
+// //    double s[1];
+// //    R.Norm2( s );
+// //    std::cout << " PRECON RES = " << s[0] << " in " << newSolver->getNumIters() << " iters" << std::endl;
+// 
+//   return ret==Belos::Converged ? 0 : -1;
 }
 // =============================================================================
 int
@@ -396,11 +402,6 @@ rebuildMl_()
 //     }
 
 //    MlPrec_->PrintUnused(0);
-
-  // Create the Belos preconditioned operator from the preconditioner.
-  // NOTE:  This is necessary because Belos expects an operator to apply the
-  //        preconditioner with Apply() NOT ApplyInverse().
-  keoMlPrec_ = Teuchos::rcp( new Belos::EpetraPrecOp( MlPrec_ ) );
 
   return;
 }

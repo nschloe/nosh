@@ -144,7 +144,6 @@ Teuchos::RCP<Ginla::KeoFactory> keoFactory_;
 //const Teuchos::RCP<Epetra_CrsMatrix> keoRegularized_;
 Teuchos::RCP<Epetra_CrsMatrix> keoRegularized_;
 
-Teuchos::RCP<Belos::EpetraPrecOp> keoMlPrec_;
 Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> MlPrec_;
 
 Teuchos::RCP<Epetra_LinearProblem> keoIluProblem_;
