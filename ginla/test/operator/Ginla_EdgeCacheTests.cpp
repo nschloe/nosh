@@ -165,7 +165,7 @@ TEUCHOS_UNIT_TEST( Ginla, EdgeCacheRectangleSmall )
                out,
                success );
 }
-// ============================================================================
+============================================================================
 TEUCHOS_UNIT_TEST( Ginla, EdgeCachePacman )
 {
     std::string inputFileNameBase = "pacman";
@@ -174,7 +174,7 @@ TEUCHOS_UNIT_TEST( Ginla, EdgeCachePacman )
                out,
                success );
 }
-// ============================================================================
+// // ============================================================================
 TEUCHOS_UNIT_TEST( Ginla, EdgeCacheCubeSmall )
 {
     std::string inputFileNameBase = "cubesmall";

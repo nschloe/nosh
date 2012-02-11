@@ -80,18 +80,6 @@ testMesh( const std::string & inputFileNameBase,
     controlVols->NormInf( &r );
     TEST_FLOATING_EQUALITY( r, controlVolNormInf, 1.0e-12 );
 
-    if ( eComm->NumProc() == 1 )
-    {
-        const Teuchos::ArrayRCP<DoubleVector> edgeCoeffs =
-            mesh->getEdgeCoefficientsFallback();
-
-        // Cannot use TEST_COMPARE_FLOATING_ARRAYS() as some
-        // array values are 0.0 which messes up the relative
-        // error.
-        for (unsigned int k=0; k<edgeCoeffs[0].length(); k++ )
-            TEST_COMPARE( fabs(edgeCoeffs[0][k]-controlEdgeCoeffs[k]), <, 1.0e-12 );
-    }
-
     return;
 }
 // ===========================================================================

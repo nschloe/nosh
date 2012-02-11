@@ -50,20 +50,6 @@ virtual double
 getdAdThetaEdgeMidpointProjection( const unsigned int edgeIndex
                                    ) const = 0;
 
-virtual double
-getAEdgeMidpointProjectionFallback( const unsigned int cellIndex,
-                                    const unsigned int edgeIndex
-                                    ) const = 0;
-
-virtual double
-getdAdMuEdgeMidpointProjectionFallback( const unsigned int cellIndex,
-                                        const unsigned int edgeIndex
-                                        ) const = 0;
-virtual double
-getdAdThetaEdgeMidpointProjectionFallback( const unsigned int cellIndex,
-                                           const unsigned int edgeIndex
-                                           ) const = 0;
-
 protected:
 private:
 };

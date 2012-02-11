@@ -64,20 +64,6 @@ double
 getdAdThetaEdgeMidpointProjection( const unsigned int edgeIndex
                                    ) const;
 
-double
-getAEdgeMidpointProjectionFallback( const unsigned int cellIndex,
-                                    const unsigned int edgeIndex
-                                    ) const;
-
-double
-getdAdMuEdgeMidpointProjectionFallback( const unsigned int cellIndex,
-                                        const unsigned int edgeIndex
-                                        ) const;
-double
-getdAdThetaEdgeMidpointProjectionFallback( const unsigned int cellIndex,
-                                           const unsigned int edgeIndex
-                                           ) const;
-
 protected:
 private:
 DoubleVector
@@ -88,9 +74,6 @@ getRawDADTheta_( const DoubleVector &x ) const;
 
 void
 initializeEdgeCache_() const;
-
-void
-initializeEdgeCacheFallback_() const;
 
 DoubleVector
 rotate_( const DoubleVector &v,
@@ -122,8 +105,6 @@ const Teuchos::RCP<const DoubleVector> u_;
 
 Teuchos::ArrayRCP<DoubleVector> edgeCache_;
 mutable bool edgeCacheUptodate_;
-Teuchos::ArrayRCP<Teuchos::ArrayRCP<DoubleVector> > edgeCacheFallback_;
-mutable bool edgeCacheFallbackUptodate_;
 };
 } // namespace MagneticVectorPotential
 } // namespace Ginla

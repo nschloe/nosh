@@ -41,9 +41,7 @@ ConstantInSpace( const Teuchos::RCP<Ginla::StkMesh> &mesh,
   theta_( theta ),
   u_( u ),
   edgeCache_( Teuchos::ArrayRCP<DoubleVector>() ),
-  edgeCacheUptodate_( false ),
-  edgeCacheFallback_( Teuchos::ArrayRCP<Teuchos::ArrayRCP<DoubleVector> >() ),
-  edgeCacheFallbackUptodate_( false )
+  edgeCacheUptodate_( false )
 {
 #ifdef _DEBUG_
   TEUCHOS_ASSERT( !mesh_.is_null() );
@@ -68,17 +66,8 @@ ConstantInSpace( const Teuchos::RCP<Ginla::StkMesh> &mesh,
   }
 
 
-  if ( mesh->supportsEdges() )
-  {
-    edgeCache_ =
-      Teuchos::ArrayRCP<DoubleVector>( mesh_->getOverlapEdges().size() );
-  }
-  else
-  {
-    edgeCacheFallback_ =
-      Teuchos::ArrayRCP<Teuchos::ArrayRCP<DoubleVector> >( mesh_->getOwnedCells(
-                                                             ).size() );
-  }
+  edgeCache_ = Teuchos::ArrayRCP<DoubleVector>(mesh_->getEdgeNodes().size());
+
   return;
 }
 // ============================================================================
@@ -244,125 +233,22 @@ initializeEdgeCache_() const
 #ifdef _DEBUG_
   TEUCHOS_ASSERT( !mesh_.is_null() );
 #endif
-  std::vector<stk::mesh::Entity*> edges = mesh_->getOverlapEdges();
+  const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > edges =
+    mesh_->getEdgeNodes();
 
   // Loop over all edges and create the cache.
   for ( unsigned int k=0; k<edges.size(); k++ )
   {
-    // Get the two end points.
-    const stk::mesh::PairIterRelation endPoints =
-      edges[k]->relations( mesh_->getMetaData()->node_rank() );
+    DoubleVector node0Coords = mesh_->getNodeCoordinates( edges[k][0] );
+    DoubleVector node1Coords = mesh_->getNodeCoordinates( edges[k][1] );
 
-    // extract the nodal coordinates
-    Teuchos::ArrayRCP<DoubleVector> localNodeCoords =
-      mesh_->getNodeCoordinates( endPoints );
-#ifdef _DEBUG_
-    TEUCHOS_ASSERT_EQUALITY( localNodeCoords.size(), 2 );
-#endif
-    DoubleVector edge = localNodeCoords[1];
-    edge -= localNodeCoords[0];
-    DoubleVector edgeMidpoint = localNodeCoords[1];
-    edgeMidpoint += localNodeCoords[0];
-    TEUCHOS_ASSERT_EQUALITY( 0, edgeMidpoint.scale( 0.5 ));
-
-    // Compute the cross product.
-    edgeCache_[k] = this->crossProduct_( edgeMidpoint, edge );
-    edgeCache_[k].scale( 0.5 );
+    // edgeMidpoint x edge = 0.5 (a+b) x (a-b) = b x a
+    edgeCache_[k] = this->crossProduct_( node0Coords, node1Coords );
+    TEUCHOS_ASSERT_EQUALITY( 0, edgeCache_[k].scale( 0.5 ) );
   }
 
   edgeCacheUptodate_ = true;
 
-  return;
-}
-// ============================================================================
-double
-ConstantInSpace::
-getAEdgeMidpointProjectionFallback( const unsigned int cellIndex,
-                                    const unsigned int edgeIndex
-                                    ) const
-{
-  if ( !edgeCacheFallbackUptodate_ )
-    this->initializeEdgeCacheFallback_();
-
-  return mu_ * rotatedB_.dot( edgeCacheFallback_[cellIndex][edgeIndex] );
-}
-// ============================================================================
-double
-ConstantInSpace::
-getdAdMuEdgeMidpointProjectionFallback( const unsigned int cellIndex,
-                                        const unsigned int edgeIndex
-                                        ) const
-{
-  if ( !edgeCacheFallbackUptodate_ )
-    this->initializeEdgeCacheFallback_();
-
-  return rotatedB_.dot( edgeCacheFallback_[cellIndex][edgeIndex] );
-}
-// ============================================================================
-double
-ConstantInSpace::
-getdAdThetaEdgeMidpointProjectionFallback( const unsigned int cellIndex,
-                                           const unsigned int edgeIndex
-                                           ) const
-{
-  if ( !edgeCacheFallbackUptodate_ )
-    this->initializeEdgeCacheFallback_();
-
-  return mu_ * dRotatedBDTheta_.dot( edgeCacheFallback_[cellIndex][edgeIndex] );
-}
-// ============================================================================
-void
-ConstantInSpace::
-initializeEdgeCacheFallback_() const
-{
-#ifdef _DEBUG_
-  TEUCHOS_ASSERT( !mesh_.is_null() );
-  TEUCHOS_ASSERT( !edgeCacheFallback_.is_null() );
-#endif
-
-  std::vector<stk::mesh::Entity*> cells = mesh_->getOwnedCells();
-
-  // Loop over all edges and create the cache.
-  // To this end, loop over all cells and the edges within the cell.
-  for ( unsigned int k=0; k<cells.size(); k++ )
-  {
-    // get the nodes local to the cell
-    stk::mesh::PairIterRelation localNodes = (*cells[k]).relations(
-        mesh_->getMetaData()->node_rank() );
-
-    unsigned int numLocalNodes = localNodes.size();
-    unsigned int cellDimension = mesh_->getCellDimension( numLocalNodes );
-    // extract the nodal coordinates
-    Teuchos::ArrayRCP<DoubleVector> localNodeCoords =
-      mesh_->getNodeCoordinates( localNodes );
-
-    edgeCacheFallback_[k] =
-      Teuchos::ArrayRCP<DoubleVector>( mesh_->getNumEdgesPerCell( cellDimension ) );
-
-    // In a simplex, the edges are exactly the connection between each pair
-    // of nodes. Hence, loop over pairs of nodes.
-    unsigned int edgeIndex = 0;
-    for ( unsigned int e0 = 0; e0 < numLocalNodes; e0++ )
-    {
-      for ( unsigned int e1 = e0+1; e1 < numLocalNodes; e1++ )
-      {
-        DoubleVector edge = localNodeCoords[1];
-        edge -= localNodeCoords[0];
-        DoubleVector edgeMidpoint = localNodeCoords[1];
-        edgeMidpoint += localNodeCoords[0];
-        TEUCHOS_ASSERT_EQUALITY( 0, edgeMidpoint.scale( 0.5 ));
-
-        // Compute the cross product.
-        edgeCacheFallback_[k][edgeIndex] =
-          this->crossProduct_( edgeMidpoint, edge );
-        edgeCacheFallback_[k][edgeIndex].scale( 0.5 );
-
-        edgeIndex++;
-      }
-    }
-  }
-
-  edgeCacheFallbackUptodate_ = true;
   return;
 }
 // ============================================================================

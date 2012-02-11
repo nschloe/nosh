@@ -73,17 +73,16 @@ StkMesh( const Epetra_Comm &comm,
   nodesOverlapMap_( this->createEntitiesMap_( this->getOverlapNodes() ) ),
   complexMap_( this->createComplexMap_( this->getOwnedNodes()   ) ),
   complexOverlapMap_( this->createComplexMap_( this->getOverlapNodes() ) ),
-  edgesOverlapMap_( Teuchos::null ),
   fvmEntitiesUpToDate_( false ),
   controlVolumes_( Teuchos::rcp( new Epetra_Vector( *nodesMap_ ) ) ),
   controlVolumesUpToDate_( false ),
   averageThickness_( Teuchos::rcp( new Epetra_Vector( *nodesMap_ ) ) ),
   edgeCoefficients_( Teuchos::ArrayRCP<double>() ),
   edgeCoefficientsUpToDate_( false ),
-  edgeCoefficientsFallback_( Teuchos::ArrayRCP<DoubleVector>() ),
-  edgeCoefficientsFallbackUpToDate_( false ),
-  supportsEdges_( Ginla::createEdges( bulkData ) )
+  edgeNodes_( Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> >() ),
+  cellEdges_( Teuchos::null )
 {
+  this->createEdges_();
 }
 // =============================================================================
 StkMesh::
@@ -190,15 +189,6 @@ getEdgeCoefficients() const
   return edgeCoefficients_;
 }
 // =============================================================================
-Teuchos::ArrayRCP<DoubleVector>
-StkMesh::
-getEdgeCoefficientsFallback() const
-{
-  if ( !edgeCoefficientsFallbackUpToDate_ )
-    this->computeEdgeCoefficientsFallback_();
-  return edgeCoefficientsFallback_;
-}
-// =============================================================================
 std::vector<stk::mesh::Entity*>
 StkMesh::
 getOwnedCells() const
@@ -215,19 +205,10 @@ getOwnedCells() const
   return cells;
 }
 // =============================================================================
-bool
-StkMesh::
-supportsEdges() const
-{
-  return supportsEdges_;
-}
-// =============================================================================
 std::vector<stk::mesh::Entity*>
 StkMesh::
 getOverlapEdges() const
 {
-  TEUCHOS_ASSERT( supportsEdges_ );
-
   // get overlap edges
   stk::mesh::Selector select_overlap_in_part = stk::mesh::Selector(
       metaData_->universal_part() )
@@ -243,20 +224,32 @@ getOverlapEdges() const
   return edges;
 }
 // =============================================================================
-Teuchos::ArrayRCP<DoubleVector>
+const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> >
 StkMesh::
-getNodeCoordinates( const stk::mesh::PairIterRelation &nodes ) const
+getEdgeNodes() const
+{
+  return edgeNodes_;
+}
+// =============================================================================
+Teuchos::ArrayRCP<const DoubleVector>
+StkMesh::
+getNodeCoordinates_( const stk::mesh::PairIterRelation &nodes ) const
 {
   unsigned int n = nodes.size();
-  Teuchos::ArrayRCP<DoubleVector> localNodes( n );
+  Teuchos::ArrayRCP<DoubleVector> localNodeCoords( n );
   for ( unsigned int i=0; i<n; i++ )
-  {
-    double * node = stk::mesh::field_data( *coordinatesField_, *nodes[i].entity() );
-    localNodes[i] = DoubleVector( 3 );
-    for ( unsigned int k=0; k<3; k++ )
-      localNodes[i][k] = node[k];
-  }
-  return localNodes;
+    localNodeCoords[i] = this->getNodeCoordinates(nodes[i].entity());
+
+  return localNodeCoords;
+}
+// =============================================================================
+const DoubleVector
+StkMesh::
+getNodeCoordinates(const stk::mesh::Entity * nodeEntity) const
+{
+  double * node = stk::mesh::field_data( *coordinatesField_, *nodeEntity );
+  // TODO Use Teuchos::View. Doesn't seem to work now? (2012-02-10)
+  return DoubleVector(Teuchos::Copy, node, 3);
 }
 // =============================================================================
 double
@@ -313,15 +306,6 @@ getComplexOverlapMap() const
   TEUCHOS_ASSERT( !complexOverlapMap_.is_null() );
 #endif
   return complexOverlapMap_;
-}
-// =============================================================================
-Teuchos::RCP<const Epetra_Map>
-StkMesh::
-getEdgesOverlapMap() const
-{
-  if ( edgesOverlapMap_.is_null() )
-    edgesOverlapMap_ = this->createEntitiesMap_( this->getOverlapEdges() );
-  return edgesOverlapMap_;
 }
 // =============================================================================
 std::vector<stk::mesh::Entity*>
@@ -433,121 +417,34 @@ computeEdgeCoefficients_() const
   Teuchos::TimeMonitor tm( *computeEdgeCoefficientsTime_ );
 #endif
 
-  // For edge generation and looping, refer to e-mail communication with
-  // Eric Cyr and Alan Williams in April 2011.
-  TEUCHOS_ASSERT( supportsEdges_ );
-
   std::vector<stk::mesh::Entity*> cells = this->getOwnedCells();
   unsigned int numCells = cells.size();
 
-  unsigned int numEdges = this->getOverlapEdges().size();
+  unsigned int numEdges = edgeNodes_.size();
 
   if ( edgeCoefficients_.size() != numEdges )
     edgeCoefficients_.resize( numEdges );
 
-  // Calculate the edge contributions edge by edge.
+  // Calculate the contributions edge by edge.
   for (unsigned int k=0; k < numCells; k++)
   {
-    // Get the edges.
-    stk::mesh::PairIterRelation localEdges =
-      cells[k]->relations( metaData_->edge_rank() );
-
     // Get edge coordinates.
-    unsigned int numLocalEdges = localEdges.size();
-    Teuchos::ArrayRCP<DoubleVector> edges( numLocalEdges );
+    unsigned int numLocalEdges = cellEdges_[k].size();
+    Teuchos::ArrayRCP<DoubleVector> localEdgeCoords( numLocalEdges );
     for ( unsigned int i=0; i<numLocalEdges; i++)
     {
-      // Get the two end points.
-      stk::mesh::PairIterRelation endPoints =
-        (*localEdges[i].entity()).relations( metaData_->node_rank() );
-#ifdef _DEBUG_
-      TEUCHOS_ASSERT_EQUALITY( endPoints.size(), 2 );
-#endif
-
-      // Fetch the edge coordinates.
-      const Teuchos::ArrayRCP<DoubleVector> localNodeCoords =
-        this->getNodeCoordinates( endPoints );
-      edges[i] = localNodeCoords[1];
-      edges[i] -= localNodeCoords[0];
+      localEdgeCoords[i] = this->getNodeCoordinates( edgeNodes_[cellEdges_[k][i]][1] );
+      localEdgeCoords[i] -= this->getNodeCoordinates( edgeNodes_[cellEdges_[k][i]][0] );
     }
 
-    const DoubleVector edgeCoeffs =
-      getEdgeCoefficientsNumerically_( edges );
+    DoubleVector edgeCoeffs = getEdgeCoefficientsNumerically_( localEdgeCoords );
 
     // Fill the edge coefficients into the vector.
     for ( unsigned int i=0; i<numLocalEdges; i++ )
-    {
-      const int gEdgeId = (*localEdges[i].entity()).identifier() - 1;
-      const int lEdgeId = this->getEdgesOverlapMap()->LID( gEdgeId );
-#ifdef _DEBUG_
-      TEST_FOR_EXCEPT_MSG( lEdgeId < 0,
-                           "The global index " << gEdgeId
-                           << " does not seem to be present on this node." );
-      TEUCHOS_ASSERT_INEQUALITY( edgeCoefficients_.size(), >, lEdgeId );
-#endif
-      edgeCoefficients_[lEdgeId] += edgeCoeffs[i];
-    }
+      edgeCoefficients_[cellEdges_[k][i]] += edgeCoeffs[i];
   }
-
-  // stk::mesh::create_adjacent_entities doesn't work for shell elements (2D)
-  // and throws a std::runtime_error. In that case, or of anything else went
-  // wrong, fall back to constructing the entities via the edges of the cells.
-  // This means less initialization cost, but at the costly construction of the
-  // kinetic energy operator, in 2D, each each has to iterated twice (once per
-  // each cell that the edge is part of). It'd be worse in the 3D.
 
   edgeCoefficientsUpToDate_ = true;
-
-  return;
-}
-// =============================================================================lvoid
-void
-StkMesh::
-computeEdgeCoefficientsFallback_() const
-{
-  std::vector<stk::mesh::Entity*> cells = this->getOwnedCells();
-  unsigned int numCells = cells.size();
-
-  if ( edgeCoefficientsFallback_.size() != numCells )
-    edgeCoefficientsFallback_.resize( numCells );
-
-  // Calculate the edge contributions cell by cell.
-  for (unsigned int k=0; k < numCells; k++)
-  {
-    stk::mesh::PairIterRelation localNodes =
-      cells[k]->relations( metaData_->node_rank() );
-    unsigned int numLocalNodes = localNodes.size();
-
-#ifdef _DEBUG_
-    // Confirm that we always have the same simplices.
-    TEUCHOS_ASSERT_EQUALITY( numLocalNodes,
-                             this->getCellDimension( numLocalNodes )+1
-                             );
-#endif
-
-    // Fetch the nodal positions into 'localNodes'.
-    const Teuchos::ArrayRCP<const DoubleVector> localNodeCoords =
-      this->getNodeCoordinates( localNodes );
-
-    // Gather the edge coordinates.
-    int numLocalEdges = numLocalNodes*(numLocalNodes-1) / 2;
-    Teuchos::ArrayRCP<DoubleVector> localEdgeCoords( numLocalEdges );
-    unsigned int i = 0;
-    for ( unsigned int e0=0; e0<numLocalNodes; e0++ )
-    {
-      for ( unsigned int e1=e0+1; e1<numLocalNodes; e1++ )
-      {
-        localEdgeCoords[i] = localNodeCoords[e1];
-        localEdgeCoords[i] -= localNodeCoords[e0];
-        i++;
-      }
-    }
-
-    edgeCoefficientsFallback_[k] =
-      this->getEdgeCoefficientsNumerically_( localEdgeCoords );
-  }
-
-  edgeCoefficientsFallbackUpToDate_ = true;
 
   return;
 }
@@ -700,7 +597,7 @@ computeControlVolumes_() const
 
     // Fetch the nodal positions into 'localNodes'.
     const Teuchos::ArrayRCP<const DoubleVector> localNodeCoords =
-      this->getNodeCoordinates( localNodes );
+      this->getNodeCoordinates_( localNodes );
 
     // compute the circumcenter of the cell
     DoubleVector cc;
@@ -1122,23 +1019,111 @@ norm2squared_( const DoubleVector &x
   return this->dot_( x, x );
 }
 // =============================================================================
-// EXTERNAL HELPER FUNCTIONS
+void
+StkMesh::
+createEdges_()
+{
+  if ( edgeNodes_.size() != 0  && !cellEdges_.is_null() )
+    return;
+
+  std::vector<stk::mesh::Entity*> cells = this->getOwnedCells();
+  int numLocalCells = cells.size();
+  // Local cell ID -> Local edge IDs.
+  cellEdges_ = Teuchos::ArrayRCP<Teuchos::ArrayRCP<int> >(numLocalCells);
+
+  // This std::map keeps track of how nodes and edges are connected.
+  // If  nodeEdges((3,4)) == 17  is true, then the nodes (3,4) are
+  // connected  by edge 17.
+  // Unfortunately, Teuchos::Tuples can't be compared with '<'. Provide a
+  // function pointer that implements lexicographic comparison.
+  // See http://www.cplusplus.com/reference/stl/map/map/.
+  std::map<Teuchos::Tuple<stk::mesh::Entity*,2>,int,TupleComp> nodesEdge;
+
+  // Loop over all owned cells.
+  unsigned int edgeLID = 0;
+  std::cout << std::endl;
+  for ( unsigned int cellLID=0; cellLID<numLocalCells; cellLID++ )
+  {
+    // Loop over all pairs of local nodes.
+    stk::mesh::PairIterRelation nodesIterator =
+      cells[cellLID]->relations( metaData_->node_rank() );
+    unsigned int numLocalNodes = nodesIterator.size();
+    unsigned int numLocalEdges = numLocalNodes*(numLocalNodes-1) / 2;
+
+    cellEdges_[cellLID] = Teuchos::ArrayRCP<int>(numLocalEdges);
+
+    // Gather the node entities.
+    Teuchos::ArrayRCP<stk::mesh::Entity*> nodes(numLocalNodes);
+    for ( unsigned int k=0; k<numLocalNodes; k++ )
+      nodes[k] = nodesIterator[k].entity();
+
+    // Sort nodes by their global identifier. This is necessary
+    // to make sure that the tuples formed below are always sorted
+    // such they are unique keys (and {3,7}, {7,3} are recognized
+    // as the same edge).
+    EntityComp ec;
+    std::sort(nodes.begin(), nodes.end(), ec);
+
+    // In a simplex, the edges are exactly the connection between each pair
+    // of nodes. Hence, loop over pairs of nodes.
+    unsigned int edgeIndex = 0;
+    Teuchos::Tuple<stk::mesh::Entity*,2> edgeNodes;
+    for ( unsigned int e0=0; e0<numLocalNodes; e0++ )
+    {
+      edgeNodes[0] = nodes[e0];
+      for ( unsigned int e1=e0+1; e1<numLocalNodes; e1++ )
+      {
+        edgeNodes[1] = nodes[e1];
+        // As nodes are sorted and by their identifiers, edgeNodes are sorted
+        // too. This is necessary as otherwise the edge {3,7} could not be
+        // identified as {7,3}.
+
+        // Check if edgeNodes is in the map.
+        std::map<Teuchos::Tuple<stk::mesh::Entity*,2>,int,TupleComp>::iterator it =
+            nodesEdge.find(edgeNodes);
+        if ( it != nodesEdge.end() )
+        {
+          // Edge is already accounted for.
+          cellEdges_[cellLID][edgeIndex] = it->second;
+        }
+        else // Edge not found -- insert it.
+        {
+          nodesEdge[edgeNodes] = edgeLID; // for householding in this method
+          edgeNodes_.append( edgeNodes ); // for looping over edges
+          cellEdges_[cellLID][edgeIndex] = edgeLID; // for this->computeEdgeCoefficients_
+          edgeLID++;
+        }
+        edgeIndex++;
+      }
+    }
+  }
+
+  return;
+}
 // =============================================================================
 bool
-createEdges( const Teuchos::RCP<stk::mesh::BulkData> &bulkData )
+StkMesh::
+isSmallerEntity_( const stk::mesh::Entity* a,
+                  const stk::mesh::Entity* b ) const
 {
-  // Try creating adjacent mesh entites (aka edges).
-  bool supportsEdges = false;
-  try
+  return a->identifier() < b->identifier();
+}
+// =============================================================================
+bool
+StkMesh::
+tupleLexicographicLess_(const Teuchos::Tuple<int,2> & a,
+                        const Teuchos::Tuple<int,2> & b
+                        )
+{
+  for ( unsigned int k=0; k++; k<2 )
   {
-    stk::mesh::PartVector empty_add_parts;
-    stk::mesh::create_adjacent_entities( *bulkData, empty_add_parts );
-    supportsEdges = true;
+     if ( a[k] < b[k] )
+         return true;
+     else if ( a[k] > b[k] )
+         return false;
   }
-  catch ( std::runtime_error )
-  {
-  }
-  return supportsEdges;
+  // If a and b are exactly equal, return false (=strict 'less').
+  return false;
 }
 // =============================================================================
 } // namespace Ginla

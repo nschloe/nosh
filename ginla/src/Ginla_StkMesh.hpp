@@ -106,14 +106,14 @@ getComm() const;
 Teuchos::ArrayRCP<double>
 getEdgeCoefficients() const;
 
-Teuchos::ArrayRCP<DoubleVector>
-getEdgeCoefficientsFallback() const;
-
 std::vector<stk::mesh::Entity*>
 getOwnedCells() const;
 
 std::vector<stk::mesh::Entity*>
 getOverlapEdges() const;
+
+const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> >
+getEdgeNodes() const;
 
 std::vector<stk::mesh::Entity*>
 getOwnedNodes() const;
@@ -121,8 +121,8 @@ getOwnedNodes() const;
 std::vector<stk::mesh::Entity*>
 getOverlapNodes() const;
 
-Teuchos::ArrayRCP<DoubleVector>
-getNodeCoordinates( const stk::mesh::PairIterRelation &relation ) const;
+const DoubleVector
+getNodeCoordinates(const stk::mesh::Entity * nodeEntity) const;
 
 double
 getThickness( const stk::mesh::PairIterRelation &relation ) const;
@@ -139,17 +139,11 @@ getComplexNonOverlapMap() const;
 Teuchos::RCP<const Epetra_Map>
 getComplexOverlapMap() const;
 
-Teuchos::RCP<const Epetra_Map>
-getEdgesOverlapMap() const;
-
 unsigned int
 getNumEdgesPerCell( unsigned int cellDimension ) const;
 
 unsigned int
 getCellDimension( const unsigned int numLocalNodes ) const;
-
-bool
-supportsEdges() const;
 
 protected:
 private:
@@ -170,7 +164,6 @@ const Teuchos::RCP<const Epetra_Map> nodesMap_;
 const Teuchos::RCP<const Epetra_Map> nodesOverlapMap_;
 const Teuchos::RCP<const Epetra_Map> complexMap_;
 const Teuchos::RCP<const Epetra_Map> complexOverlapMap_;
-mutable Teuchos::RCP<const Epetra_Map> edgesOverlapMap_;
 
 mutable bool fvmEntitiesUpToDate_;
 
@@ -181,19 +174,21 @@ const Teuchos::RCP<Epetra_Vector> averageThickness_;
 
 mutable Teuchos::ArrayRCP<double> edgeCoefficients_;
 mutable bool edgeCoefficientsUpToDate_;
-mutable Teuchos::ArrayRCP<DoubleVector> edgeCoefficientsFallback_;
-mutable bool edgeCoefficientsFallbackUpToDate_;
-
-const bool supportsEdges_;
 
 bool isOutputFileSet_;
 
+//! Local edge ID -> Global node IDs.
+Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > edgeNodes_;
+//! Local cell ID -> Local edge IDs.
+Teuchos::ArrayRCP<Teuchos::ArrayRCP<int> > cellEdges_;
+
 private:
-void
-computeEdgeCoefficients_() const;
+
+Teuchos::ArrayRCP<const DoubleVector>
+getNodeCoordinates_( const stk::mesh::PairIterRelation &relation ) const;
 
 void
-computeEdgeCoefficientsFallback_() const;
+computeEdgeCoefficients_() const;
 
 void
 computeControlVolumes_() const;
@@ -273,11 +268,53 @@ norm2_( const DoubleVector &x
 double
 norm2squared_( const DoubleVector &x
                ) const;
+
+void
+createEdges_();
+
+bool
+isSmallerEntity_( const stk::mesh::Entity* a,
+                  const stk::mesh::Entity* b ) const;
+
+bool
+tupleLexicographicLess_(const Teuchos::Tuple<int,2> & a,
+                        const Teuchos::Tuple<int,2> & b
+                        );
 };
 // -----------------------------------------------------------------------------
 // helper functions
-bool
-createEdges( const Teuchos::RCP<stk::mesh::BulkData> &bulkData );
+// -----------------------------------------------------------------------------
+class EntityComp
+{
+public:
+  bool
+  operator()(const stk::mesh::Entity* a,
+             const stk::mesh::Entity* b
+             ) const
+  {
+    return a->identifier() < b->identifier();
+  }
+};
+// -----------------------------------------------------------------------------
+class TupleComp
+{
+public:
+  bool
+  operator()(const Teuchos::Tuple<stk::mesh::Entity*,2>& a,
+             const Teuchos::Tuple<stk::mesh::Entity*,2>& b
+             ) const
+  {
+    for ( unsigned int k=0; k<2; k++ )
+    {
+      if ( a[k]->identifier() < b[k]->identifier() )
+        return true;
+      else if ( a[k]->identifier() > b[k]->identifier() )
+        return false;
+    }
+    // If a and b are exactly equal, return false (=strict 'less').
+    return false;
+  }
+};
 // -----------------------------------------------------------------------------
 } // namespace Ginla
 // =============================================================================

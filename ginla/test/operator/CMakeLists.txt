@@ -65,7 +65,7 @@ SET( MESHTEST_EXECUTABLE
      "meshTest.exe" )
 ADD_EXECUTABLE ( ${MESHTEST_EXECUTABLE}
                  Ginla_StkMeshTests.cpp
-                 Ginla_EdgeCacheTests.cpp
+#                  Ginla_EdgeCacheTests.cpp
                  unitTestMain.cpp )
 # add tests
 ADD_TEST( meshTestSerial

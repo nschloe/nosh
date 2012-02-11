@@ -176,13 +176,11 @@ ApplyInverseMl_(const Epetra_MultiVector &X,
 //   TEUCHOS_ASSERT( problem.setProblem() );
 //   // -------------------------------------------------------------------------
 //   // add preconditioner
-// #ifdef _DEBUG_
-//   TEUCHOS_ASSERT( !keoMlPrec_.is_null() );
-// #endif
 //   // Create the Belos preconditioned operator from the preconditioner.
 //   // NOTE:  This is necessary because Belos expects an operator to apply the
 //   //        preconditioner with Apply() NOT ApplyInverse().
-//   keoMlPrec = Teuchos::rcp( new Belos::EpetraPrecOp( MlPrec_ ) );
+//   Teuchos::RCP<Belos::EpetraPrecOp> keoMlPrec =
+//       Teuchos::rcp( new Belos::EpetraPrecOp( MlPrec_ ) );
 //   problem.setLeftPrec( keoMlPrec );
 //   // -------------------------------------------------------------------------
 //   // Create an iterative solver manager.

@@ -62,27 +62,10 @@ double
 getdAdThetaEdgeMidpointProjection( const unsigned int edgeIndex
                                    ) const;
 
-double
-getAEdgeMidpointProjectionFallback( const unsigned int cellIndex,
-                                    const unsigned int edgeIndex
-                                    ) const;
-
-double
-getdAdMuEdgeMidpointProjectionFallback( const unsigned int cellIndex,
-                                        const unsigned int edgeIndex
-                                        ) const;
-double
-getdAdThetaEdgeMidpointProjectionFallback( const unsigned int cellIndex,
-                                           const unsigned int edgeIndex
-                                           ) const;
-
 protected:
 private:
 void
 initializeMvpEdgeMidpointCache_() const;
-
-void
-initializeMvpEdgeMidpointFallback_() const;
 
 DoubleVector
 crossProduct_( const DoubleVector u,
@@ -96,9 +79,6 @@ double mu_;
 
 Teuchos::ArrayRCP<double> mvpEdgeMidpointProjectionCache_;
 mutable bool mvpEdgeMidpointProjectionCacheUptodate_;
-Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >
-mvpEdgeMidpointProjectionCacheFallback_;
-mutable bool mvpEdgeMidpointProjectionCacheFallbackUptodate_;
 };
 } // namespace MagneticVectorPotential
 } // namespace Ginla
