@@ -338,16 +338,16 @@ int main ( int argc, char *argv[] )
 
           // Read the data from the file.
           std::string nullstateFilePath = xmlDirectory + "/" + initialGuessList.get<std::string> ( "Null state" );
-          Teuchos::ParameterList data;
-          Ginla::StkMeshRead( *eComm, nullstateFilePath, data );
+          Teuchos::ParameterList nullstateData;
+          Ginla::StkMeshRead( *eComm, nullstateFilePath, nullstateData );
 
           // Cast the data into something more accessible.
-          Teuchos::RCP<Ginla::StkMesh> & mesh = data.get( "mesh", Teuchos::RCP<Ginla::StkMesh>() );
-          Teuchos::RCP<Epetra_Vector>  & z = data.get( "psi", Teuchos::RCP<Epetra_Vector>() );
+          Teuchos::RCP<Ginla::StkMesh> & nullstateMesh = nullstateData.get( "mesh", Teuchos::RCP<Ginla::StkMesh>() );
+          Teuchos::RCP<Epetra_Vector>  & nullstateZ = nullstateData.get( "psi", Teuchos::RCP<Epetra_Vector>() );
 
-          TEUCHOS_ASSERT( !z.is_null() );
+          TEUCHOS_ASSERT( !nullstateZ.is_null() );
           Teuchos::RCP<Ginla::State> nullstate =
-              Teuchos::rcp( new Ginla::State( *z, mesh ) );
+              Teuchos::rcp( new Ginla::State( *nullstateZ, nullstateMesh ) );
 
           Teuchos::ParameterList & bifList =
               piroParams->sublist ( "LOCA" ).sublist ( "Bifurcation" );

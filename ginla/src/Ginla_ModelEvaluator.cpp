@@ -290,7 +290,7 @@ evalModel( const InArgs &inArgs,
            ) const
 {
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
-  Teuchos::TimeMonitor tm( *evalModelTime_ );
+  Teuchos::TimeMonitor tm0( *evalModelTime_ );
 #endif
 
   const double alpha = inArgs.get_alpha();
@@ -335,7 +335,7 @@ evalModel( const InArgs &inArgs,
   if ( !f_out.is_null() )
   {
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
-    Teuchos::TimeMonitor tm( *computeFTime_ );
+    Teuchos::TimeMonitor tm1( *computeFTime_ );
 #endif
     this->computeF_( *x_in, mvpParams, T, *f_out );
   }
@@ -347,7 +347,7 @@ evalModel( const InArgs &inArgs,
   if ( !dfdp_out.is_null() )
   {
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
-    Teuchos::TimeMonitor tm( *computedFdpTime_ );
+    Teuchos::TimeMonitor tm2( *computedFdpTime_ );
 #endif
     Teuchos::Array<int> paramIndices = derivMv.getParamIndexes();
     unsigned int numDerivs = paramIndices.size();
@@ -384,7 +384,7 @@ evalModel( const InArgs &inArgs,
   if( !W_out.is_null() )
   {
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
-    Teuchos::TimeMonitor tm( *fillJacobianTime_ );
+    Teuchos::TimeMonitor tm3( *fillJacobianTime_ );
 #endif
     Teuchos::RCP<Ginla::JacobianOperator> jac =
       Teuchos::rcp_dynamic_cast<Ginla::JacobianOperator>( W_out, true );
@@ -396,7 +396,7 @@ evalModel( const InArgs &inArgs,
   if( !WPrec_out.is_null() )
   {
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
-    Teuchos::TimeMonitor tm( *fillPreconditionerTime_ );
+    Teuchos::TimeMonitor tm4( *fillPreconditionerTime_ );
 #endif
     Teuchos::RCP<Ginla::KeoRegularized> keoPrec =
       Teuchos::rcp_dynamic_cast<Ginla::KeoRegularized>( WPrec_out, true );

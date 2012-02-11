@@ -53,9 +53,9 @@ JacobianOperator::
 // =============================================================================
 int
 JacobianOperator::
-SetUseTranspose( bool UseTranspose )
+SetUseTranspose( bool useTranspose )
 {
-  useTranspose_ = UseTranspose;
+  useTranspose_ = useTranspose;
   return 0;
 }
 // =============================================================================

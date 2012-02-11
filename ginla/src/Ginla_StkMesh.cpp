@@ -1027,7 +1027,7 @@ createEdges_()
     return;
 
   std::vector<stk::mesh::Entity*> cells = this->getOwnedCells();
-  int numLocalCells = cells.size();
+  unsigned int numLocalCells = cells.size();
   // Local cell ID -> Local edge IDs.
   cellEdges_ = Teuchos::ArrayRCP<Teuchos::ArrayRCP<int> >(numLocalCells);
 
