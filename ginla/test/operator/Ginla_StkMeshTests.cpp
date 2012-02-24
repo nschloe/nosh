@@ -41,7 +41,6 @@ testMesh( const std::string & inputFileNameBase,
           const double controlVolNormOne,
           const double controlVolNormTwo,
           const double controlVolNormInf,
-          const Teuchos::ArrayRCP<double> & controlEdgeCoeffs,
           Teuchos::FancyOStream & out,
           bool & success )
 {
@@ -91,17 +90,12 @@ TEUCHOS_UNIT_TEST( Ginla, MeshRectangleSmallHashes )
     double controlVolNormOne = 10.0;
     double controlVolNormTwo = 5.0;
     double controlVolNormInf = 2.5;
-    Teuchos::ArrayRCP<double> edgeCoeffs0(3);
-    edgeCoeffs0[0] = 0.0;
-    edgeCoeffs0[1] = 5.0;
-    edgeCoeffs0[2] = 0.05;
 
     testMesh( inputFileNameBase,
               numNodes,
               controlVolNormOne,
               controlVolNormTwo,
               controlVolNormInf,
-              edgeCoeffs0,
               out,
               success );
 }
@@ -114,17 +108,12 @@ TEUCHOS_UNIT_TEST( Ginla, MeshPacmanHashes )
     double controlVolNormOne = 302.5227007210103;
     double controlVolNormTwo = 15.38575790933914;
     double controlVolNormInf = 1.127797467043659;
-    Teuchos::ArrayRCP<double> edgeCoeffs0(3);
-    edgeCoeffs0[0] = 0.1029663033064168;
-    edgeCoeffs0[1] = 0.4075254593854971;
-    edgeCoeffs0[2] = 0.407525890029648;
 
     testMesh( inputFileNameBase,
               numNodes,
               controlVolNormOne,
               controlVolNormTwo,
               controlVolNormInf,
-              edgeCoeffs0,
               out,
               success );
 }
@@ -137,20 +126,12 @@ TEUCHOS_UNIT_TEST( Ginla, MeshCubeSmallHashes )
     double controlVolNormOne = 10.0;
     double controlVolNormTwo = 3.535533905932738;
     double controlVolNormInf = 1.25;
-    Teuchos::ArrayRCP<double> edgeCoeffs0(6);
-    edgeCoeffs0[0] = 1.666666666666667;
-    edgeCoeffs0[1] = 1.666666666666667;
-    edgeCoeffs0[2] = 0.01666666666666689;
-    edgeCoeffs0[3] = 0.0;
-    edgeCoeffs0[4] = 0.0;
-    edgeCoeffs0[5] = 0.0;
 
     testMesh( inputFileNameBase,
               numNodes,
               controlVolNormOne,
               controlVolNormTwo,
               controlVolNormInf,
-              edgeCoeffs0,
               out,
               success );
 }
@@ -163,20 +144,12 @@ TEUCHOS_UNIT_TEST( Ginla, MeshBrickWHoleHashes )
     double controlVolNormOne = 388.686291694641;
     double controlVolNormTwo = 16.6614019419857;
     double controlVolNormInf = 1.46847345474977;
-    Teuchos::ArrayRCP<double> edgeCoeffs0(6);
-    edgeCoeffs0[0] = 0.0509112504788891;
-    edgeCoeffs0[1] = -0.00170834562699921;
-    edgeCoeffs0[2] = 0.0643396202379737;
-    edgeCoeffs0[3] = -0.00241147546134538;
-    edgeCoeffs0[4] = 0.139248040732853;
-    edgeCoeffs0[5] = 0.175027306845033;
 
     testMesh( inputFileNameBase,
               numNodes,
               controlVolNormOne,
               controlVolNormTwo,
               controlVolNormInf,
-              edgeCoeffs0,
               out,
               success );
 }
