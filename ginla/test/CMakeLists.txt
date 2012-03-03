@@ -42,6 +42,7 @@ SET( OPERATORTEST_EXECUTABLE
      "operatorTest.exe" )
 ADD_EXECUTABLE ( ${OPERATORTEST_EXECUTABLE}
                  Ginla_KeoUnitTests.cpp
+                 Ginla_ComputeFUnitTests.cpp
                  Ginla_JacUnitTests.cpp
                  Ginla_dfdpUnitTests.cpp
                  unitTestMain.cpp )
