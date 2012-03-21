@@ -1041,7 +1041,6 @@ createEdges_()
 
   // Loop over all owned cells.
   unsigned int edgeLID = 0;
-  std::cout << std::endl;
   for ( unsigned int cellLID=0; cellLID<numLocalCells; cellLID++ )
   {
     // Loop over all pairs of local nodes.

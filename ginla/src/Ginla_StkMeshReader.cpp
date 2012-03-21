@@ -112,9 +112,12 @@ read( const Epetra_Comm &comm,
   stk::io::set_field_role( *psii_field, Ioss::Field::TRANSIENT );
 
   // Magnetic vector potential.
-  // Declare those fields as TRANSIENT to make sure they are written out to the
-  // exodus file. Note, however, that this creates a large data overhead as the
-  // same data is written out in each step although the data don't change.
+  // Think about whether to declare the magnetic vector potential as
+  // Ioss::Field::TRANSIENT or Ioss::Field::ATTRIBUTE. "TRANSIENT" writes the
+  // data out for all time/continuation steps (although) is it actually the
+  // same throughout. "ATTRIBUTE" stores the vector field only once and hence
+  // saves a lot of disk space, but not all readers recoginize the ATTRIBUTE
+  // field (e.g., ParaView).
   //
   // On 05/11/2011 02:44 PM, Gregory Sjaardema wrote:
   // For now, the B and C fields will have to be declared as TRANSIENT fields
@@ -126,16 +129,41 @@ read( const Epetra_Comm &comm,
   // by some big debugging and didn't finish that story.  Hopefully, it will
   // be done in June at which time you could use attribute fields on the
   // universal set...
+  //
+  // Another note on the magnetic vector potential:
+  // Sometimes, it may be stored in the file with three components (A_X, A_Y,
+  // A_Z), sometimes, if the domain is two-dimensional, with two components
+  // (typically A_R, A_Z then, for some reason unknown to me -- cylindrical
+  // coordinates?).
+  // As of now (2012-03-21) there is no way to determine which fields are
+  // actually present in the file. The only thing we can do is to declare them,
+  // and check if they're full of zeros in the end.
+  // To be on the safe side, declare the vector field A, and the scalar fields
+  // A_R, A_Z here. Then further below apply some logic to make sense of the
+  // findings.
+  // What we'd really need here though is a "read everything that's in file"
+  // kind of routine.
   Teuchos::RCP<VectorFieldType> mvpField =
-    Teuchos::rcpFromRef( metaData->declare_field< VectorFieldType >( "A" ) );
+    Teuchos::rcpFromRef( metaData->declare_field<VectorFieldType>( "A" ) );
   stk::mesh::put_field( *mvpField,
                         metaData->node_rank(), metaData->universal_part() );
   stk::io::set_field_role( *mvpField, Ioss::Field::ATTRIBUTE );
 
+  Teuchos::RCP<ScalarFieldType> mvpFieldR =
+    Teuchos::rcpFromRef( metaData->declare_field< ScalarFieldType >( "A_R" ) );
+  stk::mesh::put_field( *mvpFieldR,
+                        metaData->node_rank(), metaData->universal_part() );
+  stk::io::set_field_role( *mvpFieldR, Ioss::Field::ATTRIBUTE );
+
+  Teuchos::RCP<ScalarFieldType> mvpFieldZ =
+    Teuchos::rcpFromRef( metaData->declare_field< ScalarFieldType >( "A_Z" ) );
+  stk::mesh::put_field( *mvpFieldZ,
+                        metaData->node_rank(), metaData->universal_part() );
+  stk::io::set_field_role( *mvpFieldZ, Ioss::Field::ATTRIBUTE );
+
   // Thickness fields. Same as above.
   Teuchos::RCP<ScalarFieldType> thicknessField =
-    Teuchos::rcpFromRef( metaData->declare_field< ScalarFieldType >(
-                           "thickness" ) );
+    Teuchos::rcpFromRef( metaData->declare_field<ScalarFieldType>("thickness") );
   stk::mesh::put_field( *thicknessField,
                         metaData->node_rank(), metaData->universal_part() );
   stk::io::set_field_role( *thicknessField, Ioss::Field::ATTRIBUTE );
@@ -237,17 +265,22 @@ read( const Epetra_Comm &comm,
   // create the state
   data.set( "psi", this->createPsi_( mesh, psir_field, psii_field ) );
 
-  const Teuchos::RCP<const Epetra_MultiVector> mvp
-    = this->createMvp_( mesh, mvpField );
-  // check that it's not overall 0
+  Teuchos::RCP<const Epetra_MultiVector> mvp;
+  mvp = this->createMvp_(mesh, mvpField);
+  // Check if it's 0.
   double r[3];
   mvp->NormInf( r );
-  double tol=1.0e-9;
-#ifdef _DEBUG_
-  TEST_FOR_EXCEPT_MSG( r[0]<tol && r[1]<tol && r[2]<tol,
-                       "The magnetic vector potential in the file \""
-                       << fileName_ << "\" seems to be 0 throughout. Abort." );
-#endif
+  double tol = 1.0e-15;
+  if (r[0]<tol && r[1]<tol && r[2]<tol)
+  {
+    // If the field appears to be zeroed-out, it's probably not there.
+    // Try A_R, A_Z.
+    mvp = this->createMvpRZ_(mesh, mvpFieldR, mvpFieldZ);
+    mvp->NormInf( r );
+    TEST_FOR_EXCEPT_MSG( r[0]<tol && r[1]<tol && r[2]<tol,
+                         "No magnetic vector potential field \"A\" found in file \""
+                         << fileName_ << "\". Abort." );
+  }
   data.set( "A", mvp );
 
   // Check of the thickness data is of any value. If not: ditch it.
@@ -374,13 +407,11 @@ createMvp_( const Teuchos::RCP<const Ginla::StkMesh> &mesh,
   // Fill the vector with data from the file.
   for ( unsigned int k=0; k<overlapNodes.size(); k++ )
   {
-    double* mvpVal = stk::mesh::field_data( *mvpField, *overlapNodes[k] );
+    double *mvpVal = stk::mesh::field_data( *mvpField, *overlapNodes[k] );
 #ifdef _DEBUG_
     // Check if the field is actually there.
-    TEST_FOR_EXCEPT_MSG(
-      mvpVal == NULL,
-      "MVP value for node " << k << " not found.\n"
-      <<
+    TEST_FOR_EXCEPT_MSG( mvpVal == NULL,
+      "MVPX value for node " << k << " not found.\n" <<
       "Probably there is no MVP field given with the state."
       );
 #endif
@@ -391,11 +422,67 @@ createMvp_( const Teuchos::RCP<const Ginla::StkMesh> &mesh,
   }
 
 #ifdef _DEBUG_
+  // Check for NaNs and uninitialized data.
   double r[3];
   mvp->Norm1( r );
   TEST_FOR_EXCEPT_MSG( r[0]!=r[0] || r[0]>1.0e100
                        || r[1]!=r[1] || r[1]>1.0e100
                        || r[2]!=r[2] || r[2]>1.0e100,
+                       "The input data seems flawed. Abort." );
+#endif
+
+  return mvp;
+}
+// =============================================================================
+Teuchos::RCP<Epetra_MultiVector>
+StkMeshReader::
+createMvpRZ_( const Teuchos::RCP<const Ginla::StkMesh> &mesh,
+              const Teuchos::RCP<const ScalarFieldType> &mvpFieldR,
+              const Teuchos::RCP<const ScalarFieldType> &mvpFieldZ
+            ) const
+{
+  // Get overlap nodes.
+  const std::vector<stk::mesh::Entity*> &overlapNodes = mesh->getOverlapNodes();
+
+  // Create vector with this respective map.
+  int numComponents = 3;
+  Teuchos::RCP<Epetra_MultiVector> mvp =
+    Teuchos::rcp( new Epetra_MultiVector( *mesh->getNodesOverlapMap(),
+                                          numComponents ) );
+
+#ifdef _DEBUG_
+  TEUCHOS_ASSERT( !mvpFieldR.is_null() );
+  TEUCHOS_ASSERT( !mvpFieldZ.is_null() );
+#endif
+  // Fill the vector with data from the file.
+  for ( unsigned int k=0; k<overlapNodes.size(); k++ )
+  {
+    double *mvpValR = stk::mesh::field_data( *mvpFieldR, *overlapNodes[k] );
+    double *mvpValZ = stk::mesh::field_data( *mvpFieldZ, *overlapNodes[k] );
+#ifdef _DEBUG_
+    // Check if the field is actually there.
+    TEST_FOR_EXCEPT_MSG( mvpValR == NULL,
+      "MVPR value for node " << k << " not found.\n" <<
+      "Probably there is no MVP field given with the state."
+      );
+    TEST_FOR_EXCEPT_MSG( mvpValZ == NULL,
+      "MVPZ value for node " << k << " not found.\n" <<
+      "Probably there is no MVP field given with the state."
+      );
+#endif
+
+    mvp->ReplaceMyValue( k, 0, *mvpValR );
+    mvp->ReplaceMyValue( k, 1, *mvpValZ );
+    // TODO Remove explicit extension by 0.
+    mvp->ReplaceMyValue( k, 2, 0.0 );
+  }
+
+#ifdef _DEBUG_
+  // Check for NaNs and uninitialized data.
+  double r[2];
+  mvp->Norm1( r );
+  TEST_FOR_EXCEPT_MSG( r[0]!=r[0] || r[0]>1.0e100
+                       || r[1]!=r[1] || r[1]>1.0e100,
                        "The input data seems flawed. Abort." );
 #endif
 

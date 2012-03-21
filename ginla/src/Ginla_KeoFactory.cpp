@@ -258,7 +258,6 @@ fillKeo_( const Teuchos::RCP<Epetra_FECrsMatrix> &keoMatrix,
     this->buildAlphaCache_( edges, mesh_->getEdgeCoefficients() );
 
   // Loop over all edges.
-  std::cout << std::endl;
   for ( unsigned int k=0; k<edges.size(); k++ )
   {
     // ---------------------------------------------------------------
