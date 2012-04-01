@@ -12,15 +12,16 @@ def _main():
     output = "%s-balanced.nemI" % basename
 
     # slice it
-    print "Cutting the input data into slices of ", args.slices_list, "."
-    for num_slices in args.slices_list:
-        _slice( args.filename, output, num_slices )
+    print "Cutting the input data into slices of ", args.proc_mesh, "."
+    #for proc_mesh in args.proc_meshes:
+    _slice(args.filename, output, args.proc_mesh)
 
     return
 # ==============================================================================
-def _slice( filename, output, num_slices ):
+def _slice( filename, output, proc_mesh ):
 
-    bin_dir = "/opt/trilinos/dev/master/openmpi/1.4.3/gcc/4.6.1/release/bin/"
+    bin_dir = '/opt/trilinos/dev/master/gcc/4.4.5/bin/'
+    #bin_dir = '/opt/trilinos/dev/master/openmpi/1.4.3/gcc/4.6.1/release/bin/'
     nemslice_command = bin_dir + "nem_slice"
     nemspread_command = bin_dir + "nem_spread"
     tmp_nemspreadinp = "nem_spread.inp"
@@ -28,8 +29,8 @@ def _slice( filename, output, num_slices ):
     #slice_method = "spectral"
     slice_method = "multikl"
 
-    slice_command = "%s -v -o \"%s\" -e -m mesh=1x%d -l %s \"%s\"" % \
-                    ( nemslice_command, output, num_slices, slice_method, filename )
+    slice_command = "%s -v -o \"%s\" -e -m mesh=%dx%d -l %s \"%s\"" % \
+                    ( nemslice_command, output, proc_mesh[0], proc_mesh[1], slice_method, filename )
 
     _run( slice_command )
 
@@ -67,12 +68,13 @@ def _parse_options():
                         type=str,
                         help='the file to read from')
 
-    parser.add_argument('--slices', '-s',
-                        dest='slices_list',
-                        metavar='SLICE_SIZES',
+    parser.add_argument('--process-mesh', '-p',
+                        dest='proc_mesh',
+                        metavar='PROCMESH',
                         type=int,
-                        nargs='+',
-                        help='how many slices to cut')
+                        nargs=2,
+                        required=True,
+                        help='process mesh (e.g., -p 4 2)')
 
     args = parser.parse_args()
 
