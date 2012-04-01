@@ -3,20 +3,18 @@
 import argparse, sys, os, subprocess, shutil
 # ==============================================================================
 def _main():
-    filename = _parse_options()
+    args = _parse_options()
 
     # get basename of input file
-    basename, extension = os.path.splitext( filename )
+    basename, extension = os.path.splitext( args.filename )
 
     # define output filename(s)
     output = "%s-balanced.nemI" % basename
 
     # slice it
-    slices_list = [12] #range( 2, 3 )
-    #slices_list.extend( range(32, 33, 32) )
-    print "Cutting the input data into slices of ", slices_list, "."
-    for num_slices in slices_list:
-        _slice( filename, output, num_slices )
+    print "Cutting the input data into slices of ", args.slices_list, "."
+    for num_slices in args.slices_list:
+        _slice( args.filename, output, num_slices )
 
     return
 # ==============================================================================
@@ -26,9 +24,9 @@ def _slice( filename, output, num_slices ):
     nemslice_command = bin_dir + "nem_slice"
     nemspread_command = bin_dir + "nem_spread"
     tmp_nemspreadinp = "nem_spread.inp"
-    slice_method = "inertial"
+    #slice_method = "inertial"
     #slice_method = "spectral"
-    #slice_method = "multikl"
+    slice_method = "multikl"
 
     slice_command = "%s -v -o \"%s\" -e -m mesh=1x%d -l %s \"%s\"" % \
                     ( nemslice_command, output, num_slices, slice_method, filename )
@@ -64,15 +62,21 @@ def _parse_options():
 
     parser = argparse.ArgumentParser( description = 'Split an ExodusII file into loadbalanced chunks.' )
 
-    parser.add_argument( 'filename',
-                         metavar='FILE',
-                         type=str,
-                         nargs=1,
-                         help='the file to read from')
+    parser.add_argument('filename',
+                        metavar='FILE',
+                        type=str,
+                        help='the file to read from')
+
+    parser.add_argument('--slices', '-s',
+                        dest='slices_list',
+                        metavar='SLICE_SIZES',
+                        type=int,
+                        nargs='+',
+                        help='how many slices to cut')
 
     args = parser.parse_args()
 
-    return args.filename[0]
+    return args
 # ==============================================================================
 def _run( command ):
     """Runs a given command on the command line and returns its output.
