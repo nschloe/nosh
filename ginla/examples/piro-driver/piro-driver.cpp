@@ -89,7 +89,7 @@ int main ( int argc, char *argv[] )
       *out << "Reading parameter list from \"" << xmlInputFileName << "\"."
            << std::endl;
 
-      Teuchos::updateParametersFromXmlFile( xmlInputFileName, piroParams.get() );
+      Teuchos::updateParametersFromXmlFile( xmlInputFileName, piroParams );
 
       // =======================================================================
       // extract data of the parameter list
@@ -372,8 +372,8 @@ int main ( int argc, char *argv[] )
       // ----------------------------------------------------------------------
       else
       {
-          TEST_FOR_EXCEPT_MSG( true,
-                               "Unknown solver type \"" << solver << "\"." );
+          TEUCHOS_TEST_FOR_EXCEPT_MSG(true,
+                                      "Unknown solver type \"" << solver << "\"." );
       }
       // ----------------------------------------------------------------------
 

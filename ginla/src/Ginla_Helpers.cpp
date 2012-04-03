@@ -99,8 +99,8 @@ appendToTeuchosParameterList( Teuchos::ParameterList &p,
                               const std::string &labelPrepend
                               )
 {
-  Teuchos::ParameterList::ConstIterator k;
-  for ( int k=0; k<pL.length(); k++ )
+  //Teuchos::ParameterList::ConstIterator k;
+  for (int k=0; k<pL.length(); k++)
     p.set<double>( labelPrepend + pL.getLabel( k ), pL[k] );
 
   return;

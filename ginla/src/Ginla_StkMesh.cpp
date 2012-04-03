@@ -263,7 +263,7 @@ getThickness( const stk::mesh::PairIterRelation &relation ) const
 //         thickness[i] = node[0];
 //     }
 //     return thickness;
-  TEST_FOR_EXCEPT_MSG( true,
+  TEUCHOS_TEST_FOR_EXCEPT_MSG( true,
                        "Not yet implemented." );
   return 0.0;
 }
@@ -386,7 +386,7 @@ getCellDimension( const unsigned int numLocalNodes ) const
     case 4: // tetrahedra
       return 3;
     default:
-      TEST_FOR_EXCEPT_MSG( true,
+      TEUCHOS_TEST_FOR_EXCEPT_MSG( true,
                            "Control volumes can only be constructed "
                            << "consistently with triangular or "
                            << "tetrahedral elements."
@@ -485,7 +485,7 @@ getEdgeCoefficientsNumerically_(
       }
       break;
     default:
-      TEST_FOR_EXCEPT_MSG( true,
+      TEUCHOS_TEST_FOR_EXCEPT_MSG( true,
                            "Can only handle triangles and tetrahedra." );
   }
 
@@ -606,7 +606,7 @@ computeControlVolumes_() const
     else if ( cellDimension==3 )   // tetrahedron
       cc = this->computeTetrahedronCircumcenter_( localNodeCoords );
     else
-      TEST_FOR_EXCEPT_MSG( true,
+      TEUCHOS_TEST_FOR_EXCEPT_MSG( true,
                            "Control volumes can only be constructed "
                            << "consistently with triangular or "
                            << "tetrahedral elements."
@@ -671,14 +671,14 @@ computeControlVolumes_() const
           // However, looping over edges is not (yet) possible. Hence, we loop over all the
           // cells here. This way, the edges are counted several times, but it is difficult
           // to determine how many times exactly.
-//                   TEST_FOR_EXCEPTION( true,
+//                   TEUCHOS_TEST_FOR_EXCEPTION( true,
 //                                       std::runtime_error,
 //                                       "Cannot calculate the average thickness in a 3D control volume yet."
 //                                     );
         }
         else
         {
-          TEST_FOR_EXCEPT_MSG( true,
+          TEUCHOS_TEST_FOR_EXCEPT_MSG( true,
                                "Control volumes can only be constructed "
                                << "consistently with triangular or "
                                << "tetrahedral elements."
@@ -841,7 +841,7 @@ getTetrahedronVolume_( const DoubleVector &edge0,
 {
   // Make sure the edges are not conplanar.
   double alpha = edge0.dot( this->cross_( edge1, edge2 ) );
-  TEST_FOR_EXCEPT_MSG( fabs( alpha ) / this->norm2_( edge0 )
+  TEUCHOS_TEST_FOR_EXCEPT_MSG( fabs( alpha ) / this->norm2_( edge0 )
                        / this->norm2_( edge1 )
                        / this->norm2_( edge2 )
                        < 1.0e-5,
@@ -880,7 +880,7 @@ computeTriangleCircumcenter_( const DoubleVector &node0,
                          );
 
   // don't divide by 0
-  TEST_FOR_EXCEPT_MSG( fabs( omega ) < 1.0e-10,
+  TEUCHOS_TEST_FOR_EXCEPT_MSG( fabs( omega ) < 1.0e-10,
                        "It seems that the nodes \n\n"
                        << "   " << node0 << "\n"
                        << "   " << node1 << "\n"
@@ -934,7 +934,7 @@ computeTetrahedronCircumcenter_(
     this->dot_( relNodes[0], this->cross_( relNodes[1], relNodes[2] ) );
 
   // don't divide by 0
-  TEST_FOR_EXCEPT_MSG( fabs( omega ) < 1.0e-10,
+  TEUCHOS_TEST_FOR_EXCEPT_MSG( fabs( omega ) < 1.0e-10,
                        "It seems that the nodes \n\n"
                        << "   " << nodes[0] << "\n"
                        << "   " << nodes[1] << "\n"

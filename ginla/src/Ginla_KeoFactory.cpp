@@ -306,7 +306,7 @@ fillKeo_( const Teuchos::RCP<Epetra_FECrsMatrix> &keoMatrix,
         break;
       }
       default:
-        TEST_FOR_EXCEPT_MSG( true,
+        TEUCHOS_TEST_FOR_EXCEPT_MSG( true,
                              "Illegal matrix type \"" << matrixType << "\"."
                              );
     }
@@ -389,10 +389,10 @@ buildAlphaCache_( const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > & 
     int tlid0 = thickness_->Map().LID( gid[0] );
     int tlid1 = thickness_->Map().LID( gid[1] );
 #ifdef _DEBUG_
-    TEST_FOR_EXCEPT_MSG( tlid0 < 0,
+    TEUCHOS_TEST_FOR_EXCEPT_MSG( tlid0 < 0,
                          "The global index " << gid[0]
                          << " does not seem to be present on this node." );
-    TEST_FOR_EXCEPT_MSG( tlid1 < 0,
+    TEUCHOS_TEST_FOR_EXCEPT_MSG( tlid1 < 0,
                          "The global index " << gid[1]
                          << " does not seem to be present on this node." );
 #endif

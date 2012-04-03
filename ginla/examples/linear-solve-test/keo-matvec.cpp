@@ -24,7 +24,7 @@
 #include "Ginla_State.hpp"
 #include "Ginla_ModelEvaluator.hpp"
 #include "Ginla_KeoFactory.hpp"
-#include "Ginla_MagneticVectorPotential.hpp"
+#include "Ginla_MagneticVectorPotential_ExplicitValues.hpp"
 
 #ifdef HAVE_MPI
 #include <Epetra_MpiComm.h>
@@ -106,13 +106,13 @@ int main ( int argc, char *argv[] )
       Teuchos::ParameterList           & problemParameters = data.get( "Problem parameters", Teuchos::ParameterList() );
 
       Teuchos::RCP<Teuchos::Time> mvpConstructTime = Teuchos::TimeMonitor::getNewTimer("MVP construction");
-      Teuchos::RCP<Ginla::MagneticVectorPotential> mvp;
+      Teuchos::RCP<Ginla::MagneticVectorPotential::ExplicitValues> mvp;
       double mu;
       {
           Teuchos::TimeMonitor tm(*mvpConstructTime);
           mu = problemParameters.get<double> ( "mu" );
           mu = 1.0e-3;
-          mvp = Teuchos::rcp ( new Ginla::MagneticVectorPotential ( mesh, mvpValues, mu ) );
+          mvp = Teuchos::rcp ( new Ginla::MagneticVectorPotential::ExplicitValues ( mesh, mvpValues, mu ) );
           //mvp->initializeEdgeMidpointProjectionCache_();
       }
 

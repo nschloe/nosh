@@ -74,7 +74,7 @@ observeSolution( const Epetra_Vector &soln )
       this->observeTurningPointContinuation_( savable );
       break;
     default:
-      TEST_FOR_EXCEPT_MSG( true,
+      TEUCHOS_TEST_FOR_EXCEPT_MSG( true,
                            "Illegal observer type " << observerType_ );
   }
 
@@ -114,7 +114,7 @@ observeTurningPointContinuation_( const Teuchos::RCP<const Ginla::State> &state 
     state->save( index );
   }
   else
-    TEST_FOR_EXCEPT_MSG( true, "Not yet implemented." );
+    TEUCHOS_TEST_FOR_EXCEPT_MSG( true, "Not yet implemented." );
   // This part of the code used to write state and null vector alternately
   // for turning point continuation, but because of how StkMesh is
   // organized, it seems impossible to first write to one file, then to

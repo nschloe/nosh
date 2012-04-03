@@ -106,7 +106,7 @@ print()
       else if ( statisticsList_->isType<std::string>( label ) )
         strstream.width( statisticsList_->get<std::string>( label ).length() );
       else
-        TEST_FOR_EXCEPT_MSG( true,
+        TEUCHOS_TEST_FOR_EXCEPT_MSG( true,
                              "Invalid data type for item \""
                              << label << "\"." );
 
@@ -156,7 +156,7 @@ print()
       strstream << statisticsList_->get<std::string>( label );
     }
     else
-      TEST_FOR_EXCEPT_MSG( true,
+      TEUCHOS_TEST_FOR_EXCEPT_MSG( true,
                            "Invalid data type for item \""
                            << label << "\"." );
 

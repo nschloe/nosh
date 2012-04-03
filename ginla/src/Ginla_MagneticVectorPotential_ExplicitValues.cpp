@@ -101,7 +101,7 @@ ExplicitValues::
 getdAdThetaEdgeMidpointProjection( const unsigned int edgeIndex
                                    ) const
 {
-  TEST_FOR_EXCEPT_MSG( true,
+  TEUCHOS_TEST_FOR_EXCEPT_MSG( true,
                        "Parameter \"theta\" not supported. Abort." );
 }
 // ============================================================================
@@ -126,11 +126,11 @@ initializeMvpEdgeMidpointCache_() const
     lid[1] = mvp_->Map().LID( edges[k][1]->identifier() - 1 );
 
 #ifdef _DEBUG_
-    TEST_FOR_EXCEPT_MSG( lid[0] < 0,
+    TEUCHOS_TEST_FOR_EXCEPT_MSG( lid[0] < 0,
                          "The global index " <<
                          edges[k][0]->identifier() - 1
                          << " does not seem to be present on this node." );
-    TEST_FOR_EXCEPT_MSG( lid[1] < 0,
+    TEUCHOS_TEST_FOR_EXCEPT_MSG( lid[1] < 0,
                          "The global index " <<
                          edges[k][1]->identifier() - 1
                          << " does not seem to be present on this node." );

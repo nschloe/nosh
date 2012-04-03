@@ -368,7 +368,7 @@ evalModel( const InArgs &inArgs,
           this->computeDFDT_( *x_in, mvpParams, *(*dfdp_out)(k) );
           break;
         default:
-          TEST_FOR_EXCEPT_MSG(
+          TEUCHOS_TEST_FOR_EXCEPT_MSG(
             true,
             "Unknown problem parameter "
             << "\"" << (*p_names_)[paramIndices[k]] <<

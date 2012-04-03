@@ -29,7 +29,7 @@
 #include "Ginla_StatsWriter.hpp"
 #include "Ginla_NoxObserver.hpp"
 #include "Ginla_SaveEigenData.hpp"
-#include "Ginla_MagneticVectorPotential.hpp"
+#include "Ginla_MagneticVectorPotential_ExplicitValues.hpp"
 
 #ifdef HAVE_MPI
 #include <Epetra_MpiComm.h>
@@ -80,8 +80,8 @@ int main ( int argc, char *argv[] )
       bool verbose = true;
       My_CLP.setOption("verbose","quiet",&verbose,"Print messages and results.");
 
-      bool isPrec = true;
-      My_CLP.setOption("prec","noprec",&isPrec,"Use a preconditioner.");
+      bool usePrec = true;
+      My_CLP.setOption("prec","noprec",&usePrec,"Use a preconditioner.");
 
       int frequency = 10;
       My_CLP.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
@@ -109,14 +109,14 @@ int main ( int argc, char *argv[] )
       Teuchos::RCP<Epetra_Vector>      & thickness = data.get( "thickness", Teuchos::RCP<Epetra_Vector>() );
       Teuchos::ParameterList           & problemParameters = data.get( "Problem parameters", Teuchos::ParameterList() );
 
-      Teuchos::RCP<Ginla::MagneticVectorPotential> mvp;
+      Teuchos::RCP<Ginla::MagneticVectorPotential::ExplicitValues> mvp;
       double mu;
       Teuchos::RCP<Teuchos::Time> mvpConstructTime = Teuchos::TimeMonitor::getNewTimer("MVP construction");
       {
           Teuchos::TimeMonitor tm(*mvpConstructTime);
-          mu = problemParameters.get<double> ( "mu" );
+//          mu = problemParameters.get<double> ( "mu" );
           mu = 1.0e-6;
-          mvp = Teuchos::rcp ( new Ginla::MagneticVectorPotential ( mesh, mvpValues, mu ) );
+          mvp = Teuchos::rcp ( new Ginla::MagneticVectorPotential::ExplicitValues( mesh, mvpValues, mu ) );
       }
 
       Teuchos::RCP<LOCA::ParameterVector> mvpParameters =
@@ -168,26 +168,27 @@ int main ( int argc, char *argv[] )
         belosList.set( "Verbosity", Belos::Errors + Belos::Warnings );
 
       belosList.set( "Maximum Iterations", 10000 );
+      belosList.set( "Assert Positive Definiteness", false );
 
       // Construct an unpreconditioned linear problem instance.
       Belos::LinearProblem<double,MV,OP> problem( jac, epetra_x, epetra_b );
       bool set = problem.setProblem();
-      TEST_FOR_EXCEPTION( !set,
-                          std::logic_error,
-                          "ERROR:  Belos::LinearProblem failed to set up correctly!" );
+      TEUCHOS_TEST_FOR_EXCEPTION(!set,
+                                 std::logic_error,
+                                 "ERROR:  Belos::LinearProblem failed to set up correctly!" );
       // -----------------------------------------------------------------------
       // create preconditioner
       Teuchos::RCP<Teuchos::Time> precConstructTime = Teuchos::TimeMonitor::getNewTimer("Prec construction");
-      if ( isPrec )
+      if ( usePrec )
       {
           Teuchos::TimeMonitor tm(*precConstructTime);
 
           // create the jacobian operator
           Teuchos::RCP<Ginla::KeoRegularized> keoReg =
-              Teuchos::rcp( new Ginla::KeoRegularized( keoFactory ) );
+              Teuchos::rcp( new Ginla::KeoRegularized(mesh, thickness, keoFactory));
 
           // actually fill it with values
-          keoReg->rebuild();
+          keoReg->rebuild(z);
 
           // Create the Belos preconditioned operator from the preconditioner.
           // NOTE:  This is necessary because Belos expects an operator to apply the
@@ -200,8 +201,8 @@ int main ( int argc, char *argv[] )
 
 //      belosList.set( "Assert Positive Definiteness", false );
       Teuchos::RCP<Belos::SolverManager<double,MV,OP> > newSolver
-//              = Teuchos::rcp( new Belos::PseudoBlockCGSolMgr<double,MV,OP>( Teuchos::rcp(&problem,false),
-              = Teuchos::rcp( new Belos::MinresSolMgr<double,MV,OP>( Teuchos::rcp(&problem,false),
+              = Teuchos::rcp( new Belos::PseudoBlockCGSolMgr<double,MV,OP>( Teuchos::rcp(&problem,false),
+//              = Teuchos::rcp( new Belos::MinresSolMgr<double,MV,OP>( Teuchos::rcp(&problem,false),
                                                                             Teuchos::rcp(&belosList,false)
                                                                           )
                             );

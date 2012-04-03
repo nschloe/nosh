@@ -187,7 +187,7 @@ read( const Epetra_Comm &comm,
                                                    Ioss::READ_MODEL,
                                                    MPI_COMM_WORLD
                                                    );
-  TEST_FOR_EXCEPT_MSG( dbi == NULL || !dbi->ok(),
+  TEUCHOS_TEST_FOR_EXCEPT_MSG( dbi == NULL || !dbi->ok(),
                        "ERROR: Could not open database '" << fileName_
                        << "' of type '" << meshType << "'."
                        );
@@ -277,7 +277,7 @@ read( const Epetra_Comm &comm,
     // Try A_R, A_Z.
     mvp = this->createMvpRZ_(mesh, mvpFieldR, mvpFieldZ);
     mvp->NormInf( r );
-    TEST_FOR_EXCEPT_MSG( r[0]<tol && r[1]<tol && r[2]<tol,
+    TEUCHOS_TEST_FOR_EXCEPT_MSG( r[0]<tol && r[1]<tol && r[2]<tol,
                          "No magnetic vector potential field \"A\" found in file \""
                          << fileName_ << "\". Abort." );
   }
@@ -333,7 +333,7 @@ createPsi_( const Teuchos::RCP<const Ginla::StkMesh> &mesh,
 #ifdef _DEBUG_
   double r;
   psi->Norm1( &r );
-  TEST_FOR_EXCEPT_MSG( r!=r || r>1.0e100,
+  TEUCHOS_TEST_FOR_EXCEPT_MSG( r!=r || r>1.0e100,
                        "The input data seems flawed. Abort." );
 #endif
 
@@ -378,7 +378,7 @@ createThickness_( const Teuchos::RCP<const Ginla::StkMesh> &mesh,
 #ifdef _DEBUG_
   double r;
   thickness->Norm1( &r );
-  TEST_FOR_EXCEPT_MSG( r!=r || r>1.0e100,
+  TEUCHOS_TEST_FOR_EXCEPT_MSG( r!=r || r>1.0e100,
                        "The input data seems flawed. Abort." );
 #endif
 
@@ -410,7 +410,7 @@ createMvp_( const Teuchos::RCP<const Ginla::StkMesh> &mesh,
     double *mvpVal = stk::mesh::field_data( *mvpField, *overlapNodes[k] );
 #ifdef _DEBUG_
     // Check if the field is actually there.
-    TEST_FOR_EXCEPT_MSG( mvpVal == NULL,
+    TEUCHOS_TEST_FOR_EXCEPT_MSG( mvpVal == NULL,
       "MVPX value for node " << k << " not found.\n" <<
       "Probably there is no MVP field given with the state."
       );
@@ -425,7 +425,7 @@ createMvp_( const Teuchos::RCP<const Ginla::StkMesh> &mesh,
   // Check for NaNs and uninitialized data.
   double r[3];
   mvp->Norm1( r );
-  TEST_FOR_EXCEPT_MSG( r[0]!=r[0] || r[0]>1.0e100
+  TEUCHOS_TEST_FOR_EXCEPT_MSG( r[0]!=r[0] || r[0]>1.0e100
                        || r[1]!=r[1] || r[1]>1.0e100
                        || r[2]!=r[2] || r[2]>1.0e100,
                        "The input data seems flawed. Abort." );
@@ -461,11 +461,11 @@ createMvpRZ_( const Teuchos::RCP<const Ginla::StkMesh> &mesh,
     double *mvpValZ = stk::mesh::field_data( *mvpFieldZ, *overlapNodes[k] );
 #ifdef _DEBUG_
     // Check if the field is actually there.
-    TEST_FOR_EXCEPT_MSG( mvpValR == NULL,
+    TEUCHOS_TEST_FOR_EXCEPT_MSG( mvpValR == NULL,
       "MVPR value for node " << k << " not found.\n" <<
       "Probably there is no MVP field given with the state."
       );
-    TEST_FOR_EXCEPT_MSG( mvpValZ == NULL,
+    TEUCHOS_TEST_FOR_EXCEPT_MSG( mvpValZ == NULL,
       "MVPZ value for node " << k << " not found.\n" <<
       "Probably there is no MVP field given with the state."
       );
@@ -481,7 +481,7 @@ createMvpRZ_( const Teuchos::RCP<const Ginla::StkMesh> &mesh,
   // Check for NaNs and uninitialized data.
   double r[2];
   mvp->Norm1( r );
-  TEST_FOR_EXCEPT_MSG( r[0]!=r[0] || r[0]>1.0e100
+  TEUCHOS_TEST_FOR_EXCEPT_MSG( r[0]!=r[0] || r[0]>1.0e100
                        || r[1]!=r[1] || r[1]>1.0e100,
                        "The input data seems flawed. Abort." );
 #endif

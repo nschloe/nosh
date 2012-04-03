@@ -95,7 +95,7 @@ Apply( const Epetra_MultiVector &X,
   // This serves as a safeguard:
   // Although this method in principle works, it isn't supposed to be used
   // in the given context.
-  TEST_FOR_EXCEPT_MSG( true,
+  TEUCHOS_TEST_FOR_EXCEPT_MSG( true,
                        "Not implemented."
                        );
 #ifdef _DEBUG_
@@ -121,7 +121,7 @@ ApplyInverse( const Epetra_MultiVector &X,
       err = this->ApplyInverseMl_( X, Y );
       break;
     default:
-      TEST_FOR_EXCEPT_MSG( true,
+      TEUCHOS_TEST_FOR_EXCEPT_MSG( true,
                            "Illegal value of the invType \""
                            << invType_ << "\"." );
       break;
@@ -232,7 +232,7 @@ double
 KeoRegularized::
 NormInf() const
 {
-  TEST_FOR_EXCEPT( "Not yet implemented." );
+  TEUCHOS_TEST_FOR_EXCEPT( "Not yet implemented." );
   return 0.0;
 }
 // =============================================================================
@@ -321,7 +321,7 @@ rebuild(const Teuchos::RCP<const Epetra_Vector> & psi)
       return this->rebuildMl_();
       break;
     default:
-      TEST_FOR_EXCEPT_MSG( true,
+      TEUCHOS_TEST_FOR_EXCEPT_MSG( true,
                            "Illegal value of the invType \""
                            << invType_ << "\"."
                            );

@@ -24,7 +24,7 @@
 #include "Ginla_State.hpp"
 #include "Ginla_ModelEvaluator.hpp"
 #include "Ginla_KeoFactory.hpp"
-#include "Ginla_MagneticVectorPotential.hpp"
+#include "Ginla_MagneticVectorPotential_ExplicitValues.hpp"
 
 #ifdef HAVE_MPI
 #include <Epetra_MpiComm.h>
@@ -104,14 +104,14 @@ int main ( int argc, char *argv[] )
       Teuchos::RCP<Epetra_Vector>      & thickness = data.get( "thickness", Teuchos::RCP<Epetra_Vector>() );
       Teuchos::ParameterList           & problemParameters = data.get( "Problem parameters", Teuchos::ParameterList() );
 
-      Teuchos::RCP<Ginla::MagneticVectorPotential> mvp;
+      Teuchos::RCP<Ginla::MagneticVectorPotential::ExplicitValues> mvp;
       double mu;
       Teuchos::RCP<Teuchos::Time> mvpConstructTime = Teuchos::TimeMonitor::getNewTimer("MVP construction");
       {
           Teuchos::TimeMonitor tm(*mvpConstructTime);
           mu = problemParameters.get<double> ( "mu" );
           mu = 1.0e-2;
-          mvp = Teuchos::rcp ( new Ginla::MagneticVectorPotential ( mesh, mvpValues, mu ) );
+          mvp = Teuchos::rcp ( new Ginla::MagneticVectorPotential::ExplicitValues ( mesh, mvpValues, mu ) );
           //mvp->initializeEdgeMidpointProjectionCache_();
       }
 
@@ -208,7 +208,7 @@ int main ( int argc, char *argv[] )
       // Construct an unpreconditioned linear problem instance.
       Belos::LinearProblem<double,MV,OP> problem( keoMatrix, epetra_x, epetra_b );
       bool set = problem.setProblem();
-      TEST_FOR_EXCEPTION( !set,
+      TEUCHOS_TEST_FOR_EXCEPTION( !set,
                                   std::runtime_error,
                                   "ERROR:  Belos::LinearProblem failed to set up correctly!" );
       // -----------------------------------------------------------------------

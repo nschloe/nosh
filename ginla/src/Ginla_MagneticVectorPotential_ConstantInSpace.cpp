@@ -47,14 +47,14 @@ ConstantInSpace( const Teuchos::RCP<Ginla::StkMesh> &mesh,
   TEUCHOS_ASSERT( !mesh_.is_null() );
   TEUCHOS_ASSERT( !b_.is_null() );
 #endif
-  TEST_FOR_EXCEPT_MSG( b_->dot( *b_ ) != 1.0,
+  TEUCHOS_TEST_FOR_EXCEPT_MSG( b_->dot( *b_ ) != 1.0,
                        "Magnetic field vector not normalized: "
                        << "<b,b> = " << b->dot( *b ) << "."
                        << std::endl
                        );
   if ( !u_.is_null() )
   {
-    TEST_FOR_EXCEPT_MSG( u_->dot( *u_ ) != 1.0,
+    TEUCHOS_TEST_FOR_EXCEPT_MSG( u_->dot( *u_ ) != 1.0,
                          "Rotation vector not normalized: "
                          << "<u,u> = " << u_->dot( *u_ ) << "."
                          << std::endl
