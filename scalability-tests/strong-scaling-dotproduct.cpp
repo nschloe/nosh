@@ -16,6 +16,14 @@
 #include <Teuchos_TimeMonitor.hpp>
 
 // =============================================================================
+int myPow( int n, int k )
+{
+    int out = n;
+    for ( int kk=0; kk<k; k++ )
+        out *= n;
+    return out;
+}
+// =============================================================================
 int main ( int argc, char *argv[] )
 {
   // Initialize MPI
@@ -43,7 +51,7 @@ int main ( int argc, char *argv[] )
       int maxSize = 9;
       for ( int k = 0; k != maxSize+1; k++ )
       {
-          int numGlobalElements = pow( 10, k );
+          int numGlobalElements = myPow( 10, k );
           // create map
           int indexBase = 0;
           Teuchos::RCP<Epetra_Map> map =
