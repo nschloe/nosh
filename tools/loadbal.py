@@ -14,20 +14,17 @@ def _main():
     # slice it
     print "Cutting the input data into slices of ", args.proc_mesh, "."
     #for proc_mesh in args.proc_meshes:
-    _slice(args.filename, output, args.proc_mesh)
+    _slice(args.filename, output, args.proc_mesh, args.slice_method)
 
     return
 # ==============================================================================
-def _slice( filename, output, proc_mesh ):
+def _slice(filename, output, proc_mesh, slice_method):
 
     bin_dir = '/opt/trilinos/dev/master/gcc/4.4.5/bin/'
     #bin_dir = '/opt/trilinos/dev/master/openmpi/1.4.3/gcc/4.6.1/release/bin/'
     nemslice_command = bin_dir + "nem_slice"
     nemspread_command = bin_dir + "nem_spread"
     tmp_nemspreadinp = "nem_spread.inp"
-    #slice_method = "inertial"
-    #slice_method = "spectral"
-    slice_method = "multikl"
 
     slice_command = "%s -v -o \"%s\" -e -m mesh=%dx%d -l %s \"%s\"" % \
                     ( nemslice_command, output, proc_mesh[0], proc_mesh[1], slice_method, filename )
@@ -75,6 +72,13 @@ def _parse_options():
                         nargs=2,
                         required=True,
                         help='process mesh (e.g., -p 4 2)')
+
+    parser.add_argument('--slice-method', '-m',
+                        dest='slice_method',
+                        type=str,
+                        choices = ['inertial','spectral','multikl'],
+                        default = 'multikl',
+                        help='slicing method (default: multikl)')
 
     args = parser.parse_args()
 
