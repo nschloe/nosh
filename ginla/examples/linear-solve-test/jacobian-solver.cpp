@@ -77,6 +77,9 @@ int main ( int argc, char *argv[] )
       std::string inputFileName( "" );
       My_CLP.setOption("input", &inputFileName, "Input state file", true);
 
+      std::string solver( "cg" );
+      My_CLP.setOption("solver", &solver, "Krylov subspace method (cg, minres, gmres) (default: cg)");
+
       bool verbose = true;
       My_CLP.setOption("verbose", "quiet", &verbose, "Print messages and results.");
 
@@ -170,9 +173,8 @@ int main ( int argc, char *argv[] )
       else
         belosList.set( "Verbosity", Belos::Errors + Belos::Warnings );
 
-      belosList.set( "Output Style", Belos::Brief ); // Belos::General, Belos::Brief
+      belosList.set( "Output Style", (int)Belos::Brief ); // Belos::General, Belos::Brief
       belosList.set( "Maximum Iterations", 1000 );
-      belosList.set( "Assert Positive Definiteness", false );
 
       // Construct an unpreconditioned linear problem instance.
       Belos::LinearProblem<double,MV,OP> problem( jac, epetra_x, epetra_b );
@@ -203,27 +205,40 @@ int main ( int argc, char *argv[] )
       // -----------------------------------------------------------------------
       // Create an iterative solver manager.
 
-//      belosList.set( "Assert Positive Definiteness", false );
-      Teuchos::RCP<Belos::SolverManager<double,MV,OP> > newSolver
-              = Teuchos::rcp( new Belos::PseudoBlockCGSolMgr<double,MV,OP>( Teuchos::rcp(&problem,false),
-//              = Teuchos::rcp( new Belos::MinresSolMgr<double,MV,OP>( Teuchos::rcp(&problem,false),
-                                                                            Teuchos::rcp(&belosList,false)
-                                                                          )
-                            );
-
-//       Teuchos::RCP<Belos::SolverManager<double,MV,OP> > newSolver
-//               = Teuchos::rcp( new Belos::MinresSolMgr<double,MV,OP>( Teuchos::rcp(&problem,false),
-//                                                                      Teuchos::rcp(&belosList,false)
-//                                                                    )
-//                             );
-//       RCP< Belos::SolverManager<double,MV,OP> > newSolver
-//               = rcp( new Belos::PseudoBlockGmresSolMgr<double,MV,OP>( rcp(&problem,false),
-//                                                                       rcp(&belosList,false)
-//                                                                     )
-//                    );
+      Teuchos::RCP<Belos::SolverManager<double,MV,OP> > newSolver;
+      if (solver.compare("cg") == 0)
+      {
+        belosList.set( "Assert Positive Definiteness", false );
+        newSolver =
+          Teuchos::rcp(new Belos::PseudoBlockCGSolMgr<double,MV,OP>(Teuchos::rcp(&problem,false),
+                                                                     Teuchos::rcp(&belosList,false)
+                                                                     )
+                      );
+      }
+      else if (solver.compare("minres") == 0)
+      {
+        newSolver =
+          Teuchos::rcp(new Belos::MinresSolMgr<double,MV,OP>(Teuchos::rcp(&problem,false),
+                                                             Teuchos::rcp(&belosList,false)
+                                                            )
+                      );
+      }
+      else if (solver.compare("gmres") == 0)
+      {
+        newSolver =
+          Teuchos::rcp(new Belos::PseudoBlockGmresSolMgr<double,MV,OP>(Teuchos::rcp(&problem,false),
+                                                                       Teuchos::rcp(&belosList,false)
+                                                                      )
+                      );
+      }
+      else
+      {
+        TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Unknown solver type \"" << solver << "\"." );
+      }
 
       // Perform solve
-      Teuchos::RCP<Teuchos::Time> solveTime = Teuchos::TimeMonitor::getNewTimer("Jacobian solve");
+      Teuchos::RCP<Teuchos::Time> solveTime =
+        Teuchos::TimeMonitor::getNewTimer("Jacobian solve");
       {
           Teuchos::TimeMonitor tm(*solveTime);
           Belos::ReturnType ret = newSolver->solve();
