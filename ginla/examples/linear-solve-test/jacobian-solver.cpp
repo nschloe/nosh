@@ -75,16 +75,16 @@ int main ( int argc, char *argv[] )
       );
 
       std::string inputFileName( "" );
-      My_CLP.setOption ( "input", &inputFileName, "Input state file", true );
+      My_CLP.setOption("input", &inputFileName, "Input state file", true);
 
       bool verbose = true;
-      My_CLP.setOption("verbose","quiet",&verbose,"Print messages and results.");
+      My_CLP.setOption("verbose", "quiet", &verbose, "Print messages and results.");
 
       bool usePrec = true;
-      My_CLP.setOption("prec","noprec",&usePrec,"Use a preconditioner.");
+      My_CLP.setOption("prec", "noprec", &usePrec, "Use a preconditioner.");
 
       int frequency = 10;
-      My_CLP.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
+      My_CLP.setOption("frequency", &frequency, "Solvers frequency for printing residuals (#iters).");
 
       // print warning for unrecognized arguments
       My_CLP.recogniseAllOptions ( true );
@@ -116,14 +116,15 @@ int main ( int argc, char *argv[] )
           Teuchos::TimeMonitor tm(*mvpConstructTime);
 //          mu = problemParameters.get<double> ( "mu" );
           mu = 1.0e-6;
-          mvp = Teuchos::rcp ( new Ginla::MagneticVectorPotential::ExplicitValues( mesh, mvpValues, mu ) );
+          mvp = Teuchos::rcp(new Ginla::MagneticVectorPotential::ExplicitValues(mesh, mvpValues, mu));
       }
 
       Teuchos::RCP<LOCA::ParameterVector> mvpParameters =
           Teuchos::rcp( new LOCA::ParameterVector() );
       mvpParameters->addParameter( "mu", mu );
 
-      Teuchos::RCP<Teuchos::Time> keoFactoryConstructTime = Teuchos::TimeMonitor::getNewTimer("Keo factory construction");
+      Teuchos::RCP<Teuchos::Time> keoFactoryConstructTime =
+          Teuchos::TimeMonitor::getNewTimer("Keo factory construction");
       Teuchos::RCP<Ginla::KeoFactory> keoFactory;
       {
           Teuchos::TimeMonitor tm(*keoFactoryConstructTime);
@@ -131,7 +132,8 @@ int main ( int argc, char *argv[] )
       }
 
       // create Jacobian
-      Teuchos::RCP<Teuchos::Time> jacobianConstructTime = Teuchos::TimeMonitor::getNewTimer("Jacobian construction");
+      Teuchos::RCP<Teuchos::Time> jacobianConstructTime =
+          Teuchos::TimeMonitor::getNewTimer("Jacobian construction");
       Teuchos::RCP<Ginla::JacobianOperator> jac;
       {
           Teuchos::TimeMonitor tm(*jacobianConstructTime);
@@ -150,7 +152,8 @@ int main ( int argc, char *argv[] )
       // -----------------------------------------------------------------------
       // Belos part
       Teuchos::ParameterList belosList;
-      belosList.set( "Convergence Tolerance", 1.0e-12 );  // Relative convergence tolerance requested
+      // Relative convergence tolerance requested
+      belosList.set( "Convergence Tolerance", 1.0e-12 );
       if (verbose) {
         belosList.set( "Verbosity",
                        Belos::Errors +
@@ -158,16 +161,17 @@ int main ( int argc, char *argv[] )
                        Belos::IterationDetails +
                        Belos::FinalSummary +
                        Belos::Debug +
-                       Belos::TimingDetails //+
-//                       Belos::StatusTestDetails
+                       Belos::TimingDetails +
+                       Belos::StatusTestDetails
                      );
         if (frequency > 0)
-          belosList.set( "Output Frequency", frequency );
+          belosList.set("Output Frequency", frequency);
       }
       else
         belosList.set( "Verbosity", Belos::Errors + Belos::Warnings );
 
-      belosList.set( "Maximum Iterations", 10000 );
+      belosList.set( "Output Style", Belos::Brief ); // Belos::General, Belos::Brief
+      belosList.set( "Maximum Iterations", 1000 );
       belosList.set( "Assert Positive Definiteness", false );
 
       // Construct an unpreconditioned linear problem instance.
@@ -226,7 +230,7 @@ int main ( int argc, char *argv[] )
           success = ret==Belos::Converged;
       }
 
-      *out << newSolver->getNumIters() << std::endl;
+//       *out << newSolver->getNumIters() << std::endl;
       // -----------------------------------------------------------------------
       //
       // Compute actual residuals.
