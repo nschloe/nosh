@@ -63,3 +63,11 @@ TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
                        ${Trilinos_LIBRARIES}
                        ${Trilinos_TPL_LIBRARIES} )
 # ------------------------------------------------------------------------------
+SET( MY_EXECUTABLE
+     "linsolve-test.exe" )
+ADD_EXECUTABLE( ${MY_EXECUTABLE}
+                "linsolve-test.cpp" )
+TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
+                       ${Trilinos_LIBRARIES}
+                       ${Trilinos_TPL_LIBRARIES} )
+# ------------------------------------------------------------------------------
