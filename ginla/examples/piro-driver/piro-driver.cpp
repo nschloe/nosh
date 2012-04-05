@@ -89,7 +89,7 @@ int main ( int argc, char *argv[] )
       *out << "Reading parameter list from \"" << xmlInputFileName << "\"."
            << std::endl;
 
-      Teuchos::updateParametersFromXmlFile( xmlInputFileName, piroParams );
+      Teuchos::updateParametersFromXmlFile( xmlInputFileName, piroParams.get() );
 
       // =======================================================================
       // extract data of the parameter list

@@ -614,7 +614,6 @@ computeControlVolumes_() const
 
     // Iterate over the edges.
     // As true edge entities are not available here, loop over all pairs of local nodes.
-    unsigned int edgeIndex = 0;
     for ( unsigned int e0=0; e0<numLocalNodes; e0++ )
     {
       const DoubleVector &x0 = localNodeCoords[e0];
@@ -1114,7 +1113,7 @@ tupleLexicographicLess_(const Teuchos::Tuple<int,2> & a,
                         const Teuchos::Tuple<int,2> & b
                         )
 {
-  for ( unsigned int k=0; k++; k<2 )
+  for ( unsigned int k=0; k<2; k++ )
   {
      if ( a[k] < b[k] )
          return true;

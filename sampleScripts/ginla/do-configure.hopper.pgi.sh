@@ -10,7 +10,7 @@
 #    -D BOOST_INCLUDEDIR:PATH="${BOOST_DIR}" \
 #    -D Boost_LIBRARYDIR:PATH="${BOOST_DIR}/boost" \
 
-export CMAKE_PREFIX_PATH="${SCRATCH}/trilinos/10.10.1/pgi/"
+export CMAKE_PREFIX_PATH="${SCRATCH}/trilinos/dev/master/pgi/"
 cmake \
     -DCMAKE_BUILD_TYPE=Release \
     ../../source/ginla

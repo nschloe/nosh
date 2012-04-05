@@ -17,7 +17,8 @@ SET ( ginla_SRCS
     )
 
 FIND_PACKAGE( Trilinos REQUIRED )
-INCLUDE_DIRECTORIES( ${Trilinos_INCLUDE_DIRS} )
+INCLUDE_DIRECTORIES( ${Trilinos_INCLUDE_DIRS}
+                     ${Trilinos_TPL_INCLUDE_DIRS} )
 
 ADD_LIBRARY ( ginla
               ${ginla_SRCS} )

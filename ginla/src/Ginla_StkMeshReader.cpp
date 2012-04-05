@@ -70,7 +70,7 @@ read( const Epetra_Comm &comm,
   // instead of one field with two components. This works around
   // Ioss's inability to properly read psi_R, psi_Z as a complex variable.
   // (It can handle data_X, data_Y, data_Z though.)
-  const unsigned int neq = 1;
+  //const unsigned int neq = 1;
 
   Teuchos::RCP<stk::mesh::fem::FEMMetaData> metaData =
     Teuchos::rcp( new stk::mesh::fem::FEMMetaData() );

@@ -59,8 +59,12 @@ ConstantInSpace( const Teuchos::RCP<Ginla::StkMesh> &mesh,
                          << "<u,u> = " << u_->dot( *u_ ) << "."
                          << std::endl
                          );
-    double sinTheta, cosTheta;
-    sincos( theta_, &sinTheta, &cosTheta );
+    // If compiled with GNU (and maybe other compilers), we could use
+    // sincos() here to comute sin and cos simultaneously.
+    // PGI, for one, doesn't support sincos, though.
+    double sinTheta = sin(theta_);
+    double cosTheta = cos(theta_);
+    //sincos( theta_, &sinTheta, &cosTheta );
     rotatedB_ = this->rotate_( *b_, *u_, sinTheta, cosTheta );
     dRotatedBDTheta_ = this->dRotateDTheta_( *b_, *u_, sinTheta, cosTheta );
   }
@@ -157,8 +161,12 @@ setParameters( const LOCA::ParameterVector &p )
   if (p.isParameter( "theta" ))
   {
     theta_ = p.getValue( "theta" );
-    double sinTheta, cosTheta;
-    sincos( theta_, &sinTheta, &cosTheta );
+    // If compiled with GNU (and maybe other compilers), we could use
+    // sincos() here to comute sin and cos simultaneously.
+    // PGI, for one, doesn't support sincos, 
+    double sinTheta = sin(theta_);
+    double cosTheta = cos(theta_);
+    //sincos( theta_, &sinTheta, &cosTheta );
     rotatedB_ = this->rotate_( *b_, *u_, sinTheta, cosTheta );
     dRotatedBDTheta_ = this->dRotateDTheta_( *b_, *u_, sinTheta, cosTheta );
   }

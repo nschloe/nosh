@@ -276,9 +276,12 @@ fillKeo_( const Teuchos::RCP<Epetra_FECrsMatrix> &keoMatrix,
     // edge vector.
     double aInt = mvp_->getAEdgeMidpointProjection( k );
     double c, s, d;
-    double sinAInt, cosAInt;
-    //sinAInt = sin(aInt); cosAInt = cos(aInt);
-    sincos( aInt, &sinAInt, &cosAInt );
+    // If compiled with GNU (and maybe other compilers), we could use
+    // sincos() here to comute sin and cos simultaneously.
+    // PGI, for one, doesn't support sincos, though.
+    double sinAInt = sin(aInt);
+    double cosAInt = cos(aInt);
+    //sincos( aInt, &sinAInt, &cosAInt );
     // For a slight speedup, move this switch statement out of the loop.
     switch ( matrixType )
     {

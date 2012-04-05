@@ -1,10 +1,9 @@
 FIND_PACKAGE( Trilinos REQUIRED )
-INCLUDE_DIRECTORIES ( ${Trilinos_INCLUDE_DIRS}
+INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/src
+                      ${Trilinos_INCLUDE_DIRS}
                       ${Trilinos_TPL_INCLUDE_DIRS} )
 LINK_DIRECTORIES( ${Trilinos_LIBRARY_DIRS}
                   ${Trilinos_TPL_LIBRARY_DIRS} )
-
-INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/src )
 
 SET ( internal_LIBS
       ginla
