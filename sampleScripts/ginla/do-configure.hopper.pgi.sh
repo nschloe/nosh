@@ -2,7 +2,7 @@
 
 #module purge
 #module load cmake
-module load boost
+#module load boost
 
 #      -D Boost_LIBRARY_DIRS:PATH="$BOOST_DIR"/libs \
 #      -D Boost_INCLUDE_DIRS:PATH="$BOOST_DIR" \

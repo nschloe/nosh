@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#module load boost
+module load boost
 module load binutils
 module load netcdf-hdf5parallel
 
@@ -19,12 +19,11 @@ TRILINOS_HOME=../../source
 
 #  -D Trilinos_EXTRA_LINK_FLAGS:STRING="$CRAY_HDF5_DIR/hdf5-parallel-gnu/lib/libhdf5.a" \
 
-#  -D TPL_ENABLE_Boost:BOOL=ON \
-#      -D Boost_LIBRARY_DIRS:PATH="$BOOST_DIR/libs" \
-#      -D Boost_INCLUDE_DIRS:PATH="$BOOST_DIR/include" \
+#  -D TPL_ENABLE_Boost:BOOL=OFF \
 
 cmake \
-  -D CMAKE_INSTALL_PREFIX:PATH="$SCRATCH/trilinos/10.10.1/pgi/" \
+  -D CMAKE_INSTALL_PREFIX:PATH="$SCRATCH/trilinos/dev/master/pgi/" \
+  -D Trilinos_VERBOSE_CONFIGURE:BOOL=OFF \
   -D CMAKE_BUILD_TYPE=Release \
   -D TPL_ENABLE_MPI:BOOL=ON \
       -D MPI_C_COMPILER:FILEPATH="$ASYNCPE_DIR/bin/cc" \
@@ -32,7 +31,9 @@ cmake \
       -D MPI_Fortran_COMPILER:FILEPATH="$ASYNCPE_DIR/bin/ftn" \
   -D Trilinos_ENABLE_TEUCHOS_TIME_MONITOR:BOOL=ON \
   -D Trilinos_SKIP_FORTRANCINTERFACE_VERIFY_TEST:BOOL=ON \
-  -D TPL_ENABLE_Boost:BOOL=OFF \
+  -D TPL_ENABLE_Boost:BOOL=ON \
+      -D Boost_LIBRARY_DIRS:PATH="$BOOST_DIR/libs" \
+      -D Boost_INCLUDE_DIRS:PATH="$BOOST_DIR/include" \
   -D TPL_ENABLE_BLAS:BOOL=ON \
       -D BLAS_LIBRARY_DIRS:PATH="$LIBSCI_BASE_DIR/pgi/109/mc12/lib" \
       -D BLAS_LIBRARY_NAMES="sci_pgi" \
