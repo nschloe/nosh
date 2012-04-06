@@ -61,7 +61,8 @@ class KeoRegularized : public Epetra_Operator
 public:
 KeoRegularized( const Teuchos::RCP<const Ginla::StkMesh> &mesh,
                 const Teuchos::RCP<const Epetra_Vector> &thickness,
-                const Teuchos::RCP<Ginla::KeoFactory> &keoFactory
+                const Teuchos::RCP<Ginla::KeoFactory> &keoFactory,
+                const Teuchos::RCP<const Epetra_Vector> &psi = Teuchos::null
               );
 
 // Destructor.
@@ -133,12 +134,15 @@ enum EInversionType { INVERT_ILU, INVERT_ML };
 
 private:
 bool useTranspose_;
+
 const Teuchos::RCP<const Ginla::StkMesh> mesh_;
 const Teuchos::RCP<const Epetra_Vector> thickness_;
+Teuchos::RCP<Ginla::KeoFactory> keoFactory_;
+
+Teuchos::RCP<const Epetra_Vector> psi_;
 
 const Epetra_Comm &comm_;
 
-Teuchos::RCP<Ginla::KeoFactory> keoFactory_;
 // Make sure the matrix pointer is never changed; ML's
 // preconditioner generation depends on that.
 const Teuchos::RCP<Epetra_CrsMatrix> keoRegularized_;

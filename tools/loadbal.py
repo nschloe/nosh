@@ -20,7 +20,7 @@ def _main():
 # ==============================================================================
 def _slice(filename, output, proc_mesh, slice_method):
 
-    bin_dir = '/opt/trilinos/dev/master/gcc/4.4.5/bin/'
+    bin_dir = '/opt/trilinos/dev/master/gcc/4.6.1/bin/'
     #bin_dir = '/opt/trilinos/dev/master/openmpi/1.4.3/gcc/4.6.1/release/bin/'
     nemslice_command = bin_dir + "nem_slice"
     nemspread_command = bin_dir + "nem_spread"

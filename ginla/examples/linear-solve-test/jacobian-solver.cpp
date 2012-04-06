@@ -80,6 +80,9 @@ int main ( int argc, char *argv[] )
       std::string solver( "cg" );
       My_CLP.setOption("solver", &solver, "Krylov subspace method (cg, minres, gmres) (default: cg)");
 
+      std::string op( "jac" );
+      My_CLP.setOption("operator", &op, "Operator (jac, keo) (default: jac)");
+
       bool verbose = true;
       My_CLP.setOption("verbose", "quiet", &verbose, "Print messages and results.");
 
@@ -135,20 +138,24 @@ int main ( int argc, char *argv[] )
       }
 
       // create Jacobian
-      Teuchos::RCP<Teuchos::Time> jacobianConstructTime =
-          Teuchos::TimeMonitor::getNewTimer("Jacobian construction");
-      Teuchos::RCP<Ginla::JacobianOperator> jac;
+      Teuchos::RCP<Teuchos::Time> operatorConstructTime =
+          Teuchos::TimeMonitor::getNewTimer("Operator construction");
+      Teuchos::RCP<Epetra_Operator> A;
       {
-          Teuchos::TimeMonitor tm(*jacobianConstructTime);
-          // create the jacobian operator
-          jac = Teuchos::rcp( new Ginla::JacobianOperator( mesh, thickness, keoFactory, z ) );
+          Teuchos::TimeMonitor tm(*operatorConstructTime);
+          if (op.compare("jac") == 0)
+              A = Teuchos::rcp( new Ginla::JacobianOperator( mesh, thickness, keoFactory, z ) );
+          else if (op.compare("keo") == 0)
+              A = Teuchos::rcp( new Ginla::KeoRegularized( mesh, thickness, keoFactory, z ) );
+          else
+              TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Unknown operator \"" << op << "\"." );
       }
 
       // create initial guess and right-hand side
       Teuchos::RCP<Epetra_Vector> epetra_x =
-              Teuchos::rcp( new Epetra_Vector( jac->OperatorDomainMap() ) );
+              Teuchos::rcp( new Epetra_Vector( A->OperatorDomainMap() ) );
       Teuchos::RCP<Epetra_MultiVector> epetra_b =
-              Teuchos::rcp( new Epetra_Vector( jac->OperatorRangeMap(), 1 ) );
+              Teuchos::rcp( new Epetra_Vector( A->OperatorRangeMap(), 1 ) );
       // epetra_b->Random();
       epetra_b->PutScalar( 1.0 );
 
@@ -177,7 +184,7 @@ int main ( int argc, char *argv[] )
       belosList.set( "Maximum Iterations", 1000 );
 
       // Construct an unpreconditioned linear problem instance.
-      Belos::LinearProblem<double,MV,OP> problem( jac, epetra_x, epetra_b );
+      Belos::LinearProblem<double,MV,OP> problem( A, epetra_x, epetra_b );
       bool set = problem.setProblem();
       TEUCHOS_TEST_FOR_EXCEPTION(!set,
                                  std::logic_error,
@@ -204,7 +211,6 @@ int main ( int argc, char *argv[] )
       }
       // -----------------------------------------------------------------------
       // Create an iterative solver manager.
-
       Teuchos::RCP<Belos::SolverManager<double,MV,OP> > newSolver;
       if (solver.compare("cg") == 0)
       {

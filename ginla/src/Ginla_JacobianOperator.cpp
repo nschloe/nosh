@@ -32,7 +32,7 @@ JacobianOperator::
 JacobianOperator( const Teuchos::RCP<const Ginla::StkMesh> &mesh,
                   const Teuchos::RCP<const Epetra_Vector> &thickness,
                   const Teuchos::RCP<Ginla::KeoFactory> &keoFactory,
-                  const Teuchos::RCP<Epetra_Vector> &current_X
+                  const Teuchos::RCP<const Epetra_Vector> &current_X
                   ) :
   useTranspose_( false ),
   mesh_( mesh ),

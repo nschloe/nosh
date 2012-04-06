@@ -51,13 +51,15 @@ namespace Ginla {
 KeoRegularized::
 KeoRegularized( const Teuchos::RCP<const Ginla::StkMesh> &mesh,
                 const Teuchos::RCP<const Epetra_Vector> &thickness,
-                const Teuchos::RCP<Ginla::KeoFactory> &keoFactory
+                const Teuchos::RCP<Ginla::KeoFactory> &keoFactory,
+                const Teuchos::RCP<const Epetra_Vector> &psi
               ) :
   useTranspose_( false ),
   mesh_( mesh ),
   thickness_( thickness ),
   comm_( keoFactory->getComm() ),
   keoFactory_( keoFactory ),
+  psi_( psi ),
   keoRegularized_(Teuchos::rcp(new Epetra_CrsMatrix(Copy, keoFactory_->getKeo()->Graph()))),
   MlPrec_( Teuchos::null ),
   keoIluProblem_( Teuchos::null ),
@@ -92,12 +94,6 @@ Apply( const Epetra_MultiVector &X,
        Epetra_MultiVector &Y
        ) const
 {
-  // This serves as a safeguard:
-  // Although this method in principle works, it isn't supposed to be used
-  // in the given context.
-  TEUCHOS_TEST_FOR_EXCEPT_MSG( true,
-                       "Not implemented."
-                       );
 #ifdef _DEBUG_
   TEUCHOS_ASSERT( !keoRegularized_.is_null() );
 #endif
@@ -288,6 +284,7 @@ void
 KeoRegularized::
 rebuild(const Teuchos::RCP<const Epetra_Vector> & psi)
 {
+  psi_ = psi;
   // -------------------------------------------------------------------------
   // Copy over the matrix.
 #ifdef _DEBUG_
@@ -304,7 +301,7 @@ rebuild(const Teuchos::RCP<const Epetra_Vector> & psi)
   for ( int k=0; k<numMyPoints; k++ )
   {
     double alpha = 2.0 * controlVolumes[k] * (*thickness_)[k]
-                 * ((*psi)[2*k]*(*psi)[2*k] + (*psi)[2*k+1]*(*psi)[2*k+1]);
+                 * ((*psi_)[2*k]*(*psi_)[2*k] + (*psi_)[2*k+1]*(*psi_)[2*k+1]);
     diag[2*k] += alpha;
     diag[2*k+1] += alpha;
   }
