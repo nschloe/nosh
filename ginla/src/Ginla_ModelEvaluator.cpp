@@ -22,7 +22,7 @@
 
 #include "Ginla_State.hpp"
 #include "Ginla_MagneticVectorPotential_Virtual.hpp"
-#include "Ginla_KeoFactory.hpp"
+#include "Ginla_KeoContainer.hpp"
 #include "Ginla_KeoRegularized.hpp"
 #include "Ginla_StkMesh.hpp"
 
@@ -47,8 +47,7 @@ ModelEvaluator (
   const Teuchos::RCP<Ginla::StkMesh> &mesh,
   const Teuchos::ParameterList &problemParams,
   const Teuchos::RCP<const Epetra_Vector> &thickness,
-  const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> &
-  mvp,
+  const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> &mvp,
   const Teuchos::RCP<Epetra_Vector> &initialX
   ) :
   mesh_( mesh ),
@@ -60,7 +59,7 @@ ModelEvaluator (
   p_names_( Teuchos::null ),
   p_current_( Teuchos::null ),
   mvp_( mvp ),
-  keoFactory_( Teuchos::rcp( new Ginla::KeoFactory( mesh, thickness, mvp ) ) ),
+  keoContainer_( Teuchos::rcp( new Ginla::KeoContainer( mesh, thickness, mvp ) ) ),
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
   evalModelTime_( Teuchos::TimeMonitor::getNewTimer(
                     "Ginla: ModelEvaluator::evalModel" ) ),
@@ -208,8 +207,8 @@ Teuchos::RCP<Epetra_Operator>
 ModelEvaluator::
 create_W() const
 {
-  return Teuchos::rcp( new Ginla::JacobianOperator( mesh_, thickness_,
-                                                    keoFactory_ ) );
+  return Teuchos::rcp(new Ginla::JacobianOperator(mesh_, thickness_,
+                                                  keoContainer_, x_));
 }
 // =============================================================================
 Teuchos::RCP<EpetraExt::ModelEvaluator::Preconditioner>
@@ -217,7 +216,7 @@ ModelEvaluator::
 create_WPrec() const
 {
   Teuchos::RCP<Epetra_Operator> keoPrec =
-    Teuchos::rcp( new Ginla::KeoRegularized( mesh_, thickness_, keoFactory_ ) );
+    Teuchos::rcp(new Ginla::KeoRegularized(mesh_, thickness_, keoContainer_, x_));
   // bool is answer to: "Prec is already inverted?"
   // This needs to be set to TRUE to make sure that the constructor of
   //    NOX::Epetra::LinearSystemStratimikos
@@ -400,7 +399,7 @@ evalModel( const InArgs &inArgs,
 #endif
     Teuchos::RCP<Ginla::KeoRegularized> keoPrec =
       Teuchos::rcp_dynamic_cast<Ginla::KeoRegularized>( WPrec_out, true );
-    keoPrec->rebuild( mvpParams, x_in );
+    keoPrec->rebuildInverse( mvpParams, x_in );
   }
 
   return;
@@ -415,8 +414,8 @@ computeF_( const Epetra_Vector &x,
            ) const
 {
   // build the KEO
-  keoFactory_->updateParameters( mvpParams );
-  const Teuchos::RCP<const Epetra_CrsMatrix> keoMatrix = keoFactory_->getKeo();
+  keoContainer_->updateParameters( mvpParams );
+  const Teuchos::RCP<const Epetra_CrsMatrix> keoMatrix = keoContainer_->getKeo();
 
   // compute FVec = K*x
   TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->Apply( x, FVec ) );
@@ -490,10 +489,10 @@ computeDFDMu_( const Epetra_Vector &x,
                ) const
 {
   // build the KEO
-  keoFactory_->updateParameters( mvpParams );
+  keoContainer_->updateParameters( mvpParams );
 
   // compute FVec = K*x
-  TEUCHOS_ASSERT_EQUALITY( 0, keoFactory_->getKeoDMu()->Apply( x, FVec ) );
+  TEUCHOS_ASSERT_EQUALITY( 0, keoContainer_->getKeoDMu()->Apply( x, FVec ) );
 
   return;
 }
@@ -506,10 +505,10 @@ computeDFDTheta_( const Epetra_Vector &x,
                   ) const
 {
   // build the KEO
-  keoFactory_->updateParameters( mvpParams );
+  keoContainer_->updateParameters( mvpParams );
 
   // compute FVec = K*x
-  TEUCHOS_ASSERT_EQUALITY( 0, keoFactory_->getKeoDTheta()->Apply( x, FVec ) );
+  TEUCHOS_ASSERT_EQUALITY( 0, keoContainer_->getKeoDTheta()->Apply( x, FVec ) );
 
   return;
 }

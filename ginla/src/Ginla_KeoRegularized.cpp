@@ -19,7 +19,7 @@
 // @HEADER
 
 #include "Ginla_KeoRegularized.hpp"
-#include "Ginla_KeoFactory.hpp"
+#include "Ginla_KeoContainer.hpp"
 #include "Ginla_StkMesh.hpp"
 
 #include <Epetra_SerialDenseMatrix.h>
@@ -51,28 +51,26 @@ namespace Ginla {
 KeoRegularized::
 KeoRegularized( const Teuchos::RCP<const Ginla::StkMesh> &mesh,
                 const Teuchos::RCP<const Epetra_Vector> &thickness,
-                const Teuchos::RCP<Ginla::KeoFactory> &keoFactory,
+                const Teuchos::RCP<Ginla::KeoContainer> &keoContainer,
                 const Teuchos::RCP<const Epetra_Vector> &psi
               ) :
   useTranspose_( false ),
   mesh_( mesh ),
   thickness_( thickness ),
-  comm_( keoFactory->getComm() ),
-  keoFactory_( keoFactory ),
-  psi_( psi ),
-  keoRegularized_(Teuchos::rcp(new Epetra_CrsMatrix(Copy, keoFactory_->getKeo()->Graph()))),
+  keoContainer_( keoContainer ),
+  absPsiSquared_(Teuchos::rcp(new Epetra_Vector(*mesh->getComplexOverlapMap()))),
+  keoRegularizedMatrix_( *keoContainer_->getKeo() ), // initialize the matrix with something (it gets copied over later anyways)
+  comm_( keoContainer->getComm() ),
   MlPrec_( Teuchos::null ),
-  keoIluProblem_( Teuchos::null ),
-  keoIluSolver_( Teuchos::null ),
-  invType_( INVERT_ML ),
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
   timerRebuild0_( Teuchos::TimeMonitor::getNewTimer(
-                   "Ginla: KeoRegularized::rebuild::ML init" ) ),
+                  "Ginla: KeoRegularized::rebuild::ML init" ) ),
   timerRebuild1_( Teuchos::TimeMonitor::getNewTimer(
-                   "Ginla: KeoRegularized::rebuild::ML rebuild" ) ),
+                  "Ginla: KeoRegularized::rebuild::ML rebuild" ) ),
 #endif
   out_( Teuchos::VerboseObjectBase::getDefaultOStream() )
 {
+  this->updateAbsPsiSquared_(psi);
 }
 // =============================================================================
 KeoRegularized::
@@ -94,43 +92,20 @@ Apply( const Epetra_MultiVector &X,
        Epetra_MultiVector &Y
        ) const
 {
-#ifdef _DEBUG_
-  TEUCHOS_ASSERT( !keoRegularized_.is_null() );
-#endif
-  return keoRegularized_->Apply( X, Y );
+  // K * X ...
+  TEUCHOS_ASSERT_EQUALITY(0, keoContainer_->getKeo()->Apply(X, Y));
+
+  // ... + 2*|psi|*X.
+  TEUCHOS_ASSERT_EQUALITY(0, Y.Multiply(2.0, X, *absPsiSquared_, 1.0));
+
+  return 0;
 }
 // =============================================================================
 int
 KeoRegularized::
-ApplyInverse( const Epetra_MultiVector &X,
-              Epetra_MultiVector &Y
-              ) const
-{
-  int err;
-
-  switch ( invType_ )
-  {
-    case INVERT_ILU:
-      err = this->ApplyInverseIlu_( X, Y );
-      break;
-    case INVERT_ML:
-      err = this->ApplyInverseMl_( X, Y );
-      break;
-    default:
-      TEUCHOS_TEST_FOR_EXCEPT_MSG( true,
-                           "Illegal value of the invType \""
-                           << invType_ << "\"." );
-      break;
-  }
-
-  return err;
-}
-// =============================================================================
-int
-KeoRegularized::
-ApplyInverseMl_(const Epetra_MultiVector &X,
-                Epetra_MultiVector &Y
-                ) const
+ApplyInverse(const Epetra_MultiVector &X,
+             Epetra_MultiVector &Y
+             ) const
 {
   // Just apply one (inverse) AMG cycle.
   return MlPrec_->ApplyInverse(X, Y);
@@ -161,13 +136,13 @@ ApplyInverseMl_(const Epetra_MultiVector &X,
 //   Y.PutScalar( 0.0 );
 // 
 // #ifdef _DEBUG_
-//   TEUCHOS_ASSERT( !keoRegularized_.is_null() );
+//   TEUCHOS_ASSERT( !keoRegularizedMatrix_.is_null() );
 // #endif
 // 
 //   // Construct an unpreconditioned linear problem instance.
 //   Teuchos::RCP<const Epetra_MultiVector> Xptr = Teuchos::rcpFromRef( X );
 //   Teuchos::RCP<Epetra_MultiVector> Yptr = Teuchos::rcpFromRef( Y );
-//   Belos::LinearProblem<double,MV,OP> problem( keoRegularized_, Yptr, Xptr );
+//   Belos::LinearProblem<double,MV,OP> problem( keoRegularizedMatrix_, Yptr, Xptr );
 //   // Make sure the problem sets up correctly.
 //   TEUCHOS_ASSERT( problem.setProblem() );
 //   // -------------------------------------------------------------------------
@@ -195,33 +170,13 @@ ApplyInverseMl_(const Epetra_MultiVector &X,
 // 
 // //    // compute the residual explicitly
 // //    Epetra_MultiVector R( Y.Map(), Y.NumVectors() );
-// //    keoRegularized_->Apply( Y, R );
+// //    keoRegularizedMatrix_.Apply( Y, R );
 // //    R.Update( 1.0, X, -1.0 );
 // //    double s[1];
 // //    R.Norm2( s );
 // //    std::cout << " PRECON RES = " << s[0] << " in " << newSolver->getNumIters() << " iters" << std::endl;
 // 
 //   return ret==Belos::Converged ? 0 : -1;
-}
-// =============================================================================
-int
-KeoRegularized::
-ApplyInverseIlu_( const Epetra_MultiVector &X,
-                  Epetra_MultiVector &Y
-                  ) const
-{
-#ifdef _DEBUG_
-  TEUCHOS_ASSERT( !keoIluProblem_.is_null() );
-  TEUCHOS_ASSERT( !keoIluSolver_.is_null() );
-#endif
-
-  // set left- and right-hand side
-  keoIluProblem_->SetLHS( &Y );
-  Epetra_MultiVector T = X;
-  keoIluProblem_->SetRHS( &T );
-
-  // solve and return error code
-  return keoIluSolver_->Solve();
 }
 // =============================================================================
 double
@@ -264,86 +219,38 @@ const Epetra_Map &
 KeoRegularized::
 OperatorDomainMap() const
 {
-#ifdef _DEBUG_
-  TEUCHOS_ASSERT( !keoRegularized_.is_null() );
-#endif
-  return keoRegularized_->OperatorDomainMap();
+  return keoContainer_->getKeo()->OperatorDomainMap();
 }
 // =============================================================================
 const Epetra_Map &
 KeoRegularized::
 OperatorRangeMap() const
 {
-#ifdef _DEBUG_
-  TEUCHOS_ASSERT( !keoRegularized_.is_null() );
-#endif
-  return keoRegularized_->OperatorRangeMap();
+  return keoContainer_->getKeo()->OperatorRangeMap();
 }
 // =============================================================================
 void
 KeoRegularized::
-rebuild(const Teuchos::RCP<const Epetra_Vector> & psi)
+rebuildInverse()
 {
-  psi_ = psi;
   // -------------------------------------------------------------------------
   // Copy over the matrix.
+  // This is necessary as we don't apply AMG to K, but to K+2|psi|^2.
 #ifdef _DEBUG_
-  TEUCHOS_ASSERT( !keoFactory_.is_null() );
+  TEUCHOS_ASSERT( !keoContainer_.is_null() );
+  TEUCHOS_ASSERT( !keoContainer_->getKeo().is_null() );
 #endif
-  *keoRegularized_ = *(keoFactory_->getKeo());
-  keoRegularized_->Scale( -1.0 );
+  keoRegularizedMatrix_ = *keoContainer_->getKeo();
+  keoRegularizedMatrix_.Scale( -1.0 );
   // -------------------------------------------------------------------------
   // Add 2*|psi|^2 to the diagonal.
-  Epetra_Vector diag( keoRegularized_->RowMap() );
-  TEUCHOS_ASSERT_EQUALITY( 0, keoRegularized_->ExtractDiagonalCopy( diag ) );
-  const Epetra_Vector &controlVolumes = *(mesh_->getControlVolumes());
-  int numMyPoints = controlVolumes.MyLength();
-  for ( int k=0; k<numMyPoints; k++ )
-  {
-    double alpha = 2.0 * controlVolumes[k] * (*thickness_)[k]
-                 * ((*psi_)[2*k]*(*psi_)[2*k] + (*psi_)[2*k+1]*(*psi_)[2*k+1]);
-    diag[2*k] += alpha;
-    diag[2*k+1] += alpha;
-  }
-  TEUCHOS_ASSERT_EQUALITY( 0, keoRegularized_->ReplaceDiagonalValues( diag ) );
+  Epetra_Vector diag(keoRegularizedMatrix_.RowMap());
+  TEUCHOS_ASSERT_EQUALITY(0, keoRegularizedMatrix_.ExtractDiagonalCopy(diag));
+  diag.Update(2.0, *absPsiSquared_, 1.0);
+  TEUCHOS_ASSERT_EQUALITY(0, keoRegularizedMatrix_.ReplaceDiagonalValues(diag));
   // -------------------------------------------------------------------------
   // Rebuild preconditioner for this object. Not to be mistaken for the
   // object itself.
-  switch ( invType_ )
-  {
-    case INVERT_ILU:
-      return this->rebuildIlu_();
-      break;
-    case INVERT_ML:
-      return this->rebuildMl_();
-      break;
-    default:
-      TEUCHOS_TEST_FOR_EXCEPT_MSG( true,
-                           "Illegal value of the invType \""
-                           << invType_ << "\"."
-                           );
-      break;
-  }
-  // -------------------------------------------------------------------------
-
-  return;
-}
-// =============================================================================
-void
-KeoRegularized::
-rebuild(const Teuchos::RCP<const LOCA::ParameterVector> &mvpParams,
-        const Teuchos::RCP<const Epetra_Vector> & psi
-        )
-{
-  keoFactory_->updateParameters( mvpParams );
-  this->rebuild( psi );
-  return;
-}
-// =============================================================================
-void
-KeoRegularized::
-rebuildMl_()
-{
   // For reusing the ML structure, see
   // http://trilinos.sandia.gov/packages/docs/dev/packages/ml/doc/html/classML__Epetra_1_1MultiLevelPreconditioner.html#a0a5c1d47c6938d2ec1cb9bb710723c1e
   if ( MlPrec_.is_null() )
@@ -367,10 +274,6 @@ rebuildMl_()
     // reuse the multilevel hierarchy
     MLList.set("reuse: enable", true);
 
-#ifdef _DEBUG_
-    TEUCHOS_ASSERT( !keoRegularized_.is_null() );
-#endif
-
     // From http://trilinos.sandia.gov/packages/docs/r10.8/packages/ml/doc/html/classML__Epetra_1_1MultiLevelPreconditioner.html:
     // "It is important to note that ML is more restrictive than Epetra for
     //  the definition of maps. It is required that RowMatrixRowMap() is
@@ -381,54 +284,66 @@ rebuildMl_()
     //  OperatorRangeMap()."
     // Make sure this is indeed the case.
 #ifdef _DEBUG_
-    TEUCHOS_ASSERT( keoRegularized_->OperatorRangeMap().
-                    SameAs( keoRegularized_->RowMatrixRowMap() )
+    TEUCHOS_ASSERT( keoRegularizedMatrix_.OperatorRangeMap().
+                    SameAs( keoRegularizedMatrix_.RowMatrixRowMap() )
                   );
-    TEUCHOS_ASSERT( keoRegularized_->OperatorDomainMap().
-                    SameAs( keoRegularized_->OperatorRangeMap() )
+    TEUCHOS_ASSERT( keoRegularizedMatrix_.OperatorDomainMap().
+                    SameAs( keoRegularizedMatrix_.OperatorRangeMap() )
                   );
 #endif
     MlPrec_ =
-      Teuchos::rcp( new ML_Epetra::MultiLevelPreconditioner( *keoRegularized_,
-                                                            MLList ) );
+      Teuchos::rcp(new ML_Epetra::MultiLevelPreconditioner(keoRegularizedMatrix_,
+                                                           MLList));
   }
   else
   {
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
   Teuchos::TimeMonitor tm( *timerRebuild1_ );
 #endif
-
     bool checkFiltering = true;
     TEUCHOS_ASSERT_EQUALITY( 0, MlPrec_->ComputePreconditioner(checkFiltering) );
     //TEUCHOS_ASSERT_EQUALITY( 0, MlPrec_->ReComputePreconditioner() );
   }
 
 //    MlPrec_->PrintUnused(0);
+  // -------------------------------------------------------------------------
 
   return;
 }
 // =============================================================================
 void
 KeoRegularized::
-rebuildIlu_()
+rebuildInverse(const Teuchos::RCP<const LOCA::ParameterVector> &mvpParams,
+               const Teuchos::RCP<const Epetra_Vector> & psi
+              )
 {
-  // set the matrix the linear problem
+  keoContainer_->updateParameters( mvpParams );
+  this->updateAbsPsiSquared_(psi);
+  this->rebuildInverse();
+  return;
+}
+// =============================================================================
+void
+KeoRegularized::
+updateAbsPsiSquared_(const Teuchos::RCP<const Epetra_Vector> &psi)
+{
 #ifdef _DEBUG_
-  TEUCHOS_ASSERT( !keoRegularized_.is_null() );
+  TEUCHOS_ASSERT( !mesh_.is_null() );
+  TEUCHOS_ASSERT( !thickness_.is_null() );
+  TEUCHOS_ASSERT( !psi.is_null() );
+  TEUCHOS_ASSERT( !absPsiSquared_.is_null() );
 #endif
-  if ( keoIluProblem_.is_null() )
-    keoIluProblem_ = Teuchos::rcp( new Epetra_LinearProblem() );
-  keoIluProblem_->SetOperator( &*keoRegularized_ );
 
-  // do the factorization
-  Amesos Factory;
-  keoIluSolver_ = Teuchos::rcp( Factory.Create( "Klu", *keoIluProblem_ ) );
-
-  // do symbolic and numerical factorizations
-  // TODO reuse symbolic factorization
-  TEUCHOS_ASSERT_EQUALITY( 0, keoIluSolver_->SymbolicFactorization() );
-  TEUCHOS_ASSERT_EQUALITY( 0, keoIluSolver_->NumericFactorization() );
-
+  const Teuchos::RCP<const Epetra_Vector> &controlVolumes =
+      mesh_->getControlVolumes();
+  int numMyPoints = controlVolumes->MyLength();
+  for ( int k=0; k<numMyPoints; k++ )
+  {
+    double alpha = (*controlVolumes)[k] * (*thickness_)[k]
+                 * ((*psi)[2*k]*(*psi)[2*k] + (*psi)[2*k+1]*(*psi)[2*k+1]);
+    (*absPsiSquared_)[2*k] = alpha;
+    (*absPsiSquared_)[2*k+1] = alpha;
+  }
   return;
 }
 // =============================================================================

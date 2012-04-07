@@ -1,6 +1,6 @@
 // @HEADER
 //
-//    Factory class that hosts the kinetic energy operator.
+//    Container class that hosts the kinetic energy operator.
 //    Copyright (C) 2010--2012  Nico Schl\"omer
 //
 //    This program is free software: you can redistribute it and/or modify
@@ -19,7 +19,7 @@
 // @HEADER
 // =============================================================================
 // includes
-#include "Ginla_KeoFactory.hpp"
+#include "Ginla_KeoContainer.hpp"
 #include "Ginla_StkMesh.hpp"
 #include "Ginla_Helpers.hpp"
 #include "Ginla_MagneticVectorPotential_Virtual.hpp"
@@ -38,14 +38,14 @@
 
 namespace Ginla {
 // =============================================================================
-KeoFactory::
-KeoFactory( const Teuchos::RCP<const Ginla::StkMesh> &mesh,
+KeoContainer::
+KeoContainer( const Teuchos::RCP<const Ginla::StkMesh> &mesh,
             const Teuchos::RCP<const Epetra_Vector> &thickness,
             const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> &mvp
             ) :
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
   keoFillTime_( Teuchos::TimeMonitor::getNewTimer(
-                  "Ginla: KeoFactory::fillKeo_" ) ),
+                  "Ginla: KeoContainer::fillKeo_" ) ),
 #endif
   mesh_( mesh ),
   thickness_( thickness ),
@@ -64,13 +64,13 @@ KeoFactory( const Teuchos::RCP<const Ginla::StkMesh> &mesh,
 {
 }
 // =============================================================================
-KeoFactory::
-~KeoFactory()
+KeoContainer::
+~KeoContainer()
 {
 }
 // =============================================================================
 const Epetra_Comm &
-KeoFactory::
+KeoContainer::
 getComm() const
 {
 #ifdef _DEBUG_
@@ -80,7 +80,7 @@ getComm() const
 }
 // =============================================================================
 void
-KeoFactory::
+KeoContainer::
 updateParameters( const Teuchos::RCP<const LOCA::ParameterVector> &mvpParams
                   ) const
 {
@@ -94,14 +94,14 @@ updateParameters( const Teuchos::RCP<const LOCA::ParameterVector> &mvpParams
 }
 // =============================================================================
 const Teuchos::RCP<const LOCA::ParameterVector>
-KeoFactory::
+KeoContainer::
 getMvpParameters() const
 {
   return mvp_->getParameters();
 }
 // =============================================================================
 Teuchos::RCP<const Epetra_FECrsMatrix>
-KeoFactory::
+KeoContainer::
 getKeo() const
 {
   if ( !Ginla::Helpers::locaParameterVectorsEqual( keoBuildParameters_,
@@ -114,7 +114,7 @@ getKeo() const
 }
 // =============================================================================
 Teuchos::RCP<const Epetra_FECrsMatrix>
-KeoFactory::
+KeoContainer::
 getKeoDMu() const
 {
   if ( !Ginla::Helpers::locaParameterVectorsEqual( keoDMuBuildParameters_,
@@ -127,7 +127,7 @@ getKeoDMu() const
 }
 // =============================================================================
 Teuchos::RCP<const Epetra_FECrsMatrix>
-KeoFactory::
+KeoContainer::
 getKeoDTheta() const
 {
   if ( !Ginla::Helpers::locaParameterVectorsEqual( keoDThetaBuildParameters_,
@@ -140,7 +140,7 @@ getKeoDTheta() const
 }
 // =============================================================================
 const Teuchos::RCP<Epetra_FECrsGraph>
-KeoFactory::
+KeoContainer::
 buildKeoGraph_() const
 {
   // Which row/column map to use for the matrix?
@@ -228,7 +228,7 @@ buildKeoGraph_() const
 }
 // =============================================================================
 void
-KeoFactory::
+KeoContainer::
 fillKeo_( const Teuchos::RCP<Epetra_FECrsMatrix> &keoMatrix,
           const EMatrixType matrixType
           ) const
@@ -349,7 +349,7 @@ fillKeo_( const Teuchos::RCP<Epetra_FECrsMatrix> &keoMatrix,
 }
 // =============================================================================
 void
-KeoFactory::
+KeoContainer::
 buildGlobalIndexCache_( const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > &edges ) const
 {
   globalIndexCache_ =
@@ -375,7 +375,7 @@ buildGlobalIndexCache_( const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2
 }
 // =============================================================================
 void
-KeoFactory::
+KeoContainer::
 buildAlphaCache_( const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > & edges,
                   const Teuchos::ArrayRCP<const double> &edgeCoefficients
                 ) const

@@ -1,6 +1,6 @@
 // @HEADER
 //
-//    Factory class that hosts the kinetic energy operator.
+//    Container class that hosts the kinetic energy operator.
 //    Copyright (C) 2010--2012  Nico Schl\"omer
 //
 //    This program is free software: you can redistribute it and/or modify
@@ -18,8 +18,8 @@
 //
 // @HEADER
 
-#ifndef GINLA_KEOFACTORY_H
-#define GINLA_KEOFACTORY_H
+#ifndef GINLA_KEOCONTAINER_H
+#define GINLA_KEOCONTAINER_H
 // =============================================================================
 // Workaround for icpc's error "Include mpi.h before stdio.h"
 #include <Teuchos_config.h>
@@ -55,7 +55,7 @@ class Virtual;
 // =============================================================================
 namespace Ginla {
 // =============================================================================
-class KeoFactory
+class KeoContainer
 {
 public:
 enum EMatrixType { MATRIX_TYPE_REGULAR,
@@ -63,13 +63,13 @@ enum EMatrixType { MATRIX_TYPE_REGULAR,
                    MATRIX_TYPE_DTHETA};
 
 public:
-KeoFactory( const Teuchos::RCP<const Ginla::StkMesh> &mesh,
+KeoContainer( const Teuchos::RCP<const Ginla::StkMesh> &mesh,
             const Teuchos::RCP<const Epetra_Vector> &thickness,
             const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> &mvp
             );
 
 // Destructor.
-~KeoFactory();
+~KeoContainer();
 
 const Epetra_Comm &
 getComm() const;
@@ -141,4 +141,4 @@ mutable bool alphaCacheUpToDate_;
 // =============================================================================
 } // namespace Ginla
 
-#endif // GINLA_KEOFACTORY_H
+#endif // GINLA_KEOCONTAINER_H

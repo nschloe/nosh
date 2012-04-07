@@ -4,7 +4,7 @@ SET ( ginla_SRCS
       Ginla_State.cpp
       Ginla_ModelEvaluator.cpp
       Ginla_JacobianOperator.cpp
-      Ginla_KeoFactory.cpp
+      Ginla_KeoContainer.cpp
       Ginla_KeoRegularized.cpp
       Ginla_MagneticVectorPotential_Virtual.cpp
       Ginla_MagneticVectorPotential_ExplicitValues.cpp

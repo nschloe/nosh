@@ -19,7 +19,7 @@
 // @HEADER
 // =============================================================================
 #include "Ginla_JacobianOperator.hpp"
-#include "Ginla_KeoFactory.hpp"
+#include "Ginla_KeoContainer.hpp"
 #include "Ginla_StkMesh.hpp"
 
 #include <Teuchos_ArrayRCP.hpp>
@@ -31,19 +31,19 @@ namespace Ginla {
 JacobianOperator::
 JacobianOperator( const Teuchos::RCP<const Ginla::StkMesh> &mesh,
                   const Teuchos::RCP<const Epetra_Vector> &thickness,
-                  const Teuchos::RCP<Ginla::KeoFactory> &keoFactory,
+                  const Teuchos::RCP<Ginla::KeoContainer> &keoContainer,
                   const Teuchos::RCP<const Epetra_Vector> &current_X
                   ) :
   useTranspose_( false ),
   mesh_( mesh ),
   thickness_( thickness ),
-  keoFactory_( keoFactory ),
+  keoContainer_( keoContainer ),
   current_X_( current_X ),
   T_( 0.0 ),
-  isDiagsUpToDate_( false ),
   diag0_( Teuchos::rcp( new Epetra_Vector( *(mesh->getComplexNonOverlapMap())) ) ),
   diag1b_( Teuchos::rcp( new Epetra_Vector( mesh->getControlVolumes()->Map()) ) )
 {
+  this->rebuildDiags_();
 }
 // =============================================================================
 JacobianOperator::
@@ -70,12 +70,12 @@ Apply( const Epetra_MultiVector &X,
   // B = diag( thickness * psi^2 )
 
 #ifdef _DEBUG_
-  TEUCHOS_ASSERT( !keoFactory_.is_null() );
-  TEUCHOS_ASSERT( !keoFactory_->getKeo().is_null() );
+  TEUCHOS_ASSERT( !keoContainer_.is_null() );
+  TEUCHOS_ASSERT( !keoContainer_->getKeo().is_null() );
 #endif
 
   // K*psi
-  TEUCHOS_ASSERT_EQUALITY( 0, keoFactory_->getKeo()->Apply( X, Y ) );
+  TEUCHOS_ASSERT_EQUALITY( 0, keoContainer_->getKeo()->Apply( X, Y ) );
 
   const Epetra_Vector &controlVolumes = *(mesh_->getControlVolumes());
   int numMyPoints = controlVolumes.MyLength();
@@ -83,10 +83,6 @@ Apply( const Epetra_MultiVector &X,
 #ifdef _DEBUG_
   TEUCHOS_ASSERT_EQUALITY( 2*numMyPoints, X.MyLength() );
 #endif
-
-  // rebuild diagonals cache
-  if ( !isDiagsUpToDate_ )
-    this->rebuildDiags_();
 
   for ( int vec=0; vec<X.NumVectors(); vec++ )
   {
@@ -182,10 +178,10 @@ JacobianOperator::
 OperatorDomainMap() const
 {
 #ifdef _DEBUG_
-  TEUCHOS_ASSERT( !keoFactory_.is_null() );
-  TEUCHOS_ASSERT( !keoFactory_->getKeo().is_null() );
+  TEUCHOS_ASSERT( !keoContainer_.is_null() );
+  TEUCHOS_ASSERT( !keoContainer_->getKeo().is_null() );
 #endif
-  return keoFactory_->getKeo()->OperatorDomainMap();
+  return keoContainer_->getKeo()->OperatorDomainMap();
 }
 // =============================================================================
 const Epetra_Map &
@@ -193,10 +189,10 @@ JacobianOperator::
 OperatorRangeMap() const
 {
 #ifdef _DEBUG_
-  TEUCHOS_ASSERT( !keoFactory_.is_null() );
-  TEUCHOS_ASSERT( !keoFactory_->getKeo().is_null() );
+  TEUCHOS_ASSERT( !keoContainer_.is_null() );
+  TEUCHOS_ASSERT( !keoContainer_->getKeo().is_null() );
 #endif
-  return keoFactory_->getKeo()->OperatorRangeMap();
+  return keoContainer_->getKeo()->OperatorRangeMap();
 }
 // =============================================================================
 void
@@ -209,10 +205,11 @@ rebuild( const Teuchos::RCP<const LOCA::ParameterVector> &mvpParams,
   // set the entities for the operator
   T_ = T;
   current_X_ = current_X;
-  isDiagsUpToDate_ = false;
+  // Rebuild diagonals immediately.
+  this->rebuildDiags_();
 
   // rebuild the keo
-  keoFactory_->updateParameters( mvpParams );
+  keoContainer_->updateParameters( mvpParams );
 
   return;
 }
@@ -258,7 +255,6 @@ rebuildDiags_() const
         );
     TEUCHOS_ASSERT_EQUALITY( 0, diag1b_->ReplaceMyValues( 1, &imPhiSquare, &k ) );
   }
-  isDiagsUpToDate_ = true;
 
   return;
 }

@@ -42,7 +42,7 @@
 #include <LOCA_Parameter_Vector.H>
 // =============================================================================
 namespace Ginla {
-class KeoFactory;
+class KeoContainer;
 class StkMesh;
 }
 namespace Belos {
@@ -61,8 +61,8 @@ class KeoRegularized : public Epetra_Operator
 public:
 KeoRegularized( const Teuchos::RCP<const Ginla::StkMesh> &mesh,
                 const Teuchos::RCP<const Epetra_Vector> &thickness,
-                const Teuchos::RCP<Ginla::KeoFactory> &keoFactory,
-                const Teuchos::RCP<const Epetra_Vector> &psi = Teuchos::null
+                const Teuchos::RCP<Ginla::KeoContainer> &keoContainer,
+                const Teuchos::RCP<const Epetra_Vector> &psi
               );
 
 // Destructor.
@@ -103,57 +103,37 @@ virtual const Epetra_Map &OperatorRangeMap() const;
 public:
 
 void
-rebuild(const Teuchos::RCP<const Epetra_Vector> &psi);
+rebuildInverse();
 
 void
-rebuild(const Teuchos::RCP<const LOCA::ParameterVector> &mvpParams,
-        const Teuchos::RCP<const Epetra_Vector> &psi
-        );
+rebuildInverse(const Teuchos::RCP<const LOCA::ParameterVector> &mvpParams,
+               const Teuchos::RCP<const Epetra_Vector> &psi
+              );
 
 protected:
 private:
-int
-ApplyInverseMl_( const Epetra_MultiVector &X,
-                 Epetra_MultiVector &Y
-                 ) const;
-
-int
-ApplyInverseIlu_( const Epetra_MultiVector &X,
-                  Epetra_MultiVector &Y
-                  ) const;
 
 void
-rebuildMl_();
-
-void
-rebuildIlu_();
+updateAbsPsiSquared_(const Teuchos::RCP<const Epetra_Vector> &psi);
 
 private:
-
-enum EInversionType { INVERT_ILU, INVERT_ML };
 
 private:
 bool useTranspose_;
 
 const Teuchos::RCP<const Ginla::StkMesh> mesh_;
 const Teuchos::RCP<const Epetra_Vector> thickness_;
-Teuchos::RCP<Ginla::KeoFactory> keoFactory_;
+Teuchos::RCP<Ginla::KeoContainer> keoContainer_;
 
-Teuchos::RCP<const Epetra_Vector> psi_;
+// |psi|^2
+const Teuchos::RCP<Epetra_Vector> absPsiSquared_;
+
+// Make sure the matrix is persistent in memory. ML requires that.
+Epetra_CrsMatrix keoRegularizedMatrix_;
 
 const Epetra_Comm &comm_;
 
-// Make sure the matrix pointer is never changed; ML's
-// preconditioner generation depends on that.
-const Teuchos::RCP<Epetra_CrsMatrix> keoRegularized_;
-// Teuchos::RCP<Epetra_CrsMatrix> keoRegularized_;
-
 Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> MlPrec_;
-
-Teuchos::RCP<Epetra_LinearProblem> keoIluProblem_;
-Teuchos::RCP<Amesos_BaseSolver> keoIluSolver_;
-
-EInversionType invType_;
 
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
 const Teuchos::RCP<Teuchos::Time> timerRebuild0_;

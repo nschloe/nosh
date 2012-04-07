@@ -178,7 +178,7 @@ Teuchos::RCP<Epetra_Vector> p_current_;
 
 const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp_;
 
-const Teuchos::RCP<Ginla::KeoFactory> keoFactory_;
+const Teuchos::RCP<Ginla::KeoContainer> keoContainer_;
 
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
 const Teuchos::RCP<Teuchos::Time> evalModelTime_;

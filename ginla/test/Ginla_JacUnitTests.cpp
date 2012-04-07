@@ -12,7 +12,7 @@
 #include "Ginla_StkMesh.hpp"
 #include "Ginla_StkMeshReader.hpp"
 #include "Ginla_MagneticVectorPotential_ExplicitValues.hpp"
-#include "Ginla_KeoFactory.hpp"
+#include "Ginla_KeoContainer.hpp"
 #include "Ginla_JacobianOperator.hpp"
 
 #include <Teuchos_UnitTestHarness.hpp>
@@ -63,12 +63,12 @@ testJac( const std::string & inputFileNameBase,
     mvpParameters->addParameter( "mu", mu );
 
     // create a keo factory
-    Teuchos::RCP<Ginla::KeoFactory> keoFactory =
-        Teuchos::rcp( new Ginla::KeoFactory( mesh, thickness, mvp ) );
+    Teuchos::RCP<Ginla::KeoContainer> keoContainer =
+        Teuchos::rcp( new Ginla::KeoContainer( mesh, thickness, mvp ) );
 
     // create the jacobian operator
     Teuchos::RCP<Ginla::JacobianOperator> jac =
-        Teuchos::rcp( new Ginla::JacobianOperator( mesh, thickness, keoFactory, z ) );
+        Teuchos::rcp( new Ginla::JacobianOperator( mesh, thickness, keoContainer, z ) );
 
     double sum;
     const Epetra_Map & map = jac->OperatorDomainMap();

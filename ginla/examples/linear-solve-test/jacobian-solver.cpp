@@ -24,7 +24,7 @@
 
 #include "Ginla_State.hpp"
 #include "Ginla_ModelEvaluator.hpp"
-#include "Ginla_KeoFactory.hpp"
+#include "Ginla_KeoContainer.hpp"
 #include "Ginla_KeoRegularized.hpp"
 #include "Ginla_StatsWriter.hpp"
 #include "Ginla_NoxObserver.hpp"
@@ -129,12 +129,12 @@ int main ( int argc, char *argv[] )
           Teuchos::rcp( new LOCA::ParameterVector() );
       mvpParameters->addParameter( "mu", mu );
 
-      Teuchos::RCP<Teuchos::Time> keoFactoryConstructTime =
-          Teuchos::TimeMonitor::getNewTimer("Keo factory construction");
-      Teuchos::RCP<Ginla::KeoFactory> keoFactory;
+      Teuchos::RCP<Teuchos::Time> keoContainerConstructTime =
+          Teuchos::TimeMonitor::getNewTimer("Keo container construction");
+      Teuchos::RCP<Ginla::KeoContainer> keoContainer;
       {
-          Teuchos::TimeMonitor tm(*keoFactoryConstructTime);
-          keoFactory = Teuchos::rcp( new Ginla::KeoFactory( mesh, thickness, mvp ) );
+          Teuchos::TimeMonitor tm(*keoContainerConstructTime);
+          keoContainer = Teuchos::rcp( new Ginla::KeoContainer( mesh, thickness, mvp ) );
       }
 
       // create Jacobian
@@ -144,9 +144,9 @@ int main ( int argc, char *argv[] )
       {
           Teuchos::TimeMonitor tm(*operatorConstructTime);
           if (op.compare("jac") == 0)
-              A = Teuchos::rcp( new Ginla::JacobianOperator( mesh, thickness, keoFactory, z ) );
+              A = Teuchos::rcp(new Ginla::JacobianOperator(mesh, thickness, keoContainer, z));
           else if (op.compare("keo") == 0)
-              A = Teuchos::rcp( new Ginla::KeoRegularized( mesh, thickness, keoFactory, z ) );
+              A = Teuchos::rcp(new Ginla::KeoRegularized(mesh, thickness, keoContainer, z));
           else
               TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Unknown operator \"" << op << "\"." );
       }
@@ -196,12 +196,12 @@ int main ( int argc, char *argv[] )
       {
           Teuchos::TimeMonitor tm(*precConstructTime);
 
-          // create the jacobian operator
+          // create the preconditioner
           Teuchos::RCP<Ginla::KeoRegularized> keoReg =
-              Teuchos::rcp( new Ginla::KeoRegularized(mesh, thickness, keoFactory));
+              Teuchos::rcp(new Ginla::KeoRegularized(mesh, thickness, keoContainer, z));
 
-          // actually fill it with values
-          keoReg->rebuild(z);
+          // initialize its (approximate) inverse
+          keoReg->rebuildInverse();
 
           // Create the Belos preconditioned operator from the preconditioner.
           // NOTE:  This is necessary because Belos expects an operator to apply the

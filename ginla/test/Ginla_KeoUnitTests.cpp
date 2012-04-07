@@ -31,7 +31,7 @@
 #include "Ginla_StkMesh.hpp"
 #include "Ginla_StkMeshReader.hpp"
 #include "Ginla_MagneticVectorPotential_ExplicitValues.hpp"
-#include "Ginla_KeoFactory.hpp"
+#include "Ginla_KeoContainer.hpp"
 
 #include <Teuchos_UnitTestHarness.hpp>
 
@@ -81,12 +81,12 @@ testKeo( const std::string & inputFileNameBase,
         Teuchos::rcp( new LOCA::ParameterVector() );
     mvpParameters->addParameter( "mu", mu );
 
-    Teuchos::RCP<Ginla::KeoFactory> keoFactory =
-        Teuchos::rcp( new Ginla::KeoFactory( mesh, thickness, mvp ) );
+    Teuchos::RCP<Ginla::KeoContainer> keoContainer =
+        Teuchos::rcp( new Ginla::KeoContainer( mesh, thickness, mvp ) );
 
     // create the kinetic energy operator
-    keoFactory->updateParameters( mvpParameters );
-    const Teuchos::RCP<const Epetra_CrsMatrix> keoMatrix = keoFactory->getKeo();
+    keoContainer->updateParameters( mvpParameters );
+    const Teuchos::RCP<const Epetra_CrsMatrix> keoMatrix = keoContainer->getKeo();
 
     // Compute matrix norms as hashes.
     // Don't check for NormFrobenius() as this one doesn't work for matrices

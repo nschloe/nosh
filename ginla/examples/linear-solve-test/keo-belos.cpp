@@ -23,7 +23,7 @@
 
 #include "Ginla_State.hpp"
 #include "Ginla_ModelEvaluator.hpp"
-#include "Ginla_KeoFactory.hpp"
+#include "Ginla_KeoContainer.hpp"
 #include "Ginla_MagneticVectorPotential_ExplicitValues.hpp"
 
 #ifdef HAVE_MPI
@@ -119,19 +119,19 @@ int main ( int argc, char *argv[] )
           Teuchos::rcp( new LOCA::ParameterVector() );
       mvpParameters->addParameter( "mu", mu );
 
-      Teuchos::RCP<Ginla::KeoFactory> keoFactory =
-          Teuchos::rcp( new Ginla::KeoFactory( mesh, thickness, mvp ) );
+      Teuchos::RCP<Ginla::KeoContainer> keoContainer =
+          Teuchos::rcp( new Ginla::KeoContainer( mesh, thickness, mvp ) );
 
       // create the kinetic energy operator
       Teuchos::RCP<Epetra_CrsMatrix> keoMatrix;
       Teuchos::RCP<Teuchos::Time> keoConstructTime = Teuchos::TimeMonitor::getNewTimer("Matrix construction");
       {
           Teuchos::TimeMonitor tm(*keoConstructTime);
-          keoFactory->updateParameters( mvpParameters );
+          keoContainer->updateParameters( mvpParameters );
           // Copy over the matrix
           // TODO Well, we'll need to copy here as the KEO is otherwise negative
-          // deinite.
-          keoMatrix = Teuchos::rcp( new Epetra_CrsMatrix( *keoFactory->getKeo() ) );
+          // definite.
+          keoMatrix = Teuchos::rcp( new Epetra_CrsMatrix( *keoContainer->getKeo() ) );
       }
       // Make sure the matrix is indeed positive definite, and not
       // negative definite. Belos needs that (2010-11-05).

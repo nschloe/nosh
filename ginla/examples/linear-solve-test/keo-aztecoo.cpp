@@ -16,7 +16,7 @@
 
 #include "Ginla_State.hpp"
 #include "Ginla_ModelEvaluator.hpp"
-#include "Ginla_KeoFactory.hpp"
+#include "Ginla_KeoContainer.hpp"
 #include "Ginla_MagneticVectorPotential_ExplicitValues.hpp"
 
 #ifdef HAVE_MPI
@@ -102,11 +102,11 @@ int main ( int argc, char *argv[] )
       mvpParameters->addParameter( "mu", mu );
 
       // create the kinetic energy operator
-      Teuchos::RCP<Ginla::KeoFactory> keoFactory =
-              Teuchos::rcp( new Ginla::KeoFactory( mesh, thickness, mvp ) );
-      keoFactory->updateParameters( mvpParameters );
+      Teuchos::RCP<Ginla::KeoContainer> keoContainer =
+              Teuchos::rcp( new Ginla::KeoContainer( mesh, thickness, mvp ) );
+      keoContainer->updateParameters( mvpParameters );
       // Copy out the matrix
-      Epetra_CrsMatrix keoMatrix = *(keoFactory->getKeo());
+      Epetra_CrsMatrix keoMatrix = *(keoContainer->getKeo());
 
       // create initial guess and right-hand side
       Teuchos::RCP<Epetra_Vector> epetra_x = Teuchos::rcp( new Epetra_Vector( keoMatrix.OperatorDomainMap() ) );
