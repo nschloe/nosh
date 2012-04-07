@@ -121,7 +121,7 @@ int main ( int argc, char *argv[] )
       {
           Teuchos::TimeMonitor tm(*mvpConstructTime);
 //          mu = problemParameters.get<double> ( "mu" );
-          mu = 1.0e-6;
+          mu = 1.0;
           mvp = Teuchos::rcp(new Ginla::MagneticVectorPotential::ExplicitValues(mesh, mvpValues, mu));
       }
 
@@ -158,7 +158,6 @@ int main ( int argc, char *argv[] )
               Teuchos::rcp( new Epetra_Vector( A->OperatorRangeMap(), 1 ) );
       // epetra_b->Random();
       epetra_b->PutScalar( 1.0 );
-
       // -----------------------------------------------------------------------
       // Belos part
       Teuchos::ParameterList belosList;
@@ -206,7 +205,7 @@ int main ( int argc, char *argv[] )
           // Create the Belos preconditioned operator from the preconditioner.
           // NOTE:  This is necessary because Belos expects an operator to apply the
           //        preconditioner with Apply() NOT ApplyInverse().
-          Teuchos::RCP<Belos::EpetraPrecOp> belosPrec = Teuchos::rcp( new Belos::EpetraPrecOp( keoReg ) );
+          Teuchos::RCP<Belos::EpetraPrecOp> belosPrec = Teuchos::rcp(new Belos::EpetraPrecOp(keoReg));
           problem.setLeftPrec( belosPrec );
       }
       // -----------------------------------------------------------------------

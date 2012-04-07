@@ -95,8 +95,8 @@ Apply( const Epetra_MultiVector &X,
   // K * X ...
   TEUCHOS_ASSERT_EQUALITY(0, keoContainer_->getKeo()->Apply(X, Y));
 
-  // ... + 2*|psi|*X.
-  TEUCHOS_ASSERT_EQUALITY(0, Y.Multiply(2.0, X, *absPsiSquared_, 1.0));
+  // - (K*X) + 2*|psi|*X.
+  TEUCHOS_ASSERT_EQUALITY(0, Y.Multiply(2.0, *absPsiSquared_, X, -1.0));
 
   return 0;
 }
@@ -111,13 +111,16 @@ ApplyInverse(const Epetra_MultiVector &X,
   return MlPrec_->ApplyInverse(X, Y);
 
 //   bool verbose = false;
-//   int frequency = 10;
 // 
 //   // Belos part
 //   Teuchos::ParameterList belosList;
-//   // Relative convergence tolerance requested
-//   // TODO This could be replaced by something adaptive in the future.
-//   belosList.set( "Convergence Tolerance", 1.0e-10 );
+//   // Relative convergence tolerance requested.
+//   // Set this to 0 and adapt the maximum number of iterations. This way,
+//   // the preconditioner always does exactly the same thing (namely maxIter
+//   // PCG iterations) and is independent of X. This avoids mathematical
+//   // difficulties.
+//   belosList.set( "Convergence Tolerance", 0.0 );
+//   belosList.set( "Maximum Iterations", 1 );
 //   if (verbose) {
 //     belosList.set( "Verbosity",
 //                    Belos::Errors +
@@ -125,8 +128,7 @@ ApplyInverse(const Epetra_MultiVector &X,
 //                    Belos::TimingDetails +
 //                    Belos::StatusTestDetails
 //                    );
-//     if (frequency > 0)
-//       belosList.set( "Output Frequency", frequency );
+//     belosList.set( "Output Frequency", 10 );
 //   }
 //   else
 //     belosList.set( "Verbosity", Belos::Errors + Belos::Warnings );
@@ -135,14 +137,11 @@ ApplyInverse(const Epetra_MultiVector &X,
 //   // Belos, for example, does not initialze Y before passing it here.
 //   Y.PutScalar( 0.0 );
 // 
-// #ifdef _DEBUG_
-//   TEUCHOS_ASSERT( !keoRegularizedMatrix_.is_null() );
-// #endif
-// 
 //   // Construct an unpreconditioned linear problem instance.
 //   Teuchos::RCP<const Epetra_MultiVector> Xptr = Teuchos::rcpFromRef( X );
 //   Teuchos::RCP<Epetra_MultiVector> Yptr = Teuchos::rcpFromRef( Y );
-//   Belos::LinearProblem<double,MV,OP> problem( keoRegularizedMatrix_, Yptr, Xptr );
+//   Teuchos::RCP<const Epetra_CrsMatrix> Aptr = Teuchos::rcpFromRef(keoRegularizedMatrix_);
+//   Belos::LinearProblem<double,MV,OP> problem(Aptr, Yptr, Xptr);
 //   // Make sure the problem sets up correctly.
 //   TEUCHOS_ASSERT( problem.setProblem() );
 //   // -------------------------------------------------------------------------
@@ -156,14 +155,9 @@ ApplyInverse(const Epetra_MultiVector &X,
 //   // -------------------------------------------------------------------------
 //   // Create an iterative solver manager.
 //   Teuchos::RCP<Belos::SolverManager<double,MV,OP> > newSolver =
-//     Teuchos::rcp( new Belos::PseudoBlockCGSolMgr<double,MV,
-//                                                  OP>( Teuchos::rcp( &problem,
-//                                                                     false ),
-//                                                       Teuchos::rcp( &
-//                                                                     belosList,
-//                                                                     false )
-//                                                       )
-//                   );
+//     Teuchos::rcp( new Belos::PseudoBlockCGSolMgr<double,MV,OP>
+//       (Teuchos::rcp(&problem, false), Teuchos::rcp(&belosList, false))
+//     );
 // 
 //   // Perform solve
 //   Belos::ReturnType ret = newSolver->solve();
@@ -176,7 +170,8 @@ ApplyInverse(const Epetra_MultiVector &X,
 // //    R.Norm2( s );
 // //    std::cout << " PRECON RES = " << s[0] << " in " << newSolver->getNumIters() << " iters" << std::endl;
 // 
-//   return ret==Belos::Converged ? 0 : -1;
+// //   return ret==Belos::Converged ? 0 : -1;
+//   return 0;
 }
 // =============================================================================
 double
