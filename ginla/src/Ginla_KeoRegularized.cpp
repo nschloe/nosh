@@ -58,7 +58,7 @@ KeoRegularized( const Teuchos::RCP<const Ginla::StkMesh> &mesh,
   mesh_( mesh ),
   thickness_( thickness ),
   keoContainer_( keoContainer ),
-  absPsiSquared_(Teuchos::rcp(new Epetra_Vector(*mesh->getComplexOverlapMap()))),
+  absPsiSquared_(Teuchos::rcp(new Epetra_Vector(*mesh->getComplexNonOverlapMap()))),
   keoRegularizedMatrix_( *keoContainer_->getKeo() ), // initialize the matrix with something (it gets copied over later anyways)
   comm_( keoContainer->getComm() ),
   MlPrec_( Teuchos::null ),
@@ -92,6 +92,12 @@ Apply( const Epetra_MultiVector &X,
        Epetra_MultiVector &Y
        ) const
 {
+#ifdef _DEBUG_
+  TEUCHOS_ASSERT( keoContainer_->getKeo()->DomainMap().SameAs( X.Map() ) );
+  TEUCHOS_ASSERT( keoContainer_->getKeo()->RangeMap().SameAs( Y.Map() ) );
+  TEUCHOS_ASSERT( Y.Map().SameAs( X.Map() ) );
+  TEUCHOS_ASSERT( Y.Map().SameAs(absPsiSquared_->Map()) );
+#endif
   // K * X ...
   TEUCHOS_ASSERT_EQUALITY(0, keoContainer_->getKeo()->Apply(X, Y));
 
