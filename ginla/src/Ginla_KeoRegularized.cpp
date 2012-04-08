@@ -242,12 +242,15 @@ rebuildInverse()
   TEUCHOS_ASSERT( !keoContainer_->getKeo().is_null() );
 #endif
   keoRegularizedMatrix_ = *keoContainer_->getKeo();
-  keoRegularizedMatrix_.Scale( -1.0 );
+  TEUCHOS_ASSERT_EQUALITY(0, keoRegularizedMatrix_.Scale(-1.0));
   // -------------------------------------------------------------------------
   // Add 2*|psi|^2 to the diagonal.
+#ifdef _DEBUG_
+  TEUCHOS_ASSERT( keoRegularizedMatrix_.RowMap().SameAs(absPsiSquared_->Map()) );
+#endif
   Epetra_Vector diag(keoRegularizedMatrix_.RowMap());
   TEUCHOS_ASSERT_EQUALITY(0, keoRegularizedMatrix_.ExtractDiagonalCopy(diag));
-  diag.Update(2.0, *absPsiSquared_, 1.0);
+  TEUCHOS_ASSERT_EQUALITY(0, diag.Update(2.0, *absPsiSquared_, 1.0));
   TEUCHOS_ASSERT_EQUALITY(0, keoRegularizedMatrix_.ReplaceDiagonalValues(diag));
   // -------------------------------------------------------------------------
   // Rebuild preconditioner for this object. Not to be mistaken for the
@@ -257,7 +260,7 @@ rebuildInverse()
   if ( MlPrec_.is_null() )
   {
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
-  Teuchos::TimeMonitor tm( *timerRebuild0_ );
+    Teuchos::TimeMonitor tm( *timerRebuild0_ );
 #endif
     // build ML structure
     Teuchos::ParameterList MLList;
@@ -275,7 +278,7 @@ rebuildInverse()
     // reuse the multilevel hierarchy
     MLList.set("reuse: enable", true);
 
-    // From http://trilinos.sandia.gov/packages/docs/r10.8/packages/ml/doc/html/classML__Epetra_1_1MultiLevelPreconditioner.html:
+    // From http://trilinos.sandia.gov/packages/docs/r10.10/packages/ml/doc/html/classML__Epetra_1_1MultiLevelPreconditioner.html:
     // "It is important to note that ML is more restrictive than Epetra for
     //  the definition of maps. It is required that RowMatrixRowMap() is
     //  equal to OperatorRangeMap(). This is because ML needs to perform
