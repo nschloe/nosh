@@ -21,53 +21,17 @@ TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
                        ${Trilinos_LIBRARIES}
                        ${Trilinos_TPL_LIBRARIES} )
 # ------------------------------------------------------------------------------
-SET ( keobelos_SRCS
-      keo-belos.cpp  )
-SET ( keobelos_LIBS
+SET ( linoptester_SRCS
+      linop-tester.cpp  )
+SET ( linoptester_LIBS
       ginla
     )
 SET( MY_EXECUTABLE
-     "keo-belos.exe" )
+     "linop-tester.exe" )
 ADD_EXECUTABLE( ${MY_EXECUTABLE}
-                ${keobelos_SRCS} )
+                ${linoptester_SRCS} )
 TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
-                       ${keobelos_LIBS}
-                       ${Trilinos_LIBRARIES}
-                       ${Trilinos_TPL_LIBRARIES} )
-# ------------------------------------------------------------------------------
-SET ( jacobiansolver_SRCS
-      jacobian-solver.cpp  )
-SET ( jacobiansolver_LIBS
-      ginla
-    )
-SET( MY_EXECUTABLE
-     "jacobian-solver.exe" )
-ADD_EXECUTABLE( ${MY_EXECUTABLE}
-                ${jacobiansolver_SRCS} )
-TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
-                       ${jacobiansolver_LIBS}
-                       ${Trilinos_LIBRARIES}
-                       ${Trilinos_TPL_LIBRARIES} )
-# ------------------------------------------------------------------------------
-SET ( matvec_SRCS
-      keo-matvec.cpp  )
-SET ( matvec_LIBS
-      ginla
-    )
-SET( MY_EXECUTABLE
-     "keo-matvec.exe" )
-ADD_EXECUTABLE( ${MY_EXECUTABLE}
-                ${matvec_SRCS} )
-TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
-                       ${matvec_LIBS}
-                       ${Trilinos_LIBRARIES}
-                       ${Trilinos_TPL_LIBRARIES} )
-# ------------------------------------------------------------------------------
-SET( MY_EXECUTABLE
-     "linsolve-test.exe" )
-ADD_EXECUTABLE( ${MY_EXECUTABLE}
-                "linsolve-test.cpp" )
-TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
+                       ${linoptester_LIBS}
                        ${Trilinos_LIBRARIES}
                        ${Trilinos_TPL_LIBRARIES} )
 # ------------------------------------------------------------------------------
