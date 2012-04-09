@@ -8,6 +8,8 @@ EXTRA_ARGS=$@
 #TRILINOS_HOME=../../trilinos-10.10.1-Source
 TRILINOS_HOME=../../source
 
+#  -D BinUtils_LIBRARY_DIRS:PATH="$BINUTILS_DIR/lib" \
+
 #export NETCDF_DIR=/opt/cray/netcdf-hdf5parallel/4.0.1.0/netcdf-hdf5parallel-pgi
 #      -D BLAS_LIBRARY_DIRS:FILEPATH="$ACML_DIR"/pgi64_mp/lib/ \
 #      -D LAPACK_LIBRARY_DIRS:FILEPATH="$ACML_DIR"/pgi64_mp/lib/ \
@@ -22,7 +24,7 @@ TRILINOS_HOME=../../source
 #  -D TPL_ENABLE_Boost:BOOL=OFF \
 
 cmake \
-  -D CMAKE_INSTALL_PREFIX:PATH="$SCRATCH/trilinos/dev/master/pgi/" \
+  -D CMAKE_INSTALL_PREFIX:PATH="$SCRATCH/trilinos/10.10.1/pgi/" \
   -D Trilinos_VERBOSE_CONFIGURE:BOOL=OFF \
   -D CMAKE_BUILD_TYPE=Release \
   -D TPL_ENABLE_MPI:BOOL=ON \
@@ -40,7 +42,6 @@ cmake \
   -D TPL_ENABLE_LAPACK:BOOL=ON \
       -D LAPACK_LIBRARY_DIRS:PATH="$LIBSCI_BASE_DIR/pgi/109/mc12/lib" \
       -D LAPACK_LIBRARY_NAMES="sci_pgi" \
-  -D BinUtils_LIBRARY_DIRS:PATH="$BINUTILS_DIR/lib" \
   -D Trilinos_ENABLE_NOX:BOOL=ON \
       -D NOX_ENABLE_LOCA:BOOL=ON \
   -D Trilinos_ENABLE_Piro:BOOL=ON \
