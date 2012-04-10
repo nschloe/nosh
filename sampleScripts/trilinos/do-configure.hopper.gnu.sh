@@ -1,8 +1,8 @@
 #!/bin/bash
 
-module swap PrgEnv-pgi PrgEnv-gnu
+#module swap PrgEnv-pgi PrgEnv-gnu
 
-module load boost
+#module load boost
 module load binutils
 module load netcdf-hdf5parallel
 
@@ -23,7 +23,7 @@ TRILINOS_HOME=../../source
 #  -D BinUtils_LIBRARY_DIRS:FILEPATH="$GCC_PATH/snos/lib64" \
 
 cmake \
-  -D CMAKE_INSTALL_PREFIX:PATH="$SCRATCH/trilinos/10.10.1/gnu/" \
+  -D CMAKE_INSTALL_PREFIX:PATH="$SCRATCH/trilinos/dev/master/gnu/" \
   -D Trilinos_ENABLE_TEUCHOS_TIME_MONITOR:BOOL=ON \
   -D CMAKE_BUILD_TYPE=Release \
   -D TPL_ENABLE_MPI:BOOL=ON \

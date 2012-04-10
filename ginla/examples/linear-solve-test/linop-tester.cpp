@@ -188,17 +188,18 @@ int main ( int argc, char *argv[] )
       Teuchos::RCP<Epetra_Vector> epetra_x =
               Teuchos::rcp( new Epetra_Vector( A->OperatorDomainMap() ) );
       Teuchos::RCP<Epetra_MultiVector> epetra_b =
-              Teuchos::rcp( new Epetra_Vector( A->OperatorRangeMap(), 1 ) );
+              Teuchos::rcp( new Epetra_Vector( A->OperatorRangeMap() ) );
       // epetra_b->Random();
       epetra_b->PutScalar( 1.0 );
 
 
       if (action.compare("matvec") == 0)
       {
+        epetra_x->PutScalar( 1.0 );
         Teuchos::RCP<Teuchos::Time> mvTime = Teuchos::TimeMonitor::getNewTimer("Operator apply");
         {
           Teuchos::TimeMonitor tm(*mvTime);
-          TEUCHOS_ASSERT_EQUALITY(0, A->Apply(*epetra_b, *epetra_x));
+          TEUCHOS_ASSERT_EQUALITY(0, A->Apply(*epetra_x, *epetra_b));
         }
         // print timing data
         Teuchos::TimeMonitor::summarize();
