@@ -134,6 +134,7 @@ Epetra_CrsMatrix keoRegularizedMatrix_;
 const Epetra_Comm &comm_;
 
 Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> MlPrec_;
+const int numCycles_;
 
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
 const Teuchos::RCP<Teuchos::Time> timerRebuild0_;
