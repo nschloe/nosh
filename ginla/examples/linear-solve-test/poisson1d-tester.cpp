@@ -53,18 +53,12 @@ enum Operator { JAC, KEO, KEOREG, POISSON1D };
 // =============================================================================
 int main ( int argc, char *argv[] )
 {
-  // Initialize MPI
-#ifdef HAVE_MPI
-  MPI_Init( &argc, &argv );
-#endif
-
     // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
-    Teuchos::RCP<Epetra_MpiComm> eComm =
-      Teuchos::rcp<Epetra_MpiComm> ( new Epetra_MpiComm ( MPI_COMM_WORLD ) );
+    MPI_Init( &argc, &argv );
+    Epetra_MpiComm eComm( MPI_COMM_WORLD );
 #else
-    Teuchos::RCP<Epetra_SerialComm>  eComm =
-           Teuchos::rcp<Epetra_SerialComm> ( new Epetra_SerialComm() );
+    Epetra_SerialComm eComm();
 #endif
 
     Tpetra::DefaultPlatform::DefaultPlatformType &platform =
@@ -124,43 +118,38 @@ int main ( int argc, char *argv[] )
       {
           Teuchos::TimeMonitor tm(*matrixConstructTime);
           // Build the matrix (-1,2,-1).
-          const double neg_one = -1.0;
-          const double two = 2.0;
-          Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(n, 0, *eComm));
-          int * myGlobalElements = map->MyGlobalElements();
-          epetra_A = Teuchos::rcp(new Epetra_CrsMatrix(Copy, *map, 3));
-          for (int k=0; k < map->NumMyElements(); k++)
+          Epetra_Map map(n, 0, eComm);
+          int * myGlobalElements = map.MyGlobalElements();
+          epetra_A = Teuchos::rcp(new Epetra_CrsMatrix(Copy, map, 3));
+          double vals[] = {-1.0, 2.0, -1.0};
+          for (int k=0; k < map.NumMyElements(); k++)
           {
-            int kGlobal = map->GID(k);
-            int k_min1 = kGlobal - 1;
-            int k_plu1 = kGlobal + 1;
-
             if (myGlobalElements[k] == 0)
             {
-              double vals[] = {2.0, -1.0};
+              int cols[] = {myGlobalElements[k], myGlobalElements[k]+1};
               TEUCHOS_ASSERT_EQUALITY(0, epetra_A->InsertGlobalValues(myGlobalElements[k],
                                                                       2,
-                                                                      vals,
-                                                                      &myGlobalElements[k]));
+                                                                      &vals[1],
+                                                                      cols));
             }
             else if (myGlobalElements[k] == n-1)
             {
-              double vals[] = {-1.0, 2.0};
+              int cols[] = {myGlobalElements[k]-1, myGlobalElements[k]};
               TEUCHOS_ASSERT_EQUALITY(0, epetra_A->InsertGlobalValues(myGlobalElements[k],
                                                                       2,
                                                                       vals,
-                                                                      &myGlobalElements[k-1]));
+                                                                      cols));
             }
             else
             {
-              double vals[] = {-1.0, 2.0, -1.0};
+              int cols[] = {myGlobalElements[k]-1, myGlobalElements[k], myGlobalElements[k]+1};
               TEUCHOS_ASSERT_EQUALITY(0, epetra_A->InsertGlobalValues(myGlobalElements[k],
                                                                       3,
                                                                       vals,
-                                                                      &myGlobalElements[k-1]));
+                                                                      cols));
             }
           }
-          TEUCHOS_ASSERT_EQUALITY(0, epetra_A->FillComplete());
+          TEUCHOS_ASSERT_EQUALITY(0, epetra_A->FillComplete(true));
       }
 //       epetra_A->Print(std::cout);
 
@@ -176,23 +165,26 @@ int main ( int argc, char *argv[] )
         const size_t numMyElements = map->getNodeNumElements();
         Teuchos::ArrayView<const int> myGlobalElements = map->getNodeElementList();
         // Create a CrsMatrix using the map, with a dynamic allocation of 3 entries per row
-        tpetra_A = Tpetra::createCrsMatrix<double>(map,3);
+        tpetra_A = Tpetra::createCrsMatrix<double>(map, 3);
         // Add rows one-at-a-time
-        for (size_t i=0; i<numMyElements; i++) {
-          if (myGlobalElements[i] == 0) {
+        for (size_t i=0; i<numMyElements; i++)
+        {
+          if (myGlobalElements[i] == 0)
+          {
             tpetra_A->insertGlobalValues( myGlobalElements[i],
                                           Teuchos::tuple<int>( myGlobalElements[i], myGlobalElements[i]+1 ),
                                           Teuchos::tuple<double> ( 2.0, -1.0 ) );
           }
-          else if (myGlobalElements[i] == n-1) {
+          else if (myGlobalElements[i] == n-1)
+          {
             tpetra_A->insertGlobalValues( myGlobalElements[i],
                                           Teuchos::tuple<int>( myGlobalElements[i]-1, myGlobalElements[i] ),
                                           Teuchos::tuple<double> ( -1.0, 2.0 ) );
           }
           else {
-            tpetra_A->insertGlobalValues( myGlobalElements[i],
-                                          Teuchos::tuple<int>( myGlobalElements[i]-1, myGlobalElements[i], myGlobalElements[i]+1 ),
-                                          Teuchos::tuple<double> ( -1.0, 2.0, -1.0 ) );
+          tpetra_A->insertGlobalValues( myGlobalElements[i],
+                                        Teuchos::tuple<int>( myGlobalElements[i]-1, myGlobalElements[i], myGlobalElements[i]+1 ),
+                                        Teuchos::tuple<double> ( -1.0, 2.0, -1.0 ) );
           }
         }
         // Complete the fill, ask that storage be reallocated and optimized
@@ -210,14 +202,14 @@ int main ( int argc, char *argv[] )
       Teuchos::RCP<Epetra_MultiVector> epetra_b =
               Teuchos::rcp( new Epetra_Vector( epetra_A->OperatorRangeMap() ) );
       // epetra_b->Random();
-      epetra_b->PutScalar( 1.0 );
+      TEUCHOS_ASSERT_EQUALITY(0, epetra_b->PutScalar( 1.0 ));
 
       // create tpetra vectors
       Teuchos::RCP<Tpetra::Vector<double,int> > tpetra_x =
         Teuchos::rcp( new Tpetra::Vector<double,int>(tpetra_A->getDomainMap()) );
       Teuchos::RCP<Tpetra::Vector<double,int> > tpetra_b =
         Teuchos::rcp( new Tpetra::Vector<double,int>(tpetra_A->getRangeMap()) );
-
+      tpetra_b->putScalar( 1.0 );
 
       if (action.compare("matvec") == 0)
       {
@@ -225,7 +217,8 @@ int main ( int argc, char *argv[] )
         Teuchos::RCP<Teuchos::Time> mvTime = Teuchos::TimeMonitor::getNewTimer("Epetra operator apply");
         {
           Teuchos::TimeMonitor tm(*mvTime);
-          TEUCHOS_ASSERT_EQUALITY(0, epetra_A->Apply(*epetra_x, *epetra_b));
+          // Don't TEUCHOS_ASSERT_EQUALITY() here for speed.
+          epetra_A->Apply(*epetra_x, *epetra_b);
         }
 
         tpetra_x->putScalar( 1.0 );
