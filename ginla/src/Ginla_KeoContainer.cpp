@@ -356,7 +356,6 @@ buildGlobalIndexCache_( const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2
     Teuchos::ArrayRCP<Epetra_IntSerialDenseVector>(edges.size());
 
   Teuchos::Tuple<int,2> gid;
-  const stk::mesh::EntityRank nodeRank = mesh_->getMetaData()->node_rank();
   for ( unsigned int k=0; k<edges.size(); k++ )
   {
     gid[0] = edges[k][0]->identifier() - 1;
@@ -383,7 +382,6 @@ buildAlphaCache_( const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > & 
   alphaCache_ = Teuchos::ArrayRCP<double>( edges.size() );
 
   Teuchos::Tuple<int,2> gid;
-  const stk::mesh::EntityRank nodeRank = mesh_->getMetaData()->node_rank();
   for ( unsigned int k=0; k<edges.size(); k++ )
   {
     gid[0] = edges[k][0]->identifier() - 1;

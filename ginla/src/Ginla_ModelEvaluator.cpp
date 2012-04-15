@@ -386,8 +386,8 @@ evalModel( const InArgs &inArgs,
     Teuchos::TimeMonitor tm3( *fillJacobianTime_ );
 #endif
     Teuchos::RCP<Ginla::JacobianOperator> jac =
-      Teuchos::rcp_dynamic_cast<Ginla::JacobianOperator>( W_out, true );
-    jac->rebuild( mvpParams, T, x_in );
+      Teuchos::rcp_dynamic_cast<Ginla::JacobianOperator>(W_out, true);
+    jac->rebuild(mvpParams, T, x_in);
   }
 
   // fill preconditioner
@@ -398,8 +398,8 @@ evalModel( const InArgs &inArgs,
     Teuchos::TimeMonitor tm4( *fillPreconditionerTime_ );
 #endif
     Teuchos::RCP<Ginla::KeoRegularized> keoPrec =
-      Teuchos::rcp_dynamic_cast<Ginla::KeoRegularized>( WPrec_out, true );
-    keoPrec->rebuildInverse( mvpParams, x_in );
+      Teuchos::rcp_dynamic_cast<Ginla::KeoRegularized>(WPrec_out, true);
+    keoPrec->rebuild(mvpParams, x_in);
   }
 
   return;
@@ -415,10 +415,8 @@ computeF_( const Epetra_Vector &x,
 {
   // build the KEO
   keoContainer_->updateParameters( mvpParams );
-  const Teuchos::RCP<const Epetra_CrsMatrix> keoMatrix = keoContainer_->getKeo();
-
   // compute FVec = K*x
-  TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->Apply( x, FVec ) );
+  TEUCHOS_ASSERT_EQUALITY( 0, keoContainer_->getKeo()->Apply( x, FVec ) );
 
   // add the nonlinear part (mass lumping)
 #ifdef _DEBUG_
@@ -428,13 +426,14 @@ computeF_( const Epetra_Vector &x,
 #endif
 
   const Epetra_Vector &controlVolumes = *(mesh_->getControlVolumes());
+  const int numMyPoints = controlVolumes.MyLength();
 
 #ifdef _DEBUG_
   // Make sure control volumes and state still match.
-  TEUCHOS_ASSERT_EQUALITY( 2*controlVolumes.MyLength(), x.MyLength() );
+  TEUCHOS_ASSERT_EQUALITY( 2*numMyPoints, x.MyLength() );
 #endif
 
-  for ( int k=0; k<controlVolumes.MyLength(); k++ )
+  for ( int k=0; k<numMyPoints; k++ )
   {
     // In principle, mass lumping here suggests to take
     //

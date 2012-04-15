@@ -81,7 +81,7 @@ int main ( int argc, char *argv[] )
       My_CLP.throwExceptions ( true );
 
       // finally, parse the command line
-      Teuchos::CommandLineProcessor::EParseCommandLineReturn parseReturn;
+      //Teuchos::CommandLineProcessor::EParseCommandLineReturn parseReturn;
       My_CLP.parse ( argc, argv );
 
       Teuchos::RCP<Teuchos::ParameterList> piroParams =
@@ -145,8 +145,8 @@ int main ( int argc, char *argv[] )
       }
 
       double mu = problemParameters.get<double>( "mu", 0.0 );
-      double theta = problemParameters.get<double>( "theta", 0.0 );
-      double T = problemParameters.get<double>( "T", 0.0 );
+      //double theta = problemParameters.get<double>( "theta", 0.0 );
+      //double T = problemParameters.get<double>( "T", 0.0 );
       Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp =
               Teuchos::rcp ( new Ginla::MagneticVectorPotential::ExplicitValues( mesh, mvpValues, mu ) );
 //               Teuchos::rcp ( new Ginla::MagneticVectorPotential::ConstantInSpace( mesh, mvpValues, mu, theta, u ) );
@@ -184,9 +184,9 @@ int main ( int argc, char *argv[] )
       Teuchos::RCP<Ginla::SaveEigenData> glEigenSaver;
 
       // Setup the data output.
-      int maxLocaSteps = piroParams->sublist ( "LOCA" )
-                                    .sublist ( "Stepper" )
-                                    .get<int> ( "Max Steps" );
+      //int maxLocaSteps = piroParams->sublist ( "LOCA" )
+                                    //.sublist ( "Stepper" )
+                                    //.get<int> ( "Max Steps" );
 
       // switch by solver type
       std::string & solver = piroParams->get( "Piro Solver", "" );
@@ -228,7 +228,7 @@ int main ( int argc, char *argv[] )
                Teuchos::rcp( new Ginla::StatsWriter( eigenvaluesFilePath ) );
 
            // initialize the stability change test with a pointer to the eigenvalue information
-           int stabilityChangeTreshold = 1; // stop when the stability changes by multiplicity 1
+           //int stabilityChangeTreshold = 1; // stop when the stability changes by multiplicity 1
            Teuchos::RCP<const Teuchos::ParameterList> eigendataList = eigenStatsWriter->getList();
 
            //Teuchos::RCP<LOCA::StatusTest::Abstract> stabilityChangeTest =
@@ -379,7 +379,7 @@ int main ( int argc, char *argv[] )
 
       // Now the (somewhat cumbersome) setting of inputs and outputs
       EpetraExt::ModelEvaluator::InArgs inArgs = piro->createInArgs();
-      int num_p = inArgs.Np();     // Number of *vectors* of parameters
+      //int num_p = inArgs.Np();     // Number of *vectors* of parameters
       Teuchos::RCP<Epetra_Vector> p1 =
           Teuchos::rcp(new Epetra_Vector(*(piro->get_p_init(0))));
       inArgs.set_p( 0, p1 );

@@ -7,31 +7,29 @@ INCLUDE_DIRECTORIES ( ${ginzburg-landau_SOURCE_DIR}/src
 LINK_DIRECTORIES( ${Trilinos_LIBRARY_DIRS}
                   ${Trilinos_TPL_LIBRARY_DIRS} )
 # ------------------------------------------------------------------------------
-SET ( keoaztecoo_SRCS
-      keo-aztecoo.cpp  )
-SET ( keoaztecoo_LIBS
-      ginla
-    )
 SET( MY_EXECUTABLE
      "keo-aztecoo.exe" )
 ADD_EXECUTABLE( ${MY_EXECUTABLE}
-                ${keoaztecoo_SRCS} )
+                "keo-aztecoo.cpp" )
 TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
-                       ${keoaztecoo_LIBS}
+                       "ginla"
                        ${Trilinos_LIBRARIES}
                        ${Trilinos_TPL_LIBRARIES} )
 # ------------------------------------------------------------------------------
-SET ( linoptester_SRCS
-      linop-tester.cpp  )
-SET ( linoptester_LIBS
-      ginla
-    )
 SET( MY_EXECUTABLE
      "linop-tester.exe" )
 ADD_EXECUTABLE( ${MY_EXECUTABLE}
-                ${linoptester_SRCS} )
+                "linop-tester.cpp" )
 TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
-                       ${linoptester_LIBS}
+                       "ginla"
+                       ${Trilinos_LIBRARIES}
+                       ${Trilinos_TPL_LIBRARIES} )
+# ------------------------------------------------------------------------------
+SET( MY_EXECUTABLE
+     "poisson1d-tester.exe" )
+ADD_EXECUTABLE( ${MY_EXECUTABLE}
+                "poisson1d-tester.cpp" )
+TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
                        ${Trilinos_LIBRARIES}
                        ${Trilinos_TPL_LIBRARIES} )
 # ------------------------------------------------------------------------------

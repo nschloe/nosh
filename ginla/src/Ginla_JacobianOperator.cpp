@@ -97,10 +97,10 @@ Apply( const Epetra_MultiVector &X,
     // 2k/2k and 2k+1/2k+1 handled by Multiply().
     for ( int k=0; k<numMyPoints; k++ )
     {
-      (*Y( vec ))[2*k]   +=  (*diag0_) [2*k]  * X[vec][2*k]
-        -(*diag1b_)[k]    * X[vec][2*k+1];
-      (*Y( vec ))[2*k+1] += -(*diag1b_)[k]    * X[vec][2*k]
-        +(*diag0_)[2*k+1] * X[vec][2*k+1];
+      (*Y(vec))[2*k]   += (*diag0_)  [2*k]   * X[vec][2*k]
+                        - (*diag1b_) [k]     * X[vec][2*k+1];
+      (*Y(vec))[2*k+1] += -(*diag1b_)[k]     * X[vec][2*k]
+                        +  (*diag0_) [2*k+1] * X[vec][2*k+1];
     }
 
 //        // add terms corresponding to  diag( psi^2 ) * \conj{phi}

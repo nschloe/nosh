@@ -11,6 +11,11 @@
 #include <Teuchos_StandardCatchMacros.hpp>
 #include <Epetra_LinearProblem.h>
 
+// #include <Tpetra_Platform.hpp>
+#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_CrsMatrix.hpp>
+#include <Tpetra_Map.hpp>
+
 #include <ml_epetra_preconditioner.h>
 
 //#include "BelosConfigDefs.hpp"
@@ -62,6 +67,13 @@ int main ( int argc, char *argv[] )
            Teuchos::rcp<Epetra_SerialComm> ( new Epetra_SerialComm() );
 #endif
 
+    Tpetra::DefaultPlatform::DefaultPlatformType &platform =
+      Tpetra::DefaultPlatform::getDefaultPlatform();
+    Teuchos::RCP<const Teuchos::Comm<int> > tComm = platform.getComm();
+
+    typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
+    typedef Tpetra::Map<int,int,Node>                      Map;
+
     const Teuchos::RCP<Teuchos::FancyOStream> out =
         Teuchos::VerboseObjectBase::getDefaultOStream();
 
@@ -73,20 +85,15 @@ int main ( int argc, char *argv[] )
       Teuchos::CommandLineProcessor My_CLP;
 
       My_CLP.setDocString (
-              "Linear solver testbed for KEO and Jacobian operator.\n"
+              "Linear solver testbed for the 1D Poisson matrix.\n"
       );
 
-      std::string inputFileName( "" );
-      My_CLP.setOption("input", &inputFileName, "Input state file", true);
-
-      std::string action( "solve" );
-      My_CLP.setOption("action", &action, "Which action to perform with the operator (solve, matvec)");
+      std::string action( "matvec" );
+      My_CLP.setOption("action", &action, "Which action to perform with the operator (matvec, solve_cg, solve_minres, solve_gmres)");
 
       std::string solver( "cg" );
-      My_CLP.setOption("solver", &solver, "Krylov subspace method (cg, minres, gmres)");
+//       My_CLP.setOption("solver", &solver, "Krylov subspace method (cg, minres, gmres)");
 
-      std::string op( "jac" );
-      My_CLP.setOption("operator", &op, "Operator (jac, keo, keoreg, poisson1d)");
 //       Operator op = JAC;
 //       Operator allOpts[] = {JAC, KEO, KEOREG, POISSON1D};
 //       std::string allOptNames[] = {"jac", "keo", "keoreg", "poisson1d"};
@@ -95,116 +102,143 @@ int main ( int argc, char *argv[] )
       bool verbose = true;
       My_CLP.setOption("verbose", "quiet", &verbose, "Print messages and results.");
 
-      bool usePrec = true;
-      My_CLP.setOption("prec", "noprec", &usePrec, "Use a preconditioner.");
-
       int frequency = 10;
       My_CLP.setOption("frequency", &frequency, "Solvers frequency for printing residuals (#iters).");
 
+      int n = 1000;
+      My_CLP.setOption("size", &n, "Size of the equation system (default: 1000).");
+
       // print warning for unrecognized arguments
       My_CLP.recogniseAllOptions ( true );
+      My_CLP.throwExceptions ( false );
 
       // finally, parse the command line
       TEUCHOS_ASSERT_EQUALITY( My_CLP.parse ( argc, argv ),
                                Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL
                              );
       // =========================================================================
-      // Read the data from the file.
-      Teuchos::ParameterList data;
-      Teuchos::RCP<Teuchos::Time> readTime = Teuchos::TimeMonitor::getNewTimer("Data I/O");
+      // Construct Epetra matrix.
+      Teuchos::RCP<Teuchos::Time> matrixConstructTime =
+          Teuchos::TimeMonitor::getNewTimer("Epetra matrix construction");
+      Teuchos::RCP<Epetra_CrsMatrix> epetra_A;
       {
-      Teuchos::TimeMonitor tm(*readTime);
-      Ginla::StkMeshRead( *eComm, inputFileName, data );
-      }
-
-      // Cast the data into something more accessible.
-      Teuchos::RCP<Ginla::StkMesh>     & mesh = data.get( "mesh", Teuchos::RCP<Ginla::StkMesh>() );
-      Teuchos::RCP<Epetra_Vector>      & z = data.get( "psi", Teuchos::RCP<Epetra_Vector>() );
-      Teuchos::RCP<const Epetra_MultiVector> & mvpValues = data.get( "A", Teuchos::RCP<const Epetra_MultiVector>() );
-      Teuchos::RCP<Epetra_Vector>      & thickness = data.get( "thickness", Teuchos::RCP<Epetra_Vector>() );
-      //Teuchos::ParameterList           & problemParameters = data.get( "Problem parameters", Teuchos::ParameterList() );
-
-      Teuchos::RCP<Ginla::MagneticVectorPotential::ExplicitValues> mvp;
-      double mu;
-      Teuchos::RCP<Teuchos::Time> mvpConstructTime = Teuchos::TimeMonitor::getNewTimer("MVP construction");
-      {
-          Teuchos::TimeMonitor tm(*mvpConstructTime);
-//          mu = problemParameters.get<double> ( "mu" );
-          mu = 1.0;
-          mvp = Teuchos::rcp(new Ginla::MagneticVectorPotential::ExplicitValues(mesh, mvpValues, mu));
-      }
-
-      Teuchos::RCP<LOCA::ParameterVector> mvpParameters =
-          Teuchos::rcp( new LOCA::ParameterVector() );
-      mvpParameters->addParameter( "mu", mu );
-
-      Teuchos::RCP<Teuchos::Time> keoContainerConstructTime =
-          Teuchos::TimeMonitor::getNewTimer("Keo container construction");
-      Teuchos::RCP<Ginla::KeoContainer> keoContainer;
-      {
-          Teuchos::TimeMonitor tm(*keoContainerConstructTime);
-          keoContainer = Teuchos::rcp( new Ginla::KeoContainer( mesh, thickness, mvp ) );
-      }
-
-      // create Jacobian
-      Teuchos::RCP<Teuchos::Time> operatorConstructTime =
-          Teuchos::TimeMonitor::getNewTimer("Operator construction");
-      Teuchos::RCP<const Epetra_Operator> A;
-      {
-          Teuchos::TimeMonitor tm(*operatorConstructTime);
-          if (op.compare("jac") == 0)
-              A = Teuchos::rcp(new Ginla::JacobianOperator(mesh, thickness, keoContainer, z));
-          else if (op.compare("keo") == 0)
-              A = keoContainer->getKeo();
-          else if (op.compare("keoreg") == 0)
-              A = Teuchos::rcp(new Ginla::KeoRegularized(mesh, thickness, keoContainer, z));
-          else if (op.compare("poisson1d") == 0)
+          Teuchos::TimeMonitor tm(*matrixConstructTime);
+          // Build the matrix (-1,2,-1).
+          const double neg_one = -1.0;
+          const double two = 2.0;
+          Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(n, 0, *eComm));
+          int * myGlobalElements = map->MyGlobalElements();
+          epetra_A = Teuchos::rcp(new Epetra_CrsMatrix(Copy, *map, 3));
+          for (int k=0; k < map->NumMyElements(); k++)
           {
-              int n = 1000;
-              // Build the matrix (-1,2,-1).
-              const double neg_one = -1.0;
-              const double two = 2.0;
-              Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(n, 0, *eComm));
-              Teuchos::RCP<Epetra_CrsMatrix> AMatrix =
-                  Teuchos::rcp(new Epetra_CrsMatrix(Copy, *map, 3));
-              for (int k=0; k < map->NumMyElements(); k++)
-              {
-                int k_min1 = k - 1;
-                int k_plu1 = k + 1;
-                if (k>0)
-                  AMatrix->InsertMyValues(k, 1, &neg_one, &k_min1);
-                AMatrix->InsertMyValues(k, 1, &two, &k);
-                if (k<n-1)
-                  AMatrix->InsertMyValues(k, 1, &neg_one, &k_plu1);
-              }
-              AMatrix->FillComplete();
-              A = AMatrix;
+            int kGlobal = map->GID(k);
+            int k_min1 = kGlobal - 1;
+            int k_plu1 = kGlobal + 1;
+
+            if (myGlobalElements[k] == 0)
+            {
+              double vals[] = {2.0, -1.0};
+              TEUCHOS_ASSERT_EQUALITY(0, epetra_A->InsertGlobalValues(myGlobalElements[k],
+                                                                      2,
+                                                                      vals,
+                                                                      &myGlobalElements[k]));
+            }
+            else if (myGlobalElements[k] == n-1)
+            {
+              double vals[] = {-1.0, 2.0};
+              TEUCHOS_ASSERT_EQUALITY(0, epetra_A->InsertGlobalValues(myGlobalElements[k],
+                                                                      2,
+                                                                      vals,
+                                                                      &myGlobalElements[k-1]));
+            }
+            else
+            {
+              double vals[] = {-1.0, 2.0, -1.0};
+              TEUCHOS_ASSERT_EQUALITY(0, epetra_A->InsertGlobalValues(myGlobalElements[k],
+                                                                      3,
+                                                                      vals,
+                                                                      &myGlobalElements[k-1]));
+            }
           }
-          else
-              TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Unknown operator \"" << op << "\"." );
+          TEUCHOS_ASSERT_EQUALITY(0, epetra_A->FillComplete());
       }
+//       epetra_A->Print(std::cout);
+
+      // Construct Tpetra matrix.
+      Teuchos::RCP<Teuchos::Time> tpetraMatrixConstructTime =
+          Teuchos::TimeMonitor::getNewTimer("Tpetra matrix construction");
+      Teuchos::RCP<Tpetra::CrsMatrix<double,int> > tpetra_A;
+      {
+        Teuchos::TimeMonitor tm(*tpetraMatrixConstructTime);
+        Teuchos::RCP<const Tpetra::Map<int> > map =
+          Tpetra::createUniformContigMap<int,int>(n, tComm);
+        // Get update list and number of local equations from newly created map.
+        const size_t numMyElements = map->getNodeNumElements();
+        Teuchos::ArrayView<const int> myGlobalElements = map->getNodeElementList();
+        // Create a CrsMatrix using the map, with a dynamic allocation of 3 entries per row
+        tpetra_A = Tpetra::createCrsMatrix<double>(map,3);
+        // Add rows one-at-a-time
+        for (size_t i=0; i<numMyElements; i++) {
+          if (myGlobalElements[i] == 0) {
+            tpetra_A->insertGlobalValues( myGlobalElements[i],
+                                          Teuchos::tuple<int>( myGlobalElements[i], myGlobalElements[i]+1 ),
+                                          Teuchos::tuple<double> ( 2.0, -1.0 ) );
+          }
+          else if (myGlobalElements[i] == n-1) {
+            tpetra_A->insertGlobalValues( myGlobalElements[i],
+                                          Teuchos::tuple<int>( myGlobalElements[i]-1, myGlobalElements[i] ),
+                                          Teuchos::tuple<double> ( -1.0, 2.0 ) );
+          }
+          else {
+            tpetra_A->insertGlobalValues( myGlobalElements[i],
+                                          Teuchos::tuple<int>( myGlobalElements[i]-1, myGlobalElements[i], myGlobalElements[i]+1 ),
+                                          Teuchos::tuple<double> ( -1.0, 2.0, -1.0 ) );
+          }
+        }
+        // Complete the fill, ask that storage be reallocated and optimized
+        tpetra_A->fillComplete(Tpetra::DoOptimizeStorage);
+      }
+
+//       Teuchos::RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+//       tpetra_A->describe(*fos, Teuchos::VERB_EXTREME);
+//       std::cout << std::endl << tpetra_A->description() << std::endl << std::endl;
+
 
       // create initial guess and right-hand side
       Teuchos::RCP<Epetra_Vector> epetra_x =
-              Teuchos::rcp( new Epetra_Vector( A->OperatorDomainMap() ) );
+              Teuchos::rcp( new Epetra_Vector( epetra_A->OperatorDomainMap() ) );
       Teuchos::RCP<Epetra_MultiVector> epetra_b =
-              Teuchos::rcp( new Epetra_Vector( A->OperatorRangeMap() ) );
+              Teuchos::rcp( new Epetra_Vector( epetra_A->OperatorRangeMap() ) );
       // epetra_b->Random();
       epetra_b->PutScalar( 1.0 );
+
+      // create tpetra vectors
+      Teuchos::RCP<Tpetra::Vector<double,int> > tpetra_x =
+        Teuchos::rcp( new Tpetra::Vector<double,int>(tpetra_A->getDomainMap()) );
+      Teuchos::RCP<Tpetra::Vector<double,int> > tpetra_b =
+        Teuchos::rcp( new Tpetra::Vector<double,int>(tpetra_A->getRangeMap()) );
 
 
       if (action.compare("matvec") == 0)
       {
-        epetra_x->PutScalar( 1.0 );
-        Teuchos::RCP<Teuchos::Time> mvTime = Teuchos::TimeMonitor::getNewTimer("Operator apply");
+        TEUCHOS_ASSERT_EQUALITY(0, epetra_x->PutScalar( 1.0 ));
+        Teuchos::RCP<Teuchos::Time> mvTime = Teuchos::TimeMonitor::getNewTimer("Epetra operator apply");
         {
           Teuchos::TimeMonitor tm(*mvTime);
-          TEUCHOS_ASSERT_EQUALITY(0, A->Apply(*epetra_x, *epetra_b));
+          TEUCHOS_ASSERT_EQUALITY(0, epetra_A->Apply(*epetra_x, *epetra_b));
         }
+
+        tpetra_x->putScalar( 1.0 );
+        Teuchos::RCP<Teuchos::Time> tmvTime = Teuchos::TimeMonitor::getNewTimer("Tpetra operator apply");
+        {
+          Teuchos::TimeMonitor tm(*tmvTime);
+          tpetra_A->apply(*tpetra_x, *tpetra_b);
+        }        
+        
         // print timing data
         Teuchos::TimeMonitor::summarize();
       }
-      else if (action.compare("solve") == 0)
+      else
       {
         // -----------------------------------------------------------------------
         // Belos part
@@ -231,35 +265,15 @@ int main ( int argc, char *argv[] )
         belosList.set( "Maximum Iterations", 1000 );
 
         // Construct an unpreconditioned linear problem instance.
-        Belos::LinearProblem<double,MV,OP> problem( A, epetra_x, epetra_b );
+        Belos::LinearProblem<double,MV,OP> problem( epetra_A, epetra_x, epetra_b );
         bool set = problem.setProblem();
         TEUCHOS_TEST_FOR_EXCEPTION(!set,
                                   std::logic_error,
                                   "ERROR:  Belos::LinearProblem failed to set up correctly!" );
         // -----------------------------------------------------------------------
-        // create preconditioner
-        Teuchos::RCP<Teuchos::Time> precConstructTime = Teuchos::TimeMonitor::getNewTimer("Prec construction");
-        if ( usePrec )
-        {
-            Teuchos::TimeMonitor tm(*precConstructTime);
-
-            // create the preconditioner
-            Teuchos::RCP<Ginla::KeoRegularized> keoReg =
-                Teuchos::rcp(new Ginla::KeoRegularized(mesh, thickness, keoContainer, z));
-
-            // initialize its (approximate) inverse
-            keoReg->rebuild();
-
-            // Create the Belos preconditioned operator from the preconditioner.
-            // NOTE:  This is necessary because Belos expects an operator to apply the
-            //        preconditioner with Apply() NOT ApplyInverse().
-            Teuchos::RCP<Belos::EpetraPrecOp> belosPrec = Teuchos::rcp(new Belos::EpetraPrecOp(keoReg));
-            problem.setLeftPrec( belosPrec );
-        }
-        // -----------------------------------------------------------------------
         // Create an iterative solver manager.
         Teuchos::RCP<Belos::SolverManager<double,MV,OP> > newSolver;
-        if (solver.compare("cg") == 0)
+        if (action.compare("solve_cg") == 0)
         {
           belosList.set( "Assert Positive Definiteness", false );
           newSolver =
@@ -268,7 +282,7 @@ int main ( int argc, char *argv[] )
                                                                       )
                         );
         }
-        else if (solver.compare("minres") == 0)
+        else if (action.compare("solve_minres") == 0)
         {
           newSolver =
             Teuchos::rcp(new Belos::MinresSolMgr<double,MV,OP>(Teuchos::rcp(&problem,false),
@@ -276,7 +290,7 @@ int main ( int argc, char *argv[] )
                                                               )
                         );
         }
-        else if (solver.compare("gmres") == 0)
+        else if (action.compare("solve_gmres") == 0)
         {
           newSolver =
             Teuchos::rcp(new Belos::PseudoBlockGmresSolMgr<double,MV,OP>(Teuchos::rcp(&problem,false),
@@ -291,7 +305,7 @@ int main ( int argc, char *argv[] )
 
         // Perform solve
         Teuchos::RCP<Teuchos::Time> solveTime =
-          Teuchos::TimeMonitor::getNewTimer("Jacobian solve");
+          Teuchos::TimeMonitor::getNewTimer("Linear system solve");
         {
             Teuchos::TimeMonitor tm(*solveTime);
             Belos::ReturnType ret = newSolver->solve();

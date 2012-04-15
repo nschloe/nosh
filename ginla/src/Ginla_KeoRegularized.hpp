@@ -103,12 +103,12 @@ virtual const Epetra_Map &OperatorRangeMap() const;
 public:
 
 void
-rebuildInverse();
+rebuild();
 
 void
-rebuildInverse(const Teuchos::RCP<const LOCA::ParameterVector> &mvpParams,
-               const Teuchos::RCP<const Epetra_Vector> &psi
-              );
+rebuild(const Teuchos::RCP<const LOCA::ParameterVector> &mvpParams,
+        const Teuchos::RCP<const Epetra_Vector> &psi
+       );
 
 protected:
 private:

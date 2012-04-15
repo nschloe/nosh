@@ -225,7 +225,7 @@ OperatorRangeMap() const
 // =============================================================================
 void
 KeoRegularized::
-rebuildInverse()
+rebuild()
 {
   // -------------------------------------------------------------------------
   // Copy over the matrix.
@@ -310,13 +310,13 @@ rebuildInverse()
 // =============================================================================
 void
 KeoRegularized::
-rebuildInverse(const Teuchos::RCP<const LOCA::ParameterVector> &mvpParams,
+rebuild(const Teuchos::RCP<const LOCA::ParameterVector> &mvpParams,
                const Teuchos::RCP<const Epetra_Vector> & psi
               )
 {
   keoContainer_->updateParameters( mvpParams );
   this->updateAbsPsiSquared_(psi);
-  this->rebuildInverse();
+  this->rebuild();
   return;
 }
 // =============================================================================
