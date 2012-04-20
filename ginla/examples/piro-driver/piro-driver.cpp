@@ -323,7 +323,8 @@ int main ( int argc, char *argv[] )
       // get stepper and inject it into the eigensaver
       Teuchos::RCP<LOCA::Stepper> stepper = piroLOCASolver->getLOCAStepperNonConst();
  #ifdef HAVE_LOCA_ANASAZI
-      glEigenSaver->setLocaStepper ( stepper );
+      if (computeEigenvalues)
+          glEigenSaver->setLocaStepper( stepper );
  #endif
       piro = piroLOCASolver;
     }
