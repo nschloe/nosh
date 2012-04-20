@@ -194,9 +194,9 @@ StkMesh::
 getOwnedCells() const
 {
   // get owned elements
-  stk::mesh::Selector select_owned_in_part = stk::mesh::Selector(
-      metaData_->universal_part() )
-    & stk::mesh::Selector( metaData_->locally_owned_part() );
+  stk::mesh::Selector select_owned_in_part =
+      stk::mesh::Selector(metaData_->universal_part() )
+    & stk::mesh::Selector(metaData_->locally_owned_part());
   std::vector<stk::mesh::Entity*> cells;
   stk::mesh::get_selected_entities( select_owned_in_part,
                                     bulkData_->buckets( metaData_->element_rank() ),
@@ -210,11 +210,10 @@ StkMesh::
 getOverlapEdges() const
 {
   // get overlap edges
-  stk::mesh::Selector select_overlap_in_part = stk::mesh::Selector(
-      metaData_->universal_part() )
-    & (stk::mesh::Selector( metaData_->locally_owned_part() )
-       | stk::mesh::Selector( metaData_->globally_shared_part() )
-       );
+  stk::mesh::Selector select_overlap_in_part =
+       stk::mesh::Selector(metaData_->universal_part() )
+    & (stk::mesh::Selector(metaData_->locally_owned_part())
+      |stk::mesh::Selector(metaData_->globally_shared_part()));
 
   std::vector<stk::mesh::Entity*> edges;
   stk::mesh::get_selected_entities( select_overlap_in_part,
@@ -312,9 +311,9 @@ std::vector<stk::mesh::Entity*>
 StkMesh::
 getOwnedNodes() const
 {
-  stk::mesh::Selector select_owned_in_part = stk::mesh::Selector(
-      metaData_->universal_part() )
-    & stk::mesh::Selector( metaData_->locally_owned_part() );
+  stk::mesh::Selector select_owned_in_part =
+      stk::mesh::Selector(metaData_->universal_part())
+    & stk::mesh::Selector(metaData_->locally_owned_part());
 
   std::vector<stk::mesh::Entity*> ownedNodes;
   stk::mesh::get_selected_entities( select_owned_in_part,
@@ -330,11 +329,10 @@ StkMesh::
 getOverlapNodes() const
 {
   //  overlapnodes used for overlap map -- stored for changing coords
-  stk::mesh::Selector select_overlap_in_part = stk::mesh::Selector(
-      metaData_->universal_part() )
-    & (stk::mesh::Selector( metaData_->locally_owned_part() )
-       | stk::mesh::Selector( metaData_->globally_shared_part() )
-       );
+  stk::mesh::Selector select_overlap_in_part =
+       stk::mesh::Selector(metaData_->universal_part())
+    & (stk::mesh::Selector(metaData_->locally_owned_part())
+      |stk::mesh::Selector(metaData_->globally_shared_part()));
 
   std::vector<stk::mesh::Entity*> overlapNodes;
   stk::mesh::get_selected_entities( select_overlap_in_part,
