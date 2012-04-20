@@ -1,9 +1,3 @@
-// Workaround for icpc's error "Include mpi.h before stdio.h"
-#include <Teuchos_config.h>
-#ifdef HAVE_MPI
-    #include <mpi.h>
-#endif
-
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_XMLParameterListHelpers.hpp>
@@ -16,25 +10,12 @@
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_Map.hpp>
 
-#include <ml_epetra_preconditioner.h>
-
 //#include "BelosConfigDefs.hpp"
 #include <BelosLinearProblem.hpp>
 #include <BelosEpetraAdapter.hpp>
 #include <BelosPseudoBlockGmresSolMgr.hpp>
 #include <BelosPseudoBlockCGSolMgr.hpp>
 #include <BelosMinresSolMgr.hpp>
-
-#include "Ginla_StkMeshReader.hpp"
-
-#include "Ginla_State.hpp"
-#include "Ginla_ModelEvaluator.hpp"
-#include "Ginla_KeoContainer.hpp"
-#include "Ginla_KeoRegularized.hpp"
-#include "Ginla_StatsWriter.hpp"
-#include "Ginla_NoxObserver.hpp"
-#include "Ginla_SaveEigenData.hpp"
-#include "Ginla_MagneticVectorPotential_ExplicitValues.hpp"
 
 #ifdef HAVE_MPI
 #include <Epetra_MpiComm.h>
@@ -43,13 +24,8 @@
 #endif
 
 // =============================================================================
-typedef double                           ST;
 typedef Epetra_MultiVector               MV;
 typedef Epetra_Operator                  OP;
-typedef Belos::MultiVecTraits<ST,MV>     MVT;
-typedef Belos::OperatorTraits<ST,MV,OP>  OPT;
-
-enum Operator { JAC, KEO, KEOREG, POISSON1D };
 // =============================================================================
 int main ( int argc, char *argv[] )
 {
@@ -87,11 +63,6 @@ int main ( int argc, char *argv[] )
 
       std::string solver( "cg" );
 //       My_CLP.setOption("solver", &solver, "Krylov subspace method (cg, minres, gmres)");
-
-//       Operator op = JAC;
-//       Operator allOpts[] = {JAC, KEO, KEOREG, POISSON1D};
-//       std::string allOptNames[] = {"jac", "keo", "keoreg", "poisson1d"};
-//       My_CLP.setOption("operator", &op, 4, allOpts, allOptNames);
 
       bool verbose = true;
       My_CLP.setOption("verbose", "quiet", &verbose, "Print messages and results.");
@@ -190,7 +161,6 @@ int main ( int argc, char *argv[] )
         // Complete the fill, ask that storage be reallocated and optimized
         tpetra_A->fillComplete(Tpetra::DoOptimizeStorage);
       }
-
 //       Teuchos::RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
 //       tpetra_A->describe(*fos, Teuchos::VERB_EXTREME);
 //       std::cout << std::endl << tpetra_A->description() << std::endl << std::endl;
@@ -304,25 +274,6 @@ int main ( int argc, char *argv[] )
             Belos::ReturnType ret = newSolver->solve();
             success = ret==Belos::Converged;
         }
-
-//         *out << newSolver->getNumIters() << std::endl;
-//         // Compute actual residuals.
-//         bool badRes = false;
-//         Teuchos::Array<double> actual_resids( 1 );
-//         Teuchos::Array<double> rhs_norm( 1 );
-//         Epetra_Vector resid( keoMatrix->OperatorRangeMap() );
-//         OPT::Apply( *keoMatrix, *epetra_x, resid );
-//         MVT::MvAddMv( -1.0, resid, 1.0, *epetra_b, resid );
-//         MVT::MvNorm( resid, actual_resids );
-//         MVT::MvNorm( *epetra_b, rhs_norm );
-//         if (proc_verbose) {
-//           std::cout<< "---------- Actual Residuals (normalized) ----------" <<std::endl<<std::endl;
-//           for ( int i=0; i<1; i++) {
-//             double actRes = actual_resids[i]/rhs_norm[i];
-//             std::cout << "Problem " << i << " : \t" << actRes << std::endl;
-//             if (actRes > 1.0e-10) badRes = true;
-//           }
-//         }
       }
     }
     TEUCHOS_STANDARD_CATCH_STATEMENTS(true, *out, success);
