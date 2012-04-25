@@ -2,7 +2,7 @@ EXTRA_ARGS=$@
 TRILINOS_HOME=../../source
 
 cmake \
-  -D CMAKE_INSTALL_PREFIX:PATH="/opt/trilinos/dev/master/openmpi/1.4.1/gcc/4.4.5/" \
+  -D CMAKE_INSTALL_PREFIX:PATH="/opt/trilinos/dev/master/openmpi/1.4.1/gcc/4.4.5/release" \
   -D Trilinos_VERBOSE_CONFIGURE:BOOL=OFF \
   -D CMAKE_BUILD_TYPE=Release \
   -D TPL_ENABLE_MPI:BOOL=ON \
