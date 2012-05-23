@@ -27,13 +27,15 @@ IF( IS_DEBUG_BUILD )
     ADD_DEFINITIONS( -D_DEBUG_ )
 ENDIF()
 
-#SET(CMAKE_CXX_FLAGS_RELEASE     "-O2" )
+IF(CMAKE_COMPILER_IS_GNUCXX)
+    #SET(CMAKE_CXX_FLAGS_RELEASE     "-O2" )
+    SET(CMAKE_CXX_FLAGS_DEBUG     "-g -ggdb -Wall -pedantic -fbounds-check -Wextra -Wno-unused -Wstrict-null-sentinel -Wshadow -Woverloaded-virtual -ansi -std=c++0x" )
+    SET(CMAKE_CXX_FLAGS_PROFILE     "-pg -O2" )
+    SET(CMAKE_CXX_FLAGS_DEBUG     "-g -ggdb -Wall -pedantic -Wextra -Wno-unused-parameter -Wno-unused -Wshadow -Woverloaded-virtual -ansi -std=c++0x" )
+ENDIF()
+
 #SET(CMAKE_Fortran_FLAGS_RELEASE "-O2" )
-
-SET(CMAKE_CXX_FLAGS_DEBUG     "-g -ggdb -Wall -pedantic -fbounds-check -Wextra -Wno-unused -Wstrict-null-sentinel -Wshadow -Woverloaded-virtual -ansi -std=c++0x" )
 SET(CMAKE_Fortran_FLAGS_DEBUG "-g -ggdb -Wall -pedantic -fbounds-check -Wextra -Wno-unused" )
-
-SET(CMAKE_CXX_FLAGS_PROFILE     "-pg -O2" )
 SET(CMAKE_Fortran_FLAGS_PROFILE "-pg -O2" )
 
 add_subdirectory ( src )

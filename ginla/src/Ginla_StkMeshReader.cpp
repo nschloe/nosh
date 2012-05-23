@@ -97,6 +97,10 @@ read( const Epetra_Comm &comm,
                            "coordinates" ) );
   stk::io::set_field_role( *coordinatesField, Ioss::Field::ATTRIBUTE );
 
+  Teuchos::RCP<ScalarFieldType> muField =
+    Teuchos::rcpFromRef( metaData->declare_field<ScalarFieldType>("mu"));
+  stk::io::set_field_role( *muField, Ioss::Field::TRANSIENT );
+
   // real part
   Teuchos::RCP<ScalarFieldType> psir_field =
     Teuchos::rcpFromRef( metaData->declare_field<ScalarFieldType>( "psi_R" ) );
@@ -161,12 +165,19 @@ read( const Epetra_Comm &comm,
                         metaData->node_rank(), metaData->universal_part() );
   stk::io::set_field_role( *mvpFieldZ, Ioss::Field::ATTRIBUTE );
 
-  // Thickness fields. Same as above.
+  // Thickness field. Same as above.
   Teuchos::RCP<ScalarFieldType> thicknessField =
     Teuchos::rcpFromRef( metaData->declare_field<ScalarFieldType>("thickness") );
   stk::mesh::put_field( *thicknessField,
                         metaData->node_rank(), metaData->universal_part() );
   stk::io::set_field_role( *thicknessField, Ioss::Field::ATTRIBUTE );
+
+  // Potential field. Same as above.
+  Teuchos::RCP<ScalarFieldType> potentialField =
+    Teuchos::rcpFromRef( metaData->declare_field<ScalarFieldType>("V") );
+  stk::mesh::put_field( *potentialField,
+                        metaData->node_rank(), metaData->universal_part() );
+  stk::io::set_field_role( *potentialField, Ioss::Field::ATTRIBUTE );
 
   // initialize database communication
   Ioss::Init::Initializer io;
@@ -263,9 +274,9 @@ read( const Epetra_Comm &comm,
   data.set( "mesh", mesh );
 
   // create the state
-  data.set( "psi", this->createPsi_( mesh, psir_field, psii_field ) );
+  data.set( "psi", this->complexfield2vector_( mesh, psir_field, psii_field ) );
 
-  Teuchos::RCP<const Epetra_MultiVector> mvp;
+  Teuchos::RCP<Epetra_MultiVector> mvp;
   mvp = this->createMvp_(mesh, mvpField);
   // Check if it's 0.
   double r[3];
@@ -277,42 +288,46 @@ read( const Epetra_Comm &comm,
     // Try A_R, A_Z.
     mvp = this->createMvpRZ_(mesh, mvpFieldR, mvpFieldZ);
     mvp->NormInf( r );
-    TEUCHOS_TEST_FOR_EXCEPT_MSG( r[0]<tol && r[1]<tol && r[2]<tol,
-                         "No magnetic vector potential field \"A\" found in file \""
-                         << fileName_ << "\". Abort." );
+    if (r[0]<tol && r[1]<tol && r[2]<tol)
+        mvp->PutScalar( 0.0 );
   }
   data.set( "A", mvp );
 
   // Check of the thickness data is of any value. If not: ditch it.
-  Teuchos::RCP<Epetra_Vector> thickness = this->createThickness_(
-      mesh, thicknessField );
+  Teuchos::RCP<Epetra_Vector> thickness = this->scalarfield2vector_(mesh, thicknessField);
   double norminf;
   thickness->NormInf( &norminf );
   if ( norminf < 1.0e-15 ) // assume that thickness wasn't present, fill with default value
     thickness->PutScalar( 1.0 );
   data.set( "thickness", thickness );
-
   // These are vain attempts to find out whether thicknessField is actually empty.
 //     const stk::mesh::FieldBase::RestrictionVector & restrictions = thicknessField->restrictions();
 //     TEUCHOS_ASSERT( !restrictions.empty() );
 //     *out << "max_size " << thicknessField->max_size(metaData->node_rank()) << std::endl;
+
+  // Check of the data is of any value. If not: ditch it.
+  Teuchos::RCP<Epetra_Vector> potential = this->scalarfield2vector_(mesh, potentialField);
+  potential->NormInf( &norminf );
+  if ( norminf < 1.0e-15 ) // assume that potential wasn't present, fill with default value
+    potential->PutScalar( 0.0 );
+  data.set( "V", potential );
 
   return;
 }
 // =============================================================================
 Teuchos::RCP<Epetra_Vector>
 StkMeshReader::
-createPsi_( const Teuchos::RCP<const Ginla::StkMesh> &mesh,
-            const Teuchos::RCP<ScalarFieldType> &psir_field,
-            const Teuchos::RCP<ScalarFieldType> &psii_field
-            ) const
+complexfield2vector_( const Teuchos::RCP<const Ginla::StkMesh> &mesh,
+                      const Teuchos::RCP<ScalarFieldType> &realField,
+                      const Teuchos::RCP<ScalarFieldType> &imagField
+                      ) const
 {
   // Psi needs to have unique node IDs to be able to compute Norm2().
   // This is required in Belos.
   const std::vector<stk::mesh::Entity*> &ownedNodes = mesh->getOwnedNodes();
 
   // Create vector with this respective map.
-  Teuchos::RCP<Epetra_Vector> psi =
+  Teuchos::RCP<Epetra_Vector> vector =
     Teuchos::rcp( new Epetra_Vector( *mesh->getComplexNonOverlapMap() ) );
 
   // Fill the vector with data from the file.
@@ -320,69 +335,69 @@ createPsi_( const Teuchos::RCP<const Ginla::StkMesh> &mesh,
   for ( unsigned int k=0; k<ownedNodes.size(); k++ )
   {
     // real part
-    double* psirVal = stk::mesh::field_data( *psir_field, *ownedNodes[k] );
+    double* realVal = stk::mesh::field_data( *realField, *ownedNodes[k] );
     ind = 2*k;
-    psi->ReplaceMyValues( 1, psirVal, &ind );
+    vector->ReplaceMyValues( 1, realVal, &ind );
 
     // imaginary part
-    double* psiiVal = stk::mesh::field_data( *psii_field, *ownedNodes[k] );
+    double* imagVal = stk::mesh::field_data( *imagField, *ownedNodes[k] );
     ind = 2*k+1;
-    psi->ReplaceMyValues( 1, psiiVal, &ind );
+    vector->ReplaceMyValues( 1, imagVal, &ind );
   }
 
 #ifdef _DEBUG_
   double r;
-  psi->Norm1( &r );
+  vector->Norm1( &r );
   TEUCHOS_TEST_FOR_EXCEPT_MSG( r!=r || r>1.0e100,
                        "The input data seems flawed. Abort." );
 #endif
 
-  return psi;
+  return vector;
 }
 // =============================================================================
 Teuchos::RCP<Epetra_Vector>
 StkMeshReader::
-createThickness_( const Teuchos::RCP<const Ginla::StkMesh> &mesh,
-                  const Teuchos::RCP<ScalarFieldType> &thickness_field
-                  ) const
+scalarfield2vector_( const Teuchos::RCP<const Ginla::StkMesh> &mesh,
+                     const Teuchos::RCP<ScalarFieldType> &field
+                    ) const
 {
   // Get overlap nodes.
   const std::vector<stk::mesh::Entity*> &overlapNodes = mesh->getOverlapNodes();
 
   // Create vector with this respective map.
-  Teuchos::RCP<Epetra_Vector> thickness =
+  Teuchos::RCP<Epetra_Vector> vector =
     Teuchos::rcp( new Epetra_Vector( *mesh->getNodesOverlapMap() ) );
 
 #ifdef _DEBUG_
-  TEUCHOS_ASSERT( !thickness_field.is_null() );
+  TEUCHOS_ASSERT( !field.is_null() );
 #endif
 
   // Fill the vector with data from the file.
   for ( unsigned int k=0; k<overlapNodes.size(); k++ )
   {
-    double* thicknessVal = stk::mesh::field_data( *thickness_field,
-                                                  *overlapNodes[k] );
+    double* fieldVal = stk::mesh::field_data( *field,
+                                              *overlapNodes[k] );
     // Check if the field is actually there.
-    if (thicknessVal == NULL)
+    if (fieldVal == NULL)
     {
       *out_ << "WARNING: Thickness value for node " << k << " not found.\n"
       <<
-      "Probably there is no thickness field given with the state. Using default."
+      "Probably there is no field given with the state. Using default."
       << std::endl;
       return Teuchos::null;
     }
     int kk = int(k);
-    thickness->ReplaceMyValues( 1, thicknessVal, &kk );
+    vector->ReplaceMyValues( 1, fieldVal, &kk );
   }
 
 #ifdef _DEBUG_
   double r;
-  thickness->Norm1( &r );
+  vector->Norm1( &r );
   TEUCHOS_TEST_FOR_EXCEPT_MSG( r!=r || r>1.0e100,
                        "The input data seems flawed. Abort." );
 #endif
 
-  return thickness;
+  return vector;
 }
 // =============================================================================
 Teuchos::RCP<Epetra_MultiVector>

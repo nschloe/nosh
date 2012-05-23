@@ -46,11 +46,13 @@ ModelEvaluator::
 ModelEvaluator (
   const Teuchos::RCP<Ginla::StkMesh> &mesh,
   const Teuchos::ParameterList &problemParams,
+  const Teuchos::RCP<const Epetra_Vector> &potential,
   const Teuchos::RCP<const Epetra_Vector> &thickness,
   const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> &mvp,
   const Teuchos::RCP<Epetra_Vector> &initialX
   ) :
   mesh_( mesh ),
+  potential_( potential ),
   thickness_( thickness ),
   x_( initialX ),
   numParams_( 0 ),
@@ -88,17 +90,17 @@ ModelEvaluator::
 setupParameters_( const Teuchos::ParameterList &params )
 {
   p_names_ = Teuchos::rcp( new Teuchos::Array<std::string>() );
+  p_names_->append( "g" );
   p_names_->append( "mu" );
   p_names_->append( "theta" );
-  p_names_->append( "T" );
 
   numParams_ = p_names_->length();
 
   // these are local variables
   Teuchos::Array<double> p_default_values = Teuchos::Array<double>( numParams_ );
-  p_default_values[0] = 0.0; // mu
-  p_default_values[1] = 0.0; // theta
-  p_default_values[2] = 0.0; // T
+  p_default_values[0] = 1.0; // g
+  p_default_values[1] = 0.0; // mu
+  p_default_values[2] = 0.0; // theta
 
   // setup parameter map
 #ifdef _DEBUG_
@@ -207,8 +209,8 @@ Teuchos::RCP<Epetra_Operator>
 ModelEvaluator::
 create_W() const
 {
-  return Teuchos::rcp(new Ginla::JacobianOperator(mesh_, thickness_,
-                                                  keoContainer_, x_));
+  return Teuchos::rcp(new Ginla::JacobianOperator(mesh_, potential_, (*p_current_)[0],
+                                                  thickness_, keoContainer_, x_));
 }
 // =============================================================================
 Teuchos::RCP<EpetraExt::ModelEvaluator::Preconditioner>
@@ -216,7 +218,7 @@ ModelEvaluator::
 create_WPrec() const
 {
   Teuchos::RCP<Epetra_Operator> keoPrec =
-    Teuchos::rcp(new Ginla::KeoRegularized(mesh_, thickness_, keoContainer_, x_));
+    Teuchos::rcp(new Ginla::KeoRegularized(mesh_, (*p_current_)[0], thickness_, keoContainer_, x_));
   // bool is answer to: "Prec is already inverted?"
   // This needs to be set to TRUE to make sure that the constructor of
   //    NOX::Epetra::LinearSystemStratimikos
@@ -349,21 +351,24 @@ evalModel( const InArgs &inArgs,
     Teuchos::TimeMonitor tm2( *computedFdpTime_ );
 #endif
     Teuchos::Array<int> paramIndices = derivMv.getParamIndexes();
-    unsigned int numDerivs = paramIndices.size();
+    int numDerivs = paramIndices.size();
 #ifdef _DEBUG_
     TEUCHOS_ASSERT_EQUALITY( numDerivs, dfdp_out->NumVectors() );
 #endif
-    for ( unsigned int k=0; k<numDerivs; k++ )
+    for (int k=0; k<numDerivs; k++)
     {
       switch ( paramIndices[k] )
       {
-        case 0:      // mu
+        case 0:      // g
+          this->computeDFDG_( *x_in, mvpParams, *(*dfdp_out)(k) );
+          break;
+        case 1:      // mu
           this->computeDFDMu_( *x_in, mvpParams, *(*dfdp_out)(k) );
           break;
-        case 1:      // theta
+        case 2:      // theta
           this->computeDFDTheta_( *x_in, mvpParams, *(*dfdp_out)(k) );
           break;
-        case 2:      // T
+        case 3:      // T
           this->computeDFDT_( *x_in, mvpParams, *(*dfdp_out)(k) );
           break;
         default:
@@ -422,6 +427,7 @@ computeF_( const Epetra_Vector &x,
 #ifdef _DEBUG_
   TEUCHOS_ASSERT( FVec.Map().SameAs( x.Map() ) );
   TEUCHOS_ASSERT( !mesh_.is_null() );
+  TEUCHOS_ASSERT( !potential_.is_null() );
   TEUCHOS_ASSERT( !thickness_.is_null() );
 #endif
 
@@ -461,7 +467,7 @@ computeF_( const Epetra_Vector &x,
     //     For general polynomals, this is then the above expression.
     //     Hence, do the equivalent of
     //
-    //       res[k] += controlVolumes[k] * average(thicknesses) * psi[k] * ( (1.0-T) - std::norm(psi[k]) );
+    //       res[k] += controlVolumes[k] * average(thicknesses) * psi[k] * ( V + std::norm(psi[k]) );
     //
     // (b) Another possible approximation is
     //
@@ -470,11 +476,44 @@ computeF_( const Epetra_Vector &x,
     //     as suggested by mass lumping. This works if thickness(x_k) is available.
     //
     double alpha = controlVolumes[k] * (*thickness_)[k]
-      * ( (1.0-T) - x[2*k]*x[2*k] - x[2*k+1]*x[2*k+1]);
+                 * ((*potential_)[k] + (*p_current_)[0]* (x[2*k]*x[2*k] + x[2*k+1]*x[2*k+1]));
     // real part
     FVec[2*k]   += alpha * x[2*k];
     // imaginary part
     FVec[2*k+1] += alpha * x[2*k+1];
+  }
+
+  return;
+}
+// ============================================================================
+void
+ModelEvaluator::
+computeDFDG_( const Epetra_Vector &x,
+              const Teuchos::RCP<const LOCA::ParameterVector> &mvpParams,
+              Epetra_Vector &FVec
+              ) const
+{
+#ifdef _DEBUG_
+  TEUCHOS_ASSERT( FVec.Map().SameAs( x.Map() ) );
+  TEUCHOS_ASSERT( !mesh_.is_null() );
+  TEUCHOS_ASSERT( !thickness_.is_null() );
+#endif
+
+  const Epetra_Vector &controlVolumes = *(mesh_->getControlVolumes());
+
+#ifdef _DEBUG_
+  // Make sure control volumes and state still match.
+  TEUCHOS_ASSERT_EQUALITY( 2*controlVolumes.MyLength(), x.MyLength() );
+#endif
+
+  for ( int k=0; k<controlVolumes.MyLength(); k++ )
+  {
+    double alpha = controlVolumes[k] * (*thickness_)[k]
+                 * (x[2*k]*x[2*k] + x[2*k+1]*x[2*k+1]);
+    // real part
+    FVec[2*k]   = alpha * x[2*k];
+    // imaginary part
+    FVec[2*k+1] = alpha * x[2*k+1];
   }
 
   return;

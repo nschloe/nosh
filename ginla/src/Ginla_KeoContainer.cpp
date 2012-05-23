@@ -287,24 +287,24 @@ fillKeo_( const Teuchos::RCP<Epetra_FECrsMatrix> &keoMatrix,
     {
       case MATRIX_TYPE_REGULAR:     // no derivative
       {
-        c = alphaCache_[k] * cosAInt;
-        s = alphaCache_[k] * sinAInt;
-        d = -alphaCache_[k];
+        c = -alphaCache_[k] * cosAInt;
+        s = -alphaCache_[k] * sinAInt;
+        d = alphaCache_[k];
         break;
       }
       case MATRIX_TYPE_DMU:     // dK/dmu
       {
         double dAdMuInt = mvp_->getdAdMuEdgeMidpointProjection( k );
-        c = -alphaCache_[k] * dAdMuInt * sinAInt;
-        s =   alphaCache_[k] * dAdMuInt * cosAInt;
+        c =  alphaCache_[k] * dAdMuInt * sinAInt;
+        s = -alphaCache_[k] * dAdMuInt * cosAInt;
         d = 0.0;
         break;
       }
       case MATRIX_TYPE_DTHETA:     // dK/dtheta
       {
         double dAdThetaInt = mvp_->getdAdThetaEdgeMidpointProjection( k );
-        c = -alphaCache_[k] * dAdThetaInt * sinAInt;
-        s =   alphaCache_[k] * dAdThetaInt * cosAInt;
+        c =  alphaCache_[k] * dAdThetaInt * sinAInt;
+        s = -alphaCache_[k] * dAdThetaInt * cosAInt;
         d = 0.0;
         break;
       }

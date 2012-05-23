@@ -47,6 +47,8 @@ class JacobianOperator : public Epetra_Operator
 {
 public:
 JacobianOperator( const Teuchos::RCP<const Ginla::StkMesh> &mesh,
+                  const Teuchos::RCP<const Epetra_Vector> &potential,
+                  const double g,
                   const Teuchos::RCP<const Epetra_Vector> &thickness,
                   const Teuchos::RCP<Ginla::KeoContainer> &keoContainer,
                   const Teuchos::RCP<const Epetra_Vector> &current_X
@@ -104,6 +106,8 @@ private:
 bool useTranspose_;
 
 const Teuchos::RCP<const Ginla::StkMesh> mesh_;
+const Teuchos::RCP<const Epetra_Vector> potential_;
+const double g_;
 const Teuchos::RCP<const Epetra_Vector> thickness_;
 const Teuchos::RCP<Ginla::KeoContainer> keoContainer_;
 

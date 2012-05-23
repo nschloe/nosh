@@ -60,6 +60,7 @@ class KeoRegularized : public Epetra_Operator
 {
 public:
 KeoRegularized( const Teuchos::RCP<const Ginla::StkMesh> &mesh,
+                const double g,
                 const Teuchos::RCP<const Epetra_Vector> &thickness,
                 const Teuchos::RCP<Ginla::KeoContainer> &keoContainer,
                 const Teuchos::RCP<const Epetra_Vector> &psi
@@ -122,6 +123,7 @@ private:
 bool useTranspose_;
 
 const Teuchos::RCP<const Ginla::StkMesh> mesh_;
+const double g_;
 const Teuchos::RCP<const Epetra_Vector> thickness_;
 Teuchos::RCP<Ginla::KeoContainer> keoContainer_;
 

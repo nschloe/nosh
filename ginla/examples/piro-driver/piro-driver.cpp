@@ -115,7 +115,8 @@ int main ( int argc, char *argv[] )
     // Cast the data into something more accessible.
     Teuchos::RCP<Ginla::StkMesh> & mesh = data.get<Teuchos::RCP<Ginla::StkMesh> >( "mesh" );
     Teuchos::RCP<Epetra_Vector> & z = data.get( "psi", Teuchos::RCP<Epetra_Vector>() );
-    Teuchos::RCP<const Epetra_MultiVector> & mvpValues = data.get( "A", Teuchos::RCP<const Epetra_MultiVector>() );
+    Teuchos::RCP<Epetra_MultiVector> & mvpValues = data.get( "A", Teuchos::RCP<Epetra_MultiVector>() );
+    Teuchos::RCP<Epetra_Vector> & potential = data.get( "V", Teuchos::RCP<Epetra_Vector>() );
     Teuchos::RCP<Epetra_Vector> & thickness = data.get( "thickness", Teuchos::RCP<Epetra_Vector>() );
 
     // set the output directory for later plotting with this
@@ -154,6 +155,7 @@ int main ( int argc, char *argv[] )
     Teuchos::RCP<Ginla::ModelEvaluator> glModel =
             Teuchos::rcp(new Ginla::ModelEvaluator(mesh,
                                                    problemParameters,
+                                                   potential,
                                                    thickness,
                                                    mvp,
                                                    z));

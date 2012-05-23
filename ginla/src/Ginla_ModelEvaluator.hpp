@@ -60,9 +60,9 @@ public:
 ModelEvaluator (
   const Teuchos::RCP<Ginla::StkMesh> &mesh,
   const Teuchos::ParameterList &params,
+  const Teuchos::RCP<const Epetra_Vector> &potential,
   const Teuchos::RCP<const Epetra_Vector> &thickness,
-  const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> &
-  mvp,
+  const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> &mvp,
   const Teuchos::RCP<Epetra_Vector> &initialX
   );
 
@@ -147,6 +147,12 @@ computeDFDTheta_( const Epetra_Vector &x,
                   ) const;
 
 void
+computeDFDG_( const Epetra_Vector &x,
+              const Teuchos::RCP<const LOCA::ParameterVector> &mvpParams,
+              Epetra_Vector &FVec
+              ) const;
+
+void
 computeDFDT_( const Epetra_Vector &x,
               const Teuchos::RCP<const LOCA::ParameterVector> &mvpParams,
               Epetra_Vector &FVec
@@ -163,6 +169,7 @@ private:
 
 const Teuchos::RCP<Ginla::StkMesh> mesh_;
 
+const Teuchos::RCP<const Epetra_Vector> potential_;
 const Teuchos::RCP<const Epetra_Vector> thickness_;
 
 const Teuchos::RCP<Epetra_Vector> x_;

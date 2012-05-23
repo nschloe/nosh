@@ -50,12 +50,14 @@ namespace Ginla {
 // =============================================================================
 KeoRegularized::
 KeoRegularized( const Teuchos::RCP<const Ginla::StkMesh> &mesh,
+                const double g,
                 const Teuchos::RCP<const Epetra_Vector> &thickness,
                 const Teuchos::RCP<Ginla::KeoContainer> &keoContainer,
                 const Teuchos::RCP<const Epetra_Vector> &psi
               ) :
   useTranspose_( false ),
   mesh_( mesh ),
+  g_( g ),
   thickness_( thickness ),
   keoContainer_( keoContainer ),
   absPsiSquared_(Teuchos::rcp(new Epetra_Vector(*mesh->getComplexNonOverlapMap()))),
@@ -102,8 +104,11 @@ Apply( const Epetra_MultiVector &X,
   // K * X ...
   TEUCHOS_ASSERT_EQUALITY(0, keoContainer_->getKeo()->Apply(X, Y));
 
-  // - (K*X) + 2*|psi|*X.
-  TEUCHOS_ASSERT_EQUALITY(0, Y.Multiply(2.0, *absPsiSquared_, X, -1.0));
+  if (g_>0.0)
+  {
+    // ... + g * 2*|psi|*X.
+    TEUCHOS_ASSERT_EQUALITY(0, Y.Multiply(g_ * 2.0, *absPsiSquared_, X, 1.0));
+  }
 
   return 0;
 }
@@ -229,22 +234,24 @@ rebuild()
 {
   // -------------------------------------------------------------------------
   // Copy over the matrix.
-  // This is necessary as we don't apply AMG to K, but to K+2|psi|^2.
+  // This is necessary as we don't apply AMG to K, but to K + g*2|psi|^2.
 #ifdef _DEBUG_
   TEUCHOS_ASSERT( !keoContainer_.is_null() );
   TEUCHOS_ASSERT( !keoContainer_->getKeo().is_null() );
 #endif
   keoRegularizedMatrix_ = *keoContainer_->getKeo();
-  TEUCHOS_ASSERT_EQUALITY(0, keoRegularizedMatrix_.Scale(-1.0));
   // -------------------------------------------------------------------------
   // Add 2*|psi|^2 to the diagonal.
+  if (g_ > 0.0)
+  {
 #ifdef _DEBUG_
-  TEUCHOS_ASSERT( keoRegularizedMatrix_.RowMap().SameAs(absPsiSquared_->Map()) );
+    TEUCHOS_ASSERT( keoRegularizedMatrix_.RowMap().SameAs(absPsiSquared_->Map()) );
 #endif
-  Epetra_Vector diag(keoRegularizedMatrix_.RowMap());
-  TEUCHOS_ASSERT_EQUALITY(0, keoRegularizedMatrix_.ExtractDiagonalCopy(diag));
-  TEUCHOS_ASSERT_EQUALITY(0, diag.Update(2.0, *absPsiSquared_, 1.0));
-  TEUCHOS_ASSERT_EQUALITY(0, keoRegularizedMatrix_.ReplaceDiagonalValues(diag));
+    Epetra_Vector diag(keoRegularizedMatrix_.RowMap());
+    TEUCHOS_ASSERT_EQUALITY(0, keoRegularizedMatrix_.ExtractDiagonalCopy(diag));
+    TEUCHOS_ASSERT_EQUALITY(0, diag.Update(g_*2.0, *absPsiSquared_, 1.0));
+    TEUCHOS_ASSERT_EQUALITY(0, keoRegularizedMatrix_.ReplaceDiagonalValues(diag));
+  }
   // -------------------------------------------------------------------------
   // Rebuild preconditioner for this object. Not to be mistaken for the
   // object itself.

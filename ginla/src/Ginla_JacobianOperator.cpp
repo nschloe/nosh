@@ -30,16 +30,19 @@ namespace Ginla {
 // =============================================================================
 JacobianOperator::
 JacobianOperator( const Teuchos::RCP<const Ginla::StkMesh> &mesh,
+                  const Teuchos::RCP<const Epetra_Vector> &potential,
+                  const double g,
                   const Teuchos::RCP<const Epetra_Vector> &thickness,
                   const Teuchos::RCP<Ginla::KeoContainer> &keoContainer,
                   const Teuchos::RCP<const Epetra_Vector> &current_X
                   ) :
   useTranspose_( false ),
   mesh_( mesh ),
+  potential_( potential ),
+  g_( g ),
   thickness_( thickness ),
   keoContainer_( keoContainer ),
   current_X_( current_X ),
-  T_( 0.0 ),
   diag0_( Teuchos::rcp( new Epetra_Vector( *(mesh->getComplexNonOverlapMap())) ) ),
   diag1b_( Teuchos::rcp( new Epetra_Vector( mesh->getControlVolumes()->Map()) ) )
 {
@@ -66,8 +69,8 @@ Apply( const Epetra_MultiVector &X,
        ) const
 {
   // Add the terms corresponding to the nonlinear terms.
-  // A = K - I * thickness * ( (1-temp) - 2*|psi|^2 )
-  // B = diag( thickness * psi^2 )
+  // A = K + I * thickness * (V + g * 2*|psi|^2)
+  // B = g * diag( thickness * psi^2 )
 
 #ifdef _DEBUG_
   TEUCHOS_ASSERT( !keoContainer_.is_null() );
@@ -98,9 +101,9 @@ Apply( const Epetra_MultiVector &X,
     for ( int k=0; k<numMyPoints; k++ )
     {
       (*Y(vec))[2*k]   += (*diag0_)  [2*k]   * X[vec][2*k]
-                        - (*diag1b_) [k]     * X[vec][2*k+1];
-      (*Y(vec))[2*k+1] += -(*diag1b_)[k]     * X[vec][2*k]
-                        +  (*diag0_) [2*k+1] * X[vec][2*k+1];
+                        + (*diag1b_) [k]     * X[vec][2*k+1];
+      (*Y(vec))[2*k+1] += (*diag1b_)[k]     * X[vec][2*k]
+                        + (*diag0_) [2*k+1] * X[vec][2*k+1];
     }
 
 //        // add terms corresponding to  diag( psi^2 ) * \conj{phi}
@@ -220,6 +223,7 @@ rebuildDiags_() const
 {
 #ifdef _DEBUG_
   TEUCHOS_ASSERT( !current_X_.is_null() );
+  TEUCHOS_ASSERT( !potential_.is_null() );
 #endif
 
   const Epetra_Vector &controlVolumes = *(mesh_->getControlVolumes());
@@ -233,24 +237,24 @@ rebuildDiags_() const
   {
     // rebuild diag0
     double alpha = controlVolumes[k] * (*thickness_)[k] * (
-        1.0 - T_
-        - 2.0 *
+        (*potential_)[k]
+        + g_ * 2.0 *
         ( (*current_X_)[2*k] * (*current_X_)[2*k]
         + (*current_X_)[2*k+1]*(*current_X_)[2*k+1]
         )
         );
-    double rePhiSquare = controlVolumes[k] * (*thickness_)[k] * (
+    double rePhiSquare = g_ * controlVolumes[k] * (*thickness_)[k] * (
           (*current_X_)[2*k]  *(*current_X_)[2*k]
         - (*current_X_)[2*k+1]*(*current_X_)[2*k+1]
         );
-    vals[0]    = alpha - rePhiSquare;
-    vals[1]    = alpha + rePhiSquare;
+    vals[0]    = alpha + rePhiSquare;
+    vals[1]    = alpha - rePhiSquare;
     indices[0] = 2*k;
     indices[1] = 2*k+1;
     TEUCHOS_ASSERT_EQUALITY( 0, diag0_->ReplaceMyValues( 2, vals, indices ) );
 
     // rebuild diag1b
-    double imPhiSquare = controlVolumes[k] * (*thickness_)[k] * (
+    double imPhiSquare = g_ * controlVolumes[k] * (*thickness_)[k] * (
         2.0 * (*current_X_)[2*k] * (*current_X_)[2*k+1]
         );
     TEUCHOS_ASSERT_EQUALITY( 0, diag1b_->ReplaceMyValues( 1, &imPhiSquare, &k ) );
