@@ -423,6 +423,7 @@ computeF_( const Epetra_Vector &x,
   // compute FVec = K*x
   TEUCHOS_ASSERT_EQUALITY( 0, keoContainer_->getKeo()->Apply( x, FVec ) );
 
+
   // add the nonlinear part (mass lumping)
 #ifdef _DEBUG_
   TEUCHOS_ASSERT( FVec.Map().SameAs( x.Map() ) );

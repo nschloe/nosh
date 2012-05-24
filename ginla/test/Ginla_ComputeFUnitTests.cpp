@@ -108,15 +108,15 @@ testComputeF( const std::string & inputFileNameBase,
     // check the norms
     double normOne;
     f->Norm1( &normOne );
-    TEST_FLOATING_EQUALITY( normOne, controlNormOne, 1.0e-7 );
+    TEST_FLOATING_EQUALITY( normOne, controlNormOne, 1.0e-10 );
 
     double normTwo;
     f->Norm2( &normTwo );
-    TEST_FLOATING_EQUALITY( normTwo, controlNormTwo, 1.0e-7 );
+    TEST_FLOATING_EQUALITY( normTwo, controlNormTwo, 1.0e-10 );
 
     double normInf;
     f->NormInf( &normInf );
-    TEST_FLOATING_EQUALITY( normInf, controlNormInf, 1.0e-7 );
+    TEST_FLOATING_EQUALITY( normInf, controlNormInf, 1.0e-10 );
 
 
     return;
@@ -145,9 +145,9 @@ TEUCHOS_UNIT_TEST( Ginla, ComputeFPacmanHashes )
     std::string inputFileNameBase = "pacman";
 
     double mu = 1.0e-2;
-    double controlNormOne = 0.713664749303348;
-    double controlNormTwo = 0.12552206461432219;
-    double controlNormInf = 0.055859321274632785;
+    double controlNormOne = 0.71366475047893463;
+    double controlNormTwo = 0.12552206259336218;
+    double controlNormInf = 0.055859319123267033;
 
     testComputeF( inputFileNameBase,
                   mu,
@@ -163,9 +163,9 @@ TEUCHOS_UNIT_TEST( Ginla, ComputeFCubeSmallHashes )
     std::string inputFileNameBase = "cubesmall";
 
     double mu = 1.0e-2;
-    double controlNormOne = 0.28999063035759653;
-    double controlNormTwo = 0.15062204533498347;
-    double controlNormInf = 0.095254500561777741;
+    double controlNormOne = 8.3541623156163313e-05;
+    double controlNormTwo = 2.9536515963905867e-05;
+    double controlNormInf = 1.0468744547749431e-05;
 
     testComputeF( inputFileNameBase,
                   mu,
@@ -181,9 +181,9 @@ TEUCHOS_UNIT_TEST( Ginla, ComputeFBrickWHoleHashes )
     std::string inputFileNameBase = "brick-w-hole";
 
     double mu = 1.0e-2;
-    double controlNormOne = 1.8084716162552725;
-    double controlNormTwo = 0.15654267591639234;
-    double controlNormInf = 0.030744236169795706;
+    double controlNormOne = 1.8084716102419285;
+    double controlNormTwo = 0.15654267585120338;
+    double controlNormInf = 0.03074423493622647;
 
     testComputeF( inputFileNameBase,
                   mu,

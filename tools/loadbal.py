@@ -20,14 +20,10 @@ def _main():
 # ==============================================================================
 def _slice(filename, output, proc_mesh, slice_method):
 
-    bin_dir = '/opt/trilinos/dev/master/gcc/4.4.5/bin/'
-    #bin_dir = '/opt/trilinos/dev/master/openmpi/1.4.3/gcc/4.6.1/release/bin/'
-    nemslice_command = bin_dir + "nem_slice"
-    nemspread_command = bin_dir + "nem_spread"
     tmp_nemspreadinp = "nem_spread.inp"
 
     slice_command = "%s -v -o \"%s\" -e -m mesh=%dx%d -l %s \"%s\"" % \
-                    ( nemslice_command, output, proc_mesh[0], proc_mesh[1], slice_method, filename )
+                    ( "nem_slice", output, proc_mesh[0], proc_mesh[1], slice_method, filename )
 
     _run( slice_command )
 
@@ -47,7 +43,7 @@ Parallel Disk Info = number=1\n\
 Parallel file location = root=tmp,subdir=.." % ( filename, output ) )
     file_handle.close()
 
-    _run( nemspread_command )
+    _run( "nem_spread" )
 
     # clean up
     shutil.rmtree( tmpdir )

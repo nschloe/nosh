@@ -82,7 +82,7 @@ testJac( const std::string & inputFileNameBase,
     s.PutScalar( 1.0 );
     jac->Apply( s, Js );
     s.Dot( Js, &sum );
-    TEST_FLOATING_EQUALITY( sum, controlSumT0, 1.0e-10 );
+    TEST_FLOATING_EQUALITY( sum, controlSumT0, 1.0e-12 );
     // -------------------------------------------------------------------------
     // (b) [ 1, 0, 1, 0, ... ]
     double one  = 1.0;
@@ -96,7 +96,7 @@ testJac( const std::string & inputFileNameBase,
     }
     jac->Apply( s, Js );
     s.Dot( Js, &sum );
-    TEST_FLOATING_EQUALITY( sum, controlSumT1, 1.0e-10 );
+    TEST_FLOATING_EQUALITY( sum, controlSumT1, 1.0e-12 );
     // -------------------------------------------------------------------------
     // (b) [ 0, 1, 0, 1, ... ]
     for ( int k=0; k<map.NumMyPoints(); k++ )
@@ -108,7 +108,7 @@ testJac( const std::string & inputFileNameBase,
     }
     jac->Apply( s, Js );
     s.Dot( Js, &sum );
-    TEST_FLOATING_EQUALITY( sum, controlSumT2, 1.0e-8 );
+    TEST_FLOATING_EQUALITY( sum, controlSumT2, 1.0e-10 );
     // -------------------------------------------------------------------------
     return;
 }
@@ -136,9 +136,9 @@ TEUCHOS_UNIT_TEST( Ginla, JacPacmanHashes )
     std::string inputFileNameBase = "pacman";
 
     double mu = 1.0e-2;
-    double controlSumT0 = 605.786286731452;
-    double controlSumT1 = 605.415844086736;
-    double controlSumT2 = 0.370442644715631;
+    double controlSumT0 = 605.78628672795264;
+    double controlSumT1 = 605.41584408498682;
+    double controlSumT2 = 0.37044264296586299;
 
     testJac( inputFileNameBase,
              mu,
@@ -154,9 +154,9 @@ TEUCHOS_UNIT_TEST( Ginla, JacCubeSmallHashes )
     std::string inputFileNameBase = "cubesmall";
 
     double mu = 1.0e-2;
-    double controlSumT0 = 20.0084442850419;
-    double controlSumT1 = 20.0042221425209;
-    double controlSumT2 = 0.00422214252093753;
+    double controlSumT0 = 20.000167083246311;
+    double controlSumT1 = 20.000083541623155;
+    double controlSumT2 = 8.3541623155658495e-05;
 
     testJac( inputFileNameBase,
              mu,
@@ -172,9 +172,9 @@ TEUCHOS_UNIT_TEST( Ginla, JacBrickWHoleHashes )
     std::string inputFileNameBase = "brick-w-hole";
 
     double mu = 1.0e-2;
-    double controlSumT0 = 777.707848909512;
-    double controlSumT1 = 777.540216149396;
-    double controlSumT2 = 0.167632760114663;
+    double controlSumT0 = 777.70784890954064;
+    double controlSumT1 = 777.54021614941144;
+    double controlSumT2 = 0.16763276012921419;
 
     testJac( inputFileNameBase,
              mu,
