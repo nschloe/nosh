@@ -51,7 +51,8 @@ testJac( const std::string & inputFileNameBase,
     // Cast the data into something more accessible.
     Teuchos::RCP<Ginla::StkMesh>     & mesh = data.get( "mesh", Teuchos::RCP<Ginla::StkMesh>() );
     Teuchos::RCP<Epetra_Vector>      & z = data.get( "psi", Teuchos::RCP<Epetra_Vector>() );
-    Teuchos::RCP<const Epetra_MultiVector> & mvpValues = data.get( "A", Teuchos::RCP<const Epetra_MultiVector>() );
+    Teuchos::RCP<Epetra_MultiVector> & mvpValues = data.get( "A", Teuchos::RCP<Epetra_MultiVector>() );
+    Teuchos::RCP<Epetra_Vector>      & potential = data.get( "V", Teuchos::RCP<Epetra_Vector>() );
     Teuchos::RCP<Epetra_Vector>      & thickness = data.get( "thickness", Teuchos::RCP<Epetra_Vector>() );
     Teuchos::ParameterList           & problemParameters = data.get( "Problem parameters", Teuchos::ParameterList() );
 
@@ -67,8 +68,9 @@ testJac( const std::string & inputFileNameBase,
         Teuchos::rcp( new Ginla::KeoContainer( mesh, thickness, mvp ) );
 
     // create the jacobian operator
+    double g = 1.0;
     Teuchos::RCP<Ginla::JacobianOperator> jac =
-        Teuchos::rcp( new Ginla::JacobianOperator( mesh, thickness, keoContainer, z ) );
+        Teuchos::rcp( new Ginla::JacobianOperator( mesh, potential, g, thickness, keoContainer, z ) );
 
     double sum;
     const Epetra_Map & map = jac->OperatorDomainMap();
@@ -80,7 +82,7 @@ testJac( const std::string & inputFileNameBase,
     s.PutScalar( 1.0 );
     jac->Apply( s, Js );
     s.Dot( Js, &sum );
-    TEST_FLOATING_EQUALITY( sum, controlSumT0, 1.0e-12 );
+    TEST_FLOATING_EQUALITY( sum, controlSumT0, 1.0e-10 );
     // -------------------------------------------------------------------------
     // (b) [ 1, 0, 1, 0, ... ]
     double one  = 1.0;
@@ -94,7 +96,7 @@ testJac( const std::string & inputFileNameBase,
     }
     jac->Apply( s, Js );
     s.Dot( Js, &sum );
-    TEST_FLOATING_EQUALITY( sum, controlSumT1, 1.0e-12 );
+    TEST_FLOATING_EQUALITY( sum, controlSumT1, 1.0e-10 );
     // -------------------------------------------------------------------------
     // (b) [ 0, 1, 0, 1, ... ]
     for ( int k=0; k<map.NumMyPoints(); k++ )
@@ -106,7 +108,7 @@ testJac( const std::string & inputFileNameBase,
     }
     jac->Apply( s, Js );
     s.Dot( Js, &sum );
-    TEST_FLOATING_EQUALITY( sum, controlSumT2, 1.0e-12 );
+    TEST_FLOATING_EQUALITY( sum, controlSumT2, 1.0e-8 );
     // -------------------------------------------------------------------------
     return;
 }
@@ -116,9 +118,9 @@ TEUCHOS_UNIT_TEST( Ginla, JacRectangleSmallHashes )
     std::string inputFileNameBase = "rectanglesmall";
 
     double mu = 1.0e-2;
-    double controlSumT0 = -20.0126243424616;
-    double controlSumT1 = -20.0063121712308;
-    double controlSumT2 = -0.00631217123080606;
+    double controlSumT0 = 20.0126243424616;
+    double controlSumT1 = 20.0063121712308;
+    double controlSumT2 = 0.00631217123080606;
 
     testJac( inputFileNameBase,
              mu,
@@ -134,9 +136,9 @@ TEUCHOS_UNIT_TEST( Ginla, JacPacmanHashes )
     std::string inputFileNameBase = "pacman";
 
     double mu = 1.0e-2;
-    double controlSumT0 = -605.786286731452;
-    double controlSumT1 = -605.415844086736;
-    double controlSumT2 = -0.370442644715631;
+    double controlSumT0 = 605.786286731452;
+    double controlSumT1 = 605.415844086736;
+    double controlSumT2 = 0.370442644715631;
 
     testJac( inputFileNameBase,
              mu,
@@ -152,9 +154,9 @@ TEUCHOS_UNIT_TEST( Ginla, JacCubeSmallHashes )
     std::string inputFileNameBase = "cubesmall";
 
     double mu = 1.0e-2;
-    double controlSumT0 = -20.0084442850419;
-    double controlSumT1 = -20.0042221425209;
-    double controlSumT2 = -0.00422214252093753;
+    double controlSumT0 = 20.0084442850419;
+    double controlSumT1 = 20.0042221425209;
+    double controlSumT2 = 0.00422214252093753;
 
     testJac( inputFileNameBase,
              mu,
@@ -170,9 +172,9 @@ TEUCHOS_UNIT_TEST( Ginla, JacBrickWHoleHashes )
     std::string inputFileNameBase = "brick-w-hole";
 
     double mu = 1.0e-2;
-    double controlSumT0 = -777.707848909512;
-    double controlSumT1 = -777.540216149396;
-    double controlSumT2 = -0.167632760114663;
+    double controlSumT0 = 777.707848909512;
+    double controlSumT1 = 777.540216149396;
+    double controlSumT2 = 0.167632760114663;
 
     testJac( inputFileNameBase,
              mu,

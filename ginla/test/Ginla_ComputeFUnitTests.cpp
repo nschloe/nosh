@@ -25,6 +25,7 @@
 #include <Epetra_SerialComm.h>
 #endif
 
+#include <Epetra_Map.h>
 #include <Epetra_Vector.h>
 #include <LOCA_Parameter_Vector.H>
 
@@ -69,20 +70,21 @@ testComputeF( const std::string & inputFileNameBase,
     // Cast the data into something more accessible.
     Teuchos::RCP<Ginla::StkMesh>     & mesh = data.get( "mesh", Teuchos::RCP<Ginla::StkMesh>() );
     Teuchos::RCP<Epetra_Vector>      & z = data.get( "psi", Teuchos::RCP<Epetra_Vector>() );
-    Teuchos::RCP<const Epetra_MultiVector> & mvpValues = data.get( "A", Teuchos::RCP<const Epetra_MultiVector>() );
+    Teuchos::RCP<Epetra_MultiVector> & mvpValues = data.get( "A", Teuchos::RCP<Epetra_MultiVector>() );
+    Teuchos::RCP<Epetra_Vector>      & potential = data.get( "V", Teuchos::RCP<Epetra_Vector>() );
     Teuchos::RCP<Epetra_Vector>      & thickness = data.get( "thickness", Teuchos::RCP<Epetra_Vector>() );
     Teuchos::ParameterList           & problemParameters = data.get( "Problem parameters", Teuchos::ParameterList() );
 
     // create parameter vector
+    problemParameters.set( "g", 1.0 );
     problemParameters.set( "mu", mu );
     problemParameters.set( "theta", 0.0 );
-    problemParameters.set( "T", 0.0 );
 
     Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp;
-    mvp = Teuchos::rcp ( new Ginla::MagneticVectorPotential::ExplicitValues ( mesh, mvpValues, problemParameters.get<double>("mu") ) );
+    mvp = Teuchos::rcp (new Ginla::MagneticVectorPotential::ExplicitValues(mesh, mvpValues, problemParameters.get<double>("mu")));
 
     Teuchos::RCP<Ginla::ModelEvaluator> modelEval =
-        Teuchos::rcp( new Ginla::ModelEvaluator( mesh, problemParameters, thickness, mvp, z ) );
+        Teuchos::rcp( new Ginla::ModelEvaluator( mesh, problemParameters, potential, thickness, mvp, z ) );
 
     // Get a finite-difference approximation of df/dp.
     EpetraExt::ModelEvaluator::InArgs inArgs = modelEval->createInArgs();
@@ -106,15 +108,15 @@ testComputeF( const std::string & inputFileNameBase,
     // check the norms
     double normOne;
     f->Norm1( &normOne );
-    TEST_FLOATING_EQUALITY( normOne, controlNormOne, 1.0e-13 );
+    TEST_FLOATING_EQUALITY( normOne, controlNormOne, 1.0e-7 );
 
     double normTwo;
     f->Norm2( &normTwo );
-    TEST_FLOATING_EQUALITY( normTwo, controlNormTwo, 1.0e-13 );
+    TEST_FLOATING_EQUALITY( normTwo, controlNormTwo, 1.0e-7 );
 
     double normInf;
     f->NormInf( &normInf );
-    TEST_FLOATING_EQUALITY( normInf, controlNormInf, 1.0e-13 );
+    TEST_FLOATING_EQUALITY( normInf, controlNormInf, 1.0e-7 );
 
 
     return;

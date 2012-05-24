@@ -100,8 +100,8 @@ Apply( const Epetra_MultiVector &X,
     // 2k/2k and 2k+1/2k+1 handled by Multiply().
     for ( int k=0; k<numMyPoints; k++ )
     {
-      (*Y(vec))[2*k]   += (*diag0_)  [2*k]   * X[vec][2*k]
-                        + (*diag1b_) [k]     * X[vec][2*k+1];
+      (*Y(vec))[2*k]   += (*diag0_) [2*k]   * X[vec][2*k]
+                        + (*diag1b_)[k]     * X[vec][2*k+1];
       (*Y(vec))[2*k+1] += (*diag1b_)[k]     * X[vec][2*k]
                         + (*diag0_) [2*k+1] * X[vec][2*k+1];
     }
@@ -239,25 +239,24 @@ rebuildDiags_() const
     double alpha = controlVolumes[k] * (*thickness_)[k] * (
         (*potential_)[k]
         + g_ * 2.0 *
-        ( (*current_X_)[2*k] * (*current_X_)[2*k]
-        + (*current_X_)[2*k+1]*(*current_X_)[2*k+1]
-        )
+          ( (*current_X_)[2*k] * (*current_X_)[2*k]
+          + (*current_X_)[2*k+1]*(*current_X_)[2*k+1] )
         );
-    double rePhiSquare = g_ * controlVolumes[k] * (*thickness_)[k] * (
+    double realX2 = g_ * controlVolumes[k] * (*thickness_)[k] * (
           (*current_X_)[2*k]  *(*current_X_)[2*k]
         - (*current_X_)[2*k+1]*(*current_X_)[2*k+1]
         );
-    vals[0]    = alpha + rePhiSquare;
-    vals[1]    = alpha - rePhiSquare;
+    vals[0]    = alpha + realX2;
+    vals[1]    = alpha - realX2;
     indices[0] = 2*k;
     indices[1] = 2*k+1;
     TEUCHOS_ASSERT_EQUALITY( 0, diag0_->ReplaceMyValues( 2, vals, indices ) );
 
     // rebuild diag1b
-    double imPhiSquare = g_ * controlVolumes[k] * (*thickness_)[k] * (
+    double imagX2 = g_ * controlVolumes[k] * (*thickness_)[k] * (
         2.0 * (*current_X_)[2*k] * (*current_X_)[2*k+1]
         );
-    TEUCHOS_ASSERT_EQUALITY( 0, diag1b_->ReplaceMyValues( 1, &imPhiSquare, &k ) );
+    TEUCHOS_ASSERT_EQUALITY( 0, diag1b_->ReplaceMyValues( 1, &imagX2, &k ) );
   }
 
   return;
