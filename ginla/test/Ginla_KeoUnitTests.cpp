@@ -88,8 +88,6 @@ testKeo( const std::string & inputFileNameBase,
     keoContainer->updateParameters( mvpParameters );
     const Teuchos::RCP<const Epetra_CrsMatrix> keoMatrix = keoContainer->getKeo();
 
-    std::cout << *keoMatrix << std::endl;
-
     // Compute matrix norms as hashes.
     // Don't check for NormFrobenius() as this one doesn't work for matrices
     // with overlapping maps.
@@ -97,8 +95,8 @@ testKeo( const std::string & inputFileNameBase,
     double normInf = keoMatrix->NormInf();
 
     // check the values
-    //TEST_FLOATING_EQUALITY( normOne, controlNormOne, 1.0e-12 );
-    //TEST_FLOATING_EQUALITY( normInf, controlNormInf, 1.0e-12 );
+    TEST_FLOATING_EQUALITY( normOne, controlNormOne, 1.0e-9 );
+    TEST_FLOATING_EQUALITY( normInf, controlNormInf, 1.0e-9 );
 
     const Epetra_Map & map = keoMatrix->DomainMap();
     double sum;
@@ -109,7 +107,7 @@ testKeo( const std::string & inputFileNameBase,
     u.PutScalar( 1.0 );
     keoMatrix->Apply( u, Ku );
     u.Dot( Ku, &sum );
-    TEST_FLOATING_EQUALITY( sum, controlSum, 1.0e-12 );
+    TEST_FLOATING_EQUALITY( sum, controlSum, 1.0e-8 );
 
     // Sum over all the "real parts" of the matrix.
     // Remember that a 2x2 block corresponding to z is composed as
@@ -127,7 +125,7 @@ testKeo( const std::string & inputFileNameBase,
     }
     keoMatrix->Apply( u, Ku );
     u.Dot( Ku, &sum );
-    TEST_FLOATING_EQUALITY( sum, controlSumReal, 1.0e-12 );
+    TEST_FLOATING_EQUALITY( sum, controlSumReal, 1.0e-8 );
 
     // Sum over all the "imaginary parts" of the matrix.
     // Build vector [ 0, 1, 0, 1, ... ]:
@@ -150,45 +148,45 @@ testKeo( const std::string & inputFileNameBase,
     return;
 }
 // ===========================================================================
-//TEUCHOS_UNIT_TEST( Ginla, KeoRectangleSmallHashes )
-//{
-//    std::string inputFileNameBase = "rectanglesmall";
-//
-//    double mu = 1.0e-2;
-//    double controlNormOne = 10.2246588065616;
-//    double controlNormInf = controlNormOne;
-//    double controlSumReal = 0.0063121712308067401;
-//    double controlSum     = 2 * controlSumReal;
-//
-//    testKeo( inputFileNameBase,
-//             mu,
-//             controlNormOne,
-//             controlNormInf,
-//             controlSum,
-//             controlSumReal,
-//             out,
-//             success );
-//}
+TEUCHOS_UNIT_TEST( Ginla, KeoRectangleSmallHashes )
+{
+    std::string inputFileNameBase = "rectanglesmall";
+
+    double mu = 1.0e-2;
+    double controlNormOne = 10.2246588065616;
+    double controlNormInf = controlNormOne;
+    double controlSumReal = 0.0063121712308067401;
+    double controlSum     = 2 * controlSumReal;
+
+    testKeo( inputFileNameBase,
+             mu,
+             controlNormOne,
+             controlNormInf,
+             controlSum,
+             controlSumReal,
+             out,
+             success );
+}
 // ============================================================================
-//TEUCHOS_UNIT_TEST( Ginla, KeoPacmanHashes )
-//{
-//    std::string inputFileNameBase = "pacman";
-//
-//    double mu = 1.0e-2;
-//    double controlNormOne = 10.0005208574565;
-//    double controlNormInf = controlNormOne;
-//    double controlSumReal = 0.37044264471562194;
-//    double controlSum     = 2 * controlSumReal;
-//
-//    testKeo( inputFileNameBase,
-//             mu,
-//             controlNormOne,
-//             controlNormInf,
-//             controlSum,
-//             controlSumReal,
-//             out,
-//             success );
-//}
+TEUCHOS_UNIT_TEST( Ginla, KeoPacmanHashes )
+{
+    std::string inputFileNameBase = "pacman";
+
+    double mu = 1.0e-2;
+    double controlNormOne = 10.0005208574565;
+    double controlNormInf = controlNormOne;
+    double controlSumReal = 0.37044264471562194;
+    double controlSum     = 2 * controlSumReal;
+
+    testKeo( inputFileNameBase,
+             mu,
+             controlNormOne,
+             controlNormInf,
+             controlSum,
+             controlSumReal,
+             out,
+             success );
+}
 // ============================================================================
 TEUCHOS_UNIT_TEST( Ginla, KeoCubeSmallHashes )
 {
@@ -209,25 +207,25 @@ TEUCHOS_UNIT_TEST( Ginla, KeoCubeSmallHashes )
              out,
              success );
 }
-//// ============================================================================
-//TEUCHOS_UNIT_TEST( Ginla, KeoBrickWHoleHashes )
-//{
-//    std::string inputFileNameBase = "brick-w-hole";
-//
-//    double mu = 1.0e-2;
-//    double controlNormOne = 15.1311199050181;
-//    double controlNormInf = controlNormOne;
-//    double controlSumReal = 0.16763276011469475;
-//    double controlSum     = 2 * controlSumReal;
-//
-//    testKeo( inputFileNameBase,
-//             mu,
-//             controlNormOne,
-//             controlNormInf,
-//             controlSum,
-//             controlSumReal,
-//             out,
-//             success );
-//}
+// ============================================================================
+TEUCHOS_UNIT_TEST( Ginla, KeoBrickWHoleHashes )
+{
+    std::string inputFileNameBase = "brick-w-hole";
+
+    double mu = 1.0e-2;
+    double controlNormOne = 15.1311199050181;
+    double controlNormInf = controlNormOne;
+    double controlSumReal = 0.16763276011469475;
+    double controlSum     = 2 * controlSumReal;
+
+    testKeo( inputFileNameBase,
+             mu,
+             controlNormOne,
+             controlNormInf,
+             controlSum,
+             controlSumReal,
+             out,
+             success );
+}
 // ============================================================================
 } // namespace
