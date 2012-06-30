@@ -33,7 +33,7 @@ NoxObserver(const Teuchos::RCP<const Ginla::ModelEvaluator> &modelEval,
             const NoxObserver::EObserverType &observerType
              ) :
   modelEval_(modelEval),
-  csvWriter_(new Ginla::CsvWriter(filename)),
+  csvWriter_(new Ginla::CsvWriter(filename, " ")),
   observerType_(observerType)
 {
 }

@@ -53,6 +53,7 @@ writeHeader(const Teuchos::ParameterList & pList) const
 {
   fileStream_ << headerStart_ << " ";
 
+  int count = 0;
   for (Teuchos::ParameterList::ConstIterator k=pList.begin(); k!=pList.end(); ++k )
   {
     std::stringstream strstream;
@@ -75,7 +76,11 @@ writeHeader(const Teuchos::ParameterList & pList) const
                            << label << "\"." );
 
     strstream << pList.name( k );
-    fileStream_ << strstream.str() << delimeter_ << "  ";
+
+    // Write it out to the file.
+    fileStream_ << strstream.str();
+    if (++count < pList.numParams())
+      fileStream_ << delimeter_ << "  ";
   }
   // flush:
   fileStream_ << std::endl;
@@ -91,6 +96,7 @@ writeRow(const Teuchos::ParameterList & pList) const
   // to get column alignment.
   fileStream_ << std::string(headerStart_.length() + 1, ' ');
 
+  int count=0;
   for (Teuchos::ParameterList::ConstIterator k=pList.begin(); k!=pList.end(); ++k )
   {
     std::stringstream strstream;
@@ -129,7 +135,9 @@ writeRow(const Teuchos::ParameterList & pList) const
                            "Invalid data type for item \""
                            << label << "\"." );
 
-    fileStream_ << strstream.str() << delimeter_ << "  ";
+    fileStream_ << strstream.str();
+    if (++count < pList.numParams())
+      fileStream_ << delimeter_ << "  ";
   }
 
   // flush:
