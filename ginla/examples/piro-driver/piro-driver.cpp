@@ -18,8 +18,6 @@
 #endif
 #include <Epetra_Vector.h>
 
-#include <LOCA_StatusTest_Combo.H>
-
 #include <Piro_Epetra_NOXSolver.hpp>
 #include <Piro_Epetra_LOCASolver.hpp>
 
@@ -37,27 +35,30 @@
 
 // =============================================================================
 std::string
-extractDirectory( const std::string& path )
+extractDirectory(const std::string& path)
 {
-    return path.substr( 0, path.find_last_of( "/" ) +1 );
+  // Extract the directory from a string, e.g.,
+  // "/usr/bin/" from "/usr/bin/gcc".
+  return path.substr(0, path.find_last_of( "/" ) + 1);
 }
 // =============================================================================
-int main ( int argc, char *argv[] )
+int main(int argc, char *argv[])
 {
-  // Initialize MPI
+  // Initialize MPI.
 #ifdef HAVE_MPI
   MPI_Init( &argc, &argv );
 #endif
 
-    // Create a communicator for Epetra objects
+  // Create a communicator for Epetra objects.
 #ifdef HAVE_MPI
   Teuchos::RCP<Epetra_MpiComm> eComm =
     Teuchos::rcp<Epetra_MpiComm> ( new Epetra_MpiComm ( MPI_COMM_WORLD ) );
 #else
-  Teuchos::RCP<Epetra_SerialComm>  eComm =
+  Teuchos::RCP<Epetra_SerialComm> eComm =
           Teuchos::rcp<Epetra_SerialComm> ( new Epetra_SerialComm() );
 #endif
 
+  // Create output stream. (Handy for multicore output.)
   const Teuchos::RCP<Teuchos::FancyOStream> out =
       Teuchos::VerboseObjectBase::getDefaultOStream();
 
@@ -65,160 +66,141 @@ int main ( int argc, char *argv[] )
   try
   {
     // ===========================================================================
-    // handle command line arguments
+    // Handle command line arguments.
     Teuchos::CommandLineProcessor My_CLP;
 
     My_CLP.setDocString(
-        "This program solves the Ginzburg--Landau problem with a Piro interface.\n"
+        "This program solves nonlinear Schrödinger equations with a Piro interface.\n"
     );
 
     std::string xmlInputFileName = "";
-    My_CLP.setOption ( "xml-input-file", &xmlInputFileName,
-                        "XML file containing the parameter list", true );
+    My_CLP.setOption ("xml-input-file", &xmlInputFileName,
+                      "XML file containing the parameter list", true );
 
-    // print warning for unrecognized arguments
+    // Print warning for unrecognized arguments and make sure to throw an
+    // exception if something went wrong.
     My_CLP.recogniseAllOptions ( true );
+    My_CLP.throwExceptions(true);
 
-    // do throw exceptions
-    My_CLP.throwExceptions ( true );
+    // Finally, parse the command line.
+    My_CLP.parse(argc, argv);
 
-    // finally, parse the command line
-    //Teuchos::CommandLineProcessor::EParseCommandLineReturn parseReturn;
-    My_CLP.parse ( argc, argv );
-
+    // Retrieve Piro parmeter list from given file.
     Teuchos::RCP<Teuchos::ParameterList> piroParams =
         Teuchos::rcp(new Teuchos::ParameterList );
-    *out << "Reading parameter list from \"" << xmlInputFileName << "\"."
-         << std::endl;
     Teuchos::updateParametersFromXmlFile(xmlInputFileName,
                                          piroParams.ptr());
-
     // =======================================================================
-    // extract data of the parameter list
-    Teuchos::ParameterList outputList = piroParams->sublist ( "Output", true );
+    // Extract the location of input and output files.
+    Teuchos::ParameterList outputList = piroParams->sublist("Output", true);
 
-    // set default directory to be the directory of the XML file itself
+    // Set default directory to be the directory of the XML file itself
     std::string xmlDirectory = extractDirectory( xmlInputFileName );
 
     std::string & outputDirectory = xmlDirectory;
 
     std::string contFilePath = xmlDirectory + "/"
-                              + outputList.get<std::string> ( "Continuation data file name" );
+                              + outputList.get<std::string>( "Continuation data file name" );
 
     Teuchos::ParameterList initialGuessList;
     initialGuessList = piroParams->sublist ( "Initial guess", true );
     std::string inputFilePath = xmlDirectory + "/"
-                              + initialGuessList.get<std::string> ( "State" );
+                              + initialGuessList.get<std::string>( "State" );
     // =======================================================================
     // Read the data from the file.
     Teuchos::ParameterList data;
-    Ginla::StkMeshRead( *eComm, inputFilePath, data );
+    Ginla::StkMeshRead(*eComm, inputFilePath, data);
 
     // Cast the data into something more accessible.
     Teuchos::RCP<Ginla::StkMesh> & mesh = data.get<Teuchos::RCP<Ginla::StkMesh> >( "mesh" );
-    Teuchos::RCP<Epetra_Vector> & z = data.get( "psi", Teuchos::RCP<Epetra_Vector>() );
-    Teuchos::RCP<Epetra_MultiVector> & mvpValues = data.get( "A", Teuchos::RCP<Epetra_MultiVector>() );
-    Teuchos::RCP<Epetra_Vector> & potentialValues = data.get( "V", Teuchos::RCP<Epetra_Vector>() );
+    Teuchos::RCP<Epetra_Vector> & psi = data.get("psi", Teuchos::RCP<Epetra_Vector>() );
+    Teuchos::RCP<Epetra_MultiVector> & mvpValues = data.get("A", Teuchos::RCP<Epetra_MultiVector>() );
+    Teuchos::RCP<Epetra_Vector> & potentialValues = data.get("V", Teuchos::RCP<Epetra_Vector>());
     Teuchos::RCP<Epetra_Vector> & thickness = data.get( "thickness", Teuchos::RCP<Epetra_Vector>() );
 
-    // set the output directory for later plotting with this
-    mesh->openOutputChannel( outputDirectory, "solution" );
+    // Set the output directory for later plotting with this.
+    mesh->openOutputChannel(outputDirectory, "solution");
 
-    // create the state
-    TEUCHOS_ASSERT( !z.is_null() );
-    Teuchos::RCP<Ginla::State> state = Teuchos::rcp(new Ginla::State(*z, mesh));
+    // Create the initial state from psi.
+    TEUCHOS_ASSERT( !psi.is_null() );
+    Teuchos::RCP<Ginla::State> state = Teuchos::rcp(new Ginla::State(*psi, mesh));
 
-    // possibly override the parameters
-    Teuchos::ParameterList problemParameters = Teuchos::ParameterList();
-    Teuchos::ParameterList & OverrideParamsList =
-        piroParams->sublist( "Override parameter list", true );
-    problemParameters.setParameters( OverrideParamsList );
+    // Get the initial parameter values.
+    Teuchos::ParameterList initialParameterValues =
+      piroParams->sublist("Initial parameter values", true);
 
-    // Get the rotation vector.
-    Teuchos::RCP<Teuchos::SerialDenseVector<int,double> > u = Teuchos::null;
-    if ( piroParams->isSublist("Rotation vector") )
-    {
-        u = Teuchos::rcp(new Teuchos::SerialDenseVector<int,double>(3) );
-        Teuchos::ParameterList & rotationVectorList =
-            piroParams->sublist( "Rotation vector", false );
-        (*u)[0] = rotationVectorList.get<double>("x");
-        (*u)[1] = rotationVectorList.get<double>("y");
-        (*u)[2] = rotationVectorList.get<double>("z");
-    }
-
-    double mu = problemParameters.get<double>("mu", 0.0);
-    //double theta = problemParameters.get<double>( "theta", 0.0 );
-    //double T = problemParameters.get<double>( "T", 0.0 );
+    // Setup the magnetic vector potential.
+    // Choose between several given MVPs or build your own by
+    // deriving from Ginla::MagneticVectorPotential::Virtual.
+    const double mu = initialParameterValues.get<double>("mu", 0.0);
     Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp =
-      Teuchos::rcp(new Ginla::MagneticVectorPotential::ExplicitValues(mesh, mvpValues, mu) );
-//               Teuchos::rcp ( new Ginla::MagneticVectorPotential::ConstantInSpace( mesh, mvpValues, mu, theta, u ) );
+      Teuchos::rcp(new Ginla::MagneticVectorPotential::ExplicitValues(mesh, mvpValues, mu));
+    // Alternative: Analytically given MVP. This one can also be rotated in space.
+    //const double theta = initialParameterValues.get<double>("theta", 0.0);
+    // Get the rotation vector.
+    // This is important if continuation happens as a rotation of the
+    // vector field around an axis.
+    //Teuchos::RCP<Teuchos::SerialDenseVector<int,double> > u = Teuchos::null;
+    //if ( piroParams->isSublist("Rotation vector") )
+    //{
+    //    u = Teuchos::rcp(new Teuchos::SerialDenseVector<int,double>(3) );
+    //    Teuchos::ParameterList & rotationVectorList =
+    //        piroParams->sublist( "Rotation vector", false );
+    //    (*u)[0] = rotationVectorList.get<double>("x");
+    //    (*u)[1] = rotationVectorList.get<double>("y");
+    //    (*u)[2] = rotationVectorList.get<double>("z");
+    //}
+    //Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp =
+    //  Teuchos::rcp ( new Ginla::MagneticVectorPotential::ConstantInSpace(mesh, mvpValues, mu, theta, u));
 
+    // Setup the scalar potential V.
+    // Use this or build your own by deriving from Ginla::ScalarPotential::Virtual.
+    const double T = initialParameterValues.get<double>("T", 0.0);
     Teuchos::RCP<Ginla::ScalarPotential::Virtual> sp =
-            Teuchos::rcp(new Ginla::ScalarPotential::Constant(-1.0));
-    // create the mode evaluator
-    Teuchos::RCP<Ginla::ModelEvaluator> glModel =
-            Teuchos::rcp(new Ginla::ModelEvaluator(mesh,
-                                                   problemParameters.get<double>("g"),
-                                                   sp,
-                                                   mvp,
-                                                   thickness,
-                                                   z));
+      Teuchos::rcp(new Ginla::ScalarPotential::Constant(-1.0));
 
-    // warn if initial value was given twice
-    std::string contParam = piroParams->sublist( "LOCA" )
-                                       .sublist( "Stepper" )
-                                       .get<std::string>( "Continuation Parameter" );
-    if ( problemParameters.isParameter ( contParam ) )
-        *out << "Warning: Continuation parameter \""
-             << contParam
-             << "\" explicitly given. Initial value will be overwritten by "
-             << "'LOCA->Stepper->Initial Value', though."
-             << std::endl;
+    // Finally, create the model evaluator.
+    // This is the most important object in the whole stack.
+    const double g = initialParameterValues.get<double>("g");
+    Teuchos::RCP<Ginla::ModelEvaluator> nlsModel =
+      Teuchos::rcp(new Ginla::ModelEvaluator(mesh, g, sp, mvp, thickness, psi));
 
-    // Use these two objects to construct a Piro solved application
-    //   EpetraExt::ModelEvaluator is  base class of all Piro::Epetra solvers
+    // Build the Piro model evaluator. It's used to hook up with
+    // several different backends (NOX, LOCA, Rhythmos,...).
     Teuchos::RCP<EpetraExt::ModelEvaluator> piro;
 
     // Declare the eigensaver; it will be used only for LOCA solvers, though.
     Teuchos::RCP<Ginla::SaveEigenData> glEigenSaver;
 
-    // Setup the data output.
-    //int maxLocaSteps = piroParams->sublist ( "LOCA" )
-                                  //.sublist ( "Stepper" )
-                                  //.get<int> ( "Max Steps" );
-
-    // switch by solver type
-    std::string & solver = piroParams->get( "Piro Solver", "" );
+    // Switch by solver type.
+    std::string & solver = piroParams->get("Piro Solver", "");
     // ----------------------------------------------------------------------
-    if ( solver == "NOX" )
+    if (solver == "NOX")
     {
       Teuchos::RCP<Ginla::NoxObserver> observer =
-        Teuchos::rcp(new Ginla::NoxObserver(glModel,
+        Teuchos::rcp(new Ginla::NoxObserver(nlsModel,
                                             contFilePath,
                                             Ginla::NoxObserver::OBSERVER_TYPE_NEWTON
                                             ));
 
       piro = Teuchos::rcp(new Piro::Epetra::NOXSolver(piroParams,
-                                                      glModel,
+                                                      nlsModel,
                                                       observer));
     }
     // ----------------------------------------------------------------------
-    else if ( solver == "LOCA" )
+    else if (solver == "LOCA")
     {
       Teuchos::RCP<Ginla::NoxObserver> observer =
-        Teuchos::rcp(new Ginla::NoxObserver(glModel,
+        Teuchos::rcp(new Ginla::NoxObserver(nlsModel,
                                             contFilePath,
                                             Ginla::NoxObserver::OBSERVER_TYPE_CONTINUATION
                                             ));
 
-//       Teuchos::RCP<LOCA::StatusTest::Combo> locaTest =
-//           Teuchos::rcp( new LOCA::StatusTest::Combo( LOCA::StatusTest::Combo::OR ) );
-
-      // setup eigen saver
+      // Setup eigen saver.
 #ifdef HAVE_LOCA_ANASAZI
       bool computeEigenvalues = piroParams->sublist( "LOCA" )
-                                            .sublist( "Stepper" )
-                                            .get<bool>("Compute Eigenvalues");
+                                           .sublist( "Stepper" )
+                                           .get<bool>("Compute Eigenvalues");
       if (computeEigenvalues)
       {
         Teuchos::ParameterList & eigenList = piroParams->sublist("LOCA")
@@ -229,23 +211,15 @@ int main ( int argc, char *argv[] )
                                         + outputList.get<std::string> ( "Eigenvalues file name" );
 
         Teuchos::RCP<Ginla::CsvWriter> eigenCsvWriter =
-            Teuchos::rcp( new Ginla::CsvWriter( eigenvaluesFilePath ) );
-
-        // initialize the stability change test with a pointer to the eigenvalue information
-        //int stabilityChangeTreshold = 1; // stop when the stability changes by multiplicity 1
-        //Teuchos::RCP<const Teuchos::ParameterList> eigendataList = eigenCsvWriter->getList();
-
-        //Teuchos::RCP<LOCA::StatusTest::Abstract> stabilityChangeTest =
-        //    Teuchos::rcp( new Ginla::StatusTest::StabilityChange( eigendataList,
-        //                                                          stabilityChangeTreshold ) );
-        //locaTest->addStatusTest( stabilityChangeTest );
+          Teuchos::rcp( new Ginla::CsvWriter( eigenvaluesFilePath ) );
 
         glEigenSaver =
           Teuchos::RCP<Ginla::SaveEigenData>(new Ginla::SaveEigenData(eigenList,
-                                                                      glModel,
+                                                                      nlsModel,
                                                                       eigenCsvWriter));
 
-        Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> glSaveEigenDataStrategy = glEigenSaver;
+        Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> glSaveEigenDataStrategy =
+          glEigenSaver;
         eigenList.set("Save Eigen Data Method",
                       "User-Defined");
         eigenList.set("User-Defined Save Eigen Data Name",
@@ -254,97 +228,24 @@ int main ( int argc, char *argv[] )
                       glSaveEigenDataStrategy);
       }
 #endif
-
-//           Teuchos::RCP<LOCA::StatusTest::Abstract> freeEnergyTest =
-//               Teuchos::rcp( new Ginla::StatusTest::Energy( glModel, 0.0 ) );
-//           locaTest->addStatusTest( freeEnergyTest );
-//
-//           // feed in restart predictor vector
-//           Teuchos::ParameterList & predictorList = piroParams->sublist ( "LOCA" )
-//                                                               .sublist ( "Predictor" );
-//           if ( predictorList.get<std::string>("Method") == "Secant" )
-//           {
-//               Teuchos::ParameterList & fspList = predictorList.sublist ( "First Step Predictor" );
-//               if ( fspList.get<std::string>("Method") == "Restart" )
-//               {
-//                   // Get restart vector.
-//                   // read the predictor state
-//                   Teuchos::ParameterList           voidParameters;
-//                   Teuchos::RCP<ComplexMultiVector> z = Teuchos::null;
-//                   Teuchos::RCP<VMesh::Mesh>    mesh = Teuchos::null;
-//                   VMesh::read( Comm,
-//                                    getAbsolutePath(initialGuessList.get<std::string> ( "Predictor" ), xmlPath),
-//                                    z,
-//                                    mesh,
-//                                    voidParameters );
-//                   Teuchos::RCP<Ginla::FVM::State>  predictorState =
-//                       Teuchos::rcp( new Ginla::FVM::State( z, mesh ) );
-//
-//                   // transform to system vector
-//                   Teuchos::RCP<Epetra_Vector> predictorV = glModel->createSystemVector( *predictorState );
-//
-//                   // Create the LOCA::MultiContinuation::ExtendedVector;
-//                   // that's the predictor vector with a prediction for the parameter appended
-//                   // -- 0 in the case of a pitchfork.
-//                   NOX::Epetra::Vector vx( predictorV );
-//
-//                   // Note that the globalData element is here the null pointer. It would be work-aroundish to
-//                   // artificially create one here, and after all, all that's it's used for is error and warning
-//                   // message printing.
-//                   Teuchos::RCP<LOCA::MultiContinuation::ExtendedVector> restartVector =
-//                       Teuchos::rcp( new LOCA::MultiContinuation::ExtendedVector( Teuchos::null,
-//                                                                                  vx,
-//                                                                                  1 )
-//                                   );
-//                   double vp = 0.0;
-//                   restartVector->setScalar(0, vp);
-//
-//                   fspList.set( "Restart Vector", restartVector );
-//
-// //                   // Make only one LOCA step when branch switching.
-// //                   bool return_failed_on_max_steps = false;
-// //                   extraTest = Teuchos::rcp( new Ginla::StatusTest::MaxAcceptedSteps( 2,
-// //                                                                                      return_failed_on_max_steps
-// //                                                                                     ) );
-//               }
-//           }
-//
-//           double lowerLimit = stepperList.get<double> ( "Min Value" );
-//           double upperLimit = stepperList.get<double> ( "Max Value" );
-//           Teuchos::RCP<Ginla::StatusTest::ParameterLimits> paramLimitsTest =
-//               Teuchos::rcp( new Ginla::StatusTest::ParameterLimits( lowerLimit, upperLimit, false ) );
-//
-//           locaTest->addStatusTest( paramLimitsTest );
-
-      // fetch the stepper
+      // Get the solver.
       Teuchos::RCP<Piro::Epetra::LOCASolver> piroLOCASolver =
-          Teuchos::rcp( new Piro::Epetra::LOCASolver( piroParams,
-                                                      glModel,
-                                                      observer//,
-//                                                       Teuchos::null,
-//                                                       locaTest
-                                                    ) );
+        Teuchos::rcp( new Piro::Epetra::LOCASolver(piroParams, nlsModel, observer));
 
-      // get stepper and inject it into the eigensaver
+      // Get stepper and inject it into the eigensaver.
       Teuchos::RCP<LOCA::Stepper> stepper = piroLOCASolver->getLOCAStepperNonConst();
  #ifdef HAVE_LOCA_ANASAZI
       if (computeEigenvalues)
-          glEigenSaver->setLocaStepper( stepper );
+        glEigenSaver->setLocaStepper( stepper );
  #endif
       piro = piroLOCASolver;
     }
     // ----------------------------------------------------------------------
     else if ( solver == "Turning Point" )
     {
-      // TODO make sure the turning point continuation doesn't technically fail by default
-
       Teuchos::RCP<Ginla::NoxObserver> observer = Teuchos::null;
-//          observer = Teuchos::rcp( new Ginla::NoxObserver( stateWriter,
-//                                                               glModel,
-//                                                               Ginla::NoxObserver::OBSERVER_TYPE_TURNING_POINT ) );
-//           observer->setStatisticsWriter( statsWriter, glOperator );
 
-      // get the initial null state file
+      // Get the initial null state file.
       initialGuessList = piroParams->sublist ( "Initial guess", true );
 
       // Read the data from the file.
@@ -363,20 +264,20 @@ int main ( int argc, char *argv[] )
       Teuchos::ParameterList & bifList =
           piroParams->sublist ( "LOCA" ).sublist ( "Bifurcation" );
 
-      // set the length normalization vector to be the initial null vector
+      // Set the length normalization vector to be the initial null vector.
       Teuchos::RCP<NOX::Abstract::Vector> lengthNormVec =
           Teuchos::rcp ( new NOX::Epetra::Vector ( *(nullstate->getPsi()) ) );
-//         lengthNormVec->init(1.0);
+      //lengthNormVec->init(1.0);
       bifList.set ( "Length Normalization Vector", lengthNormVec );
 
-      // set the initial null vector
+      // Set the initial null vector.
       Teuchos::RCP<NOX::Abstract::Vector> initialNullAbstractVec =
-          Teuchos::rcp ( new NOX::Epetra::Vector ( *(nullstate->getPsi()) ) );
-  //     initialNullAbstractVec->init(1.0);
+          Teuchos::rcp(new NOX::Epetra::Vector(*(nullstate->getPsi())));
+      // initialNullAbstractVec->init(1.0);
       bifList.set ( "Initial Null Vector", initialNullAbstractVec );
 
       piro = Teuchos::rcp(new Piro::Epetra::LOCASolver( piroParams,
-                                                        glModel,
+                                                        nlsModel,
                                                         observer ));
     }
     // ----------------------------------------------------------------------
@@ -389,35 +290,35 @@ int main ( int argc, char *argv[] )
 
     // Now the (somewhat cumbersome) setting of inputs and outputs
     EpetraExt::ModelEvaluator::InArgs inArgs = piro->createInArgs();
-    //int num_p = inArgs.Np();     // Number of *vectors* of parameters
     Teuchos::RCP<Epetra_Vector> p1 =
         Teuchos::rcp(new Epetra_Vector(*(piro->get_p_init(0))));
-    inArgs.set_p( 0, p1 );
+    inArgs.set_p(0, p1);
 
     // Set output arguments to evalModel call
     EpetraExt::ModelEvaluator::OutArgs outArgs = piro->createOutArgs();
 
-    // Now, solve the problem and return the responses
+    // Now solve the problem and return the responses.
     const Teuchos::RCP<Teuchos::Time> piroSolveTime =
         Teuchos::TimeMonitor::getNewTimer("Piro total solve time");;
     {
     Teuchos::TimeMonitor tm(*piroSolveTime);
     piro->evalModel(inArgs, outArgs);
     }
-    // Make sure it finsihsed without error.
-    //TEUCHOS_ASSERT( !outArgs.isFailed() );
 
-    // manually release LOCA stepper
+    // Manually release LOCA stepper.
 #ifdef HAVE_LOCA_ANASAZI
     if ( !glEigenSaver.is_null() )
         glEigenSaver->releaseLocaStepper();
 #endif
 
-    // print timing data
+    // Print timing data.
     Teuchos::TimeMonitor::summarize();
   }
+  catch (Teuchos::CommandLineProcessor::HelpPrinted)
+  {}
+  catch (Teuchos::CommandLineProcessor::UnrecognizedOption)
+  {}
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true, *out, success);
-
 
 #ifdef HAVE_MPI
     MPI_Finalize();
