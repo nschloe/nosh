@@ -218,7 +218,8 @@ create_WPrec() const
   // Effectively, this boolean serves pretty well as a quirky switch for the
   // preconditioner if Piro is used.
   return Teuchos::rcp(new EpetraExt::ModelEvaluator::Preconditioner(keoPrec,
-                                                                    true));
+                                                                    //true));
+                                                                    false));
 }
 // ============================================================================
 EpetraExt::ModelEvaluator::InArgs

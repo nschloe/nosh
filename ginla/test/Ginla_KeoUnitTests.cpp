@@ -40,7 +40,7 @@ namespace {
 // =============================================================================
 void
 testKeo( const std::string & inputFileNameBase,
-         const double mu,
+         const double initMu,
          const double controlNormOne,
          const double controlNormInf,
          const double controlSum,
@@ -75,18 +75,16 @@ testKeo( const std::string & inputFileNameBase,
     Teuchos::ParameterList           & problemParameters = data.get( "Problem parameters", Teuchos::ParameterList() );
 
     Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp;
-    mvp = Teuchos::rcp ( new Ginla::MagneticVectorPotential::ExplicitValues ( mesh, mvpValues, mu ) );
-
-    Teuchos::RCP<LOCA::ParameterVector> mvpParameters =
-        Teuchos::rcp( new LOCA::ParameterVector() );
-    mvpParameters->addParameter( "mu", mu );
+    mvp = Teuchos::rcp(new Ginla::MagneticVectorPotential::ExplicitValues(mesh, mvpValues, initMu));
 
     Teuchos::RCP<Ginla::KeoContainer> keoContainer =
-        Teuchos::rcp( new Ginla::KeoContainer( mesh, thickness, mvp ) );
+        Teuchos::rcp(new Ginla::KeoContainer(mesh, thickness, mvp));
 
-    // create the kinetic energy operator
-    keoContainer->updateParameters( mvpParameters );
-    const Teuchos::RCP<const Epetra_CrsMatrix> keoMatrix = keoContainer->getKeo();
+    // Explicitly create the kinetic energy operator.
+    Teuchos::Array<double> mvpParams(1);
+    mvpParams[0] = initMu;
+    const Teuchos::RCP<const Epetra_CrsMatrix> keoMatrix =
+      keoContainer->getKeo(mvpParams);
 
     // Compute matrix norms as hashes.
     // Don't check for NormFrobenius() as this one doesn't work for matrices

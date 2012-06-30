@@ -39,7 +39,7 @@ class ExplicitValues : public Virtual
 public:
 ExplicitValues( const Teuchos::RCP<Ginla::StkMesh> &mesh,
                 const Teuchos::RCP<const Epetra_MultiVector> &mvp,
-                const double mu
+                const double initMu
                 );
 
 ~ExplicitValues();
@@ -78,6 +78,7 @@ crossProduct_( const DoubleVector u,
 private:
 const Teuchos::RCP<Ginla::StkMesh> mesh_;
 const Teuchos::RCP<const Epetra_MultiVector> mvp_;
+const double initMu_;
 
 Teuchos::ArrayRCP<double> mvpEdgeMidpointProjectionCache_;
 mutable bool mvpEdgeMidpointProjectionCacheUptodate_;

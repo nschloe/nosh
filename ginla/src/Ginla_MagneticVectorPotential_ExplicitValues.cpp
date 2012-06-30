@@ -29,10 +29,11 @@ namespace MagneticVectorPotential {
 ExplicitValues::
 ExplicitValues(const Teuchos::RCP<Ginla::StkMesh> &mesh,
                const Teuchos::RCP<const Epetra_MultiVector> &mvp,
-               const double mu
+               const double initMu
                ) :
   mesh_( mesh ),
   mvp_( mvp ),
+  initMu_( initMu ),
   mvpEdgeMidpointProjectionCache_( Teuchos::ArrayRCP<double>() ),
   mvpEdgeMidpointProjectionCacheUptodate_( false )
 {
@@ -57,7 +58,7 @@ get_p_init() const
 {
   Teuchos::RCP<Teuchos::Array<double> > p_init =
     Teuchos::rcp(new Teuchos::Array<double>(1));
-  (*p_init)[0] = 0.0;
+  (*p_init)[0] = initMu_;
   return p_init;
 }
 // ============================================================================

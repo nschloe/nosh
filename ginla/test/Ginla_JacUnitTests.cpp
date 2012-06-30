@@ -12,6 +12,7 @@
 #include "Ginla_StkMesh.hpp"
 #include "Ginla_StkMeshReader.hpp"
 #include "Ginla_MagneticVectorPotential_ExplicitValues.hpp"
+#include "Ginla_ScalarPotential_Constant.hpp"
 #include "Ginla_KeoContainer.hpp"
 #include "Ginla_JacobianOperator.hpp"
 
@@ -52,12 +53,14 @@ testJac( const std::string & inputFileNameBase,
     Teuchos::RCP<Ginla::StkMesh>     & mesh = data.get( "mesh", Teuchos::RCP<Ginla::StkMesh>() );
     Teuchos::RCP<Epetra_Vector>      & z = data.get( "psi", Teuchos::RCP<Epetra_Vector>() );
     Teuchos::RCP<Epetra_MultiVector> & mvpValues = data.get( "A", Teuchos::RCP<Epetra_MultiVector>() );
-    Teuchos::RCP<Epetra_Vector>      & potential = data.get( "V", Teuchos::RCP<Epetra_Vector>() );
     Teuchos::RCP<Epetra_Vector>      & thickness = data.get( "thickness", Teuchos::RCP<Epetra_Vector>() );
     Teuchos::ParameterList           & problemParameters = data.get( "Problem parameters", Teuchos::ParameterList() );
 
-    Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp;
-    mvp = Teuchos::rcp ( new Ginla::MagneticVectorPotential::ExplicitValues ( mesh, mvpValues, mu ) );
+    Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp =
+      Teuchos::rcp(new Ginla::MagneticVectorPotential::ExplicitValues(mesh, mvpValues, mu));
+
+    Teuchos::RCP<Ginla::ScalarPotential::Virtual> sp =
+      Teuchos::rcp(new Ginla::ScalarPotential::Constant(-1.0));
 
     Teuchos::RCP<LOCA::ParameterVector> mvpParameters =
         Teuchos::rcp( new LOCA::ParameterVector() );
@@ -70,7 +73,7 @@ testJac( const std::string & inputFileNameBase,
     // create the jacobian operator
     double g = 1.0;
     Teuchos::RCP<Ginla::JacobianOperator> jac =
-        Teuchos::rcp( new Ginla::JacobianOperator( mesh, potential, g, thickness, keoContainer, z ) );
+        Teuchos::rcp(new Ginla::JacobianOperator(mesh, sp, g, thickness, keoContainer, z));
 
     double sum;
     const Epetra_Map & map = jac->OperatorDomainMap();

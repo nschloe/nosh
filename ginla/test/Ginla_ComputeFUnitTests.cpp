@@ -31,6 +31,7 @@
 
 #include "Ginla_StkMesh.hpp"
 #include "Ginla_StkMeshReader.hpp"
+#include "Ginla_ScalarPotential_Constant.hpp"
 #include "Ginla_MagneticVectorPotential_ExplicitValues.hpp"
 #include "Ginla_ModelEvaluator.hpp"
 
@@ -68,23 +69,24 @@ testComputeF( const std::string & inputFileNameBase,
     Ginla::StkMeshRead( *eComm, inputFileName, data );
 
     // Cast the data into something more accessible.
-    Teuchos::RCP<Ginla::StkMesh>     & mesh = data.get( "mesh", Teuchos::RCP<Ginla::StkMesh>() );
-    Teuchos::RCP<Epetra_Vector>      & z = data.get( "psi", Teuchos::RCP<Epetra_Vector>() );
+    Teuchos::RCP<Ginla::StkMesh> & mesh = data.get( "mesh", Teuchos::RCP<Ginla::StkMesh>() );
+    Teuchos::RCP<Epetra_Vector> & z = data.get( "psi", Teuchos::RCP<Epetra_Vector>() );
     Teuchos::RCP<Epetra_MultiVector> & mvpValues = data.get( "A", Teuchos::RCP<Epetra_MultiVector>() );
-    Teuchos::RCP<Epetra_Vector>      & potential = data.get( "V", Teuchos::RCP<Epetra_Vector>() );
-    Teuchos::RCP<Epetra_Vector>      & thickness = data.get( "thickness", Teuchos::RCP<Epetra_Vector>() );
-    Teuchos::ParameterList           & problemParameters = data.get( "Problem parameters", Teuchos::ParameterList() );
+    Teuchos::RCP<Epetra_Vector> & thickness = data.get( "thickness", Teuchos::RCP<Epetra_Vector>() );
+    Teuchos::ParameterList & problemParameters = data.get( "Problem parameters", Teuchos::ParameterList() );
 
     // create parameter vector
-    problemParameters.set( "g", 1.0 );
-    problemParameters.set( "mu", mu );
-    problemParameters.set( "theta", 0.0 );
+    problemParameters.set("g", 1.0);
+    problemParameters.set("mu", mu);
 
-    Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp;
-    mvp = Teuchos::rcp (new Ginla::MagneticVectorPotential::ExplicitValues(mesh, mvpValues, problemParameters.get<double>("mu")));
+    Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp =
+      Teuchos::rcp(new Ginla::MagneticVectorPotential::ExplicitValues(mesh, mvpValues, mu));
+
+    Teuchos::RCP<Ginla::ScalarPotential::Virtual> sp =
+      Teuchos::rcp(new Ginla::ScalarPotential::Constant(-1.0));
 
     Teuchos::RCP<Ginla::ModelEvaluator> modelEval =
-        Teuchos::rcp( new Ginla::ModelEvaluator( mesh, problemParameters, potential, thickness, mvp, z ) );
+        Teuchos::rcp(new Ginla::ModelEvaluator(mesh, 1.0, sp, mvp, thickness, z));
 
     // Get a finite-difference approximation of df/dp.
     EpetraExt::ModelEvaluator::InArgs inArgs = modelEval->createInArgs();
@@ -93,17 +95,17 @@ testComputeF( const std::string & inputFileNameBase,
 
     // get parameter vector and names
     Teuchos::RCP<Epetra_Vector> p =
-        Teuchos::rcp( new Epetra_Vector( *modelEval->get_p_map(0) ) );
+        Teuchos::rcp(new Epetra_Vector(*modelEval->get_p_map(0)));
     Teuchos::RCP<const Teuchos::Array<std::string> > pNames =
         modelEval->get_p_names(0);
 
     // create parameter vector
-    for ( int k=0; k<p->MyLength(); k++ )
+    for (int k=0; k<p->MyLength(); k++)
        (*p)[k] = problemParameters.get<double>( (*pNames)[k] );
-    inArgs.set_p( 0, p );
-    Teuchos::RCP<Epetra_Vector> f = Teuchos::rcp( new Epetra_Vector( z->Map() ) );
+    inArgs.set_p(0, p);
+    Teuchos::RCP<Epetra_Vector> f = Teuchos::rcp(new Epetra_Vector(z->Map()));
     outArgs.set_f( f );
-    modelEval->evalModel( inArgs, outArgs );
+    modelEval->evalModel(inArgs, outArgs);
 
     // check the norms
     double normOne;
