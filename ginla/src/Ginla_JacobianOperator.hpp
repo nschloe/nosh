@@ -50,7 +50,7 @@ class JacobianOperator : public Epetra_Operator
 {
 public:
 JacobianOperator(const Teuchos::RCP<const Ginla::StkMesh> &mesh,
-                 const Teuchos::RCP<Ginla::ScalarPotential::Virtual> &scalarPotential,
+                 const Teuchos::RCP<const Ginla::ScalarPotential::Virtual> &scalarPotential,
                  const double g,
                  const Teuchos::RCP<const Epetra_Vector> &thickness,
                  const Teuchos::RCP<Ginla::KeoContainer> &keoContainer,
@@ -94,16 +94,18 @@ virtual const Epetra_Map &OperatorRangeMap() const;
 
 public:
 void
-rebuild( const Teuchos::Array<double> &mvpParams,
-         const Teuchos::Array<double> &spParams,
-         const Teuchos::RCP<const Epetra_Vector> &current_X
-         );
+rebuild(const double g,
+        const Teuchos::Array<double> &spParams,
+        const Teuchos::Array<double> &mvpParams,
+        const Teuchos::RCP<const Epetra_Vector> &current_X
+        );
 
 protected:
 
 private:
 void
-rebuildDiags_(const Teuchos::Array<double> &spParams,
+rebuildDiags_(const double g,
+              const Teuchos::Array<double> &spParams,
               const Teuchos::RCP<const Epetra_Vector> &current_X
               );
 
@@ -111,13 +113,10 @@ private:
 bool useTranspose_;
 
 const Teuchos::RCP<const Ginla::StkMesh> mesh_;
-const Teuchos::RCP<Ginla::ScalarPotential::Virtual> scalarPotential_;
-const double g_;
+const Teuchos::RCP<const Ginla::ScalarPotential::Virtual> scalarPotential_;
 const Teuchos::RCP<const Epetra_Vector> thickness_;
 const Teuchos::RCP<Ginla::KeoContainer> keoContainer_;
 Teuchos::RCP<const Epetra_FECrsMatrix> keo_;
-
-Teuchos::RCP<const Epetra_Vector> current_X_;
 
 const Teuchos::RCP<Epetra_Vector> diag0_;
 const Teuchos::RCP<Epetra_Vector> diag1b_;

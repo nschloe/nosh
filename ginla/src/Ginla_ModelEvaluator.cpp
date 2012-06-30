@@ -218,8 +218,8 @@ create_WPrec() const
   // Effectively, this boolean serves pretty well as a quirky switch for the
   // preconditioner if Piro is used.
   return Teuchos::rcp(new EpetraExt::ModelEvaluator::Preconditioner(keoPrec,
-                                                                    //true));
-                                                                    false));
+                                                                    true));
+                                                                    //false));
 }
 // ============================================================================
 EpetraExt::ModelEvaluator::InArgs
@@ -311,7 +311,7 @@ evalModel(const InArgs &inArgs,
   // Dissect inArgs.get_p(0) into parameter sublists.
   // Keep this in sync with get_p_init() where the splitting
   // is defined.
-  Teuchos::RCP<const Epetra_Vector> p_in = inArgs.get_p(0);
+  const Teuchos::RCP<const Epetra_Vector> &p_in = inArgs.get_p(0);
 #ifdef _DEBUG_
     TEUCHOS_ASSERT( !p_in.is_null() );
     for (int k=0; k<p_in->MyLength(); k++)
@@ -337,7 +337,7 @@ evalModel(const InArgs &inArgs,
   p_latest_ = Teuchos::rcp(new Epetra_Vector(*p_in));
 
   // compute F
-  const Teuchos::RCP<Epetra_Vector> f_out = outArgs.get_f();
+  const Teuchos::RCP<Epetra_Vector> &f_out = outArgs.get_f();
   if ( !f_out.is_null() )
   {
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
@@ -396,7 +396,7 @@ evalModel(const InArgs &inArgs,
 #endif
     const Teuchos::RCP<Ginla::JacobianOperator> & jac =
       Teuchos::rcp_dynamic_cast<Ginla::JacobianOperator>(W_out, true);
-    jac->rebuild(mvpParams, spParams, x_in);
+    jac->rebuild(g, spParams, mvpParams, x_in);
   }
 
   // Fill preconditioner.

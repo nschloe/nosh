@@ -31,7 +31,7 @@ namespace Ginla {
 // =============================================================================
 JacobianOperator::
 JacobianOperator(const Teuchos::RCP<const Ginla::StkMesh> &mesh,
-                 const Teuchos::RCP<Ginla::ScalarPotential::Virtual> &scalarPotential,
+                 const Teuchos::RCP<const Ginla::ScalarPotential::Virtual> &scalarPotential,
                  const double g,
                  const Teuchos::RCP<const Epetra_Vector> &thickness,
                  const Teuchos::RCP<Ginla::KeoContainer> &keoContainer,
@@ -40,15 +40,13 @@ JacobianOperator(const Teuchos::RCP<const Ginla::StkMesh> &mesh,
   useTranspose_( false ),
   mesh_( mesh ),
   scalarPotential_( scalarPotential ),
-  g_( g ),
   thickness_( thickness ),
   keoContainer_( keoContainer ),
   keo_( Teuchos::null ),
-  current_X_( current_X ),
-  diag0_( Teuchos::rcp( new Epetra_Vector( *(mesh->getComplexNonOverlapMap())) ) ),
-  diag1b_( Teuchos::rcp( new Epetra_Vector( mesh->getControlVolumes()->Map()) ) )
+  diag0_(Teuchos::rcp(new Epetra_Vector(*(mesh->getComplexNonOverlapMap())))),
+  diag1b_(Teuchos::rcp(new Epetra_Vector(mesh->getControlVolumes()->Map())))
 {
-  this->rebuildDiags_(*scalarPotential->get_p_init(), current_X_);
+  this->rebuildDiags_(g, *scalarPotential->get_p_init(), current_X);
 }
 // =============================================================================
 JacobianOperator::
@@ -153,7 +151,7 @@ const char *
 JacobianOperator::
 Label() const
 {
-  return "Jacobian operator for Ginzburg--Landau";
+  return "Jacobian operator for nonlinear Schrödinger";
 }
 // =============================================================================
 bool
@@ -174,7 +172,10 @@ const Epetra_Comm &
 JacobianOperator::
 Comm() const
 {
-  return current_X_->Comm();
+#ifdef _DEBUG_
+  TEUCHOS_ASSERT( !keo_.is_null() );
+#endif
+  return keo_->Comm();
 }
 // =============================================================================
 const Epetra_Map &
@@ -199,23 +200,25 @@ OperatorRangeMap() const
 // =============================================================================
 void
 JacobianOperator::
-rebuild(const Teuchos::Array<double> &mvpParams,
+rebuild(const double g,
         const Teuchos::Array<double> &spParams,
+        const Teuchos::Array<double> &mvpParams,
         const Teuchos::RCP<const Epetra_Vector> &current_X
         )
 {
-  // Rebuild diagonals immediately.
-  this->rebuildDiags_(spParams, current_X);
-
   // Rebuild the KEO.
   keo_ = keoContainer_->getKeo(mvpParams);
+
+  // Rebuild diagonals.
+  this->rebuildDiags_(g, spParams, current_X);
 
   return;
 }
 // =============================================================================
 void
 JacobianOperator::
-rebuildDiags_(const Teuchos::Array<double> &spParams,
+rebuildDiags_(const double g,
+              const Teuchos::Array<double> &spParams,
               const Teuchos::RCP<const Epetra_Vector> &current_X
               )
 {
@@ -236,28 +239,27 @@ rebuildDiags_(const Teuchos::Array<double> &spParams,
     // rebuild diag0
     double alpha = controlVolumes[k] * (*thickness_)[k] * (
         scalarPotential_->getV(k, spParams)
-        + g_ * 2.0 *
+        + g * 2.0 *
           ( (*current_X)[2*k] * (*current_X)[2*k]
           + (*current_X)[2*k+1]*(*current_X)[2*k+1] )
         );
-    double realX2 = g_ * controlVolumes[k] * (*thickness_)[k] * (
+    double realX2 = g * controlVolumes[k] * (*thickness_)[k] * (
           (*current_X)[2*k]  *(*current_X)[2*k]
         - (*current_X)[2*k+1]*(*current_X)[2*k+1]
         );
-    vals[0]    = alpha + realX2;
-    vals[1]    = alpha - realX2;
+    vals[0] = alpha + realX2;
+    vals[1] = alpha - realX2;
     indices[0] = 2*k;
     indices[1] = 2*k+1;
-    TEUCHOS_ASSERT_EQUALITY( 0, diag0_->ReplaceMyValues( 2, vals, indices ) );
+    TEUCHOS_ASSERT_EQUALITY(0, diag0_->ReplaceMyValues(2, vals, indices));
 
     // rebuild diag1b
-    double imagX2 = g_ * controlVolumes[k] * (*thickness_)[k] * (
+    double imagX2 = g * controlVolumes[k] * (*thickness_)[k] * (
         2.0 * (*current_X)[2*k] * (*current_X)[2*k+1]
         );
-    TEUCHOS_ASSERT_EQUALITY( 0, diag1b_->ReplaceMyValues( 1, &imagX2, &k ) );
+    TEUCHOS_ASSERT_EQUALITY(0, diag1b_->ReplaceMyValues(1, &imagX2, &k));
   }
 
-  current_X_ = current_X;
   return;
 }
 // =============================================================================
