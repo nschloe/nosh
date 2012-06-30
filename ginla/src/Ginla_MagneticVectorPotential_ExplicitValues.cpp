@@ -27,13 +27,12 @@ namespace Ginla {
 namespace MagneticVectorPotential {
 // ============================================================================
 ExplicitValues::
-ExplicitValues( const Teuchos::RCP<Ginla::StkMesh> &mesh,
-                const Teuchos::RCP<const Epetra_MultiVector> &mvp,
-                double mu
-                ) :
+ExplicitValues(const Teuchos::RCP<Ginla::StkMesh> &mesh,
+               const Teuchos::RCP<const Epetra_MultiVector> &mvp,
+               const double mu
+               ) :
   mesh_( mesh ),
   mvp_( mvp ),
-  mu_( mu ),
   mvpEdgeMidpointProjectionCache_( Teuchos::ArrayRCP<double>() ),
   mvpEdgeMidpointProjectionCacheUptodate_( false )
 {
@@ -52,57 +51,51 @@ ExplicitValues::
 {
 }
 // ============================================================================
-void
+Teuchos::RCP<const Teuchos::Array<double> >
 ExplicitValues::
-setParameters( const LOCA::ParameterVector &p )
+get_p_init() const
 {
-  if (p.isParameter( "mu" ))
-    mu_ = p.getValue( "mu" );
-
-  return;
+  Teuchos::RCP<Teuchos::Array<double> > p_init =
+    Teuchos::rcp(new Teuchos::Array<double>(1));
+  (*p_init)[0] = 0.0;
+  return p_init;
 }
 // ============================================================================
-Teuchos::RCP<LOCA::ParameterVector>
+Teuchos::RCP<const Teuchos::Array<std::string> >
 ExplicitValues::
-getParameters() const
+get_p_names() const
 {
-  Teuchos::RCP<LOCA::ParameterVector> p =
-    Teuchos::rcp( new LOCA::ParameterVector() );
-
-  p->addParameter( "mu", mu_ );
-
-  return p;
+  Teuchos::RCP<Teuchos::Array<std::string> > p_names =
+    Teuchos::rcp(new Teuchos::Array<std::string>(1));
+  (*p_names)[0] = "mu";
+  return p_names;
 }
 // ============================================================================
 double
 ExplicitValues::
-getAEdgeMidpointProjection( const unsigned int edgeIndex
-                            ) const
+getAEdgeMidpointProjection(const unsigned int edgeIndex,
+                           const Teuchos::Array<double> & mvpParams
+                           ) const
 {
   if ( !mvpEdgeMidpointProjectionCacheUptodate_ )
     this->initializeMvpEdgeMidpointCache_();
 
-  return mu_ * mvpEdgeMidpointProjectionCache_[edgeIndex];
+  return mvpParams[0] * mvpEdgeMidpointProjectionCache_[edgeIndex];
 }
 // ============================================================================
 double
 ExplicitValues::
-getdAdMuEdgeMidpointProjection( const unsigned int edgeIndex
-                                ) const
+getdAdPEdgeMidpointProjection(const unsigned int edgeIndex,
+                              const Teuchos::Array<double> & mvpParams,
+                              const unsigned int parameterIndex
+                              ) const
 {
+  TEUCHOS_ASSERT_EQUALITY(parameterIndex, 0);
+
   if ( !mvpEdgeMidpointProjectionCacheUptodate_ )
     this->initializeMvpEdgeMidpointCache_();
 
   return mvpEdgeMidpointProjectionCache_[edgeIndex];
-}
-// ============================================================================
-double
-ExplicitValues::
-getdAdThetaEdgeMidpointProjection( const unsigned int edgeIndex
-                                   ) const
-{
-  TEUCHOS_TEST_FOR_EXCEPT_MSG( true,
-                       "Parameter \"theta\" not supported. Abort." );
 }
 // ============================================================================
 void

@@ -54,15 +54,13 @@ Teuchos::RCP<LOCA::ParameterVector>
 getParameters() const;
 
 double
-getAEdgeMidpointProjection( const unsigned int edgeIndex
-                            ) const;
+getAEdgeMidpointProjection(const unsigned int edgeIndex
+                           ) const;
 
 double
-getdAdMuEdgeMidpointProjection( const unsigned int edgeIndex
-                                ) const;
-double
-getdAdThetaEdgeMidpointProjection( const unsigned int edgeIndex
-                                   ) const;
+getdAdPEdgeMidpointProjection(const unsigned int edgeIndex,
+                              const unsigned int parameterIndex
+                              ) const;
 
 protected:
 private:

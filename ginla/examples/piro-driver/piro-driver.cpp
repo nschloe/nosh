@@ -26,10 +26,12 @@
 #include "Ginla_StkMesh.hpp"
 #include "Ginla_StkMeshReader.hpp"
 #include "Ginla_State.hpp"
+#include "Ginla_ScalarPotential_Constant.hpp"
 #include "Ginla_MagneticVectorPotential_ExplicitValues.hpp"
 #include "Ginla_ModelEvaluator.hpp"
 #include "Ginla_NoxObserver.hpp"
 #include "Ginla_SaveEigenData.hpp"
+#include "Ginla_CsvWriter.hpp"
 
 #include <Teuchos_TimeMonitor.hpp>
 
@@ -85,11 +87,11 @@ int main ( int argc, char *argv[] )
     My_CLP.parse ( argc, argv );
 
     Teuchos::RCP<Teuchos::ParameterList> piroParams =
-        Teuchos::rcp ( new Teuchos::ParameterList );
+        Teuchos::rcp(new Teuchos::ParameterList );
     *out << "Reading parameter list from \"" << xmlInputFileName << "\"."
          << std::endl;
-
-    Teuchos::updateParametersFromXmlFile( xmlInputFileName, piroParams.get() );
+    Teuchos::updateParametersFromXmlFile(xmlInputFileName,
+                                         piroParams.ptr());
 
     // =======================================================================
     // extract data of the parameter list
@@ -116,7 +118,7 @@ int main ( int argc, char *argv[] )
     Teuchos::RCP<Ginla::StkMesh> & mesh = data.get<Teuchos::RCP<Ginla::StkMesh> >( "mesh" );
     Teuchos::RCP<Epetra_Vector> & z = data.get( "psi", Teuchos::RCP<Epetra_Vector>() );
     Teuchos::RCP<Epetra_MultiVector> & mvpValues = data.get( "A", Teuchos::RCP<Epetra_MultiVector>() );
-    Teuchos::RCP<Epetra_Vector> & potential = data.get( "V", Teuchos::RCP<Epetra_Vector>() );
+    Teuchos::RCP<Epetra_Vector> & potentialValues = data.get( "V", Teuchos::RCP<Epetra_Vector>() );
     Teuchos::RCP<Epetra_Vector> & thickness = data.get( "thickness", Teuchos::RCP<Epetra_Vector>() );
 
     // set the output directory for later plotting with this
@@ -144,26 +146,23 @@ int main ( int argc, char *argv[] )
         (*u)[2] = rotationVectorList.get<double>("z");
     }
 
-    double mu = problemParameters.get<double>( "mu", 0.0 );
+    double mu = problemParameters.get<double>("mu", 0.0);
     //double theta = problemParameters.get<double>( "theta", 0.0 );
     //double T = problemParameters.get<double>( "T", 0.0 );
     Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp =
-            Teuchos::rcp ( new Ginla::MagneticVectorPotential::ExplicitValues( mesh, mvpValues, mu ) );
+      Teuchos::rcp(new Ginla::MagneticVectorPotential::ExplicitValues(mesh, mvpValues, mu) );
 //               Teuchos::rcp ( new Ginla::MagneticVectorPotential::ConstantInSpace( mesh, mvpValues, mu, theta, u ) );
 
+    Teuchos::RCP<Ginla::ScalarPotential::Virtual> sp =
+            Teuchos::rcp(new Ginla::ScalarPotential::Constant(-1.0));
     // create the mode evaluator
     Teuchos::RCP<Ginla::ModelEvaluator> glModel =
             Teuchos::rcp(new Ginla::ModelEvaluator(mesh,
-                                                   problemParameters,
-                                                   potential,
-                                                   thickness,
+                                                   problemParameters.get<double>("g"),
+                                                   sp,
                                                    mvp,
+                                                   thickness,
                                                    z));
-
-    Teuchos::RCP<Ginla::NoxObserver> observer;
-
-    Teuchos::RCP<Ginla::StatsWriter> statsWriter =
-        Teuchos::rcp( new Ginla::StatsWriter( contFilePath ) );
 
     // warn if initial value was given twice
     std::string contParam = piroParams->sublist( "LOCA" )
@@ -193,9 +192,11 @@ int main ( int argc, char *argv[] )
     // ----------------------------------------------------------------------
     if ( solver == "NOX" )
     {
-      observer = Teuchos::rcp(new Ginla::NoxObserver(glModel,
-                                                      Ginla::NoxObserver::OBSERVER_TYPE_NEWTON));
-      observer->setStatisticsWriter( statsWriter );
+      Teuchos::RCP<Ginla::NoxObserver> observer =
+        Teuchos::rcp(new Ginla::NoxObserver(glModel,
+                                            contFilePath,
+                                            Ginla::NoxObserver::OBSERVER_TYPE_NEWTON
+                                            ));
 
       piro = Teuchos::rcp(new Piro::Epetra::NOXSolver(piroParams,
                                                       glModel,
@@ -204,11 +205,11 @@ int main ( int argc, char *argv[] )
     // ----------------------------------------------------------------------
     else if ( solver == "LOCA" )
     {
-      observer = Teuchos::rcp( new Ginla::NoxObserver( glModel,
-                                                        Ginla::NoxObserver::OBSERVER_TYPE_CONTINUATION
-                                                      )
-                              );
-      observer->setStatisticsWriter( statsWriter );
+      Teuchos::RCP<Ginla::NoxObserver> observer =
+        Teuchos::rcp(new Ginla::NoxObserver(glModel,
+                                            contFilePath,
+                                            Ginla::NoxObserver::OBSERVER_TYPE_CONTINUATION
+                                            ));
 
 //       Teuchos::RCP<LOCA::StatusTest::Combo> locaTest =
 //           Teuchos::rcp( new LOCA::StatusTest::Combo( LOCA::StatusTest::Combo::OR ) );
@@ -227,20 +228,22 @@ int main ( int argc, char *argv[] )
                                         + "/"
                                         + outputList.get<std::string> ( "Eigenvalues file name" );
 
-        Teuchos::RCP<Ginla::StatsWriter> eigenStatsWriter =
-            Teuchos::rcp( new Ginla::StatsWriter( eigenvaluesFilePath ) );
+        Teuchos::RCP<Ginla::CsvWriter> eigenCsvWriter =
+            Teuchos::rcp( new Ginla::CsvWriter( eigenvaluesFilePath ) );
 
         // initialize the stability change test with a pointer to the eigenvalue information
         //int stabilityChangeTreshold = 1; // stop when the stability changes by multiplicity 1
-        Teuchos::RCP<const Teuchos::ParameterList> eigendataList = eigenStatsWriter->getList();
+        //Teuchos::RCP<const Teuchos::ParameterList> eigendataList = eigenCsvWriter->getList();
 
         //Teuchos::RCP<LOCA::StatusTest::Abstract> stabilityChangeTest =
         //    Teuchos::rcp( new Ginla::StatusTest::StabilityChange( eigendataList,
         //                                                          stabilityChangeTreshold ) );
         //locaTest->addStatusTest( stabilityChangeTest );
 
-        glEigenSaver = Teuchos::RCP<Ginla::SaveEigenData>(new
-            Ginla::SaveEigenData(eigenList, glModel, eigenStatsWriter));
+        glEigenSaver =
+          Teuchos::RCP<Ginla::SaveEigenData>(new Ginla::SaveEigenData(eigenList,
+                                                                      glModel,
+                                                                      eigenCsvWriter));
 
         Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> glSaveEigenDataStrategy = glEigenSaver;
         eigenList.set("Save Eigen Data Method",
@@ -335,7 +338,7 @@ int main ( int argc, char *argv[] )
     {
       // TODO make sure the turning point continuation doesn't technically fail by default
 
-      observer = Teuchos::null;
+      Teuchos::RCP<Ginla::NoxObserver> observer = Teuchos::null;
 //          observer = Teuchos::rcp( new Ginla::NoxObserver( stateWriter,
 //                                                               glModel,
 //                                                               Ginla::NoxObserver::OBSERVER_TYPE_TURNING_POINT ) );

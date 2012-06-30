@@ -8,17 +8,11 @@ LINK_DIRECTORIES( ${Boost_LIBRARY_DIRS}
                   ${Trilinos_LIBRARY_DIRS}
                   ${Trilinos_TPL_LIBRARY_DIRS} )
 # ------------------------------------------------------------------------------
-SET ( pirodriver_SRCS
-      piro-driver.cpp  )
-SET ( pirodriver_LIBS
-      ginla
-    )
 SET( MY_EXECUTABLE
      "piro-driver.exe" )
-ADD_EXECUTABLE( ${MY_EXECUTABLE}
-                ${pirodriver_SRCS} )
+ADD_EXECUTABLE( ${MY_EXECUTABLE} "piro-driver.cpp")
 TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
-                       ${pirodriver_LIBS}
+                       "ginla"
                        ${Trilinos_LIBRARIES}
                        ${Trilinos_TPL_LIBRARIES} )
 # ------------------------------------------------------------------------------

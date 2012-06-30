@@ -39,28 +39,31 @@ class ExplicitValues : public Virtual
 public:
 ExplicitValues( const Teuchos::RCP<Ginla::StkMesh> &mesh,
                 const Teuchos::RCP<const Epetra_MultiVector> &mvp,
-                double mu
+                const double mu
                 );
 
 ~ExplicitValues();
 
-//! Sets the parameters in this module.
-void
-setParameters( const LOCA::ParameterVector &p );
+//! Get initial parameter values.
+virtual
+Teuchos::RCP<const Teuchos::Array<double> >
+get_p_init() const;
 
-Teuchos::RCP<LOCA::ParameterVector>
-getParameters() const;
+//! Get the parameter names.
+virtual
+Teuchos::RCP<const Teuchos::Array<std::string> >
+get_p_names() const;
 
 double
-getAEdgeMidpointProjection( const unsigned int edgeIndex
-                            ) const;
+getAEdgeMidpointProjection(const unsigned int edgeIndex,
+                           const Teuchos::Array<double> &mvpParams
+                           ) const;
 
 double
-getdAdMuEdgeMidpointProjection( const unsigned int edgeIndex
-                                ) const;
-double
-getdAdThetaEdgeMidpointProjection( const unsigned int edgeIndex
-                                   ) const;
+getdAdPEdgeMidpointProjection(const unsigned int edgeIndex,
+                              const Teuchos::Array<double> &mvpParams,
+                              const unsigned int parameterIndex
+                              ) const;
 
 protected:
 private:
@@ -75,7 +78,6 @@ crossProduct_( const DoubleVector u,
 private:
 const Teuchos::RCP<Ginla::StkMesh> mesh_;
 const Teuchos::RCP<const Epetra_MultiVector> mvp_;
-double mu_;
 
 Teuchos::ArrayRCP<double> mvpEdgeMidpointProjectionCache_;
 mutable bool mvpEdgeMidpointProjectionCacheUptodate_;

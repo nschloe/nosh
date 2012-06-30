@@ -6,12 +6,14 @@ SET ( ginla_SRCS
       Ginla_JacobianOperator.cpp
       Ginla_KeoContainer.cpp
       Ginla_KeoRegularized.cpp
+      Ginla_ScalarPotential_Virtual.cpp
+      Ginla_ScalarPotential_Constant.cpp
       Ginla_MagneticVectorPotential_Virtual.cpp
       Ginla_MagneticVectorPotential_ExplicitValues.cpp
       Ginla_MagneticVectorPotential_ConstantInSpace.cpp
       Ginla_StkMesh.cpp
       Ginla_StkMeshReader.cpp
-      Ginla_StatsWriter.cpp
+      Ginla_CsvWriter.cpp
       Ginla_NoxObserver.cpp
       Ginla_SaveEigenData.cpp
     )

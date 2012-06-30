@@ -37,7 +37,6 @@
 #include <Teuchos_Tuple.hpp>
 #include <Teuchos_Array.hpp>
 #include <Teuchos_SerialDenseVector.hpp>
-#include <LOCA_Parameter_Vector.H>
 
 #include <Epetra_FECrsGraph.h>
 #include <Epetra_FECrsMatrix.h>
@@ -53,6 +52,7 @@ class Virtual;
 }
 }
 // =============================================================================
+// =============================================================================
 namespace Ginla {
 // =============================================================================
 class KeoContainer
@@ -63,10 +63,10 @@ enum EMatrixType { MATRIX_TYPE_REGULAR,
                    MATRIX_TYPE_DTHETA};
 
 public:
-KeoContainer( const Teuchos::RCP<const Ginla::StkMesh> &mesh,
-            const Teuchos::RCP<const Epetra_Vector> &thickness,
-            const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> &mvp
-            );
+KeoContainer(const Teuchos::RCP<const Ginla::StkMesh> &mesh,
+             const Teuchos::RCP<const Epetra_Vector> &thickness,
+             const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> &mvp
+             );
 
 // Destructor.
 ~KeoContainer();
@@ -74,21 +74,17 @@ KeoContainer( const Teuchos::RCP<const Ginla::StkMesh> &mesh,
 const Epetra_Comm &
 getComm() const;
 
-void
-updateParameters( const Teuchos::RCP<const LOCA::ParameterVector> &mvpParams
-                  ) const;
-
-const Teuchos::RCP<const LOCA::ParameterVector>
-getMvpParameters() const;
+//void
+//updateParameters(const Teuchos::Array<double> &mvpParams
+//                 ) const;
 
 Teuchos::RCP<const Epetra_FECrsMatrix>
-getKeo() const;
+getKeo(const Teuchos::Array<double> & mvpParams) const;
 
 Teuchos::RCP<const Epetra_FECrsMatrix>
-getKeoDMu() const;
-
-Teuchos::RCP<const Epetra_FECrsMatrix>
-getKeoDTheta() const;
+getKeoDp(const int paramIndex,
+         const Teuchos::Array<double> & mvpParams
+         ) const;
 
 protected:
 
@@ -98,14 +94,21 @@ buildKeoGraph_() const;
 
 void
 fillKeo_( const Teuchos::RCP<Epetra_FECrsMatrix> &keoMatrix,
-          const EMatrixType matrixType
+          const Teuchos::Array<double> &mvpParams,
+          void (KeoContainer::*filler)(const int, const Teuchos::Array<double>&, double*) const
           ) const;
 
 void
-fillKeoEdges_( const Teuchos::RCP<Epetra_FECrsMatrix> &keoMatrix,
-               const EMatrixType matrixType,
-               const Teuchos::ArrayRCP<const double> &edgeCoefficients
+fillerRegular_(const int k,
+               const Teuchos::Array<double> &mvpParams,
+               double * v
                ) const;
+
+void
+fillerDp_(const int k,
+          const Teuchos::Array<double> &mvpParams,
+          double * v
+          ) const;
 
 void
 buildGlobalIndexCache_( const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > &edges ) const;
@@ -129,14 +132,13 @@ mutable bool globalIndexCacheUpToDate_;
 
 const Teuchos::RCP<const Epetra_FECrsGraph> keoGraph_;
 const Teuchos::RCP<Epetra_FECrsMatrix> keo_;
-mutable Teuchos::RCP<LOCA::ParameterVector> keoBuildParameters_;
-const Teuchos::RCP<Epetra_FECrsMatrix> keoDMu_;
-mutable Teuchos::RCP<LOCA::ParameterVector> keoDMuBuildParameters_;
-const Teuchos::RCP<Epetra_FECrsMatrix> keoDTheta_;
-mutable Teuchos::RCP<LOCA::ParameterVector> keoDThetaBuildParameters_;
+mutable Teuchos::Array<double> keoBuildParameters_;
+mutable Teuchos::Array<Teuchos::RCP<Epetra_FECrsMatrix> > keoDp_;
+mutable Teuchos::Array<Teuchos::Array<double> > keoDpBuildParameters_;
 
 mutable Teuchos::ArrayRCP<double> alphaCache_;
 mutable bool alphaCacheUpToDate_;
+mutable unsigned int paramIndex_;
 };
 // =============================================================================
 } // namespace Ginla

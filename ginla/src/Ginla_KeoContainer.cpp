@@ -39,10 +39,10 @@
 namespace Ginla {
 // =============================================================================
 KeoContainer::
-KeoContainer( const Teuchos::RCP<const Ginla::StkMesh> &mesh,
-            const Teuchos::RCP<const Epetra_Vector> &thickness,
-            const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> &mvp
-            ) :
+KeoContainer(const Teuchos::RCP<const Ginla::StkMesh> &mesh,
+             const Teuchos::RCP<const Epetra_Vector> &thickness,
+             const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> &mvp
+             ) :
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
   keoFillTime_( Teuchos::TimeMonitor::getNewTimer(
                   "Ginla: KeoContainer::fillKeo_" ) ),
@@ -50,17 +50,16 @@ KeoContainer( const Teuchos::RCP<const Ginla::StkMesh> &mesh,
   mesh_( mesh ),
   thickness_( thickness ),
   mvp_( mvp ),
-  globalIndexCache_( Teuchos::ArrayRCP<Epetra_IntSerialDenseVector>() ),
+  globalIndexCache_(Teuchos::ArrayRCP<Epetra_IntSerialDenseVector>()),
   globalIndexCacheUpToDate_( false ),
-  keoGraph_( this->buildKeoGraph_() ),       // build the graph immediately
-  keo_( Teuchos::rcp( new Epetra_FECrsMatrix( Copy, *keoGraph_ ) ) ),
+  keoGraph_(this->buildKeoGraph_()),    // build the graph immediately
+  keo_(Teuchos::rcp(new Epetra_FECrsMatrix(Copy, *keoGraph_))),
   keoBuildParameters_( Teuchos::null ),
-  keoDMu_( Teuchos::rcp( new Epetra_FECrsMatrix( Copy, *keoGraph_ ) ) ),
-  keoDMuBuildParameters_( Teuchos::null ),
-  keoDTheta_( Teuchos::rcp( new Epetra_FECrsMatrix( Copy, *keoGraph_ ) ) ),
-  keoDThetaBuildParameters_( Teuchos::null ),
-  alphaCache_( Teuchos::ArrayRCP<double>() ),
-  alphaCacheUpToDate_( false )
+  keoDp_(Teuchos::Array<Teuchos::RCP<Epetra_FECrsMatrix> >(mvp_->get_p_names()->length())),
+  keoDpBuildParameters_( Teuchos::Array<Teuchos::Array<double> >(mvp_->get_p_names()->length()) ),
+  alphaCache_(Teuchos::ArrayRCP<double>()),
+  alphaCacheUpToDate_( false ),
+  paramIndex_(0)
 {
 }
 // =============================================================================
@@ -79,64 +78,51 @@ getComm() const
   return mesh_->getComm();
 }
 // =============================================================================
-void
-KeoContainer::
-updateParameters( const Teuchos::RCP<const LOCA::ParameterVector> &mvpParams
-                  ) const
-{
-  // set the parameters
-#ifdef _DEBUG_
-  TEUCHOS_ASSERT( !mvpParams.is_null() );
-  TEUCHOS_ASSERT( !mvp_.is_null() );
-#endif
-  mvp_->setParameters( *mvpParams );
-  return;
-}
-// =============================================================================
-const Teuchos::RCP<const LOCA::ParameterVector>
-KeoContainer::
-getMvpParameters() const
-{
-  return mvp_->getParameters();
-}
+//void
+//KeoContainer::
+//updateParameters(const Teuchos::Array<double> &mvpParams
+//                 ) const
+//{
+//  // set the parameters
+//#ifdef _DEBUG_
+//  TEUCHOS_ASSERT( !mvp_.is_null() );
+//#endif
+//  mvp_->set_p( mvpParams );
+//  return;
+//}
 // =============================================================================
 Teuchos::RCP<const Epetra_FECrsMatrix>
 KeoContainer::
-getKeo() const
+getKeo(const Teuchos::Array<double> &mvpParams) const
 {
-  if ( !Ginla::Helpers::locaParameterVectorsEqual( keoBuildParameters_,
-                                                   mvp_->getParameters() ) )
+  if (keoBuildParameters_ != mvpParams)
   {
-    this->fillKeo_( keo_, MATRIX_TYPE_REGULAR );
-    keoBuildParameters_ = Teuchos::rcp( mvp_->getParameters()->clone() );
+    this->fillKeo_(keo_, mvpParams, &KeoContainer::fillerRegular_);
+    keoBuildParameters_ = mvpParams;
   }
   return keo_;
 }
 // =============================================================================
 Teuchos::RCP<const Epetra_FECrsMatrix>
 KeoContainer::
-getKeoDMu() const
+getKeoDp(const int paramIndex,
+         const Teuchos::Array<double> &mvpParams
+         ) const
 {
-  if ( !Ginla::Helpers::locaParameterVectorsEqual( keoDMuBuildParameters_,
-                                                   mvp_->getParameters() ) )
+  // Create keoDp_[paramindex].
+  if (keoDp_[paramIndex].is_null())
+    keoDp_[paramIndex] = Teuchos::rcp(new Epetra_FECrsMatrix(Copy, *keoGraph_));
+
+  if (keoDpBuildParameters_[paramIndex] != mvpParams)
   {
-    this->fillKeo_( keoDMu_, MATRIX_TYPE_DMU );
-    keoDMuBuildParameters_ = Teuchos::rcp( mvp_->getParameters()->clone() );
+    // Pass parameterIndex_ to this->fillerDp_() without changing fillerDp_'s
+    // interface by setting a private variable.
+    paramIndex_ = paramIndex;
+    this->fillKeo_(keoDp_[paramIndex], mvpParams, &KeoContainer::fillerDp_);
+    // Copy over the build parameters.
+    keoDpBuildParameters_[paramIndex] = mvpParams;
   }
-  return keoDMu_;
-}
-// =============================================================================
-Teuchos::RCP<const Epetra_FECrsMatrix>
-KeoContainer::
-getKeoDTheta() const
-{
-  if ( !Ginla::Helpers::locaParameterVectorsEqual( keoDThetaBuildParameters_,
-                                                   mvp_->getParameters() ) )
-  {
-    this->fillKeo_( keoDTheta_, MATRIX_TYPE_DTHETA );
-    keoDThetaBuildParameters_ = Teuchos::rcp( mvp_->getParameters()->clone() );
-  }
-  return keoDTheta_;
+  return keoDp_[paramIndex];
 }
 // =============================================================================
 const Teuchos::RCP<Epetra_FECrsGraph>
@@ -214,7 +200,7 @@ buildKeoGraph_() const
     this->buildGlobalIndexCache_( edges );
 
   // Loop over all edges and put entries wherever two nodes are connected.
-  for ( unsigned int k=0; k<edges.size(); k++ )
+  for (unsigned int k=0; k<edges.size(); k++)
     TEUCHOS_ASSERT_EQUALITY( 0,
       keoGraph->InsertGlobalIndices(4, globalIndexCache_[k].Values(),
                                     4, globalIndexCache_[k].Values()));
@@ -222,15 +208,54 @@ buildKeoGraph_() const
   // Make sure that domain and range map are non-overlapping (to make sure that
   // states psi can compute norms) and equal (to make sure that the matrix works
   // with ML).
-  TEUCHOS_ASSERT_EQUALITY( 0, keoGraph->GlobalAssemble( noMap,noMap ) );
+  TEUCHOS_ASSERT_EQUALITY(0, keoGraph->GlobalAssemble(noMap,noMap));
 
   return keoGraph;
 }
 // =============================================================================
 void
 KeoContainer::
+fillerRegular_(const int k,
+               const Teuchos::Array<double> & mvpParams,
+               double * v) const
+{
+  // Fill v with
+  // Re(-exp(i Aint))
+  // Im(-exp(i Aint))
+  // 1.0
+  double aInt = mvp_->getAEdgeMidpointProjection(k, mvpParams);
+  // If compiled with GNU (and maybe other compilers), we could use
+  // sincos() here to comute sin and cos simultaneously.
+  // PGI, for one, doesn't support sincos, though.
+  v[0] = -cos(aInt);
+  v[1] = -sin(aInt);
+  v[2] = 1.0;
+  //sincos( aInt, &sinAInt, &cosAInt );
+
+  return;
+}
+// =============================================================================
+void
+KeoContainer::
+fillerDp_(const int k,
+          const Teuchos::Array<double> & mvpParams,
+          double * v) const
+{
+  double aInt = mvp_->getAEdgeMidpointProjection(k, mvpParams);
+  // paramIndex_ is set in the KEO building routine.
+  double dAdPInt = mvp_->getdAdPEdgeMidpointProjection(k, mvpParams, paramIndex_);
+  //sincos( aInt, &sinAInt, &cosAInt );
+  v[0] =  dAdPInt * sin(aInt);
+  v[1] = -dAdPInt * cos(aInt);
+  v[2] = 0.0;
+  return;
+}
+// =============================================================================
+void
+KeoContainer::
 fillKeo_( const Teuchos::RCP<Epetra_FECrsMatrix> &keoMatrix,
-          const EMatrixType matrixType
+          const Teuchos::Array<double> & mvpParams,
+          void (KeoContainer::*filler)(const int, const Teuchos::Array<double>&, double*) const
           ) const
 {
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
@@ -257,6 +282,8 @@ fillKeo_( const Teuchos::RCP<Epetra_FECrsMatrix> &keoMatrix,
   if ( !alphaCacheUpToDate_ )
     this->buildAlphaCache_( edges, mesh_->getEdgeCoefficients() );
 
+  double v[3];
+  Epetra_SerialDenseMatrix A(4, 4);
   // Loop over all edges.
   for ( unsigned int k=0; k<edges.size(); k++ )
   {
@@ -274,45 +301,7 @@ fillKeo_( const Teuchos::RCP<Epetra_FECrsMatrix> &keoMatrix,
     // Instead of first computing the projection over the normalized edge
     // and then multiply it with the edge length, don't normalize the
     // edge vector.
-    double aInt = mvp_->getAEdgeMidpointProjection( k );
-    double c, s, d;
-    // If compiled with GNU (and maybe other compilers), we could use
-    // sincos() here to comute sin and cos simultaneously.
-    // PGI, for one, doesn't support sincos, though.
-    double sinAInt = sin(aInt);
-    double cosAInt = cos(aInt);
-    //sincos( aInt, &sinAInt, &cosAInt );
-    // For a slight speedup, move this switch statement out of the loop.
-    switch ( matrixType )
-    {
-      case MATRIX_TYPE_REGULAR:     // no derivative
-      {
-        c = -alphaCache_[k] * cosAInt;
-        s = -alphaCache_[k] * sinAInt;
-        d = alphaCache_[k];
-        break;
-      }
-      case MATRIX_TYPE_DMU:     // dK/dmu
-      {
-        double dAdMuInt = mvp_->getdAdMuEdgeMidpointProjection( k );
-        c =  alphaCache_[k] * dAdMuInt * sinAInt;
-        s = -alphaCache_[k] * dAdMuInt * cosAInt;
-        d = 0.0;
-        break;
-      }
-      case MATRIX_TYPE_DTHETA:     // dK/dtheta
-      {
-        double dAdThetaInt = mvp_->getdAdThetaEdgeMidpointProjection( k );
-        c =  alphaCache_[k] * dAdThetaInt * sinAInt;
-        s = -alphaCache_[k] * dAdThetaInt * cosAInt;
-        d = 0.0;
-        break;
-      }
-      default:
-        TEUCHOS_TEST_FOR_EXCEPT_MSG( true,
-                             "Illegal matrix type \"" << matrixType << "\"."
-                             );
-    }
+    (this->*filler)(k, mvpParams, v);
     // We'd like to insert the 2x2 matrix
     //
     //     [   alpha                   , - alpha * exp( -IM * aInt ) ]
@@ -321,23 +310,11 @@ fillKeo_( const Teuchos::RCP<Epetra_FECrsMatrix> &keoMatrix,
     // at the indices   [ nodeIndices[0], nodeIndices[1] ] for every index pair
     // that shares and edge.
     // Do that now, just blockwise for real and imaginary part.
-    Epetra_SerialDenseMatrix A( 4,4 );
-    A( 0,0 ) = d;
-    A( 0,1 ) = 0.0;
-    A( 0,2 ) = c;
-    A( 0,3 ) = s;
-    A( 1,0 ) = 0.0;
-    A( 1,1 ) = d;
-    A( 1,2 ) = -s;
-    A( 1,3 ) = c;
-    A( 2,0 ) = c;
-    A( 2,1 ) = -s;
-    A( 2,2 ) = d;
-    A( 2,3 ) = 0.0;
-    A( 3,0 ) = s;
-    A( 3,1 ) = c;
-    A( 3,2 ) = 0.0;
-    A( 3,3 ) = d;
+    A(0, 0) = v[2];   A(0 ,1) = 0.0;     A(0, 2) = v[0];    A(0, 3) = v[1];
+    A(1, 0) = 0.0;    A(1 ,1) = v[2];    A(1, 2) = -v[1];   A(1, 3) = v[0];
+    A(2, 0) = v[0];   A(2 ,1) = -v[1];   A(2, 2) = v[2];    A(2, 3) = 0.0;
+    A(3, 0) = v[1];   A(3 ,1) = v[0];    A(3, 2) = 0.0;     A(3, 3) = v[2];
+    TEUCHOS_ASSERT_EQUALITY(0, A.Scale(alphaCache_[k]));
     TEUCHOS_ASSERT_EQUALITY(0, keoMatrix->SumIntoGlobalValues(
                                                     globalIndexCache_[k], A));
     // -------------------------------------------------------------------

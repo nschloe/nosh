@@ -45,6 +45,9 @@ class StkMesh;
 namespace MagneticVectorPotential {
 class Virtual;
 }
+namespace ScalarPotential {
+class Virtual;
+}
 }
 
 class Epetra_CrsGraph;
@@ -59,10 +62,10 @@ public:
 //! Constructor without initial guess.
 ModelEvaluator (
   const Teuchos::RCP<Ginla::StkMesh> &mesh,
-  const Teuchos::ParameterList &params,
-  const Teuchos::RCP<const Epetra_Vector> &potential,
-  const Teuchos::RCP<const Epetra_Vector> &thickness,
+  const double g,
+  const Teuchos::RCP<Ginla::ScalarPotential::Virtual> &scalarPotential,
   const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> &mvp,
+  const Teuchos::RCP<const Epetra_Vector> &thickness,
   const Teuchos::RCP<Epetra_Vector> &initialX
   );
 
@@ -118,45 +121,44 @@ evalModel( const InArgs &inArgs,
 virtual
 Teuchos::RCP<Ginla::State>
 createSavable( const Epetra_Vector &x ) const;
+
+Teuchos::RCP<const Epetra_Vector>
+get_p_latest() const;
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 public:
 
-virtual
-Teuchos::RCP<LOCA::ParameterVector>
-getParameters() const;
+//virtual
+//Teuchos::RCP<LOCA::ParameterVector>
+//getParameters() const;
 
 private:
 void
 computeF_( const Epetra_Vector &x,
-           const Teuchos::RCP<const LOCA::ParameterVector> &mvpParams,
-           const double T,
+           const double g,
+           const Teuchos::Array<double> & spParams,
+           const Teuchos::Array<double> & mvpParams,
            Epetra_Vector &FVec
            ) const;
 
 void
-computeDFDMu_( const Epetra_Vector &x,
-               const Teuchos::RCP<const LOCA::ParameterVector> &mvpParams,
-               Epetra_Vector &FVec
-               ) const;
+computeDFDg_(const Epetra_Vector &x,
+             Epetra_Vector &FVec
+             ) const;
 
 void
-computeDFDTheta_( const Epetra_Vector &x,
-                  const Teuchos::RCP<const LOCA::ParameterVector> &mvpParams,
-                  Epetra_Vector &FVec
-                  ) const;
+computeDFDPpotential_(const Epetra_Vector &x,
+                      const Teuchos::Array<double> &spParams,
+                      int paramIndex,
+                      Epetra_Vector &FVec
+                      ) const;
 
 void
-computeDFDG_( const Epetra_Vector &x,
-              const Teuchos::RCP<const LOCA::ParameterVector> &mvpParams,
-              Epetra_Vector &FVec
-              ) const;
-
-void
-computeDFDT_( const Epetra_Vector &x,
-              const Teuchos::RCP<const LOCA::ParameterVector> &mvpParams,
-              Epetra_Vector &FVec
-              ) const;
+computeDFDPmvp_(const Epetra_Vector &x,
+                const Teuchos::Array<double> &mvpParams,
+                int paramIndex,
+                Epetra_Vector &FVec
+                ) const;
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 protected:
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -169,21 +171,16 @@ private:
 
 const Teuchos::RCP<Ginla::StkMesh> mesh_;
 
-const Teuchos::RCP<const Epetra_Vector> potential_;
+double g_;
+
+const Teuchos::RCP<Ginla::ScalarPotential::Virtual> scalarPotential_;
+const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp_;
+
 const Teuchos::RCP<const Epetra_Vector> thickness_;
 
 const Teuchos::RCP<Epetra_Vector> x_;
 
-int numParams_;
-
-Teuchos::RCP<Epetra_Map> p_map_;
-Teuchos::RCP<Epetra_Vector> p_init_;
-Teuchos::RCP<Teuchos::Array<std::string> > p_names_;
-
-// for get_parameters()
-Teuchos::RCP<Epetra_Vector> p_current_;
-
-const Teuchos::RCP<Ginla::MagneticVectorPotential::Virtual> mvp_;
+mutable Teuchos::RCP<Epetra_Vector> p_latest_;
 
 const Teuchos::RCP<Ginla::KeoContainer> keoContainer_;
 
@@ -196,10 +193,6 @@ const Teuchos::RCP<Teuchos::Time> fillPreconditionerTime_;
 #endif
 
 Teuchos::RCP<Teuchos::FancyOStream> out_;
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-private:
-void
-setupParameters_( const Teuchos::ParameterList &params );
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 };
 

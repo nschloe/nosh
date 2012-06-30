@@ -35,7 +35,7 @@ namespace Komplex2 {
 class LinearProblem;
 }
 namespace Ginla {
-class StatsWriter;
+class CsvWriter;
 class ModelEvaluator;
 class State;
 }
@@ -52,9 +52,10 @@ enum EObserverType { OBSERVER_TYPE_NEWTON,
 
 public:
 //! Constructor
-NoxObserver ( const Teuchos::RCP<const Ginla::ModelEvaluator> &modelEval,
-              const NoxObserver::EObserverType &problemType
-              );
+NoxObserver(const Teuchos::RCP<const Ginla::ModelEvaluator> &modelEval,
+            const std::string & filename,
+            const NoxObserver::EObserverType &problemType
+            );
 
 //! Destructor
 virtual
@@ -63,9 +64,6 @@ virtual
 virtual
 void
 observeSolution( const Epetra_Vector &soln );
-
-void
-setStatisticsWriter( const Teuchos::RCP<Ginla::StatsWriter> &statsWriter );
 
 protected:
 private:
@@ -85,9 +83,9 @@ private:
 private:
 
 const Teuchos::RCP<const Ginla::ModelEvaluator> modelEval_;
+const Teuchos::RCP<Ginla::CsvWriter> csvWriter_;
 const EObserverType observerType_;
 
-Teuchos::RCP<Ginla::StatsWriter> statsWriter_;
 };
 
 } // namespace Ginla

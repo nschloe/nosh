@@ -29,16 +29,19 @@
 
 #include <Epetra_Operator.h>
 #include <Teuchos_RCP.hpp>
-#include <Teuchos_Tuple.hpp>
+#include <Teuchos_Array.hpp>
 #include <LOCA_Parameter_Vector.H>
 // =============================================================================
 // forward declarations
 namespace Ginla {
 class KeoContainer;
 class StkMesh;
+namespace ScalarPotential{
+class Virtual;
+}
 }
 class Epetra_CrsGraph;
-class Epetra_CrsMatrix;
+class Epetra_FECrsMatrix;
 class Epetra_Vector;
 // =============================================================================
 namespace Ginla {
@@ -46,13 +49,13 @@ namespace Ginla {
 class JacobianOperator : public Epetra_Operator
 {
 public:
-JacobianOperator( const Teuchos::RCP<const Ginla::StkMesh> &mesh,
-                  const Teuchos::RCP<const Epetra_Vector> &potential,
-                  const double g,
-                  const Teuchos::RCP<const Epetra_Vector> &thickness,
-                  const Teuchos::RCP<Ginla::KeoContainer> &keoContainer,
-                  const Teuchos::RCP<const Epetra_Vector> &current_X
-                  );
+JacobianOperator(const Teuchos::RCP<const Ginla::StkMesh> &mesh,
+                 const Teuchos::RCP<Ginla::ScalarPotential::Virtual> &scalarPotential,
+                 const double g,
+                 const Teuchos::RCP<const Epetra_Vector> &thickness,
+                 const Teuchos::RCP<Ginla::KeoContainer> &keoContainer,
+                 const Teuchos::RCP<const Epetra_Vector> &current_X
+                 );
 
 // Destructor.
 ~JacobianOperator ();
@@ -91,8 +94,8 @@ virtual const Epetra_Map &OperatorRangeMap() const;
 
 public:
 void
-rebuild( const Teuchos::RCP<const LOCA::ParameterVector> &mvpParams,
-         const double T,
+rebuild( const Teuchos::Array<double> &mvpParams,
+         const Teuchos::Array<double> &spParams,
          const Teuchos::RCP<const Epetra_Vector> &current_X
          );
 
@@ -100,20 +103,21 @@ protected:
 
 private:
 void
-rebuildDiags_() const;
+rebuildDiags_(const Teuchos::Array<double> &spParams,
+              const Teuchos::RCP<const Epetra_Vector> &current_X
+              );
 
 private:
 bool useTranspose_;
 
 const Teuchos::RCP<const Ginla::StkMesh> mesh_;
-const Teuchos::RCP<const Epetra_Vector> potential_;
+const Teuchos::RCP<Ginla::ScalarPotential::Virtual> scalarPotential_;
 const double g_;
 const Teuchos::RCP<const Epetra_Vector> thickness_;
 const Teuchos::RCP<Ginla::KeoContainer> keoContainer_;
+Teuchos::RCP<const Epetra_FECrsMatrix> keo_;
 
 Teuchos::RCP<const Epetra_Vector> current_X_;
-
-double T_;
 
 const Teuchos::RCP<Epetra_Vector> diag0_;
 const Teuchos::RCP<Epetra_Vector> diag1b_;

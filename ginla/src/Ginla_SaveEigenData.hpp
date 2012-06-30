@@ -33,12 +33,11 @@
 #include <LOCA_Parameter_SublistParser.H>
 #include <LOCA_Stepper.H>
 #include <NOX_Epetra_Vector.H>
-
-#include "Ginla_StatsWriter.hpp"
 // =============================================================================
 // forward declarations
 namespace Ginla {
 class ModelEvaluator;
+class CsvWriter;
 }
 // =============================================================================
 namespace Ginla {
@@ -58,7 +57,7 @@ public:
 // Constructor
 SaveEigenData ( Teuchos::ParameterList &eigenParamList,
                 const Teuchos::RCP<const Ginla::ModelEvaluator> &modelEval,
-                const Teuchos::RCP<Ginla::StatsWriter> &statsWriter
+                const Teuchos::RCP<Ginla::CsvWriter> &statsWriter
                 );
 
 virtual
@@ -84,7 +83,7 @@ protected:
 private:
 Teuchos::RCP<Teuchos::ParameterList> eigenParamListPtr_;
 const Teuchos::RCP<const Ginla::ModelEvaluator> modelEval_;
-Teuchos::RCP<Ginla::StatsWriter> statsWriter_;
+const Teuchos::RCP<const Ginla::CsvWriter> csvWriter_;
 Teuchos::RCP<LOCA::Stepper> locaStepper_;
 
 //! If \c true, then the number of eigenvalues is computed adaptively.

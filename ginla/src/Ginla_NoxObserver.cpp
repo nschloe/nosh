@@ -21,19 +21,20 @@
 #include "Ginla_NoxObserver.hpp"
 
 #include "Ginla_State.hpp"
-#include "Ginla_StatsWriter.hpp"
+#include "Ginla_CsvWriter.hpp"
 #include "Ginla_Helpers.hpp"
 #include "Ginla_ModelEvaluator.hpp"
 
 namespace Ginla {
 // ============================================================================
 NoxObserver::
-NoxObserver ( const Teuchos::RCP<const Ginla::ModelEvaluator> &modelEval,
-              const NoxObserver::EObserverType &observerType
-              ) :
-  modelEval_( modelEval ),
-  observerType_( observerType ),
-  statsWriter_( Teuchos::null )
+NoxObserver(const Teuchos::RCP<const Ginla::ModelEvaluator> &modelEval,
+            const std::string & filename,
+            const NoxObserver::EObserverType &observerType
+             ) :
+  modelEval_(modelEval),
+  csvWriter_(new Ginla::CsvWriter(filename)),
+  observerType_(observerType)
 {
 }
 // ============================================================================
@@ -44,16 +45,7 @@ NoxObserver::
 // ============================================================================
 void
 NoxObserver::
-setStatisticsWriter( const Teuchos::RCP<Ginla::StatsWriter> &statsWriter
-                     )
-{
-  statsWriter_ = statsWriter;
-  return;
-}
-// ============================================================================
-void
-NoxObserver::
-observeSolution( const Epetra_Vector &soln )
+observeSolution(const Epetra_Vector &soln)
 {
   // define state
   const Teuchos::RCP<const Ginla::State> savable =
@@ -88,7 +80,7 @@ observeContinuation_( const Teuchos::RCP<const Ginla::State> &state )
   static int index = -1;
   index++;
 
-  this->saveContinuationStatistics_( index, state );
+  this->saveContinuationStatistics_(index, state);
 
 #ifdef _DEBUG_
   TEUCHOS_ASSERT( !state.is_null() );
@@ -124,36 +116,42 @@ observeTurningPointContinuation_( const Teuchos::RCP<const Ginla::State> &state 
 // ============================================================================
 void
 NoxObserver::
-saveContinuationStatistics_( const int stepIndex,
-                             const Teuchos::RCP<const Ginla::State> &state
-                             )
+saveContinuationStatistics_(const int stepIndex,
+                            const Teuchos::RCP<const Ginla::State> &state
+                            )
 {
-  if ( !statsWriter_.is_null() )
+  if ( !csvWriter_.is_null() )
   {
 #ifdef _DEBUG_
     TEUCHOS_ASSERT( !state.is_null() );
 #endif
-    Teuchos::RCP<Teuchos::ParameterList> paramList =
-      statsWriter_->getListNonConst();
-
-    paramList->set( "0step", stepIndex );
-
-    // put the parameter list into statsWriter_
+    // Construct parameter list to stuff into the csvWriter_.
+    Teuchos::ParameterList paramList;
+    paramList.set( "0step", stepIndex );
+    // Model evaluator parameters.
     std::string labelPrepend = "1";
 #ifdef _DEBUG_
     TEUCHOS_ASSERT( !modelEval_.is_null() );
+    TEUCHOS_ASSERT( !modelEval_->get_p_latest().is_null() );
 #endif
-    Ginla::Helpers::appendToTeuchosParameterList( *paramList,
-                                                  *(modelEval_->getParameters()),
-                                                  labelPrepend
-                                                  );
+    Teuchos::RCP<const Epetra_Vector> meParams =
+      modelEval_->get_p_latest();
+    // TODO cache this
+    Teuchos::RCP<const Teuchos::Array<std::string> > names =
+      modelEval_->get_p_names(0);
+    for (int k=0; k<names->length(); k++)
+      paramList.set("1"+(*names)[k], (*meParams)[k]);
+    // Some extra stats.
+    paramList.set( "2free energy", state->freeEnergy() );
+    paramList.set( "2||x||_2 scaled", state->normalizedScaledL2Norm() );
 
-    paramList->set( "2free energy", state->freeEnergy() );
-    paramList->set( "2||x||_2 scaled", state->normalizedScaledL2Norm() );
-
-    // actually print the data
-    statsWriter_->print();
+    // Write out header.
+    if (stepIndex == 0)
+      csvWriter_->writeHeader(paramList);
+    // Write out the data.
+    csvWriter_->writeRow(paramList);
   }
+  return;
 }
 // ============================================================================
 } // namespace Ginla

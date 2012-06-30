@@ -163,7 +163,7 @@ setParameters( const LOCA::ParameterVector &p )
     theta_ = p.getValue( "theta" );
     // If compiled with GNU (and maybe other compilers), we could use
     // sincos() here to comute sin and cos simultaneously.
-    // PGI, for one, doesn't support sincos, 
+    // PGI, for one, doesn't support sincos,
     double sinTheta = sin(theta_);
     double cosTheta = cos(theta_);
     //sincos( theta_, &sinTheta, &cosTheta );
@@ -189,8 +189,8 @@ getParameters() const
 // ============================================================================
 double
 ConstantInSpace::
-getAEdgeMidpointProjection( const unsigned int edgeIndex
-                            ) const
+getAEdgeMidpointProjection(const unsigned int edgeIndex
+                           ) const
 {
   // A vector potential associated with the constant magnetic field RB is
   //
@@ -214,24 +214,20 @@ getAEdgeMidpointProjection( const unsigned int edgeIndex
 // ============================================================================
 double
 ConstantInSpace::
-getdAdMuEdgeMidpointProjection( const unsigned int edgeIndex
-                                ) const
+getdAdPEdgeMidpointProjection(const unsigned int edgeIndex,
+                              const unsigned int parameterIndex
+                              ) const
 {
   if ( !edgeCacheUptodate_ )
     this->initializeEdgeCache_();
 
-  return rotatedB_.dot( edgeCache_[edgeIndex] );
-}
-// ============================================================================
-double
-ConstantInSpace::
-getdAdThetaEdgeMidpointProjection( const unsigned int edgeIndex
-                                   ) const
-{
-  if ( !edgeCacheUptodate_ )
-    this->initializeEdgeCache_();
-
-  return mu_ * dRotatedBDTheta_.dot( edgeCache_[edgeIndex] );
+  if (parameterIndex == 0) // mu
+    return rotatedB_.dot( edgeCache_[edgeIndex] );
+  else if (parameterIndex == 1) // theta
+    return mu_ * dRotatedBDTheta_.dot( edgeCache_[edgeIndex] );
+  else
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(true,
+                                "Unknown parameter index " << parameterIndex << ".");
 }
 // ============================================================================
 void
@@ -245,7 +241,7 @@ initializeEdgeCache_() const
     mesh_->getEdgeNodes();
 
   // Loop over all edges and create the cache.
-  for ( unsigned int k=0; k<edges.size(); k++ )
+  for (unsigned int k=0; k<edges.size(); k++)
   {
     DoubleVector node0Coords = mesh_->getNodeCoordinates( edges[k][0] );
     DoubleVector node1Coords = mesh_->getNodeCoordinates( edges[k][1] );

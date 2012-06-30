@@ -20,8 +20,12 @@
 #ifndef GINLA_MAGNETICVECTORPOTENTIAL_VIRTUAL_H_
 #define GINLA_MAGNETICVECTORPOTENTIAL_VIRTUAL_H_
 // =============================================================================
-#include <LOCA_Parameter_Vector.H>
+// forward decls
+class Epetra_Vector;
+class Epetra_Map;
+// =============================================================================
 #include <Teuchos_RCP.hpp>
+#include <Teuchos_Array.hpp>
 // =============================================================================
 namespace Ginla {
 namespace MagneticVectorPotential {
@@ -32,23 +36,28 @@ Virtual();
 
 ~Virtual();
 
-//! Sets the parameters in this module.
-virtual void
-setParameters( const LOCA::ParameterVector &p ) = 0;
+virtual
+double
+getAEdgeMidpointProjection(const unsigned int edgeIndex,
+                           const Teuchos::Array<double> &mvpParams
+                           ) const = 0;
 
-virtual Teuchos::RCP<LOCA::ParameterVector>
-getParameters() const = 0;
+virtual
+double
+getdAdPEdgeMidpointProjection(const unsigned int edgeIndex,
+                              const Teuchos::Array<double> &mvpParams,
+                              const unsigned int parameterIndex
+                              ) const = 0;
 
-virtual double
-getAEdgeMidpointProjection( const unsigned int edgeIndex
-                            ) const = 0;
+//! Gets the current parameters from this module.
+virtual
+Teuchos::RCP<const Teuchos::Array<double> >
+get_p_init() const = 0;
 
-virtual double
-getdAdMuEdgeMidpointProjection( const unsigned int edgeIndex
-                                ) const = 0;
-virtual double
-getdAdThetaEdgeMidpointProjection( const unsigned int edgeIndex
-                                   ) const = 0;
+//! Get the parameter names.
+virtual
+Teuchos::RCP<const Teuchos::Array<std::string> >
+get_p_names() const = 0;
 
 protected:
 private:

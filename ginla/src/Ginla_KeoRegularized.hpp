@@ -31,7 +31,7 @@
 
 #include <Epetra_Operator.h>
 #include <Teuchos_RCP.hpp>
-#include <Teuchos_Tuple.hpp>
+#include <Teuchos_Array.hpp>
 #ifdef GINLA_TEUCHOS_TIME_MONITOR
   #include <Teuchos_Time.hpp>
 #endif
@@ -39,7 +39,6 @@
 #include <Epetra_CrsGraph.h>
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_LinearProblem.h>
-#include <LOCA_Parameter_Vector.H>
 // =============================================================================
 namespace Ginla {
 class KeoContainer;
@@ -104,18 +103,18 @@ virtual const Epetra_Map &OperatorRangeMap() const;
 public:
 
 void
-rebuild();
-
-void
-rebuild(const Teuchos::RCP<const LOCA::ParameterVector> &mvpParams,
+rebuild(const Teuchos::Array<double> &mvpParams,
         const Teuchos::RCP<const Epetra_Vector> &psi
        );
+
+void
+rebuildInverse();
 
 protected:
 private:
 
 void
-updateAbsPsiSquared_(const Teuchos::RCP<const Epetra_Vector> &psi);
+rebuildAbsPsiSquared_(const Teuchos::RCP<const Epetra_Vector> &psi);
 
 private:
 
@@ -131,7 +130,7 @@ Teuchos::RCP<Ginla::KeoContainer> keoContainer_;
 const Teuchos::RCP<Epetra_Vector> absPsiSquared_;
 
 // Make sure the matrix is persistent in memory. ML requires that.
-Epetra_CrsMatrix keoRegularizedMatrix_;
+Teuchos::RCP<Epetra_CrsMatrix> keoRegularizedMatrix_;
 
 const Epetra_Comm &comm_;
 

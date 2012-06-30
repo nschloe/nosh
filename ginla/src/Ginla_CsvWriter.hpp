@@ -17,8 +17,8 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 // @HEADER
-#ifndef GINLA_STATSWRITER_H
-#define GINLA_STATSWRITER_H
+#ifndef GINLA_CSVWRITER_H
+#define GINLA_CSVWRITER_H
 
 // Workaround for icpc's error "Include mpi.h before stdio.h"
 #include <Teuchos_config.h>
@@ -30,47 +30,40 @@
 
 namespace Ginla {
 
-class StatsWriter
+class CsvWriter
 {
 public:
 
 //! Default constructor.
-StatsWriter( std::string &fileName );
+CsvWriter(const std::string &fileName,
+          const std::string &delimeter = ","
+          );
 
 //! Destructor.
 virtual
-~StatsWriter();
+~CsvWriter();
 
 //! Const getter.
-Teuchos::RCP<const Teuchos::ParameterList>
-getList();
-
-//! Non-const getter.
-Teuchos::RCP<Teuchos::ParameterList>
-getListNonConst();
 
 void
-setList( const Teuchos::ParameterList &statisticsList );
+writeHeader(const Teuchos::ParameterList & pList) const;
 
 void
-setList( const Teuchos::RCP<Teuchos::ParameterList> &statisticsList );
-
-void
-print();
+writeRow(const Teuchos::ParameterList & pList) const;
 
 protected:
 private:
 
 //! File stream for the statistics.
-std::ofstream fileStream_;
+mutable std::ofstream fileStream_;
 
-//! Stores the scalar statisticsList values
-const Teuchos::RCP<Teuchos::ParameterList> statisticsList_;
+const std::string delimeter_;
+const std::string headerStart_;
 
-//! Whether or not to print the header in the stats file.
-bool printHeader_;
-
+const unsigned int doublePrec_;
+const unsigned int doubleColumnWidth_;
+const unsigned int intColumnWidth_;
 };
 } // namespace Ginla
 
-#endif // GINLA_STATSWRITER_H
+#endif // GINLA_CSVWRITER_H

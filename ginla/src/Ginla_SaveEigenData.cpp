@@ -22,9 +22,9 @@
 
 #include "Ginla_Helpers.hpp"
 #include "Ginla_ModelEvaluator.hpp"
+#include "Ginla_CsvWriter.hpp"
 
 #include <NOX_Abstract_MultiVector.H>
-
 #include <AnasaziSortManager.hpp>
 
 namespace Ginla {
@@ -32,12 +32,12 @@ namespace Ginla {
 SaveEigenData::
 SaveEigenData ( Teuchos::ParameterList &eigenParamList,
                 const Teuchos::RCP<const Ginla::ModelEvaluator> &modelEval,
-                const Teuchos::RCP<Ginla::StatsWriter> &statsWriter
+                const Teuchos::RCP<Ginla::CsvWriter> &csvWriter
                 ) :
   eigenParamListPtr_( Teuchos::rcpFromRef<Teuchos::ParameterList>(
                         eigenParamList) ),
   modelEval_( modelEval ),
-  statsWriter_( statsWriter ),
+  csvWriter_( csvWriter ),
   locaStepper_( Teuchos::null ),
   numComputeStableEigenvalues_( 6 )
 {
@@ -155,8 +155,11 @@ save( Teuchos::RCP<std::vector<double> > &evals_r,
     // make sure that the imaginary part is indeed 0
     TEUCHOS_ASSERT_INEQUALITY( fabs( (*evals_i) [k] ), <, 1.0e-15 );
   }
-  statsWriter_->setList( eigenvaluesList );
-  statsWriter_->print();
+
+  // Write out the data.
+  if (step == 0)
+    csvWriter_->writeHeader(eigenvaluesList);
+  csvWriter_->writeRow(eigenvaluesList);
 
 //     eigenFileStream << step << "\t";
 //     eigenFileStream << numUnstableEigenvalues << "\t";
