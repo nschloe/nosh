@@ -2,7 +2,7 @@
 '''Runs through different sizes of the retangular sample and the size of the
 magnetic dot (that generates the potential), for each combination creating
 a folder and start a continuation run in a detached session for it.
-This is to 
+This is to
 '''
 # ==============================================================================
 import sys, subprocess, os, shutil
@@ -49,14 +49,14 @@ def _main():
             os.mkdir( dir_name )
 
             # Move the the init file there.
-            shutil.copy( init_file, dir_name ) 
-    
+            shutil.copy( init_file, dir_name )
+
             # set the init file
             for element in conf_tree.iter( 'Parameter' ):
                 if element.get( 'name' ) == 'State':
                     element.set( 'value', init_file )
                     break
- 
+
             # set the magnetic field to 1.2345
             for element in conf_tree.iter( 'Parameter' ):
                 if element.get( 'name' ) == 'magneticDotRadius':

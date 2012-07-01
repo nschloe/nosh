@@ -1,5 +1,0 @@
-#export CMAKE_PREFIX_PATH=/opt/trilinos/10.8.3/openmpi/1.4.3/gcc/4.6.1/release/:$CMAKE_PREFIX_PATH
-export CMAKE_PREFIX_PATH=/opt/trilinos/dev/master/openmpi/1.4.3/gcc/4.6.3/release/:$CMAKE_PREFIX_PATH
-cmake \
-    -DCMAKE_BUILD_TYPE=Release \
-    ../../source/ginla
