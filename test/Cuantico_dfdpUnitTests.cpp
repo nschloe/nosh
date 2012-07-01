@@ -27,31 +27,31 @@ computeFiniteDifference_( const Teuchos::RCP<Cuantico::ModelEvaluator> & modelEv
                           EpetraExt::ModelEvaluator::OutArgs outArgs,
                           const Teuchos::RCP<const Epetra_Vector> & p,
                           const int paramIndex,
-                          const Teuchos::RCP<Epetra_Vector> & f1
+                          const Teuchos::RCP<Epetra_Vector> & fdiff
                           )
 {
     const double eps = 1.0e-6;
     Teuchos::RCP<Epetra_Vector> pp = Teuchos::rcp(new Epetra_Vector(*p));
 
     // Store the original parameter value.
-    double origValue = (*p)[paramIndex];
+    const double origValue = (*p)[paramIndex];
 
     // Get vector at x-eps.
     (*pp)[paramIndex] = origValue - eps;
     inArgs.set_p( 0, pp );
-    Teuchos::RCP<Epetra_Vector> f0 = Teuchos::rcp( new Epetra_Vector( f1->Map() ) );
+    Teuchos::RCP<Epetra_Vector> f0 = Teuchos::rcp( new Epetra_Vector( fdiff->Map() ) );
     outArgs.set_f( f0 );
     modelEval->evalModel( inArgs, outArgs );
 
     // Get vector at x+eps.
     (*pp)[paramIndex] = origValue + eps;
     inArgs.set_p( 0, pp );
-    outArgs.set_f( f1 );
+    outArgs.set_f( fdiff );
     modelEval->evalModel( inArgs, outArgs );
 
     // Calculate the finite difference approx for df/dp.
-    f1->Update( -1.0, *f0, 1.0 );
-    f1->Scale( 0.5/eps );
+    fdiff->Update( -1.0, *f0, 1.0 );
+    fdiff->Scale( 0.5/eps );
 
     return;
 }
@@ -94,8 +94,11 @@ testDfdp(const std::string & inputFileNameBase,
       Teuchos::rcp(new Cuantico::ScalarPotential::Constant(-1.0));
 
     Teuchos::RCP<Cuantico::ModelEvaluator> modelEval =
-        Teuchos::rcp(new Cuantico::ModelEvaluator(mesh, 1.0, sp, mvp, thickness, z));
+      Teuchos::rcp(new Cuantico::ModelEvaluator(mesh, 1.0, sp, mvp, thickness, z));
 
+    // -------------------------------------------------------------------------
+    // Perform the finite difference test for all parameters present in the
+    // system.
     // Get a finite-difference approximation of df/dp.
     EpetraExt::ModelEvaluator::InArgs inArgs = modelEval->createInArgs();
     inArgs.set_x( z );
@@ -103,74 +106,32 @@ testDfdp(const std::string & inputFileNameBase,
 
     // Get a the initial parameter vector.
     const Teuchos::RCP<const Epetra_Vector> p = modelEval->get_p_init(0);
-    const Teuchos::RCP<const Teuchos::Array<std::string> > pNames =
-        modelEval->get_p_names(0);
-
-    // -------------------------------------------------------------------------
-    // Find the index of the parameter.
-    std::string paramName = "mu";
-    int paramIndex;
-    for (int k=0; k<p->MyLength(); k++)
-    {
-      if ((*pNames)[k].compare(paramName) == 0)
-      {
-        paramIndex = k;
-        break;
-      }
-    }
-    // Get finite difference.
-    Teuchos::RCP<Epetra_Vector> f1 = Teuchos::rcp(new Epetra_Vector(z->Map()));
-    computeFiniteDifference_(modelEval, inArgs, outArgs, p, paramIndex, f1);
-
-    // Get the actual derivative.
-    Teuchos::RCP<Epetra_Vector> dfdp = Teuchos::rcp( new Epetra_Vector( z->Map() ) );
-    inArgs.set_p( 0, p );
-    Teuchos::Array<int> paramIndices( Teuchos::tuple(paramIndex) );
-    EpetraExt::ModelEvaluator::DerivativeMultiVector deriv( dfdp,
-                                                 EpetraExt::ModelEvaluator::DERIV_MV_BY_COL,
-                                                 paramIndices
-                                               );
-    outArgs.set_DfDp( 0, deriv );
-    Teuchos::RCP<Epetra_Vector> nullV = Teuchos::null;
-    outArgs.set_f( nullV );
-    modelEval->evalModel( inArgs, outArgs );
-
-    // compare the two
-    f1->Update( -1.0, *dfdp, 1.0 );
+    Teuchos::RCP<Epetra_Vector> fdiff = Teuchos::rcp(new Epetra_Vector(z->Map()));
+    Teuchos::RCP<Epetra_Vector> dfdp = Teuchos::rcp(new Epetra_Vector(z->Map()));
+    EpetraExt::ModelEvaluator::DerivativeMultiVector deriv;
+    Teuchos::Array<int> paramIndices(1);
+    const Teuchos::RCP<Epetra_Vector> nullV = Teuchos::null;
     double r;
-    f1->NormInf( &r );
-    TEST_COMPARE( r, <, 1.0e-8 );
-    // -------------------------------------------------------------------------
-    // Find the index of the parameter.
-    paramName = "g";
-    for (int k=0; k<p->MyLength(); k++)
+    for (int paramIndex=0; paramIndex < p->GlobalLength(); paramIndex++)
     {
-      if ((*pNames)[k].compare(paramName) == 0)
-      {
-        paramIndex = k;
-        break;
-      }
+      // Get finite difference.
+      computeFiniteDifference_(modelEval, inArgs, outArgs, p, paramIndex, fdiff);
+
+      // Get the actual derivative.
+      inArgs.set_p( 0, p );
+      paramIndices[0] = paramIndex;
+      deriv = EpetraExt::ModelEvaluator::DerivativeMultiVector(dfdp,
+                                                               EpetraExt::ModelEvaluator::DERIV_MV_BY_COL,
+                                                               paramIndices);
+      outArgs.set_DfDp( 0, deriv );
+      outArgs.set_f( nullV );
+      modelEval->evalModel( inArgs, outArgs );
+
+      // Compare the two.
+      fdiff->Update( -1.0, *dfdp, 1.0 );
+      fdiff->NormInf( &r );
+      TEST_COMPARE( r, <, 1.0e-8 );
     }
-    // Get finite difference.
-    f1 = Teuchos::rcp(new Epetra_Vector(z->Map()));
-    computeFiniteDifference_(modelEval, inArgs, outArgs, p, paramIndex, f1);
-
-    // Get the actual derivative.
-    dfdp = Teuchos::rcp( new Epetra_Vector( z->Map() ) );
-    inArgs.set_p( 0, p );
-    paramIndices = Teuchos::tuple(paramIndex);
-    deriv = EpetraExt::ModelEvaluator::DerivativeMultiVector( dfdp,
-                                                 EpetraExt::ModelEvaluator::DERIV_MV_BY_COL,
-                                                 paramIndices
-                                               );
-    outArgs.set_DfDp( 0, deriv );
-    outArgs.set_f( nullV );
-    modelEval->evalModel( inArgs, outArgs );
-
-    // compare the two
-    f1->Update( -1.0, *dfdp, 1.0 );
-    f1->NormInf( &r );
-    TEST_COMPARE( r, <, 1.0e-8 );
     // -------------------------------------------------------------------------
 
     return;
