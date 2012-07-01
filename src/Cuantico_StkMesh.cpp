@@ -58,7 +58,7 @@ StkMesh::
 StkMesh( const Epetra_Comm &comm,
          const Teuchos::RCP<stk::mesh::fem::FEMMetaData> &metaData,
          const Teuchos::RCP<stk::mesh::BulkData> &bulkData,
-         const Teuchos::RCP<VectorFieldType> &coordinatesField
+         const Teuchos::RCP<const VectorFieldType> &coordinatesField
          ) :
 #ifdef CUANTICO_TEUCHOS_TIME_MONITOR
   computeEdgeCoefficientsTime_( Teuchos::TimeMonitor::getNewTimer(
@@ -98,8 +98,8 @@ openOutputChannel( const string &outputDir,
 {
   // prepare the data for output
 #ifdef HAVE_MPI
-  const Epetra_MpiComm &mpicomm = Teuchos::dyn_cast<const Epetra_MpiComm>(
-      comm_ );
+  const Epetra_MpiComm &mpicomm =
+    Teuchos::dyn_cast<const Epetra_MpiComm>(comm_);
   MPI_Comm mcomm = mpicomm.Comm();
 #else
   int mcomm = 1;

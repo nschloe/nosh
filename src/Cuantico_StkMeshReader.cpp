@@ -46,6 +46,14 @@
 #include <Ioss_IOFactory.h>
 #include <Ioss_Region.h>
 
+#ifdef HAVE_MPI
+// Rebalance
+#include <stk_rebalance/Rebalance.hpp>
+#include <stk_rebalance_utils/RebalanceUtils.hpp>
+#include <stk_rebalance/Partition.hpp>
+#include <stk_rebalance/ZoltanPartition.hpp>
+#endif
+
 namespace Cuantico {
 // =============================================================================
 StkMeshReader::
@@ -83,11 +91,23 @@ read( const Epetra_Comm &comm,
 //   size_t spatial_dimension = 3;
 //   stk::mesh::DefaultFEM fem( *metaData, spatial_dimension );
 
+  // ---------------------------------------------------------------------------
+  // Setup field data.
+#ifdef HAVE_MPI
+  const Epetra_MpiComm &mpicomm =
+    Teuchos::dyn_cast<const Epetra_MpiComm>(comm);
+  MPI_Comm mcomm = mpicomm.Comm();
+#else
+  int mcomm = 1;
+#endif
+
+  // The work set size could probably be improved.
+  // Check out what Albany does here.
   unsigned int field_data_chunk_size = 1001;
   Teuchos::RCP<stk::mesh::BulkData> bulkData =
     Teuchos::rcp(new stk::mesh::BulkData(stk::mesh::fem::FEMMetaData::
                                          get_meta_data( *metaData ),
-                                         MPI_COMM_WORLD,
+                                         mcomm,
                                          field_data_chunk_size));
 
   // As of now (2012-03-21) there is no way to determine which fields are
@@ -194,10 +214,9 @@ read( const Epetra_Comm &comm,
                        metaData->node_rank(),
                        metaData->universal_part());
   stk::io::set_field_role(*potentialField, Ioss::Field::ATTRIBUTE);
-
+  // ---------------------------------------------------------------------------
   // initialize database communication
   Ioss::Init::Initializer io;
-
   // ---------------------------------------------------------------------------
   // The database is manually initialized to get explicit access to it
   // to be able to call set_field_separator(). This tells the database to
@@ -209,11 +228,10 @@ read( const Epetra_Comm &comm,
   // put that in the MeshData object and then call create_input_mesh(), but that
   // gets ugly.  I will try to come up with a better option... "
   std::string meshType = "exodusii";
-  Ioss::DatabaseIO *dbi = Ioss::IOFactory::create( meshType,
-                                                   fileName_,
-                                                   Ioss::READ_MODEL,
-                                                   MPI_COMM_WORLD
-                                                   );
+  Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(meshType,
+                                                  fileName_,
+                                                  Ioss::READ_MODEL,
+                                                  MPI_COMM_WORLD);
   TEUCHOS_TEST_FOR_EXCEPT_MSG( dbi == NULL || !dbi->ok(),
                        "ERROR: Could not open database '" << fileName_
                        << "' of type '" << meshType << "'."
@@ -230,12 +248,14 @@ read( const Epetra_Comm &comm,
     Teuchos::rcp( new stk::io::MeshData() );
   meshData->m_input_region = in_region;
 
-  stk::io::create_input_mesh( meshType,
-                              fileName_,
-                              MPI_COMM_WORLD,
-                              *metaData,
-                              *meshData
-                              );
+  // This checks the existence of the file, checks to see if we can open it,
+  // builds a handle to the region and puts it in mesh_data (in_region),
+  // and reads the metaData into metaData.
+  stk::io::create_input_mesh(meshType,
+                             fileName_,
+                             MPI_COMM_WORLD,
+                             *metaData,
+                             *meshData);
 
   // define_input_fields() doesn't like the ATTRIBUTE fields; disable.
   // What was it good for anyways?
@@ -246,22 +266,7 @@ read( const Epetra_Comm &comm,
 //  stk::io::put_io_part_attribute( metaData->universal_part() );
 
   metaData->commit();
-
-  stk::io::populate_bulk_data( *bulkData,
-                               *meshData
-                               );
-
-//  // add parameter
-//  meshData->m_region->field_add( Ioss::Field( "mu",
-//                                              Ioss::Field::REAL,
-//                                              "scalar",
-//                                              Ioss::Field::REDUCTION,
-//                                              1
-//                                            )
-//                               );
-//
-//  bulkData->modification_end();
-
+  stk::io::populate_bulk_data(*bulkData, *meshData);
 
   // Restart index to read solution from exodus file.
 //   int index = -1; // Default to no restart
@@ -270,11 +275,45 @@ read( const Epetra_Comm &comm,
 //      *out_ << "Restart Index not set. Not reading solution from exodus (" << index << ")"<< endl;
 //  else
 //      *out_ << "Restart Index set, reading solution time step: " << index << endl;
+  stk::io::process_input_request(*meshData, *bulkData, index);
 
-  stk::io::process_input_request( *meshData,
-                                  *bulkData,
-                                  index
-                                  );
+  bulkData->modification_end();
+
+#ifdef HAVE_MPI
+  // Optionally rebalance.
+  stk::mesh::Selector selector(metaData->universal_part());
+  stk::mesh::Selector owned_selector(metaData->locally_owned_part());
+  double imbalance = stk::rebalance::check_balance(*bulkData,
+                                                   NULL,
+                                                   metaData->node_rank(),
+                                                   &selector);
+  if (imbalance > 1.5)
+  {
+    *out_ << "Before the rebalance, the imbalance threshold is = " << imbalance << endl;
+    // Zoltan reblancing.
+    Teuchos::ParameterList emptyList;
+    stk::rebalance::Zoltan zoltan_partition(mcomm, numDim, emptyList);
+    //// Zoltan graph based.
+    //Teuchos::ParameterList graph;
+    //Teuchos::ParameterList lb_method;
+    //lb_method.set("LOAD BALANCING METHOD", "4");
+    //graph.sublist(stk::rebalance::Zoltan::default_parameters_name()) = lb_method;
+    //stk::rebalance::Zoltan zoltan_partition(Albany::getMpiCommFromEpetraComm(*comm), numDim, graph);
+
+    stk::rebalance::rebalance(*bulkData,
+                              owned_selector,
+                              &*coordinatesField,
+                              NULL,
+                              zoltan_partition);
+
+    imbalance = stk::rebalance::check_balance(*bulkData,
+                                              NULL,
+                                              metaData->node_rank(),
+                                              &selector);
+
+    *out_ << "After rebalancing, the imbalance threshold is = " << imbalance << endl;
+  }
+#endif
 
   // create the mesh with these specifications
   Teuchos::RCP<Cuantico::StkMesh> mesh =
@@ -286,7 +325,7 @@ read( const Epetra_Comm &comm,
   data.set( "mesh", mesh );
 
   // create the state
-  data.set( "psi", this->complexfield2vector_( mesh, psir_field, psii_field ) );
+  data.set("psi", this->complexfield2vector_(mesh, psir_field, psii_field));
 
   Teuchos::RCP<Epetra_MultiVector> mvp;
   mvp = this->createMvp_(mesh, mvpField);
@@ -343,18 +382,20 @@ complexfield2vector_( const Teuchos::RCP<const Cuantico::StkMesh> &mesh,
     Teuchos::rcp( new Epetra_Vector( *mesh->getComplexNonOverlapMap() ) );
 
   // Fill the vector with data from the file.
-  int ind;
+  //int ind;
   for ( unsigned int k=0; k<ownedNodes.size(); k++ )
   {
     // real part
-    double* realVal = stk::mesh::field_data( *realField, *ownedNodes[k] );
-    ind = 2*k;
-    vector->ReplaceMyValues( 1, realVal, &ind );
+    double* realVal = stk::mesh::field_data(*realField, *ownedNodes[k]);
+    //ind = 2*k;
+    //vector->ReplaceMyValues( 1, realVal, &ind );
+    (*vector)[2*k] = realVal[0];
 
     // imaginary part
     double* imagVal = stk::mesh::field_data( *imagField, *ownedNodes[k] );
-    ind = 2*k+1;
-    vector->ReplaceMyValues( 1, imagVal, &ind );
+    //ind = 2*k+1;
+    //vector->ReplaceMyValues( 1, imagVal, &ind );
+    (*vector)[2*k+1] = imagVal[0];
   }
 
 #ifdef _DEBUG_
@@ -398,8 +439,9 @@ scalarfield2vector_( const Teuchos::RCP<const Cuantico::StkMesh> &mesh,
       << std::endl;
       return Teuchos::null;
     }
-    int kk = int(k);
-    vector->ReplaceMyValues( 1, fieldVal, &kk );
+    //int kk = int(k);
+    //vector->ReplaceMyValues( 1, fieldVal, &kk );
+    (*vector)[k] = fieldVal[0];
   }
 
 #ifdef _DEBUG_

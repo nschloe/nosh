@@ -71,7 +71,7 @@ public:
 StkMesh( const Epetra_Comm &comm,
          const Teuchos::RCP<stk::mesh::fem::FEMMetaData> &metaData,
          const Teuchos::RCP<stk::mesh::BulkData> &bulkData,
-         const Teuchos::RCP<VectorFieldType> &coordinatesField
+         const Teuchos::RCP<const VectorFieldType> &coordinatesField
          );
 
 virtual
@@ -155,9 +155,9 @@ const Teuchos::RCP<Teuchos::Time> computeEdgeCoefficientsTime_;
 const Epetra_Comm &comm_;
 
 const Teuchos::RCP<stk::mesh::fem::FEMMetaData> metaData_;
-const Teuchos::RCP<stk::io::MeshData>           meshData_;
-const Teuchos::RCP<stk::mesh::BulkData>         bulkData_;
-const Teuchos::RCP<VectorFieldType>             coordinatesField_;
+const Teuchos::RCP<stk::io::MeshData> meshData_;
+const Teuchos::RCP<stk::mesh::BulkData> bulkData_;
+const Teuchos::RCP<const VectorFieldType> coordinatesField_;
 //     const Teuchos::RCP<VectorFieldType>         thicknessField_;
 
 const Teuchos::RCP<const Epetra_Map> nodesMap_;
