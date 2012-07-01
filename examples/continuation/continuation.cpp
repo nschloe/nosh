@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
     Teuchos::rcp<Epetra_MpiComm> ( new Epetra_MpiComm ( MPI_COMM_WORLD ) );
 #else
   Teuchos::RCP<Epetra_SerialComm> eComm =
-          Teuchos::rcp<Epetra_SerialComm> ( new Epetra_SerialComm() );
+    Teuchos::rcp<Epetra_SerialComm> ( new Epetra_SerialComm() );
 #endif
 
   // Create output stream. (Handy for multicore output.)
@@ -117,9 +117,6 @@ int main(int argc, char *argv[])
     Teuchos::RCP<Epetra_MultiVector> & mvpValues = data.get("A", Teuchos::RCP<Epetra_MultiVector>() );
     Teuchos::RCP<Epetra_Vector> & potentialValues = data.get("V", Teuchos::RCP<Epetra_Vector>());
     Teuchos::RCP<Epetra_Vector> & thickness = data.get( "thickness", Teuchos::RCP<Epetra_Vector>() );
-
-    std::cout << "MVP" << std::endl;
-    std::cout << *mvpValues << std::endl;
 
     // Set the output directory for later plotting with this.
     mesh->openOutputChannel(outputDirectory, "solution");
