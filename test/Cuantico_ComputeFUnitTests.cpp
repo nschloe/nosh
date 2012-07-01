@@ -52,10 +52,10 @@ testComputeF( const std::string & inputFileNameBase,
     // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
     Teuchos::RCP<Epetra_MpiComm> eComm =
-            Teuchos::rcp<Epetra_MpiComm> ( new Epetra_MpiComm ( MPI_COMM_WORLD ) );
+      Teuchos::rcp<Epetra_MpiComm> ( new Epetra_MpiComm ( MPI_COMM_WORLD ) );
 #else
     Teuchos::RCP<Epetra_SerialComm> eComm =
-            Teuchos::rcp<Epetra_SerialComm> ( new Epetra_SerialComm() );
+      Teuchos::rcp<Epetra_SerialComm> ( new Epetra_SerialComm() );
 #endif
 
     std::string inputFileName;
@@ -73,11 +73,6 @@ testComputeF( const std::string & inputFileNameBase,
     Teuchos::RCP<Epetra_Vector> & z = data.get( "psi", Teuchos::RCP<Epetra_Vector>() );
     Teuchos::RCP<Epetra_MultiVector> & mvpValues = data.get( "A", Teuchos::RCP<Epetra_MultiVector>() );
     Teuchos::RCP<Epetra_Vector> & thickness = data.get( "thickness", Teuchos::RCP<Epetra_Vector>() );
-    Teuchos::ParameterList & problemParameters = data.get( "Problem parameters", Teuchos::ParameterList() );
-
-    // create parameter vector
-    problemParameters.set("g", 1.0);
-    problemParameters.set("mu", mu);
 
     Teuchos::RCP<Cuantico::MagneticVectorPotential::Virtual> mvp =
       Teuchos::rcp(new Cuantico::MagneticVectorPotential::ExplicitValues(mesh, mvpValues, mu));
@@ -86,25 +81,19 @@ testComputeF( const std::string & inputFileNameBase,
       Teuchos::rcp(new Cuantico::ScalarPotential::Constant(-1.0));
 
     Teuchos::RCP<Cuantico::ModelEvaluator> modelEval =
-        Teuchos::rcp(new Cuantico::ModelEvaluator(mesh, 1.0, sp, mvp, thickness, z));
+      Teuchos::rcp(new Cuantico::ModelEvaluator(mesh, 1.0, sp, mvp, thickness, z));
 
-    // Get a finite-difference approximation of df/dp.
+    // Create inArgs. Use p_init as parameters.
     EpetraExt::ModelEvaluator::InArgs inArgs = modelEval->createInArgs();
     inArgs.set_x( z );
+    inArgs.set_p(0, modelEval->get_p_init(0));
+
+    // Create outArgs.
     EpetraExt::ModelEvaluator::OutArgs outArgs = modelEval->createOutArgs();
-
-    // get parameter vector and names
-    Teuchos::RCP<Epetra_Vector> p =
-        Teuchos::rcp(new Epetra_Vector(*modelEval->get_p_map(0)));
-    Teuchos::RCP<const Teuchos::Array<std::string> > pNames =
-        modelEval->get_p_names(0);
-
-    // create parameter vector
-    for (int k=0; k<p->MyLength(); k++)
-       (*p)[k] = problemParameters.get<double>( (*pNames)[k] );
-    inArgs.set_p(0, p);
     Teuchos::RCP<Epetra_Vector> f = Teuchos::rcp(new Epetra_Vector(z->Map()));
     outArgs.set_f( f );
+
+    // Fetch.
     modelEval->evalModel(inArgs, outArgs);
 
     // check the norms
@@ -119,7 +108,6 @@ testComputeF( const std::string & inputFileNameBase,
     double normInf;
     f->NormInf( &normInf );
     TEST_FLOATING_EQUALITY( normInf, controlNormInf, 1.0e-10 );
-
 
     return;
 }

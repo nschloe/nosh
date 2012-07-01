@@ -86,14 +86,9 @@ testDfdp(const std::string & inputFileNameBase,
     Teuchos::RCP<Epetra_Vector> & z = data.get( "psi", Teuchos::RCP<Epetra_Vector>() );
     Teuchos::RCP<Epetra_MultiVector> & mvpValues = data.get( "A", Teuchos::RCP<Epetra_MultiVector>() );
     Teuchos::RCP<Epetra_Vector> & thickness = data.get( "thickness", Teuchos::RCP<Epetra_Vector>() );
-    Teuchos::ParameterList & problemParameters = data.get( "Problem parameters", Teuchos::ParameterList() );
-
-    // create parameter vector
-    problemParameters.set( "g", 1.0 );
-    problemParameters.set( "mu", mu );
 
     Teuchos::RCP<Cuantico::MagneticVectorPotential::Virtual> mvp =
-      Teuchos::rcp(new Cuantico::MagneticVectorPotential::ExplicitValues(mesh, mvpValues, problemParameters.get<double>("mu")));
+      Teuchos::rcp(new Cuantico::MagneticVectorPotential::ExplicitValues(mesh, mvpValues, mu));
 
     Teuchos::RCP<Cuantico::ScalarPotential::Virtual> sp =
       Teuchos::rcp(new Cuantico::ScalarPotential::Constant(-1.0));
@@ -106,13 +101,10 @@ testDfdp(const std::string & inputFileNameBase,
     inArgs.set_x( z );
     EpetraExt::ModelEvaluator::OutArgs outArgs = modelEval->createOutArgs();
 
-    // get parameter vector and names
-    Teuchos::RCP<Epetra_Vector> p =
-        Teuchos::rcp( new Epetra_Vector( *modelEval->get_p_map(0) ) );
-    Teuchos::RCP<const Teuchos::Array<std::string> > pNames =
+    // Get a the initial parameter vector.
+    const Teuchos::RCP<const Epetra_Vector> p = modelEval->get_p_init(0);
+    const Teuchos::RCP<const Teuchos::Array<std::string> > pNames =
         modelEval->get_p_names(0);
-    for ( int k=0; k<p->MyLength(); k++ )
-       (*p)[k] = problemParameters.get<double>( (*pNames)[k] );
 
     // -------------------------------------------------------------------------
     // Find the index of the parameter.
