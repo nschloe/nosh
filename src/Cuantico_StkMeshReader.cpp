@@ -302,9 +302,10 @@ read( const Epetra_Comm &comm,
   if (needSpecialTreatment)
   {
     bulkData->modification_begin();
-    // Read the mesh with process 0.
-    if(comm.MyPID() == 0) 
-      my_populate_bulk_data_(*bulkData, *meshData, *metaData);
+    Ioss::Region *region = meshData->m_input_region;
+    // Populate on the reader process.
+    if (comm.MyPID() == 0) 
+      my_populate_bulk_data_(*bulkData, *region, *metaData);
     // Note:
     // Restart from a single Exodus file not currently supported.
     bulkData->modification_end();
@@ -414,9 +415,9 @@ read( const Epetra_Comm &comm,
 // =============================================================================
 void
 StkMeshReader::
-my_populate_bulk_data_(stk::mesh::BulkData &bulk_data,
-                       stk::io::MeshData &mesh_data,
-                       stk::mesh::fem::FEMMetaData &metaData)
+my_populate_bulk_data_(stk::mesh::BulkData &bulk,
+                       Ioss::Region &region,
+                       stk::mesh::fem::FEMMetaData &fem_meta)
 {
   // From Albany, Albany_IossSTKMeshStruct.cpp.
   // This function duplicates the function stk::io::populate_bulk_data, with the exception of an
@@ -424,13 +425,9 @@ my_populate_bulk_data_(stk::mesh::BulkData &bulk_data,
   // exodus file), all PEs must enter the modification_begin() / modification_end() block, but only one reads the
   // bulk data.
   // TODO pull the modification statements from populate_bulk_data and retrofit.
-  stk::mesh::BulkData& bulk = bulk_data;
-  Ioss::Region *region = mesh_data.m_input_region;
-  const stk::mesh::fem::FEMMetaData& fem_meta = metaData;
-
   { // element blocks
 
-    const Ioss::ElementBlockContainer& elem_blocks = region->get_element_blocks();
+    const Ioss::ElementBlockContainer& elem_blocks = region.get_element_blocks();
     for(Ioss::ElementBlockContainer::const_iterator it = elem_blocks.begin();
   it != elem_blocks.end(); ++it) {
       Ioss::ElementBlock *entity = *it;
@@ -483,7 +480,7 @@ my_populate_bulk_data_(stk::mesh::BulkData &bulk_data,
 
   { // nodeblocks
 
-    const Ioss::NodeBlockContainer& node_blocks = region->get_node_blocks();
+    const Ioss::NodeBlockContainer& node_blocks = region.get_node_blocks();
     assert(node_blocks.size() == 1);
 
     Ioss::NodeBlock *nb = node_blocks[0];
@@ -500,7 +497,7 @@ my_populate_bulk_data_(stk::mesh::BulkData &bulk_data,
 
   { // nodesets
 
-    const Ioss::NodeSetContainer& node_sets = region->get_nodesets();
+    const Ioss::NodeSetContainer& node_sets = region.get_nodesets();
 
     for(Ioss::NodeSetContainer::const_iterator it = node_sets.begin();
   it != node_sets.end(); ++it) {
@@ -535,7 +532,7 @@ my_populate_bulk_data_(stk::mesh::BulkData &bulk_data,
 
   { // sidesets
 
-    const Ioss::SideSetContainer& side_sets = region->get_sidesets();
+    const Ioss::SideSetContainer& side_sets = region.get_sidesets();
 
     for(Ioss::SideSetContainer::const_iterator it = side_sets.begin();
   it != side_sets.end(); ++it) {

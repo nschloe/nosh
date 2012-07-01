@@ -67,7 +67,7 @@ private:
 
 void
 my_populate_bulk_data_(stk::mesh::BulkData &bulk_data,
-                       stk::io::MeshData &mesh_data,
+                       Ioss::Region &region,
                        stk::mesh::fem::FEMMetaData &metaData);
 
 Teuchos::RCP<Epetra_Vector>
