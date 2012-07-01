@@ -112,7 +112,12 @@ int main ( int argc, char *argv[] )
       Teuchos::rcp(new Cuantico::ScalarPotential::Constant(-1.0));
 
     const double mu = 2.0e-1;
+    const double T = 0.0;
     const double g = 1.0;
+    Teuchos::Array<double> mvpParameters(1);
+    mvpParameters[0] = mu;
+    Teuchos::Array<double> spParameters(1);
+    spParameters[0] = T;
 
     // Construct MVP.
     Teuchos::RCP<Cuantico::MagneticVectorPotential::Virtual> mvp;
@@ -122,9 +127,6 @@ int main ( int argc, char *argv[] )
       Teuchos::TimeMonitor tm(*mvpConstructTime);
       mvp = Teuchos::rcp(new Cuantico::MagneticVectorPotential::ExplicitValues(mesh, mvpValues, mu));
     }
-
-    Teuchos::Array<double> mvpParameters(1);
-    mvpParameters[0] = mu;
 
     Teuchos::RCP<Cuantico::KeoContainer> keoContainer =
       Teuchos::rcp(new Cuantico::KeoContainer(mesh, thickness, mvp));
@@ -136,7 +138,8 @@ int main ( int argc, char *argv[] )
     {
       Teuchos::TimeMonitor tm(*jacobianConstructTime);
       // create the jacobian operator
-      jac = Teuchos::rcp(new Cuantico::JacobianOperator(mesh, sp, g, thickness, keoContainer, psi));
+      jac = Teuchos::rcp(new Cuantico::JacobianOperator(mesh, sp, thickness, keoContainer));
+      jac->rebuild(g, spParameters, mvpParameters, psi);
     }
 
     // create preconditioner
@@ -147,10 +150,10 @@ int main ( int argc, char *argv[] )
     {
       Teuchos::TimeMonitor tm(*precConstructTime);
       // create the jacobian operator
-      keoReg = Teuchos::rcp(new Cuantico::KeoRegularized(mesh, g, thickness, keoContainer, psi));
+      keoReg = Teuchos::rcp(new Cuantico::KeoRegularized(mesh, thickness, keoContainer));
 
       // actually fill it with values
-      keoReg->rebuild(mvpParameters, psi);
+      keoReg->rebuild(g, mvpParameters, psi);
     }
 
     // Create the eigensolver.

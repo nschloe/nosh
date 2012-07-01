@@ -63,7 +63,7 @@ ModelEvaluator (
   scalarPotential_( scalarPotential ),
   mvp_( mvp ),
   thickness_( thickness ),
-  x_( initialX ),
+  x_init_( initialX ),
   p_latest_(Teuchos::null),
   keoContainer_(Teuchos::rcp(new Cuantico::KeoContainer(mesh, thickness, mvp))),
 #ifdef CUANTICO_TEUCHOS_TIME_MONITOR
@@ -115,9 +115,9 @@ ModelEvaluator::
 get_x_init() const
 {
 #ifdef _DEBUG_
-  TEUCHOS_ASSERT( !x_.is_null() );
+  TEUCHOS_ASSERT( !x_init_.is_null() );
 #endif
-  return x_;
+  return x_init_;
 }
 // ============================================================================
 Teuchos::RCP<const Epetra_Vector>
@@ -158,7 +158,7 @@ get_p_map(int l) const
                      + scalarPotential_->get_p_init()->length() // scalar potential
                      + mvp_->get_p_init()->length(); // vector potential
 
-  return Teuchos::rcp(new Epetra_LocalMap(totalNumParams, 0, x_->Comm()));
+  return Teuchos::rcp(new Epetra_LocalMap(totalNumParams, 0, x_init_->Comm()));
 }
 // ============================================================================
 Teuchos::RCP<const Teuchos::Array<std::string> >
@@ -195,10 +195,8 @@ create_W() const
 {
   return Teuchos::rcp(new Cuantico::JacobianOperator(mesh_,
                                                   scalarPotential_,
-                                                  g_,
                                                   thickness_,
-                                                  keoContainer_,
-                                                  x_));
+                                                  keoContainer_));
 }
 // =============================================================================
 Teuchos::RCP<EpetraExt::ModelEvaluator::Preconditioner>
@@ -207,10 +205,8 @@ create_WPrec() const
 {
   Teuchos::RCP<Epetra_Operator> keoPrec =
     Teuchos::rcp(new Cuantico::KeoRegularized(mesh_,
-                                           g_,
-                                           thickness_,
-                                           keoContainer_,
-                                           x_));
+                                              thickness_,
+                                              keoContainer_));
   // bool is answer to: "Prec is already inverted?"
   // This needs to be set to TRUE to make sure that the constructor of
   //    NOX::Epetra::LinearSystemStratimikos
@@ -408,7 +404,7 @@ evalModel(const InArgs &inArgs,
 #endif
     const Teuchos::RCP<Cuantico::KeoRegularized> & keoPrec =
       Teuchos::rcp_dynamic_cast<Cuantico::KeoRegularized>(WPrec_out, true);
-    keoPrec->rebuild(mvpParams, x_in);
+    keoPrec->rebuild(g, mvpParams, x_in);
   }
 
   return;

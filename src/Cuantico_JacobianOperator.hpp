@@ -51,10 +51,8 @@ class JacobianOperator : public Epetra_Operator
 public:
 JacobianOperator(const Teuchos::RCP<const Cuantico::StkMesh> &mesh,
                  const Teuchos::RCP<const Cuantico::ScalarPotential::Virtual> &scalarPotential,
-                 const double g,
                  const Teuchos::RCP<const Epetra_Vector> &thickness,
-                 const Teuchos::RCP<Cuantico::KeoContainer> &keoContainer,
-                 const Teuchos::RCP<const Epetra_Vector> &current_X
+                 const Teuchos::RCP<Cuantico::KeoContainer> &keoContainer
                  );
 
 // Destructor.
@@ -88,9 +86,11 @@ HasNormInf() const;
 virtual const Epetra_Comm &
 Comm() const;
 
-virtual const Epetra_Map &OperatorDomainMap() const;
+virtual const
+Epetra_Map &OperatorDomainMap() const;
 
-virtual const Epetra_Map &OperatorRangeMap() const;
+virtual const
+Epetra_Map &OperatorRangeMap() const;
 
 public:
 void

@@ -25,6 +25,7 @@
 #include <Epetra_SerialDenseMatrix.h>
 #include <Epetra_Comm.h>
 #include <Epetra_Vector.h>
+#include <Epetra_FECrsMatrix.h>
 
 #include <BelosLinearProblem.hpp>
 #include <BelosEpetraAdapter.hpp>
@@ -49,19 +50,21 @@ typedef Belos::OperatorTraits<ST,MV,OP>  OPT;
 namespace Cuantico {
 // =============================================================================
 KeoRegularized::
-KeoRegularized( const Teuchos::RCP<const Cuantico::StkMesh> &mesh,
-                const double g,
-                const Teuchos::RCP<const Epetra_Vector> &thickness,
-                const Teuchos::RCP<Cuantico::KeoContainer> &keoContainer,
-                const Teuchos::RCP<const Epetra_Vector> &psi
-              ) :
+KeoRegularized(const Teuchos::RCP<const Cuantico::StkMesh> &mesh,
+               const Teuchos::RCP<const Epetra_Vector> &thickness,
+               const Teuchos::RCP<Cuantico::KeoContainer> &keoContainer):
   useTranspose_( false ),
   mesh_( mesh ),
-  g_( g ),
+  g_( 0.0 ),
   thickness_( thickness ),
   keoContainer_( keoContainer ),
   absPsiSquared_(Teuchos::rcp(new Epetra_Vector(*mesh->getComplexNonOverlapMap()))),
-  keoRegularizedMatrix_(Teuchos::null),
+  // It wouldn't strictly be necessary to initialize keoRegularizedMatrix_ with
+  // the proper graph here as keoContainer_'s cache will override the matrix
+  // later on anyways. Keep it, though, as it doesn't waste any memory and is
+  // in the spirit of the Trilinos::ModelEvaluator which asks for allocation
+  // of memory at one point and filling it with meaningful values later on.
+  keoRegularizedMatrix_(Teuchos::rcp(new Epetra_FECrsMatrix(Copy, *keoContainer_->getKeoGraph()))),
   comm_( keoContainer->getComm() ),
   MlPrec_( Teuchos::null ),
   numCycles_( 1 ),
@@ -73,7 +76,6 @@ KeoRegularized( const Teuchos::RCP<const Cuantico::StkMesh> &mesh,
 #endif
   out_( Teuchos::VerboseObjectBase::getDefaultOStream() )
 {
-  this->rebuildAbsPsiSquared_(psi);
 }
 // =============================================================================
 KeoRegularized::
@@ -236,10 +238,12 @@ OperatorRangeMap() const
 // =============================================================================
 void
 KeoRegularized::
-rebuild(const Teuchos::Array<double> & mvpParams,
+rebuild(const double g,
+        const Teuchos::Array<double> & mvpParams,
         const Teuchos::RCP<const Epetra_Vector> & psi
         )
 {
+  g_ = g;
   this->rebuildAbsPsiSquared_(psi);
   // Copy over the matrix.
   // This is necessary as we don't apply AMG to K,
@@ -256,23 +260,15 @@ rebuild(const Teuchos::Array<double> & mvpParams,
 #ifdef _DEBUG_
   TEUCHOS_ASSERT( !keoContainer_.is_null() );
 #endif
-  // Make sure to create the matrix in memory only once and then
-  // override it as necessary. The reason for this is that ML
-  // gets initialized only once and, upon ML.recompute(), relies
-  // on the (new) data being available at the same adress.
-  // Failure to comply to this will lead to memory errors.
-  if (keoRegularizedMatrix_.is_null())
-    keoRegularizedMatrix_ = Teuchos::rcp(new Epetra_CrsMatrix(*keoContainer_->getKeo(mvpParams)));
-  else
-    *keoRegularizedMatrix_ = *keoContainer_->getKeo(mvpParams);
+  *keoRegularizedMatrix_ = *keoContainer_->getKeo(mvpParams);
 
-  this->rebuildInverse();
+  this->rebuildInverse_();
   return;
 }
 // =============================================================================
 void
 KeoRegularized::
-rebuildInverse()
+rebuildInverse_()
 {
   // Add 2*g*|psi|^2 to the diagonal of KEO.
   if (g_ > 0.0)

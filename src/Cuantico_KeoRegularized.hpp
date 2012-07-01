@@ -58,12 +58,10 @@ namespace Cuantico {
 class KeoRegularized : public Epetra_Operator
 {
 public:
-KeoRegularized( const Teuchos::RCP<const Cuantico::StkMesh> &mesh,
-                const double g,
-                const Teuchos::RCP<const Epetra_Vector> &thickness,
-                const Teuchos::RCP<Cuantico::KeoContainer> &keoContainer,
-                const Teuchos::RCP<const Epetra_Vector> &psi
-              );
+KeoRegularized(const Teuchos::RCP<const Cuantico::StkMesh> &mesh,
+               const Teuchos::RCP<const Epetra_Vector> &thickness,
+               const Teuchos::RCP<Cuantico::KeoContainer> &keoContainer
+               );
 
 // Destructor.
 ~KeoRegularized();
@@ -103,15 +101,16 @@ virtual const Epetra_Map &OperatorRangeMap() const;
 public:
 
 void
-rebuild(const Teuchos::Array<double> &mvpParams,
+rebuild(const double g,
+        const Teuchos::Array<double> &mvpParams,
         const Teuchos::RCP<const Epetra_Vector> &psi
        );
 
-void
-rebuildInverse();
-
 protected:
 private:
+
+void
+rebuildInverse_();
 
 void
 rebuildAbsPsiSquared_(const Teuchos::RCP<const Epetra_Vector> &psi);
@@ -124,13 +123,17 @@ bool useTranspose_;
 const Teuchos::RCP<const Cuantico::StkMesh> mesh_;
 double g_;
 const Teuchos::RCP<const Epetra_Vector> thickness_;
-Teuchos::RCP<Cuantico::KeoContainer> keoContainer_;
+const Teuchos::RCP<Cuantico::KeoContainer> keoContainer_;
 
 // |psi|^2
 const Teuchos::RCP<Epetra_Vector> absPsiSquared_;
 
-// Make sure the matrix is persistent in memory. ML requires that.
-Teuchos::RCP<Epetra_CrsMatrix> keoRegularizedMatrix_;
+// Make sure to create the matrix in memory only once and then
+// override it as necessary. The reason for this is that ML
+// gets initialized only once and, upon ML.recompute(), relies
+// on the (new) data being available at the same adress.
+// Failure to comply to this will lead to memory errors.
+const Teuchos::RCP<Epetra_CrsMatrix> keoRegularizedMatrix_;
 
 const Epetra_Comm &comm_;
 

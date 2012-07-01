@@ -50,11 +50,17 @@ testJac( const std::string & inputFileNameBase,
     Cuantico::StkMeshRead( *eComm, inputFileName, data );
 
     // Cast the data into something more accessible.
-    Teuchos::RCP<Cuantico::StkMesh>     & mesh = data.get( "mesh", Teuchos::RCP<Cuantico::StkMesh>() );
-    Teuchos::RCP<Epetra_Vector>      & z = data.get( "psi", Teuchos::RCP<Epetra_Vector>() );
+    Teuchos::RCP<Cuantico::StkMesh> & mesh = data.get( "mesh", Teuchos::RCP<Cuantico::StkMesh>() );
+    Teuchos::RCP<Epetra_Vector> & psi = data.get( "psi", Teuchos::RCP<Epetra_Vector>() );
     Teuchos::RCP<Epetra_MultiVector> & mvpValues = data.get( "A", Teuchos::RCP<Epetra_MultiVector>() );
-    Teuchos::RCP<Epetra_Vector>      & thickness = data.get( "thickness", Teuchos::RCP<Epetra_Vector>() );
-    Teuchos::ParameterList           & problemParameters = data.get( "Problem parameters", Teuchos::ParameterList() );
+    Teuchos::RCP<Epetra_Vector> & thickness = data.get( "thickness", Teuchos::RCP<Epetra_Vector>() );
+    Teuchos::ParameterList & problemParameters = data.get( "Problem parameters", Teuchos::ParameterList() );
+
+    const double g = 1.0;
+    Teuchos::Array<double> mvpParameters(1);
+    mvpParameters[0] = mu;
+    Teuchos::Array<double> spParameters(1);
+    spParameters[0] = 0.0; // T
 
     Teuchos::RCP<Cuantico::MagneticVectorPotential::Virtual> mvp =
       Teuchos::rcp(new Cuantico::MagneticVectorPotential::ExplicitValues(mesh, mvpValues, mu));
@@ -62,18 +68,14 @@ testJac( const std::string & inputFileNameBase,
     Teuchos::RCP<Cuantico::ScalarPotential::Virtual> sp =
       Teuchos::rcp(new Cuantico::ScalarPotential::Constant(-1.0));
 
-    Teuchos::RCP<LOCA::ParameterVector> mvpParameters =
-        Teuchos::rcp( new LOCA::ParameterVector() );
-    mvpParameters->addParameter( "mu", mu );
-
     // create a keo factory
     Teuchos::RCP<Cuantico::KeoContainer> keoContainer =
-        Teuchos::rcp( new Cuantico::KeoContainer( mesh, thickness, mvp ) );
+        Teuchos::rcp(new Cuantico::KeoContainer(mesh, thickness, mvp));
 
     // create the jacobian operator
-    double g = 1.0;
     Teuchos::RCP<Cuantico::JacobianOperator> jac =
-        Teuchos::rcp(new Cuantico::JacobianOperator(mesh, sp, g, thickness, keoContainer, z));
+      Teuchos::rcp(new Cuantico::JacobianOperator(mesh, sp, thickness, keoContainer));
+    jac->rebuild(g, spParameters, mvpParameters, psi);
 
     double sum;
     const Epetra_Map & map = jac->OperatorDomainMap();

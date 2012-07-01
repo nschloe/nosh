@@ -78,18 +78,12 @@ getComm() const
   return mesh_->getComm();
 }
 // =============================================================================
-//void
-//KeoContainer::
-//updateParameters(const Teuchos::Array<double> &mvpParams
-//                 ) const
-//{
-//  // set the parameters
-//#ifdef _DEBUG_
-//  TEUCHOS_ASSERT( !mvp_.is_null() );
-//#endif
-//  mvp_->set_p( mvpParams );
-//  return;
-//}
+Teuchos::RCP<const Epetra_FECrsGraph>
+KeoContainer::
+getKeoGraph() const
+{
+  return keoGraph_;
+}
 // =============================================================================
 Teuchos::RCP<const Epetra_FECrsMatrix>
 KeoContainer::

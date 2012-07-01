@@ -173,12 +173,12 @@ const Teuchos::RCP<Cuantico::StkMesh> mesh_;
 
 double g_;
 
-const Teuchos::RCP<Cuantico::ScalarPotential::Virtual> scalarPotential_;
-const Teuchos::RCP<Cuantico::MagneticVectorPotential::Virtual> mvp_;
+const Teuchos::RCP<const Cuantico::ScalarPotential::Virtual> scalarPotential_;
+const Teuchos::RCP<const Cuantico::MagneticVectorPotential::Virtual> mvp_;
 
 const Teuchos::RCP<const Epetra_Vector> thickness_;
 
-const Teuchos::RCP<Epetra_Vector> x_;
+const Teuchos::RCP<const Epetra_Vector> x_init_;
 
 mutable Teuchos::RCP<Epetra_Vector> p_latest_;
 

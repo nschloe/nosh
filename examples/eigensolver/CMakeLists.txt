@@ -9,7 +9,7 @@ LINK_DIRECTORIES( ${Trilinos_LIBRARY_DIRS}
 # ------------------------------------------------------------------------------
 SET( MY_EXECUTABLE "eigensolver" )
 ADD_EXECUTABLE( ${MY_EXECUTABLE}
-                "eigensolvers.cpp" )
+                "eigensolver.cpp" )
 TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
                        "cuantico"
                        ${Trilinos_LIBRARIES}

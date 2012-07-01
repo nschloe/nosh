@@ -74,9 +74,8 @@ KeoContainer(const Teuchos::RCP<const Cuantico::StkMesh> &mesh,
 const Epetra_Comm &
 getComm() const;
 
-//void
-//updateParameters(const Teuchos::Array<double> &mvpParams
-//                 ) const;
+Teuchos::RCP<const Epetra_FECrsGraph>
+getKeoGraph() const;
 
 Teuchos::RCP<const Epetra_FECrsMatrix>
 getKeo(const Teuchos::Array<double> & mvpParams) const;
