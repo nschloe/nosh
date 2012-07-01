@@ -40,7 +40,10 @@
   #include <Teuchos_TimeMonitor.hpp>
 #endif
 
+// For the my_populate_bulk_data_.
 #include <stk_io/IossBridge.hpp>
+#include <Ioss_SubSystem.h>
+
 #include <stk_io/MeshReadWriteUtils.hpp>
 #include <Ionit_Initializer.h>
 #include <Ioss_IOFactory.h>
@@ -74,6 +77,14 @@ read( const Epetra_Comm &comm,
       Teuchos::ParameterList &data
       )
 {
+#ifdef HAVE_MPI
+  const Epetra_MpiComm &mpicomm =
+    Teuchos::dyn_cast<const Epetra_MpiComm>(comm);
+  MPI_Comm mcomm = mpicomm.Comm();
+#else
+  int mcomm = 1;
+#endif
+
   // Take two different fields with one component
   // instead of one field with two components. This works around
   // Ioss's inability to properly read psi_R, psi_Z as a complex variable.
@@ -92,15 +103,68 @@ read( const Epetra_Comm &comm,
 //   stk::mesh::DefaultFEM fem( *metaData, spatial_dimension );
 
   // ---------------------------------------------------------------------------
-  // Setup field data.
-#ifdef HAVE_MPI
-  const Epetra_MpiComm &mpicomm =
-    Teuchos::dyn_cast<const Epetra_MpiComm>(comm);
-  MPI_Comm mcomm = mpicomm.Comm();
-#else
-  int mcomm = 1;
-#endif
+  // initialize database communication
+  Ioss::Init::Initializer io;
 
+  // If the file is serial, read it with process 0 and embed it
+  // in the multiproc context. Load balancing is done later anyways.
+  bool fileIsSerial = fileName_.substr(fileName_.find_last_of(".") + 1) == "e";
+  bool needSpecialTreatment = fileIsSerial && comm.NumProc()>1;
+  MPI_Comm readerComm = mcomm;
+  if (needSpecialTreatment)
+  {
+    // reader process
+    int readerProc[1] = {0};
+
+    // Get the group under mcomm.
+    MPI_Group groupWorld;
+    MPI_Comm_group(mcomm, &groupWorld);
+    // Create the new group.
+    MPI_Group peZero;
+    MPI_Group_incl(groupWorld, 1, readerProc, &peZero);
+    // Create the new communicator.
+    MPI_Comm_create(mcomm, peZero, &readerComm);
+  }
+
+  // The database is manually initialized to get explicit access to it
+  // to be able to call set_field_separator(). This tells the database to
+  // recognize 'AX', 'AY', 'AZ', as components of one vector field.
+  // By default, the separator is '_' such that only fields 'A_*' would be
+  // recognized as such.
+  // 2011-09-26, Greg's mail:
+  // "It is possible to manually open the database and create the Ioss::Region,
+  // put that in the MeshData object and then call create_input_mesh(), but that
+  // gets ugly.  I will try to come up with a better option... "
+  std::string meshType = "exodusii";
+  Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(meshType,
+                                                  fileName_,
+                                                  Ioss::READ_MODEL,
+                                                  readerComm);
+  TEUCHOS_TEST_FOR_EXCEPT_MSG( dbi == NULL || !dbi->ok(),
+                       "ERROR: Could not open database '" << fileName_
+                       << "' of type '" << meshType << "'.");
+
+  // set the vector field label separator
+  dbi->set_field_separator( 0 );
+
+  // create region to feed into meshData
+  Ioss::Region *in_region = new Ioss::Region( dbi, "input_model" );
+  // ---------------------------------------------------------------------------
+
+  Teuchos::RCP<stk::io::MeshData> meshData =
+    Teuchos::rcp( new stk::io::MeshData() );
+  meshData->m_input_region = in_region;
+
+  // This checks the existence of the file, checks to see if we can open it,
+  // builds a handle to the region and puts it in mesh_data (in_region),
+  // and reads the metaData into metaData.
+  stk::io::create_input_mesh(meshType,
+                             fileName_,
+                             readerComm,
+                             *metaData,
+                             *meshData);
+  // ---------------------------------------------------------------------------
+  // Setup field data.
   // The work set size could probably be improved.
   // Check out what Albany does here.
   unsigned int field_data_chunk_size = 1001;
@@ -122,6 +186,15 @@ read( const Epetra_Comm &comm,
                        numDim);
   stk::io::set_field_role(*coordinatesField,
                           Ioss::Field::MESH);
+
+  //Teuchos::RCP<IntScalarFieldType> procRankField =
+  //  Teuchos::rcpFromRef(metaData->declare_field<IntScalarFieldType>( "proc_rank" ));
+  //stk::mesh::put_field(*procRankField,
+  //                     metaData->element_rank(),
+  //                     metaData->universal_part()
+  //                     );
+  //stk::io::set_field_role(*procRankField,
+  //                        Ioss::Field::MESH);
 
   Teuchos::RCP<ScalarFieldType> muField =
     Teuchos::rcpFromRef( metaData->declare_field<ScalarFieldType>("mu"));
@@ -215,47 +288,6 @@ read( const Epetra_Comm &comm,
                        metaData->universal_part());
   stk::io::set_field_role(*potentialField, Ioss::Field::ATTRIBUTE);
   // ---------------------------------------------------------------------------
-  // initialize database communication
-  Ioss::Init::Initializer io;
-  // ---------------------------------------------------------------------------
-  // The database is manually initialized to get explicit access to it
-  // to be able to call set_field_separator(). This tells the database to
-  // recognize 'AX', 'AY', 'AZ', as components of one vector field.
-  // By default, the separator is '_' such that only fields 'A_*' would be
-  // recognized as such.
-  // 2011-09-26, Greg's mail:
-  // "It is possible to manually open the database and create the Ioss::Region,
-  // put that in the MeshData object and then call create_input_mesh(), but that
-  // gets ugly.  I will try to come up with a better option... "
-  std::string meshType = "exodusii";
-  Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(meshType,
-                                                  fileName_,
-                                                  Ioss::READ_MODEL,
-                                                  MPI_COMM_WORLD);
-  TEUCHOS_TEST_FOR_EXCEPT_MSG( dbi == NULL || !dbi->ok(),
-                       "ERROR: Could not open database '" << fileName_
-                       << "' of type '" << meshType << "'."
-                       );
-
-  // set the vector field label separator
-  dbi->set_field_separator( 0 );
-
-  // create region to feed into meshData
-  Ioss::Region *in_region = new Ioss::Region( dbi, "input_model" );
-  // ---------------------------------------------------------------------------
-
-  Teuchos::RCP<stk::io::MeshData> meshData =
-    Teuchos::rcp( new stk::io::MeshData() );
-  meshData->m_input_region = in_region;
-
-  // This checks the existence of the file, checks to see if we can open it,
-  // builds a handle to the region and puts it in mesh_data (in_region),
-  // and reads the metaData into metaData.
-  stk::io::create_input_mesh(meshType,
-                             fileName_,
-                             MPI_COMM_WORLD,
-                             *metaData,
-                             *meshData);
 
   // define_input_fields() doesn't like the ATTRIBUTE fields; disable.
   // What was it good for anyways?
@@ -266,18 +298,31 @@ read( const Epetra_Comm &comm,
 //  stk::io::put_io_part_attribute( metaData->universal_part() );
 
   metaData->commit();
-  stk::io::populate_bulk_data(*bulkData, *meshData);
 
-  // Restart index to read solution from exodus file.
-//   int index = -1; // Default to no restart
-  int index = 1; // restart from the first step
-//  if ( index<1 )
-//      *out_ << "Restart Index not set. Not reading solution from exodus (" << index << ")"<< endl;
-//  else
-//      *out_ << "Restart Index set, reading solution time step: " << index << endl;
-  stk::io::process_input_request(*meshData, *bulkData, index);
+  if (needSpecialTreatment)
+  {
+    bulkData->modification_begin();
+    // Read the mesh with process 0.
+    if(comm.MyPID() == 0) 
+      my_populate_bulk_data_(*bulkData, *meshData, *metaData);
+    // Note:
+    // Restart from a single Exodus file not currently supported.
+    bulkData->modification_end();
+  }
+  else
+  {
+    stk::io::populate_bulk_data(*bulkData, *meshData);
 
-  bulkData->modification_end();
+    // Restart index to read solution from exodus file.
+//    int index = -1; // Default to no restart
+    int index = 1; // restart from the first step
+    //if ( index<1 )
+    //    *out_ << "Restart Index not set. Not reading solution from exodus (" << index << ")"<< endl;
+    //else
+    //    *out_ << "Restart Index set, reading solution time step: " << index << endl;
+    stk::io::process_input_request(*meshData, *bulkData, index);
+    bulkData->modification_end();
+  }
 
 #ifdef HAVE_MPI
   // Optionally rebalance.
@@ -287,18 +332,19 @@ read( const Epetra_Comm &comm,
                                                    NULL,
                                                    metaData->node_rank(),
                                                    &selector);
-  if (imbalance > 1.5)
+  *out_ << "The imbalance is " << imbalance << ". ";
+  if (imbalance < 1.5)
+    *out_ << "That's acceptable." << std::endl;
+  else
   {
-    *out_ << "Before the rebalance, the imbalance threshold is = " << imbalance << endl;
-    // Zoltan reblancing.
-    Teuchos::ParameterList emptyList;
-    stk::rebalance::Zoltan zoltan_partition(mcomm, numDim, emptyList);
-    //// Zoltan graph based.
-    //Teuchos::ParameterList graph;
-    //Teuchos::ParameterList lb_method;
-    //lb_method.set("LOAD BALANCING METHOD", "4");
-    //graph.sublist(stk::rebalance::Zoltan::default_parameters_name()) = lb_method;
-    //stk::rebalance::Zoltan zoltan_partition(Albany::getMpiCommFromEpetraComm(*comm), numDim, graph);
+    *out_ << "Rebalance!" << std::endl;
+    // Zoltan graph-based reblancing.
+    // http://trilinos.sandia.gov/packages/docs/dev/packages/stk/doc/html/group__stk__rebalance__unit__test__module.html
+    Teuchos::ParameterList lb_method;
+    lb_method.set("LOAD BALANCING METHOD", "4");
+    Teuchos::ParameterList graph;
+    graph.sublist(stk::rebalance::Zoltan::default_parameters_name()) = lb_method;
+    stk::rebalance::Zoltan zoltan_partition(mcomm, numDim, graph);
 
     stk::rebalance::rebalance(*bulkData,
                               owned_selector,
@@ -311,7 +357,7 @@ read( const Epetra_Comm &comm,
                                               metaData->node_rank(),
                                               &selector);
 
-    *out_ << "After rebalancing, the imbalance threshold is = " << imbalance << endl;
+    *out_ << "After rebalancing, the imbalance is " << imbalance << "." << std::endl;
   }
 #endif
 
@@ -364,6 +410,194 @@ read( const Epetra_Comm &comm,
   data.set( "V", potential );
 
   return;
+}
+// =============================================================================
+void
+StkMeshReader::
+my_populate_bulk_data_(stk::mesh::BulkData &bulk_data,
+                       stk::io::MeshData &mesh_data,
+                       stk::mesh::fem::FEMMetaData &metaData)
+{
+  // From Albany, Albany_IossSTKMeshStruct.cpp.
+  // This function duplicates the function stk::io::populate_bulk_data, with the exception of an
+  // internal modification_begin() and modification_end(). When reading bulk data on a single processor (single
+  // exodus file), all PEs must enter the modification_begin() / modification_end() block, but only one reads the
+  // bulk data.
+  // TODO pull the modification statements from populate_bulk_data and retrofit.
+  stk::mesh::BulkData& bulk = bulk_data;
+  Ioss::Region *region = mesh_data.m_input_region;
+  const stk::mesh::fem::FEMMetaData& fem_meta = metaData;
+
+  { // element blocks
+
+    const Ioss::ElementBlockContainer& elem_blocks = region->get_element_blocks();
+    for(Ioss::ElementBlockContainer::const_iterator it = elem_blocks.begin();
+  it != elem_blocks.end(); ++it) {
+      Ioss::ElementBlock *entity = *it;
+
+      if (stk::io::include_entity(entity)) {
+  const std::string &name = entity->name();
+  stk::mesh::Part* const part = fem_meta.get_part(name);
+  assert(part != NULL);
+
+  const CellTopologyData* cell_topo = stk::io::get_cell_topology(*part);
+  if (cell_topo == NULL) {
+    std::ostringstream msg ;
+    msg << " INTERNAL_ERROR: Part " << part->name() << " returned NULL from get_cell_topology()";
+    throw std::runtime_error( msg.str() );
+  }
+
+  std::vector<int> elem_ids ;
+  std::vector<int> connectivity ;
+
+  entity->get_field_data("ids", elem_ids);
+  entity->get_field_data("connectivity", connectivity);
+
+  size_t element_count = elem_ids.size();
+  int nodes_per_elem = cell_topo->node_count ;
+
+  std::vector<stk::mesh::EntityId> id_vec(nodes_per_elem);
+  std::vector<stk::mesh::Entity*> elements(element_count);
+
+  for(size_t i=0; i<element_count; ++i) {
+    int *conn = &connectivity[i*nodes_per_elem];
+    std::copy(&conn[0], &conn[0+nodes_per_elem], id_vec.begin());
+    elements[i] = &stk::mesh::fem::declare_element(bulk, *part, elem_ids[i], &id_vec[0]);
+  }
+
+  // Add all element attributes as fields.
+  // If the only attribute is 'attribute', then add it; otherwise the other attributes are the
+  // named components of the 'attribute' field, so add them instead.
+  Ioss::NameList names;
+  entity->field_describe(Ioss::Field::ATTRIBUTE, &names);
+  for(Ioss::NameList::const_iterator I = names.begin(); I != names.end(); ++I) {
+    if(*I == "attribute" && names.size() > 1)
+      continue;
+    stk::mesh::FieldBase *field = fem_meta.get_field<stk::mesh::FieldBase> (*I);
+    if (field)
+      stk::io::field_data_from_ioss(field, elements, entity, *I);
+  }
+      }
+    }
+  }
+
+  { // nodeblocks
+
+    const Ioss::NodeBlockContainer& node_blocks = region->get_node_blocks();
+    assert(node_blocks.size() == 1);
+
+    Ioss::NodeBlock *nb = node_blocks[0];
+
+    std::vector<stk::mesh::Entity*> nodes;
+    stk::io::get_entity_list(nb, fem_meta.node_rank(), bulk, nodes);
+
+    stk::mesh::Field<double,stk::mesh::Cartesian> *coord_field =
+      fem_meta.get_field<stk::mesh::Field<double,stk::mesh::Cartesian> >("coordinates");
+
+    stk::io::field_data_from_ioss(coord_field, nodes, nb, "mesh_model_coordinates");
+
+  }
+
+  { // nodesets
+
+    const Ioss::NodeSetContainer& node_sets = region->get_nodesets();
+
+    for(Ioss::NodeSetContainer::const_iterator it = node_sets.begin();
+  it != node_sets.end(); ++it) {
+      Ioss::NodeSet *entity = *it;
+
+      if (stk::io::include_entity(entity)) {
+  const std::string & name = entity->name();
+  stk::mesh::Part* const part = fem_meta.get_part(name);
+  assert(part != NULL);
+  stk::mesh::PartVector add_parts( 1 , part );
+
+  std::vector<int> node_ids ;
+  int node_count = entity->get_field_data("ids", node_ids);
+
+  std::vector<stk::mesh::Entity*> nodes(node_count);
+  stk::mesh::EntityRank n_rank = fem_meta.node_rank();
+  for(int i=0; i<node_count; ++i) {
+    nodes[i] = bulk.get_entity(n_rank, node_ids[i] );
+    if (nodes[i] != NULL)
+      bulk.declare_entity(n_rank, node_ids[i], add_parts );
+  }
+
+  stk::mesh::Field<double> *df_field =
+    fem_meta.get_field<stk::mesh::Field<double> >("distribution_factors");
+
+  if (df_field != NULL) {
+    stk::io::field_data_from_ioss(df_field, nodes, entity, "distribution_factors");
+  }
+      }
+    }
+  }
+
+  { // sidesets
+
+    const Ioss::SideSetContainer& side_sets = region->get_sidesets();
+
+    for(Ioss::SideSetContainer::const_iterator it = side_sets.begin();
+  it != side_sets.end(); ++it) {
+      Ioss::SideSet *entity = *it;
+
+      if (stk::io::include_entity(entity)) {
+//  process_surface_entity(entity, bulk);
+  {
+    assert(entity->type() == Ioss::SIDESET);
+
+    size_t block_count = entity->block_count();
+    for (size_t i=0; i < block_count; i++) {
+      Ioss::SideBlock *block = entity->get_block(i);
+      if (stk::io::include_entity(block)) {
+  std::vector<int> side_ids ;
+  std::vector<int> elem_side ;
+
+  stk::mesh::Part * const sb_part = fem_meta.get_part(block->name());
+  stk::mesh::EntityRank elem_rank = fem_meta.element_rank();
+
+  block->get_field_data("ids", side_ids);
+  block->get_field_data("element_side", elem_side);
+
+  assert(side_ids.size() * 2 == elem_side.size());
+  stk::mesh::PartVector add_parts( 1 , sb_part );
+
+  size_t side_count = side_ids.size();
+  std::vector<stk::mesh::Entity*> sides(side_count);
+  for(size_t is=0; is<side_count; ++is) {
+    stk::mesh::Entity* const elem = bulk.get_entity(elem_rank, elem_side[is*2]);
+
+    // If NULL, then the element was probably assigned to an
+    // element block that appears in the database, but was
+    // subsetted out of the analysis mesh. Only process if
+    // non-null.
+    if (elem != NULL) {
+      // Ioss uses 1-based side ordinal, stk::mesh uses 0-based.
+      int side_ordinal = elem_side[is*2+1] - 1;
+
+      stk::mesh::Entity* side_ptr = NULL;
+      side_ptr = &stk::mesh::fem::declare_element_side(bulk, side_ids[is], *elem, side_ordinal);
+      stk::mesh::Entity& side = *side_ptr;
+
+      bulk.change_entity_parts( side, add_parts );
+      sides[is] = &side;
+    } else {
+      sides[is] = NULL;
+    }
+  }
+
+  const stk::mesh::Field<double, stk::mesh::ElementNode> *df_field =
+    stk::io::get_distribution_factor_field(*sb_part);
+  if (df_field != NULL) {
+    stk::io::field_data_from_ioss(df_field, sides, block, "distribution_factors");
+  }
+      }
+    }
+  }
+      }
+    }
+  }
+
 }
 // =============================================================================
 Teuchos::RCP<Epetra_Vector>

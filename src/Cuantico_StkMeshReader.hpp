@@ -33,10 +33,12 @@
   #include <Teuchos_Time.hpp>
 #endif
 #include <Teuchos_ParameterList.hpp>
+
 // =============================================================================
 // typedefs
 typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorFieldType;
-typedef stk::mesh::Field<double>                      ScalarFieldType;
+typedef stk::mesh::Field<double> ScalarFieldType;
+typedef stk::mesh::Field<int> IntScalarFieldType ;
 // =============================================================================
 // forward declarations
 class Epetra_Vector;
@@ -62,6 +64,12 @@ const std::string fileName_;
 const Teuchos::RCP<Teuchos::FancyOStream> out_;
 
 private:
+
+void
+my_populate_bulk_data_(stk::mesh::BulkData &bulk_data,
+                       stk::io::MeshData &mesh_data,
+                       stk::mesh::fem::FEMMetaData &metaData);
+
 Teuchos::RCP<Epetra_Vector>
 complexfield2vector_( const Teuchos::RCP<const Cuantico::StkMesh> &mesh,
                       const Teuchos::RCP<ScalarFieldType> &realField,
