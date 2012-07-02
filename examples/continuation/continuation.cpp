@@ -116,18 +116,24 @@ int main(int argc, char *argv[])
     Cuantico::StkMeshRead(*eComm, inputFilePath, data);
 
     // Cast the data into something more accessible.
-    Teuchos::RCP<Cuantico::StkMesh> & mesh = data.get<Teuchos::RCP<Cuantico::StkMesh> >( "mesh" );
-    Teuchos::RCP<Epetra_Vector> & psi = data.get("psi", Teuchos::RCP<Epetra_Vector>() );
-    Teuchos::RCP<Epetra_MultiVector> & mvpValues = data.get("A", Teuchos::RCP<Epetra_MultiVector>() );
-    Teuchos::RCP<Epetra_Vector> & potentialValues = data.get("V", Teuchos::RCP<Epetra_Vector>());
-    Teuchos::RCP<Epetra_Vector> & thickness = data.get( "thickness", Teuchos::RCP<Epetra_Vector>() );
+    const Teuchos::RCP<Cuantico::StkMesh> & mesh =
+      data.get<Teuchos::RCP<Cuantico::StkMesh> >( "mesh" );
+    const Teuchos::RCP<Epetra_Vector> & psi =
+      data.get("psi", Teuchos::RCP<Epetra_Vector>() );
+    const Teuchos::RCP<const Epetra_MultiVector> & mvpValues =
+      data.get("A", Teuchos::RCP<const Epetra_MultiVector>() );
+    const Teuchos::RCP<Epetra_Vector> & potentialValues =
+      data.get("V", Teuchos::RCP<Epetra_Vector>());
+    const Teuchos::RCP<Epetra_Vector> & thickness =
+      data.get( "thickness", Teuchos::RCP<Epetra_Vector>() );
 
     // Set the output directory for later plotting with this.
     mesh->openOutputChannel(outputDirectory, "solution");
 
     // Create the initial state from psi.
     TEUCHOS_ASSERT( !psi.is_null() );
-    Teuchos::RCP<Cuantico::State> state = Teuchos::rcp(new Cuantico::State(*psi, mesh));
+    Teuchos::RCP<Cuantico::State> state =
+      Teuchos::rcp(new Cuantico::State(*psi, mesh));
 
     // Setup the magnetic vector potential.
     // Choose between several given MVPs or build your own by
@@ -288,7 +294,7 @@ int main(int argc, char *argv[])
     }
     // ----------------------------------------------------------------------
 
-    // Now the (somewhat cumbersome) setting of inputs and outputs
+    // Now the setting of inputs and outputs.
     EpetraExt::ModelEvaluator::InArgs inArgs = piro->createInArgs();
     Teuchos::RCP<Epetra_Vector> p1 =
         Teuchos::rcp(new Epetra_Vector(*(piro->get_p_init(0))));
@@ -299,7 +305,7 @@ int main(int argc, char *argv[])
 
     // Now solve the problem and return the responses.
     const Teuchos::RCP<Teuchos::Time> piroSolveTime =
-        Teuchos::TimeMonitor::getNewTimer("Piro total solve time");;
+      Teuchos::TimeMonitor::getNewTimer("Piro total solve time");;
     {
     Teuchos::TimeMonitor tm(*piroSolveTime);
     piro->evalModel(inArgs, outArgs);
@@ -308,7 +314,7 @@ int main(int argc, char *argv[])
     // Manually release LOCA stepper.
 #ifdef HAVE_LOCA_ANASAZI
     if ( !glEigenSaver.is_null() )
-        glEigenSaver->releaseLocaStepper();
+      glEigenSaver->releaseLocaStepper();
 #endif
 
     // Print timing data.

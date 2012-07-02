@@ -111,7 +111,7 @@ read( const Epetra_Comm &comm,
   bool fileIsSerial = fileName_.substr(fileName_.find_last_of(".") + 1) == "e";
   MPI_Comm readerComm = mcomm;
 #ifdef HAVE_MPI
-  if (fileIsSerial)
+  if (fileIsSerial && comm.NumProc()>1)
   {
     // reader process
     int readerProc[1] = {0};
@@ -301,7 +301,7 @@ read( const Epetra_Comm &comm,
   metaData->commit();
 
 #ifdef HAVE_MPI
-  if (fileIsSerial)
+  if (fileIsSerial && comm.NumProc()>1)
   {
     bulkData->modification_begin();
     Ioss::Region *region = meshData->m_input_region;

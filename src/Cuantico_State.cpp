@@ -106,7 +106,7 @@ save( const int index
 
   // Merge the state into the mesh.
 //     mesh_->getBulkData()->modification_begin();
-  this->mergePsi_( mesh_, psi_ );
+  this->mergePsi_(mesh_, psi_);
 //     mesh_->getBulkData()->modification_end();
 
   // Write it out to the file that's been specified in mesh_.
@@ -115,14 +115,6 @@ save( const int index
                                                   *mesh_->getBulkData(),
                                                   time
                                                   );
-//    if ( psi_.Comm().MyPID() == 0 )
-//        std::cout << "Cuantico::StkMeshWriter::write:\n"
-//                  << "\twriting time " << index << "\n"
-//                  << "\tindex " << out_step << "\n"
-//                  << std::endl;
-
-//     Cuantico::StkMeshWrite( fileBaseName, index,  psi_, mesh_, p );
-
   return;
 }
 // =============================================================================
@@ -195,21 +187,22 @@ mergePsi_( const Teuchos::RCP<const Cuantico::StkMesh> &mesh,
            const Epetra_Vector &psi
            ) const
 {
-  VectorFieldType * psir_field = mesh->getMetaData()->get_field<VectorFieldType>(
-      "psi_R" );
+  VectorFieldType * psir_field =
+    mesh->getMetaData()->get_field<VectorFieldType>("psi_R");
 #ifdef _DEBUG_
   TEUCHOS_ASSERT( psir_field != NULL );
 #endif
 
-  VectorFieldType * psii_field = mesh->getMetaData()->get_field<VectorFieldType>(
-      "psi_Z" );
+  VectorFieldType * psii_field =
+    mesh->getMetaData()->get_field<VectorFieldType>("psi_Z");
 #ifdef _DEBUG_
   TEUCHOS_ASSERT( psii_field != NULL );
 #endif
 
   // Zero out all nodal values.
   const std::vector<stk::mesh::Entity*> &overlapNodes = mesh->getOverlapNodes();
-  for (unsigned int k=0; k < overlapNodes.size(); k++)  {
+  for (unsigned int k=0; k < overlapNodes.size(); k++)
+  {
     // Extract real and imaginary part.
     double* localPsiR = stk::mesh::field_data( *psir_field, *overlapNodes[k] );
     localPsiR[0] = 0.0;
@@ -231,8 +224,10 @@ mergePsi_( const Teuchos::RCP<const Cuantico::StkMesh> &mesh,
   // This communication updates the field values on un-owned nodes
   // it is correct because the zeroSolutionField above zeros them all
   // and the getSolutionField only sets the owned nodes.
-  stk::mesh::parallel_reduce( *mesh->getBulkData(), stk::mesh::sum( *psir_field ) );
-  stk::mesh::parallel_reduce( *mesh->getBulkData(), stk::mesh::sum( *psii_field ) );
+  stk::mesh::parallel_reduce(*mesh->getBulkData(),
+                             stk::mesh::sum(*psir_field));
+  stk::mesh::parallel_reduce(*mesh->getBulkData(),
+                             stk::mesh::sum(*psii_field));
 
   return;
 }
