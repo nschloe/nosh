@@ -300,7 +300,7 @@ read( const Epetra_Comm &comm,
 
   metaData->commit();
 
-#if HAVE_MPI
+#ifdef HAVE_MPI
   if (fileIsSerial)
   {
     bulkData->modification_begin();
@@ -326,7 +326,7 @@ read( const Epetra_Comm &comm,
     //    *out_ << "Restart Index set, reading solution time step: " << index << endl;
     stk::io::process_input_request(*meshData, *bulkData, index);
     bulkData->modification_end();
-#if HAVE_MPI
+#ifdef HAVE_MPI
   }
 
   // Rebalance.

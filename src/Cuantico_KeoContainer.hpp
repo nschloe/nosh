@@ -65,7 +65,7 @@ enum EMatrixType { MATRIX_TYPE_REGULAR,
 public:
 KeoContainer(const Teuchos::RCP<const Cuantico::StkMesh> &mesh,
              const Teuchos::RCP<const Epetra_Vector> &thickness,
-             const Teuchos::RCP<Cuantico::MagneticVectorPotential::Virtual> &mvp
+             const Teuchos::RCP<const Cuantico::MagneticVectorPotential::Virtual> &mvp
              );
 
 // Destructor.
@@ -124,7 +124,7 @@ const Teuchos::RCP<Teuchos::Time> buildKeoGraphTime_;
 #endif
 const Teuchos::RCP<const Cuantico::StkMesh> mesh_;
 const Teuchos::RCP<const Epetra_Vector> thickness_;
-const Teuchos::RCP<Cuantico::MagneticVectorPotential::Virtual> mvp_;
+const Teuchos::RCP<const Cuantico::MagneticVectorPotential::Virtual> mvp_;
 
 mutable Teuchos::ArrayRCP<Epetra_IntSerialDenseVector> globalIndexCache_;
 mutable bool globalIndexCacheUpToDate_;
@@ -132,8 +132,7 @@ mutable bool globalIndexCacheUpToDate_;
 const Teuchos::RCP<const Epetra_FECrsGraph> keoGraph_;
 const Teuchos::RCP<Epetra_FECrsMatrix> keo_;
 mutable Teuchos::Array<double> keoBuildParameters_;
-mutable Teuchos::Array<Teuchos::RCP<Epetra_FECrsMatrix> > keoDp_;
-mutable Teuchos::Array<Teuchos::Array<double> > keoDpBuildParameters_;
+const Teuchos::RCP<Epetra_FECrsMatrix> keoDp_;
 
 mutable Teuchos::ArrayRCP<double> alphaCache_;
 mutable bool alphaCacheUpToDate_;

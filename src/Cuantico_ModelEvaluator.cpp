@@ -51,15 +51,15 @@ namespace Cuantico {
 // ============================================================================
 ModelEvaluator::
 ModelEvaluator (
-  const Teuchos::RCP<Cuantico::StkMesh> &mesh,
+  const Teuchos::RCP<const Cuantico::StkMesh> &mesh,
   const double g,
-  const Teuchos::RCP<Cuantico::ScalarPotential::Virtual> &scalarPotential,
-  const Teuchos::RCP<Cuantico::MagneticVectorPotential::Virtual> &mvp,
+  const Teuchos::RCP<const Cuantico::ScalarPotential::Virtual> &scalarPotential,
+  const Teuchos::RCP<const Cuantico::MagneticVectorPotential::Virtual> &mvp,
   const Teuchos::RCP<const Epetra_Vector> &thickness,
-  const Teuchos::RCP<Epetra_Vector> &initialX
+  const Teuchos::RCP<const Epetra_Vector> &initialX
   ) :
   mesh_( mesh ),
-  g_( g ),
+  initial_g_( g ),
   scalarPotential_( scalarPotential ),
   mvp_( mvp ),
   thickness_( thickness ),
@@ -135,7 +135,7 @@ get_p_init(int l) const
   int k = 0;
   Teuchos::RCP<const Teuchos::Array<double> > p;
   // Local parameters:
-  (*p_init)[k++] = g_;
+  (*p_init)[k++] = initial_g_;
   // Scalar potential parameters:
   p = scalarPotential_->get_p_init();
   for (int i=0; i<p->length(); i++)

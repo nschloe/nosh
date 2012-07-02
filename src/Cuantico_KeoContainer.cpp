@@ -41,7 +41,7 @@ namespace Cuantico {
 KeoContainer::
 KeoContainer(const Teuchos::RCP<const Cuantico::StkMesh> &mesh,
              const Teuchos::RCP<const Epetra_Vector> &thickness,
-             const Teuchos::RCP<Cuantico::MagneticVectorPotential::Virtual> &mvp
+             const Teuchos::RCP<const Cuantico::MagneticVectorPotential::Virtual> &mvp
              ) :
 #ifdef CUANTICO_TEUCHOS_TIME_MONITOR
   keoFillTime_( Teuchos::TimeMonitor::getNewTimer(
@@ -55,8 +55,7 @@ KeoContainer(const Teuchos::RCP<const Cuantico::StkMesh> &mesh,
   keoGraph_(this->buildKeoGraph_()),    // build the graph immediately
   keo_(Teuchos::rcp(new Epetra_FECrsMatrix(Copy, *keoGraph_))),
   keoBuildParameters_( Teuchos::null ),
-  keoDp_(Teuchos::Array<Teuchos::RCP<Epetra_FECrsMatrix> >(mvp_->get_p_names()->length())),
-  keoDpBuildParameters_( Teuchos::Array<Teuchos::Array<double> >(mvp_->get_p_names()->length()) ),
+  keoDp_(Teuchos::rcp(new Epetra_FECrsMatrix(Copy, *keoGraph_))),
   alphaCache_(Teuchos::ArrayRCP<double>()),
   alphaCacheUpToDate_( false ),
   paramIndex_(0)
@@ -89,6 +88,10 @@ Teuchos::RCP<const Epetra_FECrsMatrix>
 KeoContainer::
 getKeo(const Teuchos::Array<double> &mvpParams) const
 {
+  // Cache the construction of the KEO.
+  // This is useful because in the continuation context,
+  // getKeo() is called a number of times with the same arguements
+  // (in computeF, getJacobian(), and getPreconditioner().
   if (keoBuildParameters_ != mvpParams)
   {
     this->fillKeo_(keo_, mvpParams, &KeoContainer::fillerRegular_);
@@ -103,20 +106,13 @@ getKeoDp(const int paramIndex,
          const Teuchos::Array<double> &mvpParams
          ) const
 {
-  // Create keoDp_[paramindex].
-  if (keoDp_[paramIndex].is_null())
-    keoDp_[paramIndex] = Teuchos::rcp(new Epetra_FECrsMatrix(Copy, *keoGraph_));
-
-  if (keoDpBuildParameters_[paramIndex] != mvpParams)
-  {
-    // Pass parameterIndex_ to this->fillerDp_() without changing fillerDp_'s
-    // interface by setting a private variable.
-    paramIndex_ = paramIndex;
-    this->fillKeo_(keoDp_[paramIndex], mvpParams, &KeoContainer::fillerDp_);
-    // Copy over the build parameters.
-    keoDpBuildParameters_[paramIndex] = mvpParams;
-  }
-  return keoDp_[paramIndex];
+  // As opposed to the KEO, dKEO/dp is typically only needed once
+  // per parameter set and hence doesn't need to be cached.
+  // Pass parameterIndex_ to this->fillerDp_() without changing fillerDp_'s
+  // interface by setting a private variable.
+  paramIndex_ = paramIndex;
+  this->fillKeo_(keoDp_, mvpParams, &KeoContainer::fillerDp_);
+  return keoDp_;
 }
 // =============================================================================
 const Teuchos::RCP<Epetra_FECrsGraph>

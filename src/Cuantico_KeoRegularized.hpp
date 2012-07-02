@@ -60,7 +60,7 @@ class KeoRegularized : public Epetra_Operator
 public:
 KeoRegularized(const Teuchos::RCP<const Cuantico::StkMesh> &mesh,
                const Teuchos::RCP<const Epetra_Vector> &thickness,
-               const Teuchos::RCP<Cuantico::KeoContainer> &keoContainer
+               const Teuchos::RCP<const Cuantico::KeoContainer> &keoContainer
                );
 
 // Destructor.
@@ -70,14 +70,14 @@ virtual int
 SetUseTranspose( bool UseTranspose );
 
 virtual int
-Apply( const Epetra_MultiVector &X,
-       Epetra_MultiVector &Y
-       ) const;
+Apply(const Epetra_MultiVector &X,
+      Epetra_MultiVector &Y
+      ) const;
 
 virtual int
-ApplyInverse( const Epetra_MultiVector &X,
-              Epetra_MultiVector &Y
-              ) const;
+ApplyInverse(const Epetra_MultiVector &X,
+             Epetra_MultiVector &Y
+             ) const;
 
 virtual double
 NormInf() const;
@@ -123,7 +123,7 @@ bool useTranspose_;
 const Teuchos::RCP<const Cuantico::StkMesh> mesh_;
 double g_;
 const Teuchos::RCP<const Epetra_Vector> thickness_;
-const Teuchos::RCP<Cuantico::KeoContainer> keoContainer_;
+const Teuchos::RCP<const Cuantico::KeoContainer> keoContainer_;
 
 // |psi|^2
 const Teuchos::RCP<Epetra_Vector> absPsiSquared_;

@@ -61,12 +61,12 @@ public:
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 //! Constructor without initial guess.
 ModelEvaluator (
-  const Teuchos::RCP<Cuantico::StkMesh> &mesh,
+  const Teuchos::RCP<const Cuantico::StkMesh> &mesh,
   const double g,
-  const Teuchos::RCP<Cuantico::ScalarPotential::Virtual> &scalarPotential,
-  const Teuchos::RCP<Cuantico::MagneticVectorPotential::Virtual> &mvp,
+  const Teuchos::RCP<const Cuantico::ScalarPotential::Virtual> &scalarPotential,
+  const Teuchos::RCP<const Cuantico::MagneticVectorPotential::Virtual> &mvp,
   const Teuchos::RCP<const Epetra_Vector> &thickness,
-  const Teuchos::RCP<Epetra_Vector> &initialX
+  const Teuchos::RCP<const Epetra_Vector> &initialX
   );
 
 // Destructor
@@ -122,16 +122,12 @@ virtual
 Teuchos::RCP<Cuantico::State>
 createSavable( const Epetra_Vector &x ) const;
 
-Teuchos::RCP<const Epetra_Vector>
-get_p_latest() const;
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
 public:
 
-//virtual
-//Teuchos::RCP<LOCA::ParameterVector>
-//getParameters() const;
+Teuchos::RCP<const Epetra_Vector>
+get_p_latest() const;
 
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 private:
 void
 computeF_( const Epetra_Vector &x,
@@ -163,15 +159,9 @@ computeDFDPmvp_(const Epetra_Vector &x,
 protected:
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 private:
-//    const Teuchos::RCP<const Epetra_Comm> & eComm_;
-//    Teuchos::RCP<const Epetra_Map>          eMap_;
-//
-//    const Teuchos::RCP<const TComm> & tComm_;
-//    Teuchos::RCP<const TMap>          tMap_;
+const Teuchos::RCP<const Cuantico::StkMesh> mesh_;
 
-const Teuchos::RCP<Cuantico::StkMesh> mesh_;
-
-double g_;
+const double initial_g_;
 
 const Teuchos::RCP<const Cuantico::ScalarPotential::Virtual> scalarPotential_;
 const Teuchos::RCP<const Cuantico::MagneticVectorPotential::Virtual> mvp_;
@@ -180,7 +170,7 @@ const Teuchos::RCP<const Epetra_Vector> thickness_;
 
 const Teuchos::RCP<const Epetra_Vector> x_init_;
 
-mutable Teuchos::RCP<Epetra_Vector> p_latest_;
+mutable Teuchos::RCP<const Epetra_Vector> p_latest_;
 
 const Teuchos::RCP<Cuantico::KeoContainer> keoContainer_;
 

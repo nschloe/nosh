@@ -33,7 +33,7 @@ JacobianOperator::
 JacobianOperator(const Teuchos::RCP<const Cuantico::StkMesh> &mesh,
                  const Teuchos::RCP<const Cuantico::ScalarPotential::Virtual> &scalarPotential,
                  const Teuchos::RCP<const Epetra_Vector> &thickness,
-                 const Teuchos::RCP<Cuantico::KeoContainer> &keoContainer
+                 const Teuchos::RCP<const Cuantico::KeoContainer> &keoContainer
                  ) :
   useTranspose_( false ),
   mesh_( mesh ),
