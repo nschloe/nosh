@@ -62,6 +62,7 @@ class Epetra_Map;
 // typedefs
 typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorFieldType;
 typedef Teuchos::SerialDenseVector<int,double>        DoubleVector;
+typedef Teuchos::SerialDenseVector<int,const double>  ConstDoubleVector;
 // =============================================================================
 namespace Cuantico {
 
@@ -122,10 +123,7 @@ std::vector<stk::mesh::Entity*>
 getOverlapNodes() const;
 
 const DoubleVector
-getNodeCoordinates(const stk::mesh::Entity * nodeEntity) const;
-
-double
-getThickness( const stk::mesh::PairIterRelation &relation ) const;
+getNodeCoordinatesNonconst(const stk::mesh::Entity * nodeEntity) const;
 
 Teuchos::RCP<const Epetra_Map>
 getNodesMap() const;

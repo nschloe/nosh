@@ -138,10 +138,11 @@ initializeMvpEdgeMidpointCache_() const
                          * ((*(*mvp_)(i))[lid[0]] + (*(*mvp_)(i))[lid[1]]);
 
     // extract the nodal coordinates
-    DoubleVector edge = mesh_->getNodeCoordinates( edges[k][1] );
-    edge -= mesh_->getNodeCoordinates( edges[k][0] );
+    DoubleVector edge = mesh_->getNodeCoordinatesNonconst( edges[k][1] );
+    edge -= mesh_->getNodeCoordinatesNonconst( edges[k][0] );
 
-    mvpEdgeMidpointProjectionCache_[k] = edge.dot( mvpEdgeMidpoint );
+    //mvpEdgeMidpointProjectionCache_[k] = edge.dot( mvpEdgeMidpoint );
+    mvpEdgeMidpointProjectionCache_[k] = mvpEdgeMidpoint.dot(edge);
   }
 
   mvpEdgeMidpointProjectionCacheUptodate_ = true;

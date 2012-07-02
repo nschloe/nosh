@@ -243,8 +243,10 @@ initializeEdgeCache_() const
   // Loop over all edges and create the cache.
   for (unsigned int k=0; k<edges.size(); k++)
   {
-    DoubleVector node0Coords = mesh_->getNodeCoordinates( edges[k][0] );
-    DoubleVector node1Coords = mesh_->getNodeCoordinates( edges[k][1] );
+    const DoubleVector & node0Coords =
+      mesh_->getNodeCoordinatesNonconst( edges[k][0] );
+    const DoubleVector & node1Coords =
+      mesh_->getNodeCoordinatesNonconst( edges[k][1] );
 
     // edgeMidpoint x edge = 0.5 (a+b) x (a-b) = b x a
     edgeCache_[k] = this->crossProduct_( node0Coords, node1Coords );

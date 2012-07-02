@@ -109,9 +109,9 @@ read( const Epetra_Comm &comm,
   // If the file is serial, read it with process 0 and embed it
   // in the multiproc context. Load balancing is done later anyways.
   bool fileIsSerial = fileName_.substr(fileName_.find_last_of(".") + 1) == "e";
-  bool needSpecialTreatment = fileIsSerial && comm.NumProc()>1;
   MPI_Comm readerComm = mcomm;
-  if (needSpecialTreatment)
+#ifdef HAVE_MPI
+  if (fileIsSerial)
   {
     // reader process
     int readerProc[1] = {0};
@@ -125,6 +125,7 @@ read( const Epetra_Comm &comm,
     // Create the new communicator.
     MPI_Comm_create(mcomm, peZero, &readerComm);
   }
+#endif
 
   // The database is manually initialized to get explicit access to it
   // to be able to call set_field_separator(). This tells the database to
@@ -299,12 +300,13 @@ read( const Epetra_Comm &comm,
 
   metaData->commit();
 
-  if (needSpecialTreatment)
+#if HAVE_MPI
+  if (fileIsSerial)
   {
     bulkData->modification_begin();
     Ioss::Region *region = meshData->m_input_region;
     // Populate on the reader process.
-    if (comm.MyPID() == 0) 
+    if (comm.MyPID() == 0)
       my_populate_bulk_data_(*bulkData, *region, *metaData);
     // Note:
     // Restart from a single Exodus file not currently supported.
@@ -312,6 +314,7 @@ read( const Epetra_Comm &comm,
   }
   else
   {
+#endif
     stk::io::populate_bulk_data(*bulkData, *meshData);
 
     // Restart index to read solution from exodus file.
@@ -323,10 +326,10 @@ read( const Epetra_Comm &comm,
     //    *out_ << "Restart Index set, reading solution time step: " << index << endl;
     stk::io::process_input_request(*meshData, *bulkData, index);
     bulkData->modification_end();
+#if HAVE_MPI
   }
 
-#ifdef HAVE_MPI
-  // Optionally rebalance.
+  // Rebalance.
   stk::mesh::Selector selector(metaData->universal_part());
   stk::mesh::Selector owned_selector(metaData->locally_owned_part());
   double imbalance = stk::rebalance::check_balance(*bulkData,

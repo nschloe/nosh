@@ -56,10 +56,10 @@ testKeo( const std::string & inputFileNameBase,
 #endif
 
     std::string inputFileName;
-    if ( eComm->NumProc() == 1 )
+    //if ( eComm->NumProc() == 1 )
       inputFileName = inputFileNameBase + ".e";
-    else
-      inputFileName = inputFileNameBase + "-balanced.par";
+    //else
+      //inputFileName = inputFileNameBase + "-balanced.par";
     // =========================================================================
     // Read the data from the file.
     Teuchos::ParameterList data;

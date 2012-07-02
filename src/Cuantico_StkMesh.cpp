@@ -237,34 +237,19 @@ getNodeCoordinates_( const stk::mesh::PairIterRelation &nodes ) const
   unsigned int n = nodes.size();
   Teuchos::ArrayRCP<DoubleVector> localNodeCoords( n );
   for ( unsigned int i=0; i<n; i++ )
-    localNodeCoords[i] = this->getNodeCoordinates(nodes[i].entity());
+    localNodeCoords[i] = this->getNodeCoordinatesNonconst(nodes[i].entity());
 
   return localNodeCoords;
 }
 // =============================================================================
 const DoubleVector
 StkMesh::
-getNodeCoordinates(const stk::mesh::Entity * nodeEntity) const
+getNodeCoordinatesNonconst(const stk::mesh::Entity * nodeEntity) const
 {
-  double * node = stk::mesh::field_data( *coordinatesField_, *nodeEntity );
-  // TODO Use Teuchos::View. Doesn't seem to work now? (2012-02-10)
-  return DoubleVector(Teuchos::Copy, node, 3);
-}
-// =============================================================================
-double
-StkMesh::
-getThickness( const stk::mesh::PairIterRelation &relation ) const
-{
-//     Teuchos::Tuple<double,3> thickness;
-//     for ( int i=0; i<3; i++ )
-//     {
-//         double * node = stk::mesh::field_data( *coordinatesField_, *relation[i].entity() );
-//         thickness[i] = node[0];
-//     }
-//     return thickness;
-  TEUCHOS_TEST_FOR_EXCEPT_MSG( true,
-                       "Not yet implemented." );
-  return 0.0;
+  // Make a Teuchos::Copy here as the access is nonconst.
+  return DoubleVector(Teuchos::Copy,
+                      stk::mesh::field_data(*coordinatesField_, *nodeEntity),
+                      3);
 }
 // =============================================================================
 Teuchos::RCP<const Epetra_Map>
@@ -431,8 +416,8 @@ computeEdgeCoefficients_() const
     Teuchos::ArrayRCP<DoubleVector> localEdgeCoords( numLocalEdges );
     for ( unsigned int i=0; i<numLocalEdges; i++)
     {
-      localEdgeCoords[i] = this->getNodeCoordinates( edgeNodes_[cellEdges_[k][i]][1] );
-      localEdgeCoords[i] -= this->getNodeCoordinates( edgeNodes_[cellEdges_[k][i]][0] );
+      localEdgeCoords[i] = this->getNodeCoordinatesNonconst( edgeNodes_[cellEdges_[k][i]][1] );
+      localEdgeCoords[i] -= this->getNodeCoordinatesNonconst( edgeNodes_[cellEdges_[k][i]][0] );
     }
 
     DoubleVector edgeCoeffs = getEdgeCoefficientsNumerically_( localEdgeCoords );
