@@ -28,8 +28,6 @@
 #include <Epetra_Comm.h>
 #include <Epetra_Vector.h>
 
-#include <Epetra_FECrsGraph.h>
-
 #include <ml_epetra_preconditioner.h>
 
 #ifdef CUANTICO_TEUCHOS_TIME_MONITOR
@@ -52,10 +50,10 @@ KeoContainer(const Teuchos::RCP<const Cuantico::StkMesh> &mesh,
   mvp_( mvp ),
   globalIndexCache_(Teuchos::ArrayRCP<Epetra_IntSerialDenseVector>()),
   globalIndexCacheUpToDate_( false ),
-  keoGraph_(this->buildKeoGraph_()),    // build the graph immediately
-  keo_(Teuchos::rcp(new Epetra_FECrsMatrix(Copy, *keoGraph_))),
+  keoGraph_(this->buildKeoGraph_()), // build the graph immediately
+  keo_(Teuchos::rcp(new Epetra_FECrsMatrix(Copy, keoGraph_))),
   keoBuildParameters_( Teuchos::null ),
-  keoDp_(Teuchos::rcp(new Epetra_FECrsMatrix(Copy, *keoGraph_))),
+  keoDp_(Teuchos::rcp(new Epetra_FECrsMatrix(Copy, keoGraph_))),
   alphaCache_(Teuchos::ArrayRCP<double>()),
   alphaCacheUpToDate_( false ),
   paramIndex_(0)
@@ -77,14 +75,14 @@ getComm() const
   return mesh_->getComm();
 }
 // =============================================================================
-Teuchos::RCP<const Epetra_FECrsGraph>
+const Epetra_FECrsGraph &
 KeoContainer::
 getKeoGraph() const
 {
   return keoGraph_;
 }
 // =============================================================================
-Teuchos::RCP<const Epetra_FECrsMatrix>
+const Epetra_FECrsMatrix
 KeoContainer::
 getKeo(const Teuchos::Array<double> &mvpParams) const
 {
@@ -94,13 +92,13 @@ getKeo(const Teuchos::Array<double> &mvpParams) const
   // (in computeF, getJacobian(), and getPreconditioner().
   if (keoBuildParameters_ != mvpParams)
   {
-    this->fillKeo_(keo_, mvpParams, &KeoContainer::fillerRegular_);
+    this->fillKeo_(*keo_, mvpParams, &KeoContainer::fillerRegular_);
     keoBuildParameters_ = mvpParams;
   }
-  return keo_;
+  return *keo_;
 }
 // =============================================================================
-Teuchos::RCP<const Epetra_FECrsMatrix>
+const Epetra_FECrsMatrix
 KeoContainer::
 getKeoDp(const int paramIndex,
          const Teuchos::Array<double> &mvpParams
@@ -111,11 +109,11 @@ getKeoDp(const int paramIndex,
   // Pass parameterIndex_ to this->fillerDp_() without changing fillerDp_'s
   // interface by setting a private variable.
   paramIndex_ = paramIndex;
-  this->fillKeo_(keoDp_, mvpParams, &KeoContainer::fillerDp_);
-  return keoDp_;
+  this->fillKeo_(*keoDp_, mvpParams, &KeoContainer::fillerDp_);
+  return *keoDp_;
 }
 // =============================================================================
-const Teuchos::RCP<Epetra_FECrsGraph>
+const Epetra_FECrsGraph
 KeoContainer::
 buildKeoGraph_() const
 {
@@ -181,8 +179,7 @@ buildKeoGraph_() const
   TEUCHOS_ASSERT( !mesh_.is_null() );
 #endif
   const Epetra_Map &noMap = *mesh_->getComplexNonOverlapMap();
-  Teuchos::RCP<Epetra_FECrsGraph> keoGraph
-    = Teuchos::rcp( new Epetra_FECrsGraph( Copy, noMap, 0 ) );
+  Epetra_FECrsGraph keoGraph(Copy, noMap, 0);
 
   const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > edges =
     mesh_->getEdgeNodes();
@@ -192,13 +189,13 @@ buildKeoGraph_() const
   // Loop over all edges and put entries wherever two nodes are connected.
   for (unsigned int k=0; k<edges.size(); k++)
     TEUCHOS_ASSERT_EQUALITY( 0,
-      keoGraph->InsertGlobalIndices(4, globalIndexCache_[k].Values(),
-                                    4, globalIndexCache_[k].Values()));
+      keoGraph.InsertGlobalIndices(4, globalIndexCache_[k].Values(),
+                                   4, globalIndexCache_[k].Values()));
 
   // Make sure that domain and range map are non-overlapping (to make sure that
   // states psi can compute norms) and equal (to make sure that the matrix works
   // with ML).
-  TEUCHOS_ASSERT_EQUALITY(0, keoGraph->GlobalAssemble(noMap,noMap));
+  TEUCHOS_ASSERT_EQUALITY(0, keoGraph.GlobalAssemble(noMap,noMap));
 
   return keoGraph;
 }
@@ -243,7 +240,7 @@ fillerDp_(const int k,
 // =============================================================================
 void
 KeoContainer::
-fillKeo_( const Teuchos::RCP<Epetra_FECrsMatrix> &keoMatrix,
+fillKeo_( Epetra_FECrsMatrix &keoMatrix,
           const Teuchos::Array<double> & mvpParams,
           void (KeoContainer::*filler)(const int, const Teuchos::Array<double>&, double*) const
           ) const
@@ -252,7 +249,7 @@ fillKeo_( const Teuchos::RCP<Epetra_FECrsMatrix> &keoMatrix,
   Teuchos::TimeMonitor tm( *keoFillTime_ );
 #endif
   // Zero-out the matrix.
-  TEUCHOS_ASSERT_EQUALITY(0, keoMatrix->PutScalar(0.0));
+  TEUCHOS_ASSERT_EQUALITY(0, keoMatrix.PutScalar(0.0));
 
 #ifdef _DEBUG_
   TEUCHOS_ASSERT( !mesh_.is_null() );
@@ -305,13 +302,13 @@ fillKeo_( const Teuchos::RCP<Epetra_FECrsMatrix> &keoMatrix,
     A(2, 0) = v[0];   A(2 ,1) = -v[1];   A(2, 2) = v[2];    A(2, 3) = 0.0;
     A(3, 0) = v[1];   A(3 ,1) = v[0];    A(3, 2) = 0.0;     A(3, 3) = v[2];
     TEUCHOS_ASSERT_EQUALITY(0, A.Scale(alphaCache_[k]));
-    TEUCHOS_ASSERT_EQUALITY(0, keoMatrix->SumIntoGlobalValues(
+    TEUCHOS_ASSERT_EQUALITY(0, keoMatrix.SumIntoGlobalValues(
                                                     globalIndexCache_[k], A));
     // -------------------------------------------------------------------
   }
 
   // calls FillComplete by default
-  TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix->GlobalAssemble() );
+  TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix.GlobalAssemble() );
   return;
 }
 // =============================================================================

@@ -74,13 +74,13 @@ KeoContainer(const Teuchos::RCP<const Cuantico::StkMesh> &mesh,
 const Epetra_Comm &
 getComm() const;
 
-Teuchos::RCP<const Epetra_FECrsGraph>
+const Epetra_FECrsGraph &
 getKeoGraph() const;
 
-Teuchos::RCP<const Epetra_FECrsMatrix>
+const Epetra_FECrsMatrix
 getKeo(const Teuchos::Array<double> & mvpParams) const;
 
-Teuchos::RCP<const Epetra_FECrsMatrix>
+const Epetra_FECrsMatrix
 getKeoDp(const int paramIndex,
          const Teuchos::Array<double> & mvpParams
          ) const;
@@ -88,11 +88,11 @@ getKeoDp(const int paramIndex,
 protected:
 
 private:
-const Teuchos::RCP<Epetra_FECrsGraph>
+const Epetra_FECrsGraph
 buildKeoGraph_() const;
 
 void
-fillKeo_( const Teuchos::RCP<Epetra_FECrsMatrix> &keoMatrix,
+fillKeo_( Epetra_FECrsMatrix &keoMatrix,
           const Teuchos::Array<double> &mvpParams,
           void (KeoContainer::*filler)(const int, const Teuchos::Array<double>&, double*) const
           ) const;
@@ -129,7 +129,7 @@ const Teuchos::RCP<const Cuantico::MagneticVectorPotential::Virtual> mvp_;
 mutable Teuchos::ArrayRCP<Epetra_IntSerialDenseVector> globalIndexCache_;
 mutable bool globalIndexCacheUpToDate_;
 
-const Teuchos::RCP<const Epetra_FECrsGraph> keoGraph_;
+const Epetra_FECrsGraph keoGraph_;
 const Teuchos::RCP<Epetra_FECrsMatrix> keo_;
 mutable Teuchos::Array<double> keoBuildParameters_;
 const Teuchos::RCP<Epetra_FECrsMatrix> keoDp_;

@@ -40,9 +40,9 @@ JacobianOperator(const Teuchos::RCP<const Cuantico::StkMesh> &mesh,
   scalarPotential_( scalarPotential ),
   thickness_( thickness ),
   keoContainer_( keoContainer ),
-  keo_( Teuchos::null ),
-  diag0_(Teuchos::rcp(new Epetra_Vector(*(mesh->getComplexNonOverlapMap())))),
-  diag1b_(Teuchos::rcp(new Epetra_Vector(mesh->getControlVolumes()->Map())))
+  keo_(Epetra_FECrsMatrix(Copy, keoContainer_->getKeoGraph())),
+  diag0_(Epetra_Vector(*(mesh->getComplexNonOverlapMap()))),
+  diag1b_(Epetra_Vector(mesh->getControlVolumes()->Map()))
 {
 }
 // =============================================================================
@@ -69,19 +69,13 @@ Apply(const Epetra_MultiVector &X,
   // A = K + I * thickness * (V + g * 2*|psi|^2)
   // B = g * diag( thickness * psi^2 )
 
-#ifdef _DEBUG_
-  TEUCHOS_ASSERT( !keo_.is_null() );
-#endif
-
-  // K*psi
-  TEUCHOS_ASSERT_EQUALITY(0, keo_->Apply(X, Y));
-
-  const Epetra_Vector &controlVolumes = *(mesh_->getControlVolumes());
-  int numMyPoints = controlVolumes.MyLength();
-
+  const int numMyPoints = mesh_->getControlVolumes()->MyLength();
 #ifdef _DEBUG_
   TEUCHOS_ASSERT_EQUALITY( 2*numMyPoints, X.MyLength() );
 #endif
+
+  // Y = K*X
+  TEUCHOS_ASSERT_EQUALITY(0, keo_.Apply(X, Y));
 
   for ( int vec=0; vec<X.NumVectors(); vec++ )
   {
@@ -96,27 +90,11 @@ Apply(const Epetra_MultiVector &X,
     // 2k/2k and 2k+1/2k+1 handled by Multiply().
     for ( int k=0; k<numMyPoints; k++ )
     {
-      (*Y(vec))[2*k]   += (*diag0_) [2*k]   * X[vec][2*k]
-                        + (*diag1b_)[k]     * X[vec][2*k+1];
-      (*Y(vec))[2*k+1] += (*diag1b_)[k]     * X[vec][2*k]
-                        + (*diag0_) [2*k+1] * X[vec][2*k+1];
+      (*Y(vec))[2*k]   += diag0_ [2*k]   * X[vec][2*k]
+                        + diag1b_[k]     * X[vec][2*k+1];
+      (*Y(vec))[2*k+1] += diag1b_[k]     * X[vec][2*k]
+                        + diag0_ [2*k+1] * X[vec][2*k+1];
     }
-
-//        // add terms corresponding to  diag( psi^2 ) * \conj{phi}
-//        for ( int k=0; k<numMyPoints; k++ )
-//        {
-//            double rePhiSquare = controlVolumes[k] * (*thickness_)[k] * (
-//                                 (*current_X_)[2*k]*(*current_X_)[2*k] - (*current_X_)[2*k+1]*(*current_X_)[2*k+1]
-//                                 );
-//            // Im(phi^2)
-//            double imPhiSquare = controlVolumes[k] * (*thickness_)[k] * (
-//                                 2.0 * (*current_X_)[2*k] * (*current_X_)[2*k+1]
-//                                );
-//            // real part
-//            TEUCHOS_ASSERT_EQUALITY( 0, Y.SumIntoMyValue( 2*k,   vec, - rePhiSquare * X[vec][2*k] - imPhiSquare * X[vec][2*k+1] ) );
-//            // imaginary part
-//            TEUCHOS_ASSERT_EQUALITY( 0, Y.SumIntoMyValue( 2*k+1, vec, - imPhiSquare * X[vec][2*k] + rePhiSquare * X[vec][2*k+1] ) );
-//        }
   }
 
 //    // take care of the shifting
@@ -169,30 +147,21 @@ const Epetra_Comm &
 JacobianOperator::
 Comm() const
 {
-#ifdef _DEBUG_
-  TEUCHOS_ASSERT( !keo_.is_null() );
-#endif
-  return keo_->Comm();
+  return keo_.Comm();
 }
 // =============================================================================
 const Epetra_Map &
 JacobianOperator::
 OperatorDomainMap() const
 {
-#ifdef _DEBUG_
-  TEUCHOS_ASSERT( !keo_.is_null() );
-#endif
-  return keo_->OperatorDomainMap();
+  return keo_.OperatorDomainMap();
 }
 // =============================================================================
 const Epetra_Map &
 JacobianOperator::
 OperatorRangeMap() const
 {
-#ifdef _DEBUG_
-  TEUCHOS_ASSERT( !keo_.is_null() );
-#endif
-  return keo_->OperatorRangeMap();
+  return keo_.OperatorRangeMap();
 }
 // =============================================================================
 void
@@ -203,7 +172,31 @@ rebuild(const double g,
         const Teuchos::RCP<const Epetra_Vector> &current_X
         )
 {
-  // Rebuild the KEO.
+  // Copy over the KEO.
+  // This is certainly a debatable design decision.
+  // On the one hand, in a typical continuation context,
+  // the same matrix is used in computeF, the preconditioner,
+  // and here. It would then be sufficient to store the
+  // matrix at one common place and rebuild only if
+  // necessary.
+  // This might however lead to complications in a
+  // situation like the following:
+  //
+  //   1. The matrix is requested by the Jacobian operator,
+  //      a pointer to the common storage place is
+  //      returned.
+  //   2. The matrix is requested by computeF()
+  //      with different parameters.
+  //      Now also the Jacobian operato's instance
+  //      has the altered matrix.
+  //   3. The Jacobian operator uses the matrix.
+  //
+  // One might argue that this situation is does not
+  // occur in the given context, but really the code
+  // shouldn't make any assumptions about it.
+  // Besides, copying over the matrix is not of much
+  // concern computationally.
+  // Should this ever be an issue for memory, revisit.
   keo_ = keoContainer_->getKeo(mvpParams);
 
   // Rebuild diagonals.
@@ -237,11 +230,11 @@ rebuildDiags_(const double g,
                          );
     const double realX2 = g * controlVolumes[k] * (*thickness_)[k]
                         * ( x[2*k]*x[2*k] - x[2*k+1]*x[2*k+1] );
-    (*diag0_)[2*k]   = alpha + realX2;
-    (*diag0_)[2*k+1] = alpha - realX2;
+    diag0_[2*k]   = alpha + realX2;
+    diag0_[2*k+1] = alpha - realX2;
 
     // rebuild diag1b
-    (*diag1b_)[k] = g * controlVolumes[k] * (*thickness_)[k]
+    diag1b_[k] = g * controlVolumes[k] * (*thickness_)[k]
                   * (2.0 * x[2*k] * x[2*k+1]);
   }
 

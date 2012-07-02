@@ -27,10 +27,10 @@
     #include <mpi.h>
 #endif
 
-#include <Epetra_Operator.h>
+#include <Epetra_Vector.h>
+#include <Epetra_FECrsMatrix.h>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Array.hpp>
-#include <LOCA_Parameter_Vector.H>
 // =============================================================================
 // forward declarations
 namespace Cuantico {
@@ -40,8 +40,6 @@ namespace ScalarPotential{
 class Virtual;
 }
 }
-class Epetra_CrsGraph;
-class Epetra_FECrsMatrix;
 class Epetra_Vector;
 // =============================================================================
 namespace Cuantico {
@@ -116,10 +114,10 @@ const Teuchos::RCP<const Cuantico::StkMesh> mesh_;
 const Teuchos::RCP<const Cuantico::ScalarPotential::Virtual> scalarPotential_;
 const Teuchos::RCP<const Epetra_Vector> thickness_;
 const Teuchos::RCP<const Cuantico::KeoContainer> keoContainer_;
-Teuchos::RCP<const Epetra_FECrsMatrix> keo_;
 
-const Teuchos::RCP<Epetra_Vector> diag0_;
-const Teuchos::RCP<Epetra_Vector> diag1b_;
+Epetra_FECrsMatrix keo_;
+Epetra_Vector diag0_;
+Epetra_Vector diag1b_;
 };
 
 } // namespace Cuantico

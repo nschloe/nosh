@@ -29,6 +29,7 @@
 
 #include "Cuantico_config.h"
 
+#include <Epetra_Vector.h>
 #include <Epetra_Operator.h>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Array.hpp>
@@ -126,14 +127,14 @@ const Teuchos::RCP<const Epetra_Vector> thickness_;
 const Teuchos::RCP<const Cuantico::KeoContainer> keoContainer_;
 
 // |psi|^2
-const Teuchos::RCP<Epetra_Vector> absPsiSquared_;
+Epetra_Vector absPsiSquared_;
 
 // Make sure to create the matrix in memory only once and then
 // override it as necessary. The reason for this is that ML
 // gets initialized only once and, upon ML.recompute(), relies
 // on the (new) data being available at the same adress.
 // Failure to comply to this will lead to memory errors.
-const Teuchos::RCP<Epetra_CrsMatrix> keoRegularizedMatrix_;
+Epetra_CrsMatrix keoRegularizedMatrix_;
 
 const Epetra_Comm &comm_;
 

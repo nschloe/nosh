@@ -420,7 +420,7 @@ computeF_(const Epetra_Vector &x,
           ) const
 {
   // Build the KEO and compute FVec = K*x.
-  TEUCHOS_ASSERT_EQUALITY(0, keoContainer_->getKeo(mvpParams)->Apply(x, FVec));
+  TEUCHOS_ASSERT_EQUALITY(0, keoContainer_->getKeo(mvpParams).Apply(x, FVec));
 
   // Add the nonlinear part (mass lumping).
 #ifdef _DEBUG_
@@ -557,7 +557,7 @@ computeDFDPmvp_(const Epetra_Vector &x,
 {
   // Build the dK/dp and compute FVec = dK/dp * x.
   TEUCHOS_ASSERT_EQUALITY(0, keoContainer_->getKeoDp(paramIndex, mvpParams)
-                                          ->Apply(x, FVec));
+                                          .Apply(x, FVec));
 
   return;
 }

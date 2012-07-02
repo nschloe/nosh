@@ -86,27 +86,26 @@ testKeo( const std::string & inputFileNameBase,
     // Explicitly create the kinetic energy operator.
     Teuchos::Array<double> mvpParams(1);
     mvpParams[0] = initMu;
-    const Teuchos::RCP<const Epetra_CrsMatrix> keoMatrix =
-      keoContainer->getKeo(mvpParams);
+    const Epetra_CrsMatrix & keoMatrix = keoContainer->getKeo(mvpParams);
 
     // Compute matrix norms as hashes.
     // Don't check for NormFrobenius() as this one doesn't work for matrices
     // with overlapping maps.
-    double normOne = keoMatrix->NormOne();
-    double normInf = keoMatrix->NormInf();
+    double normOne = keoMatrix.NormOne();
+    double normInf = keoMatrix.NormInf();
 
     // check the values
     TEST_FLOATING_EQUALITY( normOne, controlNormOne, 1.0e-12 );
     TEST_FLOATING_EQUALITY( normInf, controlNormInf, 1.0e-12 );
 
-    const Epetra_Map & map = keoMatrix->DomainMap();
+    const Epetra_Map & map = keoMatrix.DomainMap();
     double sum;
     Epetra_Vector u( map );
     Epetra_Vector Ku( map );
 
     // Add up all the entries of the matrix.
     TEUCHOS_ASSERT_EQUALITY(0, u.PutScalar( 1.0 ));
-    TEUCHOS_ASSERT_EQUALITY(0, keoMatrix->Apply( u, Ku ));
+    TEUCHOS_ASSERT_EQUALITY(0, keoMatrix.Apply( u, Ku ));
     TEUCHOS_ASSERT_EQUALITY(0, u.Dot( Ku, &sum ));
     TEST_FLOATING_EQUALITY( sum, controlSum, 1.0e-10 );
 
@@ -124,7 +123,7 @@ testKeo( const std::string & inputFileNameBase,
       else
         u.ReplaceMyValues( 1, &zero, &k );
     }
-    TEUCHOS_ASSERT_EQUALITY(0, keoMatrix->Apply( u, Ku ));
+    TEUCHOS_ASSERT_EQUALITY(0, keoMatrix.Apply( u, Ku ));
     TEUCHOS_ASSERT_EQUALITY(0, u.Dot( Ku, &sum ));
     TEST_FLOATING_EQUALITY( sum, controlSumReal, 1.0e-10 );
 
@@ -138,7 +137,7 @@ testKeo( const std::string & inputFileNameBase,
       else
         v.ReplaceMyValues( 1, &one, &k );
     }
-    TEUCHOS_ASSERT_EQUALITY(0, keoMatrix->Apply( u, Ku ));
+    TEUCHOS_ASSERT_EQUALITY(0, keoMatrix.Apply( u, Ku ));
     TEUCHOS_ASSERT_EQUALITY(0, v.Dot( Ku, &sum ));
     // The matrix is Hermitian, so just test that the sum of
     // the imaginary parts is (close to) 0.
