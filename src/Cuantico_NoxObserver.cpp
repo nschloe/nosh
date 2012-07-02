@@ -127,9 +127,8 @@ saveContinuationStatistics_(const int stepIndex,
 #endif
     // Construct parameter list to stuff into the csvWriter_.
     Teuchos::ParameterList paramList;
-    paramList.set( "0step", stepIndex );
+    paramList.set( "step", stepIndex );
     // Model evaluator parameters.
-    std::string labelPrepend = "1";
 #ifdef _DEBUG_
     TEUCHOS_ASSERT( !modelEval_.is_null() );
     TEUCHOS_ASSERT( !modelEval_->get_p_latest().is_null() );
@@ -140,10 +139,10 @@ saveContinuationStatistics_(const int stepIndex,
     Teuchos::RCP<const Teuchos::Array<std::string> > names =
       modelEval_->get_p_names(0);
     for (int k=0; k<names->length(); k++)
-      paramList.set("1"+(*names)[k], (*meParams)[k]);
+      paramList.set((*names)[k], (*meParams)[k]);
     // Some extra stats.
-    paramList.set( "2free energy", state->freeEnergy() );
-    paramList.set( "2||x||_2 scaled", state->normalizedScaledL2Norm() );
+    paramList.set( "free energy", state->freeEnergy() );
+    paramList.set( "||x||_2 scaled", state->normalizedScaledL2Norm() );
 
     // Write out header.
     if (stepIndex == 0)

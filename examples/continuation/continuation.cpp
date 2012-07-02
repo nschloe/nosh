@@ -107,6 +107,10 @@ int main(int argc, char *argv[])
     std::string inputFilePath = xmlDirectory + "/"
                               + initialGuessList.get<std::string>( "State" );
     // =======================================================================
+    // Get the initial parameter values.
+    Teuchos::ParameterList initialParameterValues =
+      piroParams->sublist("Initial parameter values", true);
+
     // Read the data from the file.
     Teuchos::ParameterList data;
     Cuantico::StkMeshRead(*eComm, inputFilePath, data);
@@ -124,10 +128,6 @@ int main(int argc, char *argv[])
     // Create the initial state from psi.
     TEUCHOS_ASSERT( !psi.is_null() );
     Teuchos::RCP<Cuantico::State> state = Teuchos::rcp(new Cuantico::State(*psi, mesh));
-
-    // Get the initial parameter values.
-    Teuchos::ParameterList initialParameterValues =
-      piroParams->sublist("Initial parameter values", true);
 
     // Setup the magnetic vector potential.
     // Choose between several given MVPs or build your own by

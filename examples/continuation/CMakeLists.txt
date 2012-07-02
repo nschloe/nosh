@@ -8,7 +8,7 @@ LINK_DIRECTORIES( ${Boost_LIBRARY_DIRS}
                   ${Trilinos_LIBRARY_DIRS}
                   ${Trilinos_TPL_LIBRARY_DIRS} )
 # ------------------------------------------------------------------------------
-SET(MY_EXECUTABLE "cuantinuation")
+SET(MY_EXECUTABLE "cont")
 ADD_EXECUTABLE( ${MY_EXECUTABLE} "continuation.cpp")
 TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
                        "cuantico"

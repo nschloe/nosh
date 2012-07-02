@@ -36,7 +36,7 @@ if( NOT ${CMAKE_CURRENT_SOURCE_DIR} EQUAL ${CMAKE_CURRENT_BINARY_DIR} )
 endif()
 # ------------------------------------------------------------------------------
 SET( OPERATORTEST_EXECUTABLE
-     "operatorTest.exe" )
+     "operatorTest" )
 ADD_EXECUTABLE ( ${OPERATORTEST_EXECUTABLE}
                  Cuantico_KeoUnitTests.cpp
                  Cuantico_ComputeFUnitTests.cpp
@@ -60,7 +60,7 @@ TARGET_LINK_LIBRARIES ( ${OPERATORTEST_EXECUTABLE}
                       )
 # ------------------------------------------------------------------------------
 SET( MESHTEST_EXECUTABLE
-     "meshTest.exe" )
+     "meshTest" )
 ADD_EXECUTABLE ( ${MESHTEST_EXECUTABLE}
                  Cuantico_StkMeshTests.cpp
 #                  Cuantico_EdgeCacheTests.cpp
