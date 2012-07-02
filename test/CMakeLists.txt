@@ -35,25 +35,21 @@ if( NOT ${CMAKE_CURRENT_SOURCE_DIR} EQUAL ${CMAKE_CURRENT_BINARY_DIR} )
           DESTINATION ${CMAKE_CURRENT_BINARY_DIR} )
 endif()
 # ------------------------------------------------------------------------------
-SET( OPERATORTEST_EXECUTABLE
-     "operatorTest" )
-ADD_EXECUTABLE ( ${OPERATORTEST_EXECUTABLE}
-                 Cuantico_KeoUnitTests.cpp
-                 Cuantico_ComputeFUnitTests.cpp
-                 Cuantico_JacUnitTests.cpp
-                 Cuantico_dfdpUnitTests.cpp
+SET( IOTEST_EXECUTABLE
+     "ioTest" )
+ADD_EXECUTABLE ( ${IOTEST_EXECUTABLE}
+                 Cuantico_IOTests.cpp
                  unitTestMain.cpp )
-
 # add tests
-ADD_TEST( operatorTest
-          ${OPERATORTEST_EXECUTABLE}
+ADD_TEST( ioTestSerial
+          ${IOTEST_EXECUTABLE}
         )
-ADD_TEST( operatorTestMpi2
-          mpiexec -n 2 ${OPERATORTEST_EXECUTABLE}
+ADD_TEST( ioTestMpi2
+          mpiexec -n 2 ${IOTEST_EXECUTABLE}
         )
 
 # Set executable linking information.
-TARGET_LINK_LIBRARIES ( ${OPERATORTEST_EXECUTABLE}
+TARGET_LINK_LIBRARIES ( ${IOTEST_EXECUTABLE}
                         ${internal_LIBS}
                         ${Trilinos_LIBRARIES}
                         ${Trilinos_TPL_LIBRARIES}
@@ -75,6 +71,30 @@ ADD_TEST( meshTestMpi2
 
 # Set executable linking information.
 TARGET_LINK_LIBRARIES ( ${MESHTEST_EXECUTABLE}
+                        ${internal_LIBS}
+                        ${Trilinos_LIBRARIES}
+                        ${Trilinos_TPL_LIBRARIES}
+                      )
+# ------------------------------------------------------------------------------
+SET( OPERATORTEST_EXECUTABLE
+     "operatorTest" )
+ADD_EXECUTABLE ( ${OPERATORTEST_EXECUTABLE}
+                 Cuantico_KeoUnitTests.cpp
+                 Cuantico_ComputeFUnitTests.cpp
+                 Cuantico_JacUnitTests.cpp
+                 Cuantico_dfdpUnitTests.cpp
+                 unitTestMain.cpp )
+
+# add tests
+ADD_TEST( operatorTest
+          ${OPERATORTEST_EXECUTABLE}
+        )
+ADD_TEST( operatorTestMpi2
+          mpiexec -n 2 ${OPERATORTEST_EXECUTABLE}
+        )
+
+# Set executable linking information.
+TARGET_LINK_LIBRARIES ( ${OPERATORTEST_EXECUTABLE}
                         ${internal_LIBS}
                         ${Trilinos_LIBRARIES}
                         ${Trilinos_TPL_LIBRARIES}

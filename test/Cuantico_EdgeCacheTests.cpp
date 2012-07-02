@@ -51,9 +51,9 @@ testCache( const std::string & inputFileNameBase,
 
     std::string inputFileName;
     if ( eComm->NumProc() == 1 )
-        inputFileName = inputFileNameBase + ".e";
+      inputFileName = inputFileNameBase + ".e";
     else
-        inputFileName = inputFileNameBase + "-balanced.par";
+      inputFileName = inputFileNameBase + "-balanced.par";
     // =========================================================================
     // Read the data from the file.
     Teuchos::ParameterList data;
@@ -120,7 +120,7 @@ testCache( const std::string & inputFileNameBase,
                     {
                         edgeFound = true;
                         break;
-                    }    
+                    }
                 }
                 TEUCHOS_ASSERT( edgeFound );
                 // TODO Need LOCAL identifier?

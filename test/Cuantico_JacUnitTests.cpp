@@ -94,10 +94,10 @@ testJac( const std::string & inputFileNameBase,
     double zero = 0.0;
     for ( int k=0; k<map.NumMyPoints(); k++ )
     {
-        if ( map.GID(k) % 2 == 0 )
-            s.ReplaceMyValues( 1, &one, &k );
-        else
-            s.ReplaceMyValues( 1, &zero, &k );
+      if ( map.GID(k) % 2 == 0 )
+        s.ReplaceMyValues( 1, &one, &k );
+      else
+        s.ReplaceMyValues( 1, &zero, &k );
     }
     jac->Apply( s, Js );
     s.Dot( Js, &sum );
@@ -106,13 +106,13 @@ testJac( const std::string & inputFileNameBase,
     // (b) [ 0, 1, 0, 1, ... ]
     for ( int k=0; k<map.NumMyPoints(); k++ )
     {
-        if ( map.GID(k) % 2 == 0 )
-            s.ReplaceMyValues( 1, &zero, &k );
-        else
-            s.ReplaceMyValues( 1, &one, &k );
+      if ( map.GID(k) % 2 == 0 )
+        s.ReplaceMyValues( 1, &zero, &k );
+      else
+        s.ReplaceMyValues( 1, &one, &k );
     }
-    jac->Apply( s, Js );
-    s.Dot( Js, &sum );
+    TEST_EQUALITY(0, jac->Apply( s, Js ));
+    TEST_EQUALITY(0, s.Dot( Js, &sum ));
     TEST_FLOATING_EQUALITY( sum, controlSumT2, 1.0e-10 );
     // -------------------------------------------------------------------------
     return;

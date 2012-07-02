@@ -47,24 +47,25 @@ testMesh( const std::string & inputFileNameBase,
     // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
     Teuchos::RCP<Epetra_MpiComm> eComm =
-            Teuchos::rcp<Epetra_MpiComm> ( new Epetra_MpiComm ( MPI_COMM_WORLD ) );
+      Teuchos::rcp<Epetra_MpiComm> ( new Epetra_MpiComm ( MPI_COMM_WORLD ) );
 #else
     Teuchos::RCP<Epetra_SerialComm> eComm =
-            Teuchos::rcp<Epetra_SerialComm> ( new Epetra_SerialComm() );
+      Teuchos::rcp<Epetra_SerialComm> ( new Epetra_SerialComm() );
 #endif
 
     std::string inputFileName;
     if ( eComm->NumProc() == 1 )
-        inputFileName = inputFileNameBase + ".e";
+      inputFileName = inputFileNameBase + ".e";
     else
-        inputFileName = inputFileNameBase + "-balanced.par";
+      inputFileName = inputFileNameBase + "-balanced.par";
     // =========================================================================
     // Read the data from the file.
     Teuchos::ParameterList data;
     Cuantico::StkMeshRead( *eComm, inputFileName, data );
 
     // Cast the data into something more accessible.
-    Teuchos::RCP<Cuantico::StkMesh> & mesh = data.get( "mesh", Teuchos::RCP<Cuantico::StkMesh>() );
+    Teuchos::RCP<Cuantico::StkMesh> & mesh =
+      data.get( "mesh", Teuchos::RCP<Cuantico::StkMesh>() );
 
     const unsigned int numNodes = mesh->getNumNodes();
 //    mesh->computeFvmEntities_();
@@ -72,11 +73,11 @@ testMesh( const std::string & inputFileNameBase,
 
     const Teuchos::RCP<const Epetra_Vector> controlVols = mesh->getControlVolumes();
     double r;
-    controlVols->Norm1( &r );
+    TEST_EQUALITY(0, controlVols->Norm1( &r ));
     TEST_FLOATING_EQUALITY( r, controlVolNormOne, 1.0e-12 );
-    controlVols->Norm2( &r );
+    TEST_EQUALITY(0, controlVols->Norm2( &r ));
     TEST_FLOATING_EQUALITY( r, controlVolNormTwo, 1.0e-12 );
-    controlVols->NormInf( &r );
+    TEST_EQUALITY(0, controlVols->NormInf( &r ));
     TEST_FLOATING_EQUALITY( r, controlVolNormInf, 1.0e-12 );
 
     return;

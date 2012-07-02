@@ -59,26 +59,25 @@ testKeo( const std::string & inputFileNameBase,
 
     std::string inputFileName;
     if ( eComm->NumProc() == 1 )
-        inputFileName = inputFileNameBase + ".e";
+      inputFileName = inputFileNameBase + ".e";
     else
-        inputFileName = inputFileNameBase + "-balanced.par";
+      inputFileName = inputFileNameBase + "-balanced.par";
     // =========================================================================
     // Read the data from the file.
     Teuchos::ParameterList data;
     Cuantico::StkMeshRead( *eComm, inputFileName, data );
 
     // Cast the data into something more accessible.
-    Teuchos::RCP<Cuantico::StkMesh>     & mesh = data.get( "mesh", Teuchos::RCP<Cuantico::StkMesh>() );
-    Teuchos::RCP<Epetra_Vector>      & z = data.get( "psi", Teuchos::RCP<Epetra_Vector>() );
+    Teuchos::RCP<Cuantico::StkMesh> & mesh = data.get( "mesh", Teuchos::RCP<Cuantico::StkMesh>() );
+    Teuchos::RCP<Epetra_Vector> & z = data.get( "psi", Teuchos::RCP<Epetra_Vector>() );
     Teuchos::RCP<Epetra_MultiVector> & mvpValues = data.get( "A", Teuchos::RCP<Epetra_MultiVector>() );
-    Teuchos::RCP<Epetra_Vector>      & thickness = data.get( "thickness", Teuchos::RCP<Epetra_Vector>() );
-    Teuchos::ParameterList           & problemParameters = data.get( "Problem parameters", Teuchos::ParameterList() );
+    Teuchos::RCP<Epetra_Vector> & thickness = data.get( "thickness", Teuchos::RCP<Epetra_Vector>() );
 
-    Teuchos::RCP<Cuantico::MagneticVectorPotential::Virtual> mvp;
-    mvp = Teuchos::rcp(new Cuantico::MagneticVectorPotential::ExplicitValues(mesh, mvpValues, initMu));
+    Teuchos::RCP<Cuantico::MagneticVectorPotential::Virtual> mvp =
+      Teuchos::rcp(new Cuantico::MagneticVectorPotential::ExplicitValues(mesh, mvpValues, initMu));
 
     Teuchos::RCP<Cuantico::KeoContainer> keoContainer =
-        Teuchos::rcp(new Cuantico::KeoContainer(mesh, thickness, mvp));
+      Teuchos::rcp(new Cuantico::KeoContainer(mesh, thickness, mvp));
 
     // Explicitly create the kinetic energy operator.
     Teuchos::Array<double> mvpParams(1);
@@ -102,9 +101,9 @@ testKeo( const std::string & inputFileNameBase,
     Epetra_Vector Ku( map );
 
     // Add up all the entries of the matrix.
-    u.PutScalar( 1.0 );
-    keoMatrix->Apply( u, Ku );
-    u.Dot( Ku, &sum );
+    TEST_EQUALITY(0, u.PutScalar( 1.0 ));
+    TEST_EQUALITY(0, keoMatrix->Apply( u, Ku ));
+    TEST_EQUALITY(0, u.Dot( Ku, &sum ));
     TEST_FLOATING_EQUALITY( sum, controlSum, 1.0e-10 );
 
     // Sum over all the "real parts" of the matrix.
@@ -116,13 +115,13 @@ testKeo( const std::string & inputFileNameBase,
     double zero = 0.0;
     for ( int k=0; k<map.NumMyPoints(); k++ )
     {
-        if ( map.GID(k) % 2 == 0 )
-            u.ReplaceMyValues( 1, &one, &k );
-        else
-            u.ReplaceMyValues( 1, &zero, &k );
+      if ( map.GID(k) % 2 == 0 )
+        u.ReplaceMyValues( 1, &one, &k );
+      else
+        u.ReplaceMyValues( 1, &zero, &k );
     }
-    keoMatrix->Apply( u, Ku );
-    u.Dot( Ku, &sum );
+    TEST_EQUALITY(0, keoMatrix->Apply( u, Ku ));
+    TEST_EQUALITY(0, u.Dot( Ku, &sum ));
     TEST_FLOATING_EQUALITY( sum, controlSumReal, 1.0e-10 );
 
     // Sum over all the "imaginary parts" of the matrix.
@@ -130,13 +129,13 @@ testKeo( const std::string & inputFileNameBase,
     Epetra_Vector v( map );
     for ( int k=0; k<map.NumMyPoints(); k++ )
     {
-        if ( map.GID(k) % 2 == 0 )
-            v.ReplaceMyValues( 1, &zero, &k );
-        else
-            v.ReplaceMyValues( 1, &one, &k );
+      if ( map.GID(k) % 2 == 0 )
+        v.ReplaceMyValues( 1, &zero, &k );
+      else
+        v.ReplaceMyValues( 1, &one, &k );
     }
-    keoMatrix->Apply( u, Ku );
-    v.Dot( Ku, &sum );
+    TEST_EQUALITY(0, keoMatrix->Apply( u, Ku ));
+    TEST_EQUALITY(0, v.Dot( Ku, &sum ));
     // The matrix is Hermitian, so just test that the sum of
     // the imaginary parts is (close to) 0.
     // Don't use TEST_FLOATING_EQUALITY as this one checks
