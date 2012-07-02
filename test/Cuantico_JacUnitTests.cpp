@@ -84,9 +84,9 @@ testJac( const std::string & inputFileNameBase,
 
     // -------------------------------------------------------------------------
     // (a) [ 1, 1, 1, ... ]
-    s.PutScalar( 1.0 );
-    jac->Apply( s, Js );
-    s.Dot( Js, &sum );
+    TEUCHOS_ASSERT_EQUALITY(0, s.PutScalar( 1.0 ));
+    TEUCHOS_ASSERT_EQUALITY(0, jac->Apply( s, Js ));
+    TEUCHOS_ASSERT_EQUALITY(0, s.Dot( Js, &sum ));
     TEST_FLOATING_EQUALITY( sum, controlSumT0, 1.0e-12 );
     // -------------------------------------------------------------------------
     // (b) [ 1, 0, 1, 0, ... ]
@@ -99,8 +99,8 @@ testJac( const std::string & inputFileNameBase,
       else
         s.ReplaceMyValues( 1, &zero, &k );
     }
-    jac->Apply( s, Js );
-    s.Dot( Js, &sum );
+    TEUCHOS_ASSERT_EQUALITY(0, jac->Apply( s, Js ));
+    TEUCHOS_ASSERT_EQUALITY(0, s.Dot( Js, &sum ));
     TEST_FLOATING_EQUALITY( sum, controlSumT1, 1.0e-12 );
     // -------------------------------------------------------------------------
     // (b) [ 0, 1, 0, 1, ... ]
@@ -111,8 +111,8 @@ testJac( const std::string & inputFileNameBase,
       else
         s.ReplaceMyValues( 1, &one, &k );
     }
-    TEST_EQUALITY(0, jac->Apply( s, Js ));
-    TEST_EQUALITY(0, s.Dot( Js, &sum ));
+    TEUCHOS_ASSERT_EQUALITY(0, jac->Apply( s, Js ));
+    TEUCHOS_ASSERT_EQUALITY(0, s.Dot( Js, &sum ));
     TEST_FLOATING_EQUALITY( sum, controlSumT2, 1.0e-10 );
     // -------------------------------------------------------------------------
     return;

@@ -81,9 +81,7 @@ testKeo( const std::string & inputFileNameBase,
     // Only check the infinity-norm here as all other norms
     // only apply to vectors with non-overlapping maps.
     Teuchos::Array<double> R(3);
-    TEST_EQUALITY(0, mvpValues->NormInf(R.getRawPtr()));
-    std::cout.precision(15);
-    std::cout << R[0] << " " << R[1] << " " << R[2] << std::endl;
+    TEUCHOS_ASSERT_EQUALITY(0, mvpValues->NormInf(R.getRawPtr()));
     TEST_COMPARE_FLOATING_ARRAYS(R, mvpControlNormsInf, 1.0e-12);
 
     return;

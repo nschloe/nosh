@@ -51,10 +51,10 @@ testKeo( const std::string & inputFileNameBase,
     // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
     Teuchos::RCP<Epetra_MpiComm> eComm =
-            Teuchos::rcp<Epetra_MpiComm> ( new Epetra_MpiComm ( MPI_COMM_WORLD ) );
+      Teuchos::rcp<Epetra_MpiComm> ( new Epetra_MpiComm ( MPI_COMM_WORLD ) );
 #else
     Teuchos::RCP<Epetra_SerialComm> eComm =
-            Teuchos::rcp<Epetra_SerialComm> ( new Epetra_SerialComm() );
+      Teuchos::rcp<Epetra_SerialComm> ( new Epetra_SerialComm() );
 #endif
 
     std::string inputFileName;
@@ -101,9 +101,9 @@ testKeo( const std::string & inputFileNameBase,
     Epetra_Vector Ku( map );
 
     // Add up all the entries of the matrix.
-    TEST_EQUALITY(0, u.PutScalar( 1.0 ));
-    TEST_EQUALITY(0, keoMatrix->Apply( u, Ku ));
-    TEST_EQUALITY(0, u.Dot( Ku, &sum ));
+    TEUCHOS_ASSERT_EQUALITY(0, u.PutScalar( 1.0 ));
+    TEUCHOS_ASSERT_EQUALITY(0, keoMatrix->Apply( u, Ku ));
+    TEUCHOS_ASSERT_EQUALITY(0, u.Dot( Ku, &sum ));
     TEST_FLOATING_EQUALITY( sum, controlSum, 1.0e-10 );
 
     // Sum over all the "real parts" of the matrix.
@@ -120,8 +120,8 @@ testKeo( const std::string & inputFileNameBase,
       else
         u.ReplaceMyValues( 1, &zero, &k );
     }
-    TEST_EQUALITY(0, keoMatrix->Apply( u, Ku ));
-    TEST_EQUALITY(0, u.Dot( Ku, &sum ));
+    TEUCHOS_ASSERT_EQUALITY(0, keoMatrix->Apply( u, Ku ));
+    TEUCHOS_ASSERT_EQUALITY(0, u.Dot( Ku, &sum ));
     TEST_FLOATING_EQUALITY( sum, controlSumReal, 1.0e-10 );
 
     // Sum over all the "imaginary parts" of the matrix.
@@ -134,8 +134,8 @@ testKeo( const std::string & inputFileNameBase,
       else
         v.ReplaceMyValues( 1, &one, &k );
     }
-    TEST_EQUALITY(0, keoMatrix->Apply( u, Ku ));
-    TEST_EQUALITY(0, v.Dot( Ku, &sum ));
+    TEUCHOS_ASSERT_EQUALITY(0, keoMatrix->Apply( u, Ku ));
+    TEUCHOS_ASSERT_EQUALITY(0, v.Dot( Ku, &sum ));
     // The matrix is Hermitian, so just test that the sum of
     // the imaginary parts is (close to) 0.
     // Don't use TEST_FLOATING_EQUALITY as this one checks

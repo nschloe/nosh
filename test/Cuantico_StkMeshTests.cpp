@@ -69,15 +69,15 @@ testMesh( const std::string & inputFileNameBase,
 
     const unsigned int numNodes = mesh->getNumNodes();
 //    mesh->computeFvmEntities_();
-    TEST_EQUALITY( numNodes, controlNumNodes );
+    TEUCHOS_ASSERT_EQUALITY( numNodes, controlNumNodes );
 
     const Teuchos::RCP<const Epetra_Vector> controlVols = mesh->getControlVolumes();
     double r;
-    TEST_EQUALITY(0, controlVols->Norm1( &r ));
+    TEUCHOS_ASSERT_EQUALITY(0, controlVols->Norm1( &r ));
     TEST_FLOATING_EQUALITY( r, controlVolNormOne, 1.0e-12 );
-    TEST_EQUALITY(0, controlVols->Norm2( &r ));
+    TEUCHOS_ASSERT_EQUALITY(0, controlVols->Norm2( &r ));
     TEST_FLOATING_EQUALITY( r, controlVolNormTwo, 1.0e-12 );
-    TEST_EQUALITY(0, controlVols->NormInf( &r ));
+    TEUCHOS_ASSERT_EQUALITY(0, controlVols->NormInf( &r ));
     TEST_FLOATING_EQUALITY( r, controlVolNormInf, 1.0e-12 );
 
     return;

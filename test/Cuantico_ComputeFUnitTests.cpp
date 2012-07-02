@@ -98,15 +98,15 @@ testComputeF( const std::string & inputFileNameBase,
 
     // check the norms
     double normOne;
-    TEST_EQUALITY(0, f->Norm1( &normOne ));
+    TEUCHOS_ASSERT_EQUALITY(0, f->Norm1( &normOne ));
     TEST_FLOATING_EQUALITY( normOne, controlNormOne, 1.0e-10 );
 
     double normTwo;
-    TEST_EQUALITY(0, f->Norm2( &normTwo ));
+    TEUCHOS_ASSERT_EQUALITY(0, f->Norm2( &normTwo ));
     TEST_FLOATING_EQUALITY( normTwo, controlNormTwo, 1.0e-10 );
 
     double normInf;
-    TEST_EQUALITY(0, f->NormInf( &normInf ));
+    TEUCHOS_ASSERT_EQUALITY(0, f->NormInf( &normInf ));
     TEST_FLOATING_EQUALITY( normInf, controlNormInf, 1.0e-10 );
 
     return;
