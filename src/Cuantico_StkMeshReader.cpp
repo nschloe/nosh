@@ -377,21 +377,16 @@ read( const Epetra_Comm &comm,
   // create the state
   data.set("psi", this->complexfield2vector_(mesh, psir_field, psii_field));
 
-  Teuchos::RCP<Epetra_MultiVector> mvp;
+  Teuchos::RCP<const Epetra_MultiVector> mvp;
   mvp = this->createMvp_(mesh, mvpField);
   // Check if it's 0.
+  // If the field appears to be zeroed-out, it's probably not there.
+  // Try A_R, A_Z.
   double r[3];
   mvp->NormInf( r );
   double tol = 1.0e-15;
   if (r[0]<tol && r[1]<tol && r[2]<tol)
-  {
-    // If the field appears to be zeroed-out, it's probably not there.
-    // Try A_R, A_Z.
     mvp = this->createMvpRZ_(mesh, mvpFieldR, mvpFieldZ);
-    mvp->NormInf( r );
-    if (r[0]<tol && r[1]<tol && r[2]<tol)
-        mvp->PutScalar( 0.0 );
-  }
   data.set( "A", mvp );
 
   // Check of the thickness data is of any value. If not: ditch it.
@@ -616,19 +611,14 @@ complexfield2vector_( const Teuchos::RCP<const Cuantico::StkMesh> &mesh,
     Teuchos::rcp( new Epetra_Vector( *mesh->getComplexNonOverlapMap() ) );
 
   // Fill the vector with data from the file.
-  //int ind;
   for ( unsigned int k=0; k<ownedNodes.size(); k++ )
   {
     // real part
     double* realVal = stk::mesh::field_data(*realField, *ownedNodes[k]);
-    //ind = 2*k;
-    //vector->ReplaceMyValues( 1, realVal, &ind );
     (*vector)[2*k] = realVal[0];
 
     // imaginary part
     double* imagVal = stk::mesh::field_data( *imagField, *ownedNodes[k] );
-    //ind = 2*k+1;
-    //vector->ReplaceMyValues( 1, imagVal, &ind );
     (*vector)[2*k+1] = imagVal[0];
   }
 
@@ -673,8 +663,6 @@ scalarfield2vector_( const Teuchos::RCP<const Cuantico::StkMesh> &mesh,
       << std::endl;
       return Teuchos::null;
     }
-    //int kk = int(k);
-    //vector->ReplaceMyValues( 1, fieldVal, &kk );
     (*vector)[k] = fieldVal[0];
   }
 
@@ -710,7 +698,8 @@ createMvp_( const Teuchos::RCP<const Cuantico::StkMesh> &mesh,
   // Fill the vector with data from the file.
   for ( unsigned int k=0; k<overlapNodes.size(); k++ )
   {
-    double *mvpVal = stk::mesh::field_data( *mvpField, *overlapNodes[k] );
+    const double * const mvpVal =
+      stk::mesh::field_data( *mvpField, *overlapNodes[k] );
 #ifdef _DEBUG_
     // Check if the field is actually there.
     TEUCHOS_TEST_FOR_EXCEPT_MSG( mvpVal == NULL,
@@ -718,10 +707,9 @@ createMvp_( const Teuchos::RCP<const Cuantico::StkMesh> &mesh,
       "Probably there is no MVP field given with the state."
       );
 #endif
-
-    mvp->ReplaceMyValue( k, 0, mvpVal[0] );
-    mvp->ReplaceMyValue( k, 1, mvpVal[1] );
-    mvp->ReplaceMyValue( k, 2, mvpVal[2] );
+    (*mvp)[0][k] = mvpVal[0];
+    (*mvp)[1][k] = mvpVal[1];
+    (*mvp)[2][k] = mvpVal[2];
   }
 
 #ifdef _DEBUG_
@@ -773,11 +761,10 @@ createMvpRZ_( const Teuchos::RCP<const Cuantico::StkMesh> &mesh,
       "Probably there is no MVP field given with the state."
       );
 #endif
-
-    mvp->ReplaceMyValue( k, 0, *mvpValR );
-    mvp->ReplaceMyValue( k, 1, *mvpValZ );
+    (*mvp)[0][k] = *mvpValR;
+    (*mvp)[1][k] = *mvpValR;
     // TODO Remove explicit extension by 0.
-    mvp->ReplaceMyValue( k, 2, 0.0 );
+    (*mvp)[2][k] = 0.0;
   }
 
 #ifdef _DEBUG_

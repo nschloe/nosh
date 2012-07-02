@@ -106,7 +106,7 @@ private:
 void
 rebuildDiags_(const double g,
               const Teuchos::Array<double> &spParams,
-              const Teuchos::RCP<const Epetra_Vector> &current_X
+              const Epetra_Vector &current_X
               );
 
 private:

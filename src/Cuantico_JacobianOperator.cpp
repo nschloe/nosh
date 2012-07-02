@@ -207,7 +207,10 @@ rebuild(const double g,
   keo_ = keoContainer_->getKeo(mvpParams);
 
   // Rebuild diagonals.
-  this->rebuildDiags_(g, spParams, current_X);
+#ifdef _DEBUG_
+  TEUCHOS_ASSERT( !current_X.is_null() );
+#endif
+  this->rebuildDiags_(g, spParams, *current_X);
 
   return;
 }
@@ -216,45 +219,30 @@ void
 JacobianOperator::
 rebuildDiags_(const double g,
               const Teuchos::Array<double> &spParams,
-              const Teuchos::RCP<const Epetra_Vector> &current_X
+              const Epetra_Vector &x
               )
 {
 #ifdef _DEBUG_
-  TEUCHOS_ASSERT( !current_X.is_null() );
   TEUCHOS_ASSERT( !scalarPotential_.is_null() );
 #endif
 
   const Epetra_Vector &controlVolumes = *(mesh_->getControlVolumes());
-  int numMyPoints = controlVolumes.MyLength();
 
-  int kk;
-  double val;
-  int indices[2];
-  double vals[2];
-  for ( int k=0; k<numMyPoints; k++ )
+  for (int k=0; k<controlVolumes.MyLength(); k++)
   {
     // rebuild diag0
-    double alpha = controlVolumes[k] * (*thickness_)[k] * (
-        scalarPotential_->getV(k, spParams)
-        + g * 2.0 *
-          ( (*current_X)[2*k] * (*current_X)[2*k]
-          + (*current_X)[2*k+1]*(*current_X)[2*k+1] )
-        );
-    double realX2 = g * controlVolumes[k] * (*thickness_)[k] * (
-          (*current_X)[2*k]  *(*current_X)[2*k]
-        - (*current_X)[2*k+1]*(*current_X)[2*k+1]
-        );
-    vals[0] = alpha + realX2;
-    vals[1] = alpha - realX2;
-    indices[0] = 2*k;
-    indices[1] = 2*k+1;
-    TEUCHOS_ASSERT_EQUALITY(0, diag0_->ReplaceMyValues(2, vals, indices));
+    const double alpha = controlVolumes[k] * (*thickness_)[k]
+                       * ( scalarPotential_->getV(k, spParams)
+                         + g * 2.0 * (x[2*k]*x[2*k] + x[2*k+1]*x[2*k+1])
+                         );
+    const double realX2 = g * controlVolumes[k] * (*thickness_)[k]
+                        * ( x[2*k]*x[2*k] - x[2*k+1]*x[2*k+1] );
+    (*diag0_)[2*k]   = alpha + realX2;
+    (*diag0_)[2*k+1] = alpha - realX2;
 
     // rebuild diag1b
-    double imagX2 = g * controlVolumes[k] * (*thickness_)[k] * (
-        2.0 * (*current_X)[2*k] * (*current_X)[2*k+1]
-        );
-    TEUCHOS_ASSERT_EQUALITY(0, diag1b_->ReplaceMyValues(1, &imagX2, &k));
+    (*diag1b_)[k] = g * controlVolumes[k] * (*thickness_)[k]
+                  * (2.0 * x[2*k] * x[2*k+1]);
   }
 
   return;

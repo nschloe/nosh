@@ -52,7 +52,7 @@ testJac( const std::string & inputFileNameBase,
     // Cast the data into something more accessible.
     Teuchos::RCP<Cuantico::StkMesh> & mesh = data.get( "mesh", Teuchos::RCP<Cuantico::StkMesh>() );
     Teuchos::RCP<Epetra_Vector> & psi = data.get( "psi", Teuchos::RCP<Epetra_Vector>() );
-    Teuchos::RCP<Epetra_MultiVector> & mvpValues = data.get( "A", Teuchos::RCP<Epetra_MultiVector>() );
+    Teuchos::RCP<const Epetra_MultiVector> & mvpValues = data.get( "A", Teuchos::RCP<const Epetra_MultiVector>() );
     Teuchos::RCP<Epetra_Vector> & thickness = data.get( "thickness", Teuchos::RCP<Epetra_Vector>() );
     Teuchos::ParameterList & problemParameters = data.get( "Problem parameters", Teuchos::ParameterList() );
 
