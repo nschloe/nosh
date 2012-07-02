@@ -50,8 +50,8 @@ computeFiniteDifference_( const Teuchos::RCP<Cuantico::ModelEvaluator> & modelEv
     modelEval->evalModel( inArgs, outArgs );
 
     // Calculate the finite difference approx for df/dp.
-    fdiff->Update( -1.0, *f0, 1.0 );
-    fdiff->Scale( 0.5/eps );
+    TEUCHOS_ASSERT_EQUALITY(0, fdiff->Update( -1.0, *f0, 1.0 ));
+    TEUCHOS_ASSERT_EQUALITY(0, fdiff->Scale( 0.5/eps ));
 
     return;
 }
@@ -128,8 +128,8 @@ testDfdp(const std::string & inputFileNameBase,
       modelEval->evalModel( inArgs, outArgs );
 
       // Compare the two.
-      fdiff->Update( -1.0, *dfdp, 1.0 );
-      fdiff->NormInf( &r );
+      TEUCHOS_ASSERT_EQUALITY(0, fdiff->Update( -1.0, *dfdp, 1.0 ));
+      TEUCHOS_ASSERT_EQUALITY(0, fdiff->NormInf( &r ));
       TEST_COMPARE( r, <, 1.0e-8 );
     }
     // -------------------------------------------------------------------------
