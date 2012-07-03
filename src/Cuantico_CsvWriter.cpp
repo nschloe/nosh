@@ -57,10 +57,8 @@ writeHeader(const Teuchos::ParameterList & pList) const
   for (Teuchos::ParameterList::ConstIterator k=pList.begin(); k!=pList.end(); ++k )
   {
     if (!isFirst)
-    {
       fileStream_ << delimeter_ << "  ";
-      isFirst = false;
-    }
+    isFirst = false;
 
     std::stringstream strstream;
     strstream.fill( ' ' );
@@ -104,10 +102,8 @@ writeRow(const Teuchos::ParameterList & pList) const
   for (Teuchos::ParameterList::ConstIterator k=pList.begin(); k!=pList.end(); ++k )
   {
     if (!isFirst)
-    {
       fileStream_ << delimeter_ << "  ";
-      isFirst = false;
-    }
+    isFirst = false;
 
     std::stringstream strstream;
     strstream.fill( ' ' );
@@ -144,6 +140,9 @@ writeRow(const Teuchos::ParameterList & pList) const
       TEUCHOS_TEST_FOR_EXCEPT_MSG(true,
                            "Invalid data type for item \""
                            << label << "\"." );
+
+    // Write it out to the file.
+    fileStream_ << strstream.str();
   }
 
   // flush:
