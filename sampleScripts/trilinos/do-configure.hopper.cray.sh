@@ -5,26 +5,10 @@ module load binutils
 module load netcdf-hdf5parallel
 
 EXTRA_ARGS=$@
-#TRILINOS_HOME=../../trilinos-10.10.1-Source
 TRILINOS_HOME=../../trilinos-10.10.2-Source
 
-#  -D BinUtils_LIBRARY_DIRS:PATH="$BINUTILS_DIR/lib" \
-
-#export NETCDF_DIR=/opt/cray/netcdf-hdf5parallel/4.0.1.0/netcdf-hdf5parallel-pgi
-#      -D BLAS_LIBRARY_DIRS:FILEPATH="$ACML_DIR"/pgi64_mp/lib/ \
-#      -D LAPACK_LIBRARY_DIRS:FILEPATH="$ACML_DIR"/pgi64_mp/lib/ \
-
-#      -D BLAS_LIBRARY_NAMES:STRING=acml \
-#      -D BLAS_LIBRARY_DIRS:FILEPATH="$ACML_DIR"/gfortran64/lib/ \
-#      -D LAPACK_LIBRARY_NAMES:STRING=acml \
-#      -D LAPACK_LIBRARY_DIRS:FILEPATH="$ACML_DIR"/gfortran64/lib/ \
-
-#  -D Trilinos_EXTRA_LINK_FLAGS:STRING="$CRAY_HDF5_DIR/hdf5-parallel-gnu/lib/libhdf5.a" \
-
-#  -D TPL_ENABLE_Boost:BOOL=OFF \
-
 cmake \
-  -D CMAKE_INSTALL_PREFIX:PATH="$SCRATCH/trilinos/10.10.2/pgi/" \
+  -D CMAKE_INSTALL_PREFIX:PATH="$SCRATCH/trilinos/10.10.2/cray/" \
   -D Trilinos_VERBOSE_CONFIGURE:BOOL=OFF \
   -D CMAKE_BUILD_TYPE=Release \
   -D TPL_ENABLE_MPI:BOOL=ON \
@@ -37,10 +21,10 @@ cmake \
       -D Boost_LIBRARY_DIRS:PATH="$BOOST_DIR/libs" \
       -D Boost_INCLUDE_DIRS:PATH="$BOOST_DIR/include" \
   -D TPL_ENABLE_BLAS:BOOL=ON \
-      -D BLAS_LIBRARY_DIRS:PATH="$LIBSCI_BASE_DIR/pgi/109/mc12/lib" \
+      -D BLAS_LIBRARY_DIRS:PATH="$LIBSCI_BASE_DIR/cray73/mc12/lib" \
       -D BLAS_LIBRARY_NAMES="sci_pgi" \
   -D TPL_ENABLE_LAPACK:BOOL=ON \
-      -D LAPACK_LIBRARY_DIRS:PATH="$LIBSCI_BASE_DIR/pgi/109/mc12/lib" \
+      -D LAPACK_LIBRARY_DIRS:PATH="$LIBSCI_BASE_DIR/cray/73/mc12/lib" \
       -D LAPACK_LIBRARY_NAMES="sci_pgi" \
   -D Trilinos_ENABLE_NOX:BOOL=ON \
       -D NOX_ENABLE_LOCA:BOOL=ON \
@@ -51,8 +35,8 @@ cmake \
   -D Trilinos_ENABLE_Belos:BOOL=ON \
   -D Trilinos_ENABLE_SEACASIoss:BOOL=ON \
   -D TPL_ENABLE_Netcdf:BOOL=ON \
-      -D Netcdf_LIBRARY_DIRS:PATH="$CRAY_NETCDF_DIR/pgi/109/lib" \
-      -D Netcdf_INCLUDE_DIRS:PATH="$CRAY_NETCDF_DIR/pgi/109/include" \
+      -D Netcdf_LIBRARY_DIRS:PATH="$CRAY_NETCDF_DIR/cray/73/lib" \
+      -D Netcdf_INCLUDE_DIRS:PATH="$CRAY_NETCDF_DIR/cray/73/include" \
   -D DART_TESTING_TIMEOUT:STRING=600 \
   $EXTRA_ARGS \
   ${TRILINOS_HOME}
