@@ -1,8 +1,9 @@
 EXTRA_ARGS=$@
-TRILINOS_HOME=../../trilinos-10.10.2-Source
+#TRILINOS_HOME=../../trilinos-10.10.2-Source
+TRILINOS_HOME=../../source
 
 cmake \
-  -D CMAKE_INSTALL_PREFIX:PATH=/opt/trilinos/10.10.2/openmpi/1.4.3/gcc/4.6.3/release \
+  -D CMAKE_INSTALL_PREFIX:PATH=/opt/trilinos/dev/master/openmpi/1.4.3/gcc/4.6.3/release \
   -D CMAKE_BUILD_TYPE=Release \
   -D TPL_ENABLE_MPI:BOOL=ON \
   -D Trilinos_ENABLE_TEUCHOS_TIME_MONITOR=ON \

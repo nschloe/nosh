@@ -128,9 +128,11 @@ mutable Teuchos::ArrayRCP<Epetra_IntSerialDenseVector> globalIndexCache_;
 mutable bool globalIndexCacheUpToDate_;
 
 const Epetra_FECrsGraph keoGraph_;
-const Teuchos::RCP<Epetra_FECrsMatrix> keo_;
+// Make this mutable (this is really justa cache).
+mutable Epetra_FECrsMatrix keo_;
 mutable Teuchos::Array<double> keoBuildParameters_;
-const Teuchos::RCP<Epetra_FECrsMatrix> keoDp_;
+// Make this mutable (this is really justa cache).
+mutable Epetra_FECrsMatrix keoDp_;
 
 mutable Teuchos::ArrayRCP<double> alphaCache_;
 mutable bool alphaCacheUpToDate_;

@@ -51,9 +51,9 @@ KeoContainer(const Teuchos::RCP<const Cuantico::StkMesh> &mesh,
   globalIndexCache_(Teuchos::ArrayRCP<Epetra_IntSerialDenseVector>()),
   globalIndexCacheUpToDate_( false ),
   keoGraph_(this->buildKeoGraph_()), // build the graph immediately
-  keo_(Teuchos::rcp(new Epetra_FECrsMatrix(Copy, keoGraph_))),
+  keo_(Epetra_FECrsMatrix(Copy, keoGraph_)),
   keoBuildParameters_( Teuchos::null ),
-  keoDp_(Teuchos::rcp(new Epetra_FECrsMatrix(Copy, keoGraph_))),
+  keoDp_(Epetra_FECrsMatrix(Copy, keoGraph_)),
   alphaCache_(Teuchos::ArrayRCP<double>()),
   alphaCacheUpToDate_( false ),
   paramIndex_(0)
@@ -90,12 +90,17 @@ getKeo(const Teuchos::Array<double> &mvpParams) const
   // This is useful because in the continuation context,
   // getKeo() is called a number of times with the same arguements
   // (in computeF, getJacobian(), and getPreconditioner().
-  if (keoBuildParameters_ != mvpParams)
-  {
-    this->fillKeo_(*keo_, mvpParams, &KeoContainer::fillerRegular_);
+
+  // TODO Don't recreate.
+  // This is a workaround for a bug in Epetra_FECrsMatrix that
+  // makes the filling ever more costly the more often they are done.
+  keo_ = Epetra_FECrsMatrix(Copy, keoGraph_);
+  //if (keoBuildParameters_ != mvpParams)
+  //{
+    this->fillKeo_(keo_, mvpParams, &KeoContainer::fillerRegular_);
     keoBuildParameters_ = mvpParams;
-  }
-  return *keo_;
+  //}
+  return keo_;
 }
 // =============================================================================
 const Epetra_FECrsMatrix
@@ -108,9 +113,13 @@ getKeoDp(const int paramIndex,
   // per parameter set and hence doesn't need to be cached.
   // Pass parameterIndex_ to this->fillerDp_() without changing fillerDp_'s
   // interface by setting a private variable.
+  // TODO Don't recreate.
+  // This is a workaround for a bug in Epetra_FECrsMatrix that
+  // makes the filling ever more costly the more often they are done.
+  keoDp_ = Epetra_FECrsMatrix(Copy, keoGraph_);
   paramIndex_ = paramIndex;
-  this->fillKeo_(*keoDp_, mvpParams, &KeoContainer::fillerDp_);
-  return *keoDp_;
+  this->fillKeo_(keoDp_, mvpParams, &KeoContainer::fillerDp_);
+  return keoDp_;
 }
 // =============================================================================
 const Epetra_FECrsGraph
