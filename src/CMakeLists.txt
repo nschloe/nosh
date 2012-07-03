@@ -1,5 +1,5 @@
 SET ( cuantico_SRCS
-      dummy.f
+#      dummy.f
       Cuantico_Helpers.cpp
       Cuantico_State.cpp
       Cuantico_ModelEvaluator.cpp

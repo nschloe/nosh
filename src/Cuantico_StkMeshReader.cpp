@@ -108,9 +108,9 @@ read( const Epetra_Comm &comm,
 
   // If the file is serial, read it with process 0 and embed it
   // in the multiproc context. Load balancing is done later anyways.
-  bool fileIsSerial = fileName_.substr(fileName_.find_last_of(".") + 1) == "e";
   MPI_Comm readerComm = mcomm;
 #ifdef HAVE_MPI
+  bool fileIsSerial = fileName_.substr(fileName_.find_last_of(".") + 1) == "e";
   if (fileIsSerial && comm.NumProc()>1)
   {
     // reader process

@@ -27,8 +27,6 @@
     #include <mpi.h>
 #endif
 
-#include "Cuantico_config.h"
-
 #include <EpetraExt_ModelEvaluator.h>
 #include <Epetra_Vector.h>
 #include <Teuchos_ParameterList.hpp>

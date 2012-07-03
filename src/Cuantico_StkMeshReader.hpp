@@ -21,7 +21,6 @@
 #define CUANTICO_STKMESHREADER_H
 // =============================================================================
 // includes
-#include "Cuantico_config.h"
 #include "Cuantico_StkMesh.hpp"
 
 #include <string>

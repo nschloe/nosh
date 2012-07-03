@@ -21,7 +21,6 @@
 #define CUANTICO_STATE_H
 // =============================================================================
 // includes
-#include "Cuantico_config.h"
 // Workaround for icpc's error "Include mpi.h before stdio.h"
 #include <Teuchos_config.h>
 #ifdef HAVE_MPI

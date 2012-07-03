@@ -29,8 +29,6 @@
 
 #include <string>
 
-#include "Cuantico_config.h"
-
 #include <Epetra_Comm.h>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Tuple.hpp>

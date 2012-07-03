@@ -27,8 +27,6 @@
     #include <mpi.h>
 #endif
 
-#include "Cuantico_config.h"
-
 #include <Epetra_Vector.h>
 #include <Epetra_Operator.h>
 #include <Teuchos_RCP.hpp>
