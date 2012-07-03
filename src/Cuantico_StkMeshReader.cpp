@@ -383,7 +383,7 @@ read( const Epetra_Comm &comm,
   // If the field appears to be zeroed-out, it's probably not there.
   // Try A_R, A_Z.
   double r[3];
-  mvp->NormInf( r );
+  TEUCHOS_ASSERT_EQUALITY(0, mvp->NormInf( r ));
   double tol = 1.0e-15;
   if (r[0]<tol && r[1]<tol && r[2]<tol)
     mvp = this->createMvpRZ_(mesh, mvpFieldR, mvpFieldZ);
@@ -392,9 +392,9 @@ read( const Epetra_Comm &comm,
   // Check of the thickness data is of any value. If not: ditch it.
   Teuchos::RCP<Epetra_Vector> thickness = this->scalarfield2vector_(mesh, thicknessField);
   double norminf;
-  thickness->NormInf( &norminf );
+  TEUCHOS_ASSERT_EQUALITY(0, thickness->NormInf( &norminf ));
   if ( norminf < 1.0e-15 ) // assume that thickness wasn't present, fill with default value
-    thickness->PutScalar( 1.0 );
+    TEUCHOS_ASSERT_EQUALITY(0, thickness->PutScalar( 1.0 ));
   data.set( "thickness", thickness );
   // These are vain attempts to find out whether thicknessField is actually empty.
 //     const stk::mesh::FieldBase::RestrictionVector & restrictions = thicknessField->restrictions();
@@ -403,9 +403,9 @@ read( const Epetra_Comm &comm,
 
   // Check of the data is of any value. If not: ditch it.
   Teuchos::RCP<Epetra_Vector> potential = this->scalarfield2vector_(mesh, potentialField);
-  potential->NormInf( &norminf );
+  TEUCHOS_ASSERT_EQUALITY(0, potential->NormInf( &norminf ));
   if ( norminf < 1.0e-15 ) // assume that potential wasn't present, fill with default value
-    potential->PutScalar( 0.0 );
+    TEUCHOS_ASSERT_EQUALITY(0, potential->PutScalar( 0.0 ));
   data.set( "V", potential );
 
   return;
@@ -624,7 +624,7 @@ complexfield2vector_( const Teuchos::RCP<const Cuantico::StkMesh> &mesh,
 
 #ifdef _DEBUG_
   double r;
-  vector->Norm1( &r );
+  TEUCHOS_ASSERT_EQUALITY(0, vector->NormInf( &r ));
   TEUCHOS_TEST_FOR_EXCEPT_MSG( r!=r || r>1.0e100,
                        "The input data seems flawed. Abort." );
 #endif
@@ -668,7 +668,8 @@ scalarfield2vector_( const Teuchos::RCP<const Cuantico::StkMesh> &mesh,
 
 #ifdef _DEBUG_
   double r;
-  vector->Norm1( &r );
+  // Use NormInf as it's robust against overlapping maps.
+  TEUCHOS_ASSERT_EQUALITY(0, vector->NormInf( &r ));
   TEUCHOS_TEST_FOR_EXCEPT_MSG( r!=r || r>1.0e100,
                        "The input data seems flawed. Abort." );
 #endif
@@ -715,7 +716,8 @@ createMvp_( const Teuchos::RCP<const Cuantico::StkMesh> &mesh,
 #ifdef _DEBUG_
   // Check for NaNs and uninitialized data.
   double r[3];
-  mvp->Norm1( r );
+  // Use NormInf as it's robust against overlapping maps.
+  TEUCHOS_ASSERT_EQUALITY(0, mvp->NormInf( r ));
   TEUCHOS_TEST_FOR_EXCEPT_MSG( r[0]!=r[0] || r[0]>1.0e100
                        || r[1]!=r[1] || r[1]>1.0e100
                        || r[2]!=r[2] || r[2]>1.0e100,
@@ -770,7 +772,8 @@ createMvpRZ_( const Teuchos::RCP<const Cuantico::StkMesh> &mesh,
 #ifdef _DEBUG_
   // Check for NaNs and uninitialized data.
   double r[2];
-  mvp->Norm1( r );
+  // Use NormInf as it's robust against overlapping maps.
+  TEUCHOS_ASSERT_EQUALITY(0, mvp->NormInf( r ));
   TEUCHOS_TEST_FOR_EXCEPT_MSG( r[0]!=r[0] || r[0]>1.0e100
                        || r[1]!=r[1] || r[1]>1.0e100,
                        "The input data seems flawed. Abort." );
