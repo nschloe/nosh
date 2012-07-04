@@ -1,26 +1,26 @@
-SET ( cuantico_SRCS
+SET ( nosh_SRCS
 #      dummy.f
-      Cuantico_Helpers.cpp
-      Cuantico_State.cpp
-      Cuantico_ModelEvaluator.cpp
-      Cuantico_JacobianOperator.cpp
-      Cuantico_KeoContainer.cpp
-      Cuantico_KeoRegularized.cpp
-      Cuantico_ScalarPotential_Virtual.cpp
-      Cuantico_ScalarPotential_Constant.cpp
-      Cuantico_MagneticVectorPotential_Virtual.cpp
-      Cuantico_MagneticVectorPotential_ExplicitValues.cpp
-      Cuantico_MagneticVectorPotential_ConstantField.cpp
-      Cuantico_StkMesh.cpp
-      Cuantico_StkMeshReader.cpp
-      Cuantico_CsvWriter.cpp
-      Cuantico_NoxObserver.cpp
-      Cuantico_SaveEigenData.cpp
+      Nosh_Helpers.cpp
+      Nosh_State.cpp
+      Nosh_ModelEvaluator.cpp
+      Nosh_JacobianOperator.cpp
+      Nosh_KeoContainer.cpp
+      Nosh_KeoRegularized.cpp
+      Nosh_ScalarPotential_Virtual.cpp
+      Nosh_ScalarPotential_Constant.cpp
+      Nosh_MagneticVectorPotential_Virtual.cpp
+      Nosh_MagneticVectorPotential_ExplicitValues.cpp
+      Nosh_MagneticVectorPotential_ConstantField.cpp
+      Nosh_StkMesh.cpp
+      Nosh_StkMeshReader.cpp
+      Nosh_CsvWriter.cpp
+      Nosh_NoxObserver.cpp
+      Nosh_SaveEigenData.cpp
     )
 
 FIND_PACKAGE( Trilinos REQUIRED )
 INCLUDE_DIRECTORIES( ${Trilinos_INCLUDE_DIRS}
                      ${Trilinos_TPL_INCLUDE_DIRS} )
 
-ADD_LIBRARY(cuantico
-            ${cuantico_SRCS} )
+ADD_LIBRARY(nosh
+            ${nosh_SRCS} )

@@ -1,11 +1,11 @@
 FIND_PACKAGE( Trilinos REQUIRED )
-INCLUDE_DIRECTORIES ( ${cuantico_SOURCE_DIR}/src
+INCLUDE_DIRECTORIES ( ${nosh_SOURCE_DIR}/src
                       ${Trilinos_INCLUDE_DIRS}
                       ${Trilinos_TPL_INCLUDE_DIRS} )
 LINK_DIRECTORIES( ${Trilinos_LIBRARY_DIRS}
                   ${Trilinos_TPL_LIBRARY_DIRS} )
 
-SET(internal_LIBS "cuantico")
+SET(internal_LIBS "nosh")
 
 # copy over the binary data
 if( NOT ${CMAKE_CURRENT_SOURCE_DIR} EQUAL ${CMAKE_CURRENT_BINARY_DIR} )
@@ -38,7 +38,7 @@ endif()
 SET( IOTEST_EXECUTABLE
      "ioTest" )
 ADD_EXECUTABLE ( ${IOTEST_EXECUTABLE}
-                 Cuantico_IOTests.cpp
+                 Nosh_IOTests.cpp
                  unitTestMain.cpp )
 # add tests
 ADD_TEST( ioTestSerial
@@ -58,8 +58,8 @@ TARGET_LINK_LIBRARIES ( ${IOTEST_EXECUTABLE}
 SET( MESHTEST_EXECUTABLE
      "meshTest" )
 ADD_EXECUTABLE ( ${MESHTEST_EXECUTABLE}
-                 Cuantico_StkMeshTests.cpp
-#                  Cuantico_EdgeCacheTests.cpp
+                 Nosh_StkMeshTests.cpp
+#                  Nosh_EdgeCacheTests.cpp
                  unitTestMain.cpp )
 # add tests
 ADD_TEST( meshTestSerial
@@ -79,10 +79,10 @@ TARGET_LINK_LIBRARIES ( ${MESHTEST_EXECUTABLE}
 SET( OPERATORTEST_EXECUTABLE
      "operatorTest" )
 ADD_EXECUTABLE ( ${OPERATORTEST_EXECUTABLE}
-                 Cuantico_KeoUnitTests.cpp
-                 Cuantico_ComputeFUnitTests.cpp
-                 Cuantico_JacUnitTests.cpp
-                 Cuantico_dfdpUnitTests.cpp
+                 Nosh_KeoUnitTests.cpp
+                 Nosh_ComputeFUnitTests.cpp
+                 Nosh_JacUnitTests.cpp
+                 Nosh_dfdpUnitTests.cpp
                  unitTestMain.cpp )
 
 # add tests

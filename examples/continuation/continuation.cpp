@@ -21,15 +21,15 @@
 #include <Piro_Epetra_NOXSolver.hpp>
 #include <Piro_Epetra_LOCASolver.hpp>
 
-#include "Cuantico_StkMesh.hpp"
-#include "Cuantico_StkMeshReader.hpp"
-#include "Cuantico_State.hpp"
-#include "Cuantico_ScalarPotential_Constant.hpp"
-#include "Cuantico_MagneticVectorPotential_ExplicitValues.hpp"
-#include "Cuantico_ModelEvaluator.hpp"
-#include "Cuantico_NoxObserver.hpp"
-#include "Cuantico_SaveEigenData.hpp"
-#include "Cuantico_CsvWriter.hpp"
+#include "Nosh_StkMesh.hpp"
+#include "Nosh_StkMeshReader.hpp"
+#include "Nosh_State.hpp"
+#include "Nosh_ScalarPotential_Constant.hpp"
+#include "Nosh_MagneticVectorPotential_ExplicitValues.hpp"
+#include "Nosh_ModelEvaluator.hpp"
+#include "Nosh_NoxObserver.hpp"
+#include "Nosh_SaveEigenData.hpp"
+#include "Nosh_CsvWriter.hpp"
 
 #include <Teuchos_TimeMonitor.hpp>
 
@@ -113,11 +113,11 @@ int main(int argc, char *argv[])
 
     // Read the data from the file.
     Teuchos::ParameterList data;
-    Cuantico::StkMeshRead(*eComm, inputFilePath, data);
+    Nosh::StkMeshRead(*eComm, inputFilePath, data);
 
     // Cast the data into something more accessible.
-    const Teuchos::RCP<Cuantico::StkMesh> & mesh =
-      data.get<Teuchos::RCP<Cuantico::StkMesh> >( "mesh" );
+    const Teuchos::RCP<Nosh::StkMesh> & mesh =
+      data.get<Teuchos::RCP<Nosh::StkMesh> >( "mesh" );
     const Teuchos::RCP<Epetra_Vector> & psi =
       data.get("psi", Teuchos::RCP<Epetra_Vector>() );
     const Teuchos::RCP<const Epetra_MultiVector> & mvpValues =
@@ -132,15 +132,15 @@ int main(int argc, char *argv[])
 
     // Create the initial state from psi.
     TEUCHOS_ASSERT( !psi.is_null() );
-    Teuchos::RCP<Cuantico::State> state =
-      Teuchos::rcp(new Cuantico::State(*psi, mesh));
+    Teuchos::RCP<Nosh::State> state =
+      Teuchos::rcp(new Nosh::State(*psi, mesh));
 
     // Setup the magnetic vector potential.
     // Choose between several given MVPs or build your own by
-    // deriving from Cuantico::MagneticVectorPotential::Virtual.
+    // deriving from Nosh::MagneticVectorPotential::Virtual.
     const double mu = initialParameterValues.get<double>("mu", 0.0);
-    Teuchos::RCP<Cuantico::MagneticVectorPotential::Virtual> mvp =
-      Teuchos::rcp(new Cuantico::MagneticVectorPotential::ExplicitValues(mesh, mvpValues, mu));
+    Teuchos::RCP<Nosh::MagneticVectorPotential::Virtual> mvp =
+      Teuchos::rcp(new Nosh::MagneticVectorPotential::ExplicitValues(mesh, mvpValues, mu));
     // Alternative: Analytically given MVP. This one can also be rotated in space.
     //const double theta = initialParameterValues.get<double>("theta", 0.0);
     // Get the rotation vector.
@@ -156,37 +156,37 @@ int main(int argc, char *argv[])
     //    (*u)[1] = rotationVectorList.get<double>("y");
     //    (*u)[2] = rotationVectorList.get<double>("z");
     //}
-    //Teuchos::RCP<Cuantico::MagneticVectorPotential::Virtual> mvp =
-    //  Teuchos::rcp ( new Cuantico::MagneticVectorPotential::ConstantField(mesh, mvpValues, mu, theta, u));
+    //Teuchos::RCP<Nosh::MagneticVectorPotential::Virtual> mvp =
+    //  Teuchos::rcp ( new Nosh::MagneticVectorPotential::ConstantField(mesh, mvpValues, mu, theta, u));
 
     // Setup the scalar potential V.
-    // Use this or build your own by deriving from Cuantico::ScalarPotential::Virtual.
+    // Use this or build your own by deriving from Nosh::ScalarPotential::Virtual.
     const double T = initialParameterValues.get<double>("T", 0.0);
-    Teuchos::RCP<Cuantico::ScalarPotential::Virtual> sp =
-      Teuchos::rcp(new Cuantico::ScalarPotential::Constant(-1.0));
+    Teuchos::RCP<Nosh::ScalarPotential::Virtual> sp =
+      Teuchos::rcp(new Nosh::ScalarPotential::Constant(-1.0));
 
     // Finally, create the model evaluator.
     // This is the most important object in the whole stack.
     const double g = initialParameterValues.get<double>("g");
-    Teuchos::RCP<Cuantico::ModelEvaluator> nlsModel =
-      Teuchos::rcp(new Cuantico::ModelEvaluator(mesh, g, sp, mvp, thickness, psi));
+    Teuchos::RCP<Nosh::ModelEvaluator> nlsModel =
+      Teuchos::rcp(new Nosh::ModelEvaluator(mesh, g, sp, mvp, thickness, psi));
 
     // Build the Piro model evaluator. It's used to hook up with
     // several different backends (NOX, LOCA, Rhythmos,...).
     Teuchos::RCP<EpetraExt::ModelEvaluator> piro;
 
     // Declare the eigensaver; it will be used only for LOCA solvers, though.
-    Teuchos::RCP<Cuantico::SaveEigenData> glEigenSaver;
+    Teuchos::RCP<Nosh::SaveEigenData> glEigenSaver;
 
     // Switch by solver type.
     std::string & solver = piroParams->get("Piro Solver", "");
     // ----------------------------------------------------------------------
     if (solver == "NOX")
     {
-      Teuchos::RCP<Cuantico::NoxObserver> observer =
-        Teuchos::rcp(new Cuantico::NoxObserver(nlsModel,
+      Teuchos::RCP<Nosh::NoxObserver> observer =
+        Teuchos::rcp(new Nosh::NoxObserver(nlsModel,
                                             contFilePath,
-                                            Cuantico::NoxObserver::OBSERVER_TYPE_NEWTON
+                                            Nosh::NoxObserver::OBSERVER_TYPE_NEWTON
                                             ));
 
       piro = Teuchos::rcp(new Piro::Epetra::NOXSolver(piroParams,
@@ -196,10 +196,10 @@ int main(int argc, char *argv[])
     // ----------------------------------------------------------------------
     else if (solver == "LOCA")
     {
-      Teuchos::RCP<Cuantico::NoxObserver> observer =
-        Teuchos::rcp(new Cuantico::NoxObserver(nlsModel,
+      Teuchos::RCP<Nosh::NoxObserver> observer =
+        Teuchos::rcp(new Nosh::NoxObserver(nlsModel,
                                             contFilePath,
-                                            Cuantico::NoxObserver::OBSERVER_TYPE_CONTINUATION
+                                            Nosh::NoxObserver::OBSERVER_TYPE_CONTINUATION
                                             ));
 
       // Setup eigen saver.
@@ -216,11 +216,11 @@ int main(int argc, char *argv[])
                                         + "/"
                                         + outputList.get<std::string> ( "Eigenvalues file name" );
 
-        Teuchos::RCP<Cuantico::CsvWriter> eigenCsvWriter =
-          Teuchos::rcp( new Cuantico::CsvWriter( eigenvaluesFilePath ) );
+        Teuchos::RCP<Nosh::CsvWriter> eigenCsvWriter =
+          Teuchos::rcp( new Nosh::CsvWriter( eigenvaluesFilePath ) );
 
         glEigenSaver =
-          Teuchos::RCP<Cuantico::SaveEigenData>(new Cuantico::SaveEigenData(eigenList,
+          Teuchos::RCP<Nosh::SaveEigenData>(new Nosh::SaveEigenData(eigenList,
                                                                       nlsModel,
                                                                       eigenCsvWriter));
 
@@ -249,7 +249,7 @@ int main(int argc, char *argv[])
     // ----------------------------------------------------------------------
     else if ( solver == "Turning Point" )
     {
-      Teuchos::RCP<Cuantico::NoxObserver> observer = Teuchos::null;
+      Teuchos::RCP<Nosh::NoxObserver> observer = Teuchos::null;
 
       // Get the initial null state file.
       initialGuessList = piroParams->sublist ( "Initial guess", true );
@@ -257,15 +257,15 @@ int main(int argc, char *argv[])
       // Read the data from the file.
       std::string nullstateFilePath = xmlDirectory + "/" + initialGuessList.get<std::string> ( "Null state" );
       Teuchos::ParameterList nullstateData;
-      Cuantico::StkMeshRead( *eComm, nullstateFilePath, nullstateData );
+      Nosh::StkMeshRead( *eComm, nullstateFilePath, nullstateData );
 
       // Cast the data into something more accessible.
-      Teuchos::RCP<Cuantico::StkMesh> & nullstateMesh = nullstateData.get( "mesh", Teuchos::RCP<Cuantico::StkMesh>() );
+      Teuchos::RCP<Nosh::StkMesh> & nullstateMesh = nullstateData.get( "mesh", Teuchos::RCP<Nosh::StkMesh>() );
       Teuchos::RCP<Epetra_Vector>  & nullstateZ = nullstateData.get( "psi", Teuchos::RCP<Epetra_Vector>() );
 
       TEUCHOS_ASSERT( !nullstateZ.is_null() );
-      Teuchos::RCP<Cuantico::State> nullstate =
-          Teuchos::rcp( new Cuantico::State( *nullstateZ, nullstateMesh ) );
+      Teuchos::RCP<Nosh::State> nullstate =
+          Teuchos::rcp( new Nosh::State( *nullstateZ, nullstateMesh ) );
 
       Teuchos::ParameterList & bifList =
           piroParams->sublist ( "LOCA" ).sublist ( "Bifurcation" );

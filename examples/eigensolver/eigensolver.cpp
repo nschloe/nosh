@@ -13,12 +13,12 @@
 #include <Teuchos_StandardCatchMacros.hpp>
 #include <Epetra_CrsGraph.h>
 
-#include "Cuantico_StkMeshReader.hpp"
-#include "Cuantico_KeoContainer.hpp"
-#include "Cuantico_JacobianOperator.hpp"
-#include "Cuantico_KeoRegularized.hpp"
-#include "Cuantico_ScalarPotential_Constant.hpp"
-#include "Cuantico_MagneticVectorPotential_ExplicitValues.hpp"
+#include "Nosh_StkMeshReader.hpp"
+#include "Nosh_KeoContainer.hpp"
+#include "Nosh_JacobianOperator.hpp"
+#include "Nosh_KeoRegularized.hpp"
+#include "Nosh_ScalarPotential_Constant.hpp"
+#include "Nosh_MagneticVectorPotential_ExplicitValues.hpp"
 
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziBasicEigenproblem.hpp"
@@ -93,11 +93,11 @@ int main ( int argc, char *argv[] )
     // =========================================================================
     // Read the data from the file.
     Teuchos::ParameterList data;
-    Cuantico::StkMeshRead( *eComm, inputFilePath, data );
+    Nosh::StkMeshRead( *eComm, inputFilePath, data );
 
     // Cast the data into something more accessible.
-    Teuchos::RCP<Cuantico::StkMesh> & mesh =
-      data.get<Teuchos::RCP<Cuantico::StkMesh> >( "mesh" );
+    Teuchos::RCP<Nosh::StkMesh> & mesh =
+      data.get<Teuchos::RCP<Nosh::StkMesh> >( "mesh" );
     Teuchos::RCP<Epetra_Vector> & psi =
       data.get( "psi", Teuchos::RCP<Epetra_Vector>() );
     Teuchos::RCP<Epetra_MultiVector> & mvpValues =
@@ -108,8 +108,8 @@ int main ( int argc, char *argv[] )
       data.get( "Problem parameters", Teuchos::ParameterList() );
 
     // Construct scalar potential.
-    Teuchos::RCP<Cuantico::ScalarPotential::Virtual> sp =
-      Teuchos::rcp(new Cuantico::ScalarPotential::Constant(-1.0));
+    Teuchos::RCP<Nosh::ScalarPotential::Virtual> sp =
+      Teuchos::rcp(new Nosh::ScalarPotential::Constant(-1.0));
 
     const double mu = 2.0e-1;
     const double T = 0.0;
@@ -120,37 +120,37 @@ int main ( int argc, char *argv[] )
     spParameters[0] = T;
 
     // Construct MVP.
-    Teuchos::RCP<Cuantico::MagneticVectorPotential::Virtual> mvp;
+    Teuchos::RCP<Nosh::MagneticVectorPotential::Virtual> mvp;
     Teuchos::RCP<Teuchos::Time> mvpConstructTime =
       Teuchos::TimeMonitor::getNewTimer("MVP construction");
     {
       Teuchos::TimeMonitor tm(*mvpConstructTime);
-      mvp = Teuchos::rcp(new Cuantico::MagneticVectorPotential::ExplicitValues(mesh, mvpValues, mu));
+      mvp = Teuchos::rcp(new Nosh::MagneticVectorPotential::ExplicitValues(mesh, mvpValues, mu));
     }
 
-    Teuchos::RCP<Cuantico::KeoContainer> keoContainer =
-      Teuchos::rcp(new Cuantico::KeoContainer(mesh, thickness, mvp));
+    Teuchos::RCP<Nosh::KeoContainer> keoContainer =
+      Teuchos::rcp(new Nosh::KeoContainer(mesh, thickness, mvp));
 
     // create Jacobian
     Teuchos::RCP<Teuchos::Time> jacobianConstructTime =
       Teuchos::TimeMonitor::getNewTimer("Jacobian construction");
-    Teuchos::RCP<Cuantico::JacobianOperator> jac;
+    Teuchos::RCP<Nosh::JacobianOperator> jac;
     {
       Teuchos::TimeMonitor tm(*jacobianConstructTime);
       // create the jacobian operator
-      jac = Teuchos::rcp(new Cuantico::JacobianOperator(mesh, sp, thickness, keoContainer));
+      jac = Teuchos::rcp(new Nosh::JacobianOperator(mesh, sp, thickness, keoContainer));
       jac->rebuild(g, spParameters, mvpParameters, psi);
     }
 
     // create preconditioner
     Teuchos::RCP<Teuchos::Time> precConstructTime =
       Teuchos::TimeMonitor::getNewTimer("Prec construction");
-    Teuchos::RCP<Cuantico::KeoRegularized> keoReg;
+    Teuchos::RCP<Nosh::KeoRegularized> keoReg;
     if ( isPrec )
     {
       Teuchos::TimeMonitor tm(*precConstructTime);
       // create the jacobian operator
-      keoReg = Teuchos::rcp(new Cuantico::KeoRegularized(mesh, thickness, keoContainer));
+      keoReg = Teuchos::rcp(new Nosh::KeoRegularized(mesh, thickness, keoContainer));
 
       // actually fill it with values
       keoReg->rebuild(g, mvpParameters, psi);
