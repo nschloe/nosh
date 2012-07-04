@@ -30,8 +30,6 @@
 
 #include "Nosh_StkMesh.hpp"
 #include "Nosh_StkMeshReader.hpp"
-#include "Nosh_MagneticVectorPotential_ExplicitValues.hpp"
-#include "Nosh_KeoContainer.hpp"
 
 #include <Teuchos_UnitTestHarness.hpp>
 

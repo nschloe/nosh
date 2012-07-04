@@ -35,12 +35,11 @@
   #include <Teuchos_Time.hpp>
 #endif
 #include <Teuchos_FancyOStream.hpp>
-#include <Epetra_CrsGraph.h>
-#include <Epetra_CrsMatrix.h>
+#include <Epetra_FECrsMatrix.h>
 #include <Epetra_LinearProblem.h>
 // =============================================================================
 namespace Nosh {
-class KeoContainer;
+class KeoBuilder;
 class StkMesh;
 }
 namespace Belos {
@@ -59,7 +58,7 @@ class KeoRegularized : public Epetra_Operator
 public:
 KeoRegularized(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
                const Teuchos::RCP<const Epetra_Vector> &thickness,
-               const Teuchos::RCP<const Nosh::KeoContainer> &keoContainer
+               const Teuchos::RCP<const Nosh::KeoBuilder> &keoBuilder
                );
 
 // Destructor.
@@ -122,7 +121,7 @@ bool useTranspose_;
 const Teuchos::RCP<const Nosh::StkMesh> mesh_;
 double g_;
 const Teuchos::RCP<const Epetra_Vector> thickness_;
-const Teuchos::RCP<const Nosh::KeoContainer> keoContainer_;
+const Teuchos::RCP<const Nosh::KeoBuilder> keoBuilder_;
 
 // |psi|^2
 Epetra_Vector absPsiSquared_;
@@ -132,7 +131,7 @@ Epetra_Vector absPsiSquared_;
 // gets initialized only once and, upon ML.recompute(), relies
 // on the (new) data being available at the same adress.
 // Failure to comply to this will lead to memory errors.
-Epetra_CrsMatrix keoRegularizedMatrix_;
+Epetra_FECrsMatrix keoRegularizedMatrix_;
 
 const Epetra_Comm &comm_;
 

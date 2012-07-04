@@ -14,7 +14,7 @@
 #include <Epetra_CrsGraph.h>
 
 #include "Nosh_StkMeshReader.hpp"
-#include "Nosh_KeoContainer.hpp"
+#include "Nosh_KeoBuilder.hpp"
 #include "Nosh_JacobianOperator.hpp"
 #include "Nosh_KeoRegularized.hpp"
 #include "Nosh_ScalarPotential_Constant.hpp"
@@ -128,8 +128,8 @@ int main ( int argc, char *argv[] )
       mvp = Teuchos::rcp(new Nosh::MagneticVectorPotential::ExplicitValues(mesh, mvpValues, mu));
     }
 
-    Teuchos::RCP<Nosh::KeoContainer> keoContainer =
-      Teuchos::rcp(new Nosh::KeoContainer(mesh, thickness, mvp));
+    Teuchos::RCP<Nosh::KeoBuilder> keoBuilder =
+      Teuchos::rcp(new Nosh::KeoBuilder(mesh, thickness, mvp));
 
     // create Jacobian
     Teuchos::RCP<Teuchos::Time> jacobianConstructTime =
@@ -138,7 +138,7 @@ int main ( int argc, char *argv[] )
     {
       Teuchos::TimeMonitor tm(*jacobianConstructTime);
       // create the jacobian operator
-      jac = Teuchos::rcp(new Nosh::JacobianOperator(mesh, sp, thickness, keoContainer));
+      jac = Teuchos::rcp(new Nosh::JacobianOperator(mesh, sp, thickness, keoBuilder));
       jac->rebuild(g, spParameters, mvpParameters, psi);
     }
 
@@ -150,7 +150,7 @@ int main ( int argc, char *argv[] )
     {
       Teuchos::TimeMonitor tm(*precConstructTime);
       // create the jacobian operator
-      keoReg = Teuchos::rcp(new Nosh::KeoRegularized(mesh, thickness, keoContainer));
+      keoReg = Teuchos::rcp(new Nosh::KeoRegularized(mesh, thickness, keoBuilder));
 
       // actually fill it with values
       keoReg->rebuild(g, mvpParameters, psi);

@@ -4,7 +4,7 @@ SET ( nosh_SRCS
       Nosh_State.cpp
       Nosh_ModelEvaluator.cpp
       Nosh_JacobianOperator.cpp
-      Nosh_KeoContainer.cpp
+      Nosh_KeoBuilder.cpp
       Nosh_KeoRegularized.cpp
       Nosh_ScalarPotential_Virtual.cpp
       Nosh_ScalarPotential_Constant.cpp

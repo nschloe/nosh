@@ -1,6 +1,6 @@
 // @HEADER
 //
-//    Container class that hosts the kinetic energy operator.
+//    Builds the kinetic energy operator and its variants.
 //    Copyright (C) 2010--2012  Nico Schl\"omer
 //
 //    This program is free software: you can redistribute it and/or modify
@@ -19,7 +19,7 @@
 // @HEADER
 // =============================================================================
 // includes
-#include "Nosh_KeoContainer.hpp"
+#include "Nosh_KeoBuilder.hpp"
 #include "Nosh_StkMesh.hpp"
 #include "Nosh_Helpers.hpp"
 #include "Nosh_MagneticVectorPotential_Virtual.hpp"
@@ -36,14 +36,14 @@
 
 namespace Nosh {
 // =============================================================================
-KeoContainer::
-KeoContainer(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
+KeoBuilder::
+KeoBuilder(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
              const Teuchos::RCP<const Epetra_Vector> &thickness,
              const Teuchos::RCP<const Nosh::MagneticVectorPotential::Virtual> &mvp
              ) :
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   keoFillTime_( Teuchos::TimeMonitor::getNewTimer(
-                  "Nosh: KeoContainer::fillKeo_" ) ),
+                  "Nosh: KeoBuilder::fillKeo_" ) ),
 #endif
   mesh_( mesh ),
   thickness_( thickness ),
@@ -51,22 +51,22 @@ KeoContainer(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
   globalIndexCache_(Teuchos::ArrayRCP<Epetra_IntSerialDenseVector>()),
   globalIndexCacheUpToDate_( false ),
   keoGraph_(this->buildKeoGraph_()), // build the graph immediately
-  keo_(Epetra_FECrsMatrix(Copy, keoGraph_)),
+  keoCache_(Epetra_FECrsMatrix(Copy, keoGraph_)),
   keoBuildParameters_( Teuchos::null ),
-  keoDp_(Epetra_FECrsMatrix(Copy, keoGraph_)),
+  keoDpCache_(Epetra_FECrsMatrix(Copy, keoGraph_)),
   alphaCache_(Teuchos::ArrayRCP<double>()),
   alphaCacheUpToDate_( false ),
   paramIndex_(0)
 {
 }
 // =============================================================================
-KeoContainer::
-~KeoContainer()
+KeoBuilder::
+~KeoBuilder()
 {
 }
 // =============================================================================
 const Epetra_Comm &
-KeoContainer::
+KeoBuilder::
 getComm() const
 {
 #ifdef _DEBUG_
@@ -76,54 +76,87 @@ getComm() const
 }
 // =============================================================================
 const Epetra_FECrsGraph &
-KeoContainer::
+KeoBuilder::
 getKeoGraph() const
 {
   return keoGraph_;
 }
 // =============================================================================
-const Epetra_FECrsMatrix
-KeoContainer::
-getKeo(const Teuchos::Array<double> &mvpParams) const
+void
+KeoBuilder::
+applyKeo(const Teuchos::Array<double> &mvpParams,
+         const Epetra_Vector &X,
+         Epetra_Vector &Y
+         ) const
+{
+  // Rebuild if necessary.
+  if (keoBuildParameters_ != mvpParams)
+  {
+    // TODO don't recreate
+    // This is a workaround for a bug in Epetra_FECrsMatrix that
+    // makes the filling ever more costly the more often they are done.
+    keoCache_ = Epetra_FECrsMatrix(Copy, keoGraph_);
+    this->fillKeo_(keoCache_, mvpParams, &KeoBuilder::fillerRegular_);
+    keoBuildParameters_ = mvpParams;
+  }
+  // This direct application in the cache saves
+  // one matrix copy compared to an explicit
+  // fill(), Apply().
+  TEUCHOS_ASSERT_EQUALITY(0, keoCache_.Apply(X, Y));
+  return;
+}
+// =============================================================================
+void
+KeoBuilder::
+applyDKDp(const Teuchos::Array<double> &mvpParams,
+          const int paramIndex,
+          const Epetra_Vector &X,
+          Epetra_Vector &Y
+          ) const
+{
+  // TODO don't recreate
+  // This is a workaround for a bug in Epetra_FECrsMatrix that
+  // makes the filling ever more costly the more often they are done.
+  keoDpCache_ = Epetra_FECrsMatrix(Copy, keoGraph_);
+
+  // Always rebuild the cache.
+  // It would be little effort to also wrap this into a conditional
+  // with mvpParams and parmamIndex, but it never seems to occur
+  // that dK/dp with the same parameter needs to be applied
+  // twice in a row.
+  paramIndex_ = paramIndex;
+  this->fillKeo_(keoDpCache_, mvpParams, &KeoBuilder::fillerDp_);
+
+  TEUCHOS_ASSERT_EQUALITY(0, keoDpCache_.Apply(X, Y));
+  return;
+}
+// =============================================================================
+void
+KeoBuilder::
+fill(Epetra_FECrsMatrix &matrix,
+     const Teuchos::Array<double> &mvpParams
+     ) const
 {
   // Cache the construction of the KEO.
   // This is useful because in the continuation context,
-  // getKeo() is called a number of times with the same arguements
+  // getKeo() is called a number of times with the same arguments
   // (in computeF, getJacobian(), and getPreconditioner().
-
-  // TODO Don't recreate.
-  // This is a workaround for a bug in Epetra_FECrsMatrix that
-  // makes the filling ever more costly the more often they are done.
-  keo_ = Epetra_FECrsMatrix(Copy, keoGraph_);
-  //if (keoBuildParameters_ != mvpParams)
-  //{
-    this->fillKeo_(keo_, mvpParams, &KeoContainer::fillerRegular_);
+  if (keoBuildParameters_ != mvpParams)
+  {
+    // TODO don't recreate
+    // This is a workaround for a bug in Epetra_FECrsMatrix that
+    // makes the filling ever more costly the more often they are done.
+    keoCache_ = Epetra_FECrsMatrix(Copy, keoGraph_);
+    this->fillKeo_(keoCache_, mvpParams, &KeoBuilder::fillerRegular_);
     keoBuildParameters_ = mvpParams;
-  //}
-  return keo_;
-}
-// =============================================================================
-const Epetra_FECrsMatrix
-KeoContainer::
-getKeoDp(const int paramIndex,
-         const Teuchos::Array<double> &mvpParams
-         ) const
-{
-  // As opposed to the KEO, dKEO/dp is typically only needed once
-  // per parameter set and hence doesn't need to be cached.
-  // Pass parameterIndex_ to this->fillerDp_() without changing fillerDp_'s
-  // interface by setting a private variable.
-  // TODO Don't recreate.
-  // This is a workaround for a bug in Epetra_FECrsMatrix that
-  // makes the filling ever more costly the more often they are done.
-  keoDp_ = Epetra_FECrsMatrix(Copy, keoGraph_);
-  paramIndex_ = paramIndex;
-  this->fillKeo_(keoDp_, mvpParams, &KeoContainer::fillerDp_);
-  return keoDp_;
+  }
+
+  matrix = keoCache_;
+  return;
 }
 // =============================================================================
 const Epetra_FECrsGraph
-KeoContainer::
+KeoBuilder::
 buildKeoGraph_() const
 {
   // Which row/column map to use for the matrix?
@@ -210,7 +243,7 @@ buildKeoGraph_() const
 }
 // =============================================================================
 void
-KeoContainer::
+KeoBuilder::
 fillerRegular_(const int k,
                const Teuchos::Array<double> & mvpParams,
                double * v) const
@@ -232,7 +265,7 @@ fillerRegular_(const int k,
 }
 // =============================================================================
 void
-KeoContainer::
+KeoBuilder::
 fillerDp_(const int k,
           const Teuchos::Array<double> & mvpParams,
           double * v) const
@@ -248,10 +281,10 @@ fillerDp_(const int k,
 }
 // =============================================================================
 void
-KeoContainer::
+KeoBuilder::
 fillKeo_( Epetra_FECrsMatrix &keoMatrix,
           const Teuchos::Array<double> & mvpParams,
-          void (KeoContainer::*filler)(const int, const Teuchos::Array<double>&, double*) const
+          void (KeoBuilder::*filler)(const int, const Teuchos::Array<double>&, double*) const
           ) const
 {
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
@@ -322,7 +355,7 @@ fillKeo_( Epetra_FECrsMatrix &keoMatrix,
 }
 // =============================================================================
 void
-KeoContainer::
+KeoBuilder::
 buildGlobalIndexCache_( const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > &edges ) const
 {
   globalIndexCache_ =
@@ -347,7 +380,7 @@ buildGlobalIndexCache_( const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2
 }
 // =============================================================================
 void
-KeoContainer::
+KeoBuilder::
 buildAlphaCache_( const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > & edges,
                   const Teuchos::ArrayRCP<const double> &edgeCoefficients
                 ) const

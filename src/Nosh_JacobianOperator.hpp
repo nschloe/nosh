@@ -34,7 +34,7 @@
 // =============================================================================
 // forward declarations
 namespace Nosh {
-class KeoContainer;
+class KeoBuilder;
 class StkMesh;
 namespace ScalarPotential{
 class Virtual;
@@ -50,7 +50,7 @@ public:
 JacobianOperator(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
                  const Teuchos::RCP<const Nosh::ScalarPotential::Virtual> &scalarPotential,
                  const Teuchos::RCP<const Epetra_Vector> &thickness,
-                 const Teuchos::RCP<const Nosh::KeoContainer> &keoContainer
+                 const Teuchos::RCP<const Nosh::KeoBuilder> &keoBuilder
                  );
 
 // Destructor.
@@ -113,7 +113,7 @@ bool useTranspose_;
 const Teuchos::RCP<const Nosh::StkMesh> mesh_;
 const Teuchos::RCP<const Nosh::ScalarPotential::Virtual> scalarPotential_;
 const Teuchos::RCP<const Epetra_Vector> thickness_;
-const Teuchos::RCP<const Nosh::KeoContainer> keoContainer_;
+const Teuchos::RCP<const Nosh::KeoBuilder> keoBuilder_;
 
 Epetra_FECrsMatrix keo_;
 Epetra_Vector diag0_;

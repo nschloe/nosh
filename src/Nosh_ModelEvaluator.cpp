@@ -23,7 +23,7 @@
 #include "Nosh_State.hpp"
 #include "Nosh_ScalarPotential_Virtual.hpp"
 #include "Nosh_MagneticVectorPotential_Virtual.hpp"
-#include "Nosh_KeoContainer.hpp"
+#include "Nosh_KeoBuilder.hpp"
 #include "Nosh_KeoRegularized.hpp"
 #include "Nosh_StkMesh.hpp"
 
@@ -65,7 +65,7 @@ ModelEvaluator (
   thickness_( thickness ),
   x_init_( initialX ),
   p_latest_(Teuchos::null),
-  keoContainer_(Teuchos::rcp(new Nosh::KeoContainer(mesh, thickness, mvp))),
+  keoBuilder_(Teuchos::rcp(new Nosh::KeoBuilder(mesh, thickness, mvp))),
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   evalModelTime_( Teuchos::TimeMonitor::getNewTimer(
                     "Nosh: ModelEvaluator::evalModel" ) ),
@@ -196,7 +196,7 @@ create_W() const
   return Teuchos::rcp(new Nosh::JacobianOperator(mesh_,
                                                   scalarPotential_,
                                                   thickness_,
-                                                  keoContainer_));
+                                                  keoBuilder_));
 }
 // =============================================================================
 Teuchos::RCP<EpetraExt::ModelEvaluator::Preconditioner>
@@ -206,7 +206,7 @@ create_WPrec() const
   Teuchos::RCP<Epetra_Operator> keoPrec =
     Teuchos::rcp(new Nosh::KeoRegularized(mesh_,
                                               thickness_,
-                                              keoContainer_));
+                                              keoBuilder_));
   // bool is answer to: "Prec is already inverted?"
   // This needs to be set to TRUE to make sure that the constructor of
   //    NOX::Epetra::LinearSystemStratimikos
@@ -419,8 +419,8 @@ computeF_(const Epetra_Vector &x,
           Epetra_Vector &FVec
           ) const
 {
-  // Build the KEO and compute FVec = K*x.
-  TEUCHOS_ASSERT_EQUALITY(0, keoContainer_->getKeo(mvpParams).Apply(x, FVec));
+  // Compute FVec = K*x.
+  keoBuilder_->applyKeo(mvpParams, x, FVec);
 
   // Add the nonlinear part (mass lumping).
 #ifdef _DEBUG_
@@ -555,9 +555,8 @@ computeDFDPmvp_(const Epetra_Vector &x,
                 Epetra_Vector &FVec
                 ) const
 {
-  // Build the dK/dp and compute FVec = dK/dp * x.
-  TEUCHOS_ASSERT_EQUALITY(0, keoContainer_->getKeoDp(paramIndex, mvpParams)
-                                          .Apply(x, FVec));
+  // FVec = dK/dp * x.
+  keoBuilder_->applyDKDp(mvpParams, paramIndex, x, FVec);
 
   return;
 }

@@ -19,7 +19,7 @@
 // @HEADER
 // =============================================================================
 #include "Nosh_JacobianOperator.hpp"
-#include "Nosh_KeoContainer.hpp"
+#include "Nosh_KeoBuilder.hpp"
 #include "Nosh_StkMesh.hpp"
 #include "Nosh_ScalarPotential_Virtual.hpp"
 
@@ -33,14 +33,14 @@ JacobianOperator::
 JacobianOperator(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
                  const Teuchos::RCP<const Nosh::ScalarPotential::Virtual> &scalarPotential,
                  const Teuchos::RCP<const Epetra_Vector> &thickness,
-                 const Teuchos::RCP<const Nosh::KeoContainer> &keoContainer
+                 const Teuchos::RCP<const Nosh::KeoBuilder> &keoBuilder
                  ) :
   useTranspose_( false ),
   mesh_( mesh ),
   scalarPotential_( scalarPotential ),
   thickness_( thickness ),
-  keoContainer_( keoContainer ),
-  keo_(Epetra_FECrsMatrix(Copy, keoContainer_->getKeoGraph())),
+  keoBuilder_( keoBuilder ),
+  keo_(Epetra_FECrsMatrix(Copy, keoBuilder_->getKeoGraph())),
   diag0_(Epetra_Vector(*(mesh->getComplexNonOverlapMap()))),
   diag1b_(Epetra_Vector(mesh->getControlVolumes()->Map()))
 {
@@ -172,13 +172,14 @@ rebuild(const double g,
         const Teuchos::RCP<const Epetra_Vector> &current_X
         )
 {
-  // Copy over the KEO.
-  // This is certainly a debatable design decision.
+  // Fill the KEO.
+  // It is certainly a debatable design decision
+  // to have our own KEO in JacobianOperator
+  // and not live of the cache of the builder.
   // On the one hand, in a typical continuation context,
   // the same matrix is used in computeF, the preconditioner,
   // and here. It would then be sufficient to store the
-  // matrix at one common place and rebuild only if
-  // necessary.
+  // matrix at one common place (e.g., the builder).
   // This might however lead to complications in a
   // situation like the following:
   //
@@ -194,10 +195,10 @@ rebuild(const double g,
   // One might argue that this situation is does not
   // occur in the given context, but really the code
   // shouldn't make any assumptions about it.
-  // Besides, copying over the matrix is not of much
-  // concern computationally.
-  // Should this ever be an issue for memory, revisit.
-  keo_ = keoContainer_->getKeo(mvpParams);
+  // Besides, the matrix copy that happens in fill
+  // is not of much concern computationally.
+  // Should this ever become an issue, revisit.
+  keoBuilder_->fill(keo_, mvpParams);
 
   // Rebuild diagonals.
 #ifdef _DEBUG_

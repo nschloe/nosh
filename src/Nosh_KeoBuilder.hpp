@@ -1,6 +1,6 @@
 // @HEADER
 //
-//    Container class that hosts the kinetic energy operator.
+//    Builder class that hosts the kinetic energy operator.
 //    Copyright (C) 2010--2012  Nico Schl\"omer
 //
 //    This program is free software: you can redistribute it and/or modify
@@ -18,8 +18,8 @@
 //
 // @HEADER
 
-#ifndef NOSH_KEOCONTAINER_H
-#define NOSH_KEOCONTAINER_H
+#ifndef NOSH_KEOBUILDER_H
+#define NOSH_KEOBUILDER_H
 // =============================================================================
 // Workaround for icpc's error "Include mpi.h before stdio.h"
 #include <Teuchos_config.h>
@@ -53,7 +53,7 @@ class Virtual;
 // =============================================================================
 namespace Nosh {
 // =============================================================================
-class KeoContainer
+class KeoBuilder
 {
 public:
 enum EMatrixType { MATRIX_TYPE_REGULAR,
@@ -61,13 +61,13 @@ enum EMatrixType { MATRIX_TYPE_REGULAR,
                    MATRIX_TYPE_DTHETA};
 
 public:
-KeoContainer(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
+KeoBuilder(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
              const Teuchos::RCP<const Epetra_Vector> &thickness,
              const Teuchos::RCP<const Nosh::MagneticVectorPotential::Virtual> &mvp
              );
 
 // Destructor.
-~KeoContainer();
+~KeoBuilder();
 
 const Epetra_Comm &
 getComm() const;
@@ -75,13 +75,23 @@ getComm() const;
 const Epetra_FECrsGraph &
 getKeoGraph() const;
 
-const Epetra_FECrsMatrix
-getKeo(const Teuchos::Array<double> & mvpParams) const;
-
-const Epetra_FECrsMatrix
-getKeoDp(const int paramIndex,
-         const Teuchos::Array<double> & mvpParams
+void
+applyKeo(const Teuchos::Array<double> &mvpParams,
+         const Epetra_Vector &X,
+         Epetra_Vector &Y
          ) const;
+
+void
+applyDKDp(const Teuchos::Array<double> &mvpParams,
+          const int paramIndex,
+          const Epetra_Vector &X,
+          Epetra_Vector &Y
+          ) const;
+
+void
+fill(Epetra_FECrsMatrix &matrix,
+     const Teuchos::Array<double> &mvpParams
+     ) const;
 
 protected:
 
@@ -92,7 +102,7 @@ buildKeoGraph_() const;
 void
 fillKeo_( Epetra_FECrsMatrix &keoMatrix,
           const Teuchos::Array<double> &mvpParams,
-          void (KeoContainer::*filler)(const int, const Teuchos::Array<double>&, double*) const
+          void (KeoBuilder::*filler)(const int, const Teuchos::Array<double>&, double*) const
           ) const;
 
 void
@@ -128,11 +138,10 @@ mutable Teuchos::ArrayRCP<Epetra_IntSerialDenseVector> globalIndexCache_;
 mutable bool globalIndexCacheUpToDate_;
 
 const Epetra_FECrsGraph keoGraph_;
-// Make this mutable (this is really justa cache).
-mutable Epetra_FECrsMatrix keo_;
+mutable Epetra_FECrsMatrix keoCache_;
 mutable Teuchos::Array<double> keoBuildParameters_;
-// Make this mutable (this is really justa cache).
-mutable Epetra_FECrsMatrix keoDp_;
+mutable Epetra_FECrsMatrix keoDpCache_;
+
 
 mutable Teuchos::ArrayRCP<double> alphaCache_;
 mutable bool alphaCacheUpToDate_;
@@ -141,4 +150,4 @@ mutable unsigned int paramIndex_;
 // =============================================================================
 } // namespace Nosh
 
-#endif // NOSH_KEOCONTAINER_H
+#endif // NOSH_KEOBUILDER_H

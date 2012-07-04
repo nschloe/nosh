@@ -19,7 +19,7 @@
 // @HEADER
 
 #include "Nosh_KeoRegularized.hpp"
-#include "Nosh_KeoContainer.hpp"
+#include "Nosh_KeoBuilder.hpp"
 #include "Nosh_StkMesh.hpp"
 
 #include <Epetra_SerialDenseMatrix.h>
@@ -52,20 +52,20 @@ namespace Nosh {
 KeoRegularized::
 KeoRegularized(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
                const Teuchos::RCP<const Epetra_Vector> &thickness,
-               const Teuchos::RCP<const Nosh::KeoContainer> &keoContainer):
+               const Teuchos::RCP<const Nosh::KeoBuilder> &keoBuilder):
   useTranspose_( false ),
   mesh_( mesh ),
   g_( 0.0 ),
   thickness_( thickness ),
-  keoContainer_( keoContainer ),
+  keoBuilder_( keoBuilder ),
   absPsiSquared_(Epetra_Vector(*mesh->getComplexNonOverlapMap())),
   // It wouldn't strictly be necessary to initialize keoRegularizedMatrix_ with
-  // the proper graph here as keoContainer_'s cache will override the matrix
+  // the proper graph here as keoBuilder_'s cache will override the matrix
   // later on anyways. Keep it, though, as it doesn't waste any memory and is
   // in the spirit of the Trilinos::ModelEvaluator which asks for allocation
   // of memory at one point and filling it with meaningful values later on.
-  keoRegularizedMatrix_(Epetra_FECrsMatrix(Copy, keoContainer_->getKeoGraph())),
-  comm_( keoContainer->getComm() ),
+  keoRegularizedMatrix_(Epetra_FECrsMatrix(Copy, keoBuilder_->getKeoGraph())),
+  comm_( keoBuilder->getComm() ),
   MlPrec_( Teuchos::null ),
   numCycles_( 1 ),
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
@@ -244,7 +244,7 @@ rebuild(const double g,
   // This is necessary as we don't apply AMG to K,
   // but to K + g*2|psi|^2.
   // A possible work-around this copy would be to define
-  // the keoContainer's matrix as K+2*g*|psi|^2 in the first
+  // the keoBuilder's matrix as K+2*g*|psi|^2 in the first
   // place, and make sure that 2*g*|psi|^2 is taken away
   // again wherever needed (e.g., the Jacobian).
   // This would introduce the additional complication of
@@ -253,9 +253,9 @@ rebuild(const double g,
   // Hence, don't worry too much about this until memory
   // contrains get tight.
 #ifdef _DEBUG_
-  TEUCHOS_ASSERT( !keoContainer_.is_null() );
+  TEUCHOS_ASSERT( !keoBuilder_.is_null() );
 #endif
-  keoRegularizedMatrix_ = keoContainer_->getKeo(mvpParams);
+  keoBuilder_->fill(keoRegularizedMatrix_, mvpParams);
 
   this->rebuildInverse_();
   return;

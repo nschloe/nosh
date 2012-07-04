@@ -31,7 +31,7 @@
 #include "Nosh_StkMesh.hpp"
 #include "Nosh_StkMeshReader.hpp"
 #include "Nosh_MagneticVectorPotential_ExplicitValues.hpp"
-#include "Nosh_KeoContainer.hpp"
+#include "Nosh_KeoBuilder.hpp"
 
 #include <Teuchos_UnitTestHarness.hpp>
 
@@ -80,13 +80,15 @@ testKeo( const std::string & inputFileNameBase,
     Teuchos::RCP<Nosh::MagneticVectorPotential::Virtual> mvp =
       Teuchos::rcp(new Nosh::MagneticVectorPotential::ExplicitValues(mesh, mvpValues, initMu));
 
-    Teuchos::RCP<Nosh::KeoContainer> keoContainer =
-      Teuchos::rcp(new Nosh::KeoContainer(mesh, thickness, mvp));
+    Teuchos::RCP<Nosh::KeoBuilder> keoBuilder =
+      Teuchos::rcp(new Nosh::KeoBuilder(mesh, thickness, mvp));
 
     // Explicitly create the kinetic energy operator.
     Teuchos::Array<double> mvpParams(1);
     mvpParams[0] = initMu;
-    const Epetra_CrsMatrix & keoMatrix = keoContainer->getKeo(mvpParams);
+
+    Epetra_FECrsMatrix keoMatrix(Copy, keoBuilder->getKeoGraph());
+    keoBuilder->fill(keoMatrix, mvpParams);
 
     // Compute matrix norms as hashes.
     // Don't check for NormFrobenius() as this one doesn't work for matrices
