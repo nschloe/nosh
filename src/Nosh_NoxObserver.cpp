@@ -22,7 +22,6 @@
 
 #include "Nosh_State.hpp"
 #include "Nosh_CsvWriter.hpp"
-#include "Nosh_Helpers.hpp"
 #include "Nosh_ModelEvaluator.hpp"
 
 namespace Nosh {

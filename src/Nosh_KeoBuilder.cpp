@@ -21,7 +21,6 @@
 // includes
 #include "Nosh_KeoBuilder.hpp"
 #include "Nosh_StkMesh.hpp"
-#include "Nosh_Helpers.hpp"
 #include "Nosh_MagneticVectorPotential_Virtual.hpp"
 
 #include <Epetra_SerialDenseMatrix.h>

@@ -1,4 +1,0 @@
-cmake \
-    -D Trilinos_DIR:PATH=/opt/trilinos/dev/master/gcc/4.4.4/include \
-    -D NOX_DIR:PATH=/opt/trilinos/dev/master/gcc/4.4.4/include \
-    ../../source

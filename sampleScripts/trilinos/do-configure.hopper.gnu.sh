@@ -1,26 +1,14 @@
 #!/bin/bash
 
 #module swap PrgEnv-pgi PrgEnv-gnu
+#  -D BinUtils_LIBRARY_DIRS:PATH="$BINUTILS_DIR/lib" \
 
-#module load boost
+module load boost
 module load binutils
 module load netcdf-hdf5parallel
 
 EXTRA_ARGS=$@
 TRILINOS_HOME=../../source
-
-#export NETCDF_DIR=/opt/cray/netcdf-hdf5parallel/4.0.1.0/netcdf-hdf5parallel-pgi
-#      -D BLAS_LIBRARY_DIRS:FILEPATH="$ACML_DIR"/pgi64_mp/lib/ \
-#      -D LAPACK_LIBRARY_DIRS:FILEPATH="$ACML_DIR"/pgi64_mp/lib/ \
-
-#      -D BLAS_LIBRARY_NAMES:STRING=acml \
-#      -D BLAS_LIBRARY_DIRS:FILEPATH="$ACML_DIR"/gfortran64/lib/ \
-#      -D LAPACK_LIBRARY_NAMES:STRING=acml \
-#      -D LAPACK_LIBRARY_DIRS:FILEPATH="$ACML_DIR"/gfortran64/lib/ \
-
-#  -D Trilinos_EXTRA_LINK_FLAGS:STRING="$CRAY_HDF5_DIR/hdf5-parallel-gnu/lib/libhdf5.a" \
-
-#  -D BinUtils_LIBRARY_DIRS:FILEPATH="$GCC_PATH/snos/lib64" \
 
 cmake \
   -D CMAKE_INSTALL_PREFIX:PATH="$SCRATCH/trilinos/dev/master/gnu/" \
@@ -42,7 +30,6 @@ cmake \
   -D TPL_ENABLE_Netcdf:BOOL=ON \
       -D Netcdf_LIBRARY_DIRS:FILEPATH="$CRAY_NETCDF_DIR/gnu/46/lib" \
       -D Netcdf_INCLUDE_DIRS:FILEPATH="$CRAY_NETCDF_DIR/gnu/46/include" \
-  -D BinUtils_LIBRARY_DIRS:PATH="$BINUTILS_DIR/lib" \
   -D Trilinos_ENABLE_NOX:BOOL=ON \
       -D NOX_ENABLE_LOCA:BOOL=ON \
   -D Trilinos_ENABLE_Piro:BOOL=ON \

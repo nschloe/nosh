@@ -1,5 +1,4 @@
 SET ( nosh_SRCS
-#      dummy.f
       Nosh_Helpers.cpp
       Nosh_State.cpp
       Nosh_ModelEvaluator.cpp

@@ -20,7 +20,6 @@
 // =============================================================================
 #include "Nosh_SaveEigenData.hpp"
 
-#include "Nosh_Helpers.hpp"
 #include "Nosh_ModelEvaluator.hpp"
 #include "Nosh_CsvWriter.hpp"
 
