@@ -21,12 +21,6 @@
 #ifndef NOSH_JACOBIANOPERATOR_H
 #define NOSH_JACOBIANOPERATOR_H
 // =============================================================================
-// Workaround for icpc's error "Include mpi.h before stdio.h"
-#include <Teuchos_config.h>
-#ifdef HAVE_MPI
-    #include <mpi.h>
-#endif
-
 #include <Epetra_Vector.h>
 #include <Epetra_FECrsMatrix.h>
 #include <Teuchos_RCP.hpp>

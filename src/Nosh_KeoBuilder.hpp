@@ -21,12 +21,6 @@
 #ifndef NOSH_KEOBUILDER_H
 #define NOSH_KEOBUILDER_H
 // =============================================================================
-// Workaround for icpc's error "Include mpi.h before stdio.h"
-#include <Teuchos_config.h>
-#ifdef HAVE_MPI
-    #include <mpi.h>
-#endif
-
 #include <Epetra_Operator.h>
 #include <Teuchos_RCP.hpp>
 #ifdef NOSH_TEUCHOS_TIME_MONITOR

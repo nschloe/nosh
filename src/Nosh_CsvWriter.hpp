@@ -20,12 +20,6 @@
 #ifndef NOSH_CSVWRITER_H
 #define NOSH_CSVWRITER_H
 
-// Workaround for icpc's error "Include mpi.h before stdio.h"
-#include <Teuchos_config.h>
-#ifdef HAVE_MPI
-    #include <mpi.h>
-#endif
-
 #include <Teuchos_ParameterList.hpp>
 
 namespace Nosh {
