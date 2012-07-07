@@ -101,14 +101,16 @@ openOutputChannel( const string &outputDir,
   const Epetra_MpiComm &mpicomm =
     Teuchos::dyn_cast<const Epetra_MpiComm>(comm_);
   MPI_Comm mcomm = mpicomm.Comm();
+  const std::string extension = ".par";
 #else
-  int mcomm = 1;
+  const int mcomm = 1;
+  const std::string extension = ".e";
 #endif
 
   // Make sure the outputDir ends in "/".
   // Dir and filename are not concatenated properly in stk::mesh,
   std::stringstream outputFile;
-  outputFile << outputDir << "/" << fileBaseName << ".e";
+  outputFile << outputDir << "/" << fileBaseName << extension;
 
   stk::io::create_output_mesh( outputFile.str(),
                                mcomm,

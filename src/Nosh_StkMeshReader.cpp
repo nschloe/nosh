@@ -60,8 +60,10 @@
 namespace Nosh {
 // =============================================================================
 StkMeshReader::
-StkMeshReader( const std::string &fileName ) :
+StkMeshReader(const std::string &fileName,
+              const int index) :
   fileName_( fileName ),
+  index_( index ),
   out_( Teuchos::VerboseObjectBase::getDefaultOStream() )
 {
 }
@@ -197,11 +199,6 @@ read( const Epetra_Comm &comm,
   //stk::io::set_field_role(*procRankField,
   //                        Ioss::Field::MESH);
 
-  Teuchos::RCP<ScalarFieldType> muField =
-    Teuchos::rcpFromRef( metaData->declare_field<ScalarFieldType>("mu"));
-  stk::io::set_field_role(*muField,
-                          Ioss::Field::TRANSIENT);
-
   // real part
   Teuchos::RCP<ScalarFieldType> psir_field =
     Teuchos::rcpFromRef( metaData->declare_field<ScalarFieldType>( "psi_R" ) );
@@ -318,13 +315,13 @@ read( const Epetra_Comm &comm,
     stk::io::populate_bulk_data(*bulkData, *meshData);
 
     // Restart index to read solution from exodus file.
-//    int index = -1; // Default to no restart
-    int index = 1; // restart from the first step
+    // int index = -1; // Default to no restart
     //if ( index<1 )
     //    *out_ << "Restart Index not set. Not reading solution from exodus (" << index << ")"<< endl;
     //else
     //    *out_ << "Restart Index set, reading solution time step: " << index << endl;
-    stk::io::process_input_request(*meshData, *bulkData, index);
+    // Indices in STK are 1-based. :/
+    stk::io::process_input_request(*meshData, *bulkData, index_+1);
     bulkData->modification_end();
 #ifdef HAVE_MPI
   }
@@ -791,11 +788,12 @@ void
 Nosh::
 StkMeshRead( const Epetra_Comm &comm,
              const std::string &fileName,
+             const int step,
              Teuchos::ParameterList &data
              )
 {
-  StkMeshReader reader( fileName );
-  reader.read( comm, data );
+  StkMeshReader reader( fileName, step);
+  reader.read(comm, data);
   return;
 }
 // =============================================================================

@@ -61,7 +61,7 @@ testKeo( const std::string & inputFileNameBase,
     // =========================================================================
     // Read the data from the file.
     Teuchos::ParameterList data;
-    Nosh::StkMeshRead( *eComm, inputFileName, data );
+    Nosh::StkMeshRead( *eComm, inputFileName, 0, data );
 
     // Cast the data into something more accessible.
     Teuchos::RCP<Nosh::StkMesh> & mesh = data.get( "mesh", Teuchos::RCP<Nosh::StkMesh>() );

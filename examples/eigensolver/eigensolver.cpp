@@ -71,6 +71,7 @@ int main ( int argc, char *argv[] )
 
     std::string inputFilePath( "" );
     My_CLP.setOption ( "input", &inputFilePath, "Input state file", true );
+    const int step = 0;
 
     bool verbose = true;
     My_CLP.setOption("verbose","quiet",&verbose,"Print messages and results.");
@@ -93,7 +94,7 @@ int main ( int argc, char *argv[] )
     // =========================================================================
     // Read the data from the file.
     Teuchos::ParameterList data;
-    Nosh::StkMeshRead( *eComm, inputFilePath, data );
+    Nosh::StkMeshRead( *eComm, inputFilePath, step, data );
 
     // Cast the data into something more accessible.
     Teuchos::RCP<Nosh::StkMesh> & mesh =

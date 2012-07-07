@@ -87,45 +87,57 @@ int main(int argc, char *argv[])
 
     // Retrieve Piro parmeter list from given file.
     Teuchos::RCP<Teuchos::ParameterList> piroParams =
-        Teuchos::rcp(new Teuchos::ParameterList );
+        Teuchos::rcp(new Teuchos::ParameterList());
     Teuchos::updateParametersFromXmlFile(xmlInputFileName,
                                          piroParams.ptr());
     // =======================================================================
     // Extract the location of input and output files.
-    Teuchos::ParameterList outputList = piroParams->sublist("Output", true);
+    const Teuchos::ParameterList outputList = piroParams->sublist("Output", true);
 
     // Set default directory to be the directory of the XML file itself
-    std::string xmlDirectory = extractDirectory( xmlInputFileName );
+    const std::string xmlDirectory = extractDirectory( xmlInputFileName );
 
-    std::string & outputDirectory = xmlDirectory;
+    const std::string & outputDirectory = xmlDirectory;
 
-    std::string contFilePath = xmlDirectory + "/"
-                              + outputList.get<std::string>( "Continuation data file name" );
+    const std::string contFilePath = xmlDirectory + "/"
+                                   + outputList.get<std::string>( "Continuation data file name" );
 
-    Teuchos::ParameterList initialGuessList;
-    initialGuessList = piroParams->sublist ( "Initial guess", true );
-    std::string inputFilePath = xmlDirectory + "/"
-                              + initialGuessList.get<std::string>( "State" );
+    Teuchos::ParameterList & inputDataList =
+      piroParams->sublist ( "Input", true );
+    const std::string constantDataFile = xmlDirectory + "/"
+                                       + inputDataList.get<std::string>( "Constant data" );
+    const std::string initialPsiFile = xmlDirectory + "/"
+                                     + inputDataList.sublist("Initial psi", true)
+                                       .get<std::string>( "File" );
+    const int step = inputDataList.sublist("Initial psi", true).get<int>( "Step" );
     // =======================================================================
     // Get the initial parameter values.
     Teuchos::ParameterList initialParameterValues =
       piroParams->sublist("Initial parameter values", true);
 
-    // Read the data from the file.
+    // Read the the non-transient data from the first time step.
     Teuchos::ParameterList data;
-    Nosh::StkMeshRead(*eComm, inputFilePath, data);
-
+    Nosh::StkMeshRead(*eComm, constantDataFile, 0, data);
     // Cast the data into something more accessible.
     const Teuchos::RCP<Nosh::StkMesh> & mesh =
       data.get<Teuchos::RCP<Nosh::StkMesh> >( "mesh" );
-    const Teuchos::RCP<Epetra_Vector> & psi =
-      data.get("psi", Teuchos::RCP<Epetra_Vector>() );
     const Teuchos::RCP<const Epetra_MultiVector> & mvpValues =
       data.get("A", Teuchos::RCP<const Epetra_MultiVector>() );
     const Teuchos::RCP<Epetra_Vector> & potentialValues =
       data.get("V", Teuchos::RCP<Epetra_Vector>());
     const Teuchos::RCP<Epetra_Vector> & thickness =
       data.get( "thickness", Teuchos::RCP<Epetra_Vector>() );
+
+    // Read PSI from a given time step.
+    Teuchos::RCP<Epetra_Vector> psi;
+    if (constantDataFile.compare(initialPsiFile) && step == 0)
+      psi = data.get("psi", Teuchos::RCP<Epetra_Vector>() );
+    else
+    {
+      Teuchos::ParameterList tData;
+      Nosh::StkMeshRead(*eComm, initialPsiFile, step, tData);
+      psi = tData.get("psi", Teuchos::RCP<Epetra_Vector>() );
+    }
 
     // Set the output directory for later plotting with this.
     mesh->openOutputChannel(outputDirectory, "solution");
@@ -138,9 +150,9 @@ int main(int argc, char *argv[])
     // Setup the magnetic vector potential.
     // Choose between several given MVPs or build your own by
     // deriving from Nosh::MagneticVectorPotential::Virtual.
-    const double mu = initialParameterValues.get<double>("mu", 0.0);
+    const double initMu = initialParameterValues.get<double>("mu", 0.0);
     Teuchos::RCP<Nosh::MagneticVectorPotential::Virtual> mvp =
-      Teuchos::rcp(new Nosh::MagneticVectorPotential::ExplicitValues(mesh, mvpValues, mu));
+      Teuchos::rcp(new Nosh::MagneticVectorPotential::ExplicitValues(mesh, mvpValues, initMu));
     // Alternative: Analytically given MVP. This one can also be rotated in space.
     //const double theta = initialParameterValues.get<double>("theta", 0.0);
     // Get the rotation vector.
@@ -251,13 +263,10 @@ int main(int argc, char *argv[])
     {
       Teuchos::RCP<Nosh::NoxObserver> observer = Teuchos::null;
 
-      // Get the initial null state file.
-      initialGuessList = piroParams->sublist ( "Initial guess", true );
-
       // Read the data from the file.
-      std::string nullstateFilePath = xmlDirectory + "/" + initialGuessList.get<std::string> ( "Null state" );
+      std::string nullstateFilePath = xmlDirectory + "/" + inputDataList.get<std::string> ( "Null state" );
       Teuchos::ParameterList nullstateData;
-      Nosh::StkMeshRead( *eComm, nullstateFilePath, nullstateData );
+      Nosh::StkMeshRead( *eComm, nullstateFilePath, 0, nullstateData );
 
       // Cast the data into something more accessible.
       Teuchos::RCP<Nosh::StkMesh> & nullstateMesh = nullstateData.get( "mesh", Teuchos::RCP<Nosh::StkMesh>() );

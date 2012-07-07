@@ -47,7 +47,8 @@ namespace Nosh {
 class StkMeshReader
 {
 public:
-StkMeshReader( const std::string &fileName );
+StkMeshReader(const std::string &fileName,
+              const int step);
 
 virtual
 ~StkMeshReader();
@@ -60,6 +61,7 @@ read( const Epetra_Comm &comm,
 protected:
 private:
 const std::string fileName_;
+const int index_;
 const Teuchos::RCP<Teuchos::FancyOStream> out_;
 
 private:
@@ -96,6 +98,7 @@ createMvpRZ_( const Teuchos::RCP<const Nosh::StkMesh> &mesh,
 void
 StkMeshRead( const Epetra_Comm &comm,
              const std::string &fileName,
+             const int step,
              Teuchos::ParameterList &data
              );
 // -----------------------------------------------------------------------------
