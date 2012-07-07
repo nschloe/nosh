@@ -91,10 +91,6 @@ applyKeo(const Teuchos::Array<double> &mvpParams,
   // Rebuild if necessary.
   if (keoBuildParameters_ != mvpParams)
   {
-    // TODO don't recreate
-    // This is a workaround for a bug in Epetra_FECrsMatrix that
-    // makes the filling ever more costly the more often they are done.
-    keoCache_ = Epetra_FECrsMatrix(Copy, keoGraph_);
     this->fillKeo_(keoCache_, mvpParams, &KeoBuilder::fillerRegular_);
     keoBuildParameters_ = mvpParams;
   }
@@ -113,12 +109,7 @@ applyDKDp(const Teuchos::Array<double> &mvpParams,
           Epetra_Vector &Y
           ) const
 {
-  // TODO don't recreate
-  // This is a workaround for a bug in Epetra_FECrsMatrix that
-  // makes the filling ever more costly the more often they are done.
-  keoDpCache_ = Epetra_FECrsMatrix(Copy, keoGraph_);
-
-  // Always rebuild the cache.
+  // Unconditionally rebuild the cache.
   // It would be little effort to also wrap this into a conditional
   // with mvpParams and parmamIndex, but it never seems to occur
   // that dK/dp with the same parameter needs to be applied
@@ -142,10 +133,6 @@ fill(Epetra_FECrsMatrix &matrix,
   // (in computeF, getJacobian(), and getPreconditioner().
   if (keoBuildParameters_ != mvpParams)
   {
-    // TODO don't recreate
-    // This is a workaround for a bug in Epetra_FECrsMatrix that
-    // makes the filling ever more costly the more often they are done.
-    keoCache_ = Epetra_FECrsMatrix(Copy, keoGraph_);
     this->fillKeo_(keoCache_, mvpParams, &KeoBuilder::fillerRegular_);
     keoBuildParameters_ = mvpParams;
   }
