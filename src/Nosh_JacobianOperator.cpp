@@ -19,7 +19,7 @@
 // @HEADER
 // =============================================================================
 #include "Nosh_JacobianOperator.hpp"
-#include "Nosh_KeoBuilder.hpp"
+#include "Nosh_MatrixBuilder_Virtual.hpp"
 #include "Nosh_StkMesh.hpp"
 #include "Nosh_ScalarPotential_Virtual.hpp"
 
@@ -33,14 +33,14 @@ JacobianOperator::
 JacobianOperator(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
                  const Teuchos::RCP<const Nosh::ScalarPotential::Virtual> &scalarPotential,
                  const Teuchos::RCP<const Epetra_Vector> &thickness,
-                 const Teuchos::RCP<const Nosh::KeoBuilder> &keoBuilder
+                 const Teuchos::RCP<const Nosh::MatrixBuilder::Virtual> &matrixBuilder
                  ) :
   useTranspose_( false ),
   mesh_( mesh ),
   scalarPotential_( scalarPotential ),
   thickness_( thickness ),
-  keoBuilder_( keoBuilder ),
-  keo_(Epetra_FECrsMatrix(Copy, keoBuilder_->getKeoGraph())),
+  matrixBuilder_( matrixBuilder ),
+  keo_(Epetra_FECrsMatrix(Copy, matrixBuilder_->getGraph())),
   diag0_(Epetra_Vector(*(mesh->getComplexNonOverlapMap()))),
   diag1b_(Epetra_Vector(mesh->getControlVolumes()->Map()))
 {
@@ -198,7 +198,7 @@ rebuild(const double g,
   // Besides, the matrix copy that happens in fill
   // is not of much concern computationally.
   // Should this ever become an issue, revisit.
-  keoBuilder_->fill(keo_, mvpParams);
+  matrixBuilder_->fill(keo_, mvpParams);
 
   // Rebuild diagonals.
 #ifdef _DEBUG_

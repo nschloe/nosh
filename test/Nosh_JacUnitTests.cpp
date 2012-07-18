@@ -13,7 +13,7 @@
 #include "Nosh_StkMeshReader.hpp"
 #include "Nosh_MagneticVectorPotential_ExplicitValues.hpp"
 #include "Nosh_ScalarPotential_Constant.hpp"
-#include "Nosh_KeoBuilder.hpp"
+#include "Nosh_MatrixBuilder_Keo.hpp"
 #include "Nosh_JacobianOperator.hpp"
 
 #include <Teuchos_UnitTestHarness.hpp>
@@ -69,8 +69,8 @@ testJac( const std::string & inputFileNameBase,
       Teuchos::rcp(new Nosh::ScalarPotential::Constant(-1.0));
 
     // create a keo factory
-    Teuchos::RCP<Nosh::KeoBuilder> keoBuilder =
-        Teuchos::rcp(new Nosh::KeoBuilder(mesh, thickness, mvp));
+    Teuchos::RCP<Nosh::MatrixBuilder::Virtual> keoBuilder =
+        Teuchos::rcp(new Nosh::MatrixBuilder::Keo(mesh, thickness, mvp));
 
     // create the jacobian operator
     Teuchos::RCP<Nosh::JacobianOperator> jac =

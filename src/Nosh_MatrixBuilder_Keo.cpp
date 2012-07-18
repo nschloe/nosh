@@ -19,7 +19,7 @@
 // @HEADER
 // =============================================================================
 // includes
-#include "Nosh_KeoBuilder.hpp"
+#include "Nosh_MatrixBuilder_Keo.hpp"
 #include "Nosh_StkMesh.hpp"
 #include "Nosh_MagneticVectorPotential_Virtual.hpp"
 
@@ -34,15 +34,16 @@
 #endif
 
 namespace Nosh {
+namespace MatrixBuilder {
 // =============================================================================
-KeoBuilder::
-KeoBuilder(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
-             const Teuchos::RCP<const Epetra_Vector> &thickness,
-             const Teuchos::RCP<const Nosh::MagneticVectorPotential::Virtual> &mvp
-             ) :
+Keo::
+Keo(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
+    const Teuchos::RCP<const Epetra_Vector> &thickness,
+    const Teuchos::RCP<const Nosh::MagneticVectorPotential::Virtual> &mvp
+    ) :
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   keoFillTime_( Teuchos::TimeMonitor::getNewTimer(
-                  "Nosh: KeoBuilder::fillKeo_" ) ),
+                  "Nosh: Keo::fillKeo_" ) ),
 #endif
   mesh_( mesh ),
   thickness_( thickness ),
@@ -59,13 +60,13 @@ KeoBuilder(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
 {
 }
 // =============================================================================
-KeoBuilder::
-~KeoBuilder()
+Keo::
+~Keo()
 {
 }
 // =============================================================================
 const Epetra_Comm &
-KeoBuilder::
+Keo::
 getComm() const
 {
 #ifdef _DEBUG_
@@ -75,23 +76,23 @@ getComm() const
 }
 // =============================================================================
 const Epetra_FECrsGraph &
-KeoBuilder::
-getKeoGraph() const
+Keo::
+getGraph() const
 {
   return keoGraph_;
 }
 // =============================================================================
 void
-KeoBuilder::
-applyKeo(const Teuchos::Array<double> &mvpParams,
-         const Epetra_Vector &X,
-         Epetra_Vector &Y
-         ) const
+Keo::
+apply(const Teuchos::Array<double> &mvpParams,
+      const Epetra_Vector &X,
+      Epetra_Vector &Y
+      ) const
 {
   // Rebuild if necessary.
   if (keoBuildParameters_ != mvpParams)
   {
-    this->fillKeo_(keoCache_, mvpParams, &KeoBuilder::fillerRegular_);
+    this->fillKeo_(keoCache_, mvpParams, &Keo::fillerRegular_);
     keoBuildParameters_ = mvpParams;
   }
   // This direct application in the cache saves
@@ -102,7 +103,7 @@ applyKeo(const Teuchos::Array<double> &mvpParams,
 }
 // =============================================================================
 void
-KeoBuilder::
+Keo::
 applyDKDp(const Teuchos::Array<double> &mvpParams,
           const int paramIndex,
           const Epetra_Vector &X,
@@ -115,14 +116,14 @@ applyDKDp(const Teuchos::Array<double> &mvpParams,
   // that dK/dp with the same parameter needs to be applied
   // twice in a row.
   paramIndex_ = paramIndex;
-  this->fillKeo_(keoDpCache_, mvpParams, &KeoBuilder::fillerDp_);
+  this->fillKeo_(keoDpCache_, mvpParams, &Keo::fillerDp_);
 
   TEUCHOS_ASSERT_EQUALITY(0, keoDpCache_.Apply(X, Y));
   return;
 }
 // =============================================================================
 void
-KeoBuilder::
+Keo::
 fill(Epetra_FECrsMatrix &matrix,
      const Teuchos::Array<double> &mvpParams
      ) const
@@ -133,7 +134,7 @@ fill(Epetra_FECrsMatrix &matrix,
   // (in computeF, getJacobian(), and getPreconditioner().
   if (keoBuildParameters_ != mvpParams)
   {
-    this->fillKeo_(keoCache_, mvpParams, &KeoBuilder::fillerRegular_);
+    this->fillKeo_(keoCache_, mvpParams, &Keo::fillerRegular_);
     keoBuildParameters_ = mvpParams;
   }
 
@@ -142,7 +143,7 @@ fill(Epetra_FECrsMatrix &matrix,
 }
 // =============================================================================
 const Epetra_FECrsGraph
-KeoBuilder::
+Keo::
 buildKeoGraph_() const
 {
   // Which row/column map to use for the matrix?
@@ -229,7 +230,7 @@ buildKeoGraph_() const
 }
 // =============================================================================
 void
-KeoBuilder::
+Keo::
 fillerRegular_(const int k,
                const Teuchos::Array<double> & mvpParams,
                double * v) const
@@ -251,7 +252,7 @@ fillerRegular_(const int k,
 }
 // =============================================================================
 void
-KeoBuilder::
+Keo::
 fillerDp_(const int k,
           const Teuchos::Array<double> & mvpParams,
           double * v) const
@@ -267,10 +268,10 @@ fillerDp_(const int k,
 }
 // =============================================================================
 void
-KeoBuilder::
+Keo::
 fillKeo_( Epetra_FECrsMatrix &keoMatrix,
           const Teuchos::Array<double> & mvpParams,
-          void (KeoBuilder::*filler)(const int, const Teuchos::Array<double>&, double*) const
+          void (Keo::*filler)(const int, const Teuchos::Array<double>&, double*) const
           ) const
 {
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
@@ -341,7 +342,7 @@ fillKeo_( Epetra_FECrsMatrix &keoMatrix,
 }
 // =============================================================================
 void
-KeoBuilder::
+Keo::
 buildGlobalIndexCache_( const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > &edges ) const
 {
   globalIndexCache_ =
@@ -366,7 +367,7 @@ buildGlobalIndexCache_( const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2
 }
 // =============================================================================
 void
-KeoBuilder::
+Keo::
 buildAlphaCache_( const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > & edges,
                   const Teuchos::ArrayRCP<const double> &edgeCoefficients
                 ) const
@@ -399,4 +400,5 @@ buildAlphaCache_( const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > & 
   return;
 }
 // =============================================================================
+} // namespace MatrixBuilder
 } // namespace Nosh

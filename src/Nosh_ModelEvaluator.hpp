@@ -164,7 +164,7 @@ const Teuchos::RCP<const Epetra_Vector> x_init_;
 
 mutable Teuchos::RCP<const Epetra_Vector> p_latest_;
 
-const Teuchos::RCP<Nosh::KeoBuilder> keoBuilder_;
+const Teuchos::RCP<Nosh::MatrixBuilder::Virtual> matrixBuilder_;
 
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
 const Teuchos::RCP<Teuchos::Time> evalModelTime_;

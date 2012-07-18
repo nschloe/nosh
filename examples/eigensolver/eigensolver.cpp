@@ -14,7 +14,7 @@
 #include <Epetra_CrsGraph.h>
 
 #include "Nosh_StkMeshReader.hpp"
-#include "Nosh_KeoBuilder.hpp"
+#include "Nosh_MatrixBuilder_Keo.hpp"
 #include "Nosh_JacobianOperator.hpp"
 #include "Nosh_KeoRegularized.hpp"
 #include "Nosh_ScalarPotential_Constant.hpp"
@@ -129,8 +129,8 @@ int main ( int argc, char *argv[] )
       mvp = Teuchos::rcp(new Nosh::MagneticVectorPotential::ExplicitValues(mesh, mvpValues, mu));
     }
 
-    Teuchos::RCP<Nosh::KeoBuilder> keoBuilder =
-      Teuchos::rcp(new Nosh::KeoBuilder(mesh, thickness, mvp));
+    Teuchos::RCP<Nosh::MatrixBuilder::Virtual> keoBuilder =
+      Teuchos::rcp(new Nosh::MatrixBuilder::Keo(mesh, thickness, mvp));
 
     // create Jacobian
     Teuchos::RCP<Teuchos::Time> jacobianConstructTime =

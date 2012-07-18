@@ -33,8 +33,10 @@
 #include <Epetra_LinearProblem.h>
 // =============================================================================
 namespace Nosh {
-class KeoBuilder;
 class StkMesh;
+namespace MatrixBuilder {
+class Virtual;
+}
 }
 namespace Belos {
 class EpetraPrecOp;
@@ -52,7 +54,7 @@ class KeoRegularized : public Epetra_Operator
 public:
 KeoRegularized(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
                const Teuchos::RCP<const Epetra_Vector> &thickness,
-               const Teuchos::RCP<const Nosh::KeoBuilder> &keoBuilder
+               const Teuchos::RCP<const Nosh::MatrixBuilder::Virtual> &matrixBuilder
                );
 
 // Destructor.
@@ -115,7 +117,7 @@ bool useTranspose_;
 const Teuchos::RCP<const Nosh::StkMesh> mesh_;
 double g_;
 const Teuchos::RCP<const Epetra_Vector> thickness_;
-const Teuchos::RCP<const Nosh::KeoBuilder> keoBuilder_;
+const Teuchos::RCP<const Nosh::MatrixBuilder::Virtual> matrixBuilder_;
 
 // |psi|^2
 Epetra_Vector absPsiSquared_;
@@ -125,7 +127,7 @@ Epetra_Vector absPsiSquared_;
 // gets initialized only once and, upon ML.recompute(), relies
 // on the (new) data being available at the same adress.
 // Failure to comply to this will lead to memory errors.
-Epetra_FECrsMatrix keoRegularizedMatrix_;
+Epetra_FECrsMatrix regularizedMatrix_;
 
 const Epetra_Comm &comm_;
 

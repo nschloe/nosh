@@ -19,7 +19,7 @@
 // @HEADER
 
 #include "Nosh_KeoRegularized.hpp"
-#include "Nosh_KeoBuilder.hpp"
+#include "Nosh_MatrixBuilder_Virtual.hpp"
 #include "Nosh_StkMesh.hpp"
 
 #include <Epetra_SerialDenseMatrix.h>
@@ -52,20 +52,20 @@ namespace Nosh {
 KeoRegularized::
 KeoRegularized(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
                const Teuchos::RCP<const Epetra_Vector> &thickness,
-               const Teuchos::RCP<const Nosh::KeoBuilder> &keoBuilder):
+               const Teuchos::RCP<const Nosh::MatrixBuilder::Virtual> &matrixBuilder):
   useTranspose_( false ),
   mesh_( mesh ),
   g_( 0.0 ),
   thickness_( thickness ),
-  keoBuilder_( keoBuilder ),
+  matrixBuilder_( matrixBuilder ),
   absPsiSquared_(Epetra_Vector(*mesh->getComplexNonOverlapMap())),
-  // It wouldn't strictly be necessary to initialize keoRegularizedMatrix_ with
-  // the proper graph here as keoBuilder_'s cache will override the matrix
+  // It wouldn't strictly be necessary to initialize regularizedMatrix_ with
+  // the proper graph here as matrixBuilder_'s cache will override the matrix
   // later on anyways. Keep it, though, as it doesn't waste any memory and is
   // in the spirit of the Trilinos::ModelEvaluator which asks for allocation
   // of memory at one point and filling it with meaningful values later on.
-  keoRegularizedMatrix_(Epetra_FECrsMatrix(Copy, keoBuilder_->getKeoGraph())),
-  comm_( keoBuilder->getComm() ),
+  regularizedMatrix_(Epetra_FECrsMatrix(Copy, matrixBuilder_->getGraph())),
+  comm_( matrixBuilder->getComm() ),
   MlPrec_( Teuchos::null ),
   numCycles_( 1 ),
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
@@ -98,13 +98,13 @@ Apply( const Epetra_MultiVector &X,
        ) const
 {
 #ifdef _DEBUG_
-  TEUCHOS_ASSERT( keoRegularizedMatrix_.DomainMap().SameAs( X.Map() ) );
-  TEUCHOS_ASSERT( keoRegularizedMatrix_.RangeMap().SameAs( Y.Map() ) );
+  TEUCHOS_ASSERT( regularizedMatrix_.DomainMap().SameAs( X.Map() ) );
+  TEUCHOS_ASSERT( regularizedMatrix_.RangeMap().SameAs( Y.Map() ) );
   TEUCHOS_ASSERT( Y.Map().SameAs( X.Map() ) );
   TEUCHOS_ASSERT( Y.Map().SameAs(absPsiSquared_.Map()) );
 #endif
   // K * X ...
-  TEUCHOS_ASSERT_EQUALITY(0, keoRegularizedMatrix_.Apply(X, Y));
+  TEUCHOS_ASSERT_EQUALITY(0, regularizedMatrix_.Apply(X, Y));
 
   if (g_>0.0)
   {
@@ -153,7 +153,7 @@ ApplyInverse(const Epetra_MultiVector &X,
     // Construct an unpreconditioned linear problem instance.
     Teuchos::RCP<const Epetra_MultiVector> Xptr = Teuchos::rcpFromRef( X );
     Teuchos::RCP<Epetra_MultiVector> Yptr = Teuchos::rcpFromRef( Y );
-    Belos::LinearProblem<double,MV,OP> problem(Teuchos::rcpFromRef(keoRegularizedMatrix_),
+    Belos::LinearProblem<double,MV,OP> problem(Teuchos::rcpFromRef(regularizedMatrix_),
                                                Yptr,
                                                Xptr);
     // Make sure the problem sets up correctly.
@@ -163,9 +163,9 @@ ApplyInverse(const Epetra_MultiVector &X,
     // Create the Belos preconditioned operator from the preconditioner.
     // NOTE:  This is necessary because Belos expects an operator to apply the
     //        preconditioner with Apply() NOT ApplyInverse().
-    Teuchos::RCP<Belos::EpetraPrecOp> keoMlPrec =
+    Teuchos::RCP<Belos::EpetraPrecOp> mlPrec =
         Teuchos::rcp( new Belos::EpetraPrecOp( MlPrec_ ) );
-    problem.setLeftPrec( keoMlPrec );
+    problem.setLeftPrec( mlPrec );
     // -------------------------------------------------------------------------
     // Create an iterative solver manager.
     Teuchos::RCP<Belos::SolverManager<double,MV,OP> > newSolver =
@@ -221,14 +221,14 @@ const Epetra_Map &
 KeoRegularized::
 OperatorDomainMap() const
 {
-  return keoRegularizedMatrix_.OperatorDomainMap();
+  return regularizedMatrix_.OperatorDomainMap();
 }
 // =============================================================================
 const Epetra_Map &
 KeoRegularized::
 OperatorRangeMap() const
 {
-  return keoRegularizedMatrix_.OperatorRangeMap();
+  return regularizedMatrix_.OperatorRangeMap();
 }
 // =============================================================================
 void
@@ -244,7 +244,7 @@ rebuild(const double g,
   // This is necessary as we don't apply AMG to K,
   // but to K + g*2|psi|^2.
   // A possible work-around this copy would be to define
-  // the keoBuilder's matrix as K+2*g*|psi|^2 in the first
+  // the matrixBuilder's matrix as K+2*g*|psi|^2 in the first
   // place, and make sure that 2*g*|psi|^2 is taken away
   // again wherever needed (e.g., the Jacobian).
   // This would introduce the additional complication of
@@ -253,9 +253,9 @@ rebuild(const double g,
   // Hence, don't worry too much about this until memory
   // contrains get tight.
 #ifdef _DEBUG_
-  TEUCHOS_ASSERT( !keoBuilder_.is_null() );
+  TEUCHOS_ASSERT( !matrixBuilder_.is_null() );
 #endif
-  keoBuilder_->fill(keoRegularizedMatrix_, mvpParams);
+  matrixBuilder_->fill(regularizedMatrix_, mvpParams);
 
   this->rebuildInverse_();
   return;
@@ -269,12 +269,12 @@ rebuildInverse_()
   if (g_ > 0.0)
   {
 #ifdef _DEBUG_
-    TEUCHOS_ASSERT( keoRegularizedMatrix_.RowMap().SameAs(absPsiSquared_.Map()) );
+    TEUCHOS_ASSERT( regularizedMatrix_.RowMap().SameAs(absPsiSquared_.Map()) );
 #endif
-    Epetra_Vector diag(keoRegularizedMatrix_.RowMap());
-    TEUCHOS_ASSERT_EQUALITY(0, keoRegularizedMatrix_.ExtractDiagonalCopy(diag));
+    Epetra_Vector diag(regularizedMatrix_.RowMap());
+    TEUCHOS_ASSERT_EQUALITY(0, regularizedMatrix_.ExtractDiagonalCopy(diag));
     TEUCHOS_ASSERT_EQUALITY(0, diag.Update(g_*2.0, absPsiSquared_, 1.0));
-    TEUCHOS_ASSERT_EQUALITY(0, keoRegularizedMatrix_.ReplaceDiagonalValues(diag));
+    TEUCHOS_ASSERT_EQUALITY(0, regularizedMatrix_.ReplaceDiagonalValues(diag));
   }
   // -------------------------------------------------------------------------
   // Rebuild preconditioner for this object. Not to be mistaken for the
@@ -312,15 +312,15 @@ rebuildInverse_()
     //  OperatorRangeMap()."
     // Make sure this is indeed the case.
 #ifdef _DEBUG_
-    TEUCHOS_ASSERT( keoRegularizedMatrix_.OperatorRangeMap().
-                    SameAs( keoRegularizedMatrix_.RowMatrixRowMap() )
+    TEUCHOS_ASSERT( regularizedMatrix_.OperatorRangeMap().
+                    SameAs( regularizedMatrix_.RowMatrixRowMap() )
                   );
-    TEUCHOS_ASSERT( keoRegularizedMatrix_.OperatorDomainMap().
-                    SameAs( keoRegularizedMatrix_.OperatorRangeMap() )
+    TEUCHOS_ASSERT( regularizedMatrix_.OperatorDomainMap().
+                    SameAs( regularizedMatrix_.OperatorRangeMap() )
                   );
 #endif
     MlPrec_ =
-      Teuchos::rcp(new ML_Epetra::MultiLevelPreconditioner(keoRegularizedMatrix_,
+      Teuchos::rcp(new ML_Epetra::MultiLevelPreconditioner(regularizedMatrix_,
                                                            MLList));
   }
   else

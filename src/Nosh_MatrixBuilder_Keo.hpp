@@ -1,6 +1,6 @@
 // @HEADER
 //
-//    Builder class that hosts the kinetic energy operator.
+//    Builder class for the kinetic energy operator.
 //    Copyright (C) 2010--2012  Nico Schl\"omer
 //
 //    This program is free software: you can redistribute it and/or modify
@@ -18,8 +18,8 @@
 //
 // @HEADER
 
-#ifndef NOSH_KEOBUILDER_H
-#define NOSH_KEOBUILDER_H
+#ifndef NOSH_MATRIXBUILDER_KEO_H
+#define NOSH_MATRIXBUILDER_KEO_H
 // =============================================================================
 #include <Epetra_Operator.h>
 #include <Teuchos_RCP.hpp>
@@ -29,10 +29,11 @@
 #include <Teuchos_Tuple.hpp>
 #include <Teuchos_Array.hpp>
 #include <Teuchos_SerialDenseVector.hpp>
-
 #include <Epetra_FECrsGraph.h>
-#include <Epetra_FECrsMatrix.h>
+
 #include <stk_mesh/base/Entity.hpp>
+
+#include "Nosh_MatrixBuilder_Virtual.hpp"
 // =============================================================================
 typedef Teuchos::SerialDenseVector<int,double> DoubleVector;
 // =============================================================================
@@ -46,8 +47,9 @@ class Virtual;
 // =============================================================================
 // =============================================================================
 namespace Nosh {
+namespace MatrixBuilder {
 // =============================================================================
-class KeoBuilder
+class Keo: public Virtual
 {
 public:
 enum EMatrixType { MATRIX_TYPE_REGULAR,
@@ -55,23 +57,23 @@ enum EMatrixType { MATRIX_TYPE_REGULAR,
                    MATRIX_TYPE_DTHETA};
 
 public:
-KeoBuilder(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
-             const Teuchos::RCP<const Epetra_Vector> &thickness,
-             const Teuchos::RCP<const Nosh::MagneticVectorPotential::Virtual> &mvp
-             );
+Keo(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
+    const Teuchos::RCP<const Epetra_Vector> &thickness,
+    const Teuchos::RCP<const Nosh::MagneticVectorPotential::Virtual> &mvp
+    );
 
 // Destructor.
-~KeoBuilder();
+~Keo();
 
 const Epetra_Comm &
 getComm() const;
 
 const Epetra_FECrsGraph &
-getKeoGraph() const;
+getGraph() const;
 
 void
-applyKeo(const Teuchos::Array<double> &mvpParams,
-         const Epetra_Vector &X,
+apply(const Teuchos::Array<double> &mvpParams,
+      const Epetra_Vector &X,
          Epetra_Vector &Y
          ) const;
 
@@ -96,7 +98,7 @@ buildKeoGraph_() const;
 void
 fillKeo_( Epetra_FECrsMatrix &keoMatrix,
           const Teuchos::Array<double> &mvpParams,
-          void (KeoBuilder::*filler)(const int, const Teuchos::Array<double>&, double*) const
+          void (Keo::*filler)(const int, const Teuchos::Array<double>&, double*) const
           ) const;
 
 void
@@ -142,6 +144,7 @@ mutable bool alphaCacheUpToDate_;
 mutable unsigned int paramIndex_;
 };
 // =============================================================================
+} // namespace MatrixBuilder
 } // namespace Nosh
 
-#endif // NOSH_KEOBUILDER_H
+#endif // NOSH_MATRIXBUILDER_KEO_H
