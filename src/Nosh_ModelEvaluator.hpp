@@ -34,9 +34,6 @@
 namespace Nosh {
 class State;
 class StkMesh;
-namespace MagneticVectorPotential {
-class Virtual;
-}
 namespace ScalarPotential {
 class Virtual;
 }
@@ -54,9 +51,9 @@ public:
 //! Constructor without initial guess.
 ModelEvaluator (
   const Teuchos::RCP<const Nosh::StkMesh> &mesh,
-  const double g,
+  const Teuchos::RCP<const Nosh::MatrixBuilder::Virtual> &matrixBuilder,
   const Teuchos::RCP<const Nosh::ScalarPotential::Virtual> &scalarPotential,
-  const Teuchos::RCP<const Nosh::MagneticVectorPotential::Virtual> &mvp,
+  const double g,
   const Teuchos::RCP<const Epetra_Vector> &thickness,
   const Teuchos::RCP<const Epetra_Vector> &initialX
   );
@@ -122,12 +119,12 @@ get_p_latest() const;
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 private:
 void
-computeF_( const Epetra_Vector &x,
-           const double g,
-           const Teuchos::Array<double> & spParams,
-           const Teuchos::Array<double> & mvpParams,
-           Epetra_Vector &FVec
-           ) const;
+computeF_(const Epetra_Vector &x,
+          const double g,
+          const Teuchos::Array<double> & spParams,
+          const Teuchos::Array<double> & eoParams,
+          Epetra_Vector &FVec
+          ) const;
 
 void
 computeDFDg_(const Epetra_Vector &x,
@@ -142,29 +139,28 @@ computeDFDPpotential_(const Epetra_Vector &x,
                       ) const;
 
 void
-computeDFDPmvp_(const Epetra_Vector &x,
-                const Teuchos::Array<double> &mvpParams,
-                int paramIndex,
-                Epetra_Vector &FVec
-                ) const;
+computeDFDPeo_(const Epetra_Vector &x,
+               const Teuchos::Array<double> &eoParams,
+               int paramIndex,
+               Epetra_Vector &FVec
+               ) const;
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 protected:
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 private:
 const Teuchos::RCP<const Nosh::StkMesh> mesh_;
 
-const double initial_g_;
+const Teuchos::RCP<const Nosh::MatrixBuilder::Virtual> matrixBuilder_;
 
 const Teuchos::RCP<const Nosh::ScalarPotential::Virtual> scalarPotential_;
-const Teuchos::RCP<const Nosh::MagneticVectorPotential::Virtual> mvp_;
+
+const double initial_g_;
 
 const Teuchos::RCP<const Epetra_Vector> thickness_;
 
 const Teuchos::RCP<const Epetra_Vector> x_init_;
 
 mutable Teuchos::RCP<const Epetra_Vector> p_latest_;
-
-const Teuchos::RCP<Nosh::MatrixBuilder::Virtual> matrixBuilder_;
 
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
 const Teuchos::RCP<Teuchos::Time> evalModelTime_;

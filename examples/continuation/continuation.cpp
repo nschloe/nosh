@@ -25,6 +25,7 @@
 #include "Nosh_StkMeshReader.hpp"
 #include "Nosh_State.hpp"
 #include "Nosh_ScalarPotential_Constant.hpp"
+#include "Nosh_MatrixBuilder_Keo.hpp"
 #include "Nosh_MagneticVectorPotential_ExplicitValues.hpp"
 #include "Nosh_ModelEvaluator.hpp"
 #include "Nosh_NoxObserver.hpp"
@@ -147,12 +148,15 @@ int main(int argc, char *argv[])
     Teuchos::RCP<Nosh::State> state =
       Teuchos::rcp(new Nosh::State(*psi, mesh));
 
-    // Setup the magnetic vector potential.
+    // Setup the energy operator, here: (-i\nabla-A)^2.
     // Choose between several given MVPs or build your own by
     // deriving from Nosh::MagneticVectorPotential::Virtual.
     const double initMu = initialParameterValues.get<double>("mu", 0.0);
     Teuchos::RCP<Nosh::MagneticVectorPotential::Virtual> mvp =
       Teuchos::rcp(new Nosh::MagneticVectorPotential::ExplicitValues(mesh, mvpValues, initMu));
+    const Teuchos::RCP<Nosh::MatrixBuilder::Virtual> matrixBuilder =
+        Teuchos::rcp(new Nosh::MatrixBuilder::Keo(mesh, thickness, mvp));
+
     // Alternative: Analytically given MVP. This one can also be rotated in space.
     //const double theta = initialParameterValues.get<double>("theta", 0.0);
     // Get the rotation vector.
@@ -181,7 +185,7 @@ int main(int argc, char *argv[])
     // This is the most important object in the whole stack.
     const double g = initialParameterValues.get<double>("g");
     Teuchos::RCP<Nosh::ModelEvaluator> nlsModel =
-      Teuchos::rcp(new Nosh::ModelEvaluator(mesh, g, sp, mvp, thickness, psi));
+      Teuchos::rcp(new Nosh::ModelEvaluator(mesh, matrixBuilder, sp, g, thickness, psi));
 
     // Build the Piro model evaluator. It's used to hook up with
     // several different backends (NOX, LOCA, Rhythmos,...).

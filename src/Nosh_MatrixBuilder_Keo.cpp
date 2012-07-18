@@ -142,6 +142,20 @@ fill(Epetra_FECrsMatrix &matrix,
   return;
 }
 // =============================================================================
+Teuchos::RCP<const Teuchos::Array<double> >
+Keo::
+get_p_init() const
+{
+  return mvp_->get_p_init();
+}
+// =============================================================================
+Teuchos::RCP<const Teuchos::Array<std::string> >
+Keo::
+get_p_names() const
+{
+  return mvp_->get_p_names();
+}
+// =============================================================================
 const Epetra_FECrsGraph
 Keo::
 buildKeoGraph_() const

@@ -83,6 +83,16 @@ void
 fill(Epetra_FECrsMatrix &matrix,
      const Teuchos::Array<double> &params
      ) const = 0;
+
+//! Gets the initial parameters from this module.
+virtual
+Teuchos::RCP<const Teuchos::Array<double> >
+get_p_init() const = 0;
+
+//! Get the parameter names.
+virtual
+Teuchos::RCP<const Teuchos::Array<std::string> >
+get_p_names() const = 0;
 };
 // =============================================================================
 } // namespace MatrixBuilder

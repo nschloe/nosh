@@ -13,6 +13,7 @@
 #include "Nosh_StkMesh.hpp"
 #include "Nosh_StkMeshReader.hpp"
 #include "Nosh_ScalarPotential_Constant.hpp"
+#include "Nosh_MatrixBuilder_Keo.hpp"
 #include "Nosh_MagneticVectorPotential_ExplicitValues.hpp"
 #include "Nosh_ModelEvaluator.hpp"
 
@@ -89,12 +90,14 @@ testDfdp(const std::string & inputFileNameBase,
 
     Teuchos::RCP<Nosh::MagneticVectorPotential::Virtual> mvp =
       Teuchos::rcp(new Nosh::MagneticVectorPotential::ExplicitValues(mesh, mvpValues, mu));
+    const Teuchos::RCP<Nosh::MatrixBuilder::Virtual> matrixBuilder =
+      Teuchos::rcp(new Nosh::MatrixBuilder::Keo(mesh, thickness, mvp));
 
     Teuchos::RCP<Nosh::ScalarPotential::Virtual> sp =
       Teuchos::rcp(new Nosh::ScalarPotential::Constant(-1.0));
 
     Teuchos::RCP<Nosh::ModelEvaluator> modelEval =
-      Teuchos::rcp(new Nosh::ModelEvaluator(mesh, 1.0, sp, mvp, thickness, z));
+      Teuchos::rcp(new Nosh::ModelEvaluator(mesh, matrixBuilder, sp, 1.0, thickness, z));
 
     // -------------------------------------------------------------------------
     // Perform the finite difference test for all parameters present in the

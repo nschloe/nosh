@@ -22,7 +22,6 @@
 
 #include "Nosh_State.hpp"
 #include "Nosh_ScalarPotential_Virtual.hpp"
-#include "Nosh_MagneticVectorPotential_Virtual.hpp"
 #include "Nosh_MatrixBuilder_Virtual.hpp"
 #include "Nosh_MatrixBuilder_Keo.hpp"
 #include "Nosh_KeoRegularized.hpp"
@@ -42,31 +41,24 @@
 
 #include <Teuchos_VerboseObject.hpp>
 
-typedef void (Nosh::ModelEvaluator::*dfdpGetter)(const Epetra_Vector &x,
-                                                  const Teuchos::RCP<const Epetra_Vector> &mvpParams,
-                                                  int paramIndex,
-                                                  Epetra_Vector &FVec
-                                                  ) const;
-
 namespace Nosh {
 // ============================================================================
 ModelEvaluator::
 ModelEvaluator (
   const Teuchos::RCP<const Nosh::StkMesh> &mesh,
-  const double g,
+  const Teuchos::RCP<const Nosh::MatrixBuilder::Virtual> &matrixBuilder,
   const Teuchos::RCP<const Nosh::ScalarPotential::Virtual> &scalarPotential,
-  const Teuchos::RCP<const Nosh::MagneticVectorPotential::Virtual> &mvp,
+  const double g,
   const Teuchos::RCP<const Epetra_Vector> &thickness,
   const Teuchos::RCP<const Epetra_Vector> &initialX
   ) :
   mesh_( mesh ),
   initial_g_( g ),
   scalarPotential_( scalarPotential ),
-  mvp_( mvp ),
   thickness_( thickness ),
   x_init_( initialX ),
   p_latest_(Teuchos::null),
-  matrixBuilder_(Teuchos::rcp(new Nosh::MatrixBuilder::Keo(mesh, thickness, mvp))),
+  matrixBuilder_(matrixBuilder),
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   evalModelTime_( Teuchos::TimeMonitor::getNewTimer(
                     "Nosh: ModelEvaluator::evalModel" ) ),
@@ -141,8 +133,8 @@ get_p_init(int l) const
   p = scalarPotential_->get_p_init();
   for (int i=0; i<p->length(); i++)
     (*p_init)[k++] = (*p)[i];
-  // Vector potential parameters:
-  p = mvp_->get_p_init();
+  // Energy operator parameters:
+  p = matrixBuilder_->get_p_init();
   for (int i=0; i<p->length(); i++)
     (*p_init)[k++] = (*p)[i];
 
@@ -157,7 +149,7 @@ get_p_map(int l) const
                               "LOCA can only deal with one parameter vector.");
   int totalNumParams = 1 // local parameters
                      + scalarPotential_->get_p_init()->length() // scalar potential
-                     + mvp_->get_p_init()->length(); // vector potential
+                     + matrixBuilder_->get_p_init()->length(); // vector potential
 
   return Teuchos::rcp(new Epetra_LocalMap(totalNumParams, 0, x_init_->Comm()));
 }
@@ -170,7 +162,7 @@ get_p_names(int l) const
                               "LOCA can only deal with one parameter vector.");
   int totalNumParams = 1 // local parameters
                      + scalarPotential_->get_p_names()->length() // scalar potential
-                     + mvp_->get_p_names()->length(); // vector potential
+                     + matrixBuilder_->get_p_names()->length(); // vector potential
 
   Teuchos::RCP<Teuchos::Array<std::string> > p_names =
     Teuchos::rcp(new Teuchos::Array<std::string>(totalNumParams));
@@ -183,7 +175,7 @@ get_p_names(int l) const
   for (int i=0; i<p->length(); i++)
     (*p_names)[k++] = (*p)[i];
   // Vector potential parameters:
-  p = mvp_->get_p_names();
+  p = matrixBuilder_->get_p_names();
   for (int i=0; i<p->length(); i++)
     (*p_names)[k++] = (*p)[i];
 
@@ -323,10 +315,10 @@ evalModel(const InArgs &inArgs,
   for (int k=0; k<numSpParams; k++)
     spParams[k] = (*p_in)[i++];
   // Gather vector potential parameters.
-  const int numMvpParams = mvp_->get_p_init()->length();
-  Teuchos::Array<double> mvpParams(numMvpParams);
+  const int numMvpParams = matrixBuilder_->get_p_init()->length();
+  Teuchos::Array<double> eoParams(numMvpParams);
   for (int k=0; k<numMvpParams; k++)
-    mvpParams[k] = (*p_in)[i++];
+    eoParams[k] = (*p_in)[i++];
   // Make sure we arrived at the end of the vector.
   TEUCHOS_ASSERT_EQUALITY(i, p_in->MyLength());
 
@@ -340,7 +332,7 @@ evalModel(const InArgs &inArgs,
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor tm1( *computeFTime_ );
 #endif
-    this->computeF_(*x_in, g, spParams, mvpParams, *f_out);
+    this->computeF_(*x_in, g, spParams, eoParams, *f_out);
   }
 
   // Compute df/dp.
@@ -374,10 +366,10 @@ evalModel(const InArgs &inArgs,
                                     paramIndices[k] - 1,
                                     *(*dfdp_out)(k));
       else if (paramIndices[k] < 1 + numSpParams + numMvpParams)
-        this->computeDFDPmvp_(*x_in,
-                              mvpParams,
-                              paramIndices[k] - 1 - numSpParams,
-                              *(*dfdp_out)(k));
+        this->computeDFDPeo_(*x_in,
+                             eoParams,
+                             paramIndices[k] - 1 - numSpParams,
+                             *(*dfdp_out)(k));
       else
         TEUCHOS_TEST_FOR_EXCEPT_MSG(true,
                                     "Illegal parameter index " << paramIndices[k] << ". Abort.");
@@ -393,7 +385,7 @@ evalModel(const InArgs &inArgs,
 #endif
     const Teuchos::RCP<Nosh::JacobianOperator> & jac =
       Teuchos::rcp_dynamic_cast<Nosh::JacobianOperator>(W_out, true);
-    jac->rebuild(g, spParams, mvpParams, x_in);
+    jac->rebuild(g, spParams, eoParams, x_in);
   }
 
   // Fill preconditioner.
@@ -405,7 +397,7 @@ evalModel(const InArgs &inArgs,
 #endif
     const Teuchos::RCP<Nosh::KeoRegularized> & keoPrec =
       Teuchos::rcp_dynamic_cast<Nosh::KeoRegularized>(WPrec_out, true);
-    keoPrec->rebuild(g, mvpParams, x_in);
+    keoPrec->rebuild(g, eoParams, x_in);
   }
 
   return;
@@ -416,12 +408,12 @@ ModelEvaluator::
 computeF_(const Epetra_Vector &x,
           const double g,
           const Teuchos::Array<double> & spParams,
-          const Teuchos::Array<double> & mvpParams,
+          const Teuchos::Array<double> & eoParams,
           Epetra_Vector &FVec
           ) const
 {
   // Compute FVec = K*x.
-  matrixBuilder_->apply(mvpParams, x, FVec);
+  matrixBuilder_->apply(eoParams, x, FVec);
 
   // Add the nonlinear part (mass lumping).
 #ifdef _DEBUG_
@@ -550,14 +542,14 @@ computeDFDPpotential_(const Epetra_Vector &x,
 // ============================================================================
 void
 ModelEvaluator::
-computeDFDPmvp_(const Epetra_Vector &x,
-                const Teuchos::Array<double> &mvpParams,
+computeDFDPeo_(const Epetra_Vector &x,
+                const Teuchos::Array<double> &eoParams,
                 int paramIndex,
                 Epetra_Vector &FVec
                 ) const
 {
   // FVec = dK/dp * x.
-  matrixBuilder_->applyDKDp(mvpParams, paramIndex, x, FVec);
+  matrixBuilder_->applyDKDp(eoParams, paramIndex, x, FVec);
 
   return;
 }
