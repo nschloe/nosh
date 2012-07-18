@@ -5,6 +5,7 @@ SET ( nosh_SRCS
       Nosh_JacobianOperator.cpp
       Nosh_MatrixBuilder_Virtual.cpp
       Nosh_MatrixBuilder_Keo.cpp
+      Nosh_MatrixBuilder_Laplace.cpp
       Nosh_KeoRegularized.cpp
       Nosh_ScalarPotential_Virtual.cpp
       Nosh_ScalarPotential_Constant.cpp

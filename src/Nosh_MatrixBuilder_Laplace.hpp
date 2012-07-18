@@ -1,7 +1,7 @@
 // @HEADER
 //
-//    Builder class for the kinetic energy operator.
-//    Copyright (C) 2010--2012  Nico Schl\"omer
+//    Builder class for the Laplace operator.
+//    Copyright (C) 2012  Nico Schl\"omer
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -18,8 +18,8 @@
 //
 // @HEADER
 
-#ifndef NOSH_MATRIXBUILDER_KEO_H
-#define NOSH_MATRIXBUILDER_KEO_H
+#ifndef NOSH_MATRIXBUILDER_LAPLACE_H
+#define NOSH_MATRIXBUILDER_LAPLACE_H
 // =============================================================================
 #include <Epetra_Operator.h>
 #include <Teuchos_RCP.hpp>
@@ -40,24 +40,21 @@ typedef Teuchos::SerialDenseVector<int,double> DoubleVector;
 // forward declarations
 namespace Nosh {
 class StkMesh;
-namespace MagneticVectorPotential {
-class Virtual;
-}
 }
 // =============================================================================
 namespace Nosh {
 namespace MatrixBuilder {
 // =============================================================================
-class Keo: public Virtual
+class Laplace: public Virtual
 {
 public:
-Keo(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
+Laplace(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
     const Teuchos::RCP<const Epetra_Vector> &thickness,
     const Teuchos::RCP<const Nosh::MagneticVectorPotential::Virtual> &mvp
     );
 
 // Destructor.
-~Keo();
+~Laplace();
 
 const Epetra_Comm &
 getComm() const;
@@ -68,8 +65,8 @@ getGraph() const;
 void
 apply(const Teuchos::Array<double> &mvpParams,
       const Epetra_Vector &X,
-      Epetra_Vector &Y
-      ) const;
+         Epetra_Vector &Y
+         ) const;
 
 void
 applyDKDp(const Teuchos::Array<double> &mvpParams,
@@ -97,25 +94,10 @@ protected:
 
 private:
 const Epetra_FECrsGraph
-buildKeoGraph_() const;
+buildGraph_() const;
 
 void
-fillKeo_( Epetra_FECrsMatrix &keoMatrix,
-          const Teuchos::Array<double> &mvpParams,
-          void (Keo::*filler)(const int, const Teuchos::Array<double>&, double*) const
-          ) const;
-
-void
-fillerRegular_(const int k,
-               const Teuchos::Array<double> &mvpParams,
-               double * v
-               ) const;
-
-void
-fillerDp_(const int k,
-          const Teuchos::Array<double> &mvpParams,
-          double * v
-          ) const;
+fill_(Epetra_FECrsMatrix &matrix) const;
 
 void
 buildGlobalIndexCache_( const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > &edges ) const;
@@ -127,28 +109,24 @@ buildAlphaCache_( const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > & 
 
 private:
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
-const Teuchos::RCP<Teuchos::Time> keoFillTime_;
-const Teuchos::RCP<Teuchos::Time> buildKeoGraphTime_;
+const Teuchos::RCP<Teuchos::Time> fillTime_;
+const Teuchos::RCP<Teuchos::Time> buildLaplaceGraphTime_;
 #endif
 const Teuchos::RCP<const Nosh::StkMesh> mesh_;
 const Teuchos::RCP<const Epetra_Vector> thickness_;
-const Teuchos::RCP<const Nosh::MagneticVectorPotential::Virtual> mvp_;
 
 mutable Teuchos::ArrayRCP<Epetra_IntSerialDenseVector> globalIndexCache_;
 mutable bool globalIndexCacheUpToDate_;
 
-const Epetra_FECrsGraph keoGraph_;
-mutable Epetra_FECrsMatrix keoCache_;
-mutable Teuchos::Array<double> keoBuildParameters_;
-mutable Epetra_FECrsMatrix keoDpCache_;
-
+const Epetra_FECrsGraph graph_;
+mutable Epetra_FECrsMatrix matrixCache_;
+mutable bool matrixCacheUpToDate_;
 
 mutable Teuchos::ArrayRCP<double> alphaCache_;
 mutable bool alphaCacheUpToDate_;
-mutable unsigned int paramIndex_;
 };
 // =============================================================================
 } // namespace MatrixBuilder
 } // namespace Nosh
 
-#endif // NOSH_MATRIXBUILDER_KEO_H
+#endif // NOSH_MATRIXBUILDER_LAPLACE_H
