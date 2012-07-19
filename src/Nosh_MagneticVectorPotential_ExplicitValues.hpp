@@ -42,6 +42,7 @@ ExplicitValues( const Teuchos::RCP<Nosh::StkMesh> &mesh,
                 const double initMu
                 );
 
+virtual
 ~ExplicitValues();
 
 //! Get initial parameter values.

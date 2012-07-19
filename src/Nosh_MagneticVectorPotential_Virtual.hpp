@@ -34,6 +34,7 @@ class Virtual
 public:
 Virtual();
 
+virtual
 ~Virtual();
 
 virtual

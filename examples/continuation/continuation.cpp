@@ -27,6 +27,7 @@
 #include "Nosh_ScalarPotential_Constant.hpp"
 #include "Nosh_MatrixBuilder_Keo.hpp"
 #include "Nosh_MagneticVectorPotential_ExplicitValues.hpp"
+#include "Nosh_MagneticVectorPotential_ConstantField.hpp"
 #include "Nosh_ModelEvaluator.hpp"
 #include "Nosh_NoxObserver.hpp"
 #include "Nosh_SaveEigenData.hpp"
@@ -154,6 +155,9 @@ int main(int argc, char *argv[])
     const double initMu = initialParameterValues.get<double>("mu", 0.0);
     Teuchos::RCP<Nosh::MagneticVectorPotential::Virtual> mvp =
       Teuchos::rcp(new Nosh::MagneticVectorPotential::ExplicitValues(mesh, mvpValues, initMu));
+    //const Teuchos::RCP<DoubleVector> b = Teuchos::rcp(new DoubleVector(3));
+    //Teuchos::RCP<Nosh::MagneticVectorPotential::Virtual> mvp =
+    //  Teuchos::rcp(new Nosh::MagneticVectorPotential::ConstantField(mesh, b));
     const Teuchos::RCP<Nosh::MatrixBuilder::Virtual> matrixBuilder =
         Teuchos::rcp(new Nosh::MatrixBuilder::Keo(mesh, thickness, mvp));
 

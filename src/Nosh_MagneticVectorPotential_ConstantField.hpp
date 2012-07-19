@@ -17,8 +17,8 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 // @HEADER
-#ifndef NOSH_MAGNETICVECTORPOTENTIAL_CONSTANTINSPACE_H_
-#define NOSH_MAGNETICVECTORPOTENTIAL_CONSTANTINSPACE_H_
+#ifndef NOSH_MAGNETICVECTORPOTENTIAL_CONSTANTFIELD_H_
+#define NOSH_MAGNETICVECTORPOTENTIAL_CONSTANTFIELD_H_
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Tuple.hpp>
@@ -37,28 +37,34 @@ namespace MagneticVectorPotential {
 class ConstantField : public Virtual
 {
 public:
-ConstantField( const Teuchos::RCP<Nosh::StkMesh> &mesh,
-                 const Teuchos::RCP<DoubleVector> &p,
-                 double mu,
-                 double theta = 0.0,
-                 const Teuchos::RCP<DoubleVector> &u = Teuchos::null
-                 );
+ConstantField(const Teuchos::RCP<Nosh::StkMesh> &mesh,
+              const Teuchos::RCP<DoubleVector> &b,
+              const Teuchos::RCP<DoubleVector> &u = Teuchos::null
+              );
 
+virtual
 ~ConstantField();
 
-//! Sets the parameters in this module.
-void
-setParameters( const LOCA::ParameterVector &p );
+//! Get the parameter names.
+virtual
+Teuchos::RCP<const Teuchos::Array<std::string> >
+get_p_names() const;
 
-Teuchos::RCP<LOCA::ParameterVector>
-getParameters() const;
+//! Gets the current parameters from this module.
+virtual
+Teuchos::RCP<const Teuchos::Array<double> >
+get_p_init() const;
 
+virtual
 double
-getAEdgeMidpointProjection(const unsigned int edgeIndex
+getAEdgeMidpointProjection(const unsigned int edgeIndex,
+                           const Teuchos::Array<double> &mvpParams
                            ) const;
 
+virtual
 double
 getdAdPEdgeMidpointProjection(const unsigned int edgeIndex,
+                              const Teuchos::Array<double> &mvpParams,
                               const unsigned int parameterIndex
                               ) const;
 
@@ -73,37 +79,35 @@ getRawDADTheta_( const DoubleVector &x ) const;
 void
 initializeEdgeCache_() const;
 
-DoubleVector
-rotate_( const DoubleVector &v,
-         const DoubleVector &u,
-         const double sinTheta,
-         const double cosTheta
-         ) const;
+void
+rotate_(DoubleVector &v,
+        const DoubleVector &u,
+        const double theta
+        ) const;
 
-DoubleVector
-dRotateDTheta_( const DoubleVector &v,
-                const DoubleVector &u,
-                const double sinTheta,
-                const double cosTheta
-                ) const;
-
-DoubleVector
-crossProduct_( const DoubleVector u,
-               const DoubleVector v
+void
+dRotateDTheta_(DoubleVector &v,
+               const DoubleVector &u,
+               const double theta
                ) const;
+
+DoubleVector
+crossProduct_(const DoubleVector u,
+              const DoubleVector v
+              ) const;
 
 private:
 const Teuchos::RCP<Nosh::StkMesh> mesh_;
 const Teuchos::RCP<const DoubleVector> b_;
-DoubleVector rotatedB_;
-DoubleVector dRotatedBDTheta_;
-double mu_;
-double theta_;
 const Teuchos::RCP<const DoubleVector> u_;
+mutable DoubleVector rotatedBCache_;
+mutable double rotatedBCacheAngle_;
+mutable DoubleVector dRotatedBDThetaCache_;
+mutable double rotateddBdThetaCacheAngle_;
 
 Teuchos::ArrayRCP<DoubleVector> edgeCache_;
 mutable bool edgeCacheUptodate_;
 };
 } // namespace MagneticVectorPotential
 } // namespace Nosh
-#endif // NOSH_MAGNETICVECTORPOTENTIAL_CONSTANTINSPACE_H_
+#endif // NOSH_MAGNETICVECTORPOTENTIAL_CONSTANTFIELD_H_

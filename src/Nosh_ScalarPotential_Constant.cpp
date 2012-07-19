@@ -21,7 +21,6 @@
 #include "Nosh_ScalarPotential_Constant.hpp"
 
 #include <Epetra_LocalMap.h>
-#include <Epetra_Vector.h>
 
 namespace Nosh {
 namespace ScalarPotential {

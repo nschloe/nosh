@@ -27,19 +27,17 @@ namespace Nosh {
 namespace MagneticVectorPotential {
 // ============================================================================
 ConstantField::
-ConstantField( const Teuchos::RCP<Nosh::StkMesh> &mesh,
-                 const Teuchos::RCP<DoubleVector> &b,
-                 double mu,
-                 double theta,
-                 const Teuchos::RCP<DoubleVector> &u
-                 ) :
+ConstantField(const Teuchos::RCP<Nosh::StkMesh> &mesh,
+              const Teuchos::RCP<DoubleVector> &b,
+              const Teuchos::RCP<DoubleVector> &u
+              ) :
   mesh_( mesh ),
   b_( b ),
-  rotatedB_( *b ),
-  dRotatedBDTheta_( DoubleVector( 3 ) ),
-  mu_( mu ),
-  theta_( theta ),
   u_( u ),
+  rotatedBCache_( *b ),
+  rotatedBCacheAngle_(0.0),
+  dRotatedBDThetaCache_(*b_),
+  rotateddBdThetaCacheAngle_(0.0),
   edgeCache_( Teuchos::ArrayRCP<DoubleVector>() ),
   edgeCacheUptodate_( false )
 {
@@ -59,16 +57,8 @@ ConstantField( const Teuchos::RCP<Nosh::StkMesh> &mesh,
                          << "<u,u> = " << u_->dot( *u_ ) << "."
                          << std::endl
                          );
-    // If compiled with GNU (and maybe other compilers), we could use
-    // sincos() here to comute sin and cos simultaneously.
-    // PGI, for one, doesn't support sincos, though.
-    double sinTheta = sin(theta_);
-    double cosTheta = cos(theta_);
-    //sincos( theta_, &sinTheta, &cosTheta );
-    rotatedB_ = this->rotate_( *b_, *u_, sinTheta, cosTheta );
-    dRotatedBDTheta_ = this->dRotateDTheta_( *b_, *u_, sinTheta, cosTheta );
+    this->dRotateDTheta_(dRotatedBDThetaCache_, *u_, 0.0);
   }
-
 
   edgeCache_ = Teuchos::ArrayRCP<DoubleVector>(mesh_->getEdgeNodes().size());
 
@@ -80,62 +70,174 @@ ConstantField::
 {
 }
 // ============================================================================
-DoubleVector
+Teuchos::RCP<const Teuchos::Array<std::string> >
 ConstantField::
-rotate_( const DoubleVector &v,
-         const DoubleVector &u,
-         const double sinTheta,
-         const double cosTheta
-         ) const
+get_p_names() const
+{
+  Teuchos::RCP<Teuchos::Array<std::string> > p_names =
+    Teuchos::rcp(new Teuchos::Array<std::string>(1));
+  (*p_names)[0] = "mu";
+  (*p_names)[1] = "theta";
+  return p_names;
+}
+// ============================================================================
+Teuchos::RCP<const Teuchos::Array<double> >
+ConstantField::
+get_p_init() const
+{
+  Teuchos::RCP<Teuchos::Array<double> > p_init =
+    Teuchos::rcp(new Teuchos::Array<double>(2));
+  (*p_init)[0] = 0.0;
+  (*p_init)[1] = 0.0;
+  return p_init;
+}
+// ============================================================================
+double
+ConstantField::
+getAEdgeMidpointProjection(const unsigned int edgeIndex,
+                           const Teuchos::Array<double> &mvpParams
+                           ) const
+{
+  // A vector potential associated with the constant magnetic field RB is
+  //
+  //     A(X) = 0.5 * (RB x X).
+  //
+  // Projecting it onto an edge e yields
+  //     e * A(X) = e * (0.5*(RB x X))
+  //              = RB * (0.5*(X x e)).
+  //
+  // Evaluating this expression at the edge midpoint Em of the edge e gives
+  //     e * A(Em) = RB * (0.5*(Em x e)).
+  //
+  // The vector 0.5*(Em x e) can be cached for the mesh.
+  // This saves caching e and the edge midpoint separately and also avoids
+  // computing the cross-products more than once if B changes.
+
+  // Update caches.
+  if ( !edgeCacheUptodate_ )
+    this->initializeEdgeCache_();
+
+  if (rotatedBCacheAngle_ != mvpParams[1])
+  {
+    rotatedBCache_ = *b_;
+    this->rotate_(rotatedBCache_, *u_, mvpParams[1]);
+    rotatedBCacheAngle_ = mvpParams[1];
+  }
+
+  return mvpParams[0] * rotatedBCache_.dot( edgeCache_[edgeIndex] );
+}
+// ============================================================================
+double
+ConstantField::
+getdAdPEdgeMidpointProjection(const unsigned int edgeIndex,
+                              const Teuchos::Array<double> &mvpParams,
+                              const unsigned int parameterIndex
+                              ) const
+{
+  // Update caches.
+  if ( !edgeCacheUptodate_ )
+    this->initializeEdgeCache_();
+
+  if (rotatedBCacheAngle_ != mvpParams[1])
+  {
+    rotatedBCache_ = *b_;
+    this->rotate_(rotatedBCache_, *u_, mvpParams[1]);
+    rotatedBCacheAngle_ = mvpParams[1];
+  }
+
+  if (rotateddBdThetaCacheAngle_ != mvpParams[1])
+  {
+    dRotatedBDThetaCache_ = *b_;
+    this->dRotateDTheta_(dRotatedBDThetaCache_, *u_, mvpParams[1]);
+    rotateddBdThetaCacheAngle_ = mvpParams[1];
+  }
+
+  if (parameterIndex == 0) // mu
+    return rotatedBCache_.dot( edgeCache_[edgeIndex] );
+  else if (parameterIndex == 1) // theta
+    return mvpParams[0] * dRotatedBDThetaCache_.dot( edgeCache_[edgeIndex] );
+  else
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(true,
+                                "Unknown parameter index " << parameterIndex << ".");
+}
+// ============================================================================
+void
+ConstantField::
+rotate_(DoubleVector &v,
+        const DoubleVector &u,
+        const double theta
+        ) const
 {
   // Rotate a vector \c v by the angle \c theta in the plane perpendicular
   // to the axis given by \c u.
   // Refer to
   // http://en.wikipedia.org/wiki/Rotation_matrix#Rotation_matrix_from_axis_and_angle
+  double sinTheta = sin(theta);
+  double cosTheta = cos(theta);
 
-  DoubleVector r = v;
   if ( sinTheta != 0.0 )
   {
+    DoubleVector vOld = v;
+
     // cos(theta) * I * v
-    r *= cosTheta;
+    v *= cosTheta;
 
     // + sin(theta) u\cross v
-    DoubleVector tmp = this->crossProduct_( u, v );
+    // Instead of what we have here,
+    // we'd much rather write
+    //   v += sinTheta * this->crossProduct_( u, vOld );
+    // or do something like a DAXPY.
+    // However, the Teuchos::SerialDenseVector doesn't have
+    // that capability.
+    DoubleVector tmp = this->crossProduct_( u, vOld );
     tmp *= sinTheta;
-    r += tmp;
+    v += tmp;
 
     // + (1-cos(theta)) (u*u^T) * v
     tmp = u;
-    tmp *= (1.0-cosTheta) * u.dot( v );
-
-    r += tmp;
+    tmp *= (1.0-cosTheta) * u.dot( vOld );
+    v += tmp;
   }
 
-  return r;
+  return;
 }
 // ============================================================================
-DoubleVector
+void
 ConstantField::
-dRotateDTheta_( const DoubleVector &v,
-                const DoubleVector &u,
-                const double sinTheta,
-                const double cosTheta
-                ) const
+dRotateDTheta_(DoubleVector &v,
+               const DoubleVector &u,
+               const double theta
+               ) const
 {
-  DoubleVector r = v;
+  // Incremental change of the rotation of a vector v around the axis u
+  // by the angle theta.
+  // Compare with method above.
+  double sinTheta = sin(theta);
+  double cosTheta = cos(theta);
 
-  // cos(theta) * I * v
-  r *= -sinTheta;
-  // + sin(theta) u\cross v
-  DoubleVector tmp = this->crossProduct_( u, v );
+  DoubleVector vOld = v;
+
+  // -sin(theta) * I * v
+  v *= -sinTheta;
+
+  // + cos(theta) u\cross v
+  //
+  // Instead of what we have here,
+  // we'd much rather write
+  //   v += sinTheta * this->crossProduct_( u, vOld );
+  // or do something like a DAXPY.
+  // However, the Teuchos::SerialDenseVector doesn't have
+  // that capability.
+  DoubleVector tmp = this->crossProduct_( u, vOld );
   tmp *= cosTheta;
-  r += tmp;
-  // + (1-cos(theta)) (u*u^T) * v
-  tmp = u;
-  tmp *= sinTheta * u.dot( v );
-  r += tmp;
+  v += tmp;
 
-  return r;
+  // + (1+sin(theta)) (u*u^T) * v
+  tmp = u;
+  tmp *= (1.0+sinTheta) * u.dot( vOld );
+  v += tmp;
+
+  return;
 }
 // ============================================================================
 DoubleVector
@@ -149,85 +251,6 @@ crossProduct_( const DoubleVector u,
   uXv[1] = u[2]*v[0] - u[0]*v[2];
   uXv[2] = u[0]*v[1] - u[1]*v[0];
   return uXv;
-}
-// ============================================================================
-void
-ConstantField::
-setParameters( const LOCA::ParameterVector &p )
-{
-  if (p.isParameter( "mu" ))
-    mu_ = p.getValue( "mu" );
-
-  if (p.isParameter( "theta" ))
-  {
-    theta_ = p.getValue( "theta" );
-    // If compiled with GNU (and maybe other compilers), we could use
-    // sincos() here to comute sin and cos simultaneously.
-    // PGI, for one, doesn't support sincos,
-    double sinTheta = sin(theta_);
-    double cosTheta = cos(theta_);
-    //sincos( theta_, &sinTheta, &cosTheta );
-    rotatedB_ = this->rotate_( *b_, *u_, sinTheta, cosTheta );
-    dRotatedBDTheta_ = this->dRotateDTheta_( *b_, *u_, sinTheta, cosTheta );
-  }
-
-  return;
-}
-// ============================================================================
-Teuchos::RCP<LOCA::ParameterVector>
-ConstantField::
-getParameters() const
-{
-  Teuchos::RCP<LOCA::ParameterVector> p =
-    Teuchos::rcp( new LOCA::ParameterVector() );
-
-  p->addParameter( "mu", mu_ );
-  p->addParameter( "theta", theta_ );
-
-  return p;
-}
-// ============================================================================
-double
-ConstantField::
-getAEdgeMidpointProjection(const unsigned int edgeIndex
-                           ) const
-{
-  // A vector potential associated with the constant magnetic field RB is
-  //
-  //     A(X) = 0.5 * (RB x X).
-  //
-  // Projecting it onto an edge e yields
-  //     e * A(X) = e * (0.5*(RB x X))
-  //              = RB * (0.5*(X x e)),
-  //
-  // taking this at the edge midpoint Em of the edge e gives
-  //     e * A(Em) = RB * (0.5*(Em x e)).
-  //
-  // The vector 0.5*(Em x e) can be cached for the mesh.
-  // This saves caching e and the edge midpoint separately and also avoids
-  // computing the cross-products more than once if B changes.
-  if ( !edgeCacheUptodate_ )
-    this->initializeEdgeCache_();
-
-  return mu_ * rotatedB_.dot( edgeCache_[edgeIndex] );
-}
-// ============================================================================
-double
-ConstantField::
-getdAdPEdgeMidpointProjection(const unsigned int edgeIndex,
-                              const unsigned int parameterIndex
-                              ) const
-{
-  if ( !edgeCacheUptodate_ )
-    this->initializeEdgeCache_();
-
-  if (parameterIndex == 0) // mu
-    return rotatedB_.dot( edgeCache_[edgeIndex] );
-  else if (parameterIndex == 1) // theta
-    return mu_ * dRotatedBDTheta_.dot( edgeCache_[edgeIndex] );
-  else
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(true,
-                                "Unknown parameter index " << parameterIndex << ".");
 }
 // ============================================================================
 void
