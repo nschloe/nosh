@@ -49,8 +49,6 @@
 #endif
 // =============================================================================
 // typedefs
-typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorFieldType;
-typedef stk::mesh::Field<double>                      ScalarFieldType;
 // =============================================================================
 namespace Nosh {
 // =============================================================================
@@ -101,7 +99,7 @@ openOutputChannel( const string &outputDir,
   const Epetra_MpiComm &mpicomm =
     Teuchos::dyn_cast<const Epetra_MpiComm>(comm_);
   MPI_Comm mcomm = mpicomm.Comm();
-  const std::string extension = ".par";
+  const std::string extension = (mpicomm.NumProc()>1) ? ".par" : ".e";
 #else
   const int mcomm = 1;
   const std::string extension = ".e";
@@ -111,6 +109,7 @@ openOutputChannel( const string &outputDir,
   // Dir and filename are not concatenated properly in stk::mesh,
   std::stringstream outputFile;
   outputFile << outputDir << "/" << fileBaseName << extension;
+
 
   stk::io::create_output_mesh( outputFile.str(),
                                mcomm,

@@ -183,23 +183,20 @@ normalizedScaledL2Norm() const
 // =============================================================================
 void
 State::
-mergePsi_( const Teuchos::RCP<const Nosh::StkMesh> &mesh,
-           const Epetra_Vector &psi
-           ) const
+mergePsi_(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
+          const Epetra_Vector &psi
+          ) const
 {
-  VectorFieldType * psir_field =
-    mesh->getMetaData()->get_field<VectorFieldType>("psi_R");
+  ScalarFieldType * psir_field =
+    mesh->getMetaData()->get_field<ScalarFieldType>("psi_R");
+  ScalarFieldType * psii_field =
+    mesh->getMetaData()->get_field<ScalarFieldType>("psi_Z");
 #ifdef _DEBUG_
   TEUCHOS_ASSERT( psir_field != NULL );
-#endif
-
-  VectorFieldType * psii_field =
-    mesh->getMetaData()->get_field<VectorFieldType>("psi_Z");
-#ifdef _DEBUG_
   TEUCHOS_ASSERT( psii_field != NULL );
 #endif
 
-  // Zero out all nodal values.
+  // Zero out all nodal values, including the overlaps.
   const std::vector<stk::mesh::Entity*> &overlapNodes = mesh->getOverlapNodes();
   for (unsigned int k=0; k < overlapNodes.size(); k++)
   {

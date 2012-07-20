@@ -53,6 +53,7 @@ class Epetra_Map;
 // =============================================================================
 // typedefs
 typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorFieldType;
+typedef stk::mesh::Field<double>                      ScalarFieldType;
 typedef Teuchos::SerialDenseVector<int,double>        DoubleVector;
 typedef Teuchos::SerialDenseVector<int,const double>  ConstDoubleVector;
 // =============================================================================
