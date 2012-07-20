@@ -37,8 +37,7 @@ namespace MatrixBuilder {
 // =============================================================================
 Laplace::
 Laplace(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
-        const Teuchos::RCP<const Epetra_Vector> &thickness,
-        const Teuchos::RCP<const Nosh::MagneticVectorPotential::Virtual> &mvp
+        const Teuchos::RCP<const Epetra_Vector> &thickness
         ) :
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   fillTime_( Teuchos::TimeMonitor::getNewTimer(
@@ -80,7 +79,7 @@ getGraph() const
 // =============================================================================
 void
 Laplace::
-apply(const Teuchos::Array<double> &mvpParams,
+apply(const Teuchos::Array<double> &params,
       const Epetra_Vector &X,
       Epetra_Vector &Y
       ) const
@@ -100,7 +99,7 @@ apply(const Teuchos::Array<double> &mvpParams,
 // =============================================================================
 void
 Laplace::
-applyDKDp(const Teuchos::Array<double> &mvpParams,
+applyDKDp(const Teuchos::Array<double> &params,
           const int paramIndex,
           const Epetra_Vector &X,
           Epetra_Vector &Y

@@ -2,9 +2,9 @@ EXTRA_ARGS=$@
 TRILINOS_HOME=../../source
 
 cmake \
-  -D CMAKE_INSTALL_PREFIX:PATH=/opt/trilinos/dev/master/openmpi/1.4.3/gcc/4.6.3/release \
-  -D CMAKE_BUILD_TYPE=Release \
-  -D TPL_ENABLE_MPI:BOOL=ON \
+  -D CMAKE_INSTALL_PREFIX:PATH=/opt/trilinos/dev/master/gcc/4.6.3/debug \
+  -D CMAKE_BUILD_TYPE=Debug \
+  -D TPL_ENABLE_MPI:BOOL=OFF \
   -D Trilinos_ENABLE_TEUCHOS_TIME_MONITOR=ON \
   -D Trilinos_ENABLE_NOX:BOOL=ON \
       -D NOX_ENABLE_LOCA:BOOL=ON \

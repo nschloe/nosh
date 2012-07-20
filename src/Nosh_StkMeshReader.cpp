@@ -246,7 +246,7 @@ read( const Epetra_Comm &comm,
 
   // Sometimes, it may be stored in the file with three components (A_X, A_Y,
   // A_Z), sometimes, if the domain is two-dimensional, with two components
-  // (typically A_R, A_Z then, for some reason unknown to me -- cylindrical
+  // (typically A_R, A_Z then, for some funny reason -- cylindrical
   // coordinates?).
   //
   // To be on the safe side, declare the vector field A, and the scalar fields
@@ -314,13 +314,7 @@ read( const Epetra_Comm &comm,
 #endif
     stk::io::populate_bulk_data(*bulkData, *meshData);
 
-    // Restart index to read solution from exodus file.
-    // int index = -1; // Default to no restart
-    //if ( index<1 )
-    //    *out_ << "Restart Index not set. Not reading solution from exodus (" << index << ")"<< endl;
-    //else
-    //    *out_ << "Restart Index set, reading solution time step: " << index << endl;
-    // Indices in STK are 1-based. :/
+    // Remember: Indices in STK are 1-based. :/
     stk::io::process_input_request(*meshData, *bulkData, index_+1);
     bulkData->modification_end();
 #ifdef HAVE_MPI

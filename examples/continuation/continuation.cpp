@@ -33,6 +33,8 @@
 #include "Nosh_SaveEigenData.hpp"
 #include "Nosh_CsvWriter.hpp"
 
+#include "MyScalarPotential.hpp"
+
 #include <Teuchos_TimeMonitor.hpp>
 
 // =============================================================================
@@ -184,6 +186,8 @@ int main(int argc, char *argv[])
     const double T = initialParameterValues.get<double>("T", 0.0);
     Teuchos::RCP<Nosh::ScalarPotential::Virtual> sp =
       Teuchos::rcp(new Nosh::ScalarPotential::Constant(-1.0));
+    //Teuchos::RCP<Nosh::ScalarPotential::Virtual> sp =
+      //Teuchos::rcp(new MyScalarPotential(mesh));
 
     // Finally, create the model evaluator.
     // This is the most important object in the whole stack.
@@ -205,9 +209,9 @@ int main(int argc, char *argv[])
     {
       Teuchos::RCP<Nosh::NoxObserver> observer =
         Teuchos::rcp(new Nosh::NoxObserver(nlsModel,
-                                            contFilePath,
-                                            Nosh::NoxObserver::OBSERVER_TYPE_NEWTON
-                                            ));
+                                           contFilePath,
+                                           Nosh::NoxObserver::OBSERVER_TYPE_NEWTON
+                                           ));
 
       piro = Teuchos::rcp(new Piro::Epetra::NOXSolver(piroParams,
                                                       nlsModel,
@@ -218,9 +222,9 @@ int main(int argc, char *argv[])
     {
       Teuchos::RCP<Nosh::NoxObserver> observer =
         Teuchos::rcp(new Nosh::NoxObserver(nlsModel,
-                                            contFilePath,
-                                            Nosh::NoxObserver::OBSERVER_TYPE_CONTINUATION
-                                            ));
+                                           contFilePath,
+                                           Nosh::NoxObserver::OBSERVER_TYPE_CONTINUATION
+                                           ));
 
       // Setup eigen saver.
 #ifdef HAVE_LOCA_ANASAZI

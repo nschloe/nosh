@@ -29,9 +29,6 @@
 #endif
 // =============================================================================
 // forward declarations
-namespace LOCA {
-class ParameterVector;
-}
 namespace Nosh {
 class StkMesh;
 }

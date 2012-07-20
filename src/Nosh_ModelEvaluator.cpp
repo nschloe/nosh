@@ -149,7 +149,7 @@ get_p_map(int l) const
                               "LOCA can only deal with one parameter vector.");
   int totalNumParams = 1 // local parameters
                      + scalarPotential_->get_p_init()->length() // scalar potential
-                     + matrixBuilder_->get_p_init()->length(); // vector potential
+                     + matrixBuilder_->get_p_init()->length(); // posdef operator
 
   return Teuchos::rcp(new Epetra_LocalMap(totalNumParams, 0, x_init_->Comm()));
 }
@@ -162,7 +162,7 @@ get_p_names(int l) const
                               "LOCA can only deal with one parameter vector.");
   int totalNumParams = 1 // local parameters
                      + scalarPotential_->get_p_names()->length() // scalar potential
-                     + matrixBuilder_->get_p_names()->length(); // vector potential
+                     + matrixBuilder_->get_p_names()->length(); // posdef operator
 
   Teuchos::RCP<Teuchos::Array<std::string> > p_names =
     Teuchos::rcp(new Teuchos::Array<std::string>(totalNumParams));

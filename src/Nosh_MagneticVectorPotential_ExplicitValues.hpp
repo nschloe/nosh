@@ -25,7 +25,6 @@
 #include <Teuchos_SerialDenseVector.hpp>
 #include <Epetra_MultiVector.h>
 #include <Teuchos_Array.hpp>
-#include <LOCA_Parameter_Vector.H>
 
 #include "Nosh_MagneticVectorPotential_Virtual.hpp"
 #include "Nosh_StkMesh.hpp"

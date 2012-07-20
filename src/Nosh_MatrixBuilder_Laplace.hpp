@@ -49,9 +49,8 @@ class Laplace: public Virtual
 {
 public:
 Laplace(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
-    const Teuchos::RCP<const Epetra_Vector> &thickness,
-    const Teuchos::RCP<const Nosh::MagneticVectorPotential::Virtual> &mvp
-    );
+        const Teuchos::RCP<const Epetra_Vector> &thickness
+        );
 
 // Destructor.
 ~Laplace();
@@ -63,13 +62,13 @@ const Epetra_FECrsGraph &
 getGraph() const;
 
 void
-apply(const Teuchos::Array<double> &mvpParams,
+apply(const Teuchos::Array<double> &params,
       const Epetra_Vector &X,
-         Epetra_Vector &Y
-         ) const;
+      Epetra_Vector &Y
+      ) const;
 
 void
-applyDKDp(const Teuchos::Array<double> &mvpParams,
+applyDKDp(const Teuchos::Array<double> &params,
           const int paramIndex,
           const Epetra_Vector &X,
           Epetra_Vector &Y
@@ -77,7 +76,7 @@ applyDKDp(const Teuchos::Array<double> &mvpParams,
 
 void
 fill(Epetra_FECrsMatrix &matrix,
-     const Teuchos::Array<double> &mvpParams
+     const Teuchos::Array<double> &params
      ) const;
 
 //! Gets the initial parameters from this module.
@@ -100,12 +99,12 @@ void
 fill_(Epetra_FECrsMatrix &matrix) const;
 
 void
-buildGlobalIndexCache_( const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > &edges ) const;
+buildGlobalIndexCache_(const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > &edges) const;
 
 void
-buildAlphaCache_( const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > & edges,
-                  const Teuchos::ArrayRCP<const double> &edgeCoefficients
-                ) const;
+buildAlphaCache_(const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > & edges,
+                 const Teuchos::ArrayRCP<const double> &edgeCoefficients
+                 ) const;
 
 private:
 #ifdef NOSH_TEUCHOS_TIME_MONITOR

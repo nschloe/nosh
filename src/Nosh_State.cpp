@@ -27,7 +27,6 @@
 #include <stk_mesh/base/FieldParallel.hpp>
 #include <stk_io/MeshReadWriteUtils.hpp>
 
-#include <LOCA_Parameter_Vector.H>
 #include <Epetra_Comm.h>
 #include <Epetra_Map.h>
 

@@ -90,9 +90,9 @@ StkMesh::
 // =============================================================================
 void
 StkMesh::
-openOutputChannel( const string &outputDir,
-                   const string &fileBaseName
-                   )
+openOutputChannel(const string &outputDir,
+                  const string &fileBaseName
+                  )
 {
   // prepare the data for output
 #ifdef HAVE_MPI
@@ -110,16 +110,15 @@ openOutputChannel( const string &outputDir,
   std::stringstream outputFile;
   outputFile << outputDir << "/" << fileBaseName << extension;
 
+  stk::io::create_output_mesh(outputFile.str(),
+                              mcomm,
+                              *bulkData_,
+                              *meshData_
+                              );
 
-  stk::io::create_output_mesh( outputFile.str(),
-                               mcomm,
-                               *bulkData_,
-                               *meshData_
-                               );
-
-  stk::io::define_output_fields( *meshData_,
-                                 *metaData_
-                                 );
+  stk::io::define_output_fields(*meshData_,
+                                *metaData_
+                                );
 
   return;
 }
