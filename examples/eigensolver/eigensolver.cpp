@@ -17,8 +17,8 @@
 #include "Nosh_MatrixBuilder_Keo.hpp"
 #include "Nosh_JacobianOperator.hpp"
 #include "Nosh_KeoRegularized.hpp"
-#include "Nosh_ScalarPotential_Constant.hpp"
-#include "Nosh_MagneticVectorPotential_ExplicitValues.hpp"
+#include "Nosh_ScalarField_Constant.hpp"
+#include "Nosh_VectorField_ExplicitValues.hpp"
 
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziBasicEigenproblem.hpp"
@@ -109,8 +109,8 @@ int main ( int argc, char *argv[] )
       data.get( "Problem parameters", Teuchos::ParameterList() );
 
     // Construct scalar potential.
-    Teuchos::RCP<Nosh::ScalarPotential::Virtual> sp =
-      Teuchos::rcp(new Nosh::ScalarPotential::Constant(-1.0));
+    Teuchos::RCP<Nosh::ScalarField::Virtual> sp =
+      Teuchos::rcp(new Nosh::ScalarField::Constant(-1.0));
 
     const double mu = 2.0e-1;
     const double T = 0.0;
@@ -121,12 +121,12 @@ int main ( int argc, char *argv[] )
     spParameters[0] = T;
 
     // Construct MVP.
-    Teuchos::RCP<Nosh::MagneticVectorPotential::Virtual> mvp;
+    Teuchos::RCP<Nosh::VectorField::Virtual> mvp;
     Teuchos::RCP<Teuchos::Time> mvpConstructTime =
       Teuchos::TimeMonitor::getNewTimer("MVP construction");
     {
       Teuchos::TimeMonitor tm(*mvpConstructTime);
-      mvp = Teuchos::rcp(new Nosh::MagneticVectorPotential::ExplicitValues(mesh, mvpValues, mu));
+      mvp = Teuchos::rcp(new Nosh::VectorField::ExplicitValues(mesh, mvpValues, mu));
     }
 
     Teuchos::RCP<Nosh::MatrixBuilder::Virtual> keoBuilder =

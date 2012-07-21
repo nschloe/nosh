@@ -21,7 +21,7 @@
 #include "Nosh_ModelEvaluator.hpp"
 
 #include "Nosh_State.hpp"
-#include "Nosh_ScalarPotential_Virtual.hpp"
+#include "Nosh_ScalarField_Virtual.hpp"
 #include "Nosh_MatrixBuilder_Virtual.hpp"
 #include "Nosh_MatrixBuilder_Keo.hpp"
 #include "Nosh_KeoRegularized.hpp"
@@ -47,7 +47,7 @@ ModelEvaluator::
 ModelEvaluator (
   const Teuchos::RCP<const Nosh::StkMesh> &mesh,
   const Teuchos::RCP<const Nosh::MatrixBuilder::Virtual> &matrixBuilder,
-  const Teuchos::RCP<const Nosh::ScalarPotential::Virtual> &scalarPotential,
+  const Teuchos::RCP<const Nosh::ScalarField::Virtual> &scalarPotential,
   const double g,
   const Teuchos::RCP<const Epetra_Vector> &thickness,
   const Teuchos::RCP<const Epetra_Vector> &initialX

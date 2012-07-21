@@ -31,9 +31,9 @@
 
 #include "Nosh_StkMesh.hpp"
 #include "Nosh_StkMeshReader.hpp"
-#include "Nosh_ScalarPotential_Constant.hpp"
+#include "Nosh_ScalarField_Constant.hpp"
 #include "Nosh_MatrixBuilder_Keo.hpp"
-#include "Nosh_MagneticVectorPotential_ExplicitValues.hpp"
+#include "Nosh_VectorField_ExplicitValues.hpp"
 #include "Nosh_ModelEvaluator.hpp"
 
 #include <Teuchos_UnitTestHarness.hpp>
@@ -79,13 +79,13 @@ testComputeF( const std::string & inputFileNameBase,
     Teuchos::RCP<Epetra_Vector> & thickness =
       data.get( "thickness", Teuchos::RCP<Epetra_Vector>() );
 
-    Teuchos::RCP<Nosh::MagneticVectorPotential::Virtual> mvp =
-      Teuchos::rcp(new Nosh::MagneticVectorPotential::ExplicitValues(mesh, mvpValues, mu));
+    Teuchos::RCP<Nosh::VectorField::Virtual> mvp =
+      Teuchos::rcp(new Nosh::VectorField::ExplicitValues(mesh, mvpValues, mu));
     const Teuchos::RCP<Nosh::MatrixBuilder::Virtual> matrixBuilder =
       Teuchos::rcp(new Nosh::MatrixBuilder::Keo(mesh, thickness, mvp));
 
-    Teuchos::RCP<Nosh::ScalarPotential::Virtual> sp =
-      Teuchos::rcp(new Nosh::ScalarPotential::Constant(-1.0));
+    Teuchos::RCP<Nosh::ScalarField::Virtual> sp =
+      Teuchos::rcp(new Nosh::ScalarField::Constant(-1.0));
 
     Teuchos::RCP<Nosh::ModelEvaluator> modelEval =
       Teuchos::rcp(new Nosh::ModelEvaluator(mesh, matrixBuilder, sp, 1.0, thickness, z));

@@ -21,7 +21,7 @@
 // includes
 #include "Nosh_MatrixBuilder_Keo.hpp"
 #include "Nosh_StkMesh.hpp"
-#include "Nosh_MagneticVectorPotential_Virtual.hpp"
+#include "Nosh_VectorField_Virtual.hpp"
 
 #include <Epetra_SerialDenseMatrix.h>
 #include <Epetra_Comm.h>
@@ -39,7 +39,7 @@ namespace MatrixBuilder {
 Keo::
 Keo(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
     const Teuchos::RCP<const Epetra_Vector> &thickness,
-    const Teuchos::RCP<const Nosh::MagneticVectorPotential::Virtual> &mvp
+    const Teuchos::RCP<const Nosh::VectorField::Virtual> &mvp
     ) :
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   keoFillTime_( Teuchos::TimeMonitor::getNewTimer(
@@ -253,7 +253,7 @@ fillerRegular_(const int k,
   // Re(-exp(i Aint))
   // Im(-exp(i Aint))
   // 1.0
-  const double aInt = mvp_->getAEdgeMidpointProjection(k, mvpParams);
+  const double aInt = mvp_->getEdgeProjection(k, mvpParams);
   // If compiled with GNU (and maybe other compilers), we could use
   // sincos() here to comute sin and cos simultaneously.
   // PGI, for one, doesn't support sincos, though.
@@ -271,9 +271,9 @@ fillerDp_(const int k,
           const Teuchos::Array<double> & mvpParams,
           double * v) const
 {
-  double aInt = mvp_->getAEdgeMidpointProjection(k, mvpParams);
+  double aInt = mvp_->getEdgeProjection(k, mvpParams);
   // paramIndex_ is set in the KEO building routine.
-  double dAdPInt = mvp_->getdAdPEdgeMidpointProjection(k, mvpParams, paramIndex_);
+  double dAdPInt = mvp_->getDEdgeProjectionDp(k, mvpParams, paramIndex_);
   //sincos( aInt, &sinAInt, &cosAInt );
   v[0] =  dAdPInt * sin(aInt);
   v[1] = -dAdPInt * cos(aInt);

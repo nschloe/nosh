@@ -24,16 +24,16 @@
 #include "Nosh_StkMesh.hpp"
 #include "Nosh_StkMeshReader.hpp"
 #include "Nosh_State.hpp"
-#include "Nosh_ScalarPotential_Constant.hpp"
+#include "Nosh_ScalarField_Constant.hpp"
 #include "Nosh_MatrixBuilder_Keo.hpp"
-#include "Nosh_MagneticVectorPotential_ExplicitValues.hpp"
-#include "Nosh_MagneticVectorPotential_ConstantField.hpp"
+#include "Nosh_VectorField_ExplicitValues.hpp"
+#include "Nosh_VectorField_ConstantCurl.hpp"
 #include "Nosh_ModelEvaluator.hpp"
 #include "Nosh_NoxObserver.hpp"
 #include "Nosh_SaveEigenData.hpp"
 #include "Nosh_CsvWriter.hpp"
 
-#include "MyScalarPotential.hpp"
+#include "MyScalarField.hpp"
 
 #include <Teuchos_TimeMonitor.hpp>
 
@@ -153,13 +153,13 @@ int main(int argc, char *argv[])
 
     // Setup the energy operator, here: (-i\nabla-A)^2.
     // Choose between several given MVPs or build your own by
-    // deriving from Nosh::MagneticVectorPotential::Virtual.
+    // deriving from Nosh::VectorField::Virtual.
     const double initMu = initialParameterValues.get<double>("mu", 0.0);
-    Teuchos::RCP<Nosh::MagneticVectorPotential::Virtual> mvp =
-      Teuchos::rcp(new Nosh::MagneticVectorPotential::ExplicitValues(mesh, mvpValues, initMu));
+    Teuchos::RCP<Nosh::VectorField::Virtual> mvp =
+      Teuchos::rcp(new Nosh::VectorField::ExplicitValues(mesh, mvpValues, initMu));
     //const Teuchos::RCP<DoubleVector> b = Teuchos::rcp(new DoubleVector(3));
-    //Teuchos::RCP<Nosh::MagneticVectorPotential::Virtual> mvp =
-    //  Teuchos::rcp(new Nosh::MagneticVectorPotential::ConstantField(mesh, b));
+    //Teuchos::RCP<Nosh::VectorField::Virtual> mvp =
+    //  Teuchos::rcp(new Nosh::VectorField::ConstantCurl(mesh, b));
     const Teuchos::RCP<Nosh::MatrixBuilder::Virtual> matrixBuilder =
         Teuchos::rcp(new Nosh::MatrixBuilder::Keo(mesh, thickness, mvp));
 
@@ -178,16 +178,16 @@ int main(int argc, char *argv[])
     //    (*u)[1] = rotationVectorList.get<double>("y");
     //    (*u)[2] = rotationVectorList.get<double>("z");
     //}
-    //Teuchos::RCP<Nosh::MagneticVectorPotential::Virtual> mvp =
-    //  Teuchos::rcp ( new Nosh::MagneticVectorPotential::ConstantField(mesh, mvpValues, mu, theta, u));
+    //Teuchos::RCP<Nosh::VectorField::Virtual> mvp =
+    //  Teuchos::rcp ( new Nosh::VectorField::ConstantCurl(mesh, mvpValues, mu, theta, u));
 
     // Setup the scalar potential V.
-    // Use this or build your own by deriving from Nosh::ScalarPotential::Virtual.
+    // Use this or build your own by deriving from Nosh::ScalarField::Virtual.
     const double T = initialParameterValues.get<double>("T", 0.0);
-    Teuchos::RCP<Nosh::ScalarPotential::Virtual> sp =
-      Teuchos::rcp(new Nosh::ScalarPotential::Constant(-1.0));
-    //Teuchos::RCP<Nosh::ScalarPotential::Virtual> sp =
-      //Teuchos::rcp(new MyScalarPotential(mesh));
+    Teuchos::RCP<Nosh::ScalarField::Virtual> sp =
+      Teuchos::rcp(new Nosh::ScalarField::Constant(-1.0));
+    //Teuchos::RCP<Nosh::ScalarField::Virtual> sp =
+      //Teuchos::rcp(new MyScalarField(mesh));
 
     // Finally, create the model evaluator.
     // This is the most important object in the whole stack.

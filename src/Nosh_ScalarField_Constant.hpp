@@ -17,47 +17,61 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 // @HEADER
-#ifndef NOSH_SCALARPOTENTIAL_VIRTUAL_H_
-#define NOSH_SCALARPOTENTIAL_VIRTUAL_H_
+#ifndef NOSH_SCALARFIELD_CONSTANT_H_
+#define NOSH_SCALARFIELD_CONSTANT_H_
+// =============================================================================
+// forward defs
+class Epetra_Vector;
+class Epetra_Map;
 // =============================================================================
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Array.hpp>
+#include <Epetra_Comm.h>
+
+#include "Nosh_ScalarField_Virtual.hpp"
 // =============================================================================
 namespace Nosh {
-namespace ScalarPotential {
-class Virtual
+namespace ScalarField {
+class Constant: public Virtual
 {
 public:
-Virtual();
+Constant(const double alpha
+         );
 
-~Virtual();
+Epetra_Vector
+createPInit_(const Epetra_Map & map);
+
+~Constant();
 
 virtual
 double
 getV(const unsigned int nodeIndex,
      const Teuchos::Array<double> & p
-    ) const = 0;
+     ) const;
 
 virtual
 double
 getdVdP(const unsigned int nodeIndex,
         const unsigned int parameterIndex,
         const Teuchos::Array<double> & p
-        ) const = 0;
+        ) const;
 
 //! Gets the parameters from this module.
 virtual
 Teuchos::RCP<const Teuchos::Array<double> >
-get_p_init() const = 0;
+get_p_init() const;
 
 //! Get the parameter names.
 virtual
 Teuchos::RCP<const Teuchos::Array<std::string> >
-get_p_names() const = 0;
+get_p_names() const;
 
 protected:
 private:
+
+const double alpha_;
+
 };
-} // namespace ScalarPotential
+} // namespace ScalarField
 } // namespace Nosh
-#endif // NOSH_SCALARPOTENTIAL_VIRTUAL_H_
+#endif // NOSH_SCALARFIELD_CONSTANT_H_

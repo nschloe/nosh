@@ -7,11 +7,11 @@ SET ( nosh_SRCS
       Nosh_MatrixBuilder_Keo.cpp
       Nosh_MatrixBuilder_Laplace.cpp
       Nosh_KeoRegularized.cpp
-      Nosh_ScalarPotential_Virtual.cpp
-      Nosh_ScalarPotential_Constant.cpp
-      Nosh_MagneticVectorPotential_Virtual.cpp
-      Nosh_MagneticVectorPotential_ExplicitValues.cpp
-      Nosh_MagneticVectorPotential_ConstantField.cpp
+      Nosh_ScalarField_Virtual.cpp
+      Nosh_ScalarField_Constant.cpp
+      Nosh_VectorField_Virtual.cpp
+      Nosh_VectorField_ExplicitValues.cpp
+      Nosh_VectorField_ConstantCurl.cpp
       Nosh_StkMesh.cpp
       Nosh_StkMeshReader.cpp
       Nosh_CsvWriter.cpp

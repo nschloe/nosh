@@ -1,6 +1,6 @@
 // @HEADER
 //
-//    Query routines for the magnetic vector potential.
+//    Query routines for a vector potential with explicitly given values.
 //    Copyright (C) 2012  Nico Schl\"omer
 //
 //    This program is free software: you can redistribute it and/or modify
@@ -18,30 +18,30 @@
 //
 // @HEADER
 
-#include "Nosh_MagneticVectorPotential_ExplicitValues.hpp"
+#include "Nosh_VectorField_ExplicitValues.hpp"
 #include "Nosh_StkMesh.hpp"
 
 #include <Epetra_Vector.h>
 
 namespace Nosh {
-namespace MagneticVectorPotential {
+namespace VectorField {
 // ============================================================================
 ExplicitValues::
 ExplicitValues(const Teuchos::RCP<Nosh::StkMesh> &mesh,
-               const Teuchos::RCP<const Epetra_MultiVector> &mvp,
+               const Teuchos::RCP<const Epetra_MultiVector> &values,
                const double initMu
                ) :
   mesh_( mesh ),
-  mvp_( mvp ),
+  values_( values ),
   initMu_( initMu ),
-  mvpEdgeMidpointProjectionCache_( Teuchos::ArrayRCP<double>() ),
-  mvpEdgeMidpointProjectionCacheUptodate_( false )
+  edgeProjectionCache_( Teuchos::ArrayRCP<double>() ),
+  edgeProjectionCacheUptodate_( false )
 {
 #ifdef _DEBUG_
   TEUCHOS_ASSERT( !mesh_.is_null() );
 #endif
 
-  mvpEdgeMidpointProjectionCache_ =
+  edgeProjectionCache_ =
     Teuchos::ArrayRCP<double>( mesh_->getEdgeNodes().size() );
 
   return;
@@ -74,38 +74,38 @@ get_p_names() const
 // ============================================================================
 double
 ExplicitValues::
-getAEdgeMidpointProjection(const unsigned int edgeIndex,
-                           const Teuchos::Array<double> & mvpParams
-                           ) const
+getEdgeProjection(const unsigned int edgeIndex,
+                  const Teuchos::Array<double> & params
+                  ) const
 {
-  if ( !mvpEdgeMidpointProjectionCacheUptodate_ )
-    this->initializeMvpEdgeMidpointCache_();
+  if ( !edgeProjectionCacheUptodate_ )
+    this->initializeEdgeMidpointCache_();
 
-  return mvpParams[0] * mvpEdgeMidpointProjectionCache_[edgeIndex];
+  return params[0] * edgeProjectionCache_[edgeIndex];
 }
 // ============================================================================
 double
 ExplicitValues::
-getdAdPEdgeMidpointProjection(const unsigned int edgeIndex,
-                              const Teuchos::Array<double> & mvpParams,
-                              const unsigned int parameterIndex
-                              ) const
+getDEdgeProjectionDp(const unsigned int edgeIndex,
+                     const Teuchos::Array<double> & params,
+                     const unsigned int parameterIndex
+                     ) const
 {
   TEUCHOS_ASSERT_EQUALITY(parameterIndex, 0);
 
-  if ( !mvpEdgeMidpointProjectionCacheUptodate_ )
-    this->initializeMvpEdgeMidpointCache_();
+  if ( !edgeProjectionCacheUptodate_ )
+    this->initializeEdgeMidpointCache_();
 
-  return mvpEdgeMidpointProjectionCache_[edgeIndex];
+  return edgeProjectionCache_[edgeIndex];
 }
 // ============================================================================
 void
 ExplicitValues::
-initializeMvpEdgeMidpointCache_() const
+initializeEdgeMidpointCache_() const
 {
 #ifdef _DEBUG_
   TEUCHOS_ASSERT( !mesh_.is_null() );
-  TEUCHOS_ASSERT( !mvp_.is_null() );
+  TEUCHOS_ASSERT( !values_.is_null() );
 #endif
 
   const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > edges =
@@ -116,8 +116,8 @@ initializeMvpEdgeMidpointCache_() const
   {
     // Get the two end points.
     Teuchos::Tuple<int,2> lid;
-    lid[0] = mvp_->Map().LID( edges[k][0]->identifier() - 1 );
-    lid[1] = mvp_->Map().LID( edges[k][1]->identifier() - 1 );
+    lid[0] = values_->Map().LID( edges[k][0]->identifier() - 1 );
+    lid[1] = values_->Map().LID( edges[k][1]->identifier() - 1 );
 
 #ifdef _DEBUG_
     TEUCHOS_TEST_FOR_EXCEPT_MSG( lid[0] < 0,
@@ -132,22 +132,22 @@ initializeMvpEdgeMidpointCache_() const
 
     // Approximate the value at the midpoint of the edge
     // by the average of the values at the adjacent nodes.
-    DoubleVector mvpEdgeMidpoint( 3 );
+    DoubleVector valueEdgeMidpoint( 3 );
     for (int i=0; i<3; i++ )
-      mvpEdgeMidpoint[i] = 0.5
-                         * ((*(*mvp_)(i))[lid[0]] + (*(*mvp_)(i))[lid[1]]);
+      valueEdgeMidpoint[i] = 0.5
+                           * ((*(*values_)(i))[lid[0]] + (*(*values_)(i))[lid[1]]);
 
     // extract the nodal coordinates
     DoubleVector edge = mesh_->getNodeCoordinatesNonconst( edges[k][1] );
     edge -= mesh_->getNodeCoordinatesNonconst( edges[k][0] );
 
-    //mvpEdgeMidpointProjectionCache_[k] = edge.dot( mvpEdgeMidpoint );
-    mvpEdgeMidpointProjectionCache_[k] = mvpEdgeMidpoint.dot(edge);
+    //edgeProjectionCache_[k] = edge.dot( valueEdgeMidpoint );
+    edgeProjectionCache_[k] = valueEdgeMidpoint.dot(edge);
   }
 
-  mvpEdgeMidpointProjectionCacheUptodate_ = true;
+  edgeProjectionCacheUptodate_ = true;
   return;
 }
 // ============================================================================
-} // namespace MagneticVectorPotential
+} // namespace VectorField
 } // namespace Nosh

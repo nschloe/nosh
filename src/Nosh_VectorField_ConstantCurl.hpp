@@ -1,6 +1,6 @@
 // @HEADER
 //
-//    Query routines for the magnetic vector potential.
+//    Query routines for the vector potential associated with a constant curl field.
 //    Copyright (C) 2011, 2012  Nico Schl\"omer
 //
 //    This program is free software: you can redistribute it and/or modify
@@ -17,8 +17,8 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 // @HEADER
-#ifndef NOSH_MAGNETICVECTORPOTENTIAL_CONSTANTFIELD_H_
-#define NOSH_MAGNETICVECTORPOTENTIAL_CONSTANTFIELD_H_
+#ifndef NOSH_VECTORFIELD_CONSTANTCURL_H_
+#define NOSH_VECTORFIELD_CONSTANTCURL_H_
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Tuple.hpp>
@@ -26,23 +26,23 @@
 #include <Epetra_MultiVector.h>
 #include <Teuchos_Array.hpp>
 
-#include "Nosh_MagneticVectorPotential_Virtual.hpp"
+#include "Nosh_VectorField_Virtual.hpp"
 #include "Nosh_StkMesh.hpp"
 
 typedef Teuchos::SerialDenseVector<int,double> DoubleVector;
 
 namespace Nosh {
-namespace MagneticVectorPotential {
-class ConstantField : public Virtual
+namespace VectorField {
+class ConstantCurl : public Virtual
 {
 public:
-ConstantField(const Teuchos::RCP<Nosh::StkMesh> &mesh,
-              const Teuchos::RCP<DoubleVector> &b,
-              const Teuchos::RCP<DoubleVector> &u = Teuchos::null
-              );
+ConstantCurl(const Teuchos::RCP<Nosh::StkMesh> &mesh,
+             const Teuchos::RCP<DoubleVector> &b,
+             const Teuchos::RCP<DoubleVector> &u = Teuchos::null
+             );
 
 virtual
-~ConstantField();
+~ConstantCurl();
 
 //! Get the parameter names.
 virtual
@@ -56,16 +56,16 @@ get_p_init() const;
 
 virtual
 double
-getAEdgeMidpointProjection(const unsigned int edgeIndex,
-                           const Teuchos::Array<double> &mvpParams
-                           ) const;
+getEdgeProjection(const unsigned int edgeIndex,
+                  const Teuchos::Array<double> &params
+                  ) const;
 
 virtual
 double
-getdAdPEdgeMidpointProjection(const unsigned int edgeIndex,
-                              const Teuchos::Array<double> &mvpParams,
-                              const unsigned int parameterIndex
-                              ) const;
+getDEdgeProjectionDp(const unsigned int edgeIndex,
+                     const Teuchos::Array<double> &params,
+                     const unsigned int parameterIndex
+                     ) const;
 
 protected:
 private:
@@ -107,6 +107,6 @@ mutable double rotateddBdThetaCacheAngle_;
 Teuchos::ArrayRCP<DoubleVector> edgeCache_;
 mutable bool edgeCacheUptodate_;
 };
-} // namespace MagneticVectorPotential
+} // namespace VectorField
 } // namespace Nosh
-#endif // NOSH_MAGNETICVECTORPOTENTIAL_CONSTANTFIELD_H_
+#endif // NOSH_VECTORFIELD_CONSTANTCURL_H_

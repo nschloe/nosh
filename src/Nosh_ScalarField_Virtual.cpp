@@ -1,6 +1,6 @@
 // @HEADER
 //
-//    Query routines for the magnetic vector potential.
+//    Query routines for a scalar field.
 //    Copyright (C) 2012  Nico Schl\"omer
 //
 //    This program is free software: you can redistribute it and/or modify
@@ -18,10 +18,10 @@
 //
 // @HEADER
 
-#include "Nosh_ScalarPotential_Virtual.hpp"
+#include "Nosh_ScalarField_Virtual.hpp"
 
 namespace Nosh {
-namespace ScalarPotential {
+namespace ScalarField {
 // ============================================================================
 Virtual::
 Virtual()
@@ -33,5 +33,5 @@ Virtual::
 {
 }
 // ============================================================================
-} // namespace ScalarPotential
+} // namespace ScalarField
 } // namespace Nosh

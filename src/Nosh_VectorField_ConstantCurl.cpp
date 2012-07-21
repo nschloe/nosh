@@ -1,6 +1,6 @@
 // @HEADER
 //
-//    Query routines for the magnetic vector potential.
+//    Query routines for the vector potential associated with a constant curl field.
 //    Copyright (C) 2012  Nico Schl\"omer
 //
 //    This program is free software: you can redistribute it and/or modify
@@ -18,19 +18,19 @@
 //
 // @HEADER
 
-#include "Nosh_MagneticVectorPotential_ConstantField.hpp"
+#include "Nosh_VectorField_ConstantCurl.hpp"
 #include "Nosh_StkMesh.hpp"
 
 #include <Epetra_Vector.h>
 
 namespace Nosh {
-namespace MagneticVectorPotential {
+namespace VectorField {
 // ============================================================================
-ConstantField::
-ConstantField(const Teuchos::RCP<Nosh::StkMesh> &mesh,
-              const Teuchos::RCP<DoubleVector> &b,
-              const Teuchos::RCP<DoubleVector> &u
-              ) :
+ConstantCurl::
+ConstantCurl(const Teuchos::RCP<Nosh::StkMesh> &mesh,
+             const Teuchos::RCP<DoubleVector> &b,
+             const Teuchos::RCP<DoubleVector> &u
+             ) :
   mesh_( mesh ),
   b_( b ),
   u_( u ),
@@ -46,7 +46,7 @@ ConstantField(const Teuchos::RCP<Nosh::StkMesh> &mesh,
   TEUCHOS_ASSERT( !b_.is_null() );
 #endif
   TEUCHOS_TEST_FOR_EXCEPT_MSG( b_->dot( *b_ ) != 1.0,
-                       "Magnetic field vector not normalized: "
+                       "Curl vector not normalized: "
                        << "<b,b> = " << b->dot( *b ) << "."
                        << std::endl
                        );
@@ -65,13 +65,13 @@ ConstantField(const Teuchos::RCP<Nosh::StkMesh> &mesh,
   return;
 }
 // ============================================================================
-ConstantField::
-~ConstantField()
+ConstantCurl::
+~ConstantCurl()
 {
 }
 // ============================================================================
 Teuchos::RCP<const Teuchos::Array<std::string> >
-ConstantField::
+ConstantCurl::
 get_p_names() const
 {
   Teuchos::RCP<Teuchos::Array<std::string> > p_names =
@@ -82,7 +82,7 @@ get_p_names() const
 }
 // ============================================================================
 Teuchos::RCP<const Teuchos::Array<double> >
-ConstantField::
+ConstantCurl::
 get_p_init() const
 {
   Teuchos::RCP<Teuchos::Array<double> > p_init =
@@ -93,12 +93,12 @@ get_p_init() const
 }
 // ============================================================================
 double
-ConstantField::
-getAEdgeMidpointProjection(const unsigned int edgeIndex,
-                           const Teuchos::Array<double> &mvpParams
-                           ) const
+ConstantCurl::
+getEdgeProjection(const unsigned int edgeIndex,
+                  const Teuchos::Array<double> &params
+                  ) const
 {
-  // A vector potential associated with the constant magnetic field RB is
+  // A vector potential associated with the constant curl field RB is
   //
   //     A(X) = 0.5 * (RB x X).
   //
@@ -117,52 +117,52 @@ getAEdgeMidpointProjection(const unsigned int edgeIndex,
   if ( !edgeCacheUptodate_ )
     this->initializeEdgeCache_();
 
-  if (rotatedBCacheAngle_ != mvpParams[1])
+  if (rotatedBCacheAngle_ != params[1])
   {
     rotatedBCache_ = *b_;
-    this->rotate_(rotatedBCache_, *u_, mvpParams[1]);
-    rotatedBCacheAngle_ = mvpParams[1];
+    this->rotate_(rotatedBCache_, *u_, params[1]);
+    rotatedBCacheAngle_ = params[1];
   }
 
-  return mvpParams[0] * rotatedBCache_.dot( edgeCache_[edgeIndex] );
+  return params[0] * rotatedBCache_.dot( edgeCache_[edgeIndex] );
 }
 // ============================================================================
 double
-ConstantField::
-getdAdPEdgeMidpointProjection(const unsigned int edgeIndex,
-                              const Teuchos::Array<double> &mvpParams,
-                              const unsigned int parameterIndex
-                              ) const
+ConstantCurl::
+getDEdgeProjectionDp(const unsigned int edgeIndex,
+                     const Teuchos::Array<double> &params,
+                     const unsigned int parameterIndex
+                     ) const
 {
   // Update caches.
   if ( !edgeCacheUptodate_ )
     this->initializeEdgeCache_();
 
-  if (rotatedBCacheAngle_ != mvpParams[1])
+  if (rotatedBCacheAngle_ != params[1])
   {
     rotatedBCache_ = *b_;
-    this->rotate_(rotatedBCache_, *u_, mvpParams[1]);
-    rotatedBCacheAngle_ = mvpParams[1];
+    this->rotate_(rotatedBCache_, *u_, params[1]);
+    rotatedBCacheAngle_ = params[1];
   }
 
-  if (rotateddBdThetaCacheAngle_ != mvpParams[1])
+  if (rotateddBdThetaCacheAngle_ != params[1])
   {
     dRotatedBDThetaCache_ = *b_;
-    this->dRotateDTheta_(dRotatedBDThetaCache_, *u_, mvpParams[1]);
-    rotateddBdThetaCacheAngle_ = mvpParams[1];
+    this->dRotateDTheta_(dRotatedBDThetaCache_, *u_, params[1]);
+    rotateddBdThetaCacheAngle_ = params[1];
   }
 
   if (parameterIndex == 0) // mu
     return rotatedBCache_.dot( edgeCache_[edgeIndex] );
   else if (parameterIndex == 1) // theta
-    return mvpParams[0] * dRotatedBDThetaCache_.dot( edgeCache_[edgeIndex] );
+    return params[0] * dRotatedBDThetaCache_.dot( edgeCache_[edgeIndex] );
   else
     TEUCHOS_TEST_FOR_EXCEPT_MSG(true,
                                 "Unknown parameter index " << parameterIndex << ".");
 }
 // ============================================================================
 void
-ConstantField::
+ConstantCurl::
 rotate_(DoubleVector &v,
         const DoubleVector &u,
         const double theta
@@ -203,7 +203,7 @@ rotate_(DoubleVector &v,
 }
 // ============================================================================
 void
-ConstantField::
+ConstantCurl::
 dRotateDTheta_(DoubleVector &v,
                const DoubleVector &u,
                const double theta
@@ -241,7 +241,7 @@ dRotateDTheta_(DoubleVector &v,
 }
 // ============================================================================
 DoubleVector
-ConstantField::
+ConstantCurl::
 crossProduct_( const DoubleVector u,
                const DoubleVector v
                ) const
@@ -254,7 +254,7 @@ crossProduct_( const DoubleVector u,
 }
 // ============================================================================
 void
-ConstantField::
+ConstantCurl::
 initializeEdgeCache_() const
 {
 #ifdef _DEBUG_
@@ -281,5 +281,5 @@ initializeEdgeCache_() const
   return;
 }
 // ============================================================================
-} // namespace MagneticVectorPotential
+} // namespace VectorField
 } // namespace Nosh

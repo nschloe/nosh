@@ -34,7 +34,7 @@
 namespace Nosh {
 class State;
 class StkMesh;
-namespace ScalarPotential {
+namespace ScalarField {
 class Virtual;
 }
 }
@@ -52,7 +52,7 @@ public:
 ModelEvaluator (
   const Teuchos::RCP<const Nosh::StkMesh> &mesh,
   const Teuchos::RCP<const Nosh::MatrixBuilder::Virtual> &matrixBuilder,
-  const Teuchos::RCP<const Nosh::ScalarPotential::Virtual> &scalarPotential,
+  const Teuchos::RCP<const Nosh::ScalarField::Virtual> &scalarPotential,
   const double g,
   const Teuchos::RCP<const Epetra_Vector> &thickness,
   const Teuchos::RCP<const Epetra_Vector> &initialX
@@ -152,7 +152,7 @@ const Teuchos::RCP<const Nosh::StkMesh> mesh_;
 
 const Teuchos::RCP<const Nosh::MatrixBuilder::Virtual> matrixBuilder_;
 
-const Teuchos::RCP<const Nosh::ScalarPotential::Virtual> scalarPotential_;
+const Teuchos::RCP<const Nosh::ScalarField::Virtual> scalarPotential_;
 
 const double initial_g_;
 

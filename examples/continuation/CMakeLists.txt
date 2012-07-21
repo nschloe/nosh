@@ -9,7 +9,7 @@ LINK_DIRECTORIES( ${Boost_LIBRARY_DIRS}
                   ${Trilinos_TPL_LIBRARY_DIRS} )
 # ------------------------------------------------------------------------------
 SET(MY_EXECUTABLE "cont")
-ADD_EXECUTABLE( ${MY_EXECUTABLE} "continuation.cpp" "MyScalarPotential.cpp")
+ADD_EXECUTABLE( ${MY_EXECUTABLE} "continuation.cpp" "MyScalarField.cpp")
 TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
                        "nosh"
                        ${Trilinos_LIBRARIES}

@@ -18,12 +18,10 @@
 //
 // @HEADER
 
-#include "Nosh_ScalarPotential_Constant.hpp"
-
-#include <Epetra_LocalMap.h>
+#include "Nosh_ScalarField_Constant.hpp"
 
 namespace Nosh {
-namespace ScalarPotential {
+namespace ScalarField {
 // ============================================================================
 Constant::
 Constant(const double alpha ):
@@ -73,5 +71,5 @@ get_p_names() const
   return Teuchos::rcp(new Teuchos::Array<std::string>(1, "T"));
 }
 // ============================================================================
-} // namespace ScalarPotential
+} // namespace ScalarField
 } // namespace Nosh

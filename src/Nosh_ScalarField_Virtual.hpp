@@ -1,6 +1,6 @@
 // @HEADER
 //
-//    Query routines for the magnetic vector potential.
+//    Query routines for a virtual scalar field.
 //    Copyright (C) 2012  Nico Schl\"omer
 //
 //    This program is free software: you can redistribute it and/or modify
@@ -17,61 +17,47 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 // @HEADER
-#ifndef NOSH_SCALARPOTENTIAL_CONSTANT_H_
-#define NOSH_SCALARPOTENTIAL_CONSTANT_H_
-// =============================================================================
-// forward defs
-class Epetra_Vector;
-class Epetra_Map;
+#ifndef NOSH_SCALARFIELD_VIRTUAL_H_
+#define NOSH_SCALARFIELD_VIRTUAL_H_
 // =============================================================================
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Array.hpp>
-#include <Epetra_Comm.h>
-
-#include "Nosh_ScalarPotential_Virtual.hpp"
 // =============================================================================
 namespace Nosh {
-namespace ScalarPotential {
-class Constant: public Virtual
+namespace ScalarField {
+class Virtual
 {
 public:
-Constant(const double alpha
-         );
+Virtual();
 
-Epetra_Vector
-createPInit_(const Epetra_Map & map);
-
-~Constant();
+~Virtual();
 
 virtual
 double
 getV(const unsigned int nodeIndex,
      const Teuchos::Array<double> & p
-     ) const;
+     ) const = 0;
 
 virtual
 double
 getdVdP(const unsigned int nodeIndex,
         const unsigned int parameterIndex,
         const Teuchos::Array<double> & p
-        ) const;
+        ) const = 0;
 
 //! Gets the parameters from this module.
 virtual
 Teuchos::RCP<const Teuchos::Array<double> >
-get_p_init() const;
+get_p_init() const = 0;
 
 //! Get the parameter names.
 virtual
 Teuchos::RCP<const Teuchos::Array<std::string> >
-get_p_names() const;
+get_p_names() const = 0;
 
 protected:
 private:
-
-const double alpha_;
-
 };
-} // namespace ScalarPotential
+} // namespace ScalarField
 } // namespace Nosh
-#endif // NOSH_SCALARPOTENTIAL_CONSTANT_H_
+#endif // NOSH_SCALARFIELD_VIRTUAL_H_

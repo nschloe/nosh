@@ -40,7 +40,7 @@ typedef Teuchos::SerialDenseVector<int,double> DoubleVector;
 // forward declarations
 namespace Nosh {
 class StkMesh;
-namespace MagneticVectorPotential {
+namespace VectorField {
 class Virtual;
 }
 }
@@ -53,7 +53,7 @@ class Keo: public Virtual
 public:
 Keo(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
     const Teuchos::RCP<const Epetra_Vector> &thickness,
-    const Teuchos::RCP<const Nosh::MagneticVectorPotential::Virtual> &mvp
+    const Teuchos::RCP<const Nosh::VectorField::Virtual> &mvp
     );
 
 // Destructor.
@@ -132,7 +132,7 @@ const Teuchos::RCP<Teuchos::Time> buildKeoGraphTime_;
 #endif
 const Teuchos::RCP<const Nosh::StkMesh> mesh_;
 const Teuchos::RCP<const Epetra_Vector> thickness_;
-const Teuchos::RCP<const Nosh::MagneticVectorPotential::Virtual> mvp_;
+const Teuchos::RCP<const Nosh::VectorField::Virtual> mvp_;
 
 mutable Teuchos::ArrayRCP<Epetra_IntSerialDenseVector> globalIndexCache_;
 mutable bool globalIndexCacheUpToDate_;

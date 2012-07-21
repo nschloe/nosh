@@ -1,6 +1,6 @@
 // @HEADER
 //
-//    Query routines for the magnetic vector potential.
+//    Query routines for a vector field.
 //    Copyright (C) 2012  Nico Schl\"omer
 //
 //    This program is free software: you can redistribute it and/or modify
@@ -17,8 +17,8 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 // @HEADER
-#ifndef NOSH_MAGNETICVECTORPOTENTIAL_VIRTUAL_H_
-#define NOSH_MAGNETICVECTORPOTENTIAL_VIRTUAL_H_
+#ifndef NOSH_VECTORFIELD_VIRTUAL_H_
+#define NOSH_VECTORFIELD_VIRTUAL_H_
 // =============================================================================
 // forward decls
 class Epetra_Vector;
@@ -28,7 +28,7 @@ class Epetra_Map;
 #include <Teuchos_Array.hpp>
 // =============================================================================
 namespace Nosh {
-namespace MagneticVectorPotential {
+namespace VectorField {
 class Virtual
 {
 public:
@@ -37,18 +37,19 @@ Virtual();
 virtual
 ~Virtual();
 
+//! Projection of the vector field onto an edge at the midpoint of the edge.
 virtual
 double
-getAEdgeMidpointProjection(const unsigned int edgeIndex,
-                           const Teuchos::Array<double> &mvpParams
-                           ) const = 0;
+getEdgeProjection(const unsigned int edgeIndex,
+                  const Teuchos::Array<double> &params
+                  ) const = 0;
 
 virtual
 double
-getdAdPEdgeMidpointProjection(const unsigned int edgeIndex,
-                              const Teuchos::Array<double> &mvpParams,
-                              const unsigned int parameterIndex
-                              ) const = 0;
+getDEdgeProjectionDp(const unsigned int edgeIndex,
+                     const Teuchos::Array<double> &params,
+                     const unsigned int parameterIndex
+                     ) const = 0;
 
 //! Gets the current parameters from this module.
 virtual
@@ -63,6 +64,6 @@ get_p_names() const = 0;
 protected:
 private:
 };
-} // namespace MagneticVectorPotential
+} // namespace VectorField
 } // namespace Nosh
-#endif // NOSH_MAGNETICVECTORPOTENTIAL_VIRTUAL_H_
+#endif // NOSH_VECTORFIELD_VIRTUAL_H_
