@@ -218,23 +218,14 @@ read( const Epetra_Comm &comm,
                           Ioss::Field::TRANSIENT);
 
   // Magnetic vector potential.
-  // Think about whether to declare the magnetic vector potential as
-  // Ioss::Field::TRANSIENT or Ioss::Field::ATTRIBUTE. "TRANSIENT" writes the
-  // data out for all time/continuation steps (although) is it actually the
-  // same throughout. "ATTRIBUTE" stores the vector field only once and hence
-  // saves a lot of disk space, but not all readers recoginize the ATTRIBUTE
-  // field (e.g., ParaView).
-  //
-  // On 05/11/2011 02:44 PM, Gregory Sjaardema wrote:
-  // For now, the B and C fields will have to be declared as TRANSIENT fields
-  // since they are nodal fields on the universal set which currently doesn't
-  // support attributes.  One of the stories I was supposed to work on for
-  // this sprint was increasing the exodus capabilities supported by Ioss
-  // (used underneath stk_io) and attributes on nodeblocks is one of the
-  // things supported by exodus, but not by Ioss.  However, I got bogged down
-  // by some big debugging and didn't finish that story.  Hopefully, it will
-  // be done in June at which time you could use attribute fields on the
-  // universal set...
+  // Unconditionally assume that the field is 3D (A_X, A_Y, A_Z) even
+  // if the domain is two-dimensional. Eventually, we only need the
+  // the projection of the field onto the edges of the mesh, this
+  // this might be a bit overkill. Until we can explicitly associate
+  // fields with edges, though, keep it this way.
+  // Also, declare "A" as Ioss::Field::ATTRIBUTE. This makes sure that
+  // the data is written out, but only once (hence "attribute") and not
+  // once per step. (This is with trilinos-dev as of July 2012.)
   Teuchos::RCP<VectorFieldType> mvpField =
     Teuchos::rcpFromRef( metaData->declare_field<VectorFieldType>( "A" ) );
   stk::mesh::put_field(*mvpField,
@@ -242,32 +233,6 @@ read( const Epetra_Comm &comm,
                        metaData->universal_part(),
                        numDim);
   stk::io::set_field_role(*mvpField,
-                          Ioss::Field::ATTRIBUTE);
-
-  // Sometimes, it may be stored in the file with three components (A_X, A_Y,
-  // A_Z), sometimes, if the domain is two-dimensional, with two components
-  // (typically A_R, A_Z then, for some funny reason -- cylindrical
-  // coordinates?).
-  //
-  // To be on the safe side, declare the vector field A, and the scalar fields
-  // A_R, A_Z here. Then further below apply some logic to make sense of the
-  // findings.
-  // What we'd really need here though is a "read everything that's in file"
-  // kind of routine.
-  Teuchos::RCP<ScalarFieldType> mvpFieldR =
-    Teuchos::rcpFromRef( metaData->declare_field< ScalarFieldType >( "A_R" ) );
-  stk::mesh::put_field(*mvpFieldR,
-                       metaData->node_rank(),
-                       metaData->universal_part());
-  stk::io::set_field_role(*mvpFieldR,
-                          Ioss::Field::ATTRIBUTE );
-
-  Teuchos::RCP<ScalarFieldType> mvpFieldZ =
-    Teuchos::rcpFromRef( metaData->declare_field< ScalarFieldType >( "A_Z" ) );
-  stk::mesh::put_field(*mvpFieldZ,
-                       metaData->node_rank(),
-                       metaData->universal_part());
-  stk::io::set_field_role(*mvpFieldZ,
                           Ioss::Field::ATTRIBUTE);
 
   // Thickness field. Same as above.
@@ -368,17 +333,10 @@ read( const Epetra_Comm &comm,
   // create the state
   data.set("psi", this->complexfield2vector_(mesh, psir_field, psii_field));
 
-  Teuchos::RCP<const Epetra_MultiVector> mvp;
-  mvp = this->createMvp_(mesh, mvpField);
-  // Check if it's 0.
-  // If the field appears to be zeroed-out, it's probably not there.
-  // Try A_R, A_Z.
-  double r[3];
-  TEUCHOS_ASSERT_EQUALITY(0, mvp->NormInf( r ));
-  double tol = 1.0e-15;
-  if (r[0]<tol && r[1]<tol && r[2]<tol)
-    mvp = this->createMvpRZ_(mesh, mvpFieldR, mvpFieldZ);
-  data.set( "A", mvp );
+  // create mvp
+  Teuchos::RCP<const Epetra_MultiVector> mvp =
+    this->createMvp_(mesh, mvpField);
+  data.set("A", mvp);
 
   // Check of the thickness data is of any value. If not: ditch it.
   Teuchos::RCP<Epetra_Vector> thickness =
@@ -389,13 +347,8 @@ read( const Epetra_Comm &comm,
 //     TEUCHOS_ASSERT( !restrictions.empty() );
 //     *out << "max_size " << thicknessField->max_size(metaData->node_rank()) << std::endl;
 
-  // Check of the data is of any value. If not: ditch it.
-  double norminf;
-  Teuchos::RCP<Epetra_Vector> potential = this->scalarfield2vector_(mesh, potentialField);
-  TEUCHOS_ASSERT_EQUALITY(0, potential->NormInf( &norminf ));
-  if ( norminf < 1.0e-15 ) // assume that potential wasn't present, fill with default value
-    TEUCHOS_ASSERT_EQUALITY(0, potential->PutScalar( 0.0 ));
-  data.set( "V", potential );
+  // create scalar potential
+  data.set( "V", this->scalarfield2vector_(mesh, potentialField) );
 
   return;
 }

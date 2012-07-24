@@ -1,6 +1,3 @@
-EXTRA_ARGS=$@
-TRILINOS_HOME=../../source
-
 cmake \
   -D CMAKE_INSTALL_PREFIX:PATH=/opt/trilinos/dev/master/gcc/4.6.3/debug \
   -D CMAKE_BUILD_TYPE=Debug \
@@ -14,7 +11,6 @@ cmake \
   -D Trilinos_ENABLE_STK:BOOL=ON \
   -D Trilinos_ENABLE_SEACASIoss:BOOL=ON \
   -D TPL_ENABLE_Netcdf:BOOL=ON \
-      -D Netcdf_LIBRARY_DIRS:PATH=/opt/netcdf/4.1.2/lib/ \
-      -D TPL_Netcdf_INCLUDE_DIRS:PATH=/opt/netcdf/4.1.2/include \
-  $EXTRA_ARGS \
-  ${TRILINOS_HOME}
+      -D Netcdf_LIBRARY_DIRS:PATH=/opt/netcdf/4.2/lib/ \
+      -D TPL_Netcdf_INCLUDE_DIRS:PATH=/opt/netcdf/4.2/include \
+  ../../source
