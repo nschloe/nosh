@@ -28,14 +28,11 @@
 #endif
 #include <Teuchos_Tuple.hpp>
 #include <Teuchos_Array.hpp>
-#include <Teuchos_SerialDenseVector.hpp>
 #include <Epetra_FECrsGraph.h>
 
 #include <stk_mesh/base/Entity.hpp>
 
 #include "Nosh_MatrixBuilder_Virtual.hpp"
-// =============================================================================
-typedef Teuchos::SerialDenseVector<int,double> DoubleVector;
 // =============================================================================
 // forward declarations
 namespace Nosh {

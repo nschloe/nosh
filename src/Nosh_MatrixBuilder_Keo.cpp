@@ -341,11 +341,13 @@ fillKeo_( Epetra_FECrsMatrix &keoMatrix,
     // at the indices   [ nodeIndices[0], nodeIndices[1] ] for every index pair
     // that shares and edge.
     // Do that now, just blockwise for real and imaginary part.
+    v[0] *= alphaCache_[k];
+    v[1] *= alphaCache_[k];
+    v[2] *= alphaCache_[k];
     A(0, 0) = v[2];   A(0 ,1) = 0.0;     A(0, 2) = v[0];    A(0, 3) = v[1];
     A(1, 0) = 0.0;    A(1 ,1) = v[2];    A(1, 2) = -v[1];   A(1, 3) = v[0];
     A(2, 0) = v[0];   A(2 ,1) = -v[1];   A(2, 2) = v[2];    A(2, 3) = 0.0;
     A(3, 0) = v[1];   A(3 ,1) = v[0];    A(3, 2) = 0.0;     A(3, 3) = v[2];
-    TEUCHOS_ASSERT_EQUALITY(0, A.Scale(alphaCache_[k]));
     TEUCHOS_ASSERT_EQUALITY(0, keoMatrix.SumIntoGlobalValues(
                                                     globalIndexCache_[k], A));
     // -------------------------------------------------------------------

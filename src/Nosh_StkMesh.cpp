@@ -853,13 +853,19 @@ computeTriangleCircumcenter_( const DoubleVector &node0,
                               const DoubleVector &node2
                               ) const
 {
-  DoubleVector cc;
+  DoubleVector a(node0);
+  for (int k=0; k<3; k++)
+    a[k] -= node1[k];
 
-  double omega = 2.0 *
-    this->norm2squared_( this->cross_( this->add_( 1.0, node0, -1.0, node1 ),
-                                       this->add_( 1.0,
-                                                   node1, -1.0, node2 ) )
-                         );
+  DoubleVector b(node1);
+  for (int k=0; k<3; k++)
+    b[k] -= node2[k];
+
+  DoubleVector c(node2);
+  for (int k=0; k<3; k++)
+    c[k] -= node0[k];
+
+  const double omega = 2.0 * this->norm2squared_(this->cross_(a, b));
 
   // don't divide by 0
   TEUCHOS_TEST_FOR_EXCEPT_MSG( fabs( omega ) < 1.0e-10,
@@ -871,27 +877,15 @@ computeTriangleCircumcenter_( const DoubleVector &node0,
                        << std::endl
                        );
 
-  double alpha =
-    this->dot_( this->add_( 1.0, node1, -1.0,
-                            node2 ), this->add_( 1.0, node1, -1.0, node2 ) )
-    * this->dot_( this->add_( 1.0, node0, -1.0,
-                              node1 ), this->add_( 1.0, node0, -1.0, node2 ) )
-    / omega;
-  double beta  =
-    this->dot_( this->add_( 1.0, node2, -1.0,
-                            node0 ), this->add_( 1.0, node2, -1.0, node0 ) )
-    * this->dot_( this->add_( 1.0, node1, -1.0,
-                              node2 ), this->add_( 1.0, node1, -1.0, node0 ) )
-    / omega;
-  double gamma =
-    this->dot_( this->add_( 1.0, node0, -1.0,
-                            node1 ), this->add_( 1.0, node0, -1.0, node1 ) )
-    * this->dot_( this->add_( 1.0, node2, -1.0,
-                              node0 ), this->add_( 1.0, node2, -1.0, node1 ) )
-    / omega;
+  const double alpha = - this->dot_(b, b) * this->dot_(a, c) / omega;
+  const double beta  = - this->dot_(c, c) * this->dot_(b, a) / omega;
+  const double gamma = - this->dot_(a, a) * this->dot_(c, b) / omega;
 
-  cc = this->add_( alpha, node0, beta, node1 );
-  cc = this->add_( 1.0, cc, gamma, node2 );
+  DoubleVector cc(3);
+  for (int k=0; k<3; k++)
+    cc[k] = alpha * node0[k]
+          + beta  * node1[k]
+          + gamma * node2[k];
 
   return cc;
 }

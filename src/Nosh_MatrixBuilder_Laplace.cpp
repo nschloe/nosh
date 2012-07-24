@@ -268,11 +268,11 @@ fill_(Epetra_FECrsMatrix &matrix) const
     // at the indices   [ nodeIndices[0], nodeIndices[1] ] for every index pair
     // that shares and edge.
     // Do that now, just blockwise for real and imaginary part.
-    A(0, 0) =  1.0;  A(0 ,1) =  0.0;  A(0, 2) = -1.0;  A(0, 3) =  0.0;
-    A(1, 0) =  0.0;  A(1 ,1) =  1.0;  A(1, 2) =  0.0;  A(1, 3) = -1.0;
-    A(2, 0) = -1.0;  A(2 ,1) =  0.0;  A(2, 2) =  1.0;  A(2, 3) =  0.0;
-    A(3, 0) =  0.0;  A(3 ,1) = -1.0;  A(3, 2) =  0.0;  A(3, 3) =  1.0;
-    TEUCHOS_ASSERT_EQUALITY(0, A.Scale(alphaCache_[k]));
+    const double & a = alphaCache_[k];
+    A(0, 0) =  a;    A(0 ,1) =  0.0;  A(0, 2) = -a;    A(0, 3) =  0.0;
+    A(1, 0) =  0.0;  A(1 ,1) =  a;    A(1, 2) =  0.0;  A(1, 3) = -a;
+    A(2, 0) = -a;    A(2 ,1) =  0.0;  A(2, 2) =  a;    A(2, 3) =  0.0;
+    A(3, 0) =  0.0;  A(3 ,1) = -a;    A(3, 2) =  0.0;  A(3, 3) =  a;
     TEUCHOS_ASSERT_EQUALITY(0, matrix.SumIntoGlobalValues(
                                                 globalIndexCache_[k], A));
     // -------------------------------------------------------------------

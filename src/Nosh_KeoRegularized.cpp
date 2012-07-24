@@ -23,7 +23,6 @@
 #include "Nosh_MatrixBuilder_Virtual.hpp"
 #include "Nosh_StkMesh.hpp"
 
-#include <Epetra_SerialDenseMatrix.h>
 #include <Epetra_Comm.h>
 #include <Epetra_Vector.h>
 #include <Epetra_FECrsMatrix.h>

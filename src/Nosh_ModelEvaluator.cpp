@@ -33,7 +33,6 @@
 #include <Epetra_LocalMap.h>
 #include <Epetra_Vector.h>
 #include <Epetra_CrsMatrix.h>
-#include <Epetra_SerialDenseMatrix.h>
 
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   #include <Teuchos_TimeMonitor.hpp>

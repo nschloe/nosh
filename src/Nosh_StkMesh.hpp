@@ -30,7 +30,6 @@
   #include <Teuchos_Time.hpp>
 #endif
 #include <Teuchos_Array.hpp>
-#include <Teuchos_SerialDenseMatrix.hpp>
 #include <Teuchos_SerialDenseVector.hpp>
 
 #include <stk_mesh/base/Entity.hpp>
