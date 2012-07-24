@@ -49,7 +49,7 @@ ModelEvaluator (
   const Teuchos::RCP<const Nosh::MatrixBuilder::Virtual> &matrixBuilder,
   const Teuchos::RCP<const Nosh::ScalarField::Virtual> &scalarPotential,
   const double g,
-  const Teuchos::RCP<const Epetra_Vector> &thickness,
+  const Teuchos::RCP<const Nosh::ScalarField::Virtual> &thickness,
   const Teuchos::RCP<const Epetra_Vector> &initialX
   ) :
   mesh_( mesh ),
@@ -467,7 +467,10 @@ computeF_(const Epetra_Vector &x,
     //
     //     as suggested by mass lumping. This works if thickness(x_k) is available.
     //
-    double alpha = controlVolumes[k] * (*thickness_)[k]
+    // The indexing here assumes that the local index K of controlVolume's map
+    // is known to be local by thickness and scalarPotential and known to be
+    // associated with that map.
+    double alpha = controlVolumes[k] * thickness_->getV(k)
                  * (scalarPotential_->getV(k, spParams) + g * (x[2*k]*x[2*k] + x[2*k+1]*x[2*k+1]));
     // real and imaginary part
     FVec[2*k]   += alpha * x[2*k];
@@ -497,7 +500,7 @@ computeDFDg_(const Epetra_Vector &x,
 
   for ( int k=0; k<controlVolumes.MyLength(); k++ )
   {
-    double alpha = controlVolumes[k] * (*thickness_)[k]
+    double alpha = controlVolumes[k] * thickness_->getV(k)
                  * (x[2*k]*x[2*k] + x[2*k+1]*x[2*k+1]);
     // real and imaginary part
     FVec[2*k]   = alpha * x[2*k];
@@ -530,7 +533,7 @@ computeDFDPpotential_(const Epetra_Vector &x,
 
   for ( int k=0; k<controlVolumes.MyLength(); k++ )
   {
-    double alpha = controlVolumes[k] * (*thickness_)[k]
+    double alpha = controlVolumes[k] * thickness_->getV(k)
                  * scalarPotential_->getdVdP(k, paramIndex, spParams);
     // real and imaginary part
     FVec[2*k]   = alpha * x[2*k];

@@ -32,7 +32,7 @@ namespace Nosh {
 JacobianOperator::
 JacobianOperator(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
                  const Teuchos::RCP<const Nosh::ScalarField::Virtual> &scalarPotential,
-                 const Teuchos::RCP<const Epetra_Vector> &thickness,
+                 const Teuchos::RCP<const Nosh::ScalarField::Virtual> &thickness,
                  const Teuchos::RCP<const Nosh::MatrixBuilder::Virtual> &matrixBuilder
                  ) :
   useTranspose_( false ),
@@ -225,18 +225,18 @@ rebuildDiags_(const double g,
   for (int k=0; k<controlVolumes.MyLength(); k++)
   {
     // rebuild diag0
-    const double alpha = controlVolumes[k] * (*thickness_)[k]
+    const double alpha = controlVolumes[k] * thickness_->getV(k)
                        * ( scalarPotential_->getV(k, spParams)
                          + g * 2.0 * (x[2*k]*x[2*k] + x[2*k+1]*x[2*k+1])
                          );
-    const double realX2 = g * controlVolumes[k] * (*thickness_)[k]
+    const double realX2 = g * controlVolumes[k] * thickness_->getV(k)
                         * ( x[2*k]*x[2*k] - x[2*k+1]*x[2*k+1] );
     diag0_[2*k]   = alpha + realX2;
     diag0_[2*k+1] = alpha - realX2;
 
     // rebuild diag1b
-    diag1b_[k] = g * controlVolumes[k] * (*thickness_)[k]
-                  * (2.0 * x[2*k] * x[2*k+1]);
+    diag1b_[k] = g * controlVolumes[k] * thickness_->getV(k)
+                   * (2.0 * x[2*k] * x[2*k+1]);
   }
 
   return;

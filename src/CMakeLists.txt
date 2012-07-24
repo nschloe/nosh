@@ -9,6 +9,7 @@ SET ( nosh_SRCS
       Nosh_KeoRegularized.cpp
       Nosh_ScalarField_Virtual.cpp
       Nosh_ScalarField_Constant.cpp
+      Nosh_ScalarField_ConstantWithParam.cpp
       Nosh_VectorField_Virtual.cpp
       Nosh_VectorField_ExplicitValues.cpp
       Nosh_VectorField_ConstantCurl.cpp

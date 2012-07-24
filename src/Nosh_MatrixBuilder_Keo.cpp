@@ -21,6 +21,7 @@
 // includes
 #include "Nosh_MatrixBuilder_Keo.hpp"
 #include "Nosh_StkMesh.hpp"
+#include "Nosh_ScalarField_Virtual.hpp"
 #include "Nosh_VectorField_Virtual.hpp"
 
 #include <Epetra_SerialDenseMatrix.h>
@@ -38,7 +39,7 @@ namespace MatrixBuilder {
 // =============================================================================
 Keo::
 Keo(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
-    const Teuchos::RCP<const Epetra_Vector> &thickness,
+    const Teuchos::RCP<const Nosh::ScalarField::Virtual> &thickness,
     const Teuchos::RCP<const Nosh::VectorField::Virtual> &mvp
     ) :
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
@@ -391,11 +392,12 @@ buildAlphaCache_( const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > & 
   Teuchos::Tuple<int,2> gid;
   for ( unsigned int k=0; k<edges.size(); k++ )
   {
+    // Get the ID of the edge endpoints in the nonoverlapping
+    // nodes map.
     gid[0] = edges[k][0]->identifier() - 1;
     gid[1] = edges[k][1]->identifier() - 1;
-
-    int tlid0 = thickness_->Map().LID( gid[0] );
-    int tlid1 = thickness_->Map().LID( gid[1] );
+    const int tlid0 = mesh_->getNodesMap()->LID( gid[0] );
+    const int tlid1 = mesh_->getNodesMap()->LID( gid[1] );
 #ifdef _DEBUG_
     TEUCHOS_TEST_FOR_EXCEPT_MSG( tlid0 < 0,
                          "The global index " << gid[0]
@@ -404,8 +406,8 @@ buildAlphaCache_( const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > & 
                          "The global index " << gid[1]
                          << " does not seem to be present on this node." );
 #endif
-    double thickness = 0.5 * ( (*thickness_)[tlid0] + (*thickness_)[tlid1]);
-
+    // Update cache.
+    const double thickness = 0.5 * (thickness_->getV(tlid0) + thickness_->getV(tlid1));
     alphaCache_[k] = edgeCoefficients[k] * thickness;
   }
 

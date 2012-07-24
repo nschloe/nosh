@@ -17,8 +17,8 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 // @HEADER
-#ifndef NOSH_SCALARFIELD_CONSTANT_H_
-#define NOSH_SCALARFIELD_CONSTANT_H_
+#ifndef NOSH_SCALARFIELD_CONSTANTWITHPARAM_H_
+#define NOSH_SCALARFIELD_CONSTANTWITHPARAM_H_
 // =============================================================================
 // forward defs
 class Epetra_Vector;
@@ -32,16 +32,15 @@ class Epetra_Map;
 // =============================================================================
 namespace Nosh {
 namespace ScalarField {
-class Constant: public Virtual
+class ConstantWithParam: public Virtual
 {
 public:
-Constant(const double alpha
-         );
+ConstantWithParam(const double alpha);
 
 Epetra_Vector
 createPInit_(const Epetra_Map & map);
 
-~Constant();
+~ConstantWithParam();
 
 //! Get the parameter names.
 virtual
@@ -53,12 +52,10 @@ virtual
 Teuchos::RCP<const Teuchos::Array<double> >
 get_p_init() const;
 
-//! nodeIndex refers to the local index in the nonoverlapping
-//! nodes map.
 virtual
 double
 getV(const unsigned int nodeIndex,
-     const Teuchos::Array<double> & p = Teuchos::Array<double>()
+     const Teuchos::Array<double> & p
      ) const;
 
 virtual
@@ -76,4 +73,4 @@ const double alpha_;
 };
 } // namespace ScalarField
 } // namespace Nosh
-#endif // NOSH_SCALARFIELD_CONSTANT_H_
+#endif // NOSH_SCALARFIELD_CONSTANTWITHPARAM_H_

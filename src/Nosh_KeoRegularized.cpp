@@ -19,6 +19,7 @@
 // @HEADER
 
 #include "Nosh_KeoRegularized.hpp"
+#include "Nosh_ScalarField_Virtual.hpp"
 #include "Nosh_MatrixBuilder_Virtual.hpp"
 #include "Nosh_StkMesh.hpp"
 
@@ -51,7 +52,7 @@ namespace Nosh {
 // =============================================================================
 KeoRegularized::
 KeoRegularized(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
-               const Teuchos::RCP<const Epetra_Vector> &thickness,
+               const Teuchos::RCP<const Nosh::ScalarField::Virtual> &thickness,
                const Teuchos::RCP<const Nosh::MatrixBuilder::Virtual> &matrixBuilder):
   useTranspose_( false ),
   mesh_( mesh ),
@@ -353,7 +354,7 @@ rebuildAbsPsiSquared_(const Teuchos::RCP<const Epetra_Vector> &psi)
   int numMyPoints = controlVolumes->MyLength();
   for (int k=0; k<numMyPoints; k++)
   {
-    double alpha = (*controlVolumes)[k] * (*thickness_)[k]
+    double alpha = (*controlVolumes)[k] * thickness_->getV(k)
                  * ((*psi)[2*k]*(*psi)[2*k] + (*psi)[2*k+1]*(*psi)[2*k+1]);
     absPsiSquared_[2*k] = alpha;
     absPsiSquared_[2*k+1] = alpha;

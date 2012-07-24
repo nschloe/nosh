@@ -50,23 +50,28 @@ testJac( const std::string & inputFileNameBase,
     Nosh::StkMeshRead( *eComm, inputFileName, 0, data );
 
     // Cast the data into something more accessible.
-    Teuchos::RCP<Nosh::StkMesh> & mesh = data.get( "mesh", Teuchos::RCP<Nosh::StkMesh>() );
-    Teuchos::RCP<Epetra_Vector> & psi = data.get( "psi", Teuchos::RCP<Epetra_Vector>() );
-    Teuchos::RCP<const Epetra_MultiVector> & mvpValues = data.get( "A", Teuchos::RCP<const Epetra_MultiVector>() );
-    Teuchos::RCP<Epetra_Vector> & thickness = data.get( "thickness", Teuchos::RCP<Epetra_Vector>() );
+    Teuchos::RCP<Nosh::StkMesh> & mesh =
+      data.get( "mesh", Teuchos::RCP<Nosh::StkMesh>() );
+    Teuchos::RCP<Epetra_Vector> & psi =
+      data.get( "psi", Teuchos::RCP<Epetra_Vector>() );
+    Teuchos::RCP<const Epetra_MultiVector> & mvpValues =
+      data.get( "A", Teuchos::RCP<const Epetra_MultiVector>() );
     Teuchos::ParameterList & problemParameters = data.get( "Problem parameters", Teuchos::ParameterList() );
 
     const double g = 1.0;
     Teuchos::Array<double> mvpParameters(1);
     mvpParameters[0] = mu;
-    Teuchos::Array<double> spParameters(1);
-    spParameters[0] = 0.0; // T
+    Teuchos::Array<double> spParameters(0);
 
     Teuchos::RCP<Nosh::VectorField::Virtual> mvp =
       Teuchos::rcp(new Nosh::VectorField::ExplicitValues(mesh, mvpValues, mu));
 
     Teuchos::RCP<Nosh::ScalarField::Virtual> sp =
       Teuchos::rcp(new Nosh::ScalarField::Constant(-1.0));
+
+    // Set the thickness field.
+    Teuchos::RCP<Nosh::ScalarField::Virtual> thickness =
+      Teuchos::rcp(new Nosh::ScalarField::Constant(1.0));
 
     // create a keo factory
     Teuchos::RCP<Nosh::MatrixBuilder::Virtual> keoBuilder =

@@ -76,8 +76,12 @@ testComputeF( const std::string & inputFileNameBase,
       data.get( "psi", Teuchos::RCP<Epetra_Vector>() );
     Teuchos::RCP<const Epetra_MultiVector> & mvpValues =
       data.get( "A", Teuchos::RCP<const Epetra_MultiVector>() );
-    Teuchos::RCP<Epetra_Vector> & thickness =
+    Teuchos::RCP<Epetra_Vector> & thicknessValues =
       data.get( "thickness", Teuchos::RCP<Epetra_Vector>() );
+
+    // Set the thickness field.
+    Teuchos::RCP<Nosh::ScalarField::Virtual> thickness =
+      Teuchos::rcp(new Nosh::ScalarField::Constant(1.0));
 
     Teuchos::RCP<Nosh::VectorField::Virtual> mvp =
       Teuchos::rcp(new Nosh::VectorField::ExplicitValues(mesh, mvpValues, mu));

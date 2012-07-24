@@ -35,7 +35,7 @@ Virtual();
 virtual
 double
 getV(const unsigned int nodeIndex,
-     const Teuchos::Array<double> & p
+     const Teuchos::Array<double> & p = Teuchos::Array<double>()
      ) const = 0;
 
 virtual

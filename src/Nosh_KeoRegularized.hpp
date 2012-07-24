@@ -34,6 +34,9 @@
 // =============================================================================
 namespace Nosh {
 class StkMesh;
+namespace ScalarField {
+class Virtual;
+}
 namespace MatrixBuilder {
 class Virtual;
 }
@@ -53,7 +56,7 @@ class KeoRegularized : public Epetra_Operator
 {
 public:
 KeoRegularized(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
-               const Teuchos::RCP<const Epetra_Vector> &thickness,
+               const Teuchos::RCP<const Nosh::ScalarField::Virtual> &thickness,
                const Teuchos::RCP<const Nosh::MatrixBuilder::Virtual> &matrixBuilder
                );
 
@@ -116,7 +119,7 @@ bool useTranspose_;
 
 const Teuchos::RCP<const Nosh::StkMesh> mesh_;
 double g_;
-const Teuchos::RCP<const Epetra_Vector> thickness_;
+const Teuchos::RCP<const Nosh::ScalarField::Virtual> thickness_;
 const Teuchos::RCP<const Nosh::MatrixBuilder::Virtual> matrixBuilder_;
 
 // |psi|^2

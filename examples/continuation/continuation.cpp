@@ -127,10 +127,10 @@ int main(int argc, char *argv[])
       data.get<Teuchos::RCP<Nosh::StkMesh> >( "mesh" );
     const Teuchos::RCP<const Epetra_MultiVector> & mvpValues =
       data.get("A", Teuchos::RCP<const Epetra_MultiVector>() );
-    const Teuchos::RCP<Epetra_Vector> & potentialValues =
-      data.get("V", Teuchos::RCP<Epetra_Vector>());
-    const Teuchos::RCP<Epetra_Vector> & thickness =
-      data.get( "thickness", Teuchos::RCP<Epetra_Vector>() );
+    //const Teuchos::RCP<Epetra_Vector> & potentialValues =
+      //data.get("V", Teuchos::RCP<Epetra_Vector>());
+    //const Teuchos::RCP<Epetra_Vector> & thickness =
+      //data.get( "thickness", Teuchos::RCP<Epetra_Vector>() );
 
     // Read PSI from a given time step.
     Teuchos::RCP<Epetra_Vector> psi;
@@ -150,6 +150,10 @@ int main(int argc, char *argv[])
     TEUCHOS_ASSERT( !psi.is_null() );
     Teuchos::RCP<Nosh::State> state =
       Teuchos::rcp(new Nosh::State(*psi, mesh));
+
+    // Set the thickness field.
+    Teuchos::RCP<Nosh::ScalarField::Virtual> thickness =
+      Teuchos::rcp(new Nosh::ScalarField::Constant(1.0));
 
     // Setup the energy operator, here: (-i\nabla-A)^2.
     // Choose between several given MVPs or build your own by

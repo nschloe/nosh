@@ -18,58 +18,57 @@
 //
 // @HEADER
 
-#include "Nosh_ScalarField_Constant.hpp"
+#include "Nosh_ScalarField_ConstantWithParam.hpp"
 
 namespace Nosh {
 namespace ScalarField {
 // ============================================================================
-Constant::
-Constant(const double alpha ):
+ConstantWithParam::
+ConstantWithParam(const double alpha ):
   alpha_( alpha )
 {
 }
 // ============================================================================
-Constant::
-~Constant()
+ConstantWithParam::
+~ConstantWithParam()
 {
 }
 // ============================================================================
 Teuchos::RCP<const Teuchos::Array<std::string> >
-Constant::
+ConstantWithParam::
 get_p_names() const
 {
-  return Teuchos::rcp(new Teuchos::Array<std::string>());
+  return Teuchos::rcp(new Teuchos::Array<std::string>(1, "T"));
 }
 // ============================================================================
 Teuchos::RCP<const Teuchos::Array<double> >
-Constant::
+ConstantWithParam::
 get_p_init() const
 {
-  return Teuchos::rcp(new Teuchos::Array<double>());
+  return Teuchos::rcp(new Teuchos::Array<double>(1, 0.0));
 }
 // ============================================================================
 double
-Constant::
+ConstantWithParam::
 getV(const unsigned int nodeIndex,
      const Teuchos::Array<double> & p
      ) const
 {
 #ifdef _DEBUG_
-  TEUCHOS_ASSERT_EQUALITY(p.length(), 0);
+  TEUCHOS_ASSERT_EQUALITY(p.length(), 1);
 #endif
-  return alpha_;
+  return alpha_ + p[0];
 }
 // ============================================================================
 double
-Constant::
+ConstantWithParam::
 getdVdP(const unsigned int nodeIndex,
         const unsigned int parameterIndex,
         const Teuchos::Array<double> & p
         ) const
 {
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(true,
-                              "No parameter for scalar field.");
-  return 0.0;
+  TEUCHOS_ASSERT_EQUALITY(parameterIndex, 0);
+  return 1.0;
 }
 // ============================================================================
 } // namespace ScalarField

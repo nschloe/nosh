@@ -83,10 +83,16 @@ testDfdp(const std::string & inputFileNameBase,
     Nosh::StkMeshRead( *eComm, inputFileName, 0, data );
 
     // Cast the data into something more accessible.
-    Teuchos::RCP<Nosh::StkMesh> & mesh = data.get( "mesh", Teuchos::RCP<Nosh::StkMesh>() );
-    Teuchos::RCP<Epetra_Vector> & z = data.get( "psi", Teuchos::RCP<Epetra_Vector>() );
-    Teuchos::RCP<const Epetra_MultiVector> & mvpValues = data.get( "A", Teuchos::RCP<const Epetra_MultiVector>() );
-    Teuchos::RCP<Epetra_Vector> & thickness = data.get( "thickness", Teuchos::RCP<Epetra_Vector>() );
+    Teuchos::RCP<Nosh::StkMesh> & mesh =
+      data.get( "mesh", Teuchos::RCP<Nosh::StkMesh>() );
+    Teuchos::RCP<Epetra_Vector> & z =
+      data.get( "psi", Teuchos::RCP<Epetra_Vector>() );
+    Teuchos::RCP<const Epetra_MultiVector> & mvpValues =
+      data.get( "A", Teuchos::RCP<const Epetra_MultiVector>() );
+
+    // Set the thickness field.
+    Teuchos::RCP<Nosh::ScalarField::Virtual> thickness =
+      Teuchos::rcp(new Nosh::ScalarField::Constant(1.0));
 
     Teuchos::RCP<Nosh::VectorField::Virtual> mvp =
       Teuchos::rcp(new Nosh::VectorField::ExplicitValues(mesh, mvpValues, mu));

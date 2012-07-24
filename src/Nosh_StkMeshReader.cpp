@@ -381,11 +381,8 @@ read( const Epetra_Comm &comm,
   data.set( "A", mvp );
 
   // Check of the thickness data is of any value. If not: ditch it.
-  Teuchos::RCP<Epetra_Vector> thickness = this->scalarfield2vector_(mesh, thicknessField);
-  double norminf;
-  TEUCHOS_ASSERT_EQUALITY(0, thickness->NormInf( &norminf ));
-  if ( norminf < 1.0e-15 ) // assume that thickness wasn't present, fill with default value
-    TEUCHOS_ASSERT_EQUALITY(0, thickness->PutScalar( 1.0 ));
+  Teuchos::RCP<Epetra_Vector> thickness =
+    this->scalarfield2vector_(mesh, thicknessField);
   data.set( "thickness", thickness );
   // These are vain attempts to find out whether thicknessField is actually empty.
 //     const stk::mesh::FieldBase::RestrictionVector & restrictions = thicknessField->restrictions();
@@ -393,6 +390,7 @@ read( const Epetra_Comm &comm,
 //     *out << "max_size " << thicknessField->max_size(metaData->node_rank()) << std::endl;
 
   // Check of the data is of any value. If not: ditch it.
+  double norminf;
   Teuchos::RCP<Epetra_Vector> potential = this->scalarfield2vector_(mesh, potentialField);
   TEUCHOS_ASSERT_EQUALITY(0, potential->NormInf( &norminf ));
   if ( norminf < 1.0e-15 ) // assume that potential wasn't present, fill with default value

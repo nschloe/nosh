@@ -45,7 +45,7 @@ class JacobianOperator : public Epetra_Operator
 public:
 JacobianOperator(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
                  const Teuchos::RCP<const Nosh::ScalarField::Virtual> &scalarPotential,
-                 const Teuchos::RCP<const Epetra_Vector> &thickness,
+                 const Teuchos::RCP<const Nosh::ScalarField::Virtual> &thickness,
                  const Teuchos::RCP<const Nosh::MatrixBuilder::Virtual> &matrixBuilder
                  );
 
@@ -108,7 +108,7 @@ bool useTranspose_;
 
 const Teuchos::RCP<const Nosh::StkMesh> mesh_;
 const Teuchos::RCP<const Nosh::ScalarField::Virtual> scalarPotential_;
-const Teuchos::RCP<const Epetra_Vector> thickness_;
+const Teuchos::RCP<const Nosh::ScalarField::Virtual> thickness_;
 const Teuchos::RCP<const Nosh::MatrixBuilder::Virtual> matrixBuilder_;
 
 Epetra_FECrsMatrix keo_;

@@ -54,7 +54,7 @@ ModelEvaluator (
   const Teuchos::RCP<const Nosh::MatrixBuilder::Virtual> &matrixBuilder,
   const Teuchos::RCP<const Nosh::ScalarField::Virtual> &scalarPotential,
   const double g,
-  const Teuchos::RCP<const Epetra_Vector> &thickness,
+  const Teuchos::RCP<const Nosh::ScalarField::Virtual> &thickness,
   const Teuchos::RCP<const Epetra_Vector> &initialX
   );
 
@@ -156,7 +156,7 @@ const Teuchos::RCP<const Nosh::ScalarField::Virtual> scalarPotential_;
 
 const double initial_g_;
 
-const Teuchos::RCP<const Epetra_Vector> thickness_;
+const Teuchos::RCP<const Nosh::ScalarField::Virtual> thickness_;
 
 const Teuchos::RCP<const Epetra_Vector> x_init_;
 

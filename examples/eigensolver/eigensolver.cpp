@@ -103,7 +103,7 @@ int main ( int argc, char *argv[] )
       data.get( "psi", Teuchos::RCP<Epetra_Vector>() );
     Teuchos::RCP<Epetra_MultiVector> & mvpValues =
       data.get( "A", Teuchos::RCP<Epetra_MultiVector>() );
-    Teuchos::RCP<Epetra_Vector> & thickness =
+    Teuchos::RCP<Epetra_Vector> & thicknessValues =
       data.get( "thickness", Teuchos::RCP<Epetra_Vector>() );
     Teuchos::ParameterList & problemParameters =
       data.get( "Problem parameters", Teuchos::ParameterList() );
@@ -128,6 +128,10 @@ int main ( int argc, char *argv[] )
       Teuchos::TimeMonitor tm(*mvpConstructTime);
       mvp = Teuchos::rcp(new Nosh::VectorField::ExplicitValues(mesh, mvpValues, mu));
     }
+
+    // Set the thickness field.
+    Teuchos::RCP<Nosh::ScalarField::Virtual> thickness =
+      Teuchos::rcp(new Nosh::ScalarField::Constant(1.0));
 
     Teuchos::RCP<Nosh::MatrixBuilder::Virtual> keoBuilder =
       Teuchos::rcp(new Nosh::MatrixBuilder::Keo(mesh, thickness, mvp));
