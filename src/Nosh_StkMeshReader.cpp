@@ -292,12 +292,9 @@ read( const Epetra_Comm &comm,
                                                    NULL,
                                                    metaData->node_rank(),
                                                    &selector);
-  *out_ << "The imbalance is " << imbalance << ". ";
-  if (imbalance < 1.5)
-    *out_ << "That's acceptable." << std::endl;
-  else
+  if (imbalance > 1.5)
   {
-    *out_ << "Rebalance!" << std::endl;
+    *out_ << "The imbalance is " << imbalance << ". Rebalance!";
     // Zoltan graph-based reblancing.
     // http://trilinos.sandia.gov/packages/docs/dev/packages/stk/doc/html/group__stk__rebalance__unit__test__module.html
     Teuchos::ParameterList lb_method;
@@ -325,15 +322,9 @@ read( const Epetra_Comm &comm,
   Teuchos::RCP<Nosh::StkMesh> mesh =
     Teuchos::rcp(new Nosh::StkMesh(comm, metaData, bulkData, coordinatesField));
 
-  data.setName( "data" );
-
-  // add the mesh to the data list
-  data.set( "mesh", mesh );
-
-  // create the state
+  data.setName("data");
+  data.set("mesh", mesh);
   data.set("psi", this->complexfield2vector_(mesh, psir_field, psii_field));
-
-  // create mvp
   Teuchos::RCP<const Epetra_MultiVector> mvp =
     this->createMvp_(mesh, mvpField);
   data.set("A", mvp);
@@ -341,14 +332,14 @@ read( const Epetra_Comm &comm,
   // Check of the thickness data is of any value. If not: ditch it.
   Teuchos::RCP<Epetra_Vector> thickness =
     this->scalarfield2vector_(mesh, thicknessField);
-  data.set( "thickness", thickness );
-  // These are vain attempts to find out whether thicknessField is actually empty.
+//// These are vain attempts to find out whether thicknessField is actually empty.
 //     const stk::mesh::FieldBase::RestrictionVector & restrictions = thicknessField->restrictions();
 //     TEUCHOS_ASSERT( !restrictions.empty() );
 //     *out << "max_size " << thicknessField->max_size(metaData->node_rank()) << std::endl;
+  data.set("thickness", thickness);
 
   // create scalar potential
-  data.set( "V", this->scalarfield2vector_(mesh, potentialField) );
+  data.set("V", this->scalarfield2vector_(mesh, potentialField));
 
   return;
 }

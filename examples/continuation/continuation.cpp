@@ -89,7 +89,7 @@ int main(int argc, char *argv[])
     // Finally, parse the command line.
     My_CLP.parse(argc, argv);
 
-    // Retrieve Piro parmeter list from given file.
+    // Retrieve Piro parameter list from given file.
     Teuchos::RCP<Teuchos::ParameterList> piroParams =
         Teuchos::rcp(new Teuchos::ParameterList());
     Teuchos::updateParametersFromXmlFile(xmlInputFileName,
@@ -108,40 +108,28 @@ int main(int argc, char *argv[])
 
     Teuchos::ParameterList & inputDataList =
       piroParams->sublist ( "Input", true );
-    const std::string constantDataFile = xmlDirectory + "/"
-                                       + inputDataList.get<std::string>( "Constant data" );
-    const std::string initialPsiFile = xmlDirectory + "/"
-                                     + inputDataList.sublist("Initial psi", true)
-                                       .get<std::string>( "File" );
-    const int step = inputDataList.sublist("Initial psi", true).get<int>( "Step" );
+    const std::string dataFile = xmlDirectory + "/"
+                               + inputDataList.get<std::string>( "File" );
+    const int step = inputDataList.get<int>("Initial Psi Step", true);
     // =======================================================================
     // Get the initial parameter values.
     Teuchos::ParameterList initialParameterValues =
       piroParams->sublist("Initial parameter values", true);
 
-    // Read the the non-transient data from the first time step.
+    // Read the data.
     Teuchos::ParameterList data;
-    Nosh::StkMeshRead(*eComm, constantDataFile, 0, data);
+    Nosh::StkMeshRead(*eComm, dataFile, step, data);
     // Cast the data into something more accessible.
     const Teuchos::RCP<Nosh::StkMesh> & mesh =
       data.get<Teuchos::RCP<Nosh::StkMesh> >( "mesh" );
     const Teuchos::RCP<const Epetra_MultiVector> & mvpValues =
       data.get("A", Teuchos::RCP<const Epetra_MultiVector>() );
+    Teuchos::RCP<Epetra_Vector> psi =
+      data.get("psi", Teuchos::RCP<Epetra_Vector>() );
     //const Teuchos::RCP<Epetra_Vector> & potentialValues =
       //data.get("V", Teuchos::RCP<Epetra_Vector>());
     //const Teuchos::RCP<Epetra_Vector> & thickness =
       //data.get( "thickness", Teuchos::RCP<Epetra_Vector>() );
-
-    // Read PSI from a given time step.
-    Teuchos::RCP<Epetra_Vector> psi;
-    if (constantDataFile.compare(initialPsiFile) && step == 0)
-      psi = data.get("psi", Teuchos::RCP<Epetra_Vector>() );
-    else
-    {
-      Teuchos::ParameterList tData;
-      Nosh::StkMeshRead(*eComm, initialPsiFile, step, tData);
-      psi = tData.get("psi", Teuchos::RCP<Epetra_Vector>() );
-    }
 
     // Set the output directory for later plotting with this.
     mesh->openOutputChannel(outputDirectory, "solution");
@@ -165,7 +153,7 @@ int main(int argc, char *argv[])
     //Teuchos::RCP<Nosh::VectorField::Virtual> mvp =
     //  Teuchos::rcp(new Nosh::VectorField::ConstantCurl(mesh, b));
     const Teuchos::RCP<Nosh::MatrixBuilder::Virtual> matrixBuilder =
-        Teuchos::rcp(new Nosh::MatrixBuilder::Keo(mesh, thickness, mvp));
+      Teuchos::rcp(new Nosh::MatrixBuilder::Keo(mesh, thickness, mvp));
 
     // Alternative: Analytically given MVP. This one can also be rotated in space.
     //const double theta = initialParameterValues.get<double>("theta", 0.0);
@@ -268,10 +256,10 @@ int main(int argc, char *argv[])
 
       // Get stepper and inject it into the eigensaver.
       Teuchos::RCP<LOCA::Stepper> stepper = piroLOCASolver->getLOCAStepperNonConst();
- #ifdef HAVE_LOCA_ANASAZI
+#ifdef HAVE_LOCA_ANASAZI
       if (computeEigenvalues)
         glEigenSaver->setLocaStepper( stepper );
- #endif
+#endif
       piro = piroLOCASolver;
     }
     // ----------------------------------------------------------------------
@@ -322,10 +310,10 @@ int main(int argc, char *argv[])
     // Now the setting of inputs and outputs.
     EpetraExt::ModelEvaluator::InArgs inArgs = piro->createInArgs();
     Teuchos::RCP<Epetra_Vector> p1 =
-        Teuchos::rcp(new Epetra_Vector(*(piro->get_p_init(0))));
+      Teuchos::rcp(new Epetra_Vector(*(piro->get_p_init(0))));
     inArgs.set_p(0, p1);
 
-    // Set output arguments to evalModel call
+    // Set output arguments to evalModel call.
     EpetraExt::ModelEvaluator::OutArgs outArgs = piro->createOutArgs();
 
     // Now solve the problem and return the responses.
