@@ -29,10 +29,10 @@
 namespace Nosh {
 // =============================================================================
 SaveEigenData::
-SaveEigenData ( Teuchos::ParameterList &eigenParamList,
-                const Teuchos::RCP<const Nosh::ModelEvaluator> &modelEval,
-                const Teuchos::RCP<Nosh::CsvWriter> &csvWriter
-                ) :
+SaveEigenData(Teuchos::ParameterList &eigenParamList,
+              const Teuchos::RCP<const Nosh::ModelEvaluator> &modelEval,
+              const Teuchos::RCP<Nosh::CsvWriter> &csvWriter
+              ) :
   eigenParamListPtr_( Teuchos::rcpFromRef<Teuchos::ParameterList>(
                         eigenParamList) ),
   modelEval_( modelEval ),

@@ -158,6 +158,8 @@ const Teuchos::RCP<stk::io::MeshData> meshData_;
 const Teuchos::RCP<stk::mesh::BulkData> bulkData_;
 const Teuchos::RCP<const VectorFieldType> coordinatesField_;
 
+const std::vector<stk::mesh::Entity*> ownedNodes_;
+
 const Teuchos::RCP<const Epetra_Map> nodesMap_;
 const Teuchos::RCP<const Epetra_Map> nodesOverlapMap_;
 const Teuchos::RCP<const Epetra_Map> complexMap_;
@@ -183,6 +185,9 @@ Teuchos::ArrayRCP<Teuchos::ArrayRCP<int> > cellEdges_;
 bool outputChannelIsOpen_;
 
 private:
+
+std::vector<stk::mesh::Entity*>
+buildOwnedNodes_() const;
 
 Teuchos::ArrayRCP<const DoubleVector>
 getNodeCoordinates_( const stk::mesh::PairIterRelation &relation ) const;

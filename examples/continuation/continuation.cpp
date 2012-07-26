@@ -1,15 +1,10 @@
-// Workaround for icpc's error "Include mpi.h before stdio.h"
-#include <Teuchos_config.h>
-#ifdef HAVE_MPI
-    #include <mpi.h>
-#endif
-
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_XMLParameterListHelpers.hpp>
 #include <Teuchos_VerboseObject.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
+#include <Teuchos_TimeMonitor.hpp>
 
 #ifdef HAVE_MPI
 #include <Epetra_MpiComm.h>
@@ -25,6 +20,7 @@
 #include "Nosh_StkMeshReader.hpp"
 #include "Nosh_ScalarField_Constant.hpp"
 #include "Nosh_MatrixBuilder_Keo.hpp"
+#include "Nosh_MatrixBuilder_Laplace.hpp"
 #include "Nosh_VectorField_ExplicitValues.hpp"
 #include "Nosh_VectorField_ConstantCurl.hpp"
 #include "Nosh_ModelEvaluator.hpp"
@@ -33,8 +29,6 @@
 #include "Nosh_CsvWriter.hpp"
 
 #include "MyScalarField.hpp"
-
-#include <Teuchos_TimeMonitor.hpp>
 
 // =============================================================================
 using Teuchos::rcp;
@@ -130,27 +124,29 @@ int main(int argc, char *argv[])
     RCP<Nosh::ScalarField::Virtual> thickness =
       rcp(new Nosh::ScalarField::Constant(1.0));
 
-    // Setup the energy operator, here: (-i\nabla-A)^2.
-    // Choose between several given MVPs or build your own by
-    // deriving from Nosh::VectorField::Virtual.
-    const double initMu = initialParameterValues.get<double>("mu", 0.0);
-    RCP<Nosh::VectorField::Virtual> mvp =
-      rcp(new Nosh::VectorField::ExplicitValues(mesh, mvpValues, initMu));
-    //const RCP<DoubleVector> b = rcp(new DoubleVector(3));
-    //RCP<Nosh::VectorField::Virtual> mvp =
-    //  rcp(new Nosh::VectorField::ConstantCurl(mesh, b));
+    // - - - - - - - - - - - - - - - - - - - - -  - - - - - - - - - - - - - - -
+    // Some alternatives for the positive-definite operator.
+    // (a) -\Delta (Laplace operator with Neumann boundary)
     const RCP<Nosh::MatrixBuilder::Virtual> matrixBuilder =
-      rcp(new Nosh::MatrixBuilder::Keo(mesh, thickness, mvp));
+      rcp(new Nosh::MatrixBuilder::Laplace(mesh, thickness));
 
-    // Alternative: Analytically given MVP. This one can also be rotated in space.
-    //const double theta = initialParameterValues.get<double>("theta", 0.0);
-    // Get the rotation vector.
-    // This is important if continuation happens as a rotation of the
-    // vector field around an axis.
+    // (b) (-i\nabla-A)^2 (Kinetic energy of a particle in magnetic field)
+    // (b1) 'A' explicitly given in file.
+    //const double initMu = initialParameterValues.get<double>("mu", 0.0);
+    //RCP<Nosh::VectorField::Virtual> mvp =
+    //  rcp(new Nosh::VectorField::ExplicitValues(mesh, mvpValues, initMu));
+    //const RCP<Nosh::MatrixBuilder::Virtual> matrixBuilder =
+    //  rcp(new Nosh::MatrixBuilder::Keo(mesh, thickness, mvp));
+
+    // (b2) 'A' analytically given (here with constant curl).
+    //      Optionally add a rotation axis u. This is important
+    //      if continuation happens as a rotation of the vector
+    //      field around an axis.
+    //const RCP<DoubleVector> b = rcp(new DoubleVector(3));
     //RCP<Teuchos::SerialDenseVector<int,double> > u = Teuchos::null;
     //if ( piroParams->isSublist("Rotation vector") )
     //{
-    //    u = rcp(new Teuchos::SerialDenseVector<int,double>(3) );
+    //    u = rcp(new Teuchos::SerialDenseVector<int,double>(3));
     //    Teuchos::ParameterList & rotationVectorList =
     //        piroParams->sublist( "Rotation vector", false );
     //    (*u)[0] = rotationVectorList.get<double>("x");
@@ -158,15 +154,22 @@ int main(int argc, char *argv[])
     //    (*u)[2] = rotationVectorList.get<double>("z");
     //}
     //RCP<Nosh::VectorField::Virtual> mvp =
-    //  rcp ( new Nosh::VectorField::ConstantCurl(mesh, mvpValues, mu, theta, u));
-
+    //  rcp(new Nosh::VectorField::ConstantCurl(mesh, b, u));
+    //const RCP<Nosh::MatrixBuilder::Virtual> matrixBuilder =
+    //  rcp(new Nosh::MatrixBuilder::Keo(mesh, thickness, mvp));
+    // (b3) 'A' analytically given in a class you write yourself, derived
+    //      from Nosh::MatrixBuilder::Virtual.
+    // [...]
+    // - - - - - - - - - - - - - - - - - - - - -  - - - - - - - - - - - - - - -
     // Setup the scalar potential V.
-    // Use this or build your own by deriving from Nosh::ScalarField::Virtual.
-    const double T = initialParameterValues.get<double>("T", 0.0);
-    RCP<Nosh::ScalarField::Virtual> sp =
-      rcp(new Nosh::ScalarField::Constant(-1.0));
+    // (a) A constant potential.
     //RCP<Nosh::ScalarField::Virtual> sp =
-      //rcp(new MyScalarField(mesh));
+      //rcp(new Nosh::ScalarField::Constant(-1.0));
+    //const double T = initialParameterValues.get<double>("T", 0.0);
+    // (b) One you built yourself by deriving from Nosh::ScalarField::Virtual.
+    RCP<Nosh::ScalarField::Virtual> sp =
+      rcp(new MyScalarField(mesh));
+    // - - - - - - - - - - - - - - - - - - - - -  - - - - - - - - - - - - - - -
 
     // Finally, create the model evaluator.
     // This is the most important object in the whole stack.
@@ -189,8 +192,7 @@ int main(int argc, char *argv[])
       RCP<Nosh::Observer> observer =
         rcp(new Nosh::Observer(nlsModel,
                                contFilePath,
-                               Nosh::Observer::OBSERVER_TYPE_NEWTON
-                               ));
+                               Nosh::Observer::OBSERVER_TYPE_NEWTON));
 
       piro = rcp(new Piro::Epetra::NOXSolver(piroParams,
                                              nlsModel,
@@ -202,8 +204,7 @@ int main(int argc, char *argv[])
       RCP<Nosh::Observer> observer =
         rcp(new Nosh::Observer(nlsModel,
                                contFilePath,
-                               Nosh::Observer::OBSERVER_TYPE_CONTINUATION
-                               ));
+                               Nosh::Observer::OBSERVER_TYPE_CONTINUATION));
 
       // Setup eigen saver.
 #ifdef HAVE_LOCA_ANASAZI
@@ -254,34 +255,29 @@ int main(int argc, char *argv[])
     {
       RCP<Nosh::Observer> observer = Teuchos::null;
 
-      // Read the data from the file.
-      std::string nullstateFilePath = xmlDirectory + "/" + inputDataList.get<std::string> ( "Null state" );
-      Teuchos::ParameterList nullstateData;
-      Nosh::StkMeshRead(*eComm, nullstateFilePath, 0, nullstateData);
-
-      // Cast the data into something more accessible.
-      RCP<Nosh::StkMesh> & nullstateMesh = nullstateData.get( "mesh", RCP<Nosh::StkMesh>() );
-      RCP<Epetra_Vector>  & nullstateZ = nullstateData.get( "psi", RCP<Epetra_Vector>() );
-
       Teuchos::ParameterList & bifList =
-          piroParams->sublist ( "LOCA" ).sublist ( "Bifurcation" );
+        piroParams->sublist("LOCA").sublist("Bifurcation");
+
+      // Fetch the (approximate) null state.
+      RCP<Epetra_Vector> & nullstateZ =
+        data.get("null", RCP<Epetra_Vector>());
 
       // Set the length normalization vector to be the initial null vector.
       TEUCHOS_ASSERT( !nullstateZ.is_null() );
       RCP<NOX::Abstract::Vector> lengthNormVec =
-          rcp(new NOX::Epetra::Vector(*nullstateZ));
+        rcp(new NOX::Epetra::Vector(*nullstateZ));
       //lengthNormVec->init(1.0);
-      bifList.set ( "Length Normalization Vector", lengthNormVec );
+      bifList.set("Length Normalization Vector", lengthNormVec);
 
       // Set the initial null vector.
       RCP<NOX::Abstract::Vector> initialNullAbstractVec =
-          rcp(new NOX::Epetra::Vector(*nullstateZ));
+        rcp(new NOX::Epetra::Vector(*nullstateZ));
       // initialNullAbstractVec->init(1.0);
-      bifList.set ( "Initial Null Vector", initialNullAbstractVec );
+      bifList.set("Initial Null Vector", initialNullAbstractVec);
 
-      piro = rcp(new Piro::Epetra::LOCASolver( piroParams,
-                                                        nlsModel,
-                                                        observer ));
+      piro = rcp(new Piro::Epetra::LOCASolver(piroParams,
+                                              nlsModel,
+                                              observer));
     }
     // ----------------------------------------------------------------------
     else

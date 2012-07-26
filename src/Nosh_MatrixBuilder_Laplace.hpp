@@ -37,6 +37,9 @@
 // forward declarations
 namespace Nosh {
 class StkMesh;
+namespace ScalarField {
+class Virtual;
+}
 }
 // =============================================================================
 namespace Nosh {
@@ -46,7 +49,7 @@ class Laplace: public Virtual
 {
 public:
 Laplace(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
-        const Teuchos::RCP<const Epetra_Vector> &thickness
+        const Teuchos::RCP<const Nosh::ScalarField::Virtual> &thickness
         );
 
 // Destructor.
@@ -109,7 +112,7 @@ const Teuchos::RCP<Teuchos::Time> fillTime_;
 const Teuchos::RCP<Teuchos::Time> buildLaplaceGraphTime_;
 #endif
 const Teuchos::RCP<const Nosh::StkMesh> mesh_;
-const Teuchos::RCP<const Epetra_Vector> thickness_;
+const Teuchos::RCP<const Nosh::ScalarField::Virtual> thickness_;
 
 mutable Teuchos::ArrayRCP<Epetra_IntSerialDenseVector> globalIndexCache_;
 mutable bool globalIndexCacheUpToDate_;

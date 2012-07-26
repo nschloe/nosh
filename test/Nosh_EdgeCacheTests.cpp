@@ -130,13 +130,6 @@ testCache( const std::string & inputFileNameBase,
                                     "The global index " << gEdgeId
                                     << " does not seem to be present on this node." );
 
-//                 if ( gEdge==0 )
-//                 {
-//                   std::cout << "cell # " << k << std::endl;
-//                   std::cout << "local edge # " << i << std::endl;
-//                   std::cout << "global edge # " << gEdge << std::endl;
-//                   std::cout << "AAA " << edgeCoefficientsFallback[k][i] << std::endl;
-//                 }
                 TEUCHOS_ASSERT_INEQUALITY( edgeCoefficients2.size(), >, lEdgeId );
                 // Sum the coefficients up.
                 edgeCoefficients2[lEdgeId] += edgeCoefficientsFallback[k][i];

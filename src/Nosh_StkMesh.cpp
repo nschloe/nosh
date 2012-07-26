@@ -50,8 +50,6 @@
   #include <Teuchos_TimeMonitor.hpp>
 #endif
 // =============================================================================
-// typedefs
-// =============================================================================
 namespace Nosh {
 // =============================================================================
 StkMesh::
@@ -71,9 +69,10 @@ StkMesh( const Epetra_Comm &comm,
   meshData_( Teuchos::rcp( new stk::io::MeshData() ) ),
   bulkData_( bulkData ),
   coordinatesField_( coordinatesField ),
-  nodesMap_( this->createEntitiesMap_( this->getOwnedNodes()   ) ),
-  nodesOverlapMap_( this->createEntitiesMap_( this->getOverlapNodes() ) ),
-  complexMap_( this->createComplexMap_( this->getOwnedNodes()   ) ),
+  ownedNodes_(buildOwnedNodes_()),
+  nodesMap_(this->createEntitiesMap_(ownedNodes_)),
+  nodesOverlapMap_(this->createEntitiesMap_(this->getOverlapNodes())),
+  complexMap_(this->createComplexMap_(ownedNodes_)),
   complexOverlapMap_( this->createComplexMap_( this->getOverlapNodes() ) ),
   fvmEntitiesUpToDate_( false ),
   controlVolumes_( Teuchos::rcp( new Epetra_Vector( *nodesMap_ ) ) ),
@@ -179,16 +178,15 @@ mergeComplexVector_(const Epetra_Vector &psi) const
   }
 
   // Set owned nodes.
-  const std::vector<stk::mesh::Entity*> &ownedNodes = this->getOwnedNodes();
 #ifdef _DEBUG_
-  TEUCHOS_ASSERT_EQUALITY(psi.GlobalLength(), 2*ownedNodes.size());
+  TEUCHOS_ASSERT_EQUALITY(psi.GlobalLength(), 2*ownedNodes_.size());
 #endif
-  for (unsigned int k=0; k < ownedNodes.size(); k++)
+  for (unsigned int k=0; k < ownedNodes_.size(); k++)
   {
     // Extract real and imaginary part.
-    double* localPsiR = stk::mesh::field_data( *psir_field, *ownedNodes[k] );
+    double* localPsiR = stk::mesh::field_data( *psir_field, *ownedNodes_[k] );
     localPsiR[0] = psi[2*k];
-    double* localPsiI = stk::mesh::field_data( *psii_field, *ownedNodes[k] );
+    double* localPsiI = stk::mesh::field_data( *psii_field, *ownedNodes_[k] );
     localPsiI[0] = psi[2*k+1];
   }
 
@@ -312,11 +310,11 @@ getEdgeNodes() const
 // =============================================================================
 Teuchos::ArrayRCP<const DoubleVector>
 StkMesh::
-getNodeCoordinates_( const stk::mesh::PairIterRelation &nodes ) const
+getNodeCoordinates_(const stk::mesh::PairIterRelation &nodes) const
 {
   unsigned int n = nodes.size();
   Teuchos::ArrayRCP<DoubleVector> localNodeCoords( n );
-  for ( unsigned int i=0; i<n; i++ )
+  for (unsigned int i=0; i<n; i++)
     localNodeCoords[i] = this->getNodeCoordinatesNonconst(nodes[i].entity());
 
   return localNodeCoords;
@@ -374,19 +372,24 @@ getComplexOverlapMap() const
 // =============================================================================
 std::vector<stk::mesh::Entity*>
 StkMesh::
-getOwnedNodes() const
+buildOwnedNodes_() const
 {
   stk::mesh::Selector select_owned_in_part =
-      stk::mesh::Selector(metaData_->universal_part())
-    & stk::mesh::Selector(metaData_->locally_owned_part());
+        stk::mesh::Selector(metaData_->universal_part())
+      & stk::mesh::Selector(metaData_->locally_owned_part());
 
-  std::vector<stk::mesh::Entity*> ownedNodes;
-  stk::mesh::get_selected_entities( select_owned_in_part,
-                                    bulkData_->buckets( metaData_->node_rank() ),
-                                    ownedNodes
-                                    );
-
-  return ownedNodes;
+  std::vector<stk::mesh::Entity*> on;
+  stk::mesh::get_selected_entities(select_owned_in_part,
+                                   bulkData_->buckets( metaData_->node_rank() ),
+                                   on);
+  return on;
+}
+// =============================================================================
+std::vector<stk::mesh::Entity*>
+StkMesh::
+getOwnedNodes() const
+{
+  return ownedNodes_;
 }
 // =============================================================================
 std::vector<stk::mesh::Entity*>
