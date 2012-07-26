@@ -840,10 +840,9 @@ computeCovolume3d_( const DoubleVector &cc,
   // Check if the orientation of the triangle (MP,ccFace0,cc) coincides with
   // the orientation of the gauge triangle. If yes, add the area, subtract otherwise.
   DoubleVector triangleNormal0 =
-    this->cross_( this->add_( 1.0, ccFace0, -1.0, mp ),
-                  this->add_( 1.0, cc,      -1.0,
-                              mp )
-                  );
+    this->cross_(this->add_(1.0, ccFace0, -1.0, mp),
+                 this->add_(1.0, cc,      -1.0, mp));
+
   // copysign takes the absolute value of the first argument and the sign of the second.
   covolume += copysign( triangleArea0, this->dot_( triangleNormal0, gauge ) );
 
@@ -857,10 +856,9 @@ computeCovolume3d_( const DoubleVector &cc,
   // Check if the orientation of the triangle (MP,cc,ccFace1) coincides with
   // the orientation of the gauge triangle. If yes, add the area, subtract otherwise.
   DoubleVector triangleNormal1 =
-    this->cross_( this->add_( 1.0, cc,      -1.0, mp ),
-                  this->add_( 1.0, ccFace1, -1.0,
-                              mp )
-                  );
+    this->cross_( this->add_(1.0, cc,      -1.0, mp),
+                  this->add_(1.0, ccFace1, -1.0, mp));
+
   // copysign takes the absolute value of the first argument and the sign of the second.
   covolume += copysign( triangleArea1, this->dot_( triangleNormal1, gauge ) );
 
@@ -1154,31 +1152,6 @@ createEdges_()
   }
 
   return;
-}
-// =============================================================================
-bool
-StkMesh::
-isSmallerEntity_( const stk::mesh::Entity* a,
-                  const stk::mesh::Entity* b ) const
-{
-  return a->identifier() < b->identifier();
-}
-// =============================================================================
-bool
-StkMesh::
-tupleLexicographicLess_(const Teuchos::Tuple<int,2> & a,
-                        const Teuchos::Tuple<int,2> & b
-                        )
-{
-  for ( unsigned int k=0; k<2; k++ )
-  {
-     if ( a[k] < b[k] )
-         return true;
-     else if ( a[k] > b[k] )
-         return false;
-  }
-  // If a and b are exactly equal, return false (=strict 'less').
-  return false;
 }
 // =============================================================================
 } // namespace Nosh

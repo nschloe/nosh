@@ -18,7 +18,7 @@
 //
 // @HEADER
 
-#include "Nosh_NoxObserver.hpp"
+#include "Nosh_Observer.hpp"
 
 #include "Nosh_CsvWriter.hpp"
 #include "Nosh_ModelEvaluator.hpp"
@@ -26,24 +26,24 @@
 
 namespace Nosh {
 // ============================================================================
-NoxObserver::
-NoxObserver(const Teuchos::RCP<const Nosh::ModelEvaluator> &modelEval,
-            const std::string & filename,
-            const NoxObserver::EObserverType &observerType
-             ) :
+Observer::
+Observer(const Teuchos::RCP<const Nosh::ModelEvaluator> &modelEval,
+         const std::string & filename,
+         const Observer::EObserverType &observerType
+          ) :
   modelEval_(modelEval),
   csvWriter_(new Nosh::CsvWriter(filename, " ")),
   observerType_(observerType)
 {
 }
 // ============================================================================
-NoxObserver::
-~NoxObserver ()
+Observer::
+~Observer ()
 {
 }
 // ============================================================================
 void
-NoxObserver::
+Observer::
 observeSolution(const Epetra_Vector &soln)
 {
   // The switch hack is necessary as different continuation algorithms
@@ -69,7 +69,7 @@ observeSolution(const Epetra_Vector &soln)
 }
 // ============================================================================
 void
-NoxObserver::
+Observer::
 observeContinuation_(const Epetra_Vector &soln)
 {
   static int index = -1;
@@ -83,7 +83,7 @@ observeContinuation_(const Epetra_Vector &soln)
 }
 // ============================================================================
 void
-NoxObserver::
+Observer::
 observeTurningPointContinuation_(const Epetra_Vector &soln)
 {
   static int index = -1;
@@ -107,7 +107,7 @@ observeTurningPointContinuation_(const Epetra_Vector &soln)
 }
 // ============================================================================
 void
-NoxObserver::
+Observer::
 saveContinuationStatistics_(const int stepIndex,
                             const Epetra_Vector &soln
                             )

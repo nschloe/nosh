@@ -28,7 +28,7 @@
 #include "Nosh_VectorField_ExplicitValues.hpp"
 #include "Nosh_VectorField_ConstantCurl.hpp"
 #include "Nosh_ModelEvaluator.hpp"
-#include "Nosh_NoxObserver.hpp"
+#include "Nosh_Observer.hpp"
 #include "Nosh_SaveEigenData.hpp"
 #include "Nosh_CsvWriter.hpp"
 
@@ -186,24 +186,24 @@ int main(int argc, char *argv[])
     // ----------------------------------------------------------------------
     if (solver == "NOX")
     {
-      RCP<Nosh::NoxObserver> observer =
-        rcp(new Nosh::NoxObserver(nlsModel,
-                                           contFilePath,
-                                           Nosh::NoxObserver::OBSERVER_TYPE_NEWTON
-                                           ));
+      RCP<Nosh::Observer> observer =
+        rcp(new Nosh::Observer(nlsModel,
+                               contFilePath,
+                               Nosh::Observer::OBSERVER_TYPE_NEWTON
+                               ));
 
       piro = rcp(new Piro::Epetra::NOXSolver(piroParams,
-                                                      nlsModel,
-                                                      observer));
+                                             nlsModel,
+                                             observer));
     }
     // ----------------------------------------------------------------------
     else if (solver == "LOCA")
     {
-      RCP<Nosh::NoxObserver> observer =
-        rcp(new Nosh::NoxObserver(nlsModel,
-                                           contFilePath,
-                                           Nosh::NoxObserver::OBSERVER_TYPE_CONTINUATION
-                                           ));
+      RCP<Nosh::Observer> observer =
+        rcp(new Nosh::Observer(nlsModel,
+                               contFilePath,
+                               Nosh::Observer::OBSERVER_TYPE_CONTINUATION
+                               ));
 
       // Setup eigen saver.
 #ifdef HAVE_LOCA_ANASAZI
@@ -224,8 +224,8 @@ int main(int argc, char *argv[])
 
         glEigenSaver =
           RCP<Nosh::SaveEigenData>(new Nosh::SaveEigenData(eigenList,
-                                                                      nlsModel,
-                                                                      eigenCsvWriter));
+                                                           nlsModel,
+                                                           eigenCsvWriter));
 
         RCP<LOCA::SaveEigenData::AbstractStrategy> glSaveEigenDataStrategy =
           glEigenSaver;
@@ -252,7 +252,7 @@ int main(int argc, char *argv[])
     // ----------------------------------------------------------------------
     else if ( solver == "Turning Point" )
     {
-      RCP<Nosh::NoxObserver> observer = Teuchos::null;
+      RCP<Nosh::Observer> observer = Teuchos::null;
 
       // Read the data from the file.
       std::string nullstateFilePath = xmlDirectory + "/" + inputDataList.get<std::string> ( "Null state" );

@@ -15,7 +15,7 @@ SET ( nosh_SRCS
       Nosh_StkMesh.cpp
       Nosh_StkMeshReader.cpp
       Nosh_CsvWriter.cpp
-      Nosh_NoxObserver.cpp
+      Nosh_Observer.cpp
       Nosh_SaveEigenData.cpp
     )
 

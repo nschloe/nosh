@@ -35,7 +35,7 @@ class ModelEvaluator;
 // =============================================================================
 namespace Nosh {
 
-class NoxObserver :
+class Observer :
   public NOX::Epetra::Observer
 {
 public:
@@ -45,14 +45,14 @@ enum EObserverType { OBSERVER_TYPE_NEWTON,
 
 public:
 //! Constructor
-NoxObserver(const Teuchos::RCP<const Nosh::ModelEvaluator> &modelEval,
+Observer(const Teuchos::RCP<const Nosh::ModelEvaluator> &modelEval,
             const std::string & filename,
-            const NoxObserver::EObserverType &problemType
+            const Observer::EObserverType &problemType
             );
 
 //! Destructor
 virtual
-~NoxObserver ();
+~Observer ();
 
 virtual
 void

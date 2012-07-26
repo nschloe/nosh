@@ -272,14 +272,6 @@ norm2squared_( const DoubleVector &x
 void
 createEdges_();
 
-bool
-isSmallerEntity_( const stk::mesh::Entity* a,
-                  const stk::mesh::Entity* b ) const;
-
-bool
-tupleLexicographicLess_(const Teuchos::Tuple<int,2> & a,
-                        const Teuchos::Tuple<int,2> & b
-                        );
 };
 // -----------------------------------------------------------------------------
 // helper functions
