@@ -31,7 +31,6 @@ class LinearProblem;
 namespace Nosh {
 class CsvWriter;
 class ModelEvaluator;
-class State;
 }
 // =============================================================================
 namespace Nosh {
@@ -62,18 +61,16 @@ observeSolution( const Epetra_Vector &soln );
 protected:
 private:
 void
-observeContinuation_( const Teuchos::RCP<const Nosh::State> &state
-                      );
-void
-observeTurningPointContinuation_( const Teuchos::RCP<const Nosh::State> &state
-                                  );
+observeContinuation_(const Epetra_Vector &soln);
 
 void
-saveContinuationStatistics_( const int stepIndex,
-                             const Teuchos::RCP<const Nosh::State> &state
-                             );
+observeTurningPointContinuation_(const Epetra_Vector &soln);
 
-private:
+void
+saveContinuationStatistics_(const int stepIndex,
+                            const Epetra_Vector &soln
+                            );
+
 private:
 
 const Teuchos::RCP<const Nosh::ModelEvaluator> modelEval_;

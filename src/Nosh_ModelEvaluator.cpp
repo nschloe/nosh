@@ -20,7 +20,6 @@
 
 #include "Nosh_ModelEvaluator.hpp"
 
-#include "Nosh_State.hpp"
 #include "Nosh_ScalarField_Virtual.hpp"
 #include "Nosh_MatrixBuilder_Virtual.hpp"
 #include "Nosh_MatrixBuilder_Keo.hpp"
@@ -556,13 +555,6 @@ computeDFDPeo_(const Epetra_Vector &x,
   return;
 }
 // ============================================================================
-Teuchos::RCP<Nosh::State>
-ModelEvaluator::
-createSavable(const Epetra_Vector &x) const
-{
-  return Teuchos::rcp(new Nosh::State(x, mesh_));
-}
-// =============================================================================
 Teuchos::RCP<const Epetra_Vector>
 ModelEvaluator::
 get_p_latest() const
@@ -570,6 +562,73 @@ get_p_latest() const
   // This is fetcher routine to make sure that the NOX::Observer
   // can print the parameter values.
   return p_latest_;
+}
+// =============================================================================
+double
+ModelEvaluator::
+innerProduct(const Epetra_Vector &phi,
+             const Epetra_Vector &psi
+             ) const
+{
+  const Epetra_Vector &controlVolumes = *mesh_->getControlVolumes();
+
+  int numMyPoints = controlVolumes.Map().NumMyPoints();
+#ifdef _DEBUG_
+  TEUCHOS_ASSERT_EQUALITY(2*numMyPoints, phi.MyLength());
+  TEUCHOS_ASSERT_EQUALITY(2*numMyPoints, psi.MyLength());
+#endif
+
+  double res = 0.0;
+  for (int k=0; k<numMyPoints; k++)
+    res += controlVolumes[k] * (phi[2*k]*psi[2*k] + phi[2*k+1]*psi[2*k+1]);
+
+  // Sum over all processors.
+  double globalRes;
+  TEUCHOS_ASSERT_EQUALITY(0, psi.Comm().SumAll(&res, &globalRes, 1));
+
+  // normalize and return
+  return globalRes / mesh_->getDomainVolume();
+}
+// ============================================================================
+double
+ModelEvaluator::
+normalizedScaledL2Norm(const Epetra_Vector &psi) const
+{
+  return sqrt(this->innerProduct(psi, psi));
+}
+// =============================================================================
+double
+ModelEvaluator::
+gibbsEnergy(const Epetra_Vector &psi) const
+{
+  const Epetra_Vector &controlVolumes = *mesh_->getControlVolumes();
+
+  int numMyPoints = controlVolumes.Map().NumMyPoints();
+#ifdef _DEBUG_
+  TEUCHOS_ASSERT_EQUALITY(2*numMyPoints, psi.MyLength());
+#endif
+
+  double myEnergy = 0.0;
+  double alpha;
+  for (int k=0; k<numMyPoints; k++)
+  {
+    alpha = psi[2*k]*psi[2*k] + psi[2*k+1]*psi[2*k+1];
+    myEnergy -= controlVolumes[k] * alpha * alpha;
+  }
+
+  // Sum over all processors.
+  double globalEnergy;
+  TEUCHOS_ASSERT_EQUALITY(0, psi.Comm().SumAll(&myEnergy, &globalEnergy, 1));
+
+  // normalize and return
+  return globalEnergy / mesh_->getDomainVolume();
+}
+// =============================================================================
+const Teuchos::RCP<const Nosh::StkMesh>
+ModelEvaluator::
+getMesh() const
+{
+  return mesh_;
 }
 // =============================================================================
 } // namespace Nosh

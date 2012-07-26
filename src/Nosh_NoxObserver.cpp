@@ -20,9 +20,9 @@
 
 #include "Nosh_NoxObserver.hpp"
 
-#include "Nosh_State.hpp"
 #include "Nosh_CsvWriter.hpp"
 #include "Nosh_ModelEvaluator.hpp"
+#include "Nosh_StkMesh.hpp"
 
 namespace Nosh {
 // ============================================================================
@@ -46,23 +46,19 @@ void
 NoxObserver::
 observeSolution(const Epetra_Vector &soln)
 {
-  // define state
-  const Teuchos::RCP<const Nosh::State> savable =
-    modelEval_->createSavable( soln );
-
   // The switch hack is necessary as different continuation algorithms
   // call printSolution() a different number of times per step, e.g.,
   // to store solutions, null vectors, and so forth.
   switch ( observerType_ )
   {
     case OBSERVER_TYPE_NEWTON:
-      savable->save( 0 );
+      modelEval_->getMesh()->write(soln, 0);
       break;
     case OBSERVER_TYPE_CONTINUATION:
-      this->observeContinuation_( savable );
+      this->observeContinuation_( soln );
       break;
     case OBSERVER_TYPE_TURNING_POINT:
-      this->observeTurningPointContinuation_( savable );
+      this->observeTurningPointContinuation_( soln );
       break;
     default:
       TEUCHOS_TEST_FOR_EXCEPT_MSG( true,
@@ -74,24 +70,21 @@ observeSolution(const Epetra_Vector &soln)
 // ============================================================================
 void
 NoxObserver::
-observeContinuation_( const Teuchos::RCP<const Nosh::State> &state )
+observeContinuation_(const Epetra_Vector &soln)
 {
   static int index = -1;
   index++;
 
-  this->saveContinuationStatistics_(index, state);
+  this->saveContinuationStatistics_(index, soln);
 
-#ifdef _DEBUG_
-  TEUCHOS_ASSERT( !state.is_null() );
-#endif
-  state->save( index );
+  modelEval_->getMesh()->write(soln, index);
 
   return;
 }
 // ============================================================================
 void
 NoxObserver::
-observeTurningPointContinuation_( const Teuchos::RCP<const Nosh::State> &state )
+observeTurningPointContinuation_(const Epetra_Vector &soln)
 {
   static int index = -1;
   static bool isSolution = false;
@@ -101,8 +94,8 @@ observeTurningPointContinuation_( const Teuchos::RCP<const Nosh::State> &state )
   if ( isSolution )
   {
     index++;
-    this->saveContinuationStatistics_( index, state );
-    state->save( index );
+    this->saveContinuationStatistics_(index, soln);
+    modelEval_->getMesh()->write(soln, index);
   }
   else
     TEUCHOS_TEST_FOR_EXCEPT_MSG( true, "Not yet implemented." );
@@ -116,14 +109,11 @@ observeTurningPointContinuation_( const Teuchos::RCP<const Nosh::State> &state )
 void
 NoxObserver::
 saveContinuationStatistics_(const int stepIndex,
-                            const Teuchos::RCP<const Nosh::State> &state
+                            const Epetra_Vector &soln
                             )
 {
   if ( !csvWriter_.is_null() )
   {
-#ifdef _DEBUG_
-    TEUCHOS_ASSERT( !state.is_null() );
-#endif
     // Construct parameter list to stuff into the csvWriter_.
     Teuchos::ParameterList paramList;
     paramList.set( "(0) step", stepIndex );
@@ -140,8 +130,8 @@ saveContinuationStatistics_(const int stepIndex,
     for (int k=0; k<names->length(); k++)
       paramList.set("(1) "+(*names)[k], (*meParams)[k]);
     // Some extra stats.
-    paramList.set( "(2) free energy", state->freeEnergy() );
-    paramList.set( "(2) ||x||_2 scaled", state->normalizedScaledL2Norm() );
+    paramList.set( "(2) Gibbs energy", modelEval_->gibbsEnergy(soln) );
+    paramList.set( "(2) ||x||_2 scaled", modelEval_->normalizedScaledL2Norm(soln) );
 
     // Write out header.
     if (stepIndex == 0)

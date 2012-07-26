@@ -71,9 +71,17 @@ virtual
 ~StkMesh();
 
 void
-openOutputChannel( const string &outputDir,
-                   const string &fileBaseName
-                   );
+openOutputChannel(const string &outputDir,
+                  const string &fileBaseName
+                  );
+
+void
+write(const Epetra_Vector & psi,
+      const int index
+      ) const;
+
+void
+mergeComplexVector_(const Epetra_Vector &psi) const;
 
 const Teuchos::RCP<stk::mesh::fem::FEMMetaData>
 getMetaData() const;
@@ -140,6 +148,7 @@ private:
 
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
 const Teuchos::RCP<Teuchos::Time> computeEdgeCoefficientsTime_;
+const Teuchos::RCP<Teuchos::Time> writeTime_;
 #endif
 
 const Epetra_Comm &comm_;
@@ -148,7 +157,6 @@ const Teuchos::RCP<stk::mesh::fem::FEMMetaData> metaData_;
 const Teuchos::RCP<stk::io::MeshData> meshData_;
 const Teuchos::RCP<stk::mesh::BulkData> bulkData_;
 const Teuchos::RCP<const VectorFieldType> coordinatesField_;
-//     const Teuchos::RCP<VectorFieldType>         thicknessField_;
 
 const Teuchos::RCP<const Epetra_Map> nodesMap_;
 const Teuchos::RCP<const Epetra_Map> nodesOverlapMap_;
@@ -171,6 +179,8 @@ bool isOutputFileSet_;
 Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > edgeNodes_;
 //! Local cell ID -> Local edge IDs.
 Teuchos::ArrayRCP<Teuchos::ArrayRCP<int> > cellEdges_;
+
+bool outputChannelIsOpen_;
 
 private:
 

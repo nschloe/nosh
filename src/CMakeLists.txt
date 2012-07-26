@@ -1,6 +1,5 @@
 SET ( nosh_SRCS
       Nosh_Helpers.cpp
-      Nosh_State.cpp
       Nosh_ModelEvaluator.cpp
       Nosh_JacobianOperator.cpp
       Nosh_MatrixBuilder_Virtual.cpp

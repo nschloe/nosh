@@ -2,11 +2,10 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
 FIND_PACKAGE( Trilinos REQUIRED )
 
-# set compilers *before the PROJECT is declared
-#SET( CMAKE_Fortran_COMPILER ${Trilinos_Fortran_COMPILER} )
-SET(CMAKE_CXX_COMPILER ${Trilinos_CXX_COMPILER} )
+# Set compilers before the PROJECT is declared.
+SET(CMAKE_CXX_COMPILER ${Trilinos_CXX_COMPILER})
 
-PROJECT(nosh CXX)# Fortran)
+PROJECT(nosh CXX)
 
 ENABLE_TESTING()
 
@@ -35,10 +34,6 @@ IF(CMAKE_COMPILER_IS_GNUCXX)
     SET(CMAKE_CXX_FLAGS_DEBUG     "-O0 -g -ggdb -Wall -pedantic -fbounds-check -Wextra -Wno-unused -Wstrict-null-sentinel -Wshadow -Woverloaded-virtual -ansi -std=c++0x" )
     SET(CMAKE_CXX_FLAGS_PROFILE     "-pg -O2" )
 ENDIF()
-
-#SET(CMAKE_Fortran_FLAGS_RELEASE "-O2" )
-#SET(CMAKE_Fortran_FLAGS_DEBUG "-O0 -g -ggdb -Wall -pedantic -fbounds-check -Wextra -Wno-unused" )
-#SET(CMAKE_Fortran_FLAGS_PROFILE "-pg -O2" )
 
 add_subdirectory( src )
 add_subdirectory( examples )

@@ -36,6 +36,8 @@
 // #include <stk_mesh/base/Comm.hpp> // for comm_mesh_counts
 #include <stk_mesh/fem/CreateAdjacentEntities.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
+// For parallel_reduce and sum:
+#include <stk_mesh/base/FieldParallel.hpp>
 
 // #include <stk_io/IossBridge.hpp>
 // #include <Ionit_Initializer.h>
@@ -59,8 +61,10 @@ StkMesh( const Epetra_Comm &comm,
          const Teuchos::RCP<const VectorFieldType> &coordinatesField
          ) :
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
-  computeEdgeCoefficientsTime_( Teuchos::TimeMonitor::getNewTimer(
-                                  "Nosh: StkMesh::computeEdgeCoefficients" ) ),
+  computeEdgeCoefficientsTime_(Teuchos::TimeMonitor::getNewTimer(
+                                  "Nosh: StkMesh::computeEdgeCoefficients")),
+  writeTime_(Teuchos::TimeMonitor::getNewTimer(
+                                  "Nosh: StkMesh::write")),
 #endif
   comm_( comm ),
   metaData_( metaData ),
@@ -78,7 +82,8 @@ StkMesh( const Epetra_Comm &comm,
   edgeCoefficients_( Teuchos::ArrayRCP<double>() ),
   edgeCoefficientsUpToDate_( false ),
   edgeNodes_( Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> >() ),
-  cellEdges_( Teuchos::null )
+  cellEdges_( Teuchos::null ),
+  outputChannelIsOpen_(false)
 {
   this->createEdges_();
 }
@@ -119,6 +124,81 @@ openOutputChannel(const string &outputDir,
   stk::io::define_output_fields(*meshData_,
                                 *metaData_
                                 );
+
+  outputChannelIsOpen_ = true;
+  return;
+}
+// =============================================================================
+void
+StkMesh::
+write(const Epetra_Vector & psi,
+      const int index
+      ) const
+{
+#ifdef NOSH_TEUCHOS_TIME_MONITOR
+  // timer for this routine
+  Teuchos::TimeMonitor tm( *writeTime_ );
+#endif
+
+  // Merge the state into the mesh.
+//     mesh_->getBulkData()->modification_begin();
+  this->mergeComplexVector_(psi);
+//     mesh_->getBulkData()->modification_end();
+
+  TEUCHOS_ASSERT(outputChannelIsOpen_);
+
+  // Write it out to the file that's been specified in mesh_.
+  double time = index;
+  int out_step = stk::io::process_output_request(*meshData_, *bulkData_, time);
+
+  return;
+}
+// =============================================================================
+void
+StkMesh::
+mergeComplexVector_(const Epetra_Vector &psi) const
+{
+  ScalarFieldType * psir_field =
+    metaData_->get_field<ScalarFieldType>("psi_R");
+  ScalarFieldType * psii_field =
+    metaData_->get_field<ScalarFieldType>("psi_Z");
+#ifdef _DEBUG_
+  TEUCHOS_ASSERT( psir_field != NULL );
+  TEUCHOS_ASSERT( psii_field != NULL );
+#endif
+
+  // Zero out all nodal values, including the overlaps.
+  const std::vector<stk::mesh::Entity*> &overlapNodes = this->getOverlapNodes();
+  for (unsigned int k=0; k < overlapNodes.size(); k++)
+  {
+    // Extract real and imaginary part.
+    double* localPsiR = stk::mesh::field_data( *psir_field, *overlapNodes[k] );
+    localPsiR[0] = 0.0;
+    double* localPsiI = stk::mesh::field_data( *psii_field, *overlapNodes[k] );
+    localPsiI[0] = 0.0;
+  }
+
+  // Set owned nodes.
+  const std::vector<stk::mesh::Entity*> &ownedNodes = this->getOwnedNodes();
+#ifdef _DEBUG_
+  TEUCHOS_ASSERT_EQUALITY(psi.GlobalLength(), 2*ownedNodes.size());
+#endif
+  for (unsigned int k=0; k < ownedNodes.size(); k++)
+  {
+    // Extract real and imaginary part.
+    double* localPsiR = stk::mesh::field_data( *psir_field, *ownedNodes[k] );
+    localPsiR[0] = psi[2*k];
+    double* localPsiI = stk::mesh::field_data( *psii_field, *ownedNodes[k] );
+    localPsiI[0] = psi[2*k+1];
+  }
+
+  // This communication updates the field values on un-owned nodes
+  // it is correct because the zeroSolutionField above zeros them all
+  // and the getSolutionField only sets the owned nodes.
+  stk::mesh::parallel_reduce(*bulkData_,
+                             stk::mesh::sum(*psir_field));
+  stk::mesh::parallel_reduce(*bulkData_,
+                             stk::mesh::sum(*psii_field));
 
   return;
 }

@@ -75,9 +75,9 @@ StkMeshReader::
 // =============================================================================
 void
 StkMeshReader::
-read( const Epetra_Comm &comm,
-      Teuchos::ParameterList &data
-      )
+read(const Epetra_Comm &comm,
+     Teuchos::ParameterList &data
+     )
 {
 #ifdef HAVE_MPI
   const Epetra_MpiComm &mpicomm =

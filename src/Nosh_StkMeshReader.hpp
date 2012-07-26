@@ -54,9 +54,9 @@ virtual
 ~StkMeshReader();
 
 void
-read( const Epetra_Comm &comm,
-      Teuchos::ParameterList &data
-      );
+read(const Epetra_Comm &comm,
+     Teuchos::ParameterList &data
+     );
 
 protected:
 private:

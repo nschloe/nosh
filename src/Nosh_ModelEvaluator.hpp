@@ -32,7 +32,6 @@
 // -----------------------------------------------------------------------------
 // forward declarations
 namespace Nosh {
-class State;
 class StkMesh;
 namespace ScalarField {
 class Virtual;
@@ -107,14 +106,24 @@ void
 evalModel( const InArgs &inArgs,
            const OutArgs &outArgs ) const;
 
-virtual
-Teuchos::RCP<Nosh::State>
-createSavable( const Epetra_Vector &x ) const;
-
 public:
 
 Teuchos::RCP<const Epetra_Vector>
 get_p_latest() const;
+
+double
+innerProduct(const Epetra_Vector &phi,
+             const Epetra_Vector &psi
+             ) const;
+
+double
+normalizedScaledL2Norm(const Epetra_Vector &psi) const;
+
+double
+gibbsEnergy(const Epetra_Vector &psi) const;
+
+const Teuchos::RCP<const Nosh::StkMesh>
+getMesh() const;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 private:
