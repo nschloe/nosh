@@ -23,7 +23,8 @@
 #include "Nosh_MatrixBuilder_Laplace.hpp"
 #include "Nosh_VectorField_ExplicitValues.hpp"
 #include "Nosh_VectorField_ConstantCurl.hpp"
-#include "Nosh_ModelEvaluator.hpp"
+#include "Nosh_ModelEvaluator_Nls.hpp"
+#include "Nosh_ModelEvaluator_Bordered.hpp"
 #include "Nosh_Observer.hpp"
 #include "Nosh_SaveEigenData.hpp"
 #include "Nosh_CsvWriter.hpp"
@@ -127,16 +128,16 @@ int main(int argc, char *argv[])
     // - - - - - - - - - - - - - - - - - - - - -  - - - - - - - - - - - - - - -
     // Some alternatives for the positive-definite operator.
     // (a) -\Delta (Laplace operator with Neumann boundary)
-    const RCP<Nosh::MatrixBuilder::Virtual> matrixBuilder =
-      rcp(new Nosh::MatrixBuilder::Laplace(mesh, thickness));
+    //const RCP<Nosh::MatrixBuilder::Virtual> matrixBuilder =
+    //  rcp(new Nosh::MatrixBuilder::Laplace(mesh, thickness));
 
     // (b) (-i\nabla-A)^2 (Kinetic energy of a particle in magnetic field)
     // (b1) 'A' explicitly given in file.
-    //const double initMu = initialParameterValues.get<double>("mu", 0.0);
-    //RCP<Nosh::VectorField::Virtual> mvp =
-    //  rcp(new Nosh::VectorField::ExplicitValues(mesh, mvpValues, initMu));
-    //const RCP<Nosh::MatrixBuilder::Virtual> matrixBuilder =
-    //  rcp(new Nosh::MatrixBuilder::Keo(mesh, thickness, mvp));
+    const double initMu = initialParameterValues.get<double>("mu", 0.0);
+    RCP<Nosh::VectorField::Virtual> mvp =
+      rcp(new Nosh::VectorField::ExplicitValues(mesh, mvpValues, initMu));
+    const RCP<Nosh::MatrixBuilder::Virtual> matrixBuilder =
+      rcp(new Nosh::MatrixBuilder::Keo(mesh, thickness, mvp));
 
     // (b2) 'A' analytically given (here with constant curl).
     //      Optionally add a rotation axis u. This is important
@@ -163,19 +164,27 @@ int main(int argc, char *argv[])
     // - - - - - - - - - - - - - - - - - - - - -  - - - - - - - - - - - - - - -
     // Setup the scalar potential V.
     // (a) A constant potential.
-    //RCP<Nosh::ScalarField::Virtual> sp =
-      //rcp(new Nosh::ScalarField::Constant(-1.0));
+    RCP<Nosh::ScalarField::Virtual> sp =
+      rcp(new Nosh::ScalarField::Constant(-1.0));
     //const double T = initialParameterValues.get<double>("T", 0.0);
     // (b) One you built yourself by deriving from Nosh::ScalarField::Virtual.
-    RCP<Nosh::ScalarField::Virtual> sp =
-      rcp(new MyScalarField(mesh));
+    //RCP<Nosh::ScalarField::Virtual> sp =
+      //rcp(new MyScalarField(mesh));
     // - - - - - - - - - - - - - - - - - - - - -  - - - - - - - - - - - - - - -
 
     // Finally, create the model evaluator.
     // This is the most important object in the whole stack.
     const double g = initialParameterValues.get<double>("g");
-    RCP<Nosh::ModelEvaluator> nlsModel =
-      rcp(new Nosh::ModelEvaluator(mesh, matrixBuilder, sp, g, thickness, psi));
+    RCP<Nosh::ModelEvaluator::Virtual> nlsModel =
+      rcp(new Nosh::ModelEvaluator::Nls(mesh, matrixBuilder, sp, g, thickness, psi));
+
+    bool useBordering = true;
+    RCP<Nosh::ModelEvaluator::Virtual> modelEvaluator;
+    if (useBordering)
+        modelEvaluator = rcp(new Nosh::ModelEvaluator::Bordered(nlsModel));
+    else
+        modelEvaluator = nlsModel;
+
 
     // Build the Piro model evaluator. It's used to hook up with
     // several different backends (NOX, LOCA, Rhythmos,...).
@@ -190,19 +199,19 @@ int main(int argc, char *argv[])
     if (solver == "NOX")
     {
       RCP<Nosh::Observer> observer =
-        rcp(new Nosh::Observer(nlsModel,
+        rcp(new Nosh::Observer(modelEvaluator,
                                contFilePath,
                                Nosh::Observer::OBSERVER_TYPE_NEWTON));
 
       piro = rcp(new Piro::Epetra::NOXSolver(piroParams,
-                                             nlsModel,
+                                             modelEvaluator,
                                              observer));
     }
     // ----------------------------------------------------------------------
     else if (solver == "LOCA")
     {
       RCP<Nosh::Observer> observer =
-        rcp(new Nosh::Observer(nlsModel,
+        rcp(new Nosh::Observer(modelEvaluator,
                                contFilePath,
                                Nosh::Observer::OBSERVER_TYPE_CONTINUATION));
 
@@ -225,7 +234,7 @@ int main(int argc, char *argv[])
 
         glEigenSaver =
           RCP<Nosh::SaveEigenData>(new Nosh::SaveEigenData(eigenList,
-                                                           nlsModel,
+                                                           modelEvaluator,
                                                            eigenCsvWriter));
 
         RCP<LOCA::SaveEigenData::AbstractStrategy> glSaveEigenDataStrategy =
@@ -240,7 +249,7 @@ int main(int argc, char *argv[])
 #endif
       // Get the solver.
       RCP<Piro::Epetra::LOCASolver> piroLOCASolver =
-        rcp(new Piro::Epetra::LOCASolver(piroParams, nlsModel, observer));
+        rcp(new Piro::Epetra::LOCASolver(piroParams, modelEvaluator, observer));
 
       // Get stepper and inject it into the eigensaver.
       RCP<LOCA::Stepper> stepper = piroLOCASolver->getLOCAStepperNonConst();
@@ -276,7 +285,7 @@ int main(int argc, char *argv[])
       bifList.set("Initial Null Vector", initialNullAbstractVec);
 
       piro = rcp(new Piro::Epetra::LOCASolver(piroParams,
-                                              nlsModel,
+                                              modelEvaluator,
                                               observer));
     }
     // ----------------------------------------------------------------------

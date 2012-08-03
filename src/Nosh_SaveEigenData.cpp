@@ -20,7 +20,7 @@
 // =============================================================================
 #include "Nosh_SaveEigenData.hpp"
 
-#include "Nosh_ModelEvaluator.hpp"
+#include "Nosh_ModelEvaluator_Virtual.hpp"
 #include "Nosh_CsvWriter.hpp"
 
 #include <NOX_Abstract_MultiVector.H>
@@ -30,11 +30,11 @@ namespace Nosh {
 // =============================================================================
 SaveEigenData::
 SaveEigenData(Teuchos::ParameterList &eigenParamList,
-              const Teuchos::RCP<const Nosh::ModelEvaluator> &modelEval,
+              const Teuchos::RCP<const Nosh::ModelEvaluator::Virtual> &modelEval,
               const Teuchos::RCP<Nosh::CsvWriter> &csvWriter
               ) :
-  eigenParamListPtr_( Teuchos::rcpFromRef<Teuchos::ParameterList>(
-                        eigenParamList) ),
+  eigenParamListPtr_(Teuchos::rcpFromRef<Teuchos::ParameterList>(
+                       eigenParamList) ),
   modelEval_( modelEval ),
   csvWriter_( csvWriter ),
   locaStepper_( Teuchos::null ),

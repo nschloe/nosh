@@ -18,11 +18,12 @@
 //
 // @HEADER
 
-#include "Nosh_ModelEvaluator.hpp"
+#include "Nosh_ModelEvaluator_Nls.hpp"
 
 #include "Nosh_ScalarField_Virtual.hpp"
 #include "Nosh_MatrixBuilder_Virtual.hpp"
 #include "Nosh_MatrixBuilder_Keo.hpp"
+#include "Nosh_JacobianOperator.hpp"
 #include "Nosh_KeoRegularized.hpp"
 #include "Nosh_StkMesh.hpp"
 
@@ -40,9 +41,10 @@
 #include <Teuchos_VerboseObject.hpp>
 
 namespace Nosh {
+namespace ModelEvaluator {
 // ============================================================================
-ModelEvaluator::
-ModelEvaluator (
+Nls::
+Nls(
   const Teuchos::RCP<const Nosh::StkMesh> &mesh,
   const Teuchos::RCP<const Nosh::MatrixBuilder::Virtual> &matrixBuilder,
   const Teuchos::RCP<const Nosh::ScalarField::Virtual> &scalarPotential,
@@ -59,27 +61,27 @@ ModelEvaluator (
   matrixBuilder_(matrixBuilder),
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   evalModelTime_( Teuchos::TimeMonitor::getNewTimer(
-                    "Nosh: ModelEvaluator::evalModel" ) ),
+                    "Nosh: Nls::evalModel" ) ),
   computeFTime_( Teuchos::TimeMonitor::getNewTimer(
-                   "Nosh: ModelEvaluator::evalModel:compute F" ) ),
+                   "Nosh: Nls::evalModel:compute F" ) ),
   computedFdpTime_( Teuchos::TimeMonitor::getNewTimer(
-                      "Nosh: ModelEvaluator::evalModel:compute dF/dp" ) ),
+                      "Nosh: Nls::evalModel:compute dF/dp" ) ),
   fillJacobianTime_( Teuchos::TimeMonitor::getNewTimer(
-                       "Nosh: ModelEvaluator::evalModel:fill Jacobian" ) ),
+                       "Nosh: Nls::evalModel:fill Jacobian" ) ),
   fillPreconditionerTime_( Teuchos::TimeMonitor::getNewTimer(
-                             "Nosh: ModelEvaluator::evalModel::fill preconditioner" ) ),
+                             "Nosh: Nls::evalModel::fill preconditioner" ) ),
 #endif
   out_( Teuchos::VerboseObjectBase::getDefaultOStream() )
 {
 }
 // ============================================================================
-ModelEvaluator::
-~ModelEvaluator()
+Nls::
+~Nls()
 {
 }
 // ============================================================================
 Teuchos::RCP<const Epetra_Map>
-ModelEvaluator::
+Nls::
 get_x_map() const
 {
   // It is a bit of an assumption that x_ actually has this map, but
@@ -92,7 +94,7 @@ get_x_map() const
 }
 // ============================================================================
 Teuchos::RCP<const Epetra_Map>
-ModelEvaluator::
+Nls::
 get_f_map() const
 {
 #ifdef _DEBUG_
@@ -102,7 +104,7 @@ get_f_map() const
 }
 // ============================================================================
 Teuchos::RCP<const Epetra_Vector>
-ModelEvaluator::
+Nls::
 get_x_init() const
 {
 #ifdef _DEBUG_
@@ -112,7 +114,7 @@ get_x_init() const
 }
 // ============================================================================
 Teuchos::RCP<const Epetra_Vector>
-ModelEvaluator::
+Nls::
 get_p_init(int l) const
 {
   TEUCHOS_TEST_FOR_EXCEPT_MSG(l != 0,
@@ -140,7 +142,7 @@ get_p_init(int l) const
 }
 // ============================================================================
 Teuchos::RCP<const Epetra_Map>
-ModelEvaluator::
+Nls::
 get_p_map(int l) const
 {
   TEUCHOS_TEST_FOR_EXCEPT_MSG(l != 0,
@@ -153,7 +155,7 @@ get_p_map(int l) const
 }
 // ============================================================================
 Teuchos::RCP<const Teuchos::Array<std::string> >
-ModelEvaluator::
+Nls::
 get_p_names(int l) const
 {
   TEUCHOS_TEST_FOR_EXCEPT_MSG(l != 0,
@@ -181,7 +183,7 @@ get_p_names(int l) const
 }
 // =============================================================================
 Teuchos::RCP<Epetra_Operator>
-ModelEvaluator::
+Nls::
 create_W() const
 {
   return Teuchos::rcp(new Nosh::JacobianOperator(mesh_,
@@ -191,7 +193,7 @@ create_W() const
 }
 // =============================================================================
 Teuchos::RCP<EpetraExt::ModelEvaluator::Preconditioner>
-ModelEvaluator::
+Nls::
 create_WPrec() const
 {
   Teuchos::RCP<Epetra_Operator> keoPrec =
@@ -210,7 +212,7 @@ create_WPrec() const
 }
 // ============================================================================
 EpetraExt::ModelEvaluator::InArgs
-ModelEvaluator::
+Nls::
 createInArgs() const
 {
   EpetraExt::ModelEvaluator::InArgsSetup inArgs;
@@ -231,7 +233,7 @@ createInArgs() const
 }
 // ============================================================================
 EpetraExt::ModelEvaluator::OutArgs
-ModelEvaluator::
+Nls::
 createOutArgs() const
 {
   EpetraExt::ModelEvaluator::OutArgsSetup outArgs;
@@ -265,7 +267,7 @@ createOutArgs() const
 }
 // ============================================================================
 void
-ModelEvaluator::
+Nls::
 evalModel(const InArgs &inArgs,
           const OutArgs &outArgs
           ) const
@@ -402,7 +404,7 @@ evalModel(const InArgs &inArgs,
 }
 // ============================================================================
 void
-ModelEvaluator::
+Nls::
 computeF_(const Epetra_Vector &x,
           const double g,
           const Teuchos::Array<double> & spParams,
@@ -479,7 +481,7 @@ computeF_(const Epetra_Vector &x,
 }
 // ============================================================================
 void
-ModelEvaluator::
+Nls::
 computeDFDg_(const Epetra_Vector &x,
              Epetra_Vector &FVec
              ) const
@@ -509,7 +511,7 @@ computeDFDg_(const Epetra_Vector &x,
 }
 // ============================================================================
 void
-ModelEvaluator::
+Nls::
 computeDFDPpotential_(const Epetra_Vector &x,
                       const Teuchos::Array<double> & spParams,
                       int paramIndex,
@@ -542,7 +544,7 @@ computeDFDPpotential_(const Epetra_Vector &x,
 }
 // ============================================================================
 void
-ModelEvaluator::
+Nls::
 computeDFDPeo_(const Epetra_Vector &x,
                 const Teuchos::Array<double> &eoParams,
                 int paramIndex,
@@ -556,7 +558,7 @@ computeDFDPeo_(const Epetra_Vector &x,
 }
 // ============================================================================
 Teuchos::RCP<const Epetra_Vector>
-ModelEvaluator::
+Nls::
 get_p_latest() const
 {
   // This is fetcher routine to make sure that the NOX::Observer
@@ -565,7 +567,7 @@ get_p_latest() const
 }
 // =============================================================================
 double
-ModelEvaluator::
+Nls::
 innerProduct(const Epetra_Vector &phi,
              const Epetra_Vector &psi
              ) const
@@ -591,14 +593,14 @@ innerProduct(const Epetra_Vector &phi,
 }
 // ============================================================================
 double
-ModelEvaluator::
+Nls::
 normalizedScaledL2Norm(const Epetra_Vector &psi) const
 {
   return sqrt(this->innerProduct(psi, psi));
 }
 // =============================================================================
 double
-ModelEvaluator::
+Nls::
 gibbsEnergy(const Epetra_Vector &psi) const
 {
   const Epetra_Vector &controlVolumes = *mesh_->getControlVolumes();
@@ -625,10 +627,11 @@ gibbsEnergy(const Epetra_Vector &psi) const
 }
 // =============================================================================
 const Teuchos::RCP<const Nosh::StkMesh>
-ModelEvaluator::
+Nls::
 getMesh() const
 {
   return mesh_;
 }
 // =============================================================================
+} // namespace ModelEvaluator
 } // namespace Nosh

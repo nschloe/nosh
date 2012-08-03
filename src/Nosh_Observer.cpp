@@ -21,13 +21,13 @@
 #include "Nosh_Observer.hpp"
 
 #include "Nosh_CsvWriter.hpp"
-#include "Nosh_ModelEvaluator.hpp"
+#include "Nosh_ModelEvaluator_Virtual.hpp"
 #include "Nosh_StkMesh.hpp"
 
 namespace Nosh {
 // ============================================================================
 Observer::
-Observer(const Teuchos::RCP<const Nosh::ModelEvaluator> &modelEval,
+Observer(const Teuchos::RCP<const Nosh::ModelEvaluator::Virtual> &modelEval,
          const std::string & filename,
          const Observer::EObserverType &observerType
           ) :

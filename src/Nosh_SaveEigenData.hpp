@@ -30,8 +30,10 @@
 // =============================================================================
 // forward declarations
 namespace Nosh {
-class ModelEvaluator;
 class CsvWriter;
+namespace ModelEvaluator {
+class Virtual;
+}
 }
 // =============================================================================
 namespace Nosh {
@@ -50,7 +52,7 @@ public:
 
 // Constructor
 SaveEigenData ( Teuchos::ParameterList &eigenParamList,
-                const Teuchos::RCP<const Nosh::ModelEvaluator> &modelEval,
+                const Teuchos::RCP<const Nosh::ModelEvaluator::Virtual> &modelEval,
                 const Teuchos::RCP<Nosh::CsvWriter> &statsWriter
                 );
 
@@ -76,7 +78,7 @@ releaseLocaStepper();
 protected:
 private:
 Teuchos::RCP<Teuchos::ParameterList> eigenParamListPtr_;
-const Teuchos::RCP<const Nosh::ModelEvaluator> modelEval_;
+const Teuchos::RCP<const Nosh::ModelEvaluator::Virtual> modelEval_;
 const Teuchos::RCP<const Nosh::CsvWriter> csvWriter_;
 Teuchos::RCP<LOCA::Stepper> locaStepper_;
 

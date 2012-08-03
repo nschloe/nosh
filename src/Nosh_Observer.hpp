@@ -30,7 +30,9 @@ class LinearProblem;
 }
 namespace Nosh {
 class CsvWriter;
-class ModelEvaluator;
+namespace ModelEvaluator {
+class Virtual;
+}
 }
 // =============================================================================
 namespace Nosh {
@@ -45,10 +47,10 @@ enum EObserverType { OBSERVER_TYPE_NEWTON,
 
 public:
 //! Constructor
-Observer(const Teuchos::RCP<const Nosh::ModelEvaluator> &modelEval,
-            const std::string & filename,
-            const Observer::EObserverType &problemType
-            );
+Observer(const Teuchos::RCP<const Nosh::ModelEvaluator::Virtual> &modelEval,
+         const std::string & filename,
+         const Observer::EObserverType &problemType
+         );
 
 //! Destructor
 virtual
@@ -73,7 +75,7 @@ saveContinuationStatistics_(const int stepIndex,
 
 private:
 
-const Teuchos::RCP<const Nosh::ModelEvaluator> modelEval_;
+const Teuchos::RCP<const Nosh::ModelEvaluator::Virtual> modelEval_;
 const Teuchos::RCP<Nosh::CsvWriter> csvWriter_;
 const EObserverType observerType_;
 

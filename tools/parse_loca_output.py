@@ -12,7 +12,7 @@ def _main():
     # We're looking for the following string:
     #
     # The Belos solver of type "Belos::PseudoBlockCGSolMgr<...,double>{}" returned a solve status of "SOLVE_STATUS_CONVERGED" in 36 iterations with total CPU time of 0.293983 sec
-    # 
+    #
     # ************************************************************************
     # -- Nonlinear Solver Step 3 --
     # ||F|| = 3.651e-11  step = 1.000e+00  dx = 2.306e-06 (Converged!)
@@ -22,13 +22,12 @@ def _main():
     #floating_point_regex = '[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?'
     floating_point_regex = '[0-9]+\.[0-9]+e[-+][0-9]+'
     belos_already_converged_message = r'Warning: NOX::Solver::LineSearchBased::init\(\) - The solution passed into the solver \(either through constructor or reset method\) is already converged!  The solver wil not attempt to solve this system since status is flagged as converged.'
-    belos_converged_message = r'The Belos solver of type "Belos::PseudoBlockCGSolMgr<...,double>{}" returned a solve status of "SOLVE_STATUS_CONVERGED" in (\d+) iterations with total CPU time of %s sec' % real_number_regex
+    belos_converged_message = r'The Belos solver of type "Belos::PseudoBlockGmresSolMgr<...,double>{Ortho Type=\'DGKS\', Block Size=1, Num Blocks=300, Max Restarts=20}" returned a solve status of "SOLVE_STATUS_CONVERGED" in (\d+) iterations with total CPU time of %s sec' % real_number_regex
     # Create the monster of regular expression.
     regex = re.compile( r'''(%s|%s)
 
 \*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*
--- Nonlinear Solver Step \d+ -- 
-\|\|F\|\| = (%s)  step = (%s)  dx = (%s) \(Converged!\)
+-- Nonlinear Solver Step \d+ -- \n\|\|F\|\| = (%s)  step = (%s)  dx = (%s) \(Converged!\)
 \*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*''' % ( belos_already_converged_message, belos_converged_message, floating_point_regex, floating_point_regex, floating_point_regex ), re.MULTILINE )
 
     # Go through the contents of the file search for matches.

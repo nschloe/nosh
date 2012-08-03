@@ -17,18 +17,17 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 // @HEADER
-#ifndef NOSH_MODELEVALUATOR_H
-#define NOSH_MODELEVALUATOR_H
+#ifndef NOSH_MODELEVALUATOR_NLS_H
+#define NOSH_MODELEVALUATOR_NLS_H
 // -----------------------------------------------------------------------------
 // includes
-#include <EpetraExt_ModelEvaluator.h>
 #include <Epetra_Vector.h>
 #include <Teuchos_ParameterList.hpp>
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   #include <Teuchos_Time.hpp>
 #endif
 
-#include "Nosh_JacobianOperator.hpp"
+#include "Nosh_ModelEvaluator_Virtual.hpp"
 // -----------------------------------------------------------------------------
 // forward declarations
 namespace Nosh {
@@ -36,19 +35,22 @@ class StkMesh;
 namespace ScalarField {
 class Virtual;
 }
+namespace MatrixBuilder {
+class Virtual;
+}
 }
 
 class Epetra_CrsGraph;
 // -----------------------------------------------------------------------------
 namespace Nosh {
-
-class ModelEvaluator : public EpetraExt::ModelEvaluator
+namespace ModelEvaluator {
+class Nls : public Virtual
 {
 
 public:
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 //! Constructor without initial guess.
-ModelEvaluator (
+Nls (
   const Teuchos::RCP<const Nosh::StkMesh> &mesh,
   const Teuchos::RCP<const Nosh::MatrixBuilder::Virtual> &matrixBuilder,
   const Teuchos::RCP<const Nosh::ScalarField::Virtual> &scalarPotential,
@@ -59,7 +61,7 @@ ModelEvaluator (
 
 // Destructor
 virtual
-~ModelEvaluator();
+~Nls();
 
 virtual
 Teuchos::RCP<const Epetra_Map>
@@ -182,7 +184,7 @@ const Teuchos::RCP<Teuchos::Time> fillPreconditionerTime_;
 Teuchos::RCP<Teuchos::FancyOStream> out_;
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 };
+} // namespace ModelEvaluator
+} // namespace Nosh
 
-}
-
-#endif // NOSH_MODELEVALUATOR_H
+#endif // NOSH_MODELEVALUATOR_NLS_H
