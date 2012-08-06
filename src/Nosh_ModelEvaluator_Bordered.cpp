@@ -111,8 +111,23 @@ Teuchos::RCP<EpetraExt::ModelEvaluator::Preconditioner>
 Bordered::
 create_WPrec() const
 {
-  //return innerModelEval_->create_WPrec();
-  return Teuchos::null;
+  // Extract the inner preconditioner and fill a Bordered Operator with it.
+  Teuchos::RCP<Epetra_Operator> borderedPrec =
+    Teuchos::rcp(new Nosh::BorderedOperator(innerModelEval_->create_WPrec()->PrecOp,
+                                            Teuchos::rcp(new Epetra_Vector(*initialBordering_)),
+                                            Teuchos::rcp(new Epetra_Vector(*initialBordering_)),
+                                            0.0));
+
+  // bool is answer to: "Prec is already inverted?"
+  // This needs to be set to TRUE to make sure that the constructor of
+  //    NOX::Epetra::LinearSystemStratimikos
+  // chooses a user-defined preconditioner.
+  // Effectively, this boolean serves pretty well as a quirky switch for the
+  // preconditioner if Piro is used.
+  return Teuchos::rcp(new EpetraExt::ModelEvaluator::Preconditioner(borderedPrec,
+                                                                    true));
+                                                                    //false));
+
 }
 // ============================================================================
 EpetraExt::ModelEvaluator::InArgs
@@ -204,6 +219,21 @@ evalModel(const InArgs &inArgs,
     // Fill inner Jacobian.
     inner_outArgs.set_W(borderedW->getInnerOperator());
     innerModelEval_->evalModel(inner_inArgs, inner_outArgs);
+
+    // TODO reset bordering
+  }
+
+  // Fill preconditioner.
+  const Teuchos::RCP<Epetra_Operator> & WPrec_out = outArgs.get_WPrec();
+  if( !WPrec_out.is_null() )
+  {
+    const Teuchos::RCP<Nosh::BorderedOperator> & borderedPrec =
+      Teuchos::rcp_dynamic_cast<Nosh::BorderedOperator>(WPrec_out, true);
+
+    // Fill inner preconditioner.
+    inner_outArgs.set_WPrec(borderedPrec->getInnerOperator());
+    innerModelEval_->evalModel(inner_inArgs, inner_outArgs);
+
     // TODO reset bordering
   }
 

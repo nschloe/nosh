@@ -112,8 +112,56 @@ ApplyInverse(const Epetra_MultiVector &X,
              Epetra_MultiVector &Y
              ) const
 {
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(false,
-                              "Not yet implemented.");
+  // Inverse via Schur formulation.
+  //
+  // [A     B]^{-1} [X]
+  // [<C,.> D]      [lambda]
+  // =
+  // [A^{-1} X + A^{-1} B S^{-1} <C, A^{-1} X> - A^{-1} B S^{-1} lambda]
+  // [-S^{-1} <C, A^{-1} X>                    + S^{-1} lambda         ].
+#if _DEBUG_
+  TEUCHOS_ASSERT(X.Map().IsSameAs(*domainMap_));
+  TEUCHOS_ASSERT(Y.Map().IsSameAs(*rangeMap_));
+#endif
+  const int n = X.NumVectors();
+#if _DEBUG_
+  TEUCHOS_ASSERT_EQUALITY(n, Y.NumVectors());
+#endif
+  // Dissect X.
+  Epetra_Vector innerX(innerOperator_->OperatorDomainMap());
+  double lambda[n];
+  Nosh::BorderingHelpers::dissect(X, innerX, lambda);
+  // Apply inverse inner operator with right hand side `right bordering'.
+  // TODO useTranspose_
+  Epetra_Vector AiB(innerOperator_->OperatorRangeMap());
+  TEUCHOS_ASSERT_EQUALITY(0, innerOperator_->ApplyInverse(*b_, AiB));
+
+  // Schur complement S = D - <C, A^{-1} B>.
+  double s;
+  TEUCHOS_ASSERT_EQUALITY(0, c_->Dot(AiB, &s));
+  s = d_ - s;
+  TEUCHOS_ASSERT_INEQUALITY(fabs(s), >=, 1.0e-15);
+
+  Epetra_MultiVector innerY(innerOperator_->OperatorRangeMap(), n);
+  Epetra_Vector AiX(innerOperator_->OperatorRangeMap());
+  double alpha[n];
+  for (int k=0; k<n; k++)
+  {
+    // innerY = A^{-1} X
+    TEUCHOS_ASSERT_EQUALITY(0, innerOperator_->ApplyInverse(innerX, *(innerY(k))));
+    double cAiX;
+    TEUCHOS_ASSERT_EQUALITY(0, c_->Dot(AiX, &cAiX));
+
+    // [A^{-1} X + A^{-1} B S^{-1} <C, A^{-1} X> - A^{-1} B S^{-1} lambda]
+    innerY(k)->Update((cAiX-lambda[k])/s, AiB, 1.0);
+
+    // [-S^{-1} <C, A^{-1} X>                    + S^{-1} lambda         ].
+    alpha[k] = (-cAiX + lambda[k]) / s;
+  }
+
+  // Merge it all together.
+  Nosh::BorderingHelpers::merge(innerY, alpha, Y);
+
   return 0;
 }
 // =============================================================================
