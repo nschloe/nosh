@@ -1,5 +1,7 @@
 SET ( nosh_SRCS
       Nosh_Helpers.cpp
+      Nosh_BorderingHelpers.cpp
+      Nosh_BorderedOperator.cpp
       Nosh_ModelEvaluator_Virtual.cpp
       Nosh_ModelEvaluator_Nls.cpp
       Nosh_ModelEvaluator_Bordered.cpp

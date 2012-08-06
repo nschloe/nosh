@@ -34,7 +34,9 @@ public:
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 //! Constructor without initial guess.
 Bordered (
-  const Teuchos::RCP<const Nosh::ModelEvaluator::Virtual> & modelEval
+  const Teuchos::RCP<const Nosh::ModelEvaluator::Virtual> & modelEval,
+  const Teuchos::RCP<const Epetra_Vector> & initialBordering,
+  const double lambdaInit
   );
 
 // Destructor
@@ -111,8 +113,9 @@ getMesh() const;
 
 protected:
 private:
-
 const Teuchos::RCP<const Nosh::ModelEvaluator::Virtual> innerModelEval_;
+const Teuchos::RCP<const Epetra_Vector> initialBordering_;
+const double lambdaInit_;
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 };
 } // namespace Modelevaluator

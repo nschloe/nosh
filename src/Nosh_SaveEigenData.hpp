@@ -88,6 +88,6 @@ bool numEigenvaluesAdaptive_;
 //! The minimum number of stable eigenvalues that is to be computed in each step.
 unsigned int numComputeStableEigenvalues_;
 };
-} // namespace GL
+} // namespace NOSH
 
 #endif // NOSH_SAVEEIGENDATA_H

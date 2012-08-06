@@ -178,13 +178,29 @@ int main(int argc, char *argv[])
     RCP<Nosh::ModelEvaluator::Virtual> nlsModel =
       rcp(new Nosh::ModelEvaluator::Nls(mesh, matrixBuilder, sp, g, thickness, psi));
 
-    bool useBordering = true;
+    bool useBordering = false;
     RCP<Nosh::ModelEvaluator::Virtual> modelEvaluator;
     if (useBordering)
-        modelEvaluator = rcp(new Nosh::ModelEvaluator::Bordered(nlsModel));
+    {
+      // Use i*psi as bordering.
+      RCP<Epetra_Vector> bordering =
+        rcp(new Epetra_Vector(psi->Map()));
+      for (int k=0; k<psi->Map().NumMyElements()/2; k++)
+      {
+        (*bordering)[2*k] = - (*psi)[2*k+1];
+        (*bordering)[2*k+1] = (*psi)[2*k];
+        //(*bordering)[2*k]   = 1.0;
+        //(*bordering)[2*k+1] = 0.0;
+      }
+      //bordering->Random();
+      // Initial value for the extra variable.
+      double lambda = 0.0;
+      modelEvaluator = rcp(new Nosh::ModelEvaluator::Bordered(nlsModel, bordering, lambda));
+    }
     else
-        modelEvaluator = nlsModel;
-
+    {
+      modelEvaluator = nlsModel;
+    }
 
     // Build the Piro model evaluator. It's used to hook up with
     // several different backends (NOX, LOCA, Rhythmos,...).

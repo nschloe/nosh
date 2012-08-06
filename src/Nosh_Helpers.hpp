@@ -18,8 +18,8 @@
 //
 // @HEADER
 
-#ifndef GL_HELPERS_H
-#define GL_HELPERS_H
+#ifndef NOSH_HELPERS_H
+#define NOSH_HELPERS_H
 
 #include <LOCA_Parameter_Vector.H>
 #include <Teuchos_ParameterList.hpp>
@@ -61,4 +61,4 @@ numDigits( const int i );
 
 }
 
-#endif // GL_HELPERS_H
+#endif // NOSH_HELPERS_H

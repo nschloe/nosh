@@ -277,7 +277,7 @@ evalModel(const InArgs &inArgs,
 #endif
 
   const double alpha = inArgs.get_alpha();
-  double beta  = inArgs.get_beta();
+  double beta = inArgs.get_beta();
 
   // From packages/piro/test/MockModelEval_A.cpp
   if (alpha==0.0 && beta==0.0)
@@ -288,14 +288,6 @@ evalModel(const InArgs &inArgs,
 #endif
 
   const Teuchos::RCP<const Epetra_Vector> &x_in = inArgs.get_x();
-
-  // Store "current" parameters, used in this->getParameters().
-  // Setting p_current_=p_in here is really a somewhat arbitrary choice.
-  // The rationale is that the p-values which were last
-  // used here are the "current" parameter values,
-  // but there's actually no guarantee for it:
-  // The evaluator could have been used for *anything.
-  // Anyway, current_p_ is only used in this->getParameters().
 
   // Dissect inArgs.get_p(0) into parameter sublists.
   // Keep this in sync with get_p_init() where the splitting
@@ -322,7 +314,13 @@ evalModel(const InArgs &inArgs,
   // Make sure we arrived at the end of the vector.
   TEUCHOS_ASSERT_EQUALITY(i, p_in->MyLength());
 
-  // Store in p_latest_ for this->get_p_latest (for NOX::Observer).
+  // Store "current" parameters, used in this->getParameters().
+  // Setting p_latest__=p_in here is really a somewhat arbitrary choice.
+  // The rationale is that the p-values which were last
+  // used here are the "current" parameter values,
+  // but there's actually no guarantee for it:
+  // The evaluator could have been used for *anything*.
+  // Anyways, it's only used in this->get_p_latest (for NOX::Observer).
   p_latest_ = Teuchos::rcp(new Epetra_Vector(*p_in));
 
   // compute F
