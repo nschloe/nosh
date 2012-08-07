@@ -98,6 +98,8 @@ int main(int argc, char *argv[])
     const std::string dataFile = xmlDirectory + "/"
                                + inputDataList.get<std::string>( "File" );
     const int step = inputDataList.get<int>("Initial Psi Step", true);
+
+    const bool useBordering = piroParams->get<bool>("Bordering", true);
     // =======================================================================
     // Get the initial parameter values.
     Teuchos::ParameterList initialParameterValues =
@@ -178,7 +180,6 @@ int main(int argc, char *argv[])
     RCP<Nosh::ModelEvaluator::Virtual> nlsModel =
       rcp(new Nosh::ModelEvaluator::Nls(mesh, matrixBuilder, sp, g, thickness, psi));
 
-    bool useBordering = true;
     RCP<Nosh::ModelEvaluator::Virtual> modelEvaluator;
     if (useBordering)
     {
