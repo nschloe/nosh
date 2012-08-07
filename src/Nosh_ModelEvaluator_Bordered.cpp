@@ -160,11 +160,24 @@ evalModel(const InArgs &inArgs,
   double lambda;
   Nosh::BorderingHelpers::dissect(*x_in, *inner_x_in, &lambda);
 
+  // Get i*x. This assumes a particular data layout in x_in.
+  const Teuchos::RCP<Epetra_Vector> ix =
+    Teuchos::rcp(new Epetra_Vector(inner_x_in->Map()));
+  for (int k=0; k<ix->Map().NumMyElements()/2; k++)
+  {
+    (*ix)[2*k] = - (*x_in)[2*k+1];
+    (*ix)[2*k+1] = (*x_in)[2*k];
+  }
+
   // Copy over the args for use in innerModelEval.
   InArgs inner_inArgs = inArgs;
   inner_inArgs.set_x(inner_x_in);
 
   OutArgs inner_outArgs = outArgs;
+
+  const Teuchos::RCP<const Epetra_Vector> & bordering =
+    //initialBordering_;
+    ix;
 
   // Compute F(x).
   const Teuchos::RCP<Epetra_Vector> &f_out = outArgs.get_f();
@@ -177,10 +190,10 @@ evalModel(const InArgs &inArgs,
     inner_outArgs.set_f(inner_f_out);
     innerModelEval_->evalModel(inner_inArgs, inner_outArgs);
     // Add lambda * x0.
-    TEUCHOS_ASSERT_EQUALITY(0, inner_f_out->Update(lambda, *initialBordering_, 1.0));
+    TEUCHOS_ASSERT_EQUALITY(0, inner_f_out->Update(lambda, *bordering, 1.0));
     // Append <psi0, x> to f_out.
     double r;
-    TEUCHOS_ASSERT_EQUALITY(0, initialBordering_->Dot(*inner_x_in, &r));
+    TEUCHOS_ASSERT_EQUALITY(0, bordering->Dot(*inner_x_in, &r));
     //r = lambda;
     Nosh::BorderingHelpers::merge(*inner_f_out, &r, *f_out);
   }
@@ -203,10 +216,10 @@ evalModel(const InArgs &inArgs,
     inner_outArgs.set_DfDp(0, innerDerivMv);
     innerModelEval_->evalModel(inner_inArgs, inner_outArgs);
     // Append last entry and merge into dfdp_out.
-    double r[numParams];
+    std::vector<double> r(numParams);
     for (int k=0; k<numParams; k++)
       r[k] = 0.0;
-    Nosh::BorderingHelpers::merge(*inner_dfdp_out, r, *dfdp_out);
+    Nosh::BorderingHelpers::merge(*inner_dfdp_out, &r[0], *dfdp_out);
   }
 
   // Fill Jacobian.
@@ -220,7 +233,8 @@ evalModel(const InArgs &inArgs,
     inner_outArgs.set_W(borderedW->getInnerOperator());
     innerModelEval_->evalModel(inner_inArgs, inner_outArgs);
 
-    // TODO reset bordering
+    // Reset bordering.
+    borderedW->resetBordering(bordering, bordering, 0.0);
   }
 
   // Fill preconditioner.
@@ -234,7 +248,8 @@ evalModel(const InArgs &inArgs,
     inner_outArgs.set_WPrec(borderedPrec->getInnerOperator());
     innerModelEval_->evalModel(inner_inArgs, inner_outArgs);
 
-    // TODO reset bordering
+    // Reset bordering.
+    borderedPrec->resetBordering(bordering, bordering, 0.0);
   }
 
   return;

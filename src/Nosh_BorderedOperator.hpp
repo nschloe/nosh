@@ -84,13 +84,19 @@ public:
 const Teuchos::RCP<Epetra_Operator>
 getInnerOperator() const;
 
+void
+resetBordering(const Teuchos::RCP<const Epetra_Vector> & b,
+               const Teuchos::RCP<const Epetra_Vector> & c,
+               const double d
+               );
+
 protected:
 private:
 
 const Teuchos::RCP<Epetra_Operator> innerOperator_;
 const Teuchos::RCP<Epetra_Vector> b_;
 const Teuchos::RCP<Epetra_Vector> c_;
-const double d_;
+double d_;
 bool useTranspose_;
 const Epetra_Map domainMap_;
 const Epetra_Map rangeMap_;

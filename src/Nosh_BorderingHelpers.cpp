@@ -33,7 +33,7 @@ extendMapBy1(const Epetra_BlockMap & map)
   // Create a new map that hosts one more entry.
   const int numGlobalElements = map.NumGlobalElements()
                               + 1;
-  int numMyElements = map.NumMyElements();
+  const int numMyElements = map.NumMyElements();
   int * myGlobalElements = map.MyGlobalElements();
   // The following if-else construction just makes sure that
   // the Epetra_Map constructor is called with an extended
@@ -43,7 +43,7 @@ extendMapBy1(const Epetra_BlockMap & map)
   if (comm.MyPID() == 0)
   {
     // Copy over the global indices.
-    int a[numMyElements+1];
+    std::vector<int> a(numMyElements+1);
     for (int k=0; k<numMyElements; k++)
       a[k] = myGlobalElements[k];
     // Append one more.
@@ -52,7 +52,7 @@ extendMapBy1(const Epetra_BlockMap & map)
     extendedMap =
       Teuchos::rcp(new Epetra_Map(numGlobalElements,
                                   numMyElements+1,
-                                  a,
+                                  &a[0],
                                   map.IndexBase(),
                                   comm));
   }
@@ -77,17 +77,14 @@ merge(const Epetra_MultiVector & x,
       )
 {
 #if _DEBUG_
-  TEUCHOS_ASSERT_EQUALITY(x.Map().NumGlobalEntries() + 1,
-                          out.Map().NumGlobalEntries());
-#endif
+  // Check if the maps are matching.
   Teuchos::RCP<const Epetra_Map> extendedMap =
     Nosh::BorderingHelpers::extendMapBy1(x.Map());
-
-  Epetra_Import importer(*extendedMap, x.Map());
-
-#if _DEBUG_
-  out.Map.IsSameAs(*extendedMap);
+  TEUCHOS_ASSERT(out.Map().SameAs(*extendedMap));
 #endif
+
+  Epetra_Import importer(out.Map(), x.Map());
+
   TEUCHOS_ASSERT_EQUALITY(0, out.Import(x, importer, Insert));
 
   // Set last entry on proc 0.
@@ -110,21 +107,24 @@ dissect(const Epetra_MultiVector & x,
 {
 #if _DEBUG_
   TEUCHOS_ASSERT_EQUALITY(x.NumVectors(), xSmall.NumVectors());
-#endif
+  // Make sure the maps are matching.
   Teuchos::RCP<const Epetra_Map> extendedMap =
     Nosh::BorderingHelpers::extendMapBy1(xSmall.Map());
-  Epetra_Import importer(xSmall.Map(),
-                         *extendedMap);
-#if _DEBUG_
-  TEUCHOS_ASSERT(x.Map.IsSameAs(*extendedMap));
+  TEUCHOS_ASSERT(x.Map().SameAs(*extendedMap));
 #endif
+
+  Epetra_Import importer(xSmall.Map(), x.Map());
 
   // Strip off the phase constraint variable.
   xSmall.Import(x, importer, Insert);
 
-  // TODO local access to global element ugh!
-  for (int k=0; k<x.NumVectors(); k++)
-    lambda[k] = (*(x(k)))[x.GlobalLength() - 1];
+  // TODO Check if we need lambda on all procs.
+  if (x.Map().Comm().MyPID() == 0)
+  {
+    const int n = x.MyLength();
+    for (int k=0; k<x.NumVectors(); k++)
+      lambda[k] = (*(x(k)))[n - 1];
+  }
 
   return;
 }

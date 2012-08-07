@@ -62,8 +62,8 @@ Apply(const Epetra_MultiVector &X,
       ) const
 {
 #if _DEBUG_
-  TEUCHOS_ASSERT(X.Map().IsSameAs(*domainMap_));
-  TEUCHOS_ASSERT(Y.Map().IsSameAs(*rangeMap_));
+  TEUCHOS_ASSERT(X.Map().SameAs(domainMap_));
+  TEUCHOS_ASSERT(Y.Map().SameAs(rangeMap_));
 #endif
   const int n = X.NumVectors();
 #if _DEBUG_
@@ -71,8 +71,8 @@ Apply(const Epetra_MultiVector &X,
 #endif
   // Dissect X.
   Epetra_Vector innerX(innerOperator_->OperatorDomainMap());
-  double lambda[n];
-  Nosh::BorderingHelpers::dissect(X, innerX, lambda);
+  std::vector<double> lambda(n);
+  Nosh::BorderingHelpers::dissect(X, innerX, &lambda[0]);
   // Apply inner operator.
   Epetra_Vector innerY(innerOperator_->OperatorRangeMap());
   TEUCHOS_ASSERT_EQUALITY(0, innerOperator_->Apply(innerX, innerY));
@@ -95,13 +95,13 @@ Apply(const Epetra_MultiVector &X,
     TEUCHOS_ASSERT_EQUALITY(0, innerY(k)->Update(lambda[k], *rightBordering, 1.0));
 
   // Add lower bordering.
-  double alpha[n];
-  TEUCHOS_ASSERT_EQUALITY(0, lowerBordering->Dot(innerX, alpha));
+  std::vector<double> alpha(n);
+  TEUCHOS_ASSERT_EQUALITY(0, lowerBordering->Dot(innerX, &alpha[0]));
   for (int k=0; k<n; k++)
     alpha[k] += lambda[k] * d_;
 
   // Merge it all together.
-  Nosh::BorderingHelpers::merge(innerY, alpha, Y);
+  Nosh::BorderingHelpers::merge(innerY, &alpha[0], Y);
 
   return 0;
 }
@@ -120,8 +120,8 @@ ApplyInverse(const Epetra_MultiVector &X,
   // [A^{-1} X + A^{-1} B S^{-1} <C, A^{-1} X> - A^{-1} B S^{-1} lambda]
   // [-S^{-1} <C, A^{-1} X>                    + S^{-1} lambda         ].
 #if _DEBUG_
-  TEUCHOS_ASSERT(X.Map().IsSameAs(*domainMap_));
-  TEUCHOS_ASSERT(Y.Map().IsSameAs(*rangeMap_));
+  TEUCHOS_ASSERT(X.Map().SameAs(domainMap_));
+  TEUCHOS_ASSERT(Y.Map().SameAs(rangeMap_));
 #endif
   const int n = X.NumVectors();
 #if _DEBUG_
@@ -129,8 +129,8 @@ ApplyInverse(const Epetra_MultiVector &X,
 #endif
   // Dissect X.
   Epetra_Vector innerX(innerOperator_->OperatorDomainMap());
-  double lambda[n];
-  Nosh::BorderingHelpers::dissect(X, innerX, lambda);
+  std::vector<double> lambda(n);
+  Nosh::BorderingHelpers::dissect(X, innerX, &lambda[0]);
   // Apply inverse inner operator with right hand side `right bordering'.
   // TODO useTranspose_
   Epetra_Vector AiB(innerOperator_->OperatorRangeMap());
@@ -144,7 +144,7 @@ ApplyInverse(const Epetra_MultiVector &X,
 
   Epetra_MultiVector innerY(innerOperator_->OperatorRangeMap(), n);
   Epetra_Vector AiX(innerOperator_->OperatorRangeMap());
-  double alpha[n];
+  std::vector<double> alpha(n);
   for (int k=0; k<n; k++)
   {
     // innerY = A^{-1} X
@@ -160,7 +160,7 @@ ApplyInverse(const Epetra_MultiVector &X,
   }
 
   // Merge it all together.
-  Nosh::BorderingHelpers::merge(innerY, alpha, Y);
+  Nosh::BorderingHelpers::merge(innerY, &alpha[0], Y);
 
   return 0;
 }
@@ -221,6 +221,19 @@ BorderedOperator::
 getInnerOperator() const
 {
   return innerOperator_;
+}
+// =============================================================================
+void
+BorderedOperator::
+resetBordering(const Teuchos::RCP<const Epetra_Vector> & b,
+               const Teuchos::RCP<const Epetra_Vector> & c,
+               const double d
+               )
+{
+  *b_ = *b;
+  *c_ = *c;
+  d_ = d;
+  return;
 }
 // =============================================================================
 } // namespace Nosh
