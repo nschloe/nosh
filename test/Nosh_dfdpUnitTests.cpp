@@ -15,7 +15,7 @@
 #include "Nosh_ScalarField_Constant.hpp"
 #include "Nosh_MatrixBuilder_Keo.hpp"
 #include "Nosh_VectorField_ExplicitValues.hpp"
-#include "Nosh_ModelEvaluator.hpp"
+#include "Nosh_ModelEvaluator_Nls.hpp"
 
 #include <Teuchos_UnitTestHarness.hpp>
 
@@ -23,7 +23,7 @@ namespace {
 
 // ===========================================================================
 void
-computeFiniteDifference_( const Teuchos::RCP<Nosh::ModelEvaluator> & modelEval,
+computeFiniteDifference_( const Teuchos::RCP<EpetraExt::ModelEvaluator> & modelEval,
                           EpetraExt::ModelEvaluator::InArgs inArgs,
                           EpetraExt::ModelEvaluator::OutArgs outArgs,
                           const Teuchos::RCP<const Epetra_Vector> & p,
@@ -102,8 +102,8 @@ testDfdp(const std::string & inputFileNameBase,
     Teuchos::RCP<Nosh::ScalarField::Virtual> sp =
       Teuchos::rcp(new Nosh::ScalarField::Constant(-1.0));
 
-    Teuchos::RCP<Nosh::ModelEvaluator> modelEval =
-      Teuchos::rcp(new Nosh::ModelEvaluator(mesh, matrixBuilder, sp, 1.0, thickness, z));
+    Teuchos::RCP<Nosh::ModelEvaluator::Nls> modelEval =
+      Teuchos::rcp(new Nosh::ModelEvaluator::Nls(mesh, matrixBuilder, sp, 1.0, thickness, z));
 
     // -------------------------------------------------------------------------
     // Perform the finite difference test for all parameters present in the

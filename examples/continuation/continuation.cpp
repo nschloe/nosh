@@ -178,7 +178,7 @@ int main(int argc, char *argv[])
     RCP<Nosh::ModelEvaluator::Virtual> nlsModel =
       rcp(new Nosh::ModelEvaluator::Nls(mesh, matrixBuilder, sp, g, thickness, psi));
 
-    bool useBordering = false;
+    bool useBordering = true;
     RCP<Nosh::ModelEvaluator::Virtual> modelEvaluator;
     if (useBordering)
     {

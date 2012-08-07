@@ -34,7 +34,7 @@
 #include "Nosh_ScalarField_Constant.hpp"
 #include "Nosh_MatrixBuilder_Keo.hpp"
 #include "Nosh_VectorField_ExplicitValues.hpp"
-#include "Nosh_ModelEvaluator.hpp"
+#include "Nosh_ModelEvaluator_Nls.hpp"
 
 #include <Teuchos_UnitTestHarness.hpp>
 
@@ -91,8 +91,8 @@ testComputeF( const std::string & inputFileNameBase,
     Teuchos::RCP<Nosh::ScalarField::Virtual> sp =
       Teuchos::rcp(new Nosh::ScalarField::Constant(-1.0));
 
-    Teuchos::RCP<Nosh::ModelEvaluator> modelEval =
-      Teuchos::rcp(new Nosh::ModelEvaluator(mesh, matrixBuilder, sp, 1.0, thickness, z));
+    Teuchos::RCP<Nosh::ModelEvaluator::Nls> modelEval =
+      Teuchos::rcp(new Nosh::ModelEvaluator::Nls(mesh, matrixBuilder, sp, 1.0, thickness, z));
 
     // Create inArgs. Use p_init as parameters.
     EpetraExt::ModelEvaluator::InArgs inArgs = modelEval->createInArgs();
