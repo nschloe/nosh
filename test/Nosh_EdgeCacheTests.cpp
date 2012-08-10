@@ -28,7 +28,7 @@
 #include <Epetra_Vector.h>
 
 #include "Nosh_StkMesh.hpp"
-#include "Nosh_StkMeshReader.hpp"
+#include "Nosh_Helpers.hpp"
 
 #include <Teuchos_UnitTestHarness.hpp>
 
@@ -57,7 +57,7 @@ testCache( const std::string & inputFileNameBase,
     // =========================================================================
     // Read the data from the file.
     Teuchos::ParameterList data;
-    Nosh::StkMeshRead( *eComm, inputFileName, 0, data );
+    Nosh::Helpers::StkMeshRead( *eComm, inputFileName, 0, data );
 
     // Cast the data into something more accessible.
     Teuchos::RCP<Nosh::StkMesh> & mesh = data.get( "mesh", Teuchos::RCP<Nosh::StkMesh>() );

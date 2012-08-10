@@ -13,7 +13,7 @@
 #include <Teuchos_StandardCatchMacros.hpp>
 #include <Epetra_CrsGraph.h>
 
-#include "Nosh_StkMeshReader.hpp"
+#include "Nosh_Helpers.hpp"
 #include "Nosh_MatrixBuilder_Keo.hpp"
 #include "Nosh_JacobianOperator.hpp"
 #include "Nosh_KeoRegularized.hpp"
@@ -94,7 +94,7 @@ int main ( int argc, char *argv[] )
     // =========================================================================
     // Read the data from the file.
     Teuchos::ParameterList data;
-    Nosh::StkMeshRead( *eComm, inputFilePath, step, data );
+    Nosh::Helpers::StkMeshRead( *eComm, inputFilePath, step, data );
 
     // Cast the data into something more accessible.
     Teuchos::RCP<Nosh::StkMesh> & mesh =

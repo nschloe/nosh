@@ -17,7 +17,7 @@
 #include <Piro_Epetra_LOCASolver.hpp>
 
 #include "Nosh_StkMesh.hpp"
-#include "Nosh_StkMeshReader.hpp"
+#include "Nosh_Helpers.hpp"
 #include "Nosh_ScalarField_Constant.hpp"
 #include "Nosh_MatrixBuilder_Keo.hpp"
 #include "Nosh_MatrixBuilder_Laplace.hpp"
@@ -107,7 +107,7 @@ int main(int argc, char *argv[])
 
     // Read the data.
     Teuchos::ParameterList data;
-    Nosh::StkMeshRead(*eComm, dataFile, step, data);
+    Nosh::Helpers::StkMeshRead(*eComm, dataFile, step, data);
     // Cast the data into something more accessible.
     const RCP<Nosh::StkMesh> & mesh =
       data.get<RCP<Nosh::StkMesh> >( "mesh" );

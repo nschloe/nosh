@@ -10,7 +10,7 @@
 #include <LOCA_Parameter_Vector.H>
 
 #include "Nosh_StkMesh.hpp"
-#include "Nosh_StkMeshReader.hpp"
+#include "Nosh_Helpers.hpp"
 #include "Nosh_VectorField_ExplicitValues.hpp"
 #include "Nosh_ScalarField_Constant.hpp"
 #include "Nosh_MatrixBuilder_Keo.hpp"
@@ -47,7 +47,7 @@ testJac( const std::string & inputFileNameBase,
     // =========================================================================
     // Read the data from the file.
     Teuchos::ParameterList data;
-    Nosh::StkMeshRead( *eComm, inputFileName, 0, data );
+    Nosh::Helpers::StkMeshRead( *eComm, inputFileName, 0, data );
 
     // Cast the data into something more accessible.
     Teuchos::RCP<Nosh::StkMesh> & mesh =

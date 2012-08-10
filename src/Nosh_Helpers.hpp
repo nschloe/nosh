@@ -1,6 +1,6 @@
 // @HEADER
 //
-//    Nosh helper functions.
+//    Helpers functions.
 //    Copyright (C) 2010--2012  Nico Schl\"omer
 //
 //    This program is free software: you can redistribute it and/or modify
@@ -17,48 +17,24 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 // @HEADER
-
 #ifndef NOSH_HELPERS_H
 #define NOSH_HELPERS_H
+// =============================================================================
+// includes
+#include <string>
 
-#include <LOCA_Parameter_Vector.H>
+#include <Epetra_Comm.h>
 #include <Teuchos_ParameterList.hpp>
-
+// =============================================================================
 namespace Nosh {
-
 namespace Helpers {
-//! Method that reads a given Teuchos::ParameterList and puts all \c double
-//! entries into a LOCA::ParameterVector.
-Teuchos::RCP<LOCA::ParameterVector>
-teuchosParameterList2locaParameterVector( const Teuchos::ParameterList &p
-                                          );
-
-Teuchos::RCP<Teuchos::ParameterList>
-locaParameterVector2teuchosParameterList( const LOCA::ParameterVector &pL );
-
-//! Merges two \c LOCA::ParameterLists into one, checking for discrepancies
-//! in the entries.
-Teuchos::RCP<LOCA::ParameterVector>
-mergeLocaParameterVectors( const LOCA::ParameterVector &p0,
-                           const LOCA::ParameterVector &p1
-                           );
-
 void
-appendToTeuchosParameterList( Teuchos::ParameterList &p,
-                              const LOCA::ParameterVector &pL,
-                              const std::string &labelPrepend = ""
-                              );
-
-bool
-locaParameterVectorsEqual( const Teuchos::RCP<const LOCA::ParameterVector> &a,
-                           const Teuchos::RCP<const LOCA::ParameterVector> &b
-                           );
-
-unsigned int
-numDigits( const int i );
-
-}
-
-}
-
+StkMeshRead(const Epetra_Comm &comm,
+            const std::string &fileName,
+            const int step,
+            Teuchos::ParameterList &data
+            );
+} // namespace Helpers
+} // namespace Nosh
+// =============================================================================
 #endif // NOSH_HELPERS_H
