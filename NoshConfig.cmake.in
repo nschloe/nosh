@@ -1,0 +1,43 @@
+## ---------------------------------------------------------------------------
+## Compilers used by @PROJECT_NAME@ build
+## ---------------------------------------------------------------------------
+
+SET(@PROJECT_NAME@_CXX_COMPILER "@CMAKE_CXX_COMPILER@")
+
+## ---------------------------------------------------------------------------
+## Compiler flags used by @PROJECT_NAME@ build
+## ---------------------------------------------------------------------------
+
+SET(@PROJECT_NAME@_CXX_COMPILER_FLAGS "@CMAKE_CXX_FLAGS@")
+
+## Extra link flags (e.g., specification of fortran libraries)
+SET(@PROJECT_NAME@_EXTRA_LD_FLAGS "@Nosh_EXTRA_LINK_FLAGS@")
+
+SET(@PROJECT_NAME@_LINKER "@CMAKE_LINKER@")
+SET(@PROJECT_NAME@_AR "@CMAKE_AR@")
+
+
+## ---------------------------------------------------------------------------
+## Set library specifications and paths 
+## ---------------------------------------------------------------------------
+
+## The project version number
+SET(@PROJECT_NAME@_VERSION "@Nosh_VERSION@")
+
+## The project include file directories.
+SET(@PROJECT_NAME@_INCLUDE_DIRS "${CMAKE_CURRENT_LIST_DIR}/@Nosh_CONFIG_INCLUDE_DIRS@")
+
+## The project library directories.
+SET(@PROJECT_NAME@_LIBRARY_DIRS "${CMAKE_CURRENT_LIST_DIR}/@Nosh_CONFIG_LIBRARY_DIRS@")
+
+## The project libraries.
+SET(@PROJECT_NAME@_LIBRARIES "@Nosh_CONFIG_LIBRARIES@")
+
+## The project Trilinos include paths
+SET(@PROJECT_NAME@_Trilinos_INCLUDE_DIRS "@Trilinos_INCLUDE_DIRS@")
+SET(@PROJECT_NAME@_Trilinos_LIBRARY_DIRS "@Trilinos_LIBRARY_DIRS@")
+SET(@PROJECT_NAME@_Trilinos_TPL_LIBRARY_DIRS "@Trilinos_TPL_LIBRARY_DIRS@")
+
+## The project Trilinos libraries
+SET(@PROJECT_NAME@_Trilinos_LIBRARIES "@Trilinos_LIBRARIES@")
+SET(@PROJECT_NAME@_Trilinos_TPL_LIBRARIES "@Trilinos_TPL_LIBRARIES@")

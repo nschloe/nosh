@@ -80,9 +80,6 @@ configure_file(NoshBuildTreeSettings.cmake.in
 
 # Set some variables that are later exported
 SET(Nosh_CONFIG_LIBRARIES "nosh")
-SET(Nosh_CONFIG_Trilinos_INCLUDE_DIRS ${Trilinos_INCLUDE_DIRS})
-SET(Nosh_CONFIG_Trilinos_LIBRARY_DIRS ${Trilinos_LIBRARY_DIRS})
-SET(Nosh_CONFIG_Trilinos_LIBRARIES ${Trilinos_LIBRARIES})
 
 # Create the NoshConfig.cmake and NoshConfigVersion files
 file(RELATIVE_PATH Nosh_CONFIG_INCLUDE_DIRS
@@ -92,7 +89,7 @@ file(RELATIVE_PATH Nosh_CONFIG_LIBRARY_DIRS
      "${INSTALL_CMAKE_DIR}"
      "${INSTALL_LIB_DIR}")
 configure_file(NoshConfig.cmake.in
-               "${PROJECT_BINARY_DIR}/NoshConfig.cmake")
+               "${PROJECT_BINARY_DIR}/NoshConfig.cmake" @ONLY)
 configure_file(NoshConfigVersion.cmake.in
                "${PROJECT_BINARY_DIR}/NoshConfigVersion.cmake" @ONLY)
 
