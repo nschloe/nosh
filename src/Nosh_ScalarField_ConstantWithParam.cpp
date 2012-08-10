@@ -24,7 +24,7 @@ namespace Nosh {
 namespace ScalarField {
 // ============================================================================
 ConstantWithParam::
-ConstantWithParam(const double alpha ):
+ConstantWithParam(const double alpha):
   alpha_( alpha )
 {
 }

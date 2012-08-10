@@ -1,8 +1,8 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
+#CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
-INCLUDE_DIRECTORIES ( ${nosh_SOURCE_DIR}/src
-                      ${Trilinos_INCLUDE_DIRS}
-                      ${Trilinos_TPL_INCLUDE_DIRS} )
+INCLUDE_DIRECTORIES(${Nosh_SOURCE_DIR}/src
+                    ${Trilinos_INCLUDE_DIRS}
+                    ${Trilinos_TPL_INCLUDE_DIRS})
 
 LINK_DIRECTORIES( ${Boost_LIBRARY_DIRS}
                   ${Trilinos_LIBRARY_DIRS}
@@ -14,4 +14,8 @@ TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
                        "nosh"
                        ${Trilinos_LIBRARIES}
                        ${Trilinos_TPL_LIBRARIES} )
+INSTALL(TARGETS ${MY_EXECUTABLE}
+        # IMPORTANT: Add the bar executable to the "export-set"
+        EXPORT NoshLibraryDepends
+        RUNTIME DESTINATION "${INSTALL_BIN_DIR}" COMPONENT bin)
 # ------------------------------------------------------------------------------

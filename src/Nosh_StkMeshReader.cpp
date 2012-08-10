@@ -57,298 +57,18 @@
 #include <stk_rebalance/ZoltanPartition.hpp>
 #endif
 
+// typedefs
+typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorFieldType;
+typedef stk::mesh::Field<double> ScalarFieldType;
+typedef stk::mesh::Field<int> IntScalarFieldType;
+
 namespace Nosh {
 // =============================================================================
-StkMeshReader::
-StkMeshReader(const std::string &fileName,
-              const int index) :
-  fileName_( fileName ),
-  index_( index ),
-  out_( Teuchos::VerboseObjectBase::getDefaultOStream() )
-{
-}
-// =============================================================================
-StkMeshReader::
-~StkMeshReader()
-{
-}
-// =============================================================================
 void
-StkMeshReader::
-read(const Epetra_Comm &comm,
-     Teuchos::ParameterList &data
-     )
-{
-#ifdef HAVE_MPI
-  const Epetra_MpiComm &mpicomm =
-    Teuchos::dyn_cast<const Epetra_MpiComm>(comm);
-  MPI_Comm mcomm = mpicomm.Comm();
-#else
-  int mcomm = 1;
-#endif
-
-  // Take two different fields with one component
-  // instead of one field with two components. This works around
-  // Ioss's inability to properly read psi_R, psi_Z as a complex variable.
-  // (It can handle data_X, data_Y, data_Z though.)
-  //const unsigned int neq = 1;
-
-  Teuchos::RCP<stk::mesh::fem::FEMMetaData> metaData =
-    Teuchos::rcp( new stk::mesh::fem::FEMMetaData() );
-
-  int numDim = 3;
-  if ( !metaData->is_FEM_initialized() )
-    metaData->FEM_initialize( numDim );
-
-//   // attach fem data
-//   size_t spatial_dimension = 3;
-//   stk::mesh::DefaultFEM fem( *metaData, spatial_dimension );
-
-  // ---------------------------------------------------------------------------
-  // initialize database communication
-  Ioss::Init::Initializer io;
-
-  // If the file is serial, read it with process 0 and embed it
-  // in the multiproc context. Load balancing is done later anyways.
-  MPI_Comm readerComm = mcomm;
-#ifdef HAVE_MPI
-  bool fileIsSerial = fileName_.substr(fileName_.find_last_of(".") + 1) == "e";
-  if (fileIsSerial && comm.NumProc()>1)
-  {
-    // reader process
-    int readerProc[1] = {0};
-
-    // Get the group under mcomm.
-    MPI_Group groupWorld;
-    MPI_Comm_group(mcomm, &groupWorld);
-    // Create the new group.
-    MPI_Group peZero;
-    MPI_Group_incl(groupWorld, 1, readerProc, &peZero);
-    // Create the new communicator.
-    MPI_Comm_create(mcomm, peZero, &readerComm);
-  }
-#endif
-
-  // The database is manually initialized to get explicit access to it
-  // to be able to call set_field_separator(). This tells the database to
-  // recognize 'AX', 'AY', 'AZ', as components of one vector field.
-  // By default, the separator is '_' such that only fields 'A_*' would be
-  // recognized as such.
-  // 2011-09-26, Greg's mail:
-  // "It is possible to manually open the database and create the Ioss::Region,
-  // put that in the MeshData object and then call create_input_mesh(), but that
-  // gets ugly.  I will try to come up with a better option... "
-  std::string meshType = "exodusii";
-  Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(meshType,
-                                                  fileName_,
-                                                  Ioss::READ_MODEL,
-                                                  readerComm);
-  TEUCHOS_TEST_FOR_EXCEPT_MSG( dbi == NULL || !dbi->ok(),
-                       "ERROR: Could not open database '" << fileName_
-                       << "' of type '" << meshType << "'.");
-
-  // set the vector field label separator
-  dbi->set_field_separator( 0 );
-
-  // create region to feed into meshData
-  Ioss::Region *in_region = new Ioss::Region( dbi, "input_model" );
-  // ---------------------------------------------------------------------------
-
-  Teuchos::RCP<stk::io::MeshData> meshData =
-    Teuchos::rcp( new stk::io::MeshData() );
-  meshData->m_input_region = in_region;
-
-  // This checks the existence of the file, checks to see if we can open it,
-  // builds a handle to the region and puts it in mesh_data (in_region),
-  // and reads the metaData into metaData.
-  stk::io::create_input_mesh(meshType,
-                             fileName_,
-                             readerComm,
-                             *metaData,
-                             *meshData);
-  // ---------------------------------------------------------------------------
-  // Setup field data.
-  // The work set size could probably be improved.
-  // Check out what Albany does here.
-  unsigned int field_data_chunk_size = 1001;
-  Teuchos::RCP<stk::mesh::BulkData> bulkData =
-    Teuchos::rcp(new stk::mesh::BulkData(stk::mesh::fem::FEMMetaData::
-                                         get_meta_data( *metaData ),
-                                         mcomm,
-                                         field_data_chunk_size));
-
-  // As of now (2012-03-21) there is no way to determine which fields are
-  // actually present in the file. The only thing we can do is to declare them,
-  // and check if they're full of zeros in the end.
-  Teuchos::RCP<VectorFieldType> coordinatesField =
-    Teuchos::rcpFromRef(metaData->declare_field<VectorFieldType>(
-                           "coordinates"));
-  stk::mesh::put_field(*coordinatesField,
-                       metaData->node_rank(),
-                       metaData->universal_part(),
-                       numDim);
-  stk::io::set_field_role(*coordinatesField,
-                          Ioss::Field::MESH);
-
-  //Teuchos::RCP<IntScalarFieldType> procRankField =
-  //  Teuchos::rcpFromRef(metaData->declare_field<IntScalarFieldType>( "proc_rank" ));
-  //stk::mesh::put_field(*procRankField,
-  //                     metaData->element_rank(),
-  //                     metaData->universal_part()
-  //                     );
-  //stk::io::set_field_role(*procRankField,
-  //                        Ioss::Field::MESH);
-
-  // real part
-  Teuchos::RCP<ScalarFieldType> psir_field =
-    Teuchos::rcpFromRef( metaData->declare_field<ScalarFieldType>( "psi_R" ) );
-  stk::mesh::put_field(*psir_field,
-                       metaData->node_rank(),
-                       metaData->universal_part());
-  stk::io::set_field_role(*psir_field,
-                          Ioss::Field::TRANSIENT);
-
-  // imaginary part
-  Teuchos::RCP<ScalarFieldType> psii_field =
-    Teuchos::rcpFromRef( metaData->declare_field<ScalarFieldType>( "psi_Z" ) );
-  stk::mesh::put_field(*psii_field,
-                       metaData->node_rank(),
-                       metaData->universal_part());
-  stk::io::set_field_role(*psii_field,
-                          Ioss::Field::TRANSIENT);
-
-  // Magnetic vector potential.
-  // Unconditionally assume that the field is 3D (A_X, A_Y, A_Z) even
-  // if the domain is two-dimensional. Eventually, we only need the
-  // the projection of the field onto the edges of the mesh, this
-  // this might be a bit overkill. Until we can explicitly associate
-  // fields with edges, though, keep it this way.
-  // Also, declare "A" as Ioss::Field::ATTRIBUTE. This makes sure that
-  // the data is written out, but only once (hence "attribute") and not
-  // once per step. (This is with trilinos-dev as of July 2012.)
-  Teuchos::RCP<VectorFieldType> mvpField =
-    Teuchos::rcpFromRef( metaData->declare_field<VectorFieldType>( "A" ) );
-  stk::mesh::put_field(*mvpField,
-                       metaData->node_rank(),
-                       metaData->universal_part(),
-                       numDim);
-  stk::io::set_field_role(*mvpField,
-                          Ioss::Field::ATTRIBUTE);
-
-  // Thickness field. Same as above.
-  Teuchos::RCP<ScalarFieldType> thicknessField =
-    Teuchos::rcpFromRef(metaData->declare_field<ScalarFieldType>("thickness"));
-  stk::mesh::put_field(*thicknessField,
-                       metaData->node_rank(),
-                       metaData->universal_part());
-  stk::io::set_field_role(*thicknessField, Ioss::Field::ATTRIBUTE);
-
-  // Potential field. Same as above.
-  Teuchos::RCP<ScalarFieldType> potentialField =
-    Teuchos::rcpFromRef(metaData->declare_field<ScalarFieldType>("V"));
-  stk::mesh::put_field(*potentialField,
-                       metaData->node_rank(),
-                       metaData->universal_part());
-  stk::io::set_field_role(*potentialField, Ioss::Field::ATTRIBUTE);
-  // ---------------------------------------------------------------------------
-
-  // define_input_fields() doesn't like the ATTRIBUTE fields; disable.
-  // What was it good for anyways?
-//  stk::io::define_input_fields( *meshData,
-//                                *metaData
-//                              );
-
-//  stk::io::put_io_part_attribute( metaData->universal_part() );
-
-  metaData->commit();
-
-#ifdef HAVE_MPI
-  if (fileIsSerial && comm.NumProc()>1)
-  {
-    bulkData->modification_begin();
-    Ioss::Region *region = meshData->m_input_region;
-    // Populate on the reader process.
-    if (comm.MyPID() == 0)
-      my_populate_bulk_data_(*bulkData, *region, *metaData);
-    // Note:
-    // Restart from a single Exodus file not currently supported.
-    bulkData->modification_end();
-  }
-  else
-  {
-#endif
-    stk::io::populate_bulk_data(*bulkData, *meshData);
-
-    // Remember: Indices in STK are 1-based. :/
-    stk::io::process_input_request(*meshData, *bulkData, index_+1);
-    bulkData->modification_end();
-#ifdef HAVE_MPI
-  }
-
-  // Rebalance.
-  stk::mesh::Selector selector(metaData->universal_part());
-  stk::mesh::Selector owned_selector(metaData->locally_owned_part());
-  double imbalance = stk::rebalance::check_balance(*bulkData,
-                                                   NULL,
-                                                   metaData->node_rank(),
-                                                   &selector);
-  if (imbalance > 1.5)
-  {
-    *out_ << "The imbalance is " << imbalance << ". Rebalance!";
-    // Zoltan graph-based reblancing.
-    // http://trilinos.sandia.gov/packages/docs/dev/packages/stk/doc/html/group__stk__rebalance__unit__test__module.html
-    Teuchos::ParameterList lb_method;
-    lb_method.set("LOAD BALANCING METHOD", "4");
-    Teuchos::ParameterList graph;
-    graph.sublist(stk::rebalance::Zoltan::default_parameters_name()) = lb_method;
-    stk::rebalance::Zoltan zoltan_partition(mcomm, numDim, graph);
-
-    stk::rebalance::rebalance(*bulkData,
-                              owned_selector,
-                              &*coordinatesField,
-                              NULL,
-                              zoltan_partition);
-
-    imbalance = stk::rebalance::check_balance(*bulkData,
-                                              NULL,
-                                              metaData->node_rank(),
-                                              &selector);
-
-    *out_ << "After rebalancing, the imbalance is " << imbalance << "." << std::endl;
-  }
-#endif
-
-  // create the mesh with these specifications
-  Teuchos::RCP<Nosh::StkMesh> mesh =
-    Teuchos::rcp(new Nosh::StkMesh(comm, metaData, bulkData, coordinatesField));
-
-  data.setName("data");
-  data.set("mesh", mesh);
-  data.set("psi", this->complexfield2vector_(mesh, psir_field, psii_field));
-  Teuchos::RCP<const Epetra_MultiVector> mvp =
-    this->createMvp_(mesh, mvpField);
-  data.set("A", mvp);
-
-  // Check of the thickness data is of any value. If not: ditch it.
-  Teuchos::RCP<Epetra_Vector> thickness =
-    this->scalarfield2vector_(mesh, thicknessField);
-//// These are vain attempts to find out whether thicknessField is actually empty.
-//     const stk::mesh::FieldBase::RestrictionVector & restrictions = thicknessField->restrictions();
-//     TEUCHOS_ASSERT( !restrictions.empty() );
-//     *out << "max_size " << thicknessField->max_size(metaData->node_rank()) << std::endl;
-  data.set("thickness", thickness);
-
-  // create scalar potential
-  data.set("V", this->scalarfield2vector_(mesh, potentialField));
-
-  return;
-}
-// =============================================================================
-void
-StkMeshReader::
 my_populate_bulk_data_(stk::mesh::BulkData &bulk,
                        Ioss::Region &region,
-                       stk::mesh::fem::FEMMetaData &fem_meta)
+                       stk::mesh::fem::FEMMetaData &fem_meta
+                       )
 {
   // From Albany, Albany_IossSTKMeshStruct.cpp.
   // This function duplicates the function stk::io::populate_bulk_data, with the exception of an
@@ -529,11 +249,10 @@ my_populate_bulk_data_(stk::mesh::BulkData &bulk,
 }
 // =============================================================================
 Teuchos::RCP<Epetra_Vector>
-StkMeshReader::
-complexfield2vector_( const Teuchos::RCP<const Nosh::StkMesh> &mesh,
-                      const Teuchos::RCP<ScalarFieldType> &realField,
-                      const Teuchos::RCP<ScalarFieldType> &imagField
-                      ) const
+complexfield2vector_(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
+                     const Teuchos::RCP<ScalarFieldType> &realField,
+                     const Teuchos::RCP<ScalarFieldType> &imagField
+                     )
 {
   // Psi needs to have unique node IDs to be able to compute Norm2().
   // This is required in Belos.
@@ -566,11 +285,13 @@ complexfield2vector_( const Teuchos::RCP<const Nosh::StkMesh> &mesh,
 }
 // =============================================================================
 Teuchos::RCP<Epetra_Vector>
-StkMeshReader::
-scalarfield2vector_( const Teuchos::RCP<const Nosh::StkMesh> &mesh,
-                     const Teuchos::RCP<ScalarFieldType> &field
-                    ) const
+scalarfield2vector_(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
+                    const Teuchos::RCP<ScalarFieldType> &field
+                    )
 {
+  const Teuchos::RCP<Teuchos::FancyOStream> out =
+    Teuchos::VerboseObjectBase::getDefaultOStream();
+
   // Get overlap nodes.
   const std::vector<stk::mesh::Entity*> &overlapNodes = mesh->getOverlapNodes();
 
@@ -590,7 +311,7 @@ scalarfield2vector_( const Teuchos::RCP<const Nosh::StkMesh> &mesh,
     // Check if the field is actually there.
     if (fieldVal == NULL)
     {
-      *out_ << "WARNING: Thickness value for node " << k << " not found.\n"
+      *out << "WARNING: Thickness value for node " << k << " not found.\n"
       <<
       "Probably there is no field given with the state. Using default."
       << std::endl;
@@ -611,10 +332,9 @@ scalarfield2vector_( const Teuchos::RCP<const Nosh::StkMesh> &mesh,
 }
 // =============================================================================
 Teuchos::RCP<Epetra_MultiVector>
-StkMeshReader::
-createMvp_( const Teuchos::RCP<const Nosh::StkMesh> &mesh,
-            const Teuchos::RCP<const VectorFieldType> &mvpField
-            ) const
+createMvp_(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
+           const Teuchos::RCP<const VectorFieldType> &mvpField
+           )
 {
   // Get overlap nodes.
   const std::vector<stk::mesh::Entity*> &overlapNodes = mesh->getOverlapNodes();
@@ -661,11 +381,10 @@ createMvp_( const Teuchos::RCP<const Nosh::StkMesh> &mesh,
 }
 // =============================================================================
 Teuchos::RCP<Epetra_MultiVector>
-StkMeshReader::
-createMvpRZ_( const Teuchos::RCP<const Nosh::StkMesh> &mesh,
-              const Teuchos::RCP<const ScalarFieldType> &mvpFieldR,
-              const Teuchos::RCP<const ScalarFieldType> &mvpFieldZ
-            ) const
+createMvpRZ_(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
+             const Teuchos::RCP<const ScalarFieldType> &mvpFieldR,
+             const Teuchos::RCP<const ScalarFieldType> &mvpFieldZ
+             )
 {
   // Get overlap nodes.
   const std::vector<stk::mesh::Entity*> &overlapNodes = mesh->getOverlapNodes();
@@ -715,21 +434,280 @@ createMvpRZ_( const Teuchos::RCP<const Nosh::StkMesh> &mesh,
   return mvp;
 }
 // =============================================================================
-} // namespace Nosh
-// =============================================================================
-//
-// Helper functions
-//
 void
-Nosh::
-StkMeshRead( const Epetra_Comm &comm,
-             const std::string &fileName,
-             const int step,
-             Teuchos::ParameterList &data
-             )
+StkMeshRead(const Epetra_Comm &comm,
+            const std::string & fileName,
+            const int index,
+            Teuchos::ParameterList &data
+            )
 {
-  StkMeshReader reader( fileName, step);
-  reader.read(comm, data);
+#ifdef HAVE_MPI
+  const Epetra_MpiComm &mpicomm =
+    Teuchos::dyn_cast<const Epetra_MpiComm>(comm);
+  MPI_Comm mcomm = mpicomm.Comm();
+#else
+  int mcomm = 1;
+#endif
+
+  const Teuchos::RCP<Teuchos::FancyOStream> out =
+    Teuchos::VerboseObjectBase::getDefaultOStream();
+
+  // Take two different fields with one component
+  // instead of one field with two components. This works around
+  // Ioss's inability to properly read psi_R, psi_Z as a complex variable.
+  // (It can handle data_X, data_Y, data_Z though.)
+  //const unsigned int neq = 1;
+
+  Teuchos::RCP<stk::mesh::fem::FEMMetaData> metaData =
+    Teuchos::rcp( new stk::mesh::fem::FEMMetaData() );
+
+  int numDim = 3;
+  if ( !metaData->is_FEM_initialized() )
+    metaData->FEM_initialize( numDim );
+
+//   // attach fem data
+//   size_t spatial_dimension = 3;
+//   stk::mesh::DefaultFEM fem( *metaData, spatial_dimension );
+
+  // ---------------------------------------------------------------------------
+  // initialize database communication
+  Ioss::Init::Initializer io;
+
+  // If the file is serial, read it with process 0 and embed it
+  // in the multiproc context. Load balancing is done later anyways.
+  MPI_Comm readerComm = mcomm;
+#ifdef HAVE_MPI
+  bool fileIsSerial = fileName.substr(fileName.find_last_of(".") + 1) == "e";
+  if (fileIsSerial && comm.NumProc()>1)
+  {
+    // reader process
+    int readerProc[1] = {0};
+
+    // Get the group under mcomm.
+    MPI_Group groupWorld;
+    MPI_Comm_group(mcomm, &groupWorld);
+    // Create the new group.
+    MPI_Group peZero;
+    MPI_Group_incl(groupWorld, 1, readerProc, &peZero);
+    // Create the new communicator.
+    MPI_Comm_create(mcomm, peZero, &readerComm);
+  }
+#endif
+
+  // The database is manually initialized to get explicit access to it
+  // to be able to call set_field_separator(). This tells the database to
+  // recognize 'AX', 'AY', 'AZ', as components of one vector field.
+  // By default, the separator is '_' such that only fields 'A_*' would be
+  // recognized as such.
+  // 2011-09-26, Greg's mail:
+  // "It is possible to manually open the database and create the Ioss::Region,
+  // put that in the MeshData object and then call create_input_mesh(), but that
+  // gets ugly.  I will try to come up with a better option... "
+  std::string meshType = "exodusii";
+  Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(meshType,
+                                                  fileName,
+                                                  Ioss::READ_MODEL,
+                                                  readerComm);
+  TEUCHOS_TEST_FOR_EXCEPT_MSG( dbi == NULL || !dbi->ok(),
+                       "ERROR: Could not open database '" << fileName
+                       << "' of type '" << meshType << "'.");
+
+  // set the vector field label separator
+  dbi->set_field_separator( 0 );
+
+  // create region to feed into meshData
+  Ioss::Region *in_region = new Ioss::Region( dbi, "input_model" );
+  // ---------------------------------------------------------------------------
+
+  Teuchos::RCP<stk::io::MeshData> meshData =
+    Teuchos::rcp( new stk::io::MeshData() );
+  meshData->m_input_region = in_region;
+
+  // This checks the existence of the file, checks to see if we can open it,
+  // builds a handle to the region and puts it in mesh_data (in_region),
+  // and reads the metaData into metaData.
+  stk::io::create_input_mesh(meshType,
+                             fileName,
+                             readerComm,
+                             *metaData,
+                             *meshData);
+  // ---------------------------------------------------------------------------
+  // Setup field data.
+  // The work set size could probably be improved.
+  // Check out what Albany does here.
+  unsigned int field_data_chunk_size = 1001;
+  Teuchos::RCP<stk::mesh::BulkData> bulkData =
+    Teuchos::rcp(new stk::mesh::BulkData(stk::mesh::fem::FEMMetaData::
+                                         get_meta_data( *metaData ),
+                                         mcomm,
+                                         field_data_chunk_size));
+
+  // As of now (2012-03-21) there is no way to determine which fields are
+  // actually present in the file. The only thing we can do is to declare them,
+  // and check if they're full of zeros in the end.
+  Teuchos::RCP<VectorFieldType> coordinatesField =
+    Teuchos::rcpFromRef(metaData->declare_field<VectorFieldType>(
+                           "coordinates"));
+  stk::mesh::put_field(*coordinatesField,
+                       metaData->node_rank(),
+                       metaData->universal_part(),
+                       numDim);
+  stk::io::set_field_role(*coordinatesField,
+                          Ioss::Field::MESH);
+
+  //Teuchos::RCP<IntScalarFieldType> procRankField =
+  //  Teuchos::rcpFromRef(metaData->declare_field<IntScalarFieldType>( "proc_rank" ));
+  //stk::mesh::put_field(*procRankField,
+  //                     metaData->element_rank(),
+  //                     metaData->universal_part()
+  //                     );
+  //stk::io::set_field_role(*procRankField,
+  //                        Ioss::Field::MESH);
+
+  // real part
+  Teuchos::RCP<ScalarFieldType> psir_field =
+    Teuchos::rcpFromRef( metaData->declare_field<ScalarFieldType>( "psi_R" ) );
+  stk::mesh::put_field(*psir_field,
+                       metaData->node_rank(),
+                       metaData->universal_part());
+  stk::io::set_field_role(*psir_field,
+                          Ioss::Field::TRANSIENT);
+
+  // imaginary part
+  Teuchos::RCP<ScalarFieldType> psii_field =
+    Teuchos::rcpFromRef( metaData->declare_field<ScalarFieldType>( "psi_Z" ) );
+  stk::mesh::put_field(*psii_field,
+                       metaData->node_rank(),
+                       metaData->universal_part());
+  stk::io::set_field_role(*psii_field,
+                          Ioss::Field::TRANSIENT);
+
+  // Magnetic vector potential.
+  // Unconditionally assume that the field is 3D (A_X, A_Y, A_Z) even
+  // if the domain is two-dimensional. Eventually, we only need the
+  // the projection of the field onto the edges of the mesh, this
+  // this might be a bit overkill. Until we can explicitly associate
+  // fields with edges, though, keep it this way.
+  // Also, declare "A" as Ioss::Field::ATTRIBUTE. This makes sure that
+  // the data is written out, but only once (hence "attribute") and not
+  // once per step. (This is with trilinos-dev as of July 2012.)
+  Teuchos::RCP<VectorFieldType> mvpField =
+    Teuchos::rcpFromRef( metaData->declare_field<VectorFieldType>( "A" ) );
+  stk::mesh::put_field(*mvpField,
+                       metaData->node_rank(),
+                       metaData->universal_part(),
+                       numDim);
+  stk::io::set_field_role(*mvpField,
+                          Ioss::Field::ATTRIBUTE);
+
+  // Thickness field. Same as above.
+  Teuchos::RCP<ScalarFieldType> thicknessField =
+    Teuchos::rcpFromRef(metaData->declare_field<ScalarFieldType>("thickness"));
+  stk::mesh::put_field(*thicknessField,
+                       metaData->node_rank(),
+                       metaData->universal_part());
+  stk::io::set_field_role(*thicknessField, Ioss::Field::ATTRIBUTE);
+
+  // Potential field. Same as above.
+  Teuchos::RCP<ScalarFieldType> potentialField =
+    Teuchos::rcpFromRef(metaData->declare_field<ScalarFieldType>("V"));
+  stk::mesh::put_field(*potentialField,
+                       metaData->node_rank(),
+                       metaData->universal_part());
+  stk::io::set_field_role(*potentialField, Ioss::Field::ATTRIBUTE);
+  // ---------------------------------------------------------------------------
+
+  // define_input_fields() doesn't like the ATTRIBUTE fields; disable.
+  // What was it good for anyways?
+//  stk::io::define_input_fields( *meshData,
+//                                *metaData
+//                              );
+
+//  stk::io::put_io_part_attribute( metaData->universal_part() );
+
+  metaData->commit();
+
+#ifdef HAVE_MPI
+  if (fileIsSerial && comm.NumProc()>1)
+  {
+    bulkData->modification_begin();
+    Ioss::Region *region = meshData->m_input_region;
+    // Populate on the reader process.
+    if (comm.MyPID() == 0)
+      my_populate_bulk_data_(*bulkData, *region, *metaData);
+    // Note:
+    // Restart from a single Exodus file not currently supported.
+    bulkData->modification_end();
+  }
+  else
+  {
+#endif
+    stk::io::populate_bulk_data(*bulkData, *meshData);
+
+    // Remember: Indices in STK are 1-based. :/
+    stk::io::process_input_request(*meshData, *bulkData, index+1);
+    bulkData->modification_end();
+#ifdef HAVE_MPI
+  }
+
+  // Rebalance.
+  stk::mesh::Selector selector(metaData->universal_part());
+  stk::mesh::Selector owned_selector(metaData->locally_owned_part());
+  double imbalance = stk::rebalance::check_balance(*bulkData,
+                                                   NULL,
+                                                   metaData->node_rank(),
+                                                   &selector);
+  if (imbalance > 1.5)
+  {
+    *out << "The imbalance is " << imbalance << ". Rebalance!";
+    // Zoltan graph-based reblancing.
+    // http://trilinos.sandia.gov/packages/docs/dev/packages/stk/doc/html/group__stk__rebalance__unit__test__module.html
+    Teuchos::ParameterList lb_method;
+    lb_method.set("LOAD BALANCING METHOD", "4");
+    Teuchos::ParameterList graph;
+    graph.sublist(stk::rebalance::Zoltan::default_parameters_name()) = lb_method;
+    stk::rebalance::Zoltan zoltan_partition(mcomm, numDim, graph);
+
+    stk::rebalance::rebalance(*bulkData,
+                              owned_selector,
+                              &*coordinatesField,
+                              NULL,
+                              zoltan_partition);
+
+    imbalance = stk::rebalance::check_balance(*bulkData,
+                                              NULL,
+                                              metaData->node_rank(),
+                                              &selector);
+
+    *out << "After rebalancing, the imbalance is " << imbalance << "." << std::endl;
+  }
+#endif
+
+  // create the mesh with these specifications
+  Teuchos::RCP<Nosh::StkMesh> mesh =
+    Teuchos::rcp(new Nosh::StkMesh(comm, metaData, bulkData, coordinatesField));
+
+  data.setName("data");
+  data.set("mesh", mesh);
+  data.set("psi", complexfield2vector_(mesh, psir_field, psii_field));
+  Teuchos::RCP<const Epetra_MultiVector> mvp =
+    createMvp_(mesh, mvpField);
+  data.set("A", mvp);
+
+  // Check of the thickness data is of any value. If not: ditch it.
+  Teuchos::RCP<Epetra_Vector> thickness =
+    scalarfield2vector_(mesh, thicknessField);
+//// These are vain attempts to find out whether thicknessField is actually empty.
+//     const stk::mesh::FieldBase::RestrictionVector & restrictions = thicknessField->restrictions();
+//     TEUCHOS_ASSERT( !restrictions.empty() );
+//     *out << "max_size " << thicknessField->max_size(metaData->node_rank()) << std::endl;
+  data.set("thickness", thickness);
+
+  // create scalar potential
+  data.set("V", scalarfield2vector_(mesh, potentialField));
+
   return;
 }
+// =============================================================================
+} // namespace Nosh
 // =============================================================================
