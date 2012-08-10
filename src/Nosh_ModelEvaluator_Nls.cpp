@@ -87,7 +87,7 @@ get_x_map() const
   // It is a bit of an assumption that x_ actually has this map, but
   // as Epetra_Vector::Map() only returns an Epetra_BlockMap which cannot be
   // cast into an Epetra_Map, this workaround is needed.
-#ifdef _DEBUG_
+#ifndef NDEBUG
   TEUCHOS_ASSERT( !mesh_.is_null() );
 #endif
   return mesh_->getComplexNonOverlapMap();
@@ -97,7 +97,7 @@ Teuchos::RCP<const Epetra_Map>
 Nls::
 get_f_map() const
 {
-#ifdef _DEBUG_
+#ifndef NDEBUG
   TEUCHOS_ASSERT( !mesh_.is_null() );
 #endif
   return mesh_->getComplexNonOverlapMap();
@@ -107,7 +107,7 @@ Teuchos::RCP<const Epetra_Vector>
 Nls::
 get_x_init() const
 {
-#ifdef _DEBUG_
+#ifndef NDEBUG
   TEUCHOS_ASSERT( !x_init_.is_null() );
 #endif
   return x_init_;
@@ -282,7 +282,7 @@ evalModel(const InArgs &inArgs,
   // From packages/piro/test/MockModelEval_A.cpp
   if (alpha==0.0 && beta==0.0)
     beta = 1.0;
-#ifdef _DEBUG_
+#ifndef NDEBUG
   TEUCHOS_ASSERT_EQUALITY(alpha, 0.0);
   TEUCHOS_ASSERT_EQUALITY(beta,  1.0);
 #endif
@@ -293,7 +293,7 @@ evalModel(const InArgs &inArgs,
   // Keep this in sync with get_p_init() where the splitting
   // is defined.
   const Teuchos::RCP<const Epetra_Vector> &p_in = inArgs.get_p(0);
-#ifdef _DEBUG_
+#ifndef NDEBUG
     TEUCHOS_ASSERT( !p_in.is_null() );
     for (int k=0; k<p_in->MyLength(); k++)
       TEUCHOS_ASSERT( !std::isnan( (*p_in)[k] ) );
@@ -345,7 +345,7 @@ evalModel(const InArgs &inArgs,
 #endif
     const Teuchos::Array<int> &paramIndices = derivMv.getParamIndexes();
     const int numDerivs = paramIndices.size();
-#ifdef _DEBUG_
+#ifndef NDEBUG
     TEUCHOS_ASSERT_EQUALITY(numDerivs, dfdp_out->NumVectors());
 #endif
     // Come up with something better here, e.g.,
@@ -414,7 +414,7 @@ computeF_(const Epetra_Vector &x,
   matrixBuilder_->apply(eoParams, x, FVec);
 
   // Add the nonlinear part (mass lumping).
-#ifdef _DEBUG_
+#ifndef NDEBUG
   TEUCHOS_ASSERT( FVec.Map().SameAs( x.Map() ) );
   TEUCHOS_ASSERT( !mesh_.is_null() );
   TEUCHOS_ASSERT( !scalarPotential_.is_null() );
@@ -424,7 +424,7 @@ computeF_(const Epetra_Vector &x,
   const Epetra_Vector &controlVolumes = *(mesh_->getControlVolumes());
   const int numMyPoints = controlVolumes.MyLength();
 
-#ifdef _DEBUG_
+#ifndef NDEBUG
   // Make sure control volumes and state still match.
   TEUCHOS_ASSERT_EQUALITY(2*numMyPoints, x.MyLength());
 #endif
@@ -484,14 +484,14 @@ computeDFDg_(const Epetra_Vector &x,
              Epetra_Vector &FVec
              ) const
 {
-#ifdef _DEBUG_
+#ifndef NDEBUG
   TEUCHOS_ASSERT( FVec.Map().SameAs( x.Map() ) );
   TEUCHOS_ASSERT( !mesh_.is_null() );
   TEUCHOS_ASSERT( !thickness_.is_null() );
 #endif
   const Epetra_Vector &controlVolumes = *(mesh_->getControlVolumes());
 
-#ifdef _DEBUG_
+#ifndef NDEBUG
   // Make sure control volumes and state still match.
   TEUCHOS_ASSERT_EQUALITY( 2*controlVolumes.MyLength(), x.MyLength() );
 #endif
@@ -516,7 +516,7 @@ computeDFDPpotential_(const Epetra_Vector &x,
                       Epetra_Vector &FVec
                       ) const
 {
-#ifdef _DEBUG_
+#ifndef NDEBUG
   TEUCHOS_ASSERT( FVec.Map().SameAs( x.Map() ) );
   TEUCHOS_ASSERT( !mesh_.is_null() );
   TEUCHOS_ASSERT( !thickness_.is_null() );
@@ -524,7 +524,7 @@ computeDFDPpotential_(const Epetra_Vector &x,
 
   const Epetra_Vector &controlVolumes = *(mesh_->getControlVolumes());
 
-#ifdef _DEBUG_
+#ifndef NDEBUG
   // Make sure control volumes and state still match.
   TEUCHOS_ASSERT_EQUALITY(2*controlVolumes.MyLength(), x.MyLength());
 #endif
@@ -573,7 +573,7 @@ innerProduct(const Epetra_Vector &phi,
   const Epetra_Vector &controlVolumes = *mesh_->getControlVolumes();
 
   int numMyPoints = controlVolumes.Map().NumMyPoints();
-#ifdef _DEBUG_
+#ifndef NDEBUG
   TEUCHOS_ASSERT_EQUALITY(2*numMyPoints, phi.MyLength());
   TEUCHOS_ASSERT_EQUALITY(2*numMyPoints, psi.MyLength());
 #endif
@@ -604,7 +604,7 @@ gibbsEnergy(const Epetra_Vector &psi) const
   const Epetra_Vector &controlVolumes = *mesh_->getControlVolumes();
 
   int numMyPoints = controlVolumes.Map().NumMyPoints();
-#ifdef _DEBUG_
+#ifndef NDEBUG
   TEUCHOS_ASSERT_EQUALITY(2*numMyPoints, psi.MyLength());
 #endif
 

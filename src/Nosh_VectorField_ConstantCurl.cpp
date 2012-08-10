@@ -41,7 +41,7 @@ ConstantCurl(const Teuchos::RCP<Nosh::StkMesh> &mesh,
   edgeCache_( Teuchos::ArrayRCP<DoubleVector>() ),
   edgeCacheUptodate_( false )
 {
-#ifdef _DEBUG_
+#ifndef NDEBUG
   TEUCHOS_ASSERT( !mesh_.is_null() );
   TEUCHOS_ASSERT( !b_.is_null() );
 #endif
@@ -257,7 +257,7 @@ void
 ConstantCurl::
 initializeEdgeCache_() const
 {
-#ifdef _DEBUG_
+#ifndef NDEBUG
   TEUCHOS_ASSERT( !mesh_.is_null() );
 #endif
   const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > edges =

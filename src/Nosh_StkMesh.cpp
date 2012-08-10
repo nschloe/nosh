@@ -161,7 +161,7 @@ mergeComplexVector_(const Epetra_Vector &psi) const
     metaData_->get_field<ScalarFieldType>("psi_R");
   ScalarFieldType * psii_field =
     metaData_->get_field<ScalarFieldType>("psi_Z");
-#ifdef _DEBUG_
+#ifndef NDEBUG
   TEUCHOS_ASSERT( psir_field != NULL );
   TEUCHOS_ASSERT( psii_field != NULL );
 #endif
@@ -178,7 +178,7 @@ mergeComplexVector_(const Epetra_Vector &psi) const
   }
 
   // Set owned nodes.
-#ifdef _DEBUG_
+#ifndef NDEBUG
   TEUCHOS_ASSERT_EQUALITY(psi.GlobalLength(), 2*ownedNodes_.size());
 #endif
   for (unsigned int k=0; k < ownedNodes_.size(); k++)
@@ -334,7 +334,7 @@ Teuchos::RCP<const Epetra_Map>
 StkMesh::
 getNodesMap() const
 {
-#ifdef _DEBUG_
+#ifndef NDEBUG
   TEUCHOS_ASSERT( !nodesMap_.is_null() );
 #endif
   return nodesMap_;
@@ -344,7 +344,7 @@ Teuchos::RCP<const Epetra_Map>
 StkMesh::
 getNodesOverlapMap() const
 {
-#ifdef _DEBUG_
+#ifndef NDEBUG
   TEUCHOS_ASSERT( !nodesOverlapMap_.is_null() );
 #endif
   return nodesOverlapMap_;
@@ -354,7 +354,7 @@ Teuchos::RCP<const Epetra_Map>
 StkMesh::
 getComplexNonOverlapMap() const
 {
-#ifdef _DEBUG_
+#ifndef NDEBUG
   TEUCHOS_ASSERT( !complexMap_.is_null() );
 #endif
   return complexMap_;
@@ -364,7 +364,7 @@ Teuchos::RCP<const Epetra_Map>
 StkMesh::
 getComplexOverlapMap() const
 {
-#ifdef _DEBUG_
+#ifndef NDEBUG
   TEUCHOS_ASSERT( !complexOverlapMap_.is_null() );
 #endif
   return complexOverlapMap_;
@@ -624,7 +624,7 @@ void
 StkMesh::
 computeControlVolumes_() const
 {
-#ifdef _DEBUG_
+#ifndef NDEBUG
   TEUCHOS_ASSERT( !controlVolumes_.is_null() );
   TEUCHOS_ASSERT( !averageThickness_.is_null() );
   TEUCHOS_ASSERT( !nodesOverlapMap_.is_null() );
@@ -656,7 +656,7 @@ computeControlVolumes_() const
     unsigned int numLocalNodes = localNodes.size();
     unsigned int cellDimension = this->getCellDimension( numLocalNodes );
 
-#ifdef _DEBUG_
+#ifndef NDEBUG
     // Confirm that we always have the same simplices.
     TEUCHOS_ASSERT_EQUALITY( numLocalNodes, cellDimension+1 );
 #endif
@@ -685,7 +685,7 @@ computeControlVolumes_() const
       const DoubleVector &x0 = localNodeCoords[e0];
       const int gid0 = (*localNodes[e0].entity()).identifier() - 1;
       const int lid0 = nodesOverlapMap_->LID( gid0 );
-#ifdef _DEBUG_
+#ifndef NDEBUG
       TEUCHOS_ASSERT_INEQUALITY( lid0, >=, 0 );
 #endif
       for ( unsigned int e1=e0+1; e1<numLocalNodes; e1++ )
@@ -693,7 +693,7 @@ computeControlVolumes_() const
         const DoubleVector &x1 = localNodeCoords[e1];
         const int gid1 = (*localNodes[e1].entity()).identifier() - 1;
         const int lid1 = nodesOverlapMap_->LID( gid1 );
-#ifdef _DEBUG_
+#ifndef NDEBUG
         TEUCHOS_ASSERT_INEQUALITY( lid1, >=, 0 );
 #endif
 
@@ -879,7 +879,7 @@ getOtherIndices_( unsigned int e0, unsigned int e1 ) const
   {
     if ( k!=e0 && k!=e1 )
       otherInd[count++] = k;
-#ifdef _DEBUG_
+#ifndef NDEBUG
     TEUCHOS_ASSERT_INEQUALITY( count, <=, 2 );
 #endif
   }
@@ -921,7 +921,7 @@ StkMesh::
 computeTriangleCircumcenter_(
   const Teuchos::ArrayRCP<const DoubleVector> &nodes ) const
 {
-#ifdef _DEBUG_
+#ifndef NDEBUG
   TEUCHOS_ASSERT_EQUALITY( nodes.size(), 3 );
 #endif
   return this->computeTriangleCircumcenter_( nodes[0], nodes[1], nodes[2] );
@@ -977,7 +977,7 @@ computeTetrahedronCircumcenter_(
   const Teuchos::ArrayRCP<const DoubleVector> &nodes ) const
 {
   // http://www.cgafaq.info/wiki/Tetrahedron_Circumsphere
-#ifdef _DEBUG_
+#ifndef NDEBUG
   TEUCHOS_ASSERT_EQUALITY( nodes.size(), 4 );
 #endif
 
@@ -1022,7 +1022,7 @@ add_( double alpha, const DoubleVector &x,
       double beta,  const DoubleVector &y
       ) const
 {
-#ifdef _DEBUG_
+#ifndef NDEBUG
   TEUCHOS_ASSERT_EQUALITY( x.length(), 3 );
   TEUCHOS_ASSERT_EQUALITY( y.length(), 3 );
 #endif

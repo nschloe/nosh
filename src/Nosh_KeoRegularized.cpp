@@ -97,7 +97,7 @@ Apply( const Epetra_MultiVector &X,
        Epetra_MultiVector &Y
        ) const
 {
-#ifdef _DEBUG_
+#ifndef NDEBUG
   TEUCHOS_ASSERT( regularizedMatrix_.DomainMap().SameAs( X.Map() ) );
   TEUCHOS_ASSERT( regularizedMatrix_.RangeMap().SameAs( Y.Map() ) );
   TEUCHOS_ASSERT( Y.Map().SameAs( X.Map() ) );
@@ -252,7 +252,7 @@ rebuild(const double g,
   // some confusion in the rest of the code.
   // Hence, don't worry too much about this until memory
   // contrains get tight.
-#ifdef _DEBUG_
+#ifndef NDEBUG
   TEUCHOS_ASSERT( !matrixBuilder_.is_null() );
 #endif
   matrixBuilder_->fill(regularizedMatrix_, mvpParams);
@@ -268,7 +268,7 @@ rebuildInverse_()
   // Add 2*g*|psi|^2 to the diagonal of KEO.
   if (g_ > 0.0)
   {
-#ifdef _DEBUG_
+#ifndef NDEBUG
     TEUCHOS_ASSERT( regularizedMatrix_.RowMap().SameAs(absPsiSquared_.Map()) );
 #endif
     Epetra_Vector diag(regularizedMatrix_.RowMap());
@@ -311,7 +311,7 @@ rebuildInverse_()
     // "Also, for square matrices, OperatorDomainMap() must be as
     //  OperatorRangeMap()."
     // Make sure this is indeed the case.
-#ifdef _DEBUG_
+#ifndef NDEBUG
     TEUCHOS_ASSERT( regularizedMatrix_.OperatorRangeMap().
                     SameAs( regularizedMatrix_.RowMatrixRowMap() )
                   );
@@ -342,7 +342,7 @@ void
 KeoRegularized::
 rebuildAbsPsiSquared_(const Teuchos::RCP<const Epetra_Vector> &psi)
 {
-#ifdef _DEBUG_
+#ifndef NDEBUG
   TEUCHOS_ASSERT( !mesh_.is_null() );
   TEUCHOS_ASSERT( !thickness_.is_null() );
   TEUCHOS_ASSERT( !psi.is_null() );

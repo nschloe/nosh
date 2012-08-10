@@ -70,7 +70,7 @@ const Epetra_Comm &
 Keo::
 getComm() const
 {
-#ifdef _DEBUG_
+#ifndef NDEBUG
   TEUCHOS_ASSERT( !mesh_.is_null() );
 #endif
   return mesh_->getComm();
@@ -219,7 +219,7 @@ buildKeoGraph_() const
   // OperatorRangeMap must be the same, and, if the matrix is square,
   // OperatorRangeMap and OperatorDomainMap must coincide too.
   //
-#ifdef _DEBUG_
+#ifndef NDEBUG
   TEUCHOS_ASSERT( !mesh_.is_null() );
 #endif
   const Epetra_Map &noMap = *mesh_->getComplexNonOverlapMap();
@@ -295,13 +295,13 @@ fillKeo_( Epetra_FECrsMatrix &keoMatrix,
   // Zero-out the matrix.
   TEUCHOS_ASSERT_EQUALITY(0, keoMatrix.PutScalar(0.0));
 
-#ifdef _DEBUG_
+#ifndef NDEBUG
   TEUCHOS_ASSERT( !mesh_.is_null() );
 #endif
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   // Loop over the cells, create local load vector and mass matrix,
   // and insert them into the global matrix.
-#ifdef _DEBUG_
+#ifndef NDEBUG
   TEUCHOS_ASSERT( !thickness_.is_null() );
   TEUCHOS_ASSERT( !mvp_.is_null() );
 #endif
@@ -400,7 +400,7 @@ buildAlphaCache_( const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > & 
     gid[1] = edges[k][1]->identifier() - 1;
     const int tlid0 = mesh_->getNodesMap()->LID( gid[0] );
     const int tlid1 = mesh_->getNodesMap()->LID( gid[1] );
-#ifdef _DEBUG_
+#ifndef NDEBUG
     TEUCHOS_TEST_FOR_EXCEPT_MSG( tlid0 < 0,
                          "The global index " << gid[0]
                          << " does not seem to be present on this node." );

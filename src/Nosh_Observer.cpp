@@ -118,7 +118,7 @@ saveContinuationStatistics_(const int stepIndex,
     Teuchos::ParameterList paramList;
     paramList.set( "(0) step", stepIndex );
     // Model evaluator parameters.
-#ifdef _DEBUG_
+#ifndef NDEBUG
     TEUCHOS_ASSERT( !modelEval_.is_null() );
     TEUCHOS_ASSERT( !modelEval_->get_p_latest().is_null() );
 #endif

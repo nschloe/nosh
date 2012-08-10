@@ -70,7 +70,7 @@ Apply(const Epetra_MultiVector &X,
   // B = g * diag( thickness * psi^2 )
 
   const int numMyPoints = mesh_->getControlVolumes()->MyLength();
-#ifdef _DEBUG_
+#ifndef NDEBUG
   TEUCHOS_ASSERT_EQUALITY( 2*numMyPoints, X.MyLength() );
 #endif
 
@@ -201,7 +201,7 @@ rebuild(const double g,
   matrixBuilder_->fill(keo_, mvpParams);
 
   // Rebuild diagonals.
-#ifdef _DEBUG_
+#ifndef NDEBUG
   TEUCHOS_ASSERT( !current_X.is_null() );
 #endif
   this->rebuildDiags_(g, spParams, *current_X);
@@ -216,7 +216,7 @@ rebuildDiags_(const double g,
               const Epetra_Vector &x
               )
 {
-#ifdef _DEBUG_
+#ifndef NDEBUG
   TEUCHOS_ASSERT( !scalarPotential_.is_null() );
 #endif
 

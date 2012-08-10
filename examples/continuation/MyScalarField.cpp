@@ -54,7 +54,7 @@ getV(const unsigned int nodeIndex,
      const Teuchos::Array<double> & p
      ) const
 {
-#ifdef _DEBUG_
+#ifndef NDEBUG
   TEUCHOS_ASSERT_EQUALITY(p.length(), 1);
 #endif
   // Get nodal coordinates for nodeIndex.

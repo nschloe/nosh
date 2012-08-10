@@ -76,7 +76,7 @@ merge(const Epetra_MultiVector & x,
       Epetra_MultiVector & out
       )
 {
-#if _DEBUG_
+#ifndef NDEBUG
   // Check if the maps are matching.
   Teuchos::RCP<const Epetra_Map> extendedMap =
     Nosh::BorderingHelpers::extendMapBy1(x.Map());
@@ -105,7 +105,7 @@ dissect(const Epetra_MultiVector & x,
         double * lambda
         )
 {
-#if _DEBUG_
+#ifndef NDEBUG
   TEUCHOS_ASSERT_EQUALITY(x.NumVectors(), xSmall.NumVectors());
   // Make sure the maps are matching.
   Teuchos::RCP<const Epetra_Map> extendedMap =

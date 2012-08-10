@@ -27,8 +27,6 @@ ENDIF()
 
 STRING(COMPARE EQUAL ${CMAKE_BUILD_TYPE} "Debug" IS_DEBUG_BUILD)
 IF( IS_DEBUG_BUILD )
-    # Add preprocessor definition "_DEBUG_" for debug builds.
-    ADD_DEFINITIONS( -D_DEBUG_ )
     # Don't do optimization for debug builds.
     SET(CMAKE_CXX_FLAGS_DEBUG "-O0 ${CMAKE_CXX_FLAGS_DEBUG}")
 ELSE()
@@ -37,8 +35,8 @@ ELSE()
 ENDIF()
 
 IF(CMAKE_COMPILER_IS_GNUCXX)
-    SET(CMAKE_CXX_FLAGS_DEBUG     "-O0 -g -ggdb -Wall -pedantic -fbounds-check -Wextra -Wno-unused -Wstrict-null-sentinel -Wshadow -Woverloaded-virtual -ansi -std=c++0x" )
-    SET(CMAKE_CXX_FLAGS_PROFILE     "-pg -O2" )
+    SET(CMAKE_CXX_FLAGS_DEBUG "-O0 -g -ggdb -Wall -pedantic -fbounds-check -Wextra -Wno-unused -Wstrict-null-sentinel -Wshadow -Woverloaded-virtual -ansi -std=c++0x" )
+    SET(CMAKE_CXX_FLAGS_PROFILE "-pg -O2" )
 ENDIF()
 
 # Offer the user the choice of overriding the installation directories

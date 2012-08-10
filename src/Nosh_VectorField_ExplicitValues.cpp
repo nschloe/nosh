@@ -37,7 +37,7 @@ ExplicitValues(const Teuchos::RCP<Nosh::StkMesh> &mesh,
   edgeProjectionCache_( Teuchos::ArrayRCP<double>() ),
   edgeProjectionCacheUptodate_( false )
 {
-#ifdef _DEBUG_
+#ifndef NDEBUG
   TEUCHOS_ASSERT( !mesh_.is_null() );
 #endif
 
@@ -103,7 +103,7 @@ void
 ExplicitValues::
 initializeEdgeMidpointCache_() const
 {
-#ifdef _DEBUG_
+#ifndef NDEBUG
   TEUCHOS_ASSERT( !mesh_.is_null() );
   TEUCHOS_ASSERT( !values_.is_null() );
 #endif
@@ -119,7 +119,7 @@ initializeEdgeMidpointCache_() const
     lid[0] = values_->Map().LID( edges[k][0]->identifier() - 1 );
     lid[1] = values_->Map().LID( edges[k][1]->identifier() - 1 );
 
-#ifdef _DEBUG_
+#ifndef NDEBUG
     TEUCHOS_TEST_FOR_EXCEPT_MSG( lid[0] < 0,
                          "The global index " <<
                          edges[k][0]->identifier() - 1

@@ -275,7 +275,7 @@ complexfield2vector_(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
     (*vector)[2*k+1] = imagVal[0];
   }
 
-#ifdef _DEBUG_
+#ifndef NDEBUG
   double r;
   TEUCHOS_ASSERT_EQUALITY(0, vector->NormInf( &r ));
   TEUCHOS_TEST_FOR_EXCEPT_MSG( r!=r || r>1.0e100,
@@ -300,7 +300,7 @@ scalarfield2vector_(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
   Teuchos::RCP<Epetra_Vector> vector =
     Teuchos::rcp( new Epetra_Vector( *mesh->getNodesOverlapMap() ) );
 
-#ifdef _DEBUG_
+#ifndef NDEBUG
   TEUCHOS_ASSERT( !field.is_null() );
 #endif
 
@@ -321,7 +321,7 @@ scalarfield2vector_(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
     (*vector)[k] = fieldVal[0];
   }
 
-#ifdef _DEBUG_
+#ifndef NDEBUG
   double r;
   // Use NormInf as it's robust against overlapping maps.
   TEUCHOS_ASSERT_EQUALITY(0, vector->NormInf( &r ));
@@ -346,7 +346,7 @@ createMvp_(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
     Teuchos::rcp( new Epetra_MultiVector( *mesh->getNodesOverlapMap(),
                                           numComponents ) );
 
-#ifdef _DEBUG_
+#ifndef NDEBUG
   TEUCHOS_ASSERT( !mvpField.is_null() );
 #endif
 
@@ -355,7 +355,7 @@ createMvp_(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
   {
     const double * const mvpVal =
       stk::mesh::field_data( *mvpField, *overlapNodes[k] );
-#ifdef _DEBUG_
+#ifndef NDEBUG
     // Check if the field is actually there.
     TEUCHOS_TEST_FOR_EXCEPT_MSG( mvpVal == NULL,
       "MVPX value for node " << k << " not found.\n" <<
@@ -367,7 +367,7 @@ createMvp_(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
     (*mvp)[2][k] = mvpVal[2];
   }
 
-#ifdef _DEBUG_
+#ifndef NDEBUG
   // Check for NaNs and uninitialized data.
   double r[3];
   // Use NormInf as it's robust against overlapping maps.
@@ -396,7 +396,7 @@ createMvpRZ_(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
     Teuchos::rcp( new Epetra_MultiVector( *mesh->getNodesOverlapMap(),
                                           numComponents ) );
 
-#ifdef _DEBUG_
+#ifndef NDEBUG
   TEUCHOS_ASSERT( !mvpFieldR.is_null() );
   TEUCHOS_ASSERT( !mvpFieldZ.is_null() );
 #endif
@@ -405,7 +405,7 @@ createMvpRZ_(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
   {
     double *mvpValR = stk::mesh::field_data( *mvpFieldR, *overlapNodes[k] );
     double *mvpValZ = stk::mesh::field_data( *mvpFieldZ, *overlapNodes[k] );
-#ifdef _DEBUG_
+#ifndef NDEBUG
     // Check if the field is actually there.
     TEUCHOS_TEST_FOR_EXCEPT_MSG( mvpValR == NULL,
       "MVPR value for node " << k << " not found.\n" <<
@@ -422,7 +422,7 @@ createMvpRZ_(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
     (*mvp)[2][k] = 0.0;
   }
 
-#ifdef _DEBUG_
+#ifndef NDEBUG
   // Check for NaNs and uninitialized data.
   double r[2];
   // Use NormInf as it's robust against overlapping maps.

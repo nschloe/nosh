@@ -61,12 +61,12 @@ Apply(const Epetra_MultiVector &X,
       Epetra_MultiVector &Y
       ) const
 {
-#if _DEBUG_
+#ifndef NDEBUG
   TEUCHOS_ASSERT(X.Map().SameAs(domainMap_));
   TEUCHOS_ASSERT(Y.Map().SameAs(rangeMap_));
 #endif
   const int n = X.NumVectors();
-#if _DEBUG_
+#ifndef NDEBUG
   TEUCHOS_ASSERT_EQUALITY(n, Y.NumVectors());
 #endif
   // Dissect X.
@@ -119,12 +119,12 @@ ApplyInverse(const Epetra_MultiVector &X,
   // =
   // [A^{-1} X + A^{-1} B S^{-1} <C, A^{-1} X> - A^{-1} B S^{-1} lambda]
   // [-S^{-1} <C, A^{-1} X>                    + S^{-1} lambda         ].
-#if _DEBUG_
+#ifndef NDEBUG
   TEUCHOS_ASSERT(X.Map().SameAs(domainMap_));
   TEUCHOS_ASSERT(Y.Map().SameAs(rangeMap_));
 #endif
   const int n = X.NumVectors();
-#if _DEBUG_
+#ifndef NDEBUG
   TEUCHOS_ASSERT_EQUALITY(n, Y.NumVectors());
 #endif
   // Dissect X.

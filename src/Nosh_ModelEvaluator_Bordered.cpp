@@ -152,7 +152,7 @@ evalModel(const InArgs &inArgs,
 {
   // First, dissect x_in into vector and bordering.
   const Teuchos::RCP<const Epetra_Vector> &x_in = inArgs.get_x();
-#if _DEBUG_
+#ifndef NDEBUG
   TEUCHOS_ASSERT(!x_in.is_null());
 #endif
   const Teuchos::RCP<Epetra_Vector> inner_x_in =
