@@ -1,6 +1,10 @@
-To if you would like to build your own application
-against Nosh, the files in this directory may come
-in handy.
+BUILDING YOUR OWN PROJECT AGAINST NOSH
+======================================
+
+The application files contination.cpp, eigensolver.cpp, and exampleCalls.cpp
+form a good starting point for writing your own application against libnosh.
+If you would like to build your own application against Nosh, the files in
+this directory may come in handy.
 The recommended structure for a build is
 
 ./
@@ -13,21 +17,23 @@ The recommended structure for a build is
    myfile2.hpp
    [...]
 
-The files do-configure.sh and CMakeLists.txt can be taken
-from here and adapted for your project.
-Calling do-configure.sh from ./build/ should then generate
-the necessary Makefiles in ./build/ which can be used
-to build your executable:
+The files do-configure.sh and CMakeLists.txt can be taken from here and adapted
+for your project. Calling do-configure.sh from ./build/ should then generate the
+necessary Makefiles in ./build/ which can be used to build your executable:
 
 $ cd build
 $ ../do-configure.sh
 $ make
 
-If build failures occur, increasing the verbosity of `make'
-may help track down the error:
+
+DEBUGGING
+=========
+
+If build failures occur, increasing the verbosity of `make' may help track down
+the error:
 
 $ make VERBOSE=1
 
-For more guidance and information, any old CMake tutorial will do
-(e.g., http://www.cmake.org/cmake/help/cmake_tutorial.html).
+For more guidance and information, any old CMake tutorial will do (e.g.,
+http://www.cmake.org/cmake/help/cmake_tutorial.html).
 .

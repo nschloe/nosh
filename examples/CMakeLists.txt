@@ -1,2 +1,3 @@
-add_subdirectory ( continuation )
-add_subdirectory ( eigensolver )
+add_subdirectory(continuation)
+add_subdirectory(eigensolver)
+add_subdirectory(exampleCalls)
