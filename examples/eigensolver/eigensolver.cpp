@@ -39,6 +39,9 @@ typedef double                           ST;
 typedef Epetra_MultiVector               MV;
 typedef Epetra_Operator                  OP;
 // =============================================================================
+using Teuchos::rcp;
+using Teuchos::RCP;
+// =============================================================================
 int main ( int argc, char *argv[] )
 {
   // Initialize MPI
@@ -100,13 +103,13 @@ int main ( int argc, char *argv[] )
     Teuchos::RCP<Nosh::StkMesh> & mesh =
       data.get<Teuchos::RCP<Nosh::StkMesh> >( "mesh" );
     Teuchos::RCP<Epetra_Vector> & psi =
-      data.get( "psi", Teuchos::RCP<Epetra_Vector>() );
+      data.get<RCP<Epetra_Vector> >("psi");
     Teuchos::RCP<Epetra_MultiVector> & mvpValues =
-      data.get( "A", Teuchos::RCP<Epetra_MultiVector>() );
+      data.get<RCP<Epetra_MultiVector> >("A");
     Teuchos::RCP<Epetra_Vector> & thicknessValues =
-      data.get( "thickness", Teuchos::RCP<Epetra_Vector>() );
+      data.get<RCP<Epetra_Vector> >("thickness");
     Teuchos::ParameterList & problemParameters =
-      data.get( "Problem parameters", Teuchos::ParameterList() );
+      data.get<Teuchos::ParameterList>( "Problem parameters" );
 
     // Construct scalar potential.
     Teuchos::RCP<Nosh::ScalarField::Virtual> sp =
@@ -170,8 +173,6 @@ int main ( int argc, char *argv[] )
     const int maxIters = 500;
     const double tol = 1.0e-05;
 
-    typedef Epetra_MultiVector MV;
-    typedef Epetra_Operator OP;
     typedef Anasazi::MultiVecTraits<double, Epetra_MultiVector> MVT;
 
     // Create an Epetra_MultiVector for an initial vector to start the solver.

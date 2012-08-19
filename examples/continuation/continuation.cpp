@@ -97,9 +97,9 @@ int main(int argc, char *argv[])
       piroParams->sublist ( "Input", true );
     const std::string dataFile = xmlDirectory + "/"
                                + inputDataList.get<std::string>( "File" );
-    const int step = inputDataList.get<int>("Initial Psi Step", true);
+    const int step = inputDataList.get<int>("Initial Psi Step");
 
-    const bool useBordering = piroParams->get<bool>("Bordering", true);
+    const bool useBordering = piroParams->get<bool>("Bordering");
     // =======================================================================
     // Get the initial parameter values.
     Teuchos::ParameterList initialParameterValues =
@@ -112,13 +112,13 @@ int main(int argc, char *argv[])
     const RCP<Nosh::StkMesh> & mesh =
       data.get<RCP<Nosh::StkMesh> >( "mesh" );
     const RCP<const Epetra_MultiVector> & mvpValues =
-      data.get("A", RCP<const Epetra_MultiVector>() );
+      data.get<RCP<const Epetra_MultiVector> >("A");
     RCP<Epetra_Vector> psi =
-      data.get("psi", RCP<Epetra_Vector>() );
+      data.get<RCP<Epetra_Vector> >("psi");
     //const RCP<Epetra_Vector> & potentialValues =
-      //data.get("V", RCP<Epetra_Vector>());
+      //data.get("V");
     //const RCP<Epetra_Vector> & thickness =
-      //data.get( "thickness", RCP<Epetra_Vector>() );
+      //data.get("thickness");
 
     // Set the output directory for later plotting with this.
     mesh->openOutputChannel(outputDirectory, "solution");
@@ -135,7 +135,7 @@ int main(int argc, char *argv[])
 
     // (b) (-i\nabla-A)^2 (Kinetic energy of a particle in magnetic field)
     // (b1) 'A' explicitly given in file.
-    const double initMu = initialParameterValues.get<double>("mu", 0.0);
+    const double initMu = initialParameterValues.get<double>("mu");
     RCP<Nosh::VectorField::Virtual> mvp =
       rcp(new Nosh::VectorField::ExplicitValues(mesh, mvpValues, initMu));
     const RCP<Nosh::MatrixBuilder::Virtual> matrixBuilder =
@@ -168,7 +168,7 @@ int main(int argc, char *argv[])
     // (a) A constant potential.
     RCP<Nosh::ScalarField::Virtual> sp =
       rcp(new Nosh::ScalarField::Constant(-1.0));
-    //const double T = initialParameterValues.get<double>("T", 0.0);
+    //const double T = initialParameterValues.get<double>("T");
     // (b) One you built yourself by deriving from Nosh::ScalarField::Virtual.
     //RCP<Nosh::ScalarField::Virtual> sp =
       //rcp(new MyScalarField(mesh));
@@ -211,7 +211,7 @@ int main(int argc, char *argv[])
     RCP<Nosh::SaveEigenData> glEigenSaver;
 
     // Switch by solver type.
-    std::string & solver = piroParams->get("Piro Solver", "");
+    std::string & solver = piroParams->get<std::string>("Piro Solver");
     // ----------------------------------------------------------------------
     if (solver == "NOX")
     {
@@ -285,8 +285,7 @@ int main(int argc, char *argv[])
         piroParams->sublist("LOCA").sublist("Bifurcation");
 
       // Fetch the (approximate) null state.
-      RCP<Epetra_Vector> & nullstateZ =
-        data.get("null", RCP<Epetra_Vector>());
+      RCP<Epetra_Vector> & nullstateZ = data.get<RCP<Epetra_Vector> >("null");
 
       // Set the length normalization vector to be the initial null vector.
       TEUCHOS_ASSERT( !nullstateZ.is_null() );
