@@ -106,11 +106,11 @@ rebuild(const double g,
 protected:
 private:
 
-void
-rebuildInverse_();
+const Teuchos::RCP<const Epetra_Vector>
+getAbsPsiSquared_(const Teuchos::RCP<const Epetra_Vector> &psi);
 
 void
-rebuildAbsPsiSquared_(const Teuchos::RCP<const Epetra_Vector> &psi);
+rebuildInverse_();
 
 private:
 
@@ -118,12 +118,8 @@ private:
 bool useTranspose_;
 
 const Teuchos::RCP<const Nosh::StkMesh> mesh_;
-double g_;
 const Teuchos::RCP<const Nosh::ScalarField::Virtual> thickness_;
 const Teuchos::RCP<const Nosh::MatrixBuilder::Virtual> matrixBuilder_;
-
-// |psi|^2
-Epetra_Vector absPsiSquared_;
 
 // Make sure to create the matrix in memory only once and then
 // override it as necessary. The reason for this is that ML

@@ -55,10 +55,8 @@ KeoRegularized(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
                const Teuchos::RCP<const Nosh::MatrixBuilder::Virtual> &matrixBuilder):
   useTranspose_( false ),
   mesh_( mesh ),
-  g_( 0.0 ),
   thickness_( thickness ),
   matrixBuilder_( matrixBuilder ),
-  absPsiSquared_(Epetra_Vector(*mesh->getComplexNonOverlapMap())),
   // It wouldn't strictly be necessary to initialize regularizedMatrix_ with
   // the proper graph here as matrixBuilder_'s cache will override the matrix
   // later on anyways. Keep it, though, as it doesn't waste any memory and is
@@ -100,19 +98,9 @@ Apply( const Epetra_MultiVector &X,
 #ifndef NDEBUG
   TEUCHOS_ASSERT( regularizedMatrix_.DomainMap().SameAs( X.Map() ) );
   TEUCHOS_ASSERT( regularizedMatrix_.RangeMap().SameAs( Y.Map() ) );
-  TEUCHOS_ASSERT( Y.Map().SameAs( X.Map() ) );
-  TEUCHOS_ASSERT( Y.Map().SameAs(absPsiSquared_.Map()) );
 #endif
-  // K * X ...
-  TEUCHOS_ASSERT_EQUALITY(0, regularizedMatrix_.Apply(X, Y));
-
-  if (g_>0.0)
-  {
-    // ... + g * 2*|psi|*X.
-    TEUCHOS_ASSERT_EQUALITY(0, Y.Multiply(g_ * 2.0, absPsiSquared_, X, 1.0));
-  }
-
-  return 0;
+  // (K +  g * 2*|psi|) * X
+  return regularizedMatrix_.Apply(X, Y);
 }
 // =============================================================================
 int
@@ -238,8 +226,6 @@ rebuild(const double g,
         const Teuchos::RCP<const Epetra_Vector> & psi
         )
 {
-  g_ = g;
-  this->rebuildAbsPsiSquared_(psi);
   // Copy over the matrix.
   // This is necessary as we don't apply AMG to K,
   // but to K + g*2|psi|^2.
@@ -257,25 +243,53 @@ rebuild(const double g,
 #endif
   matrixBuilder_->fill(regularizedMatrix_, mvpParams);
 
+  // Add 2*g*|psi|^2 to the diagonal.
+  if (g > 0.0)
+  {
+    const Teuchos::RCP<const Epetra_Vector> absPsiSquared =
+      this->getAbsPsiSquared_(psi);
+#ifndef NDEBUG
+    TEUCHOS_ASSERT(regularizedMatrix_.RowMap().SameAs(absPsiSquared->Map()));
+#endif
+    Epetra_Vector diag(regularizedMatrix_.RowMap());
+    TEUCHOS_ASSERT_EQUALITY(0, regularizedMatrix_.ExtractDiagonalCopy(diag));
+    TEUCHOS_ASSERT_EQUALITY(0, diag.Update(g*2.0, *absPsiSquared, 1.0));
+    TEUCHOS_ASSERT_EQUALITY(0, regularizedMatrix_.ReplaceDiagonalValues(diag));
+  }
+
   this->rebuildInverse_();
   return;
+}
+// =============================================================================
+const Teuchos::RCP<const Epetra_Vector>
+KeoRegularized::
+getAbsPsiSquared_(const Teuchos::RCP<const Epetra_Vector> &psi)
+{
+#ifndef NDEBUG
+  TEUCHOS_ASSERT( !mesh_.is_null() );
+  TEUCHOS_ASSERT( !thickness_.is_null() );
+  TEUCHOS_ASSERT( !psi.is_null() );
+#endif
+  const Teuchos::RCP<Epetra_Vector> absPsiSquared =
+    Teuchos::rcp(new Epetra_Vector(*mesh_->getComplexNonOverlapMap()));
+
+  const Teuchos::RCP<const Epetra_Vector> &controlVolumes =
+    mesh_->getControlVolumes();
+  int numMyPoints = controlVolumes->MyLength();
+  for (int k=0; k<numMyPoints; k++)
+  {
+    double alpha = (*controlVolumes)[k] * thickness_->getV(k)
+                 * ((*psi)[2*k]*(*psi)[2*k] + (*psi)[2*k+1]*(*psi)[2*k+1]);
+    (*absPsiSquared)[2*k] = alpha;
+    (*absPsiSquared)[2*k+1] = alpha;
+  }
+  return absPsiSquared;
 }
 // =============================================================================
 void
 KeoRegularized::
 rebuildInverse_()
 {
-  // Add 2*g*|psi|^2 to the diagonal of KEO.
-  if (g_ > 0.0)
-  {
-#ifndef NDEBUG
-    TEUCHOS_ASSERT( regularizedMatrix_.RowMap().SameAs(absPsiSquared_.Map()) );
-#endif
-    Epetra_Vector diag(regularizedMatrix_.RowMap());
-    TEUCHOS_ASSERT_EQUALITY(0, regularizedMatrix_.ExtractDiagonalCopy(diag));
-    TEUCHOS_ASSERT_EQUALITY(0, diag.Update(g_*2.0, absPsiSquared_, 1.0));
-    TEUCHOS_ASSERT_EQUALITY(0, regularizedMatrix_.ReplaceDiagonalValues(diag));
-  }
   // -------------------------------------------------------------------------
   // Rebuild preconditioner for this object. Not to be mistaken for the
   // object itself.
@@ -329,35 +343,12 @@ rebuildInverse_()
   Teuchos::TimeMonitor tm( *timerRebuild1_ );
 #endif
     bool checkFiltering = true;
-    TEUCHOS_ASSERT_EQUALITY( 0, MlPrec_->ComputePreconditioner(checkFiltering) );
+    TEUCHOS_ASSERT_EQUALITY(0, MlPrec_->ComputePreconditioner(checkFiltering));
     //TEUCHOS_ASSERT_EQUALITY( 0, MlPrec_->ReComputePreconditioner() );
   }
 //    MlPrec_->PrintUnused(0);
   // -------------------------------------------------------------------------
 
-  return;
-}
-// =============================================================================
-void
-KeoRegularized::
-rebuildAbsPsiSquared_(const Teuchos::RCP<const Epetra_Vector> &psi)
-{
-#ifndef NDEBUG
-  TEUCHOS_ASSERT( !mesh_.is_null() );
-  TEUCHOS_ASSERT( !thickness_.is_null() );
-  TEUCHOS_ASSERT( !psi.is_null() );
-#endif
-
-  const Teuchos::RCP<const Epetra_Vector> &controlVolumes =
-    mesh_->getControlVolumes();
-  int numMyPoints = controlVolumes->MyLength();
-  for (int k=0; k<numMyPoints; k++)
-  {
-    double alpha = (*controlVolumes)[k] * thickness_->getV(k)
-                 * ((*psi)[2*k]*(*psi)[2*k] + (*psi)[2*k+1]*(*psi)[2*k+1]);
-    absPsiSquared_[2*k] = alpha;
-    absPsiSquared_[2*k+1] = alpha;
-  }
   return;
 }
 // =============================================================================
