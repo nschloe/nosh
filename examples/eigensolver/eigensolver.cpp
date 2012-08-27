@@ -120,28 +120,26 @@ int main ( int argc, char *argv[] )
     // Cast the data into something more accessible.
     RCP<Epetra_Vector> psi = mesh->createComplexVector("psi");
 
-    // Possibly read MVP from another file.
-    RCP<const Epetra_MultiVector> mvpValues;
-    if (mvpFilePath.empty())
-      mvpValues = mesh->createMultiVector("A");
-    else
+    // Create MVP (possibly from another mesh file).
+    RCP<Nosh::VectorField::Virtual> mvp;
+    RCP<Teuchos::Time> mvpConstructTime =
+      Teuchos::TimeMonitor::getNewTimer("MVP construction");
     {
-      RCP<Nosh::StkMesh> mesh2 = rcp(new Nosh::StkMesh(*eComm, mvpFilePath, 0));
-      mvpValues = mesh2->createMultiVector("A");
+      Teuchos::TimeMonitor tm(*mvpConstructTime);
+      if (mvpFilePath.empty())
+        mvp = rcp(new Nosh::VectorField::ExplicitValues(*mesh, "A", mu));
+      else
+      {
+        RCP<Nosh::StkMesh> mesh2 = rcp(new Nosh::StkMesh(*eComm, mvpFilePath, 0));
+        mvp = rcp(new Nosh::VectorField::ExplicitValues(*mesh2, "A", mu));
+      }
     }
 
     // Construct thickness.
     RCP<Nosh::ScalarField::Virtual> thickness =
       rcp(new Nosh::ScalarField::Constant(1.0));
 
-    // Create MVP and matrix builder.
-    RCP<Nosh::VectorField::Virtual> mvp;
-    RCP<Teuchos::Time> mvpConstructTime =
-      Teuchos::TimeMonitor::getNewTimer("MVP construction");
-    {
-      Teuchos::TimeMonitor tm(*mvpConstructTime);
-      mvp = rcp(new Nosh::VectorField::ExplicitValues(*mesh, *mvpValues, mu));
-    }
+    // Create matrix builder.
     const RCP<Nosh::MatrixBuilder::Virtual> matrixBuilder =
       rcp(new Nosh::MatrixBuilder::Keo(mesh, thickness, mvp));
 

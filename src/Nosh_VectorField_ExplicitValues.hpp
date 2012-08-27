@@ -37,7 +37,7 @@ class ExplicitValues : public Virtual
 {
 public:
 ExplicitValues(const Nosh::StkMesh &mesh,
-               const Epetra_MultiVector &values,
+               const std::string &fieldName,
                const double initMu
                );
 

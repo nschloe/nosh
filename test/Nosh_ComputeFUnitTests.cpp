@@ -71,15 +71,13 @@ testComputeF( const std::string & inputFileNameBase,
     // Cast the data into something more accessible.
     Teuchos::RCP<Epetra_Vector> z =
       mesh->createComplexVector("psi");
-    Teuchos::RCP<const Epetra_MultiVector> mvpValues =
-      mesh->createMultiVector("A");
 
     // Set the thickness field.
     Teuchos::RCP<Nosh::ScalarField::Virtual> thickness =
       Teuchos::rcp(new Nosh::ScalarField::Constant(1.0));
 
     Teuchos::RCP<Nosh::VectorField::Virtual> mvp =
-      Teuchos::rcp(new Nosh::VectorField::ExplicitValues(*mesh, *mvpValues, mu));
+      Teuchos::rcp(new Nosh::VectorField::ExplicitValues(*mesh, "A", mu));
     const Teuchos::RCP<Nosh::MatrixBuilder::Virtual> matrixBuilder =
       Teuchos::rcp(new Nosh::MatrixBuilder::Keo(mesh, thickness, mvp));
 

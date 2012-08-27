@@ -109,7 +109,6 @@ int main(int argc, char *argv[])
 
     // Cast the data into something more accessible.
     RCP<Epetra_Vector> psi = mesh->createComplexVector("psi");
-    RCP<const Epetra_MultiVector> mvpValues = mesh->createMultiVector("A");
 
     // Set the output directory for later plotting with this.
     mesh->openOutputChannel(outputDirectory, "solution");
@@ -128,7 +127,7 @@ int main(int argc, char *argv[])
     // (b1) 'A' explicitly given in file.
     const double initMu = initialParameterValues.get<double>("mu");
     RCP<Nosh::VectorField::Virtual> mvp =
-      rcp(new Nosh::VectorField::ExplicitValues(*mesh, *mvpValues, initMu));
+      rcp(new Nosh::VectorField::ExplicitValues(*mesh, "A", initMu));
     const RCP<Nosh::MatrixBuilder::Virtual> matrixBuilder =
       rcp(new Nosh::MatrixBuilder::Keo(mesh, thickness, mvp));
 

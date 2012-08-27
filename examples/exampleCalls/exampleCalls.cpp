@@ -69,7 +69,6 @@ int main(int argc, char *argv[])
 
     // Cast the data into something more accessible.
     RCP<Epetra_Vector> psi = mesh->createComplexVector("psi");
-    RCP<Epetra_MultiVector> mvpValues = mesh->createMultiVector("A");
 
     // Set the thickness field.
     RCP<Nosh::ScalarField::Virtual> thickness =
@@ -85,7 +84,7 @@ int main(int argc, char *argv[])
     // (b1) 'A' explicitly given in file.
     const double initMu = 0.0;
     RCP<Nosh::VectorField::Virtual> mvp =
-      rcp(new Nosh::VectorField::ExplicitValues(*mesh, *mvpValues, initMu));
+      rcp(new Nosh::VectorField::ExplicitValues(*mesh, "A", initMu));
     const RCP<Nosh::MatrixBuilder::Virtual> matrixBuilder =
       rcp(new Nosh::MatrixBuilder::Keo(mesh, thickness, mvp));
 

@@ -28,7 +28,7 @@ namespace VectorField {
 // ============================================================================
 ExplicitValues::
 ExplicitValues(const Nosh::StkMesh &mesh,
-               const Epetra_MultiVector &values,
+               const std::string & fieldName,
                const double initMu
                ) :
   initMu_( initMu ),
@@ -44,37 +44,19 @@ ExplicitValues(const Nosh::StkMesh &mesh,
   // Loop over all edges and create the cache.
   for ( unsigned int k=0; k<edges.size(); k++ )
   {
-    // Get the two end points.
-    Teuchos::Tuple<int,2> lid;
-    lid[0] = values.Map().LID( edges[k][0]->identifier() - 1 );
-    lid[1] = values.Map().LID( edges[k][1]->identifier() - 1 );
-
-#ifndef NDEBUG
-    TEUCHOS_TEST_FOR_EXCEPT_MSG( lid[0] < 0,
-                         "The global index " <<
-                         edges[k][0]->identifier() - 1
-                         << " does not seem to be present on this node." );
-    TEUCHOS_TEST_FOR_EXCEPT_MSG( lid[1] < 0,
-                         "The global index " <<
-                         edges[k][1]->identifier() - 1
-                         << " does not seem to be present on this node." );
-#endif
-
     // Approximate the value at the midpoint of the edge
     // by the average of the values at the adjacent nodes.
-    DoubleVector valueEdgeMidpoint( 3 );
-    for (int i=0; i<3; i++ )
-      valueEdgeMidpoint[i] = 0.5
-                           * ((*values(i))[lid[0]] + (*values(i))[lid[1]]);
+    DoubleVector av = mesh.getVectorFieldNonconst(edges[k][0], fieldName, 3);
+    av += mesh.getVectorFieldNonconst(edges[k][1], fieldName, 3);
+    av *= 0.5;
 
     // extract the nodal coordinates
     DoubleVector edge = mesh.getVectorFieldNonconst(edges[k][1],
-                                                     "coordinates", 3);
+                                                    "coordinates", 3);
     edge -= mesh.getVectorFieldNonconst(edges[k][0],
-                                         "coordinates", 3);
+                                        "coordinates", 3);
 
-    //edgeProjectionCache_[k] = edge.dot( valueEdgeMidpoint );
-    edgeProjectionCache_[k] = valueEdgeMidpoint.dot(edge);
+    edgeProjectionCache_[k] = av.dot(edge);
   }
 
   return;

@@ -51,8 +51,6 @@ testJac( const std::string & inputFileNameBase,
     // Cast the data into something more accessible.
     Teuchos::RCP<Epetra_Vector> psi =
       mesh->createComplexVector("psi");
-    Teuchos::RCP<const Epetra_MultiVector> mvpValues =
-      mesh->createMultiVector("A");
 
     const double g = 1.0;
     Teuchos::Array<double> mvpParameters(1);
@@ -60,7 +58,7 @@ testJac( const std::string & inputFileNameBase,
     Teuchos::Array<double> spParameters(0);
 
     Teuchos::RCP<Nosh::VectorField::Virtual> mvp =
-      Teuchos::rcp(new Nosh::VectorField::ExplicitValues(*mesh, *mvpValues, mu));
+      Teuchos::rcp(new Nosh::VectorField::ExplicitValues(*mesh, "A", mu));
 
     Teuchos::RCP<Nosh::ScalarField::Virtual> sp =
       Teuchos::rcp(new Nosh::ScalarField::Constant(-1.0));

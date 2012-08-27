@@ -70,11 +70,9 @@ testKeo( const std::string & inputFileNameBase,
     // Cast the data into something more accessible.
     Teuchos::RCP<Epetra_Vector> z =
       mesh->createComplexVector("psi");
-    const Teuchos::RCP<const Epetra_MultiVector> mvpValues =
-      mesh->createMultiVector("A");
 
     Teuchos::RCP<Nosh::VectorField::Virtual> mvp =
-      Teuchos::rcp(new Nosh::VectorField::ExplicitValues(*mesh, *mvpValues, initMu));
+      Teuchos::rcp(new Nosh::VectorField::ExplicitValues(*mesh, "A", initMu));
 
     // Set the thickness field.
     Teuchos::RCP<Nosh::ScalarField::Virtual> thickness =
