@@ -10,7 +10,6 @@
 #include <LOCA_Parameter_Vector.H>
 
 #include "Nosh_StkMesh.hpp"
-#include "Nosh_Helpers.hpp"
 #include "Nosh_VectorField_ExplicitValues.hpp"
 #include "Nosh_ScalarField_Constant.hpp"
 #include "Nosh_MatrixBuilder_Keo.hpp"
@@ -46,17 +45,14 @@ testJac( const std::string & inputFileNameBase,
         inputFileName = inputFileNameBase + "-balanced.par";
     // =========================================================================
     // Read the data from the file.
-    Teuchos::ParameterList data;
-    Nosh::Helpers::StkMeshRead( *eComm, inputFileName, 0, data );
+    Teuchos::RCP<Nosh::StkMesh> mesh =
+      Teuchos::rcp(new Nosh::StkMesh(*eComm, inputFileName, 0));
 
     // Cast the data into something more accessible.
-    Teuchos::RCP<Nosh::StkMesh> & mesh =
-      data.get( "mesh", Teuchos::RCP<Nosh::StkMesh>() );
-    Teuchos::RCP<Epetra_Vector> & psi =
-      data.get( "psi", Teuchos::RCP<Epetra_Vector>() );
-    Teuchos::RCP<const Epetra_MultiVector> & mvpValues =
-      data.get( "A", Teuchos::RCP<const Epetra_MultiVector>() );
-    Teuchos::ParameterList & problemParameters = data.get( "Problem parameters", Teuchos::ParameterList() );
+    Teuchos::RCP<Epetra_Vector> psi =
+      mesh->createComplexVector("psi");
+    Teuchos::RCP<const Epetra_MultiVector> mvpValues =
+      mesh->createMultiVector("A");
 
     const double g = 1.0;
     Teuchos::Array<double> mvpParameters(1);
@@ -64,7 +60,7 @@ testJac( const std::string & inputFileNameBase,
     Teuchos::Array<double> spParameters(0);
 
     Teuchos::RCP<Nosh::VectorField::Virtual> mvp =
-      Teuchos::rcp(new Nosh::VectorField::ExplicitValues(mesh, mvpValues, mu));
+      Teuchos::rcp(new Nosh::VectorField::ExplicitValues(*mesh, *mvpValues, mu));
 
     Teuchos::RCP<Nosh::ScalarField::Virtual> sp =
       Teuchos::rcp(new Nosh::ScalarField::Constant(-1.0));

@@ -1,5 +1,7 @@
 cmake \
-  -D CMAKE_INSTALL_PREFIX:PATH=/opt/trilinos/dev/master/gcc/4.6.3/debug \
+  -D CMAKE_C_COMPILER="clang" \
+  -D CMAKE_CXX_COMPILER="clang++" \
+  -D CMAKE_INSTALL_PREFIX:PATH=/opt/trilinos/dev/master/clang/3.0/debug \
   -D CMAKE_BUILD_TYPE=Debug \
   -D TPL_ENABLE_MPI:BOOL=OFF \
   -D Trilinos_ENABLE_TEUCHOS_TIME_MONITOR=ON \
@@ -10,7 +12,9 @@ cmake \
   -D Trilinos_ENABLE_Anasazi:BOOL=ON \
   -D Trilinos_ENABLE_STK:BOOL=ON \
   -D Trilinos_ENABLE_SEACASIoss:BOOL=ON \
+  -D Trilinos_ENABLE_SEACASNemslice:BOOL=ON \
+  -D Trilinos_ENABLE_SEACASNemspread:BOOL=ON \
   -D TPL_ENABLE_Netcdf:BOOL=ON \
-      -D Netcdf_LIBRARY_DIRS:PATH=/opt/netcdf/4.2/lib/ \
-      -D TPL_Netcdf_INCLUDE_DIRS:PATH=/opt/netcdf/4.2/include \
   ../../source
+#      -D Netcdf_LIBRARY_DIRS:PATH=/usr/local/ \
+#      -D TPL_Netcdf_INCLUDE_DIRS:PATH=/usr/local/ \

@@ -61,7 +61,8 @@ getV(const unsigned int nodeIndex,
   std::vector<stk::mesh::Entity*> ownedNodes =
     mesh_->getOwnedNodes();
   const DoubleVector X =
-    mesh_->getNodeCoordinatesNonconst(ownedNodes[nodeIndex]);
+    mesh_->getVectorFieldNonconst(ownedNodes[nodeIndex],
+                                  "coordinates", 3);
 
   return -1.0 + p[0] * (-X[0]*X[0] + X[1]*X[1]);
 }

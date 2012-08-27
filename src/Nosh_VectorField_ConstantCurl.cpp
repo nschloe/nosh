@@ -267,9 +267,11 @@ initializeEdgeCache_() const
   for (unsigned int k=0; k<edges.size(); k++)
   {
     const DoubleVector & node0Coords =
-      mesh_->getNodeCoordinatesNonconst( edges[k][0] );
+      mesh_->getVectorFieldNonconst(edges[k][0],
+                                    "coordinates", 3);
     const DoubleVector & node1Coords =
-      mesh_->getNodeCoordinatesNonconst( edges[k][1] );
+      mesh_->getVectorFieldNonconst(edges[k][1],
+                                    "coordiates", 3);
 
     // edgeMidpoint x edge = 0.5 (a+b) x (a-b) = b x a
     edgeCache_[k] = this->crossProduct_( node0Coords, node1Coords );

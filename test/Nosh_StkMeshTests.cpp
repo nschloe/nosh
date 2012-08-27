@@ -28,7 +28,6 @@
 #include <Epetra_Vector.h>
 
 #include "Nosh_StkMesh.hpp"
-#include "Nosh_Helpers.hpp"
 
 #include <Teuchos_UnitTestHarness.hpp>
 
@@ -60,18 +59,13 @@ testMesh( const std::string & inputFileNameBase,
       inputFileName = inputFileNameBase + "-balanced.par";
     // =========================================================================
     // Read the data from the file.
-    Teuchos::ParameterList data;
-    Nosh::Helpers::StkMeshRead( *eComm, inputFileName, 0, data );
+    Nosh::StkMesh mesh(*eComm, inputFileName, 0);
 
-    // Cast the data into something more accessible.
-    Teuchos::RCP<Nosh::StkMesh> & mesh =
-      data.get( "mesh", Teuchos::RCP<Nosh::StkMesh>() );
-
-    const unsigned int numNodes = mesh->getNumNodes();
-//    mesh->computeFvmEntities_();
+    const unsigned int numNodes = mesh.getNumNodes();
+//    mesh.computeFvmEntities_();
     TEUCHOS_ASSERT_EQUALITY( numNodes, controlNumNodes );
 
-    const Teuchos::RCP<const Epetra_Vector> controlVols = mesh->getControlVolumes();
+    const Teuchos::RCP<const Epetra_Vector> controlVols = mesh.getControlVolumes();
     double r;
     TEUCHOS_ASSERT_EQUALITY(0, controlVols->Norm1( &r ));
     TEST_FLOATING_EQUALITY( r, controlVolNormOne, 1.0e-12 );

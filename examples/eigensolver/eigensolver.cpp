@@ -1,9 +1,3 @@
-// Workaround for icpc's error "Include mpi.h before stdio.h"
-#include <Teuchos_config.h>
-#ifdef HAVE_MPI
-    #include <mpi.h>
-#endif
-
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_ParameterList.hpp>
@@ -13,20 +7,18 @@
 #include <Teuchos_StandardCatchMacros.hpp>
 #include <Epetra_CrsGraph.h>
 
-#include "Nosh_Helpers.hpp"
+#include <AnasaziConfigDefs.hpp>
+#include <AnasaziBasicEigenproblem.hpp>
+#include <AnasaziLOBPCGSolMgr.hpp>
+#include <AnasaziBlockDavidsonSolMgr.hpp>
+#include <AnasaziBlockKrylovSchurSolMgr.hpp>
+//#include <AnasaziBasicOutputManager.hpp>
+#include <AnasaziEpetraAdapter.hpp>
+
 #include "Nosh_MatrixBuilder_Keo.hpp"
-#include "Nosh_JacobianOperator.hpp"
-#include "Nosh_KeoRegularized.hpp"
 #include "Nosh_ScalarField_Constant.hpp"
 #include "Nosh_VectorField_ExplicitValues.hpp"
-
-#include "AnasaziConfigDefs.hpp"
-#include "AnasaziBasicEigenproblem.hpp"
-#include "AnasaziLOBPCGSolMgr.hpp"
-#include "AnasaziBlockDavidsonSolMgr.hpp"
-#include "AnasaziBlockKrylovSchurSolMgr.hpp"
-//#include "AnasaziBasicOutputManager.hpp"
-#include "AnasaziEpetraAdapter.hpp"
+#include "Nosh_ModelEvaluator_Nls.hpp"
 
 #ifdef HAVE_MPI
 #include <Epetra_MpiComm.h>
@@ -35,9 +27,10 @@
 #endif
 
 // =============================================================================
-typedef double                           ST;
-typedef Epetra_MultiVector               MV;
-typedef Epetra_Operator                  OP;
+typedef double             ST;
+typedef Epetra_MultiVector MV;
+typedef Epetra_Operator    OP;
+typedef Anasazi::MultiVecTraits<double, Epetra_MultiVector> MVT;
 // =============================================================================
 using Teuchos::rcp;
 using Teuchos::RCP;
@@ -51,14 +44,14 @@ int main ( int argc, char *argv[] )
 
     // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
-  Teuchos::RCP<Epetra_MpiComm> eComm =
-    Teuchos::rcp<Epetra_MpiComm> ( new Epetra_MpiComm ( MPI_COMM_WORLD ) );
+  RCP<Epetra_MpiComm> eComm =
+    rcp<Epetra_MpiComm> ( new Epetra_MpiComm ( MPI_COMM_WORLD ) );
 #else
-  Teuchos::RCP<Epetra_SerialComm>  eComm =
-         Teuchos::rcp<Epetra_SerialComm> ( new Epetra_SerialComm() );
+  RCP<Epetra_SerialComm>  eComm =
+         rcp<Epetra_SerialComm> ( new Epetra_SerialComm() );
 #endif
 
-  const Teuchos::RCP<Teuchos::FancyOStream> out =
+  const RCP<Teuchos::FancyOStream> out =
     Teuchos::VerboseObjectBase::getDefaultOStream();
 
   bool success = true;
@@ -72,155 +65,178 @@ int main ( int argc, char *argv[] )
       "Linear solver testbed for KEO and Jacobian operator.\n"
     );
 
-    std::string inputFilePath( "" );
-    My_CLP.setOption ( "input", &inputFilePath, "Input state file", true );
-    const int step = 0;
+    std::string inputFilePath("");
+    My_CLP.setOption("input", &inputFilePath, "input state file", true);
+
+    std::string mvpFilePath("");
+    My_CLP.setOption("mvpfile",&mvpFilePath,"file containing magnetic vector potential (default: same as input file)");
+
+    int step = 0;
+    My_CLP.setOption("step",&step,"step to read");
 
     bool verbose = true;
-    My_CLP.setOption("verbose","quiet",&verbose,"Print messages and results.");
+    My_CLP.setOption("verbose","quiet",&verbose,"print messages and results");
 
     bool isPrec = true;
-    My_CLP.setOption("prec","noprec",&isPrec,"Use a preconditioner.");
+    My_CLP.setOption("prec","noprec",&isPrec,"use a preconditioner");
 
     int frequency = 10;
-    My_CLP.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
+    My_CLP.setOption("frequency",&frequency,"solver frequency for printing eigenresiduals (#iters)");
+
+    double mu = 0.0;
+    My_CLP.setOption("mu", &mu, "parameter value mu");
 
     std::string method = "lobpcg";
-    My_CLP.setOption("method",&method,"Method for solving the eigenproblem. (*lobpcg, krylovschur, davidson)");
+    My_CLP.setOption("method",&method,"method for solving the eigenproblem {lobpcg, krylovschur, davidson}");
+
+    int numEv = 10;
+    My_CLP.setOption("numev",&numEv,"number of eigenvalues to compute");
+
+    int numBlocks = 10;
+    My_CLP.setOption("numblocks",&numBlocks,"number of blocks");
+
+    int blockSize = 2;
+    My_CLP.setOption("blocksize",&blockSize,"block size");
+
+    int maxRestarts = 10;
+    My_CLP.setOption("maxrestarts",&maxRestarts,"maximum number of restarts");
+
+    int maxIter = 100;
+    My_CLP.setOption("maxiter",&maxIter,"maximum number of iterations");
+
+    double tol = 1.0e-5;
+    My_CLP.setOption("tolerance",&tol,"tolerance");
 
     // print warning for unrecognized arguments
     My_CLP.recogniseAllOptions( true );
 
     // finally, parse the command line
-    TEUCHOS_ASSERT_EQUALITY(My_CLP.parse ( argc, argv ),
+    TEUCHOS_ASSERT_EQUALITY(My_CLP.parse(argc, argv),
                             Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL);
     // =========================================================================
     // Read the data from the file.
-    Teuchos::ParameterList data;
-    Nosh::Helpers::StkMeshRead( *eComm, inputFilePath, step, data );
+    RCP<Nosh::StkMesh> mesh = rcp(new Nosh::StkMesh(*eComm, inputFilePath, 0));
 
     // Cast the data into something more accessible.
-    Teuchos::RCP<Nosh::StkMesh> & mesh =
-      data.get<Teuchos::RCP<Nosh::StkMesh> >( "mesh" );
-    Teuchos::RCP<Epetra_Vector> & psi =
-      data.get<RCP<Epetra_Vector> >("psi");
-    Teuchos::RCP<Epetra_MultiVector> & mvpValues =
-      data.get<RCP<Epetra_MultiVector> >("A");
-    Teuchos::RCP<Epetra_Vector> & thicknessValues =
-      data.get<RCP<Epetra_Vector> >("thickness");
-    Teuchos::ParameterList & problemParameters =
-      data.get<Teuchos::ParameterList>( "Problem parameters" );
+    RCP<Epetra_Vector> psi = mesh->createComplexVector("psi");
 
-    // Construct scalar potential.
-    Teuchos::RCP<Nosh::ScalarField::Virtual> sp =
-      Teuchos::rcp(new Nosh::ScalarField::Constant(-1.0));
+    // Possibly read MVP from another file.
+    RCP<const Epetra_MultiVector> mvpValues;
+    if (mvpFilePath.empty())
+      mvpValues = mesh->createMultiVector("A");
+    else
+    {
+      RCP<Nosh::StkMesh> mesh2 = rcp(new Nosh::StkMesh(*eComm, mvpFilePath, 0));
+      mvpValues = mesh2->createMultiVector("A");
+    }
 
-    const double mu = 2.0e-1;
-    const double T = 0.0;
-    const double g = 1.0;
-    Teuchos::Array<double> mvpParameters(1);
-    mvpParameters[0] = mu;
-    Teuchos::Array<double> spParameters(1);
-    spParameters[0] = T;
+    // Construct thickness.
+    RCP<Nosh::ScalarField::Virtual> thickness =
+      rcp(new Nosh::ScalarField::Constant(1.0));
 
-    // Construct MVP.
-    Teuchos::RCP<Nosh::VectorField::Virtual> mvp;
-    Teuchos::RCP<Teuchos::Time> mvpConstructTime =
+    // Create MVP and matrix builder.
+    RCP<Nosh::VectorField::Virtual> mvp;
+    RCP<Teuchos::Time> mvpConstructTime =
       Teuchos::TimeMonitor::getNewTimer("MVP construction");
     {
       Teuchos::TimeMonitor tm(*mvpConstructTime);
-      mvp = Teuchos::rcp(new Nosh::VectorField::ExplicitValues(mesh, mvpValues, mu));
+      mvp = rcp(new Nosh::VectorField::ExplicitValues(*mesh, *mvpValues, mu));
     }
+    const RCP<Nosh::MatrixBuilder::Virtual> matrixBuilder =
+      rcp(new Nosh::MatrixBuilder::Keo(mesh, thickness, mvp));
 
-    // Set the thickness field.
-    Teuchos::RCP<Nosh::ScalarField::Virtual> thickness =
-      Teuchos::rcp(new Nosh::ScalarField::Constant(1.0));
+    // Construct scalar potential.
+    RCP<Nosh::ScalarField::Virtual> sp =
+      rcp(new Nosh::ScalarField::Constant(-1.0));
 
-    Teuchos::RCP<Nosh::MatrixBuilder::Virtual> keoBuilder =
-      Teuchos::rcp(new Nosh::MatrixBuilder::Keo(mesh, thickness, mvp));
+    // Finally, create the model evaluator.
+    // This is the most important object in the whole stack.
+    const double g = 1.0;
+    RCP<Nosh::ModelEvaluator::Virtual> modelEvaluator =
+      rcp(new Nosh::ModelEvaluator::Nls(mesh, matrixBuilder, sp, g, thickness, psi));
 
-    // create Jacobian
-    Teuchos::RCP<Teuchos::Time> jacobianConstructTime =
-      Teuchos::TimeMonitor::getNewTimer("Jacobian construction");
-    Teuchos::RCP<Nosh::JacobianOperator> jac;
+    // Set the input arguments.
+    EpetraExt::ModelEvaluator::InArgs inArgs = modelEvaluator->createInArgs();
+    EpetraExt::ModelEvaluator::OutArgs outArgs = modelEvaluator->createOutArgs();
+    RCP<const Epetra_Vector> p = modelEvaluator->get_p_init(0);
+    inArgs.set_p(0, p);
+    inArgs.set_x(psi);
+
+    // Get the preconditioner.
+    modelEvaluator->evalModel(inArgs, outArgs);
+
+    // Create and fill Jacobian.
+    RCP<Teuchos::Time> jacobianConstructTime =
+      Teuchos::TimeMonitor::getNewTimer("Operator construction");
+    RCP<Epetra_Vector> fx;
+    RCP<Epetra_Operator> jac;
+    RCP<Epetra_Operator> prec;
+    // Fill outArgs.
+    modelEvaluator->evalModel(inArgs, outArgs);
     {
       Teuchos::TimeMonitor tm(*jacobianConstructTime);
-      // create the jacobian operator
-      jac = Teuchos::rcp(new Nosh::JacobianOperator(mesh, sp, thickness, keoBuilder));
-      jac->rebuild(g, spParameters, mvpParameters, psi);
+      //fx = rcp(new Epetra_Vector(*modelEvaluator->get_f_map()));
+      //outArgs.set_f(fx);
+      // Get the Jacobian.
+      jac = modelEvaluator->create_W();
+      outArgs.set_W(jac);
+      if (isPrec)
+      {
+        prec = modelEvaluator->create_WPrec()->PrecOp;
+        outArgs.set_WPrec(prec);
+      }
+      modelEvaluator->evalModel(inArgs, outArgs);
+      // Now, jac and prec contain the operators.
     }
 
-    // create preconditioner
-    Teuchos::RCP<Teuchos::Time> precConstructTime =
-      Teuchos::TimeMonitor::getNewTimer("Prec construction");
-    Teuchos::RCP<Nosh::KeoRegularized> keoReg;
-    if ( isPrec )
-    {
-      Teuchos::TimeMonitor tm(*precConstructTime);
-      // create the jacobian operator
-      keoReg = Teuchos::rcp(new Nosh::KeoRegularized(mesh, thickness, keoBuilder));
-
-      // actually fill it with values
-      keoReg->rebuild(g, mvpParameters, psi);
-    }
+    //// Check ||F(x)||.
+    //double r;
+    //fx->Norm2(&r);
+    //*out << "||F(x)|| = " << r << std::endl;
 
     // Create the eigensolver.
-    const std::string which = "LM";
-    const int nev = 10;
-    const int blockSize = 2;
-    const int numBlocks = 8;
-    const int maxRestarts = 100;
-    const int maxIters = 500;
-    const double tol = 1.0e-05;
-
-    typedef Anasazi::MultiVecTraits<double, Epetra_MultiVector> MVT;
-
     // Create an Epetra_MultiVector for an initial vector to start the solver.
     // Note:  This needs to have the same number of columns as the blocksize.
-    //
-    Teuchos::RCP<Epetra_MultiVector> ivec = Teuchos::rcp( new Epetra_MultiVector(jac->OperatorDomainMap(), blockSize) );
+    RCP<Epetra_MultiVector> ivec =
+      rcp(new Epetra_MultiVector(jac->OperatorDomainMap(), blockSize));
     ivec->Random();
 
     // Create the eigenproblem.
-    //
-    Teuchos::RCP<Anasazi::BasicEigenproblem<double, MV, OP> > MyProblem =
-      Teuchos::rcp( new Anasazi::BasicEigenproblem<double, MV, OP>(jac, ivec) );
+    RCP<Anasazi::BasicEigenproblem<double, MV, OP> > MyProblem =
+      rcp(new Anasazi::BasicEigenproblem<double, MV, OP>(jac, ivec));
 
     // Inform the eigenproblem that the operator A is symmetric
-    //
     MyProblem->setHermitian(true);
 
     // Set the number of eigenvalues requested
-    //
-    MyProblem->setNEV( nev );
+    MyProblem->setNEV(numEv);
 
     // Set the preconditioner. (May be NULL and not used.)
-    MyProblem->setPrec( keoReg );
+    MyProblem->setPrec( prec );
 
     // Inform the eigenproblem that you are finishing passing it information
-    //
     TEUCHOS_ASSERT( MyProblem->setProblem() );
 
     // Create parameter list to pass into the solver manager
-    //
     Teuchos::ParameterList MyPL;
 
-    MyPL.set( "Which", which );
-    MyPL.set( "Block Size", blockSize );
-    MyPL.set( "Num Blocks", numBlocks );
-    MyPL.set( "Maximum Restarts", maxRestarts );
-    MyPL.set( "Maximum Iterations", maxIters );
-    MyPL.set( "Convergence Tolerance", tol );
-    MyPL.set( "Full Ortho", true );
-    MyPL.set( "Use Locking", true );
-    MyPL.set( "Verbosity", Anasazi::IterationDetails +
-                           Anasazi::Errors +
-                           Anasazi::Warnings +
-                           Anasazi::FinalSummary
-            );
+    MyPL.set("Which", "LM");
+    MyPL.set("Block Size", blockSize);
+    MyPL.set("Num Blocks", numBlocks);
+    MyPL.set("Maximum Restarts", maxRestarts);
+    MyPL.set("Maximum Iterations", maxIter);
+    MyPL.set("Convergence Tolerance", tol);
+    MyPL.set("Full Ortho", true);
+    MyPL.set("Use Locking", true);
+    MyPL.set("Verbosity", Anasazi::IterationDetails +
+                          Anasazi::Errors +
+                          Anasazi::Warnings +
+                          Anasazi::StatusTestDetails +
+                          Anasazi::Debug +
+                          Anasazi::FinalSummary
+                          );
 
     // Create the solver manager and solve the problem.
-    //
     Anasazi::ReturnType returnCode;
     if ( method.compare("lobpcg") == 0 )
     {
@@ -248,22 +264,26 @@ int main ( int argc, char *argv[] )
     const Anasazi::Eigensolution<double,MV>& anasaziSolution =
       MyProblem->getSolution();
 
-    int numVecs = anasaziSolution.numVecs;
+    const int numVecs = anasaziSolution.numVecs;
     *out << "Number of computed eigenpairs: " << numVecs << std::endl;
 
     Teuchos::ArrayRCP<double> evals_r( numVecs );
     Teuchos::ArrayRCP<double> evals_i( numVecs );
-    *out << "\n\nEigenvalues:" << std::endl;
-    for (int i=0; i<numVecs; i++)
+    if (numVecs > 0)
     {
-      evals_r[i] = anasaziSolution.Evals[i].realpart;
-      evals_i[i] = anasaziSolution.Evals[i].imagpart;
+      *out << "\nEigenvalues:" << std::endl;
+      for (int i=0; i<numVecs; i++)
+      {
+        evals_r[i] = anasaziSolution.Evals[i].realpart;
+        evals_i[i] = anasaziSolution.Evals[i].imagpart;
 
-      *out << evals_r[i] << " + I " << evals_i[i] << std::endl;
+        *out << evals_r[i] << " + I " << evals_i[i] << std::endl;
+      }
+      // Check residuals
     }
     // -----------------------------------------------------------------------
     // print timing data
-    Teuchos::TimeMonitor::summarize();
+    //Teuchos::TimeMonitor::summarize();
   }
   catch (Teuchos::CommandLineProcessor::HelpPrinted)
   {}

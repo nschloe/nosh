@@ -100,14 +100,14 @@ public:
 void
 rebuild(const double g,
         const Teuchos::Array<double> &mvpParams,
-        const Teuchos::RCP<const Epetra_Vector> &psi
+        const Epetra_Vector &psi
        );
 
 protected:
 private:
 
 const Teuchos::RCP<const Epetra_Vector>
-getAbsPsiSquared_(const Teuchos::RCP<const Epetra_Vector> &psi);
+getAbsPsiSquared_(const Epetra_Vector &psi);
 
 void
 rebuildInverse_();

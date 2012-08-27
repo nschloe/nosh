@@ -36,10 +36,10 @@ namespace VectorField {
 class ExplicitValues : public Virtual
 {
 public:
-ExplicitValues( const Teuchos::RCP<Nosh::StkMesh> &mesh,
-                const Teuchos::RCP<const Epetra_MultiVector> &values,
-                const double initMu
-                );
+ExplicitValues(const Nosh::StkMesh &mesh,
+               const Epetra_MultiVector &values,
+               const double initMu
+               );
 
 virtual
 ~ExplicitValues();
@@ -67,21 +67,9 @@ getDEdgeProjectionDp(const unsigned int edgeIndex,
 
 protected:
 private:
-void
-initializeEdgeMidpointCache_() const;
-
-DoubleVector
-crossProduct_( const DoubleVector u,
-               const DoubleVector v
-               ) const;
-
-private:
-const Teuchos::RCP<Nosh::StkMesh> mesh_;
-const Teuchos::RCP<const Epetra_MultiVector> values_;
 const double initMu_;
 
 Teuchos::ArrayRCP<double> edgeProjectionCache_;
-mutable bool edgeProjectionCacheUptodate_;
 };
 } // namespace VectorField
 } // namespace Nosh

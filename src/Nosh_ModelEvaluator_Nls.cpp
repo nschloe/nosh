@@ -288,6 +288,9 @@ evalModel(const InArgs &inArgs,
 #endif
 
   const Teuchos::RCP<const Epetra_Vector> &x_in = inArgs.get_x();
+#ifndef NDEBUG
+  TEUCHOS_ASSERT( !x_in.is_null() );
+#endif
 
   // Dissect inArgs.get_p(0) into parameter sublists.
   // Keep this in sync with get_p_init() where the splitting
@@ -395,7 +398,7 @@ evalModel(const InArgs &inArgs,
 #endif
     const Teuchos::RCP<Nosh::KeoRegularized> & keoPrec =
       Teuchos::rcp_dynamic_cast<Nosh::KeoRegularized>(WPrec_out, true);
-    keoPrec->rebuild(g, eoParams, x_in);
+    keoPrec->rebuild(g, eoParams, *x_in);
   }
 
   return;

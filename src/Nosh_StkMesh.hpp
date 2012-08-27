@@ -48,6 +48,7 @@ class MeshData;
 }
 }
 class Epetra_Vector;
+class Epetra_MultiVector;
 class Epetra_Map;
 // =============================================================================
 // typedefs
@@ -61,14 +62,19 @@ namespace Nosh {
 class StkMesh
 {
 public:
-StkMesh( const Epetra_Comm &comm,
-         const Teuchos::RCP<stk::mesh::fem::FEMMetaData> &metaData,
-         const Teuchos::RCP<stk::mesh::BulkData> &bulkData,
-         const Teuchos::RCP<const VectorFieldType> &coordinatesField
-         );
+StkMesh(const Epetra_Comm &comm,
+        const std::string & fileName,
+        const int index
+        );
 
 virtual
 ~StkMesh();
+
+void
+read(const Epetra_Comm &comm,
+     const std::string & fileName,
+     const int index
+     );
 
 void
 openOutputChannel(const string &outputDir,
@@ -80,17 +86,19 @@ write(const Epetra_Vector & psi,
       const int index
       ) const;
 
+Teuchos::RCP<Epetra_Vector>
+createVector(const std::string & fieldName) const;
+
+Teuchos::RCP<Epetra_MultiVector>
+createMultiVector(const std::string & fieldName) const;
+
+Teuchos::RCP<Epetra_Vector>
+createComplexVector(const std::string & fieldName) const;
+
 void
-mergeComplexVector_(const Epetra_Vector &psi) const;
-
-const Teuchos::RCP<stk::mesh::fem::FEMMetaData>
-getMetaData() const;
-
-const Teuchos::RCP<stk::io::MeshData>
-getMeshData() const;
-
-const Teuchos::RCP<stk::mesh::BulkData>
-getBulkData() const;
+mergeComplexVector_(const Epetra_Vector &psi,
+                    const std::string & fieldName
+                    ) const;
 
 unsigned int
 getNumNodes() const;
@@ -122,8 +130,8 @@ getOwnedNodes() const;
 std::vector<stk::mesh::Entity*>
 getOverlapNodes() const;
 
-const DoubleVector
-getNodeCoordinatesNonconst(const stk::mesh::Entity * nodeEntity) const;
+//const DoubleVector
+//getNodeCoordinatesNonconst(const stk::mesh::Entity * nodeEntity) const;
 
 Teuchos::RCP<const Epetra_Map>
 getNodesMap() const;
@@ -143,8 +151,16 @@ getNumEdgesPerCell( unsigned int cellDimension ) const;
 unsigned int
 getCellDimension( const unsigned int numLocalNodes ) const;
 
+const DoubleVector
+getVectorFieldNonconst(const stk::mesh::Entity * nodeEntity,
+                       const std::string & fieldName,
+                       const int numDims
+                       ) const;
+
 protected:
 private:
+
+const int numDim_;
 
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
 const Teuchos::RCP<Teuchos::Time> computeEdgeCoefficientsTime_;
@@ -153,24 +169,23 @@ const Teuchos::RCP<Teuchos::Time> writeTime_;
 
 const Epetra_Comm &comm_;
 
-const Teuchos::RCP<stk::mesh::fem::FEMMetaData> metaData_;
+stk::mesh::fem::FEMMetaData metaData_;
 const Teuchos::RCP<stk::io::MeshData> meshData_;
-const Teuchos::RCP<stk::mesh::BulkData> bulkData_;
-const Teuchos::RCP<const VectorFieldType> coordinatesField_;
+mutable stk::mesh::BulkData bulkData_;
 
-const std::vector<stk::mesh::Entity*> ownedNodes_;
+std::vector<stk::mesh::Entity*> ownedNodes_;
 
-const Teuchos::RCP<const Epetra_Map> nodesMap_;
-const Teuchos::RCP<const Epetra_Map> nodesOverlapMap_;
-const Teuchos::RCP<const Epetra_Map> complexMap_;
-const Teuchos::RCP<const Epetra_Map> complexOverlapMap_;
+Teuchos::RCP<const Epetra_Map> nodesMap_;
+Teuchos::RCP<const Epetra_Map> nodesOverlapMap_;
+Teuchos::RCP<const Epetra_Map> complexMap_;
+Teuchos::RCP<const Epetra_Map> complexOverlapMap_;
 
 mutable bool fvmEntitiesUpToDate_;
 
-const Teuchos::RCP<Epetra_Vector> controlVolumes_;
+Teuchos::RCP<Epetra_Vector> controlVolumes_;
 mutable bool controlVolumesUpToDate_;
 
-const Teuchos::RCP<Epetra_Vector> averageThickness_;
+Teuchos::RCP<Epetra_Vector> averageThickness_;
 
 mutable Teuchos::ArrayRCP<double> edgeCoefficients_;
 mutable bool edgeCoefficientsUpToDate_;
@@ -186,11 +201,38 @@ bool outputChannelIsOpen_;
 
 private:
 
+MPI_Comm
+epetraComm2mpiComm(const Epetra_Comm &comm) const;
+
+void
+my_populate_bulk_data_(stk::mesh::BulkData &bulk,
+                       Ioss::Region &region,
+                       stk::mesh::fem::FEMMetaData &fem_meta
+                       );
+
+Teuchos::RCP<Epetra_Vector>
+complexfield2vector_(const ScalarFieldType &realField,
+                     const ScalarFieldType &imagField
+                     ) const;
+
+Teuchos::RCP<Epetra_Vector>
+field2vector_(const ScalarFieldType &field) const;
+
+Teuchos::RCP<Epetra_MultiVector>
+field2vector_(const VectorFieldType &field,
+              const int numComponents
+              ) const;
+
 std::vector<stk::mesh::Entity*>
 buildOwnedNodes_() const;
 
-Teuchos::ArrayRCP<const DoubleVector>
-getNodeCoordinates_( const stk::mesh::PairIterRelation &relation ) const;
+double
+getScalarFieldNonconst(const stk::mesh::Entity * nodeEntity,
+                       const std::string & fieldName
+                       ) const;
+
+//Teuchos::ArrayRCP<const DoubleVector>
+//getNodeCoordinates_( const stk::mesh::PairIterRelation &relation ) const;
 
 void
 computeEdgeCoefficients_() const;

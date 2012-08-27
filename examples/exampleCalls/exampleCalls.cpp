@@ -13,7 +13,6 @@
 #include <Epetra_Vector.h>
 
 #include "Nosh_StkMesh.hpp"
-#include "Nosh_Helpers.hpp"
 #include "Nosh_ScalarField_Constant.hpp"
 #include "Nosh_MatrixBuilder_Keo.hpp"
 #include "Nosh_MatrixBuilder_Laplace.hpp"
@@ -65,21 +64,12 @@ int main(int argc, char *argv[])
     myClp.parse(argc, argv);
     // =======================================================================
     // Read the data from the file.
-    Teuchos::ParameterList data;
     const int step = 0;
-    Nosh::Helpers::StkMeshRead(*eComm, dataFile, step, data);
-    // Cast the data into something more accessible.
-    const RCP<Nosh::StkMesh> & mesh =
-      data.get<RCP<Nosh::StkMesh> >( "mesh" );
-    const RCP<const Epetra_MultiVector> & mvpValues =
-      data.get("A", RCP<const Epetra_MultiVector>() );
-    RCP<Epetra_Vector> psi =
-      data.get("psi", RCP<Epetra_Vector>() );
+    RCP<Nosh::StkMesh> mesh = rcp(new Nosh::StkMesh(*eComm, dataFile, 0));
 
-    //const RCP<Epetra_Vector> & potentialValues =
-      //data.get("V", RCP<Epetra_Vector>());
-    //const RCP<Epetra_Vector> & thickness =
-      //data.get( "thickness", RCP<Epetra_Vector>() );
+    // Cast the data into something more accessible.
+    RCP<Epetra_Vector> psi = mesh->createComplexVector("psi");
+    RCP<Epetra_MultiVector> mvpValues = mesh->createMultiVector("A");
 
     // Set the thickness field.
     RCP<Nosh::ScalarField::Virtual> thickness =
@@ -95,7 +85,7 @@ int main(int argc, char *argv[])
     // (b1) 'A' explicitly given in file.
     const double initMu = 0.0;
     RCP<Nosh::VectorField::Virtual> mvp =
-      rcp(new Nosh::VectorField::ExplicitValues(mesh, mvpValues, initMu));
+      rcp(new Nosh::VectorField::ExplicitValues(*mesh, *mvpValues, initMu));
     const RCP<Nosh::MatrixBuilder::Virtual> matrixBuilder =
       rcp(new Nosh::MatrixBuilder::Keo(mesh, thickness, mvp));
 

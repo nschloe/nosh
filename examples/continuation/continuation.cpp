@@ -17,7 +17,6 @@
 #include <Piro_Epetra_LOCASolver.hpp>
 
 #include "Nosh_StkMesh.hpp"
-#include "Nosh_Helpers.hpp"
 #include "Nosh_ScalarField_Constant.hpp"
 #include "Nosh_MatrixBuilder_Keo.hpp"
 #include "Nosh_MatrixBuilder_Laplace.hpp"
@@ -105,20 +104,12 @@ int main(int argc, char *argv[])
     Teuchos::ParameterList initialParameterValues =
       piroParams->sublist("Initial parameter values", true);
 
-    // Read the data.
-    Teuchos::ParameterList data;
-    Nosh::Helpers::StkMeshRead(*eComm, dataFile, step, data);
+    // Read the data from the file.
+    RCP<Nosh::StkMesh> mesh = rcp(new Nosh::StkMesh(*eComm, dataFile, 0));
+
     // Cast the data into something more accessible.
-    const RCP<Nosh::StkMesh> & mesh =
-      data.get<RCP<Nosh::StkMesh> >( "mesh" );
-    const RCP<const Epetra_MultiVector> & mvpValues =
-      data.get<RCP<const Epetra_MultiVector> >("A");
-    RCP<Epetra_Vector> psi =
-      data.get<RCP<Epetra_Vector> >("psi");
-    //const RCP<Epetra_Vector> & potentialValues =
-      //data.get("V");
-    //const RCP<Epetra_Vector> & thickness =
-      //data.get("thickness");
+    RCP<Epetra_Vector> psi = mesh->createComplexVector("psi");
+    RCP<const Epetra_MultiVector> mvpValues = mesh->createMultiVector("A");
 
     // Set the output directory for later plotting with this.
     mesh->openOutputChannel(outputDirectory, "solution");
@@ -137,7 +128,7 @@ int main(int argc, char *argv[])
     // (b1) 'A' explicitly given in file.
     const double initMu = initialParameterValues.get<double>("mu");
     RCP<Nosh::VectorField::Virtual> mvp =
-      rcp(new Nosh::VectorField::ExplicitValues(mesh, mvpValues, initMu));
+      rcp(new Nosh::VectorField::ExplicitValues(*mesh, *mvpValues, initMu));
     const RCP<Nosh::MatrixBuilder::Virtual> matrixBuilder =
       rcp(new Nosh::MatrixBuilder::Keo(mesh, thickness, mvp));
 
@@ -285,7 +276,7 @@ int main(int argc, char *argv[])
         piroParams->sublist("LOCA").sublist("Bifurcation");
 
       // Fetch the (approximate) null state.
-      RCP<Epetra_Vector> & nullstateZ = data.get<RCP<Epetra_Vector> >("null");
+      RCP<Epetra_Vector> nullstateZ = mesh->createVector("null");
 
       // Set the length normalization vector to be the initial null vector.
       TEUCHOS_ASSERT( !nullstateZ.is_null() );

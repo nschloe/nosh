@@ -27,22 +27,55 @@ namespace Nosh {
 namespace VectorField {
 // ============================================================================
 ExplicitValues::
-ExplicitValues(const Teuchos::RCP<Nosh::StkMesh> &mesh,
-               const Teuchos::RCP<const Epetra_MultiVector> &values,
+ExplicitValues(const Nosh::StkMesh &mesh,
+               const Epetra_MultiVector &values,
                const double initMu
                ) :
-  mesh_( mesh ),
-  values_( values ),
   initMu_( initMu ),
-  edgeProjectionCache_( Teuchos::ArrayRCP<double>() ),
-  edgeProjectionCacheUptodate_( false )
+  edgeProjectionCache_( Teuchos::ArrayRCP<double>(mesh.getEdgeNodes().size()) )
 {
 #ifndef NDEBUG
-  TEUCHOS_ASSERT( !mesh_.is_null() );
+  TEUCHOS_ASSERT_EQUALITY(values.NumVectors(), 3);
+#endif
+  // Initialize the cache.
+  const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > edges =
+    mesh.getEdgeNodes();
+
+  // Loop over all edges and create the cache.
+  for ( unsigned int k=0; k<edges.size(); k++ )
+  {
+    // Get the two end points.
+    Teuchos::Tuple<int,2> lid;
+    lid[0] = values.Map().LID( edges[k][0]->identifier() - 1 );
+    lid[1] = values.Map().LID( edges[k][1]->identifier() - 1 );
+
+#ifndef NDEBUG
+    TEUCHOS_TEST_FOR_EXCEPT_MSG( lid[0] < 0,
+                         "The global index " <<
+                         edges[k][0]->identifier() - 1
+                         << " does not seem to be present on this node." );
+    TEUCHOS_TEST_FOR_EXCEPT_MSG( lid[1] < 0,
+                         "The global index " <<
+                         edges[k][1]->identifier() - 1
+                         << " does not seem to be present on this node." );
 #endif
 
-  edgeProjectionCache_ =
-    Teuchos::ArrayRCP<double>( mesh_->getEdgeNodes().size() );
+    // Approximate the value at the midpoint of the edge
+    // by the average of the values at the adjacent nodes.
+    DoubleVector valueEdgeMidpoint( 3 );
+    for (int i=0; i<3; i++ )
+      valueEdgeMidpoint[i] = 0.5
+                           * ((*values(i))[lid[0]] + (*values(i))[lid[1]]);
+
+    // extract the nodal coordinates
+    DoubleVector edge = mesh.getVectorFieldNonconst(edges[k][1],
+                                                     "coordinates", 3);
+    edge -= mesh.getVectorFieldNonconst(edges[k][0],
+                                         "coordinates", 3);
+
+    //edgeProjectionCache_[k] = edge.dot( valueEdgeMidpoint );
+    edgeProjectionCache_[k] = valueEdgeMidpoint.dot(edge);
+  }
 
   return;
 }
@@ -78,9 +111,6 @@ getEdgeProjection(const unsigned int edgeIndex,
                   const Teuchos::Array<double> & params
                   ) const
 {
-  if ( !edgeProjectionCacheUptodate_ )
-    this->initializeEdgeMidpointCache_();
-
   return params[0] * edgeProjectionCache_[edgeIndex];
 }
 // ============================================================================
@@ -92,61 +122,7 @@ getDEdgeProjectionDp(const unsigned int edgeIndex,
                      ) const
 {
   TEUCHOS_ASSERT_EQUALITY(parameterIndex, 0);
-
-  if ( !edgeProjectionCacheUptodate_ )
-    this->initializeEdgeMidpointCache_();
-
   return edgeProjectionCache_[edgeIndex];
-}
-// ============================================================================
-void
-ExplicitValues::
-initializeEdgeMidpointCache_() const
-{
-#ifndef NDEBUG
-  TEUCHOS_ASSERT( !mesh_.is_null() );
-  TEUCHOS_ASSERT( !values_.is_null() );
-#endif
-
-  const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > edges =
-    mesh_->getEdgeNodes();
-
-  // Loop over all edges and create the cache.
-  for ( unsigned int k=0; k<edges.size(); k++ )
-  {
-    // Get the two end points.
-    Teuchos::Tuple<int,2> lid;
-    lid[0] = values_->Map().LID( edges[k][0]->identifier() - 1 );
-    lid[1] = values_->Map().LID( edges[k][1]->identifier() - 1 );
-
-#ifndef NDEBUG
-    TEUCHOS_TEST_FOR_EXCEPT_MSG( lid[0] < 0,
-                         "The global index " <<
-                         edges[k][0]->identifier() - 1
-                         << " does not seem to be present on this node." );
-    TEUCHOS_TEST_FOR_EXCEPT_MSG( lid[1] < 0,
-                         "The global index " <<
-                         edges[k][1]->identifier() - 1
-                         << " does not seem to be present on this node." );
-#endif
-
-    // Approximate the value at the midpoint of the edge
-    // by the average of the values at the adjacent nodes.
-    DoubleVector valueEdgeMidpoint( 3 );
-    for (int i=0; i<3; i++ )
-      valueEdgeMidpoint[i] = 0.5
-                           * ((*(*values_)(i))[lid[0]] + (*(*values_)(i))[lid[1]]);
-
-    // extract the nodal coordinates
-    DoubleVector edge = mesh_->getNodeCoordinatesNonconst( edges[k][1] );
-    edge -= mesh_->getNodeCoordinatesNonconst( edges[k][0] );
-
-    //edgeProjectionCache_[k] = edge.dot( valueEdgeMidpoint );
-    edgeProjectionCache_[k] = valueEdgeMidpoint.dot(edge);
-  }
-
-  edgeProjectionCacheUptodate_ = true;
-  return;
 }
 // ============================================================================
 } // namespace VectorField

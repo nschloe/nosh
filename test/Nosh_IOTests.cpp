@@ -29,7 +29,6 @@
 #include <LOCA_Parameter_Vector.H>
 
 #include "Nosh_StkMesh.hpp"
-#include "Nosh_Helpers.hpp"
 
 #include <Teuchos_UnitTestHarness.hpp>
 
@@ -60,13 +59,13 @@ testKeo( const std::string & inputFileNameBase,
       inputFileName = inputFileNameBase + "-balanced.par";
     // =========================================================================
     // Read the data from the file.
-    Teuchos::ParameterList data;
-    Nosh::Helpers::StkMeshRead( *eComm, inputFileName, 0, data );
+    Nosh::StkMesh mesh(*eComm, inputFileName, 0);
 
     // Cast the data into something more accessible.
-    Teuchos::RCP<Nosh::StkMesh> & mesh = data.get( "mesh", Teuchos::RCP<Nosh::StkMesh>() );
-    Teuchos::RCP<Epetra_Vector> & psi = data.get( "psi", Teuchos::RCP<Epetra_Vector>() );
-    Teuchos::RCP<const Epetra_MultiVector> & mvpValues = data.get( "A", Teuchos::RCP<const Epetra_MultiVector>() );
+    const Teuchos::RCP<const Epetra_Vector> psi =
+      mesh.createComplexVector("psi");
+    const Teuchos::RCP<const Epetra_MultiVector> mvpValues =
+      mesh.createMultiVector("A");
 
     // Check psi.
     double r;
@@ -78,7 +77,7 @@ testKeo( const std::string & inputFileNameBase,
     // Check MVP.
     // Only check the infinity-norm here as all other norms
     // only apply to vectors with non-overlapping maps.
-    Teuchos::Array<double> R(3);
+    Teuchos::Array<double> R(mvpValues->NumVectors());
     TEUCHOS_ASSERT_EQUALITY(0, mvpValues->NormInf(R.getRawPtr()));
     TEST_COMPARE_FLOATING_ARRAYS(R, mvpControlNormsInf, 1.0e-12);
 

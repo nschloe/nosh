@@ -223,7 +223,7 @@ void
 KeoRegularized::
 rebuild(const double g,
         const Teuchos::Array<double> & mvpParams,
-        const Teuchos::RCP<const Epetra_Vector> & psi
+        const Epetra_Vector & x
         )
 {
   // Copy over the matrix.
@@ -246,45 +246,76 @@ rebuild(const double g,
   // Add 2*g*|psi|^2 to the diagonal.
   if (g > 0.0)
   {
-    const Teuchos::RCP<const Epetra_Vector> absPsiSquared =
-      this->getAbsPsiSquared_(psi);
-#ifndef NDEBUG
-    TEUCHOS_ASSERT(regularizedMatrix_.RowMap().SameAs(absPsiSquared->Map()));
-#endif
-    Epetra_Vector diag(regularizedMatrix_.RowMap());
-    TEUCHOS_ASSERT_EQUALITY(0, regularizedMatrix_.ExtractDiagonalCopy(diag));
-    TEUCHOS_ASSERT_EQUALITY(0, diag.Update(g*2.0, *absPsiSquared, 1.0));
-    TEUCHOS_ASSERT_EQUALITY(0, regularizedMatrix_.ReplaceDiagonalValues(diag));
+    // To be added to the diagonal blocks:
+    //
+    // [alpha + gamma, beta         ]
+    // [beta,          alpha - gamma].
+    //
+    // We could also ahead and only add alpha to the diagonal, i.e.,
+    //
+    //const Teuchos::RCP<const Epetra_Vector> absPsiSquared =
+    //  this->getAbsPsiSquared_(x);
+//#ifndef NDEBUG
+    //TEUCHOS_ASSERT(regularizedMatrix_.RowMap().SameAs(absPsiSquared->Map()));
+//#endif
+    //Epetra_Vector diag(regularizedMatrix_.RowMap());
+    //TEUCHOS_ASSERT_EQUALITY(0, regularizedMatrix_.ExtractDiagonalCopy(diag));
+    //TEUCHOS_ASSERT_EQUALITY(0, diag.Update(g*2.0, *absPsiSquared, 1.0));
+    //TEUCHOS_ASSERT_EQUALITY(0, regularizedMatrix_.ReplaceDiagonalValues(diag));
+    //
+    const Epetra_Vector &controlVolumes = *(mesh_->getControlVolumes());
+    int idx[2];
+    double vals[2];
+    for (int k=0; k<controlVolumes.MyLength(); k++)
+    {
+      const double alpha = g * controlVolumes[k] * thickness_->getV(k)
+                         * 2.0 * (x[2*k]*x[2*k] + x[2*k+1]*x[2*k+1]);
+
+      const double beta = g * controlVolumes[k] * thickness_->getV(k)
+                        * (2.0 * x[2*k] * x[2*k+1]);
+
+      const double gamma = g * controlVolumes[k] * thickness_->getV(k)
+                         * (x[2*k]*x[2*k] - x[2*k+1]*x[2*k+1]);
+
+      // TODO check if the indices are correct here
+      idx[0] = 2*k;
+      idx[1] = 2*k + 1;
+      vals[0] = alpha + gamma;
+      vals[1] = beta;
+      TEUCHOS_ASSERT_EQUALITY(0, regularizedMatrix_.SumIntoMyValues(2*k, 2, vals, idx));
+      vals[0] = beta;
+      vals[1] = alpha - gamma;
+      TEUCHOS_ASSERT_EQUALITY(0, regularizedMatrix_.SumIntoMyValues(2*k+1, 2, vals, idx));
+    }
   }
 
   this->rebuildInverse_();
   return;
 }
 // =============================================================================
-const Teuchos::RCP<const Epetra_Vector>
-KeoRegularized::
-getAbsPsiSquared_(const Teuchos::RCP<const Epetra_Vector> &psi)
-{
-#ifndef NDEBUG
-  TEUCHOS_ASSERT( !mesh_.is_null() );
-  TEUCHOS_ASSERT( !thickness_.is_null() );
-  TEUCHOS_ASSERT( !psi.is_null() );
-#endif
-  const Teuchos::RCP<Epetra_Vector> absPsiSquared =
-    Teuchos::rcp(new Epetra_Vector(*mesh_->getComplexNonOverlapMap()));
-
-  const Teuchos::RCP<const Epetra_Vector> &controlVolumes =
-    mesh_->getControlVolumes();
-  int numMyPoints = controlVolumes->MyLength();
-  for (int k=0; k<numMyPoints; k++)
-  {
-    double alpha = (*controlVolumes)[k] * thickness_->getV(k)
-                 * ((*psi)[2*k]*(*psi)[2*k] + (*psi)[2*k+1]*(*psi)[2*k+1]);
-    (*absPsiSquared)[2*k] = alpha;
-    (*absPsiSquared)[2*k+1] = alpha;
-  }
-  return absPsiSquared;
-}
+//const Teuchos::RCP<const Epetra_Vector>
+//KeoRegularized::
+//getAbsPsiSquared_(const Epetra_Vector &psi)
+//{
+//#ifndef NDEBUG
+//  TEUCHOS_ASSERT( !mesh_.is_null() );
+//  TEUCHOS_ASSERT( !thickness_.is_null() );
+//#endif
+//  const Teuchos::RCP<Epetra_Vector> absPsiSquared =
+//    Teuchos::rcp(new Epetra_Vector(psi.Map()));
+//
+//  const Teuchos::RCP<const Epetra_Vector> &controlVolumes =
+//    mesh_->getControlVolumes();
+//  int numMyPoints = controlVolumes->MyLength();
+//  for (int k=0; k<numMyPoints; k++)
+//  {
+//    double alpha = (*controlVolumes)[k] * thickness_->getV(k)
+//                 * (psi[2*k]*psi[2*k] + psi[2*k+1]*psi[2*k+1]);
+//    (*absPsiSquared)[2*k] = alpha;
+//    (*absPsiSquared)[2*k+1] = alpha;
+//  }
+//  return absPsiSquared;
+//}
 // =============================================================================
 void
 KeoRegularized::

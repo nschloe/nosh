@@ -29,7 +29,6 @@
 #include <LOCA_Parameter_Vector.H>
 
 #include "Nosh_StkMesh.hpp"
-#include "Nosh_Helpers.hpp"
 #include "Nosh_ScalarField_Constant.hpp"
 #include "Nosh_VectorField_ExplicitValues.hpp"
 #include "Nosh_MatrixBuilder_Keo.hpp"
@@ -65,21 +64,17 @@ testKeo( const std::string & inputFileNameBase,
       inputFileName = inputFileNameBase + "-balanced.par";
     // =========================================================================
     // Read the data from the file.
-    Teuchos::ParameterList data;
-    Nosh::Helpers::StkMeshRead( *eComm, inputFileName, 0, data );
+    Teuchos::RCP<Nosh::StkMesh> mesh =
+      Teuchos::rcp(new Nosh::StkMesh(*eComm, inputFileName, 0));
 
     // Cast the data into something more accessible.
-    Teuchos::RCP<Nosh::StkMesh> & mesh =
-      data.get( "mesh", Teuchos::RCP<Nosh::StkMesh>() );
-    Teuchos::RCP<Epetra_Vector> & z =
-      data.get( "psi", Teuchos::RCP<Epetra_Vector>() );
-    Teuchos::RCP<const Epetra_MultiVector> & mvpValues =
-      data.get( "A", Teuchos::RCP<const Epetra_MultiVector>() );
-    Teuchos::RCP<Epetra_Vector> & thicknessValues =
-      data.get( "thickness", Teuchos::RCP<Epetra_Vector>() );
+    Teuchos::RCP<Epetra_Vector> z =
+      mesh->createComplexVector("psi");
+    const Teuchos::RCP<const Epetra_MultiVector> mvpValues =
+      mesh->createMultiVector("A");
 
     Teuchos::RCP<Nosh::VectorField::Virtual> mvp =
-      Teuchos::rcp(new Nosh::VectorField::ExplicitValues(mesh, mvpValues, initMu));
+      Teuchos::rcp(new Nosh::VectorField::ExplicitValues(*mesh, *mvpValues, initMu));
 
     // Set the thickness field.
     Teuchos::RCP<Nosh::ScalarField::Virtual> thickness =
