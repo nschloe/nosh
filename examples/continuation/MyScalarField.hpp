@@ -33,10 +33,14 @@ class StkMesh;
 
 #include "Nosh_ScalarField_Virtual.hpp"
 // =============================================================================
+using Teuchos::RCP;
+using Teuchos::rcp;
+using Teuchos::Array;
+// =============================================================================
 class MyScalarField: public Nosh::ScalarField::Virtual
 {
 public:
-MyScalarField(const Teuchos::RCP<const Nosh::StkMesh> & mesh);
+MyScalarField(const RCP<const Nosh::StkMesh> & mesh);
 
 Epetra_Vector
 createPInit_(const Epetra_Map & map);
@@ -46,30 +50,30 @@ createPInit_(const Epetra_Map & map);
 virtual
 double
 getV(const unsigned int nodeIndex,
-     const Teuchos::Array<double> & p
+     const Array<double> & p
      ) const;
 
 virtual
 double
 getdVdP(const unsigned int nodeIndex,
         const unsigned int parameterIndex,
-        const Teuchos::Array<double> & p
+        const Array<double> & p
         ) const;
 
 //! Gets the parameters from this module.
 virtual
-Teuchos::RCP<const Teuchos::Array<double> >
+RCP<const Array<double> >
 get_p_init() const;
 
 //! Get the parameter names.
 virtual
-Teuchos::RCP<const Teuchos::Array<std::string> >
+RCP<const Array<std::string> >
 get_p_names() const;
 
 protected:
 private:
 
-const Teuchos::RCP<const Nosh::StkMesh> mesh_;
+const RCP<const Nosh::StkMesh> mesh_;
 
 };
 #endif // MYSCALARFIELD_H_

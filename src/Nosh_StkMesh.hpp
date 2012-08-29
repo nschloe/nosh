@@ -83,7 +83,7 @@ openOutputChannel(const string &outputDir,
 
 void
 write(const Epetra_Vector & psi,
-      const int index
+      const double time
       ) const;
 
 Teuchos::RCP<Epetra_Vector>

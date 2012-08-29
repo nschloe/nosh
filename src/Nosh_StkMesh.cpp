@@ -737,7 +737,7 @@ openOutputChannel(const string &outputDir,
 void
 StkMesh::
 write(const Epetra_Vector & psi,
-      const int index
+      const double time
       ) const
 {
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
@@ -753,7 +753,6 @@ write(const Epetra_Vector & psi,
   TEUCHOS_ASSERT(outputChannelIsOpen_);
 
   // Write it out to the file that's been specified in mesh_.
-  double time = index;
   int out_step = stk::io::process_output_request(*meshData_, bulkData_, time);
 
   return;

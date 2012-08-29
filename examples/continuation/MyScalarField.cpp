@@ -24,7 +24,7 @@
 
 // ============================================================================
 MyScalarField::
-MyScalarField(const Teuchos::RCP<const Nosh::StkMesh> & mesh):
+MyScalarField(const RCP<const Nosh::StkMesh> & mesh):
   mesh_( mesh )
 {
 }
@@ -34,24 +34,24 @@ MyScalarField::
 {
 }
 // ============================================================================
-Teuchos::RCP<const Teuchos::Array<std::string> >
+RCP<const Array<std::string> >
 MyScalarField::
 get_p_names() const
 {
-  return Teuchos::rcp(new Teuchos::Array<std::string>(1, "tau"));
+  return rcp(new Array<std::string>(1, "tau"));
 }
 // ============================================================================
-Teuchos::RCP<const Teuchos::Array<double> >
+RCP<const Array<double> >
 MyScalarField::
 get_p_init() const
 {
-  return Teuchos::rcp(new Teuchos::Array<double>(1, 0.0));
+  return rcp(new Array<double>(1, 0.0));
 }
 // ============================================================================
 double
 MyScalarField::
 getV(const unsigned int nodeIndex,
-     const Teuchos::Array<double> & p
+     const Array<double> & p
      ) const
 {
 #ifndef NDEBUG
@@ -71,7 +71,7 @@ double
 MyScalarField::
 getdVdP(const unsigned int nodeIndex,
         const unsigned int parameterIndex,
-        const Teuchos::Array<double> & p
+        const Array<double> & p
         ) const
 {
   TEUCHOS_ASSERT_EQUALITY(parameterIndex, 0);

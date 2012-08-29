@@ -50,7 +50,8 @@ public:
 //! Constructor
 Observer(const Teuchos::RCP<const Nosh::ModelEvaluator::Virtual> &modelEval,
          const std::string & filename,
-         const Observer::EObserverType &problemType
+         const Observer::EObserverType &problemType,
+         const std::string & contParamName = ""
          );
 
 //! Destructor
@@ -79,6 +80,7 @@ private:
 const Teuchos::RCP<const Nosh::ModelEvaluator::Virtual> modelEval_;
 Nosh::CsvWriter csvWriter_;
 const EObserverType observerType_;
+const std::string contParamName_;
 
 };
 

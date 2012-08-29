@@ -28,11 +28,13 @@ namespace Nosh {
 Observer::
 Observer(const Teuchos::RCP<const Nosh::ModelEvaluator::Virtual> &modelEval,
          const std::string & filename,
-         const Observer::EObserverType &observerType
-          ) :
+         const Observer::EObserverType &observerType,
+         const std::string & contParamName
+         ) :
   modelEval_(modelEval),
   csvWriter_(filename, " "),
-  observerType_(observerType)
+  observerType_(observerType),
+  contParamName_(contParamName)
 {
 }
 // ============================================================================
@@ -74,9 +76,35 @@ observeContinuation_(const Epetra_Vector &soln)
   static int index = -1;
   index++;
 
+  double time;
+  if (!contParamName_.empty())
+  {
+    // Extract parameter value.
+#ifndef NDEBUG
+    TEUCHOS_ASSERT( !modelEval_.is_null() );
+    TEUCHOS_ASSERT( !modelEval_->get_p_latest().is_null() );
+#endif
+    Teuchos::RCP<const Epetra_Vector> meParams =
+      modelEval_->get_p_latest();
+    Teuchos::RCP<const Teuchos::Array<std::string> > names =
+      modelEval_->get_p_names(0);
+    for (int k=0; k<names->length(); k++)
+    {
+      if ((*names)[k] == contParamName_)
+      {
+        time = (*meParams)[k];
+        break;
+      }
+    }
+  }
+  else
+  {
+    time = index;
+  }
+
   this->saveContinuationStatistics_(index, soln);
 
-  modelEval_->getMesh()->write(soln, index);
+  modelEval_->getMesh()->write(soln, time);
 
   return;
 }
