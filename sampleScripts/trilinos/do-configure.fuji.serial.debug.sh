@@ -3,6 +3,7 @@ cmake \
   -D CMAKE_CXX_COMPILER="clang++" \
   -D CMAKE_INSTALL_PREFIX:PATH=/opt/trilinos/dev/master/clang/3.0/debug \
   -D CMAKE_BUILD_TYPE=Debug \
+  -D BUILD_SHARED_LIBS:BOOL=ON \
   -D TPL_ENABLE_MPI:BOOL=OFF \
   -D Trilinos_ENABLE_TEUCHOS_TIME_MONITOR=ON \
   -D Trilinos_ENABLE_NOX:BOOL=ON \

@@ -46,12 +46,12 @@ Laplace(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
 #endif
   mesh_( mesh ),
   thickness_( thickness ),
-  globalIndexCache_(Teuchos::ArrayRCP<Epetra_IntSerialDenseVector>()),
+  globalIndexCache_(),
   globalIndexCacheUpToDate_( false ),
   graph_(this->buildGraph_()), // build the graph immediately
-  matrixCache_(Epetra_FECrsMatrix(Copy, graph_)),
+  matrixCache_(Copy, graph_),
   matrixCacheUpToDate_( false ),
-  alphaCache_(Teuchos::ArrayRCP<double>()),
+  alphaCache_(),
   alphaCacheUpToDate_( false )
 {
 }

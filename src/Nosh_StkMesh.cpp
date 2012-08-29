@@ -80,7 +80,7 @@ StkMesh(const Epetra_Comm & comm,
   metaData_( numDim_ ),
   bulkData_(stk::mesh::fem::FEMMetaData::get_meta_data(metaData_),
             this->epetraComm2mpiComm(comm)),
-  meshData_( Teuchos::rcp( new stk::io::MeshData() ) ),
+  meshData_(Teuchos::rcp(new stk::io::MeshData())),
   ownedNodes_(),
   nodesMap_(),
   nodesOverlapMap_(),
@@ -90,9 +90,9 @@ StkMesh(const Epetra_Comm & comm,
   controlVolumes_(),
   controlVolumesUpToDate_( false ),
   averageThickness_(),
-  edgeCoefficients_( Teuchos::ArrayRCP<double>() ),
+  edgeCoefficients_(),
   edgeCoefficientsUpToDate_( false ),
-  edgeNodes_( Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> >() ),
+  edgeNodes_(),
   cellEdges_( Teuchos::null ),
   outputChannelIsOpen_(false)
 {
@@ -265,20 +265,33 @@ read(const Epetra_Comm &comm,
   stk::io::set_field_role(mvpField,
                           Ioss::Field::ATTRIBUTE);
 
+  // Note:
+  // Thickness and V are actually scalar fields. However, they are both
+  // declared VectorFields with 1 component here since otherwise
+  // SEACAS throws
+  //
+  //   p=0: *** Caught standard std::exception of type 'std::runtime_error' :
+  //
+  //   Expr '!(restr->not_equal_stride(tmp))' eval'd to true, throwing.
+  //   Error occured at: stk_mesh/stk_mesh/baseImpl/FieldBaseImpl.cpp:240
+  //   Error: std::mesh::MetaData::declare_field_restriction FAILED for FieldBaseImpl<double,Cartesian3d>[ name = "thickness" , #states = 1 ] { entity_rank(0) part({UNIVERSAL}) : 1 } WITH INCOMPATIBLE REDECLARATION { entity_rank(0) part({UNIVERSAL}) : 19754528 }
+  //
   // Thickness field. Same as above.
-  ScalarFieldType &thicknessField =
-    metaData_.declare_field<ScalarFieldType>("thickness");
+  VectorFieldType &thicknessField =
+    metaData_.declare_field<VectorFieldType>("thickness");
   stk::mesh::put_field(thicknessField,
                        metaData_.node_rank(),
-                       metaData_.universal_part());
+                       metaData_.universal_part(),
+                       1);
   stk::io::set_field_role(thicknessField, Ioss::Field::ATTRIBUTE);
 
   // Potential field. Same as above.
-  ScalarFieldType &potentialField =
-    metaData_.declare_field<ScalarFieldType>("V");
+  VectorFieldType &potentialField =
+    metaData_.declare_field<VectorFieldType>("V");
   stk::mesh::put_field(potentialField,
                        metaData_.node_rank(),
-                       metaData_.universal_part());
+                       metaData_.universal_part(),
+                       1);
   stk::io::set_field_role(potentialField, Ioss::Field::ATTRIBUTE);
   // ---------------------------------------------------------------------------
 

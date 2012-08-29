@@ -62,7 +62,7 @@ KeoRegularized(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
   // later on anyways. Keep it, though, as it doesn't waste any memory and is
   // in the spirit of the Trilinos::ModelEvaluator which asks for allocation
   // of memory at one point and filling it with meaningful values later on.
-  regularizedMatrix_(Epetra_FECrsMatrix(Copy, matrixBuilder_->getGraph())),
+  regularizedMatrix_(Copy, matrixBuilder_->getGraph()),
   comm_( matrixBuilder->getComm() ),
   MlPrec_( Teuchos::null ),
   numCycles_( 1 ),

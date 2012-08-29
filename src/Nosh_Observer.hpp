@@ -23,13 +23,14 @@
 #include <Teuchos_RCP.hpp>
 #include <Epetra_Vector.h>
 #include <NOX_Epetra_Observer.H>
+
+#include "Nosh_CsvWriter.hpp"
 // =============================================================================
 // forward declarations
 namespace Komplex2 {
 class LinearProblem;
 }
 namespace Nosh {
-class CsvWriter;
 namespace ModelEvaluator {
 class Virtual;
 }
@@ -76,7 +77,7 @@ saveContinuationStatistics_(const int stepIndex,
 private:
 
 const Teuchos::RCP<const Nosh::ModelEvaluator::Virtual> modelEval_;
-const Teuchos::RCP<Nosh::CsvWriter> csvWriter_;
+Nosh::CsvWriter csvWriter_;
 const EObserverType observerType_;
 
 };

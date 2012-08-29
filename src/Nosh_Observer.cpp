@@ -20,7 +20,6 @@
 
 #include "Nosh_Observer.hpp"
 
-#include "Nosh_CsvWriter.hpp"
 #include "Nosh_ModelEvaluator_Virtual.hpp"
 #include "Nosh_StkMesh.hpp"
 
@@ -32,7 +31,7 @@ Observer(const Teuchos::RCP<const Nosh::ModelEvaluator::Virtual> &modelEval,
          const Observer::EObserverType &observerType
           ) :
   modelEval_(modelEval),
-  csvWriter_(new Nosh::CsvWriter(filename, " ")),
+  csvWriter_(filename, " "),
   observerType_(observerType)
 {
 }
@@ -112,33 +111,30 @@ saveContinuationStatistics_(const int stepIndex,
                             const Epetra_Vector &soln
                             )
 {
-  if ( !csvWriter_.is_null() )
-  {
-    // Construct parameter list to stuff into the csvWriter_.
-    Teuchos::ParameterList paramList;
-    paramList.set( "(0) step", stepIndex );
-    // Model evaluator parameters.
+  // Construct parameter list to stuff into the csvWriter_.
+  Teuchos::ParameterList paramList;
+  paramList.set( "(0) step", stepIndex );
+  // Model evaluator parameters.
 #ifndef NDEBUG
-    TEUCHOS_ASSERT( !modelEval_.is_null() );
-    TEUCHOS_ASSERT( !modelEval_->get_p_latest().is_null() );
+  TEUCHOS_ASSERT( !modelEval_.is_null() );
+  TEUCHOS_ASSERT( !modelEval_->get_p_latest().is_null() );
 #endif
-    Teuchos::RCP<const Epetra_Vector> meParams =
-      modelEval_->get_p_latest();
-    // TODO cache this
-    Teuchos::RCP<const Teuchos::Array<std::string> > names =
-      modelEval_->get_p_names(0);
-    for (int k=0; k<names->length(); k++)
-      paramList.set("(1) "+(*names)[k], (*meParams)[k]);
-    // Some extra stats.
-    paramList.set( "(2) Gibbs energy", modelEval_->gibbsEnergy(soln) );
-    paramList.set( "(2) ||x||_2 scaled", modelEval_->normalizedScaledL2Norm(soln) );
+  Teuchos::RCP<const Epetra_Vector> meParams =
+    modelEval_->get_p_latest();
+  // TODO cache this
+  Teuchos::RCP<const Teuchos::Array<std::string> > names =
+    modelEval_->get_p_names(0);
+  for (int k=0; k<names->length(); k++)
+    paramList.set("(1) "+(*names)[k], (*meParams)[k]);
+  // Some extra stats.
+  paramList.set( "(2) Gibbs energy", modelEval_->gibbsEnergy(soln) );
+  paramList.set( "(2) ||x||_2 scaled", modelEval_->normalizedScaledL2Norm(soln) );
 
-    // Write out header.
-    if (stepIndex == 0)
-      csvWriter_->writeHeader(paramList);
-    // Write out the data.
-    csvWriter_->writeRow(paramList);
-  }
+  // Write out header.
+  if (stepIndex == 0)
+    csvWriter_.writeHeader(paramList);
+  // Write out the data.
+  csvWriter_.writeRow(paramList);
   return;
 }
 // ============================================================================

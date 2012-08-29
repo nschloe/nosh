@@ -49,13 +49,13 @@ Keo(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
   mesh_( mesh ),
   thickness_( thickness ),
   mvp_( mvp ),
-  globalIndexCache_(Teuchos::ArrayRCP<Epetra_IntSerialDenseVector>()),
+  globalIndexCache_(),
   globalIndexCacheUpToDate_( false ),
   keoGraph_(this->buildKeoGraph_()), // build the graph immediately
-  keoCache_(Epetra_FECrsMatrix(Copy, keoGraph_)),
-  keoBuildParameters_( Teuchos::null ),
-  keoDpCache_(Epetra_FECrsMatrix(Copy, keoGraph_)),
-  alphaCache_(Teuchos::ArrayRCP<double>()),
+  keoCache_(Copy, keoGraph_),
+  keoBuildParameters_(Teuchos::null),
+  keoDpCache_(Copy, keoGraph_),
+  alphaCache_(),
   alphaCacheUpToDate_( false ),
   paramIndex_(0)
 {

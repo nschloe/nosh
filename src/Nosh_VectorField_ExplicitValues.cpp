@@ -27,22 +27,19 @@ namespace Nosh {
 namespace VectorField {
 // ============================================================================
 ExplicitValues::
-ExplicitValues(const Nosh::StkMesh &mesh,
+ExplicitValues(const Nosh::StkMesh & mesh,
                const std::string & fieldName,
                const double initMu
                ) :
   initMu_( initMu ),
   edgeProjectionCache_( Teuchos::ArrayRCP<double>(mesh.getEdgeNodes().size()) )
 {
-#ifndef NDEBUG
-  TEUCHOS_ASSERT_EQUALITY(values.NumVectors(), 3);
-#endif
   // Initialize the cache.
   const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > edges =
     mesh.getEdgeNodes();
 
   // Loop over all edges and create the cache.
-  for ( unsigned int k=0; k<edges.size(); k++ )
+  for (unsigned int k=0; k<edges.size(); k++)
   {
     // Approximate the value at the midpoint of the edge
     // by the average of the values at the adjacent nodes.
@@ -50,7 +47,7 @@ ExplicitValues(const Nosh::StkMesh &mesh,
     av += mesh.getVectorFieldNonconst(edges[k][1], fieldName, 3);
     av *= 0.5;
 
-    // extract the nodal coordinates
+    // Extract the nodal coordinates.
     DoubleVector edge = mesh.getVectorFieldNonconst(edges[k][1],
                                                     "coordinates", 3);
     edge -= mesh.getVectorFieldNonconst(edges[k][0],

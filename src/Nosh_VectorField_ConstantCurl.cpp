@@ -38,7 +38,7 @@ ConstantCurl(const Teuchos::RCP<Nosh::StkMesh> &mesh,
   rotatedBCacheAngle_(0.0),
   dRotatedBDThetaCache_(*b_),
   rotateddBdThetaCacheAngle_(0.0),
-  edgeCache_( Teuchos::ArrayRCP<DoubleVector>() ),
+  edgeCache_(),
   edgeCacheUptodate_( false )
 {
 #ifndef NDEBUG

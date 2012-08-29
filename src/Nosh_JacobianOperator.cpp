@@ -40,9 +40,9 @@ JacobianOperator(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
   scalarPotential_( scalarPotential ),
   thickness_( thickness ),
   matrixBuilder_( matrixBuilder ),
-  keo_(Epetra_FECrsMatrix(Copy, matrixBuilder_->getGraph())),
-  diag0_(Epetra_Vector(*(mesh->getComplexNonOverlapMap()))),
-  diag1b_(Epetra_Vector(mesh->getControlVolumes()->Map()))
+  keo_(Copy, matrixBuilder_->getGraph()),
+  diag0_(*(mesh->getComplexNonOverlapMap())),
+  diag1b_(mesh->getControlVolumes()->Map())
 {
 }
 // =============================================================================
