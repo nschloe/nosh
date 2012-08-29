@@ -27,10 +27,11 @@
 #include <LOCA_Parameter_SublistParser.H>
 #include <LOCA_Stepper.H>
 #include <NOX_Epetra_Vector.H>
+
+#include "Nosh_CsvWriter.hpp"
 // =============================================================================
 // forward declarations
 namespace Nosh {
-class CsvWriter;
 namespace ModelEvaluator {
 class Virtual;
 }
@@ -51,10 +52,10 @@ public:
 //      const Teuchos::RCP<Teuchos::ParameterList>& eigenParams      );
 
 // Constructor
-SaveEigenData ( Teuchos::ParameterList &eigenParamList,
-                const Teuchos::RCP<const Nosh::ModelEvaluator::Virtual> &modelEval,
-                const Teuchos::RCP<Nosh::CsvWriter> &statsWriter
-                );
+SaveEigenData(Teuchos::ParameterList &eigenParamList,
+              const Teuchos::RCP<const Nosh::ModelEvaluator::Virtual> &modelEval,
+              const std::string & fileName
+              );
 
 virtual
 ~SaveEigenData();
@@ -79,7 +80,7 @@ protected:
 private:
 Teuchos::RCP<Teuchos::ParameterList> eigenParamListPtr_;
 const Teuchos::RCP<const Nosh::ModelEvaluator::Virtual> modelEval_;
-const Teuchos::RCP<const Nosh::CsvWriter> csvWriter_;
+Nosh::CsvWriter csvWriter_;
 Teuchos::RCP<LOCA::Stepper> locaStepper_;
 
 //! If \c true, then the number of eigenvalues is computed adaptively.

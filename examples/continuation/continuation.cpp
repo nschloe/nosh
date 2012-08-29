@@ -236,13 +236,10 @@ int main(int argc, char *argv[])
                                         + "/"
                                         + outputList.get<std::string> ( "Eigenvalues file name" );
 
-        RCP<Nosh::CsvWriter> eigenCsvWriter =
-          rcp( new Nosh::CsvWriter( eigenvaluesFilePath ) );
-
         glEigenSaver =
           RCP<Nosh::SaveEigenData>(new Nosh::SaveEigenData(eigenList,
                                                            modelEvaluator,
-                                                           eigenCsvWriter));
+                                                           eigenvaluesFilePath));
 
         RCP<LOCA::SaveEigenData::AbstractStrategy> glSaveEigenDataStrategy =
           glEigenSaver;

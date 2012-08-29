@@ -21,7 +21,6 @@
 #include "Nosh_SaveEigenData.hpp"
 
 #include "Nosh_ModelEvaluator_Virtual.hpp"
-#include "Nosh_CsvWriter.hpp"
 
 #include <NOX_Abstract_MultiVector.H>
 #include <AnasaziSortManager.hpp>
@@ -31,12 +30,12 @@ namespace Nosh {
 SaveEigenData::
 SaveEigenData(Teuchos::ParameterList &eigenParamList,
               const Teuchos::RCP<const Nosh::ModelEvaluator::Virtual> &modelEval,
-              const Teuchos::RCP<Nosh::CsvWriter> &csvWriter
+              const std::string & fileName
               ) :
   eigenParamListPtr_(Teuchos::rcpFromRef<Teuchos::ParameterList>(
                        eigenParamList) ),
   modelEval_( modelEval ),
-  csvWriter_( csvWriter ),
+  csvWriter_(fileName, " "),
   locaStepper_( Teuchos::null ),
   numComputeStableEigenvalues_( 6 )
 {
@@ -157,8 +156,8 @@ save( Teuchos::RCP<std::vector<double> > &evals_r,
 
   // Write out the data.
   if (step == 0)
-    csvWriter_->writeHeader(eigenvaluesList);
-  csvWriter_->writeRow(eigenvaluesList);
+    csvWriter_.writeHeader(eigenvaluesList);
+  csvWriter_.writeRow(eigenvaluesList);
 
 //     eigenFileStream << step << "\t";
 //     eigenFileStream << numUnstableEigenvalues << "\t";

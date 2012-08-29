@@ -60,8 +60,7 @@ Nls(
   p_latest_(Teuchos::null),
   matrixBuilder_(matrixBuilder),
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
-  evalModelTime_( Teuchos::TimeMonitor::getNewTimer(
-                    "Nosh: Nls::evalModel" ) ),
+  evalModelTime_(Teuchos::TimeMonitor::getNewTimer("Nosh: Nls::evalModel")),
   computeFTime_( Teuchos::TimeMonitor::getNewTimer(
                    "Nosh: Nls::evalModel:compute F" ) ),
   computedFdpTime_( Teuchos::TimeMonitor::getNewTimer(
@@ -273,7 +272,7 @@ evalModel(const InArgs &inArgs,
           ) const
 {
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
-  Teuchos::TimeMonitor tm0( *evalModelTime_ );
+  Teuchos::TimeMonitor tm0(*evalModelTime_);
 #endif
 
   const double alpha = inArgs.get_alpha();
