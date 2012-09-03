@@ -90,6 +90,9 @@ getEdgeProjection(const unsigned int edgeIndex,
                   const Teuchos::Array<double> & params
                   ) const
 {
+#ifndef NDEBUG
+  TEUCHOS_ASSERT_EQUALITY(params.length(), 0);
+#endif
   return params[0] * edgeProjectionCache_[edgeIndex];
 }
 // ============================================================================
@@ -100,6 +103,9 @@ getDEdgeProjectionDp(const unsigned int edgeIndex,
                      const unsigned int parameterIndex
                      ) const
 {
+#ifndef NDEBUG
+  TEUCHOS_ASSERT_EQUALITY(params.length(), 0);
+#endif
   TEUCHOS_ASSERT_EQUALITY(parameterIndex, 0);
   return edgeProjectionCache_[edgeIndex];
 }

@@ -63,13 +63,13 @@ int main(int argc, char *argv[])
     );
 
     std::string xmlInputPath = "";
-    myClp.setOption ("xml-input-file", &xmlInputPath,
-                      "XML file containing the parameter list", true );
+    myClp.setOption("xml-input-file", &xmlInputPath,
+                    "XML file containing the parameter list", true );
 
     // Print warning for unrecognized arguments and make sure to throw an
     // exception if something went wrong.
-    myClp.recogniseAllOptions ( true );
-    myClp.throwExceptions(true);
+    //myClp.throwExceptions(false);
+    //myClp.recogniseAllOptions ( true );
 
     // Finally, parse the command line.
     myClp.parse(argc, argv);

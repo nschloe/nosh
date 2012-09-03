@@ -115,7 +115,10 @@ int main ( int argc, char *argv[] )
                             Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL);
     // =========================================================================
     // Read the data from the file.
-    RCP<Nosh::StkMesh> mesh = rcp(new Nosh::StkMesh(*eComm, inputFilePath, 0));
+    RCP<Nosh::StkMesh> mesh = rcp(new Nosh::StkMesh(*eComm, inputFilePath, step));
+
+    const double time = mesh->getTime();
+    mu = time;
 
     // Cast the data into something more accessible.
     RCP<Epetra_Vector> psi = mesh->createComplexVector("psi");
@@ -130,8 +133,8 @@ int main ( int argc, char *argv[] )
         mvp = rcp(new Nosh::VectorField::ExplicitValues(*mesh, "A", mu));
       else
       {
-        RCP<Nosh::StkMesh> mesh2 = rcp(new Nosh::StkMesh(*eComm, mvpFilePath, 0));
-        mvp = rcp(new Nosh::VectorField::ExplicitValues(*mesh2, "A", mu));
+        Nosh::StkMesh mesh2(*eComm, mvpFilePath, 0);
+        mvp = rcp(new Nosh::VectorField::ExplicitValues(mesh2, "A", mu));
       }
     }
 
@@ -166,15 +169,12 @@ int main ( int argc, char *argv[] )
     // Create and fill Jacobian.
     RCP<Teuchos::Time> jacobianConstructTime =
       Teuchos::TimeMonitor::getNewTimer("Operator construction");
-    RCP<Epetra_Vector> fx;
     RCP<Epetra_Operator> jac;
     RCP<Epetra_Operator> prec;
     // Fill outArgs.
     modelEvaluator->evalModel(inArgs, outArgs);
     {
       Teuchos::TimeMonitor tm(*jacobianConstructTime);
-      //fx = rcp(new Epetra_Vector(*modelEvaluator->get_f_map()));
-      //outArgs.set_f(fx);
       // Get the Jacobian.
       jac = modelEvaluator->create_W();
       outArgs.set_W(jac);
@@ -185,12 +185,23 @@ int main ( int argc, char *argv[] )
       }
       modelEvaluator->evalModel(inArgs, outArgs);
       // Now, jac and prec contain the operators.
+      // Reset outArgs.
+      outArgs.set_W(Teuchos::null);
+      outArgs.set_WPrec(Teuchos::null);
     }
 
-    //// Check ||F(x)||.
-    //double r;
-    //fx->Norm2(&r);
-    //*out << "||F(x)|| = " << r << std::endl;
+    bool checkFx = true;
+    if (checkFx)
+    {
+      RCP<Epetra_Vector> fx =
+        rcp(new Epetra_Vector(*modelEvaluator->get_f_map()));
+      outArgs.set_f(fx);
+      modelEvaluator->evalModel(inArgs, outArgs);
+      // Check ||F(x)||.
+      double r;
+      fx->Norm2(&r);
+      *out << "||F(x)|| = " << r << std::endl;
+    }
 
     // Create the eigensolver.
     // Create an Epetra_MultiVector for an initial vector to start the solver.

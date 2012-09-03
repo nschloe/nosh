@@ -76,6 +76,9 @@ read(const Epetra_Comm &comm,
      const int index
      );
 
+double
+getTime() const;
+
 void
 openOutputChannel(const string &outputDir,
                   const string &fileBaseName
@@ -198,6 +201,8 @@ Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > edgeNodes_;
 Teuchos::ArrayRCP<Teuchos::ArrayRCP<int> > cellEdges_;
 
 bool outputChannelIsOpen_;
+
+double time_;
 
 private:
 

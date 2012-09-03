@@ -14,6 +14,11 @@ cmake \
   -D Trilinos_ENABLE_SEACASNemslice:BOOL=ON \
   -D Trilinos_ENABLE_SEACASNemspread:BOOL=ON \
   -D TPL_ENABLE_Netcdf:BOOL=ON \
+  -D Trilinos_INSTALL_INCLUDE_DIR:PATH=include/trilinos \
   ../../source
+#  -D CMAKE_BUILD_TYPE=None \
+#  -D Trilinos_ENABLE_DEVELOPMENT_MODE:BOOL=OFF \
+#  -D CMAKE_CXX_FLAGS="-Werror=format-security" \
+#  -D CMAKE_CXX_FLAGS="-Werror=format-security" \
 #      -D Netcdf_LIBRARY_DIRS:PATH=/usr/local/ \
 #      -D TPL_Netcdf_INCLUDE_DIRS:PATH=/usr/local/ \

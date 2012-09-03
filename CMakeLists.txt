@@ -5,39 +5,31 @@ FIND_PACKAGE(Trilinos REQUIRED)
 # Set compilers before the PROJECT is declared.
 SET(CMAKE_CXX_COMPILER ${Trilinos_CXX_COMPILER})
 
-PROJECT(Nosh CXX)
-
-set(NOSH_MAJOR_VERSION 10)
+set(NOSH_MAJOR_VERSION 11)
 set(NOSH_MINOR_VERSION 0)
 set(NOSH_PATCH_VERSION 0)
 set(Nosh_VERSION
   ${NOSH_MAJOR_VERSION}.${NOSH_MINOR_VERSION}.${NOSH_PATCH_VERSION})
 
-ENABLE_TESTING()
 
-IF(DEFINED CMAKE_BUILD_TYPE)
-   SET(CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE} CACHE STRING "Choose the type of
-build, options are: None(CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used) Debug
-Profile Release RelWithDebInfo MinSizeRel.")
-ELSE()
-   SET(CMAKE_BUILD_TYPE Debug CACHE STRING "Choose the type of build,
+IF(NOT DEFINED CMAKE_BUILD_TYPE)
+   SET(CMAKE_BUILD_TYPE None CACHE STRING "Choose the type of build,
 options are: None(CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used) Debug Profile
 Release RelWithDebInfo MinSizeRel.")
 ENDIF()
 
-STRING(COMPARE EQUAL ${CMAKE_BUILD_TYPE} "Debug" IS_DEBUG_BUILD)
-IF( IS_DEBUG_BUILD )
-    # Don't do optimization for debug builds.
-    SET(CMAKE_CXX_FLAGS_DEBUG "-O0 ${CMAKE_CXX_FLAGS_DEBUG}")
-ELSE()
-    # Add support for timing for non-debug builds.
-    ADD_DEFINITIONS( -DNOSH_TEUCHOS_TIME_MONITOR )
-ENDIF()
+PROJECT(Nosh CXX)
+ENABLE_TESTING()
 
-IF(CMAKE_COMPILER_IS_GNUCXX)
-    SET(CMAKE_CXX_FLAGS_DEBUG "-O0 -g -ggdb -Wall -pedantic -fbounds-check -Wextra -Wno-unused -Wstrict-null-sentinel -Wshadow -Woverloaded-virtual -ansi -std=c++0x" )
-    SET(CMAKE_CXX_FLAGS_PROFILE "-pg -O2" )
-ENDIF()
+#IF(NOT ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+#    # Add support for timing for non-debug builds.
+#    ADD_DEFINITIONS(-DNOSH_TEUCHOS_TIME_MONITOR)
+#ENDIF()
+
+#IF(CMAKE_COMPILER_IS_GNUCXX)
+#    SET(CMAKE_CXX_FLAGS_DEBUG "-O0 -g -ggdb -Wall -pedantic -fbounds-check -Wextra -Wno-unused -Wstrict-null-sentinel -Wshadow -Woverloaded-virtual -ansi -std=c++0x" )
+#    SET(CMAKE_CXX_FLAGS_PROFILE "-pg -O2" )
+#ENDIF()
 
 # Offer the user the choice of overriding the installation directories
 set(INSTALL_LIB_DIR lib CACHE PATH "Installation directory for libraries")

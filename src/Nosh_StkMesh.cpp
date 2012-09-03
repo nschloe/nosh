@@ -69,6 +69,7 @@ StkMesh(const Epetra_Comm & comm,
         const std::string & fileName,
         const int index
         ) :
+  numDim_( 3 ),
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   computeEdgeCoefficientsTime_(Teuchos::TimeMonitor::getNewTimer(
                                   "Nosh: StkMesh::computeEdgeCoefficients")),
@@ -76,11 +77,10 @@ StkMesh(const Epetra_Comm & comm,
                                   "Nosh: StkMesh::write")),
 #endif
   comm_( comm ),
-  numDim_( 3 ),
   metaData_( numDim_ ),
+  meshData_(Teuchos::rcp(new stk::io::MeshData())),
   bulkData_(stk::mesh::fem::FEMMetaData::get_meta_data(metaData_),
             this->epetraComm2mpiComm(comm)),
-  meshData_(Teuchos::rcp(new stk::io::MeshData())),
   ownedNodes_(),
   nodesMap_(),
   nodesOverlapMap_(),
@@ -94,7 +94,8 @@ StkMesh(const Epetra_Comm & comm,
   edgeCoefficientsUpToDate_( false ),
   edgeNodes_(),
   cellEdges_( Teuchos::null ),
-  outputChannelIsOpen_(false)
+  outputChannelIsOpen_(false),
+  time_(0.0)
 {
   this->read(comm, fileName, index);
   // Create all the maps.
@@ -361,26 +362,17 @@ read(const Epetra_Comm &comm,
   }
 #endif
 
-
-//  data.setName("data");
-//  data.set("psi", complexfield2vector_(psir_field, psii_field));
-//  Teuchos::RCP<const Epetra_MultiVector> mvp =
-//    field2vector_(mvpField, 3);
-//  data.set("A", mvp);
-
-  // Check of the thickness data is of any value. If not: ditch it.
-//  Teuchos::RCP<Epetra_Vector> thickness =
-//    scalarfield2vector_(mesh, thicknessField);
-//// These are vain attempts to find out whether thicknessField is actually empty.
-//     const stk::mesh::FieldBase::RestrictionVector & restrictions = thicknessField.restrictions();
-//     TEUCHOS_ASSERT( !restrictions.empty() );
-//     *out << "max_size " << thicknessField.max_size(metaData_.node_rank()) << std::endl;
-//  data.set("thickness", thickness);
-
-  // create scalar potential
-//  data.set("V", scalarfield2vector_(mesh, potentialField));
+  // Extract time value.
+  time_ = meshData_->m_input_region->get_state_time(index+1);
 
   return;
+}
+// =============================================================================
+double
+StkMesh::
+getTime() const
+{
+  return time_;
 }
 // =============================================================================
 void
@@ -679,9 +671,9 @@ field2vector_(const VectorFieldType &field,
 
 #ifndef NDEBUG
   // Check for NaNs and uninitialized data.
-  double r[numComponents];
+  std::vector<double> r(numComponents);
   // Use NormInf as it's robust against overlapping maps.
-  TEUCHOS_ASSERT_EQUALITY(0, vector->NormInf( r ));
+  TEUCHOS_ASSERT_EQUALITY(0, vector->NormInf(&r[0]));
   bool makesSense = true;
   for (int i=0; i<numComponents; i++)
   {
