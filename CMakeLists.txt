@@ -1,4 +1,12 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8.8)
+
+# Explicitly set this property to TRUE.
+# This should be the case by default, but a CMake bug
+# doesn't set it. (2012-09-04)
+# If this is fixed in a future version of CMake,
+# this following statement can be removed.
+SET_PROPERTY(GLOBAL PROPERTY
+             TARGET_SUPPORTS_SHARED_LIBS TRUE)
 
 FIND_PACKAGE(Trilinos REQUIRED)
 
@@ -32,9 +40,9 @@ ENABLE_TESTING()
 #ENDIF()
 
 # Offer the user the choice of overriding the installation directories
-set(INSTALL_LIB_DIR lib CACHE PATH "Installation directory for libraries")
-set(INSTALL_BIN_DIR bin CACHE PATH "Installation directory for executables")
-set(INSTALL_INCLUDE_DIR include CACHE PATH "Installation directory for header files")
+SET(INSTALL_LIB_DIR lib CACHE PATH "Installation directory for libraries")
+SET(INSTALL_BIN_DIR bin CACHE PATH "Installation directory for executables")
+SET(INSTALL_INCLUDE_DIR include CACHE PATH "Installation directory for header files")
 if(WIN32 AND NOT CYGWIN)
   set(DEF_INSTALL_CMAKE_DIR CMake)
 else()
@@ -43,18 +51,10 @@ endif()
 set(INSTALL_CMAKE_DIR ${DEF_INSTALL_CMAKE_DIR} CACHE PATH
   "Installation directory for CMake files")
 
-# Make relative paths absolute (needed later on)
-foreach(p LIB BIN INCLUDE CMAKE)
-  set(var INSTALL_${p}_DIR)
-  if(NOT IS_ABSOLUTE "${${var}}")
-    set(${var} "${CMAKE_INSTALL_PREFIX}/${${var}}")
-  endif()
-endforeach()
-
-add_subdirectory( src )
-add_subdirectory( examples )
-add_subdirectory( test )
-
+# Add subdirectories after INSTALL_BIN_DIR has been set.
+ADD_SUBDIRECTORY( src )
+ADD_SUBDIRECTORY( examples )
+ADD_SUBDIRECTORY( test )
 
 # Add all targets to the build-tree export set
 export(TARGETS nosh cont
@@ -63,33 +63,26 @@ export(TARGETS nosh cont
 # Export the package for use from the build-tree
 # (this registers the build-tree with a global CMake-registry)
 export(PACKAGE nosh)
- 
-# Create a NoshBuildTreeSettings.cmake file for the use from the build tree
-configure_file(NoshBuildTreeSettings.cmake.in
-               "${PROJECT_BINARY_DIR}/NoshTreeSettings.cmake" @ONLY)
 
 # Set some variables that are later exported
 SET(Nosh_CONFIG_LIBRARIES "nosh")
 
-# Create the NoshConfig.cmake and NoshConfigVersion files
-file(RELATIVE_PATH Nosh_CONFIG_INCLUDE_DIRS
-     "${INSTALL_CMAKE_DIR}"
-     "${INSTALL_INCLUDE_DIR}")
-file(RELATIVE_PATH Nosh_CONFIG_LIBRARY_DIRS
-     "${INSTALL_CMAKE_DIR}"
-     "${INSTALL_LIB_DIR}")
-configure_file(NoshConfig.cmake.in
-               "${PROJECT_BINARY_DIR}/NoshConfig.cmake" @ONLY)
-configure_file(NoshConfigVersion.cmake.in
-               "${PROJECT_BINARY_DIR}/NoshConfigVersion.cmake" @ONLY)
+INCLUDE(CMakePackageConfigHelpers)
+CONFIGURE_PACKAGE_CONFIG_FILE("NoshConfig.cmake.in"
+                              "NoshConfig.cmake"
+                              INSTALL_DESTINATION "${CMAKE_CURRENT_BINARY_DIR}"
+                              PATH_VARS INSTALL_INCLUDE_DIR INSTALL_LIB_DIR)
 
-# Install the export set for use with the install-tree
-install(EXPORT NoshLibraryDepends
+WRITE_BASIC_PACKAGE_VERSION_FILE(${CMAKE_CURRENT_BINARY_DIR}/NoshConfigVersion.cmake
+                                 VERSION ${Nosh_VERSION}
+                                 COMPATIBILITY SameMajorVersion)
+
+# Install the export set for use with the install-tree.
+INSTALL(EXPORT NoshLibraryDepends
         DESTINATION "lib/cmake/Nosh"
         COMPONENT dev)
-        #"${INSTALL_DATA_DIR}/Nosh/CMake"
 
-install(FILES
+INSTALL(FILES
         "${PROJECT_BINARY_DIR}/NoshConfig.cmake"
         "${PROJECT_BINARY_DIR}/NoshConfigVersion.cmake"
         DESTINATION "${INSTALL_CMAKE_DIR}")

@@ -25,7 +25,7 @@ TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
                        ${Trilinos_LIBRARIES}
                        ${Trilinos_TPL_LIBRARIES} )
 INSTALL(TARGETS ${MY_EXECUTABLE}
-        # IMPORTANT: Add the bar executable to the "export-set"
+        # IMPORTANT: Add the executable to the "export-set"
         EXPORT NoshLibraryDepends
         RUNTIME DESTINATION "${INSTALL_BIN_DIR}" COMPONENT bin)
 # ------------------------------------------------------------------------------
