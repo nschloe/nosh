@@ -1,6 +1,11 @@
 cmake \
   -D CMAKE_INSTALL_PREFIX:PATH=/opt/trilinos/dev/master/gcc/4.6.3/release \
   -D CMAKE_BUILD_TYPE=Debug \
+  -D CMAKE_CXX_FLAGS="-Werror=format-security" \
+  -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON \
+  -D Trilinos_ENABLE_SECONDARY_STABLE_CODE:BOOL=ON \
+  -D Trilinos_ENABLE_PyTrilinos:BOOL=OFF \
+  -D TPL_ENABLE_Matio:BOOL=OFF \
   -D TPL_ENABLE_MPI:BOOL=OFF \
   -D Trilinos_ENABLE_TEUCHOS_TIME_MONITOR=ON \
   -D Trilinos_ENABLE_NOX:BOOL=ON \
