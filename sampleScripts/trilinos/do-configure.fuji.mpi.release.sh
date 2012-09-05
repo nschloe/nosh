@@ -1,7 +1,7 @@
 cmake \
-  -D CMAKE_INSTALL_PREFIX:PATH=/opt/trilinos/dev/master/openmpi/1.4.3/gcc/4.7.1/release \
+  -D CMAKE_INSTALL_PREFIX:PATH=/opt/trilinos/dev/openmpi/1.4.3/gcc/4.7.1/release/shared \
   -D CMAKE_BUILD_TYPE=Release \
-  -D BUILD_SHARED_LIBS:BOOL=OFF \
+  -D BUILD_SHARED_LIBS:BOOL=ON \
   -D TPL_ENABLE_MPI:BOOL=ON \
   -D Trilinos_ENABLE_TEUCHOS_TIME_MONITOR=ON \
   -D Trilinos_ENABLE_NOX:BOOL=ON \

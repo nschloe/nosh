@@ -13,11 +13,11 @@ FIND_PACKAGE(Trilinos REQUIRED)
 # Set compilers before the PROJECT is declared.
 SET(CMAKE_CXX_COMPILER ${Trilinos_CXX_COMPILER})
 
-set(NOSH_MAJOR_VERSION 11)
-set(NOSH_MINOR_VERSION 0)
-set(NOSH_PATCH_VERSION 0)
+set(Nosh_MAJOR_VERSION 11)
+set(Nosh_MINOR_VERSION 0)
+set(Nosh_PATCH_VERSION 0)
 set(Nosh_VERSION
-  ${NOSH_MAJOR_VERSION}.${NOSH_MINOR_VERSION}.${NOSH_PATCH_VERSION})
+  ${Nosh_MAJOR_VERSION}.${Nosh_MINOR_VERSION}.${Nosh_PATCH_VERSION})
 
 
 IF(NOT DEFINED CMAKE_BUILD_TYPE)
@@ -53,7 +53,7 @@ set(INSTALL_CMAKE_DIR ${DEF_INSTALL_CMAKE_DIR} CACHE PATH
 
 # Add subdirectories after INSTALL_BIN_DIR has been set.
 ADD_SUBDIRECTORY( src )
-ADD_SUBDIRECTORY( examples )
+ADD_SUBDIRECTORY( executables )
 ADD_SUBDIRECTORY( test )
 
 # Add all targets to the build-tree export set
@@ -70,7 +70,7 @@ SET(Nosh_CONFIG_LIBRARIES "nosh")
 INCLUDE(CMakePackageConfigHelpers)
 CONFIGURE_PACKAGE_CONFIG_FILE("NoshConfig.cmake.in"
                               "NoshConfig.cmake"
-                              INSTALL_DESTINATION "${CMAKE_CURRENT_BINARY_DIR}"
+                              INSTALL_DESTINATION "${PROJECT_BINARY_DIR}"
                               PATH_VARS INSTALL_INCLUDE_DIR INSTALL_LIB_DIR)
 
 WRITE_BASIC_PACKAGE_VERSION_FILE(${CMAKE_CURRENT_BINARY_DIR}/NoshConfigVersion.cmake
