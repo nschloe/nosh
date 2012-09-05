@@ -1,0 +1,48 @@
+SWISS CHEESE
+============
+
+This example highlights the solution of the extreme-type-II Ginzburg-Landau
+equations for a three-dimensional domain given by swiss-cheese.geo: A cube
+with edge length 10 that has a number of ball-shaped cavities
+
+Instructions for Nosh
+---------------------
+
+1. Create a VTK mesh file from the geometry.
+   To this end, open the swiss-cheese.geo with Gmsh,
+   
+   $ gmsh swiss-cheese.geo
+
+   Then choose "Mesh" and "3D". A mesh is generated.
+   You can optionally create a finer mesh ("Refine by splitting") or optimize
+   the mesh ("Optimize", "Optimize (Netgen)"). Refer to the Gmsh documentation
+   for more information.
+   Eventually, "Save As..." VTK file. It does not matter if the binary or the
+   ASCII format are chosen.
+
+2. Add values for psi and the magnetic vector potential.
+   Use tools/equip_mesh_with_state to convert the VTK file into Exodus format
+   while adding values for the order parameter psi and the magnetic vector
+   potential A.
+
+   $ tools/equip_mesh_with_state swiss-cheese.vtk swiss-cheese.e
+
+   By default, equip_mesh_with_state adds a vector potential that
+   corresponds to the field B=(0,0,1). It contains however other interesting
+   potentials and can be edited at will.
+   The file swiss-cheese.e can be inspected with, e.g., the free and
+   open-source visualizer ParaView.
+
+3. (Optional.) Split the file up for running on multiple processes.
+
+   $ tools/loadbal swiss-cheese.e -p 4 2
+
+   The parameter "-p" determines the process mesh, so for this setup, 4x2=8
+   files for parallel processing will be generated.
+
+4. Run the parameter continuation.
+
+   $ cont --xml-input-file=./conf.xml
+
+   The file conf.xml contains a plethora of parameters around the numerical
+   parameter continuation and can be edited to your liking.
