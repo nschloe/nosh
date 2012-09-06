@@ -35,14 +35,14 @@ Virtual();
 virtual
 double
 getV(const unsigned int nodeIndex,
-     const Teuchos::Array<double> & p = Teuchos::Array<double>()
+     const std::map<std::string,double> & params
      ) const = 0;
 
 virtual
 double
 getdVdP(const unsigned int nodeIndex,
-        const unsigned int parameterIndex,
-        const Teuchos::Array<double> & p
+        const std::map<std::string,double> & params,
+        const std::string & paramName
         ) const = 0;
 
 //! Gets the parameters from this module.

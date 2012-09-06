@@ -19,7 +19,7 @@
 
   <!-- Required: -->
   <ParameterList name="Initial parameter values">
-      <Parameter name="mu" type="double" value="2.507659024446560e-01"/>
+      <Parameter name="mu" type="double" value="0.0"/>
       <Parameter name="theta" type="double" value="0.0"/>
       <Parameter name="g" type="double" value="1.0"/>
       <Parameter name="T" type="double" value="0.0"/>

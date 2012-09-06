@@ -333,7 +333,8 @@ buildAlphaCache_( const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > & 
                          "The global index " << gid[1]
                          << " does not seem to be present on this node." );
 #endif
-    const double thickness = 0.5 * (thickness_->getV(tlid0) + thickness_->getV(tlid1));
+    std::map<std::string,double> dummy;
+    const double thickness = 0.5 * (thickness_->getV(tlid0, dummy) + thickness_->getV(tlid1, dummy));
     alphaCache_[k] = edgeCoefficients[k] * thickness;
   }
 

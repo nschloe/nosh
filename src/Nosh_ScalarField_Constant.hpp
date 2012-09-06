@@ -35,7 +35,9 @@ namespace ScalarField {
 class Constant: public Virtual
 {
 public:
-Constant(const double alpha
+Constant(const double c,
+         const std::string & param1Name = "",
+         const double param1InitValue = 0.0
          );
 
 Epetra_Vector
@@ -53,25 +55,25 @@ virtual
 Teuchos::RCP<const Teuchos::Array<double> >
 get_p_init() const;
 
-//! nodeIndex refers to the local index in the nonoverlapping
-//! nodes map.
 virtual
 double
 getV(const unsigned int nodeIndex,
-     const Teuchos::Array<double> & p = Teuchos::Array<double>()
+     const std::map<std::string,double> & params
      ) const;
 
 virtual
 double
 getdVdP(const unsigned int nodeIndex,
-        const unsigned int parameterIndex,
-        const Teuchos::Array<double> & p
+        const std::map<std::string,double> & params,
+        const std::string & paramName
         ) const;
 
 protected:
 private:
 
-const double alpha_;
+const double c_;
+const std::string param1Name_;
+const double param1InitValue_;
 
 };
 } // namespace ScalarField

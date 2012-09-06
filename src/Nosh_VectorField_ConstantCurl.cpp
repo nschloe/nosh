@@ -95,7 +95,7 @@ get_p_init() const
 double
 ConstantCurl::
 getEdgeProjection(const unsigned int edgeIndex,
-                  const Teuchos::Array<double> &params
+                  const std::map<std::string, double> & params
                   ) const
 {
   // A vector potential associated with the constant curl field RB is
@@ -117,48 +117,66 @@ getEdgeProjection(const unsigned int edgeIndex,
   if ( !edgeCacheUptodate_ )
     this->initializeEdgeCache_();
 
-  if (rotatedBCacheAngle_ != params[1])
+  // Get "theta".
+  std::map<std::string, double>::const_iterator itTheta = params.find("theta");
+  TEUCHOS_ASSERT(itTheta != params.end());
+  const double & theta = itTheta->second;
+
+  if (rotatedBCacheAngle_ != theta)
   {
     rotatedBCache_ = *b_;
-    this->rotate_(rotatedBCache_, *u_, params[1]);
-    rotatedBCacheAngle_ = params[1];
+    this->rotate_(rotatedBCache_, *u_, theta);
+    rotatedBCacheAngle_ = theta;
   }
 
-  return params[0] * rotatedBCache_.dot( edgeCache_[edgeIndex] );
+  std::map<std::string, double>::const_iterator itMu = params.find("mu");
+  TEUCHOS_ASSERT(itMu != params.end());
+  return itMu->second * rotatedBCache_.dot( edgeCache_[edgeIndex] );
 }
 // ============================================================================
 double
 ConstantCurl::
 getDEdgeProjectionDp(const unsigned int edgeIndex,
-                     const Teuchos::Array<double> &params,
-                     const unsigned int parameterIndex
+                     const std::map<std::string, double> & params,
+                     const std::string & paramName
                      ) const
 {
   // Update caches.
   if ( !edgeCacheUptodate_ )
     this->initializeEdgeCache_();
 
-  if (rotatedBCacheAngle_ != params[1])
+  // Get "theta".
+  std::map<std::string, double>::const_iterator itTheta = params.find("theta");
+  TEUCHOS_ASSERT(itTheta != params.end());
+  const double theta = itTheta->second;
+
+  if (rotatedBCacheAngle_ != theta)
   {
     rotatedBCache_ = *b_;
-    this->rotate_(rotatedBCache_, *u_, params[1]);
-    rotatedBCacheAngle_ = params[1];
+    this->rotate_(rotatedBCache_, *u_, theta);
+    rotatedBCacheAngle_ = theta;
   }
 
-  if (rotateddBdThetaCacheAngle_ != params[1])
+  if (rotateddBdThetaCacheAngle_ != theta)
   {
     dRotatedBDThetaCache_ = *b_;
-    this->dRotateDTheta_(dRotatedBDThetaCache_, *u_, params[1]);
-    rotateddBdThetaCacheAngle_ = params[1];
+    this->dRotateDTheta_(dRotatedBDThetaCache_, *u_, theta);
+    rotateddBdThetaCacheAngle_ = theta;
   }
 
-  if (parameterIndex == 0) // mu
+  if (paramName.compare("mu") == 0)
+  {
     return rotatedBCache_.dot( edgeCache_[edgeIndex] );
-  else if (parameterIndex == 1) // theta
-    return params[0] * dRotatedBDThetaCache_.dot( edgeCache_[edgeIndex] );
+  }
+  else if (paramName.compare("theta") == 0)
+  {
+    std::map<std::string, double>::const_iterator itMu = params.find("mu");
+    TEUCHOS_ASSERT(itMu != params.end());
+    return itMu->second * dRotatedBDThetaCache_.dot( edgeCache_[edgeIndex] );
+  }
   else
     TEUCHOS_TEST_FOR_EXCEPT_MSG(true,
-                                "Unknown parameter index " << parameterIndex << ".");
+                                "Illegal parameter \"" << paramName << "\".");
 }
 // ============================================================================
 void

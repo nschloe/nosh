@@ -57,14 +57,14 @@ get_p_init() const;
 virtual
 double
 getEdgeProjection(const unsigned int edgeIndex,
-                  const Teuchos::Array<double> &params
+                  const std::map<std::string, double> & params
                   ) const;
 
 virtual
 double
 getDEdgeProjectionDp(const unsigned int edgeIndex,
-                     const Teuchos::Array<double> &params,
-                     const unsigned int parameterIndex
+                     const std::map<std::string, double> & params,
+                     const std::string & dParam
                      ) const;
 
 protected:

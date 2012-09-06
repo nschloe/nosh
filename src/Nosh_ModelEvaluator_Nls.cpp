@@ -296,25 +296,18 @@ evalModel(const InArgs &inArgs,
   // is defined.
   const Teuchos::RCP<const Epetra_Vector> &p_in = inArgs.get_p(0);
 #ifndef NDEBUG
-    TEUCHOS_ASSERT( !p_in.is_null() );
-    for (int k=0; k<p_in->MyLength(); k++)
-      TEUCHOS_ASSERT( !std::isnan( (*p_in)[k] ) );
+  // Make sure the paremters aren't NaNs.
+  TEUCHOS_ASSERT( !p_in.is_null() );
+  for (int k=0; k<p_in->MyLength(); k++)
+    TEUCHOS_ASSERT( !std::isnan( (*p_in)[k] ) );
 #endif
-  int i = 0;
-  // Gather g.
-  const double g = (*p_in)[i++];
-  // Gather scalar potential parameters.
-  const int numSpParams = scalarPotential_->get_p_init()->length();
-  Teuchos::Array<double> spParams(numSpParams);
-  for (int k=0; k<numSpParams; k++)
-    spParams[k] = (*p_in)[i++];
-  // Gather vector potential parameters.
-  const int numMvpParams = matrixBuilder_->get_p_init()->length();
-  Teuchos::Array<double> eoParams(numMvpParams);
-  for (int k=0; k<numMvpParams; k++)
-    eoParams[k] = (*p_in)[i++];
-  // Make sure we arrived at the end of the vector.
-  TEUCHOS_ASSERT_EQUALITY(i, p_in->MyLength());
+
+  // Fill the parameters into a std::map.
+  const Teuchos::RCP<const Teuchos::Array<std::string> > paramNames =
+    this->get_p_names(0);
+  std::map<std::string, double> params;
+  for (int k=0; k<p_in->MyLength(); k++)
+    params[(*paramNames)[k]] = (*p_in)[k];
 
   // Store "current" parameters, used in this->getParameters().
   // Setting p_latest__=p_in here is really a somewhat arbitrary choice.
@@ -332,7 +325,7 @@ evalModel(const InArgs &inArgs,
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor tm1( *computeFTime_ );
 #endif
-    this->computeF_(*x_in, g, spParams, eoParams, *f_out);
+    this->computeF_(*x_in, params, *f_out);
   }
 
   // Compute df/dp.
@@ -350,30 +343,12 @@ evalModel(const InArgs &inArgs,
 #ifndef NDEBUG
     TEUCHOS_ASSERT_EQUALITY(numDerivs, dfdp_out->NumVectors());
 #endif
-    // Come up with something better here, e.g.,
-    // Initialize array of function pointers for derivative getters
-    // so they can easily be employed in a loop?
-    // Check out
-    // http://www.parashift.com/c++-faq-lite/pointers-to-members.html#faq-33.7
+    // Compute all derivatives.
     for (int k=0; k<numDerivs; k++)
-    {
-      if (paramIndices[k] < 1)
-        this->computeDFDg_(*x_in,
-                           *(*dfdp_out)(k));
-      else if (paramIndices[k] < 1 + numSpParams)
-        this->computeDFDPpotential_(*x_in,
-                                    spParams,
-                                    paramIndices[k] - 1,
-                                    *(*dfdp_out)(k));
-      else if (paramIndices[k] < 1 + numSpParams + numMvpParams)
-        this->computeDFDPeo_(*x_in,
-                             eoParams,
-                             paramIndices[k] - 1 - numSpParams,
-                             *(*dfdp_out)(k));
-      else
-        TEUCHOS_TEST_FOR_EXCEPT_MSG(true,
-                                    "Illegal parameter index " << paramIndices[k] << ". Abort.");
-    }
+      this->computeDFDP_(*x_in,
+                         params,
+                         (*paramNames)[paramIndices[k]],
+                         *(*dfdp_out)(k));
   }
 
   // Fill Jacobian.
@@ -385,7 +360,7 @@ evalModel(const InArgs &inArgs,
 #endif
     const Teuchos::RCP<Nosh::JacobianOperator> & jac =
       Teuchos::rcp_dynamic_cast<Nosh::JacobianOperator>(W_out, true);
-    jac->rebuild(g, spParams, eoParams, x_in);
+    jac->rebuild(params, x_in);
   }
 
   // Fill preconditioner.
@@ -397,7 +372,7 @@ evalModel(const InArgs &inArgs,
 #endif
     const Teuchos::RCP<Nosh::KeoRegularized> & keoPrec =
       Teuchos::rcp_dynamic_cast<Nosh::KeoRegularized>(WPrec_out, true);
-    keoPrec->rebuild(g, eoParams, *x_in);
+    keoPrec->rebuild(params, *x_in);
   }
 
   return;
@@ -406,14 +381,12 @@ evalModel(const InArgs &inArgs,
 void
 Nls::
 computeF_(const Epetra_Vector &x,
-          const double g,
-          const Teuchos::Array<double> & spParams,
-          const Teuchos::Array<double> & eoParams,
+          const std::map<std::string, double> & params,
           Epetra_Vector &FVec
           ) const
 {
   // Compute FVec = K*x.
-  matrixBuilder_->apply(eoParams, x, FVec);
+  matrixBuilder_->apply(params, x, FVec);
 
   // Add the nonlinear part (mass lumping).
 #ifndef NDEBUG
@@ -431,6 +404,9 @@ computeF_(const Epetra_Vector &x,
   TEUCHOS_ASSERT_EQUALITY(2*numMyPoints, x.MyLength());
 #endif
 
+  std::map<std::string, double>::const_iterator it = params.find("g");
+  TEUCHOS_ASSERT( it != params.end() );
+  const double g = it->second;
   for (int k=0; k<numMyPoints; k++)
   {
     // In principle, mass lumping here suggests to take
@@ -470,8 +446,8 @@ computeF_(const Epetra_Vector &x,
     // The indexing here assumes that the local index K of controlVolume's map
     // is known to be local by thickness and scalarPotential and known to be
     // associated with that map.
-    double alpha = controlVolumes[k] * thickness_->getV(k)
-                 * (scalarPotential_->getV(k, spParams) + g * (x[2*k]*x[2*k] + x[2*k+1]*x[2*k+1]));
+    double alpha = controlVolumes[k] * thickness_->getV(k, params)
+                 * (scalarPotential_->getV(k, params) + g * (x[2*k]*x[2*k] + x[2*k+1]*x[2*k+1]));
     // real and imaginary part
     FVec[2*k]   += alpha * x[2*k];
     FVec[2*k+1] += alpha * x[2*k+1];
@@ -482,10 +458,15 @@ computeF_(const Epetra_Vector &x,
 // ============================================================================
 void
 Nls::
-computeDFDg_(const Epetra_Vector &x,
+computeDFDP_(const Epetra_Vector &x,
+             const std::map<std::string, double> & params,
+             const std::string & paramName,
              Epetra_Vector &FVec
              ) const
 {
+  // FVec = dK/dp * x.
+  matrixBuilder_->applyDKDp(params, paramName, x, FVec);
+
 #ifndef NDEBUG
   TEUCHOS_ASSERT( FVec.Map().SameAs( x.Map() ) );
   TEUCHOS_ASSERT( !mesh_.is_null() );
@@ -498,61 +479,30 @@ computeDFDg_(const Epetra_Vector &x,
   TEUCHOS_ASSERT_EQUALITY( 2*controlVolumes.MyLength(), x.MyLength() );
 #endif
 
-  for ( int k=0; k<controlVolumes.MyLength(); k++ )
+  if (paramName.compare("g") == 0)
   {
-    double alpha = controlVolumes[k] * thickness_->getV(k)
-                 * (x[2*k]*x[2*k] + x[2*k+1]*x[2*k+1]);
-    // real and imaginary part
-    FVec[2*k]   = alpha * x[2*k];
-    FVec[2*k+1] = alpha * x[2*k+1];
+    for ( int k=0; k<controlVolumes.MyLength(); k++ )
+    {
+      // This assumes that "g" is not a parameter in either of the
+      // potentials.
+      double alpha = controlVolumes[k] * thickness_->getV(k, params)
+                   * (x[2*k]*x[2*k] + x[2*k+1]*x[2*k+1]);
+      // real and imaginary part
+      FVec[2*k]   += alpha * x[2*k];
+      FVec[2*k+1] += alpha * x[2*k+1];
+    }
   }
-
-  return;
-}
-// ============================================================================
-void
-Nls::
-computeDFDPpotential_(const Epetra_Vector &x,
-                      const Teuchos::Array<double> & spParams,
-                      int paramIndex,
-                      Epetra_Vector &FVec
-                      ) const
-{
-#ifndef NDEBUG
-  TEUCHOS_ASSERT( FVec.Map().SameAs( x.Map() ) );
-  TEUCHOS_ASSERT( !mesh_.is_null() );
-  TEUCHOS_ASSERT( !thickness_.is_null() );
-#endif
-
-  const Epetra_Vector &controlVolumes = *(mesh_->getControlVolumes());
-
-#ifndef NDEBUG
-  // Make sure control volumes and state still match.
-  TEUCHOS_ASSERT_EQUALITY(2*controlVolumes.MyLength(), x.MyLength());
-#endif
-
-  for ( int k=0; k<controlVolumes.MyLength(); k++ )
+  else
   {
-    double alpha = controlVolumes[k] * thickness_->getV(k)
-                 * scalarPotential_->getdVdP(k, paramIndex, spParams);
-    // real and imaginary part
-    FVec[2*k]   = alpha * x[2*k];
-    FVec[2*k+1] = alpha * x[2*k+1];
+    for ( int k=0; k<controlVolumes.MyLength(); k++ )
+    {
+      double alpha = controlVolumes[k] * thickness_->getV(k, params)
+                   * scalarPotential_->getdVdP(k, params, paramName);
+      // real and imaginary part
+      FVec[2*k]   += alpha * x[2*k];
+      FVec[2*k+1] += alpha * x[2*k+1];
+    }
   }
-
-  return;
-}
-// ============================================================================
-void
-Nls::
-computeDFDPeo_(const Epetra_Vector &x,
-                const Teuchos::Array<double> &eoParams,
-                int paramIndex,
-                Epetra_Vector &FVec
-                ) const
-{
-  // FVec = dK/dp * x.
-  matrixBuilder_->applyDKDp(eoParams, paramIndex, x, FVec);
 
   return;
 }

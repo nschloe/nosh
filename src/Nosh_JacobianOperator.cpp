@@ -166,9 +166,7 @@ OperatorRangeMap() const
 // =============================================================================
 void
 JacobianOperator::
-rebuild(const double g,
-        const Teuchos::Array<double> &spParams,
-        const Teuchos::Array<double> &mvpParams,
+rebuild(const std::map<std::string,double> params,
         const Teuchos::RCP<const Epetra_Vector> &current_X
         )
 {
@@ -198,21 +196,20 @@ rebuild(const double g,
   // Besides, the matrix copy that happens in fill
   // is not of much concern computationally.
   // Should this ever become an issue, revisit.
-  matrixBuilder_->fill(keo_, mvpParams);
+  matrixBuilder_->fill(keo_, params);
 
   // Rebuild diagonals.
 #ifndef NDEBUG
   TEUCHOS_ASSERT( !current_X.is_null() );
 #endif
-  this->rebuildDiags_(g, spParams, *current_X);
+  this->rebuildDiags_(params, *current_X);
 
   return;
 }
 // =============================================================================
 void
 JacobianOperator::
-rebuildDiags_(const double g,
-              const Teuchos::Array<double> &spParams,
+rebuildDiags_(const std::map<std::string,double> params,
               const Epetra_Vector &x
               )
 {
@@ -222,20 +219,23 @@ rebuildDiags_(const double g,
 
   const Epetra_Vector &controlVolumes = *(mesh_->getControlVolumes());
 
+  std::map<std::string, double>::const_iterator it = params.find("g");
+  TEUCHOS_ASSERT(it != params.end());
+  const double g = it->second;
   for (int k=0; k<controlVolumes.MyLength(); k++)
   {
     // rebuild diag0
-    const double alpha = controlVolumes[k] * thickness_->getV(k)
-                       * ( scalarPotential_->getV(k, spParams)
+    const double alpha = controlVolumes[k] * thickness_->getV(k, params)
+                       * ( scalarPotential_->getV(k, params)
                          + g * 2.0 * (x[2*k]*x[2*k] + x[2*k+1]*x[2*k+1])
                          );
-    const double realX2 = g * controlVolumes[k] * thickness_->getV(k)
+    const double realX2 = g * controlVolumes[k] * thickness_->getV(k, params)
                         * ( x[2*k]*x[2*k] - x[2*k+1]*x[2*k+1] );
     diag0_[2*k]   = alpha + realX2;
     diag0_[2*k+1] = alpha - realX2;
 
     // rebuild diag1b
-    diag1b_[k] = g * controlVolumes[k] * thickness_->getV(k)
+    diag1b_[k] = g * controlVolumes[k] * thickness_->getV(k, params)
                    * (2.0 * x[2*k] * x[2*k+1]);
   }
 

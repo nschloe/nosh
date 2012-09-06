@@ -56,13 +56,13 @@ get_p_names() const;
 
 double
 getEdgeProjection(const unsigned int edgeIndex,
-                  const Teuchos::Array<double> &params
+                  const std::map<std::string, double> & params
                   ) const;
 
 double
 getDEdgeProjectionDp(const unsigned int edgeIndex,
-                     const Teuchos::Array<double> &params,
-                     const unsigned int parameterIndex
+                     const std::map<std::string, double> & params,
+                     const std::string & dParamName
                      ) const;
 
 protected:

@@ -52,10 +52,9 @@ testJac( const std::string & inputFileNameBase,
     Teuchos::RCP<Epetra_Vector> psi =
       mesh->createComplexVector("psi");
 
-    const double g = 1.0;
-    Teuchos::Array<double> mvpParameters(1);
-    mvpParameters[0] = mu;
-    Teuchos::Array<double> spParameters(0);
+    std::map<std::string,double> params;
+    params["g"] = 1.0;
+    params["mu"] = mu;
 
     Teuchos::RCP<Nosh::VectorField::Virtual> mvp =
       Teuchos::rcp(new Nosh::VectorField::ExplicitValues(*mesh, "A", mu));
@@ -74,7 +73,7 @@ testJac( const std::string & inputFileNameBase,
     // create the jacobian operator
     Teuchos::RCP<Nosh::JacobianOperator> jac =
       Teuchos::rcp(new Nosh::JacobianOperator(mesh, sp, thickness, keoBuilder));
-    jac->rebuild(g, spParameters, mvpParameters, psi);
+    jac->rebuild(params, psi);
 
     double sum;
     const Epetra_Map & map = jac->OperatorDomainMap();

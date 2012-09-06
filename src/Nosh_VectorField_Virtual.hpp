@@ -41,14 +41,14 @@ virtual
 virtual
 double
 getEdgeProjection(const unsigned int edgeIndex,
-                  const Teuchos::Array<double> &params
+                  const std::map<std::string, double> & params
                   ) const = 0;
 
 virtual
 double
 getDEdgeProjectionDp(const unsigned int edgeIndex,
-                     const Teuchos::Array<double> &params,
-                     const unsigned int parameterIndex
+                     const std::map<std::string, double> & params,
+                     const std::string & dParamName
                      ) const = 0;
 
 //! Gets the current parameters from this module.

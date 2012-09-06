@@ -66,21 +66,21 @@ const Epetra_FECrsGraph &
 getGraph() const;
 
 void
-apply(const Teuchos::Array<double> &mvpParams,
+apply(const std::map<std::string, double> & params,
       const Epetra_Vector &X,
       Epetra_Vector &Y
       ) const;
 
 void
-applyDKDp(const Teuchos::Array<double> &mvpParams,
-          const int paramIndex,
+applyDKDp(const std::map<std::string, double> & params,
+          const std::string & paramName,
           const Epetra_Vector &X,
           Epetra_Vector &Y
           ) const;
 
 void
 fill(Epetra_FECrsMatrix &matrix,
-     const Teuchos::Array<double> &mvpParams
+     const std::map<std::string, double> & params
      ) const;
 
 //! Gets the initial parameters from this module.
@@ -101,19 +101,19 @@ buildKeoGraph_() const;
 
 void
 fillKeo_( Epetra_FECrsMatrix &keoMatrix,
-          const Teuchos::Array<double> &mvpParams,
-          void (Keo::*filler)(const int, const Teuchos::Array<double>&, double*) const
+          const std::map<std::string, double> & params,
+          void (Keo::*filler)(const int, const std::map<std::string,double>&, double*) const
           ) const;
 
 void
 fillerRegular_(const int k,
-               const Teuchos::Array<double> &mvpParams,
+               const std::map<std::string, double> & params,
                double * v
                ) const;
 
 void
 fillerDp_(const int k,
-          const Teuchos::Array<double> &mvpParams,
+          const std::map<std::string, double> & params,
           double * v
           ) const;
 
@@ -139,13 +139,13 @@ mutable bool globalIndexCacheUpToDate_;
 
 const Epetra_FECrsGraph keoGraph_;
 mutable Epetra_FECrsMatrix keoCache_;
-mutable Teuchos::Array<double> keoBuildParameters_;
+mutable std::map<std::string, double> keoBuildParameters_;
 mutable Epetra_FECrsMatrix keoDpCache_;
 
 
 mutable Teuchos::ArrayRCP<double> alphaCache_;
 mutable bool alphaCacheUpToDate_;
-mutable unsigned int paramIndex_;
+mutable std::string paramName_;
 };
 // =============================================================================
 } // namespace MatrixBuilder

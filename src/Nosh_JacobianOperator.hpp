@@ -88,9 +88,7 @@ Epetra_Map &OperatorRangeMap() const;
 
 public:
 void
-rebuild(const double g,
-        const Teuchos::Array<double> &spParams,
-        const Teuchos::Array<double> &mvpParams,
+rebuild(const std::map<std::string,double> params,
         const Teuchos::RCP<const Epetra_Vector> &current_X
         );
 
@@ -98,8 +96,7 @@ protected:
 
 private:
 void
-rebuildDiags_(const double g,
-              const Teuchos::Array<double> &spParams,
+rebuildDiags_(const std::map<std::string,double> params,
               const Epetra_Vector &current_X
               );
 

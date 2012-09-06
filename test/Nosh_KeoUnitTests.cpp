@@ -82,11 +82,11 @@ testKeo( const std::string & inputFileNameBase,
       Teuchos::rcp(new Nosh::MatrixBuilder::Keo(mesh, thickness, mvp));
 
     // Explicitly create the kinetic energy operator.
-    Teuchos::Array<double> mvpParams(1);
-    mvpParams[0] = initMu;
+    std::map<std::string,double> params;
+    params["mu"] = initMu;
 
     Epetra_FECrsMatrix keoMatrix(Copy, keoBuilder->getGraph());
-    keoBuilder->fill(keoMatrix, mvpParams);
+    keoBuilder->fill(keoMatrix, params);
 
     // Compute matrix norms as hashes.
     // Don't check for NormFrobenius() as this one doesn't work for matrices

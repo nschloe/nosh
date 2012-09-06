@@ -221,8 +221,7 @@ OperatorRangeMap() const
 // =============================================================================
 void
 KeoRegularized::
-rebuild(const double g,
-        const Teuchos::Array<double> & mvpParams,
+rebuild(const std::map<std::string,double> & params,
         const Epetra_Vector & x
         )
 {
@@ -241,8 +240,11 @@ rebuild(const double g,
 #ifndef NDEBUG
   TEUCHOS_ASSERT( !matrixBuilder_.is_null() );
 #endif
-  matrixBuilder_->fill(regularizedMatrix_, mvpParams);
+  matrixBuilder_->fill(regularizedMatrix_, params);
 
+  std::map<std::string, double>::const_iterator it = params.find("g");
+  TEUCHOS_ASSERT(it != params.end());
+  const double g = it->second;
   // Add 2*g*|psi|^2 to the diagonal.
   if (g > 0.0)
   {
@@ -268,13 +270,13 @@ rebuild(const double g,
     double vals[2];
     for (int k=0; k<controlVolumes.MyLength(); k++)
     {
-      const double alpha = g * controlVolumes[k] * thickness_->getV(k)
+      const double alpha = g * controlVolumes[k] * thickness_->getV(k, params)
                          * 2.0 * (x[2*k]*x[2*k] + x[2*k+1]*x[2*k+1]);
 
-      const double beta = g * controlVolumes[k] * thickness_->getV(k)
+      const double beta = g * controlVolumes[k] * thickness_->getV(k, params)
                         * (2.0 * x[2*k] * x[2*k+1]);
 
-      const double gamma = g * controlVolumes[k] * thickness_->getV(k)
+      const double gamma = g * controlVolumes[k] * thickness_->getV(k, params)
                          * (x[2*k]*x[2*k] - x[2*k+1]*x[2*k+1]);
 
       // TODO check if the indices are correct here

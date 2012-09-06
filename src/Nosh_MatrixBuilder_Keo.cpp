@@ -53,11 +53,11 @@ Keo(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
   globalIndexCacheUpToDate_( false ),
   keoGraph_(this->buildKeoGraph_()), // build the graph immediately
   keoCache_(Copy, keoGraph_),
-  keoBuildParameters_(Teuchos::null),
+  keoBuildParameters_(),
   keoDpCache_(Copy, keoGraph_),
   alphaCache_(),
   alphaCacheUpToDate_( false ),
-  paramIndex_(0)
+  paramName_()
 {
 }
 // =============================================================================
@@ -85,16 +85,48 @@ getGraph() const
 // =============================================================================
 void
 Keo::
-apply(const Teuchos::Array<double> &mvpParams,
+apply(const std::map<std::string, double> & params,
       const Epetra_Vector &X,
       Epetra_Vector &Y
       ) const
 {
-  // Rebuild if necessary.
-  if (keoBuildParameters_ != mvpParams)
+  // Check if the relevant parameters from the previous build have changed.
+  bool needsRebuild;
+  if (keoBuildParameters_.empty())
   {
-    this->fillKeo_(keoCache_, mvpParams, &Keo::fillerRegular_);
-    keoBuildParameters_ = mvpParams;
+    needsRebuild = true;
+  }
+  else
+  {
+    needsRebuild = false;
+    for (std::map<std::string, double>::const_iterator it = keoBuildParameters_.begin();
+         it != keoBuildParameters_.end();
+         ++it)
+    {
+      // Check if it->first is in params at all and if their values are equal.
+      std::map<std::string, double>::const_iterator it2 = params.find(it->first);
+      TEUCHOS_ASSERT(it2 != params.end());
+      if (it2->second != it->second)
+      {
+        needsRebuild = true;
+        break;
+      }
+    }
+  }
+
+  // Rebuild if necessary.
+  if (needsRebuild)
+  {
+    this->fillKeo_(keoCache_, params, &Keo::fillerRegular_);
+    // Reset build parameters.
+    for (std::map<std::string, double>::iterator it = keoBuildParameters_.begin();
+         it != keoBuildParameters_.end();
+         ++it)
+    {
+      std::map<std::string, double>::const_iterator it2 = params.find(it->first);
+      TEUCHOS_ASSERT(it2 != params.end());
+      it->second = it2->second;
+    }
   }
   // This direct application in the cache saves
   // one matrix copy compared to an explicit
@@ -105,8 +137,8 @@ apply(const Teuchos::Array<double> &mvpParams,
 // =============================================================================
 void
 Keo::
-applyDKDp(const Teuchos::Array<double> &mvpParams,
-          const int paramIndex,
+applyDKDp(const std::map<std::string, double> & params,
+          const std::string & paramName,
           const Epetra_Vector &X,
           Epetra_Vector &Y
           ) const
@@ -116,8 +148,8 @@ applyDKDp(const Teuchos::Array<double> &mvpParams,
   // with mvpParams and parmamIndex, but it never seems to occur
   // that dK/dp with the same parameter needs to be applied
   // twice in a row.
-  paramIndex_ = paramIndex;
-  this->fillKeo_(keoDpCache_, mvpParams, &Keo::fillerDp_);
+  paramName_ = paramName;
+  this->fillKeo_(keoDpCache_, params, &Keo::fillerDp_);
 
   TEUCHOS_ASSERT_EQUALITY(0, keoDpCache_.Apply(X, Y));
   return;
@@ -126,17 +158,48 @@ applyDKDp(const Teuchos::Array<double> &mvpParams,
 void
 Keo::
 fill(Epetra_FECrsMatrix &matrix,
-     const Teuchos::Array<double> &mvpParams
+     const std::map<std::string, double> & params
      ) const
 {
   // Cache the construction of the KEO.
   // This is useful because in the continuation context,
   // getKeo() is called a number of times with the same arguments
   // (in computeF, getJacobian(), and getPreconditioner().
-  if (keoBuildParameters_ != mvpParams)
+  bool needsRebuild;
+  if (keoBuildParameters_.empty())
   {
-    this->fillKeo_(keoCache_, mvpParams, &Keo::fillerRegular_);
-    keoBuildParameters_ = mvpParams;
+    needsRebuild = true;
+  }
+  else
+  {
+    needsRebuild = false;
+    for (std::map<std::string, double>::const_iterator it = keoBuildParameters_.begin();
+         it != keoBuildParameters_.end();
+         ++it)
+    {
+      // Check if it->first is in params at all and if their values are equal.
+      std::map<std::string, double>::const_iterator it2 = params.find(it->first);
+      TEUCHOS_ASSERT(it2 != params.end());
+      if (it2->second != it->second)
+      {
+        needsRebuild = true;
+        break;
+      }
+    }
+  }
+
+  if (needsRebuild)
+  {
+    this->fillKeo_(keoCache_, params, &Keo::fillerRegular_);
+    // Reset build parameters.
+    for (std::map<std::string, double>::iterator it = keoBuildParameters_.begin();
+         it != keoBuildParameters_.end();
+         ++it)
+    {
+      std::map<std::string, double>::const_iterator it2 = params.find(it->first);
+      TEUCHOS_ASSERT(it2 != params.end());
+      it->second = it2->second;
+    }
   }
 
   matrix = keoCache_;
@@ -247,14 +310,14 @@ buildKeoGraph_() const
 void
 Keo::
 fillerRegular_(const int k,
-               const Teuchos::Array<double> & mvpParams,
+               const std::map<std::string, double> & params,
                double * v) const
 {
   // Fill v with
   // Re(-exp(i Aint))
   // Im(-exp(i Aint))
   // 1.0
-  const double aInt = mvp_->getEdgeProjection(k, mvpParams);
+  const double aInt = mvp_->getEdgeProjection(k, params);
   // If compiled with GNU (and maybe other compilers), we could use
   // sincos() here to comute sin and cos simultaneously.
   // PGI, for one, doesn't support sincos, though.
@@ -269,12 +332,12 @@ fillerRegular_(const int k,
 void
 Keo::
 fillerDp_(const int k,
-          const Teuchos::Array<double> & mvpParams,
+          const std::map<std::string, double> & params,
           double * v) const
 {
-  double aInt = mvp_->getEdgeProjection(k, mvpParams);
-  // paramIndex_ is set in the KEO building routine.
-  double dAdPInt = mvp_->getDEdgeProjectionDp(k, mvpParams, paramIndex_);
+  double aInt = mvp_->getEdgeProjection(k, params);
+  // paramName_ is set in the KEO building routine.
+  double dAdPInt = mvp_->getDEdgeProjectionDp(k, params, paramName_);
   //sincos( aInt, &sinAInt, &cosAInt );
   v[0] =  dAdPInt * sin(aInt);
   v[1] = -dAdPInt * cos(aInt);
@@ -284,10 +347,10 @@ fillerDp_(const int k,
 // =============================================================================
 void
 Keo::
-fillKeo_( Epetra_FECrsMatrix &keoMatrix,
-          const Teuchos::Array<double> & mvpParams,
-          void (Keo::*filler)(const int, const Teuchos::Array<double>&, double*) const
-          ) const
+fillKeo_(Epetra_FECrsMatrix &keoMatrix,
+         const std::map<std::string, double> & params,
+         void (Keo::*filler)(const int, const std::map<std::string, double> &, double*) const
+         ) const
 {
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   Teuchos::TimeMonitor tm( *keoFillTime_ );
@@ -311,7 +374,7 @@ fillKeo_( Epetra_FECrsMatrix &keoMatrix,
   if ( !globalIndexCacheUpToDate_ )
     this->buildGlobalIndexCache_( edges );
   if ( !alphaCacheUpToDate_ )
-    this->buildAlphaCache_( edges, mesh_->getEdgeCoefficients() );
+    this->buildAlphaCache_(edges, mesh_->getEdgeCoefficients());
 
   double v[3];
   Epetra_SerialDenseMatrix A(4, 4);
@@ -332,7 +395,7 @@ fillKeo_( Epetra_FECrsMatrix &keoMatrix,
     // Instead of first computing the projection over the normalized edge
     // and then multiply it with the edge length, don't normalize the
     // edge vector.
-    (this->*filler)(k, mvpParams, v);
+    (this->*filler)(k, params, v);
     // We'd like to insert the 2x2 matrix
     //
     //     [   alpha                   , - alpha * exp( -IM * aInt ) ]
@@ -385,9 +448,9 @@ buildGlobalIndexCache_( const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2
 // =============================================================================
 void
 Keo::
-buildAlphaCache_( const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > & edges,
-                  const Teuchos::ArrayRCP<const double> &edgeCoefficients
-                ) const
+buildAlphaCache_(const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > & edges,
+                 const Teuchos::ArrayRCP<const double> &edgeCoefficients
+                 ) const
 {
   alphaCache_ = Teuchos::ArrayRCP<double>( edges.size() );
 
@@ -409,7 +472,8 @@ buildAlphaCache_( const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > & 
                          << " does not seem to be present on this node." );
 #endif
     // Update cache.
-    const double thickness = 0.5 * (thickness_->getV(tlid0) + thickness_->getV(tlid1));
+    std::map<std::string,double> dummy;
+    const double thickness = 0.5 * (thickness_->getV(tlid0, dummy) + thickness_->getV(tlid1, dummy));
     alphaCache_[k] = edgeCoefficients[k] * thickness;
   }
 

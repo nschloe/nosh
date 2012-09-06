@@ -87,27 +87,25 @@ get_p_names() const
 double
 ExplicitValues::
 getEdgeProjection(const unsigned int edgeIndex,
-                  const Teuchos::Array<double> & params
+                  const std::map<std::string, double> & params
                   ) const
 {
-#ifndef NDEBUG
-  TEUCHOS_ASSERT_EQUALITY(params.length(), 0);
-#endif
-  return params[0] * edgeProjectionCache_[edgeIndex];
+  std::map<std::string, double>::const_iterator it = params.find("mu");
+  TEUCHOS_ASSERT(it != params.end());
+  return it->second * edgeProjectionCache_[edgeIndex];
 }
 // ============================================================================
 double
 ExplicitValues::
 getDEdgeProjectionDp(const unsigned int edgeIndex,
-                     const Teuchos::Array<double> & params,
-                     const unsigned int parameterIndex
+                     const std::map<std::string, double> & params,
+                     const std::string & dParamName
                      ) const
 {
-#ifndef NDEBUG
-  TEUCHOS_ASSERT_EQUALITY(params.length(), 0);
-#endif
-  TEUCHOS_ASSERT_EQUALITY(parameterIndex, 0);
-  return edgeProjectionCache_[edgeIndex];
+  if (dParamName.compare("mu") == 0)
+    return edgeProjectionCache_[edgeIndex];
+  else
+    return 0.0;
 }
 // ============================================================================
 } // namespace VectorField

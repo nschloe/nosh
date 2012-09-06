@@ -59,7 +59,7 @@ getGraph() const = 0;
 //! Y = A(params) * X.
 virtual
 void
-apply(const Teuchos::Array<double> &params,
+apply(const std::map<std::string, double> &params,
       const Epetra_Vector &X,
       Epetra_Vector &Y
       ) const = 0;
@@ -67,8 +67,8 @@ apply(const Teuchos::Array<double> &params,
 //! Y = dA/dp(params) * X.
 virtual
 void
-applyDKDp(const Teuchos::Array<double> &params,
-          const int paramIndex,
+applyDKDp(const std::map<std::string, double> &params,
+          const std::string & paramName,
           const Epetra_Vector &X,
           Epetra_Vector &Y
           ) const = 0;
@@ -77,7 +77,7 @@ applyDKDp(const Teuchos::Array<double> &params,
 virtual
 void
 fill(Epetra_FECrsMatrix &matrix,
-     const Teuchos::Array<double> &params
+     const std::map<std::string,double> &params
      ) const = 0;
 
 //! Gets the initial parameters from this module.

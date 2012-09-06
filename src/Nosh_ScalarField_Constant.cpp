@@ -24,8 +24,13 @@ namespace Nosh {
 namespace ScalarField {
 // ============================================================================
 Constant::
-Constant(const double alpha):
-  alpha_( alpha )
+Constant(const double c,
+         const std::string & param1Name,
+         const double param1InitValue
+         ):
+  c_( c ),
+  param1Name_ (param1Name),
+  param1InitValue_( param1InitValue )
 {
 }
 // ============================================================================
@@ -38,38 +43,46 @@ Teuchos::RCP<const Teuchos::Array<std::string> >
 Constant::
 get_p_names() const
 {
-  return Teuchos::rcp(new Teuchos::Array<std::string>());
+  return Teuchos::rcp(new Teuchos::Array<std::string>(1, param1Name_));
 }
 // ============================================================================
 Teuchos::RCP<const Teuchos::Array<double> >
 Constant::
 get_p_init() const
 {
-  return Teuchos::rcp(new Teuchos::Array<double>());
+  return Teuchos::rcp(new Teuchos::Array<double>(1, param1InitValue_));
 }
 // ============================================================================
 double
 Constant::
 getV(const unsigned int nodeIndex,
-     const Teuchos::Array<double> & p
+     const std::map<std::string,double> & params
      ) const
 {
-#ifndef NDEBUG
-  TEUCHOS_ASSERT_EQUALITY(p.length(), 0);
-#endif
-  return alpha_;
+  double val = c_;
+
+  if (!param1Name_.empty())
+  {
+    // If a parameter name was given, add its value to c_;
+    std::map<std::string, double>::const_iterator it = params.find(param1Name_);
+    TEUCHOS_ASSERT(it != params.end());
+    val += it->second;
+  }
+
+  return val;
 }
 // ============================================================================
 double
 Constant::
 getdVdP(const unsigned int nodeIndex,
-        const unsigned int parameterIndex,
-        const Teuchos::Array<double> & p
+        const std::map<std::string,double> & params,
+        const std::string & paramName
         ) const
 {
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(true,
-                              "No parameter for scalar field.");
-  return 0.0;
+  if (!param1Name_.empty() && paramName.compare(param1Name_) == 0)
+    return 1.0;
+  else
+    return 0.0;
 }
 // ============================================================================
 } // namespace ScalarField

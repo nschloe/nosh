@@ -131,30 +131,16 @@ getMesh() const;
 private:
 void
 computeF_(const Epetra_Vector &x,
-          const double g,
-          const Teuchos::Array<double> & spParams,
-          const Teuchos::Array<double> & eoParams,
+          const std::map<std::string,double> & params,
           Epetra_Vector &FVec
           ) const;
 
 void
-computeDFDg_(const Epetra_Vector &x,
+computeDFDP_(const Epetra_Vector &x,
+             const std::map<std::string, double> & params,
+             const std::string & paramName,
              Epetra_Vector &FVec
              ) const;
-
-void
-computeDFDPpotential_(const Epetra_Vector &x,
-                      const Teuchos::Array<double> &spParams,
-                      int paramIndex,
-                      Epetra_Vector &FVec
-                      ) const;
-
-void
-computeDFDPeo_(const Epetra_Vector &x,
-               const Teuchos::Array<double> &eoParams,
-               int paramIndex,
-               Epetra_Vector &FVec
-               ) const;
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 protected:
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -

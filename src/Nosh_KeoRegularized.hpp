@@ -98,8 +98,7 @@ virtual const Epetra_Map &OperatorRangeMap() const;
 public:
 
 void
-rebuild(const double g,
-        const Teuchos::Array<double> &mvpParams,
+rebuild(const std::map<std::string,double> & params,
         const Epetra_Vector &psi
        );
 
