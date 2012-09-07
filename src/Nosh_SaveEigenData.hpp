@@ -83,9 +83,6 @@ const Teuchos::RCP<const Nosh::ModelEvaluator::Virtual> modelEval_;
 Nosh::CsvWriter csvWriter_;
 Teuchos::RCP<LOCA::Stepper> locaStepper_;
 
-//! If \c true, then the number of eigenvalues is computed adaptively.
-//! See \c numComputeStableEigenvalues_.
-bool numEigenvaluesAdaptive_;
 //! The minimum number of stable eigenvalues that is to be computed in each step.
 unsigned int numComputeStableEigenvalues_;
 };

@@ -820,7 +820,7 @@ mergeComplexVector_(const Epetra_Vector & psi,
 
   // Set owned nodes.
 #ifndef NDEBUG
-  TEUCHOS_ASSERT_EQUALITY(psi.GlobalLength(), 2*ownedNodes_.size());
+  TEUCHOS_ASSERT_EQUALITY((unsigned int)psi.GlobalLength(), 2*ownedNodes_.size());
 #endif
   for (unsigned int k=0; k < ownedNodes_.size(); k++)
   {

@@ -80,7 +80,7 @@ getGraph() const
 // =============================================================================
 void
 Laplace::
-apply(const Teuchos::Array<double> &params,
+apply(const std::map<std::string, double> &params,
       const Epetra_Vector &X,
       Epetra_Vector &Y
       ) const
@@ -100,8 +100,8 @@ apply(const Teuchos::Array<double> &params,
 // =============================================================================
 void
 Laplace::
-applyDKDp(const Teuchos::Array<double> &params,
-          const int paramIndex,
+applyDKDp(const std::map<std::string, double> &params,
+          const std::string & paramName,
           const Epetra_Vector &X,
           Epetra_Vector &Y
           ) const
@@ -114,7 +114,7 @@ applyDKDp(const Teuchos::Array<double> &params,
 void
 Laplace::
 fill(Epetra_FECrsMatrix &matrix,
-     const Teuchos::Array<double> &params
+     const std::map<std::string, double> &params
      ) const
 {
   // Cache the construction of the Laplacian.

@@ -44,6 +44,7 @@ public:
 Virtual();
 
 // Destructor.
+virtual
 ~Virtual();
 
 //! Get the underlying communicator.

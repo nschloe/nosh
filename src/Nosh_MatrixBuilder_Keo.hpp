@@ -59,18 +59,22 @@ Keo(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
 // Destructor.
 ~Keo();
 
+virtual
 const Epetra_Comm &
 getComm() const;
 
+virtual
 const Epetra_FECrsGraph &
 getGraph() const;
 
+virtual
 void
 apply(const std::map<std::string, double> & params,
       const Epetra_Vector &X,
       Epetra_Vector &Y
       ) const;
 
+virtual
 void
 applyDKDp(const std::map<std::string, double> & params,
           const std::string & paramName,
@@ -78,6 +82,7 @@ applyDKDp(const std::map<std::string, double> & params,
           Epetra_Vector &Y
           ) const;
 
+virtual
 void
 fill(Epetra_FECrsMatrix &matrix,
      const std::map<std::string, double> & params

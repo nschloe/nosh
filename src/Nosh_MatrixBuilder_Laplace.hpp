@@ -55,28 +55,33 @@ Laplace(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
 // Destructor.
 ~Laplace();
 
+virtual
 const Epetra_Comm &
 getComm() const;
 
+virtual
 const Epetra_FECrsGraph &
 getGraph() const;
 
+virtual
 void
-apply(const Teuchos::Array<double> &params,
+apply(const std::map<std::string, double> &params,
       const Epetra_Vector &X,
       Epetra_Vector &Y
       ) const;
 
+virtual
 void
-applyDKDp(const Teuchos::Array<double> &params,
-          const int paramIndex,
+applyDKDp(const std::map<std::string, double> &params,
+          const std::string & paramName,
           const Epetra_Vector &X,
           Epetra_Vector &Y
           ) const;
 
+virtual
 void
 fill(Epetra_FECrsMatrix &matrix,
-     const Teuchos::Array<double> &params
+     const std::map<std::string, double> &params
      ) const;
 
 //! Gets the parameter with their initial values.

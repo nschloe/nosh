@@ -30,7 +30,6 @@
 typedef double             ST;
 typedef Epetra_MultiVector MV;
 typedef Epetra_Operator    OP;
-typedef Anasazi::MultiVecTraits<double, Epetra_MultiVector> MVT;
 // =============================================================================
 using Teuchos::rcp;
 using Teuchos::RCP;

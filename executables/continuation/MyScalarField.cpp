@@ -34,29 +34,21 @@ MyScalarField::
 {
 }
 // ============================================================================
-RCP<const Array<std::string> >
+const std::map<std::string,double>
 MyScalarField::
-get_p_names() const
+getParameters() const
 {
-  return rcp(new Array<std::string>(1, "tau"));
-}
-// ============================================================================
-RCP<const Array<double> >
-MyScalarField::
-get_p_init() const
-{
-  return rcp(new Array<double>(1, 0.0));
+  std::map<std::string,double> m;
+  m["tau"] = 0.0;
+  return m;
 }
 // ============================================================================
 double
 MyScalarField::
 getV(const unsigned int nodeIndex,
-     const Array<double> & p
+     const std::map<std::string,double> & params
      ) const
 {
-#ifndef NDEBUG
-  TEUCHOS_ASSERT_EQUALITY(p.length(), 1);
-#endif
   // Get nodal coordinates for nodeIndex.
   std::vector<stk::mesh::Entity*> ownedNodes =
     mesh_->getOwnedNodes();
@@ -64,17 +56,31 @@ getV(const unsigned int nodeIndex,
     mesh_->getVectorFieldNonconst(ownedNodes[nodeIndex],
                                   "coordinates", 3);
 
-  return -1.0 + p[0] * (-X[0]*X[0] + X[1]*X[1]);
+  // Pick out p["tau"].
+  std::map<std::string, double>::const_iterator it = params.find("tau");
+  TEUCHOS_ASSERT(it != params.end());
+  const double & tau = it->second;
+
+  return -1.0 + tau * (-X[0]*X[0] + X[1]*X[1]);
 }
 // ============================================================================
 double
 MyScalarField::
 getdVdP(const unsigned int nodeIndex,
-        const unsigned int parameterIndex,
-        const Array<double> & p
+        const std::map<std::string,double> & params,
+        const std::string & paramName
         ) const
 {
-  TEUCHOS_ASSERT_EQUALITY(parameterIndex, 0);
-  return 1.0;
+  if (paramName.compare("tau") == 0)
+  {
+    std::vector<stk::mesh::Entity*> ownedNodes =
+      mesh_->getOwnedNodes();
+    const DoubleVector X =
+      mesh_->getVectorFieldNonconst(ownedNodes[nodeIndex],
+                                    "coordinates", 3);
+    return -X[0]*X[0] + X[1]*X[1];
+  }
+  else
+    return 0.0;
 }
 // ============================================================================

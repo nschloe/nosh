@@ -193,8 +193,6 @@ Teuchos::RCP<Epetra_Vector> averageThickness_;
 mutable Teuchos::ArrayRCP<double> edgeCoefficients_;
 mutable bool edgeCoefficientsUpToDate_;
 
-bool isOutputFileSet_;
-
 //! Local edge ID -> Global node IDs.
 Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > edgeNodes_;
 //! Local cell ID -> Local edge IDs.
