@@ -1,7 +1,7 @@
 cmake \
-  -D CMAKE_C_COMPILER="clang" \
-  -D CMAKE_CXX_COMPILER="clang++" \
-  -D CMAKE_INSTALL_PREFIX:PATH=/opt/trilinos/dev/clang/3.0/debug \
+  -D CMAKE_C_COMPILER="gcc" \
+  -D CMAKE_CXX_COMPILER="g++" \
+  -D CMAKE_INSTALL_PREFIX:PATH=/opt/trilinos/dev/gcc/4.7.1/debug \
   -D CMAKE_BUILD_TYPE=Debug \
   -D BUILD_SHARED_LIBS:BOOL=OFF \
   -D TPL_ENABLE_MPI:BOOL=OFF \
@@ -17,5 +17,3 @@ cmake \
   -D Trilinos_ENABLE_SEACASNemspread:BOOL=ON \
   -D TPL_ENABLE_Netcdf:BOOL=ON \
   ../../source
-#      -D Netcdf_LIBRARY_DIRS:PATH=/usr/local/ \
-#      -D TPL_Netcdf_INCLUDE_DIRS:PATH=/usr/local/ \

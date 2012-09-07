@@ -1,5 +1,6 @@
 FIND_PACKAGE( Trilinos REQUIRED )
-INCLUDE_DIRECTORIES(${Nosh_SOURCE_DIR}/src
+INCLUDE_DIRECTORIES(${Nosh_SOURCE_DIR}/src)
+INCLUDE_DIRECTORIES(SYSTEM
                     ${Trilinos_INCLUDE_DIRS}
                     ${Trilinos_TPL_INCLUDE_DIRS})
 

@@ -45,10 +45,10 @@ int main ( int argc, char *argv[] )
     // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
   RCP<Epetra_MpiComm> eComm =
-    rcp<Epetra_MpiComm> ( new Epetra_MpiComm ( MPI_COMM_WORLD ) );
+    rcp<Epetra_MpiComm>(new Epetra_MpiComm (MPI_COMM_WORLD));
 #else
-  RCP<Epetra_SerialComm>  eComm =
-         rcp<Epetra_SerialComm> ( new Epetra_SerialComm() );
+  RCP<Epetra_SerialComm> eComm =
+    rcp<Epetra_SerialComm>(new Epetra_SerialComm());
 #endif
 
   const RCP<Teuchos::FancyOStream> out =
