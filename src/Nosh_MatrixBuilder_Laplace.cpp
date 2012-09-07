@@ -129,18 +129,11 @@ fill(Epetra_FECrsMatrix &matrix,
   return;
 }
 // =============================================================================
-Teuchos::RCP<const Teuchos::Array<double> >
+const std::map<std::string,double>
 Laplace::
-get_p_init() const
+getParameters() const
 {
-  return Teuchos::rcp(new Teuchos::Array<double>());
-}
-// =============================================================================
-Teuchos::RCP<const Teuchos::Array<std::string> >
-Laplace::
-get_p_names() const
-{
-  return Teuchos::rcp(new Teuchos::Array<std::string>());
+  return std::map<std::string,double>();
 }
 // =============================================================================
 const Epetra_FECrsGraph

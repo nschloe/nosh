@@ -39,18 +39,13 @@ Constant::
 {
 }
 // ============================================================================
-Teuchos::RCP<const Teuchos::Array<std::string> >
+const std::map<std::string,double>
 Constant::
-get_p_names() const
+getParameters() const
 {
-  return Teuchos::rcp(new Teuchos::Array<std::string>(1, param1Name_));
-}
-// ============================================================================
-Teuchos::RCP<const Teuchos::Array<double> >
-Constant::
-get_p_init() const
-{
-  return Teuchos::rcp(new Teuchos::Array<double>(1, param1InitValue_));
+  std::map<std::string,double> m;
+  m[param1Name_] = param1InitValue_;
+  return m;
 }
 // ============================================================================
 double
@@ -63,7 +58,7 @@ getV(const unsigned int nodeIndex,
 
   if (!param1Name_.empty())
   {
-    // If a parameter name was given, add its value to c_;
+    // If a parameter name was given, add its value to c_.
     std::map<std::string, double>::const_iterator it = params.find(param1Name_);
     TEUCHOS_ASSERT(it != params.end());
     val += it->second;

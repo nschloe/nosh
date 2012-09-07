@@ -44,15 +44,10 @@ ConstantCurl(const Teuchos::RCP<Nosh::StkMesh> &mesh,
 virtual
 ~ConstantCurl();
 
-//! Get the parameter names.
+//! Get the parameter names and initial values.
 virtual
-Teuchos::RCP<const Teuchos::Array<std::string> >
-get_p_names() const;
-
-//! Gets the current parameters from this module.
-virtual
-Teuchos::RCP<const Teuchos::Array<double> >
-get_p_init() const;
+const std::map<std::string,double>
+getParameters() const;
 
 virtual
 double

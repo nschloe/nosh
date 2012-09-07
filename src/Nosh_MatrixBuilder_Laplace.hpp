@@ -79,15 +79,10 @@ fill(Epetra_FECrsMatrix &matrix,
      const Teuchos::Array<double> &params
      ) const;
 
-//! Gets the initial parameters from this module.
+//! Gets the parameter with their initial values.
 virtual
-Teuchos::RCP<const Teuchos::Array<double> >
-get_p_init() const;
-
-//! Get the parameter names.
-virtual
-Teuchos::RCP<const Teuchos::Array<std::string> >
-get_p_names() const;
+const std::map<std::string,double>
+getParameters() const;
 
 protected:
 

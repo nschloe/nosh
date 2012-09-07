@@ -53,7 +53,6 @@ Nls(
   const Teuchos::RCP<const Epetra_Vector> &initialX
   ) :
   mesh_( mesh ),
-  initial_g_( g ),
   scalarPotential_( scalarPotential ),
   thickness_( thickness ),
   x_init_( initialX ),
@@ -70,8 +69,40 @@ Nls(
   fillPreconditionerTime_( Teuchos::TimeMonitor::getNewTimer(
                              "Nosh: Nls::evalModel::fill preconditioner" ) ),
 #endif
-  out_( Teuchos::VerboseObjectBase::getDefaultOStream() )
+  out_( Teuchos::VerboseObjectBase::getDefaultOStream() ),
+  p_map_( Teuchos::null ),
+  p_init_( Teuchos::null ),
+  p_names_( Teuchos::null )
 {
+  // Merge all of the parameters together.
+  std::map<std::string,double> params;
+  params["g"] = g;
+
+  // This merges and discards new values if their keys are already in the list.
+  std::map<std::string,double> spParams = scalarPotential_->getParameters();
+  params.insert(spParams.begin(), spParams.end());
+
+  // This merges and discards new values if their keys are already in the list.
+  std::map<std::string,double> mbParams = matrixBuilder_->getParameters();
+  params.insert(mbParams.begin(), mbParams.end());
+
+  // Out of this now complete list, create the entities that the EpetraExt::
+  // Modelevaluator needs.
+  const unsigned int numParams = params.size();
+  p_map_ = Teuchos::rcp(new Epetra_LocalMap(numParams, 0, x_init_->Comm()));
+  p_init_ = Teuchos::rcp(new Epetra_Vector(*p_map_));
+  p_names_ = Teuchos::rcp(new Teuchos::Array<std::string>(numParams));
+  int k = 0;
+  for (std::map<std::string,double>::const_iterator it = params.begin();
+       it != params.end();
+       ++it)
+  {
+    (*p_names_)[k] = it->first;
+    (*p_init_)[k] = it->second;
+    k++;
+  }
+
+  return;
 }
 // ============================================================================
 Nls::
@@ -118,26 +149,7 @@ get_p_init(int l) const
 {
   TEUCHOS_TEST_FOR_EXCEPT_MSG(l != 0,
                               "LOCA can only deal with one parameter vector.");
-  // Put all of the parameters in one vector and remember where the
-  // values are put. This information is used later on to distribute
-  // incoming parameter vectors into where the parameters are
-  // actually stored.
-  Teuchos::RCP<Epetra_Vector> p_init =
-    Teuchos::rcp(new Epetra_Vector(*this->get_p_map(l)));
-  int k = 0;
-  Teuchos::RCP<const Teuchos::Array<double> > p;
-  // Local parameters:
-  (*p_init)[k++] = initial_g_;
-  // Scalar potential parameters:
-  p = scalarPotential_->get_p_init();
-  for (int i=0; i<p->length(); i++)
-    (*p_init)[k++] = (*p)[i];
-  // Energy operator parameters:
-  p = matrixBuilder_->get_p_init();
-  for (int i=0; i<p->length(); i++)
-    (*p_init)[k++] = (*p)[i];
-
-  return p_init;
+  return p_init_;
 }
 // ============================================================================
 Teuchos::RCP<const Epetra_Map>
@@ -146,11 +158,7 @@ get_p_map(int l) const
 {
   TEUCHOS_TEST_FOR_EXCEPT_MSG(l != 0,
                               "LOCA can only deal with one parameter vector.");
-  int totalNumParams = 1 // local parameters
-                     + scalarPotential_->get_p_init()->length() // scalar potential
-                     + matrixBuilder_->get_p_init()->length(); // posdef operator
-
-  return Teuchos::rcp(new Epetra_LocalMap(totalNumParams, 0, x_init_->Comm()));
+  return p_map_;
 }
 // ============================================================================
 Teuchos::RCP<const Teuchos::Array<std::string> >
@@ -159,26 +167,7 @@ get_p_names(int l) const
 {
   TEUCHOS_TEST_FOR_EXCEPT_MSG(l != 0,
                               "LOCA can only deal with one parameter vector.");
-  int totalNumParams = 1 // local parameters
-                     + scalarPotential_->get_p_names()->length() // scalar potential
-                     + matrixBuilder_->get_p_names()->length(); // posdef operator
-
-  Teuchos::RCP<Teuchos::Array<std::string> > p_names =
-    Teuchos::rcp(new Teuchos::Array<std::string>(totalNumParams));
-  int k = 0;
-  Teuchos::RCP<const Teuchos::Array<std::string> > p;
-  // Local parameters:
-  (*p_names)[k++] = "g";
-  // Scalar potential parameters:
-  p = scalarPotential_->get_p_names();
-  for (int i=0; i<p->length(); i++)
-    (*p_names)[k++] = (*p)[i];
-  // Vector potential parameters:
-  p = matrixBuilder_->get_p_names();
-  for (int i=0; i<p->length(); i++)
-    (*p_names)[k++] = (*p)[i];
-
-  return p_names;
+  return p_names_;
 }
 // =============================================================================
 Teuchos::RCP<Epetra_Operator>

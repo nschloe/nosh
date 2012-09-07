@@ -45,15 +45,10 @@ createPInit_(const Epetra_Map & map);
 
 ~Constant();
 
-//! Get the parameter names.
+//! Get the parameter names and intial values.
 virtual
-Teuchos::RCP<const Teuchos::Array<std::string> >
-get_p_names() const;
-
-//! Gets the parameters from this module.
-virtual
-Teuchos::RCP<const Teuchos::Array<double> >
-get_p_init() const;
+const std::map<std::string,double>
+getParameters() const;
 
 virtual
 double

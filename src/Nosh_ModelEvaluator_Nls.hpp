@@ -41,6 +41,7 @@ class Virtual;
 }
 
 class Epetra_CrsGraph;
+class Epetra_LocalMap;
 // -----------------------------------------------------------------------------
 namespace Nosh {
 namespace ModelEvaluator {
@@ -147,8 +148,6 @@ protected:
 private:
 const Teuchos::RCP<const Nosh::StkMesh> mesh_;
 
-const double initial_g_;
-
 const Teuchos::RCP<const Nosh::ScalarField::Virtual> scalarPotential_;
 
 const Teuchos::RCP<const Nosh::ScalarField::Virtual> thickness_;
@@ -168,6 +167,10 @@ const Teuchos::RCP<Teuchos::Time> fillPreconditionerTime_;
 #endif
 
 Teuchos::RCP<Teuchos::FancyOStream> out_;
+
+Teuchos::RCP<Epetra_LocalMap> p_map_;
+Teuchos::RCP<Epetra_Vector> p_init_;
+Teuchos::RCP<Teuchos::Array<std::string> > p_names_;
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 };
 } // namespace ModelEvaluator

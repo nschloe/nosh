@@ -64,24 +64,13 @@ ExplicitValues::
 {
 }
 // ============================================================================
-Teuchos::RCP<const Teuchos::Array<double> >
+const std::map<std::string,double>
 ExplicitValues::
-get_p_init() const
+getParameters() const
 {
-  Teuchos::RCP<Teuchos::Array<double> > p_init =
-    Teuchos::rcp(new Teuchos::Array<double>(1));
-  (*p_init)[0] = initMu_;
-  return p_init;
-}
-// ============================================================================
-Teuchos::RCP<const Teuchos::Array<std::string> >
-ExplicitValues::
-get_p_names() const
-{
-  Teuchos::RCP<Teuchos::Array<std::string> > p_names =
-    Teuchos::rcp(new Teuchos::Array<std::string>(1));
-  (*p_names)[0] = "mu";
-  return p_names;
+  std::map<std::string,double> m;
+  m["mu"] = initMu_;
+  return m;
 }
 // ============================================================================
 double

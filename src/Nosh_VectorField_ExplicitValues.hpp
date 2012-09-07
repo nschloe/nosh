@@ -44,15 +44,10 @@ ExplicitValues(const Nosh::StkMesh &mesh,
 virtual
 ~ExplicitValues();
 
-//! Get initial parameter values.
+//! Get parameter names and initial values.
 virtual
-Teuchos::RCP<const Teuchos::Array<double> >
-get_p_init() const;
-
-//! Get the parameter names.
-virtual
-Teuchos::RCP<const Teuchos::Array<std::string> >
-get_p_names() const;
+const std::map<std::string,double>
+getParameters() const;
 
 double
 getEdgeProjection(const unsigned int edgeIndex,

@@ -70,26 +70,14 @@ ConstantCurl::
 {
 }
 // ============================================================================
-Teuchos::RCP<const Teuchos::Array<std::string> >
+const std::map<std::string,double>
 ConstantCurl::
-get_p_names() const
+getParameters() const
 {
-  Teuchos::RCP<Teuchos::Array<std::string> > p_names =
-    Teuchos::rcp(new Teuchos::Array<std::string>(1));
-  (*p_names)[0] = "mu";
-  (*p_names)[1] = "theta";
-  return p_names;
-}
-// ============================================================================
-Teuchos::RCP<const Teuchos::Array<double> >
-ConstantCurl::
-get_p_init() const
-{
-  Teuchos::RCP<Teuchos::Array<double> > p_init =
-    Teuchos::rcp(new Teuchos::Array<double>(2));
-  (*p_init)[0] = 0.0;
-  (*p_init)[1] = 0.0;
-  return p_init;
+  std::map<std::string,double> m;
+  m["mu"] = 0.0;
+  m["theta"] = 0.0;
+  return m;
 }
 // ============================================================================
 double

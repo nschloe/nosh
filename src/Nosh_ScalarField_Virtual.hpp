@@ -45,15 +45,10 @@ getdVdP(const unsigned int nodeIndex,
         const std::string & paramName
         ) const = 0;
 
-//! Gets the parameters from this module.
+//! Get parameter names and initial values.
 virtual
-Teuchos::RCP<const Teuchos::Array<double> >
-get_p_init() const = 0;
-
-//! Get the parameter names.
-virtual
-Teuchos::RCP<const Teuchos::Array<std::string> >
-get_p_names() const = 0;
+const std::map<std::string,double>
+getParameters() const = 0;
 
 protected:
 private:
