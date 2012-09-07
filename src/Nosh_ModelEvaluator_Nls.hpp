@@ -111,16 +111,10 @@ evalModel( const InArgs &inArgs,
 
 public:
 
-Teuchos::RCP<const Epetra_Vector>
-get_p_latest() const;
-
 double
 innerProduct(const Epetra_Vector &phi,
              const Epetra_Vector &psi
              ) const;
-
-double
-normalizedScaledL2Norm(const Epetra_Vector &psi) const;
 
 double
 gibbsEnergy(const Epetra_Vector &psi) const;
@@ -153,8 +147,6 @@ const Teuchos::RCP<const Nosh::ScalarField::Virtual> scalarPotential_;
 const Teuchos::RCP<const Nosh::ScalarField::Virtual> thickness_;
 
 const Teuchos::RCP<const Epetra_Vector> x_init_;
-
-mutable Teuchos::RCP<const Epetra_Vector> p_latest_;
 
 const Teuchos::RCP<const Nosh::MatrixBuilder::Virtual> matrixBuilder_;
 

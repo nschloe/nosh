@@ -44,10 +44,6 @@ virtual
 ~Virtual();
 
 virtual
-Teuchos::RCP<const Epetra_Vector>
-get_p_latest() const = 0;
-
-virtual
 double
 innerProduct(const Epetra_Vector &phi,
              const Epetra_Vector &psi
@@ -55,7 +51,7 @@ innerProduct(const Epetra_Vector &phi,
 
 virtual
 double
-normalizedScaledL2Norm(const Epetra_Vector &psi) const = 0;
+norm(const Epetra_Vector &psi) const;
 
 virtual
 double

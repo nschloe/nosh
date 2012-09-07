@@ -32,60 +32,67 @@ CsvWriter(const std::string &fileName,
   doubleColumnWidth_(doublePrec_ + 7),
   intColumnWidth_(5)
 {
-  // Set the output format
-  // Think about replacing this with NOX::Utils::Sci.
-  fileStream_.setf( std::ios::scientific );
-  fileStream_.precision( 15 );
+  if (!fileName.empty())
+  {
+    // Set the output format.
+    // Think about replacing this with NOX::Utils::Sci.
+    fileStream_.setf( std::ios::scientific );
+    fileStream_.precision( 15 );
 
-  fileStream_.open( fileName.c_str(), std::ios::trunc );
+    fileStream_.open( fileName.c_str(), std::ios::trunc );
+  }
   return;
 }
 // ============================================================================
 CsvWriter::
 ~CsvWriter()
 {
-  fileStream_.close();
+  if (fileStream_.is_open())
+    fileStream_.close();
 }
 // ============================================================================
 void
 CsvWriter::
 writeHeader(const Teuchos::ParameterList & pList) const
 {
-  fileStream_ << headerStart_ << " ";
-
-  bool isFirst = true;
-  for (Teuchos::ParameterList::ConstIterator k=pList.begin(); k!=pList.end(); ++k )
+  if (fileStream_.is_open())
   {
-    if (!isFirst)
-      fileStream_ << delimeter_ << "  ";
-    isFirst = false;
+    fileStream_ << headerStart_ << " ";
 
-    std::stringstream strstream;
-    strstream.fill( ' ' );
-    strstream << std::left;
+    bool isFirst = true;
+    for (Teuchos::ParameterList::ConstIterator k=pList.begin(); k!=pList.end(); ++k )
+    {
+      if (!isFirst)
+        fileStream_ << delimeter_ << "  ";
+      isFirst = false;
 
-    std::string label = pList.name( k );
-    if ( pList.isType<double>( label ) )
-      strstream.width( doubleColumnWidth_ );
-    else if ( pList.isType<int>( label )
-              || pList.isType<unsigned int>( label ) )
-      strstream.width( (intColumnWidth_<label.length()) ?
-                       label.length() : intColumnWidth_
-                       );
-    else if ( pList.isType<std::string>( label ) )
-      strstream.width( pList.get<std::string>( label ).length() );
-    else
-      TEUCHOS_TEST_FOR_EXCEPT_MSG(true,
-                           "Invalid data type for item \""
-                           << label << "\"." );
+      std::stringstream strstream;
+      strstream.fill( ' ' );
+      strstream << std::left;
 
-    strstream << pList.name( k );
+      std::string label = pList.name( k );
+      if ( pList.isType<double>( label ) )
+        strstream.width( doubleColumnWidth_ );
+      else if ( pList.isType<int>( label )
+                || pList.isType<unsigned int>( label ) )
+        strstream.width( (intColumnWidth_<label.length()) ?
+                         label.length() : intColumnWidth_
+                         );
+      else if ( pList.isType<std::string>( label ) )
+        strstream.width( pList.get<std::string>( label ).length() );
+      else
+        TEUCHOS_TEST_FOR_EXCEPT_MSG(true,
+                             "Invalid data type for item \""
+                             << label << "\"." );
 
-    // Write it out to the file.
-    fileStream_ << strstream.str();
+      strstream << pList.name( k );
+
+      // Write it out to the file.
+      fileStream_ << strstream.str();
+    }
+    // flush:
+    fileStream_ << std::endl;
   }
-  // flush:
-  fileStream_ << std::endl;
 
   return;
 }
@@ -94,59 +101,62 @@ void
 CsvWriter::
 writeRow(const Teuchos::ParameterList & pList) const
 {
-  // Pad from the left with the width of the header line starter
-  // to get column alignment.
-  fileStream_ << std::string(headerStart_.length() + 1, ' ');
-
-  bool isFirst = true;
-  for (Teuchos::ParameterList::ConstIterator k=pList.begin(); k!=pList.end(); ++k )
+  if (fileStream_.is_open())
   {
-    if (!isFirst)
-      fileStream_ << delimeter_ << "  ";
-    isFirst = false;
+    // Pad from the left with the width of the header line starter
+    // to get column alignment.
+    fileStream_ << std::string(headerStart_.length() + 1, ' ');
 
-    std::stringstream strstream;
-    strstream.fill( ' ' );
-    strstream << std::left;    // have the number flush left
+    bool isFirst = true;
+    for (Teuchos::ParameterList::ConstIterator k=pList.begin(); k!=pList.end(); ++k )
+    {
+      if (!isFirst)
+        fileStream_ << delimeter_ << "  ";
+      isFirst = false;
 
-    std::string label = pList.name( k );
-    if ( pList.isType<double>( label ) )
-    {
-      strstream.width( doubleColumnWidth_ );
-      strstream.setf( std::ios::scientific );
-      strstream.precision( doublePrec_ );
-      strstream << pList.get<double>( label );
-    }
-    else if ( pList.isType<int>( label ) )
-    {
-      strstream.width( (intColumnWidth_<label.length()) ?
-                       label.length() : intColumnWidth_
-                       );
-      strstream << pList.get<int>( label );
-    }
-    else if ( pList.isType<unsigned int>( label ) )
-    {
-      strstream.width( (intColumnWidth_<label.length()) ?
-                       label.length() : intColumnWidth_
-                       );
-      strstream << pList.get<unsigned int>( label );
-    }
-    else if ( pList.isType<std::string>( label ) )
-    {
-      strstream.width( pList.get<std::string>( label ).length() );
-      strstream << pList.get<std::string>( label );
-    }
-    else
-      TEUCHOS_TEST_FOR_EXCEPT_MSG(true,
-                           "Invalid data type for item \""
-                           << label << "\"." );
+      std::stringstream strstream;
+      strstream.fill( ' ' );
+      strstream << std::left;    // have the number flush left
 
-    // Write it out to the file.
-    fileStream_ << strstream.str();
+      std::string label = pList.name( k );
+      if ( pList.isType<double>( label ) )
+      {
+        strstream.width( doubleColumnWidth_ );
+        strstream.setf( std::ios::scientific );
+        strstream.precision( doublePrec_ );
+        strstream << pList.get<double>( label );
+      }
+      else if ( pList.isType<int>( label ) )
+      {
+        strstream.width( (intColumnWidth_<label.length()) ?
+                         label.length() : intColumnWidth_
+                         );
+        strstream << pList.get<int>( label );
+      }
+      else if ( pList.isType<unsigned int>( label ) )
+      {
+        strstream.width( (intColumnWidth_<label.length()) ?
+                         label.length() : intColumnWidth_
+                         );
+        strstream << pList.get<unsigned int>( label );
+      }
+      else if ( pList.isType<std::string>( label ) )
+      {
+        strstream.width( pList.get<std::string>( label ).length() );
+        strstream << pList.get<std::string>( label );
+      }
+      else
+        TEUCHOS_TEST_FOR_EXCEPT_MSG(true,
+                             "Invalid data type for item \""
+                             << label << "\"." );
+
+      // Write it out to the file.
+      fileStream_ << strstream.str();
+    }
+
+    // flush:
+    fileStream_ << std::endl;
   }
-
-  // flush:
-  fileStream_ << std::endl;
 
   return;
 }

@@ -255,13 +255,6 @@ evalModel(const InArgs &inArgs,
   return;
 }
 // =============================================================================
-Teuchos::RCP<const Epetra_Vector>
-Bordered::
-get_p_latest() const
-{
-  return innerModelEval_->get_p_latest();
-}
-// =============================================================================
 double
 Bordered::
 innerProduct(const Epetra_Vector &phi,
@@ -269,13 +262,6 @@ innerProduct(const Epetra_Vector &phi,
              ) const
 {
   return innerModelEval_->innerProduct(phi, psi);
-}
-// =============================================================================
-double
-Bordered::
-normalizedScaledL2Norm(const Epetra_Vector &psi) const
-{
-  return innerModelEval_->normalizedScaledL2Norm(psi);
 }
 // =============================================================================
 double

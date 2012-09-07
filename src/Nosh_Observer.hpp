@@ -38,20 +38,14 @@ class Virtual;
 // =============================================================================
 namespace Nosh {
 
-class Observer :
-  public NOX::Epetra::Observer
+class Observer:  public NOX::Epetra::Observer
 {
-public:
-enum EObserverType { OBSERVER_TYPE_NEWTON,
-                     OBSERVER_TYPE_CONTINUATION,
-                     OBSERVER_TYPE_TURNING_POINT };
-
 public:
 //! Constructor
 Observer(const Teuchos::RCP<const Nosh::ModelEvaluator::Virtual> &modelEval,
-         const std::string & filename,
-         const Observer::EObserverType &problemType,
-         const std::string & contParamName = ""
+         const std::string & csvFilename = "",
+         const std::string & contParamName = "",
+         const bool isTurningPointContinuation = false
          );
 
 //! Destructor
@@ -60,27 +54,37 @@ virtual
 
 virtual
 void
-observeSolution( const Epetra_Vector &soln );
+observeSolution(const Epetra_Vector &soln);
+
+virtual
+void
+observeSolution(const Epetra_Vector& soln,
+                double paramVal);
 
 protected:
 private:
 void
-observeContinuation_(const Epetra_Vector &soln);
+observeContinuation_(const Epetra_Vector &soln,
+                     const double paramVal
+                     );
 
 void
-observeTurningPointContinuation_(const Epetra_Vector &soln);
+observeTurningPointContinuation_(const Epetra_Vector &soln,
+                                 const double paramVal
+                                 );
 
 void
-saveContinuationStatistics_(const int stepIndex,
-                            const Epetra_Vector &soln
+saveContinuationStatistics_(const Epetra_Vector &soln,
+                            const double paramVal,
+                            const int stepIndex
                             );
 
 private:
 
 const Teuchos::RCP<const Nosh::ModelEvaluator::Virtual> modelEval_;
 Nosh::CsvWriter csvWriter_;
-const EObserverType observerType_;
 const std::string contParamName_;
+const bool isTurningPointContinuation_;
 
 };
 

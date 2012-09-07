@@ -89,19 +89,12 @@ evalModel( const InArgs &inArgs,
            const OutArgs &outArgs ) const;
 
 public:
-virtual
-Teuchos::RCP<const Epetra_Vector>
-get_p_latest() const;
 
 virtual
 double
 innerProduct(const Epetra_Vector &phi,
              const Epetra_Vector &psi
              ) const;
-
-virtual
-double
-normalizedScaledL2Norm(const Epetra_Vector &psi) const;
 
 virtual
 double

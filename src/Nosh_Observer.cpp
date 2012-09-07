@@ -27,14 +27,14 @@ namespace Nosh {
 // ============================================================================
 Observer::
 Observer(const Teuchos::RCP<const Nosh::ModelEvaluator::Virtual> &modelEval,
-         const std::string & filename,
-         const Observer::EObserverType &observerType,
-         const std::string & contParamName
+         const std::string & csvFilename,
+         const std::string & contParamName,
+         const bool isTurningPointContinuation
          ) :
   modelEval_(modelEval),
-  csvWriter_(filename, " "),
-  observerType_(observerType),
-  contParamName_(contParamName)
+  csvWriter_(csvFilename, " "),
+  contParamName_(contParamName),
+  isTurningPointContinuation_(isTurningPointContinuation)
 {
 }
 // ============================================================================
@@ -47,71 +47,55 @@ void
 Observer::
 observeSolution(const Epetra_Vector &soln)
 {
-  // The switch hack is necessary as different continuation algorithms
-  // call printSolution() a different number of times per step, e.g.,
-  // to store solutions, null vectors, and so forth.
-  switch ( observerType_ )
-  {
-    case OBSERVER_TYPE_NEWTON:
-      modelEval_->getMesh()->write(soln, 0);
-      break;
-    case OBSERVER_TYPE_CONTINUATION:
-      this->observeContinuation_( soln );
-      break;
-    case OBSERVER_TYPE_TURNING_POINT:
-      this->observeTurningPointContinuation_( soln );
-      break;
-    default:
-      TEUCHOS_TEST_FOR_EXCEPT_MSG( true,
-                           "Illegal observer type " << observerType_ );
-  }
+  modelEval_->getMesh()->write(soln, 0.0);
 
   return;
 }
 // ============================================================================
 void
 Observer::
-observeContinuation_(const Epetra_Vector &soln)
+observeSolution(const Epetra_Vector& soln,
+                double paramVal)
+{
+  // This if-else hack is necessary as different continuation algorithms
+  // call printSolution() a different number of times per step, e.g.,
+  // to store solutions, null vectors, and so forth.
+  if (isTurningPointContinuation_)
+    this->observeTurningPointContinuation_(soln, paramVal);
+  else
+    this->observeContinuation_(soln, paramVal);
+
+  return;
+}
+// ============================================================================
+void
+Observer::
+observeContinuation_(const Epetra_Vector &soln,
+                     const double paramVal
+                     )
 {
   static int index = -1;
   index++;
 
-  double time;
-  if (!contParamName_.empty())
-  {
-    // Extract parameter value.
-#ifndef NDEBUG
-    TEUCHOS_ASSERT( !modelEval_.is_null() );
-    TEUCHOS_ASSERT( !modelEval_->get_p_latest().is_null() );
-#endif
-    Teuchos::RCP<const Epetra_Vector> meParams =
-      modelEval_->get_p_latest();
-    Teuchos::RCP<const Teuchos::Array<std::string> > names =
-      modelEval_->get_p_names(0);
-    for (int k=0; k<names->length(); k++)
-    {
-      if ((*names)[k] == contParamName_)
-      {
-        time = (*meParams)[k];
-        break;
-      }
-    }
-  }
-  else
-  {
-    time = index;
-  }
+  this->saveContinuationStatistics_(soln, paramVal, index);
 
-  this->saveContinuationStatistics_(index, soln);
-
-  modelEval_->getMesh()->write(soln, time);
+  // Storing the parameter value as "time" variable here is convenient, but
+  // has a downside: The default output format ExodusII insists that the
+  // values for time are monotonically increasing. The parameter, however,
+  // can decrease. Since there's no hard reason for the monotonicity condition,
+  // many things will continue to work fine if the time data isn't monotonous.
+  // The display in ParaView is one example where it doesn't work so well.
+  // As a work-around for that, paramVal could be replaced by index.
+  modelEval_->getMesh()->write(soln, paramVal);
 
   return;
 }
 // ============================================================================
 void
 Observer::
-observeTurningPointContinuation_(const Epetra_Vector &soln)
+observeTurningPointContinuation_(const Epetra_Vector &soln,
+                                 const double paramVal
+                                 )
 {
   static int index = -1;
   static bool isSolution = false;
@@ -121,7 +105,7 @@ observeTurningPointContinuation_(const Epetra_Vector &soln)
   if ( isSolution )
   {
     index++;
-    this->saveContinuationStatistics_(index, soln);
+    this->saveContinuationStatistics_(soln, paramVal, index);
     modelEval_->getMesh()->write(soln, index);
   }
   else
@@ -135,28 +119,21 @@ observeTurningPointContinuation_(const Epetra_Vector &soln)
 // ============================================================================
 void
 Observer::
-saveContinuationStatistics_(const int stepIndex,
-                            const Epetra_Vector &soln
+saveContinuationStatistics_(const Epetra_Vector &soln,
+                            const double paramVal,
+                            const int stepIndex
                             )
 {
   // Construct parameter list to stuff into the csvWriter_.
   Teuchos::ParameterList paramList;
   paramList.set( "(0) step", stepIndex );
-  // Model evaluator parameters.
-#ifndef NDEBUG
-  TEUCHOS_ASSERT( !modelEval_.is_null() );
-  TEUCHOS_ASSERT( !modelEval_->get_p_latest().is_null() );
-#endif
-  Teuchos::RCP<const Epetra_Vector> meParams =
-    modelEval_->get_p_latest();
-  // TODO cache this
-  Teuchos::RCP<const Teuchos::Array<std::string> > names =
-    modelEval_->get_p_names(0);
-  for (int k=0; k<names->length(); k++)
-    paramList.set("(1) "+(*names)[k], (*meParams)[k]);
+
+  // Continuation parameter.
+  paramList.set("(1) "+contParamName_, paramVal);
+
   // Some extra stats.
   paramList.set( "(2) Gibbs energy", modelEval_->gibbsEnergy(soln) );
-  paramList.set( "(2) ||x||_2 scaled", modelEval_->normalizedScaledL2Norm(soln) );
+  paramList.set( "(2) ||x||_2 scaled", modelEval_->norm(soln) );
 
   // Write out header.
   if (stepIndex == 0)

@@ -33,5 +33,12 @@ Virtual::
 {
 }
 // =============================================================================
+double
+Virtual::
+norm(const Epetra_Vector &psi) const
+{
+  return sqrt(this->innerProduct(psi, psi));
+}
+// =============================================================================
 } // namespace ModelEvaluator
 } // namespace Nosh

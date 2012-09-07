@@ -80,7 +80,12 @@ StkMesh(const Epetra_Comm & comm,
   metaData_( numDim_ ),
   meshData_(Teuchos::rcp(new stk::io::MeshData())),
   bulkData_(stk::mesh::fem::FEMMetaData::get_meta_data(metaData_),
-            this->epetraComm2mpiComm(comm)),
+#ifdef HAVE_MPI
+    Teuchos::dyn_cast<const Epetra_MpiComm>(comm).Comm()
+#else
+    1
+#endif
+  ),
   ownedNodes_(),
   nodesMap_(),
   nodesOverlapMap_(),
@@ -114,20 +119,6 @@ StkMesh::
 {
 }
 // =============================================================================
-MPI_Comm
-StkMesh::
-epetraComm2mpiComm(const Epetra_Comm &comm) const
-{
-#ifdef HAVE_MPI
-  const Epetra_MpiComm &mpicomm =
-    Teuchos::dyn_cast<const Epetra_MpiComm>(comm);
-  MPI_Comm mcomm = mpicomm.Comm();
-#else
-  int mcomm = 1;
-#endif
-  return mcomm;
-}
-// =============================================================================
 void
 StkMesh::
 read(const Epetra_Comm &comm,
@@ -139,8 +130,6 @@ read(const Epetra_Comm &comm,
   const Epetra_MpiComm &mpicomm =
     Teuchos::dyn_cast<const Epetra_MpiComm>(comm);
   MPI_Comm mcomm = mpicomm.Comm();
-#else
-  int mcomm = 1;
 #endif
   // Take two different fields with one component
   // instead of one field with two components. This works around
@@ -745,7 +734,8 @@ write(const Epetra_Vector & psi,
   TEUCHOS_ASSERT(outputChannelIsOpen_);
 
   // Write it out to the file that's been specified in mesh_.
-  int out_step = stk::io::process_output_request(*meshData_, bulkData_, time);
+  const int out_step =
+    stk::io::process_output_request(*meshData_, bulkData_, time);
 
   return;
 }

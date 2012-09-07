@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
     // =======================================================================
     // Read the data from the file.
     const int step = 0;
-    RCP<Nosh::StkMesh> mesh = rcp(new Nosh::StkMesh(*eComm, dataFile, 0));
+    RCP<Nosh::StkMesh> mesh = rcp(new Nosh::StkMesh(*eComm, dataFile, step));
 
     // Cast the data into something more accessible.
     RCP<Epetra_Vector> psi = mesh->createComplexVector("psi");

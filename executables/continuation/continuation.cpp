@@ -206,9 +206,7 @@ int main(int argc, char *argv[])
     if (solver == "NOX")
     {
       RCP<Nosh::Observer> observer =
-        rcp(new Nosh::Observer(modelEvaluator,
-                               contFilePath,
-                               Nosh::Observer::OBSERVER_TYPE_NEWTON));
+        rcp(new Nosh::Observer(modelEvaluator));
 
       piro = rcp(new Piro::Epetra::NOXSolver(piroParams,
                                              modelEvaluator,
@@ -220,7 +218,6 @@ int main(int argc, char *argv[])
       RCP<Nosh::Observer> observer =
         rcp(new Nosh::Observer(modelEvaluator,
                                contFilePath,
-                               Nosh::Observer::OBSERVER_TYPE_CONTINUATION,
                                piroParams->sublist("LOCA")
                                           .sublist("Stepper")
                                           .get<std::string>("Continuation Parameter")

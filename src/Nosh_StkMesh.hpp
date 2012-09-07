@@ -204,9 +204,6 @@ double time_;
 
 private:
 
-MPI_Comm
-epetraComm2mpiComm(const Epetra_Comm &comm) const;
-
 void
 my_populate_bulk_data_(stk::mesh::BulkData &bulk,
                        Ioss::Region &region,

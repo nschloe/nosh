@@ -56,7 +56,6 @@ Nls(
   scalarPotential_( scalarPotential ),
   thickness_( thickness ),
   x_init_( initialX ),
-  p_latest_(Teuchos::null),
   matrixBuilder_(matrixBuilder),
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   evalModelTime_(Teuchos::TimeMonitor::getNewTimer("Nosh: Nls::evalModel")),
@@ -298,15 +297,6 @@ evalModel(const InArgs &inArgs,
   for (int k=0; k<p_in->MyLength(); k++)
     params[(*paramNames)[k]] = (*p_in)[k];
 
-  // Store "current" parameters, used in this->getParameters().
-  // Setting p_latest__=p_in here is really a somewhat arbitrary choice.
-  // The rationale is that the p-values which were last
-  // used here are the "current" parameter values,
-  // but there's actually no guarantee for it:
-  // The evaluator could have been used for *anything*.
-  // Anyways, it's only used in this->get_p_latest (for NOX::Observer).
-  p_latest_ = Teuchos::rcp(new Epetra_Vector(*p_in));
-
   // compute F
   const Teuchos::RCP<Epetra_Vector> &f_out = outArgs.get_f();
   if ( !f_out.is_null() )
@@ -495,15 +485,6 @@ computeDFDP_(const Epetra_Vector &x,
 
   return;
 }
-// ============================================================================
-Teuchos::RCP<const Epetra_Vector>
-Nls::
-get_p_latest() const
-{
-  // This is fetcher routine to make sure that the NOX::Observer
-  // can print the parameter values.
-  return p_latest_;
-}
 // =============================================================================
 double
 Nls::
@@ -529,13 +510,6 @@ innerProduct(const Epetra_Vector &phi,
 
   // normalize and return
   return globalRes / mesh_->getDomainVolume();
-}
-// ============================================================================
-double
-Nls::
-normalizedScaledL2Norm(const Epetra_Vector &psi) const
-{
-  return sqrt(this->innerProduct(psi, psi));
 }
 // =============================================================================
 double
