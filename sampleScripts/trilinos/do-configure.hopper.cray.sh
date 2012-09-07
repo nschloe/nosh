@@ -1,6 +1,6 @@
 #!/bin/bash
 
-module load cmake/2.8.7
+module load cmake/2.8.9
 module load boost
 module load binutils
 module load netcdf

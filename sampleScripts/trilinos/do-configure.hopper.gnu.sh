@@ -6,7 +6,7 @@ module load binutils
 module load netcdf
 
 cmake \
-  -D CMAKE_INSTALL_PREFIX:PATH="$SCRATCH/trilinos/dev/master/gnu/" \
+  -D CMAKE_INSTALL_PREFIX:PATH="$SCRATCH/trilinos/dev/gnu/" \
   -D Trilinos_ENABLE_TEUCHOS_TIME_MONITOR:BOOL=ON \
   -D Trilinos_ENABLE_DEVELOPMENT_MODE:BOOL=OFF \
   -D CMAKE_BUILD_TYPE=Release \
