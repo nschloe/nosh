@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Make sure the correct compiler is currently loaded.
+if [ "$CRAY_PRGENVGNU" != "loaded" ]; then
+echo "Incorrect compiler. Abort."
+exit 1
+fi
+
 module load cmake
 module load boost
 module load binutils

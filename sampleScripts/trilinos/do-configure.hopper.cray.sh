@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Make sure the correct compiler is currently loaded.
+if [ "$CRAY_PRGENVCRAY" != "loaded" ]; then
+echo "Incorrect compiler. Abort."
+exit 1
+fi
+
 module load cmake/2.8.9
 module load boost
 module load binutils
@@ -20,10 +26,10 @@ cmake \
       -D Boost_INCLUDE_DIRS:PATH="$BOOST_DIR/include" \
   -D TPL_ENABLE_BLAS:BOOL=ON \
       -D BLAS_LIBRARY_DIRS:PATH="$LIBSCI_BASE_DIR/cray/80/mc12/lib" \
-      -D BLAS_LIBRARY_NAMES="sci_pgi" \
+      -D BLAS_LIBRARY_NAMES="sci_cray" \
   -D TPL_ENABLE_LAPACK:BOOL=ON \
       -D LAPACK_LIBRARY_DIRS:PATH="$LIBSCI_BASE_DIR/cray/80/mc12/lib" \
-      -D LAPACK_LIBRARY_NAMES="sci_pgi" \
+      -D LAPACK_LIBRARY_NAMES="sci_cray" \
   -D Trilinos_ENABLE_NOX:BOOL=ON \
       -D NOX_ENABLE_LOCA:BOOL=ON \
   -D Trilinos_ENABLE_Piro:BOOL=ON \
