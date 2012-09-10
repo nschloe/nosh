@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Make sure the correct compiler is currently loaded.
-if [ "$CRAY_PRGENVCRAY" != "loaded" ]; then
+if [ "$CRAY_PRGENVPATHSCALE" != "loaded" ]; then
 echo "Incorrect compiler. Abort."
 exit 1
 fi
@@ -11,16 +11,23 @@ module load boost/1.50
 module load binutils
 module load netcdf
 
-# Use TPL_FIND_SHARED_LIBS:BOOL=OFF to force Trilinos to find
-# the static versions of the TPLs instead of their shared
-# counterparts
+# Building shared libraries fails on Hopper:
+# Somehow, the linker CC enforced static linking which leads to errors
+# of the type
+#
+# /usr/bin/ld: attempted static link of dynamic object `libnemesis.so'
+#
+# when executables are linked.
+# A Trilinos bug makes Trilnos prefer shared TPL libraries over their
+# static counterparts if both are present, independently of BUILD_SHARED_LIBS
+# (bug 5704, cf. https://software.sandia.gov/bugzilla/show_bug.cgi?id=5704).
+# As a workaround, the full library names are provided here.
 
 cmake \
-  -D CMAKE_INSTALL_PREFIX:PATH="$SCRATCH/trilinos/dev/cray/" \
+  -D CMAKE_INSTALL_PREFIX:PATH="$SCRATCH/trilinos/dev/pathscale/" \
   -D CMAKE_BUILD_TYPE=Release \
   -D Trilinos_ENABLE_DEVELOPMENT_MODE:BOOL=OFF \
   -D BUILD_SHARED_LIBS:BOOL=OFF \
-  -D TPL_FIND_SHARED_LIBS:BOOL=OFF \
   -D TPL_ENABLE_MPI:BOOL=ON \
       -D MPI_C_COMPILER:FILEPATH="$ASYNCPE_DIR/bin/cc" \
       -D MPI_CXX_COMPILER:FILEPATH="$ASYNCPE_DIR/bin/CC" \
@@ -32,10 +39,10 @@ cmake \
       -D Boost_INCLUDE_DIRS:PATH="$BOOST_DIR/include" \
   -D TPL_ENABLE_BLAS:BOOL=ON \
       -D BLAS_LIBRARY_DIRS:PATH="$CRAY_LIBSCI_PREFIX_DIR/lib" \
-      -D BLAS_LIBRARY_NAMES="sci_cray" \
+      -D BLAS_LIBRARY_NAMES="libsci_cray.a" \
   -D TPL_ENABLE_LAPACK:BOOL=ON \
       -D LAPACK_LIBRARY_DIRS:PATH="$CRAY_LIBSCI_PREFIX_DIR/lib" \
-      -D LAPACK_LIBRARY_NAMES="sci_cray" \
+      -D LAPACK_LIBRARY_NAMES="libsci_cray.a" \
   -D Trilinos_ENABLE_NOX:BOOL=ON \
       -D NOX_ENABLE_LOCA:BOOL=ON \
   -D Trilinos_ENABLE_Piro:BOOL=ON \
@@ -47,5 +54,5 @@ cmake \
   -D TPL_ENABLE_Netcdf:BOOL=ON \
       -D Netcdf_INCLUDE_DIRS:PATH="$NETCDF_DIR/include" \
       -D Netcdf_LIBRARY_DIRS:PATH="$NETCDF_DIR/lib" \
-      -D Netcdf_LIBRARY_NAMES="netcdf" \
+      -D Netcdf_LIBRARY_NAMES="libnetcdf.a" \
   ../../source/
