@@ -237,6 +237,7 @@ getScalarFieldNonconst(const stk::mesh::Entity * nodeEntity,
 void
 computeEdgeCoefficients_() const;
 
+//! Compute the volume of the (Voronoi) control cells for each point.
 void
 computeControlVolumes_() const;
 
