@@ -1,5 +1,5 @@
 cmake \
-  -D CMAKE_INSTALL_PREFIX:PATH=/opt/trilinos/dev/master/openmpi/1.4.3/gcc/4.6.3/release \
+  -D CMAKE_INSTALL_PREFIX:PATH=/opt/trilinos/dev/openmpi/1.4.3/gcc/4.6.3/release \
   -D CMAKE_BUILD_TYPE=Release \
   -D TPL_ENABLE_MPI:BOOL=ON \
   -D Trilinos_ENABLE_TEUCHOS_TIME_MONITOR=ON \
