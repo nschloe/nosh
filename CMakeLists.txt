@@ -1,17 +1,22 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8.8)
 
-# Explicitly set this property to TRUE.
-# This should be the case by default, but a CMake bug
-# doesn't set it. (2012-09-04)
-# If this is fixed in a future version of CMake,
-# this following statement can be removed.
-SET_PROPERTY(GLOBAL PROPERTY
-             TARGET_SUPPORTS_SHARED_LIBS TRUE)
+PROJECT(Nosh CXX)
 
 FIND_PACKAGE(Trilinos REQUIRED)
 
-# Set compilers before the PROJECT is declared.
-SET(CMAKE_CXX_COMPILER ${Trilinos_CXX_COMPILER})
+# Make sure the compilers match.
+IF(NOT ${Trilinos_CXX_COMPILER} STREQUAL ${CMAKE_CXX_COMPILER})
+  MESSAGE(SEND_ERROR "Compilers don't match (Trilinos: ${Trilinos_CXX_COMPILER}, Nosh: ${CMAKE_CXX_COMPILER}).")
+ENDIF()
+
+IF(NOT ${Trilinos_BUILD_SHARED_LIBS})
+  # If Trilinos is statically built, BLAS and LAPACK will need
+  # symbols from the Fortran standard library.
+  SET_PROPERTY(GLOBAL PROPERTY
+               LINKER_LANGUAGE Fortran)
+  LIST(APPEND CMAKE_EXE_LINKER_FLAGS "${Trilinos_EXTRA_LD_FLAGS}")
+ENDIF()
+
 
 set(Nosh_MAJOR_VERSION 11)
 set(Nosh_MINOR_VERSION 0)
@@ -26,7 +31,6 @@ options are: None(CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used) Debug Profile
 Release RelWithDebInfo MinSizeRel.")
 ENDIF()
 
-PROJECT(Nosh CXX)
 ENABLE_TESTING()
 
 #IF(NOT ${CMAKE_BUILD_TYPE} STREQUAL "Debug")

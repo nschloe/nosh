@@ -1,5 +1,3 @@
-FIND_PACKAGE(Trilinos REQUIRED)
-
 # Treat Trilinos as system code to prevent warnings from
 # Trilinos to appear here.
 INCLUDE_DIRECTORIES(SYSTEM
@@ -9,8 +7,17 @@ INCLUDE_DIRECTORIES(SYSTEM
 FILE(GLOB nosh_SRCS "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 FILE(GLOB nosh_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/*.hpp")
 
-ADD_LIBRARY(nosh
+ADD_LIBRARY("nosh"
             ${nosh_SRCS})
+
+# Add target link libraries.
+# This has no effect for static builds, but appends the Trilinos
+# libraries to the link line to avoid underlinking.
+# Not adding TARGET_LINK_LIBRARIES() makes the link step fail with
+# -DCMAKE_SHARED_LINKER_FLAGS:STRING="-Wl,--no-undefined".
+TARGET_LINK_LIBRARIES("nosh"
+                      ${Trilinos_LIBRARIES}
+                      ${Trilinos_TPL_LIBRARIES})
 
 SET_TARGET_PROPERTIES(
   nosh
