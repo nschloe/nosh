@@ -9,14 +9,13 @@ IF(NOT ${Trilinos_CXX_COMPILER} STREQUAL ${CMAKE_CXX_COMPILER})
   MESSAGE(SEND_ERROR "Compilers don't match (Trilinos: ${Trilinos_CXX_COMPILER}, Nosh: ${CMAKE_CXX_COMPILER}).")
 ENDIF()
 
-IF(NOT ${Trilinos_BUILD_SHARED_LIBS})
-  # If Trilinos is statically built, BLAS and LAPACK will need
-  # symbols from the Fortran standard library.
-  SET_PROPERTY(GLOBAL PROPERTY
-               LINKER_LANGUAGE Fortran)
-  LIST(APPEND CMAKE_EXE_LINKER_FLAGS "${Trilinos_EXTRA_LD_FLAGS}")
-ENDIF()
-
+#IF(NOT ${Trilinos_BUILD_SHARED_LIBS})
+#  # If Trilinos is statically built, BLAS and LAPACK will need
+#  # symbols from the Fortran standard library.
+#  SET_PROPERTY(GLOBAL PROPERTY
+#               LINKER_LANGUAGE Fortran)
+#  SET(CMAKE_EXE_LINKER_FLAGS "${Trilinos_EXTRA_LD_FLAGS}" "${CMAKE_EXE_LINKER_FLAGS}")
+#ENDIF()
 
 set(Nosh_MAJOR_VERSION 11)
 set(Nosh_MINOR_VERSION 0)
@@ -63,7 +62,7 @@ ADD_SUBDIRECTORY( test )
 # Add all targets to the build-tree export set
 export(TARGETS nosh cont
        FILE "${PROJECT_BINARY_DIR}/NoshLibraryDepends.cmake")
- 
+
 # Export the package for use from the build-tree
 # (this registers the build-tree with a global CMake-registry)
 export(PACKAGE nosh)

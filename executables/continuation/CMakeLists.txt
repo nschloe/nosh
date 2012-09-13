@@ -18,11 +18,15 @@ INCLUDE_DIRECTORIES(SYSTEM
 #                 ${Trilinos_TPL_LIBRARY_DIRS})
 # ------------------------------------------------------------------------------
 SET(MY_EXECUTABLE "cont")
-ADD_EXECUTABLE( ${MY_EXECUTABLE} "continuation.cpp" "MyScalarField.cpp")
-TARGET_LINK_LIBRARIES( ${MY_EXECUTABLE}
-                       "nosh"
-                       ${Trilinos_LIBRARIES}
-                       ${Trilinos_TPL_LIBRARIES} )
+ADD_EXECUTABLE(${MY_EXECUTABLE} "continuation.cpp" "MyScalarField.cpp")
+TARGET_LINK_LIBRARIES(${MY_EXECUTABLE}
+                      "nosh"
+                      ${Trilinos_LIBRARIES}
+                      ${Trilinos_TPL_LIBRARIES})
+#SET_TARGET_PROPERTIES(
+#  ${MY_EXECUTABLE}
+#  PROPERTIES
+#  LINKER_LANGUAGE Fortran)
 INSTALL(TARGETS ${MY_EXECUTABLE}
         # IMPORTANT: Add the executable to the "export-set"
         EXPORT NoshLibraryDepends

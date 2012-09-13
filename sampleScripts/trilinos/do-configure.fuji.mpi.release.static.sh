@@ -28,6 +28,7 @@ cmake \
   -D Trilinos_ENABLE_Piro:BOOL=ON \
   -D Trilinos_ENABLE_ML:BOOL=ON \
   -D Trilinos_ENABLE_Anasazi:BOOL=ON \
+  -D Trilinos_ENABLE_Stokhos:BOOL=ON \
   -D Trilinos_ENABLE_STK:BOOL=ON \
   -D Trilinos_ENABLE_SEACASIoss:BOOL=ON \
   -D Trilinos_ENABLE_SEACASNemslice:BOOL=ON \
