@@ -32,7 +32,7 @@ ExplicitValues(const Nosh::StkMesh & mesh,
                const double initMu
                ) :
   initMu_( initMu ),
-  edgeProjectionCache_( Teuchos::ArrayRCP<double>(mesh.getEdgeNodes().size()) )
+  edgeProjectionCache_(mesh.getEdgeNodes().size())
 {
   // Initialize the cache.
   const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > edges =

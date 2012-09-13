@@ -28,33 +28,17 @@ namespace ScalarField {
 // ============================================================================
 ExplicitValues::
 ExplicitValues(const Nosh::StkMesh & mesh,
-               const std::string & fieldName,
-               const double initMu
+               const std::string & fieldName
                ) :
-  initMu_( initMu ),
-  edgeProjectionCache_( Teuchos::ArrayRCP<double>(mesh.getEdgeNodes().size()) )
+  nodeValues_(mesh.getOwnedNodes().size())
 {
-  // Initialize the cache.
-  const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > edges =
-    mesh.getEdgeNodes();
+  // Build the nodeValues_ vector for the field so the values can later
+  // be fetched by their integer nodeIndex into the field.
+  const std::vector<stk::mesh::Entity*> & ownedNodes =
+    mesh.getOwnedNodes();
 
-  // Loop over all edges and create the cache.
-  for (unsigned int k=0; k<edges.size(); k++)
-  {
-    // Approximate the value at the midpoint of the edge
-    // by the average of the values at the adjacent nodes.
-    DoubleVector av = mesh.getVectorFieldNonconst(edges[k][0], fieldName, 3);
-    av += mesh.getVectorFieldNonconst(edges[k][1], fieldName, 3);
-    av *= 0.5;
-
-    // Extract the nodal coordinates.
-    DoubleVector edge = mesh.getVectorFieldNonconst(edges[k][1],
-                                                    "coordinates", 3);
-    edge -= mesh.getVectorFieldNonconst(edges[k][0],
-                                        "coordinates", 3);
-
-    edgeProjectionCache_[k] = av.dot(edge);
-  }
+  for (int k=0; k<ownedNodes.size(); k++)
+    nodeValues_[k] = mesh.getScalarFieldNonconst(ownedNodes[k], fieldName);
 
   return;
 }
@@ -69,32 +53,26 @@ ExplicitValues::
 getParameters() const
 {
   std::map<std::string,double> m;
-  m["mu"] = initMu_;
   return m;
 }
 // ============================================================================
 double
 ExplicitValues::
-getEdgeProjection(const unsigned int edgeIndex,
-                  const std::map<std::string,double> & params
-                  ) const
+getV(const unsigned int nodeIndex,
+     const std::map<std::string,double> & params
+     ) const
 {
-  std::map<std::string, double>::const_iterator it = params.find("mu");
-  TEUCHOS_ASSERT(it != params.end());
-  return it->second * edgeProjectionCache_[edgeIndex];
+  return nodeValues_[nodeIndex];
 }
 // ============================================================================
 double
 ExplicitValues::
-getDEdgeProjectionDp(const unsigned int edgeIndex,
-                     const std::map<std::string,double> & params,
-                     const std::string & paramName
-                     ) const
+getdVdP(const unsigned int nodeIndex,
+        const std::map<std::string,double> & params,
+        const std::string & paramName
+        ) const
 {
-  if (paramName.compare("mu") == 0)
-    return edgeProjectionCache_[edgeIndex];
-  else
-    return 0.0;
+  return 0.0;
 }
 // ============================================================================
 } // namespace ScalarField

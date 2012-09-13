@@ -18,6 +18,7 @@
 
 #include "Nosh_StkMesh.hpp"
 #include "Nosh_ScalarField_Constant.hpp"
+#include "Nosh_ScalarField_ExplicitValues.hpp"
 #include "Nosh_MatrixBuilder_Keo.hpp"
 #include "Nosh_MatrixBuilder_Laplace.hpp"
 #include "Nosh_VectorField_ExplicitValues.hpp"
@@ -156,12 +157,15 @@ int main(int argc, char *argv[])
     // - - - - - - - - - - - - - - - - - - - - -  - - - - - - - - - - - - - - -
     // Setup the scalar potential V.
     // (a) A constant potential.
-    RCP<Nosh::ScalarField::Virtual> sp =
-      rcp(new Nosh::ScalarField::Constant(-1.0));
-    //const double T = initialParameterValues.get<double>("T");
-    // (b) One you built yourself by deriving from Nosh::ScalarField::Virtual.
     //RCP<Nosh::ScalarField::Virtual> sp =
-      //rcp(new MyScalarField(mesh));
+    //  rcp(new Nosh::ScalarField::Constant(-1.0));
+    //const double T = initialParameterValues.get<double>("T");
+    // (b) With explicit values.
+    RCP<Nosh::ScalarField::Virtual> sp =
+      rcp(new Nosh::ScalarField::ExplicitValues(*mesh, "V"));
+    // (c) One you built yourself by deriving from Nosh::ScalarField::Virtual.
+    //RCP<Nosh::ScalarField::Virtual> sp =
+    //  rcp(new MyScalarField(mesh));
     // - - - - - - - - - - - - - - - - - - - - -  - - - - - - - - - - - - - - -
 
     // Finally, create the model evaluator.

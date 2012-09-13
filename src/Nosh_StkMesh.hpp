@@ -160,6 +160,11 @@ getVectorFieldNonconst(const stk::mesh::Entity * nodeEntity,
                        const int numDims
                        ) const;
 
+double
+getScalarFieldNonconst(const stk::mesh::Entity * nodeEntity,
+                       const std::string & fieldName
+                       ) const;
+
 protected:
 private:
 
@@ -225,11 +230,6 @@ field2vector_(const VectorFieldType &field,
 
 std::vector<stk::mesh::Entity*>
 buildOwnedNodes_() const;
-
-double
-getScalarFieldNonconst(const stk::mesh::Entity * nodeEntity,
-                       const std::string & fieldName
-                       ) const;
 
 //Teuchos::ArrayRCP<const DoubleVector>
 //getNodeCoordinates_( const stk::mesh::PairIterRelation &relation ) const;

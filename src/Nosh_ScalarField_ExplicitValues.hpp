@@ -34,34 +34,34 @@ class ExplicitValues : public Virtual
 {
 public:
 ExplicitValues(const Nosh::StkMesh &mesh,
-               const std::string &fieldName,
-               const double initMu
+               const std::string &fieldName
                );
 
 virtual
 ~ExplicitValues();
+
+virtual
+double
+getV(const unsigned int nodeIndex,
+     const std::map<std::string,double> & params
+     ) const;
+
+virtual
+double
+getdVdP(const unsigned int nodeIndex,
+        const std::map<std::string,double> & params,
+        const std::string & paramName
+        ) const;
 
 //! Get parameter names and initial values.
 virtual
 const std::map<std::string,double>
 getParameters() const;
 
-double
-getEdgeProjection(const unsigned int edgeIndex,
-                  const std::map<std::string,double> & params
-                  ) const;
-
-double
-getDEdgeProjectionDp(const unsigned int edgeIndex,
-                     const std::map<std::string,double> & params,
-                     const std::string & paramName
-                     ) const;
-
 protected:
 private:
-const double initMu_;
 
-Teuchos::ArrayRCP<double> edgeProjectionCache_;
+Teuchos::ArrayRCP<double> nodeValues_;
 };
 } // namespace ScalarField
 } // namespace Nosh
