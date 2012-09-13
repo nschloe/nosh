@@ -209,12 +209,6 @@ double time_;
 
 private:
 
-void
-my_populate_bulk_data_(stk::mesh::BulkData &bulk,
-                       Ioss::Region &region,
-                       stk::mesh::fem::FEMMetaData &fem_meta
-                       );
-
 Teuchos::RCP<Epetra_Vector>
 complexfield2vector_(const ScalarFieldType &realField,
                      const ScalarFieldType &imagField

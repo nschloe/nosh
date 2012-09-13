@@ -301,11 +301,11 @@ read(const Epetra_Comm &comm,
   {
     bulkData_.modification_begin();
     Ioss::Region *region = meshData_->m_input_region;
-    // Populate on the reader process.
     if (comm.MyPID() == 0)
-      my_populate_bulk_data_(bulkData_, *region, metaData_);
-    // Note:
-    // Restart from a single Exodus file not currently supported.
+    {
+      stk::io::process_mesh_bulk_data(region, bulkData_);
+      stk::io::input_mesh_fields(region, bulkData_, index+1);
+    }
     bulkData_.modification_end();
   }
   else
@@ -315,6 +315,16 @@ read(const Epetra_Comm &comm,
 
     // Remember: Indices in STK are 1-based. :/
     stk::io::process_input_request(*meshData_, bulkData_, index+1);
+
+    // This should be propagated into stk::io
+    //Ioss::Region *region = meshData_->m_input_region;
+    //const Ioss::ElementBlockContainer& elem_blocks = region->get_element_blocks();
+    //// Uncomment to print what fields are in the exodus file
+    //Ioss::NameList exo_fld_names;
+    //elem_blocks[0]->field_describe(&exo_fld_names);
+    //for(std::size_t i = 0; i < exo_fld_names.size(); i++)
+    //  std::cout << "Found field \"" << exo_fld_names[i] << "\" in exodus file" << std::endl;
+
     bulkData_.modification_end();
 #ifdef HAVE_MPI
   }
@@ -328,7 +338,7 @@ read(const Epetra_Comm &comm,
                                                    &selector);
   if (imbalance > 1.5)
   {
-    //*out << "The imbalance is " << imbalance << ". Rebalance!";
+    //std::cout << "The imbalance is " << imbalance << ". Rebalance!" << std::endl;
     // Zoltan graph-based reblancing.
     // http://trilinos.sandia.gov/packages/docs/dev/packages/stk/doc/html/group__stk__rebalance__unit__test__module.html
     Teuchos::ParameterList lb_method;
@@ -347,7 +357,7 @@ read(const Epetra_Comm &comm,
     //                                          NULL,
     //                                          metaData_.node_rank(),
     //                                          &selector);
-    //*out << "After rebalancing, the imbalance is " << imbalance << "." << std::endl;
+    //std::cout << "After rebalancing, the imbalance is " << imbalance << "." << std::endl;
   }
 #endif
 
@@ -362,191 +372,6 @@ StkMesh::
 getTime() const
 {
   return time_;
-}
-// =============================================================================
-void
-StkMesh::
-my_populate_bulk_data_(stk::mesh::BulkData &bulk,
-                       Ioss::Region &region,
-                       stk::mesh::fem::FEMMetaData &fem_meta
-                       )
-{
-  // From Albany, Albany_IossSTKMeshStruct.cpp.
-  // This function duplicates the function stk::io::populate_bulk_data, with the exception of an
-  // internal modification_begin() and modification_end(). When reading bulk data on a single processor (single
-  // exodus file), all PEs must enter the modification_begin() / modification_end() block, but only one reads the
-  // bulk data.
-  // TODO pull the modification statements from populate_bulk_data and retrofit.
-  { // element blocks
-
-    const Ioss::ElementBlockContainer& elem_blocks = region.get_element_blocks();
-    for(Ioss::ElementBlockContainer::const_iterator it = elem_blocks.begin();
-  it != elem_blocks.end(); ++it) {
-      Ioss::ElementBlock *entity = *it;
-
-      if (stk::io::include_entity(entity)) {
-  const std::string &name = entity->name();
-  stk::mesh::Part* const part = fem_meta.get_part(name);
-  assert(part != NULL);
-
-  const CellTopologyData* cell_topo = stk::io::get_cell_topology(*part);
-  if (cell_topo == NULL) {
-    std::ostringstream msg ;
-    msg << " INTERNAL_ERROR: Part " << part->name() << " returned NULL from get_cell_topology()";
-    throw std::runtime_error( msg.str() );
-  }
-
-  std::vector<int> elem_ids ;
-  std::vector<int> connectivity ;
-
-  entity->get_field_data("ids", elem_ids);
-  entity->get_field_data("connectivity", connectivity);
-
-  size_t element_count = elem_ids.size();
-  int nodes_per_elem = cell_topo->node_count ;
-
-  std::vector<stk::mesh::EntityId> id_vec(nodes_per_elem);
-  std::vector<stk::mesh::Entity*> elements(element_count);
-
-  for(size_t i=0; i<element_count; ++i) {
-    int *conn = &connectivity[i*nodes_per_elem];
-    std::copy(&conn[0], &conn[0+nodes_per_elem], id_vec.begin());
-    elements[i] = &stk::mesh::fem::declare_element(bulk, *part, elem_ids[i], &id_vec[0]);
-  }
-
-  // Add all element attributes as fields.
-  // If the only attribute is 'attribute', then add it; otherwise the other attributes are the
-  // named components of the 'attribute' field, so add them instead.
-  Ioss::NameList names;
-  entity->field_describe(Ioss::Field::ATTRIBUTE, &names);
-  for(Ioss::NameList::const_iterator I = names.begin(); I != names.end(); ++I) {
-    if(*I == "attribute" && names.size() > 1)
-      continue;
-    stk::mesh::FieldBase *field = fem_meta.get_field<stk::mesh::FieldBase> (*I);
-    if (field)
-      stk::io::field_data_from_ioss(field, elements, entity, *I);
-  }
-      }
-    }
-  }
-
-  { // nodeblocks
-
-    const Ioss::NodeBlockContainer& node_blocks = region.get_node_blocks();
-    assert(node_blocks.size() == 1);
-
-    Ioss::NodeBlock *nb = node_blocks[0];
-
-    std::vector<stk::mesh::Entity*> nodes;
-    stk::io::get_entity_list(nb, fem_meta.node_rank(), bulk, nodes);
-
-    stk::mesh::Field<double,stk::mesh::Cartesian> *coord_field =
-      fem_meta.get_field<stk::mesh::Field<double,stk::mesh::Cartesian> >("coordinates");
-
-    stk::io::field_data_from_ioss(coord_field, nodes, nb, "mesh_model_coordinates");
-
-  }
-
-  { // nodesets
-
-    const Ioss::NodeSetContainer& node_sets = region.get_nodesets();
-
-    for(Ioss::NodeSetContainer::const_iterator it = node_sets.begin();
-  it != node_sets.end(); ++it) {
-      Ioss::NodeSet *entity = *it;
-
-      if (stk::io::include_entity(entity)) {
-  const std::string & name = entity->name();
-  stk::mesh::Part* const part = fem_meta.get_part(name);
-  assert(part != NULL);
-  stk::mesh::PartVector add_parts( 1 , part );
-
-  std::vector<int> node_ids ;
-  int node_count = entity->get_field_data("ids", node_ids);
-
-  std::vector<stk::mesh::Entity*> nodes(node_count);
-  stk::mesh::EntityRank n_rank = fem_meta.node_rank();
-  for(int i=0; i<node_count; ++i) {
-    nodes[i] = bulk.get_entity(n_rank, node_ids[i] );
-    if (nodes[i] != NULL)
-      bulk.declare_entity(n_rank, node_ids[i], add_parts );
-  }
-
-  stk::mesh::Field<double> *df_field =
-    fem_meta.get_field<stk::mesh::Field<double> >("distribution_factors");
-
-  if (df_field != NULL) {
-    stk::io::field_data_from_ioss(df_field, nodes, entity, "distribution_factors");
-  }
-      }
-    }
-  }
-
-  { // sidesets
-
-    const Ioss::SideSetContainer& side_sets = region.get_sidesets();
-
-    for(Ioss::SideSetContainer::const_iterator it = side_sets.begin();
-  it != side_sets.end(); ++it) {
-      Ioss::SideSet *entity = *it;
-
-      if (stk::io::include_entity(entity)) {
-//  process_surface_entity(entity, bulk);
-  {
-    assert(entity->type() == Ioss::SIDESET);
-
-    size_t block_count = entity->block_count();
-    for (size_t i=0; i < block_count; i++) {
-      Ioss::SideBlock *block = entity->get_block(i);
-      if (stk::io::include_entity(block)) {
-  std::vector<int> side_ids ;
-  std::vector<int> elem_side ;
-
-  stk::mesh::Part * const sb_part = fem_meta.get_part(block->name());
-  stk::mesh::EntityRank elem_rank = fem_meta.element_rank();
-
-  block->get_field_data("ids", side_ids);
-  block->get_field_data("element_side", elem_side);
-
-  assert(side_ids.size() * 2 == elem_side.size());
-  stk::mesh::PartVector add_parts( 1 , sb_part );
-
-  size_t side_count = side_ids.size();
-  std::vector<stk::mesh::Entity*> sides(side_count);
-  for(size_t is=0; is<side_count; ++is) {
-    stk::mesh::Entity* const elem = bulk.get_entity(elem_rank, elem_side[is*2]);
-
-    // If NULL, then the element was probably assigned to an
-    // element block that appears in the database, but was
-    // subsetted out of the analysis mesh. Only process if
-    // non-null.
-    if (elem != NULL) {
-      // Ioss uses 1-based side ordinal, stk::mesh uses 0-based.
-      int side_ordinal = elem_side[is*2+1] - 1;
-
-      stk::mesh::Entity* side_ptr = NULL;
-      side_ptr = &stk::mesh::fem::declare_element_side(bulk, side_ids[is], *elem, side_ordinal);
-      stk::mesh::Entity& side = *side_ptr;
-
-      bulk.change_entity_parts( side, add_parts );
-      sides[is] = &side;
-    } else {
-      sides[is] = NULL;
-    }
-  }
-
-  const stk::mesh::Field<double, stk::mesh::ElementNode> *df_field =
-    stk::io::get_distribution_factor_field(*sb_part);
-  if (df_field != NULL) {
-    stk::io::field_data_from_ioss(df_field, sides, block, "distribution_factors");
-  }
-      }
-    }
-  }
-      }
-    }
-  }
-
 }
 // =============================================================================
 Teuchos::RCP<Epetra_Vector>
@@ -690,11 +515,10 @@ openOutputChannel(const string &outputDir,
   const Epetra_MpiComm &mpicomm =
     Teuchos::dyn_cast<const Epetra_MpiComm>(comm_);
   MPI_Comm mcomm = mpicomm.Comm();
-  const std::string extension = (mpicomm.NumProc()>1) ? ".par" : ".e";
 #else
   const int mcomm = 1;
-  const std::string extension = ".e";
 #endif
+  const std::string extension = ".e";
 
   // Make sure the outputDir ends in "/".
   // Dir and filename are not concatenated properly in stk::mesh,
