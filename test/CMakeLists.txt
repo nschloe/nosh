@@ -23,27 +23,11 @@ SET(internal_LIBS "nosh")
 if( NOT ${CMAKE_CURRENT_SOURCE_DIR} EQUAL ${CMAKE_CURRENT_BINARY_DIR} )
     FILE( COPY "${CMAKE_CURRENT_SOURCE_DIR}/data/rectanglesmall.e"
           DESTINATION ${CMAKE_CURRENT_BINARY_DIR} )
-    FILE( COPY "${CMAKE_CURRENT_SOURCE_DIR}/data/rectanglesmall-balanced.par.2.0"
-          DESTINATION ${CMAKE_CURRENT_BINARY_DIR} )
-    FILE( COPY "${CMAKE_CURRENT_SOURCE_DIR}/data/rectanglesmall-balanced.par.2.1"
-          DESTINATION ${CMAKE_CURRENT_BINARY_DIR} )
     FILE( COPY "${CMAKE_CURRENT_SOURCE_DIR}/data/pacman.e"
-          DESTINATION ${CMAKE_CURRENT_BINARY_DIR} )
-    FILE( COPY "${CMAKE_CURRENT_SOURCE_DIR}/data/pacman-balanced.par.2.0"
-          DESTINATION ${CMAKE_CURRENT_BINARY_DIR} )
-    FILE( COPY "${CMAKE_CURRENT_SOURCE_DIR}/data/pacman-balanced.par.2.1"
           DESTINATION ${CMAKE_CURRENT_BINARY_DIR} )
     FILE( COPY "${CMAKE_CURRENT_SOURCE_DIR}/data/cubesmall.e"
           DESTINATION ${CMAKE_CURRENT_BINARY_DIR} )
-    FILE( COPY "${CMAKE_CURRENT_SOURCE_DIR}/data/cubesmall-balanced.par.2.0"
-          DESTINATION ${CMAKE_CURRENT_BINARY_DIR} )
-    FILE( COPY "${CMAKE_CURRENT_SOURCE_DIR}/data/cubesmall-balanced.par.2.1"
-          DESTINATION ${CMAKE_CURRENT_BINARY_DIR} )
     FILE( COPY "${CMAKE_CURRENT_SOURCE_DIR}/data/brick-w-hole.e"
-          DESTINATION ${CMAKE_CURRENT_BINARY_DIR} )
-    FILE( COPY "${CMAKE_CURRENT_SOURCE_DIR}/data/brick-w-hole-balanced.par.2.0"
-          DESTINATION ${CMAKE_CURRENT_BINARY_DIR} )
-    FILE( COPY "${CMAKE_CURRENT_SOURCE_DIR}/data/brick-w-hole-balanced.par.2.1"
           DESTINATION ${CMAKE_CURRENT_BINARY_DIR} )
 endif()
 # ------------------------------------------------------------------------------
@@ -58,6 +42,9 @@ ADD_TEST( ioTestSerial
         )
 ADD_TEST( ioTestMpi2
           mpiexec -n 2 ${IOTEST_EXECUTABLE}
+        )
+ADD_TEST( ioTestMpi7
+          mpiexec -n 7 ${IOTEST_EXECUTABLE}
         )
 
 # Set executable linking information.
@@ -79,6 +66,9 @@ ADD_TEST( meshTestSerial
         )
 ADD_TEST( meshTestMpi2
           mpiexec -n 2 ${MESHTEST_EXECUTABLE}
+        )
+ADD_TEST( meshTestMpi7
+          mpiexec -n 7 ${MESHTEST_EXECUTABLE}
         )
 
 # Set executable linking information.
@@ -103,6 +93,9 @@ ADD_TEST( operatorTest
         )
 ADD_TEST( operatorTestMpi2
           mpiexec -n 2 ${OPERATORTEST_EXECUTABLE}
+        )
+ADD_TEST( operatorTestMpi7
+          mpiexec -n 7 ${OPERATORTEST_EXECUTABLE}
         )
 
 # Set executable linking information.

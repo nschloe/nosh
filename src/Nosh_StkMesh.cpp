@@ -338,7 +338,8 @@ read(const Epetra_Comm &comm,
                                                    &selector);
   if (imbalance > 1.5)
   {
-    //std::cout << "The imbalance is " << imbalance << ". Rebalance!" << std::endl;
+    //if (comm.MyPID() == 0)
+    //  std::cout << "The imbalance is " << imbalance << ". Rebalance!" << std::endl;
     // Zoltan graph-based reblancing.
     // http://trilinos.sandia.gov/packages/docs/dev/packages/stk/doc/html/group__stk__rebalance__unit__test__module.html
     Teuchos::ParameterList lb_method;
@@ -357,7 +358,8 @@ read(const Epetra_Comm &comm,
     //                                          NULL,
     //                                          metaData_.node_rank(),
     //                                          &selector);
-    //std::cout << "After rebalancing, the imbalance is " << imbalance << "." << std::endl;
+    //if (comm.MyPID() == 0)
+    //  std::cout << "After rebalancing, the imbalance is " << imbalance << "." << std::endl;
   }
 #endif
 
