@@ -101,10 +101,6 @@ int main(int argc, char *argv[])
 
     const bool useBordering = piroParams->get<bool>("Bordering");
     // =======================================================================
-    // Get the initial parameter values.
-    Teuchos::ParameterList initialParameterValues =
-      piroParams->sublist("Initial parameter values", true);
-
     // Read the data from the file.
     RCP<Nosh::StkMesh> mesh = rcp(new Nosh::StkMesh(*eComm, dataFile, step));
 
@@ -113,6 +109,28 @@ int main(int argc, char *argv[])
 
     // Set the output directory for later plotting with this.
     mesh->openOutputChannel(outputDirectory, "solution");
+
+    // Create a parameter map from the initial parameter values.
+    Teuchos::ParameterList initialParameterValues =
+      piroParams->sublist("Initial parameter values", true);
+
+    // Check if we ned to interpret the time value stored in the file
+    // as a parameter.
+    const std::string & timeName =
+      piroParams->get<std::string>("Interpret time as");
+    if (!timeName.empty())
+      initialParameterValues.set(timeName, mesh->getTime());
+
+    // Explicitly set the initial parameter value for this list.
+    const std::string & paramName =
+      piroParams->sublist( "LOCA" )
+                 .sublist( "Stepper" )
+                 .get<std::string>("Continuation Parameter");
+    *out << "Setting the initial parameter value of \""
+         << paramName << "\" to " << initialParameterValues.get<double>(paramName) << std::endl;
+    piroParams->sublist( "LOCA" )
+               .sublist( "Stepper" )
+               .set("Initial Value", initialParameterValues.get<double>(paramName));
 
     // Set the thickness field.
     RCP<Nosh::ScalarField::Virtual> thickness =
@@ -126,9 +144,9 @@ int main(int argc, char *argv[])
 
     // (b) (-i\nabla-A)^2 (Kinetic energy of a particle in magnetic field)
     // (b1) 'A' explicitly given in file.
-    const double initMu = initialParameterValues.get<double>("mu");
+    const double mu = initialParameterValues.get<double>("mu");
     RCP<Nosh::VectorField::Virtual> mvp =
-      rcp(new Nosh::VectorField::ExplicitValues(*mesh, "A", initMu));
+      rcp(new Nosh::VectorField::ExplicitValues(*mesh, "A", mu));
     const RCP<Nosh::MatrixBuilder::Virtual> matrixBuilder =
       rcp(new Nosh::MatrixBuilder::Keo(mesh, thickness, mvp));
 
@@ -158,7 +176,7 @@ int main(int argc, char *argv[])
     // Setup the scalar potential V.
     // (a) A constant potential.
     //RCP<Nosh::ScalarField::Virtual> sp =
-    //  rcp(new Nosh::ScalarField::Constant(-1.0));
+      //rcp(new Nosh::ScalarField::Constant(-1.0));
     //const double T = initialParameterValues.get<double>("T");
     // (b) With explicit values.
     RCP<Nosh::ScalarField::Virtual> sp =

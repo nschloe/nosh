@@ -61,7 +61,7 @@ int main ( int argc, char *argv[] )
     Teuchos::CommandLineProcessor My_CLP;
 
     My_CLP.setDocString (
-      "Linear solver testbed for KEO and Jacobian operator.\n"
+      "Eigensolver for K and J.\n"
     );
 
     std::string inputFilePath("");
