@@ -53,6 +53,7 @@ ExplicitValues::
 getParameters() const
 {
   std::map<std::string,double> m;
+  m["beta"] = 1.0;
   return m;
 }
 // ============================================================================
@@ -62,7 +63,14 @@ getV(const unsigned int nodeIndex,
      const std::map<std::string,double> & params
      ) const
 {
-  return nodeValues_[nodeIndex];
+  double val = nodeValues_[nodeIndex];
+
+  // Find the value of "beta" and use it as a factor.
+  std::map<std::string, double>::const_iterator it = params.find("beta");
+  TEUCHOS_ASSERT(it != params.end());
+  val *= it->second;
+
+  return val;
 }
 // ============================================================================
 double
@@ -72,7 +80,10 @@ getdVdP(const unsigned int nodeIndex,
         const std::string & paramName
         ) const
 {
-  return 0.0;
+  if (paramName.compare("beta") == 0)
+    return nodeValues_[nodeIndex];
+  else
+    return 0.0;
 }
 // ============================================================================
 } // namespace ScalarField
