@@ -162,32 +162,44 @@ read(const Epetra_Comm &comm,
   }
 #endif
 
-  // The database is manually initialized to get explicit access to it
-  // to be able to call set_field_separator(). This tells the database to
-  // recognize 'AX', 'AY', 'AZ', as components of one vector field.
-  // By default, the separator is '_' such that only fields 'A_*' would be
-  // recognized as such.
-  // 2011-09-26, Greg's mail:
-  // "It is possible to manually open the database and create the Ioss::Region,
-  // put that in the MeshData object and then call create_input_mesh(), but that
-  // gets ugly.  I will try to come up with a better option... "
   std::string meshType = "exodusii";
-  Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(meshType,
-                                                  fileName,
-                                                  Ioss::READ_MODEL,
-                                                  readerComm);
-  TEUCHOS_TEST_FOR_EXCEPT_MSG( dbi == NULL || !dbi->ok(),
-                       "ERROR: Could not open database '" << fileName
-                       << "' of type '" << meshType << "'.");
-
-  // set the vector field label separator
-  dbi->set_field_separator( 0 );
-
-  // create region to feed into meshData
-  Ioss::Region *in_region = new Ioss::Region( dbi, "input_model" );
-  // ---------------------------------------------------------------------------
-
-  meshData_->m_input_region = in_region;
+  // By default, the Exodus field separator is '_'
+  // such that only fields 'A_*' would be recognized as such.
+  // However, VTK is inconsistent in its putting underscores
+  // in field names, such that vectors with three components
+  // are typically stored as 'AX', 'AY', 'AZ'.
+  // This can be worked around where the Exodus file is created
+  // or here.
+  // The problem about messing around with the input database here
+  // is that the output routines will always "correctly" append
+  // an underscore. This then creates a difference between VTK-
+  // generated and Trilinos-generated files.
+  // Setting removing the underscore from both input and output
+  // files is possible in a figure version of Trilinos, c.f.
+  // Greg's mail (2012-09-20):
+  // '''
+  // Basically, if you do the following prior to creating ,
+  // it should give you a consistent field separator:
+  //
+  // meshData_->m_property_manager.add(Ioss::Property("FIELD_SUFFIX_SEPARATOR", ""));
+  // '''
+  //
+  // Anyways. Here's some code that removes the underscore from
+  // the input database. Keep it commented out for now though.
+  // <WORKAROUND CODE START>
+  //Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(meshType,
+  //                                                fileName,
+  //                                                Ioss::READ_MODEL,
+  //                                                readerComm);
+  //TEUCHOS_TEST_FOR_EXCEPT_MSG( dbi == NULL || !dbi->ok(),
+  //                     "ERROR: Could not open database '" << fileName
+  //                     << "' of type '" << meshType << "'.");
+  //// set the vector field label separator
+  //dbi->set_field_separator( 0 );
+  //// create region to feed into meshData
+  //Ioss::Region *in_region = new Ioss::Region( dbi, "input_model" );
+  //meshData_->m_input_region = in_region;
+  // <WORKAROUND CODE END>
 
   // This checks the existence of the file, checks to see if we can open it,
   // builds a handle to the region and puts it in mesh_data (in_region),
