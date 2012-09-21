@@ -25,6 +25,10 @@ if( NOT ${CMAKE_CURRENT_SOURCE_DIR} EQUAL ${CMAKE_CURRENT_BINARY_DIR} )
           DESTINATION ${CMAKE_CURRENT_BINARY_DIR} )
     FILE( COPY "${CMAKE_CURRENT_SOURCE_DIR}/data/pacman.e"
           DESTINATION ${CMAKE_CURRENT_BINARY_DIR} )
+    FILE( COPY "${CMAKE_CURRENT_SOURCE_DIR}/data/shell.e"
+          DESTINATION ${CMAKE_CURRENT_BINARY_DIR} )
+    FILE( COPY "${CMAKE_CURRENT_SOURCE_DIR}/data/sphere.e"
+          DESTINATION ${CMAKE_CURRENT_BINARY_DIR} )
     FILE( COPY "${CMAKE_CURRENT_SOURCE_DIR}/data/cubesmall.e"
           DESTINATION ${CMAKE_CURRENT_BINARY_DIR} )
     FILE( COPY "${CMAKE_CURRENT_SOURCE_DIR}/data/brick-w-hole.e"
@@ -58,7 +62,7 @@ SET( MESHTEST_EXECUTABLE
      "meshTest" )
 ADD_EXECUTABLE ( ${MESHTEST_EXECUTABLE}
                  Nosh_StkMeshTests.cpp
-#                  Nosh_EdgeCacheTests.cpp
+#                 Nosh_EdgeCacheTests.cpp
                  unitTestMain.cpp )
 # add tests
 ADD_TEST( meshTestSerial

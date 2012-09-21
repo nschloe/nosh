@@ -1,7 +1,7 @@
 // @HEADER
 //
 //    <one line to give the program's name and a brief idea of what it does.>
-//    Copyright (C) 2011  Nico Schl\"omer
+//    Copyright (C) 2011--2012  Nico Schl\"omer
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -28,7 +28,6 @@
 #include <Epetra_Vector.h>
 
 #include "Nosh_StkMesh.hpp"
-#include "Nosh_Helpers.hpp"
 
 #include <Teuchos_UnitTestHarness.hpp>
 
@@ -148,38 +147,32 @@ testCache( const std::string & inputFileNameBase,
 // ===========================================================================
 TEUCHOS_UNIT_TEST( Nosh, EdgeCacheRectangleSmall )
 {
-    std::string inputFileNameBase = "rectanglesmall";
-
-    testCache( inputFileNameBase,
-               out,
-               success );
+  testCache("rectanglesmall", out, success);
 }
-============================================================================
+// ============================================================================
 TEUCHOS_UNIT_TEST( Nosh, EdgeCachePacman )
 {
-    std::string inputFileNameBase = "pacman";
-
-    testCache( inputFileNameBase,
-               out,
-               success );
+  testCache("pacman", out, success);
 }
-// // ============================================================================
+// ============================================================================
+TEUCHOS_UNIT_TEST( Nosh, EdgeCachePacman )
+{
+  testCache("shell", out, success);
+}
+// ============================================================================
+TEUCHOS_UNIT_TEST( Nosh, EdgeCachePacman )
+{
+  testCache("sphere", out, success);
+}
+// ============================================================================
 TEUCHOS_UNIT_TEST( Nosh, EdgeCacheCubeSmall )
 {
-    std::string inputFileNameBase = "cubesmall";
-
-    testCache( inputFileNameBase,
-               out,
-               success );
+  testCache("cubesmall", out, success);
 }
 // ============================================================================
 TEUCHOS_UNIT_TEST( Nosh, EdgeCacheBrickWHoleHashes )
 {
-    std::string inputFileNameBase = "brick-w-hole";
-
-    testCache( inputFileNameBase,
-               out,
-               success );
+  testCache("brick-w-hole", out, success);
 }
 // ============================================================================
 } // namespace

@@ -58,7 +58,6 @@ testMesh( const std::string & inputFileNameBase,
     Nosh::StkMesh mesh(*eComm, inputFileName, 0);
 
     const unsigned int numNodes = mesh.getNumNodes();
-//    mesh.computeFvmEntities_();
     TEUCHOS_ASSERT_EQUALITY( numNodes, controlNumNodes );
 
     const Teuchos::RCP<const Epetra_Vector> controlVols = mesh.getControlVolumes();
@@ -99,6 +98,42 @@ TEUCHOS_UNIT_TEST( Nosh, MeshPacmanHashes )
     double controlVolNormOne = 302.5227007210103;
     double controlVolNormTwo = 15.38575790933914;
     double controlVolNormInf = 1.127797467043659;
+
+    testMesh( inputFileNameBase,
+              numNodes,
+              controlVolNormOne,
+              controlVolNormTwo,
+              controlVolNormInf,
+              out,
+              success );
+}
+// ============================================================================
+TEUCHOS_UNIT_TEST( Nosh, MeshShellHashes )
+{
+    std::string inputFileNameBase = "shell";
+
+    unsigned int numNodes = 5;
+    double controlVolNormOne = 3.46410161513775;
+    double controlVolNormTwo = 1.63299316185545;
+    double controlVolNormInf = 1.15470053837925;
+
+    testMesh( inputFileNameBase,
+              numNodes,
+              controlVolNormOne,
+              controlVolNormTwo,
+              controlVolNormInf,
+              out,
+              success );
+}
+// ============================================================================
+TEUCHOS_UNIT_TEST( Nosh, MeshSphereHashes )
+{
+    std::string inputFileNameBase = "sphere";
+
+    unsigned int numNodes = 82;
+    double controlVolNormOne = 11.9741927059035;
+    double controlVolNormTwo = 1.39047542328083;
+    double controlVolNormInf = 0.198927169088121;
 
     testMesh( inputFileNameBase,
               numNodes,

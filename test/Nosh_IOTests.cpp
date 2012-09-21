@@ -70,6 +70,7 @@ testKeo( const std::string & inputFileNameBase,
     psi->NormInf( &r );
     TEST_FLOATING_EQUALITY(r, psiControlNormInf, 1.0e-12);
 
+
     // Check MVP.
     // Only check the infinity-norm here as all other norms
     // only apply to vectors with non-overlapping maps.
@@ -108,6 +109,44 @@ TEUCHOS_UNIT_TEST( Nosh, KeoPacmanHashes )
     Teuchos::Array<double> mvpControlNormsInf(3);
     mvpControlNormsInf[0] = 4.999111652374270;
     mvpControlNormsInf[1] = 5.0;
+    mvpControlNormsInf[2] = 0.0;
+
+    testKeo(inputFileNameBase,
+            psiControlNormOne,
+            psiControlNormInf,
+            mvpControlNormsInf,
+            out,
+            success );
+}
+// ============================================================================
+TEUCHOS_UNIT_TEST( Nosh, KeoShellHashes )
+{
+    std::string inputFileNameBase = "shell";
+
+    const double psiControlNormOne = 5.0;
+    const double psiControlNormInf = 1.0;
+    Teuchos::Array<double> mvpControlNormsInf(3);
+    mvpControlNormsInf[0] = 0.5;
+    mvpControlNormsInf[1] = 0.5;
+    mvpControlNormsInf[2] = 0.0;
+
+    testKeo(inputFileNameBase,
+            psiControlNormOne,
+            psiControlNormInf,
+            mvpControlNormsInf,
+            out,
+            success );
+}
+// ============================================================================
+TEUCHOS_UNIT_TEST( Nosh, KeoSphereHashes )
+{
+    std::string inputFileNameBase = "sphere";
+
+    const double psiControlNormOne = 82.0;
+    const double psiControlNormInf = 1.0;
+    Teuchos::Array<double> mvpControlNormsInf(3);
+    mvpControlNormsInf[0] = 0.492403864860535;
+    mvpControlNormsInf[1] = 0.468303918838501;
     mvpControlNormsInf[2] = 0.0;
 
     testKeo(inputFileNameBase,
