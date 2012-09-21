@@ -1,20 +1,25 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8.8)
 
-PROJECT(Nosh CXX)
+# There's no Fortran in this project, but Trilinos has some Fortran
+# in it (e.g., via BLAS/LAPACK).
+# This is a cause for undefined symbols at the exectuable linking
+# stage, mostly for Fortran's standard library (if the linker language
+# is C++). Adding Fortran to the list of languages in this project makes
+# sure that CMake correctly appends the needed libraries.
+# This only influences static builds.
+# At some point in time, the BLAS/LAPACK dependency on Fortran should
+# be propagated up to applications like Nosh such that explicitly
+# adding the Fortran compiler here isn't necessary anymore.
+PROJECT(Nosh CXX Fortran)
 
 FIND_PACKAGE(Trilinos REQUIRED)
 
 # Make sure the compilers match.
 IF(NOT ${Trilinos_CXX_COMPILER} STREQUAL ${CMAKE_CXX_COMPILER})
-  MESSAGE(SEND_ERROR "Compilers don't match (Trilinos: ${Trilinos_CXX_COMPILER}, Nosh: ${CMAKE_CXX_COMPILER}).")
+  MESSAGE(FATAL_ERROR "C++ compilers don't match (Trilinos: ${Trilinos_CXX_COMPILER}, Nosh: ${CMAKE_CXX_COMPILER}).")
 ENDIF()
-
-#IF(NOT ${Trilinos_BUILD_SHARED_LIBS})
-#  # If Trilinos is statically built, BLAS and LAPACK will need
-#  # symbols from the Fortran standard library.
-#  SET_PROPERTY(GLOBAL PROPERTY
-#               LINKER_LANGUAGE Fortran)
-#  SET(CMAKE_EXE_LINKER_FLAGS "${Trilinos_EXTRA_LD_FLAGS}" "${CMAKE_EXE_LINKER_FLAGS}")
+#IF(NOT ${Trilinos_Fortran_COMPILER} STREQUAL ${CMAKE_Fortran_COMPILER})
+#  MESSAGE(FATAL_ERROR "Fortran compilers don't match (Trilinos: ${Trilinos_Fortran_COMPILER}, Nosh: ${CMAKE_Fortran_COMPILER}).")
 #ENDIF()
 
 set(Nosh_MAJOR_VERSION 11)
