@@ -152,9 +152,6 @@ getComplexOverlapMap() const;
 unsigned int
 getNumEdgesPerCell( unsigned int cellDimension ) const;
 
-unsigned int
-getCellDimension( const unsigned int numLocalNodes ) const;
-
 const DoubleVector
 getVectorFieldNonconst(const stk::mesh::Entity * nodeEntity,
                        const std::string & fieldName,
@@ -209,6 +206,12 @@ bool outputChannelIsOpen_;
 double time_;
 
 private:
+
+void
+computeControlVolumesTri_(const Teuchos::RCP<Epetra_Vector> & cvOverlap) const;
+
+void
+computeControlVolumesTet_(const Teuchos::RCP<Epetra_Vector> & cvOverlap) const;
 
 Teuchos::RCP<Epetra_Vector>
 complexfield2vector_(const ScalarFieldType &realField,

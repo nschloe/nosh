@@ -111,7 +111,20 @@ StkMesh(const Epetra_Comm & comm,
   complexOverlapMap_ = this->createComplexMap_( this->getOverlapNodes() );
   controlVolumes_ = Teuchos::rcp( new Epetra_Vector( *nodesMap_ ) );
   averageThickness_ = Teuchos::rcp( new Epetra_Vector( *nodesMap_ ) );
+  // Create adjacent entities.
   this->createEdges_();
+//  int nodesPerCell;
+//  if (comm_.MyPID() == 0)
+//  {
+//    std::vector<stk::mesh::Entity*> cells = this->getOwnedCells();
+//    nodesPerCell = cells[0]->relations(metaData_.node_rank()).size();
+//  }
+//  comm_.Broadcast(&nodesPerCell, 1, 0);
+//  if (nodesPerCell >= 4)
+//  {
+//    stk::mesh::PartVector add_parts;
+//    stk::mesh::create_adjacent_entities(bulkData_, add_parts);
+//  }
 }
 // =============================================================================
 StkMesh::
@@ -756,18 +769,6 @@ getEdgeNodes() const
   return edgeNodes_;
 }
 // =============================================================================
-//Teuchos::ArrayRCP<const DoubleVector>
-//StkMesh::
-//getNodeCoordinates_(const stk::mesh::PairIterRelation &nodes) const
-//{
-//  unsigned int n = nodes.size();
-//  Teuchos::ArrayRCP<DoubleVector> localNodeCoords( n );
-//  for (unsigned int i=0; i<n; i++)
-//    localNodeCoords[i] = this->getNodeCoordinatesNonconst(nodes[i].entity());
-//
-//  return localNodeCoords;
-//}
-// =============================================================================
 double
 StkMesh::
 getScalarFieldNonconst(const stk::mesh::Entity * nodeEntity,
@@ -799,20 +800,6 @@ getVectorFieldNonconst(const stk::mesh::Entity * nodeEntity,
                       stk::mesh::field_data(*field, *nodeEntity),
                       numDims);
 }
-// =============================================================================
-//const DoubleVector
-//StkMesh::
-//getNodeCoordinatesNonconst(const stk::mesh::Entity * nodeEntity,
-//                           const std::string & fieldName
-//                           ) const
-//{
-//  ScalarFieldType * psir_field =
-//      metaData_.get_field<ScalarFieldType>(fieldName);
-//  // Make a Teuchos::Copy here as the access is nonconst.
-//  return DoubleVector(Teuchos::Copy,
-//                      stk::mesh::field_data(*coordinatesField_, *nodeEntity),
-//                      3);
-//}
 // =============================================================================
 Teuchos::RCP<const Epetra_Map>
 StkMesh::
@@ -923,26 +910,6 @@ createComplexMap_( const std::vector<stk::mesh::Entity*> &nodeList ) const
   }
   return Teuchos::rcp( new Epetra_Map( -1, numDof, indices.getRawPtr(), 0,
                                        comm_ ) );
-}
-// =============================================================================
-unsigned int
-StkMesh::
-getCellDimension( const unsigned int numLocalNodes ) const
-{
-  switch ( numLocalNodes )
-  {
-    case 3: // triangles
-      return 2;
-    case 4: // tetrahedra
-      return 3;
-    default:
-      TEUCHOS_TEST_FOR_EXCEPT_MSG( true,
-                           "Control volumes can only be constructed "
-                           << "consistently with triangular or "
-                           << "tetrahedral elements."
-                           );
-  }
-  return 0;
 }
 // =============================================================================
 unsigned int
@@ -1112,13 +1079,13 @@ void
 StkMesh::
 computeControlVolumes_() const
 {
+  // Compute the volume of the (Voronoi) control cells for each point.
 #ifndef NDEBUG
   TEUCHOS_ASSERT( !controlVolumes_.is_null() );
   TEUCHOS_ASSERT( !averageThickness_.is_null() );
   TEUCHOS_ASSERT( !nodesOverlapMap_.is_null() );
 #endif
 
-  // Compute the volume of the (Voronoi) control cells for each point.
   if ( !controlVolumes_->Map().SameAs( *nodesMap_ ) )
     TEUCHOS_ASSERT_EQUALITY( 0, controlVolumes_->ReplaceMap( *nodesMap_ ) );
   TEUCHOS_ASSERT_EQUALITY( 0, controlVolumes_->PutScalar( 0.0 ) );
@@ -1133,6 +1100,50 @@ computeControlVolumes_() const
   Teuchos::RCP<Epetra_Vector> cvOverlap =
     Teuchos::rcp( new Epetra_Vector( *nodesOverlapMap_ ) );
 
+  // Determine the kind of mesh by the first cell.
+  int nodesPerCell;
+  if (comm_.MyPID() == 0)
+  {
+    std::vector<stk::mesh::Entity*> cells = this->getOwnedCells();
+    nodesPerCell = cells[0]->relations(metaData_.node_rank()).size();
+  }
+  comm_.Broadcast(&nodesPerCell, 1, 0);
+
+  switch (nodesPerCell)
+  {
+    case 3:
+      this->computeControlVolumesTri_(cvOverlap);
+      break;
+    case 4:
+      this->computeControlVolumesTet_(cvOverlap);
+      break;
+    default:
+      TEUCHOS_TEST_FOR_EXCEPT_MSG(true,
+                                  "Illegal cell type.");
+  }
+
+  // Export control volumes to a non-overlapping map, and sum the entries.
+  Epetra_Export exporter( *nodesOverlapMap_, *nodesMap_ );
+  TEUCHOS_ASSERT_EQUALITY( 0,
+                           controlVolumes_->Export( *cvOverlap, exporter, Add ) );
+
+  // Export control volumes to a non-overlapping map, and sum the entries.
+//   TEUCHOS_ASSERT_EQUALITY( 0, averageThickness_->Export( *atOverlap, exporter, Add ) );
+
+  // Up until this point, averageThickness_ contains the sum of the thickness at the
+  // edges. Fix this to be the average thickness.
+//   for ( controlvolumes )
+//       averageThickness_[k] /= number of edges;
+
+  controlVolumesUpToDate_ = true;
+
+  return;
+}
+// =============================================================================
+void
+StkMesh::
+computeControlVolumesTri_(const Teuchos::RCP<Epetra_Vector> & cvOverlap) const
+{
   std::vector<stk::mesh::Entity*> cells = this->getOwnedCells();
   unsigned int numCells = cells.size();
 
@@ -1142,34 +1153,104 @@ computeControlVolumes_() const
     stk::mesh::PairIterRelation localNodes =
       cells[k]->relations( metaData_.node_rank() );
     unsigned int numLocalNodes = localNodes.size();
-    unsigned int cellDimension = this->getCellDimension( numLocalNodes );
 
 #ifndef NDEBUG
     // Confirm that we always have the same simplices.
-    TEUCHOS_ASSERT_EQUALITY( numLocalNodes, cellDimension+1 );
+    TEUCHOS_ASSERT_EQUALITY(numLocalNodes, 3);
 #endif
 
     // Fetch the nodal positions into 'localNodes'.
     //const Teuchos::ArrayRCP<const DoubleVector> localNodeCoords =
       //this->getNodeCoordinates_( localNodes );
-    unsigned int n = localNodes.size();
-    Teuchos::ArrayRCP<DoubleVector> localNodeCoords( n );
-    for (unsigned int i=0; i<n; i++)
+    Teuchos::ArrayRCP<DoubleVector> localNodeCoords(numLocalNodes);
+    for (unsigned int i=0; i<numLocalNodes; i++)
       localNodeCoords[i] = this->getVectorFieldNonconst(localNodes[i].entity(),
                                                         "coordinates", 3);
 
     // compute the circumcenter of the cell
-    DoubleVector cc;
-    if ( cellDimension==2 )   // triangle
-      cc = this->computeTriangleCircumcenter_( localNodeCoords );
-    else if ( cellDimension==3 )   // tetrahedron
-      cc = this->computeTetrahedronCircumcenter_( localNodeCoords );
-    else
-      TEUCHOS_TEST_FOR_EXCEPT_MSG( true,
-                           "Control volumes can only be constructed "
-                           << "consistently with triangular or "
-                           << "tetrahedral elements."
-                           );
+    DoubleVector cc =
+      this->computeTriangleCircumcenter_( localNodeCoords );
+
+    // Iterate over the edges.
+    // As true edge entities are not available here, loop over all pairs of local nodes.
+    for ( unsigned int e0=0; e0<numLocalNodes; e0++ )
+    {
+      const DoubleVector &x0 = localNodeCoords[e0];
+      const int gid0 = (*localNodes[e0].entity()).identifier() - 1;
+      const int lid0 = nodesOverlapMap_->LID( gid0 );
+#ifndef NDEBUG
+      TEUCHOS_ASSERT_INEQUALITY( lid0, >=, 0 );
+#endif
+      for ( unsigned int e1=e0+1; e1<numLocalNodes; e1++ )
+      {
+        const DoubleVector &x1 = localNodeCoords[e1];
+        const int gid1 = (*localNodes[e1].entity()).identifier() - 1;
+        const int lid1 = nodesOverlapMap_->LID( gid1 );
+#ifndef NDEBUG
+        TEUCHOS_ASSERT_INEQUALITY( lid1, >=, 0 );
+#endif
+        // Get the other node.
+        Teuchos::Tuple<unsigned int,2> other = this->getOtherIndices_( e0, e1 );
+
+        double edgeLength = this->norm2_( this->add_( 1.0, x1, -1.0, x0 ) );
+
+        // Compute the (n-1)-dimensional covolume.
+        double covolume;
+        const DoubleVector &other0 = localNodeCoords[other[0]];
+        covolume = this->computeCovolume2d_( cc, x0, x1, other0 );
+        // The problem with counting the average thickness in 2D is the following.
+        // Ideally, one would want to loop over all edges, add the midpoint value
+        // of the thickness to both of the edge end points, and eventually loop over
+        // all endpoints and divide by the number of edges (connections) they have
+        // with neighboring nodes).
+        // Unfortunately, this is impossible now b/c there's no edge generation
+        // for shells in Trilinos yet (2011-04-15).
+        // As a workaround, one could loop over all cells, and then all pairs of
+        // nodes to retrieve the edges. In 2D, almost all of the edges would be
+        // counted twice this way as they belong to two cells. This is true for
+        // all but the boundary edges. Again, it is difficult (impossible?) to
+        // know what the boundary edges are, and hence which values to divide by
+        // 2. Dividing them all by two would result in an artificially lower
+        // thickness near the boundaries. This is not what we want.
+
+        // Compute the contributions to the finite volumes of the adjacent edges.
+        double pyramidVolume = 0.5*edgeLength * covolume / 2;
+        (*cvOverlap)[lid0] += pyramidVolume;
+        (*cvOverlap)[lid1] += pyramidVolume;
+      }
+    }
+  }
+
+  return;
+}
+// =============================================================================
+void
+StkMesh::
+computeControlVolumesTet_(const Teuchos::RCP<Epetra_Vector> & cvOverlap) const
+{
+  std::vector<stk::mesh::Entity*> cells = this->getOwnedCells();
+  unsigned int numCells = cells.size();
+
+  // Calculate the contributions to the finite volumes cell by cell.
+  for (unsigned int k=0; k < numCells; k++)
+  {
+    stk::mesh::PairIterRelation localNodes =
+      cells[k]->relations( metaData_.node_rank() );
+    unsigned int numLocalNodes = localNodes.size();
+#ifndef NDEBUG
+    // Confirm that we always have the same simplices.
+    TEUCHOS_ASSERT_EQUALITY(numLocalNodes, 4);
+#endif
+
+    // Fetch the nodal positions into 'localNodes'.
+    Teuchos::ArrayRCP<DoubleVector> localNodeCoords(numLocalNodes);
+    for (unsigned int i=0; i<numLocalNodes; i++)
+      localNodeCoords[i] = this->getVectorFieldNonconst(localNodes[i].entity(),
+                                                        "coordinates", 3);
+
+    // compute the circumcenter of the cell
+    const DoubleVector cc =
+      this->computeTetrahedronCircumcenter_( localNodeCoords );
 
     // Iterate over the edges.
     // As true edge entities are not available here, loop over all pairs of local nodes.
@@ -1196,77 +1277,29 @@ computeControlVolumes_() const
         double edgeLength = this->norm2_( this->add_( 1.0, x1, -1.0, x0 ) );
 
         // Compute the (n-1)-dimensional covolume.
-        double covolume;
-        if ( cellDimension==2 )       // triangle
-        {
-          const DoubleVector &other0 = localNodeCoords[other[0]];
-          covolume = this->computeCovolume2d_( cc, x0, x1, other0 );
-          // The problem with counting the average thickness in 2D is the following.
-          // Ideally, one would want to loop over all edges, add the midpoint value
-          // of the thickness to both of the edge end points, and eventually loop over
-          // all endpoints and divide by the number of edges (connections) they have
-          // with neighboring nodes).
-          // Unfortunately, this is impossible now b/c there's no edge generation
-          // for shells in Trilinos yet (2011-04-15).
-          // As a workaround, one could loop over all cells, and then all pairs of
-          // nodes to retrieve the edges. In 2D, almost all of the edges would be
-          // counted twice this way as they belong to two cells. This is true for
-          // all but the boundary edges. Again, it is difficult (impossible?) to
-          // know what the boundary edges are, and hence which values to divide by
-          // 2. Dividing them all by two would result in an artificially lower
-          // thickness near the boundaries. This is not what we want.
-        }
-        else if ( cellDimension==3 )       // tetrahedron
-        {
-          const DoubleVector &other0 = localNodeCoords[other[0]];
-          const DoubleVector &other1 = localNodeCoords[other[1]];
-          covolume = this->computeCovolume3d_( cc, x0, x1, other0, other1 );
-          // Throw an exception for 3D volumes.
-          // To compute the average of the thicknesses of a control volume, one has to loop
-          // over all the edges and add the thickness value to both endpoints.
-          // Then eventually, for each node, divide the resulting sum by the number of connections
-          // (=number of faces of the finite volume).
-          // However, looping over edges is not (yet) possible. Hence, we loop over all the
-          // cells here. This way, the edges are counted several times, but it is difficult
-          // to determine how many times exactly.
+        const DoubleVector &other0 = localNodeCoords[other[0]];
+        const DoubleVector &other1 = localNodeCoords[other[1]];
+        double covolume = this->computeCovolume3d_( cc, x0, x1, other0, other1 );
+        // Throw an exception for 3D volumes.
+        // To compute the average of the thicknesses of a control volume, one has to loop
+        // over all the edges and add the thickness value to both endpoints.
+        // Then eventually, for each node, divide the resulting sum by the number of connections
+        // (=number of faces of the finite volume).
+        // However, looping over edges is not (yet) possible. Hence, we loop over all the
+        // cells here. This way, the edges are counted several times, but it is difficult
+        // to determine how many times exactly.
 //                   TEUCHOS_TEST_FOR_EXCEPTION( true,
 //                                       std::runtime_error,
 //                                       "Cannot calculate the average thickness in a 3D control volume yet."
 //                                     );
-        }
-        else
-        {
-          TEUCHOS_TEST_FOR_EXCEPT_MSG( true,
-                               "Control volumes can only be constructed "
-                               << "consistently with triangular or "
-                               << "tetrahedral elements."
-                               );
-        }
 
         // Compute the contributions to the finite volumes of the adjacent edges.
-        double pyramidVolume = 0.5*edgeLength * covolume / cellDimension;
+        double pyramidVolume = 0.5*edgeLength * covolume / 3;
         (*cvOverlap)[lid0] += pyramidVolume;
         (*cvOverlap)[lid1] += pyramidVolume;
       }
     }
   }
-
-  // Export control volumes to a non-overlapping map, and sum the entries.
-  Epetra_Export exporter( *nodesOverlapMap_, *nodesMap_ );
-  TEUCHOS_ASSERT_EQUALITY( 0,
-                           controlVolumes_->Export( *cvOverlap, exporter, Add ) );
-
-  // Export control volumes to a non-overlapping map, and sum the entries.
-//   TEUCHOS_ASSERT_EQUALITY( 0, averageThickness_->Export( *atOverlap, exporter, Add ) );
-
-  // Up until this point, averageThickness_ contains the sum of the thickness at the
-  // edges. Fix this to be the average thickness.
-//   for ( controlvolumes )
-//       averageThickness_[k] /= number of edges;
-
-  controlVolumesUpToDate_ = true;
-
-  return;
 }
 // =============================================================================
 double
@@ -1573,7 +1606,7 @@ void
 StkMesh::
 createEdges_()
 {
-  if ( edgeNodes_.size() != 0  && !cellEdges_.is_null() )
+  if (edgeNodes_.size() != 0 && !cellEdges_.is_null())
     return;
 
   std::vector<stk::mesh::Entity*> cells = this->getOwnedCells();
