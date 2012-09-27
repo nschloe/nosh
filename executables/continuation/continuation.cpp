@@ -106,6 +106,7 @@ int main(int argc, char *argv[])
 
     // Cast the data into something more accessible.
     RCP<Epetra_Vector> psi = mesh->createComplexVector("psi");
+    //psi->Random();
 
     // Set the output directory for later plotting with this.
     mesh->openOutputChannel(outputDirectory, "solution");
@@ -127,7 +128,7 @@ int main(int argc, char *argv[])
                  .sublist( "Stepper" )
                  .get<std::string>("Continuation Parameter");
     *out << "Setting the initial parameter value of \""
-         << paramName << "\" to " << initialParameterValues.get<double>(paramName) << std::endl;
+         << paramName << "\" to " << initialParameterValues.get<double>(paramName) << "." << std::endl;
     piroParams->sublist( "LOCA" )
                .sublist( "Stepper" )
                .set("Initial Value", initialParameterValues.get<double>(paramName));
