@@ -50,7 +50,7 @@ getParameters() const
 // ============================================================================
 double
 Constant::
-getV(const unsigned int nodeIndex,
+getV(const unsigned int nodeLID,
      const std::map<std::string,double> & params
      ) const
 {
@@ -69,7 +69,7 @@ getV(const unsigned int nodeIndex,
 // ============================================================================
 double
 Constant::
-getdVdP(const unsigned int nodeIndex,
+getdVdP(const unsigned int nodeLID,
         const std::map<std::string,double> & params,
         const std::string & paramName
         ) const

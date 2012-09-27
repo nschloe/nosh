@@ -445,29 +445,40 @@ buildAlphaCache_(const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > & e
                  const Teuchos::ArrayRCP<const double> &edgeCoefficients
                  ) const
 {
+  // This routine serves the one and only purpose of caching the
+  // thickness average. The cache is used in every call to this->fill().
+  // This is somewhat problematic since the map of V is principally
+  // not known here. Also, it is typically a nonoverlapping map whereas
+  // some edges do sit on a processor boundary, so actually the values
+  // of V are needed in an overlapping map.
+  // Fair enough. Let's distribute the vales of V to an overlapping
+  // map here.
   alphaCache_ = Teuchos::ArrayRCP<double>( edges.size() );
 
   Teuchos::Tuple<int,2> gid;
+  Teuchos::Tuple<int,2> lid;
   for ( unsigned int k=0; k<edges.size(); k++ )
   {
-    // Get the ID of the edge endpoints in the nonoverlapping
-    // nodes map.
+    // Get the ID of the edge endpoints in the map of
+    // getV(). Well...
     gid[0] = edges[k][0]->identifier() - 1;
-    gid[1] = edges[k][1]->identifier() - 1;
-    const int tlid0 = mesh_->getNodesMap()->LID( gid[0] );
-    const int tlid1 = mesh_->getNodesMap()->LID( gid[1] );
+    lid[0] = mesh_->getNodesOverlapMap()->LID( gid[0] );
 #ifndef NDEBUG
-    TEUCHOS_TEST_FOR_EXCEPT_MSG( tlid0 < 0,
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(lid[0] < 0,
                          "The global index " << gid[0]
-                         << " does not seem to be present on this node." );
-    TEUCHOS_TEST_FOR_EXCEPT_MSG( tlid1 < 0,
+                         << " does not seem to be present on this node.");
+#endif
+    gid[1] = edges[k][1]->identifier() - 1;
+    lid[1] = mesh_->getNodesOverlapMap()->LID( gid[1] );
+#ifndef NDEBUG
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(lid[1] < 0,
                          "The global index " << gid[1]
-                         << " does not seem to be present on this node." );
+                         << " does not seem to be present on this node.");
 #endif
     // Update cache.
     std::map<std::string,double> dummy;
-    const double thickness = 0.5 * (thickness_->getV(tlid0, dummy) + thickness_->getV(tlid1, dummy));
-    alphaCache_[k] = edgeCoefficients[k] * thickness;
+    alphaCache_[k] = edgeCoefficients[k]
+                   * 0.5 * (thickness_->getV(lid[0], dummy) + thickness_->getV(lid[1], dummy));
   }
 
   alphaCacheUpToDate_ = true;

@@ -316,8 +316,8 @@ buildAlphaCache_( const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > & 
     gid[0] = edges[k][0]->identifier() - 1;
     gid[1] = edges[k][1]->identifier() - 1;
 
-    const int tlid0 = mesh_->getNodesMap()->LID( gid[0] );
-    const int tlid1 = mesh_->getNodesMap()->LID( gid[1] );
+    const int tlid0 = mesh_->getNodesOverlapMap()->LID( gid[0] );
+    const int tlid1 = mesh_->getNodesOverlapMap()->LID( gid[1] );
 #ifndef NDEBUG
     TEUCHOS_TEST_FOR_EXCEPT_MSG( tlid0 < 0,
                          "The global index " << gid[0]

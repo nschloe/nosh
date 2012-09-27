@@ -222,14 +222,14 @@ read(const Epetra_Comm &comm,
   stk::io::set_field_role(coordinatesField,
                           Ioss::Field::MESH);
 
-  //IntScalarFieldType &procRankField =
-  //  metaData_.declare_field<IntScalarFieldType>("proc_rank");
-  //stk::mesh::put_field(procRankField,
-  //                     metaData_.element_rank(),
-  //                     metaData_.universal_part()
-  //                     );
-  //stk::io::set_field_role(procRankField,
-  //                        Ioss::Field::MESH);
+  IntScalarFieldType &procRankField =
+    metaData_.declare_field<IntScalarFieldType>("proc_rank");
+  stk::mesh::put_field(procRankField,
+                       metaData_.element_rank(),
+                       metaData_.universal_part()
+                       );
+  stk::io::set_field_role(procRankField,
+                          Ioss::Field::MESH);
 
   // real part
   ScalarFieldType &psir_field =

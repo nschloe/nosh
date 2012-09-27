@@ -59,11 +59,11 @@ getParameters() const
 // ============================================================================
 double
 ExplicitValues::
-getV(const unsigned int nodeIndex,
+getV(const unsigned int nodeLID,
      const std::map<std::string,double> & params
      ) const
 {
-  double val = nodeValues_[nodeIndex];
+  double val = nodeValues_[nodeLID];
 
   // Find the value of "beta" and use it as a factor.
   std::map<std::string, double>::const_iterator it = params.find("beta");
@@ -75,13 +75,13 @@ getV(const unsigned int nodeIndex,
 // ============================================================================
 double
 ExplicitValues::
-getdVdP(const unsigned int nodeIndex,
+getdVdP(const unsigned int nodeLID,
         const std::map<std::string,double> & params,
         const std::string & paramName
         ) const
 {
   if (paramName.compare("beta") == 0)
-    return nodeValues_[nodeIndex];
+    return nodeValues_[nodeLID];
   else
     return 0.0;
 }
