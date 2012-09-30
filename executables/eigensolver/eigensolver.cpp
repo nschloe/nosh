@@ -139,7 +139,7 @@ int main ( int argc, char *argv[] )
 
     // Construct thickness.
     RCP<Nosh::ScalarField::Virtual> thickness =
-      rcp(new Nosh::ScalarField::Constant(1.0));
+      rcp(new Nosh::ScalarField::Constant(*mesh, 1.0));
 
     // Create matrix builder.
     const RCP<Nosh::MatrixBuilder::Virtual> matrixBuilder =
@@ -147,7 +147,7 @@ int main ( int argc, char *argv[] )
 
     // Construct scalar potential.
     RCP<Nosh::ScalarField::Virtual> sp =
-      rcp(new Nosh::ScalarField::Constant(-1.0));
+      rcp(new Nosh::ScalarField::Constant(*mesh, -1.0));
 
     // Finally, create the model evaluator.
     // This is the most important object in the whole stack.

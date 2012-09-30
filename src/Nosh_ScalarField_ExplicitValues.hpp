@@ -40,28 +40,25 @@ ExplicitValues(const Nosh::StkMesh &mesh,
 virtual
 ~ExplicitValues();
 
-virtual
-double
-getV(const unsigned int nodeLID,
-     const std::map<std::string,double> & params
-     ) const;
-
-virtual
-double
-getdVdP(const unsigned int nodeLID,
-        const std::map<std::string,double> & params,
-        const std::string & paramName
-        ) const;
-
 //! Get parameter names and initial values.
 virtual
 const std::map<std::string,double>
-getParameters() const;
+getInitialParameters() const;
+
+virtual
+const Epetra_Vector
+getV(const std::map<std::string,double> & params) const;
+
+virtual
+const Epetra_Vector
+getdVdP(const std::map<std::string,double> & params,
+        const std::string & paramName
+        ) const;
 
 protected:
 private:
 
-Teuchos::ArrayRCP<double> nodeValues_;
+const Teuchos::RCP<const Epetra_Vector> nodeValues_;
 };
 } // namespace ScalarField
 } // namespace Nosh

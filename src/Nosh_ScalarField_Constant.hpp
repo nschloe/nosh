@@ -20,22 +20,21 @@
 #ifndef NOSH_SCALARFIELD_CONSTANT_H_
 #define NOSH_SCALARFIELD_CONSTANT_H_
 // =============================================================================
-// forward defs
-class Epetra_Vector;
-class Epetra_Map;
-// =============================================================================
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Array.hpp>
 #include <Epetra_Comm.h>
 
 #include "Nosh_ScalarField_Virtual.hpp"
+
+#include "Nosh_StkMesh.hpp"
 // =============================================================================
 namespace Nosh {
 namespace ScalarField {
 class Constant: public Virtual
 {
 public:
-Constant(const double c,
+Constant(const Nosh::StkMesh & mesh,
+         const double c,
          const std::string & param1Name = "",
          const double param1InitValue = 0.0
          );
@@ -48,24 +47,23 @@ createPInit_(const Epetra_Map & map);
 //! Get the parameter names and intial values.
 virtual
 const std::map<std::string,double>
-getParameters() const;
+getInitialParameters() const;
 
 virtual
-double
-getV(const unsigned int nodeIndex,
-     const std::map<std::string,double> & params
+const Epetra_Vector
+getV(const std::map<std::string,double> & params
      ) const;
 
 virtual
-double
-getdVdP(const unsigned int nodeIndex,
-        const std::map<std::string,double> & params,
+const Epetra_Vector
+getdVdP(const std::map<std::string,double> & params,
         const std::string & paramName
         ) const;
 
 protected:
 private:
 
+const Teuchos::RCP<const Epetra_Map> map_;
 const double c_;
 const std::string param1Name_;
 const double param1InitValue_;

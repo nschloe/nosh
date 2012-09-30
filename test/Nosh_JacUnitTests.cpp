@@ -56,11 +56,11 @@ testJac( const std::string & inputFileNameBase,
       Teuchos::rcp(new Nosh::VectorField::ExplicitValues(*mesh, "A", mu));
 
     Teuchos::RCP<Nosh::ScalarField::Virtual> sp =
-      Teuchos::rcp(new Nosh::ScalarField::Constant(-1.0));
+      Teuchos::rcp(new Nosh::ScalarField::Constant(*mesh, -1.0));
 
     // Set the thickness field.
     Teuchos::RCP<Nosh::ScalarField::Virtual> thickness =
-      Teuchos::rcp(new Nosh::ScalarField::Constant(1.0));
+      Teuchos::rcp(new Nosh::ScalarField::Constant(*mesh, 1.0));
 
     // create a keo factory
     Teuchos::RCP<Nosh::MatrixBuilder::Virtual> keoBuilder =

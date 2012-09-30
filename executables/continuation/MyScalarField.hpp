@@ -49,18 +49,16 @@ createPInit_(const Epetra_Map & map);
 //! Get parameter names and initial values.
 virtual
 const std::map<std::string,double>
-getParameters() const = 0;
+getInitialParameters() const;
 
 virtual
-double
-getV(const unsigned int nodeIndex,
-     const std::map<std::string,double> & params
+const Epetra_Vector
+getV(const std::map<std::string,double> & params
      ) const;
 
 virtual
-double
-getdVdP(const unsigned int nodeIndex,
-        const std::map<std::string,double> & params,
+const Epetra_Vector
+getdVdP(const std::map<std::string,double> & params,
         const std::string & paramName
         ) const;
 

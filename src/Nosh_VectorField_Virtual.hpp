@@ -37,6 +37,11 @@ Virtual();
 virtual
 ~Virtual();
 
+//! Get parameter names and initial values.
+virtual
+const std::map<std::string,double>
+getInitialParameters() const = 0;
+
 //! Projection of the vector field onto an edge at the midpoint of the edge.
 virtual
 double
@@ -50,11 +55,6 @@ getDEdgeProjectionDp(const unsigned int edgeIndex,
                      const std::map<std::string, double> & params,
                      const std::string & dParamName
                      ) const = 0;
-
-//! Get parameter names and initial values.
-virtual
-const std::map<std::string,double>
-getParameters() const = 0;
 
 protected:
 private:

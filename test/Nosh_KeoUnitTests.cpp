@@ -72,7 +72,7 @@ testKeo( const std::string & inputFileNameBase,
 
     // Set the thickness field.
     Teuchos::RCP<Nosh::ScalarField::Virtual> thickness =
-      Teuchos::rcp(new Nosh::ScalarField::Constant(1.0));
+      Teuchos::rcp(new Nosh::ScalarField::Constant(*mesh, 1.0));
 
     Teuchos::RCP<Nosh::MatrixBuilder::Virtual> keoBuilder =
       Teuchos::rcp(new Nosh::MatrixBuilder::Keo(mesh, thickness, mvp));
@@ -89,6 +89,8 @@ testKeo( const std::string & inputFileNameBase,
     // with overlapping maps.
     double normOne = keoMatrix.NormOne();
     double normInf = keoMatrix.NormInf();
+
+    std::cout << keoMatrix << std::endl;
 
     // check the values
     TEST_FLOATING_EQUALITY( normOne, controlNormOne, 1.0e-12 );

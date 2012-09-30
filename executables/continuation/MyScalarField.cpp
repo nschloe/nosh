@@ -22,6 +22,9 @@
 
 #include "Nosh_StkMesh.hpp"
 
+#include <Epetra_Vector.h>
+#include <Epetra_Map.h>
+
 // ============================================================================
 MyScalarField::
 MyScalarField(const RCP<const Nosh::StkMesh> & mesh):
@@ -36,51 +39,63 @@ MyScalarField::
 // ============================================================================
 const std::map<std::string,double>
 MyScalarField::
-getParameters() const
+getInitialParameters() const
 {
   std::map<std::string,double> m;
   m["tau"] = 0.0;
   return m;
 }
 // ============================================================================
-double
+const Epetra_Vector
 MyScalarField::
-getV(const unsigned int nodeIndex,
-     const std::map<std::string,double> & params
-     ) const
+getV(const std::map<std::string,double> & params) const
 {
-  // Get nodal coordinates for nodeIndex.
-  std::vector<stk::mesh::Entity*> ownedNodes =
-    mesh_->getOwnedNodes();
-  const DoubleVector X =
-    mesh_->getVectorFieldNonconst(ownedNodes[nodeIndex],
-                                  "coordinates", 3);
-
   // Pick out p["tau"].
   std::map<std::string, double>::const_iterator it = params.find("tau");
   TEUCHOS_ASSERT(it != params.end());
   const double & tau = it->second;
 
-  return -1.0 + tau * (-X[0]*X[0] + X[1]*X[1]);
+  std::vector<stk::mesh::Entity*> ownedNodes =
+    mesh_->getOwnedNodes();
+
+  Epetra_Vector vals(*(mesh_->getNodesMap()));
+
+  for (unsigned int k=0; k<ownedNodes.size(); k++)
+  {
+    // Get nodal coordinates.
+    const DoubleVector X =
+      mesh_->getVectorFieldNonconst(ownedNodes[k],
+                                    "coordinates", 3);
+    vals[k] = -1.0 + tau * (-X[0]*X[0] + X[1]*X[1]);
+  }
+
+  return vals;
 }
 // ============================================================================
-double
+const Epetra_Vector
 MyScalarField::
-getdVdP(const unsigned int nodeIndex,
-        const std::map<std::string,double> & params,
+getdVdP(const std::map<std::string,double> & params,
         const std::string & paramName
         ) const
 {
+  // Create vals as zeroed-out vector.
+  Epetra_Vector vals(*(mesh_->getNodesMap()));
+
   if (paramName.compare("tau") == 0)
   {
     std::vector<stk::mesh::Entity*> ownedNodes =
       mesh_->getOwnedNodes();
-    const DoubleVector X =
-      mesh_->getVectorFieldNonconst(ownedNodes[nodeIndex],
-                                    "coordinates", 3);
-    return -X[0]*X[0] + X[1]*X[1];
+
+    for (unsigned int k=0; k<ownedNodes.size(); k++)
+    {
+      // Get nodal coordinates.
+      const DoubleVector X =
+        mesh_->getVectorFieldNonconst(ownedNodes[k],
+                                      "coordinates", 3);
+      vals[k] = -X[0]*X[0] + X[1]*X[1];
+    }
   }
-  else
-    return 0.0;
+
+  return vals;
 }
 // ============================================================================

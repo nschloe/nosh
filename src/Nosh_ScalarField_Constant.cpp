@@ -20,14 +20,19 @@
 
 #include "Nosh_ScalarField_Constant.hpp"
 
+#include <Epetra_Vector.h>
+#include <Epetra_Map.h>
+
 namespace Nosh {
 namespace ScalarField {
 // ============================================================================
 Constant::
-Constant(const double c,
+Constant(const Nosh::StkMesh & mesh,
+         const double c,
          const std::string & param1Name,
          const double param1InitValue
          ):
+  map_(mesh.getNodesMap()),
   c_( c ),
   param1Name_ (param1Name),
   param1InitValue_( param1InitValue )
@@ -41,43 +46,42 @@ Constant::
 // ============================================================================
 const std::map<std::string,double>
 Constant::
-getParameters() const
+getInitialParameters() const
 {
   std::map<std::string,double> m;
-  m[param1Name_] = param1InitValue_;
+  if (!param1Name_.empty())
+    m[param1Name_] = param1InitValue_;
   return m;
 }
 // ============================================================================
-double
+const Epetra_Vector
 Constant::
-getV(const unsigned int nodeLID,
-     const std::map<std::string,double> & params
-     ) const
+getV(const std::map<std::string,double> & params) const
 {
-  double val = c_;
+  // Create constant-valued vector.
+  Epetra_Vector vals(*map_);
 
-  if (!param1Name_.empty())
-  {
-    // If a parameter name was given, add its value to c_.
-    std::map<std::string, double>::const_iterator it = params.find(param1Name_);
-    TEUCHOS_ASSERT(it != params.end());
-    val += it->second;
-  }
+  std::map<std::string, double>::const_iterator it = params.find(param1Name_);
+  if (it != params.end())
+    vals.PutScalar(c_ + it->second);
+  else
+    vals.PutScalar(c_);
 
-  return val;
+  return vals;
 }
 // ============================================================================
-double
+const Epetra_Vector
 Constant::
-getdVdP(const unsigned int nodeLID,
-        const std::map<std::string,double> & params,
+getdVdP(const std::map<std::string,double> & params,
         const std::string & paramName
         ) const
 {
-  if (!param1Name_.empty() && paramName.compare(param1Name_) == 0)
-    return 1.0;
-  else
-    return 0.0;
+  // Create zeroed-out vector.
+  Epetra_Vector vals(*map_, true);
+  if (paramName.compare(param1Name_) == 0)
+    vals.PutScalar(1.0);
+
+  return vals;
 }
 // ============================================================================
 } // namespace ScalarField

@@ -191,8 +191,6 @@ mutable bool fvmEntitiesUpToDate_;
 Teuchos::RCP<Epetra_Vector> controlVolumes_;
 mutable bool controlVolumesUpToDate_;
 
-Teuchos::RCP<Epetra_Vector> averageThickness_;
-
 mutable Teuchos::ArrayRCP<double> edgeCoefficients_;
 mutable bool edgeCoefficientsUpToDate_;
 

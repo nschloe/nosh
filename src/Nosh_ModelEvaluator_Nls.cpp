@@ -78,11 +78,11 @@ Nls(
   params["g"] = g;
 
   // This merges and discards new values if their keys are already in the list.
-  std::map<std::string,double> spParams = scalarPotential_->getParameters();
+  std::map<std::string,double> spParams = scalarPotential_->getInitialParameters();
   params.insert(spParams.begin(), spParams.end());
 
   // This merges and discards new values if their keys are already in the list.
-  std::map<std::string,double> mbParams = matrixBuilder_->getParameters();
+  std::map<std::string,double> mbParams = matrixBuilder_->getInitialParameters();
   params.insert(mbParams.begin(), mbParams.end());
 
   // Out of this now complete list, create the entities that the EpetraExt::
@@ -386,6 +386,17 @@ computeF_(const Epetra_Vector &x,
   std::map<std::string, double>::const_iterator it = params.find("g");
   TEUCHOS_ASSERT( it != params.end() );
   const double g = it->second;
+
+  const Epetra_Vector thicknessValues = thickness_->getV(params);
+#ifndef NDEBUG
+  TEUCHOS_ASSERT(controlVolumes.Map().SameAs(thicknessValues.Map()));
+#endif
+
+  const Epetra_Vector scalarPotentialValues = scalarPotential_->getV(params);
+#ifndef NDEBUG
+  TEUCHOS_ASSERT(controlVolumes.Map().SameAs(scalarPotentialValues.Map()));
+#endif
+
   for (int k=0; k<numMyPoints; k++)
   {
     // In principle, mass lumping here suggests to take
@@ -400,7 +411,7 @@ computeF_(const Epetra_Vector &x,
     //     This is loosely derived from the midpoint quadrature rule for
     //     triangles, i.e.,
     //
-    //      \int_{triangle} f(x) ~= |triangle| *  \sum_{edge midpoint} 1/3 * f(midpoint).
+    //      \int_{triangle} f(x) ~= |triangle| * \sum_{edge midpoint} 1/3 * f(midpoint).
     //
     //     so all the values at the midpoints have the same weight (independent of
     //     whether the edge is long or short). This is then "generalized to
@@ -425,8 +436,10 @@ computeF_(const Epetra_Vector &x,
     // The indexing here assumes that the local index K of controlVolume's map
     // is known to be local by thickness and scalarPotential and known to be
     // associated with that map.
-    double alpha = controlVolumes[k] * thickness_->getV(k, params)
-                 * (scalarPotential_->getV(k, params) + g * (x[2*k]*x[2*k] + x[2*k+1]*x[2*k+1]));
+    const double alpha = controlVolumes[k] * thicknessValues[k]
+                       * (scalarPotentialValues[k]
+                         + g * (x[2*k]*x[2*k] + x[2*k+1]*x[2*k+1])
+                         );
     // real and imaginary part
     FVec[2*k]   += alpha * x[2*k];
     FVec[2*k+1] += alpha * x[2*k+1];
@@ -458,13 +471,18 @@ computeDFDP_(const Epetra_Vector &x,
   TEUCHOS_ASSERT_EQUALITY( 2*controlVolumes.MyLength(), x.MyLength() );
 #endif
 
+  const Epetra_Vector thicknessValues = thickness_->getV(params);
+#ifndef NDEBUG
+  TEUCHOS_ASSERT(controlVolumes.Map().SameAs(thicknessValues.Map()));
+#endif
+
   if (paramName.compare("g") == 0)
   {
     for ( int k=0; k<controlVolumes.MyLength(); k++ )
     {
       // This assumes that "g" is not a parameter in either of the
       // potentials.
-      double alpha = controlVolumes[k] * thickness_->getV(k, params)
+      double alpha = controlVolumes[k] * thicknessValues[k]
                    * (x[2*k]*x[2*k] + x[2*k+1]*x[2*k+1]);
       // real and imaginary part
       FVec[2*k]   += alpha * x[2*k];
@@ -473,10 +491,16 @@ computeDFDP_(const Epetra_Vector &x,
   }
   else
   {
-    for ( int k=0; k<controlVolumes.MyLength(); k++ )
+    const Epetra_Vector scalarPotentialValues =
+      scalarPotential_->getdVdP(params, paramName);
+#ifndef NDEBUG
+    TEUCHOS_ASSERT(controlVolumes.Map().SameAs(scalarPotentialValues.Map()));
+#endif
+
+    for (int k=0; k<controlVolumes.MyLength(); k++)
     {
-      double alpha = controlVolumes[k] * thickness_->getV(k, params)
-                   * scalarPotential_->getdVdP(k, params, paramName);
+      const double alpha = controlVolumes[k] * thicknessValues[k]
+                         * scalarPotentialValues[k];
       // real and imaginary part
       FVec[2*k]   += alpha * x[2*k];
       FVec[2*k+1] += alpha * x[2*k+1];

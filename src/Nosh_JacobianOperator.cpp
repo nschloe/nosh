@@ -222,21 +222,32 @@ rebuildDiags_(const std::map<std::string,double> params,
   std::map<std::string, double>::const_iterator it = params.find("g");
   TEUCHOS_ASSERT(it != params.end());
   const double g = it->second;
+
+  const Epetra_Vector thicknessValues = thickness_->getV(params);
+#ifndef NDEBUG
+  TEUCHOS_ASSERT(controlVolumes.Map().SameAs(thicknessValues.Map()));
+#endif
+
+  const Epetra_Vector scalarPotentialValues = scalarPotential_->getV(params);
+#ifndef NDEBUG
+  TEUCHOS_ASSERT(controlVolumes.Map().SameAs(scalarPotentialValues.Map()));
+#endif
+
   for (int k=0; k<controlVolumes.MyLength(); k++)
   {
     // rebuild diag0
-    const double alpha = controlVolumes[k] * thickness_->getV(k, params)
-                       * ( scalarPotential_->getV(k, params)
+    const double alpha = controlVolumes[k] * thicknessValues[k]
+                       * ( scalarPotentialValues[k]
                          + g * 2.0 * (x[2*k]*x[2*k] + x[2*k+1]*x[2*k+1])
                          );
-    const double realX2 = g * controlVolumes[k] * thickness_->getV(k, params)
+    const double realX2 = g * controlVolumes[k] * thicknessValues[k]
                         * ( x[2*k]*x[2*k] - x[2*k+1]*x[2*k+1] );
     diag0_[2*k]   = alpha + realX2;
     diag0_[2*k+1] = alpha - realX2;
 
     // rebuild diag1b
-    diag1b_[k] = g * controlVolumes[k] * thickness_->getV(k, params)
-                   * (2.0 * x[2*k] * x[2*k+1]);
+    diag1b_[k] = g * controlVolumes[k] * thicknessValues[k]
+               * (2.0 * x[2*k] * x[2*k+1]);
   }
 
   return;

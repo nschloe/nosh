@@ -30,17 +30,8 @@ ExplicitValues::
 ExplicitValues(const Nosh::StkMesh & mesh,
                const std::string & fieldName
                ) :
-  nodeValues_(mesh.getOwnedNodes().size())
+  nodeValues_(mesh.createVector(fieldName))
 {
-  // Build the nodeValues_ vector for the field so the values can later
-  // be fetched by their integer nodeIndex into the field.
-  const std::vector<stk::mesh::Entity*> & ownedNodes =
-    mesh.getOwnedNodes();
-
-  for (int k=0; k<ownedNodes.size(); k++)
-    nodeValues_[k] = mesh.getScalarFieldNonconst(ownedNodes[k], fieldName);
-
-  return;
 }
 // ============================================================================
 ExplicitValues::
@@ -50,40 +41,37 @@ ExplicitValues::
 // ============================================================================
 const std::map<std::string,double>
 ExplicitValues::
-getParameters() const
+getInitialParameters() const
 {
   std::map<std::string,double> m;
   m["beta"] = 1.0;
   return m;
 }
 // ============================================================================
-double
+const Epetra_Vector
 ExplicitValues::
-getV(const unsigned int nodeLID,
-     const std::map<std::string,double> & params
-     ) const
+getV(const std::map<std::string,double> & params) const
 {
-  double val = nodeValues_[nodeLID];
+  Epetra_Vector vals(*nodeValues_);
 
   // Find the value of "beta" and use it as a factor.
   std::map<std::string, double>::const_iterator it = params.find("beta");
   TEUCHOS_ASSERT(it != params.end());
-  val *= it->second;
+  vals.Scale(it->second);
 
-  return val;
+  return vals;
 }
 // ============================================================================
-double
+const Epetra_Vector
 ExplicitValues::
-getdVdP(const unsigned int nodeLID,
-        const std::map<std::string,double> & params,
+getdVdP(const std::map<std::string,double> & params,
         const std::string & paramName
         ) const
 {
   if (paramName.compare("beta") == 0)
-    return nodeValues_[nodeLID];
+    return *nodeValues_;
   else
-    return 0.0;
+    return Epetra_Vector(nodeValues_->Map(), true); // 0.0 overall
 }
 // ============================================================================
 } // namespace ScalarField

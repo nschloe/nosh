@@ -84,7 +84,7 @@ fill(Epetra_FECrsMatrix &matrix,
 //! Get parameter map with their initial values.
 virtual
 const std::map<std::string,double>
-getParameters() const = 0;
+getInitialParameters() const = 0;
 
 };
 // =============================================================================

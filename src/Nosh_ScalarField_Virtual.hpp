@@ -22,6 +22,10 @@
 // =============================================================================
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Array.hpp>
+#include <Epetra_Vector.h>
+// =============================================================================
+// forward declarations
+class Epetra_Vector;
 // =============================================================================
 namespace Nosh {
 namespace ScalarField {
@@ -34,22 +38,20 @@ virtual
 ~Virtual();
 
 virtual
-double
-getV(const unsigned int nodeLID,
-     const std::map<std::string,double> & params
+const Epetra_Vector
+getV(const std::map<std::string,double> & params
      ) const = 0;
 
 virtual
-double
-getdVdP(const unsigned int nodeLID,
-        const std::map<std::string,double> & params,
+const Epetra_Vector
+getdVdP(const std::map<std::string,double> & params,
         const std::string & paramName
         ) const = 0;
 
 //! Get parameter names and initial values.
 virtual
 const std::map<std::string,double>
-getParameters() const = 0;
+getInitialParameters() const = 0;
 
 protected:
 private:

@@ -66,7 +66,7 @@ ExplicitValues::
 // ============================================================================
 const std::map<std::string,double>
 ExplicitValues::
-getParameters() const
+getInitialParameters() const
 {
   std::map<std::string,double> m;
   m["mu"] = initMu_;

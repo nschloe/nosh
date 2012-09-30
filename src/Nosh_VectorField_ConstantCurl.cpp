@@ -72,7 +72,7 @@ ConstantCurl::
 // ============================================================================
 const std::map<std::string,double>
 ConstantCurl::
-getParameters() const
+getInitialParameters() const
 {
   std::map<std::string,double> m;
   m["mu"] = 0.0;

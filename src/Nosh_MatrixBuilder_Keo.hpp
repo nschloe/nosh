@@ -91,7 +91,7 @@ fill(Epetra_FECrsMatrix &matrix,
 //! Gets the initial parameters from this module.
 virtual
 const std::map<std::string,double>
-getParameters() const;
+getInitialParameters() const;
 
 protected:
 

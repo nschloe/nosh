@@ -47,7 +47,7 @@ virtual
 //! Get the parameter names and initial values.
 virtual
 const std::map<std::string,double>
-getParameters() const;
+getInitialParameters() const;
 
 virtual
 double

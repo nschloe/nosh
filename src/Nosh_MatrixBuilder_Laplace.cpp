@@ -131,7 +131,7 @@ fill(Epetra_FECrsMatrix &matrix,
 // =============================================================================
 const std::map<std::string,double>
 Laplace::
-getParameters() const
+getInitialParameters() const
 {
   return std::map<std::string,double>();
 }
@@ -310,25 +310,29 @@ buildAlphaCache_( const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > & 
 {
   alphaCache_ = Teuchos::ArrayRCP<double>( edges.size() );
 
+  std::map<std::string,double> dummy;
+  const Epetra_Vector thicknessValues = thickness_->getV(dummy);
+
   Teuchos::Tuple<int,2> gid;
+  Teuchos::Tuple<int,2> lid;
   for ( unsigned int k=0; k<edges.size(); k++ )
   {
     gid[0] = edges[k][0]->identifier() - 1;
-    gid[1] = edges[k][1]->identifier() - 1;
-
-    const int tlid0 = mesh_->getNodesOverlapMap()->LID( gid[0] );
-    const int tlid1 = mesh_->getNodesOverlapMap()->LID( gid[1] );
+    lid[0] = mesh_->getNodesOverlapMap()->LID( gid[0] );
 #ifndef NDEBUG
-    TEUCHOS_TEST_FOR_EXCEPT_MSG( tlid0 < 0,
+    TEUCHOS_TEST_FOR_EXCEPT_MSG( lid[0] < 0,
                          "The global index " << gid[0]
                          << " does not seem to be present on this node." );
-    TEUCHOS_TEST_FOR_EXCEPT_MSG( tlid1 < 0,
+#endif
+    gid[1] = edges[k][1]->identifier() - 1;
+    lid[1] = mesh_->getNodesOverlapMap()->LID( gid[1] );
+#ifndef NDEBUG
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(lid[1] < 0,
                          "The global index " << gid[1]
                          << " does not seem to be present on this node." );
 #endif
-    std::map<std::string,double> dummy;
-    const double thickness = 0.5 * (thickness_->getV(tlid0, dummy) + thickness_->getV(tlid1, dummy));
-    alphaCache_[k] = edgeCoefficients[k] * thickness;
+    alphaCache_[k] = edgeCoefficients[k]
+                   * 0.5 * (thicknessValues[lid[0]] + thicknessValues[lid[1]]);
   }
 
   alphaCacheUpToDate_ = true;

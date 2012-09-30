@@ -27,6 +27,7 @@
 #include <Epetra_SerialDenseMatrix.h>
 #include <Epetra_Comm.h>
 #include <Epetra_Vector.h>
+#include <Epetra_Import.h>
 
 #include <ml_epetra_preconditioner.h>
 
@@ -208,9 +209,9 @@ fill(Epetra_FECrsMatrix &matrix,
 // =============================================================================
 const std::map<std::string,double>
 Keo::
-getParameters() const
+getInitialParameters() const
 {
-  return mvp_->getParameters();
+  return mvp_->getInitialParameters();
 }
 // =============================================================================
 const Epetra_FECrsGraph
@@ -455,6 +456,21 @@ buildAlphaCache_(const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > & e
   // map here.
   alphaCache_ = Teuchos::ArrayRCP<double>( edges.size() );
 
+  std::map<std::string,double> dummy;
+  const Epetra_Vector thicknessValues = thickness_->getV(dummy);
+
+  Teuchos::RCP<const Epetra_Map> overlapMap = mesh_->getNodesOverlapMap();
+  // We need to make sure that thicknessValues are distributed on
+  // the overlap map.
+  // Make sure to use Import here instead of Export as the vector
+  // that we want to build is overlapping, "larger". If the "smaller",
+  // non-overlapping vector is exported, only the values on the overlap
+  // would only be set on one processor.
+  Epetra_Vector thicknessOverlap(*overlapMap);
+  Epetra_Import importer(*overlapMap, thicknessValues.Map());
+  TEUCHOS_ASSERT_EQUALITY(0,
+                          thicknessOverlap.Import(thicknessValues, importer, Insert));
+
   Teuchos::Tuple<int,2> gid;
   Teuchos::Tuple<int,2> lid;
   for ( unsigned int k=0; k<edges.size(); k++ )
@@ -462,23 +478,22 @@ buildAlphaCache_(const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > & e
     // Get the ID of the edge endpoints in the map of
     // getV(). Well...
     gid[0] = edges[k][0]->identifier() - 1;
-    lid[0] = mesh_->getNodesOverlapMap()->LID( gid[0] );
+    lid[0] = overlapMap->LID( gid[0] );
 #ifndef NDEBUG
     TEUCHOS_TEST_FOR_EXCEPT_MSG(lid[0] < 0,
                          "The global index " << gid[0]
                          << " does not seem to be present on this node.");
 #endif
     gid[1] = edges[k][1]->identifier() - 1;
-    lid[1] = mesh_->getNodesOverlapMap()->LID( gid[1] );
+    lid[1] = overlapMap->LID( gid[1] );
 #ifndef NDEBUG
     TEUCHOS_TEST_FOR_EXCEPT_MSG(lid[1] < 0,
                          "The global index " << gid[1]
                          << " does not seem to be present on this node.");
 #endif
     // Update cache.
-    std::map<std::string,double> dummy;
     alphaCache_[k] = edgeCoefficients[k]
-                   * 0.5 * (thickness_->getV(lid[0], dummy) + thickness_->getV(lid[1], dummy));
+                   * 0.5 * (thicknessOverlap[lid[0]] + thicknessOverlap[lid[1]]);
   }
 
   alphaCacheUpToDate_ = true;

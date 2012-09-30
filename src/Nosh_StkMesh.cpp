@@ -94,7 +94,6 @@ StkMesh(const Epetra_Comm & comm,
   fvmEntitiesUpToDate_( false ),
   controlVolumes_(),
   controlVolumesUpToDate_( false ),
-  averageThickness_(),
   edgeCoefficients_(),
   edgeCoefficientsUpToDate_( false ),
   edgeNodes_(),
@@ -110,7 +109,6 @@ StkMesh(const Epetra_Comm & comm,
   complexMap_ = this->createComplexMap_(ownedNodes_);
   complexOverlapMap_ = this->createComplexMap_( this->getOverlapNodes() );
   controlVolumes_ = Teuchos::rcp( new Epetra_Vector( *nodesMap_ ) );
-  averageThickness_ = Teuchos::rcp( new Epetra_Vector( *nodesMap_ ) );
   // Create adjacent entities.
   this->createEdges_();
 //  int nodesPerCell;
@@ -886,13 +884,12 @@ Teuchos::RCP<Epetra_Map>
 StkMesh::
 createEntitiesMap_( const std::vector<stk::mesh::Entity*> &entityList ) const
 {
-  int numEntities = entityList.size();
-  Teuchos::Array<int> indices( numEntities );
+  const int numEntities = entityList.size();
+  Teuchos::Array<int> gids(numEntities);
   for (int i=0; i < numEntities; i++)
-    indices[i] = entityList[i]->identifier() - 1;
+    gids[i] = entityList[i]->identifier() - 1;
 
-  return Teuchos::rcp( new Epetra_Map( -1, numEntities, indices.getRawPtr(), 0,
-                                       comm_ ) );
+  return Teuchos::rcp(new Epetra_Map(-1, numEntities, gids.getRawPtr(), 0, comm_));
 }
 // =============================================================================
 Teuchos::RCP<Epetra_Map>
@@ -900,16 +897,15 @@ StkMesh::
 createComplexMap_( const std::vector<stk::mesh::Entity*> &nodeList ) const
 {
   // Create a map for real/imaginary out of this.
-  int numDof = 2 * nodeList.size();
-  Teuchos::Array<int> indices( numDof );
+  const int numDof = 2 * nodeList.size();
+  Teuchos::Array<int> gids(numDof);
   for ( unsigned int k=0; k < nodeList.size(); k++ )
   {
     int globalNodeId = nodeList[k]->identifier() - 1;
-    indices[2*k]   = 2*globalNodeId;
-    indices[2*k+1] = 2*globalNodeId + 1;
+    gids[2*k]   = 2*globalNodeId;
+    gids[2*k+1] = 2*globalNodeId + 1;
   }
-  return Teuchos::rcp( new Epetra_Map( -1, numDof, indices.getRawPtr(), 0,
-                                       comm_ ) );
+  return Teuchos::rcp(new Epetra_Map(-1, numDof, gids.getRawPtr(), 0, comm_));
 }
 // =============================================================================
 unsigned int
@@ -1082,18 +1078,12 @@ computeControlVolumes_() const
   // Compute the volume of the (Voronoi) control cells for each point.
 #ifndef NDEBUG
   TEUCHOS_ASSERT( !controlVolumes_.is_null() );
-  TEUCHOS_ASSERT( !averageThickness_.is_null() );
   TEUCHOS_ASSERT( !nodesOverlapMap_.is_null() );
 #endif
 
   if ( !controlVolumes_->Map().SameAs( *nodesMap_ ) )
     TEUCHOS_ASSERT_EQUALITY( 0, controlVolumes_->ReplaceMap( *nodesMap_ ) );
   TEUCHOS_ASSERT_EQUALITY( 0, controlVolumes_->PutScalar( 0.0 ) );
-
-  // Compute the average thickness for each control volume.
-  if ( !averageThickness_->Map().SameAs( *nodesMap_ ) )
-    TEUCHOS_ASSERT_EQUALITY( 0, averageThickness_->ReplaceMap( *nodesMap_ ) );
-  TEUCHOS_ASSERT_EQUALITY( 0, averageThickness_->PutScalar( 0.0 ) );
 
   // Create temporaries to hold the overlap values for control volumes and
   // average thickness.
@@ -1126,14 +1116,6 @@ computeControlVolumes_() const
   Epetra_Export exporter( *nodesOverlapMap_, *nodesMap_ );
   TEUCHOS_ASSERT_EQUALITY( 0,
                            controlVolumes_->Export( *cvOverlap, exporter, Add ) );
-
-  // Export control volumes to a non-overlapping map, and sum the entries.
-//   TEUCHOS_ASSERT_EQUALITY( 0, averageThickness_->Export( *atOverlap, exporter, Add ) );
-
-  // Up until this point, averageThickness_ contains the sum of the thickness at the
-  // edges. Fix this to be the average thickness.
-//   for ( controlvolumes )
-//       averageThickness_[k] /= number of edges;
 
   controlVolumesUpToDate_ = true;
 

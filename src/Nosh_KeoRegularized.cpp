@@ -266,17 +266,21 @@ rebuild(const std::map<std::string,double> & params,
     //TEUCHOS_ASSERT_EQUALITY(0, regularizedMatrix_.ReplaceDiagonalValues(diag));
     //
     const Epetra_Vector &controlVolumes = *(mesh_->getControlVolumes());
+    const Epetra_Vector thicknessValues = thickness_->getV(params);
+#ifndef NDEBUG
+    TEUCHOS_ASSERT(controlVolumes.Map().SameAs(thicknessValues.Map()));
+#endif
     int idx[2];
     double vals[2];
     for (int k=0; k<controlVolumes.MyLength(); k++)
     {
-      const double alpha = g * controlVolumes[k] * thickness_->getV(k, params)
+      const double alpha = g * controlVolumes[k] * thicknessValues[k]
                          * 2.0 * (x[2*k]*x[2*k] + x[2*k+1]*x[2*k+1]);
 
-      const double beta = g * controlVolumes[k] * thickness_->getV(k, params)
+      const double beta = g * controlVolumes[k] * thicknessValues[k]
                         * (2.0 * x[2*k] * x[2*k+1]);
 
-      const double gamma = g * controlVolumes[k] * thickness_->getV(k, params)
+      const double gamma = g * controlVolumes[k] * thicknessValues[k]
                          * (x[2*k]*x[2*k] - x[2*k+1]*x[2*k+1]);
 
       // TODO check if the indices are correct here

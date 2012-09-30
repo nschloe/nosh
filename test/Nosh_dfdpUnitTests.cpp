@@ -82,7 +82,7 @@ testDfdp(const std::string & inputFileNameBase,
 
     // Set the thickness field.
     Teuchos::RCP<Nosh::ScalarField::Virtual> thickness =
-      Teuchos::rcp(new Nosh::ScalarField::Constant(1.0));
+      Teuchos::rcp(new Nosh::ScalarField::Constant(*mesh, 1.0));
 
     Teuchos::RCP<Nosh::VectorField::Virtual> mvp =
       Teuchos::rcp(new Nosh::VectorField::ExplicitValues(*mesh, "A", mu));
@@ -90,7 +90,7 @@ testDfdp(const std::string & inputFileNameBase,
       Teuchos::rcp(new Nosh::MatrixBuilder::Keo(mesh, thickness, mvp));
 
     Teuchos::RCP<Nosh::ScalarField::Virtual> sp =
-      Teuchos::rcp(new Nosh::ScalarField::Constant(-1.0));
+      Teuchos::rcp(new Nosh::ScalarField::Constant(*mesh, -1.0));
 
     Teuchos::RCP<Nosh::ModelEvaluator::Nls> modelEval =
       Teuchos::rcp(new Nosh::ModelEvaluator::Nls(mesh, matrixBuilder, sp, 1.0, thickness, z));
