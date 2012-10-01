@@ -652,22 +652,22 @@ mergeComplexVector_(const Epetra_Vector & psi,
   {
     // Extract real and imaginary part.
     double* localPsiR = stk::mesh::field_data( *psir_field, *overlapNodes[k] );
-    localPsiR[0] = 0.0;
+    *localPsiR = 0.0;
     double* localPsiI = stk::mesh::field_data( *psii_field, *overlapNodes[k] );
-    localPsiI[0] = 0.0;
+    *localPsiI = 0.0;
   }
 
   // Set owned nodes.
 #ifndef NDEBUG
-  TEUCHOS_ASSERT_EQUALITY((unsigned int)psi.GlobalLength(), 2*ownedNodes_.size());
+  TEUCHOS_ASSERT_EQUALITY((unsigned int)psi.MyLength(), 2*ownedNodes_.size());
 #endif
   for (unsigned int k=0; k < ownedNodes_.size(); k++)
   {
     // Extract real and imaginary part.
     double* localPsiR = stk::mesh::field_data( *psir_field, *ownedNodes_[k] );
-    localPsiR[0] = psi[2*k];
+    *localPsiR = psi[2*k];
     double* localPsiI = stk::mesh::field_data( *psii_field, *ownedNodes_[k] );
-    localPsiI[0] = psi[2*k+1];
+    *localPsiI = psi[2*k+1];
   }
 
   // This communication updates the field values on un-owned nodes
