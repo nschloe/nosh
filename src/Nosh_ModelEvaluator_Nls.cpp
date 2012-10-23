@@ -87,7 +87,7 @@ Nls(
 
   // Out of this now complete list, create the entities that the EpetraExt::
   // Modelevaluator needs.
-  const unsigned int numParams = params.size();
+  const int numParams = params.size();
   p_map_ = Teuchos::rcp(new Epetra_LocalMap(numParams, 0, x_init_->Comm()));
   p_init_ = Teuchos::rcp(new Epetra_Vector(*p_map_));
   p_names_ = Teuchos::rcp(new Teuchos::Array<std::string>(numParams));

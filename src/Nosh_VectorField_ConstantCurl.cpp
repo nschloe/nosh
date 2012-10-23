@@ -270,7 +270,9 @@ initializeEdgeCache_() const
     mesh_->getEdgeNodes();
 
   // Loop over all edges and create the cache.
-  for (unsigned int k=0; k<edges.size(); k++)
+  for (Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> >::size_type k = 0;
+       k < edges.size();
+       k++)
   {
     const DoubleVector & node0Coords =
       mesh_->getVectorFieldNonconst(edges[k][0],

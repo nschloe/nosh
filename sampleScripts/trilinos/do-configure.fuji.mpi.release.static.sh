@@ -23,7 +23,7 @@
 # another with netCDF's possible dependency on HDF5,
 #  -D Trilinos_EXTRA_LINK_FLAGS:STRING="-lhdf5_hl -lhdf5 -lz -lm -lcurl".
 cmake \
-  -D CMAKE_INSTALL_PREFIX:PATH=/opt/trilinos/dev/openmpi/1.4.3/gcc/4.7.1/release/static \
+  -D CMAKE_INSTALL_PREFIX:PATH=/opt/trilinos/dev/openmpi/1.4.5/gcc/4.7.2/release/static \
   -D Trilinos_ENABLE_DEVELOPMENT_MODE:BOOL=OFF \
   -D CMAKE_BUILD_TYPE:STRING=Release \
   -D BUILD_SHARED_LIBS:BOOL=OFF \

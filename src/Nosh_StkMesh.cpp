@@ -933,7 +933,7 @@ computeEdgeCoefficients_() const
   std::vector<stk::mesh::Entity*> cells = this->getOwnedCells();
   unsigned int numCells = cells.size();
 
-  unsigned int numEdges = edgeNodes_.size();
+  Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> >::size_type numEdges = edgeNodes_.size();
 
   if ( edgeCoefficients_.size() != numEdges )
     edgeCoefficients_.resize( numEdges );

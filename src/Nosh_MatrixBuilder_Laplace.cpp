@@ -210,7 +210,9 @@ buildGraph_() const
     this->buildGlobalIndexCache_( edges );
 
   // Loop over all edges and put entries wherever two nodes are connected.
-  for (unsigned int k=0; k<edges.size(); k++)
+  for (Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> >::size_type k = 0;
+       k < edges.size();
+       k++)
     TEUCHOS_ASSERT_EQUALITY( 0,
       graph.InsertGlobalIndices(4, globalIndexCache_[k].Values(),
                                 4, globalIndexCache_[k].Values()));
@@ -252,7 +254,9 @@ fill_(Epetra_FECrsMatrix &matrix) const
 
   Epetra_SerialDenseMatrix A(4, 4);
   // Loop over all edges.
-  for (unsigned int k=0; k<edges.size(); k++)
+  for (Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> >::size_type k = 0;
+       k < edges.size();
+       k++)
   {
     // We'd like to insert the 2x2 matrix
     //
@@ -285,7 +289,9 @@ buildGlobalIndexCache_( const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2
     Teuchos::ArrayRCP<Epetra_IntSerialDenseVector>(edges.size());
 
   Teuchos::Tuple<int,2> gid;
-  for ( unsigned int k=0; k<edges.size(); k++ )
+  for (Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> >::size_type k = 0;
+       k < edges.size();
+       k++)
   {
     gid[0] = edges[k][0]->identifier() - 1;
     gid[1] = edges[k][1]->identifier() - 1;
@@ -315,7 +321,9 @@ buildAlphaCache_( const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > & 
 
   Teuchos::Tuple<int,2> gid;
   Teuchos::Tuple<int,2> lid;
-  for ( unsigned int k=0; k<edges.size(); k++ )
+  for (Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> >::size_type k = 0;
+       k < edges.size();
+       k++)
   {
     gid[0] = edges[k][0]->identifier() - 1;
     lid[0] = mesh_->getNodesOverlapMap()->LID( gid[0] );

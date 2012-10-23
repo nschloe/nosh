@@ -39,7 +39,9 @@ ExplicitValues(const Nosh::StkMesh & mesh,
     mesh.getEdgeNodes();
 
   // Loop over all edges and create the cache.
-  for (unsigned int k=0; k<edges.size(); k++)
+  for (Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> >::size_type k=0;
+       k < edges.size();
+       k++)
   {
     // Approximate the value at the midpoint of the edge
     // by the average of the values at the adjacent nodes.

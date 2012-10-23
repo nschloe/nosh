@@ -1,7 +1,7 @@
 #!/bin/sh
 
 cmake \
-  -D CMAKE_INSTALL_PREFIX:PATH=/opt/trilinos/dev/openmpi/1.4.3/gcc/4.7.1/release/shared \
+  -D CMAKE_INSTALL_PREFIX:PATH=/opt/trilinos/dev/openmpi/1.4.5/gcc/4.7.2/release/shared \
   -D CMAKE_SHARED_LINKER_FLAGS:STRING="-Wl,--no-undefined" \
   -D Trilinos_ENABLE_DEVELOPMENT_MODE:BOOL=OFF \
   -D CMAKE_BUILD_TYPE:STRING=Release \
