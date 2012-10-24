@@ -1,7 +1,6 @@
 INCLUDE_DIRECTORIES(${Nosh_SOURCE_DIR}/src)
 INCLUDE_DIRECTORIES(SYSTEM
-                    ${Trilinos_INCLUDE_DIRS}
-                    ${Trilinos_TPL_INCLUDE_DIRS})
+                    ${Trilinos_INCLUDE_DIRS})
 
 # Get the absolute path of Trilinos_LIBRARY_DIRS. This is to avoid
 # conflicts with Trilinos_TPL_LIBRARY_DIRS which is typically given
@@ -21,8 +20,7 @@ SET(MY_EXECUTABLE "cont")
 ADD_EXECUTABLE(${MY_EXECUTABLE} "continuation.cpp" "MyScalarField.cpp")
 TARGET_LINK_LIBRARIES(${MY_EXECUTABLE}
                       "nosh"
-                      ${Trilinos_LIBRARIES}
-                      ${Trilinos_TPL_LIBRARIES})
+                      ${Trilinos_LIBRARIES})
 #SET_TARGET_PROPERTIES(
 #  ${MY_EXECUTABLE}
 #  PROPERTIES
