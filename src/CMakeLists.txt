@@ -30,8 +30,11 @@ INSTALL(TARGETS nosh
   # IMPORTANT: Add an the export (and install it below). It will contain
   # important build information.
   EXPORT NoshLibraryDepends
+  # We don't actually need the RUNTIME DESTINATION here since we're only
+  # installing a library.
   RUNTIME DESTINATION "${INSTALL_BIN_DIR}" COMPONENT bin
-  LIBRARY DESTINATION "${INSTALL_LIB_DIR}" COMPONENT shlib
+  LIBRARY DESTINATION "${INSTALL_LIB_DIR}" COMPONENT shlib # .so
+  ARCHIVE DESTINATION "${INSTALL_LIB_DIR}" COMPONENT shlib # .a
   PUBLIC_HEADER DESTINATION "${INSTALL_INCLUDE_DIR}" COMPONENT dev
   #PUBLIC_HEADER DESTINATION "${INSTALL_INCLUDE_DIR}/nosh" COMPONENT dev
   )
