@@ -30,7 +30,7 @@ set(Nosh_VERSION
 
 
 IF(NOT DEFINED CMAKE_BUILD_TYPE)
-   SET(CMAKE_BUILD_TYPE None CACHE STRING "Choose the type of build,
+   SET(CMAKE_BUILD_TYPE Debug CACHE STRING "Choose the type of build,
 options are: None(CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used) Debug Profile
 Release RelWithDebInfo MinSizeRel.")
 ENDIF()
@@ -48,8 +48,8 @@ IF(CMAKE_COMPILER_IS_GNUCXX)
 ENDIF()
 
 # Offer the user the choice of overriding the installation directories
-SET(INSTALL_LIB_DIR lib CACHE PATH "Installation directory for libraries")
-SET(INSTALL_BIN_DIR bin CACHE PATH "Installation directory for executables")
+SET(INSTALL_LIB_DIR     lib     CACHE PATH "Installation directory for libraries")
+SET(INSTALL_BIN_DIR     bin     CACHE PATH "Installation directory for executables")
 SET(INSTALL_INCLUDE_DIR include CACHE PATH "Installation directory for header files")
 if(WIN32 AND NOT CYGWIN)
   set(DEF_INSTALL_CMAKE_DIR CMake)
@@ -57,24 +57,14 @@ else()
   set(DEF_INSTALL_CMAKE_DIR "lib/cmake/Nosh")
 endif()
 set(INSTALL_CMAKE_DIR ${DEF_INSTALL_CMAKE_DIR} CACHE PATH
-  "Installation directory for CMake files")
+    "Installation directory for CMake files")
 
 # Add subdirectories after INSTALL_BIN_DIR has been set.
 ADD_SUBDIRECTORY( src )
 ADD_SUBDIRECTORY( executables )
 ADD_SUBDIRECTORY( test )
 
-# Add all targets to the build-tree export set
-export(TARGETS nosh cont
-       FILE "${PROJECT_BINARY_DIR}/NoshLibraryDepends.cmake")
-
-# Export the package for use from the build-tree
-# (this registers the build-tree with a global CMake-registry)
-export(PACKAGE nosh)
-
-# Set some variables that are later exported
-SET(Nosh_CONFIG_LIBRARIES "nosh")
-
+# Create and install some helper files.
 INCLUDE(CMakePackageConfigHelpers)
 CONFIGURE_PACKAGE_CONFIG_FILE("NoshConfig.cmake.in"
                               "NoshConfig.cmake"
@@ -84,11 +74,6 @@ CONFIGURE_PACKAGE_CONFIG_FILE("NoshConfig.cmake.in"
 WRITE_BASIC_PACKAGE_VERSION_FILE(${CMAKE_CURRENT_BINARY_DIR}/NoshConfigVersion.cmake
                                  VERSION ${Nosh_VERSION}
                                  COMPATIBILITY SameMajorVersion)
-
-# Install the export set for use with the install-tree.
-INSTALL(EXPORT NoshLibraryDepends
-        DESTINATION "lib/cmake/Nosh"
-        COMPONENT dev)
 
 INSTALL(FILES
         "${PROJECT_BINARY_DIR}/NoshConfig.cmake"

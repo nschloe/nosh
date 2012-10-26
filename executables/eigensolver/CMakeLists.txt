@@ -21,8 +21,7 @@ SET( MY_EXECUTABLE "eigensolver" )
 ADD_EXECUTABLE( ${MY_EXECUTABLE}
                 "eigensolver.cpp" )
 TARGET_LINK_LIBRARIES(${MY_EXECUTABLE}
-                      "nosh"
-                      ${Trilinos_LIBRARIES})
+                      "nosh")
 INSTALL(TARGETS ${MY_EXECUTABLE}
-        DESTINATION "bin")
+        DESTINATION "${INSTALL_BIN_DIR}")
 # ------------------------------------------------------------------------------

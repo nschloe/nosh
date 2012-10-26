@@ -1,8 +1,7 @@
 
 INCLUDE_DIRECTORIES(${Nosh_SOURCE_DIR}/src)
 INCLUDE_DIRECTORIES(SYSTEM
-                    ${Trilinos_INCLUDE_DIRS}
-                    ${Trilinos_TPL_INCLUDE_DIRS})
+                    ${Trilinos_INCLUDE_DIRS})
 
 ## Get the absolute path of Trilinos_LIBRARY_DIRS. This is to avoid
 ## conflicts with Trilinos_TPL_LIBRARY_DIRS which is typically given
@@ -55,7 +54,6 @@ ADD_TEST( ioTestMpi7
 TARGET_LINK_LIBRARIES ( ${IOTEST_EXECUTABLE}
                         ${internal_LIBS}
                         ${Trilinos_LIBRARIES}
-                        ${Trilinos_TPL_LIBRARIES}
                       )
 # ------------------------------------------------------------------------------
 SET( MESHTEST_EXECUTABLE
@@ -79,7 +77,6 @@ ADD_TEST( meshTestMpi7
 TARGET_LINK_LIBRARIES ( ${MESHTEST_EXECUTABLE}
                         ${internal_LIBS}
                         ${Trilinos_LIBRARIES}
-                        ${Trilinos_TPL_LIBRARIES}
                       )
 # ------------------------------------------------------------------------------
 SET( OPERATORTEST_EXECUTABLE
@@ -106,6 +103,5 @@ ADD_TEST( operatorTestMpi7
 TARGET_LINK_LIBRARIES ( ${OPERATORTEST_EXECUTABLE}
                         ${internal_LIBS}
                         ${Trilinos_LIBRARIES}
-                        ${Trilinos_TPL_LIBRARIES}
                       )
 # ------------------------------------------------------------------------------

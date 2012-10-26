@@ -19,14 +19,17 @@ INCLUDE_DIRECTORIES(SYSTEM
 SET(MY_EXECUTABLE "cont")
 ADD_EXECUTABLE(${MY_EXECUTABLE} "continuation.cpp" "MyScalarField.cpp")
 TARGET_LINK_LIBRARIES(${MY_EXECUTABLE}
-                      "nosh"
-                      ${Trilinos_LIBRARIES})
+                      "nosh")
+
 #SET_TARGET_PROPERTIES(
 #  ${MY_EXECUTABLE}
 #  PROPERTIES
 #  LINKER_LANGUAGE Fortran)
+
+# For now, we don't need COMPONENT installations, cf.
+# http://www.cmake.org/pipermail/cmake/2006-October/011362.html.
 INSTALL(TARGETS ${MY_EXECUTABLE}
-        # IMPORTANT: Add the executable to the "export-set"
-        EXPORT NoshLibraryDepends
-        RUNTIME DESTINATION "${INSTALL_BIN_DIR}" COMPONENT bin)
+#        # IMPORTANT: Add the executable to the "export-set"
+#        EXPORT NoshLibraryDepends
+        DESTINATION "${INSTALL_BIN_DIR}")
 # ------------------------------------------------------------------------------
