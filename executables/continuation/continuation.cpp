@@ -187,9 +187,9 @@ int main(int argc, char *argv[])
       rcp(new MyScalarField(mesh));
     // - - - - - - - - - - - - - - - - - - - - -  - - - - - - - - - - - - - - -
 
+    const double g = initialParameterValues.get<double>("g");
     // Finally, create the model evaluator.
     // This is the most important object in the whole stack.
-    const double g = initialParameterValues.get<double>("g");
     RCP<Nosh::ModelEvaluator::Virtual> nlsModel =
       rcp(new Nosh::ModelEvaluator::Nls(mesh, matrixBuilder, sp, g, thickness, psi));
 

@@ -58,6 +58,22 @@ ExplicitValues(const Nosh::StkMesh & mesh,
     edgeProjectionCache_[k] = av.dot(edge);
   }
 
+  // Do a quick sanity check for the edgeProjectionCache_.
+  // It happens too effing often that the reader elements aren't specified
+  // correctly and stk_io *silently* "reads" only zeros.
+  bool isZero = true;
+  for (int k=0; k<edges.size(); k++)
+  {
+     if (fabs(edgeProjectionCache_[k]) > 1.0e-10)
+     {
+       isZero = false;
+       break;
+     }
+  }
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(isZero,
+                              "Field \"" << fieldName << "\" seems empty. "
+                              << "Was it read correctly?");
+
   return;
 }
 // ============================================================================
