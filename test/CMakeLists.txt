@@ -1,3 +1,4 @@
+FIND_PACKAGE(MPI REQUIRED)
 
 INCLUDE_DIRECTORIES(${Nosh_SOURCE_DIR}/src)
 INCLUDE_DIRECTORIES(SYSTEM
@@ -43,18 +44,19 @@ ADD_EXECUTABLE ( ${IOTEST_EXECUTABLE}
 ADD_TEST( ioTestSerial
           ${IOTEST_EXECUTABLE}
         )
-ADD_TEST( ioTestMpi2
-          mpiexec -n 2 ${IOTEST_EXECUTABLE}
+# Check out FindMPI.cmake for proper syntax.
+ADD_TEST(ioTestMpi2
+         ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS} ${IOTEST_EXECUTABLE} ${MPIEXEC_POSTFLAGS}
         )
-ADD_TEST( ioTestMpi7
-          mpiexec -n 7 ${IOTEST_EXECUTABLE}
+ADD_TEST(ioTestMpi7
+         ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 7 ${MPIEXEC_PREFLAGS} ${IOTEST_EXECUTABLE} ${MPIEXEC_POSTFLAGS}
         )
 
 # Set executable linking information.
-TARGET_LINK_LIBRARIES ( ${IOTEST_EXECUTABLE}
-                        ${internal_LIBS}
-                        ${Trilinos_LIBRARIES}
-                      )
+TARGET_LINK_LIBRARIES(${IOTEST_EXECUTABLE}
+                      ${internal_LIBS}
+                      ${Trilinos_LIBRARIES}
+                     )
 # ------------------------------------------------------------------------------
 SET( MESHTEST_EXECUTABLE
      "meshTest" )
@@ -66,18 +68,18 @@ ADD_EXECUTABLE ( ${MESHTEST_EXECUTABLE}
 ADD_TEST( meshTestSerial
           ${MESHTEST_EXECUTABLE}
         )
-ADD_TEST( meshTestMpi2
-          mpiexec -n 2 ${MESHTEST_EXECUTABLE}
+ADD_TEST(meshTestMpi2
+         ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS} ${MESHTEST_EXECUTABLE} ${MPIEXEC_POSTFLAGS}
         )
-ADD_TEST( meshTestMpi7
-          mpiexec -n 7 ${MESHTEST_EXECUTABLE}
+ADD_TEST(meshTestMpi7
+         ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 7 ${MPIEXEC_PREFLAGS} ${MESHTEST_EXECUTABLE} ${MPIEXEC_POSTFLAGS}
         )
 
 # Set executable linking information.
-TARGET_LINK_LIBRARIES ( ${MESHTEST_EXECUTABLE}
-                        ${internal_LIBS}
-                        ${Trilinos_LIBRARIES}
-                      )
+TARGET_LINK_LIBRARIES(${MESHTEST_EXECUTABLE}
+                      ${internal_LIBS}
+                      ${Trilinos_LIBRARIES}
+                     )
 # ------------------------------------------------------------------------------
 SET( OPERATORTEST_EXECUTABLE
      "operatorTest" )
@@ -92,11 +94,11 @@ ADD_EXECUTABLE ( ${OPERATORTEST_EXECUTABLE}
 ADD_TEST( operatorTest
           ${OPERATORTEST_EXECUTABLE}
         )
-ADD_TEST( operatorTestMpi2
-          mpiexec -n 2 ${OPERATORTEST_EXECUTABLE}
+ADD_TEST(operatorTestMpi2
+         ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS} ${OPERATORTEST_EXECUTABLE} ${MPIEXEC_POSTFLAGS}
         )
-ADD_TEST( operatorTestMpi7
-          mpiexec -n 7 ${OPERATORTEST_EXECUTABLE}
+ADD_TEST(operatorTestMpi7
+         ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 7 ${MPIEXEC_PREFLAGS} ${OPERATORTEST_EXECUTABLE} ${MPIEXEC_POSTFLAGS}
         )
 
 # Set executable linking information.
