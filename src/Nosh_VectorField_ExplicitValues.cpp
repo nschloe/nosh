@@ -61,16 +61,21 @@ ExplicitValues(const Nosh::StkMesh & mesh,
   // Do a quick sanity check for the edgeProjectionCache_.
   // It happens too effing often that the reader elements aren't specified
   // correctly and stk_io *silently* "reads" only zeros.
-  bool isZero = true;
+  // Use the fake logical "isNonzeroLocal" since Epetra_Comm doesn't have
+  // logical any() or all() operations.
+  int isNonzeroLocal = 0;
   for (int k=0; k<edges.size(); k++)
   {
      if (fabs(edgeProjectionCache_[k]) > 1.0e-10)
      {
-       isZero = false;
+       isNonzeroLocal = 1;
        break;
      }
   }
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(isZero,
+  int isNonzeroGlobal;
+  mesh.getComm().SumAll(&isNonzeroLocal, &isNonzeroGlobal, 1);
+
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(isNonzeroGlobal == 0,
                               "Field \"" << fieldName << "\" seems empty. "
                               << "Was it read correctly?");
 
