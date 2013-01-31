@@ -62,18 +62,35 @@ namespace Nosh {
 
 class StkMesh
 {
+private:
+
+// Keep bulkData a pointer since its copy constructor is private; this causes
+// issues when trying to copy (or initialize) MeshDataContainer.
+struct MeshDataContainer {
+  stk::mesh::fem::FEMMetaData metaData;
+  Teuchos::RCP<stk::io::MeshData> meshData;
+  Teuchos::RCP<stk::mesh::BulkData> bulkData;
+};
+
+struct EdgesContainer {
+  //! Local edge ID -> Global node IDs.
+  Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > edgeNodes;
+  //! Local cell ID -> Local edge IDs.
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<int> > cellEdges;
+};
+
 public:
 StkMesh(const Epetra_Comm &comm,
-        const std::string & fileName,
+        const std::string &fileName,
         const int index
         );
 
 virtual
 ~StkMesh();
 
-void
+MeshDataContainer
 read(const Epetra_Comm &comm,
-     const std::string & fileName,
+     const std::string &fileName,
      const int index
      );
 
@@ -149,6 +166,9 @@ getComplexNonOverlapMap() const;
 Teuchos::RCP<const Epetra_Map>
 getComplexOverlapMap() const;
 
+const Epetra_Map&
+getComplexNonOverlapMap2() const;
+
 unsigned int
 getNumEdgesPerCell( unsigned int cellDimension ) const;
 
@@ -157,7 +177,6 @@ getVectorFieldNonconst(const stk::mesh::Entity * nodeEntity,
                        const std::string & fieldName,
                        const int numDims
                        ) const;
-
 double
 getScalarFieldNonconst(const stk::mesh::Entity * nodeEntity,
                        const std::string & fieldName
@@ -175,29 +194,20 @@ const Teuchos::RCP<Teuchos::Time> writeTime_;
 
 const Epetra_Comm &comm_;
 
-stk::mesh::fem::FEMMetaData metaData_;
-const Teuchos::RCP<stk::io::MeshData> meshData_;
-mutable stk::mesh::BulkData bulkData_;
+MeshDataContainer meshDataContainer_;
 
-std::vector<stk::mesh::Entity*> ownedNodes_;
+const std::vector<stk::mesh::Entity*> ownedNodes_;
 
-Teuchos::RCP<const Epetra_Map> nodesMap_;
-Teuchos::RCP<const Epetra_Map> nodesOverlapMap_;
-Teuchos::RCP<const Epetra_Map> complexMap_;
-Teuchos::RCP<const Epetra_Map> complexOverlapMap_;
+const Teuchos::RCP<const Epetra_Map> nodesMap_;
+const Teuchos::RCP<const Epetra_Map> nodesOverlapMap_;
+const Teuchos::RCP<const Epetra_Map> complexMap_;
+const Teuchos::RCP<const Epetra_Map> complexOverlapMap_;
 
-mutable bool fvmEntitiesUpToDate_;
+const Teuchos::RCP<const Epetra_Vector> controlVolumes_;
 
-Teuchos::RCP<Epetra_Vector> controlVolumes_;
-mutable bool controlVolumesUpToDate_;
+const EdgesContainer edgeData_;
 
-mutable Teuchos::ArrayRCP<double> edgeCoefficients_;
-mutable bool edgeCoefficientsUpToDate_;
-
-//! Local edge ID -> Global node IDs.
-Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > edgeNodes_;
-//! Local cell ID -> Local edge IDs.
-Teuchos::ArrayRCP<Teuchos::ArrayRCP<int> > cellEdges_;
+const Teuchos::ArrayRCP<double> edgeCoefficients_;
 
 bool outputChannelIsOpen_;
 
@@ -230,17 +240,17 @@ buildOwnedNodes_() const;
 //Teuchos::ArrayRCP<const DoubleVector>
 //getNodeCoordinates_( const stk::mesh::PairIterRelation &relation ) const;
 
-void
+Teuchos::ArrayRCP<double>
 computeEdgeCoefficients_() const;
 
 //! Compute the volume of the (Voronoi) control cells for each point.
-void
+Teuchos::RCP<Epetra_Vector>
 computeControlVolumes_() const;
 
-Teuchos::RCP<Epetra_Map>
+Teuchos::RCP<const Epetra_Map>
 createEntitiesMap_( const std::vector<stk::mesh::Entity*> &entityList ) const;
 
-Teuchos::RCP<Epetra_Map>
+Teuchos::RCP<const Epetra_Map>
 createComplexMap_( const std::vector<stk::mesh::Entity*> &nodeList ) const;
 
 double
@@ -313,8 +323,8 @@ double
 norm2squared_( const DoubleVector &x
                ) const;
 
-void
-createEdges_();
+EdgesContainer
+createEdgeData_();
 
 };
 // -----------------------------------------------------------------------------
