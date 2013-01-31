@@ -90,8 +90,6 @@ testKeo( const std::string & inputFileNameBase,
     double normOne = keoMatrix.NormOne();
     double normInf = keoMatrix.NormInf();
 
-    std::cout << keoMatrix << std::endl;
-
     // check the values
     TEST_FLOATING_EQUALITY( normOne, controlNormOne, 1.0e-12 );
     TEST_FLOATING_EQUALITY( normInf, controlNormInf, 1.0e-12 );
