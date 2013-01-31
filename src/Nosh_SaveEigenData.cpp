@@ -87,7 +87,7 @@ save( Teuchos::RCP<std::vector<double> > &evals_r,
   for ( unsigned int k = 0; k < numEigenValues; k++ )
   {
     double eigenvalue = (*evals_r) [k];
-    stringstream eigenstateFileNameAppendix;
+    std::stringstream eigenstateFileNameAppendix;
     if ( eigenvalue  < -tol )
       // don't consider stable values
       eigenstateFileNameAppendix << "-seigenstate" << numStableEigenvalues++;
@@ -147,7 +147,7 @@ save( Teuchos::RCP<std::vector<double> > &evals_r,
   for ( unsigned int k = 0; k < numEigenValues; k++ )
   {
     std::stringstream label;
-    label << setw( 2 ) << setfill( '0' ) << k << "-0Re()";
+    label << std::setw( 2 ) << std::setfill( '0' ) << k << "-0Re()";
     eigenvaluesList.set( label.str(), (*evals_r) [k] );
 
     // make sure that the imaginary part is indeed 0
