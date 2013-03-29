@@ -16,6 +16,10 @@ ADD_LIBRARY(nosh
 # -DCMAKE_SHARED_LINKER_FLAGS:STRING="-Wl,--no-undefined".
 # We don't need the TPL libraries here since the linking information
 # about them is already included in the ${Trilinos_LIBRARIES}.
+# One drawback of this is that the development versions of the TPLs must be
+# present on the system since Trilinos, by default, doesn't (shared-)link
+# against the fully qualified library (e.g., libblas.so.3) but rather its
+# development counterpart (e.g., libblas.so).
 TARGET_LINK_LIBRARIES(nosh
                       ${Trilinos_LIBRARIES}
                      )

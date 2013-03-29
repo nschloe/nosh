@@ -135,7 +135,7 @@ ApplyInverse(const Epetra_MultiVector &X,
     belosList.set( "Verbosity", Belos::Errors + Belos::Warnings );
 
     // Make sure to have a solid initial guess.
-    // Belos, for example, does not initialze Y before passing it here.
+    // Belos, for example, does not initialize Y before passing it here.
     Y.PutScalar( 0.0 );
 
     // Construct an unpreconditioned linear problem instance.
@@ -164,8 +164,8 @@ ApplyInverse(const Epetra_MultiVector &X,
     // Perform "solve".
     Belos::ReturnType ret = newSolver->solve();
 
-    return 0;
-    // return ret==Belos::Converged ? 0 : -1;
+    //return 0;
+    return ret==Belos::Converged ? 0 : -1;
   }
 }
 // =============================================================================

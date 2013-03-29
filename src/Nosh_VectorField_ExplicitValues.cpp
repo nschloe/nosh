@@ -114,6 +114,7 @@ getDEdgeProjectionDp(const unsigned int edgeIndex,
                      const std::string & dParamName
                      ) const
 {
+  (void) params;
   if (dParamName.compare("mu") == 0)
     return edgeProjectionCache_[edgeIndex];
   else

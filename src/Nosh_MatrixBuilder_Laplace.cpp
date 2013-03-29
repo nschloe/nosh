@@ -85,6 +85,7 @@ apply(const std::map<std::string, double> &params,
       Epetra_Vector &Y
       ) const
 {
+  (void) params;
   // Rebuild if necessary.
   if (!matrixCacheUpToDate_)
   {
@@ -106,6 +107,10 @@ applyDKDp(const std::map<std::string, double> &params,
           Epetra_Vector &Y
           ) const
 {
+  (void) params;
+  (void) paramName;
+  (void) X;
+  (void) Y;
   TEUCHOS_TEST_FOR_EXCEPT_MSG(true,
                               "No parameters for the Laplace operator.");
   return;
@@ -117,6 +122,7 @@ fill(Epetra_FECrsMatrix &matrix,
      const std::map<std::string, double> &params
      ) const
 {
+  (void) params;
   // Cache the construction of the Laplacian.
   // After all, it's always the same.
   if (!matrixCacheUpToDate_)

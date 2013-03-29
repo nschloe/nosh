@@ -68,6 +68,7 @@ getdVdP(const std::map<std::string,double> & params,
         const std::string & paramName
         ) const
 {
+  (void) params;
   if (paramName.compare("beta") == 0)
     return *nodeValues_;
   else

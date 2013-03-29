@@ -76,6 +76,7 @@ getdVdP(const std::map<std::string,double> & params,
         const std::string & paramName
         ) const
 {
+  (void) params;
   // Create zeroed-out vector.
   Epetra_Vector vals(*map_, true);
   if (paramName.compare(param1Name_) == 0)

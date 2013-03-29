@@ -110,6 +110,8 @@ ApplyInverse( const Epetra_MultiVector &X,
               Epetra_MultiVector &Y
               ) const
 {
+  (void) X;
+  (void) Y;
   TEUCHOS_TEST_FOR_EXCEPT( "Not implemented." );
   return -1;
 }
