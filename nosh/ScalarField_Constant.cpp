@@ -1,6 +1,6 @@
 // @HEADER
 //
-//    Custom scalar potential.
+//    Query routines for the magnetic vector potential.
 //    Copyright (C) 2012  Nico Schl\"omer
 //
 //    This program is free software: you can redistribute it and/or modify
@@ -18,84 +18,72 @@
 //
 // @HEADER
 
-#include "MyScalarField.hpp"
-
-#include "nosh/StkMesh.hpp"
+#include "nosh/ScalarField_Constant.hpp"
 
 #include <Epetra_Vector.h>
 #include <Epetra_Map.h>
 
+namespace Nosh {
+namespace ScalarField {
 // ============================================================================
-MyScalarField::
-MyScalarField(const RCP<const Nosh::StkMesh> & mesh):
-  mesh_( mesh )
+Constant::
+Constant(const Nosh::StkMesh & mesh,
+         const double c,
+         const std::string & param1Name,
+         const double param1InitValue
+         ):
+  map_(mesh.getNodesMap()),
+  c_( c ),
+  param1Name_ (param1Name),
+  param1InitValue_( param1InitValue )
 {
 }
 // ============================================================================
-MyScalarField::
-~MyScalarField()
+Constant::
+~Constant()
 {
 }
 // ============================================================================
 const std::map<std::string,double>
-MyScalarField::
+Constant::
 getInitialParameters() const
 {
   std::map<std::string,double> m;
-  m["tau"] = 0.0;
+  if (!param1Name_.empty())
+    m[param1Name_] = param1InitValue_;
   return m;
 }
 // ============================================================================
 const Epetra_Vector
-MyScalarField::
+Constant::
 getV(const std::map<std::string,double> & params) const
 {
-  // Pick out p["tau"].
-  std::map<std::string, double>::const_iterator it = params.find("tau");
-  TEUCHOS_ASSERT(it != params.end());
-  const double & tau = it->second;
+  // Create constant-valued vector.
+  Epetra_Vector vals(*map_);
 
-  std::vector<stk::mesh::Entity*> ownedNodes =
-    mesh_->getOwnedNodes();
-
-  Epetra_Vector vals(*(mesh_->getNodesMap()));
-
-  for (unsigned int k=0; k<ownedNodes.size(); k++)
-  {
-    // Get nodal coordinates.
-    const DoubleVector X =
-      mesh_->getVectorFieldNonconst(ownedNodes[k],
-                                    "coordinates", 3);
-    vals[k] = -1.0 + tau * (-X[0]*X[0] + X[1]*X[1]);
-  }
+  std::map<std::string, double>::const_iterator it = params.find(param1Name_);
+  if (it != params.end())
+    vals.PutScalar(c_ + it->second);
+  else
+    vals.PutScalar(c_);
 
   return vals;
 }
 // ============================================================================
 const Epetra_Vector
-MyScalarField::
+Constant::
 getdVdP(const std::map<std::string,double> & params,
         const std::string & paramName
         ) const
 {
-  // Create vals as zeroed-out vector.
-  Epetra_Vector vals(*(mesh_->getNodesMap()));
-
-  if (paramName.compare("tau") == 0)
-  {
-    std::vector<stk::mesh::Entity*> ownedNodes =
-      mesh_->getOwnedNodes();
-
-    for (unsigned int k=0; k<ownedNodes.size(); k++)
-    {
-      // Get nodal coordinates.
-      const DoubleVector X =
-        mesh_->getVectorFieldNonconst(ownedNodes[k],
-                                      "coordinates", 3);
-      vals[k] = -X[0]*X[0] + X[1]*X[1];
-    }
-  }
+  (void) params;
+  // Create zeroed-out vector.
+  Epetra_Vector vals(*map_, true);
+  if (paramName.compare(param1Name_) == 0)
+    vals.PutScalar(1.0);
 
   return vals;
 }
 // ============================================================================
+} // namespace ScalarField
+} // namespace Nosh

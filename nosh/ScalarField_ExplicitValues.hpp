@@ -1,7 +1,7 @@
 // @HEADER
 //
-//    Custom scalar potential.
-//    Copyright (C) 2012  Nico Schl\"omer
+//    Query routines for a vector potential with explicitly given values.
+//    Copyright (C) 2011, 2012  Nico Schl\"omer
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -17,34 +17,28 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 // @HEADER
-#ifndef MYSCALARFIELD_H_
-#define MYSCALARFIELD_H_
-// =============================================================================
-// forward defs
-class Epetra_Vector;
-class Epetra_Map;
-namespace Nosh{
-class StkMesh;
-}
-// =============================================================================
+#ifndef NOSH_SCALARFIELD_EXPLICITVALUES_H_
+#define NOSH_SCALARFIELD_EXPLICITVALUES_H_
+
 #include <Teuchos_RCP.hpp>
+#include <Teuchos_Tuple.hpp>
+#include <Epetra_MultiVector.h>
 #include <Teuchos_Array.hpp>
-#include <Epetra_Comm.h>
 
 #include "nosh/ScalarField_Virtual.hpp"
-// =============================================================================
-using Teuchos::RCP;
-using Teuchos::rcp;
-// =============================================================================
-class MyScalarField: public Nosh::ScalarField::Virtual
+#include "nosh/StkMesh.hpp"
+
+namespace Nosh {
+namespace ScalarField {
+class ExplicitValues : public Virtual
 {
 public:
-MyScalarField(const RCP<const Nosh::StkMesh> & mesh);
+ExplicitValues(const Nosh::StkMesh &mesh,
+               const std::string &fieldName
+               );
 
-Epetra_Vector
-createPInit_(const Epetra_Map & map);
-
-~MyScalarField();
+virtual
+~ExplicitValues();
 
 //! Get parameter names and initial values.
 virtual
@@ -53,8 +47,7 @@ getInitialParameters() const;
 
 virtual
 const Epetra_Vector
-getV(const std::map<std::string,double> & params
-     ) const;
+getV(const std::map<std::string,double> & params) const;
 
 virtual
 const Epetra_Vector
@@ -65,7 +58,8 @@ getdVdP(const std::map<std::string,double> & params,
 protected:
 private:
 
-const RCP<const Nosh::StkMesh> mesh_;
-
+const Teuchos::RCP<const Epetra_Vector> nodeValues_;
 };
-#endif // MYSCALARFIELD_H_
+} // namespace ScalarField
+} // namespace Nosh
+#endif // NOSH_SCALARFIELD_EXPLICITVALUES_H_

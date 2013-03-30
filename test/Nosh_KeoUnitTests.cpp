@@ -28,10 +28,10 @@
 #include <Epetra_Vector.h>
 #include <LOCA_Parameter_Vector.H>
 
-#include "Nosh_StkMesh.hpp"
-#include "Nosh_ScalarField_Constant.hpp"
-#include "Nosh_VectorField_ExplicitValues.hpp"
-#include "Nosh_MatrixBuilder_Keo.hpp"
+#include "nosh/StkMesh.hpp"
+#include "nosh/ScalarField_Constant.hpp"
+#include "nosh/VectorField_ExplicitValues.hpp"
+#include "nosh/MatrixBuilder_Keo.hpp"
 
 #include <Teuchos_UnitTestHarness.hpp>
 

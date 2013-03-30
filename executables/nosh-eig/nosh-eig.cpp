@@ -15,10 +15,10 @@
 //#include <AnasaziBasicOutputManager.hpp>
 #include <AnasaziEpetraAdapter.hpp>
 
-#include "Nosh_MatrixBuilder_Keo.hpp"
-#include "Nosh_ScalarField_Constant.hpp"
-#include "Nosh_VectorField_ExplicitValues.hpp"
-#include "Nosh_ModelEvaluator_Nls.hpp"
+#include "nosh/MatrixBuilder_Keo.hpp"
+#include "nosh/ScalarField_Constant.hpp"
+#include "nosh/VectorField_ExplicitValues.hpp"
+#include "nosh/ModelEvaluator_Nls.hpp"
 
 #ifdef HAVE_MPI
 #include <Epetra_MpiComm.h>

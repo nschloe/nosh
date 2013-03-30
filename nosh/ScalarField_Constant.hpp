@@ -1,6 +1,6 @@
 // @HEADER
 //
-//    Custom scalar potential.
+//    Query routines for the magnetic vector potential.
 //    Copyright (C) 2012  Nico Schl\"omer
 //
 //    This program is free software: you can redistribute it and/or modify
@@ -17,36 +17,34 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 // @HEADER
-#ifndef MYSCALARFIELD_H_
-#define MYSCALARFIELD_H_
-// =============================================================================
-// forward defs
-class Epetra_Vector;
-class Epetra_Map;
-namespace Nosh{
-class StkMesh;
-}
+#ifndef NOSH_SCALARFIELD_CONSTANT_H_
+#define NOSH_SCALARFIELD_CONSTANT_H_
 // =============================================================================
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Array.hpp>
 #include <Epetra_Comm.h>
 
 #include "nosh/ScalarField_Virtual.hpp"
+
+#include "nosh/StkMesh.hpp"
 // =============================================================================
-using Teuchos::RCP;
-using Teuchos::rcp;
-// =============================================================================
-class MyScalarField: public Nosh::ScalarField::Virtual
+namespace Nosh {
+namespace ScalarField {
+class Constant: public Virtual
 {
 public:
-MyScalarField(const RCP<const Nosh::StkMesh> & mesh);
+Constant(const Nosh::StkMesh & mesh,
+         const double c,
+         const std::string & param1Name = "",
+         const double param1InitValue = 0.0
+         );
 
 Epetra_Vector
 createPInit_(const Epetra_Map & map);
 
-~MyScalarField();
+~Constant();
 
-//! Get parameter names and initial values.
+//! Get the parameter names and intial values.
 virtual
 const std::map<std::string,double>
 getInitialParameters() const;
@@ -65,7 +63,12 @@ getdVdP(const std::map<std::string,double> & params,
 protected:
 private:
 
-const RCP<const Nosh::StkMesh> mesh_;
+const Teuchos::RCP<const Epetra_Map> map_;
+const double c_;
+const std::string param1Name_;
+const double param1InitValue_;
 
 };
-#endif // MYSCALARFIELD_H_
+} // namespace ScalarField
+} // namespace Nosh
+#endif // NOSH_SCALARFIELD_CONSTANT_H_
