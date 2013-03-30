@@ -95,8 +95,11 @@ int main(int argc, char *argv[])
 
     Teuchos::ParameterList & inputDataList =
       piroParams->sublist ( "Input", true );
-    const std::string dataFile = xmlDirectory + "/"
-                               + inputDataList.get<std::string>( "File" );
+
+    std::string prefix = "";
+    if (!xmlDirectory.empty())
+      prefix = xmlDirectory + "/";
+    const std::string dataFile = prefix + inputDataList.get<std::string>("File");
     const int step = inputDataList.get<int>("Initial Psi Step");
 
     const bool useBordering = piroParams->get<bool>("Bordering");
