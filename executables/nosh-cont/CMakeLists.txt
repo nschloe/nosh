@@ -16,8 +16,8 @@ INCLUDE_DIRECTORIES(SYSTEM
 #LINK_DIRECTORIES(${Trilinos_LIBRARY_DIRS_ABSOLUTE}
 #                 ${Trilinos_TPL_LIBRARY_DIRS})
 # ------------------------------------------------------------------------------
-SET(MY_EXECUTABLE "cont")
-ADD_EXECUTABLE(${MY_EXECUTABLE} "continuation.cpp" "MyScalarField.cpp")
+SET(MY_EXECUTABLE "nosh-cont")
+ADD_EXECUTABLE(${MY_EXECUTABLE} "nosh-cont.cpp" "MyScalarField.cpp")
 TARGET_LINK_LIBRARIES(${MY_EXECUTABLE}
                       "nosh")
 

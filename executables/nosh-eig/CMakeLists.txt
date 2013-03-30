@@ -17,9 +17,9 @@ INCLUDE_DIRECTORIES(SYSTEM
 #LINK_DIRECTORIES( ${Trilinos_LIBRARY_DIRS_ABSOLUTE}
 #                  ${Trilinos_TPL_LIBRARY_DIRS} )
 # ------------------------------------------------------------------------------
-SET( MY_EXECUTABLE "eigensolver" )
+SET( MY_EXECUTABLE "nosh-eig" )
 ADD_EXECUTABLE( ${MY_EXECUTABLE}
-                "eigensolver.cpp" )
+                "nosh-eig.cpp" )
 TARGET_LINK_LIBRARIES(${MY_EXECUTABLE}
                       "nosh")
 INSTALL(TARGETS ${MY_EXECUTABLE}

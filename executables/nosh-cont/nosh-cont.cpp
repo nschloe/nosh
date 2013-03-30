@@ -88,24 +88,26 @@ int main(int argc, char *argv[])
     const std::string xmlDirectory =
       xmlInputPath.substr(0, xmlInputPath.find_last_of( "/" ) + 1);
 
-    const std::string & outputDirectory = xmlDirectory;
-
-    const std::string contFilePath = xmlDirectory + "/"
-                                   + outputList.get<std::string>( "Continuation data file name" );
-
-    Teuchos::ParameterList & inputDataList =
-      piroParams->sublist ( "Input", true );
-
-    std::string prefix = "";
+    // By default, take the current directory.
+    std::string prefix = "./";
     if (!xmlDirectory.empty())
       prefix = xmlDirectory + "/";
-    const std::string dataFile = prefix + inputDataList.get<std::string>("File");
+
+    const std::string outputDirectory = prefix;
+
+    const std::string contFilePath = prefix
+                                   + outputList.get<std::string>("Continuation data file name");
+
+    Teuchos::ParameterList & inputDataList = piroParams->sublist("Input", true);
+
+    const std::string inputExodusFile = prefix
+                                      + inputDataList.get<std::string>("File");
     const int step = inputDataList.get<int>("Initial Psi Step");
 
     const bool useBordering = piroParams->get<bool>("Bordering");
     // =======================================================================
     // Read the data from the file.
-    RCP<Nosh::StkMesh> mesh = rcp(new Nosh::StkMesh(*eComm, dataFile, step));
+    RCP<Nosh::StkMesh> mesh = rcp(new Nosh::StkMesh(*eComm, inputExodusFile, step));
 
     // Cast the data into something more accessible.
     RCP<Epetra_Vector> psi = mesh->createComplexVector("psi");
@@ -118,10 +120,10 @@ int main(int argc, char *argv[])
     Teuchos::ParameterList initialParameterValues =
       piroParams->sublist("Initial parameter values", true);
 
-    // Check if we ned to interpret the time value stored in the file
+    // Check if we need to interpret the time value stored in the file
     // as a parameter.
     const std::string & timeName =
-      piroParams->get<std::string>("Interpret time as");
+      piroParams->get<std::string>("Interpret time as", "");
     if (!timeName.empty())
       initialParameterValues.set(timeName, mesh->getTime());
 
