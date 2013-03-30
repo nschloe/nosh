@@ -1400,22 +1400,26 @@ getTriangleArea_( const DoubleVector &edge0,
 // =============================================================================
 double
 StkMesh::
-getTetrahedronVolume_( const DoubleVector &edge0,
-                       const DoubleVector &edge1,
-                       const DoubleVector &edge2
-                       ) const
+getTetrahedronVolume_(const DoubleVector &edge0,
+                      const DoubleVector &edge1,
+                      const DoubleVector &edge2
+                      ) const
 {
   // Make sure the edges are not conplanar.
-  double alpha = edge0.dot( this->cross_( edge1, edge2 ) );
-  TEUCHOS_TEST_FOR_EXCEPT_MSG( fabs( alpha ) / this->norm2_( edge0 )
-                       / this->norm2_( edge1 )
-                       / this->norm2_( edge2 )
-                       < 1.0e-5,
-                       "The following edges seem to be conplanar:"
-                       << "\n(0) " << edge0
-                       << "\n(1) " << edge1
-                       << "\n(2) " << edge2 );
-  double vol = fabs( alpha ) / 6.0;
+  double alpha = edge0.dot(this->cross_(edge1, edge2));
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(fabs(alpha)
+                             / this->norm2_(edge0)
+                             / this->norm2_(edge1)
+                             / this->norm2_(edge2)
+                             < 1.0e-5,
+                             "Illegal mesh: tetrahedron too flat.\n"
+                             << "The following edges (with origin (0,0,0)) "
+                             << "seem to be conplanar:\n\n"
+                             << "  (0) (" << edge0[0] << ", " << edge0[1] << ", " << edge0[2] << "),\n"
+                             << "  (1) (" << edge1[0] << ", " << edge1[1] << ", " << edge1[2] << "),\n"
+                             << "  (2) (" << edge2[0] << ", " << edge2[1] << ", " << edge2[2] << "),\n\n"
+                             << "Abort.");
+  double vol = fabs(alpha) / 6.0;
   return vol;
 }
 // =============================================================================
