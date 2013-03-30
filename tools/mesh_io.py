@@ -134,11 +134,25 @@ def write(
     '''
     import os
 
+    extension = os.path.splitext(filename)[1]
     # add point data
+    is_exodus_format = extension in [ '.ex2', '.exo', '.e' ]
     if point_data:
-        for key, value in point_data.iteritems():
+        for name, data in point_data.iteritems():
+            new_name = name
+            # There is a naming inconsistency in VTK when it comes to
+            # multivectors in Exodus files:
+            # If a vector 'v' has two components, they are called 'v_r',
+            # 'v_z' (note the underscore), if it has three, then they are
+            # called 'vx', 'vy', 'vz'.
+            # Make this consistent by appending an underscore if needed.
+            # Note that for VTK files, this problem does not occur since
+            # the label of a vector is always stored as a string.
+            is_3d_vector = len(data.shape) == 2 and data.shape[1] == 3
+            if is_exodus_format and is_3d_vector and name[-1] != '_':
+                new_name += '_'
             vtk_mesh.GetPointData() \
-                    .AddArray(_create_vtkarray(value, key))
+                    .AddArray(_create_vtkarray(data, new_name))
 
     # add cell data
     if cell_data:
