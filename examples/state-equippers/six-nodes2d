@@ -3,7 +3,7 @@
 import numpy as np
 import time
 
-import mesh_io
+import nosh.mesh_io
 # ==============================================================================
 def _main():
 

@@ -4,7 +4,7 @@
   <Parameter name="Jacobian Operator" type="string" value="Have Jacobian"/>
 
   <ParameterList name="Input">
-      <Parameter name="File" type="string" value="swiss-cheese.e"/>
+      <Parameter name="File" type="string" value="mymesh.e"/>
       <Parameter name="Initial Psi Step" type="int" value="0"/>
   </ParameterList>
 

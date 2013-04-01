@@ -1,0 +1,49 @@
+EXAMPLES
+========
+
+This example highlights the solution of the extreme-type-II Ginzburg-Landau
+equations for a three-dimensional domain given by swiss-cheese.geo: A cube
+with edge length 10 that has a number of ball-shaped cavities.
+
+Instructions for Nosh
+---------------------
+
+1. Get a mesh in VTK or Exodus format.
+
+   You can use any mesh generator you prefer or download meshes from the
+   internet.
+   The folder meshes/ contains instructions on how to create some simple meshes
+   by yourself.
+
+2. Add values for psi, the potential V, and the magnetic vector potential to
+   the mesh, and store the result as Exodus (.e) file.
+
+   Again, you can use any tool you like to perform this task.
+   The folder state-equippers/ contains some files that will do just that,
+   namely enrich your input mesh with the respective states.
+   Example:
+
+   $ ./state-equippers/plain-gl mymesh.vtk mymesh.e
+
+   If you would like to adapt the states: Editing the files should be easy
+   enough.
+
+   The output file mymesh.e can be inspected with a number of tools. One of
+   them is the free and open-source visualizer ParaView, another is Trilinos'
+   own command-line program 'io_info'.
+
+3. Run the parameter continuation.
+
+   Now simply add the mesh file to conf.xml
+   You can either run it serial mode 
+
+   $ nosh-cont --xml-input-file=conf.xml
+
+   or in parallel
+
+   $ mpiexec -n N nosh-cont --xml-input-file=conf.xml
+
+   where N is the number of processors you want to use.
+
+   The file conf.xml contains a plethora of parameters around the numerical
+   parameter continuation and can be edited to your liking.

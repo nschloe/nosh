@@ -3,7 +3,7 @@
 import numpy as np
 import time
 
-import mesh_io
+import nosh.mesh_io
 # ==============================================================================
 def _main():
 
@@ -11,11 +11,7 @@ def _main():
     args = _parse_options()
 
     # read the mesh
-    print 'Reading mesh...',
-    start = time.time()
     vtk_mesh = mesh_io.read(args.infile)
-    elapsed = time.time()-start
-    print 'done. (%gs)' % elapsed
 
     num_nodes = vtk_mesh.GetNumberOfPoints()
 
@@ -24,40 +20,24 @@ def _main():
     for k in range(num_nodes):
         points[k] = np.array(vtk_mesh.GetPoint(k))
 
-    # create values
-    print 'Creating psi...',
-    start = time.time()
+    # Create psi.
     psi = np.ones( num_nodes, dtype = complex )
-    elapsed = time.time()-start
-    print 'done. (%gs)' % elapsed
 
-    # create values
-    print 'Creating V...',
-    start = time.time()
+    # Add potential.
     V = np.empty(num_nodes)
     V[:] = -1.0
-    elapsed = time.time()-start
-    print 'done. (%gs)' % elapsed
 
     # Add magnetic vector potential.
-    print 'Creating A...',
-    start = time.time()
     A = 0.5 * np.cross(points, np.array([0,0,1]))
-    elapsed = time.time()-start
-    print 'done. (%gs)' % elapsed
 
     g = 1.0
     mu = 0.0
 
     # write the mesh
-    print 'Writing mesh...',
-    start = time.time()
     mesh_io.write(args.outfile,
                   vtk_mesh,
                   point_data={'psi': psi, 'V': V, 'A': A},
                   field_data={'g': g, 'mu': mu})
-    elapsed = time.time()-start
-    print 'done. (%gs)' % elapsed
 
     return
 # ==============================================================================
