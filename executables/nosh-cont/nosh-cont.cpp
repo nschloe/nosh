@@ -57,10 +57,13 @@ int main(int argc, char *argv[])
   {
     // ===========================================================================
     // Handle command line arguments.
+    // Boost::program_options is somewhat more complete here (e.g. you can
+    // specify options without the "--" syntax), but it isn't less complicated
+    // to use. Stick with Teuchos for now.
     Teuchos::CommandLineProcessor myClp;
 
     myClp.setDocString(
-      "This program solves nonlinear Schrödinger equations with a Piro interface.\n"
+      "Numerical parameter continuation for nonlinear Schrödinger equations.\n"
     );
 
     std::string xmlInputPath = "";

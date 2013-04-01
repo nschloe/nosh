@@ -115,7 +115,7 @@ def magnetic_dipole(x, x0, m):
    # gets divided by the corresponding entry in ||r||^3.
    return (np.cross(m, r).T / np.sum(np.abs(r)**2,axis=-1)**(3./2)).T
 # ==============================================================================
-def magnetic_dot( X, magnet_radius, heights ):
+def magnetic_dot(X, magnet_radius, heights):
     '''Magnetic vector potential corresponding to the field that is induced
     by a cylindrical magnetic dot, centered at (0,0,0.5*(height0+height1)),
     with the radius magnet_radius for objects in the x-y-plane.
@@ -130,7 +130,7 @@ def magnetic_dot( X, magnet_radius, heights ):
     # For symmetry, choose a number that is divided by 4.
     n_phi = 100
     # Choose such that the quads at radius/2 are approximately squares.
-    n_radius = int( round( n_phi / np.pi ) )
+    n_radius = int(round(n_phi / np.pi))
 
     dr = magnet_radius / n_radius
 
