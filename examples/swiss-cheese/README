@@ -46,11 +46,11 @@ Instructions for Nosh
 3. Run the parameter continuation.
    You can either run it serial mode 
 
-   $ cont --xml-input-file=conf.xml
+   $ nosh-cont --xml-input-file=conf.xml
 
    or in parallel
 
-   $ mpiexec -n N cont --xml-input-file=conf.xml
+   $ mpiexec -n N nosh-cont --xml-input-file=conf.xml
 
    where N is the number of processors you want to use.
 
