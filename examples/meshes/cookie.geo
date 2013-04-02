@@ -4,7 +4,6 @@ R = 1.25 * 3.4;
 // characteristic length of an edge
 lcar = 1.0e-1;
 
-cl1 = 1;
 Point(1) = {0, 0, 0, lcar};
 Point(2) = {R, 0, 0, lcar};
 Point(3) = {-R, 0, 0, lcar};
