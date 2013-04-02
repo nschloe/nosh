@@ -78,6 +78,9 @@ getdVdP(const std::map<std::string,double> & params,
         const std::string & paramName
         ) const
 {
+  // Silence warning about unused params.
+  (void) params;
+
   // Create vals as zeroed-out vector.
   Epetra_Vector vals(*(mesh_->getNodesMap()));
 
