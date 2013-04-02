@@ -3,7 +3,7 @@
 import numpy as np
 import time
 
-import nosh.mesh_io
+import mesh_io
 # ==============================================================================
 def _main():
 
@@ -11,11 +11,7 @@ def _main():
     args = _parse_options()
 
     # read the mesh
-    print 'Reading mesh...',
-    start = time.time()
     vtk_mesh = mesh_io.read(args.infile)
-    elapsed = time.time()-start
-    print 'done. (%gs)' % elapsed
 
     num_nodes = vtk_mesh.GetNumberOfPoints()
 
@@ -26,8 +22,6 @@ def _main():
 
     # Construct the initial state:
     # Six vortices arranged symmetrically.
-    print 'Creating psi...',
-    start = time.time()
     psi = np.ones(num_nodes, dtype = complex)
     r = 0.5 * 3.4
     vortex_locations = [[r * np.cos(np.pi*0.0/3.0), r * np.sin(np.pi*0.0/3.0)],
@@ -40,39 +34,31 @@ def _main():
         # Calculate the distance to the vortex for all nodes at once.
         diff = points[:,0:2] - vl
         dist2 = np.sum(diff*diff, 1)
-        psi *= np.sqrt(1 - np.exp(-dist2)) \
+        # tanh vortices
+        rad = 1.0
+        r = np.linalg.norm(points[:,0:2] - vl)
+        psi *= np.sqrt(0.5 * (1 + np.tanh(4/rad*dist2))) \
              * ((points[:,0]-vl[0]) + 1j * (points[:,1]-vl[1])) / np.sqrt(dist2)
-    elapsed = time.time()-start
-    print 'done. (%gs)' % elapsed
+        # exp(x**2) vortices
+        #psi *= np.sqrt(1 - np.exp(-dist2)) \
+        #     * ((points[:,0]-vl[0]) + 1j * (points[:,1]-vl[1])) / np.sqrt(dist2)
 
-    print 'Creating harmonic trap potential V...',
-    start = time.time()
     V = np.empty(num_nodes)
     for k, node in enumerate(points):
         r2 = node[0]**2 + node[1]**2
         V[k] = 0.5 * r2 + 0.25 * r2**2
-    elapsed = time.time()-start
-    print 'done. (%gs)' % elapsed
 
     # Add magnetic vector potential.
-    print 'Creating A...',
-    start = time.time()
     A = 0.5 * np.cross(points, np.array([0,0,1]))
-    elapsed = time.time()-start
-    print 'done. (%gs)' % elapsed
 
     g = 500.0
     Omega = 2.0
 
     # write the mesh
-    print 'Writing mesh...',
-    start = time.time()
     mesh_io.write(args.outfile,
                   vtk_mesh,
                   point_data={'psi': psi, 'V': V, 'A': A},
                   field_data={'g': g, 'Omega': Omega})
-    elapsed = time.time()-start
-    print 'done. (%gs)' % elapsed
 
     return
 # ==============================================================================
