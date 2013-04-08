@@ -571,10 +571,10 @@ write(const Epetra_Vector & psi,
   TEUCHOS_ASSERT(outputChannelIsOpen_);
 
   // Write it out to the file that's been specified in mesh_.
-  const int out_step =
-    stk::io::process_output_request(*meshDataContainer_.meshData,
-                                    *meshDataContainer_.bulkData,
-                                    time);
+  // The methods returns the output step (but we ignore it).
+  (void) stk::io::process_output_request(*meshDataContainer_.meshData,
+                                         *meshDataContainer_.bulkData,
+                                         time);
 
   return;
 }
