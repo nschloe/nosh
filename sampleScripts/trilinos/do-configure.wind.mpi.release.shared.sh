@@ -14,6 +14,7 @@ cmake \
       -D NOX_ENABLE_LOCA:BOOL=ON \
   -D Trilinos_ENABLE_Piro:BOOL=ON \
   -D Trilinos_ENABLE_ML:BOOL=ON \
+  -D Belos_ENABLE_TESTS:BOOL=ON \
   -D Trilinos_ENABLE_Anasazi:BOOL=ON \
   -D Trilinos_ENABLE_STK:BOOL=ON \
   -D Trilinos_ENABLE_SEACASIoss:BOOL=ON \
