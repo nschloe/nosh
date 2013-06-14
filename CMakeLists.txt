@@ -43,14 +43,14 @@ ENABLE_TESTING()
 #ENDIF()
 
 IF(CMAKE_COMPILER_IS_GNUCXX)
-    SET(CMAKE_CXX_FLAGS_DEBUG "-O0 -g -ggdb -Wall -pedantic -fbounds-check -Wextra -Wstrict-null-sentinel -Wshadow -Woverloaded-virtual -Weffc++ -Wsign-compare -ansi -std=c++0x" )
+    SET(CMAKE_CXX_FLAGS_DEBUG "-Og -g -ggdb -Wall -pedantic -fbounds-check -Wextra -Wstrict-null-sentinel -Wshadow -Woverloaded-virtual -Weffc++ -Wsign-compare -ansi -std=c++11" )
     SET(CMAKE_CXX_FLAGS_PROFILE "-pg -O2" )
 ENDIF()
 
 # Offer the user the choice of overriding the installation directories
-SET(INSTALL_LIB_DIR     lib     CACHE PATH "Installation directory for libraries")
-SET(INSTALL_BIN_DIR     bin     CACHE PATH "Installation directory for executables")
-SET(INSTALL_INCLUDE_DIR include CACHE PATH "Installation directory for header files")
+SET(INSTALL_LIB_DIR     "lib"          CACHE PATH "Installation directory for libraries")
+SET(INSTALL_BIN_DIR     "bin"          CACHE PATH "Installation directory for executables")
+SET(INSTALL_INCLUDE_DIR "include/nosh" CACHE PATH "Installation directory for header files")
 if(WIN32 AND NOT CYGWIN)
   set(DEF_INSTALL_CMAKE_DIR CMake)
 else()
@@ -60,7 +60,7 @@ set(INSTALL_CMAKE_DIR ${DEF_INSTALL_CMAKE_DIR} CACHE PATH
     "Installation directory for CMake files")
 
 # Add subdirectories after INSTALL_BIN_DIR has been set.
-ADD_SUBDIRECTORY( src )
+ADD_SUBDIRECTORY( nosh )
 ADD_SUBDIRECTORY( executables )
 ADD_SUBDIRECTORY( test )
 

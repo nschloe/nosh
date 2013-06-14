@@ -12,14 +12,14 @@
 #endif
 #include <Epetra_Vector.h>
 
-#include "Nosh_StkMesh.hpp"
-#include "Nosh_ScalarField_Constant.hpp"
-#include "Nosh_MatrixBuilder_Keo.hpp"
-#include "Nosh_MatrixBuilder_Laplace.hpp"
-#include "Nosh_VectorField_ExplicitValues.hpp"
-#include "Nosh_VectorField_ConstantCurl.hpp"
-#include "Nosh_ModelEvaluator_Nls.hpp"
-#include "Nosh_ModelEvaluator_Bordered.hpp"
+#include "nosh/StkMesh.hpp"
+#include "nosh/ScalarField_Constant.hpp"
+#include "nosh/MatrixBuilder_Keo.hpp"
+#include "nosh/MatrixBuilder_Laplace.hpp"
+#include "nosh/VectorField_ExplicitValues.hpp"
+#include "nosh/VectorField_ConstantCurl.hpp"
+#include "nosh/ModelEvaluator_Nls.hpp"
+#include "nosh/ModelEvaluator_Bordered.hpp"
 
 // =============================================================================
 using Teuchos::rcp;

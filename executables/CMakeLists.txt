@@ -1,3 +1,3 @@
-add_subdirectory(continuation)
-add_subdirectory(eigensolver)
+add_subdirectory(nosh-cont)
+add_subdirectory(nosh-eig)
 add_subdirectory(exampleCalls)

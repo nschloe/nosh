@@ -1,3 +1,5 @@
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
+
 INCLUDE_DIRECTORIES(${Nosh_SOURCE_DIR})
 INCLUDE_DIRECTORIES(SYSTEM
                     ${Trilinos_INCLUDE_DIRS})
@@ -12,13 +14,14 @@ INCLUDE_DIRECTORIES(SYSTEM
 #                       ${Trilinos_LIBRARY_DIRS}
 #                       REALPATH)
 #
-#LINK_DIRECTORIES(${Boost_LIBRARY_DIRS}
-#                 ${Trilinos_LIBRARY_DIRS_ABSOLUTE})
+#LINK_DIRECTORIES( ${Trilinos_LIBRARY_DIRS_ABSOLUTE}
+#                  ${Trilinos_TPL_LIBRARY_DIRS} )
 # ------------------------------------------------------------------------------
-SET(MY_EXECUTABLE "noshExamples")
-ADD_EXECUTABLE( ${MY_EXECUTABLE} "exampleCalls.cpp")
+SET( MY_EXECUTABLE "nosh-eig" )
+ADD_EXECUTABLE( ${MY_EXECUTABLE}
+                "nosh-eig.cpp" )
 TARGET_LINK_LIBRARIES(${MY_EXECUTABLE}
                       "nosh")
-
-# Don't install this example code.
+INSTALL(TARGETS ${MY_EXECUTABLE}
+        DESTINATION "${INSTALL_BIN_DIR}")
 # ------------------------------------------------------------------------------

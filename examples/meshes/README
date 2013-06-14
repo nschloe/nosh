@@ -1,0 +1,25 @@
+MESHES
+======
+
+This folder contains a number of example meshes that can be used for computation
+with Nosh.
+The .geo files are geometric data, that can be used by the free and open-source
+mesh generator Gmsh to generate a mesh.
+
+To do so, you can either
+
+(a) invoke Gmsh on the command line
+
+    $ gmsh -2 circle2d.geo -o circle2d.vtk
+    $ gmsh -3 -optimize swiss-cheese3d.geo -o swiss-cheese3e.vtk
+
+(b) invoke Gmsh's user interface with
+
+    $ gmsh swiss-cheese3d.geo
+
+    Then choose "Mesh" and "3D". A mesh is generated.
+    You can optionally create a finer mesh ("Refine by splitting") or
+    optimize the mesh ("Optimize", "Optimize (Netgen)"). Refer to the Gmsh
+    documentation for more information.
+    Eventually, "Save As..." VTK file. It does not matter if the binary or
+    the ASCII format are chosen.

@@ -27,7 +27,7 @@
 
 #include <Epetra_Vector.h>
 
-#include "Nosh_StkMesh.hpp"
+#include "nosh/StkMesh.hpp"
 
 #include <Teuchos_UnitTestHarness.hpp>
 

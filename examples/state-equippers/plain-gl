@@ -1,0 +1,68 @@
+#! /usr/bin/env python
+# -*- coding: utf-8 -*-
+import numpy as np
+import time
+
+import mesh_io
+# ==============================================================================
+def _main():
+
+    # get the command line arguments
+    args = _parse_options()
+
+    # read the mesh
+    vtk_mesh = mesh_io.read(args.infile)
+
+    num_nodes = vtk_mesh.GetNumberOfPoints()
+
+    # construct the points list
+    points = np.empty(num_nodes, np.dtype((float, 3)))
+    for k in range(num_nodes):
+        points[k] = np.array(vtk_mesh.GetPoint(k))
+
+    # Create psi.
+    psi = np.ones( num_nodes, dtype = complex )
+
+    # Add potential.
+    V = np.empty(num_nodes)
+    V[:] = -1.0
+
+    # Add magnetic vector potential.
+    A = 0.5 * np.cross(points, np.array([0,0,1]))
+
+    g = 1.0
+    mu = 0.0
+
+    # write the mesh
+    mesh_io.write(args.outfile,
+                  vtk_mesh,
+                  point_data={'psi': psi, 'V': V, 'A': A},
+                  field_data={'g': g, 'mu': mu})
+
+    return
+# ==============================================================================
+def _parse_options():
+    '''Parse input options.'''
+    import argparse
+
+    parser = argparse.ArgumentParser( description = 'Reads a mesh an equips it with a state.' )
+
+    parser.add_argument('infile',
+                        metavar = 'INFILE',
+                        type    = str,
+                        help    = 'file that contains the mesh'
+                        )
+
+    parser.add_argument('outfile',
+                        metavar = 'OUFILE',
+                        type    = str,
+                        help    = 'file to be written to'
+                        )
+
+    args = parser.parse_args()
+
+    return args
+# ==============================================================================
+if __name__ == "__main__":
+    _main()
+# ==============================================================================
