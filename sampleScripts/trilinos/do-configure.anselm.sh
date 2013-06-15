@@ -17,7 +17,7 @@ if [ -z $MKLROOT ]; then
 fi
 
 if [ -z $NETCDF_LIB_DIR ]; then
-  echo "NetCDF not found. Make sure to `module load netcdf`."
+  echo "NetCDF not found. Make sure to \`module load netcdf\`."
   exit 1;
 fi
 
@@ -25,7 +25,6 @@ fi
 
 # Don't include threading, cf. <http://comments.gmane.org/gmane.comp.mathematics.libmesh.user/4555>.
 #  -D Trilinos_ENABLE_OpenMP:BOOL=ON \
-
 cmake \
   -D CMAKE_INSTALL_PREFIX:PATH=$HOME/trilinos/11.2.3/ \
   -D CMAKE_CXX_FLAGS:STRING="-DMPICH_IGNORE_CXX_SEEK" \
@@ -41,6 +40,11 @@ cmake \
   -D BUILD_SHARED_LIBS:BOOL=ON \
   -D TPL_FIND_SHARED_LIBS:BOOL=ON \
   -D TPL_ENABLE_MPI:BOOL=ON \
+    -D MPI_BASE_DIR:PATH=${I_MPI_ROOT} \
+    -D MPI_EXEC:FILEPATH="`which mpirun`" \
+    -D MPI_C_COMPILER:FILEPATH="`which mpicc`" \
+    -D MPI_CXX_COMPILER:FILEPATH="`which mpicxx`" \
+    -D MPI_Fortran_COMPILER:FILEPATH="`which mpif90`" \
   -D TPL_ENABLE_BinUtils:BOOL=ON \
   -D TPL_ENABLE_MKL:BOOL=ON \
     -D MKL_LIBRARY_DIRS:FILEPATH="${MKLROOT}/lib/intel64" \
