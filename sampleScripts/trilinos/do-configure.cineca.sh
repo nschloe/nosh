@@ -51,7 +51,3 @@ cmake \
   -D TPL_ENABLE_Matio:BOOL=OFF \
   -D SEACASExodus_ENABLE_MPI:BOOL=OFF \
   $HOME/trilinos/trilinos-11.2.3-Source
-<<<<<<< HEAD
-=======
-  #../trilinos-11.2.3-Source
->>>>>>> 1be04cde4b03f9b064403c2b71d6648517df00db
