@@ -1,8 +1,11 @@
 # Treat Trilinos as system code to prevent warnings from
 # Trilinos to appear here.
 INCLUDE_DIRECTORIES(${Nosh_SOURCE_DIR})
+# Also add Trilinos TPL include directories. Templated TPL packages such as
+# Eigen may need this.
 INCLUDE_DIRECTORIES(SYSTEM
-                    ${Trilinos_INCLUDE_DIRS})
+                    ${Trilinos_INCLUDE_DIRS}
+                    ${Trilinos_TPL_INCLUDE_DIRS})
 
 FILE(GLOB nosh_SRCS "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 FILE(GLOB nosh_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/*.hpp")
