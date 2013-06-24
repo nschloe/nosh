@@ -14,32 +14,32 @@ echo ${BOOST_DIR?Error: Need Boost loaded (module load boost/1.50).}
 # Check which compiler is loadad.
 if [ "$CRAY_PRGENVPGI" == "loaded" ]; then
   echo "Using PGI compilers."
-  NAME="pgi"
+  COMPILER_NAME="pgi"
   SCILIB_NAME="sci_pgi"
   BINUTILS="OFF"
   SKIP_C_FORTRAN="ON"
 elif [ "$CRAY_PRGENVCRAY" == "loaded" ]; then
   echo "Using Cray compilers."
-  NAME="cray"
+  COMPILER_NAME="cray"
   SCILIB_NAME="sci_cray"
   BINUTILS="OFF"
   SKIP_C_FORTRAN="OFF"
 elif [ "$CRAY_PRGENVGNU" == "loaded" ]; then
   echo "Using GNU compilers."
   echo ${BINUTILS_DIR?Error: Need Binutils loaded (module load binutils).}
-  NAME="gnu"
+  COMPILER_NAME="gnu"
   SCILIB_NAME="sci_gnu"
   BINUTILS="ON"
   SKIP_C_FORTRAN="OFF"
 elif [ "$CRAY_PRGENVINTEL" == "loaded" ]; then
   echo "Using Intel compilers."
-  NAME="intel"
+  COMPILER_NAME="intel"
   SCILIB_NAME="sci_intel"
   BINUTILS="OFF"
   SKIP_C_FORTRAN="OFF"
 elif [ "$CRAY_PRGENVPATHSCALE" == "loaded" ]; then
   echo "Using PathScale compilers."
-  NAME="pathscale"
+  COMPILER_NAME="pathscale"
   SCILIB_NAME="sci_pathscale"
   BINUTILS="OFF"
   SKIP_C_FORTRAN="OFF"
@@ -49,6 +49,7 @@ else
 fi
 
 # Give the user some time to ctrl-c out. :)
+echo "Using <$COMPILER_NAME> compilers."
 sleep 5
 
 
@@ -70,7 +71,7 @@ sleep 5
 echo ${CRAY_LIBSCI_PREFIX_DIR?Error: Need libsci loaded (module load cray-libsci).}
 
 cmake \
-  -D CMAKE_INSTALL_PREFIX:PATH="$SCRATCH/trilinos/dev/${NAME}/" \
+  -D CMAKE_INSTALL_PREFIX:PATH="$SCRATCH/trilinos/dev/${COMPILER_NAME}/" \
   -D CMAKE_BUILD_TYPE:STRING=Release \
   -D Trilinos_ENABLE_DEVELOPMENT_MODE:BOOL=OFF \
   -D BUILD_SHARED_LIBS:BOOL=OFF \

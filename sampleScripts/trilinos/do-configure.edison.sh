@@ -11,23 +11,19 @@ echo ${BOOST_DIR?Error: Need Boost loaded (module load boost).}
 
 # Check which compiler is loadad.
 if [ "$CRAY_PRGENVPGI" == "loaded" ]; then
-  echo "Using PGI compilers."
-  NAME="pgi"
+  COMPILER_NAME="pgi"
   SCILIB_NAME="sci_pgi"
   SKIP_CF="ON"
 elif [ "$CRAY_PRGENVCRAY" == "loaded" ]; then
-  echo "Using Cray compilers."
-  NAME="cray"
+  COMPILER_NAME="cray"
   SCILIB_NAME="sci_cray"
   SKIP_CF="OFF"
 elif [ "$CRAY_PRGENVGNU" == "loaded" ]; then
-  echo "Using GNU compilers."
-  NAME="gnu"
+  COMPILER_NAME="gnu"
   SCILIB_NAME="sci_gnu"
   SKIP_CF="OFF"
 elif [ "$CRAY_PRGENVINTEL" == "loaded" ]; then
-  echo "Using Intel compilers."
-  NAME="intel"
+  COMPILER_NAME="intel"
   SCILIB_NAME="sci_intel"
   SKIP_CF="OFF"
 else
@@ -36,6 +32,7 @@ else
 fi
 
 # Give the user some time to ctrl-c out. :)
+echo "Using <$COMPILER_NAME> compilers."
 sleep 5
 
 
@@ -68,7 +65,7 @@ sleep 5
 #      -D LAPACK_LIBRARY_NAMES:STRING="${SCILIB_NAME}" \
 
 cmake \
-  -D CMAKE_INSTALL_PREFIX:PATH="$SCRATCH/trilinos/dev/${NAME}/" \
+  -D CMAKE_INSTALL_PREFIX:PATH="$SCRATCH/trilinos/dev/${COMPILER_NAME}/" \
   -D CMAKE_BUILD_TYPE:STRING=Release \
   -D Trilinos_ENABLE_DEVELOPMENT_MODE:BOOL=OFF \
   -D Trilinos_ENABLE_TESTS:BOOL=ON \
