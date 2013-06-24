@@ -28,6 +28,8 @@ set(Nosh_PATCH_VERSION 0)
 set(Nosh_VERSION
   ${Nosh_MAJOR_VERSION}.${Nosh_MINOR_VERSION}.${Nosh_PATCH_VERSION})
 
+# Add compiler flags (e.g., -openmp).
+LIST(APPEND CMAKE_CXX_FLAGS ${Trilinos_CXX_COMPILER_FLAGS})
 
 IF(NOT DEFINED CMAKE_BUILD_TYPE)
    SET(CMAKE_BUILD_TYPE Debug CACHE STRING "Choose the type of build,
