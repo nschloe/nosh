@@ -104,6 +104,9 @@ cmake \
       -D MPI_C_COMPILER:FILEPATH="$ASYNCPE_DIR/bin/cc" \
       -D MPI_CXX_COMPILER:FILEPATH="$ASYNCPE_DIR/bin/CC" \
       -D MPI_Fortran_COMPILER:FILEPATH="$ASYNCPE_DIR/bin/ftn" \
+      -D MPI_EXEC:FILEPATH="aprun" \
+      -D MPI_EXEC_NUMPROCS_FLAG:STRING="-n" \
+      -D MPI_EXEC_MAX_NUMPROCS:STRING="24" \
   -D TPL_ENABLE_Boost:BOOL=ON \
       -D Boost_LIBRARY_DIRS:PATH="$BOOST_DIR/libs" \
       -D Boost_INCLUDE_DIRS:PATH="$BOOST_DIR/include" \
