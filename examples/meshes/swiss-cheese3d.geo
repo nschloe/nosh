@@ -3,7 +3,7 @@
 // Define characteristic lengths of the edges to be used for point definition.
 // Different characteristic lengths could be used for the corner points of
 // the cube and the around the cavity.
-lcar1 = 0.65;
+lcar1 = 0.5;
 
 // Define the corner points of the cube.
 Point(1) = {5.0,5.0,5.0,lcar1};
