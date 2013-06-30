@@ -1,9 +1,11 @@
-// Gmsh file for a cube of edge length 10 with several ball-shaped cavities.
+// Gmsh file for a cube of edge length 10 with a ball-shaped cavity in the
+// the middle of radius 1. The object is centered around (0,0,0) and aligned
+// with the axes.
 
 // Define characteristic lengths of the edges to be used for point definition.
 // Different characteristic lengths could be used for the corner points of
 // the cube and the around the cavity.
-lcar1 = 0.65;
+lcar1 = 0.3;
 
 // Define the corner points of the cube.
 Point(1) = {5.0,5.0,5.0,lcar1};
@@ -39,7 +41,7 @@ Line Loop(27) = {9,11,-12,-10}; Plane Surface(36) = {27};
 
 // Instead of using included files, we now use a user-defined function
 // in order to carve some holes in the cube.
-Function CheeseHole
+Function Cavity
   // In the following commands we use the reserved variable name
   // `newp', which automatically selects a new point number. This
   // number is chosen as the highest current point number, plus
@@ -92,85 +94,9 @@ Function CheeseHole
 Return
 
 // Make some cavities.
-x = -1.46317 ; y = -2.40772 ; z = 1.4293; r = 0.457792;
+x = 0.0; y = 0.0; z = 0.0; r = 1.0;
 t = 1;
-Call CheeseHole;
-
-x = -1.49481 ; y = 3.86381 ; z = 2.32999; r = 0.423834;
-t = 2;
-Call CheeseHole;
-
-x = 3.51252 ; y = -3.17091 ; z = 0.126542; r = 0.574615;
-t = 3;
-Call CheeseHole;
-
-x = 1.80873 ; y = -1.3192 ; z = 0.449734; r = 0.815995;
-t = 4;
-Call CheeseHole;
-
-x = 2.81175 ; y = -3.05816 ; z = 1.60204; r = 0.750539;
-t = 5;
-Call CheeseHole;
-
-x = -1.64069 ; y = 0.642466 ; z = 1.57775; r = 0.758124;
-t = 6;
-Call CheeseHole;
-
-x = -4.02354 ; y = 1.49486 ; z = -2.06116; r = 0.840947;
-t = 7;
-Call CheeseHole;
-
-x = -1.23371 ; y = -4.12543 ; z = -3.45951; r = 0.725355;
-t = 8;
-Call CheeseHole;
-
-x = -2.19689 ; y = -3.36984 ; z = 2.87567; r = 1.1617;
-t = 9;
-Call CheeseHole;
-
-x = -3.4803 ; y = 2.57227 ; z = 0.0892171; r = 0.853531;
-t = 10;
-Call CheeseHole;
-
-x = 3.05549 ; y = 1.74856 ; z = 2.26179; r = 0.82265;
-t = 11;
-Call CheeseHole;
-
-x = -3.55543 ; y = 2.60709 ; z = 2.43619; r = 0.711617;
-t = 12;
-Call CheeseHole;
-
-x = -1.70232 ; y = -4.56487 ; z = -0.28901; r = 0.42475;
-t = 13;
-Call CheeseHole;
-
-x = -1.71015 ; y = 3.76747 ; z = -0.493561; r = 0.718423;
-t = 14;
-Call CheeseHole;
-
-x = 0.839863 ; y = -3.57311 ; z = 4.26341; r = 0.409265;
-t = 15;
-Call CheeseHole;
-
-x = 2.98551 ; y = 2.01366 ; z = -1.09315; r = 0.609814;
-t = 16;
-Call CheeseHole;
-
-x = -4.32456 ; y = 4.29347 ; z = -4.05296; r = 0.627758;
-t = 17;
-Call CheeseHole;
-
-x = -1.20392 ; y = -3.64129 ; z = -1.91227; r = 0.864392;
-t = 18;
-Call CheeseHole;
-
-x = 3.75785 ; y = 4.00852 ; z = 4.17353; r = 0.790652;
-t = 19;
-Call CheeseHole;
-
-x = -0.00189355 ; y = 1.9328 ; z = -4.14051; r = 0.83671;
-t = 20;
-Call CheeseHole;
+Call Cavity;
 
 // We define a physical volume for each hole:
 //  Physical Volume (t) = thehole ;

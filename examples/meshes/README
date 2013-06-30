@@ -1,8 +1,8 @@
 MESHES
 ======
 
-This folder contains a number of example meshes that can be used for computation
-with Nosh.
+This folder contains a number of example meshes that can be used for
+computation with Nosh.
 The .geo files are geometric data, that can be used by the free and open-source
 mesh generator Gmsh to generate a mesh.
 
