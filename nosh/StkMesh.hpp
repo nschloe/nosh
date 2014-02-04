@@ -98,8 +98,8 @@ double
 getTime() const;
 
 void
-openOutputChannel(const string &outputDir,
-                  const string &fileBaseName
+openOutputChannel(const std::string &outputDir,
+                  const std::string &fileBaseName
                   );
 
 void

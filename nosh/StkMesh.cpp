@@ -519,8 +519,8 @@ field2vector_(const VectorFieldType &field,
 // =============================================================================
 void
 StkMesh::
-openOutputChannel(const string &outputDir,
-                  const string &fileBaseName
+openOutputChannel(const std::string &outputDir,
+                  const std::string &fileBaseName
                   )
 {
   // prepare the data for output
