@@ -6,6 +6,6 @@ before_install:
   - sudo apt-get update -qq
   - sudo apt-get install -qq libtrilinos-dev
 install:
-  - cmake && make
+  - cmake . && make
 # command to run tests
 script: ctest
