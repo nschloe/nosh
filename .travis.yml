@@ -10,6 +10,9 @@ before_install:
   # A number of dependencies here should be covered by libtrilinos-dev.
   - sudo apt-get install -qq gfortran cmake libboost-dev libtrilinos-dev
 install:
-  - cmake -DCMAKE_CXX_COMPILER:STRING=mpicxx -DCMAKE_Fortran_COMPILER:STRING=mpif90 . && make
+  - ls /usr/include/trilinos/
+  - ls /usr/include/trilinos/stk_io/
+  - cmake -DCMAKE_CXX_COMPILER:STRING=mpicxx -DCMAKE_Fortran_COMPILER:STRING=mpif90 .
+  - make
 # command to run tests
 script: ctest
