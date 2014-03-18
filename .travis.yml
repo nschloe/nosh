@@ -2,7 +2,7 @@ language: c++
 # command to install dependencies
 before_install:
   # http://about.travis-ci.org/docs/user/build-configuration/#Installing-Packages-Using-apt
-  - sudo add-apt-repository ppa:nschloe/trilinos-nightly
+  - sudo add-apt-repository -y ppa:nschloe/trilinos-nightly
   - sudo apt-get update -qq
   - sudo apt-get install -qq libtrilinos-dev
 install:
