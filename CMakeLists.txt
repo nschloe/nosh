@@ -1,4 +1,4 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8.8)
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8.7)
 
 # There's no Fortran in this project, but Trilinos has some Fortran
 # in it (e.g., via BLAS/LAPACK).
