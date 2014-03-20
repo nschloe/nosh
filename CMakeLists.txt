@@ -1,3 +1,4 @@
+# We need CONFIGURE_PACKAGE_CONFIG_FILE, available from CMake 2.8.8 on.
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8.8)
 
 # There's no Fortran in this project, but Trilinos has some Fortran

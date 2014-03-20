@@ -180,7 +180,7 @@ save( Teuchos::RCP<std::vector<double> > &evals_r,
 
   // Make sure that the shift SIGMA (if using Shift-Invert) sits THRESHOLD above
   // the rightmost eigenvalue.
-  std::string &op = eigenParamListPtr_->get<string> ( "Operator" );
+  std::string &op = eigenParamListPtr_->get<std::string> ( "Operator" );
   if ( !locaStepper_.is_null() && op.compare( "Shift-Invert" ) == 0 )
   {
     double maxEigenval = *std::max_element( evals_r->begin(), evals_r->end() );

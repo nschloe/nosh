@@ -1,0 +1,18 @@
+language: c++
+# command to install dependencies
+before_install:
+  # http://about.travis-ci.org/docs/user/build-configuration/#Installing-Packages-Using-apt
+  # Get Trilinos, netCDF.
+  - sudo add-apt-repository -y ppa:nschloe/trilinos-nightly
+  # Get CMake >=2.8.8.
+  - sudo add-apt-repository -y ppa:kalakris/cmake
+  - sudo apt-get update -qq
+  # A number of dependencies here should be covered by libtrilinos-dev.
+  - sudo apt-get install -qq gfortran cmake libboost-dev libtrilinos-dev
+install:
+  - ls /usr/include/trilinos/
+  - ls /usr/include/trilinos/stk_io/
+  - cmake -DCMAKE_CXX_COMPILER:STRING=mpicxx -DCMAKE_Fortran_COMPILER:STRING=mpif90 .
+  - make
+# command to run tests
+script: ctest

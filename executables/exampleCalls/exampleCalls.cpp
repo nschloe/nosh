@@ -65,7 +65,13 @@ int main(int argc, char *argv[])
     // =======================================================================
     // Read the data from the file.
     const int step = 0;
-    RCP<Nosh::StkMesh> mesh = rcp(new Nosh::StkMesh(*eComm, dataFile, step));
+    RCP<Nosh::StkMesh> mesh;
+    const RCP<Teuchos::Time> readTime =
+      Teuchos::TimeMonitor::getNewTimer("Read mesh");
+    {
+    Teuchos::TimeMonitor tm(*readTime);
+    mesh = rcp(new Nosh::StkMesh(*eComm, dataFile, step));
+    }
 
     // Cast the data into something more accessible.
     RCP<Epetra_Vector> psi = mesh->createComplexVector("psi");
@@ -124,8 +130,13 @@ int main(int argc, char *argv[])
     // Finally, create the model evaluator.
     // This is the most important object in the whole stack.
     const double g = 1.0;
-    RCP<Nosh::ModelEvaluator::Virtual> nlsModel =
-      rcp(new Nosh::ModelEvaluator::Nls(mesh, matrixBuilder, sp, g, thickness, psi));
+    RCP<Nosh::ModelEvaluator::Virtual> nlsModel;
+    const RCP<Teuchos::Time> meTime =
+      Teuchos::TimeMonitor::getNewTimer("Create model evaluator");
+    {
+    Teuchos::TimeMonitor tm(*meTime);
+    nlsModel = rcp(new Nosh::ModelEvaluator::Nls(mesh, matrixBuilder, sp, g, thickness, psi));
+    }
 
     RCP<Nosh::ModelEvaluator::Virtual> modelEvaluator;
     const bool useBordering = false;
@@ -151,9 +162,13 @@ int main(int argc, char *argv[])
       modelEvaluator = nlsModel;
     }
 
-    // Evaluate the nonlinear Schroedinger equation F(X).
+    const RCP<Teuchos::Time> fxTime =
+      Teuchos::TimeMonitor::getNewTimer("F(x)");
     EpetraExt::ModelEvaluator::InArgs inArgs = modelEvaluator->createInArgs();
     EpetraExt::ModelEvaluator::OutArgs outArgs = modelEvaluator->createOutArgs();
+    RCP<Epetra_Operator> nullOp = Teuchos::null;
+
+    // Evaluate the nonlinear Schroedinger equation F(X).
     // Set the parameter vector.
     RCP<const Epetra_Vector> p = modelEvaluator->get_p_init(0);
     inArgs.set_p(0, p);
@@ -162,28 +177,74 @@ int main(int argc, char *argv[])
     // Set an empty FX in outArgs. This will be filled after the call to evalModel.
     RCP<Epetra_Vector> fx = rcp(new Epetra_Vector(*modelEvaluator->get_f_map()));
     outArgs.set_f(fx);
+    modelEvaluator->evalModel(inArgs, outArgs);
+    {
+    Teuchos::TimeMonitor tm(*fxTime);
     // Fill outArgs.
     modelEvaluator->evalModel(inArgs, outArgs);
     // fx is now filled with F(X).
-    std::cout << *fx << std::endl;
+    }
+    //std::cout << *fx << std::endl;
     // Reset to null to make sure it's not refilled the next time evalModel is called.
     RCP<Epetra_Vector> null = Teuchos::null;
     outArgs.set_f(null);
 
     // Get the Jacobian.
-    Teuchos::RCP<Epetra_Operator> jac = modelEvaluator->create_W();
+    const RCP<Teuchos::Time> getJTime =
+      Teuchos::TimeMonitor::getNewTimer("Get Jacobian");
+    Teuchos::RCP<Epetra_Operator> jac;
+    {
+    Teuchos::TimeMonitor tm(*getJTime);
+    jac = modelEvaluator->create_W();
     outArgs.set_W(jac);
     modelEvaluator->evalModel(inArgs, outArgs);
     // Now, jac contains the Jacobian operator.
-    RCP<Epetra_Operator> nullOp = Teuchos::null;
     outArgs.set_W(nullOp);
+    }
+
+    // Apply Jacobian
+    Epetra_Vector X(jac->OperatorDomainMap());
+    X.Random();
+    Epetra_Vector Y(jac->OperatorRangeMap());
+    const RCP<Teuchos::Time> applyJTime =
+      Teuchos::TimeMonitor::getNewTimer("Apply Jacobian");
+    {
+    Teuchos::TimeMonitor tm(*applyJTime);
+    jac->Apply(X, Y);
+    }
 
     // Get the preconditioner.
-    Teuchos::RCP<Epetra_Operator> prec = modelEvaluator->create_WPrec()->PrecOp;
+    const RCP<Teuchos::Time> getPTime =
+      Teuchos::TimeMonitor::getNewTimer("Get Preconditioner");
+    Teuchos::RCP<Epetra_Operator> prec;
+    {
+    Teuchos::TimeMonitor tm(*getPTime);
+    prec = modelEvaluator->create_WPrec()->PrecOp;
     outArgs.set_WPrec(prec);
     modelEvaluator->evalModel(inArgs, outArgs);
     // Now, prec contains the Jacobian operator.
     outArgs.set_WPrec(nullOp);
+    }
+
+    // Apply preconditioner
+    Epetra_Vector X2(prec->OperatorDomainMap());
+    X2.Random();
+    Epetra_Vector Y2(prec->OperatorRangeMap());
+    const RCP<Teuchos::Time> applyPTime =
+      Teuchos::TimeMonitor::getNewTimer("Apply Preconditioner");
+    {
+    Teuchos::TimeMonitor tm(*applyPTime);
+    prec->Apply(X2, Y2);
+    }
+
+    // Write out data.
+    const RCP<Teuchos::Time> writeTime =
+      Teuchos::TimeMonitor::getNewTimer("Write");
+    {
+    Teuchos::TimeMonitor tm(*writeTime);
+    mesh->openOutputChannel(".", "output");
+    mesh->write(*psi, 0.0);
+    }
 
     // Print timing data.
     Teuchos::TimeMonitor::summarize();
