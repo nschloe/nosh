@@ -6,7 +6,7 @@ before_install:
   - sudo add-apt-repository -y ppa:nschloe/trilinos-nightly
   - sudo apt-get update -qq
   # A number of dependencies here should be covered by libtrilinos-dev.
-  - sudo apt-get install -qq gfortran cmake libboost-dev libtrilinos-dev
+  - sudo apt-get install gfortran cmake libboost-dev libtrilinos-dev
 install:
   - cmake -DCMAKE_CXX_COMPILER:STRING=mpicxx -DCMAKE_Fortran_COMPILER:STRING=mpif90 .
   - make

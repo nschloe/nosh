@@ -14,7 +14,7 @@
 #
 #     alpha = -ln(6)/ln(2) \approx = -2.58.
 #
-# To get double the number of elements, reduce the characterstic length by a
+# To get double the number of elements, reduce the characteristic length by a
 # factor of
 #
 #     2^(1/alpha) \approx 0.76479616424594177.

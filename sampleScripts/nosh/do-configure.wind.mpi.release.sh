@@ -1,8 +1,8 @@
 #!/bin/sh
 
-CXX=mpicxx \
+#CMAKE_PREFIX_PATH=/opt/trilinos/:$CMAKE_PREFIX_PATH \
+CXX=mpic++ \
 FC=mpif90 \
-CMAKE_PREFIX_PATH=/opt/trilinos/dev/openmpi/1.4.3/gcc/4.6.3/release/shared/:$CMAKE_PREFIX_PATH \
 cmake \
     -DCMAKE_INSTALL_PREFIX:PATH=/opt/nosh/dev/ \
     -DCMAKE_BUILD_TYPE:STRING=Release \

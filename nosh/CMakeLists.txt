@@ -1,11 +1,12 @@
-# Treat Trilinos as system code to prevent warnings from
-# Trilinos to appear here.
 INCLUDE_DIRECTORIES(${Nosh_SOURCE_DIR})
-# Also add Trilinos TPL include directories. Templated TPL packages such as
-# Eigen may need this.
-INCLUDE_DIRECTORIES(SYSTEM
-                    ${Trilinos_INCLUDE_DIRS}
-                    ${Trilinos_TPL_INCLUDE_DIRS})
+# Treat Trilinos as system code to prevent warnings from Trilinos to appear
+# here. Also add Trilinos TPL include directories. Templated TPL packages such
+# as Eigen may need this.
+INCLUDE_DIRECTORIES(
+  SYSTEM
+  ${Trilinos_INCLUDE_DIRS}
+  ${Trilinos_TPL_INCLUDE_DIRS}
+  )
 
 FILE(GLOB nosh_SRCS "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 FILE(GLOB nosh_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/*.hpp")
@@ -28,10 +29,12 @@ TARGET_LINK_LIBRARIES(nosh
                       ${Trilinos_LIBRARIES}
                      )
 
-SET_TARGET_PROPERTIES(nosh PROPERTIES
+SET_TARGET_PROPERTIES(
+  nosh PROPERTIES
   PUBLIC_HEADER "${nosh_HEADERS}"
   VERSION ${${PROJECT_NAME}_VERSION}
-  SOVERSION ${${PROJECT_NAME}_MAJOR_VERSION})
+  SOVERSION ${${PROJECT_NAME}_MAJOR_VERSION}
+  )
 
 # Installation of the program
 INSTALL(TARGETS nosh
