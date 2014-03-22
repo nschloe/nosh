@@ -9,7 +9,7 @@ before_install:
   # A number of dependencies here should be covered by libtrilinos-dev.
   - sudo apt-get install cmake gfortran libboost-dev libhdf5-openmpi-7 libeigen3-dev libtbb-dev libnetcdfc libtrilinos libtrilinos-dev
 install:
-  - cmake -DCMAKE_CXX_COMPILER:STRING=mpicxx -DCMAKE_Fortran_COMPILER:STRING=mpif90 .
+  - cmake -DBUILD_SHARED_LIBS:BOOL=TRUE -DCMAKE_CXX_COMPILER:STRING=mpicxx -DCMAKE_Fortran_COMPILER:STRING=mpif90 .
   - make
 # command to run tests
 script: ctest
