@@ -1,3 +1,6 @@
+# Nosh [![Build
+Status](https://travis-ci.org/nschloe/Nosh.svg?branch=master)](https://travis-ci.org/nschloe/Nosh)
+
 This is Nosh,
 a free and open-source implementation of numerical solutions methods
 for nonlinear Schr\"odinger equations of the form $0=(\K+V+g|\psi|^2)\psi$.
