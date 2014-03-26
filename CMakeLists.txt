@@ -11,7 +11,7 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8.8)
 # At some point in time, the BLAS/LAPACK dependency on Fortran should
 # be propagated up to applications like Nosh such that explicitly
 # adding the Fortran compiler here isn't necessary anymore.
-PROJECT(Nosh CXX Fortran)
+PROJECT(Nosh CXX)
 
 FIND_PACKAGE(Trilinos REQUIRED)
 
@@ -19,9 +19,9 @@ FIND_PACKAGE(Trilinos REQUIRED)
 IF(NOT ${Trilinos_CXX_COMPILER} STREQUAL ${CMAKE_CXX_COMPILER})
   MESSAGE(FATAL_ERROR "C++ compilers don't match (Trilinos: ${Trilinos_CXX_COMPILER}, ${PROJECT_NAME}: ${CMAKE_CXX_COMPILER}).")
 ENDIF()
-IF(NOT ${Trilinos_Fortran_COMPILER} STREQUAL ${CMAKE_Fortran_COMPILER})
-  MESSAGE(FATAL_ERROR "Fortran compilers don't match (Trilinos: ${Trilinos_Fortran_COMPILER}, ${PROJECT_NAME}: ${CMAKE_Fortran_COMPILER}).")
-ENDIF()
+#IF(NOT ${Trilinos_Fortran_COMPILER} STREQUAL ${CMAKE_Fortran_COMPILER})
+#  MESSAGE(FATAL_ERROR "Fortran compilers don't match (Trilinos: ${Trilinos_Fortran_COMPILER}, ${PROJECT_NAME}: ${CMAKE_Fortran_COMPILER}).")
+#ENDIF()
 
 set(Nosh_MAJOR_VERSION 11)
 set(Nosh_MINOR_VERSION 0)
