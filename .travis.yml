@@ -8,7 +8,7 @@ before_install:
   - sudo apt-get update -qq
   # A number of dependencies here should be covered by libtrilinos-dev.
   #- sudo apt-get install cmake gfortran libboost-dev libhdf5-openmpi-7 libeigen3-dev libtbb-dev libboost-system-dev libptscotch-dev libmumps-dev libparmetis-dev liblapack-dev binutils-dev libnetcdfc-dev libnetcdfc libtrilinos libtrilinos-dev
-  - sudo apt-get install cmake libtrilinos-dev
+  - sudo apt-get install cmake libhdf5-openmpi-dev libnetcdfc-dev libtrilinos libtrilinos-dev
   # The following dependencies can all go one the Trilinos export system is
   # fixed.
   - sudo apt-get install libmumps-dev libptscotch-dev binutils-dev libhdf5-openmpi-dev libnetcdfc-dev
