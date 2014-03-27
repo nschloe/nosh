@@ -10,7 +10,7 @@ before_install:
   # The following dependencies can all go one the Trilinos export system is
   # fixed.
   - sudo apt-get install libhdf5-openmpi-7 libhdf5-openmpi-dev
-  - sudo apt-get libnetcdfc libnetcdfc-dev
+  - sudo apt-get install libnetcdfc libnetcdfc-dev
   - sudo apt-get install libmumps-dev libptscotch-dev binutils-dev
   - sudo apt-get install cmake libtrilinos libtrilinos-dev
 install:
