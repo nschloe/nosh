@@ -157,8 +157,8 @@ evalModel(const InArgs &inArgs,
 #endif
   const Teuchos::RCP<Epetra_Vector> inner_x_in =
     Teuchos::rcp(new Epetra_Vector(*innerModelEval_->get_x_map()));
-  double lambda;
-  Nosh::BorderingHelpers::dissect(*x_in, *inner_x_in, &lambda);
+  double lambda[1];
+  Nosh::BorderingHelpers::dissect(*x_in, *inner_x_in, lambda);
 
   // Get i*x. This assumes a particular data layout in x_in.
   const Teuchos::RCP<Epetra_Vector> ix =
@@ -190,12 +190,12 @@ evalModel(const InArgs &inArgs,
     inner_outArgs.set_f(inner_f_out);
     innerModelEval_->evalModel(inner_inArgs, inner_outArgs);
     // Add lambda * x0.
-    TEUCHOS_ASSERT_EQUALITY(0, inner_f_out->Update(lambda, *bordering, 1.0));
+    TEUCHOS_ASSERT_EQUALITY(0, inner_f_out->Update(lambda[0], *bordering, 1.0));
     // Append <psi0, x> to f_out.
-    double r;
-    TEUCHOS_ASSERT_EQUALITY(0, bordering->Dot(*inner_x_in, &r));
+    double r[1];
+    TEUCHOS_ASSERT_EQUALITY(0, bordering->Dot(*inner_x_in, r));
     //r = lambda;
-    Nosh::BorderingHelpers::merge(*inner_f_out, &r, *f_out);
+    Nosh::BorderingHelpers::merge(*inner_f_out, r, *f_out);
   }
 
   // Compute df/dp.
