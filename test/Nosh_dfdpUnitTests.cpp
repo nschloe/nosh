@@ -23,8 +23,8 @@ namespace {
 // ===========================================================================
 void
 computeFiniteDifference_( const Teuchos::RCP<EpetraExt::ModelEvaluator> & modelEval,
-                          EpetraExt::ModelEvaluator::InArgs inArgs,
-                          EpetraExt::ModelEvaluator::OutArgs outArgs,
+                          EpetraExt::ModelEvaluator::InArgs & inArgs,
+                          EpetraExt::ModelEvaluator::OutArgs & outArgs,
                           const Teuchos::RCP<const Epetra_Vector> & p,
                           const int paramIndex,
                           const Teuchos::RCP<Epetra_Vector> & fdiff
