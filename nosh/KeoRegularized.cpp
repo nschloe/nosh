@@ -174,7 +174,6 @@ KeoRegularized::
 NormInf() const
 {
   TEUCHOS_TEST_FOR_EXCEPT( "Not yet implemented." );
-  return 0.0;
 }
 // =============================================================================
 const char *
