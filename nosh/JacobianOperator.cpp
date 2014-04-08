@@ -112,14 +112,14 @@ ApplyInverse( const Epetra_MultiVector &X,
 {
   (void) X;
   (void) Y;
-  TEUCHOS_TEST_FOR_EXCEPT( "Not implemented." );
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Not implemented.");
 }
 // =============================================================================
 double
 JacobianOperator::
 NormInf() const
 {
-  TEUCHOS_TEST_FOR_EXCEPT( "Not yet implemented." );
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Not yet implemented.");
 }
 // =============================================================================
 const char *

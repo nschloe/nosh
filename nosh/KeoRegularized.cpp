@@ -173,7 +173,7 @@ double
 KeoRegularized::
 NormInf() const
 {
-  TEUCHOS_TEST_FOR_EXCEPT( "Not yet implemented." );
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Not yet implemented.");
 }
 // =============================================================================
 const char *
