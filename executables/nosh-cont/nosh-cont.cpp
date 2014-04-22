@@ -37,19 +37,20 @@ using Teuchos::RCP;
 // =============================================================================
 int main(int argc, char *argv[])
 {
+  // Create output stream. (Handy for multicore output.)
+  const RCP<Teuchos::FancyOStream> out =
+    Teuchos::VerboseObjectBase::getDefaultOStream();
+
+  Teuchos::GlobalMPISession(&argc, &argv, NULL);
+
   // Create a communicator for Epetra objects.
 #ifdef HAVE_MPI
-  MPI_Init( &argc, &argv );
   RCP<const Epetra_MpiComm> eComm =
     rcp<Epetra_MpiComm>(new Epetra_MpiComm(MPI_COMM_WORLD));
 #else
   RCP<const Epetra_SerialComm> eComm =
     rcp<Epetra_SerialComm>(new Epetra_SerialComm());
 #endif
-
-  // Create output stream. (Handy for multicore output.)
-  const RCP<Teuchos::FancyOStream> out =
-    Teuchos::VerboseObjectBase::getDefaultOStream();
 
   // Wrap the whole code in a big try-catch-statement.
   bool success = true;
@@ -362,10 +363,6 @@ int main(int argc, char *argv[])
   catch (Teuchos::CommandLineProcessor::ParseError)
   {}
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true, *out, success);
-
-#ifdef HAVE_MPI
-    MPI_Finalize();
-#endif
 
   return success ? EXIT_SUCCESS : EXIT_FAILURE;
 }

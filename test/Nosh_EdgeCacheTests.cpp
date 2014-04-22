@@ -39,13 +39,16 @@ testCache( const std::string & inputFileNameBase,
            Teuchos::FancyOStream & out,
            bool & success )
 {
-    // Create a communicator for Epetra objects
+  // Create MPI communicator
+  Teuchos::GlobalMPISession (&argc, &argv, NULL);
+
+  // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
-    Teuchos::RCP<Epetra_MpiComm> eComm =
-            Teuchos::rcp<Epetra_MpiComm> ( new Epetra_MpiComm ( MPI_COMM_WORLD ) );
+  Teuchos::RCP<Epetra_MpiComm> eComm =
+          Teuchos::rcp<Epetra_MpiComm> ( new Epetra_MpiComm ( MPI_COMM_WORLD ) );
 #else
-    Teuchos::RCP<Epetra_SerialComm> eComm =
-            Teuchos::rcp<Epetra_SerialComm> ( new Epetra_SerialComm() );
+  Teuchos::RCP<Epetra_SerialComm> eComm =
+          Teuchos::rcp<Epetra_SerialComm> ( new Epetra_SerialComm() );
 #endif
 
     std::string inputFileName = inputFileNameBase + ".e";

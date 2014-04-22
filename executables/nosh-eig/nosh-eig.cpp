@@ -34,14 +34,12 @@ typedef Epetra_Operator    OP;
 using Teuchos::rcp;
 using Teuchos::RCP;
 // =============================================================================
-int main ( int argc, char *argv[] )
+int main(int argc, char *argv[])
 {
   // Initialize MPI
-#ifdef HAVE_MPI
-  MPI_Init( &argc, &argv );
-#endif
+  Teuchos::GlobalMPISession(&argc, &argv, NULL);
 
-    // Create a communicator for Epetra objects
+  // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
   RCP<Epetra_MpiComm> eComm =
     rcp<Epetra_MpiComm>(new Epetra_MpiComm (MPI_COMM_WORLD));
@@ -298,10 +296,6 @@ int main ( int argc, char *argv[] )
   catch (Teuchos::CommandLineProcessor::ParseError)
   {}
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true, *out, success);
-
-#ifdef HAVE_MPI
-  MPI_Finalize();
-#endif
 
   return success ? EXIT_SUCCESS : EXIT_FAILURE;
 }
