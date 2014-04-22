@@ -41,82 +41,80 @@
 int main ( int argc, char *argv[] )
 {
   // Initialize MPI
-#ifdef HAVE_MPI
-  MPI_Init( &argc, &argv );
-#endif
+  Teuchos::GlobalMPISession (&argc, &argv, NULL);
 
     // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
-    Teuchos::RCP<Epetra_MpiComm> eComm =
-      Teuchos::rcp<Epetra_MpiComm> ( new Epetra_MpiComm ( MPI_COMM_WORLD ) );
+  Teuchos::RCP<Epetra_MpiComm> eComm =
+    Teuchos::rcp<Epetra_MpiComm> ( new Epetra_MpiComm ( MPI_COMM_WORLD ) );
 #else
-    Teuchos::RCP<Epetra_SerialComm>  eComm =
-           Teuchos::rcp<Epetra_SerialComm> ( new Epetra_SerialComm() );
+  Teuchos::RCP<Epetra_SerialComm>  eComm =
+         Teuchos::rcp<Epetra_SerialComm> ( new Epetra_SerialComm() );
 #endif
 
-    const Teuchos::RCP<Teuchos::FancyOStream> out =
-        Teuchos::VerboseObjectBase::getDefaultOStream();
+  const Teuchos::RCP<Teuchos::FancyOStream> out =
+      Teuchos::VerboseObjectBase::getDefaultOStream();
 
-    bool success = true;
-    try
-    {
-      // ===========================================================================
-      // handle command line arguments
-      Teuchos::CommandLineProcessor My_CLP;
+  bool success = true;
+  try
+  {
+    // ===========================================================================
+    // handle command line arguments
+    Teuchos::CommandLineProcessor My_CLP;
 
-      My_CLP.setDocString (
-          "Linear solver testbed for KEO and Jacobian operator.\n"
-      );
+    My_CLP.setDocString (
+        "Linear solver testbed for KEO and Jacobian operator.\n"
+    );
 
-      std::string inputFileName = "";
-      My_CLP.setOption ( "input", &inputFileName,
-                         "Input state file", true
-                       );
+    std::string inputFileName = "";
+    My_CLP.setOption ( "input", &inputFileName,
+                       "Input state file", true
+                     );
 
-      // print warning for unrecognized arguments
-      My_CLP.recogniseAllOptions ( true );
+    // print warning for unrecognized arguments
+    My_CLP.recogniseAllOptions ( true );
 
-      // do throw exceptions
-      My_CLP.throwExceptions ( true );
+    // do throw exceptions
+    My_CLP.throwExceptions ( true );
 
-      // finally, parse the command line
-      My_CLP.parse ( argc, argv );
-      // =========================================================================
-      // Read the data from the file.
-      Teuchos::ParameterList data;
-      Ginla::StkMeshRead( *eComm, inputFileName, data );
+    // finally, parse the command line
+    My_CLP.parse ( argc, argv );
+    // =========================================================================
+    // Read the data from the file.
+    Teuchos::ParameterList data;
+    Ginla::StkMeshRead( *eComm, inputFileName, data );
 
-      // Cast the data into something more accessible.
-      Teuchos::RCP<Ginla::StkMesh>     & mesh = data.get( "mesh", Teuchos::RCP<Ginla::StkMesh>() );
-      //Teuchos::RCP<Epetra_Vector>      & z = data.get( "psi", Teuchos::RCP<Epetra_Vector>() );
-      Teuchos::RCP<Epetra_MultiVector> & mvpValues = data.get( "A", Teuchos::RCP<Epetra_MultiVector>() );
-      Teuchos::RCP<Epetra_Vector>      & thickness = data.get( "thickness", Teuchos::RCP<Epetra_Vector>() );
-      Teuchos::ParameterList           & problemParameters = data.get( "Problem parameters", Teuchos::ParameterList() );
+    // Cast the data into something more accessible.
+    Teuchos::RCP<Ginla::StkMesh>     & mesh = data.get( "mesh", Teuchos::RCP<Ginla::StkMesh>() );
+    //Teuchos::RCP<Epetra_Vector>      & z = data.get( "psi", Teuchos::RCP<Epetra_Vector>() );
+    Teuchos::RCP<Epetra_MultiVector> & mvpValues = data.get( "A", Teuchos::RCP<Epetra_MultiVector>() );
+    Teuchos::RCP<Epetra_Vector>      & thickness = data.get( "thickness", Teuchos::RCP<Epetra_Vector>() );
+    Teuchos::ParameterList           & problemParameters = data.get( "Problem parameters", Teuchos::ParameterList() );
 
-      double mu = problemParameters.get<double> ( "mu" );
-      Teuchos::RCP<Ginla::MagneticVectorPotential::ExplicitValues> mvp =
-          Teuchos::rcp ( new Ginla::MagneticVectorPotential::ExplicitValues ( mesh, mvpValues, mu ) );
+    double mu = problemParameters.get<double> ( "mu" );
+    Teuchos::RCP<Ginla::MagneticVectorPotential::ExplicitValues> mvp =
+        Teuchos::rcp ( new Ginla::MagneticVectorPotential::ExplicitValues ( mesh, mvpValues, mu ) );
 
-      Teuchos::RCP<LOCA::ParameterVector> mvpParameters =
-          Teuchos::rcp( new LOCA::ParameterVector() );
-      mvpParameters->addParameter( "mu", mu );
+    Teuchos::RCP<LOCA::ParameterVector> mvpParameters =
+        Teuchos::rcp( new LOCA::ParameterVector() );
+    mvpParameters->addParameter( "mu", mu );
 
-      // create the kinetic energy operator
-      Teuchos::RCP<Ginla::KeoContainer> keoContainer =
-              Teuchos::rcp( new Ginla::KeoContainer( mesh, thickness, mvp ) );
-      keoContainer->updateParameters( mvpParameters );
-      // Copy out the matrix
-      Epetra_CrsMatrix keoMatrix = *(keoContainer->getKeo());
+    // create the kinetic energy operator
+    Teuchos::RCP<Ginla::KeoContainer> keoContainer =
+            Teuchos::rcp( new Ginla::KeoContainer( mesh, thickness, mvp ) );
+    keoContainer->updateParameters( mvpParameters );
+    // Copy out the matrix
+    Epetra_CrsMatrix keoMatrix = *(keoContainer->getKeo());
 
-      // create initial guess and right-hand side
-      Teuchos::RCP<Epetra_Vector> epetra_x = Teuchos::rcp( new Epetra_Vector( keoMatrix.OperatorDomainMap() ) );
-      Teuchos::RCP<Epetra_Vector> epetra_b = Teuchos::rcp( new Epetra_Vector( keoMatrix.OperatorRangeMap() ) );
-      epetra_b->Random();
+    // create initial guess and right-hand side
+    Teuchos::RCP<Epetra_Vector> epetra_x = Teuchos::rcp( new Epetra_Vector( keoMatrix.OperatorDomainMap() ) );
+    Teuchos::RCP<Epetra_Vector> epetra_b = Teuchos::rcp( new Epetra_Vector( keoMatrix.OperatorRangeMap() ) );
+    epetra_b->Random();
 
-      // build the problem
-      Epetra_LinearProblem problem( &keoMatrix, &*epetra_x, &*epetra_b );
+    // build the problem
+    Epetra_LinearProblem problem( &keoMatrix, &*epetra_x, &*epetra_b );
 
-      // -----------------------------------------------------------------------
+    // -----------------------------------------------------------------------
 //      // Stratimikos.
 //      // Thyra glue
 //      Teuchos::RCP<const Thyra::LinearOpBase<double> > A = Thyra::epetraLinearOp( keo );
@@ -153,99 +151,95 @@ int main ( int argc, char *argv[] )
 //        Thyra::solve<double>(*lows, Thyra::NOTRANS, *b, x.ptr());
 //      *out << "\nSolve status:\n" << status;
 
-      // -----------------------------------------------------------------------
-      // build the AztecOO solver
-      AztecOO solver( problem );
-      // make sure the problem is symmetric
-      problem.AssertSymmetric();
+    // -----------------------------------------------------------------------
+    // build the AztecOO solver
+    AztecOO solver( problem );
+    // make sure the problem is symmetric
+    problem.AssertSymmetric();
 
-      // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-      // ML part
-      Teuchos::ParameterList MLList;
-      ML_Epetra::SetDefaults( "SA", MLList );
-      MLList.set("ML output", 10);
-      MLList.set("max levels", 10);
-      MLList.set("increasing or decreasing", "increasing");
-      MLList.set("aggregation: type", "Uncoupled");
-      MLList.set("smoother: type", "Chebyshev");
-      MLList.set("smoother: sweeps", 3);
-      MLList.set("smoother: pre or post", "both");
-      MLList.set("coarse: type", "Amesos-KLU");
-      MLList.set("PDE equations", 2);
-      Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> MLPrec =
-                  Teuchos::rcp( new ML_Epetra::MultiLevelPreconditioner(keoMatrix, MLList) );
-      MLPrec->PrintUnused(0);
-      // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    // ML part
+    Teuchos::ParameterList MLList;
+    ML_Epetra::SetDefaults( "SA", MLList );
+    MLList.set("ML output", 10);
+    MLList.set("max levels", 10);
+    MLList.set("increasing or decreasing", "increasing");
+    MLList.set("aggregation: type", "Uncoupled");
+    MLList.set("smoother: type", "Chebyshev");
+    MLList.set("smoother: sweeps", 3);
+    MLList.set("smoother: pre or post", "both");
+    MLList.set("coarse: type", "Amesos-KLU");
+    MLList.set("PDE equations", 2);
+    Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> MLPrec =
+                Teuchos::rcp( new ML_Epetra::MultiLevelPreconditioner(keoMatrix, MLList) );
+    MLPrec->PrintUnused(0);
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-      solver.SetAztecOption(AZ_precond, AZ_none);
-      //solver.SetAztecOption(AZ_precond, AZ_dom_decomp);
-      //solver.SetPrecOperator( MLPrec.getRawPtr() );
-      //solver.SetAztecOption(AZ_solver, AZ_gmres);
-      solver.SetAztecOption(AZ_solver, AZ_bicgstab);
-      //solver.SetAztecOption(AZ_solver, AZ_cg);
-      //solver.SetAztecOption(AZ_scaling, 8);
-      //solver.SetAztecOption(AZ_subdomain_solve, AZ_ilut);
-      //solver.SetAztecOption(AZ_output, 1);
-      //solver.SetAztecOption(AZ_reorder, 0);
-      //solver.SetAztecOption(AZ_graph_fill, 3);
-      //solver.SetAztecOption(AZ_overlap, 0);
-      //solver.SetAztecOption(AZ_poly_ord, 9);
-      //solver.SetAztecParam(AZ_ilut_fill, 4.0);
-      //solver.SetAztecParam(AZ_drop, 0.0);
-      solver.SetAztecOption(AZ_output, 5);
-      //double rthresh = 1.4;
-      //cout << "Rel threshold = " << rthresh << endl;
-      //solver.SetAztecParam(AZ_rthresh, rthresh);
-      //double athresh = 10.0;
-      //cout << "Abs threshold = " << athresh << endl;
-      //solver.SetAztecParam(AZ_athresh, athresh);
-      //solver.SetAztecParam(AZ_ill_cond_thresh, 1.0e200);
+    solver.SetAztecOption(AZ_precond, AZ_none);
+    //solver.SetAztecOption(AZ_precond, AZ_dom_decomp);
+    //solver.SetPrecOperator( MLPrec.getRawPtr() );
+    //solver.SetAztecOption(AZ_solver, AZ_gmres);
+    solver.SetAztecOption(AZ_solver, AZ_bicgstab);
+    //solver.SetAztecOption(AZ_solver, AZ_cg);
+    //solver.SetAztecOption(AZ_scaling, 8);
+    //solver.SetAztecOption(AZ_subdomain_solve, AZ_ilut);
+    //solver.SetAztecOption(AZ_output, 1);
+    //solver.SetAztecOption(AZ_reorder, 0);
+    //solver.SetAztecOption(AZ_graph_fill, 3);
+    //solver.SetAztecOption(AZ_overlap, 0);
+    //solver.SetAztecOption(AZ_poly_ord, 9);
+    //solver.SetAztecParam(AZ_ilut_fill, 4.0);
+    //solver.SetAztecParam(AZ_drop, 0.0);
+    solver.SetAztecOption(AZ_output, 5);
+    //double rthresh = 1.4;
+    //cout << "Rel threshold = " << rthresh << endl;
+    //solver.SetAztecParam(AZ_rthresh, rthresh);
+    //double athresh = 10.0;
+    //cout << "Abs threshold = " << athresh << endl;
+    //solver.SetAztecParam(AZ_athresh, athresh);
+    //solver.SetAztecParam(AZ_ill_cond_thresh, 1.0e200);
 
-      int Niters = 10000;
-      //solver.SetAztecOption(AZ_kspace, Niters);
+    int Niters = 10000;
+    //solver.SetAztecOption(AZ_kspace, Niters);
 
-      // do the iteration
-      solver.Iterate(Niters, 1.0e-10);
+    // do the iteration
+    solver.Iterate(Niters, 1.0e-10);
 
-      // compute the residual
-      Epetra_Vector bcomp( keoMatrix.OperatorRangeMap() );
-      TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix.Apply(*epetra_x, bcomp) );
+    // compute the residual
+    Epetra_Vector bcomp( keoMatrix.OperatorRangeMap() );
+    TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix.Apply(*epetra_x, bcomp) );
 
-      Epetra_Vector resid( keoMatrix.OperatorRangeMap() );
-      TEUCHOS_ASSERT_EQUALITY( 0, resid.Update(1.0, *epetra_b, -1.0, bcomp, 0.0 ) );
+    Epetra_Vector resid( keoMatrix.OperatorRangeMap() );
+    TEUCHOS_ASSERT_EQUALITY( 0, resid.Update(1.0, *epetra_b, -1.0, bcomp, 0.0 ) );
 
-      double residual;
-      TEUCHOS_ASSERT_EQUALITY( 0, resid.Norm2(&residual) );
-      *out << "Residual    = " << residual << "\n\n" << endl;
-      // -----------------------------------------------------------------------
-      // direct solver
-      Amesos Factory;
-      std::string SolverType = "Klu";
-      Teuchos::RCP<Amesos_BaseSolver> Solver =
-              Teuchos::rcp( Factory.Create( SolverType, problem ) );
-      TEUCHOS_ASSERT( !Solver.is_null() );
+    double residual;
+    TEUCHOS_ASSERT_EQUALITY( 0, resid.Norm2(&residual) );
+    *out << "Residual    = " << residual << "\n\n" << endl;
+    // -----------------------------------------------------------------------
+    // direct solver
+    Amesos Factory;
+    std::string SolverType = "Klu";
+    Teuchos::RCP<Amesos_BaseSolver> Solver =
+            Teuchos::rcp( Factory.Create( SolverType, problem ) );
+    TEUCHOS_ASSERT( !Solver.is_null() );
 
-      Teuchos::ParameterList List;
-      List.set("PrintTiming", true);
-      List.set("PrintStatus", true);
-      Solver->SetParameters(List);
+    Teuchos::ParameterList List;
+    List.set("PrintTiming", true);
+    List.set("PrintStatus", true);
+    Solver->SetParameters(List);
 
-      *out << "Starting symbolic factorization..." << std::endl;
-      Solver->SymbolicFactorization();
-      *out << "Starting numeric factorization..." << std::endl;
-      Solver->NumericFactorization();
-      *out << "Starting solution phase..." << std::endl;
-      // solve!
-      int ierr = Solver->Solve();
-      success = ierr==0;
-      // -----------------------------------------------------------------------
-    }
-    TEUCHOS_STANDARD_CATCH_STATEMENTS(true, *out, success);
+    *out << "Starting symbolic factorization..." << std::endl;
+    Solver->SymbolicFactorization();
+    *out << "Starting numeric factorization..." << std::endl;
+    Solver->NumericFactorization();
+    *out << "Starting solution phase..." << std::endl;
+    // solve!
+    int ierr = Solver->Solve();
+    success = ierr==0;
+    // -----------------------------------------------------------------------
+  }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(true, *out, success);
 
-#ifdef HAVE_MPI
-      MPI_Finalize();
-#endif
-
-    return success ? EXIT_SUCCESS : EXIT_FAILURE;
+  return success ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 // =========================================================================
