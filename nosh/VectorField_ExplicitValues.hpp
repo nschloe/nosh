@@ -41,7 +41,7 @@ public:
   ExplicitValues(const Nosh::StkMesh &mesh,
                  const std::string &fieldName,
                  const double initMu
-                );
+               );
 
   virtual
   ~ExplicitValues();
@@ -54,13 +54,13 @@ public:
   double
   getEdgeProjection(const unsigned int edgeIndex,
                     const std::map<std::string, double> & params
-                   ) const;
+                  ) const;
 
   double
   getDEdgeProjectionDp(const unsigned int edgeIndex,
                        const std::map<std::string, double> & params,
                        const std::string & dParamName
-                      ) const;
+                     ) const;
 
 protected:
 private:

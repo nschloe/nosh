@@ -36,32 +36,32 @@ ConstantCurl::
 ConstantCurl(const Teuchos::RCP<Nosh::StkMesh> &mesh,
              const Teuchos::RCP<DoubleVector> &b,
              const Teuchos::RCP<DoubleVector> &u
-            ) :
-  mesh_( mesh ),
-  b_( b ),
-  u_( u ),
-  rotatedBCache_( *b ),
+           ) :
+  mesh_(mesh),
+  b_(b),
+  u_(u),
+  rotatedBCache_(*b),
   rotatedBCacheAngle_(0.0),
   dRotatedBDThetaCache_(*b_),
   rotateddBdThetaCacheAngle_(0.0),
   edgeCache_(),
-  edgeCacheUptodate_( false )
+  edgeCacheUptodate_(false)
 {
 #ifndef NDEBUG
-  TEUCHOS_ASSERT( !mesh_.is_null() );
-  TEUCHOS_ASSERT( !b_.is_null() );
+  TEUCHOS_ASSERT(!mesh_.is_null());
+  TEUCHOS_ASSERT(!b_.is_null());
 #endif
-  TEUCHOS_TEST_FOR_EXCEPT_MSG( b_->dot( *b_ ) != 1.0,
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(b_->dot(*b_) != 1.0,
                                "Curl vector not normalized: "
-                               << "<b,b> = " << b->dot( *b ) << "."
+                               << "<b,b> = " << b->dot(*b) << "."
                                << std::endl
-                             );
-  if ( !u_.is_null() ) {
-    TEUCHOS_TEST_FOR_EXCEPT_MSG( u_->dot( *u_ ) != 1.0,
+                            );
+  if (!u_.is_null()) {
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(u_->dot(*u_) != 1.0,
                                  "Rotation vector not normalized: "
-                                 << "<u,u> = " << u_->dot( *u_ ) << "."
+                                 << "<u,u> = " << u_->dot(*u_) << "."
                                  << std::endl
-                               );
+                              );
     this->dRotateDTheta_(dRotatedBDThetaCache_, *u_, 0.0);
   }
 
@@ -89,7 +89,7 @@ double
 ConstantCurl::
 getEdgeProjection(const unsigned int edgeIndex,
                   const std::map<std::string, double> & params
-                 ) const
+                ) const
 {
   // A vector potential associated with the constant curl field RB is
   //
@@ -107,7 +107,7 @@ getEdgeProjection(const unsigned int edgeIndex,
   // computing the cross-products more than once if B changes.
 
   // Update caches.
-  if ( !edgeCacheUptodate_ )
+  if (!edgeCacheUptodate_)
     this->initializeEdgeCache_();
 
   // Get "theta".
@@ -123,7 +123,7 @@ getEdgeProjection(const unsigned int edgeIndex,
 
   std::map<std::string, double>::const_iterator itMu = params.find("mu");
   TEUCHOS_ASSERT(itMu != params.end());
-  return itMu->second * rotatedBCache_.dot( edgeCache_[edgeIndex] );
+  return itMu->second * rotatedBCache_.dot(edgeCache_[edgeIndex]);
 }
 // ============================================================================
 double
@@ -131,10 +131,10 @@ ConstantCurl::
 getDEdgeProjectionDp(const unsigned int edgeIndex,
                      const std::map<std::string, double> & params,
                      const std::string & paramName
-                    ) const
+                   ) const
 {
   // Update caches.
-  if ( !edgeCacheUptodate_ )
+  if (!edgeCacheUptodate_)
     this->initializeEdgeCache_();
 
   // Get "theta".
@@ -155,11 +155,11 @@ getDEdgeProjectionDp(const unsigned int edgeIndex,
   }
 
   if (paramName.compare("mu") == 0) {
-    return rotatedBCache_.dot( edgeCache_[edgeIndex] );
+    return rotatedBCache_.dot(edgeCache_[edgeIndex]);
   } else if (paramName.compare("theta") == 0) {
     std::map<std::string, double>::const_iterator itMu = params.find("mu");
     TEUCHOS_ASSERT(itMu != params.end());
-    return itMu->second * dRotatedBDThetaCache_.dot( edgeCache_[edgeIndex] );
+    return itMu->second * dRotatedBDThetaCache_.dot(edgeCache_[edgeIndex]);
   } else
     TEUCHOS_TEST_FOR_EXCEPT_MSG(true,
                                 "Illegal parameter \"" << paramName << "\".");
@@ -170,7 +170,7 @@ ConstantCurl::
 rotate_(DoubleVector &v,
         const DoubleVector &u,
         const double theta
-       ) const
+      ) const
 {
   // Rotate a vector \c v by the angle \c theta in the plane perpendicular
   // to the axis given by \c u.
@@ -179,7 +179,7 @@ rotate_(DoubleVector &v,
   double sinTheta = sin(theta);
   double cosTheta = cos(theta);
 
-  if ( sinTheta != 0.0 ) {
+  if (sinTheta != 0.0) {
     DoubleVector vOld = v;
 
     // cos(theta) * I * v
@@ -188,17 +188,17 @@ rotate_(DoubleVector &v,
     // + sin(theta) u\cross v
     // Instead of what we have here,
     // we'd much rather write
-    //   v += sinTheta * this->crossProduct_( u, vOld );
+    //   v += sinTheta * this->crossProduct_(u, vOld);
     // or do something like a DAXPY.
     // However, the Teuchos::SerialDenseVector doesn't have
     // that capability.
-    DoubleVector tmp = this->crossProduct_( u, vOld );
+    DoubleVector tmp = this->crossProduct_(u, vOld);
     tmp *= sinTheta;
     v += tmp;
 
     // + (1-cos(theta)) (u*u^T) * v
     tmp = u;
-    tmp *= (1.0-cosTheta) * u.dot( vOld );
+    tmp *= (1.0-cosTheta) * u.dot(vOld);
     v += tmp;
   }
 
@@ -210,7 +210,7 @@ ConstantCurl::
 dRotateDTheta_(DoubleVector &v,
                const DoubleVector &u,
                const double theta
-              ) const
+             ) const
 {
   // Incremental change of the rotation of a vector v around the axis u
   // by the angle theta.
@@ -227,17 +227,17 @@ dRotateDTheta_(DoubleVector &v,
   //
   // Instead of what we have here,
   // we'd much rather write
-  //   v += sinTheta * this->crossProduct_( u, vOld );
+  //   v += sinTheta * this->crossProduct_(u, vOld);
   // or do something like a DAXPY.
   // However, the Teuchos::SerialDenseVector doesn't have
   // that capability.
-  DoubleVector tmp = this->crossProduct_( u, vOld );
+  DoubleVector tmp = this->crossProduct_(u, vOld);
   tmp *= cosTheta;
   v += tmp;
 
   // + (1+sin(theta)) (u*u^T) * v
   tmp = u;
-  tmp *= (1.0+sinTheta) * u.dot( vOld );
+  tmp *= (1.0+sinTheta) * u.dot(vOld);
   v += tmp;
 
   return;
@@ -245,11 +245,11 @@ dRotateDTheta_(DoubleVector &v,
 // ============================================================================
 DoubleVector
 ConstantCurl::
-crossProduct_( const DoubleVector u,
+crossProduct_(const DoubleVector u,
                const DoubleVector v
-             ) const
+            ) const
 {
-  DoubleVector uXv( 3 );
+  DoubleVector uXv(3);
   uXv[0] = u[1]*v[2] - u[2]*v[1];
   uXv[1] = u[2]*v[0] - u[0]*v[2];
   uXv[2] = u[0]*v[1] - u[1]*v[0];
@@ -261,7 +261,7 @@ ConstantCurl::
 initializeEdgeCache_() const
 {
 #ifndef NDEBUG
-  TEUCHOS_ASSERT( !mesh_.is_null() );
+  TEUCHOS_ASSERT(!mesh_.is_null());
 #endif
   const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > edges =
     mesh_->getEdgeNodes();
@@ -278,8 +278,8 @@ initializeEdgeCache_() const
                                     "coordinates", 3);
 
     // edgeMidpoint x edge = 0.5 (a+b) x (a-b) = b x a
-    edgeCache_[k] = this->crossProduct_( node0Coords, node1Coords );
-    TEUCHOS_ASSERT_EQUALITY( 0, edgeCache_[k].scale( 0.5 ) );
+    edgeCache_[k] = this->crossProduct_(node0Coords, node1Coords);
+    TEUCHOS_ASSERT_EQUALITY(0, edgeCache_[k].scale(0.5));
   }
 
   edgeCacheUptodate_ = true;

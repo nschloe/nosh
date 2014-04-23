@@ -49,14 +49,14 @@ public:
   double
   getEdgeProjection(const unsigned int edgeIndex,
                     const std::map<std::string, double> & params
-                   ) const = 0;
+                  ) const = 0;
 
   virtual
   double
   getDEdgeProjectionDp(const unsigned int edgeIndex,
                        const std::map<std::string, double> & params,
                        const std::string & dParamName
-                      ) const = 0;
+                     ) const = 0;
 
 protected:
 private:

@@ -37,7 +37,7 @@ class ExplicitValues : public Virtual
 public:
   ExplicitValues(const Nosh::StkMesh &mesh,
                  const std::string &fieldName
-                );
+               );
 
   virtual
   ~ExplicitValues();
@@ -55,7 +55,7 @@ public:
   const Epetra_Vector
   getdVdP(const std::map<std::string,double> & params,
           const std::string & paramName
-         ) const;
+        ) const;
 
 protected:
 private:

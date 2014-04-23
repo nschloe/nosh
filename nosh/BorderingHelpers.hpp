@@ -38,13 +38,13 @@ void
 merge(const Epetra_MultiVector & x,
       const double * lambda,
       Epetra_MultiVector & out
-     );
+    );
 
 void
 dissect(const Epetra_MultiVector & x,
         Epetra_MultiVector & xSmall,
         double * lambda
-       );
+      );
 }
 }
 // =============================================================================

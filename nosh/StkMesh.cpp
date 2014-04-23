@@ -74,7 +74,7 @@ StkMesh::
 StkMesh(const Epetra_Comm & comm,
         const std::string & fileName,
         const int index
-       ) :
+      ) :
   numDim_(3),
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   computeEdgeCoefficientsTime_(Teuchos::TimeMonitor::getNewTimer(
@@ -119,7 +119,7 @@ StkMesh::
 read(const Epetra_Comm &comm,
      const std::string &fileName,
      const int index
-    )
+   )
 {
   StkMesh::MeshDataContainer d = {
     stk::mesh::fem::FEMMetaData(numDim_),
@@ -130,7 +130,7 @@ read(const Epetra_Comm &comm,
 #else
     1
 #endif
-                                        ))
+                                       ))
   };
 
 #ifdef HAVE_MPI
@@ -197,13 +197,13 @@ read(const Epetra_Comm &comm,
   //                                                fileName,
   //                                                Ioss::READ_MODEL,
   //                                                readerComm);
-  //TEUCHOS_TEST_FOR_EXCEPT_MSG( dbi == NULL || !dbi->ok(),
+  //TEUCHOS_TEST_FOR_EXCEPT_MSG(dbi == NULL || !dbi->ok(),
   //                     "ERROR: Could not open database '" << fileName
   //                     << "' of type '" << meshType << "'.");
   //// set the vector field label separator
-  //dbi->set_field_separator( 0 );
+  //dbi->set_field_separator(0);
   //// create region to feed into meshData
-  //Ioss::Region *in_region = new Ioss::Region( dbi, "input_model" );
+  //Ioss::Region *in_region = new Ioss::Region(dbi, "input_model");
   //meshDataContainer_.meshData->m_input_region = in_region;
   // <WORKAROUND CODE END>
 
@@ -233,7 +233,7 @@ read(const Epetra_Comm &comm,
   stk::mesh::put_field(procRankField,
                        d.metaData.element_rank(),
                        d.metaData.universal_part()
-                      );
+                     );
   stk::io::set_field_role(procRankField,
                           Ioss::Field::MESH);
 
@@ -305,11 +305,11 @@ read(const Epetra_Comm &comm,
 
   // define_input_fields() doesn't like the ATTRIBUTE fields; disable.
   // What was it good for anyways?
-//  stk::io::define_input_fields( *meshDataContainer_.meshData,
+//  stk::io::define_input_fields(*meshDataContainer_.meshData,
 //                                metaData
-//                              );
+//                             );
 
-//  stk::io::put_io_part_attribute( meshDataContainer_.metaData.universal_part() );
+//  stk::io::put_io_part_attribute(meshDataContainer_.metaData.universal_part());
 
   // Finalize the setup.
   d.metaData.commit();
@@ -393,7 +393,7 @@ Teuchos::RCP<Epetra_Vector>
 StkMesh::
 complexfield2vector_(const ScalarFieldType &realField,
                      const ScalarFieldType &imagField
-                    ) const
+                   ) const
 {
   // Psi needs to have unique node IDs to be able to compute Norm2().
   // This is required in Belos.
@@ -404,7 +404,7 @@ complexfield2vector_(const ScalarFieldType &realField,
     Teuchos::rcp(new Epetra_Vector(*this->getComplexNonOverlapMap()));
 
   // Fill the vector with data from the file.
-  for (unsigned int k=0; k<ownedNodes.size(); k++) {
+  for (unsigned int k = 0; k < ownedNodes.size(); k++) {
     // real part
     double* realVal = stk::mesh::field_data(realField, *ownedNodes[k]);
     (*vector)[2*k] = realVal[0];
@@ -416,9 +416,9 @@ complexfield2vector_(const ScalarFieldType &realField,
 
 #ifndef NDEBUG
   double r;
-  TEUCHOS_ASSERT_EQUALITY(0, vector->NormInf( &r ));
-  TEUCHOS_TEST_FOR_EXCEPT_MSG( r!=r || r>1.0e100,
-                               "The input data seems flawed. Abort." );
+  TEUCHOS_ASSERT_EQUALITY(0, vector->NormInf(&r));
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(r!=r || r>1.0e100,
+                               "The input data seems flawed. Abort.");
 #endif
 
   return vector;
@@ -437,9 +437,9 @@ field2vector_(const ScalarFieldType &field) const
     Teuchos::rcp(new Epetra_Vector(*this->getNodesOverlapMap()));
 
   // Fill the vector with data from the file.
-  for ( unsigned int k=0; k<overlapNodes.size(); k++ ) {
+  for (unsigned int k = 0; k < overlapNodes.size(); k++) {
     double* vals = stk::mesh::field_data(field,
-                                         *overlapNodes[k] );
+                                         *overlapNodes[k]);
     // Check if the field is actually there.
 #ifndef NDEBUG
     TEUCHOS_ASSERT(vals != NULL);
@@ -453,9 +453,9 @@ field2vector_(const ScalarFieldType &field) const
 #ifndef NDEBUG
   double r;
   // Use NormInf as it's robust against overlapping maps.
-  TEUCHOS_ASSERT_EQUALITY(0, vector->NormInf( &r ));
-  TEUCHOS_TEST_FOR_EXCEPT_MSG( r!=r || r>1.0e100,
-                               "The input data seems flawed. Abort." );
+  TEUCHOS_ASSERT_EQUALITY(0, vector->NormInf(&r));
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(r!=r || r>1.0e100,
+                               "The input data seems flawed. Abort.");
 #endif
 
   return vector;
@@ -465,7 +465,7 @@ Teuchos::RCP<Epetra_MultiVector>
 StkMesh::
 field2vector_(const VectorFieldType &field,
               const int numComponents
-             ) const
+            ) const
 {
   // Get overlap nodes.
   const std::vector<stk::mesh::Entity*> &overlapNodes =
@@ -477,15 +477,15 @@ field2vector_(const VectorFieldType &field,
                                         numComponents));
 
   // Fill the vector with data from the file.
-  for ( unsigned int k=0; k<overlapNodes.size(); k++ ) {
+  for (unsigned int k = 0; k < overlapNodes.size(); k++) {
     const double * const vals =
       stk::mesh::field_data(field, *overlapNodes[k]);
 #ifndef NDEBUG
     // Check if the field is actually there.
-    TEUCHOS_TEST_FOR_EXCEPT_MSG( vals == NULL,
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(vals == NULL,
                                  "Field value for node " << k << " not found.\n" <<
                                  "Probably there is no field given with the state."
-                               );
+                              );
 #endif
     // Copy over.
     // A multivector isn't actually a good data structure for this.
@@ -518,7 +518,7 @@ void
 StkMesh::
 openOutputChannel(const std::string &outputDir,
                   const std::string &fileBaseName
-                 )
+                )
 {
   // prepare the data for output
 #ifdef HAVE_MPI
@@ -539,11 +539,11 @@ openOutputChannel(const std::string &outputDir,
                               mcomm,
                               *meshDataContainer_.bulkData,
                               *meshDataContainer_.meshData
-                             );
+                            );
 
   stk::io::define_output_fields(*meshDataContainer_.meshData,
                                 meshDataContainer_.metaData
-                               );
+                              );
 
   outputChannelIsOpen_ = true;
   return;
@@ -553,11 +553,11 @@ void
 StkMesh::
 write(const Epetra_Vector & psi,
       const double time
-     ) const
+    ) const
 {
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   // timer for this routine
-  Teuchos::TimeMonitor tm( *writeTime_ );
+  Teuchos::TimeMonitor tm(*writeTime_);
 #endif
 
   // Merge the state into the mesh.
@@ -622,24 +622,24 @@ void
 StkMesh::
 mergeComplexVector_(const Epetra_Vector & psi,
                     const std::string & fieldName
-                   ) const
+                  ) const
 {
   ScalarFieldType * psir_field =
     meshDataContainer_.metaData.get_field<ScalarFieldType>(fieldName + "_R");
   ScalarFieldType * psii_field =
     meshDataContainer_.metaData.get_field<ScalarFieldType>(fieldName + "_Z");
 #ifndef NDEBUG
-  TEUCHOS_ASSERT( psir_field != NULL );
-  TEUCHOS_ASSERT( psii_field != NULL );
+  TEUCHOS_ASSERT(psir_field != NULL);
+  TEUCHOS_ASSERT(psii_field != NULL);
 #endif
 
   // Zero out all nodal values, including the overlaps.
   const std::vector<stk::mesh::Entity*> &overlapNodes = this->getOverlapNodes();
-  for (unsigned int k=0; k < overlapNodes.size(); k++) {
+  for (unsigned int k = 0; k < overlapNodes.size(); k++) {
     // Extract real and imaginary part.
-    double* localPsiR = stk::mesh::field_data( *psir_field, *overlapNodes[k] );
+    double* localPsiR = stk::mesh::field_data(*psir_field, *overlapNodes[k]);
     *localPsiR = 0.0;
-    double* localPsiI = stk::mesh::field_data( *psii_field, *overlapNodes[k] );
+    double* localPsiI = stk::mesh::field_data(*psii_field, *overlapNodes[k]);
     *localPsiI = 0.0;
   }
 
@@ -647,11 +647,11 @@ mergeComplexVector_(const Epetra_Vector & psi,
 #ifndef NDEBUG
   TEUCHOS_ASSERT_EQUALITY((unsigned int)psi.MyLength(), 2*ownedNodes_.size());
 #endif
-  for (unsigned int k=0; k < ownedNodes_.size(); k++) {
+  for (unsigned int k = 0; k < ownedNodes_.size(); k++) {
     // Extract real and imaginary part.
-    double* localPsiR = stk::mesh::field_data( *psir_field, *ownedNodes_[k] );
+    double* localPsiR = stk::mesh::field_data(*psir_field, *ownedNodes_[k]);
     *localPsiR = psi[2*k];
-    double* localPsiI = stk::mesh::field_data( *psii_field, *ownedNodes_[k] );
+    double* localPsiI = stk::mesh::field_data(*psii_field, *ownedNodes_[k]);
     *localPsiI = psi[2*k+1];
   }
 
@@ -686,7 +686,7 @@ getDomainVolume() const
 {
   // update the domain area value
   double volume;
-  TEUCHOS_ASSERT_EQUALITY( 0, controlVolumes_->Norm1( &volume ) );
+  TEUCHOS_ASSERT_EQUALITY(0, controlVolumes_->Norm1(&volume));
 
   return volume;
 }
@@ -711,13 +711,13 @@ getOwnedCells() const
 {
   // get owned elements
   stk::mesh::Selector select_owned_in_part =
-    stk::mesh::Selector(meshDataContainer_.metaData.universal_part() )
+    stk::mesh::Selector(meshDataContainer_.metaData.universal_part())
     & stk::mesh::Selector(meshDataContainer_.metaData.locally_owned_part());
   std::vector<stk::mesh::Entity*> cells;
   stk::mesh::get_selected_entities(select_owned_in_part,
-                                   meshDataContainer_.bulkData->buckets( meshDataContainer_.metaData.element_rank() ),
+                                   meshDataContainer_.bulkData->buckets(meshDataContainer_.metaData.element_rank()),
                                    cells
-                                  );
+                                 );
   return cells;
 }
 // =============================================================================
@@ -727,15 +727,15 @@ getOverlapEdges() const
 {
   // get overlap edges
   stk::mesh::Selector select_overlap_in_part =
-    stk::mesh::Selector(meshDataContainer_.metaData.universal_part() )
+    stk::mesh::Selector(meshDataContainer_.metaData.universal_part())
     & (stk::mesh::Selector(meshDataContainer_.metaData.locally_owned_part())
        |stk::mesh::Selector(meshDataContainer_.metaData.globally_shared_part()));
 
   std::vector<stk::mesh::Entity*> edges;
   stk::mesh::get_selected_entities(select_overlap_in_part,
-                                   meshDataContainer_.bulkData->buckets( meshDataContainer_.metaData.edge_rank() ),
+                                   meshDataContainer_.bulkData->buckets(meshDataContainer_.metaData.edge_rank()),
                                    edges
-                                  );
+                                 );
   return edges;
 }
 // =============================================================================
@@ -750,7 +750,7 @@ double
 StkMesh::
 getScalarFieldNonconst(const stk::mesh::Entity * nodeEntity,
                        const std::string & fieldName
-                      ) const
+                     ) const
 {
   const ScalarFieldType * const field =
     meshDataContainer_.metaData.get_field<ScalarFieldType>(fieldName);
@@ -765,7 +765,7 @@ StkMesh::
 getVectorFieldNonconst(const stk::mesh::Entity * nodeEntity,
                        const std::string & fieldName,
                        const int numDims
-                      ) const
+                     ) const
 {
   const VectorFieldType * const field =
     meshDataContainer_.metaData.get_field<VectorFieldType>(fieldName);
@@ -783,7 +783,7 @@ StkMesh::
 getNodesMap() const
 {
 #ifndef NDEBUG
-  TEUCHOS_ASSERT( !nodesMap_.is_null() );
+  TEUCHOS_ASSERT(!nodesMap_.is_null());
 #endif
   return nodesMap_;
 }
@@ -793,7 +793,7 @@ StkMesh::
 getNodesOverlapMap() const
 {
 #ifndef NDEBUG
-  TEUCHOS_ASSERT( !nodesOverlapMap_.is_null() );
+  TEUCHOS_ASSERT(!nodesOverlapMap_.is_null());
 #endif
   return nodesOverlapMap_;
 }
@@ -803,7 +803,7 @@ StkMesh::
 getComplexNonOverlapMap() const
 {
 #ifndef NDEBUG
-  TEUCHOS_ASSERT( !complexMap_.is_null() );
+  TEUCHOS_ASSERT(!complexMap_.is_null());
 #endif
   return complexMap_;
 }
@@ -813,7 +813,7 @@ StkMesh::
 getComplexNonOverlapMap2() const
 {
 #ifndef NDEBUG
-  TEUCHOS_ASSERT( !complexMap_.is_null() );
+  TEUCHOS_ASSERT(!complexMap_.is_null());
 #endif
   return *complexMap_;
 }
@@ -823,7 +823,7 @@ StkMesh::
 getComplexOverlapMap() const
 {
 #ifndef NDEBUG
-  TEUCHOS_ASSERT( !complexOverlapMap_.is_null() );
+  TEUCHOS_ASSERT(!complexOverlapMap_.is_null());
 #endif
   return complexOverlapMap_;
 }
@@ -838,7 +838,7 @@ buildOwnedNodes_() const
 
   std::vector<stk::mesh::Entity*> on;
   stk::mesh::get_selected_entities(select_owned_in_part,
-                                   meshDataContainer_.bulkData->buckets( meshDataContainer_.metaData.node_rank() ),
+                                   meshDataContainer_.bulkData->buckets(meshDataContainer_.metaData.node_rank()),
                                    on);
   return on;
 }
@@ -862,9 +862,9 @@ getOverlapNodes() const
 
   std::vector<stk::mesh::Entity*> overlapNodes;
   stk::mesh::get_selected_entities(select_overlap_in_part,
-                                   meshDataContainer_.bulkData->buckets( meshDataContainer_.metaData.node_rank() ),
+                                   meshDataContainer_.bulkData->buckets(meshDataContainer_.metaData.node_rank()),
                                    overlapNodes
-                                  );
+                                 );
 
   return overlapNodes;
 }
@@ -888,7 +888,7 @@ createComplexMap_(const std::vector<stk::mesh::Entity*> &nodeList) const
   // Create a map for real/imaginary out of this.
   const int numDof = 2 * nodeList.size();
   Teuchos::Array<int> gids(numDof);
-  for (unsigned int k=0; k < nodeList.size(); k++) {
+  for (unsigned int k = 0; k < nodeList.size(); k++) {
     int globalNodeId = nodeList[k]->identifier() - 1;
     gids[2*k]   = 2*globalNodeId;
     gids[2*k+1] = 2*globalNodeId + 1;
@@ -922,7 +922,7 @@ computeEdgeCoefficients_() const
 {
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   // timer for this routine
-  Teuchos::TimeMonitor tm( *computeEdgeCoefficientsTime_ );
+  Teuchos::TimeMonitor tm(*computeEdgeCoefficientsTime_);
 #endif
 
   std::vector<stk::mesh::Entity*> cells = this->getOwnedCells();
@@ -934,11 +934,11 @@ computeEdgeCoefficients_() const
   Teuchos::ArrayRCP<double> edgeCoefficients(numEdges);
 
   // Calculate the contributions edge by edge.
-  for (unsigned int k=0; k < numCells; k++) {
+  for (unsigned int k = 0; k < numCells; k++) {
     // Get edge coordinates.
     unsigned int numLocalEdges = edgeData_.cellEdges[k].size();
-    Teuchos::ArrayRCP<DoubleVector> localEdgeCoords( numLocalEdges );
-    for ( unsigned int i=0; i<numLocalEdges; i++) {
+    Teuchos::ArrayRCP<DoubleVector> localEdgeCoords(numLocalEdges);
+    for (unsigned int i=0; i<numLocalEdges; i++) {
       localEdgeCoords[i] = this->getVectorFieldNonconst(edgeData_.edgeNodes[edgeData_.cellEdges[k][i]][1],
                            "coordinates",
                            3);
@@ -947,10 +947,10 @@ computeEdgeCoefficients_() const
                             3);
     }
 
-    DoubleVector edgeCoeffs = getEdgeCoefficientsNumerically_( localEdgeCoords );
+    DoubleVector edgeCoeffs = getEdgeCoefficientsNumerically_(localEdgeCoords);
 
     // Fill the edge coefficients into the vector.
-    for ( unsigned int i=0; i<numLocalEdges; i++ )
+    for (unsigned int i=0; i<numLocalEdges; i++)
       edgeCoefficients[edgeData_.cellEdges[k][i]] += edgeCoeffs[i];
   }
 
@@ -973,32 +973,32 @@ getEdgeCoefficientsNumerically_(
   // for any pair of vectors u, v in the plane of the triangle.
   //
   double vol;
-  switch ( numEdges ) {
+  switch (numEdges) {
   case 3:
-    vol = getTriangleArea_( edges[0], edges[1] );
+    vol = getTriangleArea_(edges[0], edges[1]);
     break;
   case 6:
     // TODO Come up with a cleaner solution here.
     try {
-      vol = getTetrahedronVolume_( edges[0], edges[1], edges[2] );
+      vol = getTetrahedronVolume_(edges[0], edges[1], edges[2]);
     } catch(...) {
       // If computing the volume throws an exception, then the edges
       // chosen happened to be conplanar. Changing one of those
       // fixes this.
-      vol = getTetrahedronVolume_( edges[0], edges[1], edges[3] );
+      vol = getTetrahedronVolume_(edges[0], edges[1], edges[3]);
     }
     break;
   default:
-    TEUCHOS_TEST_FOR_EXCEPT_MSG( true,
-                                 "Can only handle triangles and tetrahedra." );
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(true,
+                                 "Can only handle triangles and tetrahedra.");
   }
 
   Teuchos::RCP<Teuchos::SerialSymDenseMatrix<int, double> > A =
-    Teuchos::rcp( new Teuchos::SerialSymDenseMatrix<int, double>( numEdges ) );
+    Teuchos::rcp(new Teuchos::SerialSymDenseMatrix<int, double>(numEdges));
   Teuchos::RCP<DoubleVector> rhs =
-    Teuchos::rcp( new DoubleVector( numEdges ) );
+    Teuchos::rcp(new DoubleVector(numEdges));
   Teuchos::RCP<DoubleVector> alpha =
-    Teuchos::rcp( new DoubleVector( numEdges ) );
+    Teuchos::rcp(new DoubleVector(numEdges));
 
   // Build the equation system:
   // The equation
@@ -1010,44 +1010,44 @@ getEdgeCoefficientsNumerically_(
   //
   // Only fill the upper part of the Hermitian matrix.
   //
-  for ( int i=0; i<numEdges; i++ ) {
-    (*rhs)(i) = vol * edges[i].dot( edges[i] );
-    for ( int j=i; j<numEdges; j++ )
-      (*A)(i,j) = edges[i].dot( edges[j] ) * edges[j].dot( edges[i] );
+  for (int i=0; i<numEdges; i++) {
+    (*rhs)(i) = vol * edges[i].dot(edges[i]);
+    for (int j=i; j<numEdges; j++)
+      (*A)(i,j) = edges[i].dot(edges[j]) * edges[j].dot(edges[i]);
   }
 
   // Solve the equation system for the alpha_i.
   // The system is symmetric and, if the simplex is
   // not degenerate, positive definite.
   Teuchos::SerialSpdDenseSolver<int,double> solver;
-  TEUCHOS_ASSERT_EQUALITY( 0, solver.setMatrix( A ) );
-  TEUCHOS_ASSERT_EQUALITY( 0, solver.setVectors( alpha, rhs ) );
-  if ( solver.shouldEquilibrate() ) {
-    TEUCHOS_ASSERT_EQUALITY( 0, solver.equilibrateRHS() );
+  TEUCHOS_ASSERT_EQUALITY(0, solver.setMatrix(A));
+  TEUCHOS_ASSERT_EQUALITY(0, solver.setVectors(alpha, rhs));
+  if (solver.shouldEquilibrate()) {
+    TEUCHOS_ASSERT_EQUALITY(0, solver.equilibrateRHS());
 #if TRILINOS_MAJOR_MINOR_VERSION > 100803
-    TEUCHOS_ASSERT_EQUALITY( 0, solver.equilibrateMatrix() );
-    TEUCHOS_ASSERT_EQUALITY( 0, solver.solve() );
-    TEUCHOS_ASSERT_EQUALITY( 0, solver.unequilibrateLHS() );
+    TEUCHOS_ASSERT_EQUALITY(0, solver.equilibrateMatrix());
+    TEUCHOS_ASSERT_EQUALITY(0, solver.solve());
+    TEUCHOS_ASSERT_EQUALITY(0, solver.unequilibrateLHS());
 #else
     // A bug in Trilinos<=10.8.3 makes unequilibrateLHS() fail.
     // Work around by doing the unequilibration manually.
     // Note that this relies on the scaling being
     // s(i) = 1 / sqrt(A(i,i)).
     Teuchos::RCP<DoubleVector> diagA =
-      Teuchos::rcp( new DoubleVector( numEdges ) );
-    for ( int k=0; k<numEdges; k++ )
+      Teuchos::rcp(new DoubleVector(numEdges));
+    for (int k = 0; k < numEdges; k++)
       (*diagA)(k) = (*A)(k,k);
-    TEUCHOS_ASSERT_EQUALITY( 0, solver.equilibrateMatrix() );
-    TEUCHOS_ASSERT_EQUALITY( 0, solver.solve() );
-    for ( int k=0; k<numEdges; k++ )
-      (*alpha)(k) = (*alpha)(k) / sqrt( (*diagA)(k) );
+    TEUCHOS_ASSERT_EQUALITY(0, solver.equilibrateMatrix());
+    TEUCHOS_ASSERT_EQUALITY(0, solver.solve());
+    for (int k = 0; k < numEdges; k++)
+      (*alpha)(k) = (*alpha)(k) / sqrt((*diagA)(k));
 #endif
   } else {
-    TEUCHOS_ASSERT_EQUALITY( 0, solver.solve() );
+    TEUCHOS_ASSERT_EQUALITY(0, solver.solve());
   }
 
-//     Teuchos::ArrayRCP<double> alphaArrayRCP( numEdges );
-//     for ( int k=0; k<numEdges; k++ )
+//     Teuchos::ArrayRCP<double> alphaArrayRCP(numEdges);
+//     for (int k = 0; k < numEdges; k++)
 //         alphaArrayRCP[k] = (*alpha)(k,0);
 
   // TODO Don't explicitly copy alpha on return.
@@ -1059,8 +1059,8 @@ StkMesh::
 computeControlVolumes_() const
 {
 #ifndef NDEBUG
-  TEUCHOS_ASSERT( !nodesMap_.is_null() );
-  TEUCHOS_ASSERT( !nodesOverlapMap_.is_null() );
+  TEUCHOS_ASSERT(!nodesMap_.is_null());
+  TEUCHOS_ASSERT(!nodesOverlapMap_.is_null());
 #endif
 
   Teuchos::RCP<Epetra_Vector> controlVolumes =
@@ -1069,7 +1069,7 @@ computeControlVolumes_() const
   // Create temporaries to hold the overlap values for control volumes and
   // average thickness.
   Teuchos::RCP<Epetra_Vector> cvOverlap =
-    Teuchos::rcp( new Epetra_Vector( *nodesOverlapMap_ ) );
+    Teuchos::rcp(new Epetra_Vector(*nodesOverlapMap_));
 
   // Determine the kind of mesh by the first cell.
   int nodesPerCell;
@@ -1107,9 +1107,9 @@ computeControlVolumesTri_(const Teuchos::RCP<Epetra_Vector> & cvOverlap) const
   unsigned int numCells = cells.size();
 
   // Calculate the contributions to the finite volumes cell by cell.
-  for (unsigned int k=0; k < numCells; k++) {
+  for (unsigned int k = 0; k < numCells; k++) {
     stk::mesh::PairIterRelation localNodes =
-      cells[k]->relations( meshDataContainer_.metaData.node_rank() );
+      cells[k]->relations(meshDataContainer_.metaData.node_rank());
     unsigned int numLocalNodes = localNodes.size();
 
 #ifndef NDEBUG
@@ -1119,7 +1119,7 @@ computeControlVolumesTri_(const Teuchos::RCP<Epetra_Vector> & cvOverlap) const
 
     // Fetch the nodal positions into 'localNodes'.
     //const Teuchos::ArrayRCP<const DoubleVector> localNodeCoords =
-    //this->getNodeCoordinates_( localNodes );
+    //this->getNodeCoordinates_(localNodes);
     Teuchos::ArrayRCP<DoubleVector> localNodeCoords(numLocalNodes);
     for (unsigned int i=0; i<numLocalNodes; i++)
       localNodeCoords[i] = this->getVectorFieldNonconst(localNodes[i].entity(),
@@ -1127,33 +1127,33 @@ computeControlVolumesTri_(const Teuchos::RCP<Epetra_Vector> & cvOverlap) const
 
     // compute the circumcenter of the cell
     DoubleVector cc =
-      this->computeTriangleCircumcenter_( localNodeCoords );
+      this->computeTriangleCircumcenter_(localNodeCoords);
 
     // Iterate over the edges.
     // As true edge entities are not available here, loop over all pairs of local nodes.
-    for ( unsigned int e0=0; e0<numLocalNodes; e0++ ) {
+    for (unsigned int e0=0; e0<numLocalNodes; e0++) {
       const DoubleVector &x0 = localNodeCoords[e0];
       const int gid0 = (*localNodes[e0].entity()).identifier() - 1;
-      const int lid0 = nodesOverlapMap_->LID( gid0 );
+      const int lid0 = nodesOverlapMap_->LID(gid0);
 #ifndef NDEBUG
-      TEUCHOS_ASSERT_INEQUALITY( lid0, >=, 0 );
+      TEUCHOS_ASSERT_INEQUALITY(lid0, >=, 0);
 #endif
-      for ( unsigned int e1=e0+1; e1<numLocalNodes; e1++ ) {
+      for (unsigned int e1=e0+1; e1<numLocalNodes; e1++) {
         const DoubleVector &x1 = localNodeCoords[e1];
         const int gid1 = (*localNodes[e1].entity()).identifier() - 1;
-        const int lid1 = nodesOverlapMap_->LID( gid1 );
+        const int lid1 = nodesOverlapMap_->LID(gid1);
 #ifndef NDEBUG
-        TEUCHOS_ASSERT_INEQUALITY( lid1, >=, 0 );
+        TEUCHOS_ASSERT_INEQUALITY(lid1, >=, 0);
 #endif
         // Get the other node.
-        Teuchos::Tuple<unsigned int,2> other = this->getOtherIndices_( e0, e1 );
+        Teuchos::Tuple<unsigned int,2> other = this->getOtherIndices_(e0, e1);
 
-        double edgeLength = this->norm2_( this->add_( 1.0, x1, -1.0, x0 ) );
+        double edgeLength = this->norm2_(this->add_(1.0, x1, -1.0, x0));
 
         // Compute the (n-1)-dimensional covolume.
         double covolume;
         const DoubleVector &other0 = localNodeCoords[other[0]];
-        covolume = this->computeCovolume2d_( cc, x0, x1, other0 );
+        covolume = this->computeCovolume2d_(cc, x0, x1, other0);
         // The problem with counting the average thickness in 2D is the following.
         // Ideally, one would want to loop over all edges, add the midpoint value
         // of the thickness to both of the edge end points, and eventually loop over
@@ -1188,9 +1188,9 @@ computeControlVolumesTet_(const Teuchos::RCP<Epetra_Vector> & cvOverlap) const
   unsigned int numCells = cells.size();
 
   // Calculate the contributions to the finite volumes cell by cell.
-  for (unsigned int k=0; k < numCells; k++) {
+  for (unsigned int k = 0; k < numCells; k++) {
     stk::mesh::PairIterRelation localNodes =
-      cells[k]->relations( meshDataContainer_.metaData.node_rank() );
+      cells[k]->relations(meshDataContainer_.metaData.node_rank());
     unsigned int numLocalNodes = localNodes.size();
 #ifndef NDEBUG
     // Confirm that we always have the same simplices.
@@ -1205,34 +1205,34 @@ computeControlVolumesTet_(const Teuchos::RCP<Epetra_Vector> & cvOverlap) const
 
     // compute the circumcenter of the cell
     const DoubleVector cc =
-      this->computeTetrahedronCircumcenter_( localNodeCoords );
+      this->computeTetrahedronCircumcenter_(localNodeCoords);
 
     // Iterate over the edges.
     // As true edge entities are not available here, loop over all pairs of local nodes.
-    for ( unsigned int e0=0; e0<numLocalNodes; e0++ ) {
+    for (unsigned int e0=0; e0<numLocalNodes; e0++) {
       const DoubleVector &x0 = localNodeCoords[e0];
       const int gid0 = (*localNodes[e0].entity()).identifier() - 1;
-      const int lid0 = nodesOverlapMap_->LID( gid0 );
+      const int lid0 = nodesOverlapMap_->LID(gid0);
 #ifndef NDEBUG
-      TEUCHOS_ASSERT_INEQUALITY( lid0, >=, 0 );
+      TEUCHOS_ASSERT_INEQUALITY(lid0, >=, 0);
 #endif
-      for ( unsigned int e1=e0+1; e1<numLocalNodes; e1++ ) {
+      for (unsigned int e1=e0+1; e1<numLocalNodes; e1++) {
         const DoubleVector &x1 = localNodeCoords[e1];
         const int gid1 = (*localNodes[e1].entity()).identifier() - 1;
-        const int lid1 = nodesOverlapMap_->LID( gid1 );
+        const int lid1 = nodesOverlapMap_->LID(gid1);
 #ifndef NDEBUG
-        TEUCHOS_ASSERT_INEQUALITY( lid1, >=, 0 );
+        TEUCHOS_ASSERT_INEQUALITY(lid1, >=, 0);
 #endif
 
         // Get the other nodes.
-        Teuchos::Tuple<unsigned int,2> other = this->getOtherIndices_( e0, e1 );
+        Teuchos::Tuple<unsigned int,2> other = this->getOtherIndices_(e0, e1);
 
-        double edgeLength = this->norm2_( this->add_( 1.0, x1, -1.0, x0 ) );
+        double edgeLength = this->norm2_(this->add_(1.0, x1, -1.0, x0));
 
         // Compute the (n-1)-dimensional covolume.
         const DoubleVector &other0 = localNodeCoords[other[0]];
         const DoubleVector &other1 = localNodeCoords[other[1]];
-        double covolume = this->computeCovolume3d_( cc, x0, x1, other0, other1 );
+        double covolume = this->computeCovolume3d_(cc, x0, x1, other0, other1);
         // Throw an exception for 3D volumes.
         // To compute the average of the thicknesses of a control volume, one has to loop
         // over all the edges and add the thickness value to both endpoints.
@@ -1241,10 +1241,10 @@ computeControlVolumesTet_(const Teuchos::RCP<Epetra_Vector> & cvOverlap) const
         // However, looping over edges is not (yet) possible. Hence, we loop over all the
         // cells here. This way, the edges are counted several times, but it is difficult
         // to determine how many times exactly.
-//                   TEUCHOS_TEST_FOR_EXCEPTION( true,
+//                   TEUCHOS_TEST_FOR_EXCEPTION(true,
 //                                       std::runtime_error,
 //                                       "Cannot calculate the average thickness in a 3D control volume yet."
-//                                     );
+//                                    );
 
         // Compute the contributions to the finite volumes of the adjacent edges.
         double pyramidVolume = 0.5*edgeLength * covolume / 3;
@@ -1257,67 +1257,67 @@ computeControlVolumesTet_(const Teuchos::RCP<Epetra_Vector> & cvOverlap) const
 // =============================================================================
 double
 StkMesh::
-computeCovolume2d_( const DoubleVector &cc,
+computeCovolume2d_(const DoubleVector &cc,
                     const DoubleVector &x0,
                     const DoubleVector &x1,
                     const DoubleVector &other0
-                  ) const
+                 ) const
 {
   // edge midpoint
-  DoubleVector mp = this->add_( 0.5, x0, 0.5, x1 );
+  DoubleVector mp = this->add_(0.5, x0, 0.5, x1);
 
-  double coedgeLength = this->norm2_( this->add_( 1.0, mp, -1.0, cc ) );
+  double coedgeLength = this->norm2_(this->add_(1.0, mp, -1.0, cc));
 
   // The only difficulty here is to determine whether the length of coedge
   // is to be taken positive or negative.
   // To this end, make sure that the order (x0, cc, mp) is of the same
   // orientation as (x0, other0, mp).
-  DoubleVector cellNormal = this->cross_( this->add_( 1.0, other0, -1.0, x0 ),
-                                          this->add_( 1.0, mp,     -1.0, x0 )
-                                        );
-  DoubleVector ccNormal = this->cross_( this->add_( 1.0, cc, -1.0, x0 ),
-                                        this->add_( 1.0, mp, -1.0, x0 )
-                                      );
+  DoubleVector cellNormal = this->cross_(this->add_(1.0, other0, -1.0, x0),
+                                          this->add_(1.0, mp,     -1.0, x0)
+                                       );
+  DoubleVector ccNormal = this->cross_(this->add_(1.0, cc, -1.0, x0),
+                                        this->add_(1.0, mp, -1.0, x0)
+                                     );
 
   // copysign takes the absolute value of the first argument and the sign of the second.
-  return copysign( coedgeLength, this->dot_( ccNormal, cellNormal ) );
+  return copysign(coedgeLength, this->dot_(ccNormal, cellNormal));
 }
 // =============================================================================
 double
 StkMesh::
-computeCovolume3d_( const DoubleVector &cc,
+computeCovolume3d_(const DoubleVector &cc,
                     const DoubleVector &x0,
                     const DoubleVector &x1,
                     const DoubleVector &other0,
                     const DoubleVector &other1
-                  ) const
+                 ) const
 {
   double covolume = 0.0;
 
   // edge midpoint
-  DoubleVector mp = this->add_( 0.5, x0, 0.5, x1 );
+  DoubleVector mp = this->add_(0.5, x0, 0.5, x1);
 
   // Compute the circumcenters of the adjacent faces.
   // This could be precomputed as well.
-  DoubleVector ccFace0 = this->computeTriangleCircumcenter_( x0, x1, other0 );
-  DoubleVector ccFace1 = this->computeTriangleCircumcenter_( x0, x1, other1 );
+  DoubleVector ccFace0 = this->computeTriangleCircumcenter_(x0, x1, other0);
+  DoubleVector ccFace1 = this->computeTriangleCircumcenter_(x0, x1, other1);
 
   // Compute the area of the quadrilateral.
   // There are some really tricky degenerate cases here, i.e., combinations
   // of when ccFace{0,1}, cc, sit outside of the tetrahedron.
 
-  // Use the triangle (MP, localNodes[other[0]], localNodes[other[1]] ) (in this order)
+  // Use the triangle (MP, localNodes[other[0]], localNodes[other[1]]) (in this order)
   // to gauge the orientation of the two triangles that compose the quadrilateral.
-  DoubleVector gauge = this->cross_( this->add_( 1.0, other0, -1.0, mp ),
-                                     this->add_( 1.0, other1, -1.0, mp )
-                                   );
+  DoubleVector gauge = this->cross_(this->add_(1.0, other0, -1.0, mp),
+                                     this->add_(1.0, other1, -1.0, mp)
+                                  );
 
   // Add the area of the first triangle (MP,ccFace0,cc).
   // This makes use of the right angles.
-  double triangleHeight0 = this->norm2_( this->add_( 1.0, mp, -1.0, ccFace0 ) );
+  double triangleHeight0 = this->norm2_(this->add_(1.0, mp, -1.0, ccFace0));
   double triangleArea0 = 0.5
                          * triangleHeight0
-                         * this->norm2_( this->add_( 1.0, ccFace0, -1.0, cc ) );
+                         * this->norm2_(this->add_(1.0, ccFace0, -1.0, cc));
 
   // Check if the orientation of the triangle (MP,ccFace0,cc) coincides with
   // the orientation of the gauge triangle. If yes, add the area, subtract otherwise.
@@ -1326,39 +1326,39 @@ computeCovolume3d_( const DoubleVector &cc,
                  this->add_(1.0, cc,      -1.0, mp));
 
   // copysign takes the absolute value of the first argument and the sign of the second.
-  covolume += copysign( triangleArea0, this->dot_( triangleNormal0, gauge ) );
+  covolume += copysign(triangleArea0, this->dot_(triangleNormal0, gauge));
 
   // Add the area of the second triangle (MP,cc,ccFace1).
   // This makes use of the right angles.
-  double triangleHeight1 = this->norm2_( this->add_( 1.0, mp, -1.0, ccFace1 ) );
+  double triangleHeight1 = this->norm2_(this->add_(1.0, mp, -1.0, ccFace1));
   double triangleArea1 = 0.5
                          * triangleHeight1
-                         * this->norm2_( this->add_( 1.0, ccFace1, -1.0, cc ) );
+                         * this->norm2_(this->add_(1.0, ccFace1, -1.0, cc));
 
   // Check if the orientation of the triangle (MP,cc,ccFace1) coincides with
   // the orientation of the gauge triangle. If yes, add the area, subtract otherwise.
   DoubleVector triangleNormal1 =
-    this->cross_( this->add_(1.0, cc,      -1.0, mp),
+    this->cross_(this->add_(1.0, cc,      -1.0, mp),
                   this->add_(1.0, ccFace1, -1.0, mp));
 
   // copysign takes the absolute value of the first argument and the sign of the second.
-  covolume += copysign( triangleArea1, this->dot_( triangleNormal1, gauge ) );
+  covolume += copysign(triangleArea1, this->dot_(triangleNormal1, gauge));
 
   return covolume;
 }
 // =============================================================================
 Teuchos::Tuple<unsigned int,2>
 StkMesh::
-getOtherIndices_( unsigned int e0, unsigned int e1 ) const
+getOtherIndices_(unsigned int e0, unsigned int e1) const
 {
   // Get the two indices in [0,1,2,3] which are not e0, e1.
   unsigned int count = 0;
   Teuchos::Tuple<unsigned int,2> otherInd;
-  for ( unsigned int k=0; k<4; k++ ) {
-    if ( k!=e0 && k!=e1 )
+  for (unsigned int k = 0; k < 4; k++) {
+    if (k != e0 && k != e1)
       otherInd[count++] = k;
 #ifndef NDEBUG
-    TEUCHOS_ASSERT_INEQUALITY( count, <=, 2 );
+    TEUCHOS_ASSERT_INEQUALITY(count, <=, 2);
 #endif
   }
   return otherInd;
@@ -1366,11 +1366,11 @@ getOtherIndices_( unsigned int e0, unsigned int e1 ) const
 // =============================================================================
 double
 StkMesh::
-getTriangleArea_( const DoubleVector &edge0,
+getTriangleArea_(const DoubleVector &edge0,
                   const DoubleVector &edge1
-                ) const
+               ) const
 {
-  return 0.5 * this->norm2_( this->cross_( edge0, edge1 ) );
+  return 0.5 * this->norm2_(this->cross_(edge0, edge1));
 }
 // =============================================================================
 double
@@ -1378,7 +1378,7 @@ StkMesh::
 getTetrahedronVolume_(const DoubleVector &edge0,
                       const DoubleVector &edge1,
                       const DoubleVector &edge2
-                     ) const
+                    ) const
 {
   // Make sure the edges are not conplanar.
   double alpha = edge0.dot(this->cross_(edge1, edge2));
@@ -1401,51 +1401,51 @@ getTetrahedronVolume_(const DoubleVector &edge0,
 DoubleVector
 StkMesh::
 computeTriangleCircumcenter_(
-  const Teuchos::ArrayRCP<const DoubleVector> &nodes ) const
+  const Teuchos::ArrayRCP<const DoubleVector> &nodes) const
 {
 #ifndef NDEBUG
-  TEUCHOS_ASSERT_EQUALITY( nodes.size(), 3 );
+  TEUCHOS_ASSERT_EQUALITY(nodes.size(), 3);
 #endif
-  return this->computeTriangleCircumcenter_( nodes[0], nodes[1], nodes[2] );
+  return this->computeTriangleCircumcenter_(nodes[0], nodes[1], nodes[2]);
 }
 // =============================================================================
 DoubleVector
 StkMesh::
-computeTriangleCircumcenter_( const DoubleVector &node0,
+computeTriangleCircumcenter_(const DoubleVector &node0,
                               const DoubleVector &node1,
                               const DoubleVector &node2
-                            ) const
+                           ) const
 {
   DoubleVector a(node0);
-  for (int k=0; k<3; k++)
+  for (int k = 0; k < 3; k++)
     a[k] -= node1[k];
 
   DoubleVector b(node1);
-  for (int k=0; k<3; k++)
+  for (int k = 0; k < 3; k++)
     b[k] -= node2[k];
 
   DoubleVector c(node2);
-  for (int k=0; k<3; k++)
+  for (int k = 0; k < 3; k++)
     c[k] -= node0[k];
 
   const double omega = 2.0 * this->norm2squared_(this->cross_(a, b));
 
   // don't divide by 0
-  TEUCHOS_TEST_FOR_EXCEPT_MSG( fabs( omega ) < 1.0e-10,
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(fabs(omega) < 1.0e-10,
                                "It seems that the nodes \n\n"
                                << "   " << node0 << "\n"
                                << "   " << node1 << "\n"
                                << "   " << node2 << "\n"
                                << "\ndo not form a proper triangle. Abort."
                                << std::endl
-                             );
+                            );
 
   const double alpha = - this->dot_(b, b) * this->dot_(a, c) / omega;
   const double beta  = - this->dot_(c, c) * this->dot_(b, a) / omega;
   const double gamma = - this->dot_(a, a) * this->dot_(c, b) / omega;
 
   DoubleVector cc(3);
-  for (int k=0; k<3; k++)
+  for (int k = 0; k < 3; k++)
     cc[k] = alpha * node0[k]
             + beta  * node1[k]
             + gamma * node2[k];
@@ -1456,24 +1456,24 @@ computeTriangleCircumcenter_( const DoubleVector &node0,
 DoubleVector
 StkMesh::
 computeTetrahedronCircumcenter_(
-  const Teuchos::ArrayRCP<const DoubleVector> &nodes ) const
+  const Teuchos::ArrayRCP<const DoubleVector> &nodes) const
 {
   // http://www.cgafaq.info/wiki/Tetrahedron_Circumsphere
 #ifndef NDEBUG
-  TEUCHOS_ASSERT_EQUALITY( nodes.size(), 4 );
+  TEUCHOS_ASSERT_EQUALITY(nodes.size(), 4);
 #endif
 
   // Compute with respect to the first point.
-  Teuchos::Array<DoubleVector> relNodes( 3 );
-  for ( int k=0; k<3; k++ )
-    relNodes[k] = this->add_( 1.0, nodes[k+1], -1.0, nodes[0] );
+  Teuchos::Array<DoubleVector> relNodes(3);
+  for (int k = 0; k < 3; k++)
+    relNodes[k] = this->add_(1.0, nodes[k+1], -1.0, nodes[0]);
 
 
   double omega = 2.0 *
-                 this->dot_( relNodes[0], this->cross_( relNodes[1], relNodes[2] ) );
+                 this->dot_(relNodes[0], this->cross_(relNodes[1], relNodes[2]));
 
   // don't divide by 0
-  TEUCHOS_TEST_FOR_EXCEPT_MSG( fabs( omega ) < 1.0e-10,
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(fabs(omega) < 1.0e-10,
                                "It seems that the nodes \n\n"
                                << "   " << nodes[0] << "\n"
                                << "   " << nodes[1] << "\n"
@@ -1481,35 +1481,35 @@ computeTetrahedronCircumcenter_(
                                << "   " << nodes[3] << "\n"
                                << "\ndo not form a proper tetrahedron. Abort."
                                << std::endl
-                             );
-  double alpha = this->norm2squared_( relNodes[0] ) / omega;
-  double beta  = this->norm2squared_( relNodes[1] ) / omega;
-  double gamma = this->norm2squared_( relNodes[2] ) / omega;
+                            );
+  double alpha = this->norm2squared_(relNodes[0]) / omega;
+  double beta  = this->norm2squared_(relNodes[1]) / omega;
+  double gamma = this->norm2squared_(relNodes[2]) / omega;
 
   DoubleVector cc;
-  cc = this->add_( alpha, this->cross_( relNodes[1], relNodes[2] ),
-                   beta,  this->cross_( relNodes[2], relNodes[0] ) );
-  cc = this->add_( 1.0,   cc,
-                   gamma, this->cross_( relNodes[0], relNodes[1] ) );
+  cc = this->add_(alpha, this->cross_(relNodes[1], relNodes[2]),
+                   beta,  this->cross_(relNodes[2], relNodes[0]));
+  cc = this->add_(1.0,   cc,
+                   gamma, this->cross_(relNodes[0], relNodes[1]));
 
-  cc = this->add_( 1.0, cc,
-                   1.0, nodes[0] );
+  cc = this->add_(1.0, cc,
+                   1.0, nodes[0]);
 
   return cc;
 }
 // =============================================================================
 DoubleVector
 StkMesh::
-add_( double alpha, const DoubleVector &x,
+add_(double alpha, const DoubleVector &x,
       double beta,  const DoubleVector &y
-    ) const
+   ) const
 {
 #ifndef NDEBUG
-  TEUCHOS_ASSERT_EQUALITY( x.length(), 3 );
-  TEUCHOS_ASSERT_EQUALITY( y.length(), 3 );
+  TEUCHOS_ASSERT_EQUALITY(x.length(), 3);
+  TEUCHOS_ASSERT_EQUALITY(y.length(), 3);
 #endif
-  DoubleVector z( 3 );
-  for ( int k=0; k<z.length(); k++ )
+  DoubleVector z(3);
+  for (int k = 0; k < z.length(); k++)
     z[k] = alpha*x[k] + beta*y[k];
 
   return z;
@@ -1517,23 +1517,23 @@ add_( double alpha, const DoubleVector &x,
 // =============================================================================
 double
 StkMesh::
-dot_( const DoubleVector &v,
+dot_(const DoubleVector &v,
       const DoubleVector &w
-    ) const
+   ) const
 {
   double sum = 0.0;
-  for ( int k=0; k<v.length(); k++ )
+  for (int k = 0; k < v.length(); k++)
     sum += v[k] * w[k];
   return sum;
 }
 // =============================================================================
 DoubleVector
 StkMesh::
-cross_( const DoubleVector &v,
+cross_(const DoubleVector &v,
         const DoubleVector &w
-      ) const
+     ) const
 {
-  DoubleVector z( 3 );
+  DoubleVector z(3);
 
   z[0] = v[1]*w[2] - v[2]*w[1];
   z[1] = v[2]*w[0] - v[0]*w[2];
@@ -1544,18 +1544,18 @@ cross_( const DoubleVector &v,
 // =============================================================================
 double
 StkMesh::
-norm2_( const DoubleVector &x
-      ) const
+norm2_(const DoubleVector &x
+     ) const
 {
-  return sqrt( this->dot_( x,x ) );
+  return sqrt(this->dot_(x,x));
 }
 // =============================================================================
 double
 StkMesh::
-norm2squared_( const DoubleVector &x
-             ) const
+norm2squared_(const DoubleVector &x
+            ) const
 {
-  return this->dot_( x, x );
+  return this->dot_(x, x);
 }
 // =============================================================================
 StkMesh::EdgesContainer
@@ -1582,10 +1582,10 @@ createEdgeData_()
 
   // Loop over all owned cells.
   unsigned int edgeLID = 0;
-  for ( unsigned int cellLID=0; cellLID<numLocalCells; cellLID++ ) {
+  for (unsigned int cellLID=0; cellLID<numLocalCells; cellLID++) {
     // Loop over all pairs of local nodes.
     stk::mesh::PairIterRelation nodesIterator =
-      cells[cellLID]->relations( meshDataContainer_.metaData.node_rank() );
+      cells[cellLID]->relations(meshDataContainer_.metaData.node_rank());
     unsigned int numLocalNodes = nodesIterator.size();
     unsigned int numLocalEdges = numLocalNodes*(numLocalNodes-1) / 2;
 
@@ -1593,7 +1593,7 @@ createEdgeData_()
 
     // Gather the node entities.
     Teuchos::ArrayRCP<stk::mesh::Entity*> nodes(numLocalNodes);
-    for ( unsigned int k=0; k<numLocalNodes; k++ )
+    for (unsigned int k = 0; k < numLocalNodes; k++)
       nodes[k] = nodesIterator[k].entity();
 
     // Sort nodes by their global identifier. This is necessary
@@ -1607,9 +1607,9 @@ createEdgeData_()
     // of nodes. Hence, loop over pairs of nodes.
     unsigned int edgeIndex = 0;
     Teuchos::Tuple<stk::mesh::Entity*,2> edgeNodes;
-    for ( unsigned int e0=0; e0<numLocalNodes; e0++ ) {
+    for (unsigned int e0=0; e0<numLocalNodes; e0++) {
       edgeNodes[0] = nodes[e0];
-      for ( unsigned int e1=e0+1; e1<numLocalNodes; e1++ ) {
+      for (unsigned int e1=e0+1; e1<numLocalNodes; e1++) {
         edgeNodes[1] = nodes[e1];
         // As nodes are sorted and by their identifiers, edgeNodes are sorted
         // too. This is necessary as otherwise the edge {3,7} could not be
@@ -1618,12 +1618,12 @@ createEdgeData_()
         // Check if edgeNodes is in the map.
         std::map<Teuchos::Tuple<stk::mesh::Entity*,2>,int,TupleComp>::iterator it =
           nodesEdge.find(edgeNodes);
-        if ( it != nodesEdge.end() ) {
+        if (it != nodesEdge.end()) {
           // Edge is already accounted for.
           edgeData.cellEdges[cellLID][edgeIndex] = it->second;
         } else { // Edge not found -- insert it.
           nodesEdge[edgeNodes] = edgeLID; // for householding in this method
-          edgeData.edgeNodes.append( edgeNodes ); // for looping over edges
+          edgeData.edgeNodes.append(edgeNodes); // for looping over edges
           edgeData.cellEdges[cellLID][edgeIndex] = edgeLID; // for this->computeEdgeCoefficients_
           edgeLID++;
         }

@@ -52,27 +52,27 @@ public:
 //    EigenSaver(
 //      const Teuchos::RCP<LOCA::GlobalData>& global_data,
 //      const Teuchos::RCP<LOCA::P#ifndef GL_SAVEEIGENDATA_Harameter::SublistParser>& topParams,
-//      const Teuchos::RCP<Teuchos::ParameterList>& eigenParams      );
+//      const Teuchos::RCP<Teuchos::ParameterList>& eigenParams     );
 
 // Constructor
   SaveEigenData(Teuchos::ParameterList &eigenParamList,
                 const Teuchos::RCP<const Nosh::ModelEvaluator::Virtual> &modelEval,
                 const std::string & fileName
-               );
+              );
 
   virtual
   ~SaveEigenData();
 
   virtual
   NOX::Abstract::Group::ReturnType
-  save( Teuchos::RCP<std::vector<double> > &evals_r,
+  save(Teuchos::RCP<std::vector<double> > &evals_r,
         Teuchos::RCP<std::vector<double> > &evals_i,
         Teuchos::RCP<NOX::Abstract::MultiVector> &evecs_r,
         Teuchos::RCP<NOX::Abstract::MultiVector> &evecs_i
-      );
+     );
 
   void
-  setLocaStepper( const Teuchos::RCP<LOCA::Stepper> locaStepper );
+  setLocaStepper(const Teuchos::RCP<LOCA::Stepper> locaStepper);
 
 // This function is necessary to break the circular dependency with the
 // LOCA_Stepper object to allow for a clean termination

@@ -27,7 +27,7 @@ ADD_LIBRARY(nosh
 # development counterpart (e.g., libblas.so).
 TARGET_LINK_LIBRARIES(nosh
                       ${Trilinos_LIBRARIES}
-                     )
+                    )
 
 SET_TARGET_PROPERTIES(
   nosh PROPERTIES
@@ -48,9 +48,9 @@ INSTALL(TARGETS nosh
         ARCHIVE DESTINATION "${INSTALL_LIB_DIR}" COMPONENT shlib # .a
         PUBLIC_HEADER DESTINATION "${INSTALL_INCLUDE_DIR}" COMPONENT dev
 #PUBLIC_HEADER DESTINATION "${INSTALL_INCLUDE_DIR}/nosh" COMPONENT dev
-       )
+      )
 
 # Install the export set.
 INSTALL(EXPORT NoshLibraryDepends
         DESTINATION "${INSTALL_CMAKE_DIR}"
-       )
+      )

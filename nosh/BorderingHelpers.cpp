@@ -73,7 +73,7 @@ BorderingHelpers::
 merge(const Epetra_MultiVector & x,
       const double * lambda,
       Epetra_MultiVector & out
-     )
+    )
 {
 #ifndef NDEBUG
   // Check if the maps are matching.
@@ -101,7 +101,7 @@ BorderingHelpers::
 dissect(const Epetra_MultiVector & x,
         Epetra_MultiVector & xSmall,
         double * lambda
-       )
+      )
 {
 #ifndef NDEBUG
   TEUCHOS_ASSERT_EQUALITY(x.NumVectors(), xSmall.NumVectors());

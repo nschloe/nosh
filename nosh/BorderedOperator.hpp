@@ -43,23 +43,23 @@ public:
                    const Teuchos::RCP<Epetra_Vector> & b,
                    const Teuchos::RCP<Epetra_Vector> & c,
                    const double d
-                  );
+                 );
 
   // Destructor.
   ~BorderedOperator();
 
   virtual int
-  SetUseTranspose( bool UseTranspose );
+  SetUseTranspose(bool UseTranspose);
 
   virtual int
   Apply(const Epetra_MultiVector &X,
         Epetra_MultiVector &Y
-       ) const;
+      ) const;
 
   virtual int
   ApplyInverse(const Epetra_MultiVector &X,
                Epetra_MultiVector &Y
-              ) const;
+             ) const;
 
   virtual double
   NormInf() const;
@@ -89,7 +89,7 @@ public:
   resetBordering(const Teuchos::RCP<const Epetra_Vector> & b,
                  const Teuchos::RCP<const Epetra_Vector> & c,
                  const double d
-                );
+               );
 
 protected:
 private:

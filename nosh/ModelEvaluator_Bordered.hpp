@@ -39,7 +39,7 @@ public:
     const Teuchos::RCP<const Nosh::ModelEvaluator::Virtual> & modelEval,
     const Teuchos::RCP<const Epetra_Vector> & initialBordering,
     const double lambdaInit
-  );
+ );
 
 // Destructor
   virtual
@@ -59,15 +59,15 @@ public:
 
   virtual
   Teuchos::RCP<const Epetra_Vector>
-  get_p_init( int l ) const;
+  get_p_init(int l) const;
 
   virtual
   Teuchos::RCP<const Epetra_Map>
-  get_p_map( int l ) const;
+  get_p_map(int l) const;
 
   virtual
   Teuchos::RCP<const Teuchos::Array<std::string> >
-  get_p_names( int l ) const;
+  get_p_names(int l) const;
 
   virtual
   Teuchos::RCP<Epetra_Operator>
@@ -87,8 +87,8 @@ public:
 
   virtual
   void
-  evalModel( const InArgs &inArgs,
-             const OutArgs &outArgs ) const;
+  evalModel(const InArgs &inArgs,
+             const OutArgs &outArgs) const;
 
 public:
 
@@ -96,7 +96,7 @@ public:
   double
   innerProduct(const Epetra_Vector &phi,
                const Epetra_Vector &psi
-              ) const;
+             ) const;
 
   virtual
   double

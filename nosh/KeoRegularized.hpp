@@ -64,23 +64,23 @@ public:
   KeoRegularized(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
                  const Teuchos::RCP<const Nosh::ScalarField::Virtual> &thickness,
                  const Teuchos::RCP<const Nosh::MatrixBuilder::Virtual> &matrixBuilder
-                );
+               );
 
 // Destructor.
   ~KeoRegularized();
 
   virtual int
-  SetUseTranspose( bool UseTranspose );
+  SetUseTranspose(bool UseTranspose);
 
   virtual int
   Apply(const Epetra_MultiVector &X,
         Epetra_MultiVector &Y
-       ) const;
+      ) const;
 
   virtual int
   ApplyInverse(const Epetra_MultiVector &X,
                Epetra_MultiVector &Y
-              ) const;
+             ) const;
 
   virtual double
   NormInf() const;
@@ -106,7 +106,7 @@ public:
   void
   rebuild(const std::map<std::string,double> & params,
           const Epetra_Vector &psi
-         );
+        );
 
 protected:
 private:

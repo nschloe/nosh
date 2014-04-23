@@ -59,7 +59,7 @@ KeoRegularized(
     const Teuchos::RCP<const Nosh::StkMesh> &mesh,
     const Teuchos::RCP<const Nosh::ScalarField::Virtual> &thickness,
     const Teuchos::RCP<const Nosh::MatrixBuilder::Virtual> &matrixBuilder
-   ):
+  ):
   useTranspose_(false),
   mesh_(mesh),
   thickness_(thickness),
@@ -100,7 +100,7 @@ int
 KeoRegularized::
 Apply(const Epetra_MultiVector &X,
        Epetra_MultiVector &Y
-    ) const
+   ) const
 {
 #ifndef NDEBUG
   TEUCHOS_ASSERT(regularizedMatrix_.DomainMap().SameAs(X.Map()));
@@ -114,7 +114,7 @@ int
 KeoRegularized::
 ApplyInverse(const Epetra_MultiVector &X,
              Epetra_MultiVector &Y
-           ) const
+          ) const
 {
   if (numCycles_ == 1) {
     // Just apply one (inverse) AMG cycle.
@@ -134,7 +134,7 @@ ApplyInverse(const Epetra_MultiVector &X,
 //                   Belos::Warnings +
 //                   Belos::TimingDetails +
 //                   Belos::StatusTestDetails
-//                  );
+//                 );
 //     belosList.set("Output Frequency", 10);
     belosList.set("Verbosity", Belos::Errors + Belos::Warnings);
 
@@ -145,9 +145,11 @@ ApplyInverse(const Epetra_MultiVector &X,
     // Construct an unpreconditioned linear problem instance.
     Teuchos::RCP<const Epetra_MultiVector> Xptr = Teuchos::rcpFromRef(X);
     Teuchos::RCP<Epetra_MultiVector> Yptr = Teuchos::rcpFromRef(Y);
-    Belos::LinearProblem<double,MV,OP> problem(Teuchos::rcpFromRef(regularizedMatrix_),
+    Belos::LinearProblem<double, MV, OP> problem(
+        Teuchos::rcpFromRef(regularizedMatrix_),
         Yptr,
-        Xptr);
+        Xptr
+        );
     // Make sure the problem sets up correctly.
     TEUCHOS_ASSERT(problem.setProblem());
     // -------------------------------------------------------------------------
@@ -163,7 +165,7 @@ ApplyInverse(const Epetra_MultiVector &X,
     Teuchos::RCP<Belos::SolverManager<double,MV,OP> > newSolver =
       Teuchos::rcp(new Belos::PseudoBlockCGSolMgr<double,MV,OP>
                     (Teuchos::rcp(&problem, false), Teuchos::rcp(&belosList, false))
-                 );
+                );
 
     // Perform "solve".
     Belos::ReturnType ret = newSolver->solve();
@@ -226,7 +228,7 @@ void
 KeoRegularized::
 rebuild(const std::map<std::string,double> & params,
         const Epetra_Vector & x
-       )
+      )
 {
   // Copy over the matrix.
   // This is necessary as we don't apply AMG to K,
@@ -365,10 +367,10 @@ rebuildInverse_()
 #ifndef NDEBUG
     TEUCHOS_ASSERT(regularizedMatrix_.OperatorRangeMap().
                    SameAs(regularizedMatrix_.RowMatrixRowMap())
-                  );
+                 );
     TEUCHOS_ASSERT(regularizedMatrix_.OperatorDomainMap().
                    SameAs(regularizedMatrix_.OperatorRangeMap())
-                  );
+                 );
 #endif
     MlPrec_ =
       Teuchos::rcp(new ML_Epetra::MultiLevelPreconditioner(regularizedMatrix_,
@@ -387,4 +389,4 @@ rebuildInverse_()
   return;
 }
 // =============================================================================
-} // namespace Nosh
+}  // namespace Nosh

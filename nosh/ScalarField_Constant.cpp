@@ -36,11 +36,11 @@ Constant(const Nosh::StkMesh & mesh,
          const double c,
          const std::string & param1Name,
          const double param1InitValue
-        ):
+       ):
   map_(mesh.getNodesMap()),
-  c_( c ),
+  c_(c),
   param1Name_ (param1Name),
-  param1InitValue_( param1InitValue )
+  param1InitValue_(param1InitValue)
 {
 }
 // ============================================================================
@@ -79,7 +79,7 @@ const Epetra_Vector
 Constant::
 getdVdP(const std::map<std::string,double> & params,
         const std::string & paramName
-       ) const
+      ) const
 {
   (void) params;
   // Create zeroed-out vector.

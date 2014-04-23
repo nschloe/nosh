@@ -50,7 +50,7 @@ public:
   double
   innerProduct(const Epetra_Vector &phi,
                const Epetra_Vector &psi
-              ) const = 0;
+             ) const = 0;
 
   virtual
   double

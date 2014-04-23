@@ -50,7 +50,7 @@ public:
            const std::string & csvFilename = "",
            const std::string & contParamName = "",
            const bool isTurningPointContinuation = false
-          );
+         );
 
 //! Destructor
   virtual
@@ -70,18 +70,18 @@ private:
   void
   observeContinuation_(const Epetra_Vector &soln,
                        const double paramVal
-                      );
+                     );
 
   void
   observeTurningPointContinuation_(const Epetra_Vector &soln,
                                    const double paramVal
-                                  );
+                                 );
 
   void
   saveContinuationStatistics_(const Epetra_Vector &soln,
                               const double paramVal,
                               const int stepIndex
-                             );
+                            );
 
 private:
 

@@ -66,7 +66,7 @@ public:
   apply(const std::map<std::string, double> &params,
         const Epetra_Vector &X,
         Epetra_Vector &Y
-       ) const = 0;
+      ) const = 0;
 
 //! Y = dA/dp(params) * X.
   virtual
@@ -75,14 +75,14 @@ public:
             const std::string & paramName,
             const Epetra_Vector &X,
             Epetra_Vector &Y
-           ) const = 0;
+          ) const = 0;
 
 //! Fill a given matrix with the parameter entries as given in params.
   virtual
   void
   fill(Epetra_FECrsMatrix &matrix,
        const std::map<std::string,double> &params
-      ) const = 0;
+     ) const = 0;
 
 //! Get parameter map with their initial values.
   virtual

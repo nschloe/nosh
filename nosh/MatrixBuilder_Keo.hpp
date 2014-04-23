@@ -59,7 +59,7 @@ public:
   Keo(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
       const Teuchos::RCP<const Nosh::ScalarField::Virtual> &thickness,
       const Teuchos::RCP<const Nosh::VectorField::Virtual> &mvp
-     );
+    );
 
 // Destructor.
   ~Keo();
@@ -77,7 +77,7 @@ public:
   apply(const std::map<std::string, double> & params,
         const Epetra_Vector &X,
         Epetra_Vector &Y
-       ) const;
+      ) const;
 
   virtual
   void
@@ -85,13 +85,13 @@ public:
             const std::string & paramName,
             const Epetra_Vector &X,
             Epetra_Vector &Y
-           ) const;
+          ) const;
 
   virtual
   void
   fill(Epetra_FECrsMatrix &matrix,
        const std::map<std::string, double> & params
-      ) const;
+     ) const;
 
 //! Gets the initial parameters from this module.
   virtual
@@ -105,30 +105,30 @@ private:
   buildKeoGraph_() const;
 
   void
-  fillKeo_( Epetra_FECrsMatrix &keoMatrix,
+  fillKeo_(Epetra_FECrsMatrix &keoMatrix,
             const std::map<std::string, double> & params,
             void (Keo::*filler)(const int, const std::map<std::string,double>&, double*) const
-          ) const;
+         ) const;
 
   void
   fillerRegular_(const int k,
                  const std::map<std::string, double> & params,
                  double * v
-                ) const;
+               ) const;
 
   void
   fillerDp_(const int k,
             const std::map<std::string, double> & params,
             double * v
-           ) const;
+          ) const;
 
   void
-  buildGlobalIndexCache_( const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > &edges ) const;
+  buildGlobalIndexCache_(const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > &edges) const;
 
   void
-  buildAlphaCache_( const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > & edges,
+  buildAlphaCache_(const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > & edges,
                     const Teuchos::ArrayRCP<const double> &edgeCoefficients
-                  ) const;
+                 ) const;
 
 private:
 #ifdef NOSH_TEUCHOS_TIME_MONITOR

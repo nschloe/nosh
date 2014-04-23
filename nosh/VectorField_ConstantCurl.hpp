@@ -41,7 +41,7 @@ public:
   ConstantCurl(const Teuchos::RCP<Nosh::StkMesh> &mesh,
                const Teuchos::RCP<DoubleVector> &b,
                const Teuchos::RCP<DoubleVector> &u = Teuchos::null
-              );
+             );
 
   virtual
   ~ConstantCurl();
@@ -55,22 +55,22 @@ public:
   double
   getEdgeProjection(const unsigned int edgeIndex,
                     const std::map<std::string, double> & params
-                   ) const;
+                  ) const;
 
   virtual
   double
   getDEdgeProjectionDp(const unsigned int edgeIndex,
                        const std::map<std::string, double> & params,
                        const std::string & dParam
-                      ) const;
+                     ) const;
 
 protected:
 private:
   DoubleVector
-  getRawA_( const DoubleVector &x ) const;
+  getRawA_(const DoubleVector &x) const;
 
   DoubleVector
-  getRawDADTheta_( const DoubleVector &x ) const;
+  getRawDADTheta_(const DoubleVector &x) const;
 
   void
   initializeEdgeCache_() const;
@@ -79,18 +79,18 @@ private:
   rotate_(DoubleVector &v,
           const DoubleVector &u,
           const double theta
-         ) const;
+        ) const;
 
   void
   dRotateDTheta_(DoubleVector &v,
                  const DoubleVector &u,
                  const double theta
-                ) const;
+               ) const;
 
   DoubleVector
   crossProduct_(const DoubleVector u,
                 const DoubleVector v
-               ) const;
+              ) const;
 
 private:
   const Teuchos::RCP<Nosh::StkMesh> mesh_;

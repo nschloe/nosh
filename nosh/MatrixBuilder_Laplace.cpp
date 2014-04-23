@@ -45,7 +45,7 @@ namespace MatrixBuilder
 Laplace::
 Laplace(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
         const Teuchos::RCP<const Nosh::ScalarField::Virtual> &thickness
-      ) :
+     ) :
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   fillTime_(Teuchos::TimeMonitor::getNewTimer(
                "Nosh: Laplace::fill_")),
@@ -89,7 +89,7 @@ Laplace::
 apply(const std::map<std::string, double> &params,
       const Epetra_Vector &X,
       Epetra_Vector &Y
-    ) const
+   ) const
 {
   (void) params;
   // Rebuild if necessary.
@@ -110,7 +110,7 @@ applyDKDp(const std::map<std::string, double> &params,
           const std::string & paramName,
           const Epetra_Vector &X,
           Epetra_Vector &Y
-        ) const
+       ) const
 {
   (void) params;
   (void) paramName;
@@ -125,7 +125,7 @@ void
 Laplace::
 fill(Epetra_FECrsMatrix &matrix,
      const std::map<std::string, double> &params
-   ) const
+  ) const
 {
   (void) params;
   // Cache the construction of the Laplacian.
@@ -227,8 +227,8 @@ buildGraph_() const
         0,
         graph.InsertGlobalIndices(
           4, globalIndexCache_[k].Values(), 4, globalIndexCache_[k].Values()
-          )
-        );
+         )
+       );
 
   // Make sure that domain and range map are non-overlapping (to make sure that
   // states psi can compute norms) and equal (to make sure that the matrix works
@@ -335,7 +335,7 @@ void
 Laplace::
 buildAlphaCache_(const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > & edges,
                   const Teuchos::ArrayRCP<const double> &edgeCoefficients
-                ) const
+               ) const
 {
   alphaCache_ = Teuchos::ArrayRCP<double>(edges.size());
 

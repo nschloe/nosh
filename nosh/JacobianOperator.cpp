@@ -39,12 +39,12 @@ JacobianOperator(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
                  const Teuchos::RCP<const Nosh::ScalarField::Virtual> &scalarPotential,
                  const Teuchos::RCP<const Nosh::ScalarField::Virtual> &thickness,
                  const Teuchos::RCP<const Nosh::MatrixBuilder::Virtual> &matrixBuilder
-                ) :
-  useTranspose_( false ),
-  mesh_( mesh ),
-  scalarPotential_( scalarPotential ),
-  thickness_( thickness ),
-  matrixBuilder_( matrixBuilder ),
+               ) :
+  useTranspose_(false),
+  mesh_(mesh),
+  scalarPotential_(scalarPotential),
+  thickness_(thickness),
+  matrixBuilder_(matrixBuilder),
   keo_(Copy, matrixBuilder_->getGraph()),
   diag0_(*(mesh->getComplexNonOverlapMap())),
   diag1b_(mesh->getControlVolumes()->Map())
@@ -58,7 +58,7 @@ JacobianOperator::
 // =============================================================================
 int
 JacobianOperator::
-SetUseTranspose( bool useTranspose )
+SetUseTranspose(bool useTranspose)
 {
   useTranspose_ = useTranspose;
   return 0;
@@ -68,21 +68,21 @@ int
 JacobianOperator::
 Apply(const Epetra_MultiVector &X,
       Epetra_MultiVector &Y
-     ) const
+    ) const
 {
   // Add the terms corresponding to the nonlinear terms.
   // A = K + I * thickness * (V + g * 2*|psi|^2)
-  // B = g * diag( thickness * psi^2 )
+  // B = g * diag(thickness * psi^2)
 
   const int numMyPoints = mesh_->getControlVolumes()->MyLength();
 #ifndef NDEBUG
-  TEUCHOS_ASSERT_EQUALITY( 2*numMyPoints, X.MyLength() );
+  TEUCHOS_ASSERT_EQUALITY(2*numMyPoints, X.MyLength());
 #endif
 
   // Y = K*X
   TEUCHOS_ASSERT_EQUALITY(0, keo_.Apply(X, Y));
 
-  for ( int vec=0; vec<X.NumVectors(); vec++ ) {
+  for (int vec = 0; vec < X.NumVectors(); vec++) {
     // For the parts Re(psi)Im(phi), Im(psi)Re(phi), the (2*k+1)th
     // component of X needs to be summed into the (2k)th component of Y,
     // likewise for (2k) -> (2k+1).
@@ -92,7 +92,7 @@ Apply(const Epetra_MultiVector &X,
     // we're at it, let's include all the other terms in the loop
     // too. (It would actually be possible to have the terms
     // 2k/2k and 2k+1/2k+1 handled by Multiply().
-    for ( int k=0; k<numMyPoints; k++ ) {
+    for (int k = 0; k < numMyPoints; k++) {
       (*Y(vec))[2*k]   += diag0_ [2*k]   * X[vec][2*k]
                           + diag1b_[k]     * X[vec][2*k+1];
       (*Y(vec))[2*k+1] += diag1b_[k]     * X[vec][2*k]
@@ -101,17 +101,17 @@ Apply(const Epetra_MultiVector &X,
   }
 
 //    // take care of the shifting
-//    if ( alpha_ != 0.0 || beta_ != -1.0 )
-//    TEUCHOS_ASSERT_EQUALITY( 0, Y.Update( alpha_, X, -beta_ ) );
+//    if (alpha_ != 0.0 || beta_ != -1.0)
+//    TEUCHOS_ASSERT_EQUALITY(0, Y.Update(alpha_, X, -beta_));
 
   return 0;
 }
 // =============================================================================
 int
 JacobianOperator::
-ApplyInverse( const Epetra_MultiVector &X,
+ApplyInverse(const Epetra_MultiVector &X,
               Epetra_MultiVector &Y
-            ) const
+           ) const
 {
   (void) X;
   (void) Y;
@@ -171,7 +171,7 @@ void
 JacobianOperator::
 rebuild(const std::map<std::string,double> params,
         const Teuchos::RCP<const Epetra_Vector> &current_X
-       )
+      )
 {
   // Fill the KEO.
   // It is certainly a debatable design decision
@@ -203,7 +203,7 @@ rebuild(const std::map<std::string,double> params,
 
   // Rebuild diagonals.
 #ifndef NDEBUG
-  TEUCHOS_ASSERT( !current_X.is_null() );
+  TEUCHOS_ASSERT(!current_X.is_null());
 #endif
   this->rebuildDiags_(params, *current_X);
 
@@ -214,10 +214,10 @@ void
 JacobianOperator::
 rebuildDiags_(const std::map<std::string,double> params,
               const Epetra_Vector &x
-             )
+            )
 {
 #ifndef NDEBUG
-  TEUCHOS_ASSERT( !scalarPotential_.is_null() );
+  TEUCHOS_ASSERT(!scalarPotential_.is_null());
 #endif
 
   const Epetra_Vector &controlVolumes = *(mesh_->getControlVolumes());
@@ -236,14 +236,14 @@ rebuildDiags_(const std::map<std::string,double> params,
   TEUCHOS_ASSERT(controlVolumes.Map().SameAs(scalarPotentialValues.Map()));
 #endif
 
-  for (int k=0; k<controlVolumes.MyLength(); k++) {
+  for (int k = 0; k < controlVolumes.MyLength(); k++) {
     // rebuild diag0
     const double alpha = controlVolumes[k] * thicknessValues[k]
-                         * ( scalarPotentialValues[k]
+                         * (scalarPotentialValues[k]
                              + g * 2.0 * (x[2*k]*x[2*k] + x[2*k+1]*x[2*k+1])
-                           );
+                          );
     const double realX2 = g * controlVolumes[k] * thicknessValues[k]
-                          * ( x[2*k]*x[2*k] - x[2*k+1]*x[2*k+1] );
+                          * (x[2*k]*x[2*k] - x[2*k+1]*x[2*k+1]);
     diag0_[2*k]   = alpha + realX2;
     diag0_[2*k+1] = alpha - realX2;
 

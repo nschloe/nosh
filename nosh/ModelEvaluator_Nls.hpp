@@ -63,7 +63,7 @@ public:
     const double g,
     const Teuchos::RCP<const Nosh::ScalarField::Virtual> &thickness,
     const Teuchos::RCP<const Epetra_Vector> &initialX
-  );
+ );
 
 // Destructor
   virtual
@@ -83,15 +83,15 @@ public:
 
   virtual
   Teuchos::RCP<const Epetra_Vector>
-  get_p_init( int l ) const;
+  get_p_init(int l) const;
 
   virtual
   Teuchos::RCP<const Epetra_Map>
-  get_p_map( int l ) const;
+  get_p_map(int l) const;
 
   virtual
   Teuchos::RCP<const Teuchos::Array<std::string> >
-  get_p_names( int l ) const;
+  get_p_names(int l) const;
 
   virtual
   Teuchos::RCP<Epetra_Operator>
@@ -111,15 +111,15 @@ public:
 
   virtual
   void
-  evalModel( const InArgs &inArgs,
-             const OutArgs &outArgs ) const;
+  evalModel(const InArgs &inArgs,
+             const OutArgs &outArgs) const;
 
 public:
 
   double
   innerProduct(const Epetra_Vector &phi,
                const Epetra_Vector &psi
-              ) const;
+             ) const;
 
   double
   gibbsEnergy(const Epetra_Vector &psi) const;
@@ -133,14 +133,14 @@ private:
   computeF_(const Epetra_Vector &x,
             const std::map<std::string,double> & params,
             Epetra_Vector &FVec
-           ) const;
+          ) const;
 
   void
   computeDFDP_(const Epetra_Vector &x,
                const std::map<std::string, double> & params,
                const std::string & paramName,
                Epetra_Vector &FVec
-              ) const;
+             ) const;
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 protected:
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -

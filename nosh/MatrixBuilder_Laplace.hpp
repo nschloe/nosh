@@ -54,7 +54,7 @@ class Laplace: public Virtual
 public:
   Laplace(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
           const Teuchos::RCP<const Nosh::ScalarField::Virtual> &thickness
-         );
+        );
 
 // Destructor.
   ~Laplace();
@@ -72,7 +72,7 @@ public:
   apply(const std::map<std::string, double> &params,
         const Epetra_Vector &X,
         Epetra_Vector &Y
-       ) const;
+      ) const;
 
   virtual
   void
@@ -80,13 +80,13 @@ public:
             const std::string & paramName,
             const Epetra_Vector &X,
             Epetra_Vector &Y
-           ) const;
+          ) const;
 
   virtual
   void
   fill(Epetra_FECrsMatrix &matrix,
        const std::map<std::string, double> &params
-      ) const;
+     ) const;
 
 //! Gets the parameter with their initial values.
   virtual
@@ -108,7 +108,7 @@ private:
   void
   buildAlphaCache_(const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > & edges,
                    const Teuchos::ArrayRCP<const double> &edgeCoefficients
-                  ) const;
+                 ) const;
 
 private:
 #ifdef NOSH_TEUCHOS_TIME_MONITOR

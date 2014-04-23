@@ -32,7 +32,7 @@ public:
 //! Default constructor.
   CsvWriter(const std::string &fileName,
             const std::string &delimeter = ","
-           );
+          );
 
 //! Destructor.
   virtual

@@ -36,16 +36,16 @@ ExplicitValues::
 ExplicitValues(const Nosh::StkMesh & mesh,
                const std::string & fieldName,
                const double initMu
-              ) :
-  initMu_( initMu ),
+             ) :
+  initMu_(initMu),
   edgeProjectionCache_(mesh.getEdgeNodes().size())
 {
   // Initialize the cache.
-  const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > edges =
+  const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*, 2> > edges =
     mesh.getEdgeNodes();
 
   // Loop over all edges and create the cache.
-  for (Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> >::size_type k=0;
+  for (Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*, 2> >::size_type k = 0;
        k < edges.size();
        k++) {
     // Approximate the value at the midpoint of the edge
@@ -55,10 +55,10 @@ ExplicitValues(const Nosh::StkMesh & mesh,
     av *= 0.5;
 
     // Extract the nodal coordinates.
-    DoubleVector edge = mesh.getVectorFieldNonconst(edges[k][1],
-                        "coordinates", 3);
-    edge -= mesh.getVectorFieldNonconst(edges[k][0],
-                                        "coordinates", 3);
+    DoubleVector edge =
+      mesh.getVectorFieldNonconst(edges[k][1], "coordinates", 3);
+    edge -=
+      mesh.getVectorFieldNonconst(edges[k][0], "coordinates", 3);
 
     edgeProjectionCache_[k] = av.dot(edge);
   }
@@ -69,7 +69,7 @@ ExplicitValues(const Nosh::StkMesh & mesh,
   // Use the fake logical "isNonzeroLocal" since Epetra_Comm doesn't have
   // logical any() or all() operations.
   int isNonzeroLocal = 0;
-  for (int k=0; k<edges.size(); k++) {
+  for (int k = 0; k < edges.size(); k++) {
     if (fabs(edgeProjectionCache_[k]) > 1.0e-10) {
       isNonzeroLocal = 1;
       break;
@@ -103,7 +103,7 @@ double
 ExplicitValues::
 getEdgeProjection(const unsigned int edgeIndex,
                   const std::map<std::string, double> & params
-                 ) const
+                ) const
 {
   std::map<std::string, double>::const_iterator it = params.find("mu");
   TEUCHOS_ASSERT(it != params.end());
@@ -115,7 +115,7 @@ ExplicitValues::
 getDEdgeProjectionDp(const unsigned int edgeIndex,
                      const std::map<std::string, double> & params,
                      const std::string & dParamName
-                    ) const
+                   ) const
 {
   (void) params;
   if (dParamName.compare("mu") == 0)

@@ -39,7 +39,7 @@ public:
            const double c,
            const std::string & param1Name = "",
            const double param1InitValue = 0.0
-          );
+         );
 
   Epetra_Vector
   createPInit_(const Epetra_Map & map);
@@ -54,13 +54,13 @@ public:
   virtual
   const Epetra_Vector
   getV(const std::map<std::string,double> & params
-      ) const;
+     ) const;
 
   virtual
   const Epetra_Vector
   getdVdP(const std::map<std::string,double> & params,
           const std::string & paramName
-         ) const;
+        ) const;
 
 protected:
 private:

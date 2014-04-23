@@ -95,7 +95,7 @@ Keo::
 apply(const std::map<std::string, double> & params,
       const Epetra_Vector &X,
       Epetra_Vector &Y
-     ) const
+    ) const
 {
   // Check if the relevant parameters from the previous build have changed.
   bool needsRebuild;
@@ -159,7 +159,7 @@ void
 Keo::
 fill(Epetra_FECrsMatrix &matrix,
      const std::map<std::string, double> & params
-   ) const
+    ) const
 {
   // Cache the construction of the KEO.
   // This is useful because in the continuation context,
@@ -199,7 +199,7 @@ fill(Epetra_FECrsMatrix &matrix,
   return;
 }
 // =============================================================================
-const std::map<std::string,double>
+const std::map<std::string, double>
 Keo::
 getInitialParameters() const
 {
@@ -274,18 +274,21 @@ buildKeoGraph_() const
   const Epetra_Map &noMap = *mesh_->getComplexNonOverlapMap();
   Epetra_FECrsGraph keoGraph(Copy, noMap, 0);
 
-  const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > edges =
+  const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*, 2> > edges =
     mesh_->getEdgeNodes();
   if (!globalIndexCacheUpToDate_)
     this->buildGlobalIndexCache_(edges);
 
   // Loop over all edges and put entries wherever two nodes are connected.
-  for (Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> >::size_type k = 0;
+  for (Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*, 2> >::size_type k = 0;
        k < edges.size();
        k++)
-    TEUCHOS_ASSERT_EQUALITY(0,
-                             keoGraph.InsertGlobalIndices(4, globalIndexCache_[k].Values(),
-                                 4, globalIndexCache_[k].Values()));
+    TEUCHOS_ASSERT_EQUALITY(
+        0,
+        keoGraph.InsertGlobalIndices(4, globalIndexCache_[k].Values(),
+                                     4, globalIndexCache_[k].Values()
+                                     )
+        );
 
   // Make sure that domain and range map are non-overlapping (to make sure that
   // states psi can compute norms) and equal (to make sure that the matrix works
@@ -338,7 +341,7 @@ Keo::
 fillKeo_(Epetra_FECrsMatrix &keoMatrix,
          const std::map<std::string, double> & params,
          void (Keo::*filler)(const int, const std::map<std::string, double> &, double*) const
-        ) const
+       ) const
 {
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   Teuchos::TimeMonitor tm(*keoFillTime_);
@@ -357,7 +360,7 @@ fillKeo_(Epetra_FECrsMatrix &keoMatrix,
   TEUCHOS_ASSERT(!mvp_.is_null());
 #endif
 
-  const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > edges =
+  const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*, 2> > edges =
     mesh_->getEdgeNodes();
   if (!globalIndexCacheUpToDate_)
     this->buildGlobalIndexCache_(edges);
@@ -367,7 +370,7 @@ fillKeo_(Epetra_FECrsMatrix &keoMatrix,
   double v[3];
   Epetra_SerialDenseMatrix A(4, 4);
   // Loop over all edges.
-  for (Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> >::size_type k = 0;
+  for (Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*, 2> >::size_type k = 0;
        k < edges.size();
        k++) {
     // ---------------------------------------------------------------
@@ -397,7 +400,7 @@ fillKeo_(Epetra_FECrsMatrix &keoMatrix,
     v[1] *= alphaCache_[k];
     v[2] *= alphaCache_[k];
     A(0, 0) = v[2];
-    A(0 ,1) = 0.0;
+    A(0, 1) = 0.0;
     A(0, 2) = v[0];
     A(0, 3) = v[1];
     A(1, 0) = 0.0;
@@ -412,8 +415,10 @@ fillKeo_(Epetra_FECrsMatrix &keoMatrix,
     A(3 ,1) = v[0];
     A(3, 2) = 0.0;
     A(3, 3) = v[2];
-    TEUCHOS_ASSERT_EQUALITY(0, keoMatrix.SumIntoGlobalValues(
-                              globalIndexCache_[k], A));
+    TEUCHOS_ASSERT_EQUALITY(
+        0,
+        keoMatrix.SumIntoGlobalValues(globalIndexCache_[k], A)
+        );
     // -------------------------------------------------------------------
   }
 
@@ -424,13 +429,15 @@ fillKeo_(Epetra_FECrsMatrix &keoMatrix,
 // =============================================================================
 void
 Keo::
-buildGlobalIndexCache_(const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > &edges) const
+buildGlobalIndexCache_(
+    const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*, 2> > &edges
+    ) const
 {
   globalIndexCache_ =
     Teuchos::ArrayRCP<Epetra_IntSerialDenseVector>(edges.size());
 
-  Teuchos::Tuple<int,2> gid;
-  for (Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> >::size_type k = 0;
+  Teuchos::Tuple<int, 2> gid;
+  for (Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*, 2> >::size_type k = 0;
        k < edges.size();
        k++) {
     gid[0] = edges[k][0]->identifier() - 1;
@@ -450,9 +457,10 @@ buildGlobalIndexCache_(const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2>
 // =============================================================================
 void
 Keo::
-buildAlphaCache_(const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > & edges,
-                 const Teuchos::ArrayRCP<const double> &edgeCoefficients
-               ) const
+buildAlphaCache_(
+    const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*, 2> > & edges,
+    const Teuchos::ArrayRCP<const double> &edgeCoefficients
+    ) const
 {
   // This routine serves the one and only purpose of caching the
   // thickness average. The cache is used in every call to this->fill().
@@ -464,7 +472,7 @@ buildAlphaCache_(const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > & e
   // map here.
   alphaCache_ = Teuchos::ArrayRCP<double>(edges.size());
 
-  std::map<std::string,double> dummy;
+  std::map<std::string, double> dummy;
   const Epetra_Vector thicknessValues = thickness_->getV(dummy);
 
   Teuchos::RCP<const Epetra_Map> overlapMap = mesh_->getNodesOverlapMap();
@@ -476,12 +484,14 @@ buildAlphaCache_(const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > & e
   // would only be set on one processor.
   Epetra_Vector thicknessOverlap(*overlapMap);
   Epetra_Import importer(*overlapMap, thicknessValues.Map());
-  TEUCHOS_ASSERT_EQUALITY(0,
-                          thicknessOverlap.Import(thicknessValues, importer, Insert));
+  TEUCHOS_ASSERT_EQUALITY(
+      0,
+      thicknessOverlap.Import(thicknessValues, importer, Insert)
+      );
 
-  Teuchos::Tuple<int,2> gid;
-  Teuchos::Tuple<int,2> lid;
-  for (Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> >::size_type k = 0;
+  Teuchos::Tuple<int, 2> gid;
+  Teuchos::Tuple<int, 2> lid;
+  for (Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*, 2> >::size_type k = 0;
        k < edges.size();
        k++) {
     // Get the ID of the edge endpoints in the map of
@@ -493,7 +503,7 @@ buildAlphaCache_(const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > & e
         lid[0] < 0,
         "The global index " << gid[0]
         << " does not seem to be present on this node."
-        );
+       );
 #endif
     gid[1] = edges[k][1]->identifier() - 1;
     lid[1] = overlapMap->LID(gid[1]);
@@ -502,7 +512,7 @@ buildAlphaCache_(const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > & e
         lid[1] < 0,
         "The global index " << gid[1]
         << " does not seem to be present on this node."
-        );
+       );
 #endif
     // Update cache.
     alphaCache_[k] = edgeCoefficients[k]
@@ -514,5 +524,5 @@ buildAlphaCache_(const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > & e
   return;
 }
 // =============================================================================
-} // namespace MatrixBuilder
-} // namespace Nosh
+}  // namespace MatrixBuilder
+}  // namespace Nosh
