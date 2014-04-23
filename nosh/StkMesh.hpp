@@ -78,7 +78,7 @@ private:
 
   struct EdgesContainer {
     //! Local edge ID -> Global node IDs.
-    Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > edgeNodes;
+    Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*, 2> > edgeNodes;
     //! Local cell ID -> Local edge IDs.
     Teuchos::ArrayRCP<Teuchos::ArrayRCP<int> > cellEdges;
   };
@@ -146,7 +146,7 @@ public:
   std::vector<stk::mesh::Entity*>
   getOverlapEdges() const;
 
-  const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> >
+  const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*, 2> >
   getEdgeNodes() const;
 
   std::vector<stk::mesh::Entity*>
@@ -272,7 +272,7 @@ private:
                       const DoubleVector &other1
                    ) const;
 
-  Teuchos::Tuple<unsigned int,2>
+  Teuchos::Tuple<unsigned int, 2>
   getOtherIndices_(unsigned int e0, unsigned int e1) const;
 
   DoubleVector
@@ -349,8 +349,8 @@ class TupleComp
 {
 public:
   bool
-  operator()(const Teuchos::Tuple<stk::mesh::Entity*,2>& a,
-             const Teuchos::Tuple<stk::mesh::Entity*,2>& b
+  operator()(const Teuchos::Tuple<stk::mesh::Entity*, 2>& a,
+             const Teuchos::Tuple<stk::mesh::Entity*, 2>& b
            ) const {
     for (unsigned int k = 0; k < 2; k++) {
       if (a[k]->identifier() < b[k]->identifier())

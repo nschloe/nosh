@@ -227,7 +227,7 @@ buildKeoGraph_() const
   //   [       ]   [   1 2 ].
   // The vectors always need to have a unique map (otherwise, norms
   // cannot be computed by Epetra), so let's assume they have the
-  // map ([1,2], [3]).
+  // map ([1, 2], [3]).
   // The communucation for a matrix-vector multiplication Ax=y
   // needs to be:
   //
@@ -293,7 +293,7 @@ buildKeoGraph_() const
   // Make sure that domain and range map are non-overlapping (to make sure that
   // states psi can compute norms) and equal (to make sure that the matrix works
   // with ML).
-  TEUCHOS_ASSERT_EQUALITY(0, keoGraph.GlobalAssemble(noMap,noMap));
+  TEUCHOS_ASSERT_EQUALITY(0, keoGraph.GlobalAssemble(noMap, noMap));
 
   return keoGraph;
 }

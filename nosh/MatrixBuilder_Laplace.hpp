@@ -103,10 +103,10 @@ private:
   fill_(Epetra_FECrsMatrix &matrix) const;
 
   void
-  buildGlobalIndexCache_(const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > &edges) const;
+  buildGlobalIndexCache_(const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*, 2> > &edges) const;
 
   void
-  buildAlphaCache_(const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > & edges,
+  buildAlphaCache_(const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*, 2> > & edges,
                    const Teuchos::ArrayRCP<const double> &edgeCoefficients
                  ) const;
 

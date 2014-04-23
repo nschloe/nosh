@@ -491,7 +491,7 @@ field2vector_(const VectorFieldType &field,
     // A multivector isn't actually a good data structure for this.
     // What would be needed is a vector where each entry has k
     // components. This way, the data could stick together.
-    for (int i=0; i<numComponents; i++)
+    for (int i = 0; i < numComponents; i++)
       (*vector)[i][k] = vals[i];
   }
 
@@ -501,7 +501,7 @@ field2vector_(const VectorFieldType &field,
   // Use NormInf as it's robust against overlapping maps.
   TEUCHOS_ASSERT_EQUALITY(0, vector->NormInf(&r[0]));
   bool makesSense = true;
-  for (int i=0; i<numComponents; i++) {
+  for (int i = 0; i < numComponents; i++) {
     if (r[i]!=r[i] || r[i]>1.0e100) {
       makesSense = false;
       break;
@@ -739,7 +739,7 @@ getOverlapEdges() const
   return edges;
 }
 // =============================================================================
-const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> >
+const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*, 2> >
 StkMesh::
 getEdgeNodes() const
 {
@@ -765,7 +765,7 @@ StkMesh::
 getVectorFieldNonconst(const stk::mesh::Entity * nodeEntity,
                        const std::string & fieldName,
                        const int numDims
-                     ) const
+                      ) const
 {
   const VectorFieldType * const field =
     meshDataContainer_.metaData.get_field<VectorFieldType>(fieldName);
@@ -875,7 +875,7 @@ createEntitiesMap_(const std::vector<stk::mesh::Entity*> &entityList) const
 {
   const int numEntities = entityList.size();
   Teuchos::Array<int> gids(numEntities);
-  for (int i=0; i < numEntities; i++)
+  for (int i = 0; i < numEntities; i++)
     gids[i] = entityList[i]->identifier() - 1;
 
   return Teuchos::rcp(new Epetra_Map(-1, numEntities, gids.getRawPtr(), 0, comm_));
@@ -910,7 +910,7 @@ getNumEdgesPerCell(unsigned int cellDimension) const
   // In n-simplices, all nodes are connected with all other nodesMap.
   // Hence, numEdges==sum_{i=1}^(numLocalNodes-1) i.
   unsigned int numEdgesPerCell = 0;
-  for (unsigned int i=1; i<cellDimension+1; i++)
+  for (unsigned int i = 1; i < cellDimension+1; i++)
     numEdgesPerCell += i;
 
   return numEdgesPerCell;
@@ -928,7 +928,7 @@ computeEdgeCoefficients_() const
   std::vector<stk::mesh::Entity*> cells = this->getOwnedCells();
   unsigned int numCells = cells.size();
 
-  Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> >::size_type numEdges =
+  Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*, 2> >::size_type numEdges =
     edgeData_.edgeNodes.size();
 
   Teuchos::ArrayRCP<double> edgeCoefficients(numEdges);
@@ -938,7 +938,7 @@ computeEdgeCoefficients_() const
     // Get edge coordinates.
     unsigned int numLocalEdges = edgeData_.cellEdges[k].size();
     Teuchos::ArrayRCP<DoubleVector> localEdgeCoords(numLocalEdges);
-    for (unsigned int i=0; i<numLocalEdges; i++) {
+    for (unsigned int i = 0; i < numLocalEdges; i++) {
       localEdgeCoords[i] = this->getVectorFieldNonconst(edgeData_.edgeNodes[edgeData_.cellEdges[k][i]][1],
                            "coordinates",
                            3);
@@ -950,7 +950,7 @@ computeEdgeCoefficients_() const
     DoubleVector edgeCoeffs = getEdgeCoefficientsNumerically_(localEdgeCoords);
 
     // Fill the edge coefficients into the vector.
-    for (unsigned int i=0; i<numLocalEdges; i++)
+    for (unsigned int i = 0; i < numLocalEdges; i++)
       edgeCoefficients[edgeData_.cellEdges[k][i]] += edgeCoeffs[i];
   }
 
@@ -990,7 +990,7 @@ getEdgeCoefficientsNumerically_(
     break;
   default:
     TEUCHOS_TEST_FOR_EXCEPT_MSG(true,
-                                 "Can only handle triangles and tetrahedra.");
+                                "Can only handle triangles and tetrahedra.");
   }
 
   Teuchos::RCP<Teuchos::SerialSymDenseMatrix<int, double> > A =
@@ -1010,16 +1010,16 @@ getEdgeCoefficientsNumerically_(
   //
   // Only fill the upper part of the Hermitian matrix.
   //
-  for (int i=0; i<numEdges; i++) {
+  for (int i = 0; i < numEdges; i++) {
     (*rhs)(i) = vol * edges[i].dot(edges[i]);
-    for (int j=i; j<numEdges; j++)
-      (*A)(i,j) = edges[i].dot(edges[j]) * edges[j].dot(edges[i]);
+    for (int j = i; j < numEdges; j++)
+      (*A)(i, j) = edges[i].dot(edges[j]) * edges[j].dot(edges[i]);
   }
 
   // Solve the equation system for the alpha_i.
   // The system is symmetric and, if the simplex is
   // not degenerate, positive definite.
-  Teuchos::SerialSpdDenseSolver<int,double> solver;
+  Teuchos::SerialSpdDenseSolver<int, double> solver;
   TEUCHOS_ASSERT_EQUALITY(0, solver.setMatrix(A));
   TEUCHOS_ASSERT_EQUALITY(0, solver.setVectors(alpha, rhs));
   if (solver.shouldEquilibrate()) {
@@ -1036,7 +1036,7 @@ getEdgeCoefficientsNumerically_(
     Teuchos::RCP<DoubleVector> diagA =
       Teuchos::rcp(new DoubleVector(numEdges));
     for (int k = 0; k < numEdges; k++)
-      (*diagA)(k) = (*A)(k,k);
+      (*diagA)(k) = (*A)(k, k);
     TEUCHOS_ASSERT_EQUALITY(0, solver.equilibrateMatrix());
     TEUCHOS_ASSERT_EQUALITY(0, solver.solve());
     for (int k = 0; k < numEdges; k++)
@@ -1121,7 +1121,7 @@ computeControlVolumesTri_(const Teuchos::RCP<Epetra_Vector> & cvOverlap) const
     //const Teuchos::ArrayRCP<const DoubleVector> localNodeCoords =
     //this->getNodeCoordinates_(localNodes);
     Teuchos::ArrayRCP<DoubleVector> localNodeCoords(numLocalNodes);
-    for (unsigned int i=0; i<numLocalNodes; i++)
+    for (unsigned int i = 0; i < numLocalNodes; i++)
       localNodeCoords[i] = this->getVectorFieldNonconst(localNodes[i].entity(),
                            "coordinates", 3);
 
@@ -1131,14 +1131,14 @@ computeControlVolumesTri_(const Teuchos::RCP<Epetra_Vector> & cvOverlap) const
 
     // Iterate over the edges.
     // As true edge entities are not available here, loop over all pairs of local nodes.
-    for (unsigned int e0=0; e0<numLocalNodes; e0++) {
+    for (unsigned int e0 = 0; e0 < numLocalNodes; e0++) {
       const DoubleVector &x0 = localNodeCoords[e0];
       const int gid0 = (*localNodes[e0].entity()).identifier() - 1;
       const int lid0 = nodesOverlapMap_->LID(gid0);
 #ifndef NDEBUG
       TEUCHOS_ASSERT_INEQUALITY(lid0, >=, 0);
 #endif
-      for (unsigned int e1=e0+1; e1<numLocalNodes; e1++) {
+      for (unsigned int e1 = e0+1; e1 < numLocalNodes; e1++) {
         const DoubleVector &x1 = localNodeCoords[e1];
         const int gid1 = (*localNodes[e1].entity()).identifier() - 1;
         const int lid1 = nodesOverlapMap_->LID(gid1);
@@ -1146,7 +1146,7 @@ computeControlVolumesTri_(const Teuchos::RCP<Epetra_Vector> & cvOverlap) const
         TEUCHOS_ASSERT_INEQUALITY(lid1, >=, 0);
 #endif
         // Get the other node.
-        Teuchos::Tuple<unsigned int,2> other = this->getOtherIndices_(e0, e1);
+        Teuchos::Tuple<unsigned int, 2> other = this->getOtherIndices_(e0, e1);
 
         double edgeLength = this->norm2_(this->add_(1.0, x1, -1.0, x0));
 
@@ -1199,7 +1199,7 @@ computeControlVolumesTet_(const Teuchos::RCP<Epetra_Vector> & cvOverlap) const
 
     // Fetch the nodal positions into 'localNodes'.
     Teuchos::ArrayRCP<DoubleVector> localNodeCoords(numLocalNodes);
-    for (unsigned int i=0; i<numLocalNodes; i++)
+    for (unsigned int i = 0; i < numLocalNodes; i++)
       localNodeCoords[i] = this->getVectorFieldNonconst(localNodes[i].entity(),
                            "coordinates", 3);
 
@@ -1208,15 +1208,16 @@ computeControlVolumesTet_(const Teuchos::RCP<Epetra_Vector> & cvOverlap) const
       this->computeTetrahedronCircumcenter_(localNodeCoords);
 
     // Iterate over the edges.
-    // As true edge entities are not available here, loop over all pairs of local nodes.
-    for (unsigned int e0=0; e0<numLocalNodes; e0++) {
+    // As true edge entities are not available here, loop over all pairs of
+    // local nodes.
+    for (unsigned int e0 = 0; e0 < numLocalNodes; e0++) {
       const DoubleVector &x0 = localNodeCoords[e0];
       const int gid0 = (*localNodes[e0].entity()).identifier() - 1;
       const int lid0 = nodesOverlapMap_->LID(gid0);
 #ifndef NDEBUG
       TEUCHOS_ASSERT_INEQUALITY(lid0, >=, 0);
 #endif
-      for (unsigned int e1=e0+1; e1<numLocalNodes; e1++) {
+      for (unsigned int e1 = e0+1; e1 < numLocalNodes; e1++) {
         const DoubleVector &x1 = localNodeCoords[e1];
         const int gid1 = (*localNodes[e1].entity()).identifier() - 1;
         const int lid1 = nodesOverlapMap_->LID(gid1);
@@ -1225,7 +1226,7 @@ computeControlVolumesTet_(const Teuchos::RCP<Epetra_Vector> & cvOverlap) const
 #endif
 
         // Get the other nodes.
-        Teuchos::Tuple<unsigned int,2> other = this->getOtherIndices_(e0, e1);
+        Teuchos::Tuple<unsigned int, 2> other = this->getOtherIndices_(e0, e1);
 
         double edgeLength = this->norm2_(this->add_(1.0, x1, -1.0, x0));
 
@@ -1347,13 +1348,13 @@ computeCovolume3d_(const DoubleVector &cc,
   return covolume;
 }
 // =============================================================================
-Teuchos::Tuple<unsigned int,2>
+Teuchos::Tuple<unsigned int, 2>
 StkMesh::
 getOtherIndices_(unsigned int e0, unsigned int e1) const
 {
-  // Get the two indices in [0,1,2,3] which are not e0, e1.
+  // Get the two indices in [0,1, 2,3] which are not e0, e1.
   unsigned int count = 0;
-  Teuchos::Tuple<unsigned int,2> otherInd;
+  Teuchos::Tuple<unsigned int, 2> otherInd;
   for (unsigned int k = 0; k < 4; k++) {
     if (k != e0 && k != e1)
       otherInd[count++] = k;
@@ -1547,7 +1548,7 @@ StkMesh::
 norm2_(const DoubleVector &x
      ) const
 {
-  return sqrt(this->dot_(x,x));
+  return sqrt(this->dot_(x, x));
 }
 // =============================================================================
 double
@@ -1567,7 +1568,7 @@ createEdgeData_()
 
   StkMesh::EdgesContainer edgeData = {
     // Local edge ID -> Global node IDs.
-    Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> >(),
+    Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*, 2> >(),
     // Local cell ID -> Local edge IDs.
     Teuchos::ArrayRCP<Teuchos::ArrayRCP<int> >(numLocalCells)
   };
@@ -1578,11 +1579,11 @@ createEdgeData_()
   // Unfortunately, Teuchos::Tuples can't be compared with '<'. Provide a
   // function pointer that implements lexicographic comparison.
   // See http://www.cplusplus.com/reference/stl/map/map/.
-  std::map<Teuchos::Tuple<stk::mesh::Entity*,2>,int,TupleComp> nodesEdge;
+  std::map<Teuchos::Tuple<stk::mesh::Entity*, 2>, int, TupleComp> nodesEdge;
 
   // Loop over all owned cells.
   unsigned int edgeLID = 0;
-  for (unsigned int cellLID=0; cellLID<numLocalCells; cellLID++) {
+  for (unsigned int cellLID = 0; cellLID < numLocalCells; cellLID++) {
     // Loop over all pairs of local nodes.
     stk::mesh::PairIterRelation nodesIterator =
       cells[cellLID]->relations(meshDataContainer_.metaData.node_rank());
@@ -1606,22 +1607,21 @@ createEdgeData_()
     // In a simplex, the edges are exactly the connection between each pair
     // of nodes. Hence, loop over pairs of nodes.
     unsigned int edgeIndex = 0;
-    Teuchos::Tuple<stk::mesh::Entity*,2> edgeNodes;
-    for (unsigned int e0=0; e0<numLocalNodes; e0++) {
+    Teuchos::Tuple<stk::mesh::Entity*, 2> edgeNodes;
+    for (unsigned int e0 = 0; e0 < numLocalNodes; e0++) {
       edgeNodes[0] = nodes[e0];
-      for (unsigned int e1=e0+1; e1<numLocalNodes; e1++) {
+      for (unsigned int e1 = e0+1; e1 < numLocalNodes; e1++) {
         edgeNodes[1] = nodes[e1];
         // As nodes are sorted and by their identifiers, edgeNodes are sorted
         // too. This is necessary as otherwise the edge {3,7} could not be
         // identified as {7,3}.
-
         // Check if edgeNodes is in the map.
-        std::map<Teuchos::Tuple<stk::mesh::Entity*,2>,int,TupleComp>::iterator it =
+        std::map<Teuchos::Tuple<stk::mesh::Entity*, 2>,int,TupleComp>::iterator it =
           nodesEdge.find(edgeNodes);
         if (it != nodesEdge.end()) {
           // Edge is already accounted for.
           edgeData.cellEdges[cellLID][edgeIndex] = it->second;
-        } else { // Edge not found -- insert it.
+        } else {  // Edge not found -- insert it.
           nodesEdge[edgeNodes] = edgeLID; // for householding in this method
           edgeData.edgeNodes.append(edgeNodes); // for looping over edges
           edgeData.cellEdges[cellLID][edgeIndex] = edgeLID; // for this->computeEdgeCoefficients_
@@ -1635,4 +1635,4 @@ createEdgeData_()
   return edgeData;
 }
 // =============================================================================
-} // namespace Nosh
+}  // namespace Nosh
