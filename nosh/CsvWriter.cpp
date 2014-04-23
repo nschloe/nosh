@@ -19,6 +19,8 @@
 // @HEADER
 #include "nosh/CsvWriter.hpp"
 
+#include <string>
+
 namespace Nosh
 {
 // ============================================================================

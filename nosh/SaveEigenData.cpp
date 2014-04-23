@@ -20,6 +20,8 @@
 // =============================================================================
 #include "nosh/SaveEigenData.hpp"
 
+#include <string>
+
 #include "nosh/ModelEvaluator_Virtual.hpp"
 
 #include <NOX_Abstract_MultiVector.H>

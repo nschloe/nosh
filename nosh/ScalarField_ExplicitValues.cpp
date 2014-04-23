@@ -19,9 +19,13 @@
 // @HEADER
 
 #include "nosh/ScalarField_ExplicitValues.hpp"
-#include "nosh/StkMesh.hpp"
+
+#include <map>
+#include <string>
 
 #include <Epetra_Vector.h>
+
+#include "nosh/StkMesh.hpp"
 
 namespace Nosh
 {

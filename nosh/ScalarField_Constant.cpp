@@ -20,6 +20,9 @@
 
 #include "nosh/ScalarField_Constant.hpp"
 
+#include <map>
+#include <string>
+
 #include <Epetra_Vector.h>
 #include <Epetra_Map.h>
 

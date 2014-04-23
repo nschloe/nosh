@@ -20,6 +20,9 @@
 
 #include "nosh/ModelEvaluator_Bordered.hpp"
 
+#include <string>
+#include <vector>
+
 #include "nosh/BorderingHelpers.hpp"
 #include "nosh/BorderedOperator.hpp"
 

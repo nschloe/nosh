@@ -20,6 +20,10 @@
 // =============================================================================
 // includes
 #include "nosh/MatrixBuilder_Keo.hpp"
+
+#include <map>
+#include <string>
+
 #include "nosh/StkMesh.hpp"
 #include "nosh/ScalarField_Virtual.hpp"
 #include "nosh/VectorField_Virtual.hpp"
@@ -46,20 +50,20 @@ Keo(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
     const Teuchos::RCP<const Nosh::VectorField::Virtual> &mvp
    ) :
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
-  keoFillTime_( Teuchos::TimeMonitor::getNewTimer(
-                  "Nosh: Keo::fillKeo_" ) ),
+  keoFillTime_(Teuchos::TimeMonitor::getNewTimer(
+                  "Nosh: Keo::fillKeo_")),
 #endif
-  mesh_( mesh ),
-  thickness_( thickness ),
-  mvp_( mvp ),
+  mesh_(mesh),
+  thickness_(thickness),
+  mvp_(mvp),
   globalIndexCache_(),
-  globalIndexCacheUpToDate_( false ),
+  globalIndexCacheUpToDate_(false),
   keoGraph_(this->buildKeoGraph_()), // build the graph immediately
   keoCache_(Copy, keoGraph_),
   keoBuildParameters_(),
   keoDpCache_(Copy, keoGraph_),
   alphaCache_(),
-  alphaCacheUpToDate_( false ),
+  alphaCacheUpToDate_(false),
   paramName_()
 {
 }
@@ -74,7 +78,7 @@ Keo::
 getComm() const
 {
 #ifndef NDEBUG
-  TEUCHOS_ASSERT( !mesh_.is_null() );
+  TEUCHOS_ASSERT(!mesh_.is_null());
 #endif
   return mesh_->getComm();
 }
@@ -155,7 +159,7 @@ void
 Keo::
 fill(Epetra_FECrsMatrix &matrix,
      const std::map<std::string, double> & params
-    ) const
+   ) const
 {
   // Cache the construction of the KEO.
   // This is useful because in the continuation context,
@@ -223,7 +227,7 @@ buildKeoGraph_() const
   //   [       ]   [   1 2 ].
   // The vectors always need to have a unique map (otherwise, norms
   // cannot be computed by Epetra), so let's assume they have the
-  // map ( [1,2], [3] ).
+  // map ([1,2], [3]).
   // The communucation for a matrix-vector multiplication Ax=y
   // needs to be:
   //
@@ -265,21 +269,21 @@ buildKeoGraph_() const
   // OperatorRangeMap and OperatorDomainMap must coincide too.
   //
 #ifndef NDEBUG
-  TEUCHOS_ASSERT( !mesh_.is_null() );
+  TEUCHOS_ASSERT(!mesh_.is_null());
 #endif
   const Epetra_Map &noMap = *mesh_->getComplexNonOverlapMap();
   Epetra_FECrsGraph keoGraph(Copy, noMap, 0);
 
   const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > edges =
     mesh_->getEdgeNodes();
-  if ( !globalIndexCacheUpToDate_ )
-    this->buildGlobalIndexCache_( edges );
+  if (!globalIndexCacheUpToDate_)
+    this->buildGlobalIndexCache_(edges);
 
   // Loop over all edges and put entries wherever two nodes are connected.
   for (Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> >::size_type k = 0;
        k < edges.size();
        k++)
-    TEUCHOS_ASSERT_EQUALITY( 0,
+    TEUCHOS_ASSERT_EQUALITY(0,
                              keoGraph.InsertGlobalIndices(4, globalIndexCache_[k].Values(),
                                  4, globalIndexCache_[k].Values()));
 
@@ -308,7 +312,7 @@ fillerRegular_(const int k,
   v[0] = -cos(aInt);
   v[1] = -sin(aInt);
   v[2] = 1.0;
-  //sincos( aInt, &sinAInt, &cosAInt );
+  //sincos(aInt, &sinAInt, &cosAInt);
 
   return;
 }
@@ -322,7 +326,7 @@ fillerDp_(const int k,
   double aInt = mvp_->getEdgeProjection(k, params);
   // paramName_ is set in the KEO building routine.
   double dAdPInt = mvp_->getDEdgeProjectionDp(k, params, paramName_);
-  //sincos( aInt, &sinAInt, &cosAInt );
+  //sincos(aInt, &sinAInt, &cosAInt);
   v[0] =  dAdPInt * sin(aInt);
   v[1] = -dAdPInt * cos(aInt);
   v[2] = 0.0;
@@ -337,27 +341,27 @@ fillKeo_(Epetra_FECrsMatrix &keoMatrix,
         ) const
 {
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
-  Teuchos::TimeMonitor tm( *keoFillTime_ );
+  Teuchos::TimeMonitor tm(*keoFillTime_);
 #endif
   // Zero-out the matrix.
   TEUCHOS_ASSERT_EQUALITY(0, keoMatrix.PutScalar(0.0));
 
 #ifndef NDEBUG
-  TEUCHOS_ASSERT( !mesh_.is_null() );
+  TEUCHOS_ASSERT(!mesh_.is_null());
 #endif
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   // Loop over the cells, create local load vector and mass matrix,
   // and insert them into the global matrix.
 #ifndef NDEBUG
-  TEUCHOS_ASSERT( !thickness_.is_null() );
-  TEUCHOS_ASSERT( !mvp_.is_null() );
+  TEUCHOS_ASSERT(!thickness_.is_null());
+  TEUCHOS_ASSERT(!mvp_.is_null());
 #endif
 
   const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > edges =
     mesh_->getEdgeNodes();
-  if ( !globalIndexCacheUpToDate_ )
-    this->buildGlobalIndexCache_( edges );
-  if ( !alphaCacheUpToDate_ )
+  if (!globalIndexCacheUpToDate_)
+    this->buildGlobalIndexCache_(edges);
+  if (!alphaCacheUpToDate_)
     this->buildAlphaCache_(edges, mesh_->getEdgeCoefficients());
 
   double v[3];
@@ -373,7 +377,7 @@ fillKeo_(Epetra_FECrsMatrix &keoMatrix,
     //
     // numerically by the midpoint rule, i.e.,
     //
-    //    I ~ |xj-x0| * (xj-x0) . A( 0.5*(xj+x0) ) / |xj-x0|.
+    //    I ~ |xj-x0| * (xj-x0) . A(0.5*(xj+x0)) / |xj-x0|.
     //
     // -------------------------------------------------------------------
     // Project vector field onto the edge.
@@ -383,8 +387,8 @@ fillKeo_(Epetra_FECrsMatrix &keoMatrix,
     (this->*filler)(k, params, v);
     // We'd like to insert the 2x2 matrix
     //
-    //     [   alpha                   , - alpha * exp( -IM * aInt ) ]
-    //     [ - alpha * exp( IM * aInt ),   alpha                       ]
+    //     [   alpha                   , - alpha * exp(-IM * aInt) ]
+    //     [ - alpha * exp(IM * aInt),   alpha                       ]
     //
     // at the indices   [ nodeIndices[0], nodeIndices[1] ] for every index pair
     // that shares and edge.
@@ -414,13 +418,13 @@ fillKeo_(Epetra_FECrsMatrix &keoMatrix,
   }
 
   // calls FillComplete by default
-  TEUCHOS_ASSERT_EQUALITY( 0, keoMatrix.GlobalAssemble() );
+  TEUCHOS_ASSERT_EQUALITY(0, keoMatrix.GlobalAssemble());
   return;
 }
 // =============================================================================
 void
 Keo::
-buildGlobalIndexCache_( const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > &edges ) const
+buildGlobalIndexCache_(const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > &edges) const
 {
   globalIndexCache_ =
     Teuchos::ArrayRCP<Epetra_IntSerialDenseVector>(edges.size());
@@ -432,11 +436,11 @@ buildGlobalIndexCache_( const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2
     gid[0] = edges[k][0]->identifier() - 1;
     gid[1] = edges[k][1]->identifier() - 1;
 
-    globalIndexCache_[k] = Epetra_IntSerialDenseVector( 4 );
-    globalIndexCache_[k][0] = 2*gid[0];
-    globalIndexCache_[k][1] = 2*gid[0]+1;
-    globalIndexCache_[k][2] = 2*gid[1];
-    globalIndexCache_[k][3] = 2*gid[1]+1;
+    globalIndexCache_[k] = Epetra_IntSerialDenseVector(4);
+    globalIndexCache_[k][0] = 2 * gid[0];
+    globalIndexCache_[k][1] = 2 * gid[0] + 1;
+    globalIndexCache_[k][2] = 2 * gid[1];
+    globalIndexCache_[k][3] = 2 * gid[1] + 1;
   }
 
   globalIndexCacheUpToDate_ = true;
@@ -448,7 +452,7 @@ void
 Keo::
 buildAlphaCache_(const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > & edges,
                  const Teuchos::ArrayRCP<const double> &edgeCoefficients
-                ) const
+               ) const
 {
   // This routine serves the one and only purpose of caching the
   // thickness average. The cache is used in every call to this->fill().
@@ -458,7 +462,7 @@ buildAlphaCache_(const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > & e
   // of V are needed in an overlapping map.
   // Fair enough. Let's distribute the vales of V to an overlapping
   // map here.
-  alphaCache_ = Teuchos::ArrayRCP<double>( edges.size() );
+  alphaCache_ = Teuchos::ArrayRCP<double>(edges.size());
 
   std::map<std::string,double> dummy;
   const Epetra_Vector thicknessValues = thickness_->getV(dummy);
@@ -483,22 +487,26 @@ buildAlphaCache_(const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > & e
     // Get the ID of the edge endpoints in the map of
     // getV(). Well...
     gid[0] = edges[k][0]->identifier() - 1;
-    lid[0] = overlapMap->LID( gid[0] );
+    lid[0] = overlapMap->LID(gid[0]);
 #ifndef NDEBUG
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(lid[0] < 0,
-                                "The global index " << gid[0]
-                                << " does not seem to be present on this node.");
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(
+        lid[0] < 0,
+        "The global index " << gid[0]
+        << " does not seem to be present on this node."
+        );
 #endif
     gid[1] = edges[k][1]->identifier() - 1;
-    lid[1] = overlapMap->LID( gid[1] );
+    lid[1] = overlapMap->LID(gid[1]);
 #ifndef NDEBUG
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(lid[1] < 0,
-                                "The global index " << gid[1]
-                                << " does not seem to be present on this node.");
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(
+        lid[1] < 0,
+        "The global index " << gid[1]
+        << " does not seem to be present on this node."
+        );
 #endif
     // Update cache.
     alphaCache_[k] = edgeCoefficients[k]
-                     * 0.5 * (thicknessOverlap[lid[0]] + thicknessOverlap[lid[1]]);
+      * 0.5 * (thicknessOverlap[lid[0]] + thicknessOverlap[lid[1]]);
   }
 
   alphaCacheUpToDate_ = true;

@@ -20,6 +20,8 @@
 
 #include "nosh/Observer.hpp"
 
+#include <string>
+
 #include "nosh/ModelEvaluator_Virtual.hpp"
 #include "nosh/StkMesh.hpp"
 

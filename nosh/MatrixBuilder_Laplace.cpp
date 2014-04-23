@@ -20,6 +20,10 @@
 // =============================================================================
 // includes
 #include "nosh/MatrixBuilder_Laplace.hpp"
+
+#include <map>
+#include <string>
+
 #include "nosh/StkMesh.hpp"
 #include "nosh/ScalarField_Virtual.hpp"
 
@@ -41,20 +45,20 @@ namespace MatrixBuilder
 Laplace::
 Laplace(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
         const Teuchos::RCP<const Nosh::ScalarField::Virtual> &thickness
-       ) :
+      ) :
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
-  fillTime_( Teuchos::TimeMonitor::getNewTimer(
-               "Nosh: Laplace::fill_" ) ),
+  fillTime_(Teuchos::TimeMonitor::getNewTimer(
+               "Nosh: Laplace::fill_")),
 #endif
-  mesh_( mesh ),
-  thickness_( thickness ),
+  mesh_(mesh),
+  thickness_(thickness),
   globalIndexCache_(),
-  globalIndexCacheUpToDate_( false ),
+  globalIndexCacheUpToDate_(false),
   graph_(this->buildGraph_()), // build the graph immediately
   matrixCache_(Copy, graph_),
-  matrixCacheUpToDate_( false ),
+  matrixCacheUpToDate_(false),
   alphaCache_(),
-  alphaCacheUpToDate_( false )
+  alphaCacheUpToDate_(false)
 {
 }
 // =============================================================================
@@ -68,7 +72,7 @@ Laplace::
 getComm() const
 {
 #ifndef NDEBUG
-  TEUCHOS_ASSERT( !mesh_.is_null() );
+  TEUCHOS_ASSERT(!mesh_.is_null());
 #endif
   return mesh_->getComm();
 }
@@ -85,7 +89,7 @@ Laplace::
 apply(const std::map<std::string, double> &params,
       const Epetra_Vector &X,
       Epetra_Vector &Y
-     ) const
+    ) const
 {
   (void) params;
   // Rebuild if necessary.
@@ -106,7 +110,7 @@ applyDKDp(const std::map<std::string, double> &params,
           const std::string & paramName,
           const Epetra_Vector &X,
           Epetra_Vector &Y
-         ) const
+        ) const
 {
   (void) params;
   (void) paramName;
@@ -121,7 +125,7 @@ void
 Laplace::
 fill(Epetra_FECrsMatrix &matrix,
      const std::map<std::string, double> &params
-    ) const
+   ) const
 {
   (void) params;
   // Cache the construction of the Laplacian.
@@ -163,7 +167,7 @@ buildGraph_() const
   //   [       ]   [   1 2 ].
   // The vectors always need to have a unique map (otherwise, norms
   // cannot be computed by Epetra), so let's assume they have the
-  // map ( [1,2], [3] ).
+  // map ([1,2], [3]).
   // The communucation for a matrix-vector multiplication Ax=y
   // needs to be:
   //
@@ -205,23 +209,26 @@ buildGraph_() const
   // OperatorRangeMap and OperatorDomainMap must coincide too.
   //
 #ifndef NDEBUG
-  TEUCHOS_ASSERT( !mesh_.is_null() );
+  TEUCHOS_ASSERT(!mesh_.is_null());
 #endif
   const Epetra_Map &noMap = *mesh_->getComplexNonOverlapMap();
   Epetra_FECrsGraph graph(Copy, noMap, 0);
 
   const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > edges =
     mesh_->getEdgeNodes();
-  if ( !globalIndexCacheUpToDate_ )
-    this->buildGlobalIndexCache_( edges );
+  if (!globalIndexCacheUpToDate_)
+    this->buildGlobalIndexCache_(edges);
 
   // Loop over all edges and put entries wherever two nodes are connected.
   for (Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> >::size_type k = 0;
        k < edges.size();
        k++)
-    TEUCHOS_ASSERT_EQUALITY( 0,
-                             graph.InsertGlobalIndices(4, globalIndexCache_[k].Values(),
-                                 4, globalIndexCache_[k].Values()));
+    TEUCHOS_ASSERT_EQUALITY(
+        0,
+        graph.InsertGlobalIndices(
+          4, globalIndexCache_[k].Values(), 4, globalIndexCache_[k].Values()
+          )
+        );
 
   // Make sure that domain and range map are non-overlapping (to make sure that
   // states psi can compute norms) and equal (to make sure that the matrix works
@@ -236,27 +243,27 @@ Laplace::
 fill_(Epetra_FECrsMatrix &matrix) const
 {
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
-  Teuchos::TimeMonitor tm( *fillTime_ );
+  Teuchos::TimeMonitor tm(*fillTime_);
 #endif
   // Zero-out the matrix.
   TEUCHOS_ASSERT_EQUALITY(0, matrix.PutScalar(0.0));
 
 #ifndef NDEBUG
-  TEUCHOS_ASSERT( !mesh_.is_null() );
+  TEUCHOS_ASSERT(!mesh_.is_null());
 #endif
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   // Loop over the cells, create local load vector and mass matrix,
   // and insert them into the global matrix.
 #ifndef NDEBUG
-  TEUCHOS_ASSERT( !thickness_.is_null() );
+  TEUCHOS_ASSERT(!thickness_.is_null());
 #endif
 
   const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > edges =
     mesh_->getEdgeNodes();
-  if ( !globalIndexCacheUpToDate_ )
-    this->buildGlobalIndexCache_( edges );
-  if ( !alphaCacheUpToDate_ )
-    this->buildAlphaCache_( edges, mesh_->getEdgeCoefficients() );
+  if (!globalIndexCacheUpToDate_)
+    this->buildGlobalIndexCache_(edges);
+  if (!alphaCacheUpToDate_)
+    this->buildAlphaCache_(edges, mesh_->getEdgeCoefficients());
 
   Epetra_SerialDenseMatrix A(4, 4);
   // Loop over all edges.
@@ -294,13 +301,13 @@ fill_(Epetra_FECrsMatrix &matrix) const
   }
 
   // calls FillComplete by default
-  TEUCHOS_ASSERT_EQUALITY( 0, matrix.GlobalAssemble() );
+  TEUCHOS_ASSERT_EQUALITY(0, matrix.GlobalAssemble());
   return;
 }
 // =============================================================================
 void
 Laplace::
-buildGlobalIndexCache_( const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > &edges ) const
+buildGlobalIndexCache_(const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > &edges) const
 {
   globalIndexCache_ =
     Teuchos::ArrayRCP<Epetra_IntSerialDenseVector>(edges.size());
@@ -312,7 +319,7 @@ buildGlobalIndexCache_( const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2
     gid[0] = edges[k][0]->identifier() - 1;
     gid[1] = edges[k][1]->identifier() - 1;
 
-    globalIndexCache_[k] = Epetra_IntSerialDenseVector( 4 );
+    globalIndexCache_[k] = Epetra_IntSerialDenseVector(4);
     globalIndexCache_[k][0] = 2*gid[0];
     globalIndexCache_[k][1] = 2*gid[0]+1;
     globalIndexCache_[k][2] = 2*gid[1];
@@ -326,11 +333,11 @@ buildGlobalIndexCache_( const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2
 // =============================================================================
 void
 Laplace::
-buildAlphaCache_( const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > & edges,
+buildAlphaCache_(const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > & edges,
                   const Teuchos::ArrayRCP<const double> &edgeCoefficients
                 ) const
 {
-  alphaCache_ = Teuchos::ArrayRCP<double>( edges.size() );
+  alphaCache_ = Teuchos::ArrayRCP<double>(edges.size());
 
   std::map<std::string,double> dummy;
   const Epetra_Vector thicknessValues = thickness_->getV(dummy);
@@ -341,18 +348,18 @@ buildAlphaCache_( const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > & 
        k < edges.size();
        k++) {
     gid[0] = edges[k][0]->identifier() - 1;
-    lid[0] = mesh_->getNodesOverlapMap()->LID( gid[0] );
+    lid[0] = mesh_->getNodesOverlapMap()->LID(gid[0]);
 #ifndef NDEBUG
-    TEUCHOS_TEST_FOR_EXCEPT_MSG( lid[0] < 0,
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(lid[0] < 0,
                                  "The global index " << gid[0]
-                                 << " does not seem to be present on this node." );
+                                 << " does not seem to be present on this node.");
 #endif
     gid[1] = edges[k][1]->identifier() - 1;
-    lid[1] = mesh_->getNodesOverlapMap()->LID( gid[1] );
+    lid[1] = mesh_->getNodesOverlapMap()->LID(gid[1]);
 #ifndef NDEBUG
     TEUCHOS_TEST_FOR_EXCEPT_MSG(lid[1] < 0,
                                 "The global index " << gid[1]
-                                << " does not seem to be present on this node." );
+                                << " does not seem to be present on this node.");
 #endif
     alphaCache_[k] = edgeCoefficients[k]
                      * 0.5 * (thicknessValues[lid[0]] + thicknessValues[lid[1]]);

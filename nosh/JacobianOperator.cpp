@@ -19,13 +19,17 @@
 // @HEADER
 // =============================================================================
 #include "nosh/JacobianOperator.hpp"
-#include "nosh/MatrixBuilder_Virtual.hpp"
-#include "nosh/StkMesh.hpp"
-#include "nosh/ScalarField_Virtual.hpp"
+
+#include <map>
+#include <string>
 
 #include <Teuchos_ArrayRCP.hpp>
 #include <Epetra_Vector.h>
 #include <Epetra_Map.h>
+
+#include "nosh/MatrixBuilder_Virtual.hpp"
+#include "nosh/StkMesh.hpp"
+#include "nosh/ScalarField_Virtual.hpp"
 
 namespace Nosh
 {

@@ -28,6 +28,7 @@
 #include "nosh/StkMesh.hpp"
 
 #include <string>
+#include <map>
 
 #include <Epetra_Map.h>
 #include <Epetra_LocalMap.h>

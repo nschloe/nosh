@@ -20,6 +20,11 @@
 // =============================================================================
 #include "nosh/StkMesh.hpp"
 
+#include <map>
+#include <string>
+#include <algorithm>
+#include <vector>
+
 #include <Trilinos_version.h>
 
 #include <Epetra_Map.h>

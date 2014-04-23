@@ -20,6 +20,8 @@
 
 #include "nosh/BorderingHelpers.hpp"
 
+#include <vector>
+
 #include <Epetra_Comm.h>
 #include <Epetra_Import.h>
 
@@ -32,8 +34,7 @@ extendMapBy1(const Epetra_BlockMap & map)
 {
   const Epetra_Comm & comm = map.Comm();
   // Create a new map that hosts one more entry.
-  const int numGlobalElements = map.NumGlobalElements()
-                                + 1;
+  const int numGlobalElements = map.NumGlobalElements() + 1;
   const int numMyElements = map.NumMyElements();
   int * myGlobalElements = map.MyGlobalElements();
   // The following if-else construction just makes sure that
@@ -44,7 +45,7 @@ extendMapBy1(const Epetra_BlockMap & map)
   if (comm.MyPID() == 0) {
     // Copy over the global indices.
     std::vector<int> a(numMyElements+1);
-    for (int k=0; k<numMyElements; k++)
+    for (int k = 0; k < numMyElements; k++)
       a[k] = myGlobalElements[k];
     // Append one more.
     a[numMyElements] = map.NumGlobalElements();
@@ -88,7 +89,7 @@ merge(const Epetra_MultiVector & x,
   // Set last entry on proc 0.
   if (x.Map().Comm().MyPID() == 0) {
     const int numMyElems = x.Map().NumMyElements();
-    for (int k=0; k<x.NumVectors(); k++)
+    for (int k = 0; k < x.NumVectors(); k++)
       (*out(k))[numMyElems] = lambda[k];
   }
 
@@ -118,7 +119,7 @@ dissect(const Epetra_MultiVector & x,
   // TODO Check if we need lambda on all procs.
   if (x.Map().Comm().MyPID() == 0) {
     const int n = x.MyLength();
-    for (int k=0; k<x.NumVectors(); k++)
+    for (int k = 0; k < x.NumVectors(); k++)
       lambda[k] = (*(x(k)))[n - 1];
   }
 
