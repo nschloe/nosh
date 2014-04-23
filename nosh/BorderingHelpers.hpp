@@ -25,9 +25,11 @@
 #include <Epetra_Map.h>
 #include <Epetra_Vector.h>
 // =============================================================================
-namespace Nosh {
+namespace Nosh
+{
 
-namespace BorderingHelpers {
+namespace BorderingHelpers
+{
 
 Teuchos::RCP<const Epetra_Map>
 extendMapBy1(const Epetra_BlockMap & map);
@@ -36,13 +38,13 @@ void
 merge(const Epetra_MultiVector & x,
       const double * lambda,
       Epetra_MultiVector & out
-      );
+     );
 
 void
 dissect(const Epetra_MultiVector & x,
         Epetra_MultiVector & xSmall,
         double * lambda
-        );
+       );
 }
 }
 // =============================================================================

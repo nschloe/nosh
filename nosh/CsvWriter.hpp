@@ -22,41 +22,42 @@
 
 #include <Teuchos_ParameterList.hpp>
 
-namespace Nosh {
+namespace Nosh
+{
 
 class CsvWriter
 {
 public:
 
 //! Default constructor.
-CsvWriter(const std::string &fileName,
-          const std::string &delimeter = ","
-          );
+  CsvWriter(const std::string &fileName,
+            const std::string &delimeter = ","
+           );
 
 //! Destructor.
-virtual
-~CsvWriter();
+  virtual
+  ~CsvWriter();
 
 //! Const getter.
 
-void
-writeHeader(const Teuchos::ParameterList & pList) const;
+  void
+  writeHeader(const Teuchos::ParameterList & pList) const;
 
-void
-writeRow(const Teuchos::ParameterList & pList) const;
+  void
+  writeRow(const Teuchos::ParameterList & pList) const;
 
 protected:
 private:
 
 //! File stream for the statistics.
-mutable std::ofstream fileStream_;
+  mutable std::ofstream fileStream_;
 
-const std::string delimeter_;
-const std::string headerStart_;
+  const std::string delimeter_;
+  const std::string headerStart_;
 
-const unsigned int doublePrec_;
-const unsigned int doubleColumnWidth_;
-const unsigned int intColumnWidth_;
+  const unsigned int doublePrec_;
+  const unsigned int doubleColumnWidth_;
+  const unsigned int intColumnWidth_;
 };
 } // namespace Nosh
 

@@ -23,7 +23,8 @@
 #include <Epetra_Comm.h>
 #include <Epetra_Import.h>
 
-namespace Nosh {
+namespace Nosh
+{
 // ============================================================================
 Teuchos::RCP<const Epetra_Map>
 BorderingHelpers::
@@ -32,7 +33,7 @@ extendMapBy1(const Epetra_BlockMap & map)
   const Epetra_Comm & comm = map.Comm();
   // Create a new map that hosts one more entry.
   const int numGlobalElements = map.NumGlobalElements()
-                              + 1;
+                                + 1;
   const int numMyElements = map.NumMyElements();
   int * myGlobalElements = map.MyGlobalElements();
   // The following if-else construction just makes sure that
@@ -40,8 +41,7 @@ extendMapBy1(const Epetra_BlockMap & map)
   // map on proc 0, and with the regular old stuff on all
   // other procs.
   Teuchos::RCP<Epetra_Map> extendedMap;
-  if (comm.MyPID() == 0)
-  {
+  if (comm.MyPID() == 0) {
     // Copy over the global indices.
     std::vector<int> a(numMyElements+1);
     for (int k=0; k<numMyElements; k++)
@@ -55,9 +55,7 @@ extendMapBy1(const Epetra_BlockMap & map)
                                   &a[0],
                                   map.IndexBase(),
                                   comm));
-  }
-  else
-  {
+  } else {
     extendedMap =
       Teuchos::rcp(new Epetra_Map(numGlobalElements,
                                   numMyElements,
@@ -74,7 +72,7 @@ BorderingHelpers::
 merge(const Epetra_MultiVector & x,
       const double * lambda,
       Epetra_MultiVector & out
-      )
+     )
 {
 #ifndef NDEBUG
   // Check if the maps are matching.
@@ -88,8 +86,7 @@ merge(const Epetra_MultiVector & x,
   TEUCHOS_ASSERT_EQUALITY(0, out.Import(x, importer, Insert));
 
   // Set last entry on proc 0.
-  if (x.Map().Comm().MyPID() == 0)
-  {
+  if (x.Map().Comm().MyPID() == 0) {
     const int numMyElems = x.Map().NumMyElements();
     for (int k=0; k<x.NumVectors(); k++)
       (*out(k))[numMyElems] = lambda[k];
@@ -103,7 +100,7 @@ BorderingHelpers::
 dissect(const Epetra_MultiVector & x,
         Epetra_MultiVector & xSmall,
         double * lambda
-        )
+       )
 {
 #ifndef NDEBUG
   TEUCHOS_ASSERT_EQUALITY(x.NumVectors(), xSmall.NumVectors());
@@ -119,8 +116,7 @@ dissect(const Epetra_MultiVector & x,
   xSmall.Import(x, importer, Insert);
 
   // TODO Check if we need lambda on all procs.
-  if (x.Map().Comm().MyPID() == 0)
-  {
+  if (x.Map().Comm().MyPID() == 0) {
     const int n = x.MyLength();
     for (int k=0; k<x.NumVectors(); k++)
       lambda[k] = (*(x(k)))[n - 1];

@@ -25,13 +25,14 @@
 #include <NOX_Abstract_MultiVector.H>
 #include <AnasaziSortManager.hpp>
 
-namespace Nosh {
+namespace Nosh
+{
 // =============================================================================
 SaveEigenData::
 SaveEigenData(Teuchos::ParameterList &eigenParamList,
               const Teuchos::RCP<const Nosh::ModelEvaluator::Virtual> &modelEval,
               const std::string & fileName
-              ) :
+             ) :
   eigenParamListPtr_(Teuchos::rcpFromRef<Teuchos::ParameterList>(
                        eigenParamList) ),
   modelEval_( modelEval ),
@@ -66,7 +67,7 @@ save( Teuchos::RCP<std::vector<double> > &evals_r,
       Teuchos::RCP<std::vector<double> > &evals_i,
       Teuchos::RCP<NOX::Abstract::MultiVector> &evecs_r,
       Teuchos::RCP<NOX::Abstract::MultiVector> &evecs_i
-      )
+    )
 {
   // Can't fetch step index now, so rely on the function
   // being called exactly once per step.
@@ -84,8 +85,7 @@ save( Teuchos::RCP<std::vector<double> > &evals_r,
   unsigned int numStableEigenvalues = 0;
   unsigned int numUnstableEigenvalues = 0;
   unsigned int numNullvalues = 0;
-  for ( unsigned int k = 0; k < numEigenValues; k++ )
-  {
+  for ( unsigned int k = 0; k < numEigenValues; k++ ) {
     double eigenvalue = (*evals_r) [k];
     std::stringstream eigenstateFileNameAppendix;
     if ( eigenvalue  < -tol )
@@ -144,8 +144,7 @@ save( Teuchos::RCP<std::vector<double> > &evals_r,
   eigenvaluesList.set( "#0unstable", numUnstableEigenvalues );
   eigenvaluesList.set( "#1null", numNullvalues );
   eigenvaluesList.set( "#2stable", numStableEigenvalues );
-  for ( unsigned int k = 0; k < numEigenValues; k++ )
-  {
+  for ( unsigned int k = 0; k < numEigenValues; k++ ) {
     std::stringstream label;
     label << std::setw( 2 ) << std::setfill( '0' ) << k << "-0Re()";
     eigenvaluesList.set( label.str(), (*evals_r) [k] );
@@ -181,8 +180,7 @@ save( Teuchos::RCP<std::vector<double> > &evals_r,
   // Make sure that the shift SIGMA (if using Shift-Invert) sits THRESHOLD above
   // the rightmost eigenvalue.
   std::string &op = eigenParamListPtr_->get<std::string> ( "Operator" );
-  if ( !locaStepper_.is_null() && op.compare( "Shift-Invert" ) == 0 )
-  {
+  if ( !locaStepper_.is_null() && op.compare( "Shift-Invert" ) == 0 ) {
     double maxEigenval = *std::max_element( evals_r->begin(), evals_r->end() );
     double threshold = 0.5;
     eigenParamListPtr_->set( "Shift", maxEigenval + threshold );

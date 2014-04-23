@@ -23,14 +23,15 @@
 #include "nosh/ModelEvaluator_Virtual.hpp"
 #include "nosh/StkMesh.hpp"
 
-namespace Nosh {
+namespace Nosh
+{
 // ============================================================================
 Observer::
 Observer(const Teuchos::RCP<const Nosh::ModelEvaluator::Virtual> &modelEval,
          const std::string & csvFilename,
          const std::string & contParamName,
          const bool isTurningPointContinuation
-         ) :
+        ) :
   modelEval_(modelEval),
   csvWriter_(csvFilename, " "),
   contParamName_(contParamName),
@@ -72,7 +73,7 @@ void
 Observer::
 observeContinuation_(const Epetra_Vector &soln,
                      const double paramVal
-                     )
+                    )
 {
   static int index = -1;
   index++;
@@ -95,20 +96,18 @@ void
 Observer::
 observeTurningPointContinuation_(const Epetra_Vector &soln,
                                  const double paramVal
-                                 )
+                                )
 {
   static int index = -1;
   static bool isSolution = false;
 
   // alternate between solution and nullvector
   isSolution = !isSolution;
-  if ( isSolution )
-  {
+  if ( isSolution ) {
     index++;
     this->saveContinuationStatistics_(soln, paramVal, index);
     modelEval_->getMesh()->write(soln, index);
-  }
-  else
+  } else
     TEUCHOS_TEST_FOR_EXCEPT_MSG( true, "Not yet implemented." );
   // This part of the code used to write state and null vector alternately
   // for turning point continuation, but because of how StkMesh is
@@ -122,7 +121,7 @@ Observer::
 saveContinuationStatistics_(const Epetra_Vector &soln,
                             const double paramVal,
                             const int stepIndex
-                            )
+                           )
 {
   // Construct parameter list to stuff into the csvWriter_.
   Teuchos::ParameterList paramList;

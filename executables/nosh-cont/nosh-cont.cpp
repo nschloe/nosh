@@ -54,8 +54,7 @@ int main(int argc, char *argv[])
 
   // Wrap the whole code in a big try-catch-statement.
   bool success = true;
-  try
-  {
+  try {
     // ===========================================================================
     // Handle command line arguments.
     // Boost::program_options is somewhat more complete here (e.g. you can
@@ -81,7 +80,7 @@ int main(int argc, char *argv[])
 
     // Retrieve Piro parameter list from given file.
     RCP<Teuchos::ParameterList> piroParams =
-        rcp(new Teuchos::ParameterList());
+      rcp(new Teuchos::ParameterList());
     Teuchos::updateParametersFromXmlFile(xmlInputPath,
                                          piroParams.ptr());
     // =======================================================================
@@ -100,12 +99,12 @@ int main(int argc, char *argv[])
     const std::string outputDirectory = prefix;
 
     const std::string contFilePath = prefix
-                                   + outputList.get<std::string>("Continuation data file name");
+                                     + outputList.get<std::string>("Continuation data file name");
 
     Teuchos::ParameterList & inputDataList = piroParams->sublist("Input", true);
 
     const std::string inputExodusFile = prefix
-                                      + inputDataList.get<std::string>("File");
+                                        + inputDataList.get<std::string>("File");
     const int step = inputDataList.get<int>("Initial Psi Step");
 
     const bool useBordering = piroParams->get<bool>("Bordering");
@@ -134,13 +133,13 @@ int main(int argc, char *argv[])
     // Explicitly set the initial parameter value for this list.
     const std::string & paramName =
       piroParams->sublist( "LOCA" )
-                 .sublist( "Stepper" )
-                 .get<std::string>("Continuation Parameter");
+      .sublist( "Stepper" )
+      .get<std::string>("Continuation Parameter");
     *out << "Setting the initial parameter value of \""
          << paramName << "\" to " << initialParameterValues.get<double>(paramName) << "." << std::endl;
     piroParams->sublist( "LOCA" )
-               .sublist( "Stepper" )
-               .set("Initial Value", initialParameterValues.get<double>(paramName));
+    .sublist( "Stepper" )
+    .set("Initial Value", initialParameterValues.get<double>(paramName));
 
     // Set the thickness field.
     RCP<Nosh::ScalarField::Virtual> thickness =
@@ -186,11 +185,11 @@ int main(int argc, char *argv[])
     // Setup the scalar potential V.
     // (a) A constant potential.
     //RCP<Nosh::ScalarField::Virtual> sp =
-      //rcp(new Nosh::ScalarField::Constant(*mesh, -1.0));
+    //rcp(new Nosh::ScalarField::Constant(*mesh, -1.0));
     //const double T = initialParameterValues.get<double>("T");
     // (b) With explicit values.
     //RCP<Nosh::ScalarField::Virtual> sp =
-      //rcp(new Nosh::ScalarField::ExplicitValues(*mesh, "V"));
+    //rcp(new Nosh::ScalarField::ExplicitValues(*mesh, "V"));
     // (c) One you built yourself by deriving from Nosh::ScalarField::Virtual.
     RCP<Nosh::ScalarField::Virtual> sp =
       rcp(new MyScalarField(mesh));
@@ -203,13 +202,11 @@ int main(int argc, char *argv[])
       rcp(new Nosh::ModelEvaluator::Nls(mesh, matrixBuilder, sp, g, thickness, psi));
 
     RCP<Nosh::ModelEvaluator::Virtual> modelEvaluator;
-    if (useBordering)
-    {
+    if (useBordering) {
       // Use i*psi as bordering.
       RCP<Epetra_Vector> bordering =
         rcp(new Epetra_Vector(psi->Map()));
-      for (int k=0; k<psi->Map().NumMyElements()/2; k++)
-      {
+      for (int k=0; k<psi->Map().NumMyElements()/2; k++) {
         (*bordering)[2*k] = - (*psi)[2*k+1];
         (*bordering)[2*k+1] = (*psi)[2*k];
         //(*bordering)[2*k]   = 1.0;
@@ -219,9 +216,7 @@ int main(int argc, char *argv[])
       // Initial value for the extra variable.
       double lambda = 0.0;
       modelEvaluator = rcp(new Nosh::ModelEvaluator::Bordered(nlsModel, bordering, lambda));
-    }
-    else
-    {
+    } else {
       modelEvaluator = nlsModel;
     }
 
@@ -235,8 +230,7 @@ int main(int argc, char *argv[])
     // Switch by solver type.
     std::string & solver = piroParams->get<std::string>("Piro Solver");
     // ----------------------------------------------------------------------
-    if (solver == "NOX")
-    {
+    if (solver == "NOX") {
       RCP<Nosh::Observer> observer =
         rcp(new Nosh::Observer(modelEvaluator));
 
@@ -245,34 +239,32 @@ int main(int argc, char *argv[])
                                              observer));
     }
     // ----------------------------------------------------------------------
-    else if (solver == "LOCA")
-    {
+    else if (solver == "LOCA") {
       RCP<Nosh::Observer> observer =
         rcp(new Nosh::Observer(modelEvaluator,
                                contFilePath,
                                piroParams->sublist("LOCA")
-                                          .sublist("Stepper")
-                                          .get<std::string>("Continuation Parameter")
-                               ));
+                               .sublist("Stepper")
+                               .get<std::string>("Continuation Parameter")
+                              ));
 
       // Setup eigen saver.
 #ifdef HAVE_LOCA_ANASAZI
       bool computeEigenvalues = piroParams->sublist( "LOCA" )
-                                           .sublist( "Stepper" )
-                                           .get<bool>("Compute Eigenvalues");
-      if (computeEigenvalues)
-      {
+                                .sublist( "Stepper" )
+                                .get<bool>("Compute Eigenvalues");
+      if (computeEigenvalues) {
         Teuchos::ParameterList & eigenList = piroParams->sublist("LOCA")
-                                                        .sublist("Stepper")
-                                                        .sublist("Eigensolver");
+                                             .sublist("Stepper")
+                                             .sublist("Eigensolver");
         std::string eigenvaluesFilePath = xmlDirectory
-                                        + "/"
-                                        + outputList.get<std::string> ( "Eigenvalues file name" );
+                                          + "/"
+                                          + outputList.get<std::string> ( "Eigenvalues file name" );
 
         glEigenSaver =
           RCP<Nosh::SaveEigenData>(new Nosh::SaveEigenData(eigenList,
-                                                           modelEvaluator,
-                                                           eigenvaluesFilePath));
+                                   modelEvaluator,
+                                   eigenvaluesFilePath));
 
         RCP<LOCA::SaveEigenData::AbstractStrategy> glSaveEigenDataStrategy =
           glEigenSaver;
@@ -297,8 +289,7 @@ int main(int argc, char *argv[])
       piro = piroLOCASolver;
     }
     // ----------------------------------------------------------------------
-    else if ( solver == "Turning Point" )
-    {
+    else if ( solver == "Turning Point" ) {
       RCP<Nosh::Observer> observer = Teuchos::null;
 
       Teuchos::ParameterList & bifList =
@@ -325,8 +316,7 @@ int main(int argc, char *argv[])
                                               observer));
     }
     // ----------------------------------------------------------------------
-    else
-    {
+    else {
       TEUCHOS_TEST_FOR_EXCEPT_MSG(true,
                                   "Unknown solver type \"" << solver << "\"." );
     }
@@ -345,8 +335,8 @@ int main(int argc, char *argv[])
     const RCP<Teuchos::Time> piroSolveTime =
       Teuchos::TimeMonitor::getNewTimer("Piro total solve time");;
     {
-    Teuchos::TimeMonitor tm(*piroSolveTime);
-    piro->evalModel(inArgs, outArgs);
+      Teuchos::TimeMonitor tm(*piroSolveTime);
+      piro->evalModel(inArgs, outArgs);
     }
 
     // Manually release LOCA stepper.
@@ -357,11 +347,9 @@ int main(int argc, char *argv[])
 
     // Print timing data.
     Teuchos::TimeMonitor::summarize();
+  } catch (Teuchos::CommandLineProcessor::HelpPrinted) {
+  } catch (Teuchos::CommandLineProcessor::ParseError) {
   }
-  catch (Teuchos::CommandLineProcessor::HelpPrinted)
-  {}
-  catch (Teuchos::CommandLineProcessor::ParseError)
-  {}
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true, *out, success);
 
   return success ? EXIT_SUCCESS : EXIT_FAILURE;

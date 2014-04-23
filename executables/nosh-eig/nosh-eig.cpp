@@ -52,8 +52,7 @@ int main(int argc, char *argv[])
     Teuchos::VerboseObjectBase::getDefaultOStream();
 
   bool success = true;
-  try
-  {
+  try {
     // ===========================================================================
     // handle command line arguments
     Teuchos::CommandLineProcessor My_CLP;
@@ -128,8 +127,7 @@ int main(int argc, char *argv[])
       Teuchos::TimeMonitor tm(*mvpConstructTime);
       if (mvpFilePath.empty())
         mvp = rcp(new Nosh::VectorField::ExplicitValues(*mesh, "A", mu));
-      else
-      {
+      else {
         Nosh::StkMesh mesh2(*eComm, mvpFilePath, 0);
         mvp = rcp(new Nosh::VectorField::ExplicitValues(mesh2, "A", mu));
       }
@@ -175,8 +173,7 @@ int main(int argc, char *argv[])
       // Get the Jacobian.
       jac = modelEvaluator->create_W();
       outArgs.set_W(jac);
-      if (isPrec)
-      {
+      if (isPrec) {
         prec = modelEvaluator->create_WPrec()->PrecOp;
         outArgs.set_WPrec(prec);
       }
@@ -188,8 +185,7 @@ int main(int argc, char *argv[])
     }
 
     bool checkFx = true;
-    if (checkFx)
-    {
+    if (checkFx) {
       RCP<Epetra_Vector> fx =
         rcp(new Epetra_Vector(*modelEvaluator->get_f_map()));
       outArgs.set_f(fx);
@@ -235,31 +231,25 @@ int main(int argc, char *argv[])
     MyPL.set("Full Ortho", true);
     MyPL.set("Use Locking", true);
     MyPL.set("Verbosity", Anasazi::IterationDetails +
-                          Anasazi::Errors +
-                          Anasazi::Warnings +
-                          Anasazi::StatusTestDetails +
-                          Anasazi::Debug +
-                          Anasazi::FinalSummary
-                          );
+             Anasazi::Errors +
+             Anasazi::Warnings +
+             Anasazi::StatusTestDetails +
+             Anasazi::Debug +
+             Anasazi::FinalSummary
+            );
 
     // Create the solver manager and solve the problem.
     Anasazi::ReturnType returnCode;
-    if ( method.compare("lobpcg") == 0 )
-    {
+    if ( method.compare("lobpcg") == 0 ) {
       Anasazi::LOBPCGSolMgr<double, MV, OP> MySolverMan(MyProblem, MyPL);
       returnCode = MySolverMan.solve();
-    }
-    else if ( method.compare("davidson") == 0 )
-    {
+    } else if ( method.compare("davidson") == 0 ) {
       Anasazi::BlockDavidsonSolMgr<double, MV, OP> MySolverMan(MyProblem, MyPL);
       returnCode = MySolverMan.solve();
-    }
-    else if ( method.compare("krylovschur") == 0 )
-    {
+    } else if ( method.compare("krylovschur") == 0 ) {
       Anasazi::BlockKrylovSchurSolMgr<double, MV, OP> MySolverMan(MyProblem, MyPL);
       returnCode = MySolverMan.solve();
-    }
-    else
+    } else
       TEUCHOS_TEST_FOR_EXCEPT_MSG(true,
                                   "Invalid eigensolver method \"" << method << "\"." );
 
@@ -275,11 +265,9 @@ int main(int argc, char *argv[])
 
     Teuchos::ArrayRCP<double> evals_r( numVecs );
     Teuchos::ArrayRCP<double> evals_i( numVecs );
-    if (numVecs > 0)
-    {
+    if (numVecs > 0) {
       *out << "\nEigenvalues:" << std::endl;
-      for (int i=0; i<numVecs; i++)
-      {
+      for (int i=0; i<numVecs; i++) {
         evals_r[i] = anasaziSolution.Evals[i].realpart;
         evals_i[i] = anasaziSolution.Evals[i].imagpart;
 
@@ -290,11 +278,9 @@ int main(int argc, char *argv[])
     // -----------------------------------------------------------------------
     // print timing data
     //Teuchos::TimeMonitor::summarize();
+  } catch (Teuchos::CommandLineProcessor::HelpPrinted) {
+  } catch (Teuchos::CommandLineProcessor::ParseError) {
   }
-  catch (Teuchos::CommandLineProcessor::HelpPrinted)
-  {}
-  catch (Teuchos::CommandLineProcessor::ParseError)
-  {}
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true, *out, success);
 
   return success ? EXIT_SUCCESS : EXIT_FAILURE;

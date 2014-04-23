@@ -21,7 +21,8 @@
 #define NOSH_MODELEVALUATOR_VIRTUAL_H
 // -----------------------------------------------------------------------------
 // forward declarations
-namespace Nosh{
+namespace Nosh
+{
 class StkMesh;
 }
 // -----------------------------------------------------------------------------
@@ -30,36 +31,38 @@ class StkMesh;
 #include <Epetra_Vector.h>
 #include <Teuchos_RCP.hpp>
 // -----------------------------------------------------------------------------
-namespace Nosh {
-namespace ModelEvaluator {
+namespace Nosh
+{
+namespace ModelEvaluator
+{
 class Virtual : public EpetraExt::ModelEvaluator
 {
 
 public:
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-Virtual();
+  Virtual();
 
 // Destructor
-virtual
-~Virtual();
+  virtual
+  ~Virtual();
 
-virtual
-double
-innerProduct(const Epetra_Vector &phi,
-             const Epetra_Vector &psi
-             ) const = 0;
+  virtual
+  double
+  innerProduct(const Epetra_Vector &phi,
+               const Epetra_Vector &psi
+              ) const = 0;
 
-virtual
-double
-norm(const Epetra_Vector &psi) const;
+  virtual
+  double
+  norm(const Epetra_Vector &psi) const;
 
-virtual
-double
-gibbsEnergy(const Epetra_Vector &psi) const = 0;
+  virtual
+  double
+  gibbsEnergy(const Epetra_Vector &psi) const = 0;
 
-virtual
-const Teuchos::RCP<const Nosh::StkMesh>
-getMesh() const = 0;
+  virtual
+  const Teuchos::RCP<const Nosh::StkMesh>
+  getMesh() const = 0;
 
 protected:
 private:

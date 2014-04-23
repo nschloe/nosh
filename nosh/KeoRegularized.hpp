@@ -26,118 +26,124 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Array.hpp>
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
-  #include <Teuchos_Time.hpp>
+#include <Teuchos_Time.hpp>
 #endif
 #include <Teuchos_FancyOStream.hpp>
 #include <Epetra_FECrsMatrix.h>
 #include <Epetra_LinearProblem.h>
 // =============================================================================
-namespace Nosh {
+namespace Nosh
+{
 class StkMesh;
-namespace ScalarField {
+namespace ScalarField
+{
 class Virtual;
 }
-namespace MatrixBuilder {
+namespace MatrixBuilder
+{
 class Virtual;
 }
 }
-namespace Belos {
+namespace Belos
+{
 class EpetraPrecOp;
 }
 class Amesos_BaseSolver;
 class Epetra_LinearProblem;
-namespace ML_Epetra {
+namespace ML_Epetra
+{
 class MultiLevelPreconditioner;
 }
 // =============================================================================
-namespace Nosh {
+namespace Nosh
+{
 // =============================================================================
 class KeoRegularized : public Epetra_Operator
 {
 public:
-KeoRegularized(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
-               const Teuchos::RCP<const Nosh::ScalarField::Virtual> &thickness,
-               const Teuchos::RCP<const Nosh::MatrixBuilder::Virtual> &matrixBuilder
-               );
+  KeoRegularized(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
+                 const Teuchos::RCP<const Nosh::ScalarField::Virtual> &thickness,
+                 const Teuchos::RCP<const Nosh::MatrixBuilder::Virtual> &matrixBuilder
+                );
 
 // Destructor.
-~KeoRegularized();
+  ~KeoRegularized();
 
-virtual int
-SetUseTranspose( bool UseTranspose );
+  virtual int
+  SetUseTranspose( bool UseTranspose );
 
-virtual int
-Apply(const Epetra_MultiVector &X,
-      Epetra_MultiVector &Y
-      ) const;
+  virtual int
+  Apply(const Epetra_MultiVector &X,
+        Epetra_MultiVector &Y
+       ) const;
 
-virtual int
-ApplyInverse(const Epetra_MultiVector &X,
-             Epetra_MultiVector &Y
-             ) const;
+  virtual int
+  ApplyInverse(const Epetra_MultiVector &X,
+               Epetra_MultiVector &Y
+              ) const;
 
-virtual double
-NormInf() const;
+  virtual double
+  NormInf() const;
 
-virtual const char *
-Label() const;
+  virtual const char *
+  Label() const;
 
-virtual bool
-UseTranspose() const;
+  virtual bool
+  UseTranspose() const;
 
-virtual bool
-HasNormInf() const;
+  virtual bool
+  HasNormInf() const;
 
-virtual const Epetra_Comm &
-Comm() const;
+  virtual const Epetra_Comm &
+  Comm() const;
 
-virtual const Epetra_Map &OperatorDomainMap() const;
+  virtual const Epetra_Map &OperatorDomainMap() const;
 
-virtual const Epetra_Map &OperatorRangeMap() const;
+  virtual const Epetra_Map &OperatorRangeMap() const;
 
 public:
 
-void
-rebuild(const std::map<std::string,double> & params,
-        const Epetra_Vector &psi
-       );
+  void
+  rebuild(const std::map<std::string,double> & params,
+          const Epetra_Vector &psi
+         );
 
 protected:
 private:
 
-const Teuchos::RCP<const Epetra_Vector>
-getAbsPsiSquared_(const Epetra_Vector &psi);
+  const Teuchos::RCP<const Epetra_Vector>
+  getAbsPsiSquared_(const Epetra_Vector &psi);
 
-void
-rebuildInverse_();
-
-private:
+  void
+  rebuildInverse_();
 
 private:
-bool useTranspose_;
 
-const Teuchos::RCP<const Nosh::StkMesh> mesh_;
-const Teuchos::RCP<const Nosh::ScalarField::Virtual> thickness_;
-const Teuchos::RCP<const Nosh::MatrixBuilder::Virtual> matrixBuilder_;
+private:
+  bool useTranspose_;
+
+  const Teuchos::RCP<const Nosh::StkMesh> mesh_;
+  const Teuchos::RCP<const Nosh::ScalarField::Virtual> thickness_;
+  const Teuchos::RCP<const Nosh::MatrixBuilder::Virtual> matrixBuilder_;
 
 // Make sure to create the matrix in memory only once and then
 // override it as necessary. The reason for this is that ML
 // gets initialized only once and, upon ML.recompute(), relies
 // on the (new) data being available at the same adress.
 // Failure to comply to this will lead to memory errors.
-Epetra_FECrsMatrix regularizedMatrix_;
+  Epetra_FECrsMatrix regularizedMatrix_;
 
-const Epetra_Comm &comm_;
+  const Epetra_Comm &comm_;
 
-Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> MlPrec_;
-const int numCycles_;
+  Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> MlPrec_;
+  const int numCycles_;
 
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
-const Teuchos::RCP<Teuchos::Time> timerRebuild0_;
-const Teuchos::RCP<Teuchos::Time> timerRebuild1_;
+  const Teuchos::RCP<Teuchos::Time> timerRebuild0_;
+  const Teuchos::RCP<Teuchos::Time> timerRebuild1_;
 #endif
 
-Teuchos::RCP<Teuchos::FancyOStream> out_;
+  Teuchos::RCP<Teuchos::FancyOStream> out_;
 };
 // =============================================================================
 } // namespace Nosh

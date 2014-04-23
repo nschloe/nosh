@@ -24,18 +24,21 @@
 #include <Epetra_Vector.h>
 #include <Teuchos_ParameterList.hpp>
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
-  #include <Teuchos_Time.hpp>
+#include <Teuchos_Time.hpp>
 #endif
 
 #include "nosh/ModelEvaluator_Virtual.hpp"
 // -----------------------------------------------------------------------------
 // forward declarations
-namespace Nosh {
+namespace Nosh
+{
 class StkMesh;
-namespace ScalarField {
+namespace ScalarField
+{
 class Virtual;
 }
-namespace MatrixBuilder {
+namespace MatrixBuilder
+{
 class Virtual;
 }
 }
@@ -43,126 +46,128 @@ class Virtual;
 class Epetra_CrsGraph;
 class Epetra_LocalMap;
 // -----------------------------------------------------------------------------
-namespace Nosh {
-namespace ModelEvaluator {
+namespace Nosh
+{
+namespace ModelEvaluator
+{
 class Nls : public Virtual
 {
 
 public:
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 //! Constructor without initial guess.
-Nls (
-  const Teuchos::RCP<const Nosh::StkMesh> &mesh,
-  const Teuchos::RCP<const Nosh::MatrixBuilder::Virtual> &matrixBuilder,
-  const Teuchos::RCP<const Nosh::ScalarField::Virtual> &scalarPotential,
-  const double g,
-  const Teuchos::RCP<const Nosh::ScalarField::Virtual> &thickness,
-  const Teuchos::RCP<const Epetra_Vector> &initialX
+  Nls (
+    const Teuchos::RCP<const Nosh::StkMesh> &mesh,
+    const Teuchos::RCP<const Nosh::MatrixBuilder::Virtual> &matrixBuilder,
+    const Teuchos::RCP<const Nosh::ScalarField::Virtual> &scalarPotential,
+    const double g,
+    const Teuchos::RCP<const Nosh::ScalarField::Virtual> &thickness,
+    const Teuchos::RCP<const Epetra_Vector> &initialX
   );
 
 // Destructor
-virtual
-~Nls();
+  virtual
+  ~Nls();
 
-virtual
-Teuchos::RCP<const Epetra_Map>
-get_x_map() const;
+  virtual
+  Teuchos::RCP<const Epetra_Map>
+  get_x_map() const;
 
-virtual
-Teuchos::RCP<const Epetra_Map>
-get_f_map() const;
+  virtual
+  Teuchos::RCP<const Epetra_Map>
+  get_f_map() const;
 
-virtual
-Teuchos::RCP<const Epetra_Vector>
-get_x_init() const;
+  virtual
+  Teuchos::RCP<const Epetra_Vector>
+  get_x_init() const;
 
-virtual
-Teuchos::RCP<const Epetra_Vector>
-get_p_init( int l ) const;
+  virtual
+  Teuchos::RCP<const Epetra_Vector>
+  get_p_init( int l ) const;
 
-virtual
-Teuchos::RCP<const Epetra_Map>
-get_p_map( int l ) const;
+  virtual
+  Teuchos::RCP<const Epetra_Map>
+  get_p_map( int l ) const;
 
-virtual
-Teuchos::RCP<const Teuchos::Array<std::string> >
-get_p_names( int l ) const;
+  virtual
+  Teuchos::RCP<const Teuchos::Array<std::string> >
+  get_p_names( int l ) const;
 
-virtual
-Teuchos::RCP<Epetra_Operator>
-create_W() const;
+  virtual
+  Teuchos::RCP<Epetra_Operator>
+  create_W() const;
 
-virtual
-Teuchos::RCP<EpetraExt::ModelEvaluator::Preconditioner>
-create_WPrec() const;
+  virtual
+  Teuchos::RCP<EpetraExt::ModelEvaluator::Preconditioner>
+  create_WPrec() const;
 
-virtual
-InArgs
-createInArgs() const;
+  virtual
+  InArgs
+  createInArgs() const;
 
-virtual
-OutArgs
-createOutArgs() const;
+  virtual
+  OutArgs
+  createOutArgs() const;
 
-virtual
-void
-evalModel( const InArgs &inArgs,
-           const OutArgs &outArgs ) const;
+  virtual
+  void
+  evalModel( const InArgs &inArgs,
+             const OutArgs &outArgs ) const;
 
 public:
 
-double
-innerProduct(const Epetra_Vector &phi,
-             const Epetra_Vector &psi
-             ) const;
+  double
+  innerProduct(const Epetra_Vector &phi,
+               const Epetra_Vector &psi
+              ) const;
 
-double
-gibbsEnergy(const Epetra_Vector &psi) const;
+  double
+  gibbsEnergy(const Epetra_Vector &psi) const;
 
-const Teuchos::RCP<const Nosh::StkMesh>
-getMesh() const;
+  const Teuchos::RCP<const Nosh::StkMesh>
+  getMesh() const;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 private:
-void
-computeF_(const Epetra_Vector &x,
-          const std::map<std::string,double> & params,
-          Epetra_Vector &FVec
-          ) const;
+  void
+  computeF_(const Epetra_Vector &x,
+            const std::map<std::string,double> & params,
+            Epetra_Vector &FVec
+           ) const;
 
-void
-computeDFDP_(const Epetra_Vector &x,
-             const std::map<std::string, double> & params,
-             const std::string & paramName,
-             Epetra_Vector &FVec
-             ) const;
+  void
+  computeDFDP_(const Epetra_Vector &x,
+               const std::map<std::string, double> & params,
+               const std::string & paramName,
+               Epetra_Vector &FVec
+              ) const;
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 protected:
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 private:
-const Teuchos::RCP<const Nosh::StkMesh> mesh_;
+  const Teuchos::RCP<const Nosh::StkMesh> mesh_;
 
-const Teuchos::RCP<const Nosh::ScalarField::Virtual> scalarPotential_;
+  const Teuchos::RCP<const Nosh::ScalarField::Virtual> scalarPotential_;
 
-const Teuchos::RCP<const Nosh::ScalarField::Virtual> thickness_;
+  const Teuchos::RCP<const Nosh::ScalarField::Virtual> thickness_;
 
-const Teuchos::RCP<const Epetra_Vector> x_init_;
+  const Teuchos::RCP<const Epetra_Vector> x_init_;
 
-const Teuchos::RCP<const Nosh::MatrixBuilder::Virtual> matrixBuilder_;
+  const Teuchos::RCP<const Nosh::MatrixBuilder::Virtual> matrixBuilder_;
 
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
-const Teuchos::RCP<Teuchos::Time> evalModelTime_;
-const Teuchos::RCP<Teuchos::Time> computeFTime_;
-const Teuchos::RCP<Teuchos::Time> computedFdpTime_;
-const Teuchos::RCP<Teuchos::Time> fillJacobianTime_;
-const Teuchos::RCP<Teuchos::Time> fillPreconditionerTime_;
+  const Teuchos::RCP<Teuchos::Time> evalModelTime_;
+  const Teuchos::RCP<Teuchos::Time> computeFTime_;
+  const Teuchos::RCP<Teuchos::Time> computedFdpTime_;
+  const Teuchos::RCP<Teuchos::Time> fillJacobianTime_;
+  const Teuchos::RCP<Teuchos::Time> fillPreconditionerTime_;
 #endif
 
-Teuchos::RCP<Teuchos::FancyOStream> out_;
+  Teuchos::RCP<Teuchos::FancyOStream> out_;
 
-Teuchos::RCP<Epetra_LocalMap> p_map_;
-Teuchos::RCP<Epetra_Vector> p_init_;
-Teuchos::RCP<Teuchos::Array<std::string> > p_names_;
+  Teuchos::RCP<Epetra_LocalMap> p_map_;
+  Teuchos::RCP<Epetra_Vector> p_init_;
+  Teuchos::RCP<Teuchos::Array<std::string> > p_names_;
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 };
 } // namespace ModelEvaluator

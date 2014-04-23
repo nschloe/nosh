@@ -31,76 +31,78 @@
 
 typedef Teuchos::SerialDenseVector<int,double> DoubleVector;
 
-namespace Nosh {
-namespace VectorField {
+namespace Nosh
+{
+namespace VectorField
+{
 class ConstantCurl : public Virtual
 {
 public:
-ConstantCurl(const Teuchos::RCP<Nosh::StkMesh> &mesh,
-             const Teuchos::RCP<DoubleVector> &b,
-             const Teuchos::RCP<DoubleVector> &u = Teuchos::null
-             );
+  ConstantCurl(const Teuchos::RCP<Nosh::StkMesh> &mesh,
+               const Teuchos::RCP<DoubleVector> &b,
+               const Teuchos::RCP<DoubleVector> &u = Teuchos::null
+              );
 
-virtual
-~ConstantCurl();
+  virtual
+  ~ConstantCurl();
 
 //! Get the parameter names and initial values.
-virtual
-const std::map<std::string,double>
-getInitialParameters() const;
+  virtual
+  const std::map<std::string,double>
+  getInitialParameters() const;
 
-virtual
-double
-getEdgeProjection(const unsigned int edgeIndex,
-                  const std::map<std::string, double> & params
-                  ) const;
+  virtual
+  double
+  getEdgeProjection(const unsigned int edgeIndex,
+                    const std::map<std::string, double> & params
+                   ) const;
 
-virtual
-double
-getDEdgeProjectionDp(const unsigned int edgeIndex,
-                     const std::map<std::string, double> & params,
-                     const std::string & dParam
-                     ) const;
+  virtual
+  double
+  getDEdgeProjectionDp(const unsigned int edgeIndex,
+                       const std::map<std::string, double> & params,
+                       const std::string & dParam
+                      ) const;
 
 protected:
 private:
-DoubleVector
-getRawA_( const DoubleVector &x ) const;
+  DoubleVector
+  getRawA_( const DoubleVector &x ) const;
 
-DoubleVector
-getRawDADTheta_( const DoubleVector &x ) const;
+  DoubleVector
+  getRawDADTheta_( const DoubleVector &x ) const;
 
-void
-initializeEdgeCache_() const;
+  void
+  initializeEdgeCache_() const;
 
-void
-rotate_(DoubleVector &v,
-        const DoubleVector &u,
-        const double theta
-        ) const;
+  void
+  rotate_(DoubleVector &v,
+          const DoubleVector &u,
+          const double theta
+         ) const;
 
-void
-dRotateDTheta_(DoubleVector &v,
-               const DoubleVector &u,
-               const double theta
+  void
+  dRotateDTheta_(DoubleVector &v,
+                 const DoubleVector &u,
+                 const double theta
+                ) const;
+
+  DoubleVector
+  crossProduct_(const DoubleVector u,
+                const DoubleVector v
                ) const;
 
-DoubleVector
-crossProduct_(const DoubleVector u,
-              const DoubleVector v
-              ) const;
-
 private:
-const Teuchos::RCP<Nosh::StkMesh> mesh_;
-const Teuchos::RCP<const DoubleVector> b_;
-const Teuchos::RCP<const DoubleVector> u_;
-mutable DoubleVector rotatedBCache_;
-mutable double rotatedBCacheAngle_;
-mutable DoubleVector dRotatedBDThetaCache_;
-mutable double rotateddBdThetaCacheAngle_;
+  const Teuchos::RCP<Nosh::StkMesh> mesh_;
+  const Teuchos::RCP<const DoubleVector> b_;
+  const Teuchos::RCP<const DoubleVector> u_;
+  mutable DoubleVector rotatedBCache_;
+  mutable double rotatedBCacheAngle_;
+  mutable DoubleVector dRotatedBDThetaCache_;
+  mutable double rotateddBdThetaCacheAngle_;
 
-Teuchos::ArrayRCP<DoubleVector> edgeCache_;
-mutable bool edgeCacheUptodate_;
+  Teuchos::ArrayRCP<DoubleVector> edgeCache_;
+  mutable bool edgeCacheUptodate_;
 };
 } // namespace VectorField
 } // namespace Nosh

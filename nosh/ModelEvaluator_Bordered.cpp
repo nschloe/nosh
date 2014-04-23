@@ -27,14 +27,16 @@
 #include <Epetra_Map.h>
 #include <Epetra_Import.h>
 
-namespace Nosh {
-namespace ModelEvaluator {
+namespace Nosh
+{
+namespace ModelEvaluator
+{
 // ============================================================================
 Bordered::
 Bordered(const Teuchos::RCP<const Nosh::ModelEvaluator::Virtual> & modelEvaluator,
          const Teuchos::RCP<const Epetra_Vector> & initialBordering,
          const double lambdaInit
-         ):
+        ):
   innerModelEval_( modelEvaluator ),
   initialBordering_( initialBordering ),
   lambdaInit_( lambdaInit )
@@ -102,9 +104,9 @@ Bordered::
 create_W() const
 {
   return Teuchos::rcp(new Nosh::BorderedOperator(innerModelEval_->create_W(),
-                                                 Teuchos::rcp(new Epetra_Vector(*initialBordering_)),
-                                                 Teuchos::rcp(new Epetra_Vector(*initialBordering_)),
-                                                 0.0));
+                      Teuchos::rcp(new Epetra_Vector(*initialBordering_)),
+                      Teuchos::rcp(new Epetra_Vector(*initialBordering_)),
+                      0.0));
 }
 // =============================================================================
 Teuchos::RCP<EpetraExt::ModelEvaluator::Preconditioner>
@@ -114,9 +116,9 @@ create_WPrec() const
   // Extract the inner preconditioner and fill a Bordered Operator with it.
   Teuchos::RCP<Epetra_Operator> borderedPrec =
     Teuchos::rcp(new Nosh::BorderedOperator(innerModelEval_->create_WPrec()->PrecOp,
-                                            Teuchos::rcp(new Epetra_Vector(*initialBordering_)),
-                                            Teuchos::rcp(new Epetra_Vector(*initialBordering_)),
-                                            0.0));
+                 Teuchos::rcp(new Epetra_Vector(*initialBordering_)),
+                 Teuchos::rcp(new Epetra_Vector(*initialBordering_)),
+                 0.0));
 
   // bool is answer to: "Prec is already inverted?"
   // This needs to be set to TRUE to make sure that the constructor of
@@ -125,8 +127,8 @@ create_WPrec() const
   // Effectively, this boolean serves pretty well as a quirky switch for the
   // preconditioner if Piro is used.
   return Teuchos::rcp(new EpetraExt::ModelEvaluator::Preconditioner(borderedPrec,
-                                                                    true));
-                                                                    //false));
+                      true));
+  //false));
 
 }
 // ============================================================================
@@ -148,7 +150,7 @@ void
 Bordered::
 evalModel(const InArgs &inArgs,
           const OutArgs &outArgs
-          ) const
+         ) const
 {
   // First, dissect x_in into vector and bordering.
   const Teuchos::RCP<const Epetra_Vector> &x_in = inArgs.get_x();
@@ -163,8 +165,7 @@ evalModel(const InArgs &inArgs,
   // Get i*x. This assumes a particular data layout in x_in.
   const Teuchos::RCP<Epetra_Vector> ix =
     Teuchos::rcp(new Epetra_Vector(inner_x_in->Map()));
-  for (int k=0; k<ix->Map().NumMyElements()/2; k++)
-  {
+  for (int k=0; k<ix->Map().NumMyElements()/2; k++) {
     (*ix)[2*k] = - (*x_in)[2*k+1];
     (*ix)[2*k+1] = (*x_in)[2*k];
   }
@@ -181,8 +182,7 @@ evalModel(const InArgs &inArgs,
 
   // Compute F(x).
   const Teuchos::RCP<Epetra_Vector> &f_out = outArgs.get_f();
-  if ( !f_out.is_null() )
-  {
+  if ( !f_out.is_null() ) {
     // Create new temporary f_out.
     const Teuchos::RCP<Epetra_Vector> inner_f_out =
       Teuchos::rcp(new Epetra_Vector(*innerModelEval_->get_f_map()));
@@ -203,16 +203,15 @@ evalModel(const InArgs &inArgs,
     outArgs.get_DfDp(0).getDerivativeMultiVector();
   const Teuchos::RCP<Epetra_MultiVector> &dfdp_out =
     derivMv.getMultiVector();
-  if ( !dfdp_out.is_null() )
-  {
+  if ( !dfdp_out.is_null() ) {
     // Create temporary DerivativeMultiVector inner_dfdp_out.
     const int numParams = derivMv.getParamIndexes().length();
     const Teuchos::RCP<Epetra_MultiVector> inner_dfdp_out =
       Teuchos::rcp(new Epetra_MultiVector(*innerModelEval_->get_f_map(),
                                           numParams));
     const EpetraExt::ModelEvaluator::DerivativeMultiVector innerDerivMv(inner_dfdp_out,
-                                                                        derivMv.getOrientation(),
-                                                                        derivMv.getParamIndexes());
+        derivMv.getOrientation(),
+        derivMv.getParamIndexes());
     inner_outArgs.set_DfDp(0, innerDerivMv);
     innerModelEval_->evalModel(inner_inArgs, inner_outArgs);
     // Append last entry and merge into dfdp_out.
@@ -224,8 +223,7 @@ evalModel(const InArgs &inArgs,
 
   // Fill Jacobian.
   const Teuchos::RCP<Epetra_Operator> & W_out = outArgs.get_W();
-  if( !W_out.is_null() )
-  {
+  if( !W_out.is_null() ) {
     const Teuchos::RCP<Nosh::BorderedOperator> & borderedW =
       Teuchos::rcp_dynamic_cast<Nosh::BorderedOperator>(W_out, true);
 
@@ -239,8 +237,7 @@ evalModel(const InArgs &inArgs,
 
   // Fill preconditioner.
   const Teuchos::RCP<Epetra_Operator> & WPrec_out = outArgs.get_WPrec();
-  if( !WPrec_out.is_null() )
-  {
+  if( !WPrec_out.is_null() ) {
     const Teuchos::RCP<Nosh::BorderedOperator> & borderedPrec =
       Teuchos::rcp_dynamic_cast<Nosh::BorderedOperator>(WPrec_out, true);
 
@@ -259,7 +256,7 @@ double
 Bordered::
 innerProduct(const Epetra_Vector &phi,
              const Epetra_Vector &psi
-             ) const
+            ) const
 {
   return innerModelEval_->innerProduct(phi, psi);
 }

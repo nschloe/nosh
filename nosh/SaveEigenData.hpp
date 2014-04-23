@@ -31,13 +31,16 @@
 #include "nosh/CsvWriter.hpp"
 // =============================================================================
 // forward declarations
-namespace Nosh {
-namespace ModelEvaluator {
+namespace Nosh
+{
+namespace ModelEvaluator
+{
 class Virtual;
 }
 }
 // =============================================================================
-namespace Nosh {
+namespace Nosh
+{
 
 class SaveEigenData :
   public LOCA::SaveEigenData::AbstractStrategy
@@ -52,39 +55,39 @@ public:
 //      const Teuchos::RCP<Teuchos::ParameterList>& eigenParams      );
 
 // Constructor
-SaveEigenData(Teuchos::ParameterList &eigenParamList,
-              const Teuchos::RCP<const Nosh::ModelEvaluator::Virtual> &modelEval,
-              const std::string & fileName
-              );
+  SaveEigenData(Teuchos::ParameterList &eigenParamList,
+                const Teuchos::RCP<const Nosh::ModelEvaluator::Virtual> &modelEval,
+                const std::string & fileName
+               );
 
-virtual
-~SaveEigenData();
+  virtual
+  ~SaveEigenData();
 
-virtual
-NOX::Abstract::Group::ReturnType
-save( Teuchos::RCP<std::vector<double> > &evals_r,
-      Teuchos::RCP<std::vector<double> > &evals_i,
-      Teuchos::RCP<NOX::Abstract::MultiVector> &evecs_r,
-      Teuchos::RCP<NOX::Abstract::MultiVector> &evecs_i
+  virtual
+  NOX::Abstract::Group::ReturnType
+  save( Teuchos::RCP<std::vector<double> > &evals_r,
+        Teuchos::RCP<std::vector<double> > &evals_i,
+        Teuchos::RCP<NOX::Abstract::MultiVector> &evecs_r,
+        Teuchos::RCP<NOX::Abstract::MultiVector> &evecs_i
       );
 
-void
-setLocaStepper( const Teuchos::RCP<LOCA::Stepper> locaStepper );
+  void
+  setLocaStepper( const Teuchos::RCP<LOCA::Stepper> locaStepper );
 
 // This function is necessary to break the circular dependency with the
 // LOCA_Stepper object to allow for a clean termination
-void
-releaseLocaStepper();
+  void
+  releaseLocaStepper();
 
 protected:
 private:
-Teuchos::RCP<Teuchos::ParameterList> eigenParamListPtr_;
-const Teuchos::RCP<const Nosh::ModelEvaluator::Virtual> modelEval_;
-Nosh::CsvWriter csvWriter_;
-Teuchos::RCP<LOCA::Stepper> locaStepper_;
+  Teuchos::RCP<Teuchos::ParameterList> eigenParamListPtr_;
+  const Teuchos::RCP<const Nosh::ModelEvaluator::Virtual> modelEval_;
+  Nosh::CsvWriter csvWriter_;
+  Teuchos::RCP<LOCA::Stepper> locaStepper_;
 
 //! The minimum number of stable eigenvalues that is to be computed in each step.
-unsigned int numComputeStableEigenvalues_;
+  unsigned int numComputeStableEigenvalues_;
 };
 } // namespace NOSH
 

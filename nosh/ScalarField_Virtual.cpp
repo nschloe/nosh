@@ -20,8 +20,10 @@
 
 #include "nosh/ScalarField_Virtual.hpp"
 
-namespace Nosh {
-namespace ScalarField {
+namespace Nosh
+{
+namespace ScalarField
+{
 // ============================================================================
 Virtual::
 Virtual()

@@ -20,8 +20,10 @@
 
 #include "nosh/MatrixBuilder_Virtual.hpp"
 
-namespace Nosh {
-namespace MatrixBuilder {
+namespace Nosh
+{
+namespace MatrixBuilder
+{
 // ============================================================================
 Virtual::
 Virtual()

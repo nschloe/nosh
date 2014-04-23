@@ -1,18 +1,18 @@
-INCLUDE_DIRECTORIES(${Nosh_SOURCE_DIR})
+INCLUDE_DIRECTORIES($ {Nosh_SOURCE_DIR})
 # Treat Trilinos as system code to prevent warnings from Trilinos to appear
 # here. Also add Trilinos TPL include directories. Templated TPL packages such
 # as Eigen may need this.
 INCLUDE_DIRECTORIES(
   SYSTEM
-  ${Trilinos_INCLUDE_DIRS}
-  ${Trilinos_TPL_INCLUDE_DIRS}
-  )
+  $ {Trilinos_INCLUDE_DIRS}
+  $ {Trilinos_TPL_INCLUDE_DIRS}
+)
 
 FILE(GLOB nosh_SRCS "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 FILE(GLOB nosh_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/*.hpp")
 
 ADD_LIBRARY(nosh
-            ${nosh_SRCS})
+            $ {nosh_SRCS})
 
 # Add target link libraries.
 # This has no effect for static builds, but appends the Trilinos
@@ -26,31 +26,31 @@ ADD_LIBRARY(nosh
 # against the fully qualified library (e.g., libblas.so.3) but rather its
 # development counterpart (e.g., libblas.so).
 TARGET_LINK_LIBRARIES(nosh
-                      ${Trilinos_LIBRARIES}
+                      $ {Trilinos_LIBRARIES}
                      )
 
 SET_TARGET_PROPERTIES(
   nosh PROPERTIES
   PUBLIC_HEADER "${nosh_HEADERS}"
-  VERSION ${${PROJECT_NAME}_VERSION}
-  SOVERSION ${${PROJECT_NAME}_MAJOR_VERSION}
-  )
+  VERSION $ {${PROJECT_NAME} _VERSION}
+  SOVERSION $ {${PROJECT_NAME} _MAJOR_VERSION}
+)
 
 # Installation of the program
 INSTALL(TARGETS nosh
-  # IMPORTANT: Add an the export (and install it below). It will contain
-  # important build information.
-  EXPORT NoshLibraryDepends
-  # We don't actually need the RUNTIME DESTINATION here since we're only
-  # installing a library.
-  RUNTIME DESTINATION "${INSTALL_BIN_DIR}" COMPONENT bin
-  LIBRARY DESTINATION "${INSTALL_LIB_DIR}" COMPONENT shlib # .so
-  ARCHIVE DESTINATION "${INSTALL_LIB_DIR}" COMPONENT shlib # .a
-  PUBLIC_HEADER DESTINATION "${INSTALL_INCLUDE_DIR}" COMPONENT dev
-  #PUBLIC_HEADER DESTINATION "${INSTALL_INCLUDE_DIR}/nosh" COMPONENT dev
-  )
+# IMPORTANT: Add an the export (and install it below). It will contain
+# important build information.
+        EXPORT NoshLibraryDepends
+# We don't actually need the RUNTIME DESTINATION here since we're only
+# installing a library.
+        RUNTIME DESTINATION "${INSTALL_BIN_DIR}" COMPONENT bin
+        LIBRARY DESTINATION "${INSTALL_LIB_DIR}" COMPONENT shlib # .so
+        ARCHIVE DESTINATION "${INSTALL_LIB_DIR}" COMPONENT shlib # .a
+        PUBLIC_HEADER DESTINATION "${INSTALL_INCLUDE_DIR}" COMPONENT dev
+#PUBLIC_HEADER DESTINATION "${INSTALL_INCLUDE_DIR}/nosh" COMPONENT dev
+       )
 
 # Install the export set.
 INSTALL(EXPORT NoshLibraryDepends
         DESTINATION "${INSTALL_CMAKE_DIR}"
-        )
+       )

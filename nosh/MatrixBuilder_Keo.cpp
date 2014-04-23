@@ -32,17 +32,19 @@
 #include <ml_epetra_preconditioner.h>
 
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
-  #include <Teuchos_TimeMonitor.hpp>
+#include <Teuchos_TimeMonitor.hpp>
 #endif
 
-namespace Nosh {
-namespace MatrixBuilder {
+namespace Nosh
+{
+namespace MatrixBuilder
+{
 // =============================================================================
 Keo::
 Keo(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
     const Teuchos::RCP<const Nosh::ScalarField::Virtual> &thickness,
     const Teuchos::RCP<const Nosh::VectorField::Virtual> &mvp
-    ) :
+   ) :
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   keoFillTime_( Teuchos::TimeMonitor::getNewTimer(
                   "Nosh: Keo::fillKeo_" ) ),
@@ -89,26 +91,21 @@ Keo::
 apply(const std::map<std::string, double> & params,
       const Epetra_Vector &X,
       Epetra_Vector &Y
-      ) const
+     ) const
 {
   // Check if the relevant parameters from the previous build have changed.
   bool needsRebuild;
-  if (keoBuildParameters_.empty())
-  {
+  if (keoBuildParameters_.empty()) {
     needsRebuild = true;
-  }
-  else
-  {
+  } else {
     needsRebuild = false;
     for (std::map<std::string, double>::const_iterator it = keoBuildParameters_.begin();
          it != keoBuildParameters_.end();
-         ++it)
-    {
+         ++it) {
       // Check if it->first is in params at all and if their values are equal.
       std::map<std::string, double>::const_iterator it2 = params.find(it->first);
       TEUCHOS_ASSERT(it2 != params.end());
-      if (it2->second != it->second)
-      {
+      if (it2->second != it->second) {
         needsRebuild = true;
         break;
       }
@@ -116,14 +113,12 @@ apply(const std::map<std::string, double> & params,
   }
 
   // Rebuild if necessary.
-  if (needsRebuild)
-  {
+  if (needsRebuild) {
     this->fillKeo_(keoCache_, params, &Keo::fillerRegular_);
     // Reset build parameters.
     for (std::map<std::string, double>::iterator it = keoBuildParameters_.begin();
          it != keoBuildParameters_.end();
-         ++it)
-    {
+         ++it) {
       std::map<std::string, double>::const_iterator it2 = params.find(it->first);
       TEUCHOS_ASSERT(it2 != params.end());
       it->second = it2->second;
@@ -142,7 +137,7 @@ applyDKDp(const std::map<std::string, double> & params,
           const std::string & paramName,
           const Epetra_Vector &X,
           Epetra_Vector &Y
-          ) const
+         ) const
 {
   // Unconditionally rebuild the cache.
   // It would be little effort to also wrap this into a conditional
@@ -160,43 +155,36 @@ void
 Keo::
 fill(Epetra_FECrsMatrix &matrix,
      const std::map<std::string, double> & params
-     ) const
+    ) const
 {
   // Cache the construction of the KEO.
   // This is useful because in the continuation context,
   // getKeo() is called a number of times with the same arguments
   // (in computeF, getJacobian(), and getPreconditioner().
   bool needsRebuild;
-  if (keoBuildParameters_.empty())
-  {
+  if (keoBuildParameters_.empty()) {
     needsRebuild = true;
-  }
-  else
-  {
+  } else {
     needsRebuild = false;
     for (std::map<std::string, double>::const_iterator it = keoBuildParameters_.begin();
          it != keoBuildParameters_.end();
-         ++it)
-    {
+         ++it) {
       // Check if it->first is in params at all and if their values are equal.
       std::map<std::string, double>::const_iterator it2 = params.find(it->first);
       TEUCHOS_ASSERT(it2 != params.end());
-      if (it2->second != it->second)
-      {
+      if (it2->second != it->second) {
         needsRebuild = true;
         break;
       }
     }
   }
 
-  if (needsRebuild)
-  {
+  if (needsRebuild) {
     this->fillKeo_(keoCache_, params, &Keo::fillerRegular_);
     // Reset build parameters.
     for (std::map<std::string, double>::iterator it = keoBuildParameters_.begin();
          it != keoBuildParameters_.end();
-         ++it)
-    {
+         ++it) {
       std::map<std::string, double>::const_iterator it2 = params.find(it->first);
       TEUCHOS_ASSERT(it2 != params.end());
       it->second = it2->second;
@@ -292,8 +280,8 @@ buildKeoGraph_() const
        k < edges.size();
        k++)
     TEUCHOS_ASSERT_EQUALITY( 0,
-      keoGraph.InsertGlobalIndices(4, globalIndexCache_[k].Values(),
-                                   4, globalIndexCache_[k].Values()));
+                             keoGraph.InsertGlobalIndices(4, globalIndexCache_[k].Values(),
+                                 4, globalIndexCache_[k].Values()));
 
   // Make sure that domain and range map are non-overlapping (to make sure that
   // states psi can compute norms) and equal (to make sure that the matrix works
@@ -346,7 +334,7 @@ Keo::
 fillKeo_(Epetra_FECrsMatrix &keoMatrix,
          const std::map<std::string, double> & params,
          void (Keo::*filler)(const int, const std::map<std::string, double> &, double*) const
-         ) const
+        ) const
 {
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   Teuchos::TimeMonitor tm( *keoFillTime_ );
@@ -377,8 +365,7 @@ fillKeo_(Epetra_FECrsMatrix &keoMatrix,
   // Loop over all edges.
   for (Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> >::size_type k = 0;
        k < edges.size();
-       k++)
-  {
+       k++) {
     // ---------------------------------------------------------------
     // Compute the integral
     //
@@ -405,12 +392,24 @@ fillKeo_(Epetra_FECrsMatrix &keoMatrix,
     v[0] *= alphaCache_[k];
     v[1] *= alphaCache_[k];
     v[2] *= alphaCache_[k];
-    A(0, 0) = v[2];   A(0 ,1) = 0.0;     A(0, 2) = v[0];    A(0, 3) = v[1];
-    A(1, 0) = 0.0;    A(1 ,1) = v[2];    A(1, 2) = -v[1];   A(1, 3) = v[0];
-    A(2, 0) = v[0];   A(2 ,1) = -v[1];   A(2, 2) = v[2];    A(2, 3) = 0.0;
-    A(3, 0) = v[1];   A(3 ,1) = v[0];    A(3, 2) = 0.0;     A(3, 3) = v[2];
+    A(0, 0) = v[2];
+    A(0 ,1) = 0.0;
+    A(0, 2) = v[0];
+    A(0, 3) = v[1];
+    A(1, 0) = 0.0;
+    A(1 ,1) = v[2];
+    A(1, 2) = -v[1];
+    A(1, 3) = v[0];
+    A(2, 0) = v[0];
+    A(2 ,1) = -v[1];
+    A(2, 2) = v[2];
+    A(2, 3) = 0.0;
+    A(3, 0) = v[1];
+    A(3 ,1) = v[0];
+    A(3, 2) = 0.0;
+    A(3, 3) = v[2];
     TEUCHOS_ASSERT_EQUALITY(0, keoMatrix.SumIntoGlobalValues(
-                                                    globalIndexCache_[k], A));
+                              globalIndexCache_[k], A));
     // -------------------------------------------------------------------
   }
 
@@ -429,8 +428,7 @@ buildGlobalIndexCache_( const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2
   Teuchos::Tuple<int,2> gid;
   for (Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> >::size_type k = 0;
        k < edges.size();
-       k++)
-  {
+       k++) {
     gid[0] = edges[k][0]->identifier() - 1;
     gid[1] = edges[k][1]->identifier() - 1;
 
@@ -450,7 +448,7 @@ void
 Keo::
 buildAlphaCache_(const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > & edges,
                  const Teuchos::ArrayRCP<const double> &edgeCoefficients
-                 ) const
+                ) const
 {
   // This routine serves the one and only purpose of caching the
   // thickness average. The cache is used in every call to this->fill().
@@ -481,27 +479,26 @@ buildAlphaCache_(const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > & e
   Teuchos::Tuple<int,2> lid;
   for (Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> >::size_type k = 0;
        k < edges.size();
-       k++)
-  {
+       k++) {
     // Get the ID of the edge endpoints in the map of
     // getV(). Well...
     gid[0] = edges[k][0]->identifier() - 1;
     lid[0] = overlapMap->LID( gid[0] );
 #ifndef NDEBUG
     TEUCHOS_TEST_FOR_EXCEPT_MSG(lid[0] < 0,
-                         "The global index " << gid[0]
-                         << " does not seem to be present on this node.");
+                                "The global index " << gid[0]
+                                << " does not seem to be present on this node.");
 #endif
     gid[1] = edges[k][1]->identifier() - 1;
     lid[1] = overlapMap->LID( gid[1] );
 #ifndef NDEBUG
     TEUCHOS_TEST_FOR_EXCEPT_MSG(lid[1] < 0,
-                         "The global index " << gid[1]
-                         << " does not seem to be present on this node.");
+                                "The global index " << gid[1]
+                                << " does not seem to be present on this node.");
 #endif
     // Update cache.
     alphaCache_[k] = edgeCoefficients[k]
-                   * 0.5 * (thicknessOverlap[lid[0]] + thicknessOverlap[lid[1]]);
+                     * 0.5 * (thicknessOverlap[lid[0]] + thicknessOverlap[lid[1]]);
   }
 
   alphaCacheUpToDate_ = true;

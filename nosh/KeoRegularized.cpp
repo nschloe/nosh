@@ -47,7 +47,8 @@ typedef Epetra_Operator OP;
 typedef Belos::MultiVecTraits<ST,MV>     MVT;
 typedef Belos::OperatorTraits<ST,MV,OP>  OPT;
 // =============================================================================
-namespace Nosh {
+namespace Nosh
+{
 // =============================================================================
 KeoRegularized::
 KeoRegularized(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
@@ -68,9 +69,9 @@ KeoRegularized(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
   numCycles_( 1 ),
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   timerRebuild0_( Teuchos::TimeMonitor::getNewTimer(
-                  "Nosh: KeoRegularized::rebuild::ML init" ) ),
+                    "Nosh: KeoRegularized::rebuild::ML init" ) ),
   timerRebuild1_( Teuchos::TimeMonitor::getNewTimer(
-                  "Nosh: KeoRegularized::rebuild::ML rebuild" ) ),
+                    "Nosh: KeoRegularized::rebuild::ML rebuild" ) ),
 #endif
   out_( Teuchos::VerboseObjectBase::getDefaultOStream() )
 {
@@ -93,7 +94,7 @@ int
 KeoRegularized::
 Apply( const Epetra_MultiVector &X,
        Epetra_MultiVector &Y
-       ) const
+     ) const
 {
 #ifndef NDEBUG
   TEUCHOS_ASSERT( regularizedMatrix_.DomainMap().SameAs( X.Map() ) );
@@ -107,15 +108,12 @@ int
 KeoRegularized::
 ApplyInverse(const Epetra_MultiVector &X,
              Epetra_MultiVector &Y
-             ) const
+            ) const
 {
-  if (numCycles_ == 1)
-  {
+  if (numCycles_ == 1) {
     // Just apply one (inverse) AMG cycle.
     return MlPrec_->ApplyInverse(X, Y);
-  }
-  else
-  {
+  } else {
     // Belos part
     Teuchos::ParameterList belosList;
     // Relative convergence tolerance requested.
@@ -142,8 +140,8 @@ ApplyInverse(const Epetra_MultiVector &X,
     Teuchos::RCP<const Epetra_MultiVector> Xptr = Teuchos::rcpFromRef( X );
     Teuchos::RCP<Epetra_MultiVector> Yptr = Teuchos::rcpFromRef( Y );
     Belos::LinearProblem<double,MV,OP> problem(Teuchos::rcpFromRef(regularizedMatrix_),
-                                               Yptr,
-                                               Xptr);
+        Yptr,
+        Xptr);
     // Make sure the problem sets up correctly.
     TEUCHOS_ASSERT( problem.setProblem() );
     // -------------------------------------------------------------------------
@@ -152,14 +150,14 @@ ApplyInverse(const Epetra_MultiVector &X,
     // NOTE:  This is necessary because Belos expects an operator to apply the
     //        preconditioner with Apply() NOT ApplyInverse().
     Teuchos::RCP<Belos::EpetraPrecOp> mlPrec =
-        Teuchos::rcp( new Belos::EpetraPrecOp( MlPrec_ ) );
+      Teuchos::rcp( new Belos::EpetraPrecOp( MlPrec_ ) );
     problem.setLeftPrec( mlPrec );
     // -------------------------------------------------------------------------
     // Create an iterative solver manager.
     Teuchos::RCP<Belos::SolverManager<double,MV,OP> > newSolver =
       Teuchos::rcp( new Belos::PseudoBlockCGSolMgr<double,MV,OP>
-        (Teuchos::rcp(&problem, false), Teuchos::rcp(&belosList, false))
-      );
+                    (Teuchos::rcp(&problem, false), Teuchos::rcp(&belosList, false))
+                  );
 
     // Perform "solve".
     Belos::ReturnType ret = newSolver->solve();
@@ -222,7 +220,7 @@ void
 KeoRegularized::
 rebuild(const std::map<std::string,double> & params,
         const Epetra_Vector & x
-        )
+       )
 {
   // Copy over the matrix.
   // This is necessary as we don't apply AMG to K,
@@ -245,8 +243,7 @@ rebuild(const std::map<std::string,double> & params,
   TEUCHOS_ASSERT(it != params.end());
   const double g = it->second;
   // Add 2*g*|psi|^2 to the diagonal.
-  if (g > 0.0)
-  {
+  if (g > 0.0) {
     // To be added to the diagonal blocks:
     //
     // [alpha + gamma, beta         ]
@@ -271,16 +268,15 @@ rebuild(const std::map<std::string,double> & params,
 #endif
     int idx[2];
     double vals[2];
-    for (int k=0; k<controlVolumes.MyLength(); k++)
-    {
+    for (int k=0; k<controlVolumes.MyLength(); k++) {
       const double alpha = g * controlVolumes[k] * thicknessValues[k]
-                         * 2.0 * (x[2*k]*x[2*k] + x[2*k+1]*x[2*k+1]);
+                           * 2.0 * (x[2*k]*x[2*k] + x[2*k+1]*x[2*k+1]);
 
       const double beta = g * controlVolumes[k] * thicknessValues[k]
-                        * (2.0 * x[2*k] * x[2*k+1]);
+                          * (2.0 * x[2*k] * x[2*k+1]);
 
       const double gamma = g * controlVolumes[k] * thicknessValues[k]
-                         * (x[2*k]*x[2*k] - x[2*k+1]*x[2*k+1]);
+                           * (x[2*k]*x[2*k] - x[2*k+1]*x[2*k+1]);
 
       // TODO check if the indices are correct here
       idx[0] = 2*k;
@@ -331,8 +327,7 @@ rebuildInverse_()
   // object itself.
   // For reusing the ML structure, see
   // http://trilinos.sandia.gov/packages/docs/dev/packages/ml/doc/html/classML__Epetra_1_1MultiLevelPreconditioner.html#a0a5c1d47c6938d2ec1cb9bb710723c1e
-  if ( MlPrec_.is_null() )
-  {
+  if ( MlPrec_.is_null() ) {
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor tm( *timerRebuild0_ );
 #endif
@@ -371,12 +366,10 @@ rebuildInverse_()
 #endif
     MlPrec_ =
       Teuchos::rcp(new ML_Epetra::MultiLevelPreconditioner(regularizedMatrix_,
-                                                           MLList));
-  }
-  else
-  {
+                   MLList));
+  } else {
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
-  Teuchos::TimeMonitor tm( *timerRebuild1_ );
+    Teuchos::TimeMonitor tm( *timerRebuild1_ );
 #endif
     bool checkFiltering = true;
     TEUCHOS_ASSERT_EQUALITY(0, MlPrec_->ComputePreconditioner(checkFiltering));

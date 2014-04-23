@@ -23,13 +23,15 @@
 
 #include <Epetra_Vector.h>
 
-namespace Nosh {
-namespace ScalarField {
+namespace Nosh
+{
+namespace ScalarField
+{
 // ============================================================================
 ExplicitValues::
 ExplicitValues(const Nosh::StkMesh & mesh,
                const std::string & fieldName
-               ) :
+              ) :
   nodeValues_(mesh.createVector(fieldName))
 {
 }
@@ -66,7 +68,7 @@ const Epetra_Vector
 ExplicitValues::
 getdVdP(const std::map<std::string,double> & params,
         const std::string & paramName
-        ) const
+       ) const
 {
   (void) params;
   if (paramName.compare("beta") == 0)

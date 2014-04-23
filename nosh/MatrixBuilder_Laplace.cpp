@@ -30,19 +30,21 @@
 #include <ml_epetra_preconditioner.h>
 
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
-  #include <Teuchos_TimeMonitor.hpp>
+#include <Teuchos_TimeMonitor.hpp>
 #endif
 
-namespace Nosh {
-namespace MatrixBuilder {
+namespace Nosh
+{
+namespace MatrixBuilder
+{
 // =============================================================================
 Laplace::
 Laplace(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
         const Teuchos::RCP<const Nosh::ScalarField::Virtual> &thickness
-        ) :
+       ) :
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   fillTime_( Teuchos::TimeMonitor::getNewTimer(
-                  "Nosh: Laplace::fill_" ) ),
+               "Nosh: Laplace::fill_" ) ),
 #endif
   mesh_( mesh ),
   thickness_( thickness ),
@@ -83,12 +85,11 @@ Laplace::
 apply(const std::map<std::string, double> &params,
       const Epetra_Vector &X,
       Epetra_Vector &Y
-      ) const
+     ) const
 {
   (void) params;
   // Rebuild if necessary.
-  if (!matrixCacheUpToDate_)
-  {
+  if (!matrixCacheUpToDate_) {
     this->fill_(matrixCache_);
     matrixCacheUpToDate_ = true;
   }
@@ -105,7 +106,7 @@ applyDKDp(const std::map<std::string, double> &params,
           const std::string & paramName,
           const Epetra_Vector &X,
           Epetra_Vector &Y
-          ) const
+         ) const
 {
   (void) params;
   (void) paramName;
@@ -120,13 +121,12 @@ void
 Laplace::
 fill(Epetra_FECrsMatrix &matrix,
      const std::map<std::string, double> &params
-     ) const
+    ) const
 {
   (void) params;
   // Cache the construction of the Laplacian.
   // After all, it's always the same.
-  if (!matrixCacheUpToDate_)
-  {
+  if (!matrixCacheUpToDate_) {
     this->fill_(matrixCache_);
     matrixCacheUpToDate_ = true;
   }
@@ -220,8 +220,8 @@ buildGraph_() const
        k < edges.size();
        k++)
     TEUCHOS_ASSERT_EQUALITY( 0,
-      graph.InsertGlobalIndices(4, globalIndexCache_[k].Values(),
-                                4, globalIndexCache_[k].Values()));
+                             graph.InsertGlobalIndices(4, globalIndexCache_[k].Values(),
+                                 4, globalIndexCache_[k].Values()));
 
   // Make sure that domain and range map are non-overlapping (to make sure that
   // states psi can compute norms) and equal (to make sure that the matrix works
@@ -262,8 +262,7 @@ fill_(Epetra_FECrsMatrix &matrix) const
   // Loop over all edges.
   for (Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> >::size_type k = 0;
        k < edges.size();
-       k++)
-  {
+       k++) {
     // We'd like to insert the 2x2 matrix
     //
     //     [   alpha, - alpha ]
@@ -273,12 +272,24 @@ fill_(Epetra_FECrsMatrix &matrix) const
     // that shares and edge.
     // Do that now, just blockwise for real and imaginary part.
     const double & a = alphaCache_[k];
-    A(0, 0) =  a;    A(0 ,1) =  0.0;  A(0, 2) = -a;    A(0, 3) =  0.0;
-    A(1, 0) =  0.0;  A(1 ,1) =  a;    A(1, 2) =  0.0;  A(1, 3) = -a;
-    A(2, 0) = -a;    A(2 ,1) =  0.0;  A(2, 2) =  a;    A(2, 3) =  0.0;
-    A(3, 0) =  0.0;  A(3 ,1) = -a;    A(3, 2) =  0.0;  A(3, 3) =  a;
+    A(0, 0) =  a;
+    A(0 ,1) =  0.0;
+    A(0, 2) = -a;
+    A(0, 3) =  0.0;
+    A(1, 0) =  0.0;
+    A(1 ,1) =  a;
+    A(1, 2) =  0.0;
+    A(1, 3) = -a;
+    A(2, 0) = -a;
+    A(2 ,1) =  0.0;
+    A(2, 2) =  a;
+    A(2, 3) =  0.0;
+    A(3, 0) =  0.0;
+    A(3 ,1) = -a;
+    A(3, 2) =  0.0;
+    A(3, 3) =  a;
     TEUCHOS_ASSERT_EQUALITY(0, matrix.SumIntoGlobalValues(
-                                                globalIndexCache_[k], A));
+                              globalIndexCache_[k], A));
     // -------------------------------------------------------------------
   }
 
@@ -297,8 +308,7 @@ buildGlobalIndexCache_( const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2
   Teuchos::Tuple<int,2> gid;
   for (Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> >::size_type k = 0;
        k < edges.size();
-       k++)
-  {
+       k++) {
     gid[0] = edges[k][0]->identifier() - 1;
     gid[1] = edges[k][1]->identifier() - 1;
 
@@ -329,24 +339,23 @@ buildAlphaCache_( const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > & 
   Teuchos::Tuple<int,2> lid;
   for (Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> >::size_type k = 0;
        k < edges.size();
-       k++)
-  {
+       k++) {
     gid[0] = edges[k][0]->identifier() - 1;
     lid[0] = mesh_->getNodesOverlapMap()->LID( gid[0] );
 #ifndef NDEBUG
     TEUCHOS_TEST_FOR_EXCEPT_MSG( lid[0] < 0,
-                         "The global index " << gid[0]
-                         << " does not seem to be present on this node." );
+                                 "The global index " << gid[0]
+                                 << " does not seem to be present on this node." );
 #endif
     gid[1] = edges[k][1]->identifier() - 1;
     lid[1] = mesh_->getNodesOverlapMap()->LID( gid[1] );
 #ifndef NDEBUG
     TEUCHOS_TEST_FOR_EXCEPT_MSG(lid[1] < 0,
-                         "The global index " << gid[1]
-                         << " does not seem to be present on this node." );
+                                "The global index " << gid[1]
+                                << " does not seem to be present on this node." );
 #endif
     alphaCache_[k] = edgeCoefficients[k]
-                   * 0.5 * (thicknessValues[lid[0]] + thicknessValues[lid[1]]);
+                     * 0.5 * (thicknessValues[lid[0]] + thicknessValues[lid[1]]);
   }
 
   alphaCacheUpToDate_ = true;

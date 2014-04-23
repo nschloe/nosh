@@ -20,8 +20,10 @@
 
 #include "nosh/VectorField_Virtual.hpp"
 
-namespace Nosh {
-namespace VectorField {
+namespace Nosh
+{
+namespace VectorField
+{
 // ============================================================================
 Virtual::
 Virtual()

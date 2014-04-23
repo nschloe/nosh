@@ -23,15 +23,17 @@
 #include <Epetra_Vector.h>
 #include <Epetra_Map.h>
 
-namespace Nosh {
-namespace ScalarField {
+namespace Nosh
+{
+namespace ScalarField
+{
 // ============================================================================
 Constant::
 Constant(const Nosh::StkMesh & mesh,
          const double c,
          const std::string & param1Name,
          const double param1InitValue
-         ):
+        ):
   map_(mesh.getNodesMap()),
   c_( c ),
   param1Name_ (param1Name),
@@ -74,7 +76,7 @@ const Epetra_Vector
 Constant::
 getdVdP(const std::map<std::string,double> & params,
         const std::string & paramName
-        ) const
+       ) const
 {
   (void) params;
   // Create zeroed-out vector.

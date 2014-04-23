@@ -31,40 +31,42 @@
 
 typedef Teuchos::SerialDenseVector<int,double> DoubleVector;
 
-namespace Nosh {
-namespace VectorField {
+namespace Nosh
+{
+namespace VectorField
+{
 class ExplicitValues : public Virtual
 {
 public:
-ExplicitValues(const Nosh::StkMesh &mesh,
-               const std::string &fieldName,
-               const double initMu
-               );
+  ExplicitValues(const Nosh::StkMesh &mesh,
+                 const std::string &fieldName,
+                 const double initMu
+                );
 
-virtual
-~ExplicitValues();
+  virtual
+  ~ExplicitValues();
 
 //! Get parameter names and initial values.
-virtual
-const std::map<std::string,double>
-getInitialParameters() const;
+  virtual
+  const std::map<std::string,double>
+  getInitialParameters() const;
 
-double
-getEdgeProjection(const unsigned int edgeIndex,
-                  const std::map<std::string, double> & params
-                  ) const;
+  double
+  getEdgeProjection(const unsigned int edgeIndex,
+                    const std::map<std::string, double> & params
+                   ) const;
 
-double
-getDEdgeProjectionDp(const unsigned int edgeIndex,
-                     const std::map<std::string, double> & params,
-                     const std::string & dParamName
-                     ) const;
+  double
+  getDEdgeProjectionDp(const unsigned int edgeIndex,
+                       const std::map<std::string, double> & params,
+                       const std::string & dParamName
+                      ) const;
 
 protected:
 private:
-const double initMu_;
+  const double initMu_;
 
-Teuchos::ArrayRCP<double> edgeProjectionCache_;
+  Teuchos::ArrayRCP<double> edgeProjectionCache_;
 };
 } // namespace VectorField
 } // namespace Nosh

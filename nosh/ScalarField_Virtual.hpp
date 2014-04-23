@@ -27,31 +27,33 @@
 // forward declarations
 class Epetra_Vector;
 // =============================================================================
-namespace Nosh {
-namespace ScalarField {
+namespace Nosh
+{
+namespace ScalarField
+{
 class Virtual
 {
 public:
-Virtual();
+  Virtual();
 
-virtual
-~Virtual();
+  virtual
+  ~Virtual();
 
-virtual
-const Epetra_Vector
-getV(const std::map<std::string,double> & params
-     ) const = 0;
+  virtual
+  const Epetra_Vector
+  getV(const std::map<std::string,double> & params
+      ) const = 0;
 
-virtual
-const Epetra_Vector
-getdVdP(const std::map<std::string,double> & params,
-        const std::string & paramName
-        ) const = 0;
+  virtual
+  const Epetra_Vector
+  getdVdP(const std::map<std::string,double> & params,
+          const std::string & paramName
+         ) const = 0;
 
 //! Get parameter names and initial values.
-virtual
-const std::map<std::string,double>
-getInitialParameters() const = 0;
+  virtual
+  const std::map<std::string,double>
+  getInitialParameters() const = 0;
 
 protected:
 private:

@@ -20,8 +20,10 @@
 
 #include "nosh/ModelEvaluator_Virtual.hpp"
 
-namespace Nosh {
-namespace ModelEvaluator {
+namespace Nosh
+{
+namespace ModelEvaluator
+{
 // ============================================================================
 Virtual::
 Virtual ()

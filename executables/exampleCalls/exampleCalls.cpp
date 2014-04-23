@@ -42,8 +42,7 @@ int main(int argc, char *argv[])
     Teuchos::VerboseObjectBase::getDefaultOStream();
 
   bool success = true;
-  try
-  {
+  try {
     // ===========================================================================
     // Handle command line arguments.
     Teuchos::CommandLineProcessor myClp;
@@ -69,8 +68,8 @@ int main(int argc, char *argv[])
     const RCP<Teuchos::Time> readTime =
       Teuchos::TimeMonitor::getNewTimer("Read mesh");
     {
-    Teuchos::TimeMonitor tm(*readTime);
-    mesh = rcp(new Nosh::StkMesh(*eComm, dataFile, step));
+      Teuchos::TimeMonitor tm(*readTime);
+      mesh = rcp(new Nosh::StkMesh(*eComm, dataFile, step));
     }
 
     // Cast the data into something more accessible.
@@ -124,7 +123,7 @@ int main(int argc, char *argv[])
     //const double T = 0.0;
     // (b) One you built yourself by deriving from Nosh::ScalarField::Virtual.
     //RCP<Nosh::ScalarField::Virtual> sp =
-      //rcp(new MyScalarField(mesh));
+    //rcp(new MyScalarField(mesh));
     // - - - - - - - - - - - - - - - - - - - - -  - - - - - - - - - - - - - - -
 
     // Finally, create the model evaluator.
@@ -134,19 +133,17 @@ int main(int argc, char *argv[])
     const RCP<Teuchos::Time> meTime =
       Teuchos::TimeMonitor::getNewTimer("Create model evaluator");
     {
-    Teuchos::TimeMonitor tm(*meTime);
-    nlsModel = rcp(new Nosh::ModelEvaluator::Nls(mesh, matrixBuilder, sp, g, thickness, psi));
+      Teuchos::TimeMonitor tm(*meTime);
+      nlsModel = rcp(new Nosh::ModelEvaluator::Nls(mesh, matrixBuilder, sp, g, thickness, psi));
     }
 
     RCP<Nosh::ModelEvaluator::Virtual> modelEvaluator;
     const bool useBordering = false;
-    if (useBordering)
-    {
+    if (useBordering) {
       // Use i*psi as bordering.
       RCP<Epetra_Vector> bordering =
         rcp(new Epetra_Vector(psi->Map()));
-      for (int k=0; k<psi->Map().NumMyElements()/2; k++)
-      {
+      for (int k=0; k<psi->Map().NumMyElements()/2; k++) {
         (*bordering)[2*k] = - (*psi)[2*k+1];
         (*bordering)[2*k+1] = (*psi)[2*k];
         //(*bordering)[2*k]   = 1.0;
@@ -156,9 +153,7 @@ int main(int argc, char *argv[])
       // Initial value for the extra variable.
       double lambda = 0.0;
       modelEvaluator = rcp(new Nosh::ModelEvaluator::Bordered(nlsModel, bordering, lambda));
-    }
-    else
-    {
+    } else {
       modelEvaluator = nlsModel;
     }
 
@@ -179,10 +174,10 @@ int main(int argc, char *argv[])
     outArgs.set_f(fx);
     modelEvaluator->evalModel(inArgs, outArgs);
     {
-    Teuchos::TimeMonitor tm(*fxTime);
-    // Fill outArgs.
-    modelEvaluator->evalModel(inArgs, outArgs);
-    // fx is now filled with F(X).
+      Teuchos::TimeMonitor tm(*fxTime);
+      // Fill outArgs.
+      modelEvaluator->evalModel(inArgs, outArgs);
+      // fx is now filled with F(X).
     }
     //std::cout << *fx << std::endl;
     // Reset to null to make sure it's not refilled the next time evalModel is called.
@@ -194,12 +189,12 @@ int main(int argc, char *argv[])
       Teuchos::TimeMonitor::getNewTimer("Get Jacobian");
     Teuchos::RCP<Epetra_Operator> jac;
     {
-    Teuchos::TimeMonitor tm(*getJTime);
-    jac = modelEvaluator->create_W();
-    outArgs.set_W(jac);
-    modelEvaluator->evalModel(inArgs, outArgs);
-    // Now, jac contains the Jacobian operator.
-    outArgs.set_W(nullOp);
+      Teuchos::TimeMonitor tm(*getJTime);
+      jac = modelEvaluator->create_W();
+      outArgs.set_W(jac);
+      modelEvaluator->evalModel(inArgs, outArgs);
+      // Now, jac contains the Jacobian operator.
+      outArgs.set_W(nullOp);
     }
 
     // Apply Jacobian
@@ -209,8 +204,8 @@ int main(int argc, char *argv[])
     const RCP<Teuchos::Time> applyJTime =
       Teuchos::TimeMonitor::getNewTimer("Apply Jacobian");
     {
-    Teuchos::TimeMonitor tm(*applyJTime);
-    jac->Apply(X, Y);
+      Teuchos::TimeMonitor tm(*applyJTime);
+      jac->Apply(X, Y);
     }
 
     // Get the preconditioner.
@@ -218,12 +213,12 @@ int main(int argc, char *argv[])
       Teuchos::TimeMonitor::getNewTimer("Get Preconditioner");
     Teuchos::RCP<Epetra_Operator> prec;
     {
-    Teuchos::TimeMonitor tm(*getPTime);
-    prec = modelEvaluator->create_WPrec()->PrecOp;
-    outArgs.set_WPrec(prec);
-    modelEvaluator->evalModel(inArgs, outArgs);
-    // Now, prec contains the Jacobian operator.
-    outArgs.set_WPrec(nullOp);
+      Teuchos::TimeMonitor tm(*getPTime);
+      prec = modelEvaluator->create_WPrec()->PrecOp;
+      outArgs.set_WPrec(prec);
+      modelEvaluator->evalModel(inArgs, outArgs);
+      // Now, prec contains the Jacobian operator.
+      outArgs.set_WPrec(nullOp);
     }
 
     // Apply preconditioner
@@ -233,26 +228,24 @@ int main(int argc, char *argv[])
     const RCP<Teuchos::Time> applyPTime =
       Teuchos::TimeMonitor::getNewTimer("Apply Preconditioner");
     {
-    Teuchos::TimeMonitor tm(*applyPTime);
-    prec->Apply(X2, Y2);
+      Teuchos::TimeMonitor tm(*applyPTime);
+      prec->Apply(X2, Y2);
     }
 
     // Write out data.
     const RCP<Teuchos::Time> writeTime =
       Teuchos::TimeMonitor::getNewTimer("Write");
     {
-    Teuchos::TimeMonitor tm(*writeTime);
-    mesh->openOutputChannel(".", "output");
-    mesh->write(*psi, 0.0);
+      Teuchos::TimeMonitor tm(*writeTime);
+      mesh->openOutputChannel(".", "output");
+      mesh->write(*psi, 0.0);
     }
 
     // Print timing data.
     Teuchos::TimeMonitor::summarize();
+  } catch (Teuchos::CommandLineProcessor::HelpPrinted) {
+  } catch (Teuchos::CommandLineProcessor::ParseError) {
   }
-  catch (Teuchos::CommandLineProcessor::HelpPrinted)
-  {}
-  catch (Teuchos::CommandLineProcessor::ParseError)
-  {}
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true, *out, success);
 
   return success ? EXIT_SUCCESS : EXIT_FAILURE;

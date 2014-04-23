@@ -28,37 +28,39 @@
 #include "nosh/ScalarField_Virtual.hpp"
 #include "nosh/StkMesh.hpp"
 
-namespace Nosh {
-namespace ScalarField {
+namespace Nosh
+{
+namespace ScalarField
+{
 class ExplicitValues : public Virtual
 {
 public:
-ExplicitValues(const Nosh::StkMesh &mesh,
-               const std::string &fieldName
-               );
+  ExplicitValues(const Nosh::StkMesh &mesh,
+                 const std::string &fieldName
+                );
 
-virtual
-~ExplicitValues();
+  virtual
+  ~ExplicitValues();
 
 //! Get parameter names and initial values.
-virtual
-const std::map<std::string,double>
-getInitialParameters() const;
+  virtual
+  const std::map<std::string,double>
+  getInitialParameters() const;
 
-virtual
-const Epetra_Vector
-getV(const std::map<std::string,double> & params) const;
+  virtual
+  const Epetra_Vector
+  getV(const std::map<std::string,double> & params) const;
 
-virtual
-const Epetra_Vector
-getdVdP(const std::map<std::string,double> & params,
-        const std::string & paramName
-        ) const;
+  virtual
+  const Epetra_Vector
+  getdVdP(const std::map<std::string,double> & params,
+          const std::string & paramName
+         ) const;
 
 protected:
 private:
 
-const Teuchos::RCP<const Epetra_Vector> nodeValues_;
+  const Teuchos::RCP<const Epetra_Vector> nodeValues_;
 };
 } // namespace ScalarField
 } // namespace Nosh

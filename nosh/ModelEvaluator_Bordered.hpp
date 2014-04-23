@@ -25,90 +25,92 @@
 
 #include "nosh/ModelEvaluator_Virtual.hpp"
 // -----------------------------------------------------------------------------
-namespace Nosh {
-namespace ModelEvaluator {
+namespace Nosh
+{
+namespace ModelEvaluator
+{
 class Bordered : public Nosh::ModelEvaluator::Virtual
 {
 
 public:
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 //! Constructor without initial guess.
-Bordered (
-  const Teuchos::RCP<const Nosh::ModelEvaluator::Virtual> & modelEval,
-  const Teuchos::RCP<const Epetra_Vector> & initialBordering,
-  const double lambdaInit
+  Bordered (
+    const Teuchos::RCP<const Nosh::ModelEvaluator::Virtual> & modelEval,
+    const Teuchos::RCP<const Epetra_Vector> & initialBordering,
+    const double lambdaInit
   );
 
 // Destructor
-virtual
-~Bordered();
+  virtual
+  ~Bordered();
 
-virtual
-Teuchos::RCP<const Epetra_Map>
-get_x_map() const;
+  virtual
+  Teuchos::RCP<const Epetra_Map>
+  get_x_map() const;
 
-virtual
-Teuchos::RCP<const Epetra_Map>
-get_f_map() const;
+  virtual
+  Teuchos::RCP<const Epetra_Map>
+  get_f_map() const;
 
-virtual
-Teuchos::RCP<const Epetra_Vector>
-get_x_init() const;
+  virtual
+  Teuchos::RCP<const Epetra_Vector>
+  get_x_init() const;
 
-virtual
-Teuchos::RCP<const Epetra_Vector>
-get_p_init( int l ) const;
+  virtual
+  Teuchos::RCP<const Epetra_Vector>
+  get_p_init( int l ) const;
 
-virtual
-Teuchos::RCP<const Epetra_Map>
-get_p_map( int l ) const;
+  virtual
+  Teuchos::RCP<const Epetra_Map>
+  get_p_map( int l ) const;
 
-virtual
-Teuchos::RCP<const Teuchos::Array<std::string> >
-get_p_names( int l ) const;
+  virtual
+  Teuchos::RCP<const Teuchos::Array<std::string> >
+  get_p_names( int l ) const;
 
-virtual
-Teuchos::RCP<Epetra_Operator>
-create_W() const;
+  virtual
+  Teuchos::RCP<Epetra_Operator>
+  create_W() const;
 
-virtual
-Teuchos::RCP<EpetraExt::ModelEvaluator::Preconditioner>
-create_WPrec() const;
+  virtual
+  Teuchos::RCP<EpetraExt::ModelEvaluator::Preconditioner>
+  create_WPrec() const;
 
-virtual
-InArgs
-createInArgs() const;
+  virtual
+  InArgs
+  createInArgs() const;
 
-virtual
-OutArgs
-createOutArgs() const;
+  virtual
+  OutArgs
+  createOutArgs() const;
 
-virtual
-void
-evalModel( const InArgs &inArgs,
-           const OutArgs &outArgs ) const;
+  virtual
+  void
+  evalModel( const InArgs &inArgs,
+             const OutArgs &outArgs ) const;
 
 public:
 
-virtual
-double
-innerProduct(const Epetra_Vector &phi,
-             const Epetra_Vector &psi
-             ) const;
+  virtual
+  double
+  innerProduct(const Epetra_Vector &phi,
+               const Epetra_Vector &psi
+              ) const;
 
-virtual
-double
-gibbsEnergy(const Epetra_Vector &psi) const;
+  virtual
+  double
+  gibbsEnergy(const Epetra_Vector &psi) const;
 
-virtual
-const Teuchos::RCP<const Nosh::StkMesh>
-getMesh() const;
+  virtual
+  const Teuchos::RCP<const Nosh::StkMesh>
+  getMesh() const;
 
 protected:
 private:
-const Teuchos::RCP<const Nosh::ModelEvaluator::Virtual> innerModelEval_;
-const Teuchos::RCP<const Epetra_Vector> initialBordering_;
-const double lambdaInit_;
+  const Teuchos::RCP<const Nosh::ModelEvaluator::Virtual> innerModelEval_;
+  const Teuchos::RCP<const Epetra_Vector> initialBordering_;
+  const double lambdaInit_;
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 };
 } // namespace Modelevaluator

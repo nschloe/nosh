@@ -27,7 +27,7 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Tuple.hpp>
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
-  #include <Teuchos_Time.hpp>
+#include <Teuchos_Time.hpp>
 #endif
 #include <Teuchos_Array.hpp>
 #include <Teuchos_SerialDenseVector.hpp>
@@ -38,12 +38,15 @@
 #include <stk_io/MeshReadWriteUtils.hpp>
 // =============================================================================
 // forward declarations
-namespace stk {
-namespace mesh {
+namespace stk
+{
+namespace mesh
+{
 class MetaData;
 class BulkData;
 }
-namespace io {
+namespace io
+{
 class MeshData;
 }
 }
@@ -58,7 +61,8 @@ typedef stk::mesh::Field<int>                         IntScalarFieldType;
 typedef Teuchos::SerialDenseVector<int,double>        DoubleVector;
 typedef Teuchos::SerialDenseVector<int,const double>  ConstDoubleVector;
 // =============================================================================
-namespace Nosh {
+namespace Nosh
+{
 
 class StkMesh
 {
@@ -66,265 +70,265 @@ private:
 
 // Keep bulkData a pointer since its copy constructor is private; this causes
 // issues when trying to copy (or initialize) MeshDataContainer.
-struct MeshDataContainer {
-  stk::mesh::fem::FEMMetaData metaData;
-  Teuchos::RCP<stk::io::MeshData> meshData;
-  Teuchos::RCP<stk::mesh::BulkData> bulkData;
-};
+  struct MeshDataContainer {
+    stk::mesh::fem::FEMMetaData metaData;
+    Teuchos::RCP<stk::io::MeshData> meshData;
+    Teuchos::RCP<stk::mesh::BulkData> bulkData;
+  };
 
-struct EdgesContainer {
-  //! Local edge ID -> Global node IDs.
-  Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > edgeNodes;
-  //! Local cell ID -> Local edge IDs.
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<int> > cellEdges;
-};
+  struct EdgesContainer {
+    //! Local edge ID -> Global node IDs.
+    Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > edgeNodes;
+    //! Local cell ID -> Local edge IDs.
+    Teuchos::ArrayRCP<Teuchos::ArrayRCP<int> > cellEdges;
+  };
 
 public:
-StkMesh(const Epetra_Comm &comm,
-        const std::string &fileName,
-        const int index
-        );
+  StkMesh(const Epetra_Comm &comm,
+          const std::string &fileName,
+          const int index
+         );
 
-virtual
-~StkMesh();
+  virtual
+  ~StkMesh();
 
-MeshDataContainer
-read(const Epetra_Comm &comm,
-     const std::string &fileName,
-     const int index
-     );
+  MeshDataContainer
+  read(const Epetra_Comm &comm,
+       const std::string &fileName,
+       const int index
+      );
 
-double
-getTime() const;
+  double
+  getTime() const;
 
-void
-openOutputChannel(const std::string &outputDir,
-                  const std::string &fileBaseName
-                  );
+  void
+  openOutputChannel(const std::string &outputDir,
+                    const std::string &fileBaseName
+                   );
 
-void
-write(const Epetra_Vector & psi,
-      const double time
-      ) const;
+  void
+  write(const Epetra_Vector & psi,
+        const double time
+       ) const;
 
-Teuchos::RCP<Epetra_Vector>
-createVector(const std::string & fieldName) const;
+  Teuchos::RCP<Epetra_Vector>
+  createVector(const std::string & fieldName) const;
 
-Teuchos::RCP<Epetra_MultiVector>
-createMultiVector(const std::string & fieldName) const;
+  Teuchos::RCP<Epetra_MultiVector>
+  createMultiVector(const std::string & fieldName) const;
 
-Teuchos::RCP<Epetra_Vector>
-createComplexVector(const std::string & fieldName) const;
+  Teuchos::RCP<Epetra_Vector>
+  createComplexVector(const std::string & fieldName) const;
 
-void
-mergeComplexVector_(const Epetra_Vector &psi,
-                    const std::string & fieldName
-                    ) const;
+  void
+  mergeComplexVector_(const Epetra_Vector &psi,
+                      const std::string & fieldName
+                     ) const;
 
-unsigned int
-getNumNodes() const;
+  unsigned int
+  getNumNodes() const;
 
-Teuchos::RCP<const Epetra_Vector>
-getControlVolumes() const;
+  Teuchos::RCP<const Epetra_Vector>
+  getControlVolumes() const;
 
-double
-getDomainVolume() const;
+  double
+  getDomainVolume() const;
 
-const Epetra_Comm &
-getComm() const;
+  const Epetra_Comm &
+  getComm() const;
 
-Teuchos::ArrayRCP<double>
-getEdgeCoefficients() const;
+  Teuchos::ArrayRCP<double>
+  getEdgeCoefficients() const;
 
-std::vector<stk::mesh::Entity*>
-getOwnedCells() const;
+  std::vector<stk::mesh::Entity*>
+  getOwnedCells() const;
 
-std::vector<stk::mesh::Entity*>
-getOverlapEdges() const;
+  std::vector<stk::mesh::Entity*>
+  getOverlapEdges() const;
 
-const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> >
-getEdgeNodes() const;
+  const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> >
+  getEdgeNodes() const;
 
-std::vector<stk::mesh::Entity*>
-getOwnedNodes() const;
+  std::vector<stk::mesh::Entity*>
+  getOwnedNodes() const;
 
-std::vector<stk::mesh::Entity*>
-getOverlapNodes() const;
+  std::vector<stk::mesh::Entity*>
+  getOverlapNodes() const;
 
 //const DoubleVector
 //getNodeCoordinatesNonconst(const stk::mesh::Entity * nodeEntity) const;
 
-Teuchos::RCP<const Epetra_Map>
-getNodesMap() const;
+  Teuchos::RCP<const Epetra_Map>
+  getNodesMap() const;
 
-Teuchos::RCP<const Epetra_Map>
-getNodesOverlapMap() const;
+  Teuchos::RCP<const Epetra_Map>
+  getNodesOverlapMap() const;
 
-Teuchos::RCP<const Epetra_Map>
-getComplexNonOverlapMap() const;
+  Teuchos::RCP<const Epetra_Map>
+  getComplexNonOverlapMap() const;
 
-Teuchos::RCP<const Epetra_Map>
-getComplexOverlapMap() const;
+  Teuchos::RCP<const Epetra_Map>
+  getComplexOverlapMap() const;
 
-const Epetra_Map&
-getComplexNonOverlapMap2() const;
+  const Epetra_Map&
+  getComplexNonOverlapMap2() const;
 
-unsigned int
-getNumEdgesPerCell( unsigned int cellDimension ) const;
+  unsigned int
+  getNumEdgesPerCell( unsigned int cellDimension ) const;
 
-const DoubleVector
-getVectorFieldNonconst(const stk::mesh::Entity * nodeEntity,
-                       const std::string & fieldName,
-                       const int numDims
-                       ) const;
-double
-getScalarFieldNonconst(const stk::mesh::Entity * nodeEntity,
-                       const std::string & fieldName
-                       ) const;
+  const DoubleVector
+  getVectorFieldNonconst(const stk::mesh::Entity * nodeEntity,
+                         const std::string & fieldName,
+                         const int numDims
+                        ) const;
+  double
+  getScalarFieldNonconst(const stk::mesh::Entity * nodeEntity,
+                         const std::string & fieldName
+                        ) const;
 
 protected:
 private:
 
-const int numDim_;
+  const int numDim_;
 
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
-const Teuchos::RCP<Teuchos::Time> computeEdgeCoefficientsTime_;
-const Teuchos::RCP<Teuchos::Time> writeTime_;
+  const Teuchos::RCP<Teuchos::Time> computeEdgeCoefficientsTime_;
+  const Teuchos::RCP<Teuchos::Time> writeTime_;
 #endif
 
-const Epetra_Comm &comm_;
+  const Epetra_Comm &comm_;
 
-MeshDataContainer meshDataContainer_;
+  MeshDataContainer meshDataContainer_;
 
-const std::vector<stk::mesh::Entity*> ownedNodes_;
+  const std::vector<stk::mesh::Entity*> ownedNodes_;
 
-const Teuchos::RCP<const Epetra_Map> nodesMap_;
-const Teuchos::RCP<const Epetra_Map> nodesOverlapMap_;
-const Teuchos::RCP<const Epetra_Map> complexMap_;
-const Teuchos::RCP<const Epetra_Map> complexOverlapMap_;
+  const Teuchos::RCP<const Epetra_Map> nodesMap_;
+  const Teuchos::RCP<const Epetra_Map> nodesOverlapMap_;
+  const Teuchos::RCP<const Epetra_Map> complexMap_;
+  const Teuchos::RCP<const Epetra_Map> complexOverlapMap_;
 
-const Teuchos::RCP<const Epetra_Vector> controlVolumes_;
+  const Teuchos::RCP<const Epetra_Vector> controlVolumes_;
 
-const EdgesContainer edgeData_;
+  const EdgesContainer edgeData_;
 
-const Teuchos::ArrayRCP<double> edgeCoefficients_;
+  const Teuchos::ArrayRCP<double> edgeCoefficients_;
 
-bool outputChannelIsOpen_;
+  bool outputChannelIsOpen_;
 
-double time_;
+  double time_;
 
 private:
 
-void
-computeControlVolumesTri_(const Teuchos::RCP<Epetra_Vector> & cvOverlap) const;
+  void
+  computeControlVolumesTri_(const Teuchos::RCP<Epetra_Vector> & cvOverlap) const;
 
-void
-computeControlVolumesTet_(const Teuchos::RCP<Epetra_Vector> & cvOverlap) const;
+  void
+  computeControlVolumesTet_(const Teuchos::RCP<Epetra_Vector> & cvOverlap) const;
 
-Teuchos::RCP<Epetra_Vector>
-complexfield2vector_(const ScalarFieldType &realField,
-                     const ScalarFieldType &imagField
-                     ) const;
+  Teuchos::RCP<Epetra_Vector>
+  complexfield2vector_(const ScalarFieldType &realField,
+                       const ScalarFieldType &imagField
+                      ) const;
 
-Teuchos::RCP<Epetra_Vector>
-field2vector_(const ScalarFieldType &field) const;
+  Teuchos::RCP<Epetra_Vector>
+  field2vector_(const ScalarFieldType &field) const;
 
-Teuchos::RCP<Epetra_MultiVector>
-field2vector_(const VectorFieldType &field,
-              const int numComponents
-              ) const;
+  Teuchos::RCP<Epetra_MultiVector>
+  field2vector_(const VectorFieldType &field,
+                const int numComponents
+               ) const;
 
-std::vector<stk::mesh::Entity*>
-buildOwnedNodes_() const;
+  std::vector<stk::mesh::Entity*>
+  buildOwnedNodes_() const;
 
 //Teuchos::ArrayRCP<const DoubleVector>
 //getNodeCoordinates_( const stk::mesh::PairIterRelation &relation ) const;
 
-Teuchos::ArrayRCP<double>
-computeEdgeCoefficients_() const;
+  Teuchos::ArrayRCP<double>
+  computeEdgeCoefficients_() const;
 
 //! Compute the volume of the (Voronoi) control cells for each point.
-Teuchos::RCP<Epetra_Vector>
-computeControlVolumes_() const;
+  Teuchos::RCP<Epetra_Vector>
+  computeControlVolumes_() const;
 
-Teuchos::RCP<const Epetra_Map>
-createEntitiesMap_( const std::vector<stk::mesh::Entity*> &entityList ) const;
+  Teuchos::RCP<const Epetra_Map>
+  createEntitiesMap_( const std::vector<stk::mesh::Entity*> &entityList ) const;
 
-Teuchos::RCP<const Epetra_Map>
-createComplexMap_( const std::vector<stk::mesh::Entity*> &nodeList ) const;
+  Teuchos::RCP<const Epetra_Map>
+  createComplexMap_( const std::vector<stk::mesh::Entity*> &nodeList ) const;
 
-double
-computeCovolume2d_( const DoubleVector &cc,
-                    const DoubleVector &x0,
-                    const DoubleVector &x1,
-                    const DoubleVector &other0
+  double
+  computeCovolume2d_( const DoubleVector &cc,
+                      const DoubleVector &x0,
+                      const DoubleVector &x1,
+                      const DoubleVector &other0
                     ) const;
 
-double
-computeCovolume3d_( const DoubleVector &cc,
-                    const DoubleVector &x0,
-                    const DoubleVector &x1,
-                    const DoubleVector &other0,
-                    const DoubleVector &other1
+  double
+  computeCovolume3d_( const DoubleVector &cc,
+                      const DoubleVector &x0,
+                      const DoubleVector &x1,
+                      const DoubleVector &other0,
+                      const DoubleVector &other1
                     ) const;
 
-Teuchos::Tuple<unsigned int,2>
-getOtherIndices_( unsigned int e0, unsigned int e1 ) const;
+  Teuchos::Tuple<unsigned int,2>
+  getOtherIndices_( unsigned int e0, unsigned int e1 ) const;
 
-DoubleVector
-add_( double alpha, const DoubleVector &x,
-      double beta,  const DoubleVector &y
+  DoubleVector
+  add_( double alpha, const DoubleVector &x,
+        double beta,  const DoubleVector &y
       ) const;
 
 
-double
-getTriangleArea_( const DoubleVector &edge0,
-                  const DoubleVector &edge1
+  double
+  getTriangleArea_( const DoubleVector &edge0,
+                    const DoubleVector &edge1
                   ) const;
 
-double
-getTetrahedronVolume_( const DoubleVector &edge0,
-                       const DoubleVector &edge1,
-                       const DoubleVector &edge2
+  double
+  getTetrahedronVolume_( const DoubleVector &edge0,
+                         const DoubleVector &edge1,
+                         const DoubleVector &edge2
                        ) const;
 
-DoubleVector
-computeTriangleCircumcenter_( const DoubleVector &node0,
-                              const DoubleVector &node1,
-                              const DoubleVector &node2
+  DoubleVector
+  computeTriangleCircumcenter_( const DoubleVector &node0,
+                                const DoubleVector &node1,
+                                const DoubleVector &node2
                               ) const;
-DoubleVector
-computeTriangleCircumcenter_(
-  const Teuchos::ArrayRCP<const DoubleVector> &nodes ) const;
+  DoubleVector
+  computeTriangleCircumcenter_(
+    const Teuchos::ArrayRCP<const DoubleVector> &nodes ) const;
 
-DoubleVector
-computeTetrahedronCircumcenter_(
-  const Teuchos::ArrayRCP<const DoubleVector> &nodes ) const;
+  DoubleVector
+  computeTetrahedronCircumcenter_(
+    const Teuchos::ArrayRCP<const DoubleVector> &nodes ) const;
 
-DoubleVector
-getEdgeCoefficientsNumerically_(
-  const Teuchos::ArrayRCP<const DoubleVector> edges
+  DoubleVector
+  getEdgeCoefficientsNumerically_(
+    const Teuchos::ArrayRCP<const DoubleVector> edges
   ) const;
 
-double
-dot_( const DoubleVector &v, const DoubleVector &w
+  double
+  dot_( const DoubleVector &v, const DoubleVector &w
       ) const;
 
-DoubleVector
-cross_( const DoubleVector &v,
-        const DoubleVector &w
+  DoubleVector
+  cross_( const DoubleVector &v,
+          const DoubleVector &w
         ) const;
 
-double
-norm2_( const DoubleVector &x
+  double
+  norm2_( const DoubleVector &x
         ) const;
 
-double
-norm2squared_( const DoubleVector &x
+  double
+  norm2squared_( const DoubleVector &x
                ) const;
 
-EdgesContainer
-createEdgeData_();
+  EdgesContainer
+  createEdgeData_();
 
 };
 // -----------------------------------------------------------------------------
@@ -336,8 +340,7 @@ public:
   bool
   operator()(const stk::mesh::Entity* a,
              const stk::mesh::Entity* b
-             ) const
-  {
+            ) const {
     return a->identifier() < b->identifier();
   }
 };
@@ -348,10 +351,8 @@ public:
   bool
   operator()(const Teuchos::Tuple<stk::mesh::Entity*,2>& a,
              const Teuchos::Tuple<stk::mesh::Entity*,2>& b
-             ) const
-  {
-    for ( unsigned int k=0; k<2; k++ )
-    {
+            ) const {
+    for ( unsigned int k=0; k<2; k++ ) {
       if ( a[k]->identifier() < b[k]->identifier() )
         return true;
       else if ( a[k]->identifier() > b[k]->identifier() )

@@ -20,17 +20,20 @@
 
 #include "nosh/BorderedOperator.hpp"
 
+#include <vector>
+
 #include "nosh/BorderingHelpers.hpp"
 
 // =============================================================================
-namespace Nosh {
+namespace Nosh
+{
 // =============================================================================
 BorderedOperator::
 BorderedOperator(const Teuchos::RCP<Epetra_Operator> & innerOperator,
                  const Teuchos::RCP<Epetra_Vector> & b,
                  const Teuchos::RCP<Epetra_Vector> & c,
                  const double d
-                 ):
+                ):
   innerOperator_( innerOperator ),
   b_( b ),
   c_( c ),
@@ -59,7 +62,7 @@ int
 BorderedOperator::
 Apply(const Epetra_MultiVector &X,
       Epetra_MultiVector &Y
-      ) const
+     ) const
 {
 #ifndef NDEBUG
   TEUCHOS_ASSERT(X.Map().SameAs(domainMap_));
@@ -79,13 +82,10 @@ Apply(const Epetra_MultiVector &X,
 
   Teuchos::RCP<Epetra_Vector> rightBordering;
   Teuchos::RCP<Epetra_Vector> lowerBordering;
-  if (useTranspose_)
-  {
+  if (useTranspose_) {
     rightBordering = c_;
     lowerBordering = b_;
-  }
-  else
-  {
+  } else {
     rightBordering = b_;
     lowerBordering = c_;
   }
@@ -110,7 +110,7 @@ int
 BorderedOperator::
 ApplyInverse(const Epetra_MultiVector &X,
              Epetra_MultiVector &Y
-             ) const
+            ) const
 {
   // Inverse via Schur formulation.
   //
@@ -145,8 +145,7 @@ ApplyInverse(const Epetra_MultiVector &X,
   Epetra_MultiVector innerY(innerOperator_->OperatorRangeMap(), n);
   Epetra_Vector AiX(innerOperator_->OperatorRangeMap());
   std::vector<double> alpha(n);
-  for (int k=0; k<n; k++)
-  {
+  for (int k=0; k<n; k++) {
     // innerY = A^{-1} X
     TEUCHOS_ASSERT_EQUALITY(0, innerOperator_->ApplyInverse(innerX, *(innerY(k))));
     double cAiX;
@@ -228,7 +227,7 @@ BorderedOperator::
 resetBordering(const Teuchos::RCP<const Epetra_Vector> & b,
                const Teuchos::RCP<const Epetra_Vector> & c,
                const double d
-               )
+              )
 {
   *b_ = *b;
   *c_ = *c;

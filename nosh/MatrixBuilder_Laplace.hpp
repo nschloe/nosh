@@ -24,7 +24,7 @@
 #include <Epetra_Operator.h>
 #include <Teuchos_RCP.hpp>
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
-  #include <Teuchos_Time.hpp>
+#include <Teuchos_Time.hpp>
 #endif
 #include <Teuchos_Tuple.hpp>
 #include <Teuchos_Array.hpp>
@@ -35,94 +35,98 @@
 #include "nosh/MatrixBuilder_Virtual.hpp"
 // =============================================================================
 // forward declarations
-namespace Nosh {
+namespace Nosh
+{
 class StkMesh;
-namespace ScalarField {
+namespace ScalarField
+{
 class Virtual;
 }
 }
 // =============================================================================
-namespace Nosh {
-namespace MatrixBuilder {
+namespace Nosh
+{
+namespace MatrixBuilder
+{
 // =============================================================================
 class Laplace: public Virtual
 {
 public:
-Laplace(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
-        const Teuchos::RCP<const Nosh::ScalarField::Virtual> &thickness
-        );
+  Laplace(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
+          const Teuchos::RCP<const Nosh::ScalarField::Virtual> &thickness
+         );
 
 // Destructor.
-~Laplace();
+  ~Laplace();
 
-virtual
-const Epetra_Comm &
-getComm() const;
+  virtual
+  const Epetra_Comm &
+  getComm() const;
 
-virtual
-const Epetra_FECrsGraph &
-getGraph() const;
+  virtual
+  const Epetra_FECrsGraph &
+  getGraph() const;
 
-virtual
-void
-apply(const std::map<std::string, double> &params,
-      const Epetra_Vector &X,
-      Epetra_Vector &Y
+  virtual
+  void
+  apply(const std::map<std::string, double> &params,
+        const Epetra_Vector &X,
+        Epetra_Vector &Y
+       ) const;
+
+  virtual
+  void
+  applyDKDp(const std::map<std::string, double> &params,
+            const std::string & paramName,
+            const Epetra_Vector &X,
+            Epetra_Vector &Y
+           ) const;
+
+  virtual
+  void
+  fill(Epetra_FECrsMatrix &matrix,
+       const std::map<std::string, double> &params
       ) const;
 
-virtual
-void
-applyDKDp(const std::map<std::string, double> &params,
-          const std::string & paramName,
-          const Epetra_Vector &X,
-          Epetra_Vector &Y
-          ) const;
-
-virtual
-void
-fill(Epetra_FECrsMatrix &matrix,
-     const std::map<std::string, double> &params
-     ) const;
-
 //! Gets the parameter with their initial values.
-virtual
-const std::map<std::string,double>
-getInitialParameters() const;
+  virtual
+  const std::map<std::string,double>
+  getInitialParameters() const;
 
 protected:
 
 private:
-const Epetra_FECrsGraph
-buildGraph_() const;
+  const Epetra_FECrsGraph
+  buildGraph_() const;
 
-void
-fill_(Epetra_FECrsMatrix &matrix) const;
+  void
+  fill_(Epetra_FECrsMatrix &matrix) const;
 
-void
-buildGlobalIndexCache_(const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > &edges) const;
+  void
+  buildGlobalIndexCache_(const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > &edges) const;
 
-void
-buildAlphaCache_(const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > & edges,
-                 const Teuchos::ArrayRCP<const double> &edgeCoefficients
-                 ) const;
+  void
+  buildAlphaCache_(const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*,2> > & edges,
+                   const Teuchos::ArrayRCP<const double> &edgeCoefficients
+                  ) const;
 
 private:
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
-const Teuchos::RCP<Teuchos::Time> fillTime_;
-const Teuchos::RCP<Teuchos::Time> buildLaplaceGraphTime_;
+  const Teuchos::RCP<Teuchos::Time> fillTime_;
+  const Teuchos::RCP<Teuchos::Time> buildLaplaceGraphTime_;
 #endif
-const Teuchos::RCP<const Nosh::StkMesh> mesh_;
-const Teuchos::RCP<const Nosh::ScalarField::Virtual> thickness_;
+  const Teuchos::RCP<const Nosh::StkMesh> mesh_;
+  const Teuchos::RCP<const Nosh::ScalarField::Virtual> thickness_;
 
-mutable Teuchos::ArrayRCP<Epetra_IntSerialDenseVector> globalIndexCache_;
-mutable bool globalIndexCacheUpToDate_;
+  mutable Teuchos::ArrayRCP<Epetra_IntSerialDenseVector> globalIndexCache_;
+  mutable bool globalIndexCacheUpToDate_;
 
-const Epetra_FECrsGraph graph_;
-mutable Epetra_FECrsMatrix matrixCache_;
-mutable bool matrixCacheUpToDate_;
+  const Epetra_FECrsGraph graph_;
+  mutable Epetra_FECrsMatrix matrixCache_;
+  mutable bool matrixCacheUpToDate_;
 
-mutable Teuchos::ArrayRCP<double> alphaCache_;
-mutable bool alphaCacheUpToDate_;
+  mutable Teuchos::ArrayRCP<double> alphaCache_;
+  mutable bool alphaCacheUpToDate_;
 };
 // =============================================================================
 } // namespace MatrixBuilder

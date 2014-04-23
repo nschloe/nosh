@@ -29,62 +29,65 @@
 #include <Epetra_Vector.h>
 // =============================================================================
 // forward declarations
-namespace Nosh {
+namespace Nosh
+{
 class StkMesh;
 }
 // =============================================================================
-namespace Nosh {
+namespace Nosh
+{
 // =============================================================================
-namespace MatrixBuilder {
+namespace MatrixBuilder
+{
 // =============================================================================
 class Virtual
 {
 
 public:
-Virtual();
+  Virtual();
 
 // Destructor.
-virtual
-~Virtual();
+  virtual
+  ~Virtual();
 
 //! Get the underlying communicator.
-virtual
-const Epetra_Comm &
-getComm() const = 0;
+  virtual
+  const Epetra_Comm &
+  getComm() const = 0;
 
 //! Get the connectivity graph of the matrix.
-virtual
-const Epetra_FECrsGraph &
-getGraph() const = 0;
+  virtual
+  const Epetra_FECrsGraph &
+  getGraph() const = 0;
 
 //! Y = A(params) * X.
-virtual
-void
-apply(const std::map<std::string, double> &params,
-      const Epetra_Vector &X,
-      Epetra_Vector &Y
-      ) const = 0;
+  virtual
+  void
+  apply(const std::map<std::string, double> &params,
+        const Epetra_Vector &X,
+        Epetra_Vector &Y
+       ) const = 0;
 
 //! Y = dA/dp(params) * X.
-virtual
-void
-applyDKDp(const std::map<std::string, double> &params,
-          const std::string & paramName,
-          const Epetra_Vector &X,
-          Epetra_Vector &Y
-          ) const = 0;
+  virtual
+  void
+  applyDKDp(const std::map<std::string, double> &params,
+            const std::string & paramName,
+            const Epetra_Vector &X,
+            Epetra_Vector &Y
+           ) const = 0;
 
 //! Fill a given matrix with the parameter entries as given in params.
-virtual
-void
-fill(Epetra_FECrsMatrix &matrix,
-     const std::map<std::string,double> &params
-     ) const = 0;
+  virtual
+  void
+  fill(Epetra_FECrsMatrix &matrix,
+       const std::map<std::string,double> &params
+      ) const = 0;
 
 //! Get parameter map with their initial values.
-virtual
-const std::map<std::string,double>
-getInitialParameters() const = 0;
+  virtual
+  const std::map<std::string,double>
+  getInitialParameters() const = 0;
 
 };
 // =============================================================================

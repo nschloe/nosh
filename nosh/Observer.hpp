@@ -27,64 +27,68 @@
 #include "nosh/CsvWriter.hpp"
 // =============================================================================
 // forward declarations
-namespace Komplex2 {
+namespace Komplex2
+{
 class LinearProblem;
 }
-namespace Nosh {
-namespace ModelEvaluator {
+namespace Nosh
+{
+namespace ModelEvaluator
+{
 class Virtual;
 }
 }
 // =============================================================================
-namespace Nosh {
+namespace Nosh
+{
 
 class Observer:  public NOX::Epetra::Observer
 {
 public:
 //! Constructor
-Observer(const Teuchos::RCP<const Nosh::ModelEvaluator::Virtual> &modelEval,
-         const std::string & csvFilename = "",
-         const std::string & contParamName = "",
-         const bool isTurningPointContinuation = false
-         );
+  Observer(const Teuchos::RCP<const Nosh::ModelEvaluator::Virtual> &modelEval,
+           const std::string & csvFilename = "",
+           const std::string & contParamName = "",
+           const bool isTurningPointContinuation = false
+          );
 
 //! Destructor
-virtual
-~Observer ();
+  virtual
+  ~Observer ();
 
-virtual
-void
-observeSolution(const Epetra_Vector &soln);
+  virtual
+  void
+  observeSolution(const Epetra_Vector &soln);
 
-virtual
-void
-observeSolution(const Epetra_Vector& soln,
-                double paramVal);
+  virtual
+  void
+  observeSolution(const Epetra_Vector& soln,
+                  double paramVal);
 
 protected:
 private:
-void
-observeContinuation_(const Epetra_Vector &soln,
-                     const double paramVal
-                     );
+  void
+  observeContinuation_(const Epetra_Vector &soln,
+                       const double paramVal
+                      );
 
-void
-observeTurningPointContinuation_(const Epetra_Vector &soln,
-                                 const double paramVal
-                                 );
+  void
+  observeTurningPointContinuation_(const Epetra_Vector &soln,
+                                   const double paramVal
+                                  );
 
-void
-saveContinuationStatistics_(const Epetra_Vector &soln,
-                            const double paramVal,
-                            const int stepIndex
-                            );
+  void
+  saveContinuationStatistics_(const Epetra_Vector &soln,
+                              const double paramVal,
+                              const int stepIndex
+                             );
 
 private:
 
-const Teuchos::RCP<const Nosh::ModelEvaluator::Virtual> modelEval_;
-Nosh::CsvWriter csvWriter_;
-const std::string contParamName_;
-const bool isTurningPointContinuation_;
+  const Teuchos::RCP<const Nosh::ModelEvaluator::Virtual> modelEval_;
+  Nosh::CsvWriter csvWriter_;
+  const std::string contParamName_;
+  const bool isTurningPointContinuation_;
 
 };
 
