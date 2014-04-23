@@ -18,4 +18,4 @@ install:
   - cmake -DBUILD_SHARED_LIBS:BOOL=TRUE -DCMAKE_CXX_COMPILER:STRING=mpicxx -DCMAKE_Fortran_COMPILER:STRING=mpif90 .
   - make
 # command to run tests
-script: ctest
+script: ctest -VV
