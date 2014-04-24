@@ -101,7 +101,7 @@ BorderingHelpers::
 dissect(const Epetra_MultiVector & x,
         Epetra_MultiVector & xSmall,
         double * lambda
-      )
+       )
 {
 #ifndef NDEBUG
   TEUCHOS_ASSERT_EQUALITY(x.NumVectors(), xSmall.NumVectors());
