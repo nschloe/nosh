@@ -12,10 +12,10 @@
 // =============================================================================
 int myPow( int n, int k )
 {
-    int out = n;
-    for ( int kk=0; kk<k; k++ )
-        out *= n;
-    return out;
+  int out = n;
+  for ( int kk=0; kk<k; k++ )
+    out *= n;
+  return out;
 }
 // =============================================================================
 int main ( int argc, char *argv[] )
@@ -23,7 +23,7 @@ int main ( int argc, char *argv[] )
   // Initialize MPI
   Teuchos::GlobalMPISession (&argc, &argv, NULL);
 
-    // Create a communicator for Epetra objects
+  // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
   Teuchos::RCP<Epetra_MpiComm> eComm =
     Teuchos::rcp<Epetra_MpiComm> ( new Epetra_MpiComm ( MPI_COMM_WORLD ) );
@@ -33,19 +33,17 @@ int main ( int argc, char *argv[] )
 #endif
 
   bool success = true;
-  try
-  {
+  try {
     // Create map.
     // Do strong scaling tests, so keep numGlobalElements independent of
     // the number of processes.
     const int maxSize = 9;
-    for ( int k = 0; k != maxSize+1; k++ )
-    {
+    for ( int k = 0; k != maxSize+1; k++ ) {
       int numGlobalElements = myPow( 10, k );
       // create map
       int indexBase = 0;
       Teuchos::RCP<Epetra_Map> map =
-          Teuchos::rcp( new Epetra_Map ( numGlobalElements, indexBase, *eComm ) );
+        Teuchos::rcp( new Epetra_Map ( numGlobalElements, indexBase, *eComm ) );
       // create vectors
       Teuchos::RCP<Epetra_Vector> u = Teuchos::rcp( new Epetra_Vector( *map ) );
       u->Random();
@@ -57,11 +55,11 @@ int main ( int argc, char *argv[] )
       label << "Vector::Dot 10^" << k;
 
       Teuchos::RCP<Teuchos::Time> dotTime =
-          Teuchos::TimeMonitor::getNewTimer( label.str() );
+        Teuchos::TimeMonitor::getNewTimer( label.str() );
       {
-          Teuchos::TimeMonitor tm(*dotTime);
-          double dot;
-          TEUCHOS_ASSERT_EQUALITY( 0, u->Dot( *v, &dot ) );
+        Teuchos::TimeMonitor tm(*dotTime);
+        double dot;
+        TEUCHOS_ASSERT_EQUALITY( 0, u->Dot( *v, &dot ) );
       }
     }
     // print timing data

@@ -44,12 +44,12 @@ namespace
 // =============================================================================
 void
 testComputeF(const std::string & inputFileNameBase,
-              const double mu,
-              const double controlNormOne,
-              const double controlNormTwo,
-              const double controlNormInf,
-              Teuchos::FancyOStream & out,
-              bool & success)
+             const double mu,
+             const double controlNormOne,
+             const double controlNormTwo,
+             const double controlNormInf,
+             Teuchos::FancyOStream & out,
+             bool & success)
 {
   // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
@@ -124,12 +124,12 @@ TEUCHOS_UNIT_TEST(Nosh, ComputeFRectangleSmallHashes)
   double controlNormInf = 0.12373710977782607;
 
   testComputeF(inputFileNameBase,
-                mu,
-                controlNormOne,
-                controlNormTwo,
-                controlNormInf,
-                out,
-                success);
+               mu,
+               controlNormOne,
+               controlNormTwo,
+               controlNormInf,
+               out,
+               success);
 }
 // ============================================================================
 TEUCHOS_UNIT_TEST(Nosh, ComputeFPacmanHashes)
@@ -142,12 +142,12 @@ TEUCHOS_UNIT_TEST(Nosh, ComputeFPacmanHashes)
   double controlNormInf = 0.055859319123267033;
 
   testComputeF(inputFileNameBase,
-                mu,
-                controlNormOne,
-                controlNormTwo,
-                controlNormInf,
-                out,
-                success);
+               mu,
+               controlNormOne,
+               controlNormTwo,
+               controlNormInf,
+               out,
+               success);
 }
 // ============================================================================
 TEUCHOS_UNIT_TEST(Nosh, ComputeFCubeSmallHashes)
@@ -160,12 +160,12 @@ TEUCHOS_UNIT_TEST(Nosh, ComputeFCubeSmallHashes)
   double controlNormInf = 1.0468744547749431e-05;
 
   testComputeF(inputFileNameBase,
-                mu,
-                controlNormOne,
-                controlNormTwo,
-                controlNormInf,
-                out,
-                success);
+               mu,
+               controlNormOne,
+               controlNormTwo,
+               controlNormInf,
+               out,
+               success);
 }
 // ============================================================================
 TEUCHOS_UNIT_TEST(Nosh, ComputeFBrickWHoleHashes)
@@ -178,12 +178,12 @@ TEUCHOS_UNIT_TEST(Nosh, ComputeFBrickWHoleHashes)
   double controlNormInf = 0.03074423493622647;
 
   testComputeF(inputFileNameBase,
-                mu,
-                controlNormOne,
-                controlNormTwo,
-                controlNormInf,
-                out,
-                success);
+               mu,
+               controlNormOne,
+               controlNormTwo,
+               controlNormInf,
+               out,
+               success);
 }
 // ============================================================================
 } // namespace

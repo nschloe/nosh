@@ -79,7 +79,7 @@ const Epetra_Vector
 MyScalarField::
 getdVdP(const std::map<std::string, double> & params,
         const std::string & paramName
-        ) const
+       ) const
 {
   // Silence warning about unused params.
   (void) params;
@@ -87,13 +87,11 @@ getdVdP(const std::map<std::string, double> & params,
   // Create vals as zeroed-out vector.
   Epetra_Vector vals(*(mesh_->getNodesMap()));
 
-  if (paramName.compare("tau") == 0)
-  {
+  if (paramName.compare("tau") == 0) {
     std::vector<stk::mesh::Entity*> ownedNodes =
       mesh_->getOwnedNodes();
 
-    for (unsigned int k = 0; k < ownedNodes.size(); k++)
-    {
+    for (unsigned int k = 0; k < ownedNodes.size(); k++) {
       // Get nodal coordinates.
       const DoubleVector X =
         mesh_->getVectorFieldNonconst(ownedNodes[k],

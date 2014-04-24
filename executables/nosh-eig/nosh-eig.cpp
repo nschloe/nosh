@@ -87,10 +87,10 @@ int main(int argc, char *argv[])
 
     std::string mvpFilePath("");
     My_CLP.setOption(
-        "mvpfile",
-        &mvpFilePath,
-        "file containing magnetic vector potential (default: same as input file)"
-        );
+      "mvpfile",
+      &mvpFilePath,
+      "file containing magnetic vector potential (default: same as input file)"
+    );
 
     int step = 0;
     My_CLP.setOption("step", &step, "step to read");
@@ -103,20 +103,20 @@ int main(int argc, char *argv[])
 
     int frequency = 10;
     My_CLP.setOption(
-        "frequency",
-        &frequency,
-        "solver frequency for printing eigenresiduals (#iters)"
-        );
+      "frequency",
+      &frequency,
+      "solver frequency for printing eigenresiduals (#iters)"
+    );
 
     double mu = 0.0;
     My_CLP.setOption("mu", &mu, "parameter value mu");
 
     std::string method = "lobpcg";
     My_CLP.setOption(
-        "method",
-        &method,
-        "method for solving the eigenproblem {lobpcg, krylovschur, davidson}"
-        );
+      "method",
+      &method,
+      "method for solving the eigenproblem {lobpcg, krylovschur, davidson}"
+    );
 
     int numEv = 10;
     My_CLP.setOption("numev", &numEv, "number of eigenvalues to compute");
@@ -129,17 +129,17 @@ int main(int argc, char *argv[])
 
     int maxRestarts = 10;
     My_CLP.setOption(
-        "maxrestarts",
-        &maxRestarts,
-        "maximum number of restarts"
-        );
+      "maxrestarts",
+      &maxRestarts,
+      "maximum number of restarts"
+    );
 
     int maxIter = 100;
     My_CLP.setOption(
-        "maxiter",
-        &maxIter,
-        "maximum number of iterations"
-        );
+      "maxiter",
+      &maxIter,
+      "maximum number of iterations"
+    );
 
     double tol = 1.0e-5;
     My_CLP.setOption("tolerance", &tol, "tolerance");
@@ -292,9 +292,9 @@ int main(int argc, char *argv[])
       returnCode = MySolverMan.solve();
     } else {
       TEUCHOS_TEST_FOR_EXCEPT_MSG(
-          true,
-          "Invalid eigensolver method \"" << method << "\"."
-          );
+        true,
+        "Invalid eigensolver method \"" << method << "\"."
+      );
     }
 
     // Check for success.

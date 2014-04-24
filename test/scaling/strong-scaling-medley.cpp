@@ -1,7 +1,7 @@
 // Workaround for icpc's error "Include mpi.h before stdio.h"
 #include <Teuchos_config.h>
 #ifdef HAVE_MPI
-    #include <mpi.h>
+#include <mpi.h>
 #endif
 
 #include <Epetra_Vector.h>
@@ -27,12 +27,11 @@ int main ( int argc, char *argv[] )
     Teuchos::rcp<Epetra_MpiComm> ( new Epetra_MpiComm ( MPI_COMM_WORLD ) );
 #else
   Teuchos::RCP<Epetra_SerialComm> eComm =
-         Teuchos::rcp<Epetra_SerialComm> ( new Epetra_SerialComm() );
+    Teuchos::rcp<Epetra_SerialComm> ( new Epetra_SerialComm() );
 #endif
 
   bool success = true;
-  try
-  {
+  try {
     // =======================================================================
     // Create map.
     // Do strong scaling tests, so keep numGlobalElements independent of
@@ -40,7 +39,7 @@ int main ( int argc, char *argv[] )
     int numGlobalElements = 5e7;
     int indexBase = 0;
     Teuchos::RCP<Epetra_Map> map =
-        Teuchos::rcp( new Epetra_Map ( numGlobalElements, indexBase, *eComm ) );
+      Teuchos::rcp( new Epetra_Map ( numGlobalElements, indexBase, *eComm ) );
     // =======================================================================
     //// Create map with overlay.
     //int numMyOverlapNodes = 3;
@@ -80,7 +79,7 @@ int main ( int argc, char *argv[] )
     u->Random();
 
     Teuchos::RCP<Teuchos::Time> meanValueTime =
-        Teuchos::TimeMonitor::getNewTimer("Vector::MeanValue");
+      Teuchos::TimeMonitor::getNewTimer("Vector::MeanValue");
     {
       Teuchos::TimeMonitor tm(*meanValueTime);
       double meanVal;
@@ -88,7 +87,7 @@ int main ( int argc, char *argv[] )
     }
 
     Teuchos::RCP<Teuchos::Time> maxValueTime =
-        Teuchos::TimeMonitor::getNewTimer("Vector::MaxValue");
+      Teuchos::TimeMonitor::getNewTimer("Vector::MaxValue");
     {
       Teuchos::TimeMonitor tm(*maxValueTime);
       double maxValue;
@@ -96,7 +95,7 @@ int main ( int argc, char *argv[] )
     }
 
     Teuchos::RCP<Teuchos::Time> minValueTime =
-        Teuchos::TimeMonitor::getNewTimer("Vector::MinValue");
+      Teuchos::TimeMonitor::getNewTimer("Vector::MinValue");
     {
       Teuchos::TimeMonitor tm(*minValueTime);
       double minValue;
@@ -104,7 +103,7 @@ int main ( int argc, char *argv[] )
     }
 
     Teuchos::RCP<Teuchos::Time> norm1Time =
-        Teuchos::TimeMonitor::getNewTimer("Vector::Norm1");
+      Teuchos::TimeMonitor::getNewTimer("Vector::Norm1");
     {
       Teuchos::TimeMonitor tm(*norm1Time);
       double norm1;
@@ -112,7 +111,7 @@ int main ( int argc, char *argv[] )
     }
 
     Teuchos::RCP<Teuchos::Time> norm2Time =
-        Teuchos::TimeMonitor::getNewTimer("Vector::Norm2");
+      Teuchos::TimeMonitor::getNewTimer("Vector::Norm2");
     {
       Teuchos::TimeMonitor tm(*norm2Time);
       double norm2;
@@ -120,7 +119,7 @@ int main ( int argc, char *argv[] )
     }
 
     Teuchos::RCP<Teuchos::Time> normInfTime =
-        Teuchos::TimeMonitor::getNewTimer("Vector::NormInf");
+      Teuchos::TimeMonitor::getNewTimer("Vector::NormInf");
     {
       Teuchos::TimeMonitor tm(*normInfTime);
       double normInf;
@@ -128,7 +127,7 @@ int main ( int argc, char *argv[] )
     }
 
     Teuchos::RCP<Teuchos::Time> scaleTime =
-        Teuchos::TimeMonitor::getNewTimer("Vector::Scale");
+      Teuchos::TimeMonitor::getNewTimer("Vector::Scale");
     {
       Teuchos::TimeMonitor tm(*scaleTime);
       double alpha = 0.5;
@@ -140,7 +139,7 @@ int main ( int argc, char *argv[] )
     v->Random();
 
     Teuchos::RCP<Teuchos::Time> dotTime =
-        Teuchos::TimeMonitor::getNewTimer("Vector::Dot");
+      Teuchos::TimeMonitor::getNewTimer("Vector::Dot");
     {
       Teuchos::TimeMonitor tm(*dotTime);
       double dot;
@@ -148,14 +147,14 @@ int main ( int argc, char *argv[] )
     }
 
     Teuchos::RCP<Teuchos::Time> multiplyTime =
-        Teuchos::TimeMonitor::getNewTimer("Vector::Multiply");
+      Teuchos::TimeMonitor::getNewTimer("Vector::Multiply");
     {
       Teuchos::TimeMonitor tm(*multiplyTime);
       TEUCHOS_ASSERT_EQUALITY( 0, u->Multiply( 1.0, *u, *v, 1.0 ) );
     }
 
     Teuchos::RCP<Teuchos::Time> updateTime =
-        Teuchos::TimeMonitor::getNewTimer("Vector::Update");
+      Teuchos::TimeMonitor::getNewTimer("Vector::Update");
     {
       Teuchos::TimeMonitor tm(*updateTime);
       TEUCHOS_ASSERT_EQUALITY( 0, u->Update( 1.0, *v, 1.0 ) );
@@ -165,9 +164,8 @@ int main ( int argc, char *argv[] )
 
     // diagonal test matrix
     Teuchos::RCP<Epetra_CrsMatrix> D =
-        Teuchos::rcp( new Epetra_CrsMatrix( Copy, *map, 1 ) );
-    for ( int k=0; k < map->NumMyElements(); k++ )
-    {
+      Teuchos::rcp( new Epetra_CrsMatrix( Copy, *map, 1 ) );
+    for ( int k=0; k < map->NumMyElements(); k++ ) {
       int col = map->GID(k);
       double val = 1.0 / (col+1);
       //TEUCHOS_ASSERT_EQUALITY( 0, D->InsertMyValues( k, 1, &val, &col ) );
@@ -177,12 +175,10 @@ int main ( int argc, char *argv[] )
 
     // tridiagonal test matrix
     Teuchos::RCP<Epetra_CrsMatrix> T =
-        Teuchos::rcp( new Epetra_CrsMatrix( Copy, *map, 3 ) );
-    for ( int k=0; k < map->NumMyElements(); k++ )
-    {
+      Teuchos::rcp( new Epetra_CrsMatrix( Copy, *map, 3 ) );
+    for ( int k=0; k < map->NumMyElements(); k++ ) {
       int row = map->GID(k);
-      if ( row > 0 )
-      {
+      if ( row > 0 ) {
         int col = row-1;
         double val = -1.0;
         //TEUCHOS_ASSERT_EQUALITY( 0, T->InsertMyValues( k, 1, &val, &col ) );
@@ -194,8 +190,7 @@ int main ( int argc, char *argv[] )
         //TEUCHOS_ASSERT_EQUALITY( 0, T->InsertMyValues( k, 1, &val, &col ) );
         TEUCHOS_ASSERT_EQUALITY( 0, T->InsertGlobalValues( row, 1, &val, &col ) );
       }
-      if ( row < numGlobalElements-1 )
-      {
+      if ( row < numGlobalElements-1 ) {
         int col = row+1;
         double val = -1.0;
         //TEUCHOS_ASSERT_EQUALITY( 0, T->InsertMyValues( k, 1, &val, &col ) );
@@ -206,7 +201,7 @@ int main ( int argc, char *argv[] )
 
     // start timings
     Teuchos::RCP<Teuchos::Time> mNorm1Time =
-        Teuchos::TimeMonitor::getNewTimer("CrsMatrix::Norm1");
+      Teuchos::TimeMonitor::getNewTimer("CrsMatrix::Norm1");
     {
       Teuchos::TimeMonitor tm(*mNorm1Time);
       double dNorm1 = D->NormOne();
@@ -214,7 +209,7 @@ int main ( int argc, char *argv[] )
     }
 
     Teuchos::RCP<Teuchos::Time> mNormInfTime =
-        Teuchos::TimeMonitor::getNewTimer("CrsMatrix::NormInf");
+      Teuchos::TimeMonitor::getNewTimer("CrsMatrix::NormInf");
     {
       Teuchos::TimeMonitor tm(*mNormInfTime);
       double dNormInf = D->NormInf();
@@ -222,7 +217,7 @@ int main ( int argc, char *argv[] )
     }
 
     Teuchos::RCP<Teuchos::Time> mNormFrobTime =
-        Teuchos::TimeMonitor::getNewTimer("CrsMatrix::NormFrobenius");
+      Teuchos::TimeMonitor::getNewTimer("CrsMatrix::NormFrobenius");
     {
       Teuchos::TimeMonitor tm(*mNormFrobTime);
       double dNormFrob = D->NormFrobenius();
@@ -230,7 +225,7 @@ int main ( int argc, char *argv[] )
     }
 
     Teuchos::RCP<Teuchos::Time> mScaleTime =
-        Teuchos::TimeMonitor::getNewTimer("CrsMatrix::Scale");
+      Teuchos::TimeMonitor::getNewTimer("CrsMatrix::Scale");
     {
       Teuchos::TimeMonitor tm(*mScaleTime);
       TEUCHOS_ASSERT_EQUALITY( 0, D->Scale( 2.0 ) );
@@ -238,7 +233,7 @@ int main ( int argc, char *argv[] )
     }
 
     Teuchos::RCP<Teuchos::Time> leftScaleTime =
-        Teuchos::TimeMonitor::getNewTimer("CrsMatrix::LeftScale");
+      Teuchos::TimeMonitor::getNewTimer("CrsMatrix::LeftScale");
     {
       Teuchos::TimeMonitor tm(*leftScaleTime);
       TEUCHOS_ASSERT_EQUALITY( 0, D->LeftScale( *v ) );
@@ -246,7 +241,7 @@ int main ( int argc, char *argv[] )
     }
 
     Teuchos::RCP<Teuchos::Time> rightScaleTime =
-        Teuchos::TimeMonitor::getNewTimer("CrsMatrix::RightScale");
+      Teuchos::TimeMonitor::getNewTimer("CrsMatrix::RightScale");
     {
       Teuchos::TimeMonitor tm(*rightScaleTime);
       TEUCHOS_ASSERT_EQUALITY( 0, D->RightScale( *v ) );
@@ -254,7 +249,7 @@ int main ( int argc, char *argv[] )
     }
 
     Teuchos::RCP<Teuchos::Time> applyTime =
-        Teuchos::TimeMonitor::getNewTimer("CrsMatrix::Apply");
+      Teuchos::TimeMonitor::getNewTimer("CrsMatrix::Apply");
     {
       Teuchos::TimeMonitor tm(*applyTime);
       TEUCHOS_ASSERT_EQUALITY( 0, D->Apply( *u, *v ) );

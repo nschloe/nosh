@@ -39,17 +39,18 @@
 
 #include <Teuchos_UnitTestHarness.hpp>
 
-namespace {
+namespace
+{
 // ===========================================================================
 void
 computeFiniteDifference_(
-    const Teuchos::RCP<EpetraExt::ModelEvaluator> & modelEval,
-    EpetraExt::ModelEvaluator::InArgs & inArgs,
-    EpetraExt::ModelEvaluator::OutArgs & outArgs,
-    const Teuchos::RCP<const Epetra_Vector> & p,
-    const int paramIndex,
-    const Teuchos::RCP<Epetra_Vector> & fdiff
-    )
+  const Teuchos::RCP<EpetraExt::ModelEvaluator> & modelEval,
+  EpetraExt::ModelEvaluator::InArgs & inArgs,
+  EpetraExt::ModelEvaluator::OutArgs & outArgs,
+  const Teuchos::RCP<const Epetra_Vector> & p,
+  const int paramIndex,
+  const Teuchos::RCP<Epetra_Vector> & fdiff
+)
 {
   const double eps = 1.0e-6;
   Teuchos::RCP<Epetra_Vector> pp = Teuchos::rcp(new Epetra_Vector(*p));
@@ -117,11 +118,11 @@ testDfdp(const std::string & inputFileNameBase,
 
   Teuchos::RCP<Nosh::ModelEvaluator::Nls> modelEval =
     Teuchos::rcp(new Nosh::ModelEvaluator::Nls(mesh,
-                                               matrixBuilder,
-                                               sp,
-                                               1.0,
-                                               thickness,
-                                               z
+                 matrixBuilder,
+                 sp,
+                 1.0,
+                 thickness,
+                 z
                                               ));
 
   // -------------------------------------------------------------------------
@@ -140,8 +141,7 @@ testDfdp(const std::string & inputFileNameBase,
   Teuchos::Array<int> paramIndices(1);
   const Teuchos::RCP<Epetra_Vector> nullV = Teuchos::null;
   double r;
-  for (int paramIndex = 0; paramIndex < p->GlobalLength(); paramIndex++)
-  {
+  for (int paramIndex = 0; paramIndex < p->GlobalLength(); paramIndex++) {
     // Get finite difference.
     computeFiniteDifference_(modelEval, inArgs, outArgs, p, paramIndex, fdiff);
 
@@ -149,10 +149,10 @@ testDfdp(const std::string & inputFileNameBase,
     inArgs.set_p(0, p);
     paramIndices[0] = paramIndex;
     deriv = EpetraExt::ModelEvaluator::DerivativeMultiVector(
-        dfdp,
-        EpetraExt::ModelEvaluator::DERIV_MV_BY_COL,
-        paramIndices
-       );
+              dfdp,
+              EpetraExt::ModelEvaluator::DERIV_MV_BY_COL,
+              paramIndices
+            );
     outArgs.set_DfDp(0, deriv);
     outArgs.set_f(nullV);
     modelEval->evalModel(inArgs, outArgs);
