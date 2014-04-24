@@ -21,6 +21,9 @@
 #define NOSH_MODELEVALUATOR_NLS_H
 // -----------------------------------------------------------------------------
 // includes
+#include <map>
+#include <string>
+
 #include <Epetra_Vector.h>
 #include <Teuchos_ParameterList.hpp>
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
@@ -41,7 +44,7 @@ namespace MatrixBuilder
 {
 class Virtual;
 }
-}
+} // namespace Nosh
 
 class Epetra_CrsGraph;
 class Epetra_LocalMap;
@@ -52,10 +55,8 @@ namespace ModelEvaluator
 {
 class Nls : public Virtual
 {
-
 public:
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-//! Constructor without initial guess.
+  //! Constructor without initial guess.
   Nls (
     const Teuchos::RCP<const Nosh::StkMesh> &mesh,
     const Teuchos::RCP<const Nosh::MatrixBuilder::Virtual> &matrixBuilder,
@@ -63,9 +64,9 @@ public:
     const double g,
     const Teuchos::RCP<const Nosh::ScalarField::Virtual> &thickness,
     const Teuchos::RCP<const Epetra_Vector> &initialX
- );
+    );
 
-// Destructor
+  // Destructor
   virtual
   ~Nls();
 
@@ -115,7 +116,6 @@ public:
              const OutArgs &outArgs) const;
 
 public:
-
   double
   innerProduct(const Epetra_Vector &phi,
                const Epetra_Vector &psi
@@ -127,11 +127,10 @@ public:
   const Teuchos::RCP<const Nosh::StkMesh>
   getMesh() const;
 
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 private:
   void
   computeF_(const Epetra_Vector &x,
-            const std::map<std::string,double> & params,
+            const std::map<std::string, double> & params,
             Epetra_Vector &FVec
           ) const;
 
@@ -141,9 +140,8 @@ private:
                const std::string & paramName,
                Epetra_Vector &FVec
              ) const;
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 protected:
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 private:
   const Teuchos::RCP<const Nosh::StkMesh> mesh_;
 
@@ -168,7 +166,6 @@ private:
   Teuchos::RCP<Epetra_LocalMap> p_map_;
   Teuchos::RCP<Epetra_Vector> p_init_;
   Teuchos::RCP<Teuchos::Array<std::string> > p_names_;
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 };
 } // namespace ModelEvaluator
 } // namespace Nosh

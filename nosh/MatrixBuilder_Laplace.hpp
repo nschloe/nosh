@@ -17,10 +17,12 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 // @HEADER
-
 #ifndef NOSH_MATRIXBUILDER_LAPLACE_H
 #define NOSH_MATRIXBUILDER_LAPLACE_H
-// =============================================================================
+
+#include <map>
+#include <string>
+
 #include <Epetra_Operator.h>
 #include <Teuchos_RCP.hpp>
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
@@ -33,7 +35,7 @@
 #include <stk_mesh/base/Entity.hpp>
 
 #include "nosh/MatrixBuilder_Virtual.hpp"
-// =============================================================================
+
 // forward declarations
 namespace Nosh
 {
@@ -42,13 +44,12 @@ namespace ScalarField
 {
 class Virtual;
 }
-}
-// =============================================================================
+} // namespace Nosh
+
 namespace Nosh
 {
 namespace MatrixBuilder
 {
-// =============================================================================
 class Laplace: public Virtual
 {
 public:
@@ -72,7 +73,7 @@ public:
   apply(const std::map<std::string, double> &params,
         const Epetra_Vector &X,
         Epetra_Vector &Y
-      ) const;
+       ) const;
 
   virtual
   void
@@ -80,21 +81,20 @@ public:
             const std::string & paramName,
             const Epetra_Vector &X,
             Epetra_Vector &Y
-          ) const;
+           ) const;
 
   virtual
   void
   fill(Epetra_FECrsMatrix &matrix,
        const std::map<std::string, double> &params
-     ) const;
+      ) const;
 
-//! Gets the parameter with their initial values.
+  //! Gets the parameter with their initial values.
   virtual
-  const std::map<std::string,double>
+  const std::map<std::string, double>
   getInitialParameters() const;
 
 protected:
-
 private:
   const Epetra_FECrsGraph
   buildGraph_() const;
@@ -103,12 +103,15 @@ private:
   fill_(Epetra_FECrsMatrix &matrix) const;
 
   void
-  buildGlobalIndexCache_(const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*, 2> > &edges) const;
+  buildGlobalIndexCache_(
+      const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*, 2> > &edges
+      ) const;
 
   void
-  buildAlphaCache_(const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*, 2> > & edges,
-                   const Teuchos::ArrayRCP<const double> &edgeCoefficients
-                 ) const;
+  buildAlphaCache_(
+      const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*, 2> > & edges,
+      const Teuchos::ArrayRCP<const double> &edgeCoefficients
+      ) const;
 
 private:
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
@@ -128,7 +131,6 @@ private:
   mutable Teuchos::ArrayRCP<double> alphaCache_;
   mutable bool alphaCacheUpToDate_;
 };
-// =============================================================================
 } // namespace MatrixBuilder
 } // namespace Nosh
 

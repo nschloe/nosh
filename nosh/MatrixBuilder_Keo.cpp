@@ -50,8 +50,7 @@ Keo(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
     const Teuchos::RCP<const Nosh::VectorField::Virtual> &mvp
    ):
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
-  keoFillTime_(Teuchos::TimeMonitor::getNewTimer(
-                  "Nosh: Keo::fillKeo_")),
+  keoFillTime_(Teuchos::TimeMonitor::getNewTimer("Nosh: Keo::fillKeo_")),
 #endif
   mesh_(mesh),
   thickness_(thickness),
@@ -174,7 +173,8 @@ fill(Epetra_FECrsMatrix &matrix,
          it != keoBuildParameters_.end();
          ++it) {
       // Check if it->first is in params at all and if their values are equal.
-      std::map<std::string, double>::const_iterator it2 = params.find(it->first);
+      std::map<std::string, double>::const_iterator it2 =
+        params.find(it->first);
       TEUCHOS_ASSERT(it2 != params.end());
       if (it2->second != it->second) {
         needsRebuild = true;
@@ -189,7 +189,8 @@ fill(Epetra_FECrsMatrix &matrix,
     for (std::map<std::string, double>::iterator it = keoBuildParameters_.begin();
          it != keoBuildParameters_.end();
          ++it) {
-      std::map<std::string, double>::const_iterator it2 = params.find(it->first);
+      std::map<std::string, double>::const_iterator it2 =
+        params.find(it->first);
       TEUCHOS_ASSERT(it2 != params.end());
       it->second = it2->second;
     }

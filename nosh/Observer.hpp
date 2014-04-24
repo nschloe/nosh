@@ -20,6 +20,8 @@
 #ifndef NOSH_NOXOBSERVER_H
 #define NOSH_NOXOBSERVER_H
 // =============================================================================
+#include <string>
+
 #include <Teuchos_RCP.hpp>
 #include <Epetra_Vector.h>
 #include <NOX_Epetra_Observer.H>
@@ -50,7 +52,7 @@ public:
            const std::string & csvFilename = "",
            const std::string & contParamName = "",
            const bool isTurningPointContinuation = false
-         );
+          );
 
 //! Destructor
   virtual
@@ -81,17 +83,13 @@ private:
   saveContinuationStatistics_(const Epetra_Vector &soln,
                               const double paramVal,
                               const int stepIndex
-                            );
+                             );
 
 private:
-
   const Teuchos::RCP<const Nosh::ModelEvaluator::Virtual> modelEval_;
   Nosh::CsvWriter csvWriter_;
   const std::string contParamName_;
   const bool isTurningPointContinuation_;
-
 };
-
 } // namespace Nosh
-
 #endif // NOSH_NOXOBSERVER_H

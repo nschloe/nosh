@@ -22,6 +22,7 @@
 // =============================================================================
 // includes
 #include <string>
+#include <vector>
 
 #include <Epetra_Comm.h>
 #include <Teuchos_RCP.hpp>
@@ -49,17 +50,17 @@ namespace io
 {
 class MeshData;
 }
-}
+} // namespace stk
 class Epetra_Vector;
 class Epetra_MultiVector;
 class Epetra_Map;
 // =============================================================================
 // typedefs
-typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorFieldType;
+typedef stk::mesh::Field<double, stk::mesh::Cartesian> VectorFieldType;
 typedef stk::mesh::Field<double>                      ScalarFieldType;
 typedef stk::mesh::Field<int>                         IntScalarFieldType;
-typedef Teuchos::SerialDenseVector<int,double>        DoubleVector;
-typedef Teuchos::SerialDenseVector<int,const double>  ConstDoubleVector;
+typedef Teuchos::SerialDenseVector<int, double>        DoubleVector;
+typedef Teuchos::SerialDenseVector<int, const double>  ConstDoubleVector;
 // =============================================================================
 namespace Nosh
 {
@@ -67,7 +68,6 @@ namespace Nosh
 class StkMesh
 {
 private:
-
 // Keep bulkData a pointer since its copy constructor is private; this causes
 // issues when trying to copy (or initialize) MeshDataContainer.
   struct MeshDataContainer {
@@ -104,12 +104,12 @@ public:
   void
   openOutputChannel(const std::string &outputDir,
                     const std::string &fileBaseName
-                  );
+                   );
 
   void
   write(const Epetra_Vector & psi,
         const double time
-      ) const;
+       ) const;
 
   Teuchos::RCP<Epetra_Vector>
   createVector(const std::string & fieldName) const;
@@ -180,15 +180,14 @@ public:
   getVectorFieldNonconst(const stk::mesh::Entity * nodeEntity,
                          const std::string & fieldName,
                          const int numDims
-                       ) const;
+                        ) const;
   double
   getScalarFieldNonconst(const stk::mesh::Entity * nodeEntity,
                          const std::string & fieldName
-                       ) const;
+                        ) const;
 
 protected:
 private:
-
   const int numDim_;
 
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
@@ -218,12 +217,15 @@ private:
   double time_;
 
 private:
+  void
+  computeControlVolumesTri_(
+      const Teuchos::RCP<Epetra_Vector> & cvOverlap
+      ) const;
 
   void
-  computeControlVolumesTri_(const Teuchos::RCP<Epetra_Vector> & cvOverlap) const;
-
-  void
-  computeControlVolumesTet_(const Teuchos::RCP<Epetra_Vector> & cvOverlap) const;
+  computeControlVolumesTet_(
+      const Teuchos::RCP<Epetra_Vector> & cvOverlap
+      ) const;
 
   Teuchos::RCP<Epetra_Vector>
   complexfield2vector_(const ScalarFieldType &realField,
@@ -236,7 +238,7 @@ private:
   Teuchos::RCP<Epetra_MultiVector>
   field2vector_(const VectorFieldType &field,
                 const int numComponents
-              ) const;
+               ) const;
 
   std::vector<stk::mesh::Entity*>
   buildOwnedNodes_() const;
@@ -259,77 +261,75 @@ private:
 
   double
   computeCovolume2d_(const DoubleVector &cc,
-                      const DoubleVector &x0,
-                      const DoubleVector &x1,
-                      const DoubleVector &other0
-                   ) const;
+                     const DoubleVector &x0,
+                     const DoubleVector &x1,
+                     const DoubleVector &other0
+                    ) const;
 
   double
   computeCovolume3d_(const DoubleVector &cc,
-                      const DoubleVector &x0,
-                      const DoubleVector &x1,
-                      const DoubleVector &other0,
-                      const DoubleVector &other1
-                   ) const;
+                     const DoubleVector &x0,
+                     const DoubleVector &x1,
+                     const DoubleVector &other0,
+                     const DoubleVector &other1
+                    ) const;
 
   Teuchos::Tuple<unsigned int, 2>
   getOtherIndices_(unsigned int e0, unsigned int e1) const;
 
   DoubleVector
   add_(double alpha, const DoubleVector &x,
-        double beta,  const DoubleVector &y
-     ) const;
+       double beta,  const DoubleVector &y
+      ) const;
 
 
   double
   getTriangleArea_(const DoubleVector &edge0,
-                    const DoubleVector &edge1
-                 ) const;
+                   const DoubleVector &edge1
+                  ) const;
 
   double
   getTetrahedronVolume_(const DoubleVector &edge0,
-                         const DoubleVector &edge1,
-                         const DoubleVector &edge2
-                      ) const;
+                        const DoubleVector &edge1,
+                        const DoubleVector &edge2
+                       ) const;
 
   DoubleVector
   computeTriangleCircumcenter_(const DoubleVector &node0,
-                                const DoubleVector &node1,
-                                const DoubleVector &node2
-                             ) const;
+                               const DoubleVector &node1,
+                               const DoubleVector &node2
+                              ) const;
   DoubleVector
   computeTriangleCircumcenter_(
-    const Teuchos::ArrayRCP<const DoubleVector> &nodes) const;
+    const Teuchos::ArrayRCP<const DoubleVector> &nodes
+    ) const;
 
   DoubleVector
   computeTetrahedronCircumcenter_(
-    const Teuchos::ArrayRCP<const DoubleVector> &nodes) const;
+    const Teuchos::ArrayRCP<const DoubleVector> &nodes
+    ) const;
 
   DoubleVector
   getEdgeCoefficientsNumerically_(
     const Teuchos::ArrayRCP<const DoubleVector> edges
- ) const;
+    ) const;
 
   double
-  dot_(const DoubleVector &v, const DoubleVector &w
-     ) const;
+  dot_(const DoubleVector &v, const DoubleVector &w) const;
 
   DoubleVector
   cross_(const DoubleVector &v,
-          const DoubleVector &w
-       ) const;
+         const DoubleVector &w
+        ) const;
 
   double
-  norm2_(const DoubleVector &x
-       ) const;
+  norm2_(const DoubleVector &x) const;
 
   double
-  norm2squared_(const DoubleVector &x
-              ) const;
+  norm2squared_(const DoubleVector &x) const;
 
   EdgesContainer
   createEdgeData_();
-
 };
 // -----------------------------------------------------------------------------
 // helper functions

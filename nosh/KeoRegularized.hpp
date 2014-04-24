@@ -20,7 +20,10 @@
 
 #ifndef NOSH_KEOPRECONDITIONER_H
 #define NOSH_KEOPRECONDITIONER_H
-// =============================================================================
+
+#include <map>
+#include <string>
+
 #include <Epetra_Vector.h>
 #include <Epetra_Operator.h>
 #include <Teuchos_RCP.hpp>
@@ -31,7 +34,7 @@
 #include <Teuchos_FancyOStream.hpp>
 #include <Epetra_FECrsMatrix.h>
 #include <Epetra_LinearProblem.h>
-// =============================================================================
+
 namespace Nosh
 {
 class StkMesh;
@@ -43,7 +46,8 @@ namespace MatrixBuilder
 {
 class Virtual;
 }
-}
+} // namespace Nosh
+
 namespace Belos
 {
 class EpetraPrecOp;
@@ -54,10 +58,9 @@ namespace ML_Epetra
 {
 class MultiLevelPreconditioner;
 }
-// =============================================================================
+
 namespace Nosh
 {
-// =============================================================================
 class KeoRegularized : public Epetra_Operator
 {
 public:
@@ -66,7 +69,7 @@ public:
                  const Teuchos::RCP<const Nosh::MatrixBuilder::Virtual> &matrixBuilder
                );
 
-// Destructor.
+  // Destructor.
   ~KeoRegularized();
 
   virtual int
@@ -75,12 +78,12 @@ public:
   virtual int
   Apply(const Epetra_MultiVector &X,
         Epetra_MultiVector &Y
-      ) const;
+       ) const;
 
   virtual int
   ApplyInverse(const Epetra_MultiVector &X,
                Epetra_MultiVector &Y
-             ) const;
+              ) const;
 
   virtual double
   NormInf() const;
@@ -102,22 +105,18 @@ public:
   virtual const Epetra_Map &OperatorRangeMap() const;
 
 public:
-
   void
-  rebuild(const std::map<std::string,double> & params,
+  rebuild(const std::map<std::string, double> & params,
           const Epetra_Vector &psi
-        );
+         );
 
 protected:
 private:
-
   const Teuchos::RCP<const Epetra_Vector>
   getAbsPsiSquared_(const Epetra_Vector &psi);
 
   void
   rebuildInverse_();
-
-private:
 
 private:
   bool useTranspose_;
@@ -145,7 +144,6 @@ private:
 
   Teuchos::RCP<Teuchos::FancyOStream> out_;
 };
-// =============================================================================
 } // namespace Nosh
 
 #endif // NOSH_KEOPRECONDITIONER_H

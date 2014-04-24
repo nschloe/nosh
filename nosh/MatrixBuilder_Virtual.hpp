@@ -17,50 +17,49 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 // @HEADER
-
 #ifndef NOSH_MATRIXBUILDER_VIRTUAL
 #define NOSH_MATRIXBUILDER_VIRTUAL
-// =============================================================================
+
+#include <map>
+#include <string>
+
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Array.hpp>
 #include <Epetra_Comm.h>
 #include <Epetra_FECrsGraph.h>
 #include <Epetra_FECrsMatrix.h>
 #include <Epetra_Vector.h>
-// =============================================================================
+
 // forward declarations
 namespace Nosh
 {
 class StkMesh;
 }
-// =============================================================================
+
 namespace Nosh
 {
-// =============================================================================
 namespace MatrixBuilder
 {
-// =============================================================================
 class Virtual
 {
-
 public:
   Virtual();
 
-// Destructor.
+  // Destructor.
   virtual
   ~Virtual();
 
-//! Get the underlying communicator.
+  //! Get the underlying communicator.
   virtual
   const Epetra_Comm &
   getComm() const = 0;
 
-//! Get the connectivity graph of the matrix.
+  //! Get the connectivity graph of the matrix.
   virtual
   const Epetra_FECrsGraph &
   getGraph() const = 0;
 
-//! Y = A(params) * X.
+  //! Y = A(params) * X.
   virtual
   void
   apply(const std::map<std::string, double> &params,
@@ -68,7 +67,7 @@ public:
         Epetra_Vector &Y
       ) const = 0;
 
-//! Y = dA/dp(params) * X.
+  //! Y = dA/dp(params) * X.
   virtual
   void
   applyDKDp(const std::map<std::string, double> &params,
@@ -77,20 +76,18 @@ public:
             Epetra_Vector &Y
           ) const = 0;
 
-//! Fill a given matrix with the parameter entries as given in params.
+  //! Fill a given matrix with the parameter entries as given in params.
   virtual
   void
   fill(Epetra_FECrsMatrix &matrix,
-       const std::map<std::string,double> &params
+       const std::map<std::string, double> &params
      ) const = 0;
 
-//! Get parameter map with their initial values.
+  //! Get parameter map with their initial values.
   virtual
-  const std::map<std::string,double>
+  const std::map<std::string, double>
   getInitialParameters() const = 0;
-
 };
-// =============================================================================
 } // namespace MatrixBuilder
 } // namespace Nosh
 

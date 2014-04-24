@@ -20,6 +20,9 @@
 #ifndef NOSH_SCALARFIELD_VIRTUAL_H_
 #define NOSH_SCALARFIELD_VIRTUAL_H_
 // =============================================================================
+#include <map>
+#include <string>
+
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Array.hpp>
 #include <Epetra_Vector.h>
@@ -41,18 +44,18 @@ public:
 
   virtual
   const Epetra_Vector
-  getV(const std::map<std::string,double> & params
+  getV(const std::map<std::string, double> & params
      ) const = 0;
 
   virtual
   const Epetra_Vector
-  getdVdP(const std::map<std::string,double> & params,
+  getdVdP(const std::map<std::string, double> & params,
           const std::string & paramName
         ) const = 0;
 
-//! Get parameter names and initial values.
+  //! Get parameter names and initial values.
   virtual
-  const std::map<std::string,double>
+  const std::map<std::string, double>
   getInitialParameters() const = 0;
 
 protected:

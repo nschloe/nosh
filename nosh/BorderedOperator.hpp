@@ -81,7 +81,6 @@ public:
   virtual const Epetra_Map &OperatorRangeMap() const;
 
 public:
-
   const Teuchos::RCP<Epetra_Operator>
   getInnerOperator() const;
 
@@ -93,7 +92,6 @@ public:
 
 protected:
 private:
-
   const Teuchos::RCP<Epetra_Operator> innerOperator_;
   const Teuchos::RCP<Epetra_Vector> b_;
   const Teuchos::RCP<Epetra_Vector> c_;

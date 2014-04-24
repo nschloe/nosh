@@ -20,6 +20,8 @@
 #ifndef NOSH_CSVWRITER_H
 #define NOSH_CSVWRITER_H
 
+#include <string>
+
 #include <Teuchos_ParameterList.hpp>
 
 namespace Nosh
@@ -28,17 +30,14 @@ namespace Nosh
 class CsvWriter
 {
 public:
-
-//! Default constructor.
+  //! Default constructor.
   CsvWriter(const std::string &fileName,
             const std::string &delimeter = ","
           );
 
-//! Destructor.
+  //! Destructor.
   virtual
   ~CsvWriter();
-
-//! Const getter.
 
   void
   writeHeader(const Teuchos::ParameterList & pList) const;
@@ -48,8 +47,7 @@ public:
 
 protected:
 private:
-
-//! File stream for the statistics.
+  //! File stream for the statistics.
   mutable std::ofstream fileStream_;
 
   const std::string delimeter_;

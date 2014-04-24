@@ -24,6 +24,9 @@
 class Epetra_Vector;
 class Epetra_Map;
 // =============================================================================
+#include <string>
+#include <map>
+
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Array.hpp>
 // =============================================================================
@@ -41,7 +44,7 @@ public:
 
 //! Get parameter names and initial values.
   virtual
-  const std::map<std::string,double>
+  const std::map<std::string, double>
   getInitialParameters() const = 0;
 
 //! Projection of the vector field onto an edge at the midpoint of the edge.
@@ -49,14 +52,14 @@ public:
   double
   getEdgeProjection(const unsigned int edgeIndex,
                     const std::map<std::string, double> & params
-                  ) const = 0;
+                   ) const = 0;
 
   virtual
   double
   getDEdgeProjectionDp(const unsigned int edgeIndex,
                        const std::map<std::string, double> & params,
                        const std::string & dParamName
-                     ) const = 0;
+                      ) const = 0;
 
 protected:
 private:

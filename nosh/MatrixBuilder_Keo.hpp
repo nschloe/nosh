@@ -20,7 +20,10 @@
 
 #ifndef NOSH_MATRIXBUILDER_KEO_H
 #define NOSH_MATRIXBUILDER_KEO_H
-// =============================================================================
+
+#include <map>
+#include <string>
+
 #include <Epetra_Operator.h>
 #include <Teuchos_RCP.hpp>
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
@@ -33,7 +36,7 @@
 #include <stk_mesh/base/Entity.hpp>
 
 #include "nosh/MatrixBuilder_Virtual.hpp"
-// =============================================================================
+
 // forward declarations
 namespace Nosh
 {
@@ -46,13 +49,13 @@ namespace VectorField
 {
 class Virtual;
 }
-}
-// =============================================================================
+} // namespace Nosh
+
 namespace Nosh
 {
 namespace MatrixBuilder
 {
-// =============================================================================
+
 class Keo: public Virtual
 {
 public:
@@ -61,7 +64,7 @@ public:
       const Teuchos::RCP<const Nosh::VectorField::Virtual> &mvp
     );
 
-// Destructor.
+  // Destructor.
   ~Keo();
 
   virtual
@@ -95,11 +98,10 @@ public:
 
 //! Gets the initial parameters from this module.
   virtual
-  const std::map<std::string,double>
+  const std::map<std::string, double>
   getInitialParameters() const;
 
 protected:
-
 private:
   const Epetra_FECrsGraph
   buildKeoGraph_() const;
@@ -107,20 +109,20 @@ private:
   void
   fillKeo_(Epetra_FECrsMatrix &keoMatrix,
             const std::map<std::string, double> & params,
-            void (Keo::*filler)(const int, const std::map<std::string,double>&, double*) const
-         ) const;
+            void (Keo::*filler)(const int, const std::map<std::string, double>&, double*) const
+          ) const;
 
   void
   fillerRegular_(const int k,
                  const std::map<std::string, double> & params,
                  double * v
-               ) const;
+                ) const;
 
   void
   fillerDp_(const int k,
             const std::map<std::string, double> & params,
             double * v
-          ) const;
+           ) const;
 
   void
   buildGlobalIndexCache_(const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*, 2> > &edges) const;
@@ -152,7 +154,6 @@ private:
   mutable bool alphaCacheUpToDate_;
   mutable std::string paramName_;
 };
-// =============================================================================
 } // namespace MatrixBuilder
 } // namespace Nosh
 

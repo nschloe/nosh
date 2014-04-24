@@ -20,6 +20,9 @@
 #ifndef NOSH_VECTORFIELD_EXPLICITVALUES_H_
 #define NOSH_VECTORFIELD_EXPLICITVALUES_H_
 
+#include <map>
+#include <string>
+
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Tuple.hpp>
 #include <Teuchos_SerialDenseVector.hpp>
@@ -29,7 +32,7 @@
 #include "nosh/VectorField_Virtual.hpp"
 #include "nosh/StkMesh.hpp"
 
-typedef Teuchos::SerialDenseVector<int,double> DoubleVector;
+typedef Teuchos::SerialDenseVector<int, double> DoubleVector;
 
 namespace Nosh
 {
@@ -48,7 +51,7 @@ public:
 
 //! Get parameter names and initial values.
   virtual
-  const std::map<std::string,double>
+  const std::map<std::string, double>
   getInitialParameters() const;
 
   double

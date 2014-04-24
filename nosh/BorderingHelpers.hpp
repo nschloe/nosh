@@ -20,17 +20,15 @@
 
 #ifndef NOSH_BORDERINGHELPERS_H
 #define NOSH_BORDERINGHELPERS_H
-// =============================================================================
+
 #include <Teuchos_RCP.hpp>
 #include <Epetra_Map.h>
 #include <Epetra_Vector.h>
-// =============================================================================
+
 namespace Nosh
 {
-
 namespace BorderingHelpers
 {
-
 Teuchos::RCP<const Epetra_Map>
 extendMapBy1(const Epetra_BlockMap & map);
 
@@ -45,7 +43,6 @@ dissect(const Epetra_MultiVector & x,
         Epetra_MultiVector & xSmall,
         double * lambda
       );
-}
-}
-// =============================================================================
+} // namespace BorderingHelpers
+} // namespace Nosh
 #endif // NOCH_BORDERINGHELPERS_H

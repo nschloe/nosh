@@ -20,6 +20,9 @@
 #ifndef NOSH_SAVEEIGENDATA_H
 #define NOSH_SAVEEIGENDATA_H
 // =============================================================================
+#include <string>
+#include <vector>
+
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
 
@@ -37,7 +40,7 @@ namespace ModelEvaluator
 {
 class Virtual;
 }
-}
+} // namespace Nosh
 // =============================================================================
 namespace Nosh
 {
@@ -45,9 +48,7 @@ namespace Nosh
 class SaveEigenData :
   public LOCA::SaveEigenData::AbstractStrategy
 {
-
 public:
-
 // Actually suggested interface:
 //    EigenSaver(
 //      const Teuchos::RCP<LOCA::GlobalData>& global_data,
@@ -89,6 +90,6 @@ private:
 //! The minimum number of stable eigenvalues that is to be computed in each step.
   unsigned int numComputeStableEigenvalues_;
 };
-} // namespace NOSH
+} // namespace Nosh
 
 #endif // NOSH_SAVEEIGENDATA_H

@@ -20,12 +20,15 @@
 
 #ifndef NOSH_JACOBIANOPERATOR_H
 #define NOSH_JACOBIANOPERATOR_H
-// =============================================================================
+
+#include <map>
+#include <string>
+
 #include <Epetra_Vector.h>
 #include <Epetra_FECrsMatrix.h>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Array.hpp>
-// =============================================================================
+
 // forward declarations
 namespace Nosh
 {
@@ -38,22 +41,23 @@ namespace ScalarField
 {
 class Virtual;
 }
-}
+} // namespace Nosh
 class Epetra_Vector;
-// =============================================================================
+
 namespace Nosh
 {
 
 class JacobianOperator : public Epetra_Operator
 {
 public:
-  JacobianOperator(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
-                   const Teuchos::RCP<const Nosh::ScalarField::Virtual> &scalarPotential,
-                   const Teuchos::RCP<const Nosh::ScalarField::Virtual> &thickness,
-                   const Teuchos::RCP<const Nosh::MatrixBuilder::Virtual> &matrixBuilder
-                 );
+  JacobianOperator(
+      const Teuchos::RCP<const Nosh::StkMesh> &mesh,
+      const Teuchos::RCP<const Nosh::ScalarField::Virtual> &scalarPotential,
+      const Teuchos::RCP<const Nosh::ScalarField::Virtual> &thickness,
+      const Teuchos::RCP<const Nosh::MatrixBuilder::Virtual> &matrixBuilder
+      );
 
-// Destructor.
+  // Destructor.
   ~JacobianOperator ();
 
   virtual int
@@ -92,15 +96,14 @@ public:
 
 public:
   void
-  rebuild(const std::map<std::string,double> params,
+  rebuild(const std::map<std::string, double> params,
           const Teuchos::RCP<const Epetra_Vector> &current_X
         );
 
 protected:
-
 private:
   void
-  rebuildDiags_(const std::map<std::string,double> params,
+  rebuildDiags_(const std::map<std::string, double> params,
                 const Epetra_Vector &current_X
               );
 
@@ -116,7 +119,6 @@ private:
   Epetra_Vector diag0_;
   Epetra_Vector diag1b_;
 };
-
 } // namespace Nosh
-// =============================================================================
+
 #endif // NOSH_JACOBIANOPERATOR_H

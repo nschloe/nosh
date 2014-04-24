@@ -20,6 +20,9 @@
 #ifndef NOSH_SCALARFIELD_CONSTANT_H_
 #define NOSH_SCALARFIELD_CONSTANT_H_
 // =============================================================================
+#include <map>
+#include <string>
+
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Array.hpp>
 #include <Epetra_Comm.h>
@@ -48,28 +51,26 @@ public:
 
 //! Get the parameter names and intial values.
   virtual
-  const std::map<std::string,double>
+  const std::map<std::string, double>
   getInitialParameters() const;
 
   virtual
   const Epetra_Vector
-  getV(const std::map<std::string,double> & params
+  getV(const std::map<std::string, double> & params
      ) const;
 
   virtual
   const Epetra_Vector
-  getdVdP(const std::map<std::string,double> & params,
+  getdVdP(const std::map<std::string, double> & params,
           const std::string & paramName
         ) const;
 
 protected:
 private:
-
   const Teuchos::RCP<const Epetra_Map> map_;
   const double c_;
   const std::string param1Name_;
   const double param1InitValue_;
-
 };
 } // namespace ScalarField
 } // namespace Nosh

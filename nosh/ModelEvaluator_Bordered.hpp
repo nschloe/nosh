@@ -21,6 +21,8 @@
 #define NOSH_MODELEVALUATOR_BORDERED_H
 // -----------------------------------------------------------------------------
 // includes
+#include <string>
+
 #include <Teuchos_RCP.hpp>
 
 #include "nosh/ModelEvaluator_Virtual.hpp"
@@ -31,7 +33,6 @@ namespace ModelEvaluator
 {
 class Bordered : public Nosh::ModelEvaluator::Virtual
 {
-
 public:
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 //! Constructor without initial guess.
@@ -91,7 +92,6 @@ public:
              const OutArgs &outArgs) const;
 
 public:
-
   virtual
   double
   innerProduct(const Epetra_Vector &phi,
@@ -113,7 +113,7 @@ private:
   const double lambdaInit_;
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 };
-} // namespace Modelevaluator
+} // namespace ModelEvaluator
 } // namespace Nosh
 
 #endif // NOSH_MODELEVALUATOR_BORDERED_H

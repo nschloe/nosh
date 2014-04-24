@@ -19,30 +19,28 @@
 // @HEADER
 #ifndef NOSH_MODELEVALUATOR_VIRTUAL_H
 #define NOSH_MODELEVALUATOR_VIRTUAL_H
-// -----------------------------------------------------------------------------
+
 // forward declarations
 namespace Nosh
 {
 class StkMesh;
 }
-// -----------------------------------------------------------------------------
+
 // includes
 #include <EpetraExt_ModelEvaluator.h>
 #include <Epetra_Vector.h>
 #include <Teuchos_RCP.hpp>
-// -----------------------------------------------------------------------------
+
 namespace Nosh
 {
 namespace ModelEvaluator
 {
 class Virtual : public EpetraExt::ModelEvaluator
 {
-
 public:
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   Virtual();
 
-// Destructor
+  // Destructor
   virtual
   ~Virtual();
 
@@ -66,9 +64,8 @@ public:
 
 protected:
 private:
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 };
-}
-}
+} // namespace ModelEvaluator
+} // namespace Nosh
 
 #endif // NOSH_MODELEVALUATOR_VIRTUAL_H
