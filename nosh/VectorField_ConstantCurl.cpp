@@ -75,11 +75,11 @@ ConstantCurl::
 {
 }
 // ============================================================================
-const std::map<std::string,double>
+const std::map<std::string, double>
 ConstantCurl::
 getInitialParameters() const
 {
-  std::map<std::string,double> m;
+  std::map<std::string, double> m;
   m["mu"] = 0.0;
   m["theta"] = 0.0;
   return m;
@@ -160,9 +160,10 @@ getDEdgeProjectionDp(const unsigned int edgeIndex,
     std::map<std::string, double>::const_iterator itMu = params.find("mu");
     TEUCHOS_ASSERT(itMu != params.end());
     return itMu->second * dRotatedBDThetaCache_.dot(edgeCache_[edgeIndex]);
-  } else
+  } else {
     TEUCHOS_TEST_FOR_EXCEPT_MSG(true,
                                 "Illegal parameter \"" << paramName << "\".");
+  }
 }
 // ============================================================================
 void

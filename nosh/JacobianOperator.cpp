@@ -169,7 +169,7 @@ OperatorRangeMap() const
 // =============================================================================
 void
 JacobianOperator::
-rebuild(const std::map<std::string,double> params,
+rebuild(const std::map<std::string, double> params,
         const Teuchos::RCP<const Epetra_Vector> &current_X
       )
 {
@@ -212,7 +212,7 @@ rebuild(const std::map<std::string,double> params,
 // =============================================================================
 void
 JacobianOperator::
-rebuildDiags_(const std::map<std::string,double> params,
+rebuildDiags_(const std::map<std::string, double> params,
               const Epetra_Vector &x
             )
 {

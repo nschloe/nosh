@@ -21,6 +21,7 @@
 #include "nosh/SaveEigenData.hpp"
 
 #include <string>
+#include <vector>
 
 #include "nosh/ModelEvaluator_Virtual.hpp"
 
@@ -69,7 +70,7 @@ save(Teuchos::RCP<std::vector<double> > &evals_r,
       Teuchos::RCP<std::vector<double> > &evals_i,
       Teuchos::RCP<NOX::Abstract::MultiVector> &evecs_r,
       Teuchos::RCP<NOX::Abstract::MultiVector> &evecs_i
-   )
+    )
 {
   // Can't fetch step index now, so rely on the function
   // being called exactly once per step.

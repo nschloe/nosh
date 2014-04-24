@@ -132,7 +132,6 @@ create_WPrec() const
   return Teuchos::rcp(new EpetraExt::ModelEvaluator::Preconditioner(borderedPrec,
                       true));
   //false));
-
 }
 // ============================================================================
 EpetraExt::ModelEvaluator::InArgs

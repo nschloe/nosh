@@ -90,11 +90,11 @@ ExplicitValues::
 {
 }
 // ============================================================================
-const std::map<std::string,double>
+const std::map<std::string, double>
 ExplicitValues::
 getInitialParameters() const
 {
-  std::map<std::string,double> m;
+  std::map<std::string, double> m;
   m["mu"] = initMu_;
   return m;
 }

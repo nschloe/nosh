@@ -109,8 +109,9 @@ observeTurningPointContinuation_(const Epetra_Vector &soln,
     index++;
     this->saveContinuationStatistics_(soln, paramVal, index);
     modelEval_->getMesh()->write(soln, index);
-  } else
+  } else {
     TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Not yet implemented.");
+  }
   // This part of the code used to write state and null vector alternately
   // for turning point continuation, but because of how StkMesh is
   // organized, it seems impossible to first write to one file, then to

@@ -81,11 +81,13 @@ Nls(
   params["g"] = g;
 
   // This merges and discards new values if their keys are already in the list.
-  std::map<std::string,double> spParams = scalarPotential_->getInitialParameters();
+  std::map<std::string, double> spParams =
+    scalarPotential_->getInitialParameters();
   params.insert(spParams.begin(), spParams.end());
 
   // This merges and discards new values if their keys are already in the list.
-  std::map<std::string,double> mbParams = matrixBuilder_->getInitialParameters();
+  std::map<std::string, double> mbParams =
+    matrixBuilder_->getInitialParameters();
   params.insert(mbParams.begin(), mbParams.end());
 
   // Out of this now complete list, create the entities that the EpetraExt::
@@ -95,7 +97,7 @@ Nls(
   p_init_ = Teuchos::rcp(new Epetra_Vector(*p_map_));
   p_names_ = Teuchos::rcp(new Teuchos::Array<std::string>(numParams));
   int k = 0;
-  for (std::map<std::string,double>::const_iterator it = params.begin();
+  for (std::map<std::string, double>::const_iterator it = params.begin();
        it != params.end();
        ++it) {
     (*p_names_)[k] = it->first;
@@ -269,7 +271,7 @@ evalModel(const InArgs &inArgs,
   double beta = inArgs.get_beta();
 
   // From packages/piro/test/MockModelEval_A.cpp
-  if (alpha==0.0 && beta==0.0)
+  if (alpha == 0.0 && beta == 0.0)
     beta = 1.0;
 #ifndef NDEBUG
   TEUCHOS_ASSERT_EQUALITY(alpha, 0.0);

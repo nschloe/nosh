@@ -100,7 +100,7 @@ int
 KeoRegularized::
 Apply(const Epetra_MultiVector &X,
        Epetra_MultiVector &Y
-   ) const
+     ) const
 {
 #ifndef NDEBUG
   TEUCHOS_ASSERT(regularizedMatrix_.DomainMap().SameAs(X.Map()));
@@ -162,16 +162,16 @@ ApplyInverse(const Epetra_MultiVector &X,
     problem.setLeftPrec(mlPrec);
     // -------------------------------------------------------------------------
     // Create an iterative solver manager.
-    Teuchos::RCP<Belos::SolverManager<double,MV,OP> > newSolver =
-      Teuchos::rcp(new Belos::PseudoBlockCGSolMgr<double,MV,OP>
-                    (Teuchos::rcp(&problem, false), Teuchos::rcp(&belosList, false))
-                );
+    Teuchos::RCP<Belos::SolverManager<double, MV, OP> > newSolver =
+      Teuchos::rcp(new Belos::PseudoBlockCGSolMgr<double, MV, OP>
+                   (Teuchos::rcp(&problem, false), Teuchos::rcp(&belosList, false))
+                  );
 
     // Perform "solve".
     Belos::ReturnType ret = newSolver->solve();
 
     //return 0;
-    return ret==Belos::Converged ? 0 : -1;
+    return ret == Belos::Converged ? 0 : -1;
   }
 }
 // =============================================================================
@@ -226,7 +226,7 @@ OperatorRangeMap() const
 // =============================================================================
 void
 KeoRegularized::
-rebuild(const std::map<std::string,double> & params,
+rebuild(const std::map<std::string, double> & params,
         const Epetra_Vector & x
       )
 {

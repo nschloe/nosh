@@ -48,7 +48,7 @@ Keo::
 Keo(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
     const Teuchos::RCP<const Nosh::ScalarField::Virtual> &thickness,
     const Teuchos::RCP<const Nosh::VectorField::Virtual> &mvp
-   ) :
+   ):
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   keoFillTime_(Teuchos::TimeMonitor::getNewTimer(
                   "Nosh: Keo::fillKeo_")),
@@ -404,15 +404,15 @@ fillKeo_(Epetra_FECrsMatrix &keoMatrix,
     A(0, 2) = v[0];
     A(0, 3) = v[1];
     A(1, 0) = 0.0;
-    A(1 ,1) = v[2];
+    A(1, 1) = v[2];
     A(1, 2) = -v[1];
     A(1, 3) = v[0];
     A(2, 0) = v[0];
-    A(2 ,1) = -v[1];
+    A(2, 1) = -v[1];
     A(2, 2) = v[2];
     A(2, 3) = 0.0;
     A(3, 0) = v[1];
-    A(3 ,1) = v[0];
+    A(3, 1) = v[0];
     A(3, 2) = 0.0;
     A(3, 3) = v[2];
     TEUCHOS_ASSERT_EQUALITY(

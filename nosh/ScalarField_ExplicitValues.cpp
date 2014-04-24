@@ -45,18 +45,18 @@ ExplicitValues::
 {
 }
 // ============================================================================
-const std::map<std::string,double>
+const std::map<std::string, double>
 ExplicitValues::
 getInitialParameters() const
 {
-  std::map<std::string,double> m;
+  std::map<std::string, double> m;
   m["beta"] = 1.0;
   return m;
 }
 // ============================================================================
 const Epetra_Vector
 ExplicitValues::
-getV(const std::map<std::string,double> & params) const
+getV(const std::map<std::string, double> & params) const
 {
   Epetra_Vector vals(*nodeValues_);
 
@@ -70,7 +70,7 @@ getV(const std::map<std::string,double> & params) const
 // ============================================================================
 const Epetra_Vector
 ExplicitValues::
-getdVdP(const std::map<std::string,double> & params,
+getdVdP(const std::map<std::string, double> & params,
         const std::string & paramName
       ) const
 {

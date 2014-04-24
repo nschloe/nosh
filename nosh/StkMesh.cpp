@@ -119,7 +119,7 @@ StkMesh::
 read(const Epetra_Comm &comm,
      const std::string &fileName,
      const int index
-   )
+    )
 {
   StkMesh::MeshDataContainer d = {
     stk::mesh::fem::FEMMetaData(numDim_),
@@ -417,8 +417,9 @@ complexfield2vector_(const ScalarFieldType &realField,
 #ifndef NDEBUG
   double r;
   TEUCHOS_ASSERT_EQUALITY(0, vector->NormInf(&r));
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(r!=r || r>1.0e100,
-                               "The input data seems flawed. Abort.");
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(r != r || r > 1.0e100,
+                              "The input data seems flawed. Abort."
+                             );
 #endif
 
   return vector;
@@ -454,8 +455,9 @@ field2vector_(const ScalarFieldType &field) const
   double r;
   // Use NormInf as it's robust against overlapping maps.
   TEUCHOS_ASSERT_EQUALITY(0, vector->NormInf(&r));
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(r!=r || r>1.0e100,
-                               "The input data seems flawed. Abort.");
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(r != r || r > 1.0e100,
+                              "The input data seems flawed. Abort."
+                             );
 #endif
 
   return vector;
@@ -502,7 +504,7 @@ field2vector_(const VectorFieldType &field,
   TEUCHOS_ASSERT_EQUALITY(0, vector->NormInf(&r[0]));
   bool makesSense = true;
   for (int i = 0; i < numComponents; i++) {
-    if (r[i]!=r[i] || r[i]>1.0e100) {
+    if (r[i] != r[i] || r[i] > 1.0e100) {
       makesSense = false;
       break;
     }
@@ -1503,7 +1505,7 @@ DoubleVector
 StkMesh::
 add_(double alpha, const DoubleVector &x,
       double beta,  const DoubleVector &y
-   ) const
+    ) const
 {
 #ifndef NDEBUG
   TEUCHOS_ASSERT_EQUALITY(x.length(), 3);
@@ -1520,7 +1522,7 @@ double
 StkMesh::
 dot_(const DoubleVector &v,
       const DoubleVector &w
-   ) const
+    ) const
 {
   double sum = 0.0;
   for (int k = 0; k < v.length(); k++)
@@ -1616,7 +1618,7 @@ createEdgeData_()
         // too. This is necessary as otherwise the edge {3,7} could not be
         // identified as {7,3}.
         // Check if edgeNodes is in the map.
-        std::map<Teuchos::Tuple<stk::mesh::Entity*, 2>,int,TupleComp>::iterator it =
+        std::map<Teuchos::Tuple<stk::mesh::Entity*, 2>, int, TupleComp>::iterator it =
           nodesEdge.find(edgeNodes);
         if (it != nodesEdge.end()) {
           // Edge is already accounted for.

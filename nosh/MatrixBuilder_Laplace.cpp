@@ -89,7 +89,7 @@ Laplace::
 apply(const std::map<std::string, double> &params,
       const Epetra_Vector &X,
       Epetra_Vector &Y
-   ) const
+     ) const
 {
   (void) params;
   // Rebuild if necessary.
@@ -139,11 +139,11 @@ fill(Epetra_FECrsMatrix &matrix,
   return;
 }
 // =============================================================================
-const std::map<std::string,double>
+const std::map<std::string, double>
 Laplace::
 getInitialParameters() const
 {
-  return std::map<std::string,double>();
+  return std::map<std::string, double>();
 }
 // =============================================================================
 const Epetra_FECrsGraph
@@ -233,7 +233,7 @@ buildGraph_() const
   // Make sure that domain and range map are non-overlapping (to make sure that
   // states psi can compute norms) and equal (to make sure that the matrix works
   // with ML).
-  TEUCHOS_ASSERT_EQUALITY(0, graph.GlobalAssemble(noMap,noMap));
+  TEUCHOS_ASSERT_EQUALITY(0, graph.GlobalAssemble(noMap, noMap));
 
   return graph;
 }
@@ -280,23 +280,25 @@ fill_(Epetra_FECrsMatrix &matrix) const
     // Do that now, just blockwise for real and imaginary part.
     const double & a = alphaCache_[k];
     A(0, 0) =  a;
-    A(0 ,1) =  0.0;
+    A(0, 1) =  0.0;
     A(0, 2) = -a;
     A(0, 3) =  0.0;
     A(1, 0) =  0.0;
-    A(1 ,1) =  a;
+    A(1, 1) =  a;
     A(1, 2) =  0.0;
     A(1, 3) = -a;
     A(2, 0) = -a;
-    A(2 ,1) =  0.0;
+    A(2, 1) =  0.0;
     A(2, 2) =  a;
     A(2, 3) =  0.0;
     A(3, 0) =  0.0;
-    A(3 ,1) = -a;
+    A(3, 1) = -a;
     A(3, 2) =  0.0;
     A(3, 3) =  a;
-    TEUCHOS_ASSERT_EQUALITY(0, matrix.SumIntoGlobalValues(
-                              globalIndexCache_[k], A));
+    TEUCHOS_ASSERT_EQUALITY(
+        0,
+        matrix.SumIntoGlobalValues(globalIndexCache_[k], A)
+        );
     // -------------------------------------------------------------------
   }
 
@@ -339,7 +341,7 @@ buildAlphaCache_(const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*, 2> > & 
 {
   alphaCache_ = Teuchos::ArrayRCP<double>(edges.size());
 
-  std::map<std::string,double> dummy;
+  std::map<std::string, double> dummy;
   const Epetra_Vector thicknessValues = thickness_->getV(dummy);
 
   Teuchos::Tuple<int, 2> gid;

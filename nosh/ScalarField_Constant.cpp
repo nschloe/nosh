@@ -49,11 +49,11 @@ Constant::
 {
 }
 // ============================================================================
-const std::map<std::string,double>
+const std::map<std::string, double>
 Constant::
 getInitialParameters() const
 {
-  std::map<std::string,double> m;
+  std::map<std::string, double> m;
   if (!param1Name_.empty())
     m[param1Name_] = param1InitValue_;
   return m;
@@ -61,7 +61,7 @@ getInitialParameters() const
 // ============================================================================
 const Epetra_Vector
 Constant::
-getV(const std::map<std::string,double> & params) const
+getV(const std::map<std::string, double> & params) const
 {
   // Create constant-valued vector.
   Epetra_Vector vals(*map_);
@@ -77,7 +77,7 @@ getV(const std::map<std::string,double> & params) const
 // ============================================================================
 const Epetra_Vector
 Constant::
-getdVdP(const std::map<std::string,double> & params,
+getdVdP(const std::map<std::string, double> & params,
         const std::string & paramName
       ) const
 {
