@@ -1,12 +1,11 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 import numpy as np
-import time
 
 import mesh_io
-# ==============================================================================
-def _main():
 
+
+def _main():
     # get the command line arguments
     args = _parse_options()
 
@@ -22,7 +21,7 @@ def _main():
 
     # Construct the initial state:
     # Six vortices arranged symmetrically.
-    psi = np.ones(num_nodes, dtype = complex)
+    psi = np.ones(num_nodes, dtype=complex)
     r = 0.3 * 3.4
     vortex_locations = [[r * np.cos(np.pi*0.0/3.0), r * np.sin(np.pi*0.0/3.0)],
                         [r * np.cos(np.pi*1.0/3.0), r * np.sin(np.pi*1.0/3.0)],
@@ -32,13 +31,14 @@ def _main():
                         [r * np.cos(np.pi*5.0/3.0), r * np.sin(np.pi*5.0/3.0)]]
     for vl in vortex_locations:
         # Calculate the distance to the vortex for all nodes at once.
-        diff = points[:,0:2] - vl
+        diff = points[:, 0:2] - vl
         dist2 = np.sum(diff*diff, 1)
         # tanh vortices
         rad = 1.0
-        r = np.linalg.norm(points[:,0:2] - vl)
+        r = np.linalg.norm(points[:, 0:2] - vl)
         psi *= np.sqrt(0.5 * (1 + np.tanh(4/rad*dist2))) \
-             * ((points[:,0]-vl[0]) + 1j * (points[:,1]-vl[1])) / np.sqrt(dist2)
+                * ((points[:, 0]-vl[0]) + 1j * (points[:, 1]-vl[1])) \
+                / np.sqrt(dist2)
         # exp(x**2) vortices
         #psi *= np.sqrt(1 - np.exp(-dist2)) \
         #     * ((points[:,0]-vl[0]) + 1j * (points[:,1]-vl[1])) / np.sqrt(dist2)
@@ -49,7 +49,7 @@ def _main():
         V[k] = 0.5 * r2 + 0.25 * r2**2
 
     # Add magnetic vector potential.
-    A = 0.5 * np.cross(points, np.array([0,0,1]))
+    A = 0.5 * np.cross(points, np.array([0, 0, 1]))
 
     g = 500.0
     Omega = 2.0
@@ -59,31 +59,28 @@ def _main():
                   vtk_mesh,
                   point_data={'psi': psi, 'V': V, 'A': A},
                   field_data={'g': g, 'Omega': Omega})
-
     return
-# ==============================================================================
+
+
 def _parse_options():
     '''Parse input options.'''
     import argparse
-
-    parser = argparse.ArgumentParser( description = 'Reads a mesh an equips it with a state.' )
-
+    parser = argparse.ArgumentParser(
+            description='Reads a mesh an equips it with a state.'
+            )
     parser.add_argument('infile',
-                        metavar = 'INFILE',
-                        type    = str,
-                        help    = 'file that contains the mesh'
+                        metavar='INFILE',
+                        type=str,
+                        help='file that contains the mesh'
                         )
-
     parser.add_argument('outfile',
-                        metavar = 'OUFILE',
-                        type    = str,
-                        help    = 'file to be written to'
+                        metavar='OUFILE',
+                        type=str,
+                        help='file to be written to'
                         )
-
     args = parser.parse_args()
-
     return args
-# ==============================================================================
+
+
 if __name__ == "__main__":
     _main()
-# ==============================================================================
