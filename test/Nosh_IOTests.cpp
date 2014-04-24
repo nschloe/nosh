@@ -17,6 +17,8 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 // @HEADER
+#include <string>
+
 #include <Teuchos_ParameterList.hpp>
 
 #ifdef HAVE_MPI
@@ -36,20 +38,20 @@ namespace {
 
 // =============================================================================
 void
-testKeo( const std::string & inputFileNameBase,
+testKeo(const std::string & inputFileNameBase,
          const double psiControlNormOne,
          const double psiControlNormInf,
          const Teuchos::Array<double> & mvpControlNormsInf,
          Teuchos::FancyOStream & out,
-         bool & success )
+         bool & success)
 {
     // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
     Teuchos::RCP<Epetra_MpiComm> eComm =
-      Teuchos::rcp<Epetra_MpiComm> ( new Epetra_MpiComm ( MPI_COMM_WORLD ) );
+      Teuchos::rcp<Epetra_MpiComm> (new Epetra_MpiComm (MPI_COMM_WORLD));
 #else
     Teuchos::RCP<Epetra_SerialComm> eComm =
-      Teuchos::rcp<Epetra_SerialComm> ( new Epetra_SerialComm() );
+      Teuchos::rcp<Epetra_SerialComm> (new Epetra_SerialComm());
 #endif
 
     std::string inputFileName = inputFileNameBase + ".e";
@@ -65,9 +67,9 @@ testKeo( const std::string & inputFileNameBase,
 
     // Check psi.
     double r;
-    psi->Norm1( &r );
+    psi->Norm1(&r);
     TEST_FLOATING_EQUALITY(r, psiControlNormOne, 1.0e-12);
-    psi->NormInf( &r );
+    psi->NormInf(&r);
     TEST_FLOATING_EQUALITY(r, psiControlNormInf, 1.0e-12);
 
 
@@ -81,7 +83,7 @@ testKeo( const std::string & inputFileNameBase,
     return;
 }
 // ===========================================================================
-TEUCHOS_UNIT_TEST( Nosh, KeoRectangleSmallHashes )
+TEUCHOS_UNIT_TEST(Nosh, KeoRectangleSmallHashes)
 {
     std::string inputFileNameBase = "rectanglesmall";
 
@@ -97,10 +99,10 @@ TEUCHOS_UNIT_TEST( Nosh, KeoRectangleSmallHashes )
             psiControlNormInf,
             mvpControlNormsInf,
             out,
-            success );
+            success);
 }
 // ============================================================================
-TEUCHOS_UNIT_TEST( Nosh, KeoPacmanHashes )
+TEUCHOS_UNIT_TEST(Nosh, KeoPacmanHashes)
 {
     std::string inputFileNameBase = "pacman";
 
@@ -116,10 +118,10 @@ TEUCHOS_UNIT_TEST( Nosh, KeoPacmanHashes )
             psiControlNormInf,
             mvpControlNormsInf,
             out,
-            success );
+            success);
 }
 // ============================================================================
-TEUCHOS_UNIT_TEST( Nosh, KeoShellHashes )
+TEUCHOS_UNIT_TEST(Nosh, KeoShellHashes)
 {
     std::string inputFileNameBase = "shell";
 
@@ -135,10 +137,10 @@ TEUCHOS_UNIT_TEST( Nosh, KeoShellHashes )
             psiControlNormInf,
             mvpControlNormsInf,
             out,
-            success );
+            success);
 }
 // ============================================================================
-TEUCHOS_UNIT_TEST( Nosh, KeoSphereHashes )
+TEUCHOS_UNIT_TEST(Nosh, KeoSphereHashes)
 {
     std::string inputFileNameBase = "sphere";
 
@@ -154,10 +156,10 @@ TEUCHOS_UNIT_TEST( Nosh, KeoSphereHashes )
             psiControlNormInf,
             mvpControlNormsInf,
             out,
-            success );
+            success);
 }
 // ============================================================================
-TEUCHOS_UNIT_TEST( Nosh, KeoCubeSmallHashes )
+TEUCHOS_UNIT_TEST(Nosh, KeoCubeSmallHashes)
 {
     std::string inputFileNameBase = "cubesmall";
 
@@ -173,10 +175,10 @@ TEUCHOS_UNIT_TEST( Nosh, KeoCubeSmallHashes )
             psiControlNormInf,
             mvpControlNormsInf,
             out,
-            success );
+            success);
 }
 // ============================================================================
-TEUCHOS_UNIT_TEST( Nosh, KeoBrickWHoleHashes )
+TEUCHOS_UNIT_TEST(Nosh, KeoBrickWHoleHashes)
 {
     std::string inputFileNameBase = "brick-w-hole";
 
@@ -192,7 +194,7 @@ TEUCHOS_UNIT_TEST( Nosh, KeoBrickWHoleHashes )
             psiControlNormInf,
             mvpControlNormsInf,
             out,
-            success );
+            success);
 }
 // ============================================================================
 } // namespace

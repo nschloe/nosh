@@ -1,3 +1,24 @@
+// @HEADER
+//
+//    Example function calls.
+//    Copyright (C) 2012--2014  Nico Schl\"omer
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//
+// @HEADER
+#include <string>
+
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_ParameterList.hpp>
@@ -143,7 +164,7 @@ int main(int argc, char *argv[])
       // Use i*psi as bordering.
       RCP<Epetra_Vector> bordering =
         rcp(new Epetra_Vector(psi->Map()));
-      for (int k=0; k<psi->Map().NumMyElements()/2; k++) {
+      for (int k = 0; k < psi->Map().NumMyElements()/2; k++) {
         (*bordering)[2*k] = - (*psi)[2*k+1];
         (*bordering)[2*k+1] = (*psi)[2*k];
         //(*bordering)[2*k]   = 1.0;

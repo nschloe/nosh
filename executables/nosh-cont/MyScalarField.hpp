@@ -27,6 +27,9 @@ namespace Nosh{
 class StkMesh;
 }
 // =============================================================================
+#include <map>
+#include <string>
+
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Array.hpp>
 #include <Epetra_Comm.h>
@@ -48,24 +51,22 @@ createPInit_(const Epetra_Map & map);
 
 //! Get parameter names and initial values.
 virtual
-const std::map<std::string,double>
+const std::map<std::string, double>
 getInitialParameters() const;
 
 virtual
 const Epetra_Vector
-getV(const std::map<std::string,double> & params
+getV(const std::map<std::string, double> & params
      ) const;
 
 virtual
 const Epetra_Vector
-getdVdP(const std::map<std::string,double> & params,
+getdVdP(const std::map<std::string, double> & params,
         const std::string & paramName
         ) const;
 
 protected:
 private:
-
 const RCP<const Nosh::StkMesh> mesh_;
-
 };
 #endif // MYSCALARFIELD_H_

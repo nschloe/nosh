@@ -17,6 +17,8 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 // @HEADER
+#include <string>
+
 #include <Teuchos_ParameterList.hpp>
 
 #ifdef HAVE_MPI
@@ -39,24 +41,23 @@
 
 namespace
 {
-
 // =============================================================================
 void
-testComputeF( const std::string & inputFileNameBase,
+testComputeF(const std::string & inputFileNameBase,
               const double mu,
               const double controlNormOne,
               const double controlNormTwo,
               const double controlNormInf,
               Teuchos::FancyOStream & out,
-              bool & success )
+              bool & success)
 {
   // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
   Teuchos::RCP<Epetra_MpiComm> eComm =
-    Teuchos::rcp<Epetra_MpiComm> ( new Epetra_MpiComm ( MPI_COMM_WORLD ) );
+    Teuchos::rcp<Epetra_MpiComm> (new Epetra_MpiComm (MPI_COMM_WORLD));
 #else
   Teuchos::RCP<Epetra_SerialComm> eComm =
-    Teuchos::rcp<Epetra_SerialComm> ( new Epetra_SerialComm() );
+    Teuchos::rcp<Epetra_SerialComm> (new Epetra_SerialComm());
 #endif
 
   std::string inputFileName = inputFileNameBase + ".e";
@@ -86,34 +87,34 @@ testComputeF( const std::string & inputFileNameBase,
 
   // Create inArgs. Use p_init as parameters.
   EpetraExt::ModelEvaluator::InArgs inArgs = modelEval->createInArgs();
-  inArgs.set_x( z );
+  inArgs.set_x(z);
   inArgs.set_p(0, modelEval->get_p_init(0));
 
   // Create outArgs.
   EpetraExt::ModelEvaluator::OutArgs outArgs = modelEval->createOutArgs();
   Teuchos::RCP<Epetra_Vector> f = Teuchos::rcp(new Epetra_Vector(z->Map()));
-  outArgs.set_f( f );
+  outArgs.set_f(f);
 
   // Fetch.
   modelEval->evalModel(inArgs, outArgs);
 
   // check the norms
   double normOne;
-  TEUCHOS_ASSERT_EQUALITY(0, f->Norm1( &normOne ));
-  TEST_FLOATING_EQUALITY( normOne, controlNormOne, 1.0e-10 );
+  TEUCHOS_ASSERT_EQUALITY(0, f->Norm1(&normOne));
+  TEST_FLOATING_EQUALITY(normOne, controlNormOne, 1.0e-10);
 
   double normTwo;
-  TEUCHOS_ASSERT_EQUALITY(0, f->Norm2( &normTwo ));
-  TEST_FLOATING_EQUALITY( normTwo, controlNormTwo, 1.0e-10 );
+  TEUCHOS_ASSERT_EQUALITY(0, f->Norm2(&normTwo));
+  TEST_FLOATING_EQUALITY(normTwo, controlNormTwo, 1.0e-10);
 
   double normInf;
-  TEUCHOS_ASSERT_EQUALITY(0, f->NormInf( &normInf ));
-  TEST_FLOATING_EQUALITY( normInf, controlNormInf, 1.0e-10 );
+  TEUCHOS_ASSERT_EQUALITY(0, f->NormInf(&normInf));
+  TEST_FLOATING_EQUALITY(normInf, controlNormInf, 1.0e-10);
 
   return;
 }
 // ===========================================================================
-TEUCHOS_UNIT_TEST( Nosh, ComputeFRectangleSmallHashes )
+TEUCHOS_UNIT_TEST(Nosh, ComputeFRectangleSmallHashes)
 {
   std::string inputFileNameBase = "rectanglesmall";
 
@@ -122,16 +123,16 @@ TEUCHOS_UNIT_TEST( Nosh, ComputeFRectangleSmallHashes )
   double controlNormTwo = 0.24749434381636057;
   double controlNormInf = 0.12373710977782607;
 
-  testComputeF( inputFileNameBase,
+  testComputeF(inputFileNameBase,
                 mu,
                 controlNormOne,
                 controlNormTwo,
                 controlNormInf,
                 out,
-                success );
+                success);
 }
 // ============================================================================
-TEUCHOS_UNIT_TEST( Nosh, ComputeFPacmanHashes )
+TEUCHOS_UNIT_TEST(Nosh, ComputeFPacmanHashes)
 {
   std::string inputFileNameBase = "pacman";
 
@@ -140,16 +141,16 @@ TEUCHOS_UNIT_TEST( Nosh, ComputeFPacmanHashes )
   double controlNormTwo = 0.12552206259336218;
   double controlNormInf = 0.055859319123267033;
 
-  testComputeF( inputFileNameBase,
+  testComputeF(inputFileNameBase,
                 mu,
                 controlNormOne,
                 controlNormTwo,
                 controlNormInf,
                 out,
-                success );
+                success);
 }
 // ============================================================================
-TEUCHOS_UNIT_TEST( Nosh, ComputeFCubeSmallHashes )
+TEUCHOS_UNIT_TEST(Nosh, ComputeFCubeSmallHashes)
 {
   std::string inputFileNameBase = "cubesmall";
 
@@ -158,16 +159,16 @@ TEUCHOS_UNIT_TEST( Nosh, ComputeFCubeSmallHashes )
   double controlNormTwo = 2.9536515963905867e-05;
   double controlNormInf = 1.0468744547749431e-05;
 
-  testComputeF( inputFileNameBase,
+  testComputeF(inputFileNameBase,
                 mu,
                 controlNormOne,
                 controlNormTwo,
                 controlNormInf,
                 out,
-                success );
+                success);
 }
 // ============================================================================
-TEUCHOS_UNIT_TEST( Nosh, ComputeFBrickWHoleHashes )
+TEUCHOS_UNIT_TEST(Nosh, ComputeFBrickWHoleHashes)
 {
   std::string inputFileNameBase = "brick-w-hole";
 
@@ -176,13 +177,13 @@ TEUCHOS_UNIT_TEST( Nosh, ComputeFBrickWHoleHashes )
   double controlNormTwo = 0.15654267585120338;
   double controlNormInf = 0.03074423493622647;
 
-  testComputeF( inputFileNameBase,
+  testComputeF(inputFileNameBase,
                 mu,
                 controlNormOne,
                 controlNormTwo,
                 controlNormInf,
                 out,
-                success );
+                success);
 }
 // ============================================================================
 } // namespace

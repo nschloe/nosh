@@ -1,3 +1,25 @@
+// @HEADER
+//
+//    Unit tests for the Jacobian operator.
+//    Copyright (C) 2012--2014  Nico Schl\"omer
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//
+// @HEADER
+#include <map>
+#include <string>
+
 #include <Teuchos_ParameterList.hpp>
 
 #ifdef HAVE_MPI
@@ -21,21 +43,21 @@ namespace {
 
 // =============================================================================
 void
-testJac( const std::string & inputFileNameBase,
+testJac(const std::string & inputFileNameBase,
          const double mu,
          const double controlSumT0,
          const double controlSumT1,
          const double controlSumT2,
          Teuchos::FancyOStream & out,
-         bool & success )
+         bool & success)
 {
     // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
     Teuchos::RCP<Epetra_MpiComm> eComm =
-            Teuchos::rcp<Epetra_MpiComm> ( new Epetra_MpiComm ( MPI_COMM_WORLD ) );
+            Teuchos::rcp<Epetra_MpiComm> (new Epetra_MpiComm (MPI_COMM_WORLD));
 #else
     Teuchos::RCP<Epetra_SerialComm> eComm =
-            Teuchos::rcp<Epetra_SerialComm> ( new Epetra_SerialComm() );
+            Teuchos::rcp<Epetra_SerialComm> (new Epetra_SerialComm());
 #endif
 
     std::string inputFileName = inputFileNameBase + ".e";
@@ -48,7 +70,7 @@ testJac( const std::string & inputFileNameBase,
     Teuchos::RCP<Epetra_Vector> psi =
       mesh->createComplexVector("psi");
 
-    std::map<std::string,double> params;
+    std::map<std::string, double> params;
     params["g"] = 1.0;
     params["mu"] = mu;
 
@@ -78,41 +100,41 @@ testJac( const std::string & inputFileNameBase,
 
     // -------------------------------------------------------------------------
     // (a) [ 1, 1, 1, ... ]
-    TEUCHOS_ASSERT_EQUALITY(0, s.PutScalar( 1.0 ));
-    TEUCHOS_ASSERT_EQUALITY(0, jac->Apply( s, Js ));
-    TEUCHOS_ASSERT_EQUALITY(0, s.Dot( Js, &sum ));
-    TEST_FLOATING_EQUALITY( sum, controlSumT0, 1.0e-12 );
+    TEUCHOS_ASSERT_EQUALITY(0, s.PutScalar(1.0));
+    TEUCHOS_ASSERT_EQUALITY(0, jac->Apply(s, Js));
+    TEUCHOS_ASSERT_EQUALITY(0, s.Dot(Js, &sum));
+    TEST_FLOATING_EQUALITY(sum, controlSumT0, 1.0e-12);
     // -------------------------------------------------------------------------
     // (b) [ 1, 0, 1, 0, ... ]
     double one  = 1.0;
     double zero = 0.0;
-    for ( int k=0; k<map.NumMyPoints(); k++ )
+    for (int k = 0; k < map.NumMyPoints(); k++)
     {
-      if ( map.GID(k) % 2 == 0 )
-        s.ReplaceMyValues( 1, &one, &k );
+      if (map.GID(k) % 2 == 0)
+        s.ReplaceMyValues(1, &one, &k);
       else
-        s.ReplaceMyValues( 1, &zero, &k );
+        s.ReplaceMyValues(1, &zero, &k);
     }
-    TEUCHOS_ASSERT_EQUALITY(0, jac->Apply( s, Js ));
-    TEUCHOS_ASSERT_EQUALITY(0, s.Dot( Js, &sum ));
-    TEST_FLOATING_EQUALITY( sum, controlSumT1, 1.0e-12 );
+    TEUCHOS_ASSERT_EQUALITY(0, jac->Apply(s, Js));
+    TEUCHOS_ASSERT_EQUALITY(0, s.Dot(Js, &sum));
+    TEST_FLOATING_EQUALITY(sum, controlSumT1, 1.0e-12);
     // -------------------------------------------------------------------------
     // (b) [ 0, 1, 0, 1, ... ]
-    for ( int k=0; k<map.NumMyPoints(); k++ )
+    for (int k = 0; k < map.NumMyPoints(); k++)
     {
-      if ( map.GID(k) % 2 == 0 )
-        s.ReplaceMyValues( 1, &zero, &k );
+      if (map.GID(k) % 2 == 0)
+        s.ReplaceMyValues(1, &zero, &k);
       else
-        s.ReplaceMyValues( 1, &one, &k );
+        s.ReplaceMyValues(1, &one, &k);
     }
-    TEUCHOS_ASSERT_EQUALITY(0, jac->Apply( s, Js ));
-    TEUCHOS_ASSERT_EQUALITY(0, s.Dot( Js, &sum ));
-    TEST_FLOATING_EQUALITY( sum, controlSumT2, 1.0e-10 );
+    TEUCHOS_ASSERT_EQUALITY(0, jac->Apply(s, Js));
+    TEUCHOS_ASSERT_EQUALITY(0, s.Dot(Js, &sum));
+    TEST_FLOATING_EQUALITY(sum, controlSumT2, 1.0e-10);
     // -------------------------------------------------------------------------
     return;
 }
 // ===========================================================================
-TEUCHOS_UNIT_TEST( Nosh, JacRectangleSmallHashes )
+TEUCHOS_UNIT_TEST(Nosh, JacRectangleSmallHashes)
 {
     std::string inputFileNameBase = "rectanglesmall";
 
@@ -121,16 +143,16 @@ TEUCHOS_UNIT_TEST( Nosh, JacRectangleSmallHashes )
     double controlSumT1 = 20.0063121712308;
     double controlSumT2 = 0.00631217123080606;
 
-    testJac( inputFileNameBase,
+    testJac(inputFileNameBase,
              mu,
              controlSumT0,
              controlSumT1,
              controlSumT2,
              out,
-             success );
+             success);
 }
 // ============================================================================
-TEUCHOS_UNIT_TEST( Nosh, JacPacmanHashes )
+TEUCHOS_UNIT_TEST(Nosh, JacPacmanHashes)
 {
     std::string inputFileNameBase = "pacman";
 
@@ -139,16 +161,16 @@ TEUCHOS_UNIT_TEST( Nosh, JacPacmanHashes )
     double controlSumT1 = 605.41584408498682;
     double controlSumT2 = 0.37044264296586299;
 
-    testJac( inputFileNameBase,
+    testJac(inputFileNameBase,
              mu,
              controlSumT0,
              controlSumT1,
              controlSumT2,
              out,
-             success );
+             success);
 }
 // ============================================================================
-TEUCHOS_UNIT_TEST( Nosh, JacCubeSmallHashes )
+TEUCHOS_UNIT_TEST(Nosh, JacCubeSmallHashes)
 {
     std::string inputFileNameBase = "cubesmall";
 
@@ -157,16 +179,16 @@ TEUCHOS_UNIT_TEST( Nosh, JacCubeSmallHashes )
     double controlSumT1 = 20.000083541623155;
     double controlSumT2 = 8.3541623155658495e-05;
 
-    testJac( inputFileNameBase,
+    testJac(inputFileNameBase,
              mu,
              controlSumT0,
              controlSumT1,
              controlSumT2,
              out,
-             success );
+             success);
 }
 // ============================================================================
-TEUCHOS_UNIT_TEST( Nosh, JacBrickWHoleHashes )
+TEUCHOS_UNIT_TEST(Nosh, JacBrickWHoleHashes)
 {
     std::string inputFileNameBase = "brick-w-hole";
 
@@ -175,13 +197,13 @@ TEUCHOS_UNIT_TEST( Nosh, JacBrickWHoleHashes )
     double controlSumT1 = 777.54021614941144;
     double controlSumT2 = 0.16763276012921419;
 
-    testJac( inputFileNameBase,
+    testJac(inputFileNameBase,
              mu,
              controlSumT0,
              controlSumT1,
              controlSumT2,
              out,
-             success );
+             success);
 }
 // ============================================================================
 } // namespace

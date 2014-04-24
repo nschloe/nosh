@@ -20,6 +20,10 @@
 
 #include "MyScalarField.hpp"
 
+#include <map>
+#include <string>
+#include <vector>
+
 #include "nosh/StkMesh.hpp"
 
 #include <Epetra_Vector.h>
@@ -37,18 +41,18 @@ MyScalarField::
 {
 }
 // ============================================================================
-const std::map<std::string,double>
+const std::map<std::string, double>
 MyScalarField::
 getInitialParameters() const
 {
-  std::map<std::string,double> m;
+  std::map<std::string, double> m;
   m["tau"] = 0.0;
   return m;
 }
 // ============================================================================
 const Epetra_Vector
 MyScalarField::
-getV(const std::map<std::string,double> & params) const
+getV(const std::map<std::string, double> & params) const
 {
   // Pick out p["tau"].
   std::map<std::string, double>::const_iterator it = params.find("tau");
@@ -60,8 +64,7 @@ getV(const std::map<std::string,double> & params) const
 
   Epetra_Vector vals(*(mesh_->getNodesMap()));
 
-  for (unsigned int k=0; k<ownedNodes.size(); k++)
-  {
+  for (unsigned int k = 0; k < ownedNodes.size(); k++) {
     // Get nodal coordinates.
     const DoubleVector X =
       mesh_->getVectorFieldNonconst(ownedNodes[k],
@@ -74,7 +77,7 @@ getV(const std::map<std::string,double> & params) const
 // ============================================================================
 const Epetra_Vector
 MyScalarField::
-getdVdP(const std::map<std::string,double> & params,
+getdVdP(const std::map<std::string, double> & params,
         const std::string & paramName
         ) const
 {
@@ -89,7 +92,7 @@ getdVdP(const std::map<std::string,double> & params,
     std::vector<stk::mesh::Entity*> ownedNodes =
       mesh_->getOwnedNodes();
 
-    for (unsigned int k=0; k<ownedNodes.size(); k++)
+    for (unsigned int k = 0; k < ownedNodes.size(); k++)
     {
       // Get nodal coordinates.
       const DoubleVector X =

@@ -1,3 +1,24 @@
+// @HEADER
+//
+//    Main eigenvalue routine.
+//    Copyright (C) 2012--2014  Nico Schl\"omer
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//
+// @HEADER
+#include <string>
+
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_ParameterList.hpp>
@@ -65,43 +86,63 @@ int main(int argc, char *argv[])
     My_CLP.setOption("input", &inputFilePath, "input state file", true);
 
     std::string mvpFilePath("");
-    My_CLP.setOption("mvpfile",&mvpFilePath,"file containing magnetic vector potential (default: same as input file)");
+    My_CLP.setOption(
+        "mvpfile",
+        &mvpFilePath,
+        "file containing magnetic vector potential (default: same as input file)"
+        );
 
     int step = 0;
-    My_CLP.setOption("step",&step,"step to read");
+    My_CLP.setOption("step", &step, "step to read");
 
     bool verbose = true;
-    My_CLP.setOption("verbose","quiet",&verbose,"print messages and results");
+    My_CLP.setOption("verbose", "quiet", &verbose, "print messages and results");
 
     bool isPrec = true;
-    My_CLP.setOption("prec","noprec",&isPrec,"use a preconditioner");
+    My_CLP.setOption("prec", "noprec", &isPrec, "use a preconditioner");
 
     int frequency = 10;
-    My_CLP.setOption("frequency",&frequency,"solver frequency for printing eigenresiduals (#iters)");
+    My_CLP.setOption(
+        "frequency",
+        &frequency,
+        "solver frequency for printing eigenresiduals (#iters)"
+        );
 
     double mu = 0.0;
     My_CLP.setOption("mu", &mu, "parameter value mu");
 
     std::string method = "lobpcg";
-    My_CLP.setOption("method",&method,"method for solving the eigenproblem {lobpcg, krylovschur, davidson}");
+    My_CLP.setOption(
+        "method",
+        &method,
+        "method for solving the eigenproblem {lobpcg, krylovschur, davidson}"
+        );
 
     int numEv = 10;
-    My_CLP.setOption("numev",&numEv,"number of eigenvalues to compute");
+    My_CLP.setOption("numev", &numEv, "number of eigenvalues to compute");
 
     int numBlocks = 10;
-    My_CLP.setOption("numblocks",&numBlocks,"number of blocks");
+    My_CLP.setOption("numblocks", &numBlocks, "number of blocks");
 
     int blockSize = 2;
-    My_CLP.setOption("blocksize",&blockSize,"block size");
+    My_CLP.setOption("blocksize", &blockSize, "block size");
 
     int maxRestarts = 10;
-    My_CLP.setOption("maxrestarts",&maxRestarts,"maximum number of restarts");
+    My_CLP.setOption(
+        "maxrestarts",
+        &maxRestarts,
+        "maximum number of restarts"
+        );
 
     int maxIter = 100;
-    My_CLP.setOption("maxiter",&maxIter,"maximum number of iterations");
+    My_CLP.setOption(
+        "maxiter",
+        &maxIter,
+        "maximum number of iterations"
+        );
 
     double tol = 1.0e-5;
-    My_CLP.setOption("tolerance",&tol,"tolerance");
+    My_CLP.setOption("tolerance", &tol, "tolerance");
 
     // print warning for unrecognized arguments
     My_CLP.recogniseAllOptions( true );
@@ -125,9 +166,9 @@ int main(int argc, char *argv[])
       Teuchos::TimeMonitor::getNewTimer("MVP construction");
     {
       Teuchos::TimeMonitor tm(*mvpConstructTime);
-      if (mvpFilePath.empty())
+      if (mvpFilePath.empty()) {
         mvp = rcp(new Nosh::VectorField::ExplicitValues(*mesh, "A", mu));
-      else {
+      } else {
         Nosh::StkMesh mesh2(*eComm, mvpFilePath, 0);
         mvp = rcp(new Nosh::VectorField::ExplicitValues(mesh2, "A", mu));
       }
@@ -249,15 +290,18 @@ int main(int argc, char *argv[])
     } else if ( method.compare("krylovschur") == 0 ) {
       Anasazi::BlockKrylovSchurSolMgr<double, MV, OP> MySolverMan(MyProblem, MyPL);
       returnCode = MySolverMan.solve();
-    } else
-      TEUCHOS_TEST_FOR_EXCEPT_MSG(true,
-                                  "Invalid eigensolver method \"" << method << "\"." );
+    } else {
+      TEUCHOS_TEST_FOR_EXCEPT_MSG(
+          true,
+          "Invalid eigensolver method \"" << method << "\"."
+          );
+    }
 
     // Check for success.
-    success = returnCode==Anasazi::Converged;
+    success = returnCode == Anasazi::Converged;
 
     // get the solution
-    const Anasazi::Eigensolution<double,MV>& anasaziSolution =
+    const Anasazi::Eigensolution<double, MV>& anasaziSolution =
       MyProblem->getSolution();
 
     const int numVecs = anasaziSolution.numVecs;
@@ -267,7 +311,7 @@ int main(int argc, char *argv[])
     Teuchos::ArrayRCP<double> evals_i( numVecs );
     if (numVecs > 0) {
       *out << "\nEigenvalues:" << std::endl;
-      for (int i=0; i<numVecs; i++) {
+      for (int i = 0; i < numVecs; i++) {
         evals_r[i] = anasaziSolution.Evals[i].realpart;
         evals_i[i] = anasaziSolution.Evals[i].imagpart;
 

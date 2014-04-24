@@ -17,6 +17,9 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 // @HEADER
+#include <map>
+#include <string>
+
 #include <Teuchos_ParameterList.hpp>
 
 #ifdef HAVE_MPI
@@ -39,22 +42,22 @@ namespace {
 
 // =============================================================================
 void
-testKeo( const std::string & inputFileNameBase,
+testKeo(const std::string & inputFileNameBase,
          const double initMu,
          const double controlNormOne,
          const double controlNormInf,
          const double controlSum,
          const double controlSumReal,
          Teuchos::FancyOStream & out,
-         bool & success )
+         bool & success)
 {
     // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
     Teuchos::RCP<Epetra_MpiComm> eComm =
-      Teuchos::rcp<Epetra_MpiComm> ( new Epetra_MpiComm ( MPI_COMM_WORLD ) );
+      Teuchos::rcp<Epetra_MpiComm> (new Epetra_MpiComm (MPI_COMM_WORLD));
 #else
     Teuchos::RCP<Epetra_SerialComm> eComm =
-      Teuchos::rcp<Epetra_SerialComm> ( new Epetra_SerialComm() );
+      Teuchos::rcp<Epetra_SerialComm> (new Epetra_SerialComm());
 #endif
 
     std::string inputFileName = inputFileNameBase + ".e";
@@ -78,7 +81,7 @@ testKeo( const std::string & inputFileNameBase,
       Teuchos::rcp(new Nosh::MatrixBuilder::Keo(mesh, thickness, mvp));
 
     // Explicitly create the kinetic energy operator.
-    std::map<std::string,double> params;
+    std::map<std::string, double> params;
     params["mu"] = initMu;
 
     Epetra_FECrsMatrix keoMatrix(Copy, keoBuilder->getGraph());
@@ -91,19 +94,19 @@ testKeo( const std::string & inputFileNameBase,
     double normInf = keoMatrix.NormInf();
 
     // check the values
-    TEST_FLOATING_EQUALITY( normOne, controlNormOne, 1.0e-12 );
-    TEST_FLOATING_EQUALITY( normInf, controlNormInf, 1.0e-12 );
+    TEST_FLOATING_EQUALITY(normOne, controlNormOne, 1.0e-12);
+    TEST_FLOATING_EQUALITY(normInf, controlNormInf, 1.0e-12);
 
     const Epetra_Map & map = keoMatrix.DomainMap();
     double sum;
-    Epetra_Vector u( map );
-    Epetra_Vector Ku( map );
+    Epetra_Vector u(map);
+    Epetra_Vector Ku(map);
 
     // Add up all the entries of the matrix.
-    TEUCHOS_ASSERT_EQUALITY(0, u.PutScalar( 1.0 ));
-    TEUCHOS_ASSERT_EQUALITY(0, keoMatrix.Apply( u, Ku ));
-    TEUCHOS_ASSERT_EQUALITY(0, u.Dot( Ku, &sum ));
-    TEST_FLOATING_EQUALITY( sum, controlSum, 1.0e-10 );
+    TEUCHOS_ASSERT_EQUALITY(0, u.PutScalar(1.0));
+    TEUCHOS_ASSERT_EQUALITY(0, keoMatrix.Apply(u, Ku));
+    TEUCHOS_ASSERT_EQUALITY(0, u.Dot(Ku, &sum));
+    TEST_FLOATING_EQUALITY(sum, controlSum, 1.0e-10);
 
     // Sum over all the "real parts" of the matrix.
     // Remember that a 2x2 block corresponding to z is composed as
@@ -112,39 +115,39 @@ testKeo( const std::string & inputFileNameBase,
     // Build vector [ 1, 0, 1, 0, ... ]:
     double one  = 1.0;
     double zero = 0.0;
-    for ( int k=0; k<map.NumMyPoints(); k++ )
+    for (int k = 0; k < map.NumMyPoints(); k++)
     {
-      if ( map.GID(k) % 2 == 0 )
-        u.ReplaceMyValues( 1, &one, &k );
+      if (map.GID(k) % 2 == 0)
+        u.ReplaceMyValues(1, &one, &k);
       else
-        u.ReplaceMyValues( 1, &zero, &k );
+        u.ReplaceMyValues(1, &zero, &k);
     }
-    TEUCHOS_ASSERT_EQUALITY(0, keoMatrix.Apply( u, Ku ));
-    TEUCHOS_ASSERT_EQUALITY(0, u.Dot( Ku, &sum ));
-    TEST_FLOATING_EQUALITY( sum, controlSumReal, 1.0e-10 );
+    TEUCHOS_ASSERT_EQUALITY(0, keoMatrix.Apply(u, Ku));
+    TEUCHOS_ASSERT_EQUALITY(0, u.Dot(Ku, &sum));
+    TEST_FLOATING_EQUALITY(sum, controlSumReal, 1.0e-10);
 
     // Sum over all the "imaginary parts" of the matrix.
     // Build vector [ 0, 1, 0, 1, ... ]:
-    Epetra_Vector v( map );
-    for ( int k=0; k<map.NumMyPoints(); k++ )
+    Epetra_Vector v(map);
+    for (int k = 0; k < map.NumMyPoints(); k++)
     {
-      if ( map.GID(k) % 2 == 0 )
-        v.ReplaceMyValues( 1, &zero, &k );
+      if (map.GID(k) % 2 == 0)
+        v.ReplaceMyValues(1, &zero, &k);
       else
-        v.ReplaceMyValues( 1, &one, &k );
+        v.ReplaceMyValues(1, &one, &k);
     }
-    TEUCHOS_ASSERT_EQUALITY(0, keoMatrix.Apply( u, Ku ));
-    TEUCHOS_ASSERT_EQUALITY(0, v.Dot( Ku, &sum ));
+    TEUCHOS_ASSERT_EQUALITY(0, keoMatrix.Apply(u, Ku));
+    TEUCHOS_ASSERT_EQUALITY(0, v.Dot(Ku, &sum));
     // The matrix is Hermitian, so just test that the sum of
     // the imaginary parts is (close to) 0.
     // Don't use TEST_FLOATING_EQUALITY as this one checks
     // the *relative* error.
-    TEST_COMPARE( fabs(sum), <, 1.0e-12 );
+    TEST_COMPARE(fabs(sum), <, 1.0e-12);
 
     return;
 }
 // ===========================================================================
-TEUCHOS_UNIT_TEST( Nosh, KeoRectangleSmallHashes )
+TEUCHOS_UNIT_TEST(Nosh, KeoRectangleSmallHashes)
 {
     std::string inputFileNameBase = "rectanglesmall";
 
@@ -154,17 +157,17 @@ TEUCHOS_UNIT_TEST( Nosh, KeoRectangleSmallHashes )
     double controlSumReal = 0.0063121712308067401;
     double controlSum     = 2 * controlSumReal;
 
-    testKeo( inputFileNameBase,
+    testKeo(inputFileNameBase,
              mu,
              controlNormOne,
              controlNormInf,
              controlSum,
              controlSumReal,
              out,
-             success );
+             success);
 }
 // ============================================================================
-TEUCHOS_UNIT_TEST( Nosh, KeoPacmanHashes )
+TEUCHOS_UNIT_TEST(Nosh, KeoPacmanHashes)
 {
     std::string inputFileNameBase = "pacman";
 
@@ -174,17 +177,17 @@ TEUCHOS_UNIT_TEST( Nosh, KeoPacmanHashes )
     double controlSumReal = 0.37044264296585938;
     double controlSum     = 2 * controlSumReal;
 
-    testKeo( inputFileNameBase,
+    testKeo(inputFileNameBase,
              mu,
              controlNormOne,
              controlNormInf,
              controlSum,
              controlSumReal,
              out,
-             success );
+             success);
 }
 // ============================================================================
-TEUCHOS_UNIT_TEST( Nosh, KeoCubeSmallHashes )
+TEUCHOS_UNIT_TEST(Nosh, KeoCubeSmallHashes)
 {
     std::string inputFileNameBase = "cubesmall";
 
@@ -194,17 +197,17 @@ TEUCHOS_UNIT_TEST( Nosh, KeoCubeSmallHashes )
     double controlSumReal = 8.3541623155714007e-05;
     double controlSum     = 2 * controlSumReal;
 
-    testKeo( inputFileNameBase,
+    testKeo(inputFileNameBase,
              mu,
              controlNormOne,
              controlNormInf,
              controlSum,
              controlSumReal,
              out,
-             success );
+             success);
 }
 // ============================================================================
-TEUCHOS_UNIT_TEST( Nosh, KeoBrickWHoleHashes )
+TEUCHOS_UNIT_TEST(Nosh, KeoBrickWHoleHashes)
 {
     std::string inputFileNameBase = "brick-w-hole";
 
@@ -214,14 +217,14 @@ TEUCHOS_UNIT_TEST( Nosh, KeoBrickWHoleHashes )
     double controlSumReal = 0.16763276012920181;
     double controlSum     = 2 * controlSumReal;
 
-    testKeo( inputFileNameBase,
+    testKeo(inputFileNameBase,
              mu,
              controlNormOne,
              controlNormInf,
              controlSum,
              controlSumReal,
              out,
-             success );
+             success);
 }
 // ============================================================================
 } // namespace
