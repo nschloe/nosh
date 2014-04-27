@@ -208,7 +208,7 @@ createInArgs() const
 {
   EpetraExt::ModelEvaluator::InArgsSetup inArgs;
 
-  inArgs.setModelEvalDescription("Nonlinear Schrödinger");
+  inArgs.setModelEvalDescription("Nonlinear Schr\"odinger");
 
   // We have *one* parameter vector with numParams_ parameters in it.
   inArgs.set_Np(1);
@@ -229,7 +229,7 @@ createOutArgs() const
 {
   EpetraExt::ModelEvaluator::OutArgsSetup outArgs;
 
-  outArgs.setModelEvalDescription("Nonlinear Schrödinger");
+  outArgs.setModelEvalDescription("Nonlinear Schr\"odinger");
 
   outArgs.set_Np_Ng(1, 0); // one parameter vector, no objective function
 

@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
     Teuchos::CommandLineProcessor myClp;
 
     myClp.setDocString(
-      "Numerical parameter continuation for nonlinear Schrödinger equations.\n"
+      "Numerical parameter continuation for nonlinear Schr\"odinger equations.\n"
     );
 
     std::string xmlInputPath = "";

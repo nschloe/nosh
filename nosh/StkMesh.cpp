@@ -1603,8 +1603,7 @@ createEdgeData_()
     // to make sure that the tuples formed below are always sorted
     // such they are unique keys (and {3,7}, {7,3} are recognized
     // as the same edge).
-    EntityComp ec;
-    std::sort(nodes.begin(), nodes.end(), ec);
+    std::sort(nodes.begin(), nodes.end(), myEntityComp);
 
     // In a simplex, the edges are exactly the connection between each pair
     // of nodes. Hence, loop over pairs of nodes.

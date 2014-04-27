@@ -343,7 +343,7 @@ public:
            ) const {
     return a->identifier() < b->identifier();
   }
-};
+} myEntityComp;
 // -----------------------------------------------------------------------------
 class TupleComp
 {

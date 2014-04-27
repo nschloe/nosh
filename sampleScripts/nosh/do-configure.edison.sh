@@ -17,10 +17,11 @@ else
 fi
 
 echo ${BOOST_DIR?Error: Need Boost loaded (module load boost).}
-echo ${CRAY_TRILINOS_PREFIX_DIR?Error: Need Trilinos loaded (module load cray-trilinos).}
+#echo ${CRAY_TRILINOS_PREFIX_DIR?Error: Need Trilinos loaded (module load cray-trilinos).}
 
 sleep 5
 
+CMAKE_PREFIX_PATH=$SCRATCH/trilinos-sandybridge:$CMAKE_PREFIX_PATH \
 CC=cc \
 CXX=CC \
 FC=ftn \

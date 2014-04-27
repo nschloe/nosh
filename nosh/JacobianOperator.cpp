@@ -129,7 +129,7 @@ const char *
 JacobianOperator::
 Label() const
 {
-  return "Jacobian operator for nonlinear Schrödinger";
+  return "Jacobian operator for nonlinear Schr\"odinger";
 }
 // =============================================================================
 bool
