@@ -69,6 +69,34 @@
 // =============================================================================
 namespace Nosh
 {
+class EntityComp
+{
+public:
+  bool
+  operator()(const stk::mesh::Entity* a,
+             const stk::mesh::Entity* b
+           ) const {
+    return a->identifier() < b->identifier();
+  }
+} myEntityComp;
+
+class TupleComp
+{
+public:
+  bool
+  operator()(const Teuchos::Tuple<stk::mesh::Entity*, 2>& a,
+             const Teuchos::Tuple<stk::mesh::Entity*, 2>& b
+           ) const {
+    for (unsigned int k = 0; k < 2; k++) {
+      if (a[k]->identifier() < b[k]->identifier())
+        return true;
+      else if (a[k]->identifier() > b[k]->identifier())
+        return false;
+    }
+    // If a and b are exactly equal, return false (=strict 'less').
+    return false;
+  }
+};
 // =============================================================================
 StkMesh::
 StkMesh(const Epetra_Comm & comm,
