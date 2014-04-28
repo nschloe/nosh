@@ -26,16 +26,18 @@ ENDIF()
 set(Nosh_MAJOR_VERSION 11)
 set(Nosh_MINOR_VERSION 0)
 set(Nosh_PATCH_VERSION 0)
-set(Nosh_VERSION
-  ${Nosh_MAJOR_VERSION}.${Nosh_MINOR_VERSION}.${Nosh_PATCH_VERSION})
+set(
+  Nosh_VERSION
+  ${Nosh_MAJOR_VERSION}.${Nosh_MINOR_VERSION}.${Nosh_PATCH_VERSION}
+  )
 
 # Add compiler flags (e.g., -openmp).
 LIST(APPEND CMAKE_CXX_FLAGS ${Trilinos_CXX_COMPILER_FLAGS})
 
 IF(NOT DEFINED CMAKE_BUILD_TYPE)
-   SET(CMAKE_BUILD_TYPE Debug CACHE STRING "Choose the type of build,
-options are: None(CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used) Debug Profile
-Release RelWithDebInfo MinSizeRel.")
+   SET(
+     CMAKE_BUILD_TYPE Debug
+     CACHE STRING "Choose the type of build, options are: None(CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used) Debug Profile Release RelWithDebInfo MinSizeRel.")
 ENDIF()
 
 ENABLE_TESTING()
@@ -60,26 +62,34 @@ if(WIN32 AND NOT CYGWIN)
 else()
   set(DEF_INSTALL_CMAKE_DIR "lib/cmake/${PROJECT_NAME}")
 endif()
-set(INSTALL_CMAKE_DIR ${DEF_INSTALL_CMAKE_DIR} CACHE PATH
-    "Installation directory for CMake files")
+set(
+  INSTALL_CMAKE_DIR ${DEF_INSTALL_CMAKE_DIR} CACHE PATH
+  "Installation directory for CMake files"
+  )
 
 # Add subdirectories after INSTALL_BIN_DIR has been set.
-ADD_SUBDIRECTORY( nosh )
-ADD_SUBDIRECTORY( executables )
-ADD_SUBDIRECTORY( test )
+ADD_SUBDIRECTORY(nosh)
+ADD_SUBDIRECTORY(executables)
+ADD_SUBDIRECTORY(test)
 
 # Create and install some helper files.
 INCLUDE(CMakePackageConfigHelpers)
-CONFIGURE_PACKAGE_CONFIG_FILE("${PROJECT_NAME}Config.cmake.in"
-                              "${PROJECT_NAME}Config.cmake"
-                              INSTALL_DESTINATION "${PROJECT_BINARY_DIR}"
-                              PATH_VARS INSTALL_INCLUDE_DIR INSTALL_LIB_DIR)
+CONFIGURE_PACKAGE_CONFIG_FILE(
+  "${PROJECT_NAME}Config.cmake.in"
+  "${PROJECT_NAME}Config.cmake"
+  INSTALL_DESTINATION "${PROJECT_BINARY_DIR}"
+  PATH_VARS INSTALL_INCLUDE_DIR INSTALL_LIB_DIR
+  )
 
-WRITE_BASIC_PACKAGE_VERSION_FILE(${CMAKE_CURRENT_BINARY_DIR}/NoshConfigVersion.cmake
-                                 VERSION ${Nosh_VERSION}
-                                 COMPATIBILITY SameMajorVersion)
+WRITE_BASIC_PACKAGE_VERSION_FILE(
+  ${CMAKE_CURRENT_BINARY_DIR}/NoshConfigVersion.cmake
+  VERSION ${Nosh_VERSION}
+  COMPATIBILITY SameMajorVersion
+  )
 
-INSTALL(FILES
-        "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
-        "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
-        DESTINATION "${INSTALL_CMAKE_DIR}")
+INSTALL(
+  FILES
+  "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
+  "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
+  DESTINATION "${INSTALL_CMAKE_DIR}"
+  )
