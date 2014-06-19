@@ -29,7 +29,7 @@ typedef Epetra_Operator                  OP;
 // =============================================================================
 int main ( int argc, char *argv[] )
 {
-  Teuchos::GlobalMPISession (&argc, &argv, NULL);
+  Teuchos::GlobalMPISession session(&argc, &argv, NULL);
 
   // Create a communicator for Epetra objects
 #ifdef HAVE_MPI

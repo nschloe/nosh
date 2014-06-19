@@ -44,7 +44,7 @@ testCache(const std::string & inputFileNameBase,
           bool & success)
 {
   // Create MPI communicator
-  Teuchos::GlobalMPISession (&argc, &argv, NULL);
+  Teuchos::GlobalMPISession session(&argc, &argv, NULL);
 
   // Create a communicator for Epetra objects
 #ifdef HAVE_MPI

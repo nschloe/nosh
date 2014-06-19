@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
   const RCP<Teuchos::FancyOStream> out =
     Teuchos::VerboseObjectBase::getDefaultOStream();
 
-  Teuchos::GlobalMPISession(&argc, &argv, NULL);
+  Teuchos::GlobalMPISession session(&argc, &argv, NULL);
 
   // Create a communicator for Epetra objects.
 #ifdef HAVE_MPI
