@@ -79,13 +79,13 @@ testCache(const std::string & inputFileNameBase,
   // -------------------------------------------------------------------------
   // Build the equivalent of edgeCoefficients using edgeCoefficientsFallback.
   Teuchos::ArrayRCP<double> edgeCoefficients2(numEdges);
-  std::vector<stk::mesh::Entity*> cells = mesh->getOwnedCells();
+  std::vector<stk_classic::mesh::Entity*> cells = mesh->getOwnedCells();
   for (unsigned int k = 0; k < cells.size(); k++) {
-    stk::mesh::PairIterRelation localNodes =
+    stk_classic::mesh::PairIterRelation localNodes =
       cells[k]->relations(mesh->getMetaData()->node_rank());
     unsigned int numLocalNodes = localNodes.size();
 
-    stk::mesh::PairIterRelation localEdges =
+    stk_classic::mesh::PairIterRelation localEdges =
       cells[k]->relations(mesh->getMetaData()->edge_rank());
 
     // Fetch the nodal positions into 'localNodes'.
@@ -106,7 +106,7 @@ testCache(const std::string & inputFileNameBase,
         unsigned int j;
         for (j = 0; j < localEdges.size(); j++) {
           // Get the endpoints
-          stk::mesh::PairIterRelation endPoints =
+          stk_classic::mesh::PairIterRelation endPoints =
             (*localEdges[j].entity()).relations(mesh->getMetaData()->node_rank());
           TEUCHOS_ASSERT_EQUALITY(endPoints.size(), 2);
           int ep0 = (*endPoints[0].entity()).identifier() - 1;

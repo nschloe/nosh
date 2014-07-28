@@ -59,7 +59,7 @@ getV(const std::map<std::string, double> & params) const
   TEUCHOS_ASSERT(it != params.end());
   const double & tau = it->second;
 
-  std::vector<stk::mesh::Entity*> ownedNodes =
+  std::vector<stk_classic::mesh::Entity*> ownedNodes =
     mesh_->getOwnedNodes();
 
   Epetra_Vector vals(*(mesh_->getNodesMap()));
@@ -88,7 +88,7 @@ getdVdP(const std::map<std::string, double> & params,
   Epetra_Vector vals(*(mesh_->getNodesMap()));
 
   if (paramName.compare("tau") == 0) {
-    std::vector<stk::mesh::Entity*> ownedNodes =
+    std::vector<stk_classic::mesh::Entity*> ownedNodes =
       mesh_->getOwnedNodes();
 
     for (unsigned int k = 0; k < ownedNodes.size(); k++) {

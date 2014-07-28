@@ -41,11 +41,11 @@ ExplicitValues(const Nosh::StkMesh & mesh,
   edgeProjectionCache_(mesh.getEdgeNodes().size())
 {
   // Initialize the cache.
-  const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*, 2> > edges =
+  const Teuchos::Array<Teuchos::Tuple<stk_classic::mesh::Entity*, 2> > edges =
     mesh.getEdgeNodes();
 
   // Loop over all edges and create the cache.
-  for (Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*, 2> >::size_type k = 0;
+  for (Teuchos::Array<Teuchos::Tuple<stk_classic::mesh::Entity*, 2> >::size_type k = 0;
        k < edges.size();
        k++) {
     // Approximate the value at the midpoint of the edge

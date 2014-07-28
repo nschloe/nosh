@@ -1,6 +1,6 @@
 #!/bin/sh
 
-CMAKE_PREFIX_PATH=/opt/trilinos/:$CMAKE_PREFIX_PATH \
+CMAKE_PREFIX_PATH=/opt/trilinos/coll/:$CMAKE_PREFIX_PATH \
 CXX=mpicxx \
 FC=mpif90 \
 cmake \

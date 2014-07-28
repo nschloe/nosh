@@ -264,11 +264,11 @@ initializeEdgeCache_() const
 #ifndef NDEBUG
   TEUCHOS_ASSERT(!mesh_.is_null());
 #endif
-  const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*, 2> > edges =
+  const Teuchos::Array<Teuchos::Tuple<stk_classic::mesh::Entity*, 2> > edges =
     mesh_->getEdgeNodes();
 
   // Loop over all edges and create the cache.
-  for (Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*, 2> >::size_type k = 0;
+  for (Teuchos::Array<Teuchos::Tuple<stk_classic::mesh::Entity*, 2> >::size_type k = 0;
        k < edges.size();
        k++) {
     const DoubleVector & node0Coords =

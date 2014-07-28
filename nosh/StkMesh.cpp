@@ -73,8 +73,8 @@ class EntityComp
 {
 public:
   bool
-  operator()(const stk::mesh::Entity* a,
-             const stk::mesh::Entity* b
+  operator()(const stk_classic::mesh::Entity* a,
+             const stk_classic::mesh::Entity* b
            ) const {
     return a->identifier() < b->identifier();
   }
@@ -84,8 +84,8 @@ class TupleComp
 {
 public:
   bool
-  operator()(const Teuchos::Tuple<stk::mesh::Entity*, 2>& a,
-             const Teuchos::Tuple<stk::mesh::Entity*, 2>& b
+  operator()(const Teuchos::Tuple<stk_classic::mesh::Entity*, 2>& a,
+             const Teuchos::Tuple<stk_classic::mesh::Entity*, 2>& b
            ) const {
     for (unsigned int k = 0; k < 2; k++) {
       if (a[k]->identifier() < b[k]->identifier())
@@ -126,14 +126,14 @@ StkMesh(const Epetra_Comm & comm,
 //  int nodesPerCell;
 //  if (comm_.MyPID() == 0)
 //  {
-//    std::vector<stk::mesh::Entity*> cells = this->getOwnedCells();
+//    std::vector<stk_classic::mesh::Entity*> cells = this->getOwnedCells();
 //    nodesPerCell = cells[0]->relations(meshDataContainer_.metaData.node_rank()).size();
 //  }
 //  comm_.Broadcast(&nodesPerCell, 1, 0);
 //  if (nodesPerCell >= 4)
 //  {
-//    stk::mesh::PartVector add_parts;
-//    stk::mesh::create_adjacent_entities(meshDataContainer_.bulkData, add_parts);
+//    stk_classic::mesh::PartVector add_parts;
+//    stk_classic::mesh::create_adjacent_entities(meshDataContainer_.bulkData, add_parts);
 //  }
 }
 // =============================================================================
@@ -150,9 +150,9 @@ read(const Epetra_Comm &comm,
     )
 {
   StkMesh::MeshDataContainer d = {
-    stk::mesh::fem::FEMMetaData(numDim_),
-    Teuchos::rcp(new stk::io::MeshData()),
-    Teuchos::rcp(new stk::mesh::BulkData(stk::mesh::fem::FEMMetaData::get_meta_data(d.metaData),
+    stk_classic::mesh::fem::FEMMetaData(numDim_),
+    Teuchos::rcp(new stk_classic::io::MeshData()),
+    Teuchos::rcp(new stk_classic::mesh::BulkData(stk_classic::mesh::fem::FEMMetaData::get_meta_data(d.metaData),
 #ifdef HAVE_MPI
     Teuchos::dyn_cast<const Epetra_MpiComm>(comm_).Comm()
 #else
@@ -238,7 +238,7 @@ read(const Epetra_Comm &comm,
   // This checks the existence of the file, checks to see if we can open it,
   // builds a handle to the region and puts it in mesh_data (in_region),
   // and reads the metaData into metaData.
-  stk::io::create_input_mesh(meshType,
+  stk_classic::io::create_input_mesh(meshType,
                              fileName,
                              readerComm,
                              d.metaData,
@@ -249,38 +249,38 @@ read(const Epetra_Comm &comm,
   // and check if they're full of zeros in the end.
   VectorFieldType &coordinatesField =
     meshDataContainer_.metaData.declare_field<VectorFieldType>("coordinates");
-  stk::mesh::put_field(coordinatesField,
+  stk_classic::mesh::put_field(coordinatesField,
                        d.metaData.node_rank(),
                        d.metaData.universal_part(),
                        numDim_);
-  stk::io::set_field_role(coordinatesField,
+  stk_classic::io::set_field_role(coordinatesField,
                           Ioss::Field::MESH);
 
   IntScalarFieldType &procRankField =
     meshDataContainer_.metaData.declare_field<IntScalarFieldType>("proc_rank");
-  stk::mesh::put_field(procRankField,
+  stk_classic::mesh::put_field(procRankField,
                        d.metaData.element_rank(),
                        d.metaData.universal_part()
                      );
-  stk::io::set_field_role(procRankField,
+  stk_classic::io::set_field_role(procRankField,
                           Ioss::Field::MESH);
 
   // real part
   ScalarFieldType &psir_field =
     meshDataContainer_.metaData.declare_field<ScalarFieldType>("psi_R");
-  stk::mesh::put_field(psir_field,
+  stk_classic::mesh::put_field(psir_field,
                        d.metaData.node_rank(),
                        d.metaData.universal_part());
-  stk::io::set_field_role(psir_field,
+  stk_classic::io::set_field_role(psir_field,
                           Ioss::Field::TRANSIENT);
 
   // imaginary part
   ScalarFieldType &psii_field =
     meshDataContainer_.metaData.declare_field<ScalarFieldType>("psi_Z");
-  stk::mesh::put_field(psii_field,
+  stk_classic::mesh::put_field(psii_field,
                        d.metaData.node_rank(),
                        d.metaData.universal_part());
-  stk::io::set_field_role(psii_field,
+  stk_classic::io::set_field_role(psii_field,
                           Ioss::Field::TRANSIENT);
 
   // Magnetic vector potential.
@@ -294,11 +294,11 @@ read(const Epetra_Comm &comm,
   // once per step. (This is with trilinos-dev as of July 2012.)
   VectorFieldType &mvpField =
     meshDataContainer_.metaData.declare_field<VectorFieldType>("A");
-  stk::mesh::put_field(mvpField,
+  stk_classic::mesh::put_field(mvpField,
                        d.metaData.node_rank(),
                        d.metaData.universal_part(),
                        numDim_);
-  stk::io::set_field_role(mvpField,
+  stk_classic::io::set_field_role(mvpField,
                           Ioss::Field::ATTRIBUTE);
 
   // Note:
@@ -315,29 +315,29 @@ read(const Epetra_Comm &comm,
   // Thickness field. Same as above.
   VectorFieldType &thicknessField =
     meshDataContainer_.metaData.declare_field<VectorFieldType>("thickness");
-  stk::mesh::put_field(thicknessField,
+  stk_classic::mesh::put_field(thicknessField,
                        d.metaData.node_rank(),
                        d.metaData.universal_part(),
                        1);
-  stk::io::set_field_role(thicknessField, Ioss::Field::ATTRIBUTE);
+  stk_classic::io::set_field_role(thicknessField, Ioss::Field::ATTRIBUTE);
 
   // Potential field. Same as above.
   VectorFieldType &potentialField =
     meshDataContainer_.metaData.declare_field<VectorFieldType>("V");
-  stk::mesh::put_field(potentialField,
+  stk_classic::mesh::put_field(potentialField,
                        d.metaData.node_rank(),
                        d.metaData.universal_part(),
                        1);
-  stk::io::set_field_role(potentialField, Ioss::Field::ATTRIBUTE);
+  stk_classic::io::set_field_role(potentialField, Ioss::Field::ATTRIBUTE);
   // ---------------------------------------------------------------------------
 
   // define_input_fields() doesn't like the ATTRIBUTE fields; disable.
   // What was it good for anyways?
-//  stk::io::define_input_fields(*meshDataContainer_.meshData,
+//  stk_classic::io::define_input_fields(*meshDataContainer_.meshData,
 //                                metaData
 //                             );
 
-//  stk::io::put_io_part_attribute(meshDataContainer_.metaData.universal_part());
+//  stk_classic::io::put_io_part_attribute(meshDataContainer_.metaData.universal_part());
 
   // Finalize the setup.
   d.metaData.commit();
@@ -347,18 +347,18 @@ read(const Epetra_Comm &comm,
     d.bulkData->modification_begin();
     Ioss::Region *region = d.meshData->m_input_region;
     if (comm.MyPID() == 0) {
-      stk::io::process_mesh_bulk_data(region, *(d.bulkData));
-      stk::io::input_mesh_fields(region, *(d.bulkData), index+1);
+      stk_classic::io::process_mesh_bulk_data(region, *(d.bulkData));
+      stk_classic::io::input_mesh_fields(region, *(d.bulkData), index+1);
     }
     d.bulkData->modification_end();
   } else {
 #endif
-    stk::io::populate_bulk_data(*(d.bulkData), *d.meshData);
+    stk_classic::io::populate_bulk_data(*(d.bulkData), *d.meshData);
 
     // Remember: Indices in STK are 1-based. :/
-    stk::io::process_input_request(*d.meshData, *d.bulkData, index+1);
+    stk_classic::io::process_input_request(*d.meshData, *d.bulkData, index+1);
 
-    // This should be propagated into stk::io
+    // This should be propagated into stk_classic::io
     //Ioss::Region *region = meshDataContainer_.meshData->m_input_region;
     //const Ioss::ElementBlockContainer& elem_blocks = region->get_element_blocks();
     //// Uncomment to print what fields are in the exodus file
@@ -372,9 +372,9 @@ read(const Epetra_Comm &comm,
   }
 
   // Rebalance.
-  stk::mesh::Selector selector(d.metaData.universal_part());
-  stk::mesh::Selector owned_selector(d.metaData.locally_owned_part());
-  double imbalance = stk::rebalance::check_balance(*d.bulkData,
+  stk_classic::mesh::Selector selector(d.metaData.universal_part());
+  stk_classic::mesh::Selector owned_selector(d.metaData.locally_owned_part());
+  double imbalance = stk_classic::rebalance::check_balance(*d.bulkData,
                      NULL,
                      d.metaData.node_rank(),
                      &selector);
@@ -386,16 +386,16 @@ read(const Epetra_Comm &comm,
     Teuchos::ParameterList lb_method;
     lb_method.set("LOAD BALANCING METHOD", "4");
     Teuchos::ParameterList graph;
-    graph.sublist(stk::rebalance::Zoltan::default_parameters_name()) = lb_method;
-    stk::rebalance::Zoltan zoltan_partition(mcomm, numDim_, graph);
+    graph.sublist(stk_classic::rebalance::Zoltan::default_parameters_name()) = lb_method;
+    stk_classic::rebalance::Zoltan zoltan_partition(mcomm, numDim_, graph);
 
-    stk::rebalance::rebalance(*d.bulkData,
+    stk_classic::rebalance::rebalance(*d.bulkData,
                               owned_selector,
                               &coordinatesField,
                               NULL,
                               zoltan_partition);
 
-    //imbalance = stk::rebalance::check_balance(meshDataContainer_.bulkData,
+    //imbalance = stk_classic::rebalance::check_balance(meshDataContainer_.bulkData,
     //                                          NULL,
     //                                          meshDataContainer_.metaData.node_rank(),
     //                                          &selector);
@@ -425,7 +425,7 @@ complexfield2vector_(const ScalarFieldType &realField,
 {
   // Psi needs to have unique node IDs to be able to compute Norm2().
   // This is required in Belos.
-  const std::vector<stk::mesh::Entity*> &ownedNodes = this->getOwnedNodes();
+  const std::vector<stk_classic::mesh::Entity*> &ownedNodes = this->getOwnedNodes();
 
   // Create vector with this respective map.
   Teuchos::RCP<Epetra_Vector> vector =
@@ -434,11 +434,11 @@ complexfield2vector_(const ScalarFieldType &realField,
   // Fill the vector with data from the file.
   for (unsigned int k = 0; k < ownedNodes.size(); k++) {
     // real part
-    double* realVal = stk::mesh::field_data(realField, *ownedNodes[k]);
+    double* realVal = stk_classic::mesh::field_data(realField, *ownedNodes[k]);
     (*vector)[2*k] = realVal[0];
 
     // imaginary part
-    double* imagVal = stk::mesh::field_data(imagField, *ownedNodes[k]);
+    double* imagVal = stk_classic::mesh::field_data(imagField, *ownedNodes[k]);
     (*vector)[2*k+1] = imagVal[0];
   }
 
@@ -458,7 +458,7 @@ StkMesh::
 field2vector_(const ScalarFieldType &field) const
 {
   // Get overlap nodes.
-  const std::vector<stk::mesh::Entity*> &overlapNodes =
+  const std::vector<stk_classic::mesh::Entity*> &overlapNodes =
     this->getOverlapNodes();
 
   // Create vector with this respective map.
@@ -467,7 +467,7 @@ field2vector_(const ScalarFieldType &field) const
 
   // Fill the vector with data from the file.
   for (unsigned int k = 0; k < overlapNodes.size(); k++) {
-    double* vals = stk::mesh::field_data(field,
+    double* vals = stk_classic::mesh::field_data(field,
                                          *overlapNodes[k]);
     // Check if the field is actually there.
 #ifndef NDEBUG
@@ -498,7 +498,7 @@ field2vector_(const VectorFieldType &field,
             ) const
 {
   // Get overlap nodes.
-  const std::vector<stk::mesh::Entity*> &overlapNodes =
+  const std::vector<stk_classic::mesh::Entity*> &overlapNodes =
     this->getOverlapNodes();
 
   // Create vector with this respective map.
@@ -509,7 +509,7 @@ field2vector_(const VectorFieldType &field,
   // Fill the vector with data from the file.
   for (unsigned int k = 0; k < overlapNodes.size(); k++) {
     const double * const vals =
-      stk::mesh::field_data(field, *overlapNodes[k]);
+      stk_classic::mesh::field_data(field, *overlapNodes[k]);
 #ifndef NDEBUG
     // Check if the field is actually there.
     TEUCHOS_TEST_FOR_EXCEPT_MSG(vals == NULL,
@@ -561,17 +561,17 @@ openOutputChannel(const std::string &outputDir,
   const std::string extension = ".e";
 
   // Make sure the outputDir ends in "/".
-  // Dir and filename are not concatenated properly in stk::mesh,
+  // Dir and filename are not concatenated properly in stk_classic::mesh,
   std::stringstream outputFile;
   outputFile << outputDir << "/" << fileBaseName << extension;
 
-  stk::io::create_output_mesh(outputFile.str(),
+  stk_classic::io::create_output_mesh(outputFile.str(),
                               mcomm,
                               *meshDataContainer_.bulkData,
                               *meshDataContainer_.meshData
                             );
 
-  stk::io::define_output_fields(*meshDataContainer_.meshData,
+  stk_classic::io::define_output_fields(*meshDataContainer_.meshData,
                                 meshDataContainer_.metaData
                               );
 
@@ -599,7 +599,7 @@ write(const Epetra_Vector & psi,
 
   // Write it out to the file that's been specified in mesh_.
   // The methods returns the output step (but we ignore it).
-  (void) stk::io::process_output_request(*meshDataContainer_.meshData,
+  (void) stk_classic::io::process_output_request(*meshDataContainer_.meshData,
                                          *meshDataContainer_.bulkData,
                                          time);
 
@@ -664,12 +664,12 @@ mergeComplexVector_(const Epetra_Vector & psi,
 #endif
 
   // Zero out all nodal values, including the overlaps.
-  const std::vector<stk::mesh::Entity*> &overlapNodes = this->getOverlapNodes();
+  const std::vector<stk_classic::mesh::Entity*> &overlapNodes = this->getOverlapNodes();
   for (unsigned int k = 0; k < overlapNodes.size(); k++) {
     // Extract real and imaginary part.
-    double* localPsiR = stk::mesh::field_data(*psir_field, *overlapNodes[k]);
+    double* localPsiR = stk_classic::mesh::field_data(*psir_field, *overlapNodes[k]);
     *localPsiR = 0.0;
-    double* localPsiI = stk::mesh::field_data(*psii_field, *overlapNodes[k]);
+    double* localPsiI = stk_classic::mesh::field_data(*psii_field, *overlapNodes[k]);
     *localPsiI = 0.0;
   }
 
@@ -679,19 +679,19 @@ mergeComplexVector_(const Epetra_Vector & psi,
 #endif
   for (unsigned int k = 0; k < ownedNodes_.size(); k++) {
     // Extract real and imaginary part.
-    double* localPsiR = stk::mesh::field_data(*psir_field, *ownedNodes_[k]);
+    double* localPsiR = stk_classic::mesh::field_data(*psir_field, *ownedNodes_[k]);
     *localPsiR = psi[2*k];
-    double* localPsiI = stk::mesh::field_data(*psii_field, *ownedNodes_[k]);
+    double* localPsiI = stk_classic::mesh::field_data(*psii_field, *ownedNodes_[k]);
     *localPsiI = psi[2*k+1];
   }
 
   // This communication updates the field values on un-owned nodes
   // it is correct because the zeroSolutionField above zeros them all
   // and the getSolutionField only sets the owned nodes.
-  stk::mesh::parallel_reduce(*meshDataContainer_.bulkData,
-                             stk::mesh::sum(*psir_field));
-  stk::mesh::parallel_reduce(*meshDataContainer_.bulkData,
-                             stk::mesh::sum(*psii_field));
+  stk_classic::mesh::parallel_reduce(*meshDataContainer_.bulkData,
+                             stk_classic::mesh::sum(*psir_field));
+  stk_classic::mesh::parallel_reduce(*meshDataContainer_.bulkData,
+                             stk_classic::mesh::sum(*psii_field));
 
   return;
 }
@@ -735,41 +735,41 @@ getEdgeCoefficients() const
   return edgeCoefficients_;
 }
 // =============================================================================
-std::vector<stk::mesh::Entity*>
+std::vector<stk_classic::mesh::Entity*>
 StkMesh::
 getOwnedCells() const
 {
   // get owned elements
-  stk::mesh::Selector select_owned_in_part =
-    stk::mesh::Selector(meshDataContainer_.metaData.universal_part())
-    & stk::mesh::Selector(meshDataContainer_.metaData.locally_owned_part());
-  std::vector<stk::mesh::Entity*> cells;
-  stk::mesh::get_selected_entities(select_owned_in_part,
+  stk_classic::mesh::Selector select_owned_in_part =
+    stk_classic::mesh::Selector(meshDataContainer_.metaData.universal_part())
+    & stk_classic::mesh::Selector(meshDataContainer_.metaData.locally_owned_part());
+  std::vector<stk_classic::mesh::Entity*> cells;
+  stk_classic::mesh::get_selected_entities(select_owned_in_part,
                                    meshDataContainer_.bulkData->buckets(meshDataContainer_.metaData.element_rank()),
                                    cells
                                  );
   return cells;
 }
 // =============================================================================
-std::vector<stk::mesh::Entity*>
+std::vector<stk_classic::mesh::Entity*>
 StkMesh::
 getOverlapEdges() const
 {
   // get overlap edges
-  stk::mesh::Selector select_overlap_in_part =
-    stk::mesh::Selector(meshDataContainer_.metaData.universal_part())
-    & (stk::mesh::Selector(meshDataContainer_.metaData.locally_owned_part())
-       |stk::mesh::Selector(meshDataContainer_.metaData.globally_shared_part()));
+  stk_classic::mesh::Selector select_overlap_in_part =
+    stk_classic::mesh::Selector(meshDataContainer_.metaData.universal_part())
+    & (stk_classic::mesh::Selector(meshDataContainer_.metaData.locally_owned_part())
+       |stk_classic::mesh::Selector(meshDataContainer_.metaData.globally_shared_part()));
 
-  std::vector<stk::mesh::Entity*> edges;
-  stk::mesh::get_selected_entities(select_overlap_in_part,
+  std::vector<stk_classic::mesh::Entity*> edges;
+  stk_classic::mesh::get_selected_entities(select_overlap_in_part,
                                    meshDataContainer_.bulkData->buckets(meshDataContainer_.metaData.edge_rank()),
                                    edges
                                  );
   return edges;
 }
 // =============================================================================
-const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*, 2> >
+const Teuchos::Array<Teuchos::Tuple<stk_classic::mesh::Entity*, 2> >
 StkMesh::
 getEdgeNodes() const
 {
@@ -778,7 +778,7 @@ getEdgeNodes() const
 // =============================================================================
 double
 StkMesh::
-getScalarFieldNonconst(const stk::mesh::Entity * nodeEntity,
+getScalarFieldNonconst(const stk_classic::mesh::Entity * nodeEntity,
                        const std::string & fieldName
                      ) const
 {
@@ -787,12 +787,12 @@ getScalarFieldNonconst(const stk::mesh::Entity * nodeEntity,
 #ifndef NDEBUG
   TEUCHOS_ASSERT(field != NULL);
 #endif
-  return *stk::mesh::field_data(*field, *nodeEntity);
+  return *stk_classic::mesh::field_data(*field, *nodeEntity);
 }
 // =============================================================================
 const DoubleVector
 StkMesh::
-getVectorFieldNonconst(const stk::mesh::Entity * nodeEntity,
+getVectorFieldNonconst(const stk_classic::mesh::Entity * nodeEntity,
                        const std::string & fieldName,
                        const int numDims
                       ) const
@@ -804,7 +804,7 @@ getVectorFieldNonconst(const stk::mesh::Entity * nodeEntity,
 #endif
   // Make a Teuchos::Copy here as the access is nonconst.
   return DoubleVector(Teuchos::Copy,
-                      stk::mesh::field_data(*field, *nodeEntity),
+                      stk_classic::mesh::field_data(*field, *nodeEntity),
                       numDims);
 }
 // =============================================================================
@@ -858,40 +858,40 @@ getComplexOverlapMap() const
   return complexOverlapMap_;
 }
 // =============================================================================
-std::vector<stk::mesh::Entity*>
+std::vector<stk_classic::mesh::Entity*>
 StkMesh::
 buildOwnedNodes_() const
 {
-  stk::mesh::Selector select_owned_in_part =
-    stk::mesh::Selector(meshDataContainer_.metaData.universal_part())
-    & stk::mesh::Selector(meshDataContainer_.metaData.locally_owned_part());
+  stk_classic::mesh::Selector select_owned_in_part =
+    stk_classic::mesh::Selector(meshDataContainer_.metaData.universal_part())
+    & stk_classic::mesh::Selector(meshDataContainer_.metaData.locally_owned_part());
 
-  std::vector<stk::mesh::Entity*> on;
-  stk::mesh::get_selected_entities(select_owned_in_part,
+  std::vector<stk_classic::mesh::Entity*> on;
+  stk_classic::mesh::get_selected_entities(select_owned_in_part,
                                    meshDataContainer_.bulkData->buckets(meshDataContainer_.metaData.node_rank()),
                                    on);
   return on;
 }
 // =============================================================================
-std::vector<stk::mesh::Entity*>
+std::vector<stk_classic::mesh::Entity*>
 StkMesh::
 getOwnedNodes() const
 {
   return ownedNodes_;
 }
 // =============================================================================
-std::vector<stk::mesh::Entity*>
+std::vector<stk_classic::mesh::Entity*>
 StkMesh::
 getOverlapNodes() const
 {
   //  overlapnodes used for overlap map -- stored for changing coords
-  stk::mesh::Selector select_overlap_in_part =
-    stk::mesh::Selector(meshDataContainer_.metaData.universal_part())
-    & (stk::mesh::Selector(meshDataContainer_.metaData.locally_owned_part())
-       |stk::mesh::Selector(meshDataContainer_.metaData.globally_shared_part()));
+  stk_classic::mesh::Selector select_overlap_in_part =
+    stk_classic::mesh::Selector(meshDataContainer_.metaData.universal_part())
+    & (stk_classic::mesh::Selector(meshDataContainer_.metaData.locally_owned_part())
+       |stk_classic::mesh::Selector(meshDataContainer_.metaData.globally_shared_part()));
 
-  std::vector<stk::mesh::Entity*> overlapNodes;
-  stk::mesh::get_selected_entities(select_overlap_in_part,
+  std::vector<stk_classic::mesh::Entity*> overlapNodes;
+  stk_classic::mesh::get_selected_entities(select_overlap_in_part,
                                    meshDataContainer_.bulkData->buckets(meshDataContainer_.metaData.node_rank()),
                                    overlapNodes
                                  );
@@ -901,7 +901,7 @@ getOverlapNodes() const
 // =============================================================================
 Teuchos::RCP<const Epetra_Map>
 StkMesh::
-createEntitiesMap_(const std::vector<stk::mesh::Entity*> &entityList) const
+createEntitiesMap_(const std::vector<stk_classic::mesh::Entity*> &entityList) const
 {
   const int numEntities = entityList.size();
   Teuchos::Array<int> gids(numEntities);
@@ -913,7 +913,7 @@ createEntitiesMap_(const std::vector<stk::mesh::Entity*> &entityList) const
 // =============================================================================
 Teuchos::RCP<const Epetra_Map>
 StkMesh::
-createComplexMap_(const std::vector<stk::mesh::Entity*> &nodeList) const
+createComplexMap_(const std::vector<stk_classic::mesh::Entity*> &nodeList) const
 {
   // Create a map for real/imaginary out of this.
   const int numDof = 2 * nodeList.size();
@@ -955,10 +955,10 @@ computeEdgeCoefficients_() const
   Teuchos::TimeMonitor tm(*computeEdgeCoefficientsTime_);
 #endif
 
-  std::vector<stk::mesh::Entity*> cells = this->getOwnedCells();
+  std::vector<stk_classic::mesh::Entity*> cells = this->getOwnedCells();
   unsigned int numCells = cells.size();
 
-  Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*, 2> >::size_type numEdges =
+  Teuchos::Array<Teuchos::Tuple<stk_classic::mesh::Entity*, 2> >::size_type numEdges =
     edgeData_.edgeNodes.size();
 
   Teuchos::ArrayRCP<double> edgeCoefficients(numEdges);
@@ -1104,7 +1104,7 @@ computeControlVolumes_() const
   // Determine the kind of mesh by the first cell.
   int nodesPerCell;
   if (comm_.MyPID() == 0) {
-    std::vector<stk::mesh::Entity*> cells = this->getOwnedCells();
+    std::vector<stk_classic::mesh::Entity*> cells = this->getOwnedCells();
     nodesPerCell = cells[0]->relations(meshDataContainer_.metaData.node_rank()).size();
   }
   comm_.Broadcast(&nodesPerCell, 1, 0);
@@ -1133,12 +1133,12 @@ void
 StkMesh::
 computeControlVolumesTri_(const Teuchos::RCP<Epetra_Vector> & cvOverlap) const
 {
-  std::vector<stk::mesh::Entity*> cells = this->getOwnedCells();
+  std::vector<stk_classic::mesh::Entity*> cells = this->getOwnedCells();
   unsigned int numCells = cells.size();
 
   // Calculate the contributions to the finite volumes cell by cell.
   for (unsigned int k = 0; k < numCells; k++) {
-    stk::mesh::PairIterRelation localNodes =
+    stk_classic::mesh::PairIterRelation localNodes =
       cells[k]->relations(meshDataContainer_.metaData.node_rank());
     unsigned int numLocalNodes = localNodes.size();
 
@@ -1214,12 +1214,12 @@ void
 StkMesh::
 computeControlVolumesTet_(const Teuchos::RCP<Epetra_Vector> & cvOverlap) const
 {
-  std::vector<stk::mesh::Entity*> cells = this->getOwnedCells();
+  std::vector<stk_classic::mesh::Entity*> cells = this->getOwnedCells();
   unsigned int numCells = cells.size();
 
   // Calculate the contributions to the finite volumes cell by cell.
   for (unsigned int k = 0; k < numCells; k++) {
-    stk::mesh::PairIterRelation localNodes =
+    stk_classic::mesh::PairIterRelation localNodes =
       cells[k]->relations(meshDataContainer_.metaData.node_rank());
     unsigned int numLocalNodes = localNodes.size();
 #ifndef NDEBUG
@@ -1593,12 +1593,12 @@ StkMesh::EdgesContainer
 StkMesh::
 createEdgeData_()
 {
-  std::vector<stk::mesh::Entity*> cells = this->getOwnedCells();
+  std::vector<stk_classic::mesh::Entity*> cells = this->getOwnedCells();
   unsigned int numLocalCells = cells.size();
 
   StkMesh::EdgesContainer edgeData = {
     // Local edge ID -> Global node IDs.
-    Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*, 2> >(),
+    Teuchos::Array<Teuchos::Tuple<stk_classic::mesh::Entity*, 2> >(),
     // Local cell ID -> Local edge IDs.
     Teuchos::ArrayRCP<Teuchos::ArrayRCP<int> >(numLocalCells)
   };
@@ -1609,13 +1609,13 @@ createEdgeData_()
   // Unfortunately, Teuchos::Tuples can't be compared with '<'. Provide a
   // function pointer that implements lexicographic comparison.
   // See http://www.cplusplus.com/reference/stl/map/map/.
-  std::map<Teuchos::Tuple<stk::mesh::Entity*, 2>, int, TupleComp> nodesEdge;
+  std::map<Teuchos::Tuple<stk_classic::mesh::Entity*, 2>, int, TupleComp> nodesEdge;
 
   // Loop over all owned cells.
   unsigned int edgeLID = 0;
   for (unsigned int cellLID = 0; cellLID < numLocalCells; cellLID++) {
     // Loop over all pairs of local nodes.
-    stk::mesh::PairIterRelation nodesIterator =
+    stk_classic::mesh::PairIterRelation nodesIterator =
       cells[cellLID]->relations(meshDataContainer_.metaData.node_rank());
     unsigned int numLocalNodes = nodesIterator.size();
     unsigned int numLocalEdges = numLocalNodes*(numLocalNodes-1) / 2;
@@ -1623,7 +1623,7 @@ createEdgeData_()
     edgeData.cellEdges[cellLID] = Teuchos::ArrayRCP<int>(numLocalEdges);
 
     // Gather the node entities.
-    Teuchos::ArrayRCP<stk::mesh::Entity*> nodes(numLocalNodes);
+    Teuchos::ArrayRCP<stk_classic::mesh::Entity*> nodes(numLocalNodes);
     for (unsigned int k = 0; k < numLocalNodes; k++)
       nodes[k] = nodesIterator[k].entity();
 
@@ -1636,7 +1636,7 @@ createEdgeData_()
     // In a simplex, the edges are exactly the connection between each pair
     // of nodes. Hence, loop over pairs of nodes.
     unsigned int edgeIndex = 0;
-    Teuchos::Tuple<stk::mesh::Entity*, 2> edgeNodes;
+    Teuchos::Tuple<stk_classic::mesh::Entity*, 2> edgeNodes;
     for (unsigned int e0 = 0; e0 < numLocalNodes; e0++) {
       edgeNodes[0] = nodes[e0];
       for (unsigned int e1 = e0+1; e1 < numLocalNodes; e1++) {
@@ -1645,7 +1645,7 @@ createEdgeData_()
         // too. This is necessary as otherwise the edge {3,7} could not be
         // identified as {7,3}.
         // Check if edgeNodes is in the map.
-        std::map<Teuchos::Tuple<stk::mesh::Entity*, 2>, int, TupleComp>::iterator it =
+        std::map<Teuchos::Tuple<stk_classic::mesh::Entity*, 2>, int, TupleComp>::iterator it =
           nodesEdge.find(edgeNodes);
         if (it != nodesEdge.end()) {
           // Edge is already accounted for.

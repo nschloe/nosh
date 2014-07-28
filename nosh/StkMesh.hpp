@@ -39,7 +39,7 @@
 #include <stk_io/MeshReadWriteUtils.hpp>
 // =============================================================================
 // forward declarations
-namespace stk
+namespace stk_classic
 {
 namespace mesh
 {
@@ -56,9 +56,9 @@ class Epetra_MultiVector;
 class Epetra_Map;
 // =============================================================================
 // typedefs
-typedef stk::mesh::Field<double, stk::mesh::Cartesian> VectorFieldType;
-typedef stk::mesh::Field<double>                      ScalarFieldType;
-typedef stk::mesh::Field<int>                         IntScalarFieldType;
+typedef stk_classic::mesh::Field<double, stk_classic::mesh::Cartesian> VectorFieldType;
+typedef stk_classic::mesh::Field<double>                      ScalarFieldType;
+typedef stk_classic::mesh::Field<int>                         IntScalarFieldType;
 typedef Teuchos::SerialDenseVector<int, double>        DoubleVector;
 typedef Teuchos::SerialDenseVector<int, const double>  ConstDoubleVector;
 // =============================================================================
@@ -71,14 +71,14 @@ private:
 // Keep bulkData a pointer since its copy constructor is private; this causes
 // issues when trying to copy (or initialize) MeshDataContainer.
   struct MeshDataContainer {
-    stk::mesh::fem::FEMMetaData metaData;
-    Teuchos::RCP<stk::io::MeshData> meshData;
-    Teuchos::RCP<stk::mesh::BulkData> bulkData;
+    stk_classic::mesh::fem::FEMMetaData metaData;
+    Teuchos::RCP<stk_classic::io::MeshData> meshData;
+    Teuchos::RCP<stk_classic::mesh::BulkData> bulkData;
   };
 
   struct EdgesContainer {
     //! Local edge ID -> Global node IDs.
-    Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*, 2> > edgeNodes;
+    Teuchos::Array<Teuchos::Tuple<stk_classic::mesh::Entity*, 2> > edgeNodes;
     //! Local cell ID -> Local edge IDs.
     Teuchos::ArrayRCP<Teuchos::ArrayRCP<int> > cellEdges;
   };
@@ -140,23 +140,23 @@ public:
   Teuchos::ArrayRCP<double>
   getEdgeCoefficients() const;
 
-  std::vector<stk::mesh::Entity*>
+  std::vector<stk_classic::mesh::Entity*>
   getOwnedCells() const;
 
-  std::vector<stk::mesh::Entity*>
+  std::vector<stk_classic::mesh::Entity*>
   getOverlapEdges() const;
 
-  const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity*, 2> >
+  const Teuchos::Array<Teuchos::Tuple<stk_classic::mesh::Entity*, 2> >
   getEdgeNodes() const;
 
-  std::vector<stk::mesh::Entity*>
+  std::vector<stk_classic::mesh::Entity*>
   getOwnedNodes() const;
 
-  std::vector<stk::mesh::Entity*>
+  std::vector<stk_classic::mesh::Entity*>
   getOverlapNodes() const;
 
 //const DoubleVector
-//getNodeCoordinatesNonconst(const stk::mesh::Entity * nodeEntity) const;
+//getNodeCoordinatesNonconst(const stk_classic::mesh::Entity * nodeEntity) const;
 
   Teuchos::RCP<const Epetra_Map>
   getNodesMap() const;
@@ -177,12 +177,12 @@ public:
   getNumEdgesPerCell(unsigned int cellDimension) const;
 
   const DoubleVector
-  getVectorFieldNonconst(const stk::mesh::Entity * nodeEntity,
+  getVectorFieldNonconst(const stk_classic::mesh::Entity * nodeEntity,
                          const std::string & fieldName,
                          const int numDims
                         ) const;
   double
-  getScalarFieldNonconst(const stk::mesh::Entity * nodeEntity,
+  getScalarFieldNonconst(const stk_classic::mesh::Entity * nodeEntity,
                          const std::string & fieldName
                         ) const;
 
@@ -199,7 +199,7 @@ private:
 
   MeshDataContainer meshDataContainer_;
 
-  const std::vector<stk::mesh::Entity*> ownedNodes_;
+  const std::vector<stk_classic::mesh::Entity*> ownedNodes_;
 
   const Teuchos::RCP<const Epetra_Map> nodesMap_;
   const Teuchos::RCP<const Epetra_Map> nodesOverlapMap_;
@@ -240,11 +240,11 @@ private:
                 const int numComponents
                ) const;
 
-  std::vector<stk::mesh::Entity*>
+  std::vector<stk_classic::mesh::Entity*>
   buildOwnedNodes_() const;
 
 //Teuchos::ArrayRCP<const DoubleVector>
-//getNodeCoordinates_(const stk::mesh::PairIterRelation &relation) const;
+//getNodeCoordinates_(const stk_classic::mesh::PairIterRelation &relation) const;
 
   Teuchos::ArrayRCP<double>
   computeEdgeCoefficients_() const;
@@ -254,10 +254,10 @@ private:
   computeControlVolumes_() const;
 
   Teuchos::RCP<const Epetra_Map>
-  createEntitiesMap_(const std::vector<stk::mesh::Entity*> &entityList) const;
+  createEntitiesMap_(const std::vector<stk_classic::mesh::Entity*> &entityList) const;
 
   Teuchos::RCP<const Epetra_Map>
-  createComplexMap_(const std::vector<stk::mesh::Entity*> &nodeList) const;
+  createComplexMap_(const std::vector<stk_classic::mesh::Entity*> &nodeList) const;
 
   double
   computeCovolume2d_(const DoubleVector &cc,
