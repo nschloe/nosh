@@ -32,5 +32,6 @@ FC=ftn \
 cmake \
   -DCMAKE_INSTALL_PREFIX:PATH="$SCRATCH/nosh/dev/$NAME/" \
   -DCMAKE_BUILD_TYPE:STRING=Release \
+  -DBUILD_SHARED_LIBS:BOOL=OFF \
+  -DTrilinos_Implicit:BOOL=ON \
   $HOME/software/nosh/dev/
-#  -DBUILD_SHARED_LIBS:BOOL=ON \

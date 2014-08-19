@@ -3,7 +3,8 @@ FIND_PACKAGE(MPI REQUIRED)
 INCLUDE_DIRECTORIES(${Nosh_SOURCE_DIR})
 INCLUDE_DIRECTORIES(SYSTEM
   ${Trilinos_INCLUDE_DIRS}
-  ${Trilinos_TPL_INCLUDE_DIRS})
+  ${Trilinos_TPL_INCLUDE_DIRS}
+  )
 
 ## Get the absolute path of Trilinos_LIBRARY_DIRS. This is to avoid
 ## conflicts with Trilinos_TPL_LIBRARY_DIRS which is typically given
@@ -40,7 +41,8 @@ SET(IOTEST_EXECUTABLE
   "ioTest")
 ADD_EXECUTABLE (${IOTEST_EXECUTABLE}
   Nosh_IOTests.cpp
-  unitTestMain.cpp)
+  unitTestMain.cpp
+  )
 # add tests
 ADD_TEST(ioTestSerial
   ${IOTEST_EXECUTABLE}
@@ -57,8 +59,13 @@ ADD_TEST(ioTestMpi7
 TARGET_LINK_LIBRARIES(
   ${IOTEST_EXECUTABLE}
   ${internal_LIBS}
-  #${Trilinos_LIBRARIES}
   )
+IF (NOT Trilinos_Implicit)
+  TARGET_LINK_LIBRARIES(
+    ${IOTEST_EXECUTABLE}
+    ${Trilinos_LIBRARIES}
+    )
+ENDIF()
 # ------------------------------------------------------------------------------
 SET(MESHTEST_EXECUTABLE
   "meshTest")
@@ -81,8 +88,13 @@ ADD_TEST(meshTestMpi7
 TARGET_LINK_LIBRARIES(
   ${MESHTEST_EXECUTABLE}
   ${internal_LIBS}
-  #${Trilinos_LIBRARIES}
   )
+IF (NOT Trilinos_Implicit)
+  TARGET_LINK_LIBRARIES(
+    ${MESHTEST_EXECUTABLE}
+    ${Trilinos_LIBRARIES}
+    )
+ENDIF()
 # ------------------------------------------------------------------------------
 SET(OPERATORTEST_EXECUTABLE
   "operatorTest")
@@ -108,6 +120,11 @@ ADD_TEST(operatorTestMpi7
 TARGET_LINK_LIBRARIES(
   ${OPERATORTEST_EXECUTABLE}
   ${internal_LIBS}
-  #${Trilinos_LIBRARIES}
   )
+IF (NOT Trilinos_Implicit)
+  TARGET_LINK_LIBRARIES(
+    ${OPERATORTEST_EXECUTABLE}
+    ${Trilinos_LIBRARIES}
+    )
+ENDIF()
 # ------------------------------------------------------------------------------

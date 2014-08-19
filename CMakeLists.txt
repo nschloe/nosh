@@ -13,7 +13,9 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8.8)
 # adding the Fortran compiler here isn't necessary anymore.
 PROJECT(Nosh CXX)
 
-FIND_PACKAGE(Trilinos REQUIRED)
+IF (NOT Trilinos_Implicit)
+  FIND_PACKAGE(Trilinos REQUIRED)
+ENDIF()
 
 # Make sure the compilers match.
 IF(NOT ${Trilinos_CXX_COMPILER} STREQUAL ${CMAKE_CXX_COMPILER})
