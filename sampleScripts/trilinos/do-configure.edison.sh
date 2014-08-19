@@ -14,18 +14,22 @@ if [ "$CRAY_PRGENVPGI" == "loaded" ]; then
   COMPILER_NAME="pgi"
   SCILIB_NAME="sci_pgi"
   SKIP_CF="ON"
+  EXTRA_OPTION=""
 elif [ "$CRAY_PRGENVCRAY" == "loaded" ]; then
   COMPILER_NAME="cray"
   SCILIB_NAME="sci_cray"
   SKIP_CF="OFF"
+  EXTRA_OPTION="-D CMAKE_C_SIZEOF_DATA_PTR:STRING=\"8\""
 elif [ "$CRAY_PRGENVGNU" == "loaded" ]; then
   COMPILER_NAME="gnu"
   SCILIB_NAME="sci_gnu"
   SKIP_CF="OFF"
+  EXTRA_OPTION=""
 elif [ "$CRAY_PRGENVINTEL" == "loaded" ]; then
   COMPILER_NAME="intel"
   SCILIB_NAME="sci_intel"
   SKIP_CF="OFF"
+  EXTRA_OPTION=""
 else
   echo "Unknown compiler suite selected. Abort."
   exit 1
@@ -64,38 +68,39 @@ sleep 5
 #      -D LAPACK_LIBRARY_DIRS:PATH="$CRAY_LIBSCI_PREFIX_DIR/lib" \
 #      -D LAPACK_LIBRARY_NAMES:STRING="${SCILIB_NAME}" \
 
+#  -D Trilinos_ENABLE_OpenMP:BOOL=ON \
 cmake \
   -D CMAKE_INSTALL_PREFIX:PATH="$SCRATCH/trilinos/dev/${COMPILER_NAME}/" \
+  -D CMAKE_C_SIZEOF_DATA_PTR:STRING="8" \
   -D CMAKE_BUILD_TYPE:STRING=Release \
-  -D Trilinos_ENABLE_DEVELOPMENT_MODE:BOOL=OFF \
-  -D Trilinos_ENABLE_TESTS:BOOL=ON \
   -D BUILD_SHARED_LIBS:BOOL=OFF \
   -D TPL_FIND_SHARED_LIBS:BOOL=OFF \
   -D Trilinos_LINK_SEARCH_START_STATIC:BOOL=ON \
-  -D Trilinos_ENABLE_OpenMP:BOOL=ON \
+  -D Trilinos_ENABLE_DEVELOPMENT_MODE:BOOL=OFF \
+  -D Trilinos_ENABLE_TESTS:BOOL=OFF \
+  -D Trilinos_ENABLE_TEUCHOS_TIME_MONITOR:BOOL=ON \
+  -D Trilinos_SKIP_FORTRANCINTERFACE_VERIFY_TEST:BOOL=${SKIP_CF} \
+  -D Trilinos_ENABLE_Anasazi:BOOL=ON \
+  -D Trilinos_ENABLE_Belos:BOOL=ON \
+  -D Trilinos_ENABLE_ML:BOOL=ON \
+  -D Trilinos_ENABLE_NOX:BOOL=ON \
+      -D NOX_ENABLE_LOCA:BOOL=ON \
+  -D Trilinos_ENABLE_Piro:BOOL=ON \
+  -D Trilinos_ENABLE_STK:BOOL=ON \
+  -D Trilinos_ENABLE_SEACASIoss:BOOL=ON \
+  -D TPL_ENABLE_BinUtils:BOOL=OFF \
+  -D TPL_ENABLE_BLAS:BOOL=ON \
+      -D TPL_BLAS_LIBRARIES:STRING="-mkl=cluster" \
+  -D TPL_ENABLE_Boost:BOOL=ON \
+      -D Boost_LIBRARY_DIRS:PATH="$BOOST_DIR/libs" \
+      -D Boost_INCLUDE_DIRS:PATH="$BOOST_DIR/include" \
+  -D TPL_ENABLE_LAPACK:BOOL=ON \
+      -D TPL_LAPACK_LIBRARIES:STRING="-mkl=cluster" \
   -D TPL_ENABLE_MPI:BOOL=ON \
       -D MPI_C_COMPILER:FILEPATH=${CRAYPE_DIR}/bin/cc \
       -D MPI_CXX_COMPILER:FILEPATH=${CRAYPE_DIR}/bin/CC \
       -D MPI_Fortran_COMPILER:FILEPATH=${CRAYPE_DIR}/bin/ftn \
-  -D Trilinos_SKIP_FORTRANCINTERFACE_VERIFY_TEST:BOOL=${SKIP_CF} \
-  -D Trilinos_ENABLE_TEUCHOS_TIME_MONITOR:BOOL=ON \
-  -D TPL_ENABLE_BinUtils:BOOL=OFF \
-  -D TPL_ENABLE_Boost:BOOL=ON \
-      -D Boost_LIBRARY_DIRS:PATH="$BOOST_DIR/libs" \
-      -D Boost_INCLUDE_DIRS:PATH="$BOOST_DIR/include" \
-  -D TPL_ENABLE_BLAS:BOOL=ON \
-      -D TPL_BLAS_LIBRARIES:STRING="-mkl=cluster" \
-  -D TPL_ENABLE_LAPACK:BOOL=ON \
-      -D TPL_LAPACK_LIBRARIES:STRING="-mkl=cluster" \
-  -D Trilinos_ENABLE_NOX:BOOL=ON \
-      -D NOX_ENABLE_LOCA:BOOL=ON \
-  -D Trilinos_ENABLE_Piro:BOOL=ON \
-  -D Trilinos_ENABLE_Belos:BOOL=ON \
-  -D Trilinos_ENABLE_ML:BOOL=ON \
-  -D Trilinos_ENABLE_Anasazi:BOOL=ON \
-  -D Trilinos_ENABLE_STK:BOOL=ON \
-    -D Trilinos_ENABLE_SEACASIoss:BOOL=ON \
   -D TPL_ENABLE_Netcdf:BOOL=ON \
       -D Netcdf_INCLUDE_DIRS:PATH="$NETCDF_DIR/include" \
       -D Netcdf_LIBRARY_DIRS:PATH="$NETCDF_DIR/lib" \
-  ${HOME}/software/trilinos/dev/source/
+  ${HOME}/software/trilinos/dev/
