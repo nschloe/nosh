@@ -1,6 +1,6 @@
 # Nosh
 
-[![Build Status](https://travis-ci.org/nschloe/Nosh.svg?branch=master)](https://travis-ci.org/nschloe/nosh)
+[![Build Status](https://travis-ci.org/nschloe/nosh.svg?branch=master)](https://travis-ci.org/nschloe/nosh)
 [![Coverity Scan Build](https://scan.coverity.com/projects/1659/badge.svg)](https://scan.coverity.com/projects/1659)
 
 
