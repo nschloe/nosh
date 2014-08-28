@@ -1,4 +1,8 @@
-# Nosh [![Build Status](https://travis-ci.org/nschloe/Nosh.svg?branch=master)](https://travis-ci.org/nschloe/Nosh)
+# Nosh
+
+[![Build Status](https://travis-ci.org/nschloe/nosh.svg?branch=master)](https://travis-ci.org/nschloe/nosh)
+[![Coverity Scan Build](https://scan.coverity.com/projects/1659/badge.svg)](https://scan.coverity.com/projects/1659)
+
 
 This is Nosh,
 a free and open-source implementation of numerical solutions methods
