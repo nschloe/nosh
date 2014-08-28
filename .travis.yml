@@ -9,13 +9,13 @@ before_install:
   # A number of dependencies here should be covered by libtrilinos-dev.
   # The following dependencies can all go once the Trilinos export system is
   # fixed.
-  - sudo apt-get install libopenmpi-dev openmpi-bin
+  #- sudo apt-get install libopenmpi-dev openmpi-bin
   #- sudo apt-get install libhdf5-openmpi-7 libhdf5-openmpi-dev
   #- sudo apt-get install libnetcdf libnetcdf-dev
   #- sudo apt-get install libboost-system-dev
   #- sudo apt-get install libmumps-dev libptscotch-dev binutils-dev
   - sudo apt-get install cmake-data cmake
-  - sudo apt-get install trilinos-dev
+  - sudo apt-get install -f trilinos-dev
 install:
   - cmake -DBUILD_SHARED_LIBS:BOOL=TRUE -DCMAKE_CXX_COMPILER:STRING=mpicxx -DCMAKE_Fortran_COMPILER:STRING=mpif90 .
   - make
