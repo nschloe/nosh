@@ -9,7 +9,7 @@ before_install:
   # A number of dependencies here should be covered by libtrilinos-dev.
   # The following dependencies can all go once the Trilinos export system is
   # fixed.
-  - sudo apt-get install mpi-default-bin
+  - sudo apt-get install libopenmpi-dev openmpi-bin
   #- sudo apt-get install libhdf5-openmpi-7 libhdf5-openmpi-dev
   #- sudo apt-get install libnetcdf libnetcdf-dev
   #- sudo apt-get install libboost-system-dev
