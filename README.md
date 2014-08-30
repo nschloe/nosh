@@ -1,7 +1,7 @@
 # Nosh
 
 [![Build Status](https://travis-ci.org/nschloe/nosh.svg?branch=master)](https://travis-ci.org/nschloe/nosh)
-[![Coverage Status](https://coveralls.io/repos/nschloe/nosh/badge.png)](https://coveralls.io/r/nschloe/nosh)
+[![Coverage Status](https://img.shields.io/coveralls/nschloe/nosh.svg)](https://coveralls.io/r/nschloe/nosh)
 [![Coverity Scan Build](https://scan.coverity.com/projects/1659/badge.svg)](https://scan.coverity.com/projects/1659)
 
 
