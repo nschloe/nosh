@@ -56,6 +56,14 @@ IF(CMAKE_COMPILER_IS_GNUCXX)
     SET(CMAKE_CXX_FLAGS_PROFILE "-pg -O2" )
 ENDIF()
 
+option(ENABLE_GCOV "Enable gcov support" OFF)
+if(ENABLE_GCOV)
+  message(STATUS "Enabling gcov support")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} --coverage")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --coverage")
+  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} --coverage")
+endif()
+
 # Offer the user the choice of overriding the installation directories
 SET(INSTALL_LIB_DIR     "lib"          CACHE PATH "Installation directory for libraries")
 SET(INSTALL_BIN_DIR     "bin"          CACHE PATH "Installation directory for executables")
