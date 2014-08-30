@@ -14,7 +14,10 @@ before_install:
   #- sudo apt-get install libnetcdf libnetcdf-dev
   #- sudo apt-get install libboost-system-dev
   #- sudo apt-get install libmumps-dev libptscotch-dev binutils-dev
-  - sudo apt-get install libptscotch-5.1 # should be added by Trilinos
+  # The -dev versions are definitely not needed since Trilinos doesn't expose
+  # any of the interface of libptscotch. This can be fixed by the PRIVATE
+  # keyword in the appropriate target_link_libraries() in Trilinos.
+  - sudo apt-get install libptscotch-dev
   - sudo apt-get install libboost-dev libtbb-dev # should be added by Trilinos
   - sudo apt-get install cmake-data cmake
   - sudo apt-get install libgtest-dev libtribits-dev # shouldn't be necessary
