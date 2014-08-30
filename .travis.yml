@@ -15,7 +15,7 @@ before_install:
   #- sudo apt-get install libboost-system-dev
   #- sudo apt-get install libmumps-dev libptscotch-dev binutils-dev
   - sudo apt-get install cmake-data cmake
-  - sudo apt-get install libgtest11 trilinos-dev
+  - sudo apt-get install libgtest-dev libtribits-dev trilinos-dev
 install:
   - cmake -DBUILD_SHARED_LIBS:BOOL=TRUE -DCMAKE_CXX_COMPILER:STRING=mpicxx -DCMAKE_Fortran_COMPILER:STRING=mpif90 .
   - make
