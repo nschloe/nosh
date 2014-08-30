@@ -109,7 +109,8 @@ testComputeF(const std::string & inputFileNameBase,
 
   double normInf;
   TEUCHOS_ASSERT_EQUALITY(0, f->NormInf(&normInf));
-  TEST_FLOATING_EQUALITY(normInf, controlNormInf, 1.0e-10);
+  // Relax the tolerance just a little bit here.
+  TEST_FLOATING_EQUALITY(normInf, controlNormInf, 1.0e-9);
 
   return;
 }
