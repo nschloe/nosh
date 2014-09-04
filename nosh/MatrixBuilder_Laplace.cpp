@@ -37,7 +37,7 @@
 #include <Teuchos_TimeMonitor.hpp>
 #endif
 
-typedef Teuchos::Tuple<stk::mesh::Entity, 2> edge;
+typedef std::tuple<stk::mesh::Entity, stk::mesh::Entity> edge;
 
 namespace Nosh
 {
@@ -318,8 +318,8 @@ buildGlobalIndexCache_(const Teuchos::Array<edge> &edges) const
   for (Teuchos::Array<edge>::size_type k = 0;
        k < edges.size();
        k++) {
-    gid[0] = edges[k][0]->identifier() - 1;
-    gid[1] = edges[k][1]->identifier() - 1;
+    gid[0] = mesh_->bulkData->identifier(std::get<0>(edges[k])) - 1;
+    gid[1] = mesh_->bulkData->identifier(std::get<1>(edges[k])) - 1;
 
     globalIndexCache_[k] = Epetra_IntSerialDenseVector(4);
     globalIndexCache_[k][0] = 2*gid[0];
@@ -350,7 +350,7 @@ buildAlphaCache_(
   for (Teuchos::Array<edge>::size_type k = 0;
        k < edges.size();
        k++) {
-    gid[0] = edges[k][0]->identifier() - 1;
+    gid[0] = mesh_->bulkData->identifier(std::get<0>(edges[k])) - 1;
     lid[0] = mesh_->getNodesOverlapMap()->LID(gid[0]);
 #ifndef NDEBUG
     TEUCHOS_TEST_FOR_EXCEPT_MSG(
@@ -359,7 +359,7 @@ buildAlphaCache_(
         << " does not seem to be present on this node."
         );
 #endif
-    gid[1] = edges[k][1]->identifier() - 1;
+    gid[1] = mesh_->bulkData->identifier(std::get<1>(edges[k])) - 1;
     lid[1] = mesh_->getNodesOverlapMap()->LID(gid[1]);
 #ifndef NDEBUG
     TEUCHOS_TEST_FOR_EXCEPT_MSG(

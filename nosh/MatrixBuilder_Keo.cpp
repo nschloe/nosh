@@ -275,13 +275,13 @@ buildKeoGraph_() const
   const Epetra_Map &noMap = *mesh_->getComplexNonOverlapMap();
   Epetra_FECrsGraph keoGraph(Copy, noMap, 0);
 
-  const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity, 2> > edges =
+  const Teuchos::Array<edge> edges =
     mesh_->getEdgeNodes();
   if (!globalIndexCacheUpToDate_)
     this->buildGlobalIndexCache_(edges);
 
   // Loop over all edges and put entries wherever two nodes are connected.
-  for (Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity, 2> >::size_type k = 0;
+  for (Teuchos::Array<edge>::size_type k = 0;
        k < edges.size();
        k++)
     TEUCHOS_ASSERT_EQUALITY(
@@ -361,8 +361,7 @@ fillKeo_(Epetra_FECrsMatrix &keoMatrix,
   TEUCHOS_ASSERT(!mvp_.is_null());
 #endif
 
-  const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity, 2> > edges =
-    mesh_->getEdgeNodes();
+  const Teuchos::Array<edge> edges = mesh_->getEdgeNodes();
   if (!globalIndexCacheUpToDate_)
     this->buildGlobalIndexCache_(edges);
   if (!alphaCacheUpToDate_)
@@ -371,7 +370,7 @@ fillKeo_(Epetra_FECrsMatrix &keoMatrix,
   double v[3];
   Epetra_SerialDenseMatrix A(4, 4);
   // Loop over all edges.
-  for (Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity, 2> >::size_type k = 0;
+  for (Teuchos::Array<edge>::size_type k = 0;
        k < edges.size();
        k++) {
     // ---------------------------------------------------------------
@@ -431,18 +430,18 @@ fillKeo_(Epetra_FECrsMatrix &keoMatrix,
 void
 Keo::
 buildGlobalIndexCache_(
-    const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity, 2> > &edges
+    const Teuchos::Array<edge> &edges
     ) const
 {
   globalIndexCache_ =
     Teuchos::ArrayRCP<Epetra_IntSerialDenseVector>(edges.size());
 
   Teuchos::Tuple<int, 2> gid;
-  for (Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity, 2> >::size_type k = 0;
+  for (Teuchos::Array<edge>::size_type k = 0;
        k < edges.size();
        k++) {
-    gid[0] = edges[k][0]->identifier() - 1;
-    gid[1] = edges[k][1]->identifier() - 1;
+    gid[0] = mesh_->bulkData->identifier(std::get<0>(edges[k])) - 1;
+    gid[1] = mesh_->bulkData->identifier(std::get<1>(edges[k])) - 1;
 
     globalIndexCache_[k] = Epetra_IntSerialDenseVector(4);
     globalIndexCache_[k][0] = 2 * gid[0];
@@ -459,7 +458,7 @@ buildGlobalIndexCache_(
 void
 Keo::
 buildAlphaCache_(
-    const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity, 2> > & edges,
+    const Teuchos::Array<edge> & edges,
     const Teuchos::ArrayRCP<const double> &edgeCoefficients
     ) const
 {
@@ -492,12 +491,12 @@ buildAlphaCache_(
 
   Teuchos::Tuple<int, 2> gid;
   Teuchos::Tuple<int, 2> lid;
-  for (Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity, 2> >::size_type k = 0;
+  for (Teuchos::Array<edge>::size_type k = 0;
        k < edges.size();
        k++) {
     // Get the ID of the edge endpoints in the map of
     // getV(). Well...
-    gid[0] = edges[k][0]->identifier() - 1;
+    gid[0] = mesh_->bulkData->identifier(std::get<0>(edges[k])) - 1;
     lid[0] = overlapMap->LID(gid[0]);
 #ifndef NDEBUG
     TEUCHOS_TEST_FOR_EXCEPT_MSG(
@@ -506,7 +505,7 @@ buildAlphaCache_(
         << " does not seem to be present on this node."
        );
 #endif
-    gid[1] = edges[k][1]->identifier() - 1;
+    gid[1] = mesh_->bulkData->identifier(std::get<1>(edges[k])) - 1;
     lid[1] = overlapMap->LID(gid[1]);
 #ifndef NDEBUG
     TEUCHOS_TEST_FOR_EXCEPT_MSG(

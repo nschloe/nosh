@@ -175,6 +175,9 @@ public:
   getScalarFieldNonconst(stk::mesh::Entity nodeEntity,
                          const std::string & fieldName
                         ) const;
+public:
+
+  const Teuchos::RCP<const stk::mesh::BulkData> bulkData;
 
 protected:
 private:
@@ -186,8 +189,6 @@ private:
 #endif
 
   const Epetra_Comm &comm_;
-
-  const Teuchos::RCP<const stk::mesh::BulkData> bulkData_;
 
   const std::vector<stk::mesh::Entity> ownedNodes_;
 

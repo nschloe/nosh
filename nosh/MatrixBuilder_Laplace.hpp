@@ -22,19 +22,21 @@
 
 #include <map>
 #include <string>
+#include <tuple>
 
 #include <Epetra_Operator.h>
 #include <Teuchos_RCP.hpp>
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
 #include <Teuchos_Time.hpp>
 #endif
-#include <Teuchos_Tuple.hpp>
 #include <Teuchos_Array.hpp>
 #include <Epetra_FECrsGraph.h>
 
 #include <stk_mesh/base/Entity.hpp>
 
 #include "nosh/MatrixBuilder_Virtual.hpp"
+
+typedef std::tuple<stk::mesh::Entity, stk::mesh::Entity> edge;
 
 // forward declarations
 namespace Nosh
@@ -104,12 +106,12 @@ private:
 
   void
   buildGlobalIndexCache_(
-      const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity, 2> > &edges
+      const Teuchos::Array<edge> &edges
       ) const;
 
   void
   buildAlphaCache_(
-      const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity, 2> > & edges,
+      const Teuchos::Array<edge> & edges,
       const Teuchos::ArrayRCP<const double> &edgeCoefficients
       ) const;
 
