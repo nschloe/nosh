@@ -37,6 +37,8 @@
 #include <Teuchos_TimeMonitor.hpp>
 #endif
 
+typedef Teuchos::Tuple<stk::mesh::Entity, 2> edge;
+
 namespace Nosh
 {
 namespace MatrixBuilder
@@ -214,13 +216,12 @@ buildGraph_() const
   const Epetra_Map &noMap = *mesh_->getComplexNonOverlapMap();
   Epetra_FECrsGraph graph(Copy, noMap, 0);
 
-  const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity, 2> > edges =
-    mesh_->getEdgeNodes();
+  const Teuchos::Array<edge> edges = mesh_->getEdgeNodes();
   if (!globalIndexCacheUpToDate_)
     this->buildGlobalIndexCache_(edges);
 
   // Loop over all edges and put entries wherever two nodes are connected.
-  for (Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity, 2> >::size_type k = 0;
+  for (Teuchos::Array<edge>::size_type k = 0;
        k < edges.size();
        k++)
     TEUCHOS_ASSERT_EQUALITY(
@@ -258,8 +259,7 @@ fill_(Epetra_FECrsMatrix &matrix) const
   TEUCHOS_ASSERT(!thickness_.is_null());
 #endif
 
-  const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity, 2> > edges =
-    mesh_->getEdgeNodes();
+  const Teuchos::Array<edge> edges = mesh_->getEdgeNodes();
   if (!globalIndexCacheUpToDate_)
     this->buildGlobalIndexCache_(edges);
   if (!alphaCacheUpToDate_)
@@ -267,7 +267,7 @@ fill_(Epetra_FECrsMatrix &matrix) const
 
   Epetra_SerialDenseMatrix A(4, 4);
   // Loop over all edges.
-  for (Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity, 2> >::size_type k = 0;
+  for (Teuchos::Array<edge>::size_type k = 0;
        k < edges.size();
        k++) {
     // We'd like to insert the 2x2 matrix
@@ -309,13 +309,13 @@ fill_(Epetra_FECrsMatrix &matrix) const
 // =============================================================================
 void
 Laplace::
-buildGlobalIndexCache_(const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity, 2> > &edges) const
+buildGlobalIndexCache_(const Teuchos::Array<edge> &edges) const
 {
   globalIndexCache_ =
     Teuchos::ArrayRCP<Epetra_IntSerialDenseVector>(edges.size());
 
   Teuchos::Tuple<int, 2> gid;
-  for (Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity, 2> >::size_type k = 0;
+  for (Teuchos::Array<edge>::size_type k = 0;
        k < edges.size();
        k++) {
     gid[0] = edges[k][0]->identifier() - 1;
@@ -335,9 +335,10 @@ buildGlobalIndexCache_(const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity, 2>
 // =============================================================================
 void
 Laplace::
-buildAlphaCache_(const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity, 2> > & edges,
-                  const Teuchos::ArrayRCP<const double> &edgeCoefficients
-               ) const
+buildAlphaCache_(
+    const Teuchos::Array<edge> & edges,
+    const Teuchos::ArrayRCP<const double> &edgeCoefficients
+    ) const
 {
   alphaCache_ = Teuchos::ArrayRCP<double>(edges.size());
 
@@ -346,22 +347,26 @@ buildAlphaCache_(const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity, 2> > & e
 
   Teuchos::Tuple<int, 2> gid;
   Teuchos::Tuple<int, 2> lid;
-  for (Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity, 2> >::size_type k = 0;
+  for (Teuchos::Array<edge>::size_type k = 0;
        k < edges.size();
        k++) {
     gid[0] = edges[k][0]->identifier() - 1;
     lid[0] = mesh_->getNodesOverlapMap()->LID(gid[0]);
 #ifndef NDEBUG
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(lid[0] < 0,
-                                 "The global index " << gid[0]
-                                 << " does not seem to be present on this node.");
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(
+        lid[0] < 0,
+        "The global index " << gid[0]
+        << " does not seem to be present on this node."
+        );
 #endif
     gid[1] = edges[k][1]->identifier() - 1;
     lid[1] = mesh_->getNodesOverlapMap()->LID(gid[1]);
 #ifndef NDEBUG
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(lid[1] < 0,
-                                "The global index " << gid[1]
-                                << " does not seem to be present on this node.");
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(
+        lid[1] < 0,
+        "The global index " << gid[1]
+        << " does not seem to be present on this node."
+        );
 #endif
     alphaCache_[k] = edgeCoefficients[k]
                      * 0.5 * (thicknessValues[lid[0]] + thicknessValues[lid[1]]);

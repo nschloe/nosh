@@ -77,7 +77,7 @@ public:
   StkMesh(const Epetra_Comm &comm,
           const std::string &fileName,
           const int index
-        );
+          );
 
   virtual
   ~StkMesh();
@@ -187,7 +187,7 @@ private:
 
   const Epetra_Comm &comm_;
 
-  const Teuchos::RCP<stk::mesh::BulkData> bulkData_;
+  const Teuchos::RCP<const stk::mesh::BulkData> bulkData_;
 
   const std::vector<stk::mesh::Entity> ownedNodes_;
 
