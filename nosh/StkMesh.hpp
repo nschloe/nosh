@@ -23,10 +23,11 @@
 // includes
 #include <string>
 #include <vector>
+#include <tuple>
+#include <set>
 
 #include <Epetra_Comm.h>
 #include <Teuchos_RCP.hpp>
-#include <Teuchos_Tuple.hpp>
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
 #include <Teuchos_Time.hpp>
 #endif
@@ -34,21 +35,16 @@
 #include <Teuchos_SerialDenseVector.hpp>
 
 #include <stk_mesh/base/Entity.hpp>
-#include <stk_mesh/fem/CoordinateSystems.hpp>
-#include <stk_mesh/fem/FEMMetaData.hpp>
-#include <stk_io/MeshReadWriteUtils.hpp>
+#include <stk_mesh/base/CoordinateSystems.hpp>
+#include <stk_mesh/base/MetaData.hpp>
+#include <stk_io/StkMeshIoBroker.hpp>
 // =============================================================================
 // forward declarations
-namespace stk_classic
+namespace stk
 {
 namespace mesh
 {
-class MetaData;
 class BulkData;
-}
-namespace io
-{
-class MeshData;
 }
 } // namespace stk
 class Epetra_Vector;
@@ -56,9 +52,9 @@ class Epetra_MultiVector;
 class Epetra_Map;
 // =============================================================================
 // typedefs
-typedef stk_classic::mesh::Field<double, stk_classic::mesh::Cartesian> VectorFieldType;
-typedef stk_classic::mesh::Field<double>                      ScalarFieldType;
-typedef stk_classic::mesh::Field<int>                         IntScalarFieldType;
+typedef stk::mesh::Field<double, stk::mesh::Cartesian> VectorFieldType;
+typedef stk::mesh::Field<double>                      ScalarFieldType;
+typedef stk::mesh::Field<int>                         IntScalarFieldType;
 typedef Teuchos::SerialDenseVector<int, double>        DoubleVector;
 typedef Teuchos::SerialDenseVector<int, const double>  ConstDoubleVector;
 // =============================================================================
@@ -68,17 +64,11 @@ namespace Nosh
 class StkMesh
 {
 private:
-// Keep bulkData a pointer since its copy constructor is private; this causes
-// issues when trying to copy (or initialize) MeshDataContainer.
-  struct MeshDataContainer {
-    stk_classic::mesh::fem::FEMMetaData metaData;
-    Teuchos::RCP<stk_classic::io::MeshData> meshData;
-    Teuchos::RCP<stk_classic::mesh::BulkData> bulkData;
-  };
-
+  // Keep bulkData a pointer since its copy constructor is private; this causes
+  // issues when trying to copy (or initialize) MeshDataContainer.
   struct EdgesContainer {
     //! Local edge ID -> Global node IDs.
-    Teuchos::Array<Teuchos::Tuple<stk_classic::mesh::Entity*, 2> > edgeNodes;
+    Teuchos::Array<std::tuple<stk::mesh::Entity, stk::mesh::Entity> > edgeNodes;
     //! Local cell ID -> Local edge IDs.
     Teuchos::ArrayRCP<Teuchos::ArrayRCP<int> > cellEdges;
   };
@@ -92,11 +82,11 @@ public:
   virtual
   ~StkMesh();
 
-  MeshDataContainer
+  Teuchos::RCP<stk::mesh::BulkData>
   read(const Epetra_Comm &comm,
        const std::string &fileName,
        const int index
-     );
+       );
 
   double
   getTime() const;
@@ -140,23 +130,23 @@ public:
   Teuchos::ArrayRCP<double>
   getEdgeCoefficients() const;
 
-  std::vector<stk_classic::mesh::Entity*>
+  std::vector<stk::mesh::Entity>
   getOwnedCells() const;
 
-  std::vector<stk_classic::mesh::Entity*>
+  std::vector<stk::mesh::Entity>
   getOverlapEdges() const;
 
-  const Teuchos::Array<Teuchos::Tuple<stk_classic::mesh::Entity*, 2> >
+  const Teuchos::Array<std::tuple<stk::mesh::Entity, stk::mesh::Entity> >
   getEdgeNodes() const;
 
-  std::vector<stk_classic::mesh::Entity*>
+  std::vector<stk::mesh::Entity>
   getOwnedNodes() const;
 
-  std::vector<stk_classic::mesh::Entity*>
+  std::vector<stk::mesh::Entity>
   getOverlapNodes() const;
 
 //const DoubleVector
-//getNodeCoordinatesNonconst(const stk_classic::mesh::Entity * nodeEntity) const;
+//getNodeCoordinatesNonconst(stk::mesh::Entity nodeEntity) const;
 
   Teuchos::RCP<const Epetra_Map>
   getNodesMap() const;
@@ -177,12 +167,12 @@ public:
   getNumEdgesPerCell(unsigned int cellDimension) const;
 
   const DoubleVector
-  getVectorFieldNonconst(const stk_classic::mesh::Entity * nodeEntity,
+  getVectorFieldNonconst(stk::mesh::Entity nodeEntity,
                          const std::string & fieldName,
                          const int numDims
                         ) const;
   double
-  getScalarFieldNonconst(const stk_classic::mesh::Entity * nodeEntity,
+  getScalarFieldNonconst(stk::mesh::Entity nodeEntity,
                          const std::string & fieldName
                         ) const;
 
@@ -197,9 +187,9 @@ private:
 
   const Epetra_Comm &comm_;
 
-  MeshDataContainer meshDataContainer_;
+  const Teuchos::RCP<stk::mesh::BulkData> bulkData_;
 
-  const std::vector<stk_classic::mesh::Entity*> ownedNodes_;
+  const std::vector<stk::mesh::Entity> ownedNodes_;
 
   const Teuchos::RCP<const Epetra_Map> nodesMap_;
   const Teuchos::RCP<const Epetra_Map> nodesOverlapMap_;
@@ -212,9 +202,13 @@ private:
 
   const Teuchos::ArrayRCP<double> edgeCoefficients_;
 
-  bool outputChannelIsOpen_;
+  int outputChannel_;
 
   double time_;
+
+  // Apparently, process_output_request is not const. Make
+  // the ioBroker_ mutable to our write() can be const.
+  mutable stk::io::StkMeshIoBroker ioBroker_;
 
 private:
   void
@@ -240,11 +234,11 @@ private:
                 const int numComponents
                ) const;
 
-  std::vector<stk_classic::mesh::Entity*>
+  std::vector<stk::mesh::Entity>
   buildOwnedNodes_() const;
 
 //Teuchos::ArrayRCP<const DoubleVector>
-//getNodeCoordinates_(const stk_classic::mesh::PairIterRelation &relation) const;
+//getNodeCoordinates_(const stk::mesh::PairIterRelation &relation) const;
 
   Teuchos::ArrayRCP<double>
   computeEdgeCoefficients_() const;
@@ -254,10 +248,10 @@ private:
   computeControlVolumes_() const;
 
   Teuchos::RCP<const Epetra_Map>
-  createEntitiesMap_(const std::vector<stk_classic::mesh::Entity*> &entityList) const;
+  createEntitiesMap_(const std::vector<stk::mesh::Entity> &entityList) const;
 
   Teuchos::RCP<const Epetra_Map>
-  createComplexMap_(const std::vector<stk_classic::mesh::Entity*> &nodeList) const;
+  createComplexMap_(const std::vector<stk::mesh::Entity> &nodeList) const;
 
   double
   computeCovolume2d_(const DoubleVector &cc,
@@ -274,7 +268,10 @@ private:
                      const DoubleVector &other1
                     ) const;
 
-  Teuchos::Tuple<unsigned int, 2>
+  unsigned int
+  getOtherIndex_(unsigned int e0, unsigned int e1) const;
+
+  std::set<unsigned int>
   getOtherIndices_(unsigned int e0, unsigned int e1) const;
 
   DoubleVector

@@ -275,13 +275,13 @@ buildKeoGraph_() const
   const Epetra_Map &noMap = *mesh_->getComplexNonOverlapMap();
   Epetra_FECrsGraph keoGraph(Copy, noMap, 0);
 
-  const Teuchos::Array<Teuchos::Tuple<stk_classic::mesh::Entity*, 2> > edges =
+  const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity, 2> > edges =
     mesh_->getEdgeNodes();
   if (!globalIndexCacheUpToDate_)
     this->buildGlobalIndexCache_(edges);
 
   // Loop over all edges and put entries wherever two nodes are connected.
-  for (Teuchos::Array<Teuchos::Tuple<stk_classic::mesh::Entity*, 2> >::size_type k = 0;
+  for (Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity, 2> >::size_type k = 0;
        k < edges.size();
        k++)
     TEUCHOS_ASSERT_EQUALITY(
@@ -361,7 +361,7 @@ fillKeo_(Epetra_FECrsMatrix &keoMatrix,
   TEUCHOS_ASSERT(!mvp_.is_null());
 #endif
 
-  const Teuchos::Array<Teuchos::Tuple<stk_classic::mesh::Entity*, 2> > edges =
+  const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity, 2> > edges =
     mesh_->getEdgeNodes();
   if (!globalIndexCacheUpToDate_)
     this->buildGlobalIndexCache_(edges);
@@ -371,7 +371,7 @@ fillKeo_(Epetra_FECrsMatrix &keoMatrix,
   double v[3];
   Epetra_SerialDenseMatrix A(4, 4);
   // Loop over all edges.
-  for (Teuchos::Array<Teuchos::Tuple<stk_classic::mesh::Entity*, 2> >::size_type k = 0;
+  for (Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity, 2> >::size_type k = 0;
        k < edges.size();
        k++) {
     // ---------------------------------------------------------------
@@ -431,14 +431,14 @@ fillKeo_(Epetra_FECrsMatrix &keoMatrix,
 void
 Keo::
 buildGlobalIndexCache_(
-    const Teuchos::Array<Teuchos::Tuple<stk_classic::mesh::Entity*, 2> > &edges
+    const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity, 2> > &edges
     ) const
 {
   globalIndexCache_ =
     Teuchos::ArrayRCP<Epetra_IntSerialDenseVector>(edges.size());
 
   Teuchos::Tuple<int, 2> gid;
-  for (Teuchos::Array<Teuchos::Tuple<stk_classic::mesh::Entity*, 2> >::size_type k = 0;
+  for (Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity, 2> >::size_type k = 0;
        k < edges.size();
        k++) {
     gid[0] = edges[k][0]->identifier() - 1;
@@ -459,7 +459,7 @@ buildGlobalIndexCache_(
 void
 Keo::
 buildAlphaCache_(
-    const Teuchos::Array<Teuchos::Tuple<stk_classic::mesh::Entity*, 2> > & edges,
+    const Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity, 2> > & edges,
     const Teuchos::ArrayRCP<const double> &edgeCoefficients
     ) const
 {
@@ -492,7 +492,7 @@ buildAlphaCache_(
 
   Teuchos::Tuple<int, 2> gid;
   Teuchos::Tuple<int, 2> lid;
-  for (Teuchos::Array<Teuchos::Tuple<stk_classic::mesh::Entity*, 2> >::size_type k = 0;
+  for (Teuchos::Array<Teuchos::Tuple<stk::mesh::Entity, 2> >::size_type k = 0;
        k < edges.size();
        k++) {
     // Get the ID of the edge endpoints in the map of

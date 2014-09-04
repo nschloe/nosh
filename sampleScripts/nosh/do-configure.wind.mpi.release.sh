@@ -4,8 +4,9 @@ CMAKE_PREFIX_PATH=/opt/trilinos/private/:$CMAKE_PREFIX_PATH \
 CXX=mpicxx \
 FC=mpif90 \
 cmake \
-    -DCMAKE_SHARED_LINKER_FLAGS:STRING="-Wl,--no-undefined" \
-    -DCMAKE_INSTALL_PREFIX:PATH=/opt/nosh/dev/ \
-    -DCMAKE_BUILD_TYPE:STRING=Release \
-    -DBUILD_SHARED_LIBS:BOOL=TRUE \
-    ../../source
+  -DCMAKE_SHARED_LINKER_FLAGS:STRING="-Wl,--no-undefined" \
+  -DCMAKE_INSTALL_PREFIX:PATH=/opt/nosh/dev/ \
+  -DCMAKE_BUILD_TYPE:STRING=Release \
+  -DBUILD_SHARED_LIBS:BOOL=TRUE \
+  ../../source
+#  -DENABLE_GCOV:BOOL=TRUE \

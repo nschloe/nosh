@@ -40,25 +40,37 @@ ExplicitValues(const Nosh::StkMesh & mesh,
   initMu_(initMu),
   edgeProjectionCache_(mesh.getEdgeNodes().size())
 {
+  typedef std::tuple<stk::mesh::Entity,stk::mesh::Entity> edge;
   // Initialize the cache.
-  const Teuchos::Array<Teuchos::Tuple<stk_classic::mesh::Entity*, 2> > edges =
-    mesh.getEdgeNodes();
+  const Teuchos::Array<edge> edges = mesh.getEdgeNodes();
 
   // Loop over all edges and create the cache.
-  for (Teuchos::Array<Teuchos::Tuple<stk_classic::mesh::Entity*, 2> >::size_type k = 0;
+  for (Teuchos::Array<edge>::size_type k = 0;
        k < edges.size();
        k++) {
     // Approximate the value at the midpoint of the edge
     // by the average of the values at the adjacent nodes.
-    DoubleVector av = mesh.getVectorFieldNonconst(edges[k][0], fieldName, 3);
-    av += mesh.getVectorFieldNonconst(edges[k][1], fieldName, 3);
+    DoubleVector av = mesh.getVectorFieldNonconst(
+        std::get<0>(edges[k]),
+        fieldName, 3
+        );
+    av += mesh.getVectorFieldNonconst(
+        std::get<1>(edges[k]),
+        fieldName, 3
+        );
     av *= 0.5;
 
     // Extract the nodal coordinates.
     DoubleVector edge =
-      mesh.getVectorFieldNonconst(edges[k][1], "coordinates", 3);
+      mesh.getVectorFieldNonconst(
+          std::get<1>(edges[k]),
+          "coordinates", 3
+          );
     edge -=
-      mesh.getVectorFieldNonconst(edges[k][0], "coordinates", 3);
+      mesh.getVectorFieldNonconst(
+          std::get<0>(edges[k]),
+          "coordinates", 3
+          );
 
     edgeProjectionCache_[k] = av.dot(edge);
   }
