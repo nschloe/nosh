@@ -109,7 +109,7 @@ StkMesh(const Epetra_Comm & comm,
   writeTime_(Teuchos::TimeMonitor::getNewTimer("Nosh: StkMesh::write")),
 #endif
   comm_(comm),
-  bulkData(this->read(comm, fileName, index)),
+  bulkData(this->read_(comm, fileName, index)),
   ownedNodes_(this->buildOwnedNodes_()),
   nodesMap_(this->createEntitiesMap_(ownedNodes_)),
   nodesOverlapMap_(this->createEntitiesMap_(this->getOverlapNodes())),
@@ -149,13 +149,13 @@ StkMesh::
 // =============================================================================
 Teuchos::RCP<stk::mesh::BulkData>
 StkMesh::
-read(const Epetra_Comm &comm,
-     const std::string &fileName,
-     const int index
-     )
+read_(const Epetra_Comm &comm,
+      const std::string &fileName,
+      const int index
+      )
 {
   stk::mesh::MetaData metaData(numDim_);
-  Teuchos::RCP<stk::mesh::BulkData> bulkData =
+  Teuchos::RCP<stk::mesh::BulkData> myBulkData =
   Teuchos::rcp(
       new stk::mesh::BulkData(
         metaData,
@@ -183,7 +183,7 @@ read(const Epetra_Comm &comm,
 
   // If the file is serial, read it with process 0 and embed it
   // in the multiproc context. Load balancing is done later anyways.
-  MPI_Comm readerComm = bulkData->parallel();
+  MPI_Comm readerComm = myBulkData->parallel();
 #ifdef HAVE_MPI
   bool fileIsSerial = fileName.substr(fileName.find_last_of(".") + 1) == "e";
   if (fileIsSerial && comm.NumProc() > 1) {
@@ -387,7 +387,7 @@ read(const Epetra_Comm &comm,
     //for(std::size_t i = 0; i < exo_fld_names.size(); i++)
     //  std::cout << "Found field \"" << exo_fld_names[i] << "\" in exodus file" << std::endl;
 
-    bulkData->modification_end();
+    myBulkData->modification_end();
 //#ifdef HAVE_MPI
 //  }
 
@@ -429,7 +429,7 @@ read(const Epetra_Comm &comm,
   //time_ = meshData->m_input_region->get_state_time(index+1);
   time_ = 0.0;
 
-  return bulkData;
+  return myBulkData;
 }
 // =============================================================================
 double
@@ -573,14 +573,14 @@ openOutputChannel(const std::string &outputDir,
                   const std::string &fileBaseName
                 )
 {
-  // prepare the data for output
-#ifdef HAVE_MPI
-  const Epetra_MpiComm &mpicomm =
-    Teuchos::dyn_cast<const Epetra_MpiComm>(comm_);
-  MPI_Comm mcomm = mpicomm.Comm();
-#else
-  const int mcomm = 1;
-#endif
+//  // prepare the data for output
+//#ifdef HAVE_MPI
+//  const Epetra_MpiComm &mpicomm =
+//    Teuchos::dyn_cast<const Epetra_MpiComm>(comm_);
+//  MPI_Comm mcomm = mpicomm.Comm();
+//#else
+//  const int mcomm = 1;
+//#endif
   const std::string extension = ".e";
 
   // Make sure the outputDir ends in "/".
@@ -618,7 +618,7 @@ write(const Epetra_Vector & psi,
 
   // Write it out to the file that's been specified in mesh_.
   // The methods returns the output step (but we ignore it).
-  int out_step = ioBroker_.process_output_request(
+  (void) ioBroker_.process_output_request(
       outputChannel_,
       time
       );
@@ -1361,11 +1361,11 @@ computeCovolume2d_(const DoubleVector &cc,
   // To this end, make sure that the order (x0, cc, mp) is of the same
   // orientation as (x0, other0, mp).
   DoubleVector cellNormal = this->cross_(this->add_(1.0, other0, -1.0, x0),
-                                          this->add_(1.0, mp,     -1.0, x0)
-                                       );
+                                         this->add_(1.0, mp,     -1.0, x0)
+                                         );
   DoubleVector ccNormal = this->cross_(this->add_(1.0, cc, -1.0, x0),
-                                        this->add_(1.0, mp, -1.0, x0)
-                                     );
+                                       this->add_(1.0, mp, -1.0, x0)
+                                       );
 
   // copysign takes the absolute value of the first argument and the sign of the second.
   return copysign(coedgeLength, this->dot_(ccNormal, cellNormal));
@@ -1440,7 +1440,7 @@ StkMesh::
 getOtherIndex_(unsigned int e0, unsigned int e1) const
 {
 #ifndef NDEBUG
-  TEUCHOS_ASSERT_INEQUALITY(e0, e1);
+  TEUCHOS_ASSERT_INEQUALITY(e0, !=, e1);
 #endif
 
   // Get the index in [0,1,2] which is not e0, e1.
@@ -1462,7 +1462,7 @@ StkMesh::
 getOtherIndices_(unsigned int e0, unsigned int e1) const
 {
 #ifndef NDEBUG
-  TEUCHOS_ASSERT_INEQUALITY(e0, e1);
+  TEUCHOS_ASSERT_INEQUALITY(e0, !=, e1);
 #endif
   // Get the two indices in [0,1,2,3] which are not e0, e1.
   int myint[] = {0, 1, 2, 3};

@@ -82,12 +82,6 @@ public:
   virtual
   ~StkMesh();
 
-  Teuchos::RCP<stk::mesh::BulkData>
-  read(const Epetra_Comm &comm,
-       const std::string &fileName,
-       const int index
-       );
-
   double
   getTime() const;
 
@@ -175,9 +169,6 @@ public:
   getScalarFieldNonconst(stk::mesh::Entity nodeEntity,
                          const std::string & fieldName
                         ) const;
-public:
-
-  const Teuchos::RCP<const stk::mesh::BulkData> bulkData;
 
 protected:
 private:
@@ -190,6 +181,10 @@ private:
 
   const Epetra_Comm &comm_;
 
+public:
+  const Teuchos::RCP<const stk::mesh::BulkData> bulkData;
+
+private:
   const std::vector<stk::mesh::Entity> ownedNodes_;
 
   const Teuchos::RCP<const Epetra_Map> nodesMap_;
@@ -208,10 +203,16 @@ private:
   double time_;
 
   // Apparently, process_output_request is not const. Make
-  // the ioBroker_ mutable to our write() can be const.
+  // the ioBroker_ mutable so our write() can be const.
   mutable stk::io::StkMeshIoBroker ioBroker_;
 
 private:
+  Teuchos::RCP<stk::mesh::BulkData>
+  read_(const Epetra_Comm &comm,
+        const std::string &fileName,
+        const int index
+        );
+
   void
   computeControlVolumesTri_(
       const Teuchos::RCP<Epetra_Vector> & cvOverlap

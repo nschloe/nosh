@@ -61,18 +61,18 @@ ExplicitValues(const Nosh::StkMesh & mesh,
     av *= 0.5;
 
     // Extract the nodal coordinates.
-    DoubleVector edge =
+    DoubleVector myEdge =
       mesh.getVectorFieldNonconst(
           std::get<1>(edges[k]),
           "coordinates", 3
           );
-    edge -=
+    myEdge -=
       mesh.getVectorFieldNonconst(
           std::get<0>(edges[k]),
           "coordinates", 3
           );
 
-    edgeProjectionCache_[k] = av.dot(edge);
+    edgeProjectionCache_[k] = av.dot(myEdge);
   }
 
   // Do a quick sanity check for the edgeProjectionCache_.
