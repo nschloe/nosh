@@ -257,7 +257,7 @@ read_(const Epetra_Comm &comm,
         "coordinates"
         );
   stk::mesh::put_field(coordinatesField,
-                       metaData.universal_part(),
+                       ibMetaData.universal_part(),
                        numDim_);
   stk::io::set_field_role(coordinatesField,
                           Ioss::Field::MESH);
@@ -268,7 +268,7 @@ read_(const Epetra_Comm &comm,
         "proc_rank"
         );
   stk::mesh::put_field(procRankField,
-                       metaData.universal_part()
+                       ibMetaData.universal_part()
                        );
   stk::io::set_field_role(procRankField,
                           Ioss::Field::MESH);
@@ -280,7 +280,7 @@ read_(const Epetra_Comm &comm,
         "psi_R"
         );
   stk::mesh::put_field(psir_field,
-                       metaData.universal_part());
+                       ibMetaData.universal_part());
   stk::io::set_field_role(psir_field,
                           Ioss::Field::TRANSIENT);
 
@@ -291,7 +291,7 @@ read_(const Epetra_Comm &comm,
         "psi_Z"
         );
   stk::mesh::put_field(psii_field,
-                       metaData.universal_part());
+                       ibMetaData.universal_part());
   stk::io::set_field_role(psii_field,
                           Ioss::Field::TRANSIENT);
 
@@ -310,7 +310,7 @@ read_(const Epetra_Comm &comm,
         "A"
         );
   stk::mesh::put_field(mvpField,
-                       metaData.universal_part(),
+                       ibMetaData.universal_part(),
                        numDim_);
   stk::io::set_field_role(mvpField,
                           Ioss::Field::ATTRIBUTE);
@@ -333,7 +333,7 @@ read_(const Epetra_Comm &comm,
         "thickness"
         );
   stk::mesh::put_field(thicknessField,
-                       metaData.universal_part(),
+                       ibMetaData.universal_part(),
                        1);
   stk::io::set_field_role(thicknessField, Ioss::Field::ATTRIBUTE);
 
@@ -344,7 +344,7 @@ read_(const Epetra_Comm &comm,
         "V"
         );
   stk::mesh::put_field(potentialField,
-                       metaData.universal_part(),
+                       ibMetaData.universal_part(),
                        1);
   stk::io::set_field_role(potentialField, Ioss::Field::ATTRIBUTE);
   // ---------------------------------------------------------------------------
@@ -1145,6 +1145,7 @@ computeControlVolumes_() const
 #ifndef NDEBUG
   TEUCHOS_ASSERT(!nodesMap_.is_null());
   TEUCHOS_ASSERT(!nodesOverlapMap_.is_null());
+  TEUCHOS_ASSERT(!this->bulkData.is_null());
 #endif
 
   Teuchos::RCP<Epetra_Vector> controlVolumes =
@@ -1155,10 +1156,14 @@ computeControlVolumes_() const
   Teuchos::RCP<Epetra_Vector> cvOverlap =
     Teuchos::rcp(new Epetra_Vector(*nodesOverlapMap_));
 
-  // Determine the kind of mesh by the first cell.
+  // Determine the kind of mesh by the first cell on the first
+  // process
   int nodesPerCell;
   if (comm_.MyPID() == 0) {
     std::vector<stk::mesh::Entity> cells = this->getOwnedCells();
+#ifndef NDEBUG
+    TEUCHOS_ASSERT_INEQUALITY(cells.size(), >, 0);
+#endif
     nodesPerCell = this->bulkData->num_nodes(cells[0]);
   }
   comm_.Broadcast(&nodesPerCell, 1, 0);
