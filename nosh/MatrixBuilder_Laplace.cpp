@@ -318,8 +318,8 @@ buildGlobalIndexCache_(const Teuchos::Array<edge> &edges) const
   for (Teuchos::Array<edge>::size_type k = 0;
        k < edges.size();
        k++) {
-    gid[0] = mesh_->bulkData->identifier(std::get<0>(edges[k])) - 1;
-    gid[1] = mesh_->bulkData->identifier(std::get<1>(edges[k])) - 1;
+    gid[0] = mesh_->gid(std::get<0>(edges[k]));
+    gid[1] = mesh_->gid(std::get<1>(edges[k]));
 
     globalIndexCache_[k] = Epetra_IntSerialDenseVector(4);
     globalIndexCache_[k][0] = 2*gid[0];
@@ -350,7 +350,7 @@ buildAlphaCache_(
   for (Teuchos::Array<edge>::size_type k = 0;
        k < edges.size();
        k++) {
-    gid[0] = mesh_->bulkData->identifier(std::get<0>(edges[k])) - 1;
+    gid[0] = mesh_->gid(std::get<0>(edges[k]));
     lid[0] = mesh_->getNodesOverlapMap()->LID(gid[0]);
 #ifndef NDEBUG
     TEUCHOS_TEST_FOR_EXCEPT_MSG(
@@ -359,7 +359,7 @@ buildAlphaCache_(
         << " does not seem to be present on this node."
         );
 #endif
-    gid[1] = mesh_->bulkData->identifier(std::get<1>(edges[k])) - 1;
+    gid[1] = mesh_->gid(std::get<1>(edges[k]));
     lid[1] = mesh_->getNodesOverlapMap()->LID(gid[1]);
 #ifndef NDEBUG
     TEUCHOS_TEST_FOR_EXCEPT_MSG(

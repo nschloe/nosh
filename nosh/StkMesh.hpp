@@ -170,6 +170,9 @@ public:
                          const std::string & fieldName
                         ) const;
 
+  uint64_t
+  gid(const stk::mesh::Entity e) const;
+
 protected:
 private:
   const int numDim_;
@@ -181,10 +184,9 @@ private:
 
   const Epetra_Comm &comm_;
 
-public:
-  const Teuchos::RCP<const stk::mesh::BulkData> bulkData;
+  stk::mesh::MetaData metaData_;
+  const Teuchos::RCP<const stk::mesh::BulkData> bulkData_;
 
-private:
   const std::vector<stk::mesh::Entity> ownedNodes_;
 
   const Teuchos::RCP<const Epetra_Map> nodesMap_;
@@ -207,9 +209,11 @@ private:
   mutable stk::io::StkMeshIoBroker ioBroker_;
 
 private:
+
+  MPI_Comm epetraComm2mpiComm(const Epetra_Comm& ec);
+
   Teuchos::RCP<stk::mesh::BulkData>
-  read_(const Epetra_Comm &comm,
-        const std::string &fileName,
+  read_(const std::string &fileName,
         const int index
         );
 
@@ -237,7 +241,7 @@ private:
                ) const;
 
   std::vector<stk::mesh::Entity>
-  buildOwnedNodes_() const;
+  buildOwnedNodes_(const stk::mesh::BulkData & myBulkData) const;
 
 //Teuchos::ArrayRCP<const DoubleVector>
 //getNodeCoordinates_(const stk::mesh::PairIterRelation &relation) const;
