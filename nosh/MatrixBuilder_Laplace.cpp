@@ -47,7 +47,7 @@ namespace MatrixBuilder
 Laplace::
 Laplace(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
         const Teuchos::RCP<const Nosh::ScalarField::Virtual> &thickness
-     ) :
+        ) :
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   fillTime_(Teuchos::TimeMonitor::getNewTimer(
                "Nosh: Laplace::fill_")),
@@ -127,7 +127,7 @@ void
 Laplace::
 fill(Epetra_FECrsMatrix &matrix,
      const std::map<std::string, double> &params
-  ) const
+     ) const
 {
   (void) params;
   // Cache the construction of the Laplacian.

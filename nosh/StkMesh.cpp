@@ -71,30 +71,6 @@
 namespace Nosh
 {
 // =============================================================================
-//class EntityComp
-//{
-//public:
-//  EntityComp(const stk::mesh::BulkData & bd):
-//    bd_(bd)
-//  {
-//  }
-//
-//  ~EntityComp()
-//  {
-//  }
-//
-//  bool
-//  operator()(stk::mesh::Entity a,
-//             stk::mesh::Entity b
-//             ) const
-//  {
-//    return this->bd_.identifier(a) < this->bd_.identifier(b);
-//  }
-//
-//private:
-//  const stk::mesh::BulkData bd_;
-//};
-// =============================================================================
 StkMesh::
 StkMesh(const Epetra_Comm & comm,
         const std::string & fileName,
@@ -145,7 +121,6 @@ read_(const std::string &fileName,
       const int index
       )
 {
-  const int numDim = 3;
   //Teuchos::RCP<stk::mesh::BulkData> myBulkData =
   //  Teuchos::rcp(
   //    new stk::mesh::BulkData(
@@ -425,12 +400,10 @@ read_(const std::string &fileName,
 //#endif
 
   // Extract time value.
-  // TODO extract time value
-  //time_ = meshData->m_input_region->get_state_time(index+1);
-  time_ = 0.0;
+  time_ = ioBroker->get_input_io_region()->get_state_time(index+1);
 
-  // test
 #ifndef NDEBUG
+  // Assert that all processes own nodes
   std::vector<stk::mesh::Entity> on =
     buildOwnedNodes_(ioBroker->bulk_data());
   TEUCHOS_ASSERT_INEQUALITY(on.size(), >, 0);
@@ -665,12 +638,14 @@ createMultiVector(const std::string & fieldName) const
         stk::topology::NODE_RANK,
         fieldName
         );
-#ifndef NDEBUG
-  TEUCHOS_ASSERT(field != NULL);
-#endif
 
-  Teuchos::RCP<Epetra_MultiVector> a = this->field2vector_(*field, 3);
-  return a;
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(
+      field == NULL,
+      "Field \"" << fieldName << "\" not found in database. "
+      << "Is it present in the input file at all? Check with io_info."
+      );
+
+  return this->field2vector_(*field, 3);
 }
 // =============================================================================
 Teuchos::RCP<Epetra_Vector>
@@ -1746,11 +1721,10 @@ createEdgeData_()
     for (unsigned int k = 0; k < numLocalNodes; k++)
       nodes[k] = localNodes[k];
 
-    // Sort nodes by their global identifier. This is necessary
-    // to make sure that the tuples formed below are always sorted
-    // such they are unique keys (and {3,7}, {7,3} are recognized
-    // as the same edge).
-    //std::sort(nodes.begin(), nodes.end(), ec);
+    // Sort nodes. This is necessary to make sure that the
+    // tuples formed below are always sorted such they are
+    // unique keys (and {3,7}, {7,3} are recognized as the
+    // same edge).
     std::sort(nodes.begin(), nodes.end());
 
     // In a simplex, the edges are exactly the connection between each pair

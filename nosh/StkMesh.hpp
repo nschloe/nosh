@@ -223,7 +223,7 @@ private:
   Teuchos::RCP<Epetra_Vector>
   complexfield2vector_(const ScalarFieldType &realField,
                        const ScalarFieldType &imagField
-                     ) const;
+                       ) const;
 
   Teuchos::RCP<Epetra_Vector>
   field2vector_(const ScalarFieldType &field) const;
@@ -231,7 +231,7 @@ private:
   Teuchos::RCP<Epetra_MultiVector>
   field2vector_(const VectorFieldType &field,
                 const int numComponents
-               ) const;
+                ) const;
 
   std::vector<stk::mesh::Entity>
   buildOwnedNodes_(const stk::mesh::BulkData & myBulkData) const;
