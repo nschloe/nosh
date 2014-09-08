@@ -73,7 +73,6 @@ testKeo(const std::string & inputFileNameBase,
   psi->NormInf(&r);
   TEST_FLOATING_EQUALITY(r, psiControlNormInf, 1.0e-12);
 
-
   // Check MVP.
   // Only check the infinity-norm here as all other norms
   // only apply to vectors with non-overlapping maps.

@@ -175,8 +175,6 @@ public:
 
 protected:
 private:
-  const int numDim_;
-
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   const Teuchos::RCP<Teuchos::Time> computeEdgeCoefficientsTime_;
   const Teuchos::RCP<Teuchos::Time> writeTime_;
@@ -184,8 +182,9 @@ private:
 
   const Epetra_Comm &comm_;
 
-  stk::mesh::MetaData metaData_;
-  const Teuchos::RCP<const stk::mesh::BulkData> bulkData_;
+  // Apparently, process_output_request is not const. Make
+  // the ioBroker_ mutable so our write() can be const.
+  const Teuchos::RCP<stk::io::StkMeshIoBroker> ioBroker_;
 
   const std::vector<stk::mesh::Entity> ownedNodes_;
 
@@ -204,15 +203,9 @@ private:
 
   double time_;
 
-  // Apparently, process_output_request is not const. Make
-  // the ioBroker_ mutable so our write() can be const.
-  mutable stk::io::StkMeshIoBroker ioBroker_;
-
 private:
 
-  MPI_Comm epetraComm2mpiComm(const Epetra_Comm& ec);
-
-  Teuchos::RCP<stk::mesh::BulkData>
+  Teuchos::RCP<stk::io::StkMeshIoBroker>
   read_(const std::string &fileName,
         const int index
         );
