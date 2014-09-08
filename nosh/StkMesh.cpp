@@ -618,9 +618,12 @@ createVector(const std::string & fieldName) const
         stk::topology::NODE_RANK,
         fieldName
         );
-#ifndef NDEBUG
-  TEUCHOS_ASSERT(field != NULL);
-#endif
+
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(
+      field == NULL,
+      "Scalar field \"" << fieldName << "\" not found in database. "
+      << "Is it present in the input file at all? Check with io_info."
+      );
 
   return this->field2vector_(*field);
 }
@@ -641,10 +644,11 @@ createMultiVector(const std::string & fieldName) const
 
   TEUCHOS_TEST_FOR_EXCEPT_MSG(
       field == NULL,
-      "Field \"" << fieldName << "\" not found in database. "
+      "Vector field \"" << fieldName << "\" not found in database. "
       << "Is it present in the input file at all? Check with io_info."
       );
 
+  // TODO remove the hardcoded "3"
   return this->field2vector_(*field, 3);
 }
 // =============================================================================
@@ -652,20 +656,30 @@ Teuchos::RCP<Epetra_Vector>
 StkMesh::
 createComplexVector(const std::string & fieldName) const
 {
+#ifndef NDEBUG
+  TEUCHOS_ASSERT(!ioBroker_.is_null());
+#endif
   const ScalarFieldType * const r_field =
     ioBroker_->bulk_data().mesh_meta_data().get_field<ScalarFieldType>(
         stk::topology::NODE_RANK,
         fieldName + "_R"
         );
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(
+      r_field == NULL,
+      "Scalar field \"" << fieldName << "_R\" not found in database. "
+      << "Is it present in the input file at all? Check with io_info."
+      );
+
   const ScalarFieldType * const i_field =
     ioBroker_->bulk_data().mesh_meta_data().get_field<ScalarFieldType>(
         stk::topology::NODE_RANK,
         fieldName + "_Z"
         );
-#ifndef NDEBUG
-  TEUCHOS_ASSERT(r_field != NULL);
-  TEUCHOS_ASSERT(i_field != NULL);
-#endif
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(
+      i_field == NULL,
+      "Scalar field \"" << fieldName << "_Z\" not found in database. "
+      << "Is it present in the input file at all? Check with io_info."
+      );
 
   return this->complexfield2vector_(*r_field, *i_field);
 }
@@ -676,20 +690,30 @@ mergeComplexVector_(const Epetra_Vector & psi,
                     const std::string & fieldName
                     ) const
 {
+#ifndef NDEBUG
+  TEUCHOS_ASSERT(!ioBroker_.is_null());
+#endif
   ScalarFieldType * psir_field =
     ioBroker_->bulk_data().mesh_meta_data().get_field<ScalarFieldType>(
         stk::topology::NODE_RANK,
         fieldName + "_R"
         );
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(
+      psir_field == NULL,
+      "Scalar field \"" << fieldName << "_R\" not found in database. "
+      << "Is it present in the input file at all? Check with io_info."
+      );
+
   ScalarFieldType * psii_field =
     ioBroker_->bulk_data().mesh_meta_data().get_field<ScalarFieldType>(
         stk::topology::NODE_RANK,
         fieldName + "_Z"
         );
-#ifndef NDEBUG
-  TEUCHOS_ASSERT(psir_field != NULL);
-  TEUCHOS_ASSERT(psii_field != NULL);
-#endif
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(
+      psii_field == NULL,
+      "Scalar field \"" << fieldName << "_Z\" not found in database. "
+      << "Is it present in the input file at all? Check with io_info."
+      );
 
   // Zero out all nodal values, including the overlaps.
   const std::vector<stk::mesh::Entity> &overlapNodes = this->getOverlapNodes();
@@ -713,13 +737,10 @@ mergeComplexVector_(const Epetra_Vector & psi,
     *localPsiI = psi[2*k+1];
   }
 
-#ifndef NDEBUG
-  TEUCHOS_ASSERT(!ioBroker_.is_null());
-#endif
   // This communication updates the field values on un-owned nodes
   // it is correct because the zeroSolutionField above zeros them all
   // and the getSolutionField only sets the owned nodes.
-  // TODO combine these fields
+  // TODO combine these fields into a vector of fields
   std::vector<stk::mesh::FieldBase*> tmp(1, psir_field);
   stk::mesh::parallel_sum(ioBroker_->bulk_data(),
                           tmp);
