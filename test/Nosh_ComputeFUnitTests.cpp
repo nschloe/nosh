@@ -115,23 +115,23 @@ testComputeF(const std::string & inputFileNameBase,
   return;
 }
 // ===========================================================================
-TEUCHOS_UNIT_TEST(Nosh, ComputeFRectangleSmallHashes)
-{
-  std::string inputFileNameBase = "rectanglesmall";
-
-  double mu = 1.0e-2;
-  double controlNormOne = 0.50126061034211067;
-  double controlNormTwo = 0.24749434381636057;
-  double controlNormInf = 0.12373710977782607;
-
-  testComputeF(inputFileNameBase,
-               mu,
-               controlNormOne,
-               controlNormTwo,
-               controlNormInf,
-               out,
-               success);
-}
+//TEUCHOS_UNIT_TEST(Nosh, ComputeFRectangleSmallHashes)
+//{
+//  std::string inputFileNameBase = "rectanglesmall";
+//
+//  double mu = 1.0e-2;
+//  double controlNormOne = 0.50126061034211067;
+//  double controlNormTwo = 0.24749434381636057;
+//  double controlNormInf = 0.12373710977782607;
+//
+//  testComputeF(inputFileNameBase,
+//               mu,
+//               controlNormOne,
+//               controlNormTwo,
+//               controlNormInf,
+//               out,
+//               success);
+//}
 // ============================================================================
 TEUCHOS_UNIT_TEST(Nosh, ComputeFPacmanHashes)
 {
@@ -151,23 +151,23 @@ TEUCHOS_UNIT_TEST(Nosh, ComputeFPacmanHashes)
                success);
 }
 // ============================================================================
-TEUCHOS_UNIT_TEST(Nosh, ComputeFCubeSmallHashes)
-{
-  std::string inputFileNameBase = "cubesmall";
-
-  double mu = 1.0e-2;
-  double controlNormOne = 8.3541623156163313e-05;
-  double controlNormTwo = 2.9536515963905867e-05;
-  double controlNormInf = 1.0468744547749431e-05;
-
-  testComputeF(inputFileNameBase,
-               mu,
-               controlNormOne,
-               controlNormTwo,
-               controlNormInf,
-               out,
-               success);
-}
+//TEUCHOS_UNIT_TEST(Nosh, ComputeFCubeSmallHashes)
+//{
+//  std::string inputFileNameBase = "cubesmall";
+//
+//  double mu = 1.0e-2;
+//  double controlNormOne = 8.3541623156163313e-05;
+//  double controlNormTwo = 2.9536515963905867e-05;
+//  double controlNormInf = 1.0468744547749431e-05;
+//
+//  testComputeF(inputFileNameBase,
+//               mu,
+//               controlNormOne,
+//               controlNormTwo,
+//               controlNormInf,
+//               out,
+//               success);
+//}
 // ============================================================================
 TEUCHOS_UNIT_TEST(Nosh, ComputeFBrickWHoleHashes)
 {

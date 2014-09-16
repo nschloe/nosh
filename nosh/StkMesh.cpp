@@ -136,6 +136,11 @@ read_(const std::string &fileName,
       1
 #endif
       ));
+
+  // How to split the file for mulitproc I/O
+  ioBroker->property_add(
+      Ioss::Property("DECOMPOSITION_METHOD", "rcb")
+      );
 //#ifdef HAVE_MPI
 //  const Epetra_MpiComm &mpicomm =
 //    Teuchos::dyn_cast<const Epetra_MpiComm>(comm);

@@ -83,24 +83,24 @@ testKeo(const std::string & inputFileNameBase,
   return;
 }
 // ===========================================================================
-TEUCHOS_UNIT_TEST(Nosh, KeoRectangleSmallHashes)
-{
-  std::string inputFileNameBase = "rectanglesmall";
-
-  const double psiControlNormOne = 4.0;
-  const double psiControlNormInf = 1.0;
-  Teuchos::Array<double> mvpControlNormsInf(3);
-  mvpControlNormsInf[0] = 0.25;
-  mvpControlNormsInf[1] = 2.5;
-  mvpControlNormsInf[2] = 0.0;
-
-  testKeo(inputFileNameBase,
-          psiControlNormOne,
-          psiControlNormInf,
-          mvpControlNormsInf,
-          out,
-          success);
-}
+//TEUCHOS_UNIT_TEST(Nosh, KeoRectangleSmallHashes)
+//{
+//  std::string inputFileNameBase = "rectanglesmall";
+//
+//  const double psiControlNormOne = 4.0;
+//  const double psiControlNormInf = 1.0;
+//  Teuchos::Array<double> mvpControlNormsInf(3);
+//  mvpControlNormsInf[0] = 0.25;
+//  mvpControlNormsInf[1] = 2.5;
+//  mvpControlNormsInf[2] = 0.0;
+//
+//  testKeo(inputFileNameBase,
+//          psiControlNormOne,
+//          psiControlNormInf,
+//          mvpControlNormsInf,
+//          out,
+//          success);
+//}
 // ============================================================================
 TEUCHOS_UNIT_TEST(Nosh, KeoPacmanHashes)
 {
@@ -121,24 +121,24 @@ TEUCHOS_UNIT_TEST(Nosh, KeoPacmanHashes)
           success);
 }
 // ============================================================================
-TEUCHOS_UNIT_TEST(Nosh, KeoShellHashes)
-{
-  std::string inputFileNameBase = "shell";
-
-  const double psiControlNormOne = 5.0;
-  const double psiControlNormInf = 1.0;
-  Teuchos::Array<double> mvpControlNormsInf(3);
-  mvpControlNormsInf[0] = 0.5;
-  mvpControlNormsInf[1] = 0.5;
-  mvpControlNormsInf[2] = 0.0;
-
-  testKeo(inputFileNameBase,
-          psiControlNormOne,
-          psiControlNormInf,
-          mvpControlNormsInf,
-          out,
-          success);
-}
+//TEUCHOS_UNIT_TEST(Nosh, KeoShellHashes)
+//{
+//  std::string inputFileNameBase = "shell";
+//
+//  const double psiControlNormOne = 5.0;
+//  const double psiControlNormInf = 1.0;
+//  Teuchos::Array<double> mvpControlNormsInf(3);
+//  mvpControlNormsInf[0] = 0.5;
+//  mvpControlNormsInf[1] = 0.5;
+//  mvpControlNormsInf[2] = 0.0;
+//
+//  testKeo(inputFileNameBase,
+//          psiControlNormOne,
+//          psiControlNormInf,
+//          mvpControlNormsInf,
+//          out,
+//          success);
+//}
 // ============================================================================
 TEUCHOS_UNIT_TEST(Nosh, KeoSphereHashes)
 {
@@ -159,24 +159,24 @@ TEUCHOS_UNIT_TEST(Nosh, KeoSphereHashes)
           success);
 }
 // ============================================================================
-TEUCHOS_UNIT_TEST(Nosh, KeoCubeSmallHashes)
-{
-  std::string inputFileNameBase = "cubesmall";
-
-  const double psiControlNormOne = 8.0;
-  const double psiControlNormInf = 1.0;
-  Teuchos::Array<double> mvpControlNormsInf(3);
-  mvpControlNormsInf[0] = 0.25;
-  mvpControlNormsInf[1] = 0.25;
-  mvpControlNormsInf[2] = 0.0;
-
-  testKeo(inputFileNameBase,
-          psiControlNormOne,
-          psiControlNormInf,
-          mvpControlNormsInf,
-          out,
-          success);
-}
+//TEUCHOS_UNIT_TEST(Nosh, KeoCubeSmallHashes)
+//{
+//  std::string inputFileNameBase = "cubesmall";
+//
+//  const double psiControlNormOne = 8.0;
+//  const double psiControlNormInf = 1.0;
+//  Teuchos::Array<double> mvpControlNormsInf(3);
+//  mvpControlNormsInf[0] = 0.25;
+//  mvpControlNormsInf[1] = 0.25;
+//  mvpControlNormsInf[2] = 0.0;
+//
+//  testKeo(inputFileNameBase,
+//          psiControlNormOne,
+//          psiControlNormInf,
+//          mvpControlNormsInf,
+//          out,
+//          success);
+//}
 // ============================================================================
 TEUCHOS_UNIT_TEST(Nosh, KeoBrickWHoleHashes)
 {

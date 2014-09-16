@@ -146,25 +146,25 @@ testKeo(const std::string & inputFileNameBase,
   return;
 }
 // ===========================================================================
-TEUCHOS_UNIT_TEST(Nosh, KeoRectangleSmallHashes)
-{
-  std::string inputFileNameBase = "rectanglesmall";
-
-  double mu = 1.0e-2;
-  double controlNormOne = 10.224658806561596;
-  double controlNormInf = controlNormOne;
-  double controlSumReal = 0.0063121712308067401;
-  double controlSum     = 2 * controlSumReal;
-
-  testKeo(inputFileNameBase,
-          mu,
-          controlNormOne,
-          controlNormInf,
-          controlSum,
-          controlSumReal,
-          out,
-          success);
-}
+//TEUCHOS_UNIT_TEST(Nosh, KeoRectangleSmallHashes)
+//{
+//  std::string inputFileNameBase = "rectanglesmall";
+//
+//  double mu = 1.0e-2;
+//  double controlNormOne = 10.224658806561596;
+//  double controlNormInf = controlNormOne;
+//  double controlSumReal = 0.0063121712308067401;
+//  double controlSum     = 2 * controlSumReal;
+//
+//  testKeo(inputFileNameBase,
+//          mu,
+//          controlNormOne,
+//          controlNormInf,
+//          controlSum,
+//          controlSumReal,
+//          out,
+//          success);
+//}
 // ============================================================================
 TEUCHOS_UNIT_TEST(Nosh, KeoPacmanHashes)
 {
@@ -186,25 +186,25 @@ TEUCHOS_UNIT_TEST(Nosh, KeoPacmanHashes)
           success);
 }
 // ============================================================================
-TEUCHOS_UNIT_TEST(Nosh, KeoCubeSmallHashes)
-{
-  std::string inputFileNameBase = "cubesmall";
-
-  double mu = 1.0e-2;
-  double controlNormOne = 10.058364522531498;
-  double controlNormInf = controlNormOne;
-  double controlSumReal = 8.3541623155714007e-05;
-  double controlSum     = 2 * controlSumReal;
-
-  testKeo(inputFileNameBase,
-          mu,
-          controlNormOne,
-          controlNormInf,
-          controlSum,
-          controlSumReal,
-          out,
-          success);
-}
+//TEUCHOS_UNIT_TEST(Nosh, KeoCubeSmallHashes)
+//{
+//  std::string inputFileNameBase = "cubesmall";
+//
+//  double mu = 1.0e-2;
+//  double controlNormOne = 10.058364522531498;
+//  double controlNormInf = controlNormOne;
+//  double controlSumReal = 8.3541623155714007e-05;
+//  double controlSum     = 2 * controlSumReal;
+//
+//  testKeo(inputFileNameBase,
+//          mu,
+//          controlNormOne,
+//          controlNormInf,
+//          controlSum,
+//          controlSumReal,
+//          out,
+//          success);
+//}
 // ============================================================================
 TEUCHOS_UNIT_TEST(Nosh, KeoBrickWHoleHashes)
 {

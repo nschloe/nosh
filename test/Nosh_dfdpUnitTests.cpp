@@ -167,12 +167,12 @@ testDfdp(const std::string & inputFileNameBase,
   return;
 }
 // ===========================================================================
-TEUCHOS_UNIT_TEST(Nosh, DfdpRectangleSmallHashes)
-{
-  const std::string inputFileNameBase = "rectanglesmall";
-  const double mu = 1.0e-2;
-  testDfdp(inputFileNameBase, mu, out, success);
-}
+//TEUCHOS_UNIT_TEST(Nosh, DfdpRectangleSmallHashes)
+//{
+//  const std::string inputFileNameBase = "rectanglesmall";
+//  const double mu = 1.0e-2;
+//  testDfdp(inputFileNameBase, mu, out, success);
+//}
 // ============================================================================
 TEUCHOS_UNIT_TEST(Nosh, DfdpPacmanHashes)
 {
@@ -181,12 +181,12 @@ TEUCHOS_UNIT_TEST(Nosh, DfdpPacmanHashes)
   testDfdp(inputFileNameBase, mu, out, success);
 }
 // ============================================================================
-TEUCHOS_UNIT_TEST(Nosh, DfdpCubeSmallHashes)
-{
-  const std::string inputFileNameBase = "cubesmall";
-  const double mu = 1.0e-2;
-  testDfdp(inputFileNameBase, mu, out, success);
-}
+//TEUCHOS_UNIT_TEST(Nosh, DfdpCubeSmallHashes)
+//{
+//  const std::string inputFileNameBase = "cubesmall";
+//  const double mu = 1.0e-2;
+//  testDfdp(inputFileNameBase, mu, out, success);
+//}
 // ============================================================================
 TEUCHOS_UNIT_TEST(Nosh, DfdpBrickWithHoleHashes)
 {

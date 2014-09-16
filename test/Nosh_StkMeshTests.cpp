@@ -75,23 +75,23 @@ testMesh(const std::string & inputFileNameBase,
   return;
 }
 // ===========================================================================
-TEUCHOS_UNIT_TEST(Nosh, MeshRectangleSmallHashes)
-{
-  std::string inputFileNameBase = "rectanglesmall";
-
-  unsigned int numNodes = 4;
-  double controlVolNormOne = 10.0;
-  double controlVolNormTwo = 5.0;
-  double controlVolNormInf = 2.5;
-
-  testMesh(inputFileNameBase,
-           numNodes,
-           controlVolNormOne,
-           controlVolNormTwo,
-           controlVolNormInf,
-           out,
-           success);
-}
+//TEUCHOS_UNIT_TEST(Nosh, MeshRectangleSmallHashes)
+//{
+//  std::string inputFileNameBase = "rectanglesmall";
+//
+//  unsigned int numNodes = 4;
+//  double controlVolNormOne = 10.0;
+//  double controlVolNormTwo = 5.0;
+//  double controlVolNormInf = 2.5;
+//
+//  testMesh(inputFileNameBase,
+//           numNodes,
+//           controlVolNormOne,
+//           controlVolNormTwo,
+//           controlVolNormInf,
+//           out,
+//           success);
+//}
 // ============================================================================
 TEUCHOS_UNIT_TEST(Nosh, MeshPacmanHashes)
 {
@@ -111,23 +111,23 @@ TEUCHOS_UNIT_TEST(Nosh, MeshPacmanHashes)
            success);
 }
 // ============================================================================
-TEUCHOS_UNIT_TEST(Nosh, MeshShellHashes)
-{
-  std::string inputFileNameBase = "shell";
-
-  unsigned int numNodes = 5;
-  double controlVolNormOne = 3.46410161513775;
-  double controlVolNormTwo = 1.63299316185545;
-  double controlVolNormInf = 1.15470053837925;
-
-  testMesh(inputFileNameBase,
-           numNodes,
-           controlVolNormOne,
-           controlVolNormTwo,
-           controlVolNormInf,
-           out,
-           success);
-}
+//TEUCHOS_UNIT_TEST(Nosh, MeshShellHashes)
+//{
+//  std::string inputFileNameBase = "shell";
+//
+//  unsigned int numNodes = 5;
+//  double controlVolNormOne = 3.46410161513775;
+//  double controlVolNormTwo = 1.63299316185545;
+//  double controlVolNormInf = 1.15470053837925;
+//
+//  testMesh(inputFileNameBase,
+//           numNodes,
+//           controlVolNormOne,
+//           controlVolNormTwo,
+//           controlVolNormInf,
+//           out,
+//           success);
+//}
 // ============================================================================
 TEUCHOS_UNIT_TEST(Nosh, MeshSphereHashes)
 {
@@ -147,23 +147,23 @@ TEUCHOS_UNIT_TEST(Nosh, MeshSphereHashes)
            success);
 }
 // ============================================================================
-TEUCHOS_UNIT_TEST(Nosh, MeshCubeSmallHashes)
-{
-  std::string inputFileNameBase = "cubesmall";
-
-  unsigned int numNodes = 8;
-  double controlVolNormOne = 10.0;
-  double controlVolNormTwo = 3.535533905932738;
-  double controlVolNormInf = 1.25;
-
-  testMesh(inputFileNameBase,
-           numNodes,
-           controlVolNormOne,
-           controlVolNormTwo,
-           controlVolNormInf,
-           out,
-           success);
-}
+//TEUCHOS_UNIT_TEST(Nosh, MeshCubeSmallHashes)
+//{
+//  std::string inputFileNameBase = "cubesmall";
+//
+//  unsigned int numNodes = 8;
+//  double controlVolNormOne = 10.0;
+//  double controlVolNormTwo = 3.535533905932738;
+//  double controlVolNormInf = 1.25;
+//
+//  testMesh(inputFileNameBase,
+//           numNodes,
+//           controlVolNormOne,
+//           controlVolNormTwo,
+//           controlVolNormInf,
+//           out,
+//           success);
+//}
 // ============================================================================
 TEUCHOS_UNIT_TEST(Nosh, MeshBrickWHoleHashes)
 {

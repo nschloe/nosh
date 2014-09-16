@@ -133,23 +133,23 @@ testJac(const std::string & inputFileNameBase,
   return;
 }
 // ===========================================================================
-TEUCHOS_UNIT_TEST(Nosh, JacRectangleSmallHashes)
-{
-  std::string inputFileNameBase = "rectanglesmall";
-
-  double mu = 1.0e-2;
-  double controlSumT0 = 20.0126243424616;
-  double controlSumT1 = 20.0063121712308;
-  double controlSumT2 = 0.00631217123080606;
-
-  testJac(inputFileNameBase,
-          mu,
-          controlSumT0,
-          controlSumT1,
-          controlSumT2,
-          out,
-          success);
-}
+//TEUCHOS_UNIT_TEST(Nosh, JacRectangleSmallHashes)
+//{
+//  std::string inputFileNameBase = "rectanglesmall";
+//
+//  double mu = 1.0e-2;
+//  double controlSumT0 = 20.0126243424616;
+//  double controlSumT1 = 20.0063121712308;
+//  double controlSumT2 = 0.00631217123080606;
+//
+//  testJac(inputFileNameBase,
+//          mu,
+//          controlSumT0,
+//          controlSumT1,
+//          controlSumT2,
+//          out,
+//          success);
+//}
 // ============================================================================
 TEUCHOS_UNIT_TEST(Nosh, JacPacmanHashes)
 {
@@ -169,23 +169,23 @@ TEUCHOS_UNIT_TEST(Nosh, JacPacmanHashes)
           success);
 }
 // ============================================================================
-TEUCHOS_UNIT_TEST(Nosh, JacCubeSmallHashes)
-{
-  std::string inputFileNameBase = "cubesmall";
-
-  double mu = 1.0e-2;
-  double controlSumT0 = 20.000167083246311;
-  double controlSumT1 = 20.000083541623155;
-  double controlSumT2 = 8.3541623155658495e-05;
-
-  testJac(inputFileNameBase,
-          mu,
-          controlSumT0,
-          controlSumT1,
-          controlSumT2,
-          out,
-          success);
-}
+//TEUCHOS_UNIT_TEST(Nosh, JacCubeSmallHashes)
+//{
+//  std::string inputFileNameBase = "cubesmall";
+//
+//  double mu = 1.0e-2;
+//  double controlSumT0 = 20.000167083246311;
+//  double controlSumT1 = 20.000083541623155;
+//  double controlSumT2 = 8.3541623155658495e-05;
+//
+//  testJac(inputFileNameBase,
+//          mu,
+//          controlSumT0,
+//          controlSumT1,
+//          controlSumT2,
+//          out,
+//          success);
+//}
 // ============================================================================
 TEUCHOS_UNIT_TEST(Nosh, JacBrickWHoleHashes)
 {
