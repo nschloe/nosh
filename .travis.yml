@@ -20,10 +20,10 @@ before_install:
   - sudo pip install cpp-coveralls
 install:
   - cmake -DBUILD_SHARED_LIBS:BOOL=ON -DENABLE_GCOV:BOOL=ON -DCMAKE_CXX_COMPILER:STRING=mpicxx .
-  - make VERBOSE=1
+  - make
 # command to run tests
 script:
   - ctest -VV
 # Submit to coveralls for coverage statistics
 after_success:
-  - coveralls --gcov-options '\-lp'
+  - coveralls --exclude test --exclude obsolete --gcov-options '\-lp'
