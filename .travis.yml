@@ -26,4 +26,4 @@ script:
   - ctest -VV
 # Submit to coveralls for coverage statistics
 after_success:
-  - coveralls --exclude CMakeFiles --exclude executables --exclude test --exclude obsolete --gcov-options '\-lp'
+  - coveralls --extension cpp --exclude CMakeFiles --exclude executables --exclude test --exclude obsolete --gcov-options '\-lp'
