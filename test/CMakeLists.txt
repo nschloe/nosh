@@ -49,10 +49,10 @@ ADD_TEST(ioTestSerial
   )
 # Check out FindMPI.cmake for proper syntax.
 ADD_TEST(ioTestMpi2
-  ${Trilinos_MPI_EXEC} ${Trilinos_MPI_EXEC_NUMPROCS_FLAG} 2 ${IOTEST_EXECUTABLE}
+  ${Trilinos_MPI_EXEC} --noprefix ${Trilinos_MPI_EXEC_NUMPROCS_FLAG} 2 ${IOTEST_EXECUTABLE}
   )
 ADD_TEST(ioTestMpi7
-  ${Trilinos_MPI_EXEC} ${Trilinos_MPI_EXEC_NUMPROCS_FLAG} 7 ${IOTEST_EXECUTABLE}
+  ${Trilinos_MPI_EXEC} --noprefix ${Trilinos_MPI_EXEC_NUMPROCS_FLAG} 7 ${IOTEST_EXECUTABLE}
   )
 
 # Set executable linking information.
@@ -78,10 +78,10 @@ ADD_TEST(meshTestSerial
   ${MESHTEST_EXECUTABLE}
   )
 ADD_TEST(meshTestMpi2
-  ${Trilinos_MPI_EXEC} ${Trilinos_MPI_EXEC_NUMPROCS_FLAG} 2 ${MESHTEST_EXECUTABLE}
+  ${Trilinos_MPI_EXEC} --noprefix ${Trilinos_MPI_EXEC_NUMPROCS_FLAG} 2 ${MESHTEST_EXECUTABLE}
   )
 ADD_TEST(meshTestMpi7
-  ${Trilinos_MPI_EXEC} ${Trilinos_MPI_EXEC_NUMPROCS_FLAG} 7 ${MESHTEST_EXECUTABLE}
+  ${Trilinos_MPI_EXEC} --noprefix ${Trilinos_MPI_EXEC_NUMPROCS_FLAG} 7 ${MESHTEST_EXECUTABLE}
   )
 
 # Set executable linking information.
@@ -110,10 +110,10 @@ ADD_TEST(operatorTest
   ${OPERATORTEST_EXECUTABLE}
   )
 ADD_TEST(operatorTestMpi2
-  ${Trilinos_MPI_EXEC} ${Trilinos_MPI_EXEC_NUMPROCS_FLAG} 2 ${OPERATORTEST_EXECUTABLE}
+  ${Trilinos_MPI_EXEC} --noprefix ${Trilinos_MPI_EXEC_NUMPROCS_FLAG} 2 ${OPERATORTEST_EXECUTABLE}
   )
 ADD_TEST(operatorTestMpi7
-  ${Trilinos_MPI_EXEC} ${Trilinos_MPI_EXEC_NUMPROCS_FLAG} 7 ${OPERATORTEST_EXECUTABLE}
+  ${Trilinos_MPI_EXEC} --noprefix ${Trilinos_MPI_EXEC_NUMPROCS_FLAG} 7 ${OPERATORTEST_EXECUTABLE}
   )
 
 # Set executable linking information.
