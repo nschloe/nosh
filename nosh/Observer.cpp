@@ -50,7 +50,8 @@ void
 Observer::
 observeSolution(const Epetra_Vector &soln)
 {
-  modelEval_->getMesh()->write(soln, 0.0);
+  modelEval_->getMesh()->insert(soln, "psi");
+  modelEval_->getMesh()->write(0.0);
 
   return;
 }
@@ -89,7 +90,8 @@ observeContinuation_(const Epetra_Vector &soln,
   // many things will continue to work fine if the time data isn't monotonous.
   // The display in ParaView is one example where it doesn't work so well.
   // As a work-around for that, paramVal could be replaced by index.
-  modelEval_->getMesh()->write(soln, paramVal);
+  modelEval_->getMesh()->insert(soln, "psi");
+  modelEval_->getMesh()->write(paramVal);
 
   return;
 }
@@ -108,7 +110,8 @@ observeTurningPointContinuation_(const Epetra_Vector &soln,
   if (isSolution) {
     index++;
     this->saveContinuationStatistics_(soln, paramVal, index);
-    modelEval_->getMesh()->write(soln, index);
+    modelEval_->getMesh()->insert(soln, "psi");
+    modelEval_->getMesh()->write(index);
   } else {
     TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Not yet implemented.");
   }

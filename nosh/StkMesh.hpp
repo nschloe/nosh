@@ -74,7 +74,7 @@ private:
   };
 
 public:
-  StkMesh(const Epetra_Comm &comm,
+  StkMesh(const Teuchos::RCP<const Epetra_Comm> & comm,
           const std::string &fileName,
           const int index
           );
@@ -91,9 +91,7 @@ public:
                    );
 
   void
-  write(const Epetra_Vector & psi,
-        const double time
-       ) const;
+  write(const double time) const;
 
   Teuchos::RCP<Epetra_Vector>
   createVector(const std::string & fieldName) const;
@@ -105,9 +103,9 @@ public:
   createComplexVector(const std::string & fieldName) const;
 
   void
-  mergeComplexVector_(const Epetra_Vector &psi,
-                      const std::string & fieldName
-                    ) const;
+  insert(const Epetra_Vector & psi,
+         const std::string & fieldName
+         ) const;
 
   unsigned int
   getNumNodes() const;
@@ -180,7 +178,7 @@ private:
   const Teuchos::RCP<Teuchos::Time> writeTime_;
 #endif
 
-  const Epetra_Comm &comm_;
+  const Teuchos::RCP<const Epetra_Comm> comm_;
 
   // Apparently, process_output_request is not const. Make
   // the ioBroker_ mutable so our write() can be const.
@@ -232,6 +230,11 @@ private:
   field2vector_(const VectorFieldType &field,
                 const int numComponents
                 ) const;
+
+  void
+  mergeComplexVector_(const Epetra_Vector &psi,
+                      const std::string & fieldName
+                      ) const;
 
   std::vector<stk::mesh::Entity>
   buildOwnedNodes_(const stk::mesh::BulkData & myBulkData) const;
@@ -328,6 +331,10 @@ private:
   createEdgeData_();
 };
 // -----------------------------------------------------------------------------
+StkMesh
+read(const std::string & fileName,
+     const int index
+     );
 } // namespace Nosh
 // =============================================================================
 #endif // NOSH_STKMESH_H

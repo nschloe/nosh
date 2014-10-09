@@ -72,7 +72,7 @@ namespace Nosh
 {
 // =============================================================================
 StkMesh::
-StkMesh(const Epetra_Comm & comm,
+StkMesh(const Teuchos::RCP<const Epetra_Comm> & comm,
         const std::string & fileName,
         const int index
         ) :
@@ -131,7 +131,7 @@ read_(const std::string &fileName,
   Teuchos::RCP<stk::io::StkMeshIoBroker> ioBroker =
     Teuchos::rcp(new stk::io::StkMeshIoBroker(
 #ifdef HAVE_MPI
-      Teuchos::dyn_cast<const Epetra_MpiComm>(comm_).Comm()
+      Teuchos::dyn_cast<const Epetra_MpiComm>(*comm_).Comm()
 #else
       1
 #endif
@@ -587,9 +587,9 @@ openOutputChannel(const std::string &outputDir,
 // =============================================================================
 void
 StkMesh::
-write(const Epetra_Vector & psi,
-      const double time
-      ) const
+insert(const Epetra_Vector & psi,
+       const std::string & name
+       ) const
 {
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   // timer for this routine
@@ -597,9 +597,19 @@ write(const Epetra_Vector & psi,
 #endif
 
   // Merge the state into the mesh.
-//     mesh_->getBulkData()->modification_begin();
-  this->mergeComplexVector_(psi, "psi");
-//     mesh_->getBulkData()->modification_end();
+  this->mergeComplexVector_(psi, name);
+
+  return;
+}
+// =============================================================================
+void
+StkMesh::
+write(const double time) const
+{
+#ifdef NOSH_TEUCHOS_TIME_MONITOR
+  // timer for this routine
+  Teuchos::TimeMonitor tm(*writeTime_);
+#endif
 
   // Write it out to the file that's been specified in mesh_.
   // The methods returns the output step (but we ignore it).
@@ -785,7 +795,7 @@ const Epetra_Comm &
 StkMesh::
 getComm() const
 {
-  return comm_;
+  return *comm_;
 }
 // =============================================================================
 Teuchos::ArrayRCP<double>
@@ -986,7 +996,7 @@ createEntitiesMap_(const std::vector<stk::mesh::Entity> &entityList) const
   for (int i = 0; i < numEntities; i++)
     gids[i] = ioBroker_->bulk_data().identifier(entityList[i]) - 1;
 
-  return Teuchos::rcp(new Epetra_Map(-1, numEntities, gids.getRawPtr(), 0, comm_));
+  return Teuchos::rcp(new Epetra_Map(-1, numEntities, gids.getRawPtr(), 0, *comm_));
 }
 // =============================================================================
 Teuchos::RCP<const Epetra_Map>
@@ -1003,11 +1013,11 @@ createComplexMap_(const std::vector<stk::mesh::Entity> &nodeList) const
   }
 
   Teuchos::RCP<const Epetra_Map> map =
-    Teuchos::rcp(new Epetra_Map(-1, numDof, gids.getRawPtr(), 0, comm_));
-//  comm_.Barrier();
+    Teuchos::rcp(new Epetra_Map(-1, numDof, gids.getRawPtr(), 0, *comm_));
+//  comm_->Barrier();
 
   return map;
-  //return Teuchos::rcp(new Epetra_Map(-1, numDof, gids.getRawPtr(), 0, comm_));
+  //return Teuchos::rcp(new Epetra_Map(-1, numDof, gids.getRawPtr(), 0, *comm_));
 }
 // =============================================================================
 unsigned int
@@ -1184,14 +1194,14 @@ computeControlVolumes_() const
   // Determine the kind of mesh by the first cell on the first
   // process
   int nodesPerCell;
-  if (comm_.MyPID() == 0) {
+  if (comm_->MyPID() == 0) {
     std::vector<stk::mesh::Entity> cells = this->getOwnedCells();
 #ifndef NDEBUG
     TEUCHOS_ASSERT_INEQUALITY(cells.size(), >, 0);
 #endif
     nodesPerCell = ioBroker_->bulk_data().num_nodes(cells[0]);
   }
-  comm_.Broadcast(&nodesPerCell, 1, 0);
+  comm_->Broadcast(&nodesPerCell, 1, 0);
 
   switch (nodesPerCell) {
     case 3:
@@ -1783,4 +1793,19 @@ createEdgeData_()
   return edgeData;
 }
 // =============================================================================
+// Helper function
+StkMesh
+read(const std::string & fileName,
+     const int index
+     )
+{
+#ifdef HAVE_MPI
+  Teuchos::RCP<const Epetra_MpiComm> eComm =
+    Teuchos::rcp<Epetra_MpiComm>(new Epetra_MpiComm(MPI_COMM_WORLD));
+#else
+  Teuchos::RCP<const Epetra_SerialComm> eComm =
+    Teuchos::rcp<Epetra_SerialComm>(new Epetra_SerialComm());
+#endif
+  return StkMesh(eComm, fileName, index);
+}
 }  // namespace Nosh
