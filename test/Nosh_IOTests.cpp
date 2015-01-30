@@ -58,7 +58,7 @@ testKeo(const std::string & inputFileNameBase,
   std::string inputFileName = inputFileNameBase + ".e";
   // =========================================================================
   // Read the data from the file.
-  Nosh::StkMesh mesh(*eComm, inputFileName, 0);
+  Nosh::StkMesh mesh(eComm, inputFileName, 0);
 
   // Cast the data into something more accessible.
   const Teuchos::RCP<const Epetra_Vector> psi =

@@ -90,7 +90,7 @@ int main(int argc, char *argv[])
       Teuchos::TimeMonitor::getNewTimer("Read mesh");
     {
       Teuchos::TimeMonitor tm(*readTime);
-      mesh = rcp(new Nosh::StkMesh(*eComm, dataFile, step));
+      mesh = rcp(new Nosh::StkMesh(eComm, dataFile, step));
     }
 
     // Cast the data into something more accessible.
@@ -259,7 +259,8 @@ int main(int argc, char *argv[])
     {
       Teuchos::TimeMonitor tm(*writeTime);
       mesh->openOutputChannel(".", "output");
-      mesh->write(*psi, 0.0);
+      // TODO how to write out psi?
+      mesh->write(0.0);
     }
 
     // Print timing data.

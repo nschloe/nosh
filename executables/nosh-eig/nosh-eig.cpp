@@ -152,7 +152,7 @@ int main(int argc, char *argv[])
                             Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL);
     // =========================================================================
     // Read the data from the file.
-    RCP<Nosh::StkMesh> mesh = rcp(new Nosh::StkMesh(*eComm, inputFilePath, step));
+    RCP<Nosh::StkMesh> mesh = rcp(new Nosh::StkMesh(eComm, inputFilePath, step));
 
     const double time = mesh->getTime();
     mu = time;
@@ -169,7 +169,7 @@ int main(int argc, char *argv[])
       if (mvpFilePath.empty()) {
         mvp = rcp(new Nosh::VectorField::ExplicitValues(*mesh, "A", mu));
       } else {
-        Nosh::StkMesh mesh2(*eComm, mvpFilePath, 0);
+        Nosh::StkMesh mesh2(eComm, mvpFilePath, 0);
         mvp = rcp(new Nosh::VectorField::ExplicitValues(mesh2, "A", mu));
       }
     }

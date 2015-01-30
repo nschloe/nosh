@@ -131,7 +131,7 @@ int main(int argc, char *argv[])
     const bool useBordering = piroParams->get<bool>("Bordering");
     // =======================================================================
     // Read the data from the file.
-    RCP<Nosh::StkMesh> mesh = rcp(new Nosh::StkMesh(*eComm, inputExodusFile, step));
+    RCP<Nosh::StkMesh> mesh = rcp(new Nosh::StkMesh(eComm, inputExodusFile, step));
 
     // Cast the data into something more accessible.
     RCP<Epetra_Vector> psi = mesh->createComplexVector("psi");

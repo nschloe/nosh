@@ -58,7 +58,7 @@ testMesh(const std::string & inputFileNameBase,
   std::string inputFileName = inputFileNameBase + ".e";
   // =========================================================================
   // Read the data from the file.
-  Nosh::StkMesh mesh(*eComm, inputFileName, 0);
+  Nosh::StkMesh mesh(eComm, inputFileName, 0);
 
   const unsigned int numNodes = mesh.getNumNodes();
   TEUCHOS_ASSERT_EQUALITY(numNodes, controlNumNodes);

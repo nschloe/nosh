@@ -37,8 +37,8 @@ def _main():
         rad = 1.0
         r = np.linalg.norm(points[:, 0:2] - vl)
         psi *= np.sqrt(0.5 * (1 + np.tanh(4/rad*dist2))) \
-                * ((points[:, 0]-vl[0]) + 1j * (points[:, 1]-vl[1])) \
-                / np.sqrt(dist2)
+            * ((points[:, 0]-vl[0]) + 1j * (points[:, 1]-vl[1])) \
+            / np.sqrt(dist2)
         # exp(x**2) vortices
         #psi *= np.sqrt(1 - np.exp(-dist2)) \
         #     * ((points[:,0]-vl[0]) + 1j * (points[:,1]-vl[1])) / np.sqrt(dist2)

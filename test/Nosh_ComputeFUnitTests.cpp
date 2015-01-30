@@ -64,7 +64,7 @@ testComputeF(const std::string & inputFileNameBase,
   // =========================================================================
   // Read the data from the file.
   Teuchos::RCP<Nosh::StkMesh> mesh =
-    Teuchos::rcp(new Nosh::StkMesh(*eComm, inputFileName, 0));
+    Teuchos::rcp(new Nosh::StkMesh(eComm, inputFileName, 0));
 
   // Cast the data into something more accessible.
   Teuchos::RCP<Epetra_Vector> z =
