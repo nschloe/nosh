@@ -4,6 +4,7 @@ before_install:
   # http://about.travis-ci.org/docs/user/build-configuration/#Installing-Packages-Using-apt
   # Get Trilinos.
   - sudo add-apt-repository -y ppa:nschloe/trilinos-nightly
+  - sudo add-apt-repository -y ppa:nschloe/netcdf-nightly
   - sudo apt-get update -qq
   - sudo apt-get install libopenmpi-dev openmpi-bin
   # The -dev versions are definitely not needed since Trilinos doesn't expose
@@ -15,6 +16,7 @@ before_install:
   - sudo apt-get install libnetcdf-dev
   - sudo apt-get install libboost-dev libtbb-dev # should be added by Trilinos
   - sudo apt-get install cmake-data cmake
+  - sudo apt-get install libtrilinos-amesos-dev
   - sudo apt-get install trilinos-dev
   - sudo pip install cpp-coveralls
 install:
