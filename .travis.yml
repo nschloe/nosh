@@ -15,7 +15,6 @@ before_install:
   - sudo apt-get install libnetcdf-dev
   - sudo apt-get install libboost-dev libtbb-dev # should be added by Trilinos
   - sudo apt-get install cmake-data cmake
-  - sudo apt-get install libtribits-dev # shouldn't be necessary
   - sudo apt-get install trilinos-dev
   - sudo pip install cpp-coveralls
 install:
