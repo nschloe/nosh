@@ -55,7 +55,7 @@ testCache(const std::string & inputFileNameBase,
     Teuchos::rcp<Epetra_SerialComm> (new Epetra_SerialComm());
 #endif
 
-  std::string inputFileName = inputFileNameBase + ".e";
+  std::string inputFileName = "data/" + inputFileNameBase + ".e";
   // =========================================================================
   // Read the data from the file.
   Teuchos::ParameterList data;

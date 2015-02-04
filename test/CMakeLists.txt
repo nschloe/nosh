@@ -21,21 +21,29 @@ INCLUDE_DIRECTORIES(SYSTEM
 
 SET(internal_LIBS "nosh")
 
-# copy over the binary data
-if(NOT ${CMAKE_CURRENT_SOURCE_DIR} EQUAL ${CMAKE_CURRENT_BINARY_DIR})
-  FILE(COPY "${CMAKE_CURRENT_SOURCE_DIR}/data/rectanglesmall.e"
-    DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-  FILE(COPY "${CMAKE_CURRENT_SOURCE_DIR}/data/pacman.e"
-    DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-  FILE(COPY "${CMAKE_CURRENT_SOURCE_DIR}/data/shell.e"
-    DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-  FILE(COPY "${CMAKE_CURRENT_SOURCE_DIR}/data/sphere.e"
-    DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-  FILE(COPY "${CMAKE_CURRENT_SOURCE_DIR}/data/cubesmall.e"
-    DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-  FILE(COPY "${CMAKE_CURRENT_SOURCE_DIR}/data/brick-w-hole.e"
-    DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-endif()
+set(input_files
+  rectanglesmall.e
+  pacman.e
+  shell.e
+  sphere.e
+  cubesmall.e
+  brick-w-hole.e
+  )
+
+# Download the files
+INCLUDE(ExternalData)
+set(
+  ExternalData_URL_TEMPLATES
+  "https://downloads.sourceforge.net/project/noshdata/%(algo)/%(hash)"
+  )
+foreach(file ${input_files})
+  ExternalData_Expand_Arguments(
+    NoshTestFetchData
+    OUT_DATA DATA{${CMAKE_SOURCE_DIR}/test/data/${file}}
+    )
+endforeach()
+ExternalData_Add_Target(NoshTestFetchData)
+
 # ------------------------------------------------------------------------------
 SET(IOTEST_EXECUTABLE
   "ioTest")
