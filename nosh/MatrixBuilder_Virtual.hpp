@@ -30,6 +30,10 @@
 #include <Epetra_FECrsMatrix.h>
 #include <Epetra_Vector.h>
 
+#include <stk_mesh/base/Entity.hpp>
+
+typedef std::tuple<stk::mesh::Entity, stk::mesh::Entity> edge;
+
 // forward declarations
 namespace Nosh
 {
@@ -43,21 +47,21 @@ namespace MatrixBuilder
 class Virtual
 {
 public:
-  Virtual();
+  Virtual(const Teuchos::RCP<const Nosh::StkMesh> &mesh);
 
   // Destructor.
   virtual
   ~Virtual();
 
+  //! Get the connectivity graph of the matrix.
+  virtual
+  const Epetra_FECrsGraph &
+  getGraph() const;
+
   //! Get the underlying communicator.
   virtual
   const Epetra_Comm &
   getComm() const = 0;
-
-  //! Get the connectivity graph of the matrix.
-  virtual
-  const Epetra_FECrsGraph &
-  getGraph() const = 0;
 
   //! Y = A(params) * X.
   virtual
@@ -87,6 +91,20 @@ public:
   virtual
   const std::map<std::string, double>
   getInitialParameters() const = 0;
+
+protected:
+  const Epetra_FECrsGraph
+  buildGraph_() const;
+
+  const Teuchos::ArrayRCP<Epetra_IntSerialDenseVector>
+  buildGlobalIndexCache_() const;
+
+protected:
+  const Teuchos::RCP<const Nosh::StkMesh> mesh_;
+  const Teuchos::ArrayRCP<Epetra_IntSerialDenseVector> globalIndexCache_;
+  const Epetra_FECrsGraph graph_;
+
+private:
 };
 } // namespace MatrixBuilder
 } // namespace Nosh

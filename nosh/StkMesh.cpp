@@ -786,7 +786,8 @@ getDomainVolume() const
 {
   // update the domain area value
   double volume;
-  TEUCHOS_ASSERT_EQUALITY(0, controlVolumes_->Norm1(&volume));
+  const int ierr = controlVolumes_->Norm1(&volume);
+  TEUCHOS_ASSERT_EQUALITY(0, ierr);
 
   return volume;
 }
@@ -1362,13 +1363,14 @@ computeControlVolumesTet_(const Teuchos::RCP<Epetra_Vector> & cvOverlap) const
         const DoubleVector &other1 = localNodeCoords[other[1]];
         double covolume = this->computeCovolume3d_(cc, x0, x1, other0, other1);
         // Throw an exception for 3D volumes.
-        // To compute the average of the thicknesses of a control volume, one has to loop
-        // over all the edges and add the thickness value to both endpoints.
-        // Then eventually, for each node, divide the resulting sum by the number of connections
-        // (=number of faces of the finite volume).
-        // However, looping over edges is not (yet) possible. Hence, we loop over all the
-        // cells here. This way, the edges are counted several times, but it is difficult
-        // to determine how many times exactly.
+        // To compute the average of the thicknesses of a control volume, one
+        // has to loop over all the edges and add the thickness value to both
+        // endpoints.  Then eventually, for each node, divide the resulting sum
+        // by the number of connections (=number of faces of the finite
+        // volume).  However, looping over edges is not (yet) possible. Hence,
+        // we loop over all the cells here. This way, the edges are counted
+        // several times, but it is difficult to determine how many times
+        // exactly.
 //                   TEUCHOS_TEST_FOR_EXCEPTION(true,
 //                                       std::runtime_error,
 //                                       "Cannot calculate the average thickness in a 3D control volume yet."
@@ -1407,7 +1409,8 @@ computeCovolume2d_(const DoubleVector &cc,
                                        this->add_(1.0, mp, -1.0, x0)
                                        );
 
-  // copysign takes the absolute value of the first argument and the sign of the second.
+  // copysign takes the absolute value of the first argument and the sign of
+  // the second.
   return copysign(coedgeLength, this->dot_(ccNormal, cellNormal));
 }
 // =============================================================================
@@ -1434,8 +1437,9 @@ computeCovolume3d_(const DoubleVector &cc,
   // There are some really tricky degenerate cases here, i.e., combinations
   // of when ccFace{0,1}, cc, sit outside of the tetrahedron.
 
-  // Use the triangle (MP, localNodes[other[0]], localNodes[other[1]]) (in this order)
-  // to gauge the orientation of the two triangles that compose the quadrilateral.
+  // Use the triangle (MP, localNodes[other[0]], localNodes[other[1]]) (in this
+  // order) to gauge the orientation of the two triangles that compose the
+  // quadrilateral.
   DoubleVector gauge = this->cross_(this->add_(1.0, other0, -1.0, mp),
                                      this->add_(1.0, other1, -1.0, mp)
                                   );
@@ -1448,12 +1452,14 @@ computeCovolume3d_(const DoubleVector &cc,
                          * this->norm2_(this->add_(1.0, ccFace0, -1.0, cc));
 
   // Check if the orientation of the triangle (MP,ccFace0,cc) coincides with
-  // the orientation of the gauge triangle. If yes, add the area, subtract otherwise.
+  // the orientation of the gauge triangle. If yes, add the area, subtract
+  // otherwise.
   DoubleVector triangleNormal0 =
     this->cross_(this->add_(1.0, ccFace0, -1.0, mp),
                  this->add_(1.0, cc,      -1.0, mp));
 
-  // copysign takes the absolute value of the first argument and the sign of the second.
+  // copysign takes the absolute value of the first argument and the sign of
+  // the second.
   covolume += copysign(triangleArea0, this->dot_(triangleNormal0, gauge));
 
   // Add the area of the second triangle (MP,cc,ccFace1).
@@ -1464,12 +1470,14 @@ computeCovolume3d_(const DoubleVector &cc,
                          * this->norm2_(this->add_(1.0, ccFace1, -1.0, cc));
 
   // Check if the orientation of the triangle (MP,cc,ccFace1) coincides with
-  // the orientation of the gauge triangle. If yes, add the area, subtract otherwise.
+  // the orientation of the gauge triangle. If yes, add the area, subtract
+  // otherwise.
   DoubleVector triangleNormal1 =
     this->cross_(this->add_(1.0, cc,      -1.0, mp),
                  this->add_(1.0, ccFace1, -1.0, mp));
 
-  // copysign takes the absolute value of the first argument and the sign of the second.
+  // copysign takes the absolute value of the first argument and the sign of
+  // the second.
   covolume += copysign(triangleArea1, this->dot_(triangleNormal1, gauge));
 
   return covolume;
@@ -1533,18 +1541,20 @@ getTetrahedronVolume_(const DoubleVector &edge0,
 {
   // Make sure the edges are not conplanar.
   double alpha = edge0.dot(this->cross_(edge1, edge2));
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(fabs(alpha)
-                              / this->norm2_(edge0)
-                              / this->norm2_(edge1)
-                              / this->norm2_(edge2)
-                              < 1.0e-5,
-                              "Illegal mesh: tetrahedron too flat.\n"
-                              << "The following edges (with origin (0,0,0)) "
-                              << "seem to be conplanar:\n\n"
-                              << "  (0) (" << edge0[0] << ", " << edge0[1] << ", " << edge0[2] << "),\n"
-                              << "  (1) (" << edge1[0] << ", " << edge1[1] << ", " << edge1[2] << "),\n"
-                              << "  (2) (" << edge2[0] << ", " << edge2[1] << ", " << edge2[2] << "),\n\n"
-                              << "Abort.");
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(
+      fabs(alpha)
+      / this->norm2_(edge0)
+      / this->norm2_(edge1)
+      / this->norm2_(edge2)
+      < 1.0e-5,
+      "Illegal mesh: tetrahedron too flat.\n"
+      << "The following edges (with origin (0,0,0)) "
+      << "seem to be conplanar:\n\n"
+      << "  (0) (" << edge0[0] << ", " << edge0[1] << ", " << edge0[2] << "),\n"
+      << "  (1) (" << edge1[0] << ", " << edge1[1] << ", " << edge1[2] << "),\n"
+      << "  (2) (" << edge2[0] << ", " << edge2[1] << ", " << edge2[2] << "),\n\n"
+      << "Abort."
+      );
   double vol = fabs(alpha) / 6.0;
   return vol;
 }
@@ -1620,19 +1630,20 @@ computeTetrahedronCircumcenter_(
     relNodes[k] = this->add_(1.0, nodes[k+1], -1.0, nodes[0]);
 
 
-  double omega = 2.0 *
-                 this->dot_(relNodes[0], this->cross_(relNodes[1], relNodes[2]));
+  double omega =
+    2.0 * this->dot_(relNodes[0], this->cross_(relNodes[1], relNodes[2]));
 
   // don't divide by 0
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(fabs(omega) < 1.0e-10,
-                               "It seems that the nodes \n\n"
-                               << "   " << nodes[0] << "\n"
-                               << "   " << nodes[1] << "\n"
-                               << "   " << nodes[2] << "\n"
-                               << "   " << nodes[3] << "\n"
-                               << "\ndo not form a proper tetrahedron. Abort."
-                               << std::endl
-                            );
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(
+      fabs(omega) < 1.0e-10,
+      "It seems that the nodes \n\n"
+      << "   " << nodes[0] << "\n"
+      << "   " << nodes[1] << "\n"
+      << "   " << nodes[2] << "\n"
+      << "   " << nodes[3] << "\n"
+      << "\ndo not form a proper tetrahedron. Abort."
+      << std::endl
+      );
   double alpha = this->norm2squared_(relNodes[0]) / omega;
   double beta  = this->norm2squared_(relNodes[1]) / omega;
   double gamma = this->norm2squared_(relNodes[2]) / omega;
@@ -1652,7 +1663,7 @@ computeTetrahedronCircumcenter_(
 DoubleVector
 StkMesh::
 add_(double alpha, const DoubleVector &x,
-      double beta,  const DoubleVector &y
+     double beta,  const DoubleVector &y
     ) const
 {
 #ifndef NDEBUG

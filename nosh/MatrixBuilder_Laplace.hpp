@@ -36,8 +36,6 @@
 
 #include "nosh/MatrixBuilder_Virtual.hpp"
 
-typedef std::tuple<stk::mesh::Entity, stk::mesh::Entity> edge;
-
 // forward declarations
 namespace Nosh
 {
@@ -67,10 +65,6 @@ public:
   getComm() const;
 
   virtual
-  const Epetra_FECrsGraph &
-  getGraph() const;
-
-  virtual
   void
   apply(const std::map<std::string, double> &params,
         const Epetra_Vector &X,
@@ -98,16 +92,8 @@ public:
 
 protected:
 private:
-  const Epetra_FECrsGraph
-  buildGraph_() const;
-
   void
   fill_(Epetra_FECrsMatrix &matrix) const;
-
-  void
-  buildGlobalIndexCache_(
-      const Teuchos::Array<edge> &edges
-      ) const;
 
   void
   buildAlphaCache_(
@@ -120,13 +106,8 @@ private:
   const Teuchos::RCP<Teuchos::Time> fillTime_;
   const Teuchos::RCP<Teuchos::Time> buildLaplaceGraphTime_;
 #endif
-  const Teuchos::RCP<const Nosh::StkMesh> mesh_;
   const Teuchos::RCP<const Nosh::ScalarField::Virtual> thickness_;
 
-  mutable Teuchos::ArrayRCP<Epetra_IntSerialDenseVector> globalIndexCache_;
-  mutable bool globalIndexCacheUpToDate_;
-
-  const Epetra_FECrsGraph graph_;
   mutable Epetra_FECrsMatrix matrixCache_;
   mutable bool matrixCacheUpToDate_;
 

@@ -74,10 +74,6 @@ public:
   getComm() const;
 
   virtual
-  const Epetra_FECrsGraph &
-  getGraph() const;
-
-  virtual
   void
   apply(const std::map<std::string, double> & params,
         const Epetra_Vector &X,
@@ -105,9 +101,6 @@ public:
 
 protected:
 private:
-  const Epetra_FECrsGraph
-  buildKeoGraph_() const;
-
   void
   fillKeo_(Epetra_FECrsMatrix &keoMatrix,
             const std::map<std::string, double> & params,
@@ -127,9 +120,6 @@ private:
             ) const;
 
   void
-  buildGlobalIndexCache_(const Teuchos::Array<edge> &edges) const;
-
-  void
   buildAlphaCache_(const Teuchos::Array<edge> & edges,
                    const Teuchos::ArrayRCP<const double> &edgeCoefficients
                    ) const;
@@ -139,14 +129,9 @@ private:
   const Teuchos::RCP<Teuchos::Time> keoFillTime_;
   const Teuchos::RCP<Teuchos::Time> buildKeoGraphTime_;
 #endif
-  const Teuchos::RCP<const Nosh::StkMesh> mesh_;
   const Teuchos::RCP<const Nosh::ScalarField::Virtual> thickness_;
   const Teuchos::RCP<const Nosh::VectorField::Virtual> mvp_;
 
-  mutable Teuchos::ArrayRCP<Epetra_IntSerialDenseVector> globalIndexCache_;
-  mutable bool globalIndexCacheUpToDate_;
-
-  const Epetra_FECrsGraph keoGraph_;
   mutable Epetra_FECrsMatrix keoCache_;
   mutable std::map<std::string, double> keoBuildParameters_;
   mutable Epetra_FECrsMatrix keoDpCache_;
