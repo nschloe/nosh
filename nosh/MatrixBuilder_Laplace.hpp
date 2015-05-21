@@ -57,12 +57,8 @@ public:
           const Teuchos::RCP<const Nosh::ScalarField::Virtual> &thickness
         );
 
-// Destructor.
+  // Destructor.
   ~Laplace();
-
-  virtual
-  const Epetra_Comm &
-  getComm() const;
 
   virtual
   void

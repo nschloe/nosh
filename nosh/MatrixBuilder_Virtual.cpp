@@ -40,6 +40,16 @@ Virtual::
 {
 }
 // =============================================================================
+const Epetra_Comm &
+Virtual::
+getComm() const
+{
+#ifndef NDEBUG
+  TEUCHOS_ASSERT(!mesh_.is_null());
+#endif
+  return mesh_->getComm();
+}
+// =============================================================================
 const Epetra_FECrsGraph &
 Virtual::
 getGraph() const

@@ -53,15 +53,15 @@ public:
   virtual
   ~Virtual();
 
+  //! Get the underlying communicator.
+  virtual
+  const Epetra_Comm &
+  getComm() const;
+
   //! Get the connectivity graph of the matrix.
   virtual
   const Epetra_FECrsGraph &
   getGraph() const;
-
-  //! Get the underlying communicator.
-  virtual
-  const Epetra_Comm &
-  getComm() const = 0;
 
   //! Y = A(params) * X.
   virtual

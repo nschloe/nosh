@@ -70,29 +70,28 @@ public:
   ~Keo();
 
   virtual
-  const Epetra_Comm &
-  getComm() const;
-
-  virtual
   void
-  apply(const std::map<std::string, double> & params,
-        const Epetra_Vector &X,
-        Epetra_Vector &Y
+  apply(
+      const std::map<std::string, double> & params,
+      const Epetra_Vector &X,
+      Epetra_Vector &Y
       ) const;
 
   virtual
   void
-  applyDKDp(const std::map<std::string, double> & params,
-            const std::string & paramName,
-            const Epetra_Vector &X,
-            Epetra_Vector &Y
-          ) const;
+  applyDKDp(
+      const std::map<std::string, double> & params,
+      const std::string & paramName,
+      const Epetra_Vector &X,
+      Epetra_Vector &Y
+      ) const;
 
   virtual
   void
-  fill(Epetra_FECrsMatrix &matrix,
-       const std::map<std::string, double> & params
-     ) const;
+  fill(
+      Epetra_FECrsMatrix &matrix,
+      const std::map<std::string, double> & params
+      ) const;
 
 //! Gets the initial parameters from this module.
   virtual
@@ -102,16 +101,18 @@ public:
 protected:
 private:
   void
-  fillKeo_(Epetra_FECrsMatrix &keoMatrix,
-            const std::map<std::string, double> & params,
-            void (Keo::*filler)(const int, const std::map<std::string, double>&, double*) const
-          ) const;
+  fillKeo_(
+      Epetra_FECrsMatrix &keoMatrix,
+      const std::map<std::string, double> & params,
+      void (Keo::*filler)(const int, const std::map<std::string, double>&, double*) const
+      ) const;
 
   void
-  fillerRegular_(const int k,
-                 const std::map<std::string, double> & params,
-                 double * v
-                 ) const;
+  fillerRegular_(
+      const int k,
+      const std::map<std::string, double> & params,
+      double * v
+      ) const;
 
   void
   fillerDp_(const int k,

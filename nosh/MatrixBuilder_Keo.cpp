@@ -69,16 +69,6 @@ Keo::
 {
 }
 // =============================================================================
-const Epetra_Comm &
-Keo::
-getComm() const
-{
-#ifndef NDEBUG
-  TEUCHOS_ASSERT(!mesh_.is_null());
-#endif
-  return mesh_->getComm();
-}
-// =============================================================================
 void
 Keo::
 apply(const std::map<std::string, double> & params,
