@@ -22,7 +22,6 @@
 
 #include "nosh/ScalarField_Virtual.hpp"
 #include "nosh/MatrixBuilder_Virtual.hpp"
-#include "nosh/MatrixBuilder_Keo.hpp"
 #include "nosh/JacobianOperator.hpp"
 #include "nosh/KeoRegularized.hpp"
 #include "nosh/StkMesh.hpp"

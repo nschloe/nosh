@@ -93,7 +93,7 @@ public:
       const std::map<std::string, double> & params
       ) const;
 
-//! Gets the initial parameters from this module.
+  //! Gets the initial parameters from this module.
   virtual
   const std::map<std::string, double>
   getInitialParameters() const;

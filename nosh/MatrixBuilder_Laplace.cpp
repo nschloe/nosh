@@ -155,9 +155,7 @@ fill_(Epetra_FECrsMatrix &matrix) const
 
   Epetra_SerialDenseMatrix A(4, 4);
   // Loop over all edges.
-  for (Teuchos::Array<edge>::size_type k = 0;
-       k < edges.size();
-       k++) {
+  for (auto k = 0; k < edges.size(); k++) {
     // We'd like to insert the 2x2 matrix
     //
     //     [   alpha, - alpha ]
@@ -183,10 +181,10 @@ fill_(Epetra_FECrsMatrix &matrix) const
     A(3, 1) = -a;
     A(3, 2) =  0.0;
     A(3, 3) =  a;
-    TEUCHOS_ASSERT_EQUALITY(
-        0,
-        matrix.SumIntoGlobalValues(globalIndexCache_[k], A)
-        );
+    int ierr = matrix.SumIntoGlobalValues(globalIndexCache_[k], A);
+#ifndef NDEBUG
+    TEUCHOS_ASSERT_EQUALITY(0, ierr);
+#endif
     // -------------------------------------------------------------------
   }
 

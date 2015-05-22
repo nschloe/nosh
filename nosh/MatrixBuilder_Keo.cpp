@@ -82,7 +82,7 @@ apply(const std::map<std::string, double> & params,
     needsRebuild = true;
   } else {
     needsRebuild = false;
-    for (std::map<std::string, double>::const_iterator it = keoBuildParameters_.begin();
+    for (auto it = keoBuildParameters_.begin();
          it != keoBuildParameters_.end();
          ++it) {
       // Check if it->first is in params at all and if their values are equal.
@@ -99,7 +99,7 @@ apply(const std::map<std::string, double> & params,
   if (needsRebuild) {
     this->fillKeo_(keoCache_, params, &Keo::fillerRegular_);
     // Reset build parameters.
-    for (std::map<std::string, double>::iterator it = keoBuildParameters_.begin();
+    for (auto it = keoBuildParameters_.begin();
          it != keoBuildParameters_.end();
          ++it) {
       std::map<std::string, double>::const_iterator it2 = params.find(it->first);
@@ -149,7 +149,7 @@ fill(Epetra_FECrsMatrix &matrix,
     needsRebuild = true;
   } else {
     needsRebuild = false;
-    for (std::map<std::string, double>::const_iterator it = keoBuildParameters_.begin();
+    for (auto it = keoBuildParameters_.begin();
          it != keoBuildParameters_.end();
          ++it) {
       // Check if it->first is in params at all and if their values are equal.
@@ -166,7 +166,7 @@ fill(Epetra_FECrsMatrix &matrix,
   if (needsRebuild) {
     this->fillKeo_(keoCache_, params, &Keo::fillerRegular_);
     // Reset build parameters.
-    for (std::map<std::string, double>::iterator it = keoBuildParameters_.begin();
+    for (auto it = keoBuildParameters_.begin();
          it != keoBuildParameters_.end();
          ++it) {
       std::map<std::string, double>::const_iterator it2 =
@@ -199,7 +199,7 @@ fillerRegular_(const int k,
   // 1.0
   const double aInt = mvp_->getEdgeProjection(k, params);
   // If compiled with GNU (and maybe other compilers), we could use
-  // sincos() here to comute sin and cos simultaneously.
+  // sincos() here to compute sin and cos simultaneously.
   // PGI, for one, doesn't support sincos, though.
   v[0] = -cos(aInt);
   v[1] = -sin(aInt);
