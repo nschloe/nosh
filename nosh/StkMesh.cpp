@@ -558,6 +558,7 @@ openOutputChannel(const std::string &outputDir,
                   const std::string &fileBaseName
                   )
 {
+
 //  // prepare the data for output
 //#ifdef HAVE_MPI
 //  const Epetra_MpiComm &mpicomm =
@@ -579,6 +580,12 @@ openOutputChannel(const std::string &outputDir,
       );
   const stk::mesh::FieldVector &fields = ioBroker_->meta_data().get_fields();
   for (size_t i=0; i < fields.size(); i++) {
+    if (
+        fields[i]->name() == "coordinates" ||
+        fields[i]->name() == "distribution_factors"
+       ) {
+      continue;
+    }
     ioBroker_->add_field(outputChannel_, *fields[i]);
   }
 
