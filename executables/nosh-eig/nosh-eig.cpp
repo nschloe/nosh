@@ -37,6 +37,7 @@
 #include <AnasaziEpetraAdapter.hpp>
 
 #include "nosh/MatrixBuilder_Keo.hpp"
+#include "nosh/MatrixBuilder_DKeoDP.hpp"
 #include "nosh/ScalarField_Constant.hpp"
 #include "nosh/VectorField_ExplicitValues.hpp"
 #include "nosh/ModelEvaluator_Nls.hpp"
@@ -179,8 +180,12 @@ int main(int argc, char *argv[])
       rcp(new Nosh::ScalarField::Constant(*mesh, 1.0));
 
     // Create matrix builder.
-    const RCP<Nosh::MatrixBuilder::Virtual> matrixBuilder =
+    const RCP<Nosh::MatrixBuilder::Virtual> keoBuilder =
       rcp(new Nosh::MatrixBuilder::Keo(mesh, thickness, mvp));
+
+    // Create matrix builder.
+    const RCP<Nosh::MatrixBuilder::Virtual> DKeoDPBuilder =
+      rcp(new Nosh::MatrixBuilder::DKeoDP(mesh, thickness, mvp, "mu"));
 
     // Construct scalar potential.
     RCP<Nosh::ScalarField::Virtual> sp =
@@ -190,7 +195,15 @@ int main(int argc, char *argv[])
     // This is the most important object in the whole stack.
     const double g = 1.0;
     RCP<Nosh::ModelEvaluator::Virtual> modelEvaluator =
-      rcp(new Nosh::ModelEvaluator::Nls(mesh, matrixBuilder, sp, g, thickness, psi));
+      rcp(new Nosh::ModelEvaluator::Nls(
+            mesh,
+            keoBuilder,
+            DKeoDPBuilder,
+            sp,
+            g,
+            thickness,
+            psi
+            ));
 
     // Set the input arguments.
     EpetraExt::ModelEvaluator::InArgs inArgs = modelEvaluator->createInArgs();

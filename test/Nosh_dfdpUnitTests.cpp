@@ -34,6 +34,7 @@
 #include "nosh/StkMesh.hpp"
 #include "nosh/ScalarField_Constant.hpp"
 #include "nosh/MatrixBuilder_Keo.hpp"
+#include "nosh/MatrixBuilder_DKeoDP.hpp"
 #include "nosh/VectorField_ExplicitValues.hpp"
 #include "nosh/ModelEvaluator_Nls.hpp"
 
@@ -110,20 +111,24 @@ testDfdp(const std::string & inputFileNameBase,
 
   Teuchos::RCP<Nosh::VectorField::Virtual> mvp =
     Teuchos::rcp(new Nosh::VectorField::ExplicitValues(*mesh, "A", mu));
-  const Teuchos::RCP<Nosh::MatrixBuilder::Virtual> matrixBuilder =
+  const Teuchos::RCP<Nosh::MatrixBuilder::Virtual> keoBuilder =
     Teuchos::rcp(new Nosh::MatrixBuilder::Keo(mesh, thickness, mvp));
+  const Teuchos::RCP<Nosh::MatrixBuilder::Virtual> DKeoDPBuilder =
+    Teuchos::rcp(new Nosh::MatrixBuilder::DKeoDP(mesh, thickness, mvp, "g"));
 
   Teuchos::RCP<Nosh::ScalarField::Virtual> sp =
     Teuchos::rcp(new Nosh::ScalarField::Constant(*mesh, -1.0));
 
   Teuchos::RCP<Nosh::ModelEvaluator::Nls> modelEval =
-    Teuchos::rcp(new Nosh::ModelEvaluator::Nls(mesh,
-                 matrixBuilder,
-                 sp,
-                 1.0,
-                 thickness,
-                 z
-                                              ));
+    Teuchos::rcp(
+        new Nosh::ModelEvaluator::Nls(mesh,
+          keoBuilder,
+          DKeoDPBuilder,
+          sp,
+          1.0,
+          thickness,
+          z
+          ));
 
   // -------------------------------------------------------------------------
   // Perform the finite difference test for all parameters present in the
@@ -141,7 +146,14 @@ testDfdp(const std::string & inputFileNameBase,
   Teuchos::Array<int> paramIndices(1);
   const Teuchos::RCP<Epetra_Vector> nullV = Teuchos::null;
   double r;
-  for (int paramIndex = 0; paramIndex < p->GlobalLength(); paramIndex++) {
+  Teuchos::RCP<const Teuchos::Array<std::string> >
+    pnames = modelEval->get_p_names(0);
+  // Only test the first parameter "g" for now since we have to set the DKeoDP
+  // above. Alternative: Use "mu" above, and take paramIndex 1 here.
+  // TODO test both parameters
+  //for (int paramIndex = 0; paramIndex < p->GlobalLength(); paramIndex++) {
+  for (int paramIndex = 0; paramIndex < 1; paramIndex++) {
+    std::cout << paramIndex << std::endl;
     // Get finite difference.
     computeFiniteDifference_(modelEval, inArgs, outArgs, p, paramIndex, fdiff);
 
@@ -149,10 +161,10 @@ testDfdp(const std::string & inputFileNameBase,
     inArgs.set_p(0, p);
     paramIndices[0] = paramIndex;
     deriv = EpetraExt::ModelEvaluator::DerivativeMultiVector(
-              dfdp,
-              EpetraExt::ModelEvaluator::DERIV_MV_BY_COL,
-              paramIndices
-            );
+        dfdp,
+        EpetraExt::ModelEvaluator::DERIV_MV_BY_COL,
+        paramIndices
+        );
     outArgs.set_DfDp(0, deriv);
     outArgs.set_f(nullV);
     modelEval->evalModel(inArgs, outArgs);

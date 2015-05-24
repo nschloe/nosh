@@ -34,6 +34,7 @@
 #include "nosh/StkMesh.hpp"
 #include "nosh/ScalarField_Constant.hpp"
 #include "nosh/MatrixBuilder_Keo.hpp"
+#include "nosh/MatrixBuilder_DKeoDP.hpp"
 #include "nosh/VectorField_ExplicitValues.hpp"
 #include "nosh/ModelEvaluator_Nls.hpp"
 
@@ -76,14 +77,24 @@ testComputeF(const std::string & inputFileNameBase,
 
   Teuchos::RCP<Nosh::VectorField::Virtual> mvp =
     Teuchos::rcp(new Nosh::VectorField::ExplicitValues(*mesh, "A", mu));
-  const Teuchos::RCP<Nosh::MatrixBuilder::Virtual> matrixBuilder =
+  const Teuchos::RCP<Nosh::MatrixBuilder::Virtual> keoBuilder =
     Teuchos::rcp(new Nosh::MatrixBuilder::Keo(mesh, thickness, mvp));
+  const Teuchos::RCP<Nosh::MatrixBuilder::Virtual> DKeoDPBuilder =
+    Teuchos::rcp(new Nosh::MatrixBuilder::DKeoDP(mesh, thickness, mvp, "mu"));
 
   Teuchos::RCP<Nosh::ScalarField::Virtual> sp =
     Teuchos::rcp(new Nosh::ScalarField::Constant(*mesh, -1.0));
 
   Teuchos::RCP<Nosh::ModelEvaluator::Nls> modelEval =
-    Teuchos::rcp(new Nosh::ModelEvaluator::Nls(mesh, matrixBuilder, sp, 1.0, thickness, z));
+    Teuchos::rcp(new Nosh::ModelEvaluator::Nls(
+          mesh,
+          keoBuilder,
+          DKeoDPBuilder,
+          sp,
+          1.0,
+          thickness,
+          z)
+        );
 
   // Create inArgs. Use p_init as parameters.
   EpetraExt::ModelEvaluator::InArgs inArgs = modelEval->createInArgs();

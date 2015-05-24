@@ -41,6 +41,7 @@
 #include "nosh/ScalarField_Constant.hpp"
 #include "nosh/ScalarField_ExplicitValues.hpp"
 #include "nosh/MatrixBuilder_Keo.hpp"
+#include "nosh/MatrixBuilder_DKeoDP.hpp"
 #include "nosh/MatrixBuilder_Laplace.hpp"
 #include "nosh/VectorField_ExplicitValues.hpp"
 #include "nosh/VectorField_ConstantCurl.hpp"
@@ -177,8 +178,10 @@ int main(int argc, char *argv[])
     const double mu = initialParameterValues.get<double>("mu");
     RCP<Nosh::VectorField::Virtual> mvp =
       rcp(new Nosh::VectorField::ExplicitValues(*mesh, "A", mu));
-    const RCP<Nosh::MatrixBuilder::Virtual> matrixBuilder =
+    const RCP<Nosh::MatrixBuilder::Virtual> keoBuilder =
       rcp(new Nosh::MatrixBuilder::Keo(mesh, thickness, mvp));
+    const RCP<Nosh::MatrixBuilder::Virtual> DKeoDPBuilder =
+      rcp(new Nosh::MatrixBuilder::DKeoDP(mesh, thickness, mvp, "mu"));
 
     // (b2) 'A' analytically given (here with constant curl).
     //      Optionally add a rotation axis u. This is important
@@ -220,7 +223,15 @@ int main(int argc, char *argv[])
     // Finally, create the model evaluator.
     // This is the most important object in the whole stack.
     RCP<Nosh::ModelEvaluator::Virtual> nlsModel =
-      rcp(new Nosh::ModelEvaluator::Nls(mesh, matrixBuilder, sp, g, thickness, psi));
+      rcp(new Nosh::ModelEvaluator::Nls(
+            mesh,
+            keoBuilder,
+            DKeoDPBuilder,
+            sp,
+            g,
+            thickness,
+            psi
+            ));
 
     RCP<Nosh::ModelEvaluator::Virtual> modelEvaluator;
     if (useBordering) {

@@ -226,9 +226,10 @@ OperatorRangeMap() const
 // =============================================================================
 void
 KeoRegularized::
-rebuild(const std::map<std::string, double> & params,
-        const Epetra_Vector & x
-      )
+rebuild(
+    const std::map<std::string, double> & params,
+    const Epetra_Vector & x
+    )
 {
   // Copy over the matrix.
   // This is necessary as we don't apply AMG to K,

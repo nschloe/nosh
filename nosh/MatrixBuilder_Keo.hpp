@@ -79,15 +79,6 @@ public:
 
   virtual
   void
-  applyDKDp(
-      const std::map<std::string, double> & params,
-      const std::string & paramName,
-      const Epetra_Vector &X,
-      Epetra_Vector &Y
-      ) const;
-
-  virtual
-  void
   fill(
       Epetra_FECrsMatrix &matrix,
       const std::map<std::string, double> & params
@@ -115,12 +106,6 @@ private:
       ) const;
 
   void
-  fillerDp_(const int k,
-            const std::map<std::string, double> & params,
-            double * v
-            ) const;
-
-  void
   buildAlphaCache_(const Teuchos::Array<edge> & edges,
                    const Teuchos::ArrayRCP<const double> &edgeCoefficients
                    ) const;
@@ -135,12 +120,10 @@ private:
 
   mutable Epetra_FECrsMatrix keoCache_;
   mutable std::map<std::string, double> keoBuildParameters_;
-  mutable Epetra_FECrsMatrix keoDpCache_;
 
 
   mutable Teuchos::ArrayRCP<double> alphaCache_;
   mutable bool alphaCacheUpToDate_;
-  mutable std::string paramName_;
 };
 } // namespace MatrixBuilder
 } // namespace Nosh

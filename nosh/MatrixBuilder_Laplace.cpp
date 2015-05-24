@@ -88,24 +88,6 @@ apply(const std::map<std::string, double> &params,
 // =============================================================================
 void
 Laplace::
-applyDKDp(
-    const std::map<std::string, double> &params,
-    const std::string & paramName,
-    const Epetra_Vector &X,
-    Epetra_Vector &Y
-    ) const
-{
-  (void) params;
-  (void) paramName;
-  (void) X;
-  (void) Y;
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(true,
-                              "No parameters for the Laplace operator.");
-  return;
-}
-// =============================================================================
-void
-Laplace::
 fill(Epetra_FECrsMatrix &matrix,
      const std::map<std::string, double> &params
      ) const

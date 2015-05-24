@@ -48,7 +48,8 @@ namespace ModelEvaluator
 Nls::
 Nls(
   const Teuchos::RCP<const Nosh::StkMesh> &mesh,
-  const Teuchos::RCP<const Nosh::MatrixBuilder::Virtual> &matrixBuilder,
+  const Teuchos::RCP<const Nosh::MatrixBuilder::Virtual> &keoBuilder,
+  const Teuchos::RCP<const Nosh::MatrixBuilder::Virtual> &DKeoDPBuilder,
   const Teuchos::RCP<const Nosh::ScalarField::Virtual> &scalarPotential,
   const double g,
   const Teuchos::RCP<const Nosh::ScalarField::Virtual> &thickness,
@@ -58,17 +59,24 @@ Nls(
   scalarPotential_(scalarPotential),
   thickness_(thickness),
   x_init_(initialX),
-  matrixBuilder_(matrixBuilder),
+  keoBuilder_(keoBuilder),
+  DKeoDPBuilder_(DKeoDPBuilder),
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
-  evalModelTime_(Teuchos::TimeMonitor::getNewTimer("Nosh: Nls::evalModel")),
+  evalModelTime_(Teuchos::TimeMonitor::getNewTimer(
+        "Nosh: Nls::evalModel"
+        )),
   computeFTime_(Teuchos::TimeMonitor::getNewTimer(
-                   "Nosh: Nls::evalModel:compute F")),
+        "Nosh: Nls::evalModel:compute F"
+        )),
   computedFdpTime_(Teuchos::TimeMonitor::getNewTimer(
-                      "Nosh: Nls::evalModel:compute dF/dp")),
+        "Nosh: Nls::evalModel:compute dF/dp"
+        )),
   fillJacobianTime_(Teuchos::TimeMonitor::getNewTimer(
-                       "Nosh: Nls::evalModel:fill Jacobian")),
+        "Nosh: Nls::evalModel:fill Jacobian"
+        )),
   fillPreconditionerTime_(Teuchos::TimeMonitor::getNewTimer(
-                             "Nosh: Nls::evalModel::fill preconditioner")),
+        "Nosh: Nls::evalModel::fill preconditioner"
+        )),
 #endif
   out_(Teuchos::VerboseObjectBase::getDefaultOStream()),
   p_map_(Teuchos::null),
@@ -86,7 +94,7 @@ Nls(
 
   // This merges and discards new values if their keys are already in the list.
   std::map<std::string, double> mbParams =
-    matrixBuilder_->getInitialParameters();
+    keoBuilder_->getInitialParameters();
   params.insert(mbParams.begin(), mbParams.end());
 
   // Out of this now complete list, create the entities that the EpetraExt::
@@ -96,9 +104,7 @@ Nls(
   p_init_ = Teuchos::rcp(new Epetra_Vector(*p_map_));
   p_names_ = Teuchos::rcp(new Teuchos::Array<std::string>(numParams));
   int k = 0;
-  for (std::map<std::string, double>::const_iterator it = params.begin();
-       it != params.end();
-       ++it) {
+  for (auto it = params.begin(); it != params.end(); ++it) {
     (*p_names_)[k] = it->first;
     (*p_init_)[k] = it->second;
     k++;
@@ -149,8 +155,10 @@ Teuchos::RCP<const Epetra_Vector>
 Nls::
 get_p_init(int l) const
 {
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(l != 0,
-                              "LOCA can only deal with one parameter vector.");
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(
+      l != 0,
+      "LOCA can only deal with one parameter vector."
+      );
   return p_init_;
 }
 // ============================================================================
@@ -158,8 +166,10 @@ Teuchos::RCP<const Epetra_Map>
 Nls::
 get_p_map(int l) const
 {
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(l != 0,
-                              "LOCA can only deal with one parameter vector.");
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(
+      l != 0,
+      "LOCA can only deal with one parameter vector."
+      );
   return p_map_;
 }
 // ============================================================================
@@ -167,8 +177,10 @@ Teuchos::RCP<const Teuchos::Array<std::string> >
 Nls::
 get_p_names(int l) const
 {
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(l != 0,
-                              "LOCA can only deal with one parameter vector.");
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(
+      l != 0,
+      "LOCA can only deal with one parameter vector."
+      );
   return p_names_;
 }
 // =============================================================================
@@ -176,29 +188,36 @@ Teuchos::RCP<Epetra_Operator>
 Nls::
 create_W() const
 {
-  return Teuchos::rcp(new Nosh::JacobianOperator(mesh_,
-                      scalarPotential_,
-                      thickness_,
-                      matrixBuilder_));
+  return Teuchos::rcp(
+      new Nosh::JacobianOperator(
+        mesh_,
+        scalarPotential_,
+        thickness_,
+        keoBuilder_
+        )
+      );
 }
 // =============================================================================
 Teuchos::RCP<EpetraExt::ModelEvaluator::Preconditioner>
 Nls::
 create_WPrec() const
 {
-  Teuchos::RCP<Epetra_Operator> keoPrec =
-    Teuchos::rcp(new Nosh::KeoRegularized(mesh_,
-                                          thickness_,
-                                          matrixBuilder_));
+  Teuchos::RCP<Epetra_Operator> keoPrec = Teuchos::rcp(
+      new Nosh::KeoRegularized(
+        mesh_,
+        thickness_,
+        keoBuilder_
+        )
+      );
   // bool is answer to: "Prec is already inverted?"
   // This needs to be set to TRUE to make sure that the constructor of
   //    NOX::Epetra::LinearSystemStratimikos
   // chooses a user-defined preconditioner.
   // Effectively, this boolean serves pretty well as a quirky switch for the
   // preconditioner if Piro is used.
-  return Teuchos::rcp(new EpetraExt::ModelEvaluator::Preconditioner(keoPrec,
-                      true));
-  //false));
+  return Teuchos::rcp(
+      new EpetraExt::ModelEvaluator::Preconditioner(keoPrec, true)
+      );
 }
 // ============================================================================
 EpetraExt::ModelEvaluator::InArgs
@@ -240,27 +259,32 @@ createOutArgs() const
 
   outArgs.setSupports(OUT_ARG_f, true);
   outArgs.setSupports(OUT_ARG_W, true);
-  outArgs.set_W_properties(DerivativeProperties(DERIV_LINEARITY_UNKNOWN, // DERIV_LINEARITY_NONCONST
-                           DERIV_RANK_DEFICIENT, // DERIV_RANK_FULL, DERIV_RANK_DEFICIENT
-                           false // supportsAdjoint
-                                              )
-                         );
+  outArgs.set_W_properties(
+      DerivativeProperties(
+        DERIV_LINEARITY_UNKNOWN, // DERIV_LINEARITY_NONCONST
+        DERIV_RANK_DEFICIENT, // DERIV_RANK_FULL, DERIV_RANK_DEFICIENT
+        false // supportsAdjoint
+        )
+      );
 
   outArgs.setSupports(OUT_ARG_WPrec, true);
-  outArgs.set_WPrec_properties(DerivativeProperties(DERIV_LINEARITY_UNKNOWN,
-                               DERIV_RANK_FULL,
-                               false
-                                                  )
-                             );
+  outArgs.set_WPrec_properties(
+      DerivativeProperties(
+        DERIV_LINEARITY_UNKNOWN,
+        DERIV_RANK_FULL,
+        false
+        )
+      );
 
   return outArgs;
 }
 // ============================================================================
 void
 Nls::
-evalModel(const InArgs &inArgs,
-          const OutArgs &outArgs
-        ) const
+evalModel(
+    const InArgs &inArgs,
+    const OutArgs &outArgs
+    ) const
 {
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   Teuchos::TimeMonitor tm0(*evalModelTime_);
@@ -270,8 +294,9 @@ evalModel(const InArgs &inArgs,
   double beta = inArgs.get_beta();
 
   // From packages/piro/test/MockModelEval_A.cpp
-  if (alpha == 0.0 && beta == 0.0)
+  if (alpha == 0.0 && beta == 0.0) {
     beta = 1.0;
+  }
 #ifndef NDEBUG
   TEUCHOS_ASSERT_EQUALITY(alpha, 0.0);
   TEUCHOS_ASSERT_EQUALITY(beta,  1.0);
@@ -289,16 +314,20 @@ evalModel(const InArgs &inArgs,
 #ifndef NDEBUG
   // Make sure the paremters aren't NaNs.
   TEUCHOS_ASSERT(!p_in.is_null());
-  for (int k = 0; k < p_in->MyLength(); k++)
+  for (int k = 0; k < p_in->MyLength(); k++) {
     TEUCHOS_ASSERT(!std::isnan((*p_in)[k]));
+  }
 #endif
 
   // Fill the parameters into a std::map.
   const Teuchos::RCP<const Teuchos::Array<std::string> > paramNames =
     this->get_p_names(0);
   std::map<std::string, double> params;
-  for (int k = 0; k < p_in->MyLength(); k++)
+  for (int k = 0; k < p_in->MyLength(); k++) {
     params[(*paramNames)[k]] = (*p_in)[k];
+    //std::cout << (*paramNames)[k] << " " << (*p_in)[k] << std::endl;
+  }
+
 
   // compute F
   const Teuchos::RCP<Epetra_Vector> &f_out = outArgs.get_f();
@@ -324,11 +353,14 @@ evalModel(const InArgs &inArgs,
     TEUCHOS_ASSERT_EQUALITY(numDerivs, dfdp_out->NumVectors());
 #endif
     // Compute all derivatives.
-    for (int k = 0; k < numDerivs; k++)
-      this->computeDFDP_(*x_in,
-                         params,
-                         (*paramNames)[paramIndices[k]],
-                         *(*dfdp_out)(k));
+    for (int k = 0; k < numDerivs; k++) {
+      this->computeDFDP_(
+          *x_in,
+          params,
+          (*paramNames)[paramIndices[k]],
+          *(*dfdp_out)(k)
+          );
+    }
   }
 
   // Fill Jacobian.
@@ -358,13 +390,14 @@ evalModel(const InArgs &inArgs,
 // ============================================================================
 void
 Nls::
-computeF_(const Epetra_Vector &x,
-          const std::map<std::string, double> & params,
-          Epetra_Vector &FVec
-        ) const
+computeF_(
+    const Epetra_Vector &x,
+    const std::map<std::string, double> & params,
+    Epetra_Vector &FVec
+    ) const
 {
   // Compute FVec = K*x.
-  matrixBuilder_->apply(params, x, FVec);
+  keoBuilder_->apply(params, x, FVec);
 
   // Add the nonlinear part (mass lumping).
 #ifndef NDEBUG
@@ -434,10 +467,10 @@ computeF_(const Epetra_Vector &x,
     // The indexing here assumes that the local index K of controlVolume's map
     // is known to be local by thickness and scalarPotential and known to be
     // associated with that map.
-    const double alpha = controlVolumes[k] * thicknessValues[k]
-                         * (scalarPotentialValues[k]
-                            + g * (x[2*k]*x[2*k] + x[2*k+1]*x[2*k+1])
-                          );
+    const double alpha =
+      controlVolumes[k] * thicknessValues[k]* (
+          scalarPotentialValues[k] + g * (x[2*k]*x[2*k] + x[2*k+1]*x[2*k+1])
+          );
     // real and imaginary part
     FVec[2*k]   += alpha * x[2*k];
     FVec[2*k+1] += alpha * x[2*k+1];
@@ -448,14 +481,15 @@ computeF_(const Epetra_Vector &x,
 // ============================================================================
 void
 Nls::
-computeDFDP_(const Epetra_Vector &x,
-             const std::map<std::string, double> & params,
-             const std::string & paramName,
-             Epetra_Vector &FVec
-           ) const
+computeDFDP_(
+    const Epetra_Vector &x,
+    const std::map<std::string, double> & params,
+    const std::string & paramName,
+    Epetra_Vector &FVec
+    ) const
 {
   // FVec = dK/dp * x.
-  matrixBuilder_->applyDKDp(params, paramName, x, FVec);
+  DKeoDPBuilder_->apply(params, x, FVec);
 
 #ifndef NDEBUG
   TEUCHOS_ASSERT(FVec.Map().SameAs(x.Map()));

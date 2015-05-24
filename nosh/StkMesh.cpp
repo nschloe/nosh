@@ -554,9 +554,10 @@ field2vector_(const VectorFieldType &field,
 // =============================================================================
 void
 StkMesh::
-openOutputChannel(const std::string &outputDir,
-                  const std::string &fileBaseName
-                  )
+openOutputChannel(
+    const std::string &outputDir,
+    const std::string &fileBaseName
+    )
 {
 
 //  // prepare the data for output
@@ -580,6 +581,7 @@ openOutputChannel(const std::string &outputDir,
       );
   const stk::mesh::FieldVector &fields = ioBroker_->meta_data().get_fields();
   for (size_t i=0; i < fields.size(); i++) {
+    std::cout << fields[i]->data_traits().name << std::endl;
     if (
         fields[i]->name() == "coordinates" ||
         fields[i]->name() == "distribution_factors"
@@ -620,10 +622,12 @@ write(const double time) const
 
   // Write it out to the file that's been specified in mesh_.
   // The methods returns the output step (but we ignore it).
-  (void) ioBroker_->process_output_request(
-      outputChannel_,
-      time
-      );
+  //(void) ioBroker_->process_output_request(
+  //    outputChannel_,
+  //    time
+  //    );
+  static int step = 0;
+  (void) ioBroker_->process_output_request(outputChannel_, step++);
 
   return;
 }
