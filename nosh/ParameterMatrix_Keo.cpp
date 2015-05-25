@@ -55,7 +55,6 @@ Keo(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
 #endif
   thickness_(thickness),
   mvp_(mvp),
-  keoBuildParameters_(),
   alphaCache_(),
   alphaCacheUpToDate_(false)
 {

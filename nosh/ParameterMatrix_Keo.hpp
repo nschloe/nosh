@@ -97,8 +97,6 @@ private:
   const Teuchos::RCP<const Nosh::ScalarField::Virtual> thickness_;
   const Teuchos::RCP<const Nosh::VectorField::Virtual> mvp_;
 
-  mutable std::map<std::string, double> keoBuildParameters_;
-
   mutable Teuchos::ArrayRCP<double> alphaCache_;
   mutable bool alphaCacheUpToDate_;
 };
