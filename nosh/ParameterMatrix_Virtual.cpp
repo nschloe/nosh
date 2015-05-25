@@ -53,14 +53,8 @@ refill(const std::map<std::string, double> &params)
     needsRefill = true;
   } else {
     needsRefill = false;
-    for (auto it = buildParameters_.begin();
-         it != buildParameters_.end();
-         ++it) {
-      // Check if it->first is in params at all and if their values are equal.
-      std::map<std::string, double>::const_iterator it2 =
-        params.find(it->first);
-      TEUCHOS_ASSERT(it2 != params.end());
-      if (it2->second != it->second) {
+    for (auto const &buildParam: buildParameters_) {
+      if (buildParam.second != params.at(buildParam.first)) {
         needsRefill = true;
         break;
       }
@@ -69,14 +63,8 @@ refill(const std::map<std::string, double> &params)
 
   if (needsRefill) {
     this->refill_(params);
-    // Reset build parameters.
-    for (auto it = buildParameters_.begin();
-         it != buildParameters_.end();
-         ++it) {
-      std::map<std::string, double>::const_iterator it2 =
-        params.find(it->first);
-      TEUCHOS_ASSERT(it2 != params.end());
-      it->second = it2->second;
+    for (auto &buildParam: buildParameters_) {
+      buildParams.second = params.at(buildParam.first);
     }
   }
 

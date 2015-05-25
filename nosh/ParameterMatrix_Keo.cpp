@@ -86,6 +86,9 @@ refill_(const std::map<std::string, double> & params)
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   Teuchos::TimeMonitor tm(*keoFillTime_);
 #endif
+
+  mvp_->setParameters(params);
+
   // Zero-out the matrix.
   TEUCHOS_ASSERT_EQUALITY(0, this->PutScalar(0.0));
 
@@ -103,8 +106,6 @@ refill_(const std::map<std::string, double> & params)
   const Teuchos::Array<edge> edges = mesh_->getEdgeNodes();
   if (!alphaCacheUpToDate_)
     this->buildAlphaCache_(edges, mesh_->getEdgeCoefficients());
-
-  mvp_->setParameters(params);
 
   double v[3];
   Epetra_SerialDenseMatrix A(4, 4);

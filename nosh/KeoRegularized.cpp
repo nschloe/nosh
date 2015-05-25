@@ -122,9 +122,9 @@ ApplyInverse(const Epetra_MultiVector &X,
     // Belos part
     Teuchos::ParameterList belosList;
     // Relative convergence tolerance requested.
-    // Set this to 0 and adapt the maximum number of iterations. This way,
-    // the preconditioner always does exactly the same thing (namely maxIter
-    // PCG iterations) and is independent of X. This avoids mathematical
+    // Set this to 0 and adapt the maximum number of iterations. This way, the
+    // preconditioner always does exactly the same thing (namely maxIter PCG
+    // iterations) and is independent of X. This avoids mathematical
     // difficulties.
     belosList.set("Convergence Tolerance", 0.0);
     belosList.set("Maximum Iterations", numCycles_);
@@ -162,9 +162,11 @@ ApplyInverse(const Epetra_MultiVector &X,
     // -------------------------------------------------------------------------
     // Create an iterative solver manager.
     Teuchos::RCP<Belos::SolverManager<double, MV, OP> > newSolver =
-      Teuchos::rcp(new Belos::PseudoBlockCGSolMgr<double, MV, OP>
-                   (Teuchos::rcp(&problem, false), Teuchos::rcp(&belosList, false))
-                  );
+      Teuchos::rcp(
+          new Belos::PseudoBlockCGSolMgr<double, MV, OP>(
+            Teuchos::rcp(&problem, false),
+            Teuchos::rcp(&belosList, false)
+            ));
 
     // Perform "solve".
     Belos::ReturnType ret = newSolver->solve();
@@ -231,17 +233,13 @@ rebuild(
     )
 {
   // Copy over the matrix.
-  // This is necessary as we don't apply AMG to K,
-  // but to K + g*2|psi|^2.
-  // A possible work-around this copy would be to define
-  // the matrixBuilder's matrix as K+2*g*|psi|^2 in the first
-  // place, and make sure that 2*g*|psi|^2 is taken away
-  // again wherever needed (e.g., the Jacobian).
-  // This would introduce the additional complication of
-  // having KEO depend on psi, and would likely lead to
-  // some confusion in the rest of the code.
-  // Hence, don't worry too much about this until memory
-  // contrains get tight.
+  // This is necessary as we don't apply AMG to K, but to K + g*2|psi|^2.
+  // A possible work-around this copy would be to define the matrixBuilder's
+  // matrix as K+2*g*|psi|^2 in the first place, and make sure that 2*g*|psi|^2
+  // is taken away again wherever needed (e.g., the Jacobian).  This would
+  // introduce the additional complication of having KEO depend on psi, and
+  // would likely lead to some confusion in the rest of the code.  Hence, don't
+  // worry too much about this until memory contrains get tight.
   regularizedKeo_->refill(params);
 
   std::map<std::string, double>::const_iterator it = params.find("g");
@@ -368,16 +366,20 @@ rebuildInverse_()
     //  OperatorRangeMap()."
     // Make sure this is indeed the case.
 #ifndef NDEBUG
-    TEUCHOS_ASSERT(regularizedKeo_->OperatorRangeMap().
-                   SameAs(regularizedKeo_->RowMatrixRowMap())
-                 );
-    TEUCHOS_ASSERT(regularizedKeo_->OperatorDomainMap().
-                   SameAs(regularizedKeo_->OperatorRangeMap())
-                 );
+    TEUCHOS_ASSERT(
+        regularizedKeo_->OperatorRangeMap().SameAs(
+          regularizedKeo_->RowMatrixRowMap()
+          ));
+    TEUCHOS_ASSERT(
+        regularizedKeo_->OperatorDomainMap().SameAs(
+          regularizedKeo_->OperatorRangeMap()
+          ));
 #endif
-    MlPrec_ =
-      Teuchos::rcp(new ML_Epetra::MultiLevelPreconditioner(*regularizedKeo_,
-                   MLList));
+    MlPrec_ = Teuchos::rcp(
+        new ML_Epetra::MultiLevelPreconditioner(
+          *regularizedKeo_,
+          MLList
+          ));
   } else {
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor tm(*timerRebuild1_);
