@@ -264,7 +264,6 @@ initializeEdgeCache_() const
 #ifndef NDEBUG
   TEUCHOS_ASSERT(!mesh_.is_null());
 #endif
-  typedef std::tuple<stk::mesh::Entity, stk::mesh::Entity> edge;
   const Teuchos::Array<edge> edges = mesh_->getEdgeNodes();
 
   // Loop over all edges and create the cache.

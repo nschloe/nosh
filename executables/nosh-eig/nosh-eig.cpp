@@ -36,8 +36,8 @@
 //#include <AnasaziBasicOutputManager.hpp>
 #include <AnasaziEpetraAdapter.hpp>
 
-#include "nosh/MatrixBuilder_Keo.hpp"
-#include "nosh/MatrixBuilder_DKeoDP.hpp"
+#include "nosh/ParameterMatrix_Keo.hpp"
+#include "nosh/ParameterMatrix_DKeoDP.hpp"
 #include "nosh/ScalarField_Constant.hpp"
 #include "nosh/VectorField_ExplicitValues.hpp"
 #include "nosh/ModelEvaluator_Nls.hpp"
@@ -180,12 +180,12 @@ int main(int argc, char *argv[])
       rcp(new Nosh::ScalarField::Constant(*mesh, 1.0));
 
     // Create matrix builder.
-    const RCP<Nosh::MatrixBuilder::Virtual> keoBuilder =
-      rcp(new Nosh::MatrixBuilder::Keo(mesh, thickness, mvp));
+    const RCP<Nosh::ParameterMatrix::Virtual> keoBuilder =
+      rcp(new Nosh::ParameterMatrix::Keo(mesh, thickness, mvp));
 
     // Create matrix builder.
-    const RCP<Nosh::MatrixBuilder::Virtual> DKeoDPBuilder =
-      rcp(new Nosh::MatrixBuilder::DKeoDP(mesh, thickness, mvp, "mu"));
+    const RCP<Nosh::ParameterMatrix::Virtual> DKeoDPBuilder =
+      rcp(new Nosh::ParameterMatrix::DKeoDP(mesh, thickness, mvp, "mu"));
 
     // Construct scalar potential.
     RCP<Nosh::ScalarField::Virtual> sp =

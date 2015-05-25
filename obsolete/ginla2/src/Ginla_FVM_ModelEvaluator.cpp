@@ -425,13 +425,13 @@ assembleKineticEnergyOperators_( const double                     mu,
 //  dKineticEnergyDMuOperator_ = Teuchos::rcp( new ComplexMatrix( kineticEnergyOperatorGraph_ ) );
 
   // TODO Don't throw away the old matrix.
-  // This whole things could be treated more elegantly with an FEMatrixBuilder class.
+  // This whole things could be treated more elegantly with an FEParameterMatrix class.
   // Chris Baker, Aug 22, 2010:
   // In Tpetra, this could happen via some non-member function or helper class.
-  // For example, FEMatrixBuilder would accept your assembled matrix and internally
-  // stored a matrix of non-locals. All of the methods to FEMatrixBuilder would send
+  // For example, FEParameterMatrix would accept your assembled matrix and internally
+  // stored a matrix of non-locals. All of the methods to FEParameterMatrix would send
   // local entries to your assembled matrix and cache non-local entries in another matrix.
-  // When you call FEMatrixBuilder::doneBuilding(), then it would call the import/export
+  // When you call FEParameterMatrix::doneBuilding(), then it would call the import/export
   // functionality. The graph is only rebuilt if necessary (e.g., because the set of
   // occupied columns grows).
   int maxNumEntriesPerRow = komplex_->getComplexMap()->getGlobalNumElements();

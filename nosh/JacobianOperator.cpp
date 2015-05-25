@@ -27,7 +27,7 @@
 #include <Epetra_Vector.h>
 #include <Epetra_Map.h>
 
-#include "nosh/MatrixBuilder_Virtual.hpp"
+#include "nosh/ParameterMatrix_Virtual.hpp"
 #include "nosh/StkMesh.hpp"
 #include "nosh/ScalarField_Virtual.hpp"
 
@@ -35,17 +35,17 @@ namespace Nosh
 {
 // =============================================================================
 JacobianOperator::
-JacobianOperator(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
-                 const Teuchos::RCP<const Nosh::ScalarField::Virtual> &scalarPotential,
-                 const Teuchos::RCP<const Nosh::ScalarField::Virtual> &thickness,
-                 const Teuchos::RCP<const Nosh::MatrixBuilder::Virtual> &matrixBuilder
-               ) :
+JacobianOperator(
+    const Teuchos::RCP<const Nosh::StkMesh> &mesh,
+    const Teuchos::RCP<const Nosh::ScalarField::Virtual> &scalarPotential,
+    const Teuchos::RCP<const Nosh::ScalarField::Virtual> &thickness,
+    const Teuchos::RCP<Nosh::ParameterMatrix::Virtual> &matrix
+    ) :
   useTranspose_(false),
   mesh_(mesh),
   scalarPotential_(scalarPotential),
   thickness_(thickness),
-  matrixBuilder_(matrixBuilder),
-  keo_(Copy, matrixBuilder_->getGraph()),
+  keo_(matrix),
   diag0_(*(mesh->getComplexNonOverlapMap())),
   diag1b_(mesh->getControlVolumes()->Map())
 {
@@ -80,7 +80,7 @@ Apply(const Epetra_MultiVector &X,
 #endif
 
   // Y = K*X
-  TEUCHOS_ASSERT_EQUALITY(0, keo_.Apply(X, Y));
+  TEUCHOS_ASSERT_EQUALITY(0, keo_->Apply(X, Y));
 
   for (int vec = 0; vec < X.NumVectors(); vec++) {
     // For the parts Re(psi)Im(phi), Im(psi)Re(phi), the (2*k+1)th
@@ -93,10 +93,10 @@ Apply(const Epetra_MultiVector &X,
     // too. (It would actually be possible to have the terms
     // 2k/2k and 2k+1/2k+1 handled by Multiply().
     for (int k = 0; k < numMyPoints; k++) {
-      (*Y(vec))[2*k]   += diag0_ [2*k]   * X[vec][2*k]
-                          + diag1b_[k]     * X[vec][2*k+1];
+      (*Y(vec))[2*k]  += diag0_ [2*k]   * X[vec][2*k]
+                       + diag1b_[k]     * X[vec][2*k+1];
       (*Y(vec))[2*k+1] += diag1b_[k]     * X[vec][2*k]
-                          + diag0_ [2*k+1] * X[vec][2*k+1];
+                        + diag0_ [2*k+1] * X[vec][2*k+1];
     }
   }
 
@@ -150,21 +150,21 @@ const Epetra_Comm &
 JacobianOperator::
 Comm() const
 {
-  return keo_.Comm();
+  return keo_->Comm();
 }
 // =============================================================================
 const Epetra_Map &
 JacobianOperator::
 OperatorDomainMap() const
 {
-  return keo_.OperatorDomainMap();
+  return keo_->OperatorDomainMap();
 }
 // =============================================================================
 const Epetra_Map &
 JacobianOperator::
 OperatorRangeMap() const
 {
-  return keo_.OperatorRangeMap();
+  return keo_->OperatorRangeMap();
 }
 // =============================================================================
 void
@@ -174,15 +174,12 @@ rebuild(const std::map<std::string, double> params,
       )
 {
   // Fill the KEO.
-  // It is certainly a debatable design decision
-  // to have our own KEO in JacobianOperator
-  // and not live of the cache of the builder.
-  // On the one hand, in a typical continuation context,
-  // the same matrix is used in computeF, the preconditioner,
-  // and here. It would then be sufficient to store the
-  // matrix at one common place (e.g., the builder).
-  // This might however lead to complications in a
-  // situation like the following:
+  // It is certainly a debatable design decision to have our own KEO in
+  // JacobianOperator and not live of the cache of the builder. On the one
+  // hand, in a typical continuation context, the same matrix is used in
+  // computeF, the preconditioner, and here. It would then be sufficient to
+  // store the matrix at one common place (e.g., the builder).  This might
+  // however lead to complications in a situation like the following:
   //
   //   1. The matrix is requested by the Jacobian operator,
   //      a pointer to the common storage place is
@@ -193,13 +190,11 @@ rebuild(const std::map<std::string, double> params,
   //      has the altered matrix.
   //   3. The Jacobian operator uses the matrix.
   //
-  // One might argue that this situation is does not
-  // occur in the given context, but really the code
-  // shouldn't make any assumptions about it.
-  // Besides, the matrix copy that happens in fill
-  // is not of much concern computationally.
-  // Should this ever become an issue, revisit.
-  matrixBuilder_->fill(keo_, params);
+  // One might argue that this situation is does not occur in the given
+  // context, but really the code shouldn't make any assumptions about it.
+  // Besides, the matrix copy that happens in fill is not of much concern
+  // computationally. Should this ever become an issue, revisit.
+  keo_->refill(params);
 
   // Rebuild diagonals.
 #ifndef NDEBUG
@@ -212,9 +207,10 @@ rebuild(const std::map<std::string, double> params,
 // =============================================================================
 void
 JacobianOperator::
-rebuildDiags_(const std::map<std::string, double> params,
-              const Epetra_Vector &x
-            )
+rebuildDiags_(
+    const std::map<std::string, double> params,
+    const Epetra_Vector &x
+    )
 {
 #ifndef NDEBUG
   TEUCHOS_ASSERT(!scalarPotential_.is_null());

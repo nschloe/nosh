@@ -40,7 +40,7 @@ namespace ScalarField
 {
 class Virtual;
 }
-namespace MatrixBuilder
+namespace ParameterMatrix
 {
 class Virtual;
 }
@@ -59,8 +59,8 @@ public:
   //! Constructor without initial guess.
   Nls (
     const Teuchos::RCP<const Nosh::StkMesh> &mesh,
-    const Teuchos::RCP<const Nosh::MatrixBuilder::Virtual> &keoBuilder,
-    const Teuchos::RCP<const Nosh::MatrixBuilder::Virtual> &DKeoDPBuilder,
+    const Teuchos::RCP<Nosh::ParameterMatrix::Virtual> &keo,
+    const Teuchos::RCP<Nosh::ParameterMatrix::Virtual> &dKeoDP,
     const Teuchos::RCP<const Nosh::ScalarField::Virtual> &scalarPotential,
     const double g,
     const Teuchos::RCP<const Nosh::ScalarField::Virtual> &thickness,
@@ -152,8 +152,8 @@ private:
 
   const Teuchos::RCP<const Epetra_Vector> x_init_;
 
-  const Teuchos::RCP<const Nosh::MatrixBuilder::Virtual> keoBuilder_;
-  const Teuchos::RCP<const Nosh::MatrixBuilder::Virtual> DKeoDPBuilder_;
+  const Teuchos::RCP<Nosh::ParameterMatrix::Virtual> keo_;
+  const Teuchos::RCP<Nosh::ParameterMatrix::Virtual> dKeoDP_;
 
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   const Teuchos::RCP<Teuchos::Time> evalModelTime_;

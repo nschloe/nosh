@@ -19,7 +19,7 @@
 // @HEADER
 // =============================================================================
 // includes
-#include "nosh/MatrixBuilder_Keo.hpp"
+#include "nosh/ParameterMatrix_DKeoDP.hpp"
 
 #include <map>
 #include <string>
@@ -41,169 +41,56 @@
 
 namespace Nosh
 {
-namespace MatrixBuilder
+namespace ParameterMatrix
 {
 // =============================================================================
-Keo::
-Keo(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
+DKeoDP::
+DKeoDP(
+    const Teuchos::RCP<const Nosh::StkMesh> &mesh,
     const Teuchos::RCP<const Nosh::ScalarField::Virtual> &thickness,
-    const Teuchos::RCP<const Nosh::VectorField::Virtual> &mvp
+    const Teuchos::RCP<const Nosh::VectorField::Virtual> &mvp,
+    const std::string & paramName
    ):
   Virtual(mesh),
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
-  keoFillTime_(Teuchos::TimeMonitor::getNewTimer("Nosh: Keo::fillKeo_")),
+  keoFillTime_(Teuchos::TimeMonitor::getNewTimer("Nosh: DKeoDP::refill_")),
 #endif
   thickness_(thickness),
   mvp_(mvp),
-  keoCache_(Copy, graph_),
-  keoBuildParameters_(),
   alphaCache_(),
-  alphaCacheUpToDate_(false)
+  alphaCacheUpToDate_(false),
+  paramName_(paramName)
 {
 }
 // =============================================================================
-Keo::
-~Keo()
+DKeoDP::
+~DKeoDP()
 {
 }
 // =============================================================================
-void
-Keo::
-apply(
-    const std::map<std::string, double> & params,
-    const Epetra_Vector &X,
-    Epetra_Vector &Y
-    ) const
+Teuchos::RCP<Virtual>
+DKeoDP::
+clone() const
 {
-  // Check if the relevant parameters from the previous build have changed.
-  bool needsRebuild;
-  if (keoBuildParameters_.empty()) {
-    needsRebuild = true;
-  } else {
-    needsRebuild = false;
-    for (auto it = keoBuildParameters_.begin();
-         it != keoBuildParameters_.end();
-         ++it) {
-      // Check if it->first is in params at all and if their values are equal.
-      std::map<std::string, double>::const_iterator it2 = params.find(it->first);
-      TEUCHOS_ASSERT(it2 != params.end());
-      if (it2->second != it->second) {
-        needsRebuild = true;
-        break;
-      }
-    }
-  }
-
-  // Rebuild if necessary.
-  if (needsRebuild) {
-    this->fillKeo_(keoCache_, params, &Keo::fillerRegular_);
-    // Reset build parameters.
-    for (auto it = keoBuildParameters_.begin();
-         it != keoBuildParameters_.end();
-         ++it) {
-      std::map<std::string, double>::const_iterator it2 = params.find(it->first);
-      TEUCHOS_ASSERT(it2 != params.end());
-      it->second = it2->second;
-    }
-  }
-  // This direct application in the cache saves
-  // one matrix copy compared to an explicit
-  // fill(), Apply().
-  TEUCHOS_ASSERT_EQUALITY(0, keoCache_.Apply(X, Y));
-  return;
-}
-// =============================================================================
-void
-Keo::
-fill(
-    Epetra_FECrsMatrix &matrix,
-    const std::map<std::string, double> & params
-    ) const
-{
-  // Cache the construction of the KEO.
-  // This is useful because in the continuation context,
-  // getKeo() is called a number of times with the same arguments
-  // (in computeF, getJacobian(), and getPreconditioner().
-  bool needsRebuild;
-  if (keoBuildParameters_.empty()) {
-    needsRebuild = true;
-  } else {
-    needsRebuild = false;
-    for (auto it = keoBuildParameters_.begin();
-         it != keoBuildParameters_.end();
-         ++it) {
-      // Check if it->first is in params at all and if their values are equal.
-      std::map<std::string, double>::const_iterator it2 =
-        params.find(it->first);
-      TEUCHOS_ASSERT(it2 != params.end());
-      if (it2->second != it->second) {
-        needsRebuild = true;
-        break;
-      }
-    }
-  }
-
-  if (needsRebuild) {
-    this->fillKeo_(keoCache_, params, &Keo::fillerRegular_);
-    // Reset build parameters.
-    for (auto it = keoBuildParameters_.begin();
-         it != keoBuildParameters_.end();
-         ++it) {
-      std::map<std::string, double>::const_iterator it2 =
-        params.find(it->first);
-      TEUCHOS_ASSERT(it2 != params.end());
-      it->second = it2->second;
-    }
-  }
-
-  matrix = keoCache_;
-  return;
+  return Teuchos::RCP<DKeoDP>(new DKeoDP(*this));
 }
 // =============================================================================
 const std::map<std::string, double>
-Keo::
+DKeoDP::
 getInitialParameters() const
 {
   return mvp_->getInitialParameters();
 }
 // =============================================================================
 void
-Keo::
-fillerRegular_(
-    const int k,
-    const std::map<std::string, double> & params,
-    double * v
-    ) const
-{
-  // Fill v with
-  // Re(-exp(i Aint))
-  // Im(-exp(i Aint))
-  // 1.0
-  const double aInt = mvp_->getEdgeProjection(k, params);
-  // If compiled with GNU (and maybe other compilers), we could use
-  // sincos() here to compute sin and cos simultaneously.
-  // PGI, for one, doesn't support sincos, though.
-  v[0] = -cos(aInt);
-  v[1] = -sin(aInt);
-  v[2] = 1.0;
-  //sincos(aInt, &sinAInt, &cosAInt);
-
-  return;
-}
-// =============================================================================
-void
-Keo::
-fillKeo_(
-    Epetra_FECrsMatrix &keoMatrix,
-    const std::map<std::string, double> & params,
-    void (Keo::*filler)(const int, const std::map<std::string, double> &, double*) const
-    ) const
+DKeoDP::
+refill_(const std::map<std::string, double> & params)
 {
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   Teuchos::TimeMonitor tm(*keoFillTime_);
 #endif
   // Zero-out the matrix.
-  TEUCHOS_ASSERT_EQUALITY(0, keoMatrix.PutScalar(0.0));
+  TEUCHOS_ASSERT_EQUALITY(0, this->PutScalar(0.0));
 
 #ifndef NDEBUG
   TEUCHOS_ASSERT(!mesh_.is_null());
@@ -238,7 +125,13 @@ fillKeo_(
     // Instead of first computing the projection over the normalized edge
     // and then multiply it with the edge length, don't normalize the
     // edge vector.
-    (this->*filler)(k, params, v);
+    double aInt = mvp_->getEdgeProjection(k, params);
+    // paramName_ is set in the KEO building routine.
+    double dAdPInt = mvp_->getDEdgeProjectionDp(k, params, paramName_);
+    //sincos(aInt, &sinAInt, &cosAInt);
+    v[0] =  dAdPInt * sin(aInt);
+    v[1] = -dAdPInt * cos(aInt);
+    v[2] = 0.0;
     // We'd like to insert the 2x2 matrix
     //
     //     [   alpha                   , - alpha * exp(-IM * aInt) ]
@@ -268,18 +161,18 @@ fillKeo_(
     A(3, 3) = v[2];
     TEUCHOS_ASSERT_EQUALITY(
         0,
-        keoMatrix.SumIntoGlobalValues(globalIndexCache_[k], A)
+        this->SumIntoGlobalValues(mesh_->globalIndexCache[k], A)
         );
     // -------------------------------------------------------------------
   }
 
   // calls FillComplete by default
-  TEUCHOS_ASSERT_EQUALITY(0, keoMatrix.GlobalAssemble());
+  TEUCHOS_ASSERT_EQUALITY(0, this->GlobalAssemble());
   return;
 }
 // =============================================================================
 void
-Keo::
+DKeoDP::
 buildAlphaCache_(
     const Teuchos::Array<edge> & edges,
     const Teuchos::ArrayRCP<const double> &edgeCoefficients
@@ -347,5 +240,5 @@ buildAlphaCache_(
   return;
 }
 // =============================================================================
-}  // namespace MatrixBuilder
+}  // namespace ParameterMatrix
 }  // namespace Nosh

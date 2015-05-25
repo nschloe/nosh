@@ -34,7 +34,8 @@
 
 #include <stk_mesh/base/Entity.hpp>
 
-#include "nosh/MatrixBuilder_Virtual.hpp"
+#include "nosh/ParameterMatrix_Virtual.hpp"
+#include "nosh/StkMesh.hpp"
 
 // forward declarations
 namespace Nosh
@@ -48,30 +49,31 @@ class Virtual;
 
 namespace Nosh
 {
-namespace MatrixBuilder
+namespace ParameterMatrix
 {
 class Laplace: public Virtual
 {
 public:
-  Laplace(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
-          const Teuchos::RCP<const Nosh::ScalarField::Virtual> &thickness
-        );
+  Laplace(
+      const Teuchos::RCP<const Nosh::StkMesh> &mesh,
+      const Teuchos::RCP<const Nosh::ScalarField::Virtual> &thickness
+      );
 
   // Destructor.
   ~Laplace();
 
-  virtual
-  void
-  apply(const std::map<std::string, double> &params,
-        const Epetra_Vector &X,
-        Epetra_Vector &Y
-       ) const;
+  //virtual
+  //void
+  //apply(const std::map<std::string, double> &params,
+  //      const Epetra_Vector &X,
+  //      Epetra_Vector &Y
+  //     ) const;
 
-  virtual
-  void
-  fill(Epetra_FECrsMatrix &matrix,
-       const std::map<std::string, double> &params
-      ) const;
+  //virtual
+  //void
+  //fill(Epetra_FECrsMatrix &matrix,
+  //     const std::map<std::string, double> &params
+  //    ) const;
 
   //! Gets the parameter with their initial values.
   virtual
@@ -81,7 +83,7 @@ public:
 protected:
 private:
   void
-  fill_(Epetra_FECrsMatrix &matrix) const;
+  fill_();
 
   void
   buildAlphaCache_(
@@ -96,13 +98,10 @@ private:
 #endif
   const Teuchos::RCP<const Nosh::ScalarField::Virtual> thickness_;
 
-  mutable Epetra_FECrsMatrix matrixCache_;
-  mutable bool matrixCacheUpToDate_;
-
   mutable Teuchos::ArrayRCP<double> alphaCache_;
   mutable bool alphaCacheUpToDate_;
 };
-} // namespace MatrixBuilder
+} // namespace ParameterMatrix
 } // namespace Nosh
 
 #endif // NOSH_MATRIXBUILDER_LAPLACE_H

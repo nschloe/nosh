@@ -35,9 +35,9 @@
 
 #include "nosh/StkMesh.hpp"
 #include "nosh/ScalarField_Constant.hpp"
-#include "nosh/MatrixBuilder_Keo.hpp"
-#include "nosh/MatrixBuilder_DKeoDP.hpp"
-#include "nosh/MatrixBuilder_Laplace.hpp"
+#include "nosh/ParameterMatrix_Keo.hpp"
+#include "nosh/ParameterMatrix_DKeoDP.hpp"
+#include "nosh/ParameterMatrix_Laplace.hpp"
 #include "nosh/VectorField_ExplicitValues.hpp"
 #include "nosh/VectorField_ConstantCurl.hpp"
 #include "nosh/ModelEvaluator_Nls.hpp"
@@ -104,18 +104,18 @@ int main(int argc, char *argv[])
     // - - - - - - - - - - - - - - - - - - - - -  - - - - - - - - - - - - - - -
     // Some alternatives for the positive-definite operator.
     // (a) -\Delta (Laplace operator with Neumann boundary)
-    //const RCP<Nosh::MatrixBuilder::Virtual> keoBuilder =
-    //  rcp(new Nosh::MatrixBuilder::Laplace(mesh, thickness));
+    //const RCP<Nosh::ParameterMatrix::Virtual> keoBuilder =
+    //  rcp(new Nosh::ParameterMatrix::Laplace(mesh, thickness));
 
     // (b) (-i\nabla-A)^2 (Kinetic energy of a particle in magnetic field)
     // (b1) 'A' explicitly given in file.
     const double initMu = 0.0;
     RCP<Nosh::VectorField::Virtual> mvp =
       rcp(new Nosh::VectorField::ExplicitValues(*mesh, "A", initMu));
-    const RCP<Nosh::MatrixBuilder::Virtual> keoBuilder =
-      rcp(new Nosh::MatrixBuilder::Keo(mesh, thickness, mvp));
-    const RCP<Nosh::MatrixBuilder::Virtual> DKeoDPBuilder =
-      rcp(new Nosh::MatrixBuilder::DKeoDP(mesh, thickness, mvp, "mu"));
+    const RCP<Nosh::ParameterMatrix::Virtual> keoBuilder =
+      rcp(new Nosh::ParameterMatrix::Keo(mesh, thickness, mvp));
+    const RCP<Nosh::ParameterMatrix::Virtual> DKeoDPBuilder =
+      rcp(new Nosh::ParameterMatrix::DKeoDP(mesh, thickness, mvp, "mu"));
 
     // (b2) 'A' analytically given (here with constant curl).
     //      Optionally add a rotation axis u. This is important
@@ -134,10 +134,10 @@ int main(int argc, char *argv[])
     //}
     //RCP<Nosh::VectorField::Virtual> mvp =
     //  rcp(new Nosh::VectorField::ConstantCurl(mesh, b, u));
-    //const RCP<Nosh::MatrixBuilder::Virtual> keoBuilder =
-    //  rcp(new Nosh::MatrixBuilder::Keo(mesh, thickness, mvp));
+    //const RCP<Nosh::ParameterMatrix::Virtual> keoBuilder =
+    //  rcp(new Nosh::ParameterMatrix::Keo(mesh, thickness, mvp));
     // (b3) 'A' analytically given in a class you write yourself, derived
-    //      from Nosh::MatrixBuilder::Virtual.
+    //      from Nosh::ParameterMatrix::Virtual.
     // [...]
     // - - - - - - - - - - - - - - - - - - - - -  - - - - - - - - - - - - - - -
     // Setup the scalar potential V.

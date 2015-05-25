@@ -33,8 +33,8 @@
 
 #include "nosh/StkMesh.hpp"
 #include "nosh/ScalarField_Constant.hpp"
-#include "nosh/MatrixBuilder_Keo.hpp"
-#include "nosh/MatrixBuilder_DKeoDP.hpp"
+#include "nosh/ParameterMatrix_Keo.hpp"
+#include "nosh/ParameterMatrix_DKeoDP.hpp"
 #include "nosh/VectorField_ExplicitValues.hpp"
 #include "nosh/ModelEvaluator_Nls.hpp"
 
@@ -77,10 +77,10 @@ testComputeF(const std::string & inputFileNameBase,
 
   Teuchos::RCP<Nosh::VectorField::Virtual> mvp =
     Teuchos::rcp(new Nosh::VectorField::ExplicitValues(*mesh, "A", mu));
-  const Teuchos::RCP<Nosh::MatrixBuilder::Virtual> keoBuilder =
-    Teuchos::rcp(new Nosh::MatrixBuilder::Keo(mesh, thickness, mvp));
-  const Teuchos::RCP<Nosh::MatrixBuilder::Virtual> DKeoDPBuilder =
-    Teuchos::rcp(new Nosh::MatrixBuilder::DKeoDP(mesh, thickness, mvp, "mu"));
+  const Teuchos::RCP<Nosh::ParameterMatrix::Virtual> keoBuilder =
+    Teuchos::rcp(new Nosh::ParameterMatrix::Keo(mesh, thickness, mvp));
+  const Teuchos::RCP<Nosh::ParameterMatrix::Virtual> DKeoDPBuilder =
+    Teuchos::rcp(new Nosh::ParameterMatrix::DKeoDP(mesh, thickness, mvp, "mu"));
 
   Teuchos::RCP<Nosh::ScalarField::Virtual> sp =
     Teuchos::rcp(new Nosh::ScalarField::Constant(*mesh, -1.0));

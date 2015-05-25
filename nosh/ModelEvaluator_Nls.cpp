@@ -21,7 +21,7 @@
 #include "nosh/ModelEvaluator_Nls.hpp"
 
 #include "nosh/ScalarField_Virtual.hpp"
-#include "nosh/MatrixBuilder_Virtual.hpp"
+#include "nosh/ParameterMatrix_Virtual.hpp"
 #include "nosh/JacobianOperator.hpp"
 #include "nosh/KeoRegularized.hpp"
 #include "nosh/StkMesh.hpp"
@@ -48,8 +48,8 @@ namespace ModelEvaluator
 Nls::
 Nls(
   const Teuchos::RCP<const Nosh::StkMesh> &mesh,
-  const Teuchos::RCP<const Nosh::MatrixBuilder::Virtual> &keoBuilder,
-  const Teuchos::RCP<const Nosh::MatrixBuilder::Virtual> &DKeoDPBuilder,
+  const Teuchos::RCP<Nosh::ParameterMatrix::Virtual> &keo,
+  const Teuchos::RCP<Nosh::ParameterMatrix::Virtual> &dKeoDP,
   const Teuchos::RCP<const Nosh::ScalarField::Virtual> &scalarPotential,
   const double g,
   const Teuchos::RCP<const Nosh::ScalarField::Virtual> &thickness,
@@ -59,8 +59,8 @@ Nls(
   scalarPotential_(scalarPotential),
   thickness_(thickness),
   x_init_(initialX),
-  keoBuilder_(keoBuilder),
-  DKeoDPBuilder_(DKeoDPBuilder),
+  keo_(keo),
+  dKeoDP_(dKeoDP),
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   evalModelTime_(Teuchos::TimeMonitor::getNewTimer(
         "Nosh: Nls::evalModel"
@@ -94,7 +94,7 @@ Nls(
 
   // This merges and discards new values if their keys are already in the list.
   std::map<std::string, double> mbParams =
-    keoBuilder_->getInitialParameters();
+    keo_->getInitialParameters();
   params.insert(mbParams.begin(), mbParams.end());
 
   // Out of this now complete list, create the entities that the EpetraExt::
@@ -193,7 +193,7 @@ create_W() const
         mesh_,
         scalarPotential_,
         thickness_,
-        keoBuilder_
+        keo_
         )
       );
 }
@@ -206,7 +206,7 @@ create_WPrec() const
       new Nosh::KeoRegularized(
         mesh_,
         thickness_,
-        keoBuilder_
+        keo_
         )
       );
   // bool is answer to: "Prec is already inverted?"
@@ -397,7 +397,8 @@ computeF_(
     ) const
 {
   // Compute FVec = K*x.
-  keoBuilder_->apply(params, x, FVec);
+  keo_->refill(params);
+  keo_->Apply(x, FVec);
 
   // Add the nonlinear part (mass lumping).
 #ifndef NDEBUG
@@ -442,27 +443,33 @@ computeF_(
     //     This is loosely derived from the midpoint quadrature rule for
     //     triangles, i.e.,
     //
-    //      \int_{triangle} f(x) ~= |triangle| * \sum_{edge midpoint} 1/3 * f(midpoint).
+    //      \int_{triangle} f(x) ~=
+    //        |triangle| * \sum_{edge midpoint} 1/3 * f(midpoint).
     //
-    //     so all the values at the midpoints have the same weight (independent of
-    //     whether the edge is long or short). This is then "generalized to
+    //     so all the values at the midpoints have the same weight (independent
+    //     of whether the edge is long or short). This is then "generalized to
     //
-    //      \int_{triangle} f(x)*a(x) ~= |triangle| *  \sum_{edge midpoint} 1/3 * f(midpoint)*a(midpoint),
+    //      \int_{triangle} f(x)*a(x) ~=
+    //        |triangle| *  \sum_{edge midpoint} 1/3 * f(midpoint)*a(midpoint),
     //
     //     or, as f(midpoint) is not available,
     //
-    //      \int_{triangle} f(x)*a(x) ~= |triangle| * f(center of gravity)  \sum_{edge midpoint} 1/3 * a(midpoint).
+    //      \int_{triangle} f(x)*a(x) ~=
+    //        |triangle| * f(center of gravity)
+    //          \sum_{edge midpoint} 1/3 * a(midpoint).
     //
     //     For general polynomals, this is then the above expression.
     //     Hence, do the equivalent of
     //
-    //       res[k] += controlVolumes[k] * average(thicknesses) * psi[k] * (V + std::norm(psi[k]));
+    //       res[k] += controlVolumes[k] * average(thicknesses)
+    //               * psi[k] * (V + std::norm(psi[k]));
     //
     // (b) Another possible approximation is
     //
     //        |control volume| * thickness(x_k) * f(psi(x_k))
     //
-    //     as suggested by mass lumping. This works if thickness(x_k) is available.
+    //     as suggested by mass lumping. This works if thickness(x_k) is
+    //     available.
     //
     // The indexing here assumes that the local index K of controlVolume's map
     // is known to be local by thickness and scalarPotential and known to be
@@ -489,7 +496,8 @@ computeDFDP_(
     ) const
 {
   // FVec = dK/dp * x.
-  DKeoDPBuilder_->apply(params, x, FVec);
+  dKeoDP_->refill(params);
+  dKeoDP_->Apply(x, FVec);
 
 #ifndef NDEBUG
   TEUCHOS_ASSERT(FVec.Map().SameAs(x.Map()));

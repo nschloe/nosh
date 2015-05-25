@@ -33,7 +33,7 @@
 namespace Nosh
 {
 class StkMesh;
-namespace MatrixBuilder
+namespace ParameterMatrix
 {
 class Virtual;
 }
@@ -54,7 +54,7 @@ public:
       const Teuchos::RCP<const Nosh::StkMesh> &mesh,
       const Teuchos::RCP<const Nosh::ScalarField::Virtual> &scalarPotential,
       const Teuchos::RCP<const Nosh::ScalarField::Virtual> &thickness,
-      const Teuchos::RCP<const Nosh::MatrixBuilder::Virtual> &matrixBuilder
+      const Teuchos::RCP<Nosh::ParameterMatrix::Virtual> &matrix
       );
 
   // Destructor.
@@ -64,14 +64,16 @@ public:
   SetUseTranspose(bool UseTranspose);
 
   virtual int
-  Apply(const Epetra_MultiVector &X,
-         Epetra_MultiVector &Y
+  Apply(
+      const Epetra_MultiVector &X,
+      Epetra_MultiVector &Y
       ) const;
 
   virtual int
-  ApplyInverse(const Epetra_MultiVector &X,
-                Epetra_MultiVector &Y
-             ) const;
+  ApplyInverse(
+      const Epetra_MultiVector &X,
+      Epetra_MultiVector &Y
+      ) const;
 
   virtual double
   NormInf() const;
@@ -96,16 +98,18 @@ public:
 
 public:
   void
-  rebuild(const std::map<std::string, double> params,
-          const Teuchos::RCP<const Epetra_Vector> &current_X
-        );
+  rebuild(
+      const std::map<std::string, double> params,
+      const Teuchos::RCP<const Epetra_Vector> &current_X
+      );
 
 protected:
 private:
   void
-  rebuildDiags_(const std::map<std::string, double> params,
-                const Epetra_Vector &current_X
-              );
+  rebuildDiags_(
+      const std::map<std::string, double> params,
+      const Epetra_Vector &current_X
+      );
 
 private:
   bool useTranspose_;
@@ -113,9 +117,8 @@ private:
   const Teuchos::RCP<const Nosh::StkMesh> mesh_;
   const Teuchos::RCP<const Nosh::ScalarField::Virtual> scalarPotential_;
   const Teuchos::RCP<const Nosh::ScalarField::Virtual> thickness_;
-  const Teuchos::RCP<const Nosh::MatrixBuilder::Virtual> matrixBuilder_;
 
-  Epetra_FECrsMatrix keo_;
+  const Teuchos::RCP<Nosh::ParameterMatrix::Virtual> keo_;
   Epetra_Vector diag0_;
   Epetra_Vector diag1b_;
 };

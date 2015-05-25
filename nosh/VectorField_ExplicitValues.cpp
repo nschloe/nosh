@@ -40,7 +40,6 @@ ExplicitValues(const Nosh::StkMesh & mesh,
   initMu_(initMu),
   edgeProjectionCache_(mesh.getEdgeNodes().size())
 {
-  typedef std::tuple<stk::mesh::Entity,stk::mesh::Entity> edge;
   // Initialize the cache.
   const Teuchos::Array<edge> edges = mesh.getEdgeNodes();
 

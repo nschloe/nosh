@@ -32,8 +32,6 @@
 
 #include <stk_mesh/base/Entity.hpp>
 
-typedef std::tuple<stk::mesh::Entity, stk::mesh::Entity> edge;
-
 // forward declarations
 namespace Nosh
 {
@@ -42,9 +40,9 @@ class StkMesh;
 
 namespace Nosh
 {
-namespace MatrixBuilder
+namespace ParameterMatrix
 {
-class Virtual
+class Virtual: public Epetra_FECrsMatrix
 {
 public:
   Virtual(const Teuchos::RCP<const Nosh::StkMesh> &mesh);
@@ -53,32 +51,20 @@ public:
   virtual
   ~Virtual();
 
-  //! Get the underlying communicator.
-  virtual
-  const Epetra_Comm &
-  getComm() const;
+  //// https://en.wikibooks.org/wiki/More_C%2B%2B_Idioms/Virtual_Constructor
+  //virtual
+  //Teuchos::RCP<Virtual>
+  //create() const = 0;
 
-  //! Get the connectivity graph of the matrix.
   virtual
-  const Epetra_FECrsGraph &
-  getGraph() const;
+  Teuchos::RCP<Virtual>
+  clone() const = 0;
 
-  //! Y = A(params) * X.
+  //! Fill the matrix with the parameter entries as given in params.
+  //! Includes some caching logic for params.
   virtual
   void
-  apply(
-      const std::map<std::string, double> &params,
-      const Epetra_Vector &X,
-      Epetra_Vector &Y
-      ) const = 0;
-
-  //! Fill a given matrix with the parameter entries as given in params.
-  virtual
-  void
-  fill(
-      Epetra_FECrsMatrix &matrix,
-      const std::map<std::string, double> &params
-      ) const = 0;
+  refill(const std::map<std::string, double> &params);
 
   //! Get parameter map with their initial values.
   virtual
@@ -86,20 +72,22 @@ public:
   getInitialParameters() const = 0;
 
 protected:
-  const Epetra_FECrsGraph
-  buildGraph_() const;
-
-  const Teuchos::ArrayRCP<Epetra_IntSerialDenseVector>
-  buildGlobalIndexCache_() const;
+  //! Fill the matrix with the parameter entries as given in params.
+  virtual
+  void
+  refill_(const std::map<std::string, double> &params) = 0;
 
 protected:
   const Teuchos::RCP<const Nosh::StkMesh> mesh_;
-  const Teuchos::ArrayRCP<Epetra_IntSerialDenseVector> globalIndexCache_;
-  const Epetra_FECrsGraph graph_;
 
 private:
+  const Epetra_FECrsGraph
+  buildGraph_(const Nosh::StkMesh &mesh);
+
+private:
+  std::map<std::string, double> buildParameters_;
 };
-} // namespace MatrixBuilder
+} // namespace ParameterMatrix
 } // namespace Nosh
 
 #endif // NOSH_MATRIXBUILDER_VIRTUAL

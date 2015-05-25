@@ -34,7 +34,7 @@
 #include "nosh/StkMesh.hpp"
 #include "nosh/VectorField_ExplicitValues.hpp"
 #include "nosh/ScalarField_Constant.hpp"
-#include "nosh/MatrixBuilder_Keo.hpp"
+#include "nosh/ParameterMatrix_Keo.hpp"
 #include "nosh/JacobianOperator.hpp"
 
 #include <Teuchos_UnitTestHarness.hpp>
@@ -86,8 +86,8 @@ testJac(const std::string & inputFileNameBase,
     Teuchos::rcp(new Nosh::ScalarField::Constant(*mesh, 1.0));
 
   // create a keo factory
-  Teuchos::RCP<Nosh::MatrixBuilder::Virtual> keoBuilder =
-    Teuchos::rcp(new Nosh::MatrixBuilder::Keo(mesh, thickness, mvp));
+  Teuchos::RCP<Nosh::ParameterMatrix::Virtual> keoBuilder =
+    Teuchos::rcp(new Nosh::ParameterMatrix::Keo(mesh, thickness, mvp));
 
   // create the jacobian operator
   Teuchos::RCP<Nosh::JacobianOperator> jac =

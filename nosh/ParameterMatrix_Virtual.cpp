@@ -18,20 +18,20 @@
 //
 // @HEADER
 
-#include "nosh/MatrixBuilder_Virtual.hpp"
+#include "nosh/ParameterMatrix_Virtual.hpp"
 
 #include "nosh/StkMesh.hpp"
 
 namespace Nosh
 {
-namespace MatrixBuilder
+namespace ParameterMatrix
 {
 // ============================================================================
 Virtual::
 Virtual(const Teuchos::RCP<const Nosh::StkMesh> &mesh):
+  Epetra_FECrsMatrix(Copy, this->buildGraph_(*mesh)),
   mesh_(mesh),
-  globalIndexCache_(this->buildGlobalIndexCache_()),
-  graph_(this->buildGraph_())
+  buildParameters_()
 {
 }
 // ============================================================================
@@ -39,27 +39,53 @@ Virtual::
 ~Virtual()
 {
 }
-// =============================================================================
-const Epetra_Comm &
+// ============================================================================
+void
 Virtual::
-getComm() const
+refill(const std::map<std::string, double> &params)
 {
-#ifndef NDEBUG
-  TEUCHOS_ASSERT(!mesh_.is_null());
-#endif
-  return mesh_->getComm();
-}
-// =============================================================================
-const Epetra_FECrsGraph &
-Virtual::
-getGraph() const
-{
-  return graph_;
+  // Cache the construction of the matrix.
+  // This is useful because in the continuation context, the matrix is called a
+  // number of times with the same arguments (in computeF, getJacobian(), and
+  // getPreconditioner().
+  bool needsRefill;
+  if (buildParameters_.empty()) {
+    needsRefill = true;
+  } else {
+    needsRefill = false;
+    for (auto it = buildParameters_.begin();
+         it != buildParameters_.end();
+         ++it) {
+      // Check if it->first is in params at all and if their values are equal.
+      std::map<std::string, double>::const_iterator it2 =
+        params.find(it->first);
+      TEUCHOS_ASSERT(it2 != params.end());
+      if (it2->second != it->second) {
+        needsRefill = true;
+        break;
+      }
+    }
+  }
+
+  if (needsRefill) {
+    this->refill_(params);
+    // Reset build parameters.
+    for (auto it = buildParameters_.begin();
+         it != buildParameters_.end();
+         ++it) {
+      std::map<std::string, double>::const_iterator it2 =
+        params.find(it->first);
+      TEUCHOS_ASSERT(it2 != params.end());
+      it->second = it2->second;
+    }
+  }
+
+  return;
 }
 // =============================================================================
 const Epetra_FECrsGraph
 Virtual::
-buildGraph_() const
+buildGraph_(const Nosh::StkMesh & mesh)
 {
   // Which row/column map to use for the matrix?
   // The two possibilites are the non-overlapping map fetched from
@@ -119,19 +145,19 @@ buildGraph_() const
   // OperatorRangeMap must be the same, and, if the matrix is square,
   // OperatorRangeMap and OperatorDomainMap must coincide too.
   //
+  const Teuchos::RCP<const Epetra_Map> noMap = mesh.getComplexNonOverlapMap();
 #ifndef NDEBUG
-  TEUCHOS_ASSERT(!mesh_.is_null());
+    TEUCHOS_ASSERT(!noMap.is_null());
 #endif
-  const Epetra_Map &noMap = *mesh_->getComplexNonOverlapMap();
-  Epetra_FECrsGraph graph(Copy, noMap, 0);
+  Epetra_FECrsGraph graph(Copy, *noMap, 0);
 
-  const Teuchos::Array<edge> edges = mesh_->getEdgeNodes();
+  const Teuchos::Array<edge> edges = mesh.getEdgeNodes();
 
   // Loop over all edges and put entries wherever two nodes are connected.
   for (auto k = 0; k < edges.size(); k++) {
     int ierr = graph.InsertGlobalIndices(
-        4, globalIndexCache_[k].Values(),
-        4, globalIndexCache_[k].Values()
+        4, mesh.globalIndexCache[k].Values(),
+        4, mesh.globalIndexCache[k].Values()
         );
 #ifndef NDEBUG
     TEUCHOS_ASSERT_EQUALITY(0, ierr);
@@ -141,36 +167,13 @@ buildGraph_() const
   // Make sure that domain and range map are non-overlapping (to make sure that
   // states psi can compute norms) and equal (to make sure that the matrix works
   // with ML).
-  int ierr = graph.GlobalAssemble(noMap, noMap);
+  int ierr = graph.GlobalAssemble(*noMap, *noMap);
 #ifndef NDEBUG
   TEUCHOS_ASSERT_EQUALITY(0, ierr);
 #endif
 
   return graph;
 }
-// =============================================================================
-const Teuchos::ArrayRCP<Epetra_IntSerialDenseVector>
-Virtual::
-buildGlobalIndexCache_() const
-{
-  const Teuchos::Array<edge> edges = mesh_->getEdgeNodes();
-
-  Teuchos::ArrayRCP<Epetra_IntSerialDenseVector> globalIndexCache(edges.size());
-
-  Teuchos::Tuple<int, 2> gid;
-  for (auto k = 0; k < edges.size(); k++) {
-    gid[0] = mesh_->gid(std::get<0>(edges[k]));
-    gid[1] = mesh_->gid(std::get<1>(edges[k]));
-
-    globalIndexCache_[k] = Epetra_IntSerialDenseVector(4);
-    globalIndexCache_[k][0] = 2 * gid[0];
-    globalIndexCache_[k][1] = 2 * gid[0] + 1;
-    globalIndexCache_[k][2] = 2 * gid[1];
-    globalIndexCache_[k][3] = 2 * gid[1] + 1;
-  }
-
-  return globalIndexCache;
-}
 // ============================================================================
-} // namespace MatrixBuilder
+} // namespace ParameterMatrix
 } // namespace Nosh

@@ -40,7 +40,7 @@
 #include <Amesos.h>
 
 #include "nosh/ScalarField_Virtual.hpp"
-#include "nosh/MatrixBuilder_Virtual.hpp"
+#include "nosh/ParameterMatrix_Virtual.hpp"
 #include "nosh/StkMesh.hpp"
 
 // =============================================================================
@@ -58,19 +58,18 @@ KeoRegularized::
 KeoRegularized(
     const Teuchos::RCP<const Nosh::StkMesh> &mesh,
     const Teuchos::RCP<const Nosh::ScalarField::Virtual> &thickness,
-    const Teuchos::RCP<const Nosh::MatrixBuilder::Virtual> &matrixBuilder
+    const Teuchos::RCP<const Nosh::ParameterMatrix::Virtual> &keo
   ):
   useTranspose_(false),
   mesh_(mesh),
   thickness_(thickness),
-  matrixBuilder_(matrixBuilder),
-  // It wouldn't strictly be necessary to initialize regularizedMatrix_ with
+  // It wouldn't strictly be necessary to initialize regularizedKeo_ with
   // the proper graph here as matrixBuilder_'s cache will override the matrix
   // later on anyways. Keep it, though, as it doesn't waste any memory and is
   // in the spirit of the Trilinos::ModelEvaluator which asks for allocation
   // of memory at one point and filling it with meaningful values later on.
-  regularizedMatrix_(Copy, matrixBuilder_->getGraph()),
-  comm_(matrixBuilder->getComm()),
+  // *Copy* over the matrix.
+  regularizedKeo_(keo->clone()),
   MlPrec_(Teuchos::null),
   numCycles_(1),
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
@@ -103,11 +102,11 @@ Apply(const Epetra_MultiVector &X,
      ) const
 {
 #ifndef NDEBUG
-  TEUCHOS_ASSERT(regularizedMatrix_.DomainMap().SameAs(X.Map()));
-  TEUCHOS_ASSERT(regularizedMatrix_.RangeMap().SameAs(Y.Map()));
+  TEUCHOS_ASSERT(regularizedKeo_->DomainMap().SameAs(X.Map()));
+  TEUCHOS_ASSERT(regularizedKeo_->RangeMap().SameAs(Y.Map()));
 #endif
   // (K +  g * 2*|psi|) * X
-  return regularizedMatrix_.Apply(X, Y);
+  return regularizedKeo_->Apply(X, Y);
 }
 // =============================================================================
 int
@@ -146,7 +145,7 @@ ApplyInverse(const Epetra_MultiVector &X,
     Teuchos::RCP<const Epetra_MultiVector> Xptr = Teuchos::rcpFromRef(X);
     Teuchos::RCP<Epetra_MultiVector> Yptr = Teuchos::rcpFromRef(Y);
     Belos::LinearProblem<double, MV, OP> problem(
-        Teuchos::rcpFromRef(regularizedMatrix_),
+        regularizedKeo_,
         Yptr,
         Xptr
         );
@@ -207,21 +206,21 @@ const Epetra_Comm &
 KeoRegularized::
 Comm() const
 {
-  return comm_;
+  return regularizedKeo_->Comm();
 }
 // =============================================================================
 const Epetra_Map &
 KeoRegularized::
 OperatorDomainMap() const
 {
-  return regularizedMatrix_.OperatorDomainMap();
+  return regularizedKeo_->OperatorDomainMap();
 }
 // =============================================================================
 const Epetra_Map &
 KeoRegularized::
 OperatorRangeMap() const
 {
-  return regularizedMatrix_.OperatorRangeMap();
+  return regularizedKeo_->OperatorRangeMap();
 }
 // =============================================================================
 void
@@ -243,10 +242,7 @@ rebuild(
   // some confusion in the rest of the code.
   // Hence, don't worry too much about this until memory
   // contrains get tight.
-#ifndef NDEBUG
-  TEUCHOS_ASSERT(!matrixBuilder_.is_null());
-#endif
-  matrixBuilder_->fill(regularizedMatrix_, params);
+  regularizedKeo_->refill(params);
 
   std::map<std::string, double>::const_iterator it = params.find("g");
   TEUCHOS_ASSERT(it != params.end());
@@ -263,12 +259,12 @@ rebuild(
     //const Teuchos::RCP<const Epetra_Vector> absPsiSquared =
     //  this->getAbsPsiSquared_(x);
 //#ifndef NDEBUG
-    //TEUCHOS_ASSERT(regularizedMatrix_.RowMap().SameAs(absPsiSquared->Map()));
+    //TEUCHOS_ASSERT(regularizedKeo_.RowMap().SameAs(absPsiSquared->Map()));
 //#endif
-    //Epetra_Vector diag(regularizedMatrix_.RowMap());
-    //TEUCHOS_ASSERT_EQUALITY(0, regularizedMatrix_.ExtractDiagonalCopy(diag));
+    //Epetra_Vector diag(regularizedKeo_.RowMap());
+    //TEUCHOS_ASSERT_EQUALITY(0, regularizedKeo_.ExtractDiagonalCopy(diag));
     //TEUCHOS_ASSERT_EQUALITY(0, diag.Update(g*2.0, *absPsiSquared, 1.0));
-    //TEUCHOS_ASSERT_EQUALITY(0, regularizedMatrix_.ReplaceDiagonalValues(diag));
+    //TEUCHOS_ASSERT_EQUALITY(0, regularizedKeo_.ReplaceDiagonalValues(diag));
     //
     const Epetra_Vector &controlVolumes = *(mesh_->getControlVolumes());
     const Epetra_Vector thicknessValues = thickness_->getV(params);
@@ -292,10 +288,16 @@ rebuild(
       idx[1] = 2*k + 1;
       vals[0] = alpha + gamma;
       vals[1] = beta;
-      TEUCHOS_ASSERT_EQUALITY(0, regularizedMatrix_.SumIntoMyValues(2*k, 2, vals, idx));
+      TEUCHOS_ASSERT_EQUALITY(
+          0,
+          regularizedKeo_->SumIntoMyValues(2*k, 2, vals, idx)
+          );
       vals[0] = beta;
       vals[1] = alpha - gamma;
-      TEUCHOS_ASSERT_EQUALITY(0, regularizedMatrix_.SumIntoMyValues(2*k+1, 2, vals, idx));
+      TEUCHOS_ASSERT_EQUALITY(
+          0,
+          regularizedKeo_->SumIntoMyValues(2*k+1, 2, vals, idx)
+          );
     }
   }
 
@@ -366,15 +368,15 @@ rebuildInverse_()
     //  OperatorRangeMap()."
     // Make sure this is indeed the case.
 #ifndef NDEBUG
-    TEUCHOS_ASSERT(regularizedMatrix_.OperatorRangeMap().
-                   SameAs(regularizedMatrix_.RowMatrixRowMap())
+    TEUCHOS_ASSERT(regularizedKeo_->OperatorRangeMap().
+                   SameAs(regularizedKeo_->RowMatrixRowMap())
                  );
-    TEUCHOS_ASSERT(regularizedMatrix_.OperatorDomainMap().
-                   SameAs(regularizedMatrix_.OperatorRangeMap())
+    TEUCHOS_ASSERT(regularizedKeo_->OperatorDomainMap().
+                   SameAs(regularizedKeo_->OperatorRangeMap())
                  );
 #endif
     MlPrec_ =
-      Teuchos::rcp(new ML_Epetra::MultiLevelPreconditioner(regularizedMatrix_,
+      Teuchos::rcp(new ML_Epetra::MultiLevelPreconditioner(*regularizedKeo_,
                    MLList));
   } else {
 #ifdef NOSH_TEUCHOS_TIME_MONITOR

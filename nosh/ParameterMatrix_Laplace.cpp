@@ -19,7 +19,7 @@
 // @HEADER
 // =============================================================================
 // includes
-#include "nosh/MatrixBuilder_Laplace.hpp"
+#include "nosh/ParameterMatrix_Laplace.hpp"
 
 #include <map>
 #include <string>
@@ -37,11 +37,9 @@
 #include <Teuchos_TimeMonitor.hpp>
 #endif
 
-typedef std::tuple<stk::mesh::Entity, stk::mesh::Entity> edge;
-
 namespace Nosh
 {
-namespace MatrixBuilder
+namespace ParameterMatrix
 {
 // =============================================================================
 Laplace::
@@ -54,8 +52,6 @@ Laplace(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
                "Nosh: Laplace::fill_")),
 #endif
   thickness_(thickness),
-  matrixCache_(Copy, graph_),
-  matrixCacheUpToDate_(false),
   alphaCache_(),
   alphaCacheUpToDate_(false)
 {
@@ -66,43 +62,43 @@ Laplace::
 {
 }
 // =============================================================================
-void
-Laplace::
-apply(const std::map<std::string, double> &params,
-      const Epetra_Vector &X,
-      Epetra_Vector &Y
-     ) const
-{
-  (void) params;
-  // Rebuild if necessary.
-  if (!matrixCacheUpToDate_) {
-    this->fill_(matrixCache_);
-    matrixCacheUpToDate_ = true;
-  }
-  // This direct application in the cache saves
-  // one matrix copy compared to an explicit
-  // fill(), Apply().
-  TEUCHOS_ASSERT_EQUALITY(0, matrixCache_.Apply(X, Y));
-  return;
-}
-// =============================================================================
-void
-Laplace::
-fill(Epetra_FECrsMatrix &matrix,
-     const std::map<std::string, double> &params
-     ) const
-{
-  (void) params;
-  // Cache the construction of the Laplacian.
-  // After all, it's always the same.
-  if (!matrixCacheUpToDate_) {
-    this->fill_(matrixCache_);
-    matrixCacheUpToDate_ = true;
-  }
-
-  matrix = matrixCache_;
-  return;
-}
+//void
+//Laplace::
+//apply(const std::map<std::string, double> &params,
+//      const Epetra_Vector &X,
+//      Epetra_Vector &Y
+//     ) const
+//{
+//  (void) params;
+//  // Rebuild if necessary.
+//  if (!matrixCacheUpToDate_) {
+//    this->fill_(matrixCache_);
+//    matrixCacheUpToDate_ = true;
+//  }
+//  // This direct application in the cache saves
+//  // one matrix copy compared to an explicit
+//  // fill(), Apply().
+//  TEUCHOS_ASSERT_EQUALITY(0, matrixCache_.Apply(X, Y));
+//  return;
+//}
+//// =============================================================================
+//void
+//Laplace::
+//fill(Epetra_FECrsMatrix &matrix,
+//     const std::map<std::string, double> &params
+//     ) const
+//{
+//  (void) params;
+//  // Cache the construction of the Laplacian.
+//  // After all, it's always the same.
+//  if (!matrixCacheUpToDate_) {
+//    this->fill_(matrixCache_);
+//    matrixCacheUpToDate_ = true;
+//  }
+//
+//  matrix = matrixCache_;
+//  return;
+//}
 // =============================================================================
 const std::map<std::string, double>
 Laplace::
@@ -113,13 +109,13 @@ getInitialParameters() const
 // =============================================================================
 void
 Laplace::
-fill_(Epetra_FECrsMatrix &matrix) const
+fill_()
 {
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   Teuchos::TimeMonitor tm(*fillTime_);
 #endif
   // Zero-out the matrix.
-  TEUCHOS_ASSERT_EQUALITY(0, matrix.PutScalar(0.0));
+  TEUCHOS_ASSERT_EQUALITY(0, this->PutScalar(0.0));
 
 #ifndef NDEBUG
   TEUCHOS_ASSERT(!mesh_.is_null());
@@ -163,7 +159,7 @@ fill_(Epetra_FECrsMatrix &matrix) const
     A(3, 1) = -a;
     A(3, 2) =  0.0;
     A(3, 3) =  a;
-    int ierr = matrix.SumIntoGlobalValues(globalIndexCache_[k], A);
+    int ierr = this->SumIntoGlobalValues(mesh_->globalIndexCache[k], A);
 #ifndef NDEBUG
     TEUCHOS_ASSERT_EQUALITY(0, ierr);
 #endif
@@ -171,7 +167,7 @@ fill_(Epetra_FECrsMatrix &matrix) const
   }
 
   // calls FillComplete by default
-  TEUCHOS_ASSERT_EQUALITY(0, matrix.GlobalAssemble());
+  TEUCHOS_ASSERT_EQUALITY(0, this->GlobalAssemble());
   return;
 }
 // =============================================================================
@@ -219,5 +215,5 @@ buildAlphaCache_(
   return;
 }
 // =============================================================================
-} // namespace MatrixBuilder
+} // namespace ParameterMatrix
 } // namespace Nosh

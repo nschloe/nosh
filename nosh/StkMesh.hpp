@@ -33,6 +33,7 @@
 #endif
 #include <Teuchos_Array.hpp>
 #include <Teuchos_SerialDenseVector.hpp>
+#include <Epetra_IntSerialDenseVector.h>
 
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/CoordinateSystems.hpp>
@@ -57,6 +58,7 @@ typedef stk::mesh::Field<double>                      ScalarFieldType;
 typedef stk::mesh::Field<int>                         IntScalarFieldType;
 typedef Teuchos::SerialDenseVector<int, double>        DoubleVector;
 typedef Teuchos::SerialDenseVector<int, const double>  ConstDoubleVector;
+typedef std::tuple<stk::mesh::Entity, stk::mesh::Entity> edge;
 // =============================================================================
 namespace Nosh
 {
@@ -201,7 +203,13 @@ private:
 
   double time_;
 
+public:
+  const Teuchos::ArrayRCP<Epetra_IntSerialDenseVector> globalIndexCache;
+
 private:
+
+  const Teuchos::ArrayRCP<Epetra_IntSerialDenseVector>
+  buildGlobalIndexCache_() const;
 
   Teuchos::RCP<stk::io::StkMeshIoBroker>
   read_(const std::string &fileName,

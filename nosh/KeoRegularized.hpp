@@ -42,7 +42,7 @@ namespace ScalarField
 {
 class Virtual;
 }
-namespace MatrixBuilder
+namespace ParameterMatrix
 {
 class Virtual;
 }
@@ -67,7 +67,7 @@ public:
   KeoRegularized(
       const Teuchos::RCP<const Nosh::StkMesh> &mesh,
       const Teuchos::RCP<const Nosh::ScalarField::Virtual> &thickness,
-      const Teuchos::RCP<const Nosh::MatrixBuilder::Virtual> &matrixBuilder
+      const Teuchos::RCP<const Nosh::ParameterMatrix::Virtual> &matrix
       );
 
   // Destructor.
@@ -124,16 +124,13 @@ private:
 
   const Teuchos::RCP<const Nosh::StkMesh> mesh_;
   const Teuchos::RCP<const Nosh::ScalarField::Virtual> thickness_;
-  const Teuchos::RCP<const Nosh::MatrixBuilder::Virtual> matrixBuilder_;
 
-// Make sure to create the matrix in memory only once and then
-// override it as necessary. The reason for this is that ML
-// gets initialized only once and, upon ML.recompute(), relies
-// on the (new) data being available at the same adress.
-// Failure to comply to this will lead to memory errors.
-  Epetra_FECrsMatrix regularizedMatrix_;
-
-  const Epetra_Comm &comm_;
+  // Make sure to create the matrix in memory only once and then
+  // override it as necessary. The reason for this is that ML
+  // gets initialized only once and, upon ML.recompute(), relies
+  // on the (new) data being available at the same adress.
+  // Failure to comply to this will lead to memory errors.
+  const Teuchos::RCP<Nosh::ParameterMatrix::Virtual> regularizedKeo_;
 
   Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> MlPrec_;
   const int numCycles_;

@@ -18,8 +18,8 @@
 //
 // @HEADER
 
-#ifndef NOSH_MATRIXBUILDER_KEO_H
-#define NOSH_MATRIXBUILDER_KEO_H
+#ifndef NOSH_MATRIXBUILDER_DKEODP_H
+#define NOSH_MATRIXBUILDER_DKEODP_H
 
 #include <map>
 #include <string>
@@ -35,14 +35,13 @@
 
 #include <stk_mesh/base/Entity.hpp>
 
-#include "nosh/MatrixBuilder_Virtual.hpp"
+#include "nosh/ParameterMatrix_Virtual.hpp"
 
-typedef std::tuple<stk::mesh::Entity, stk::mesh::Entity> edge;
+#include "nosh/StkMesh.hpp"
 
 // forward declarations
 namespace Nosh
 {
-class StkMesh;
 namespace ScalarField
 {
 class Virtual;
@@ -55,34 +54,25 @@ class Virtual;
 
 namespace Nosh
 {
-namespace MatrixBuilder
+namespace ParameterMatrix
 {
 
-class Keo: public Virtual
+class DKeoDP: public Virtual
 {
 public:
-  Keo(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
+  DKeoDP(
+      const Teuchos::RCP<const Nosh::StkMesh> &mesh,
       const Teuchos::RCP<const Nosh::ScalarField::Virtual> &thickness,
-      const Teuchos::RCP<const Nosh::VectorField::Virtual> &mvp
-    );
+      const Teuchos::RCP<const Nosh::VectorField::Virtual> &mvp,
+      const std::string & paramName
+      );
 
   // Destructor.
-  ~Keo();
+  ~DKeoDP();
 
   virtual
-  void
-  apply(
-      const std::map<std::string, double> & params,
-      const Epetra_Vector &X,
-      Epetra_Vector &Y
-      ) const;
-
-  virtual
-  void
-  fill(
-      Epetra_FECrsMatrix &matrix,
-      const std::map<std::string, double> & params
-      ) const;
+  Teuchos::RCP<Virtual>
+  clone() const;
 
   //! Gets the initial parameters from this module.
   virtual
@@ -92,18 +82,7 @@ public:
 protected:
 private:
   void
-  fillKeo_(
-      Epetra_FECrsMatrix &keoMatrix,
-      const std::map<std::string, double> & params,
-      void (Keo::*filler)(const int, const std::map<std::string, double>&, double*) const
-      ) const;
-
-  void
-  fillerRegular_(
-      const int k,
-      const std::map<std::string, double> & params,
-      double * v
-      ) const;
+  refill_(const std::map<std::string, double> & params);
 
   void
   buildAlphaCache_(const Teuchos::Array<edge> & edges,
@@ -118,14 +97,11 @@ private:
   const Teuchos::RCP<const Nosh::ScalarField::Virtual> thickness_;
   const Teuchos::RCP<const Nosh::VectorField::Virtual> mvp_;
 
-  mutable Epetra_FECrsMatrix keoCache_;
-  mutable std::map<std::string, double> keoBuildParameters_;
-
-
   mutable Teuchos::ArrayRCP<double> alphaCache_;
   mutable bool alphaCacheUpToDate_;
+  const std::string paramName_;
 };
-} // namespace MatrixBuilder
+} // namespace ParameterMatrix
 } // namespace Nosh
 
-#endif // NOSH_MATRIXBUILDER_KEO_H
+#endif // NOSH_MATRIXBUILDER_DKEODP_H

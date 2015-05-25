@@ -94,7 +94,8 @@ StkMesh(const Teuchos::RCP<const Epetra_Comm> & comm,
   edgeData_(this->createEdgeData_()),
   edgeCoefficients_(this->computeEdgeCoefficients_()),
   outputChannel_(0),
-  time_(0.0)
+  time_(0.0),
+  globalIndexCache(buildGlobalIndexCache_())
 {
 //  int nodesPerCell;
 //  if (comm_.MyPID() == 0)
@@ -923,8 +924,12 @@ StkMesh::
 getComplexNonOverlapMap() const
 {
 #ifndef NDEBUG
+  std::cout << "22" << std::endl;
+  std::cout << complexMap_ << std::endl;
+  std::cout << "22a" << std::endl;
   TEUCHOS_ASSERT(!complexMap_.is_null());
 #endif
+  std::cout << "99" << std::endl;
   return complexMap_;
 }
 // =============================================================================
@@ -997,6 +1002,29 @@ StkMesh::
 gid(const stk::mesh::Entity e) const
 {
   return ioBroker_->bulk_data().identifier(e) - 1;
+}
+// =============================================================================
+const Teuchos::ArrayRCP<Epetra_IntSerialDenseVector>
+StkMesh::
+buildGlobalIndexCache_() const
+{
+  const Teuchos::Array<edge> edges = this->getEdgeNodes();
+
+  Teuchos::ArrayRCP<Epetra_IntSerialDenseVector> gic(edges.size());
+
+  Teuchos::Tuple<int, 2> gidT;
+  for (auto k = 0; k < edges.size(); k++) {
+    gidT[0] = this->gid(std::get<0>(edges[k]));
+    gidT[1] = this->gid(std::get<1>(edges[k]));
+
+    gic[k] = Epetra_IntSerialDenseVector(4);
+    gic[k][0] = 2 * gidT[0];
+    gic[k][1] = 2 * gidT[0] + 1;
+    gic[k][2] = 2 * gidT[1];
+    gic[k][3] = 2 * gidT[1] + 1;
+  }
+
+  return gic;
 }
 // =============================================================================
 Teuchos::RCP<const Epetra_Map>
@@ -1755,7 +1783,6 @@ createEdgeData_()
 
   //const EntityComp ec(ioBroker_->bulk_data());
 
-  typedef std::tuple<stk::mesh::Entity, stk::mesh::Entity> edge;
   // Loop over all owned cells.
   unsigned int edgeLID = 0;
   for (unsigned int cellLID = 0;

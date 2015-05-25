@@ -106,12 +106,13 @@ ENDIF()
 # ------------------------------------------------------------------------------
 SET(OPERATORTEST_EXECUTABLE
   "operatorTest")
-ADD_EXECUTABLE (${OPERATORTEST_EXECUTABLE}
+ADD_EXECUTABLE(${OPERATORTEST_EXECUTABLE}
   Nosh_KeoUnitTests.cpp
   Nosh_ComputeFUnitTests.cpp
   Nosh_JacUnitTests.cpp
   Nosh_dfdpUnitTests.cpp
-  unitTestMain.cpp)
+  unitTestMain.cpp
+  )
 
 # add tests
 ADD_TEST(operatorTest
