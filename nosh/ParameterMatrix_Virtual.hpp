@@ -81,10 +81,6 @@ protected:
   const Teuchos::RCP<const Nosh::StkMesh> mesh_;
 
 private:
-  const Epetra_FECrsGraph
-  buildGraph_(const Nosh::StkMesh &mesh);
-
-private:
   std::map<std::string, double> buildParameters_;
 };
 } // namespace ParameterMatrix

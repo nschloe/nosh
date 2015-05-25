@@ -34,6 +34,7 @@
 #include <Teuchos_Array.hpp>
 #include <Teuchos_SerialDenseVector.hpp>
 #include <Epetra_IntSerialDenseVector.h>
+#include <Epetra_FECrsGraph.h>
 
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/CoordinateSystems.hpp>
@@ -172,6 +173,9 @@ public:
 
   uint64_t
   gid(const stk::mesh::Entity e) const;
+
+  const Epetra_FECrsGraph
+  buildComplexGraph() const;
 
 protected:
 private:

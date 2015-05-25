@@ -62,19 +62,6 @@ public:
   // Destructor.
   ~Laplace();
 
-  //virtual
-  //void
-  //apply(const std::map<std::string, double> &params,
-  //      const Epetra_Vector &X,
-  //      Epetra_Vector &Y
-  //     ) const;
-
-  //virtual
-  //void
-  //fill(Epetra_FECrsMatrix &matrix,
-  //     const std::map<std::string, double> &params
-  //    ) const;
-
   //! Gets the parameter with their initial values.
   virtual
   const std::map<std::string, double>
@@ -94,7 +81,6 @@ private:
 private:
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   const Teuchos::RCP<Teuchos::Time> fillTime_;
-  const Teuchos::RCP<Teuchos::Time> buildLaplaceGraphTime_;
 #endif
   const Teuchos::RCP<const Nosh::ScalarField::Virtual> thickness_;
 

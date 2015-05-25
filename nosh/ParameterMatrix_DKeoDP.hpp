@@ -85,14 +85,14 @@ private:
   refill_(const std::map<std::string, double> & params);
 
   void
-  buildAlphaCache_(const Teuchos::Array<edge> & edges,
-                   const Teuchos::ArrayRCP<const double> &edgeCoefficients
-                   ) const;
+  buildAlphaCache_(
+      const Teuchos::Array<edge> & edges,
+      const Teuchos::ArrayRCP<const double> &edgeCoefficients
+      ) const;
 
 private:
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   const Teuchos::RCP<Teuchos::Time> keoFillTime_;
-  const Teuchos::RCP<Teuchos::Time> buildKeoGraphTime_;
 #endif
   const Teuchos::RCP<const Nosh::ScalarField::Virtual> thickness_;
   const Teuchos::RCP<const Nosh::VectorField::Virtual> mvp_;

@@ -92,7 +92,6 @@ private:
 private:
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   const Teuchos::RCP<Teuchos::Time> keoFillTime_;
-  const Teuchos::RCP<Teuchos::Time> buildKeoGraphTime_;
 #endif
   const Teuchos::RCP<const Nosh::ScalarField::Virtual> thickness_;
   const Teuchos::RCP<const Nosh::VectorField::Virtual> mvp_;
