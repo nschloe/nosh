@@ -69,7 +69,7 @@ public:
   //! Get parameter map with their initial values.
   virtual
   const std::map<std::string, double>
-  getInitialParameters() const = 0;
+  getParameters() const = 0;
 
 protected:
   //! Fill the matrix with the parameter entries as given in params.

@@ -51,7 +51,7 @@ Constant::
 // ============================================================================
 const std::map<std::string, double>
 Constant::
-getInitialParameters() const
+getParameters() const
 {
   std::map<std::string, double> m;
   if (!param1Name_.empty())

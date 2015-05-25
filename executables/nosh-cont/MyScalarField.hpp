@@ -52,7 +52,7 @@ createPInit_(const Epetra_Map & map);
 //! Get parameter names and initial values.
 virtual
 const std::map<std::string, double>
-getInitialParameters() const;
+getParameters() const;
 
 virtual
 const Epetra_Vector

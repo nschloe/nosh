@@ -33,20 +33,19 @@ namespace VectorField
 {
 // ============================================================================
 ExplicitValues::
-ExplicitValues(const Nosh::StkMesh & mesh,
-               const std::string & fieldName,
-               const double initMu
-             ) :
-  initMu_(initMu),
+ExplicitValues(
+    const Nosh::StkMesh & mesh,
+    const std::string & fieldName,
+    const double mu
+    ) :
+  mu_(mu),
   edgeProjectionCache_(mesh.getEdgeNodes().size())
 {
   // Initialize the cache.
   const Teuchos::Array<edge> edges = mesh.getEdgeNodes();
 
   // Loop over all edges and create the cache.
-  for (Teuchos::Array<edge>::size_type k = 0;
-       k < edges.size();
-       k++) {
+  for (auto k = 0; k < edges.size(); k++) {
     // Approximate the value at the midpoint of the edge
     // by the average of the values at the adjacent nodes.
     DoubleVector av = mesh.getVectorFieldNonconst(
@@ -89,9 +88,10 @@ ExplicitValues(const Nosh::StkMesh & mesh,
   int isNonzeroGlobal;
   mesh.getComm().SumAll(&isNonzeroLocal, &isNonzeroGlobal, 1);
 
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(isNonzeroGlobal == 0,
-                              "Field \"" << fieldName << "\" seems empty. "
-                              << "Was it read correctly?");
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(
+      isNonzeroGlobal == 0,
+      "Field \"" << fieldName << "\" seems empty. Was it read correctly?"
+      );
 
   return;
 }
@@ -101,34 +101,35 @@ ExplicitValues::
 {
 }
 // ============================================================================
+void
+ExplicitValues::
+setParameters(const std::map<std::string, double> & params)
+{
+  mu_ = params.at("mu");
+  return;
+}
+// ============================================================================
 const std::map<std::string, double>
 ExplicitValues::
-getInitialParameters() const
+getParameters() const
 {
-  std::map<std::string, double> m;
-  m["mu"] = initMu_;
-  return m;
+  return {{"mu", mu_}};
 }
 // ============================================================================
 double
 ExplicitValues::
-getEdgeProjection(const unsigned int edgeIndex,
-                  const std::map<std::string, double> & params
-                ) const
+getEdgeProjection(const unsigned int edgeIndex) const
 {
-  std::map<std::string, double>::const_iterator it = params.find("mu");
-  TEUCHOS_ASSERT(it != params.end());
-  return it->second * edgeProjectionCache_[edgeIndex];
+  return mu_ * edgeProjectionCache_[edgeIndex];
 }
 // ============================================================================
 double
 ExplicitValues::
-getDEdgeProjectionDp(const unsigned int edgeIndex,
-                     const std::map<std::string, double> & params,
-                     const std::string & dParamName
-                   ) const
+getDEdgeProjectionDp(
+    const unsigned int edgeIndex,
+    const std::string & dParamName
+    ) const
 {
-  (void) params;
   if (dParamName.compare("mu") == 0)
     return edgeProjectionCache_[edgeIndex];
   else

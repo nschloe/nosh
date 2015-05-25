@@ -52,7 +52,7 @@ public:
 //! Get the parameter names and intial values.
   virtual
   const std::map<std::string, double>
-  getInitialParameters() const;
+  getParameters() const;
 
   virtual
   const Epetra_Vector

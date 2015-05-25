@@ -63,7 +63,7 @@ public:
   Keo(
       const Teuchos::RCP<const Nosh::StkMesh> &mesh,
       const Teuchos::RCP<const Nosh::ScalarField::Virtual> &thickness,
-      const Teuchos::RCP<const Nosh::VectorField::Virtual> &mvp
+      const Teuchos::RCP<Nosh::VectorField::Virtual> &mvp
      );
 
   // Destructor.
@@ -76,7 +76,7 @@ public:
   //! Gets the initial parameters from this module.
   virtual
   const std::map<std::string, double>
-  getInitialParameters() const;
+  getParameters() const;
 
 protected:
 private:
@@ -94,7 +94,7 @@ private:
   const Teuchos::RCP<Teuchos::Time> keoFillTime_;
 #endif
   const Teuchos::RCP<const Nosh::ScalarField::Virtual> thickness_;
-  const Teuchos::RCP<const Nosh::VectorField::Virtual> mvp_;
+  const Teuchos::RCP<Nosh::VectorField::Virtual> mvp_;
 
   mutable Teuchos::ArrayRCP<double> alphaCache_;
   mutable bool alphaCacheUpToDate_;

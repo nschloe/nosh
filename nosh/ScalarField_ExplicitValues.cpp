@@ -47,7 +47,7 @@ ExplicitValues::
 // ============================================================================
 const std::map<std::string, double>
 ExplicitValues::
-getInitialParameters() const
+getParameters() const
 {
   std::map<std::string, double> m;
   m["beta"] = 1.0;

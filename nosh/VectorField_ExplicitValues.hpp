@@ -41,33 +41,36 @@ namespace VectorField
 class ExplicitValues : public Virtual
 {
 public:
-  ExplicitValues(const Nosh::StkMesh &mesh,
-                 const std::string &fieldName,
-                 const double initMu
-               );
+  ExplicitValues(
+      const Nosh::StkMesh &mesh,
+      const std::string &fieldName,
+      const double mu
+      );
 
   virtual
   ~ExplicitValues();
 
-//! Get parameter names and initial values.
+  virtual
+  void
+  setParameters(const std::map<std::string, double> & params);
+
+  //! Get parameter names and initial values.
   virtual
   const std::map<std::string, double>
-  getInitialParameters() const;
+  getParameters() const;
 
   double
-  getEdgeProjection(const unsigned int edgeIndex,
-                    const std::map<std::string, double> & params
-                  ) const;
+  getEdgeProjection(const unsigned int edgeIndex) const;
 
   double
-  getDEdgeProjectionDp(const unsigned int edgeIndex,
-                       const std::map<std::string, double> & params,
-                       const std::string & dParamName
-                     ) const;
+  getDEdgeProjectionDp(
+      const unsigned int edgeIndex,
+      const std::string & dParamName
+      ) const;
 
 protected:
 private:
-  const double initMu_;
+  double mu_;
 
   Teuchos::ArrayRCP<double> edgeProjectionCache_;
 };

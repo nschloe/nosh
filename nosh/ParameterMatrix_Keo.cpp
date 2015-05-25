@@ -47,7 +47,7 @@ namespace ParameterMatrix
 Keo::
 Keo(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
     const Teuchos::RCP<const Nosh::ScalarField::Virtual> &thickness,
-    const Teuchos::RCP<const Nosh::VectorField::Virtual> &mvp
+    const Teuchos::RCP<Nosh::VectorField::Virtual> &mvp
    ):
   Virtual(mesh),
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
@@ -74,9 +74,9 @@ clone() const
 // =============================================================================
 const std::map<std::string, double>
 Keo::
-getInitialParameters() const
+getParameters() const
 {
-  return mvp_->getInitialParameters();
+  return mvp_->getParameters();
 }
 // =============================================================================
 void
@@ -104,6 +104,8 @@ refill_(const std::map<std::string, double> & params)
   if (!alphaCacheUpToDate_)
     this->buildAlphaCache_(edges, mesh_->getEdgeCoefficients());
 
+  mvp_->setParameters(params);
+
   double v[3];
   Epetra_SerialDenseMatrix A(4, 4);
   // Loop over all edges.
@@ -126,7 +128,7 @@ refill_(const std::map<std::string, double> & params)
     // Re(-exp(i Aint))
     // Im(-exp(i Aint))
     // 1.0
-    const double aInt = mvp_->getEdgeProjection(k, params);
+    const double aInt = mvp_->getEdgeProjection(k);
     // If compiled with GNU (and maybe other compilers), we could use
     // sincos() here to compute sin and cos simultaneously.
     // PGI, for one, doesn't support sincos, though.

@@ -56,7 +56,7 @@ public:
   //! Get parameter names and initial values.
   virtual
   const std::map<std::string, double>
-  getInitialParameters() const = 0;
+  getParameters() const = 0;
 
 protected:
 private:

@@ -42,24 +42,26 @@ public:
   virtual
   ~Virtual();
 
-//! Get parameter names and initial values.
+  virtual
+  void
+  setParameters(const std::map<std::string, double> & params) = 0;
+
+  //! get parameter names and initial values.
   virtual
   const std::map<std::string, double>
-  getInitialParameters() const = 0;
+  getParameters() const = 0;
 
-//! Projection of the vector field onto an edge at the midpoint of the edge.
+  //! Projection of the vector field onto an edge at the midpoint of the edge.
   virtual
   double
-  getEdgeProjection(const unsigned int edgeIndex,
-                    const std::map<std::string, double> & params
-                   ) const = 0;
+  getEdgeProjection(const unsigned int edgeIndex) const = 0;
 
   virtual
   double
-  getDEdgeProjectionDp(const unsigned int edgeIndex,
-                       const std::map<std::string, double> & params,
-                       const std::string & dParamName
-                      ) const = 0;
+  getDEdgeProjectionDp(
+      const unsigned int edgeIndex,
+      const std::string & dParamName
+      ) const = 0;
 
 protected:
 private:

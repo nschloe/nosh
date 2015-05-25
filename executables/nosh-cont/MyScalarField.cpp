@@ -43,7 +43,7 @@ MyScalarField::
 // ============================================================================
 const std::map<std::string, double>
 MyScalarField::
-getInitialParameters() const
+getParameters() const
 {
   std::map<std::string, double> m;
   m["tau"] = 0.0;

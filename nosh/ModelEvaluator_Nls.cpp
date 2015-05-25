@@ -89,12 +89,12 @@ Nls(
 
   // This merges and discards new values if their keys are already in the list.
   std::map<std::string, double> spParams =
-    scalarPotential_->getInitialParameters();
+    scalarPotential_->getParameters();
   params.insert(spParams.begin(), spParams.end());
 
   // This merges and discards new values if their keys are already in the list.
   std::map<std::string, double> mbParams =
-    keo_->getInitialParameters();
+    keo_->getParameters();
   params.insert(mbParams.begin(), mbParams.end());
 
   // Out of this now complete list, create the entities that the EpetraExt::

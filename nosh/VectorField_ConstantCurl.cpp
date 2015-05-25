@@ -33,10 +33,11 @@ namespace VectorField
 {
 // ============================================================================
 ConstantCurl::
-ConstantCurl(const Teuchos::RCP<Nosh::StkMesh> &mesh,
-             const Teuchos::RCP<DoubleVector> &b,
-             const Teuchos::RCP<DoubleVector> &u
-           ) :
+ConstantCurl(
+    const Teuchos::RCP<Nosh::StkMesh> &mesh,
+    const Teuchos::RCP<DoubleVector> &b,
+    const Teuchos::RCP<DoubleVector> &u
+    ) :
   mesh_(mesh),
   b_(b),
   u_(u),
@@ -45,7 +46,9 @@ ConstantCurl(const Teuchos::RCP<Nosh::StkMesh> &mesh,
   dRotatedBDThetaCache_(*b_),
   rotateddBdThetaCacheAngle_(0.0),
   edgeCache_(),
-  edgeCacheUptodate_(false)
+  edgeCacheUptodate_(false),
+  mu_(0.0),
+  theta_(0.0)
 {
 #ifndef NDEBUG
   TEUCHOS_ASSERT(!mesh_.is_null());
@@ -75,21 +78,25 @@ ConstantCurl::
 {
 }
 // ============================================================================
+void
+ConstantCurl::
+setParameters(const std::map<std::string, double> & params)
+{
+  mu_ = params.at("mu");
+  theta_ = params.at("theta");
+  return;
+}
+// ============================================================================
 const std::map<std::string, double>
 ConstantCurl::
-getInitialParameters() const
+getParameters() const
 {
-  std::map<std::string, double> m;
-  m["mu"] = 0.0;
-  m["theta"] = 0.0;
-  return m;
+  return {{"mu", mu_}, {"theta", theta_}};
 }
 // ============================================================================
 double
 ConstantCurl::
-getEdgeProjection(const unsigned int edgeIndex,
-                  const std::map<std::string, double> & params
-                ) const
+getEdgeProjection(const unsigned int edgeIndex) const
 {
   // A vector potential associated with the constant curl field RB is
   //
@@ -110,59 +117,47 @@ getEdgeProjection(const unsigned int edgeIndex,
   if (!edgeCacheUptodate_)
     this->initializeEdgeCache_();
 
-  // Get "theta".
-  std::map<std::string, double>::const_iterator itTheta = params.find("theta");
-  TEUCHOS_ASSERT(itTheta != params.end());
-  const double & theta = itTheta->second;
-
-  if (rotatedBCacheAngle_ != theta) {
+  if (rotatedBCacheAngle_ != theta_) {
     rotatedBCache_ = *b_;
-    this->rotate_(rotatedBCache_, *u_, theta);
-    rotatedBCacheAngle_ = theta;
+    this->rotate_(rotatedBCache_, *u_, theta_);
+    rotatedBCacheAngle_ = theta_;
   }
 
-  std::map<std::string, double>::const_iterator itMu = params.find("mu");
-  TEUCHOS_ASSERT(itMu != params.end());
-  return itMu->second * rotatedBCache_.dot(edgeCache_[edgeIndex]);
+  return mu_ * rotatedBCache_.dot(edgeCache_[edgeIndex]);
 }
 // ============================================================================
 double
 ConstantCurl::
-getDEdgeProjectionDp(const unsigned int edgeIndex,
-                     const std::map<std::string, double> & params,
-                     const std::string & paramName
-                   ) const
+getDEdgeProjectionDp(
+    const unsigned int edgeIndex,
+    const std::string & paramName
+    ) const
 {
   // Update caches.
   if (!edgeCacheUptodate_)
     this->initializeEdgeCache_();
 
-  // Get "theta".
-  std::map<std::string, double>::const_iterator itTheta = params.find("theta");
-  TEUCHOS_ASSERT(itTheta != params.end());
-  const double theta = itTheta->second;
-
-  if (rotatedBCacheAngle_ != theta) {
+  if (rotatedBCacheAngle_ != theta_) {
     rotatedBCache_ = *b_;
-    this->rotate_(rotatedBCache_, *u_, theta);
-    rotatedBCacheAngle_ = theta;
+    this->rotate_(rotatedBCache_, *u_, theta_);
+    rotatedBCacheAngle_ = theta_;
   }
 
-  if (rotateddBdThetaCacheAngle_ != theta) {
+  if (rotateddBdThetaCacheAngle_ != theta_) {
     dRotatedBDThetaCache_ = *b_;
-    this->dRotateDTheta_(dRotatedBDThetaCache_, *u_, theta);
-    rotateddBdThetaCacheAngle_ = theta;
+    this->dRotateDTheta_(dRotatedBDThetaCache_, *u_, theta_);
+    rotateddBdThetaCacheAngle_ = theta_;
   }
 
   if (paramName.compare("mu") == 0) {
     return rotatedBCache_.dot(edgeCache_[edgeIndex]);
   } else if (paramName.compare("theta") == 0) {
-    std::map<std::string, double>::const_iterator itMu = params.find("mu");
-    TEUCHOS_ASSERT(itMu != params.end());
-    return itMu->second * dRotatedBDThetaCache_.dot(edgeCache_[edgeIndex]);
+    return mu_ * dRotatedBDThetaCache_.dot(edgeCache_[edgeIndex]);
   } else {
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(true,
-                                "Illegal parameter \"" << paramName << "\".");
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(
+        true,
+        "Illegal parameter \"" << paramName << "\"."
+        );
   }
 }
 // ============================================================================

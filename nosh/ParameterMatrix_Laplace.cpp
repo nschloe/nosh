@@ -102,7 +102,7 @@ Laplace::
 // =============================================================================
 const std::map<std::string, double>
 Laplace::
-getInitialParameters() const
+getParameters() const
 {
   return std::map<std::string, double>();
 }

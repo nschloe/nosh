@@ -49,23 +49,25 @@ public:
   virtual
   ~ConstantCurl();
 
-//! Get the parameter names and initial values.
+  virtual
+  void
+  setParameters(const std::map<std::string, double> & params);
+
+  //! get parameter names and initial values.
   virtual
   const std::map<std::string, double>
-  getInitialParameters() const;
+  getParameters() const;
 
   virtual
   double
-  getEdgeProjection(const unsigned int edgeIndex,
-                    const std::map<std::string, double> & params
-                  ) const;
+  getEdgeProjection(const unsigned int edgeIndex) const;
 
   virtual
   double
-  getDEdgeProjectionDp(const unsigned int edgeIndex,
-                       const std::map<std::string, double> & params,
-                       const std::string & dParam
-                     ) const;
+  getDEdgeProjectionDp(
+      const unsigned int edgeIndex,
+      const std::string & dParam
+      ) const;
 
 protected:
 private:
@@ -106,6 +108,9 @@ private:
 
   Teuchos::ArrayRCP<DoubleVector> edgeCache_;
   mutable bool edgeCacheUptodate_;
+
+  double mu_;
+  double theta_;
 };
 } // namespace VectorField
 } // namespace Nosh

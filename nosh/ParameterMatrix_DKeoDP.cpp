@@ -48,7 +48,7 @@ DKeoDP::
 DKeoDP(
     const Teuchos::RCP<const Nosh::StkMesh> &mesh,
     const Teuchos::RCP<const Nosh::ScalarField::Virtual> &thickness,
-    const Teuchos::RCP<const Nosh::VectorField::Virtual> &mvp,
+    const Teuchos::RCP<Nosh::VectorField::Virtual> &mvp,
     const std::string & paramName
    ):
   Virtual(mesh),
@@ -77,9 +77,9 @@ clone() const
 // =============================================================================
 const std::map<std::string, double>
 DKeoDP::
-getInitialParameters() const
+getParameters() const
 {
-  return mvp_->getInitialParameters();
+  return mvp_->getParameters();
 }
 // =============================================================================
 void
@@ -109,6 +109,8 @@ refill_(const std::map<std::string, double> & params)
 
   double v[3];
   Epetra_SerialDenseMatrix A(4, 4);
+  // set parameter
+  mvp_->setParameters(params);
   // Loop over all edges.
   for (auto k = 0; k < edges.size(); k++) {
     // ---------------------------------------------------------------
@@ -125,9 +127,9 @@ refill_(const std::map<std::string, double> & params)
     // Instead of first computing the projection over the normalized edge
     // and then multiply it with the edge length, don't normalize the
     // edge vector.
-    double aInt = mvp_->getEdgeProjection(k, params);
+    double aInt = mvp_->getEdgeProjection(k);
     // paramName_ is set in the KEO building routine.
-    double dAdPInt = mvp_->getDEdgeProjectionDp(k, params, paramName_);
+    double dAdPInt = mvp_->getDEdgeProjectionDp(k, paramName_);
     //sincos(aInt, &sinAInt, &cosAInt);
     v[0] =  dAdPInt * sin(aInt);
     v[1] = -dAdPInt * cos(aInt);
