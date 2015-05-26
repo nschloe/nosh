@@ -582,14 +582,9 @@ openOutputChannel(
       );
   const stk::mesh::FieldVector &fields = ioBroker_->meta_data().get_fields();
   for (size_t i=0; i < fields.size(); i++) {
-    std::cout << fields[i]->data_traits().name << std::endl;
-    if (
-        fields[i]->name() == "coordinates" ||
-        fields[i]->name() == "distribution_factors"
-       ) {
-      continue;
+    if (*stk::io::get_field_role(*fields[i]) == Ioss::Field::TRANSIENT) {
+      ioBroker_->add_field(outputChannel_, *fields[i]);
     }
-    ioBroker_->add_field(outputChannel_, *fields[i]);
   }
 
   return;
