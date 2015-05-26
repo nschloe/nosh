@@ -59,12 +59,8 @@ ExplicitValues::
 getV(const std::map<std::string, double> & params) const
 {
   Epetra_Vector vals(*nodeValues_);
-
-  // Find the value of "beta" and use it as a factor.
-  std::map<std::string, double>::const_iterator it = params.find("beta");
-  TEUCHOS_ASSERT(it != params.end());
-  vals.Scale(it->second);
-
+  // Scale by "beta"
+  vals.Scale(params.at("beta"));
   return vals;
 }
 // ============================================================================

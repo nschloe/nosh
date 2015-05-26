@@ -194,7 +194,7 @@ rebuild(const std::map<std::string, double> params,
   // context, but really the code shouldn't make any assumptions about it.
   // Besides, the matrix copy that happens in fill is not of much concern
   // computationally. Should this ever become an issue, revisit.
-  keo_->refill(params);
+  keo_->setParameters(params);
 
   // Rebuild diagonals.
 #ifndef NDEBUG
@@ -218,9 +218,7 @@ rebuildDiags_(
 
   const Epetra_Vector &controlVolumes = *(mesh_->getControlVolumes());
 
-  std::map<std::string, double>::const_iterator it = params.find("g");
-  TEUCHOS_ASSERT(it != params.end());
-  const double g = it->second;
+  const double g = params.at("g");
 
   const Epetra_Vector thicknessValues = thickness_->getV(params);
 #ifndef NDEBUG

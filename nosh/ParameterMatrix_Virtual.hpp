@@ -64,7 +64,7 @@ public:
   //! Includes some caching logic for params.
   virtual
   void
-  refill(const std::map<std::string, double> &params);
+  setParameters(const std::map<std::string, double> &params);
 
   //! Get parameter map with their initial values.
   virtual

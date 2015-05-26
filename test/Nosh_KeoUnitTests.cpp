@@ -71,28 +71,17 @@ testKeo(const std::string & inputFileNameBase,
   Teuchos::RCP<Epetra_Vector> z =
     mesh->createComplexVector("psi");
 
-  std::cout << mesh->getComplexNonOverlapMap() << std::endl;
-
   Teuchos::RCP<Nosh::VectorField::Virtual> mvp =
     Teuchos::rcp(new Nosh::VectorField::ExplicitValues(*mesh, "A", initMu));
-
-  std::cout << mesh->getComplexNonOverlapMap() << std::endl;
 
   // Set the thickness field.
   Teuchos::RCP<Nosh::ScalarField::Virtual> thickness =
     Teuchos::rcp(new Nosh::ScalarField::Constant(*mesh, 1.0));
 
-  std::cout << mesh->getComplexNonOverlapMap() << std::endl;
-
-  std::cout << "a" << std::endl;
   Nosh::ParameterMatrix::Keo keo(mesh, thickness, mvp);
-  std::cout << "b" << std::endl;
 
   // Explicitly create the kinetic energy operator.
-  std::map<std::string, double> params;
-  params["mu"] = initMu;
-
-  keo.refill(params);
+  keo.setParameters({{"mu", initMu}});
 
   // Compute matrix norms as hashes.
   // Don't check for NormFrobenius() as this one doesn't work for matrices

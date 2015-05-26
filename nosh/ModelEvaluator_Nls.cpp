@@ -397,7 +397,7 @@ computeF_(
     ) const
 {
   // Compute FVec = K*x.
-  keo_->refill(params);
+  keo_->setParameters(params);
   keo_->Apply(x, FVec);
 
   // Add the nonlinear part (mass lumping).
@@ -416,9 +416,7 @@ computeF_(
   TEUCHOS_ASSERT_EQUALITY(2*numMyPoints, x.MyLength());
 #endif
 
-  std::map<std::string, double>::const_iterator it = params.find("g");
-  TEUCHOS_ASSERT(it != params.end());
-  const double g = it->second;
+  const double g = params.at("g");
 
   const Epetra_Vector thicknessValues = thickness_->getV(params);
 #ifndef NDEBUG
@@ -496,7 +494,7 @@ computeDFDP_(
     ) const
 {
   // FVec = dK/dp * x.
-  dKeoDP_->refill(params);
+  dKeoDP_->setParameters(params);
   dKeoDP_->Apply(x, FVec);
 
 #ifndef NDEBUG

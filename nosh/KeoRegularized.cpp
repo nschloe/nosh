@@ -240,11 +240,9 @@ rebuild(
   // introduce the additional complication of having KEO depend on psi, and
   // would likely lead to some confusion in the rest of the code.  Hence, don't
   // worry too much about this until memory contrains get tight.
-  regularizedKeo_->refill(params);
+  regularizedKeo_->setParameters(params);
 
-  std::map<std::string, double>::const_iterator it = params.find("g");
-  TEUCHOS_ASSERT(it != params.end());
-  const double g = it->second;
+  const double g = params.at("g");
   // Add 2*g*|psi|^2 to the diagonal.
   if (g > 0.0) {
     // To be added to the diagonal blocks:

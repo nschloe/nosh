@@ -42,7 +42,7 @@ Virtual::
 // ============================================================================
 void
 Virtual::
-refill(const std::map<std::string, double> &params)
+setParameters(const std::map<std::string, double> &params)
 {
   // Cache the construction of the matrix.
   // This is useful because in the continuation context, the matrix is called a
@@ -64,7 +64,7 @@ refill(const std::map<std::string, double> &params)
   if (needsRefill) {
     this->refill_(params);
     for (auto &buildParam: buildParameters_) {
-      buildParams.second = params.at(buildParam.first);
+      buildParam.second = params.at(buildParam.first);
     }
   }
 
