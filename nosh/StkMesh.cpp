@@ -544,8 +544,10 @@ field2vector_(const VectorFieldType &field,
       break;
     }
   }
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(!makesSense,
-                              "The input data seems flawed. Abort.");
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(
+      !makesSense,
+      "The input data seems flawed. Abort."
+      );
 #endif
 
   return vector;
@@ -590,9 +592,10 @@ openOutputChannel(
 // =============================================================================
 void
 StkMesh::
-insert(const Epetra_Vector & psi,
-       const std::string & name
-       ) const
+insert(
+    const Epetra_Vector & psi,
+    const std::string & name
+    ) const
 {
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   // timer for this routine
@@ -762,11 +765,9 @@ mergeComplexVector_(const Epetra_Vector & psi,
   // and the getSolutionField only sets the owned nodes.
   // TODO combine these fields into a vector of fields
   std::vector<stk::mesh::FieldBase*> tmp(1, psir_field);
-  stk::mesh::parallel_sum(ioBroker_->bulk_data(),
-                          tmp);
+  stk::mesh::parallel_sum(ioBroker_->bulk_data(), tmp);
   std::vector<stk::mesh::FieldBase*> tmp2(1, psii_field);
-  stk::mesh::parallel_sum(ioBroker_->bulk_data(),
-                          tmp2);
+  stk::mesh::parallel_sum(ioBroker_->bulk_data(), tmp2);
 
   return;
 }
@@ -1055,8 +1056,9 @@ getNumEdgesPerCell(unsigned int cellDimension) const
   // In n-simplices, all nodes are connected with all other nodesMap.
   // Hence, numEdges==sum_{i=1}^(numLocalNodes-1) i.
   unsigned int numEdgesPerCell = 0;
-  for (unsigned int i = 1; i < cellDimension+1; i++)
+  for (unsigned int i = 1; i < cellDimension+1; i++) {
     numEdgesPerCell += i;
+  }
 
   return numEdgesPerCell;
 }

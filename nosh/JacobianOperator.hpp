@@ -25,24 +25,22 @@
 #include <string>
 
 #include <Epetra_Vector.h>
-#include <Epetra_FECrsMatrix.h>
+#include <Epetra_Operator.h>
 #include <Teuchos_RCP.hpp>
-#include <Teuchos_Array.hpp>
 
 // forward declarations
 namespace Nosh
 {
-class StkMesh;
-namespace ParameterMatrix
-{
-class Virtual;
-}
-namespace ScalarField
-{
-class Virtual;
-}
+  class StkMesh;
+  namespace ParameterMatrix
+  {
+    class Virtual;
+  }
+  namespace ScalarField
+  {
+    class Virtual;
+  }
 } // namespace Nosh
-class Epetra_Vector;
 
 namespace Nosh
 {

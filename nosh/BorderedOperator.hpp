@@ -25,13 +25,10 @@
 #include <Epetra_Map.h>
 #include <Epetra_Operator.h>
 #include <Teuchos_RCP.hpp>
-#include <Teuchos_Array.hpp>
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
 #include <Teuchos_Time.hpp>
 #endif
 #include <Teuchos_FancyOStream.hpp>
-#include <Epetra_FECrsMatrix.h>
-#include <Epetra_LinearProblem.h>
 // =============================================================================
 namespace Nosh
 {

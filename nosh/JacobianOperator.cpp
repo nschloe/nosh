@@ -23,7 +23,6 @@
 #include <map>
 #include <string>
 
-#include <Teuchos_ArrayRCP.hpp>
 #include <Epetra_Vector.h>
 #include <Epetra_Map.h>
 

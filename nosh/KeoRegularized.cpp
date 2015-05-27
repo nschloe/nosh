@@ -32,12 +32,7 @@
 #include <BelosPseudoBlockCGSolMgr.hpp>
 #include <ml_epetra_preconditioner.h>
 
-#include <Amesos_BaseSolver.h>
-#include <Epetra_LinearProblem.h>
-
 #include <Teuchos_VerboseObject.hpp>
-
-#include <Amesos.h>
 
 #include "nosh/ScalarField_Virtual.hpp"
 #include "nosh/ParameterMatrix_Virtual.hpp"

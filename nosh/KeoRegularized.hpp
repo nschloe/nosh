@@ -27,13 +27,10 @@
 #include <Epetra_Vector.h>
 #include <Epetra_Operator.h>
 #include <Teuchos_RCP.hpp>
-#include <Teuchos_Array.hpp>
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
 #include <Teuchos_Time.hpp>
 #endif
 #include <Teuchos_FancyOStream.hpp>
-#include <Epetra_FECrsMatrix.h>
-#include <Epetra_LinearProblem.h>
 
 namespace Nosh
 {
@@ -52,8 +49,6 @@ namespace Belos
 {
 class EpetraPrecOp;
 }
-class Amesos_BaseSolver;
-class Epetra_LinearProblem;
 namespace ML_Epetra
 {
 class MultiLevelPreconditioner;
