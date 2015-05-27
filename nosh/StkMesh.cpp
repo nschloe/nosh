@@ -1235,7 +1235,8 @@ computeControlVolumesTri_(const Teuchos::RCP<Epetra_Vector> & cvOverlap) const
 
   // Calculate the contributions to the finite volumes cell by cell.
   for (unsigned int k = 0; k < numCells; k++) {
-    const stk::mesh::Entity * localNodes = ioBroker_->bulk_data().begin_nodes(cells[k]);
+    const stk::mesh::Entity * localNodes =
+      ioBroker_->bulk_data().begin_nodes(cells[k]);
     unsigned int numLocalNodes = ioBroker_->bulk_data().num_nodes(cells[k]);
 
 #ifndef NDEBUG
@@ -1253,11 +1254,12 @@ computeControlVolumesTri_(const Teuchos::RCP<Epetra_Vector> & cvOverlap) const
     }
 
     // compute the circumcenter of the cell
-    Eigen::Vector3d cc =
+    const Eigen::Vector3d cc =
       this->computeTriangleCircumcenter_(localNodeCoords);
 
     // Iterate over the edges.
-    // As true edge entities are not available here, loop over all pairs of local nodes.
+    // As true edge entities are not available here, loop over all pairs of
+    // local nodes.
     for (unsigned int e0 = 0; e0 < numLocalNodes; e0++) {
       const Eigen::Vector3d &x0 = localNodeCoords[e0];
       const int gid0 = ioBroker_->bulk_data().identifier(localNodes[e0]) - 1;
@@ -1318,7 +1320,8 @@ computeControlVolumesTet_(const Teuchos::RCP<Epetra_Vector> & cvOverlap) const
 
   // Calculate the contributions to the finite volumes cell by cell.
   for (unsigned int k = 0; k < numCells; k++) {
-    const stk::mesh::Entity * localNodes = ioBroker_->bulk_data().begin_nodes(cells[k]);
+    const stk::mesh::Entity * localNodes =
+      ioBroker_->bulk_data().begin_nodes(cells[k]);
     unsigned int numLocalNodes = ioBroker_->bulk_data().num_nodes(cells[k]);
 #ifndef NDEBUG
     // Confirm that we always have the same simplices.
@@ -1375,12 +1378,14 @@ computeControlVolumesTet_(const Teuchos::RCP<Epetra_Vector> & cvOverlap) const
         // we loop over all the cells here. This way, the edges are counted
         // several times, but it is difficult to determine how many times
         // exactly.
-//                   TEUCHOS_TEST_FOR_EXCEPTION(true,
-//                                       std::runtime_error,
-//                                       "Cannot calculate the average thickness in a 3D control volume yet."
-//                                    );
+        //TEUCHOS_TEST_FOR_EXCEPTION(
+        //    true,
+        //    std::runtime_error,
+        //    "Cannot calculate the average thickness in a 3D control volume yet."
+        //    );
 
-        // Compute the contributions to the finite volumes of the adjacent edges.
+        // Compute the contributions to the finite volumes of the adjacent
+        // edges.
         double pyramidVolume = 0.5*edgeLength * covolume / 3;
         (*cvOverlap)[lid0] += pyramidVolume;
         (*cvOverlap)[lid1] += pyramidVolume;
@@ -1403,8 +1408,8 @@ computeCovolume2d_(
 
   double coedgeLength = (mp - cc).norm();
 
-  // The only difficulty here is to determine whether the length of coedge
-  // is to be taken positive or negative.
+  // The only difficulty here is to determine whether the length of coedge is
+  // to be taken positive or negative.
   // To this end, make sure that the order (x0, cc, mp) is of the same
   // orientation as (x0, other0, mp).
   Eigen::Vector3d cellNormal = (other0 - x0).cross(mp - x0);
@@ -1417,12 +1422,13 @@ computeCovolume2d_(
 // =============================================================================
 double
 StkMesh::
-computeCovolume3d_(const Eigen::Vector3d &cc,
-                   const Eigen::Vector3d &x0,
-                   const Eigen::Vector3d &x1,
-                   const Eigen::Vector3d &other0,
-                   const Eigen::Vector3d &other1
-                   ) const
+computeCovolume3d_(
+    const Eigen::Vector3d &cc,
+    const Eigen::Vector3d &x0,
+    const Eigen::Vector3d &x1,
+    const Eigen::Vector3d &other0,
+    const Eigen::Vector3d &other1
+    ) const
 {
   double covolume = 0.0;
 
@@ -1516,19 +1522,21 @@ getOtherIndices_(unsigned int e0, unsigned int e1) const
 // =============================================================================
 double
 StkMesh::
-getTriangleArea_(const Eigen::Vector3d &edge0,
-                  const Eigen::Vector3d &edge1
-               ) const
+getTriangleArea_(
+    const Eigen::Vector3d &edge0,
+    const Eigen::Vector3d &edge1
+    ) const
 {
   return 0.5 * (edge0.cross(edge1)).norm();
 }
 // =============================================================================
 double
 StkMesh::
-getTetrahedronVolume_(const Eigen::Vector3d &edge0,
-                      const Eigen::Vector3d &edge1,
-                      const Eigen::Vector3d &edge2
-                    ) const
+getTetrahedronVolume_(
+    const Eigen::Vector3d &edge0,
+    const Eigen::Vector3d &edge1,
+    const Eigen::Vector3d &edge2
+    ) const
 {
   // Make sure the edges are not conplanar.
   double alpha = edge0.dot(edge1.cross(edge2));
@@ -1553,7 +1561,8 @@ getTetrahedronVolume_(const Eigen::Vector3d &edge0,
 Eigen::Vector3d
 StkMesh::
 computeTriangleCircumcenter_(
-  const Teuchos::ArrayRCP<const Eigen::Vector3d> &nodes) const
+  const Teuchos::ArrayRCP<const Eigen::Vector3d> &nodes
+  ) const
 {
 #ifndef NDEBUG
   TEUCHOS_ASSERT_EQUALITY(nodes.size(), 3);
@@ -1569,20 +1578,9 @@ computeTriangleCircumcenter_(
     const Eigen::Vector3d &node2
     ) const
 {
-  Eigen::Vector3d a(node0);
-  for (int k = 0; k < 3; k++) {
-    a[k] -= node1[k];
-  }
-
-  Eigen::Vector3d b(node1);
-  for (int k = 0; k < 3; k++) {
-    b[k] -= node2[k];
-  }
-
-  Eigen::Vector3d c(node2);
-  for (int k = 0; k < 3; k++) {
-    c[k] -= node0[k];
-  }
+  Eigen::Vector3d a = node0 - node1;
+  Eigen::Vector3d b = node1 - node2;
+  Eigen::Vector3d c = node2 - node0;
 
   const double omega = 2.0 * (a.cross(b)).squaredNorm();
 
@@ -1603,14 +1601,7 @@ computeTriangleCircumcenter_(
   const double beta  = - c.dot(c) * b.dot(a) / omega;
   const double gamma = - a.dot(a) * c.dot(b) / omega;
 
-  Eigen::Vector3d cc(3);
-  for (int k = 0; k < 3; k++) {
-    cc[k] = alpha * node0[k]
-            + beta  * node1[k]
-            + gamma * node2[k];
-  }
-
-  return cc;
+  return alpha * node0 + beta * node1 + gamma * node2;
 }
 // =============================================================================
 Eigen::Vector3d
@@ -1635,17 +1626,19 @@ computeTetrahedronCircumcenter_(
   // don't divide by 0
   TEUCHOS_TEST_FOR_EXCEPT_MSG(
       fabs(omega) < 1.0e-10,
-      "It seems that the nodes \n\n"
+      "It seems that the nodes \n"
+      << "\n"
       << "   " << nodes[0] << "\n"
       << "   " << nodes[1] << "\n"
       << "   " << nodes[2] << "\n"
       << "   " << nodes[3] << "\n"
-      << "\ndo not form a proper tetrahedron. Abort."
+      << "\n"
+      << "do not form a proper tetrahedron. Abort."
       << std::endl
       );
-  double alpha = relNodes[0].squaredNorm() / omega;
-  double beta  = relNodes[1].squaredNorm() / omega;
-  double gamma = relNodes[2].squaredNorm() / omega;
+  const double alpha = relNodes[0].squaredNorm() / omega;
+  const double beta  = relNodes[1].squaredNorm() / omega;
+  const double gamma = relNodes[2].squaredNorm() / omega;
 
   return nodes[0]
     + alpha * relNodes[1].cross(relNodes[2])
@@ -1679,14 +1672,12 @@ createEdgeData_()
 
   // Loop over all owned cells.
   unsigned int edgeLID = 0;
-  for (unsigned int cellLID = 0;
-       cellLID < numLocalCells;
-       cellLID++
-       ) {
+  for (unsigned int cellLID = 0; cellLID < numLocalCells; cellLID++) {
     // Loop over all pairs of local nodes.
     stk::mesh::Entity const * localNodes
       = ioBroker_->bulk_data().begin_nodes(cells[cellLID]);
-    size_t const numLocalNodes = ioBroker_->bulk_data().num_nodes(cells[cellLID]);
+    size_t const numLocalNodes =
+      ioBroker_->bulk_data().num_nodes(cells[cellLID]);
 
     //stk::mesh::PairIterRelation nodesIterator =
     //  cells[cellLID]->relations(metaData.node_rank());
@@ -1697,8 +1688,9 @@ createEdgeData_()
 
     // Gather the node entities.
     Teuchos::ArrayRCP<stk::mesh::Entity> nodes(numLocalNodes);
-    for (unsigned int k = 0; k < numLocalNodes; k++)
+    for (unsigned int k = 0; k < numLocalNodes; k++) {
       nodes[k] = localNodes[k];
+    }
 
     // Sort nodes. This is necessary to make sure that the
     // tuples formed below are always sorted such they are
