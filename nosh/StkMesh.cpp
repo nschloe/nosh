@@ -1275,29 +1275,30 @@ computeControlVolumesTri_(const Teuchos::RCP<Epetra_Vector> & cvOverlap) const
         // Get the other node.
         const unsigned int other = this->getOtherIndex_(e0, e1);
 
-        //double edgeLength = this->norm2_(this->add_(1.0, x1, -1.0, x0));
         double edgeLength = (x1-x0).norm();
 
         // Compute the (n-1)-dimensional covolume.
         double covolume;
         const Eigen::Vector3d &other0 = localNodeCoords[other];
         covolume = this->computeCovolume2d_(cc, x0, x1, other0);
-        // The problem with counting the average thickness in 2D is the following.
-        // Ideally, one would want to loop over all edges, add the midpoint value
-        // of the thickness to both of the edge end points, and eventually loop over
-        // all endpoints and divide by the number of edges (connections) they have
-        // with neighboring nodes).
+        // The problem with counting the average thickness in 2D is the
+        // following.  Ideally, one would want to loop over all edges, add the
+        // midpoint value of the thickness to both of the edge end points, and
+        // eventually loop over all endpoints and divide by the number of edges
+        // (connections) they have with neighboring nodes).
         // Unfortunately, this is impossible now b/c there's no edge generation
         // for shells in Trilinos yet (2011-04-15).
-        // As a workaround, one could loop over all cells, and then all pairs of
-        // nodes to retrieve the edges. In 2D, almost all of the edges would be
-        // counted twice this way as they belong to two cells. This is true for
-        // all but the boundary edges. Again, it is difficult (impossible?) to
-        // know what the boundary edges are, and hence which values to divide by
-        // 2. Dividing them all by two would result in an artificially lower
-        // thickness near the boundaries. This is not what we want.
+        // As a workaround, one could loop over all cells, and then all pairs
+        // of nodes to retrieve the edges. In 2D, almost all of the edges would
+        // be counted twice this way as they belong to two cells. This is true
+        // for all but the boundary edges. Again, it is difficult (impossible?)
+        // to know what the boundary edges are, and hence which values to
+        // divide by 2. Dividing them all by two would result in an
+        // artificially lower thickness near the boundaries. This is not what
+        // we want.
 
-        // Compute the contributions to the finite volumes of the adjacent edges.
+        // Compute the contributions to the finite volumes of the adjacent
+        // edges.
         double pyramidVolume = 0.5*edgeLength * covolume / 2;
         (*cvOverlap)[lid0] += pyramidVolume;
         (*cvOverlap)[lid1] += pyramidVolume;
@@ -1359,7 +1360,6 @@ computeControlVolumesTet_(const Teuchos::RCP<Epetra_Vector> & cvOverlap) const
         // Convert to vector (easier to handle for now)
         std::vector<unsigned int> other(otherSet.begin(), otherSet.end() );
 
-        //double edgeLength = this->norm2_(this->add_(1.0, x1, -1.0, x0));
         double edgeLength = (x1 - x0).norm();
 
         // Compute the (n-1)-dimensional covolume.
@@ -1399,10 +1399,8 @@ computeCovolume2d_(
     ) const
 {
   // edge midpoint
-  //Eigen::Vector3d mp = this->add_(0.5, x0, 0.5, x1);
   Eigen::Vector3d mp = 0.5 * (x0 + x1);
 
-  //double coedgeLength = this->norm2_(this->add_(1.0, mp, -1.0, cc));
   double coedgeLength = (mp - cc).norm();
 
   // The only difficulty here is to determine whether the length of coedge
@@ -1429,7 +1427,6 @@ computeCovolume3d_(const Eigen::Vector3d &cc,
   double covolume = 0.0;
 
   // edge midpoint
-  //Eigen::Vector3d mp = this->add_(0.5, x0, 0.5, x1);
   Eigen::Vector3d mp = 0.5 * (x0 + x1);
 
   // Compute the circumcenters of the adjacent faces.
@@ -1444,26 +1441,16 @@ computeCovolume3d_(const Eigen::Vector3d &cc,
   // Use the triangle (MP, localNodes[other[0]], localNodes[other[1]]) (in this
   // order) to gauge the orientation of the two triangles that compose the
   // quadrilateral.
-  //Eigen::Vector3d gauge = this->cross_(this->add_(1.0, other0, -1.0, mp),
-  //                                   this->add_(1.0, other1, -1.0, mp)
-  //                                );
   Eigen::Vector3d gauge = (other0 - mp).cross(other1 - mp);
 
   // Add the area of the first triangle (MP,ccFace0,cc).
   // This makes use of the right angles.
-  //double triangleHeight0 = this->norm2_(this->add_(1.0, mp, -1.0, ccFace0));
   double triangleHeight0 = (mp - ccFace0).norm();
-  double triangleArea0 = 0.5
-                         * triangleHeight0
-                         * (ccFace0 - cc).norm();
-                         //* this->norm2_(this->add_(1.0, ccFace0, -1.0, cc));
+  double triangleArea0 = 0.5 * triangleHeight0 * (ccFace0 - cc).norm();
 
   // Check if the orientation of the triangle (MP,ccFace0,cc) coincides with
   // the orientation of the gauge triangle. If yes, add the area, subtract
   // otherwise.
-  //Eigen::Vector3d triangleNormal0 =
-  //  this->cross_(this->add_(1.0, ccFace0, -1.0, mp),
-  //               this->add_(1.0, cc,      -1.0, mp));
   Eigen::Vector3d triangleNormal0 = (ccFace0 - mp).cross(cc - mp);
 
   // copysign takes the absolute value of the first argument and the sign of
@@ -1472,19 +1459,12 @@ computeCovolume3d_(const Eigen::Vector3d &cc,
 
   // Add the area of the second triangle (MP,cc,ccFace1).
   // This makes use of the right angles.
-  //double triangleHeight1 = this->norm2_(this->add_(1.0, mp, -1.0, ccFace1));
   double triangleHeight1 = (mp - ccFace1).norm();
-  double triangleArea1 = 0.5
-                         * triangleHeight1
-                         * (ccFace1 - cc).norm();
-                         //* this->norm2_(this->add_(1.0, ccFace1, -1.0, cc));
+  double triangleArea1 = 0.5 * triangleHeight1 * (ccFace1 - cc).norm();
 
   // Check if the orientation of the triangle (MP,cc,ccFace1) coincides with
   // the orientation of the gauge triangle. If yes, add the area, subtract
   // otherwise.
-  //Eigen::Vector3d triangleNormal1 =
-  //  this->cross_(this->add_(1.0, cc,      -1.0, mp),
-  //               this->add_(1.0, ccFace1, -1.0, mp));
   Eigen::Vector3d triangleNormal1 = (cc - mp).cross(ccFace1 - mp);
 
   // copysign takes the absolute value of the first argument and the sign of
@@ -1647,12 +1627,10 @@ computeTetrahedronCircumcenter_(
   // Compute with respect to the first point.
   Teuchos::Array<Eigen::Vector3d> relNodes(3);
   for (int k = 0; k < 3; k++) {
-    //relNodes[k] = this->add_(1.0, nodes[k+1], -1.0, nodes[0]);
     relNodes[k] = nodes[k+1] - nodes[0];
   }
 
-  double omega =
-    2.0 * relNodes[0].dot(relNodes[1].cross(relNodes[2]));
+  double omega = 2.0 * relNodes[0].dot(relNodes[1].cross(relNodes[2]));
 
   // don't divide by 0
   TEUCHOS_TEST_FOR_EXCEPT_MSG(
@@ -1669,22 +1647,10 @@ computeTetrahedronCircumcenter_(
   double beta  = relNodes[1].squaredNorm() / omega;
   double gamma = relNodes[2].squaredNorm() / omega;
 
-  //Eigen::Vector3d cc;
-  //cc = this->add_(alpha, this->cross_(relNodes[1], relNodes[2]),
-  //                 beta,  this->cross_(relNodes[2], relNodes[0]));
-  //cc = this->add_(1.0,   cc,
-  //                 gamma, this->cross_(relNodes[0], relNodes[1]));
-
-  //cc = this->add_(1.0, cc,
-  //                 1.0, nodes[0]);
-
-  Eigen::Vector3d cc =
-    alpha * relNodes[1].cross(relNodes[2])
-    + beta * relNodes[2].cross(relNodes[0])
-    + gamma * relNodes[0].cross(relNodes[1])
-    + nodes[0];
-
-  return cc;
+  return nodes[0]
+    + alpha * relNodes[1].cross(relNodes[2])
+    + beta *  relNodes[2].cross(relNodes[0])
+    + gamma * relNodes[0].cross(relNodes[1]);
 }
 // =============================================================================
 StkMesh::EdgesContainer
