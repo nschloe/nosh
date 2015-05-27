@@ -48,7 +48,7 @@ public:
 
   ~Constant();
 
-//! Get the parameter names and intial values.
+  //! Get the parameter names and intial values.
   virtual
   const std::map<std::string, double>
   getParameters() const;

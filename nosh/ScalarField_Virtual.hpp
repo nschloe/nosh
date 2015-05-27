@@ -23,13 +23,8 @@
 #include <map>
 #include <string>
 
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_Array.hpp>
 #include <Epetra_Vector.h>
-// =============================================================================
-// forward declarations
-class Epetra_Vector;
-// =============================================================================
+
 namespace Nosh
 {
 namespace ScalarField

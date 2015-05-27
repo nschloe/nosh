@@ -24,7 +24,7 @@
 #include <string>
 
 #include <Teuchos_RCP.hpp>
-#include <Epetra_MultiVector.h>
+#include <Epetra_Vector.h>
 
 #include "nosh/ScalarField_Virtual.hpp"
 #include "nosh/StkMesh.hpp"
