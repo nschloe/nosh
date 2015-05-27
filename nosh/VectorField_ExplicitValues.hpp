@@ -24,7 +24,6 @@
 #include <string>
 
 #include <Teuchos_RCP.hpp>
-#include <Teuchos_ArrayRCP.hpp>
 
 #include "nosh/VectorField_Virtual.hpp"
 #include "nosh/StkMesh.hpp"
@@ -67,7 +66,7 @@ protected:
 private:
   double mu_;
 
-  Teuchos::ArrayRCP<double> edgeProjectionCache_;
+  std::vector<double> edgeProjectionCache_;
 };
 } // namespace VectorField
 } // namespace Nosh

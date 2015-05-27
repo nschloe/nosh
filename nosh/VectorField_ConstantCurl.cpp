@@ -65,7 +65,7 @@ ConstantCurl(
     this->dRotateDTheta_(dRotatedBDThetaCache_, *u_, 0.0);
   }
 
-  edgeCache_ = Teuchos::ArrayRCP<Eigen::Vector3d>(mesh_->getEdgeNodes().size());
+  edgeCache_ = std::vector<Eigen::Vector3d>(mesh_->getEdgeNodes().size());
 
   return;
 }
@@ -111,8 +111,9 @@ getEdgeProjection(const unsigned int edgeIndex) const
   // computing the cross-products more than once if B changes.
 
   // Update caches.
-  if (!edgeCacheUptodate_)
+  if (!edgeCacheUptodate_) {
     this->initializeEdgeCache_();
+  }
 
   if (rotatedBCacheAngle_ != theta_) {
     rotatedBCache_ = *b_;
@@ -131,8 +132,9 @@ getDEdgeProjectionDp(
     ) const
 {
   // Update caches.
-  if (!edgeCacheUptodate_)
+  if (!edgeCacheUptodate_) {
     this->initializeEdgeCache_();
+  }
 
   if (rotatedBCacheAngle_ != theta_) {
     rotatedBCache_ = *b_;
@@ -222,7 +224,7 @@ initializeEdgeCache_() const
 #ifndef NDEBUG
   TEUCHOS_ASSERT(!mesh_.is_null());
 #endif
-  const Teuchos::Array<edge> edges = mesh_->getEdgeNodes();
+  const std::vector<edge> edges = mesh_->getEdgeNodes();
 
   const VectorFieldType & coordsField = mesh_->getNodeField("coordinates");
 

@@ -127,7 +127,7 @@ fill_()
   TEUCHOS_ASSERT(!thickness_.is_null());
 #endif
 
-  const Teuchos::Array<edge> edges = mesh_->getEdgeNodes();
+  const std::vector<edge> edges = mesh_->getEdgeNodes();
   if (!alphaCacheUpToDate_)
     this->buildAlphaCache_(edges, mesh_->getEdgeCoefficients());
 
@@ -174,11 +174,11 @@ fill_()
 void
 Laplace::
 buildAlphaCache_(
-    const Teuchos::Array<edge> & edges,
-    const Teuchos::ArrayRCP<const double> &edgeCoefficients
+    const std::vector<edge> & edges,
+    const std::vector<double> & edgeCoefficients
     ) const
 {
-  alphaCache_ = Teuchos::ArrayRCP<double>(edges.size());
+  alphaCache_ = std::vector<double>(edges.size());
 
   std::map<std::string, double> dummy;
   const Epetra_Vector thicknessValues = thickness_->getV(dummy);

@@ -40,7 +40,7 @@ ExplicitValues(
   edgeProjectionCache_(mesh.getEdgeNodes().size())
 {
   // Initialize the cache.
-  const Teuchos::Array<edge> edges = mesh.getEdgeNodes();
+  const std::vector<edge> edges = mesh.getEdgeNodes();
 
   const VectorFieldType & coordsField = mesh.getNodeField("coordinates");
 

@@ -64,8 +64,8 @@ testCache(const std::string & inputFileNameBase,
   // Cast the data into something more accessible.
   Teuchos::RCP<Nosh::StkMesh> & mesh = data.get("mesh", Teuchos::RCP<Nosh::StkMesh>());
 
-  Teuchos::ArrayRCP<double> edgeCoefficients;
-  Teuchos::ArrayRCP<DoubleVector> edgeCoefficientsFallback;
+  std::vectorRCP<double> edgeCoefficients;
+  std::vectorRCP<DoubleVector> edgeCoefficientsFallback;
   unsigned int numEdges;
   if (mesh->supportsEdges()) {
     edgeCoefficients = mesh->getEdgeCoefficients();
@@ -78,7 +78,7 @@ testCache(const std::string & inputFileNameBase,
 
   // -------------------------------------------------------------------------
   // Build the equivalent of edgeCoefficients using edgeCoefficientsFallback.
-  Teuchos::ArrayRCP<double> edgeCoefficients2(numEdges);
+  std::vectorRCP<double> edgeCoefficients2(numEdges);
   std::vector<stk_classic::mesh::Entity*> cells = mesh->getOwnedCells();
   for (unsigned int k = 0; k < cells.size(); k++) {
     stk_classic::mesh::PairIterRelation localNodes =
@@ -89,12 +89,12 @@ testCache(const std::string & inputFileNameBase,
       cells[k]->relations(mesh->getMetaData()->edge_rank());
 
     // Fetch the nodal positions into 'localNodes'.
-    const Teuchos::ArrayRCP<const DoubleVector> localNodeCoords =
+    const std::vectorRCP<const DoubleVector> localNodeCoords =
       mesh->getNodeCoordinates(localNodes);
 
     // Gather the edge coordinates.
     int numLocalEdges = numLocalNodes*(numLocalNodes-1) / 2;
-    Teuchos::ArrayRCP<DoubleVector> localEdgeCoords(numLocalEdges);
+    std::vectorRCP<DoubleVector> localEdgeCoords(numLocalEdges);
     unsigned int i = 0;
     for (unsigned int e0 = 0; e0 < numLocalNodes; e0++) {
       const int gid0 = (*localNodes[e0].entity()).identifier() - 1;

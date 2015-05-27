@@ -24,7 +24,6 @@
 #include <string>
 
 #include <Teuchos_RCP.hpp>
-#include <Teuchos_Array.hpp>
 #include <Epetra_Comm.h>
 #include <Epetra_FECrsGraph.h>
 #include <Epetra_FECrsMatrix.h>

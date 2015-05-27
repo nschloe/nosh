@@ -30,7 +30,6 @@
 #include <Epetra_Map.h>
 #include <Epetra_Vector.h>
 #include <Epetra_Export.h>
-#include <Teuchos_ArrayRCP.hpp>
 
 // #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
@@ -176,29 +175,25 @@ read_(
 //#endif
 
   const std::string meshType = "exodusII";
-  // By default, the Exodus field separator is '_'
-  // such that only fields 'A_*' would be recognized as such.
-  // However, VTK is inconsistent in its putting underscores
-  // in field names, such that vectors with three components
-  // are typically stored as 'AX', 'AY', 'AZ'.
-  // This can be worked around where the Exodus file is created
-  // or here.
-  // The problem about messing around with the input database here
-  // is that the output routines will always "correctly" append
-  // an underscore. This then creates a difference between VTK-
-  // generated and Trilinos-generated files.
-  // Setting removing the underscore from both input and output
-  // files is possible in a figure version of Trilinos, c.f.
-  // Greg's mail (2012-09-20):
+  // By default, the Exodus field separator is '_' such that only fields 'A_*'
+  // would be recognized as such.  However, VTK is inconsistent in its putting
+  // underscores in field names, such that vectors with three components are
+  // typically stored as 'AX', 'AY', 'AZ'.
+  // This can be worked around where the Exodus file is created or here.
+  // The problem about messing around with the input database here is that the
+  // output routines will always "correctly" append an underscore. This then
+  // creates a difference between VTK- generated and Trilinos-generated files.
+  // Setting removing the underscore from both input and output files is
+  // possible in a figure version of Trilinos, c.f.  Greg's mail (2012-09-20):
   // '''
-  // Basically, if you do the following prior to creating ,
-  // it should give you a consistent field separator:
+  // Basically, if you do the following prior to creating, it should give you
+  // a consistent field separator:
   //
   // meshData->m_property_manager.add(Ioss::Property("FIELD_SUFFIX_SEPARATOR", ""));
   // '''
   //
-  // Anyways. Here's some code that removes the underscore from
-  // the input database. Keep it commented out for now though.
+  // Anyways. Here's some code that removes the underscore from the input
+  // database. Keep it commented out for now though.
   // <WORKAROUND CODE START>
   //Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(meshType,
   //                                                fileName,
@@ -215,8 +210,8 @@ read_(
   // <WORKAROUND CODE END>
 
   // This checks the existence of the file, checks to see if we can open it,
-  // builds a handle to the region and puts it in mesh_data (in_region),
-  // and reads the metaData into metaData.
+  // builds a handle to the region and puts it in mesh_data (in_region), and
+  // reads the metaData into metaData.
   ioBroker->add_mesh_database(
       fileName,
       meshType,
@@ -273,14 +268,14 @@ read_(
   //                        Ioss::Field::TRANSIENT);
 
   // Magnetic vector potential.
-  // Unconditionally assume that the field is 3D (A_X, A_Y, A_Z) even
-  // if the domain is two-dimensional. Eventually, we only need the
-  // the projection of the field onto the edges of the mesh, this
-  // this might be a bit overkill. Until we can explicitly associate
-  // fields with edges, though, keep it this way.
-  // Also, declare "A" as Ioss::Field::ATTRIBUTE. This makes sure that
-  // the data is written out, but only once (hence "attribute") and not
-  // once per step. (This is with trilinos-dev as of July 2012.)
+  // Unconditionally assume that the field is 3D (A_X, A_Y, A_Z) even if the
+  // domain is two-dimensional. Eventually, we only need the the projection of
+  // the field onto the edges of the mesh, this this might be a bit overkill.
+  // Until we can explicitly associate fields with edges, though, keep it this
+  // way.
+  // Also, declare "A" as Ioss::Field::ATTRIBUTE. This makes sure that the data
+  // is written out, but only once (hence "attribute") and not once per step.
+  // (This is with trilinos-dev as of July 2012.)
   //VectorFieldType &mvpField =
   //  ioBroker->meta_data().declare_field<VectorFieldType>(
   //      stk::topology::NODE_RANK,
@@ -806,7 +801,7 @@ getComm() const
   return *comm_;
 }
 // =============================================================================
-Teuchos::ArrayRCP<double>
+std::vector<double>
 StkMesh::
 getEdgeCoefficients() const
 {
@@ -849,7 +844,7 @@ getOverlapEdges() const
   return edges;
 }
 // =============================================================================
-const Teuchos::Array<std::tuple<stk::mesh::Entity, stk::mesh::Entity> >
+const std::vector<std::tuple<stk::mesh::Entity, stk::mesh::Entity> >
 StkMesh::
 getEdgeNodes() const
 {
@@ -1001,13 +996,13 @@ gid(const stk::mesh::Entity e) const
   return ioBroker_->bulk_data().identifier(e) - 1;
 }
 // =============================================================================
-const Teuchos::ArrayRCP<Epetra_IntSerialDenseVector>
+const std::vector<Epetra_IntSerialDenseVector>
 StkMesh::
 buildGlobalIndexCache_() const
 {
-  const Teuchos::Array<edge> edges = this->getEdgeNodes();
+  const std::vector<edge> edges = this->getEdgeNodes();
 
-  Teuchos::ArrayRCP<Epetra_IntSerialDenseVector> gic(edges.size());
+  std::vector<Epetra_IntSerialDenseVector> gic(edges.size());
 
   int gidT0, gidT1;
   for (auto k = 0; k < edges.size(); k++) {
@@ -1029,12 +1024,13 @@ StkMesh::
 createEntitiesMap_(const std::vector<stk::mesh::Entity> &entityList) const
 {
   const int numEntities = entityList.size();
-  Teuchos::Array<int> gids(numEntities);
-  for (int i = 0; i < numEntities; i++)
+  std::vector<int> gids(numEntities);
+  for (int i = 0; i < numEntities; i++) {
     gids[i] = ioBroker_->bulk_data().identifier(entityList[i]) - 1;
+  }
 
   return Teuchos::rcp(
-      new Epetra_Map(-1, numEntities, gids.getRawPtr(), 0, *comm_)
+      new Epetra_Map(-1, numEntities, gids.data(), 0, *comm_)
       );
 }
 // =============================================================================
@@ -1044,7 +1040,7 @@ createComplexMap_(const std::vector<stk::mesh::Entity> &nodeList) const
 {
   // Create a map for real/imaginary out of this.
   const int numDof = 2 * nodeList.size();
-  Teuchos::Array<int> gids(numDof);
+  std::vector<int> gids(numDof);
   for (unsigned int k = 0; k < nodeList.size(); k++) {
     int globalNodeId = ioBroker_->bulk_data().identifier(nodeList[k]) - 1;
     gids[2*k]   = 2*globalNodeId;
@@ -1052,7 +1048,7 @@ createComplexMap_(const std::vector<stk::mesh::Entity> &nodeList) const
   }
 
   Teuchos::RCP<const Epetra_Map> map =
-    Teuchos::rcp(new Epetra_Map(-1, numDof, gids.getRawPtr(), 0, *comm_));
+    Teuchos::rcp(new Epetra_Map(-1, numDof, gids.data(), 0, *comm_));
 //  comm_->Barrier();
 
   return map;
@@ -1073,7 +1069,7 @@ getNumEdgesPerCell(unsigned int cellDimension) const
   return numEdgesPerCell;
 }
 // =============================================================================
-Teuchos::ArrayRCP<double>
+std::vector<double>
 StkMesh::
 computeEdgeCoefficients_() const
 {
@@ -1087,7 +1083,7 @@ computeEdgeCoefficients_() const
 
   auto numEdges = edgeData_.edgeNodes.size();
 
-  Teuchos::ArrayRCP<double> edgeCoefficients(numEdges);
+  std::vector<double> edgeCoefficients(numEdges);
 
   const VectorFieldType & coordsField = getNodeField("coordinates");
 
@@ -1095,7 +1091,7 @@ computeEdgeCoefficients_() const
   for (unsigned int k = 0; k < numCells; k++) {
     // Get edge coordinates.
     unsigned int numLocalEdges = edgeData_.cellEdges[k].size();
-    Teuchos::ArrayRCP<Eigen::Vector3d> localEdgeCoords(numLocalEdges);
+    std::vector<Eigen::Vector3d> localEdgeCoords(numLocalEdges);
     for (unsigned int i = 0; i < numLocalEdges; i++) {
       const edge & e = edgeData_.edgeNodes[edgeData_.cellEdges[k][i]];
       localEdgeCoords[i] =
@@ -1118,7 +1114,7 @@ computeEdgeCoefficients_() const
 Eigen::VectorXd
 StkMesh::
 getEdgeCoefficientsNumerically_(
-  const Teuchos::ArrayRCP<const Eigen::Vector3d> edges
+  const std::vector<Eigen::Vector3d> edges
   ) const
 {
   int numEdges = edges.size();
@@ -1255,9 +1251,9 @@ computeControlVolumesTri_(const Teuchos::RCP<Epetra_Vector> & cvOverlap) const
 #endif
 
     // Fetch the nodal positions into 'localNodes'.
-    //const Teuchos::ArrayRCP<const Eigen::Vector3d> localNodeCoords =
+    //const std::vector<Eigen::Vector3d> localNodeCoords =
     //this->getNodeCoordinates_(localNodes);
-    Teuchos::ArrayRCP<Eigen::Vector3d> localNodeCoords(numLocalNodes);
+    std::vector<Eigen::Vector3d> localNodeCoords(numLocalNodes);
     for (unsigned int i = 0; i < numLocalNodes; i++) {
       localNodeCoords[i] = this->getNodeValue(coordsField, localNodes[i]);
     }
@@ -1340,7 +1336,7 @@ computeControlVolumesTet_(const Teuchos::RCP<Epetra_Vector> & cvOverlap) const
 #endif
 
     // Fetch the nodal positions into 'localNodes'.
-    Teuchos::ArrayRCP<Eigen::Vector3d> localNodeCoords(numLocalNodes);
+    std::vector<Eigen::Vector3d> localNodeCoords(numLocalNodes);
     for (unsigned int i = 0; i < numLocalNodes; i++) {
       localNodeCoords[i] = this->getNodeValue(coordsField, localNodes[i]);
     }
@@ -1571,7 +1567,7 @@ getTetrahedronVolume_(
 Eigen::Vector3d
 StkMesh::
 computeTriangleCircumcenter_(
-  const Teuchos::ArrayRCP<const Eigen::Vector3d> &nodes
+  const std::vector<Eigen::Vector3d> &nodes
   ) const
 {
 #ifndef NDEBUG
@@ -1617,7 +1613,7 @@ computeTriangleCircumcenter_(
 Eigen::Vector3d
 StkMesh::
 computeTetrahedronCircumcenter_(
-  const Teuchos::ArrayRCP<const Eigen::Vector3d> &nodes
+  const std::vector<Eigen::Vector3d> &nodes
   ) const
 {
   // http://www.cgafaq.info/wiki/Tetrahedron_Circumsphere
@@ -1626,7 +1622,7 @@ computeTetrahedronCircumcenter_(
 #endif
 
   // Compute with respect to the first point.
-  Teuchos::Array<Eigen::Vector3d> relNodes(3);
+  std::vector<Eigen::Vector3d> relNodes(3);
   for (int k = 0; k < 3; k++) {
     relNodes[k] = nodes[k+1] - nodes[0];
   }
@@ -1665,9 +1661,9 @@ createEdgeData_()
 
   StkMesh::EdgesContainer edgeData = {
     // Local edge ID -> Global node IDs.
-    Teuchos::Array<std::tuple<stk::mesh::Entity, stk::mesh::Entity> >(),
+    std::vector<std::tuple<stk::mesh::Entity, stk::mesh::Entity> >(),
     // Local cell ID -> Local edge IDs.
-    Teuchos::ArrayRCP<Teuchos::ArrayRCP<int> >(numLocalCells)
+    std::vector<std::vector<int> >(numLocalCells)
     };
 
   // This std::map keeps track of how nodes and edges are connected.
@@ -1694,10 +1690,10 @@ createEdgeData_()
     //unsigned int numLocalNodes = nodesIterator.size();
     unsigned int numLocalEdges = numLocalNodes*(numLocalNodes-1) / 2;
 
-    edgeData.cellEdges[cellLID] = Teuchos::ArrayRCP<int>(numLocalEdges);
+    edgeData.cellEdges[cellLID] = std::vector<int>(numLocalEdges);
 
     // Gather the node entities.
-    Teuchos::ArrayRCP<stk::mesh::Entity> nodes(numLocalNodes);
+    std::vector<stk::mesh::Entity> nodes(numLocalNodes);
     for (unsigned int k = 0; k < numLocalNodes; k++) {
       nodes[k] = localNodes[k];
     }
@@ -1726,7 +1722,7 @@ createEdgeData_()
           edgeData.cellEdges[cellLID][edgeIndex] = it->second;
         } else {  // Edge not found -- insert it.
           nodesEdge[edgeNodes] = edgeLID; // for householding in this method
-          edgeData.edgeNodes.append(edgeNodes); // for looping over edges
+          edgeData.edgeNodes.push_back(edgeNodes); // for looping over edges
           edgeData.cellEdges[cellLID][edgeIndex] = edgeLID; // for this->computeEdgeCoefficients_
           edgeLID++;
         }
@@ -1806,7 +1802,7 @@ buildComplexGraph() const
 #endif
   Epetra_FECrsGraph graph(Copy, *noMap, 0);
 
-  const Teuchos::Array<edge> edges = this->getEdgeNodes();
+  const std::vector<edge> edges = this->getEdgeNodes();
 
   // Loop over all edges and put entries wherever two nodes are connected.
   for (auto k = 0; k < edges.size(); k++) {

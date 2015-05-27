@@ -141,7 +141,7 @@ int main ( int argc, char *argv[] )
         Tpetra::createUniformContigMap<int,int>(n, tComm);
       // Get update list and number of local equations from newly created map.
       const size_t numMyElements = map->getNodeNumElements();
-      Teuchos::ArrayView<const int> myGlobalElements = map->getNodeElementList();
+      std::vectorView<const int> myGlobalElements = map->getNodeElementList();
       // Create a CrsMatrix using the map, with a dynamic allocation of 3 entries per row
       tpetra_A = Tpetra::createCrsMatrix<double>(map, 3);
       // Add rows one-at-a-time

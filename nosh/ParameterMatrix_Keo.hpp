@@ -30,7 +30,6 @@
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
 #include <Teuchos_Time.hpp>
 #endif
-#include <Teuchos_Array.hpp>
 #include <Epetra_FECrsGraph.h>
 
 #include <stk_mesh/base/Entity.hpp>
@@ -85,8 +84,8 @@ private:
 
   void
   buildAlphaCache_(
-      const Teuchos::Array<edge> & edges,
-      const Teuchos::ArrayRCP<const double> &edgeCoefficients
+      const std::vector<edge> & edges,
+      const std::vector<double> & edgeCoefficients
       ) const;
 
 private:
@@ -96,7 +95,7 @@ private:
   const Teuchos::RCP<const Nosh::ScalarField::Virtual> thickness_;
   const Teuchos::RCP<Nosh::VectorField::Virtual> mvp_;
 
-  mutable Teuchos::ArrayRCP<double> alphaCache_;
+  mutable std::vector<double> alphaCache_;
   mutable bool alphaCacheUpToDate_;
 };
 } // namespace ParameterMatrix

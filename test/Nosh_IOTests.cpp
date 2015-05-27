@@ -42,7 +42,7 @@ void
 testKeo(const std::string & inputFileNameBase,
         const double psiControlNormOne,
         const double psiControlNormInf,
-        const Teuchos::Array<double> & mvpControlNormsInf,
+        const std::vector<double> & mvpControlNormsInf,
         Teuchos::FancyOStream & out,
         bool & success)
 {
@@ -76,8 +76,8 @@ testKeo(const std::string & inputFileNameBase,
   // Check MVP.
   // Only check the infinity-norm here as all other norms
   // only apply to vectors with non-overlapping maps.
-  Teuchos::Array<double> R(mvpValues->NumVectors());
-  TEUCHOS_ASSERT_EQUALITY(0, mvpValues->NormInf(R.getRawPtr()));
+  std::vector<double> R(mvpValues->NumVectors());
+  TEUCHOS_ASSERT_EQUALITY(0, mvpValues->NormInf(R.data()));
   TEST_COMPARE_FLOATING_ARRAYS(R, mvpControlNormsInf, 1.0e-12);
 
   return;
@@ -89,7 +89,7 @@ testKeo(const std::string & inputFileNameBase,
 //
 //  const double psiControlNormOne = 4.0;
 //  const double psiControlNormInf = 1.0;
-//  Teuchos::Array<double> mvpControlNormsInf(3);
+//  std::vector<double> mvpControlNormsInf(3);
 //  mvpControlNormsInf[0] = 0.25;
 //  mvpControlNormsInf[1] = 2.5;
 //  mvpControlNormsInf[2] = 0.0;
@@ -108,7 +108,7 @@ TEUCHOS_UNIT_TEST(Nosh, KeoPacmanHashes)
 
   const double psiControlNormOne = 409.0;
   const double psiControlNormInf = 1.0;
-  Teuchos::Array<double> mvpControlNormsInf(3);
+  std::vector<double> mvpControlNormsInf(3);
   mvpControlNormsInf[0] = 4.999111652374270;
   mvpControlNormsInf[1] = 5.0;
   mvpControlNormsInf[2] = 0.0;
@@ -127,7 +127,7 @@ TEUCHOS_UNIT_TEST(Nosh, KeoPacmanHashes)
 //
 //  const double psiControlNormOne = 5.0;
 //  const double psiControlNormInf = 1.0;
-//  Teuchos::Array<double> mvpControlNormsInf(3);
+//  std::vector<double> mvpControlNormsInf(3);
 //  mvpControlNormsInf[0] = 0.5;
 //  mvpControlNormsInf[1] = 0.5;
 //  mvpControlNormsInf[2] = 0.0;
@@ -146,7 +146,7 @@ TEUCHOS_UNIT_TEST(Nosh, KeoSphereHashes)
 
   const double psiControlNormOne = 82.0;
   const double psiControlNormInf = 1.0;
-  Teuchos::Array<double> mvpControlNormsInf(3);
+  std::vector<double> mvpControlNormsInf(3);
   mvpControlNormsInf[0] = 0.492403864860535;
   mvpControlNormsInf[1] = 0.468303918838501;
   mvpControlNormsInf[2] = 0.0;
@@ -165,7 +165,7 @@ TEUCHOS_UNIT_TEST(Nosh, KeoSphereHashes)
 //
 //  const double psiControlNormOne = 8.0;
 //  const double psiControlNormInf = 1.0;
-//  Teuchos::Array<double> mvpControlNormsInf(3);
+//  std::vector<double> mvpControlNormsInf(3);
 //  mvpControlNormsInf[0] = 0.25;
 //  mvpControlNormsInf[1] = 0.25;
 //  mvpControlNormsInf[2] = 0.0;
@@ -184,7 +184,7 @@ TEUCHOS_UNIT_TEST(Nosh, KeoBrickWHoleHashes)
 
   const double psiControlNormOne = 744.0;
   const double psiControlNormInf = 1.0;
-  Teuchos::Array<double> mvpControlNormsInf(3);
+  std::vector<double> mvpControlNormsInf(3);
   mvpControlNormsInf[0] = 2.5;
   mvpControlNormsInf[1] = 2.5;
   mvpControlNormsInf[2] = 0.0;

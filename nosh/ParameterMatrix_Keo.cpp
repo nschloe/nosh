@@ -103,7 +103,7 @@ refill_(const std::map<std::string, double> & params)
   TEUCHOS_ASSERT(!mvp_.is_null());
 #endif
 
-  const Teuchos::Array<edge> edges = mesh_->getEdgeNodes();
+  const std::vector<edge> edges = mesh_->getEdgeNodes();
   if (!alphaCacheUpToDate_) {
     this->buildAlphaCache_(edges, mesh_->getEdgeCoefficients());
   }
@@ -178,8 +178,8 @@ refill_(const std::map<std::string, double> & params)
 void
 Keo::
 buildAlphaCache_(
-    const Teuchos::Array<edge> & edges,
-    const Teuchos::ArrayRCP<const double> &edgeCoefficients
+    const std::vector<edge> & edges,
+    const std::vector<double> &edgeCoefficients
     ) const
 {
   // This routine serves the one and only purpose of caching the
@@ -190,7 +190,7 @@ buildAlphaCache_(
   // of V are needed in an overlapping map.
   // Fair enough. Let's distribute the vales of V to an overlapping
   // map here.
-  alphaCache_ = Teuchos::ArrayRCP<double>(edges.size());
+  alphaCache_ = std::vector<double>(edges.size());
 
   std::map<std::string, double> dummy;
   const Epetra_Vector thicknessValues = thickness_->getV(dummy);

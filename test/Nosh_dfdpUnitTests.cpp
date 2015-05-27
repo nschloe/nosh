@@ -143,11 +143,9 @@ testDfdp(const std::string & inputFileNameBase,
   Teuchos::RCP<Epetra_Vector> fdiff = Teuchos::rcp(new Epetra_Vector(z->Map()));
   Teuchos::RCP<Epetra_Vector> dfdp = Teuchos::rcp(new Epetra_Vector(z->Map()));
   EpetraExt::ModelEvaluator::DerivativeMultiVector deriv;
-  Teuchos::Array<int> paramIndices(1);
+  std::vector<int> paramIndices(1);
   const Teuchos::RCP<Epetra_Vector> nullV = Teuchos::null;
   double r;
-  Teuchos::RCP<const Teuchos::Array<std::string> >
-    pnames = modelEval->get_p_names(0);
   // Only test the first parameter "g" for now since we have to set the DKeoDP
   // above. Alternative: Use "mu" above, and take paramIndex 1 here.
   // TODO test both parameters

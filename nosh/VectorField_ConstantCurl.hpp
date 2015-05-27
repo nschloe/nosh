@@ -24,7 +24,6 @@
 #include <string>
 
 #include <Teuchos_RCP.hpp>
-#include <Teuchos_ArrayRCP.hpp>
 
 #include "nosh/VectorField_Virtual.hpp"
 #include "nosh/StkMesh.hpp"
@@ -76,16 +75,18 @@ private:
   initializeEdgeCache_() const;
 
   void
-  rotate_(Eigen::Vector3d &v,
-          const Eigen::Vector3d &u,
-          const double theta
+    rotate_(
+        Eigen::Vector3d &v,
+        const Eigen::Vector3d &u,
+        const double theta
         ) const;
 
   void
-  dRotateDTheta_(Eigen::Vector3d &v,
-                 const Eigen::Vector3d &u,
-                 const double theta
-               ) const;
+    dRotateDTheta_(
+        Eigen::Vector3d &v,
+        const Eigen::Vector3d &u,
+        const double theta
+        ) const;
 
 private:
   const Teuchos::RCP<Nosh::StkMesh> mesh_;
@@ -96,7 +97,7 @@ private:
   mutable Eigen::Vector3d dRotatedBDThetaCache_;
   mutable double rotateddBdThetaCacheAngle_;
 
-  Teuchos::ArrayRCP<Eigen::Vector3d> edgeCache_;
+  mutable std::vector<Eigen::Vector3d> edgeCache_;
   mutable bool edgeCacheUptodate_;
 
   double mu_;

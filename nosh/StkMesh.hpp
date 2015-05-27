@@ -31,7 +31,6 @@
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
 #include <Teuchos_Time.hpp>
 #endif
-#include <Teuchos_Array.hpp>
 #include <Epetra_IntSerialDenseVector.h>
 #include <Epetra_FECrsGraph.h>
 
@@ -70,9 +69,9 @@ private:
   // issues when trying to copy (or initialize) MeshDataContainer.
   struct EdgesContainer {
     //! Local edge ID -> Global node IDs.
-    Teuchos::Array<edge> edgeNodes;
+    std::vector<edge> edgeNodes;
     //! Local cell ID -> Local edge IDs.
-    Teuchos::ArrayRCP<Teuchos::ArrayRCP<int> > cellEdges;
+    std::vector<std::vector<int> > cellEdges;
   };
 
 public:
@@ -122,7 +121,7 @@ public:
   const Epetra_Comm &
   getComm() const;
 
-  Teuchos::ArrayRCP<double>
+  std::vector<double>
   getEdgeCoefficients() const;
 
   std::vector<stk::mesh::Entity>
@@ -131,7 +130,7 @@ public:
   std::vector<stk::mesh::Entity>
   getOverlapEdges() const;
 
-  const Teuchos::Array<std::tuple<stk::mesh::Entity, stk::mesh::Entity> >
+  const std::vector<std::tuple<stk::mesh::Entity, stk::mesh::Entity> >
   getEdgeNodes() const;
 
   std::vector<stk::mesh::Entity>
@@ -206,18 +205,18 @@ private:
 
   const EdgesContainer edgeData_;
 
-  const Teuchos::ArrayRCP<double> edgeCoefficients_;
+  const std::vector<double> edgeCoefficients_;
 
   int outputChannel_;
 
   double time_;
 
 public:
-  const Teuchos::ArrayRCP<Epetra_IntSerialDenseVector> globalIndexCache;
+  const std::vector<Epetra_IntSerialDenseVector> globalIndexCache;
 
 private:
 
-  const Teuchos::ArrayRCP<Epetra_IntSerialDenseVector>
+  const std::vector<Epetra_IntSerialDenseVector>
   buildGlobalIndexCache_() const;
 
   Teuchos::RCP<stk::io::StkMeshIoBroker>
@@ -256,7 +255,7 @@ private:
   std::vector<stk::mesh::Entity>
   buildOwnedNodes_(const stk::mesh::BulkData & myBulkData) const;
 
-  Teuchos::ArrayRCP<double>
+  std::vector<double>
   computeEdgeCoefficients_() const;
 
   //! Compute the volume of the (Voronoi) control cells for each point.
@@ -296,30 +295,32 @@ private:
                   ) const;
 
   double
-  getTetrahedronVolume_(const Eigen::Vector3d &edge0,
-                        const Eigen::Vector3d &edge1,
-                        const Eigen::Vector3d &edge2
-                       ) const;
+    getTetrahedronVolume_(
+        const Eigen::Vector3d &edge0,
+        const Eigen::Vector3d &edge1,
+        const Eigen::Vector3d &edge2
+        ) const;
 
   Eigen::Vector3d
-  computeTriangleCircumcenter_(const Eigen::Vector3d &node0,
-                               const Eigen::Vector3d &node1,
-                               const Eigen::Vector3d &node2
-                              ) const;
+    computeTriangleCircumcenter_(
+        const Eigen::Vector3d &node0,
+        const Eigen::Vector3d &node1,
+        const Eigen::Vector3d &node2
+        ) const;
 
   Eigen::Vector3d
   computeTriangleCircumcenter_(
-    const Teuchos::ArrayRCP<const Eigen::Vector3d> &nodes
+    const std::vector<Eigen::Vector3d> &nodes
     ) const;
 
   Eigen::Vector3d
   computeTetrahedronCircumcenter_(
-    const Teuchos::ArrayRCP<const Eigen::Vector3d> &nodes
+    const std::vector<Eigen::Vector3d> &nodes
     ) const;
 
   Eigen::VectorXd
   getEdgeCoefficientsNumerically_(
-    const Teuchos::ArrayRCP<const Eigen::Vector3d> edges
+    const std::vector<Eigen::Vector3d> edges
     ) const;
 
   double

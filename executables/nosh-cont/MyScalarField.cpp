@@ -64,12 +64,11 @@ getV(const std::map<std::string, double> & params) const
 
   Epetra_Vector vals(*(mesh_->getNodesMap()));
 
-  const Teuchos::RCP<const VectorFieldType> coordsField =
-    mesh_->getNodeField("coordinates");
+  const VectorFieldType & coordsField = mesh_->getNodeField("coordinates");
 
   for (unsigned int k = 0; k < ownedNodes.size(); k++) {
     // Get nodal coordinates.
-    const Eigen::Vector3d X = mesh_->getNodeValue(*coordsField, ownedNodes[k]);
+    const Eigen::Vector3d X = mesh_->getNodeValue(coordsField, ownedNodes[k]);
     vals[k] = -1.0 + tau * (-X[0]*X[0] + X[1]*X[1]);
   }
 
@@ -92,12 +91,11 @@ getdVdP(const std::map<std::string, double> & params,
     std::vector<stk::mesh::Entity> ownedNodes =
       mesh_->getOwnedNodes();
 
-    const Teuchos::RCP<const VectorFieldType> coordsField =
-      mesh_->getNodeField("coordinates");
+    const VectorFieldType & coordsField = mesh_->getNodeField("coordinates");
 
     for (unsigned int k = 0; k < ownedNodes.size(); k++) {
       // Get nodal coordinates.
-      const Eigen::Vector3d X = mesh_->getNodeValue(*coordsField, ownedNodes[k]);
+      const Eigen::Vector3d X = mesh_->getNodeValue(coordsField, ownedNodes[k]);
       vals[k] = -X[0]*X[0] + X[1]*X[1];
     }
   }
