@@ -108,12 +108,10 @@ refill_(const std::map<std::string, double> & params)
     this->buildAlphaCache_(edges, mesh_->getEdgeCoefficients());
 
   double v[3];
-  Epetra_SerialDenseMatrix A(4, 4);
   // set parameter
   mvp_->setParameters(params);
   // Loop over all edges.
   for (auto k = 0; k < edges.size(); k++) {
-    // ---------------------------------------------------------------
     // Compute the integral
     //
     //    I = \int_{x0}^{xj} (xj-x0).A(x) / |xj-x0| dx
@@ -122,17 +120,16 @@ refill_(const std::map<std::string, double> & params)
     //
     //    I ~ |xj-x0| * (xj-x0) . A(0.5*(xj+x0)) / |xj-x0|.
     //
-    // -------------------------------------------------------------------
     // Project vector field onto the edge.
-    // Instead of first computing the projection over the normalized edge
-    // and then multiply it with the edge length, don't normalize the
-    // edge vector.
+    // Instead of first computing the projection over the normalized edge and
+    // then multiply it with the edge length, don't normalize the edge vector.
     double aInt = mvp_->getEdgeProjection(k);
     // paramName_ is set in the KEO building routine.
     double dAdPInt = mvp_->getDEdgeProjectionDp(k, paramName_);
-    //sincos(aInt, &sinAInt, &cosAInt);
-    v[0] =  dAdPInt * sin(aInt);
-    v[1] = -dAdPInt * cos(aInt);
+    double sinAInt, cosAInt;
+    sincos(aInt, &sinAInt, &cosAInt);
+    v[0] =  dAdPInt * sinAInt;
+    v[1] = -dAdPInt * cosAInt;
     v[2] = 0.0;
     // We'd like to insert the 2x2 matrix
     //
@@ -145,27 +142,19 @@ refill_(const std::map<std::string, double> & params)
     v[0] *= alphaCache_[k];
     v[1] *= alphaCache_[k];
     v[2] *= alphaCache_[k];
-    A(0, 0) = v[2];
-    A(0, 1) = 0.0;
-    A(0, 2) = v[0];
-    A(0, 3) = v[1];
-    A(1, 0) = 0.0;
-    A(1, 1) = v[2];
-    A(1, 2) = -v[1];
-    A(1, 3) = v[0];
-    A(2, 0) = v[0];
-    A(2, 1) = -v[1];
-    A(2, 2) = v[2];
-    A(2, 3) = 0.0;
-    A(3, 0) = v[1];
-    A(3, 1) = v[0];
-    A(3, 2) = 0.0;
-    A(3, 3) = v[2];
-    TEUCHOS_ASSERT_EQUALITY(
-        0,
-        this->SumIntoGlobalValues(mesh_->globalIndexCache[k], A)
+    double ain [] = {
+      v[2],  0.0,   v[0], v[1],
+       0.0,  v[2], -v[1], v[0],
+      v[0], -v[1],  v[2],  0.0,
+      v[1],  v[0],   0.0, v[2]
+    };
+    int ierr = this->SumIntoGlobalValues(
+        mesh_->globalIndexCache[k],
+        Epetra_SerialDenseMatrix(View, ain, 4, 4 ,4)
         );
-    // -------------------------------------------------------------------
+#ifndef NDEBUG
+    TEUCHOS_ASSERT_EQUALITY(0, ierr);
+#endif
   }
 
   // calls FillComplete by default

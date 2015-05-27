@@ -45,7 +45,8 @@ namespace ParameterMatrix
 {
 // =============================================================================
 Keo::
-Keo(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
+Keo(
+    const Teuchos::RCP<const Nosh::StkMesh> &mesh,
     const Teuchos::RCP<const Nosh::ScalarField::Virtual> &thickness,
     const Teuchos::RCP<Nosh::VectorField::Virtual> &mvp
    ):
@@ -109,7 +110,6 @@ refill_(const std::map<std::string, double> & params)
   }
 
   double v[3];
-  Epetra_SerialDenseMatrix A(4, 4);
   // Loop over all edges.
   for (auto k = 0; k < edges.size(); k++) {
     // Compute the integral
@@ -145,23 +145,16 @@ refill_(const std::map<std::string, double> & params)
     v[0] *= alphaCache_[k];
     v[1] *= alphaCache_[k];
     v[2] *= alphaCache_[k];
-    A(0, 0) = v[2];
-    A(0, 1) = 0.0;
-    A(0, 2) = v[0];
-    A(0, 3) = v[1];
-    A(1, 0) = 0.0;
-    A(1, 1) = v[2];
-    A(1, 2) = -v[1];
-    A(1, 3) = v[0];
-    A(2, 0) = v[0];
-    A(2, 1) = -v[1];
-    A(2, 2) = v[2];
-    A(2, 3) = 0.0;
-    A(3, 0) = v[1];
-    A(3, 1) = v[0];
-    A(3, 2) = 0.0;
-    A(3, 3) = v[2];
-    int ierr = this->SumIntoGlobalValues(mesh_->globalIndexCache[k], A);
+    double ain [] = {
+      v[2],  0.0,   v[0], v[1],
+       0.0,  v[2], -v[1], v[0],
+      v[0], -v[1],  v[2],  0.0,
+      v[1],  v[0],   0.0, v[2]
+    };
+    int ierr = this->SumIntoGlobalValues(
+        mesh_->globalIndexCache[k],
+        Epetra_SerialDenseMatrix(View, ain, 4, 4 ,4)
+        );
 #ifndef NDEBUG
     TEUCHOS_ASSERT_EQUALITY(0, ierr);
 #endif
@@ -179,7 +172,7 @@ void
 Keo::
 buildAlphaCache_(
     const std::vector<edge> & edges,
-    const std::vector<double> &edgeCoefficients
+    const std::vector<double> & edgeCoefficients
     ) const
 {
   // This routine serves the one and only purpose of caching the

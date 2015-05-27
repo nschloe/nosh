@@ -131,7 +131,6 @@ fill_()
   if (!alphaCacheUpToDate_)
     this->buildAlphaCache_(edges, mesh_->getEdgeCoefficients());
 
-  Epetra_SerialDenseMatrix A(4, 4);
   // Loop over all edges.
   for (auto k = 0; k < edges.size(); k++) {
     // We'd like to insert the 2x2 matrix
@@ -143,27 +142,19 @@ fill_()
     // that shares and edge.
     // Do that now, just blockwise for real and imaginary part.
     const double & a = alphaCache_[k];
-    A(0, 0) =  a;
-    A(0, 1) =  0.0;
-    A(0, 2) = -a;
-    A(0, 3) =  0.0;
-    A(1, 0) =  0.0;
-    A(1, 1) =  a;
-    A(1, 2) =  0.0;
-    A(1, 3) = -a;
-    A(2, 0) = -a;
-    A(2, 1) =  0.0;
-    A(2, 2) =  a;
-    A(2, 3) =  0.0;
-    A(3, 0) =  0.0;
-    A(3, 1) = -a;
-    A(3, 2) =  0.0;
-    A(3, 3) =  a;
-    int ierr = this->SumIntoGlobalValues(mesh_->globalIndexCache[k], A);
+    double ain [] = {
+        a, 0.0,  -a, 0.0,
+      0.0,   a, 0.0,  -a,
+       -a, 0.0,   a, 0.0,
+      0.0,  -a, 0.0,   a
+    };
+    int ierr = this->SumIntoGlobalValues(
+        mesh_->globalIndexCache[k],
+        Epetra_SerialDenseMatrix(View, ain, 4, 4 ,4)
+        );
 #ifndef NDEBUG
     TEUCHOS_ASSERT_EQUALITY(0, ierr);
 #endif
-    // -------------------------------------------------------------------
   }
 
   // calls FillComplete by default
