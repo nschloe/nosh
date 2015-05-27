@@ -183,31 +183,29 @@ buildAlphaCache_(
   std::map<std::string, double> dummy;
   const Epetra_Vector thicknessValues = thickness_->getV(dummy);
 
-  Teuchos::Tuple<int, 2> gid;
-  Teuchos::Tuple<int, 2> lid;
-  for (Teuchos::Array<edge>::size_type k = 0;
-       k < edges.size();
-       k++) {
-    gid[0] = mesh_->gid(std::get<0>(edges[k]));
-    lid[0] = mesh_->getNodesOverlapMap()->LID(gid[0]);
+  int gid0, gid1;
+  int lid0, lid1;
+  for (auto k = 0; k < edges.size(); k++) {
+    gid0 = mesh_->gid(std::get<0>(edges[k]));
+    lid0 = mesh_->getNodesOverlapMap()->LID(gid0);
 #ifndef NDEBUG
     TEUCHOS_TEST_FOR_EXCEPT_MSG(
-        lid[0] < 0,
-        "The global index " << gid[0]
+        lid0 < 0,
+        "The global index " << gid0
         << " does not seem to be present on this node."
         );
 #endif
-    gid[1] = mesh_->gid(std::get<1>(edges[k]));
-    lid[1] = mesh_->getNodesOverlapMap()->LID(gid[1]);
+    gid1 = mesh_->gid(std::get<1>(edges[k]));
+    lid1 = mesh_->getNodesOverlapMap()->LID(gid1);
 #ifndef NDEBUG
     TEUCHOS_TEST_FOR_EXCEPT_MSG(
-        lid[1] < 0,
-        "The global index " << gid[1]
+        lid1 < 0,
+        "The global index " << gid1
         << " does not seem to be present on this node."
         );
 #endif
     alphaCache_[k] = edgeCoefficients[k]
-                     * 0.5 * (thicknessValues[lid[0]] + thicknessValues[lid[1]]);
+      * 0.5 * (thicknessValues[lid0] + thicknessValues[lid1]);
   }
 
   alphaCacheUpToDate_ = true;

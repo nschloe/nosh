@@ -210,34 +210,32 @@ buildAlphaCache_(
       thicknessOverlap.Import(thicknessValues, importer, Insert)
       );
 
-  Teuchos::Tuple<int, 2> gid;
-  Teuchos::Tuple<int, 2> lid;
-  for (Teuchos::Array<edge>::size_type k = 0;
-       k < edges.size();
-       k++) {
+  int gid0, gid1;
+  int lid0, lid1;
+  for (auto k = 0; k < edges.size(); k++) {
     // Get the ID of the edge endpoints in the map of
     // getV(). Well...
-    gid[0] = mesh_->gid(std::get<0>(edges[k]));
-    lid[0] = overlapMap->LID(gid[0]);
+    gid0 = mesh_->gid(std::get<0>(edges[k]));
+    lid0 = overlapMap->LID(gid0);
 #ifndef NDEBUG
     TEUCHOS_TEST_FOR_EXCEPT_MSG(
-        lid[0] < 0,
-        "The global index " << gid[0]
+        lid0 < 0,
+        "The global index " << gid0
         << " does not seem to be present on this node."
        );
 #endif
-    gid[1] = mesh_->gid(std::get<1>(edges[k]));
-    lid[1] = overlapMap->LID(gid[1]);
+    gid1 = mesh_->gid(std::get<1>(edges[k]));
+    lid1 = overlapMap->LID(gid1);
 #ifndef NDEBUG
     TEUCHOS_TEST_FOR_EXCEPT_MSG(
-        lid[1] < 0,
-        "The global index " << gid[1]
+        lid1 < 0,
+        "The global index " << gid1
         << " does not seem to be present on this node."
        );
 #endif
     // Update cache.
     alphaCache_[k] = edgeCoefficients[k]
-      * 0.5 * (thicknessOverlap[lid[0]] + thicknessOverlap[lid[1]]);
+      * 0.5 * (thicknessOverlap[lid0] + thicknessOverlap[lid1]);
   }
 
   alphaCacheUpToDate_ = true;

@@ -998,16 +998,16 @@ buildGlobalIndexCache_() const
 
   Teuchos::ArrayRCP<Epetra_IntSerialDenseVector> gic(edges.size());
 
-  Teuchos::Tuple<int, 2> gidT;
+  int gidT0, gidT1;
   for (auto k = 0; k < edges.size(); k++) {
-    gidT[0] = this->gid(std::get<0>(edges[k]));
-    gidT[1] = this->gid(std::get<1>(edges[k]));
+    gidT0 = this->gid(std::get<0>(edges[k]));
+    gidT1 = this->gid(std::get<1>(edges[k]));
 
     gic[k] = Epetra_IntSerialDenseVector(4);
-    gic[k][0] = 2 * gidT[0];
-    gic[k][1] = 2 * gidT[0] + 1;
-    gic[k][2] = 2 * gidT[1];
-    gic[k][3] = 2 * gidT[1] + 1;
+    gic[k][0] = 2 * gidT0;
+    gic[k][1] = 2 * gidT0 + 1;
+    gic[k][2] = 2 * gidT1;
+    gic[k][3] = 2 * gidT1 + 1;
   }
 
   return gic;
