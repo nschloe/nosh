@@ -19,17 +19,10 @@
 // @HEADER
 #ifndef NOSH_VECTORFIELD_VIRTUAL_H_
 #define NOSH_VECTORFIELD_VIRTUAL_H_
-// =============================================================================
-// forward decls
-class Epetra_Vector;
-class Epetra_Map;
-// =============================================================================
+
 #include <string>
 #include <map>
 
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_Array.hpp>
-// =============================================================================
 namespace Nosh
 {
 namespace VectorField

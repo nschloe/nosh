@@ -24,8 +24,6 @@
 #include <string>
 
 #include <Teuchos_RCP.hpp>
-#include <Teuchos_Array.hpp>
-#include <Epetra_Comm.h>
 
 #include "nosh/ScalarField_Virtual.hpp"
 
@@ -38,11 +36,12 @@ namespace ScalarField
 class Constant: public Virtual
 {
 public:
-  Constant(const Nosh::StkMesh & mesh,
-           const double c,
-           const std::string & param1Name = "",
-           const double param1InitValue = 0.0
-         );
+  Constant(
+      const Nosh::StkMesh & mesh,
+      const double c,
+      const std::string & param1Name = "",
+      const double param1InitValue = 0.0
+      );
 
   Epetra_Vector
   createPInit_(const Epetra_Map & map);

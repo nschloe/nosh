@@ -24,10 +24,7 @@
 #include <string>
 
 #include <Teuchos_RCP.hpp>
-#include <Teuchos_Tuple.hpp>
-#include <Teuchos_SerialDenseVector.hpp>
-#include <Epetra_MultiVector.h>
-#include <Teuchos_Array.hpp>
+#include <Teuchos_ArrayRCP.hpp>
 
 #include "nosh/VectorField_Virtual.hpp"
 #include "nosh/StkMesh.hpp"

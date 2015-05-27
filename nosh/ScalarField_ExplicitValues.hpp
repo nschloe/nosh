@@ -24,9 +24,7 @@
 #include <string>
 
 #include <Teuchos_RCP.hpp>
-#include <Teuchos_Tuple.hpp>
 #include <Epetra_MultiVector.h>
-#include <Teuchos_Array.hpp>
 
 #include "nosh/ScalarField_Virtual.hpp"
 #include "nosh/StkMesh.hpp"
@@ -38,9 +36,10 @@ namespace ScalarField
 class ExplicitValues : public Virtual
 {
 public:
-  ExplicitValues(const Nosh::StkMesh &mesh,
-                 const std::string &fieldName
-               );
+  ExplicitValues(
+      const Nosh::StkMesh &mesh,
+      const std::string &fieldName
+      );
 
   virtual
   ~ExplicitValues();
@@ -56,9 +55,10 @@ public:
 
   virtual
   const Epetra_Vector
-  getdVdP(const std::map<std::string, double> & params,
-          const std::string & paramName
-        ) const;
+  getdVdP(
+      const std::map<std::string, double> & params,
+      const std::string & paramName
+      ) const;
 
 protected:
 private:
