@@ -48,26 +48,26 @@ ExplicitValues(
   for (auto k = 0; k < edges.size(); k++) {
     // Approximate the value at the midpoint of the edge
     // by the average of the values at the adjacent nodes.
-    DoubleVector av = mesh.getVectorFieldNonconst(
+    Eigen::Vector3d av = mesh.get3dVectorFieldNonconst(
         std::get<0>(edges[k]),
-        fieldName, 3
+        fieldName
         );
-    av += mesh.getVectorFieldNonconst(
+    av += mesh.get3dVectorFieldNonconst(
         std::get<1>(edges[k]),
-        fieldName, 3
+        fieldName
         );
     av *= 0.5;
 
     // Extract the nodal coordinates.
-    DoubleVector myEdge =
-      mesh.getVectorFieldNonconst(
+    Eigen::Vector3d myEdge =
+      mesh.get3dVectorFieldNonconst(
           std::get<1>(edges[k]),
-          "coordinates", 3
+          "coordinates"
           );
     myEdge -=
-      mesh.getVectorFieldNonconst(
+      mesh.get3dVectorFieldNonconst(
           std::get<0>(edges[k]),
-          "coordinates", 3
+          "coordinates"
           );
 
     edgeProjectionCache_[k] = av.dot(myEdge);

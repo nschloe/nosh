@@ -1,9 +1,12 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
 INCLUDE_DIRECTORIES(${Nosh_SOURCE_DIR})
-INCLUDE_DIRECTORIES(SYSTEM
-                    ${Trilinos_INCLUDE_DIRS}
-                    ${Trilinos_TPL_INCLUDE_DIRS})
+INCLUDE_DIRECTORIES(
+  SYSTEM
+  ${Trilinos_INCLUDE_DIRS}
+  ${Trilinos_TPL_INCLUDE_DIRS}
+  ${EIGEN3_INCLUDE_DIR}
+  )
 
 ## Get the absolute path of Trilinos_LIBRARY_DIRS. This is to avoid
 ## conflicts with Trilinos_TPL_LIBRARY_DIRS which is typically given

@@ -32,7 +32,6 @@
 #include <Teuchos_Time.hpp>
 #endif
 #include <Teuchos_Array.hpp>
-#include <Teuchos_SerialDenseVector.hpp>
 #include <Epetra_IntSerialDenseVector.h>
 #include <Epetra_FECrsGraph.h>
 
@@ -40,6 +39,8 @@
 #include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
+
+#include <Eigen/Dense>
 // =============================================================================
 // forward declarations
 namespace stk
@@ -55,10 +56,8 @@ class Epetra_Map;
 // =============================================================================
 // typedefs
 typedef stk::mesh::Field<double, stk::mesh::Cartesian> VectorFieldType;
-typedef stk::mesh::Field<double>                      ScalarFieldType;
-typedef stk::mesh::Field<int>                         IntScalarFieldType;
-typedef Teuchos::SerialDenseVector<int, double>        DoubleVector;
-typedef Teuchos::SerialDenseVector<int, const double>  ConstDoubleVector;
+typedef stk::mesh::Field<double> ScalarFieldType;
+typedef stk::mesh::Field<int> IntScalarFieldType;
 typedef std::tuple<stk::mesh::Entity, stk::mesh::Entity> edge;
 // =============================================================================
 namespace Nosh
@@ -140,7 +139,7 @@ public:
   std::vector<stk::mesh::Entity>
   getOverlapNodes() const;
 
-//const DoubleVector
+//const Eigen::Vector3d
 //getNodeCoordinatesNonconst(stk::mesh::Entity nodeEntity) const;
 
   Teuchos::RCP<const Epetra_Map>
@@ -161,15 +160,17 @@ public:
   unsigned int
   getNumEdgesPerCell(unsigned int cellDimension) const;
 
-  const DoubleVector
-  getVectorFieldNonconst(stk::mesh::Entity nodeEntity,
-                         const std::string & fieldName,
-                         const int numDims
-                        ) const;
+  const Eigen::Vector3d
+    get3dVectorFieldNonconst(
+        stk::mesh::Entity nodeEntity,
+        const std::string & fieldName
+        ) const;
+
   double
-  getScalarFieldNonconst(stk::mesh::Entity nodeEntity,
-                         const std::string & fieldName
-                        ) const;
+    getScalarFieldNonconst(
+        stk::mesh::Entity nodeEntity,
+        const std::string & fieldName
+        ) const;
 
   uint64_t
   gid(const stk::mesh::Entity e) const;
@@ -251,7 +252,7 @@ private:
   std::vector<stk::mesh::Entity>
   buildOwnedNodes_(const stk::mesh::BulkData & myBulkData) const;
 
-//Teuchos::ArrayRCP<const DoubleVector>
+//Teuchos::ArrayRCP<const Eigen::Vector3d>
 //getNodeCoordinates_(const stk::mesh::PairIterRelation &relation) const;
 
   Teuchos::ArrayRCP<double>
@@ -268,18 +269,18 @@ private:
   createComplexMap_(const std::vector<stk::mesh::Entity> &nodeList) const;
 
   double
-  computeCovolume2d_(const DoubleVector &cc,
-                     const DoubleVector &x0,
-                     const DoubleVector &x1,
-                     const DoubleVector &other0
+  computeCovolume2d_(const Eigen::Vector3d &cc,
+                     const Eigen::Vector3d &x0,
+                     const Eigen::Vector3d &x1,
+                     const Eigen::Vector3d &other0
                     ) const;
 
   double
-  computeCovolume3d_(const DoubleVector &cc,
-                     const DoubleVector &x0,
-                     const DoubleVector &x1,
-                     const DoubleVector &other0,
-                     const DoubleVector &other1
+  computeCovolume3d_(const Eigen::Vector3d &cc,
+                     const Eigen::Vector3d &x0,
+                     const Eigen::Vector3d &x1,
+                     const Eigen::Vector3d &other0,
+                     const Eigen::Vector3d &other1
                     ) const;
 
   unsigned int
@@ -288,56 +289,39 @@ private:
   std::set<unsigned int>
   getOtherIndices_(unsigned int e0, unsigned int e1) const;
 
-  DoubleVector
-  add_(double alpha, const DoubleVector &x,
-       double beta,  const DoubleVector &y
-      ) const;
-
-
   double
-  getTriangleArea_(const DoubleVector &edge0,
-                   const DoubleVector &edge1
+  getTriangleArea_(const Eigen::Vector3d &edge0,
+                   const Eigen::Vector3d &edge1
                   ) const;
 
   double
-  getTetrahedronVolume_(const DoubleVector &edge0,
-                        const DoubleVector &edge1,
-                        const DoubleVector &edge2
+  getTetrahedronVolume_(const Eigen::Vector3d &edge0,
+                        const Eigen::Vector3d &edge1,
+                        const Eigen::Vector3d &edge2
                        ) const;
 
-  DoubleVector
-  computeTriangleCircumcenter_(const DoubleVector &node0,
-                               const DoubleVector &node1,
-                               const DoubleVector &node2
+  Eigen::Vector3d
+  computeTriangleCircumcenter_(const Eigen::Vector3d &node0,
+                               const Eigen::Vector3d &node1,
+                               const Eigen::Vector3d &node2
                               ) const;
-  DoubleVector
+  Eigen::Vector3d
   computeTriangleCircumcenter_(
-    const Teuchos::ArrayRCP<const DoubleVector> &nodes
+    const Teuchos::ArrayRCP<const Eigen::Vector3d> &nodes
     ) const;
 
-  DoubleVector
+  Eigen::Vector3d
   computeTetrahedronCircumcenter_(
-    const Teuchos::ArrayRCP<const DoubleVector> &nodes
+    const Teuchos::ArrayRCP<const Eigen::Vector3d> &nodes
     ) const;
 
-  DoubleVector
+  Eigen::VectorXd
   getEdgeCoefficientsNumerically_(
-    const Teuchos::ArrayRCP<const DoubleVector> edges
+    const Teuchos::ArrayRCP<const Eigen::Vector3d> edges
     ) const;
 
   double
-  dot_(const DoubleVector &v, const DoubleVector &w) const;
-
-  DoubleVector
-  cross_(const DoubleVector &v,
-         const DoubleVector &w
-        ) const;
-
-  double
-  norm2_(const DoubleVector &x) const;
-
-  double
-  norm2squared_(const DoubleVector &x) const;
+  norm2squared_(const Eigen::Vector3d &x) const;
 
   EdgesContainer
   createEdgeData_();

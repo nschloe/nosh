@@ -32,8 +32,6 @@
 #include "nosh/VectorField_Virtual.hpp"
 #include "nosh/StkMesh.hpp"
 
-typedef Teuchos::SerialDenseVector<int, double> DoubleVector;
-
 namespace Nosh
 {
 namespace VectorField

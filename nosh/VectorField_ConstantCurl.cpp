@@ -35,8 +35,8 @@ namespace VectorField
 ConstantCurl::
 ConstantCurl(
     const Teuchos::RCP<Nosh::StkMesh> &mesh,
-    const Teuchos::RCP<DoubleVector> &b,
-    const Teuchos::RCP<DoubleVector> &u
+    const Teuchos::RCP<Eigen::Vector3d> &b,
+    const Teuchos::RCP<Eigen::Vector3d> &u
     ) :
   mesh_(mesh),
   b_(b),
@@ -68,7 +68,7 @@ ConstantCurl(
     this->dRotateDTheta_(dRotatedBDThetaCache_, *u_, 0.0);
   }
 
-  edgeCache_ = Teuchos::ArrayRCP<DoubleVector>(mesh_->getEdgeNodes().size());
+  edgeCache_ = Teuchos::ArrayRCP<Eigen::Vector3d>(mesh_->getEdgeNodes().size());
 
   return;
 }
@@ -163,10 +163,11 @@ getDEdgeProjectionDp(
 // ============================================================================
 void
 ConstantCurl::
-rotate_(DoubleVector &v,
-        const DoubleVector &u,
-        const double theta
-      ) const
+rotate_(
+    Eigen::Vector3d &v,
+    const Eigen::Vector3d &u,
+    const double theta
+    ) const
 {
   // Rotate a vector \c v by the angle \c theta in the plane perpendicular
   // to the axis given by \c u.
@@ -176,7 +177,7 @@ rotate_(DoubleVector &v,
   double cosTheta = cos(theta);
 
   if (sinTheta != 0.0) {
-    DoubleVector vOld = v;
+    Eigen::Vector3d vOld = v;
 
     // cos(theta) * I * v
     v *= cosTheta;
@@ -188,7 +189,7 @@ rotate_(DoubleVector &v,
     // or do something like a DAXPY.
     // However, the Teuchos::SerialDenseVector doesn't have
     // that capability.
-    DoubleVector tmp = this->crossProduct_(u, vOld);
+    Eigen::Vector3d tmp = this->crossProduct_(u, vOld);
     tmp *= sinTheta;
     v += tmp;
 
@@ -203,10 +204,11 @@ rotate_(DoubleVector &v,
 // ============================================================================
 void
 ConstantCurl::
-dRotateDTheta_(DoubleVector &v,
-               const DoubleVector &u,
-               const double theta
-             ) const
+dRotateDTheta_(
+    Eigen::Vector3d &v,
+    const Eigen::Vector3d &u,
+    const double theta
+    ) const
 {
   // Incremental change of the rotation of a vector v around the axis u
   // by the angle theta.
@@ -214,7 +216,7 @@ dRotateDTheta_(DoubleVector &v,
   double sinTheta = sin(theta);
   double cosTheta = cos(theta);
 
-  DoubleVector vOld = v;
+  Eigen::Vector3d vOld = v;
 
   // -sin(theta) * I * v
   v *= -sinTheta;
@@ -227,7 +229,7 @@ dRotateDTheta_(DoubleVector &v,
   // or do something like a DAXPY.
   // However, the Teuchos::SerialDenseVector doesn't have
   // that capability.
-  DoubleVector tmp = this->crossProduct_(u, vOld);
+  Eigen::Vector3d tmp = this->crossProduct_(u, vOld);
   tmp *= cosTheta;
   v += tmp;
 
@@ -239,13 +241,14 @@ dRotateDTheta_(DoubleVector &v,
   return;
 }
 // ============================================================================
-DoubleVector
+Eigen::Vector3d
 ConstantCurl::
-crossProduct_(const DoubleVector u,
-               const DoubleVector v
-            ) const
+crossProduct_(
+    const Eigen::Vector3d u,
+    const Eigen::Vector3d v
+    ) const
 {
-  DoubleVector uXv(3);
+  Eigen::Vector3d uXv(3);
   uXv[0] = u[1]*v[2] - u[2]*v[1];
   uXv[1] = u[2]*v[0] - u[0]*v[2];
   uXv[2] = u[0]*v[1] - u[1]*v[0];
@@ -262,19 +265,14 @@ initializeEdgeCache_() const
   const Teuchos::Array<edge> edges = mesh_->getEdgeNodes();
 
   // Loop over all edges and create the cache.
-  for (Teuchos::Array<edge>::size_type k = 0;
-       k < edges.size();
-       k++) {
-    const DoubleVector & node0Coords =
-      mesh_->getVectorFieldNonconst(std::get<0>(edges[k]),
-                                    "coordinates", 3);
-    const DoubleVector & node1Coords =
-      mesh_->getVectorFieldNonconst(std::get<1>(edges[k]),
-                                    "coordinates", 3);
+  for (auto k = 0; k < edges.size(); k++) {
+    const Eigen::Vector3d & node0Coords =
+      mesh_->get3dVectorFieldNonconst(std::get<0>(edges[k]), "coordinates");
+    const Eigen::Vector3d & node1Coords =
+      mesh_->get3dVectorFieldNonconst(std::get<1>(edges[k]), "coordinates");
 
     // edgeMidpoint x edge = 0.5 (a+b) x (a-b) = b x a
-    edgeCache_[k] = this->crossProduct_(node0Coords, node1Coords);
-    TEUCHOS_ASSERT_EQUALITY(0, edgeCache_[k].scale(0.5));
+    edgeCache_[k] = 0.5 * node0Coords.cross(node1Coords);
   }
 
   edgeCacheUptodate_ = true;

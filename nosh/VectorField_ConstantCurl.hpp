@@ -32,8 +32,6 @@
 #include "nosh/VectorField_Virtual.hpp"
 #include "nosh/StkMesh.hpp"
 
-typedef Teuchos::SerialDenseVector<int, double> DoubleVector;
-
 namespace Nosh
 {
 namespace VectorField
@@ -42,8 +40,8 @@ class ConstantCurl : public Virtual
 {
 public:
   ConstantCurl(const Teuchos::RCP<Nosh::StkMesh> &mesh,
-               const Teuchos::RCP<DoubleVector> &b,
-               const Teuchos::RCP<DoubleVector> &u = Teuchos::null
+               const Teuchos::RCP<Eigen::Vector3d> &b,
+               const Teuchos::RCP<Eigen::Vector3d> &u = Teuchos::null
               );
 
   virtual
@@ -71,42 +69,42 @@ public:
 
 protected:
 private:
-  DoubleVector
-  getRawA_(const DoubleVector &x) const;
+  Eigen::Vector3d
+  getRawA_(const Eigen::Vector3d &x) const;
 
-  DoubleVector
-  getRawDADTheta_(const DoubleVector &x) const;
+  Eigen::Vector3d
+  getRawDADTheta_(const Eigen::Vector3d &x) const;
 
   void
   initializeEdgeCache_() const;
 
   void
-  rotate_(DoubleVector &v,
-          const DoubleVector &u,
+  rotate_(Eigen::Vector3d &v,
+          const Eigen::Vector3d &u,
           const double theta
         ) const;
 
   void
-  dRotateDTheta_(DoubleVector &v,
-                 const DoubleVector &u,
+  dRotateDTheta_(Eigen::Vector3d &v,
+                 const Eigen::Vector3d &u,
                  const double theta
                ) const;
 
-  DoubleVector
-  crossProduct_(const DoubleVector u,
-                const DoubleVector v
+  Eigen::Vector3d
+  crossProduct_(const Eigen::Vector3d u,
+                const Eigen::Vector3d v
               ) const;
 
 private:
   const Teuchos::RCP<Nosh::StkMesh> mesh_;
-  const Teuchos::RCP<const DoubleVector> b_;
-  const Teuchos::RCP<const DoubleVector> u_;
-  mutable DoubleVector rotatedBCache_;
+  const Teuchos::RCP<const Eigen::Vector3d> b_;
+  const Teuchos::RCP<const Eigen::Vector3d> u_;
+  mutable Eigen::Vector3d rotatedBCache_;
   mutable double rotatedBCacheAngle_;
-  mutable DoubleVector dRotatedBDThetaCache_;
+  mutable Eigen::Vector3d dRotatedBDThetaCache_;
   mutable double rotateddBdThetaCacheAngle_;
 
-  Teuchos::ArrayRCP<DoubleVector> edgeCache_;
+  Teuchos::ArrayRCP<Eigen::Vector3d> edgeCache_;
   mutable bool edgeCacheUptodate_;
 
   double mu_;

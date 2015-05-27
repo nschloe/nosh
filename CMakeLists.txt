@@ -18,6 +18,8 @@ IF (NOT Trilinos_Implicit)
   #FIND_PACKAGE(Trilinos REQUIRED COMPONENTS Belos EpetraExt NOX Piro STK)
 ENDIF()
 
+FIND_PACKAGE(Eigen3 REQUIRED)
+
 # Make sure the compilers match.
 IF(NOT ${Trilinos_CXX_COMPILER} STREQUAL ${CMAKE_CXX_COMPILER})
   MESSAGE(WARNING "C++ compilers don't match (Trilinos: ${Trilinos_CXX_COMPILER}, ${PROJECT_NAME}: ${CMAKE_CXX_COMPILER}).")

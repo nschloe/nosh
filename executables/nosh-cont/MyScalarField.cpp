@@ -66,9 +66,8 @@ getV(const std::map<std::string, double> & params) const
 
   for (unsigned int k = 0; k < ownedNodes.size(); k++) {
     // Get nodal coordinates.
-    const DoubleVector X =
-      mesh_->getVectorFieldNonconst(ownedNodes[k],
-                                    "coordinates", 3);
+    const Eigen::Vector3d X =
+      mesh_->get3dVectorFieldNonconst(ownedNodes[k], "coordinates");
     vals[k] = -1.0 + tau * (-X[0]*X[0] + X[1]*X[1]);
   }
 
@@ -93,9 +92,8 @@ getdVdP(const std::map<std::string, double> & params,
 
     for (unsigned int k = 0; k < ownedNodes.size(); k++) {
       // Get nodal coordinates.
-      const DoubleVector X =
-        mesh_->getVectorFieldNonconst(ownedNodes[k],
-                                      "coordinates", 3);
+      const Eigen::Vector3d X =
+        mesh_->get3dVectorFieldNonconst(ownedNodes[k], "coordinates");
       vals[k] = -X[0]*X[0] + X[1]*X[1];
     }
   }
