@@ -224,12 +224,14 @@ initializeEdgeCache_() const
 #endif
   const Teuchos::Array<edge> edges = mesh_->getEdgeNodes();
 
+  const VectorFieldType & coordsField = mesh_->getNodeField("coordinates");
+
   // Loop over all edges and create the cache.
   for (auto k = 0; k < edges.size(); k++) {
     const Eigen::Vector3d & node0Coords =
-      mesh_->get3dVectorFieldNonconst(std::get<0>(edges[k]), "coordinates");
+      mesh_->getNodeValue(coordsField, std::get<0>(edges[k]));
     const Eigen::Vector3d & node1Coords =
-      mesh_->get3dVectorFieldNonconst(std::get<1>(edges[k]), "coordinates");
+      mesh_->getNodeValue(coordsField, std::get<1>(edges[k]));
 
     // edgeMidpoint x edge = 0.5 (a+b) x (a-b) = b x a
     edgeCache_[k] = 0.5 * node0Coords.cross(node1Coords);

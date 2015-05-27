@@ -104,14 +104,14 @@ refill_(const std::map<std::string, double> & params)
 #endif
 
   const Teuchos::Array<edge> edges = mesh_->getEdgeNodes();
-  if (!alphaCacheUpToDate_)
+  if (!alphaCacheUpToDate_) {
     this->buildAlphaCache_(edges, mesh_->getEdgeCoefficients());
+  }
 
   double v[3];
   Epetra_SerialDenseMatrix A(4, 4);
   // Loop over all edges.
   for (auto k = 0; k < edges.size(); k++) {
-    // ---------------------------------------------------------------
     // Compute the integral
     //
     //    I = \int_{x0}^{xj} (xj-x0).A(x) / |xj-x0| dx
@@ -120,23 +120,20 @@ refill_(const std::map<std::string, double> & params)
     //
     //    I ~ |xj-x0| * (xj-x0) . A(0.5*(xj+x0)) / |xj-x0|.
     //
-    // -------------------------------------------------------------------
     // Project vector field onto the edge.
     // Instead of first computing the projection over the normalized edge
     // and then multiply it with the edge length, don't normalize the
     // edge vector.
+    const double aInt = mvp_->getEdgeProjection(k);
     // Fill v with
     // Re(-exp(i Aint))
     // Im(-exp(i Aint))
     // 1.0
-    const double aInt = mvp_->getEdgeProjection(k);
-    // If compiled with GNU (and maybe other compilers), we could use
-    // sincos() here to compute sin and cos simultaneously.
-    // PGI, for one, doesn't support sincos, though.
-    v[0] = -cos(aInt);
-    v[1] = -sin(aInt);
+    double sinAInt, cosAInt;
+    sincos(aInt, &sinAInt, &cosAInt);
+    v[0] = -cosAInt;
+    v[1] = -sinAInt;
     v[2] = 1.0;
-    //sincos(aInt, &sinAInt, &cosAInt);
     // We'd like to insert the 2x2 matrix
     //
     //     [   alpha                   , - alpha * exp(-IM * aInt) ]
@@ -164,15 +161,17 @@ refill_(const std::map<std::string, double> & params)
     A(3, 1) = v[0];
     A(3, 2) = 0.0;
     A(3, 3) = v[2];
-    TEUCHOS_ASSERT_EQUALITY(
-        0,
-        this->SumIntoGlobalValues(mesh_->globalIndexCache[k], A)
-        );
-    // -------------------------------------------------------------------
+    int ierr = this->SumIntoGlobalValues(mesh_->globalIndexCache[k], A);
+#ifndef NDEBUG
+    TEUCHOS_ASSERT_EQUALITY(0, ierr);
+#endif
   }
 
   // calls FillComplete by default
-  TEUCHOS_ASSERT_EQUALITY(0, this->GlobalAssemble());
+  int ierr = this->GlobalAssemble();
+#ifndef NDEBUG
+  TEUCHOS_ASSERT_EQUALITY(0, ierr);
+#endif
   return;
 }
 // =============================================================================

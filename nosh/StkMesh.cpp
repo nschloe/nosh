@@ -709,9 +709,10 @@ createComplexVector(const std::string & fieldName) const
 // =============================================================================
 void
 StkMesh::
-mergeComplexVector_(const Epetra_Vector & psi,
-                    const std::string & fieldName
-                    ) const
+mergeComplexVector_(
+    const Epetra_Vector & psi,
+    const std::string & fieldName
+    ) const
 {
 #ifndef NDEBUG
   TEUCHOS_ASSERT(!ioBroker_.is_null());
@@ -872,22 +873,31 @@ getScalarFieldNonconst(stk::mesh::Entity nodeEntity,
   return *stk::mesh::field_data(*field, nodeEntity);
 }
 // =============================================================================
-const Eigen::Vector3d
+const VectorFieldType &
 StkMesh::
-get3dVectorFieldNonconst(
-    stk::mesh::Entity nodeEntity,
-    const std::string & fieldName
-    ) const
-{
+getNodeField(const std::string & fieldName) const {
   const VectorFieldType * const field =
     ioBroker_->bulk_data().mesh_meta_data().get_field<VectorFieldType>(
         stk::topology::NODE_RANK,
         fieldName
         );
-#ifndef NDEBUG
-  TEUCHOS_ASSERT(field != NULL);
-#endif
-  return Eigen::Vector3d(stk::mesh::field_data(*field, nodeEntity));
+  if (field == NULL ) {
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(
+        true,
+        "Invalid field name \"" << fieldName << "\"."
+        );
+  }
+  return *field;
+}
+// =============================================================================
+const Eigen::Vector3d
+StkMesh::
+getNodeValue(
+    const VectorFieldType & field,
+    stk::mesh::Entity nodeEntity
+    ) const
+{
+  return Eigen::Vector3d(stk::mesh::field_data(field, nodeEntity));
 }
 // =============================================================================
 Teuchos::RCP<const Epetra_Map>
@@ -1079,22 +1089,18 @@ computeEdgeCoefficients_() const
 
   Teuchos::ArrayRCP<double> edgeCoefficients(numEdges);
 
+  const VectorFieldType & coordsField = getNodeField("coordinates");
+
   // Calculate the contributions edge by edge.
   for (unsigned int k = 0; k < numCells; k++) {
     // Get edge coordinates.
     unsigned int numLocalEdges = edgeData_.cellEdges[k].size();
     Teuchos::ArrayRCP<Eigen::Vector3d> localEdgeCoords(numLocalEdges);
     for (unsigned int i = 0; i < numLocalEdges; i++) {
+      const edge & e = edgeData_.edgeNodes[edgeData_.cellEdges[k][i]];
       localEdgeCoords[i] =
-        this->get3dVectorFieldNonconst(
-            std::get<1>(edgeData_.edgeNodes[edgeData_.cellEdges[k][i]]),
-            "coordinates"
-            )
-        -
-        this->get3dVectorFieldNonconst(
-            std::get<0>(edgeData_.edgeNodes[edgeData_.cellEdges[k][i]]),
-            "coordinates"
-            );
+        this->getNodeValue(coordsField, std::get<1>(e))
+        - this->getNodeValue(coordsField, std::get<0>(e));
     }
 
     Eigen::VectorXd edgeCoeffs =
@@ -1235,6 +1241,8 @@ computeControlVolumesTri_(const Teuchos::RCP<Epetra_Vector> & cvOverlap) const
   std::vector<stk::mesh::Entity> cells = this->getOwnedCells();
   unsigned int numCells = cells.size();
 
+  const VectorFieldType & coordsField = getNodeField("coordinates");
+
   // Calculate the contributions to the finite volumes cell by cell.
   for (unsigned int k = 0; k < numCells; k++) {
     const stk::mesh::Entity * localNodes =
@@ -1251,8 +1259,7 @@ computeControlVolumesTri_(const Teuchos::RCP<Epetra_Vector> & cvOverlap) const
     //this->getNodeCoordinates_(localNodes);
     Teuchos::ArrayRCP<Eigen::Vector3d> localNodeCoords(numLocalNodes);
     for (unsigned int i = 0; i < numLocalNodes; i++) {
-      localNodeCoords[i] =
-        this->get3dVectorFieldNonconst(localNodes[i], "coordinates");
+      localNodeCoords[i] = this->getNodeValue(coordsField, localNodes[i]);
     }
 
     // compute the circumcenter of the cell
@@ -1320,6 +1327,8 @@ computeControlVolumesTet_(const Teuchos::RCP<Epetra_Vector> & cvOverlap) const
   std::vector<stk::mesh::Entity> cells = this->getOwnedCells();
   unsigned int numCells = cells.size();
 
+  const VectorFieldType & coordsField = getNodeField("coordinates");
+
   // Calculate the contributions to the finite volumes cell by cell.
   for (unsigned int k = 0; k < numCells; k++) {
     const stk::mesh::Entity * localNodes =
@@ -1333,8 +1342,7 @@ computeControlVolumesTet_(const Teuchos::RCP<Epetra_Vector> & cvOverlap) const
     // Fetch the nodal positions into 'localNodes'.
     Teuchos::ArrayRCP<Eigen::Vector3d> localNodeCoords(numLocalNodes);
     for (unsigned int i = 0; i < numLocalNodes; i++) {
-      localNodeCoords[i] =
-        this->get3dVectorFieldNonconst(localNodes[i], "coordinates");
+      localNodeCoords[i] = this->getNodeValue(coordsField, localNodes[i]);
     }
 
     // compute the circumcenter of the cell
@@ -1824,9 +1832,10 @@ buildComplexGraph() const
 // =============================================================================
 // Helper function
 StkMesh
-read(const std::string & fileName,
-     const int index
-     )
+read(
+    const std::string & fileName,
+    const int index
+    )
 {
 #ifdef HAVE_MPI
   Teuchos::RCP<const Epetra_MpiComm> eComm =

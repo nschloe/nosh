@@ -70,16 +70,17 @@ private:
   // issues when trying to copy (or initialize) MeshDataContainer.
   struct EdgesContainer {
     //! Local edge ID -> Global node IDs.
-    Teuchos::Array<std::tuple<stk::mesh::Entity, stk::mesh::Entity> > edgeNodes;
+    Teuchos::Array<edge> edgeNodes;
     //! Local cell ID -> Local edge IDs.
     Teuchos::ArrayRCP<Teuchos::ArrayRCP<int> > cellEdges;
   };
 
 public:
-  StkMesh(const Teuchos::RCP<const Epetra_Comm> & comm,
-          const std::string &fileName,
-          const int index
-          );
+  StkMesh(
+      const Teuchos::RCP<const Epetra_Comm> & comm,
+      const std::string &fileName,
+      const int index
+      );
 
   virtual
   ~StkMesh();
@@ -160,17 +161,20 @@ public:
   unsigned int
   getNumEdgesPerCell(unsigned int cellDimension) const;
 
+  const VectorFieldType &
+  getNodeField(const std::string & fieldName) const;
+
   const Eigen::Vector3d
-    get3dVectorFieldNonconst(
-        stk::mesh::Entity nodeEntity,
-        const std::string & fieldName
-        ) const;
+  getNodeValue(
+      const VectorFieldType & field,
+      stk::mesh::Entity nodeEntity
+      ) const;
 
   double
-    getScalarFieldNonconst(
-        stk::mesh::Entity nodeEntity,
-        const std::string & fieldName
-        ) const;
+  getScalarFieldNonconst(
+      stk::mesh::Entity nodeEntity,
+      const std::string & fieldName
+      ) const;
 
   uint64_t
   gid(const stk::mesh::Entity e) const;
@@ -252,13 +256,10 @@ private:
   std::vector<stk::mesh::Entity>
   buildOwnedNodes_(const stk::mesh::BulkData & myBulkData) const;
 
-//Teuchos::ArrayRCP<const Eigen::Vector3d>
-//getNodeCoordinates_(const stk::mesh::PairIterRelation &relation) const;
-
   Teuchos::ArrayRCP<double>
   computeEdgeCoefficients_() const;
 
-//! Compute the volume of the (Voronoi) control cells for each point.
+  //! Compute the volume of the (Voronoi) control cells for each point.
   Teuchos::RCP<Epetra_Vector>
   computeControlVolumes_() const;
 
@@ -305,6 +306,7 @@ private:
                                const Eigen::Vector3d &node1,
                                const Eigen::Vector3d &node2
                               ) const;
+
   Eigen::Vector3d
   computeTriangleCircumcenter_(
     const Teuchos::ArrayRCP<const Eigen::Vector3d> &nodes

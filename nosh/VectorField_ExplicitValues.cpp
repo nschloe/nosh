@@ -42,19 +42,23 @@ ExplicitValues(
   // Initialize the cache.
   const Teuchos::Array<edge> edges = mesh.getEdgeNodes();
 
+  const VectorFieldType & coordsField = mesh.getNodeField("coordinates");
+
+  const VectorFieldType & dataField = mesh.getNodeField(fieldName);
+
   // Loop over all edges and create the cache.
   for (auto k = 0; k < edges.size(); k++) {
     // Approximate the value at the midpoint of the edge
     // by the average of the values at the adjacent nodes.
     Eigen::Vector3d av = 0.5 * (
-        mesh.get3dVectorFieldNonconst(std::get<0>(edges[k]), fieldName)
-        + mesh.get3dVectorFieldNonconst(std::get<1>(edges[k]), fieldName)
+        mesh.getNodeValue(dataField, std::get<0>(edges[k]))
+        + mesh.getNodeValue(dataField, std::get<1>(edges[k]))
         );
 
     // Extract the nodal coordinates.
     Eigen::Vector3d myEdge =
-      mesh.get3dVectorFieldNonconst(std::get<1>(edges[k]), "coordinates")
-      - mesh.get3dVectorFieldNonconst(std::get<0>(edges[k]), "coordinates");
+      mesh.getNodeValue(coordsField, std::get<1>(edges[k]))
+      - mesh.getNodeValue(coordsField, std::get<0>(edges[k]));
 
     edgeProjectionCache_[k] = av.dot(myEdge);
   }
