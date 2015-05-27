@@ -54,17 +54,16 @@ ConstantCurl(
   TEUCHOS_ASSERT(!mesh_.is_null());
   TEUCHOS_ASSERT(!b_.is_null());
 #endif
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(b_->dot(*b_) != 1.0,
-                               "Curl vector not normalized: "
-                               << "<b,b> = " << b->dot(*b) << "."
-                               << std::endl
-                            );
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(
+      b_->dot(*b_) != 1.0,
+      "Curl vector not normalized: <b,b> = " << b->dot(*b) << "." << std::endl
+      );
   if (!u_.is_null()) {
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(u_->dot(*u_) != 1.0,
-                                 "Rotation vector not normalized: "
-                                 << "<u,u> = " << u_->dot(*u_) << "."
-                                 << std::endl
-                              );
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(
+        u_->dot(*u_) != 1.0,
+        "Rotation vector not normalized: <u,u> = " << u_->dot(*u_) << "."
+        << std::endl
+        );
     this->dRotateDTheta_(dRotatedBDThetaCache_, *u_, 0.0);
   }
 
@@ -189,7 +188,7 @@ rotate_(
     // or do something like a DAXPY.
     // However, the Teuchos::SerialDenseVector doesn't have
     // that capability.
-    Eigen::Vector3d tmp = this->crossProduct_(u, vOld);
+    Eigen::Vector3d tmp = u.cross(vOld);
     tmp *= sinTheta;
     v += tmp;
 
@@ -213,8 +212,9 @@ dRotateDTheta_(
   // Incremental change of the rotation of a vector v around the axis u
   // by the angle theta.
   // Compare with method above.
-  double sinTheta = sin(theta);
-  double cosTheta = cos(theta);
+  double sinTheta;
+  double cosTheta;
+  sincos(theta, &sinTheta, &cosTheta);
 
   Eigen::Vector3d vOld = v;
 
@@ -222,37 +222,12 @@ dRotateDTheta_(
   v *= -sinTheta;
 
   // + cos(theta) u\cross v
-  //
-  // Instead of what we have here,
-  // we'd much rather write
-  //   v += sinTheta * this->crossProduct_(u, vOld);
-  // or do something like a DAXPY.
-  // However, the Teuchos::SerialDenseVector doesn't have
-  // that capability.
-  Eigen::Vector3d tmp = this->crossProduct_(u, vOld);
-  tmp *= cosTheta;
-  v += tmp;
+  v += cosTheta * u.cross(vOld);
 
   // + (1+sin(theta)) (u*u^T) * v
-  tmp = u;
-  tmp *= (1.0+sinTheta) * u.dot(vOld);
-  v += tmp;
+  v += (1.0+sinTheta) * u.dot(vOld) * u;
 
   return;
-}
-// ============================================================================
-Eigen::Vector3d
-ConstantCurl::
-crossProduct_(
-    const Eigen::Vector3d u,
-    const Eigen::Vector3d v
-    ) const
-{
-  Eigen::Vector3d uXv(3);
-  uXv[0] = u[1]*v[2] - u[2]*v[1];
-  uXv[1] = u[2]*v[0] - u[0]*v[2];
-  uXv[2] = u[0]*v[1] - u[1]*v[0];
-  return uXv;
 }
 // ============================================================================
 void

@@ -90,11 +90,6 @@ private:
                  const double theta
                ) const;
 
-  Eigen::Vector3d
-  crossProduct_(const Eigen::Vector3d u,
-                const Eigen::Vector3d v
-              ) const;
-
 private:
   const Teuchos::RCP<Nosh::StkMesh> mesh_;
   const Teuchos::RCP<const Eigen::Vector3d> b_;
