@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
   // Wrap the whole code in a big try-catch-statement.
   bool success = true;
   try {
-    // ===========================================================================
+    // =========================================================================
     // Handle command line arguments.
     // Boost::program_options is somewhat more complete here (e.g. you can
     // specify options without the "--" syntax), but it isn't less complicated
@@ -103,11 +103,11 @@ int main(int argc, char *argv[])
     // Retrieve Piro parameter list from given file.
     RCP<Teuchos::ParameterList> piroParams =
       rcp(new Teuchos::ParameterList());
-    Teuchos::updateParametersFromXmlFile(xmlInputPath,
-                                         piroParams.ptr());
+    Teuchos::updateParametersFromXmlFile(xmlInputPath, piroParams.ptr());
     // =======================================================================
     // Extract the location of input and output files.
-    const Teuchos::ParameterList outputList = piroParams->sublist("Output", true);
+    const Teuchos::ParameterList outputList =
+      piroParams->sublist("Output", true);
 
     // Set default directory to be the directory of the XML file itself
     const std::string xmlDirectory =
@@ -120,19 +120,20 @@ int main(int argc, char *argv[])
 
     const std::string outputDirectory = prefix;
 
-    const std::string contFilePath = prefix
-                                     + outputList.get<std::string>("Continuation data file name");
+    const std::string contFilePath =
+      prefix + outputList.get<std::string>("Continuation data file name");
 
     Teuchos::ParameterList & inputDataList = piroParams->sublist("Input", true);
 
-    const std::string inputExodusFile = prefix
-                                        + inputDataList.get<std::string>("File");
+    const std::string inputExodusFile =
+      prefix + inputDataList.get<std::string>("File");
     const int step = inputDataList.get<int>("Initial Psi Step");
 
     const bool useBordering = piroParams->get<bool>("Bordering");
     // =======================================================================
     // Read the data from the file.
-    RCP<Nosh::StkMesh> mesh = rcp(new Nosh::StkMesh(eComm, inputExodusFile, step));
+    RCP<Nosh::StkMesh> mesh =
+      rcp(new Nosh::StkMesh(eComm, inputExodusFile, step));
 
     // Cast the data into something more accessible.
     RCP<Epetra_Vector> psi = mesh->createComplexVector("psi");

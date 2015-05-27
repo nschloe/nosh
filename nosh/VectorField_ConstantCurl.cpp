@@ -170,30 +170,19 @@ rotate_(
   // to the axis given by \c u.
   // Refer to
   // http://en.wikipedia.org/wiki/Rotation_matrix#Rotation_matrix_from_axis_and_angle
-  double sinTheta = sin(theta);
-  double cosTheta = cos(theta);
+  double sinTheta;
+  double cosTheta;
+  sincos(theta, &sinTheta, &cosTheta);
 
   if (sinTheta != 0.0) {
     Eigen::Vector3d vOld = v;
 
     // cos(theta) * I * v
-    v *= cosTheta;
-
     // + sin(theta) u\cross v
-    // Instead of what we have here,
-    // we'd much rather write
-    //   v += sinTheta * this->crossProduct_(u, vOld);
-    // or do something like a DAXPY.
-    // However, the Teuchos::SerialDenseVector doesn't have
-    // that capability.
-    Eigen::Vector3d tmp = u.cross(vOld);
-    tmp *= sinTheta;
-    v += tmp;
-
     // + (1-cos(theta)) (u*u^T) * v
-    tmp = u;
-    tmp *= (1.0-cosTheta) * u.dot(vOld);
-    v += tmp;
+    v = cosTheta * vOld
+      + sinTheta * u.cross(vOld)
+      + (1.0-cosTheta) * u.dot(vOld) * u;
   }
 
   return;
@@ -217,13 +206,11 @@ dRotateDTheta_(
   Eigen::Vector3d vOld = v;
 
   // -sin(theta) * I * v
-  v *= -sinTheta;
-
   // + cos(theta) u\cross v
-  v += cosTheta * u.cross(vOld);
-
   // + (1+sin(theta)) (u*u^T) * v
-  v += (1.0+sinTheta) * u.dot(vOld) * u;
+  v = -sinTheta * vOld
+    + cosTheta * u.cross(vOld)
+    + (1.0+sinTheta) * u.dot(vOld) * u;
 
   return;
 }
