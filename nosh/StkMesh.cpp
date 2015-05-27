@@ -1022,7 +1022,9 @@ createEntitiesMap_(const std::vector<stk::mesh::Entity> &entityList) const
   for (int i = 0; i < numEntities; i++)
     gids[i] = ioBroker_->bulk_data().identifier(entityList[i]) - 1;
 
-  return Teuchos::rcp(new Epetra_Map(-1, numEntities, gids.getRawPtr(), 0, *comm_));
+  return Teuchos::rcp(
+      new Epetra_Map(-1, numEntities, gids.getRawPtr(), 0, *comm_)
+      );
 }
 // =============================================================================
 Teuchos::RCP<const Epetra_Map>
@@ -1085,8 +1087,8 @@ computeEdgeCoefficients_() const
         this->get3dVectorFieldNonconst(
             std::get<1>(edgeData_.edgeNodes[edgeData_.cellEdges[k][i]]),
             "coordinates"
-            );
-      localEdgeCoords[i] -=
+            )
+        -
         this->get3dVectorFieldNonconst(
             std::get<0>(edgeData_.edgeNodes[edgeData_.cellEdges[k][i]]),
             "coordinates"
@@ -1143,12 +1145,6 @@ getEdgeCoefficientsNumerically_(
         );
   }
 
-  //Teuchos::RCP<Teuchos::SerialSymDenseMatrix<int, double> > A =
-  //  Teuchos::rcp(new Teuchos::SerialSymDenseMatrix<int, double>(numEdges));
-  //Teuchos::RCP<Eigen::Vector3d> rhs =
-  //  Teuchos::rcp(new Eigen::Vector3d(numEdges));
-  //Teuchos::RCP<Eigen::Vector3d> alpha =
-  //  Teuchos::rcp(new Eigen::Vector3d(numEdges));
   Eigen::MatrixXd A(numEdges, numEdges);
   Eigen::VectorXd rhs(numEdges);
 
@@ -1163,10 +1159,12 @@ getEdgeCoefficientsNumerically_(
   // Only fill the upper part of the Hermitian matrix.
   //
   for (int i = 0; i < numEdges; i++) {
-    rhs(i) = vol * edges[i].dot(edges[i]);
-    // TODO optimize for symmetry
-    for (int j = 0; j < numEdges; j++) {
+    double alpha = edges[i].dot(edges[i]);
+    rhs(i) = vol * alpha;
+    A(i,i) = alpha * alpha;
+    for (int j = i+1; j < numEdges; j++) {
       A(i, j) = edges[i].dot(edges[j]) * edges[j].dot(edges[i]);
+      A(j, i) = A(i, j);
     }
   }
 
