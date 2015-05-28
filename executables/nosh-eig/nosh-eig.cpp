@@ -26,6 +26,7 @@
 #include <Teuchos_TimeMonitor.hpp>
 #include <Teuchos_VerboseObject.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
+#include <Teuchos_RCPStdSharedPtrConversions.hpp>
 #include <Epetra_CrsGraph.h>
 
 #include <AnasaziConfigDefs.hpp>
@@ -48,14 +49,11 @@
 #include <Epetra_SerialComm.h>
 #endif
 
-// =============================================================================
+
 typedef double             ST;
 typedef Epetra_MultiVector MV;
 typedef Epetra_Operator    OP;
-// =============================================================================
-using Teuchos::rcp;
-using Teuchos::RCP;
-// =============================================================================
+
 int main(int argc, char *argv[])
 {
   // Initialize MPI
@@ -63,19 +61,17 @@ int main(int argc, char *argv[])
 
   // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
-  RCP<Epetra_MpiComm> eComm =
-    rcp<Epetra_MpiComm>(new Epetra_MpiComm (MPI_COMM_WORLD));
+  std::shared_ptr<Epetra_MpiComm> eComm(new Epetra_MpiComm (MPI_COMM_WORLD));
 #else
-  RCP<Epetra_SerialComm> eComm =
-    rcp<Epetra_SerialComm>(new Epetra_SerialComm());
+  std::shared_ptr<Epetra_SerialComm> eComm(new Epetra_SerialComm());
 #endif
 
-  const RCP<Teuchos::FancyOStream> out =
+  const Teuchos::RCP<Teuchos::FancyOStream> out =
     Teuchos::VerboseObjectBase::getDefaultOStream();
 
   bool success = true;
   try {
-    // ===========================================================================
+    // =========================================================================
     // handle command line arguments
     Teuchos::CommandLineProcessor My_CLP;
 
@@ -153,73 +149,79 @@ int main(int argc, char *argv[])
                             Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL);
     // =========================================================================
     // Read the data from the file.
-    RCP<Nosh::StkMesh> mesh = rcp(new Nosh::StkMesh(eComm, inputFilePath, step));
+    std::shared_ptr<Nosh::StkMesh> mesh(
+        new Nosh::StkMesh(eComm, inputFilePath, step)
+        );
 
     const double time = mesh->getTime();
     mu = time;
 
     // Cast the data into something more accessible.
-    RCP<Epetra_Vector> psi = mesh->createComplexVector("psi");
+    std::shared_ptr<Epetra_Vector> psi = mesh->createComplexVector("psi");
 
     // Create MVP (possibly from another mesh file).
-    RCP<Nosh::VectorField::Virtual> mvp;
-    RCP<Teuchos::Time> mvpConstructTime =
+    std::shared_ptr<Nosh::VectorField::Virtual> mvp;
+    Teuchos::RCP<Teuchos::Time> mvpConstructTime =
       Teuchos::TimeMonitor::getNewTimer("MVP construction");
     {
       Teuchos::TimeMonitor tm(*mvpConstructTime);
       if (mvpFilePath.empty()) {
-        mvp = rcp(new Nosh::VectorField::ExplicitValues(*mesh, "A", mu));
+        mvp = std::make_shared<Nosh::VectorField::ExplicitValues>(*mesh, "A", mu);
       } else {
         Nosh::StkMesh mesh2(eComm, mvpFilePath, 0);
-        mvp = rcp(new Nosh::VectorField::ExplicitValues(mesh2, "A", mu));
+        mvp = std::make_shared<Nosh::VectorField::ExplicitValues>(mesh2, "A", mu);
       }
     }
 
     // Construct thickness.
-    RCP<Nosh::ScalarField::Virtual> thickness =
-      rcp(new Nosh::ScalarField::Constant(*mesh, 1.0));
+    std::shared_ptr<Nosh::ScalarField::Virtual> thickness(
+        new Nosh::ScalarField::Constant(*mesh, 1.0)
+        );
 
     // Create matrix builder.
-    const RCP<Nosh::ParameterMatrix::Virtual> keoBuilder =
-      rcp(new Nosh::ParameterMatrix::Keo(mesh, thickness, mvp));
+    const std::shared_ptr<Nosh::ParameterMatrix::Virtual> keoBuilder(
+        new Nosh::ParameterMatrix::Keo(mesh, thickness, mvp)
+        );
 
     // Create matrix builder.
-    const RCP<Nosh::ParameterMatrix::Virtual> DKeoDPBuilder =
-      rcp(new Nosh::ParameterMatrix::DKeoDP(mesh, thickness, mvp, "mu"));
+    const std::shared_ptr<Nosh::ParameterMatrix::Virtual> DKeoDPBuilder(
+        new Nosh::ParameterMatrix::DKeoDP(mesh, thickness, mvp, "mu")
+        );
 
     // Construct scalar potential.
-    RCP<Nosh::ScalarField::Virtual> sp =
-      rcp(new Nosh::ScalarField::Constant(*mesh, -1.0));
+    std::shared_ptr<Nosh::ScalarField::Virtual> sp(
+        new Nosh::ScalarField::Constant(*mesh, -1.0)
+        );
 
     // Finally, create the model evaluator.
     // This is the most important object in the whole stack.
     const double g = 1.0;
-    RCP<Nosh::ModelEvaluator::Virtual> modelEvaluator =
-      rcp(new Nosh::ModelEvaluator::Nls(
-            mesh,
-            keoBuilder,
-            DKeoDPBuilder,
-            sp,
-            g,
-            thickness,
-            psi
-            ));
+    std::shared_ptr<Nosh::ModelEvaluator::Virtual> modelEvaluator(
+        new Nosh::ModelEvaluator::Nls(
+          mesh,
+          keoBuilder,
+          DKeoDPBuilder,
+          sp,
+          g,
+          thickness,
+          psi
+          ));
 
     // Set the input arguments.
     EpetraExt::ModelEvaluator::InArgs inArgs = modelEvaluator->createInArgs();
     EpetraExt::ModelEvaluator::OutArgs outArgs = modelEvaluator->createOutArgs();
-    RCP<const Epetra_Vector> p = modelEvaluator->get_p_init(0);
+    Teuchos::RCP<const Epetra_Vector> p = modelEvaluator->get_p_init(0);
     inArgs.set_p(0, p);
-    inArgs.set_x(psi);
+    inArgs.set_x(Teuchos::rcp(psi));
 
     // Get the preconditioner.
     modelEvaluator->evalModel(inArgs, outArgs);
 
     // Create and fill Jacobian.
-    RCP<Teuchos::Time> jacobianConstructTime =
+    Teuchos::RCP<Teuchos::Time> jacobianConstructTime =
       Teuchos::TimeMonitor::getNewTimer("Operator construction");
-    RCP<Epetra_Operator> jac;
-    RCP<Epetra_Operator> prec;
+    Teuchos::RCP<Epetra_Operator> jac;
+    Teuchos::RCP<Epetra_Operator> prec;
     // Fill outArgs.
     modelEvaluator->evalModel(inArgs, outArgs);
     {
@@ -240,9 +242,10 @@ int main(int argc, char *argv[])
 
     bool checkFx = true;
     if (checkFx) {
-      RCP<Epetra_Vector> fx =
-        rcp(new Epetra_Vector(*modelEvaluator->get_f_map()));
-      outArgs.set_f(fx);
+      std::shared_ptr<Epetra_Vector> fx(
+          new Epetra_Vector(*modelEvaluator->get_f_map())
+          );
+      outArgs.set_f(Teuchos::rcp(fx));
       modelEvaluator->evalModel(inArgs, outArgs);
       // Check ||F(x)||.
       double r;
@@ -253,13 +256,15 @@ int main(int argc, char *argv[])
     // Create the eigensolver.
     // Create an Epetra_MultiVector for an initial vector to start the solver.
     // Note:  This needs to have the same number of columns as the blocksize.
-    RCP<Epetra_MultiVector> ivec =
-      rcp(new Epetra_MultiVector(jac->OperatorDomainMap(), blockSize));
+    std::shared_ptr<Epetra_MultiVector> ivec(
+        new Epetra_MultiVector(jac->OperatorDomainMap(), blockSize)
+        );
     ivec->Random();
 
     // Create the eigenproblem.
-    RCP<Anasazi::BasicEigenproblem<double, MV, OP> > MyProblem =
-      rcp(new Anasazi::BasicEigenproblem<double, MV, OP>(jac, ivec));
+    std::shared_ptr<Anasazi::BasicEigenproblem<double, MV, OP> > MyProblem(
+        new Anasazi::BasicEigenproblem<double, MV, OP>(jac, Teuchos::rcp(ivec))
+        );
 
     // Inform the eigenproblem that the operator A is symmetric
     MyProblem->setHermitian(true);
@@ -295,13 +300,13 @@ int main(int argc, char *argv[])
     // Create the solver manager and solve the problem.
     Anasazi::ReturnType returnCode;
     if ( method.compare("lobpcg") == 0 ) {
-      Anasazi::LOBPCGSolMgr<double, MV, OP> MySolverMan(MyProblem, MyPL);
+      Anasazi::LOBPCGSolMgr<double, MV, OP> MySolverMan(Teuchos::rcp(MyProblem), MyPL);
       returnCode = MySolverMan.solve();
     } else if ( method.compare("davidson") == 0 ) {
-      Anasazi::BlockDavidsonSolMgr<double, MV, OP> MySolverMan(MyProblem, MyPL);
+      Anasazi::BlockDavidsonSolMgr<double, MV, OP> MySolverMan(Teuchos::rcp(MyProblem), MyPL);
       returnCode = MySolverMan.solve();
     } else if ( method.compare("krylovschur") == 0 ) {
-      Anasazi::BlockKrylovSchurSolMgr<double, MV, OP> MySolverMan(MyProblem, MyPL);
+      Anasazi::BlockKrylovSchurSolMgr<double, MV, OP> MySolverMan(Teuchos::rcp(MyProblem), MyPL);
       returnCode = MySolverMan.solve();
     } else {
       TEUCHOS_TEST_FOR_EXCEPT_MSG(
@@ -320,8 +325,8 @@ int main(int argc, char *argv[])
     const int numVecs = anasaziSolution.numVecs;
     *out << "Number of computed eigenpairs: " << numVecs << std::endl;
 
-    Teuchos::ArrayRCP<double> evals_r( numVecs );
-    Teuchos::ArrayRCP<double> evals_i( numVecs );
+    std::vector<double> evals_r( numVecs );
+    std::vector<double> evals_i( numVecs );
     if (numVecs > 0) {
       *out << "\nEigenvalues:" << std::endl;
       for (int i = 0; i < numVecs; i++) {

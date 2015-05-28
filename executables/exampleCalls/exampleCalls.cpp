@@ -25,6 +25,7 @@
 #include <Teuchos_VerboseObject.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
 #include <Teuchos_TimeMonitor.hpp>
+#include <Teuchos_RCPStdSharedPtrConversions.hpp>
 
 #ifdef HAVE_MPI
 #include <Epetra_MpiComm.h>
@@ -43,24 +44,18 @@
 #include "nosh/ModelEvaluator_Nls.hpp"
 #include "nosh/ModelEvaluator_Bordered.hpp"
 
-// =============================================================================
-using Teuchos::rcp;
-using Teuchos::RCP;
-// =============================================================================
 int main(int argc, char *argv[])
 {
   Teuchos::GlobalMPISession session(&argc, &argv, NULL);
   // Create a communicator for Epetra objects.
 #ifdef HAVE_MPI
-  RCP<const Epetra_MpiComm> eComm
-    = rcp<Epetra_MpiComm>(new Epetra_MpiComm(MPI_COMM_WORLD));
+  std::shared_ptr<const Epetra_MpiComm> eComm(new Epetra_MpiComm(MPI_COMM_WORLD));
 #else
-  RCP<const Epetra_SerialComm> eComm
-    = rcp<Epetra_SerialComm>(new Epetra_SerialComm());
+  std::shared_ptr<const Epetra_SerialComm> eComm(new Epetra_SerialComm());
 #endif
 
   // Create output stream. (Handy for multicore output.)
-  const RCP<Teuchos::FancyOStream> out =
+  const Teuchos::RCP<Teuchos::FancyOStream> out =
     Teuchos::VerboseObjectBase::getDefaultOStream();
 
   bool success = true;
@@ -86,43 +81,47 @@ int main(int argc, char *argv[])
     // =======================================================================
     // Read the data from the file.
     const int step = 0;
-    RCP<Nosh::StkMesh> mesh;
-    const RCP<Teuchos::Time> readTime =
+    std::shared_ptr<Nosh::StkMesh> mesh;
+    const Teuchos::RCP<Teuchos::Time> readTime =
       Teuchos::TimeMonitor::getNewTimer("Read mesh");
     {
       Teuchos::TimeMonitor tm(*readTime);
-      mesh = rcp(new Nosh::StkMesh(eComm, dataFile, step));
+      mesh = std::make_shared<Nosh::StkMesh>(eComm, dataFile, step);
     }
 
     // Cast the data into something more accessible.
-    RCP<Epetra_Vector> psi = mesh->createComplexVector("psi");
+    std::shared_ptr<Epetra_Vector> psi = mesh->createComplexVector("psi");
 
     // Set the thickness field.
-    RCP<Nosh::ScalarField::Virtual> thickness =
-      rcp(new Nosh::ScalarField::Constant(*mesh, 1.0));
+    std::shared_ptr<Nosh::ScalarField::Virtual> thickness(
+        new Nosh::ScalarField::Constant(*mesh, 1.0)
+        );
 
     // - - - - - - - - - - - - - - - - - - - - -  - - - - - - - - - - - - - - -
     // Some alternatives for the positive-definite operator.
     // (a) -\Delta (Laplace operator with Neumann boundary)
-    //const RCP<Nosh::ParameterMatrix::Virtual> keoBuilder =
+    //const std::shared_ptr<Nosh::ParameterMatrix::Virtual> keoBuilder =
     //  rcp(new Nosh::ParameterMatrix::Laplace(mesh, thickness));
 
     // (b) (-i\nabla-A)^2 (Kinetic energy of a particle in magnetic field)
     // (b1) 'A' explicitly given in file.
     const double initMu = 0.0;
-    RCP<Nosh::VectorField::Virtual> mvp =
-      rcp(new Nosh::VectorField::ExplicitValues(*mesh, "A", initMu));
-    const RCP<Nosh::ParameterMatrix::Virtual> keoBuilder =
-      rcp(new Nosh::ParameterMatrix::Keo(mesh, thickness, mvp));
-    const RCP<Nosh::ParameterMatrix::Virtual> DKeoDPBuilder =
-      rcp(new Nosh::ParameterMatrix::DKeoDP(mesh, thickness, mvp, "mu"));
+    std::shared_ptr<Nosh::VectorField::Virtual> mvp(
+        new Nosh::VectorField::ExplicitValues(*mesh, "A", initMu)
+        );
+    const std::shared_ptr<Nosh::ParameterMatrix::Virtual> keoBuilder(
+        new Nosh::ParameterMatrix::Keo(mesh, thickness, mvp)
+        );
+    const std::shared_ptr<Nosh::ParameterMatrix::Virtual> DKeoDPBuilder(
+        new Nosh::ParameterMatrix::DKeoDP(mesh, thickness, mvp, "mu")
+        );
 
     // (b2) 'A' analytically given (here with constant curl).
     //      Optionally add a rotation axis u. This is important
     //      if continuation happens as a rotation of the vector
     //      field around an axis.
-    //const RCP<DoubleVector> b = rcp(new DoubleVector(3));
-    //RCP<Teuchos::SerialDenseVector<int,double> > u = Teuchos::null;
+    //const std::shared_ptr<DoubleVector> b = rcp(new DoubleVector(3));
+    //std::shared_ptr<Teuchos::SerialDenseVector<int,double> > u = Teuchos::null;
     //if ( piroParams->isSublist("Rotation vector") )
     //{
     //    u = rcp(new Teuchos::SerialDenseVector<int,double>(3));
@@ -132,9 +131,9 @@ int main(int argc, char *argv[])
     //    (*u)[1] = rotationVectorList.get<double>("y");
     //    (*u)[2] = rotationVectorList.get<double>("z");
     //}
-    //RCP<Nosh::VectorField::Virtual> mvp =
+    //std::shared_ptr<Nosh::VectorField::Virtual> mvp =
     //  rcp(new Nosh::VectorField::ConstantCurl(mesh, b, u));
-    //const RCP<Nosh::ParameterMatrix::Virtual> keoBuilder =
+    //const std::shared_ptr<Nosh::ParameterMatrix::Virtual> keoBuilder =
     //  rcp(new Nosh::ParameterMatrix::Keo(mesh, thickness, mvp));
     // (b3) 'A' analytically given in a class you write yourself, derived
     //      from Nosh::ParameterMatrix::Virtual.
@@ -142,23 +141,24 @@ int main(int argc, char *argv[])
     // - - - - - - - - - - - - - - - - - - - - -  - - - - - - - - - - - - - - -
     // Setup the scalar potential V.
     // (a) A constant potential.
-    RCP<Nosh::ScalarField::Virtual> sp =
-      rcp(new Nosh::ScalarField::Constant(*mesh, -1.0));
+    std::shared_ptr<Nosh::ScalarField::Virtual> sp(
+        new Nosh::ScalarField::Constant(*mesh, -1.0)
+        );
     //const double T = 0.0;
     // (b) One you built yourself by deriving from Nosh::ScalarField::Virtual.
-    //RCP<Nosh::ScalarField::Virtual> sp =
+    //std::shared_ptr<Nosh::ScalarField::Virtual> sp =
     //rcp(new MyScalarField(mesh));
     // - - - - - - - - - - - - - - - - - - - - -  - - - - - - - - - - - - - - -
 
     // Finally, create the model evaluator.
     // This is the most important object in the whole stack.
     const double g = 1.0;
-    RCP<Nosh::ModelEvaluator::Virtual> nlsModel;
-    const RCP<Teuchos::Time> meTime =
+    std::shared_ptr<Nosh::ModelEvaluator::Virtual> nlsModel;
+    const Teuchos::RCP<Teuchos::Time> meTime =
       Teuchos::TimeMonitor::getNewTimer("Create model evaluator");
     {
       Teuchos::TimeMonitor tm(*meTime);
-      nlsModel = rcp(new Nosh::ModelEvaluator::Nls(
+      nlsModel = std::make_shared<Nosh::ModelEvaluator::Nls>(
             mesh,
             keoBuilder,
             DKeoDPBuilder,
@@ -166,15 +166,14 @@ int main(int argc, char *argv[])
             g,
             thickness,
             psi
-            ));
+            );
     }
 
-    RCP<Nosh::ModelEvaluator::Virtual> modelEvaluator;
+    std::shared_ptr<Nosh::ModelEvaluator::Virtual> modelEvaluator;
     const bool useBordering = false;
     if (useBordering) {
       // Use i*psi as bordering.
-      RCP<Epetra_Vector> bordering =
-        rcp(new Epetra_Vector(psi->Map()));
+      std::shared_ptr<Epetra_Vector> bordering(new Epetra_Vector(psi->Map()));
       for (int k = 0; k < psi->Map().NumMyElements()/2; k++) {
         (*bordering)[2*k] = - (*psi)[2*k+1];
         (*bordering)[2*k+1] = (*psi)[2*k];
@@ -184,26 +183,32 @@ int main(int argc, char *argv[])
       //bordering->Random();
       // Initial value for the extra variable.
       double lambda = 0.0;
-      modelEvaluator = rcp(new Nosh::ModelEvaluator::Bordered(nlsModel, bordering, lambda));
+      modelEvaluator = std::make_shared<Nosh::ModelEvaluator::Bordered>(
+          nlsModel,
+          bordering,
+          lambda
+          );
     } else {
       modelEvaluator = nlsModel;
     }
 
-    const RCP<Teuchos::Time> fxTime =
+    const Teuchos::RCP<Teuchos::Time> fxTime =
       Teuchos::TimeMonitor::getNewTimer("F(x)");
     EpetraExt::ModelEvaluator::InArgs inArgs = modelEvaluator->createInArgs();
     EpetraExt::ModelEvaluator::OutArgs outArgs = modelEvaluator->createOutArgs();
-    RCP<Epetra_Operator> nullOp = Teuchos::null;
+    Teuchos::RCP<Epetra_Operator> nullOp = Teuchos::null;
 
     // Evaluate the nonlinear Schroedinger equation F(X).
     // Set the parameter vector.
-    RCP<const Epetra_Vector> p = modelEvaluator->get_p_init(0);
+    Teuchos::RCP<const Epetra_Vector> p = modelEvaluator->get_p_init(0);
     inArgs.set_p(0, p);
     // Set the X in inArgs.
-    inArgs.set_x(psi);
+    inArgs.set_x(Teuchos::rcp(psi));
     // Set an empty FX in outArgs. This will be filled after the call to evalModel.
-    RCP<Epetra_Vector> fx = rcp(new Epetra_Vector(*modelEvaluator->get_f_map()));
-    outArgs.set_f(fx);
+    std::shared_ptr<Epetra_Vector> fx(
+        new Epetra_Vector(*modelEvaluator->get_f_map())
+        );
+    outArgs.set_f(Teuchos::rcp(fx));
     modelEvaluator->evalModel(inArgs, outArgs);
     {
       Teuchos::TimeMonitor tm(*fxTime);
@@ -213,11 +218,11 @@ int main(int argc, char *argv[])
     }
     //std::cout << *fx << std::endl;
     // Reset to null to make sure it's not refilled the next time evalModel is called.
-    RCP<Epetra_Vector> null = Teuchos::null;
+    Teuchos::RCP<Epetra_Vector> null = Teuchos::null;
     outArgs.set_f(null);
 
     // Get the Jacobian.
-    const RCP<Teuchos::Time> getJTime =
+    const Teuchos::RCP<Teuchos::Time> getJTime =
       Teuchos::TimeMonitor::getNewTimer("Get Jacobian");
     Teuchos::RCP<Epetra_Operator> jac;
     {
@@ -233,7 +238,7 @@ int main(int argc, char *argv[])
     Epetra_Vector X(jac->OperatorDomainMap());
     X.Random();
     Epetra_Vector Y(jac->OperatorRangeMap());
-    const RCP<Teuchos::Time> applyJTime =
+    const Teuchos::RCP<Teuchos::Time> applyJTime =
       Teuchos::TimeMonitor::getNewTimer("Apply Jacobian");
     {
       Teuchos::TimeMonitor tm(*applyJTime);
@@ -241,7 +246,7 @@ int main(int argc, char *argv[])
     }
 
     // Get the preconditioner.
-    const RCP<Teuchos::Time> getPTime =
+    const Teuchos::RCP<Teuchos::Time> getPTime =
       Teuchos::TimeMonitor::getNewTimer("Get Preconditioner");
     Teuchos::RCP<Epetra_Operator> prec;
     {
@@ -257,7 +262,7 @@ int main(int argc, char *argv[])
     Epetra_Vector X2(prec->OperatorDomainMap());
     X2.Random();
     Epetra_Vector Y2(prec->OperatorRangeMap());
-    const RCP<Teuchos::Time> applyPTime =
+    const Teuchos::RCP<Teuchos::Time> applyPTime =
       Teuchos::TimeMonitor::getNewTimer("Apply Preconditioner");
     {
       Teuchos::TimeMonitor tm(*applyPTime);
@@ -265,7 +270,7 @@ int main(int argc, char *argv[])
     }
 
     // Write out data.
-    const RCP<Teuchos::Time> writeTime =
+    const Teuchos::RCP<Teuchos::Time> writeTime =
       Teuchos::TimeMonitor::getNewTimer("Write");
     {
       Teuchos::TimeMonitor tm(*writeTime);
@@ -283,4 +288,3 @@ int main(int argc, char *argv[])
 
   return success ? EXIT_SUCCESS : EXIT_FAILURE;
 }
-// =========================================================================
