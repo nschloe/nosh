@@ -49,10 +49,10 @@ class JacobianOperator : public Epetra_Operator
 {
 public:
   JacobianOperator(
-      const Teuchos::RCP<const Nosh::StkMesh> &mesh,
-      const Teuchos::RCP<const Nosh::ScalarField::Virtual> &scalarPotential,
-      const Teuchos::RCP<const Nosh::ScalarField::Virtual> &thickness,
-      const Teuchos::RCP<Nosh::ParameterMatrix::Virtual> &matrix
+      const std::shared_ptr<const Nosh::StkMesh> &mesh,
+      const std::shared_ptr<const Nosh::ScalarField::Virtual> &scalarPotential,
+      const std::shared_ptr<const Nosh::ScalarField::Virtual> &thickness,
+      const std::shared_ptr<Nosh::ParameterMatrix::Virtual> &matrix
       );
 
   // Destructor.
@@ -98,7 +98,7 @@ public:
   void
   rebuild(
       const std::map<std::string, double> params,
-      const Teuchos::RCP<const Epetra_Vector> &current_X
+      const Epetra_Vector & current_X
       );
 
 protected:
@@ -112,11 +112,11 @@ private:
 private:
   bool useTranspose_;
 
-  const Teuchos::RCP<const Nosh::StkMesh> mesh_;
-  const Teuchos::RCP<const Nosh::ScalarField::Virtual> scalarPotential_;
-  const Teuchos::RCP<const Nosh::ScalarField::Virtual> thickness_;
+  const std::shared_ptr<const Nosh::StkMesh> mesh_;
+  const std::shared_ptr<const Nosh::ScalarField::Virtual> scalarPotential_;
+  const std::shared_ptr<const Nosh::ScalarField::Virtual> thickness_;
 
-  const Teuchos::RCP<Nosh::ParameterMatrix::Virtual> keo_;
+  const std::shared_ptr<Nosh::ParameterMatrix::Virtual> keo_;
   Epetra_Vector diag0_;
   Epetra_Vector diag1b_;
 };

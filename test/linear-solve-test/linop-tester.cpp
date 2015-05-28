@@ -53,14 +53,14 @@ int main ( int argc, char *argv[] )
 
   // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
-  Teuchos::RCP<Epetra_MpiComm> eComm =
+  std::shared_ptr<Epetra_MpiComm> eComm =
     Teuchos::rcp<Epetra_MpiComm> ( new Epetra_MpiComm ( MPI_COMM_WORLD ) );
 #else
-  Teuchos::RCP<Epetra_SerialComm>  eComm =
+  std::shared_ptr<Epetra_SerialComm>  eComm =
          Teuchos::rcp<Epetra_SerialComm> ( new Epetra_SerialComm() );
 #endif
 
-  const Teuchos::RCP<Teuchos::FancyOStream> out =
+  const std::shared_ptr<Teuchos::FancyOStream> out =
       Teuchos::VerboseObjectBase::getDefaultOStream();
 
   bool success = true;
@@ -125,22 +125,22 @@ int main ( int argc, char *argv[] )
     // =========================================================================
     // Read the data from the file.
     Teuchos::ParameterList data;
-    Teuchos::RCP<Teuchos::Time> readTime = Teuchos::TimeMonitor::getNewTimer("Data I/O");
+    std::shared_ptr<Teuchos::Time> readTime = Teuchos::TimeMonitor::getNewTimer("Data I/O");
     {
     Teuchos::TimeMonitor tm(*readTime);
     Ginla::StkMeshRead( *eComm, inputFileName, data );
     }
 
     // Cast the data into something more accessible.
-    Teuchos::RCP<Ginla::StkMesh>     & mesh = data.get( "mesh", Teuchos::RCP<Ginla::StkMesh>() );
-    Teuchos::RCP<Epetra_Vector>      & z = data.get( "psi", Teuchos::RCP<Epetra_Vector>() );
-    Teuchos::RCP<const Epetra_MultiVector> & mvpValues = data.get( "A", Teuchos::RCP<const Epetra_MultiVector>() );
-    Teuchos::RCP<Epetra_Vector>      & thickness = data.get( "thickness", Teuchos::RCP<Epetra_Vector>() );
+    std::shared_ptr<Ginla::StkMesh>     & mesh = data.get( "mesh", std::shared_ptr<Ginla::StkMesh>() );
+    std::shared_ptr<Epetra_Vector>      & z = data.get( "psi", std::shared_ptr<Epetra_Vector>() );
+    std::shared_ptr<const Epetra_MultiVector> & mvpValues = data.get( "A", std::shared_ptr<const Epetra_MultiVector>() );
+    std::shared_ptr<Epetra_Vector>      & thickness = data.get( "thickness", std::shared_ptr<Epetra_Vector>() );
     //Teuchos::ParameterList           & problemParameters = data.get( "Problem parameters", Teuchos::ParameterList() );
 
-    Teuchos::RCP<Ginla::MagneticVectorPotential::ExplicitValues> mvp;
+    std::shared_ptr<Ginla::MagneticVectorPotential::ExplicitValues> mvp;
     double mu;
-    Teuchos::RCP<Teuchos::Time> mvpConstructTime = Teuchos::TimeMonitor::getNewTimer("MVP construction");
+    std::shared_ptr<Teuchos::Time> mvpConstructTime = Teuchos::TimeMonitor::getNewTimer("MVP construction");
     {
         Teuchos::TimeMonitor tm(*mvpConstructTime);
 //          mu = problemParameters.get<double> ( "mu" );
@@ -148,22 +148,22 @@ int main ( int argc, char *argv[] )
         mvp = Teuchos::rcp(new Ginla::MagneticVectorPotential::ExplicitValues(mesh, mvpValues, mu));
     }
 
-    Teuchos::RCP<LOCA::ParameterVector> mvpParameters =
+    std::shared_ptr<LOCA::ParameterVector> mvpParameters =
         Teuchos::rcp( new LOCA::ParameterVector() );
     mvpParameters->addParameter( "mu", mu );
 
-    Teuchos::RCP<Teuchos::Time> keoContainerConstructTime =
+    std::shared_ptr<Teuchos::Time> keoContainerConstructTime =
         Teuchos::TimeMonitor::getNewTimer("Keo container construction");
-    Teuchos::RCP<Ginla::KeoContainer> keoContainer;
+    std::shared_ptr<Ginla::KeoContainer> keoContainer;
     {
         Teuchos::TimeMonitor tm(*keoContainerConstructTime);
         keoContainer = Teuchos::rcp( new Ginla::KeoContainer( mesh, thickness, mvp ) );
     }
 
     // create Jacobian
-    Teuchos::RCP<Teuchos::Time> operatorConstructTime =
+    std::shared_ptr<Teuchos::Time> operatorConstructTime =
         Teuchos::TimeMonitor::getNewTimer("Operator construction");
-    Teuchos::RCP<const Epetra_Operator> A;
+    std::shared_ptr<const Epetra_Operator> A;
     {
         Teuchos::TimeMonitor tm(*operatorConstructTime);
         if (op.compare("jac") == 0)
@@ -178,8 +178,8 @@ int main ( int argc, char *argv[] )
             // Build the matrix (-1,2,-1).
             const double neg_one = -1.0;
             const double two = 2.0;
-            Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(n, 0, *eComm));
-            Teuchos::RCP<Epetra_CrsMatrix> AMatrix =
+            std::shared_ptr<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(n, 0, *eComm));
+            std::shared_ptr<Epetra_CrsMatrix> AMatrix =
                 Teuchos::rcp(new Epetra_CrsMatrix(Copy, *map, 3));
             for (int k=0; k < map->NumMyElements(); k++)
             {
@@ -199,9 +199,9 @@ int main ( int argc, char *argv[] )
     }
 
     // create initial guess and right-hand side
-    Teuchos::RCP<Epetra_Vector> epetra_x =
+    std::shared_ptr<Epetra_Vector> epetra_x =
             Teuchos::rcp( new Epetra_Vector( A->OperatorDomainMap() ) );
-    Teuchos::RCP<Epetra_MultiVector> epetra_b =
+    std::shared_ptr<Epetra_MultiVector> epetra_b =
             Teuchos::rcp( new Epetra_Vector( A->OperatorRangeMap() ) );
     // epetra_b->Random();
     epetra_b->PutScalar( 1.0 );
@@ -210,7 +210,7 @@ int main ( int argc, char *argv[] )
     if (action.compare("matvec") == 0)
     {
       epetra_x->PutScalar( 1.0 );
-      Teuchos::RCP<Teuchos::Time> mvTime = Teuchos::TimeMonitor::getNewTimer("Operator apply");
+      std::shared_ptr<Teuchos::Time> mvTime = Teuchos::TimeMonitor::getNewTimer("Operator apply");
       {
         Teuchos::TimeMonitor tm(*mvTime);
         TEUCHOS_ASSERT_EQUALITY(0, A->Apply(*epetra_x, *epetra_b));
@@ -252,13 +252,13 @@ int main ( int argc, char *argv[] )
                                 "ERROR:  Belos::LinearProblem failed to set up correctly!" );
       // -----------------------------------------------------------------------
       // create preconditioner
-      Teuchos::RCP<Teuchos::Time> precConstructTime = Teuchos::TimeMonitor::getNewTimer("Prec construction");
+      std::shared_ptr<Teuchos::Time> precConstructTime = Teuchos::TimeMonitor::getNewTimer("Prec construction");
       if ( usePrec )
       {
           Teuchos::TimeMonitor tm(*precConstructTime);
 
           // create the preconditioner
-          Teuchos::RCP<Ginla::KeoRegularized> keoReg =
+          std::shared_ptr<Ginla::KeoRegularized> keoReg =
               Teuchos::rcp(new Ginla::KeoRegularized(mesh, thickness, keoContainer, z));
 
           // initialize its (approximate) inverse
@@ -267,12 +267,12 @@ int main ( int argc, char *argv[] )
           // Create the Belos preconditioned operator from the preconditioner.
           // NOTE:  This is necessary because Belos expects an operator to apply the
           //        preconditioner with Apply() NOT ApplyInverse().
-          Teuchos::RCP<Belos::EpetraPrecOp> belosPrec = Teuchos::rcp(new Belos::EpetraPrecOp(keoReg));
+          std::shared_ptr<Belos::EpetraPrecOp> belosPrec = Teuchos::rcp(new Belos::EpetraPrecOp(keoReg));
           problem.setLeftPrec( belosPrec );
       }
       // -----------------------------------------------------------------------
       // Create an iterative solver manager.
-      Teuchos::RCP<Belos::SolverManager<double,MV,OP> > newSolver;
+      std::shared_ptr<Belos::SolverManager<double,MV,OP> > newSolver;
       if (solver.compare("cg") == 0)
       {
         belosList.set( "Assert Positive Definiteness", false );
@@ -304,7 +304,7 @@ int main ( int argc, char *argv[] )
       }
 
       // Perform solve
-      Teuchos::RCP<Teuchos::Time> solveTime =
+      std::shared_ptr<Teuchos::Time> solveTime =
         Teuchos::TimeMonitor::getNewTimer("Jacobian solve");
       {
           Teuchos::TimeMonitor tm(*solveTime);

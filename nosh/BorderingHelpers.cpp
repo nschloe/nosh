@@ -28,7 +28,7 @@
 namespace Nosh
 {
 // ============================================================================
-Teuchos::RCP<const Epetra_Map>
+std::shared_ptr<const Epetra_Map>
 BorderingHelpers::
 extendMapBy1(const Epetra_BlockMap & map)
 {
@@ -41,7 +41,7 @@ extendMapBy1(const Epetra_BlockMap & map)
   // the Epetra_Map constructor is called with an extended
   // map on proc 0, and with the regular old stuff on all
   // other procs.
-  Teuchos::RCP<Epetra_Map> extendedMap;
+  std::shared_ptr<Epetra_Map> extendedMap;
   if (comm.MyPID() == 0) {
     // Copy over the global indices.
     std::vector<int> a(numMyElements+1);
@@ -50,19 +50,21 @@ extendMapBy1(const Epetra_BlockMap & map)
     // Append one more.
     a[numMyElements] = map.NumGlobalElements();
 
-    extendedMap =
-      Teuchos::rcp(new Epetra_Map(numGlobalElements,
-                                  numMyElements+1,
-                                  &a[0],
-                                  map.IndexBase(),
-                                  comm));
+    extendedMap = std::make_shared<Epetra_Map>(
+        numGlobalElements,
+        numMyElements+1,
+        &a[0],
+        map.IndexBase(),
+        comm
+        );
   } else {
-    extendedMap =
-      Teuchos::rcp(new Epetra_Map(numGlobalElements,
-                                  numMyElements,
-                                  myGlobalElements,
-                                  map.IndexBase(),
-                                  comm));
+    extendedMap = std::make_shared<Epetra_Map>(
+        numGlobalElements,
+        numMyElements,
+        myGlobalElements,
+        map.IndexBase(),
+        comm
+        );
   }
 
   return extendedMap;
@@ -77,7 +79,7 @@ merge(const Epetra_MultiVector & x,
 {
 #ifndef NDEBUG
   // Check if the maps are matching.
-  Teuchos::RCP<const Epetra_Map> extendedMap =
+  std::shared_ptr<const Epetra_Map> extendedMap =
     Nosh::BorderingHelpers::extendMapBy1(x.Map());
   TEUCHOS_ASSERT(out.Map().SameAs(*extendedMap));
 #endif
@@ -106,7 +108,7 @@ dissect(const Epetra_MultiVector & x,
 #ifndef NDEBUG
   TEUCHOS_ASSERT_EQUALITY(x.NumVectors(), xSmall.NumVectors());
   // Make sure the maps are matching.
-  Teuchos::RCP<const Epetra_Map> extendedMap =
+  std::shared_ptr<const Epetra_Map> extendedMap =
     Nosh::BorderingHelpers::extendMapBy1(xSmall.Map());
   TEUCHOS_ASSERT(x.Map().SameAs(*extendedMap));
 #endif

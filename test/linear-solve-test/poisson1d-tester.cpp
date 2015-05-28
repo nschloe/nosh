@@ -40,12 +40,12 @@ int main ( int argc, char *argv[] )
 
   Tpetra::DefaultPlatform::DefaultPlatformType &platform =
     Tpetra::DefaultPlatform::getDefaultPlatform();
-  Teuchos::RCP<const Teuchos::Comm<int> > tComm = platform.getComm();
+  std::shared_ptr<const Teuchos::Comm<int> > tComm = platform.getComm();
 
   typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
   typedef Tpetra::Map<int,int,Node>                      Map;
 
-  const Teuchos::RCP<Teuchos::FancyOStream> out =
+  const std::shared_ptr<Teuchos::FancyOStream> out =
       Teuchos::VerboseObjectBase::getDefaultOStream();
 
   bool success = true;
@@ -84,9 +84,9 @@ int main ( int argc, char *argv[] )
                             );
     // =========================================================================
     // Construct Epetra matrix.
-    Teuchos::RCP<Teuchos::Time> matrixConstructTime =
+    std::shared_ptr<Teuchos::Time> matrixConstructTime =
         Teuchos::TimeMonitor::getNewTimer("Epetra matrix construction");
-    Teuchos::RCP<Epetra_CrsMatrix> epetra_A;
+    std::shared_ptr<Epetra_CrsMatrix> epetra_A;
     {
       Teuchos::TimeMonitor tm(*matrixConstructTime);
       // Build the matrix (-1,2,-1).
@@ -132,12 +132,12 @@ int main ( int argc, char *argv[] )
 //       epetra_A->Print(std::cout);
 
     // Construct Tpetra matrix.
-    Teuchos::RCP<Teuchos::Time> tpetraMatrixConstructTime =
+    std::shared_ptr<Teuchos::Time> tpetraMatrixConstructTime =
         Teuchos::TimeMonitor::getNewTimer("Tpetra matrix construction");
-    Teuchos::RCP<Tpetra::CrsMatrix<double,int> > tpetra_A;
+    std::shared_ptr<Tpetra::CrsMatrix<double,int> > tpetra_A;
     {
       Teuchos::TimeMonitor tm(*tpetraMatrixConstructTime);
-      Teuchos::RCP<const Tpetra::Map<int> > map =
+      std::shared_ptr<const Tpetra::Map<int> > map =
         Tpetra::createUniformContigMap<int,int>(n, tComm);
       // Get update list and number of local equations from newly created map.
       const size_t numMyElements = map->getNodeNumElements();
@@ -178,30 +178,30 @@ int main ( int argc, char *argv[] )
       // Complete the fill, ask that storage be reallocated and optimized
       tpetra_A->fillComplete(Tpetra::DoOptimizeStorage);
     }
-//       Teuchos::RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+//       std::shared_ptr<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
 //       tpetra_A->describe(*fos, Teuchos::VERB_EXTREME);
 //       std::cout << std::endl << tpetra_A->description() << std::endl << std::endl;
 
 
     // create initial guess and right-hand side
-    Teuchos::RCP<Epetra_Vector> epetra_x =
+    std::shared_ptr<Epetra_Vector> epetra_x =
             Teuchos::rcp( new Epetra_Vector( epetra_A->OperatorDomainMap() ) );
-    Teuchos::RCP<Epetra_MultiVector> epetra_b =
+    std::shared_ptr<Epetra_MultiVector> epetra_b =
             Teuchos::rcp( new Epetra_Vector( epetra_A->OperatorRangeMap() ) );
     // epetra_b->Random();
     TEUCHOS_ASSERT_EQUALITY(0, epetra_b->PutScalar( 1.0 ));
 
     // create tpetra vectors
-    Teuchos::RCP<Tpetra::Vector<double,int> > tpetra_x =
+    std::shared_ptr<Tpetra::Vector<double,int> > tpetra_x =
       Teuchos::rcp( new Tpetra::Vector<double,int>(tpetra_A->getDomainMap()) );
-    Teuchos::RCP<Tpetra::Vector<double,int> > tpetra_b =
+    std::shared_ptr<Tpetra::Vector<double,int> > tpetra_b =
       Teuchos::rcp( new Tpetra::Vector<double,int>(tpetra_A->getRangeMap()) );
     tpetra_b->putScalar( 1.0 );
 
     if (action.compare("matvec") == 0)
     {
       TEUCHOS_ASSERT_EQUALITY(0, epetra_x->PutScalar( 1.0 ));
-      Teuchos::RCP<Teuchos::Time> mvTime =
+      std::shared_ptr<Teuchos::Time> mvTime =
         Teuchos::TimeMonitor::getNewTimer("Epetra operator apply");
       {
         Teuchos::TimeMonitor tm(*mvTime);
@@ -210,7 +210,7 @@ int main ( int argc, char *argv[] )
       }
 
       tpetra_x->putScalar( 1.0 );
-      Teuchos::RCP<Teuchos::Time> tmvTime =
+      std::shared_ptr<Teuchos::Time> tmvTime =
         Teuchos::TimeMonitor::getNewTimer("Tpetra operator apply");
       {
         Teuchos::TimeMonitor tm(*tmvTime);
@@ -256,7 +256,7 @@ int main ( int argc, char *argv[] )
           );
       // -----------------------------------------------------------------------
       // Create an iterative solver manager.
-      Teuchos::RCP<Belos::SolverManager<double,MV,OP> > newSolver;
+      std::shared_ptr<Belos::SolverManager<double,MV,OP> > newSolver;
       if (action.compare("solve_cg") == 0)
       {
         belosList.set( "Assert Positive Definiteness", false );
@@ -288,7 +288,7 @@ int main ( int argc, char *argv[] )
       }
 
       // Perform solve
-      Teuchos::RCP<Teuchos::Time> solveTime =
+      std::shared_ptr<Teuchos::Time> solveTime =
         Teuchos::TimeMonitor::getNewTimer("Linear system solve");
       {
         Teuchos::TimeMonitor tm(*solveTime);

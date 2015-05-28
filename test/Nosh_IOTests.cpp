@@ -48,11 +48,9 @@ testKeo(const std::string & inputFileNameBase,
 {
   // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
-  Teuchos::RCP<Epetra_MpiComm> eComm =
-    Teuchos::rcp<Epetra_MpiComm> (new Epetra_MpiComm (MPI_COMM_WORLD));
+  std::shared_ptr<Epetra_MpiComm> eComm(new Epetra_MpiComm(MPI_COMM_WORLD));
 #else
-  Teuchos::RCP<Epetra_SerialComm> eComm =
-    Teuchos::rcp<Epetra_SerialComm> (new Epetra_SerialComm());
+  std::shared_ptr<Epetra_SerialComm> eComm(new Epetra_SerialComm());
 #endif
 
   std::string inputFileName = "data/" + inputFileNameBase + ".e";
@@ -61,9 +59,9 @@ testKeo(const std::string & inputFileNameBase,
   Nosh::StkMesh mesh(eComm, inputFileName, 0);
 
   // Cast the data into something more accessible.
-  const Teuchos::RCP<const Epetra_Vector> psi =
+  const std::shared_ptr<const Epetra_Vector> psi =
     mesh.createComplexVector("psi");
-  const Teuchos::RCP<const Epetra_MultiVector> mvpValues =
+  const std::shared_ptr<const Epetra_MultiVector> mvpValues =
     mesh.createMultiVector("A");
 
   // Check psi.

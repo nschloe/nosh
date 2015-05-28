@@ -33,6 +33,7 @@
 #include <ml_epetra_preconditioner.h>
 
 #include <Teuchos_VerboseObject.hpp>
+#include <Teuchos_RCPStdSharedPtrConversions.hpp>
 
 #include "nosh/ScalarField_Virtual.hpp"
 #include "nosh/ParameterMatrix_Virtual.hpp"
@@ -51,19 +52,19 @@ namespace Nosh
 // =============================================================================
 KeoRegularized::
 KeoRegularized(
-    const Teuchos::RCP<const Nosh::StkMesh> &mesh,
-    const Teuchos::RCP<const Nosh::ScalarField::Virtual> &thickness,
-    const Teuchos::RCP<const Nosh::ParameterMatrix::Virtual> &keo
+    const std::shared_ptr<const Nosh::StkMesh> &mesh,
+    const std::shared_ptr<const Nosh::ScalarField::Virtual> &thickness,
+    const std::shared_ptr<const Nosh::ParameterMatrix::Virtual> &keo
   ):
   useTranspose_(false),
   mesh_(mesh),
   thickness_(thickness),
-  // It wouldn't strictly be necessary to initialize regularizedKeo_ with
-  // the proper graph here as matrixBuilder_'s cache will override the matrix
-  // later on anyways. Keep it, though, as it doesn't waste any memory and is
-  // in the spirit of the Trilinos::ModelEvaluator which asks for allocation
-  // of memory at one point and filling it with meaningful values later on.
-  // *Copy* over the matrix.
+  // It wouldn't strictly be necessary to initialize regularizedKeo_ with the
+  // proper graph here as matrixBuilder_'s cache will override the matrix later
+  // on anyways. Keep it, though, as it doesn't waste any memory and is in the
+  // spirit of the Trilinos::ModelEvaluator which asks for allocation of memory
+  // at one point and filling it with meaningful values later on.  *Copy* over
+  // the matrix.
   regularizedKeo_(keo->clone()),
   MlPrec_(Teuchos::null),
   numCycles_(1),
@@ -140,7 +141,7 @@ ApplyInverse(const Epetra_MultiVector &X,
     Teuchos::RCP<const Epetra_MultiVector> Xptr = Teuchos::rcpFromRef(X);
     Teuchos::RCP<Epetra_MultiVector> Yptr = Teuchos::rcpFromRef(Y);
     Belos::LinearProblem<double, MV, OP> problem(
-        regularizedKeo_,
+        Teuchos::rcp(regularizedKeo_),
         Yptr,
         Xptr
         );
@@ -156,15 +157,13 @@ ApplyInverse(const Epetra_MultiVector &X,
     problem.setLeftPrec(mlPrec);
     // -------------------------------------------------------------------------
     // Create an iterative solver manager.
-    Teuchos::RCP<Belos::SolverManager<double, MV, OP> > newSolver =
-      Teuchos::rcp(
-          new Belos::PseudoBlockCGSolMgr<double, MV, OP>(
-            Teuchos::rcp(&problem, false),
-            Teuchos::rcp(&belosList, false)
-            ));
+    Belos::PseudoBlockCGSolMgr<double, MV, OP> newSolver(
+        Teuchos::rcp(&problem, false),
+        Teuchos::rcp(&belosList, false)
+        );
 
     // Perform "solve".
-    Belos::ReturnType ret = newSolver->solve();
+    Belos::ReturnType ret = newSolver.solve();
 
     //return 0;
     return ret == Belos::Converged ? 0 : -1;
@@ -247,7 +246,7 @@ rebuild(
     //
     // We could also ahead and only add alpha to the diagonal, i.e.,
     //
-    //const Teuchos::RCP<const Epetra_Vector> absPsiSquared =
+    //const std::shared_ptr<const Epetra_Vector> absPsiSquared =
     //  this->getAbsPsiSquared_(x);
 //#ifndef NDEBUG
     //TEUCHOS_ASSERT(regularizedKeo_.RowMap().SameAs(absPsiSquared->Map()));
@@ -296,7 +295,7 @@ rebuild(
   return;
 }
 // =============================================================================
-//const Teuchos::RCP<const Epetra_Vector>
+//const std::shared_ptr<const Epetra_Vector>
 //KeoRegularized::
 //getAbsPsiSquared_(const Epetra_Vector &psi)
 //{
@@ -304,10 +303,10 @@ rebuild(
 //  TEUCHOS_ASSERT(!mesh_.is_null());
 //  TEUCHOS_ASSERT(!thickness_.is_null());
 //#endif
-//  const Teuchos::RCP<Epetra_Vector> absPsiSquared =
+//  const std::shared_ptr<Epetra_Vector> absPsiSquared =
 //    Teuchos::rcp(new Epetra_Vector(psi.Map()));
 //
-//  const Teuchos::RCP<const Epetra_Vector> &controlVolumes =
+//  const std::shared_ptr<const Epetra_Vector> &controlVolumes =
 //    mesh_->getControlVolumes();
 //  int numMyPoints = controlVolumes->MyLength();
 //  for (int k=0; k<numMyPoints; k++)

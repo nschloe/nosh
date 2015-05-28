@@ -36,11 +36,12 @@ namespace Nosh
 class BorderedOperator : public Epetra_Operator
 {
 public:
-  BorderedOperator(const Teuchos::RCP<Epetra_Operator> & innerOperator,
-                   const Teuchos::RCP<Epetra_Vector> & b,
-                   const Teuchos::RCP<Epetra_Vector> & c,
-                   const double d
-                 );
+  BorderedOperator(
+      const std::shared_ptr<Epetra_Operator> & innerOperator,
+      const Epetra_Vector & b,
+      const Epetra_Vector & c,
+      const double d
+      );
 
   // Destructor.
   ~BorderedOperator();
@@ -78,20 +79,20 @@ public:
   virtual const Epetra_Map &OperatorRangeMap() const;
 
 public:
-  const Teuchos::RCP<Epetra_Operator>
+  const std::shared_ptr<Epetra_Operator>
   getInnerOperator() const;
 
   void
-  resetBordering(const Teuchos::RCP<const Epetra_Vector> & b,
-                 const Teuchos::RCP<const Epetra_Vector> & c,
+  resetBordering(const Epetra_Vector & b,
+                 const Epetra_Vector & c,
                  const double d
                );
 
 protected:
 private:
-  const Teuchos::RCP<Epetra_Operator> innerOperator_;
-  const Teuchos::RCP<Epetra_Vector> b_;
-  const Teuchos::RCP<Epetra_Vector> c_;
+  const std::shared_ptr<Epetra_Operator> innerOperator_;
+  Epetra_Vector b_;
+  Epetra_Vector c_;
   double d_;
   bool useTranspose_;
   const Epetra_Map domainMap_;

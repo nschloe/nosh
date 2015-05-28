@@ -35,10 +35,10 @@ namespace Nosh
 // =============================================================================
 JacobianOperator::
 JacobianOperator(
-    const Teuchos::RCP<const Nosh::StkMesh> &mesh,
-    const Teuchos::RCP<const Nosh::ScalarField::Virtual> &scalarPotential,
-    const Teuchos::RCP<const Nosh::ScalarField::Virtual> &thickness,
-    const Teuchos::RCP<Nosh::ParameterMatrix::Virtual> &matrix
+    const std::shared_ptr<const Nosh::StkMesh> &mesh,
+    const std::shared_ptr<const Nosh::ScalarField::Virtual> &scalarPotential,
+    const std::shared_ptr<const Nosh::ScalarField::Virtual> &thickness,
+    const std::shared_ptr<Nosh::ParameterMatrix::Virtual> &matrix
     ) :
   useTranspose_(false),
   mesh_(mesh),
@@ -168,9 +168,10 @@ OperatorRangeMap() const
 // =============================================================================
 void
 JacobianOperator::
-rebuild(const std::map<std::string, double> params,
-        const Teuchos::RCP<const Epetra_Vector> &current_X
-      )
+rebuild(
+    const std::map<std::string, double> params,
+    const Epetra_Vector & current_X
+    )
 {
   // Fill the KEO.
   // It is certainly a debatable design decision to have our own KEO in
@@ -196,10 +197,7 @@ rebuild(const std::map<std::string, double> params,
   keo_->setParameters(params);
 
   // Rebuild diagonals.
-#ifndef NDEBUG
-  TEUCHOS_ASSERT(!current_X.is_null());
-#endif
-  this->rebuildDiags_(params, *current_X);
+  this->rebuildDiags_(params, current_X);
 
   return;
 }
@@ -212,7 +210,7 @@ rebuildDiags_(
     )
 {
 #ifndef NDEBUG
-  TEUCHOS_ASSERT(!scalarPotential_.is_null());
+  TEUCHOS_ASSERT(scalarPotential_);
 #endif
 
   const Epetra_Vector &controlVolumes = *(mesh_->getControlVolumes());

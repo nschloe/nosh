@@ -54,8 +54,8 @@ class Laplace: public Virtual
 {
 public:
   Laplace(
-      const Teuchos::RCP<const Nosh::StkMesh> &mesh,
-      const Teuchos::RCP<const Nosh::ScalarField::Virtual> &thickness
+      const std::shared_ptr<const Nosh::StkMesh> &mesh,
+      const std::shared_ptr<const Nosh::ScalarField::Virtual> &thickness
       );
 
   // Destructor.
@@ -79,9 +79,9 @@ private:
 
 private:
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
-  const Teuchos::RCP<Teuchos::Time> fillTime_;
+  const std::shared_ptr<Teuchos::Time> fillTime_;
 #endif
-  const Teuchos::RCP<const Nosh::ScalarField::Virtual> thickness_;
+  const std::shared_ptr<const Nosh::ScalarField::Virtual> thickness_;
 
   mutable std::vector<double> alphaCache_;
   mutable bool alphaCacheUpToDate_;

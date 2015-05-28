@@ -35,9 +35,9 @@ namespace VectorField
 class ConstantCurl : public Virtual
 {
 public:
-  ConstantCurl(const Teuchos::RCP<Nosh::StkMesh> &mesh,
-               const Teuchos::RCP<Eigen::Vector3d> &b,
-               const Teuchos::RCP<Eigen::Vector3d> &u = Teuchos::null
+  ConstantCurl(const std::shared_ptr<Nosh::StkMesh> &mesh,
+               const std::shared_ptr<Eigen::Vector3d> &b,
+               const std::shared_ptr<Eigen::Vector3d> &u = nullptr
               );
 
   virtual
@@ -89,9 +89,9 @@ private:
         ) const;
 
 private:
-  const Teuchos::RCP<Nosh::StkMesh> mesh_;
-  const Teuchos::RCP<const Eigen::Vector3d> b_;
-  const Teuchos::RCP<const Eigen::Vector3d> u_;
+  const std::shared_ptr<Nosh::StkMesh> mesh_;
+  const std::shared_ptr<const Eigen::Vector3d> b_;
+  const std::shared_ptr<const Eigen::Vector3d> u_;
   mutable Eigen::Vector3d rotatedBCache_;
   mutable double rotatedBCacheAngle_;
   mutable Eigen::Vector3d dRotatedBDThetaCache_;

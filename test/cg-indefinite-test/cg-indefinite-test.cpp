@@ -29,14 +29,14 @@ int main ( int argc, char *argv[] )
 
   // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
-  Teuchos::RCP<Epetra_MpiComm> eComm =
+  std::shared_ptr<Epetra_MpiComm> eComm =
     Teuchos::rcp<Epetra_MpiComm> ( new Epetra_MpiComm ( MPI_COMM_WORLD ) );
 #else
-  Teuchos::RCP<Epetra_SerialComm>  eComm =
+  std::shared_ptr<Epetra_SerialComm>  eComm =
     Teuchos::rcp<Epetra_SerialComm> ( new Epetra_SerialComm() );
 #endif
 
-  Teuchos::RCP<Teuchos::FancyOStream>
+  std::shared_ptr<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
   bool success = true;
@@ -44,11 +44,11 @@ int main ( int argc, char *argv[] )
   {
     // define the map
     int N = 1e1;
-    Teuchos::RCP<Epetra_Map> map =
+    std::shared_ptr<Epetra_Map> map =
             Teuchos::rcp( new Epetra_Map(N,0,*eComm) );
 
     // create a diagonal matrix
-    Teuchos::RCP<Epetra_CrsMatrix> A =
+    std::shared_ptr<Epetra_CrsMatrix> A =
             Teuchos::rcp( new Epetra_CrsMatrix( Copy, *map, 1 ));
     Epetra_Vector diag(*map);
     diag.Random();
@@ -65,8 +65,8 @@ int main ( int argc, char *argv[] )
     A->Print( std::cout );
 
     // create initial guess and right-hand side
-    Teuchos::RCP<Epetra_Vector> epetra_x = Teuchos::rcp( new Epetra_Vector( A->DomainMap() ) );
-    Teuchos::RCP<Epetra_Vector> epetra_b = Teuchos::rcp( new Epetra_Vector( A->RangeMap() ) );
+    std::shared_ptr<Epetra_Vector> epetra_x = Teuchos::rcp( new Epetra_Vector( A->DomainMap() ) );
+    std::shared_ptr<Epetra_Vector> epetra_b = Teuchos::rcp( new Epetra_Vector( A->RangeMap() ) );
     epetra_b->Random();
     epetra_b->PutScalar(1.0);
 
@@ -76,9 +76,9 @@ int main ( int argc, char *argv[] )
     // -----------------------------------------------------------------------
     //// Stratimikos.
     //// Thyra glue
-    //Teuchos::RCP<const Thyra::LinearOpBase<double> > A = Thyra::epetraLinearOp( keo );
-    //Teuchos::RCP<Thyra::VectorBase<double> > x = Thyra::create_Vector( epetra_x, A->domain() );
-    //Teuchos::RCP<const Thyra::VectorBase<double> > b = Thyra::create_Vector( epetra_b, A->range() );
+    //std::shared_ptr<const Thyra::LinearOpBase<double> > A = Thyra::epetraLinearOp( keo );
+    //std::shared_ptr<Thyra::VectorBase<double> > x = Thyra::create_Vector( epetra_x, A->domain() );
+    //std::shared_ptr<const Thyra::VectorBase<double> > b = Thyra::create_Vector( epetra_b, A->range() );
 
     //Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
 
@@ -91,7 +91,7 @@ int main ( int argc, char *argv[] )
 
     //// Create a linear solver factory given information read from the
     //// parameter list.
-    //Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory =
+    //std::shared_ptr<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory =
     //  linearSolverBuilder.createLinearSolveStrategy("");
 
     //// Setup output stream and the verbosity level
@@ -99,7 +99,7 @@ int main ( int argc, char *argv[] )
     //lowsFactory->setVerbLevel( Teuchos::VERB_LOW );
 
     //// Create a linear solver based on the forward operator A
-    //Teuchos::RCP<Thyra::LinearOpWithSolveBase<double> > lows =
+    //std::shared_ptr<Thyra::LinearOpWithSolveBase<double> > lows =
     //  Thyra::linearOpWithSolve(*lowsFactory, A);
 
     //// Solve the linear system (note: the initial guess in 'x' is critical)
@@ -125,7 +125,7 @@ int main ( int argc, char *argv[] )
 //      MLList.set("smoother: sweeps", 3);
 //      MLList.set("smoother: pre or post", "both");
 //      MLList.set("coarse: type", "Amesos-KLU");
-//      Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> MLPrec =
+//      std::shared_ptr<ML_Epetra::MultiLevelPreconditioner> MLPrec =
 //                  Teuchos::rcp( new ML_Epetra::MultiLevelPreconditioner(*keoMatrix, MLList) );
 //      MLPrec->PrintUnused(0);
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -173,7 +173,7 @@ int main ( int argc, char *argv[] )
     // direct solver
     Amesos Factory;
     std::string SolverType = "Klu";
-    Teuchos::RCP<Amesos_BaseSolver> Solver =
+    std::shared_ptr<Amesos_BaseSolver> Solver =
             Teuchos::rcp( Factory.Create( SolverType, problem ) );
     TEUCHOS_ASSERT( !Solver.is_null() );
 

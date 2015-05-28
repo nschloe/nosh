@@ -29,7 +29,7 @@ namespace Nosh
 {
 // ============================================================================
 Observer::
-Observer(const Teuchos::RCP<const Nosh::ModelEvaluator::Virtual> &modelEval,
+Observer(const std::shared_ptr<const Nosh::ModelEvaluator::Virtual> &modelEval,
          const std::string & csvFilename,
          const std::string & contParamName,
          const bool isTurningPointContinuation

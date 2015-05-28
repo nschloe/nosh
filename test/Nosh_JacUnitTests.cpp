@@ -54,55 +54,57 @@ testJac(const std::string & inputFileNameBase,
 {
   // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
-  Teuchos::RCP<Epetra_MpiComm> eComm =
-    Teuchos::rcp<Epetra_MpiComm> (new Epetra_MpiComm (MPI_COMM_WORLD));
+  std::shared_ptr<Epetra_MpiComm> eComm(new Epetra_MpiComm (MPI_COMM_WORLD));
 #else
-  Teuchos::RCP<Epetra_SerialComm> eComm =
-    Teuchos::rcp<Epetra_SerialComm> (new Epetra_SerialComm());
+  std::shared_ptr<Epetra_SerialComm> eComm(new Epetra_SerialComm());
 #endif
 
   std::string inputFileName = "data/" + inputFileNameBase + ".e";
   // =========================================================================
   // Read the data from the file.
-  Teuchos::RCP<Nosh::StkMesh> mesh =
-    Teuchos::rcp(new Nosh::StkMesh(eComm, inputFileName, 0));
+  std::shared_ptr<Nosh::StkMesh> mesh(
+      new Nosh::StkMesh(eComm, inputFileName, 0)
+      );
 
   // Cast the data into something more accessible.
-  Teuchos::RCP<Epetra_Vector> psi =
+  std::shared_ptr<Epetra_Vector> psi =
     mesh->createComplexVector("psi");
 
   std::map<std::string, double> params;
   params["g"] = 1.0;
   params["mu"] = mu;
 
-  Teuchos::RCP<Nosh::VectorField::Virtual> mvp =
-    Teuchos::rcp(new Nosh::VectorField::ExplicitValues(*mesh, "A", mu));
+  std::shared_ptr<Nosh::VectorField::Virtual> mvp(
+      new Nosh::VectorField::ExplicitValues(*mesh, "A", mu)
+      );
 
-  Teuchos::RCP<Nosh::ScalarField::Virtual> sp =
-    Teuchos::rcp(new Nosh::ScalarField::Constant(*mesh, -1.0));
+  std::shared_ptr<Nosh::ScalarField::Virtual> sp(
+      new Nosh::ScalarField::Constant(*mesh, -1.0)
+      );
 
   // Set the thickness field.
-  Teuchos::RCP<Nosh::ScalarField::Virtual> thickness =
-    Teuchos::rcp(new Nosh::ScalarField::Constant(*mesh, 1.0));
+  std::shared_ptr<Nosh::ScalarField::Virtual> thickness(
+      new Nosh::ScalarField::Constant(*mesh, 1.0)
+      );
 
   // create a keo factory
-  Teuchos::RCP<Nosh::ParameterMatrix::Virtual> keoBuilder =
-    Teuchos::rcp(new Nosh::ParameterMatrix::Keo(mesh, thickness, mvp));
+  std::shared_ptr<Nosh::ParameterMatrix::Virtual> keoBuilder(
+      new Nosh::ParameterMatrix::Keo(mesh, thickness, mvp)
+      );
 
   // create the jacobian operator
-  Teuchos::RCP<Nosh::JacobianOperator> jac =
-    Teuchos::rcp(new Nosh::JacobianOperator(mesh, sp, thickness, keoBuilder));
-  jac->rebuild(params, psi);
+  Nosh::JacobianOperator jac(mesh, sp, thickness, keoBuilder);
+  jac.rebuild(params, *psi);
 
   double sum;
-  const Epetra_Map & map = jac->OperatorDomainMap();
+  const Epetra_Map & map = jac.OperatorDomainMap();
   Epetra_Vector s(map);
   Epetra_Vector Js(map);
 
   // -------------------------------------------------------------------------
   // (a) [ 1, 1, 1, ... ]
   TEUCHOS_ASSERT_EQUALITY(0, s.PutScalar(1.0));
-  TEUCHOS_ASSERT_EQUALITY(0, jac->Apply(s, Js));
+  TEUCHOS_ASSERT_EQUALITY(0, jac.Apply(s, Js));
   TEUCHOS_ASSERT_EQUALITY(0, s.Dot(Js, &sum));
   TEST_FLOATING_EQUALITY(sum, controlSumT0, 1.0e-12);
   // -------------------------------------------------------------------------
@@ -115,7 +117,7 @@ testJac(const std::string & inputFileNameBase,
     else
       s.ReplaceMyValues(1, &zero, &k);
   }
-  TEUCHOS_ASSERT_EQUALITY(0, jac->Apply(s, Js));
+  TEUCHOS_ASSERT_EQUALITY(0, jac.Apply(s, Js));
   TEUCHOS_ASSERT_EQUALITY(0, s.Dot(Js, &sum));
   TEST_FLOATING_EQUALITY(sum, controlSumT1, 1.0e-12);
   // -------------------------------------------------------------------------
@@ -126,7 +128,7 @@ testJac(const std::string & inputFileNameBase,
     else
       s.ReplaceMyValues(1, &one, &k);
   }
-  TEUCHOS_ASSERT_EQUALITY(0, jac->Apply(s, Js));
+  TEUCHOS_ASSERT_EQUALITY(0, jac.Apply(s, Js));
   TEUCHOS_ASSERT_EQUALITY(0, s.Dot(Js, &sum));
   TEST_FLOATING_EQUALITY(sum, controlSumT2, 1.0e-10);
   // -------------------------------------------------------------------------

@@ -60,9 +60,9 @@ class KeoRegularized : public Epetra_Operator
 {
 public:
   KeoRegularized(
-      const Teuchos::RCP<const Nosh::StkMesh> &mesh,
-      const Teuchos::RCP<const Nosh::ScalarField::Virtual> &thickness,
-      const Teuchos::RCP<const Nosh::ParameterMatrix::Virtual> &matrix
+      const std::shared_ptr<const Nosh::StkMesh> &mesh,
+      const std::shared_ptr<const Nosh::ScalarField::Virtual> &thickness,
+      const std::shared_ptr<const Nosh::ParameterMatrix::Virtual> &matrix
       );
 
   // Destructor.
@@ -108,7 +108,7 @@ public:
 
 protected:
 private:
-  const Teuchos::RCP<const Epetra_Vector>
+  const std::shared_ptr<const Epetra_Vector>
   getAbsPsiSquared_(const Epetra_Vector &psi);
 
   void
@@ -117,22 +117,22 @@ private:
 private:
   bool useTranspose_;
 
-  const Teuchos::RCP<const Nosh::StkMesh> mesh_;
-  const Teuchos::RCP<const Nosh::ScalarField::Virtual> thickness_;
+  const std::shared_ptr<const Nosh::StkMesh> mesh_;
+  const std::shared_ptr<const Nosh::ScalarField::Virtual> thickness_;
 
   // Make sure to create the matrix in memory only once and then
   // override it as necessary. The reason for this is that ML
   // gets initialized only once and, upon ML.recompute(), relies
   // on the (new) data being available at the same adress.
   // Failure to comply to this will lead to memory errors.
-  const Teuchos::RCP<Nosh::ParameterMatrix::Virtual> regularizedKeo_;
+  const std::shared_ptr<Nosh::ParameterMatrix::Virtual> regularizedKeo_;
 
   Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> MlPrec_;
   const int numCycles_;
 
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
-  const Teuchos::RCP<Teuchos::Time> timerRebuild0_;
-  const Teuchos::RCP<Teuchos::Time> timerRebuild1_;
+  const std::shared_ptr<Teuchos::Time> timerRebuild0_;
+  const std::shared_ptr<Teuchos::Time> timerRebuild1_;
 #endif
 
   Teuchos::RCP<Teuchos::FancyOStream> out_;

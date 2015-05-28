@@ -51,43 +51,46 @@ class SaveEigenData :
 public:
 // Actually suggested interface:
 //    EigenSaver(
-//      const Teuchos::RCP<LOCA::GlobalData>& global_data,
-//      const Teuchos::RCP<LOCA::P#ifndef GL_SAVEEIGENDATA_Harameter::SublistParser>& topParams,
-//      const Teuchos::RCP<Teuchos::ParameterList>& eigenParams     );
+//      const std::shared_ptr<LOCA::GlobalData>& global_data,
+//      const std::shared_ptr<LOCA::P#ifndef GL_SAVEEIGENDATA_Harameter::SublistParser>& topParams,
+//      const std::shared_ptr<Teuchos::ParameterList>& eigenParams     );
 
-// Constructor
-  SaveEigenData(Teuchos::ParameterList &eigenParamList,
-                const Teuchos::RCP<const Nosh::ModelEvaluator::Virtual> &modelEval,
-                const std::string & fileName
-              );
+  // Constructor
+  SaveEigenData(
+      Teuchos::ParameterList &eigenParamList,
+      const std::shared_ptr<const Nosh::ModelEvaluator::Virtual> &modelEval,
+      const std::string & fileName
+      );
 
   virtual
   ~SaveEigenData();
 
   virtual
   NOX::Abstract::Group::ReturnType
-  save(Teuchos::RCP<std::vector<double> > &evals_r,
-        Teuchos::RCP<std::vector<double> > &evals_i,
-        Teuchos::RCP<NOX::Abstract::MultiVector> &evecs_r,
-        Teuchos::RCP<NOX::Abstract::MultiVector> &evecs_i
-     );
+  save(
+      std::shared_ptr<std::vector<double> > &evals_r,
+      std::shared_ptr<std::vector<double> > &evals_i,
+      std::shared_ptr<NOX::Abstract::MultiVector> &evecs_r,
+      std::shared_ptr<NOX::Abstract::MultiVector> &evecs_i
+      );
 
   void
-  setLocaStepper(const Teuchos::RCP<LOCA::Stepper> locaStepper);
+  setLocaStepper(const std::shared_ptr<LOCA::Stepper> locaStepper);
 
-// This function is necessary to break the circular dependency with the
-// LOCA_Stepper object to allow for a clean termination
+  // This function is necessary to break the circular dependency with the
+  // LOCA_Stepper object to allow for a clean termination
   void
   releaseLocaStepper();
 
 protected:
 private:
   Teuchos::RCP<Teuchos::ParameterList> eigenParamListPtr_;
-  const Teuchos::RCP<const Nosh::ModelEvaluator::Virtual> modelEval_;
+  const std::shared_ptr<const Nosh::ModelEvaluator::Virtual> modelEval_;
   Nosh::CsvWriter csvWriter_;
-  Teuchos::RCP<LOCA::Stepper> locaStepper_;
+  std::shared_ptr<LOCA::Stepper> locaStepper_;
 
-//! The minimum number of stable eigenvalues that is to be computed in each step.
+  //! The minimum number of stable eigenvalues that is to be computed in each
+  //! step.
   unsigned int numComputeStableEigenvalues_;
 };
 } // namespace Nosh

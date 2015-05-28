@@ -76,7 +76,7 @@ private:
 
 public:
   StkMesh(
-      const Teuchos::RCP<const Epetra_Comm> & comm,
+      const std::shared_ptr<const Epetra_Comm> & comm,
       const std::string &fileName,
       const int index
       );
@@ -95,13 +95,13 @@ public:
   void
   write(const double time) const;
 
-  Teuchos::RCP<Epetra_Vector>
+  std::shared_ptr<Epetra_Vector>
   createVector(const std::string & fieldName) const;
 
-  Teuchos::RCP<Epetra_MultiVector>
+  std::shared_ptr<Epetra_MultiVector>
   createMultiVector(const std::string & fieldName) const;
 
-  Teuchos::RCP<Epetra_Vector>
+  std::shared_ptr<Epetra_Vector>
   createComplexVector(const std::string & fieldName) const;
 
   void
@@ -112,7 +112,7 @@ public:
   unsigned int
   getNumNodes() const;
 
-  Teuchos::RCP<const Epetra_Vector>
+  std::shared_ptr<const Epetra_Vector>
   getControlVolumes() const;
 
   double
@@ -142,16 +142,16 @@ public:
 //const Eigen::Vector3d
 //getNodeCoordinatesNonconst(stk::mesh::Entity nodeEntity) const;
 
-  Teuchos::RCP<const Epetra_Map>
+  std::shared_ptr<const Epetra_Map>
   getNodesMap() const;
 
-  Teuchos::RCP<const Epetra_Map>
+  std::shared_ptr<const Epetra_Map>
   getNodesOverlapMap() const;
 
-  Teuchos::RCP<const Epetra_Map>
+  std::shared_ptr<const Epetra_Map>
   getComplexNonOverlapMap() const;
 
-  Teuchos::RCP<const Epetra_Map>
+  std::shared_ptr<const Epetra_Map>
   getComplexOverlapMap() const;
 
   const Epetra_Map&
@@ -184,24 +184,24 @@ public:
 protected:
 private:
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
-  const Teuchos::RCP<Teuchos::Time> computeEdgeCoefficientsTime_;
-  const Teuchos::RCP<Teuchos::Time> writeTime_;
+  const std::shared_ptr<Teuchos::Time> computeEdgeCoefficientsTime_;
+  const std::shared_ptr<Teuchos::Time> writeTime_;
 #endif
 
-  const Teuchos::RCP<const Epetra_Comm> comm_;
+  const std::shared_ptr<const Epetra_Comm> comm_;
 
   // Apparently, process_output_request is not const. Make
   // the ioBroker_ mutable so our write() can be const.
-  const Teuchos::RCP<stk::io::StkMeshIoBroker> ioBroker_;
+  const std::shared_ptr<stk::io::StkMeshIoBroker> ioBroker_;
 
   const std::vector<stk::mesh::Entity> ownedNodes_;
 
-  const Teuchos::RCP<const Epetra_Map> nodesMap_;
-  const Teuchos::RCP<const Epetra_Map> nodesOverlapMap_;
-  const Teuchos::RCP<const Epetra_Map> complexMap_;
-  const Teuchos::RCP<const Epetra_Map> complexOverlapMap_;
+  const std::shared_ptr<const Epetra_Map> nodesMap_;
+  const std::shared_ptr<const Epetra_Map> nodesOverlapMap_;
+  const std::shared_ptr<const Epetra_Map> complexMap_;
+  const std::shared_ptr<const Epetra_Map> complexOverlapMap_;
 
-  const Teuchos::RCP<const Epetra_Vector> controlVolumes_;
+  const std::shared_ptr<const Epetra_Vector> controlVolumes_;
 
   const EdgesContainer edgeData_;
 
@@ -219,30 +219,26 @@ private:
   const std::vector<Epetra_IntSerialDenseVector>
   buildGlobalIndexCache_() const;
 
-  Teuchos::RCP<stk::io::StkMeshIoBroker>
+  std::shared_ptr<stk::io::StkMeshIoBroker>
   read_(const std::string &fileName,
         const int index
         );
 
   void
-  computeControlVolumesTri_(
-      const Teuchos::RCP<Epetra_Vector> & cvOverlap
-      ) const;
+  computeControlVolumesTri_(Epetra_Vector & cvOverlap) const;
 
   void
-  computeControlVolumesTet_(
-      const Teuchos::RCP<Epetra_Vector> & cvOverlap
-      ) const;
+  computeControlVolumesTet_(Epetra_Vector & cvOverlap) const;
 
-  Teuchos::RCP<Epetra_Vector>
+  std::shared_ptr<Epetra_Vector>
   complexfield2vector_(const ScalarFieldType &realField,
                        const ScalarFieldType &imagField
                        ) const;
 
-  Teuchos::RCP<Epetra_Vector>
+  std::shared_ptr<Epetra_Vector>
   field2vector_(const ScalarFieldType &field) const;
 
-  Teuchos::RCP<Epetra_MultiVector>
+  std::shared_ptr<Epetra_MultiVector>
   field2vector_(const VectorFieldType &field,
                 const int numComponents
                 ) const;
@@ -259,13 +255,13 @@ private:
   computeEdgeCoefficients_() const;
 
   //! Compute the volume of the (Voronoi) control cells for each point.
-  Teuchos::RCP<Epetra_Vector>
+  std::shared_ptr<Epetra_Vector>
   computeControlVolumes_() const;
 
-  Teuchos::RCP<const Epetra_Map>
+  std::shared_ptr<const Epetra_Map>
   createEntitiesMap_(const std::vector<stk::mesh::Entity> &entityList) const;
 
-  Teuchos::RCP<const Epetra_Map>
+  std::shared_ptr<const Epetra_Map>
   createComplexMap_(const std::vector<stk::mesh::Entity> &nodeList) const;
 
   double

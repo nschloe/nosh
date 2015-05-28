@@ -29,9 +29,9 @@ namespace Nosh
 {
 // =============================================================================
 BorderedOperator::
-BorderedOperator(const Teuchos::RCP<Epetra_Operator> & innerOperator,
-                 const Teuchos::RCP<Epetra_Vector> & b,
-                 const Teuchos::RCP<Epetra_Vector> & c,
+BorderedOperator(const std::shared_ptr<Epetra_Operator> & innerOperator,
+                 const Epetra_Vector & b,
+                 const Epetra_Vector & c,
                  const double d
                 ):
   innerOperator_(innerOperator),
@@ -80,25 +80,20 @@ Apply(const Epetra_MultiVector &X,
   Epetra_Vector innerY(innerOperator_->OperatorRangeMap());
   TEUCHOS_ASSERT_EQUALITY(0, innerOperator_->Apply(innerX, innerY));
 
-  Teuchos::RCP<Epetra_Vector> rightBordering;
-  Teuchos::RCP<Epetra_Vector> lowerBordering;
-  if (useTranspose_) {
-    rightBordering = c_;
-    lowerBordering = b_;
-  } else {
-    rightBordering = b_;
-    lowerBordering = c_;
-  }
+  const Epetra_Vector & rightBordering = useTranspose_? c_ : b_;
+  const Epetra_Vector & lowerBordering = useTranspose_? b_ : c_;
 
   // Add right bordering.
-  for (int k = 0; k < n; k++)
-    TEUCHOS_ASSERT_EQUALITY(0, innerY(k)->Update(lambda[k], *rightBordering, 1.0));
+  for (int k = 0; k < n; k++) {
+    TEUCHOS_ASSERT_EQUALITY(0, innerY(k)->Update(lambda[k], rightBordering, 1.0));
+  }
 
   // Add lower bordering.
   std::vector<double> alpha(n);
-  TEUCHOS_ASSERT_EQUALITY(0, lowerBordering->Dot(innerX, &alpha[0]));
-  for (int k = 0; k < n; k++)
+  TEUCHOS_ASSERT_EQUALITY(0, lowerBordering.Dot(innerX, &alpha[0]));
+  for (int k = 0; k < n; k++) {
     alpha[k] += lambda[k] * d_;
+  }
 
   // Merge it all together.
   Nosh::BorderingHelpers::merge(innerY, &alpha[0], Y);
@@ -134,11 +129,11 @@ ApplyInverse(const Epetra_MultiVector &X,
   // Apply inverse inner operator with right hand side `right bordering'.
   // TODO useTranspose_
   Epetra_Vector AiB(innerOperator_->OperatorRangeMap());
-  TEUCHOS_ASSERT_EQUALITY(0, innerOperator_->ApplyInverse(*b_, AiB));
+  TEUCHOS_ASSERT_EQUALITY(0, innerOperator_->ApplyInverse(b_, AiB));
 
   // Schur complement S = D - <C, A^{-1} B>.
   double s;
-  TEUCHOS_ASSERT_EQUALITY(0, c_->Dot(AiB, &s));
+  TEUCHOS_ASSERT_EQUALITY(0, c_.Dot(AiB, &s));
   s = d_ - s;
   TEUCHOS_ASSERT_INEQUALITY(fabs(s), >=, 1.0e-15);
 
@@ -149,7 +144,7 @@ ApplyInverse(const Epetra_MultiVector &X,
     // innerY = A^{-1} X
     TEUCHOS_ASSERT_EQUALITY(0, innerOperator_->ApplyInverse(innerX, *(innerY(k))));
     double cAiX;
-    TEUCHOS_ASSERT_EQUALITY(0, c_->Dot(AiX, &cAiX));
+    TEUCHOS_ASSERT_EQUALITY(0, c_.Dot(AiX, &cAiX));
 
     // [A^{-1} X + A^{-1} B S^{-1} <C, A^{-1} X> - A^{-1} B S^{-1} lambda]
     innerY(k)->Update((cAiX-lambda[k])/s, AiB, 1.0);
@@ -215,7 +210,7 @@ OperatorRangeMap() const
   return rangeMap_;
 }
 // =============================================================================
-const Teuchos::RCP<Epetra_Operator>
+const std::shared_ptr<Epetra_Operator>
 BorderedOperator::
 getInnerOperator() const
 {
@@ -224,13 +219,13 @@ getInnerOperator() const
 // =============================================================================
 void
 BorderedOperator::
-resetBordering(const Teuchos::RCP<const Epetra_Vector> & b,
-               const Teuchos::RCP<const Epetra_Vector> & c,
+resetBordering(const Epetra_Vector & b,
+               const Epetra_Vector & c,
                const double d
               )
 {
-  *b_ = *b;
-  *c_ = *c;
+  b_ = b;
+  c_ = c;
   d_ = d;
   return;
 }

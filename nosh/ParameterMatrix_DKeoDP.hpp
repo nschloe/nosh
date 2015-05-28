@@ -60,9 +60,9 @@ class DKeoDP: public Virtual
 {
 public:
   DKeoDP(
-      const Teuchos::RCP<const Nosh::StkMesh> &mesh,
-      const Teuchos::RCP<const Nosh::ScalarField::Virtual> &thickness,
-      const Teuchos::RCP<Nosh::VectorField::Virtual> &mvp,
+      const std::shared_ptr<const Nosh::StkMesh> &mesh,
+      const std::shared_ptr<const Nosh::ScalarField::Virtual> &thickness,
+      const std::shared_ptr<Nosh::VectorField::Virtual> &mvp,
       const std::string & paramName
       );
 
@@ -70,7 +70,7 @@ public:
   ~DKeoDP();
 
   virtual
-  Teuchos::RCP<Virtual>
+  std::shared_ptr<Virtual>
   clone() const;
 
   //! Gets the initial parameters from this module.
@@ -91,10 +91,10 @@ private:
 
 private:
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
-  const Teuchos::RCP<Teuchos::Time> keoFillTime_;
+  const std::shared_ptr<Teuchos::Time> keoFillTime_;
 #endif
-  const Teuchos::RCP<const Nosh::ScalarField::Virtual> thickness_;
-  const Teuchos::RCP<Nosh::VectorField::Virtual> mvp_;
+  const std::shared_ptr<const Nosh::ScalarField::Virtual> thickness_;
+  const std::shared_ptr<Nosh::VectorField::Virtual> mvp_;
 
   mutable std::vector<double> alphaCache_;
   mutable bool alphaCacheUpToDate_;

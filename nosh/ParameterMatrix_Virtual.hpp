@@ -44,7 +44,7 @@ namespace ParameterMatrix
 class Virtual: public Epetra_FECrsMatrix
 {
 public:
-  Virtual(const Teuchos::RCP<const Nosh::StkMesh> &mesh);
+  Virtual(const std::shared_ptr<const Nosh::StkMesh> &mesh);
 
   // Destructor.
   virtual
@@ -52,11 +52,11 @@ public:
 
   //// https://en.wikibooks.org/wiki/More_C%2B%2B_Idioms/Virtual_Constructor
   //virtual
-  //Teuchos::RCP<Virtual>
+  //std::shared_ptr<Virtual>
   //create() const = 0;
 
   virtual
-  Teuchos::RCP<Virtual>
+  std::shared_ptr<Virtual>
   clone() const = 0;
 
   //! Fill the matrix with the parameter entries as given in params.
@@ -77,7 +77,7 @@ protected:
   refill_(const std::map<std::string, double> &params) = 0;
 
 protected:
-  const Teuchos::RCP<const Nosh::StkMesh> mesh_;
+  const std::shared_ptr<const Nosh::StkMesh> mesh_;
 
 private:
   std::map<std::string, double> buildParameters_;

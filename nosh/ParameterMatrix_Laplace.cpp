@@ -43,8 +43,8 @@ namespace ParameterMatrix
 {
 // =============================================================================
 Laplace::
-Laplace(const Teuchos::RCP<const Nosh::StkMesh> &mesh,
-        const Teuchos::RCP<const Nosh::ScalarField::Virtual> &thickness
+Laplace(const std::shared_ptr<const Nosh::StkMesh> &mesh,
+        const std::shared_ptr<const Nosh::ScalarField::Virtual> &thickness
         ) :
   Virtual(mesh),
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
@@ -118,18 +118,19 @@ fill_()
   TEUCHOS_ASSERT_EQUALITY(0, this->PutScalar(0.0));
 
 #ifndef NDEBUG
-  TEUCHOS_ASSERT(!mesh_.is_null());
+  TEUCHOS_ASSERT(mesh_);
 #endif
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   // Loop over the cells, create local load vector and mass matrix,
   // and insert them into the global matrix.
 #ifndef NDEBUG
-  TEUCHOS_ASSERT(!thickness_.is_null());
+  TEUCHOS_ASSERT(thickness_);
 #endif
 
   const std::vector<edge> edges = mesh_->getEdgeNodes();
-  if (!alphaCacheUpToDate_)
+  if (!alphaCacheUpToDate_) {
     this->buildAlphaCache_(edges, mesh_->getEdgeCoefficients());
+  }
 
   // Loop over all edges.
   for (auto k = 0; k < edges.size(); k++) {

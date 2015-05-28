@@ -30,14 +30,16 @@
 #include <Epetra_Map.h>
 #include <Epetra_Import.h>
 
+#include <Teuchos_RCPStdSharedPtrConversions.hpp>
+
 namespace Nosh
 {
 namespace ModelEvaluator
 {
 // ============================================================================
 Bordered::
-Bordered(const Teuchos::RCP<const Nosh::ModelEvaluator::Virtual> & modelEvaluator,
-         const Teuchos::RCP<const Epetra_Vector> & initialBordering,
+Bordered(const std::shared_ptr<const Nosh::ModelEvaluator::Virtual> & modelEvaluator,
+         const std::shared_ptr<const Epetra_Vector> & initialBordering,
          const double lambdaInit
        ):
   innerModelEval_(modelEvaluator),
@@ -55,14 +57,18 @@ Teuchos::RCP<const Epetra_Map>
 Bordered::
 get_x_map() const
 {
-  return Nosh::BorderingHelpers::extendMapBy1(*innerModelEval_->get_x_map());
+  return Teuchos::rcp(
+      Nosh::BorderingHelpers::extendMapBy1(*innerModelEval_->get_x_map())
+      );
 }
 // ============================================================================
 Teuchos::RCP<const Epetra_Map>
 Bordered::
 get_f_map() const
 {
-  return Nosh::BorderingHelpers::extendMapBy1(*innerModelEval_->get_f_map());
+  return Teuchos::rcp(
+      Nosh::BorderingHelpers::extendMapBy1(*innerModelEval_->get_f_map())
+      );
 }
 // ============================================================================
 Teuchos::RCP<const Epetra_Vector>
@@ -106,10 +112,14 @@ Teuchos::RCP<Epetra_Operator>
 Bordered::
 create_W() const
 {
-  return Teuchos::rcp(new Nosh::BorderedOperator(innerModelEval_->create_W(),
-                      Teuchos::rcp(new Epetra_Vector(*initialBordering_)),
-                      Teuchos::rcp(new Epetra_Vector(*initialBordering_)),
-                      0.0));
+  return Teuchos::rcp(
+      new Nosh::BorderedOperator(
+        Teuchos::get_shared_ptr(innerModelEval_->create_W()),
+        *initialBordering_,
+        *initialBordering_,
+        0.0
+        )
+      );
 }
 // =============================================================================
 Teuchos::RCP<EpetraExt::ModelEvaluator::Preconditioner>
@@ -118,10 +128,14 @@ create_WPrec() const
 {
   // Extract the inner preconditioner and fill a Bordered Operator with it.
   Teuchos::RCP<Epetra_Operator> borderedPrec =
-    Teuchos::rcp(new Nosh::BorderedOperator(innerModelEval_->create_WPrec()->PrecOp,
-                 Teuchos::rcp(new Epetra_Vector(*initialBordering_)),
-                 Teuchos::rcp(new Epetra_Vector(*initialBordering_)),
-                 0.0));
+    Teuchos::rcp(
+        new Nosh::BorderedOperator(
+          Teuchos::get_shared_ptr(innerModelEval_->create_WPrec()->PrecOp),
+          *initialBordering_,
+          *initialBordering_,
+          0.0
+          )
+        );
 
   // bool is answer to: "Prec is already inverted?"
   // This needs to be set to TRUE to make sure that the constructor of
@@ -165,11 +179,10 @@ evalModel(const InArgs &inArgs,
   Nosh::BorderingHelpers::dissect(*x_in, *inner_x_in, lambda);
 
   // Get i*x. This assumes a particular data layout in x_in.
-  const Teuchos::RCP<Epetra_Vector> ix =
-    Teuchos::rcp(new Epetra_Vector(inner_x_in->Map()));
-  for (int k = 0; k < ix->Map().NumMyElements()/2; k++) {
-    (*ix)[2*k] = - (*x_in)[2*k+1];
-    (*ix)[2*k+1] = (*x_in)[2*k];
+  Epetra_Vector ix(inner_x_in->Map());
+  for (int k = 0; k < ix.Map().NumMyElements()/2; k++) {
+    ix[2*k] = - (*x_in)[2*k+1];
+    ix[2*k+1] = (*x_in)[2*k];
   }
 
   // Copy over the args for use in innerModelEval.
@@ -178,9 +191,7 @@ evalModel(const InArgs &inArgs,
 
   OutArgs inner_outArgs = outArgs;
 
-  const Teuchos::RCP<const Epetra_Vector> & bordering =
-    //initialBordering_;
-    ix;
+  const Epetra_Vector & bordering = ix;
 
   // Compute F(x).
   const Teuchos::RCP<Epetra_Vector> &f_out = outArgs.get_f();
@@ -192,10 +203,10 @@ evalModel(const InArgs &inArgs,
     inner_outArgs.set_f(inner_f_out);
     innerModelEval_->evalModel(inner_inArgs, inner_outArgs);
     // Add lambda * x0.
-    TEUCHOS_ASSERT_EQUALITY(0, inner_f_out->Update(lambda[0], *bordering, 1.0));
+    TEUCHOS_ASSERT_EQUALITY(0, inner_f_out->Update(lambda[0], bordering, 1.0));
     // Append <psi0, x> to f_out.
     double r[1];
-    TEUCHOS_ASSERT_EQUALITY(0, bordering->Dot(*inner_x_in, r));
+    TEUCHOS_ASSERT_EQUALITY(0, bordering.Dot(*inner_x_in, r));
     //r = lambda;
     Nosh::BorderingHelpers::merge(*inner_f_out, r, *f_out);
   }
@@ -230,7 +241,7 @@ evalModel(const InArgs &inArgs,
       Teuchos::rcp_dynamic_cast<Nosh::BorderedOperator>(W_out, true);
 
     // Fill inner Jacobian.
-    inner_outArgs.set_W(borderedW->getInnerOperator());
+    inner_outArgs.set_W(Teuchos::rcp(borderedW->getInnerOperator()));
     innerModelEval_->evalModel(inner_inArgs, inner_outArgs);
 
     // Reset bordering.
@@ -244,7 +255,7 @@ evalModel(const InArgs &inArgs,
       Teuchos::rcp_dynamic_cast<Nosh::BorderedOperator>(WPrec_out, true);
 
     // Fill inner preconditioner.
-    inner_outArgs.set_WPrec(borderedPrec->getInnerOperator());
+    inner_outArgs.set_WPrec(Teuchos::rcp(borderedPrec->getInnerOperator()));
     innerModelEval_->evalModel(inner_inArgs, inner_outArgs);
 
     // Reset bordering.
@@ -270,7 +281,7 @@ gibbsEnergy(const Epetra_Vector &psi) const
   return innerModelEval_->gibbsEnergy(psi);
 }
 // =============================================================================
-const Teuchos::RCP<const Nosh::StkMesh>
+const std::shared_ptr<const Nosh::StkMesh>
 Bordered::
 getMesh() const
 {

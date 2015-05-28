@@ -59,7 +59,7 @@ public:
   gibbsEnergy(const Epetra_Vector &psi) const = 0;
 
   virtual
-  const Teuchos::RCP<const Nosh::StkMesh>
+  const std::shared_ptr<const Nosh::StkMesh>
   getMesh() const = 0;
 
 protected:

@@ -32,9 +32,9 @@ namespace VectorField
 // ============================================================================
 ConstantCurl::
 ConstantCurl(
-    const Teuchos::RCP<Nosh::StkMesh> &mesh,
-    const Teuchos::RCP<Eigen::Vector3d> &b,
-    const Teuchos::RCP<Eigen::Vector3d> &u
+    const std::shared_ptr<Nosh::StkMesh> &mesh,
+    const std::shared_ptr<Eigen::Vector3d> &b,
+    const std::shared_ptr<Eigen::Vector3d> &u
     ) :
   mesh_(mesh),
   b_(b),
@@ -49,14 +49,14 @@ ConstantCurl(
   theta_(0.0)
 {
 #ifndef NDEBUG
-  TEUCHOS_ASSERT(!mesh_.is_null());
-  TEUCHOS_ASSERT(!b_.is_null());
+  TEUCHOS_ASSERT(mesh_);
+  TEUCHOS_ASSERT(b_);
 #endif
   TEUCHOS_TEST_FOR_EXCEPT_MSG(
       b_->dot(*b_) != 1.0,
       "Curl vector not normalized: <b,b> = " << b->dot(*b) << "." << std::endl
       );
-  if (!u_.is_null()) {
+  if (u_) {
     TEUCHOS_TEST_FOR_EXCEPT_MSG(
         u_->dot(*u_) != 1.0,
         "Rotation vector not normalized: <u,u> = " << u_->dot(*u_) << "."
@@ -222,7 +222,7 @@ ConstantCurl::
 initializeEdgeCache_() const
 {
 #ifndef NDEBUG
-  TEUCHOS_ASSERT(!mesh_.is_null());
+  TEUCHOS_ASSERT(mesh_);
 #endif
   const std::vector<edge> edges = mesh_->getEdgeNodes();
 

@@ -32,15 +32,15 @@ namespace Nosh
 {
 // =============================================================================
 SaveEigenData::
-SaveEigenData(Teuchos::ParameterList &eigenParamList,
-              const Teuchos::RCP<const Nosh::ModelEvaluator::Virtual> &modelEval,
-              const std::string & fileName
-            ) :
-  eigenParamListPtr_(Teuchos::rcpFromRef<Teuchos::ParameterList>(
-                       eigenParamList)),
+SaveEigenData(
+    Teuchos::ParameterList &eigenParamList,
+    const std::shared_ptr<const Nosh::ModelEvaluator::Virtual> &modelEval,
+    const std::string & fileName
+    ) :
+  eigenParamListPtr_(Teuchos::rcpFromRef<Teuchos::ParameterList>(eigenParamList)),
   modelEval_(modelEval),
   csvWriter_(fileName, " "),
-  locaStepper_(Teuchos::null),
+  locaStepper_(),
   numComputeStableEigenvalues_(6)
 {
 }
@@ -52,7 +52,7 @@ SaveEigenData::
 // =============================================================================
 void
 SaveEigenData::
-setLocaStepper(const Teuchos::RCP<LOCA::Stepper> locaStepper)
+setLocaStepper(const std::shared_ptr<LOCA::Stepper> locaStepper)
 {
   locaStepper_ = locaStepper;
 }
@@ -61,27 +61,28 @@ void
 SaveEigenData::
 releaseLocaStepper()
 {
-  locaStepper_ = Teuchos::null;
+  locaStepper_ = nullptr;
 }
 // =============================================================================
 NOX::Abstract::Group::ReturnType
 SaveEigenData::
-save(Teuchos::RCP<std::vector<double> > &evals_r,
-      Teuchos::RCP<std::vector<double> > &evals_i,
-      Teuchos::RCP<NOX::Abstract::MultiVector> &evecs_r,
-      Teuchos::RCP<NOX::Abstract::MultiVector> &evecs_i
+save(
+    std::shared_ptr<std::vector<double> > &evals_r,
+    std::shared_ptr<std::vector<double> > &evals_i,
+    std::shared_ptr<NOX::Abstract::MultiVector> &evecs_r,
+    std::shared_ptr<NOX::Abstract::MultiVector> &evecs_i
     )
 {
-  // Can't fetch step index now, so rely on the function
-  // being called exactly once per step.
-  // Step number updated at the end of the function.
+  // Can't fetch step index now, so rely on the function being called exactly
+  // once per step.  Step number updated at the end of the function.
   static unsigned int step = 0;
   unsigned int numEigenValues = evals_r->size();
 
-  // Consider eigenvalue above tol to be unstable, and between -tol and tol to be nullstable.
-  // This is really loose here, and this makes sure that we get most actual nullvalues.
-  // Sometimes they are really hard to approach using regular continuation, but if tol
-  // flags an approximate nullvector, turning point continuation may help nailing it down.
+  // Consider eigenvalue above tol to be unstable, and between -tol and tol to
+  // be nullstable.  This is really loose here, and this makes sure that we get
+  // most actual nullvalues.  Sometimes they are really hard to approach using
+  // regular continuation, but if tol flags an approximate nullvector, turning
+  // point continuation may help nailing it down.
   const double tol = 1.0e-5;
 
   // Store all eigenstates in files.
@@ -100,10 +101,9 @@ save(Teuchos::RCP<std::vector<double> > &evals_r,
       eigenstateFileNameAppendix << "-nullstate" << numNullvalues++;
 
     // transform the real part of the eigenvector into psi
-    Teuchos::RCP<NOX::Abstract::Vector> realPart =
-      Teuchos::rcpFromRef((*evecs_r) [k]);
-    Teuchos::RCP<NOX::Epetra::Vector> realPartE =
-      Teuchos::rcp_dynamic_cast<NOX::Epetra::Vector> (realPart, true);
+    const NOX::Abstract::Vector & realPart = (*evecs_r)[k];
+    //std::shared_ptr<NOX::Epetra::Vector> realPartE =
+    //  Teuchos::rcp_dynamic_cast<NOX::Epetra::Vector> (realPart, true);
 
     // Don't store eigendata in a file right now.
     // The reason for this is that that the data gets written to the same
@@ -118,7 +118,7 @@ save(Teuchos::RCP<std::vector<double> > &evals_r,
     //   3) A mix of the two first options: Keep the solution states
     //      separate and put all the eigenstates into one file.
     //
-    //Teuchos::RCP<Nosh::State> eigenstate =
+    //std::shared_ptr<Nosh::State> eigenstate =
     //    modelEval_->createSavable(realPartE->getEpetraVector());
     //eigenstate->save(step);  //  eigenstateFileNameAppendix.str();
 
@@ -126,15 +126,14 @@ save(Teuchos::RCP<std::vector<double> > &evals_r,
     // so the eigenvector's real and imaginary parts are eigenvectors
     // in their own right. Check here for the imaginary part,
     // and print it, too, if it's nonzero.
-    Teuchos::RCP<NOX::Abstract::Vector> imagPart =
-      Teuchos::rcpFromRef((*evecs_i) [k]);
-    TEUCHOS_ASSERT_INEQUALITY(imagPart->norm(), <, 1.0e-15);
+    const NOX::Abstract::Vector & imagPart = (*evecs_i)[k];
+    TEUCHOS_ASSERT_INEQUALITY(imagPart.norm(), <, 1.0e-15);
 //        if (imagPart->norm() > 1.0e-15)
 //        {
-//            Teuchos::RCP<NOX::Epetra::Vector> imagPartE =
+//            std::shared_ptr<NOX::Epetra::Vector> imagPartE =
 //                Teuchos::rcp_dynamic_cast<NOX::Epetra::Vector> (imagPart, true);
 //            eigenstateFileNameAppendix << "-im";
-//            Teuchos::RCP<Nosh::State> eigenstate =
+//            std::shared_ptr<Nosh::State> eigenstate =
 //                modelEval_->createSavable(imagPartE->getEpetraVector());
 //            eigenstate->save(step); //eigenstateFileNameAppendix.str()
 //        }
@@ -157,8 +156,9 @@ save(Teuchos::RCP<std::vector<double> > &evals_r,
   }
 
   // Write out the data.
-  if (step == 0)
+  if (step == 0) {
     csvWriter_.writeHeader(eigenvaluesList);
+  }
   csvWriter_.writeRow(eigenvaluesList);
 
 //     eigenFileStream << step << "\t";
@@ -183,16 +183,17 @@ save(Teuchos::RCP<std::vector<double> > &evals_r,
   // Make sure that the shift SIGMA (if using Shift-Invert) sits THRESHOLD above
   // the rightmost eigenvalue.
   std::string &op = eigenParamListPtr_->get<std::string> ("Operator");
-  if (!locaStepper_.is_null() && op.compare("Shift-Invert") == 0) {
+  if (locaStepper_ && op.compare("Shift-Invert") == 0) {
     double maxEigenval = *std::max_element(evals_r->begin(), evals_r->end());
     double threshold = 0.5;
     eigenParamListPtr_->set("Shift", maxEigenval + threshold);
 
     // Preserve the sort manager.
-    // TODO For some reason, the call to eigensolverReset destroys the "Sort Manager" entry.
-    //      No idea why. This is potentially a bug in Trilinos.
-    Teuchos::RCP<Anasazi::SortManager<double> > d =
-      eigenParamListPtr_->get<Teuchos::RCP<Anasazi::SortManager<double> > >(
+    // TODO For some reason, the call to eigensolverReset destroys the "Sort
+    // Manager" entry.
+    // No idea why. This is potentially a bug in Trilinos.
+    std::shared_ptr<Anasazi::SortManager<double> > d =
+      eigenParamListPtr_->get<std::shared_ptr<Anasazi::SortManager<double> > >(
         "Sort Manager");
     // reset the eigensolver to take notice of the new values
     locaStepper_->eigensolverReset(eigenParamListPtr_);
@@ -200,10 +201,11 @@ save(Teuchos::RCP<std::vector<double> > &evals_r,
   }
 
   // update the step index for the next run
-  if (!locaStepper_.is_null())
+  if (locaStepper_) {
     step = locaStepper_->getStepNumber();
-  else
+  } else {
     step++;
+  }
 
   return NOX::Abstract::Group::Ok;
 }

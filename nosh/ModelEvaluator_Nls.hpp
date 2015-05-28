@@ -58,13 +58,13 @@ class Nls : public Virtual
 public:
   //! Constructor without initial guess.
   Nls (
-    const Teuchos::RCP<const Nosh::StkMesh> &mesh,
-    const Teuchos::RCP<Nosh::ParameterMatrix::Virtual> &keo,
-    const Teuchos::RCP<Nosh::ParameterMatrix::Virtual> &dKeoDP,
-    const Teuchos::RCP<const Nosh::ScalarField::Virtual> &scalarPotential,
+    const std::shared_ptr<const Nosh::StkMesh> &mesh,
+    const std::shared_ptr<Nosh::ParameterMatrix::Virtual> &keo,
+    const std::shared_ptr<Nosh::ParameterMatrix::Virtual> &dKeoDP,
+    const std::shared_ptr<const Nosh::ScalarField::Virtual> &scalarPotential,
     const double g,
-    const Teuchos::RCP<const Nosh::ScalarField::Virtual> &thickness,
-    const Teuchos::RCP<const Epetra_Vector> &initialX
+    const std::shared_ptr<const Nosh::ScalarField::Virtual> &thickness,
+    const std::shared_ptr<const Epetra_Vector> &initialX
     );
 
   // Destructor
@@ -125,7 +125,7 @@ public:
   double
   gibbsEnergy(const Epetra_Vector &psi) const;
 
-  const Teuchos::RCP<const Nosh::StkMesh>
+  const std::shared_ptr<const Nosh::StkMesh>
   getMesh() const;
 
 private:
@@ -144,23 +144,23 @@ private:
 
 protected:
 private:
-  const Teuchos::RCP<const Nosh::StkMesh> mesh_;
+  const std::shared_ptr<const Nosh::StkMesh> mesh_;
 
-  const Teuchos::RCP<const Nosh::ScalarField::Virtual> scalarPotential_;
+  const std::shared_ptr<const Nosh::ScalarField::Virtual> scalarPotential_;
 
-  const Teuchos::RCP<const Nosh::ScalarField::Virtual> thickness_;
+  const std::shared_ptr<const Nosh::ScalarField::Virtual> thickness_;
 
   const Teuchos::RCP<const Epetra_Vector> x_init_;
 
-  const Teuchos::RCP<Nosh::ParameterMatrix::Virtual> keo_;
-  const Teuchos::RCP<Nosh::ParameterMatrix::Virtual> dKeoDP_;
+  const std::shared_ptr<Nosh::ParameterMatrix::Virtual> keo_;
+  const std::shared_ptr<Nosh::ParameterMatrix::Virtual> dKeoDP_;
 
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
-  const Teuchos::RCP<Teuchos::Time> evalModelTime_;
-  const Teuchos::RCP<Teuchos::Time> computeFTime_;
-  const Teuchos::RCP<Teuchos::Time> computedFdpTime_;
-  const Teuchos::RCP<Teuchos::Time> fillJacobianTime_;
-  const Teuchos::RCP<Teuchos::Time> fillPreconditionerTime_;
+  const std::shared_ptr<Teuchos::Time> evalModelTime_;
+  const std::shared_ptr<Teuchos::Time> computeFTime_;
+  const std::shared_ptr<Teuchos::Time> computedFdpTime_;
+  const std::shared_ptr<Teuchos::Time> fillJacobianTime_;
+  const std::shared_ptr<Teuchos::Time> fillPreconditionerTime_;
 #endif
 
   Teuchos::RCP<Teuchos::FancyOStream> out_;

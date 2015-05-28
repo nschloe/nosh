@@ -39,18 +39,19 @@
 #include "nosh/ModelEvaluator_Nls.hpp"
 
 #include <Teuchos_UnitTestHarness.hpp>
+#include <Teuchos_RCPStdSharedPtrConversions.hpp>
 
 namespace
 {
 // ===========================================================================
 void
 computeFiniteDifference_(
-  const Teuchos::RCP<EpetraExt::ModelEvaluator> & modelEval,
+  const EpetraExt::ModelEvaluator & modelEval,
   EpetraExt::ModelEvaluator::InArgs & inArgs,
   EpetraExt::ModelEvaluator::OutArgs & outArgs,
-  const Teuchos::RCP<const Epetra_Vector> & p,
+  const std::shared_ptr<const Epetra_Vector> & p,
   const int paramIndex,
-  const Teuchos::RCP<Epetra_Vector> & fdiff
+  const std::shared_ptr<Epetra_Vector> & fdiff
 )
 {
   const double eps = 1.0e-6;
@@ -65,13 +66,13 @@ computeFiniteDifference_(
   Teuchos::RCP<Epetra_Vector> f0 =
     Teuchos::rcp(new Epetra_Vector(fdiff->Map()));
   outArgs.set_f(f0);
-  modelEval->evalModel(inArgs, outArgs);
+  modelEval.evalModel(inArgs, outArgs);
 
   // Get vector at x+eps.
   (*pp)[paramIndex] = origValue + eps;
   inArgs.set_p(0, pp);
-  outArgs.set_f(fdiff);
-  modelEval->evalModel(inArgs, outArgs);
+  outArgs.set_f(Teuchos::rcp(fdiff));
+  modelEval.evalModel(inArgs, outArgs);
 
   // Calculate the finite difference approx for df/dp.
   TEUCHOS_ASSERT_EQUALITY(0, fdiff->Update(-1.0, *f0, 1.0));
@@ -89,62 +90,65 @@ testDfdp(const std::string & inputFileNameBase,
 {
   // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
-  Teuchos::RCP<Epetra_MpiComm> eComm =
-    Teuchos::rcp<Epetra_MpiComm> (new Epetra_MpiComm(MPI_COMM_WORLD));
+  std::shared_ptr<Epetra_MpiComm> eComm(new Epetra_MpiComm(MPI_COMM_WORLD));
 #else
-  Teuchos::RCP<Epetra_SerialComm> eComm =
-    Teuchos::rcp<Epetra_SerialComm>(new Epetra_SerialComm());
+  std::shared_ptr<Epetra_SerialComm> eComm(new Epetra_SerialComm());
 #endif
 
   std::string inputFileName = "data/" + inputFileNameBase + ".e";
   // =========================================================================
   // Read the data from the file.
-  Teuchos::RCP<Nosh::StkMesh> mesh =
-    Teuchos::rcp(new Nosh::StkMesh(eComm, inputFileName, 0));
+  std::shared_ptr<Nosh::StkMesh> mesh(
+      new Nosh::StkMesh(eComm, inputFileName, 0)
+      );
 
   // Cast the data into something more accessible.
-  Teuchos::RCP<Epetra_Vector> z = mesh->createComplexVector("psi");
+  std::shared_ptr<Epetra_Vector> z = mesh->createComplexVector("psi");
 
   // Set the thickness field.
-  Teuchos::RCP<Nosh::ScalarField::Virtual> thickness =
-    Teuchos::rcp(new Nosh::ScalarField::Constant(*mesh, 1.0));
+  std::shared_ptr<Nosh::ScalarField::Virtual> thickness(
+      new Nosh::ScalarField::Constant(*mesh, 1.0)
+      );
 
-  Teuchos::RCP<Nosh::VectorField::Virtual> mvp =
-    Teuchos::rcp(new Nosh::VectorField::ExplicitValues(*mesh, "A", mu));
-  const Teuchos::RCP<Nosh::ParameterMatrix::Virtual> keoBuilder =
-    Teuchos::rcp(new Nosh::ParameterMatrix::Keo(mesh, thickness, mvp));
-  const Teuchos::RCP<Nosh::ParameterMatrix::Virtual> DKeoDPBuilder =
-    Teuchos::rcp(new Nosh::ParameterMatrix::DKeoDP(mesh, thickness, mvp, "g"));
+  std::shared_ptr<Nosh::VectorField::Virtual> mvp(
+      new Nosh::VectorField::ExplicitValues(*mesh, "A", mu)
+      );
+  const std::shared_ptr<Nosh::ParameterMatrix::Virtual> keoBuilder(
+      new Nosh::ParameterMatrix::Keo(mesh, thickness, mvp)
+      );
+  const std::shared_ptr<Nosh::ParameterMatrix::Virtual> DKeoDPBuilder(
+      new Nosh::ParameterMatrix::DKeoDP(mesh, thickness, mvp, "g")
+      );
 
-  Teuchos::RCP<Nosh::ScalarField::Virtual> sp =
-    Teuchos::rcp(new Nosh::ScalarField::Constant(*mesh, -1.0));
+  std::shared_ptr<Nosh::ScalarField::Virtual> sp(
+      new Nosh::ScalarField::Constant(*mesh, -1.0)
+      );
 
-  Teuchos::RCP<Nosh::ModelEvaluator::Nls> modelEval =
-    Teuchos::rcp(
-        new Nosh::ModelEvaluator::Nls(mesh,
-          keoBuilder,
-          DKeoDPBuilder,
-          sp,
-          1.0,
-          thickness,
-          z
-          ));
+  Nosh::ModelEvaluator::Nls modelEval(
+      mesh,
+      keoBuilder,
+      DKeoDPBuilder,
+      sp,
+      1.0,
+      thickness,
+      z
+      );
 
   // -------------------------------------------------------------------------
   // Perform the finite difference test for all parameters present in the
   // system.
   // Get a finite-difference approximation of df/dp.
-  EpetraExt::ModelEvaluator::InArgs inArgs = modelEval->createInArgs();
-  inArgs.set_x(z);
-  EpetraExt::ModelEvaluator::OutArgs outArgs = modelEval->createOutArgs();
+  EpetraExt::ModelEvaluator::InArgs inArgs = modelEval.createInArgs();
+  inArgs.set_x(Teuchos::rcp(z));
+  EpetraExt::ModelEvaluator::OutArgs outArgs = modelEval.createOutArgs();
 
   // Get a the initial parameter vector.
-  const Teuchos::RCP<const Epetra_Vector> p = modelEval->get_p_init(0);
-  Teuchos::RCP<Epetra_Vector> fdiff = Teuchos::rcp(new Epetra_Vector(z->Map()));
-  Teuchos::RCP<Epetra_Vector> dfdp = Teuchos::rcp(new Epetra_Vector(z->Map()));
+  const Teuchos::RCP<const Epetra_Vector> p = modelEval.get_p_init(0);
+  std::shared_ptr<Epetra_Vector> fdiff(new Epetra_Vector(z->Map()));
+  std::shared_ptr<Epetra_Vector> dfdp(new Epetra_Vector(z->Map()));
   EpetraExt::ModelEvaluator::DerivativeMultiVector deriv;
   std::vector<int> paramIndices(1);
-  const Teuchos::RCP<Epetra_Vector> nullV = Teuchos::null;
+  const std::shared_ptr<Epetra_Vector> nullV = nullptr;
   double r;
   // Only test the first parameter "g" for now since we have to set the DKeoDP
   // above. Alternative: Use "mu" above, and take paramIndex 1 here.
@@ -153,19 +157,26 @@ testDfdp(const std::string & inputFileNameBase,
   for (int paramIndex = 0; paramIndex < 1; paramIndex++) {
     std::cout << paramIndex << std::endl;
     // Get finite difference.
-    computeFiniteDifference_(modelEval, inArgs, outArgs, p, paramIndex, fdiff);
+    computeFiniteDifference_(
+        modelEval,
+        inArgs,
+        outArgs,
+        Teuchos::get_shared_ptr(p),
+        paramIndex,
+        fdiff
+        );
 
     // Get the actual derivative.
     inArgs.set_p(0, p);
     paramIndices[0] = paramIndex;
     deriv = EpetraExt::ModelEvaluator::DerivativeMultiVector(
-        dfdp,
+        Teuchos::rcp(dfdp),
         EpetraExt::ModelEvaluator::DERIV_MV_BY_COL,
         paramIndices
         );
     outArgs.set_DfDp(0, deriv);
-    outArgs.set_f(nullV);
-    modelEval->evalModel(inArgs, outArgs);
+    outArgs.set_f(Teuchos::rcp(nullV));
+    modelEval.evalModel(inArgs, outArgs);
 
     // Compare the two.
     TEUCHOS_ASSERT_EQUALITY(0, fdiff->Update(-1.0, *dfdp, 1.0));

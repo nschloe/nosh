@@ -45,14 +45,14 @@ int main ( int argc, char *argv[] )
 
     // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
-  Teuchos::RCP<Epetra_MpiComm> eComm =
+  std::shared_ptr<Epetra_MpiComm> eComm =
     Teuchos::rcp<Epetra_MpiComm> ( new Epetra_MpiComm ( MPI_COMM_WORLD ) );
 #else
-  Teuchos::RCP<Epetra_SerialComm>  eComm =
+  std::shared_ptr<Epetra_SerialComm>  eComm =
          Teuchos::rcp<Epetra_SerialComm> ( new Epetra_SerialComm() );
 #endif
 
-  const Teuchos::RCP<Teuchos::FancyOStream> out =
+  const std::shared_ptr<Teuchos::FancyOStream> out =
       Teuchos::VerboseObjectBase::getDefaultOStream();
 
   bool success = true;
@@ -85,30 +85,30 @@ int main ( int argc, char *argv[] )
     Ginla::StkMeshRead( *eComm, inputFileName, data );
 
     // Cast the data into something more accessible.
-    Teuchos::RCP<Ginla::StkMesh>     & mesh = data.get( "mesh", Teuchos::RCP<Ginla::StkMesh>() );
-    //Teuchos::RCP<Epetra_Vector>      & z = data.get( "psi", Teuchos::RCP<Epetra_Vector>() );
-    Teuchos::RCP<Epetra_MultiVector> & mvpValues = data.get( "A", Teuchos::RCP<Epetra_MultiVector>() );
-    Teuchos::RCP<Epetra_Vector>      & thickness = data.get( "thickness", Teuchos::RCP<Epetra_Vector>() );
+    std::shared_ptr<Ginla::StkMesh>     & mesh = data.get( "mesh", std::shared_ptr<Ginla::StkMesh>() );
+    //std::shared_ptr<Epetra_Vector>      & z = data.get( "psi", std::shared_ptr<Epetra_Vector>() );
+    std::shared_ptr<Epetra_MultiVector> & mvpValues = data.get( "A", std::shared_ptr<Epetra_MultiVector>() );
+    std::shared_ptr<Epetra_Vector>      & thickness = data.get( "thickness", std::shared_ptr<Epetra_Vector>() );
     Teuchos::ParameterList           & problemParameters = data.get( "Problem parameters", Teuchos::ParameterList() );
 
     double mu = problemParameters.get<double> ( "mu" );
-    Teuchos::RCP<Ginla::MagneticVectorPotential::ExplicitValues> mvp =
+    std::shared_ptr<Ginla::MagneticVectorPotential::ExplicitValues> mvp =
         Teuchos::rcp ( new Ginla::MagneticVectorPotential::ExplicitValues ( mesh, mvpValues, mu ) );
 
-    Teuchos::RCP<LOCA::ParameterVector> mvpParameters =
+    std::shared_ptr<LOCA::ParameterVector> mvpParameters =
         Teuchos::rcp( new LOCA::ParameterVector() );
     mvpParameters->addParameter( "mu", mu );
 
     // create the kinetic energy operator
-    Teuchos::RCP<Ginla::KeoContainer> keoContainer =
+    std::shared_ptr<Ginla::KeoContainer> keoContainer =
             Teuchos::rcp( new Ginla::KeoContainer( mesh, thickness, mvp ) );
     keoContainer->updateParameters( mvpParameters );
     // Copy out the matrix
     Epetra_CrsMatrix keoMatrix = *(keoContainer->getKeo());
 
     // create initial guess and right-hand side
-    Teuchos::RCP<Epetra_Vector> epetra_x = Teuchos::rcp( new Epetra_Vector( keoMatrix.OperatorDomainMap() ) );
-    Teuchos::RCP<Epetra_Vector> epetra_b = Teuchos::rcp( new Epetra_Vector( keoMatrix.OperatorRangeMap() ) );
+    std::shared_ptr<Epetra_Vector> epetra_x = Teuchos::rcp( new Epetra_Vector( keoMatrix.OperatorDomainMap() ) );
+    std::shared_ptr<Epetra_Vector> epetra_b = Teuchos::rcp( new Epetra_Vector( keoMatrix.OperatorRangeMap() ) );
     epetra_b->Random();
 
     // build the problem
@@ -117,11 +117,11 @@ int main ( int argc, char *argv[] )
     // -----------------------------------------------------------------------
 //      // Stratimikos.
 //      // Thyra glue
-//      Teuchos::RCP<const Thyra::LinearOpBase<double> > A = Thyra::epetraLinearOp( keo );
-//      Teuchos::RCP<Thyra::VectorBase<double> > x = Thyra::create_Vector( epetra_x, A->domain() );
-//      Teuchos::RCP<const Thyra::VectorBase<double> > b = Thyra::create_Vector( epetra_b, A->range() );
+//      std::shared_ptr<const Thyra::LinearOpBase<double> > A = Thyra::epetraLinearOp( keo );
+//      std::shared_ptr<Thyra::VectorBase<double> > x = Thyra::create_Vector( epetra_x, A->domain() );
+//      std::shared_ptr<const Thyra::VectorBase<double> > b = Thyra::create_Vector( epetra_b, A->range() );
 //
-//      Teuchos::RCP<Teuchos::FancyOStream>
+//      std::shared_ptr<Teuchos::FancyOStream>
 //        out = Teuchos::VerboseObjectBase::getDefaultOStream();
 //
 //      Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
@@ -135,7 +135,7 @@ int main ( int argc, char *argv[] )
 //
 //      // Create a linear solver factory given information read from the
 //      // parameter list.
-//      Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory =
+//      std::shared_ptr<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory =
 //        linearSolverBuilder.createLinearSolveStrategy("");
 //
 //      // Setup output stream and the verbosity level
@@ -143,7 +143,7 @@ int main ( int argc, char *argv[] )
 //      lowsFactory->setVerbLevel( Teuchos::VERB_LOW );
 //
 //      // Create a linear solver based on the forward operator A
-//      Teuchos::RCP<Thyra::LinearOpWithSolveBase<double> > lows =
+//      std::shared_ptr<Thyra::LinearOpWithSolveBase<double> > lows =
 //        Thyra::linearOpWithSolve(*lowsFactory, A);
 //
 //      // Solve the linear system (note: the initial guess in 'x' is critical)
@@ -170,7 +170,7 @@ int main ( int argc, char *argv[] )
     MLList.set("smoother: pre or post", "both");
     MLList.set("coarse: type", "Amesos-KLU");
     MLList.set("PDE equations", 2);
-    Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> MLPrec =
+    std::shared_ptr<ML_Epetra::MultiLevelPreconditioner> MLPrec =
                 Teuchos::rcp( new ML_Epetra::MultiLevelPreconditioner(keoMatrix, MLList) );
     MLPrec->PrintUnused(0);
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -219,7 +219,7 @@ int main ( int argc, char *argv[] )
     // direct solver
     Amesos Factory;
     std::string SolverType = "Klu";
-    Teuchos::RCP<Amesos_BaseSolver> Solver =
+    std::shared_ptr<Amesos_BaseSolver> Solver =
             Teuchos::rcp( Factory.Create( SolverType, problem ) );
     TEUCHOS_ASSERT( !Solver.is_null() );
 

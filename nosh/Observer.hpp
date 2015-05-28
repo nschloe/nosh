@@ -48,7 +48,7 @@ class Observer:  public NOX::Epetra::Observer
 {
 public:
 //! Constructor
-  Observer(const Teuchos::RCP<const Nosh::ModelEvaluator::Virtual> &modelEval,
+  Observer(const std::shared_ptr<const Nosh::ModelEvaluator::Virtual> &modelEval,
            const std::string & csvFilename = "",
            const std::string & contParamName = "",
            const bool isTurningPointContinuation = false
@@ -86,7 +86,7 @@ private:
                              );
 
 private:
-  const Teuchos::RCP<const Nosh::ModelEvaluator::Virtual> modelEval_;
+  const std::shared_ptr<const Nosh::ModelEvaluator::Virtual> modelEval_;
   Nosh::CsvWriter csvWriter_;
   const std::string contParamName_;
   const bool isTurningPointContinuation_;

@@ -29,7 +29,7 @@ namespace Nosh
 {
 namespace BorderingHelpers
 {
-Teuchos::RCP<const Epetra_Map>
+std::shared_ptr<const Epetra_Map>
 extendMapBy1(const Epetra_BlockMap & map);
 
 void

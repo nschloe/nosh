@@ -54,29 +54,28 @@ testKeo(const std::string & inputFileNameBase,
 {
   // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
-  Teuchos::RCP<Epetra_MpiComm> eComm =
-    Teuchos::rcp<Epetra_MpiComm> (new Epetra_MpiComm (MPI_COMM_WORLD));
+  std::shared_ptr<Epetra_MpiComm> eComm(new Epetra_MpiComm (MPI_COMM_WORLD));
 #else
-  Teuchos::RCP<Epetra_SerialComm> eComm =
-    Teuchos::rcp<Epetra_SerialComm> (new Epetra_SerialComm());
+  std::shared_ptr<Epetra_SerialComm> eComm(new Epetra_SerialComm());
 #endif
 
   std::string inputFileName = "data/" + inputFileNameBase + ".e";
   // =========================================================================
   // Read the data from the file.
-  Teuchos::RCP<Nosh::StkMesh> mesh =
-    Teuchos::rcp(new Nosh::StkMesh(eComm, inputFileName, 0));
+  std::shared_ptr<Nosh::StkMesh> mesh(new Nosh::StkMesh(eComm, inputFileName, 0));
 
   // Cast the data into something more accessible.
-  Teuchos::RCP<Epetra_Vector> z =
+  std::shared_ptr<Epetra_Vector> z =
     mesh->createComplexVector("psi");
 
-  Teuchos::RCP<Nosh::VectorField::Virtual> mvp =
-    Teuchos::rcp(new Nosh::VectorField::ExplicitValues(*mesh, "A", initMu));
+  std::shared_ptr<Nosh::VectorField::Virtual> mvp(
+      new Nosh::VectorField::ExplicitValues(*mesh, "A", initMu)
+      );
 
   // Set the thickness field.
-  Teuchos::RCP<Nosh::ScalarField::Virtual> thickness =
-    Teuchos::rcp(new Nosh::ScalarField::Constant(*mesh, 1.0));
+  std::shared_ptr<Nosh::ScalarField::Virtual> thickness(
+      new Nosh::ScalarField::Constant(*mesh, 1.0)
+      );
 
   Nosh::ParameterMatrix::Keo keo(mesh, thickness, mvp);
 

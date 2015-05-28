@@ -39,6 +39,7 @@
 #include "nosh/ModelEvaluator_Nls.hpp"
 
 #include <Teuchos_UnitTestHarness.hpp>
+#include <Teuchos_RCPStdSharedPtrConversions.hpp>
 
 namespace
 {
@@ -54,60 +55,63 @@ testComputeF(const std::string & inputFileNameBase,
 {
   // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
-  Teuchos::RCP<Epetra_MpiComm> eComm =
-    Teuchos::rcp<Epetra_MpiComm> (new Epetra_MpiComm (MPI_COMM_WORLD));
+  std::shared_ptr<Epetra_MpiComm> eComm(new Epetra_MpiComm (MPI_COMM_WORLD));
 #else
-  Teuchos::RCP<Epetra_SerialComm> eComm =
-    Teuchos::rcp<Epetra_SerialComm> (new Epetra_SerialComm());
+  std::shared_ptr<Epetra_SerialComm> eComm(new Epetra_SerialComm());
 #endif
 
   std::string inputFileName = "data/" + inputFileNameBase + ".e";
   // =========================================================================
   // Read the data from the file.
-  Teuchos::RCP<Nosh::StkMesh> mesh =
-    Teuchos::rcp(new Nosh::StkMesh(eComm, inputFileName, 0));
+  std::shared_ptr<Nosh::StkMesh> mesh(
+      new Nosh::StkMesh(eComm, inputFileName, 0)
+      );
 
   // Cast the data into something more accessible.
-  Teuchos::RCP<Epetra_Vector> z =
+  std::shared_ptr<Epetra_Vector> z =
     mesh->createComplexVector("psi");
 
   // Set the thickness field.
-  Teuchos::RCP<Nosh::ScalarField::Virtual> thickness =
-    Teuchos::rcp(new Nosh::ScalarField::Constant(*mesh, 1.0));
+  std::shared_ptr<Nosh::ScalarField::Virtual> thickness(
+      new Nosh::ScalarField::Constant(*mesh, 1.0)
+      );
 
-  Teuchos::RCP<Nosh::VectorField::Virtual> mvp =
-    Teuchos::rcp(new Nosh::VectorField::ExplicitValues(*mesh, "A", mu));
-  const Teuchos::RCP<Nosh::ParameterMatrix::Virtual> keoBuilder =
-    Teuchos::rcp(new Nosh::ParameterMatrix::Keo(mesh, thickness, mvp));
-  const Teuchos::RCP<Nosh::ParameterMatrix::Virtual> DKeoDPBuilder =
-    Teuchos::rcp(new Nosh::ParameterMatrix::DKeoDP(mesh, thickness, mvp, "mu"));
+  std::shared_ptr<Nosh::VectorField::Virtual> mvp(
+      new Nosh::VectorField::ExplicitValues(*mesh, "A", mu)
+      );
+  const std::shared_ptr<Nosh::ParameterMatrix::Virtual> keoBuilder(
+      new Nosh::ParameterMatrix::Keo(mesh, thickness, mvp)
+      );
+  const std::shared_ptr<Nosh::ParameterMatrix::Virtual> DKeoDPBuilder(
+      new Nosh::ParameterMatrix::DKeoDP(mesh, thickness, mvp, "mu")
+      );
 
-  Teuchos::RCP<Nosh::ScalarField::Virtual> sp =
-    Teuchos::rcp(new Nosh::ScalarField::Constant(*mesh, -1.0));
+  std::shared_ptr<Nosh::ScalarField::Virtual> sp(
+      new Nosh::ScalarField::Constant(*mesh, -1.0)
+      );
 
-  Teuchos::RCP<Nosh::ModelEvaluator::Nls> modelEval =
-    Teuchos::rcp(new Nosh::ModelEvaluator::Nls(
-          mesh,
-          keoBuilder,
-          DKeoDPBuilder,
-          sp,
-          1.0,
-          thickness,
-          z)
-        );
+  Nosh::ModelEvaluator::Nls modelEval(
+      mesh,
+      keoBuilder,
+      DKeoDPBuilder,
+      sp,
+      1.0,
+      thickness,
+      z
+      );
 
   // Create inArgs. Use p_init as parameters.
-  EpetraExt::ModelEvaluator::InArgs inArgs = modelEval->createInArgs();
-  inArgs.set_x(z);
-  inArgs.set_p(0, modelEval->get_p_init(0));
+  EpetraExt::ModelEvaluator::InArgs inArgs = modelEval.createInArgs();
+  inArgs.set_x(Teuchos::rcp(z));
+  inArgs.set_p(0, modelEval.get_p_init(0));
 
   // Create outArgs.
-  EpetraExt::ModelEvaluator::OutArgs outArgs = modelEval->createOutArgs();
+  EpetraExt::ModelEvaluator::OutArgs outArgs = modelEval.createOutArgs();
   Teuchos::RCP<Epetra_Vector> f = Teuchos::rcp(new Epetra_Vector(z->Map()));
   outArgs.set_f(f);
 
   // Fetch.
-  modelEval->evalModel(inArgs, outArgs);
+  modelEval.evalModel(inArgs, outArgs);
 
   // check the norms
   double normOne;

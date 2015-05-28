@@ -28,7 +28,7 @@ namespace ParameterMatrix
 {
 // ============================================================================
 Virtual::
-Virtual(const Teuchos::RCP<const Nosh::StkMesh> &mesh):
+Virtual(const std::shared_ptr<const Nosh::StkMesh> &mesh):
   Epetra_FECrsMatrix(Copy, mesh->buildComplexGraph()),
   mesh_(mesh),
   buildParameters_()

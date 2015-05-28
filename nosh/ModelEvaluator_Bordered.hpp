@@ -34,15 +34,14 @@ namespace ModelEvaluator
 class Bordered : public Nosh::ModelEvaluator::Virtual
 {
 public:
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-//! Constructor without initial guess.
+  //! Constructor without initial guess.
   Bordered (
-    const Teuchos::RCP<const Nosh::ModelEvaluator::Virtual> & modelEval,
-    const Teuchos::RCP<const Epetra_Vector> & initialBordering,
-    const double lambdaInit
- );
+      const std::shared_ptr<const Nosh::ModelEvaluator::Virtual> & modelEval,
+      const std::shared_ptr<const Epetra_Vector> & initialBordering,
+      const double lambdaInit
+      );
 
-// Destructor
+  // Destructor
   virtual
   ~Bordered();
 
@@ -88,8 +87,10 @@ public:
 
   virtual
   void
-  evalModel(const InArgs &inArgs,
-             const OutArgs &outArgs) const;
+  evalModel(
+      const InArgs &inArgs,
+      const OutArgs &outArgs
+      ) const;
 
 public:
   virtual
@@ -103,15 +104,14 @@ public:
   gibbsEnergy(const Epetra_Vector &psi) const;
 
   virtual
-  const Teuchos::RCP<const Nosh::StkMesh>
+  const std::shared_ptr<const Nosh::StkMesh>
   getMesh() const;
 
 protected:
 private:
-  const Teuchos::RCP<const Nosh::ModelEvaluator::Virtual> innerModelEval_;
-  const Teuchos::RCP<const Epetra_Vector> initialBordering_;
+  const std::shared_ptr<const Nosh::ModelEvaluator::Virtual> innerModelEval_;
+  const std::shared_ptr<const Epetra_Vector> initialBordering_;
   const double lambdaInit_;
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 };
 } // namespace ModelEvaluator
 } // namespace Nosh

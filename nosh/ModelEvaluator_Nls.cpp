@@ -39,6 +39,7 @@
 #endif
 
 #include <Teuchos_VerboseObject.hpp>
+#include <Teuchos_RCPStdSharedPtrConversions.hpp>
 
 namespace Nosh
 {
@@ -47,18 +48,18 @@ namespace ModelEvaluator
 // ============================================================================
 Nls::
 Nls(
-  const Teuchos::RCP<const Nosh::StkMesh> &mesh,
-  const Teuchos::RCP<Nosh::ParameterMatrix::Virtual> &keo,
-  const Teuchos::RCP<Nosh::ParameterMatrix::Virtual> &dKeoDP,
-  const Teuchos::RCP<const Nosh::ScalarField::Virtual> &scalarPotential,
+  const std::shared_ptr<const Nosh::StkMesh> &mesh,
+  const std::shared_ptr<Nosh::ParameterMatrix::Virtual> &keo,
+  const std::shared_ptr<Nosh::ParameterMatrix::Virtual> &dKeoDP,
+  const std::shared_ptr<const Nosh::ScalarField::Virtual> &scalarPotential,
   const double g,
-  const Teuchos::RCP<const Nosh::ScalarField::Virtual> &thickness,
-  const Teuchos::RCP<const Epetra_Vector> &initialX
+  const std::shared_ptr<const Nosh::ScalarField::Virtual> &thickness,
+  const std::shared_ptr<const Epetra_Vector> &initialX
 ) :
   mesh_(mesh),
   scalarPotential_(scalarPotential),
   thickness_(thickness),
-  x_init_(initialX),
+  x_init_(Teuchos::rcp(initialX)),
   keo_(keo),
   dKeoDP_(dKeoDP),
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
@@ -126,9 +127,9 @@ get_x_map() const
   // as Epetra_Vector::Map() only returns an Epetra_BlockMap which cannot be
   // cast into an Epetra_Map, this workaround is needed.
 #ifndef NDEBUG
-  TEUCHOS_ASSERT(!mesh_.is_null());
+  TEUCHOS_ASSERT(mesh_);
 #endif
-  return mesh_->getComplexNonOverlapMap();
+  return Teuchos::rcp(mesh_->getComplexNonOverlapMap());
 }
 // ============================================================================
 Teuchos::RCP<const Epetra_Map>
@@ -136,9 +137,9 @@ Nls::
 get_f_map() const
 {
 #ifndef NDEBUG
-  TEUCHOS_ASSERT(!mesh_.is_null());
+  TEUCHOS_ASSERT(mesh_);
 #endif
-  return mesh_->getComplexNonOverlapMap();
+  return Teuchos::rcp(mesh_->getComplexNonOverlapMap());
 }
 // ============================================================================
 Teuchos::RCP<const Epetra_Vector>
@@ -328,7 +329,6 @@ evalModel(
     //std::cout << (*paramNames)[k] << " " << (*p_in)[k] << std::endl;
   }
 
-
   // compute F
   const Teuchos::RCP<Epetra_Vector> &f_out = outArgs.get_f();
   if (!f_out.is_null()) {
@@ -341,8 +341,7 @@ evalModel(
   // Compute df/dp.
   const EpetraExt::ModelEvaluator::DerivativeMultiVector &derivMv =
     outArgs.get_DfDp(0).getDerivativeMultiVector();
-  const Teuchos::RCP<Epetra_MultiVector> &dfdp_out =
-    derivMv.getMultiVector();
+  const Teuchos::RCP<Epetra_MultiVector> &dfdp_out = derivMv.getMultiVector();
   if (!dfdp_out.is_null()) {
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor tm2(*computedFdpTime_);
@@ -371,7 +370,7 @@ evalModel(
 #endif
     const Teuchos::RCP<Nosh::JacobianOperator> & jac =
       Teuchos::rcp_dynamic_cast<Nosh::JacobianOperator>(W_out, true);
-    jac->rebuild(params, x_in);
+    jac->rebuild(params, *x_in);
   }
 
   // Fill preconditioner.
@@ -403,9 +402,9 @@ computeF_(
   // Add the nonlinear part (mass lumping).
 #ifndef NDEBUG
   TEUCHOS_ASSERT(FVec.Map().SameAs(x.Map()));
-  TEUCHOS_ASSERT(!mesh_.is_null());
-  TEUCHOS_ASSERT(!scalarPotential_.is_null());
-  TEUCHOS_ASSERT(!thickness_.is_null());
+  TEUCHOS_ASSERT(mesh_);
+  TEUCHOS_ASSERT(scalarPotential_);
+  TEUCHOS_ASSERT(thickness_);
 #endif
 
   const Epetra_Vector &controlVolumes = *(mesh_->getControlVolumes());
@@ -499,8 +498,8 @@ computeDFDP_(
 
 #ifndef NDEBUG
   TEUCHOS_ASSERT(FVec.Map().SameAs(x.Map()));
-  TEUCHOS_ASSERT(!mesh_.is_null());
-  TEUCHOS_ASSERT(!thickness_.is_null());
+  TEUCHOS_ASSERT(mesh_);
+  TEUCHOS_ASSERT(thickness_);
 #endif
   const Epetra_Vector &controlVolumes = *(mesh_->getControlVolumes());
 
@@ -595,7 +594,7 @@ gibbsEnergy(const Epetra_Vector &psi) const
   return globalEnergy / mesh_->getDomainVolume();
 }
 // =============================================================================
-const Teuchos::RCP<const Nosh::StkMesh>
+const std::shared_ptr<const Nosh::StkMesh>
 Nls::
 getMesh() const
 {

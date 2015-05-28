@@ -62,7 +62,7 @@ public:
 
 protected:
 private:
-  const Teuchos::RCP<const Epetra_Vector> nodeValues_;
+  const std::shared_ptr<const Epetra_Vector> nodeValues_;
 };
 } // namespace ScalarField
 } // namespace Nosh

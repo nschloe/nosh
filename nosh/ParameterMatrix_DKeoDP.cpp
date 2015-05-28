@@ -46,9 +46,9 @@ namespace ParameterMatrix
 // =============================================================================
 DKeoDP::
 DKeoDP(
-    const Teuchos::RCP<const Nosh::StkMesh> &mesh,
-    const Teuchos::RCP<const Nosh::ScalarField::Virtual> &thickness,
-    const Teuchos::RCP<Nosh::VectorField::Virtual> &mvp,
+    const std::shared_ptr<const Nosh::StkMesh> &mesh,
+    const std::shared_ptr<const Nosh::ScalarField::Virtual> &thickness,
+    const std::shared_ptr<Nosh::VectorField::Virtual> &mvp,
     const std::string & paramName
    ):
   Virtual(mesh),
@@ -68,11 +68,11 @@ DKeoDP::
 {
 }
 // =============================================================================
-Teuchos::RCP<Virtual>
+std::shared_ptr<Virtual>
 DKeoDP::
 clone() const
 {
-  return Teuchos::RCP<DKeoDP>(new DKeoDP(*this));
+  return std::shared_ptr<DKeoDP>(new DKeoDP(*this));
 }
 // =============================================================================
 const std::map<std::string, double>
@@ -93,19 +93,20 @@ refill_(const std::map<std::string, double> & params)
   TEUCHOS_ASSERT_EQUALITY(0, this->PutScalar(0.0));
 
 #ifndef NDEBUG
-  TEUCHOS_ASSERT(!mesh_.is_null());
+  TEUCHOS_ASSERT(mesh_);
 #endif
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   // Loop over the cells, create local load vector and mass matrix,
   // and insert them into the global matrix.
 #ifndef NDEBUG
-  TEUCHOS_ASSERT(!thickness_.is_null());
-  TEUCHOS_ASSERT(!mvp_.is_null());
+  TEUCHOS_ASSERT(thickness_);
+  TEUCHOS_ASSERT(mvp_);
 #endif
 
   const std::vector<edge> edges = mesh_->getEdgeNodes();
-  if (!alphaCacheUpToDate_)
+  if (!alphaCacheUpToDate_) {
     this->buildAlphaCache_(edges, mesh_->getEdgeCoefficients());
+  }
 
   double v[3];
   // set parameter
@@ -182,7 +183,7 @@ buildAlphaCache_(
   std::map<std::string, double> dummy;
   const Epetra_Vector thicknessValues = thickness_->getV(dummy);
 
-  Teuchos::RCP<const Epetra_Map> overlapMap = mesh_->getNodesOverlapMap();
+  std::shared_ptr<const Epetra_Map> overlapMap = mesh_->getNodesOverlapMap();
   // We need to make sure that thicknessValues are distributed on
   // the overlap map.
   // Make sure to use Import here instead of Export as the vector

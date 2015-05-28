@@ -66,7 +66,7 @@ public:
 
 protected:
 private:
-  const Teuchos::RCP<const Epetra_Map> map_;
+  const std::shared_ptr<const Epetra_Map> map_;
   const double c_;
   const std::string param1Name_;
   const double param1InitValue_;

@@ -48,10 +48,10 @@ testCache(const std::string & inputFileNameBase,
 
   // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
-  Teuchos::RCP<Epetra_MpiComm> eComm =
+  std::shared_ptr<Epetra_MpiComm> eComm =
     Teuchos::rcp<Epetra_MpiComm> (new Epetra_MpiComm (MPI_COMM_WORLD));
 #else
-  Teuchos::RCP<Epetra_SerialComm> eComm =
+  std::shared_ptr<Epetra_SerialComm> eComm =
     Teuchos::rcp<Epetra_SerialComm> (new Epetra_SerialComm());
 #endif
 
@@ -62,7 +62,7 @@ testCache(const std::string & inputFileNameBase,
   Nosh::Helpers::StkMeshRead(eComm, inputFileName, 0, data);
 
   // Cast the data into something more accessible.
-  Teuchos::RCP<Nosh::StkMesh> & mesh = data.get("mesh", Teuchos::RCP<Nosh::StkMesh>());
+  std::shared_ptr<Nosh::StkMesh> & mesh = data.get("mesh", std::shared_ptr<Nosh::StkMesh>());
 
   std::vectorRCP<double> edgeCoefficients;
   std::vectorRCP<DoubleVector> edgeCoefficientsFallback;

@@ -48,11 +48,9 @@ testMesh(const std::string & inputFileNameBase,
 {
   // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
-  Teuchos::RCP<Epetra_MpiComm> eComm =
-    Teuchos::rcp<Epetra_MpiComm> (new Epetra_MpiComm (MPI_COMM_WORLD));
+  std::shared_ptr<Epetra_MpiComm> eComm(new Epetra_MpiComm (MPI_COMM_WORLD));
 #else
-  Teuchos::RCP<Epetra_SerialComm> eComm =
-    Teuchos::rcp<Epetra_SerialComm> (new Epetra_SerialComm());
+  std::shared_ptr<Epetra_SerialComm> eComm(new Epetra_SerialComm());
 #endif
 
   std::string inputFileName = "data/" + inputFileNameBase + ".e";
@@ -63,7 +61,7 @@ testMesh(const std::string & inputFileNameBase,
   const unsigned int numNodes = mesh.getNumNodes();
   TEUCHOS_ASSERT_EQUALITY(numNodes, controlNumNodes);
 
-  const Teuchos::RCP<const Epetra_Vector> controlVols = mesh.getControlVolumes();
+  const std::shared_ptr<const Epetra_Vector> controlVols = mesh.getControlVolumes();
   double r;
   TEUCHOS_ASSERT_EQUALITY(0, controlVols->Norm1(&r));
   TEST_FLOATING_EQUALITY(r, controlVolNormOne, 1.0e-12);
