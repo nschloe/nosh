@@ -31,8 +31,8 @@
 
 // ============================================================================
 MyScalarField::
-MyScalarField(const RCP<const Nosh::StkMesh> & mesh):
-  mesh_( mesh )
+MyScalarField(const std::shared_ptr<const Nosh::StkMesh> & mesh):
+  mesh_(mesh)
 {
 }
 // ============================================================================

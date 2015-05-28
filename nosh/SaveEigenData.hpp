@@ -68,10 +68,10 @@ public:
   virtual
   NOX::Abstract::Group::ReturnType
   save(
-      std::shared_ptr<std::vector<double> > &evals_r,
-      std::shared_ptr<std::vector<double> > &evals_i,
-      std::shared_ptr<NOX::Abstract::MultiVector> &evecs_r,
-      std::shared_ptr<NOX::Abstract::MultiVector> &evecs_i
+      Teuchos::RCP<std::vector<double> > &evals_r,
+      Teuchos::RCP<std::vector<double> > &evals_i,
+      Teuchos::RCP<NOX::Abstract::MultiVector> &evecs_r,
+      Teuchos::RCP<NOX::Abstract::MultiVector> &evecs_i
       );
 
   void

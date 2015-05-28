@@ -23,8 +23,6 @@
 #include <map>
 #include <string>
 
-#include <Teuchos_RCP.hpp>
-
 #include "nosh/VectorField_Virtual.hpp"
 #include "nosh/StkMesh.hpp"
 

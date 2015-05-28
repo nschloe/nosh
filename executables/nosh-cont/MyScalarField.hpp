@@ -19,30 +19,26 @@
 // @HEADER
 #ifndef MYSCALARFIELD_H_
 #define MYSCALARFIELD_H_
-// =============================================================================
+
 // forward defs
 class Epetra_Vector;
 class Epetra_Map;
 namespace Nosh{
 class StkMesh;
 }
-// =============================================================================
+
 #include <map>
+#include <memory>
 #include <string>
 
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_Array.hpp>
 #include <Epetra_Comm.h>
 
 #include "nosh/ScalarField_Virtual.hpp"
-// =============================================================================
-using Teuchos::RCP;
-using Teuchos::rcp;
-// =============================================================================
+
 class MyScalarField: public Nosh::ScalarField::Virtual
 {
 public:
-MyScalarField(const RCP<const Nosh::StkMesh> & mesh);
+MyScalarField(const std::shared_ptr<const Nosh::StkMesh> & mesh);
 
 Epetra_Vector
 createPInit_(const Epetra_Map & map);
@@ -56,8 +52,7 @@ getParameters() const;
 
 virtual
 const Epetra_Vector
-getV(const std::map<std::string, double> & params
-     ) const;
+getV(const std::map<std::string, double> & params) const;
 
 virtual
 const Epetra_Vector
@@ -67,6 +62,6 @@ getdVdP(const std::map<std::string, double> & params,
 
 protected:
 private:
-const RCP<const Nosh::StkMesh> mesh_;
+const std::shared_ptr<const Nosh::StkMesh> mesh_;
 };
 #endif // MYSCALARFIELD_H_

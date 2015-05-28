@@ -26,6 +26,7 @@
 #include <Teuchos_VerboseObject.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
 #include <Teuchos_TimeMonitor.hpp>
+#include <Teuchos_RCPStdSharedPtrConversions.hpp>
 
 #ifdef HAVE_MPI
 #include <Epetra_MpiComm.h>
@@ -53,25 +54,19 @@
 
 #include "MyScalarField.hpp"
 
-// =============================================================================
-using Teuchos::rcp;
-using Teuchos::RCP;
-// =============================================================================
 int main(int argc, char *argv[])
 {
   // Create output stream. (Handy for multicore output.)
-  const RCP<Teuchos::FancyOStream> out =
+  const Teuchos::RCP<Teuchos::FancyOStream> out =
     Teuchos::VerboseObjectBase::getDefaultOStream();
 
   Teuchos::GlobalMPISession session(&argc, &argv, NULL);
 
   // Create a communicator for Epetra objects.
 #ifdef HAVE_MPI
-  RCP<const Epetra_MpiComm> eComm =
-    rcp<Epetra_MpiComm>(new Epetra_MpiComm(MPI_COMM_WORLD));
+  std::shared_ptr<const Epetra_MpiComm> eComm(new Epetra_MpiComm(MPI_COMM_WORLD));
 #else
-  RCP<const Epetra_SerialComm> eComm =
-    rcp<Epetra_SerialComm>(new Epetra_SerialComm());
+  std::shared_ptr<const Epetra_SerialComm> eComm(new Epetra_SerialComm());
 #endif
 
   // Wrap the whole code in a big try-catch-statement.
@@ -101,9 +96,13 @@ int main(int argc, char *argv[])
     myClp.parse(argc, argv);
 
     // Retrieve Piro parameter list from given file.
-    RCP<Teuchos::ParameterList> piroParams =
-      rcp(new Teuchos::ParameterList());
-    Teuchos::updateParametersFromXmlFile(xmlInputPath, piroParams.ptr());
+    std::shared_ptr<Teuchos::ParameterList> piroParams(
+        new Teuchos::ParameterList()
+        );
+    Teuchos::updateParametersFromXmlFile(
+        xmlInputPath,
+        Teuchos::rcp(piroParams).ptr()
+        );
     // =======================================================================
     // Extract the location of input and output files.
     const Teuchos::ParameterList outputList =
@@ -132,11 +131,12 @@ int main(int argc, char *argv[])
     const bool useBordering = piroParams->get<bool>("Bordering");
     // =======================================================================
     // Read the data from the file.
-    RCP<Nosh::StkMesh> mesh =
-      rcp(new Nosh::StkMesh(eComm, inputExodusFile, step));
+    std::shared_ptr<Nosh::StkMesh> mesh(
+        new Nosh::StkMesh(eComm, inputExodusFile, step)
+        );
 
     // Cast the data into something more accessible.
-    RCP<Epetra_Vector> psi = mesh->createComplexVector("psi");
+    std::shared_ptr<Epetra_Vector> psi = mesh->createComplexVector("psi");
     //psi->Random();
 
     // Set the output directory for later plotting with this.
@@ -165,31 +165,35 @@ int main(int argc, char *argv[])
     .set("Initial Value", initialParameterValues.get<double>(paramName));
 
     // Set the thickness field.
-    RCP<Nosh::ScalarField::Virtual> thickness =
-      rcp(new Nosh::ScalarField::Constant(*mesh, 1.0));
+    std::shared_ptr<Nosh::ScalarField::Virtual> thickness(
+        new Nosh::ScalarField::Constant(*mesh, 1.0)
+        );
 
     // - - - - - - - - - - - - - - - - - - - - -  - - - - - - - - - - - - - - -
     // Some alternatives for the positive-definite operator.
     // (a) -\Delta (Laplace operator with Neumann boundary)
-    //const RCP<Nosh::ParameterMatrix::Virtual> matrixBuilder =
+    //const std::shared_ptr<Nosh::ParameterMatrix::Virtual> matrixBuilder =
     //  rcp(new Nosh::ParameterMatrix::Laplace(mesh, thickness));
 
     // (b) (-i\nabla-A)^2 (Kinetic energy of a particle in magnetic field)
     // (b1) 'A' explicitly given in file.
     const double mu = initialParameterValues.get<double>("mu");
-    RCP<Nosh::VectorField::Virtual> mvp =
-      rcp(new Nosh::VectorField::ExplicitValues(*mesh, "A", mu));
-    const RCP<Nosh::ParameterMatrix::Virtual> keoBuilder =
-      rcp(new Nosh::ParameterMatrix::Keo(mesh, thickness, mvp));
-    const RCP<Nosh::ParameterMatrix::Virtual> DKeoDPBuilder =
-      rcp(new Nosh::ParameterMatrix::DKeoDP(mesh, thickness, mvp, "mu"));
+    std::shared_ptr<Nosh::VectorField::Virtual> mvp(
+        new Nosh::VectorField::ExplicitValues(*mesh, "A", mu)
+        );
+    const std::shared_ptr<Nosh::ParameterMatrix::Virtual> keoBuilder(
+        new Nosh::ParameterMatrix::Keo(mesh, thickness, mvp)
+        );
+    const std::shared_ptr<Nosh::ParameterMatrix::Virtual> DKeoDPBuilder(
+        new Nosh::ParameterMatrix::DKeoDP(mesh, thickness, mvp, "mu")
+        );
 
     // (b2) 'A' analytically given (here with constant curl).
     //      Optionally add a rotation axis u. This is important
     //      if continuation happens as a rotation of the vector
     //      field around an axis.
-    //const RCP<DoubleVector> b = rcp(new DoubleVector(3));
-    //RCP<Teuchos::SerialDenseVector<int,double> > u = Teuchos::null;
+    //const std::shared_ptr<DoubleVector> b = rcp(new DoubleVector(3));
+    //std::shared_ptr<Teuchos::SerialDenseVector<int,double> > u = Teuchos::null;
     //if ( piroParams->isSublist("Rotation vector") )
     //{
     //    u = rcp(new Teuchos::SerialDenseVector<int,double>(3));
@@ -199,9 +203,9 @@ int main(int argc, char *argv[])
     //    (*u)[1] = rotationVectorList.get<double>("y");
     //    (*u)[2] = rotationVectorList.get<double>("z");
     //}
-    //RCP<Nosh::VectorField::Virtual> mvp =
+    //std::shared_ptr<Nosh::VectorField::Virtual> mvp =
     //  rcp(new Nosh::VectorField::ConstantCurl(mesh, b, u));
-    //const RCP<Nosh::ParameterMatrix::Virtual> matrixBuilder =
+    //const std::shared_ptr<Nosh::ParameterMatrix::Virtual> matrixBuilder =
     //  rcp(new Nosh::ParameterMatrix::Keo(mesh, thickness, mvp));
     // (b3) 'A' analytically given in a class you write yourself, derived
     //      from Nosh::ParameterMatrix::Virtual.
@@ -209,75 +213,83 @@ int main(int argc, char *argv[])
     // - - - - - - - - - - - - - - - - - - - - -  - - - - - - - - - - - - - - -
     // Setup the scalar potential V.
     // (a) A constant potential.
-    //RCP<Nosh::ScalarField::Virtual> sp =
+    //std::shared_ptr<Nosh::ScalarField::Virtual> sp =
     //rcp(new Nosh::ScalarField::Constant(*mesh, -1.0));
     //const double T = initialParameterValues.get<double>("T");
     // (b) With explicit values.
-    //RCP<Nosh::ScalarField::Virtual> sp =
+    //std::shared_ptr<Nosh::ScalarField::Virtual> sp =
     //rcp(new Nosh::ScalarField::ExplicitValues(*mesh, "V"));
     // (c) One you built yourself by deriving from Nosh::ScalarField::Virtual.
-    RCP<Nosh::ScalarField::Virtual> sp =
-      rcp(new MyScalarField(mesh));
+    std::shared_ptr<Nosh::ScalarField::Virtual> sp(
+        new MyScalarField(mesh)
+        );
     // - - - - - - - - - - - - - - - - - - - - -  - - - - - - - - - - - - - - -
 
     const double g = initialParameterValues.get<double>("g");
     // Finally, create the model evaluator.
     // This is the most important object in the whole stack.
-    RCP<Nosh::ModelEvaluator::Virtual> nlsModel =
-      rcp(new Nosh::ModelEvaluator::Nls(
-            mesh,
-            keoBuilder,
-            DKeoDPBuilder,
-            sp,
-            g,
-            thickness,
-            psi
-            ));
+    std::shared_ptr<Nosh::ModelEvaluator::Virtual> nlsModel(
+        new Nosh::ModelEvaluator::Nls(
+          mesh,
+          keoBuilder,
+          DKeoDPBuilder,
+          sp,
+          g,
+          thickness,
+          psi
+          ));
 
-    RCP<Nosh::ModelEvaluator::Virtual> modelEvaluator;
+    std::shared_ptr<Nosh::ModelEvaluator::Virtual> modelEvaluator;
     if (useBordering) {
       // Use i*psi as bordering.
-      RCP<Epetra_Vector> bordering =
-        rcp(new Epetra_Vector(psi->Map()));
+      std::shared_ptr<Epetra_Vector> bordering(new Epetra_Vector(psi->Map()));
       for (int k = 0; k < psi->Map().NumMyElements()/2; k++) {
         (*bordering)[2*k] = - (*psi)[2*k+1];
         (*bordering)[2*k+1] = (*psi)[2*k];
-        //(*bordering)[2*k]   = 1.0;
-        //(*bordering)[2*k+1] = 0.0;
+        //bordering[2*k]   = 1.0;
+        //bordering[2*k+1] = 0.0;
       }
       //bordering->Random();
       // Initial value for the extra variable.
       double lambda = 0.0;
-      modelEvaluator = rcp(new Nosh::ModelEvaluator::Bordered(nlsModel, bordering, lambda));
+      modelEvaluator = std::make_shared<Nosh::ModelEvaluator::Bordered>(
+          nlsModel,
+          bordering,
+          lambda
+          );
     } else {
       modelEvaluator = nlsModel;
     }
 
     // Build the Piro model evaluator. It's used to hook up with
     // several different backends (NOX, LOCA, Rhythmos,...).
-    RCP<EpetraExt::ModelEvaluator> piro;
+    std::shared_ptr<EpetraExt::ModelEvaluator> piro;
 
     // Declare the eigensaver; it will be used only for LOCA solvers, though.
-    RCP<Nosh::SaveEigenData> glEigenSaver;
+    std::shared_ptr<Nosh::SaveEigenData> glEigenSaver;
 
     // Switch by solver type.
     std::string & solver = piroParams->get<std::string>("Piro Solver");
     // ----------------------------------------------------------------------
     if (solver == "NOX") {
-      RCP<Nosh::Observer> observer =
-        rcp(new Nosh::Observer(modelEvaluator));
+      std::shared_ptr<Nosh::Observer> observer(
+          new Nosh::Observer(modelEvaluator)
+          );
 
-      piro = rcp(new Piro::Epetra::NOXSolver(piroParams,
-                                             modelEvaluator,
-                                             observer));
+      piro = std::make_shared<Piro::Epetra::NOXSolver>(
+            Teuchos::rcp(piroParams),
+            Teuchos::rcp(modelEvaluator),
+            Teuchos::rcp(observer)
+            );
     } else if (solver == "LOCA") {
-      RCP<Nosh::Observer> observer =
-        rcp(new Nosh::Observer(modelEvaluator,
-                               contFilePath,
-                               piroParams->sublist("LOCA")
-                               .sublist("Stepper")
-                               .get<std::string>("Continuation Parameter")
-                              ));
+      std::shared_ptr<Nosh::Observer> observer(
+          new Nosh::Observer(
+            modelEvaluator,
+            contFilePath,
+            piroParams->sublist("LOCA")
+            .sublist("Stepper")
+            .get<std::string>("Continuation Parameter")
+            ));
 
       // Setup eigen saver.
 #ifdef HAVE_LOCA_ANASAZI
@@ -288,17 +300,17 @@ int main(int argc, char *argv[])
         Teuchos::ParameterList & eigenList = piroParams->sublist("LOCA")
                                              .sublist("Stepper")
                                              .sublist("Eigensolver");
-        std::string eigenvaluesFilePath = xmlDirectory
-                                          + "/"
-                                          + outputList.get<std::string> ( "Eigenvalues file name" );
+        std::string eigenvaluesFilePath =
+          xmlDirectory + "/" + outputList.get<std::string> ( "Eigenvalues file name" );
 
-        glEigenSaver =
-          RCP<Nosh::SaveEigenData>(new Nosh::SaveEigenData(eigenList,
-                                   modelEvaluator,
-                                   eigenvaluesFilePath));
+        glEigenSaver = std::make_shared<Nosh::SaveEigenData>(
+            eigenList,
+            modelEvaluator,
+            eigenvaluesFilePath
+            );
 
-        RCP<LOCA::SaveEigenData::AbstractStrategy> glSaveEigenDataStrategy =
-          glEigenSaver;
+        std::shared_ptr<LOCA::SaveEigenData::AbstractStrategy>
+          glSaveEigenDataStrategy = glEigenSaver;
         eigenList.set("Save Eigen Data Method",
                       "User-Defined");
         eigenList.set("User-Defined Save Eigen Data Name",
@@ -308,58 +320,69 @@ int main(int argc, char *argv[])
       }
 #endif
       // Get the solver.
-      RCP<Piro::Epetra::LOCASolver> piroLOCASolver =
-        rcp(new Piro::Epetra::LOCASolver(piroParams, modelEvaluator, observer));
+      std::shared_ptr<Piro::Epetra::LOCASolver> piroLOCASolver(
+          new Piro::Epetra::LOCASolver(
+            Teuchos::rcp(piroParams),
+            Teuchos::rcp(modelEvaluator),
+            Teuchos::rcp(observer)
+            )
+          );
 
       // Get stepper and inject it into the eigensaver.
-      RCP<LOCA::Stepper> stepper = piroLOCASolver->getLOCAStepperNonConst();
+      std::shared_ptr<LOCA::Stepper> stepper = Teuchos::get_shared_ptr(
+          piroLOCASolver->getLOCAStepperNonConst()
+          );
 #ifdef HAVE_LOCA_ANASAZI
       if (computeEigenvalues)
-        glEigenSaver->setLocaStepper( stepper );
+        glEigenSaver->setLocaStepper(stepper);
 #endif
       piro = piroLOCASolver;
     } else if ( solver == "Turning Point" ) {
-      RCP<Nosh::Observer> observer = Teuchos::null;
+      std::shared_ptr<Nosh::Observer> observer;
 
       Teuchos::ParameterList & bifList =
         piroParams->sublist("LOCA").sublist("Bifurcation");
 
       // Fetch the (approximate) null state.
-      RCP<Epetra_Vector> nullstateZ = mesh->createVector("null");
+      std::shared_ptr<Epetra_Vector> nullstateZ = mesh->createVector("null");
 
       // Set the length normalization vector to be the initial null vector.
-      TEUCHOS_ASSERT( !nullstateZ.is_null() );
-      RCP<NOX::Abstract::Vector> lengthNormVec =
-        rcp(new NOX::Epetra::Vector(*nullstateZ));
+      TEUCHOS_ASSERT(nullstateZ);
+      Teuchos::RCP<NOX::Abstract::Vector> lengthNormVec =
+        Teuchos::rcp(new NOX::Epetra::Vector(*nullstateZ));
       //lengthNormVec->init(1.0);
       bifList.set("Length Normalization Vector", lengthNormVec);
 
       // Set the initial null vector.
-      RCP<NOX::Abstract::Vector> initialNullAbstractVec =
-        rcp(new NOX::Epetra::Vector(*nullstateZ));
+      Teuchos::RCP<NOX::Abstract::Vector> initialNullAbstractVec =
+        Teuchos::rcp(new NOX::Epetra::Vector(*nullstateZ));
       // initialNullAbstractVec->init(1.0);
       bifList.set("Initial Null Vector", initialNullAbstractVec);
 
-      piro = rcp(new Piro::Epetra::LOCASolver(piroParams,
-                                              modelEvaluator,
-                                              observer));
+      piro = std::make_shared<Piro::Epetra::LOCASolver>(
+            Teuchos::rcp(piroParams),
+            Teuchos::rcp(modelEvaluator),
+            Teuchos::rcp(observer)
+            );
     } else {
-      TEUCHOS_TEST_FOR_EXCEPT_MSG(true,
-                                  "Unknown solver type \"" << solver << "\"." );
+      TEUCHOS_TEST_FOR_EXCEPT_MSG(
+          true,
+          "Unknown solver type \"" << solver << "\"."
+          );
     }
     // ----------------------------------------------------------------------
 
     // Now the setting of inputs and outputs.
     EpetraExt::ModelEvaluator::InArgs inArgs = piro->createInArgs();
-    RCP<Epetra_Vector> p1 =
-      rcp(new Epetra_Vector(*(piro->get_p_init(0))));
+    Teuchos::RCP<Epetra_Vector> p1 =
+      Teuchos::rcp(new Epetra_Vector(*(piro->get_p_init(0))));
     inArgs.set_p(0, p1);
 
     // Set output arguments to evalModel call.
     EpetraExt::ModelEvaluator::OutArgs outArgs = piro->createOutArgs();
 
     // Now solve the problem and return the responses.
-    const RCP<Teuchos::Time> piroSolveTime =
+    const Teuchos::RCP<Teuchos::Time> piroSolveTime =
       Teuchos::TimeMonitor::getNewTimer("Piro total solve time");;
     {
       Teuchos::TimeMonitor tm(*piroSolveTime);
@@ -368,7 +391,7 @@ int main(int argc, char *argv[])
 
     // Manually release LOCA stepper.
 #ifdef HAVE_LOCA_ANASAZI
-    if ( !glEigenSaver.is_null() )
+    if (glEigenSaver)
       glEigenSaver->releaseLocaStepper();
 #endif
 
