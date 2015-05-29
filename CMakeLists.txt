@@ -1,16 +1,16 @@
 # We need CONFIGURE_PACKAGE_CONFIG_FILE, available from CMake 2.8.8 on.
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8.8)
 
-# There's no Fortran in this project, but Trilinos has some Fortran
-# in it (e.g., via BLAS/LAPACK).
-# This is a cause for undefined symbols at the exectuable linking
-# stage, mostly for Fortran's standard library (if the linker language
-# is C++). Adding Fortran to the list of languages in this project makes
-# sure that CMake correctly appends the needed libraries.
+# There's no Fortran in this project, but Trilinos has some Fortran in it
+# (e.g., via BLAS/LAPACK).
+# This is a cause for undefined symbols at the exectuable linking stage, mostly
+# for Fortran's standard library (if the linker language is C++). Adding
+# Fortran to the list of languages in this project makes sure that CMake
+# correctly appends the needed libraries.
 # This only influences static builds.
-# At some point in time, the BLAS/LAPACK dependency on Fortran should
-# be propagated up to applications like Nosh such that explicitly
-# adding the Fortran compiler here isn't necessary anymore.
+# At some point in time, the BLAS/LAPACK dependency on Fortran should be
+# propagated up to applications like Nosh such that explicitly adding the
+# Fortran compiler here isn't necessary anymore.
 PROJECT(Nosh CXX)
 
 IF (NOT Trilinos_Implicit)
@@ -36,8 +36,8 @@ set(
   ${Nosh_MAJOR_VERSION}.${Nosh_MINOR_VERSION}.${Nosh_PATCH_VERSION}
   )
 
-# Add compiler flags (e.g., -openmp).
-LIST(APPEND CMAKE_CXX_FLAGS ${Trilinos_CXX_COMPILER_FLAGS})
+## Add compiler flags (e.g., -openmp).
+#LIST(APPEND CMAKE_CXX_FLAGS ${Trilinos_CXX_COMPILER_FLAGS})
 
 IF(NOT DEFINED CMAKE_BUILD_TYPE)
    SET(
@@ -54,7 +54,9 @@ ENABLE_TESTING()
 
 IF(CMAKE_COMPILER_IS_GNUCXX)
   #SET(CMAKE_CXX_FLAGS_DEBUG "-Og -g -ggdb -Wall -pedantic -fbounds-check -Wextra -Wstrict-null-sentinel -Wshadow -Woverloaded-virtual -Weffc++ -Wsign-compare -ansi -std=c++11" )
-    SET(CMAKE_CXX_FLAGS_DEBUG "-O0 -g -ggdb -Wall -pedantic -fbounds-check -Wextra -Wstrict-null-sentinel -Wshadow -Woverloaded-virtual -Weffc++ -Wsign-compare -ansi -std=c++0x")
+    SET(CMAKE_CXX_FLAGS_DEBUG "-O0 -g -ggdb -Wall -pedantic -fbounds-check
+    -Wextra -Wstrict-null-sentinel -Wshadow -Woverloaded-virtual -Weffc++
+    -Wsign-compare -ansi -std=c++11")
     execute_process(COMMAND ${CMAKE_C_COMPILER} -dumpversion
                     OUTPUT_VARIABLE GCC_VERSION
                     )
@@ -62,7 +64,7 @@ IF(CMAKE_COMPILER_IS_GNUCXX)
       SET(CMAKE_CXX_FLAGS_DEBUG ${CMAKE_CXX_FLAGS_DEBUG} -fdiagnostics-color=auto)
     endif()
     SET(CMAKE_CXX_FLAGS_PROFILE "-pg -O2" )
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x" )
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11" )
 ENDIF()
 
 option(ENABLE_GCOV "Enable gcov support" OFF)
