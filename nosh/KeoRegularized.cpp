@@ -30,8 +30,13 @@
 #include <BelosLinearProblem.hpp>
 #include <BelosEpetraAdapter.hpp>
 #include <BelosPseudoBlockCGSolMgr.hpp>
-#include <ml_epetra_preconditioner.h>
+#include <BelosOperatorT.hpp>
+#include <BelosMueLuAdapter.hpp>
 
+#include <MueLu_CreateEpetraPreconditioner.hpp>
+#include <MueLu_MLParameterListInterpreter.hpp>
+
+#include <Teuchos_ParameterList.hpp>
 #include <Teuchos_VerboseObject.hpp>
 #include <Teuchos_RCPStdSharedPtrConversions.hpp>
 
@@ -66,13 +71,15 @@ KeoRegularized(
   // at one point and filling it with meaningful values later on.  *Copy* over
   // the matrix.
   regularizedKeo_(keo->clone()),
-  MlPrec_(Teuchos::null),
+  MueluPrec_(Teuchos::null),
   numCycles_(1),
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   timerRebuild0_(Teuchos::TimeMonitor::getNewTimer(
-                   "Nosh: KeoRegularized::rebuild::ML init")),
+        "Nosh: KeoRegularized::rebuild::MueLu init"
+        )),
   timerRebuild1_(Teuchos::TimeMonitor::getNewTimer(
-                    "Nosh: KeoRegularized::rebuild::ML rebuild")),
+        "Nosh: KeoRegularized::rebuild::MueLu rebuild"
+        )),
 #endif
   out_(Teuchos::VerboseObjectBase::getDefaultOStream())
 {
@@ -113,7 +120,7 @@ ApplyInverse(const Epetra_MultiVector &X,
 {
   if (numCycles_ == 1) {
     // Just apply one (inverse) AMG cycle.
-    return MlPrec_->ApplyInverse(X, Y);
+    return MueluPrec_->ApplyInverse(X, Y);
   } else {
     // Belos part
     Teuchos::ParameterList belosList;
@@ -152,9 +159,10 @@ ApplyInverse(const Epetra_MultiVector &X,
     // Create the Belos preconditioned operator from the preconditioner.
     // NOTE:  This is necessary because Belos expects an operator to apply the
     //        preconditioner with Apply() NOT ApplyInverse().
-    Teuchos::RCP<Belos::EpetraPrecOp> mlPrec =
-      Teuchos::rcp(new Belos::EpetraPrecOp(MlPrec_));
-    problem.setLeftPrec(mlPrec);
+    Teuchos::RCP<Belos::EpetraPrecOp> mueluPrec =
+      Teuchos::rcp(new Belos::EpetraPrecOp(MueluPrec_));
+    problem.setLeftPrec(mueluPrec);
+
     // -------------------------------------------------------------------------
     // Create an iterative solver manager.
     Belos::PseudoBlockCGSolMgr<double, MV, OP> newSolver(
@@ -323,65 +331,39 @@ void
 KeoRegularized::
 rebuildInverse_()
 {
-  // -------------------------------------------------------------------------
-  // Rebuild preconditioner for this object. Not to be mistaken for the
-  // object itself.
-  // For reusing the ML structure, see
-  // http://trilinos.sandia.gov/packages/docs/dev/packages/ml/doc/html/classML__Epetra_1_1MultiLevelPreconditioner.html#a0a5c1d47c6938d2ec1cb9bb710723c1e
-  if (MlPrec_.is_null()) {
+  if (MueluPrec_.is_null()) {
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor tm(*timerRebuild0_);
 #endif
-    // build ML structure
-    Teuchos::ParameterList MLList;
-    ML_Epetra::SetDefaults("SA", MLList);
-//     MLList.set("ML output", 0);
-    MLList.set("max levels", 10);
-    MLList.set("increasing or decreasing", "increasing");
-    MLList.set("aggregation: type", "Uncoupled");
-    MLList.set("smoother: type", "Chebyshev");     // "block Gauss-Seidel" "Chebyshev"
-    MLList.set("aggregation: threshold", 0.0);
-    MLList.set("smoother: sweeps", 3);
-    MLList.set("smoother: pre or post", "both");
-    MLList.set("coarse: type", "Amesos-KLU");
-    MLList.set("PDE equations", 2);
-    // reuse the multilevel hierarchy
-    MLList.set("reuse: enable", true);
+    Teuchos::ParameterList params;
+    params.set("number of equations", 2);
+    params.set("reuse: type", "full");
+    // See
+    // <http://trilinos.org/wordpress/wp-content/uploads/2015/05/MueLu_Users_Guide_Trilinos12_0.pdf>
+    // for recommended settings.
+    //params.set("smoother: type", "Chebyshev");
 
-    // From http://trilinos.sandia.gov/packages/docs/r10.10/packages/ml/doc/html/classML__Epetra_1_1MultiLevelPreconditioner.html:
-    // "It is important to note that ML is more restrictive than Epetra for
-    //  the definition of maps. It is required that RowMatrixRowMap() is
-    //  equal to OperatorRangeMap(). This is because ML needs to perform
-    //  matrix-std::vector product, as well as getrow() functions, on the
-    //  same data distribution.
-    // "Also, for square matrices, OperatorDomainMap() must be as
-    //  OperatorRangeMap()."
-    // Make sure this is indeed the case.
-#ifndef NDEBUG
-    TEUCHOS_ASSERT(
-        regularizedKeo_->OperatorRangeMap().SameAs(
-          regularizedKeo_->RowMatrixRowMap()
-          ));
-    TEUCHOS_ASSERT(
-        regularizedKeo_->OperatorDomainMap().SameAs(
-          regularizedKeo_->OperatorRangeMap()
-          ));
-#endif
-    MlPrec_ = Teuchos::rcp(
-        new ML_Epetra::MultiLevelPreconditioner(
-          *regularizedKeo_,
-          MLList
-          ));
+    //params.set("max levels", 10);
+    //params.set("increasing or decreasing", "increasing");
+    //params.set("aggregation: type", "Uncoupled");
+    //params.set("aggregation: threshold", 0.0);
+    //params.set("smoother: sweeps", 3);
+    //params.set("smoother: pre or post", "both");
+    //params.set("coarse: type", "Amesos-KLU");
+
+    MueluPrec_ = MueLu::CreateEpetraPreconditioner(
+        Teuchos::rcp(regularizedKeo_),
+        params
+        );
   } else {
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor tm(*timerRebuild1_);
 #endif
-    bool checkFiltering = true;
-    TEUCHOS_ASSERT_EQUALITY(0, MlPrec_->ComputePreconditioner(checkFiltering));
-    //TEUCHOS_ASSERT_EQUALITY(0, MlPrec_->ReComputePreconditioner());
+    MueLu::ReuseEpetraPreconditioner(
+        Teuchos::rcp(regularizedKeo_),
+        *MueluPrec_
+        );
   }
-//    MlPrec_->PrintUnused(0);
-  // -------------------------------------------------------------------------
 
   return;
 }

@@ -32,27 +32,21 @@
 #endif
 #include <Teuchos_FancyOStream.hpp>
 
+#include <MueLu_EpetraOperator.hpp>
+
+// forward declarations
 namespace Nosh
 {
-class StkMesh;
-namespace ScalarField
-{
-class Virtual;
-}
-namespace ParameterMatrix
-{
-class Virtual;
-}
+  class StkMesh;
+  namespace ScalarField
+  {
+    class Virtual;
+  }
+  namespace ParameterMatrix
+  {
+    class Virtual;
+  }
 } // namespace Nosh
-
-namespace Belos
-{
-class EpetraPrecOp;
-}
-namespace ML_Epetra
-{
-class MultiLevelPreconditioner;
-}
 
 namespace Nosh
 {
@@ -120,14 +114,10 @@ private:
   const std::shared_ptr<const Nosh::StkMesh> mesh_;
   const std::shared_ptr<const Nosh::ScalarField::Virtual> thickness_;
 
-  // Make sure to create the matrix in memory only once and then
-  // override it as necessary. The reason for this is that ML
-  // gets initialized only once and, upon ML.recompute(), relies
-  // on the (new) data being available at the same adress.
-  // Failure to comply to this will lead to memory errors.
   const std::shared_ptr<Nosh::ParameterMatrix::Virtual> regularizedKeo_;
 
-  Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> MlPrec_;
+  Teuchos::RCP<MueLu::EpetraOperator> MueluPrec_;
+
   const int numCycles_;
 
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
