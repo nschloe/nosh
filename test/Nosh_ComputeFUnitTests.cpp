@@ -29,7 +29,7 @@
 
 #include <Epetra_Map.h>
 #include <Epetra_Vector.h>
-#include <LOCA_Parameter_Vector.H>
+#include <Thyra_EpetraModelEvaluator.hpp>
 
 #include "nosh/StkMesh.hpp"
 #include "nosh/ScalarField_Constant.hpp"
@@ -90,28 +90,39 @@ testComputeF(const std::string & inputFileNameBase,
       new Nosh::ScalarField::Constant(*mesh, -1.0)
       );
 
-  Nosh::ModelEvaluator::Nls modelEval(
-      mesh,
-      keoBuilder,
-      DKeoDPBuilder,
-      sp,
-      1.0,
-      thickness,
-      z
-      );
+  Teuchos::RCP<Nosh::ModelEvaluator::Nls> modelEvalE =
+    Teuchos::rcp(new Nosh::ModelEvaluator::Nls(
+          mesh,
+          keoBuilder,
+          DKeoDPBuilder,
+          sp,
+          1.0,
+          thickness,
+          z
+          ));
+
+  Teuchos::RCP<Thyra::ModelEvaluator<double> > modelEval =
+    Thyra::epetraModelEvaluator(modelEvalE, Teuchos::null);
+
+  Teuchos::RCP<const Thyra::VectorSpaceBase<double> > vectorSpace =
+    Thyra::create_VectorSpace(modelEvalE->get_x_map());
 
   // Create inArgs. Use p_init as parameters.
-  EpetraExt::ModelEvaluator::InArgs inArgs = modelEval.createInArgs();
-  inArgs.set_x(Teuchos::rcp(z));
-  inArgs.set_p(0, modelEval.get_p_init(0));
+  Thyra::ModelEvaluatorBase::InArgs<double> inArgs =
+    modelEval->createInArgs();
+  inArgs.set_x(Thyra::create_Vector(Teuchos::rcp(z), vectorSpace));
+  //inArgs.set_p(0, modelEvalT->get_p_init(0));
 
   // Create outArgs.
-  EpetraExt::ModelEvaluator::OutArgs outArgs = modelEval.createOutArgs();
-  Teuchos::RCP<Epetra_Vector> f = Teuchos::rcp(new Epetra_Vector(z->Map()));
-  outArgs.set_f(f);
+  Thyra::ModelEvaluatorBase::OutArgs<double> outArgs =
+    modelEval->createOutArgs();
+  Teuchos::RCP<Epetra_Vector> f = Teuchos::rcp(new Epetra_Vector(*modelEvalE->get_f_map()));
+  Teuchos::RCP<const Thyra::VectorSpaceBase<double> > vectorSpaceF =
+    Thyra::create_VectorSpace(modelEvalE->get_f_map());
+  outArgs.set_f(Thyra::create_Vector(f, vectorSpaceF));
 
   // Fetch.
-  modelEval.evalModel(inArgs, outArgs);
+  modelEval->evalModel(inArgs, outArgs);
 
   // check the norms
   double normOne;
