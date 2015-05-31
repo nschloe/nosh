@@ -346,13 +346,24 @@ evalModel(
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor tm2(*computedFdpTime_);
 #endif
-    const Teuchos::Array<int> &paramIndices = derivMv.getParamIndexes();
-    const int numDerivs = paramIndices.size();
-#ifndef NDEBUG
-    TEUCHOS_ASSERT_EQUALITY(numDerivs, dfdp_out->NumVectors());
-#endif
+    Teuchos::Array<int> paramIndices = derivMv.getParamIndexes();
+    if (paramIndices.size() == 0) {
+      // if no parameter list was given, assume that *all* parameters
+      // were demanded
+      const int numAllParams = this->get_p_map(0)->NumGlobalElements();
+      paramIndices.resize(numAllParams);
+      for (int i = 0; i < numAllParams; i++) {
+        paramIndices[i] = i;
+      }
+    }
+    int numParams = paramIndices.size();
+
+    TEUCHOS_ASSERT_EQUALITY(
+        numParams,
+        dfdp_out->NumVectors()
+        );
     // Compute all derivatives.
-    for (int k = 0; k < numDerivs; k++) {
+    for (int k = 0; k < numParams; k++) {
       this->computeDFDP_(
           *x_in,
           params,
