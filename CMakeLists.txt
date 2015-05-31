@@ -54,9 +54,7 @@ ENABLE_TESTING()
 
 IF(CMAKE_COMPILER_IS_GNUCXX)
   #SET(CMAKE_CXX_FLAGS_DEBUG "-Og -g -ggdb -Wall -pedantic -fbounds-check -Wextra -Wstrict-null-sentinel -Wshadow -Woverloaded-virtual -Weffc++ -Wsign-compare -ansi -std=c++11" )
-    SET(CMAKE_CXX_FLAGS_DEBUG "-O0 -g -ggdb -Wall -pedantic -fbounds-check
-    -Wextra -Wstrict-null-sentinel -Wshadow -Woverloaded-virtual -Weffc++
-    -Wsign-compare -ansi -std=c++11")
+    SET(CMAKE_CXX_FLAGS_DEBUG "-O0 -g -ggdb -Wall -pedantic -fbounds-check -Wextra -Wstrict-null-sentinel -Wshadow -Woverloaded-virtual -Weffc++ -Wsign-compare -ansi -std=c++11")
     execute_process(COMMAND ${CMAKE_C_COMPILER} -dumpversion
                     OUTPUT_VARIABLE GCC_VERSION
                     )
