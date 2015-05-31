@@ -29,7 +29,7 @@
 
 #include <Epetra_Map.h>
 #include <Epetra_Vector.h>
-#include <LOCA_Parameter_Vector.H>
+#include <Thyra_EpetraModelEvaluator.hpp>
 
 #include "nosh/StkMesh.hpp"
 #include "nosh/ScalarField_Constant.hpp"
@@ -46,37 +46,39 @@ namespace
 // ===========================================================================
 void
 computeFiniteDifference_(
-  const EpetraExt::ModelEvaluator & modelEval,
-  EpetraExt::ModelEvaluator::InArgs & inArgs,
-  EpetraExt::ModelEvaluator::OutArgs & outArgs,
-  const std::shared_ptr<const Epetra_Vector> & p,
+  const Thyra::ModelEvaluator<double> & modelEval,
+  Teuchos::RCP<Thyra::VectorBase<double> > & p,
   const int paramIndex,
-  const std::shared_ptr<Epetra_Vector> & fdiff
+  const Teuchos::RCP<Thyra::VectorBase<double> > & fdiff
 )
 {
-  const double eps = 1.0e-6;
-  Teuchos::RCP<Epetra_Vector> pp = Teuchos::rcp(new Epetra_Vector(*p));
+  const double eps = 1.0e-8;
+  Teuchos::RCP<Thyra::VectorBase<double> > pp = p->clone_v();
 
-  // Store the original parameter value.
-  const double origValue = (*p)[paramIndex];
+  const double origValue = Thyra::get_ele(*pp, paramIndex);
+
+  Thyra::ModelEvaluatorBase::InArgs<double> inArgs =
+    modelEval.createInArgs();
+  Thyra::ModelEvaluatorBase::OutArgs<double> outArgs =
+    modelEval.createOutArgs();
 
   // Get vector at x-eps.
-  (*pp)[paramIndex] = origValue - eps;
+  Thyra::set_ele(paramIndex, origValue - eps, pp());
   inArgs.set_p(0, pp);
-  Teuchos::RCP<Epetra_Vector> f0 =
-    Teuchos::rcp(new Epetra_Vector(fdiff->Map()));
+  Teuchos::RCP<Thyra::VectorBase<double> > f0 =
+    Thyra::createMember(fdiff->space());
   outArgs.set_f(f0);
   modelEval.evalModel(inArgs, outArgs);
 
   // Get vector at x+eps.
-  (*pp)[paramIndex] = origValue + eps;
+  Thyra::set_ele(paramIndex, origValue + eps, pp());
   inArgs.set_p(0, pp);
-  outArgs.set_f(Teuchos::rcp(fdiff));
+  outArgs.set_f(fdiff);
   modelEval.evalModel(inArgs, outArgs);
 
   // Calculate the finite difference approx for df/dp.
-  TEUCHOS_ASSERT_EQUALITY(0, fdiff->Update(-1.0, *f0, 1.0));
-  TEUCHOS_ASSERT_EQUALITY(0, fdiff->Scale(0.5/eps));
+  Thyra::Vp_StV(fdiff(), -1.0, *f0);
+  Thyra::scale(0.5/eps, fdiff());
 
   return;
 }
@@ -124,64 +126,73 @@ testDfdp(const std::string & inputFileNameBase,
       new Nosh::ScalarField::Constant(*mesh, -1.0)
       );
 
-  Nosh::ModelEvaluator::Nls modelEval(
-      mesh,
-      keoBuilder,
-      DKeoDPBuilder,
-      sp,
-      1.0,
-      thickness,
-      z
-      );
+  Teuchos::RCP<Nosh::ModelEvaluator::Nls> modelEvalE =
+    Teuchos::rcp(new Nosh::ModelEvaluator::Nls(
+          mesh,
+          keoBuilder,
+          DKeoDPBuilder,
+          sp,
+          1.0,
+          thickness,
+          z
+          ));
+
+  Teuchos::RCP<Thyra::ModelEvaluator<double> > modelEval =
+    Thyra::epetraModelEvaluator(modelEvalE, Teuchos::null);
+
+  Teuchos::RCP<const Thyra::VectorSpaceBase<double> > vectorSpaceX =
+    Thyra::create_VectorSpace(modelEvalE->get_x_map());
+  Teuchos::RCP<const Thyra::VectorSpaceBase<double> > vectorSpaceF =
+    Thyra::create_VectorSpace(modelEvalE->get_f_map());
 
   // -------------------------------------------------------------------------
   // Perform the finite difference test for all parameters present in the
   // system.
   // Get a finite-difference approximation of df/dp.
-  EpetraExt::ModelEvaluator::InArgs inArgs = modelEval.createInArgs();
-  inArgs.set_x(Teuchos::rcp(z));
-  EpetraExt::ModelEvaluator::OutArgs outArgs = modelEval.createOutArgs();
+  Thyra::ModelEvaluatorBase::InArgs<double> inArgs =
+    modelEval->createInArgs();
+  inArgs.set_x(Thyra::create_Vector(Teuchos::rcp(z), vectorSpaceX));
+  Thyra::ModelEvaluatorBase::OutArgs<double> outArgs =
+    modelEval->createOutArgs();
 
-  // Get a the initial parameter vector.
-  const Teuchos::RCP<const Epetra_Vector> p = modelEval.get_p_init(0);
-  std::shared_ptr<Epetra_Vector> fdiff(new Epetra_Vector(z->Map()));
-  std::shared_ptr<Epetra_Vector> dfdp(new Epetra_Vector(z->Map()));
-  EpetraExt::ModelEvaluator::DerivativeMultiVector deriv;
-  std::vector<int> paramIndices(1);
-  const std::shared_ptr<Epetra_Vector> nullV = nullptr;
-  double r;
+  // create parameter vector
+  Teuchos::RCP<Thyra::VectorBase<double> > p = Thyra::createMember(
+      modelEval->get_p_space(0)
+      );
+  Teuchos::RCP<Thyra::VectorBase<double> > fdiff = Thyra::createMember(
+      modelEval->get_f_space()
+      );
+
+  // Get the actual derivatives.
+  inArgs.set_p(0, p);
+  Teuchos::RCP<Thyra::MultiVectorBase<double> > dfdp =
+    Thyra::createMembers(modelEval->get_f_space(), 2);
+  Thyra::ModelEvaluatorBase::Derivative<double> deriv(
+      dfdp,
+      Thyra::ModelEvaluatorBase::DERIV_MV_BY_COL
+      );
+  outArgs.set_DfDp(0, deriv);
+  modelEval->evalModel(inArgs, outArgs);
+
   // Only test the first parameter "g" for now since we have to set the DKeoDP
   // above. Alternative: Use "mu" above, and take paramIndex 1 here.
   // TODO test both parameters
   //for (int paramIndex = 0; paramIndex < p->GlobalLength(); paramIndex++) {
+  std::vector<int> paramIndices(1);
+  double r;
   for (int paramIndex = 0; paramIndex < 1; paramIndex++) {
-    std::cout << paramIndex << std::endl;
     // Get finite difference.
     computeFiniteDifference_(
-        modelEval,
-        inArgs,
-        outArgs,
-        Teuchos::get_shared_ptr(p),
+        *modelEval,
+        p,
         paramIndex,
         fdiff
         );
 
-    // Get the actual derivative.
-    inArgs.set_p(0, p);
-    paramIndices[0] = paramIndex;
-    deriv = EpetraExt::ModelEvaluator::DerivativeMultiVector(
-        Teuchos::rcp(dfdp),
-        EpetraExt::ModelEvaluator::DERIV_MV_BY_COL,
-        paramIndices
-        );
-    outArgs.set_DfDp(0, deriv);
-    outArgs.set_f(Teuchos::rcp(nullV));
-    modelEval.evalModel(inArgs, outArgs);
-
     // Compare the two.
-    TEUCHOS_ASSERT_EQUALITY(0, fdiff->Update(-1.0, *dfdp, 1.0));
-    TEUCHOS_ASSERT_EQUALITY(0, fdiff->NormInf(&r));
-    TEST_COMPARE(r, <, 1.0e-8);
+    Thyra::Vp_StV(fdiff(), -1.0, *dfdp->col(0));
+    r = Thyra::norm_inf(*fdiff);
+    TEST_COMPARE(r, <, 1.0e-7);
   }
   // -------------------------------------------------------------------------
 
