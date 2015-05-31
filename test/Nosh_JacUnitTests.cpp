@@ -30,14 +30,18 @@
 
 #include <Epetra_Vector.h>
 #include <LOCA_Parameter_Vector.H>
+#include <Thyra_EpetraModelEvaluator.hpp>
 
 #include "nosh/StkMesh.hpp"
 #include "nosh/VectorField_ExplicitValues.hpp"
 #include "nosh/ScalarField_Constant.hpp"
 #include "nosh/ParameterMatrix_Keo.hpp"
+#include "nosh/ParameterMatrix_DKeoDP.hpp"
 #include "nosh/JacobianOperator.hpp"
+#include "nosh/ModelEvaluator_Nls.hpp"
 
 #include <Teuchos_UnitTestHarness.hpp>
+#include <Teuchos_RCPStdSharedPtrConversions.hpp>
 
 namespace
 {
@@ -92,19 +96,58 @@ testJac(const std::string & inputFileNameBase,
       new Nosh::ParameterMatrix::Keo(mesh, thickness, mvp)
       );
 
-  // create the jacobian operator
-  Nosh::JacobianOperator jac(mesh, sp, thickness, keoBuilder);
-  jac.rebuild(params, *psi);
+  std::shared_ptr<Nosh::ParameterMatrix::Virtual> DKeoDPBuilder(
+      new Nosh::ParameterMatrix::DKeoDP(mesh, thickness, mvp, "mu")
+      );
+
+  Teuchos::RCP<Nosh::ModelEvaluator::Nls> modelEvalE =
+    Teuchos::rcp(new Nosh::ModelEvaluator::Nls(
+          mesh,
+          keoBuilder,
+          DKeoDPBuilder,
+          sp,
+          1.0,
+          thickness,
+          psi
+          ));
+
+  //Teuchos::RCP<Thyra::ModelEvaluator<double> > modelEval =
+  //  Thyra::epetraModelEvaluator(modelEvalE, Teuchos::null);
+
+  // get the jacobian from the model evaluator
+  Teuchos::RCP<Epetra_Operator> jac = modelEvalE->create_W();
+
+  EpetraExt::ModelEvaluator::InArgs inArgs = modelEvalE->createInArgs();
+  Teuchos::RCP<Epetra_Vector> p = Teuchos::rcp(new Epetra_Vector(
+        *(modelEvalE->get_p_map(0))
+        ));
+  Teuchos::RCP<const Teuchos::Array<std::string> > pNames =
+    modelEvalE->get_p_names(0);
+  for (int i=0; i<pNames->size(); i++) {
+    (*p)[i] = params.at((*pNames)[i]);
+  }
+  inArgs.set_p(0, p);
+  inArgs.set_x(Teuchos::rcp(psi));
+
+  EpetraExt::ModelEvaluator::OutArgs outArgs = modelEvalE->createOutArgs();
+  outArgs.set_W(jac);
+
+  // call the model
+  modelEvalE->evalModel(inArgs, outArgs);
+
+  //// create the jacobian operator
+  //Nosh::JacobianOperator jac(mesh, sp, thickness, keoBuilder);
+  //jac.rebuild(params, *psi);
 
   double sum;
-  const Epetra_Map & map = jac.OperatorDomainMap();
+  const Epetra_Map & map = jac->OperatorDomainMap();
   Epetra_Vector s(map);
   Epetra_Vector Js(map);
 
   // -------------------------------------------------------------------------
   // (a) [ 1, 1, 1, ... ]
   TEUCHOS_ASSERT_EQUALITY(0, s.PutScalar(1.0));
-  TEUCHOS_ASSERT_EQUALITY(0, jac.Apply(s, Js));
+  TEUCHOS_ASSERT_EQUALITY(0, jac->Apply(s, Js));
   TEUCHOS_ASSERT_EQUALITY(0, s.Dot(Js, &sum));
   TEST_FLOATING_EQUALITY(sum, controlSumT0, 1.0e-12);
   // -------------------------------------------------------------------------
@@ -117,7 +160,7 @@ testJac(const std::string & inputFileNameBase,
     else
       s.ReplaceMyValues(1, &zero, &k);
   }
-  TEUCHOS_ASSERT_EQUALITY(0, jac.Apply(s, Js));
+  TEUCHOS_ASSERT_EQUALITY(0, jac->Apply(s, Js));
   TEUCHOS_ASSERT_EQUALITY(0, s.Dot(Js, &sum));
   TEST_FLOATING_EQUALITY(sum, controlSumT1, 1.0e-12);
   // -------------------------------------------------------------------------
@@ -128,7 +171,7 @@ testJac(const std::string & inputFileNameBase,
     else
       s.ReplaceMyValues(1, &one, &k);
   }
-  TEUCHOS_ASSERT_EQUALITY(0, jac.Apply(s, Js));
+  TEUCHOS_ASSERT_EQUALITY(0, jac->Apply(s, Js));
   TEUCHOS_ASSERT_EQUALITY(0, s.Dot(Js, &sum));
   TEST_FLOATING_EQUALITY(sum, controlSumT2, 1.0e-10);
   // -------------------------------------------------------------------------
