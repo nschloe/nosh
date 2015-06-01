@@ -37,6 +37,7 @@
 #include "nosh/ParameterMatrix_DKeoDP.hpp"
 #include "nosh/VectorField_ExplicitValues.hpp"
 #include "nosh/ModelEvaluator_Nls.hpp"
+#include "nosh/ModelEvaluatorT_Nls.hpp"
 
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_RCPStdSharedPtrConversions.hpp>
@@ -45,13 +46,15 @@ namespace
 {
 // =============================================================================
 void
-testComputeF(const std::string & inputFileNameBase,
-             const double mu,
-             const double controlNormOne,
-             const double controlNormTwo,
-             const double controlNormInf,
-             Teuchos::FancyOStream & out,
-             bool & success)
+testComputeF(
+    const std::string & inputFileNameBase,
+    const double mu,
+    const double controlNormOne,
+    const double controlNormTwo,
+    const double controlNormInf,
+    Teuchos::FancyOStream & out,
+    bool & success
+    )
 {
   // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
@@ -100,43 +103,55 @@ testComputeF(const std::string & inputFileNameBase,
           thickness,
           z
           ));
-
   Teuchos::RCP<Thyra::ModelEvaluator<double> > modelEval =
     Thyra::epetraModelEvaluator(modelEvalE, Teuchos::null);
 
-  Teuchos::RCP<const Thyra::VectorSpaceBase<double> > vectorSpace =
-    Thyra::create_VectorSpace(modelEvalE->get_x_map());
+  //Teuchos::RCP<Thyra::ModelEvaluator<double>> modelEval =
+  //  Teuchos::rcp(new Nosh::ModelEvaluator::NlsT(
+  //        mesh,
+  //        keoBuilder,
+  //        DKeoDPBuilder,
+  //        sp,
+  //        1.0,
+  //        thickness,
+  //        z
+  //        ));
+
+  //Teuchos::RCP<const Thyra::VectorSpaceBase<double> > vectorSpace =
+  //  Thyra::create_VectorSpace(modelEvalE->get_x_map());
 
   // Create inArgs. Use p_init as parameters.
   Thyra::ModelEvaluatorBase::InArgs<double> inArgs =
     modelEval->createInArgs();
-  inArgs.set_x(Thyra::create_Vector(Teuchos::rcp(z), vectorSpace));
+  inArgs.set_x(Thyra::create_Vector(Teuchos::rcp(z), modelEval->get_x_space()));
   //inArgs.set_p(0, modelEvalT->get_p_init(0));
 
   // Create outArgs.
   Thyra::ModelEvaluatorBase::OutArgs<double> outArgs =
     modelEval->createOutArgs();
-  Teuchos::RCP<Epetra_Vector> f = Teuchos::rcp(new Epetra_Vector(*modelEvalE->get_f_map()));
-  Teuchos::RCP<const Thyra::VectorSpaceBase<double> > vectorSpaceF =
-    Thyra::create_VectorSpace(modelEvalE->get_f_map());
-  outArgs.set_f(Thyra::create_Vector(f, vectorSpaceF));
+  Teuchos::RCP<Thyra::VectorBase<double>> f =
+    Thyra::createMember(modelEval->get_f_space());
+  outArgs.set_f(f);
 
   // Fetch.
   modelEval->evalModel(inArgs, outArgs);
 
   // check the norms
-  double normOne;
-  TEUCHOS_ASSERT_EQUALITY(0, f->Norm1(&normOne));
-  TEST_FLOATING_EQUALITY(normOne, controlNormOne, 1.0e-10);
-
-  double normTwo;
-  TEUCHOS_ASSERT_EQUALITY(0, f->Norm2(&normTwo));
-  TEST_FLOATING_EQUALITY(normTwo, controlNormTwo, 1.0e-10);
-
-  double normInf;
-  TEUCHOS_ASSERT_EQUALITY(0, f->NormInf(&normInf));
-  // Relax the tolerance just a little bit here.
-  TEST_FLOATING_EQUALITY(normInf, controlNormInf, 1.0e-9);
+  TEST_FLOATING_EQUALITY(
+      Thyra::norm_1(*f),
+      controlNormOne,
+      1.0e-10
+      );
+  TEST_FLOATING_EQUALITY(
+      Thyra::norm_2(*f),
+      controlNormTwo,
+      1.0e-10
+      );
+  TEST_FLOATING_EQUALITY(
+      Thyra::norm_inf(*f),
+      controlNormInf,
+      1.0e-10
+      );
 
   return;
 }
