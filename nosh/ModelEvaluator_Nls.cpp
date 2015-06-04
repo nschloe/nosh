@@ -271,39 +271,8 @@ get_W_factory() const
 
   lowsFactory->setVerbLevel(Teuchos::VERB_LOW);
 
-  //// add preconditioner
-  //Teuchos::RCP<Thyra::PreconditionerFactoryBase<double>>
-  //  precFactory = Teuchos::rcp(new IfpackPreconditionerFactory());
-  //if (precPL)
-  //  precFactory->setParameterList(rcp(precPL,false));
-  //lowsFactory->setPreconditionerFactory(precFactory,"Ifpack");
-
   return lowsFactory;
 }
-// =============================================================================
-//Teuchos::RCP<Thyra::LinearOpWithSolveBase<double>>
-//Nls::
-//create_W() const
-//{
-//  Teuchos::RCP<const Thyra::LinearOpBase<double>> jac =
-//    Thyra::epetraLinearOp(
-//      Teuchos::rcp(
-//        new Nosh::JacobianOperator(
-//          mesh_,
-//          scalarPotential_,
-//          thickness_,
-//          keo_
-//          ),
-//        "Jacobian"
-//        ));
-//
-//   Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
-//   // TODO set some solver parameters here
-//   Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double>> lowsFactory =
-//     linearSolverBuilder.createLinearSolveStrategy("");
-//
-//   return Thyra::linearOpWithSolve(*lowsFactory, jac);
-//}
 // =============================================================================
 Teuchos::RCP<Thyra::PreconditionerBase<double>>
 Nls::
@@ -319,15 +288,6 @@ create_W_prec() const
   Teuchos::RCP<Thyra::LinearOpBase<double>> keoT =
     Thyra::nonconstEpetraLinearOp(keoPrec, "KEO");
   return Thyra::nonconstUnspecifiedPrec(keoT);
-  //// bool is answer to: "Prec is already inverted?"
-  //// This needs to be set to TRUE to make sure that the constructor of
-  ////    NOX::Epetra::LinearSystemStratimikos
-  //// chooses a user-defined preconditioner.
-  //// Effectively, this boolean serves pretty well as a quirky switch for the
-  //// preconditioner if Piro is used.
-  //return Teuchos::rcp(
-  //    new EpetraExt::ModelEvaluator::Preconditioner(keoPrec, true)
-  //    );
 }
 // ============================================================================
 void
@@ -436,8 +396,6 @@ evalModelImpl(
   // create corresponding epetra vector
   Teuchos::RCP<const Epetra_Comm> comm =
     Teuchos::rcpFromRef(mesh_->getComm());
-  //Teuchos::RCP<const Epetra_Map> xmap =
-  //  Thyra::get_Epetra_Map(*x_in->space(), comm);
   Teuchos::RCP<const Epetra_Vector> x_in_epetra =
     Thyra::get_Epetra_Vector(*mesh_->getComplexNonOverlapMap(), x_in);
 
@@ -476,8 +434,6 @@ evalModelImpl(
     Teuchos::TimeMonitor tm1(*computeFTime_);
 #endif
 
-    //Teuchos::RCP<const Epetra_Map> fmap =
-    //  Thyra::get_Epetra_Map(*f_out->space(), comm);
     Teuchos::RCP<Epetra_Vector> f_out_epetra =
       Thyra::get_Epetra_Vector(*mesh_->getComplexNonOverlapMap(), f_out);
     this->computeF_(
@@ -496,8 +452,6 @@ evalModelImpl(
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor tm2(*computedFdpTime_);
 #endif
-    //Teuchos::RCP<const Epetra_Map> dfdpmap =
-    //  Thyra::get_Epetra_Map(*dfdp_out->col(0)->space(), comm);
     Teuchos::RCP<Epetra_MultiVector> dfdp_out_epetra =
       Thyra::get_Epetra_MultiVector(
           *mesh_->getComplexNonOverlapMap(),
