@@ -36,7 +36,7 @@
 #include "nosh/ParameterMatrix_Keo.hpp"
 #include "nosh/ParameterMatrix_DKeoDP.hpp"
 #include "nosh/VectorField_ExplicitValues.hpp"
-#include "nosh/ModelEvaluatorT_Nls.hpp"
+#include "nosh/ModelEvaluator_Nls.hpp"
 
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_RCPStdSharedPtrConversions.hpp>
@@ -92,21 +92,8 @@ testComputeF(
       new Nosh::ScalarField::Constant(*mesh, -1.0)
       );
 
-  //Teuchos::RCP<Nosh::ModelEvaluator::Nls> modelEvalE =
-  //  Teuchos::rcp(new Nosh::ModelEvaluator::Nls(
-  //        mesh,
-  //        keoBuilder,
-  //        DKeoDPBuilder,
-  //        sp,
-  //        1.0,
-  //        thickness,
-  //        z
-  //        ));
-  //Teuchos::RCP<Thyra::ModelEvaluator<double> > modelEval =
-  //  Thyra::epetraModelEvaluator(modelEvalE, Teuchos::null);
-
   Teuchos::RCP<Thyra::ModelEvaluator<double>> modelEval =
-    Teuchos::rcp(new Nosh::ModelEvaluatorT::Nls(
+    Teuchos::rcp(new Nosh::ModelEvaluator::Nls(
           mesh,
           keoBuilder,
           DKeoDPBuilder,

@@ -36,7 +36,7 @@
 // forward declarations
 namespace Nosh
 {
-namespace ModelEvaluatorT
+namespace ModelEvaluator
 {
 class Virtual;
 }
@@ -58,7 +58,7 @@ public:
   // Constructor
   SaveEigenData(
       Teuchos::ParameterList &eigenParamList,
-      const std::shared_ptr<const Nosh::ModelEvaluatorT::Virtual> &modelEval,
+      const std::shared_ptr<const Nosh::ModelEvaluator::Virtual> &modelEval,
       const std::string & fileName
       );
 
@@ -85,7 +85,7 @@ public:
 protected:
 private:
   Teuchos::RCP<Teuchos::ParameterList> eigenParamListPtr_;
-  const std::shared_ptr<const Nosh::ModelEvaluatorT::Virtual> modelEval_;
+  const std::shared_ptr<const Nosh::ModelEvaluator::Virtual> modelEval_;
   Nosh::CsvWriter csvWriter_;
   std::shared_ptr<LOCA::Stepper> locaStepper_;
 

@@ -35,15 +35,15 @@
 // forward declarations
 namespace Nosh
 {
-class StkMesh;
-namespace ScalarField
-{
-class Virtual;
-}
-namespace ParameterMatrix
-{
-class Virtual;
-}
+  class StkMesh;
+  namespace ScalarField
+  {
+    class Virtual;
+  }
+  namespace ParameterMatrix
+  {
+    class Virtual;
+  }
 } // namespace Nosh
 
 class Epetra_CrsGraph;
@@ -72,88 +72,111 @@ public:
   ~Nls();
 
   virtual
-  Teuchos::RCP<const Epetra_Map>
-  get_x_map() const;
+  Teuchos::RCP<const Thyra::VectorSpaceBase<double>>
+  get_x_space() const;
 
   virtual
-  Teuchos::RCP<const Epetra_Map>
-  get_f_map() const;
+  Teuchos::RCP<const Thyra::VectorSpaceBase<double>>
+  get_f_space() const;
 
   virtual
-  Teuchos::RCP<const Epetra_Vector>
-  get_x_init() const;
-
-  virtual
-  Teuchos::RCP<const Epetra_Vector>
-  get_p_init(int l) const;
-
-  virtual
-  Teuchos::RCP<const Epetra_Map>
-  get_p_map(int l) const;
+  Teuchos::RCP<const Thyra::VectorSpaceBase<double>>
+  get_p_space(int l) const;
 
   virtual
   Teuchos::RCP<const Teuchos::Array<std::string> >
   get_p_names(int l) const;
 
   virtual
-  Teuchos::RCP<Epetra_Operator>
-  create_W() const;
+  Teuchos::RCP<const Thyra::VectorSpaceBase<double>>
+  get_g_space(int l) const;
 
   virtual
-  Teuchos::RCP<EpetraExt::ModelEvaluator::Preconditioner>
-  create_WPrec() const;
+  Thyra::ModelEvaluatorBase::InArgs<double>
+  getNominalValues() const;
 
   virtual
-  InArgs
-  createInArgs() const;
+  Thyra::ModelEvaluatorBase::InArgs<double>
+  getLowerBounds() const;
 
   virtual
-  OutArgs
-  createOutArgs() const;
+  Thyra::ModelEvaluatorBase::InArgs<double>
+  getUpperBounds() const;
+
+  //virtual
+  //Teuchos::RCP<Thyra::LinearOpWithSolveBase<double>>
+  //create_W() const;
+
+  virtual
+  Teuchos::RCP<Thyra::LinearOpBase<double>>
+  create_W_op() const;
+
+  virtual
+  Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<double>>
+  get_W_factory() const;
+
+  virtual
+  Teuchos::RCP<Thyra::PreconditionerBase<double>>
+  create_W_prec() const;
 
   virtual
   void
-  evalModel(
-      const InArgs &inArgs,
-      const OutArgs &outArgs
-      ) const;
+  reportFinalPoint(
+      const Thyra::ModelEvaluatorBase::InArgs<double> &finalPoint,
+      const bool wasSolved
+      );
+
+  virtual
+  Thyra::ModelEvaluatorBase::InArgs<double>
+  createInArgs() const;
 
 public:
   double
   innerProduct(
-      const Epetra_Vector &phi,
-      const Epetra_Vector &psi
+      const Thyra::VectorBase<double> &phi,
+      const Thyra::VectorBase<double> &psi
       ) const;
 
   double
-  gibbsEnergy(const Epetra_Vector &psi) const;
+  gibbsEnergy(const Thyra::VectorBase<double> &psi) const;
 
   const std::shared_ptr<const Nosh::StkMesh>
   getMesh() const;
 
+protected:
+
+  virtual
+  Thyra::ModelEvaluatorBase::OutArgs<double>
+  createOutArgsImpl() const;
+
+  virtual
+  void evalModelImpl(
+      const Thyra::ModelEvaluatorBase::InArgs<double> &inArgs,
+      const Thyra::ModelEvaluatorBase::OutArgs<double> &outArgs
+      ) const;
+
 private:
   void
-  computeF_(const Epetra_Vector &x,
-            const std::map<std::string, double> & params,
-            Epetra_Vector &FVec
-          ) const;
+  computeF_(
+      const Epetra_Vector &x,
+      const std::map<std::string, double> & params,
+      Epetra_Vector &FVec
+      ) const;
 
   void
-  computeDFDP_(const Epetra_Vector &x,
-               const std::map<std::string, double> & params,
-               const std::string & paramName,
-               Epetra_Vector &FVec
-             ) const;
+  computeDFDP_(
+      const Epetra_Vector &x,
+      const std::map<std::string, double> & params,
+      const std::string & paramName,
+      Epetra_Vector &FVec
+      ) const;
 
-protected:
 private:
   const std::shared_ptr<const Nosh::StkMesh> mesh_;
 
   const std::shared_ptr<const Nosh::ScalarField::Virtual> scalarPotential_;
 
   const std::shared_ptr<const Nosh::ScalarField::Virtual> thickness_;
-
-  const Teuchos::RCP<const Epetra_Vector> x_init_;
 
   const std::shared_ptr<Nosh::ParameterMatrix::Virtual> keo_;
   const std::shared_ptr<Nosh::ParameterMatrix::Virtual> dKeoDP_;
@@ -169,8 +192,9 @@ private:
   Teuchos::RCP<Teuchos::FancyOStream> out_;
 
   Teuchos::RCP<Epetra_LocalMap> p_map_;
-  Teuchos::RCP<Epetra_Vector> p_init_;
   Teuchos::RCP<Teuchos::Array<std::string> > p_names_;
+
+  Thyra::ModelEvaluatorBase::InArgs<double> nominalValues_;
 };
 } // namespace ModelEvaluator
 } // namespace Nosh

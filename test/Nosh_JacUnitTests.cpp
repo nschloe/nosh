@@ -41,7 +41,7 @@
 #include "nosh/ParameterMatrix_DKeoDP.hpp"
 #include "nosh/JacobianOperator.hpp"
 #include "nosh/ModelEvaluator_Nls.hpp"
-#include "nosh/ModelEvaluatorT_Nls.hpp"
+#include "nosh/ModelEvaluator_Nls.hpp"
 
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_RCPStdSharedPtrConversions.hpp>
@@ -105,34 +105,8 @@ void
       new Nosh::ParameterMatrix::DKeoDP(mesh, thickness, mvp, "mu")
       );
 
-  //Teuchos::RCP<Nosh::ModelEvaluator::Nls> modelEvalE =
-  //  Teuchos::rcp(new Nosh::ModelEvaluator::Nls(
-  //        mesh,
-  //        keoBuilder,
-  //        DKeoDPBuilder,
-  //        sp,
-  //        1.0,
-  //        thickness,
-  //        psi
-  //        ));
-
-  //Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
-  //Teuchos::RCP<Teuchos::ParameterList> solverParams =
-  //  Teuchos::rcp(new Teuchos::ParameterList());
-  //solverParams->set("Linear Solver Type", "Belos");
-  ////linearSolverBuilder.setParameterList(Piro::extractStratimikosParams(piroParams));
-  //linearSolverBuilder.setParameterList(solverParams);
-  //const Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory =
-  //  createLinearSolveStrategy(linearSolverBuilder);
-
-  ////const Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory =
-  ////  Thyra::createLinearSolveStrategy("myStrat");
-
-  //Teuchos::RCP<Thyra::ModelEvaluator<double> > modelEval =
-  //  Thyra::epetraModelEvaluator(modelEvalE, lowsFactory);
-
-  Teuchos::RCP<Nosh::ModelEvaluatorT::Nls> modelEval =
-    Teuchos::rcp(new Nosh::ModelEvaluatorT::Nls(
+  Teuchos::RCP<Nosh::ModelEvaluator::Nls> modelEval =
+    Teuchos::rcp(new Nosh::ModelEvaluator::Nls(
           mesh,
           keoBuilder,
           DKeoDPBuilder,

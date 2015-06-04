@@ -26,7 +26,7 @@ namespace ModelEvaluator
 {
 // ============================================================================
 Virtual::
-Virtual ()
+Virtual()
 {
 }
 // ============================================================================
@@ -37,7 +37,7 @@ Virtual::
 // =============================================================================
 double
 Virtual::
-norm(const Epetra_Vector &psi) const
+norm(const Thyra::VectorBase<double> &psi) const
 {
   return sqrt(this->innerProduct(psi, psi));
 }

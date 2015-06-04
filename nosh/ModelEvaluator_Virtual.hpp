@@ -26,16 +26,13 @@ namespace Nosh
 class StkMesh;
 }
 
-// includes
-#include <EpetraExt_ModelEvaluator.h>
-#include <Epetra_Vector.h>
-#include <Teuchos_RCP.hpp>
+#include <Thyra_ModelEvaluatorDefaultBase.hpp>
 
 namespace Nosh
 {
 namespace ModelEvaluator
 {
-class Virtual : public EpetraExt::ModelEvaluator
+class Virtual : public Thyra::ModelEvaluatorDefaultBase<double>
 {
 public:
   Virtual();
@@ -46,17 +43,18 @@ public:
 
   virtual
   double
-  innerProduct(const Epetra_Vector &phi,
-               const Epetra_Vector &psi
-             ) const = 0;
+  innerProduct(
+      const Thyra::VectorBase<double> &phi,
+      const Thyra::VectorBase<double> &psi
+      ) const = 0;
 
   virtual
   double
-  norm(const Epetra_Vector &psi) const;
+  norm(const Thyra::VectorBase<double> &psi) const;
 
   virtual
   double
-  gibbsEnergy(const Epetra_Vector &psi) const = 0;
+  gibbsEnergy(const Thyra::VectorBase<double> &psi) const = 0;
 
   virtual
   const std::shared_ptr<const Nosh::StkMesh>

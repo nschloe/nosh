@@ -22,7 +22,7 @@
 
 #include <string>
 
-#include "nosh/ModelEvaluatorT_Virtual.hpp"
+#include "nosh/ModelEvaluator_Virtual.hpp"
 #include "nosh/StkMesh.hpp"
 
 namespace Nosh
@@ -30,7 +30,7 @@ namespace Nosh
 // ============================================================================
 Observer::
 Observer(
-    const std::shared_ptr<const Nosh::ModelEvaluatorT::Virtual> &modelEval,
+    const std::shared_ptr<const Nosh::ModelEvaluator::Virtual> &modelEval,
     const std::string & csvFilename,
     const std::string & contParamName,
     const bool isTurningPointContinuation

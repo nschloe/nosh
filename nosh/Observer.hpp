@@ -30,7 +30,7 @@
 // forward declarations
 namespace Nosh
 {
-namespace ModelEvaluatorT
+namespace ModelEvaluator
 {
 class Virtual;
 }
@@ -44,7 +44,7 @@ class Observer: public Piro::ObserverBase<double>
 public:
   //! Constructor
   Observer(
-      const std::shared_ptr<const Nosh::ModelEvaluatorT::Virtual> &modelEval,
+      const std::shared_ptr<const Nosh::ModelEvaluator::Virtual> &modelEval,
       const std::string & csvFilename = "",
       const std::string & contParamName = "",
       const bool isTurningPointContinuation = false
@@ -87,7 +87,7 @@ private:
       );
 
 private:
-  const std::shared_ptr<const Nosh::ModelEvaluatorT::Virtual> modelEval_;
+  const std::shared_ptr<const Nosh::ModelEvaluator::Virtual> modelEval_;
   Nosh::CsvWriter csvWriter_;
   const std::string contParamName_;
   const bool isTurningPointContinuation_;
