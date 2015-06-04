@@ -37,6 +37,7 @@
 #include "nosh/ParameterMatrix_DKeoDP.hpp"
 #include "nosh/VectorField_ExplicitValues.hpp"
 #include "nosh/ModelEvaluator_Nls.hpp"
+#include "nosh/ModelEvaluatorT_Nls.hpp"
 
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_RCPStdSharedPtrConversions.hpp>
@@ -47,6 +48,7 @@ namespace
 void
 computeFiniteDifference_(
   const Thyra::ModelEvaluator<double> & modelEval,
+  const Teuchos::RCP<Thyra::VectorBase<double>> & x,
   Teuchos::RCP<Thyra::VectorBase<double> > & p,
   const int paramIndex,
   const Teuchos::RCP<Thyra::VectorBase<double> > & fdiff
@@ -59,6 +61,8 @@ computeFiniteDifference_(
 
   Thyra::ModelEvaluatorBase::InArgs<double> inArgs =
     modelEval.createInArgs();
+  inArgs.set_x(x);
+
   Thyra::ModelEvaluatorBase::OutArgs<double> outArgs =
     modelEval.createOutArgs();
 
@@ -126,8 +130,21 @@ testDfdp(const std::string & inputFileNameBase,
       new Nosh::ScalarField::Constant(*mesh, -1.0)
       );
 
-  Teuchos::RCP<Nosh::ModelEvaluator::Nls> modelEvalE =
-    Teuchos::rcp(new Nosh::ModelEvaluator::Nls(
+  //Teuchos::RCP<Nosh::ModelEvaluator::Nls> modelEvalE =
+  //  Teuchos::rcp(new Nosh::ModelEvaluator::Nls(
+  //        mesh,
+  //        keoBuilder,
+  //        DKeoDPBuilder,
+  //        sp,
+  //        1.0,
+  //        thickness,
+  //        z
+  //        ));
+  //Teuchos::RCP<Thyra::ModelEvaluator<double> > modelEval =
+  //  Thyra::epetraModelEvaluator(modelEvalE, Teuchos::null);
+
+  Teuchos::RCP<Thyra::ModelEvaluator<double>> modelEval =
+    Teuchos::rcp(new Nosh::ModelEvaluatorT::Nls(
           mesh,
           keoBuilder,
           DKeoDPBuilder,
@@ -137,13 +154,10 @@ testDfdp(const std::string & inputFileNameBase,
           z
           ));
 
-  Teuchos::RCP<Thyra::ModelEvaluator<double> > modelEval =
-    Thyra::epetraModelEvaluator(modelEvalE, Teuchos::null);
-
   Teuchos::RCP<const Thyra::VectorSpaceBase<double> > vectorSpaceX =
-    Thyra::create_VectorSpace(modelEvalE->get_x_map());
+    modelEval->get_x_space();
   Teuchos::RCP<const Thyra::VectorSpaceBase<double> > vectorSpaceF =
-    Thyra::create_VectorSpace(modelEvalE->get_f_map());
+    modelEval->get_f_space();
 
   // -------------------------------------------------------------------------
   // Perform the finite difference test for all parameters present in the
@@ -151,7 +165,10 @@ testDfdp(const std::string & inputFileNameBase,
   // Get a finite-difference approximation of df/dp.
   Thyra::ModelEvaluatorBase::InArgs<double> inArgs =
     modelEval->createInArgs();
-  inArgs.set_x(Thyra::create_Vector(Teuchos::rcp(z), vectorSpaceX));
+  Teuchos::RCP<Thyra::VectorBase<double>> zT =
+    Thyra::create_Vector(Teuchos::rcp(z), vectorSpaceX);
+  inArgs.set_x(zT);
+
   Thyra::ModelEvaluatorBase::OutArgs<double> outArgs =
     modelEval->createOutArgs();
 
@@ -184,6 +201,7 @@ testDfdp(const std::string & inputFileNameBase,
     // Get finite difference.
     computeFiniteDifference_(
         *modelEval,
+        zT,
         p,
         paramIndex,
         fdiff

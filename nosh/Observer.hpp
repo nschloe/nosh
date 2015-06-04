@@ -23,19 +23,14 @@
 #include <string>
 
 #include <Teuchos_RCP.hpp>
-#include <Epetra_Vector.h>
-#include <NOX_Epetra_Observer.H>
+#include <Piro_ObserverBase.hpp>
 
 #include "nosh/CsvWriter.hpp"
 // =============================================================================
 // forward declarations
-namespace Komplex2
-{
-class LinearProblem;
-}
 namespace Nosh
 {
-namespace ModelEvaluator
+namespace ModelEvaluatorT
 {
 class Virtual;
 }
@@ -44,49 +39,55 @@ class Virtual;
 namespace Nosh
 {
 
-class Observer:  public NOX::Epetra::Observer
+class Observer: public Piro::ObserverBase<double>
 {
 public:
-//! Constructor
-  Observer(const std::shared_ptr<const Nosh::ModelEvaluator::Virtual> &modelEval,
-           const std::string & csvFilename = "",
-           const std::string & contParamName = "",
-           const bool isTurningPointContinuation = false
-          );
+  //! Constructor
+  Observer(
+      const std::shared_ptr<const Nosh::ModelEvaluatorT::Virtual> &modelEval,
+      const std::string & csvFilename = "",
+      const std::string & contParamName = "",
+      const bool isTurningPointContinuation = false
+      );
 
-//! Destructor
+  //! Destructor
   virtual
   ~Observer ();
 
   virtual
   void
-  observeSolution(const Epetra_Vector &soln);
+  observeSolution(const Thyra::VectorBase<double> &soln);
 
   virtual
   void
-  observeSolution(const Epetra_Vector& soln,
-                  double paramVal);
+  observeSolution(
+      const Thyra::VectorBase<double> & soln,
+      double paramVal
+      );
 
 protected:
 private:
   void
-  observeContinuation_(const Epetra_Vector &soln,
-                       const double paramVal
-                     );
+  observeContinuation_(
+      const Thyra::VectorBase<double> &soln,
+      const double paramVal
+      );
 
   void
-  observeTurningPointContinuation_(const Epetra_Vector &soln,
-                                   const double paramVal
-                                 );
+  observeTurningPointContinuation_(
+      const Thyra::VectorBase<double> &soln,
+      const double paramVal
+      );
 
   void
-  saveContinuationStatistics_(const Epetra_Vector &soln,
-                              const double paramVal,
-                              const int stepIndex
-                             );
+  saveContinuationStatistics_(
+      const Thyra::VectorBase<double> &soln,
+      const double paramVal,
+      const int stepIndex
+      );
 
 private:
-  const std::shared_ptr<const Nosh::ModelEvaluator::Virtual> modelEval_;
+  const std::shared_ptr<const Nosh::ModelEvaluatorT::Virtual> modelEval_;
   Nosh::CsvWriter csvWriter_;
   const std::string contParamName_;
   const bool isTurningPointContinuation_;

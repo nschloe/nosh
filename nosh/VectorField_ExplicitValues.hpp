@@ -60,6 +60,19 @@ public:
       const std::string & dParamName
       ) const;
 
+  virtual
+  Eigen::Vector3d
+  eval(const Eigen::Vector3d & x) const {
+    // mu * 0.5  * X.cross(B)
+    return mu_ * 0.5 * Eigen::Vector3d({-x[1], x[0], 0.0});
+  };
+
+  virtual
+  unsigned int
+  degree() const {
+    return 1;
+  };
+
 protected:
 private:
   double mu_;

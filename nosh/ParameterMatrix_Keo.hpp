@@ -34,6 +34,8 @@
 
 #include <stk_mesh/base/Entity.hpp>
 
+#include <Eigen/Dense>
+
 #include "nosh/ParameterMatrix_Virtual.hpp"
 #include "nosh/StkMesh.hpp"
 
@@ -86,6 +88,13 @@ private:
   buildAlphaCache_(
       const std::vector<edge> & edges,
       const std::vector<double> & edgeCoefficients
+      ) const;
+
+  double
+  integrate1d_(
+      const Nosh::VectorField::Virtual & f,
+      const Eigen::Vector3d & x0,
+      const Eigen::Vector3d & x1
       ) const;
 
 private:

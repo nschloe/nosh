@@ -100,9 +100,10 @@ SetUseTranspose(bool useTranspose)
 // =============================================================================
 int
 KeoRegularized::
-Apply(const Epetra_MultiVector &X,
-       Epetra_MultiVector &Y
-     ) const
+ApplyInverse(
+    const Epetra_MultiVector &X,
+    Epetra_MultiVector &Y
+    ) const
 {
 #ifndef NDEBUG
   TEUCHOS_ASSERT(regularizedKeo_->DomainMap().SameAs(X.Map()));
@@ -114,9 +115,10 @@ Apply(const Epetra_MultiVector &X,
 // =============================================================================
 int
 KeoRegularized::
-ApplyInverse(const Epetra_MultiVector &X,
-             Epetra_MultiVector &Y
-          ) const
+Apply(
+    const Epetra_MultiVector &X,
+    Epetra_MultiVector &Y
+    ) const
 {
   if (numCycles_ == 1) {
     // Just apply one (inverse) AMG cycle.

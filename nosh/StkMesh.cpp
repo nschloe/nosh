@@ -420,9 +420,10 @@ getTime() const
 // =============================================================================
 std::shared_ptr<Epetra_Vector>
 StkMesh::
-complexfield2vector_(const ScalarFieldType &realField,
-                     const ScalarFieldType &imagField
-                     ) const
+complexfield2vector_(
+    const ScalarFieldType &realField,
+    const ScalarFieldType &imagField
+    ) const
 {
   // Psi needs to have unique node IDs to be able to compute Norm2().
   // This is required in Belos.

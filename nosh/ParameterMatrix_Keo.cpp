@@ -80,6 +80,24 @@ getParameters() const
   return mvp_->getParameters();
 }
 // =============================================================================
+double
+Keo::
+integrate1d_(
+    const Nosh::VectorField::Virtual & f,
+    const Eigen::Vector3d & x0,
+    const Eigen::Vector3d & x1
+    ) const
+{
+  if (f.degree() < 2) {
+    return (x0 - x1).dot(mvp_->eval(0.5 * (x0 + x1)));
+  } else {
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(
+        true,
+        "Cannot integrate functions of degree " << f.degree() << "."
+        );
+  }
+}
+// =============================================================================
 void
 Keo::
 refill_(const std::map<std::string, double> & params)
@@ -95,11 +113,6 @@ refill_(const std::map<std::string, double> & params)
 
 #ifndef NDEBUG
   TEUCHOS_ASSERT(mesh_);
-#endif
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  // Loop over the cells, create local load vector and mass matrix,
-  // and insert them into the global matrix.
-#ifndef NDEBUG
   TEUCHOS_ASSERT(thickness_);
   TEUCHOS_ASSERT(mvp_);
 #endif
@@ -110,6 +123,7 @@ refill_(const std::map<std::string, double> & params)
   }
 
   double v[3];
+  const VectorFieldType & coordsField = mesh_->getNodeField("coordinates");
   // Loop over all edges.
   for (auto k = 0; k < edges.size(); k++) {
     // Compute the integral
@@ -124,16 +138,6 @@ refill_(const std::map<std::string, double> & params)
     // Instead of first computing the projection over the normalized edge
     // and then multiply it with the edge length, don't normalize the
     // edge vector.
-    const double aInt = mvp_->getEdgeProjection(k);
-    // Fill v with
-    // Re(-exp(i Aint))
-    // Im(-exp(i Aint))
-    // 1.0
-    double sinAInt, cosAInt;
-    sincos(aInt, &sinAInt, &cosAInt);
-    v[0] = -cosAInt;
-    v[1] = -sinAInt;
-    v[2] = 1.0;
     // We'd like to insert the 2x2 matrix
     //
     //     [   alpha                 , - alpha * exp(-IM * aInt) ]
@@ -142,9 +146,33 @@ refill_(const std::map<std::string, double> & params)
     // at the indices   [ nodeIndices[0], nodeIndices[1] ] for every index pair
     // that shares and edge.
     // Do that now, just blockwise for real and imaginary part.
-    v[0] *= alphaCache_[k];
-    v[1] *= alphaCache_[k];
-    v[2] *= alphaCache_[k];
+
+    const double aInt = mvp_->getEdgeProjection(k);
+
+    //// ----
+    //// get edge coords (cache this)
+    //// Now: midpoint rule
+    //const Eigen::Vector3d x0 =
+    //  mesh_->getNodeValue(coordsField, std::get<0>(edges[k]));
+    //const Eigen::Vector3d x1 =
+    //  mesh_->getNodeValue(coordsField, std::get<1>(edges[k]));
+    //const double aInt2 = integrate1d_(*mvp_, x0, x1);
+
+    //TEUCHOS_TEST_FOR_EXCEPT_MSG(
+    //    fabs(aInt - aInt2) > 1.0e-10,
+    //    aInt << " != " << aInt2 << " diff  = " << aInt - aInt2
+    //   );
+
+    // ----
+    // Fill v with
+    // Re(-exp(i Aint))
+    // Im(-exp(i Aint))
+    // 1.0
+    double sinAInt, cosAInt;
+    sincos(aInt, &sinAInt, &cosAInt);
+    v[0] = -cosAInt * alphaCache_[k];
+    v[1] = -sinAInt * alphaCache_[k];
+    v[2] = alphaCache_[k];
     double ain [] = {
       v[2],  0.0,   v[0], v[1],
        0.0,  v[2], -v[1], v[0],

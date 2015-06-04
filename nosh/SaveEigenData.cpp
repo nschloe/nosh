@@ -23,7 +23,7 @@
 #include <string>
 #include <vector>
 
-#include "nosh/ModelEvaluator_Virtual.hpp"
+#include "nosh/ModelEvaluatorT_Virtual.hpp"
 
 #include <NOX_Abstract_MultiVector.H>
 #include <AnasaziSortManager.hpp>
@@ -34,7 +34,7 @@ namespace Nosh
 SaveEigenData::
 SaveEigenData(
     Teuchos::ParameterList &eigenParamList,
-    const std::shared_ptr<const Nosh::ModelEvaluator::Virtual> &modelEval,
+    const std::shared_ptr<const Nosh::ModelEvaluatorT::Virtual> &modelEval,
     const std::string & fileName
     ) :
   eigenParamListPtr_(Teuchos::rcpFromRef<Teuchos::ParameterList>(eigenParamList)),

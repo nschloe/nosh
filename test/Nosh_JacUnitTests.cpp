@@ -31,6 +31,8 @@
 #include <Epetra_Vector.h>
 #include <LOCA_Parameter_Vector.H>
 #include <Thyra_EpetraModelEvaluator.hpp>
+#include <Thyra_LinearSolverBuilderBase.hpp>
+#include <Stratimikos_DefaultLinearSolverBuilder.hpp>
 
 #include "nosh/StkMesh.hpp"
 #include "nosh/VectorField_ExplicitValues.hpp"
@@ -39,6 +41,7 @@
 #include "nosh/ParameterMatrix_DKeoDP.hpp"
 #include "nosh/JacobianOperator.hpp"
 #include "nosh/ModelEvaluator_Nls.hpp"
+#include "nosh/ModelEvaluatorT_Nls.hpp"
 
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_RCPStdSharedPtrConversions.hpp>
@@ -48,13 +51,15 @@ namespace
 
 // =============================================================================
 void
-testJac(const std::string & inputFileNameBase,
-        const double mu,
-        const double controlSumT0,
-        const double controlSumT1,
-        const double controlSumT2,
-        Teuchos::FancyOStream & out,
-        bool & success)
+  testJac(
+      const std::string & inputFileNameBase,
+      const double mu,
+      const double controlSumT0,
+      const double controlSumT1,
+      const double controlSumT2,
+      Teuchos::FancyOStream & out,
+      bool & success
+      )
 {
   // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
@@ -100,8 +105,34 @@ testJac(const std::string & inputFileNameBase,
       new Nosh::ParameterMatrix::DKeoDP(mesh, thickness, mvp, "mu")
       );
 
-  Teuchos::RCP<Nosh::ModelEvaluator::Nls> modelEvalE =
-    Teuchos::rcp(new Nosh::ModelEvaluator::Nls(
+  //Teuchos::RCP<Nosh::ModelEvaluator::Nls> modelEvalE =
+  //  Teuchos::rcp(new Nosh::ModelEvaluator::Nls(
+  //        mesh,
+  //        keoBuilder,
+  //        DKeoDPBuilder,
+  //        sp,
+  //        1.0,
+  //        thickness,
+  //        psi
+  //        ));
+
+  //Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
+  //Teuchos::RCP<Teuchos::ParameterList> solverParams =
+  //  Teuchos::rcp(new Teuchos::ParameterList());
+  //solverParams->set("Linear Solver Type", "Belos");
+  ////linearSolverBuilder.setParameterList(Piro::extractStratimikosParams(piroParams));
+  //linearSolverBuilder.setParameterList(solverParams);
+  //const Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory =
+  //  createLinearSolveStrategy(linearSolverBuilder);
+
+  ////const Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory =
+  ////  Thyra::createLinearSolveStrategy("myStrat");
+
+  //Teuchos::RCP<Thyra::ModelEvaluator<double> > modelEval =
+  //  Thyra::epetraModelEvaluator(modelEvalE, lowsFactory);
+
+  Teuchos::RCP<Nosh::ModelEvaluatorT::Nls> modelEval =
+    Teuchos::rcp(new Nosh::ModelEvaluatorT::Nls(
           mesh,
           keoBuilder,
           DKeoDPBuilder,
@@ -111,68 +142,69 @@ testJac(const std::string & inputFileNameBase,
           psi
           ));
 
-  //Teuchos::RCP<Thyra::ModelEvaluator<double> > modelEval =
-  //  Thyra::epetraModelEvaluator(modelEvalE, Teuchos::null);
-
-  // get the jacobian from the model evaluator
-  Teuchos::RCP<Epetra_Operator> jac = modelEvalE->create_W();
-
-  EpetraExt::ModelEvaluator::InArgs inArgs = modelEvalE->createInArgs();
-  Teuchos::RCP<Epetra_Vector> p = Teuchos::rcp(new Epetra_Vector(
-        *(modelEvalE->get_p_map(0))
-        ));
-  Teuchos::RCP<const Teuchos::Array<std::string> > pNames =
-    modelEvalE->get_p_names(0);
+  // set parameters
+  Thyra::ModelEvaluatorBase::InArgs<double> inArgs =
+    modelEval->createInArgs();
+  Teuchos::RCP<Thyra::VectorBase<double>> p =
+    Thyra::createMember(modelEval->get_p_space(0));
+  Teuchos::RCP<const Teuchos::Array<std::string>> pNames =
+    modelEval->get_p_names(0);
   for (int i=0; i<pNames->size(); i++) {
-    (*p)[i] = params.at((*pNames)[i]);
+    Thyra::set_ele(i, params.at((*pNames)[i]), p());
   }
   inArgs.set_p(0, p);
-  inArgs.set_x(Teuchos::rcp(psi));
+  inArgs.set_x(Thyra::create_Vector(
+        Teuchos::rcp(psi),
+        modelEval->get_x_space()
+        ));
 
-  EpetraExt::ModelEvaluator::OutArgs outArgs = modelEvalE->createOutArgs();
-  outArgs.set_W(jac);
+  // get the jacobian from the model evaluator
+  Teuchos::RCP<Thyra::LinearOpBase<double> > jac = modelEval->create_W_op();
+
+  Thyra::ModelEvaluatorBase::OutArgs<double> outArgs =
+    modelEval->createOutArgs();
+  outArgs.set_W_op(jac);
 
   // call the model
-  modelEvalE->evalModel(inArgs, outArgs);
+  modelEval->evalModel(inArgs, outArgs);
 
-  //// create the jacobian operator
-  //Nosh::JacobianOperator jac(mesh, sp, thickness, keoBuilder);
-  //jac.rebuild(params, *psi);
+  TEUCHOS_ASSERT(!jac.is_null());
+
+  Teuchos::RCP<const Thyra::VectorSpaceBase<double> > domain = jac->domain();
+  TEUCHOS_ASSERT(!domain.is_null());
+  Teuchos::RCP<Thyra::VectorBase<double> > s = Thyra::createMember(domain);
+  Teuchos::RCP<const Thyra::VectorSpaceBase<double> > range = jac->range();
+  Teuchos::RCP<Thyra::VectorBase<double> > Js =
+    Thyra::createMember(range);
 
   double sum;
-  const Epetra_Map & map = jac->OperatorDomainMap();
-  Epetra_Vector s(map);
-  Epetra_Vector Js(map);
-
   // -------------------------------------------------------------------------
   // (a) [ 1, 1, 1, ... ]
-  TEUCHOS_ASSERT_EQUALITY(0, s.PutScalar(1.0));
-  TEUCHOS_ASSERT_EQUALITY(0, jac->Apply(s, Js));
-  TEUCHOS_ASSERT_EQUALITY(0, s.Dot(Js, &sum));
+  Thyra::put_scalar<double>(1.0, s());
+  jac->apply(Thyra::NOTRANS, *s, Js(), 1.0, 0.0);
+  sum = Thyra::dot(*s, *Js);
   TEST_FLOATING_EQUALITY(sum, controlSumT0, 1.0e-12);
   // -------------------------------------------------------------------------
   // (b) [ 1, 0, 1, 0, ... ]
-  double one  = 1.0;
-  double zero = 0.0;
-  for (int k = 0; k < map.NumMyPoints(); k++) {
-    if (map.GID(k) % 2 == 0)
-      s.ReplaceMyValues(1, &one, &k);
+  for (int k = 0; k < s->space()->dim(); k++) {
+    if (k % 2 == 0)
+      Thyra::set_ele(k, 1.0, s());
     else
-      s.ReplaceMyValues(1, &zero, &k);
+      Thyra::set_ele(k, 0.0, s());
   }
-  TEUCHOS_ASSERT_EQUALITY(0, jac->Apply(s, Js));
-  TEUCHOS_ASSERT_EQUALITY(0, s.Dot(Js, &sum));
+  jac->apply(Thyra::NOTRANS, *s, Js(), 1.0, 0.0);
+  sum = Thyra::dot(*s, *Js);
   TEST_FLOATING_EQUALITY(sum, controlSumT1, 1.0e-12);
   // -------------------------------------------------------------------------
   // (b) [ 0, 1, 0, 1, ... ]
-  for (int k = 0; k < map.NumMyPoints(); k++) {
-    if (map.GID(k) % 2 == 0)
-      s.ReplaceMyValues(1, &zero, &k);
+  for (int k = 0; k < s->space()->dim(); k++) {
+    if (k % 2 == 0)
+      Thyra::set_ele(k, 0.0, s());
     else
-      s.ReplaceMyValues(1, &one, &k);
+      Thyra::set_ele(k, 1.0, s());
   }
-  TEUCHOS_ASSERT_EQUALITY(0, jac->Apply(s, Js));
-  TEUCHOS_ASSERT_EQUALITY(0, s.Dot(Js, &sum));
+  jac->apply(Thyra::NOTRANS, *s, Js(), 1.0, 0.0);
+  sum = Thyra::dot(*s, *Js);
   TEST_FLOATING_EQUALITY(sum, controlSumT2, 1.0e-10);
   // -------------------------------------------------------------------------
   return;

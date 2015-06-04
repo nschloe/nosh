@@ -35,8 +35,10 @@
 #endif
 #include <Epetra_Vector.h>
 
-#include <Piro_Epetra_NOXSolver.hpp>
-#include <Piro_Epetra_LOCASolver.hpp>
+//#include <Piro_Epetra_NOXSolver.hpp>
+//#include <Piro_Epetra_LOCASolver.hpp>
+#include <Piro_NOXSolver.hpp>
+#include <Piro_LOCASolver.hpp>
 
 #include "nosh/StkMesh.hpp"
 #include "nosh/ScalarField_Constant.hpp"
@@ -47,6 +49,7 @@
 #include "nosh/VectorField_ExplicitValues.hpp"
 #include "nosh/VectorField_ConstantCurl.hpp"
 #include "nosh/ModelEvaluator_Nls.hpp"
+#include "nosh/ModelEvaluatorT_Nls.hpp"
 #include "nosh/ModelEvaluator_Bordered.hpp"
 #include "nosh/Observer.hpp"
 #include "nosh/SaveEigenData.hpp"
@@ -128,7 +131,7 @@ int main(int argc, char *argv[])
       prefix + inputDataList.get<std::string>("File");
     const int step = inputDataList.get<int>("Initial Psi Step");
 
-    const bool useBordering = piroParams->get<bool>("Bordering");
+    //const bool useBordering = piroParams->get<bool>("Bordering");
     // =======================================================================
     // Read the data from the file.
     std::shared_ptr<Nosh::StkMesh> mesh(
@@ -228,8 +231,8 @@ int main(int argc, char *argv[])
     const double g = initialParameterValues.get<double>("g");
     // Finally, create the model evaluator.
     // This is the most important object in the whole stack.
-    std::shared_ptr<Nosh::ModelEvaluator::Virtual> nlsModel(
-        new Nosh::ModelEvaluator::Nls(
+    std::shared_ptr<Nosh::ModelEvaluatorT::Virtual> nlsModel(
+        new Nosh::ModelEvaluatorT::Nls(
           mesh,
           keoBuilder,
           DKeoDPBuilder,
@@ -239,31 +242,31 @@ int main(int argc, char *argv[])
           psi
           ));
 
-    std::shared_ptr<Nosh::ModelEvaluator::Virtual> modelEvaluator;
-    if (useBordering) {
-      // Use i*psi as bordering.
-      std::shared_ptr<Epetra_Vector> bordering(new Epetra_Vector(psi->Map()));
-      for (int k = 0; k < psi->Map().NumMyElements()/2; k++) {
-        (*bordering)[2*k] = - (*psi)[2*k+1];
-        (*bordering)[2*k+1] = (*psi)[2*k];
-        //bordering[2*k]   = 1.0;
-        //bordering[2*k+1] = 0.0;
-      }
-      //bordering->Random();
-      // Initial value for the extra variable.
-      double lambda = 0.0;
-      modelEvaluator = std::make_shared<Nosh::ModelEvaluator::Bordered>(
-          nlsModel,
-          bordering,
-          lambda
-          );
-    } else {
+    std::shared_ptr<Nosh::ModelEvaluatorT::Virtual> modelEvaluator;
+    //if (useBordering) {
+    //  // Use i*psi as bordering.
+    //  std::shared_ptr<Epetra_Vector> bordering(new Epetra_Vector(psi->Map()));
+    //  for (int k = 0; k < psi->Map().NumMyElements()/2; k++) {
+    //    (*bordering)[2*k] = - (*psi)[2*k+1];
+    //    (*bordering)[2*k+1] = (*psi)[2*k];
+    //    //bordering[2*k]   = 1.0;
+    //    //bordering[2*k+1] = 0.0;
+    //  }
+    //  //bordering->Random();
+    //  // Initial value for the extra variable.
+    //  double lambda = 0.0;
+    //  modelEvaluator = std::make_shared<Nosh::ModelEvaluator::Bordered>(
+    //      nlsModel,
+    //      bordering,
+    //      lambda
+    //      );
+    //} else {
       modelEvaluator = nlsModel;
-    }
+    //}
 
     // Build the Piro model evaluator. It's used to hook up with
     // several different backends (NOX, LOCA, Rhythmos,...).
-    std::shared_ptr<EpetraExt::ModelEvaluator> piro;
+    std::shared_ptr<Thyra::ModelEvaluator<double>> piro;
 
     // Declare the eigensaver; it will be used only for LOCA solvers, though.
     std::shared_ptr<Nosh::SaveEigenData> glEigenSaver;
@@ -276,7 +279,7 @@ int main(int argc, char *argv[])
           new Nosh::Observer(modelEvaluator)
           );
 
-      piro = std::make_shared<Piro::Epetra::NOXSolver>(
+      piro = std::make_shared<Piro::NOXSolver<double>>(
             Teuchos::rcp(piroParams),
             Teuchos::rcp(modelEvaluator),
             Teuchos::rcp(observer)
@@ -320,22 +323,23 @@ int main(int argc, char *argv[])
       }
 #endif
       // Get the solver.
-      std::shared_ptr<Piro::Epetra::LOCASolver> piroLOCASolver(
-          new Piro::Epetra::LOCASolver(
+      std::shared_ptr<Piro::LOCASolver<double>> piroLOCASolver(
+          new Piro::LOCASolver<double>(
             Teuchos::rcp(piroParams),
             Teuchos::rcp(modelEvaluator),
-            Teuchos::rcp(observer)
+            Teuchos::null
+            //Teuchos::rcp(observer)
             )
           );
 
-      // Get stepper and inject it into the eigensaver.
-      std::shared_ptr<LOCA::Stepper> stepper = Teuchos::get_shared_ptr(
-          piroLOCASolver->getLOCAStepperNonConst()
-          );
-#ifdef HAVE_LOCA_ANASAZI
-      if (computeEigenvalues)
-        glEigenSaver->setLocaStepper(stepper);
-#endif
+//      // Get stepper and inject it into the eigensaver.
+//      std::shared_ptr<LOCA::Stepper> stepper = Teuchos::get_shared_ptr(
+//          piroLOCASolver->getLOCAStepperNonConst()
+//          );
+//#ifdef HAVE_LOCA_ANASAZI
+//      if (computeEigenvalues)
+//        glEigenSaver->setLocaStepper(stepper);
+//#endif
       piro = piroLOCASolver;
     } else if ( solver == "Turning Point" ) {
       std::shared_ptr<Nosh::Observer> observer;
@@ -359,10 +363,11 @@ int main(int argc, char *argv[])
       // initialNullAbstractVec->init(1.0);
       bifList.set("Initial Null Vector", initialNullAbstractVec);
 
-      piro = std::make_shared<Piro::Epetra::LOCASolver>(
+      piro = std::make_shared<Piro::LOCASolver<double>>(
             Teuchos::rcp(piroParams),
             Teuchos::rcp(modelEvaluator),
-            Teuchos::rcp(observer)
+            Teuchos::null
+            //Teuchos::rcp(observer)
             );
     } else {
       TEUCHOS_TEST_FOR_EXCEPT_MSG(
@@ -373,13 +378,14 @@ int main(int argc, char *argv[])
     // ----------------------------------------------------------------------
 
     // Now the setting of inputs and outputs.
-    EpetraExt::ModelEvaluator::InArgs inArgs = piro->createInArgs();
-    Teuchos::RCP<Epetra_Vector> p1 =
-      Teuchos::rcp(new Epetra_Vector(*(piro->get_p_init(0))));
-    inArgs.set_p(0, p1);
+    Thyra::ModelEvaluatorBase::InArgs<double> inArgs = piro->createInArgs();
+    inArgs.set_p(
+        0,
+        piro->getNominalValues().get_p(0)
+        );
 
     // Set output arguments to evalModel call.
-    EpetraExt::ModelEvaluator::OutArgs outArgs = piro->createOutArgs();
+    Thyra::ModelEvaluatorBase::OutArgs<double> outArgs = piro->createOutArgs();
 
     // Now solve the problem and return the responses.
     const Teuchos::RCP<Teuchos::Time> piroSolveTime =

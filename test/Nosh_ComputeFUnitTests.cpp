@@ -1,7 +1,7 @@
 // @HEADER
 //
 //    <one line to give the program's name and a brief idea of what it does.>
-//    Copyright (C) 2012  Nico Schl\"omer
+//    Copyright (C) 2012  Nico Schlömer
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -36,7 +36,6 @@
 #include "nosh/ParameterMatrix_Keo.hpp"
 #include "nosh/ParameterMatrix_DKeoDP.hpp"
 #include "nosh/VectorField_ExplicitValues.hpp"
-#include "nosh/ModelEvaluator_Nls.hpp"
 #include "nosh/ModelEvaluatorT_Nls.hpp"
 
 #include <Teuchos_UnitTestHarness.hpp>
@@ -93,21 +92,8 @@ testComputeF(
       new Nosh::ScalarField::Constant(*mesh, -1.0)
       );
 
-  Teuchos::RCP<Nosh::ModelEvaluator::Nls> modelEvalE =
-    Teuchos::rcp(new Nosh::ModelEvaluator::Nls(
-          mesh,
-          keoBuilder,
-          DKeoDPBuilder,
-          sp,
-          1.0,
-          thickness,
-          z
-          ));
-  Teuchos::RCP<Thyra::ModelEvaluator<double> > modelEval =
-    Thyra::epetraModelEvaluator(modelEvalE, Teuchos::null);
-
-  //Teuchos::RCP<Thyra::ModelEvaluator<double>> modelEval =
-  //  Teuchos::rcp(new Nosh::ModelEvaluator::NlsT(
+  //Teuchos::RCP<Nosh::ModelEvaluator::Nls> modelEvalE =
+  //  Teuchos::rcp(new Nosh::ModelEvaluator::Nls(
   //        mesh,
   //        keoBuilder,
   //        DKeoDPBuilder,
@@ -116,15 +102,47 @@ testComputeF(
   //        thickness,
   //        z
   //        ));
+  //Teuchos::RCP<Thyra::ModelEvaluator<double> > modelEval =
+  //  Thyra::epetraModelEvaluator(modelEvalE, Teuchos::null);
 
-  //Teuchos::RCP<const Thyra::VectorSpaceBase<double> > vectorSpace =
-  //  Thyra::create_VectorSpace(modelEvalE->get_x_map());
+  Teuchos::RCP<Thyra::ModelEvaluator<double>> modelEval =
+    Teuchos::rcp(new Nosh::ModelEvaluatorT::Nls(
+          mesh,
+          keoBuilder,
+          DKeoDPBuilder,
+          sp,
+          1.0,
+          thickness,
+          z
+          ));
 
-  // Create inArgs. Use p_init as parameters.
-  Thyra::ModelEvaluatorBase::InArgs<double> inArgs =
-    modelEval->createInArgs();
-  inArgs.set_x(Thyra::create_Vector(Teuchos::rcp(z), modelEval->get_x_space()));
-  //inArgs.set_p(0, modelEvalT->get_p_init(0));
+  // Create inArgs.x
+  Thyra::ModelEvaluatorBase::InArgs<double> inArgs = modelEval->createInArgs();
+  inArgs.set_x(Thyra::create_Vector(Teuchos::rcp(z), modelEval->get_f_space()));
+  // inArgs.p
+  Teuchos::RCP<Thyra::VectorBase<double>> p =
+    Thyra::createMember(modelEval->get_p_space(0));
+  Thyra::set_ele(0, 1.0, p()); // g
+  Thyra::set_ele(1, 0.01, p()); // mu
+  inArgs.set_p(0, p);
+
+  Teuchos::RCP<const Epetra_Comm> comm =
+    Teuchos::rcpFromRef(mesh->getComm());
+  Teuchos::RCP<const Epetra_Map> xmap =
+    Thyra::get_Epetra_Map(*modelEval->get_x_space(), comm);
+  Teuchos::RCP<const Epetra_Map> fmap =
+    Thyra::get_Epetra_Map(*modelEval->get_f_space(), comm);
+
+  std::shared_ptr<const Epetra_Map> mymap = mesh->getComplexNonOverlapMap();
+  Teuchos::RCP<const Thyra::VectorSpaceBase<double>> space =
+    Thyra::create_VectorSpace(Teuchos::rcp(mymap));
+  Teuchos::RCP<const Epetra_Map> spacemap =
+    Thyra::get_Epetra_Map(*space, comm);
+
+  std::cout
+    << "Same0c? "
+    << spacemap->SameAs(*mymap)
+    << std::endl;
 
   // Create outArgs.
   Thyra::ModelEvaluatorBase::OutArgs<double> outArgs =

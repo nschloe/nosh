@@ -1,6 +1,6 @@
 // @HEADER
 //
-//    Query routines for a vector field.
+//    Nosh virtual model evaluator.
 //    Copyright (C) 2012  Nico Schl\"omer
 //
 //    This program is free software: you can redistribute it and/or modify
@@ -17,58 +17,53 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 // @HEADER
-#ifndef NOSH_VECTORFIELD_VIRTUAL_H_
-#define NOSH_VECTORFIELD_VIRTUAL_H_
+#ifndef NOSH_MODELEVALUATORT_VIRTUAL_H
+#define NOSH_MODELEVALUATORT_VIRTUAL_H
 
-#include <string>
-#include <map>
+// forward declarations
+namespace Nosh
+{
+class StkMesh;
+}
 
-#include <Eigen/Dense>
+#include <Thyra_ModelEvaluatorDefaultBase.hpp>
 
 namespace Nosh
 {
-namespace VectorField
+namespace ModelEvaluatorT
 {
-class Virtual
+class Virtual : public Thyra::ModelEvaluatorDefaultBase<double>
 {
 public:
   Virtual();
 
+  // Destructor
   virtual
   ~Virtual();
 
   virtual
-  void
-  setParameters(const std::map<std::string, double> & params) = 0;
-
-  //! get parameter names and initial values.
-  virtual
-  const std::map<std::string, double>
-  getParameters() const = 0;
-
-  //! Projection of the vector field onto an edge at the midpoint of the edge.
-  virtual
   double
-  getEdgeProjection(const unsigned int edgeIndex) const = 0;
-
-  virtual
-  double
-  getDEdgeProjectionDp(
-      const unsigned int edgeIndex,
-      const std::string & dParamName
+  innerProduct(
+      const Thyra::VectorBase<double> &phi,
+      const Thyra::VectorBase<double> &psi
       ) const = 0;
 
   virtual
-  Eigen::Vector3d
-  eval(const Eigen::Vector3d & x) const = 0;
+  double
+  norm(const Thyra::VectorBase<double> &psi) const;
 
   virtual
-  unsigned int
-  degree() const = 0;
+  double
+  gibbsEnergy(const Thyra::VectorBase<double> &psi) const = 0;
+
+  virtual
+  const std::shared_ptr<const Nosh::StkMesh>
+  getMesh() const = 0;
 
 protected:
 private:
 };
-} // namespace VectorField
+} // namespace ModelEvaluatorT
 } // namespace Nosh
-#endif // NOSH_VECTORFIELD_VIRTUAL_H_
+
+#endif // NOSH_MODELEVALUATORT_VIRTUAL_H
