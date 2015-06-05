@@ -188,8 +188,8 @@ buildAlphaCache_(
   // one processor.
   Tpetra::Vector<double,int,int> thicknessOverlap(Teuchos::rcp(overlapMap));
   Teuchos::RCP<const Tpetra::Import<int,int>> importer = Tpetra::createImport(
-      Teuchos::rcp(overlapMap),
-      thicknessValues.getMap()
+      thicknessValues.getMap(),
+      Teuchos::rcp(overlapMap)
       );
   thicknessOverlap.doImport(thicknessValues, *importer, Tpetra::INSERT);
 
