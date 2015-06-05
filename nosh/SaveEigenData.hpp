@@ -29,7 +29,6 @@
 #include <LOCA_SaveEigenData_AbstractStrategy.H>
 #include <LOCA_Parameter_SublistParser.H>
 #include <LOCA_Stepper.H>
-#include <NOX_Epetra_Vector.H>
 
 #include "nosh/CsvWriter.hpp"
 // =============================================================================

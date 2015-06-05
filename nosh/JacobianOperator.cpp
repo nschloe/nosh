@@ -23,8 +23,9 @@
 #include <map>
 #include <string>
 
-#include <Epetra_Vector.h>
-#include <Epetra_Map.h>
+#include <Tpetra_Map.hpp>
+#include <Tpetra_Vector.hpp>
+#include <Teuchos_RCPStdSharedPtrConversions.hpp>
 
 #include "nosh/ParameterMatrix_Virtual.hpp"
 #include "nosh/StkMesh.hpp"
@@ -40,13 +41,12 @@ JacobianOperator(
     const std::shared_ptr<const Nosh::ScalarField::Virtual> &thickness,
     const std::shared_ptr<Nosh::ParameterMatrix::Virtual> &matrix
     ) :
-  useTranspose_(false),
   mesh_(mesh),
   scalarPotential_(scalarPotential),
   thickness_(thickness),
   keo_(matrix),
-  diag0_(*(mesh->getComplexNonOverlapMap())),
-  diag1b_(mesh->getControlVolumes()->Map())
+  diag0_(Teuchos::rcp(mesh->getComplexNonOverlapMap())),
+  diag1b_(mesh->getControlVolumes()->getMap())
 {
 }
 // =============================================================================
@@ -55,47 +55,69 @@ JacobianOperator::
 {
 }
 // =============================================================================
-int
+void
 JacobianOperator::
-SetUseTranspose(bool useTranspose)
-{
-  useTranspose_ = useTranspose;
-  return 0;
-}
-// =============================================================================
-int
-JacobianOperator::
-Apply(const Epetra_MultiVector &X,
-      Epetra_MultiVector &Y
+apply(
+    const Tpetra::MultiVector<double,int,int> &X,
+    Tpetra::MultiVector<double,int,int> &Y,
+    Teuchos::ETransp mode,
+    double alpha,
+    double beta
     ) const
 {
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(
+      mode != Teuchos::NO_TRANS,
+      "Only untransposed applies supported."
+      );
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(
+      alpha != 1.0,
+      "Only alpha==1.0 supported."
+      );
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(
+      beta != 0.0,
+      "Only beta==0.0 supported."
+      )
   // Add the terms corresponding to the nonlinear terms.
   // A = K + I * thickness * (V + g * 2*|psi|^2)
   // B = g * diag(thickness * psi^2)
 
-  const int numMyPoints = mesh_->getControlVolumes()->MyLength();
+  // Y = K*X
+  keo_->apply(X, Y);
+
+
+  const std::size_t numMyPoints = mesh_->getControlVolumes()->getLocalLength();
 #ifndef NDEBUG
-  TEUCHOS_ASSERT_EQUALITY(2*numMyPoints, X.MyLength());
+  TEUCHOS_ASSERT_EQUALITY(2*numMyPoints, X.getLocalLength());
 #endif
 
-  // Y = K*X
-  TEUCHOS_ASSERT_EQUALITY(0, keo_->Apply(X, Y));
+  Teuchos::ArrayRCP<const double> d0Data = diag0_.getData();
+  Teuchos::ArrayRCP<const double> d1bData = diag1b_.getData();
 
-  for (int vec = 0; vec < X.NumVectors(); vec++) {
-    // For the parts Re(psi)Im(phi), Im(psi)Re(phi), the (2*k+1)th
-    // component of X needs to be summed into the (2k)th component of Y,
-    // likewise for (2k) -> (2k+1).
-    // The Epetra class cannot currently handle this situation
-    // (e.g., by Epetra_Vector::Multiply()), so we
-    // need to access the vector entries one-by-one. And then, while
-    // we're at it, let's include all the other terms in the loop
-    // too. (It would actually be possible to have the terms
-    // 2k/2k and 2k+1/2k+1 handled by Multiply().
-    for (int k = 0; k < numMyPoints; k++) {
-      (*Y(vec))[2*k]  += diag0_ [2*k]   * X[vec][2*k]
-                       + diag1b_[k]     * X[vec][2*k+1];
-      (*Y(vec))[2*k+1] += diag1b_[k]     * X[vec][2*k]
-                        + diag0_ [2*k+1] * X[vec][2*k+1];
+#ifndef NDEBUG
+  TEUCHOS_ASSERT_EQUALITY(2*numMyPoints, d0Data.size());
+  TEUCHOS_ASSERT_EQUALITY(numMyPoints, d1bData.size());
+#endif
+
+  for (std::size_t i = 0; i < X.getNumVectors(); i++) {
+    Teuchos::ArrayRCP<const double> xData = X.getVector(i)->getData();
+    Teuchos::ArrayRCP<double> yData = Y.getVectorNonConst(i)->getDataNonConst();
+#ifndef NDEBUG
+    TEUCHOS_ASSERT_EQUALITY(2*numMyPoints, xData.size());
+    TEUCHOS_ASSERT_EQUALITY(2*numMyPoints, yData.size());
+#endif
+    // For the parts Re(psi)Im(phi), Im(psi)Re(phi), the (2*k+1)th component of
+    // X needs to be summed into the (2k)th component of Y, likewise for (2k)
+    // -> (2k+1).
+    // The Epetra class cannot currently handle this situation (e.g., by
+    // Tpetra::Vector<double,int,int>::Multiply()), so we need to access the
+    // vector entries one-by-one. And then, while we're at it, let's include
+    // all the other terms in the loop too. (It would actually be possible to
+    // have the terms 2k/2k and 2k+1/2k+1 handled by Multiply().
+    for (std::size_t k = 0; k < numMyPoints; k++) {
+      yData[2*k] += d0Data[2*k] * xData[2*k]
+                  + d1bData[k]  * xData[2*k+1];
+      yData[2*k+1] += d1bData[k]    * xData[2*k]
+                    + d0Data[2*k+1] * xData[2*k+1];
     }
   }
 
@@ -103,74 +125,28 @@ Apply(const Epetra_MultiVector &X,
 //    if (alpha_ != 0.0 || beta_ != -1.0)
 //    TEUCHOS_ASSERT_EQUALITY(0, Y.Update(alpha_, X, -beta_));
 
-  return 0;
+  return;
 }
 // =============================================================================
-int
+Teuchos::RCP<const Tpetra::Map<int,int>>
 JacobianOperator::
-ApplyInverse(const Epetra_MultiVector &X,
-              Epetra_MultiVector &Y
-           ) const
+getDomainMap() const
 {
-  (void) X;
-  (void) Y;
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Not implemented.");
+  return keo_->getDomainMap();
 }
 // =============================================================================
-double
+Teuchos::RCP<const Tpetra::Map<int,int>>
 JacobianOperator::
-NormInf() const
+getRangeMap() const
 {
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Not yet implemented.");
-}
-// =============================================================================
-const char *
-JacobianOperator::
-Label() const
-{
-  return "Jacobian operator for nonlinear Schr\"odinger";
-}
-// =============================================================================
-bool
-JacobianOperator::
-UseTranspose() const
-{
-  return useTranspose_;
-}
-// =============================================================================
-bool
-JacobianOperator::
-HasNormInf() const
-{
-  return false;
-}
-// =============================================================================
-const Epetra_Comm &
-JacobianOperator::
-Comm() const
-{
-  return keo_->Comm();
-}
-// =============================================================================
-const Epetra_Map &
-JacobianOperator::
-OperatorDomainMap() const
-{
-  return keo_->OperatorDomainMap();
-}
-// =============================================================================
-const Epetra_Map &
-JacobianOperator::
-OperatorRangeMap() const
-{
-  return keo_->OperatorRangeMap();
+  return keo_->getRangeMap();
 }
 // =============================================================================
 void
 JacobianOperator::
 rebuild(
     const std::map<std::string, double> params,
-    const Epetra_Vector & current_X
+    const Tpetra::Vector<double,int,int> & current_X
     )
 {
   // Fill the KEO.
@@ -206,41 +182,59 @@ void
 JacobianOperator::
 rebuildDiags_(
     const std::map<std::string, double> params,
-    const Epetra_Vector &x
+    const Tpetra::Vector<double,int,int> &x
     )
 {
 #ifndef NDEBUG
   TEUCHOS_ASSERT(scalarPotential_);
 #endif
 
-  const Epetra_Vector &controlVolumes = *(mesh_->getControlVolumes());
+  const Tpetra::Vector<double,int,int> &controlVolumes =
+    *(mesh_->getControlVolumes());
 
   const double g = params.at("g");
 
-  const Epetra_Vector thicknessValues = thickness_->getV(params);
+  const Tpetra::Vector<double,int,int> thicknessValues =
+    thickness_->getV(params);
 #ifndef NDEBUG
-  TEUCHOS_ASSERT(controlVolumes.Map().SameAs(thicknessValues.Map()));
+  TEUCHOS_ASSERT(controlVolumes.getMap()->isSameAs(*thicknessValues.getMap()));
 #endif
 
-  const Epetra_Vector scalarPotentialValues = scalarPotential_->getV(params);
+  const Tpetra::Vector<double,int,int> scalarPotentialValues =
+    scalarPotential_->getV(params);
 #ifndef NDEBUG
-  TEUCHOS_ASSERT(controlVolumes.Map().SameAs(scalarPotentialValues.Map()));
+  TEUCHOS_ASSERT(
+      controlVolumes.getMap()->isSameAs(*scalarPotentialValues.getMap())
+      );
 #endif
 
-  for (int k = 0; k < controlVolumes.MyLength(); k++) {
+  Teuchos::ArrayRCP<const double> xData = x.getData();
+  Teuchos::ArrayRCP<const double> cData = controlVolumes.getData();
+  Teuchos::ArrayRCP<const double> tData = thicknessValues.getData();
+  Teuchos::ArrayRCP<const double> sData = scalarPotentialValues.getData();
+
+  Teuchos::ArrayRCP<double> d0Data = diag0_.getDataNonConst();
+  Teuchos::ArrayRCP<double> d1bData = diag1b_.getDataNonConst();
+#ifndef NDEBUG
+  TEUCHOS_ASSERT_EQUALITY(cData.size(), tData.size());
+  TEUCHOS_ASSERT_EQUALITY(tData.size(), sData.size());
+  TEUCHOS_ASSERT_EQUALITY(2*sData.size(), xData.size());
+  TEUCHOS_ASSERT_EQUALITY(sData.size(), d1bData.size());
+#endif
+
+  for (decltype(cData)::size_type k = 0; k < cData.size(); k++) {
     // rebuild diag0
-    const double alpha = controlVolumes[k] * thicknessValues[k]
-                         * (scalarPotentialValues[k]
-                             + g * 2.0 * (x[2*k]*x[2*k] + x[2*k+1]*x[2*k+1])
-                          );
-    const double realX2 = g * controlVolumes[k] * thicknessValues[k]
-                          * (x[2*k]*x[2*k] - x[2*k+1]*x[2*k+1]);
-    diag0_[2*k]   = alpha + realX2;
-    diag0_[2*k+1] = alpha - realX2;
+    const double alpha = cData[k] * tData[k]
+      * (sData[k]
+          + g * 2.0 * (xData[2*k]*xData[2*k] + xData[2*k+1]*xData[2*k+1])
+        );
+    const double realX2 = g * cData[k] * tData[k]
+      * (xData[2*k]*xData[2*k] - xData[2*k+1]*xData[2*k+1]);
+    d0Data[2*k]   = alpha + realX2;
+    d0Data[2*k+1] = alpha - realX2;
 
     // rebuild diag1b
-    diag1b_[k] = g * controlVolumes[k] * thicknessValues[k]
-                 * (2.0 * x[2*k] * x[2*k+1]);
+    d1bData[k] = g * cData[k] * tData[k] * (2.0 * xData[2*k] * xData[2*k+1]);
   }
 
   return;

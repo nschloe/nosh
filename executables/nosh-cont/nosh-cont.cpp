@@ -184,12 +184,12 @@ int main(int argc, char *argv[])
     std::shared_ptr<Nosh::VectorField::Virtual> mvp(
         new Nosh::VectorField::ExplicitValues(*mesh, "A", mu)
         );
-    const std::shared_ptr<Nosh::ParameterMatrix::Virtual> keoBuilder(
-        new Nosh::ParameterMatrix::Keo(mesh, thickness, mvp)
-        );
-    const std::shared_ptr<Nosh::ParameterMatrix::Virtual> DKeoDPBuilder(
-        new Nosh::ParameterMatrix::DKeoDP(mesh, thickness, mvp, "mu")
-        );
+    //const std::shared_ptr<Nosh::ParameterMatrix::Virtual> keoBuilder(
+    //    new Nosh::ParameterMatrix::Keo(mesh, thickness, mvp)
+    //    );
+    //const std::shared_ptr<Nosh::ParameterMatrix::Virtual> DKeoDPBuilder(
+    //    new Nosh::ParameterMatrix::DKeoDP(mesh, thickness, mvp, "mu")
+    //    );
 
     // (b2) 'A' analytically given (here with constant curl).
     //      Optionally add a rotation axis u. This is important
@@ -234,8 +234,7 @@ int main(int argc, char *argv[])
     std::shared_ptr<Nosh::ModelEvaluatorT::Virtual> nlsModel(
         new Nosh::ModelEvaluatorT::Nls(
           mesh,
-          keoBuilder,
-          DKeoDPBuilder,
+          mvp,
           sp,
           g,
           thickness,

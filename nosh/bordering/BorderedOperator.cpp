@@ -29,9 +29,9 @@ namespace Nosh
 {
 // =============================================================================
 BorderedOperator::
-BorderedOperator(const std::shared_ptr<Epetra_Operator> & innerOperator,
-                 const Epetra_Vector & b,
-                 const Epetra_Vector & c,
+BorderedOperator(const std::shared_ptr<Tpetra::Operator<double,int,int>> & innerOperator,
+                 const Tpetra::Vector<double,int,int> & b,
+                 const Tpetra::Vector<double,int,int> & c,
                  const double d
                 ):
   innerOperator_(innerOperator),
@@ -39,8 +39,8 @@ BorderedOperator(const std::shared_ptr<Epetra_Operator> & innerOperator,
   c_(c),
   d_(d),
   useTranspose_(false),
-  domainMap_(*Nosh::BorderingHelpers::extendMapBy1(innerOperator_->OperatorDomainMap())),
-  rangeMap_(*Nosh::BorderingHelpers::extendMapBy1(innerOperator_->OperatorRangeMap()))
+  domainMap_(*Nosh::BorderingHelpers::extendMapBy1(innerOperator_->getDomainMap())),
+  rangeMap_(*Nosh::BorderingHelpers::extendMapBy1(innerOperator_->getRangeMap()))
 {
 }
 // =============================================================================
@@ -60,28 +60,28 @@ SetUseTranspose(bool useTranspose)
 // =============================================================================
 int
 BorderedOperator::
-Apply(const Epetra_MultiVector &X,
-      Epetra_MultiVector &Y
+Apply(const Tpetra::MultiVector<double,int,int> &X,
+      Tpetra::MultiVector<double,int,int> &Y
      ) const
 {
 #ifndef NDEBUG
-  TEUCHOS_ASSERT(X.Map().SameAs(domainMap_));
-  TEUCHOS_ASSERT(Y.Map().SameAs(rangeMap_));
+  TEUCHOS_ASSERT(X.getMap().SameAs(domainMap_));
+  TEUCHOS_ASSERT(Y.getMap().SameAs(rangeMap_));
 #endif
   const int n = X.NumVectors();
 #ifndef NDEBUG
   TEUCHOS_ASSERT_EQUALITY(n, Y.NumVectors());
 #endif
   // Dissect X.
-  Epetra_Vector innerX(innerOperator_->OperatorDomainMap());
+  Tpetra::Vector<double,int,int> innerX(innerOperator_->getDomainMap());
   std::vector<double> lambda(n);
   Nosh::BorderingHelpers::dissect(X, innerX, &lambda[0]);
   // Apply inner operator.
-  Epetra_Vector innerY(innerOperator_->OperatorRangeMap());
+  Tpetra::Vector<double,int,int> innerY(innerOperator_->getRangeMap());
   TEUCHOS_ASSERT_EQUALITY(0, innerOperator_->Apply(innerX, innerY));
 
-  const Epetra_Vector & rightBordering = useTranspose_? c_ : b_;
-  const Epetra_Vector & lowerBordering = useTranspose_? b_ : c_;
+  const Tpetra::Vector<double,int,int> & rightBordering = useTranspose_? c_ : b_;
+  const Tpetra::Vector<double,int,int> & lowerBordering = useTranspose_? b_ : c_;
 
   // Add right bordering.
   for (int k = 0; k < n; k++) {
@@ -103,8 +103,8 @@ Apply(const Epetra_MultiVector &X,
 // =============================================================================
 int
 BorderedOperator::
-ApplyInverse(const Epetra_MultiVector &X,
-             Epetra_MultiVector &Y
+ApplyInverse(const Tpetra::MultiVector<double,int,int> &X,
+             Tpetra::MultiVector<double,int,int> &Y
             ) const
 {
   // Inverse via Schur formulation.
@@ -115,20 +115,20 @@ ApplyInverse(const Epetra_MultiVector &X,
   // [A^{-1} X + A^{-1} B S^{-1} <C, A^{-1} X> - A^{-1} B S^{-1} lambda]
   // [-S^{-1} <C, A^{-1} X>                    + S^{-1} lambda         ].
 #ifndef NDEBUG
-  TEUCHOS_ASSERT(X.Map().SameAs(domainMap_));
-  TEUCHOS_ASSERT(Y.Map().SameAs(rangeMap_));
+  TEUCHOS_ASSERT(X.getMap().SameAs(domainMap_));
+  TEUCHOS_ASSERT(Y.getMap().SameAs(rangeMap_));
 #endif
   const int n = X.NumVectors();
 #ifndef NDEBUG
   TEUCHOS_ASSERT_EQUALITY(n, Y.NumVectors());
 #endif
   // Dissect X.
-  Epetra_Vector innerX(innerOperator_->OperatorDomainMap());
+  Tpetra::Vector<double,int,int> innerX(innerOperator_->getDomainMap());
   std::vector<double> lambda(n);
   Nosh::BorderingHelpers::dissect(X, innerX, &lambda[0]);
   // Apply inverse inner operator with right hand side `right bordering'.
   // TODO useTranspose_
-  Epetra_Vector AiB(innerOperator_->OperatorRangeMap());
+  Tpetra::Vector<double,int,int> AiB(innerOperator_->getRangeMap());
   TEUCHOS_ASSERT_EQUALITY(0, innerOperator_->ApplyInverse(b_, AiB));
 
   // Schur complement S = D - <C, A^{-1} B>.
@@ -137,8 +137,8 @@ ApplyInverse(const Epetra_MultiVector &X,
   s = d_ - s;
   TEUCHOS_ASSERT_INEQUALITY(fabs(s), >=, 1.0e-15);
 
-  Epetra_MultiVector innerY(innerOperator_->OperatorRangeMap(), n);
-  Epetra_Vector AiX(innerOperator_->OperatorRangeMap());
+  Tpetra::MultiVector<double,int,int> innerY(innerOperator_->getRangeMap(), n);
+  Tpetra::Vector<double,int,int> AiX(innerOperator_->getRangeMap());
   std::vector<double> alpha(n);
   for (int k = 0; k < n; k++) {
     // innerY = A^{-1} X
@@ -189,28 +189,28 @@ HasNormInf() const
   return false;
 }
 // =============================================================================
-const Epetra_Comm &
+const Teuchos::Comm<int> &
 BorderedOperator::
 Comm() const
 {
   return innerOperator_->Comm();
 }
 // =============================================================================
-const Epetra_Map &
+const Tpetra::Map<int,int> &
 BorderedOperator::
-OperatorDomainMap() const
+getDomainMap() const
 {
   return domainMap_;
 }
 // =============================================================================
-const Epetra_Map &
+const Tpetra::Map<int,int> &
 BorderedOperator::
-OperatorRangeMap() const
+getRangeMap() const
 {
   return rangeMap_;
 }
 // =============================================================================
-const std::shared_ptr<Epetra_Operator>
+const std::shared_ptr<Tpetra::Operator<double,int,int>>
 BorderedOperator::
 getInnerOperator() const
 {
@@ -219,8 +219,8 @@ getInnerOperator() const
 // =============================================================================
 void
 BorderedOperator::
-resetBordering(const Epetra_Vector & b,
-               const Epetra_Vector & c,
+resetBordering(const Tpetra::Vector<double,int,int> & b,
+               const Tpetra::Vector<double,int,int> & c,
                const double d
               )
 {

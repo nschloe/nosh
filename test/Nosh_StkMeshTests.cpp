@@ -21,13 +21,8 @@
 
 #include <Teuchos_ParameterList.hpp>
 
-#ifdef HAVE_MPI
-#include <Epetra_MpiComm.h>
-#else
-#include <Epetra_SerialComm.h>
-#endif
-
-#include <Epetra_Vector.h>
+#include <Teuchos_DefaultComm.hpp>
+#include <Teuchos_RCPStdSharedPtrConversions.hpp>
 
 #include "nosh/StkMesh.hpp"
 
@@ -38,37 +33,43 @@ namespace
 
 // =============================================================================
 void
-testMesh(const std::string & inputFileNameBase,
-         const unsigned int controlNumNodes,
-         const double controlVolNormOne,
-         const double controlVolNormTwo,
-         const double controlVolNormInf,
-         Teuchos::FancyOStream & out,
-         bool & success)
+testMesh(
+    const std::string & inputFileNameBase,
+    const unsigned int controlNumNodes,
+    const double controlVolNormOne,
+    const double controlVolNormTwo,
+    const double controlVolNormInf,
+    Teuchos::FancyOStream & out,
+    bool & success
+    )
 {
-  // Create a communicator for Epetra objects
-#ifdef HAVE_MPI
-  std::shared_ptr<Epetra_MpiComm> eComm(new Epetra_MpiComm (MPI_COMM_WORLD));
-#else
-  std::shared_ptr<Epetra_SerialComm> eComm(new Epetra_SerialComm());
-#endif
+  Teuchos::RCP<const Teuchos::Comm<int>> comm =
+    Teuchos::DefaultComm<int>::getComm();
 
   std::string inputFileName = "data/" + inputFileNameBase + ".e";
   // =========================================================================
   // Read the data from the file.
-  Nosh::StkMesh mesh(eComm, inputFileName, 0);
+  Nosh::StkMesh mesh(Teuchos::get_shared_ptr(comm), inputFileName, 0);
 
   const unsigned int numNodes = mesh.getNumNodes();
   TEUCHOS_ASSERT_EQUALITY(numNodes, controlNumNodes);
 
-  const std::shared_ptr<const Epetra_Vector> controlVols = mesh.getControlVolumes();
-  double r;
-  TEUCHOS_ASSERT_EQUALITY(0, controlVols->Norm1(&r));
-  TEST_FLOATING_EQUALITY(r, controlVolNormOne, 1.0e-12);
-  TEUCHOS_ASSERT_EQUALITY(0, controlVols->Norm2(&r));
-  TEST_FLOATING_EQUALITY(r, controlVolNormTwo, 1.0e-12);
-  TEUCHOS_ASSERT_EQUALITY(0, controlVols->NormInf(&r));
-  TEST_FLOATING_EQUALITY(r, controlVolNormInf, 1.0e-12);
+  const auto controlVols = mesh.getControlVolumes();
+  TEST_FLOATING_EQUALITY(
+      controlVols->norm1(),
+      controlVolNormOne,
+      1.0e-12
+      );
+  TEST_FLOATING_EQUALITY(
+      controlVols->norm2(),
+      controlVolNormTwo,
+      1.0e-12
+      );
+  TEST_FLOATING_EQUALITY(
+      controlVols->normInf(),
+      controlVolNormInf,
+      1.0e-12
+      );
 
   return;
 }
@@ -100,13 +101,15 @@ TEUCHOS_UNIT_TEST(Nosh, MeshPacmanHashes)
   double controlVolNormTwo = 15.38575790933914;
   double controlVolNormInf = 1.127797467043659;
 
-  testMesh(inputFileNameBase,
-           numNodes,
-           controlVolNormOne,
-           controlVolNormTwo,
-           controlVolNormInf,
-           out,
-           success);
+  testMesh(
+      inputFileNameBase,
+      numNodes,
+      controlVolNormOne,
+      controlVolNormTwo,
+      controlVolNormInf,
+      out,
+      success
+      );
 }
 // ============================================================================
 //TEUCHOS_UNIT_TEST(Nosh, MeshShellHashes)
@@ -136,13 +139,15 @@ TEUCHOS_UNIT_TEST(Nosh, MeshSphereHashes)
   double controlVolNormTwo = 1.39047542328083;
   double controlVolNormInf = 0.198927169088121;
 
-  testMesh(inputFileNameBase,
-           numNodes,
-           controlVolNormOne,
-           controlVolNormTwo,
-           controlVolNormInf,
-           out,
-           success);
+  testMesh(
+      inputFileNameBase,
+      numNodes,
+      controlVolNormOne,
+      controlVolNormTwo,
+      controlVolNormInf,
+      out,
+      success
+      );
 }
 // ============================================================================
 //TEUCHOS_UNIT_TEST(Nosh, MeshCubeSmallHashes)
@@ -172,13 +177,15 @@ TEUCHOS_UNIT_TEST(Nosh, MeshBrickWHoleHashes)
   double controlVolNormTwo = 16.6614019419857;
   double controlVolNormInf = 1.46847345474977;
 
-  testMesh(inputFileNameBase,
-           numNodes,
-           controlVolNormOne,
-           controlVolNormTwo,
-           controlVolNormInf,
-           out,
-           success);
+  testMesh(
+      inputFileNameBase,
+      numNodes,
+      controlVolNormOne,
+      controlVolNormTwo,
+      controlVolNormInf,
+      out,
+      success
+      );
 }
 // ============================================================================
 } // namespace

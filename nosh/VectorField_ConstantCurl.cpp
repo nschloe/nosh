@@ -229,7 +229,7 @@ initializeEdgeCache_() const
   const VectorFieldType & coordsField = mesh_->getNodeField("coordinates");
 
   // Loop over all edges and create the cache.
-  for (auto k = 0; k < edges.size(); k++) {
+  for (std::size_t k = 0; k < edges.size(); k++) {
     const Eigen::Vector3d & node0Coords =
       mesh_->getNodeValue(coordsField, std::get<0>(edges[k]));
     const Eigen::Vector3d & node1Coords =

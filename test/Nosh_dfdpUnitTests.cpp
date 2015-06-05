@@ -19,17 +19,10 @@
 // @HEADER
 #include <string>
 
+#include <Teuchos_DefaultComm.hpp>
+#include <Teuchos_RCPStdSharedPtrConversions.hpp>
 #include <Teuchos_ParameterList.hpp>
-
-#ifdef HAVE_MPI
-#include <Epetra_MpiComm.h>
-#else
-#include <Epetra_SerialComm.h>
-#endif
-
-#include <Epetra_Map.h>
-#include <Epetra_Vector.h>
-#include <Thyra_EpetraModelEvaluator.hpp>
+#include <Thyra_TpetraThyraWrappers.hpp>
 
 #include "nosh/StkMesh.hpp"
 #include "nosh/ScalarField_Constant.hpp"
@@ -40,19 +33,18 @@
 #include "nosh/ModelEvaluator_Nls.hpp"
 
 #include <Teuchos_UnitTestHarness.hpp>
-#include <Teuchos_RCPStdSharedPtrConversions.hpp>
 
 namespace
 {
 // ===========================================================================
 void
 computeFiniteDifference_(
-  const Thyra::ModelEvaluator<double> & modelEval,
-  const Teuchos::RCP<Thyra::VectorBase<double>> & x,
-  Teuchos::RCP<Thyra::VectorBase<double> > & p,
-  const int paramIndex,
-  const Teuchos::RCP<Thyra::VectorBase<double> > & fdiff
-)
+    const Thyra::ModelEvaluator<double> & modelEval,
+    const Teuchos::RCP<Thyra::VectorBase<double>> & x,
+    Teuchos::RCP<Thyra::VectorBase<double> > & p,
+    const int paramIndex,
+    const Teuchos::RCP<Thyra::VectorBase<double> > & fdiff
+    )
 {
   const double eps = 1.0e-8;
   Teuchos::RCP<Thyra::VectorBase<double> > pp = p->clone_v();
@@ -88,89 +80,62 @@ computeFiniteDifference_(
 }
 // =============================================================================
 void
-testDfdp(const std::string & inputFileNameBase,
-         const double mu,
-         Teuchos::FancyOStream & out,
-         bool & success
-        )
+testDfdp(
+    const std::string & inputFileNameBase,
+    const double mu,
+    Teuchos::FancyOStream & out,
+    bool & success
+    )
 {
-  // Create a communicator for Epetra objects
-#ifdef HAVE_MPI
-  std::shared_ptr<Epetra_MpiComm> eComm(new Epetra_MpiComm(MPI_COMM_WORLD));
-#else
-  std::shared_ptr<Epetra_SerialComm> eComm(new Epetra_SerialComm());
-#endif
+  Teuchos::RCP<const Teuchos::Comm<int>> comm =
+    Teuchos::DefaultComm<int>::getComm();
 
   std::string inputFileName = "data/" + inputFileNameBase + ".e";
-  // =========================================================================
+
   // Read the data from the file.
-  std::shared_ptr<Nosh::StkMesh> mesh(
-      new Nosh::StkMesh(eComm, inputFileName, 0)
+  auto mesh = std::make_shared<Nosh::StkMesh>(
+      Teuchos::get_shared_ptr(comm),
+      inputFileName,
+      0
       );
 
   // Cast the data into something more accessible.
-  std::shared_ptr<Epetra_Vector> z = mesh->createComplexVector("psi");
+  auto z = mesh->createComplexVector("psi");
 
   // Set the thickness field.
-  std::shared_ptr<Nosh::ScalarField::Virtual> thickness(
-      new Nosh::ScalarField::Constant(*mesh, 1.0)
-      );
-
-  std::shared_ptr<Nosh::VectorField::Virtual> mvp(
-      new Nosh::VectorField::ExplicitValues(*mesh, "A", mu)
-      );
-  const std::shared_ptr<Nosh::ParameterMatrix::Virtual> keoBuilder(
-      new Nosh::ParameterMatrix::Keo(mesh, thickness, mvp)
-      );
-  const std::shared_ptr<Nosh::ParameterMatrix::Virtual> DKeoDPBuilder(
-      new Nosh::ParameterMatrix::DKeoDP(mesh, thickness, mvp, "g")
-      );
-
-  std::shared_ptr<Nosh::ScalarField::Virtual> sp(
-      new Nosh::ScalarField::Constant(*mesh, -1.0)
-      );
+  auto thickness = std::make_shared<Nosh::ScalarField::Constant>(*mesh, 1.0);
+  auto mvp = std::make_shared<Nosh::VectorField::ExplicitValues>(*mesh, "A", mu);
+  auto sp = std::make_shared<Nosh::ScalarField::Constant>(*mesh, -1.0);
 
   Teuchos::RCP<Thyra::ModelEvaluator<double>> modelEval =
     Teuchos::rcp(new Nosh::ModelEvaluator::Nls(
           mesh,
-          keoBuilder,
-          DKeoDPBuilder,
+          mvp,
           sp,
           1.0,
           thickness,
           z
           ));
 
-  Teuchos::RCP<const Thyra::VectorSpaceBase<double> > vectorSpaceX =
-    modelEval->get_x_space();
-  Teuchos::RCP<const Thyra::VectorSpaceBase<double> > vectorSpaceF =
-    modelEval->get_f_space();
+  auto vectorSpaceX = modelEval->get_x_space();
+  auto vectorSpaceF = modelEval->get_f_space();
 
-  // -------------------------------------------------------------------------
   // Perform the finite difference test for all parameters present in the
   // system.
   // Get a finite-difference approximation of df/dp.
-  Thyra::ModelEvaluatorBase::InArgs<double> inArgs =
-    modelEval->createInArgs();
-  Teuchos::RCP<Thyra::VectorBase<double>> zT =
-    Thyra::create_Vector(Teuchos::rcp(z), vectorSpaceX);
+  auto inArgs = modelEval->createInArgs();
+  auto zT = Thyra::createVector(Teuchos::rcp(z), vectorSpaceX);
   inArgs.set_x(zT);
 
-  Thyra::ModelEvaluatorBase::OutArgs<double> outArgs =
-    modelEval->createOutArgs();
+  auto outArgs = modelEval->createOutArgs();
 
   // create parameter vector
-  Teuchos::RCP<Thyra::VectorBase<double> > p = Thyra::createMember(
-      modelEval->get_p_space(0)
-      );
-  Teuchos::RCP<Thyra::VectorBase<double> > fdiff = Thyra::createMember(
-      modelEval->get_f_space()
-      );
+  auto p = Thyra::createMember(modelEval->get_p_space(0));
+  auto fdiff = Thyra::createMember(modelEval->get_f_space());
 
   // Get the actual derivatives.
   inArgs.set_p(0, p);
-  Teuchos::RCP<Thyra::MultiVectorBase<double> > dfdp =
-    Thyra::createMembers(modelEval->get_f_space(), 2);
+  auto dfdp = Thyra::createMembers(modelEval->get_f_space(), 2);
   Thyra::ModelEvaluatorBase::Derivative<double> deriv(
       dfdp,
       Thyra::ModelEvaluatorBase::DERIV_MV_BY_COL
@@ -184,7 +149,7 @@ testDfdp(const std::string & inputFileNameBase,
   //for (int paramIndex = 0; paramIndex < p->GlobalLength(); paramIndex++) {
   std::vector<int> paramIndices(1);
   double r;
-  for (int paramIndex = 0; paramIndex < 1; paramIndex++) {
+  for (size_t paramIndex = 0; paramIndex < 1; paramIndex++) {
     // Get finite difference.
     computeFiniteDifference_(
         *modelEval,
@@ -199,7 +164,6 @@ testDfdp(const std::string & inputFileNameBase,
     r = Thyra::norm_inf(*fdiff);
     TEST_COMPARE(r, <, 1.0e-7);
   }
-  // -------------------------------------------------------------------------
 
   return;
 }

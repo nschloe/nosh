@@ -23,11 +23,8 @@
 #include <map>
 #include <string>
 
+#include <Tpetra_CrsMatrix.hpp>
 #include <Teuchos_RCP.hpp>
-#include <Epetra_Comm.h>
-#include <Epetra_FECrsGraph.h>
-#include <Epetra_FECrsMatrix.h>
-#include <Epetra_Vector.h>
 
 #include <stk_mesh/base/Entity.hpp>
 
@@ -41,7 +38,7 @@ namespace Nosh
 {
 namespace ParameterMatrix
 {
-class Virtual: public Epetra_FECrsMatrix
+class Virtual: public Tpetra::CrsMatrix<double,int,int>
 {
 public:
   Virtual(const std::shared_ptr<const Nosh::StkMesh> &mesh);
@@ -49,15 +46,6 @@ public:
   // Destructor.
   virtual
   ~Virtual();
-
-  //// https://en.wikibooks.org/wiki/More_C%2B%2B_Idioms/Virtual_Constructor
-  //virtual
-  //std::shared_ptr<Virtual>
-  //create() const = 0;
-
-  virtual
-  std::shared_ptr<Virtual>
-  clone() const = 0;
 
   //! Fill the matrix with the parameter entries as given in params.
   //! Includes some caching logic for params.

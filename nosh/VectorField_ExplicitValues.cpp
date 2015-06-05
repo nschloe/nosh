@@ -47,7 +47,7 @@ ExplicitValues(
   const VectorFieldType & dataField = mesh.getNodeField(fieldName);
 
   // Loop over all edges and create the cache.
-  for (auto k = 0; k < edges.size(); k++) {
+  for (std::size_t k = 0; k < edges.size(); k++) {
     // Approximate the value at the midpoint of the edge
     // by the average of the values at the adjacent nodes.
     Eigen::Vector3d av = 0.5 * (
@@ -63,25 +63,34 @@ ExplicitValues(
     edgeProjectionCache_[k] = av.dot(myEdge);
   }
 
-  // Do a quick sanity check for the edgeProjectionCache_.
-  // It happens too effing often that the reader elements aren't specified
-  // correctly and stk_io *silently* "reads" only zeros.
-  // Use the fake logical "isNonzeroLocal" since Epetra_Comm doesn't have
-  // logical any() or all() operations.
-  int isNonzeroLocal = 0;
-  for (int k = 0; k < edges.size(); k++) {
+// TODO resurrect this
+//#ifndef NDEBUG
+#if 0
+  // Do a quick sanity check for the edgeProjectionCache_.  It happens too
+  // often that the reader elements aren't specified correctly and stk_io
+  // *silently* "reads" only zeros.  Use the fake logical "isNonzeroLocal"
+  // since Teuchos::Comm<int> doesn't have logical any() or all() operations.
+  bool isZeroLocal = true;
+  for (std::size_t k = 0; k < edgeProjectionCache_.size(); k++) {
     if (fabs(edgeProjectionCache_[k]) > 1.0e-10) {
-      isNonzeroLocal = 1;
+      isZeroLocal = false;
       break;
     }
   }
-  int isNonzeroGlobal;
-  mesh.getComm().SumAll(&isNonzeroLocal, &isNonzeroGlobal, 1);
+  bool isZeroGlobal;
+  Teuchos::reduceAll(
+      *mesh.getComm(),
+      Teuchos::REDUCE_AND,
+      1,
+      &isZeroLocal,
+      &isZeroGlobal
+      );
 
   TEUCHOS_TEST_FOR_EXCEPT_MSG(
-      isNonzeroGlobal == 0,
+      isZeroGlobal,
       "Field \"" << fieldName << "\" seems empty. Was it read correctly?"
       );
+#endif
 
   return;
 }

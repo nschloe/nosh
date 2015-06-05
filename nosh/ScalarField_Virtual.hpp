@@ -23,7 +23,7 @@
 #include <map>
 #include <string>
 
-#include <Epetra_Vector.h>
+#include <Tpetra_Vector.hpp>
 
 namespace Nosh
 {
@@ -38,12 +38,12 @@ public:
   ~Virtual();
 
   virtual
-  const Epetra_Vector
+  const Tpetra::Vector<double,int,int>
   getV(const std::map<std::string, double> & params
      ) const = 0;
 
   virtual
-  const Epetra_Vector
+  const Tpetra::Vector<double,int,int>
   getdVdP(const std::map<std::string, double> & params,
           const std::string & paramName
         ) const = 0;

@@ -24,12 +24,12 @@
 #include <string>
 #include <tuple>
 
-#include <Epetra_Operator.h>
+#include <Tpetra_Operator.hpp>
 #include <Teuchos_RCP.hpp>
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
 #include <Teuchos_Time.hpp>
 #endif
-#include <Epetra_FECrsGraph.h>
+#include <Tpetra_CrsGraph.hpp>
 
 #include <stk_mesh/base/Entity.hpp>
 

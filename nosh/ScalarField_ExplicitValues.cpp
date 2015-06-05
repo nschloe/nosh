@@ -52,17 +52,17 @@ getParameters() const
   return m;
 }
 // ============================================================================
-const Epetra_Vector
+const Tpetra::Vector<double,int,int>
 ExplicitValues::
 getV(const std::map<std::string, double> & params) const
 {
-  Epetra_Vector vals(*nodeValues_);
+  Tpetra::Vector<double,int,int> vals(*nodeValues_);
   // Scale by "beta"
-  vals.Scale(params.at("beta"));
+  vals.scale(params.at("beta"));
   return vals;
 }
 // ============================================================================
-const Epetra_Vector
+const Tpetra::Vector<double,int,int>
 ExplicitValues::
 getdVdP(const std::map<std::string, double> & params,
         const std::string & paramName
@@ -72,7 +72,10 @@ getdVdP(const std::map<std::string, double> & params,
   if (paramName.compare("beta") == 0)
     return *nodeValues_;
   else
-    return Epetra_Vector(nodeValues_->Map(), true); // 0.0 overall
+    return Tpetra::Vector<double,int,int>(
+        nodeValues_->getMap(),
+        true // zero out
+        );
 }
 // ============================================================================
 } // namespace ScalarField

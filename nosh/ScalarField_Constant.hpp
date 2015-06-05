@@ -43,8 +43,8 @@ public:
       const double param1InitValue = 0.0
       );
 
-  Epetra_Vector
-  createPInit_(const Epetra_Map & map);
+  Tpetra::Vector<double,int,int>
+  createPInit_(const Tpetra::Map<int,int> & map);
 
   ~Constant();
 
@@ -54,19 +54,19 @@ public:
   getParameters() const;
 
   virtual
-  const Epetra_Vector
+  const Tpetra::Vector<double,int,int>
   getV(const std::map<std::string, double> & params
      ) const;
 
   virtual
-  const Epetra_Vector
+  const Tpetra::Vector<double,int,int>
   getdVdP(const std::map<std::string, double> & params,
           const std::string & paramName
         ) const;
 
 protected:
 private:
-  const std::shared_ptr<const Epetra_Map> map_;
+  const std::shared_ptr<const Tpetra::Map<int,int>> map_;
   const double c_;
   const std::string param1Name_;
   const double param1InitValue_;

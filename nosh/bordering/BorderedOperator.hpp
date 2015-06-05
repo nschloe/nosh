@@ -21,9 +21,9 @@
 #ifndef NOSH_BORDEREDOPERATOR_H
 #define NOSH_BORDEREDOPERATOR_H
 // =============================================================================
-#include <Epetra_Vector.h>
-#include <Epetra_Map.h>
-#include <Epetra_Operator.h>
+#include <Tpetra_Vector.hpp>
+#include <Tpetra::Map<int,int>.h>
+#include <Tpetra::Operator<double,int,int>.h>
 #include <Teuchos_RCP.hpp>
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
 #include <Teuchos_Time.hpp>
@@ -33,13 +33,13 @@
 namespace Nosh
 {
 // =============================================================================
-class BorderedOperator : public Epetra_Operator
+class BorderedOperator : public Tpetra::Operator<double,int,int>
 {
 public:
   BorderedOperator(
-      const std::shared_ptr<Epetra_Operator> & innerOperator,
-      const Epetra_Vector & b,
-      const Epetra_Vector & c,
+      const std::shared_ptr<Tpetra::Operator<double,int,int>> & innerOperator,
+      const Tpetra::Vector<double,int,int> & b,
+      const Tpetra::Vector<double,int,int> & c,
       const double d
       );
 
@@ -50,13 +50,13 @@ public:
   SetUseTranspose(bool UseTranspose);
 
   virtual int
-  Apply(const Epetra_MultiVector &X,
-        Epetra_MultiVector &Y
+  Apply(const Tpetra::MultiVector<double,int,int> &X,
+        Tpetra::MultiVector<double,int,int> &Y
       ) const;
 
   virtual int
-  ApplyInverse(const Epetra_MultiVector &X,
-               Epetra_MultiVector &Y
+  ApplyInverse(const Tpetra::MultiVector<double,int,int> &X,
+               Tpetra::MultiVector<double,int,int> &Y
              ) const;
 
   virtual double
@@ -71,32 +71,32 @@ public:
   virtual bool
   HasNormInf() const;
 
-  virtual const Epetra_Comm &
+  virtual const Teuchos::Comm<int> &
   Comm() const;
 
-  virtual const Epetra_Map &OperatorDomainMap() const;
+  virtual const Tpetra::Map<int,int> &getDomainMap() const;
 
-  virtual const Epetra_Map &OperatorRangeMap() const;
+  virtual const Tpetra::Map<int,int> &getRangeMap() const;
 
 public:
-  const std::shared_ptr<Epetra_Operator>
+  const std::shared_ptr<Tpetra::Operator<double,int,int>>
   getInnerOperator() const;
 
   void
-  resetBordering(const Epetra_Vector & b,
-                 const Epetra_Vector & c,
+  resetBordering(const Tpetra::Vector<double,int,int> & b,
+                 const Tpetra::Vector<double,int,int> & c,
                  const double d
                );
 
 protected:
 private:
-  const std::shared_ptr<Epetra_Operator> innerOperator_;
-  Epetra_Vector b_;
-  Epetra_Vector c_;
+  const std::shared_ptr<Tpetra::Operator<double,int,int>> innerOperator_;
+  Tpetra::Vector<double,int,int> b_;
+  Tpetra::Vector<double,int,int> c_;
   double d_;
   bool useTranspose_;
-  const Epetra_Map domainMap_;
-  const Epetra_Map rangeMap_;
+  const Tpetra::Map<int,int> domainMap_;
+  const Tpetra::Map<int,int> rangeMap_;
 };
 // =============================================================================
 } // namespace Nosh

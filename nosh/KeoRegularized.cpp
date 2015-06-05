@@ -23,17 +23,17 @@
 #include <map>
 #include <string>
 
-#include <Epetra_Comm.h>
-#include <Epetra_Vector.h>
+#include <Teuchos_Comm.hpp>
+#include <Tpetra_Vector.hpp>
 #include <Epetra_FECrsMatrix.h>
 
 #include <BelosLinearProblem.hpp>
-#include <BelosEpetraAdapter.hpp>
+#include <BelosTpetraAdapter.hpp>
 #include <BelosPseudoBlockCGSolMgr.hpp>
 #include <BelosOperatorT.hpp>
 #include <BelosMueLuAdapter.hpp>
 
-#include <MueLu_CreateEpetraPreconditioner.hpp>
+#include <MueLu_CreateTpetraPreconditioner.hpp>
 #include <MueLu_MLParameterListInterpreter.hpp>
 
 #include <Teuchos_ParameterList.hpp>
@@ -41,14 +41,15 @@
 #include <Teuchos_RCPStdSharedPtrConversions.hpp>
 
 #include "nosh/ScalarField_Virtual.hpp"
-#include "nosh/ParameterMatrix_Virtual.hpp"
+#include "nosh/VectorField_Virtual.hpp"
+#include "nosh/ParameterMatrix_Keo.hpp"
 #include "nosh/StkMesh.hpp"
 
 // =============================================================================
 // some typdefs for Belos
 typedef double ST;
-typedef Epetra_MultiVector MV;
-typedef Epetra_Operator OP;
+typedef Tpetra::MultiVector<double,int,int> MV;
+typedef Tpetra::Operator<double,int,int> OP;
 typedef Belos::MultiVecTraits<ST, MV>     MVT;
 typedef Belos::OperatorTraits<ST, MV, OP>  OPT;
 // =============================================================================
@@ -59,20 +60,19 @@ KeoRegularized::
 KeoRegularized(
     const std::shared_ptr<const Nosh::StkMesh> &mesh,
     const std::shared_ptr<const Nosh::ScalarField::Virtual> &thickness,
-    const std::shared_ptr<const Nosh::ParameterMatrix::Virtual> &keo
-  ):
-  useTranspose_(false),
+    const std::shared_ptr<Nosh::VectorField::Virtual> &mvp
+    ):
   mesh_(mesh),
   thickness_(thickness),
   // It wouldn't strictly be necessary to initialize regularizedKeo_ with the
   // proper graph here as matrixBuilder_'s cache will override the matrix later
   // on anyways. Keep it, though, as it doesn't waste any memory and is in the
   // spirit of the Trilinos::ModelEvaluator which asks for allocation of memory
-  // at one point and filling it with meaningful values later on.  *Copy* over
-  // the matrix.
-  regularizedKeo_(keo->clone()),
+  // at one point and filling it with meaningful values later on.
+  regularizedKeo_(
+      std::make_shared<Nosh::ParameterMatrix::Keo>(mesh, thickness, mvp)
+      ),
   MueluPrec_(Teuchos::null),
-  numCycles_(1),
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   timerRebuild0_(Teuchos::TimeMonitor::getNewTimer(
         "Nosh: KeoRegularized::rebuild::MueLu init"
@@ -81,7 +81,7 @@ KeoRegularized(
         "Nosh: KeoRegularized::rebuild::MueLu rebuild"
         )),
 #endif
-  out_(Teuchos::VerboseObjectBase::getDefaultOStream())
+  numCycles_(1)
 {
 }
 // =============================================================================
@@ -90,39 +90,42 @@ KeoRegularized::
 {
 }
 // =============================================================================
-int
-KeoRegularized::
-SetUseTranspose(bool useTranspose)
-{
-  useTranspose_ = useTranspose;
-  return 0;
-}
+//int
+//KeoRegularized::
+//applyInverse(
+//    const Tpetra::MultiVector<double,int,int> &X,
+//    Tpetra::MultiVector<double,int,int> &Y
+//    ) const
+//{
+//#ifndef NDEBUG
+//  TEUCHOS_ASSERT(regularizedKeo_->DomainMap().SameAs(X.getMap()));
+//  TEUCHOS_ASSERT(regularizedKeo_->RangeMap().SameAs(Y.getMap()));
+//#endif
+//  // (K +  g * 2*|psi|) * X
+//  return regularizedKeo_->Apply(X, Y);
+//}
 // =============================================================================
-int
+void
 KeoRegularized::
-ApplyInverse(
-    const Epetra_MultiVector &X,
-    Epetra_MultiVector &Y
+apply(
+    const Tpetra::MultiVector<double,int,int> &X,
+    Tpetra::MultiVector<double,int,int> &Y,
+    Teuchos::ETransp mode,
+    double alpha,
+    double beta
     ) const
 {
+  TEUCHOS_ASSERT_EQUALITY(mode, Teuchos::NO_TRANS);
+  TEUCHOS_ASSERT_EQUALITY(alpha, 1.0);
+  TEUCHOS_ASSERT_EQUALITY(beta, 0.0);
+
 #ifndef NDEBUG
-  TEUCHOS_ASSERT(regularizedKeo_->DomainMap().SameAs(X.Map()));
-  TEUCHOS_ASSERT(regularizedKeo_->RangeMap().SameAs(Y.Map()));
+  TEUCHOS_ASSERT(!MueluPrec_.is_null());
 #endif
-  // (K +  g * 2*|psi|) * X
-  return regularizedKeo_->Apply(X, Y);
-}
-// =============================================================================
-int
-KeoRegularized::
-Apply(
-    const Epetra_MultiVector &X,
-    Epetra_MultiVector &Y
-    ) const
-{
+
   if (numCycles_ == 1) {
     // Just apply one (inverse) AMG cycle.
-    return MueluPrec_->ApplyInverse(X, Y);
+    return MueluPrec_->apply(X, Y);
   } else {
     // Belos part
     Teuchos::ParameterList belosList;
@@ -144,11 +147,11 @@ Apply(
 
     // Make sure to have a solid initial guess.
     // Belos, for example, does not initialize Y before passing it here.
-    Y.PutScalar(0.0);
+    Y.putScalar(0.0);
 
     // Construct an unpreconditioned linear problem instance.
-    Teuchos::RCP<const Epetra_MultiVector> Xptr = Teuchos::rcpFromRef(X);
-    Teuchos::RCP<Epetra_MultiVector> Yptr = Teuchos::rcpFromRef(Y);
+    Teuchos::RCP<const Tpetra::MultiVector<double,int,int>> Xptr = Teuchos::rcpFromRef(X);
+    Teuchos::RCP<Tpetra::MultiVector<double,int,int>> Yptr = Teuchos::rcpFromRef(Y);
     Belos::LinearProblem<double, MV, OP> problem(
         Teuchos::rcp(regularizedKeo_),
         Yptr,
@@ -158,12 +161,13 @@ Apply(
     TEUCHOS_ASSERT(problem.setProblem());
     // -------------------------------------------------------------------------
     // add preconditioner
+    // TODO recheck
     // Create the Belos preconditioned operator from the preconditioner.
     // NOTE:  This is necessary because Belos expects an operator to apply the
     //        preconditioner with Apply() NOT ApplyInverse().
-    Teuchos::RCP<Belos::EpetraPrecOp> mueluPrec =
-      Teuchos::rcp(new Belos::EpetraPrecOp(MueluPrec_));
-    problem.setLeftPrec(mueluPrec);
+    //Teuchos::RCP<Belos::EpetraPrecOp> mueluPrec =
+    //  Teuchos::rcp(new Belos::EpetraPrecOp(MueluPrec_));
+    problem.setLeftPrec(MueluPrec_);
 
     // -------------------------------------------------------------------------
     // Create an iterative solver manager.
@@ -175,65 +179,31 @@ Apply(
     // Perform "solve".
     Belos::ReturnType ret = newSolver.solve();
 
-    //return 0;
-    return ret == Belos::Converged ? 0 : -1;
+    TEUCHOS_ASSERT_EQUALITY(ret, Belos::Converged);
+
+    return;
   }
 }
 // =============================================================================
-double
+Teuchos::RCP<const Tpetra::Map<int,int>>
 KeoRegularized::
-NormInf() const
+getDomainMap() const
 {
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Not yet implemented.");
+  return regularizedKeo_->getDomainMap();
 }
 // =============================================================================
-const char *
+Teuchos::RCP<const Tpetra::Map<int,int>>
 KeoRegularized::
-Label() const
+getRangeMap() const
 {
-  return "Kinetic energy operator";
-}
-// =============================================================================
-bool
-KeoRegularized::
-UseTranspose() const
-{
-  return useTranspose_;
-}
-// =============================================================================
-bool
-KeoRegularized::
-HasNormInf() const
-{
-  return false;
-}
-// =============================================================================
-const Epetra_Comm &
-KeoRegularized::
-Comm() const
-{
-  return regularizedKeo_->Comm();
-}
-// =============================================================================
-const Epetra_Map &
-KeoRegularized::
-OperatorDomainMap() const
-{
-  return regularizedKeo_->OperatorDomainMap();
-}
-// =============================================================================
-const Epetra_Map &
-KeoRegularized::
-OperatorRangeMap() const
-{
-  return regularizedKeo_->OperatorRangeMap();
+  return regularizedKeo_->getRangeMap();
 }
 // =============================================================================
 void
 KeoRegularized::
 rebuild(
     const std::map<std::string, double> & params,
-    const Epetra_Vector & x
+    const Tpetra::Vector<double,int,int> & x
     )
 {
   // Copy over the matrix.
@@ -256,32 +226,41 @@ rebuild(
     //
     // We could also ahead and only add alpha to the diagonal, i.e.,
     //
-    //const std::shared_ptr<const Epetra_Vector> absPsiSquared =
+    //const std::shared_ptr<const Tpetra::Vector<double,int,int>> absPsiSquared =
     //  this->getAbsPsiSquared_(x);
 //#ifndef NDEBUG
     //TEUCHOS_ASSERT(regularizedKeo_.RowMap().SameAs(absPsiSquared->Map()));
 //#endif
-    //Epetra_Vector diag(regularizedKeo_.RowMap());
+    //Tpetra::Vector<double,int,int> diag(regularizedKeo_.RowMap());
     //TEUCHOS_ASSERT_EQUALITY(0, regularizedKeo_.ExtractDiagonalCopy(diag));
     //TEUCHOS_ASSERT_EQUALITY(0, diag.Update(g*2.0, *absPsiSquared, 1.0));
     //TEUCHOS_ASSERT_EQUALITY(0, regularizedKeo_.ReplaceDiagonalValues(diag));
     //
-    const Epetra_Vector &controlVolumes = *(mesh_->getControlVolumes());
-    const Epetra_Vector thicknessValues = thickness_->getV(params);
+    const Tpetra::Vector<double,int,int> &controlVolumes =
+      *(mesh_->getControlVolumes());
+    const Tpetra::Vector<double,int,int> thicknessValues =
+      thickness_->getV(params);
 #ifndef NDEBUG
-    TEUCHOS_ASSERT(controlVolumes.Map().SameAs(thicknessValues.Map()));
+    TEUCHOS_ASSERT(controlVolumes.getMap()->isSameAs(*thicknessValues.getMap()));
 #endif
-    int idx[2];
-    double vals[2];
-    for (int k = 0; k < controlVolumes.MyLength(); k++) {
-      const double alpha = g * controlVolumes[k] * thicknessValues[k]
-                           * 2.0 * (x[2*k]*x[2*k] + x[2*k+1]*x[2*k+1]);
+    Teuchos::ArrayRCP<const double> cData = controlVolumes.getData();
+    Teuchos::ArrayRCP<const double> tData = thicknessValues.getData();
+    Teuchos::ArrayRCP<const double> xData = x.getData();
+#ifndef NDEBUG
+    TEUCHOS_ASSERT_EQUALITY(cData.size(), tData.size());
+    TEUCHOS_ASSERT_EQUALITY(2*tData.size(), xData.size());
+#endif
+    Teuchos::Tuple<int,2> idx;
+    Teuchos::Tuple<double,2> vals;
+    for (int k = 0; k < cData.size(); k++) {
+      const double alpha = g * cData[k] * tData[k]
+        * 2.0 * (xData[2*k]*xData[2*k] + xData[2*k+1]*xData[2*k+1]);
 
-      const double beta = g * controlVolumes[k] * thicknessValues[k]
-                          * (2.0 * x[2*k] * x[2*k+1]);
+      const double beta = g * cData[k] * tData[k]
+                          * (2.0 * xData[2*k] * xData[2*k+1]);
 
-      const double gamma = g * controlVolumes[k] * thicknessValues[k]
-                           * (x[2*k]*x[2*k] - x[2*k+1]*x[2*k+1]);
+      const double gamma = g * cData[k] * tData[k]
+        * (xData[2*k]*xData[2*k] - xData[2*k+1]*xData[2*k+1]);
 
       // TODO check if the indices are correct here
       idx[0] = 2*k;
@@ -289,14 +268,14 @@ rebuild(
       vals[0] = alpha + gamma;
       vals[1] = beta;
       TEUCHOS_ASSERT_EQUALITY(
-          0,
-          regularizedKeo_->SumIntoMyValues(2*k, 2, vals, idx)
+          2,
+          regularizedKeo_->sumIntoLocalValues(2*k, idx, vals)
           );
       vals[0] = beta;
       vals[1] = alpha - gamma;
       TEUCHOS_ASSERT_EQUALITY(
-          0,
-          regularizedKeo_->SumIntoMyValues(2*k+1, 2, vals, idx)
+          2,
+          regularizedKeo_->sumIntoLocalValues(2*k+1, idx, vals)
           );
     }
   }
@@ -305,18 +284,18 @@ rebuild(
   return;
 }
 // =============================================================================
-//const std::shared_ptr<const Epetra_Vector>
+//const std::shared_ptr<const Tpetra::Vector<double,int,int>>
 //KeoRegularized::
-//getAbsPsiSquared_(const Epetra_Vector &psi)
+//getAbsPsiSquared_(const Tpetra::Vector<double,int,int> &psi)
 //{
 //#ifndef NDEBUG
 //  TEUCHOS_ASSERT(!mesh_.is_null());
 //  TEUCHOS_ASSERT(!thickness_.is_null());
 //#endif
-//  const std::shared_ptr<Epetra_Vector> absPsiSquared =
-//    Teuchos::rcp(new Epetra_Vector(psi.Map()));
+//  const std::shared_ptr<Tpetra::Vector<double,int,int>> absPsiSquared =
+//    Teuchos::rcp(new Tpetra::Vector<double,int,int>(psi.getMap()));
 //
-//  const std::shared_ptr<const Epetra_Vector> &controlVolumes =
+//  const std::shared_ptr<const Tpetra::Vector<double,int,int>> &controlVolumes =
 //    mesh_->getControlVolumes();
 //  int numMyPoints = controlVolumes->MyLength();
 //  for (int k=0; k<numMyPoints; k++)
@@ -353,16 +332,23 @@ rebuildInverse_()
     //params.set("smoother: pre or post", "both");
     //params.set("coarse: type", "Amesos-KLU");
 
-    MueluPrec_ = MueLu::CreateEpetraPreconditioner(
-        Teuchos::rcp(regularizedKeo_),
+    // For some reason, we need to rcp explicitly. Otherwise, the call to
+    // MueLu::CreateTpetraPreconditioner will complain about unmatching types.
+    Teuchos::RCP<Tpetra::CrsMatrix<double,int,int>> rKeoRcp =
+      Teuchos::rcp(regularizedKeo_);
+
+    MueluPrec_ = MueLu::CreateTpetraPreconditioner(
+        rKeoRcp,
         params
         );
   } else {
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor tm(*timerRebuild1_);
 #endif
-    MueLu::ReuseEpetraPreconditioner(
-        Teuchos::rcp(regularizedKeo_),
+    Teuchos::RCP<Tpetra::CrsMatrix<double,int,int>> rKeoRcp =
+      Teuchos::rcp(regularizedKeo_);
+    MueLu::ReuseTpetraPreconditioner(
+        rKeoRcp,
         *MueluPrec_
         );
   }

@@ -19,17 +19,10 @@
 // @HEADER
 #include <string>
 
+#include <Teuchos_DefaultComm.hpp>
+#include <Teuchos_RCPStdSharedPtrConversions.hpp>
 #include <Teuchos_ParameterList.hpp>
-
-#ifdef HAVE_MPI
-#include <Epetra_MpiComm.h>
-#else
-#include <Epetra_SerialComm.h>
-#endif
-
-#include <Epetra_Map.h>
-#include <Epetra_Vector.h>
-#include <Thyra_EpetraModelEvaluator.hpp>
+#include <Thyra_TpetraThyraWrappers.hpp>
 
 #include "nosh/StkMesh.hpp"
 #include "nosh/ScalarField_Constant.hpp"
@@ -39,7 +32,6 @@
 #include "nosh/ModelEvaluator_Nls.hpp"
 
 #include <Teuchos_UnitTestHarness.hpp>
-#include <Teuchos_RCPStdSharedPtrConversions.hpp>
 
 namespace
 {
@@ -55,48 +47,28 @@ testComputeF(
     bool & success
     )
 {
-  // Create a communicator for Epetra objects
-#ifdef HAVE_MPI
-  std::shared_ptr<Epetra_MpiComm> eComm(new Epetra_MpiComm (MPI_COMM_WORLD));
-#else
-  std::shared_ptr<Epetra_SerialComm> eComm(new Epetra_SerialComm());
-#endif
+  auto comm = Teuchos::DefaultComm<int>::getComm();
 
   std::string inputFileName = "data/" + inputFileNameBase + ".e";
-  // =========================================================================
+
   // Read the data from the file.
-  std::shared_ptr<Nosh::StkMesh> mesh(
-      new Nosh::StkMesh(eComm, inputFileName, 0)
+  auto mesh = std::make_shared<Nosh::StkMesh>(
+      Teuchos::get_shared_ptr(comm), inputFileName, 0
       );
 
   // Cast the data into something more accessible.
-  std::shared_ptr<Epetra_Vector> z =
-    mesh->createComplexVector("psi");
+  auto z = mesh->createComplexVector("psi");
 
   // Set the thickness field.
-  std::shared_ptr<Nosh::ScalarField::Virtual> thickness(
-      new Nosh::ScalarField::Constant(*mesh, 1.0)
-      );
+  auto thickness = std::make_shared<Nosh::ScalarField::Constant>(*mesh, 1.0);
+  auto mvp = std::make_shared<Nosh::VectorField::ExplicitValues>(*mesh, "A", mu);
 
-  std::shared_ptr<Nosh::VectorField::Virtual> mvp(
-      new Nosh::VectorField::ExplicitValues(*mesh, "A", mu)
-      );
-  const std::shared_ptr<Nosh::ParameterMatrix::Virtual> keoBuilder(
-      new Nosh::ParameterMatrix::Keo(mesh, thickness, mvp)
-      );
-  const std::shared_ptr<Nosh::ParameterMatrix::Virtual> DKeoDPBuilder(
-      new Nosh::ParameterMatrix::DKeoDP(mesh, thickness, mvp, "mu")
-      );
-
-  std::shared_ptr<Nosh::ScalarField::Virtual> sp(
-      new Nosh::ScalarField::Constant(*mesh, -1.0)
-      );
+  auto sp = std::make_shared<Nosh::ScalarField::Constant>(*mesh, -1.0);
 
   Teuchos::RCP<Thyra::ModelEvaluator<double>> modelEval =
     Teuchos::rcp(new Nosh::ModelEvaluator::Nls(
           mesh,
-          keoBuilder,
-          DKeoDPBuilder,
+          mvp,
           sp,
           1.0,
           thickness,
@@ -104,38 +76,20 @@ testComputeF(
           ));
 
   // Create inArgs.x
-  Thyra::ModelEvaluatorBase::InArgs<double> inArgs = modelEval->createInArgs();
-  inArgs.set_x(Thyra::create_Vector(Teuchos::rcp(z), modelEval->get_f_space()));
+  auto inArgs = modelEval->createInArgs();
+  inArgs.set_x(Thyra::createVector(Teuchos::rcp(z), modelEval->get_f_space()));
   // inArgs.p
-  Teuchos::RCP<Thyra::VectorBase<double>> p =
-    Thyra::createMember(modelEval->get_p_space(0));
+  auto p = Thyra::createMember(modelEval->get_p_space(0));
   Thyra::set_ele(0, 1.0, p()); // g
   Thyra::set_ele(1, 0.01, p()); // mu
   inArgs.set_p(0, p);
 
-  Teuchos::RCP<const Epetra_Comm> comm =
-    Teuchos::rcpFromRef(mesh->getComm());
-  Teuchos::RCP<const Epetra_Map> xmap =
-    Thyra::get_Epetra_Map(*modelEval->get_x_space(), comm);
-  Teuchos::RCP<const Epetra_Map> fmap =
-    Thyra::get_Epetra_Map(*modelEval->get_f_space(), comm);
-
-  std::shared_ptr<const Epetra_Map> mymap = mesh->getComplexNonOverlapMap();
-  Teuchos::RCP<const Thyra::VectorSpaceBase<double>> space =
-    Thyra::create_VectorSpace(Teuchos::rcp(mymap));
-  Teuchos::RCP<const Epetra_Map> spacemap =
-    Thyra::get_Epetra_Map(*space, comm);
-
-  std::cout
-    << "Same0c? "
-    << spacemap->SameAs(*mymap)
-    << std::endl;
+  auto mymap = mesh->getComplexNonOverlapMap();
+  auto space = Thyra::createVectorSpace<int,int>(Teuchos::rcp(mymap));
 
   // Create outArgs.
-  Thyra::ModelEvaluatorBase::OutArgs<double> outArgs =
-    modelEval->createOutArgs();
-  Teuchos::RCP<Thyra::VectorBase<double>> f =
-    Thyra::createMember(modelEval->get_f_space());
+  auto outArgs = modelEval->createOutArgs();
+  auto f = Thyra::createMember(modelEval->get_f_space());
   outArgs.set_f(f);
 
   // Fetch.

@@ -25,12 +25,10 @@
 #include <string>
 #include <tuple>
 
-#include <Epetra_Operator.h>
 #include <Teuchos_RCP.hpp>
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
 #include <Teuchos_Time.hpp>
 #endif
-#include <Epetra_FECrsGraph.h>
 
 #include <stk_mesh/base/Entity.hpp>
 
@@ -69,10 +67,6 @@ public:
 
   // Destructor.
   ~Keo();
-
-  virtual
-  std::shared_ptr<Virtual>
-  clone() const;
 
   //! Gets the initial parameters from this module.
   virtual

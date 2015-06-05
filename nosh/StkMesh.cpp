@@ -27,9 +27,10 @@
 
 #include <Trilinos_version.h>
 
-#include <Epetra_Map.h>
-#include <Epetra_Vector.h>
-#include <Epetra_Export.h>
+#include <Tpetra_Vector.hpp>
+#include <Teuchos_RCPStdSharedPtrConversions.hpp>
+#include <Teuchos_RCP.hpp>
+#include <Teuchos_DefaultComm.hpp>
 
 // #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
@@ -57,10 +58,6 @@
 //#include <stk_rebalance/ZoltanPartition.hpp>
 //#endif
 
-#ifdef HAVE_MPI
-#include <Epetra_MpiComm.h>
-#endif
-
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
 #include <Teuchos_TimeMonitor.hpp>
 #endif
@@ -68,7 +65,7 @@ namespace Nosh
 {
 // =============================================================================
 StkMesh::
-StkMesh(const std::shared_ptr<const Epetra_Comm> & comm,
+StkMesh(const std::shared_ptr<const Teuchos::Comm<int>> & comm,
         const std::string & fileName,
         const int index
         ) :
@@ -94,7 +91,7 @@ StkMesh(const std::shared_ptr<const Epetra_Comm> & comm,
   globalIndexCache(buildGlobalIndexCache_())
 {
 //  int nodesPerCell;
-//  if (comm_.MyPID() == 0)
+//  if (comm_.getRank() == 0)
 //  {
 //    std::vector<stk::mesh::Entity> cells = this->getOwnedCells();
 //    nodesPerCell = cells[0]->relations(metaData.node_rank()).size();
@@ -129,9 +126,10 @@ read_(
   std::shared_ptr<stk::io::StkMeshIoBroker> ioBroker(
       new stk::io::StkMeshIoBroker(
 #ifdef HAVE_MPI
-      Teuchos::dyn_cast<const Epetra_MpiComm>(*comm_).Comm()
+        *(Teuchos::dyn_cast<const Teuchos::MpiComm<int>>(*comm_)
+        .getRawMpiComm())
 #else
-      1
+        1
 #endif
       ));
 
@@ -340,7 +338,7 @@ read_(
 //  if (fileIsSerial && comm.NumProc() > 1) {
 //    bulkData->modification_begin();
 //    Ioss::Region *region = meshData->m_input_region;
-//    if (comm.MyPID() == 0) {
+//    if (comm.getRank() == 0) {
 //      stk::io::process_mesh_bulk_data(region, *(bulkData));
 //      stk::io::input_mesh_fields(region, *(bulkData), index+1);
 //    }
@@ -373,7 +371,7 @@ read_(
   //                   metaData.node_rank(),
   //                   &selector);
   //if (imbalance > 1.5) {
-  //  //if (comm.MyPID() == 0)
+  //  //if (comm.getRank() == 0)
   //  //  std::cout << "The imbalance is " << imbalance << ". Rebalance!" << std::endl;
   //  // Zoltan graph-based reblancing.
   //  // http://trilinos.sandia.gov/packages/docs/dev/packages/stk/doc/html/group__stk__rebalance__unit__test__module.html
@@ -393,7 +391,7 @@ read_(
   //  //                                          NULL,
   //  //                                          metaData.node_rank(),
   //  //                                          &selector);
-  //  //if (comm.MyPID() == 0)
+  //  //if (comm.getRank() == 0)
   //  //  std::cout << "After rebalancing, the imbalance is " << imbalance << "." << std::endl;
   //}
 //#endif
@@ -418,7 +416,7 @@ getTime() const
   return time_;
 }
 // =============================================================================
-std::shared_ptr<Epetra_Vector>
+std::shared_ptr<Tpetra::Vector<double,int,int>>
 StkMesh::
 complexfield2vector_(
     const ScalarFieldType &realField,
@@ -430,33 +428,42 @@ complexfield2vector_(
   const std::vector<stk::mesh::Entity> &ownedNodes = this->getOwnedNodes();
 
   // Create vector with this respective map.
-  std::shared_ptr<Epetra_Vector> vector(
-      new Epetra_Vector(*this->getComplexNonOverlapMap())
+  std::shared_ptr<Tpetra::Vector<double,int,int>> vector(
+      new Tpetra::Vector<double,int,int>(
+        Teuchos::rcp(this->getComplexNonOverlapMap())
+        )
       );
+
+  Teuchos::ArrayRCP<double> vData = vector->getDataNonConst();
+
+#ifndef NDEBUG
+  TEUCHOS_ASSERT_EQUALITY(vData.size(), 2*ownedNodes.size());
+#endif
 
   // Fill the vector with data from the file.
   for (unsigned int k = 0; k < ownedNodes.size(); k++) {
     // real part
     double* realVal = stk::mesh::field_data(realField, ownedNodes[k]);
-    (*vector)[2*k] = realVal[0];
+    vData[2*k] = realVal[0];
 
     // imaginary part
     double* imagVal = stk::mesh::field_data(imagField, ownedNodes[k]);
-    (*vector)[2*k+1] = imagVal[0];
+    vData[2*k+1] = imagVal[0];
   }
 
 #ifndef NDEBUG
-  double r;
-  TEUCHOS_ASSERT_EQUALITY(0, vector->NormInf(&r));
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(r != r || r > 1.0e100,
-                              "The input data seems flawed. Abort."
-                             );
+  // Use NormInf as it's robust against overlapping maps.
+  const double r = vector->normInf();
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(
+      r != r || r > 1.0e100,
+      "The input data seems flawed. Abort."
+      );
 #endif
 
   return vector;
 }
 // =============================================================================
-std::shared_ptr<Epetra_Vector>
+std::shared_ptr<Tpetra::Vector<double,int,int>>
 StkMesh::
 field2vector_(const ScalarFieldType &field) const
 {
@@ -465,14 +472,21 @@ field2vector_(const ScalarFieldType &field) const
     this->getOverlapNodes();
 
   // Create vector with this respective map.
-  std::shared_ptr<Epetra_Vector> vector(
-      new Epetra_Vector(*this->getNodesOverlapMap())
+  std::shared_ptr<Tpetra::Vector<double,int,int>> vector(
+      new Tpetra::Vector<double,int,int>(
+        Teuchos::rcp(this->getNodesOverlapMap())
+        )
       );
+
+  Teuchos::ArrayRCP<double> vData = vector->getDataNonConst();
+
+#ifndef NDEBUG
+  TEUCHOS_ASSERT_EQUALITY(vData.size(), 2*overlapNodes.size());
+#endif
 
   // Fill the vector with data from the file.
   for (unsigned int k = 0; k < overlapNodes.size(); k++) {
-    double* vals = stk::mesh::field_data(field,
-                                         overlapNodes[k]);
+    double* vals = stk::mesh::field_data(field, overlapNodes[k]);
     // Check if the field is actually there.
 #ifndef NDEBUG
     TEUCHOS_ASSERT(vals != NULL);
@@ -480,38 +494,47 @@ field2vector_(const ScalarFieldType &field) const
     //  "Probably there is no field given with the state. Using default."
     //  << std::endl;
 #endif
-    (*vector)[k] = vals[0];
+    vData[k] = vals[0];
   }
 
 #ifndef NDEBUG
-  double r;
   // Use NormInf as it's robust against overlapping maps.
-  TEUCHOS_ASSERT_EQUALITY(0, vector->NormInf(&r));
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(r != r || r > 1.0e100,
-                              "The input data seems flawed. Abort."
-                             );
+  const double r = vector->normInf();
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(
+      r != r || r > 1.0e100,
+      "The input data seems flawed. Abort."
+      );
 #endif
 
   return vector;
 }
 // =============================================================================
-std::shared_ptr<Epetra_MultiVector>
+std::shared_ptr<Tpetra::MultiVector<double,int,int>>
 StkMesh::
-field2vector_(const VectorFieldType &field,
-              const int numComponents
-              ) const
+field2vector_(
+    const VectorFieldType &field,
+    const int numComponents
+    ) const
 {
   // Get overlap nodes.
   const std::vector<stk::mesh::Entity> &overlapNodes =
     this->getOverlapNodes();
 
   // Create vector with this respective map.
-  std::shared_ptr<Epetra_MultiVector> vector(
-      new Epetra_MultiVector(
-        *(this->getNodesOverlapMap()),
+  std::shared_ptr<Tpetra::MultiVector<double,int,int>> vector(
+      new Tpetra::MultiVector<double,int,int>(
+        Teuchos::rcp(this->getNodesOverlapMap()),
         numComponents
         )
       );
+
+  std::vector<Teuchos::ArrayRCP<double>> data(numComponents);
+  for (int i = 0; i < numComponents; i++) {
+    data[i] = vector->getDataNonConst(i);
+#ifndef NDEBUG
+    TEUCHOS_ASSERT_EQUALITY(data[i].size(), overlapNodes.size());
+#endif
+  }
 
   // Fill the vector with data from the file.
   for (unsigned int k = 0; k < overlapNodes.size(); k++) {
@@ -526,29 +549,25 @@ field2vector_(const VectorFieldType &field,
         );
 #endif
     // Copy over.
-    // A multivector isn't actually a good data structure for this.
-    // What would be needed is a vector where each entry has k
-    // components. This way, the data could stick together.
-    for (int i = 0; i < numComponents; i++)
-      (*vector)[i][k] = vals[i];
+    // A multivector isn't actually a good data structure for this.  What would
+    // be needed is a vector where each entry has k components. This way, the
+    // data could stick together.
+    for (int i = 0; i < numComponents; i++) {
+      data[i][k] = vals[i];
+    }
   }
 
 #ifndef NDEBUG
   // Check for NaNs and uninitialized data.
   std::vector<double> r(numComponents);
   // Use NormInf as it's robust against overlapping maps.
-  TEUCHOS_ASSERT_EQUALITY(0, vector->NormInf(&r[0]));
-  bool makesSense = true;
+  vector->normInf(Teuchos::ArrayView<double>(r));
   for (int i = 0; i < numComponents; i++) {
-    if (r[i] != r[i] || r[i] > 1.0e100) {
-      makesSense = false;
-      break;
-    }
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(
+        r[i] != r[i] || r[i] > 1.0e100,
+        "The input data seems flawed. Abort."
+        );
   }
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(
-      !makesSense,
-      "The input data seems flawed. Abort."
-      );
 #endif
 
   return vector;
@@ -594,7 +613,7 @@ openOutputChannel(
 void
 StkMesh::
 insert(
-    const Epetra_Vector & psi,
+    const Tpetra::Vector<double,int,int> & psi,
     const std::string & name
     ) const
 {
@@ -630,7 +649,7 @@ write(const double time) const
   return;
 }
 // =============================================================================
-std::shared_ptr<Epetra_Vector>
+std::shared_ptr<Tpetra::Vector<double,int,int>>
 StkMesh::
 createVector(const std::string & fieldName) const
 {
@@ -652,7 +671,7 @@ createVector(const std::string & fieldName) const
   return this->field2vector_(*field);
 }
 // =============================================================================
-std::shared_ptr<Epetra_MultiVector>
+std::shared_ptr<Tpetra::MultiVector<double,int,int>>
 StkMesh::
 createMultiVector(const std::string & fieldName) const
 {
@@ -676,7 +695,7 @@ createMultiVector(const std::string & fieldName) const
   return this->field2vector_(*field, 3);
 }
 // =============================================================================
-std::shared_ptr<Epetra_Vector>
+std::shared_ptr<Tpetra::Vector<double,int,int>>
 StkMesh::
 createComplexVector(const std::string & fieldName) const
 {
@@ -711,7 +730,7 @@ createComplexVector(const std::string & fieldName) const
 void
 StkMesh::
 mergeComplexVector_(
-    const Epetra_Vector & psi,
+    const Tpetra::Vector<double,int,int> & psi,
     const std::string & fieldName
     ) const
 {
@@ -750,16 +769,18 @@ mergeComplexVector_(
     *localPsiI = 0.0;
   }
 
+  Teuchos::ArrayRCP<const double> psiData = psi.getData();
+
   // Set owned nodes.
 #ifndef NDEBUG
-  TEUCHOS_ASSERT_EQUALITY((unsigned int)psi.MyLength(), 2*ownedNodes_.size());
+  TEUCHOS_ASSERT_EQUALITY(psiData.size(), 2*ownedNodes_.size());
 #endif
   for (unsigned int k = 0; k < ownedNodes_.size(); k++) {
     // Extract real and imaginary part.
     double* localPsiR = stk::mesh::field_data(*psir_field, ownedNodes_[k]);
-    *localPsiR = psi[2*k];
+    *localPsiR = psiData[2*k];
     double* localPsiI = stk::mesh::field_data(*psii_field, ownedNodes_[k]);
-    *localPsiI = psi[2*k+1];
+    *localPsiI = psiData[2*k+1];
   }
 
   // This communication updates the field values on un-owned nodes
@@ -778,10 +799,10 @@ unsigned int
 StkMesh::
 getNumNodes() const
 {
-  return nodesMap_->NumGlobalElements();
+  return nodesMap_->getGlobalNumElements();
 }
 // =============================================================================
-std::shared_ptr<const Epetra_Vector>
+std::shared_ptr<const Tpetra::Vector<double,int,int>>
 StkMesh::
 getControlVolumes() const
 {
@@ -792,19 +813,14 @@ double
 StkMesh::
 getDomainVolume() const
 {
-  // update the domain area value
-  double volume;
-  const int ierr = controlVolumes_->Norm1(&volume);
-  TEUCHOS_ASSERT_EQUALITY(0, ierr);
-
-  return volume;
+  return controlVolumes_->norm1();
 }
 // =============================================================================
-const Epetra_Comm &
+std::shared_ptr<const Teuchos::Comm<int>>
 StkMesh::
 getComm() const
 {
-  return *comm_;
+  return comm_;
 }
 // =============================================================================
 std::vector<double>
@@ -901,7 +917,7 @@ getNodeValue(
   return Eigen::Vector3d(stk::mesh::field_data(field, nodeEntity));
 }
 // =============================================================================
-std::shared_ptr<const Epetra_Map>
+std::shared_ptr<const Tpetra::Map<int,int>>
 StkMesh::
 getNodesMap() const
 {
@@ -911,7 +927,7 @@ getNodesMap() const
   return nodesMap_;
 }
 // =============================================================================
-std::shared_ptr<const Epetra_Map>
+std::shared_ptr<const Tpetra::Map<int,int>>
 StkMesh::
 getNodesOverlapMap() const
 {
@@ -921,7 +937,7 @@ getNodesOverlapMap() const
   return nodesOverlapMap_;
 }
 // =============================================================================
-std::shared_ptr<const Epetra_Map>
+std::shared_ptr<const Tpetra::Map<int,int>>
 StkMesh::
 getComplexNonOverlapMap() const
 {
@@ -931,7 +947,7 @@ getComplexNonOverlapMap() const
   return complexMap_;
 }
 // =============================================================================
-const Epetra_Map&
+const Tpetra::Map<int,int>&
 StkMesh::
 getComplexNonOverlapMap2() const
 {
@@ -941,7 +957,7 @@ getComplexNonOverlapMap2() const
   return *complexMap_;
 }
 // =============================================================================
-std::shared_ptr<const Epetra_Map>
+std::shared_ptr<const Tpetra::Map<int,int>>
 StkMesh::
 getComplexOverlapMap() const
 {
@@ -1002,30 +1018,25 @@ gid(const stk::mesh::Entity e) const
   return ioBroker_->bulk_data().identifier(e) - 1;
 }
 // =============================================================================
-const std::vector<Epetra_IntSerialDenseVector>
+const std::vector<Teuchos::Tuple<int,4>>
 StkMesh::
 buildGlobalIndexCache_() const
 {
   const std::vector<edge> edges = this->getEdgeNodes();
 
-  std::vector<Epetra_IntSerialDenseVector> gic(edges.size());
+  std::vector<Teuchos::Tuple<int,4>> gic(edges.size());
 
   int gidT0, gidT1;
-  for (auto k = 0; k < edges.size(); k++) {
+  for (std::vector<Teuchos::Tuple<int,4>>::size_type k = 0; k < edges.size(); k++) {
     gidT0 = this->gid(std::get<0>(edges[k]));
     gidT1 = this->gid(std::get<1>(edges[k]));
-
-    gic[k] = Epetra_IntSerialDenseVector(4);
-    gic[k][0] = 2 * gidT0;
-    gic[k][1] = 2 * gidT0 + 1;
-    gic[k][2] = 2 * gidT1;
-    gic[k][3] = 2 * gidT1 + 1;
+    gic[k] = Teuchos::tuple(2*gidT0, 2*gidT0 + 1, 2*gidT1, 2*gidT1 + 1);
   }
 
   return gic;
 }
 // =============================================================================
-std::shared_ptr<const Epetra_Map>
+std::shared_ptr<const Tpetra::Map<int,int>>
 StkMesh::
 createEntitiesMap_(const std::vector<stk::mesh::Entity> &entityList) const
 {
@@ -1035,10 +1046,12 @@ createEntitiesMap_(const std::vector<stk::mesh::Entity> &entityList) const
     gids[i] = ioBroker_->bulk_data().identifier(entityList[i]) - 1;
   }
 
-  return std::make_shared<Epetra_Map>(-1, numEntities, gids.data(), 0, *comm_);
+  return std::make_shared<Tpetra::Map<int,int>>(
+      -1, Teuchos::ArrayView<int>(gids), 0, Teuchos::rcp(comm_)
+      );
 }
 // =============================================================================
-std::shared_ptr<const Epetra_Map>
+std::shared_ptr<const Tpetra::Map<int,int>>
 StkMesh::
 createComplexMap_(const std::vector<stk::mesh::Entity> &nodeList) const
 {
@@ -1051,13 +1064,9 @@ createComplexMap_(const std::vector<stk::mesh::Entity> &nodeList) const
     gids[2*k+1] = 2*globalNodeId + 1;
   }
 
-  std::shared_ptr<const Epetra_Map> map(
-      new Epetra_Map(-1, numDof, gids.data(), 0, *comm_)
+  return std::make_shared<Tpetra::Map<int,int>>(
+      -1, Teuchos::ArrayView<int>(gids), 0, Teuchos::rcp(comm_)
       );
-//  comm_->Barrier();
-
-  return map;
-  //return Teuchos::rcp(new Epetra_Map(-1, numDof, gids.getRawPtr(), 0, *comm_));
 }
 // =============================================================================
 unsigned int
@@ -1183,7 +1192,7 @@ getEdgeCoefficientsNumerically_(
   return A.fullPivLu().solve(rhs);
 }
 // =============================================================================
-std::shared_ptr<Epetra_Vector>
+std::shared_ptr<Tpetra::Vector<double,int,int>>
 StkMesh::
 computeControlVolumes_() const
 {
@@ -1193,22 +1202,24 @@ computeControlVolumes_() const
   TEUCHOS_ASSERT(ioBroker_);
 #endif
 
-  std::shared_ptr<Epetra_Vector> controlVolumes(new Epetra_Vector(*nodesMap_));
+  std::shared_ptr<Tpetra::Vector<double,int,int>> controlVolumes(
+      new Tpetra::Vector<double,int,int>(Teuchos::rcp(nodesMap_))
+      );
 
   // Create temporaries to hold the overlap values for control volumes and
   // average thickness.
-  Epetra_Vector cvOverlap(*nodesOverlapMap_);
+  Tpetra::Vector<double,int,int> cvOverlap(Teuchos::rcp(nodesOverlapMap_));
 
   // Determine the kind of mesh by the first cell on the first process
   int nodesPerCell;
-  if (comm_->MyPID() == 0) {
+  if (comm_->getRank() == 0) {
     std::vector<stk::mesh::Entity> cells = this->getOwnedCells();
 #ifndef NDEBUG
     TEUCHOS_ASSERT_INEQUALITY(cells.size(), >, 0);
 #endif
     nodesPerCell = ioBroker_->bulk_data().num_nodes(cells[0]);
   }
-  comm_->Broadcast(&nodesPerCell, 1, 0);
+  Teuchos::broadcast(*comm_, 0, 1, &nodesPerCell);
 
   switch (nodesPerCell) {
     case 3:
@@ -1218,26 +1229,30 @@ computeControlVolumes_() const
       this->computeControlVolumesTet_(cvOverlap);
       break;
     default:
-      TEUCHOS_TEST_FOR_EXCEPT_MSG(true,
-                                  "Illegal cell type.");
+      TEUCHOS_TEST_FOR_EXCEPT_MSG(
+          true,
+          "Illegal cell type."
+          );
   }
 
   // Export control volumes to a non-overlapping map, and sum the entries.
-  Epetra_Export exporter(*nodesOverlapMap_, *nodesMap_);
-  TEUCHOS_ASSERT_EQUALITY(
-      0,
-      controlVolumes->Export(cvOverlap, exporter, Add)
+  Teuchos::RCP<const Tpetra::Export<int,int>> exporter = Tpetra::createExport(
+      Teuchos::rcp(nodesOverlapMap_),
+      Teuchos::rcp(nodesMap_)
       );
+  controlVolumes->doExport(cvOverlap, *exporter, Tpetra::ADD);
 
   return controlVolumes;
 }
 // =============================================================================
 void
 StkMesh::
-computeControlVolumesTri_(Epetra_Vector & cvOverlap) const
+computeControlVolumesTri_(Tpetra::Vector<double,int,int> & cvOverlap) const
 {
   std::vector<stk::mesh::Entity> cells = this->getOwnedCells();
   unsigned int numCells = cells.size();
+
+  Teuchos::ArrayRCP<double> cvData = cvOverlap.getDataNonConst();
 
   const VectorFieldType & coordsField = getNodeField("coordinates");
 
@@ -1270,14 +1285,14 @@ computeControlVolumesTri_(Epetra_Vector & cvOverlap) const
     for (unsigned int e0 = 0; e0 < numLocalNodes; e0++) {
       const Eigen::Vector3d &x0 = localNodeCoords[e0];
       const int gid0 = ioBroker_->bulk_data().identifier(localNodes[e0]) - 1;
-      const int lid0 = nodesOverlapMap_->LID(gid0);
+      const int lid0 = nodesOverlapMap_->getLocalElement(gid0);
 #ifndef NDEBUG
       TEUCHOS_ASSERT_INEQUALITY(lid0, >=, 0);
 #endif
       for (unsigned int e1 = e0+1; e1 < numLocalNodes; e1++) {
         const Eigen::Vector3d &x1 = localNodeCoords[e1];
         const int gid1 = ioBroker_->bulk_data().identifier(localNodes[e1]) - 1;
-        const int lid1 = nodesOverlapMap_->LID(gid1);
+        const int lid1 = nodesOverlapMap_->getLocalElement(gid1);
 #ifndef NDEBUG
         TEUCHOS_ASSERT_INEQUALITY(lid1, >=, 0);
 #endif
@@ -1309,8 +1324,8 @@ computeControlVolumesTri_(Epetra_Vector & cvOverlap) const
         // Compute the contributions to the finite volumes of the adjacent
         // edges.
         double pyramidVolume = 0.5*edgeLength * covolume / 2;
-        cvOverlap[lid0] += pyramidVolume;
-        cvOverlap[lid1] += pyramidVolume;
+        cvData[lid0] += pyramidVolume;
+        cvData[lid1] += pyramidVolume;
       }
     }
   }
@@ -1320,12 +1335,14 @@ computeControlVolumesTri_(Epetra_Vector & cvOverlap) const
 // =============================================================================
 void
 StkMesh::
-computeControlVolumesTet_(Epetra_Vector & cvOverlap) const
+computeControlVolumesTet_(Tpetra::Vector<double,int,int> & cvOverlap) const
 {
   std::vector<stk::mesh::Entity> cells = this->getOwnedCells();
   unsigned int numCells = cells.size();
 
   const VectorFieldType & coordsField = getNodeField("coordinates");
+
+  Teuchos::ArrayRCP<double> cvData = cvOverlap.getDataNonConst();
 
   // Calculate the contributions to the finite volumes cell by cell.
   for (unsigned int k = 0; k < numCells; k++) {
@@ -1354,14 +1371,14 @@ computeControlVolumesTet_(Epetra_Vector & cvOverlap) const
       const Eigen::Vector3d &x0 = localNodeCoords[e0];
       // TODO check if "- 1" is still needed
       const int gid0 = ioBroker_->bulk_data().identifier(localNodes[e0]) - 1;
-      const int lid0 = nodesOverlapMap_->LID(gid0);
+      const int lid0 = nodesOverlapMap_->getLocalElement(gid0);
 #ifndef NDEBUG
       TEUCHOS_ASSERT_INEQUALITY(lid0, >=, 0);
 #endif
       for (unsigned int e1 = e0+1; e1 < numLocalNodes; e1++) {
         const Eigen::Vector3d &x1 = localNodeCoords[e1];
         const int gid1 = ioBroker_->bulk_data().identifier(localNodes[e1]) - 1;
-        const int lid1 = nodesOverlapMap_->LID(gid1);
+        const int lid1 = nodesOverlapMap_->getLocalElement(gid1);
 #ifndef NDEBUG
         TEUCHOS_ASSERT_INEQUALITY(lid1, >=, 0);
 #endif
@@ -1395,8 +1412,8 @@ computeControlVolumesTet_(Epetra_Vector & cvOverlap) const
         // Compute the contributions to the finite volumes of the adjacent
         // edges.
         double pyramidVolume = 0.5*edgeLength * covolume / 3;
-        cvOverlap[lid0] += pyramidVolume;
-        cvOverlap[lid1] += pyramidVolume;
+        cvData[lid0] += pyramidVolume;
+        cvData[lid1] += pyramidVolume;
       }
     }
   }
@@ -1736,7 +1753,7 @@ createEdgeData_()
   return edgeData;
 }
 // =============================================================================
-const Epetra_FECrsGraph
+Teuchos::RCP<const Tpetra::CrsGraph<int,int>>
 StkMesh::
 buildComplexGraph() const
 {
@@ -1795,35 +1812,32 @@ buildComplexGraph() const
   // Remark:
   // This matrix will later be fed into ML. ML has certain restrictions as to
   // what maps can be used. One of those is that RowMatrixRowMap() and
-  // OperatorRangeMap must be the same, and, if the matrix is square,
-  // OperatorRangeMap and OperatorDomainMap must coincide too.
+  // getRangeMap must be the same, and, if the matrix is square,
+  // getRangeMap and getDomainMap must coincide too.
   //
-  const std::shared_ptr<const Epetra_Map> noMap = this->getComplexNonOverlapMap();
+  const std::shared_ptr<const Tpetra::Map<int,int>> noMap =
+    this->getComplexNonOverlapMap();
 #ifndef NDEBUG
-    TEUCHOS_ASSERT(noMap);
+  TEUCHOS_ASSERT(noMap);
 #endif
-  Epetra_FECrsGraph graph(Copy, *noMap, 0);
+  Teuchos::RCP<Tpetra::CrsGraph<int,int>> graph =
+    Tpetra::createCrsGraph(Teuchos::rcp(noMap));
 
   const std::vector<edge> edges = this->getEdgeNodes();
 
   // Loop over all edges and put entries wherever two nodes are connected.
-  for (auto k = 0; k < edges.size(); k++) {
-    int ierr = graph.InsertGlobalIndices(
-        4, this->globalIndexCache[k].Values(),
-        4, this->globalIndexCache[k].Values()
-        );
-#ifndef NDEBUG
-    TEUCHOS_ASSERT_EQUALITY(0, ierr);
-#endif
+  for (std::vector<edge>::size_type k = 0; k < edges.size(); k++) {
+    const Teuchos::Tuple<int,4> & idx = this->globalIndexCache[k];
+    for (int i = 0; i < 4; i++) {
+      graph->insertGlobalIndices(idx[i], idx);
+    }
   }
 
   // Make sure that domain and range map are non-overlapping (to make sure that
   // states psi can compute norms) and equal (to make sure that the matrix works
   // with ML).
-  int ierr = graph.GlobalAssemble(*noMap, *noMap);
-#ifndef NDEBUG
-  TEUCHOS_ASSERT_EQUALITY(0, ierr);
-#endif
+  // TODO specify noMap?
+  graph->fillComplete();
 
   return graph;
 }
@@ -1835,13 +1849,8 @@ read(
     const int index
     )
 {
-#ifdef HAVE_MPI
-  std::shared_ptr<const Epetra_MpiComm> eComm(
-      new Epetra_MpiComm(MPI_COMM_WORLD)
-      );
-#else
-  std::shared_ptr<const Epetra_SerialComm> eComm (new Epetra_SerialComm());
-#endif
-  return StkMesh(eComm, fileName, index);
+  Teuchos::RCP<const Teuchos::Comm<int>> comm =
+    Teuchos::DefaultComm<int>::getComm();
+  return StkMesh(Teuchos::get_shared_ptr(comm), fileName, index);
 }
 }  // namespace Nosh

@@ -19,24 +19,29 @@
 // @HEADER
 #ifndef NOSH_MODELEVALUATOR_NLS_H
 #define NOSH_MODELEVALUATOR_NLS_H
-// -----------------------------------------------------------------------------
+
 // includes
 #include <map>
 #include <string>
 
-#include <Epetra_Vector.h>
+#include <Tpetra_Map.hpp>
+#include <Tpetra_Vector.hpp>
 #include <Teuchos_ParameterList.hpp>
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
 #include <Teuchos_Time.hpp>
 #endif
 
 #include "nosh/ModelEvaluator_Virtual.hpp"
-// -----------------------------------------------------------------------------
+
 // forward declarations
 namespace Nosh
 {
   class StkMesh;
   namespace ScalarField
+  {
+    class Virtual;
+  }
+  namespace VectorField
   {
     class Virtual;
   }
@@ -46,9 +51,6 @@ namespace Nosh
   }
 } // namespace Nosh
 
-class Epetra_CrsGraph;
-class Epetra_LocalMap;
-// -----------------------------------------------------------------------------
 namespace Nosh
 {
 namespace ModelEvaluator
@@ -59,12 +61,11 @@ public:
   //! Constructor without initial guess.
   Nls (
     const std::shared_ptr<const Nosh::StkMesh> &mesh,
-    const std::shared_ptr<Nosh::ParameterMatrix::Virtual> &keo,
-    const std::shared_ptr<Nosh::ParameterMatrix::Virtual> &dKeoDP,
+    const std::shared_ptr<Nosh::VectorField::Virtual> &mvp,
     const std::shared_ptr<const Nosh::ScalarField::Virtual> &scalarPotential,
     const double g,
     const std::shared_ptr<const Nosh::ScalarField::Virtual> &thickness,
-    const std::shared_ptr<const Epetra_Vector> &initialX
+    const std::shared_ptr<const Tpetra::Vector<double,int,int>> &initialX
     );
 
   // Destructor
@@ -158,24 +159,24 @@ protected:
 private:
   void
   computeF_(
-      const Epetra_Vector &x,
+      const Tpetra::Vector<double,int,int> &x,
       const std::map<std::string, double> & params,
-      Epetra_Vector &FVec
+      Tpetra::Vector<double,int,int> &FVec
       ) const;
 
   void
   computeDFDP_(
-      const Epetra_Vector &x,
+      const Tpetra::Vector<double,int,int> &x,
       const std::map<std::string, double> & params,
       const std::string & paramName,
-      Epetra_Vector &FVec
+      Tpetra::Vector<double,int,int> &FVec
       ) const;
 
 private:
   const std::shared_ptr<const Nosh::StkMesh> mesh_;
 
+  const std::shared_ptr<Nosh::VectorField::Virtual> mvp_;
   const std::shared_ptr<const Nosh::ScalarField::Virtual> scalarPotential_;
-
   const std::shared_ptr<const Nosh::ScalarField::Virtual> thickness_;
 
   const std::shared_ptr<Nosh::ParameterMatrix::Virtual> keo_;
@@ -191,7 +192,7 @@ private:
 
   Teuchos::RCP<Teuchos::FancyOStream> out_;
 
-  Teuchos::RCP<Epetra_LocalMap> p_map_;
+  Teuchos::RCP<const Tpetra::Map<int,int>> p_map_;
   Teuchos::RCP<Teuchos::Array<std::string> > p_names_;
 
   Thyra::ModelEvaluatorBase::InArgs<double> nominalValues_;

@@ -21,14 +21,9 @@
 
 #include <Teuchos_ParameterList.hpp>
 
-#ifdef HAVE_MPI
-#include <Epetra_MpiComm.h>
-#else
-#include <Epetra_SerialComm.h>
-#endif
-
-#include <Epetra_Vector.h>
-#include <LOCA_Parameter_Vector.H>
+#include <Teuchos_DefaultComm.hpp>
+#include <Teuchos_RCPStdSharedPtrConversions.hpp>
+#include <Tpetra_Vector.hpp>
 
 #include "nosh/StkMesh.hpp"
 
@@ -39,44 +34,49 @@ namespace
 
 // =============================================================================
 void
-testKeo(const std::string & inputFileNameBase,
-        const double psiControlNormOne,
-        const double psiControlNormInf,
-        const std::vector<double> & mvpControlNormsInf,
-        Teuchos::FancyOStream & out,
-        bool & success)
+testKeo(
+    const std::string & inputFileNameBase,
+    const double psiControlNormOne,
+    const double psiControlNormInf,
+    const std::vector<double> & mvpControlNormsInf,
+    Teuchos::FancyOStream & out,
+    bool & success
+    )
 {
-  // Create a communicator for Epetra objects
-#ifdef HAVE_MPI
-  std::shared_ptr<Epetra_MpiComm> eComm(new Epetra_MpiComm(MPI_COMM_WORLD));
-#else
-  std::shared_ptr<Epetra_SerialComm> eComm(new Epetra_SerialComm());
-#endif
+  Teuchos::RCP<const Teuchos::Comm<int>> comm =
+    Teuchos::DefaultComm<int>::getComm();
 
   std::string inputFileName = "data/" + inputFileNameBase + ".e";
   // =========================================================================
   // Read the data from the file.
-  Nosh::StkMesh mesh(eComm, inputFileName, 0);
+  Nosh::StkMesh mesh(Teuchos::get_shared_ptr(comm), inputFileName, 0);
 
   // Cast the data into something more accessible.
-  const std::shared_ptr<const Epetra_Vector> psi =
-    mesh.createComplexVector("psi");
-  const std::shared_ptr<const Epetra_MultiVector> mvpValues =
-    mesh.createMultiVector("A");
+  const auto psi = mesh.createComplexVector("psi");
+  const auto mvpValues = mesh.createMultiVector("A");
 
   // Check psi.
-  double r;
-  psi->Norm1(&r);
-  TEST_FLOATING_EQUALITY(r, psiControlNormOne, 1.0e-12);
-  psi->NormInf(&r);
-  TEST_FLOATING_EQUALITY(r, psiControlNormInf, 1.0e-12);
+  TEST_FLOATING_EQUALITY(
+      psi->norm1(),
+      psiControlNormOne,
+      1.0e-12
+      );
+  TEST_FLOATING_EQUALITY(
+      psi->normInf(),
+      psiControlNormInf,
+      1.0e-12
+      );
 
   // Check MVP.
-  // Only check the infinity-norm here as all other norms
-  // only apply to vectors with non-overlapping maps.
-  std::vector<double> R(mvpValues->NumVectors());
-  TEUCHOS_ASSERT_EQUALITY(0, mvpValues->NormInf(R.data()));
-  TEST_COMPARE_FLOATING_ARRAYS(R, mvpControlNormsInf, 1.0e-12);
+  // Only check the infinity-norm here as all other norms only apply to vectors
+  // with non-overlapping maps.
+  std::vector<double> v(mvpValues->getNumVectors());
+  mvpValues->normInf(Teuchos::ArrayView<double>(v));
+  TEST_COMPARE_FLOATING_ARRAYS(
+      v,
+      mvpControlNormsInf,
+      1.0e-12
+      );
 
   return;
 }

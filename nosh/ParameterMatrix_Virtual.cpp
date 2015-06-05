@@ -29,7 +29,7 @@ namespace ParameterMatrix
 // ============================================================================
 Virtual::
 Virtual(const std::shared_ptr<const Nosh::StkMesh> &mesh):
-  Epetra_FECrsMatrix(Copy, mesh->buildComplexGraph()),
+  Tpetra::CrsMatrix<double,int,int>(mesh->buildComplexGraph()),
   mesh_(mesh),
   buildParameters_()
 {

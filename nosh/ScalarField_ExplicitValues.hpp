@@ -24,7 +24,7 @@
 #include <string>
 
 #include <Teuchos_RCP.hpp>
-#include <Epetra_Vector.h>
+#include <Tpetra_Vector.hpp>
 
 #include "nosh/ScalarField_Virtual.hpp"
 #include "nosh/StkMesh.hpp"
@@ -50,11 +50,11 @@ public:
   getParameters() const;
 
   virtual
-  const Epetra_Vector
+  const Tpetra::Vector<double,int,int>
   getV(const std::map<std::string, double> & params) const;
 
   virtual
-  const Epetra_Vector
+  const Tpetra::Vector<double,int,int>
   getdVdP(
       const std::map<std::string, double> & params,
       const std::string & paramName
@@ -62,7 +62,7 @@ public:
 
 protected:
 private:
-  const std::shared_ptr<const Epetra_Vector> nodeValues_;
+  const std::shared_ptr<const Tpetra::Vector<double,int,int>> nodeValues_;
 };
 } // namespace ScalarField
 } // namespace Nosh

@@ -28,10 +28,8 @@
 #include "nosh/ScalarField_Virtual.hpp"
 #include "nosh/VectorField_Virtual.hpp"
 
-#include <Epetra_SerialDenseMatrix.h>
-#include <Epetra_Comm.h>
-#include <Epetra_Vector.h>
-#include <Epetra_Import.h>
+#include <Teuchos_RCPStdSharedPtrConversions.hpp>
+#include <Tpetra_Vector.hpp>
 
 #include <ml_epetra_preconditioner.h>
 
@@ -64,13 +62,6 @@ Keo(
 Keo::
 ~Keo()
 {
-}
-// =============================================================================
-std::shared_ptr<Virtual>
-Keo::
-clone() const
-{
-  return std::shared_ptr<Keo>(new Keo(*this));
 }
 // =============================================================================
 const std::map<std::string, double>
@@ -106,10 +97,11 @@ refill_(const std::map<std::string, double> & params)
   Teuchos::TimeMonitor tm(*keoFillTime_);
 #endif
 
+  this->resumeFill();
+
   mvp_->setParameters(params);
 
-  // Zero-out the matrix.
-  TEUCHOS_ASSERT_EQUALITY(0, this->PutScalar(0.0));
+  this->setAllToScalar(0.0);
 
 #ifndef NDEBUG
   TEUCHOS_ASSERT(mesh_);
@@ -123,9 +115,9 @@ refill_(const std::map<std::string, double> & params)
   }
 
   double v[3];
-  const VectorFieldType & coordsField = mesh_->getNodeField("coordinates");
+  //const VectorFieldType & coordsField = mesh_->getNodeField("coordinates");
   // Loop over all edges.
-  for (auto k = 0; k < edges.size(); k++) {
+  for (std::size_t k = 0; k < edges.size(); k++) {
     // Compute the integral
     //
     //    I = \int_{x0}^{xj} (xj-x0).A(x) / |xj-x0| dx
@@ -173,26 +165,23 @@ refill_(const std::map<std::string, double> & params)
     v[0] = -cosAInt * alphaCache_[k];
     v[1] = -sinAInt * alphaCache_[k];
     v[2] = alphaCache_[k];
-    double ain [] = {
-      v[2],  0.0,   v[0], v[1],
-       0.0,  v[2], -v[1], v[0],
-      v[0], -v[1],  v[2],  0.0,
-      v[1],  v[0],   0.0, v[2]
-    };
-    int ierr = this->SumIntoGlobalValues(
-        mesh_->globalIndexCache[k],
-        Epetra_SerialDenseMatrix(View, ain, 4, 4 ,4)
-        );
+    Teuchos::Tuple<Teuchos::Tuple<double,4>,4> vals = Teuchos::tuple(
+      Teuchos::tuple(v[2],  0.0,   v[0], v[1]),
+      Teuchos::tuple( 0.0,  v[2], -v[1], v[0]),
+      Teuchos::tuple(v[0], -v[1],  v[2],  0.0),
+      Teuchos::tuple(v[1],  v[0],   0.0, v[2])
+      );
+    const Teuchos::Tuple<int,4> & idx = mesh_->globalIndexCache[k];
+    for (int i = 0; i < 4; i++) {
+      int num = this->sumIntoGlobalValues(idx[i], idx, vals[i]);
 #ifndef NDEBUG
-    TEUCHOS_ASSERT_EQUALITY(0, ierr);
+      TEUCHOS_ASSERT_EQUALITY(num, 4);
 #endif
+    }
   }
 
-  // calls FillComplete by default
-  int ierr = this->GlobalAssemble();
-#ifndef NDEBUG
-  TEUCHOS_ASSERT_EQUALITY(0, ierr);
-#endif
+  this->fillComplete();
+
   return;
 }
 // =============================================================================
@@ -203,40 +192,42 @@ buildAlphaCache_(
     const std::vector<double> & edgeCoefficients
     ) const
 {
-  // This routine serves the one and only purpose of caching the
-  // thickness average. The cache is used in every call to this->fill().
-  // This is somewhat problematic since the map of V is principally
-  // not known here. Also, it is typically a nonoverlapping map whereas
-  // some edges do sit on a processor boundary, so actually the values
-  // of V are needed in an overlapping map.
-  // Fair enough. Let's distribute the vales of V to an overlapping
-  // map here.
+  // This routine serves the one and only purpose of caching the thickness
+  // average. The cache is used in every call to this->fill().  This is
+  // somewhat problematic since the map of V is principally not known here.
+  // Also, it is typically a nonoverlapping map whereas some edges do sit on a
+  // processor boundary, so actually the values of V are needed in an
+  // overlapping map.
+  // Fair enough. Let's distribute the vales of V to an overlapping map here.
   alphaCache_ = std::vector<double>(edges.size());
 
   std::map<std::string, double> dummy;
-  const Epetra_Vector thicknessValues = thickness_->getV(dummy);
+  const Tpetra::Vector<double,int,int> thicknessValues =
+    thickness_->getV(dummy);
 
-  std::shared_ptr<const Epetra_Map> overlapMap = mesh_->getNodesOverlapMap();
-  // We need to make sure that thicknessValues are distributed on
-  // the overlap map.
-  // Make sure to use Import here instead of Export as the vector
-  // that we want to build is overlapping, "larger". If the "smaller",
-  // non-overlapping vector is exported, only the values on the overlap
-  // would only be set on one processor.
-  Epetra_Vector thicknessOverlap(*overlapMap);
-  Epetra_Import importer(*overlapMap, thicknessValues.Map());
-  TEUCHOS_ASSERT_EQUALITY(
-      0,
-      thicknessOverlap.Import(thicknessValues, importer, Insert)
+  std::shared_ptr<const Tpetra::Map<int,int>> overlapMap =
+    mesh_->getNodesOverlapMap();
+  // We need to make sure that thicknessValues are distributed on the overlap
+  // map.
+  // Make sure to use Import here instead of Export as the vector that we want
+  // to build is overlapping, "larger". If the "smaller", non-overlapping
+  // vector is exported, only the values on the overlap would only be set on
+  // one processor.
+  Tpetra::Vector<double,int,int> thicknessOverlap(Teuchos::rcp(overlapMap));
+  Tpetra::Import<int,int> importer(
+      Teuchos::rcp(overlapMap),
+      thicknessValues.getMap()
       );
+  thicknessOverlap.doImport(thicknessValues, importer, Tpetra::INSERT);
+
+  Teuchos::ArrayRCP<const double> tData = thicknessOverlap.getData();
 
   int gid0, gid1;
   int lid0, lid1;
-  for (auto k = 0; k < edges.size(); k++) {
-    // Get the ID of the edge endpoints in the map of
-    // getV(). Well...
+  for (std::size_t k = 0; k < edges.size(); k++) {
+    // Get the ID of the edge endpoints in the map of getV(). Well...
     gid0 = mesh_->gid(std::get<0>(edges[k]));
-    lid0 = overlapMap->LID(gid0);
+    lid0 = overlapMap->getLocalElement(gid0);
 #ifndef NDEBUG
     TEUCHOS_TEST_FOR_EXCEPT_MSG(
         lid0 < 0,
@@ -245,7 +236,7 @@ buildAlphaCache_(
        );
 #endif
     gid1 = mesh_->gid(std::get<1>(edges[k]));
-    lid1 = overlapMap->LID(gid1);
+    lid1 = overlapMap->getLocalElement(gid1);
 #ifndef NDEBUG
     TEUCHOS_TEST_FOR_EXCEPT_MSG(
         lid1 < 0,
@@ -255,7 +246,7 @@ buildAlphaCache_(
 #endif
     // Update cache.
     alphaCache_[k] = edgeCoefficients[k]
-      * 0.5 * (thicknessOverlap[lid0] + thicknessOverlap[lid1]);
+      * 0.5 * (tData[lid0] + tData[lid1]);
   }
 
   alphaCacheUpToDate_ = true;

@@ -24,15 +24,15 @@
 #include <map>
 #include <string>
 
-#include <Epetra_Vector.h>
-#include <Epetra_Operator.h>
+#include <Tpetra_Vector.hpp>
+#include <Tpetra_Operator.hpp>
 #include <Teuchos_RCP.hpp>
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
 #include <Teuchos_Time.hpp>
 #endif
 #include <Teuchos_FancyOStream.hpp>
 
-#include <MueLu_EpetraOperator.hpp>
+#include <MueLu_TpetraOperator.hpp>
 
 // forward declarations
 namespace Nosh
@@ -42,90 +42,80 @@ namespace Nosh
   {
     class Virtual;
   }
-  namespace ParameterMatrix
+  namespace VectorField
   {
     class Virtual;
+  }
+  namespace ParameterMatrix
+  {
+    class Keo;
   }
 } // namespace Nosh
 
 namespace Nosh
 {
-class KeoRegularized : public Epetra_Operator
+class KeoRegularized : public Tpetra::Operator<double,int,int>
 {
 public:
   KeoRegularized(
       const std::shared_ptr<const Nosh::StkMesh> &mesh,
       const std::shared_ptr<const Nosh::ScalarField::Virtual> &thickness,
-      const std::shared_ptr<const Nosh::ParameterMatrix::Virtual> &matrix
+      const std::shared_ptr<Nosh::VectorField::Virtual> &mvp
       );
 
   // Destructor.
   ~KeoRegularized();
 
-  virtual int
-  SetUseTranspose(bool UseTranspose);
+  virtual void
+  apply(
+      const Tpetra::MultiVector<double,int,int> &X,
+      Tpetra::MultiVector<double,int,int> &Y,
+      Teuchos::ETransp mode,
+      double alpha,
+      double beta
+      ) const;
 
-  virtual int
-  Apply(const Epetra_MultiVector &X,
-        Epetra_MultiVector &Y
-       ) const;
+  //virtual int
+  //applyInverse(const Tpetra::MultiVector<double,int,int> &X,
+  //             Tpetra::MultiVector<double,int,int> &Y
+  //            ) const;
 
-  virtual int
-  ApplyInverse(const Epetra_MultiVector &X,
-               Epetra_MultiVector &Y
-              ) const;
+  virtual
+  Teuchos::RCP<const Tpetra::Map<int,int>> getDomainMap() const;
 
-  virtual double
-  NormInf() const;
-
-  virtual const char *
-  Label() const;
-
-  virtual bool
-  UseTranspose() const;
-
-  virtual bool
-  HasNormInf() const;
-
-  virtual const Epetra_Comm &
-  Comm() const;
-
-  virtual const Epetra_Map &OperatorDomainMap() const;
-
-  virtual const Epetra_Map &OperatorRangeMap() const;
+  virtual
+  Teuchos::RCP<const Tpetra::Map<int,int>> getRangeMap() const;
 
 public:
   void
-  rebuild(const std::map<std::string, double> & params,
-          const Epetra_Vector &psi
-         );
+  rebuild(
+      const std::map<std::string, double> & params,
+      const Tpetra::Vector<double,int,int> &psi
+      );
 
 protected:
 private:
-  const std::shared_ptr<const Epetra_Vector>
-  getAbsPsiSquared_(const Epetra_Vector &psi);
+  const std::shared_ptr<const Tpetra::Vector<double,int,int>>
+  getAbsPsiSquared_(const Tpetra::Vector<double,int,int> &psi);
 
   void
   rebuildInverse_();
 
 private:
-  bool useTranspose_;
 
   const std::shared_ptr<const Nosh::StkMesh> mesh_;
   const std::shared_ptr<const Nosh::ScalarField::Virtual> thickness_;
 
-  const std::shared_ptr<Nosh::ParameterMatrix::Virtual> regularizedKeo_;
+  const std::shared_ptr<Nosh::ParameterMatrix::Keo> regularizedKeo_;
 
-  Teuchos::RCP<MueLu::EpetraOperator> MueluPrec_;
-
-  const int numCycles_;
+  Teuchos::RCP<MueLu::TpetraOperator<double,int,int>> MueluPrec_;
 
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   const std::shared_ptr<Teuchos::Time> timerRebuild0_;
   const std::shared_ptr<Teuchos::Time> timerRebuild1_;
 #endif
 
-  Teuchos::RCP<Teuchos::FancyOStream> out_;
+  const int numCycles_;
 };
 } // namespace Nosh
 

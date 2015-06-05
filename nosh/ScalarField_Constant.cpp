@@ -23,7 +23,8 @@
 #include <map>
 #include <string>
 
-#include <Epetra_Map.h>
+#include <Tpetra_Map.hpp>
+#include <Teuchos_RCPStdSharedPtrConversions.hpp>
 
 namespace Nosh
 {
@@ -31,11 +32,12 @@ namespace ScalarField
 {
 // ============================================================================
 Constant::
-Constant(const Nosh::StkMesh & mesh,
-         const double c,
-         const std::string & param1Name,
-         const double param1InitValue
-       ):
+Constant(
+    const Nosh::StkMesh & mesh,
+    const double c,
+    const std::string & param1Name,
+    const double param1InitValue
+    ):
   map_(mesh.getNodesMap()),
   c_(c),
   param1Name_ (param1Name),
@@ -58,33 +60,35 @@ getParameters() const
   return m;
 }
 // ============================================================================
-const Epetra_Vector
+const Tpetra::Vector<double,int,int>
 Constant::
 getV(const std::map<std::string, double> & params) const
 {
   // Create constant-valued vector.
-  Epetra_Vector vals(*map_);
+  Tpetra::Vector<double,int,int> vals(Teuchos::rcp(map_));
 
-  std::map<std::string, double>::const_iterator it = params.find(param1Name_);
+  auto it = params.find(param1Name_);
   if (it != params.end())
-    vals.PutScalar(c_ + it->second);
+    vals.putScalar(c_ + it->second);
   else
-    vals.PutScalar(c_);
+    vals.putScalar(c_);
 
   return vals;
 }
 // ============================================================================
-const Epetra_Vector
+const Tpetra::Vector<double,int,int>
 Constant::
-getdVdP(const std::map<std::string, double> & params,
-        const std::string & paramName
-      ) const
+getdVdP(
+    const std::map<std::string, double> & params,
+    const std::string & paramName
+    ) const
 {
   (void) params;
   // Create zeroed-out vector.
-  Epetra_Vector vals(*map_, true);
-  if (paramName.compare(param1Name_) == 0)
-    vals.PutScalar(1.0);
+  Tpetra::Vector<double,int,int> vals(Teuchos::rcp(map_), true);
+  if (paramName.compare(param1Name_) == 0) {
+    vals.putScalar(1.0);
+  }
 
   return vals;
 }

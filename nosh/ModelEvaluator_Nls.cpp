@@ -22,6 +22,8 @@
 
 #include "nosh/ScalarField_Virtual.hpp"
 #include "nosh/ParameterMatrix_Virtual.hpp"
+#include "nosh/ParameterMatrix_Keo.hpp"
+#include "nosh/ParameterMatrix_DKeoDP.hpp"
 #include "nosh/JacobianOperator.hpp"
 #include "nosh/KeoRegularized.hpp"
 #include "nosh/StkMesh.hpp"
@@ -29,18 +31,13 @@
 #include <string>
 #include <map>
 
-#include <Epetra_Map.h>
-#include <Epetra_LocalMap.h>
-#include <Epetra_Vector.h>
-#include <Epetra_CrsMatrix.h>
-#include <Thyra_EpetraThyraWrappers.hpp>
-#include <Thyra_EpetraLinearOp.hpp>
 #include <Thyra_DefaultPreconditioner.hpp>
 #include <Thyra_ModelEvaluatorBase.hpp>
 #include <Thyra_VectorBase.hpp>
-#include <Thyra_get_Epetra_Operator.hpp>
-#include <Thyra_EpetraThyraWrappers.hpp>
 #include <Stratimikos_DefaultLinearSolverBuilder.hpp>
+#include <Thyra_TpetraThyraWrappers.hpp>
+#include <Thyra_TpetraThyraWrappers_decl.hpp>
+#include <Thyra_TpetraLinearOp.hpp>
 
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
 #include <Teuchos_TimeMonitor.hpp>
@@ -57,18 +54,24 @@ namespace ModelEvaluator
 Nls::
 Nls(
   const std::shared_ptr<const Nosh::StkMesh> &mesh,
-  const std::shared_ptr<Nosh::ParameterMatrix::Virtual> &keo,
-  const std::shared_ptr<Nosh::ParameterMatrix::Virtual> &dKeoDP,
+  const std::shared_ptr<Nosh::VectorField::Virtual> &mvp,
   const std::shared_ptr<const Nosh::ScalarField::Virtual> &scalarPotential,
   const double g,
   const std::shared_ptr<const Nosh::ScalarField::Virtual> &thickness,
-  const std::shared_ptr<const Epetra_Vector> &initialX
+  const std::shared_ptr<const Tpetra::Vector<double,int,int>> &initialX
 ) :
   mesh_(mesh),
+  mvp_(mvp),
   scalarPotential_(scalarPotential),
   thickness_(thickness),
-  keo_(keo),
-  dKeoDP_(dKeoDP),
+  keo_(
+      std::make_shared<Nosh::ParameterMatrix::Keo>(mesh_, thickness_, mvp_)
+      ),
+  dKeoDP_(
+      std::make_shared<Nosh::ParameterMatrix::DKeoDP>(
+        mesh_, thickness_, mvp_, "g"
+        )
+      ),
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   evalModelTime_(Teuchos::TimeMonitor::getNewTimer(
         "Nosh: Nls::evalModel"
@@ -105,10 +108,16 @@ Nls(
     keo_->getParameters();
   params.insert(mbParams.begin(), mbParams.end());
 
-  // Out of this now complete list, create the entities that the EpetraExt::
-  // Modelevaluator needs.
+  // Out of this now complete list, create the entities that the Modelevaluator
+  // needs.
   const int numParams = params.size();
-  p_map_ = Teuchos::rcp(new Epetra_LocalMap(numParams, 0, mesh_->getComm()));
+  p_map_ = Teuchos::rcp(
+      new Tpetra::Map<int,int>(
+        numParams,
+        0,
+        Teuchos::rcp(mesh_->getComm())
+        )
+      );
   Teuchos::RCP<Thyra::VectorBase<double>> p_init =
     Thyra::createMember(this->get_p_space(0));
   p_names_ = Teuchos::rcp(new Teuchos::Array<std::string>(numParams));
@@ -120,8 +129,8 @@ Nls(
   }
 
   // set nominal values
-  Teuchos::RCP<const Thyra::VectorBase<double>> xxx = Thyra::create_Vector(
-        Teuchos::rcp(initialX), this->get_x_space()
+  Teuchos::RCP<const Thyra::VectorBase<double>> xxx = Thyra::createConstVector(
+        Teuchos::rcp(initialX)
         );
   nominalValues_.set_p(0, p_init);
   nominalValues_.set_x(xxx);
@@ -138,13 +147,10 @@ Teuchos::RCP<const Thyra::VectorSpaceBase<double>>
 Nls::
 get_x_space() const
 {
-  // It is a bit of an assumption that x_ actually has this map, but as
-  // Epetra_Vector::Map() only returns an Epetra_BlockMap which cannot be cast
-  // into an Epetra_Map, this workaround is needed.
 #ifndef NDEBUG
   TEUCHOS_ASSERT(mesh_);
 #endif
-  return Thyra::create_VectorSpace(Teuchos::rcp(
+  return Thyra::createVectorSpace<double>(Teuchos::rcp(
         mesh_->getComplexNonOverlapMap()
         ));
 }
@@ -156,7 +162,7 @@ get_f_space() const
 #ifndef NDEBUG
   TEUCHOS_ASSERT(mesh_);
 #endif
-  return Thyra::create_VectorSpace(Teuchos::rcp(
+  return Thyra::createVectorSpace<double>(Teuchos::rcp(
         mesh_->getComplexNonOverlapMap()
         ));
 }
@@ -169,10 +175,10 @@ get_p_space(int l) const
       l != 0,
       "LOCA can only deal with one parameter vector."
       );
-  return Thyra::create_VectorSpace(p_map_);
+  return Thyra::createVectorSpace<double>(p_map_);
 }
 // ============================================================================
-Teuchos::RCP<const Teuchos::Array<std::string> >
+Teuchos::RCP<const Teuchos::Array<std::string>>
 Nls::
 get_p_names(int l) const
 {
@@ -228,7 +234,7 @@ Teuchos::RCP<Thyra::LinearOpBase<double>>
 Nls::
 create_W_op() const
 {
-  Teuchos::RCP<Epetra_Operator> jac =
+  Teuchos::RCP<Tpetra::Operator<double,int,int>> jac =
       Teuchos::rcp(
         new Nosh::JacobianOperator(
           mesh_,
@@ -238,7 +244,7 @@ create_W_op() const
           )
         );
 
-  return Thyra::nonconstEpetraLinearOp(jac, "Jacobian");
+  return Thyra::createLinearOp(jac);
 }
 // =============================================================================
 Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<double>>
@@ -278,15 +284,15 @@ Teuchos::RCP<Thyra::PreconditionerBase<double>>
 Nls::
 create_W_prec() const
 {
-  const Teuchos::RCP<Epetra_Operator> keoPrec = Teuchos::rcp(
+  const Teuchos::RCP<Tpetra::Operator<double,int,int>> keoPrec = Teuchos::rcp(
       new Nosh::KeoRegularized(
         mesh_,
         thickness_,
-        keo_
+        mvp_
         )
       );
   Teuchos::RCP<Thyra::LinearOpBase<double>> keoT =
-    Thyra::nonconstEpetraLinearOp(keoPrec, "KEO");
+    Thyra::createLinearOp(keoPrec);
   return Thyra::nonconstUnspecifiedPrec(keoT);
 }
 // ============================================================================
@@ -393,11 +399,11 @@ evalModelImpl(
 #ifndef NDEBUG
   TEUCHOS_ASSERT(!x_in.is_null());
 #endif
-  // create corresponding epetra vector
-  Teuchos::RCP<const Epetra_Comm> comm =
-    Teuchos::rcpFromRef(mesh_->getComm());
-  Teuchos::RCP<const Epetra_Vector> x_in_epetra =
-    Thyra::get_Epetra_Vector(*mesh_->getComplexNonOverlapMap(), x_in);
+  // create corresponding tpetra vector
+  Teuchos::RCP<const Tpetra::Vector<double,int,int>> x_in_tpetra =
+    Thyra::TpetraOperatorVectorExtraction<double,int,int>::getConstTpetraVector(
+        x_in
+        );
 
   // Dissect inArgs.get_p(0) into parameter sublists.
   const Teuchos::RCP<const Thyra::VectorBase<double>> &p_in = inArgs.get_p(0);
@@ -405,25 +411,19 @@ evalModelImpl(
   TEUCHOS_ASSERT(!p_in.is_null());
 #endif
 
-  Teuchos::RCP<const Epetra_Map> pmap =
-    Thyra::get_Epetra_Map(*p_in->space(), comm);
-  Teuchos::RCP<const Epetra_Vector> p_in_epetra =
-    Thyra::get_Epetra_Vector(*pmap, p_in);
-
 #ifndef NDEBUG
   // Make sure the parameters aren't NaNs.
-  TEUCHOS_ASSERT(!p_in_epetra.is_null());
-  for (int k = 0; k < p_in_epetra->MyLength(); k++) {
-    TEUCHOS_ASSERT(!std::isnan((*p_in_epetra)[k]));
+  for (int k = 0; k < p_in->space()->dim(); k++) {
+    TEUCHOS_ASSERT(!std::isnan(Thyra::get_ele(*p_in, k)));
   }
 #endif
 
   // Fill the parameters into a std::map.
-  const Teuchos::RCP<const Teuchos::Array<std::string> > paramNames =
+  const Teuchos::RCP<const Teuchos::Array<std::string>> paramNames =
     this->get_p_names(0);
   std::map<std::string, double> params;
-  for (int k = 0; k < p_in_epetra->MyLength(); k++) {
-    params[(*paramNames)[k]] = (*p_in_epetra)[k];
+  for (int k = 0; k < p_in->space()->dim(); k++) {
+    params[(*paramNames)[k]] = Thyra::get_ele(*p_in, k);
     //std::cout << (*paramNames)[k] << " " << (*p_in)[k] << std::endl;
   }
 
@@ -434,12 +434,14 @@ evalModelImpl(
     Teuchos::TimeMonitor tm1(*computeFTime_);
 #endif
 
-    Teuchos::RCP<Epetra_Vector> f_out_epetra =
-      Thyra::get_Epetra_Vector(*mesh_->getComplexNonOverlapMap(), f_out);
+    Teuchos::RCP<Tpetra::Vector<double,int,int>> f_out_tpetra =
+      Thyra::TpetraOperatorVectorExtraction<double,int,int>::getTpetraVector(
+          f_out
+          );
     this->computeF_(
-        *x_in_epetra,
+        *x_in_tpetra,
         params,
-        *f_out_epetra
+        *f_out_tpetra
         );
   }
 
@@ -452,24 +454,23 @@ evalModelImpl(
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor tm2(*computedFdpTime_);
 #endif
-    Teuchos::RCP<Epetra_MultiVector> dfdp_out_epetra =
-      Thyra::get_Epetra_MultiVector(
-          *mesh_->getComplexNonOverlapMap(),
+    Teuchos::RCP<Tpetra::MultiVector<double,int,int>> dfdp_out_tpetra =
+      Thyra::TpetraOperatorVectorExtraction<double,int,int>::getTpetraMultiVector(
           dfdp_out
           );
 
     const int numAllParams = this->get_p_space(0)->dim();
     TEUCHOS_ASSERT_EQUALITY(
         numAllParams,
-        dfdp_out_epetra->NumVectors()
+        dfdp_out_tpetra->getNumVectors()
         );
     // Compute all derivatives.
     for (int k = 0; k < numAllParams; k++) {
       this->computeDFDP_(
-          *x_in_epetra,
+          *x_in_tpetra,
           params,
           (*paramNames)[k],
-          *(*dfdp_out_epetra)(k)
+          *dfdp_out_tpetra->getVectorNonConst(k)
           );
     }
   }
@@ -480,10 +481,13 @@ evalModelImpl(
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor tm3(*fillJacobianTime_);
 #endif
-    Teuchos::RCP<Epetra_Operator> W_outE = Thyra::get_Epetra_Operator(*W_out);
+    Teuchos::RCP<Tpetra::Operator<double,int,int>> W_outE =
+      Thyra::TpetraOperatorVectorExtraction<double,int,int>::getTpetraOperator(
+          W_out
+          );
     const Teuchos::RCP<Nosh::JacobianOperator> & jac =
       Teuchos::rcp_dynamic_cast<Nosh::JacobianOperator>(W_outE, true);
-    jac->rebuild(params, *x_in_epetra);
+    jac->rebuild(params, *x_in_tpetra);
   }
 
   // Fill preconditioner.
@@ -493,15 +497,15 @@ evalModelImpl(
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor tm4(*fillPreconditionerTime_);
 #endif
-    Teuchos::RCP<Epetra_Operator> WPrec_outE =
-      Thyra::get_Epetra_Operator(
-          *WPrec_out->getNonconstUnspecifiedPrecOp()
+    Teuchos::RCP<Tpetra::Operator<double,int,int>> WPrec_outE =
+      Thyra::TpetraOperatorVectorExtraction<double,int,int>::getTpetraOperator(
+          WPrec_out->getNonconstUnspecifiedPrecOp()
           );
     const Teuchos::RCP<Nosh::KeoRegularized> & keoPrec =
       Teuchos::rcp_dynamic_cast<Nosh::KeoRegularized>(WPrec_outE, true);
     keoPrec->rebuild(
         params,
-        *x_in_epetra
+        *x_in_tpetra
         );
   }
 
@@ -511,41 +515,52 @@ evalModelImpl(
 void
 Nls::
 computeF_(
-    const Epetra_Vector &x,
+    const Tpetra::Vector<double,int,int> &x,
     const std::map<std::string, double> & params,
-    Epetra_Vector &FVec
+    Tpetra::Vector<double,int,int> &FVec
     ) const
 {
   // Compute FVec = K*x.
   keo_->setParameters(params);
-  keo_->Apply(x, FVec);
+  keo_->apply(x, FVec);
+
+  Teuchos::ArrayRCP<const double> xData = x.getData();
+  Teuchos::ArrayRCP<double> fData = FVec.getDataNonConst();
+
 
   // Add the nonlinear part (mass lumping).
 #ifndef NDEBUG
-  TEUCHOS_ASSERT(FVec.Map().SameAs(x.Map()));
+  TEUCHOS_ASSERT(FVec.getMap()->isSameAs(*x.getMap()));
   TEUCHOS_ASSERT(mesh_);
   TEUCHOS_ASSERT(scalarPotential_);
   TEUCHOS_ASSERT(thickness_);
 #endif
 
-  const Epetra_Vector &controlVolumes = *(mesh_->getControlVolumes());
-  const int numMyPoints = controlVolumes.MyLength();
+  const Tpetra::Vector<double,int,int> &controlVolumes =
+    *(mesh_->getControlVolumes());
+  Teuchos::ArrayRCP<const double> cData = controlVolumes.getData();
+
+  const int numMyPoints = cData.size();
 
 #ifndef NDEBUG
   // Make sure control volumes and state still match.
-  TEUCHOS_ASSERT_EQUALITY(2*numMyPoints, x.MyLength());
+  TEUCHOS_ASSERT_EQUALITY(2*numMyPoints, xData.size());
 #endif
 
   const double g = params.at("g");
 
-  const Epetra_Vector thicknessValues = thickness_->getV(params);
+  const Tpetra::Vector<double,int,int> thicknessValues =
+    thickness_->getV(params);
+  Teuchos::ArrayRCP<const double> tData = thicknessValues.getData();
 #ifndef NDEBUG
-  TEUCHOS_ASSERT(controlVolumes.Map().SameAs(thicknessValues.Map()));
+  TEUCHOS_ASSERT(controlVolumes.getMap()->isSameAs(*thicknessValues.getMap()));
 #endif
 
-  const Epetra_Vector scalarPotentialValues = scalarPotential_->getV(params);
+  const Tpetra::Vector<double,int,int> scalarPotentialValues =
+    scalarPotential_->getV(params);
+  Teuchos::ArrayRCP<const double> sData = scalarPotentialValues.getData();
 #ifndef NDEBUG
-  TEUCHOS_ASSERT(controlVolumes.Map().SameAs(scalarPotentialValues.Map()));
+  TEUCHOS_ASSERT(controlVolumes.getMap()->isSameAs(*scalarPotentialValues.getMap()));
 #endif
 
   for (int k = 0; k < numMyPoints; k++) {
@@ -593,12 +608,12 @@ computeF_(
     // is known to be local by thickness and scalarPotential and known to be
     // associated with that map.
     const double alpha =
-      controlVolumes[k] * thicknessValues[k]* (
-          scalarPotentialValues[k] + g * (x[2*k]*x[2*k] + x[2*k+1]*x[2*k+1])
+      cData[k] * tData[k]* (
+          sData[k] + g * (xData[2*k]*xData[2*k] + xData[2*k+1]*xData[2*k+1])
           );
     // real and imaginary part
-    FVec[2*k]   += alpha * x[2*k];
-    FVec[2*k+1] += alpha * x[2*k+1];
+    fData[2*k]   += alpha * xData[2*k];
+    fData[2*k+1] += alpha * xData[2*k+1];
   }
 
   return;
@@ -607,56 +622,66 @@ computeF_(
 void
 Nls::
 computeDFDP_(
-    const Epetra_Vector &x,
+    const Tpetra::Vector<double,int,int> &x,
     const std::map<std::string, double> & params,
     const std::string & paramName,
-    Epetra_Vector &FVec
+    Tpetra::Vector<double,int,int> &FVec
     ) const
 {
   // FVec = dK/dp * x.
   dKeoDP_->setParameters(params);
-  dKeoDP_->Apply(x, FVec);
+  dKeoDP_->apply(x, FVec);
+
+  Teuchos::ArrayRCP<const double> xData = x.getData();
+  Teuchos::ArrayRCP<double> fData = FVec.getDataNonConst();
 
 #ifndef NDEBUG
-  TEUCHOS_ASSERT(FVec.Map().SameAs(x.Map()));
+  TEUCHOS_ASSERT(FVec.getMap()->isSameAs(*x.getMap()));
   TEUCHOS_ASSERT(mesh_);
   TEUCHOS_ASSERT(thickness_);
 #endif
-  const Epetra_Vector &controlVolumes = *(mesh_->getControlVolumes());
+  const Tpetra::Vector<double,int,int> &controlVolumes =
+    *(mesh_->getControlVolumes());
+  Teuchos::ArrayRCP<const double> cData = controlVolumes.getData();
 
 #ifndef NDEBUG
   // Make sure control volumes and state still match.
-  TEUCHOS_ASSERT_EQUALITY(2*controlVolumes.MyLength(), x.MyLength());
+  TEUCHOS_ASSERT_EQUALITY(2*cData.size(), xData.size());
 #endif
 
-  const Epetra_Vector thicknessValues = thickness_->getV(params);
+  const Tpetra::Vector<double,int,int> thicknessValues =
+    thickness_->getV(params);
+  Teuchos::ArrayRCP<const double> tData = thicknessValues.getData();
 #ifndef NDEBUG
-  TEUCHOS_ASSERT(controlVolumes.Map().SameAs(thicknessValues.Map()));
+  TEUCHOS_ASSERT(controlVolumes.getMap()->isSameAs(*thicknessValues.getMap()));
 #endif
 
   if (paramName.compare("g") == 0) {
-    for (int k = 0; k < controlVolumes.MyLength(); k++) {
+    for (int k = 0; k < cData.size(); k++) {
       // This assumes that "g" is not a parameter in either of the
       // potentials.
-      double alpha = controlVolumes[k] * thicknessValues[k]
-                     * (x[2*k]*x[2*k] + x[2*k+1]*x[2*k+1]);
+      double alpha = cData[k] * tData[k] *
+        (xData[2*k]*xData[2*k] + xData[2*k+1]*xData[2*k+1]);
       // real and imaginary part
-      FVec[2*k]   += alpha * x[2*k];
-      FVec[2*k+1] += alpha * x[2*k+1];
+      fData[2*k]   += alpha * xData[2*k];
+      fData[2*k+1] += alpha * xData[2*k+1];
     }
   } else {
-    const Epetra_Vector scalarPotentialValues =
+    const Tpetra::Vector<double,int,int> scalarPotentialValues =
       scalarPotential_->getdVdP(params, paramName);
+    Teuchos::ArrayRCP<const double> sData = scalarPotentialValues.getData();
 #ifndef NDEBUG
-    TEUCHOS_ASSERT(controlVolumes.Map().SameAs(scalarPotentialValues.Map()));
+    TEUCHOS_ASSERT(controlVolumes.getMap()->isSameAs(
+          *scalarPotentialValues.getMap()
+          )
+        );
 #endif
 
-    for (int k = 0; k < controlVolumes.MyLength(); k++) {
-      const double alpha = controlVolumes[k] * thicknessValues[k]
-                           * scalarPotentialValues[k];
+    for (int k = 0; k < cData.size(); k++) {
+      const double alpha = cData[k] * tData[k] * sData[k];
       // real and imaginary part
-      FVec[2*k]   += alpha * x[2*k];
-      FVec[2*k+1] += alpha * x[2*k+1];
+      fData[2*k]   += alpha * xData[2*k];
+      fData[2*k+1] += alpha * xData[2*k+1];
     }
   }
 
@@ -670,9 +695,11 @@ innerProduct(
     const Thyra::VectorBase<double> &psi
     ) const
 {
-  const Epetra_Vector &controlVolumes = *mesh_->getControlVolumes();
+  const Tpetra::Vector<double,int,int> &controlVolumes = *mesh_->getControlVolumes();
 
-  int numMyPoints = controlVolumes.Map().NumMyPoints();
+  Teuchos::ArrayRCP<const double> cData = controlVolumes.getData();
+
+  int numMyPoints = cData.size();
 #ifndef NDEBUG
   TEUCHOS_ASSERT_EQUALITY(2*numMyPoints, phi.space()->dim());
   TEUCHOS_ASSERT_EQUALITY(2*numMyPoints, psi.space()->dim());
@@ -684,24 +711,36 @@ innerProduct(
     double imPhi = Thyra::get_ele(phi, 2*k+1);
     double rePsi = Thyra::get_ele(psi, 2*k);
     double imPsi = Thyra::get_ele(psi, 2*k+1);
-    res += controlVolumes[k] * (rePhi*rePsi + imPhi*imPsi);
+    res += cData[k] * (rePhi*rePsi + imPhi*imPsi);
   }
 
-  // Sum over all processors.
-  double globalRes;
-  TEUCHOS_ASSERT_EQUALITY(0, mesh_->getComm().SumAll(&res, &globalRes, 1));
+  // TODO
+  //// Sum over all processors.
+  //double globalRes;
+  //TEUCHOS_ASSERT_EQUALITY(0,
+  //    mesh_->getComm().reduceAll(
+  //      &res,
+  //      &globalRes,
+  //      1
+  //      )
+  //    );
+  //
+  //// normalize and return
+  //return globalRes / mesh_->getDomainVolume();
 
-  // normalize and return
-  return globalRes / mesh_->getDomainVolume();
+  return 0.0;
 }
 // =============================================================================
 double
 Nls::
 gibbsEnergy(const Thyra::VectorBase<double> &psi) const
 {
-  const Epetra_Vector &controlVolumes = *mesh_->getControlVolumes();
+  const Tpetra::Vector<double,int,int> &controlVolumes =
+    *mesh_->getControlVolumes();
 
-  int numMyPoints = controlVolumes.Map().NumMyPoints();
+  Teuchos::ArrayRCP<const double> cData = controlVolumes.getData();
+
+  int numMyPoints = cData.size();
 #ifndef NDEBUG
   TEUCHOS_ASSERT_EQUALITY(2*numMyPoints, psi.space()->dim());
 #endif
@@ -711,15 +750,18 @@ gibbsEnergy(const Thyra::VectorBase<double> &psi) const
     double re = Thyra::get_ele(psi, 2*k);
     double im = Thyra::get_ele(psi, 2*k+1);
     double alpha = re*re + im*im;
-    myEnergy -= controlVolumes[k] * alpha * alpha;
+    myEnergy -= cData[k] * alpha * alpha;
   }
 
-  // Sum over all processors.
-  double globalEnergy;
-  TEUCHOS_ASSERT_EQUALITY(0, mesh_->getComm().SumAll(&myEnergy, &globalEnergy, 1));
+  // TODO
+  //// Sum over all processors.
+  //double globalEnergy;
+  //TEUCHOS_ASSERT_EQUALITY(0, mesh_->getComm().SumAll(&myEnergy, &globalEnergy, 1));
 
-  // normalize and return
-  return globalEnergy / mesh_->getDomainVolume();
+  //// normalize and return
+  //return globalEnergy / mesh_->getDomainVolume();
+
+  return 0.0;
 }
 // =============================================================================
 const std::shared_ptr<const Nosh::StkMesh>

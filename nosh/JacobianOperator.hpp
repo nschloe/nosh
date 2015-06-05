@@ -24,8 +24,8 @@
 #include <map>
 #include <string>
 
-#include <Epetra_Vector.h>
-#include <Epetra_Operator.h>
+#include <Tpetra_Vector.hpp>
+#include <Tpetra_Operator.hpp>
 #include <Teuchos_RCP.hpp>
 
 // forward declarations
@@ -45,7 +45,7 @@ namespace Nosh
 namespace Nosh
 {
 
-class JacobianOperator : public Epetra_Operator
+class JacobianOperator : public Tpetra::Operator<double,int,int>
 {
 public:
   JacobianOperator(
@@ -58,47 +58,26 @@ public:
   // Destructor.
   ~JacobianOperator ();
 
-  virtual int
-  SetUseTranspose(bool UseTranspose);
-
-  virtual int
-  Apply(
-      const Epetra_MultiVector &X,
-      Epetra_MultiVector &Y
+  virtual void
+  apply(
+      const Tpetra::MultiVector<double,int,int> &X,
+      Tpetra::MultiVector<double,int,int> &Y,
+      Teuchos::ETransp mode,
+      double alpha,
+      double beta
       ) const;
 
-  virtual int
-  ApplyInverse(
-      const Epetra_MultiVector &X,
-      Epetra_MultiVector &Y
-      ) const;
+  virtual
+  Teuchos::RCP<const Tpetra::Map<int,int>> getDomainMap() const;
 
-  virtual double
-  NormInf() const;
-
-  virtual const char *
-  Label() const;
-
-  virtual bool
-  UseTranspose() const;
-
-  virtual bool
-  HasNormInf() const;
-
-  virtual const Epetra_Comm &
-  Comm() const;
-
-  virtual const
-  Epetra_Map &OperatorDomainMap() const;
-
-  virtual const
-  Epetra_Map &OperatorRangeMap() const;
+  virtual
+  Teuchos::RCP<const Tpetra::Map<int,int>> getRangeMap() const;
 
 public:
   void
   rebuild(
       const std::map<std::string, double> params,
-      const Epetra_Vector & current_X
+      const Tpetra::Vector<double,int,int> & current_X
       );
 
 protected:
@@ -106,19 +85,17 @@ private:
   void
   rebuildDiags_(
       const std::map<std::string, double> params,
-      const Epetra_Vector &current_X
+      const Tpetra::Vector<double,int,int> &current_X
       );
 
 private:
-  bool useTranspose_;
-
   const std::shared_ptr<const Nosh::StkMesh> mesh_;
   const std::shared_ptr<const Nosh::ScalarField::Virtual> scalarPotential_;
   const std::shared_ptr<const Nosh::ScalarField::Virtual> thickness_;
 
   const std::shared_ptr<Nosh::ParameterMatrix::Virtual> keo_;
-  Epetra_Vector diag0_;
-  Epetra_Vector diag1b_;
+  Tpetra::Vector<double,int,int> diag0_;
+  Tpetra::Vector<double,int,int> diag1b_;
 };
 } // namespace Nosh
 

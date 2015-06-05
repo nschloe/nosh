@@ -37,7 +37,7 @@ public:
   //! Constructor without initial guess.
   Bordered (
       const std::shared_ptr<const Nosh::ModelEvaluator::Virtual> & modelEval,
-      const std::shared_ptr<const Epetra_Vector> & initialBordering,
+      const std::shared_ptr<const Tpetra::Vector<double,int,int>> & initialBordering,
       const double lambdaInit
       );
 
@@ -46,23 +46,23 @@ public:
   ~Bordered();
 
   virtual
-  Teuchos::RCP<const Epetra_Map>
+  Teuchos::RCP<const Tpetra::Map<int,int>>
   get_x_map() const;
 
   virtual
-  Teuchos::RCP<const Epetra_Map>
+  Teuchos::RCP<const Tpetra::Map<int,int>>
   get_f_map() const;
 
   virtual
-  Teuchos::RCP<const Epetra_Vector>
+  Teuchos::RCP<const Tpetra::Vector<double,int,int>>
   get_x_init() const;
 
   virtual
-  Teuchos::RCP<const Epetra_Vector>
+  Teuchos::RCP<const Tpetra::Vector<double,int,int>>
   get_p_init(int l) const;
 
   virtual
-  Teuchos::RCP<const Epetra_Map>
+  Teuchos::RCP<const Tpetra::Map<int,int>>
   get_p_map(int l) const;
 
   virtual
@@ -70,7 +70,7 @@ public:
   get_p_names(int l) const;
 
   virtual
-  Teuchos::RCP<Epetra_Operator>
+  Teuchos::RCP<Tpetra::Operator<double,int,int>>
   create_W() const;
 
   virtual
@@ -95,13 +95,13 @@ public:
 public:
   virtual
   double
-  innerProduct(const Epetra_Vector &phi,
-               const Epetra_Vector &psi
+  innerProduct(const Tpetra::Vector<double,int,int> &phi,
+               const Tpetra::Vector<double,int,int> &psi
              ) const;
 
   virtual
   double
-  gibbsEnergy(const Epetra_Vector &psi) const;
+  gibbsEnergy(const Tpetra::Vector<double,int,int> &psi) const;
 
   virtual
   const std::shared_ptr<const Nosh::StkMesh>
@@ -110,7 +110,7 @@ public:
 protected:
 private:
   const std::shared_ptr<const Nosh::ModelEvaluator::Virtual> innerModelEval_;
-  const std::shared_ptr<const Epetra_Vector> initialBordering_;
+  const std::shared_ptr<const Tpetra::Vector<double,int,int>> initialBordering_;
   const double lambdaInit_;
 };
 } // namespace ModelEvaluator

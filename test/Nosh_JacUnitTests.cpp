@@ -20,17 +20,11 @@
 #include <map>
 #include <string>
 
+#include <Teuchos_DefaultComm.hpp>
+#include <Teuchos_RCPStdSharedPtrConversions.hpp>
 #include <Teuchos_ParameterList.hpp>
+#include <Thyra_TpetraThyraWrappers.hpp>
 
-#ifdef HAVE_MPI
-#include <Epetra_MpiComm.h>
-#else
-#include <Epetra_SerialComm.h>
-#endif
-
-#include <Epetra_Vector.h>
-#include <LOCA_Parameter_Vector.H>
-#include <Thyra_EpetraModelEvaluator.hpp>
 #include <Thyra_LinearSolverBuilderBase.hpp>
 #include <Stratimikos_DefaultLinearSolverBuilder.hpp>
 
@@ -44,7 +38,6 @@
 #include "nosh/ModelEvaluator_Nls.hpp"
 
 #include <Teuchos_UnitTestHarness.hpp>
-#include <Teuchos_RCPStdSharedPtrConversions.hpp>
 
 namespace
 {
@@ -61,23 +54,18 @@ void
       bool & success
       )
 {
-  // Create a communicator for Epetra objects
-#ifdef HAVE_MPI
-  std::shared_ptr<Epetra_MpiComm> eComm(new Epetra_MpiComm (MPI_COMM_WORLD));
-#else
-  std::shared_ptr<Epetra_SerialComm> eComm(new Epetra_SerialComm());
-#endif
+  Teuchos::RCP<const Teuchos::Comm<int>> comm =
+    Teuchos::DefaultComm<int>::getComm();
 
   std::string inputFileName = "data/" + inputFileNameBase + ".e";
   // =========================================================================
   // Read the data from the file.
   std::shared_ptr<Nosh::StkMesh> mesh(
-      new Nosh::StkMesh(eComm, inputFileName, 0)
+      new Nosh::StkMesh(Teuchos::get_shared_ptr(comm), inputFileName, 0)
       );
 
   // Cast the data into something more accessible.
-  std::shared_ptr<Epetra_Vector> psi =
-    mesh->createComplexVector("psi");
+  auto psi = mesh->createComplexVector("psi");
 
   std::map<std::string, double> params;
   params["g"] = 1.0;
@@ -96,20 +84,10 @@ void
       new Nosh::ScalarField::Constant(*mesh, 1.0)
       );
 
-  // create a keo factory
-  std::shared_ptr<Nosh::ParameterMatrix::Virtual> keoBuilder(
-      new Nosh::ParameterMatrix::Keo(mesh, thickness, mvp)
-      );
-
-  std::shared_ptr<Nosh::ParameterMatrix::Virtual> DKeoDPBuilder(
-      new Nosh::ParameterMatrix::DKeoDP(mesh, thickness, mvp, "mu")
-      );
-
   Teuchos::RCP<Nosh::ModelEvaluator::Nls> modelEval =
     Teuchos::rcp(new Nosh::ModelEvaluator::Nls(
           mesh,
-          keoBuilder,
-          DKeoDPBuilder,
+          mvp,
           sp,
           1.0,
           thickness,
@@ -117,26 +95,22 @@ void
           ));
 
   // set parameters
-  Thyra::ModelEvaluatorBase::InArgs<double> inArgs =
-    modelEval->createInArgs();
-  Teuchos::RCP<Thyra::VectorBase<double>> p =
-    Thyra::createMember(modelEval->get_p_space(0));
-  Teuchos::RCP<const Teuchos::Array<std::string>> pNames =
-    modelEval->get_p_names(0);
+  auto inArgs = modelEval->createInArgs();
+  auto p = Thyra::createMember(modelEval->get_p_space(0));
+  auto pNames = modelEval->get_p_names(0);
   for (int i=0; i<pNames->size(); i++) {
     Thyra::set_ele(i, params.at((*pNames)[i]), p());
   }
   inArgs.set_p(0, p);
-  inArgs.set_x(Thyra::create_Vector(
+  inArgs.set_x(Thyra::createVector(
         Teuchos::rcp(psi),
         modelEval->get_x_space()
         ));
 
   // get the jacobian from the model evaluator
-  Teuchos::RCP<Thyra::LinearOpBase<double> > jac = modelEval->create_W_op();
+  auto jac = modelEval->create_W_op();
 
-  Thyra::ModelEvaluatorBase::OutArgs<double> outArgs =
-    modelEval->createOutArgs();
+  auto outArgs = modelEval->createOutArgs();
   outArgs.set_W_op(jac);
 
   // call the model
@@ -144,12 +118,11 @@ void
 
   TEUCHOS_ASSERT(!jac.is_null());
 
-  Teuchos::RCP<const Thyra::VectorSpaceBase<double> > domain = jac->domain();
+  auto domain = jac->domain();
   TEUCHOS_ASSERT(!domain.is_null());
-  Teuchos::RCP<Thyra::VectorBase<double> > s = Thyra::createMember(domain);
-  Teuchos::RCP<const Thyra::VectorSpaceBase<double> > range = jac->range();
-  Teuchos::RCP<Thyra::VectorBase<double> > Js =
-    Thyra::createMember(range);
+  auto s = Thyra::createMember(domain);
+  auto range = jac->range();
+  auto Js = Thyra::createMember(range);
 
   double sum;
   // -------------------------------------------------------------------------

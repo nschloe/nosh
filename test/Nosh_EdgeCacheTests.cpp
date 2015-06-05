@@ -22,13 +22,8 @@
 
 #include <Teuchos_ParameterList.hpp>
 
-#ifdef HAVE_MPI
-#include <Epetra_MpiComm.h>
-#else
-#include <Epetra_SerialComm.h>
-#endif
-
-#include <Epetra_Vector.h>
+#include <Teuchos_DefaultComm.hpp>
+#include <Teuchos_RCPStdSharedPtrConversions.hpp>
 
 #include "nosh/StkMesh.hpp"
 
@@ -46,20 +41,19 @@ testCache(const std::string & inputFileNameBase,
   // Create MPI communicator
   Teuchos::GlobalMPISession session(&argc, &argv, NULL);
 
-  // Create a communicator for Epetra objects
-#ifdef HAVE_MPI
-  std::shared_ptr<Epetra_MpiComm> eComm =
-    Teuchos::rcp<Epetra_MpiComm> (new Epetra_MpiComm (MPI_COMM_WORLD));
-#else
-  std::shared_ptr<Epetra_SerialComm> eComm =
-    Teuchos::rcp<Epetra_SerialComm> (new Epetra_SerialComm());
-#endif
+  Teuchos::RCP<const Teuchos::Comm<int>> comm =
+    Teuchos::DefaultComm<int>::getComm();
 
   std::string inputFileName = "data/" + inputFileNameBase + ".e";
   // =========================================================================
   // Read the data from the file.
   Teuchos::ParameterList data;
-  Nosh::Helpers::StkMeshRead(eComm, inputFileName, 0, data);
+  Nosh::Helpers::StkMeshRead(
+      Teuchos::get_shared_ptr(comm),
+      inputFileName,
+      0,
+      data
+      );
 
   // Cast the data into something more accessible.
   std::shared_ptr<Nosh::StkMesh> & mesh = data.get("mesh", std::shared_ptr<Nosh::StkMesh>());

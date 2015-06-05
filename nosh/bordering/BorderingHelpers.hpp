@@ -22,25 +22,25 @@
 #define NOSH_BORDERINGHELPERS_H
 
 #include <Teuchos_RCP.hpp>
-#include <Epetra_Map.h>
-#include <Epetra_Vector.h>
+#include <Tpetra::Map<int,int>.h>
+#include <Tpetra_Vector.hpp>
 
 namespace Nosh
 {
 namespace BorderingHelpers
 {
-std::shared_ptr<const Epetra_Map>
+std::shared_ptr<const Tpetra::Map<int,int>>
 extendMapBy1(const Epetra_BlockMap & map);
 
 void
-merge(const Epetra_MultiVector & x,
+merge(const Tpetra::MultiVector<double,int,int> & x,
       const double * lambda,
-      Epetra_MultiVector & out
+      Tpetra::MultiVector<double,int,int> & out
     );
 
 void
-dissect(const Epetra_MultiVector & x,
-        Epetra_MultiVector & xSmall,
+dissect(const Tpetra::MultiVector<double,int,int> & x,
+        Tpetra::MultiVector<double,int,int> & xSmall,
         double * lambda
       );
 } // namespace BorderingHelpers
