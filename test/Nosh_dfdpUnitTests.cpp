@@ -47,22 +47,19 @@ computeFiniteDifference_(
     )
 {
   const double eps = 1.0e-8;
-  Teuchos::RCP<Thyra::VectorBase<double> > pp = p->clone_v();
+  auto pp = p->clone_v();
 
   const double origValue = Thyra::get_ele(*pp, paramIndex);
 
-  Thyra::ModelEvaluatorBase::InArgs<double> inArgs =
-    modelEval.createInArgs();
+  auto inArgs = modelEval.createInArgs();
   inArgs.set_x(x);
 
-  Thyra::ModelEvaluatorBase::OutArgs<double> outArgs =
-    modelEval.createOutArgs();
+  auto outArgs = modelEval.createOutArgs();
 
   // Get vector at x-eps.
   Thyra::set_ele(paramIndex, origValue - eps, pp());
   inArgs.set_p(0, pp);
-  Teuchos::RCP<Thyra::VectorBase<double> > f0 =
-    Thyra::createMember(fdiff->space());
+  auto f0 = Thyra::createMember(fdiff->space());
   outArgs.set_f(f0);
   modelEval.evalModel(inArgs, outArgs);
 
@@ -87,8 +84,7 @@ testDfdp(
     bool & success
     )
 {
-  Teuchos::RCP<const Teuchos::Comm<int>> comm =
-    Teuchos::DefaultComm<int>::getComm();
+  auto comm = Teuchos::DefaultComm<int>::getComm();
 
   std::string inputFileName = "data/" + inputFileNameBase + ".e";
 
@@ -114,7 +110,8 @@ testDfdp(
           sp,
           1.0,
           thickness,
-          z
+          z,
+          "g"
           ));
 
   auto vectorSpaceX = modelEval->get_x_space();

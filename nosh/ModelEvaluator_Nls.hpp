@@ -58,17 +58,16 @@ namespace ModelEvaluator
 class Nls : public Virtual
 {
 public:
-  //! Constructor without initial guess.
   Nls (
     const std::shared_ptr<const Nosh::StkMesh> &mesh,
     const std::shared_ptr<Nosh::VectorField::Virtual> &mvp,
     const std::shared_ptr<const Nosh::ScalarField::Virtual> &scalarPotential,
     const double g,
     const std::shared_ptr<const Nosh::ScalarField::Virtual> &thickness,
-    const std::shared_ptr<const Tpetra::Vector<double,int,int>> &initialX
+    const std::shared_ptr<const Tpetra::Vector<double,int,int>> &initialX,
+    const std::string & derivParameter
     );
 
-  // Destructor
   virtual
   ~Nls();
 

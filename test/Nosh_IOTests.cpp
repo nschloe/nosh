@@ -47,7 +47,7 @@ testKeo(
     Teuchos::DefaultComm<int>::getComm();
 
   std::string inputFileName = "data/" + inputFileNameBase + ".e";
-  // =========================================================================
+
   // Read the data from the file.
   Nosh::StkMesh mesh(Teuchos::get_shared_ptr(comm), inputFileName, 0);
 

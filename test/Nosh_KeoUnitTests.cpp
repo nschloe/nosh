@@ -53,24 +53,17 @@ testKeo(
   std::string inputFileName = "data/" + inputFileNameBase + ".e";
 
   // Read the data from the file.
-  std::shared_ptr<Nosh::StkMesh> mesh(new Nosh::StkMesh(
-        Teuchos::get_shared_ptr(comm),
-        inputFileName,
-        0
-        )
+  auto mesh = std::make_shared<Nosh::StkMesh>(
+      Teuchos::get_shared_ptr(comm),
+      inputFileName,
+      0
       );
 
   // Cast the data into something more accessible.
   auto z = mesh->createComplexVector("psi");
 
-  std::shared_ptr<Nosh::VectorField::Virtual> mvp(
-      new Nosh::VectorField::ExplicitValues(*mesh, "A", initMu)
-      );
-
-  // Set the thickness field.
-  std::shared_ptr<Nosh::ScalarField::Virtual> thickness(
-      new Nosh::ScalarField::Constant(*mesh, 1.0)
-      );
+  auto mvp = std::make_shared<Nosh::VectorField::ExplicitValues>(*mesh, "A", initMu);
+  auto thickness = std::make_shared<Nosh::ScalarField::Constant>(*mesh, 1.0);
 
   Nosh::ParameterMatrix::Keo keo(mesh, thickness, mvp);
 
@@ -92,7 +85,7 @@ testKeo(
   //    1.0e-12
   //    );
 
-  Teuchos::RCP<const Tpetra::Map<int,int>> map = keo.getDomainMap();
+  auto map = keo.getDomainMap();
   Tpetra::Vector<double,int,int> u(map);
   Tpetra::Vector<double,int,int> Ku(map);
 

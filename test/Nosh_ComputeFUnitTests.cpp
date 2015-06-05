@@ -62,7 +62,6 @@ testComputeF(
   // Set the thickness field.
   auto thickness = std::make_shared<Nosh::ScalarField::Constant>(*mesh, 1.0);
   auto mvp = std::make_shared<Nosh::VectorField::ExplicitValues>(*mesh, "A", mu);
-
   auto sp = std::make_shared<Nosh::ScalarField::Constant>(*mesh, -1.0);
 
   Teuchos::RCP<Thyra::ModelEvaluator<double>> modelEval =
@@ -72,7 +71,8 @@ testComputeF(
           sp,
           1.0,
           thickness,
-          z
+          z,
+          "mu"
           ));
 
   // Create inArgs.x

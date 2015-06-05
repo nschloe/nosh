@@ -53,13 +53,14 @@ namespace ModelEvaluator
 // ============================================================================
 Nls::
 Nls(
-  const std::shared_ptr<const Nosh::StkMesh> &mesh,
-  const std::shared_ptr<Nosh::VectorField::Virtual> &mvp,
-  const std::shared_ptr<const Nosh::ScalarField::Virtual> &scalarPotential,
-  const double g,
-  const std::shared_ptr<const Nosh::ScalarField::Virtual> &thickness,
-  const std::shared_ptr<const Tpetra::Vector<double,int,int>> &initialX
-) :
+    const std::shared_ptr<const Nosh::StkMesh> &mesh,
+    const std::shared_ptr<Nosh::VectorField::Virtual> &mvp,
+    const std::shared_ptr<const Nosh::ScalarField::Virtual> &scalarPotential,
+    const double g,
+    const std::shared_ptr<const Nosh::ScalarField::Virtual> &thickness,
+    const std::shared_ptr<const Tpetra::Vector<double,int,int>> &initialX,
+    const std::string & derivParameter
+   ) :
   mesh_(mesh),
   mvp_(mvp),
   scalarPotential_(scalarPotential),
@@ -69,7 +70,7 @@ Nls(
       ),
   dKeoDP_(
       std::make_shared<Nosh::ParameterMatrix::DKeoDP>(
-        mesh_, thickness_, mvp_, "g"
+        mesh_, thickness_, mvp_, derivParameter
         )
       ),
 #ifdef NOSH_TEUCHOS_TIME_MONITOR

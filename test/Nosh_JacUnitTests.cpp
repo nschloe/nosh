@@ -54,14 +54,15 @@ void
       bool & success
       )
 {
-  Teuchos::RCP<const Teuchos::Comm<int>> comm =
-    Teuchos::DefaultComm<int>::getComm();
+  auto comm = Teuchos::DefaultComm<int>::getComm();
 
-  std::string inputFileName = "data/" + inputFileNameBase + ".e";
-  // =========================================================================
+  const std::string inputFileName = "data/" + inputFileNameBase + ".e";
+
   // Read the data from the file.
-  std::shared_ptr<Nosh::StkMesh> mesh(
-      new Nosh::StkMesh(Teuchos::get_shared_ptr(comm), inputFileName, 0)
+  auto mesh = std::make_shared<Nosh::StkMesh>(
+      Teuchos::get_shared_ptr(comm),
+      inputFileName,
+      0
       );
 
   // Cast the data into something more accessible.
@@ -71,18 +72,9 @@ void
   params["g"] = 1.0;
   params["mu"] = mu;
 
-  std::shared_ptr<Nosh::VectorField::Virtual> mvp(
-      new Nosh::VectorField::ExplicitValues(*mesh, "A", mu)
-      );
-
-  std::shared_ptr<Nosh::ScalarField::Virtual> sp(
-      new Nosh::ScalarField::Constant(*mesh, -1.0)
-      );
-
-  // Set the thickness field.
-  std::shared_ptr<Nosh::ScalarField::Virtual> thickness(
-      new Nosh::ScalarField::Constant(*mesh, 1.0)
-      );
+  auto mvp = std::make_shared<Nosh::VectorField::ExplicitValues>(*mesh, "A", mu);
+  auto sp = std::make_shared<Nosh::ScalarField::Constant>(*mesh, -1.0);
+  auto thickness = std::make_shared<Nosh::ScalarField::Constant>(*mesh, 1.0);
 
   Teuchos::RCP<Nosh::ModelEvaluator::Nls> modelEval =
     Teuchos::rcp(new Nosh::ModelEvaluator::Nls(
@@ -91,7 +83,8 @@ void
           sp,
           1.0,
           thickness,
-          psi
+          psi,
+          "mu"
           ));
 
   // set parameters
@@ -124,36 +117,45 @@ void
   auto range = jac->range();
   auto Js = Thyra::createMember(range);
 
-  double sum;
-  // -------------------------------------------------------------------------
   // (a) [ 1, 1, 1, ... ]
   Thyra::put_scalar<double>(1.0, s());
   jac->apply(Thyra::NOTRANS, *s, Js(), 1.0, 0.0);
-  sum = Thyra::dot(*s, *Js);
-  TEST_FLOATING_EQUALITY(sum, controlSumT0, 1.0e-12);
-  // -------------------------------------------------------------------------
+  TEST_FLOATING_EQUALITY(
+      Thyra::dot(*s, *Js),
+      controlSumT0,
+      1.0e-12
+      );
+
   // (b) [ 1, 0, 1, 0, ... ]
   for (int k = 0; k < s->space()->dim(); k++) {
-    if (k % 2 == 0)
+    if (k % 2 == 0) {
       Thyra::set_ele(k, 1.0, s());
-    else
+    } else {
       Thyra::set_ele(k, 0.0, s());
+    }
   }
   jac->apply(Thyra::NOTRANS, *s, Js(), 1.0, 0.0);
-  sum = Thyra::dot(*s, *Js);
-  TEST_FLOATING_EQUALITY(sum, controlSumT1, 1.0e-12);
-  // -------------------------------------------------------------------------
+  TEST_FLOATING_EQUALITY(
+      Thyra::dot(*s, *Js),
+      controlSumT1,
+      1.0e-12
+      );
+
   // (b) [ 0, 1, 0, 1, ... ]
   for (int k = 0; k < s->space()->dim(); k++) {
-    if (k % 2 == 0)
+    if (k % 2 == 0) {
       Thyra::set_ele(k, 0.0, s());
-    else
+    } else {
       Thyra::set_ele(k, 1.0, s());
+    }
   }
   jac->apply(Thyra::NOTRANS, *s, Js(), 1.0, 0.0);
-  sum = Thyra::dot(*s, *Js);
-  TEST_FLOATING_EQUALITY(sum, controlSumT2, 1.0e-10);
-  // -------------------------------------------------------------------------
+  TEST_FLOATING_EQUALITY(
+      Thyra::dot(*s, *Js),
+      controlSumT2,
+      1.0e-10
+      );
+
   return;
 }
 // ===========================================================================
