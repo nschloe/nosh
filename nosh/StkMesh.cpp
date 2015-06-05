@@ -116,32 +116,19 @@ read_(
     const int index
     )
 {
-  //std::shared_ptr<stk::mesh::BulkData> myBulkData =
-  //  Teuchos::rcp(
-  //    new stk::mesh::BulkData(
-  //      metaData_,
-  //      epetraComm2mpiComm(comm_)
-  //      ));
-
-  std::shared_ptr<stk::io::StkMeshIoBroker> ioBroker(
-      new stk::io::StkMeshIoBroker(
+  auto ioBroker = std::make_shared<stk::io::StkMeshIoBroker>(
 #ifdef HAVE_MPI
         *(Teuchos::dyn_cast<const Teuchos::MpiComm<int>>(*comm_)
         .getRawMpiComm())
 #else
         1
 #endif
-      ));
+      );
 
   // How to split the file for mulitproc I/O
   ioBroker->property_add(
       Ioss::Property("DECOMPOSITION_METHOD", "rcb")
       );
-//#ifdef HAVE_MPI
-//  const Epetra_MpiComm &mpicomm =
-//    Teuchos::dyn_cast<const Epetra_MpiComm>(comm);
-//  MPI_Comm mcomm = mpicomm.Comm();
-//#endif
   // Take two different fields with one component
   // instead of one field with two components. This works around
   // Ioss's inability to properly read psi_R, psi_Z as a complex variable.
@@ -425,23 +412,21 @@ complexfield2vector_(
 {
   // Psi needs to have unique node IDs to be able to compute Norm2().
   // This is required in Belos.
-  const std::vector<stk::mesh::Entity> &ownedNodes = this->getOwnedNodes();
+  const auto & ownedNodes = this->getOwnedNodes();
 
   // Create vector with this respective map.
-  std::shared_ptr<Tpetra::Vector<double,int,int>> vector(
-      new Tpetra::Vector<double,int,int>(
-        Teuchos::rcp(this->getComplexNonOverlapMap())
-        )
+  auto vector = std::make_shared<Tpetra::Vector<double,int,int>>(
+      Teuchos::rcp(this->getComplexNonOverlapMap())
       );
 
-  Teuchos::ArrayRCP<double> vData = vector->getDataNonConst();
+  auto vData = vector->getDataNonConst();
 
 #ifndef NDEBUG
   TEUCHOS_ASSERT_EQUALITY(vData.size(), 2*ownedNodes.size());
 #endif
 
   // Fill the vector with data from the file.
-  for (unsigned int k = 0; k < ownedNodes.size(); k++) {
+  for (size_t k = 0; k < ownedNodes.size(); k++) {
     // real part
     double* realVal = stk::mesh::field_data(realField, ownedNodes[k]);
     vData[2*k] = realVal[0];
@@ -468,17 +453,14 @@ StkMesh::
 field2vector_(const ScalarFieldType &field) const
 {
   // Get overlap nodes.
-  const std::vector<stk::mesh::Entity> &overlapNodes =
-    this->getOverlapNodes();
+  const auto & overlapNodes = this->getOverlapNodes();
 
   // Create vector with this respective map.
-  std::shared_ptr<Tpetra::Vector<double,int,int>> vector(
-      new Tpetra::Vector<double,int,int>(
-        Teuchos::rcp(this->getNodesOverlapMap())
-        )
+  auto vector = std::make_shared<Tpetra::Vector<double,int,int>>(
+      Teuchos::rcp(this->getNodesOverlapMap())
       );
 
-  Teuchos::ArrayRCP<double> vData = vector->getDataNonConst();
+  auto vData = vector->getDataNonConst();
 
 #ifndef NDEBUG
   TEUCHOS_ASSERT_EQUALITY(vData.size(), 2*overlapNodes.size());
@@ -517,15 +499,12 @@ field2vector_(
     ) const
 {
   // Get overlap nodes.
-  const std::vector<stk::mesh::Entity> &overlapNodes =
-    this->getOverlapNodes();
+  const auto & overlapNodes = this->getOverlapNodes();
 
   // Create vector with this respective map.
-  std::shared_ptr<Tpetra::MultiVector<double,int,int>> vector(
-      new Tpetra::MultiVector<double,int,int>(
-        Teuchos::rcp(this->getNodesOverlapMap()),
-        numComponents
-        )
+  auto vector = std::make_shared<Tpetra::MultiVector<double,int,int>>(
+      Teuchos::rcp(this->getNodesOverlapMap()),
+      numComponents
       );
 
   std::vector<Teuchos::ArrayRCP<double>> data(numComponents);
@@ -581,14 +560,6 @@ openOutputChannel(
     )
 {
 
-//  // prepare the data for output
-//#ifdef HAVE_MPI
-//  const Epetra_MpiComm &mpicomm =
-//    Teuchos::dyn_cast<const Epetra_MpiComm>(comm_);
-//  MPI_Comm mcomm = mpicomm.Comm();
-//#else
-//  const int mcomm = 1;
-//#endif
   const std::string extension = ".e";
 
   // Make sure the outputDir ends in "/".
@@ -760,7 +731,7 @@ mergeComplexVector_(
       );
 
   // Zero out all nodal values, including the overlaps.
-  const std::vector<stk::mesh::Entity> &overlapNodes = this->getOverlapNodes();
+  const auto & overlapNodes = this->getOverlapNodes();
   for (unsigned int k = 0; k < overlapNodes.size(); k++) {
     // Extract real and imaginary part.
     double* localPsiR = stk::mesh::field_data(*psir_field, overlapNodes[k]);
@@ -769,7 +740,7 @@ mergeComplexVector_(
     *localPsiI = 0.0;
   }
 
-  Teuchos::ArrayRCP<const double> psiData = psi.getData();
+  auto psiData = psi.getData();
 
   // Set owned nodes.
 #ifndef NDEBUG
@@ -1027,7 +998,7 @@ buildGlobalIndexCache_() const
   std::vector<Teuchos::Tuple<int,4>> gic(edges.size());
 
   int gidT0, gidT1;
-  for (std::vector<Teuchos::Tuple<int,4>>::size_type k = 0; k < edges.size(); k++) {
+  for (std::size_t k = 0; k < edges.size(); k++) {
     gidT0 = this->gid(std::get<0>(edges[k]));
     gidT1 = this->gid(std::get<1>(edges[k]));
     gic[k] = Teuchos::tuple(2*gidT0, 2*gidT0 + 1, 2*gidT1, 2*gidT1 + 1);
@@ -1040,9 +1011,9 @@ std::shared_ptr<const Tpetra::Map<int,int>>
 StkMesh::
 createEntitiesMap_(const std::vector<stk::mesh::Entity> &entityList) const
 {
-  const int numEntities = entityList.size();
+  const size_t numEntities = entityList.size();
   std::vector<int> gids(numEntities);
-  for (int i = 0; i < numEntities; i++) {
+  for (size_t i = 0; i < numEntities; i++) {
     gids[i] = ioBroker_->bulk_data().identifier(entityList[i]) - 1;
   }
 
@@ -1056,9 +1027,9 @@ StkMesh::
 createComplexMap_(const std::vector<stk::mesh::Entity> &nodeList) const
 {
   // Create a map for real/imaginary out of this.
-  const int numDof = 2 * nodeList.size();
+  const size_t numDof = 2 * nodeList.size();
   std::vector<int> gids(numDof);
-  for (unsigned int k = 0; k < nodeList.size(); k++) {
+  for (size_t k = 0; k < nodeList.size(); k++) {
     int globalNodeId = ioBroker_->bulk_data().identifier(nodeList[k]) - 1;
     gids[2*k]   = 2*globalNodeId;
     gids[2*k+1] = 2*globalNodeId + 1;
@@ -1104,9 +1075,9 @@ computeEdgeCoefficients_() const
   // Calculate the contributions edge by edge.
   for (unsigned int k = 0; k < numCells; k++) {
     // Get edge coordinates.
-    unsigned int numLocalEdges = edgeData_.cellEdges[k].size();
+    size_t numLocalEdges = edgeData_.cellEdges[k].size();
     std::vector<Eigen::Vector3d> localEdgeCoords(numLocalEdges);
-    for (unsigned int i = 0; i < numLocalEdges; i++) {
+    for (size_t i = 0; i < numLocalEdges; i++) {
       const edge & e = edgeData_.edgeNodes[edgeData_.cellEdges[k][i]];
       localEdgeCoords[i] =
         this->getNodeValue(coordsField, std::get<1>(e))
@@ -1117,7 +1088,7 @@ computeEdgeCoefficients_() const
       getEdgeCoefficientsNumerically_(localEdgeCoords);
 
     // Fill the edge coefficients into the vector.
-    for (unsigned int i = 0; i < numLocalEdges; i++) {
+    for (size_t i = 0; i < numLocalEdges; i++) {
       edgeCoefficients[edgeData_.cellEdges[k][i]] += edgeCoeffs[i];
     }
   }
@@ -1131,7 +1102,7 @@ getEdgeCoefficientsNumerically_(
   const std::vector<Eigen::Vector3d> edges
   ) const
 {
-  int numEdges = edges.size();
+  size_t numEdges = edges.size();
 
   // Build an equation system for the edge coefficients alpha_k.
   // They fulfill
@@ -1176,11 +1147,11 @@ getEdgeCoefficientsNumerically_(
   //
   // Only fill the upper part of the Hermitian matrix.
   //
-  for (int i = 0; i < numEdges; i++) {
+  for (size_t i = 0; i < numEdges; i++) {
     double alpha = edges[i].dot(edges[i]);
     rhs(i) = vol * alpha;
     A(i,i) = alpha * alpha;
-    for (int j = i+1; j < numEdges; j++) {
+    for (size_t j = i+1; j < numEdges; j++) {
       A(i, j) = edges[i].dot(edges[j]) * edges[j].dot(edges[i]);
       A(j, i) = A(i, j);
     }
@@ -1202,8 +1173,8 @@ computeControlVolumes_() const
   TEUCHOS_ASSERT(ioBroker_);
 #endif
 
-  std::shared_ptr<Tpetra::Vector<double,int,int>> controlVolumes(
-      new Tpetra::Vector<double,int,int>(Teuchos::rcp(nodesMap_))
+  auto controlVolumes = std::make_shared<Tpetra::Vector<double,int,int>>(
+      Teuchos::rcp(nodesMap_)
       );
 
   // Create temporaries to hold the overlap values for control volumes and
@@ -1250,14 +1221,14 @@ StkMesh::
 computeControlVolumesTri_(Tpetra::Vector<double,int,int> & cvOverlap) const
 {
   std::vector<stk::mesh::Entity> cells = this->getOwnedCells();
-  unsigned int numCells = cells.size();
+  size_t numCells = cells.size();
 
   Teuchos::ArrayRCP<double> cvData = cvOverlap.getDataNonConst();
 
   const VectorFieldType & coordsField = getNodeField("coordinates");
 
   // Calculate the contributions to the finite volumes cell by cell.
-  for (unsigned int k = 0; k < numCells; k++) {
+  for (size_t k = 0; k < numCells; k++) {
     const stk::mesh::Entity * localNodes =
       ioBroker_->bulk_data().begin_nodes(cells[k]);
     unsigned int numLocalNodes = ioBroker_->bulk_data().num_nodes(cells[k]);
@@ -1338,14 +1309,14 @@ StkMesh::
 computeControlVolumesTet_(Tpetra::Vector<double,int,int> & cvOverlap) const
 {
   std::vector<stk::mesh::Entity> cells = this->getOwnedCells();
-  unsigned int numCells = cells.size();
+  const size_t numCells = cells.size();
 
   const VectorFieldType & coordsField = getNodeField("coordinates");
 
   Teuchos::ArrayRCP<double> cvData = cvOverlap.getDataNonConst();
 
   // Calculate the contributions to the finite volumes cell by cell.
-  for (unsigned int k = 0; k < numCells; k++) {
+  for (size_t k = 0; k < numCells; k++) {
     const stk::mesh::Entity * localNodes =
       ioBroker_->bulk_data().begin_nodes(cells[k]);
     unsigned int numLocalNodes = ioBroker_->bulk_data().num_nodes(cells[k]);
@@ -1676,13 +1647,13 @@ StkMesh::
 createEdgeData_()
 {
   std::vector<stk::mesh::Entity> cells = this->getOwnedCells();
-  unsigned int numLocalCells = cells.size();
+  size_t numLocalCells = cells.size();
 
   StkMesh::EdgesContainer edgeData = {
     // Local edge ID -> Global node IDs.
     std::vector<std::tuple<stk::mesh::Entity, stk::mesh::Entity> >(),
     // Local cell ID -> Local edge IDs.
-    std::vector<std::vector<int> >(numLocalCells)
+    std::vector<std::vector<int>>(numLocalCells)
     };
 
   // This std::map keeps track of how nodes and edges are connected.
@@ -1697,23 +1668,23 @@ createEdgeData_()
 
   // Loop over all owned cells.
   unsigned int edgeLID = 0;
-  for (unsigned int cellLID = 0; cellLID < numLocalCells; cellLID++) {
+  for (size_t cellLID = 0; cellLID < numLocalCells; cellLID++) {
     // Loop over all pairs of local nodes.
     stk::mesh::Entity const * localNodes
       = ioBroker_->bulk_data().begin_nodes(cells[cellLID]);
-    size_t const numLocalNodes =
+    const size_t numLocalNodes =
       ioBroker_->bulk_data().num_nodes(cells[cellLID]);
 
     //stk::mesh::PairIterRelation nodesIterator =
     //  cells[cellLID]->relations(metaData.node_rank());
     //unsigned int numLocalNodes = nodesIterator.size();
-    unsigned int numLocalEdges = numLocalNodes*(numLocalNodes-1) / 2;
+    size_t numLocalEdges = numLocalNodes*(numLocalNodes-1) / 2;
 
     edgeData.cellEdges[cellLID] = std::vector<int>(numLocalEdges);
 
     // Gather the node entities.
     std::vector<stk::mesh::Entity> nodes(numLocalNodes);
-    for (unsigned int k = 0; k < numLocalNodes; k++) {
+    for (size_t k = 0; k < numLocalNodes; k++) {
       nodes[k] = localNodes[k];
     }
 
@@ -1727,15 +1698,15 @@ createEdgeData_()
     // of nodes. Hence, loop over pairs of nodes.
     unsigned int edgeIndex = 0;
     edge edgeNodes;
-    for (unsigned int e0 = 0; e0 < numLocalNodes; e0++) {
+    for (size_t e0 = 0; e0 < numLocalNodes; e0++) {
       std::get<0>(edgeNodes) = nodes[e0];
-      for (unsigned int e1 = e0+1; e1 < numLocalNodes; e1++) {
+      for (size_t e1 = e0+1; e1 < numLocalNodes; e1++) {
         std::get<1>(edgeNodes) = nodes[e1];
         // As nodes are sorted and by their identifiers, edgeNodes are sorted
         // too. This is necessary as otherwise the edge {3,7} could not be
         // identified as {7,3}.
         // Check if edgeNodes is in the map.
-        std::map<edge, int>::iterator it = nodesEdge.find(edgeNodes);
+        auto it = nodesEdge.find(edgeNodes);
         if (it != nodesEdge.end()) {
           // Edge is already accounted for.
           edgeData.cellEdges[cellLID][edgeIndex] = it->second;
@@ -1815,18 +1786,16 @@ buildComplexGraph() const
   // getRangeMap must be the same, and, if the matrix is square,
   // getRangeMap and getDomainMap must coincide too.
   //
-  const std::shared_ptr<const Tpetra::Map<int,int>> noMap =
-    this->getComplexNonOverlapMap();
+  const auto noMap = this->getComplexNonOverlapMap();
 #ifndef NDEBUG
   TEUCHOS_ASSERT(noMap);
 #endif
-  Teuchos::RCP<Tpetra::CrsGraph<int,int>> graph =
-    Tpetra::createCrsGraph(Teuchos::rcp(noMap));
+  auto graph = Tpetra::createCrsGraph(Teuchos::rcp(noMap));
 
   const std::vector<edge> edges = this->getEdgeNodes();
 
   // Loop over all edges and put entries wherever two nodes are connected.
-  for (std::vector<edge>::size_type k = 0; k < edges.size(); k++) {
+  for (size_t k = 0; k < edges.size(); k++) {
     const Teuchos::Tuple<int,4> & idx = this->globalIndexCache[k];
     for (int i = 0; i < 4; i++) {
       graph->insertGlobalIndices(idx[i], idx);
@@ -1849,8 +1818,7 @@ read(
     const int index
     )
 {
-  Teuchos::RCP<const Teuchos::Comm<int>> comm =
-    Teuchos::DefaultComm<int>::getComm();
+  auto comm = Teuchos::DefaultComm<int>::getComm();
   return StkMesh(Teuchos::get_shared_ptr(comm), fileName, index);
 }
 }  // namespace Nosh
