@@ -84,9 +84,6 @@ testComputeF(
   Thyra::set_ele(1, 0.01, p()); // mu
   inArgs.set_p(0, p);
 
-  auto mymap = mesh->getComplexNonOverlapMap();
-  auto space = Thyra::createVectorSpace<int,int>(Teuchos::rcp(mymap));
-
   // Create outArgs.
   auto outArgs = modelEval->createOutArgs();
   auto f = Thyra::createMember(modelEval->get_f_space());
