@@ -19,6 +19,7 @@
 // @HEADER
 #include <string>
 
+#include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_ParameterList.hpp>
@@ -27,16 +28,7 @@
 #include <Teuchos_StandardCatchMacros.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 #include <Teuchos_RCPStdSharedPtrConversions.hpp>
-
-#ifdef HAVE_MPI
-#include <Epetra_MpiComm.h>
-#else
-#include <Epetra_SerialComm.h>
-#endif
-#include <Epetra_Vector.h>
-
-//#include <Piro_Epetra_NOXSolver.hpp>
-//#include <Piro_Epetra_LOCASolver.hpp>
+#include <NOX_Thyra_Vector.H>
 #include <Piro_NOXSolver.hpp>
 #include <Piro_LOCASolver.hpp>
 
@@ -49,8 +41,6 @@
 #include "nosh/VectorField_ExplicitValues.hpp"
 #include "nosh/VectorField_ConstantCurl.hpp"
 #include "nosh/ModelEvaluator_Nls.hpp"
-#include "nosh/ModelEvaluatorT_Nls.hpp"
-#include "nosh/ModelEvaluator_Bordered.hpp"
 #include "nosh/Observer.hpp"
 #include "nosh/SaveEigenData.hpp"
 #include "nosh/CsvWriter.hpp"
@@ -60,17 +50,11 @@
 int main(int argc, char *argv[])
 {
   // Create output stream. (Handy for multicore output.)
-  const Teuchos::RCP<Teuchos::FancyOStream> out =
-    Teuchos::VerboseObjectBase::getDefaultOStream();
+  auto out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
   Teuchos::GlobalMPISession session(&argc, &argv, NULL);
 
-  // Create a communicator for Epetra objects.
-#ifdef HAVE_MPI
-  std::shared_ptr<const Epetra_MpiComm> eComm(new Epetra_MpiComm(MPI_COMM_WORLD));
-#else
-  std::shared_ptr<const Epetra_SerialComm> eComm(new Epetra_SerialComm());
-#endif
+  auto comm = Teuchos::DefaultComm<int>::getComm();
 
   // Wrap the whole code in a big try-catch-statement.
   bool success = true;
@@ -134,12 +118,14 @@ int main(int argc, char *argv[])
     //const bool useBordering = piroParams->get<bool>("Bordering");
     // =======================================================================
     // Read the data from the file.
-    std::shared_ptr<Nosh::StkMesh> mesh(
-        new Nosh::StkMesh(eComm, inputExodusFile, step)
+    auto mesh = std::make_shared<Nosh::StkMesh>(
+        Teuchos::get_shared_ptr(comm),
+        inputExodusFile,
+        step
         );
 
     // Cast the data into something more accessible.
-    std::shared_ptr<Epetra_Vector> psi = mesh->createComplexVector("psi");
+    auto psi = mesh->createComplexVector("psi");
     //psi->Random();
 
     // Set the output directory for later plotting with this.
@@ -153,8 +139,9 @@ int main(int argc, char *argv[])
     // as a parameter.
     const std::string & timeName =
       piroParams->get<std::string>("Interpret time as", "");
-    if (!timeName.empty())
+    if (!timeName.empty()) {
       initialParameterValues.set(timeName, mesh->getTime());
+    }
 
     // Explicitly set the initial parameter value for this list.
     const std::string & paramName =
@@ -168,11 +155,8 @@ int main(int argc, char *argv[])
     .set("Initial Value", initialParameterValues.get<double>(paramName));
 
     // Set the thickness field.
-    std::shared_ptr<Nosh::ScalarField::Virtual> thickness(
-        new Nosh::ScalarField::Constant(*mesh, 1.0)
-        );
+    auto thickness = std::make_shared<Nosh::ScalarField::Constant>(*mesh, 1.0);
 
-    // - - - - - - - - - - - - - - - - - - - - -  - - - - - - - - - - - - - - -
     // Some alternatives for the positive-definite operator.
     // (a) -\Delta (Laplace operator with Neumann boundary)
     //const std::shared_ptr<Nosh::ParameterMatrix::Virtual> matrixBuilder =
@@ -181,9 +165,8 @@ int main(int argc, char *argv[])
     // (b) (-i\nabla-A)^2 (Kinetic energy of a particle in magnetic field)
     // (b1) 'A' explicitly given in file.
     const double mu = initialParameterValues.get<double>("mu");
-    std::shared_ptr<Nosh::VectorField::Virtual> mvp(
-        new Nosh::VectorField::ExplicitValues(*mesh, "A", mu)
-        );
+    auto mvp = std::make_shared<Nosh::VectorField::ExplicitValues>(*mesh, "A", mu);
+
     //const std::shared_ptr<Nosh::ParameterMatrix::Virtual> keoBuilder(
     //    new Nosh::ParameterMatrix::Keo(mesh, thickness, mvp)
     //    );
@@ -213,7 +196,7 @@ int main(int argc, char *argv[])
     // (b3) 'A' analytically given in a class you write yourself, derived
     //      from Nosh::ParameterMatrix::Virtual.
     // [...]
-    // - - - - - - - - - - - - - - - - - - - - -  - - - - - - - - - - - - - - -
+    //
     // Setup the scalar potential V.
     // (a) A constant potential.
     //std::shared_ptr<Nosh::ScalarField::Virtual> sp =
@@ -223,45 +206,21 @@ int main(int argc, char *argv[])
     //std::shared_ptr<Nosh::ScalarField::Virtual> sp =
     //rcp(new Nosh::ScalarField::ExplicitValues(*mesh, "V"));
     // (c) One you built yourself by deriving from Nosh::ScalarField::Virtual.
-    std::shared_ptr<Nosh::ScalarField::Virtual> sp(
-        new MyScalarField(mesh)
-        );
-    // - - - - - - - - - - - - - - - - - - - - -  - - - - - - - - - - - - - - -
+    auto sp = std::make_shared<MyScalarField>(mesh);
+
 
     const double g = initialParameterValues.get<double>("g");
     // Finally, create the model evaluator.
     // This is the most important object in the whole stack.
-    std::shared_ptr<Nosh::ModelEvaluatorT::Virtual> nlsModel(
-        new Nosh::ModelEvaluatorT::Nls(
-          mesh,
-          mvp,
-          sp,
-          g,
-          thickness,
-          psi
-          ));
-
-    std::shared_ptr<Nosh::ModelEvaluatorT::Virtual> modelEvaluator;
-    //if (useBordering) {
-    //  // Use i*psi as bordering.
-    //  std::shared_ptr<Epetra_Vector> bordering(new Epetra_Vector(psi->Map()));
-    //  for (int k = 0; k < psi->Map().NumMyElements()/2; k++) {
-    //    (*bordering)[2*k] = - (*psi)[2*k+1];
-    //    (*bordering)[2*k+1] = (*psi)[2*k];
-    //    //bordering[2*k]   = 1.0;
-    //    //bordering[2*k+1] = 0.0;
-    //  }
-    //  //bordering->Random();
-    //  // Initial value for the extra variable.
-    //  double lambda = 0.0;
-    //  modelEvaluator = std::make_shared<Nosh::ModelEvaluator::Bordered>(
-    //      nlsModel,
-    //      bordering,
-    //      lambda
-    //      );
-    //} else {
-      modelEvaluator = nlsModel;
-    //}
+    auto modelEvaluator = std::make_shared<Nosh::ModelEvaluator::Nls>(
+        mesh,
+        mvp,
+        sp,
+        g,
+        thickness,
+        psi,
+        "mu"
+        );
 
     // Build the Piro model evaluator. It's used to hook up with
     // several different backends (NOX, LOCA, Rhythmos,...).
@@ -272,11 +231,9 @@ int main(int argc, char *argv[])
 
     // Switch by solver type.
     std::string & solver = piroParams->get<std::string>("Piro Solver");
-    // ----------------------------------------------------------------------
+
     if (solver == "NOX") {
-      std::shared_ptr<Nosh::Observer> observer(
-          new Nosh::Observer(modelEvaluator)
-          );
+      auto observer = std::make_shared<Nosh::Observer>(modelEvaluator);
 
       piro = std::make_shared<Piro::NOXSolver<double>>(
             Teuchos::rcp(piroParams),
@@ -284,14 +241,13 @@ int main(int argc, char *argv[])
             Teuchos::rcp(observer)
             );
     } else if (solver == "LOCA") {
-      std::shared_ptr<Nosh::Observer> observer(
-          new Nosh::Observer(
-            modelEvaluator,
-            contFilePath,
-            piroParams->sublist("LOCA")
-            .sublist("Stepper")
-            .get<std::string>("Continuation Parameter")
-            ));
+      auto observer = std::make_shared<Nosh::Observer>(
+          modelEvaluator,
+          contFilePath,
+          piroParams->sublist("LOCA")
+          .sublist("Stepper")
+          .get<std::string>("Continuation Parameter")
+          );
 
       // Setup eigen saver.
 #ifdef HAVE_LOCA_ANASAZI
@@ -340,25 +296,26 @@ int main(int argc, char *argv[])
 //        glEigenSaver->setLocaStepper(stepper);
 //#endif
       piro = piroLOCASolver;
-    } else if ( solver == "Turning Point" ) {
+    }
+#if 0
+    else if ( solver == "Turning Point" ) {
       std::shared_ptr<Nosh::Observer> observer;
 
       Teuchos::ParameterList & bifList =
         piroParams->sublist("LOCA").sublist("Bifurcation");
 
       // Fetch the (approximate) null state.
-      std::shared_ptr<Epetra_Vector> nullstateZ = mesh->createVector("null");
+      auto nullstateZ = mesh->createVector("null");
 
       // Set the length normalization vector to be the initial null vector.
       TEUCHOS_ASSERT(nullstateZ);
-      Teuchos::RCP<NOX::Abstract::Vector> lengthNormVec =
-        Teuchos::rcp(new NOX::Epetra::Vector(*nullstateZ));
+      auto lengthNormVec = Teuchos::rcp(new NOX::Thyra::Vector(*nullstateZ));
       //lengthNormVec->init(1.0);
       bifList.set("Length Normalization Vector", lengthNormVec);
 
       // Set the initial null vector.
-      Teuchos::RCP<NOX::Abstract::Vector> initialNullAbstractVec =
-        Teuchos::rcp(new NOX::Epetra::Vector(*nullstateZ));
+      auto initialNullAbstractVec =
+        Teuchos::rcp(new NOX::Thyra::Vector(*nullstateZ));
       // initialNullAbstractVec->init(1.0);
       bifList.set("Initial Null Vector", initialNullAbstractVec);
 
@@ -368,7 +325,9 @@ int main(int argc, char *argv[])
             Teuchos::null
             //Teuchos::rcp(observer)
             );
-    } else {
+    }
+#endif
+    else {
       TEUCHOS_TEST_FOR_EXCEPT_MSG(
           true,
           "Unknown solver type \"" << solver << "\"."

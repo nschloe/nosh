@@ -150,8 +150,8 @@ apply(
     Y.putScalar(0.0);
 
     // Construct an unpreconditioned linear problem instance.
-    Teuchos::RCP<const Tpetra::MultiVector<double,int,int>> Xptr = Teuchos::rcpFromRef(X);
-    Teuchos::RCP<Tpetra::MultiVector<double,int,int>> Yptr = Teuchos::rcpFromRef(Y);
+    auto Xptr = Teuchos::rcpFromRef(X);
+    auto Yptr = Teuchos::rcpFromRef(Y);
     Belos::LinearProblem<double, MV, OP> problem(
         Teuchos::rcp(regularizedKeo_),
         Yptr,
@@ -159,7 +159,7 @@ apply(
         );
     // Make sure the problem sets up correctly.
     TEUCHOS_ASSERT(problem.setProblem());
-    // -------------------------------------------------------------------------
+
     // add preconditioner
     // TODO recheck
     // Create the Belos preconditioned operator from the preconditioner.
@@ -169,7 +169,6 @@ apply(
     //  Teuchos::rcp(new Belos::EpetraPrecOp(MueluPrec_));
     problem.setLeftPrec(MueluPrec_);
 
-    // -------------------------------------------------------------------------
     // Create an iterative solver manager.
     Belos::PseudoBlockCGSolMgr<double, MV, OP> newSolver(
         Teuchos::rcp(&problem, false),
@@ -236,22 +235,21 @@ rebuild(
     //TEUCHOS_ASSERT_EQUALITY(0, diag.Update(g*2.0, *absPsiSquared, 1.0));
     //TEUCHOS_ASSERT_EQUALITY(0, regularizedKeo_.ReplaceDiagonalValues(diag));
     //
-    const Tpetra::Vector<double,int,int> &controlVolumes =
-      *(mesh_->getControlVolumes());
-    const Tpetra::Vector<double,int,int> thicknessValues =
-      thickness_->getV(params);
+    const auto & controlVolumes = *(mesh_->getControlVolumes());
+    const auto thicknessValues = thickness_->getV(params);
 #ifndef NDEBUG
     TEUCHOS_ASSERT(controlVolumes.getMap()->isSameAs(*thicknessValues.getMap()));
 #endif
-    Teuchos::ArrayRCP<const double> cData = controlVolumes.getData();
-    Teuchos::ArrayRCP<const double> tData = thicknessValues.getData();
-    Teuchos::ArrayRCP<const double> xData = x.getData();
+    auto cData = controlVolumes.getData();
+    auto tData = thicknessValues.getData();
+    auto xData = x.getData();
 #ifndef NDEBUG
     TEUCHOS_ASSERT_EQUALITY(cData.size(), tData.size());
     TEUCHOS_ASSERT_EQUALITY(2*tData.size(), xData.size());
 #endif
     Teuchos::Tuple<int,2> idx;
     Teuchos::Tuple<double,2> vals;
+    regularizedKeo_->resumeFill();
     for (int k = 0; k < cData.size(); k++) {
       const double alpha = g * cData[k] * tData[k]
         * 2.0 * (xData[2*k]*xData[2*k] + xData[2*k+1]*xData[2*k+1]);
@@ -279,6 +277,7 @@ rebuild(
           );
     }
   }
+  regularizedKeo_->fillComplete();
 
   this->rebuildInverse_();
   return;

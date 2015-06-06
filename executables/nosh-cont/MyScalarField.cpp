@@ -24,10 +24,9 @@
 #include <string>
 #include <vector>
 
-#include "nosh/StkMesh.hpp"
+#include <Teuchos_RCPStdSharedPtrConversions.hpp>
 
-#include <Epetra_Vector.h>
-#include <Epetra_Map.h>
+#include "nosh/StkMesh.hpp"
 
 // ============================================================================
 MyScalarField::
@@ -50,42 +49,40 @@ getParameters() const
   return m;
 }
 // ============================================================================
-const Epetra_Vector
+const Tpetra::Vector<double,int,int>
 MyScalarField::
 getV(const std::map<std::string, double> & params) const
 {
-  // Pick out p["tau"].
-  std::map<std::string, double>::const_iterator it = params.find("tau");
-  TEUCHOS_ASSERT(it != params.end());
-  const double & tau = it->second;
+  const double tau = params.at("tau");
 
-  std::vector<stk::mesh::Entity> ownedNodes =
-    mesh_->getOwnedNodes();
+  auto ownedNodes = mesh_->getOwnedNodes();
 
-  Epetra_Vector vals(*(mesh_->getNodesMap()));
+  Tpetra::Vector<double,int,int> vals(Teuchos::rcp(mesh_->getNodesMap()));
+  auto vData = vals.getDataNonConst();
 
   const VectorFieldType & coordsField = mesh_->getNodeField("coordinates");
 
-  for (unsigned int k = 0; k < ownedNodes.size(); k++) {
+  for (size_t k = 0; k < ownedNodes.size(); k++) {
     // Get nodal coordinates.
     const Eigen::Vector3d X = mesh_->getNodeValue(coordsField, ownedNodes[k]);
-    vals[k] = -1.0 + tau * (-X[0]*X[0] + X[1]*X[1]);
+    vData[k] = -1.0 + tau * (-X[0]*X[0] + X[1]*X[1]);
   }
 
   return vals;
 }
 // ============================================================================
-const Epetra_Vector
+const Tpetra::Vector<double,int,int>
 MyScalarField::
-getdVdP(const std::map<std::string, double> & params,
-        const std::string & paramName
-       ) const
+getdVdP(
+    const std::map<std::string, double> & params,
+    const std::string & paramName
+    ) const
 {
   // Silence warning about unused params.
   (void) params;
 
   // Create vals as zeroed-out vector.
-  Epetra_Vector vals(*(mesh_->getNodesMap()));
+  Tpetra::Vector<double,int,int> vals(Teuchos::rcp(mesh_->getNodesMap()), true);
 
   if (paramName.compare("tau") == 0) {
     std::vector<stk::mesh::Entity> ownedNodes =
@@ -93,10 +90,12 @@ getdVdP(const std::map<std::string, double> & params,
 
     const VectorFieldType & coordsField = mesh_->getNodeField("coordinates");
 
-    for (unsigned int k = 0; k < ownedNodes.size(); k++) {
+    auto vData = vals.getDataNonConst();
+
+    for (size_t k = 0; k < ownedNodes.size(); k++) {
       // Get nodal coordinates.
       const Eigen::Vector3d X = mesh_->getNodeValue(coordsField, ownedNodes[k]);
-      vals[k] = -X[0]*X[0] + X[1]*X[1];
+      vData[k] = -X[0]*X[0] + X[1]*X[1];
     }
   }
 

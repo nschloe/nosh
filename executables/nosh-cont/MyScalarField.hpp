@@ -20,45 +20,42 @@
 #ifndef MYSCALARFIELD_H_
 #define MYSCALARFIELD_H_
 
-// forward defs
-class Epetra_Vector;
-class Epetra_Map;
-namespace Nosh{
-class StkMesh;
-}
-
 #include <map>
 #include <memory>
 #include <string>
 
-#include <Epetra_Comm.h>
-
 #include "nosh/ScalarField_Virtual.hpp"
+
+// forward defs
+namespace Nosh{
+  class StkMesh;
+}
 
 class MyScalarField: public Nosh::ScalarField::Virtual
 {
 public:
-MyScalarField(const std::shared_ptr<const Nosh::StkMesh> & mesh);
+  MyScalarField(const std::shared_ptr<const Nosh::StkMesh> & mesh);
 
-Epetra_Vector
-createPInit_(const Epetra_Map & map);
+  Tpetra::Vector<double,int,int>
+  createPInit_(const Tpetra::Map<int,int> & map);
 
-~MyScalarField();
+  ~MyScalarField();
 
-//! Get parameter names and initial values.
-virtual
-const std::map<std::string, double>
-getParameters() const;
+  //! Get parameter names and initial values.
+  virtual
+  const std::map<std::string, double>
+  getParameters() const;
 
-virtual
-const Epetra_Vector
-getV(const std::map<std::string, double> & params) const;
+  virtual
+  const Tpetra::Vector<double,int,int>
+  getV(const std::map<std::string, double> & params) const;
 
-virtual
-const Epetra_Vector
-getdVdP(const std::map<std::string, double> & params,
-        const std::string & paramName
-        ) const;
+  virtual
+  const Tpetra::Vector<double,int,int>
+  getdVdP(
+      const std::map<std::string, double> & params,
+      const std::string & paramName
+      ) const;
 
 protected:
 private:
