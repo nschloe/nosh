@@ -23,19 +23,17 @@
 
 #include <map>
 #include <string>
-#include <tuple>
 
-#include <Teuchos_RCP.hpp>
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
 #include <Teuchos_Time.hpp>
 #endif
 
-#include <stk_mesh/base/Entity.hpp>
+#include <Tpetra_CrsMatrix.hpp>
 
 #include <Eigen/Dense>
 
-#include "nosh/ParameterMatrix_Virtual.hpp"
 #include "nosh/StkMesh.hpp"
+#include "nosh/ParameterObject.hpp"
 
 // forward declarations
 namespace Nosh
@@ -56,7 +54,7 @@ namespace Nosh
 namespace ParameterMatrix
 {
 
-class Keo: public Virtual
+class Keo: public Nosh::ParameterObject, public Tpetra::CrsMatrix<double,int,int>
 {
 public:
   Keo(
@@ -92,6 +90,7 @@ private:
       ) const;
 
 private:
+  const std::shared_ptr<const Nosh::StkMesh> mesh_;
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   const std::shared_ptr<Teuchos::Time> keoFillTime_;
 #endif

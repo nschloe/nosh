@@ -48,7 +48,9 @@ Keo(
     const std::shared_ptr<const Nosh::ScalarField::Virtual> &thickness,
     const std::shared_ptr<Nosh::VectorField::Virtual> &mvp
    ):
-  Virtual(mesh),
+  ParameterObject(),
+  Tpetra::CrsMatrix<double,int,int>(mesh->buildComplexGraph()),
+  mesh_(mesh),
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   keoFillTime_(Teuchos::TimeMonitor::getNewTimer("Nosh: Keo::fill_")),
 #endif

@@ -44,7 +44,9 @@ Laplace(
     const std::shared_ptr<const Nosh::StkMesh> &mesh,
     const std::shared_ptr<const Nosh::ScalarField::Virtual> &thickness
     ) :
-  Virtual(mesh),
+  ParameterObject(),
+  Tpetra::CrsMatrix<double,int,int>(mesh->buildComplexGraph()),
+  mesh_(mesh),
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   fillTime_(Teuchos::TimeMonitor::getNewTimer(
                "Nosh: Laplace::fill_")),

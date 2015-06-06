@@ -18,23 +18,21 @@
 //
 // @HEADER
 
-#ifndef NOSH_MATRIXBUILDER_DKEODP_H
-#define NOSH_MATRIXBUILDER_DKEODP_H
+#ifndef NOSH_PARAMETERMATRIX_DKEODP_H
+#define NOSH_PARAMETERMATRIX_DKEODP_H
 
 #include <map>
 #include <string>
-#include <tuple>
 
 #include <Teuchos_RCP.hpp>
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
 #include <Teuchos_Time.hpp>
 #endif
 
-#include <stk_mesh/base/Entity.hpp>
-
-#include "nosh/ParameterMatrix_Virtual.hpp"
+#include <Tpetra_CrsMatrix.hpp>
 
 #include "nosh/StkMesh.hpp"
+#include "nosh/ParameterObject.hpp"
 
 // forward declarations
 namespace Nosh
@@ -54,7 +52,7 @@ namespace Nosh
 namespace ParameterMatrix
 {
 
-class DKeoDP: public Virtual
+class DKeoDP: public Nosh::ParameterObject, public Tpetra::CrsMatrix<double,int,int>
 {
 public:
   DKeoDP(
@@ -84,6 +82,7 @@ private:
       ) const;
 
 private:
+  const std::shared_ptr<const Nosh::StkMesh> mesh_;
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   const std::shared_ptr<Teuchos::Time> keoFillTime_;
 #endif
@@ -97,4 +96,4 @@ private:
 } // namespace ParameterMatrix
 } // namespace Nosh
 
-#endif // NOSH_MATRIXBUILDER_DKEODP_H
+#endif // NOSH_PARAMETERMATRIX_DKEODP_H

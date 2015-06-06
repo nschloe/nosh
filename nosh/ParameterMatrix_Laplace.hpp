@@ -24,17 +24,13 @@
 #include <string>
 #include <tuple>
 
-#include <Tpetra_Operator.hpp>
-#include <Teuchos_RCP.hpp>
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
 #include <Teuchos_Time.hpp>
 #endif
-#include <Tpetra_CrsGraph.hpp>
+#include <Tpetra_CrsMatrix.hpp>
 
-#include <stk_mesh/base/Entity.hpp>
-
-#include "nosh/ParameterMatrix_Virtual.hpp"
 #include "nosh/StkMesh.hpp"
+#include "nosh/ParameterObject.hpp"
 
 // forward declarations
 namespace Nosh
@@ -50,7 +46,7 @@ namespace Nosh
 {
 namespace ParameterMatrix
 {
-class Laplace: public Virtual
+class Laplace: public Nosh::ParameterObject, public Tpetra::CrsMatrix<double,int,int>
 {
 public:
   Laplace(
@@ -78,6 +74,7 @@ private:
       ) const;
 
 private:
+  const std::shared_ptr<const Nosh::StkMesh> mesh_;
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   const std::shared_ptr<Teuchos::Time> fillTime_;
 #endif

@@ -51,7 +51,9 @@ DKeoDP(
     const std::shared_ptr<Nosh::VectorField::Virtual> &mvp,
     const std::string & paramName
    ):
-  Virtual(mesh),
+  ParameterObject(),
+  Tpetra::CrsMatrix<double,int,int>(mesh->buildComplexGraph()),
+  mesh_(mesh),
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   keoFillTime_(Teuchos::TimeMonitor::getNewTimer("Nosh: DKeoDP::refill_")),
 #endif
