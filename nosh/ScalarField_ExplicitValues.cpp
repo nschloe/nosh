@@ -69,13 +69,14 @@ getdVdP(const std::map<std::string, double> & params,
       ) const
 {
   (void) params;
-  if (paramName.compare("beta") == 0)
+  if (paramName.compare("beta") == 0) {
     return *nodeValues_;
-  else
+  } else {
     return Tpetra::Vector<double,int,int>(
         nodeValues_->getMap(),
         true // zero out
         );
+  }
 }
 // ============================================================================
 } // namespace ScalarField

@@ -79,7 +79,7 @@ Laplace::
 //  TEUCHOS_ASSERT_EQUALITY(0, matrixCache_.Apply(X, Y));
 //  return;
 //}
-//// =============================================================================
+// =============================================================================
 //void
 //Laplace::
 //fill(Epetra_FECrsMatrix &matrix,
@@ -143,7 +143,7 @@ fill_()
     // that shares and edge.
     // Do that now, just blockwise for real and imaginary part.
     const double & a = alphaCache_[k];
-    Teuchos::Tuple<Teuchos::Tuple<double,4>,4> vals = Teuchos::tuple(
+    auto vals = Teuchos::tuple(
       Teuchos::tuple(  a, 0.0,  -a, 0.0),
       Teuchos::tuple(0.0,   a, 0.0,  -a),
       Teuchos::tuple( -a, 0.0,   a, 0.0),
@@ -180,11 +180,9 @@ buildAlphaCache_(
   alphaCache_ = std::vector<double>(edges.size());
 
   std::map<std::string, double> dummy;
-  const Tpetra::Vector<double,int,int> thicknessValues =
-    thickness_->getV(dummy);
+  const auto thicknessValues = thickness_->getV(dummy);
 
-  std::shared_ptr<const Tpetra::Map<int,int>> overlapMap =
-    mesh_->getNodesOverlapMap();
+  auto overlapMap = mesh_->getNodesOverlapMap();
   // We need to make sure that thicknessValues are distributed on the overlap
   // map.
   // Make sure to use Import here instead of Export as the vector that we want

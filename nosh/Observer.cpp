@@ -68,10 +68,11 @@ observeSolution(
   // This if-else hack is necessary as different continuation algorithms
   // call printSolution() a different number of times per step, e.g.,
   // to store solutions, null vectors, and so forth.
-  if (isTurningPointContinuation_)
+  if (isTurningPointContinuation_) {
     this->observeTurningPointContinuation_(soln, paramVal);
-  else
+  } else {
     this->observeContinuation_(soln, paramVal);
+  }
 
   return;
 }

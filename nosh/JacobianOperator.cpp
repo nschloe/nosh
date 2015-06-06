@@ -84,14 +84,13 @@ apply(
   // Y = K*X
   keo_->apply(X, Y);
 
-
   const std::size_t numMyPoints = mesh_->getControlVolumes()->getLocalLength();
 #ifndef NDEBUG
   TEUCHOS_ASSERT_EQUALITY(2*numMyPoints, X.getLocalLength());
 #endif
 
-  Teuchos::ArrayRCP<const double> d0Data = diag0_.getData();
-  Teuchos::ArrayRCP<const double> d1bData = diag1b_.getData();
+  auto d0Data = diag0_.getData();
+  auto d1bData = diag1b_.getData();
 
 #ifndef NDEBUG
   TEUCHOS_ASSERT_EQUALITY(2*numMyPoints, d0Data.size());
@@ -99,8 +98,8 @@ apply(
 #endif
 
   for (std::size_t i = 0; i < X.getNumVectors(); i++) {
-    Teuchos::ArrayRCP<const double> xData = X.getVector(i)->getData();
-    Teuchos::ArrayRCP<double> yData = Y.getVectorNonConst(i)->getDataNonConst();
+    auto xData = X.getVector(i)->getData();
+    auto yData = Y.getVectorNonConst(i)->getDataNonConst();
 #ifndef NDEBUG
     TEUCHOS_ASSERT_EQUALITY(2*numMyPoints, xData.size());
     TEUCHOS_ASSERT_EQUALITY(2*numMyPoints, yData.size());
@@ -189,32 +188,29 @@ rebuildDiags_(
   TEUCHOS_ASSERT(scalarPotential_);
 #endif
 
-  const Tpetra::Vector<double,int,int> &controlVolumes =
-    *(mesh_->getControlVolumes());
+  const auto & controlVolumes = *(mesh_->getControlVolumes());
 
   const double g = params.at("g");
 
-  const Tpetra::Vector<double,int,int> thicknessValues =
-    thickness_->getV(params);
+  const auto thicknessValues = thickness_->getV(params);
 #ifndef NDEBUG
   TEUCHOS_ASSERT(controlVolumes.getMap()->isSameAs(*thicknessValues.getMap()));
 #endif
 
-  const Tpetra::Vector<double,int,int> scalarPotentialValues =
-    scalarPotential_->getV(params);
+  const auto scalarPotentialValues = scalarPotential_->getV(params);
 #ifndef NDEBUG
   TEUCHOS_ASSERT(
       controlVolumes.getMap()->isSameAs(*scalarPotentialValues.getMap())
       );
 #endif
 
-  Teuchos::ArrayRCP<const double> xData = x.getData();
-  Teuchos::ArrayRCP<const double> cData = controlVolumes.getData();
-  Teuchos::ArrayRCP<const double> tData = thicknessValues.getData();
-  Teuchos::ArrayRCP<const double> sData = scalarPotentialValues.getData();
+  auto xData = x.getData();
+  auto cData = controlVolumes.getData();
+  auto tData = thicknessValues.getData();
+  auto sData = scalarPotentialValues.getData();
 
-  Teuchos::ArrayRCP<double> d0Data = diag0_.getDataNonConst();
-  Teuchos::ArrayRCP<double> d1bData = diag1b_.getDataNonConst();
+  auto d0Data = diag0_.getDataNonConst();
+  auto d1bData = diag1b_.getDataNonConst();
 #ifndef NDEBUG
   TEUCHOS_ASSERT_EQUALITY(cData.size(), tData.size());
   TEUCHOS_ASSERT_EQUALITY(tData.size(), sData.size());

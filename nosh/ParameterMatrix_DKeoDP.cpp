@@ -138,7 +138,7 @@ refill_(const std::map<std::string, double> & params)
     v[0] *= alphaCache_[k];
     v[1] *= alphaCache_[k];
     v[2] *= alphaCache_[k];
-    Teuchos::Tuple<Teuchos::Tuple<double,4>,4> vals = Teuchos::tuple(
+    auto vals = Teuchos::tuple(
       Teuchos::tuple(v[2],  0.0,   v[0], v[1]),
       Teuchos::tuple( 0.0,  v[2], -v[1], v[0]),
       Teuchos::tuple(v[0], -v[1],  v[2],  0.0),
@@ -175,11 +175,9 @@ buildAlphaCache_(
   alphaCache_ = std::vector<double>(edges.size());
 
   std::map<std::string, double> dummy;
-  const Tpetra::Vector<double,int,int> thicknessValues =
-    thickness_->getV(dummy);
+  const auto thicknessValues = thickness_->getV(dummy);
 
-  std::shared_ptr<const Tpetra::Map<int,int>> overlapMap =
-    mesh_->getNodesOverlapMap();
+  auto overlapMap = mesh_->getNodesOverlapMap();
   // We need to make sure that thicknessValues are distributed on the overlap
   // map.
   // Make sure to use Import here instead of Export as the vector that we want
@@ -187,13 +185,13 @@ buildAlphaCache_(
   // vector is exported, only the values on the overlap would only be set on
   // one processor.
   Tpetra::Vector<double,int,int> thicknessOverlap(Teuchos::rcp(overlapMap));
-  Teuchos::RCP<const Tpetra::Import<int,int>> importer = Tpetra::createImport(
+  auto importer = Tpetra::createImport(
       thicknessValues.getMap(),
       Teuchos::rcp(overlapMap)
       );
   thicknessOverlap.doImport(thicknessValues, *importer, Tpetra::INSERT);
 
-  Teuchos::ArrayRCP<const double> tData = thicknessOverlap.getData();
+  auto tData = thicknessOverlap.getData();
 
   int gid0, gid1;
   int lid0, lid1;

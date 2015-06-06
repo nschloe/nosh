@@ -470,12 +470,12 @@ evalModelImpl(
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor tm3(*fillJacobianTime_);
 #endif
-    auto W_outE =
+    auto W_outT =
       Thyra::TpetraOperatorVectorExtraction<double,int,int>::getTpetraOperator(
           W_out
           );
     const auto & jac =
-      Teuchos::rcp_dynamic_cast<Nosh::JacobianOperator>(W_outE, true);
+      Teuchos::rcp_dynamic_cast<Nosh::JacobianOperator>(W_outT, true);
     jac->rebuild(params, *x_in_tpetra);
   }
 
@@ -485,12 +485,12 @@ evalModelImpl(
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor tm4(*fillPreconditionerTime_);
 #endif
-    auto WPrec_outE =
+    auto WPrec_outT =
       Thyra::TpetraOperatorVectorExtraction<double,int,int>::getTpetraOperator(
           WPrec_out->getNonconstUnspecifiedPrecOp()
           );
     const auto & keoPrec =
-      Teuchos::rcp_dynamic_cast<Nosh::KeoRegularized>(WPrec_outE, true);
+      Teuchos::rcp_dynamic_cast<Nosh::KeoRegularized>(WPrec_outT, true);
     keoPrec->rebuild(
         params,
         *x_in_tpetra

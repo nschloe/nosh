@@ -68,10 +68,11 @@ getV(const std::map<std::string, double> & params) const
   Tpetra::Vector<double,int,int> vals(Teuchos::rcp(map_));
 
   auto it = params.find(param1Name_);
-  if (it != params.end())
+  if (it != params.end()) {
     vals.putScalar(c_ + it->second);
-  else
+  } else {
     vals.putScalar(c_);
+  }
 
   return vals;
 }
