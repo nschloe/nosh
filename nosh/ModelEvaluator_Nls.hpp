@@ -47,7 +47,8 @@ namespace Nosh
   }
   namespace ParameterMatrix
   {
-    class Virtual;
+    class Keo;
+    class DKeoDP;
   }
 } // namespace Nosh
 
@@ -178,8 +179,8 @@ private:
   const std::shared_ptr<const Nosh::ScalarField::Virtual> scalarPotential_;
   const std::shared_ptr<const Nosh::ScalarField::Virtual> thickness_;
 
-  const std::shared_ptr<Nosh::ParameterMatrix::Virtual> keo_;
-  const std::shared_ptr<Nosh::ParameterMatrix::Virtual> dKeoDP_;
+  const std::shared_ptr<Nosh::ParameterMatrix::Keo> keo_;
+  const std::shared_ptr<Nosh::ParameterMatrix::DKeoDP> dKeoDP_;
 
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   const std::shared_ptr<Teuchos::Time> evalModelTime_;

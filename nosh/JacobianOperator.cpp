@@ -27,7 +27,7 @@
 #include <Tpetra_Vector.hpp>
 #include <Teuchos_RCPStdSharedPtrConversions.hpp>
 
-#include "nosh/ParameterMatrix_Virtual.hpp"
+#include "nosh/ParameterMatrix_Keo.hpp"
 #include "nosh/StkMesh.hpp"
 #include "nosh/ScalarField_Virtual.hpp"
 
@@ -39,12 +39,12 @@ JacobianOperator(
     const std::shared_ptr<const Nosh::StkMesh> &mesh,
     const std::shared_ptr<const Nosh::ScalarField::Virtual> &scalarPotential,
     const std::shared_ptr<const Nosh::ScalarField::Virtual> &thickness,
-    const std::shared_ptr<Nosh::ParameterMatrix::Virtual> &matrix
+    const std::shared_ptr<Nosh::ParameterMatrix::Keo> &keo
     ) :
   mesh_(mesh),
   scalarPotential_(scalarPotential),
   thickness_(thickness),
-  keo_(matrix),
+  keo_(keo),
   diag0_(Teuchos::rcp(mesh->getComplexNonOverlapMap())),
   diag1b_(mesh->getControlVolumes()->getMap())
 {

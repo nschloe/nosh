@@ -34,7 +34,7 @@ namespace Nosh
   class StkMesh;
   namespace ParameterMatrix
   {
-    class Virtual;
+    class Keo;
   }
   namespace ScalarField
   {
@@ -52,7 +52,7 @@ public:
       const std::shared_ptr<const Nosh::StkMesh> &mesh,
       const std::shared_ptr<const Nosh::ScalarField::Virtual> &scalarPotential,
       const std::shared_ptr<const Nosh::ScalarField::Virtual> &thickness,
-      const std::shared_ptr<Nosh::ParameterMatrix::Virtual> &matrix
+      const std::shared_ptr<Nosh::ParameterMatrix::Keo> &keo
       );
 
   // Destructor.
@@ -93,7 +93,7 @@ private:
   const std::shared_ptr<const Nosh::ScalarField::Virtual> scalarPotential_;
   const std::shared_ptr<const Nosh::ScalarField::Virtual> thickness_;
 
-  const std::shared_ptr<Nosh::ParameterMatrix::Virtual> keo_;
+  const std::shared_ptr<Nosh::ParameterMatrix::Keo> keo_;
   Tpetra::Vector<double,int,int> diag0_;
   Tpetra::Vector<double,int,int> diag1b_;
 };
