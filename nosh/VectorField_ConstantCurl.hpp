@@ -25,8 +25,8 @@
 
 #include <Teuchos_RCP.hpp>
 
-#include "nosh/VectorField_Virtual.hpp"
-#include "nosh/StkMesh.hpp"
+#include "VectorField_Virtual.hpp"
+#include "StkMesh.hpp"
 
 namespace Nosh
 {

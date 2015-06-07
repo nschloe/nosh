@@ -29,8 +29,8 @@
 #endif
 #include <Tpetra_CrsMatrix.hpp>
 
-#include "nosh/StkMesh.hpp"
-#include "nosh/ParameterObject.hpp"
+#include "StkMesh.hpp"
+#include "ParameterObject.hpp"
 
 // forward declarations
 namespace Nosh

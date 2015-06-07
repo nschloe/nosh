@@ -18,11 +18,11 @@
 //
 // @HEADER
 
-#include "nosh/BorderedOperator.hpp"
+#include "BorderedOperator.hpp"
 
 #include <vector>
 
-#include "nosh/BorderingHelpers.hpp"
+#include "BorderingHelpers.hpp"
 
 // =============================================================================
 namespace Nosh

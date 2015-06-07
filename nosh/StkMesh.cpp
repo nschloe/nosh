@@ -18,7 +18,7 @@
 //
 // @HEADER
 // =============================================================================
-#include "nosh/StkMesh.hpp"
+#include "StkMesh.hpp"
 
 #include <map>
 #include <string>

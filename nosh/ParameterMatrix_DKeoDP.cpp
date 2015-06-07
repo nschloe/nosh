@@ -19,14 +19,14 @@
 // @HEADER
 // =============================================================================
 // includes
-#include "nosh/ParameterMatrix_DKeoDP.hpp"
+#include "ParameterMatrix_DKeoDP.hpp"
 
 #include <map>
 #include <string>
 
-#include "nosh/StkMesh.hpp"
-#include "nosh/ScalarField_Virtual.hpp"
-#include "nosh/VectorField_Virtual.hpp"
+#include "StkMesh.hpp"
+#include "ScalarField_Virtual.hpp"
+#include "VectorField_Virtual.hpp"
 
 #include <Tpetra_Vector.hpp>
 #include <Tpetra_Import.hpp>

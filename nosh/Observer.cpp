@@ -18,12 +18,12 @@
 //
 // @HEADER
 
-#include "nosh/Observer.hpp"
+#include "Observer.hpp"
 
 #include <string>
 
-#include "nosh/ModelEvaluator_Virtual.hpp"
-#include "nosh/StkMesh.hpp"
+#include "ModelEvaluator_Virtual.hpp"
+#include "StkMesh.hpp"
 
 namespace Nosh
 {

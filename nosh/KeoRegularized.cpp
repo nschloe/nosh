@@ -18,7 +18,7 @@
 //
 // @HEADER
 
-#include "nosh/KeoRegularized.hpp"
+#include "KeoRegularized.hpp"
 
 #include <map>
 #include <string>
@@ -40,10 +40,10 @@
 #include <Teuchos_VerboseObject.hpp>
 #include <Teuchos_RCPStdSharedPtrConversions.hpp>
 
-#include "nosh/ScalarField_Virtual.hpp"
-#include "nosh/VectorField_Virtual.hpp"
-#include "nosh/ParameterMatrix_Keo.hpp"
-#include "nosh/StkMesh.hpp"
+#include "ScalarField_Virtual.hpp"
+#include "VectorField_Virtual.hpp"
+#include "ParameterMatrix_Keo.hpp"
+#include "StkMesh.hpp"
 
 // =============================================================================
 // some typdefs for Belos

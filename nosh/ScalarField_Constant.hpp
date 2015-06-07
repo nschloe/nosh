@@ -25,9 +25,9 @@
 
 #include <Teuchos_RCP.hpp>
 
-#include "nosh/ScalarField_Virtual.hpp"
+#include "ScalarField_Virtual.hpp"
 
-#include "nosh/StkMesh.hpp"
+#include "StkMesh.hpp"
 // =============================================================================
 namespace Nosh
 {

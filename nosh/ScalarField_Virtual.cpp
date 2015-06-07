@@ -18,7 +18,7 @@
 //
 // @HEADER
 
-#include "nosh/ScalarField_Virtual.hpp"
+#include "ScalarField_Virtual.hpp"
 
 namespace Nosh
 {

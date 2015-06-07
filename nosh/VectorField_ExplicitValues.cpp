@@ -18,12 +18,12 @@
 //
 // @HEADER
 
-#include "nosh/VectorField_ExplicitValues.hpp"
+#include "VectorField_ExplicitValues.hpp"
 
 #include <map>
 #include <string>
 
-#include "nosh/StkMesh.hpp"
+#include "StkMesh.hpp"
 
 namespace Nosh
 {

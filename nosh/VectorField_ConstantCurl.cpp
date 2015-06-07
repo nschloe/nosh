@@ -18,12 +18,12 @@
 //
 // @HEADER
 
-#include "nosh/VectorField_ConstantCurl.hpp"
+#include "VectorField_ConstantCurl.hpp"
 
 #include <map>
 #include <string>
 
-#include "nosh/StkMesh.hpp"
+#include "StkMesh.hpp"
 
 namespace Nosh
 {

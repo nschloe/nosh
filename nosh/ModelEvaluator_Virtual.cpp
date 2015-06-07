@@ -18,7 +18,7 @@
 //
 // @HEADER
 
-#include "nosh/ModelEvaluator_Virtual.hpp"
+#include "ModelEvaluator_Virtual.hpp"
 
 namespace Nosh
 {

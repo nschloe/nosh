@@ -18,12 +18,12 @@
 //
 // @HEADER
 // =============================================================================
-#include "nosh/SaveEigenData.hpp"
+#include "SaveEigenData.hpp"
 
 #include <string>
 #include <vector>
 
-#include "nosh/ModelEvaluator_Virtual.hpp"
+#include "ModelEvaluator_Virtual.hpp"
 
 #include <NOX_Abstract_MultiVector.H>
 #include <AnasaziSortManager.hpp>

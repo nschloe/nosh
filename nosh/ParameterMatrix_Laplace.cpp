@@ -19,13 +19,13 @@
 // @HEADER
 // =============================================================================
 // includes
-#include "nosh/ParameterMatrix_Laplace.hpp"
+#include "ParameterMatrix_Laplace.hpp"
 
 #include <map>
 #include <string>
 
-#include "nosh/StkMesh.hpp"
-#include "nosh/ScalarField_Virtual.hpp"
+#include "StkMesh.hpp"
+#include "ScalarField_Virtual.hpp"
 
 #include <Tpetra_Vector.hpp>
 #include <Teuchos_RCPStdSharedPtrConversions.hpp>

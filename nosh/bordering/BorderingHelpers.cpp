@@ -18,7 +18,7 @@
 //
 // @HEADER
 
-#include "nosh/BorderingHelpers.hpp"
+#include "BorderingHelpers.hpp"
 
 #include <vector>
 

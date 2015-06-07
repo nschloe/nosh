@@ -18,13 +18,13 @@
 //
 // @HEADER
 
-#include "nosh/ModelEvaluator_Bordered.hpp"
+#include "ModelEvaluator_Bordered.hpp"
 
 #include <string>
 #include <vector>
 
-#include "nosh/BorderingHelpers.hpp"
-#include "nosh/BorderedOperator.hpp"
+#include "BorderingHelpers.hpp"
+#include "BorderedOperator.hpp"
 
 #include <Teuchos::Comm<int>.h>
 #include <Tpetra::Map<int,int>.h>

@@ -18,12 +18,12 @@
 //
 // @HEADER
 
-#include "nosh/ScalarField_ExplicitValues.hpp"
+#include "ScalarField_ExplicitValues.hpp"
 
 #include <map>
 #include <string>
 
-#include "nosh/StkMesh.hpp"
+#include "StkMesh.hpp"
 
 namespace Nosh
 {

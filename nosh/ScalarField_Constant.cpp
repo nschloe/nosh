@@ -18,7 +18,7 @@
 //
 // @HEADER
 
-#include "nosh/ScalarField_Constant.hpp"
+#include "ScalarField_Constant.hpp"
 
 #include <map>
 #include <string>

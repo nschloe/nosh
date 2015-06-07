@@ -18,7 +18,7 @@
 //
 // @HEADER
 
-#include "nosh/VectorField_Virtual.hpp"
+#include "VectorField_Virtual.hpp"
 
 namespace Nosh
 {

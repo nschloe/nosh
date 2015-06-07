@@ -31,7 +31,7 @@
 #include <Teuchos_Time.hpp>
 #endif
 
-#include "nosh/ModelEvaluator_Virtual.hpp"
+#include "ModelEvaluator_Virtual.hpp"
 
 // forward declarations
 namespace Nosh

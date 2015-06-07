@@ -18,7 +18,7 @@
 //
 // @HEADER
 
-#include "nosh/ParameterObject.hpp"
+#include "ParameterObject.hpp"
 
 namespace Nosh
 {

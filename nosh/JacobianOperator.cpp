@@ -18,7 +18,7 @@
 //
 // @HEADER
 // =============================================================================
-#include "nosh/JacobianOperator.hpp"
+#include "JacobianOperator.hpp"
 
 #include <map>
 #include <string>
@@ -27,9 +27,9 @@
 #include <Tpetra_Vector.hpp>
 #include <Teuchos_RCPStdSharedPtrConversions.hpp>
 
-#include "nosh/ParameterMatrix_Keo.hpp"
-#include "nosh/StkMesh.hpp"
-#include "nosh/ScalarField_Virtual.hpp"
+#include "ParameterMatrix_Keo.hpp"
+#include "StkMesh.hpp"
+#include "ScalarField_Virtual.hpp"
 
 namespace Nosh
 {

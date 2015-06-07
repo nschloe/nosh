@@ -18,15 +18,16 @@
 //
 // @HEADER
 
-#include "nosh/ModelEvaluator_Nls.hpp"
+#include "ModelEvaluator_Nls.hpp"
 
-#include "nosh/ScalarField_Virtual.hpp"
-#include "nosh/ParameterMatrix_Virtual.hpp"
-#include "nosh/ParameterMatrix_Keo.hpp"
-#include "nosh/ParameterMatrix_DKeoDP.hpp"
-#include "nosh/JacobianOperator.hpp"
-#include "nosh/KeoRegularized.hpp"
-#include "nosh/StkMesh.hpp"
+#include "ScalarField_Virtual.hpp"
+#include "ParameterMatrix_Virtual.hpp"
+#include "ParameterMatrix_Keo.hpp"
+#include "ParameterMatrix_DKeoDP.hpp"
+#include "JacobianOperator.hpp"
+#include "KeoRegularized.hpp"
+#include "StkMesh.hpp"
+//#include "Nosh_ConjugateGradientLinearOpWithSolveFactory.hpp"
 
 #include <string>
 #include <map>
@@ -271,6 +272,8 @@ get_W_factory() const
   lowsFactory->setVerbLevel(Teuchos::VERB_LOW);
 
   return lowsFactory;
+
+//  return Nosh::ConjugateGradientLinearOpWithSolveFactory()
 }
 // =============================================================================
 Teuchos::RCP<Thyra::PreconditionerBase<double>>

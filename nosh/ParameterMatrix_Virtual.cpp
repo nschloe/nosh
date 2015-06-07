@@ -18,9 +18,9 @@
 //
 // @HEADER
 
-#include "nosh/ParameterMatrix_Virtual.hpp"
+#include "ParameterMatrix_Virtual.hpp"
 
-#include "nosh/StkMesh.hpp"
+#include "StkMesh.hpp"
 
 namespace Nosh
 {

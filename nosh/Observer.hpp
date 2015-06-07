@@ -25,7 +25,7 @@
 #include <Teuchos_RCP.hpp>
 #include <Piro_ObserverBase.hpp>
 
-#include "nosh/CsvWriter.hpp"
+#include "CsvWriter.hpp"
 // =============================================================================
 // forward declarations
 namespace Nosh
