@@ -27,7 +27,7 @@
 #include "JacobianOperator.hpp"
 #include "KeoRegularized.hpp"
 #include "StkMesh.hpp"
-//#include "Nosh_ConjugateGradientLinearOpWithSolveFactory.hpp"
+#include "Nosh_RealScalarProd.hpp"
 
 #include <string>
 #include <map>
@@ -39,6 +39,7 @@
 #include <Thyra_TpetraThyraWrappers.hpp>
 #include <Thyra_TpetraThyraWrappers_decl.hpp>
 #include <Thyra_TpetraLinearOp.hpp>
+//#include <Thyra_MultiVectorAdapterBase.hpp>
 
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
 #include <Teuchos_TimeMonitor.hpp>
@@ -94,7 +95,8 @@ Nls(
   out_(Teuchos::VerboseObjectBase::getDefaultOStream()),
   p_map_(Teuchos::null),
   p_names_(Teuchos::null),
-  nominalValues_(this->createInArgs())
+  nominalValues_(this->createInArgs()),
+  space_(createAlteredSpace())
 {
   // Merge all of the parameters together.
   std::map<std::string, double> params;
@@ -128,7 +130,7 @@ Nls(
   }
 
   // set nominal values
-  auto xxx = Thyra::createConstVector(Teuchos::rcp(initialX));
+  auto xxx = Thyra::createConstVector(Teuchos::rcp(initialX), space_);
   nominalValues_.set_p(0, p_init);
   nominalValues_.set_x(xxx);
 
@@ -142,14 +144,29 @@ Nls::
 // ============================================================================
 Teuchos::RCP<const Thyra::VectorSpaceBase<double>>
 Nls::
+createAlteredSpace() const
+{
+  auto a = Thyra::createVectorSpace<double>(
+      Teuchos::rcp(mesh_->getComplexNonOverlapMap()), true
+      );
+  // Use the Nosh scalar product. We still need to cast, cf.
+  // <https://software.sandia.gov/bugzilla/show_bug.cgi?id=6355>.
+  auto s = Teuchos::rcp_dynamic_cast<Thyra::ScalarProdVectorSpaceBase<double>>(a, true);
+  auto sp = Teuchos::rcp(new Nosh::RealScalarProd<double>());
+  //auto sp = Teuchos::rcp(new Thyra::EuclideanScalarProd<double>());
+  s->setScalarProd(sp);
+
+  return s;
+}
+// ============================================================================
+Teuchos::RCP<const Thyra::VectorSpaceBase<double>>
+Nls::
 get_x_space() const
 {
 #ifndef NDEBUG
-  TEUCHOS_ASSERT(mesh_);
+  TEUCHOS_ASSERT(!space_.is_null());
 #endif
-  return Thyra::createVectorSpace<double>(Teuchos::rcp(
-        mesh_->getComplexNonOverlapMap()
-        ));
+  return space_;
 }
 // ============================================================================
 Teuchos::RCP<const Thyra::VectorSpaceBase<double>>
@@ -157,11 +174,9 @@ Nls::
 get_f_space() const
 {
 #ifndef NDEBUG
-  TEUCHOS_ASSERT(mesh_);
+  TEUCHOS_ASSERT(!space_.is_null());
 #endif
-  return Thyra::createVectorSpace<double>(Teuchos::rcp(
-        mesh_->getComplexNonOverlapMap()
-        ));
+  return space_;
 }
 // ============================================================================
 Teuchos::RCP<const Thyra::VectorSpaceBase<double>>
@@ -240,7 +255,7 @@ create_W_op() const
           )
         );
 
-  return Thyra::createLinearOp(jac);
+  return Thyra::createLinearOp(jac, space_, space_);
 }
 // =============================================================================
 Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<double>>
@@ -255,14 +270,15 @@ get_W_factory() const
     p->sublist("Linear Solver Types")
     .sublist("Belos");
   //belosList.set("Solver Type", "MINRES");
-  belosList.set("Solver Type", "Pseudo Block GMRES");
+  //belosList.set("Solver Type", "Pseudo Block GMRES");
+  belosList.set("Solver Type", "Pseudo Block CG");
 
-  auto & gmresList =
+  auto & solverList =
     belosList.sublist("Solver Types")
-    .sublist("Pseudo Block GMRES");
-  gmresList.set("Output Frequency", 10);
-  gmresList.set("Output Style", 1);
-  gmresList.set("Verbosity", 33);
+    .sublist("Pseudo Block CG");
+  solverList.set("Output Frequency", 1);
+  solverList.set("Output Style", 1);
+  solverList.set("Verbosity", 33);
 
   p->set("Preconditioner Type", "None");
   builder.setParameterList(p);
@@ -272,8 +288,6 @@ get_W_factory() const
   lowsFactory->setVerbLevel(Teuchos::VERB_LOW);
 
   return lowsFactory;
-
-//  return Nosh::ConjugateGradientLinearOpWithSolveFactory()
 }
 // =============================================================================
 Teuchos::RCP<Thyra::PreconditionerBase<double>>
@@ -287,7 +301,7 @@ create_W_prec() const
         mvp_
         )
       );
-  auto keoT = Thyra::createLinearOp(keoPrec);
+  auto keoT = Thyra::createLinearOp(keoPrec, space_, space_);
   return Thyra::nonconstUnspecifiedPrec(keoT);
 }
 // ============================================================================

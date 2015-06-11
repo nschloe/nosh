@@ -157,6 +157,9 @@ protected:
       ) const;
 
 private:
+  Teuchos::RCP<const Thyra::VectorSpaceBase<double>>
+  createAlteredSpace() const;
+
   void
   computeF_(
       const Tpetra::Vector<double,int,int> &x,
@@ -196,6 +199,8 @@ private:
   Teuchos::RCP<Teuchos::Array<std::string> > p_names_;
 
   Thyra::ModelEvaluatorBase::InArgs<double> nominalValues_;
+
+  const Teuchos::RCP<const Thyra::VectorSpaceBase<double>> space_;
 };
 } // namespace ModelEvaluator
 } // namespace Nosh
