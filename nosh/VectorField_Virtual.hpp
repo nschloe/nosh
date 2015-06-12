@@ -32,10 +32,8 @@ namespace VectorField
 class Virtual
 {
 public:
-  Virtual();
-
   virtual
-  ~Virtual();
+  ~Virtual(){};
 
   virtual
   void

@@ -32,10 +32,8 @@ namespace ScalarField
 class Virtual
 {
 public:
-  Virtual();
-
   virtual
-  ~Virtual();
+  ~Virtual(){};
 
   virtual
   const Tpetra::Vector<double,int,int>
