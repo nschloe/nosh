@@ -23,7 +23,7 @@
 #include <map>
 #include <string>
 
-#include "StkMesh.hpp"
+#include "Mesh.hpp"
 
 namespace Nosh
 {
@@ -32,7 +32,7 @@ namespace VectorField
 // ============================================================================
 ExplicitValues::
 ExplicitValues(
-    const Nosh::StkMesh & mesh,
+    const Nosh::Mesh & mesh,
     const std::string & fieldName,
     const double mu
     ) :

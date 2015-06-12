@@ -23,7 +23,7 @@
 #include <string>
 
 #include "ModelEvaluator_Virtual.hpp"
-#include "StkMesh.hpp"
+#include "Mesh.hpp"
 
 namespace Nosh
 {
@@ -125,7 +125,7 @@ observeTurningPointContinuation_(
     TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Not yet implemented.");
   }
   // This part of the code used to write state and null vector alternately
-  // for turning point continuation, but because of how StkMesh is
+  // for turning point continuation, but because of how Mesh is
   // organized, it seems impossible to first write to one file, then to
   // another with with the same mesh. Need to investigate.
   return;

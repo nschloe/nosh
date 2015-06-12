@@ -36,7 +36,7 @@
 // forward declarations
 namespace Nosh
 {
-  class StkMesh;
+  class Mesh;
   namespace ScalarField
   {
     class Virtual;
@@ -60,7 +60,7 @@ class Nls : public Virtual
 {
 public:
   Nls (
-    const std::shared_ptr<const Nosh::StkMesh> &mesh,
+    const std::shared_ptr<const Nosh::Mesh> &mesh,
     const std::shared_ptr<Nosh::VectorField::Virtual> &mvp,
     const std::shared_ptr<const Nosh::ScalarField::Virtual> &scalarPotential,
     const double g,
@@ -141,7 +141,7 @@ public:
   double
   gibbsEnergy(const Thyra::VectorBase<double> &psi) const;
 
-  const std::shared_ptr<const Nosh::StkMesh>
+  const std::shared_ptr<const Nosh::Mesh>
   getMesh() const;
 
 protected:
@@ -176,7 +176,7 @@ private:
       ) const;
 
 private:
-  const std::shared_ptr<const Nosh::StkMesh> mesh_;
+  const std::shared_ptr<const Nosh::Mesh> mesh_;
 
   const std::shared_ptr<Nosh::VectorField::Virtual> mvp_;
   const std::shared_ptr<const Nosh::ScalarField::Virtual> scalarPotential_;

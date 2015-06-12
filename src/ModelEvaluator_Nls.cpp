@@ -26,7 +26,7 @@
 #include "ParameterMatrix_DKeoDP.hpp"
 #include "JacobianOperator.hpp"
 #include "KeoRegularized.hpp"
-#include "StkMesh.hpp"
+#include "Mesh.hpp"
 #include "Nosh_RealScalarProd.hpp"
 
 #include <string>
@@ -55,7 +55,7 @@ namespace ModelEvaluator
 // ============================================================================
 Nls::
 Nls(
-    const std::shared_ptr<const Nosh::StkMesh> &mesh,
+    const std::shared_ptr<const Nosh::Mesh> &mesh,
     const std::shared_ptr<Nosh::VectorField::Virtual> &mvp,
     const std::shared_ptr<const Nosh::ScalarField::Virtual> &scalarPotential,
     const double g,
@@ -762,7 +762,7 @@ gibbsEnergy(const Thyra::VectorBase<double> &psi) const
   return 0.0;
 }
 // =============================================================================
-const std::shared_ptr<const Nosh::StkMesh>
+const std::shared_ptr<const Nosh::Mesh>
 Nls::
 getMesh() const
 {

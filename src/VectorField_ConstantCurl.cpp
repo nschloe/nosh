@@ -23,7 +23,7 @@
 #include <map>
 #include <string>
 
-#include "StkMesh.hpp"
+#include "Mesh.hpp"
 
 namespace Nosh
 {
@@ -32,7 +32,7 @@ namespace VectorField
 // ============================================================================
 ConstantCurl::
 ConstantCurl(
-    const std::shared_ptr<Nosh::StkMesh> &mesh,
+    const std::shared_ptr<Nosh::Mesh> &mesh,
     const std::shared_ptr<Eigen::Vector3d> &b,
     const std::shared_ptr<Eigen::Vector3d> &u
     ) :

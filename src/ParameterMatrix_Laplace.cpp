@@ -24,7 +24,7 @@
 #include <map>
 #include <string>
 
-#include "StkMesh.hpp"
+#include "Mesh.hpp"
 #include "ScalarField_Virtual.hpp"
 
 #include <Tpetra_Vector.hpp>
@@ -41,7 +41,7 @@ namespace ParameterMatrix
 // =============================================================================
 Laplace::
 Laplace(
-    const std::shared_ptr<const Nosh::StkMesh> &mesh,
+    const std::shared_ptr<const Nosh::Mesh> &mesh,
     const std::shared_ptr<const Nosh::ScalarField::Virtual> &thickness
     ) :
   ParameterObject(),

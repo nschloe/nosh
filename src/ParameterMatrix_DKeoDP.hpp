@@ -31,7 +31,7 @@
 
 #include <Tpetra_CrsMatrix.hpp>
 
-#include "StkMesh.hpp"
+#include "Mesh.hpp"
 #include "ParameterObject.hpp"
 
 // forward declarations
@@ -56,7 +56,7 @@ class DKeoDP: public Nosh::ParameterObject, public Tpetra::CrsMatrix<double,int,
 {
 public:
   DKeoDP(
-      const std::shared_ptr<const Nosh::StkMesh> &mesh,
+      const std::shared_ptr<const Nosh::Mesh> &mesh,
       const std::shared_ptr<const Nosh::ScalarField::Virtual> &thickness,
       const std::shared_ptr<Nosh::VectorField::Virtual> &mvp,
       const std::string & paramName
@@ -82,7 +82,7 @@ private:
       ) const;
 
 private:
-  const std::shared_ptr<const Nosh::StkMesh> mesh_;
+  const std::shared_ptr<const Nosh::Mesh> mesh_;
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   const std::shared_ptr<Teuchos::Time> keoFillTime_;
 #endif

@@ -31,7 +31,7 @@
 // forward declarations
 namespace Nosh
 {
-class StkMesh;
+class Mesh;
 }
 
 namespace Nosh
@@ -41,7 +41,7 @@ namespace ParameterMatrix
 class Virtual: public Tpetra::CrsMatrix<double,int,int>
 {
 public:
-  Virtual(const std::shared_ptr<const Nosh::StkMesh> &mesh);
+  Virtual(const std::shared_ptr<const Nosh::Mesh> &mesh);
 
   // Destructor.
   virtual
@@ -65,7 +65,7 @@ protected:
   refill_(const std::map<std::string, double> &params) = 0;
 
 protected:
-  const std::shared_ptr<const Nosh::StkMesh> mesh_;
+  const std::shared_ptr<const Nosh::Mesh> mesh_;
 
 private:
   std::map<std::string, double> buildParameters_;

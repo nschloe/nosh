@@ -23,7 +23,7 @@
 #include <map>
 #include <string>
 
-#include "StkMesh.hpp"
+#include "Mesh.hpp"
 
 namespace Nosh
 {
@@ -31,7 +31,7 @@ namespace ScalarField
 {
 // ============================================================================
 ExplicitValues::
-ExplicitValues(const Nosh::StkMesh & mesh,
+ExplicitValues(const Nosh::Mesh & mesh,
                const std::string & fieldName
              ) :
   nodeValues_(mesh.createVector(fieldName))

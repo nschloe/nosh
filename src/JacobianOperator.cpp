@@ -28,7 +28,7 @@
 #include <Teuchos_RCPStdSharedPtrConversions.hpp>
 
 #include "ParameterMatrix_Keo.hpp"
-#include "StkMesh.hpp"
+#include "Mesh.hpp"
 #include "ScalarField_Virtual.hpp"
 
 namespace Nosh
@@ -36,7 +36,7 @@ namespace Nosh
 // =============================================================================
 JacobianOperator::
 JacobianOperator(
-    const std::shared_ptr<const Nosh::StkMesh> &mesh,
+    const std::shared_ptr<const Nosh::Mesh> &mesh,
     const std::shared_ptr<const Nosh::ScalarField::Virtual> &scalarPotential,
     const std::shared_ptr<const Nosh::ScalarField::Virtual> &thickness,
     const std::shared_ptr<Nosh::ParameterMatrix::Keo> &keo

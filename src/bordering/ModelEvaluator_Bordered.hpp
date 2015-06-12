@@ -104,7 +104,7 @@ public:
   gibbsEnergy(const Tpetra::Vector<double,int,int> &psi) const;
 
   virtual
-  const std::shared_ptr<const Nosh::StkMesh>
+  const std::shared_ptr<const Nosh::Mesh>
   getMesh() const;
 
 protected:

@@ -37,7 +37,7 @@
 // forward declarations
 namespace Nosh
 {
-  class StkMesh;
+  class Mesh;
   namespace ScalarField
   {
     class Virtual;
@@ -58,7 +58,7 @@ class KeoRegularized : public Tpetra::Operator<double,int,int>
 {
 public:
   KeoRegularized(
-      const std::shared_ptr<const Nosh::StkMesh> &mesh,
+      const std::shared_ptr<const Nosh::Mesh> &mesh,
       const std::shared_ptr<const Nosh::ScalarField::Virtual> &thickness,
       const std::shared_ptr<Nosh::VectorField::Virtual> &mvp
       );
@@ -103,7 +103,7 @@ private:
 
 private:
 
-  const std::shared_ptr<const Nosh::StkMesh> mesh_;
+  const std::shared_ptr<const Nosh::Mesh> mesh_;
   const std::shared_ptr<const Nosh::ScalarField::Virtual> thickness_;
 
   const std::shared_ptr<Nosh::ParameterMatrix::Keo> regularizedKeo_;

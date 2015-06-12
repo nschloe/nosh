@@ -27,7 +27,7 @@
 #include <Tpetra_Vector.hpp>
 
 #include "ScalarField_Virtual.hpp"
-#include "StkMesh.hpp"
+#include "Mesh.hpp"
 
 namespace Nosh
 {
@@ -37,7 +37,7 @@ class ExplicitValues : public Virtual
 {
 public:
   ExplicitValues(
-      const Nosh::StkMesh &mesh,
+      const Nosh::Mesh &mesh,
       const std::string &fieldName
       );
 

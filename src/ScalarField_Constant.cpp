@@ -33,7 +33,7 @@ namespace ScalarField
 // ============================================================================
 Constant::
 Constant(
-    const Nosh::StkMesh & mesh,
+    const Nosh::Mesh & mesh,
     const double c,
     const std::string & param1Name,
     const double param1InitValue

@@ -31,7 +31,7 @@
 // forward declarations
 namespace Nosh
 {
-  class StkMesh;
+  class Mesh;
   namespace ParameterMatrix
   {
     class Keo;
@@ -49,7 +49,7 @@ class JacobianOperator : public Tpetra::Operator<double,int,int>
 {
 public:
   JacobianOperator(
-      const std::shared_ptr<const Nosh::StkMesh> &mesh,
+      const std::shared_ptr<const Nosh::Mesh> &mesh,
       const std::shared_ptr<const Nosh::ScalarField::Virtual> &scalarPotential,
       const std::shared_ptr<const Nosh::ScalarField::Virtual> &thickness,
       const std::shared_ptr<Nosh::ParameterMatrix::Keo> &keo
@@ -89,7 +89,7 @@ private:
       );
 
 private:
-  const std::shared_ptr<const Nosh::StkMesh> mesh_;
+  const std::shared_ptr<const Nosh::Mesh> mesh_;
   const std::shared_ptr<const Nosh::ScalarField::Virtual> scalarPotential_;
   const std::shared_ptr<const Nosh::ScalarField::Virtual> thickness_;
 

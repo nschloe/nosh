@@ -27,7 +27,7 @@
 
 #include "ScalarField_Virtual.hpp"
 
-#include "StkMesh.hpp"
+#include "Mesh.hpp"
 // =============================================================================
 namespace Nosh
 {
@@ -37,7 +37,7 @@ class Constant: public Virtual
 {
 public:
   Constant(
-      const Nosh::StkMesh & mesh,
+      const Nosh::Mesh & mesh,
       const double c,
       const std::string & param1Name = "",
       const double param1InitValue = 0.0

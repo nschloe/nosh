@@ -20,7 +20,7 @@
 
 #include "ParameterMatrix_Virtual.hpp"
 
-#include "StkMesh.hpp"
+#include "Mesh.hpp"
 
 namespace Nosh
 {
@@ -28,7 +28,7 @@ namespace ParameterMatrix
 {
 // ============================================================================
 Virtual::
-Virtual(const std::shared_ptr<const Nosh::StkMesh> &mesh):
+Virtual(const std::shared_ptr<const Nosh::Mesh> &mesh):
   Tpetra::CrsMatrix<double,int,int>(mesh->buildComplexGraph()),
   mesh_(mesh),
   buildParameters_()

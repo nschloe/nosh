@@ -24,7 +24,7 @@
 #include <map>
 #include <string>
 
-#include "StkMesh.hpp"
+#include "Mesh.hpp"
 #include "ScalarField_Virtual.hpp"
 #include "VectorField_Virtual.hpp"
 
@@ -44,7 +44,7 @@ namespace ParameterMatrix
 // =============================================================================
 Keo::
 Keo(
-    const std::shared_ptr<const Nosh::StkMesh> &mesh,
+    const std::shared_ptr<const Nosh::Mesh> &mesh,
     const std::shared_ptr<const Nosh::ScalarField::Virtual> &thickness,
     const std::shared_ptr<Nosh::VectorField::Virtual> &mvp
    ):

@@ -43,7 +43,7 @@
 #include "ScalarField_Virtual.hpp"
 #include "VectorField_Virtual.hpp"
 #include "ParameterMatrix_Keo.hpp"
-#include "StkMesh.hpp"
+#include "Mesh.hpp"
 
 // =============================================================================
 // some typdefs for Belos
@@ -58,7 +58,7 @@ namespace Nosh
 // =============================================================================
 KeoRegularized::
 KeoRegularized(
-    const std::shared_ptr<const Nosh::StkMesh> &mesh,
+    const std::shared_ptr<const Nosh::Mesh> &mesh,
     const std::shared_ptr<const Nosh::ScalarField::Virtual> &thickness,
     const std::shared_ptr<Nosh::VectorField::Virtual> &mvp
     ):

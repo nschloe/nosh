@@ -18,7 +18,7 @@
 //
 // @HEADER
 // =============================================================================
-#include "StkMesh.hpp"
+#include "Mesh.hpp"
 
 #include <map>
 #include <string>
@@ -64,17 +64,17 @@
 namespace Nosh
 {
 // =============================================================================
-StkMesh::
-StkMesh(const std::shared_ptr<const Teuchos::Comm<int>> & comm,
+Mesh::
+Mesh(const std::shared_ptr<const Teuchos::Comm<int>> & comm,
         const std::string & fileName,
         const int index
         ) :
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   computeEdgeCoefficientsTime_(
       Teuchos::TimeMonitor::getNewTimer(
-        "Nosh: StkMesh::computeEdgeCoefficients"
+        "Nosh: Mesh::computeEdgeCoefficients"
         )),
-  writeTime_(Teuchos::TimeMonitor::getNewTimer("Nosh: StkMesh::write")),
+  writeTime_(Teuchos::TimeMonitor::getNewTimer("Nosh: Mesh::write")),
 #endif
   comm_(comm),
   ioBroker_(this->read_(fileName, index)),
@@ -104,13 +104,13 @@ StkMesh(const std::shared_ptr<const Teuchos::Comm<int>> & comm,
 //  }
 }
 // =============================================================================
-StkMesh::
-~StkMesh()
+Mesh::
+~Mesh()
 {
 }
 // =============================================================================
 std::shared_ptr<stk::io::StkMeshIoBroker>
-StkMesh::
+Mesh::
 read_(
     const std::string &fileName,
     const int index
@@ -397,7 +397,7 @@ read_(
 }
 // =============================================================================
 std::shared_ptr<Tpetra::Vector<double,int,int>>
-StkMesh::
+Mesh::
 complexfield2vector_(
     const ScalarFieldType &realField,
     const ScalarFieldType &imagField
@@ -442,7 +442,7 @@ complexfield2vector_(
 }
 // =============================================================================
 std::shared_ptr<Tpetra::Vector<double,int,int>>
-StkMesh::
+Mesh::
 field2vector_(const ScalarFieldType &field) const
 {
   // Get overlap nodes.
@@ -485,7 +485,7 @@ field2vector_(const ScalarFieldType &field) const
 }
 // =============================================================================
 std::shared_ptr<Tpetra::MultiVector<double,int,int>>
-StkMesh::
+Mesh::
 field2vector_(
     const VectorFieldType &field,
     const int numComponents
@@ -546,7 +546,7 @@ field2vector_(
 }
 // =============================================================================
 void
-StkMesh::
+Mesh::
 openOutputChannel(
     const std::string &outputDir,
     const std::string &fileBaseName
@@ -575,7 +575,7 @@ openOutputChannel(
 }
 // =============================================================================
 void
-StkMesh::
+Mesh::
 insert(
     const Tpetra::Vector<double,int,int> & psi,
     const std::string & name
@@ -593,7 +593,7 @@ insert(
 }
 // =============================================================================
 void
-StkMesh::
+Mesh::
 write(const double time) const
 {
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
@@ -614,7 +614,7 @@ write(const double time) const
 }
 // =============================================================================
 std::shared_ptr<Tpetra::Vector<double,int,int>>
-StkMesh::
+Mesh::
 createVector(const std::string & fieldName) const
 {
 #ifndef NDEBUG
@@ -636,7 +636,7 @@ createVector(const std::string & fieldName) const
 }
 // =============================================================================
 std::shared_ptr<Tpetra::MultiVector<double,int,int>>
-StkMesh::
+Mesh::
 createMultiVector(const std::string & fieldName) const
 {
 #ifndef NDEBUG
@@ -660,7 +660,7 @@ createMultiVector(const std::string & fieldName) const
 }
 // =============================================================================
 std::shared_ptr<Tpetra::Vector<double,int,int>>
-StkMesh::
+Mesh::
 createComplexVector(const std::string & fieldName) const
 {
 #ifndef NDEBUG
@@ -692,7 +692,7 @@ createComplexVector(const std::string & fieldName) const
 }
 // =============================================================================
 void
-StkMesh::
+Mesh::
 mergeComplexVector_(
     const Tpetra::Vector<double,int,int> & psi,
     const std::string & fieldName
@@ -761,7 +761,7 @@ mergeComplexVector_(
 
 // =============================================================================
 std::vector<stk::mesh::Entity>
-StkMesh::
+Mesh::
 getOwnedCells() const
 {
   // get owned elements
@@ -778,7 +778,7 @@ getOwnedCells() const
 }
 // =============================================================================
 std::vector<stk::mesh::Entity>
-StkMesh::
+Mesh::
 getOverlapEdges() const
 {
   // get overlap edges
@@ -797,7 +797,7 @@ getOverlapEdges() const
 }
 // =============================================================================
 double
-StkMesh::
+Mesh::
 getScalarFieldNonconst(stk::mesh::Entity nodeEntity,
                        const std::string & fieldName
                      ) const
@@ -814,7 +814,7 @@ getScalarFieldNonconst(stk::mesh::Entity nodeEntity,
 }
 // =============================================================================
 const VectorFieldType &
-StkMesh::
+Mesh::
 getNodeField(const std::string & fieldName) const {
   const VectorFieldType * const field =
     ioBroker_->bulk_data().mesh_meta_data().get_field<VectorFieldType>(
@@ -831,7 +831,7 @@ getNodeField(const std::string & fieldName) const {
 }
 // =============================================================================
 const Eigen::Vector3d
-StkMesh::
+Mesh::
 getNodeValue(
     const VectorFieldType & field,
     stk::mesh::Entity nodeEntity
@@ -841,7 +841,7 @@ getNodeValue(
 }
 // =============================================================================
 std::vector<stk::mesh::Entity>
-StkMesh::
+Mesh::
 buildOwnedNodes_(const stk::mesh::BulkData & myBulkData) const
 {
   stk::mesh::Selector select_owned_in_part =
@@ -858,7 +858,7 @@ buildOwnedNodes_(const stk::mesh::BulkData & myBulkData) const
 }
 // =============================================================================
 std::vector<stk::mesh::Entity>
-StkMesh::
+Mesh::
 getOverlapNodes() const
 {
   //  overlapnodes used for overlap map -- stored for changing coords
@@ -878,7 +878,7 @@ getOverlapNodes() const
 }
 // =============================================================================
 const std::vector<Teuchos::Tuple<int,4>>
-StkMesh::
+Mesh::
 buildGlobalIndexCache_() const
 {
   const std::vector<edge> edges = this->getEdgeNodes();
@@ -896,7 +896,7 @@ buildGlobalIndexCache_() const
 }
 // =============================================================================
 std::shared_ptr<const Tpetra::Map<int,int>>
-StkMesh::
+Mesh::
 createEntitiesMap_(const std::vector<stk::mesh::Entity> &entityList) const
 {
   const size_t numEntities = entityList.size();
@@ -911,7 +911,7 @@ createEntitiesMap_(const std::vector<stk::mesh::Entity> &entityList) const
 }
 // =============================================================================
 std::shared_ptr<const Tpetra::Map<int,int>>
-StkMesh::
+Mesh::
 createComplexMap_(const std::vector<stk::mesh::Entity> &nodeList) const
 {
   // Create a map for real/imaginary out of this.
@@ -929,7 +929,7 @@ createComplexMap_(const std::vector<stk::mesh::Entity> &nodeList) const
 }
 // =============================================================================
 unsigned int
-StkMesh::
+Mesh::
 getNumEdgesPerCell(unsigned int cellDimension) const
 {
   // In n-simplices, all nodes are connected with all other nodesMap.
@@ -943,7 +943,7 @@ getNumEdgesPerCell(unsigned int cellDimension) const
 }
 // =============================================================================
 std::vector<double>
-StkMesh::
+Mesh::
 computeEdgeCoefficients_() const
 {
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
@@ -985,7 +985,7 @@ computeEdgeCoefficients_() const
 }
 // =============================================================================
 Eigen::VectorXd
-StkMesh::
+Mesh::
 getEdgeCoefficientsNumerically_(
   const std::vector<Eigen::Vector3d> edges
   ) const
@@ -1052,7 +1052,7 @@ getEdgeCoefficientsNumerically_(
 }
 // =============================================================================
 std::shared_ptr<Tpetra::Vector<double,int,int>>
-StkMesh::
+Mesh::
 computeControlVolumes_() const
 {
 #ifndef NDEBUG
@@ -1105,7 +1105,7 @@ computeControlVolumes_() const
 }
 // =============================================================================
 void
-StkMesh::
+Mesh::
 computeControlVolumesTri_(Tpetra::Vector<double,int,int> & cvOverlap) const
 {
   std::vector<stk::mesh::Entity> cells = this->getOwnedCells();
@@ -1193,7 +1193,7 @@ computeControlVolumesTri_(Tpetra::Vector<double,int,int> & cvOverlap) const
 }
 // =============================================================================
 void
-StkMesh::
+Mesh::
 computeControlVolumesTet_(Tpetra::Vector<double,int,int> & cvOverlap) const
 {
   std::vector<stk::mesh::Entity> cells = this->getOwnedCells();
@@ -1279,7 +1279,7 @@ computeControlVolumesTet_(Tpetra::Vector<double,int,int> & cvOverlap) const
 }
 // =============================================================================
 double
-StkMesh::
+Mesh::
 computeCovolume2d_(
     const Eigen::Vector3d &cc,
     const Eigen::Vector3d &x0,
@@ -1305,7 +1305,7 @@ computeCovolume2d_(
 }
 // =============================================================================
 double
-StkMesh::
+Mesh::
 computeCovolume3d_(
     const Eigen::Vector3d &cc,
     const Eigen::Vector3d &x0,
@@ -1365,7 +1365,7 @@ computeCovolume3d_(
 }
 // =============================================================================
 unsigned int
-StkMesh::
+Mesh::
 getOtherIndex_(unsigned int e0, unsigned int e1) const
 {
 #ifndef NDEBUG
@@ -1387,7 +1387,7 @@ getOtherIndex_(unsigned int e0, unsigned int e1) const
 }
 // =============================================================================
 std::set<unsigned int>
-StkMesh::
+Mesh::
 getOtherIndices_(unsigned int e0, unsigned int e1) const
 {
 #ifndef NDEBUG
@@ -1405,7 +1405,7 @@ getOtherIndices_(unsigned int e0, unsigned int e1) const
 }
 // =============================================================================
 double
-StkMesh::
+Mesh::
 getTriangleArea_(
     const Eigen::Vector3d &edge0,
     const Eigen::Vector3d &edge1
@@ -1415,7 +1415,7 @@ getTriangleArea_(
 }
 // =============================================================================
 double
-StkMesh::
+Mesh::
 getTetrahedronVolume_(
     const Eigen::Vector3d &edge0,
     const Eigen::Vector3d &edge1,
@@ -1443,7 +1443,7 @@ getTetrahedronVolume_(
 }
 // =============================================================================
 Eigen::Vector3d
-StkMesh::
+Mesh::
 computeTriangleCircumcenter_(
   const std::vector<Eigen::Vector3d> &nodes
   ) const
@@ -1455,7 +1455,7 @@ computeTriangleCircumcenter_(
 }
 // =============================================================================
 Eigen::Vector3d
-StkMesh::
+Mesh::
 computeTriangleCircumcenter_(
     const Eigen::Vector3d &node0,
     const Eigen::Vector3d &node1,
@@ -1489,7 +1489,7 @@ computeTriangleCircumcenter_(
 }
 // =============================================================================
 Eigen::Vector3d
-StkMesh::
+Mesh::
 computeTetrahedronCircumcenter_(
   const std::vector<Eigen::Vector3d> &nodes
   ) const
@@ -1530,14 +1530,14 @@ computeTetrahedronCircumcenter_(
     + gamma * relNodes[0].cross(relNodes[1]);
 }
 // =============================================================================
-StkMesh::EdgesContainer
-StkMesh::
+Mesh::EdgesContainer
+Mesh::
 createEdgeData_()
 {
   std::vector<stk::mesh::Entity> cells = this->getOwnedCells();
   size_t numLocalCells = cells.size();
 
-  StkMesh::EdgesContainer edgeData = {
+  Mesh::EdgesContainer edgeData = {
     // Local edge ID -> Global node IDs.
     std::vector<std::tuple<stk::mesh::Entity, stk::mesh::Entity> >(),
     // Local cell ID -> Local edge IDs.
@@ -1613,7 +1613,7 @@ createEdgeData_()
 }
 // =============================================================================
 Teuchos::RCP<const Tpetra::CrsGraph<int,int>>
-StkMesh::
+Mesh::
 buildComplexGraph() const
 {
   // Which row/column map to use for the matrix?
@@ -1700,13 +1700,13 @@ buildComplexGraph() const
 }
 // =============================================================================
 // Helper function
-StkMesh
+Mesh
 read(
     const std::string & fileName,
     const int index
     )
 {
   auto comm = Teuchos::DefaultComm<int>::getComm();
-  return StkMesh(Teuchos::get_shared_ptr(comm), fileName, index);
+  return Mesh(Teuchos::get_shared_ptr(comm), fileName, index);
 }
 }  // namespace Nosh

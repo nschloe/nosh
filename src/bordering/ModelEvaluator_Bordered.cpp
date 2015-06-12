@@ -281,7 +281,7 @@ gibbsEnergy(const Tpetra::Vector<double,int,int> &psi) const
   return innerModelEval_->gibbsEnergy(psi);
 }
 // =============================================================================
-const std::shared_ptr<const Nosh::StkMesh>
+const std::shared_ptr<const Nosh::Mesh>
 Bordered::
 getMesh() const
 {

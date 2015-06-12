@@ -32,13 +32,13 @@
 
 #include <Eigen/Dense>
 
-#include "StkMesh.hpp"
+#include "Mesh.hpp"
 #include "ParameterObject.hpp"
 
 // forward declarations
 namespace Nosh
 {
-class StkMesh;
+class Mesh;
 namespace ScalarField
 {
 class Virtual;
@@ -58,7 +58,7 @@ class Keo: public Nosh::ParameterObject, public Tpetra::CrsMatrix<double,int,int
 {
 public:
   Keo(
-      const std::shared_ptr<const Nosh::StkMesh> &mesh,
+      const std::shared_ptr<const Nosh::Mesh> &mesh,
       const std::shared_ptr<const Nosh::ScalarField::Virtual> &thickness,
       const std::shared_ptr<Nosh::VectorField::Virtual> &mvp
      );
@@ -90,7 +90,7 @@ private:
       ) const;
 
 private:
-  const std::shared_ptr<const Nosh::StkMesh> mesh_;
+  const std::shared_ptr<const Nosh::Mesh> mesh_;
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   const std::shared_ptr<Teuchos::Time> keoFillTime_;
 #endif

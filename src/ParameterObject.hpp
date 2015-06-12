@@ -29,7 +29,7 @@
 // forward declarations
 namespace Nosh
 {
-class StkMesh;
+class Mesh;
 }
 
 namespace Nosh

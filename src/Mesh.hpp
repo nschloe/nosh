@@ -58,7 +58,7 @@ typedef std::tuple<stk::mesh::Entity, stk::mesh::Entity> edge;
 namespace Nosh
 {
 
-class StkMesh
+class Mesh
 {
 private:
   // Keep bulkData a pointer since its copy constructor is private; this causes
@@ -71,14 +71,14 @@ private:
   };
 
 public:
-  StkMesh(
+  Mesh(
       const std::shared_ptr<const Teuchos::Comm<int>> & comm,
       const std::string &fileName,
       const int index
       );
 
   virtual
-  ~StkMesh();
+  ~Mesh();
 
   double
   getTime() const
@@ -386,9 +386,9 @@ private:
   createEdgeData_();
 };
 // -----------------------------------------------------------------------------
-StkMesh
+Mesh
 read(const std::string & fileName,
-     const int index
+     const int index = 0
      );
 } // namespace Nosh
 // =============================================================================
