@@ -1,7 +1,7 @@
 // @HEADER
 //
 //    Helper class for computation and I/O of eigenvalues and -vectors.
-//    Copyright (C) 2009--2012  Nico Schl\"omer
+//    Copyright (C) 2009--2012  Nico Schlömer
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by

@@ -24,7 +24,7 @@
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_RCPStdSharedPtrConversions.hpp>
 
-#include "nosh/StkMesh.hpp"
+#include <Mesh.hpp>
 
 #include <Teuchos_UnitTestHarness.hpp>
 
@@ -48,7 +48,7 @@ testMesh(
   std::string inputFileName = "data/" + inputFileNameBase + ".e";
 
   // Read the data from the file.
-  Nosh::StkMesh mesh(Teuchos::get_shared_ptr(comm), inputFileName, 0);
+  Nosh::Mesh mesh(Teuchos::get_shared_ptr(comm), inputFileName, 0);
 
   const unsigned int numNodes = mesh.getNumNodes();
   TEUCHOS_ASSERT_EQUALITY(numNodes, controlNumNodes);

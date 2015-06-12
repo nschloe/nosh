@@ -1,7 +1,7 @@
 // @HEADER
 //
 //    Query routines for the magnetic vector potential.
-//    Copyright (C) 2012  Nico Schl\"omer
+//    Copyright (C) 2012  Nico Schlömer
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -38,7 +38,7 @@ Constant(
     const std::string & param1Name,
     const double param1InitValue
     ):
-  map_(mesh.getNodesMap()),
+  map_(mesh.getMap()),
   c_(c),
   param1Name_ (param1Name),
   param1InitValue_(param1InitValue)

@@ -1,7 +1,7 @@
 // @HEADER
 //
 //    Mesh class with compatibility to stk_mesh.
-//    Copyright (C) 2010--2012  Nico Schl\"omer
+//    Copyright (C) 2010--2012  Nico Schlömer
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -28,9 +28,7 @@
 #include <Trilinos_version.h>
 
 #include <Tpetra_Vector.hpp>
-#include <Teuchos_RCPStdSharedPtrConversions.hpp>
 #include <Teuchos_RCP.hpp>
-#include <Teuchos_DefaultComm.hpp>
 
 // #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
@@ -88,7 +86,8 @@ Mesh(const std::shared_ptr<const Teuchos::Comm<int>> & comm,
   edgeCoefficients_(this->computeEdgeCoefficients_()),
   outputChannel_(0),
   time_(0.0),
-  globalIndexCache(buildGlobalIndexCache_())
+  edgeGids(buildEdgeGids_()),
+  edgeGidsComplex(buildEdgeGidsComplex_())
 {
 //  int nodesPerCell;
 //  if (comm_.getRank() == 0)
@@ -409,7 +408,7 @@ complexfield2vector_(
 
   // Create vector with this respective map.
   auto vector = std::make_shared<Tpetra::Vector<double,int,int>>(
-      Teuchos::rcp(this->getComplexNonOverlapMap())
+      Teuchos::rcp(this->getMapComplex())
       );
 
   auto vData = vector->getDataNonConst();
@@ -450,7 +449,7 @@ field2vector_(const ScalarFieldType &field) const
 
   // Create vector with this respective map.
   auto vector = std::make_shared<Tpetra::Vector<double,int,int>>(
-      Teuchos::rcp(this->getNodesOverlapMap())
+      Teuchos::rcp(this->getOverlapMap())
       );
 
   auto vData = vector->getDataNonConst();
@@ -496,7 +495,7 @@ field2vector_(
 
   // Create vector with this respective map.
   auto vector = std::make_shared<Tpetra::MultiVector<double,int,int>>(
-      Teuchos::rcp(this->getNodesOverlapMap()),
+      Teuchos::rcp(this->getOverlapMap()),
       numComponents
       );
 
@@ -877,9 +876,27 @@ getOverlapNodes() const
   return overlapNodes;
 }
 // =============================================================================
+const std::vector<Teuchos::Tuple<int,2>>
+Mesh::
+buildEdgeGids_() const
+{
+  const std::vector<edge> edges = this->getEdgeNodes();
+
+  std::vector<Teuchos::Tuple<int,2>> gic(edges.size());
+
+  int gidT0, gidT1;
+  for (std::size_t k = 0; k < edges.size(); k++) {
+    gidT0 = this->gid(std::get<0>(edges[k]));
+    gidT1 = this->gid(std::get<1>(edges[k]));
+    gic[k] = Teuchos::tuple(gidT0, gidT1);
+  }
+
+  return gic;
+}
+// =============================================================================
 const std::vector<Teuchos::Tuple<int,4>>
 Mesh::
-buildGlobalIndexCache_() const
+buildEdgeGidsComplex_() const
 {
   const std::vector<edge> edges = this->getEdgeNodes();
 
@@ -1614,6 +1631,94 @@ createEdgeData_()
 // =============================================================================
 Teuchos::RCP<const Tpetra::CrsGraph<int,int>>
 Mesh::
+buildGraph() const
+{
+  // Which row/column map to use for the matrix?
+  // The two possibilites are the non-overlapping map fetched from
+  // the ownedNodes map, and the overlapping one from the
+  // overlapNodes.
+  // Let's illustrate the implications with the example of the matrix
+  //   [ 2 1   ]
+  //   [ 1 2 1 ]
+  //   [   1 2 ].
+  // Suppose subdomain 1 consists of node 1, subdomain 2 of node 3,
+  // and node 2 forms the boundary between them.
+  // For two processes, if process 1 owns nodes 1 and 2, the matrix
+  // will be split as
+  //   [ 2 1   ]   [       ]
+  //   [ 1 2 1 ] + [       ]
+  //   [       ]   [   1 2 ].
+  // The vectors always need to have a unique map (otherwise, norms
+  // cannot be computed by Epetra), so let's assume they have the
+  // map ([1, 2], [3]).
+  // The communucation for a matrix-vector multiplication Ax=y
+  // needs to be:
+  //
+  //   1. Communicate x(3) to process 1.
+  //   2. Communicate x(2) to process 2.
+  //   3. Compute.
+  //
+  // If the matrix is split up like
+  //   [ 2 1   ]   [       ]
+  //   [ 1 1   ] + [   1 1 ]
+  //   [       ]   [   1 2 ]
+  // (like the overlap map suggests), then any Ax=y comes down to:
+  //
+  //   1. Communicate x(2) to process 2.
+  //   2. Compute.
+  //   3. Communicate (part of) y(2) to process 1.
+  //
+  // In the general case, assuming that the number of nodes adjacent
+  // to a boundary (on one side) are approximately the number of
+  // nodes on that boundary, there is not much difference in
+  // communication between the patterns.
+  // What does differ, though, is the workload on the processes
+  // during the computation phase: Process 1 that owns the whole
+  // boundary, has to compute more than process 2.
+  // Notice, however, that the total number of computations is
+  // lower in scenario 1 (7 vs. 8 FLOPs); the same is true for
+  // storage.
+  // Hence, it comes down to the question whether or not the
+  // mesh generator provided a fair share of the boundary nodes.
+  // If yes, then scenario 1 will yield approximately even
+  // computation times; if not, then scenario 2 will guarantee
+  // equal computation times at the cost of higher total
+  // storage and computation needs.
+  //
+  // Remark:
+  // This matrix will later be fed into ML. ML has certain restrictions as to
+  // what maps can be used. One of those is that RowMatrixRowMap() and
+  // getRangeMap must be the same, and, if the matrix is square,
+  // getRangeMap and getDomainMap must coincide too.
+  //
+  const auto noMap = this->getMap();
+#ifndef NDEBUG
+  TEUCHOS_ASSERT(noMap);
+#endif
+  auto graph = Tpetra::createCrsGraph(Teuchos::rcp(noMap));
+
+  const std::vector<edge> edges = this->getEdgeNodes();
+
+  // Loop over all edges and put entries wherever two nodes are connected.
+  // TODO check if we can use LIDs here
+  for (size_t k = 0; k < edges.size(); k++) {
+    const Teuchos::Tuple<int,2> & idx = this->edgeGids[k];
+    for (int i = 0; i < 2; i++) {
+      graph->insertGlobalIndices(idx[i], idx);
+    }
+  }
+
+  // Make sure that domain and range map are non-overlapping (to make sure that
+  // states psi can compute norms) and equal (to make sure that the matrix works
+  // with ML).
+  // TODO specify noMap?
+  graph->fillComplete();
+
+  return graph;
+}
+// =============================================================================
+Teuchos::RCP<const Tpetra::CrsGraph<int,int>>
+Mesh::
 buildComplexGraph() const
 {
   // Which row/column map to use for the matrix?
@@ -1674,7 +1779,7 @@ buildComplexGraph() const
   // getRangeMap must be the same, and, if the matrix is square,
   // getRangeMap and getDomainMap must coincide too.
   //
-  const auto noMap = this->getComplexNonOverlapMap();
+  const auto noMap = this->getMapComplex();
 #ifndef NDEBUG
   TEUCHOS_ASSERT(noMap);
 #endif
@@ -1683,8 +1788,9 @@ buildComplexGraph() const
   const std::vector<edge> edges = this->getEdgeNodes();
 
   // Loop over all edges and put entries wherever two nodes are connected.
+  // TODO check if we can use LIDs here
   for (size_t k = 0; k < edges.size(); k++) {
-    const Teuchos::Tuple<int,4> & idx = this->globalIndexCache[k];
+    const Teuchos::Tuple<int,4> & idx = this->edgeGidsComplex[k];
     for (int i = 0; i < 4; i++) {
       graph->insertGlobalIndices(idx[i], idx);
     }

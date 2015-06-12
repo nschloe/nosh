@@ -25,7 +25,7 @@
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_RCPStdSharedPtrConversions.hpp>
 
-#include "nosh/StkMesh.hpp"
+#include "nosh/Mesh.hpp"
 
 #include <Teuchos_UnitTestHarness.hpp>
 
@@ -48,7 +48,7 @@ testCache(const std::string & inputFileNameBase,
   // =========================================================================
   // Read the data from the file.
   Teuchos::ParameterList data;
-  Nosh::Helpers::StkMeshRead(
+  Nosh::Helpers::MeshRead(
       Teuchos::get_shared_ptr(comm),
       inputFileName,
       0,
@@ -56,7 +56,7 @@ testCache(const std::string & inputFileNameBase,
       );
 
   // Cast the data into something more accessible.
-  std::shared_ptr<Nosh::StkMesh> & mesh = data.get("mesh", std::shared_ptr<Nosh::StkMesh>());
+  std::shared_ptr<Nosh::Mesh> & mesh = data.get("mesh", std::shared_ptr<Nosh::Mesh>());
 
   std::vectorRCP<double> edgeCoefficients;
   std::vectorRCP<DoubleVector> edgeCoefficientsFallback;

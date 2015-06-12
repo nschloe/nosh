@@ -24,12 +24,12 @@
 #include <Teuchos_ParameterList.hpp>
 #include <Thyra_TpetraThyraWrappers.hpp>
 
-#include "nosh/StkMesh.hpp"
-#include "nosh/ScalarField_Constant.hpp"
-#include "nosh/ParameterMatrix_Keo.hpp"
-#include "nosh/ParameterMatrix_DKeoDP.hpp"
-#include "nosh/VectorField_ExplicitValues.hpp"
-#include "nosh/ModelEvaluator_Nls.hpp"
+#include <Mesh.hpp>
+#include <ScalarField_Constant.hpp>
+#include <ParameterMatrix_Keo.hpp>
+#include <ParameterMatrix_DKeoDP.hpp>
+#include <VectorField_ExplicitValues.hpp>
+#include <ModelEvaluator_Nls.hpp>
 
 #include <Teuchos_UnitTestHarness.hpp>
 
@@ -52,7 +52,7 @@ testComputeF(
   std::string inputFileName = "data/" + inputFileNameBase + ".e";
 
   // Read the data from the file.
-  auto mesh = std::make_shared<Nosh::StkMesh>(
+  auto mesh = std::make_shared<Nosh::Mesh>(
       Teuchos::get_shared_ptr(comm), inputFileName, 0
       );
 

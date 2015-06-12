@@ -25,7 +25,7 @@
 #include <Teuchos_RCPStdSharedPtrConversions.hpp>
 #include <Tpetra_Vector.hpp>
 
-#include "nosh/StkMesh.hpp"
+#include <Mesh.hpp>
 
 #include <Teuchos_UnitTestHarness.hpp>
 
@@ -49,7 +49,7 @@ testKeo(
   std::string inputFileName = "data/" + inputFileNameBase + ".e";
 
   // Read the data from the file.
-  Nosh::StkMesh mesh(Teuchos::get_shared_ptr(comm), inputFileName, 0);
+  Nosh::Mesh mesh(Teuchos::get_shared_ptr(comm), inputFileName, 0);
 
   // Cast the data into something more accessible.
   const auto psi = mesh.createComplexVector("psi");

@@ -1,7 +1,7 @@
 // @HEADER
 //
 //    Query routines for the vector potential associated with a constant curl field.
-//    Copyright (C) 2012  Nico Schl\"omer
+//    Copyright (C) 2012  Nico Schlömer
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by

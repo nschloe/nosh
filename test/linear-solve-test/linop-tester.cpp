@@ -20,7 +20,7 @@
 #include <BelosPseudoBlockCGSolMgr.hpp>
 #include <BelosMinresSolMgr.hpp>
 
-#include "Ginla_StkMeshReader.hpp"
+#include "Ginla_MeshReader.hpp"
 
 #include "Ginla_State.hpp"
 #include "Ginla_ModelEvaluator.hpp"
@@ -128,11 +128,11 @@ int main ( int argc, char *argv[] )
     std::shared_ptr<Teuchos::Time> readTime = Teuchos::TimeMonitor::getNewTimer("Data I/O");
     {
     Teuchos::TimeMonitor tm(*readTime);
-    Ginla::StkMeshRead( *eComm, inputFileName, data );
+    Ginla::MeshRead( *eComm, inputFileName, data );
     }
 
     // Cast the data into something more accessible.
-    std::shared_ptr<Ginla::StkMesh>     & mesh = data.get( "mesh", std::shared_ptr<Ginla::StkMesh>() );
+    std::shared_ptr<Ginla::Mesh>     & mesh = data.get( "mesh", std::shared_ptr<Ginla::Mesh>() );
     std::shared_ptr<Epetra_Vector>      & z = data.get( "psi", std::shared_ptr<Epetra_Vector>() );
     std::shared_ptr<const Epetra_MultiVector> & mvpValues = data.get( "A", std::shared_ptr<const Epetra_MultiVector>() );
     std::shared_ptr<Epetra_Vector>      & thickness = data.get( "thickness", std::shared_ptr<Epetra_Vector>() );

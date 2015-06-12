@@ -1,7 +1,7 @@
 // @HEADER
 //
 //    Builds the kinetic energy operator and its variants.
-//    Copyright (C) 2010--2012  Nico Schl\"omer
+//    Copyright (C) 2010--2012  Nico Schlömer
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -146,7 +146,7 @@ refill_(const std::map<std::string, double> & params)
       Teuchos::tuple(v[0], -v[1],  v[2],  0.0),
       Teuchos::tuple(v[1],  v[0],   0.0, v[2])
       );
-    const Teuchos::Tuple<int,4> & idx = mesh_->globalIndexCache[k];
+    const Teuchos::Tuple<int,4> & idx = mesh_->edgeGidsComplex[k];
     for (int i = 0; i < 4; i++) {
       int num = this->sumIntoGlobalValues(idx[i], idx, vals[i]);
 #ifndef NDEBUG
@@ -179,7 +179,7 @@ buildAlphaCache_(
   std::map<std::string, double> dummy;
   const auto thicknessValues = thickness_->getV(dummy);
 
-  auto overlapMap = mesh_->getNodesOverlapMap();
+  auto overlapMap = mesh_->getOverlapMap();
   // We need to make sure that thicknessValues are distributed on the overlap
   // map.
   // Make sure to use Import here instead of Export as the vector that we want

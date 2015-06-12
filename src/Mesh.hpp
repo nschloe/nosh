@@ -1,7 +1,7 @@
 // @HEADER
 //
 //    Mesh class with compatibility to stk_mesh.
-//    Copyright (C) 2010--2012  Nico Schl\"omer
+//    Copyright (C) 2010--2012  Nico Schlömer
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -17,8 +17,8 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 // @HEADER
-#ifndef NOSH_STKMESH_H
-#define NOSH_STKMESH_H
+#ifndef NOSH_MESH_HPP
+#define NOSH_MESH_HPP
 // =============================================================================
 // includes
 #include <string>
@@ -27,6 +27,8 @@
 #include <set>
 
 #include <Teuchos_RCP.hpp>
+#include <Teuchos_DefaultComm.hpp>
+#include <Teuchos_RCPStdSharedPtrConversions.hpp>
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
 #include <Teuchos_Time.hpp>
 #endif
@@ -85,7 +87,6 @@ public:
   {
     return time_;
   };
-
 
   void
   openOutputChannel(const std::string &outputDir,
@@ -164,7 +165,7 @@ public:
 //getNodeCoordinatesNonconst(stk::mesh::Entity nodeEntity) const;
 
   std::shared_ptr<const Tpetra::Map<int,int>>
-  getNodesMap() const
+  getMap() const
   {
 #ifndef NDEBUG
     TEUCHOS_ASSERT(nodesMap_);
@@ -173,7 +174,7 @@ public:
   }
 
   std::shared_ptr<const Tpetra::Map<int,int>>
-  getNodesOverlapMap() const
+  getOverlapMap() const
   {
 #ifndef NDEBUG
     TEUCHOS_ASSERT(nodesOverlapMap_);
@@ -182,7 +183,7 @@ public:
   }
 
   std::shared_ptr<const Tpetra::Map<int,int>>
-  getComplexNonOverlapMap() const
+  getMapComplex() const
   {
 #ifndef NDEBUG
     TEUCHOS_ASSERT(complexMap_);
@@ -190,17 +191,8 @@ public:
     return complexMap_;
   }
 
-  const Tpetra::Map<int,int>&
-  getComplexNonOverlapMap2() const
-  {
-#ifndef NDEBUG
-    TEUCHOS_ASSERT(complexMap_);
-#endif
-    return *complexMap_;
-  }
-
   std::shared_ptr<const Tpetra::Map<int,int>>
-  getComplexOverlapMap() const
+  getOverlapMapComplex() const
   {
 #ifndef NDEBUG
     TEUCHOS_ASSERT(complexOverlapMap_);
@@ -231,6 +223,9 @@ public:
   {
     return ioBroker_->bulk_data().identifier(e) - 1;
   }
+
+  Teuchos::RCP<const Tpetra::CrsGraph<int,int>>
+  buildGraph() const;
 
   Teuchos::RCP<const Tpetra::CrsGraph<int,int>>
   buildComplexGraph() const;
@@ -266,12 +261,16 @@ private:
   double time_;
 
 public:
-  const std::vector<Teuchos::Tuple<int,4>> globalIndexCache;
+  const std::vector<Teuchos::Tuple<int,2>> edgeGids;
+  const std::vector<Teuchos::Tuple<int,4>> edgeGidsComplex;
 
 private:
 
+  const std::vector<Teuchos::Tuple<int,2>>
+  buildEdgeGids_() const;
+
   const std::vector<Teuchos::Tuple<int,4>>
-  buildGlobalIndexCache_() const;
+  buildEdgeGidsComplex_() const;
 
   std::shared_ptr<stk::io::StkMeshIoBroker>
   read_(
@@ -386,10 +385,13 @@ private:
   createEdgeData_();
 };
 // -----------------------------------------------------------------------------
+// Helper function
 Mesh
-read(const std::string & fileName,
-     const int index = 0
-     );
+read(
+    const std::string & fileName,
+    const int index = 0
+    );
+
 } // namespace Nosh
 // =============================================================================
-#endif // NOSH_STKMESH_H
+#endif // NOSH_MESH_HPP

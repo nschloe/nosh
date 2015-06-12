@@ -1,6 +1,6 @@
 FIND_PACKAGE(MPI REQUIRED)
 
-INCLUDE_DIRECTORIES(${Nosh_SOURCE_DIR})
+INCLUDE_DIRECTORIES(${Nosh_SOURCE_DIR}/src/)
 INCLUDE_DIRECTORIES(SYSTEM
   ${Trilinos_INCLUDE_DIRS}
   ${Trilinos_TPL_INCLUDE_DIRS}
@@ -79,7 +79,7 @@ ENDIF()
 SET(MESHTEST_EXECUTABLE
   "meshTest")
 ADD_EXECUTABLE (${MESHTEST_EXECUTABLE}
-  Nosh_StkMeshTests.cpp
+  Nosh_MeshTests.cpp
   #                 Nosh_EdgeCacheTests.cpp
   unitTestMain.cpp)
 # add tests

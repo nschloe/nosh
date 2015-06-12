@@ -1,7 +1,7 @@
 // @HEADER
 //
 //    Query routines for a vector potential with explicitly given values.
-//    Copyright (C) 2011, 2012  Nico Schl\"omer
+//    Copyright (C) 2011, 2012  Nico Schlömer
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
