@@ -81,7 +81,11 @@ public:
   ~StkMesh();
 
   double
-  getTime() const;
+  getTime() const
+  {
+    return time_;
+  };
+
 
   void
   openOutputChannel(const std::string &outputDir,
@@ -106,19 +110,34 @@ public:
          ) const;
 
   unsigned int
-  getNumNodes() const;
+  getNumNodes() const
+  {
+    return nodesMap_->getGlobalNumElements();
+  }
 
   std::shared_ptr<const Tpetra::Vector<double,int,int>>
-  getControlVolumes() const;
+  getControlVolumes() const
+  {
+    return controlVolumes_;
+  }
 
   double
-  getDomainVolume() const;
+  getDomainVolume() const
+  {
+    return controlVolumes_->norm1();
+  }
 
   std::shared_ptr<const Teuchos::Comm<int>>
-  getComm() const;
+  getComm() const
+  {
+    return comm_;
+  }
 
   std::vector<double>
-  getEdgeCoefficients() const;
+  getEdgeCoefficients() const
+  {
+    return edgeCoefficients_;
+  }
 
   std::vector<stk::mesh::Entity>
   getOwnedCells() const;
@@ -127,10 +146,16 @@ public:
   getOverlapEdges() const;
 
   const std::vector<std::tuple<stk::mesh::Entity, stk::mesh::Entity> >
-  getEdgeNodes() const;
+  getEdgeNodes() const
+  {
+    return edgeData_.edgeNodes;
+  }
 
   std::vector<stk::mesh::Entity>
-  getOwnedNodes() const;
+  getOwnedNodes() const
+  {
+    return ownedNodes_;
+  }
 
   std::vector<stk::mesh::Entity>
   getOverlapNodes() const;
@@ -139,19 +164,49 @@ public:
 //getNodeCoordinatesNonconst(stk::mesh::Entity nodeEntity) const;
 
   std::shared_ptr<const Tpetra::Map<int,int>>
-  getNodesMap() const;
+  getNodesMap() const
+  {
+#ifndef NDEBUG
+    TEUCHOS_ASSERT(nodesMap_);
+#endif
+    return nodesMap_;
+  }
 
   std::shared_ptr<const Tpetra::Map<int,int>>
-  getNodesOverlapMap() const;
+  getNodesOverlapMap() const
+  {
+#ifndef NDEBUG
+    TEUCHOS_ASSERT(nodesOverlapMap_);
+#endif
+    return nodesOverlapMap_;
+  }
 
   std::shared_ptr<const Tpetra::Map<int,int>>
-  getComplexNonOverlapMap() const;
-
-  std::shared_ptr<const Tpetra::Map<int,int>>
-  getComplexOverlapMap() const;
+  getComplexNonOverlapMap() const
+  {
+#ifndef NDEBUG
+    TEUCHOS_ASSERT(complexMap_);
+#endif
+    return complexMap_;
+  }
 
   const Tpetra::Map<int,int>&
-  getComplexNonOverlapMap2() const;
+  getComplexNonOverlapMap2() const
+  {
+#ifndef NDEBUG
+    TEUCHOS_ASSERT(complexMap_);
+#endif
+    return *complexMap_;
+  }
+
+  std::shared_ptr<const Tpetra::Map<int,int>>
+  getComplexOverlapMap() const
+  {
+#ifndef NDEBUG
+    TEUCHOS_ASSERT(complexOverlapMap_);
+#endif
+    return complexOverlapMap_;
+  }
 
   unsigned int
   getNumEdgesPerCell(unsigned int cellDimension) const;
@@ -172,7 +227,10 @@ public:
       ) const;
 
   uint64_t
-  gid(const stk::mesh::Entity e) const;
+  gid(const stk::mesh::Entity e) const
+  {
+    return ioBroker_->bulk_data().identifier(e) - 1;
+  }
 
   Teuchos::RCP<const Tpetra::CrsGraph<int,int>>
   buildComplexGraph() const;

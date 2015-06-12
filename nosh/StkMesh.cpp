@@ -396,13 +396,6 @@ read_(
   return ioBroker;
 }
 // =============================================================================
-double
-StkMesh::
-getTime() const
-{
-  return time_;
-}
-// =============================================================================
 std::shared_ptr<Tpetra::Vector<double,int,int>>
 StkMesh::
 complexfield2vector_(
@@ -765,41 +758,7 @@ mergeComplexVector_(
 
   return;
 }
-// =============================================================================
-unsigned int
-StkMesh::
-getNumNodes() const
-{
-  return nodesMap_->getGlobalNumElements();
-}
-// =============================================================================
-std::shared_ptr<const Tpetra::Vector<double,int,int>>
-StkMesh::
-getControlVolumes() const
-{
-  return controlVolumes_;
-}
-// =============================================================================
-double
-StkMesh::
-getDomainVolume() const
-{
-  return controlVolumes_->norm1();
-}
-// =============================================================================
-std::shared_ptr<const Teuchos::Comm<int>>
-StkMesh::
-getComm() const
-{
-  return comm_;
-}
-// =============================================================================
-std::vector<double>
-StkMesh::
-getEdgeCoefficients() const
-{
-  return edgeCoefficients_;
-}
+
 // =============================================================================
 std::vector<stk::mesh::Entity>
 StkMesh::
@@ -835,13 +794,6 @@ getOverlapEdges() const
       edges
       );
   return edges;
-}
-// =============================================================================
-const std::vector<std::tuple<stk::mesh::Entity, stk::mesh::Entity> >
-StkMesh::
-getEdgeNodes() const
-{
-  return edgeData_.edgeNodes;
 }
 // =============================================================================
 double
@@ -888,56 +840,6 @@ getNodeValue(
   return Eigen::Vector3d(stk::mesh::field_data(field, nodeEntity));
 }
 // =============================================================================
-std::shared_ptr<const Tpetra::Map<int,int>>
-StkMesh::
-getNodesMap() const
-{
-#ifndef NDEBUG
-  TEUCHOS_ASSERT(nodesMap_);
-#endif
-  return nodesMap_;
-}
-// =============================================================================
-std::shared_ptr<const Tpetra::Map<int,int>>
-StkMesh::
-getNodesOverlapMap() const
-{
-#ifndef NDEBUG
-  TEUCHOS_ASSERT(nodesOverlapMap_);
-#endif
-  return nodesOverlapMap_;
-}
-// =============================================================================
-std::shared_ptr<const Tpetra::Map<int,int>>
-StkMesh::
-getComplexNonOverlapMap() const
-{
-#ifndef NDEBUG
-  TEUCHOS_ASSERT(complexMap_);
-#endif
-  return complexMap_;
-}
-// =============================================================================
-const Tpetra::Map<int,int>&
-StkMesh::
-getComplexNonOverlapMap2() const
-{
-#ifndef NDEBUG
-  TEUCHOS_ASSERT(complexMap_);
-#endif
-  return *complexMap_;
-}
-// =============================================================================
-std::shared_ptr<const Tpetra::Map<int,int>>
-StkMesh::
-getComplexOverlapMap() const
-{
-#ifndef NDEBUG
-  TEUCHOS_ASSERT(complexOverlapMap_);
-#endif
-  return complexOverlapMap_;
-}
-// =============================================================================
 std::vector<stk::mesh::Entity>
 StkMesh::
 buildOwnedNodes_(const stk::mesh::BulkData & myBulkData) const
@@ -953,13 +855,6 @@ buildOwnedNodes_(const stk::mesh::BulkData & myBulkData) const
       on
       );
   return on;
-}
-// =============================================================================
-std::vector<stk::mesh::Entity>
-StkMesh::
-getOwnedNodes() const
-{
-  return ownedNodes_;
 }
 // =============================================================================
 std::vector<stk::mesh::Entity>
@@ -980,13 +875,6 @@ getOverlapNodes() const
       );
 
   return overlapNodes;
-}
-// =============================================================================
-uint64_t
-StkMesh::
-gid(const stk::mesh::Entity e) const
-{
-  return ioBroker_->bulk_data().identifier(e) - 1;
 }
 // =============================================================================
 const std::vector<Teuchos::Tuple<int,4>>

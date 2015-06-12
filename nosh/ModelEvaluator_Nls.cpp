@@ -147,7 +147,7 @@ Nls::
 createAlteredSpace() const
 {
   auto a = Thyra::createVectorSpace<double>(
-      Teuchos::rcp(mesh_->getComplexNonOverlapMap()), true
+      Teuchos::rcp(mesh_->getComplexNonOverlapMap())
       );
   // Use the Nosh scalar product. We still need to cast, cf.
   // <https://software.sandia.gov/bugzilla/show_bug.cgi?id=6355>.
