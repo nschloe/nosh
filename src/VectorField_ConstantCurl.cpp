@@ -65,7 +65,7 @@ ConstantCurl(
     this->dRotateDTheta_(dRotatedBDThetaCache_, *u_, 0.0);
   }
 
-  edgeCache_ = std::vector<Eigen::Vector3d>(mesh_->getEdgeNodes().size());
+  edgeCache_ = std::vector<Eigen::Vector3d>(mesh_->getMyEdges().size());
 
   return;
 }
@@ -224,7 +224,7 @@ initializeEdgeCache_() const
 #ifndef NDEBUG
   TEUCHOS_ASSERT(mesh_);
 #endif
-  const std::vector<edge> edges = mesh_->getEdgeNodes();
+  const std::vector<edge> edges = mesh_->getMyEdges();
 
   const VectorFieldType & coordsField = mesh_->getNodeField("coordinates");
 

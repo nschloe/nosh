@@ -880,7 +880,7 @@ const std::vector<Teuchos::Tuple<int,2>>
 Mesh::
 buildEdgeGids_() const
 {
-  const std::vector<edge> edges = this->getEdgeNodes();
+  const std::vector<edge> edges = this->getMyEdges();
 
   std::vector<Teuchos::Tuple<int,2>> gic(edges.size());
 
@@ -898,7 +898,7 @@ const std::vector<Teuchos::Tuple<int,4>>
 Mesh::
 buildEdgeGidsComplex_() const
 {
-  const std::vector<edge> edges = this->getEdgeNodes();
+  const std::vector<edge> edges = this->getMyEdges();
 
   std::vector<Teuchos::Tuple<int,4>> gic(edges.size());
 
@@ -1555,17 +1555,16 @@ createEdgeData_()
   size_t numLocalCells = cells.size();
 
   Mesh::EdgesContainer edgeData = {
-    // Local edge ID -> Global node IDs.
+    // Local edge ID -> Local node IDs.
     std::vector<std::tuple<stk::mesh::Entity, stk::mesh::Entity> >(),
     // Local cell ID -> Local edge IDs.
     std::vector<std::vector<int>>(numLocalCells)
     };
 
-  // This std::map keeps track of how nodes and edges are connected.
-  // If  nodeEdges((3,4)) == 17  is true, then the nodes (3,4) are
-  // connected  by edge 17.
-  // Unfortunately, std::tuples can't be compared with '<'. Provide a
-  // function pointer that implements lexicographic comparison.
+  // This std::map keeps track of how nodes and edges are connected. If
+  // `nodeEdges((3,4)) == 17`, then the nodes (3,4) are connected by edge 17.
+  // Unfortunately, std::tuples can't be compared with '<'. Provide a function
+  // pointer that implements lexicographic comparison.
   // See http://www.cplusplus.com/reference/stl/map/map/.
   std::map<std::tuple<stk::mesh::Entity, stk::mesh::Entity>, int> nodesEdge;
 
@@ -1599,8 +1598,8 @@ createEdgeData_()
     // same edge).
     std::sort(nodes.begin(), nodes.end());
 
-    // In a simplex, the edges are exactly the connection between each pair
-    // of nodes. Hence, loop over pairs of nodes.
+    // In a simplex, the edges are exactly the connection between each pair of
+    // nodes. Hence, loop over pairs of nodes.
     unsigned int edgeIndex = 0;
     edge edgeNodes;
     for (size_t e0 = 0; e0 < numLocalNodes; e0++) {
@@ -1697,7 +1696,7 @@ buildGraph() const
 #endif
   auto graph = Tpetra::createCrsGraph(Teuchos::rcp(noMap));
 
-  const std::vector<edge> edges = this->getEdgeNodes();
+  const std::vector<edge> edges = this->getMyEdges();
 
   // Loop over all edges and put entries wherever two nodes are connected.
   // TODO check if we can use LIDs here
@@ -1785,7 +1784,7 @@ buildComplexGraph() const
 #endif
   auto graph = Tpetra::createCrsGraph(Teuchos::rcp(noMap));
 
-  const std::vector<edge> edges = this->getEdgeNodes();
+  const std::vector<edge> edges = this->getMyEdges();
 
   // Loop over all edges and put entries wherever two nodes are connected.
   // TODO check if we can use LIDs here

@@ -111,7 +111,7 @@ refill_(const std::map<std::string, double> & params)
   TEUCHOS_ASSERT(mvp_);
 #endif
 
-  const std::vector<edge> edges = mesh_->getEdgeNodes();
+  const std::vector<edge> edges = mesh_->getMyEdges();
   if (!alphaCacheUpToDate_) {
     this->buildAlphaCache_(edges, mesh_->getEdgeCoefficients());
   }

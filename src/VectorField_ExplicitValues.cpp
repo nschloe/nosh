@@ -37,10 +37,10 @@ ExplicitValues(
     const double mu
     ) :
   mu_(mu),
-  edgeProjectionCache_(mesh.getEdgeNodes().size())
+  edgeProjectionCache_(mesh.getMyEdges().size())
 {
   // Initialize the cache.
-  const std::vector<edge> edges = mesh.getEdgeNodes();
+  const std::vector<edge> edges = mesh.getMyEdges();
 
   const VectorFieldType & coordsField = mesh.getNodeField("coordinates");
 

@@ -129,7 +129,7 @@ fill_()
   TEUCHOS_ASSERT(thickness_);
 #endif
 
-  const std::vector<edge> edges = mesh_->getEdgeNodes();
+  const std::vector<edge> edges = mesh_->getMyEdges();
   if (!alphaCacheUpToDate_) {
     this->buildAlphaCache_(edges, mesh_->getEdgeCoefficients());
   }

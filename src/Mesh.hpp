@@ -69,7 +69,7 @@ private:
     //! Local edge ID -> Global node IDs.
     std::vector<edge> edgeNodes;
     //! Local cell ID -> Local edge IDs.
-    std::vector<std::vector<int> > cellEdges;
+    std::vector<std::vector<int>> cellEdges;
   };
 
 public:
@@ -146,8 +146,8 @@ public:
   std::vector<stk::mesh::Entity>
   getOverlapEdges() const;
 
-  const std::vector<std::tuple<stk::mesh::Entity, stk::mesh::Entity> >
-  getEdgeNodes() const
+  const std::vector<std::tuple<stk::mesh::Entity, stk::mesh::Entity>>
+  getMyEdges() const
   {
     return edgeData_.edgeNodes;
   }
