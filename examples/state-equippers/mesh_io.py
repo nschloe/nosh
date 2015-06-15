@@ -37,6 +37,10 @@ def read(filenames, timestep=None):
             from vtk import vtkUnstructuredGridReader
             reader = vtkUnstructuredGridReader()
             vtk_mesh = _read_vtk_mesh(reader, filename)
+        elif extension == '.xmf':
+            from vtk import vtkXdmfReader
+            reader = vtkXdmfReader()
+            vtk_mesh = _read_vtk_mesh(reader, filename)
         elif extension in [ '.ex2', '.exo', '.e' ]:
             from vtk import vtkExodusIIReader
             reader = vtkExodusIIReader()
@@ -178,6 +182,9 @@ def write(
         from vtk import vtkUnstructuredGridWriter
         writer = vtkUnstructuredGridWriter()
         writer.SetFileTypeToASCII()
+    elif extension == '.xmf': # XDMF format
+        from vtk import vtkXdmfWriter
+        writer = vtkXdmfWriter()
     elif extension in [ '.ex2', '.exo', '.e' ]: # Exodus II format
         from vtk import vtkExodusIIWriter
         writer = vtkExodusIIWriter()
@@ -196,7 +203,7 @@ def write(
 
     writer.SetFileName( filename )
 
-    writer.SetInput( vtk_mesh )
+    writer.SetInputData( vtk_mesh )
 
     writer.Write()
 
