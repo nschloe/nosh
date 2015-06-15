@@ -24,7 +24,7 @@
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_RCPStdSharedPtrConversions.hpp>
 
-#include <Mesh.hpp>
+#include <nosh.hpp>
 
 #include <Teuchos_UnitTestHarness.hpp>
 
@@ -43,17 +43,15 @@ testMesh(
     bool & success
     )
 {
-  auto comm = Teuchos::DefaultComm<int>::getComm();
-
   std::string inputFileName = "data/" + inputFileNameBase + ".e";
 
   // Read the data from the file.
-  Nosh::Mesh mesh(Teuchos::get_shared_ptr(comm), inputFileName, 0);
+  auto mesh = Nosh::read(inputFileName);
 
-  const unsigned int numNodes = mesh.getNumNodes();
+  const unsigned int numNodes = mesh->getNumNodes();
   TEUCHOS_ASSERT_EQUALITY(numNodes, controlNumNodes);
 
-  const auto controlVols = mesh.getControlVolumes();
+  const auto controlVols = mesh->getControlVolumes();
   TEST_FLOATING_EQUALITY(
       controlVols->norm1(),
       controlVolNormOne,

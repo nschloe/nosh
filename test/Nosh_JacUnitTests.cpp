@@ -28,13 +28,7 @@
 #include <Thyra_LinearSolverBuilderBase.hpp>
 #include <Stratimikos_DefaultLinearSolverBuilder.hpp>
 
-#include <Mesh.hpp>
-#include <VectorField_ExplicitValues.hpp>
-#include <ScalarField_Constant.hpp>
-#include <ParameterMatrix_Keo.hpp>
-#include <ParameterMatrix_DKeoDP.hpp>
-#include <JacobianOperator.hpp>
-#include <ModelEvaluator_Nls.hpp>
+#include <nosh.hpp>
 
 #include <Teuchos_UnitTestHarness.hpp>
 
@@ -53,16 +47,10 @@ void
       bool & success
       )
 {
-  auto comm = Teuchos::DefaultComm<int>::getComm();
-
   const std::string inputFileName = "data/" + inputFileNameBase + ".e";
 
   // Read the data from the file.
-  auto mesh = std::make_shared<Nosh::Mesh>(
-      Teuchos::get_shared_ptr(comm),
-      inputFileName,
-      0
-      );
+  auto mesh = Nosh::read(inputFileName);
 
   // Cast the data into something more accessible.
   auto psi = mesh->createComplexVector("psi");

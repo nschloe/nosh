@@ -25,7 +25,7 @@
 #include <Teuchos_RCPStdSharedPtrConversions.hpp>
 #include <Tpetra_Vector.hpp>
 
-#include <Mesh.hpp>
+#include <nosh.hpp>
 
 #include <Teuchos_UnitTestHarness.hpp>
 
@@ -43,17 +43,14 @@ testKeo(
     bool & success
     )
 {
-  Teuchos::RCP<const Teuchos::Comm<int>> comm =
-    Teuchos::DefaultComm<int>::getComm();
-
   std::string inputFileName = "data/" + inputFileNameBase + ".e";
 
   // Read the data from the file.
-  Nosh::Mesh mesh(Teuchos::get_shared_ptr(comm), inputFileName, 0);
+  auto mesh = Nosh::read(inputFileName);
 
   // Cast the data into something more accessible.
-  const auto psi = mesh.createComplexVector("psi");
-  const auto mvpValues = mesh.createMultiVector("A");
+  const auto psi = mesh->createComplexVector("psi");
+  const auto mvpValues = mesh->createMultiVector("A");
 
   // Check psi.
   TEST_FLOATING_EQUALITY(

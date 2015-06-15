@@ -25,7 +25,7 @@
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_RCPStdSharedPtrConversions.hpp>
 
-#include "nosh/Mesh.hpp"
+#include <nosh.hpp>
 
 #include <Teuchos_UnitTestHarness.hpp>
 
@@ -41,19 +41,10 @@ testCache(const std::string & inputFileNameBase,
   // Create MPI communicator
   Teuchos::GlobalMPISession session(&argc, &argv, NULL);
 
-  Teuchos::RCP<const Teuchos::Comm<int>> comm =
-    Teuchos::DefaultComm<int>::getComm();
-
   std::string inputFileName = "data/" + inputFileNameBase + ".e";
-  // =========================================================================
+
   // Read the data from the file.
-  Teuchos::ParameterList data;
-  Nosh::Helpers::MeshRead(
-      Teuchos::get_shared_ptr(comm),
-      inputFileName,
-      0,
-      data
-      );
+  auto mesh = Nosh::read(inputFileName);
 
   // Cast the data into something more accessible.
   std::shared_ptr<Nosh::Mesh> & mesh = data.get("mesh", std::shared_ptr<Nosh::Mesh>());

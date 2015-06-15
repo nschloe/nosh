@@ -129,7 +129,9 @@ int main(int argc, char *argv[])
     //psi->Random();
 
     // Set the output directory for later plotting with this.
-    mesh->openOutputChannel(outputDirectory, "solution");
+    std::stringstream outputFile;
+    outputFile << outputDirectory << "/solution.e";
+    mesh->openOutputChannel(outputFile.str());
 
     // Create a parameter map from the initial parameter values.
     Teuchos::ParameterList initialParameterValues =

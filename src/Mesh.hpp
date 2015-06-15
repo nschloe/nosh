@@ -21,40 +21,40 @@
 #define NOSH_MESH_HPP
 // =============================================================================
 // includes
+#include <memory>
 #include <string>
 #include <vector>
 #include <tuple>
-#include <set>
 
 #include <Teuchos_RCP.hpp>
-#include <Teuchos_DefaultComm.hpp>
-#include <Teuchos_RCPStdSharedPtrConversions.hpp>
-#ifdef NOSH_TEUCHOS_TIME_MONITOR
-#include <Teuchos_Time.hpp>
-#endif
+//#ifdef NOSH_TEUCHOS_TIME_MONITOR
+//#include <Teuchos_Time.hpp>
+//#endif
 #include <Tpetra_Vector.hpp>
 #include <Tpetra_CrsGraph.hpp>
 
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/CoordinateSystems.hpp>
-#include <stk_mesh/base/MetaData.hpp>
+//#include <stk_mesh/base/MetaData.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
+#include <stk_mesh/base/Field.hpp>
+#include <stk_mesh/base/FieldTraits.hpp>
 
 #include <Eigen/Dense>
 
-// forward declarations
-namespace stk
-{
-namespace mesh
-{
-class BulkData;
-}
-} // namespace stk
-
-// typedefs
+//// forward declarations
+//namespace stk
+//{
+//namespace mesh
+//{
+//class BulkData;
+//}
+//} // namespace stk
+//
+//// typedefs
 typedef stk::mesh::Field<double, stk::mesh::Cartesian> VectorFieldType;
 typedef stk::mesh::Field<double> ScalarFieldType;
-typedef stk::mesh::Field<int> IntScalarFieldType;
+//typedef stk::mesh::Field<int> IntScalarFieldType;
 typedef std::tuple<stk::mesh::Entity, stk::mesh::Entity> edge;
 
 namespace Nosh
@@ -75,8 +75,7 @@ private:
 public:
   Mesh(
       const std::shared_ptr<const Teuchos::Comm<int>> & comm,
-      const std::string &fileName,
-      const int index
+      const std::shared_ptr<stk::io::StkMeshIoBroker> & broker
       );
 
   virtual
@@ -89,12 +88,10 @@ public:
   };
 
   void
-  openOutputChannel(const std::string &outputDir,
-                    const std::string &fileBaseName
-                   );
+  openFile(const std::string &outputFile);
 
   void
-  write(const double time) const;
+  write(const double time = 0.0) const;
 
   std::shared_ptr<Tpetra::Vector<double,int,int>>
   createVector(const std::string & fieldName) const;
@@ -105,39 +102,16 @@ public:
   std::shared_ptr<Tpetra::Vector<double,int,int>>
   createComplexVector(const std::string & fieldName) const;
 
-  void
-  insert(const Tpetra::Vector<double,int,int> & psi,
-         const std::string & fieldName
-         ) const;
-
   unsigned int
   getNumNodes() const
   {
     return nodesMap_->getGlobalNumElements();
   }
 
-  std::shared_ptr<const Tpetra::Vector<double,int,int>>
-  getControlVolumes() const
-  {
-    return controlVolumes_;
-  }
-
-  double
-  getDomainVolume() const
-  {
-    return controlVolumes_->norm1();
-  }
-
   std::shared_ptr<const Teuchos::Comm<int>>
   getComm() const
   {
     return comm_;
-  }
-
-  std::vector<double>
-  getEdgeCoefficients() const
-  {
-    return edgeCoefficients_;
   }
 
   std::vector<stk::mesh::Entity>
@@ -160,9 +134,6 @@ public:
 
   std::vector<stk::mesh::Entity>
   getOverlapNodes() const;
-
-//const Eigen::Vector3d
-//getNodeCoordinatesNonconst(stk::mesh::Entity nodeEntity) const;
 
   std::shared_ptr<const Tpetra::Map<int,int>>
   getMap() const
@@ -200,9 +171,6 @@ public:
     return complexOverlapMap_;
   }
 
-  unsigned int
-  getNumEdgesPerCell(unsigned int cellDimension) const;
-
   const VectorFieldType &
   getNodeField(const std::string & fieldName) const;
 
@@ -210,7 +178,10 @@ public:
   getNodeValue(
       const VectorFieldType & field,
       stk::mesh::Entity nodeEntity
-      ) const;
+      ) const
+  {
+    return Eigen::Vector3d(stk::mesh::field_data(field, nodeEntity));
+  };
 
   double
   getScalarFieldNonconst(
@@ -230,32 +201,73 @@ public:
   Teuchos::RCP<const Tpetra::CrsGraph<int,int>>
   buildComplexGraph() const;
 
+  void
+  insertVector(
+      const Tpetra::Vector<double,int,int> &x,
+      const std::string & fieldName
+      ) const;
+
+  void
+  insertComplexVector(
+      const Tpetra::Vector<double,int,int> &psi,
+      const std::string & fieldName
+      ) const;
+
+public:
+  virtual
+  std::shared_ptr<const Tpetra::Vector<double,int,int>>
+  getControlVolumes() const = 0;
+
+  virtual
+  double
+  getDomainVolume() const = 0;
+
+  virtual
+  std::vector<double>
+  getEdgeCoefficients() const = 0;
+
 protected:
+
+  Eigen::Vector3d
+  computeTriangleCircumcenter_(
+      const std::vector<Eigen::Vector3d> &nodes
+      ) const;
+
+  Eigen::Vector3d
+  computeTriangleCircumcenter_(
+      const Eigen::Vector3d &node0,
+      const Eigen::Vector3d &node1,
+      const Eigen::Vector3d &node2
+      ) const;
+
 private:
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   const std::shared_ptr<Teuchos::Time> computeEdgeCoefficientsTime_;
   const std::shared_ptr<Teuchos::Time> writeTime_;
 #endif
 
+protected:
   const std::shared_ptr<const Teuchos::Comm<int>> comm_;
 
   // Apparently, process_output_request is not const. Make
   // the ioBroker_ mutable so our write() can be const.
   const std::shared_ptr<stk::io::StkMeshIoBroker> ioBroker_;
 
+private:
   const std::vector<stk::mesh::Entity> ownedNodes_;
 
+protected:
   const std::shared_ptr<const Tpetra::Map<int,int>> nodesMap_;
   const std::shared_ptr<const Tpetra::Map<int,int>> nodesOverlapMap_;
+
+private:
   const std::shared_ptr<const Tpetra::Map<int,int>> complexMap_;
   const std::shared_ptr<const Tpetra::Map<int,int>> complexOverlapMap_;
 
-  const std::shared_ptr<const Tpetra::Vector<double,int,int>> controlVolumes_;
-
+protected:
   const EdgesContainer edgeData_;
 
-  const std::vector<double> edgeCoefficients_;
-
+private:
   int outputChannel_;
 
   double time_;
@@ -265,7 +277,6 @@ public:
   const std::vector<Teuchos::Tuple<int,4>> edgeGidsComplex;
 
 private:
-
   const std::vector<Teuchos::Tuple<int,2>>
   buildEdgeGids_() const;
 
@@ -277,12 +288,6 @@ private:
       const std::string &fileName,
       const int index
       );
-
-  void
-  computeControlVolumesTri_(Tpetra::Vector<double,int,int> & cvOverlap) const;
-
-  void
-  computeControlVolumesTet_(Tpetra::Vector<double,int,int> & cvOverlap) const;
 
   std::shared_ptr<Tpetra::Vector<double,int,int>>
   complexfield2vector_(
@@ -299,21 +304,11 @@ private:
       const int numComponents
       ) const;
 
-  void
-  mergeComplexVector_(
-      const Tpetra::Vector<double,int,int> &psi,
-      const std::string & fieldName
-      ) const;
-
   std::vector<stk::mesh::Entity>
   buildOwnedNodes_(const stk::mesh::BulkData & myBulkData) const;
 
   std::vector<double>
   computeEdgeCoefficients_() const;
-
-  //! Compute the volume of the (Voronoi) control cells for each point.
-  std::shared_ptr<Tpetra::Vector<double,int,int>>
-  computeControlVolumes_() const;
 
   std::shared_ptr<const Tpetra::Map<int,int>>
   createEntitiesMap_(const std::vector<stk::mesh::Entity> &entityList) const;
@@ -321,76 +316,10 @@ private:
   std::shared_ptr<const Tpetra::Map<int,int>>
   createComplexMap_(const std::vector<stk::mesh::Entity> &nodeList) const;
 
-  double
-  computeCovolume2d_(
-      const Eigen::Vector3d &cc,
-      const Eigen::Vector3d &x0,
-      const Eigen::Vector3d &x1,
-      const Eigen::Vector3d &other0
-      ) const;
-
-  double
-  computeCovolume3d_(
-      const Eigen::Vector3d &cc,
-      const Eigen::Vector3d &x0,
-      const Eigen::Vector3d &x1,
-      const Eigen::Vector3d &other0,
-      const Eigen::Vector3d &other1
-      ) const;
-
-  unsigned int
-  getOtherIndex_(unsigned int e0, unsigned int e1) const;
-
-  std::set<unsigned int>
-  getOtherIndices_(unsigned int e0, unsigned int e1) const;
-
-  double
-  getTriangleArea_(const Eigen::Vector3d &edge0,
-                   const Eigen::Vector3d &edge1
-                  ) const;
-
-  double
-  getTetrahedronVolume_(
-      const Eigen::Vector3d &edge0,
-      const Eigen::Vector3d &edge1,
-      const Eigen::Vector3d &edge2
-      ) const;
-
-  Eigen::Vector3d
-  computeTriangleCircumcenter_(
-      const Eigen::Vector3d &node0,
-      const Eigen::Vector3d &node1,
-      const Eigen::Vector3d &node2
-      ) const;
-
-  Eigen::Vector3d
-  computeTriangleCircumcenter_(
-    const std::vector<Eigen::Vector3d> &nodes
-    ) const;
-
-  Eigen::Vector3d
-  computeTetrahedronCircumcenter_(
-    const std::vector<Eigen::Vector3d> &nodes
-    ) const;
-
-  Eigen::VectorXd
-  getEdgeCoefficientsNumerically_(
-    const std::vector<Eigen::Vector3d> edges
-    ) const;
-
-  double
-  norm2squared_(const Eigen::Vector3d &x) const;
-
   EdgesContainer
   createEdgeData_();
 };
 // -----------------------------------------------------------------------------
-// Helper function
-Mesh
-read(
-    const std::string & fileName,
-    const int index = 0
-    );
 
 } // namespace Nosh
 // =============================================================================
