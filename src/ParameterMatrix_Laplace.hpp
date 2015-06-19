@@ -76,7 +76,7 @@ private:
 private:
   const std::shared_ptr<const Nosh::Mesh> mesh_;
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
-  const std::shared_ptr<Teuchos::Time> fillTime_;
+  const Teuchos::RCP<Teuchos::Time> fillTime_;
 #endif
   const std::shared_ptr<const Nosh::ScalarField::Virtual> thickness_;
 

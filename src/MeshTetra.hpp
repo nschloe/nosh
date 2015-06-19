@@ -143,6 +143,12 @@ private:
       ) const;
 
 private:
+#ifdef NOSH_TEUCHOS_TIME_MONITOR
+  const Teuchos::RCP<Teuchos::Time> computeEdgeCoefficientsTime_;
+  const Teuchos::RCP<Teuchos::Time> computeControlVolumesTime_;
+  const Teuchos::RCP<Teuchos::Time> computeBoundaryNodesTime_;
+#endif
+
   const std::shared_ptr<const Tpetra::Vector<double,int,int>> controlVolumes_;
   const std::vector<double> edgeCoefficients_;
   const std::vector<int> boundaryNodes_;

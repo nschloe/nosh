@@ -72,11 +72,9 @@ Mesh(
     const std::shared_ptr<stk::io::StkMeshIoBroker> & broker
     ) :
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
-  computeEdgeCoefficientsTime_(
-      Teuchos::TimeMonitor::getNewTimer(
-        "Nosh: Mesh::computeEdgeCoefficients"
-        )),
   writeTime_(Teuchos::TimeMonitor::getNewTimer("Nosh: Mesh::write")),
+  getComplexTime_(Teuchos::TimeMonitor::getNewTimer("Nosh: Mesh::getComplexVector")),
+  getMultiTime_(Teuchos::TimeMonitor::getNewTimer("Nosh: Mesh::getMultiVector")),
 #endif
   comm(_comm),
   ioBroker_(broker),
@@ -320,6 +318,9 @@ std::shared_ptr<Tpetra::MultiVector<double,int,int>>
 Mesh::
 getMultiVector(const std::string & fieldName) const
 {
+#ifdef NOSH_TEUCHOS_TIME_MONITOR
+  Teuchos::TimeMonitor tm(*getMultiTime_);
+#endif
 #ifndef NDEBUG
   TEUCHOS_ASSERT(ioBroker_);
 #endif
@@ -344,6 +345,9 @@ std::shared_ptr<Tpetra::Vector<double,int,int>>
 Mesh::
 getComplexVector(const std::string & fieldName) const
 {
+#ifdef NOSH_TEUCHOS_TIME_MONITOR
+  Teuchos::TimeMonitor tm(*getComplexTime_);
+#endif
 #ifndef NDEBUG
   TEUCHOS_ASSERT(ioBroker_);
 #endif

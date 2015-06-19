@@ -51,6 +51,10 @@
 //#include <Ioss_IOFactory.h>
 //#include <Ioss_Region.h>
 
+#ifdef NOSH_TEUCHOS_TIME_MONITOR
+#include <Teuchos_Time.hpp>
+#endif
+
 //#ifdef HAVE_MPI
 //// Rebalance
 //#include <stk_rebalance/Rebalance.hpp>
@@ -74,6 +78,12 @@ read(
     const int index
     )
 {
+#ifdef NOSH_TEUCHOS_TIME_MONITOR
+  const auto fillTime =
+    Teuchos::TimeMonitor::getNewTimer("Nosh: read()");
+  Teuchos::TimeMonitor tm(*fillTime);
+#endif
+
   auto comm = Teuchos::get_shared_ptr(Teuchos::DefaultComm<int>::getComm());
 
   auto ioBroker = std::make_shared<stk::io::StkMeshIoBroker>(

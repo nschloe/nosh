@@ -20,44 +20,8 @@
 #ifndef NOSH_MESHREADER_HPP
 #define NOSH_MESHREADER_HPP
 // =============================================================================
-//// includes
-//#include <string>
-//#include <vector>
-//#include <tuple>
-//#include <set>
+// includes
 #include <memory>
-//
-//#include <Teuchos_RCP.hpp>
-//#include <Teuchos_DefaultComm.hpp>
-//#include <Teuchos_RCPStdSharedPtrConversions.hpp>
-//#ifdef NOSH_TEUCHOS_TIME_MONITOR
-//#include <Teuchos_Time.hpp>
-//#endif
-//#include <Tpetra_Vector.hpp>
-//#include <Tpetra_CrsGraph.hpp>
-//
-//#include <stk_mesh/base/Entity.hpp>
-//#include <stk_mesh/base/CoordinateSystems.hpp>
-//#include <stk_mesh/base/MetaData.hpp>
-//#include <stk_io/StkMeshIoBroker.hpp>
-//#include <stk_mesh/base/FieldTraits.hpp>
-//
-//#include <Eigen/Dense>
-//
-//// forward declarations
-//namespace stk
-//{
-//namespace mesh
-//{
-//class BulkData;
-//}
-//} // namespace stk
-//
-//// typedefs
-//typedef stk::mesh::Field<double, stk::mesh::Cartesian> VectorFieldType;
-//typedef stk::mesh::Field<double> ScalarFieldType;
-//typedef stk::mesh::Field<int> IntScalarFieldType;
-//typedef std::tuple<stk::mesh::Entity, stk::mesh::Entity> edge;
 
 #include "Mesh.hpp"
 

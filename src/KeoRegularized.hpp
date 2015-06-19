@@ -111,8 +111,8 @@ private:
   Teuchos::RCP<MueLu::TpetraOperator<double,int,int>> MueluPrec_;
 
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
-  const std::shared_ptr<Teuchos::Time> timerRebuild0_;
-  const std::shared_ptr<Teuchos::Time> timerRebuild1_;
+  const Teuchos::RCP<Teuchos::Time> timerRebuild0_;
+  const Teuchos::RCP<Teuchos::Time> timerRebuild1_;
 #endif
 
   const int numCycles_;

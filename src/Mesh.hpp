@@ -215,8 +215,9 @@ protected:
 
 private:
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
-  const std::shared_ptr<Teuchos::Time> computeEdgeCoefficientsTime_;
-  const std::shared_ptr<Teuchos::Time> writeTime_;
+  const Teuchos::RCP<Teuchos::Time> writeTime_;
+  const Teuchos::RCP<Teuchos::Time> getComplexTime_;
+  const Teuchos::RCP<Teuchos::Time> getMultiTime_;
 #endif
 
 public:

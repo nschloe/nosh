@@ -186,11 +186,11 @@ private:
   const std::shared_ptr<Nosh::ParameterMatrix::DKeoDP> dKeoDP_;
 
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
-  const std::shared_ptr<Teuchos::Time> evalModelTime_;
-  const std::shared_ptr<Teuchos::Time> computeFTime_;
-  const std::shared_ptr<Teuchos::Time> computedFdpTime_;
-  const std::shared_ptr<Teuchos::Time> fillJacobianTime_;
-  const std::shared_ptr<Teuchos::Time> fillPreconditionerTime_;
+  const Teuchos::RCP<Teuchos::Time> evalModelTime_;
+  const Teuchos::RCP<Teuchos::Time> computeFTime_;
+  const Teuchos::RCP<Teuchos::Time> computedFdpTime_;
+  const Teuchos::RCP<Teuchos::Time> fillJacobianTime_;
+  const Teuchos::RCP<Teuchos::Time> fillPreconditionerTime_;
 #endif
 
   Teuchos::RCP<Teuchos::FancyOStream> out_;

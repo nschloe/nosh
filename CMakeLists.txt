@@ -47,10 +47,10 @@ ENDIF()
 
 ENABLE_TESTING()
 
-#IF(NOT ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
-#    # Add support for timing for non-debug builds.
-#    ADD_DEFINITIONS(-DNOSH_TEUCHOS_TIME_MONITOR)
-#ENDIF()
+IF(${TIME_MONITOR})
+    # Add support for timing for non-debug builds.
+    ADD_DEFINITIONS(-DNOSH_TEUCHOS_TIME_MONITOR)
+ENDIF()
 
 IF(CMAKE_COMPILER_IS_GNUCXX)
   #SET(CMAKE_CXX_FLAGS_DEBUG "-Og -g -ggdb -Wall -pedantic -fbounds-check -Wextra -Wstrict-null-sentinel -Wshadow -Woverloaded-virtual -Weffc++ -Wsign-compare -ansi -std=c++11" )

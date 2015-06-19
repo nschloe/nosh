@@ -35,6 +35,20 @@ MeshTetra(
     const std::shared_ptr<stk::io::StkMeshIoBroker> & broker
     ) :
   Mesh(_comm, broker),
+#ifdef NOSH_TEUCHOS_TIME_MONITOR
+  computeEdgeCoefficientsTime_(
+      Teuchos::TimeMonitor::getNewTimer(
+        "Nosh: MeshTetra::computeEdgeCoefficients"
+        )),
+  computeControlVolumesTime_(
+      Teuchos::TimeMonitor::getNewTimer(
+        "Nosh: MeshTetra::computeControlVolumes"
+        )),
+  computeBoundaryNodesTime_(
+      Teuchos::TimeMonitor::getNewTimer(
+        "Nosh: MeshTetra::computeBoundaryNodes"
+        )),
+#endif
   controlVolumes_(this->computeControlVolumes_()),
   edgeCoefficients_(this->computeEdgeCoefficients_()),
   boundaryNodes_(this->computeBoundaryNodes_())
@@ -51,7 +65,6 @@ MeshTetra::
 computeEdgeCoefficients_() const
 {
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
-  // timer for this routine
   Teuchos::TimeMonitor tm(*computeEdgeCoefficientsTime_);
 #endif
 
@@ -145,6 +158,9 @@ std::shared_ptr<Tpetra::Vector<double,int,int>>
 MeshTetra::
 computeControlVolumes_() const
 {
+#ifdef NOSH_TEUCHOS_TIME_MONITOR
+  Teuchos::TimeMonitor tm(*computeControlVolumesTime_);
+#endif
 #ifndef NDEBUG
   TEUCHOS_ASSERT(nodesMap_);
   TEUCHOS_ASSERT(nodesOverlapMap_);
@@ -404,6 +420,9 @@ std::vector<int>
 MeshTetra::
 computeBoundaryNodes_() const
 {
+#ifdef NOSH_TEUCHOS_TIME_MONITOR
+  Teuchos::TimeMonitor tm(*computeBoundaryNodesTime_);
+#endif
   //TEUCHOS_ASSERT(false);
   return std::vector<int>();
 }
