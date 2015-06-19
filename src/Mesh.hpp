@@ -42,16 +42,7 @@
 
 #include <Eigen/Dense>
 
-//// forward declarations
-//namespace stk
-//{
-//namespace mesh
-//{
-//class BulkData;
-//}
-//} // namespace stk
-//
-//// typedefs
+// typedefs
 typedef stk::mesh::Field<double, stk::mesh::Cartesian> VectorFieldType;
 typedef stk::mesh::Field<double> ScalarFieldType;
 //typedef stk::mesh::Field<int> IntScalarFieldType;
@@ -94,25 +85,13 @@ public:
   write(const double time = 0.0) const;
 
   std::shared_ptr<Tpetra::Vector<double,int,int>>
-  createVector(const std::string & fieldName) const;
+  getVector(const std::string & fieldName) const;
 
   std::shared_ptr<Tpetra::MultiVector<double,int,int>>
-  createMultiVector(const std::string & fieldName) const;
+  getMultiVector(const std::string & fieldName) const;
 
   std::shared_ptr<Tpetra::Vector<double,int,int>>
-  createComplexVector(const std::string & fieldName) const;
-
-  unsigned int
-  getNumNodes() const
-  {
-    return nodesMap_->getGlobalNumElements();
-  }
-
-  std::shared_ptr<const Teuchos::Comm<int>>
-  getComm() const
-  {
-    return comm_;
-  }
+  getComplexVector(const std::string & fieldName) const;
 
   std::vector<stk::mesh::Entity>
   getOwnedCells() const;
@@ -183,12 +162,6 @@ public:
     return Eigen::Vector3d(stk::mesh::field_data(field, nodeEntity));
   };
 
-  double
-  getScalarFieldNonconst(
-      stk::mesh::Entity nodeEntity,
-      const std::string & fieldName
-      ) const;
-
   uint64_t
   gid(const stk::mesh::Entity e) const
   {
@@ -219,12 +192,12 @@ public:
   getControlVolumes() const = 0;
 
   virtual
-  double
-  getDomainVolume() const = 0;
-
-  virtual
   std::vector<double>
   getEdgeCoefficients() const = 0;
+
+  virtual
+  std::vector<int>
+  getBoundaryNodes() const = 0;
 
 protected:
 
@@ -246,9 +219,10 @@ private:
   const std::shared_ptr<Teuchos::Time> writeTime_;
 #endif
 
-protected:
-  const std::shared_ptr<const Teuchos::Comm<int>> comm_;
+public:
+  const std::shared_ptr<const Teuchos::Comm<int>> comm;
 
+protected:
   // Apparently, process_output_request is not const. Make
   // the ioBroker_ mutable so our write() can be const.
   const std::shared_ptr<stk::io::StkMeshIoBroker> ioBroker_;

@@ -68,7 +68,7 @@ namespace Nosh
 // =============================================================================
 Mesh::
 Mesh(
-    const std::shared_ptr<const Teuchos::Comm<int>> & comm,
+    const std::shared_ptr<const Teuchos::Comm<int>> & _comm,
     const std::shared_ptr<stk::io::StkMeshIoBroker> & broker
     ) :
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
@@ -78,7 +78,7 @@ Mesh(
         )),
   writeTime_(Teuchos::TimeMonitor::getNewTimer("Nosh: Mesh::write")),
 #endif
-  comm_(comm),
+  comm(_comm),
   ioBroker_(broker),
   ownedNodes_(this->buildOwnedNodes_(ioBroker_->bulk_data())),
   nodesMap_(this->createEntitiesMap_(ownedNodes_)),
@@ -296,7 +296,7 @@ write(const double time) const
 // =============================================================================
 std::shared_ptr<Tpetra::Vector<double,int,int>>
 Mesh::
-createVector(const std::string & fieldName) const
+getVector(const std::string & fieldName) const
 {
 #ifndef NDEBUG
   TEUCHOS_ASSERT(ioBroker_);
@@ -318,7 +318,7 @@ createVector(const std::string & fieldName) const
 // =============================================================================
 std::shared_ptr<Tpetra::MultiVector<double,int,int>>
 Mesh::
-createMultiVector(const std::string & fieldName) const
+getMultiVector(const std::string & fieldName) const
 {
 #ifndef NDEBUG
   TEUCHOS_ASSERT(ioBroker_);
@@ -342,7 +342,7 @@ createMultiVector(const std::string & fieldName) const
 // =============================================================================
 std::shared_ptr<Tpetra::Vector<double,int,int>>
 Mesh::
-createComplexVector(const std::string & fieldName) const
+getComplexVector(const std::string & fieldName) const
 {
 #ifndef NDEBUG
   TEUCHOS_ASSERT(ioBroker_);
@@ -539,24 +539,6 @@ getOverlapEdges() const
   return edges;
 }
 // =============================================================================
-double
-Mesh::
-getScalarFieldNonconst(
-    stk::mesh::Entity nodeEntity,
-    const std::string & fieldName
-    ) const
-{
-  const ScalarFieldType * const field =
-    ioBroker_->bulk_data().mesh_meta_data().get_field<ScalarFieldType>(
-        stk::topology::NODE_RANK,
-        fieldName
-        );
-#ifndef NDEBUG
-  TEUCHOS_ASSERT(field != NULL);
-#endif
-  return *stk::mesh::field_data(*field, nodeEntity);
-}
-// =============================================================================
 const VectorFieldType &
 Mesh::
 getNodeField(const std::string & fieldName) const {
@@ -565,12 +547,10 @@ getNodeField(const std::string & fieldName) const {
         stk::topology::NODE_RANK,
         fieldName
         );
-  if (field == NULL ) {
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(
-        true,
-        "Invalid field name \"" << fieldName << "\"."
-        );
-  }
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(
+      field == NULL,
+      "Invalid field name \"" << fieldName << "\"."
+      );
   return *field;
 }
 // =============================================================================
@@ -658,7 +638,7 @@ createEntitiesMap_(const std::vector<stk::mesh::Entity> &entityList) const
   }
 
   return std::make_shared<Tpetra::Map<int,int>>(
-      -1, Teuchos::ArrayView<int>(gids), 0, Teuchos::rcp(comm_)
+      -1, Teuchos::ArrayView<int>(gids), 0, Teuchos::rcp(this->comm)
       );
 }
 // =============================================================================
@@ -676,7 +656,7 @@ createComplexMap_(const std::vector<stk::mesh::Entity> &nodeList) const
   }
 
   return std::make_shared<Tpetra::Map<int,int>>(
-      -1, Teuchos::ArrayView<int>(gids), 0, Teuchos::rcp(comm_)
+      -1, Teuchos::ArrayView<int>(gids), 0, Teuchos::rcp(this->comm)
       );
 }
 // =============================================================================

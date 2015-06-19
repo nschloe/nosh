@@ -31,12 +31,13 @@ namespace Nosh
 // =============================================================================
 MeshTetra::
 MeshTetra(
-    const std::shared_ptr<const Teuchos::Comm<int>> & comm,
+    const std::shared_ptr<const Teuchos::Comm<int>> & _comm,
     const std::shared_ptr<stk::io::StkMeshIoBroker> & broker
     ) :
-  Mesh(comm, broker),
+  Mesh(_comm, broker),
   controlVolumes_(this->computeControlVolumes_()),
-  edgeCoefficients_(this->computeEdgeCoefficients_())
+  edgeCoefficients_(this->computeEdgeCoefficients_()),
+  boundaryNodes_(this->computeBoundaryNodes_())
 {
 }
 // =============================================================================
@@ -45,9 +46,50 @@ MeshTetra::
 {
 }
 // =============================================================================
+std::vector<double>
+MeshTetra::
+computeEdgeCoefficients_() const
+{
+#ifdef NOSH_TEUCHOS_TIME_MONITOR
+  // timer for this routine
+  Teuchos::TimeMonitor tm(*computeEdgeCoefficientsTime_);
+#endif
+
+  std::vector<stk::mesh::Entity> cells = this->getOwnedCells();
+  unsigned int numCells = cells.size();
+
+  auto numEdges = edgeData_.edgeNodes.size();
+
+  std::vector<double> edgeCoefficients(numEdges);
+
+  const VectorFieldType & coordsField = getNodeField("coordinates");
+
+  // Calculate the contributions edge by edge.
+  for (unsigned int k = 0; k < numCells; k++) {
+    // Get edge coordinates.
+    size_t numLocalEdges = edgeData_.cellEdges[k].size();
+    std::vector<Eigen::Vector3d> localEdgeCoords(numLocalEdges);
+    for (size_t i = 0; i < numLocalEdges; i++) {
+      const edge & e = edgeData_.edgeNodes[edgeData_.cellEdges[k][i]];
+      localEdgeCoords[i] =
+        this->getNodeValue(coordsField, std::get<1>(e))
+        - this->getNodeValue(coordsField, std::get<0>(e));
+    }
+
+    auto edgeCoeffs = getEdgeCoefficientsCell_(localEdgeCoords);
+
+    // Fill the edge coefficients into the vector.
+    for (size_t i = 0; i < numLocalEdges; i++) {
+      edgeCoefficients[edgeData_.cellEdges[k][i]] += edgeCoeffs[i];
+    }
+  }
+
+  return edgeCoefficients;
+}
+// =============================================================================
 Eigen::VectorXd
 MeshTetra::
-getEdgeCoefficientsNumerically_(
+getEdgeCoefficientsCell_(
   const std::vector<Eigen::Vector3d> edges
   ) const
 {
@@ -117,17 +159,6 @@ computeControlVolumes_() const
   // average thickness.
   Tpetra::Vector<double,int,int> cvOverlap(Teuchos::rcp(nodesOverlapMap_));
 
-  // Determine the kind of mesh by the first cell on the first process
-  int nodesPerCell;
-  if (comm_->getRank() == 0) {
-    std::vector<stk::mesh::Entity> cells = this->getOwnedCells();
-#ifndef NDEBUG
-    TEUCHOS_ASSERT_INEQUALITY(cells.size(), >, 0);
-#endif
-    nodesPerCell = ioBroker_->bulk_data().num_nodes(cells[0]);
-  }
-  Teuchos::broadcast(*comm_, 0, 1, &nodesPerCell);
-
   this->computeControlVolumesT_(cvOverlap);
 
   // Export control volumes to a non-overlapping map, and sum the entries.
@@ -168,8 +199,7 @@ computeControlVolumesT_(Tpetra::Vector<double,int,int> & cvOverlap) const
     }
 
     // compute the circumcenter of the cell
-    const Eigen::Vector3d cc =
-      this->computeTetrahedronCircumcenter_(localNodeCoords);
+    const auto cc = this->computeTetrahedronCircumcenter_(localNodeCoords);
 
     // Iterate over the edges.
     // As true edge entities are not available here, loop over all pairs of
@@ -370,47 +400,12 @@ computeTetrahedronCircumcenter_(
     + gamma * relNodes[0].cross(relNodes[1]);
 }
 // =============================================================================
-std::vector<double>
+std::vector<int>
 MeshTetra::
-computeEdgeCoefficients_() const
+computeBoundaryNodes_() const
 {
-#ifdef NOSH_TEUCHOS_TIME_MONITOR
-  // timer for this routine
-  Teuchos::TimeMonitor tm(*computeEdgeCoefficientsTime_);
-#endif
-
-  std::vector<stk::mesh::Entity> cells = this->getOwnedCells();
-  unsigned int numCells = cells.size();
-
-  auto numEdges = edgeData_.edgeNodes.size();
-
-  std::vector<double> edgeCoefficients(numEdges);
-
-  const VectorFieldType & coordsField = getNodeField("coordinates");
-
-  // Calculate the contributions edge by edge.
-  for (unsigned int k = 0; k < numCells; k++) {
-    // Get edge coordinates.
-    size_t numLocalEdges = edgeData_.cellEdges[k].size();
-    std::vector<Eigen::Vector3d> localEdgeCoords(numLocalEdges);
-    for (size_t i = 0; i < numLocalEdges; i++) {
-      const edge & e = edgeData_.edgeNodes[edgeData_.cellEdges[k][i]];
-      localEdgeCoords[i] =
-        this->getNodeValue(coordsField, std::get<1>(e))
-        - this->getNodeValue(coordsField, std::get<0>(e));
-    }
-
-    Eigen::VectorXd edgeCoeffs =
-      getEdgeCoefficientsNumerically_(localEdgeCoords);
-
-    // Fill the edge coefficients into the vector.
-    for (size_t i = 0; i < numLocalEdges; i++) {
-      edgeCoefficients[edgeData_.cellEdges[k][i]] += edgeCoeffs[i];
-    }
-  }
-
-  return edgeCoefficients;
+  //TEUCHOS_ASSERT(false);
+  return std::vector<int>();
 }
 // =============================================================================
-
 }  // namespace Nosh

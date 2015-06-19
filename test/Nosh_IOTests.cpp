@@ -43,14 +43,18 @@ testKeo(
     bool & success
     )
 {
-  std::string inputFileName = "data/" + inputFileNameBase + ".e";
+  //std::string inputFileName = "data/" + inputFileNameBase + ".xmf";
+  //Nosh::readXdmf(inputFileName);
 
   // Read the data from the file.
+  std::string inputFileName = "data/" + inputFileNameBase + ".e";
   auto mesh = Nosh::read(inputFileName);
 
+  //return;
+
   // Cast the data into something more accessible.
-  const auto psi = mesh->createComplexVector("psi");
-  const auto mvpValues = mesh->createMultiVector("A");
+  const auto psi = mesh->getComplexVector("psi");
+  const auto mvpValues = mesh->getMultiVector("A");
 
   // Check psi.
   TEST_FLOATING_EQUALITY(

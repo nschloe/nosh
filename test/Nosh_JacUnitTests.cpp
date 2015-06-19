@@ -53,7 +53,7 @@ void
   auto mesh = Nosh::read(inputFileName);
 
   // Cast the data into something more accessible.
-  auto psi = mesh->createComplexVector("psi");
+  auto psi = mesh->getComplexVector("psi");
 
   std::map<std::string, double> params;
   params["g"] = 1.0;

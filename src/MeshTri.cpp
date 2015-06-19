@@ -31,12 +31,13 @@ namespace Nosh
 // =============================================================================
 MeshTri::
 MeshTri(
-    const std::shared_ptr<const Teuchos::Comm<int>> & comm,
+    const std::shared_ptr<const Teuchos::Comm<int>> & _comm,
     const std::shared_ptr<stk::io::StkMeshIoBroker> & broker
     ) :
-  Mesh(comm, broker),
+  Mesh(_comm, broker),
   controlVolumes_(this->computeControlVolumes_()),
-  edgeCoefficients_(this->computeEdgeCoefficients_())
+  edgeCoefficients_(this->computeEdgeCoefficients_()),
+  boundaryNodes_(this->computeBoundaryNodes_())
 {
 }
 // =============================================================================
@@ -295,6 +296,14 @@ getOtherIndex_(unsigned int e0, unsigned int e1) const
         true,
         "illegal"
         );
+}
+// =============================================================================
+std::vector<int>
+MeshTri::
+computeBoundaryNodes_() const
+{
+  //TEUCHOS_ASSERT(false);
+  return std::vector<int>();
 }
 // =============================================================================
 }  // namespace Nosh

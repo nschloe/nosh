@@ -117,7 +117,7 @@ Nls(
       new Tpetra::Map<int,int>(
         numParams,
         0,
-        Teuchos::rcp(mesh_->getComm())
+        Teuchos::rcp(mesh_->comm)
         )
       );
   auto p_init = Thyra::createMember(this->get_p_space(0));
@@ -725,7 +725,7 @@ innerProduct(
   //    );
   //
   //// normalize and return
-  //return globalRes / mesh_->getDomainVolume();
+  //return globalRes / mesh_->getControlVolumes()->norm1();
 
   return 0.0;
 }
@@ -757,7 +757,7 @@ gibbsEnergy(const Thyra::VectorBase<double> &psi) const
   //TEUCHOS_ASSERT_EQUALITY(0, mesh_->getComm().SumAll(&myEnergy, &globalEnergy, 1));
 
   //// normalize and return
-  //return globalEnergy / mesh_->getDomainVolume();
+  //return globalEnergy / mesh_->getControlVolumes()->norm1();
 
   return 0.0;
 }

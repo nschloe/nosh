@@ -48,7 +48,7 @@ testComputeF(
   auto mesh = Nosh::read(inputFileName);
 
   // Cast the data into something more accessible.
-  auto z = mesh->createComplexVector("psi");
+  auto z = mesh->getComplexVector("psi");
 
   // Set the thickness field.
   auto thickness = std::make_shared<Nosh::ScalarField::Constant>(*mesh, 1.0);

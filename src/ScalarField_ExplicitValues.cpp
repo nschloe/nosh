@@ -34,7 +34,7 @@ ExplicitValues::
 ExplicitValues(const Nosh::Mesh & mesh,
                const std::string & fieldName
              ) :
-  nodeValues_(mesh.createVector(fieldName))
+  nodeValues_(mesh.getVector(fieldName))
 {
 }
 // ============================================================================

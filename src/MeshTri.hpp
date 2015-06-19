@@ -83,25 +83,25 @@ public:
     return controlVolumes_;
   }
 
-  double
-  getDomainVolume() const
-  {
-    return controlVolumes_->norm1();
-  }
-
+  virtual
   std::vector<double>
   getEdgeCoefficients() const
   {
     return edgeCoefficients_;
   }
 
+  virtual
+  std::vector<int>
+  getBoundaryNodes() const
+  {
+    return boundaryNodes_;
+  }
+
 private:
   //! Compute the volume of the (Voronoi) control cells for each point.
-  virtual
   std::shared_ptr<Tpetra::Vector<double,int,int>>
   computeControlVolumes_() const;
 
-  virtual
   void
   computeControlVolumesT_(
       Tpetra::Vector<double,int,int> & cvOverlap
@@ -109,6 +109,9 @@ private:
 
   std::vector<double>
   computeEdgeCoefficients_() const;
+
+  std::vector<int>
+  computeBoundaryNodes_() const;
 
   double
   computeCovolume_(
@@ -147,6 +150,7 @@ private:
 private:
   const std::shared_ptr<const Tpetra::Vector<double,int,int>> controlVolumes_;
   const std::vector<double> edgeCoefficients_;
+  const std::vector<int> boundaryNodes_;
 
 };
 

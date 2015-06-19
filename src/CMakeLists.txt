@@ -1,4 +1,7 @@
-INCLUDE_DIRECTORIES(${Nosh_SOURCE_DIR})
+# http://www.vtk.org/Wiki/VTK/Build_System_Migration
+FIND_PACKAGE(VTK COMPONENTS vtkIOXdmf3 vtkParallelMPI NO_MODULE)
+INCLUDE(${VTK_USE_FILE})
+
 # Treat Trilinos as system code to prevent warnings from Trilinos to appear
 # here. Also add Trilinos TPL include directories. Templated TPL packages such
 # as Eigen may need this.
@@ -7,6 +10,7 @@ INCLUDE_DIRECTORIES(
   ${Trilinos_INCLUDE_DIRS}
   ${Trilinos_TPL_INCLUDE_DIRS}
   ${EIGEN3_INCLUDE_DIR}
+  ${VTK_INCLUDE_DIRS}
 )
 
 FILE(GLOB nosh_SRCS "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
@@ -31,6 +35,7 @@ ADD_LIBRARY(
 TARGET_LINK_LIBRARIES(
   nosh
   ${Trilinos_LIBRARIES}
+  ${VTK_LIBRARIES}
   )
 
 SET_TARGET_PROPERTIES(

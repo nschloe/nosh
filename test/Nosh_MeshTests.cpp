@@ -48,7 +48,7 @@ testMesh(
   // Read the data from the file.
   auto mesh = Nosh::read(inputFileName);
 
-  const unsigned int numNodes = mesh->getNumNodes();
+  const unsigned int numNodes = mesh->getMap()->getGlobalNumElements();
   TEUCHOS_ASSERT_EQUALITY(numNodes, controlNumNodes);
 
   const auto controlVols = mesh->getControlVolumes();

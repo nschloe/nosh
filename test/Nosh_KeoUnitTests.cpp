@@ -50,7 +50,7 @@ testKeo(
   auto mesh = Nosh::read(inputFileName);
 
   // Cast the data into something more accessible.
-  auto z = mesh->createComplexVector("psi");
+  auto z = mesh->getComplexVector("psi");
 
   auto mvp = std::make_shared<Nosh::VectorField::ExplicitValues>(*mesh, "A", initMu);
   auto thickness = std::make_shared<Nosh::ScalarField::Constant>(*mesh, 1.0);

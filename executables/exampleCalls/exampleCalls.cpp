@@ -90,12 +90,10 @@ int main(int argc, char *argv[])
     }
 
     // Cast the data into something more accessible.
-    std::shared_ptr<Epetra_Vector> psi = mesh->createComplexVector("psi");
+    auto psi = mesh->getComplexVector("psi");
 
     // Set the thickness field.
-    std::shared_ptr<Nosh::ScalarField::Virtual> thickness(
-        new Nosh::ScalarField::Constant(*mesh, 1.0)
-        );
+    auto thickness = std::make_shared<Nosh::ScalarField::Constant>(*mesh, 1.0);
 
     // - - - - - - - - - - - - - - - - - - - - -  - - - - - - - - - - - - - - -
     // Some alternatives for the positive-definite operator.
@@ -106,14 +104,14 @@ int main(int argc, char *argv[])
     // (b) (-i\nabla-A)^2 (Kinetic energy of a particle in magnetic field)
     // (b1) 'A' explicitly given in file.
     const double initMu = 0.0;
-    std::shared_ptr<Nosh::VectorField::Virtual> mvp(
-        new Nosh::VectorField::ExplicitValues(*mesh, "A", initMu)
+    auto mvp = std::make_shared<Nosh::VectorField::ExplicitValues>(
+        *mesh, "A", initMu
         );
-    const std::shared_ptr<Nosh::ParameterMatrix::Virtual> keoBuilder(
-        new Nosh::ParameterMatrix::Keo(mesh, thickness, mvp)
+    const auto keoBuilder = std::make_shared<Nosh::ParameterMatrix::Keo>(
+        mesh, thickness, mvp
         );
-    const std::shared_ptr<Nosh::ParameterMatrix::Virtual> DKeoDPBuilder(
-        new Nosh::ParameterMatrix::DKeoDP(mesh, thickness, mvp, "mu")
+    const auto DKeoDPBuilder = std::make_shared<Nosh::ParameterMatrix::DKeoDP>(
+        mesh, thickness, mvp, "mu"
         );
 
     // (b2) 'A' analytically given (here with constant curl).
@@ -141,9 +139,8 @@ int main(int argc, char *argv[])
     // - - - - - - - - - - - - - - - - - - - - -  - - - - - - - - - - - - - - -
     // Setup the scalar potential V.
     // (a) A constant potential.
-    std::shared_ptr<Nosh::ScalarField::Virtual> sp(
-        new Nosh::ScalarField::Constant(*mesh, -1.0)
-        );
+    auto sp = std::make_shared<Nosh::ScalarField::Constant>(*mesh, -1.0);
+
     //const double T = 0.0;
     // (b) One you built yourself by deriving from Nosh::ScalarField::Virtual.
     //std::shared_ptr<Nosh::ScalarField::Virtual> sp =

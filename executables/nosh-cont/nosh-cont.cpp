@@ -125,7 +125,7 @@ int main(int argc, char *argv[])
         );
 
     // Cast the data into something more accessible.
-    auto psi = mesh->createComplexVector("psi");
+    auto psi = mesh->getComplexVector("psi");
     //psi->Random();
 
     // Set the output directory for later plotting with this.
@@ -307,7 +307,7 @@ int main(int argc, char *argv[])
         piroParams->sublist("LOCA").sublist("Bifurcation");
 
       // Fetch the (approximate) null state.
-      auto nullstateZ = mesh->createVector("null");
+      auto nullstateZ = mesh->getVector("null");
 
       // Set the length normalization vector to be the initial null vector.
       TEUCHOS_ASSERT(nullstateZ);

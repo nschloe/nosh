@@ -63,22 +63,27 @@ public:
     return controlVolumes_;
   }
 
-  double
-  getDomainVolume() const
-  {
-    return controlVolumes_->norm1();
-  }
-
+  virtual
   std::vector<double>
   getEdgeCoefficients() const
   {
     return edgeCoefficients_;
   }
 
+  virtual
+  std::vector<int>
+  getBoundaryNodes() const
+  {
+    return boundaryNodes_;
+  }
+
 private:
 
   std::vector<double>
   computeEdgeCoefficients_() const;
+
+  std::vector<int>
+  computeBoundaryNodes_() const;
 
   double
   computeCovolume_(
@@ -105,7 +110,7 @@ private:
     ) const;
 
   Eigen::VectorXd
-  getEdgeCoefficientsNumerically_(
+  getEdgeCoefficientsCell_(
     const std::vector<Eigen::Vector3d> edges
     ) const;
 
@@ -140,6 +145,7 @@ private:
 private:
   const std::shared_ptr<const Tpetra::Vector<double,int,int>> controlVolumes_;
   const std::vector<double> edgeCoefficients_;
+  const std::vector<int> boundaryNodes_;
 
 };
 

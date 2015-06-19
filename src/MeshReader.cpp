@@ -349,10 +349,10 @@ read(
 //  TEUCHOS_ASSERT_INEQUALITY(on.size(), >, 0);
 //#endif
 
-#if 0
   // create edges
   stk::mesh::create_edges(ioBroker->bulk_data());
 
+#if 0
   std::vector<size_t> mesh_counts;
   stk::mesh::comm_mesh_counts(ioBroker->bulk_data(), mesh_counts);
 
