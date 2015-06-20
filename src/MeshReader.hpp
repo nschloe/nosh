@@ -31,6 +31,7 @@ namespace Nosh
 std::shared_ptr<Nosh::Mesh>
 read(
     const std::string & fileName,
+    const std::set<std::string> & fields = std::set<std::string>(),
     const int index = 0
     );
 
