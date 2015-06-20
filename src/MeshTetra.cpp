@@ -26,6 +26,9 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_RCPStdSharedPtrConversions.hpp>
 
+#include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/base/GetEntities.hpp>
+
 namespace Nosh
 {
 // =============================================================================
@@ -51,7 +54,7 @@ MeshTetra(
 #endif
   controlVolumes_(this->computeControlVolumes_()),
   edgeCoefficients_(this->computeEdgeCoefficients_()),
-  boundaryNodes_(this->computeBoundaryNodes_())
+  boundaryNodeGids_(this->computeBoundaryNodeGids_())
 {
 }
 // =============================================================================
@@ -416,15 +419,50 @@ computeTetrahedronCircumcenter_(
     + gamma * relNodes[0].cross(relNodes[1]);
 }
 // =============================================================================
-std::vector<int>
+std::vector<stk::mesh::Entity>
 MeshTetra::
-computeBoundaryNodes_() const
+getOverlapFaces_() const
+{
+  stk::mesh::Selector select_overlap_in_part =
+    stk::mesh::Selector(ioBroker_->bulk_data().mesh_meta_data().universal_part())
+    & (stk::mesh::Selector(ioBroker_->bulk_data().mesh_meta_data().locally_owned_part())
+       |stk::mesh::Selector(ioBroker_->bulk_data().mesh_meta_data().globally_shared_part()));
+
+  std::vector<stk::mesh::Entity> faces;
+  stk::mesh::get_selected_entities(
+      select_overlap_in_part,
+      ioBroker_->bulk_data().buckets(stk::topology::FACE_RANK),
+      faces
+      );
+  return faces;
+}
+// =============================================================================
+std::set<int>
+MeshTetra::
+computeBoundaryNodeGids_() const
 {
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   Teuchos::TimeMonitor tm(*computeBoundaryNodesTime_);
 #endif
-  //TEUCHOS_ASSERT(false);
-  return std::vector<int>();
+
+  auto myFaces = this->getOverlapFaces_();
+
+  std::set<int> boundaryNodeGids;
+  for (size_t k = 0; k < myFaces.size(); k++) {
+    // if the face has one element, it's on the boundary
+    if (ioBroker_->bulk_data().num_elements(myFaces[k]) == 1) {
+      stk::mesh::Entity const * nodes =
+        ioBroker_->bulk_data().begin_nodes(myFaces[k]);
+#ifndef NDEBUG
+      TEUCHOS_ASSERT_EQUALITY(ioBroker_->bulk_data().num_nodes(myFaces[k]), 3);
+#endif
+      boundaryNodeGids.insert(this->gid(nodes[0]));
+      boundaryNodeGids.insert(this->gid(nodes[1]));
+      boundaryNodeGids.insert(this->gid(nodes[2]));
+    }
+  }
+
+  return boundaryNodeGids;
 }
 // =============================================================================
 }  // namespace Nosh

@@ -71,19 +71,22 @@ public:
   }
 
   virtual
-  std::vector<int>
-  getBoundaryNodes() const
+  std::set<int>
+  getBoundaryNodeGids() const
   {
-    return boundaryNodes_;
+    return boundaryNodeGids_;
   }
 
 private:
 
+  std::vector<stk::mesh::Entity>
+  getOverlapFaces_() const;
+
   std::vector<double>
   computeEdgeCoefficients_() const;
 
-  std::vector<int>
-  computeBoundaryNodes_() const;
+  std::set<int>
+  computeBoundaryNodeGids_() const;
 
   double
   computeCovolume_(
@@ -151,7 +154,7 @@ private:
 
   const std::shared_ptr<const Tpetra::Vector<double,int,int>> controlVolumes_;
   const std::vector<double> edgeCoefficients_;
-  const std::vector<int> boundaryNodes_;
+  const std::set<int> boundaryNodeGids_;
 
 };
 

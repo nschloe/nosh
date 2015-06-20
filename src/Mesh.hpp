@@ -196,8 +196,8 @@ public:
   getEdgeCoefficients() const = 0;
 
   virtual
-  std::vector<int>
-  getBoundaryNodes() const = 0;
+  std::set<int>
+  getBoundaryNodeGids() const = 0;
 
 protected:
 
@@ -286,13 +286,13 @@ private:
   computeEdgeCoefficients_() const;
 
   std::shared_ptr<const Tpetra::Map<int,int>>
-  createEntitiesMap_(const std::vector<stk::mesh::Entity> &entityList) const;
+  buildEntitiesMap_(const std::vector<stk::mesh::Entity> &entityList) const;
 
   std::shared_ptr<const Tpetra::Map<int,int>>
-  createComplexMap_(const std::vector<stk::mesh::Entity> &nodeList) const;
+  buildComplexMap_(const std::vector<stk::mesh::Entity> &nodeList) const;
 
   EdgesContainer
-  createEdgeData_();
+  buildEdgeData_();
 };
 // -----------------------------------------------------------------------------
 

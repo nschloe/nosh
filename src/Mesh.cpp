@@ -79,11 +79,11 @@ Mesh(
   comm(_comm),
   ioBroker_(broker),
   ownedNodes_(this->buildOwnedNodes_(ioBroker_->bulk_data())),
-  nodesMap_(this->createEntitiesMap_(ownedNodes_)),
-  nodesOverlapMap_(this->createEntitiesMap_(this->getOverlapNodes())),
-  complexMap_(this->createComplexMap_(ownedNodes_)),
-  complexOverlapMap_(this->createComplexMap_(this->getOverlapNodes())),
-  edgeData_(this->createEdgeData_()),
+  nodesMap_(this->buildEntitiesMap_(ownedNodes_)),
+  nodesOverlapMap_(this->buildEntitiesMap_(this->getOverlapNodes())),
+  complexMap_(this->buildComplexMap_(ownedNodes_)),
+  complexOverlapMap_(this->buildComplexMap_(this->getOverlapNodes())),
+  edgeData_(this->buildEdgeData_()),
   outputChannel_(0),
   // TODO get index right
   //time_(ioBroker_->get_input_io_region()->get_state_time(index+1)),
@@ -601,16 +601,16 @@ buildEdgeGids_() const
 {
   const std::vector<edge> edges = this->getMyEdges();
 
-  std::vector<Teuchos::Tuple<int,2>> gic(edges.size());
+  std::vector<Teuchos::Tuple<int,2>> _edgeGids(edges.size());
 
   int gidT0, gidT1;
   for (std::size_t k = 0; k < edges.size(); k++) {
     gidT0 = this->gid(std::get<0>(edges[k]));
     gidT1 = this->gid(std::get<1>(edges[k]));
-    gic[k] = Teuchos::tuple(gidT0, gidT1);
+    _edgeGids[k] = Teuchos::tuple(gidT0, gidT1);
   }
 
-  return gic;
+  return _edgeGids;
 }
 // =============================================================================
 const std::vector<Teuchos::Tuple<int,4>>
@@ -619,21 +619,22 @@ buildEdgeGidsComplex_() const
 {
   const std::vector<edge> edges = this->getMyEdges();
 
-  std::vector<Teuchos::Tuple<int,4>> gic(edges.size());
+  std::vector<Teuchos::Tuple<int,4>> _edgeGidsComplex(edges.size());
 
   int gidT0, gidT1;
   for (std::size_t k = 0; k < edges.size(); k++) {
     gidT0 = this->gid(std::get<0>(edges[k]));
     gidT1 = this->gid(std::get<1>(edges[k]));
-    gic[k] = Teuchos::tuple(2*gidT0, 2*gidT0 + 1, 2*gidT1, 2*gidT1 + 1);
+    _edgeGidsComplex[k] =
+      Teuchos::tuple(2*gidT0, 2*gidT0 + 1, 2*gidT1, 2*gidT1 + 1);
   }
 
-  return gic;
+  return _edgeGidsComplex;
 }
 // =============================================================================
 std::shared_ptr<const Tpetra::Map<int,int>>
 Mesh::
-createEntitiesMap_(const std::vector<stk::mesh::Entity> &entityList) const
+buildEntitiesMap_(const std::vector<stk::mesh::Entity> &entityList) const
 {
   const size_t numEntities = entityList.size();
   std::vector<int> gids(numEntities);
@@ -648,7 +649,7 @@ createEntitiesMap_(const std::vector<stk::mesh::Entity> &entityList) const
 // =============================================================================
 std::shared_ptr<const Tpetra::Map<int,int>>
 Mesh::
-createComplexMap_(const std::vector<stk::mesh::Entity> &nodeList) const
+buildComplexMap_(const std::vector<stk::mesh::Entity> &nodeList) const
 {
   // Create a map for real/imaginary out of this.
   const size_t numDof = 2 * nodeList.size();
@@ -666,7 +667,7 @@ createComplexMap_(const std::vector<stk::mesh::Entity> &nodeList) const
 // =============================================================================
 Mesh::EdgesContainer
 Mesh::
-createEdgeData_()
+buildEdgeData_()
 {
   std::vector<stk::mesh::Entity> cells = this->getOwnedCells();
   size_t numLocalCells = cells.size();
@@ -840,25 +841,22 @@ Mesh::
 buildComplexGraph() const
 {
   // Which row/column map to use for the matrix?
-  // The two possibilites are the non-overlapping map fetched from
-  // the ownedNodes map, and the overlapping one from the
-  // overlapNodes.
+  // The two possibilites are the non-overlapping map fetched from the
+  // ownedNodes map, and the overlapping one from the overlapNodes.
   // Let's illustrate the implications with the example of the matrix
   //   [ 2 1   ]
   //   [ 1 2 1 ]
   //   [   1 2 ].
-  // Suppose subdomain 1 consists of node 1, subdomain 2 of node 3,
-  // and node 2 forms the boundary between them.
-  // For two processes, if process 1 owns nodes 1 and 2, the matrix
-  // will be split as
+  // Suppose subdomain 1 consists of node 1, subdomain 2 of node 3, and node 2
+  // forms the boundary between them.
+  // For two processes, if process 1 owns nodes 1 and 2, the matrix will be
+  // split as
   //   [ 2 1   ]   [       ]
   //   [ 1 2 1 ] + [       ]
   //   [       ]   [   1 2 ].
-  // The vectors always need to have a unique map (otherwise, norms
-  // cannot be computed by Epetra), so let's assume they have the
-  // map ([1, 2], [3]).
-  // The communucation for a matrix-vector multiplication Ax=y
-  // needs to be:
+  // The vectors always need to have a unique map (otherwise, norms cannot be
+  // computed by Epetra), so let's assume they have the map ([1, 2], [3]).
+  // The communucation for a matrix-vector multiplication Ax=y needs to be:
   //
   //   1. Communicate x(3) to process 1.
   //   2. Communicate x(2) to process 2.
@@ -874,28 +872,26 @@ buildComplexGraph() const
   //   2. Compute.
   //   3. Communicate (part of) y(2) to process 1.
   //
-  // In the general case, assuming that the number of nodes adjacent
-  // to a boundary (on one side) are approximately the number of
-  // nodes on that boundary, there is not much difference in
-  // communication between the patterns.
-  // What does differ, though, is the workload on the processes
-  // during the computation phase: Process 1 that owns the whole
-  // boundary, has to compute more than process 2.
-  // Notice, however, that the total number of computations is
-  // lower in scenario 1 (7 vs. 8 FLOPs); the same is true for
-  // storage.
-  // Hence, it comes down to the question whether or not the
-  // mesh generator provided a fair share of the boundary nodes.
-  // If yes, then scenario 1 will yield approximately even
-  // computation times; if not, then scenario 2 will guarantee
-  // equal computation times at the cost of higher total
-  // storage and computation needs.
+  // In the general case, assuming that the number of nodes adjacent to a
+  // boundary (on one side) are approximately the number of nodes on that
+  // boundary, there is not much difference in communication between the
+  // patterns.
+  // What does differ, though, is the workload on the processes during the
+  // computation phase: Process 1 that owns the whole boundary, has to compute
+  // more than process 2.
+  // Notice, however, that the total number of computations is lower in
+  // scenario 1 (7 vs. 8 FLOPs); the same is true for storage.
+  // Hence, it comes down to the question whether or not the mesh generator
+  // provided a fair share of the boundary nodes.  If yes, then scenario 1 will
+  // yield approximately even computation times; if not, then scenario 2 will
+  // guarantee equal computation times at the cost of higher total storage and
+  // computation needs.
   //
   // Remark:
   // This matrix will later be fed into ML. ML has certain restrictions as to
   // what maps can be used. One of those is that RowMatrixRowMap() and
-  // getRangeMap must be the same, and, if the matrix is square,
-  // getRangeMap and getDomainMap must coincide too.
+  // getRangeMap must be the same, and, if the matrix is square, getRangeMap
+  // and getDomainMap must coincide too.
   //
   const auto noMap = this->getMapComplex();
 #ifndef NDEBUG
