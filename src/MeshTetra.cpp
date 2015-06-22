@@ -28,6 +28,7 @@
 
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
+#include <stk_mesh/base/CreateFaces.hpp>
 
 namespace Nosh
 {
@@ -445,6 +446,9 @@ computeBoundaryNodes_() const
   Teuchos::TimeMonitor tm(*computeBoundaryNodesTime_);
 #endif
 
+  // TODO move the face creation to a more appropriate place
+  stk::mesh::create_faces(ioBroker_->bulk_data());
+
   auto myFaces = this->getOverlapFaces_();
 
   std::set<stk::mesh::Entity> boundaryNodes;
@@ -461,6 +465,10 @@ computeBoundaryNodes_() const
       boundaryNodes.insert(nodes[2]);
     }
   }
+
+#ifndef NDEBUG
+  TEUCHOS_ASSERT_INEQUALITY(boundaryNodes.size(), >, 0);
+#endif
 
   return boundaryNodes;
 }
