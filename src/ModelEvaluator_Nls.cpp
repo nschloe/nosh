@@ -149,6 +149,7 @@ createAlteredSpace() const
   auto a = Thyra::createVectorSpace<double>(
       Teuchos::rcp(mesh_->getMapComplex())
       );
+#if 0
   // Use the Nosh scalar product. We still need to cast, cf.
   // <https://software.sandia.gov/bugzilla/show_bug.cgi?id=6355>.
   auto s = Teuchos::rcp_dynamic_cast<Thyra::ScalarProdVectorSpaceBase<double>>(a, true);
@@ -157,6 +158,8 @@ createAlteredSpace() const
   s->setScalarProd(sp);
 
   return s;
+#endif
+  return a;
 }
 // ============================================================================
 Teuchos::RCP<const Thyra::VectorSpaceBase<double>>

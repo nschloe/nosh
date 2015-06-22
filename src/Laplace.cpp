@@ -42,9 +42,9 @@ Laplace(
     const std::shared_ptr<const Nosh::Mesh> & _mesh,
     const std::shared_ptr<const Nosh::DirichletBoundaryConditions> & _bcs
     ) :
-  LinearOperator(_mesh, _bcs),
+  LinearOperator(_mesh, _bcs)
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
-  fillTime_(Teuchos::TimeMonitor::getNewTimer("Nosh: Laplace::fill_"))
+  ,fillTime_(Teuchos::TimeMonitor::getNewTimer("Nosh: Laplace::fill_"))
 #endif
 {
   this->fill_();
