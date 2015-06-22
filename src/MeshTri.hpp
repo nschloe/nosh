@@ -91,10 +91,10 @@ public:
   }
 
   virtual
-  std::set<int>
-  getBoundaryNodeGids() const
+  std::set<stk::mesh::Entity>
+  getBoundaryNodes() const
   {
-    return boundaryNodeGids_;
+    return boundaryNodes_;
   }
 
 private:
@@ -110,8 +110,8 @@ private:
   std::vector<double>
   computeEdgeCoefficients_() const;
 
-  std::set<int>
-  computeBoundaryNodeGids_() const;
+  std::set<stk::mesh::Entity>
+  computeBoundaryNodes_() const;
 
   double
   computeCovolume_(
@@ -156,7 +156,7 @@ private:
 
   const std::shared_ptr<const Tpetra::Vector<double,int,int>> controlVolumes_;
   const std::vector<double> edgeCoefficients_;
-  const std::set<int> boundaryNodeGids_;
+  const std::set<stk::mesh::Entity> boundaryNodes_;
 
 };
 

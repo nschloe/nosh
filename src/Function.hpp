@@ -1,3 +1,5 @@
+#ifndef NOSH_FUNCTION_HPP
+#define NOSH_FUNCTION_HPP
 
 #include <memory>
 
@@ -33,3 +35,4 @@ namespace Nosh {
       );
 
 }
+#endif // NOSH_FUNCTION_HPP

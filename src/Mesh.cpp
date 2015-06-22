@@ -637,6 +637,9 @@ Mesh::
 buildEntitiesMap_(const std::vector<stk::mesh::Entity> &entityList) const
 {
   const size_t numEntities = entityList.size();
+#ifndef NDEBUG
+  TEUCHOS_ASSERT_INEQUALITY(numEntities, >, 0);
+#endif
   std::vector<int> gids(numEntities);
   for (size_t i = 0; i < numEntities; i++) {
     gids[i] = ioBroker_->bulk_data().identifier(entityList[i]) - 1;

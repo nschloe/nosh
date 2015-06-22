@@ -54,7 +54,7 @@ MeshTri(
 #endif
   controlVolumes_(this->computeControlVolumes_()),
   edgeCoefficients_(this->computeEdgeCoefficients_()),
-  boundaryNodeGids_(this->computeBoundaryNodeGids_())
+  boundaryNodes_(this->computeBoundaryNodes_())
 {
 }
 // =============================================================================
@@ -75,7 +75,7 @@ computeEdgeCoefficients_() const
   std::vector<stk::mesh::Entity> cells = this->getOwnedCells();
   unsigned int numCells = cells.size();
 
-  auto numEdges = edgeData_.edgeNodes.size();
+  size_t numEdges = edgeData_.edgeNodes.size();
 
   std::vector<double> edgeCoefficients(numEdges);
 
@@ -318,9 +318,9 @@ getOtherIndex_(unsigned int e0, unsigned int e1) const
         );
 }
 // =============================================================================
-std::set<int>
+std::set<stk::mesh::Entity>
 MeshTri::
-computeBoundaryNodeGids_() const
+computeBoundaryNodes_() const
 {
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   Teuchos::TimeMonitor tm(*computeBoundaryNodesTime_);
@@ -328,7 +328,7 @@ computeBoundaryNodeGids_() const
 
   auto myEdges = this->getOverlapEdges();
 
-  std::set<int> boundaryNodeGids;
+  std::set<stk::mesh::Entity> boundaryNodes;
   for (size_t k = 0; k < myEdges.size(); k++) {
     // if the edge has one element, it's on the boundary
     if (ioBroker_->bulk_data().num_elements(myEdges[k]) == 1) {
@@ -337,12 +337,12 @@ computeBoundaryNodeGids_() const
 #ifndef NDEBUG
       TEUCHOS_ASSERT_EQUALITY(ioBroker_->bulk_data().num_nodes(myEdges[k]), 2);
 #endif
-      boundaryNodeGids.insert(this->gid(nodes[0]));
-      boundaryNodeGids.insert(this->gid(nodes[1]));
+      boundaryNodes.insert(nodes[0]);
+      boundaryNodes.insert(nodes[1]);
     }
   }
 
-  return boundaryNodeGids;
+  return boundaryNodes;
 }
 // =============================================================================
 }  // namespace Nosh

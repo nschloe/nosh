@@ -196,8 +196,8 @@ public:
   getEdgeCoefficients() const = 0;
 
   virtual
-  std::set<int>
-  getBoundaryNodeGids() const = 0;
+  std::set<stk::mesh::Entity>
+  getBoundaryNodes() const = 0;
 
 protected:
 

@@ -17,8 +17,8 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 // @HEADER
-#ifndef NOSH_MATRIXBUILDER_LAPLACE_H
-#define NOSH_MATRIXBUILDER_LAPLACE_H
+#ifndef NOSH_LAPLACE_H
+#define NOSH_LAPLACE_H
 
 #include <map>
 #include <string>
@@ -27,8 +27,8 @@
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
 #include <Teuchos_Time.hpp>
 #endif
-#include <Tpetra_CrsMatrix.hpp>
 
+#include "LinearOperator.hpp"
 #include "Mesh.hpp"
 #include "ParameterObject.hpp"
 
@@ -36,54 +36,32 @@
 namespace Nosh
 {
 class Mesh;
-namespace ScalarField
-{
-class Virtual;
-}
 } // namespace Nosh
 
 namespace Nosh
 {
-namespace ParameterMatrix
-{
-class Laplace: public Nosh::ParameterObject, public Tpetra::CrsMatrix<double,int,int>
+class Laplace:
+  public LinearOperator
 {
 public:
   Laplace(
-      const std::shared_ptr<const Nosh::Mesh> &mesh,
-      const std::shared_ptr<const Nosh::ScalarField::Virtual> &thickness
+      const std::shared_ptr<const Nosh::Mesh> & mesh,
+      const std::shared_ptr<const Nosh::DirichletBoundaryConditions> & _bcs
       );
 
   // Destructor.
   ~Laplace();
-
-  //! Gets the parameter with their initial values.
-  virtual
-  const std::map<std::string, double>
-  getParameters() const;
 
 protected:
 private:
   void
   fill_();
 
-  void
-  buildAlphaCache_(
-      const std::vector<edge> & edges,
-      const std::vector<double> & edgeCoefficients
-      ) const;
-
 private:
-  const std::shared_ptr<const Nosh::Mesh> mesh_;
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   const Teuchos::RCP<Teuchos::Time> fillTime_;
 #endif
-  const std::shared_ptr<const Nosh::ScalarField::Virtual> thickness_;
-
-  mutable std::vector<double> alphaCache_;
-  mutable bool alphaCacheUpToDate_;
 };
-} // namespace ParameterMatrix
 } // namespace Nosh
 
-#endif // NOSH_MATRIXBUILDER_LAPLACE_H
+#endif // NOSH_LAPLACE_H

@@ -54,7 +54,7 @@ MeshTetra(
 #endif
   controlVolumes_(this->computeControlVolumes_()),
   edgeCoefficients_(this->computeEdgeCoefficients_()),
-  boundaryNodeGids_(this->computeBoundaryNodeGids_())
+  boundaryNodes_(this->computeBoundaryNodes_())
 {
 }
 // =============================================================================
@@ -437,9 +437,9 @@ getOverlapFaces_() const
   return faces;
 }
 // =============================================================================
-std::set<int>
+std::set<stk::mesh::Entity>
 MeshTetra::
-computeBoundaryNodeGids_() const
+computeBoundaryNodes_() const
 {
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   Teuchos::TimeMonitor tm(*computeBoundaryNodesTime_);
@@ -447,7 +447,7 @@ computeBoundaryNodeGids_() const
 
   auto myFaces = this->getOverlapFaces_();
 
-  std::set<int> boundaryNodeGids;
+  std::set<stk::mesh::Entity> boundaryNodes;
   for (size_t k = 0; k < myFaces.size(); k++) {
     // if the face has one element, it's on the boundary
     if (ioBroker_->bulk_data().num_elements(myFaces[k]) == 1) {
@@ -456,13 +456,13 @@ computeBoundaryNodeGids_() const
 #ifndef NDEBUG
       TEUCHOS_ASSERT_EQUALITY(ioBroker_->bulk_data().num_nodes(myFaces[k]), 3);
 #endif
-      boundaryNodeGids.insert(this->gid(nodes[0]));
-      boundaryNodeGids.insert(this->gid(nodes[1]));
-      boundaryNodeGids.insert(this->gid(nodes[2]));
+      boundaryNodes.insert(nodes[0]);
+      boundaryNodes.insert(nodes[1]);
+      boundaryNodes.insert(nodes[2]);
     }
   }
 
-  return boundaryNodeGids;
+  return boundaryNodes;
 }
 // =============================================================================
 }  // namespace Nosh
