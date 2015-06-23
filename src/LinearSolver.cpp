@@ -17,15 +17,14 @@ linearSolve(
     Teuchos::RCP<Teuchos::ParameterList> solverParams
     )
 {
-  // apply boundary conditions to A.matrix and f
+  // apply boundary conditions to f
   const auto boundaryNodes = A.mesh->getBoundaryNodes();
   const VectorFieldType & coordsField = A.mesh->getNodeField("coordinates");
   for (const auto boundaryNode: boundaryNodes) {
-    const auto gid = A.mesh->gid(boundaryNode);
-    // set rhs value
     const auto coord = A.mesh->getNodeValue(coordsField, boundaryNode);
     for (const auto & bc: A.bcs) {
       if (bc->isInside(coord)) {
+        const auto gid = A.mesh->gid(boundaryNode);
         f.replaceGlobalValue(gid, bc->eval(coord));
         break; // only set one bc per boundary point
       }
