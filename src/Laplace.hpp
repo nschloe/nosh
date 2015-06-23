@@ -20,47 +20,45 @@
 #ifndef NOSH_LAPLACE_H
 #define NOSH_LAPLACE_H
 
-#include <map>
-#include <string>
-#include <tuple>
-
-#ifdef NOSH_TEUCHOS_TIME_MONITOR
-#include <Teuchos_Time.hpp>
-#endif
-
-#include "LinearOperator.hpp"
-#include "Mesh.hpp"
-#include "ParameterObject.hpp"
-
-// forward declarations
-namespace Nosh
-{
-class Mesh;
-} // namespace Nosh
+#include "EdgeOperator.hpp"
 
 namespace Nosh
 {
-class Laplace:
-  public LinearOperator
-{
-public:
-  Laplace(
-      const std::shared_ptr<const Nosh::Mesh> & mesh,
-      const std::set<std::shared_ptr<const Nosh::DirichletBC>> & _bcs
-      );
+  class Laplace:
+    public EdgeOperator
+  {
+    public:
+      Laplace(
+          const std::shared_ptr<const Nosh::Mesh> & _mesh,
+          const std::set<std::shared_ptr<const Nosh::DirichletBC>> & _bcs
+          ):
+        EdgeOperator(_mesh, _bcs)
+      {
+        this->fill_();
+      };
 
-  ~Laplace();
+      virtual
+      ~Laplace()
+      {};
 
-protected:
-private:
-  void
-  fill_();
+    protected:
+      virtual
+        std::vector<std::vector<double>>
+        edgeContrib(
+            const double edgeCoefficient,
+            const double controlVolume0,
+            const double controlVolume1
+            ) const
+        {
+          (void) controlVolume0;
+          (void) controlVolume1;
+          return {
+            { edgeCoefficient, -edgeCoefficient},
+            {-edgeCoefficient,  edgeCoefficient}
+          };
+        }
 
-private:
-#ifdef NOSH_TEUCHOS_TIME_MONITOR
-  const Teuchos::RCP<Teuchos::Time> fillTime_;
-#endif
-};
+  };
 } // namespace Nosh
 
 #endif // NOSH_LAPLACE_H
