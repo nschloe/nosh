@@ -1,19 +1,19 @@
 #ifndef NOSH_DIRICHLETBOUNDARYCONDITONSCONST_HPP
 #define NOSH_DIRICHLETBOUNDARYCONDITONSCONST_HPP
 
-#include "DirichletBoundaryConditions.hpp"
+#include "DirichletBC.hpp"
 
 namespace Nosh {
-  class DirichletBoundaryConditionsConst:
-    public DirichletBoundaryConditions
+  class DirichletBCConst:
+    public DirichletBC
   {
     public:
-      DirichletBoundaryConditionsConst(const double val):
+      DirichletBCConst(const double val):
         val_(val)
       {};
 
       virtual
-      ~DirichletBoundaryConditionsConst()
+      ~DirichletBCConst()
       {};
 
       virtual

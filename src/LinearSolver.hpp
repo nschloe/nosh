@@ -11,7 +11,7 @@ namespace Nosh {
 
   void
   linearSolve(
-      Nosh::LinearOperator & A,
+      const Nosh::LinearOperator & A,
       Nosh::Function & f,
       Nosh::Function & x,
       Teuchos::RCP<Teuchos::ParameterList> solverParams = Nosh::defaultLinearSolverParams()

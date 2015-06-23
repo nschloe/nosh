@@ -2,10 +2,11 @@
 #define NOSH_LINEAROPERATOR_HPP
 
 #include <memory>
+#include <set>
 
 #include <Tpetra_CrsMatrix.hpp>
 
-#include "DirichletBoundaryConditions.hpp"
+#include "DirichletBC.hpp"
 #include "Mesh.hpp"
 
 namespace Nosh {
@@ -15,7 +16,7 @@ namespace Nosh {
     public:
       LinearOperator(
           const std::shared_ptr<const Nosh::Mesh> & _mesh,
-          const std::shared_ptr<const Nosh::DirichletBoundaryConditions> & _bcs
+          const std::set<std::shared_ptr<const Nosh::DirichletBC>> & _bcs
           ):
         Tpetra::CrsMatrix<double,int,int>(_mesh->buildGraph()),
         mesh(_mesh),
@@ -29,7 +30,12 @@ namespace Nosh {
 
     public:
     const std::shared_ptr<const Nosh::Mesh> mesh;
-    const std::shared_ptr<const Nosh::DirichletBoundaryConditions> bcs;
+    const std::set<std::shared_ptr<const Nosh::DirichletBC>> bcs;
+
+    protected:
+
+    void
+    applyBcs_();
   };
 }
 #endif // NOSH_LINEAROPERATOR_HPP

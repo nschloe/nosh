@@ -11,40 +11,26 @@
 void
 Nosh::
 linearSolve(
-    Nosh::LinearOperator & A,
+    const Nosh::LinearOperator & A,
     Nosh::Function & f,
     Nosh::Function & x,
     Teuchos::RCP<Teuchos::ParameterList> solverParams
     )
 {
   // apply boundary conditions to A.matrix and f
-  A.resumeFill();
   const auto boundaryNodes = A.mesh->getBoundaryNodes();
   const VectorFieldType & coordsField = A.mesh->getNodeField("coordinates");
   for (const auto boundaryNode: boundaryNodes) {
-    // eliminate the row in A
     const auto gid = A.mesh->gid(boundaryNode);
-    size_t num = A.getNumEntriesInGlobalRow(gid);
-    std::vector<int> cols(num);
-    std::vector<double> vals(num);
-    A.getGlobalRowCopy(gid, cols, vals, num);
-    // set vals to 9
-    std::fill(vals.begin(), vals.end(), 0.0);
-    // set diagonal entry to 1
-    auto it = std::find(cols.begin(), cols.end(), gid);
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(
-        it == cols.end(),
-        "Matrix has no main diagonal entry."
-        );
-    int pos = it - cols.begin();
-    vals[pos] = 1.0;
-    A.replaceGlobalValues(gid, cols, vals);
-
     // set rhs value
     const auto coord = A.mesh->getNodeValue(coordsField, boundaryNode);
-    f.replaceGlobalValue(gid, A.bcs->eval(coord));
+    for (const auto & bc: A.bcs) {
+      if (bc->isInside(coord)) {
+        f.replaceGlobalValue(gid, bc->eval(coord));
+        break; // only set one bc per boundary point
+      }
+    }
   }
-  A.fillComplete();
 
   //auto out = Teuchos::VerboseObjectBase::getDefaultOStream();
   //A.describe(*out, Teuchos::VERB_EXTREME);

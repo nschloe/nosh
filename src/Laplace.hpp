@@ -46,10 +46,9 @@ class Laplace:
 public:
   Laplace(
       const std::shared_ptr<const Nosh::Mesh> & mesh,
-      const std::shared_ptr<const Nosh::DirichletBoundaryConditions> & _bcs
+      const std::set<std::shared_ptr<const Nosh::DirichletBC>> & _bcs
       );
 
-  // Destructor.
   ~Laplace();
 
 protected:

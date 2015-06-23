@@ -40,7 +40,7 @@ namespace Nosh
 Laplace::
 Laplace(
     const std::shared_ptr<const Nosh::Mesh> & _mesh,
-    const std::shared_ptr<const Nosh::DirichletBoundaryConditions> & _bcs
+    const std::set<std::shared_ptr<const Nosh::DirichletBC>> & _bcs
     ) :
   LinearOperator(_mesh, _bcs)
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
@@ -99,6 +99,8 @@ fill_()
 #endif
     }
   }
+
+  this->applyBcs_();
 
   this->fillComplete();
 

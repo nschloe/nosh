@@ -4,14 +4,14 @@
 #include <Eigen/Dense>
 
 namespace Nosh {
-  class DirichletBoundaryConditions
+  class DirichletBC
   {
     public:
-      DirichletBoundaryConditions()
+      DirichletBC()
       {};
 
       virtual
-      ~DirichletBoundaryConditions()
+      ~DirichletBC()
       {};
 
       virtual
