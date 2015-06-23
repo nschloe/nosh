@@ -65,13 +65,18 @@ read(
       );
 
   // How to split the file for mulitproc I/O
-  ioBroker->property_add(
-      Ioss::Property("DECOMPOSITION_METHOD", "rcb")
-      );
-  // Take two different fields with one component
-  // instead of one field with two components. This works around
-  // Ioss's inability to properly read psi_R, psi_Z as a complex variable.
-  // (It can handle data_X, data_Y, data_Z though.)
+  ioBroker->property_add(Ioss::Property("DECOMPOSITION_METHOD", "rcb"));
+
+  // make sure the output is one file
+  ioBroker->property_add(Ioss::Property("COMPOSE_RESULTS", true));
+  ioBroker->property_add(Ioss::Property("COMPOSE_RESTART", true));
+  ioBroker->property_add(Ioss::Property("PARALLEL_IO_MODE", "mpiio"));
+  //ioBroker->property_add(Ioss::Property("FILE_TYPE", "netcdf4"));
+
+  // Take two different fields with one component instead of one field with two
+  // components. This works around Ioss's inability to properly read psi_R,
+  // psi_Z as a complex variable.  (It can handle data_X, data_Y, data_Z
+  // though.)
   //const unsigned int neq = 1;
 
   const std::string meshType = "exodusII";

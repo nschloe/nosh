@@ -17,9 +17,29 @@ write(
   // in, claiming there is a field "x", and then writing it out again.
   const std::string tmpFile = "/tmp/mesh.e";
   x.mesh->openFile(tmpFile);
-  x.mesh->write();
+  try {
+    x.mesh->write();
+  }
+  catch (const std::runtime_error& error)
+  {
+    // Ignore std::runtime_error.
+    // Those are hopefully restricted to
+    // ```
+    //[ex_put_time] Error: failed to store time value in file id 65536
+    //    exerrval = -130
+    //terminate called after throwing an instance of 'std::runtime_error'
+    //  what():  Exodus error (-130)NetCDF: Attempt to extend dataset during NC_INDEPENDENT I/O operation. Use nc_var_par_access to set mode NC_COLLECTIVE before extending variable. at line 853 in file 'Ioex_DatabaseIO.C 2015/04/13' Please report to gdsjaar@sandia.gov if you need help.
+    // ```
+    // Greg should be able to handle those soon.
+  }
   auto mesh2 = Nosh::read(tmpFile, {"x"});
   mesh2->insertVector(x, "x");
   mesh2->openFile(fileName);
-  mesh2->write();
+  try {
+    mesh2->write();
+  }
+  catch (const std::runtime_error& error)
+  {
+    // see above
+  }
 }
