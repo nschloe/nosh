@@ -15,8 +15,7 @@ int main(int argc, char *argv[]) {
 
   const Poisson::A A(mesh, {bc1, bc2});
 
-  Nosh::Function f(mesh);
-  f.putScalar(0.0);
+  Nosh::Constant f(0.0);
 
   Nosh::Function x(mesh);
   x.putScalar(0.0);

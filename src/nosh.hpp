@@ -13,3 +13,5 @@
 #include "Laplace.hpp"
 #include "LinearSolver.hpp"
 #include "EdgeOperator.hpp"
+#include "Expression.hpp"
+#include "Expression_Constant.hpp"

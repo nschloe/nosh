@@ -221,14 +221,14 @@ computeControlVolumesT_(Tpetra::Vector<double,int,int> & cvOverlap) const
     // local nodes.
     for (unsigned int e0 = 0; e0 < numLocalNodes; e0++) {
       const Eigen::Vector3d &x0 = localNodeCoords[e0];
-      const int gid0 = ioBroker_->bulk_data().identifier(localNodes[e0]) - 1;
+      const int gid0 = this->gid(localNodes[e0]);
       const int lid0 = nodesOverlapMap_->getLocalElement(gid0);
 #ifndef NDEBUG
       TEUCHOS_ASSERT_INEQUALITY(lid0, >=, 0);
 #endif
       for (unsigned int e1 = e0+1; e1 < numLocalNodes; e1++) {
         const Eigen::Vector3d &x1 = localNodeCoords[e1];
-        const int gid1 = ioBroker_->bulk_data().identifier(localNodes[e1]) - 1;
+        const int gid1 = this->gid(localNodes[e1]);
         const int lid1 = nodesOverlapMap_->getLocalElement(gid1);
 #ifndef NDEBUG
         TEUCHOS_ASSERT_INEQUALITY(lid1, >=, 0);

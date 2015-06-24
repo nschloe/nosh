@@ -27,10 +27,6 @@ from nfl import *
 
 #n = OuterNormal()
 
-#e = EdgeCoefficient()
-#c = [[2 * e, -e], [-e, e]]
-#a = EdgeOperator(
-
 #a = Integral(dot(n, grad(u)), 'ds')
 
 bc1 = DirichletBC(
@@ -41,6 +37,11 @@ bc2 = DirichletBC(
   lambda x: x[0] >= 0,
   lambda x: 1.0
   )
+
+f = Expression(
+    lambda x: x[0]**2,
+    degree=2
+    )
 
 def laplace(alpha, c0, c1):
   import sympy

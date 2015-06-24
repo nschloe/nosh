@@ -32,6 +32,7 @@ class Coefficient(object):
 class Expression(object):
     def __init__(self, expr, degree=numpy.infty):
         self.expr = expr
+        self.degree = degree
         return
 
 class Vector(object):

@@ -12,11 +12,14 @@ void
 Nosh::
 linearSolve(
     const Nosh::LinearOperator & A,
-    Nosh::Function & f,
+    const Nosh::Expression & f,
     Nosh::Function & x,
     Teuchos::RCP<Teuchos::ParameterList> solverParams
     )
 {
+  // create f vector
+  auto fVec = Nosh::integrateOverControlVolumes(f, *A.mesh);
+
   // apply boundary conditions to f
   const auto boundaryNodes = A.mesh->getBoundaryNodes();
   const VectorFieldType & coordsField = A.mesh->getNodeField("coordinates");
@@ -25,7 +28,7 @@ linearSolve(
     for (const auto & bc: A.bcs) {
       if (bc->isInside(coord)) {
         const auto gid = A.mesh->gid(boundaryNode);
-        f.replaceGlobalValue(gid, bc->eval(coord));
+        fVec->replaceGlobalValue(gid, bc->eval(coord));
         break; // only set one bc per boundary point
       }
     }
@@ -46,7 +49,7 @@ linearSolve(
       *lowsFactory,
       thyraA
       );
-  const Tpetra::Vector<double,int,int> & vecF = f;
+  const Tpetra::Vector<double,int,int> & vecF = *fVec;
   Tpetra::Vector<double,int,int> & vecX = x;
   auto status = Thyra::solve<double>(
       *lows,

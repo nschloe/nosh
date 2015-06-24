@@ -2,6 +2,7 @@
 #define NOSH_LINEARSOLVER_HPP
 
 #include "LinearOperator.hpp"
+#include "Expression.hpp"
 #include "Function.hpp"
 
 namespace Nosh {
@@ -12,7 +13,7 @@ namespace Nosh {
   void
   linearSolve(
       const Nosh::LinearOperator & A,
-      Nosh::Function & f,
+      const Nosh::Expression & f,
       Nosh::Function & x,
       Teuchos::RCP<Teuchos::ParameterList> solverParams = Nosh::defaultLinearSolverParams()
       );
