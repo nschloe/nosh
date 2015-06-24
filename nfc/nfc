@@ -43,6 +43,8 @@ def _main():
             entities.append(getCodeEdgeOperator(local_var, name))
         elif isinstance(local_var, nfl.DirichletBC):
             entities.append(getCodeDirichletBC(local_var, name))
+        elif isinstance(local_var, nfl.Expression):
+            entities.append(getCodeExpression(local_var, name))
 
     # Plug it all together in main
     with open('templates/main.tpl', 'r') as f:
@@ -114,6 +116,29 @@ def getCodeDirichletBC(dbc, name):
             'name': name.upper(),  # class names are uppercase
             'insideCondition': extractCExpression(result0),
             'evalReturnValue': extractCExpression(result1)
+            })
+
+    return code
+
+
+def getCodeExpression(expr, name):
+    assert(isinstance(expr, nfl.Expression))
+
+    x = sympy.DeferredVector('x')
+
+    result = expr.eval(x)
+
+    # TODO
+    # Check if any of the arguments is not used in the function.
+    # (We'll declare them (void) to supress compiler warnings.)
+
+    # template substitution
+    with open('templates/Expression.tpl', 'r') as f:
+        src = Template(f.read())
+        code = src.substitute({
+            'name': name.upper(),  # class names are uppercase
+            'degree': expr.degree,
+            'eval': extractCExpression(result)
             })
 
     return code

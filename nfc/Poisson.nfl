@@ -37,6 +37,10 @@ bc2 = DirichletBC(
   lambda x: x[0] >= 0,
   lambda x: 1.0
   )
+bc3 = DirichletBC(
+  lambda x: x[0] > -10000,
+  lambda x: 0.0
+  )
 
 f = Expression(
     lambda x: x[0]**2,

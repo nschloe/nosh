@@ -30,8 +30,8 @@ class Coefficient(object):
         return
 
 class Expression(object):
-    def __init__(self, expr, degree=numpy.infty):
-        self.expr = expr
+    def __init__(self, eval, degree=numpy.infty):
+        self.eval = eval
         self.degree = degree
         return
 
