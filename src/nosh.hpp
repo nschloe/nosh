@@ -12,3 +12,4 @@
 #include "DirichletBCConst.hpp"
 #include "Laplace.hpp"
 #include "LinearSolver.hpp"
+#include "EdgeOperator.hpp"
