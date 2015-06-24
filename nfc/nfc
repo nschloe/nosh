@@ -24,6 +24,7 @@ import sympy
 import re
 from string import Template
 
+
 def _main():
     args = _parse_cmd_arguments()
 
@@ -40,6 +41,8 @@ def _main():
     for name, local_var in local_vars.items():
         if isinstance(local_var, nfl.EdgeOperator):
             entities.append(getCodeEdgeOperator(local_var, name))
+        elif isinstance(local_var, nfl.DirichletBC):
+            entities.append(getCodeDirichletBC(local_var, name))
 
     # Plug it all together in main
     with open('templates/main.tpl', 'r') as f:
@@ -55,8 +58,8 @@ def _main():
 
     return 0
 
+
 def getCodeEdgeOperator(eo, name):
-    # Build LHS 'a'
     assert(isinstance(eo, nfl.EdgeOperator))
     specs = inspect.getargspec(eo.edgeFunction)
     assert(len(specs.args) == 3)
@@ -76,15 +79,45 @@ def getCodeEdgeOperator(eo, name):
     # template substitution
     with open('templates/EdgeOperator.tpl', 'r') as f:
         src = Template(f.read())
-        linop = src.substitute({
-            'name': name.upper(), # class names are uppercase
+        code = src.substitute({
+            'name': name.upper(),  # class names are uppercase
             'edge00': extractCExpression(result[0][0]),
             'edge01': extractCExpression(result[0][1]),
             'edge10': extractCExpression(result[1][0]),
             'edge11': extractCExpression(result[1][1])
             })
 
-    return linop
+    return code
+
+
+def getCodeDirichletBC(dbc, name):
+    assert(isinstance(dbc, nfl.DirichletBC))
+
+    x = sympy.DeferredVector('x')
+
+    #specs = inspect.getargspec(dbc.insideCondition)
+    #assert(len(specs.args) == 1)
+    result0 = dbc.isInside(x)
+
+    #specs = inspect.getargspec(dbc.evalReturn)
+    #assert(len(specs.args) == 1)
+    result1 = dbc.eval(x)
+
+    # TODO
+    # Check if any of the arguments is not used in the function.
+    # (We'll declare them (void) to supress compiler warnings.)
+
+    # template substitution
+    with open('templates/DirichletBC.tpl', 'r') as f:
+        src = Template(f.read())
+        code = src.substitute({
+            'name': name.upper(),  # class names are uppercase
+            'insideCondition': extractCExpression(result0),
+            'evalReturnValue': extractCExpression(result1)
+            })
+
+    return code
+
 
 def extractCExpression(expr):
     from sympy.utilities.codegen import codegen
@@ -92,8 +125,10 @@ def extractCExpression(expr):
     res = re.search("f_result = (.*);", c_code)
     return res.group(1)
 
+
 def integrate_element(expression):
     return
+
 
 def assemble_rhs(L):
     assert(isinstance(L, nfl.Integral))
@@ -110,15 +145,16 @@ def assemble_rhs(L):
         outfile.write('};')
     return
 
+
 def _parse_cmd_arguments():
     parser = argparse.ArgumentParser(
         description='Convert NFL files into C++ headers.'
         )
     parser.add_argument(
-            'infile',
-            type=str,
-            help='input NFL file'
-            )
+        'infile',
+        type=str,
+        help='input NFL file'
+        )
     return parser.parse_args()
 
 if __name__ == '__main__':

@@ -60,6 +60,12 @@ class Integral(object):
         self.measure = measure
         return
 
+class DirichletBC(object):
+    def __init__(self, insideCondition, evalReturn):
+        self.isInside = insideCondition
+        self.eval = evalReturn
+        return
+
 def inner(a, b):
     assert(isinstance(a, Vector))
     assert(isinstance(b, Vector))
