@@ -21,19 +21,23 @@
 #
 from nfl import *
 
-u = Function()
-f = Coefficient()
-f = Expression('x[0]*x[0] + 2*x[0] + 1', degree=2)
+#u = Function()
+#f = Coefficient()
+#f = Expression('x[0]*x[0] + 2*x[0] + 1', degree=2)
 
-n = OuterNormal()
-
-A = Expression((1, 1, 2))
+#n = OuterNormal()
 
 #e = EdgeCoefficient()
 #c = [[2 * e, -e], [-e, e]]
 #a = EdgeOperator(
 
 #a = Integral(dot(n, grad(u)), 'ds')
+
+#def isInside(x):
+#    return x[0] < 0.0
+#def eval(x):
+#    return 0.0
+#bc1 = DirichletBC(isInside, eval)
 
 def laplace(alpha, c0, c1):
   import sympy
@@ -46,4 +50,4 @@ a = EdgeOperator(laplace)
 #          [-exp(-1j * Integral(dot(edge, A), edge) * alpha, alpha]]
 #a = EdgeOperator(glEdge)
 
-L = Integral(f, 'dx')
+#L = Integral(f, 'dx')
