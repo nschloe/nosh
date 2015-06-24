@@ -23,7 +23,7 @@ import inspect
 import sympy
 import re
 from string import Template
-
+import os
 
 def _main():
     args = _parse_cmd_arguments()
@@ -50,12 +50,12 @@ def _main():
     with open('templates/main.tpl', 'r') as f:
         main_src = Template(f.read())
         main_content = main_src.substitute({
-            'name': 'Poisson',
+            'name': os.path.splitext(os.path.basename(args.infile))[0],
             'content': '\n'.join(entities)
             })
 
     # write it
-    with open('Poisson.hpp', 'w') as f:
+    with open(os.path.splitext(args.infile)[0] + '.hpp', 'w') as f:
         f.write(main_content)
 
     return 0
@@ -97,12 +97,7 @@ def getCodeDirichletBC(dbc, name):
 
     x = sympy.DeferredVector('x')
 
-    #specs = inspect.getargspec(dbc.insideCondition)
-    #assert(len(specs.args) == 1)
     result0 = dbc.isInside(x)
-
-    #specs = inspect.getargspec(dbc.evalReturn)
-    #assert(len(specs.args) == 1)
     result1 = dbc.eval(x)
 
     # TODO
@@ -149,26 +144,6 @@ def extractCExpression(expr):
     [(c_name, c_code), (h_name, c_header)] = codegen(("f", expr), "C")
     res = re.search("f_result = (.*);", c_code)
     return res.group(1)
-
-
-def integrate_element(expression):
-    return
-
-
-def assemble_rhs(L):
-    assert(isinstance(L, nfl.Integral))
-    assert(isinstance(L.integrand, nfl.Expression))
-    assert(L.measure == 'dx')
-
-    # write to file
-    with open('poisson.h', 'w') as outfile:
-        outfile.write('class Poisson:\n')
-        outfile.write('{\n')
-        outfile.write('public:\n')
-        outfile.write('Epetra_Vector assembleRhs() {\n')
-        outfile.write('}\n')
-        outfile.write('};')
-    return
 
 
 def _parse_cmd_arguments():
