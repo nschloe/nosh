@@ -88,7 +88,7 @@ def getCodeEdgeMatrix(eo, name):
     with open('templates/EdgeMatrix.tpl', 'r') as f:
         src = Template(f.read())
         code = src.substitute({
-            'name': name.upper(),  # class names are uppercase
+            'name': name.title(),  # class names are uppercase
             'edge00': extractCExpression(result[0][0]),
             'edge01': extractCExpression(result[0][1]),
             'edge10': extractCExpression(result[1][0]),
@@ -114,7 +114,7 @@ def getCodeDirichletBC(dbc, name):
     with open('templates/DirichletBC.tpl', 'r') as f:
         src = Template(f.read())
         code = src.substitute({
-            'name': name.upper(),  # class names are uppercase
+            'name': name.title(),  # class names are uppercase
             'insideCondition': extractCExpression(result0),
             'evalReturnValue': extractCExpression(result1)
             })
@@ -137,7 +137,7 @@ def getCodeExpression(expr, name):
     with open('templates/Expression.tpl', 'r') as f:
         src = Template(f.read())
         code = src.substitute({
-            'name': name.upper(),  # class names are uppercase
+            'name': name.title(),  # class names are uppercase
             'degree': expr.degree,
             'eval': extractCExpression(result)
             })
@@ -176,7 +176,7 @@ def getCodeNonlinearOperator(F, name, local_vars):
     with open('templates/ModelEvaluator.tpl', 'r') as f:
         src = Template(f.read())
         code = src.substitute({
-            'name': name.upper(),
+            'name': name.title(),
             'description': 'description',
             'compute_f_body': compute_f_body
             })

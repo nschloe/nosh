@@ -33,7 +33,6 @@ ${name}(
 {
   // Merge all of the parameters together.
   std::map<std::string, double> params;
-  params["g"] = g;
 
   // This merges and discards new values if their keys are already in the list.
   auto spParams = scalarPotential_->getParameters();

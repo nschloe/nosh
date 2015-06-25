@@ -26,13 +26,13 @@ bc0 = DirichletBC(
     lambda x: 0.0
     )
 
-A = EdgeMatrix(
+laplace = EdgeMatrix(
     lambda alpha, c0, c1: [[alpha, -alpha],  [-alpha, alpha]]
     )
 
 def f(u):
-    return A(u) - lmbd * exp(u)
-Bratu = NonlinearOperator(
+    return laplace(u) - lmbd * exp(u)
+bratu = NonlinearOperator(
     evalu=f
     )
 # Jac=(lambda u0: A - lmbd * exp(u0))
