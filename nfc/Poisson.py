@@ -51,11 +51,11 @@ def laplace(alpha, c0, c1):
   import sympy
   return [[alpha, -alpha],
           [-alpha, alpha]]
-a = EdgeOperator(laplace)
+a = EdgeMatrix(laplace)
 
 #def glEdge(edge, alpha):
 #  return [[alpha, -exp(1j * Integral(dot(edge, A), edge) * alpha],
 #          [-exp(-1j * Integral(dot(edge, A), edge) * alpha, alpha]]
-#a = EdgeOperator(glEdge)
+#a = EdgeMatrix(glEdge)
 
 #L = Integral(f, 'dx')

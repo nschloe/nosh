@@ -19,11 +19,13 @@
 #
 import argparse
 import nfl
+import ast
 import inspect
 import sympy
 import re
 from string import Template
 import os
+
 
 def _main():
     args = _parse_cmd_arguments()
@@ -39,12 +41,16 @@ def _main():
     # loop over the local variables and see if there's anything we can convert
     entities = []
     for name, local_var in local_vars.items():
-        if isinstance(local_var, nfl.EdgeOperator):
-            entities.append(getCodeEdgeOperator(local_var, name))
+        if isinstance(local_var, nfl.EdgeMatrix):
+            entities.append(getCodeEdgeMatrix(local_var, name))
         elif isinstance(local_var, nfl.DirichletBC):
             entities.append(getCodeDirichletBC(local_var, name))
         elif isinstance(local_var, nfl.Expression):
             entities.append(getCodeExpression(local_var, name))
+        elif isinstance(local_var, nfl.NonlinearOperator):
+            entities.append(
+                getCodeNonlinearOperator(local_var, name, local_vars)
+                )
 
     # Plug it all together in main
     with open('templates/main.tpl', 'r') as f:
@@ -61,8 +67,8 @@ def _main():
     return 0
 
 
-def getCodeEdgeOperator(eo, name):
-    assert(isinstance(eo, nfl.EdgeOperator))
+def getCodeEdgeMatrix(eo, name):
+    assert(isinstance(eo, nfl.EdgeMatrix))
     specs = inspect.getargspec(eo.edgeFunction)
     assert(len(specs.args) == 3)
 
@@ -79,7 +85,7 @@ def getCodeEdgeOperator(eo, name):
     # (We'll declare them (void) to supress compiler warnings.)
 
     # template substitution
-    with open('templates/EdgeOperator.tpl', 'r') as f:
+    with open('templates/EdgeMatrix.tpl', 'r') as f:
         src = Template(f.read())
         code = src.substitute({
             'name': name.upper(),  # class names are uppercase
@@ -137,6 +143,114 @@ def getCodeExpression(expr, name):
             })
 
     return code
+
+
+def getCodeNonlinearOperator(F, name, local_vars):
+    assert(isinstance(F, nfl.NonlinearOperator))
+
+    # The dissection of nonlinear operators is unfortunately not so easy. We
+    # cannot use SymPy's built-in C-code generation here, since the operator
+    # may be composed of more complex operatations than that the basic ones.
+    # For example, the operator could involve the application of linear
+    # operator defined elsewhere.
+    # For this reason, we're doing the code generation manually. This involves
+    #   (1) generating the abstract syntax tree, and
+    #   (2) generating the code from the AST.
+    #
+    tree = ast.parse(inspect.getsource(F.evalu))
+
+    # Parse the tree and generate the code along the way.
+    assert(len(tree.body) == 1)
+    assert(isinstance(tree.body[0], ast.FunctionDef))
+    assert(len(tree.body[0].body) == 1)
+
+    compute_f_body, type = \
+        recursiveCodeGen(tree.body[0].body[0].value, local_vars)
+    assert(type == 'vector')
+
+    # TODO
+    # Check if any of the arguments is not used in the function.
+    # (We'll declare them (void) to supress compiler warnings.)
+    # template substitution
+
+    with open('templates/ModelEvaluator.tpl', 'r') as f:
+        src = Template(f.read())
+        code = src.substitute({
+            'name': name.upper(),
+            'description': 'description',
+            'compute_f_body': compute_f_body
+            })
+
+    return code
+
+
+def recursiveCodeGen(node, local_vars):
+
+    wrapperCode = '''
+auto uData = u->getData();
+auto yData = y->getDataNonConst();
+#ifndef NDEBUG
+TEUCHOS_ASSERT_EQUALITY(uData.size(), yData.size());
+#endif
+for (size_t k = 0; k < uData.size(); k++) {
+  yData[k] %s= %s;
+}'''
+
+    if isinstance(node, ast.BinOp):
+        if isinstance(node.op, ast.Add):
+            operation = '+'
+        elif isinstance(node.op, ast.Sub):
+            operation = '-'
+        elif isinstance(node.op, ast.Mult):
+            operation = '*'
+        else:
+            raise ValueError('Unknown binary operation', node.op)
+
+        code1, type1 = recursiveCodeGen(node.left, local_vars)
+        code2, type2 = recursiveCodeGen(node.right, local_vars)
+
+        if type1 == 'vector' and type2 == 'pointwise':
+            code2 = wrapperCode % (operation, code2)
+            code = code1 + code2
+            return code, 'vector'
+        elif type1 == 'pointwise' and type2 == 'vector':
+            code1 = wrapperCode % (operation, code1)
+            code = code1 + code2
+            return code, 'vector'
+        elif type1 == 'vector' and type2 == 'vector':
+            code = code1 + operation + code2
+            return code, 'vector'
+        elif type1 == 'pointwise' and type2 == 'pointwise':
+            code = code1 + ' ' + operation + ' ' + code2
+            return code, 'pointwise'
+        else:
+            raise ValueError('Illegal types.')
+    elif isinstance(node, ast.Call):
+        # Call to linear or nonlinear operator
+        opName = node.func.id
+        assert(len(node.args) == 1)
+        argName = node.args[0].id
+        # Check if the op is a Nosh::Operator.
+        isOperator = (
+            opName in local_vars and
+            isinstance(local_vars[opName], nfl.EdgeMatrix)
+            )
+        if (isOperator):
+            outName = 'y'
+            code = opName + '->apply(' + argName + ', ' + outName + ');'
+            return code, 'vector'
+        else:
+            # Assume that the operator is C++ built-in.
+            code = opName + '(' + argName + 'Data[k]' + ')'
+            return code, 'pointwise'
+    elif isinstance(node, ast.Name):
+        # assume this is a local variable
+        return node.id, 'pointwise'
+    else:
+        print(node)
+        raise ValueError('Illegal operation.')
+
+    return
 
 
 def extractCExpression(expr):

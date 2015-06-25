@@ -45,10 +45,15 @@ class OuterNormal(Vector):
 
 # Linear operator deifned via the operation along edges
 # in a Delaunay mesh
-class EdgeOperator(object):
+class EdgeMatrix(object):
     def __init__(self, edgeFunction):
         self.edgeFunction = edgeFunction
         #print(edgeFunction())
+        return
+
+class NonlinearOperator(object):
+    def __init__(self, evalu=None):
+        self.evalu = evalu
         return
 
 class EdgeCoefficient(object):

@@ -1,6 +1,6 @@
 // @HEADER
 //
-//    Builder class for the EdgeOperator.
+//    Builder class for the EdgeMatrix.
 //    Copyright (C) 2015  Nico Schlömer
 //
 //    This program is free software: you can redistribute it and/or modify
@@ -31,23 +31,23 @@
 
 namespace Nosh
 {
-  class EdgeOperator:
+  class EdgeMatrix:
     public LinearOperator
   {
     public:
-      EdgeOperator(
+      EdgeMatrix(
           const std::shared_ptr<const Nosh::Mesh> & _mesh,
           const std::set<std::shared_ptr<const Nosh::DirichletBC>> & _bcs
           ) :
         LinearOperator(_mesh, _bcs)
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
-        ,fillTime_(Teuchos::TimeMonitor::getNewTimer("Nosh: EdgeOperator::fill_"))
+        ,fillTime_(Teuchos::TimeMonitor::getNewTimer("Nosh: EdgeMatrix::fill_"))
 #endif
         {
         }
 
       virtual
-      ~EdgeOperator()
+      ~EdgeMatrix()
       {};
 
     protected:

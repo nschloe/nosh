@@ -1,12 +1,12 @@
 class ${name}:
-  public Nosh::EdgeOperator
+  public Nosh::EdgeMatrix
 {
   public:
     ${name}(
         const std::shared_ptr<const Nosh::Mesh> & _mesh,
         const std::set<std::shared_ptr<const Nosh::DirichletBC>> & _bcs
         ):
-      Nosh::EdgeOperator(_mesh, _bcs)
+      Nosh::EdgeMatrix(_mesh, _bcs)
   {
     this->fill_();
   };
