@@ -25,7 +25,7 @@ import sympy
 import re
 from string import Template
 import os
-
+import enum
 
 def _main():
     args = _parse_cmd_arguments()
@@ -158,16 +158,59 @@ def getCodeNonlinearOperator(F, name, local_vars):
     #   (2) generating the code from the AST.
     #
     tree = ast.parse(inspect.getsource(F.evalu))
-
     # Parse the tree and generate the code along the way.
     assert(len(tree.body) == 1)
     assert(isinstance(tree.body[0], ast.FunctionDef))
+    assert(len(tree.body[0].args.args) == 1)
     assert(len(tree.body[0].body) == 1)
+#    compute_f_body, type, _ = \
+#        recursiveCodeGen(tree.body[0].body[0].value, local_vars)
+#    assert(type == 'vector')
+#    compute_f_body = '''
+#const auto xData = x->getData();
+#auto yData = y->getDataNonConst();
+##ifndef NDEBUG
+#TEUCHOS_ASSERT_EQUALITY(xData.size(), yData.size());
+##endif
+#y->putScalar(0.0);
+#''' + compute_f_body
+#    print(compute_f_body)
+#    exit()
 
-    compute_f_body, type = \
-        recursiveCodeGen(tree.body[0].body[0].value, local_vars)
-    assert(type == 'vector')
+    # collect operators
+    operators = []
+    for id, local_var in local_vars.items():
+        if isinstance(local_var, nfl.EdgeMatrix):
+            operators.append(id)
+    assert(len(tree.body[0].args.args) == 1)
+    x = v(operators, 'x', 'y', tree.body[0].args.args[0].arg)
+    out_name, loopcode = x.visit(tree.body[0].body[0].value)
+    code = x.code
+    if loopcode:
+        code += '''
+for (size_t k = 0; k < yData.size(); k++) {
+  yData[k] += %s;
+}''' % loopcode
+    print(code)
+    exit()
 
+    # Jacobian
+    tree = ast.parse(inspect.getsource(F.jac))
+    # Parse the tree and generate the code along the way.
+    assert(len(tree.body) == 1)
+    assert(isinstance(tree.body[0], ast.FunctionDef))
+    assert(len(tree.body[0].args.args) == 2)
+    assert(len(tree.body[0].body) == 1)
+    #jac_body, type, _ = \
+    #    recursiveCodeGen(tree.body[0].body[0].value, local_vars)
+    #assert(type == 'vector')
+    #print(jac_body)
+
+    x = v(local_vars)
+    code, type = x.visit(tree)
+    assert(type == Type.vector)
+    print(code)
+    exit()
     # TODO
     # Check if any of the arguments is not used in the function.
     # (We'll declare them (void) to supress compiler warnings.)
@@ -184,73 +227,116 @@ def getCodeNonlinearOperator(F, name, local_vars):
     return code
 
 
-def recursiveCodeGen(node, local_vars):
+class Type(enum.Enum):
+    pointwise = 1
+    vector = 2
 
-    wrapperCode = '''
-auto uData = u->getData();
+
+class v(ast.NodeVisitor):
+    def __init__(self, operators, invar, outvar, confvar):
+        self.operators = operators
+        # sync with template:
+        self.invar = invar
+        self.outvar = outvar
+        self.confvar = confvar
+
+        self.intermediate_count = 0
+
+        self.mode = Type.vector
+
+        self.code = '''const auto xData = x->getData();
 auto yData = y->getDataNonConst();
 #ifndef NDEBUG
-TEUCHOS_ASSERT_EQUALITY(uData.size(), yData.size());
+TEUCHOS_ASSERT_EQUALITY(xData.size(), yData.size());
 #endif
-for (size_t k = 0; k < uData.size(); k++) {
-  yData[k] %s= %s;
-}'''
+y->putScalar(0.0);
+'''
+        return
 
-    if isinstance(node, ast.BinOp):
-        if isinstance(node.op, ast.Add):
-            operation = '+'
-        elif isinstance(node.op, ast.Sub):
-            operation = '-'
-        elif isinstance(node.op, ast.Mult):
-            operation = '*'
-        else:
-            raise ValueError('Unknown binary operation', node.op)
+    def wrap(self, loopcode):
+        out_name = 'y%d' % self.intermediate_count
+        self.code += '''
+Tpetra::Vector<double> %s(y->getMap());
+auto %sData = %s.getDataNonConst();
+for (size_t k = 0; k < %sData.size(); k++) {
+  %sData[k] = %s;
+}
+''' % (out_name, out_name, out_name, out_name, out_name, loopcode)
+        self.intermediate_count += 1
+        return out_name, None
 
-        code1, type1 = recursiveCodeGen(node.left, local_vars)
-        code2, type2 = recursiveCodeGen(node.right, local_vars)
-
-        if type1 == 'vector' and type2 == 'pointwise':
-            code2 = wrapperCode % (operation, code2)
-            code = code1 + code2
-            return code, 'vector'
-        elif type1 == 'pointwise' and type2 == 'vector':
-            code1 = wrapperCode % (operation, code1)
-            code = code1 + code2
-            return code, 'vector'
-        elif type1 == 'vector' and type2 == 'vector':
-            code = code1 + operation + code2
-            return code, 'vector'
-        elif type1 == 'pointwise' and type2 == 'pointwise':
-            code = code1 + ' ' + operation + ' ' + code2
-            return code, 'pointwise'
-        else:
-            raise ValueError('Illegal types.')
-    elif isinstance(node, ast.Call):
-        # Call to linear or nonlinear operator
-        opName = node.func.id
-        assert(len(node.args) == 1)
-        argName = node.args[0].id
-        # Check if the op is a Nosh::Operator.
-        isOperator = (
-            opName in local_vars and
-            isinstance(local_vars[opName], nfl.EdgeMatrix)
+    def generic_visit(self, node):
+        raise RuntimeError(
+            'Should never be called. __name__:',
+            type(node).__name__
             )
-        if (isOperator):
-            outName = 'y'
-            code = opName + '->apply(' + argName + ', ' + outName + ');'
-            return code, 'vector'
-        else:
-            # Assume that the operator is C++ built-in.
-            code = opName + '(' + argName + 'Data[k]' + ')'
-            return code, 'pointwise'
-    elif isinstance(node, ast.Name):
-        # assume this is a local variable
-        return node.id, 'pointwise'
-    else:
-        print(node)
-        raise ValueError('Illegal operation.')
+        self.visit(node)
+        return
 
-    return
+    def visit_Load(self, node):
+        pass
+
+    def visit_Call(self, node):
+        print('> Call ', node.func.id)
+        assert(len(node.args) == 1)  # one argument, e.g., A(x)
+        arg_name, loopcode = self.visit(node.args[0])
+        if node.func.id in self.operators:
+            # The argument to A(.) must be of vector type.
+            if loopcode:
+                arg_name, _ = self.wrap(loopcode)
+            out_name = 'y%d' % self.intermediate_count
+            self.code += '''
+Tpetra::Vector<double> %s(y->getMap());
+%s->apply(%s, %s);
+const auto %sData = %s.getData();
+''' % (out_name, node.func.id, arg_name, out_name, out_name, out_name)
+            self.intermediate_count += 1
+            print('  Call >')
+            return out_name, None
+        else:
+            # Assume that the operator is a C++ intrinsic.
+            if arg_name:
+                a = arg_name + 'Data[k]'
+            else:
+                a = loopcode
+            print('  Call >')
+            return None, '%s(%s)' % (node.func.id, a)
+
+    def visit_BinOp(self, node):
+        print('> BinOp')
+        left_name, loopcode_left = self.visit(node.left)
+        if left_name:
+            loopcode_left = left_name + 'Data[k]'
+        code_op = self.visit(node.op)
+        right_name, loopcode_right = self.visit(node.right)
+        if right_name:
+            loopcode_right = right_name + 'Data[k]'
+        loopcode = '%s %s %s' % (loopcode_left, code_op, loopcode_right)
+        print('  BinOp >')
+        return None, loopcode
+
+    def visit_Name(self, node):
+        print('> Name', node.id, '>')
+        if (node.id == self.confvar):
+            # Translate Python invar to template invar
+            return self.invar, None
+        else:
+            return node.id, None
+
+    def visit_Add(self, node):
+        return '+'
+
+    def visit_Sub(self, node):
+        return '-'
+
+    def visit_Mult(self, node):
+        return '*'
+
+    def visit_Div(self, node):
+        return '/'
+
+    def visit_Num(self, node):
+        return None, str(node.n)
 
 
 def extractCExpression(expr):

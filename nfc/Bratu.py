@@ -30,9 +30,21 @@ laplace = EdgeMatrix(
     lambda alpha, c0, c1: [[alpha, -alpha],  [-alpha, alpha]]
     )
 
+
 def f(u):
-    return laplace(u) - lmbd * exp(u)
+    return laplace(laplace(u))
+    #return laplace(u + 1) - lmbd * exp(u)
+    #return 2 * u + laplace(u)
+    #return u + 1 + 2 + exp(u / 6)
+    #return laplace(u+1)
+    #return laplace(u) + 2
+
+
+def jac(u0, u):
+    return laplace(u) - lmbd * exp(u0 + 1) * u
+
 bratu = NonlinearOperator(
-    evalu=f
+    evalu=f,
+    jac=jac
     )
 # Jac=(lambda u0: A - lmbd * exp(u0))

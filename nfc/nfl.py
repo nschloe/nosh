@@ -52,8 +52,9 @@ class EdgeMatrix(object):
         return
 
 class NonlinearOperator(object):
-    def __init__(self, evalu=None):
+    def __init__(self, evalu=None, jac=None):
         self.evalu = evalu
+        self.jac = jac
         return
 
 class EdgeCoefficient(object):
