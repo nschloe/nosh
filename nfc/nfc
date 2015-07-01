@@ -27,6 +27,7 @@ from string import Template
 import os
 import enum
 
+
 def _main():
     args = _parse_cmd_arguments()
 
@@ -186,11 +187,6 @@ def getCodeNonlinearOperator(F, name, local_vars):
     x = v(operators, 'x', 'y', tree.body[0].args.args[0].arg)
     out_name, loopcode = x.visit(tree.body[0].body[0].value)
     code = x.code
-    if loopcode:
-        code += '''
-for (size_t k = 0; k < yData.size(); k++) {
-  yData[k] += %s;
-}''' % loopcode
     print(code)
     exit()
 
@@ -227,11 +223,6 @@ for (size_t k = 0; k < yData.size(); k++) {
     return code
 
 
-class Type(enum.Enum):
-    pointwise = 1
-    vector = 2
-
-
 class v(ast.NodeVisitor):
     def __init__(self, operators, invar, outvar, confvar):
         self.operators = operators
@@ -242,28 +233,37 @@ class v(ast.NodeVisitor):
 
         self.intermediate_count = 0
 
-        self.mode = Type.vector
+        self.get_data = set([])
 
-        self.code = '''const auto xData = x->getData();
-auto yData = y->getDataNonConst();
-#ifndef NDEBUG
-TEUCHOS_ASSERT_EQUALITY(xData.size(), yData.size());
-#endif
-y->putScalar(0.0);
-'''
+        self.code = ''
+
+        self.visited_treetop = False
+#        self.code = '''const auto xData = x->getData();
+#auto yData = y->getDataNonConst();
+##ifndef NDEBUG
+#TEUCHOS_ASSERT_EQUALITY(xData.size(), yData.size());
+##endif
+#y->putScalar(0.0);
+#'''
         return
 
-    def wrap(self, loopcode):
-        out_name = 'y%d' % self.intermediate_count
-        self.code += '''
+    def wrap(self, loopcode, is_treetop=False):
+        if is_treetop:
+            out_name = 'y'
+            self.visited_treetop = True
+        else:
+            out_name = 'y%d' % self.intermediate_count
+            self.intermediate_count += 1
+            self.code += '''
 Tpetra::Vector<double> %s(y->getMap());
-auto %sData = %s.getDataNonConst();
+''' % out_name
+        self.code += '''auto %sData = %s.getDataNonConst();
 for (size_t k = 0; k < %sData.size(); k++) {
   %sData[k] = %s;
 }
-''' % (out_name, out_name, out_name, out_name, out_name, loopcode)
-        self.intermediate_count += 1
-        return out_name, None
+''' % (out_name, out_name, out_name, out_name, loopcode)
+        self.get_data.add(out_name)
+        return out_name
 
     def generic_visit(self, node):
         raise RuntimeError(
@@ -274,28 +274,40 @@ for (size_t k = 0; k < %sData.size(); k++) {
         return
 
     def visit_Load(self, node):
+        print('> Load >')
         pass
 
     def visit_Call(self, node):
         print('> Call ', node.func.id)
+        is_top_call = False
+        if not self.visited_treetop:
+            is_top_call = True
+            self.visited_treetop = True
         assert(len(node.args) == 1)  # one argument, e.g., A(x)
         arg_name, loopcode = self.visit(node.args[0])
         if node.func.id in self.operators:
             # The argument to A(.) must be of vector type.
             if loopcode:
-                arg_name, _ = self.wrap(loopcode)
-            out_name = 'y%d' % self.intermediate_count
+                arg_name = self.wrap(loopcode)
+            if is_top_call:
+                out_name = 'y'
+            else:
+                out_name = 'y%d' % self.intermediate_count
+                self.intermediate_count += 1
+                self.code += '''
+Tpetra::Vector<double> %s(y->getMap());''' % out_name
             self.code += '''
-Tpetra::Vector<double> %s(y->getMap());
 %s->apply(%s, %s);
-const auto %sData = %s.getData();
-''' % (out_name, node.func.id, arg_name, out_name, out_name, out_name)
-            self.intermediate_count += 1
+''' % (node.func.id, arg_name, out_name)
             print('  Call >')
             return out_name, None
         else:
             # Assume that the operator is a C++ intrinsic.
             if arg_name:
+                if arg_name not in self.get_data:
+                    self.code += '''const auto %sData = %s.getData();''' \
+                        % (2 * (arg_name,))
+                    self.get_data.add(arg_name)
                 a = arg_name + 'Data[k]'
             else:
                 a = loopcode
@@ -303,17 +315,37 @@ const auto %sData = %s.getData();
             return None, '%s(%s)' % (node.func.id, a)
 
     def visit_BinOp(self, node):
-        print('> BinOp')
+        code_op = self.visit(node.op)
+        print('> BinOp', code_op)
+        is_treetop = False
+        if not self.visited_treetop:
+            print('TOP!')
+            is_treetop = True
+            self.visited_treetop = True
         left_name, loopcode_left = self.visit(node.left)
         if left_name:
+            if left_name not in self.get_data:
+                self.code += '''
+const auto %sData = %s.getData();
+''' % (2 * (left_name,))
+                self.get_data.add(left_name)
             loopcode_left = left_name + 'Data[k]'
-        code_op = self.visit(node.op)
         right_name, loopcode_right = self.visit(node.right)
         if right_name:
+            if right_name not in self.get_data:
+                self.code += '''
+const auto %sData = %s.getData();
+''' % (2 * (right_name,))
+                self.get_data.add(right_name)
             loopcode_right = right_name + 'Data[k]'
         loopcode = '%s %s %s' % (loopcode_left, code_op, loopcode_right)
         print('  BinOp >')
-        return None, loopcode
+        if is_treetop:
+            print('TOP! >', code_op)
+            arg_name = self.wrap(loopcode, is_treetop)
+            return arg_name, None
+        else:
+            return None, loopcode
 
     def visit_Name(self, node):
         print('> Name', node.id, '>')

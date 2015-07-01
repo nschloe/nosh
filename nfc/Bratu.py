@@ -29,15 +29,18 @@ bc0 = DirichletBC(
 laplace = EdgeMatrix(
     lambda alpha, c0, c1: [[alpha, -alpha],  [-alpha, alpha]]
     )
+daplace = EdgeMatrix(
+    lambda alpha, c0, c1: [[alpha, -alpha],  [-alpha, alpha]]
+    )
 
 
 def f(u):
-    return laplace(laplace(u))
-    #return laplace(u + 1) - lmbd * exp(u)
-    #return 2 * u + laplace(u)
     #return u + 1 + 2 + exp(u / 6)
-    #return laplace(u+1)
     #return laplace(u) + 2
+    #return 2 * u + laplace(u)
+    #return daplace(laplace(u))
+    return laplace(u + 1) - lmbd * exp(u + 2)
+    #return laplace(u+1)
 
 
 def jac(u0, u):
