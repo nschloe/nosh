@@ -26,6 +26,7 @@ import re
 from string import Template
 import os
 import enum
+import logging
 
 
 def _main():
@@ -173,7 +174,11 @@ def getCodeNonlinearOperator(F, name, local_vars):
         if isinstance(local_var, nfl.EdgeMatrix):
             operators.append(id)
 
-    x = v(operators, [a.arg for a in tree.body[0].args.args])
+    debug = True
+    if debug:
+        logging.basicConfig(level=logging.DEBUG)
+
+    x = CodeGen(operators, [a.arg for a in tree.body[0].args.args])
     out_name, pointwise_code = x.visit(tree.body[0].body[0].value)
     code = x.code
     print(code)
@@ -208,11 +213,11 @@ def getCodeNonlinearOperator(F, name, local_vars):
     return code
 
 
-class v(ast.NodeVisitor):
+class CodeGen(ast.NodeVisitor):
     def __init__(self, operators, args):
         self.operators = operators
         self.invar = 'x'  # in the template
-        # in the python config
+        # in the python config:
         self.conf_x_arg = args[0]
         self.param_args = args[1:]
 
@@ -223,6 +228,9 @@ class v(ast.NodeVisitor):
         return
 
     def get_outname(self, is_treetop):
+        '''Sometime, one needs to store intermediate values in vectors. This
+        function provides a admissible name for an intermediate vector.
+        '''
         if is_treetop:
             out_name = 'y'
         else:
@@ -232,6 +240,9 @@ class v(ast.NodeVisitor):
         return out_name
 
     def wrap(self, pointwise_code, is_treetop=False):
+        '''This method takes pointwise code and wraps it up into a vector. The
+        name of the vector containing the data is returned.
+        '''
         out_name = self.get_outname(is_treetop)
         self.code += '''
 auto %sData = %s.getDataNonConst();
@@ -251,11 +262,15 @@ for (size_t k = 0; k < %sData.size(); k++) {
         return
 
     def visit_Load(self, node):
-        print('> Load >')
+        logging.debug('> Load >')
         pass
 
     def visit_Call(self, node):
-        print('> Call ', node.func.id)
+        '''Handles calls for operators A(u) and pointwise functions sin(u).
+        '''
+        logging.debug('> Call %s' % node.func.id)
+        # Check if this is the top (or root) of the recursion. If it is, the
+        # output variable will be `y`.
         is_treetop = False
         if not self.visited_treetop:
             is_treetop = True
@@ -269,10 +284,11 @@ for (size_t k = 0; k < %sData.size(); k++) {
             out_name = self.get_outname(is_treetop)
             self.code += '\n%s->apply(%s, %s);\n' \
                 % (node.func.id, arg_name, out_name)
-            print('  Call >')
+            logging.debug('  Call >')
             return out_name, None
         else:
-            # Assume that the operator is a C++ intrinsic.
+            # Assume that the operator is a C++ intrinsic or otherwise defined.
+            # The argument must be of pointwise type.
             if arg_name:
                 if arg_name not in self.get_data:
                     self.code += 'const auto %sData = %s.getData();' \
@@ -281,12 +297,12 @@ for (size_t k = 0; k < %sData.size(); k++) {
                 a = arg_name + 'Data[k]'
             else:
                 a = pointwise_code
-            print('  Call >')
+            logging.debug('  Call >')
             return None, '%s(%s)' % (node.func.id, a)
 
     def visit_BinOp(self, node):
         code_op = self.visit(node.op)
-        print('> BinOp', code_op)
+        logging.debug('> BinOp %s' % code_op)
         is_treetop = False
         if not self.visited_treetop:
             is_treetop = True
@@ -304,16 +320,15 @@ for (size_t k = 0; k < %sData.size(); k++) {
             lr_pwcode.append(pwcode)
         # plug it together
         pointwise_code = '%s %s %s' % (lr_pwcode[0], code_op, lr_pwcode[1])
-        print('  BinOp >')
+        logging.debug('  BinOp >')
         if is_treetop:
-            print('TOP! >', code_op)
             arg_name = self.wrap(pointwise_code, is_treetop)
             return arg_name, None
         else:
             return None, pointwise_code
 
     def visit_Name(self, node):
-        print('> Name', node.id, '>')
+        logging.debug('> Name %s >' % node.id)
         if (node.id == self.conf_x_arg):
             # Translate Python invar to template invar
             return self.invar, None
