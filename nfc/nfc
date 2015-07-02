@@ -179,7 +179,7 @@ def getCodeNonlinearOperator(F, name, local_vars):
         logging.basicConfig(level=logging.DEBUG)
 
     x = CodeGen(operators, [a.arg for a in tree.body[0].args.args])
-    x.enter(tree.body[0].body[0].value)
+    x.generate(tree.body[0].body[0].value)
     code = x.code
     print(code)
     exit()
@@ -234,16 +234,16 @@ class CodeGen(ast.NodeVisitor):
         self.code = ''
         return
 
-    def enter(self, node):
+    def generate(self, node):
         '''Entrance point to this class.
         '''
         node.out_vector = 'y'
         out = self.visit(node)
         if isinstance(out, Pointwise):
-            self.to_vector(out, 'y')
+            self._to_vector(out, 'y')
         return
 
-    def get_outvector(self):
+    def _get_outvector(self):
         '''Sometime, one needs to store intermediate values in vectors. This
         function provides a admissible name for an intermediate vector.
         '''
@@ -252,7 +252,7 @@ class CodeGen(ast.NodeVisitor):
         self.code += '\nTpetra::Vector<double> %s(y->getMap());' % out_vector
         return out_vector
 
-    def to_vector(self, pointwise_code, out_vector):
+    def _to_vector(self, pointwise_code, out_vector):
         '''This method takes pointwise code and wraps it up into a vector. The
         name of the vector containing the data is returned.
         '''
@@ -266,7 +266,7 @@ for (size_t k = 0; k < %sData.size(); k++) {
         self.get_data.add(out_vector)
         return
 
-    def to_pointwise(self, name):
+    def _to_pointwise(self, name):
         if name not in self.get_data:
             self.code += '\nconst auto %sData = %s.getData();' % (name, name)
             self.get_data.add(name)
@@ -296,14 +296,16 @@ for (size_t k = 0; k < %sData.size(); k++) {
             if isinstance(ret, Vector):
                 arg_name = ret
             elif isinstance(ret, Pointwise):
-                arg_name = self.get_outvector()
-                self.to_vector(ret, arg_name)
+                arg_name = self._get_outvector()
+                self._to_vector(ret, arg_name)
             else:
                 raise ValueError('Illegal input type')
+            # Get the output vector
             if hasattr(node, 'out_vector'):
                 out_vector = node.out_vector
             else:
-                out_vector = self.get_outvector()
+                out_vector = self._get_outvector()
+            # Put it all together
             self.code += '\n%s->apply(%s, %s);\n' \
                 % (node.func.id, arg_name, out_vector)
             logging.debug('  Call >')
@@ -312,7 +314,7 @@ for (size_t k = 0; k < %sData.size(); k++) {
             # Assume that the operator is a C++ intrinsic or otherwise defined.
             # The argument must be of pointwise type.
             if isinstance(ret, Vector):
-                a = self.to_pointwise(ret)
+                a = self._to_pointwise(ret)
             elif isinstance(ret, Pointwise):
                 a = ret
             else:
@@ -330,7 +332,7 @@ for (size_t k = 0; k < %sData.size(); k++) {
         for n in [node.left, node.right]:
             ret = self.visit(n)
             if isinstance(ret, Vector):
-                lr_pwcode.append(self.to_pointwise(ret))
+                lr_pwcode.append(self._to_pointwise(ret))
             elif isinstance(ret, Pointwise):
                 lr_pwcode.append(ret)
             else:
