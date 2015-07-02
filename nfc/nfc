@@ -179,7 +179,7 @@ def getCodeNonlinearOperator(F, name, local_vars):
         logging.basicConfig(level=logging.DEBUG)
 
     x = CodeGen(operators, [a.arg for a in tree.body[0].args.args])
-    out = x.visit(tree.body[0].body[0].value)
+    x.enter(tree.body[0].body[0].value)
     code = x.code
     print(code)
     exit()
@@ -232,8 +232,13 @@ class CodeGen(ast.NodeVisitor):
         self.intermediate_count = 0
         self.get_data = set([])
         self.code = ''
-        self.visited_treetop = False
         return
+
+    def enter(self, node):
+        '''Entrance point to this class.
+        '''
+        node.is_top = True
+        self.visit(node)
 
     def get_outname(self, is_treetop):
         '''Sometime, one needs to store intermediate values in vectors. This
@@ -270,8 +275,7 @@ for (size_t k = 0; k < %sData.size(); k++) {
 
     def generic_visit(self, node):
         raise RuntimeError(
-            'Should never be called. __name__:',
-            type(node).__name__
+            'Should never be called. __name__:', type(node).__name__
             )
         self.visit(node)
         return
@@ -283,13 +287,14 @@ for (size_t k = 0; k < %sData.size(); k++) {
     def visit_Call(self, node):
         '''Handles calls for operators A(u) and pointwise functions sin(u).
         '''
+        try:
+            if node.is_top:
+                print('top of the pops')
+        except AttributeError:
+            pass
         logging.debug('> Call %s' % node.func.id)
         # Check if this is the top (or root) of the recursion. If it is, the
         # output variable will be `y`.
-        is_treetop = False
-        if not self.visited_treetop:
-            is_treetop = True
-            self.visited_treetop = True
         assert(len(node.args) == 1)  # one argument, e.g., A(x)
         ret = self.visit(node.args[0])
         if node.func.id in self.operators:
@@ -300,7 +305,9 @@ for (size_t k = 0; k < %sData.size(); k++) {
                 arg_name = self.to_vector(ret)
             else:
                 raise ValueError('Illegal input type')
-            out_name = self.get_outname(is_treetop)
+            out_name = self.get_outname(
+                hasattr(node, 'is_top') and node.is_top
+                )
             self.code += '\n%s->apply(%s, %s);\n' \
                 % (node.func.id, arg_name, out_name)
             logging.debug('  Call >')
@@ -322,11 +329,6 @@ for (size_t k = 0; k < %sData.size(); k++) {
         '''
         code_op = self.visit(node.op)
         logging.debug('> BinOp %s' % code_op)
-        # We need to check for treetop *before* any self.visit() call.
-        is_treetop = False
-        if not self.visited_treetop:
-            is_treetop = True
-            self.visited_treetop = True
         # collect the pointwise code for left and right
         lr_pwcode = []
         for n in [node.left, node.right]:
@@ -342,8 +344,8 @@ for (size_t k = 0; k < %sData.size(); k++) {
             '%s %s %s' % (lr_pwcode[0], code_op, lr_pwcode[1])
             )
         logging.debug('  BinOp >')
-        if is_treetop:
-            arg_name = self.to_vector(pointwise_code, is_treetop)
+        if hasattr(node, 'is_top') and node.is_top:
+            arg_name = self.to_vector(pointwise_code, True)
             return Vector(arg_name)
         else:
             return Pointwise(pointwise_code)
