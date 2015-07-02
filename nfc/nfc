@@ -228,8 +228,7 @@ class v(ast.NodeVisitor):
         else:
             out_name = 'y%d' % self.intermediate_count
             self.intermediate_count += 1
-            self.code += '''
-Tpetra::Vector<double> %s(y->getMap());''' % out_name
+            self.code += '\nTpetra::Vector<double> %s(y->getMap());' % out_name
         return out_name
 
     def wrap(self, pointwise_code, is_treetop=False):
@@ -268,17 +267,16 @@ for (size_t k = 0; k < %sData.size(); k++) {
             if pointwise_code:
                 arg_name = self.wrap(pointwise_code)
             out_name = self.get_outname(is_treetop)
-            self.code += '''
-%s->apply(%s, %s);
-''' % (node.func.id, arg_name, out_name)
+            self.code += '\n%s->apply(%s, %s);\n' \
+                % (node.func.id, arg_name, out_name)
             print('  Call >')
             return out_name, None
         else:
             # Assume that the operator is a C++ intrinsic.
             if arg_name:
                 if arg_name not in self.get_data:
-                    self.code += '''const auto %sData = %s.getData();''' \
-                        % (2 * (arg_name,))
+                    self.code += 'const auto %sData = %s.getData();' \
+                        % (arg_name, arg_name)
                     self.get_data.add(arg_name)
                 a = arg_name + 'Data[k]'
             else:
@@ -294,7 +292,7 @@ for (size_t k = 0; k < %sData.size(); k++) {
             is_treetop = True
             self.visited_treetop = True
         # collect the pointwise code for left and right
-        pointwise_code = []
+        lr_pwcode = []
         for n in [node.left, node.right]:
             name, pwcode = self.visit(n)
             if name:
@@ -303,10 +301,9 @@ for (size_t k = 0; k < %sData.size(); k++) {
                         % (name, name)
                     self.get_data.add(name)
                 pwcode = name + 'Data[k]'
-            pointwise_code.append(pwcode)
+            lr_pwcode.append(pwcode)
         # plug it together
-        pointwise_code = '%s %s %s' \
-            % (pointwise_code[0], code_op, pointwise_code[1])
+        pointwise_code = '%s %s %s' % (lr_pwcode[0], code_op, lr_pwcode[1])
         print('  BinOp >')
         if is_treetop:
             print('TOP! >', code_op)
