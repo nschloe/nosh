@@ -34,7 +34,7 @@ daplace = EdgeMatrix(
     )
 
 
-def f(u):
+def f(u, lmbd):
     #return u + 1 + 2 + exp(u / 6)
     #return laplace(u) + 2
     #return 2 * u + laplace(u)
