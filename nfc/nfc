@@ -179,7 +179,7 @@ def getCodeNonlinearOperator(F, name, local_vars):
         logging.basicConfig(level=logging.DEBUG)
 
     x = CodeGen(operators, [a.arg for a in tree.body[0].args.args])
-    out_name, pointwise_code = x.visit(tree.body[0].body[0].value)
+    out = x.visit(tree.body[0].body[0].value)
     code = x.code
     print(code)
     exit()
@@ -213,6 +213,14 @@ def getCodeNonlinearOperator(F, name, local_vars):
     return code
 
 
+class Pointwise(str):
+    pass
+
+
+class Vector(str):
+    pass
+
+
 class CodeGen(ast.NodeVisitor):
     def __init__(self, operators, args):
         self.operators = operators
@@ -243,6 +251,7 @@ class CodeGen(ast.NodeVisitor):
         '''This method takes pointwise code and wraps it up into a vector. The
         name of the vector containing the data is returned.
         '''
+        assert(isinstance(pointwise_code, Pointwise))
         out_name = self.get_outname(is_treetop)
         self.code += '''
 auto %sData = %s.getDataNonConst();
@@ -276,33 +285,38 @@ for (size_t k = 0; k < %sData.size(); k++) {
             is_treetop = True
             self.visited_treetop = True
         assert(len(node.args) == 1)  # one argument, e.g., A(x)
-        arg_name, pointwise_code = self.visit(node.args[0])
+        ret = self.visit(node.args[0])
         if node.func.id in self.operators:
             # The argument to A(.) must be of vector type.
-            if pointwise_code:
-                arg_name = self.wrap(pointwise_code)
+            if isinstance(ret, Pointwise):
+                arg_name = self.wrap(ret)
             out_name = self.get_outname(is_treetop)
             self.code += '\n%s->apply(%s, %s);\n' \
                 % (node.func.id, arg_name, out_name)
             logging.debug('  Call >')
-            return out_name, None
+            return Vector(out_name)
         else:
             # Assume that the operator is a C++ intrinsic or otherwise defined.
             # The argument must be of pointwise type.
-            if arg_name:
-                if arg_name not in self.get_data:
+            if isinstance(ret, Vector):
+                if ret not in self.get_data:
                     self.code += 'const auto %sData = %s.getData();' \
-                        % (arg_name, arg_name)
-                    self.get_data.add(arg_name)
-                a = arg_name + 'Data[k]'
+                        % (ret, ret)
+                    self.get_data.add(ret)
+                a = ret + 'Data[k]'
+            elif isinstance(ret, Pointwise):
+                a = ret
             else:
-                a = pointwise_code
+                raise ValueError('Illegal input type')
             logging.debug('  Call >')
-            return None, '%s(%s)' % (node.func.id, a)
+            return Pointwise('%s(%s)' % (node.func.id, a))
 
     def visit_BinOp(self, node):
+        '''Handles binary operations (e.g., +, -, *, ...).
+        '''
         code_op = self.visit(node.op)
         logging.debug('> BinOp %s' % code_op)
+        # We need to check for treetop *before* any self.visit() call.
         is_treetop = False
         if not self.visited_treetop:
             is_treetop = True
@@ -310,30 +324,36 @@ for (size_t k = 0; k < %sData.size(); k++) {
         # collect the pointwise code for left and right
         lr_pwcode = []
         for n in [node.left, node.right]:
-            name, pwcode = self.visit(n)
-            if name:
-                if name not in self.get_data:
+            ret = self.visit(n)
+            if isinstance(ret, Vector):
+                if ret not in self.get_data:
                     self.code += '\nconst auto %sData = %s.getData();' \
-                        % (name, name)
-                    self.get_data.add(name)
-                pwcode = name + 'Data[k]'
+                        % (ret, ret)
+                    self.get_data.add(ret)
+                pwcode = ret + 'Data[k]'
+            elif isinstance(ret, Pointwise):
+                pwcode = ret
+            else:
+                raise ValueError('Illegal input type')
             lr_pwcode.append(pwcode)
         # plug it together
-        pointwise_code = '%s %s %s' % (lr_pwcode[0], code_op, lr_pwcode[1])
+        pointwise_code = Pointwise(
+            '%s %s %s' % (lr_pwcode[0], code_op, lr_pwcode[1])
+            )
         logging.debug('  BinOp >')
         if is_treetop:
             arg_name = self.wrap(pointwise_code, is_treetop)
-            return arg_name, None
+            return Vector(arg_name)
         else:
-            return None, pointwise_code
+            return Pointwise(pointwise_code)
 
     def visit_Name(self, node):
         logging.debug('> Name %s >' % node.id)
         if (node.id == self.conf_x_arg):
             # Translate Python invar to template invar
-            return self.invar, None
+            return Vector(self.invar)
         elif(node.id in self.param_args):
-            return None, node.id
+            return Pointwise(node.id)
         else:
             raise ValueError('Name \"%s\" not defined.' % node.id)
 
@@ -350,7 +370,7 @@ for (size_t k = 0; k < %sData.size(); k++) {
         return '/'
 
     def visit_Num(self, node):
-        return None, str(node.n)
+        return Pointwise(str(node.n))
 
 
 def extractCExpression(expr):
