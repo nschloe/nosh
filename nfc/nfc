@@ -247,7 +247,7 @@ class CodeGen(ast.NodeVisitor):
             self.code += '\nTpetra::Vector<double> %s(y->getMap());' % out_name
         return out_name
 
-    def wrap(self, pointwise_code, is_treetop=False):
+    def to_vector(self, pointwise_code, is_treetop=False):
         '''This method takes pointwise code and wraps it up into a vector. The
         name of the vector containing the data is returned.
         '''
@@ -261,6 +261,12 @@ for (size_t k = 0; k < %sData.size(); k++) {
 ''' % (out_name, out_name, out_name, out_name, pointwise_code)
         self.get_data.add(out_name)
         return out_name
+
+    def to_pointwise(self, name):
+        if name not in self.get_data:
+            self.code += '\nconst auto %sData = %s.getData();' % (name, name)
+            self.get_data.add(name)
+        return '%sData[k]' % name
 
     def generic_visit(self, node):
         raise RuntimeError(
@@ -288,8 +294,12 @@ for (size_t k = 0; k < %sData.size(); k++) {
         ret = self.visit(node.args[0])
         if node.func.id in self.operators:
             # The argument to A(.) must be of vector type.
-            if isinstance(ret, Pointwise):
-                arg_name = self.wrap(ret)
+            if isinstance(ret, Vector):
+                arg_name = ret
+            elif isinstance(ret, Pointwise):
+                arg_name = self.to_vector(ret)
+            else:
+                raise ValueError('Illegal input type')
             out_name = self.get_outname(is_treetop)
             self.code += '\n%s->apply(%s, %s);\n' \
                 % (node.func.id, arg_name, out_name)
@@ -299,11 +309,7 @@ for (size_t k = 0; k < %sData.size(); k++) {
             # Assume that the operator is a C++ intrinsic or otherwise defined.
             # The argument must be of pointwise type.
             if isinstance(ret, Vector):
-                if ret not in self.get_data:
-                    self.code += 'const auto %sData = %s.getData();' \
-                        % (ret, ret)
-                    self.get_data.add(ret)
-                a = ret + 'Data[k]'
+                a = self.to_pointwise(ret)
             elif isinstance(ret, Pointwise):
                 a = ret
             else:
@@ -326,23 +332,18 @@ for (size_t k = 0; k < %sData.size(); k++) {
         for n in [node.left, node.right]:
             ret = self.visit(n)
             if isinstance(ret, Vector):
-                if ret not in self.get_data:
-                    self.code += '\nconst auto %sData = %s.getData();' \
-                        % (ret, ret)
-                    self.get_data.add(ret)
-                pwcode = ret + 'Data[k]'
+                lr_pwcode.append(self.to_pointwise(ret))
             elif isinstance(ret, Pointwise):
-                pwcode = ret
+                lr_pwcode.append(ret)
             else:
                 raise ValueError('Illegal input type')
-            lr_pwcode.append(pwcode)
         # plug it together
         pointwise_code = Pointwise(
             '%s %s %s' % (lr_pwcode[0], code_op, lr_pwcode[1])
             )
         logging.debug('  BinOp >')
         if is_treetop:
-            arg_name = self.wrap(pointwise_code, is_treetop)
+            arg_name = self.to_vector(pointwise_code, is_treetop)
             return Vector(arg_name)
         else:
             return Pointwise(pointwise_code)

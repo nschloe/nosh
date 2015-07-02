@@ -40,7 +40,6 @@ def f(u, lmbd):
     #return 2 * u + laplace(u)
     #return daplace(laplace(u))
     return laplace(u + 1) - lmbd * exp(u + 2)
-    #return laplace(u+1)
 
 
 def jac(u0, u):
