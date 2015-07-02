@@ -150,25 +150,7 @@ def getCodeExpression(expr, name):
 def getCodeNonlinearOperator(F, name, local_vars):
     assert(isinstance(F, nfl.NonlinearOperator))
 
-    # The dissection of nonlinear operators is unfortunately not so easy. We
-    # cannot use SymPy's built-in C-code generation here, since the operator
-    # may be composed of more complex operatations than that the basic ones.
-    # For example, the operator could involve the application of linear
-    # operator defined elsewhere.
-    # For this reason, we're doing the code generation manually. This involves
-    #   (1) generating the abstract syntax tree, and
-    #   (2) generating the code from the AST.
-    #
-    tree = ast.parse(inspect.getsource(F.evalu))
-    # Parse the tree and generate the code along the way.
-    assert(len(tree.body) == 1)
-    assert(isinstance(tree.body[0], ast.FunctionDef))
-    assert(len(tree.body[0].args.args) >= 1)
-    assert(len(tree.body[0].body) == 1)
-#    print(compute_f_body)
-#    exit()
-
-    # collect operators
+    # collect all defined operators
     operators = []
     for id, local_var in local_vars.items():
         if isinstance(local_var, nfl.EdgeMatrix):
@@ -178,10 +160,38 @@ def getCodeNonlinearOperator(F, name, local_vars):
     if debug:
         logging.basicConfig(level=logging.DEBUG)
 
-    x = CodeGen(operators, [a.arg for a in tree.body[0].args.args])
-    x.generate(tree.body[0].body[0].value)
-    code = x.code
-    print(code)
+    # The dissection of nonlinear operators is unfortunately not so easy. We
+    # cannot use SymPy's built-in C-code generation here, since the operator
+    # may be composed of more complex operatations than that the basic ones.
+    # For example, the operator could involve the application of linear
+    # operator defined elsewhere.
+    # For this reason, we're doing the code generation manually. This involves
+    #   (1) generating the abstract syntax tree, and
+    #   (2) generating the code from the AST.
+    #
+    tree = ast.parse(inspect.getsource(F.f))
+    assert(len(tree.body) == 1)
+    assert(isinstance(tree.body[0], ast.FunctionDef))
+    assert(len(tree.body[0].args.args) >= 1)
+    assert(len(tree.body[0].body) == 1)
+
+    args = [a.arg for a in tree.body[0].args.args]
+    # The first argument is u (aka x), all the rest are scalar parameters.
+    generator = CodeGen(operators, args[0], args[1:])
+    f_code = generator.generate(tree.body[0].body[0].value)
+    print(f_code)
+
+    # dfdp
+    tree = ast.parse(inspect.getsource(F.dfdp))
+    assert(len(tree.body) == 1)
+    assert(isinstance(tree.body[0], ast.FunctionDef))
+    assert(len(tree.body[0].args.args) >= 1)
+    assert(len(tree.body[0].body) == 1)
+    args = [a.arg for a in tree.body[0].args.args]
+    # The first argument is u (aka x), all the rest are scalar parameters.
+    generator = CodeGen(operators, args[0], args[1:])
+    dfdp_code = generator.generate(tree.body[0].body[0].value)
+    print(dfdp_code)
     exit()
 
     # Jacobian
@@ -189,19 +199,20 @@ def getCodeNonlinearOperator(F, name, local_vars):
     # Parse the tree and generate the code along the way.
     assert(len(tree.body) == 1)
     assert(isinstance(tree.body[0], ast.FunctionDef))
-    assert(len(tree.body[0].args.args) == 2)
+    assert(len(tree.body[0].args.args) >= 2)
     assert(len(tree.body[0].body) == 1)
+    args = [a.arg for a in tree.body[0].args.args]
+    # The first is u, then u0, then the scalar parameters.
+    generator = CodeGen(operators, [args[0], args[1]], args[2:])
+    jac_code = generator.generate(tree.body[0].body[0].value)
+    print(jac_code)
 
-    x = v(local_vars)
-    code, type = x.visit(tree)
-    assert(type == Type.vector)
-    print(code)
     exit()
+
     # TODO
     # Check if any of the arguments is not used in the function.
     # (We'll declare them (void) to supress compiler warnings.)
     # template substitution
-
     with open('templates/ModelEvaluator.tpl', 'r') as f:
         src = Template(f.read())
         code = src.substitute({
@@ -222,16 +233,21 @@ class Vector(str):
 
 
 class CodeGen(ast.NodeVisitor):
-    def __init__(self, operators, args):
+    def __init__(self, operators, vector_args, scalar_args):
         self.operators = operators
-        self.invar = 'x'  # in the template
+        # Translation between arguments in the python conf and the template
+        self.arg_translate = {
+            vector_args[0]: 'x'
+            }
+        if len(vector_args) > 1:
+            self.arg_translate[vector_args[1]] = 'x0_'
         # in the python config:
-        self.conf_x_arg = args[0]
-        self.param_args = args[1:]
+        self.conf_x_arg = vector_args[0]
+        self.param_args = scalar_args
 
-        self.intermediate_count = 0
-        self.get_data = set([])
-        self.code = ''
+        self._intermediate_count = 0
+        self._get_data = set([])
+        self._code = ''
         return
 
     def generate(self, node):
@@ -241,15 +257,15 @@ class CodeGen(ast.NodeVisitor):
         out = self.visit(node)
         if isinstance(out, Pointwise):
             self._to_vector(out, 'y')
-        return
+        return self._code
 
     def _get_outvector(self):
         '''Sometime, one needs to store intermediate values in vectors. This
         function provides a admissible name for an intermediate vector.
         '''
-        out_vector = 'y%d' % self.intermediate_count
-        self.intermediate_count += 1
-        self.code += '\nTpetra::Vector<double> %s(y->getMap());' % out_vector
+        out_vector = 'y%d' % self._intermediate_count
+        self._intermediate_count += 1
+        self._code += '\nTpetra::Vector<double> %s(y->getMap());' % out_vector
         return out_vector
 
     def _to_vector(self, pointwise_code, out_vector):
@@ -257,19 +273,19 @@ class CodeGen(ast.NodeVisitor):
         name of the vector containing the data is returned.
         '''
         assert(isinstance(pointwise_code, Pointwise))
-        self.code += '''
+        self._code += '''
 auto %sData = %s.getDataNonConst();
 for (size_t k = 0; k < %sData.size(); k++) {
   %sData[k] = %s;
 }
 ''' % (out_vector, out_vector, out_vector, out_vector, pointwise_code)
-        self.get_data.add(out_vector)
+        self._get_data.add(out_vector)
         return
 
     def _to_pointwise(self, name):
-        if name not in self.get_data:
-            self.code += '\nconst auto %sData = %s.getData();' % (name, name)
-            self.get_data.add(name)
+        if name not in self._get_data:
+            self._code += '\nconst auto %sData = %s.getData();' % (name, name)
+            self._get_data.add(name)
         return '%sData[k]' % name
 
     def generic_visit(self, node):
@@ -306,7 +322,7 @@ for (size_t k = 0; k < %sData.size(); k++) {
             else:
                 out_vector = self._get_outvector()
             # Put it all together
-            self.code += '\n%s->apply(%s, %s);\n' \
+            self._code += '\n%s->apply(%s, %s);\n' \
                 % (node.func.id, arg_name, out_vector)
             logging.debug('  Call >')
             return Vector(out_vector)
@@ -322,8 +338,25 @@ for (size_t k = 0; k < %sData.size(); k++) {
             logging.debug('  Call >')
             return Pointwise('%s(%s)' % (node.func.id, a))
 
+    def visit_UnaryOp(self, node):
+        '''Handles unary operations (e.g., +, -,...).
+        '''
+        code_op = self.visit(node.op)
+        logging.debug('> UnaryOp %s' % code_op)
+        ret = self.visit(node.operand)
+        if isinstance(ret, Vector):
+            code = self._to_pointwise(ret)
+        elif isinstance(ret, Pointwise):
+            code = ret
+        else:
+            raise ValueError('Illegal input type')
+        # plug it together
+        pointwise_code = '%s%s' % (code_op, code)
+        logging.debug('  UnaryOp >')
+        return Pointwise(pointwise_code)
+
     def visit_BinOp(self, node):
-        '''Handles binary operations (e.g., +, -, *, ...).
+        '''Handles binary operations (e.g., +, -, *,...).
         '''
         code_op = self.visit(node.op)
         logging.debug('> BinOp %s' % code_op)
@@ -344,13 +377,14 @@ for (size_t k = 0; k < %sData.size(); k++) {
 
     def visit_Name(self, node):
         logging.debug('> Name %s >' % node.id)
-        if (node.id == self.conf_x_arg):
-            # Translate Python invar to template invar
-            return Vector(self.invar)
-        elif(node.id in self.param_args):
+        if node.id in self.arg_translate:
+            return Vector(self.arg_translate[node.id])
+        elif node.id in self.param_args:
             return Pointwise(node.id)
         else:
-            raise ValueError('Name \"%s\" not defined.' % node.id)
+            raise ValueError(
+                'Name \"%s\" not defined. Should it be an argument?' % node.id
+                )
 
     def visit_Add(self, node):
         return '+'
@@ -363,6 +397,12 @@ for (size_t k = 0; k < %sData.size(); k++) {
 
     def visit_Div(self, node):
         return '/'
+
+    def visit_UAdd(self, node):
+        return '+'
+
+    def visit_USub(self, node):
+        return '-'
 
     def visit_Num(self, node):
         return Pointwise(str(node.n))

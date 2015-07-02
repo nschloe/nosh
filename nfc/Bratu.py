@@ -35,19 +35,26 @@ daplace = EdgeMatrix(
 
 
 def f(u, lmbd):
-    #return u + 1 + 2 + exp(u / 6)
-    #return laplace(u) + 2
-    #return exp(u)
-    #return 2 * u + laplace(u)
-    #return daplace(laplace(u))
-    return laplace(u + 1) - lmbd * exp(u + 2)
+    # return u + 1 + 2 + exp(u / 6)
+    # return laplace(u) + 2
+    # return exp(u)
+    # return 2 * u + laplace(u)
+    # return daplace(laplace(u))
+    return laplace(u) - lmbd * exp(u)
 
 
-def jac(u0, u):
-    return laplace(u) - lmbd * exp(u0 + 1) * u
+def dfdp(u, lmbd):
+    # return 0.0
+    return -exp(u)
+
+
+def jac(u, u0, lmbd):
+    return laplace(u) - lmbd * exp(u0) * u
+    # return laplace(u) - lmbd * exp(u0 + 1) * u
 
 bratu = NonlinearOperator(
-    evalu=f,
+    f=f,
+    dfdp=dfdp,
     jac=jac
     )
 # Jac=(lambda u0: A - lmbd * exp(u0))
