@@ -293,22 +293,20 @@ for (size_t k = 0; k < %sData.size(); k++) {
         if not self.visited_treetop:
             is_treetop = True
             self.visited_treetop = True
-        left_name, pointwise_code_left = self.visit(node.left)
-        if left_name:
-            if left_name not in self.get_data:
-                self.code += '''
-const auto %sData = %s.getData();''' % (2 * (left_name,))
-                self.get_data.add(left_name)
-            pointwise_code_left = left_name + 'Data[k]'
-        right_name, pointwise_code_right = self.visit(node.right)
-        if right_name:
-            if right_name not in self.get_data:
-                self.code += '''const auto %sData = %s.getData();
-''' % (2 * (right_name,))
-                self.get_data.add(right_name)
-            pointwise_code_right = right_name + 'Data[k]'
+        # collect the pointwise code for left and right
+        pointwise_code = []
+        for n in [node.left, node.right]:
+            name, pwcode = self.visit(n)
+            if name:
+                if name not in self.get_data:
+                    self.code += '\nconst auto %sData = %s.getData();' \
+                        % (name, name)
+                    self.get_data.add(name)
+                pwcode = name + 'Data[k]'
+            pointwise_code.append(pwcode)
+        # plug it together
         pointwise_code = '%s %s %s' \
-            % (pointwise_code_left, code_op, pointwise_code_right)
+            % (pointwise_code[0], code_op, pointwise_code[1])
         print('  BinOp >')
         if is_treetop:
             print('TOP! >', code_op)
