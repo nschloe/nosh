@@ -237,35 +237,34 @@ class CodeGen(ast.NodeVisitor):
     def enter(self, node):
         '''Entrance point to this class.
         '''
-        node.is_top = True
-        self.visit(node)
+        node.out_vector = 'y'
+        out = self.visit(node)
+        if isinstance(out, Pointwise):
+            self.to_vector(out, 'y')
+        return
 
-    def get_outname(self, is_treetop):
+    def get_outvector(self):
         '''Sometime, one needs to store intermediate values in vectors. This
         function provides a admissible name for an intermediate vector.
         '''
-        if is_treetop:
-            out_name = 'y'
-        else:
-            out_name = 'y%d' % self.intermediate_count
-            self.intermediate_count += 1
-            self.code += '\nTpetra::Vector<double> %s(y->getMap());' % out_name
-        return out_name
+        out_vector = 'y%d' % self.intermediate_count
+        self.intermediate_count += 1
+        self.code += '\nTpetra::Vector<double> %s(y->getMap());' % out_vector
+        return out_vector
 
-    def to_vector(self, pointwise_code, is_treetop=False):
+    def to_vector(self, pointwise_code, out_vector):
         '''This method takes pointwise code and wraps it up into a vector. The
         name of the vector containing the data is returned.
         '''
         assert(isinstance(pointwise_code, Pointwise))
-        out_name = self.get_outname(is_treetop)
         self.code += '''
 auto %sData = %s.getDataNonConst();
 for (size_t k = 0; k < %sData.size(); k++) {
   %sData[k] = %s;
 }
-''' % (out_name, out_name, out_name, out_name, pointwise_code)
-        self.get_data.add(out_name)
-        return out_name
+''' % (out_vector, out_vector, out_vector, out_vector, pointwise_code)
+        self.get_data.add(out_vector)
+        return
 
     def to_pointwise(self, name):
         if name not in self.get_data:
@@ -287,11 +286,6 @@ for (size_t k = 0; k < %sData.size(); k++) {
     def visit_Call(self, node):
         '''Handles calls for operators A(u) and pointwise functions sin(u).
         '''
-        try:
-            if node.is_top:
-                print('top of the pops')
-        except AttributeError:
-            pass
         logging.debug('> Call %s' % node.func.id)
         # Check if this is the top (or root) of the recursion. If it is, the
         # output variable will be `y`.
@@ -302,16 +296,18 @@ for (size_t k = 0; k < %sData.size(); k++) {
             if isinstance(ret, Vector):
                 arg_name = ret
             elif isinstance(ret, Pointwise):
-                arg_name = self.to_vector(ret)
+                arg_name = self.get_outvector()
+                self.to_vector(ret, arg_name)
             else:
                 raise ValueError('Illegal input type')
-            out_name = self.get_outname(
-                hasattr(node, 'is_top') and node.is_top
-                )
+            if hasattr(node, 'out_vector'):
+                out_vector = node.out_vector
+            else:
+                out_vector = self.get_outvector()
             self.code += '\n%s->apply(%s, %s);\n' \
-                % (node.func.id, arg_name, out_name)
+                % (node.func.id, arg_name, out_vector)
             logging.debug('  Call >')
-            return Vector(out_name)
+            return Vector(out_vector)
         else:
             # Assume that the operator is a C++ intrinsic or otherwise defined.
             # The argument must be of pointwise type.
@@ -340,15 +336,9 @@ for (size_t k = 0; k < %sData.size(); k++) {
             else:
                 raise ValueError('Illegal input type')
         # plug it together
-        pointwise_code = Pointwise(
-            '%s %s %s' % (lr_pwcode[0], code_op, lr_pwcode[1])
-            )
+        pointwise_code = '%s %s %s' % (lr_pwcode[0], code_op, lr_pwcode[1])
         logging.debug('  BinOp >')
-        if hasattr(node, 'is_top') and node.is_top:
-            arg_name = self.to_vector(pointwise_code, True)
-            return Vector(arg_name)
-        else:
-            return Pointwise(pointwise_code)
+        return Pointwise(pointwise_code)
 
     def visit_Name(self, node):
         logging.debug('> Name %s >' % node.id)
