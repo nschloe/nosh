@@ -432,64 +432,10 @@ computeDFDP_(
     const Tpetra::Vector<double,int,int> &x,
     const std::map<std::string, double> & params,
     const std::string & paramName,
-    Tpetra::Vector<double,int,int> &FVec
+    Tpetra::Vector<double,int,int> &y
     ) const
 {
-  // FVec = dK/dp * x.
-  dKeoDP_->setParameters(params);
-  dKeoDP_->apply(x, FVec);
-
-  auto xData = x.getData();
-  auto fData = FVec.getDataNonConst();
-
-#ifndef NDEBUG
-  TEUCHOS_ASSERT(FVec.getMap()->isSameAs(*x.getMap()));
-  TEUCHOS_ASSERT(mesh_);
-  TEUCHOS_ASSERT(thickness_);
-#endif
-  const auto & controlVolumes = *(mesh_->getControlVolumes());
-  auto cData = controlVolumes.getData();
-
-#ifndef NDEBUG
-  // Make sure control volumes and state still match.
-  TEUCHOS_ASSERT_EQUALITY(2*cData.size(), xData.size());
-#endif
-
-  const auto thicknessValues = thickness_->getV(params);
-  auto tData = thicknessValues.getData();
-#ifndef NDEBUG
-  TEUCHOS_ASSERT(controlVolumes.getMap()->isSameAs(*thicknessValues.getMap()));
-#endif
-
-  if (paramName.compare("g") == 0) {
-    for (int k = 0; k < cData.size(); k++) {
-      // This assumes that "g" is not a parameter in either of the
-      // potentials.
-      double alpha = cData[k] * tData[k] *
-        (xData[2*k]*xData[2*k] + xData[2*k+1]*xData[2*k+1]);
-      // real and imaginary part
-      fData[2*k]   += alpha * xData[2*k];
-      fData[2*k+1] += alpha * xData[2*k+1];
-    }
-  } else {
-    const auto scalarPotentialValues =
-      scalarPotential_->getdVdP(params, paramName);
-    auto sData = scalarPotentialValues.getData();
-#ifndef NDEBUG
-    TEUCHOS_ASSERT(controlVolumes.getMap()->isSameAs(
-          *scalarPotentialValues.getMap()
-          )
-        );
-#endif
-
-    for (int k = 0; k < cData.size(); k++) {
-      const double alpha = cData[k] * tData[k] * sData[k];
-      // real and imaginary part
-      fData[2*k]   += alpha * xData[2*k];
-      fData[2*k+1] += alpha * xData[2*k+1];
-    }
-  }
-
+  ${compute_dfdp_body}
   return;
 }
 // =============================================================================

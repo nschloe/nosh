@@ -27,31 +27,30 @@ from string import Template
 import os
 import enum
 import logging
+import importlib.machinery
 
 
 def _main():
     args = _parse_cmd_arguments()
 
-    # http://stackoverflow.com/a/437857/353337
-    global_vars = {}
-    local_vars = {}
-    namespace = {}
-    with open(args.infile) as f:
-        code = compile(f.read(), args.infile, 'exec')
-        exec(code, global_vars, local_vars)
+    inmod = importlib.machinery.SourceFileLoader(
+        'inmod',
+        args.infile
+        ).load_module()
 
-    # loop over the local variables and see if there's anything we can convert
+    # loop over all locally defined entities to see if there's anything we can
+    # convert
     entities = []
-    for name, local_var in local_vars.items():
-        if isinstance(local_var, nfl.EdgeMatrix):
-            entities.append(getCodeEdgeMatrix(local_var, name))
-        elif isinstance(local_var, nfl.DirichletBC):
-            entities.append(getCodeDirichletBC(local_var, name))
-        elif isinstance(local_var, nfl.Expression):
-            entities.append(getCodeExpression(local_var, name))
-        elif isinstance(local_var, nfl.NonlinearOperator):
+    for name, var in inmod.__dict__.items():
+        if isinstance(var, nfl.EdgeMatrix):
+            entities.append(getCodeEdgeMatrix(var, name))
+        elif isinstance(var, nfl.DirichletBC):
+            entities.append(getCodeDirichletBC(var, name))
+        elif isinstance(var, nfl.Expression):
+            entities.append(getCodeExpression(var, name))
+        elif isinstance(var, nfl.NonlinearOperator):
             entities.append(
-                getCodeNonlinearOperator(local_var, name, local_vars)
+                getCodeNonlinearOperator(var, name)
                 )
 
     # Plug it all together in main
@@ -147,14 +146,8 @@ def getCodeExpression(expr, name):
     return code
 
 
-def getCodeNonlinearOperator(F, name, local_vars):
+def getCodeNonlinearOperator(F, name):
     assert(isinstance(F, nfl.NonlinearOperator))
-
-    # collect all defined operators
-    operators = []
-    for id, local_var in local_vars.items():
-        if isinstance(local_var, nfl.EdgeMatrix):
-            operators.append(id)
 
     debug = True
     if debug:
@@ -162,52 +155,29 @@ def getCodeNonlinearOperator(F, name, local_vars):
 
     # The dissection of nonlinear operators is unfortunately not so easy. We
     # cannot use SymPy's built-in C-code generation here, since the operator
-    # may be composed of more complex operatations than that the basic ones.
-    # For example, the operator could involve the application of linear
-    # operator defined elsewhere.
+    # may be composed of more complex operations than that the basic ones. For
+    # example, the operator could involve the application of linear operator
+    # defined elsewhere.
     # For this reason, we're doing the code generation manually. This involves
     #   (1) generating the abstract syntax tree, and
     #   (2) generating the code from the AST.
     #
-    tree = ast.parse(inspect.getsource(F.f))
-    assert(len(tree.body) == 1)
-    assert(isinstance(tree.body[0], ast.FunctionDef))
-    assert(len(tree.body[0].args.args) >= 1)
-    assert(len(tree.body[0].body) == 1)
-
-    args = [a.arg for a in tree.body[0].args.args]
-    # The first argument is u (aka x), all the rest are scalar parameters.
-    generator = CodeGen(operators, args[0], args[1:])
-    f_code = generator.generate(tree.body[0].body[0].value)
+    # Call the function and check the return value.
+    generator = CodeGen2()
+    u = sympy.Symbol('u')
+    f_code = generator.generate(F.f(u), {'u': 'x'})
     print(f_code)
 
-    # dfdp
-    tree = ast.parse(inspect.getsource(F.dfdp))
-    assert(len(tree.body) == 1)
-    assert(isinstance(tree.body[0], ast.FunctionDef))
-    assert(len(tree.body[0].args.args) >= 1)
-    assert(len(tree.body[0].body) == 1)
-    args = [a.arg for a in tree.body[0].args.args]
-    # The first argument is u (aka x), all the rest are scalar parameters.
-    generator = CodeGen(operators, args[0], args[1:])
-    dfdp_code = generator.generate(tree.body[0].body[0].value)
+    print('-----------------------------')
+
+    dfdp_code = generator.generate(F.dfdp(u), {'u': 'x'})
     print(dfdp_code)
-    exit()
 
-    # Jacobian
-    tree = ast.parse(inspect.getsource(F.jac))
-    # Parse the tree and generate the code along the way.
-    assert(len(tree.body) == 1)
-    assert(isinstance(tree.body[0], ast.FunctionDef))
-    assert(len(tree.body[0].args.args) >= 2)
-    assert(len(tree.body[0].body) == 1)
-    args = [a.arg for a in tree.body[0].args.args]
-    # The first is u, then u0, then the scalar parameters.
-    generator = CodeGen(operators, [args[0], args[1]], args[2:])
-    jac_code = generator.generate(tree.body[0].body[0].value)
+    print('-----------------------------')
+
+    u0 = sympy.Symbol('u0')
+    jac_code = generator.generate(F.jac(u, u0), {'u': 'x', 'u0': 'x0'})
     print(jac_code)
-
-    exit()
 
     # TODO
     # Check if any of the arguments is not used in the function.
@@ -218,9 +188,12 @@ def getCodeNonlinearOperator(F, name, local_vars):
         code = src.substitute({
             'name': name.title(),
             'description': 'description',
-            'compute_f_body': compute_f_body
+            'compute_f_body': f_code,
+            'compute_dfdp_body': dfdp_code
             })
 
+    print(code)
+    exit()
     return code
 
 
@@ -230,6 +203,196 @@ class Pointwise(str):
 
 class Vector(str):
     pass
+
+
+class CodeGen2(object):
+    def __init__(self):  # , operators, vector_args, scalar_args):
+        self.arg_translate = {}
+        self._intermediate_count = 0
+        self._get_data = set([])
+        self._code = ''
+        return
+
+    def visit(self, node, out_vector=None):
+        if node.is_Add:
+            return self.visit_ChainOp(node, '+')
+        elif node.is_Mul:
+            return self.visit_ChainOp(node, '*')
+        elif node.is_Number:
+            return Pointwise(node)
+        elif node.is_Symbol:
+            return self.visit_Name(node)
+        elif node.is_Function:
+            a = self.visit_Call(node)
+            return a
+        else:
+            raise RuntimeError('Unknown node type \"', type(node), '\".')
+        return
+
+    def generate(self, node, arg_translate):
+        '''Entrance point to this class.
+        '''
+        self.arg_translate = arg_translate
+        self._intermediate_count = 0
+        self._get_data = set([])
+        self._code = ''
+        out = self.visit(node, 'y')
+        if isinstance(out, Pointwise):
+            self._to_vector(out, 'y')
+        return self._code
+
+    def _get_outvector(self):
+        '''Sometime, one needs to store intermediate values in vectors. This
+        function provides a admissible name for an intermediate vector.
+        '''
+        out_vector = 'y%d' % self._intermediate_count
+        self._intermediate_count += 1
+        self._code += '\nTpetra::Vector<double> %s(y->getMap());' % out_vector
+        return out_vector
+
+    def _to_vector(self, pointwise_code, out_vector):
+        '''This method takes pointwise code and wraps it up into a vector. The
+        name of the vector containing the data is returned.
+        '''
+        assert(isinstance(pointwise_code, Pointwise))
+        self._code += '''
+auto %sData = %s.getDataNonConst();
+for (size_t k = 0; k < %sData.size(); k++) {
+  %sData[k] = %s;
+}
+''' % (out_vector, out_vector, out_vector, out_vector, pointwise_code)
+        self._get_data.add(out_vector)
+        return
+
+    def _to_pointwise(self, name):
+        if name not in self._get_data:
+            self._code += '\nconst auto %sData = %s.getData();' % (name, name)
+            self._get_data.add(name)
+        return '%sData[k]' % name
+
+    def generic_visit(self, node):
+        raise RuntimeError(
+            'Should never be called. __name__:', type(node).__name__
+            )
+        self.visit(node)
+        return
+
+    def visit_Load(self, node):
+        logging.debug('> Load >')
+        pass
+
+    def visit_Call(self, node):
+        '''Handles calls for operators A(u) and pointwise functions sin(u).
+        '''
+        id = node.func.__name__
+        logging.debug('> Call %s' % id)
+        # Check if this is the top (or root) of the recursion. If it is, the
+        # output variable will be `y`.
+        assert(len(node.args) == 1)  # one argument, e.g., A(x)
+        ret = self.visit(node.args[0])
+        if isinstance(node, nfl.EdgeMatrix):
+            # The argument to A(.) must be of vector type.
+            if isinstance(ret, Vector):
+                arg_name = ret
+            elif isinstance(ret, Pointwise):
+                arg_name = self._get_outvector()
+                self._to_vector(ret, arg_name)
+            else:
+                raise ValueError('Illegal input type')
+            # Get the output vector
+            if hasattr(node, 'out_vector'):
+                out_vector = node.out_vector
+            else:
+                out_vector = self._get_outvector()
+            # Put it all together
+            self._code += '\n%s->apply(%s, %s);\n' \
+                % (id, arg_name, out_vector)
+            logging.debug('  Call >')
+            return Vector(out_vector)
+        else:
+            # Assume that the operator is a C++ intrinsic or otherwise defined.
+            # The argument must be of pointwise type.
+            if isinstance(ret, Vector):
+                a = self._to_pointwise(ret)
+            elif isinstance(ret, Pointwise):
+                a = ret
+            else:
+                raise ValueError('Illegal input type')
+            logging.debug('  Call >')
+            return Pointwise('%s(%s)' % (id, a))
+
+    def visit_UnaryOp(self, node):
+        '''Handles unary operations (e.g., +, -,...).
+        '''
+        code_op = self.visit(node.op)
+        logging.debug('> UnaryOp %s' % code_op)
+        ret = self.visit(node.operand)
+        if isinstance(ret, Vector):
+            code = self._to_pointwise(ret)
+        elif isinstance(ret, Pointwise):
+            code = ret
+        else:
+            raise ValueError('Illegal input type')
+        # plug it together
+        pointwise_code = '%s%s' % (code_op, code)
+        logging.debug('  UnaryOp >')
+        return Pointwise(pointwise_code)
+
+    def visit_ChainOp(self, node, code_op):
+        '''Handles binary operations (e.g., +, -, *,...).
+        '''
+        logging.debug('> BinOp %s' % code_op)
+        # collect the pointwise code for left and right
+        pwcode = []
+        for n in node.args:
+            ret = self.visit(n)
+            if isinstance(ret, Vector):
+                pwcode.append(self._to_pointwise(ret))
+            elif isinstance(ret, Pointwise):
+                pwcode.append(ret)
+            else:
+                raise ValueError('Illegal input type')
+        # plug it together
+        co = ' ' + code_op + ' '
+        # TODO turn "-1 *" into unary operator
+        # print(pwcode)
+        pointwise_code = co.join(pwcode)
+        logging.debug('  BinOp >')
+        return Pointwise(pointwise_code)
+
+    def visit_Name(self, node):
+        id = node.name
+        logging.debug('> Name %s >' % id)
+        if id in self.arg_translate:
+            return Vector(self.arg_translate[id])
+        elif isinstance(node, sympy.Symbol):
+            # Treat all other symbols as pointwise variables
+            return Pointwise(id)
+        else:
+            raise ValueError(
+                'Name \"%s\" not defined. Should it be an argument?' % id
+                )
+
+    def visit_Add(self, node):
+        return '+'
+
+    def visit_Sub(self, node):
+        return '-'
+
+    def visit_Mult(self, node):
+        return '*'
+
+    def visit_Div(self, node):
+        return '/'
+
+    def visit_UAdd(self, node):
+        return '+'
+
+    def visit_USub(self, node):
+        return '-'
+
+    def visit_Num(self, node):
+        return Pointwise(str(node.n))
 
 
 class CodeGen(ast.NodeVisitor):

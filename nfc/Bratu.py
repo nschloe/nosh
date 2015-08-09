@@ -20,41 +20,32 @@
 # @HEADER
 #
 from nfl import *
+import sympy
 
 bc0 = DirichletBC(
     lambda x: x[0] > -10000,
     lambda x: 0.0
     )
 
-laplace = EdgeMatrix(
-    lambda alpha, c0, c1: [[alpha, -alpha],  [-alpha, alpha]]
-    )
-daplace = EdgeMatrix(
-    lambda alpha, c0, c1: [[alpha, -alpha],  [-alpha, alpha]]
-    )
 
+class laplace(EdgeMatrix):
+    def edge_function(alpha, c0, c1):
+        return [[alpha, -alpha], [-alpha, alpha]]
 
-def f(u, lmbd):
-    # return u + 1 + 2 + exp(u / 6)
-    # return laplace(u) + 2
-    # return exp(u)
-    # return 2 * u + laplace(u)
-    # return daplace(laplace(u))
-    return laplace(u) - lmbd * exp(u)
-
-
-def dfdp(u, lmbd):
-    # return 0.0
-    return -exp(u)
-
-
-def jac(u, u0, lmbd):
-    return laplace(u) - lmbd * exp(u0) * u
-    # return laplace(u) - lmbd * exp(u0 + 1) * u
+# lmbd = ScalarParameter('lambda')
+lmbd = sympy.Symbol('lambda')
+# alpha = 2.0
+# beta = - 4.0
+# f =  u + alpha + 1 + beta
+# f =  u + 1 + 2 + sympy.exp(u / 6)
+# f =  laplace(u) + 2
+# f =  sympy.exp(u)
+# f =  2 * u + laplace(u)
+# f =  daplace(laplace(u))
+# f = laplace(u) - lmbd * sympy.exp(u)
 
 bratu = NonlinearOperator(
-    f=f,
-    dfdp=dfdp,
-    jac=jac
+    f=lambda u: laplace(u) - lmbd * sympy.exp(u),
+    dfdp=lambda u: -sympy.exp(u),
+    jac=lambda u, u0: laplace(u) - lmbd * sympy.exp(u0) * u
     )
-# Jac=(lambda u0: A - lmbd * exp(u0))
