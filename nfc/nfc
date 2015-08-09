@@ -193,6 +193,16 @@ def getCodeNonlinearOperator(F, name):
             })
 
     print(code)
+
+    with open('templates/Jacobian.tpl', 'r') as f:
+        src = Template(f.read())
+        code = src.substitute({
+            'name': name.title() + 'Jacobian',
+            'description': 'description',
+            'body': jac_code,
+            })
+
+    print(code)
     exit()
     return code
 

@@ -418,9 +418,9 @@ evalModelImpl(
 // ============================================================================
 void
 computeF_(
-    const Tpetra::Vector<double,int,int> &u,
+    const Tpetra::Vector<double,int,int> & x,
     const std::map<std::string, double> & params,
-    Tpetra::Vector<double,int,int> &y
+    Tpetra::Vector<double,int,int> & y
     ) const
 {
 ${compute_f_body}
@@ -429,10 +429,10 @@ return;
 // ============================================================================
 void
 computeDFDP_(
-    const Tpetra::Vector<double,int,int> &x,
+    const Tpetra::Vector<double,int,int> & x,
     const std::map<std::string, double> & params,
     const std::string & paramName,
-    Tpetra::Vector<double,int,int> &y
+    Tpetra::Vector<double,int,int> & y
     ) const
 {
   ${compute_dfdp_body}
