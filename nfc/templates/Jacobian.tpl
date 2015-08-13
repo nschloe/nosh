@@ -1,16 +1,10 @@
-#include <map>
-#include <string>
-
-#include <Tpetra_Map.hpp>
-#include <Tpetra_Vector.hpp>
-#include <Teuchos_RCPStdSharedPtrConversions.hpp>
 
 class ${name}: public Tpetra::Operator<double,int,int> {
 
 public:
 
 ${name}(
-    const std::shared_ptr<const Nosh::Mesh> &mesh,
+    const std::shared_ptr<const Nosh::Mesh> & mesh,
     const Tpetra::Vector<double,int,int> & x0
     ) :
   mesh_(mesh),

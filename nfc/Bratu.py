@@ -32,20 +32,56 @@ class laplace(EdgeMatrix):
     def edge_function(alpha, c0, c1):
         return [[alpha, -alpha], [-alpha, alpha]]
 
+
 # lmbd = ScalarParameter('lambda')
 lmbd = sympy.Symbol('lambda')
 # alpha = 2.0
 # beta = - 4.0
-# f =  u + alpha + 1 + beta
-# f =  u + 1 + 2 + sympy.exp(u / 6)
-# f =  laplace(u) + 2
-# f =  sympy.exp(u)
-# f =  2 * u + laplace(u)
-# f =  daplace(laplace(u))
+# f = u + alpha + 1 + beta
+# f = u + 1 + 2 + sympy.exp(u / 6)
+# f = laplace(u) + 2
+# f = sympy.exp(u)
+# f = 2 * u + laplace(u)
+# f = daplace(laplace(u))
 # f = laplace(u) - lmbd * sympy.exp(u)
 
 bratu = NonlinearOperator(
-    f=lambda u: laplace(u) - lmbd * sympy.exp(u),
-    dfdp=lambda u: -sympy.exp(u),
-    jac=lambda u, u0: laplace(u) - lmbd * sympy.exp(u0) * u
-    )
+        f=lambda u: laplace(u) - lmbd * sympy.exp(u),
+        dfdp=lambda u: -sympy.exp(u),
+        jac={
+            'operator': lambda u, u0: laplace(u) - lmbd * sympy.exp(u0) * u,
+            'solver': {
+                # https://trilinos.org/docs/dev/packages/stratimikos/doc/html/index.html
+                'type': 'Pseudo Block GMRES',
+                'parameters': {
+                    'Output Frequency': 1,
+                    'Output Style': 1,
+                    'Verbosity': 33
+                    }
+                },
+            'preconditioner': {
+                'operator': lambda u0: laplace,
+                'solver': {
+                    'type': 'Muelu',  # AMG,
+                    'parameters': {
+                        # http://trilinos.org/wordpress/wp-content/uploads/2015/05/MueLu_Users_Guide_Trilinos12_0.pdf
+                        'reuse: type': 'full'
+                        }
+                    }
+                # 'solver': {
+                #     'type': 'Pseudo Block CG',
+                #     'parameters': {
+                #         'Convergence Tolerance': 0.0,
+                #         'Maximum Iterations': 10
+                #         },
+                #     'preconditioner': {
+                #         'type': 'Muelu',  # AMG,
+                #         'parameters': {
+                #             'reuse: type': 'full'
+                #             }
+                #         }
+                #     },
+                # }
+                }
+            }
+        )

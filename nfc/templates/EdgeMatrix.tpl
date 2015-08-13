@@ -7,9 +7,9 @@ class ${name}:
         const std::set<std::shared_ptr<const Nosh::DirichletBC>> & _bcs
         ):
       Nosh::EdgeMatrix(_mesh, _bcs)
-  {
-    this->fill_();
-  };
+    {
+      this->fill_();
+    };
 
     virtual
       ~${name}()
@@ -35,4 +35,6 @@ class ${name}:
           }
         };
       }
+
+  private:
 };

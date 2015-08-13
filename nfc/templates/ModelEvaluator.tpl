@@ -1,28 +1,28 @@
-class ${name}:
+class ModelEvaluator:
   public Nosh::ModelEvaluator
 {
-// ============================================================================
-${name}(
-    const std::shared_ptr<const Nosh::Mesh> &mesh,
-    const std::shared_ptr<const Tpetra::Vector<double,int,int>> &x,
+public:
+ModelEvaluator(
+    const std::shared_ptr<const Nosh::Mesh> & mesh,
+    const std::shared_ptr<const Tpetra::Vector<double,int,int>> & x,
     const std::string & derivParameter
    ) :
   mesh_(mesh),
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   evalModelTime_(Teuchos::TimeMonitor::getNewTimer(
-        "Nosh: evalModel"
+        "${name}: evalModel"
         )),
   computeFTime_(Teuchos::TimeMonitor::getNewTimer(
-        "Nosh: evalModel:compute F"
+        "${name}: evalModel:compute F"
         )),
   computedFdpTime_(Teuchos::TimeMonitor::getNewTimer(
-        "Nosh: evalModel:compute dF/dp"
+        "${name}: evalModel:compute dF/dp"
         )),
   fillJacobianTime_(Teuchos::TimeMonitor::getNewTimer(
-        "Nosh: evalModel:fill Jacobian"
+        "${name}: evalModel:fill Jacobian"
         )),
   fillPreconditionerTime_(Teuchos::TimeMonitor::getNewTimer(
-        "Nosh: evalModel::fill preconditioner"
+        "${name}: evalModel::fill preconditioner"
         )),
 #endif
   out_(Teuchos::VerboseObjectBase::getDefaultOStream()),
@@ -69,7 +69,7 @@ ${name}(
   return;
 }
 // ============================================================================
-~${name}()
+~ModelEvaluator()
 {
 }
 // ============================================================================
@@ -151,12 +151,11 @@ getUpperBounds() const
 Teuchos::RCP<Thyra::LinearOpBase<double>>
 create_W_op() const
 {
+  Tpetra::Vector<double,int,int> x0(this->space_);
   Teuchos::RCP<Tpetra::Operator<double,int,int>> jac = Teuchos::rcp(
-        new Nosh::JacobianOperator(
+        new ${name}::JacobianOperator(
           mesh_,
-          scalarPotential_,
-          thickness_,
-          keo_
+          x0
           )
         );
 
@@ -173,16 +172,8 @@ get_W_factory() const
   auto & belosList =
     p->sublist("Linear Solver Types")
     .sublist("Belos");
-  //belosList.set("Solver Type", "MINRES");
-  belosList.set("Solver Type", "Pseudo Block GMRES");
-  //belosList.set("Solver Type", "Pseudo Block CG");
 
-  auto & solverList =
-    belosList.sublist("Solver Types")
-    .sublist("Pseudo Block CG");
-  solverList.set("Output Frequency", 1);
-  solverList.set("Output Style", 1);
-  solverList.set("Verbosity", 33);
+${belos_options_code}
 
   p->set("Preconditioner Type", "None");
   builder.setParameterList(p);
@@ -198,10 +189,8 @@ Teuchos::RCP<Thyra::PreconditionerBase<double>>
 create_W_prec() const
 {
   const Teuchos::RCP<Tpetra::Operator<double,int,int>> keoPrec = Teuchos::rcp(
-      new Nosh::KeoRegularized(
-        mesh_,
-        thickness_,
-        mvp_
+      new ${name}::JacPreconditioner(
+        mesh_
         )
       );
   auto keoT = Thyra::createLinearOp(keoPrec, space_, space_);
@@ -391,7 +380,7 @@ evalModelImpl(
           W_out
           );
     const auto & jac =
-      Teuchos::rcp_dynamic_cast<Nosh::JacobianOperator>(W_outT, true);
+      Teuchos::rcp_dynamic_cast<${name}::JacobianOperator>(W_outT, true);
     jac->rebuild(params, *x_in_tpetra);
   }
 
@@ -405,9 +394,9 @@ evalModelImpl(
       Thyra::TpetraOperatorVectorExtraction<double,int,int>::getTpetraOperator(
           WPrec_out->getNonconstUnspecifiedPrecOp()
           );
-    const auto & keoPrec =
-      Teuchos::rcp_dynamic_cast<Nosh::KeoRegularized>(WPrec_outT, true);
-    keoPrec->rebuild(
+    const auto & prec =
+      Teuchos::rcp_dynamic_cast<${name}::JacPreconditioner>(WPrec_outT, true);
+    prec->rebuild(
         params,
         *x_in_tpetra
         );
@@ -439,4 +428,6 @@ computeDFDP_(
   return;
 }
 // =============================================================================
-} // class ${name}
+protected:
+private:
+} // class ModelEvaluator
