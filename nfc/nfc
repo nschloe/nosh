@@ -40,16 +40,7 @@ def _main():
     # convert
     entities = []
     for name, var in inmod.__dict__.items():
-        from sympy.core import function
-        # The EdgeMatrix class is supposed to be derived from sympy.Function
-        # so it can be used in other expressions (e.g., laplace(u) + 2*u).
-        # Unfortunately, subclassing from sympy.Function isn't exactly easy,
-        # cf. <https://groups.google.com/forum/#!topic/sympy/X6tejUa18r8>.
-        # Right now, EdgeMatrix is just an alias for sympy.Function, so we need
-        # to go the extra mile here to check if we're actually dealing with an
-        # EdgeMatrix.
-        if isinstance(var, function.FunctionClass) and \
-           callable(getattr(var, "edge_function", None)):
+        if is_edge_matrix(var):
             entities.append(get_code_edge_matrix(var, name))
         elif isinstance(var, nfl.DirichletBC):
             entities.append(getCodeDirichletBC(var, name))
@@ -73,6 +64,18 @@ def _main():
         f.write(main_content)
 
     return 0
+
+
+def is_edge_matrix(var):
+    from sympy.core import function
+    # The EdgeMatrix class is supposed to be derived from sympy.Function so it
+    # can be used in other expressions (e.g., laplace(u) + 2*u).
+    # Unfortunately, subclassing from sympy.Function isn't exactly easy, cf.
+    # <https://groups.google.com/forum/#!topic/sympy/X6tejUa18r8>.  Right now,
+    # EdgeMatrix is just an alias for sympy.Function, so we need to go the
+    # extra mile here to check if we're actually dealing with an EdgeMatrix.
+    return isinstance(var, function.FunctionClass) and \
+        callable(getattr(var, "edge_function", None))
 
 
 def get_code_edge_matrix(eo, name):
@@ -197,9 +200,7 @@ def get_code_nonlinear_operator(F, name):
     if 'preconditioner' in F.jac:
         print(F.jac['preconditioner'])
         assert('operator' in F.jac['preconditioner'])
-        assert(
-            isinstance(F.jac['preconditioner']['operator'](u0), nfl.EdgeMatrix)
-            )
+        assert(is_edge_matrix(F.jac['preconditioner']['operator'](u0)))
 
     exit()
 
