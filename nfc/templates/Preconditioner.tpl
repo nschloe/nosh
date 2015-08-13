@@ -188,48 +188,8 @@ rebuild(
   }
   regularizedKeo_->fillComplete();
 
-  // rebuild inverse
-  if (MueluPrec_.is_null()) {
-#ifdef NOSH_TEUCHOS_TIME_MONITOR
-    Teuchos::TimeMonitor tm(*timerRebuild0_);
-#endif
-    Teuchos::ParameterList params;
-${muelu_parameter_set}
-    params.set("number of equations", 2);
-    params.set("reuse: type", "full");
-    // See
-    // <http://trilinos.org/wordpress/wp-content/uploads/2015/05/MueLu_Users_Guide_Trilinos12_0.pdf>
-    // for recommended settings.
-    //params.set("smoother: type", "Chebyshev");
+${rebuild_code}
 
-    //params.set("max levels", 10);
-    //params.set("increasing or decreasing", "increasing");
-    //params.set("aggregation: type", "Uncoupled");
-    //params.set("aggregation: threshold", 0.0);
-    //params.set("smoother: sweeps", 3);
-    //params.set("smoother: pre or post", "both");
-    //params.set("coarse: type", "Amesos-KLU");
-
-    // For some reason, we need to rcp explicitly. Otherwise, the call to
-    // MueLu::CreateTpetraPreconditioner will complain about unmatching types.
-    Teuchos::RCP<Tpetra::CrsMatrix<double,int,int>> rKeoRcp =
-      Teuchos::rcp(regularizedKeo_);
-
-    MueluPrec_ = MueLu::CreateTpetraPreconditioner(
-        rKeoRcp,
-        params
-        );
-  } else {
-#ifdef NOSH_TEUCHOS_TIME_MONITOR
-    Teuchos::TimeMonitor tm(*timerRebuild1_);
-#endif
-    Teuchos::RCP<Tpetra::CrsMatrix<double,int,int>> rKeoRcp =
-      Teuchos::rcp(regularizedKeo_);
-    MueLu::ReuseTpetraPreconditioner(
-        rKeoRcp,
-        *MueluPrec_
-        );
-  }
   return;
 }
 

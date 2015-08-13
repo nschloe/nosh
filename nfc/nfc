@@ -210,6 +210,7 @@ def get_code_nonlinear_operator(F, name):
         if prec['solver']['type'] == 'Muelu':
             # Muelu-only preconditioner
             init_matrix_code += 'MueluPrec_()'
+
             parameters = ''
             for key, value in prec['solver']['parameters'].items():
                 parameters += 'params.set("%s", "%s")' % (key, value)
@@ -219,7 +220,7 @@ def get_code_nonlinear_operator(F, name):
                     'muelu_parameter_set': parameters,
                     'matrix': str(op) + '_'
                     })
-            print(rebuild_code)
+
             apply_prec_code = '''
 #ifndef NDEBUG
   TEUCHOS_ASSERT(!MueluPrec_.is_null());
@@ -229,6 +230,15 @@ return MueluPrec_->apply(X, Y);
         else:
             raise ValueError('Unknown preconditioner solver type.')
 
+    with open('templates/Preconditioner.tpl', 'r') as f:
+        src = Template(f.read())
+        prec_code = src.substitute({
+            'name': name.title(),
+            'init_matrix': init_matrix_code,
+            'apply_prec_code': apply_prec_code,
+            'rebuild_code': rebuild_code
+            })
+    print(prec_code)
     exit()
 
     # TODO
