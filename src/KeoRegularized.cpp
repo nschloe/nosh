@@ -47,11 +47,11 @@
 
 // =============================================================================
 // some typdefs for Belos
-typedef double ST;
-typedef Tpetra::MultiVector<double,int,int> MV;
-typedef Tpetra::Operator<double,int,int> OP;
-typedef Belos::MultiVecTraits<ST, MV>     MVT;
-typedef Belos::OperatorTraits<ST, MV, OP>  OPT;
+using ST = double;
+using MV = Tpetra::MultiVector<double,int,int>;
+using OP = Tpetra::Operator<double,int,int>;
+using MVT = Belos::MultiVecTraits<ST, MV>;
+using OPT = Belos::OperatorTraits<ST, MV, OP>;
 // =============================================================================
 namespace Nosh
 {

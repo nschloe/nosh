@@ -5,9 +5,13 @@
 #include "Expression.hpp"
 #include "Function.hpp"
 
-namespace Nosh {
+#include <Teuchos_ParameterList.hpp>
+#include <boost/any.hpp>
 
-  Teuchos::RCP<Teuchos::ParameterList>
+#include <map>
+
+namespace Nosh {
+  std::map<std::string, boost::any>
   defaultLinearSolverParams();
 
   void
@@ -15,7 +19,13 @@ namespace Nosh {
       const Nosh::LinearOperator & A,
       const Nosh::Expression & f,
       Nosh::Function & x,
-      Teuchos::RCP<Teuchos::ParameterList> solverParams = Nosh::defaultLinearSolverParams()
+      std::map<std::string, boost::any> solverParams = Nosh::defaultLinearSolverParams()
+      );
+
+  void
+  stdmap2teuchoslist(
+      const std::map<std::string, boost::any> & map,
+      Teuchos::ParameterList & p
       );
 }
 #endif // NOSH_LINEARSOLVER_HPP

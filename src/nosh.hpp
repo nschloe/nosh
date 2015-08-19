@@ -10,7 +10,7 @@
 #include "ModelEvaluator_Nls.hpp"
 #include "DirichletBC.hpp"
 #include "DirichletBCConst.hpp"
-#include "Laplace.hpp"
+//#include "Laplace.hpp"
 #include "LinearSolver.hpp"
 #include "EdgeMatrix.hpp"
 #include "Expression.hpp"
