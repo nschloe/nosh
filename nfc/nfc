@@ -45,7 +45,7 @@ def _main():
         if is_edge_matrix(var):
             entities.append(get_code_edge_matrix(var, name))
         elif isinstance(var, nfl.DirichletBC):
-            entities.append(getCodeDirichletBC(var, name))
+            entities.append(get_code_dirichlet_bc(var, name))
         elif isinstance(var, nfl.Expression):
             entities.append(get_code_expression(var, name))
         elif isinstance(var, nfl.NonlinearOperator):
@@ -149,17 +149,22 @@ def get_code_edge_matrix(eo, name):
     return code
 
 
-def getCodeDirichletBC(dbc, name):
+def get_code_dirichlet_bc(dbc, name):
     assert(isinstance(dbc, nfl.DirichletBC))
 
-    x = sympy.DeferredVector('x')
+    x = sympy.MatrixSymbol('x', 1, 3)
 
     result0 = dbc.isInside(x)
-    result1 = dbc.eval(x)
+    try:
+        is_x_used_inside = x in result0.free_symbols
+    except AttributeError:
+        is_x_used_inside = False
 
-    # TODO
-    # Check if any of the arguments is not used in the function.
-    # (We'll declare them (void) to supress compiler warnings.)
+    result1 = dbc.eval(x)
+    try:
+        is_x_used_eval = x in result1.free_symbols
+    except AttributeError:
+        is_x_used_eval = False
 
     # template substitution
     with open('templates/DirichletBC.tpl', 'r') as f:
@@ -167,7 +172,9 @@ def getCodeDirichletBC(dbc, name):
         code = src.substitute({
             'name': name.title(),  # class names are uppercase
             'insideCondition': extract_c_expression(result0),
-            'evalReturnValue': extract_c_expression(result1)
+            'inside_void': '' if is_x_used_inside else '(void) x;\n',
+            'evalReturnValue': extract_c_expression(result1),
+            'eval_void': '' if is_x_used_eval else '(void) x;\n',
             })
 
     return code
