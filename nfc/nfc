@@ -124,9 +124,13 @@ def get_code_edge_matrix(eo, name):
     assert(len(result[0]) == 2)
     assert(len(result[1]) == 2)
 
-    # TODO
     # Check if any of the arguments is not used in the function.
     # (We'll declare them (void) to supress compiler warnings.)
+    all_symbols = set([alpha, c0, c1])
+    used_symbols = set()
+    for r in [result[0][0], result[0][1], result[1][0], result[1][1]]:
+        used_symbols = used_symbols.union(r.free_symbols)
+    unused_symbols = all_symbols - used_symbols
 
     # template substitution
     with open('templates/EdgeMatrix.tpl', 'r') as f:
@@ -136,7 +140,10 @@ def get_code_edge_matrix(eo, name):
             'edge00': extract_c_expression(result[0][0]),
             'edge01': extract_c_expression(result[0][1]),
             'edge10': extract_c_expression(result[1][0]),
-            'edge11': extract_c_expression(result[1][1])
+            'edge11': extract_c_expression(result[1][1]),
+            'edgecontrib_unused_args': '\n'.join(
+                ('(void) %s;' % name) for name in unused_symbols
+                )
             })
 
     return code
