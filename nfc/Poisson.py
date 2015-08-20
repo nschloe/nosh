@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @HEADER
 #
-#    <description>
+#    Operators for the Poisson problem.
 #    Copyright (C) 2015  Nico Schlömer
 #
 #    This program is free software: you can redistribute it and/or modify
@@ -20,14 +20,7 @@
 # @HEADER
 #
 from nfl import *
-
-#u = Function()
-#f = Coefficient()
-#f = Expression('x[0]*x[0] + 2*x[0] + 1', degree=2)
-
-#n = OuterNormal()
-
-#a = Integral(dot(n, grad(u)), 'ds')
+import sympy
 
 bc1 = DirichletBC(
   lambda x: x[0] < 0,
@@ -47,15 +40,7 @@ f = Expression(
     degree=2
     )
 
-def laplace(alpha, c0, c1):
-  import sympy
-  return [[alpha, -alpha],
-          [-alpha, alpha]]
-a = EdgeMatrix(laplace)
 
-#def glEdge(edge, alpha):
-#  return [[alpha, -exp(1j * Integral(dot(edge, A), edge) * alpha],
-#          [-exp(-1j * Integral(dot(edge, A), edge) * alpha, alpha]]
-#a = EdgeMatrix(glEdge)
-
-#L = Integral(f, 'dx')
+class A(EdgeMatrix):
+    def edge_function(alpha, c0, c1):
+        return [[alpha, -alpha], [-alpha, alpha]]

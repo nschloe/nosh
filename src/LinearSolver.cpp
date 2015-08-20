@@ -78,6 +78,7 @@ defaultLinearSolverParams()
         {"Solver Type", "Pseudo Block GMRES"},
         {"Solver Types", list{
           {"Pseudo Block GMRES", list{
+            {"Convergence Tolerance", 1.0e-10},
             {"Output Frequency", 1},
             {"Output Style", 1},
             {"Verbosity", 33}
