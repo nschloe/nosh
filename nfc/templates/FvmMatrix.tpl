@@ -1,12 +1,12 @@
 class ${name}:
-  public Nosh::EdgeMatrix
+  public Nosh::FvmMatrix
 {
   public:
     ${name}(
         const std::shared_ptr<const Nosh::Mesh> & _mesh,
         const std::set<std::shared_ptr<const Nosh::DirichletBC>> & _bcs
         ):
-      Nosh::EdgeMatrix(_mesh, _bcs)
+      Nosh::FvmMatrix(_mesh, _bcs)
     {
       this->fill_();
     };
@@ -20,10 +20,10 @@ class ${name}:
       std::vector<std::vector<double>>
       edgeContrib(
           const double edgeCoefficient,
-          const double controlVolume0,
-          const double controlVolume1
+          const Eigen::Vector3d & edgeMidpoint
           ) const
       {
+        ${edge_contrib_unused_args}
         return {
           {
             ${edge00},
@@ -36,5 +36,14 @@ class ${name}:
         };
       }
 
+    virtual
+      double
+      vertexContrib(
+          const double controlVolume
+          ) const
+      {
+        ${vertex_contrib_unused_args}
+        return ${vertex_contrib};
+      }
   private:
 };

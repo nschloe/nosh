@@ -28,7 +28,7 @@ bc0 = DirichletBC(
     )
 
 
-class laplace(EdgeMatrix):
+class laplace(FvmMatrix):
     def edge_function(alpha, c0, c1):
         return [[alpha, -alpha], [-alpha, alpha]]
 
@@ -58,30 +58,29 @@ bratu = NonlinearOperator(
                     'Output Style': 1,
                     'Verbosity': 33
                     }
-                },
-            'preconditioner': {
-                'operator': lambda u0: laplace,
-                'solver': {
-                    'type': 'Muelu',  # AMG,
-                    'parameters': {
-                        # http://trilinos.org/wordpress/wp-content/uploads/2015/05/MueLu_Users_Guide_Trilinos12_0.pdf
-                        'reuse: type': 'full'
-                        }
+                'preconditioner': {
+                    'operator': lambda u0: laplace,
+                    # 'solver': {
+                    #     'type': 'Muelu',  # AMG,
+                    #     'parameters': {
+                    #         # http://trilinos.org/wordpress/wp-content/uploads/2015/05/MueLu_Users_Guide_Trilinos12_0.pdf
+                    #         'reuse: type': 'full'
+                    #         }
+                    #     }
+                    'solver': {
+                        'type': 'Pseudo Block CG',
+                        'parameters': {
+                            'Convergence Tolerance': 0.0,
+                            'Maximum Iterations': 10
+                            },
+                        'preconditioner': {
+                            'operator': 'Muelu',  # AMG,
+                            'parameters': {
+                                'reuse: type': 'full'
+                                }
+                            }
+                        },
                     }
-                # 'solver': {
-                #     'type': 'Pseudo Block CG',
-                #     'parameters': {
-                #         'Convergence Tolerance': 0.0,
-                #         'Maximum Iterations': 10
-                #         },
-                #     'preconditioner': {
-                #         'type': 'Muelu',  # AMG,
-                #         'parameters': {
-                #             'reuse: type': 'full'
-                #             }
-                #         }
-                #     },
-                # }
-                }
+                },
             }
         )

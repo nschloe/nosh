@@ -55,37 +55,44 @@ class OuterNormal(Vector):
         return
 
 
-# Linear operator deifned via the operation along edges in a Delaunay mesh
-class EdgeMatrix(sympy.Function):
+# Linear operator defined via the operation along edges in a Delaunay mesh
+class FvmMatrix(sympy.Function):
     pass
+
+    #def edge_contrib(self, alpha, edge_midpoint):
+    #    return []
+
+    #def vertex_contrib(self, control_volume):
+    #    return None
+
     #def __call__(self, *args):
-    #    print(super(EdgeMatrix, self))
-    #    return super(EdgeMatrix, self).__call__(self, *args)
+    #    print(super(FvmMatrix, self))
+    #    return super(FvmMatrix, self).__call__(self, *args)
     #    print('Called !')
 
     ## Override __new__,
     ## cf. <https://groups.google.com/forum/#!topic/sympy/5mLEq4Gbyfk>.
     #def __new__(self, name, edge_function):
-    #    obj = super(EdgeMatrix, self).__new__(self, name)
+    #    obj = super(FvmMatrix, self).__new__(self, name)
     #    return obj
 
     #def __init__(self, name, edge_function):
-    #    super(EdgeMatrix, self).__init__(name)
+    #    super(FvmMatrix, self).__init__(name)
     #    self.edge_function = edge_function
     #    return
 
     #def __new__(self, *args, **kwargs):
-    #    #obj = super(EdgeMatrix, self).__new__(self, name)
-    #    obj = super(EdgeMatrix, self).__new__(self, *args, **kwargs)
+    #    #obj = super(FvmMatrix, self).__new__(self, name)
+    #    obj = super(FvmMatrix, self).__new__(self, *args, **kwargs)
     #    return obj
 
     #def __init__(self, name):
-    #    #obj = super(EdgeMatrix, self).__new__(self, name)
-    #    #super(EdgeMatrix, self).__init__(self, name)
+    #    #obj = super(FvmMatrix, self).__new__(self, name)
+    #    #super(FvmMatrix, self).__init__(self, name)
     #    return
 
     #def __init__(self, name, edge_function):
-    #    super(EdgeMatrix, self).__init__(name)
+    #    super(FvmMatrix, self).__init__(name)
     #    self.edge_function = edge_function
     #    return
 

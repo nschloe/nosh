@@ -41,6 +41,24 @@ f = Expression(
     )
 
 
-class A(EdgeMatrix):
-    def edge_function(alpha, c0, c1):
+# Laplace
+class A(FvmMatrix):
+    def edge_contrib(alpha, edge_midpoint):
         return [[alpha, -alpha], [-alpha, alpha]]
+
+
+# - eps \Delta(u) + u
+class A2(FvmMatrix):
+    def edge_contrib(alpha, edge_midpoint):
+        eps = 1.0e-2
+        return [[eps*alpha, -eps*alpha], [-eps*alpha, eps*alpha]]
+
+    def vertex_contrib(control_volume):
+        return control_volume
+
+
+# - nabla (eps(x) nabla(u))
+class A2(FvmMatrix):
+    def edge_contrib(alpha, edge_midpoint):
+        eps = 3 * edge_midpoint[0] - 1
+        return [[eps*alpha, -eps*alpha], [-eps*alpha, eps*alpha]]

@@ -42,8 +42,8 @@ def _main():
     # convert
     entities = []
     for name, var in inmod.__dict__.items():
-        if is_edge_matrix(var):
-            entities.append(get_code_edge_matrix(var, name))
+        if is_fvm_matrix(var):
+            entities.append(get_code_fvm_matrix(var, name))
         elif isinstance(var, nfl.DirichletBC):
             entities.append(get_code_dirichlet_bc(var, name))
         elif isinstance(var, nfl.Expression):
@@ -97,43 +97,68 @@ def _run(command):
     return output
 
 
-def is_edge_matrix(var):
+def is_fvm_matrix(var):
     from sympy.core import function
-    # The EdgeMatrix class is supposed to be derived from sympy.Function so it
+    # The FvmMatrix class is supposed to be derived from sympy.Function so it
     # can be used in other expressions (e.g., laplace(u) + 2*u).
     # Unfortunately, subclassing from sympy.Function isn't exactly easy, cf.
     # <https://groups.google.com/forum/#!topic/sympy/X6tejUa18r8>.  Right now,
-    # EdgeMatrix is just an alias for sympy.Function, so we need to go the
-    # extra mile here to check if we're actually dealing with an EdgeMatrix.
+    # FvmMatrix is just an alias for sympy.Function, so we need to go the
+    # extra mile here to check if we're actually dealing with an FvmMatrix.
     return isinstance(var, function.FunctionClass) and \
-        callable(getattr(var, "edge_function", None))
+        (callable(getattr(var, "edge_contrib", None)) or
+         callable(getattr(var, "vertex_contrib", None))
+         )
 
 
-def get_code_edge_matrix(eo, name):
-    '''Get Trilinos code for an edge matrix.
+def get_code_fvm_matrix(eo, name):
+    '''Get Trilinos code for an FVM matrix.
     '''
-    assert(callable(getattr(eo, "edge_function", None)))
-    specs = inspect.getargspec(eo.edge_function)
-    assert(len(specs.args) == 3)
-
+    # handle the edge contributions
     alpha = sympy.Symbol('edgeCoefficient')
-    c0 = sympy.Symbol('controlVolume0')
-    c1 = sympy.Symbol('controlVolume1')
-    result = eo.edge_function(alpha, c0, c1)
-    assert(len(result) == 2)
-    assert(len(result[0]) == 2)
-    assert(len(result[1]) == 2)
+    xm = sympy.MatrixSymbol('edgeMidpoint', 1, 3)
+    all_symbols = set([alpha, xm])
+    if callable(getattr(eo, "edge_contrib", None)):
+        specs = inspect.getargspec(eo.edge_contrib)
+        assert(len(specs.args) == 2)
 
-    # Check if any of the arguments is not used in the function.
-    # (We'll declare them (void) to supress compiler warnings.)
-    all_symbols = set([alpha, c0, c1])
-    used_symbols = set()
-    for r in [result[0][0], result[0][1], result[1][0], result[1][1]]:
-        used_symbols = used_symbols.union(r.free_symbols)
-    unused_symbols = all_symbols - used_symbols
+        result = eo.edge_contrib(alpha, xm)
+        assert(len(result) == 2)
+        assert(len(result[0]) == 2)
+        assert(len(result[1]) == 2)
+
+        # Check if any of the arguments is not used in the function.
+        # (We'll declare them (void) to supress compiler warnings.)
+        used_symbols = set()
+        for r in [result[0][0], result[0][1], result[1][0], result[1][1]]:
+            used_symbols = used_symbols.union(r.free_symbols)
+        unused_symbols_edge = all_symbols - used_symbols
+    else:
+        result = [[0, 0], [0, 0]]
+        unused_symbols_edge = all_symbols
+    # edge contribution handling done
+
+    # handle the vertex contributions
+    vol = sympy.Symbol('controlVolume')
+    if callable(getattr(eo, "vertex_contrib", None)):
+        specs = inspect.getargspec(eo.vertex_contrib)
+        assert(len(specs.args) == 1)
+
+        result_vertex = eo.vertex_contrib(vol)
+
+        # Check if any of the arguments is not used in the function.
+        # (We'll declare them (void) to supress compiler warnings.)
+        if vol in result_vertex.free_symbols:
+            unused_symbols_vertex = None
+        else:
+            unused_symbols_vertex = set([vol])
+    else:
+        result_vertex = 0.0
+        unused_symbols_vertex = set([vol])
+    # vertex contribution handling done
 
     # template substitution
-    with open('templates/EdgeMatrix.tpl', 'r') as f:
+    with open('templates/FvmMatrix.tpl', 'r') as f:
         src = Template(f.read())
         code = src.substitute({
             'name': name.title(),  # class names are uppercase
@@ -141,9 +166,13 @@ def get_code_edge_matrix(eo, name):
             'edge01': extract_c_expression(result[0][1]),
             'edge10': extract_c_expression(result[1][0]),
             'edge11': extract_c_expression(result[1][1]),
-            'edgecontrib_unused_args': '\n'.join(
-                ('(void) %s;' % name) for name in unused_symbols
-                )
+            'edge_contrib_unused_args': '\n'.join(
+                ('(void) %s;' % name) for name in unused_symbols_edge
+                ),
+            'vertex_contrib': extract_c_expression(result_vertex),
+            'vertex_contrib_unused_args': '\n'.join(
+                ('(void) %s;' % name) for name in unused_symbols_vertex
+                ),
             })
 
     return code
@@ -314,7 +343,7 @@ def get_preconditioner_code(prec):
     print(prec)
     assert('operator' in F.jac['preconditioner'])
     op = prec['operator'](u0)
-    assert(is_edge_matrix(op))
+    assert(is_fvm_matrix(op))
     init_code = ',%s_(%s(mesh, x0))\n' \
         % (str(op), str(op).capitalize())
     print(init_matrix_code)
@@ -503,7 +532,7 @@ for (size_t k = 0; k < %sData.size(); k++) {
         # output variable will be `y`.
         assert(len(node.args) == 1)  # one argument, e.g., A(x)
         ret = self.visit(node.args[0])
-        if isinstance(node, nfl.EdgeMatrix):
+        if isinstance(node, nfl.FvmMatrix):
             # The argument to A(.) must be of vector type.
             if isinstance(ret, Vector):
                 arg_name = ret

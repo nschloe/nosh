@@ -212,7 +212,7 @@ rebuild(
   // is taken away again wherever needed (e.g., the Jacobian).  This would
   // introduce the additional complication of having KEO depend on psi, and
   // would likely lead to some confusion in the rest of the code.  Hence, don't
-  // worry too much about this until memory contrains get tight.
+  // worry too much about this until memory constrains get tight.
   regularizedKeo_->setParameters(params);
 
   const double g = params.at("g");

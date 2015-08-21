@@ -1,6 +1,6 @@
 // @HEADER
 //
-//    Builder class for the EdgeMatrix.
+//    Builder class for the FvmMatrix.
 //    Copyright (C) 2015  Nico Schlömer
 //
 //    This program is free software: you can redistribute it and/or modify
@@ -17,8 +17,8 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 // @HEADER
-#ifndef NOSH_EDGEOPERATOR_H
-#define NOSH_EDGEOPERATOR_H
+#ifndef NOSH_FVMMATRIX_H
+#define NOSH_FVMMATRIX_H
 
 #include <Teuchos_Tuple.hpp>
 
@@ -31,23 +31,23 @@
 
 namespace Nosh
 {
-  class EdgeMatrix:
+  class FvmMatrix:
     public LinearOperator
   {
     public:
-      EdgeMatrix(
+      FvmMatrix(
           const std::shared_ptr<const Nosh::Mesh> & _mesh,
           const std::set<std::shared_ptr<const Nosh::DirichletBC>> & _bcs
           ) :
         LinearOperator(_mesh, _bcs)
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
-        ,fillTime_(Teuchos::TimeMonitor::getNewTimer("Nosh: EdgeMatrix::fill_"))
+        ,fillTime_(Teuchos::TimeMonitor::getNewTimer("Nosh: FvmMatrix::fill_"))
 #endif
         {
         }
 
       virtual
-      ~EdgeMatrix()
+      ~FvmMatrix()
       {};
 
     protected:
@@ -56,8 +56,13 @@ namespace Nosh
       std::vector<std::vector<double>>
       edgeContrib(
           const double edgeCoefficient,
-          const double controlVolume0,
-          const double controlVolume1
+          const Eigen::Vector3d & edgeMidpoint
+          ) const = 0;
+
+      virtual
+      double
+      vertexContrib(
+          const double controlVolume
           ) const = 0;
 
       void
@@ -71,13 +76,21 @@ namespace Nosh
 #endif
           this->resumeFill();
           this->setAllToScalar(0.0);
+
+          // Add edge contributions
           const std::vector<edge> edges = this->mesh->getMyEdges();
           const auto edgeCoefficients = this->mesh->getEdgeCoefficients();
+          const VectorFieldType & coordsField =
+            this->mesh->getNodeField("coordinates");
           for (size_t k = 0; k < edges.size(); k++) {
-            const double & a = edgeCoefficients[k];
-            auto vals = edgeContrib(
-                a, 0.0, 0.0 // TODO provide correct values
-                );
+            const Eigen::Vector3d & x0 =
+              this->mesh->getNodeValue(coordsField, std::get<0>(edges[k]));
+            const Eigen::Vector3d & x1 =
+              this->mesh->getNodeValue(coordsField, std::get<1>(edges[k]));
+            const Eigen::Vector3d edgeMidpoint = 0.5 * (x0 + x1);
+
+            auto vals = edgeContrib(edgeCoefficients[k], edgeMidpoint);
+
             const Teuchos::Tuple<int,2> & idx = this->mesh->edgeGids[k];
             for (int i = 0; i < 2; i++) {
               int num = this->sumIntoGlobalValues(
@@ -88,6 +101,21 @@ namespace Nosh
               TEUCHOS_ASSERT_EQUALITY(num, 2);
 #endif
             }
+          }
+
+          // Add vertex contributions
+          const auto & controlVolumes = this->mesh->getControlVolumes();
+          auto cData = controlVolumes->getData();
+          for (int k = 0; k < cData.size(); k++) {
+            auto val = vertexContrib(cData[k]);
+            int num = this->sumIntoLocalValues(
+                k,
+                Teuchos::tuple<int>(k),
+                Teuchos::tuple<double>(val)
+                );
+#ifndef NDEBUG
+            TEUCHOS_ASSERT_EQUALITY(num, 1);
+#endif
           }
 
           this->applyBcs_();
@@ -104,4 +132,4 @@ namespace Nosh
   };
 } // namespace Nosh
 
-#endif // NOSH_EDGEOPERATOR_H
+#endif // NOSH_FVMMATRIX_H

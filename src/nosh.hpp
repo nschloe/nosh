@@ -12,6 +12,6 @@
 #include "DirichletBCConst.hpp"
 //#include "Laplace.hpp"
 #include "LinearSolver.hpp"
-#include "EdgeMatrix.hpp"
 #include "Expression.hpp"
 #include "Expression_Constant.hpp"
+#include "FvmMatrix.hpp"

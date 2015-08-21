@@ -6,18 +6,17 @@ ${name}Preconditioner(
     const std::shared_ptr<const Nosh::Mesh> &mesh,
     const Tpetra::Vector<double,int,int> & x0
     ):
-  mesh_(mesh),
-  x0_(x0),
-  ${init_matrix},
+  mesh_(mesh)
+  ,x0_(x0)
+  ${init_code}
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
-  timerRebuild0_(Teuchos::TimeMonitor::getNewTimer(
+  ,timerRebuild0_(Teuchos::TimeMonitor::getNewTimer(
         "${name}Preconditioner::rebuild::MueLu init"
-        )),
-  timerRebuild1_(Teuchos::TimeMonitor::getNewTimer(
+        ))
+  ,timerRebuild1_(Teuchos::TimeMonitor::getNewTimer(
         "${name}Preconditioner::rebuild::MueLu rebuild"
-        )),
+        ))
 #endif
-  numCycles_(1)
 {
 }
 
@@ -195,4 +194,6 @@ ${rebuild_code}
 
 protected:
 private:
+
+${declare_code}
 }

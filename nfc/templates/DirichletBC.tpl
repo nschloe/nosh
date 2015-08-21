@@ -4,10 +4,10 @@ class ${name}:
   public:
     virtual bool
     isInside(const Eigen::Vector3d & x) const {
-      return ${insideCondition};
+      ${inside_void}return ${insideCondition};
     }
     virtual double
     eval(const Eigen::Vector3d & x) const {
-      return ${evalReturnValue};
+      ${eval_void}return ${evalReturnValue};
     }
 };
