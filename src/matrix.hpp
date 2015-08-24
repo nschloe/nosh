@@ -10,11 +10,11 @@
 #include "mesh.hpp"
 
 namespace nosh {
-  class linear_operator:
+  class matrix:
     public Tpetra::CrsMatrix<double,int,int>
   {
     public:
-      linear_operator(
+      matrix(
           const std::shared_ptr<const nosh::mesh> & _mesh,
           const std::set<std::shared_ptr<const nosh::dirichlet_bc>> & _bcs
           ):
@@ -25,7 +25,7 @@ namespace nosh {
     };
 
     virtual
-    ~linear_operator()
+    ~matrix()
     {};
 
     public:

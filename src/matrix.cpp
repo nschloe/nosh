@@ -1,10 +1,10 @@
 
-#include "linear_operator.hpp"
+#include "matrix.hpp"
 namespace nosh{
 
 // apply boundary conditions to the matrix
 void
-linear_operator::
+matrix::
 apply_bcs_()
 {
   const auto boundary_nodes = this->mesh->boundary_nodes();

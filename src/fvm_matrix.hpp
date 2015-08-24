@@ -26,20 +26,20 @@
 #include <Teuchos_Time.hpp>
 #endif
 
-#include "linear_operator.hpp"
+#include "matrix.hpp"
 #include "mesh.hpp"
 
 namespace nosh
 {
   class fvm_matrix:
-    public linear_operator
+    public matrix
   {
     public:
       fvm_matrix(
           const std::shared_ptr<const nosh::mesh> & _mesh,
           const std::set<std::shared_ptr<const nosh::dirichlet_bc>> & _bcs
           ) :
-        linear_operator(_mesh, _bcs)
+        matrix(_mesh, _bcs)
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
         ,fill_time_(Teuchos::TimeMonitor::getNewTimer("Nosh: fvm_matrix::fill_"))
 #endif

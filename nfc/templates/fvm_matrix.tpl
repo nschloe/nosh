@@ -42,8 +42,7 @@ class ${name}:
           const double control_volume
           ) const
       {
-        ${vertex_contrib_unused_args}
-        return ${vertex_contrib};
+        ${vertex_contrib_unused_args}return ${vertex_contrib};
       }
   private:
 };

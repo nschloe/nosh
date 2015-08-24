@@ -56,8 +56,10 @@ def _main():
     # Plug it all together in main
     with open('templates/main.tpl', 'r') as f:
         main_src = Template(f.read())
+        name = os.path.splitext(os.path.basename(args.infile))[0]
         main_content = main_src.substitute({
-            'name': os.path.splitext(os.path.basename(args.infile))[0],
+            'name': name,
+            'name_uppercase': name.upper(),
             'content': '\n'.join(entities)
             })
 

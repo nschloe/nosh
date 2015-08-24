@@ -18,9 +18,9 @@ int main(int argc, char *argv[]) {
   const auto bc2 = std::make_shared<poisson::bc2>();
   const auto bc3 = std::make_shared<poisson::bc3>();
 
-  //const poisson::A A(mesh, {bc1, bc2});
-  //const poisson::A2 matrix(mesh, {bc3});
-  const poisson::i matrix(mesh, {bc3});
+  //poisson::A A(mesh, {bc1, bc2});
+  //poisson::A2 matrix(mesh, {bc3});
+  poisson::i matrix(mesh, {bc3});
 
   nosh::constant rhs(1.0);
   //const poisson::f rhs();
@@ -28,7 +28,7 @@ int main(int argc, char *argv[]) {
   nosh::function x(mesh);
   x.putScalar(0.0);
 
-  nosh::linear_solve(
+  nosh::scaled_linear_solve(
       matrix, rhs, x
       // {
       // {"method", "GMRES"},

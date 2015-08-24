@@ -1,6 +1,6 @@
 #include "linear_solver.hpp"
 
-#include "linear_operator.hpp"
+#include "matrix.hpp"
 
 #include <Teuchos_RCP.hpp>
 #include <Stratimikos_DefaultLinearSolverBuilder.hpp>
@@ -14,15 +14,28 @@
 void
 nosh::
 linear_solve(
-    const nosh::linear_operator & A,
+    const nosh::matrix & A,
     const nosh::expression & f,
     nosh::function & x,
     std::map<std::string, boost::any> solver_params
     )
 {
   // create f vector
-  auto fVec = nosh::integrate_over_control_volumes(f, *A.mesh);
-
+  auto f_vec = nosh::integrate_over_control_volumes(f, *A.mesh);
+  // solve
+  linear_solve(A, f_vec, x, solver_params);
+  return;
+}
+// =============================================================================
+void
+nosh::
+linear_solve(
+    const nosh::matrix & A,
+    std::shared_ptr<Tpetra::Vector<double,int,int>> f_vec,
+    nosh::function & x,
+    std::map<std::string, boost::any> solver_params
+    )
+{
   // apply boundary conditions to f
   const auto boundary_nodes = A.mesh->boundary_nodes();
   const vector_fieldType & coords_field = A.mesh->get_node_field("coordinates");
@@ -31,7 +44,7 @@ linear_solve(
     for (const auto & bc: A.bcs) {
       if (bc->is_inside(coord)) {
         const auto gid = A.mesh->gid(boundary_node);
-        fVec->replaceGlobalValue(gid, bc->eval(coord));
+        f_vec->replaceGlobalValue(gid, bc->eval(coord));
         break; // only set one bc per boundary point
       }
     }
@@ -54,7 +67,7 @@ linear_solve(
       *lowsFactory,
       thyraA
       );
-  const Tpetra::Vector<double,int,int> & vecF = *fVec;
+  const Tpetra::Vector<double,int,int> & vecF = *f_vec;
   Tpetra::Vector<double,int,int> & vecX = x;
   auto status = Thyra::solve<double>(
       *lows,
@@ -63,6 +76,51 @@ linear_solve(
       Thyra::createVector(Teuchos::rcpFromRef(vecX)).ptr()
       );
   std::cout << "Solve status: " << status << std::endl;
+  return;
+}
+// =============================================================================
+void
+nosh::
+scaled_linear_solve(
+    nosh::matrix & A,
+    const nosh::expression & f,
+    nosh::function & x,
+    std::map<std::string, boost::any> solver_params
+    )
+{
+  // create f vector
+  auto b = nosh::integrate_over_control_volumes(f, *A.mesh);
+
+  // create scaling vectors
+  const auto control_volumes = A.mesh->control_volumes();
+  auto inv_sqrt_control_volumes =
+    Tpetra::Vector<double,int,int>(control_volumes->getMap());
+
+  auto cv_data = control_volumes->getData();
+  auto inv_sqrt_cv_data = inv_sqrt_control_volumes.getDataNonConst();
+  for (int k = 0; k < cv_data.size(); k++) {
+    inv_sqrt_cv_data[k] = 1.0 / sqrt(cv_data[k]);
+  }
+
+  // scale A
+  A.leftScale(inv_sqrt_control_volumes);
+  A.rightScale(inv_sqrt_control_volumes);
+
+  // scale fvec
+  auto b_data = b->getDataNonConst();
+  for (int k = 0; k < b_data.size(); k++) {
+    b_data[k] *= inv_sqrt_cv_data[k];
+  }
+
+  // solve
+  linear_solve(A, b, x, solver_params);
+
+  // scale the solution
+  auto x_data = x.getDataNonConst();
+  for (int k = 0; k < x_data.size(); k++) {
+    x_data[k] *= inv_sqrt_cv_data[k];
+  }
+
   return;
 }
 // =============================================================================
