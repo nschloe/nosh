@@ -3,17 +3,17 @@
 
 #include "Thyra_ScalarProdBase_decl.hpp"
 
-namespace Nosh {
+namespace nosh {
 
 template<class Scalar>
 class RealScalarProd : public Thyra::ScalarProdBase<Scalar> {
 protected:
   virtual bool isEuclideanImpl() const;
 
-  virtual void scalarProdsImpl(
+  virtual void scalar_prodsImpl(
     const Thyra::MultiVectorBase<Scalar>& X,
     const Thyra::MultiVectorBase<Scalar>& Y,
-    const Teuchos::ArrayView<Scalar> &scalarProds
+    const Teuchos::ArrayView<Scalar> &scalar_prods
     ) const;
 
 private:
@@ -31,7 +31,7 @@ private:
   };
 
 };
-} // end namespace Nosh
+} // end namespace nosh
 
 #endif  // NOSH_REALSCALARPROD_DECL_HPP
 

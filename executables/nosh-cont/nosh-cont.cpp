@@ -32,18 +32,7 @@
 #include <Piro_NOXSolver.hpp>
 #include <Piro_LOCASolver.hpp>
 
-#include "nosh/StkMesh.hpp"
-#include "nosh/ScalarField_Constant.hpp"
-#include "nosh/ScalarField_ExplicitValues.hpp"
-#include "nosh/ParameterMatrix_Keo.hpp"
-#include "nosh/ParameterMatrix_DKeoDP.hpp"
-#include "nosh/ParameterMatrix_Laplace.hpp"
-#include "nosh/VectorField_ExplicitValues.hpp"
-#include "nosh/VectorField_ConstantCurl.hpp"
-#include "nosh/ModelEvaluator_Nls.hpp"
-#include "nosh/Observer.hpp"
-#include "nosh/SaveEigenData.hpp"
-#include "nosh/CsvWriter.hpp"
+#include "nosh.hpp"
 
 #include "MyScalarField.hpp"
 

@@ -20,7 +20,7 @@
 # @HEADER
 #
 from nfl import *
-import sympy
+from sympy import *
 
 bc1 = DirichletBC(
   lambda x: x[0] < 0,
@@ -36,9 +36,15 @@ bc3 = DirichletBC(
   )
 
 f = Expression(
-    lambda x: x[0]**2,
+    lambda x: x[0]**2 + sin(5*x[1]),
     degree=2
     )
+
+
+# identity
+class I(FvmMatrix):
+    def vertex_contrib(control_volume):
+        return control_volume
 
 
 # Laplace

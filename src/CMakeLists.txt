@@ -1,6 +1,6 @@
-# http://www.vtk.org/Wiki/VTK/Build_System_Migration
-FIND_PACKAGE(VTK COMPONENTS vtkIOXdmf3 vtkParallelMPI NO_MODULE)
-INCLUDE(${VTK_USE_FILE})
+## http://www.vtk.org/Wiki/VTK/Build_System_Migration
+#FIND_PACKAGE(VTK COMPONENTS vtkIOXdmf3 vtkParallelMPI NO_MODULE)
+#INCLUDE(${VTK_USE_FILE})
 
 # Treat Trilinos as system code to prevent warnings from Trilinos to appear
 # here. Also add Trilinos TPL include directories. Templated TPL packages such
@@ -10,7 +10,7 @@ INCLUDE_DIRECTORIES(
   ${Trilinos_INCLUDE_DIRS}
   ${Trilinos_TPL_INCLUDE_DIRS}
   ${EIGEN3_INCLUDE_DIR}
-  ${VTK_INCLUDE_DIRS}
+  #${VTK_INCLUDE_DIRS}
 )
 
 FILE(GLOB nosh_SRCS "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")

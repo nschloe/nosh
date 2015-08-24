@@ -25,7 +25,7 @@
 #include "BorderingHelpers.hpp"
 
 // =============================================================================
-namespace Nosh
+namespace nosh
 {
 // =============================================================================
 BorderedOperator::
@@ -39,8 +39,8 @@ BorderedOperator(const std::shared_ptr<Tpetra::Operator<double,int,int>> & inner
   c_(c),
   d_(d),
   useTranspose_(false),
-  domainMap_(*Nosh::BorderingHelpers::extendMapBy1(innerOperator_->getDomainMap())),
-  rangeMap_(*Nosh::BorderingHelpers::extendMapBy1(innerOperator_->getRangeMap()))
+  domainMap_(*nosh::BorderingHelpers::extendMapBy1(innerOperator_->getDomainMap())),
+  rangeMap_(*nosh::BorderingHelpers::extendMapBy1(innerOperator_->getRangeMap()))
 {
 }
 // =============================================================================
@@ -75,7 +75,7 @@ Apply(const Tpetra::MultiVector<double,int,int> &X,
   // Dissect X.
   Tpetra::Vector<double,int,int> innerX(innerOperator_->getDomainMap());
   std::vector<double> lambda(n);
-  Nosh::BorderingHelpers::dissect(X, innerX, &lambda[0]);
+  nosh::BorderingHelpers::dissect(X, innerX, &lambda[0]);
   // Apply inner operator.
   Tpetra::Vector<double,int,int> innerY(innerOperator_->getRangeMap());
   TEUCHOS_ASSERT_EQUALITY(0, innerOperator_->Apply(innerX, innerY));
@@ -96,7 +96,7 @@ Apply(const Tpetra::MultiVector<double,int,int> &X,
   }
 
   // Merge it all together.
-  Nosh::BorderingHelpers::merge(innerY, &alpha[0], Y);
+  nosh::BorderingHelpers::merge(innerY, &alpha[0], Y);
 
   return 0;
 }
@@ -125,7 +125,7 @@ ApplyInverse(const Tpetra::MultiVector<double,int,int> &X,
   // Dissect X.
   Tpetra::Vector<double,int,int> innerX(innerOperator_->getDomainMap());
   std::vector<double> lambda(n);
-  Nosh::BorderingHelpers::dissect(X, innerX, &lambda[0]);
+  nosh::BorderingHelpers::dissect(X, innerX, &lambda[0]);
   // Apply inverse inner operator with right hand side `right bordering'.
   // TODO useTranspose_
   Tpetra::Vector<double,int,int> AiB(innerOperator_->getRangeMap());
@@ -154,7 +154,7 @@ ApplyInverse(const Tpetra::MultiVector<double,int,int> &X,
   }
 
   // Merge it all together.
-  Nosh::BorderingHelpers::merge(innerY, &alpha[0], Y);
+  nosh::BorderingHelpers::merge(innerY, &alpha[0], Y);
 
   return 0;
 }
@@ -230,4 +230,4 @@ resetBordering(const Tpetra::Vector<double,int,int> & b,
   return;
 }
 // =============================================================================
-} // namespace Nosh
+} // namespace nosh

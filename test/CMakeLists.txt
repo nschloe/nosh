@@ -39,17 +39,17 @@ set(
   )
 foreach(file ${input_files})
   ExternalData_Expand_Arguments(
-    NoshTestFetchData
+    noshTestFetchData
     OUT_DATA DATA{${CMAKE_SOURCE_DIR}/test/data/${file}}
     )
 endforeach()
-ExternalData_Add_Target(NoshTestFetchData)
+ExternalData_Add_Target(noshTestFetchData)
 
 # ------------------------------------------------------------------------------
 SET(IOTEST_EXECUTABLE
   "ioTest")
 ADD_EXECUTABLE (${IOTEST_EXECUTABLE}
-  Nosh_IOTests.cpp
+  io.cpp
   unitTestMain.cpp
   )
 # add tests
@@ -79,8 +79,8 @@ ENDIF()
 SET(MESHTEST_EXECUTABLE
   "meshTest")
 ADD_EXECUTABLE (${MESHTEST_EXECUTABLE}
-  Nosh_MeshTests.cpp
-  #                 Nosh_EdgeCacheTests.cpp
+  mesh.cpp
+  #                 nosh_Edge_cacheTests.cpp
   unitTestMain.cpp)
 # add tests
 ADD_TEST(meshTestSerial
@@ -108,10 +108,10 @@ ENDIF()
 SET(OPERATORTEST_EXECUTABLE
   "operatorTest")
 ADD_EXECUTABLE(${OPERATORTEST_EXECUTABLE}
-  Nosh_KeoUnitTests.cpp
-  Nosh_ComputeFUnitTests.cpp
-  Nosh_JacUnitTests.cpp
-  Nosh_dfdpUnitTests.cpp
+  keo.cpp
+  compute_f.cpp
+  jac.cpp
+  dfdp.cpp
   unitTestMain.cpp
   )
 

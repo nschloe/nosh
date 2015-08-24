@@ -29,10 +29,10 @@ int main ( int argc, char *argv[] )
 
   // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
-  std::shared_ptr<Epetra_MpiComm> eComm =
+  std::shared_ptr<Epetra_MpiComm> e_comm =
     Teuchos::rcp<Epetra_MpiComm> ( new Epetra_MpiComm ( MPI_COMM_WORLD ) );
 #else
-  std::shared_ptr<Epetra_SerialComm>  eComm =
+  std::shared_ptr<Epetra_SerialComm>  e_comm =
     Teuchos::rcp<Epetra_SerialComm> ( new Epetra_SerialComm() );
 #endif
 
@@ -45,7 +45,7 @@ int main ( int argc, char *argv[] )
     // define the map
     int N = 1e1;
     std::shared_ptr<Epetra_Map> map =
-            Teuchos::rcp( new Epetra_Map(N,0,*eComm) );
+            Teuchos::rcp( new Epetra_Map(N,0,*e_comm) );
 
     // create a diagonal matrix
     std::shared_ptr<Epetra_CrsMatrix> A =
@@ -85,22 +85,22 @@ int main ( int argc, char *argv[] )
     //std::cout << "a" << std::endl;
 
     //// read parameters from file
-    //Teuchos::updateParametersFromXmlFile( "./stratimikos.xml", &*linearSolverBuilder.getNonconstParameterList() );
+    //Teuchos::updateParameters_fromXmlFile( "./stratimikos.xml", &*linearSolverBuilder.getNonconstParameterList() );
 
     //std::cout << "b" << std::endl;
 
     //// Create a linear solver factory given information read from the
     //// parameter list.
-    //std::shared_ptr<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory =
+    //std::shared_ptr<Thyra::LinearOpWithSolveFactoryBase<double> > lows_factory =
     //  linearSolverBuilder.createLinearSolveStrategy("");
 
     //// Setup output stream and the verbosity level
-    //lowsFactory->setOStream( out );
-    //lowsFactory->setVerbLevel( Teuchos::VERB_LOW );
+    //lows_factory->setOStream( out );
+    //lows_factory->setVerbLevel( Teuchos::VERB_LOW );
 
     //// Create a linear solver based on the forward operator A
     //std::shared_ptr<Thyra::LinearOpWithSolveBase<double> > lows =
-    //  Thyra::linearOpWithSolve(*lowsFactory, A);
+    //  Thyra::linearOpWithSolve(*lows_factory, A);
 
     //// Solve the linear system (note: the initial guess in 'x' is critical)
     //Thyra::SolveStatus<double> status =
@@ -168,7 +168,7 @@ int main ( int argc, char *argv[] )
 
     double residual;
     TEUCHOS_ASSERT_EQUALITY( 0, resid.Norm2(&residual) );
-    if (eComm->MyPID()==0) cout << "Residual    = " << residual << "\n\n" << endl;
+    if (e_comm->MyPID()==0) cout << "Residual    = " << residual << "\n\n" << endl;
     // -----------------------------------------------------------------------
     // direct solver
     Amesos Factory;
@@ -182,13 +182,13 @@ int main ( int argc, char *argv[] )
     List.set("PrintStatus", true);
     Solver->SetParameters(List);
 
-    if (eComm->MyPID() == 0)
+    if (e_comm->MyPID() == 0)
       std::cout << "Starting symbolic factorization..." << std::endl;
     Solver->SymbolicFactorization();
-    if (eComm->MyPID() == 0)
+    if (e_comm->MyPID() == 0)
       std::cout << "Starting numeric factorization..." << std::endl;
     Solver->NumericFactorization();
-    if (eComm->MyPID() == 0)
+    if (e_comm->MyPID() == 0)
       std::cout << "Starting solution phase..." << std::endl;
     // solve!
     Solver->Solve();

@@ -6,7 +6,7 @@
 #include <Thyra_ScalarProdBase.hpp>
 #include <Thyra_MultiVectorStdOps.hpp>
 
-namespace Nosh {
+namespace nosh {
 
 template<class Scalar>
 bool
@@ -19,20 +19,20 @@ isEuclideanImpl() const
 template<class Scalar>
 void
 RealScalarProd<Scalar>::
-scalarProdsImpl(
+scalar_prodsImpl(
     const Thyra::MultiVectorBase<Scalar>& X,
     const Thyra::MultiVectorBase<Scalar>& Y,
-    const Teuchos::ArrayView<Scalar> &scalarProds_out
+    const Teuchos::ArrayView<Scalar> &scalar_prods_out
     ) const
 {
-  std::cout << "> RealScalarProd<Scalar>::scalarProdsImpl()" << std::endl;
-  Thyra::dots(X, Y, scalarProds_out);
-  for (int k = 0; k < scalarProds_out.size(); k++) {
-    scalarProds_out[k] = getRealPart(scalarProds_out[k]);
+  std::cout << "> RealScalarProd<Scalar>::scalar_prodsImpl()" << std::endl;
+  Thyra::dots(X, Y, scalar_prods_out);
+  for (int k = 0; k < scalar_prods_out.size(); k++) {
+    scalar_prods_out[k] = getRealPart(scalar_prods_out[k]);
   }
-  std::cout << "  RealScalarProd<Scalar>::scalarProdsImpl() >" << std::endl;
+  std::cout << "  RealScalarProd<Scalar>::scalar_prodsImpl() >" << std::endl;
 }
 
-} // end namespace Nosh
+} // end namespace nosh
 
 #endif  // NOSH_REALSCALARPROD_DEF_HPP

@@ -24,11 +24,11 @@
 #include <memory>
 #include <string>
 
-#include "nosh/ScalarField_Virtual.hpp"
+#include "nosh/scalar_field_base.hpp"
 
 // forward defs
-namespace Nosh{
-  class StkMesh;
+namespace nosh{
+  class mesh;
 }
 
 class MyScalarField: public Nosh::ScalarField::Virtual

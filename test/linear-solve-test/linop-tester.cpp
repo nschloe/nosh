@@ -53,10 +53,10 @@ int main ( int argc, char *argv[] )
 
   // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
-  std::shared_ptr<Epetra_MpiComm> eComm =
+  std::shared_ptr<Epetra_MpiComm> e_comm =
     Teuchos::rcp<Epetra_MpiComm> ( new Epetra_MpiComm ( MPI_COMM_WORLD ) );
 #else
-  std::shared_ptr<Epetra_SerialComm>  eComm =
+  std::shared_ptr<Epetra_SerialComm>  e_comm =
          Teuchos::rcp<Epetra_SerialComm> ( new Epetra_SerialComm() );
 #endif
 
@@ -74,8 +74,8 @@ int main ( int argc, char *argv[] )
         "Linear solver testbed for KEO and Jacobian operator.\n"
         );
 
-    std::string inputFileName( "" );
-    My_CLP.setOption("input", &inputFileName, "Input state file", true);
+    std::string input_filename( "" );
+    My_CLP.setOption("input", &input_filename, "Input state file", true);
 
     std::string action( "solve" );
     My_CLP.setOption(
@@ -128,7 +128,7 @@ int main ( int argc, char *argv[] )
     std::shared_ptr<Teuchos::Time> readTime = Teuchos::TimeMonitor::getNewTimer("Data I/O");
     {
     Teuchos::TimeMonitor tm(*readTime);
-    Ginla::MeshRead( *eComm, inputFileName, data );
+    Ginla::MeshRead( *e_comm, input_filename, data );
     }
 
     // Cast the data into something more accessible.
@@ -178,7 +178,7 @@ int main ( int argc, char *argv[] )
             // Build the matrix (-1,2,-1).
             const double neg_one = -1.0;
             const double two = 2.0;
-            std::shared_ptr<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(n, 0, *eComm));
+            std::shared_ptr<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(n, 0, *e_comm));
             std::shared_ptr<Epetra_CrsMatrix> AMatrix =
                 Teuchos::rcp(new Epetra_CrsMatrix(Copy, *map, 3));
             for (int k=0; k < map->NumMyElements(); k++)

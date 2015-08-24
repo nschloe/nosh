@@ -33,9 +33,9 @@ int main ( int argc, char *argv[] )
 
   // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
-  Epetra_MpiComm eComm( MPI_COMM_WORLD );
+  Epetra_MpiComm e_comm( MPI_COMM_WORLD );
 #else
-  Epetra_SerialComm eComm();
+  Epetra_SerialComm e_comm();
 #endif
 
   Tpetra::DefaultPlatform::DefaultPlatformType &platform =
@@ -90,7 +90,7 @@ int main ( int argc, char *argv[] )
     {
       Teuchos::TimeMonitor tm(*matrixConstructTime);
       // Build the matrix (-1,2,-1).
-      Epetra_Map map(n, 0, eComm);
+      Epetra_Map map(n, 0, e_comm);
       int * myGlobalElements = map.MyGlobalElements();
       epetra_A = Teuchos::rcp(new Epetra_CrsMatrix(Copy, map, 3));
       double vals[] = {-1.0, 2.0, -1.0};
@@ -143,7 +143,7 @@ int main ( int argc, char *argv[] )
       const size_t numMyElements = map->getNodeNumElements();
       std::vectorView<const int> myGlobalElements = map->getNodeElementList();
       // Create a CrsMatrix using the map, with a dynamic allocation of 3 entries per row
-      tpetra_A = Tpetra::createCrsMatrix<double>(map, 3);
+      tpetra_A = Tpetra::create_crsMatrix<double>(map, 3);
       // Add rows one-at-a-time
       for (size_t i=0; i<numMyElements; i++)
       {

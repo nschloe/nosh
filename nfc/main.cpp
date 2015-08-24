@@ -6,29 +6,30 @@ int main(int argc, char *argv[]) {
   Teuchos::GlobalMPISession session(&argc, &argv, NULL);
 
   // auto p = Teuchos::rcp(new Teuchos::ParameterList());
-  // Nosh::stdmap2teuchoslist(Nosh::defaultLinearSolverParams(), *p);
+  // nosh::stdmap2teuchoslist(nosh::defaultLinearSolverParams(), *p);
   // std::cout << *p << std::endl;
 
-  //const auto mesh = Nosh::read("rectangle.e");
-  const auto mesh = Nosh::read("pacman.e");
-  //const auto mesh = Nosh::read("cubesmall.e");
-  //const auto mesh = Nosh::read("brick-w-hole.e");
+  //const auto mesh = nosh::read("rectangle.e");
+  const auto mesh = nosh::read("pacman.e");
+  //const auto mesh = nosh::read("cubesmall.e");
+  //const auto mesh = nosh::read("brick-w-hole.e");
 
-  const auto bc1 = std::make_shared<poisson::Bc1>();
-  const auto bc2 = std::make_shared<poisson::Bc2>();
-  const auto bc3 = std::make_shared<poisson::Bc3>();
+  const auto bc1 = std::make_shared<poisson::bc1>();
+  const auto bc2 = std::make_shared<poisson::bc2>();
+  const auto bc3 = std::make_shared<poisson::bc3>();
 
-  ////const poisson::A A(mesh, {bc1, bc2});
-  const poisson::A2 matrix(mesh, {bc3});
+  //const poisson::A A(mesh, {bc1, bc2});
+  //const poisson::A2 matrix(mesh, {bc3});
+  const poisson::i matrix(mesh, {bc3});
 
-  Nosh::Constant f(1.0);
-  //poisson::F f;
+  nosh::constant rhs(1.0);
+  //const poisson::f rhs();
 
-  Nosh::Function x(mesh);
+  nosh::function x(mesh);
   x.putScalar(0.0);
 
-  Nosh::linearSolve(
-      matrix, f, x
+  nosh::linear_solve(
+      matrix, rhs, x
       // {
       // {"method", "GMRES"},
       // {"parameters", {
@@ -37,7 +38,7 @@ int main(int argc, char *argv[]) {
       // }
       );
 
-  Nosh::write(x, "out.e");
+  nosh::write(x, "out.e");
 
   return EXIT_SUCCESS;
 }

@@ -45,10 +45,10 @@ int main ( int argc, char *argv[] )
 
     // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
-  std::shared_ptr<Epetra_MpiComm> eComm =
+  std::shared_ptr<Epetra_MpiComm> e_comm =
     Teuchos::rcp<Epetra_MpiComm> ( new Epetra_MpiComm ( MPI_COMM_WORLD ) );
 #else
-  std::shared_ptr<Epetra_SerialComm>  eComm =
+  std::shared_ptr<Epetra_SerialComm>  e_comm =
          Teuchos::rcp<Epetra_SerialComm> ( new Epetra_SerialComm() );
 #endif
 
@@ -66,8 +66,8 @@ int main ( int argc, char *argv[] )
         "Linear solver testbed for KEO and Jacobian operator.\n"
     );
 
-    std::string inputFileName = "";
-    My_CLP.setOption ( "input", &inputFileName,
+    std::string input_filename = "";
+    My_CLP.setOption ( "input", &input_filename,
                        "Input state file", true
                      );
 
@@ -82,7 +82,7 @@ int main ( int argc, char *argv[] )
     // =========================================================================
     // Read the data from the file.
     Teuchos::ParameterList data;
-    Ginla::MeshRead( *eComm, inputFileName, data );
+    Ginla::MeshRead( *e_comm, input_filename, data );
 
     // Cast the data into something more accessible.
     std::shared_ptr<Ginla::Mesh>     & mesh = data.get( "mesh", std::shared_ptr<Ginla::Mesh>() );
@@ -129,22 +129,22 @@ int main ( int argc, char *argv[] )
 //      std::cout << "a" << std::endl;
 //
 //      // read parameters from file
-//      Teuchos::updateParametersFromXmlFile( "./stratimikos.xml", &*linearSolverBuilder.getNonconstParameterList() );
+//      Teuchos::updateParameters_fromXmlFile( "./stratimikos.xml", &*linearSolverBuilder.getNonconstParameterList() );
 //
 //      std::cout << "b" << std::endl;
 //
 //      // Create a linear solver factory given information read from the
 //      // parameter list.
-//      std::shared_ptr<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory =
+//      std::shared_ptr<Thyra::LinearOpWithSolveFactoryBase<double> > lows_factory =
 //        linearSolverBuilder.createLinearSolveStrategy("");
 //
 //      // Setup output stream and the verbosity level
-//      lowsFactory->setOStream( out );
-//      lowsFactory->setVerbLevel( Teuchos::VERB_LOW );
+//      lows_factory->setOStream( out );
+//      lows_factory->setVerbLevel( Teuchos::VERB_LOW );
 //
 //      // Create a linear solver based on the forward operator A
 //      std::shared_ptr<Thyra::LinearOpWithSolveBase<double> > lows =
-//        Thyra::linearOpWithSolve(*lowsFactory, A);
+//        Thyra::linearOpWithSolve(*lows_factory, A);
 //
 //      // Solve the linear system (note: the initial guess in 'x' is critical)
 //      Thyra::SolveStatus<double> status =

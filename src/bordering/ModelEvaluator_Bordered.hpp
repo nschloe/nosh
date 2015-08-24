@@ -25,18 +25,18 @@
 
 #include <Teuchos_RCP.hpp>
 
-#include "ModelEvaluator_Virtual.hpp"
+#include "model_evaluator_base.hpp"
 // -----------------------------------------------------------------------------
-namespace Nosh
+namespace nosh
 {
-namespace ModelEvaluator
+namespace model_evaluator
 {
-class Bordered : public Nosh::ModelEvaluator::Virtual
+class Bordered : public nosh::model_evaluator::base
 {
 public:
   //! Constructor without initial guess.
   Bordered (
-      const std::shared_ptr<const Nosh::ModelEvaluator::Virtual> & modelEval,
+      const std::shared_ptr<const nosh::model_evaluator::base> & model_eval,
       const std::shared_ptr<const Tpetra::Vector<double,int,int>> & initialBordering,
       const double lambdaInit
       );
@@ -87,33 +87,33 @@ public:
 
   virtual
   void
-  evalModel(
-      const InArgs &inArgs,
-      const OutArgs &outArgs
+  eval_mdel(
+      const InArgs &in_args,
+      const OutArgs &out_args
       ) const;
 
 public:
   virtual
   double
-  innerProduct(const Tpetra::Vector<double,int,int> &phi,
+  inner_product(const Tpetra::Vector<double,int,int> &phi,
                const Tpetra::Vector<double,int,int> &psi
              ) const;
 
   virtual
   double
-  gibbsEnergy(const Tpetra::Vector<double,int,int> &psi) const;
+  gibbs_energy(const Tpetra::Vector<double,int,int> &psi) const;
 
   virtual
-  const std::shared_ptr<const Nosh::Mesh>
-  getMesh() const;
+  const std::shared_ptr<const nosh::mesh>
+  mesh() const;
 
 protected:
 private:
-  const std::shared_ptr<const Nosh::ModelEvaluator::Virtual> innerModelEval_;
+  const std::shared_ptr<const nosh::model_evaluator::base> innerModelEval_;
   const std::shared_ptr<const Tpetra::Vector<double,int,int>> initialBordering_;
   const double lambdaInit_;
 };
-} // namespace ModelEvaluator
-} // namespace Nosh
+} // namespace model_evaluator
+} // namespace nosh
 
 #endif // NOSH_MODELEVALUATOR_BORDERED_H

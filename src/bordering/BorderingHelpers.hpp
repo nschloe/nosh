@@ -25,7 +25,7 @@
 #include <Tpetra::Map<int,int>.h>
 #include <Tpetra_Vector.hpp>
 
-namespace Nosh
+namespace nosh
 {
 namespace BorderingHelpers
 {
@@ -44,5 +44,5 @@ dissect(const Tpetra::MultiVector<double,int,int> & x,
         double * lambda
       );
 } // namespace BorderingHelpers
-} // namespace Nosh
+} // namespace nosh
 #endif // NOCH_BORDERINGHELPERS_H

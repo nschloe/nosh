@@ -30,7 +30,7 @@
 #endif
 #include <Teuchos_FancyOStream.hpp>
 // =============================================================================
-namespace Nosh
+namespace nosh
 {
 // =============================================================================
 class BorderedOperator : public Tpetra::Operator<double,int,int>
@@ -99,5 +99,5 @@ private:
   const Tpetra::Map<int,int> rangeMap_;
 };
 // =============================================================================
-} // namespace Nosh
+} // namespace nosh
 #endif // NOSH_BORDEREDOPERATOR_H

@@ -25,7 +25,7 @@
 #include <Teuchos::Comm<int>.h>
 #include <Epetra_Import.h>
 
-namespace Nosh
+namespace nosh
 {
 // ============================================================================
 std::shared_ptr<const Tpetra::Map<int,int>>
@@ -80,7 +80,7 @@ merge(const Tpetra::MultiVector<double,int,int> & x,
 #ifndef NDEBUG
   // Check if the maps are matching.
   std::shared_ptr<const Tpetra::Map<int,int>> extendedMap =
-    Nosh::BorderingHelpers::extendMapBy1(x.getMap());
+    nosh::BorderingHelpers::extendMapBy1(x.getMap());
   TEUCHOS_ASSERT(out.getMap().SameAs(*extendedMap));
 #endif
 
@@ -109,7 +109,7 @@ dissect(const Tpetra::MultiVector<double,int,int> & x,
   TEUCHOS_ASSERT_EQUALITY(x.NumVectors(), xSmall.NumVectors());
   // Make sure the maps are matching.
   std::shared_ptr<const Tpetra::Map<int,int>> extendedMap =
-    Nosh::BorderingHelpers::extendMapBy1(xSmall.getMap());
+    nosh::BorderingHelpers::extendMapBy1(xSmall.getMap());
   TEUCHOS_ASSERT(x.getMap().SameAs(*extendedMap));
 #endif
 
@@ -128,4 +128,4 @@ dissect(const Tpetra::MultiVector<double,int,int> & x,
   return;
 }
 // ============================================================================
-} // namespace Nosh
+} // namespace nosh

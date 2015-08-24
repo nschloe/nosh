@@ -3,7 +3,7 @@
 
 //#include <Thyra_ScalarProdBase.hpp>
 //
-//namespace Nosh {
+//namespace nosh {
 //
 //  template<class Scalar>
 //    class RealScalarProduct: public Thyra::ScalarProdBase<Scalar>
@@ -18,18 +18,18 @@
 //
 //      virtual
 //        void
-//        scalarProdsImpl(
+//        scalar_prodsImpl(
 //            const Thyra::MultiVectorBase<Scalar> &X,
 //            const Thyra::MultiVectorBase<Scalar> &Y,
-//            const Teuchos::ArrayView<Scalar> &scalarProds_out
+//            const Teuchos::ArrayView<Scalar> &scalar_prods_out
 //            ) const
 //        {
-//          std::cout << "> NOSH::scalarProdsImpl()" << std::endl;
-//          Thyra::dots(X, Y, scalarProds_out);
-//          //for (int k = 0; k < scalarProds_out.size(); k++) {
-//          //  scalarProds_out[k] = getRealPart(scalarProds_out[k]);
+//          std::cout << "> NOSH::scalar_prodsImpl()" << std::endl;
+//          Thyra::dots(X, Y, scalar_prods_out);
+//          //for (int k = 0; k < scalar_prods_out.size(); k++) {
+//          //  scalar_prods_out[k] = getRealPart(scalar_prods_out[k]);
 //          //}
-//          std::cout << "  NOSH::scalarProdsImpl() >" << std::endl;
+//          std::cout << "  NOSH::scalar_prodsImpl() >" << std::endl;
 //        }
 //
 //    private:
