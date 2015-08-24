@@ -29,6 +29,11 @@ import importlib.machinery
 import subprocess
 import sys
 
+templates_dir = os.path.join(
+    os.path.dirname(os.path.realpath(__file__)),
+    'templates'
+    )
+
 
 def _main():
     args = _parse_cmd_arguments()
@@ -54,7 +59,7 @@ def _main():
                 )
 
     # Plug it all together in main
-    with open('templates/main.tpl', 'r') as f:
+    with open(os.path.join(templates_dir, 'main.tpl'), 'r') as f:
         main_src = Template(f.read())
         name = os.path.splitext(os.path.basename(args.infile))[0]
         main_content = main_src.substitute({
@@ -64,13 +69,13 @@ def _main():
             })
 
     # write it
-    outfile = os.path.splitext(args.infile)[0] + '.hpp'
-    with open(outfile, 'w') as f:
+    # outfile = os.path.splitext(args.infile)[0] + '.hpp'
+    with open(args.outfile, 'w') as f:
         f.write(main_content)
 
     # Make sure it's formatted nicely.
     # TODO check out uncrustify
-    _run('astyle --style=ansi -s2 %s' % outfile)
+    _run('astyle --style=ansi -s2 %s' % args.outfile)
 
     return 0
 
@@ -160,7 +165,7 @@ def get_code_fvm_matrix(eo, name):
     # vertex contribution handling done
 
     # template substitution
-    with open('templates/fvm_matrix.tpl', 'r') as f:
+    with open(os.path.join(templates_dir, 'fvm_matrix.tpl'), 'r') as f:
         src = Template(f.read())
         code = src.substitute({
             'name': name.lower(),  # class names ara lowercase
@@ -198,7 +203,7 @@ def get_code_dirichlet_bc(dbc, name):
         is_x_used_eval = False
 
     # template substitution
-    with open('templates/dirichlet_bc.tpl', 'r') as f:
+    with open(os.path.join(templates_dir, 'dirichlet_bc.tpl'), 'r') as f:
         src = Template(f.read())
         code = src.substitute({
             'name': name.lower(),  # class names are lowercase
@@ -223,7 +228,7 @@ def get_code_expression(expr, name):
     # (We'll declare them (void) to supress compiler warnings.)
 
     # template substitution
-    with open('templates/expression.tpl', 'r') as f:
+    with open(os.path.join(templates_dir, 'expression.tpl'), 'r') as f:
         src = Template(f.read())
         code = src.substitute({
             'name': name.lower(),  # class names are lowercase
@@ -316,7 +321,7 @@ def get_code_nonlinear_operator(F, name):
     # Check if any of the arguments is not used in the function.
     # (We'll declare them (void) to supress compiler warnings.)
     # template substitution
-    with open('templates/ModelEvaluator.tpl', 'r') as f:
+    with open(os.path.join(templates_dir, 'ModelEvaluator.tpl'), 'r') as f:
         src = Template(f.read())
         code = src.substitute({
             'name': name.title(),
@@ -328,7 +333,7 @@ def get_code_nonlinear_operator(F, name):
 
     print(code)
 
-    with open('templates/Jacobian.tpl', 'r') as f:
+    with open(os.path.join(templates_dir, 'jacobian.tpl'), 'r') as f:
         src = Template(f.read())
         code = src.substitute({
             'name': name.title() + 'Jacobian',
@@ -378,7 +383,7 @@ return MueluPrec_->apply(X, Y);
                     'Illegal Belos preconditioner type "%s".' % tp
                     )
 
-        with open('templates/Belos.tpl', 'r') as f:
+        with open(os.path.join(templates_dir, 'Belos.tpl'), 'r') as f:
             src = Template(f.read())
             rebuild_code = src.substitute({
                 'set_parameters': parameters,
@@ -387,7 +392,7 @@ return MueluPrec_->apply(X, Y);
                 'method': prec['solver']['type'].replace(' ', '')
                 })
 
-    with open('templates/Preconditioner.tpl', 'r') as f:
+    with open(os.path.join(templates_dir, 'Preconditioner.tpl'), 'r') as f:
         src = Template(f.read())
         prec_code = src.substitute({
             'name': name.title(),
@@ -407,7 +412,7 @@ def get_muelu_code(parameters):
     for key, value in prec['solver']['parameters'].items():
         parameters += 'params.set("%s", %s)' % (key, to_c_string(value))
 
-    with open('templates/RebuildMuelu.tpl', 'r') as f:
+    with open(os.path.join(templates_dir, 'RebuildMuelu.tpl'), 'r') as f:
         src = Template(f.read())
         rebuild_code = src.substitute({
             'muelu_parameter_set': parameters,
@@ -654,6 +659,11 @@ def _parse_cmd_arguments():
         'infile',
         type=str,
         help='input NFL file'
+        )
+    parser.add_argument(
+        'outfile',
+        type=str,
+        help='output C++ header file'
         )
     return parser.parse_args()
 

@@ -54,6 +54,9 @@ linear_solve(
   //A.describe(*out, Teuchos::VERB_EXTREME);
   //return;
 
+  // set x to 0
+  x.putScalar(0.0);
+
   Stratimikos::DefaultLinearSolverBuilder builder;
   auto p = Teuchos::rcp(new Teuchos::ParameterList());
   std_map_to_teuchos_list(solver_params, *p);

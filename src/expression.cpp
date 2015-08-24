@@ -12,7 +12,11 @@ namespace nosh {
     auto vals = std::make_shared<Tpetra::Vector<double,int,int>>(cv->getMap());
 
     // can only integrate degree 0 for now
-    TEUCHOS_ASSERT_INEQUALITY(expr.degree, <, 1);
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(
+        expr.degree > 0,
+        "Expression degree " << expr.degree << " too high. "
+        << "Can only integrate expressions of degree 0 for now."
+        );
 
     auto cv_data = cv->getData();
     auto vals_data = vals->getDataNonConst();

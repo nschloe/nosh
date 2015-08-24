@@ -36,8 +36,8 @@ bc3 = DirichletBC(
   )
 
 f = Expression(
-    lambda x: x[0]**2 + sin(5*x[1]),
-    degree=2
+    lambda x: sin(x[1]),
+    degree=0
     )
 
 
@@ -48,13 +48,13 @@ class I(FvmMatrix):
 
 
 # Laplace
-class A(FvmMatrix):
+class Laplace(FvmMatrix):
     def edge_contrib(alpha, edge_midpoint):
         return [[alpha, -alpha], [-alpha, alpha]]
 
 
 # - eps \Delta(u) + u
-class A2(FvmMatrix):
+class SingPer(FvmMatrix):
     def edge_contrib(alpha, edge_midpoint):
         eps = 1.0e-2
         return [[eps*alpha, -eps*alpha], [-eps*alpha, eps*alpha]]
@@ -64,7 +64,7 @@ class A2(FvmMatrix):
 
 
 # - nabla (eps(x) nabla(u))
-class A3(FvmMatrix):
+class LaplaceVar(FvmMatrix):
     def edge_contrib(alpha, edge_midpoint):
         eps = abs(edge_midpoint[0]) + 0.1
         return [[eps*alpha, -eps*alpha], [-eps*alpha, eps*alpha]]

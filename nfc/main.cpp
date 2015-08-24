@@ -5,10 +5,6 @@
 int main(int argc, char *argv[]) {
   Teuchos::GlobalMPISession session(&argc, &argv, NULL);
 
-  // auto p = Teuchos::rcp(new Teuchos::ParameterList());
-  // nosh::stdmap2teuchoslist(nosh::defaultLinearSolverParams(), *p);
-  // std::cout << *p << std::endl;
-
   //const auto mesh = nosh::read("rectangle.e");
   const auto mesh = nosh::read("pacman.e");
   //const auto mesh = nosh::read("cubesmall.e");
@@ -18,17 +14,21 @@ int main(int argc, char *argv[]) {
   const auto bc2 = std::make_shared<poisson::bc2>();
   const auto bc3 = std::make_shared<poisson::bc3>();
 
-  //poisson::a matrix(mesh, {bc3});
-  //poisson::a2 matrix(mesh, {bc3});
-  poisson::a3 matrix(mesh, {bc3});
+  poisson::laplace matrix(mesh, {bc3});
+  //poisson::singper matrix(mesh, {bc3});
+  //poisson::laplacevar matrix(mesh, {bc3});
   //poisson::i matrix(mesh, {bc3});
 
-  nosh::constant rhs(1.0);
-  //const poisson::f rhs();
+  //nosh::constant rhs(1.0);
+  const poisson::f rhs;
 
   nosh::function x(mesh);
   x.putScalar(0.0);
 
+  // TODO other krylov solvers
+  // TODO muelu preconditioner
+  // TODO direct solvers
+  // TODO complex-valued problem
   nosh::scaled_linear_solve(
       matrix, rhs, x
       // {
