@@ -64,7 +64,7 @@ class A2(FvmMatrix):
 
 
 # - nabla (eps(x) nabla(u))
-class A2(FvmMatrix):
+class A3(FvmMatrix):
     def edge_contrib(alpha, edge_midpoint):
-        eps = 3 * edge_midpoint[0] - 1
+        eps = abs(edge_midpoint[0]) + 0.1
         return [[eps*alpha, -eps*alpha], [-eps*alpha, eps*alpha]]

@@ -18,9 +18,10 @@ int main(int argc, char *argv[]) {
   const auto bc2 = std::make_shared<poisson::bc2>();
   const auto bc3 = std::make_shared<poisson::bc3>();
 
-  //poisson::A A(mesh, {bc1, bc2});
-  //poisson::A2 matrix(mesh, {bc3});
-  poisson::i matrix(mesh, {bc3});
+  //poisson::a matrix(mesh, {bc3});
+  //poisson::a2 matrix(mesh, {bc3});
+  poisson::a3 matrix(mesh, {bc3});
+  //poisson::i matrix(mesh, {bc3});
 
   nosh::constant rhs(1.0);
   //const poisson::f rhs();
