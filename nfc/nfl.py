@@ -123,9 +123,9 @@ class Integral(object):
 
 
 class DirichletBC(object):
-    def __init__(self, insideCondition, evalReturn):
-        self.isInside = insideCondition
-        self.eval = evalReturn
+    def __init__(self, inside_condition, eval_return):
+        self.is_inside = inside_condition
+        self.eval = eval_return
         return
 
 

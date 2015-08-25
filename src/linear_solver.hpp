@@ -10,15 +10,43 @@
 
 #include <map>
 
+using list = std::map<std::string, boost::any>;
 namespace nosh {
-  std::map<std::string, boost::any> default_linear_solver_params();
+  // https://trilinos.org/docs/dev/packages/stratimikos/doc/html/index.html
+  std::map<std::string, boost::any> default_linear_solver_params = {
+    {"method", "Pseudo Block GMRES"},
+    {"parameters", list{
+      {"Convergence Tolerance", 1.0e-10},
+      {"Output Frequency", 1},
+      {"Output Style", 1},
+      {"Verbosity", 33}
+      }}
+  };
+  //std::map<std::string, boost::any> default_linear_solver_params =
+  //{
+  //  {"Linear Solver Type", "Belos"},
+  //  {"Linear Solver Types", list{
+  //    {"Belos", list{
+  //      {"Solver Type", "Pseudo Block GMRES"},
+  //      {"Solver Types", list{
+  //        {"Pseudo Block GMRES", list{
+  //          {"Convergence Tolerance", 1.0e-10},
+  //          {"Output Frequency", 1},
+  //          {"Output Style", 1},
+  //          {"Verbosity", 33}
+  //        }}
+  //      }}
+  //    }}
+  //  }},
+  //  {"Preconditioner Type", "None"}
+  //};
 
   void
   linear_solve(
       const nosh::matrix & A,
       const nosh::expression & f,
       nosh::function & x,
-      std::map<std::string, boost::any> solver_params = nosh::default_linear_solver_params()
+      std::map<std::string, boost::any> solver_params = nosh::default_linear_solver_params
       );
 
   void
@@ -26,7 +54,7 @@ namespace nosh {
       const nosh::matrix & A,
       std::shared_ptr<Tpetra::Vector<double,int,int>> f_vec,
       nosh::function & x,
-      std::map<std::string, boost::any> solver_params = nosh::default_linear_solver_params()
+      std::map<std::string, boost::any> solver_params = nosh::default_linear_solver_params
       );
 
   void
@@ -34,7 +62,12 @@ namespace nosh {
       nosh::matrix & A,
       const nosh::expression & f,
       nosh::function & x,
-      std::map<std::string, boost::any> solver_params = nosh::default_linear_solver_params()
+      std::map<std::string, boost::any> solver_params = nosh::default_linear_solver_params
+      );
+
+  std::map<std::string, boost::any>
+  convert_to_belos_parameters(
+      const std::map<std::string, boost::any> & map
       );
 
   void

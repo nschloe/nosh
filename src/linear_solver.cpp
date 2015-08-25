@@ -59,8 +59,9 @@ linear_solve(
 
   Stratimikos::DefaultLinearSolverBuilder builder;
   auto p = Teuchos::rcp(new Teuchos::ParameterList());
-  std_map_to_teuchos_list(solver_params, *p);
+  std_map_to_teuchos_list(convert_to_belos_parameters(solver_params), *p);
   builder.setParameterList(p);
+  std::cout << *p << std::endl;
   auto lowsFactory = builder.createLinearSolveStrategy("");
   lowsFactory->setVerbLevel(Teuchos::VERB_LOW);
 
@@ -129,44 +130,49 @@ scaled_linear_solve(
 // =============================================================================
 std::map<std::string, boost::any>
 nosh::
-default_linear_solver_params()
+convert_to_belos_parameters(
+    const std::map<std::string, boost::any> & in_map
+    )
 {
-  using list = std::map<std::string, boost::any>;
-  return {
-    {"Linear Solver Type", "Belos"},
-    {"Linear Solver Types", list{
-      {"Belos", list{
-        {"Solver Type", "Pseudo Block GMRES"},
-        {"Solver Types", list{
-          {"Pseudo Block GMRES", list{
-            {"Convergence Tolerance", 1.0e-10},
-            {"Output Frequency", 1},
-            {"Output Style", 1},
-            {"Verbosity", 33}
-          }}
+  if (in_map.find("method") != in_map.end()) {
+    const std::string method =
+      boost::any_cast<const char *>(in_map.at("method"));
+    std::map<std::string, boost::any> out_map = {
+      {"Linear Solver Type", "Belos"},
+      {"Linear Solver Types", list{
+        {"Belos", list{
+          {"Solver Type", method}
         }}
-      }}
-    }},
-    {"Preconditioner Type", "None"}
-  };
+      }},
+      {"Preconditioner Type", "None"}
+    };
 
-  // auto p = Teuchos::rcp(new Teuchos::ParameterList);
-  // p->set("Linear Solver Type", "Belos");
-  // auto & belosList =
-  //   p->sublist("Linear Solver Types")
-  //   .sublist("Belos");
-  // belosList.set("Solver Type", "Pseudo Block GMRES");
-
-  // auto & solverList =
-  //   belosList.sublist("Solver Types")
-  //   .sublist("Pseudo Block CG");
-  // solverList.set("Output Frequency", 1);
-  // solverList.set("Output Style", 1);
-  // solverList.set("Verbosity", 33);
-
-  // p->set("Preconditioner Type", "None");
-
-  // return p;
+    auto lst = boost::any_cast<list>(out_map.at("Linear Solver Types"));
+    auto belos = boost::any_cast<list>(lst.at("Belos"));
+    if (in_map.find("parameters") != in_map.end()) {
+      belos.insert({
+          "Solver Types",
+          list{{method, in_map.at("parameters")}}
+          });
+    } else {
+      // insert default parameters
+      std::cout << "def" << std::endl;
+      belos.insert({
+          "Solver Types",
+          list{{method,
+            list{
+              {"Convergence Tolerance", 1.0e-10},
+              {"Output Frequency", 1},
+              {"Output Style", 1},
+              {"Verbosity", 33}
+            }
+            }}
+          });
+    }
+    return out_map;
+  } else {
+    return {};
+  }
 }
 // =============================================================================
 void
