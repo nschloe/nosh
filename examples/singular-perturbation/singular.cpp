@@ -15,18 +15,19 @@ int main(int argc, char *argv[]) {
 
   nosh::function x(mesh);
 
+  // TODO better, functioning parameter list spec
   nosh::scaled_linear_solve(
     matrix, rhs, x,
     {
       {"method", "Pseudo Block CG"},
-      {
-        "parameters", list{
-        {"Convergence Tolerance", 1.0e-10},
-        {"Output Frequency", 1},
-        {"Output Style", 1},
-        {"Verbosity", 33}
-        }
-      }
+      //{
+      //  "parameters", list{
+      //  {"Convergence Tolerance", 1.0e-10},
+      //  {"Output Frequency", 1},
+      //  {"Output Style", 1},
+      //  {"Verbosity", 33}
+      //  }
+      //}
     }
   );
 

@@ -20,7 +20,7 @@ ADD_CUSTOM_COMMAND(
 ADD_CUSTOM_COMMAND(
    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/pacman.e
    COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_BINARY_DIR}/test/data/pacman.e ${CMAKE_CURRENT_BINARY_DIR}/pacman.e
-   DEPENDS ${PROJECT_BINARY_DIR}/test/data/pacman.e
+   DEPENDS noshTestFetchData
    )
 
 SET(MY_EXECUTABLE singular)
