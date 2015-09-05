@@ -18,6 +18,7 @@ before_install:
   - sudo apt-get install cmake-data cmake
   - sudo apt-get install trilinos-dev
   - sudo pip install cpp-coveralls
+  - sudo apt install cppcheck && cppcheck --enable=all
 install:
   - cmake -DBUILD_SHARED_LIBS:BOOL=ON -DENABLE_GCOV:BOOL=ON -DCMAKE_CXX_COMPILER:STRING=mpicxx .
   - make
