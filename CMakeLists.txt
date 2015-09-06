@@ -89,7 +89,6 @@ set(
 
 # Add subdirectories after INSTALL_BIN_DIR has been set.
 ADD_SUBDIRECTORY(src)
-ADD_SUBDIRECTORY(nfc)
 ADD_SUBDIRECTORY(examples)
 ADD_SUBDIRECTORY(executables)
 ADD_SUBDIRECTORY(test)
