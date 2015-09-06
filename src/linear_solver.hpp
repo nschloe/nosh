@@ -13,7 +13,9 @@
 using list = std::map<std::string, boost::any>;
 namespace nosh {
   // https://trilinos.org/docs/dev/packages/stratimikos/doc/html/index.html
-  std::map<std::string, boost::any> default_linear_solver_params = {
+  // http://stackoverflow.com/a/14425299/353337
+  static
+  const std::map<std::string, boost::any> default_linear_solver_params = {
     {"method", "Pseudo Block GMRES"},
     {"parameters", list{
       {"Convergence Tolerance", 1.0e-10},
