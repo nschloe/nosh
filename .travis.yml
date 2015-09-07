@@ -1,4 +1,12 @@
 language: c++
+
+compiler:
+  - gcc
+  - clang
+  # TODO static analyisis <http://clang-analyzer.llvm.org/scan-build.html>
+  # scan-build cmake && make
+  # problem: mpi.h
+
 # command to install dependencies
 before_install:
   # http://about.travis-ci.org/docs/user/build-configuration/#Installing-Packages-Using-apt
@@ -19,12 +27,15 @@ before_install:
   - sudo apt-get install trilinos-dev
   - sudo pip install cpp-coveralls
   - sudo apt install cppcheck && cppcheck --enable=all
+
 install:
   - cmake -DBUILD_SHARED_LIBS:BOOL=ON -DENABLE_GCOV:BOOL=ON -DCMAKE_CXX_COMPILER:STRING=mpicxx .
   - make
+
 # command to run tests
 script:
   - ctest -VV
+
 # Submit to coveralls for coverage statistics
 after_success:
   - coveralls --extension cpp --exclude CMakeFiles --exclude executables --exclude test --exclude obsolete --gcov-options '\-lp'
