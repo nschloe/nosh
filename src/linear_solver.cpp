@@ -85,9 +85,9 @@ linear_solve(
   if (package == "Belos") {
       linear_solve_belos(A, b, x, solver_params);
       return;
-  /*} else if (package == "MueLu") {
+  } else if (package == "MueLu") {
       linear_solve_muelu(A, b, x, solver_params);
-      return;*/
+      return;
   } else {
       TEUCHOS_TEST_FOR_EXCEPT_MSG(
           true,
@@ -164,7 +164,50 @@ linear_solve_belos(
   return;
 }
 // =============================================================================
-/*
+std::shared_ptr<MueLu::Hierarchy<double,int,int>>
+nosh::
+get_muelu_hierarchy(
+    const nosh::matrix & A,
+    const std::map<std::string, boost::any> & muelu_params
+    )
+{
+  // Tpetra -> Xpetra
+  Teuchos::RCP<const Tpetra::CrsMatrix<double,int,int>> ATpetra =
+    Teuchos::rcpFromRef(A);
+  // cast away the const from A :(
+  auto nonconst_ATpetra =
+    Teuchos::rcp_const_cast<Tpetra::CrsMatrix<double,int,int>>(ATpetra);
+  auto AXpetra = MueLu::TpetraCrs_To_XpetraMatrix(nonconst_ATpetra);
+
+  // build null space vector
+  auto map = AXpetra->getRowMap();
+  auto nullspace = Xpetra::MultiVectorFactory<double,int,int>::Build(map, 1);
+  nullspace->putScalar(1.0);
+
+  auto p = Teuchos::rcp(new Teuchos::ParameterList());
+  const auto & params = boost::any_cast<std::map<std::string,boost::any>>(
+      muelu_params
+      );
+  std_map_to_teuchos_list(params, *p);
+  std::cout << p << std::endl;
+
+  auto mueLuFactory =
+    MueLu::ParameterListInterpreter<double,int,int>(*p, map->getComm());
+
+  auto H = Teuchos::get_shared_ptr(mueLuFactory.CreateHierarchy());
+  H->GetLevel(0)->Set("A", AXpetra);
+  H->GetLevel(0)->Set("Nullspace", nullspace);
+
+  //// TODO
+  ////// get the coordinates as multivector
+  ////RCP<MultiVector> coords = Teuchos::rcp(new Xpetra::EpetraMultiVector(epCoord));
+  ////H->GetLevel(0)->Set("Coordinates", coords);
+
+  mueLuFactory.SetupHierarchy(*H);
+
+  return H;
+}
+// =============================================================================
 void
 nosh::
 linear_solve_muelu(
@@ -174,46 +217,17 @@ linear_solve_muelu(
     std::map<std::string, boost::any> solver_params
     )
 {
+  x.putScalar(0.0);
   // Tpetra -> Xpetra
-  Teuchos::RCP<const Tpetra::CrsMatrix<double,int,int>> ATpetra =
-    Teuchos::rcpFromRef(A);
-  auto tmp = Xpetra::TpetraCrsMatrix<double,int,int>(ATpetra);
-  auto AXpetra = Teuchos::rcpFromRef(tmp);
-  auto AXpetraWrap = Teuchos::rcp(new Xpetra::CrsMatrixWrap(AXpetra));
-
   auto bXpetra = Xpetra::toXpetra(Teuchos::rcpFromRef(*b));
   Tpetra::Vector<double,int,int> & xTpetra = x;
   auto xXpetra = Xpetra::toXpetra(Teuchos::rcpFromRef(xTpetra));
 
-  // build null space vector
-  auto map = AXpetraWrap->getRowMap();
-  auto nullspace = Xpetra::MultiVectorFactory::Build(map, 1);
-  nullspace.putScalar(1.0);
-
-  auto p = Teuchos::rcp(new Teuchos::ParameterList());
-  const auto & params = boost::any_cast<std::map<std::string,boost::any>>(
-      solver_params.at("parameters")
-      );
-  std_map_to_teuchos_list(params, *p);
-
-  std::cout << p << std::endl;
-
-  auto mueLuFactory =
-    MueLu::ParameterListInterpreter<double,int,int>(*p, map->getComm());
-
-  auto H = mueLuFactory.CreateHierarchy();
-  H->GetLevel(0)->Set("A", AXpetraWrap);
-  H->GetLevel(0)->Set("Nullspace", nullspace);
-
-  //// TODO
-  ////H->GetLevel(0)->Set("Coordinates", coords);
-  ////// get the coordinates as multivector
-  ////RCP<MultiVector> coords = Teuchos::rcp(new Xpetra::EpetraMultiVector(epCoord));
-
-  mueLuFactory.SetupHierarchy(*H);
-
-  x.putScalar(0.0);
-  //x->update(1.0, *xX, 1.0);
+  auto muelu_params =
+    boost::any_cast<std::map<std::string, boost::any>>(
+        solver_params.at("parameters")
+        );
+  auto H = get_muelu_hierarchy(A, muelu_params);
   H->IsPreconditioner(false);
 
   const int mgridSweeps = 10;
@@ -221,7 +235,6 @@ linear_solve_muelu(
 
   return;
 }
-*/
 // =============================================================================
 void
 nosh::
