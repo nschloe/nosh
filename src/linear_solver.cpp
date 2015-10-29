@@ -23,9 +23,10 @@
 using SC = double;
 using LO = int;
 using GO = int;
-using MV = Tpetra::Vector<double,int,int>;
-using OP = Tpetra::CrsMatrix<double,int,int>;
+using MV = Tpetra::MultiVector<SC,LO,GO>;
+using OP = Tpetra::CrsMatrix<SC,LO,GO>;
 using NormType = MV::mag_type;
+
 
 // =============================================================================
 void
@@ -78,11 +79,10 @@ linear_solve(
 
   const std::string package =
     boost::any_cast<const char *>(solver_params.at("package"));
-  /*if (package == "Amesos2") {
+  if (package == "Amesos2") {
       linear_solve_amesos2(A, b, x, solver_params);
       return;
-  } else*/
-  if (package == "Belos") {
+  } else if (package == "Belos") {
       linear_solve_belos(A, b, x, solver_params);
       return;
   } else if (package == "MueLu") {
@@ -96,7 +96,6 @@ linear_solve(
   }
 }
 // =============================================================================
-/*
 void
 nosh::
 linear_solve_amesos2(
@@ -106,24 +105,25 @@ linear_solve_amesos2(
     std::map<std::string, boost::any> solver_params
     )
 {
+  auto solver = Amesos2::create<OP,MV>(
+        "Superlu",
+        Teuchos::rcpFromRef(A),
+        Teuchos::rcpFromRef(x),
+        Teuchos::rcp(b)
+        );
+
+  //// Create a Teuchos::ParameterList to hold solver parameters
   //Teuchos::ParameterList amesos2_params("Amesos2");
-  //Teuchos::ParameterList superlu_params =
-  //  amesos2_params.sublist("SuperLU");
+  //Teuchos::ParameterList superlu_params = amesos2_params.sublist("SuperLU");
   //superlu_params.set("Trans","TRANS","Whether to solve with A^T");
-  //superlu_params.set(
-  //    "Equil", false, "Whether to equilibrate the system before solve"
-  //    );
+  //superlu_params.set("Equil",false,"Whether to equilibrate the system before solve");
   //superlu_params.set("ColPerm","NATURAL","Use 'natural' ordering of columns");
   //solver->setParameters( Teuchos::rcpFromRef(amesos2_params) );
 
-  // Create solver interface to Superlu with Amesos2 factory method
-  //Teuchos::RCP<Amesos2::Solver<OP,MV> > solver =
-  auto solver = Amesos2::create<OP,MV>("Superlu", &A, &x, b.get());
   solver->symbolicFactorization().numericFactorization().solve();
 
   return;
 }
-*/
 // =============================================================================
 void
 nosh::

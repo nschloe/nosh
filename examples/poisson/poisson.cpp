@@ -5,7 +5,7 @@
 int main(int argc, char *argv[]) {
   Teuchos::GlobalMPISession session(&argc, &argv, NULL);
 
-  const auto mesh = nosh::read("pacman.e");
+  const auto mesh = nosh::read("cube.e");
 
   const auto bc1 = std::make_shared<poisson::bc1>();
   const auto bc2 = std::make_shared<poisson::bc2>();

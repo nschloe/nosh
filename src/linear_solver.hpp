@@ -35,9 +35,15 @@ namespace nosh {
 
   static
   const std::map<std::string, boost::any> default_linear_solver_params = {
-    {"package", "MueLu"},
+    {"package", "Amesos2"},
     {"parameters", list{}}
   };
+
+  //static
+  //const std::map<std::string, boost::any> default_linear_solver_params = {
+  //  {"package", "MueLu"},
+  //  {"parameters", list{}}
+  //};
 
   //std::map<std::string, boost::any> default_linear_solver_params =
   //{
@@ -74,7 +80,6 @@ namespace nosh {
       std::map<std::string, boost::any> solver_params = nosh::default_linear_solver_params
       );
 
-  /*
   void
   linear_solve_amesos2(
       const nosh::matrix & A,
@@ -82,7 +87,6 @@ namespace nosh {
       nosh::function & x,
       std::map<std::string, boost::any> solver_params = nosh::default_linear_solver_params
       );
-  */
 
   void
   linear_solve_belos(
