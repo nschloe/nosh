@@ -25,6 +25,7 @@ SET(internal_LIBS "nosh")
 set(input_files
   rectanglesmall.e
   pacman.e
+  screw.e
   shell.e
   sphere.e
   cubesmall.e
