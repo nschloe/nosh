@@ -16,10 +16,15 @@ ADD_CUSTOM_COMMAND(
   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/poisson.py
   )
 
-# copy over mesh file
+# copy over mesh files
 ADD_CUSTOM_COMMAND(
    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/pacman.e
    COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_BINARY_DIR}/test/data/pacman.e ${CMAKE_CURRENT_BINARY_DIR}/pacman.e
+   DEPENDS noshTestFetchData
+   )
+ADD_CUSTOM_COMMAND(
+   OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/pacman.e
+   COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_BINARY_DIR}/test/data/screw.e ${CMAKE_CURRENT_BINARY_DIR}/screw.e
    DEPENDS noshTestFetchData
    )
 
