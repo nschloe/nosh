@@ -69,7 +69,8 @@ namespace nosh
 mesh::
 mesh(
     const std::shared_ptr<const Teuchos::Comm<int>> & _comm,
-    const std::shared_ptr<stk::io::StkMeshIoBroker> & broker
+    const std::shared_ptr<stk::io::StkMeshIoBroker> & broker,
+    const std::set<std::string> allocated_vector_nms
     ) :
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   write_time_(Teuchos::TimeMonitor::getNewTimer("Nosh: mesh::write")),
@@ -77,6 +78,7 @@ mesh(
   multi_time_(Teuchos::TimeMonitor::getNewTimer("Nosh: mesh::get_multi_vector")),
 #endif
   comm(_comm),
+  allocated_vector_names(allocated_vector_nms),
   io_broker_(broker),
   owned_nodes_(this->buildOwnedNodes_(io_broker_->bulk_data())),
   nodes_map_(this->buildEntitiesMap_(owned_nodes_)),

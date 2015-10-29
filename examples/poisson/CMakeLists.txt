@@ -23,7 +23,7 @@ ADD_CUSTOM_COMMAND(
    DEPENDS noshTestFetchData
    )
 ADD_CUSTOM_COMMAND(
-   OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/pacman.e
+   OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/screw.e
    COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_BINARY_DIR}/test/data/screw.e ${CMAKE_CURRENT_BINARY_DIR}/screw.e
    DEPENDS noshTestFetchData
    )

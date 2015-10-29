@@ -230,7 +230,7 @@ linear_solve_muelu(
   auto H = get_muelu_hierarchy(A, muelu_params);
   H->IsPreconditioner(false);
 
-  const int mgridSweeps = 10;
+  const int mgridSweeps = 100;
   H->Iterate(*bXpetra, *xXpetra, mgridSweeps);
 
   return;

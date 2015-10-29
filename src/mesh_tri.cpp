@@ -35,9 +35,10 @@ namespace nosh
 mesh_tri::
 mesh_tri(
     const std::shared_ptr<const Teuchos::Comm<int>> & _comm,
-    const std::shared_ptr<stk::io::StkMeshIoBroker> & broker
+    const std::shared_ptr<stk::io::StkMeshIoBroker> & broker,
+      const std::set<std::string> allocated_vector_names
     ) :
-  mesh(_comm, broker),
+  mesh(_comm, broker, allocated_vector_names),
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   compute_edge_coefficients_time_(
       Teuchos::TimeMonitor::getNewTimer(

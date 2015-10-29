@@ -12,34 +12,23 @@ write(
 {
   // 2015-06-20:
   // STK has to know the fields that are written out with a mesh *before* the
-  // mesh is read. This makes writing any function out with a mesh impossible.
-  // Well, the workaround is to write out the mesh to a temporary file, read it
-  // in, claiming there is a field "x", and then writing it out again.
-  const std::string tmp_file = "/tmp/mesh.e";
-  x.mesh->open_file(tmp_file);
-  try {
+  // mesh is read. Hopefully, the reader was smart enough allocate some
+  // space...
+  const std::set<std::string> names = x.mesh->allocated_vector_names;
+  if (!names.empty()) {
+    std::string allocated_vector_name;
+    for (const auto& name: names) {
+      // any name will do
+      allocated_vector_name = name;
+      break;
+    }
+    x.mesh->insert_vector(x, allocated_vector_name);
+    x.mesh->open_file(file_name);
     x.mesh->write();
-  }
-  catch (const std::runtime_error& error)
-  {
-    // Ignore std::runtime_error.
-    // Those are hopefully restricted to
-    // ```
-    //[ex_put_time] Error: failed to store time value in file id 65536
-    //    exerrval = -130
-    //terminate called after throwing an instance of 'std::runtime_error'
-    //  what():  Exodus error (-130)NetCDF: Attempt to extend dataset during NC_INDEPENDENT I/O operation. Use nc_var_par_access to set mode NC_COLLECTIVE before extending variable. at line 853 in file 'Ioex__databaseIO.C 2015/04/13' Please report to gdsjaar@sandia.gov if you need help.
-    // ```
-    // Greg should be able to handle those soon.
-  }
-  auto mesh2 = nosh::read(tmp_file, {"x"});
-  mesh2->insert_vector(x, "x");
-  mesh2->open_file(file_name);
-  try {
-    mesh2->write();
-  }
-  catch (const std::runtime_error& error)
-  {
-    // see above
+  } else {
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(
+        true,
+        "STK meshes need to have space reserved for writing at read time."
+        );
   }
 }

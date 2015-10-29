@@ -22,6 +22,8 @@
 // =============================================================================
 // includes
 #include <memory>
+#include <set>
+#include <string>
 
 #include "mesh.hpp"
 

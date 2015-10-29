@@ -36,9 +36,10 @@ namespace nosh
 mesh_tetra::
 mesh_tetra(
     const std::shared_ptr<const Teuchos::Comm<int>> & _comm,
-    const std::shared_ptr<stk::io::StkMeshIoBroker> & broker
+    const std::shared_ptr<stk::io::StkMeshIoBroker> & broker,
+    const std::set<std::string> allocated_vector_names_
     ) :
-  mesh(_comm, broker),
+  mesh(_comm, broker, allocated_vector_names_),
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   compute_edge_coefficients_time_(
       Teuchos::TimeMonitor::getNewTimer(
@@ -445,8 +446,7 @@ compute_boundary_nodes_() const
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   Teuchos::TimeMonitor tm(*compute_boundary_nodes_time_);
 #endif
-
-  // TODO move the face creation to a more appropriate place
+  // this takes a reaaaally long time
   stk::mesh::create_faces(io_broker_->bulk_data());
 
   auto my_faces = this->get_overlap_faces_();

@@ -66,7 +66,8 @@ private:
 public:
   mesh(
       const std::shared_ptr<const Teuchos::Comm<int>> & comm,
-      const std::shared_ptr<stk::io::StkMeshIoBroker> & broker
+      const std::shared_ptr<stk::io::StkMeshIoBroker> & broker,
+      const std::set<std::string> allocated_vector_names = {}
       );
 
   virtual
@@ -223,6 +224,12 @@ private:
 public:
   const std::shared_ptr<const Teuchos::Comm<int>> comm;
 
+  // A STK oddity is that you cannot add data to a mesh after it has been
+  // *read*. That's right: read. To work around this issue, allocate one or
+  // more spaces for vectors at read time and store the names of the fields
+  // here. Those can later be used to insert actual data.
+  const std::set<std::string> allocated_vector_names;
+
 protected:
   // Apparently, process_output_request is not const. Make
   // the io_broker_ mutable so our write() can be const.
@@ -252,6 +259,7 @@ public:
   const std::vector<Teuchos::Tuple<int,4>> edge_gids_complex;
 
 private:
+
   const std::vector<Teuchos::Tuple<int,2>>
   buildEdgeGids_() const;
 

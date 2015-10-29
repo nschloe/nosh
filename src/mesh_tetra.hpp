@@ -40,6 +40,8 @@
 
 #include "mesh.hpp"
 
+#include <set>
+
 namespace nosh
 {
 
@@ -50,7 +52,8 @@ class mesh_tetra:
 public:
   mesh_tetra(
       const std::shared_ptr<const Teuchos::Comm<int>> & comm,
-      const std::shared_ptr<stk::io::StkMeshIoBroker> & broker
+      const std::shared_ptr<stk::io::StkMeshIoBroker> & broker,
+      const std::set<std::string> allocated_vector_names = {}
       );
 
   virtual

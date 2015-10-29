@@ -106,13 +106,26 @@ read(
     // Read all fields from the input file
     io_broker->add_all_mesh_fields_as_input_fields();
   }
+  // And reserve one additional field. One.
+  // Hopefull the name of this field doesn't clash with what we already have.
+  const std::string allocated_name = "nosh0";
+  auto & meta_data = io_broker->meta_data();
+  ScalarFieldType &field = meta_data.declare_field<ScalarFieldType>(
+      stk::topology::NODE_RANK,
+      allocated_name
+      );
+  stk::mesh::put_field(field, meta_data.universal_part());
+  stk::io::set_field_role(field, Ioss::Field::TRANSIENT);
 
+  // populating takes a moderate amount of time
   io_broker->populate_bulk_data();
 
   // Remember: Indices in STK are 1-based. :/
   io_broker->read_defined_input_fields(index+1);
 
-  // create edges
+  // create edges.
+  // whoops, that takes longer!
+  // TODO can we improve anything about this?
   stk::mesh::create_edges(io_broker->bulk_data());
 
 #if 0
@@ -175,9 +188,18 @@ read(
 
   switch (nodesPerCell) {
     case 3:
-      return std::make_shared<nosh::mesh_tri>(comm, io_broker);
+      return std::make_shared<nosh::mesh_tri>(
+          comm,
+          io_broker,
+          std::set<std::string>({allocated_name})
+          );
+      break;
     case 4:
-      return std::make_shared<nosh::mesh_tetra>(comm, io_broker);
+      return std::make_shared<nosh::mesh_tetra>(
+          comm,
+          io_broker,
+          std::set<std::string>({allocated_name})
+          );
       break;
     default:
       TEUCHOS_TEST_FOR_EXCEPT_MSG(
