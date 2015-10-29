@@ -16,6 +16,7 @@ namespace nosh {
   // http://stackoverflow.com/a/14425299/353337
   static
   const std::map<std::string, boost::any> default_linear_solver_params = {
+    {"package", "Belos"},
     {"method", "Pseudo Block GMRES"},
     {"parameters", list{
       {"Convergence Tolerance", 1.0e-10},
@@ -24,6 +25,15 @@ namespace nosh {
       {"Verbosity", 33}
       }}
   };
+
+  /*
+  static
+  const std::map<std::string, boost::any> default_linear_solver_params = {
+    {"package", "MueLu"},
+    {"parameters", list{}}
+  };
+  */
+
   //std::map<std::string, boost::any> default_linear_solver_params =
   //{
   //  {"Linear Solver Type", "Belos"},
@@ -58,6 +68,34 @@ namespace nosh {
       nosh::function & x,
       std::map<std::string, boost::any> solver_params = nosh::default_linear_solver_params
       );
+
+  /*
+  void
+  linear_solve_amesos2(
+      const nosh::matrix & A,
+      std::shared_ptr<Tpetra::Vector<double,int,int>> f_vec,
+      nosh::function & x,
+      std::map<std::string, boost::any> solver_params = nosh::default_linear_solver_params
+      );
+  */
+
+  void
+  linear_solve_belos(
+      const nosh::matrix & A,
+      std::shared_ptr<Tpetra::Vector<double,int,int>> f_vec,
+      nosh::function & x,
+      std::map<std::string, boost::any> solver_params = nosh::default_linear_solver_params
+      );
+
+  /*
+  void
+  linear_solve_muelu(
+      const nosh::matrix & A,
+      std::shared_ptr<Tpetra::Vector<double,int,int>> f_vec,
+      nosh::function & x,
+      std::map<std::string, boost::any> solver_params = nosh::default_linear_solver_params
+      );
+      */
 
   void
   scaled_linear_solve(

@@ -2,13 +2,30 @@
 
 #include "matrix.hpp"
 
-#include <Teuchos_RCP.hpp>
+#include <Amesos2.hpp>
+#include <MueLu_ParameterListInterpreter.hpp>
 #include <Stratimikos_DefaultLinearSolverBuilder.hpp>
+#include <Teuchos_ParameterList.hpp>
+#include <Teuchos_RCP.hpp>
 #include <Thyra_TpetraThyraWrappers.hpp>
 #include <Tpetra_CrsMatrix.hpp>
-#include <Teuchos_ParameterList.hpp>
+#include <Xpetra_CrsMatrixWrap_fwd.hpp>
+#include <Xpetra_TpetraCrsMatrix.hpp>
+
+//#include <Amesos2_Details_LinearSolverFactory.hpp>
+//#include <Belos_Details_LinearSolverFactory.hpp>
+//#include <Ifpack2_Details_LinearSolverFactory.hpp>
+// #include <Trilinos_Details_LinearSolver.hpp>
+// #include <Trilinos_Details_LinearSolverFactory.hpp>
 
 #include <map>
+
+using SC = double;
+using LO = int;
+using GO = int;
+using MV = Tpetra::Vector<double,int,int>;
+using OP = Tpetra::CrsMatrix<double,int,int>;
+using NormType = MV::mag_type;
 
 // =============================================================================
 void
@@ -21,9 +38,9 @@ linear_solve(
     )
 {
   // create f vector
-  auto f_vec = nosh::integrate_over_control_volumes(f, *A.mesh);
+  auto b = nosh::integrate_over_control_volumes(f, *A.mesh);
   // solve
-  linear_solve(A, f_vec, x, solver_params);
+  linear_solve(A, b, x, solver_params);
   return;
 }
 // =============================================================================
@@ -31,12 +48,12 @@ void
 nosh::
 linear_solve(
     const nosh::matrix & A,
-    std::shared_ptr<Tpetra::Vector<double,int,int>> f_vec,
+    std::shared_ptr<Tpetra::Vector<double,int,int>> b,
     nosh::function & x,
     std::map<std::string, boost::any> solver_params
     )
 {
-  // apply boundary conditions to f
+  // apply boundary conditions to b
   const auto boundary_nodes = A.mesh->boundary_nodes();
   const vector_fieldType & coords_field = A.mesh->get_node_field("coordinates");
   for (const auto boundary_node: boundary_nodes) {
@@ -44,7 +61,7 @@ linear_solve(
     for (const auto & bc: A.bcs) {
       if (bc->is_inside(coord)) {
         const auto gid = A.mesh->gid(boundary_node);
-        f_vec->replaceGlobalValue(gid, bc->eval(coord));
+        b->replaceGlobalValue(gid, bc->eval(coord));
         break; // only set one bc per boundary point
       }
     }
@@ -54,12 +71,76 @@ linear_solve(
   //A.describe(*out, Teuchos::VERB_EXTREME);
   //return;
 
+  //auto A_rcp = Teuchos::rcpFromRef(A);
+  //solver->setMatrix(A_rcp);
+  //// solver.setParameters(); // TODO
+  //solver->solve(x, *b);
+
+  const std::string package =
+    boost::any_cast<const char *>(solver_params.at("package"));
+  /*if (package == "Amesos2") {
+      linear_solve_amesos2(A, b, x, solver_params);
+      return;
+  } else*/
+  if (package == "Belos") {
+      linear_solve_belos(A, b, x, solver_params);
+      return;
+  /*} else if (package == "MueLu") {
+      linear_solve_muelu(A, b, x, solver_params);
+      return;*/
+  } else {
+      TEUCHOS_TEST_FOR_EXCEPT_MSG(
+          true,
+          "Unknown linear solver package \"" << package << "\"."
+          );
+  }
+}
+// =============================================================================
+/*
+void
+nosh::
+linear_solve_amesos2(
+    const nosh::matrix & A,
+    std::shared_ptr<Tpetra::Vector<double,int,int>> b,
+    nosh::function & x,
+    std::map<std::string, boost::any> solver_params
+    )
+{
+  //Teuchos::ParameterList amesos2_params("Amesos2");
+  //Teuchos::ParameterList superlu_params =
+  //  amesos2_params.sublist("SuperLU");
+  //superlu_params.set("Trans","TRANS","Whether to solve with A^T");
+  //superlu_params.set(
+  //    "Equil", false, "Whether to equilibrate the system before solve"
+  //    );
+  //superlu_params.set("ColPerm","NATURAL","Use 'natural' ordering of columns");
+  //solver->setParameters( Teuchos::rcpFromRef(amesos2_params) );
+
+  // Create solver interface to Superlu with Amesos2 factory method
+  //Teuchos::RCP<Amesos2::Solver<OP,MV> > solver =
+  auto solver = Amesos2::create<OP,MV>("Superlu", &A, &x, b.get());
+  solver->symbolicFactorization().numericFactorization().solve();
+
+  return;
+}
+*/
+// =============================================================================
+void
+nosh::
+linear_solve_belos(
+    const nosh::matrix & A,
+    std::shared_ptr<Tpetra::Vector<double,int,int>> b,
+    nosh::function & x,
+    std::map<std::string, boost::any> solver_params
+    )
+{
   // set x to 0
   x.putScalar(0.0);
 
   Stratimikos::DefaultLinearSolverBuilder builder;
   auto p = Teuchos::rcp(new Teuchos::ParameterList());
   std_map_to_teuchos_list(convert_to_belos_parameters(solver_params), *p);
+  std::cout << p << std::endl;
   builder.setParameterList(p);
   std::cout << *p << std::endl;
   auto lowsFactory = builder.createLinearSolveStrategy("");
@@ -71,7 +152,7 @@ linear_solve(
       *lowsFactory,
       thyraA
       );
-  const Tpetra::Vector<double,int,int> & vecF = *f_vec;
+  const Tpetra::Vector<double,int,int> & vecF = *b;
   Tpetra::Vector<double,int,int> & vecX = x;
   auto status = Thyra::solve<double>(
       *lows,
@@ -82,6 +163,65 @@ linear_solve(
   std::cout << "Solve status: " << status << std::endl;
   return;
 }
+// =============================================================================
+/*
+void
+nosh::
+linear_solve_muelu(
+    const nosh::matrix & A,
+    std::shared_ptr<Tpetra::Vector<double,int,int>> b,
+    nosh::function & x,
+    std::map<std::string, boost::any> solver_params
+    )
+{
+  // Tpetra -> Xpetra
+  Teuchos::RCP<const Tpetra::CrsMatrix<double,int,int>> ATpetra =
+    Teuchos::rcpFromRef(A);
+  auto tmp = Xpetra::TpetraCrsMatrix<double,int,int>(ATpetra);
+  auto AXpetra = Teuchos::rcpFromRef(tmp);
+  auto AXpetraWrap = Teuchos::rcp(new Xpetra::CrsMatrixWrap(AXpetra));
+
+  auto bXpetra = Xpetra::toXpetra(Teuchos::rcpFromRef(*b));
+  Tpetra::Vector<double,int,int> & xTpetra = x;
+  auto xXpetra = Xpetra::toXpetra(Teuchos::rcpFromRef(xTpetra));
+
+  // build null space vector
+  auto map = AXpetraWrap->getRowMap();
+  auto nullspace = Xpetra::MultiVectorFactory::Build(map, 1);
+  nullspace.putScalar(1.0);
+
+  auto p = Teuchos::rcp(new Teuchos::ParameterList());
+  const auto & params = boost::any_cast<std::map<std::string,boost::any>>(
+      solver_params.at("parameters")
+      );
+  std_map_to_teuchos_list(params, *p);
+
+  std::cout << p << std::endl;
+
+  auto mueLuFactory =
+    MueLu::ParameterListInterpreter<double,int,int>(*p, map->getComm());
+
+  auto H = mueLuFactory.CreateHierarchy();
+  H->GetLevel(0)->Set("A", AXpetraWrap);
+  H->GetLevel(0)->Set("Nullspace", nullspace);
+
+  //// TODO
+  ////H->GetLevel(0)->Set("Coordinates", coords);
+  ////// get the coordinates as multivector
+  ////RCP<MultiVector> coords = Teuchos::rcp(new Xpetra::EpetraMultiVector(epCoord));
+
+  mueLuFactory.SetupHierarchy(*H);
+
+  x.putScalar(0.0);
+  //x->update(1.0, *xX, 1.0);
+  H->IsPreconditioner(false);
+
+  const int mgridSweeps = 10;
+  H->Iterate(*bXpetra, *xXpetra, mgridSweeps);
+
+  return;
+}
+*/
 // =============================================================================
 void
 nosh::
@@ -156,7 +296,6 @@ convert_to_belos_parameters(
           });
     } else {
       // insert default parameters
-      std::cout << "def" << std::endl;
       belos.insert({
           "Solver Types",
           list{{method,
