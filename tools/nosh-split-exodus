@@ -11,27 +11,29 @@ def _split():
     args = _parse_options()
 
     exodus_file = args.file
+    output_dir = os.path.dirname(exodus_file)
 
     # define output filename(s)
     # get basename of input file
-    basename, extension = os.path.splitext(exodus_file)
-    lb_file = '%s-split.nemI' % basename
+    root, extension = os.path.splitext(exodus_file)
+    # the root already contains exodus_file's path
+    lb_file = '%s-split.nemI' % root
 
     # compute load balancing
-    subprocess.check_call(
-        ['nem_slice',
-         '-v',
-         '-e',  # elemental-based balancing
-         '-m', 'mesh=%dx%d' % tuple(args.proc_mesh),
-         '-l', args.slice_method,
-         '-o', lb_file,
-         exodus_file]
-        )
+    subprocess.check_call([
+        'nem_slice',
+        '-v',
+        '-e',  # elemental-based balancing
+        '-m', 'mesh=%dx%d' % tuple(args.proc_mesh),
+        '-l', args.slice_method,
+        '-o', lb_file,
+        exodus_file
+        ])
 
     # create a temporary directory in the current directory
     tmpdir = tempfile.mkdtemp(
         suffix='1',  # it *has* to end in 1
-        dir='.'
+        dir=output_dir
         )
     # Output directory. It needs to be specified *relative* to tmpdir.
     outdir = '/../'
