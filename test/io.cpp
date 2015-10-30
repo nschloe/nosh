@@ -43,11 +43,12 @@ testKeo(
     bool & success
     )
 {
-  //std::string input_filename = "data/" + input_filename_base + ".xmf";
-  //nosh::readXdmf(input_filename);
-
   // Read the data from the file.
-  std::string input_filename = "data/" + input_filename_base + ".e";
+  auto comm =  Teuchos::DefaultComm<int>::getComm();
+  const std::string input_filename = (comm->getSize() == 1) ?
+    "data/" + input_filename_base + ".e" :
+    "data/" + input_filename_base + "-split.par";
+
   auto mesh = nosh::read(input_filename);
 
   //return;

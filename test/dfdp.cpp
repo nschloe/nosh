@@ -78,7 +78,11 @@ test_dfdp(
     bool & success
     )
 {
-  std::string input_filename = "data/" + input_filename_base + ".e";
+  // Read the data from the file.
+  auto comm =  Teuchos::DefaultComm<int>::getComm();
+  const std::string input_filename = (comm->getSize() == 1) ?
+    "data/" + input_filename_base + ".e" :
+    "data/" + input_filename_base + "-split.par";
 
   // Read the data from the file.
   auto mesh = nosh::read(input_filename);
@@ -133,7 +137,6 @@ test_dfdp(
   // TODO test both parameters
   //for (int param_index = 0; param_index < p->GlobalLength(); param_index++) {
   std::vector<int> param_indices(1);
-  double r;
   for (size_t param_index = 0; param_index < 1; param_index++) {
     // Get finite difference.
     computeFiniteDifference_(
@@ -146,19 +149,19 @@ test_dfdp(
 
     // Compare the two.
     Thyra::Vp_StV(fdiff(), -1.0, *dfdp->col(0));
-    r = Thyra::norm_inf(*fdiff);
+    double r = Thyra::norm_inf(*fdiff);
     TEST_COMPARE(r, <, 1.0e-7);
   }
 
   return;
 }
 // ===========================================================================
-TEUCHOS_UNIT_TEST(nosh, DfdpRectangleSmallHashes)
-{
-  const std::string input_filename_base = "rectanglesmall";
-  const double mu = 1.0e-2;
-  test_dfdp(input_filename_base, mu, out, success);
-}
+//TEUCHOS_UNIT_TEST(nosh, DfdpRectangleSmallHashes)
+//{
+//  const std::string input_filename_base = "rectanglesmall";
+//  const double mu = 1.0e-2;
+//  test_dfdp(input_filename_base, mu, out, success);
+//}
 // ============================================================================
 TEUCHOS_UNIT_TEST(nosh, DfdpPacmanHashes)
 {

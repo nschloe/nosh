@@ -46,6 +46,16 @@ foreach(file ${input_files})
 endforeach()
 ExternalData_Add_Target(noshTestFetchData)
 
+# Split it into chunks of 2 and 7 for the parallel tests.
+foreach(file ${input_files})
+  execute_process(
+    COMMAND ${PROJECT_SOURCE_DIR}/tools/nosh-split-exodus -p 1 2 ${CMAKE_BINARY_DIR}/test/data/${file}
+    )
+  execute_process(
+    COMMAND ${PROJECT_SOURCE_DIR}/tools/nosh-split-exodus -p 1 7 ${CMAKE_BINARY_DIR}/test/data/${file}
+    )
+endforeach()
+
 # ------------------------------------------------------------------------------
 SET(IOTEST_EXECUTABLE
   "ioTest")

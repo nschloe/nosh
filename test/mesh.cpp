@@ -43,7 +43,16 @@ testMesh(
     bool & success
     )
 {
-  std::string input_filename = "data/" + input_filename_base + ".e";
+  auto comm =  Teuchos::DefaultComm<int>::getComm();
+  const int numProc = comm->getSize();
+
+  // Read the data from the file.
+  std::string input_filename;
+  if (numProc == 1) {
+    input_filename = "data/" + input_filename_base + ".e";
+  } else {
+    input_filename = "data/" + input_filename_base + "-split.par";
+  }
 
   // Read the data from the file.
   auto mesh = nosh::read(input_filename);
