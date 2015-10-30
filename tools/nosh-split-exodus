@@ -1,0 +1,104 @@
+#!/usr/bin/env python
+
+import argparse
+import os
+import subprocess
+import sys
+import tempfile
+
+
+def _split():
+    args = _parse_options()
+
+    exodus_file = args.file
+
+    # define output filename(s)
+    # get basename of input file
+    basename, extension = os.path.splitext(exodus_file)
+    lb_file = '%s-split.nemI' % basename
+
+    # compute load balancing
+    subprocess.check_call(
+        ['nem_slice',
+         '-v',
+         '-e',  # elemental-based balancing
+         '-m', 'mesh=%dx%d' % tuple(args.proc_mesh),
+         '-l', args.slice_method,
+         '-o', lb_file,
+         exodus_file]
+        )
+
+    # create a temporary directory in the current directory
+    tmpdir = tempfile.mkdtemp(
+        suffix='1',  # it *has* to end in 1
+        dir='.'
+        )
+    # Output directory. It needs to be specified *relative* to tmpdir.
+    outdir = '/../'
+
+    # create a temporary file for the nemspread config
+    handle, tmpfile = tempfile.mkstemp()
+
+    with open(tmpfile, mode='w') as f:
+        f.write('''Input FEM file          = %s
+LB file                 = %s
+Debug                   = 1
+Restart Time list       = off
+Reserve space           = nodal=1, elemental=0, global=0
+Parallel Disk Info = number=1
+Parallel file location = root=%s,subdir=%s''' %
+                (exodus_file, lb_file, tmpdir[:-1], outdir)
+                # The '1' at the end of tmpdir needs to be removed.
+                # Don't know why, but nem_spread wants it that way.
+                )
+
+    subprocess.check_call(['nem_spread', tmpfile])
+
+    # clean up
+    os.rmdir(tmpdir)
+    os.remove(tmpfile)
+
+    return
+
+
+def _parse_options():
+    '''Parse input options.'''
+
+    parser = argparse.ArgumentParser(
+        description='Split an ExodusII file into load-balanced chunks.'
+        )
+
+    parser.add_argument(
+            'file',
+            metavar='FILE',
+            type=str,
+            help='the file to read from'
+            )
+
+    parser.add_argument(
+            '--process-mesh', '-p',
+            dest='proc_mesh',
+            metavar='PROCMESH',
+            type=int,
+            nargs=2,
+            required=True,
+            help='process mesh (e.g., -p 4 2)'
+            )
+
+    parser.add_argument(
+            '--slice-method', '-m',
+            dest='slice_method',
+            type=str,
+            choices=['inertial', 'spectral', 'multikl'],
+            default='multikl',
+            help='slicing method (default: multikl)'
+            )
+
+    args = parser.parse_args()
+
+    return args
+
+
+if __name__ == '__main__':
+    STATUS = _split()
+    sys.exit(STATUS)
