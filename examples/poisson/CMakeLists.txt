@@ -22,11 +22,6 @@ ADD_CUSTOM_COMMAND(
    COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_BINARY_DIR}/test/data/pacman.e ${CMAKE_CURRENT_BINARY_DIR}/pacman.e
    DEPENDS noshTestFetchData
    )
-ADD_CUSTOM_COMMAND(
-   OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/screw.e
-   COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_BINARY_DIR}/test/data/screw.e ${CMAKE_CURRENT_BINARY_DIR}/screw.e
-   DEPENDS noshTestFetchData
-   )
 
 SET(MY_EXECUTABLE poisson)
 ADD_EXECUTABLE(${MY_EXECUTABLE} poisson.cpp poisson.hpp pacman.e)

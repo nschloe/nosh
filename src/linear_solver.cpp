@@ -54,6 +54,7 @@ linear_solve(
     std::map<std::string, boost::any> solver_params
     )
 {
+#if 0
   // apply boundary conditions to b
   const auto boundary_nodes = A.mesh->boundary_nodes();
   const vector_fieldType & coords_field = A.mesh->get_node_field("coordinates");
@@ -62,7 +63,9 @@ linear_solve(
     for (const auto & bc: A.bcs) {
       if (bc->is_inside(coord)) {
         const auto gid = A.mesh->gid(boundary_node);
-        b->replaceGlobalValue(gid, bc->eval(coord));
+        std::cout << "gid " << gid << std::endl;
+        b->replaceGlobalValue(gid, 0.0);
+        //b->replaceGlobalValue(gid, bc->eval(coord));
         break; // only set one bc per boundary point
       }
     }
@@ -77,23 +80,24 @@ linear_solve(
   //// solver.setParameters(); // TODO
   //solver->solve(x, *b);
 
-  const std::string package =
-    boost::any_cast<const char *>(solver_params.at("package"));
-  if (package == "Amesos2") {
-      linear_solve_amesos2(A, b, x, solver_params);
-      return;
-  } else if (package == "Belos") {
-      linear_solve_belos(A, b, x, solver_params);
-      return;
-  } else if (package == "MueLu") {
-      linear_solve_muelu(A, b, x, solver_params);
-      return;
-  } else {
-      TEUCHOS_TEST_FOR_EXCEPT_MSG(
-          true,
-          "Unknown linear solver package \"" << package << "\"."
-          );
-  }
+  //const std::string package =
+  //  boost::any_cast<const char *>(solver_params.at("package"));
+  //if (package == "Amesos2") {
+  //    linear_solve_amesos2(A, b, x, solver_params);
+  //    return;
+  //} else if (package == "Belos") {
+  //    linear_solve_belos(A, b, x, solver_params);
+  //    return;
+  //} else if (package == "MueLu") {
+  //    linear_solve_muelu(A, b, x, solver_params);
+  //    return;
+  //} else {
+  //    TEUCHOS_TEST_FOR_EXCEPT_MSG(
+  //        true,
+  //        "Unknown linear solver package \"" << package << "\"."
+  //        );
+  //}
+#endif
 }
 // =============================================================================
 void
@@ -179,10 +183,7 @@ get_muelu_hierarchy(
     Teuchos::rcp_const_cast<Tpetra::CrsMatrix<double,int,int>>(ATpetra);
   auto AXpetra = MueLu::TpetraCrs_To_XpetraMatrix(nonconst_ATpetra);
 
-  // build null space vector
   auto map = AXpetra->getRowMap();
-  auto nullspace = Xpetra::MultiVectorFactory<double,int,int>::Build(map, 1);
-  nullspace->putScalar(1.0);
 
   auto p = Teuchos::rcp(new Teuchos::ParameterList());
   const auto & params = boost::any_cast<std::map<std::string,boost::any>>(
@@ -196,12 +197,16 @@ get_muelu_hierarchy(
 
   auto H = Teuchos::get_shared_ptr(mueLuFactory.CreateHierarchy());
   H->GetLevel(0)->Set("A", AXpetra);
-  H->GetLevel(0)->Set("Nullspace", nullspace);
+
+  //// build null space vector
+  //auto nullspace = Xpetra::MultiVectorFactory<double,int,int>::Build(map, 1);
+  //nullspace->putScalar(1.0);
+  //H->GetLevel(0)->Set("Nullspace", nullspace);
 
   //// TODO
-  ////// get the coordinates as multivector
-  ////RCP<MultiVector> coords = Teuchos::rcp(new Xpetra::EpetraMultiVector(epCoord));
-  ////H->GetLevel(0)->Set("Coordinates", coords);
+  //// get the coordinates as multivector
+  //RCP<MultiVector> coords = Teuchos::rcp(new Xpetra::EpetraMultiVector(epCoord));
+  //H->GetLevel(0)->Set("Coordinates", coords);
 
   mueLuFactory.SetupHierarchy(*H);
 
@@ -272,13 +277,13 @@ scaled_linear_solve(
   // solve
   linear_solve(A, b, x, solver_params);
 
-  // scale the solution
-  auto x_data = x.getDataNonConst();
-  for (int k = 0; k < x_data.size(); k++) {
-    x_data[k] *= inv_sqrt_cv_data[k];
-  }
+  //// scale the solution
+  //auto x_data = x.getDataNonConst();
+  //for (int k = 0; k < x_data.size(); k++) {
+  //  x_data[k] *= inv_sqrt_cv_data[k];
+  //}
 
-  return;
+  //return;
 }
 // =============================================================================
 std::map<std::string, boost::any>

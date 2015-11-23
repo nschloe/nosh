@@ -7,62 +7,80 @@ INCLUDE_DIRECTORIES(SYSTEM
   ${EIGEN3_INCLUDE_DIR}
   )
 
-## Get the absolute path of Trilinos_LIBRARY_DIRS. This is to avoid
-## conflicts with Trilinos_TPL_LIBRARY_DIRS which is typically given
-## as absolute paths.
-## To be removed once Sandia bug #5692, cf.
-##   https://software.sandia.gov/bugzilla/show_bug.cgi?id=5692,
-## has been resolved.
-#GET_FILENAME_COMPONENT(Trilinos_LIBRARY_DIRS_ABSOLUTE
-#                       ${Trilinos_LIBRARY_DIRS}
-#                       REALPATH)
-#
-#LINK_DIRECTORIES(${Trilinos_LIBRARY_DIRS_ABSOLUTE}
-#                 ${Trilinos_TPL_LIBRARY_DIRS})
-
 SET(internal_LIBS "nosh")
 
-set(input_files
-  rectanglesmall.e
-  pacman.e
-  screw.e
-  shell.e
-  sphere.e
-  cubesmall.e
-  brick-w-hole.e
-  )
+#set(input_files
+#  rectanglesmall
+#  pacman
+#  screw
+#  shell
+#  sphere
+#  cubesmall
+#  brick-w-hole
+#  )
+#
+## Download the files
+#INCLUDE(ExternalData)
+#set(
+#  ExternalData_URL_TEMPLATES
+#  "https://downloads.sourceforge.net/project/noshdata/%(algo)/%(hash)"
+#  )
+#foreach(file ${input_files})
+#  ExternalData_Expand_Arguments(
+#    noshTestFetchData
+#    OUT_DATA DATA{${CMAKE_SOURCE_DIR}/test/data/${file}.e}
+#    )
+#endforeach()
+#ExternalData_Add_Target(noshTestFetchData)
+#
+## convert and split the downloaded files
+#add_custom_target(create_h5m ALL)
+#add_dependencies(create_h5m noshTestFetchData)
+#
+#SET(FILES2)
+#SET(FILES7)
+#foreach(file ${input_files})
+#  add_custom_command(
+#    TARGET create_h5m
+#    WORKING_DIRECTORY data/
+#    COMMAND meshio-convert ${file}.e ${file}.h5m
+#    )
+#
+#  LIST(APPEND FILES2 ${file}-2.h5m)
+#  add_custom_command(
+#    OUTPUT data/${file}-2.h5m
+#    DEPENDS data/${file}.h5m
+#    WORKING_DIRECTORY data/
+#    COMMAND mbpart 2 -m ML_KWAY ${file}.h5m ${file}-2.h5m
+#    )
+#
+#  LIST(APPEND FILES7 ${file}-7.h5m)
+#  add_custom_command(
+#    OUTPUT data/${file}-7.h5m
+#    DEPENDS data/${file}.h5m
+#    WORKING_DIRECTORY data/
+#    COMMAND mbpart 7 -m ML_KWAY ${file}.h5m ${file}-7.h5m
+#    )
+#endforeach()
+#
+#add_custom_target(split2 ALL
+#  # DEPENDS noshTestFetchData
+#  SOURCES ${FILES2}
+#  )
+#
+#add_custom_target(split7 ALL
+#  #  DEPENDS noshTestFetchData
+#  SOURCES ${FILES7}
+#  )
 
-# Download the files
-INCLUDE(ExternalData)
-set(
-  ExternalData_URL_TEMPLATES
-  "https://downloads.sourceforge.net/project/noshdata/%(algo)/%(hash)"
-  )
-foreach(file ${input_files})
-  ExternalData_Expand_Arguments(
-    noshTestFetchData
-    OUT_DATA DATA{${CMAKE_SOURCE_DIR}/test/data/${file}}
-    )
-endforeach()
-ExternalData_Add_Target(noshTestFetchData)
 
-# Split it into chunks of 2 and 7 for the parallel tests.
-foreach(file ${input_files})
-  execute_process(
-    COMMAND ${PROJECT_SOURCE_DIR}/tools/nosh-split-exodus -p 1 2 ${CMAKE_BINARY_DIR}/test/data/${file}
-    )
-  execute_process(
-    COMMAND ${PROJECT_SOURCE_DIR}/tools/nosh-split-exodus -p 1 7 ${CMAKE_BINARY_DIR}/test/data/${file}
-    )
-endforeach()
-
-# ------------------------------------------------------------------------------
 SET(IOTEST_EXECUTABLE
   "ioTest")
 ADD_EXECUTABLE (${IOTEST_EXECUTABLE}
   io.cpp
   unitTestMain.cpp
   )
+
 # add tests
 ADD_TEST(ioTestSerial
   ${IOTEST_EXECUTABLE}
@@ -116,8 +134,7 @@ IF (NOT Trilinos_Implicit)
     )
 ENDIF()
 # ------------------------------------------------------------------------------
-SET(OPERATORTEST_EXECUTABLE
-  "operatorTest")
+SET(OPERATORTEST_EXECUTABLE "operatorTest")
 ADD_EXECUTABLE(${OPERATORTEST_EXECUTABLE}
   keo.cpp
   compute_f.cpp
@@ -148,4 +165,6 @@ IF (NOT Trilinos_Implicit)
     ${Trilinos_LIBRARIES}
     )
 ENDIF()
-# ------------------------------------------------------------------------------
+
+
+ADD_SUBDIRECTORY(data)

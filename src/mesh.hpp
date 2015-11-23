@@ -19,34 +19,25 @@
 // @HEADER
 #ifndef NOSH_MESH_HPP
 #define NOSH_MESH_HPP
-// =============================================================================
+
 // includes
 #include <memory>
 #include <string>
-#include <vector>
 #include <tuple>
+#include <vector>
 
 #include <Teuchos_RCP.hpp>
-//#ifdef NOSH_TEUCHOS_TIME_MONITOR
-//#include <Teuchos_Time.hpp>
-//#endif
-#include <Tpetra_Vector.hpp>
 #include <Tpetra_CrsGraph.hpp>
+#include <Tpetra_Map.hpp>
+#include <Tpetra_Vector.hpp>
 
-#include <stk_mesh/base/Entity.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
-//#include <stk_mesh/base/MetaData.hpp>
-#include <stk_io/StkMeshIoBroker.hpp>
-#include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/FieldTraits.hpp>
+#include <moab/Core.hpp>
+#include <moab/MOABConfig.h>
+#include <moab/ParallelComm.hpp>
 
 #include <Eigen/Dense>
 
-// typedefs
-typedef stk::mesh::Field<double, stk::mesh::Cartesian> vector_fieldType;
-typedef stk::mesh::Field<double> ScalarFieldType;
-//typedef stk::mesh::Field<int> IntScalarFieldType;
-typedef std::tuple<stk::mesh::Entity, stk::mesh::Entity> edge;
+typedef std::tuple<moab::EntityHandle, moab::EntityHandle> edge;
 
 namespace nosh
 {
@@ -66,53 +57,53 @@ private:
 public:
   mesh(
       const std::shared_ptr<const Teuchos::Comm<int>> & comm,
-      const std::shared_ptr<stk::io::StkMeshIoBroker> & broker,
-      const std::set<std::string> allocated_vector_names = {}
+      const std::shared_ptr<moab::ParallelComm> & mcomm,
+      const std::shared_ptr<moab::Core> & mb
       );
 
   virtual
   ~mesh();
 
-  double
-  time() const
-  {
-    return time_;
-  };
-
   void
   open_file(const std::string &output_file);
 
   void
-  write(const double time = 0.0) const;
+  write(const std::string & filename) const;
 
   std::shared_ptr<Tpetra::Vector<double,int,int>>
   get_vector(const std::string & field_name) const;
 
+  //std::shared_ptr<Tpetra::Vector<double,int,int>>
+  //get_complex_vector(const std::string & field_name) const;
+
   std::shared_ptr<Tpetra::MultiVector<double,int,int>>
   get_multi_vector(const std::string & field_name) const;
 
-  std::shared_ptr<Tpetra::Vector<double,int,int>>
-  get_complex_vector(const std::string & field_name) const;
+  std::shared_ptr<Tpetra::Map<int,int>>
+  get_owned_map_() const;
 
-  std::vector<stk::mesh::Entity>
+  std::shared_ptr<Tpetra::Map<int,int>>
+  get_overlap_map_() const;
+
+  std::vector<moab::EntityHandle>
   get_owned_cells() const;
 
-  std::vector<stk::mesh::Entity>
+  std::vector<moab::EntityHandle>
   get_overlap_edges() const;
 
-  const std::vector<std::tuple<stk::mesh::Entity, stk::mesh::Entity>>
+  const std::vector<edge>
   my_edges() const
   {
     return edge_data_.edge_nodes;
   }
 
-  std::vector<stk::mesh::Entity>
+  std::vector<moab::EntityHandle>
   owned_nodes() const
   {
     return owned_nodes_;
   }
 
-  std::vector<stk::mesh::Entity>
+  std::vector<moab::EntityHandle>
   get_overlap_nodes() const;
 
   std::shared_ptr<const Tpetra::Map<int,int>>
@@ -151,22 +142,32 @@ public:
     return complex_overlap_map_;
   }
 
-  const vector_fieldType &
-  get_node_field(const std::string & field_name) const;
 
-  const Eigen::Vector3d
-  get_node_value(
-      const vector_fieldType & field,
-      stk::mesh::Entity node_entity
-      ) const
-  {
-    return Eigen::Vector3d(stk::mesh::field_data(field, node_entity));
-  };
+  //const vector_fieldType &
+  //get_node_field(const std::string & field_name) const;
 
-  uint64_t
-  gid(const stk::mesh::Entity e) const
+  //const Eigen::Vector3d
+  //get_node_value(
+  //    const vector_fieldType & field,
+  //    moab::EntityHandle node_entity
+  //    ) const
+  //{
+  //  return Eigen::Vector3d(stk::mesh::field_data(field, node_entity));
+  //};
+
+  moab::EntityHandle
+  gid(const moab::EntityHandle e) const
   {
-    return io_broker_->bulk_data().identifier(e) - 1;
+    throw 1;
+    return e;
+    //return io_broker_->bulk_data().identifier(e);
+  }
+
+  moab::EntityHandle
+  lid(const moab::EntityHandle e) const
+  {
+    throw 1;
+    return e;
   }
 
   Teuchos::RCP<const Tpetra::CrsGraph<int,int>>
@@ -181,12 +182,6 @@ public:
       const std::string & field_name
       ) const;
 
-  void
-  insert_complex_vector(
-      const Tpetra::Vector<double,int,int> &psi,
-      const std::string & field_name
-      ) const;
-
 public:
   virtual
   std::shared_ptr<const Tpetra::Vector<double,int,int>>
@@ -196,9 +191,9 @@ public:
   std::vector<double>
   edge_coefficients() const = 0;
 
-  virtual
-  std::set<stk::mesh::Entity>
-  boundary_nodes() const = 0;
+  //virtual
+  //std::set<moab::EntityHandle>
+  //boundary_nodes() const = 0;
 
 protected:
 
@@ -217,26 +212,18 @@ protected:
 private:
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   const Teuchos::RCP<Teuchos::Time> write_time_;
-  const Teuchos::RCP<Teuchos::Time> getComplex_time_;
   const Teuchos::RCP<Teuchos::Time> multi_time_;
 #endif
 
 public:
   const std::shared_ptr<const Teuchos::Comm<int>> comm;
 
-  // A STK oddity is that you cannot add data to a mesh after it has been
-  // *read*. That's right: read. To work around this issue, allocate one or
-  // more spaces for vectors at read time and store the names of the fields
-  // here. Those can later be used to insert actual data.
-  const std::set<std::string> allocated_vector_names;
-
 protected:
-  // Apparently, process_output_request is not const. Make
-  // the io_broker_ mutable so our write() can be const.
-  const std::shared_ptr<stk::io::StkMeshIoBroker> io_broker_;
+  const std::shared_ptr<moab::Core> mb_;
+  const std::shared_ptr<moab::ParallelComm> mcomm_;
 
 private:
-  const std::vector<stk::mesh::Entity> owned_nodes_;
+  const std::vector<moab::EntityHandle> owned_nodes_;
 
 protected:
   const std::shared_ptr<const Tpetra::Map<int,int>> nodes_map_;
@@ -249,55 +236,42 @@ private:
 protected:
   const edges_container edge_data_;
 
-private:
-  int output_channel_;
-
-  double time_;
-
 public:
-  const std::vector<Teuchos::Tuple<int,2>> edge_gids;
-  const std::vector<Teuchos::Tuple<int,4>> edge_gids_complex;
+  const std::vector<Teuchos::Tuple<int,2>> edge_lids;
+  const std::vector<Teuchos::Tuple<int,4>> edge_lids_complex;
 
 private:
 
   const std::vector<Teuchos::Tuple<int,2>>
-  buildEdgeGids_() const;
+  build_edge_lids_() const;
 
   const std::vector<Teuchos::Tuple<int,4>>
-  buildEdgeGidsComplex_() const;
+  build_edge_lids_complex_() const;
 
-  std::shared_ptr<stk::io::StkMeshIoBroker>
+  std::shared_ptr<moab::Core>
   read_(
       const std::string &file_name,
       const int index
       );
 
-  std::shared_ptr<Tpetra::Vector<double,int,int>>
-  complexfield_to_vector_(
-      const ScalarFieldType &real_field,
-      const ScalarFieldType &imag_field
-      ) const;
+  //std::shared_ptr<Tpetra::Vector<double,int,int>>
+  //field_to_vector_(const ScalarFieldType &field) const;
 
-  std::shared_ptr<Tpetra::Vector<double,int,int>>
-  field_to_vector_(const ScalarFieldType &field) const;
+  //std::shared_ptr<Tpetra::MultiVector<double,int,int>>
+  //field_to_vector_(
+  //    const vector_fieldType &field,
+  //    const int num_components
+  //    ) const;
 
-  std::shared_ptr<Tpetra::MultiVector<double,int,int>>
-  field_to_vector_(
-      const vector_fieldType &field,
-      const int num_components
-      ) const;
-
-  std::vector<stk::mesh::Entity>
-  buildOwnedNodes_(const stk::mesh::BulkData & myBulkData) const;
+  std::vector<moab::EntityHandle>
+  //build_owned_nodes_(const stk::mesh::BulkData & myBulkData) const;
+  build_owned_nodes_() const;
 
   std::vector<double>
   compute_edge_coefficients_() const;
 
   std::shared_ptr<const Tpetra::Map<int,int>>
-  buildEntitiesMap_(const std::vector<stk::mesh::Entity> &entityList) const;
-
-  std::shared_ptr<const Tpetra::Map<int,int>>
-  buildComplexMap_(const std::vector<stk::mesh::Entity> &node_list) const;
+  build_map_(const std::vector<moab::EntityHandle> &entityList) const;
 
   edges_container
   buildEdge_data_();

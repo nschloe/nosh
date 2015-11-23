@@ -51,8 +51,6 @@ testKeo(
 
   auto mesh = nosh::read(input_filename);
 
-  //return;
-
   // Cast the data into something more accessible.
   const auto psi = mesh->get_complex_vector("psi");
   const auto mvpValues = mesh->get_multi_vector("A");

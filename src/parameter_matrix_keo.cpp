@@ -173,9 +173,9 @@ refill_(const std::map<std::string, double> & params)
       Teuchos::tuple(v[0], -v[1],  v[2],  0.0),
       Teuchos::tuple(v[1],  v[0],   0.0, v[2])
       );
-    const Teuchos::Tuple<int,4> & idx = mesh_->edge_gids_complex[k];
+    const Teuchos::Tuple<int,4> & idx = mesh_->edge_lids_complex[k];
     for (int i = 0; i < 4; i++) {
-      int num = this->sumIntoGlobalValues(idx[i], idx, vals[i]);
+      int num = this->sumIntoLocalValues(idx[i], idx, vals[i]);
 #ifndef NDEBUG
       TEUCHOS_ASSERT_EQUALITY(num, 4);
 #endif
@@ -222,12 +222,10 @@ build_alpha_cache_(
 
   auto t_data = thicknessOverlap.getData();
 
-  int gid0, gid1;
-  int lid0, lid1;
   for (std::size_t k = 0; k < edges.size(); k++) {
     // Get the ID of the edge endpoints in the map of get_v(). Well...
-    gid0 = mesh_->gid(std::get<0>(edges[k]));
-    lid0 = overlapMap->getLocalElement(gid0);
+    int gid0 = mesh_->gid(std::get<0>(edges[k]));
+    int lid0 = overlapMap->getLocalElement(gid0);
 #ifndef NDEBUG
     TEUCHOS_TEST_FOR_EXCEPT_MSG(
         lid0 < 0,
@@ -235,8 +233,8 @@ build_alpha_cache_(
         << " does not seem to be present on this node."
        );
 #endif
-    gid1 = mesh_->gid(std::get<1>(edges[k]));
-    lid1 = overlapMap->getLocalElement(gid1);
+    int gid1 = mesh_->gid(std::get<1>(edges[k]));
+    int lid1 = overlapMap->getLocalElement(gid1);
 #ifndef NDEBUG
     TEUCHOS_TEST_FOR_EXCEPT_MSG(
         lid1 < 0,

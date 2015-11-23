@@ -1,6 +1,6 @@
 #!/bin/sh
 
-CMAKE_PREFIX_PATH=/opt/trilinos/private/:$CMAKE_PREFIX_PATH \
+CMAKE_PREFIX_PATH=/opt/trilinos/public/:$CMAKE_PREFIX_PATH \
 CMAKE_PREFIX_PATH=/opt/vtk/upstream/:$CMAKE_PREFIX_PATH \
 cmake \
     -DCMAKE_BUILD_TYPE:STRING=Debug \

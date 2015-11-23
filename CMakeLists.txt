@@ -19,6 +19,7 @@ IF (NOT Trilinos_Implicit)
 ENDIF()
 
 FIND_PACKAGE(Eigen3 REQUIRED)
+FIND_PACKAGE(MOAB REQUIRED)
 
 # Make sure the compilers match.
 IF(NOT ${Trilinos_CXX_COMPILER} STREQUAL ${CMAKE_CXX_COMPILER})

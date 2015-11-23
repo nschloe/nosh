@@ -21,44 +21,10 @@
 #define NOSH_MESHTRI_HPP
 // =============================================================================
 // includes
-//#include <string>
-//#include <vector>
-//#include <tuple>
-//#include <set>
-//
-//#include <Teuchos_RCP.hpp>
-//#include <Teuchos_DefaultComm.hpp>
-//#include <Teuchos_RCPStdSharedPtrConversions.hpp>
-//#ifdef NOSH_TEUCHOS_TIME_MONITOR
-//#include <Teuchos_Time.hpp>
-//#endif
-//#include <Tpetra_Vector.hpp>
-//#include <Tpetra_CrsGraph.hpp>
-//
-//#include <stk_mesh/base/Entity.hpp>
-//#include <stk_mesh/base/CoordinateSystems.hpp>
-//#include <stk_mesh/base/MetaData.hpp>
-//#include <stk_io/StkMeshIoBroker.hpp>
-//#include <stk_mesh/base/FieldTraits.hpp>
-//
-//#include <Eigen/Dense>
 
 #include "mesh.hpp"
 
-//// forward declarations
-//namespace stk
-//{
-//namespace mesh
-//{
-//class BulkData;
-//}
-//} // namespace stk
-//
-//// typedefs
-//typedef stk::mesh::Field<double, stk::mesh::Cartesian> vector_fieldType;
-//typedef stk::mesh::Field<double> ScalarFieldType;
-//typedef stk::mesh::Field<int> IntScalarFieldType;
-//typedef std::tuple<stk::mesh::Entity, stk::mesh::Entity> edge;
+#include <moab/Core.hpp>
 
 namespace nosh
 {
@@ -70,8 +36,8 @@ class mesh_tri:
 public:
   mesh_tri(
       const std::shared_ptr<const Teuchos::Comm<int>> & comm,
-      const std::shared_ptr<stk::io::StkMeshIoBroker> & broker,
-      const std::set<std::string> allocated_vector_names = {}
+      const std::shared_ptr<moab::ParallelComm> & mcomm,
+      const std::shared_ptr<moab::Core> & mb
       );
 
   virtual
@@ -92,7 +58,7 @@ public:
   }
 
   virtual
-  std::set<stk::mesh::Entity>
+  std::set<moab::EntityHandle>
   boundary_nodes() const
   {
     return boundary_nodes_;
@@ -111,7 +77,7 @@ private:
   std::vector<double>
   compute_edge_coefficients_() const;
 
-  std::set<stk::mesh::Entity>
+  std::set<moab::EntityHandle>
   compute_boundary_nodes_() const;
 
   double
@@ -137,7 +103,7 @@ private:
 
   Eigen::VectorXd
   edge_coefficients_numerically_(
-    const std::vector<Eigen::Vector3d> edges
+    const std::vector<Eigen::Vector3d> & edges
     ) const;
 
   double
@@ -157,8 +123,7 @@ private:
 
   const std::shared_ptr<const Tpetra::Vector<double,int,int>> control_volumes_;
   const std::vector<double> edge_coefficients_;
-  const std::set<stk::mesh::Entity> boundary_nodes_;
-
+  const std::set<moab::EntityHandle> boundary_nodes_;
 };
 
 } // namespace nosh

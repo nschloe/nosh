@@ -26,20 +26,16 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_RCPStdSharedPtrConversions.hpp>
 
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/CreateFaces.hpp>
-
 namespace nosh
 {
 // =============================================================================
 mesh_tetra::
 mesh_tetra(
     const std::shared_ptr<const Teuchos::Comm<int>> & _comm,
-    const std::shared_ptr<stk::io::StkMeshIoBroker> & broker,
-    const std::set<std::string> allocated_vector_names_
+    const std::shared_ptr<moab::ParallelComm> & mcomm,
+    const std::shared_ptr<moab::Core> & mb
     ) :
-  mesh(_comm, broker, allocated_vector_names_),
+  mesh(_comm, mcomm, mb),
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   compute_edge_coefficients_time_(
       Teuchos::TimeMonitor::getNewTimer(
@@ -52,11 +48,11 @@ mesh_tetra(
   compute_boundary_nodes_time_(
       Teuchos::TimeMonitor::getNewTimer(
         "Nosh: mesh_tetra::compute_boundary_nodes"
-        )),
+        ))
 #endif
-  control_volumes_(this->compute_control_volumes_()),
-  edge_coefficients_(this->compute_edge_coefficients_()),
-  boundary_nodes_(this->compute_boundary_nodes_())
+  //,control_volumes_(this->compute_control_volumes_())
+  //,edge_coefficients_(this->compute_edge_coefficients_())
+  //,boundary_nodes_(this->compute_boundary_nodes_())
 {
 }
 // =============================================================================
@@ -72,13 +68,13 @@ compute_edge_coefficients_() const
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   Teuchos::TimeMonitor tm(*compute_edge_coefficients_time_);
 #endif
+  auto num_eges = edge_data_.edge_nodes.size();
+  std::vector<double> _edge_coefficients(num_eges);
 
-  std::vector<stk::mesh::Entity> cells = this->get_owned_cells();
+#if 0
+  std::vector<moab::EntityHandle> cells = this->get_owned_cells();
   unsigned int num_cells = cells.size();
 
-  auto num_eges = edge_data_.edge_nodes.size();
-
-  std::vector<double> _edge_coefficients(num_eges);
 
   const vector_fieldType & coords_field = get_node_field("coordinates");
 
@@ -101,14 +97,14 @@ compute_edge_coefficients_() const
       _edge_coefficients[edge_data_.cell_edges[k][i]] += edge_coeffs[i];
     }
   }
-
+#endif
   return _edge_coefficients;
 }
 // =============================================================================
 Eigen::VectorXd
 mesh_tetra::
 edge_coefficients_cell_(
-  const std::vector<Eigen::Vector3d> edges
+  const std::vector<Eigen::Vector3d> & edges
   ) const
 {
   size_t num_eges = edges.size();
@@ -169,7 +165,6 @@ compute_control_volumes_() const
 #ifndef NDEBUG
   TEUCHOS_ASSERT(nodes_map_);
   TEUCHOS_ASSERT(nodes_overlap_map_);
-  TEUCHOS_ASSERT(io_broker_);
 #endif
 
   auto _control_volumes = std::make_shared<Tpetra::Vector<double,int,int>>(
@@ -196,7 +191,8 @@ void
 mesh_tetra::
 compute_control_volumes_t_(Tpetra::Vector<double,int,int> & cv_overlap) const
 {
-  std::vector<stk::mesh::Entity> cells = this->get_owned_cells();
+#if 0
+  std::vector<moab::EntityHandle> cells = this->get_owned_cells();
   const size_t num_cells = cells.size();
 
   const vector_fieldType & coords_field = get_node_field("coordinates");
@@ -205,7 +201,7 @@ compute_control_volumes_t_(Tpetra::Vector<double,int,int> & cv_overlap) const
 
   // Calculate the contributions to the finite volumes cell by cell.
   for (size_t k = 0; k < num_cells; k++) {
-    const stk::mesh::Entity * local_nodes =
+    const moab::EntityHandle * local_nodes =
       io_broker_->bulk_data().begin_nodes(cells[k]);
     unsigned int num_local_nodes = io_broker_->bulk_data().num_nodes(cells[k]);
 #ifndef NDEBUG
@@ -228,18 +224,10 @@ compute_control_volumes_t_(Tpetra::Vector<double,int,int> & cv_overlap) const
     for (unsigned int e0 = 0; e0 < num_local_nodes; e0++) {
       const Eigen::Vector3d &x0 = local_node_coords[e0];
       // TODO check if "- 1" is still needed
-      const int gid0 = io_broker_->bulk_data().identifier(local_nodes[e0]) - 1;
-      const int lid0 = nodes_overlap_map_->getLocalElement(gid0);
-#ifndef NDEBUG
-      TEUCHOS_ASSERT_INEQUALITY(lid0, >=, 0);
-#endif
+      const int lid0 = this->lid(local_nodes[e0]);
       for (unsigned int e1 = e0+1; e1 < num_local_nodes; e1++) {
         const Eigen::Vector3d &x1 = local_node_coords[e1];
-        const int gid1 = io_broker_->bulk_data().identifier(local_nodes[e1]) - 1;
-        const int lid1 = nodes_overlap_map_->getLocalElement(gid1);
-#ifndef NDEBUG
-        TEUCHOS_ASSERT_INEQUALITY(lid1, >=, 0);
-#endif
+        const int lid1 = this->lid(local_nodes[e1]);
 
         // Get the other nodes.
         std::set<unsigned int> other_set = this->get_other_indices_(e0, e1);
@@ -275,6 +263,7 @@ compute_control_volumes_t_(Tpetra::Vector<double,int,int> & cv_overlap) const
       }
     }
   }
+#endif
 }
 // =============================================================================
 double
@@ -421,41 +410,46 @@ compute_tetrahedron_circumcenter_(
     + gamma * rel_nodes[0].cross(rel_nodes[1]);
 }
 // =============================================================================
-std::vector<stk::mesh::Entity>
+std::vector<moab::EntityHandle>
 mesh_tetra::
 get_overlap_faces_() const
 {
+  std::vector<moab::EntityHandle> faces;
+
+#if 0
   stk::mesh::Selector select_overlap_in_part =
     stk::mesh::Selector(io_broker_->bulk_data().mesh_meta_data().universal_part())
     & (stk::mesh::Selector(io_broker_->bulk_data().mesh_meta_data().locally_owned_part())
        |stk::mesh::Selector(io_broker_->bulk_data().mesh_meta_data().globally_shared_part()));
 
-  std::vector<stk::mesh::Entity> faces;
   stk::mesh::get_selected_entities(
       select_overlap_in_part,
       io_broker_->bulk_data().buckets(stk::topology::FACE_RANK),
       faces
       );
+#endif
   return faces;
 }
 // =============================================================================
-std::set<stk::mesh::Entity>
+std::set<moab::EntityHandle>
 mesh_tetra::
 compute_boundary_nodes_() const
 {
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   Teuchos::TimeMonitor tm(*compute_boundary_nodes_time_);
 #endif
+  std::set<moab::EntityHandle> _boundary_nodes;
+
+#if 0
   // this takes a reaaaally long time
   stk::mesh::create_faces(io_broker_->bulk_data());
 
   auto my_faces = this->get_overlap_faces_();
 
-  std::set<stk::mesh::Entity> _boundary_nodes;
   for (size_t k = 0; k < my_faces.size(); k++) {
     // if the face has one element, it's on the boundary
     if (io_broker_->bulk_data().num_elements(my_faces[k]) == 1) {
-      stk::mesh::Entity const * nodes =
+      moab::EntityHandle const * nodes =
         io_broker_->bulk_data().begin_nodes(my_faces[k]);
 #ifndef NDEBUG
       TEUCHOS_ASSERT_EQUALITY(io_broker_->bulk_data().num_nodes(my_faces[k]), 3);
@@ -469,7 +463,7 @@ compute_boundary_nodes_() const
 #ifndef NDEBUG
   TEUCHOS_ASSERT_INEQUALITY(_boundary_nodes.size(), >, 0);
 #endif
-
+#endif
   return _boundary_nodes;
 }
 // =============================================================================

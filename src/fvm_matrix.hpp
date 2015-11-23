@@ -74,6 +74,7 @@ namespace nosh
 #ifndef NDEBUG
           TEUCHOS_ASSERT(this->mesh);
 #endif
+#if 0
           this->resumeFill();
           this->setAllToScalar(0.0);
 
@@ -91,9 +92,9 @@ namespace nosh
 
             auto vals = edge_contrib(edge_coefficients[k], edge_midpoint);
 
-            const Teuchos::Tuple<int,2> & idx = this->mesh->edge_gids[k];
+            const Teuchos::Tuple<int,2> & idx = this->mesh->edge_lids[k];
             for (int i = 0; i < 2; i++) {
-              int num = this->sumIntoGlobalValues(
+              int num = this->sumIntoLocalValues(
                   idx[i], idx,
                   Teuchos::ArrayView<double>(vals[i])
                   );
@@ -123,6 +124,7 @@ namespace nosh
           this->fillComplete();
 
           return;
+#endif
         }
 
     private:

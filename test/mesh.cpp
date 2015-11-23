@@ -80,23 +80,23 @@ testMesh(
   return;
 }
 // ===========================================================================
-//TEUCHOS_UNIT_TEST(nosh, MeshRectangleSmallHashes)
-//{
-//  std::string input_filename_base = "rectanglesmall";
-//
-//  unsigned int num_nodes = 4;
-//  double control_vol_norm_1 = 10.0;
-//  double control_vol_norm_2 = 5.0;
-//  double control_vol_norm_inf = 2.5;
-//
-//  testMesh(input_filename_base,
-//           num_nodes,
-//           control_vol_norm_1,
-//           control_vol_norm_2,
-//           control_vol_norm_inf,
-//           out,
-//           success);
-//}
+TEUCHOS_UNIT_TEST(nosh, MeshRectangleSmallHashes)
+{
+  std::string input_filename_base = "rectanglesmall";
+
+  unsigned int num_nodes = 4;
+  double control_vol_norm_1 = 10.0;
+  double control_vol_norm_2 = 5.0;
+  double control_vol_norm_inf = 2.5;
+
+  testMesh(input_filename_base,
+           num_nodes,
+           control_vol_norm_1,
+           control_vol_norm_2,
+           control_vol_norm_inf,
+           out,
+           success);
+}
 // ============================================================================
 TEUCHOS_UNIT_TEST(nosh, MeshPacmanHashes)
 {

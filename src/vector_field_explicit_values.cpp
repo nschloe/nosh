@@ -39,6 +39,7 @@ explicit_values(
   mu_(mu),
   edgeProjectionCache_(mesh.my_edges().size())
 {
+#if 0
   // Initialize the cache.
   const std::vector<edge> edges = mesh.my_edges();
 
@@ -91,7 +92,7 @@ explicit_values(
       "Field \"" << field_name << "\" seems empty. Was it read correctly?"
       );
 #endif
-
+#endif
   return;
 }
 // ============================================================================
