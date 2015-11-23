@@ -73,17 +73,23 @@ public:
   std::shared_ptr<Tpetra::Vector<double,int,int>>
   get_vector(const std::string & field_name) const;
 
-  //std::shared_ptr<Tpetra::Vector<double,int,int>>
-  //get_complex_vector(const std::string & field_name) const;
+  std::shared_ptr<Tpetra::Vector<double,int,int>>
+  get_complex_vector(const std::string & field_name) const;
 
   std::shared_ptr<Tpetra::MultiVector<double,int,int>>
   get_multi_vector(const std::string & field_name) const;
 
-  std::shared_ptr<Tpetra::Map<int,int>>
-  get_owned_map_() const;
+  const std::vector<int>
+  get_owned_ids_() const;
+
+  const std::vector<int>
+  get_overlap_ids_() const;
+
+  const std::vector<int>
+  complexify_(const std::vector<int> & ids) const;
 
   std::shared_ptr<Tpetra::Map<int,int>>
-  get_overlap_map_() const;
+  get_map_(const std::vector<int> & ids) const;
 
   std::vector<moab::EntityHandle>
   get_owned_cells() const;

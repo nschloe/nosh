@@ -46,10 +46,12 @@ mesh(
   mb_(mb),
   mcomm_(mcomm),
   //owned_nodes_(this->build_owned_nodes_()),
-  nodes_map_(this->get_owned_map_()),
-  nodes_overlap_map_(this->get_overlap_map_())
-  //complex_map_(this->get_owned_map_()),
-  //complex_overlap_map_(this->get_overlap_map_()),
+  nodes_map_(this->get_map_(this->get_owned_ids_())),
+  nodes_overlap_map_(this->get_map_(this->get_overlap_ids_())),
+  complex_map_(this->get_map_(this->complexify_(this->get_owned_ids_()))),
+  complex_overlap_map_(
+    this->get_map_(this->complexify_(this->get_overlap_ids_()))
+    )
   //edge_data_(this->buildEdge_data_()),
   //edge_lids(build_edge_lids_()),
   //edge_lids_complex(build_edge_lids_complex_())
@@ -208,6 +210,31 @@ write(const std::string & filename) const
 std::shared_ptr<Tpetra::Vector<double,int,int>>
 mesh::
 get_vector(const std::string & field_name) const
+{
+#if 0
+  const ScalarFieldType * const field =
+    io_broker_->bulk_data().mesh_meta_data().get_field<ScalarFieldType>(
+        stk::topology::NODE_RANK,
+        field_name
+        );
+
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(
+      field == NULL,
+      "Scalar field \"" << field_name << "\" not found in database. "
+      << "Is it present in the input file at all? Check with io_info."
+      );
+
+  return this->field_to_vector_(*field);
+#endif
+
+  return std::make_shared<Tpetra::Vector<double,int,int>>(
+      Teuchos::rcp(this->overlap_map())
+      );
+}
+// =============================================================================
+std::shared_ptr<Tpetra::Vector<double,int,int>>
+mesh::
+get_complex_vector(const std::string & field_name) const
 {
 #if 0
   const ScalarFieldType * const field =
@@ -409,9 +436,9 @@ build_edge_lids_complex_() const
   return _edge_lids_complex;
 }
 // =============================================================================
-std::shared_ptr<Tpetra::Map<int,int>>
+const std::vector<int>
 mesh::
-get_owned_map_() const
+get_owned_ids_() const
 {
   moab::ErrorCode ierr;
   const auto mb = this->mcomm_->get_moab();
@@ -430,17 +457,12 @@ get_owned_map_() const
   ierr = mb->tag_get_data(gid, verts, &global_ids[0]);
   TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
 
-  return std::make_shared<Tpetra::Map<int,int>>(
-      -1,
-      global_ids,
-      0,
-      Teuchos::rcp(this->comm)
-      );
+  return global_ids;
 }
 // =============================================================================
-std::shared_ptr<Tpetra::Map<int,int>>
+const std::vector<int>
 mesh::
-get_overlap_map_() const
+get_overlap_ids_() const
 {
   moab::ErrorCode ierr;
   const auto mb = this->mcomm_->get_moab();
@@ -467,9 +489,29 @@ get_overlap_map_() const
   ierr = mb->tag_get_data(gid, all, &global_ids[0]);
   TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
 
+  return global_ids;
+}
+// =============================================================================
+const std::vector<int>
+mesh::
+complexify_(const std::vector<int> & ids) const
+{
+  std::vector<int> complex_ids(2 * ids.size());
+  for (size_t k=0; k < ids.size(); k++) {
+    complex_ids[2*k] = 2 * ids[k];
+    complex_ids[2*k+1] = 2 * ids[k] + 1;
+  }
+
+  return complex_ids;
+}
+// =============================================================================
+std::shared_ptr<Tpetra::Map<int,int>>
+mesh::
+get_map_(const std::vector<int> & ids) const
+{
   return std::make_shared<Tpetra::Map<int,int>>(
       -1,
-      global_ids,
+      ids,
       0,
       Teuchos::rcp(this->comm)
       );
