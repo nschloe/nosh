@@ -45,15 +45,18 @@ testKeo(
 {
   // Read the data from the file.
   auto comm =  Teuchos::DefaultComm<int>::getComm();
-  const std::string input_filename = (comm->getSize() == 1) ?
-    "data/" + input_filename_base + ".e" :
-    "data/" + input_filename_base + "-split.par";
+  const std::string input_filename = "data/" + input_filename_base + ".h5m";
 
   auto mesh = nosh::read(input_filename);
 
   // Cast the data into something more accessible.
   const auto psi = mesh->get_complex_vector("psi");
   const auto mvpValues = mesh->get_multi_vector("A");
+
+  // auto data = psi->getData();
+  // for (int k=0; k<data.size(); k++) {
+  //   std::cout << data[k] << std::endl;
+  // }
 
   // Check psi.
   TEST_FLOATING_EQUALITY(

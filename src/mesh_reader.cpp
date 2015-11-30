@@ -44,8 +44,12 @@ read(const std::string & file_name)
   Teuchos::TimeMonitor tm(*fill_time);
 #endif
 
-  std::string options;
-  options = "PARALLEL=READ_PART;PARTITION=PARALLEL_PARTITION;PARALLEL_RESOLVE_SHARED_ENTS";
+  const auto comm = Teuchos::get_shared_ptr(Teuchos::DefaultComm<int>::getComm());
+
+  const std::string options =
+    comm->getSize() == 1 ?
+    "" :
+    "PARALLEL=READ_PART;PARTITION=PARALLEL_PARTITION;PARALLEL_RESOLVE_SHARED_ENTS";
 
   // Get MOAB instance
   //moab::Interface* mb = new (std::nothrow) moab::Core;
@@ -54,9 +58,7 @@ read(const std::string & file_name)
   TEUCHOS_ASSERT(mb);
 #endif
 
-  auto comm = Teuchos::get_shared_ptr(Teuchos::DefaultComm<int>::getComm());
-
-  auto global_rank = comm->getRank();
+  const auto global_rank = comm->getRank();
 
   //if (nbComms > 1) {
   //  // Split the communicator, into ngroups = nbComms
@@ -118,6 +120,7 @@ read(const std::string & file_name)
   }
 
   //}
+std::cout << "aaa"  << std::endl;
   return std::make_shared<nosh::mesh_tri>(comm, mcomm, mb);
 
   //switch (nodesPerCell) {

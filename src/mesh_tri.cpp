@@ -59,7 +59,6 @@ mesh_tri(
   ,edge_coefficients_(this->compute_edge_coefficients_())
   ,boundary_nodes_(this->compute_boundary_nodes_())
 {
-  std::cout << "mesh_tri::mesh_tri" << std::endl;
 }
 // =============================================================================
 mesh_tri::
@@ -71,7 +70,6 @@ std::vector<double>
 mesh_tri::
 compute_edge_coefficients_() const
 {
-  std::cout << "compute_edge_coefficients_" << std::endl;
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   // timer for this routine
   Teuchos::TimeMonitor tm(*compute_edge_coefficients_time_);
@@ -280,8 +278,9 @@ compute_control_volumes_t_(Tpetra::Vector<double,int,int> & cv_overlap) const
         // edges.
         double pyramid_volume = 0.5 * edge_length * covolume / 2;
         // The EntityHandle (conn) is a local identifier
-        cv_data[conn[e0]] += pyramid_volume;
-        cv_data[conn[e1]] += pyramid_volume;
+        // MOAB indices are 1-based.
+        cv_data[conn[e0] - 1] += pyramid_volume;
+        cv_data[conn[e1] - 1] += pyramid_volume;
       }
     }
   }

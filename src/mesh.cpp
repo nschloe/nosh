@@ -207,9 +207,40 @@ write(const std::string & filename) const
   return;
 }
 // =============================================================================
+std::vector<double>
+mesh::
+get_data_(
+  const std::string & tag_name,
+  const moab::Range & range
+  ) const
+{
+  moab::ErrorCode ierr;
+
+  moab::Tag tag;
+  ierr = mb_->tag_get_handle(tag_name.c_str(), tag);
+  TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+
+  int length;
+  ierr = mb_->tag_get_length(tag, length);
+  TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+
+  moab::DataType type;
+  ierr = mb_->tag_get_data_type(tag, type);
+  TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+
+  TEUCHOS_ASSERT_EQUALITY(type, moab::DataType::MB_TYPE_DOUBLE);
+
+  const int num_data = length * range.size();
+  std::vector<double> data(num_data);
+  ierr = mb_->tag_get_data(tag, range, &data[0]);
+  TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+
+  return data;
+}
+// =============================================================================
 std::shared_ptr<Tpetra::Vector<double,int,int>>
 mesh::
-get_vector(const std::string & field_name) const
+get_vector(const std::string & tag_name) const
 {
 #if 0
   const ScalarFieldType * const field =
@@ -234,56 +265,67 @@ get_vector(const std::string & field_name) const
 // =============================================================================
 std::shared_ptr<Tpetra::Vector<double,int,int>>
 mesh::
-get_complex_vector(const std::string & field_name) const
+get_complex_vector(const std::string & tag_name) const
 {
-#if 0
-  const ScalarFieldType * const field =
-    io_broker_->bulk_data().mesh_meta_data().get_field<ScalarFieldType>(
-        stk::topology::NODE_RANK,
-        field_name
-        );
+  // get data for all vertices
+  moab::ErrorCode ierr;
+  moab::Range verts;
+  ierr = mb_->get_entities_by_dimension(0, 0, verts);
+  TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
 
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(
-      field == NULL,
-      "Scalar field \"" << field_name << "\" not found in database. "
-      << "Is it present in the input file at all? Check with io_info."
-      );
+  auto data = this->get_data_(tag_name, verts);
 
-  return this->field_to_vector_(*field);
-#endif
+  TEUCHOS_ASSERT_EQUALITY(
+    data.size(),
+    this->overlap_complex_map()->getNodeNumElements()
+    );
 
+  // Set vector values from an existing array (copy)
   return std::make_shared<Tpetra::Vector<double,int,int>>(
-      Teuchos::rcp(this->overlap_map())
+      Teuchos::rcp(this->overlap_complex_map()),
+      Teuchos::ArrayView<double>(data)
       );
 }
 // =============================================================================
 std::shared_ptr<Tpetra::MultiVector<double,int,int>>
 mesh::
-get_multi_vector(const std::string & field_name) const
+get_multi_vector(const std::string & tag_name) const
 {
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   Teuchos::TimeMonitor tm(*multi_time_);
 #endif
+  // get data for all vertices
+  moab::ErrorCode ierr;
+  moab::Range verts;
+  ierr = mb_->get_entities_by_dimension(0, 0, verts);
+  TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
 
-#if 0
-  const vector_fieldType * const field =
-    io_broker_->bulk_data().mesh_meta_data().get_field<vector_fieldType>(
-        stk::topology::NODE_RANK,
-        field_name
-        );
+  auto data = this->get_data_(tag_name, verts);
 
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(
-      field == NULL,
-      "Vector field \"" << field_name << "\" not found in database. "
-      << "Is it present in the input file at all? Check with io_info."
-      );
+  // MOAB's ordering is
+  //   x0, y0, z0, x1, y1, z1, ...
+  // However,Tpetra::MultiVector's constructor needs the data ordered like
+  //   x0, x1, ..., xn, y0, y1, ...
+  // Hence, reorder.
+  std::vector<double> new_data(data.size());
+  const size_t length = data.size() / verts.size();
+  for (size_t i = 0; i < length; i++) {
+    for (size_t j = 0; j < verts.size(); j++) {
+      new_data[j + i*verts.size()] = data[i + j*length];
+    }
+  }
 
-  // TODO remove the hardcoded "3"
-  return this->field_to_vector_(*field, 3);
-#endif
+  TEUCHOS_ASSERT_EQUALITY(
+    data.size(),
+    length * this->overlap_map()->getNodeNumElements()
+    );
 
-  return std::make_shared<Tpetra::Vector<double,int,int>>(
-      Teuchos::rcp(this->overlap_map())
+  // Set vector values from an existing array (copy)
+  return std::make_shared<Tpetra::MultiVector<double,int,int>>(
+      Teuchos::rcp(this->overlap_map()),
+      Teuchos::ArrayView<double>(new_data),
+      verts.size(),
+      length
       );
 }
 // =============================================================================

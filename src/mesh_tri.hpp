@@ -121,7 +121,7 @@ private:
   const Teuchos::RCP<Teuchos::Time> compute_boundary_nodes_time_;
 #endif
 
-  const std::shared_ptr<const Tpetra::Vector<double,int,int>> control_volumes_;
+  std::shared_ptr<const Tpetra::Vector<double,int,int>> control_volumes_;
   const std::vector<double> edge_coefficients_;
   const std::set<moab::EntityHandle> boundary_nodes_;
 };

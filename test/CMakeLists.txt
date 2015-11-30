@@ -9,70 +9,6 @@ INCLUDE_DIRECTORIES(SYSTEM
 
 SET(internal_LIBS "nosh")
 
-#set(input_files
-#  rectanglesmall
-#  pacman
-#  screw
-#  shell
-#  sphere
-#  cubesmall
-#  brick-w-hole
-#  )
-#
-## Download the files
-#INCLUDE(ExternalData)
-#set(
-#  ExternalData_URL_TEMPLATES
-#  "https://downloads.sourceforge.net/project/noshdata/%(algo)/%(hash)"
-#  )
-#foreach(file ${input_files})
-#  ExternalData_Expand_Arguments(
-#    noshTestFetchData
-#    OUT_DATA DATA{${CMAKE_SOURCE_DIR}/test/data/${file}.e}
-#    )
-#endforeach()
-#ExternalData_Add_Target(noshTestFetchData)
-#
-## convert and split the downloaded files
-#add_custom_target(create_h5m ALL)
-#add_dependencies(create_h5m noshTestFetchData)
-#
-#SET(FILES2)
-#SET(FILES7)
-#foreach(file ${input_files})
-#  add_custom_command(
-#    TARGET create_h5m
-#    WORKING_DIRECTORY data/
-#    COMMAND meshio-convert ${file}.e ${file}.h5m
-#    )
-#
-#  LIST(APPEND FILES2 ${file}-2.h5m)
-#  add_custom_command(
-#    OUTPUT data/${file}-2.h5m
-#    DEPENDS data/${file}.h5m
-#    WORKING_DIRECTORY data/
-#    COMMAND mbpart 2 -m ML_KWAY ${file}.h5m ${file}-2.h5m
-#    )
-#
-#  LIST(APPEND FILES7 ${file}-7.h5m)
-#  add_custom_command(
-#    OUTPUT data/${file}-7.h5m
-#    DEPENDS data/${file}.h5m
-#    WORKING_DIRECTORY data/
-#    COMMAND mbpart 7 -m ML_KWAY ${file}.h5m ${file}-7.h5m
-#    )
-#endforeach()
-#
-#add_custom_target(split2 ALL
-#  # DEPENDS noshTestFetchData
-#  SOURCES ${FILES2}
-#  )
-#
-#add_custom_target(split7 ALL
-#  #  DEPENDS noshTestFetchData
-#  SOURCES ${FILES7}
-#  )
-
 
 SET(IOTEST_EXECUTABLE
   "ioTest")
@@ -80,7 +16,6 @@ ADD_EXECUTABLE (${IOTEST_EXECUTABLE}
   io.cpp
   unitTestMain.cpp
   )
-
 # add tests
 ADD_TEST(ioTestSerial
   ${IOTEST_EXECUTABLE}
@@ -104,7 +39,7 @@ IF (NOT Trilinos_Implicit)
     ${Trilinos_LIBRARIES}
     )
 ENDIF()
-# ------------------------------------------------------------------------------
+
 SET(MESHTEST_EXECUTABLE
   "meshTest")
 ADD_EXECUTABLE (${MESHTEST_EXECUTABLE}
@@ -133,7 +68,7 @@ IF (NOT Trilinos_Implicit)
     ${Trilinos_LIBRARIES}
     )
 ENDIF()
-# ------------------------------------------------------------------------------
+
 SET(OPERATORTEST_EXECUTABLE "operatorTest")
 ADD_EXECUTABLE(${OPERATORTEST_EXECUTABLE}
   keo.cpp

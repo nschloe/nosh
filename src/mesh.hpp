@@ -148,7 +148,6 @@ public:
     return complex_overlap_map_;
   }
 
-
   //const vector_fieldType &
   //get_node_field(const std::string & field_name) const;
 
@@ -281,6 +280,12 @@ private:
 
   edges_container
   buildEdge_data_();
+
+  std::vector<double>
+  get_data_(
+    const std::string & tag_name,
+    const moab::Range & range
+    ) const;
 };
 // -----------------------------------------------------------------------------
 
