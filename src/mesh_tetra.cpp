@@ -50,9 +50,9 @@ mesh_tetra(
         "Nosh: mesh_tetra::compute_boundary_nodes"
         ))
 #endif
-  //,control_volumes_(this->compute_control_volumes_())
-  //,edge_coefficients_(this->compute_edge_coefficients_())
-  //,boundary_nodes_(this->compute_boundary_nodes_())
+  ,control_volumes_(this->compute_control_volumes_())
+  ,edge_coefficients_(this->compute_edge_coefficients_())
+  ,boundary_nodes_(this->compute_boundary_nodes_())
 {
 }
 // =============================================================================
@@ -191,28 +191,42 @@ void
 mesh_tetra::
 compute_control_volumes_t_(Tpetra::Vector<double,int,int> & cv_overlap) const
 {
-#if 0
-  std::vector<moab::EntityHandle> cells = this->get_owned_cells();
-  const size_t num_cells = cells.size();
+  // get owned entities
+  moab::Range cells;
 
-  const vector_fieldType & coords_field = get_node_field("coordinates");
+  moab::ErrorCode ierr;
+
+  ierr = this->mb_->get_entities_by_dimension(0, 3, cells);
+  TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+
+  unsigned int num_cells = cells.size();
 
   Teuchos::ArrayRCP<double> cv_data = cv_overlap.getDataNonConst();
 
+  auto rank = cv_overlap.getMap()->getComm()->getRank();
+
   // Calculate the contributions to the finite volumes cell by cell.
   for (size_t k = 0; k < num_cells; k++) {
-    const moab::EntityHandle * local_nodes =
-      io_broker_->bulk_data().begin_nodes(cells[k]);
-    unsigned int num_local_nodes = io_broker_->bulk_data().num_nodes(cells[k]);
+    const moab::EntityHandle * conn = NULL;
+    int numV = 0;
+    ierr = this->mb_->get_connectivity(cells[k], conn, numV);
+    TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+
 #ifndef NDEBUG
-    // Confirm that we always have the same simplices.
-    TEUCHOS_ASSERT_EQUALITY(num_local_nodes, 4);
+    TEUCHOS_ASSERT_EQUALITY(numV, 4);
 #endif
 
-    // Fetch the nodal positions into 'local_nodes'.
-    std::vector<Eigen::Vector3d> local_node_coords(num_local_nodes);
-    for (unsigned int i = 0; i < num_local_nodes; i++) {
-      local_node_coords[i] = this->get_node_value(coords_field, local_nodes[i]);
+    // Fetch the nodal positions into 'local_node_coords'.
+    std::vector<double> coords(3 * numV);
+    ierr = this->mb_->get_coords(conn, numV, &coords[0]);
+    TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+
+    std::vector<Eigen::Vector3d> local_node_coords(numV);
+    for (int i = 0; i < numV; i++) {
+      // TODO do something smarter than copying here
+      local_node_coords[i][0] = coords[3*i];
+      local_node_coords[i][1] = coords[3*i + 1];
+      local_node_coords[i][2] = coords[3*i + 2];
     }
 
     // compute the circumcenter of the cell
@@ -221,13 +235,10 @@ compute_control_volumes_t_(Tpetra::Vector<double,int,int> & cv_overlap) const
     // Iterate over the edges.
     // As true edge entities are not available here, loop over all pairs of
     // local nodes.
-    for (unsigned int e0 = 0; e0 < num_local_nodes; e0++) {
+    for (int e0 = 0; e0 < numV; e0++) {
       const Eigen::Vector3d &x0 = local_node_coords[e0];
-      // TODO check if "- 1" is still needed
-      const int lid0 = this->lid(local_nodes[e0]);
-      for (unsigned int e1 = e0+1; e1 < num_local_nodes; e1++) {
+      for (int e1 = e0+1; e1 < numV; e1++) {
         const Eigen::Vector3d &x1 = local_node_coords[e1];
-        const int lid1 = this->lid(local_nodes[e1]);
 
         // Get the other nodes.
         std::set<unsigned int> other_set = this->get_other_indices_(e0, e1);
@@ -258,12 +269,13 @@ compute_control_volumes_t_(Tpetra::Vector<double,int,int> & cv_overlap) const
         // Compute the contributions to the finite volumes of the adjacent
         // edges.
         double pyramid_volume = 0.5 * edge_length * covolume / 3;
-        cv_data[lid0] += pyramid_volume;
-        cv_data[lid1] += pyramid_volume;
+        // The EntityHandle (conn) is a local identifier, MOAB indices are
+        // 1-based.
+        cv_data[conn[e0] - 1] += pyramid_volume;
+        cv_data[conn[e1] - 1] += pyramid_volume;
       }
     }
   }
-#endif
 }
 // =============================================================================
 double

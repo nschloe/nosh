@@ -277,8 +277,8 @@ compute_control_volumes_t_(Tpetra::Vector<double,int,int> & cv_overlap) const
         // Compute the contributions to the finite volumes of the adjacent
         // edges.
         double pyramid_volume = 0.5 * edge_length * covolume / 2;
-        // The EntityHandle (conn) is a local identifier
-        // MOAB indices are 1-based.
+        // The EntityHandle (conn) is a local identifier, MOAB indices are
+        // 1-based.
         cv_data[conn[e0] - 1] += pyramid_volume;
         cv_data[conn[e1] - 1] += pyramid_volume;
       }
