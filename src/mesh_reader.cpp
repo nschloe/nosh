@@ -31,7 +31,7 @@
 #include <MBParallelConventions.h>
 
 #include "mesh_tri.hpp"
-//#include "mesh_tetra.hpp"
+#include "mesh_tetra.hpp"
 
 namespace nosh
 {
@@ -44,7 +44,8 @@ read(const std::string & file_name)
   Teuchos::TimeMonitor tm(*fill_time);
 #endif
 
-  const auto comm = Teuchos::get_shared_ptr(Teuchos::DefaultComm<int>::getComm());
+  const auto comm =
+    Teuchos::get_shared_ptr(Teuchos::DefaultComm<int>::getComm());
 
   const std::string options =
     comm->getSize() == 1 ?
@@ -66,7 +67,8 @@ read(const std::string & file_name)
   //}
   //else
   //raw_comm = MPI_COMM_WORLD;
-  MPI_Comm raw_comm = *(Teuchos::dyn_cast<const Teuchos::MpiComm<int>>(*comm).getRawMpiComm());
+  MPI_Comm raw_comm =
+    *(Teuchos::dyn_cast<const Teuchos::MpiComm<int>>(*comm).getRawMpiComm());
 
   // Get the ParallelComm instance
   auto mcomm = std::make_shared<moab::ParallelComm>(mb.get(), raw_comm);
@@ -119,23 +121,15 @@ read(const std::string & file_name)
           rbuf[4*i + 1] << " edges, " << rbuf[4*i + 2] << " faces, " << rbuf[4*i + 3] << " elements" << std::endl;
   }
 
-  //}
-std::cout << "aaa"  << std::endl;
-  return std::make_shared<nosh::mesh_tri>(comm, mcomm, mb);
+  // get the number of 3D entities
+  int num3d = 0;
+  rval = mb->get_number_entities_by_dimension(0, 3, num3d);
+  TEUCHOS_ASSERT_EQUALITY(rval, moab::MB_SUCCESS);
 
-  //switch (nodesPerCell) {
-  //  case 3:
-  //    return std::make_shared<nosh::mesh_tri>(comm, mb);
-  //    break;
-  //  case 4:
-  //    return std::make_shared<nosh::mesh_tetra>(comm, mb);
-  //    break;
-  //  default:
-  //    TEUCHOS_TEST_FOR_EXCEPT_MSG(
-  //        true,
-  //        "Illegal cell type."
-  //        );
-  //}
+  if (num3d == 0) {
+    return std::make_shared<nosh::mesh_tri>(comm, mcomm, mb);
+  }
+  return std::make_shared<nosh::mesh_tetra>(comm, mcomm, mb);
 }
 
 }  // namespace nosh
