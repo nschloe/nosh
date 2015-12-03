@@ -152,7 +152,17 @@ TEUCHOS_UNIT_TEST(nosh, KeoRectangleSmallHashes)
   double control_norm_inf = control_norm_1;
   double control_sum_real = 0.0063121712308067401;
   double control_sum     = 2 * control_sum_real;
-
+  // For reference: The expected KEO matrix:
+  //
+  // 5.05         0            -2.00604e-16 0            -4.99844    -0.124987  -0.0499844  0.00124987
+  // 0            5.05         0            -2.00604e-16 0.124987    -4.99844   -0.00124987 -0.0499844
+  // -2.00604e-16 0            5.05         0            -0.0499844  0.00124987 -4.99844    -0.124987
+  // 0            -2.00604e-16 0            5.05         -0.00124987 -0.0499844 0.124987    -4.99844
+  // -4.99844     0.124987     -0.0499844   -0.00124987  5.05         0         0           0
+  // -0.124987    -4.99844     0.00124987   -0.0499844   0            5.05      0           0
+  // -0.0499844   -0.00124987  -4.99844     0.124987     0            0         5.05        0
+  // 0.00124987   -0.0499844   -0.124987    -4.99844     0            0         0           5.05
+  //
   testKeo(input_filename_base,
           mu,
           control_norm_1,
@@ -182,7 +192,7 @@ TEUCHOS_UNIT_TEST(nosh, KeoPacmanHashes)
           out,
           success);
 }
-//// ============================================================================
+// ============================================================================
 ////TEUCHOS_UNIT_TEST(nosh, KeoCubeSmallHashes)
 ////{
 ////  std::string input_filename_base = "cubesmall";
