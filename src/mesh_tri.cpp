@@ -59,6 +59,7 @@ mesh_tri(
   ,edge_coefficients_(this->compute_edge_coefficients_())
   ,boundary_nodes_(this->compute_boundary_nodes_())
 {
+  std::cout << "mesh_tri::mesh_tri" << std::endl;
 }
 // =============================================================================
 mesh_tri::
@@ -70,51 +71,125 @@ std::vector<double>
 mesh_tri::
 compute_edge_coefficients_() const
 {
+  std::cout << ">> mesh_tri::edge_coefficients" << std::endl;
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   // timer for this routine
   Teuchos::TimeMonitor tm(*compute_edge_coefficients_time_);
 #endif
   moab::ErrorCode ierr;
 
-  std::vector<moab::EntityHandle> cells = this->get_owned_cells();
-  unsigned int num_cells = cells.size();
+  moab::Range cells;
+  ierr = this->mb_->get_entities_by_dimension(0, 2, cells);
+  TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+
+  size_t num_cells = cells.size();
 
   size_t num_edges = edge_data_.edge_nodes.size();
+
+  // compute all coordinates
+  std::vector<Eigen::Vector3d> edge_coords(num_edges);
+  for (size_t k = 0; k < num_edges; k++) {
+    std::vector<double> coords0(3);
+    auto tmp1 = std::get<0>(edge_data_.edge_nodes[k]);
+    ierr = this->mb_->get_coords(&tmp1, 1, &coords0[0]);
+    TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+
+    std::vector<double> coords1(3);
+    tmp1 = std::get<1>(edge_data_.edge_nodes[k]);
+    ierr = this->mb_->get_coords(&tmp1, 1, &coords1[0]);
+    TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+
+    edge_coords[k][0] = coords0[0] - coords1[0];
+    edge_coords[k][1] = coords0[1] - coords1[1];
+    edge_coords[k][2] = coords0[2] - coords1[2];
+
+    std::cout << "edge " << k
+      << "  coords0 "
+      << " " << coords0[0]
+      << " " << coords0[1]
+      << " " << coords0[2]
+      << "  coords1 "
+      << " " << coords1[0]
+      << " " << coords1[1]
+      << " " << coords1[2]
+      << "  diff "
+      << " " << edge_coords[k][0]
+      << " " << edge_coords[k][1]
+      << " " << edge_coords[k][2]
+      << std::endl;
+  }
+
   std::vector<double> _edge_coefficients(num_edges);
 
-  // Calculate the contributions edge by edge.
-  for (unsigned int k = 0; k < num_cells; k++) {
-    const moab::EntityHandle * conn = NULL;
-    int numV = 0;
-    ierr = this->mb_->get_connectivity(cells[k], conn, numV);
-    TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+  // Compute the contributions edge by edge.
+  for (size_t k = 0; k < num_cells; k++) {
+    const std::vector<size_t> edge_idxs = {
+      this->local_index(edge_data_.cell_edges[k][0]),
+      this->local_index(edge_data_.cell_edges[k][1]),
+      this->local_index(edge_data_.cell_edges[k][2])
+    };
+    std::cout << "cell " << k << "   edge_idxs "
+      << " " << edge_idxs[0]
+      << " " << edge_idxs[1]
+      << " " << edge_idxs[2]
+      << std::endl;
+    const std::vector<Eigen::Vector3d> local_edge_coords = {
+      edge_coords[edge_idxs[0]],
+      edge_coords[edge_idxs[1]],
+      edge_coords[edge_idxs[2]]
+    };
+    // const moab::EntityHandle * conn = NULL;
+    // int numV = 0;
+    // ierr = this->mb_->get_connectivity(cells[k], conn, numV);
+    // TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
 
-    std::vector<double> coords(3 * numV);
-    ierr = this->mb_->get_coords(conn, numV, &coords[0]);
-    TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+    // std::vector<double> coords(3 * numV);
+    // ierr = this->mb_->get_coords(conn, numV, &coords[0]);
+    // TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
 
-    // Get edge coordinates.
-    const unsigned int num_local_edges = (numV - 1) * numV / 2;
-    std::vector<Eigen::Vector3d> local_edge_coords(num_local_edges);
-    int k0 = 0;
-    for (int i = 0; i < numV; i++) {
-      for (int j = i+1; j < numV; j++) {
-        local_edge_coords[k0][0] = coords[3*i] - coords[3*j];
-        local_edge_coords[k0][1] = coords[3*i + 1] - coords[3*j + 1];
-        local_edge_coords[k0][2] = coords[3*i + 2] - coords[3*j + 2];
-        k0++;
-      }
+    // // Get edge coordinates.
+    // const unsigned int num_local_edges = (numV - 1) * numV / 2;
+    // std::vector<Eigen::Vector3d> local_edge_coords(num_local_edges);
+    // int k0 = 0;
+    // for (int i = 0; i < numV; i++) {
+    //   for (int j = i+1; j < numV; j++) {
+    //     local_edge_coords[k0][0] = coords[3*i] - coords[3*j];
+    //     local_edge_coords[k0][1] = coords[3*i + 1] - coords[3*j + 1];
+    //     local_edge_coords[k0][2] = coords[3*i + 2] - coords[3*j + 2];
+    //     k0++;
+    //   }
+    // }
+
+    std::cout << "cell " << k << "   local edge coords" << std::endl;
+    for (size_t i = 0; i < local_edge_coords.size(); i++) {
+      std::cout << "    "
+        << " " << local_edge_coords[i][0]
+        << " " << local_edge_coords[i][1]
+        << " " << local_edge_coords[i][2]
+        << std::endl;
     }
 
     Eigen::VectorXd edge_coeffs =
       edge_coefficients_numerically_(local_edge_coords);
 
     // Fill the edge coefficients into the vector.
-    for (size_t i = 0; i < num_local_edges; i++) {
-      _edge_coefficients[edge_data_.cell_edges[k][i]] += edge_coeffs[i];
+    for (int i = 0; i < edge_coeffs.size(); i++) {
+      const size_t edge_idx = this->local_index(edge_data_.cell_edges[k][i]);
+      std::cout << "cell " << k
+        << "  edge " << edge_idx
+        << "  val "  << edge_coeffs[i]
+        << std::endl;
+      //std::cout << "edge_idx " << edge_idx << std::endl;
+      // const int edge_id = this->liddd
+      _edge_coefficients[edge_idx] += edge_coeffs[i];
     }
   }
 
+  for (size_t k = 0; k < _edge_coefficients.size(); k++) {
+    std::cout << "ec[" << k << "] = " << _edge_coefficients[k] << std::endl;
+  }
+
+  std::cout << "   mesh_tri::edge_coefficients >>" << std::endl;
   return _edge_coefficients;
 }
 // =============================================================================
@@ -125,6 +200,7 @@ edge_coefficients_numerically_(
   ) const
 {
   size_t num_edges = edges.size();
+  TEUCHOS_ASSERT_EQUALITY(num_edges, 3);
 
   // Build an equation system for the edge coefficients alpha_k.
   // They fulfill
@@ -135,8 +211,8 @@ edge_coefficients_numerically_(
   //
   const double vol = 0.5 * (edges[0].cross(edges[1])).norm();
 
-  Eigen::MatrixXd A(num_edges, num_edges);
-  Eigen::VectorXd rhs(num_edges);
+  Eigen::Matrix3d A;
+  Eigen::Vector3d rhs;
 
   // Build the equation system:
   // The equation
@@ -146,12 +222,10 @@ edge_coefficients_numerically_(
   // has to hold for all vectors u in the plane spanned by the edges,
   // particularly by the edges themselves.
   //
-  // Only fill the upper part of the Hermitian matrix.
-  //
   for (size_t i = 0; i < num_edges; i++) {
     double alpha = edges[i].dot(edges[i]);
     rhs(i) = vol * alpha;
-    A(i,i) = alpha * alpha;
+    A(i, i) = alpha * alpha;
     for (size_t j = i+1; j < num_edges; j++) {
       A(i, j) = edges[i].dot(edges[j]) * edges[j].dot(edges[i]);
       A(j, i) = A(i, j);
@@ -161,7 +235,10 @@ edge_coefficients_numerically_(
   // Solve the equation system for the alpha_i.  The system is symmetric and,
   // if the simplex is not degenerate, positive definite.
   //return A.ldlt().solve(rhs);
-  return A.fullPivLu().solve(rhs);
+  const auto x = A.fullPivLu().solve(rhs);
+  //auto x = A.colPivHouseholderQr().solve(rhs);
+
+  return x;
 }
 // =============================================================================
 std::shared_ptr<Tpetra::Vector<double,int,int>>
@@ -284,6 +361,11 @@ compute_control_volumes_t_(Tpetra::Vector<double,int,int> & cv_overlap) const
       }
     }
   }
+
+  // std::cout << "control volumes:" << std::endl;
+  // for (size_t k = 0; k < cv_data.size(); k++) {
+  //   std::cout << k << " " << cv_data[k] << std::endl;
+  // }
 
   return;
 }

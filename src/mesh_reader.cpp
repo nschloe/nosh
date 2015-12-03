@@ -81,11 +81,13 @@ read(const std::string & file_name)
   //MPI_Barrier(MPI_COMM_WORLD);
   MPI_Barrier(raw_comm);
 
+#ifndef NDEBUG
   if (global_rank == 0) {
     int nbComms = 1;
     std::cout << "Reading file " << file_name << "\n with options: " << options <<
          "\n on " << nprocs << " processors on " << nbComms << " communicator(s)\n";
   }
+#endif
 
   moab::ErrorCode rval;
 
@@ -114,12 +116,15 @@ read(const std::string & file_name)
     nums[i] = (int)owned_entities.num_of_dimension(i);
   std::vector<int> rbuf(nprocs*4, 0);
   MPI_Gather(nums, 4, MPI_INT, &rbuf[0], 4, MPI_INT, 0, raw_comm);
+
+#ifndef NDEBUG
   // Print the stats gathered:
   if (0 == global_rank) {
     for (int i = 0; i < nprocs; i++)
       std::cout << " Shared, owned entities on proc " << i << ": " << rbuf[4*i] << " verts, " <<
           rbuf[4*i + 1] << " edges, " << rbuf[4*i + 2] << " faces, " << rbuf[4*i + 3] << " elements" << std::endl;
   }
+#endif
 
   // get the number of 3D entities
   int num3d = 0;

@@ -59,6 +59,7 @@ keo(
   alpha_cache_(),
   alpha_cache_up_to_date_(false)
 {
+  std::cout << "keo::keo" << std::endl;
 }
 // =============================================================================
 keo::
@@ -95,6 +96,7 @@ void
 keo::
 refill_(const std::map<std::string, double> & params)
 {
+  std::cout << ">> keo::refill" << std::endl;
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   Teuchos::TimeMonitor tm(*keo_fill_time_);
 #endif
@@ -167,15 +169,23 @@ refill_(const std::map<std::string, double> & params)
     v[0] = -cos_a_int * alpha_cache_[k];
     v[1] = -sin_a_int * alpha_cache_[k];
     v[2] = alpha_cache_[k];
+
+    std::cout << "k " << k << std::endl;
+    std::cout << "   v   " << v[0] << " " << v[1] << " " << v[2] << std::endl;
+    std::cout << "   ak  " << alpha_cache_[k] << std::endl;
+    std::cout << "   edge " << std::get<0>(edges[k]) << " " << std::get<1>(edges[k]) << std::endl;
+
     auto vals = Teuchos::tuple(
       Teuchos::tuple(v[2],  0.0,   v[0], v[1]),
       Teuchos::tuple( 0.0,  v[2], -v[1], v[0]),
       Teuchos::tuple(v[0], -v[1],  v[2],  0.0),
       Teuchos::tuple(v[1],  v[0],   0.0, v[2])
       );
+
     const Teuchos::Tuple<int,4> & idx = mesh_->edge_lids_complex[k];
+    std::cout << "   idx " << idx[0] << " " << idx[1] << " " << idx[2] << " " << idx[3] << std::endl;
     for (int i = 0; i < 4; i++) {
-      int num = this->sumIntoLocalValues(idx[i], idx, vals[i]);
+      const int num = this->sumIntoLocalValues(idx[i], idx, vals[i]);
 #ifndef NDEBUG
       TEUCHOS_ASSERT_EQUALITY(num, 4);
 #endif
@@ -184,6 +194,7 @@ refill_(const std::map<std::string, double> & params)
 
   this->fillComplete();
 
+  std::cout << "   keo::refill >>" << std::endl;
   return;
 }
 // =============================================================================
@@ -194,6 +205,7 @@ build_alpha_cache_(
     const std::vector<double> & edge_coefficients
     ) const
 {
+  std::cout << ">> build_alpha_cache_" << std::endl;
   // This routine serves the one and only purpose of caching the thickness
   // average. The cache is used in every call to this->fill().  This is
   // somewhat problematic since the map of V is principally not known here.
@@ -224,31 +236,23 @@ build_alpha_cache_(
 
   for (std::size_t k = 0; k < edges.size(); k++) {
     // Get the ID of the edge endpoints in the map of get_v(). Well...
-    int gid0 = mesh_->gid(std::get<0>(edges[k]));
-    int lid0 = overlapMap->getLocalElement(gid0);
-#ifndef NDEBUG
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(
-        lid0 < 0,
-        "The global index " << gid0
-        << " does not seem to be present on this node."
-       );
-#endif
-    int gid1 = mesh_->gid(std::get<1>(edges[k]));
-    int lid1 = overlapMap->getLocalElement(gid1);
-#ifndef NDEBUG
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(
-        lid1 < 0,
-        "The global index " << gid1
-        << " does not seem to be present on this node."
-       );
-#endif
+    const int i0 = mesh_->local_index(std::get<0>(edges[k]));
+    const int i1 = mesh_->local_index(std::get<1>(edges[k]));
     // Update cache.
-    alpha_cache_[k] = edge_coefficients[k]
-      * 0.5 * (t_data[lid0] + t_data[lid1]);
+    //std::cout << "ac "
+    //  << " " << edge_coefficients[k]
+    //  << " " << t_data[lid0]
+    //  << " " << t_data[lid1]
+    //  << std::endl;
+
+    alpha_cache_[k] = edge_coefficients[k] * 0.5 * (t_data[i0] + t_data[i1]);
+
+    std::cout << "ac[" << k << "] = " << alpha_cache_[k] << std::endl;
   }
 
   alpha_cache_up_to_date_ = true;
 
+  std::cout << "   build_alpha_cache_ >>" << std::endl;
   return;
 }
 // =============================================================================

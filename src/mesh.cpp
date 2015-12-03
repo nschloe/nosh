@@ -46,21 +46,22 @@ mesh(
   mb_(mb),
   mcomm_(mcomm),
   //owned_nodes_(this->build_owned_nodes_()),
-  nodes_map_(this->get_map_(this->get_owned_ids_())),
-  nodes_overlap_map_(this->get_map_(this->get_overlap_ids_())),
-  complex_map_(this->get_map_(this->complexify_(this->get_owned_ids_()))),
+  nodes_map_(this->get_map_(this->get_owned_gids_())),
+  nodes_overlap_map_(this->get_map_(this->get_overlap_gids_())),
+  complex_map_(this->get_map_(this->complexify_(this->get_owned_gids_()))),
   complex_overlap_map_(
-    this->get_map_(this->complexify_(this->get_overlap_ids_()))
+    this->get_map_(this->complexify_(this->get_overlap_gids_()))
     )
-  //edge_data_(this->buildEdge_data_()),
-  //edge_lids(build_edge_lids_()),
-  //edge_lids_complex(build_edge_lids_complex_())
+  ,edge_data_(this->build_edge_data_())
+  ,edge_lids(build_edge_lids_())
+  ,edge_lids_complex(build_edge_lids_complex_())
 {
 // TODO resurrect
 //#ifndef NDEBUG
 //  // Assert that all processes own nodes
 //  TEUCHOS_ASSERT_INEQUALITY(owned_nodes_.size(), >, 0);
 //#endif
+  std::cout << "mesh::mesh" << std::endl;
 }
 // =============================================================================
 mesh::
@@ -209,7 +210,7 @@ write(const std::string & filename) const
 // =============================================================================
 std::vector<double>
 mesh::
-get_data_(
+get_data(
   const std::string & tag_name,
   const moab::Range & range
   ) const
@@ -236,6 +237,21 @@ get_data_(
   TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
 
   return data;
+}
+// =============================================================================
+std::vector<double>
+mesh::
+get_coords(
+  const moab::EntityHandle vertex
+  ) const
+{
+  moab::ErrorCode ierr;
+
+  std::vector<double> coords(3);
+  ierr = this->mb_->get_coords(&vertex, 1, &coords[0]);
+  TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+
+  return coords;
 }
 // =============================================================================
 std::shared_ptr<Tpetra::Vector<double,int,int>>
@@ -270,10 +286,10 @@ get_complex_vector(const std::string & tag_name) const
   // get data for all vertices
   moab::ErrorCode ierr;
   moab::Range verts;
-  ierr = mb_->get_entities_by_dimension(0, 0, verts);
+  ierr = this->mb_->get_entities_by_dimension(0, 0, verts);
   TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
 
-  auto data = this->get_data_(tag_name, verts);
+  auto data = this->get_data(tag_name, verts);
 
   TEUCHOS_ASSERT_EQUALITY(
     data.size(),
@@ -300,7 +316,7 @@ get_multi_vector(const std::string & tag_name) const
   ierr = mb_->get_entities_by_dimension(0, 0, verts);
   TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
 
-  auto data = this->get_data_(tag_name, verts);
+  auto data = this->get_data(tag_name, verts);
 
   // MOAB's ordering is
   //   x0, y0, z0, x1, y1, z1, ...
@@ -389,6 +405,7 @@ mesh::
 get_owned_cells() const
 {
   std::vector<moab::EntityHandle> cells;
+  throw "mesh::get_owned_cells";
 #if 0
   // get owned elements
   stk::mesh::Selector select_owned_in_part =
@@ -443,17 +460,19 @@ const std::vector<Teuchos::Tuple<int,2>>
 mesh::
 build_edge_lids_() const
 {
+  std::cout << ">> build_edge_lids_" << std::endl;
   const std::vector<edge> edges = this->my_edges();
 
   std::vector<Teuchos::Tuple<int,2>> _edge_lids(edges.size());
 
   for (std::size_t k = 0; k < edges.size(); k++) {
     _edge_lids[k] = Teuchos::tuple(
-        (int)this->lid(std::get<0>(edges[k])),
-        (int)this->lid(std::get<1>(edges[k]))
+        (int)this->local_index(std::get<0>(edges[k])),
+        (int)this->local_index(std::get<1>(edges[k]))
         );
   }
 
+  std::cout << "   build_edge_lids_ >>" << std::endl;
   return _edge_lids;
 }
 // =============================================================================
@@ -466,8 +485,8 @@ build_edge_lids_complex_() const
   std::vector<Teuchos::Tuple<int,4>> _edge_lids_complex(edges.size());
 
   for (std::size_t k = 0; k < edges.size(); k++) {
-    int lidT0 = this->lid(std::get<0>(edges[k]));
-    int lidT1 = this->lid(std::get<1>(edges[k]));
+    int lidT0 = this->local_index(std::get<0>(edges[k]));
+    int lidT1 = this->local_index(std::get<1>(edges[k]));
     _edge_lids_complex[k] =
       Teuchos::tuple(
           2*lidT0, 2*lidT0 + 1,
@@ -480,7 +499,7 @@ build_edge_lids_complex_() const
 // =============================================================================
 const std::vector<int>
 mesh::
-get_owned_ids_() const
+get_owned_gids_() const
 {
   moab::ErrorCode ierr;
   const auto mb = this->mcomm_->get_moab();
@@ -504,7 +523,7 @@ get_owned_ids_() const
 // =============================================================================
 const std::vector<int>
 mesh::
-get_overlap_ids_() const
+get_overlap_gids_() const
 {
   moab::ErrorCode ierr;
   const auto mb = this->mcomm_->get_moab();
@@ -561,14 +580,120 @@ get_map_(const std::vector<int> & ids) const
 // =============================================================================
 mesh::edges_container
 mesh::
-buildEdge_data_()
+build_edge_data_()
 {
-  mesh::edges_container edge_data = {
-    // Local edge ID -> Local node IDs.
-    std::vector<std::tuple<moab::EntityHandle, moab::EntityHandle> >(),
-    // Local cell ID -> Local edge IDs.
-    std::vector<std::vector<int>>(0)
-    };
+  moab::ErrorCode rval;
+
+  // get the number of 3D entities
+  int num3d = 0;
+  rval = this->mb_->get_number_entities_by_dimension(0, 3, num3d);
+  TEUCHOS_ASSERT_EQUALITY(rval, moab::MB_SUCCESS);
+
+  const int dim = (num3d > 0) ? 3 : 2;
+
+  std::cout << "dim = " << dim << std::endl;
+
+  // Get regions, by dimension, so we stay generic to entity type
+  moab::Range elems;
+  rval = this->mb_->get_entities_by_dimension(0, dim, elems);
+  TEUCHOS_ASSERT_EQUALITY(rval, moab::MB_SUCCESS);
+  std::cout << "Number of elements is " << elems.size() << std::endl;
+  //for (size_t k = 0; k < elems.size(); k++) {
+  //  std::cout << "elems[" << k << "] = " << elems[k] << std::endl;
+  //}
+
+  // get and create all edges adjacent to cells
+  moab::Range edges;
+  rval = this->mb_->get_adjacencies(
+      elems,
+      1,
+      true,
+      edges,
+      moab::Interface::UNION
+      );
+  TEUCHOS_ASSERT_EQUALITY(rval, moab::MB_SUCCESS);
+  std::cout << "Number of edges adjacent to cells: " << edges.size() << std::endl;
+
+  // for testing: TODO remove
+  moab::Range verts2;
+  rval = mb_->get_entities_by_dimension(0, 0, verts2);
+  TEUCHOS_ASSERT_EQUALITY(rval, moab::MB_SUCCESS);
+  for (size_t k = 0; k < verts2.size(); k++) {
+    auto tmp = verts2[k];
+    std::vector<double> coords(3);
+    rval = this->mb_->get_coords(&tmp, 1, &coords[0]);
+    TEUCHOS_ASSERT_EQUALITY(rval, moab::MB_SUCCESS);
+    std::cout << "vert " << k << "   coords"
+      << " " << coords[0]
+      << " " << coords[1]
+      << " " << coords[2]
+      << std::endl;
+  }
+  // std::vector<double> coords;
+  // ierr = mb_->get_vertex_coordinates(coords);
+  // TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+
+  // create cell->edge relation
+  std::vector<std::vector<moab::EntityHandle>> cell_edges(elems.size());
+  for (size_t k = 0; k < elems.size(); k++) {
+    // TODO don't use tmp
+    moab::EntityHandle tmp = elems[k];
+    rval = this->mb_->get_adjacencies(
+        &tmp, 1,
+        1,
+        true,
+        cell_edges[k],
+        moab::Interface::UNION
+        );
+    TEUCHOS_ASSERT_EQUALITY(rval, moab::MB_SUCCESS);
+
+    //std::cout << "cell_edges[" << k << "] ="
+    //  << " " << cell_edges[k][0]
+    //  << " " << cell_edges[k][1]
+    //  << " " << cell_edges[k][2]
+    //  // << " " << out[0]
+    //  // << " " << out[1]
+    //  // << " " << out[2]
+    //  << std::endl;
+  }
+
+  // create edge->node relation
+  std::vector<std::tuple<moab::EntityHandle, moab::EntityHandle>>
+    edge_nodes(edges.size());
+  for (size_t k = 0; k < edges.size(); k++) {
+    moab::Range verts;
+    // TODO don't use tmp
+    std::vector<moab::EntityHandle> tmp(1);
+    tmp[0] = edges[k];
+    rval = this->mb_->get_adjacencies(
+        &tmp[0], 1,
+        0,
+        true,
+        verts,
+        moab::Interface::UNION
+        );
+    TEUCHOS_ASSERT_EQUALITY(rval, moab::MB_SUCCESS);
+    edge_nodes[k] = std::make_tuple(verts[0], verts[1]);
+    std::cout << "edge " << k << ", verts " << verts[0] << " " << verts[1] << std::endl;
+  }
+
+  mesh::edges_container edge_data = {edge_nodes, cell_edges};
+
+  // for testing
+  moab::Range verts;
+  rval = this->mb_->get_adjacencies(
+      elems,
+      0,
+      true,
+      verts,
+      moab::Interface::UNION
+      );
+  TEUCHOS_ASSERT_EQUALITY(rval, moab::MB_SUCCESS);
+  std::cout << "Number of verts adjacent to cells: " << verts.size() << std::endl;
+  // for (size_t k = 0; k < verts.size(); k++) {
+  //   std::cout << "vert " << k << " " << verts[k] << std::endl;
+  // }
+
 #if 0
   std::vector<moab::EntityHandle> cells = this->get_owned_cells();
   size_t num_local_cells = cells.size();
@@ -653,6 +778,7 @@ Teuchos::RCP<const Tpetra::CrsGraph<int,int>>
 mesh::
 build_graph() const
 {
+  std::cout << ">> build_graph" << std::endl;
   // Which row/column map to use for the matrix?
   // The two possibilites are the non-overlapping map fetched from
   // the owned_nodes map, and the overlapping one from the
@@ -715,9 +841,21 @@ build_graph() const
 #ifndef NDEBUG
   TEUCHOS_ASSERT(nonoverlap_map);
 #endif
-  auto graph = Tpetra::createCrsGraph(Teuchos::rcp(nonoverlap_map));
+
+  // Make sure that domain and range map are non-overlapping (to make sure that
+  // states psi can compute norms) and equal (to make sure that the matrix works
+  // with ML).
+  auto graph = Teuchos::rcp(new Tpetra::CrsGraph<int, int>(
+      Teuchos::rcp(nonoverlap_map),
+      Teuchos::rcp(nonoverlap_map),
+      0
+      ));
 
   const std::vector<edge> edges = this->my_edges();
+
+  std::cout << "hasColMap " << graph->hasColMap() << std::endl;
+  std::cout << "isLocallyIndexed " << graph->isLocallyIndexed() << std::endl;
+  std::cout << "isGloballyIndexed " << graph->isGloballyIndexed() << std::endl;
 
   // Loop over all edges and put entries wherever two nodes are connected.
   // TODO check if we can use LIDs here
@@ -727,13 +865,9 @@ build_graph() const
       graph->insertLocalIndices(idx[i], idx);
     }
   }
-
-  // Make sure that domain and range map are non-overlapping (to make sure that
-  // states psi can compute norms) and equal (to make sure that the matrix works
-  // with ML).
-  // TODO specify nonoverlap_map?
   graph->fillComplete();
 
+  std::cout << "   build_graph >>" << std::endl;
   return graph;
 }
 // =============================================================================
@@ -741,6 +875,7 @@ Teuchos::RCP<const Tpetra::CrsGraph<int,int>>
 mesh::
 build_complex_graph() const
 {
+  std::cout << ">> build_complex_graph" << std::endl;
   // Which row/column map to use for the matrix?
   // The two possibilites are the non-overlapping map fetched from
   // the owned_nodes map, and the overlapping one from the
@@ -799,29 +934,37 @@ build_complex_graph() const
   // getRangeMap must be the same, and, if the matrix is square,
   // getRangeMap and getDomainMap must coincide too.
   //
-  const auto nonoverlap_map = this->map();
+  const auto nonoverlap_map = this->complex_map();
 #ifndef NDEBUG
   TEUCHOS_ASSERT(nonoverlap_map);
 #endif
-  auto graph = Tpetra::createCrsGraph(Teuchos::rcp(nonoverlap_map));
+  // Make sure that domain and range map are non-overlapping (to make sure that
+  // states psi can compute norms) and equal (to make sure that the matrix works
+  // with ML).
+  auto graph = Teuchos::rcp(new Tpetra::CrsGraph<int, int>(
+      Teuchos::rcp(nonoverlap_map),
+      Teuchos::rcp(nonoverlap_map),
+      0
+      ));
+
+  std::cout << "hasColMap " << graph->hasColMap() << std::endl;
+  std::cout << "isLocallyIndexed " << graph->isLocallyIndexed() << std::endl;
+  std::cout << "isGloballyIndexed " << graph->isGloballyIndexed() << std::endl;
 
   const std::vector<edge> edges = this->my_edges();
 
   // Loop over all edges and put entries wherever two nodes are connected.
   // TODO check if we can use LIDs here
   for (size_t k = 0; k < edges.size(); k++) {
-    const Teuchos::Tuple<int,2> & idx = this->edge_lids[k];
-    for (int i = 0; i < 2; i++) {
+    const Teuchos::Tuple<int,4> & idx = this->edge_lids_complex[k];
+    for (int i = 0; i < 4; i++) {
       graph->insertLocalIndices(idx[i], idx);
     }
   }
 
-  // Make sure that domain and range map are non-overlapping (to make sure that
-  // states psi can compute norms) and equal (to make sure that the matrix works
-  // with ML).
-  // TODO specify nonoverlap_map?
   graph->fillComplete();
 
+  std::cout << "   build_complex_graph >>" << std::endl;
   return graph;
 }
 // =============================================================================

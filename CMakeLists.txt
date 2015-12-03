@@ -15,7 +15,7 @@ PROJECT(Nosh CXX)
 
 IF (NOT Trilinos_Implicit)
   #FIND_PACKAGE(Trilinos REQUIRED)
-  FIND_PACKAGE(Trilinos REQUIRED COMPONENTS Belos MueLu Thyra Tpetra NOX Piro STK)
+  FIND_PACKAGE(Trilinos REQUIRED COMPONENTS Belos MueLu Thyra Tpetra NOX Piro)
 ENDIF()
 
 FIND_PACKAGE(Eigen3 REQUIRED)

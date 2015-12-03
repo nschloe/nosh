@@ -69,26 +69,67 @@ IF (NOT Trilinos_Implicit)
     )
 ENDIF()
 
+SET(FTEST_EXECUTABLE "fTest")
+ADD_EXECUTABLE(${FTEST_EXECUTABLE}
+  compute_f.cpp
+  unitTestMain.cpp
+  )
+# Set executable linking information.
+TARGET_LINK_LIBRARIES(
+  ${FTEST_EXECUTABLE}
+  ${internal_LIBS}
+  )
+IF (NOT Trilinos_Implicit)
+  TARGET_LINK_LIBRARIES(
+    ${FTEST_EXECUTABLE}
+    ${Trilinos_LIBRARIES}
+    )
+ENDIF()
+# add tests
+ADD_TEST(fTest
+  ${FTEST_EXECUTABLE}
+  )
+ADD_TEST(fTestMpi2
+  ${Trilinos_MPI_EXEC} --noprefix ${Trilinos_MPI_EXEC_NUMPROCS_FLAG} 2 ${FTEST_EXECUTABLE}
+  )
+ADD_TEST(fTestMpi7
+  ${Trilinos_MPI_EXEC} --noprefix ${Trilinos_MPI_EXEC_NUMPROCS_FLAG} 7 ${FTEST_EXECUTABLE}
+  )
+
+
+SET(KEOTEST_EXECUTABLE "keoTest")
+ADD_EXECUTABLE(${KEOTEST_EXECUTABLE}
+  keo.cpp
+  unitTestMain.cpp
+  )
+# Set executable linking information.
+TARGET_LINK_LIBRARIES(
+  ${KEOTEST_EXECUTABLE}
+  ${internal_LIBS}
+  )
+IF (NOT Trilinos_Implicit)
+  TARGET_LINK_LIBRARIES(
+    ${KEOTEST_EXECUTABLE}
+    ${Trilinos_LIBRARIES}
+    )
+ENDIF()
+# add tests
+ADD_TEST(operatorTest
+  ${KEOTEST_EXECUTABLE}
+  )
+ADD_TEST(operatorTestMpi2
+  ${Trilinos_MPI_EXEC} --noprefix ${Trilinos_MPI_EXEC_NUMPROCS_FLAG} 2 ${KEOTEST_EXECUTABLE}
+  )
+ADD_TEST(operatorTestMpi7
+  ${Trilinos_MPI_EXEC} --noprefix ${Trilinos_MPI_EXEC_NUMPROCS_FLAG} 7 ${KEOTEST_EXECUTABLE}
+  )
+
 SET(OPERATORTEST_EXECUTABLE "operatorTest")
 ADD_EXECUTABLE(${OPERATORTEST_EXECUTABLE}
-  keo.cpp
-  compute_f.cpp
   jac.cpp
   dfdp.cpp
   unitTestMain.cpp
   )
-
-# add tests
-ADD_TEST(operatorTest
-  ${OPERATORTEST_EXECUTABLE}
-  )
-ADD_TEST(operatorTestMpi2
-  ${Trilinos_MPI_EXEC} --noprefix ${Trilinos_MPI_EXEC_NUMPROCS_FLAG} 2 ${OPERATORTEST_EXECUTABLE}
-  )
-ADD_TEST(operatorTestMpi7
-  ${Trilinos_MPI_EXEC} --noprefix ${Trilinos_MPI_EXEC_NUMPROCS_FLAG} 7 ${OPERATORTEST_EXECUTABLE}
-  )
-
 # Set executable linking information.
 TARGET_LINK_LIBRARIES(
   ${OPERATORTEST_EXECUTABLE}
@@ -100,6 +141,16 @@ IF (NOT Trilinos_Implicit)
     ${Trilinos_LIBRARIES}
     )
 ENDIF()
+# add tests
+ADD_TEST(operatorTest
+  ${OPERATORTEST_EXECUTABLE}
+  )
+ADD_TEST(operatorTestMpi2
+  ${Trilinos_MPI_EXEC} --noprefix ${Trilinos_MPI_EXEC_NUMPROCS_FLAG} 2 ${OPERATORTEST_EXECUTABLE}
+  )
+ADD_TEST(operatorTestMpi7
+  ${Trilinos_MPI_EXEC} --noprefix ${Trilinos_MPI_EXEC_NUMPROCS_FLAG} 7 ${OPERATORTEST_EXECUTABLE}
+  )
 
 
 ADD_SUBDIRECTORY(data)

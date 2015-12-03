@@ -51,7 +51,7 @@ private:
     //! Local edge ID -> Global node IDs.
     std::vector<edge> edge_nodes;
     //! Local cell ID -> Local edge IDs.
-    std::vector<std::vector<int>> cell_edges;
+    std::vector<std::vector<moab::EntityHandle>> cell_edges;
   };
 
 public:
@@ -80,10 +80,10 @@ public:
   get_multi_vector(const std::string & field_name) const;
 
   const std::vector<int>
-  get_owned_ids_() const;
+  get_owned_gids_() const;
 
   const std::vector<int>
-  get_overlap_ids_() const;
+  get_overlap_gids_() const;
 
   const std::vector<int>
   complexify_(const std::vector<int> & ids) const;
@@ -148,31 +148,20 @@ public:
     return complex_overlap_map_;
   }
 
-  //const vector_fieldType &
-  //get_node_field(const std::string & field_name) const;
-
-  //const Eigen::Vector3d
-  //get_node_value(
-  //    const vector_fieldType & field,
-  //    moab::EntityHandle node_entity
-  //    ) const
-  //{
-  //  return Eigen::Vector3d(stk::mesh::field_data(field, node_entity));
-  //};
-
   moab::EntityHandle
   gid(const moab::EntityHandle e) const
   {
-    throw 1;
+    throw "in mesh::gid";
     return e;
     //return io_broker_->bulk_data().identifier(e);
   }
 
-  moab::EntityHandle
-  lid(const moab::EntityHandle e) const
+  // Convert a moab Entity ID to a continuous index into an array.
+  size_t
+  local_index(const moab::EntityHandle id) const
   {
-    throw 1;
-    return e;
+    // MOAB EntityHandles are 1-based
+    return this->mb_->id_from_handle(id) - 1;
   }
 
   Teuchos::RCP<const Tpetra::CrsGraph<int,int>>
@@ -186,6 +175,19 @@ public:
       const Tpetra::Vector<double,int,int> &x,
       const std::string & field_name
       ) const;
+
+  std::vector<double>
+  get_data(
+    const std::string & tag_name,
+    const moab::Range & range
+    ) const;
+
+  std::vector<double>
+  get_coords(
+      const moab::EntityHandle vertex
+      ) const;
+
+  const std::shared_ptr<moab::Core> mb_;
 
 public:
   virtual
@@ -224,7 +226,6 @@ public:
   const std::shared_ptr<const Teuchos::Comm<int>> comm;
 
 protected:
-  const std::shared_ptr<moab::Core> mb_;
   const std::shared_ptr<moab::ParallelComm> mcomm_;
 
 private:
@@ -279,13 +280,7 @@ private:
   build_map_(const std::vector<moab::EntityHandle> &entityList) const;
 
   edges_container
-  buildEdge_data_();
-
-  std::vector<double>
-  get_data_(
-    const std::string & tag_name,
-    const moab::Range & range
-    ) const;
+  build_edge_data_();
 };
 // -----------------------------------------------------------------------------
 
