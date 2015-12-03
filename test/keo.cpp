@@ -193,44 +193,44 @@ TEUCHOS_UNIT_TEST(nosh, KeoPacmanHashes)
           success);
 }
 // ============================================================================
-////TEUCHOS_UNIT_TEST(nosh, KeoCubeSmallHashes)
-////{
-////  std::string input_filename_base = "cubesmall";
-////
-////  double mu = 1.0e-2;
-////  double control_norm_1 = 10.058364522531498;
-////  double control_norm_inf = control_norm_1;
-////  double control_sum_real = 8.3541623155714007e-05;
-////  double control_sum     = 2 * control_sum_real;
-////
-////  testKeo(input_filename_base,
-////          mu,
-////          control_norm_1,
-////          control_norm_inf,
-////          control_sum,
-////          control_sum_real,
-////          out,
-////          success);
-////}
-//// ============================================================================
-//TEUCHOS_UNIT_TEST(nosh, KeoBrickWHoleHashes)
-//{
-//  std::string input_filename_base = "brick-w-hole";
-//
-//  double mu = 1.0e-2;
-//  double control_norm_1 = 15.131119904340618;
-//  double control_norm_inf = control_norm_1;
-//  double control_sum_real = 0.16763276012920181;
-//  double control_sum     = 2 * control_sum_real;
-//
-//  testKeo(input_filename_base,
-//          mu,
-//          control_norm_1,
-//          control_norm_inf,
-//          control_sum,
-//          control_sum_real,
-//          out,
-//          success);
-//}
+TEUCHOS_UNIT_TEST(nosh, KeoCubeSmallHashes)
+{
+  std::string input_filename_base = "cubesmall";
+
+  double mu = 1.0e-2;
+  double control_norm_1 = 10.058364522531498;
+  double control_norm_inf = control_norm_1;
+  double control_sum_real = 8.3541623155714007e-05;
+  double control_sum     = 2 * control_sum_real;
+
+  testKeo(input_filename_base,
+          mu,
+          control_norm_1,
+          control_norm_inf,
+          control_sum,
+          control_sum_real,
+          out,
+          success);
+}
+// ============================================================================
+TEUCHOS_UNIT_TEST(nosh, KeoBrickWHoleHashes)
+{
+  std::string input_filename_base = "brick-w-hole";
+
+  double mu = 1.0e-2;
+  double control_norm_1 = 15.131119904340618;
+  double control_norm_inf = control_norm_1;
+  double control_sum_real = 0.16763276012920181;
+  double control_sum     = 2 * control_sum_real;
+
+  testKeo(input_filename_base,
+          mu,
+          control_norm_1,
+          control_norm_inf,
+          control_sum,
+          control_sum_real,
+          out,
+          success);
+}
 // ============================================================================
 } // namespace
