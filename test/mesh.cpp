@@ -45,7 +45,11 @@ testMesh(
 {
   // Read the data from the file.
   auto comm =  Teuchos::DefaultComm<int>::getComm();
-  const std::string input_filename = "data/" + input_filename_base + ".h5m";
+  const int size = comm->getSize();
+  const std::string input_filename = (size == 1) ?
+    "data/" + input_filename_base + ".h5m" :
+    "data/" + input_filename_base + "-" + std::to_string(size) + ".h5m"
+    ;
 
   auto mesh = nosh::read(input_filename);
 

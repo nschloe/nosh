@@ -114,43 +114,68 @@ IF (NOT Trilinos_Implicit)
     )
 ENDIF()
 # add tests
-ADD_TEST(operatorTest
+ADD_TEST(keoTest
   ${KEOTEST_EXECUTABLE}
   )
-ADD_TEST(operatorTestMpi2
+ADD_TEST(keoTestMpi2
   ${Trilinos_MPI_EXEC} --noprefix ${Trilinos_MPI_EXEC_NUMPROCS_FLAG} 2 ${KEOTEST_EXECUTABLE}
   )
-ADD_TEST(operatorTestMpi7
+ADD_TEST(keoTestMpi7
   ${Trilinos_MPI_EXEC} --noprefix ${Trilinos_MPI_EXEC_NUMPROCS_FLAG} 7 ${KEOTEST_EXECUTABLE}
   )
 
-SET(OPERATORTEST_EXECUTABLE "operatorTest")
-ADD_EXECUTABLE(${OPERATORTEST_EXECUTABLE}
+SET(JACTEST_EXECUTABLE "jacTest")
+ADD_EXECUTABLE(${JACTEST_EXECUTABLE}
   jac.cpp
+  unitTestMain.cpp
+  )
+# Set executable linking information.
+TARGET_LINK_LIBRARIES(
+  ${JACTEST_EXECUTABLE}
+  ${internal_LIBS}
+  )
+IF (NOT Trilinos_Implicit)
+  TARGET_LINK_LIBRARIES(
+    ${JACTEST_EXECUTABLE}
+    ${Trilinos_LIBRARIES}
+    )
+ENDIF()
+# add tests
+ADD_TEST(jacTest
+  ${JACTEST_EXECUTABLE}
+  )
+ADD_TEST(jacTestMpi2
+  ${Trilinos_MPI_EXEC} --noprefix ${Trilinos_MPI_EXEC_NUMPROCS_FLAG} 2 ${JACTEST_EXECUTABLE}
+  )
+ADD_TEST(jacTestMpi7
+  ${Trilinos_MPI_EXEC} --noprefix ${Trilinos_MPI_EXEC_NUMPROCS_FLAG} 7 ${JACTEST_EXECUTABLE}
+  )
+
+SET(DFDPTEST_EXECUTABLE "dfdpTest")
+ADD_EXECUTABLE(${DFDPTEST_EXECUTABLE}
   dfdp.cpp
   unitTestMain.cpp
   )
 # Set executable linking information.
 TARGET_LINK_LIBRARIES(
-  ${OPERATORTEST_EXECUTABLE}
+  ${DFDPTEST_EXECUTABLE}
   ${internal_LIBS}
   )
 IF (NOT Trilinos_Implicit)
   TARGET_LINK_LIBRARIES(
-    ${OPERATORTEST_EXECUTABLE}
+    ${DFDPTEST_EXECUTABLE}
     ${Trilinos_LIBRARIES}
     )
 ENDIF()
 # add tests
-ADD_TEST(operatorTest
-  ${OPERATORTEST_EXECUTABLE}
+ADD_TEST(dfdpTest
+  ${DFDPTEST_EXECUTABLE}
   )
-ADD_TEST(operatorTestMpi2
-  ${Trilinos_MPI_EXEC} --noprefix ${Trilinos_MPI_EXEC_NUMPROCS_FLAG} 2 ${OPERATORTEST_EXECUTABLE}
+ADD_TEST(dfdpTestMpi2
+  ${Trilinos_MPI_EXEC} --noprefix ${Trilinos_MPI_EXEC_NUMPROCS_FLAG} 2 ${DFDPTEST_EXECUTABLE}
   )
-ADD_TEST(operatorTestMpi7
-  ${Trilinos_MPI_EXEC} --noprefix ${Trilinos_MPI_EXEC_NUMPROCS_FLAG} 7 ${OPERATORTEST_EXECUTABLE}
+ADD_TEST(dfdpTestMpi7
+  ${Trilinos_MPI_EXEC} --noprefix ${Trilinos_MPI_EXEC_NUMPROCS_FLAG} 7 ${DFDPTEST_EXECUTABLE}
   )
-
 
 ADD_SUBDIRECTORY(data)

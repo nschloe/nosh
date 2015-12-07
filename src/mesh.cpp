@@ -21,6 +21,8 @@
 #include "mesh.hpp"
 
 #include <moab/Core.hpp>
+#include <moab/ParallelComm.hpp>
+#include <MBParallelConventions.h>
 
 #include <Tpetra_Vector.hpp>
 #include <Teuchos_RCP.hpp>
@@ -283,22 +285,33 @@ std::shared_ptr<Tpetra::Vector<double,int,int>>
 mesh::
 get_complex_vector(const std::string & tag_name) const
 {
+  std::cout << ">> get_complex_vector" << std::endl;
   // get data for all vertices
   moab::ErrorCode ierr;
+  moab::Range all_verts;
+  ierr = this->mb_->get_entities_by_dimension(0, 0, all_verts);
+  TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+
   moab::Range verts;
-  ierr = this->mb_->get_entities_by_dimension(0, 0, verts);
+  ierr = this->mcomm_->filter_pstatus(
+      all_verts,
+      PSTATUS_NOT_OWNED, PSTATUS_NOT,
+      -1,
+      &verts
+      );
   TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
 
   auto data = this->get_data(tag_name, verts);
 
   TEUCHOS_ASSERT_EQUALITY(
     data.size(),
-    this->complex_overlap_map_->getNodeNumElements()
+    this->complex_map_->getNodeNumElements()
     );
 
+  std::cout << "   get_complex_vector >>" << std::endl;
   // Set vector values from an existing array (copy)
   return std::make_shared<Tpetra::Vector<double,int,int>>(
-      Teuchos::rcp(this->complex_overlap_map_),
+      Teuchos::rcp(this->complex_map_),
       Teuchos::ArrayView<double>(data)
       );
 }
@@ -504,9 +517,19 @@ get_owned_gids_() const
   moab::ErrorCode ierr;
   const auto mb = this->mcomm_->get_moab();
 
-  // get owned entities
+  // get all entities
+  moab::Range all_verts;
+  ierr = mb->get_entities_by_dimension(0, 0, all_verts);
+  TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+
+  // filter out only owned
   moab::Range verts;
-  ierr = mb->get_entities_by_dimension(0, 0, verts);
+  ierr = this->mcomm_->filter_pstatus(
+      all_verts,
+      PSTATUS_NOT_OWNED, PSTATUS_NOT,
+      -1,
+      &verts
+      );
   TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
 
   // get the corresponding global IDs
@@ -517,6 +540,11 @@ get_owned_gids_() const
   std::vector<int> global_ids(verts.size());
   ierr = mb->tag_get_data(gid, verts, &global_ids[0]);
   TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+
+  std::cout << "owned gids for rank " << comm->getRank() << " " << global_ids.size() << std::endl;
+  for (size_t k = 0; k < global_ids.size(); k++) {
+    std::cout << "  " << comm->getRank() << " " << global_ids[k] << std::endl;
+  }
 
   return global_ids;
 }
@@ -535,7 +563,7 @@ get_overlap_gids_() const
 
   // Get entities shared with all other processors
   moab::Range shared;
-  ierr = mcomm_->get_shared_entities(-1, shared, 0);
+  ierr = mcomm_->get_shared_entities(-1, shared, 0); // only verts
   TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
 
   // merge

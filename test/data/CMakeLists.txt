@@ -35,14 +35,18 @@ foreach(file ${input_files})
   LIST(APPEND FILES2 ${file}-2.h5m)
   add_custom_command(
     DEPENDS ${file}.h5m
-    COMMAND mbpart 2 -m ML_KWAY ${file}.h5m ${file}-2.h5m
+    # https://bitbucket.org/fathomteam/moab/issues/27/parallel-read-of-simple-file-fails
+    COMMAND mbpart 2 -m ML_RB ${file}.h5m ${file}-2.h5m
+    #COMMAND mbpart 2 -m ML_KWAY ${file}.h5m ${file}-2.h5m
     OUTPUT ${file}-2.h5m
     )
 
   LIST(APPEND FILES7 ${file}-7.h5m)
   add_custom_command(
     DEPENDS ${file}.h5m
-    COMMAND mbpart 7 -m ML_KWAY ${file}.h5m ${file}-7.h5m
+    # https://bitbucket.org/fathomteam/moab/issues/27/parallel-read-of-simple-file-fails
+    COMMAND mbpart 7 -m ML_RB ${file}.h5m ${file}-7.h5m
+    #COMMAND mbpart 7 -m ML_KWAY ${file}.h5m ${file}-7.h5m
     OUTPUT ${file}-7.h5m
     )
 endforeach()

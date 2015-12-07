@@ -80,11 +80,16 @@ test_dfdp(
 {
   // Read the data from the file.
   auto comm =  Teuchos::DefaultComm<int>::getComm();
-  const std::string input_filename = "data/" + input_filename_base + ".h5m";
+  const int size = comm->getSize();
+  const std::string input_filename = (size == 1) ?
+    "data/" + input_filename_base + ".h5m" :
+    "data/" + input_filename_base + "-" + std::to_string(size) + ".h5m"
+    ;
 
   // Read the data from the file.
   auto mesh = nosh::read(input_filename);
 
+  std::cout << "test0" << std::endl;
   // Cast the data into something more accessible.
   auto z = mesh->get_complex_vector("psi");
 
@@ -92,6 +97,8 @@ test_dfdp(
   auto thickness = std::make_shared<nosh::scalar_field::constant>(*mesh, 1.0);
   auto mvp = std::make_shared<nosh::vector_field::explicit_values>(*mesh, "A", mu);
   auto sp = std::make_shared<nosh::scalar_field::constant>(*mesh, -1.0);
+
+  std::cout << "test1" << std::endl;
 
   Teuchos::RCP<Thyra::ModelEvaluator<double>> model_eval =
     Teuchos::rcp(new nosh::model_evaluator::nls(
@@ -104,9 +111,11 @@ test_dfdp(
           "g"
           ));
 
+  std::cout << "test2" << std::endl;
   auto vector_space_x = model_eval->get_x_space();
   auto vectorSpaceF = model_eval->get_f_space();
 
+  std::cout << "test3" << std::endl;
   // Perform the finite difference test for all parameters present in the
   // system.
   // Get a finite-difference approximation of df/dp.
@@ -114,22 +123,29 @@ test_dfdp(
   auto zT = Thyra::createVector(Teuchos::rcp(z), vector_space_x);
   in_args.set_x(zT);
 
+  std::cout << "test4" << std::endl;
   auto out_args = model_eval->createOutArgs();
 
   // create parameter vector
   auto p = Thyra::createMember(model_eval->get_p_space(0));
   auto fdiff = Thyra::createMember(model_eval->get_f_space());
 
+  std::cout << "test5" << std::endl;
   // Get the actual derivatives.
   in_args.set_p(0, p);
+  std::cout << "test5a" << std::endl;
   auto dfdp = Thyra::createMembers(model_eval->get_f_space(), 2);
+  std::cout << "test5b" << std::endl;
   Thyra::ModelEvaluatorBase::Derivative<double> deriv(
       dfdp,
       Thyra::ModelEvaluatorBase::DERIV_MV_BY_COL
       );
+  std::cout << "test5c" << std::endl;
   out_args.set_DfDp(0, deriv);
+  std::cout << "test5d" << std::endl;
   model_eval->evalModel(in_args, out_args);
 
+  std::cout << "test6" << std::endl;
   // Only test the first parameter "g" for now since we have to set the DKeoDP
   // above. Alternative: Use "mu" above, and take param_index 1 here.
   // TODO test both parameters
@@ -154,19 +170,19 @@ test_dfdp(
   return;
 }
 // ===========================================================================
-//TEUCHOS_UNIT_TEST(nosh, DfdpRectangleSmallHashes)
-//{
-//  const std::string input_filename_base = "rectanglesmall";
-//  const double mu = 1.0e-2;
-//  test_dfdp(input_filename_base, mu, out, success);
-//}
-// ============================================================================
-TEUCHOS_UNIT_TEST(nosh, DfdpPacmanHashes)
+TEUCHOS_UNIT_TEST(nosh, DfdpRectangleSmallHashes)
 {
-  const std::string input_filename_base = "pacman";
+  const std::string input_filename_base = "rectanglesmall";
   const double mu = 1.0e-2;
   test_dfdp(input_filename_base, mu, out, success);
 }
+// ============================================================================
+//TEUCHOS_UNIT_TEST(nosh, DfdpPacmanHashes)
+//{
+//  const std::string input_filename_base = "pacman";
+//  const double mu = 1.0e-2;
+//  test_dfdp(input_filename_base, mu, out, success);
+//}
 // ============================================================================
 //TEUCHOS_UNIT_TEST(nosh, DfdpCubeSmallHashes)
 //{
@@ -175,11 +191,11 @@ TEUCHOS_UNIT_TEST(nosh, DfdpPacmanHashes)
 //  test_dfdp(input_filename_base, mu, out, success);
 //}
 // ============================================================================
-TEUCHOS_UNIT_TEST(nosh, DfdpBrickWithHoleHashes)
-{
-  const std::string input_filename_base = "brick-w-hole";
-  const double mu = 1.0e-2;
-  test_dfdp(input_filename_base, mu, out, success);
-}
+//TEUCHOS_UNIT_TEST(nosh, DfdpBrickWithHoleHashes)
+//{
+//  const std::string input_filename_base = "brick-w-hole";
+//  const double mu = 1.0e-2;
+//  test_dfdp(input_filename_base, mu, out, success);
+//}
 // ============================================================================
 } // namespace

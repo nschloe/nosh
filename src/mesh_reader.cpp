@@ -43,12 +43,13 @@ read(const std::string & file_name)
     Teuchos::TimeMonitor::getNewTimer("Nosh: read()");
   Teuchos::TimeMonitor tm(*fill_time);
 #endif
+  std::cout << ">> mesh_reader" << std::endl;
 
   const auto comm =
     Teuchos::get_shared_ptr(Teuchos::DefaultComm<int>::getComm());
 
   const std::string options =
-    comm->getSize() == 1 ?
+    (comm->getSize() == 1) ?
     "" :
     "PARALLEL=READ_PART;PARTITION=PARALLEL_PARTITION;PARALLEL_RESOLVE_SHARED_ENTS";
 
@@ -93,7 +94,7 @@ read(const std::string & file_name)
 
   // Read the file with the specified options
   rval = mb->load_file(file_name.c_str(), 0, options.c_str());
-  TEUCHOS_ASSERT_EQUALITY(rval, moab::MB_SUCCESS)
+  TEUCHOS_ASSERT_EQUALITY(rval, moab::MB_SUCCESS);
 
   moab::Range shared_ents;
   // Get entities shared with all other processors
@@ -131,6 +132,7 @@ read(const std::string & file_name)
   rval = mb->get_number_entities_by_dimension(0, 3, num3d);
   TEUCHOS_ASSERT_EQUALITY(rval, moab::MB_SUCCESS);
 
+  std::cout << "   mesh_reader >>" << std::endl;
   if (num3d == 0) {
     return std::make_shared<nosh::mesh_tri>(comm, mcomm, mb);
   }
