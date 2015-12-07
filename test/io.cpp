@@ -90,24 +90,24 @@ testKeo(
   return;
 }
 // ===========================================================================
-TEUCHOS_UNIT_TEST(nosh, KeoRectangleSmallHashes)
-{
-  std::string input_filename_base = "rectanglesmall";
-
-  const double psi_control_norm_1 = 4.0;
-  const double psi_control_norm_inf = 1.0;
-  std::vector<double> mvp_control_norms_inf(3);
-  mvp_control_norms_inf[0] = 0.25;
-  mvp_control_norms_inf[1] = 2.5;
-  mvp_control_norms_inf[2] = 0.0;
-
-  testKeo(input_filename_base,
-          psi_control_norm_1,
-          psi_control_norm_inf,
-          mvp_control_norms_inf,
-          out,
-          success);
-}
+//TEUCHOS_UNIT_TEST(nosh, KeoRectangleSmallHashes)
+//{
+//  std::string input_filename_base = "rectanglesmall";
+//
+//  const double psi_control_norm_1 = 4.0;
+//  const double psi_control_norm_inf = 1.0;
+//  std::vector<double> mvp_control_norms_inf(3);
+//  mvp_control_norms_inf[0] = 0.25;
+//  mvp_control_norms_inf[1] = 2.5;
+//  mvp_control_norms_inf[2] = 0.0;
+//
+//  testKeo(input_filename_base,
+//          psi_control_norm_1,
+//          psi_control_norm_inf,
+//          mvp_control_norms_inf,
+//          out,
+//          success);
+//}
 // ============================================================================
 TEUCHOS_UNIT_TEST(nosh, KeoPacmanHashes)
 {
@@ -128,24 +128,24 @@ TEUCHOS_UNIT_TEST(nosh, KeoPacmanHashes)
           success);
 }
 // ============================================================================
-TEUCHOS_UNIT_TEST(nosh, KeoShellHashes)
-{
-  std::string input_filename_base = "shell";
-
-  const double psi_control_norm_1 = 5.0;
-  const double psi_control_norm_inf = 1.0;
-  std::vector<double> mvp_control_norms_inf(3);
-  mvp_control_norms_inf[0] = 0.5;
-  mvp_control_norms_inf[1] = 0.5;
-  mvp_control_norms_inf[2] = 0.0;
-
-  testKeo(input_filename_base,
-          psi_control_norm_1,
-          psi_control_norm_inf,
-          mvp_control_norms_inf,
-          out,
-          success);
-}
+//TEUCHOS_UNIT_TEST(nosh, KeoShellHashes)
+//{
+//  std::string input_filename_base = "shell";
+//
+//  const double psi_control_norm_1 = 5.0;
+//  const double psi_control_norm_inf = 1.0;
+//  std::vector<double> mvp_control_norms_inf(3);
+//  mvp_control_norms_inf[0] = 0.5;
+//  mvp_control_norms_inf[1] = 0.5;
+//  mvp_control_norms_inf[2] = 0.0;
+//
+//  testKeo(input_filename_base,
+//          psi_control_norm_1,
+//          psi_control_norm_inf,
+//          mvp_control_norms_inf,
+//          out,
+//          success);
+//}
 // ============================================================================
 TEUCHOS_UNIT_TEST(nosh, KeoSphereHashes)
 {
@@ -166,24 +166,24 @@ TEUCHOS_UNIT_TEST(nosh, KeoSphereHashes)
           success);
 }
 // ============================================================================
-TEUCHOS_UNIT_TEST(nosh, KeoCubeSmallHashes)
-{
-  std::string input_filename_base = "cubesmall";
-
-  const double psi_control_norm_1 = 8.0;
-  const double psi_control_norm_inf = 1.0;
-  std::vector<double> mvp_control_norms_inf(3);
-  mvp_control_norms_inf[0] = 0.25;
-  mvp_control_norms_inf[1] = 0.25;
-  mvp_control_norms_inf[2] = 0.0;
-
-  testKeo(input_filename_base,
-          psi_control_norm_1,
-          psi_control_norm_inf,
-          mvp_control_norms_inf,
-          out,
-          success);
-}
+//TEUCHOS_UNIT_TEST(nosh, KeoCubeSmallHashes)
+//{
+//  std::string input_filename_base = "cubesmall";
+//
+//  const double psi_control_norm_1 = 8.0;
+//  const double psi_control_norm_inf = 1.0;
+//  std::vector<double> mvp_control_norms_inf(3);
+//  mvp_control_norms_inf[0] = 0.25;
+//  mvp_control_norms_inf[1] = 0.25;
+//  mvp_control_norms_inf[2] = 0.0;
+//
+//  testKeo(input_filename_base,
+//          psi_control_norm_1,
+//          psi_control_norm_inf,
+//          mvp_control_norms_inf,
+//          out,
+//          success);
+//}
 // ============================================================================
 TEUCHOS_UNIT_TEST(nosh, KeoBrickWHoleHashes)
 {
