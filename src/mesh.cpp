@@ -293,12 +293,12 @@ get_complex_vector(const std::string & tag_name) const
 
   TEUCHOS_ASSERT_EQUALITY(
     data.size(),
-    this->overlap_complex_map()->getNodeNumElements()
+    this->complex_overlap_map_->getNodeNumElements()
     );
 
   // Set vector values from an existing array (copy)
   return std::make_shared<Tpetra::Vector<double,int,int>>(
-      Teuchos::rcp(this->overlap_complex_map()),
+      Teuchos::rcp(this->complex_overlap_map_),
       Teuchos::ArrayView<double>(data)
       );
 }
@@ -535,7 +535,7 @@ get_overlap_gids_() const
 
   // Get entities shared with all other processors
   moab::Range shared;
-  ierr = mcomm_->get_shared_entities(-1, shared);
+  ierr = mcomm_->get_shared_entities(-1, shared, 0);
   TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
 
   // merge
@@ -549,6 +549,11 @@ get_overlap_gids_() const
   std::vector<int> global_ids(all.size());
   ierr = mb->tag_get_data(gid, all, &global_ids[0]);
   TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+
+  // std::cout << "rank " << comm->getRank() << " " << global_ids.size() << std::endl;
+  // for (size_t k = 0; k < global_ids.size(); k++) {
+  //   std::cout << "  " << comm->getRank() << " " << global_ids[k] << std::endl;
+  // }
 
   return global_ids;
 }
