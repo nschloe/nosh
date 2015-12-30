@@ -37,6 +37,8 @@
 
 #include <Eigen/Dense>
 
+#include "moab_wrap.hpp"
+
 typedef std::tuple<moab::EntityHandle, moab::EntityHandle> edge;
 
 namespace nosh
@@ -161,7 +163,7 @@ public:
   local_index(const moab::EntityHandle id) const
   {
     // MOAB EntityHandles are 1-based
-    return this->mb_->id_from_handle(id) - 1;
+    return this->mbw_->mb->id_from_handle(id) - 1;
   }
 
   Teuchos::RCP<const Tpetra::CrsGraph<int,int>>
@@ -187,7 +189,7 @@ public:
       const moab::EntityHandle vertex
       ) const;
 
-  const std::shared_ptr<moab::Core> mb_;
+  const std::shared_ptr<nosh::moab_wrap> mbw_;
 
 public:
   virtual

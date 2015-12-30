@@ -74,7 +74,7 @@ compute_edge_coefficients_() const
   moab::ErrorCode ierr;
 
   moab::Range cells;
-  ierr = this->mb_->get_entities_by_dimension(0, 3, cells);
+  ierr = this->mbw_->mb->get_entities_by_dimension(0, 3, cells);
   TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
 
   size_t num_cells = cells.size();
@@ -86,12 +86,12 @@ compute_edge_coefficients_() const
   for (size_t k = 0; k < num_edges; k++) {
     std::vector<double> coords0(3);
     auto tmp1 = std::get<0>(edge_data_.edge_nodes[k]);
-    ierr = this->mb_->get_coords(&tmp1, 1, &coords0[0]);
+    ierr = this->mbw_->mb->get_coords(&tmp1, 1, &coords0[0]);
     TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
 
     std::vector<double> coords1(3);
     tmp1 = std::get<1>(edge_data_.edge_nodes[k]);
-    ierr = this->mb_->get_coords(&tmp1, 1, &coords1[0]);
+    ierr = this->mbw_->mb->get_coords(&tmp1, 1, &coords1[0]);
     TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
 
     edge_coords[k][0] = coords0[0] - coords1[0];
@@ -232,20 +232,18 @@ compute_control_volumes_t_(Tpetra::Vector<double,int,int> & cv_overlap) const
 
   moab::ErrorCode ierr;
 
-  ierr = this->mb_->get_entities_by_dimension(0, 3, cells);
+  ierr = this->mbw_->mb->get_entities_by_dimension(0, 3, cells);
   TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
 
   unsigned int num_cells = cells.size();
 
   Teuchos::ArrayRCP<double> cv_data = cv_overlap.getDataNonConst();
 
-  auto rank = cv_overlap.getMap()->getComm()->getRank();
-
   // Calculate the contributions to the finite volumes cell by cell.
   for (size_t k = 0; k < num_cells; k++) {
     const moab::EntityHandle * conn = NULL;
     int numV = 0;
-    ierr = this->mb_->get_connectivity(cells[k], conn, numV);
+    ierr = this->mbw_->mb->get_connectivity(cells[k], conn, numV);
     TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
 
 #ifndef NDEBUG
@@ -254,7 +252,7 @@ compute_control_volumes_t_(Tpetra::Vector<double,int,int> & cv_overlap) const
 
     // Fetch the nodal positions into 'local_node_coords'.
     std::vector<double> coords(3 * numV);
-    ierr = this->mb_->get_coords(conn, numV, &coords[0]);
+    ierr = this->mbw_->mb->get_coords(conn, numV, &coords[0]);
     TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
 
     std::vector<Eigen::Vector3d> local_node_coords(numV);

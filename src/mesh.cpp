@@ -45,7 +45,7 @@ mesh(
   multi_time_(Teuchos::TimeMonitor::getNewTimer("Nosh: mesh::get_multi_vector")),
 #endif
   comm(_comm),
-  mb_(mb),
+  mbw_(std::make_shared<moab_wrap>(mb)),
   mcomm_(mcomm),
   //owned_nodes_(this->build_owned_nodes_()),
   nodes_map_(this->get_map_(this->get_owned_gids_())),
@@ -206,7 +206,7 @@ write(const std::string & filename) const
   Teuchos::TimeMonitor tm(*write_time_);
 #endif
 
-  this->mb_->write_mesh(filename.c_str());
+  this->mbw_->mb->write_mesh(filename.c_str());
 
   return;
 }
@@ -218,28 +218,14 @@ get_data(
   const moab::Range & range
   ) const
 {
-  moab::ErrorCode ierr;
+  const moab::Tag tag = this->mbw_->tag_get_handle(tag_name);
 
-  moab::Tag tag;
-  ierr = mb_->tag_get_handle(tag_name.c_str(), tag);
-  TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+  TEUCHOS_ASSERT_EQUALITY(
+      this->mbw_->tag_get_data_type(tag),
+      moab::DataType::MB_TYPE_DOUBLE
+      );
 
-  int length;
-  ierr = mb_->tag_get_length(tag, length);
-  TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
-
-  moab::DataType type;
-  ierr = mb_->tag_get_data_type(tag, type);
-  TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
-
-  TEUCHOS_ASSERT_EQUALITY(type, moab::DataType::MB_TYPE_DOUBLE);
-
-  const int num_data = length * range.size();
-  std::vector<double> data(num_data);
-  ierr = mb_->tag_get_data(tag, range, &data[0]);
-  TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
-
-  return data;
+  return this->mbw_->tag_get_data(tag, range);
 }
 // =============================================================================
 std::vector<double>
@@ -248,13 +234,7 @@ get_coords(
   const moab::EntityHandle vertex
   ) const
 {
-  moab::ErrorCode ierr;
-
-  std::vector<double> coords(3);
-  ierr = this->mb_->get_coords(&vertex, 1, &coords[0]);
-  TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
-
-  return coords;
+  return this->mbw_->get_coords({vertex});
 }
 // =============================================================================
 std::shared_ptr<Tpetra::Vector<double,int,int>>
@@ -287,11 +267,9 @@ mesh::
 get_complex_vector(const std::string & tag_name) const
 {
   // get data for all vertices
-  moab::ErrorCode ierr;
-  moab::Range all_verts;
-  ierr = this->mb_->get_entities_by_dimension(0, 0, all_verts);
-  TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+  moab::Range all_verts = this->mbw_->get_entities_by_dimension(0, 0);
 
+  moab::ErrorCode ierr;
   moab::Range verts;
   ierr = this->mcomm_->filter_pstatus(
       all_verts,
@@ -323,10 +301,7 @@ get_multi_vector(const std::string & tag_name) const
   Teuchos::TimeMonitor tm(*multi_time_);
 #endif
   // get data for all vertices
-  moab::ErrorCode ierr;
-  moab::Range verts;
-  ierr = mb_->get_entities_by_dimension(0, 0, verts);
-  TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+  const moab::Range verts = this->mbw_->get_entities_by_dimension(0, 0);
 
   auto data = this->get_data(tag_name, verts);
 
@@ -515,26 +490,13 @@ build_edge_gids_() const
 
   std::vector<Teuchos::Tuple<int,2>> _edge_gids(edges.size());
 
-  moab::ErrorCode ierr;
-
-  moab::Tag gid;
-  ierr = this->mb_->tag_get_handle("GLOBAL_ID", gid);
-  TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+  const moab::Tag gid = this->mbw_->tag_get_handle("GLOBAL_ID");
 
   for (std::size_t k = 0; k < edges.size(); k++) {
     // get the global IDs of the vertices
-    std::vector<int> global_ids(2);
-    std::vector<moab::EntityHandle> verts = {
-      std::get<0>(edges[k]),
-      std::get<1>(edges[k])
-    };
-    ierr = this->mb_->tag_get_data(
-        gid,
-        &verts[0],
-        2,
-        &global_ids[0]
-        );
-    TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+    const std::vector<moab::EntityHandle> entities =
+      {std::get<0>(edges[k]), std::get<1>(edges[k])};
+    const auto global_ids = this->mbw_->tag_get_int_data(gid, entities);
 
     _edge_gids[k] = Teuchos::tuple(
         global_ids[0],
@@ -553,27 +515,13 @@ build_edge_gids_complex_() const
 
   std::vector<Teuchos::Tuple<int,4>> _edge_gids_complex(edges.size());
 
-  moab::ErrorCode ierr;
+  const moab::Tag gid = this->mbw_->tag_get_handle("GLOBAL_ID");
 
-  moab::Tag gid;
-  ierr = this->mb_->tag_get_handle("GLOBAL_ID", gid);
-  TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
-
-  // TODO those aren't the GIDs! use GLOBAL_IDs
   for (std::size_t k = 0; k < edges.size(); k++) {
     // get the global IDs of the vertices
-    std::vector<int> global_ids(2);
-    std::vector<moab::EntityHandle> verts = {
-      std::get<0>(edges[k]),
-      std::get<1>(edges[k])
-    };
-    ierr = this->mb_->tag_get_data(
-        gid,
-        &verts[0],
-        2,
-        &global_ids[0]
-        );
-    TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+    const std::vector<moab::EntityHandle> entities =
+      {std::get<0>(edges[k]), std::get<1>(edges[k])};
+    const auto global_ids = this->mbw_->tag_get_int_data(gid, entities);
 
     _edge_gids_complex[k] =
       Teuchos::tuple(
@@ -589,15 +537,13 @@ const std::vector<int>
 mesh::
 get_owned_gids_() const
 {
-  moab::ErrorCode ierr;
   const auto mb = this->mcomm_->get_moab();
 
   // get all entities
-  moab::Range all_verts;
-  ierr = mb->get_entities_by_dimension(0, 0, all_verts);
-  TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+  moab::Range all_verts = mbw_->get_entities_by_dimension(0, 0);
 
   // filter out only owned
+  moab::ErrorCode ierr;
   moab::Range verts;
   ierr = this->mcomm_->filter_pstatus(
       all_verts,
@@ -608,9 +554,7 @@ get_owned_gids_() const
   TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
 
   // get the corresponding global IDs
-  moab::Tag gid;
-  ierr = mb->tag_get_handle("GLOBAL_ID", gid);
-  TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+  moab::Tag gid = mbw_->tag_get_handle("GLOBAL_ID");
 
   std::vector<int> global_ids(verts.size());
   ierr = mb->tag_get_data(gid, verts, &global_ids[0]);
@@ -623,16 +567,15 @@ const std::vector<int>
 mesh::
 get_overlap_gids_() const
 {
-  moab::ErrorCode ierr;
-  const auto mb = this->mcomm_->get_moab();
+  // TODO remove?
+  //const auto mb = this->mcomm_->get_moab();
 
   // get owned
-  moab::Range all;
-  ierr = mb->get_entities_by_dimension(0, 0, all);
-  TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+  moab::Range all = this->mbw_->get_entities_by_dimension(0, 0);
 
   // Get entities shared with all other processors
   moab::Range shared;
+  moab::ErrorCode ierr;
   ierr = mcomm_->get_shared_entities(-1, shared, 0); // only verts
   TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
 
@@ -640,15 +583,9 @@ get_overlap_gids_() const
   all.merge(shared);
 
   // get the corresponding global IDs
-  moab::Tag gid;
-  ierr = mb->tag_get_handle("GLOBAL_ID", gid);
-  TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+  const moab::Tag gid = mbw_->tag_get_handle("GLOBAL_ID");
 
-  std::vector<int> global_ids(all.size());
-  ierr = mb->tag_get_data(gid, all, &global_ids[0]);
-  TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
-
-  return global_ids;
+  return this->mbw_->tag_get_int_data(gid, all);
 }
 // =============================================================================
 const std::vector<int>
@@ -684,79 +621,72 @@ build_edge_data_()
 
   // get the number of 3D entities
   int num3d = 0;
-  rval = this->mb_->get_number_entities_by_dimension(0, 3, num3d);
+  rval = this->mbw_->mb->get_number_entities_by_dimension(0, 3, num3d);
   TEUCHOS_ASSERT_EQUALITY(rval, moab::MB_SUCCESS);
 
   const int dim = (num3d > 0) ? 3 : 2;
 
   // Get regions, by dimension, so we stay generic to entity type
-  moab::Range elems;
-  rval = this->mb_->get_entities_by_dimension(0, dim, elems);
-  TEUCHOS_ASSERT_EQUALITY(rval, moab::MB_SUCCESS);
+  const moab::Range elems = this->mbw_->get_entities_by_dimension(0, dim);
 
   // get and create all edges adjacent to cells
-  moab::Range edges;
-  rval = this->mb_->get_adjacencies(
+  const moab::Range edges = this->mbw_->get_adjacencies(
       elems,
       1,
       true,
-      edges,
       moab::Interface::UNION
       );
-  TEUCHOS_ASSERT_EQUALITY(rval, moab::MB_SUCCESS);
 
   // create cell->edge relation
   std::vector<std::vector<moab::EntityHandle>> cell_edges(elems.size());
   for (size_t k = 0; k < elems.size(); k++) {
     // TODO don't use tmp
-    moab::EntityHandle tmp = elems[k];
-    rval = this->mb_->get_adjacencies(
-        &tmp, 1,
-        1,
-        true,
-        cell_edges[k],
-        moab::Interface::UNION
-        );
-    TEUCHOS_ASSERT_EQUALITY(rval, moab::MB_SUCCESS);
+    std::vector<moab::EntityHandle> tmp = {elems[k]};
+    //moab::Range tmp_edges = this->mbw_->get_adjacencies(
+    //    tmp,
+    //    1,
+    //    true,
+    //    moab::Interface::UNION
+    //    );
+
+    // TODO use moab_wrap
+    this->mbw_->mb->get_adjacencies(
+          &tmp[0], 1,
+          1,
+          true,
+          cell_edges[k],
+          moab::Interface::UNION
+          );
+
+    //for (size_t i = 0; i < tmp_edges.size(); i++) {
+    //  cell_edges[k][i] = tmp_edges[i];
+    //}
   }
 
   // create edge->node relation
   std::vector<std::tuple<moab::EntityHandle, moab::EntityHandle>>
     edge_nodes(edges.size());
 
-  moab::Tag gid;
-  rval = this->mb_->tag_get_handle("GLOBAL_ID", gid);
-  TEUCHOS_ASSERT_EQUALITY(rval, moab::MB_SUCCESS);
-
   for (size_t k = 0; k < edges.size(); k++) {
-    moab::Range verts;
-    // TODO don't use tmp
-    std::vector<moab::EntityHandle> tmp(1);
-    tmp[0] = edges[k];
-    rval = this->mb_->get_adjacencies(
-        &tmp[0], 1,
+    moab::Range verts = this->mbw_->get_adjacencies(
+        {edges[k]},
         0,
         true,
-        verts,
         moab::Interface::UNION
         );
-    TEUCHOS_ASSERT_EQUALITY(rval, moab::MB_SUCCESS);
 
     edge_nodes[k] = std::make_tuple(verts[0], verts[1]);
   }
 
   mesh::edges_container edge_data = {edge_nodes, cell_edges};
 
-  // for testing
-  moab::Range verts;
-  rval = this->mb_->get_adjacencies(
-      elems,
-      0,
-      true,
-      verts,
-      moab::Interface::UNION
-      );
-  TEUCHOS_ASSERT_EQUALITY(rval, moab::MB_SUCCESS);
+  //// for testing
+  //moab::Range verts = this->mbw_->mb->get_adjacencies(
+  //    elems,
+  //    0,
+  //    true,
+  //    moab::Interface::UNION
+  //    );
 
 #if 0
   std::vector<moab::EntityHandle> cells = this->get_owned_cells();

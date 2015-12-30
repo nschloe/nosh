@@ -45,7 +45,7 @@ explicit_values(
   moab::ErrorCode ierr;
   moab::Range verts;
   // TODO make mb_ private again
-  ierr = mesh.mb_->get_entities_by_dimension(0, 0, verts);
+  ierr = mesh.mbw_->mb->get_entities_by_dimension(0, 0, verts);
   TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
 
   const auto data = mesh.get_data(field_name, verts);
