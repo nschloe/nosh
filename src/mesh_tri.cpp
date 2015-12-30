@@ -59,7 +59,6 @@ mesh_tri(
   ,edge_coefficients_(this->compute_edge_coefficients_())
   ,boundary_nodes_(this->compute_boundary_nodes_())
 {
-  std::cout << "mesh_tri::mesh_tri" << std::endl;
 }
 // =============================================================================
 mesh_tri::
@@ -71,7 +70,6 @@ std::vector<double>
 mesh_tri::
 compute_edge_coefficients_() const
 {
-  std::cout << ">> mesh_tri::edge_coefficients" << std::endl;
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   // timer for this routine
   Teuchos::TimeMonitor tm(*compute_edge_coefficients_time_);
@@ -102,21 +100,6 @@ compute_edge_coefficients_() const
     edge_coords[k][0] = coords0[0] - coords1[0];
     edge_coords[k][1] = coords0[1] - coords1[1];
     edge_coords[k][2] = coords0[2] - coords1[2];
-
-    std::cout << "edge " << k
-      << "  coords0 "
-      << " " << coords0[0]
-      << " " << coords0[1]
-      << " " << coords0[2]
-      << "  coords1 "
-      << " " << coords1[0]
-      << " " << coords1[1]
-      << " " << coords1[2]
-      << "  diff "
-      << " " << edge_coords[k][0]
-      << " " << edge_coords[k][1]
-      << " " << edge_coords[k][2]
-      << std::endl;
   }
 
   std::vector<double> _edge_coefficients(num_edges);
@@ -128,11 +111,6 @@ compute_edge_coefficients_() const
       this->local_index(edge_data_.cell_edges[k][1]),
       this->local_index(edge_data_.cell_edges[k][2])
     };
-    std::cout << "cell " << k << "   edge_idxs "
-      << " " << edge_idxs[0]
-      << " " << edge_idxs[1]
-      << " " << edge_idxs[2]
-      << std::endl;
     const std::vector<Eigen::Vector3d> local_edge_coords = {
       edge_coords[edge_idxs[0]],
       edge_coords[edge_idxs[1]],
@@ -160,36 +138,17 @@ compute_edge_coefficients_() const
     //   }
     // }
 
-    std::cout << "cell " << k << "   local edge coords" << std::endl;
-    for (size_t i = 0; i < local_edge_coords.size(); i++) {
-      std::cout << "    "
-        << " " << local_edge_coords[i][0]
-        << " " << local_edge_coords[i][1]
-        << " " << local_edge_coords[i][2]
-        << std::endl;
-    }
-
     Eigen::VectorXd edge_coeffs =
       edge_coefficients_numerically_(local_edge_coords);
 
     // Fill the edge coefficients into the vector.
     for (int i = 0; i < edge_coeffs.size(); i++) {
       const size_t edge_idx = this->local_index(edge_data_.cell_edges[k][i]);
-      std::cout << "cell " << k
-        << "  edge " << edge_idx
-        << "  val "  << edge_coeffs[i]
-        << std::endl;
-      //std::cout << "edge_idx " << edge_idx << std::endl;
       // const int edge_id = this->liddd
       _edge_coefficients[edge_idx] += edge_coeffs[i];
     }
   }
 
-  for (size_t k = 0; k < _edge_coefficients.size(); k++) {
-    std::cout << "ec[" << k << "] = " << _edge_coefficients[k] << std::endl;
-  }
-
-  std::cout << "   mesh_tri::edge_coefficients >>" << std::endl;
   return _edge_coefficients;
 }
 // =============================================================================
@@ -361,11 +320,6 @@ compute_control_volumes_t_(Tpetra::Vector<double,int,int> & cv_overlap) const
       }
     }
   }
-
-  // std::cout << "control volumes:" << std::endl;
-  // for (size_t k = 0; k < cv_data.size(); k++) {
-  //   std::cout << k << " " << cv_data[k] << std::endl;
-  // }
 
   return;
 }

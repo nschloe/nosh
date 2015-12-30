@@ -38,7 +38,6 @@ void
 parameter_object::
 set_parameters(const std::map<std::string, double> &params)
 {
-  std::cout << ">> po::set_parameters" << std::endl;
   // Cache the construction of the matrix.
   // This is useful because in the continuation context, the matrix is called a
   // number of times with the same arguments (in compute_f, getJacobian(), and
@@ -56,18 +55,13 @@ set_parameters(const std::map<std::string, double> &params)
     }
   }
 
-  std::cout << "aa " << needs_refill << std::endl;
-
   if (needs_refill) {
-    std::cout << "about to refill" << std::endl;
     this->refill_(params);
-    std::cout << "just refilled" << std::endl;
     for (auto &build_param: build_parameters_) {
       build_param.second = params.at(build_param.first);
     }
   }
 
-  std::cout << "   po::set_parameters >>" << std::endl;
   return;
 }
 // ============================================================================

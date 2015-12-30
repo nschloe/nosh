@@ -89,7 +89,6 @@ test_dfdp(
   // Read the data from the file.
   auto mesh = nosh::read(input_filename);
 
-  std::cout << "test0" << std::endl;
   // Cast the data into something more accessible.
   auto z = mesh->get_complex_vector("psi");
 
@@ -97,8 +96,6 @@ test_dfdp(
   auto thickness = std::make_shared<nosh::scalar_field::constant>(*mesh, 1.0);
   auto mvp = std::make_shared<nosh::vector_field::explicit_values>(*mesh, "A", mu);
   auto sp = std::make_shared<nosh::scalar_field::constant>(*mesh, -1.0);
-
-  std::cout << "test1" << std::endl;
 
   Teuchos::RCP<Thyra::ModelEvaluator<double>> model_eval =
     Teuchos::rcp(new nosh::model_evaluator::nls(
@@ -111,11 +108,9 @@ test_dfdp(
           "g"
           ));
 
-  std::cout << "test2" << std::endl;
   auto vector_space_x = model_eval->get_x_space();
   auto vectorSpaceF = model_eval->get_f_space();
 
-  std::cout << "test3" << std::endl;
   // Perform the finite difference test for all parameters present in the
   // system.
   // Get a finite-difference approximation of df/dp.
@@ -123,7 +118,6 @@ test_dfdp(
   auto zT = Thyra::createVector(Teuchos::rcp(z), vector_space_x);
   in_args.set_x(zT);
 
-  std::cout << "test4" << std::endl;
   auto out_args = model_eval->createOutArgs();
 
   // create parameter vector
@@ -138,22 +132,16 @@ test_dfdp(
 
   auto fdiff = Thyra::createMember(model_eval->get_f_space());
 
-  std::cout << "test5" << std::endl;
   // Get the actual derivatives.
   in_args.set_p(0, p);
-  std::cout << "test5a" << std::endl;
   auto dfdp = Thyra::createMembers(model_eval->get_f_space(), 2);
-  std::cout << "test5b" << std::endl;
   Thyra::ModelEvaluatorBase::Derivative<double> deriv(
       dfdp,
       Thyra::ModelEvaluatorBase::DERIV_MV_BY_COL
       );
-  std::cout << "test5c" << std::endl;
   out_args.set_DfDp(0, deriv);
-  std::cout << "test5d" << std::endl;
   model_eval->evalModel(in_args, out_args);
 
-  std::cout << "test6" << std::endl;
   // Only test the first parameter "g" for now since we have to set the DKeoDP
   // above. Alternative: Use "mu" above, and take param_index 1 here.
   // TODO test both parameters

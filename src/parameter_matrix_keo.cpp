@@ -59,7 +59,6 @@ keo(
   alpha_cache_(),
   alpha_cache_up_to_date_(false)
 {
-  std::cout << "keo::keo" << std::endl;
 }
 // =============================================================================
 keo::
@@ -96,7 +95,6 @@ void
 keo::
 refill_(const std::map<std::string, double> & params)
 {
-  std::cout << ">> keo::refill (@" << mesh_->comm->getRank() << ")" << std::endl;
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   Teuchos::TimeMonitor tm(*keo_fill_time_);
 #endif
@@ -170,13 +168,6 @@ refill_(const std::map<std::string, double> & params)
     v[1] = -sin_a_int * alpha_cache_[k];
     v[2] = alpha_cache_[k];
 
-    std::cout << "K " << k << " (@" << mesh_->comm->getRank() << ")" << std::endl;
-
-    std::cout << "k " << k << " (@" << mesh_->comm->getRank() << ")\n"
-      << "   v   " << v[0] << " " << v[1] << " " << v[2] << "\n"
-      << "   ak  " << alpha_cache_[k] << "\n"
-      << "   edge " << std::get<0>(edges[k]) << " " << std::get<1>(edges[k]) << std::endl;
-
     auto vals = Teuchos::tuple(
       Teuchos::tuple(v[2],  0.0,   v[0], v[1]),
       Teuchos::tuple( 0.0,  v[2], -v[1], v[0]),
@@ -185,25 +176,9 @@ refill_(const std::map<std::string, double> & params)
       );
 
     const Teuchos::Tuple<int,4> & idx = mesh_->edge_gids_complex[k];
-    std::cout << " (@" <<  mesh_->comm->getRank() << ")   idx " << idx[0] << " " << idx[1] << " " << idx[2] << " " << idx[3] << std::endl;
 
-    Teuchos::Array<int> cols(100);
-    Teuchos::Array<double> evals(100);
-    size_t numss;
     for (int i = 0; i < 4; i++) {
       const int num = this->sumIntoGlobalValues(idx[i], idx, vals[i]);
-
-      this->getGlobalRowCopy(idx[i], cols, evals, numss);
-      std::cout << "@" << mesh_->comm->getRank()
-        << ", num inserted "  << num
-        << ", num columns "  << numss
-        << ", row " << idx[i]
-        << ", columns ";
-      for (size_t kk = 0; kk < numss; kk++) {
-        std::cout  << cols[kk] << " ";
-      }
-      std::cout << std::endl;
-
 #ifndef NDEBUG
       TEUCHOS_TEST_FOR_EXCEPT_MSG(
           num != 4,
@@ -219,11 +194,8 @@ refill_(const std::map<std::string, double> & params)
 #endif
     }
   }
-  std::cout << ">> keo::refill::fillComplete @" << mesh_->comm->getRank() << std::endl;
   this->fillComplete();
-  std::cout << "   keo::refill::fillComplete >>" << std::endl;
 
-  std::cout << "   keo::refill >>" << std::endl;
   return;
 }
 // =============================================================================
@@ -234,7 +206,6 @@ build_alpha_cache_(
     const std::vector<double> & edge_coefficients
     ) const
 {
-  std::cout << ">> build_alpha_cache_" << std::endl;
   // This routine serves the one and only purpose of caching the thickness
   // average. The cache is used in every call to this->fill().  This is
   // somewhat problematic since the map of V is principally not known here.
@@ -268,20 +239,10 @@ build_alpha_cache_(
     const int i0 = mesh_->local_index(std::get<0>(edges[k]));
     const int i1 = mesh_->local_index(std::get<1>(edges[k]));
     // Update cache.
-    //std::cout << "ac "
-    //  << " " << edge_coefficients[k]
-    //  << " " << t_data[lid0]
-    //  << " " << t_data[lid1]
-    //  << std::endl;
-
     alpha_cache_[k] = edge_coefficients[k] * 0.5 * (t_data[i0] + t_data[i1]);
-
-    //std::cout << "ac[" << k << "] = " << alpha_cache_[k] << std::endl;
   }
 
   alpha_cache_up_to_date_ = true;
-
-  std::cout << "   build_alpha_cache_ >>" << std::endl;
   return;
 }
 // =============================================================================
