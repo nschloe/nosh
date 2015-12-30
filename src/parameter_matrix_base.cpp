@@ -44,6 +44,7 @@ void
 base::
 set_parameters(const std::map<std::string, double> &params)
 {
+  std::cout << ">> set_parameters" << std::endl;
   // Cache the construction of the matrix.
   // This is useful because in the continuation context, the matrix is called a
   // number of times with the same arguments (in compute_f, getJacobian(), and
@@ -68,6 +69,7 @@ set_parameters(const std::map<std::string, double> &params)
     }
   }
 
+  std::cout << "   set_parameters >>" << std::endl;
   return;
 }
 // ============================================================================

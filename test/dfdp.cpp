@@ -128,6 +128,14 @@ test_dfdp(
 
   // create parameter vector
   auto p = Thyra::createMember(model_eval->get_p_space(0));
+
+  // set default parameters
+  auto p_names = model_eval->get_p_names(0);
+  TEUCHOS_ASSERT_EQUALITY((*p_names)[0], "g");
+  TEUCHOS_ASSERT_EQUALITY((*p_names)[1], "mu");
+  Thyra::set_ele(0, 1.0, p());
+  Thyra::set_ele(1, 0.0, p());
+
   auto fdiff = Thyra::createMember(model_eval->get_f_space());
 
   std::cout << "test5" << std::endl;
@@ -170,32 +178,36 @@ test_dfdp(
   return;
 }
 // ===========================================================================
+#if 0
 TEUCHOS_UNIT_TEST(nosh, DfdpRectangleSmallHashes)
 {
   const std::string input_filename_base = "rectanglesmall";
   const double mu = 1.0e-2;
   test_dfdp(input_filename_base, mu, out, success);
 }
+#endif
 // ============================================================================
-//TEUCHOS_UNIT_TEST(nosh, DfdpPacmanHashes)
-//{
-//  const std::string input_filename_base = "pacman";
-//  const double mu = 1.0e-2;
-//  test_dfdp(input_filename_base, mu, out, success);
-//}
+TEUCHOS_UNIT_TEST(nosh, DfdpPacmanHashes)
+{
+  const std::string input_filename_base = "pacman";
+  const double mu = 1.0e-2;
+  test_dfdp(input_filename_base, mu, out, success);
+}
 // ============================================================================
-//TEUCHOS_UNIT_TEST(nosh, DfdpCubeSmallHashes)
-//{
-//  const std::string input_filename_base = "cubesmall";
-//  const double mu = 1.0e-2;
-//  test_dfdp(input_filename_base, mu, out, success);
-//}
+#if 0
+TEUCHOS_UNIT_TEST(nosh, DfdpCubeSmallHashes)
+{
+  const std::string input_filename_base = "cubesmall";
+  const double mu = 1.0e-2;
+  test_dfdp(input_filename_base, mu, out, success);
+}
+#endif
 // ============================================================================
-//TEUCHOS_UNIT_TEST(nosh, DfdpBrickWithHoleHashes)
-//{
-//  const std::string input_filename_base = "brick-w-hole";
-//  const double mu = 1.0e-2;
-//  test_dfdp(input_filename_base, mu, out, success);
-//}
+TEUCHOS_UNIT_TEST(nosh, DfdpBrickWithHoleHashes)
+{
+  const std::string input_filename_base = "brick-w-hole";
+  const double mu = 1.0e-2;
+  test_dfdp(input_filename_base, mu, out, success);
+}
 // ============================================================================
 } // namespace

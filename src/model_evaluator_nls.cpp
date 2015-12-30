@@ -440,7 +440,7 @@ evalModelImpl(
   std::map<std::string, double> params;
   for (int k = 0; k < p_in->space()->dim(); k++) {
     params[(*param_names)[k]] = Thyra::get_ele(*p_in, k);
-    //std::cout << (*param_names)[k] << " " << (*p_in)[k] << std::endl;
+    std::cout << (*param_names)[k] << " " << Thyra::get_ele(*p_in, k) << std::endl;
   }
 
   // compute F
@@ -465,6 +465,10 @@ evalModelImpl(
   const auto & derivMv = out_args.get_DfDp(0).getDerivativeMultiVector();
   const auto & dfdp_out = derivMv.getMultiVector();
   if (!dfdp_out.is_null()) {
+    std::cout << "!dfdp_out.is_null()" << std::endl;
+    for (const auto &p : params) {
+      std::cout << "params[" << p.first << "] = " << p.second << '\n';
+    }
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor tm2(*compute_dfdp_time_);
 #endif
@@ -637,13 +641,25 @@ computeDFDP_(
     Tpetra::Vector<double,int,int> &f_vec
     ) const
 {
+  std::cout << ">> computeDFDP_ " << param_name << std::endl;
   // f_vec = dK/dp * x.
+  std::cout << "1a" << std::endl;
+  std::cout << dkeo_dp_ << std::endl;
+  for (const auto &p : params) {
+    std::cout << "params[" << p.first << "] = " << p.second << '\n';
+  }
+
+  //dkeo_dp_->set_parameters();
+  std::cout << "1b" << std::endl;
   dkeo_dp_->set_parameters(params);
+  std::cout << "1c" << std::endl;
   dkeo_dp_->apply(x, f_vec);
+  std::cout << "1d" << std::endl;
 
   auto x_data = x.getData();
   auto f_data = f_vec.getDataNonConst();
 
+  std::cout << "2" << std::endl;
 #ifndef NDEBUG
   TEUCHOS_ASSERT(f_vec.getMap()->isSameAs(*x.getMap()));
   TEUCHOS_ASSERT(mesh_);
@@ -652,6 +668,7 @@ computeDFDP_(
   const auto & control_volumes = *(mesh_->control_volumes());
   auto c_data = control_volumes.getData();
 
+  std::cout << "3" << std::endl;
 #ifndef NDEBUG
   // Make sure control volumes and state still match.
   TEUCHOS_ASSERT_EQUALITY(2*c_data.size(), x_data.size());
@@ -663,6 +680,7 @@ computeDFDP_(
   TEUCHOS_ASSERT(control_volumes.getMap()->isSameAs(*thickness_values.getMap()));
 #endif
 
+  std::cout << "4 " << param_name << std::endl;
   if (param_name.compare("g") == 0) {
     for (int k = 0; k < c_data.size(); k++) {
       // This assumes that "g" is not a parameter in either of the
@@ -692,6 +710,7 @@ computeDFDP_(
     }
   }
 
+  std::cout << "   computeDFDP_ >>" << std::endl;
   return;
 }
 // =============================================================================

@@ -245,6 +245,8 @@ protected:
 public:
   const std::vector<Teuchos::Tuple<int,2>> edge_lids;
   const std::vector<Teuchos::Tuple<int,4>> edge_lids_complex;
+  const std::vector<Teuchos::Tuple<int,2>> edge_gids;
+  const std::vector<Teuchos::Tuple<int,4>> edge_gids_complex;
 
 private:
 
@@ -253,6 +255,12 @@ private:
 
   const std::vector<Teuchos::Tuple<int,4>>
   build_edge_lids_complex_() const;
+
+  const std::vector<Teuchos::Tuple<int,2>>
+  build_edge_gids_() const;
+
+  const std::vector<Teuchos::Tuple<int,4>>
+  build_edge_gids_complex_() const;
 
   std::shared_ptr<moab::Core>
   read_(

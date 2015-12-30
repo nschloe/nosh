@@ -57,6 +57,8 @@ mesh(
   ,edge_data_(this->build_edge_data_())
   ,edge_lids(build_edge_lids_())
   ,edge_lids_complex(build_edge_lids_complex_())
+  ,edge_gids(build_edge_gids_())
+  ,edge_gids_complex(build_edge_gids_complex_())
 {
 // TODO resurrect
 //#ifndef NDEBUG
@@ -510,6 +512,86 @@ build_edge_lids_complex_() const
   return _edge_lids_complex;
 }
 // =============================================================================
+const std::vector<Teuchos::Tuple<int,2>>
+mesh::
+build_edge_gids_() const
+{
+  std::cout << ">> build_edge_gids_" << std::endl;
+  const std::vector<edge> edges = this->my_edges();
+
+  std::vector<Teuchos::Tuple<int,2>> _edge_gids(edges.size());
+
+  moab::ErrorCode ierr;
+
+  moab::Tag gid;
+  ierr = this->mb_->tag_get_handle("GLOBAL_ID", gid);
+  TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+
+  for (std::size_t k = 0; k < edges.size(); k++) {
+    // get the global IDs of the vertices
+    std::vector<int> global_ids(2);
+    std::vector<moab::EntityHandle> verts = {
+      std::get<0>(edges[k]),
+      std::get<1>(edges[k])
+    };
+    ierr = this->mb_->tag_get_data(
+        gid,
+        &verts[0],
+        2,
+        &global_ids[0]
+        );
+    TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+
+    _edge_gids[k] = Teuchos::tuple(
+        global_ids[0],
+        global_ids[1]
+        );
+  }
+
+  std::cout << "   build_edge_gids_ >>" << std::endl;
+  return _edge_gids;
+}
+// =============================================================================
+const std::vector<Teuchos::Tuple<int,4>>
+mesh::
+build_edge_gids_complex_() const
+{
+  const std::vector<edge> edges = this->my_edges();
+
+  std::vector<Teuchos::Tuple<int,4>> _edge_gids_complex(edges.size());
+
+  moab::ErrorCode ierr;
+
+  moab::Tag gid;
+  ierr = this->mb_->tag_get_handle("GLOBAL_ID", gid);
+  TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+
+  // TODO those aren't the GIDs! use GLOBAL_IDs
+  for (std::size_t k = 0; k < edges.size(); k++) {
+    // get the global IDs of the vertices
+    std::vector<int> global_ids(2);
+    std::vector<moab::EntityHandle> verts = {
+      std::get<0>(edges[k]),
+      std::get<1>(edges[k])
+    };
+    ierr = this->mb_->tag_get_data(
+        gid,
+        &verts[0],
+        2,
+        &global_ids[0]
+        );
+    TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+
+    _edge_gids_complex[k] =
+      Teuchos::tuple(
+          2*global_ids[0], 2*global_ids[0] + 1,
+          2*global_ids[1], 2*global_ids[1] + 1
+          );
+  }
+
+  return _edge_gids_complex;
+}
+// =============================================================================
 const std::vector<int>
 mesh::
 get_owned_gids_() const
@@ -522,6 +604,8 @@ get_owned_gids_() const
   ierr = mb->get_entities_by_dimension(0, 0, all_verts);
   TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
 
+  std::cout << "all_verts @" << comm->getRank() << ": " << all_verts.size() << std::endl;
+
   // filter out only owned
   moab::Range verts;
   ierr = this->mcomm_->filter_pstatus(
@@ -531,6 +615,11 @@ get_owned_gids_() const
       &verts
       );
   TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+
+  std::cout << "owned verts @" << comm->getRank() << ": " << verts.size() << std::endl;
+  for (size_t k = 0; k < verts.size(); k++) {
+    std::cout << "@" << comm->getRank() << ":  " << k << " " << mb->id_from_handle(verts[k]) << std::endl;
+  }
 
   // get the corresponding global IDs
   moab::Tag gid;
@@ -543,7 +632,7 @@ get_owned_gids_() const
 
   std::cout << "owned gids for rank " << comm->getRank() << " " << global_ids.size() << std::endl;
   for (size_t k = 0; k < global_ids.size(); k++) {
-    std::cout << "  " << comm->getRank() << " " << global_ids[k] << std::endl;
+    std::cout << "  " << comm->getRank() << " " << k << " " << global_ids[k] << std::endl;
   }
 
   return global_ids;
@@ -603,6 +692,10 @@ std::shared_ptr<Tpetra::Map<int,int>>
 mesh::
 get_map_(const std::vector<int> & ids) const
 {
+  std::cout << "get_map_ " << std::endl;
+  for (size_t k = 0; k < ids.size(); k++) {
+    std::cout << "ids[" << k << "] = " << ids[k] << std::endl;
+  }
   return std::make_shared<Tpetra::Map<int,int>>(
       -1,
       ids,
@@ -693,6 +786,11 @@ build_edge_data_()
   // create edge->node relation
   std::vector<std::tuple<moab::EntityHandle, moab::EntityHandle>>
     edge_nodes(edges.size());
+
+  moab::Tag gid;
+  rval = this->mb_->tag_get_handle("GLOBAL_ID", gid);
+  TEUCHOS_ASSERT_EQUALITY(rval, moab::MB_SUCCESS);
+
   for (size_t k = 0; k < edges.size(); k++) {
     moab::Range verts;
     // TODO don't use tmp
@@ -706,8 +804,12 @@ build_edge_data_()
         moab::Interface::UNION
         );
     TEUCHOS_ASSERT_EQUALITY(rval, moab::MB_SUCCESS);
+
     edge_nodes[k] = std::make_tuple(verts[0], verts[1]);
-    std::cout << "edge " << k << ", verts " << verts[0] << " " << verts[1] << std::endl;
+    if (verts[0] == 9 || verts[1] == 9) {
+      std::cout << "@" << comm->getRank() << "   edge " << k << ", verts "
+        << verts[0] << " " << verts[1] << std::endl;
+    }
   }
 
   mesh::edges_container edge_data = {edge_nodes, cell_edges};
@@ -878,11 +980,12 @@ build_graph() const
   // Make sure that domain and range map are non-overlapping (to make sure that
   // states psi can compute norms) and equal (to make sure that the matrix works
   // with ML).
-  auto graph = Teuchos::rcp(new Tpetra::CrsGraph<int, int>(
-      Teuchos::rcp(nonoverlap_map),
-      Teuchos::rcp(nonoverlap_map),
-      0
-      ));
+  //auto graph = Teuchos::rcp(new Tpetra::CrsGraph<int, int>(
+  //    Teuchos::rcp(nonoverlap_map),
+  //    Teuchos::rcp(nonoverlap_map),
+  //    0
+  //    ));
+  const auto graph = Tpetra::createCrsGraph(Teuchos::rcp(nonoverlap_map));
 
   const std::vector<edge> edges = this->my_edges();
 
@@ -893,9 +996,10 @@ build_graph() const
   // Loop over all edges and put entries wherever two nodes are connected.
   // TODO check if we can use LIDs here
   for (size_t k = 0; k < edges.size(); k++) {
-    const Teuchos::Tuple<int,2> & idx = this->edge_lids[k];
+    const Teuchos::Tuple<int,2> & idx = this->edge_gids[k];
     for (int i = 0; i < 2; i++) {
-      graph->insertLocalIndices(idx[i], idx);
+      graph->insertGlobalIndices(idx[i], idx);
+      // graph->insertLocalIndices(idx[i], idx);
     }
   }
   graph->fillComplete();
@@ -974,11 +1078,36 @@ build_complex_graph() const
   // Make sure that domain and range map are non-overlapping (to make sure that
   // states psi can compute norms) and equal (to make sure that the matrix works
   // with ML).
-  auto graph = Teuchos::rcp(new Tpetra::CrsGraph<int, int>(
-      Teuchos::rcp(nonoverlap_map),
-      Teuchos::rcp(nonoverlap_map),
-      0
-      ));
+  // const auto graph = Teuchos::rcp(new Tpetra::CrsGraph<int, int>(
+  //     Teuchos::rcp(nonoverlap_map),
+  //     Teuchos::rcp(nonoverlap_map),
+  //     0
+  //     ));
+  const auto graph = Tpetra::createCrsGraph(Teuchos::rcp(nonoverlap_map));
+
+  comm->barrier();
+  std::cout << "nonoverlap_map" << *nonoverlap_map << std::endl;
+
+  // show the map
+  std::cout << "@" << comm->getRank() << ": "
+    << nonoverlap_map->getNodeNumElements() << " out of "
+    << nonoverlap_map->getGlobalNumElements() << " elems, "
+    << "min index " << nonoverlap_map->getMinLocalIndex() << ", "
+    << "max index " << nonoverlap_map->getMaxLocalIndex() << ", "
+    << "index base " << nonoverlap_map->getIndexBase()
+    << std::endl;
+  comm->barrier();
+  for (int k = nonoverlap_map->getMinLocalIndex();
+       k <= nonoverlap_map->getMaxLocalIndex();
+       k++) {
+    std::cout << "map @" << comm->getRank() << " "
+      << ": "
+      << " local index " << k << ", "
+      << " global index " << nonoverlap_map->getGlobalElement(k)
+      << std::endl;
+  }
+
+  comm->barrier();
 
   std::cout << "hasColMap " << graph->hasColMap() << std::endl;
   std::cout << "isLocallyIndexed " << graph->isLocallyIndexed() << std::endl;
@@ -986,16 +1115,64 @@ build_complex_graph() const
 
   const std::vector<edge> edges = this->my_edges();
 
+  std::cout << "num edges @" << comm->getRank() << ": " << edges.size() << std::endl;
+
   // Loop over all edges and put entries wherever two nodes are connected.
   // TODO check if we can use LIDs here
   for (size_t k = 0; k < edges.size(); k++) {
-    const Teuchos::Tuple<int,4> & idx = this->edge_lids_complex[k];
+    //std::cout << "  " << comm->getRank() << " " << k << std::endl;
+    const Teuchos::Tuple<int,4> & idx = this->edge_gids_complex[k];
     for (int i = 0; i < 4; i++) {
-      graph->insertLocalIndices(idx[i], idx);
+      TEUCHOS_ASSERT_INEQUALITY(idx[i], >=, 0);
+      //if (idx[i] == 26) {
+        std::cout << " graph inserting (@" << comm->getRank() << ") "
+          << "row: " << idx[i] << "    "
+          << "cols: " << idx[0] << " " << idx[1] << " " << idx[2] << " " << idx[3]
+          << std::endl;
+      //}
+      graph->insertGlobalIndices(idx[i], idx);
+      //graph->insertLocalIndices(idx[i], idx);
     }
   }
 
+  std::cout << "done @" << comm->getRank() << std::endl;
+
+
   graph->fillComplete();
+
+  //// print out indices
+  //Teuchos::Array<int> cols(100);
+  //size_t num;
+  //const int row = 18;
+  //graph->getGlobalRowCopy(row, cols, num);
+  //std::cout << "row: " << row << "  " << num << "  cols:";
+  //for (size_t kk=0; kk < num; kk++) {
+  //  std::cout << " " << cols[kk];
+  //}
+  //std::cout << std::endl;
+  //for (size_t k = 0; k < edges.size(); k++) {
+  //  //std::cout << "  " << comm->getRank() << " " << k << std::endl;
+  //  const Teuchos::Tuple<int,4> & idx = this->edge_gids_complex[k];
+  //  for (int i = 0; i < 4; i++) {
+  //    graph->getGlobalRowCopy(idx[i], cols, numss);
+  //    std::cout << "row: " << idx[i] << "  " << numss << "  cols:";
+  //    for (size_t kk=0; kk < numss; kk++) {
+  //      std::cout << " " << cols[kk];
+  //    }
+  //    std::cout << std::endl;
+  //  }
+  //}
+
+  //throw 1;
+  // for (size_t k = 0; k < graph->getGlobalNumRows(); k++) {
+  //   std::cout << "global row " << k << std::endl;
+  //   graph->getGlobalRowCopy(k, cols, numss);
+  //   std::cout << "row: " << k << "   cols";
+  //   for (size_t kk=0; kk < numss; k++) {
+  //     std::cout << cols[kk] << " ";
+  //   }
+  //   std::cout << std::endl;
+  // }
 
   std::cout << "   build_complex_graph >>" << std::endl;
   return graph;

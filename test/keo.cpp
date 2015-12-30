@@ -147,35 +147,37 @@ testKeo(
   return;
 }
 // ===========================================================================
-TEUCHOS_UNIT_TEST(nosh, KeoRectangleSmallHashes)
-{
-  std::string input_filename_base = "rectanglesmall";
-
-  double mu = 1.0e-2;
-  double control_norm_1 = 10.224658806561596;
-  double control_norm_inf = control_norm_1;
-  double control_sum_real = 0.0063121712308067401;
-  double control_sum     = 2 * control_sum_real;
-  // For reference: The expected KEO matrix:
-  //
-  // 5.05         0            -2.00604e-16 0            -4.99844    -0.124987  -0.0499844  0.00124987
-  // 0            5.05         0            -2.00604e-16 0.124987    -4.99844   -0.00124987 -0.0499844
-  // -2.00604e-16 0            5.05         0            -0.0499844  0.00124987 -4.99844    -0.124987
-  // 0            -2.00604e-16 0            5.05         -0.00124987 -0.0499844 0.124987    -4.99844
-  // -4.99844     0.124987     -0.0499844   -0.00124987  5.05         0         0           0
-  // -0.124987    -4.99844     0.00124987   -0.0499844   0            5.05      0           0
-  // -0.0499844   -0.00124987  -4.99844     0.124987     0            0         5.05        0
-  // 0.00124987   -0.0499844   -0.124987    -4.99844     0            0         0           5.05
-  //
-  testKeo(input_filename_base,
-          mu,
-          control_norm_1,
-          control_norm_inf,
-          control_sum,
-          control_sum_real,
-          out,
-          success);
-}
+//TEUCHOS_UNIT_TEST(nosh, KeoRectangleSmallHashes)
+//{
+//  std::string input_filename_base = "rectanglesmall";
+//
+//  double mu = 1.0e-2;
+//  double control_norm_1 = 10.224658806561596;
+//  double control_norm_inf = control_norm_1;
+//  double control_sum_real = 0.0063121712308067401;
+//  double control_sum     = 2 * control_sum_real;
+//  // For reference: The expected KEO matrix:
+//  //
+//  // 5.05         0            -2.00604e-16 0            -4.99844    -0.124987  -0.0499844  0.00124987
+//  // 0            5.05         0            -2.00604e-16 0.124987    -4.99844   -0.00124987 -0.0499844
+//  // -2.00604e-16 0            5.05         0            -0.0499844  0.00124987 -4.99844    -0.124987
+//  // 0            -2.00604e-16 0            5.05         -0.00124987 -0.0499844 0.124987    -4.99844
+//  // -4.99844     0.124987     -0.0499844   -0.00124987  5.05         0         0           0
+//  // -0.124987    -4.99844     0.00124987   -0.0499844   0            5.05      0           0
+//  // -0.0499844   -0.00124987  -4.99844     0.124987     0            0         5.05        0
+//  // 0.00124987   -0.0499844   -0.124987    -4.99844     0            0         0           5.05
+//  //
+//  testKeo(
+//      input_filename_base,
+//      mu,
+//      control_norm_1,
+//      control_norm_inf,
+//      control_sum,
+//      control_sum_real,
+//      out,
+//      success
+//      );
+//}
 // ============================================================================
 TEUCHOS_UNIT_TEST(nosh, KeoPacmanHashes)
 {
@@ -187,54 +189,56 @@ TEUCHOS_UNIT_TEST(nosh, KeoPacmanHashes)
   double control_sum_real = 0.37044264296585938;
   double control_sum     = 2 * control_sum_real;
 
-  testKeo(input_filename_base,
-          mu,
-          control_norm_1,
-          control_norm_inf,
-          control_sum,
-          control_sum_real,
-          out,
-          success);
+  testKeo(
+      input_filename_base,
+      mu,
+      control_norm_1,
+      control_norm_inf,
+      control_sum,
+      control_sum_real,
+      out,
+      success
+      );
 }
 // ============================================================================
-TEUCHOS_UNIT_TEST(nosh, KeoCubeSmallHashes)
-{
-  std::string input_filename_base = "cubesmall";
-
-  double mu = 1.0e-2;
-  double control_norm_1 = 10.058364522531498;
-  double control_norm_inf = control_norm_1;
-  double control_sum_real = 8.3541623155714007e-05;
-  double control_sum     = 2 * control_sum_real;
-
-  testKeo(input_filename_base,
-          mu,
-          control_norm_1,
-          control_norm_inf,
-          control_sum,
-          control_sum_real,
-          out,
-          success);
-}
-// ============================================================================
-TEUCHOS_UNIT_TEST(nosh, KeoBrickWHoleHashes)
-{
-  std::string input_filename_base = "brick-w-hole";
-
-  double mu = 1.0e-2;
-  double control_norm_1 = 15.131119904340618;
-  double control_norm_inf = control_norm_1;
-  double control_sum_real = 0.16763276012920181;
-  double control_sum     = 2 * control_sum_real;
-
-  testKeo(input_filename_base,
-          mu,
-          control_norm_1,
-          control_norm_inf,
-          control_sum,
-          control_sum_real,
-          out,
-          success);
-}
-// ============================================================================
+//TEUCHOS_UNIT_TEST(nosh, KeoCubeSmallHashes)
+//{
+//  std::string input_filename_base = "cubesmall";
+//
+//  double mu = 1.0e-2;
+//  double control_norm_1 = 10.058364522531498;
+//  double control_norm_inf = control_norm_1;
+//  double control_sum_real = 8.3541623155714007e-05;
+//  double control_sum     = 2 * control_sum_real;
+//
+//  testKeo(input_filename_base,
+//          mu,
+//          control_norm_1,
+//          control_norm_inf,
+//          control_sum,
+//          control_sum_real,
+//          out,
+//          success);
+//}
+//// ============================================================================
+//TEUCHOS_UNIT_TEST(nosh, KeoBrickWHoleHashes)
+//{
+//  std::string input_filename_base = "brick-w-hole";
+//
+//  double mu = 1.0e-2;
+//  double control_norm_1 = 15.131119904340618;
+//  double control_norm_inf = control_norm_1;
+//  double control_sum_real = 0.16763276012920181;
+//  double control_sum     = 2 * control_sum_real;
+//
+//  testKeo(input_filename_base,
+//          mu,
+//          control_norm_1,
+//          control_norm_inf,
+//          control_sum,
+//          control_sum_real,
+//          out,
+//          success);
+//}
+//// ============================================================================
 } // namespace

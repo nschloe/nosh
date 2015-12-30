@@ -96,7 +96,7 @@ void
 keo::
 refill_(const std::map<std::string, double> & params)
 {
-  std::cout << ">> keo::refill" << std::endl;
+  std::cout << ">> keo::refill (@" << mesh_->comm->getRank() << ")" << std::endl;
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   Teuchos::TimeMonitor tm(*keo_fill_time_);
 #endif
@@ -170,10 +170,12 @@ refill_(const std::map<std::string, double> & params)
     v[1] = -sin_a_int * alpha_cache_[k];
     v[2] = alpha_cache_[k];
 
-    std::cout << "k " << k << std::endl;
-    std::cout << "   v   " << v[0] << " " << v[1] << " " << v[2] << std::endl;
-    std::cout << "   ak  " << alpha_cache_[k] << std::endl;
-    std::cout << "   edge " << std::get<0>(edges[k]) << " " << std::get<1>(edges[k]) << std::endl;
+    std::cout << "K " << k << " (@" << mesh_->comm->getRank() << ")" << std::endl;
+
+    std::cout << "k " << k << " (@" << mesh_->comm->getRank() << ")\n"
+      << "   v   " << v[0] << " " << v[1] << " " << v[2] << "\n"
+      << "   ak  " << alpha_cache_[k] << "\n"
+      << "   edge " << std::get<0>(edges[k]) << " " << std::get<1>(edges[k]) << std::endl;
 
     auto vals = Teuchos::tuple(
       Teuchos::tuple(v[2],  0.0,   v[0], v[1]),
@@ -182,17 +184,44 @@ refill_(const std::map<std::string, double> & params)
       Teuchos::tuple(v[1],  v[0],   0.0, v[2])
       );
 
-    const Teuchos::Tuple<int,4> & idx = mesh_->edge_lids_complex[k];
-    std::cout << "   idx " << idx[0] << " " << idx[1] << " " << idx[2] << " " << idx[3] << std::endl;
+    const Teuchos::Tuple<int,4> & idx = mesh_->edge_gids_complex[k];
+    std::cout << " (@" <<  mesh_->comm->getRank() << ")   idx " << idx[0] << " " << idx[1] << " " << idx[2] << " " << idx[3] << std::endl;
+
+    Teuchos::Array<int> cols(100);
+    Teuchos::Array<double> evals(100);
+    size_t numss;
     for (int i = 0; i < 4; i++) {
-      const int num = this->sumIntoLocalValues(idx[i], idx, vals[i]);
+      const int num = this->sumIntoGlobalValues(idx[i], idx, vals[i]);
+
+      this->getGlobalRowCopy(idx[i], cols, evals, numss);
+      std::cout << "@" << mesh_->comm->getRank()
+        << ", num inserted "  << num
+        << ", num columns "  << numss
+        << ", row " << idx[i]
+        << ", columns ";
+      for (size_t kk = 0; kk < numss; kk++) {
+        std::cout  << cols[kk] << " ";
+      }
+      std::cout << std::endl;
+
 #ifndef NDEBUG
-      TEUCHOS_ASSERT_EQUALITY(num, 4);
+      TEUCHOS_TEST_FOR_EXCEPT_MSG(
+          num != 4,
+          "Error trying to sum into colums "
+          << " " << idx[0]
+          << " " << idx[1]
+          << " " << idx[2]
+          << " " << idx[3]
+          << " in row " << idx[i]
+          << " on proc " << mesh_->comm->getRank()
+          << ". Only " << num << " entries inserted."
+          );
 #endif
     }
   }
-
+  std::cout << ">> keo::refill::fillComplete @" << mesh_->comm->getRank() << std::endl;
   this->fillComplete();
+  std::cout << "   keo::refill::fillComplete >>" << std::endl;
 
   std::cout << "   keo::refill >>" << std::endl;
   return;
@@ -247,7 +276,7 @@ build_alpha_cache_(
 
     alpha_cache_[k] = edge_coefficients[k] * 0.5 * (t_data[i0] + t_data[i1]);
 
-    std::cout << "ac[" << k << "] = " << alpha_cache_[k] << std::endl;
+    //std::cout << "ac[" << k << "] = " << alpha_cache_[k] << std::endl;
   }
 
   alpha_cache_up_to_date_ = true;

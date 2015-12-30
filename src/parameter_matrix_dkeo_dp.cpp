@@ -81,6 +81,7 @@ void
 DkeoDP::
 refill_(const std::map<std::string, double> & params)
 {
+  std::cout << ">> refill_" << std::endl;
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   Teuchos::TimeMonitor tm(*keo_fill_time_);
 #endif
@@ -89,6 +90,8 @@ refill_(const std::map<std::string, double> & params)
   mvp_->set_parameters(params);
 
   this->setAllToScalar(0.0);
+
+  std::cout << "r0" << std::endl;
 
 #ifndef NDEBUG
   TEUCHOS_ASSERT(mesh_);
@@ -101,13 +104,18 @@ refill_(const std::map<std::string, double> & params)
   TEUCHOS_ASSERT(mvp_);
 #endif
 
+  std::cout << "r1" << std::endl;
   const std::vector<edge> edges = mesh_->my_edges();
+  std::cout << "r2" << std::endl;
   if (!alpha_cache_up_to_date_) {
+  std::cout << "r3" << std::endl;
     this->build_alpha_cache_(edges, mesh_->edge_coefficients());
+  std::cout << "r5" << std::endl;
   }
 
-  std::vector<double> v(3);
+  double v[3];
 
+  std::cout << "r6" << std::endl;
   // Loop over all edges.
   for (std::size_t k = 0; k < edges.size(); k++) {
     // Compute the integral
@@ -146,17 +154,45 @@ refill_(const std::map<std::string, double> & params)
       Teuchos::tuple(v[0], -v[1],  v[2],  0.0),
       Teuchos::tuple(v[1],  v[0],   0.0, v[2])
       );
-    const Teuchos::Tuple<int,4> & idx = mesh_->edge_lids_complex[k];
+    const Teuchos::Tuple<int,4> & idx = mesh_->edge_gids_complex[k];
+    std::cout << " (@" <<  mesh_->comm->getRank() << ")   idx " << idx[0] << " " << idx[1] << " " << idx[2] << " " << idx[3] << std::endl;
+
+    Teuchos::Array<int> cols(100);
+    Teuchos::Array<double> evals(100);
+    size_t numss;
     for (int i = 0; i < 4; i++) {
-      int num = this->sumIntoLocalValues(idx[i], idx, vals[i]);
+      const int num = this->sumIntoGlobalValues(idx[i], idx, vals[i]);
+
+      this->getGlobalRowCopy(idx[i], cols, evals, numss);
+      std::cout << "@" << mesh_->comm->getRank()
+        << ", num inserted "  << num
+        << ", num columns "  << numss
+        << ", row " << idx[i]
+        << ", columns ";
+      for (size_t kk = 0; kk < numss; kk++) {
+        std::cout  << cols[kk] << " ";
+      }
+      std::cout << std::endl;
+
 #ifndef NDEBUG
-      TEUCHOS_ASSERT_EQUALITY(num, 4);
+      TEUCHOS_TEST_FOR_EXCEPT_MSG(
+          num != 4,
+          "Error trying to sum into colums "
+          << " " << idx[0]
+          << " " << idx[1]
+          << " " << idx[2]
+          << " " << idx[3]
+          << " in row " << idx[i]
+          << " on proc " << mesh_->comm->getRank()
+          << ". Only " << num << " entries inserted."
+          );
 #endif
     }
   }
 
   this->fillComplete();
 
+  std::cout << "   refill_ >>" << std::endl;
   return;
 }
 // =============================================================================
@@ -167,6 +203,7 @@ build_alpha_cache_(
     const std::vector<double> & edge_coefficients
     ) const
 {
+  std::cout << ">> build_alpha_cache_" << std::endl;
   // This routine serves the one and only purpose of caching the thickness
   // average. The cache is used in every call to this->fill().  This is
   // somewhat problematic since the map of V is principally not known here.
@@ -187,43 +224,33 @@ build_alpha_cache_(
   // vector is exported, only the values on the overlap would only be set on
   // one processor.
   Tpetra::Vector<double,int,int> thicknessOverlap(Teuchos::rcp(overlapMap));
-  auto importer = Tpetra::createImport(
+  Tpetra::Import<int,int> importer(
       thickness_values.getMap(),
       Teuchos::rcp(overlapMap)
       );
-  thicknessOverlap.doImport(thickness_values, *importer, Tpetra::INSERT);
+  thicknessOverlap.doImport(thickness_values, importer, Tpetra::INSERT);
 
   auto t_data = thicknessOverlap.getData();
 
-  int gid0, gid1;
-  int lid0, lid1;
   for (std::size_t k = 0; k < edges.size(); k++) {
     // Get the ID of the edge endpoints in the map of get_v(). Well...
-    gid0 = mesh_->gid(std::get<0>(edges[k]));
-    lid0 = overlapMap->getLocalElement(gid0);
-#ifndef NDEBUG
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(
-        lid0 < 0,
-        "The global index " << gid0
-        << " does not seem to be present on this node."
-       );
-#endif
-    gid1 = mesh_->gid(std::get<1>(edges[k]));
-    lid1 = overlapMap->getLocalElement(gid1);
-#ifndef NDEBUG
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(
-        lid1 < 0,
-        "The global index " << gid1
-        << " does not seem to be present on this node."
-       );
-#endif
+    const int i0 = mesh_->local_index(std::get<0>(edges[k]));
+    const int i1 = mesh_->local_index(std::get<1>(edges[k]));
     // Update cache.
-    alpha_cache_[k] = edge_coefficients[k]
-      * 0.5 * (t_data[lid0] + t_data[lid1]);
+    //std::cout << "ac "
+    //  << " " << edge_coefficients[k]
+    //  << " " << t_data[lid0]
+    //  << " " << t_data[lid1]
+    //  << std::endl;
+
+    alpha_cache_[k] = edge_coefficients[k] * 0.5 * (t_data[i0] + t_data[i1]);
+
+    //std::cout << "ac[" << k << "] = " << alpha_cache_[k] << std::endl;
   }
 
   alpha_cache_up_to_date_ = true;
 
+  std::cout << "   build_alpha_cache_ >>" << std::endl;
   return;
 }
 // =============================================================================

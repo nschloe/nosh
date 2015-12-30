@@ -111,11 +111,7 @@ compute_edge_coefficients_() const
       this->local_index(edge_data_.cell_edges[k][4]),
       this->local_index(edge_data_.cell_edges[k][5])
     };
-    std::cout << "cell " << k << "   edge_idxs "
-      << " " << edge_idxs[0]
-      << " " << edge_idxs[1]
-      << " " << edge_idxs[2]
-      << std::endl;
+
     const std::vector<Eigen::Vector3d> local_edge_coords = {
       edge_coords[edge_idxs[0]],
       edge_coords[edge_idxs[1]],
@@ -125,9 +121,7 @@ compute_edge_coefficients_() const
       edge_coords[edge_idxs[5]]
     };
 
-    std::cout << "aa" << std::endl;
     auto edge_coeffs = edge_coefficients_cell_(local_edge_coords);
-    std::cout << "bb" << std::endl;
 
     // Fill the edge coefficients into the vector.
     for (int i = 0; i < edge_coeffs.size(); i++) {
