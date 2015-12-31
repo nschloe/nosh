@@ -26,6 +26,8 @@
 //
 //   return data;
 // }
+#ifndef MOAB_WRAP_HPP
+#define MOAB_WRAP_HPP
 
 #include <iterator>
 #include <memory>
@@ -243,7 +245,30 @@ namespace nosh {
         return conn_vec;
       }
 
+    void
+    load_file(
+        const std::string & file_name,
+        const moab::EntityHandle * file_set = 0,
+        const std::string & options = "",
+        const std::string & set_tag_name = "",
+        std::vector<int> set_tag_values = {}
+        )
+    {
+      moab::ErrorCode rval;
+      rval = this->mb->load_file(
+          file_name.c_str(),
+          file_set,
+          options.c_str(),
+          set_tag_name.c_str(),
+          &set_tag_values[0],
+          set_tag_values.size()
+          );
+      TEUCHOS_ASSERT_EQUALITY(rval, moab::MB_SUCCESS);
+      return;
+    }
+
     public:
       const std::shared_ptr<moab::Core> mb;
   };
 }
+#endif // MOAB_WRAP_HPP

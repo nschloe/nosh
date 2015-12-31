@@ -32,6 +32,7 @@
 
 #include "mesh_tri.hpp"
 #include "mesh_tetra.hpp"
+#include "moab_wrap.hpp"
 
 namespace nosh
 {
@@ -54,11 +55,12 @@ read(const std::string & file_name)
     "PARALLEL=READ_PART;PARTITION=PARALLEL_PARTITION;PARALLEL_RESOLVE_SHARED_ENTS";
 
   // Get MOAB instance
-  //moab::Interface* mb = new (std::nothrow) moab::Core;
+  //moab::Interface* mbw->mb = new (std::nothrow) moab::Core;
   auto mb = std::make_shared<moab::Core>();
 #ifndef NDEBUG
   TEUCHOS_ASSERT(mb);
 #endif
+  auto mbw = std::make_shared<moab_wrap>(mb);
 
   const auto global_rank = comm->getRank();
 
@@ -72,7 +74,7 @@ read(const std::string & file_name)
     *(Teuchos::dyn_cast<const Teuchos::MpiComm<int>>(*comm).getRawMpiComm());
 
   // Get the ParallelComm instance
-  auto mcomm = std::make_shared<moab::ParallelComm>(mb.get(), raw_comm);
+  auto mcomm = std::make_shared<moab::ParallelComm>(mbw->mb.get(), raw_comm);
   int nprocs = mcomm->proc_config().proc_size();
 #ifndef NDEBUG
   MPI_Comm rcomm = mcomm->proc_config().proc_comm();
@@ -90,12 +92,10 @@ read(const std::string & file_name)
   }
 #endif
 
-  moab::ErrorCode rval;
-
   // Read the file with the specified options
-  rval = mb->load_file(file_name.c_str(), 0, options.c_str());
-  TEUCHOS_ASSERT_EQUALITY(rval, moab::MB_SUCCESS);
+  mbw->load_file(file_name, 0, options);
 
+  moab::ErrorCode rval;
   moab::Range shared_ents;
   // Get entities shared with all other processors
   rval = mcomm->get_shared_entities(-1, shared_ents);
@@ -128,15 +128,13 @@ read(const std::string & file_name)
 #endif
 
   // get the number of 3D entities
-  int num3d = 0;
-  rval = mb->get_number_entities_by_dimension(0, 3, num3d);
-  TEUCHOS_ASSERT_EQUALITY(rval, moab::MB_SUCCESS);
+  const int num3d = mbw->get_number_entities_by_dimension(0, 3);
 
   std::cout << "   mesh_reader >>" << std::endl;
   if (num3d == 0) {
-    return std::make_shared<nosh::mesh_tri>(comm, mcomm, mb);
+    return std::make_shared<nosh::mesh_tri>(comm, mcomm, mbw->mb);
   }
-  return std::make_shared<nosh::mesh_tetra>(comm, mcomm, mb);
+  return std::make_shared<nosh::mesh_tetra>(comm, mcomm, mbw->mb);
 }
 
 }  // namespace nosh
