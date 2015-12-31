@@ -13,7 +13,6 @@ int main(int argc, char *argv[]) {
   try {
 
   const auto mesh = nosh::read("2.h5m");
-  std::cout << "READ, thanks!" << std::endl;
 
   //const auto bc1 = std::make_shared<poisson::bc1>();
   //const auto bc2 = std::make_shared<poisson::bc2>();

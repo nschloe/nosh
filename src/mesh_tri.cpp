@@ -387,9 +387,9 @@ compute_boundary_nodes_() const
     edges = subtract(edges, tmp_edges);
 
   // get all vertices on the remaining edges
-  moab::Range verts;
-  this->mbw_->mb->get_adjacencies(edges, 0, false, verts);
+  const auto verts = this->mbw_->get_adjacencies(edges, 0, false);
 
+  // convert range to set
   // TODO perhaps there is better way?
   std::set<moab::EntityHandle> boundary_verts;
   for (size_t k = 0; k < verts.size(); k++) {

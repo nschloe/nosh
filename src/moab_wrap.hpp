@@ -267,6 +267,22 @@ namespace nosh {
       return;
     }
 
+    void
+    write_mesh(
+        const std::string & file_name,
+        const moab::EntityHandle * output_list = NULL,
+        const int num_sets = 0
+        )
+    {
+      moab::ErrorCode rval;
+      rval = this->mb->write_mesh(
+          file_name.c_str(),
+          output_list,
+          num_sets
+          );
+      TEUCHOS_ASSERT_EQUALITY(rval, moab::MB_SUCCESS);
+    }
+
     public:
       const std::shared_ptr<moab::Core> mb;
   };

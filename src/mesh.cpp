@@ -206,7 +206,7 @@ write(const std::string & filename) const
   Teuchos::TimeMonitor tm(*write_time_);
 #endif
 
-  this->mbw_->mb->write_mesh(filename.c_str());
+  this->mbw_->write_mesh(filename);
 
   return;
 }
@@ -632,27 +632,17 @@ build_edge_data_()
   // create cell->edge relation
   std::vector<std::vector<moab::EntityHandle>> cell_edges(elems.size());
   for (size_t k = 0; k < elems.size(); k++) {
-    // TODO don't use tmp
-    std::vector<moab::EntityHandle> tmp = {elems[k]};
-    //moab::Range tmp_edges = this->mbw_->get_adjacencies(
-    //    tmp,
-    //    1,
-    //    true,
-    //    moab::Interface::UNION
-    //    );
-
-    // TODO use moab_wrap
-    this->mbw_->mb->get_adjacencies(
-          &tmp[0], 1,
+    const auto ce = this->mbw_->get_adjacencies(
+          {elems[k]},
           1,
           true,
-          cell_edges[k],
           moab::Interface::UNION
           );
 
-    //for (size_t i = 0; i < tmp_edges.size(); i++) {
-    //  cell_edges[k][i] = tmp_edges[i];
-    //}
+    cell_edges[k].resize(ce.size());
+    for (size_t i = 0; i < ce.size(); i++) {
+      cell_edges[k][i] = ce[i];
+    }
   }
 
   // create edge->node relation
