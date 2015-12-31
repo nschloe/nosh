@@ -42,11 +42,8 @@ explicit_values(
   // Initialize the cache.
   const std::vector<edge> edges = mesh.my_edges();
 
-  moab::ErrorCode ierr;
-  moab::Range verts;
   // TODO make mb_ private again
-  ierr = mesh.mbw_->mb->get_entities_by_dimension(0, 0, verts);
-  TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+  moab::Range verts = mesh.mbw_->get_entities_by_dimension(0, 0);
 
   const auto data = mesh.get_data(field_name, verts);
 
