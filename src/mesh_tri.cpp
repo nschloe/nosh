@@ -74,11 +74,8 @@ compute_edge_coefficients_() const
   // timer for this routine
   Teuchos::TimeMonitor tm(*compute_edge_coefficients_time_);
 #endif
-  moab::ErrorCode ierr;
 
-  moab::Range cells;
-  ierr = this->mbw_->mb->get_entities_by_dimension(0, 2, cells);
-  TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+  moab::Range cells = this->mbw_->get_entities_by_dimension(0, 2);
 
   size_t num_cells = cells.size();
 
@@ -87,15 +84,11 @@ compute_edge_coefficients_() const
   // compute all coordinates
   std::vector<Eigen::Vector3d> edge_coords(num_edges);
   for (size_t k = 0; k < num_edges; k++) {
-    std::vector<double> coords0(3);
     auto tmp1 = std::get<0>(edge_data_.edge_nodes[k]);
-    ierr = this->mbw_->mb->get_coords(&tmp1, 1, &coords0[0]);
-    TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+    std::vector<double> coords0 = this->mbw_->get_coords({tmp1});
 
-    std::vector<double> coords1(3);
     tmp1 = std::get<1>(edge_data_.edge_nodes[k]);
-    ierr = this->mbw_->mb->get_coords(&tmp1, 1, &coords1[0]);
-    TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+    std::vector<double> coords1 = this->mbw_->get_coords({tmp1});
 
     edge_coords[k][0] = coords0[0] - coords1[0];
     edge_coords[k][1] = coords0[1] - coords1[1];
@@ -237,12 +230,7 @@ mesh_tri::
 compute_control_volumes_t_(Tpetra::Vector<double,int,int> & cv_overlap) const
 {
   // get owned entities
-  moab::Range cells;
-
-  moab::ErrorCode ierr;
-
-  ierr = this->mbw_->mb->get_entities_by_dimension(0, 2, cells);
-  TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+  moab::Range cells = this->mbw_->get_entities_by_dimension(0, 2);
 
   Teuchos::ArrayRCP<double> cv_data = cv_overlap.getDataNonConst();
   //const vector_fieldType & coords_field = get_node_field("coordinates");
@@ -253,22 +241,17 @@ compute_control_volumes_t_(Tpetra::Vector<double,int,int> & cv_overlap) const
 
   // Calculate the contributions to the finite volumes cell by cell.
   for (size_t k = 0; k < cells.size(); k++) {
-    const moab::EntityHandle * conn = NULL;
-    int numV = 0;
-    ierr = this->mbw_->mb->get_connectivity(cells[k], conn, numV);
-    TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+    const auto conn = this->mbw_->get_connectivity(cells[k]);
 
 #ifndef NDEBUG
-    TEUCHOS_ASSERT_EQUALITY(numV, 3);
+    TEUCHOS_ASSERT_EQUALITY(conn.size(), 3);
 #endif
 
     // Fetch the nodal positions into 'local_node_coords'.
-    std::vector<double> coords(3 * numV);
-    ierr = this->mbw_->mb->get_coords(conn, numV, &coords[0]);
-    TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+    std::vector<double> coords = this->mbw_->get_coords(conn);
 
-    std::vector<Eigen::Vector3d> local_node_coords(numV);
-    for (int i = 0; i < numV; i++) {
+    std::vector<Eigen::Vector3d> local_node_coords(conn.size());
+    for (size_t i = 0; i < conn.size(); i++) {
       // TODO do something smarter than copying here
       local_node_coords[i][0] = coords[3*i];
       local_node_coords[i][1] = coords[3*i + 1];
@@ -280,9 +263,9 @@ compute_control_volumes_t_(Tpetra::Vector<double,int,int> & cv_overlap) const
       compute_triangle_circumcenter_(local_node_coords);
 
     // Iterate over the edges (aka pairs of nodes).
-    for (int e0 = 0; e0 < numV; e0++) {
+    for (size_t e0 = 0; e0 < conn.size(); e0++) {
       const Eigen::Vector3d &x0 = local_node_coords[e0];
-      for (int e1 = e0+1; e1 < numV; e1++) {
+      for (size_t e1 = e0+1; e1 < conn.size(); e1++) {
         const Eigen::Vector3d &x1 = local_node_coords[e1];
         // Get the other node.
         const unsigned int other = this->get_other_index_(e0, e1);
@@ -378,14 +361,11 @@ compute_boundary_nodes_() const
   Teuchos::TimeMonitor tm(*compute_boundary_nodes_time_);
 #endif
 
-  moab::ErrorCode rval;
-
   // get all the cell elements on each task
-  moab::Range cells;
-  rval = this->mbw_->mb->get_entities_by_dimension(0, 2, cells);
-  TEUCHOS_ASSERT_EQUALITY(rval, moab::MB_SUCCESS);
+  moab::Range cells = this->mbw_->get_entities_by_dimension(0, 2);
 
   // get face skin
+  moab::ErrorCode rval;
   moab::Skinner tool(this->mbw_->mb.get());
   moab::Range edges;
   rval = tool.find_skin(0, cells, false, edges);

@@ -537,10 +537,11 @@ const std::vector<int>
 mesh::
 get_owned_gids_() const
 {
-  const auto mb = this->mcomm_->get_moab();
+  // TODO resurrect?
+  //const auto mb = this->mcomm_->get_moab();
 
   // get all entities
-  moab::Range all_verts = mbw_->get_entities_by_dimension(0, 0);
+  moab::Range all_verts = this->mbw_->get_entities_by_dimension(0, 0);
 
   // filter out only owned
   moab::ErrorCode ierr;
@@ -555,12 +556,7 @@ get_owned_gids_() const
 
   // get the corresponding global IDs
   moab::Tag gid = mbw_->tag_get_handle("GLOBAL_ID");
-
-  std::vector<int> global_ids(verts.size());
-  ierr = mb->tag_get_data(gid, verts, &global_ids[0]);
-  TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
-
-  return global_ids;
+  return this->mbw_->tag_get_int_data(gid, verts);
 }
 // =============================================================================
 const std::vector<int>
@@ -617,12 +613,8 @@ mesh::edges_container
 mesh::
 build_edge_data_()
 {
-  moab::ErrorCode rval;
-
   // get the number of 3D entities
-  int num3d = 0;
-  rval = this->mbw_->mb->get_number_entities_by_dimension(0, 3, num3d);
-  TEUCHOS_ASSERT_EQUALITY(rval, moab::MB_SUCCESS);
+  const int num3d = this->mbw_->get_number_entities_by_dimension(0, 3);
 
   const int dim = (num3d > 0) ? 3 : 2;
 

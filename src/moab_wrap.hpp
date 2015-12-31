@@ -27,7 +27,9 @@
 //   return data;
 // }
 
+#include <iterator>
 #include <memory>
+#include <vector>
 
 #include <moab/Core.hpp>
 
@@ -194,6 +196,51 @@ namespace nosh {
             );
         TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
         return adj_entities;
+      }
+
+      int
+      get_number_entities_by_dimension(
+          const moab::EntityHandle meshset,
+          const int dimension,
+          const bool recursive = false
+          )
+      {
+        moab::ErrorCode ierr;
+        int num = 0;
+        ierr = this->mb->get_number_entities_by_dimension(
+            meshset,
+            dimension,
+            num,
+            recursive
+            );
+        TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+        return num;
+      }
+
+      std::vector<moab::EntityHandle>
+      get_connectivity(
+          const moab::EntityHandle entity_handle,
+          bool corners_only = false,
+          std::vector<moab::EntityHandle> * storage = 0
+          )
+      {
+        moab::ErrorCode ierr;
+        const moab::EntityHandle * conn = NULL;
+        int numV = 0;
+        ierr = this->mb->get_connectivity(
+            entity_handle,
+            conn,
+            numV,
+            corners_only,
+            storage
+            );
+        TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+        // construct vector from array
+        std::vector<moab::EntityHandle> conn_vec(numV);
+        for (int k = 0; k < numV; k++) {
+          conn_vec[k] = conn[k];
+        }
+        return conn_vec;
       }
 
     public:
