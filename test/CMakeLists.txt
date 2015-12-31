@@ -34,12 +34,8 @@ IF (NOT Trilinos_Implicit)
     )
 ENDIF()
 
-SET(MESHTEST_EXECUTABLE
-  "meshTest")
-ADD_EXECUTABLE (${MESHTEST_EXECUTABLE}
-  mesh.cpp
-  #                 nosh_Edge_cacheTests.cpp
-  unitTestMain.cpp)
+SET(MESHTEST_EXECUTABLE "meshTest")
+ADD_EXECUTABLE (${MESHTEST_EXECUTABLE} mesh.cpp main.cpp)
 # add tests
 ADD_TEST(meshTestSerial
   ${MESHTEST_EXECUTABLE}

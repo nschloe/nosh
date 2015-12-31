@@ -2,10 +2,7 @@
 
 #include <string>
 
-#include <Teuchos_ParameterList.hpp>
-
 #include <Teuchos_DefaultComm.hpp>
-#include <Teuchos_RCPStdSharedPtrConversions.hpp>
 #include <Tpetra_Vector.hpp>
 
 #include <nosh.hpp>
@@ -40,7 +37,7 @@ testKeo(
   // Check MVP.
   // Only check the infinity-norm here as all other norms only apply to vectors
   // with non-overlapping maps.
-  const auto v = mvpValues->getNumVectors();
+  std::vector<double> v(mvpValues->getNumVectors());
   mvpValues->normInf(Teuchos::ArrayView<double>(v));
   for (size_t k = 0; k < v.size(); k++) {
     REQUIRE(v[k] == Approx(mvp_control_norms_inf[k]));
