@@ -283,6 +283,48 @@ namespace nosh {
       TEUCHOS_ASSERT_EQUALITY(rval, moab::MB_SUCCESS);
     }
 
+    std::tuple<moab::Tag, bool>
+    tag_get_handle(
+        const std::string & name,
+        int size,
+        moab::DataType type,
+        unsigned flags = 0,
+        const void *  default_value = 0
+        )
+    {
+      moab::ErrorCode rval;
+      moab::Tag tag_handle;
+      bool created;
+      rval = this->mb->tag_get_handle(
+          name.c_str(),
+          size,
+          type,
+          tag_handle,
+          flags,
+          default_value,
+          &created
+          );
+      TEUCHOS_ASSERT_EQUALITY(rval, moab::MB_SUCCESS);
+      return std::make_tuple(tag_handle, created);
+    }
+
+    void
+    tag_set_data(
+        moab::Tag tag_handle,
+        const moab::Range & entity_handles,
+        const void * tag_data
+        )
+    {
+      moab::ErrorCode rval;
+      rval = this->mb->tag_set_data(
+        tag_handle,
+        entity_handles,
+        tag_data
+        );
+      TEUCHOS_ASSERT_EQUALITY(rval, moab::MB_SUCCESS);
+      return;
+    }
+
     public:
       const std::shared_ptr<moab::Core> mb;
   };

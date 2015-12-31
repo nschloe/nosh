@@ -207,7 +207,6 @@ write(const std::string & filename) const
 #endif
 
   this->mbw_->write_mesh(filename);
-
   return;
 }
 // =============================================================================
@@ -336,7 +335,7 @@ void
 mesh::
 insert_vector(
     const Tpetra::Vector<double,int,int> & x,
-    const std::string & field_name
+    const std::string & name
     ) const
 {
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
@@ -344,46 +343,44 @@ insert_vector(
   Teuchos::TimeMonitor tm(*write_time_);
 #endif
 
-#if 0
-  ScalarFieldType * x_field =
-    io_broker_->bulk_data().mesh_meta_data().get_field<ScalarFieldType>(
-        stk::topology::NODE_RANK,
-        field_name
-        );
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(
-      x_field == NULL,
-      "Scalar field \"" << field_name << "\" not found in database. "
-      << "Is it present in the input file at all? Check with io_info."
+  // get/create handle
+  const auto out = this->mbw_->tag_get_handle(
+      name,
+      1,
+      moab::MB_TYPE_DOUBLE,
+      moab::MB_TAG_EXCL | moab::MB_TAG_DENSE
       );
 
-  // Zero out all nodal values, including the overlaps.
-  const auto & overlap_nodes = this->get_overlap_nodes();
-  for (unsigned int k = 0; k < overlap_nodes.size(); k++) {
-    // Extract real and imaginary part.
-    double* localPsiR = stk::mesh::field_data(*x_field, overlap_nodes[k]);
-    *localPsiR = 0.0;
-  }
+  const moab::Tag handle = std::get<0>(out);
+  //const bool created = std::get<1>(out);
 
-  auto x_data = x.getData();
+  // get vertices for which to set the data
+  moab::Range all_verts = this->mbw_->get_entities_by_dimension(0, 0);
+  moab::ErrorCode ierr;
+  moab::Range verts;
+  ierr = this->mcomm_->filter_pstatus(
+      all_verts,
+      PSTATUS_NOT_OWNED, PSTATUS_NOT,
+      -1,
+      &verts
+      );
+  TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
 
-  // Set owned nodes.
-#ifndef NDEBUG
-  TEUCHOS_ASSERT_EQUALITY(x_data.size(), owned_nodes_.size());
-#endif
-  for (unsigned int k = 0; k < owned_nodes_.size(); k++) {
-    // Extract real and imaginary part.
-    double* localPsiR = stk::mesh::field_data(*x_field, owned_nodes_[k]);
-    *localPsiR = x_data[k];
-  }
+  // get data
+  const auto data = x.getData();
 
-  // This communication updates the field values on un-owned nodes it is
-  // correct because the zeroSolutionField above zeros them all and the
-  // getSolutionField only sets the owned nodes.
-  // TODO combine these fields into a vector of fields
-  std::vector<stk::mesh::FieldBase*> tmp(1, x_field);
-  stk::mesh::parallel_sum(io_broker_->bulk_data(), tmp);
+  TEUCHOS_ASSERT_EQUALITY(
+    data.size(),
+    this->nodes_map_->getNodeNumElements()
+    );
 
-#endif
+  // set data
+  mbw_->tag_set_data(
+      handle,
+      verts,
+      data.get()
+      );
+
   return;
 }
 // =============================================================================

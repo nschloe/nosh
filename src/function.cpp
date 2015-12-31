@@ -1,7 +1,4 @@
-
 #include "function.hpp"
-
-#include "mesh_reader.hpp"
 
 void
 nosh::
@@ -10,5 +7,6 @@ write(
     const std::string & filename
     )
 {
+  x.mesh->insert_vector(x, "x");
   x.mesh->write(filename);
 }
