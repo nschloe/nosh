@@ -10,16 +10,10 @@ INCLUDE_DIRECTORIES(SYSTEM
 SET(internal_LIBS "nosh")
 
 
-SET(IOTEST_EXECUTABLE
-  "ioTest")
-ADD_EXECUTABLE (${IOTEST_EXECUTABLE}
-  io.cpp
-  unitTestMain.cpp
-  )
+SET(IOTEST_EXECUTABLE "ioTest")
+ADD_EXECUTABLE (${IOTEST_EXECUTABLE} io.cpp main.cpp)
 # add tests
-ADD_TEST(ioTestSerial
-  ${IOTEST_EXECUTABLE}
-  )
+ADD_TEST(ioTestSerial ${IOTEST_EXECUTABLE})
 # Check out FindMPI.cmake for proper syntax.
 ADD_TEST(ioTestMpi2
   ${Trilinos_MPI_EXEC} --noprefix ${Trilinos_MPI_EXEC_NUMPROCS_FLAG} 2 ${IOTEST_EXECUTABLE}
