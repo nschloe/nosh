@@ -26,8 +26,6 @@
 #include <Tpetra_CrsMatrix.hpp>
 #include <Teuchos_RCP.hpp>
 
-#include <stk_mesh/base/Entity.hpp>
-
 // forward declarations
 namespace nosh
 {
@@ -41,7 +39,7 @@ namespace parameter_matrix
 class base: public Tpetra::CrsMatrix<double,int,int>
 {
 public:
-  base(const std::shared_ptr<const nosh::mesh> &mesh);
+  explicit base(const std::shared_ptr<const nosh::mesh> &mesh);
 
   // Destructor.
   virtual

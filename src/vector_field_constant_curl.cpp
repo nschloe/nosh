@@ -226,6 +226,7 @@ initializeEdgeCache_() const
 #endif
   const std::vector<edge> edges = mesh_->my_edges();
 
+#if 0
   const vector_fieldType & coords_field = mesh_->get_node_field("coordinates");
 
   // Loop over all edges and create the cache.
@@ -240,6 +241,7 @@ initializeEdgeCache_() const
   }
 
   edgeCacheUptodate_ = true;
+#endif
 
   return;
 }

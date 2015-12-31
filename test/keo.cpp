@@ -46,9 +46,11 @@ testKeo(
 {
   // Read the data from the file.
   auto comm =  Teuchos::DefaultComm<int>::getComm();
-  const std::string input_filename = (comm->getSize() == 1) ?
-    "data/" + input_filename_base + ".e" :
-    "data/" + input_filename_base + "-split.par";
+  const int size = comm->getSize();
+  const std::string input_filename = (size == 1) ?
+    "data/" + input_filename_base + ".h5m" :
+    "data/" + input_filename_base + "-" + std::to_string(size) + ".h5m"
+    ;
 
   // Read the data from the file.
   auto mesh = nosh::read(input_filename);
@@ -64,7 +66,18 @@ testKeo(
   // Explicitly create the kinetic energy operator.
   keo.set_parameters({{"mu", initMu}});
 
-  // TODO revive these tests
+  // show me the matrix
+  for (int row=0; row < 8; row++) {
+    Teuchos::ArrayView<const int> cols;
+    Teuchos::ArrayView<const double> vals;
+    keo.getLocalRowView(row, cols, vals);
+    std::cout << "row: " << row << std::endl;
+    for (int k = 0; k < cols.size(); k++) {
+      std::cout << "  col: "  << cols[k] << "   val: " << vals[k] << std::endl;
+    }
+  }
+
+  //// TODO revive these tests
   //// Compute matrix norms as hashes.
   //// Don't check for NormFrobenius() as this one doesn't work for matrices with
   //// overlapping maps.
@@ -88,8 +101,7 @@ testKeo(
   // Add up all the entries of the matrix.
   u.putScalar(1.0);
   keo.apply(u, Ku);
-  const double sum = u.dot(Ku);
-  TEST_FLOATING_EQUALITY(sum, control_sum, 1.0e-10);
+  TEST_FLOATING_EQUALITY(u.dot(Ku), control_sum, 1.0e-10);
 
   // Sum over all the "real parts" of the matrix.
   // Remember that a 2x2 block corresponding to z is composed as
@@ -144,15 +156,27 @@ testKeo(
 //  double control_norm_inf = control_norm_1;
 //  double control_sum_real = 0.0063121712308067401;
 //  double control_sum     = 2 * control_sum_real;
-//
-//  testKeo(input_filename_base,
-//          mu,
-//          control_norm_1,
-//          control_norm_inf,
-//          control_sum,
-//          control_sum_real,
-//          out,
-//          success);
+//  // For reference: The expected KEO matrix:
+//  //
+//  // 5.05         0            -2.00604e-16 0            -4.99844    -0.124987  -0.0499844  0.00124987
+//  // 0            5.05         0            -2.00604e-16 0.124987    -4.99844   -0.00124987 -0.0499844
+//  // -2.00604e-16 0            5.05         0            -0.0499844  0.00124987 -4.99844    -0.124987
+//  // 0            -2.00604e-16 0            5.05         -0.00124987 -0.0499844 0.124987    -4.99844
+//  // -4.99844     0.124987     -0.0499844   -0.00124987  5.05         0         0           0
+//  // -0.124987    -4.99844     0.00124987   -0.0499844   0            5.05      0           0
+//  // -0.0499844   -0.00124987  -4.99844     0.124987     0            0         5.05        0
+//  // 0.00124987   -0.0499844   -0.124987    -4.99844     0            0         0           5.05
+//  //
+//  testKeo(
+//      input_filename_base,
+//      mu,
+//      control_norm_1,
+//      control_norm_inf,
+//      control_sum,
+//      control_sum_real,
+//      out,
+//      success
+//      );
 //}
 // ============================================================================
 TEUCHOS_UNIT_TEST(nosh, KeoPacmanHashes)
@@ -165,14 +189,16 @@ TEUCHOS_UNIT_TEST(nosh, KeoPacmanHashes)
   double control_sum_real = 0.37044264296585938;
   double control_sum     = 2 * control_sum_real;
 
-  testKeo(input_filename_base,
-          mu,
-          control_norm_1,
-          control_norm_inf,
-          control_sum,
-          control_sum_real,
-          out,
-          success);
+  testKeo(
+      input_filename_base,
+      mu,
+      control_norm_1,
+      control_norm_inf,
+      control_sum,
+      control_sum_real,
+      out,
+      success
+      );
 }
 // ============================================================================
 //TEUCHOS_UNIT_TEST(nosh, KeoCubeSmallHashes)
@@ -194,25 +220,25 @@ TEUCHOS_UNIT_TEST(nosh, KeoPacmanHashes)
 //          out,
 //          success);
 //}
-// ============================================================================
-TEUCHOS_UNIT_TEST(nosh, KeoBrickWHoleHashes)
-{
-  std::string input_filename_base = "brick-w-hole";
-
-  double mu = 1.0e-2;
-  double control_norm_1 = 15.131119904340618;
-  double control_norm_inf = control_norm_1;
-  double control_sum_real = 0.16763276012920181;
-  double control_sum     = 2 * control_sum_real;
-
-  testKeo(input_filename_base,
-          mu,
-          control_norm_1,
-          control_norm_inf,
-          control_sum,
-          control_sum_real,
-          out,
-          success);
-}
-// ============================================================================
+//// ============================================================================
+//TEUCHOS_UNIT_TEST(nosh, KeoBrickWHoleHashes)
+//{
+//  std::string input_filename_base = "brick-w-hole";
+//
+//  double mu = 1.0e-2;
+//  double control_norm_1 = 15.131119904340618;
+//  double control_norm_inf = control_norm_1;
+//  double control_sum_real = 0.16763276012920181;
+//  double control_sum     = 2 * control_sum_real;
+//
+//  testKeo(input_filename_base,
+//          mu,
+//          control_norm_1,
+//          control_norm_inf,
+//          control_sum,
+//          control_sum_real,
+//          out,
+//          success);
+//}
+//// ============================================================================
 } // namespace

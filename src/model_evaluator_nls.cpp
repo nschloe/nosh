@@ -440,7 +440,6 @@ evalModelImpl(
   std::map<std::string, double> params;
   for (int k = 0; k < p_in->space()->dim(); k++) {
     params[(*param_names)[k]] = Thyra::get_ele(*p_in, k);
-    //std::cout << (*param_names)[k] << " " << (*p_in)[k] << std::endl;
   }
 
   // compute F

@@ -40,9 +40,11 @@ testCache(const std::string & input_filename_base,
 {
   // Read the data from the file.
   auto comm =  Teuchos::DefaultComm<int>::getComm();
-  const std::string input_filename = (comm->getSize() == 1) ?
-    "data/" + input_filename_base + ".e" :
-    "data/" + input_filename_base + "-split.par";
+  const int size = comm->getSize();
+  const std::string input_filename = (size == 1) ?
+    "data/" + input_filename_base + ".h5m" :
+    "data/" + input_filename_base + "-" + std::to_string(size) + ".h5m"
+    ;
 
   // Read the data from the file.
   auto mesh = nosh::read(input_filename);

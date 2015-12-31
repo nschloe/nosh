@@ -42,25 +42,36 @@ explicit_values(
   // Initialize the cache.
   const std::vector<edge> edges = mesh.my_edges();
 
-  const vector_fieldType & coords_field = mesh.get_node_field("coordinates");
+  // TODO make mb_ private again
+  moab::Range verts = mesh.mbw_->get_entities_by_dimension(0, 0);
 
-  const vector_fieldType & dataField = mesh.get_node_field(field_name);
+  const auto data = mesh.get_data(field_name, verts);
 
   // Loop over all edges and create the cache.
   for (std::size_t k = 0; k < edges.size(); k++) {
-    // Approximate the value at the midpoint of the edge
-    // by the average of the values at the adjacent nodes.
-    Eigen::Vector3d av = 0.5 * (
-        mesh.get_node_value(dataField, std::get<0>(edges[k]))
-        + mesh.get_node_value(dataField, std::get<1>(edges[k]))
+    const auto v0 = std::get<0>(edges[k]);
+    const auto v1 = std::get<1>(edges[k]);
+
+    const auto idx0 = mesh.local_index(v0);
+    const auto idx1 = mesh.local_index(v1);
+
+    Eigen::Vector3d A0(data[3*idx0], data[3*idx0 + 1], data[3*idx0 + 2]);
+    Eigen::Vector3d A1(data[3*idx1], data[3*idx1 + 1], data[3*idx1 + 2]);
+
+    // Approximate the value at the midpoint of the edge by the average of the
+    // values at the adjacent nodes.
+    Eigen::Vector3d av = 0.5 * (A0 + A1);
+
+    std::vector<double> coords0 = mesh.get_coords(v0);
+    std::vector<double> coords1 = mesh.get_coords(v1);
+
+    Eigen::Vector3d edge_coords(
+        coords0[0] - coords1[0],
+        coords0[1] - coords1[1],
+        coords0[2] - coords1[2]
         );
 
-    // Extract the nodal coordinates.
-    Eigen::Vector3d my_edge =
-      mesh.get_node_value(coords_field, std::get<1>(edges[k]))
-      - mesh.get_node_value(coords_field, std::get<0>(edges[k]));
-
-    edgeProjectionCache_[k] = av.dot(my_edge);
+    edgeProjectionCache_[k] = av.dot(edge_coords);
   }
 
 // TODO resurrect this
@@ -91,7 +102,6 @@ explicit_values(
       "Field \"" << field_name << "\" seems empty. Was it read correctly?"
       );
 #endif
-
   return;
 }
 // ============================================================================

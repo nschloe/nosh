@@ -7,6 +7,7 @@ void
 matrix::
 apply_bcs_()
 {
+#if 0
   const auto boundary_nodes = this->mesh->boundary_nodes();
   const vector_fieldType & coords_field = this->mesh->get_node_field("coordinates");
   for (const auto boundary_node: boundary_nodes) {
@@ -26,22 +27,29 @@ apply_bcs_()
       // eliminate the row in A
       const auto gid = this->mesh->gid(boundary_node);
       size_t num = this->getNumEntriesInGlobalRow(gid);
-      std::vector<int> cols(num);
-      std::vector<double> vals(num);
-      this->getGlobalRowCopy(gid, cols, vals, num);
-      // set vals to 9
-      std::fill(vals.begin(), vals.end(), 0.0);
-      // set diagonal entry to 1
-      auto it = std::find(cols.begin(), cols.end(), gid);
-      TEUCHOS_TEST_FOR_EXCEPT_MSG(
-          it == cols.end(),
-          "Matrix has no main diagonal entry."
-          );
-      int pos = it - cols.begin();
-      vals[pos] = 1.0;
-      this->replaceGlobalValues(gid, cols, vals);
+      // It shouldn't actually happen that the specified global row
+      // does not belong to this graph.
+      // TODO find out if why we need this, fix the underlying issue, make this
+      // a TEUCHOS_TEST_*
+      if (num != Teuchos::OrdinalTraits<size_t>::invalid()) {
+        std::vector<int> cols(num);
+        std::vector<double> vals(num);
+        this->getGlobalRowCopy(gid, cols, vals, num);
+        // set vals to 0
+        std::fill(vals.begin(), vals.end(), 0.0);
+        // set diagonal entry to 1
+        auto it = std::find(cols.begin(), cols.end(), gid);
+        TEUCHOS_TEST_FOR_EXCEPT_MSG(
+            it == cols.end(),
+            "Matrix has no main diagonal entry."
+            );
+        int pos = it - cols.begin();
+        vals[pos] = 1.0;
+        this->replaceGlobalValues(gid, cols, vals);
+      }
     }
   }
+#endif
 }
 
 } // namespace nosh

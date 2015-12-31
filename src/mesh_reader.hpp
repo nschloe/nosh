@@ -31,11 +31,7 @@ namespace nosh
 {
 
 std::shared_ptr<nosh::mesh>
-read(
-    const std::string & file_name,
-    const std::set<std::string> & fields = std::set<std::string>(),
-    const int index = 0
-    );
+read(const std::string & file_name);
 
 } // namespace nosh
 // =============================================================================

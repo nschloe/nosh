@@ -53,7 +53,7 @@ observeSolution(const Thyra::VectorBase<double> &soln)
 {
   // TODO
   //model_eval_->mesh()->insert(soln, "psi");
-  model_eval_->mesh()->write(0.0);
+  //model_eval_->mesh()->write(0.0);
 
   return;
 }
@@ -98,7 +98,7 @@ observeContinuation_(
   // As a work-around for that, param_val could be replaced by index.
   // TODO
   //model_eval_->mesh()->insert(soln, "psi");
-  model_eval_->mesh()->write(param_val);
+  //model_eval_->mesh()->write(param_val);
 
   return;
 }
@@ -120,7 +120,7 @@ observe_turning_point_continuation_(
     this->save_continuation_statistics_(soln, param_val, index);
     // TODO
     //model_eval_->mesh()->insert(soln, "psi");
-    model_eval_->mesh()->write(index);
+    //model_eval_->mesh()->write(index);
   } else {
     TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Not yet implemented.");
   }

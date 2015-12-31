@@ -80,9 +80,11 @@ test_dfdp(
 {
   // Read the data from the file.
   auto comm =  Teuchos::DefaultComm<int>::getComm();
-  const std::string input_filename = (comm->getSize() == 1) ?
-    "data/" + input_filename_base + ".e" :
-    "data/" + input_filename_base + "-split.par";
+  const int size = comm->getSize();
+  const std::string input_filename = (size == 1) ?
+    "data/" + input_filename_base + ".h5m" :
+    "data/" + input_filename_base + "-" + std::to_string(size) + ".h5m"
+    ;
 
   // Read the data from the file.
   auto mesh = nosh::read(input_filename);
@@ -120,6 +122,14 @@ test_dfdp(
 
   // create parameter vector
   auto p = Thyra::createMember(model_eval->get_p_space(0));
+
+  // set default parameters
+  auto p_names = model_eval->get_p_names(0);
+  TEUCHOS_ASSERT_EQUALITY((*p_names)[0], "g");
+  TEUCHOS_ASSERT_EQUALITY((*p_names)[1], "mu");
+  Thyra::set_ele(0, 1.0, p());
+  Thyra::set_ele(1, 0.0, p());
+
   auto fdiff = Thyra::createMember(model_eval->get_f_space());
 
   // Get the actual derivatives.
@@ -156,12 +166,14 @@ test_dfdp(
   return;
 }
 // ===========================================================================
-//TEUCHOS_UNIT_TEST(nosh, DfdpRectangleSmallHashes)
-//{
-//  const std::string input_filename_base = "rectanglesmall";
-//  const double mu = 1.0e-2;
-//  test_dfdp(input_filename_base, mu, out, success);
-//}
+#if 0
+TEUCHOS_UNIT_TEST(nosh, DfdpRectangleSmallHashes)
+{
+  const std::string input_filename_base = "rectanglesmall";
+  const double mu = 1.0e-2;
+  test_dfdp(input_filename_base, mu, out, success);
+}
+#endif
 // ============================================================================
 TEUCHOS_UNIT_TEST(nosh, DfdpPacmanHashes)
 {
@@ -170,12 +182,14 @@ TEUCHOS_UNIT_TEST(nosh, DfdpPacmanHashes)
   test_dfdp(input_filename_base, mu, out, success);
 }
 // ============================================================================
-//TEUCHOS_UNIT_TEST(nosh, DfdpCubeSmallHashes)
-//{
-//  const std::string input_filename_base = "cubesmall";
-//  const double mu = 1.0e-2;
-//  test_dfdp(input_filename_base, mu, out, success);
-//}
+#if 0
+TEUCHOS_UNIT_TEST(nosh, DfdpCubeSmallHashes)
+{
+  const std::string input_filename_base = "cubesmall";
+  const double mu = 1.0e-2;
+  test_dfdp(input_filename_base, mu, out, success);
+}
+#endif
 // ============================================================================
 TEUCHOS_UNIT_TEST(nosh, DfdpBrickWithHoleHashes)
 {

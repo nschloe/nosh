@@ -26,9 +26,7 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_RCPStdSharedPtrConversions.hpp>
 
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/CreateFaces.hpp>
+#include <Eigen/Dense>
 
 namespace nosh
 {
@@ -36,10 +34,10 @@ namespace nosh
 mesh_tetra::
 mesh_tetra(
     const std::shared_ptr<const Teuchos::Comm<int>> & _comm,
-    const std::shared_ptr<stk::io::StkMeshIoBroker> & broker,
-    const std::set<std::string> allocated_vector_names_
+    const std::shared_ptr<moab::ParallelComm> & mcomm,
+    const std::shared_ptr<moab::Core> & mb
     ) :
-  mesh(_comm, broker, allocated_vector_names_),
+  mesh(_comm, mcomm, mb),
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   compute_edge_coefficients_time_(
       Teuchos::TimeMonitor::getNewTimer(
@@ -52,11 +50,11 @@ mesh_tetra(
   compute_boundary_nodes_time_(
       Teuchos::TimeMonitor::getNewTimer(
         "Nosh: mesh_tetra::compute_boundary_nodes"
-        )),
+        ))
 #endif
-  control_volumes_(this->compute_control_volumes_()),
-  edge_coefficients_(this->compute_edge_coefficients_()),
-  boundary_nodes_(this->compute_boundary_nodes_())
+  ,control_volumes_(this->compute_control_volumes_())
+  ,edge_coefficients_(this->compute_edge_coefficients_())
+  ,boundary_nodes_(this->compute_boundary_nodes_())
 {
 }
 // =============================================================================
@@ -72,33 +70,54 @@ compute_edge_coefficients_() const
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   Teuchos::TimeMonitor tm(*compute_edge_coefficients_time_);
 #endif
+  moab::Range cells = this->mbw_->get_entities_by_dimension(0, 3);
 
-  std::vector<stk::mesh::Entity> cells = this->get_owned_cells();
-  unsigned int num_cells = cells.size();
+  size_t num_cells = cells.size();
 
-  auto num_eges = edge_data_.edge_nodes.size();
+  size_t num_edges = edge_data_.edge_nodes.size();
 
-  std::vector<double> _edge_coefficients(num_eges);
+  // compute all coordinates
+  std::vector<Eigen::Vector3d> edge_coords(num_edges);
+  for (size_t k = 0; k < num_edges; k++) {
+    auto tmp1 = std::get<0>(edge_data_.edge_nodes[k]);
+    const auto coords0 = this->mbw_->get_coords({tmp1});
 
-  const vector_fieldType & coords_field = get_node_field("coordinates");
+    tmp1 = std::get<1>(edge_data_.edge_nodes[k]);
+    const auto coords1 = this->mbw_->get_coords({tmp1});
 
-  // Calculate the contributions edge by edge.
-  for (unsigned int k = 0; k < num_cells; k++) {
-    // Get edge coordinates.
-    size_t num_local_edges = edge_data_.cell_edges[k].size();
-    std::vector<Eigen::Vector3d> local_edge_coords(num_local_edges);
-    for (size_t i = 0; i < num_local_edges; i++) {
-      const edge & e = edge_data_.edge_nodes[edge_data_.cell_edges[k][i]];
-      local_edge_coords[i] =
-        this->get_node_value(coords_field, std::get<1>(e))
-        - this->get_node_value(coords_field, std::get<0>(e));
-    }
+    edge_coords[k][0] = coords0[0] - coords1[0];
+    edge_coords[k][1] = coords0[1] - coords1[1];
+    edge_coords[k][2] = coords0[2] - coords1[2];
+  }
+
+  std::vector<double> _edge_coefficients(num_edges);
+
+  // Compute the contributions edge by edge.
+  for (size_t k = 0; k < num_cells; k++) {
+    const std::vector<size_t> edge_idxs = {
+      this->local_index(edge_data_.cell_edges[k][0]),
+      this->local_index(edge_data_.cell_edges[k][1]),
+      this->local_index(edge_data_.cell_edges[k][2]),
+      this->local_index(edge_data_.cell_edges[k][3]),
+      this->local_index(edge_data_.cell_edges[k][4]),
+      this->local_index(edge_data_.cell_edges[k][5])
+    };
+
+    const std::vector<Eigen::Vector3d> local_edge_coords = {
+      edge_coords[edge_idxs[0]],
+      edge_coords[edge_idxs[1]],
+      edge_coords[edge_idxs[2]],
+      edge_coords[edge_idxs[3]],
+      edge_coords[edge_idxs[4]],
+      edge_coords[edge_idxs[5]]
+    };
 
     auto edge_coeffs = edge_coefficients_cell_(local_edge_coords);
 
     // Fill the edge coefficients into the vector.
-    for (size_t i = 0; i < num_local_edges; i++) {
-      _edge_coefficients[edge_data_.cell_edges[k][i]] += edge_coeffs[i];
+    for (int i = 0; i < edge_coeffs.size(); i++) {
+      const size_t edge_idx = this->local_index(edge_data_.cell_edges[k][i]);
+      _edge_coefficients[edge_idx] += edge_coeffs[i];
     }
   }
 
@@ -108,10 +127,10 @@ compute_edge_coefficients_() const
 Eigen::VectorXd
 mesh_tetra::
 edge_coefficients_cell_(
-  const std::vector<Eigen::Vector3d> edges
+  const std::vector<Eigen::Vector3d> & edges
   ) const
 {
-  size_t num_eges = edges.size();
+  size_t num_edges = edges.size();
 
   // Build an equation system for the edge coefficients alpha_k.
   // They fulfill
@@ -130,8 +149,8 @@ edge_coefficients_cell_(
     vol = get_tetrahedron_volume_(edges[0], edges[1], edges[3]);
   }
 
-  Eigen::MatrixXd A(num_eges, num_eges);
-  Eigen::VectorXd rhs(num_eges);
+  Eigen::Matrix<double, 6, 6> A;
+  Eigen::VectorXd rhs(6);
 
   // Build the equation system:
   // The equation
@@ -143,11 +162,11 @@ edge_coefficients_cell_(
   //
   // Only fill the upper part of the Hermitian matrix.
   //
-  for (size_t i = 0; i < num_eges; i++) {
+  for (size_t i = 0; i < num_edges; i++) {
     double alpha = edges[i].dot(edges[i]);
     rhs(i) = vol * alpha;
-    A(i,i) = alpha * alpha;
-    for (size_t j = i+1; j < num_eges; j++) {
+    A(i, i) = alpha * alpha;
+    for (size_t j = i+1; j < num_edges; j++) {
       A(i, j) = edges[i].dot(edges[j]) * edges[j].dot(edges[i]);
       A(j, i) = A(i, j);
     }
@@ -155,8 +174,11 @@ edge_coefficients_cell_(
 
   // Solve the equation system for the alpha_i.  The system is symmetric and,
   // if the simplex is not degenerate, positive definite.
-  //return A.ldlt().solve(rhs);
-  return A.fullPivLu().solve(rhs);
+  const auto x = A.fullPivLu().solve(rhs);
+  //const auto x = A.colPivHouseholderQr().solve(rhs);
+  //const auto x = A.ldlt().solve(rhs);
+
+  return x;
 }
 // =============================================================================
 std::shared_ptr<Tpetra::Vector<double,int,int>>
@@ -169,7 +191,6 @@ compute_control_volumes_() const
 #ifndef NDEBUG
   TEUCHOS_ASSERT(nodes_map_);
   TEUCHOS_ASSERT(nodes_overlap_map_);
-  TEUCHOS_ASSERT(io_broker_);
 #endif
 
   auto _control_volumes = std::make_shared<Tpetra::Vector<double,int,int>>(
@@ -196,27 +217,30 @@ void
 mesh_tetra::
 compute_control_volumes_t_(Tpetra::Vector<double,int,int> & cv_overlap) const
 {
-  std::vector<stk::mesh::Entity> cells = this->get_owned_cells();
-  const size_t num_cells = cells.size();
+  // get owned entities
+  moab::Range cells = this->mbw_->get_entities_by_dimension(0, 3);
 
-  const vector_fieldType & coords_field = get_node_field("coordinates");
+  const size_t num_cells = cells.size();
 
   Teuchos::ArrayRCP<double> cv_data = cv_overlap.getDataNonConst();
 
   // Calculate the contributions to the finite volumes cell by cell.
   for (size_t k = 0; k < num_cells; k++) {
-    const stk::mesh::Entity * local_nodes =
-      io_broker_->bulk_data().begin_nodes(cells[k]);
-    unsigned int num_local_nodes = io_broker_->bulk_data().num_nodes(cells[k]);
+    const auto conn = this->mbw_->get_connectivity(cells[k]);
+
 #ifndef NDEBUG
-    // Confirm that we always have the same simplices.
-    TEUCHOS_ASSERT_EQUALITY(num_local_nodes, 4);
+    TEUCHOS_ASSERT_EQUALITY(conn.size(), 4);
 #endif
 
-    // Fetch the nodal positions into 'local_nodes'.
-    std::vector<Eigen::Vector3d> local_node_coords(num_local_nodes);
-    for (unsigned int i = 0; i < num_local_nodes; i++) {
-      local_node_coords[i] = this->get_node_value(coords_field, local_nodes[i]);
+    // Fetch the nodal positions into 'local_node_coords'.
+    const auto coords = this->mbw_->get_coords(conn);
+
+    std::vector<Eigen::Vector3d> local_node_coords(conn.size());
+    for (size_t i = 0; i < conn.size(); i++) {
+      // TODO do something smarter than copying here
+      local_node_coords[i][0] = coords[3*i];
+      local_node_coords[i][1] = coords[3*i + 1];
+      local_node_coords[i][2] = coords[3*i + 2];
     }
 
     // compute the circumcenter of the cell
@@ -225,21 +249,10 @@ compute_control_volumes_t_(Tpetra::Vector<double,int,int> & cv_overlap) const
     // Iterate over the edges.
     // As true edge entities are not available here, loop over all pairs of
     // local nodes.
-    for (unsigned int e0 = 0; e0 < num_local_nodes; e0++) {
+    for (size_t e0 = 0; e0 < conn.size(); e0++) {
       const Eigen::Vector3d &x0 = local_node_coords[e0];
-      // TODO check if "- 1" is still needed
-      const int gid0 = io_broker_->bulk_data().identifier(local_nodes[e0]) - 1;
-      const int lid0 = nodes_overlap_map_->getLocalElement(gid0);
-#ifndef NDEBUG
-      TEUCHOS_ASSERT_INEQUALITY(lid0, >=, 0);
-#endif
-      for (unsigned int e1 = e0+1; e1 < num_local_nodes; e1++) {
+      for (size_t e1 = e0+1; e1 < conn.size(); e1++) {
         const Eigen::Vector3d &x1 = local_node_coords[e1];
-        const int gid1 = io_broker_->bulk_data().identifier(local_nodes[e1]) - 1;
-        const int lid1 = nodes_overlap_map_->getLocalElement(gid1);
-#ifndef NDEBUG
-        TEUCHOS_ASSERT_INEQUALITY(lid1, >=, 0);
-#endif
 
         // Get the other nodes.
         std::set<unsigned int> other_set = this->get_other_indices_(e0, e1);
@@ -270,8 +283,10 @@ compute_control_volumes_t_(Tpetra::Vector<double,int,int> & cv_overlap) const
         // Compute the contributions to the finite volumes of the adjacent
         // edges.
         double pyramid_volume = 0.5 * edge_length * covolume / 3;
-        cv_data[lid0] += pyramid_volume;
-        cv_data[lid1] += pyramid_volume;
+        // The EntityHandle (conn) is a local identifier, MOAB indices are
+        // 1-based.
+        cv_data[conn[e0] - 1] += pyramid_volume;
+        cv_data[conn[e1] - 1] += pyramid_volume;
       }
     }
   }
@@ -421,41 +436,46 @@ compute_tetrahedron_circumcenter_(
     + gamma * rel_nodes[0].cross(rel_nodes[1]);
 }
 // =============================================================================
-std::vector<stk::mesh::Entity>
+std::vector<moab::EntityHandle>
 mesh_tetra::
 get_overlap_faces_() const
 {
+  std::vector<moab::EntityHandle> faces;
+
+#if 0
   stk::mesh::Selector select_overlap_in_part =
     stk::mesh::Selector(io_broker_->bulk_data().mesh_meta_data().universal_part())
     & (stk::mesh::Selector(io_broker_->bulk_data().mesh_meta_data().locally_owned_part())
        |stk::mesh::Selector(io_broker_->bulk_data().mesh_meta_data().globally_shared_part()));
 
-  std::vector<stk::mesh::Entity> faces;
   stk::mesh::get_selected_entities(
       select_overlap_in_part,
       io_broker_->bulk_data().buckets(stk::topology::FACE_RANK),
       faces
       );
+#endif
   return faces;
 }
 // =============================================================================
-std::set<stk::mesh::Entity>
+std::set<moab::EntityHandle>
 mesh_tetra::
 compute_boundary_nodes_() const
 {
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   Teuchos::TimeMonitor tm(*compute_boundary_nodes_time_);
 #endif
+  std::set<moab::EntityHandle> _boundary_nodes;
+
+#if 0
   // this takes a reaaaally long time
   stk::mesh::create_faces(io_broker_->bulk_data());
 
   auto my_faces = this->get_overlap_faces_();
 
-  std::set<stk::mesh::Entity> _boundary_nodes;
   for (size_t k = 0; k < my_faces.size(); k++) {
     // if the face has one element, it's on the boundary
     if (io_broker_->bulk_data().num_elements(my_faces[k]) == 1) {
-      stk::mesh::Entity const * nodes =
+      moab::EntityHandle const * nodes =
         io_broker_->bulk_data().begin_nodes(my_faces[k]);
 #ifndef NDEBUG
       TEUCHOS_ASSERT_EQUALITY(io_broker_->bulk_data().num_nodes(my_faces[k]), 3);
@@ -469,7 +489,7 @@ compute_boundary_nodes_() const
 #ifndef NDEBUG
   TEUCHOS_ASSERT_INEQUALITY(_boundary_nodes.size(), >, 0);
 #endif
-
+#endif
   return _boundary_nodes;
 }
 // =============================================================================

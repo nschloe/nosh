@@ -30,12 +30,6 @@
 //#endif
 #include <Tpetra_Vector.hpp>
 
-//#include <stk_mesh/base/Entity.hpp>
-//#include <stk_mesh/base/CoordinateSystems.hpp>
-//#include <stk_mesh/base/MetaData.hpp>
-//#include <stk_io/StkMeshIoBroker.hpp>
-//#include <stk_mesh/base/FieldTraits.hpp>
-
 #include <Eigen/Dense>
 
 #include "mesh.hpp"
@@ -52,8 +46,8 @@ class mesh_tetra:
 public:
   mesh_tetra(
       const std::shared_ptr<const Teuchos::Comm<int>> & comm,
-      const std::shared_ptr<stk::io::StkMeshIoBroker> & broker,
-      const std::set<std::string> allocated_vector_names = {}
+      const std::shared_ptr<moab::ParallelComm> & mcomm,
+      const std::shared_ptr<moab::Core> & mb
       );
 
   virtual
@@ -74,7 +68,7 @@ public:
   }
 
   virtual
-  std::set<stk::mesh::Entity>
+  std::set<moab::EntityHandle>
   boundary_nodes() const
   {
     return boundary_nodes_;
@@ -82,13 +76,13 @@ public:
 
 private:
 
-  std::vector<stk::mesh::Entity>
+  std::vector<moab::EntityHandle>
   get_overlap_faces_() const;
 
   std::vector<double>
   compute_edge_coefficients_() const;
 
-  std::set<stk::mesh::Entity>
+  std::set<moab::EntityHandle>
   compute_boundary_nodes_() const;
 
   double
@@ -112,12 +106,12 @@ private:
 
   Eigen::Vector3d
   compute_cell_circumcenter_(
-    const std::vector<Eigen::Vector3d> &nodes
+    const std::vector<Eigen::Vector3d> & nodes
     ) const;
 
   Eigen::VectorXd
   edge_coefficients_cell_(
-    const std::vector<Eigen::Vector3d> edges
+    const std::vector<Eigen::Vector3d> & edges
     ) const;
 
   //! Compute the volume of the (Voronoi) control cells for each point.
@@ -157,7 +151,7 @@ private:
 
   const std::shared_ptr<const Tpetra::Vector<double,int,int>> control_volumes_;
   const std::vector<double> edge_coefficients_;
-  const std::set<stk::mesh::Entity> boundary_nodes_;
+  const std::set<moab::EntityHandle> boundary_nodes_;
 
 };
 

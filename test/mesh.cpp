@@ -43,18 +43,14 @@ testMesh(
     bool & success
     )
 {
+  // Read the data from the file.
   auto comm =  Teuchos::DefaultComm<int>::getComm();
-  const int numProc = comm->getSize();
+  const int size = comm->getSize();
+  const std::string input_filename = (size == 1) ?
+    "data/" + input_filename_base + ".h5m" :
+    "data/" + input_filename_base + "-" + std::to_string(size) + ".h5m"
+    ;
 
-  // Read the data from the file.
-  std::string input_filename;
-  if (numProc == 1) {
-    input_filename = "data/" + input_filename_base + ".e";
-  } else {
-    input_filename = "data/" + input_filename_base + "-split.par";
-  }
-
-  // Read the data from the file.
   auto mesh = nosh::read(input_filename);
 
   const unsigned int num_nodes = mesh->map()->getGlobalNumElements();

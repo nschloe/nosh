@@ -20,83 +20,51 @@
 // =============================================================================
 #include "mesh.hpp"
 
-//#include <map>
-//#include <string>
-//#include <algorithm>
-//#include <vector>
+#include <moab/Core.hpp>
+#include <moab/ParallelComm.hpp>
+#include <MBParallelConventions.h>
 
 #include <Tpetra_Vector.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_RCPStdSharedPtrConversions.hpp>
-
-#include <stk_mesh/base/MetaData.hpp>
-//#include <stk_mesh/base/BulkData.hpp>
-//#include <stk_mesh/base/Entity.hpp>
-//// #include <stk_mesh/base/Field.hpp>
-//#include <stk_mesh/base/FieldBase.hpp>
-//// #include <stk_mesh/base/Comm.hpp> // for comm_mesh_counts
-//#include <stk_mesh/base/CreateAdjacentEntities.hpp>
-#include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/FieldParallel.hpp> // for parallel_sum
-//#include <stk_mesh/base/MetaData.hpp>
-//#include <stk_mesh/base/Comm.hpp>
-
-//#include <stk_mesh/base/CreateEdges.hpp>
-//#include <stk_mesh/base/CreateFaces.hpp>
-//#include <stk_mesh/base/Skinmesh.hpp>
-//
-//#include <stk_io/IossBridge.hpp>
-//#include <Ioss_SubSystem.h>
-////#include <stk_io/mesh_readWriteUtils.hpp>
-//#include <Ionit_Initializer.h>
-//#include <Ioss_IOFactory.h>
-#include <Ioss_Region.h>
-
-//#ifdef HAVE_MPI
-//// Rebalance
-//#include <stk_rebalance/Rebalance.hpp>
-//#include <stk_rebalance_utils/RebalanceUtils.hpp>
-//#include <stk_rebalance/Partition.hpp>
-//#include <stk_rebalance/ZoltanPartition.hpp>
-//#endif
-
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
-#include <Teuchos_TimeMonitor.hpp>
+#  include <Teuchos_TimeMonitor.hpp>
 #endif
+
 namespace nosh
 {
 // =============================================================================
 mesh::
 mesh(
     const std::shared_ptr<const Teuchos::Comm<int>> & _comm,
-    const std::shared_ptr<stk::io::StkMeshIoBroker> & broker,
-    const std::set<std::string> allocated_vector_nms
+    const std::shared_ptr<moab::ParallelComm> & mcomm,
+    const std::shared_ptr<moab::Core> & mb
     ) :
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   write_time_(Teuchos::TimeMonitor::getNewTimer("Nosh: mesh::write")),
-  getComplex_time_(Teuchos::TimeMonitor::getNewTimer("Nosh: mesh::get_complex_vector")),
   multi_time_(Teuchos::TimeMonitor::getNewTimer("Nosh: mesh::get_multi_vector")),
 #endif
   comm(_comm),
-  allocated_vector_names(allocated_vector_nms),
-  io_broker_(broker),
-  owned_nodes_(this->buildOwnedNodes_(io_broker_->bulk_data())),
-  nodes_map_(this->buildEntitiesMap_(owned_nodes_)),
-  nodes_overlap_map_(this->buildEntitiesMap_(this->get_overlap_nodes())),
-  complex_map_(this->buildComplexMap_(owned_nodes_)),
-  complex_overlap_map_(this->buildComplexMap_(this->get_overlap_nodes())),
-  edge_data_(this->buildEdge_data_()),
-  output_channel_(0),
-  // TODO get index right
-  //time_(io_broker_->get_input_io_region()->get_state_time(index+1)),
-  time_(io_broker_->get_input_io_region()->get_state_time(1)),
-  edge_gids(buildEdgeGids_()),
-  edge_gids_complex(buildEdgeGidsComplex_())
+  mbw_(std::make_shared<moab_wrap>(mb)),
+  mcomm_(mcomm),
+  //owned_nodes_(this->build_owned_nodes_()),
+  nodes_map_(this->get_map_(this->get_owned_gids_())),
+  nodes_overlap_map_(this->get_map_(this->get_overlap_gids_())),
+  complex_map_(this->get_map_(this->complexify_(this->get_owned_gids_()))),
+  complex_overlap_map_(
+    this->get_map_(this->complexify_(this->get_overlap_gids_()))
+    )
+  ,edge_data_(this->build_edge_data_())
+  ,edge_lids(build_edge_lids_())
+  ,edge_lids_complex(build_edge_lids_complex_())
+  ,edge_gids(build_edge_gids_())
+  ,edge_gids_complex(build_edge_gids_complex_())
 {
-#ifndef NDEBUG
-  // Assert that all processes own nodes
-  TEUCHOS_ASSERT_INEQUALITY(owned_nodes_.size(), >, 0);
-#endif
+// TODO resurrect
+//#ifndef NDEBUG
+//  // Assert that all processes own nodes
+//  TEUCHOS_ASSERT_INEQUALITY(owned_nodes_.size(), >, 0);
+//#endif
 }
 // =============================================================================
 mesh::
@@ -104,154 +72,109 @@ mesh::
 {
 }
 // =============================================================================
-std::shared_ptr<Tpetra::Vector<double,int,int>>
-mesh::
-complexfield_to_vector_(
-    const ScalarFieldType &real_field,
-    const ScalarFieldType &imag_field
-    ) const
-{
-  // Psi needs to have unique node IDs to be able to compute Norm2().
-  // This is required in Belos.
-  const auto & _owned_nodes = this->owned_nodes();
-
-  // Create vector with this respective map.
-  auto vector = std::make_shared<Tpetra::Vector<double,int,int>>(
-      Teuchos::rcp(this->complex_map())
-      );
-
-  auto v_data = vector->getDataNonConst();
-
-#ifndef NDEBUG
-  TEUCHOS_ASSERT_EQUALITY(v_data.size(), 2 * _owned_nodes.size());
-#endif
-
-  // Fill the vector with data from the file.
-  for (size_t k = 0; k < _owned_nodes.size(); k++) {
-    // real part
-    double* real_val = stk::mesh::field_data(real_field, _owned_nodes[k]);
-    v_data[2*k] = real_val[0];
-
-    // imaginary part
-    double* imag_val = stk::mesh::field_data(imag_field, _owned_nodes[k]);
-    v_data[2*k+1] = imag_val[0];
-  }
-
-#ifndef NDEBUG
-  // Use NormInf as it's robust against overlapping maps.
-  const double r = vector->normInf();
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(
-      r != r || r > 1.0e100,
-      "The input data seems flawed. Abort."
-      );
-#endif
-
-  return vector;
-}
+//std::shared_ptr<Tpetra::Vector<double,int,int>>
+//mesh::
+//field_to_vector_(const ScalarFieldType &field) const
+//{
+//  // Get overlap nodes.
+//  const auto & overlap_nodes = this->get_overlap_nodes();
+//
+//  // Create vector with this respective map.
+//  auto vector = std::make_shared<Tpetra::Vector<double,int,int>>(
+//      Teuchos::rcp(this->overlap_map())
+//      );
+//
+//  auto v_data = vector->getDataNonConst();
+//
+//#ifndef NDEBUG
+//  TEUCHOS_ASSERT_EQUALITY(v_data.size(), 2*overlap_nodes.size());
+//#endif
+//
+//  // Fill the vector with data from the file.
+//  for (unsigned int k = 0; k < overlap_nodes.size(); k++) {
+//    double* vals = stk::mesh::field_data(field, overlap_nodes[k]);
+//    // Check if the field is actually there.
+//#ifndef NDEBUG
+//    TEUCHOS_ASSERT(vals != NULL);
+//    //*out << "WARNING: _value for node " << k << " not found.\n" <<
+//    //  "Probably there is no field given with the state. Using default."
+//    //  << std::endl;
+//#endif
+//    v_data[k] = vals[0];
+//  }
+//
+//#ifndef NDEBUG
+//  // Use NormInf as it's robust against overlapping maps.
+//  const double r = vector->normInf();
+//  TEUCHOS_TEST_FOR_EXCEPT_MSG(
+//      r != r || r > 1.0e100,
+//      "The input data seems flawed. Abort."
+//      );
+//#endif
+//
+//  return vector;
+//}
 // =============================================================================
-std::shared_ptr<Tpetra::Vector<double,int,int>>
-mesh::
-field_to_vector_(const ScalarFieldType &field) const
-{
-  // Get overlap nodes.
-  const auto & overlap_nodes = this->get_overlap_nodes();
-
-  // Create vector with this respective map.
-  auto vector = std::make_shared<Tpetra::Vector<double,int,int>>(
-      Teuchos::rcp(this->overlap_map())
-      );
-
-  auto v_data = vector->getDataNonConst();
-
-#ifndef NDEBUG
-  TEUCHOS_ASSERT_EQUALITY(v_data.size(), 2*overlap_nodes.size());
-#endif
-
-  // Fill the vector with data from the file.
-  for (unsigned int k = 0; k < overlap_nodes.size(); k++) {
-    double* vals = stk::mesh::field_data(field, overlap_nodes[k]);
-    // Check if the field is actually there.
-#ifndef NDEBUG
-    TEUCHOS_ASSERT(vals != NULL);
-    //*out << "WARNING: _value for node " << k << " not found.\n" <<
-    //  "Probably there is no field given with the state. Using default."
-    //  << std::endl;
-#endif
-    v_data[k] = vals[0];
-  }
-
-#ifndef NDEBUG
-  // Use NormInf as it's robust against overlapping maps.
-  const double r = vector->normInf();
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(
-      r != r || r > 1.0e100,
-      "The input data seems flawed. Abort."
-      );
-#endif
-
-  return vector;
-}
-// =============================================================================
-std::shared_ptr<Tpetra::MultiVector<double,int,int>>
-mesh::
-field_to_vector_(
-    const vector_fieldType &field,
-    const int num_components
-    ) const
-{
-  // Get overlap nodes.
-  const auto & overlap_nodes = this->get_overlap_nodes();
-
-  // Create vector with this respective map.
-  auto vector = std::make_shared<Tpetra::MultiVector<double,int,int>>(
-      Teuchos::rcp(this->overlap_map()),
-      num_components
-      );
-
-  std::vector<Teuchos::ArrayRCP<double>> data(num_components);
-  for (int i = 0; i < num_components; i++) {
-    data[i] = vector->getDataNonConst(i);
-#ifndef NDEBUG
-    TEUCHOS_ASSERT_EQUALITY(data[i].size(), overlap_nodes.size());
-#endif
-  }
-
-  // Fill the vector with data from the file.
-  for (unsigned int k = 0; k < overlap_nodes.size(); k++) {
-    const double * const vals =
-      stk::mesh::field_data(field, overlap_nodes[k]);
-#ifndef NDEBUG
-    // Check if the field is actually there.
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(
-        vals == NULL,
-        "Field value for node " << k << " not found.\n" <<
-        "Probably there is no field given with the state."
-        );
-#endif
-    // Copy over.
-    // A multivector isn't actually a good data structure for this.  What would
-    // be needed is a vector where each entry has k components. This way, the
-    // data could stick together.
-    for (int i = 0; i < num_components; i++) {
-      data[i][k] = vals[i];
-    }
-  }
-
-#ifndef NDEBUG
-  // Check for NaNs and uninitialized data.
-  std::vector<double> r(num_components);
-  // Use NormInf as it's robust against overlapping maps.
-  vector->normInf(Teuchos::ArrayView<double>(r));
-  for (int i = 0; i < num_components; i++) {
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(
-        r[i] != r[i] || r[i] > 1.0e100,
-        "The input data seems flawed. Abort."
-        );
-  }
-#endif
-
-  return vector;
-}
+//std::shared_ptr<Tpetra::MultiVector<double,int,int>>
+//mesh::
+//field_to_vector_(
+//    const vector_fieldType &field,
+//    const int num_components
+//    ) const
+//{
+//  // Get overlap nodes.
+//  const auto & overlap_nodes = this->get_overlap_nodes();
+//
+//  // Create vector with this respective map.
+//  auto vector = std::make_shared<Tpetra::MultiVector<double,int,int>>(
+//      Teuchos::rcp(this->overlap_map()),
+//      num_components
+//      );
+//
+//  std::vector<Teuchos::ArrayRCP<double>> data(num_components);
+//  for (int i = 0; i < num_components; i++) {
+//    data[i] = vector->getDataNonConst(i);
+//#ifndef NDEBUG
+//    TEUCHOS_ASSERT_EQUALITY(data[i].size(), overlap_nodes.size());
+//#endif
+//  }
+//
+//  // Fill the vector with data from the file.
+//  for (unsigned int k = 0; k < overlap_nodes.size(); k++) {
+//    const double * const vals =
+//      stk::mesh::field_data(field, overlap_nodes[k]);
+//#ifndef NDEBUG
+//    // Check if the field is actually there.
+//    TEUCHOS_TEST_FOR_EXCEPT_MSG(
+//        vals == NULL,
+//        "Field value for node " << k << " not found.\n" <<
+//        "Probably there is no field given with the state."
+//        );
+//#endif
+//    // Copy over.
+//    // A multivector isn't actually a good data structure for this.  What would
+//    // be needed is a vector where each entry has k components. This way, the
+//    // data could stick together.
+//    for (int i = 0; i < num_components; i++) {
+//      data[i][k] = vals[i];
+//    }
+//  }
+//
+//#ifndef NDEBUG
+//  // Check for NaNs and uninitialized data.
+//  std::vector<double> r(num_components);
+//  // Use NormInf as it's robust against overlapping maps.
+//  vector->normInf(Teuchos::ArrayView<double>(r));
+//  for (int i = 0; i < num_components; i++) {
+//    TEUCHOS_TEST_FOR_EXCEPT_MSG(
+//        r[i] != r[i] || r[i] > 1.0e100,
+//        "The input data seems flawed. Abort."
+//        );
+//  }
+//#endif
+//
+//  return vector;
+//}
 // =============================================================================
 void
 mesh::
@@ -259,6 +182,7 @@ open_file(
     const std::string &output_file
     )
 {
+#if 0
   output_channel_ = io_broker_->create_output_mesh(
       output_file,
       stk::io::WRITE_RESULTS
@@ -269,39 +193,54 @@ open_file(
       io_broker_->add_field(output_channel_, *fields[i]);
     }
   }
-
+#endif
   return;
 }
 // =============================================================================
 void
 mesh::
-write(const double _time) const
+write(const std::string & filename) const
 {
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   // timer for this routine
   Teuchos::TimeMonitor tm(*write_time_);
 #endif
 
-  (void) _time;
-  // Write it out to the file that's been specified in mesh_.
-  // The methods returns the output step (but we ignore it).
-  //(void) io_broker_->process_output_request(
-  //    output_channel_,
-  //    _time
-  //    );
-  static int step = 0;
-  (void) io_broker_->process_output_request(output_channel_, step++);
-
+  this->mbw_->write_mesh(filename);
   return;
+}
+// =============================================================================
+std::vector<double>
+mesh::
+get_data(
+  const std::string & tag_name,
+  const moab::Range & range
+  ) const
+{
+  const moab::Tag tag = this->mbw_->tag_get_handle(tag_name);
+
+  TEUCHOS_ASSERT_EQUALITY(
+      this->mbw_->tag_get_data_type(tag),
+      moab::DataType::MB_TYPE_DOUBLE
+      );
+
+  return this->mbw_->tag_get_data(tag, range);
+}
+// =============================================================================
+std::vector<double>
+mesh::
+get_coords(
+  const moab::EntityHandle vertex
+  ) const
+{
+  return this->mbw_->get_coords({vertex});
 }
 // =============================================================================
 std::shared_ptr<Tpetra::Vector<double,int,int>>
 mesh::
-get_vector(const std::string & field_name) const
+get_vector(const std::string & tag_name) const
 {
-#ifndef NDEBUG
-  TEUCHOS_ASSERT(io_broker_);
-#endif
+#if 0
   const ScalarFieldType * const field =
     io_broker_->bulk_data().mesh_meta_data().get_field<ScalarFieldType>(
         stk::topology::NODE_RANK,
@@ -315,75 +254,88 @@ get_vector(const std::string & field_name) const
       );
 
   return this->field_to_vector_(*field);
-}
-// =============================================================================
-std::shared_ptr<Tpetra::MultiVector<double,int,int>>
-mesh::
-get_multi_vector(const std::string & field_name) const
-{
-#ifdef NOSH_TEUCHOS_TIME_MONITOR
-  Teuchos::TimeMonitor tm(*multi_time_);
-#endif
-#ifndef NDEBUG
-  TEUCHOS_ASSERT(io_broker_);
 #endif
 
-  const vector_fieldType * const field =
-    io_broker_->bulk_data().mesh_meta_data().get_field<vector_fieldType>(
-        stk::topology::NODE_RANK,
-        field_name
-        );
-
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(
-      field == NULL,
-      "Vector field \"" << field_name << "\" not found in database. "
-      << "Is it present in the input file at all? Check with io_info."
+  return std::make_shared<Tpetra::Vector<double,int,int>>(
+      Teuchos::rcp(this->overlap_map())
       );
-
-  // TODO remove the hardcoded "3"
-  return this->field_to_vector_(*field, 3);
 }
 // =============================================================================
 std::shared_ptr<Tpetra::Vector<double,int,int>>
 mesh::
-get_complex_vector(const std::string & field_name) const
+get_complex_vector(const std::string & tag_name) const
+{
+  // get data for all vertices
+  moab::Range all_verts = this->mbw_->get_entities_by_dimension(0, 0);
+
+  moab::ErrorCode ierr;
+  moab::Range verts;
+  ierr = this->mcomm_->filter_pstatus(
+      all_verts,
+      PSTATUS_NOT_OWNED, PSTATUS_NOT,
+      -1,
+      &verts
+      );
+  TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+
+  auto data = this->get_data(tag_name, verts);
+
+  TEUCHOS_ASSERT_EQUALITY(
+    data.size(),
+    this->complex_map_->getNodeNumElements()
+    );
+
+  // Set vector values from an existing array (copy)
+  return std::make_shared<Tpetra::Vector<double,int,int>>(
+      Teuchos::rcp(this->complex_map_),
+      Teuchos::ArrayView<double>(data)
+      );
+}
+// =============================================================================
+std::shared_ptr<Tpetra::MultiVector<double,int,int>>
+mesh::
+get_multi_vector(const std::string & tag_name) const
 {
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
-  Teuchos::TimeMonitor tm(*getComplex_time_);
+  Teuchos::TimeMonitor tm(*multi_time_);
 #endif
-#ifndef NDEBUG
-  TEUCHOS_ASSERT(io_broker_);
-#endif
-  const ScalarFieldType * const r_field =
-    io_broker_->bulk_data().mesh_meta_data().get_field<ScalarFieldType>(
-        stk::topology::NODE_RANK,
-        field_name + "_R"
-        );
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(
-      r_field == NULL,
-      "Scalar field \"" << field_name << "_R\" not found in database. "
-      << "Is it present in the input file at all? Check with io_info."
-      );
+  // get data for all vertices
+  const moab::Range verts = this->mbw_->get_entities_by_dimension(0, 0);
 
-  const ScalarFieldType * const i_field =
-    io_broker_->bulk_data().mesh_meta_data().get_field<ScalarFieldType>(
-        stk::topology::NODE_RANK,
-        field_name + "_Z"
-        );
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(
-      i_field == NULL,
-      "Scalar field \"" << field_name << "_Z\" not found in database. "
-      << "Is it present in the input file at all? Check with io_info."
-      );
+  auto data = this->get_data(tag_name, verts);
 
-  return this->complexfield_to_vector_(*r_field, *i_field);
+  // MOAB's ordering is
+  //   x0, y0, z0, x1, y1, z1, ...
+  // However,Tpetra::MultiVector's constructor needs the data ordered like
+  //   x0, x1, ..., xn, y0, y1, ...
+  // Hence, reorder.
+  std::vector<double> new_data(data.size());
+  const size_t length = data.size() / verts.size();
+  for (size_t i = 0; i < length; i++) {
+    for (size_t j = 0; j < verts.size(); j++) {
+      new_data[j + i*verts.size()] = data[i + j*length];
+    }
+  }
+
+  TEUCHOS_ASSERT_EQUALITY(
+    data.size(),
+    length * this->overlap_map()->getNodeNumElements()
+    );
+
+  // Set vector values from an existing array (copy)
+  return std::make_shared<Tpetra::MultiVector<double,int,int>>(
+      Teuchos::rcp(this->overlap_map()),
+      Teuchos::ArrayView<double>(new_data),
+      verts.size(),
+      length
+      );
 }
 // =============================================================================
 void
 mesh::
 insert_vector(
     const Tpetra::Vector<double,int,int> & x,
-    const std::string & field_name
+    const std::string & name
     ) const
 {
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
@@ -391,226 +343,162 @@ insert_vector(
   Teuchos::TimeMonitor tm(*write_time_);
 #endif
 
-#ifndef NDEBUG
-  TEUCHOS_ASSERT(io_broker_);
-#endif
-
-  ScalarFieldType * x_field =
-    io_broker_->bulk_data().mesh_meta_data().get_field<ScalarFieldType>(
-        stk::topology::NODE_RANK,
-        field_name
-        );
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(
-      x_field == NULL,
-      "Scalar field \"" << field_name << "\" not found in database. "
-      << "Is it present in the input file at all? Check with io_info."
+  // get/create handle
+  const auto out = this->mbw_->tag_get_handle(
+      name,
+      1,
+      moab::MB_TYPE_DOUBLE,
+      moab::MB_TAG_EXCL | moab::MB_TAG_DENSE
       );
 
-  // Zero out all nodal values, including the overlaps.
-  const auto & overlap_nodes = this->get_overlap_nodes();
-  for (unsigned int k = 0; k < overlap_nodes.size(); k++) {
-    // Extract real and imaginary part.
-    double* localPsiR = stk::mesh::field_data(*x_field, overlap_nodes[k]);
-    *localPsiR = 0.0;
-  }
+  const moab::Tag handle = std::get<0>(out);
+  //const bool created = std::get<1>(out);
 
-  auto x_data = x.getData();
+  // get vertices for which to set the data
+  moab::Range all_verts = this->mbw_->get_entities_by_dimension(0, 0);
+  moab::ErrorCode ierr;
+  moab::Range verts;
+  ierr = this->mcomm_->filter_pstatus(
+      all_verts,
+      PSTATUS_NOT_OWNED, PSTATUS_NOT,
+      -1,
+      &verts
+      );
+  TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
 
-  // Set owned nodes.
-#ifndef NDEBUG
-  TEUCHOS_ASSERT_EQUALITY(x_data.size(), owned_nodes_.size());
-#endif
-  for (unsigned int k = 0; k < owned_nodes_.size(); k++) {
-    // Extract real and imaginary part.
-    double* localPsiR = stk::mesh::field_data(*x_field, owned_nodes_[k]);
-    *localPsiR = x_data[k];
-  }
+  // get data
+  const auto data = x.getData();
 
-  // This communication updates the field values on un-owned nodes it is
-  // correct because the zeroSolutionField above zeros them all and the
-  // getSolutionField only sets the owned nodes.
-  // TODO combine these fields into a vector of fields
-  std::vector<stk::mesh::FieldBase*> tmp(1, x_field);
-  stk::mesh::parallel_sum(io_broker_->bulk_data(), tmp);
+  TEUCHOS_ASSERT_EQUALITY(
+    data.size(),
+    this->nodes_map_->getNodeNumElements()
+    );
+
+  // set data
+  mbw_->tag_set_data(
+      handle,
+      verts,
+      data.get()
+      );
 
   return;
 }
 // =============================================================================
-void
-mesh::
-insert_complex_vector(
-    const Tpetra::Vector<double,int,int> & psi,
-    const std::string & field_name
-    ) const
-{
-#ifdef NOSH_TEUCHOS_TIME_MONITOR
-  // timer for this routine
-  Teuchos::TimeMonitor tm(*write_time_);
-#endif
-
-#ifndef NDEBUG
-  TEUCHOS_ASSERT(io_broker_);
-#endif
-  ScalarFieldType * psi_r_field =
-    io_broker_->bulk_data().mesh_meta_data().get_field<ScalarFieldType>(
-        stk::topology::NODE_RANK,
-        field_name + "_R"
-        );
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(
-      psi_r_field == NULL,
-      "Scalar field \"" << field_name << "_R\" not found in database. "
-      << "Is it present in the input file at all? Check with io_info."
-      );
-
-  ScalarFieldType * psi_i_field =
-    io_broker_->bulk_data().mesh_meta_data().get_field<ScalarFieldType>(
-        stk::topology::NODE_RANK,
-        field_name + "_Z"
-        );
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(
-      psi_i_field == NULL,
-      "Scalar field \"" << field_name << "_Z\" not found in database. "
-      << "Is it present in the input file at all? Check with io_info."
-      );
-
-  // Zero out all nodal values, including the overlaps.
-  const auto & overlap_nodes = this->get_overlap_nodes();
-  for (unsigned int k = 0; k < overlap_nodes.size(); k++) {
-    // Extract real and imaginary part.
-    double* localPsiR = stk::mesh::field_data(*psi_r_field, overlap_nodes[k]);
-    *localPsiR = 0.0;
-    double* localPsiI = stk::mesh::field_data(*psi_i_field, overlap_nodes[k]);
-    *localPsiI = 0.0;
-  }
-
-  auto psi_data = psi.getData();
-
-  // Set owned nodes.
-#ifndef NDEBUG
-  TEUCHOS_ASSERT_EQUALITY(psi_data.size(), 2*owned_nodes_.size());
-#endif
-  for (unsigned int k = 0; k < owned_nodes_.size(); k++) {
-    // Extract real and imaginary part.
-    double* localPsiR = stk::mesh::field_data(*psi_r_field, owned_nodes_[k]);
-    *localPsiR = psi_data[2*k];
-    double* localPsiI = stk::mesh::field_data(*psi_i_field, owned_nodes_[k]);
-    *localPsiI = psi_data[2*k+1];
-  }
-
-  // This communication updates the field values on un-owned nodes
-  // it is correct because the zeroSolutionField above zeros them all
-  // and the getSolutionField only sets the owned nodes.
-  // TODO combine these fields into a vector of fields
-  std::vector<stk::mesh::FieldBase*> tmp(1, psi_r_field);
-  stk::mesh::parallel_sum(io_broker_->bulk_data(), tmp);
-  std::vector<stk::mesh::FieldBase*> tmp2(1, psi_i_field);
-  stk::mesh::parallel_sum(io_broker_->bulk_data(), tmp2);
-
-  return;
-}
-
-// =============================================================================
-std::vector<stk::mesh::Entity>
+std::vector<moab::EntityHandle>
 mesh::
 get_owned_cells() const
 {
+  std::vector<moab::EntityHandle> cells;
+  throw "mesh::get_owned_cells";
+#if 0
   // get owned elements
   stk::mesh::Selector select_owned_in_part =
     stk::mesh::Selector(io_broker_->bulk_data().mesh_meta_data().universal_part())
     & stk::mesh::Selector(io_broker_->bulk_data().mesh_meta_data().locally_owned_part());
-  std::vector<stk::mesh::Entity> cells;
   stk::mesh::get_selected_entities(
       select_owned_in_part,
       io_broker_->bulk_data().buckets(stk::topology::ELEMENT_RANK),
       cells
       );
+#endif
   return cells;
 }
 // =============================================================================
-std::vector<stk::mesh::Entity>
+std::vector<moab::EntityHandle>
 mesh::
 get_overlap_edges() const
 {
+  std::vector<moab::EntityHandle> edges;
+#if 0
   // get overlap edges
   stk::mesh::Selector select_overlap_in_part =
     stk::mesh::Selector(io_broker_->bulk_data().mesh_meta_data().universal_part())
     & (stk::mesh::Selector(io_broker_->bulk_data().mesh_meta_data().locally_owned_part())
        |stk::mesh::Selector(io_broker_->bulk_data().mesh_meta_data().globally_shared_part()));
 
-  std::vector<stk::mesh::Entity> edges;
   stk::mesh::get_selected_entities(
       select_overlap_in_part,
       io_broker_->bulk_data().buckets(stk::topology::EDGE_RANK),
       edges
       );
+#endif
   return edges;
 }
 // =============================================================================
-const vector_fieldType &
+//const vector_fieldType &
+//mesh::
+//get_node_field(const std::string & field_name) const {
+//  const vector_fieldType * const field =
+//    io_broker_->bulk_data().mesh_meta_data().get_field<vector_fieldType>(
+//        stk::topology::NODE_RANK,
+//        field_name
+//        );
+//  TEUCHOS_TEST_FOR_EXCEPT_MSG(
+//      field == NULL,
+//      "Invalid field name \"" << field_name << "\"."
+//      );
+//  return *field;
+//}
+// =============================================================================
+const std::vector<Teuchos::Tuple<int,2>>
 mesh::
-get_node_field(const std::string & field_name) const {
-  const vector_fieldType * const field =
-    io_broker_->bulk_data().mesh_meta_data().get_field<vector_fieldType>(
-        stk::topology::NODE_RANK,
-        field_name
+build_edge_lids_() const
+{
+  const std::vector<edge> edges = this->my_edges();
+
+  std::vector<Teuchos::Tuple<int,2>> _edge_lids(edges.size());
+
+  for (std::size_t k = 0; k < edges.size(); k++) {
+    _edge_lids[k] = Teuchos::tuple(
+        (int)this->local_index(std::get<0>(edges[k])),
+        (int)this->local_index(std::get<1>(edges[k]))
         );
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(
-      field == NULL,
-      "Invalid field name \"" << field_name << "\"."
-      );
-  return *field;
+  }
+
+  return _edge_lids;
 }
 // =============================================================================
-std::vector<stk::mesh::Entity>
+const std::vector<Teuchos::Tuple<int,4>>
 mesh::
-buildOwnedNodes_(const stk::mesh::BulkData & myBulkData) const
+build_edge_lids_complex_() const
 {
-  stk::mesh::Selector select_owned_in_part =
-    stk::mesh::Selector(myBulkData.mesh_meta_data().universal_part())
-    & stk::mesh::Selector(myBulkData.mesh_meta_data().locally_owned_part());
+  const std::vector<edge> edges = this->my_edges();
 
-  std::vector<stk::mesh::Entity> on;
-  stk::mesh::get_selected_entities(
-      select_owned_in_part,
-      myBulkData.buckets(stk::topology::NODE_RANK),
-      on
-      );
-  return on;
-}
-// =============================================================================
-std::vector<stk::mesh::Entity>
-mesh::
-get_overlap_nodes() const
-{
-  //  overlapnodes used for overlap map -- stored for changing coords
-  stk::mesh::Selector select_overlap_in_part =
-    stk::mesh::Selector(io_broker_->bulk_data().mesh_meta_data().universal_part())
-    & (stk::mesh::Selector(io_broker_->bulk_data().mesh_meta_data().locally_owned_part())
-       |stk::mesh::Selector(io_broker_->bulk_data().mesh_meta_data().globally_shared_part()));
+  std::vector<Teuchos::Tuple<int,4>> _edge_lids_complex(edges.size());
 
-  std::vector<stk::mesh::Entity> overlap_nodes;
-  stk::mesh::get_selected_entities(
-      select_overlap_in_part,
-      io_broker_->bulk_data().buckets(stk::topology::NODE_RANK),
-      overlap_nodes
-      );
+  for (std::size_t k = 0; k < edges.size(); k++) {
+    int lidT0 = this->local_index(std::get<0>(edges[k]));
+    int lidT1 = this->local_index(std::get<1>(edges[k]));
+    _edge_lids_complex[k] =
+      Teuchos::tuple(
+          2*lidT0, 2*lidT0 + 1,
+          2*lidT1, 2*lidT1 + 1
+          );
+  }
 
-  return overlap_nodes;
+  return _edge_lids_complex;
 }
 // =============================================================================
 const std::vector<Teuchos::Tuple<int,2>>
 mesh::
-buildEdgeGids_() const
+build_edge_gids_() const
 {
   const std::vector<edge> edges = this->my_edges();
 
   std::vector<Teuchos::Tuple<int,2>> _edge_gids(edges.size());
 
-  int gidT0, gidT1;
+  const moab::Tag gid = this->mbw_->tag_get_handle("GLOBAL_ID");
+
   for (std::size_t k = 0; k < edges.size(); k++) {
-    gidT0 = this->gid(std::get<0>(edges[k]));
-    gidT1 = this->gid(std::get<1>(edges[k]));
-    _edge_gids[k] = Teuchos::tuple(gidT0, gidT1);
+    // get the global IDs of the vertices
+    const std::vector<moab::EntityHandle> entities =
+      {std::get<0>(edges[k]), std::get<1>(edges[k])};
+    const auto global_ids = this->mbw_->tag_get_int_data(gid, entities);
+
+    _edge_gids[k] = Teuchos::tuple(
+        global_ids[0],
+        global_ids[1]
+        );
   }
 
   return _edge_gids;
@@ -618,69 +506,174 @@ buildEdgeGids_() const
 // =============================================================================
 const std::vector<Teuchos::Tuple<int,4>>
 mesh::
-buildEdgeGidsComplex_() const
+build_edge_gids_complex_() const
 {
   const std::vector<edge> edges = this->my_edges();
 
   std::vector<Teuchos::Tuple<int,4>> _edge_gids_complex(edges.size());
 
-  int gidT0, gidT1;
+  const moab::Tag gid = this->mbw_->tag_get_handle("GLOBAL_ID");
+
   for (std::size_t k = 0; k < edges.size(); k++) {
-    gidT0 = this->gid(std::get<0>(edges[k]));
-    gidT1 = this->gid(std::get<1>(edges[k]));
+    // get the global IDs of the vertices
+    const std::vector<moab::EntityHandle> entities =
+      {std::get<0>(edges[k]), std::get<1>(edges[k])};
+    const auto global_ids = this->mbw_->tag_get_int_data(gid, entities);
+
     _edge_gids_complex[k] =
-      Teuchos::tuple(2*gidT0, 2*gidT0 + 1, 2*gidT1, 2*gidT1 + 1);
+      Teuchos::tuple(
+          2*global_ids[0], 2*global_ids[0] + 1,
+          2*global_ids[1], 2*global_ids[1] + 1
+          );
   }
 
   return _edge_gids_complex;
 }
 // =============================================================================
-std::shared_ptr<const Tpetra::Map<int,int>>
+const std::vector<int>
 mesh::
-buildEntitiesMap_(const std::vector<stk::mesh::Entity> &entityList) const
+get_owned_gids_() const
 {
-  const size_t numEntities = entityList.size();
-#ifndef NDEBUG
-  TEUCHOS_ASSERT_INEQUALITY(numEntities, >, 0);
-#endif
-  std::vector<int> gids(numEntities);
-  for (size_t i = 0; i < numEntities; i++) {
-    gids[i] = io_broker_->bulk_data().identifier(entityList[i]) - 1;
-  }
+  // TODO resurrect?
+  //const auto mb = this->mcomm_->get_moab();
 
-  return std::make_shared<Tpetra::Map<int,int>>(
-      -1, Teuchos::ArrayView<int>(gids), 0, Teuchos::rcp(this->comm)
+  // get all entities
+  moab::Range all_verts = this->mbw_->get_entities_by_dimension(0, 0);
+
+  // filter out only owned
+  moab::ErrorCode ierr;
+  moab::Range verts;
+  ierr = this->mcomm_->filter_pstatus(
+      all_verts,
+      PSTATUS_NOT_OWNED, PSTATUS_NOT,
+      -1,
+      &verts
       );
+  TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+
+  // get the corresponding global IDs
+  moab::Tag gid = mbw_->tag_get_handle("GLOBAL_ID");
+  return this->mbw_->tag_get_int_data(gid, verts);
 }
 // =============================================================================
-std::shared_ptr<const Tpetra::Map<int,int>>
+const std::vector<int>
 mesh::
-buildComplexMap_(const std::vector<stk::mesh::Entity> &node_list) const
+get_overlap_gids_() const
 {
-  // Create a map for real/imaginary out of this.
-  const size_t num_dof = 2 * node_list.size();
-  std::vector<int> gids(num_dof);
-  for (size_t k = 0; k < node_list.size(); k++) {
-    int global_node_id = io_broker_->bulk_data().identifier(node_list[k]) - 1;
-    gids[2*k]   = 2 * global_node_id;
-    gids[2*k+1] = 2 * global_node_id + 1;
+  // TODO remove?
+  //const auto mb = this->mcomm_->get_moab();
+
+  // get owned
+  moab::Range all = this->mbw_->get_entities_by_dimension(0, 0);
+
+  // Get entities shared with all other processors
+  moab::Range shared;
+  moab::ErrorCode ierr;
+  ierr = mcomm_->get_shared_entities(-1, shared, 0); // only verts
+  TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+
+  // merge
+  all.merge(shared);
+
+  // get the corresponding global IDs
+  const moab::Tag gid = mbw_->tag_get_handle("GLOBAL_ID");
+
+  return this->mbw_->tag_get_int_data(gid, all);
+}
+// =============================================================================
+const std::vector<int>
+mesh::
+complexify_(const std::vector<int> & ids) const
+{
+  std::vector<int> complex_ids(2 * ids.size());
+  for (size_t k=0; k < ids.size(); k++) {
+    complex_ids[2*k] = 2 * ids[k];
+    complex_ids[2*k+1] = 2 * ids[k] + 1;
   }
 
+  return complex_ids;
+}
+// =============================================================================
+std::shared_ptr<Tpetra::Map<int,int>>
+mesh::
+get_map_(const std::vector<int> & ids) const
+{
   return std::make_shared<Tpetra::Map<int,int>>(
-      -1, Teuchos::ArrayView<int>(gids), 0, Teuchos::rcp(this->comm)
+      -1,
+      ids,
+      0,
+      Teuchos::rcp(this->comm)
       );
 }
 // =============================================================================
 mesh::edges_container
 mesh::
-buildEdge_data_()
+build_edge_data_()
 {
-  std::vector<stk::mesh::Entity> cells = this->get_owned_cells();
+  // get the number of 3D entities
+  const int num3d = this->mbw_->get_number_entities_by_dimension(0, 3);
+
+  const int dim = (num3d > 0) ? 3 : 2;
+
+  // Get regions, by dimension, so we stay generic to entity type
+  const moab::Range elems = this->mbw_->get_entities_by_dimension(0, dim);
+
+  // get and create all edges adjacent to cells
+  const moab::Range edges = this->mbw_->get_adjacencies(
+      elems,
+      1,
+      true,
+      moab::Interface::UNION
+      );
+
+  // create cell->edge relation
+  std::vector<std::vector<moab::EntityHandle>> cell_edges(elems.size());
+  for (size_t k = 0; k < elems.size(); k++) {
+    const auto ce = this->mbw_->get_adjacencies(
+          {elems[k]},
+          1,
+          true,
+          moab::Interface::UNION
+          );
+
+    cell_edges[k].resize(ce.size());
+    for (size_t i = 0; i < ce.size(); i++) {
+      cell_edges[k][i] = ce[i];
+    }
+  }
+
+  // create edge->node relation
+  std::vector<std::tuple<moab::EntityHandle, moab::EntityHandle>>
+    edge_nodes(edges.size());
+
+  for (size_t k = 0; k < edges.size(); k++) {
+    moab::Range verts = this->mbw_->get_adjacencies(
+        {edges[k]},
+        0,
+        true,
+        moab::Interface::UNION
+        );
+
+    edge_nodes[k] = std::make_tuple(verts[0], verts[1]);
+  }
+
+  mesh::edges_container edge_data = {edge_nodes, cell_edges};
+
+  //// for testing
+  //moab::Range verts = this->mbw_->mb->get_adjacencies(
+  //    elems,
+  //    0,
+  //    true,
+  //    moab::Interface::UNION
+  //    );
+
+#if 0
+  std::vector<moab::EntityHandle> cells = this->get_owned_cells();
   size_t num_local_cells = cells.size();
 
   mesh::edges_container edge_data = {
     // Local edge ID -> Local node IDs.
-    std::vector<std::tuple<stk::mesh::Entity, stk::mesh::Entity> >(),
+    std::vector<std::tuple<moab::EntityHandle, moab::EntityHandle> >(),
     // Local cell ID -> Local edge IDs.
     std::vector<std::vector<int>>(num_local_cells)
     };
@@ -693,7 +686,7 @@ buildEdge_data_()
   // Unfortunately, std::tuples can't be compared with '<'. Provide a function
   // pointer that implements lexicographic comparison.
   // See http://www.cplusplus.com/reference/stl/map/map/.
-  std::map<std::tuple<stk::mesh::Entity, stk::mesh::Entity>, int> nodesEdge;
+  std::map<std::tuple<moab::EntityHandle, moab::EntityHandle>, int> nodesEdge;
 
   //const EntityComp ec(io_broker_->bulk_data());
 
@@ -701,7 +694,7 @@ buildEdge_data_()
   unsigned int edge_local_id = 0;
   for (size_t cellLID = 0; cellLID < num_local_cells; cellLID++) {
     // Loop over all pairs of local nodes.
-    stk::mesh::Entity const * local_nodes
+    moab::EntityHandle const * local_nodes
       = io_broker_->bulk_data().begin_nodes(cells[cellLID]);
     const size_t num_local_nodes =
       io_broker_->bulk_data().num_nodes(cells[cellLID]);
@@ -714,7 +707,7 @@ buildEdge_data_()
     edge_data.cell_edges[cellLID] = std::vector<int>(num_local_edges);
 
     // Gather the node entities.
-    std::vector<stk::mesh::Entity> nodes(num_local_nodes);
+    std::vector<moab::EntityHandle> nodes(num_local_nodes);
     for (size_t k = 0; k < num_local_nodes; k++) {
       nodes[k] = local_nodes[k];
     }
@@ -750,7 +743,7 @@ buildEdge_data_()
       }
     }
   }
-
+#endif
   return edge_data;
 }
 // =============================================================================
@@ -820,7 +813,16 @@ build_graph() const
 #ifndef NDEBUG
   TEUCHOS_ASSERT(nonoverlap_map);
 #endif
-  auto graph = Tpetra::createCrsGraph(Teuchos::rcp(nonoverlap_map));
+
+  // Make sure that domain and range map are non-overlapping (to make sure that
+  // states psi can compute norms) and equal (to make sure that the matrix works
+  // with ML).
+  //auto graph = Teuchos::rcp(new Tpetra::CrsGraph<int, int>(
+  //    Teuchos::rcp(nonoverlap_map),
+  //    Teuchos::rcp(nonoverlap_map),
+  //    0
+  //    ));
+  const auto graph = Tpetra::createCrsGraph(Teuchos::rcp(nonoverlap_map));
 
   const std::vector<edge> edges = this->my_edges();
 
@@ -830,13 +832,9 @@ build_graph() const
     const Teuchos::Tuple<int,2> & idx = this->edge_gids[k];
     for (int i = 0; i < 2; i++) {
       graph->insertGlobalIndices(idx[i], idx);
+      // graph->insertLocalIndices(idx[i], idx);
     }
   }
-
-  // Make sure that domain and range map are non-overlapping (to make sure that
-  // states psi can compute norms) and equal (to make sure that the matrix works
-  // with ML).
-  // TODO specify nonoverlap_map?
   graph->fillComplete();
 
   return graph;
@@ -847,22 +845,25 @@ mesh::
 build_complex_graph() const
 {
   // Which row/column map to use for the matrix?
-  // The two possibilites are the non-overlapping map fetched from the
-  // owned_nodes map, and the overlapping one from the overlap_nodes.
+  // The two possibilites are the non-overlapping map fetched from
+  // the owned_nodes map, and the overlapping one from the
+  // overlap_nodes.
   // Let's illustrate the implications with the example of the matrix
   //   [ 2 1   ]
   //   [ 1 2 1 ]
   //   [   1 2 ].
-  // Suppose subdomain 1 consists of node 1, subdomain 2 of node 3, and node 2
-  // forms the boundary between them.
-  // For two processes, if process 1 owns nodes 1 and 2, the matrix will be
-  // split as
+  // Suppose subdomain 1 consists of node 1, subdomain 2 of node 3,
+  // and node 2 forms the boundary between them.
+  // For two processes, if process 1 owns nodes 1 and 2, the matrix
+  // will be split as
   //   [ 2 1   ]   [       ]
   //   [ 1 2 1 ] + [       ]
   //   [       ]   [   1 2 ].
-  // The vectors always need to have a unique map (otherwise, norms cannot be
-  // computed by Epetra), so let's assume they have the map ([1, 2], [3]).
-  // The communucation for a matrix-vector multiplication Ax=y needs to be:
+  // The vectors always need to have a unique map (otherwise, norms
+  // cannot be computed by Epetra), so let's assume they have the
+  // map ([1, 2], [3]).
+  // The communucation for a matrix-vector multiplication Ax=y
+  // needs to be:
   //
   //   1. Communicate x(3) to process 1.
   //   2. Communicate x(2) to process 2.
@@ -878,32 +879,42 @@ build_complex_graph() const
   //   2. Compute.
   //   3. Communicate (part of) y(2) to process 1.
   //
-  // In the general case, assuming that the number of nodes adjacent to a
-  // boundary (on one side) are approximately the number of nodes on that
-  // boundary, there is not much difference in communication between the
-  // patterns.
-  // What does differ, though, is the workload on the processes during the
-  // computation phase: Process 1 that owns the whole boundary, has to compute
-  // more than process 2.
-  // Notice, however, that the total number of computations is lower in
-  // scenario 1 (7 vs. 8 FLOPs); the same is true for storage.
-  // Hence, it comes down to the question whether or not the mesh generator
-  // provided a fair share of the boundary nodes.  If yes, then scenario 1 will
-  // yield approximately even computation times; if not, then scenario 2 will
-  // guarantee equal computation times at the cost of higher total storage and
-  // computation needs.
+  // In the general case, assuming that the number of nodes adjacent
+  // to a boundary (on one side) are approximately the number of
+  // nodes on that boundary, there is not much difference in
+  // communication between the patterns.
+  // What does differ, though, is the workload on the processes
+  // during the computation phase: Process 1 that owns the whole
+  // boundary, has to compute more than process 2.
+  // Notice, however, that the total number of computations is
+  // lower in scenario 1 (7 vs. 8 FLOPs); the same is true for
+  // storage.
+  // Hence, it comes down to the question whether or not the
+  // mesh generator provided a fair share of the boundary nodes.
+  // If yes, then scenario 1 will yield approximately even
+  // computation times; if not, then scenario 2 will guarantee
+  // equal computation times at the cost of higher total
+  // storage and computation needs.
   //
   // Remark:
   // This matrix will later be fed into ML. ML has certain restrictions as to
   // what maps can be used. One of those is that RowMatrixRowMap() and
-  // getRangeMap must be the same, and, if the matrix is square, getRangeMap
-  // and getDomainMap must coincide too.
+  // getRangeMap must be the same, and, if the matrix is square,
+  // getRangeMap and getDomainMap must coincide too.
   //
   const auto nonoverlap_map = this->complex_map();
 #ifndef NDEBUG
   TEUCHOS_ASSERT(nonoverlap_map);
 #endif
-  auto graph = Tpetra::createCrsGraph(Teuchos::rcp(nonoverlap_map));
+  // Make sure that domain and range map are non-overlapping (to make sure that
+  // states psi can compute norms) and equal (to make sure that the matrix works
+  // with ML).
+  // const auto graph = Teuchos::rcp(new Tpetra::CrsGraph<int, int>(
+  //     Teuchos::rcp(nonoverlap_map),
+  //     Teuchos::rcp(nonoverlap_map),
+  //     0
+  //     ));
+  const auto graph = Tpetra::createCrsGraph(Teuchos::rcp(nonoverlap_map));
 
   const std::vector<edge> edges = this->my_edges();
 
@@ -912,14 +923,14 @@ build_complex_graph() const
   for (size_t k = 0; k < edges.size(); k++) {
     const Teuchos::Tuple<int,4> & idx = this->edge_gids_complex[k];
     for (int i = 0; i < 4; i++) {
+#ifdef NDEBUG
+      TEUCHOS_ASSERT_INEQUALITY(idx[i], >=, 0);
+#endif
       graph->insertGlobalIndices(idx[i], idx);
+      //graph->insertLocalIndices(idx[i], idx);
     }
   }
 
-  // Make sure that domain and range map are non-overlapping (to make sure that
-  // states psi can compute norms) and equal (to make sure that the matrix works
-  // with ML).
-  // TODO specify nonoverlap_map?
   graph->fillComplete();
 
   return graph;
