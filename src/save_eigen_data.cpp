@@ -40,8 +40,7 @@ save_eigen_data(
   eigen_param_listPtr_(Teuchos::rcpFromRef<Teuchos::ParameterList>(eigen_param_list)),
   model_eval_(model_eval),
   csv_writer_(file_name, " "),
-  locaStepper_(),
-  num_compute_stable_eigenvalues_(6)
+  locaStepper_()
 {
 }
 // =============================================================================

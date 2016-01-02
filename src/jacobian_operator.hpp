@@ -80,7 +80,7 @@ public:
 public:
   void
   rebuild(
-      const std::map<std::string, double> params,
+      const std::map<std::string, double> & params,
       const Tpetra::Vector<double,int,int> & current_x
       );
 
@@ -88,8 +88,8 @@ protected:
 private:
   void
   rebuild_diags_(
-      const std::map<std::string, double> params,
-      const Tpetra::Vector<double,int,int> &current_x
+      const std::map<std::string, double> & params,
+      const Tpetra::Vector<double,int,int> & current_x
       );
 
 private:
