@@ -80,7 +80,11 @@ write(const std::string & filename) const
   Teuchos::TimeMonitor tm(*write_time_);
 #endif
 
-  this->mbw_->write_file(filename);
+  this->mbw_->write_file(
+      filename,
+      "",
+      "PARALLEL=WRITE_PART;"
+      );
   return;
 }
 // =============================================================================

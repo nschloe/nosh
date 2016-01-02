@@ -5,24 +5,24 @@
 //   const moab::Range & range
 //   ) const
 // {
-//   moab::ErrorCode ierr;
+//   moab::ErrorCode rval;
 //
 //   moab::Tag tag = mbw_->tag_get_handle(tag_name);
 //
 //   int length;
-//   ierr = mbw_->mb->tag_get_length(tag, length);
-//   TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+//   rval = mbw_->mb->tag_get_length(tag, length);
+//   TEUCHOS_ASSERT_EQUALITY(rval, moab::MB_SUCCESS);
 //
 //   moab::DataType type;
-//   ierr = mbw_->mb->tag_get_data_type(tag, type);
-//   TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+//   rval = mbw_->mb->tag_get_data_type(tag, type);
+//   TEUCHOS_ASSERT_EQUALITY(rval, moab::MB_SUCCESS);
 //
 //   TEUCHOS_ASSERT_EQUALITY(type, moab::DataType::MB_TYPE_DOUBLE);
 //
 //   const int num_data = length * range.size();
 //   std::vector<double> data(num_data);
-//   ierr = mbw_->mb->tag_get_data(tag, range, &data[0]);
-//   TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+//   rval = mbw_->mb->tag_get_data(tag, range, &data[0]);
+//   TEUCHOS_ASSERT_EQUALITY(rval, moab::MB_SUCCESS);
 //
 //   return data;
 // }
@@ -50,30 +50,33 @@ namespace nosh {
       moab::Tag
       tag_get_handle(const std::string & name)
       {
-        moab::ErrorCode ierr;
         moab::Tag tag;
-        ierr = this->mb->tag_get_handle(name.c_str(), tag);
-        TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+        const auto rval = this->mb->tag_get_handle(name.c_str(), tag);
+        if (rval != moab::MB_SUCCESS) {
+          throw std::runtime_error("error in moab::tag_get_handle");
+        }
         return tag;
       }
 
       int
       tag_get_length(const moab::Tag tag)
       {
-        moab::ErrorCode ierr;
         int length;
-        ierr = this->mb->tag_get_length(tag, length);
-        TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+        const auto rval = this->mb->tag_get_length(tag, length);
+        if (rval != moab::MB_SUCCESS) {
+          throw std::runtime_error("error in moab::tag_get_length");
+        }
         return length;
       }
 
       moab::DataType
       tag_get_data_type(const moab::Tag tag)
       {
-        moab::ErrorCode ierr;
         moab::DataType type;
-        ierr = this->mb->tag_get_data_type(tag, type);
-        TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+        const auto rval = this->mb->tag_get_data_type(tag, type);
+        if (rval != moab::MB_SUCCESS) {
+          throw std::runtime_error("error in moab::tag_get_data_type");
+        }
         return type;
       }
 
@@ -84,12 +87,13 @@ namespace nosh {
           )
       {
         // TODO assert double
-        moab::ErrorCode ierr;
         const int length = this->tag_get_length(tag);
         const int num_data = length * range.size();
         std::vector<double> data(num_data);
-        ierr = this->mb->tag_get_data(tag, range, &data[0]);
-        TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+        const auto rval = this->mb->tag_get_data(tag, range, data.data());
+        if (rval != moab::MB_SUCCESS) {
+          throw std::runtime_error("error in moab::tag_get_data");
+        }
         return data;
       }
 
@@ -100,12 +104,13 @@ namespace nosh {
           )
       {
         // TODO assert int
-        moab::ErrorCode ierr;
         const int length = this->tag_get_length(tag);
         const int num_data = length * range.size();
         std::vector<int> data(num_data);
-        ierr = this->mb->tag_get_data(tag, range, &data[0]);
-        TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+        const auto rval = this->mb->tag_get_data(tag, range, data.data());
+        if (rval != moab::MB_SUCCESS) {
+          throw std::runtime_error("error in moab::tag_get_data");
+        }
         return data;
       }
 
@@ -116,31 +121,33 @@ namespace nosh {
           )
       {
         // TODO assert int
-        moab::ErrorCode ierr;
         const int length = this->tag_get_length(tag);
         const int num_data = length * entity_handles.size();
         std::vector<int> data(num_data);
-        ierr = this->mb->tag_get_data(
+        const auto rval = this->mb->tag_get_data(
             tag,
             entity_handles.data(),
             entity_handles.size(),
             data.data()
             );
-        TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+        if (rval != moab::MB_SUCCESS) {
+          throw std::runtime_error("error in moab::tag_get_data");
+        }
         return data;
       }
 
       std::vector<double>
       get_coords(const std::vector<moab::EntityHandle> & entity_handles)
       {
-        moab::ErrorCode ierr;
         std::vector<double> coords(3 * entity_handles.size());
-        ierr = this->mb->get_coords(
+        const auto rval = this->mb->get_coords(
             entity_handles.data(),
             entity_handles.size(),
             coords.data()
             );
-        TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS)
+        if (rval != moab::MB_SUCCESS) {
+          throw std::runtime_error("error in moab::get_coords");
+        }
         return coords;
       }
 
@@ -151,15 +158,16 @@ namespace nosh {
           const bool recursive=false
           )
       {
-        moab::ErrorCode ierr;
         moab::Range entities;
-        ierr = this->mb->get_entities_by_dimension(
+        const auto rval = this->mb->get_entities_by_dimension(
             meshset,
             dimension,
             entities,
             recursive
             );
-        TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+        if (rval != moab::MB_SUCCESS) {
+          throw std::runtime_error("error in moab::get_entities_by_dimension");
+        }
         return entities;
       }
 
@@ -171,16 +179,17 @@ namespace nosh {
           const int operation_type = moab::Interface::INTERSECT
           )
       {
-        moab::ErrorCode ierr;
         moab::Range adj_entities;
-        ierr = this->mb->get_adjacencies(
+        const auto rval = this->mb->get_adjacencies(
             from_entities,
             to_dimension,
             create_if_missing,
             adj_entities,
             operation_type
             );
-        TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+        if (rval != moab::MB_SUCCESS) {
+          throw std::runtime_error("error in moab::get_adjacencies");
+        }
         return adj_entities;
       }
 
@@ -192,17 +201,18 @@ namespace nosh {
           const int operation_type = moab::Interface::INTERSECT
           )
       {
-        moab::ErrorCode ierr;
         moab::Range adj_entities;
-        ierr = this->mb->get_adjacencies(
-            &from_entities[0],
+        const auto rval = this->mb->get_adjacencies(
+            from_entities.data(),
             from_entities.size(),
             to_dimension,
             create_if_missing,
             adj_entities,
             operation_type
             );
-        TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+        if (rval != moab::MB_SUCCESS) {
+          throw std::runtime_error("error in moab::get_adjacencies");
+        }
         return adj_entities;
       }
 
@@ -213,15 +223,18 @@ namespace nosh {
           const bool recursive = false
           )
       {
-        moab::ErrorCode ierr;
         int num = 0;
-        ierr = this->mb->get_number_entities_by_dimension(
+        const auto rval = this->mb->get_number_entities_by_dimension(
             meshset,
             dimension,
             num,
             recursive
             );
-        TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+        if (rval != moab::MB_SUCCESS) {
+          throw std::runtime_error(
+              "error in moab::get_number_entities_by_dimension"
+              );
+        }
         return num;
       }
 
@@ -232,17 +245,18 @@ namespace nosh {
           std::vector<moab::EntityHandle> * storage = 0
           )
       {
-        moab::ErrorCode ierr;
         const moab::EntityHandle * conn = NULL;
         int numV = 0;
-        ierr = this->mb->get_connectivity(
+        const auto rval = this->mb->get_connectivity(
             entity_handle,
             conn,
             numV,
             corners_only,
             storage
             );
-        TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
+        if (rval != moab::MB_SUCCESS) {
+          throw std::runtime_error("error in moab::get_connectivity");
+        }
         // construct vector from array
         std::vector<moab::EntityHandle> conn_vec(numV);
         for (int k = 0; k < numV; k++) {
@@ -254,22 +268,23 @@ namespace nosh {
     void
     load_file(
         const std::string & file_name,
-        const moab::EntityHandle * file_set = 0,
+        const moab::EntityHandle * file_set = nullptr,
         const std::string & options = "",
         const std::string & set_tag_name = "",
         std::vector<int> set_tag_values = {}
         )
     {
-      moab::ErrorCode rval;
-      rval = this->mb->load_file(
+      const auto rval = this->mb->load_file(
           file_name.c_str(),
           file_set,
           options.c_str(),
           set_tag_name.c_str(),
-          &set_tag_values[0],
+          set_tag_values.data(),
           set_tag_values.size()
           );
-      TEUCHOS_ASSERT_EQUALITY(rval, moab::MB_SUCCESS);
+      if (rval != moab::MB_SUCCESS) {
+        throw std::runtime_error("error in moab::load_file");
+      }
       return;
     }
 
@@ -282,8 +297,7 @@ namespace nosh {
         const std::vector<moab::Tag> & tag_list = {}
         )
     {
-      moab::ErrorCode rval;
-      rval = this->mb->write_file (
+      const auto rval = this->mb->write_file(
           file_name.c_str(),
           file_type.c_str(),
           options.c_str(),
@@ -292,7 +306,9 @@ namespace nosh {
           tag_list.data(),
           tag_list.size()
           );
-      TEUCHOS_ASSERT_EQUALITY(rval, moab::MB_SUCCESS);
+      if (rval != moab::MB_SUCCESS) {
+        throw std::runtime_error("error in moab::write_file");
+      }
     }
 
     void
@@ -307,7 +323,9 @@ namespace nosh {
           output_list.data(),
           output_list.size()
           );
-      TEUCHOS_ASSERT_EQUALITY(rval, moab::MB_SUCCESS);
+      if (rval != moab::MB_SUCCESS) {
+        throw std::runtime_error("error in moab::write_mesh");
+      }
     }
 
     std::tuple<moab::Tag, bool>
@@ -319,10 +337,9 @@ namespace nosh {
         const void * default_value = 0
         )
     {
-      moab::ErrorCode rval;
       moab::Tag tag_handle;
       bool created;
-      rval = this->mb->tag_get_handle(
+      const auto rval = this->mb->tag_get_handle(
           name.c_str(),
           size,
           type,
@@ -331,7 +348,9 @@ namespace nosh {
           default_value,
           &created
           );
-      TEUCHOS_ASSERT_EQUALITY(rval, moab::MB_SUCCESS);
+      if (rval != moab::MB_SUCCESS) {
+        throw std::runtime_error("error in moab::tag_get_handle");
+      }
       return std::make_tuple(tag_handle, created);
     }
 
@@ -342,13 +361,14 @@ namespace nosh {
         const void * tag_data
         )
     {
-      moab::ErrorCode rval;
-      rval = this->mb->tag_set_data(
+      const auto rval = this->mb->tag_set_data(
         tag_handle,
         entity_handles,
         tag_data
         );
-      TEUCHOS_ASSERT_EQUALITY(rval, moab::MB_SUCCESS);
+      if (rval != moab::MB_SUCCESS) {
+        throw std::runtime_error("error in moab::tag_set_data");
+      }
       return;
     }
 
