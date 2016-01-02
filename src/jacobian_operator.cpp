@@ -84,7 +84,7 @@ apply(
   // Y = K*X
   keo_->apply(X, Y);
 
-  const std::size_t num_my_points = mesh_->control_volumes()->getLocalLength();
+  const int num_my_points = mesh_->control_volumes()->getLocalLength();
 #ifndef NDEBUG
   TEUCHOS_ASSERT_EQUALITY(2*num_my_points, X.getLocalLength());
 #endif
@@ -112,7 +112,7 @@ apply(
     // vector entries one-by-one. And then, while we're at it, let's include
     // all the other terms in the loop too. (It would actually be possible to
     // have the terms 2k/2k and 2k+1/2k+1 handled by Multiply().
-    for (std::size_t k = 0; k < num_my_points; k++) {
+    for (int k = 0; k < num_my_points; k++) {
       y_data[2*k] += d0_data[2*k] * x_data[2*k]
                   + d1b_data[k]  * x_data[2*k+1];
       y_data[2*k+1] += d1b_data[k]    * x_data[2*k]
@@ -130,7 +130,7 @@ apply(
 void
 jacobian_operator::
 rebuild(
-    const std::map<std::string, double> params,
+    const std::map<std::string, double> & params,
     const Tpetra::Vector<double,int,int> & current_x
     )
 {
@@ -166,8 +166,8 @@ rebuild(
 void
 jacobian_operator::
 rebuild_diags_(
-    const std::map<std::string, double> params,
-    const Tpetra::Vector<double,int,int> &x
+    const std::map<std::string, double> & params,
+    const Tpetra::Vector<double,int,int>  &x
     )
 {
 #ifndef NDEBUG

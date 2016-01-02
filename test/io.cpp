@@ -1,36 +1,11 @@
-// @HEADER
-//
-//    <one line to give the program's name and a brief idea of what it does.>
-//    Copyright (C) 2011  Nico Schl\"omer
-//
-//    This program is free software: you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation, either version 3 of the License, or
-//    (at your option) any later version.
-//
-//    This program is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//    GNU General Public License for more details.
-//
-//    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
-// @HEADER
+#include <catch.hpp>
+
 #include <string>
 
-#include <Teuchos_ParameterList.hpp>
-
 #include <Teuchos_DefaultComm.hpp>
-#include <Teuchos_RCPStdSharedPtrConversions.hpp>
 #include <Tpetra_Vector.hpp>
 
 #include <nosh.hpp>
-
-#include <Teuchos_UnitTestHarness.hpp>
-
-namespace
-{
 
 // =============================================================================
 void
@@ -38,9 +13,7 @@ testKeo(
     const std::string & input_filename_base,
     const double psi_control_norm_1,
     const double psi_control_norm_inf,
-    const std::vector<double> & mvp_control_norms_inf,
-    Teuchos::FancyOStream & out,
-    bool & success
+    const std::vector<double> & mvp_control_norms_inf
     )
 {
   // Read the data from the file.
@@ -57,151 +30,86 @@ testKeo(
   const auto psi = mesh->get_complex_vector("psi");
   const auto mvpValues = mesh->get_multi_vector("A");
 
-  //auto data = psi->getData();
-  //for (int k = 0; k < data.size(); k++) {
-  //  std::cout << comm->getRank() << " " << k << " " << data[k] << std::endl;
-  //}
-
   // Check psi.
-  TEST_FLOATING_EQUALITY(
-      psi->norm1(),
-      psi_control_norm_1,
-      1.0e-12
-      );
-  TEST_FLOATING_EQUALITY(
-      psi->normInf(),
-      psi_control_norm_inf,
-      1.0e-12
-      );
+  REQUIRE(psi->norm1() == Approx(psi_control_norm_1));
+  REQUIRE(psi->normInf() == Approx(psi_control_norm_inf));
 
   // Check MVP.
   // Only check the infinity-norm here as all other norms only apply to vectors
   // with non-overlapping maps.
   std::vector<double> v(mvpValues->getNumVectors());
   mvpValues->normInf(Teuchos::ArrayView<double>(v));
-  TEST_COMPARE_FLOATING_ARRAYS(
-      v,
-      mvp_control_norms_inf,
-      1.0e-12
-      );
+  for (size_t k = 0; k < v.size(); k++) {
+    REQUIRE(v[k] == Approx(mvp_control_norms_inf[k]));
+  }
 
   Teuchos::TimeMonitor::summarize();
-
   return;
 }
 // ===========================================================================
-//TEUCHOS_UNIT_TEST(nosh, KeoRectangleSmallHashes)
-//{
-//  std::string input_filename_base = "rectanglesmall";
-//
-//  const double psi_control_norm_1 = 4.0;
-//  const double psi_control_norm_inf = 1.0;
-//  std::vector<double> mvp_control_norms_inf(3);
-//  mvp_control_norms_inf[0] = 0.25;
-//  mvp_control_norms_inf[1] = 2.5;
-//  mvp_control_norms_inf[2] = 0.0;
-//
-//  testKeo(input_filename_base,
-//          psi_control_norm_1,
-//          psi_control_norm_inf,
-//          mvp_control_norms_inf,
-//          out,
-//          success);
-//}
-// ============================================================================
-TEUCHOS_UNIT_TEST(nosh, KeoPacmanHashes)
+#if 0
+TEST_CASE("hashes for rectangle mesh", "[rectangle]")
 {
-  std::string input_filename_base = "pacman";
-
-  const double psi_control_norm_1 = 409.0;
-  const double psi_control_norm_inf = 1.0;
-  std::vector<double> mvp_control_norms_inf(3);
-  mvp_control_norms_inf[0] = 4.999111652374270;
-  mvp_control_norms_inf[1] = 5.0;
-  mvp_control_norms_inf[2] = 0.0;
-
-  testKeo(input_filename_base,
-          psi_control_norm_1,
-          psi_control_norm_inf,
-          mvp_control_norms_inf,
-          out,
-          success);
+  testKeo(
+      "rectanglesmall",
+      4.0,
+      1.0,
+      {0.25, 2.5, 0.0}
+      );
+}
+#endif
+// ============================================================================
+TEST_CASE("hashes for pacman mesh", "[pacman]")
+{
+  testKeo(
+      "pacman",
+      409.0,
+      1.0,
+      {4.999111652374270, 5.0, 0.0}
+      );
 }
 // ============================================================================
-//TEUCHOS_UNIT_TEST(nosh, KeoShellHashes)
-//{
-//  std::string input_filename_base = "shell";
-//
-//  const double psi_control_norm_1 = 5.0;
-//  const double psi_control_norm_inf = 1.0;
-//  std::vector<double> mvp_control_norms_inf(3);
-//  mvp_control_norms_inf[0] = 0.5;
-//  mvp_control_norms_inf[1] = 0.5;
-//  mvp_control_norms_inf[2] = 0.0;
-//
-//  testKeo(input_filename_base,
-//          psi_control_norm_1,
-//          psi_control_norm_inf,
-//          mvp_control_norms_inf,
-//          out,
-//          success);
-//}
-// ============================================================================
-TEUCHOS_UNIT_TEST(nosh, KeoSphereHashes)
+#if 0
+TEST_CASE("hashes for shell mesh", "[shell]")
 {
-  std::string input_filename_base = "sphere";
-
-  const double psi_control_norm_1 = 82.0;
-  const double psi_control_norm_inf = 1.0;
-  std::vector<double> mvp_control_norms_inf(3);
-  mvp_control_norms_inf[0] = 0.492403864860535;
-  mvp_control_norms_inf[1] = 0.468303918838501;
-  mvp_control_norms_inf[2] = 0.0;
-
-  testKeo(input_filename_base,
-          psi_control_norm_1,
-          psi_control_norm_inf,
-          mvp_control_norms_inf,
-          out,
-          success);
+  testKeo(
+      "shell",
+      5.0,
+      1.0,
+      {0.5, 0.5, 0.0}
+      );
+}
+#endif
+// ============================================================================
+TEST_CASE("hashes for sphere mesh", "[sphere]")
+{
+  testKeo(
+      "sphere",
+      82.0,
+      1.0,
+      {0.492403864860535, 0.468303918838501, 0.0}
+      );
 }
 // ============================================================================
-//TEUCHOS_UNIT_TEST(nosh, KeoCubeSmallHashes)
-//{
-//  std::string input_filename_base = "cubesmall";
-//
-//  const double psi_control_norm_1 = 8.0;
-//  const double psi_control_norm_inf = 1.0;
-//  std::vector<double> mvp_control_norms_inf(3);
-//  mvp_control_norms_inf[0] = 0.25;
-//  mvp_control_norms_inf[1] = 0.25;
-//  mvp_control_norms_inf[2] = 0.0;
-//
-//  testKeo(input_filename_base,
-//          psi_control_norm_1,
-//          psi_control_norm_inf,
-//          mvp_control_norms_inf,
-//          out,
-//          success);
-//}
-// ============================================================================
-TEUCHOS_UNIT_TEST(nosh, KeoBrickWHoleHashes)
+#if 0
+TEST_CASE("hashes for cube mesh", "[cube]")
 {
-  std::string input_filename_base = "brick-w-hole";
-
-  const double psi_control_norm_1 = 744.0;
-  const double psi_control_norm_inf = 1.0;
-  std::vector<double> mvp_control_norms_inf(3);
-  mvp_control_norms_inf[0] = 2.5;
-  mvp_control_norms_inf[1] = 2.5;
-  mvp_control_norms_inf[2] = 0.0;
-
-  testKeo(input_filename_base,
-          psi_control_norm_1,
-          psi_control_norm_inf,
-          mvp_control_norms_inf,
-          out,
-          success);
+  testKeo(
+      "cubesmall",
+      8.0,
+      1.0,
+      {0.25, 0.25, 0.0}
+      );
+}
+#endif
+// ============================================================================
+TEST_CASE("hashes for brick mesh", "[brick]")
+{
+  testKeo(
+      "brick-w-hole",
+      744.0,
+      1.0,
+      {2.5, 2.5, 0.0}
+      );
 }
 // ============================================================================
-} // namespace

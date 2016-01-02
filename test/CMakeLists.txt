@@ -10,16 +10,10 @@ INCLUDE_DIRECTORIES(SYSTEM
 SET(internal_LIBS "nosh")
 
 
-SET(IOTEST_EXECUTABLE
-  "ioTest")
-ADD_EXECUTABLE (${IOTEST_EXECUTABLE}
-  io.cpp
-  unitTestMain.cpp
-  )
+SET(IOTEST_EXECUTABLE "ioTest")
+ADD_EXECUTABLE (${IOTEST_EXECUTABLE} io.cpp main.cpp)
 # add tests
-ADD_TEST(ioTestSerial
-  ${IOTEST_EXECUTABLE}
-  )
+ADD_TEST(ioTestSerial ${IOTEST_EXECUTABLE})
 # Check out FindMPI.cmake for proper syntax.
 ADD_TEST(ioTestMpi2
   ${Trilinos_MPI_EXEC} --noprefix ${Trilinos_MPI_EXEC_NUMPROCS_FLAG} 2 ${IOTEST_EXECUTABLE}
@@ -40,12 +34,8 @@ IF (NOT Trilinos_Implicit)
     )
 ENDIF()
 
-SET(MESHTEST_EXECUTABLE
-  "meshTest")
-ADD_EXECUTABLE (${MESHTEST_EXECUTABLE}
-  mesh.cpp
-  #                 nosh_Edge_cacheTests.cpp
-  unitTestMain.cpp)
+SET(MESHTEST_EXECUTABLE "meshTest")
+ADD_EXECUTABLE (${MESHTEST_EXECUTABLE} mesh.cpp main.cpp)
 # add tests
 ADD_TEST(meshTestSerial
   ${MESHTEST_EXECUTABLE}
@@ -72,7 +62,7 @@ ENDIF()
 SET(FTEST_EXECUTABLE "fTest")
 ADD_EXECUTABLE(${FTEST_EXECUTABLE}
   compute_f.cpp
-  unitTestMain.cpp
+  main.cpp
   )
 # Set executable linking information.
 TARGET_LINK_LIBRARIES(
@@ -100,7 +90,7 @@ ADD_TEST(fTestMpi7
 SET(KEOTEST_EXECUTABLE "keoTest")
 ADD_EXECUTABLE(${KEOTEST_EXECUTABLE}
   keo.cpp
-  unitTestMain.cpp
+  main.cpp
   )
 # Set executable linking information.
 TARGET_LINK_LIBRARIES(
@@ -127,7 +117,7 @@ ADD_TEST(keoTestMpi7
 SET(JACTEST_EXECUTABLE "jacTest")
 ADD_EXECUTABLE(${JACTEST_EXECUTABLE}
   jac.cpp
-  unitTestMain.cpp
+  main.cpp
   )
 # Set executable linking information.
 TARGET_LINK_LIBRARIES(
@@ -154,7 +144,7 @@ ADD_TEST(jacTestMpi7
 SET(DFDPTEST_EXECUTABLE "dfdpTest")
 ADD_EXECUTABLE(${DFDPTEST_EXECUTABLE}
   dfdp.cpp
-  unitTestMain.cpp
+  main.cpp
   )
 # Set executable linking information.
 TARGET_LINK_LIBRARIES(

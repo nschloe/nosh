@@ -20,13 +20,13 @@ namespace nosh {
 
     auto cv_data = cv->getData();
     auto vals_data = vals->getDataNonConst();
-//    const vector_fieldType & coords_field = mesh.get_node_field("coordinates");
-    auto nodes = mesh.owned_nodes();
+    // const vector_fieldType & coords_field = mesh.get_node_field("coordinates");
+    // auto nodes = mesh.owned_nodes();
 
-#ifndef NDEBUG
-    TEUCHOS_ASSERT_EQUALITY(nodes.size(), cv_data.size());
-    TEUCHOS_ASSERT_EQUALITY(nodes.size(), vals_data.size());
-#endif
+//#ifndef NDEBUG
+//    TEUCHOS_ASSERT_EQUALITY(nodes.size(), cv_data.size());
+//    TEUCHOS_ASSERT_EQUALITY(nodes.size(), vals_data.size());
+//#endif
 
 //    switch (expr.degree) {
 //      case 0:

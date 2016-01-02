@@ -1,35 +1,13 @@
-// @HEADER
-//
-//    <one line to give the program's name and a brief idea of what it does.>
-//    Copyright (C) 2012  Nico Schlömer
-//
-//    This program is free software: you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation, either version 3 of the License, or
-//    (at your option) any later version.
-//
-//    This program is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//    GNU General Public License for more details.
-//
-//    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
-// @HEADER
+#include <catch.hpp>
+
 #include <string>
 
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_RCPStdSharedPtrConversions.hpp>
-#include <Teuchos_ParameterList.hpp>
 #include <Thyra_TpetraThyraWrappers.hpp>
 
 #include <nosh.hpp>
 
-#include <Teuchos_UnitTestHarness.hpp>
-
-namespace
-{
 // =============================================================================
 void
 testComputeF(
@@ -37,9 +15,7 @@ testComputeF(
     const double mu,
     const double control_norm_1,
     const double control_norm_2,
-    const double control_norm_inf,
-    Teuchos::FancyOStream & out,
-    bool & success
+    const double control_norm_inf
     )
 {
   // Read the data from the file.
@@ -61,8 +37,7 @@ testComputeF(
   auto mvp = std::make_shared<nosh::vector_field::explicit_values>(*mesh, "A", mu);
   auto sp = std::make_shared<nosh::scalar_field::constant>(*mesh, -1.0);
 
-  Teuchos::RCP<Thyra::ModelEvaluator<double>> model_eval =
-    Teuchos::rcp(new nosh::model_evaluator::nls(
+  auto model_eval = Teuchos::rcp(new nosh::model_evaluator::nls(
           mesh,
           mvp,
           sp,
@@ -90,95 +65,58 @@ testComputeF(
   model_eval->evalModel(in_args, out_args);
 
   // check the norms
-  TEST_FLOATING_EQUALITY(
-      Thyra::norm_1(*f),
-      control_norm_1,
-      1.0e-10
-      );
-  TEST_FLOATING_EQUALITY(
-      Thyra::norm_2(*f),
-      control_norm_2,
-      1.0e-10
-      );
-  TEST_FLOATING_EQUALITY(
-      Thyra::norm_inf(*f),
-      control_norm_inf,
-      1.0e-10
-      );
+  REQUIRE(Thyra::norm_1(*f) == Approx(control_norm_1));
+  REQUIRE(Thyra::norm_2(*f) == Approx(control_norm_2));
+  REQUIRE(Thyra::norm_inf(*f) == Approx(control_norm_inf));
 
   return;
 }
 // ===========================================================================
-//TEUCHOS_UNIT_TEST(nosh, ComputeFRectangleSmallHashes)
-//{
-//  std::string input_filename_base = "rectanglesmall";
-//
-//  double mu = 1.0e-2;
-//  double control_norm_1 = 0.50126061034211067;
-//  double control_norm_2 = 0.24749434381636057;
-//  double control_norm_inf = 0.12373710977782607;
-//
-//  testComputeF(input_filename_base,
-//               mu,
-//               control_norm_1,
-//               control_norm_2,
-//               control_norm_inf,
-//               out,
-//               success);
-//}
-// ============================================================================
-TEUCHOS_UNIT_TEST(nosh, ComputeFPacmanHashes)
+#if 0
+TEST_CASE("F(x) for rectangle mesh", "[rectangle]")
 {
-  std::string input_filename_base = "pacman";
-
-  double mu = 1.0e-2;
-  double control_norm_1 = 0.71366475047893463;
-  double control_norm_2 = 0.12552206259336218;
-  double control_norm_inf = 0.055859319123267033;
-
-  testComputeF(input_filename_base,
-               mu,
-               control_norm_1,
-               control_norm_2,
-               control_norm_inf,
-               out,
-               success);
+  testComputeF(
+      "rectanglesmall",
+      1.0e-2,
+      0.50126061034211067,
+      0.24749434381636057,
+      0.12373710977782607
+      );
+}
+#endif
+// ============================================================================
+TEST_CASE("F(x) for pacman mesh", "[pacman]")
+{
+  testComputeF(
+      "pacman",
+      1.0e-2,
+      0.71366475047893463,
+      0.12552206259336218,
+      0.055859319123267033
+      );
 }
 // ============================================================================
-//TEUCHOS_UNIT_TEST(nosh, ComputeFCubeSmallHashes)
-//{
-//  std::string input_filename_base = "cubesmall";
-//
-//  double mu = 1.0e-2;
-//  double control_norm_1 = 8.3541623156163313e-05;
-//  double control_norm_2 = 2.9536515963905867e-05;
-//  double control_norm_inf = 1.0468744547749431e-05;
-//
-//  testComputeF(input_filename_base,
-//               mu,
-//               control_norm_1,
-//               control_norm_2,
-//               control_norm_inf,
-//               out,
-//               success);
-//}
-// ============================================================================
-TEUCHOS_UNIT_TEST(nosh, ComputeFBrickWHoleHashes)
+#if 0
+TEST_CASE("F(x) for cube mesh", "[cube]")
 {
-  std::string input_filename_base = "brick-w-hole";
-
-  double mu = 1.0e-2;
-  double control_norm_1 = 1.8084716102419285;
-  double control_norm_2 = 0.15654267585120338;
-  double control_norm_inf = 0.03074423493622647;
-
-  testComputeF(input_filename_base,
-               mu,
-               control_norm_1,
-               control_norm_2,
-               control_norm_inf,
-               out,
-               success);
+  testComputeF(
+      "cubesmall",
+      1.0e-2,
+      8.3541623156163313e-05,
+      2.9536515963905867e-05,
+      1.0468744547749431e-05
+      );
+}
+#endif
+// ============================================================================
+TEST_CASE("F(x) for brick mesh", "[brick]")
+{
+  testComputeF(
+      "brick-w-hole",
+      1.0e-2,
+      1.8084716102419285,
+      0.15654267585120338,
+      0.03074423493622647
+      );
 }
 // ============================================================================
-} // namespace

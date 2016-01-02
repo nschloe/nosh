@@ -87,10 +87,6 @@ private:
   const std::shared_ptr<const nosh::model_evaluator::base> model_eval_;
   nosh::csv_writer csv_writer_;
   std::shared_ptr<LOCA::Stepper> locaStepper_;
-
-  //! The minimum number of stable eigenvalues that is to be computed in each
-  //! step.
-  unsigned int num_compute_stable_eigenvalues_;
 };
 } // namespace nosh
 
