@@ -7,6 +7,6 @@ write(
     const std::string & filename
     )
 {
-  x.mesh->insert_vector(x, "x");
+  //x.mesh->insert_vector(x, "x");
   x.mesh->write(filename);
 }

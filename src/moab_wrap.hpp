@@ -78,7 +78,10 @@ namespace nosh {
       }
 
       std::vector<double>
-      tag_get_data(const moab::Tag tag, const moab::Range & range)
+      tag_get_data(
+          const moab::Tag tag,
+          const moab::Range & range
+          )
       {
         // TODO assert double
         moab::ErrorCode ierr;
@@ -91,7 +94,10 @@ namespace nosh {
       }
 
       std::vector<int>
-      tag_get_int_data(const moab::Tag tag, const moab::Range & range)
+      tag_get_int_data(
+          const moab::Tag tag,
+          const moab::Range & range
+          )
       {
         // TODO assert int
         moab::ErrorCode ierr;
@@ -116,9 +122,9 @@ namespace nosh {
         std::vector<int> data(num_data);
         ierr = this->mb->tag_get_data(
             tag,
-            &entity_handles[0],
+            entity_handles.data(),
             entity_handles.size(),
-            &data[0]
+            data.data()
             );
         TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
         return data;
@@ -130,9 +136,9 @@ namespace nosh {
         moab::ErrorCode ierr;
         std::vector<double> coords(3 * entity_handles.size());
         ierr = this->mb->get_coords(
-            &entity_handles[0],
+            entity_handles.data(),
             entity_handles.size(),
-            &coords[0]
+            coords.data()
             );
         TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS)
         return coords;
@@ -268,17 +274,38 @@ namespace nosh {
     }
 
     void
+    write_file(
+        const std::string & file_name,
+        const std::string & file_type = "",
+        const std::string & options = "",
+        const std::vector<moab::EntityHandle> & output_sets = {},
+        const std::vector<moab::Tag> & tag_list = {}
+        )
+    {
+      moab::ErrorCode rval;
+      rval = this->mb->write_file (
+          file_name.c_str(),
+          file_type.c_str(),
+          options.c_str(),
+          output_sets.data(),
+          output_sets.size(),
+          tag_list.data(),
+          tag_list.size()
+          );
+      TEUCHOS_ASSERT_EQUALITY(rval, moab::MB_SUCCESS);
+    }
+
+    void
     write_mesh(
         const std::string & file_name,
-        const moab::EntityHandle * output_list = NULL,
-        const int num_sets = 0
+        const std::vector<moab::EntityHandle> & output_list = {}
         )
     {
       moab::ErrorCode rval;
       rval = this->mb->write_mesh(
           file_name.c_str(),
-          output_list,
-          num_sets
+          output_list.data(),
+          output_list.size()
           );
       TEUCHOS_ASSERT_EQUALITY(rval, moab::MB_SUCCESS);
     }
@@ -289,7 +316,7 @@ namespace nosh {
         int size,
         moab::DataType type,
         unsigned flags = 0,
-        const void *  default_value = 0
+        const void * default_value = 0
         )
     {
       moab::ErrorCode rval;
