@@ -67,9 +67,6 @@ public:
   ~mesh();
 
   void
-  open_file(const std::string &output_file);
-
-  void
   write(const std::string & filename) const;
 
   std::shared_ptr<Tpetra::Vector<double,int,int>>
@@ -93,22 +90,10 @@ public:
   std::shared_ptr<Tpetra::Map<int,int>>
   get_map_(const std::vector<int> & ids) const;
 
-  std::vector<moab::EntityHandle>
-  get_owned_cells() const;
-
-  std::vector<moab::EntityHandle>
-  get_overlap_edges() const;
-
   const std::vector<edge>
   my_edges() const
   {
     return edge_data_.edge_nodes;
-  }
-
-  std::vector<moab::EntityHandle>
-  owned_nodes() const
-  {
-    return owned_nodes_;
   }
 
   std::vector<moab::EntityHandle>
@@ -230,9 +215,6 @@ public:
 protected:
   const std::shared_ptr<moab::ParallelComm> mcomm_;
 
-private:
-  const std::vector<moab::EntityHandle> owned_nodes_;
-
 protected:
   const std::shared_ptr<const Tpetra::Map<int,int>> nodes_map_;
   const std::shared_ptr<const Tpetra::Map<int,int>> nodes_overlap_map_;
@@ -269,19 +251,6 @@ private:
       const std::string &file_name,
       const int index
       );
-
-  //std::shared_ptr<Tpetra::Vector<double,int,int>>
-  //field_to_vector_(const ScalarFieldType &field) const;
-
-  //std::shared_ptr<Tpetra::MultiVector<double,int,int>>
-  //field_to_vector_(
-  //    const vector_fieldType &field,
-  //    const int num_components
-  //    ) const;
-
-  std::vector<moab::EntityHandle>
-  //build_owned_nodes_(const stk::mesh::BulkData & myBulkData) const;
-  build_owned_nodes_() const;
 
   std::vector<double>
   compute_edge_coefficients_() const;

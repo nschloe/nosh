@@ -47,7 +47,6 @@ mesh(
   comm(_comm),
   mbw_(std::make_shared<moab_wrap>(mb)),
   mcomm_(mcomm),
-  //owned_nodes_(this->build_owned_nodes_()),
   nodes_map_(this->get_map_(this->get_owned_gids_())),
   nodes_overlap_map_(this->get_map_(this->get_overlap_gids_())),
   complex_map_(this->get_map_(this->complexify_(this->get_owned_gids_()))),
@@ -70,131 +69,6 @@ mesh(
 mesh::
 ~mesh()
 {
-}
-// =============================================================================
-//std::shared_ptr<Tpetra::Vector<double,int,int>>
-//mesh::
-//field_to_vector_(const ScalarFieldType &field) const
-//{
-//  // Get overlap nodes.
-//  const auto & overlap_nodes = this->get_overlap_nodes();
-//
-//  // Create vector with this respective map.
-//  auto vector = std::make_shared<Tpetra::Vector<double,int,int>>(
-//      Teuchos::rcp(this->overlap_map())
-//      );
-//
-//  auto v_data = vector->getDataNonConst();
-//
-//#ifndef NDEBUG
-//  TEUCHOS_ASSERT_EQUALITY(v_data.size(), 2*overlap_nodes.size());
-//#endif
-//
-//  // Fill the vector with data from the file.
-//  for (unsigned int k = 0; k < overlap_nodes.size(); k++) {
-//    double* vals = stk::mesh::field_data(field, overlap_nodes[k]);
-//    // Check if the field is actually there.
-//#ifndef NDEBUG
-//    TEUCHOS_ASSERT(vals != NULL);
-//    //*out << "WARNING: _value for node " << k << " not found.\n" <<
-//    //  "Probably there is no field given with the state. Using default."
-//    //  << std::endl;
-//#endif
-//    v_data[k] = vals[0];
-//  }
-//
-//#ifndef NDEBUG
-//  // Use NormInf as it's robust against overlapping maps.
-//  const double r = vector->normInf();
-//  TEUCHOS_TEST_FOR_EXCEPT_MSG(
-//      r != r || r > 1.0e100,
-//      "The input data seems flawed. Abort."
-//      );
-//#endif
-//
-//  return vector;
-//}
-// =============================================================================
-//std::shared_ptr<Tpetra::MultiVector<double,int,int>>
-//mesh::
-//field_to_vector_(
-//    const vector_fieldType &field,
-//    const int num_components
-//    ) const
-//{
-//  // Get overlap nodes.
-//  const auto & overlap_nodes = this->get_overlap_nodes();
-//
-//  // Create vector with this respective map.
-//  auto vector = std::make_shared<Tpetra::MultiVector<double,int,int>>(
-//      Teuchos::rcp(this->overlap_map()),
-//      num_components
-//      );
-//
-//  std::vector<Teuchos::ArrayRCP<double>> data(num_components);
-//  for (int i = 0; i < num_components; i++) {
-//    data[i] = vector->getDataNonConst(i);
-//#ifndef NDEBUG
-//    TEUCHOS_ASSERT_EQUALITY(data[i].size(), overlap_nodes.size());
-//#endif
-//  }
-//
-//  // Fill the vector with data from the file.
-//  for (unsigned int k = 0; k < overlap_nodes.size(); k++) {
-//    const double * const vals =
-//      stk::mesh::field_data(field, overlap_nodes[k]);
-//#ifndef NDEBUG
-//    // Check if the field is actually there.
-//    TEUCHOS_TEST_FOR_EXCEPT_MSG(
-//        vals == NULL,
-//        "Field value for node " << k << " not found.\n" <<
-//        "Probably there is no field given with the state."
-//        );
-//#endif
-//    // Copy over.
-//    // A multivector isn't actually a good data structure for this.  What would
-//    // be needed is a vector where each entry has k components. This way, the
-//    // data could stick together.
-//    for (int i = 0; i < num_components; i++) {
-//      data[i][k] = vals[i];
-//    }
-//  }
-//
-//#ifndef NDEBUG
-//  // Check for NaNs and uninitialized data.
-//  std::vector<double> r(num_components);
-//  // Use NormInf as it's robust against overlapping maps.
-//  vector->normInf(Teuchos::ArrayView<double>(r));
-//  for (int i = 0; i < num_components; i++) {
-//    TEUCHOS_TEST_FOR_EXCEPT_MSG(
-//        r[i] != r[i] || r[i] > 1.0e100,
-//        "The input data seems flawed. Abort."
-//        );
-//  }
-//#endif
-//
-//  return vector;
-//}
-// =============================================================================
-void
-mesh::
-open_file(
-    const std::string &output_file
-    )
-{
-#if 0
-  output_channel_ = io_broker_->create_output_mesh(
-      output_file,
-      stk::io::WRITE_RESULTS
-      );
-  const stk::mesh::FieldVector &fields = io_broker_->meta_data().get_fields();
-  for (size_t i=0; i < fields.size(); i++) {
-    if (*stk::io::get_field_role(*fields[i]) == Ioss::Field::TRANSIENT) {
-      io_broker_->add_field(output_channel_, *fields[i]);
-    }
-  }
-#endif
-  return;
 }
 // =============================================================================
 void
@@ -240,24 +114,30 @@ std::shared_ptr<Tpetra::Vector<double,int,int>>
 mesh::
 get_vector(const std::string & tag_name) const
 {
-#if 0
-  const ScalarFieldType * const field =
-    io_broker_->bulk_data().mesh_meta_data().get_field<ScalarFieldType>(
-        stk::topology::NODE_RANK,
-        field_name
-        );
+  // get data for all vertices
+  moab::Range all_verts = this->mbw_->get_entities_by_dimension(0, 0);
 
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(
-      field == NULL,
-      "Scalar field \"" << field_name << "\" not found in database. "
-      << "Is it present in the input file at all? Check with io_info."
+  moab::ErrorCode ierr;
+  moab::Range verts;
+  ierr = this->mcomm_->filter_pstatus(
+      all_verts,
+      PSTATUS_NOT_OWNED, PSTATUS_NOT,
+      -1,
+      &verts
       );
+  TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
 
-  return this->field_to_vector_(*field);
-#endif
+  auto data = this->get_data(tag_name, verts);
 
+  TEUCHOS_ASSERT_EQUALITY(
+    data.size(),
+    this->nodes_map_->getNodeNumElements()
+    );
+
+  // Set vector values from an existing array (copy)
   return std::make_shared<Tpetra::Vector<double,int,int>>(
-      Teuchos::rcp(this->overlap_map())
+      Teuchos::rcp(this->nodes_map_),
+      Teuchos::ArrayView<double>(data)
       );
 }
 // =============================================================================
@@ -383,62 +263,6 @@ insert_vector(
 
   return;
 }
-// =============================================================================
-std::vector<moab::EntityHandle>
-mesh::
-get_owned_cells() const
-{
-  std::vector<moab::EntityHandle> cells;
-  throw "mesh::get_owned_cells";
-#if 0
-  // get owned elements
-  stk::mesh::Selector select_owned_in_part =
-    stk::mesh::Selector(io_broker_->bulk_data().mesh_meta_data().universal_part())
-    & stk::mesh::Selector(io_broker_->bulk_data().mesh_meta_data().locally_owned_part());
-  stk::mesh::get_selected_entities(
-      select_owned_in_part,
-      io_broker_->bulk_data().buckets(stk::topology::ELEMENT_RANK),
-      cells
-      );
-#endif
-  return cells;
-}
-// =============================================================================
-std::vector<moab::EntityHandle>
-mesh::
-get_overlap_edges() const
-{
-  std::vector<moab::EntityHandle> edges;
-#if 0
-  // get overlap edges
-  stk::mesh::Selector select_overlap_in_part =
-    stk::mesh::Selector(io_broker_->bulk_data().mesh_meta_data().universal_part())
-    & (stk::mesh::Selector(io_broker_->bulk_data().mesh_meta_data().locally_owned_part())
-       |stk::mesh::Selector(io_broker_->bulk_data().mesh_meta_data().globally_shared_part()));
-
-  stk::mesh::get_selected_entities(
-      select_overlap_in_part,
-      io_broker_->bulk_data().buckets(stk::topology::EDGE_RANK),
-      edges
-      );
-#endif
-  return edges;
-}
-// =============================================================================
-//const vector_fieldType &
-//mesh::
-//get_node_field(const std::string & field_name) const {
-//  const vector_fieldType * const field =
-//    io_broker_->bulk_data().mesh_meta_data().get_field<vector_fieldType>(
-//        stk::topology::NODE_RANK,
-//        field_name
-//        );
-//  TEUCHOS_TEST_FOR_EXCEPT_MSG(
-//      field == NULL,
-//      "Invalid field name \"" << field_name << "\"."
-//      );
-//  return *field;
-//}
 // =============================================================================
 const std::vector<Teuchos::Tuple<int,2>>
 mesh::
@@ -667,83 +491,6 @@ build_edge_data_()
   //    moab::Interface::UNION
   //    );
 
-#if 0
-  std::vector<moab::EntityHandle> cells = this->get_owned_cells();
-  size_t num_local_cells = cells.size();
-
-  mesh::edges_container edge_data = {
-    // Local edge ID -> Local node IDs.
-    std::vector<std::tuple<moab::EntityHandle, moab::EntityHandle> >(),
-    // Local cell ID -> Local edge IDs.
-    std::vector<std::vector<int>>(num_local_cells)
-    };
-
-  // Used to determine if an edge sits on the domain boundary
-  std::vector<size_t> num_cells_per_edge();
-
-  // This std::map keeps track of how nodes and edges are connected. If
-  // `node_edges((3,4)) == 17`, then the nodes (3,4) are connected by edge 17.
-  // Unfortunately, std::tuples can't be compared with '<'. Provide a function
-  // pointer that implements lexicographic comparison.
-  // See http://www.cplusplus.com/reference/stl/map/map/.
-  std::map<std::tuple<moab::EntityHandle, moab::EntityHandle>, int> nodesEdge;
-
-  //const EntityComp ec(io_broker_->bulk_data());
-
-  // Loop over all owned cells.
-  unsigned int edge_local_id = 0;
-  for (size_t cellLID = 0; cellLID < num_local_cells; cellLID++) {
-    // Loop over all pairs of local nodes.
-    moab::EntityHandle const * local_nodes
-      = io_broker_->bulk_data().begin_nodes(cells[cellLID]);
-    const size_t num_local_nodes =
-      io_broker_->bulk_data().num_nodes(cells[cellLID]);
-
-    //stk::mesh::PairIterRelation nodesIterator =
-    //  cells[cellLID]->relations(meta_data.node_rank());
-    //unsigned int num_local_nodes = nodesIterator.size();
-    size_t num_local_edges = num_local_nodes * (num_local_nodes - 1) / 2;
-
-    edge_data.cell_edges[cellLID] = std::vector<int>(num_local_edges);
-
-    // Gather the node entities.
-    std::vector<moab::EntityHandle> nodes(num_local_nodes);
-    for (size_t k = 0; k < num_local_nodes; k++) {
-      nodes[k] = local_nodes[k];
-    }
-
-    // Sort nodes. This is necessary to make sure that the tuples formed below
-    // are always sorted such they are unique keys (and {3,7}, {7,3} are
-    // recognized as the same edge).
-    std::sort(nodes.begin(), nodes.end());
-
-    // In a simplex, the edges are exactly the connection between each pair of
-    // nodes. Hence, loop over pairs of nodes.
-    unsigned int edge_index = 0;
-    edge edge_nodes;
-    for (size_t e0 = 0; e0 < num_local_nodes; e0++) {
-      std::get<0>(edge_nodes) = nodes[e0];
-      for (size_t e1 = e0+1; e1 < num_local_nodes; e1++) {
-        std::get<1>(edge_nodes) = nodes[e1];
-        // As nodes are sorted and by their identifiers, edge_nodes are sorted
-        // too. This is necessary as otherwise the edge {3,7} could not be
-        // identified as {7,3}.
-        // Check if edge_nodes is in the map.
-        auto it = nodesEdge.find(edge_nodes);
-        if (it != nodesEdge.end()) {
-          // Edge is already accounted for.
-          edge_data.cell_edges[cellLID][edge_index] = it->second;
-        } else {  // Edge not found -- insert it.
-          nodesEdge[edge_nodes] = edge_local_id; // for householding in this method
-          edge_data.edge_nodes.push_back(edge_nodes); // for looping over edges
-          edge_data.cell_edges[cellLID][edge_index] = edge_local_id; // for this->compute_edge_coefficients_
-          edge_local_id++;
-        }
-        edge_index++;
-      }
-    }
-  }
-#endif
   return edge_data;
 }
 // =============================================================================
