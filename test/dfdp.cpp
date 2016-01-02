@@ -1,35 +1,12 @@
-// @HEADER
-//
-//    Unit test for dF/dp.
-//    Copyright (C) 2012--2014  Nico Schl\"omer
-//
-//    This program is free software: you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation, either version 3 of the License, or
-//    (at your option) any later version.
-//
-//    This program is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//    GNU General Public License for more details.
-//
-//    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
-// @HEADER
+#include <catch.hpp>
+
 #include <string>
 
 #include <Teuchos_DefaultComm.hpp>
-#include <Teuchos_RCPStdSharedPtrConversions.hpp>
-#include <Teuchos_ParameterList.hpp>
 #include <Thyra_TpetraThyraWrappers.hpp>
 
 #include <nosh.hpp>
 
-#include <Teuchos_UnitTestHarness.hpp>
-
-namespace
-{
 // ===========================================================================
 void
 computeFiniteDifference_(
@@ -73,9 +50,7 @@ computeFiniteDifference_(
 void
 test_dfdp(
     const std::string & input_filename_base,
-    const double mu,
-    Teuchos::FancyOStream & out,
-    bool & success
+    const double mu
     )
 {
   // Read the data from the file.
@@ -159,43 +134,41 @@ test_dfdp(
 
     // Compare the two.
     Thyra::Vp_StV(fdiff(), -1.0, *dfdp->col(0));
-    double r = Thyra::norm_inf(*fdiff);
-    TEST_COMPARE(r, <, 1.0e-7);
+    REQUIRE(Thyra::norm_inf(*fdiff) == Approx(0.0));
   }
 
   return;
 }
 // ===========================================================================
 #if 0
-TEUCHOS_UNIT_TEST(nosh, DfdpRectangleSmallHashes)
+TEST_CASE("dF/dP for rectangle mesh", "[rectangle]")
 {
   const std::string input_filename_base = "rectanglesmall";
   const double mu = 1.0e-2;
-  test_dfdp(input_filename_base, mu, out, success);
+  test_dfdp(input_filename_base, mu);
 }
 #endif
 // ============================================================================
-TEUCHOS_UNIT_TEST(nosh, DfdpPacmanHashes)
+TEST_CASE("dF/dP for pacman mesh", "[pacman]")
 {
   const std::string input_filename_base = "pacman";
   const double mu = 1.0e-2;
-  test_dfdp(input_filename_base, mu, out, success);
+  test_dfdp(input_filename_base, mu);
 }
 // ============================================================================
 #if 0
-TEUCHOS_UNIT_TEST(nosh, DfdpCubeSmallHashes)
+TEST_CASE("dF/dP for cube mesh", "[cube]")
 {
   const std::string input_filename_base = "cubesmall";
   const double mu = 1.0e-2;
-  test_dfdp(input_filename_base, mu, out, success);
+  test_dfdp(input_filename_base, mu);
 }
 #endif
 // ============================================================================
-TEUCHOS_UNIT_TEST(nosh, DfdpBrickWithHoleHashes)
+TEST_CASE("dF/dP for brick mesh", "[brick]")
 {
   const std::string input_filename_base = "brick-w-hole";
   const double mu = 1.0e-2;
-  test_dfdp(input_filename_base, mu, out, success);
+  test_dfdp(input_filename_base, mu);
 }
 // ============================================================================
-} // namespace

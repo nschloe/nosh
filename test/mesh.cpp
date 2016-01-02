@@ -16,7 +16,7 @@ testMesh(
     const double control_vol_norm_inf
     )
 {
-  auto comm =  Teuchos::DefaultComm<int>::getComm();
+  const auto comm =  Teuchos::DefaultComm<int>::getComm();
   const int size = comm->getSize();
   const std::string input_filename = (size == 1) ?
     "data/" + input_filename_base + ".h5m" :

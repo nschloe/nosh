@@ -62,7 +62,7 @@ ENDIF()
 SET(FTEST_EXECUTABLE "fTest")
 ADD_EXECUTABLE(${FTEST_EXECUTABLE}
   compute_f.cpp
-  unitTestMain.cpp
+  main.cpp
   )
 # Set executable linking information.
 TARGET_LINK_LIBRARIES(
@@ -90,7 +90,7 @@ ADD_TEST(fTestMpi7
 SET(KEOTEST_EXECUTABLE "keoTest")
 ADD_EXECUTABLE(${KEOTEST_EXECUTABLE}
   keo.cpp
-  unitTestMain.cpp
+  main.cpp
   )
 # Set executable linking information.
 TARGET_LINK_LIBRARIES(
@@ -117,7 +117,7 @@ ADD_TEST(keoTestMpi7
 SET(JACTEST_EXECUTABLE "jacTest")
 ADD_EXECUTABLE(${JACTEST_EXECUTABLE}
   jac.cpp
-  unitTestMain.cpp
+  main.cpp
   )
 # Set executable linking information.
 TARGET_LINK_LIBRARIES(
@@ -144,7 +144,7 @@ ADD_TEST(jacTestMpi7
 SET(DFDPTEST_EXECUTABLE "dfdpTest")
 ADD_EXECUTABLE(${DFDPTEST_EXECUTABLE}
   dfdp.cpp
-  unitTestMain.cpp
+  main.cpp
   )
 # Set executable linking information.
 TARGET_LINK_LIBRARIES(
