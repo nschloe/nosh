@@ -311,23 +311,6 @@ namespace nosh {
       }
     }
 
-    void
-    write_mesh(
-        const std::string & file_name,
-        const std::vector<moab::EntityHandle> & output_list = {}
-        )
-    {
-      moab::ErrorCode rval;
-      rval = this->mb->write_mesh(
-          file_name.c_str(),
-          output_list.data(),
-          output_list.size()
-          );
-      if (rval != moab::MB_SUCCESS) {
-        throw std::runtime_error("error in moab::write_mesh");
-      }
-    }
-
     std::tuple<moab::Tag, bool>
     tag_get_handle(
         const std::string & name,
