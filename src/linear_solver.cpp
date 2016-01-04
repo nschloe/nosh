@@ -68,11 +68,11 @@ linear_solve(
     }
   }
 
-#if 1
+#if 0
   auto out = Teuchos::VerboseObjectBase::getDefaultOStream();
   A.describe(*out, Teuchos::VERB_EXTREME);
   b->describe(*out, Teuchos::VERB_EXTREME);
-  //return;
+  return;
 #endif
 
   //auto A_rcp = Teuchos::rcpFromRef(A);

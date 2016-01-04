@@ -7,12 +7,10 @@ void
 matrix::
 apply_bcs_()
 {
-#if 0
   const auto boundary_nodes = this->mesh->boundary_nodes();
-  const vector_fieldType & coords_field = this->mesh->get_node_field("coordinates");
   for (const auto boundary_node: boundary_nodes) {
     // check if any of the boundary conditions kicks in
-    const auto coord = this->mesh->get_node_value(coords_field, boundary_node);
+    const auto coord = this->mesh->get_coords(boundary_node);
     int count = 0;
     for (const auto & bc: bcs) {
       if (bc->is_inside(coord)) {
@@ -49,7 +47,6 @@ apply_bcs_()
       }
     }
   }
-#endif
 }
 
 } // namespace nosh
