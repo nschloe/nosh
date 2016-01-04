@@ -74,27 +74,23 @@ namespace nosh
 #ifndef NDEBUG
           TEUCHOS_ASSERT(this->mesh);
 #endif
-#if 0
           this->resumeFill();
           this->setAllToScalar(0.0);
 
           // Add edge contributions
           const std::vector<edge> edges = this->mesh->my_edges();
           const auto edge_coefficients = this->mesh->edge_coefficients();
-          const vector_fieldType & coords_field =
-            this->mesh->get_node_field("coordinates");
           for (size_t k = 0; k < edges.size(); k++) {
-            const Eigen::Vector3d & x0 =
-              this->mesh->get_node_value(coords_field, std::get<0>(edges[k]));
-            const Eigen::Vector3d & x1 =
-              this->mesh->get_node_value(coords_field, std::get<1>(edges[k]));
-            const Eigen::Vector3d edge_midpoint = 0.5 * (x0 + x1);
+            const Eigen::Vector3d edge_midpoint = 0.5 * (
+                this->mesh->get_coords(std::get<0>(edges[k])) +
+                this->mesh->get_coords(std::get<1>(edges[k]))
+                );
 
             auto vals = edge_contrib(edge_coefficients[k], edge_midpoint);
 
-            const Teuchos::Tuple<int,2> & idx = this->mesh->edge_lids[k];
+            const Teuchos::Tuple<int,2> & idx = this->mesh->edge_gids[k];
             for (int i = 0; i < 2; i++) {
-              int num = this->sumIntoLocalValues(
+              int num = this->sumIntoGlobalValues(
                   idx[i], idx,
                   Teuchos::ArrayView<double>(vals[i])
                   );
@@ -124,7 +120,6 @@ namespace nosh
           this->fillComplete();
 
           return;
-#endif
         }
 
     private:
