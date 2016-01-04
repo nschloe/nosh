@@ -365,9 +365,9 @@ compute_boundary_nodes_() const
   moab::Range cells = this->mbw_->get_entities_by_dimension(0, 2);
 
   // get face skin
-  moab::ErrorCode rval;
   moab::Skinner tool(this->mbw_->mb.get());
   moab::Range edges;
+  moab::ErrorCode rval;
   rval = tool.find_skin(0, cells, false, edges);
   TEUCHOS_ASSERT_EQUALITY(rval, moab::MB_SUCCESS);
 
@@ -383,11 +383,17 @@ compute_boundary_nodes_() const
       );
   TEUCHOS_ASSERT_EQUALITY(rval, moab::MB_SUCCESS);
 
-  if (!tmp_edges.empty())
+  if (!tmp_edges.empty()) {
     edges = subtract(edges, tmp_edges);
+  }
 
   // get all vertices on the remaining edges
-  const auto verts = this->mbw_->get_adjacencies(edges, 0, false);
+  const auto verts = this->mbw_->get_adjacencies(
+      edges,
+      0,
+      false,
+      moab::Interface::UNION
+      );
 
   // convert range to set
   // TODO perhaps there is better way?
