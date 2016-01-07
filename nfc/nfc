@@ -35,6 +35,11 @@ templates_dir = os.path.join(
     )
 
 
+def _sanitize(str):
+    # turn any string into a valid variable identifier
+    return re.sub('\W|^(?=\d)', '_', str)
+
+
 def _main():
     args = _parse_cmd_arguments()
 
@@ -62,6 +67,8 @@ def _main():
     with open(os.path.join(templates_dir, 'main.tpl'), 'r') as f:
         main_src = Template(f.read())
         name = os.path.splitext(os.path.basename(args.infile))[0]
+        # sanitize the name
+        name = _sanitize(name)
         main_content = main_src.substitute({
             'name': name,
             'name_uppercase': name.upper(),
