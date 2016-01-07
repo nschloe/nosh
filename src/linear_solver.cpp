@@ -223,10 +223,14 @@ linear_solve_muelu(
   Tpetra::Vector<double,int,int> & xTpetra = x;
   auto xXpetra = Xpetra::toXpetra(Teuchos::rcpFromRef(xTpetra));
 
-  auto muelu_params =
-    boost::any_cast<std::map<std::string, boost::any>>(
+  std::map<std::string, boost::any> muelu_params;
+  try {
+    muelu_params = boost::any_cast<std::map<std::string, boost::any>>(
         solver_params.at("parameters")
         );
+  } catch (std::out_of_range) {
+    muelu_params = {};
+  }
   auto H = get_muelu_hierarchy(A, muelu_params);
   H->IsPreconditioner(false);
 

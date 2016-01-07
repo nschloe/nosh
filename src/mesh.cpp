@@ -432,10 +432,19 @@ std::shared_ptr<Tpetra::Map<int,int>>
 mesh::
 get_map_(const std::vector<int> & ids) const
 {
+  // Given all IDs, the base is actually redundant. It has to be <= the
+  // minimal global index, and is often taken to be 0. However, there are some
+  // bugs that manifest if the minimal global index does not equal the base,
+  // e.g., <https://github.com/trilinos/Trilinos/issues/70>.
+  // Hence, set it to 1 as dictated by MOAB.
+  //
+  // The will fail for complexified maps where the minimal ID is 2.
+  // TODO derive the base from all ID vectors.
+  const int base = 1;
   return std::make_shared<Tpetra::Map<int,int>>(
       -1,
       ids,
-      0,
+      base,
       Teuchos::rcp(this->comm)
       );
 }

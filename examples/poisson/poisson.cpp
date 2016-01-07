@@ -12,6 +12,7 @@ int main(int argc, char *argv[]) {
   bool success = true;
   try {
 
+  //const auto mesh = nosh::read("r2.h5m");
   const auto mesh = nosh::read("pacman2.h5m");
 
   const auto bc1 = std::make_shared<poisson::bc1>();
@@ -27,17 +28,26 @@ int main(int argc, char *argv[]) {
   nosh::scaled_linear_solve(
       matrix, rhs, x,
       {
+#if 0
+        {"package", "MueLu"}
+#endif
+#if 1
+  // Did not get the expected number of non-zero vals
+        {"package", "Amesos2"}
+#endif
+#if 0
         {"package", "Belos"}
         ,{"method", "Pseudo Block GMRES"}
-        //,{"parameters", list{
-        //  {"Convergence Tolerance", 1.0e-10},
-        //  {"Output Frequency", 1},
-        //  {"Output Style", 1},
-        //  {"Verbosity", 33}
-        //}}
-        //,{"preconditioner", "MueLu"},
-        //{"preconditioner parameters", list{
-        //}}
+        ,{"parameters", list{
+          {"Convergence Tolerance", 1.0e-10},
+          {"Output Frequency", 1},
+          {"Output Style", 1},
+          {"Verbosity", 33}
+        }}
+        ,{"preconditioner", "MueLu"},
+        {"preconditioner parameters", list{
+        }}
+#endif
       }
       );
 
