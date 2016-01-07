@@ -1,22 +1,3 @@
-// @HEADER
-//
-//    Mesh class with compatibility to stk_mesh.
-//    Copyright (C) 2010--2012  Nico Schlömer
-//
-//    This program is free software: you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation, either version 3 of the License, or
-//    (at your option) any later version.
-//
-//    This program is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//    GNU General Public License for more details.
-//
-//    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
-// @HEADER
 #ifndef NOSH_MESH_HPP
 #define NOSH_MESH_HPP
 
@@ -96,9 +77,6 @@ public:
     return edge_data_.edge_nodes;
   }
 
-  std::vector<moab::EntityHandle>
-  get_overlap_nodes() const;
-
   std::shared_ptr<const Tpetra::Map<int,int>>
   map() const
   {
@@ -135,12 +113,15 @@ public:
     return complex_overlap_map_;
   }
 
+  moab::Range
+  get_owned_nodes() const;
+
   moab::EntityHandle
   gid(const moab::EntityHandle e) const
   {
-    throw "in mesh::gid";
-    return e;
-    //return io_broker_->bulk_data().identifier(e);
+    const moab::Tag gid = this->mbw_->tag_get_handle("GLOBAL_ID");
+    const auto global_ids = this->mbw_->tag_get_int_data(gid, {e});
+    return global_ids[0];
   }
 
   // Convert a moab Entity ID to a continuous index into an array.
@@ -169,7 +150,7 @@ public:
     const moab::Range & range
     ) const;
 
-  std::vector<double>
+  Eigen::Vector3d
   get_coords(
       const moab::EntityHandle vertex
       ) const;
@@ -185,9 +166,9 @@ public:
   std::vector<double>
   edge_coefficients() const = 0;
 
-  //virtual
-  //std::set<moab::EntityHandle>
-  //boundary_nodes() const = 0;
+  virtual
+  std::set<moab::EntityHandle>
+  boundary_nodes() const = 0;
 
 protected:
 

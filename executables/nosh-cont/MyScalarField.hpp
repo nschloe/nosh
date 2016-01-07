@@ -24,7 +24,7 @@
 #include <memory>
 #include <string>
 
-#include "nosh/scalar_field_base.hpp"
+#include "scalar_field_base.hpp"
 
 // forward defs
 namespace nosh{
@@ -34,7 +34,7 @@ namespace nosh{
 class MyScalarField: public Nosh::ScalarField::Virtual
 {
 public:
-  MyScalarField(const std::shared_ptr<const Nosh::StkMesh> & mesh);
+  MyScalarField(const std::shared_ptr<const nosh::mesh> & mesh);
 
   Tpetra::Vector<double,int,int>
   createPInit_(const Tpetra::Map<int,int> & map);

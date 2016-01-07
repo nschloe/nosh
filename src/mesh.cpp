@@ -80,7 +80,11 @@ write(const std::string & filename) const
   Teuchos::TimeMonitor tm(*write_time_);
 #endif
 
-  this->mbw_->write_mesh(filename);
+  this->mbw_->write_file(
+      filename,
+      "",
+      "PARALLEL=WRITE_PART;"
+      );
   return;
 }
 // =============================================================================
@@ -101,13 +105,13 @@ get_data(
   return this->mbw_->tag_get_data(tag, range);
 }
 // =============================================================================
-std::vector<double>
+Eigen::Vector3d
 mesh::
 get_coords(
   const moab::EntityHandle vertex
   ) const
 {
-  return this->mbw_->get_coords({vertex});
+  return Eigen::Vector3d(this->mbw_->get_coords({vertex}).data());
 }
 // =============================================================================
 std::shared_ptr<Tpetra::Vector<double,int,int>>
@@ -354,9 +358,9 @@ build_edge_gids_complex_() const
   return _edge_gids_complex;
 }
 // =============================================================================
-const std::vector<int>
+moab::Range
 mesh::
-get_owned_gids_() const
+get_owned_nodes() const
 {
   // TODO resurrect?
   //const auto mb = this->mcomm_->get_moab();
@@ -375,9 +379,15 @@ get_owned_gids_() const
       );
   TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
 
-  // get the corresponding global IDs
+  return verts;
+}
+// =============================================================================
+const std::vector<int>
+mesh::
+get_owned_gids_() const
+{
   moab::Tag gid = mbw_->tag_get_handle("GLOBAL_ID");
-  return this->mbw_->tag_get_int_data(gid, verts);
+  return this->mbw_->tag_get_int_data(gid, this->get_owned_nodes());
 }
 // =============================================================================
 const std::vector<int>

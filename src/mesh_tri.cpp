@@ -365,29 +365,35 @@ compute_boundary_nodes_() const
   moab::Range cells = this->mbw_->get_entities_by_dimension(0, 2);
 
   // get face skin
-  moab::ErrorCode rval;
   moab::Skinner tool(this->mbw_->mb.get());
   moab::Range edges;
+  moab::ErrorCode rval;
   rval = tool.find_skin(0, cells, false, edges);
   TEUCHOS_ASSERT_EQUALITY(rval, moab::MB_SUCCESS);
 
   // filter out edges that are shared with other tasks; they will not be on the
   // true skin
-  moab::Range tmp_edges;
+  moab::Range shared_edges;
   rval = this->mcomm_->filter_pstatus(
       edges,
       PSTATUS_SHARED,
       PSTATUS_AND,
       -1,
-      &tmp_edges
+      &shared_edges
       );
   TEUCHOS_ASSERT_EQUALITY(rval, moab::MB_SUCCESS);
 
-  if (!tmp_edges.empty())
-    edges = subtract(edges, tmp_edges);
+  if (!shared_edges.empty()) {
+    edges = subtract(edges, shared_edges);
+  }
 
   // get all vertices on the remaining edges
-  const auto verts = this->mbw_->get_adjacencies(edges, 0, false);
+  const auto verts = this->mbw_->get_adjacencies(
+      edges,
+      0,
+      false,
+      moab::Interface::UNION
+      );
 
   // convert range to set
   // TODO perhaps there is better way?

@@ -226,6 +226,7 @@ initializeEdgeCache_() const
 #endif
   const std::vector<edge> edges = mesh_->my_edges();
 
+  throw std::runtime_error("initializeEdgeCache_: not yet implemented");
 #if 0
   const vector_fieldType & coords_field = mesh_->get_node_field("coordinates");
 

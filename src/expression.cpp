@@ -20,26 +20,24 @@ namespace nosh {
 
     auto cv_data = cv->getData();
     auto vals_data = vals->getDataNonConst();
-    // const vector_fieldType & coords_field = mesh.get_node_field("coordinates");
-    // auto nodes = mesh.owned_nodes();
+    auto nodes = mesh.get_owned_nodes();
 
-//#ifndef NDEBUG
-//    TEUCHOS_ASSERT_EQUALITY(nodes.size(), cv_data.size());
-//    TEUCHOS_ASSERT_EQUALITY(nodes.size(), vals_data.size());
-//#endif
+#ifndef NDEBUG
+    TEUCHOS_ASSERT_EQUALITY(nodes.size(), cv_data.size());
+    TEUCHOS_ASSERT_EQUALITY(nodes.size(), vals_data.size());
+#endif
 
-//    switch (expr.degree) {
-//      case 0:
-//        for (size_t k = 0; k < nodes.size(); k++)
-//        {
-//          auto x = mesh.get_node_value(coords_field, nodes[k]);
-//          vals_data[k] = expr.eval(x) * cv_data[k];
-//        }
-//        break;
-//
-//      default:
-//        throw "Illegal degree";
-//    }
+    switch (expr.degree) {
+      case 0:
+        for (size_t k = 0; k < nodes.size(); k++)
+        {
+          vals_data[k] = expr.eval(mesh.get_coords(nodes[k])) * cv_data[k];
+        }
+        break;
+
+      default:
+        throw "Illegal degree";
+    }
 
     return vals;
   }
