@@ -27,6 +27,8 @@
 #include <Teuchos_RCPStdSharedPtrConversions.hpp>
 
 #include <Eigen/Dense>
+#include <moab/Skinner.hpp>
+#include <MBParallelConventions.h>
 
 namespace nosh
 {
@@ -442,7 +444,7 @@ get_overlap_faces_() const
 {
   std::vector<moab::EntityHandle> faces;
 
-  throw std::runtime_error("not yet implemented");
+  throw std::runtime_error("get_overlap_faces_:: not yet implemented");
 #if 0
   stk::mesh::Selector select_overlap_in_part =
     stk::mesh::Selector(io_broker_->bulk_data().mesh_meta_data().universal_part())
@@ -465,34 +467,49 @@ compute_boundary_nodes_() const
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   Teuchos::TimeMonitor tm(*compute_boundary_nodes_time_);
 #endif
-  std::set<moab::EntityHandle> _boundary_nodes;
 
-  throw std::runtime_error("not yet implemented");
-#if 0
-  // this takes a reaaaally long time
-  stk::mesh::create_faces(io_broker_->bulk_data());
+  // get all the cell elements on each task
+  moab::Range cells = this->mbw_->get_entities_by_dimension(0, 3);
 
-  auto my_faces = this->get_overlap_faces_();
+  // get face skin
+  moab::Skinner tool(this->mbw_->mb.get());
+  moab::Range faces;
+  moab::ErrorCode rval;
+  rval = tool.find_skin(0, cells, false, faces);
+  TEUCHOS_ASSERT_EQUALITY(rval, moab::MB_SUCCESS);
 
-  for (size_t k = 0; k < my_faces.size(); k++) {
-    // if the face has one element, it's on the boundary
-    if (io_broker_->bulk_data().num_elements(my_faces[k]) == 1) {
-      moab::EntityHandle const * nodes =
-        io_broker_->bulk_data().begin_nodes(my_faces[k]);
-#ifndef NDEBUG
-      TEUCHOS_ASSERT_EQUALITY(io_broker_->bulk_data().num_nodes(my_faces[k]), 3);
-#endif
-      _boundary_nodes.insert(nodes[0]);
-      _boundary_nodes.insert(nodes[1]);
-      _boundary_nodes.insert(nodes[2]);
-    }
+  // filter out faces that are shared with other tasks; they will not be on the
+  // true skin
+  moab::Range shared_faces;
+  rval = this->mcomm_->filter_pstatus(
+      faces,
+      PSTATUS_SHARED,
+      PSTATUS_AND,
+      -1,
+      &shared_faces
+      );
+  TEUCHOS_ASSERT_EQUALITY(rval, moab::MB_SUCCESS);
+
+  if (!shared_faces.empty()) {
+    faces = subtract(faces, shared_faces);
   }
 
-#ifndef NDEBUG
-  TEUCHOS_ASSERT_INEQUALITY(_boundary_nodes.size(), >, 0);
-#endif
-#endif
-  return _boundary_nodes;
+  // get all vertices on the remaining edges
+  const auto verts = this->mbw_->get_adjacencies(
+      faces,
+      0,
+      false,
+      moab::Interface::UNION
+      );
+
+  // convert range to set
+  // TODO perhaps there is better way?
+  std::set<moab::EntityHandle> boundary_verts;
+  for (size_t k = 0; k < verts.size(); k++) {
+    boundary_verts.insert(verts[k]);
+  }
+
+  return boundary_verts;
 }
 // =============================================================================
 }  // namespace nosh
