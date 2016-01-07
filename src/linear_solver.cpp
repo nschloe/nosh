@@ -156,6 +156,10 @@ linear_solve_belos(
       *Thyra::createConstVector(Teuchos::rcpFromRef(vecF)),
       Thyra::createVector(Teuchos::rcpFromRef(vecX)).ptr()
       );
+
+  if (A.getComm()->getRank() == 0) {
+    std::cout << status << std::endl;
+  }
   return;
 }
 // =============================================================================
