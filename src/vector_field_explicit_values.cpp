@@ -46,36 +46,6 @@ explicit_values(
 
     edgeProjectionCache_[k] = av.dot(edge_coords);
   }
-
-// TODO resurrect this
-//#ifndef NDEBUG
-  throw std::runtime_error("not yet implemented");
-#if 0
-  // Do a quick sanity check for the edgeProjectionCache_.  It happens too
-  // often that the reader elements aren't specified correctly and stk_io
-  // *silently* "reads" only zeros.  Use the fake logical "isNonzeroLocal"
-  // since Teuchos::Comm<int> doesn't have logical any() or all() operations.
-  bool isZeroLocal = true;
-  for (std::size_t k = 0; k < edgeProjectionCache_.size(); k++) {
-    if (fabs(edgeProjectionCache_[k]) > 1.0e-10) {
-      isZeroLocal = false;
-      break;
-    }
-  }
-  bool isZeroGlobal;
-  Teuchos::reduceAll(
-      *mesh.getComm(),
-      Teuchos::REDUCE_AND,
-      1,
-      &isZeroLocal,
-      &isZeroGlobal
-      );
-
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(
-      isZeroGlobal,
-      "Field \"" << field_name << "\" seems empty. Was it read correctly?"
-      );
-#endif
   return;
 }
 // ============================================================================
