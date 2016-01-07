@@ -59,21 +59,18 @@ linear_solve(
   for (const auto boundary_node: boundary_nodes) {
     const auto coord = A.mesh->get_coords(boundary_node);
     for (const auto & bc: A.bcs) {
+      TEUCHOS_ASSERT(bc != nullptr);
       if (bc->is_inside(coord)) {
         const auto gid = A.mesh->gid(boundary_node);
-        //b->replaceGlobalValue(gid, 0.0);
-        b->replaceGlobalValue(gid, bc->eval(coord));
-        break; // only set one bc per boundary point
+        // TODO don't check here but only get the array of owned boundary nodes
+        // in the first place
+        if (b->getMap()->isNodeGlobalElement(gid)) {
+          b->replaceGlobalValue(gid, bc->eval(coord));
+          break; // only set one bc per boundary point
+        }
       }
     }
   }
-
-#if 0
-  auto out = Teuchos::VerboseObjectBase::getDefaultOStream();
-  A.describe(*out, Teuchos::VERB_EXTREME);
-  b->describe(*out, Teuchos::VERB_EXTREME);
-  return;
-#endif
 
   //auto A_rcp = Teuchos::rcpFromRef(A);
   //solver->setMatrix(A_rcp);
@@ -84,19 +81,17 @@ linear_solve(
     boost::any_cast<const char *>(solver_params.at("package"));
   if (package == "Amesos2") {
       linear_solve_amesos2(A, b, x, solver_params);
-      return;
   } else if (package == "Belos") {
       linear_solve_belos(A, b, x, solver_params);
-      return;
   } else if (package == "MueLu") {
       linear_solve_muelu(A, b, x, solver_params);
-      return;
   } else {
       TEUCHOS_TEST_FOR_EXCEPT_MSG(
           true,
           "Unknown linear solver package \"" << package << "\"."
           );
   }
+  return;
 }
 // =============================================================================
 void
@@ -161,7 +156,6 @@ linear_solve_belos(
       *Thyra::createConstVector(Teuchos::rcpFromRef(vecF)),
       Thyra::createVector(Teuchos::rcpFromRef(vecX)).ptr()
       );
-  std::cout << "Solve status: " << status << std::endl;
   return;
 }
 // =============================================================================
@@ -274,13 +268,13 @@ scaled_linear_solve(
   // solve
   linear_solve(A, b, x, solver_params);
 
-  //// scale the solution
-  //auto x_data = x.getDataNonConst();
-  //for (int k = 0; k < x_data.size(); k++) {
-  //  x_data[k] *= inv_sqrt_cv_data[k];
-  //}
+  // scale the solution
+  auto x_data = x.getDataNonConst();
+  for (int k = 0; k < x_data.size(); k++) {
+    x_data[k] *= inv_sqrt_cv_data[k];
+  }
 
-  //return;
+  return;
 }
 // =============================================================================
 std::map<std::string, boost::any>

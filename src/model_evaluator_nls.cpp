@@ -149,6 +149,7 @@ createAlteredSpace() const
   auto a = Thyra::createVectorSpace<double>(
       Teuchos::rcp(mesh_->complex_map())
       );
+  throw std::runtime_error("not yet implemented");
 #if 0
   // Use the Nosh scalar product. We still need to cast, cf.
   // <https://software.sandia.gov/bugzilla/show_bug.cgi?id=6355>.

@@ -49,6 +49,7 @@ explicit_values(
 
 // TODO resurrect this
 //#ifndef NDEBUG
+  throw std::runtime_error("not yet implemented");
 #if 0
   // Do a quick sanity check for the edgeProjectionCache_.  It happens too
   // often that the reader elements aren't specified correctly and stk_io

@@ -442,6 +442,7 @@ get_overlap_faces_() const
 {
   std::vector<moab::EntityHandle> faces;
 
+  throw std::runtime_error("not yet implemented");
 #if 0
   stk::mesh::Selector select_overlap_in_part =
     stk::mesh::Selector(io_broker_->bulk_data().mesh_meta_data().universal_part())
@@ -466,6 +467,7 @@ compute_boundary_nodes_() const
 #endif
   std::set<moab::EntityHandle> _boundary_nodes;
 
+  throw std::runtime_error("not yet implemented");
 #if 0
   // this takes a reaaaally long time
   stk::mesh::create_faces(io_broker_->bulk_data());

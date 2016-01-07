@@ -373,18 +373,18 @@ compute_boundary_nodes_() const
 
   // filter out edges that are shared with other tasks; they will not be on the
   // true skin
-  moab::Range tmp_edges;
+  moab::Range shared_edges;
   rval = this->mcomm_->filter_pstatus(
       edges,
       PSTATUS_SHARED,
       PSTATUS_AND,
       -1,
-      &tmp_edges
+      &shared_edges
       );
   TEUCHOS_ASSERT_EQUALITY(rval, moab::MB_SUCCESS);
 
-  if (!tmp_edges.empty()) {
-    edges = subtract(edges, tmp_edges);
+  if (!shared_edges.empty()) {
+    edges = subtract(edges, shared_edges);
   }
 
   // get all vertices on the remaining edges
