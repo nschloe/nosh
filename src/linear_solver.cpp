@@ -105,34 +105,37 @@ linear_solve_amesos2(
     )
 {
   if (A.mesh->comm->getRank() == 0) {
-    nosh::show_map(solver_params);
-    nosh::show_any(solver_params.at("parameters"));
+    nosh::show_any(solver_params);
+    std::cout << std::endl;
   }
 
+  std::string method = boost::any_cast<const char*>(solver_params.at("method"));
   auto solver = Amesos2::create<OP,MV>(
-        boost::any_cast<const char*>(solver_params.at("method")),
+        method,
         Teuchos::rcpFromRef(A),
         Teuchos::rcpFromRef(x),
         Teuchos::rcp(b)
         );
 
-  Teuchos::ParameterList p;
-  std_map_to_teuchos_list(
-      boost::any_cast<std::map<std::string, boost::any>>(solver_params.at("parameters")),
-      p
-      );
+  // Create appropriate parameter list. Check out
+  // <https://trilinos.org/docs/dev/packages/amesos2/doc/html/group__amesos2__solvers.html>.
+  std::map<std::string, boost::any> method_params = {
+    {method, solver_params.at("parameters")}
+  };
 
-  //solver->setParametersu(p);
+  // For valid parameters, see
+  // <https://trilinos.org/docs/dev/packages/amesos2/doc/html/group__amesos2__solver__parameters.html>.
+  auto p = Teuchos::rcp(new Teuchos::ParameterList());
+  std_map_to_teuchos_list(method_params, *p);
+  // std::cout << *p << std::endl;
+  solver->setParameters(p);
 
-  //// Create a Teuchos::ParameterList to hold solver parameters
-  //Teuchos::ParameterList amesos2_params("Amesos2");
-  //Teuchos::ParameterList superlu_params = amesos2_params.sublist("SuperLU");
-  //superlu_params.set("Trans","TRANS","Whether to solve with A^T");
-  //superlu_params.set("Equil",false,"Whether to equilibrate the system before solve");
-  //superlu_params.set("ColPerm","NATURAL","Use 'natural' ordering of columns");
-  //solver->setParameters( Teuchos::rcpFromRef(amesos2_params) );
+  // std::cout << *(solver->getValidParameters()) << std::endl;
 
   solver->symbolicFactorization().numericFactorization().solve();
+
+  auto out = Teuchos::VerboseObjectBase::getDefaultOStream();
+  solver->describe(*out, Teuchos::VERB_EXTREME);
 
   return;
 }
@@ -357,6 +360,8 @@ std_map_to_teuchos_list(
         p.set(entry.first, boost::any_cast<int>(entry.second));
       } else if(entry.second.type() == typeid(double)) {
         p.set(entry.first, boost::any_cast<double>(entry.second));
+      } else if(entry.second.type() == typeid(bool)) {
+        p.set(entry.first, boost::any_cast<bool>(entry.second));
       } else if(entry.second.type() == typeid(const char*)) {
         p.set(entry.first, boost::any_cast<const char*>(entry.second));
       } else if(entry.second.type() == typeid(std::string)) {

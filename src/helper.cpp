@@ -13,6 +13,8 @@ namespace nosh
       std::cout << boost::any_cast<int>(any);
     } else if (any.type() == typeid(double)) {
       std::cout << boost::any_cast<double>(any);
+    } else if (any.type() == typeid(bool)) {
+      std::cout << boost::any_cast<bool>(any);
     } else if (any.type() == typeid(std::string)) {
       std::cout << boost::any_cast<std::string>(any);
     } else if (any.type() == typeid(const char*)) {

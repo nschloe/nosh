@@ -38,7 +38,7 @@ int main(int argc, char *argv[]) {
         {"package", "Amesos2"},
         {"method", "SuperLU"},
         {"parameters", list{
-          {"Trans", "NOTRANS"},
+          {"Transpose", false},
           {"ColPerm", "COLAMD"}
         }}
 #endif
