@@ -104,16 +104,25 @@ linear_solve_amesos2(
     std::map<std::string, boost::any> solver_params
     )
 {
+  if (A.mesh->comm->getRank() == 0) {
+    nosh::show_map(solver_params);
+    nosh::show_any(solver_params.at("parameters"));
+  }
+
   auto solver = Amesos2::create<OP,MV>(
-        "Superlu",
+        boost::any_cast<const char*>(solver_params.at("method")),
         Teuchos::rcpFromRef(A),
         Teuchos::rcpFromRef(x),
         Teuchos::rcp(b)
         );
 
-  if (A.mesh->comm->getRank() == 0) {
-    nosh::show_map(solver_params);
-  }
+  Teuchos::ParameterList p;
+  std_map_to_teuchos_list(
+      boost::any_cast<std::map<std::string, boost::any>>(solver_params.at("parameters")),
+      p
+      );
+
+  //solver->setParametersu(p);
 
   //// Create a Teuchos::ParameterList to hold solver parameters
   //Teuchos::ParameterList amesos2_params("Amesos2");

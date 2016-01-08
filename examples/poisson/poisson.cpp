@@ -36,6 +36,7 @@ int main(int argc, char *argv[]) {
         // https://trilinos.org/docs/dev/packages/amesos2/doc/html/group__amesos2__solver__parameters.html
         // for more options.
         {"package", "Amesos2"},
+        {"method", "SuperLU"},
         {"parameters", list{
           {"Trans", "NOTRANS"},
           {"ColPerm", "COLAMD"}
