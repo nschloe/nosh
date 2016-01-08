@@ -32,8 +32,14 @@ int main(int argc, char *argv[]) {
         {"package", "MueLu"}
 #endif
 #if 1
-  // Did not get the expected number of non-zero vals
-        {"package", "Amesos2"}
+        // Check
+        // https://trilinos.org/docs/dev/packages/amesos2/doc/html/group__amesos2__solver__parameters.html
+        // for more options.
+        {"package", "Amesos2"},
+        {"parameters", list{
+          {"Trans", "NOTRANS"},
+          {"ColPerm", "COLAMD"}
+        }}
 #endif
 #if 0
         {"package", "Belos"}

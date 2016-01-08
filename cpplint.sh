@@ -1,12 +1,14 @@
-CPPLINT=~/software/cpplint/cpplint/cpplint.py
+#!/bin/sh
 
-${CPPLINT} \
+# sudo -H pip install cpplint
+
+cpplint \
   --extensions=hpp,cpp \
   --filter=-whitespace/parens,-whitespace/braces,-whitespace/line_length,-whitespace/comments,-runtime/references,-build/include_order,-readability/todo \
   \
-  nosh/*.cpp
+  src/*.cpp
 
-~/software/cpplint/cpplint/cpplint.py
-${CPPLINT} \
+cpplint \
  --filter=-whitespace/parens,-whitespace/braces,-whitespace/line_length,-whitespace/comments,-runtime/references,-build/include_order,-readability/todo,-whitespace/indent \
-  --extensions=cpp,hpp nosh/*.hpp
+  --extensions=cpp,hpp \
+  src/*.hpp

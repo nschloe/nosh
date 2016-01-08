@@ -1,6 +1,7 @@
 #include "linear_solver.hpp"
 
 #include "matrix.hpp"
+#include "helper.hpp"
 
 #include <Amesos2.hpp>
 #include <MueLu_ParameterListInterpreter.hpp>
@@ -109,6 +110,10 @@ linear_solve_amesos2(
         Teuchos::rcpFromRef(x),
         Teuchos::rcp(b)
         );
+
+  if (A.mesh->comm->getRank() == 0) {
+    nosh::show_map(solver_params);
+  }
 
   //// Create a Teuchos::ParameterList to hold solver parameters
   //Teuchos::ParameterList amesos2_params("Amesos2");
