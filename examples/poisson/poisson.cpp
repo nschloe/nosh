@@ -13,7 +13,8 @@ int main(int argc, char *argv[]) {
   try {
 
   //const auto mesh = nosh::read("r2.h5m");
-  const auto mesh = nosh::read("pacman2.h5m");
+  //const auto mesh = nosh::read("pacman2.h5m");
+  const auto mesh = nosh::read("screw2.h5m");
 
   const auto bc1 = std::make_shared<poisson::bc1>();
   const auto bc2 = std::make_shared<poisson::bc2>();
@@ -28,10 +29,10 @@ int main(int argc, char *argv[]) {
   nosh::scaled_linear_solve(
       matrix, rhs, x,
       {
-#if 0
+#if 1
         {"package", "MueLu"}
 #endif
-#if 1
+#if 0
         // Check
         // https://trilinos.org/docs/dev/packages/amesos2/doc/html/group__amesos2__solver__parameters.html
         // for more options.
