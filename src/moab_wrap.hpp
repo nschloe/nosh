@@ -152,6 +152,26 @@ namespace nosh {
       }
 
       moab::Range
+      get_entities_by_type(
+          const moab::EntityHandle meshset,
+          const moab::EntityType type,
+          const bool recursive=false
+          )
+      {
+        moab::Range entities;
+        const auto rval = this->mb->get_entities_by_type(
+            meshset,
+            type,
+            entities,
+            recursive
+            );
+        if (rval != moab::MB_SUCCESS) {
+          throw std::runtime_error("error in moab::get_entities_by_type");
+        }
+        return entities;
+      }
+
+      moab::Range
       get_entities_by_dimension(
           const moab::EntityHandle meshset,
           const int dimension,

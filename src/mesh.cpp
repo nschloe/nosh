@@ -602,15 +602,6 @@ build_graph() const
     }
   }
 
-  // insert diagonal elements
-  const auto nodes = this->map()->getNodeElementList();
-  for (int k = 0; k < nodes.size(); k++) {
-    graph->insertGlobalIndices(
-        nodes[k],
-        Teuchos::tuple<int>(nodes[k])
-        );
-  }
-
   graph->fillComplete();
 
   return graph;
@@ -706,8 +697,6 @@ build_complex_graph() const
       //graph->insertLocalIndices(idx[i], idx);
     }
   }
-
-  // TODO diagonal elements
 
   graph->fillComplete();
 

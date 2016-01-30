@@ -125,6 +125,22 @@ read(const std::string & file_name)
       std::cout << " Shared, owned entities on proc " << i << ": " << rbuf[4*i] << " verts, " <<
           rbuf[4*i + 1] << " edges, " << rbuf[4*i + 2] << " faces, " << rbuf[4*i + 3] << " elements" << std::endl;
   }
+
+  // check for illegal nodes
+  const auto verts = mbw->get_entities_by_type(0, moab::MBVERTEX);
+  for (size_t k = 0; k < verts.size(); k++) {
+    const auto edges = mbw->get_adjacencies(
+        {verts[k]},
+        1,
+        true,
+        moab::Interface::UNION
+        );
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(
+        edges.size() == 0,
+        "Node without edge connection. This might be a spurious leftover from " <<
+        "the mesh generation and will cause errors when building the system."
+        );
+  }
 #endif
 
   // get the number of 3D entities
