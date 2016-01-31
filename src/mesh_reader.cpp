@@ -1,23 +1,3 @@
-// @HEADER
-//
-//    STK mesh reader.
-//    Copyright (C) 2015  Nico Schlömer
-//
-//    This program is free software: you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation, either version 3 of the License, or
-//    (at your option) any later version.
-//
-//    This program is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//    GNU General Public License for more details.
-//
-//    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
-// @HEADER
-// =============================================================================
 #include "mesh_reader.hpp"
 
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
@@ -118,6 +98,37 @@ read(const std::string & file_name)
   std::vector<int> rbuf(nprocs*4, 0);
   MPI_Gather(nums, 4, MPI_INT, &rbuf[0], 4, MPI_INT, 0, raw_comm);
 
+  std::cout <<
+    "Number of vertices: " <<
+    mbw->get_number_entities_by_type(0, moab::MBVERTEX) <<
+    std::endl;
+  std::cout <<
+    "Number of edges: " <<
+    mbw->get_number_entities_by_type(0, moab::MBEDGE) <<
+    std::endl;
+  std::cout <<
+    "Number of triangles: " <<
+    mbw->get_number_entities_by_type(0, moab::MBTRI) <<
+    std::endl;
+  // get the number of 3D entities
+  const int numTets = mbw->get_number_entities_by_type(0, moab::MBTET);
+  std::cout << "Number of tetrahedra: " << numTets << std::endl;
+
+  // Create all edges adjacent to tets.
+  // Alternative: Create all edges adjacent to nodes.
+  if (numTets > 0) {
+     const auto tets = mbw->get_entities_by_type(0, moab::MBTET);
+     (void) mbw->get_adjacencies(tets, 1, true, moab::Interface::UNION);
+  } else {
+     const auto tris = mbw->get_entities_by_type(0, moab::MBTRI);
+     (void) mbw->get_adjacencies(tris, 1, true, moab::Interface::UNION);
+  }
+  std::cout <<
+    "Number of edges (after creation): " <<
+    mbw->get_number_entities_by_type(0, moab::MBEDGE) <<
+    std::endl;
+
+
 #ifndef NDEBUG
   // Print the stats gathered:
   if (0 == global_rank) {
@@ -132,7 +143,7 @@ read(const std::string & file_name)
     const auto edges = mbw->get_adjacencies(
         {verts[k]},
         1,
-        true,
+        false,
         moab::Interface::UNION
         );
     TEUCHOS_TEST_FOR_EXCEPT_MSG(
@@ -143,11 +154,8 @@ read(const std::string & file_name)
   }
 #endif
 
-  // get the number of 3D entities
-  const int num3d = mbw->get_number_entities_by_dimension(0, 3);
-
   std::cout << "   mesh_reader >>" << std::endl;
-  if (num3d == 0) {
+  if (numTets == 0) {
     return std::make_shared<nosh::mesh_tri>(comm, mcomm, mbw->mb);
   }
   return std::make_shared<nosh::mesh_tetra>(comm, mcomm, mbw->mb);

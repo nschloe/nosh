@@ -258,6 +258,28 @@ namespace nosh {
         return num;
       }
 
+      int
+      get_number_entities_by_type(
+          const moab::EntityHandle meshset,
+          const moab::EntityType type,
+          const bool recursive = false
+          )
+      {
+        int num = 0;
+        const auto rval = this->mb->get_number_entities_by_type(
+            meshset,
+            type,
+            num,
+            recursive
+            );
+        if (rval != moab::MB_SUCCESS) {
+          throw std::runtime_error(
+              "error in moab::get_number_entities_by_dimension"
+              );
+        }
+        return num;
+      }
+
       std::vector<moab::EntityHandle>
       get_connectivity(
           const moab::EntityHandle entity_handle,
