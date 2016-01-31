@@ -156,17 +156,30 @@ linear_solve_belos(
   auto p = Teuchos::rcp(new Teuchos::ParameterList());
   std_map_to_teuchos_list(convert_to_belos_parameters(solver_params), *p);
   builder.setParameterList(p);
+
   auto lowsFactory = builder.createLinearSolveStrategy("");
+#ifndef NDEBUG
+  TEUCHOS_ASSERT(!lowsFactory.is_null());
+#endif
   lowsFactory->setVerbLevel(Teuchos::VERB_LOW);
+
+  auto precFactory = builder.createPreconditioningStrategy("");
+#ifndef NDEBUG
+  TEUCHOS_ASSERT(!precFactory.is_null());
+#endif
+  precFactory->setVerbLevel(Teuchos::VERB_LOW);
 
   const Tpetra::Operator<double,int,int> & opA = A;
   auto thyraA = Thyra::createConstLinearOp(Teuchos::rcpFromRef(opA)); // throws
+
   auto lows = Thyra::linearOpWithSolve(
       *lowsFactory,
       thyraA
       );
+
   const Tpetra::Vector<double,int,int> & vecF = *b;
   Tpetra::Vector<double,int,int> & vecX = x;
+
   auto status = Thyra::solve<double>(
       *lows,
       Thyra::NOTRANS,
@@ -240,19 +253,46 @@ linear_solve_muelu(
   Tpetra::Vector<double,int,int> & xTpetra = x;
   auto xXpetra = Xpetra::toXpetra(Teuchos::rcpFromRef(xTpetra));
 
-  std::map<std::string, boost::any> muelu_params;
+  std::map<std::string, boost::any> params;
   try {
-    muelu_params = boost::any_cast<std::map<std::string, boost::any>>(
+    params = boost::any_cast<std::map<std::string, boost::any>>(
         solver_params.at("parameters")
         );
   } catch (std::out_of_range) {
-    muelu_params = {};
+    params = {};
   }
-  auto H = get_muelu_hierarchy(A, muelu_params);
+
+  // store the two custon keys
+  //   "max cycles"
+  // and
+  //   "convergence tolerance"
+  // separately.
+  const auto mc_it = params.find("max cycles");
+  const int max_cycles =
+    mc_it != params.end() ?
+    boost::any_cast<int>(params.at("max cycles")) :
+    10; // default
+  if (mc_it != params.end()) {
+    params.erase(mc_it);
+  }
+
+  const auto ct_it = params.find("convergence tolerance");
+  const double convergence_tolerance =
+    ct_it != params.end() ?
+    boost::any_cast<double>(params.at("convergence tolerance")) :
+    1.0e-10; // default
+  if (ct_it != params.end()) {
+    params.erase(ct_it);
+  }
+
+  auto H = get_muelu_hierarchy(A, params);
   H->IsPreconditioner(false);
 
-  const int mgridSweeps = 100;
-  H->Iterate(*bXpetra, *xXpetra, mgridSweeps);
+  H->Iterate(
+    *bXpetra,
+    *xXpetra,
+    std::make_pair(max_cycles, convergence_tolerance)
+    );
 
   return;
 }
@@ -316,44 +356,59 @@ convert_to_belos_parameters(
     const std::map<std::string, boost::any> & in_map
     )
 {
-  if (in_map.find("method") != in_map.end()) {
-    const std::string method =
-      boost::any_cast<const char *>(in_map.at("method"));
-    std::map<std::string, boost::any> out_map = {
-      {"Linear Solver Type", "Belos"},
-      {"Linear Solver Types", list{
-        {"Belos", list{
-          {"Solver Type", method}
-        }}
-      }},
-      {"Preconditioner Type", "None"}
-    };
+  std::map<std::string, boost::any> out_map = {};
 
-    auto lst = boost::any_cast<list>(out_map.at("Linear Solver Types"));
-    auto belos = boost::any_cast<list>(lst.at("Belos"));
-    if (in_map.find("parameters") != in_map.end()) {
-      belos.insert({
-          "Solver Types",
-          list{{method, in_map.at("parameters")}}
-          });
-    } else {
-      // insert default parameters
-      belos.insert({
-          "Solver Types",
-          list{{method,
-            list{
-              {"Convergence Tolerance", 1.0e-10},
-              {"Output Frequency", 1},
-              {"Output Style", 1},
-              {"Verbosity", 33}
-            }
-            }}
-          });
-    }
+  if (in_map.find("method") == in_map.end()) {
     return out_map;
-  } else {
-    return {};
   }
+
+  const std::string method =
+    boost::any_cast<const char *>(in_map.at("method"));
+
+  out_map.insert({"Linear Solver Type", "Belos"});
+  out_map.insert({"Linear Solver Types", list{
+      {"Belos", list{{"Solver Type", method}}}
+      }});
+
+  auto lst = boost::any_cast<list>(out_map.at("Linear Solver Types"));
+  auto belos = boost::any_cast<list>(lst.at("Belos"));
+  if (in_map.find("parameters") != in_map.end()) {
+    belos.insert({
+        "Solver Types",
+        list{{method, in_map.at("parameters")}}
+        });
+  } else {
+    // insert default parameters
+    belos.insert({
+        "Solver Types",
+        list{{method,
+          list{
+            {"Convergence Tolerance", 1.0e-10},
+            {"Output Frequency", 1},
+            {"Output Style", 1},
+            {"Verbosity", 33}
+          }
+          }}
+        });
+  }
+
+  if (in_map.find("preconditioner") == in_map.end()) {
+    out_map.insert({"Preconditioner Type", "None"});
+    return out_map;
+  }
+
+  // handle preconditioner parameters
+  const std::string prec_method =
+    boost::any_cast<const char *>(in_map.at("preconditioner"));
+  out_map.insert({"Preconditioner Type", prec_method});
+
+  if (in_map.find("preconditioner parameters") != in_map.end()) {
+    out_map.insert({"Preconditioner Types", list{
+        {prec_method, in_map.at("preconditioner parameters")}
+        }});
+  }
+
+  return out_map;
 }
 // =============================================================================
 void
