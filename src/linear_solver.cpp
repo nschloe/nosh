@@ -269,25 +269,33 @@ scaled_linear_solve(
   // create f vector
   auto b = nosh::integrate_over_control_volumes(f, *A.mesh);
 
-  // create scaling vectors
-  const auto control_volumes = A.mesh->control_volumes();
-  auto inv_sqrt_control_volumes =
-    Tpetra::Vector<double,int,int>(control_volumes->getMap());
+  // We cannot scale by the control volumes since the boundary conditions are
+  // already applied now. Small control volumes would lead to huge entries on
+  // the diagonal.
+  //
+  //   const auto scale_vector = A.mesh->control_volumes();
+  //
+  // Hence, simply scale by the diagonal values.
+  Tpetra::Vector<double,int,int> scale_vector(A.getRowMap());
+  A.getLocalDiagCopy(scale_vector);
 
-  auto cv_data = control_volumes->getData();
-  auto inv_sqrt_cv_data = inv_sqrt_control_volumes.getDataNonConst();
-  for (int k = 0; k < cv_data.size(); k++) {
-    inv_sqrt_cv_data[k] = 1.0 / sqrt(cv_data[k]);
+  auto inv_sqrt_scale_vector =
+    Tpetra::Vector<double,int,int>(scale_vector.getMap());
+
+  auto sc_data = scale_vector.getData();
+  auto inv_sqrt_sc_data = inv_sqrt_scale_vector.getDataNonConst();
+  for (int k = 0; k < sc_data.size(); k++) {
+    inv_sqrt_sc_data[k] = 1.0 / sqrt(sc_data[k]);
   }
 
   // scale A
-  A.leftScale(inv_sqrt_control_volumes);
-  A.rightScale(inv_sqrt_control_volumes);
+  A.leftScale(inv_sqrt_scale_vector);
+  A.rightScale(inv_sqrt_scale_vector);
 
   // scale fvec
   auto b_data = b->getDataNonConst();
   for (int k = 0; k < b_data.size(); k++) {
-    b_data[k] *= inv_sqrt_cv_data[k];
+    b_data[k] *= inv_sqrt_sc_data[k];
   }
 
   // solve
@@ -296,7 +304,7 @@ scaled_linear_solve(
   // scale the solution
   auto x_data = x.getDataNonConst();
   for (int k = 0; k < x_data.size(); k++) {
-    x_data[k] *= inv_sqrt_cv_data[k];
+    x_data[k] *= inv_sqrt_sc_data[k];
   }
 
   return;
