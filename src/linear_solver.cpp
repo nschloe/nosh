@@ -41,22 +41,8 @@ linear_solve(
     std::map<std::string, boost::any> solver_params
     )
 {
-  // create f vector
+  // create rhs vector
   auto b = nosh::integrate_over_control_volumes(f, *A.mesh);
-  // solve
-  linear_solve(A, b, x, solver_params);
-  return;
-}
-// =============================================================================
-void
-nosh::
-linear_solve(
-    const nosh::matrix & A,
-    std::shared_ptr<Tpetra::Vector<double,int,int>> b,
-    nosh::function & x,
-    std::map<std::string, boost::any> solver_params
-    )
-{
   // apply boundary conditions to b
   const auto boundary_nodes = A.mesh->boundary_nodes();
   for (const auto boundary_node: boundary_nodes) {
@@ -74,12 +60,20 @@ linear_solve(
       }
     }
   }
-
-  //auto A_rcp = Teuchos::rcpFromRef(A);
-  //solver->setMatrix(A_rcp);
-  //// solver.setParameters(); // TODO
-  //solver->solve(x, *b);
-
+  // solve
+  linear_solve(A, *b, x, solver_params);
+  return;
+}
+// =============================================================================
+void
+nosh::
+linear_solve(
+    const Tpetra::CrsMatrix<double,int,int> & A,
+    const Tpetra::Vector<double,int,int> & b,
+    nosh::function & x,
+    std::map<std::string, boost::any> solver_params
+    )
+{
   const std::string package =
     boost::any_cast<const char *>(solver_params.at("package"));
   if (package == "Amesos2") {
@@ -100,13 +94,13 @@ linear_solve(
 void
 nosh::
 linear_solve_amesos2(
-    const nosh::matrix & A,
-    std::shared_ptr<Tpetra::Vector<double,int,int>> b,
+    const Tpetra::CrsMatrix<double,int,int> & A,
+    const Tpetra::Vector<double,int,int> & b,
     nosh::function & x,
     std::map<std::string, boost::any> solver_params
     )
 {
-  if (A.mesh->comm->getRank() == 0) {
+  if (A.getComm()->getRank() == 0) {
     nosh::show_any(solver_params);
     std::cout << std::endl;
   }
@@ -116,7 +110,7 @@ linear_solve_amesos2(
         method,
         Teuchos::rcpFromRef(A),
         Teuchos::rcpFromRef(x),
-        Teuchos::rcp(b)
+        Teuchos::rcpFromRef(b)
         );
 
   // Create appropriate parameter list. Check out
@@ -145,8 +139,8 @@ linear_solve_amesos2(
 void
 nosh::
 linear_solve_belos(
-    const nosh::matrix & A,
-    std::shared_ptr<Tpetra::Vector<double,int,int>> b,
+    const Tpetra::Operator<double,int,int> & A,
+    const Tpetra::Vector<double,int,int> & b,
     nosh::function & x,
     std::map<std::string, boost::any> solver_params
     )
@@ -211,7 +205,7 @@ linear_solve_belos(
     Thyra::initializePreconditionedOp<double>(*lowsFactory, thyraA, prec, lows.ptr());
   }
 
-  const Tpetra::Vector<double,int,int> & vecF = *b;
+  const Tpetra::Vector<double,int,int> & vecF = b;
   Tpetra::Vector<double,int,int> & vecX = x;
 
   auto status = Thyra::solve<double>(
@@ -221,7 +215,7 @@ linear_solve_belos(
       Thyra::createVector(Teuchos::rcpFromRef(vecX)).ptr()
       );
 
-  if (A.getComm()->getRank() == 0) {
+  if (A.getDomainMap()->getComm()->getRank() == 0) {
     std::cout << status << std::endl;
   }
   return;
@@ -230,7 +224,7 @@ linear_solve_belos(
 std::shared_ptr<MueLu::Hierarchy<double,int,int>>
 nosh::
 get_muelu_hierarchy(
-    const nosh::matrix & A,
+    const Tpetra::CrsMatrix<double,int,int> & A,
     const std::map<std::string, boost::any> & muelu_params
     )
 {
@@ -249,7 +243,6 @@ get_muelu_hierarchy(
       muelu_params
       );
   std_map_to_teuchos_list(params, *p);
-  std::cout << p << std::endl;
 
   auto mueLuFactory =
     MueLu::ParameterListInterpreter<double,int,int>(*p, map->getComm());
@@ -275,15 +268,15 @@ get_muelu_hierarchy(
 void
 nosh::
 linear_solve_muelu(
-    const nosh::matrix & A,
-    std::shared_ptr<Tpetra::Vector<double,int,int>> b,
+    const Tpetra::CrsMatrix<double,int,int> & A,
+    const Tpetra::Vector<double,int,int> & b,
     nosh::function & x,
     std::map<std::string, boost::any> solver_params
     )
 {
   x.putScalar(0.0);
   // Tpetra -> Xpetra
-  auto bXpetra = Xpetra::toXpetra(Teuchos::rcpFromRef(*b));
+  auto bXpetra = Xpetra::toXpetra(Teuchos::rcpFromRef(b));
   Tpetra::Vector<double,int,int> & xTpetra = x;
   auto xXpetra = Xpetra::toXpetra(Teuchos::rcpFromRef(xTpetra));
 
@@ -372,8 +365,26 @@ scaled_linear_solve(
     b_data[k] *= inv_sqrt_sc_data[k];
   }
 
+  // apply boundary conditions to b
+  const auto boundary_nodes = A.mesh->boundary_nodes();
+  for (const auto boundary_node: boundary_nodes) {
+    const auto coord = A.mesh->get_coords(boundary_node);
+    for (const auto & bc: A.bcs) {
+      TEUCHOS_ASSERT(bc != nullptr);
+      if (bc->is_inside(coord)) {
+        const auto gid = A.mesh->gid(boundary_node);
+        // TODO don't check here but only get the array of owned boundary nodes
+        // in the first place
+        if (b->getMap()->isNodeGlobalElement(gid)) {
+          b->replaceGlobalValue(gid, bc->eval(coord));
+          break; // only set one bc per boundary point
+        }
+      }
+    }
+  }
+
   // solve
-  linear_solve(A, b, x, solver_params);
+  linear_solve(A, *b, x, solver_params);
 
   // scale the solution
   auto x_data = x.getDataNonConst();
