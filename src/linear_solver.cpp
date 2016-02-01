@@ -70,7 +70,7 @@ nosh::
 linear_solve(
     const Tpetra::CrsMatrix<double,int,int> & A,
     const Tpetra::Vector<double,int,int> & b,
-    nosh::function & x,
+    Tpetra::Vector<double,int,int> & x,
     std::map<std::string, boost::any> solver_params
     )
 {
@@ -96,7 +96,7 @@ nosh::
 linear_solve_amesos2(
     const Tpetra::CrsMatrix<double,int,int> & A,
     const Tpetra::Vector<double,int,int> & b,
-    nosh::function & x,
+    Tpetra::Vector<double,int,int> & x,
     std::map<std::string, boost::any> solver_params
     )
 {
@@ -141,7 +141,7 @@ nosh::
 linear_solve_belos(
     const Tpetra::Operator<double,int,int> & A,
     const Tpetra::Vector<double,int,int> & b,
-    nosh::function & x,
+    Tpetra::Vector<double,int,int> & x,
     std::map<std::string, boost::any> solver_params
     )
 {
@@ -270,7 +270,7 @@ nosh::
 linear_solve_muelu(
     const Tpetra::CrsMatrix<double,int,int> & A,
     const Tpetra::Vector<double,int,int> & b,
-    nosh::function & x,
+    Tpetra::Vector<double,int,int> & x,
     std::map<std::string, boost::any> solver_params
     )
 {
