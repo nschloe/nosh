@@ -8,14 +8,16 @@
 #include <Stratimikos_DefaultLinearSolverBuilder.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_RCP.hpp>
+#include <Thyra_Ifpack2PreconditionerFactory.hpp>
+#include <Thyra_MueLuPreconditionerFactory.hpp>
 #include <Thyra_TpetraThyraWrappers.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 #include <Xpetra_CrsMatrixWrap_fwd.hpp>
 #include <Xpetra_TpetraCrsMatrix.hpp>
 
-//#include <Amesos2_Details_LinearSolverFactory.hpp>
-//#include <Belos_Details_LinearSolverFactory.hpp>
-//#include <Ifpack2_Details_LinearSolverFactory.hpp>
+// #include <Amesos2_Details_LinearSolverFactory.hpp>
+// #include <Belos_Details_LinearSolverFactory.hpp>
+// #include <Ifpack2_Details_LinearSolverFactory.hpp>
 // #include <Trilinos_Details_LinearSolver.hpp>
 // #include <Trilinos_Details_LinearSolverFactory.hpp>
 
@@ -163,19 +165,51 @@ linear_solve_belos(
 #endif
   lowsFactory->setVerbLevel(Teuchos::VERB_LOW);
 
-  auto precFactory = builder.createPreconditioningStrategy("");
-#ifndef NDEBUG
-  TEUCHOS_ASSERT(!precFactory.is_null());
-#endif
-  precFactory->setVerbLevel(Teuchos::VERB_LOW);
-
   const Tpetra::Operator<double,int,int> & opA = A;
   auto thyraA = Thyra::createConstLinearOp(Teuchos::rcpFromRef(opA)); // throws
 
-  auto lows = Thyra::linearOpWithSolve(
-      *lowsFactory,
-      thyraA
-      );
+  Teuchos::RCP<Thyra::LinearOpWithSolveBase<double>> lows;
+  if (solver_params.find("preconditioner") == solver_params.end()) {
+    // no preconditioner
+    lows = Thyra::linearOpWithSolve(
+        *lowsFactory,
+        thyraA
+        );
+  } else {
+    // handle preconditioner
+    const std::string prec_type =
+      boost::any_cast<const char *>(solver_params.at("preconditioner"));
+    Teuchos::RCP<Thyra::PreconditionerFactoryBase<double>> factory;
+    if (prec_type == "Ifpack2") {
+      factory = Teuchos::rcp(
+          new Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<double,int,int>>()
+          );
+    } else if (prec_type == "MueLu") {
+      factory = Teuchos::rcp(
+          new Thyra::MueLuPreconditionerFactory<double,int,int>()
+          );
+    } else {
+      TEUCHOS_TEST_FOR_EXCEPT_MSG(
+          true,
+          "Unknown preconditioner \"" << prec_type << "\". Valid values: 'MueLu', 'Ifpack2'."
+          );
+    }
+    // TODO isCompatible
+    // TEUCHOS_ASSERT(factory->isCompatible(*thyraA));
+    if (solver_params.find("preconditioner parameters") != solver_params.end()) {
+      const auto & prec_params = boost::any_cast<std::map<std::string,boost::any>>(
+          solver_params.at("preconditioner parameters")
+          );
+      auto prec_p = Teuchos::rcp(new Teuchos::ParameterList());
+      std_map_to_teuchos_list(prec_params, *prec_p);
+      factory->setParameterList(prec_p);
+    }
+    const auto prec = factory->createPrec();
+    Thyra::initializePrec(*factory, thyraA, prec.ptr());
+
+    lows = lowsFactory->createOp();
+    Thyra::initializePreconditionedOp<double>(*lowsFactory, thyraA, prec, lows.ptr());
+  }
 
   const Tpetra::Vector<double,int,int> & vecF = *b;
   Tpetra::Vector<double,int,int> & vecX = x;
@@ -392,21 +426,15 @@ convert_to_belos_parameters(
         });
   }
 
-  if (in_map.find("preconditioner") == in_map.end()) {
-    out_map.insert({"Preconditioner Type", "None"});
-    return out_map;
-  }
-
-  // handle preconditioner parameters
-  const std::string prec_method =
-    boost::any_cast<const char *>(in_map.at("preconditioner"));
-  out_map.insert({"Preconditioner Type", prec_method});
-
-  if (in_map.find("preconditioner parameters") != in_map.end()) {
-    out_map.insert({"Preconditioner Types", list{
-        {prec_method, in_map.at("preconditioner parameters")}
-        }});
-  }
+  // Valid values include:
+  //    {
+  //      "None"
+  //      "ML"
+  //      "Ifpack"
+  //    }
+  // Since we'd like to use MueLu, Ifpack2, and so forth, set it to "None" here
+  // and handle the preconditioner separately.
+  out_map.insert({"Preconditioner Type", "None"});
 
   return out_map;
 }

@@ -32,7 +32,7 @@ int main(int argc, char *argv[]) {
   nosh::linear_solve(
       matrix, rhs, x,
       {
-#if 1
+#if 0
         // For solver parameters, check
         // https://trilinos.org/wordpress/wp-content/uploads/2015/05/MueLu_Users_Guide_Trilinos12_0.pdf
         {"package", "MueLu"},
@@ -53,7 +53,7 @@ int main(int argc, char *argv[]) {
           {"ColPerm", "COLAMD"}
         }}
 #endif
-#if 0
+#if 1
         {"package", "Belos"},
         //,{"method", "Pseudo Block GMRES"},
         {"method", "Pseudo Block CG"},
@@ -65,7 +65,7 @@ int main(int argc, char *argv[]) {
         }},
         {"preconditioner", "MueLu"},
         {"preconditioner parameters", list{
-          {"cycle type", "W"}
+          {"cycle type", "V"}
         }}
 #endif
       }
