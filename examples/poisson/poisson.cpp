@@ -12,7 +12,11 @@ int main(int argc, char *argv[]) {
   bool success = true;
   try {
 
-  const auto mesh = nosh::read("pacman2.h5m");
+  //const auto mesh = nosh::read("r2.h5m");
+  //const auto mesh = nosh::read("pacman2.h5m");
+  //const auto mesh = nosh::read("screw3.h5m");
+  //const auto mesh = nosh::read("cubesmall.h5m");
+  const auto mesh = nosh::read("cube.h5m");
 
   const auto bc1 = std::make_shared<poisson::bc1>();
   const auto bc2 = std::make_shared<poisson::bc2>();
@@ -24,20 +28,46 @@ int main(int argc, char *argv[]) {
   nosh::function x(mesh);
   x.putScalar(0.0);
 
-  nosh::scaled_linear_solve(
+  //nosh::scaled_linear_solve(
+  nosh::linear_solve(
       matrix, rhs, x,
       {
-        {"package", "Belos"}
-        ,{"method", "Pseudo Block GMRES"}
-        //,{"parameters", list{
-        //  {"Convergence Tolerance", 1.0e-10},
-        //  {"Output Frequency", 1},
-        //  {"Output Style", 1},
-        //  {"Verbosity", 33}
-        //}}
-        //,{"preconditioner", "MueLu"},
-        //{"preconditioner parameters", list{
-        //}}
+#if 0
+        // For solver parameters, check
+        // https://trilinos.org/wordpress/wp-content/uploads/2015/05/MueLu_Users_Guide_Trilinos12_0.pdf
+        {"package", "MueLu"},
+        {"parameters", list{
+          {"convergence tolerance", 1.0e-10},
+          {"max cycles", 25},
+          {"cycle type", "W"},
+        }}
+#endif
+#if 0
+        // Check
+        // https://trilinos.org/docs/dev/packages/amesos2/doc/html/group__amesos2__solver__parameters.html
+        // for more options.
+        {"package", "Amesos2"},
+        {"method", "SuperLU"},
+        {"parameters", list{
+          {"Transpose", false},
+          {"ColPerm", "COLAMD"}
+        }}
+#endif
+#if 1
+        {"package", "Belos"},
+        //,{"method", "Pseudo Block GMRES"},
+        {"method", "Pseudo Block CG"},
+        {"parameters", list{
+          {"Convergence Tolerance", 1.0e-10},
+          {"Output Frequency", 1},
+          {"Output Style", 1},
+          {"Verbosity", 33}
+        }},
+        {"preconditioner", "MueLu"},
+        {"preconditioner parameters", list{
+          {"cycle type", "V"}
+        }}
+#endif
       }
       );
 

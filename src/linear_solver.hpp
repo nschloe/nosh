@@ -74,39 +74,39 @@ namespace nosh {
 
   void
   linear_solve(
-      const nosh::matrix & A,
-      std::shared_ptr<Tpetra::Vector<double,int,int>> f_vec,
-      nosh::function & x,
+      const Tpetra::CrsMatrix<double,int,int> & A,
+      const Tpetra::Vector<double,int,int> & b,
+      Tpetra::Vector<double,int,int> & x,
       std::map<std::string, boost::any> solver_params = nosh::default_linear_solver_params
       );
 
   void
   linear_solve_amesos2(
-      const nosh::matrix & A,
-      std::shared_ptr<Tpetra::Vector<double,int,int>> f_vec,
-      nosh::function & x,
+      const Tpetra::CrsMatrix<double,int,int> & A,
+      const Tpetra::Vector<double,int,int> & b,
+      Tpetra::Vector<double,int,int> & x,
       std::map<std::string, boost::any> solver_params = nosh::default_linear_solver_params
       );
 
   void
   linear_solve_belos(
-      const nosh::matrix & A,
-      std::shared_ptr<Tpetra::Vector<double,int,int>> f_vec,
-      nosh::function & x,
+      const Tpetra::Operator<double,int,int> & A,
+      const Tpetra::Vector<double,int,int> & b,
+      Tpetra::Vector<double,int,int> & x,
       std::map<std::string, boost::any> solver_params = nosh::default_linear_solver_params
       );
 
   std::shared_ptr<MueLu::Hierarchy<double,int,int>>
   get_muelu_hierarchy(
-      const nosh::matrix & A,
+      const Tpetra::CrsMatrix<double,int,int> & A,
       const std::map<std::string, boost::any> & muelu_params
       );
 
   void
   linear_solve_muelu(
-      const nosh::matrix & A,
-      std::shared_ptr<Tpetra::Vector<double,int,int>> f_vec,
-      nosh::function & x,
+      const Tpetra::CrsMatrix<double,int,int> & A,
+      const Tpetra::Vector<double,int,int> & b,
+      Tpetra::Vector<double,int,int> & x,
       std::map<std::string, boost::any> solver_params = nosh::default_linear_solver_params
       );
 
