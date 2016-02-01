@@ -74,6 +74,10 @@ linear_solve(
     std::map<std::string, boost::any> solver_params
     )
 {
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(
+      solver_params.find("package") == solver_params.end(),
+      "Missing key \"package\" in solver parameters."
+      )
   const std::string package =
     boost::any_cast<const char *>(solver_params.at("package"));
   if (package == "Amesos2") {

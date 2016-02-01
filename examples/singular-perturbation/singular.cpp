@@ -5,7 +5,7 @@
 int main(int argc, char *argv[]) {
   Teuchos::GlobalMPISession session(&argc, &argv, NULL);
 
-  const auto mesh = nosh::read("pacman.e");
+  const auto mesh = nosh::read("pacman.h5m");
 
   const auto bc1 = std::make_shared<singular::bc1>();
 
@@ -15,23 +15,16 @@ int main(int argc, char *argv[]) {
 
   nosh::function x(mesh);
 
-  // TODO better, functioning parameter list spec
-  nosh::scaled_linear_solve(
+  nosh::linear_solve(
     matrix, rhs, x,
     {
+      {"package", "Belos"},
       {"method", "Pseudo Block CG"},
-      //{
-      //  "parameters", list{
-      //  {"Convergence Tolerance", 1.0e-10},
-      //  {"Output Frequency", 1},
-      //  {"Output Style", 1},
-      //  {"Verbosity", 33}
-      //  }
-      //}
+      {"preconditioner", "MueLu"}
     }
   );
 
-  nosh::write(x, "out.e");
+  nosh::write(x, "out.h5m");
 
   return EXIT_SUCCESS;
 }
