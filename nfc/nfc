@@ -58,7 +58,7 @@ def _main():
             entities.append(get_code_dirichlet_bc(var, name))
         elif isinstance(var, nfl.Expression):
             entities.append(get_code_expression(var, name))
-        elif isinstance(var, nfl.NonlinearOperator):
+        elif isinstance(var, nfl.NonlinearProblem):
             entities.append(
                 get_code_nonlinear_operator(var, name)
                 )
@@ -280,7 +280,7 @@ def get_code_linear_operator(operator_dict):
 
 
 def get_code_nonlinear_operator(F, name):
-    assert(isinstance(F, nfl.NonlinearOperator))
+    assert(isinstance(F, nfl.NonlinearProblem))
 
     debug = True
     if debug:
@@ -470,19 +470,25 @@ class CodeGen(object):
         return
 
     def visit(self, node, out_vector=None):
-        if node.is_Add:
-            return self.visit_ChainOp(node, '+')
-        elif node.is_Mul:
-            return self.visit_ChainOp(node, '*')
-        elif node.is_Number:
+        print('node', node, type(node))
+        if isinstance(node, int):
             return Pointwise(node)
-        elif node.is_Symbol:
-            return self.visit_Name(node)
-        elif node.is_Function:
-            a = self.visit_Call(node)
-            return a
-        else:
-            raise RuntimeError('Unknown node type \"', type(node), '\".')
+        elif isinstance(node, float):
+            return Pointwise(node)
+        elif isinstance(node, sympy.Basic):
+            if node.is_Add:
+                return self.visit_ChainOp(node, '+')
+            elif node.is_Mul:
+                return self.visit_ChainOp(node, '*')
+            elif node.is_Number:
+                return Pointwise(node)
+            elif node.is_Symbol:
+                return self.visit_Name(node)
+            elif node.is_Function:
+                a = self.visit_Call(node)
+                return a
+
+        raise RuntimeError('Unknown node type \"', type(node), '\".')
         return
 
     def generate(self, node, arg_translate):

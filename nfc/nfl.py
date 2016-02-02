@@ -102,7 +102,7 @@ class MatrixFactory(object):
         return
 
 
-class NonlinearOperator(object):
+class NonlinearProblem(object):
     def __init__(self, f=None, dfdp=None, jac=None):
         self.f = f
         self.dfdp = dfdp
