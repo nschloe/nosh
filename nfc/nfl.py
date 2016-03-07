@@ -32,6 +32,12 @@ class Coefficient(object):
         return
 
 
+class Operator(object):
+    def __init__(self, expr):
+        self.eval = expr
+        return
+
+
 class Expression(object):
     def __init__(self, eval, degree=sympy.oo):
         self.eval = eval
@@ -103,10 +109,11 @@ class MatrixFactory(object):
 
 
 class NonlinearProblem(object):
-    def __init__(self, f=None, dfdp=None, jac=None):
+    def __init__(self, f=None, dfdp=None, jac=None, prec=None):
         self.f = f
         self.dfdp = dfdp
         self.jac = jac
+        self.prec = prec
         return
 
 

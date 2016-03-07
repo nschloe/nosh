@@ -18,12 +18,16 @@ int main(int argc, char *argv[]) {
   //const auto mesh = nosh::read("cubesmall.h5m");
   const auto mesh = nosh::read("cube.h5m");
 
-  const auto bc1 = std::make_shared<poisson::bc1>();
-  const auto bc2 = std::make_shared<poisson::bc2>();
+  const auto p = poisson.problem(mesh);
 
-  poisson::laplace matrix(mesh, {bc1, bc2});
+  // const auto bc1 = std::make_shared<poisson::bc1>();
+  // const auto bc2 = std::make_shared<poisson::bc2>();
+  //
+  const auto matrix = p.laplace({p.bc1, p.bc2})
 
-  const poisson::f rhs;
+  //poisson::laplace matrix(mesh, {bc1, bc2});
+
+  const auto rhs = p.f;
 
   nosh::function x(mesh);
   x.putScalar(0.0);
@@ -64,6 +68,7 @@ int main(int argc, char *argv[]) {
           {"Verbosity", 33}
         }},
         {"preconditioner", "MueLu"},
+        {"preconditioner matrix", M},
         {"preconditioner parameters", list{
           {"cycle type", "V"}
         }}

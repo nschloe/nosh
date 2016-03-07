@@ -10,4 +10,4 @@ class ${name}:
     eval(const Eigen::Vector3d & x) const {
       ${eval_void}return ${eval_return_value};
     }
-};
+}; // class ${name}

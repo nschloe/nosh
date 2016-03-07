@@ -45,4 +45,4 @@ class ${name}:
         ${vertex_contrib_unused_args}return ${vertex_contrib};
       }
   private:
-};
+}; // class ${name}

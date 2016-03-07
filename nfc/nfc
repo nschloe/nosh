@@ -58,6 +58,8 @@ def _main():
             entities.append(get_code_dirichlet_bc(var, name))
         elif isinstance(var, nfl.Expression):
             entities.append(get_code_expression(var, name))
+        elif isinstance(var, nfl.Operator):
+            entities.append(get_code_operator(var, name))
         elif isinstance(var, nfl.NonlinearProblem):
             entities.append(
                 get_code_nonlinear_operator(var, name)
@@ -246,6 +248,47 @@ def get_code_expression(expr, name):
     return code
 
 
+def get_code_operator(operator, name):
+    assert(isinstance(operator, nfl.Operator))
+
+    x = sympy.DeferredVector('x')
+
+    # result = operator.eval(x)
+    assert(callable(operator.eval))
+    generator = CodeGen()
+    u = sympy.Symbol('u')
+    op_code, required_ops = generator.generate(operator.eval(u), {'u': 'x'})
+
+    additional_members = []
+    additional_members_init = []
+    for required_operator in required_ops:
+        additional_members.append(
+                'const std::shared<Tpetra::Operator> %s;' %
+                required_operator['var_name'].lower()
+                )
+        additional_members_init.append(
+                '%s(std::make_shared<%s>(mesh))' %
+                (required_operator['var_name'].lower(),
+                    required_operator['class_name'].lower())
+                )
+
+    # TODO
+    # Check if any of the arguments is not used in the function.
+    # (We'll declare them (void) to supress compiler warnings.)
+
+    # template substitution
+    with open(os.path.join(templates_dir, 'operator.tpl'), 'r') as f:
+        src = Template(f.read())
+        code = src.substitute({
+            'name': name.lower(),  # class names are lowercase
+            'apply': op_code,
+            'additional_members': '\n'.join(additional_members),
+            'additional_members_init': ',\n' + (',\n'.join(additional_members_init))
+            })
+
+    return code
+
+
 def get_code_linear_operator(operator_dict):
     '''Generate code for a linear operator (with solver and all).
     It is assumed that the input dictionary specifies everything around
@@ -271,7 +314,7 @@ def get_code_linear_operator(operator_dict):
     assert(callable(operator_dict['operator']))
     generator = CodeGen()
     u = sympy.Symbol('u')
-    op_code = generator.generate(F.f(u), {'u': 'x'})
+    op_code, required_ops = generator.generate(F.f(u), {'u': 'x'})
     print(op_code)
 
     exit()
@@ -288,7 +331,7 @@ def get_code_nonlinear_operator(F, name):
 
     # The dissection of nonlinear operators is unfortunately not so easy. We
     # cannot use SymPy's built-in C-code generation here, since the operator
-    # may be composed of more complex operations than that the basic ones. For
+    # may be composed of more complex operations than the basic ones. For
     # example, the operator could involve the application of linear operator
     # defined elsewhere.
     # For this reason, we're doing the code generation manually. This involves
@@ -298,30 +341,32 @@ def get_code_nonlinear_operator(F, name):
     # Call the function and check the return value.
     generator = CodeGen()
     u = sympy.Symbol('u')
-    f_code = generator.generate(F.f(u), {'u': 'x'})
+    f_code, required_ops = generator.generate(F.f(u), {'u': 'x'})
     print(f_code)
 
     print('-----------------------------')
 
-    dfdp_code = generator.generate(F.dfdp(u), {'u': 'x'})
-    print(dfdp_code)
+    if F.dfdp:
+        dfdp_code, required_ops = generator.generate(F.dfdp(u), {'u': 'x'})
+        print(dfdp_code)
+        print('-----------------------------')
 
-    print('-----------------------------')
+    if F.jac:
+        u0 = sympy.Symbol('u0')
+        jac_code, required_ops = generator.generate(
+            F.jac(u, u0),
+            {'u': 'x', 'u0': 'x0_'}
+            )
+        print(jac_code)
+        print('-----------------------------')
 
-    u0 = sympy.Symbol('u0')
-    jac_code = generator.generate(
-        F.jac['operator'](u, u0),
-        {'u': 'x', 'u0': 'x0_'}
-        )
-    print(jac_code)
-
-    # retrieve the linear solver options
-    belos_options_code = dict_to_beloscode(F.jac['solver'])
-
-    if 'preconditioner' in F.jac:
-        prec_code = get_preconditioner_code(F.jac['preconditioner'])
+    print(F)
+    if F.prec:
+        prec_code = get_preconditioner_code(F.prec)
         print(prec_code)
+        print('-----------------------------')
 
+    print('lulz')
     exit()
 
     # TODO
@@ -354,9 +399,7 @@ def get_code_nonlinear_operator(F, name):
 
 
 def get_preconditioner_code(prec):
-    print(prec)
-    assert('operator' in F.jac['preconditioner'])
-    op = prec['operator'](u0)
+    op = prec(u0)
     assert(is_fvm_matrix(op))
     init_code = ',%s_(%s(mesh, x0))\n' \
         % (str(op), str(op).capitalize())
@@ -467,6 +510,7 @@ class CodeGen(object):
         self._intermediate_count = 0
         self._get_data = set([])
         self._code = ''
+        self._required_operators = []
         return
 
     def visit(self, node, out_vector=None):
@@ -498,10 +542,11 @@ class CodeGen(object):
         self._intermediate_count = 0
         self._get_data = set([])
         self._code = ''
+        self._required_operators = []
         out = self.visit(node, 'y')
         if isinstance(out, Pointwise):
             self._to_vector(out, 'y')
-        return self._code
+        return self._code, self._required_operators
 
     def _get_outvector(self):
         '''Sometime, one needs to store intermediate values in vectors. This
@@ -568,7 +613,11 @@ for (size_t k = 0; k < %sData.size(); k++) {
                 out_vector = self._get_outvector()
             # Put it all together
             self._code += '\n%s->apply(%s, %s);\n' \
-                % (id, arg_name, out_vector)
+                % (id + '_', arg_name, out_vector)
+            self._required_operators.append({
+                'var_name': id + '_',
+                'class_name': id,
+                })
             logging.debug('  Call >')
             return Vector(out_vector)
         else:
