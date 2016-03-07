@@ -6,7 +6,7 @@ public:
 ${name}(
     const std::shared_ptr<const nosh::mesh> & mesh
     ) :
-  mesh_(mesh)${additional_members_init}
+  ${members_init}
 {
 }
 
@@ -53,6 +53,5 @@ getRangeMap() const
 
 protected:
 private:
-  const std::shared_ptr<const nosh::mesh> mesh_;
-  ${additional_members}
+  ${members}
 } // class ${name}

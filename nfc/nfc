@@ -259,14 +259,14 @@ def get_code_operator(operator, name):
     u = sympy.Symbol('u')
     op_code, required_ops = generator.generate(operator.eval(u), {'u': 'x'})
 
-    additional_members = []
-    additional_members_init = []
+    members = ['const std::shared_ptr<const nosh::mesh> mesh_;']
+    members_init = ['mesh_(mesh)']
     for required_operator in required_ops:
-        additional_members.append(
-                'const std::shared<Tpetra::Operator> %s;' %
+        members.append(
+                'const std::shared<const Tpetra::Operator> %s;' %
                 required_operator['var_name'].lower()
                 )
-        additional_members_init.append(
+        members_init.append(
                 '%s(std::make_shared<%s>(mesh))' %
                 (required_operator['var_name'].lower(),
                     required_operator['class_name'].lower())
@@ -282,8 +282,8 @@ def get_code_operator(operator, name):
         code = src.substitute({
             'name': name.lower(),  # class names are lowercase
             'apply': op_code,
-            'additional_members': '\n'.join(additional_members),
-            'additional_members_init': ',\n' + (',\n'.join(additional_members_init))
+            'members': '\n'.join(members),
+            'members_init': ',\n'.join(members_init)
             })
 
     return code
