@@ -2,10 +2,11 @@
 from nfl import *
 from sympy import *
 
-bc1 = DirichletBC(
-  lambda x: x[0] < 1e6,  # True
-  lambda x: 0.0
-  )
+
+class Bc1(DirichletBC):
+    def is_inside(self, x): return x[0] < 1e6  # everywhere
+
+    def eval(self, x): return 0.0
 
 
 class Singular(FvmMatrix):
@@ -17,3 +18,6 @@ class Singular(FvmMatrix):
 
     def vertex_contrib(control_volume):
         return control_volume
+
+    def boundary_conditions():
+        return [Bc1()]

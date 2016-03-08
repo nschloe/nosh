@@ -7,9 +7,7 @@ int main(int argc, char *argv[]) {
 
   const auto mesh = nosh::read("pacman.h5m");
 
-  const auto bc1 = std::make_shared<singular::bc1>();
-
-  singular::singular matrix(mesh, {bc1});
+  const singular::singular matrix(mesh);
 
   const nosh::constant rhs(1.0);
 

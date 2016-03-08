@@ -3,10 +3,12 @@ class ${name}:
 {
   public:
     ${name}(
-        const std::shared_ptr<const nosh::mesh> & _mesh,
-        const std::set<std::shared_ptr<const nosh::dirichlet_bc>> & _bcs
+        const std::shared_ptr<const nosh::mesh> & _mesh
         ):
-      nosh::fvm_matrix(_mesh, _bcs)
+      nosh::fvm_matrix(
+        _mesh,
+        ${boundary_conditions}
+        )
     {
       this->fill_();
     };

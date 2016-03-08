@@ -26,7 +26,6 @@ class Function(sympy.Symbol):
     def __init__(self):
         return
 
-
 class Coefficient(object):
     def __init__(self):
         return
@@ -130,10 +129,9 @@ class Integral(object):
 
 
 class DirichletBC(object):
-    def __init__(self, inside_condition, eval_return):
-        self.is_inside = inside_condition
-        self.eval = eval_return
-        return
+    def is_inside(self, x): return x[0] < 1e10
+
+    def eval(self, x): return 0.0
 
 
 def inner(a, b):
