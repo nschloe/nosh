@@ -10,12 +10,7 @@ int main(int argc, char *argv[]) {
 
   bool success = true;
   try {
-
-  //const auto mesh = nosh::read("r2.h5m");
-  //const auto mesh = nosh::read("pacman2.h5m");
-  //const auto mesh = nosh::read("screw3.h5m");
-  //const auto mesh = nosh::read("cubesmall.h5m");
-  const auto mesh = nosh::read("cube.h5m");
+  const auto mesh = nosh::read("pacman.h5m");
 
   different_materials::laplace matrix(mesh);
   different_materials::f rhs;
