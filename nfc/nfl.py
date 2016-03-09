@@ -18,10 +18,7 @@ class Operator(sympy.Function):
 
 
 class Expression(object):
-    def __init__(self, eval, degree=sympy.oo):
-        self.eval = eval
-        self.degree = degree
-        return
+    degree = sympy.oo
 
 
 class Vector(object):

@@ -2,21 +2,23 @@
 from nfl import *
 from sympy import *
 
-bc1 = DirichletBC(
-  lambda x: x[0] < 0,
-  lambda x: 0.0
-  )
-bc2 = DirichletBC(
-  lambda x: x[0] >= 0,
-  lambda x: 1.0
-  )
 
-f = Expression(
-    lambda x: sin(x[1]),
-    degree=0
-    )
+class Bc1(DirichletBC):
+    def is_inside(self, x): return x[0] < 0
+    def eval(self, x): return 0.0
 
-# Laplace
+
+class Bc2(DirichletBC):
+    def is_inside(self, x): return x[0] >= 0
+    def eval(self, x): return 1.0
+
+
+class F(Expression):
+    def eval(self, x): return sin(x[1])
+    degree = 0
+
+
 class Laplace(FvmMatrix):
     def edge_contrib(alpha, edge_midpoint):
         return [[alpha, -alpha], [-alpha, alpha]]
+    boundary_conditions = [Bc1(), Bc2()]

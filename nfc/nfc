@@ -43,8 +43,11 @@ def _main():
                 var != nfl.DirichletBC:
             instance = var()
             entities.append(get_code_dirichlet_bc(instance, name))
-        elif isinstance(var, nfl.Expression):
-            entities.append(get_code_expression(var, name))
+        elif inspect.isclass(var) and \
+                issubclass(var, nfl.Expression) and \
+                var != nfl.Expression:
+            instance = var()
+            entities.append(get_code_expression(instance, name))
         elif isinstance(var, nfl.Operator):
             entities.append(get_code_operator(var, name))
         elif isinstance(var, nfl.NonlinearProblem):
@@ -79,7 +82,6 @@ def _main():
 def _run(command):
     """Runs a given command on the command line and returns its output.
     """
-    # print(command)
     process = subprocess.Popen(
         command,
         shell=True,
