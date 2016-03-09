@@ -19,7 +19,7 @@ int main(int argc, char *argv[]) {
   const auto mesh = nosh::read("cube.h5m");
 
   poisson::laplace matrix(mesh);
-  poisson::f rhs();
+  poisson::f rhs;
 
   nosh::function x(mesh);
   x.putScalar(0.0);
