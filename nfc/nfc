@@ -161,14 +161,10 @@ def get_code_fvm_matrix(eo, name):
     # vertex contribution handling done
 
     # handle the boundary conditions
-    if callable(getattr(eo, 'boundary_conditions', None)):
-        specs = inspect.getargspec(eo.boundary_conditions)
-        assert(len(specs.args) == 0)
-        bcs = eo.boundary_conditions()
+    if getattr(eo, 'boundary_conditions', None):
+        bcs = eo.boundary_conditions
         for bc in bcs:
             assert(isinstance(bc, nfl.DirichletBC))
-        print(bc)
-        print(type(bc).__name__)
         code_bcs = \
             '{%s}' % (', '.join('std::make_shared<%s>()' %
                       type(bc).__name__.lower() for bc in bcs))
