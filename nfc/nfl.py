@@ -17,8 +17,9 @@ class Operator(sympy.Function):
     pass
 
 
-class Expression(object):
-    degree = sympy.oo
+class Expression(sympy.Function):
+    pass
+    # degree = sympy.oo
 
 
 class Vector(object):

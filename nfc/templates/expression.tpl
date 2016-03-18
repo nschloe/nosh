@@ -12,7 +12,7 @@ class ${name}:
 
     virtual
     double
-    eval(const Eigen::Vector3d & x) const
+    operator()(const Eigen::Vector3d & x) const
     {
       return ${eval};
     };

@@ -3,6 +3,23 @@
 
 #include <Teuchos_StandardCatchMacros.hpp>
 
+class eps: public nosh::expression
+{
+public:
+  eps(): nosh::expression(0) {}
+  virtual ~eps() {}
+
+  virtual double operator()(const Eigen::Vector3d & x) const
+  {
+    if (x[0] > 0.0) {
+      return 3.0;
+    } else {
+      return 1.0;
+    }
+  };
+};
+
+
 using list = std::map<std::string, boost::any>;
 int main(int argc, char *argv[]) {
   Teuchos::GlobalMPISession session(&argc, &argv, NULL);
@@ -12,7 +29,7 @@ int main(int argc, char *argv[]) {
   try {
   const auto mesh = nosh::read("pacman.h5m");
 
-  different_materials::laplace matrix(mesh);
+  different_materials::laplace matrix(mesh, eps());
   different_materials::f rhs;
 
   nosh::function x(mesh);

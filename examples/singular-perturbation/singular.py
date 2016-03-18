@@ -7,6 +7,13 @@ class Bc1(DirichletBC):
     def eval(self, x): return 0.0
 
 
+# class Singular(Operator):
+#     def eval(u):
+#         return - 2.0e-1 * dot(n, grad(u)) * domega + u * dV
+#
+#     boundary_conditions = [Bc1()]
+
+
 class Singular(FvmMatrix):
     def edge_contrib(alpha, edge_midpoint):
         eps = 2.0e-1

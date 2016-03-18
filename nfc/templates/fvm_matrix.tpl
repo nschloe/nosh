@@ -3,12 +3,9 @@ class ${name}:
 {
   public:
     ${name}(
-        const std::shared_ptr<const nosh::mesh> & _mesh
+        ${constructor_args}
         ):
-      nosh::fvm_matrix(
-        _mesh,
-        ${boundary_conditions}
-        )
+      ${members_init}
     {
       this->fill_();
     };
@@ -47,4 +44,5 @@ class ${name}:
         ${vertex_contrib_unused_args}return ${vertex_contrib};
       }
   private:
+    ${members_declare}
 }; // class ${name}

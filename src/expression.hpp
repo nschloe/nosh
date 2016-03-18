@@ -24,7 +24,7 @@ namespace nosh {
 
       virtual
       double
-      eval(const Eigen::Vector3d & x) const = 0;
+      operator()(const Eigen::Vector3d & x) const = 0;
 
     public:
       const unsigned int degree;

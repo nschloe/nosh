@@ -31,7 +31,7 @@ namespace nosh {
       case 0:
         for (size_t k = 0; k < nodes.size(); k++)
         {
-          vals_data[k] = expr.eval(mesh.get_coords(nodes[k])) * cv_data[k];
+          vals_data[k] = expr(mesh.get_coords(nodes[k])) * cv_data[k];
         }
         break;
 
