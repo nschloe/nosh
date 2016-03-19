@@ -51,10 +51,10 @@ public:
   }
 
   virtual
-  std::vector<double>
-  edge_coefficients() const
+  std::vector<edge_data>
+  get_edge_data() const
   {
-    return edge_coefficients_;
+    return edge_data_;
   }
 
   virtual
@@ -74,8 +74,8 @@ private:
       Tpetra::Vector<double,int,int> & cv_overlap
       ) const;
 
-  std::vector<double>
-  compute_edge_coefficients_() const;
+  std::vector<mesh::edge_data>
+  compute_edge_data_() const;
 
   std::set<moab::EntityHandle>
   compute_boundary_nodes_() const;
@@ -116,13 +116,13 @@ private:
 
 private:
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
-  const Teuchos::RCP<Teuchos::Time> compute_edge_coefficients_time_;
+  const Teuchos::RCP<Teuchos::Time> compute_edge_data_time_;
   const Teuchos::RCP<Teuchos::Time> compute_control_volumes_time_;
   const Teuchos::RCP<Teuchos::Time> compute_boundary_nodes_time_;
 #endif
 
   std::shared_ptr<const Tpetra::Vector<double,int,int>> control_volumes_;
-  const std::vector<double> edge_coefficients_;
+  const std::vector<edge_data> edge_data_;
   const std::set<moab::EntityHandle> boundary_nodes_;
 };
 

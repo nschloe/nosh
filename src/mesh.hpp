@@ -36,6 +36,13 @@ private:
   };
 
 public:
+
+  struct edge_data {
+    double length;
+    double covolume;
+  };
+
+public:
   mesh(
       const std::shared_ptr<const Teuchos::Comm<int>> & comm,
       const std::shared_ptr<moab::ParallelComm> & mcomm,
@@ -161,8 +168,8 @@ public:
   control_volumes() const = 0;
 
   virtual
-  std::vector<double>
-  edge_coefficients() const = 0;
+  std::vector<edge_data>
+  get_edge_data() const = 0;
 
   virtual
   std::set<moab::EntityHandle>
@@ -231,8 +238,8 @@ private:
       const int index
       );
 
-  std::vector<double>
-  compute_edge_coefficients_() const;
+  std::vector<edge_data>
+  compute_edge_data_() const;
 
   std::shared_ptr<const Tpetra::Map<int,int>>
   build_map_(const std::vector<moab::EntityHandle> &entityList) const;

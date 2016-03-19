@@ -79,7 +79,7 @@ private:
   void
   build_alpha_cache_(
       const std::vector<edge> & edges,
-      const std::vector<double> & edge_coefficients
+      const std::vector<nosh::mesh::edge_data> & edge_data
       ) const;
 
   double

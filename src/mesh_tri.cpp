@@ -22,9 +22,9 @@ mesh_tri(
     ) :
   mesh(_comm, mcomm, mb)
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
-  ,compute_edge_coefficients_time_(
+  ,compute_edge_data_time_(
       Teuchos::TimeMonitor::getNewTimer(
-        "Nosh: mesh_tri::compute_edge_coefficients"
+        "Nosh: mesh_tri::compute_edge_data"
         ))
   ,compute_control_volumes_time_(
       Teuchos::TimeMonitor::getNewTimer(
@@ -36,7 +36,7 @@ mesh_tri(
         ))
 #endif
   ,control_volumes_(this->compute_control_volumes_())
-  ,edge_coefficients_(this->compute_edge_coefficients_())
+  ,edge_data_(this->compute_edge_data_())
   ,boundary_nodes_(this->compute_boundary_nodes_())
 {
 }
@@ -46,13 +46,13 @@ mesh_tri::
 {
 }
 // =============================================================================
-std::vector<double>
+std::vector<mesh::edge_data>
 mesh_tri::
-compute_edge_coefficients_() const
+compute_edge_data_() const
 {
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   // timer for this routine
-  Teuchos::TimeMonitor tm(*compute_edge_coefficients_time_);
+  Teuchos::TimeMonitor tm(*compute_edge_data_time_);
 #endif
 
   moab::Range cells = this->mbw_->get_entities_by_dimension(0, 2);
@@ -60,6 +60,8 @@ compute_edge_coefficients_() const
   size_t num_cells = cells.size();
 
   size_t num_edges = relations_.edge_nodes.size();
+
+  std::vector<edge_data> _edge_data(num_edges);
 
   // compute all coordinates
   std::vector<Eigen::Vector3d> edge_coords(num_edges);
@@ -73,9 +75,9 @@ compute_edge_coefficients_() const
     edge_coords[k][0] = coords0[0] - coords1[0];
     edge_coords[k][1] = coords0[1] - coords1[1];
     edge_coords[k][2] = coords0[2] - coords1[2];
-  }
 
-  std::vector<double> _edge_coefficients(num_edges);
+    _edge_data[k].length = edge_coords[k].norm();
+  }
 
   // Compute the contributions cell by cell.
   for (size_t k = 0; k < num_cells; k++) {
@@ -89,27 +91,6 @@ compute_edge_coefficients_() const
       edge_coords[edge_idxs[1]],
       edge_coords[edge_idxs[2]]
     };
-    // const moab::EntityHandle * conn = NULL;
-    // int numV = 0;
-    // ierr = this->mbw_->mb->get_connectivity(cells[k], conn, numV);
-    // TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
-
-    // std::vector<double> coords(3 * numV);
-    // ierr = this->mbw_->mb->get_coords(conn, numV, &coords[0]);
-    // TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
-
-    // // Get edge coordinates.
-    // const unsigned int num_local_edges = (numV - 1) * numV / 2;
-    // std::vector<Eigen::Vector3d> local_edge_coords(num_local_edges);
-    // int k0 = 0;
-    // for (int i = 0; i < numV; i++) {
-    //   for (int j = i+1; j < numV; j++) {
-    //     local_edge_coords[k0][0] = coords[3*i] - coords[3*j];
-    //     local_edge_coords[k0][1] = coords[3*i + 1] - coords[3*j + 1];
-    //     local_edge_coords[k0][2] = coords[3*i + 2] - coords[3*j + 2];
-    //     k0++;
-    //   }
-    // }
 
     Eigen::VectorXd edge_coeffs =
       edge_coefficients_numerically_(local_edge_coords);
@@ -118,11 +99,12 @@ compute_edge_coefficients_() const
     for (int i = 0; i < edge_coeffs.size(); i++) {
       const size_t edge_idx = this->local_index(relations_.cell_edges[k][i]);
       // const int edge_id = this->liddd
-      _edge_coefficients[edge_idx] += edge_coeffs[i];
+      _edge_data[edge_idx].covolume +=
+        edge_coeffs[i] * _edge_data[edge_idx].length;
     }
   }
 
-  return _edge_coefficients;
+  return _edge_data;
 }
 // =============================================================================
 Eigen::VectorXd

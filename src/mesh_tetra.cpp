@@ -41,9 +41,9 @@ mesh_tetra(
     ) :
   mesh(_comm, mcomm, mb),
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
-  compute_edge_coefficients_time_(
+  compute_edge_data_time_(
       Teuchos::TimeMonitor::getNewTimer(
-        "Nosh: mesh_tetra::compute_edge_coefficients"
+        "Nosh: mesh_tetra::compute_edge_data"
         )),
   compute_control_volumes_time_(
       Teuchos::TimeMonitor::getNewTimer(
@@ -55,7 +55,7 @@ mesh_tetra(
         ))
 #endif
   ,control_volumes_(this->compute_control_volumes_())
-  ,edge_coefficients_(this->compute_edge_coefficients_())
+  ,edge_data_(this->compute_edge_data_())
   ,boundary_nodes_(this->compute_boundary_nodes_())
 {
 }
@@ -65,18 +65,20 @@ mesh_tetra::
 {
 }
 // =============================================================================
-std::vector<double>
+std::vector<mesh::edge_data>
 mesh_tetra::
-compute_edge_coefficients_() const
+compute_edge_data_() const
 {
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
-  Teuchos::TimeMonitor tm(*compute_edge_coefficients_time_);
+  Teuchos::TimeMonitor tm(*compute_edge_data_time_);
 #endif
   moab::Range cells = this->mbw_->get_entities_by_dimension(0, 3);
 
   size_t num_cells = cells.size();
 
   size_t num_edges = relations_.edge_nodes.size();
+
+  std::vector<mesh::edge_data> _edge_data(num_edges);
 
   // compute all coordinates
   std::vector<Eigen::Vector3d> edge_coords(num_edges);
@@ -90,9 +92,9 @@ compute_edge_coefficients_() const
     edge_coords[k][0] = coords0[0] - coords1[0];
     edge_coords[k][1] = coords0[1] - coords1[1];
     edge_coords[k][2] = coords0[2] - coords1[2];
-  }
 
-  std::vector<double> _edge_coefficients(num_edges);
+    _edge_data[k].length = edge_coords[k].norm();
+  }
 
   // Compute the contributions edge by edge.
   for (size_t k = 0; k < num_cells; k++) {
@@ -119,11 +121,12 @@ compute_edge_coefficients_() const
     // Fill the edge coefficients into the vector.
     for (int i = 0; i < edge_coeffs.size(); i++) {
       const size_t edge_idx = this->local_index(relations_.cell_edges[k][i]);
-      _edge_coefficients[edge_idx] += edge_coeffs[i];
+      _edge_data[edge_idx].covolume +=
+        edge_coeffs[i] * _edge_data[edge_idx].length;
     }
   }
 
-  return _edge_coefficients;
+  return _edge_data;
 }
 // =============================================================================
 Eigen::VectorXd

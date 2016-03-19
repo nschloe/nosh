@@ -60,14 +60,15 @@ namespace nosh
 
           // Add edge contributions
           const std::vector<edge> edges = this->mesh->my_edges();
-          const auto edge_coefficients = this->mesh->edge_coefficients();
+          const auto edge_data = this->mesh->get_edge_data();
           for (size_t k = 0; k < edges.size(); k++) {
             const Eigen::Vector3d edge_midpoint = 0.5 * (
                 this->mesh->get_coords(std::get<0>(edges[k])) +
                 this->mesh->get_coords(std::get<1>(edges[k]))
                 );
 
-            auto vals = edge_contrib(edge_coefficients[k], edge_midpoint);
+            const double alpha = edge_data[k].covolume / edge_data[k].length;
+            auto vals = edge_contrib(alpha, edge_midpoint);
 
             const Teuchos::Tuple<int,2> & idx = this->mesh->edge_gids[k];
             for (int i = 0; i < 2; i++) {

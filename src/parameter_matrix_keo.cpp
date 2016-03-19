@@ -113,7 +113,7 @@ refill_(const std::map<std::string, double> & params)
 
   const std::vector<edge> edges = mesh_->my_edges();
   if (!alpha_cache_up_to_date_) {
-    this->build_alpha_cache_(edges, mesh_->edge_coefficients());
+    this->build_alpha_cache_(edges, mesh_->get_edge_data());
   }
 
   double v[3];
@@ -203,7 +203,7 @@ void
 keo::
 build_alpha_cache_(
     const std::vector<edge> & edges,
-    const std::vector<double> & edge_coefficients
+    const std::vector<nosh::mesh::edge_data> & edge_data
     ) const
 {
   // This routine serves the one and only purpose of caching the thickness
@@ -239,7 +239,8 @@ build_alpha_cache_(
     const int i0 = mesh_->local_index(std::get<0>(edges[k]));
     const int i1 = mesh_->local_index(std::get<1>(edges[k]));
     // Update cache.
-    alpha_cache_[k] = edge_coefficients[k] * 0.5 * (t_data[i0] + t_data[i1]);
+    const double alpha = edge_data[k].covolume / edge_data[k].length;
+    alpha_cache_[k] = alpha * 0.5 * (t_data[i0] + t_data[i1]);
   }
 
   alpha_cache_up_to_date_ = true;
