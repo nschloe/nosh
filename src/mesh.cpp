@@ -53,7 +53,7 @@ mesh(
   complex_overlap_map_(
     this->get_map_(this->complexify_(this->get_overlap_gids_()))
     )
-  ,edge_data_(this->build_edge_data_())
+  ,relations_(this->build_entity_relations_())
   ,edge_lids(build_edge_lids_())
   ,edge_lids_complex(build_edge_lids_complex_())
   ,edge_gids(build_edge_gids_())
@@ -449,9 +449,9 @@ get_map_(const std::vector<int> & ids) const
       );
 }
 // =============================================================================
-mesh::edges_container
+mesh::entity_relations
 mesh::
-build_edge_data_()
+build_entity_relations_()
 {
   // get the number of 3D entities
   const int num3d = this->mbw_->get_number_entities_by_dimension(0, 3);
@@ -500,7 +500,7 @@ build_edge_data_()
     edge_nodes[k] = std::make_tuple(verts[0], verts[1]);
   }
 
-  mesh::edges_container edge_data = {edge_nodes, cell_edges};
+  mesh::entity_relations relations = {edge_nodes, cell_edges};
 
   //// for testing
   //moab::Range verts = this->mbw_->mb->get_adjacencies(
@@ -510,7 +510,7 @@ build_edge_data_()
   //    moab::Interface::UNION
   //    );
 
-  return edge_data;
+  return relations;
 }
 // =============================================================================
 Teuchos::RCP<const Tpetra::CrsGraph<int,int>>

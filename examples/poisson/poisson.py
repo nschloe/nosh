@@ -20,14 +20,15 @@ class F(Expression):
     degree = 0
 
 
-# class Laplace(FvmMatrix):
-#     def edge_contrib(alpha, edge_midpoint):
-#         return [[alpha, -alpha], [-alpha, alpha]]
-#     boundary_conditions = [Bc1(), Bc2()]
-
-
 class Laplace(FvmMatrix):
-    def eval(u):
-        return - dot(n, grad(u)) * dS
+    def edge_contrib(alpha, edge_midpoint):
+        return [[alpha, -alpha], [-alpha, alpha]]
 
     boundary_conditions = [Bc1(), Bc2()]
+
+
+# class Laplace(FvmMatrix):
+#     def eval(u):
+#         return - dot(n, grad(u)) * dS
+#
+#     boundary_conditions = [Bc1(), Bc2()]

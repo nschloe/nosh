@@ -28,9 +28,7 @@ namespace nosh
 class mesh
 {
 private:
-  // Keep bulk_data a pointer since its copy constructor is private; this causes
-  // issues when trying to copy (or initialize) Mesh_dataContainer.
-  struct edges_container {
+  struct entity_relations {
     //! Local edge ID -> Global node IDs.
     std::vector<edge> edge_nodes;
     //! Local cell ID -> Local edge IDs.
@@ -74,7 +72,7 @@ public:
   const std::vector<edge>
   my_edges() const
   {
-    return edge_data_.edge_nodes;
+    return relations_.edge_nodes;
   }
 
   std::shared_ptr<const Tpetra::Map<int,int>>
@@ -205,7 +203,7 @@ private:
   const std::shared_ptr<const Tpetra::Map<int,int>> complex_overlap_map_;
 
 protected:
-  const edges_container edge_data_;
+  const entity_relations relations_;
 
 public:
   const std::vector<Teuchos::Tuple<int,2>> edge_lids;
@@ -239,8 +237,8 @@ private:
   std::shared_ptr<const Tpetra::Map<int,int>>
   build_map_(const std::vector<moab::EntityHandle> &entityList) const;
 
-  edges_container
-  build_edge_data_();
+  entity_relations
+  build_entity_relations_();
 };
 // -----------------------------------------------------------------------------
 

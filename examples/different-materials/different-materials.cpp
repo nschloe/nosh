@@ -19,7 +19,6 @@ public:
   };
 };
 
-
 using list = std::map<std::string, boost::any>;
 int main(int argc, char *argv[]) {
   Teuchos::GlobalMPISession session(&argc, &argv, NULL);

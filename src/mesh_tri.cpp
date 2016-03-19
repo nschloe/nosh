@@ -1,23 +1,3 @@
-// @HEADER
-//
-//    Mesh class with compatibility to stk_mesh.
-//    Copyright (C) 2010--2012  Nico Schlömer
-//
-//    This program is free software: you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation, either version 3 of the License, or
-//    (at your option) any later version.
-//
-//    This program is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//    GNU General Public License for more details.
-//
-//    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
-// @HEADER
-// =============================================================================
 #include "mesh_tri.hpp"
 
 #include <vector>
@@ -79,15 +59,15 @@ compute_edge_coefficients_() const
 
   size_t num_cells = cells.size();
 
-  size_t num_edges = edge_data_.edge_nodes.size();
+  size_t num_edges = relations_.edge_nodes.size();
 
   // compute all coordinates
   std::vector<Eigen::Vector3d> edge_coords(num_edges);
   for (size_t k = 0; k < num_edges; k++) {
-    auto tmp1 = std::get<0>(edge_data_.edge_nodes[k]);
+    auto tmp1 = std::get<0>(relations_.edge_nodes[k]);
     std::vector<double> coords0 = this->mbw_->get_coords({tmp1});
 
-    tmp1 = std::get<1>(edge_data_.edge_nodes[k]);
+    tmp1 = std::get<1>(relations_.edge_nodes[k]);
     std::vector<double> coords1 = this->mbw_->get_coords({tmp1});
 
     edge_coords[k][0] = coords0[0] - coords1[0];
@@ -97,12 +77,12 @@ compute_edge_coefficients_() const
 
   std::vector<double> _edge_coefficients(num_edges);
 
-  // Compute the contributions edge by edge.
+  // Compute the contributions cell by cell.
   for (size_t k = 0; k < num_cells; k++) {
     const std::vector<size_t> edge_idxs = {
-      this->local_index(edge_data_.cell_edges[k][0]),
-      this->local_index(edge_data_.cell_edges[k][1]),
-      this->local_index(edge_data_.cell_edges[k][2])
+      this->local_index(relations_.cell_edges[k][0]),
+      this->local_index(relations_.cell_edges[k][1]),
+      this->local_index(relations_.cell_edges[k][2])
     };
     const std::vector<Eigen::Vector3d> local_edge_coords = {
       edge_coords[edge_idxs[0]],
@@ -136,7 +116,7 @@ compute_edge_coefficients_() const
 
     // Fill the edge coefficients into the vector.
     for (int i = 0; i < edge_coeffs.size(); i++) {
-      const size_t edge_idx = this->local_index(edge_data_.cell_edges[k][i]);
+      const size_t edge_idx = this->local_index(relations_.cell_edges[k][i]);
       // const int edge_id = this->liddd
       _edge_coefficients[edge_idx] += edge_coeffs[i];
     }

@@ -76,15 +76,15 @@ compute_edge_coefficients_() const
 
   size_t num_cells = cells.size();
 
-  size_t num_edges = edge_data_.edge_nodes.size();
+  size_t num_edges = relations_.edge_nodes.size();
 
   // compute all coordinates
   std::vector<Eigen::Vector3d> edge_coords(num_edges);
   for (size_t k = 0; k < num_edges; k++) {
-    auto tmp1 = std::get<0>(edge_data_.edge_nodes[k]);
+    auto tmp1 = std::get<0>(relations_.edge_nodes[k]);
     const auto coords0 = this->mbw_->get_coords({tmp1});
 
-    tmp1 = std::get<1>(edge_data_.edge_nodes[k]);
+    tmp1 = std::get<1>(relations_.edge_nodes[k]);
     const auto coords1 = this->mbw_->get_coords({tmp1});
 
     edge_coords[k][0] = coords0[0] - coords1[0];
@@ -97,12 +97,12 @@ compute_edge_coefficients_() const
   // Compute the contributions edge by edge.
   for (size_t k = 0; k < num_cells; k++) {
     const std::vector<size_t> edge_idxs = {
-      this->local_index(edge_data_.cell_edges[k][0]),
-      this->local_index(edge_data_.cell_edges[k][1]),
-      this->local_index(edge_data_.cell_edges[k][2]),
-      this->local_index(edge_data_.cell_edges[k][3]),
-      this->local_index(edge_data_.cell_edges[k][4]),
-      this->local_index(edge_data_.cell_edges[k][5])
+      this->local_index(relations_.cell_edges[k][0]),
+      this->local_index(relations_.cell_edges[k][1]),
+      this->local_index(relations_.cell_edges[k][2]),
+      this->local_index(relations_.cell_edges[k][3]),
+      this->local_index(relations_.cell_edges[k][4]),
+      this->local_index(relations_.cell_edges[k][5])
     };
 
     const std::vector<Eigen::Vector3d> local_edge_coords = {
@@ -118,7 +118,7 @@ compute_edge_coefficients_() const
 
     // Fill the edge coefficients into the vector.
     for (int i = 0; i < edge_coeffs.size(); i++) {
-      const size_t edge_idx = this->local_index(edge_data_.cell_edges[k][i]);
+      const size_t edge_idx = this->local_index(relations_.cell_edges[k][i]);
       _edge_coefficients[edge_idx] += edge_coeffs[i];
     }
   }
