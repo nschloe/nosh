@@ -121,11 +121,10 @@ def get_code_fvm_matrix(eo, name):
     '''Get Nosh C++ code for an FVM matrix.
     '''
     # handle the edge contributions
-    x0 = sympy.Symbol('x0')
-    x1 = sympy.Symbol('x1')
+    x0 = sympy.MatrixSymbol('x0', 1, 3)
+    x1 = sympy.MatrixSymbol('x1', 1, 3)
     edge_length = sympy.Symbol('edge_length')
     edge_covolume = sympy.Symbol('edge_covolume')
-    xm = sympy.MatrixSymbol('edge_midpoint', 1, 3)
     all_symbols = set([x0, x1, edge_length, edge_covolume])
     used_symbols = set()
     used_expressions = set()
