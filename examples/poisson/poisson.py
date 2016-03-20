@@ -16,12 +16,13 @@ class Bc2(DirichletBC):
 
 
 class F(Expression):
-    def eval(self, x): return sin(x[1])
+    def eval(x): return sin(x[1])
     degree = 0
 
 
 class Laplace(FvmMatrix):
-    def edge_contrib(alpha, edge_midpoint):
+    def edge_contrib(x0, x1, edge_length, edge_covolume):
+        alpha = edge_covolume / edge_length
         return [[alpha, -alpha], [-alpha, alpha]]
 
     boundary_conditions = [Bc1(), Bc2()]

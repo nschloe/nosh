@@ -17,7 +17,9 @@ class eps(Expression):
 
 
 class Laplace(FvmMatrix):
-    def edge_contrib(alpha, edge_midpoint):
+    def edge_contrib(x0, x1, edge_length, edge_covolume):
+        alpha = edge_covolume / edge_length
+        edge_midpoint = 0.5 * (x0 + x1)
         return [
                 [
                     # Expression(alpha) * eps(edge_midpoint) * alpha,

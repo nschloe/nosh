@@ -18,8 +18,10 @@ class ${name}:
     virtual
       std::vector<std::vector<double>>
       edge_contrib(
-          const double edge_coefficient,
-          const Eigen::Vector3d & edge_midpoint
+          const Eigen::Vector3d & x0,
+          const Eigen::Vector3d & x1,
+          const double edge_length,
+          const double edge_covolume
           ) const
       {
         ${edge_contrib_unused_args}

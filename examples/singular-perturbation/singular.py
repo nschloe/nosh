@@ -15,8 +15,9 @@ class Bc1(DirichletBC):
 
 
 class Singular(FvmMatrix):
-    def edge_contrib(alpha, edge_midpoint):
+    def edge_contrib(x0, x1, edge_length, edge_covolume):
         eps = 2.0e-1
+        alpha = edge_covolume / edge_length
         return [[eps * alpha, -eps * alpha],
                 [-eps * alpha, eps * alpha]
                 ]

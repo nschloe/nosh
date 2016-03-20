@@ -121,16 +121,19 @@ def get_code_fvm_matrix(eo, name):
     '''Get Nosh C++ code for an FVM matrix.
     '''
     # handle the edge contributions
-    alpha = sympy.Symbol('edge_coefficient')
+    x0 = sympy.Symbol('x0')
+    x1 = sympy.Symbol('x1')
+    edge_length = sympy.Symbol('edge_length')
+    edge_covolume = sympy.Symbol('edge_covolume')
     xm = sympy.MatrixSymbol('edge_midpoint', 1, 3)
-    all_symbols = set([alpha, xm])
+    all_symbols = set([x0, x1, edge_length, edge_covolume])
     used_symbols = set()
     used_expressions = set()
     if callable(getattr(eo, 'edge_contrib', None)):
         specs = inspect.getargspec(eo.edge_contrib)
-        assert(len(specs.args) == 2)
+        assert(len(specs.args) == 4)
 
-        result = eo.edge_contrib(alpha, xm)
+        result = eo.edge_contrib(x0, x1, edge_length, edge_covolume)
 
         assert(len(result) == 2)
         assert(len(result[0]) == 2)
