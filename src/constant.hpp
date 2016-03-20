@@ -25,7 +25,7 @@ namespace nosh {
 
       virtual
       double
-      eval(const Eigen::Vector3d & x) const
+      operator()(const Eigen::Vector3d & x) const
       {
         (void) x;
         return val_;
