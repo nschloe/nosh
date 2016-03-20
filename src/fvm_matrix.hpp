@@ -36,8 +36,10 @@ namespace nosh
       virtual
       std::vector<std::vector<double>>
       edge_contrib(
-          const double edge_coefficient,
-          const Eigen::Vector3d & edge_midpoint
+          const Eigen::Vector3d & x0,
+          const Eigen::Vector3d & x1,
+          const double edge_length,
+          const double covolume
           ) const = 0;
 
       virtual
@@ -62,13 +64,12 @@ namespace nosh
           const std::vector<edge> edges = this->mesh->my_edges();
           const auto edge_data = this->mesh->get_edge_data();
           for (size_t k = 0; k < edges.size(); k++) {
-            const Eigen::Vector3d edge_midpoint = 0.5 * (
-                this->mesh->get_coords(std::get<0>(edges[k])) +
-                this->mesh->get_coords(std::get<1>(edges[k]))
+            auto vals = edge_contrib(
+                this->mesh->get_coords(std::get<0>(edges[k])),
+                this->mesh->get_coords(std::get<1>(edges[k])),
+                edge_data[k].length,
+                edge_data[k].covolume
                 );
-
-            const double alpha = edge_data[k].covolume / edge_data[k].length;
-            auto vals = edge_contrib(alpha, edge_midpoint);
 
             const Teuchos::Tuple<int,2> & idx = this->mesh->edge_gids[k];
             for (int i = 0; i < 2; i++) {
