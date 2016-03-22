@@ -486,11 +486,7 @@ compute_boundary_nodes_() const
       );
 
   // convert range to set
-  // TODO perhaps there is better way?
-  std::set<moab::EntityHandle> boundary_verts;
-  for (size_t k = 0; k < verts.size(); k++) {
-    boundary_verts.insert(verts[k]);
-  }
+  std::set<moab::EntityHandle> boundary_verts(verts.begin(), verts.end());
 
   return boundary_verts;
 }
