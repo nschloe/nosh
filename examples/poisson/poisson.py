@@ -4,13 +4,13 @@ from sympy import *
 
 
 class Bc1(DirichletBC):
-    def is_inside(self, x): return x[0] < 0 and x[1] < 0
+    def is_inside(self, x): return x[1] < 0
 
     def eval(self, x): return 0.0
 
 
 class Bc2(DirichletBC):
-    def is_inside(self, x): return x[0] < 0 and x[1] >= 0
+    def is_inside(self, x): return x[1] >= 0
 
     def eval(self, x): return 1.0
 
@@ -27,7 +27,7 @@ class Laplace(FvmMatrix):
 
     boundary_conditions = [Bc1(), Bc2()]
 
-dS n grad(u)
+# dS n grad(u)
 
 # class Laplace(Operator):
 #     def eval(u):

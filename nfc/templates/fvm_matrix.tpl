@@ -40,6 +40,7 @@ class ${name}:
     virtual
       double
       vertex_contrib(
+          const Eigen::Vector3d & x,
           const double control_volume
           ) const
       {

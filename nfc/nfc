@@ -153,7 +153,9 @@ def get_code_fvm_matrix(eo, name):
     # edge contribution handling done
 
     # handle the vertex contributions
+    x = sympy.MatrixSymbol('x', 1, 3)
     vol = sympy.Symbol('control_volume')
+    all_symbols = set([x, vol])
     if callable(getattr(eo, 'vertex_contrib', None)):
         specs = inspect.getargspec(eo.vertex_contrib)
         assert(len(specs.args) == 1)
@@ -162,13 +164,10 @@ def get_code_fvm_matrix(eo, name):
 
         # Check if any of the arguments is not used in the function.
         # (We'll declare them (void) to supress compiler warnings.)
-        if vol in result_vertex.free_symbols:
-            unused_symbols_vertex = set([])
-        else:
-            unused_symbols_vertex = set([vol])
+        unused_symbols = all_symbols - result_vertex.free_symbols
     else:
         result_vertex = 0.0
-        unused_symbols_vertex = set([vol])
+        unused_symbols_vertex = all_symbols
     # vertex contribution handling done
 
     # handle the boundary conditions

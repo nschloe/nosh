@@ -45,6 +45,7 @@ namespace nosh
       virtual
       double
       vertex_contrib(
+          const Eigen::Vector3d & x,
           const double control_volume
           ) const = 0;
 
@@ -85,9 +86,16 @@ namespace nosh
 
           // Add vertex contributions
           const auto & control_volumes = this->mesh->control_volumes();
+          const auto & owned_nodes = this->mesh->get_owned_nodes();
           auto c_data = control_volumes->getData();
+#ifndef NDEBUG
+          TEUCHOS_ASSERT_EQUALITY(c_data.size(), owned_nodes.size());
+#endif
           for (int k = 0; k < c_data.size(); k++) {
-            auto val = vertex_contrib(c_data[k]);
+            auto val = vertex_contrib(
+                this->mesh->get_coords(owned_nodes[k]),
+                c_data[k]
+                );
             auto gid = this->getMap()->getGlobalElement(k);
             int num = this->sumIntoGlobalValues(
                 gid,
