@@ -46,12 +46,12 @@ linear_solve(
 
   // apply Dirichlet boundary conditions to b
   const auto boundary_vertices = A.mesh->boundary_vertices();
-  for (const auto boundary_node: boundary_vertices) {
-    const auto coord = A.mesh->get_coords(boundary_node);
+  for (const auto boundary_vertex: boundary_vertices) {
+    const auto coord = A.mesh->get_coords(boundary_vertex);
     for (const auto & bc: A.bcs) {
       TEUCHOS_ASSERT(bc != nullptr);
       if (bc->is_inside(coord)) {
-        const auto gid = A.mesh->gid(boundary_node);
+        const auto gid = A.mesh->gid(boundary_vertex);
         // TODO don't check here but only get the array of owned boundary nodes
         // in the first place
         if (b->getMap()->isNodeGlobalElement(gid)) {
@@ -380,12 +380,12 @@ scaled_linear_solve(
 
   // apply boundary conditions to b
   const auto boundary_vertices = A.mesh->boundary_vertices();
-  for (const auto boundary_node: boundary_vertices) {
-    const auto coord = A.mesh->get_coords(boundary_node);
+  for (const auto boundary_vertex: boundary_vertices) {
+    const auto coord = A.mesh->get_coords(boundary_vertex);
     for (const auto & bc: A.bcs) {
       TEUCHOS_ASSERT(bc != nullptr);
       if (bc->is_inside(coord)) {
-        const auto gid = A.mesh->gid(boundary_node);
+        const auto gid = A.mesh->gid(boundary_vertex);
         // TODO don't check here but only get the array of owned boundary nodes
         // in the first place
         if (b->getMap()->isNodeGlobalElement(gid)) {

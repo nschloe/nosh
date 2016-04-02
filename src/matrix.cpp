@@ -7,9 +7,9 @@ matrix::
 apply_bcs_()
 {
   const auto boundary_vertices = this->mesh->boundary_vertices();
-  for (const auto boundary_node: boundary_vertices) {
+  for (const auto boundary_vertex: boundary_vertices) {
     // check if any of the boundary conditions kicks in
-    const auto coord = this->mesh->get_coords(boundary_node);
+    const auto coord = this->mesh->get_coords(boundary_vertex);
     int count = 0;
     for (const auto & bc: bcs) {
       if (bc->is_inside(coord)) {
@@ -22,7 +22,7 @@ apply_bcs_()
         );
     if (count == 1) {
       // eliminate the row in A
-      const auto gid = this->mesh->gid(boundary_node);
+      const auto gid = this->mesh->gid(boundary_vertex);
       size_t num = this->getNumEntriesInGlobalRow(gid);
       // It shouldn't actually happen that the specified global row
       // does not belong to this graph.
