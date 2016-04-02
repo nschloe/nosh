@@ -42,6 +42,11 @@ public:
     double covolume;
   };
 
+  struct boundary_data {
+    std::vector<moab::EntityHandle> vertices;
+    std::vector<double> surface_areas;
+  };
+
 public:
   mesh(
       const std::shared_ptr<const Teuchos::Comm<int>> & comm,
@@ -172,8 +177,12 @@ public:
   get_edge_data() const = 0;
 
   virtual
-  std::set<moab::EntityHandle>
-  boundary_nodes() const = 0;
+  std::vector<moab::EntityHandle>
+  boundary_vertices() const = 0;
+
+  virtual
+  std::vector<double>
+  boundary_surface_areas() const = 0;
 
 protected:
 
@@ -187,6 +196,11 @@ protected:
       const Eigen::Vector3d &node0,
       const Eigen::Vector3d &node1,
       const Eigen::Vector3d &node2
+      ) const;
+
+  std::vector<double>
+  compute_triangle_splitting_(
+      const std::vector<moab::EntityHandle> & conn
       ) const;
 
 private:
@@ -246,6 +260,17 @@ private:
 
   entity_relations
   build_entity_relations_();
+
+  unsigned int
+  get_other_index_(unsigned int e0, unsigned int e1) const;
+
+  double
+  compute_covolume2d_(
+      const Eigen::Vector3d &cc,
+      const Eigen::Vector3d &x0,
+      const Eigen::Vector3d &x1,
+      const Eigen::Vector3d &other0
+      ) const;
 };
 // -----------------------------------------------------------------------------
 

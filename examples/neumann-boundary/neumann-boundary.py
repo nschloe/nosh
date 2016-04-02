@@ -15,8 +15,17 @@ class Bc2(DirichletBC):
     def eval(self, x): return 1.0
 
 
+class Bc3(NeumannBC):
+    def is_inside(self, x): return x[0] >= 0
+
+    # Careful! This must be seen in context with edge_contrib of whatever
+    # operator it's used with.
+    # Here: Neumann condition with n.grad(u) = 1.
+    def eval(self, x, surface): return 1.0 * surface
+
+
 class F(Expression):
-    def eval(x): return sin(x[1])
+    def eval(x): return 1.0
     degree = 0
 
 
@@ -25,12 +34,5 @@ class Laplace(FvmMatrix):
         alpha = edge_covolume / edge_length
         return [[alpha, -alpha], [-alpha, alpha]]
 
-    boundary_conditions = [Bc1(), Bc2()]
+    boundary_conditions = [Bc1(), Bc2(), Bc3()]
 
-dS n grad(u)
-
-# class Laplace(Operator):
-#     def eval(u):
-#         return integral(- dot(n, grad(u)), dS)
-#
-#     boundary_conditions = [Bc1(), Bc2()]

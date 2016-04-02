@@ -49,11 +49,19 @@ public:
   }
 
   virtual
-  std::set<moab::EntityHandle>
-  boundary_nodes() const
+  std::vector<moab::EntityHandle>
+  boundary_vertices() const
   {
-    return boundary_nodes_;
+    return boundary_data_.vertices;
   }
+
+  virtual
+  std::vector<double>
+  boundary_surface_areas() const
+  {
+    return boundary_data_.surface_areas;
+  }
+
 
 private:
 
@@ -63,8 +71,22 @@ private:
   std::vector<mesh::edge_data>
   compute_edge_data_() const;
 
-  std::set<moab::EntityHandle>
-  compute_boundary_nodes_() const;
+  std::vector<moab::EntityHandle>
+  compute_boundary_faces_() const;
+
+  mesh::boundary_data
+  compute_boundary_data_() const;
+
+  std::vector<moab::EntityHandle>
+  compute_boundary_vertices_(
+      const std::vector<moab::EntityHandle> & boundary_faces
+      ) const;
+
+  std::vector<double>
+  compute_boundary_surface_areas_(
+      const std::vector<moab::EntityHandle> & boundary_vertices,
+      const std::vector<moab::EntityHandle> & boundary_faces
+      ) const;
 
   double
   compute_covolume_(
@@ -127,13 +149,13 @@ private:
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   const Teuchos::RCP<Teuchos::Time> compute_edge_data_time_;
   const Teuchos::RCP<Teuchos::Time> compute_control_volumes_time_;
-  const Teuchos::RCP<Teuchos::Time> compute_boundary_nodes_time_;
+  const Teuchos::RCP<Teuchos::Time> compute_boundary_vertices_time_;
+  const Teuchos::RCP<Teuchos::Time> compute_boundary_faces_time_;
 #endif
 
   const std::shared_ptr<const Tpetra::Vector<double,int,int>> control_volumes_;
   const std::vector<edge_data> edge_data_;
-  const std::set<moab::EntityHandle> boundary_nodes_;
-
+  const mesh::boundary_data boundary_data_;
 };
 
 } // namespace nosh

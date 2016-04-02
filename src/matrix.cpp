@@ -6,8 +6,8 @@ void
 matrix::
 apply_bcs_()
 {
-  const auto boundary_nodes = this->mesh->boundary_nodes();
-  for (const auto boundary_node: boundary_nodes) {
+  const auto boundary_vertices = this->mesh->boundary_vertices();
+  for (const auto boundary_node: boundary_vertices) {
     // check if any of the boundary conditions kicks in
     const auto coord = this->mesh->get_coords(boundary_node);
     int count = 0;

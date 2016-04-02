@@ -13,20 +13,7 @@ class F(Expression):
 
 
 class Laplace(FvmMatrix):
-    def edge_contrib(x0, x1, edge_length, edge_covolume):
-        a = [1, 0, 0]
-        edge_midpoint = 0.5 * (x0 + x1)
-        n = (x1 - x0) / edge_length
-        beta = edge_covolume / 2 * (n.T * a)
-        return [
-            [
-                alpha + beta,
-                -alpha + beta
-            ],
-            [
-                -alpha - beta,
-                alpha - beta
-            ]
-            ]
+    def eval(u):
+        return dot(n, grad(u)) * dS + dot(n, a) * u * dS
 
     boundary_conditions = [Bc1()]

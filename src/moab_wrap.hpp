@@ -236,6 +236,29 @@ namespace nosh {
         return adj_entities;
       }
 
+      moab::Range
+      get_adjacencies(
+          const moab::EntityHandle from_entity,
+          const int to_dimension,
+          const bool create_if_missing,
+          const int operation_type = moab::Interface::INTERSECT
+          )
+      {
+        moab::Range adj_entities;
+        const auto rval = this->mb->get_adjacencies(
+            &from_entity,
+            1,
+            to_dimension,
+            create_if_missing,
+            adj_entities,
+            operation_type
+            );
+        if (rval != moab::MB_SUCCESS) {
+          throw std::runtime_error("error in moab::get_adjacencies");
+        }
+        return adj_entities;
+      }
+
       int
       get_number_entities_by_dimension(
           const moab::EntityHandle meshset,

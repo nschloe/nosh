@@ -30,14 +30,14 @@ mesh_tri(
       Teuchos::TimeMonitor::getNewTimer(
         "Nosh: mesh_tri::compute_control_volumes"
         ))
-  ,compute_boundary_nodes_time_(
+  ,compute_boundary_vertices_time_(
       Teuchos::TimeMonitor::getNewTimer(
-        "Nosh: mesh_tri::compute_boundary_nodes"
+        "Nosh: mesh_tri::compute_boundary_vertices"
         ))
 #endif
   ,control_volumes_(this->compute_control_volumes_())
   ,edge_data_(this->compute_edge_data_())
-  ,boundary_nodes_(this->compute_boundary_nodes_())
+  ,boundary_data_(this->compute_boundary_data_())
 {
 }
 // =============================================================================
@@ -204,125 +204,20 @@ compute_control_volumes_t_(Tpetra::Vector<double,int,int> & cv_overlap) const
   // Calculate the contributions to the finite volumes cell by cell.
   for (size_t k = 0; k < cells.size(); k++) {
     const auto conn = this->mbw_->get_connectivity(cells[k]);
+    const auto splitting = this->compute_triangle_splitting_(conn);
 
-#ifndef NDEBUG
-    TEUCHOS_ASSERT_EQUALITY(conn.size(), 3);
-#endif
-
-    // Fetch the nodal positions into 'local_node_coords'.
-    std::vector<double> coords = this->mbw_->get_coords(conn);
-
-    std::vector<Eigen::Vector3d> local_node_coords(conn.size());
-    for (size_t i = 0; i < conn.size(); i++) {
-      // TODO do something smarter than copying here
-      local_node_coords[i][0] = coords[3*i];
-      local_node_coords[i][1] = coords[3*i + 1];
-      local_node_coords[i][2] = coords[3*i + 2];
-    }
-
-    // compute the circumcenter of the cell
-    const Eigen::Vector3d cc =
-      compute_triangle_circumcenter_(local_node_coords);
-
-    // Iterate over the edges (aka pairs of nodes).
-    for (size_t e0 = 0; e0 < conn.size(); e0++) {
-      const Eigen::Vector3d &x0 = local_node_coords[e0];
-      for (size_t e1 = e0+1; e1 < conn.size(); e1++) {
-        const Eigen::Vector3d &x1 = local_node_coords[e1];
-        // Get the other node.
-        const unsigned int other = this->get_other_index_(e0, e1);
-
-        double edge_length = (x1-x0).norm();
-
-        // Compute the (n-1)-dimensional covolume.
-        const Eigen::Vector3d &other0 = local_node_coords[other];
-        double covolume = this->compute_covolume2d_(cc, x0, x1, other0);
-        // The problem with counting the average thickness in 2D is the
-        // following.  Ideally, one would want to loop over all edges, add the
-        // midpoint value of the thickness to both of the edge end points, and
-        // eventually loop over all endpoints and divide by the number of edges
-        // (connections) they have with neighboring nodes).
-        // Unfortunately, this is impossible now b/c there's no edge generation
-        // for shells in Trilinos yet (2011-04-15).
-        // As a workaround, one could loop over all cells, and then all pairs
-        // of nodes to retrieve the edges. In 2D, almost all of the edges would
-        // be counted twice this way as they belong to two cells. This is true
-        // for all but the boundary edges. Again, it is difficult (impossible?)
-        // to know what the boundary edges are, and hence which values to
-        // divide by 2. Dividing them all by two would result in an
-        // artificially lower thickness near the boundaries. This is not what
-        // we want.
-
-        // Compute the contributions to the finite volumes of the adjacent
-        // edges.
-        double pyramid_volume = 0.5 * edge_length * covolume / 2;
-        // The EntityHandle (conn) is a local identifier, MOAB indices are
-        // 1-based.
-        cv_data[conn[e0] - 1] += pyramid_volume;
-        cv_data[conn[e1] - 1] += pyramid_volume;
-      }
+    for (int i = 0; i < 3; i++) {
+      cv_data[this->local_index(conn[i])] += splitting[i];
     }
   }
 
   return;
 }
 // =============================================================================
-double
+std::vector<moab::EntityHandle>
 mesh_tri::
-compute_covolume2d_(
-    const Eigen::Vector3d &cc,
-    const Eigen::Vector3d &x0,
-    const Eigen::Vector3d &x1,
-    const Eigen::Vector3d &other0
-    ) const
+compute_boundary_edges_() const
 {
-  // edge midpoint
-  Eigen::Vector3d mp = 0.5 * (x0 + x1);
-
-  double coedge_length = (mp - cc).norm();
-
-  // The only difficulty here is to determine whether the length of coedge is
-  // to be taken positive or negative.
-  // To this end, make sure that the order (x0, cc, mp) is of the same
-  // orientation as (x0, other0, mp).
-  Eigen::Vector3d cell_normal = (other0 - x0).cross(mp - x0);
-  Eigen::Vector3d cc_normal = (cc - x0).cross(mp - x0);
-
-  // copysign takes the absolute value of the first argument and the sign of
-  // the second.
-  return copysign(coedge_length, cc_normal.dot(cell_normal));
-}
-// =============================================================================
-unsigned int
-mesh_tri::
-get_other_index_(unsigned int e0, unsigned int e1) const
-{
-#ifndef NDEBUG
-  TEUCHOS_ASSERT_INEQUALITY(e0, !=, e1);
-#endif
-
-  // Get the index in [0,1,2] which is not e0, e1.
-  if (0 != e0 && 0 != e1)
-    return 0;
-  else if (1 != e0 && 1 != e1)
-    return 1;
-  else if (2 != e0 && 2 != e1)
-    return 2;
-  else
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(
-        true,
-        "illegal"
-        );
-}
-// =============================================================================
-std::set<moab::EntityHandle>
-mesh_tri::
-compute_boundary_nodes_() const
-{
-#ifdef NOSH_TEUCHOS_TIME_MONITOR
-  Teuchos::TimeMonitor tm(*compute_boundary_nodes_time_);
-#endif
-
   // get all the cell elements on each task
   moab::Range cells = this->mbw_->get_entities_by_dimension(0, 2);
 
@@ -349,18 +244,83 @@ compute_boundary_nodes_() const
     edges = subtract(edges, shared_edges);
   }
 
-  // get all vertices on the remaining edges
+  // convert range to vector
+  std::vector<moab::EntityHandle> boundary_edges(edges.begin(), edges.end());
+
+  return boundary_edges;
+}
+// =============================================================================
+mesh::boundary_data
+mesh_tri::
+compute_boundary_data_() const
+{
+  const auto boundary_edges = this->compute_boundary_edges_();
+
+  const auto boundary_vertices =
+    this->compute_boundary_vertices_(boundary_edges);
+  const auto boundary_surface_areas =
+    this->compute_boundary_surface_areas_(boundary_vertices, boundary_edges);
+
+  const boundary_data bd = {
+    boundary_vertices,
+    boundary_surface_areas
+  };
+  return bd;
+}
+// =============================================================================
+std::vector<moab::EntityHandle>
+mesh_tri::
+compute_boundary_vertices_(
+    const std::vector<moab::EntityHandle> & boundary_edges
+    ) const
+{
+  // get all vertices on the boundary edges
   const auto verts = this->mbw_->get_adjacencies(
-      edges,
+      boundary_edges,
       0,
       false,
       moab::Interface::UNION
       );
 
-  // convert range to set
-  std::set<moab::EntityHandle> boundary_verts(verts.begin(), verts.end());
+  // convert range to vector
+  std::vector<moab::EntityHandle> boundary_verts(verts.begin(), verts.end());
 
   return boundary_verts;
+}
+// =============================================================================
+std::vector<double>
+mesh_tri::
+compute_boundary_surface_areas_(
+    const std::vector<moab::EntityHandle> & boundary_vertices,
+    const std::vector<moab::EntityHandle> & boundary_edges
+    ) const
+{
+  // Cache vector for _all_ vertices. We actually only need the boundary ones,
+  // but that'll make it easier for us here
+  const moab::Range vertices = this->mbw_->get_entities_by_dimension(0, 0);
+  const size_t num_vertices = vertices.size();
+  std::vector<double> boundary_surface_areas(num_vertices);
+  // initialize to 0
+  std::fill(boundary_surface_areas.begin(), boundary_surface_areas.end(), 0.0);
+
+  for (size_t k = 0; k < boundary_edges.size(); k++) {
+    const size_t edge_idx = this->local_index(boundary_edges[k]);
+    const auto verts = this->mbw_->get_connectivity(boundary_edges[k]);
+    // add contributions to the verts
+    boundary_surface_areas[this->local_index(verts[0])] +=
+      0.5 * this->edge_data_[edge_idx].length;
+    boundary_surface_areas[this->local_index(verts[1])] +=
+      0.5 * this->edge_data_[edge_idx].length;
+  }
+
+  // Sort the values into a smaller (boundary-only) vector, in sync with
+  // boundary_vertices.
+  std::vector<double> bsa(boundary_vertices.size());
+  for (size_t k = 0; k < boundary_vertices.size(); k++) {
+    bsa[k] = boundary_surface_areas[this->local_index(boundary_vertices[k])];
+  }
+
+  return bsa;
 }
 // =============================================================================
 }  // namespace nosh

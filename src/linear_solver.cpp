@@ -43,9 +43,10 @@ linear_solve(
 {
   // create rhs vector
   auto b = nosh::integrate_over_control_volumes(f, *A.mesh);
-  // apply boundary conditions to b
-  const auto boundary_nodes = A.mesh->boundary_nodes();
-  for (const auto boundary_node: boundary_nodes) {
+
+  // apply Dirichlet boundary conditions to b
+  const auto boundary_vertices = A.mesh->boundary_vertices();
+  for (const auto boundary_node: boundary_vertices) {
     const auto coord = A.mesh->get_coords(boundary_node);
     for (const auto & bc: A.bcs) {
       TEUCHOS_ASSERT(bc != nullptr);
@@ -55,6 +56,14 @@ linear_solve(
         // in the first place
         if (b->getMap()->isNodeGlobalElement(gid)) {
           b->replaceGlobalValue(gid, bc->eval(coord));
+          // if (dirichlet) {
+          //   b->replaceGlobalValue(gid, bc->eval(coord));
+          // } else if (neumann) {
+          //   const auto surface = ...;
+          //   b->sumIntoGlobalValue(gid, bc->eval(coord, surface));
+          // } else {
+          //   // error
+          // }
           break; // only set one bc per boundary point
         }
       }
@@ -370,8 +379,8 @@ scaled_linear_solve(
   }
 
   // apply boundary conditions to b
-  const auto boundary_nodes = A.mesh->boundary_nodes();
-  for (const auto boundary_node: boundary_nodes) {
+  const auto boundary_vertices = A.mesh->boundary_vertices();
+  for (const auto boundary_node: boundary_vertices) {
     const auto coord = A.mesh->get_coords(boundary_node);
     for (const auto & bc: A.bcs) {
       TEUCHOS_ASSERT(bc != nullptr);

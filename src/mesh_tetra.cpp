@@ -29,14 +29,18 @@ mesh_tetra(
       Teuchos::TimeMonitor::getNewTimer(
         "Nosh: mesh_tetra::compute_control_volumes"
         )),
-  compute_boundary_nodes_time_(
+  compute_boundary_vertices_time_(
       Teuchos::TimeMonitor::getNewTimer(
-        "Nosh: mesh_tetra::compute_boundary_nodes"
+        "Nosh: mesh_tetra::compute_boundary_vertices"
+        )),
+  compute_boundary_faces_time_(
+      Teuchos::TimeMonitor::getNewTimer(
+        "Nosh: mesh_tetra::compute_boundary_faces"
         ))
 #endif
   ,control_volumes_(this->compute_control_volumes_())
   ,edge_data_(this->compute_edge_data_())
-  ,boundary_nodes_(this->compute_boundary_nodes_())
+  ,boundary_data_(this->compute_boundary_data_())
 {
 }
 // =============================================================================
@@ -443,12 +447,12 @@ get_overlap_faces_() const
   return faces;
 }
 // =============================================================================
-std::set<moab::EntityHandle>
+std::vector<moab::EntityHandle>
 mesh_tetra::
-compute_boundary_nodes_() const
+compute_boundary_faces_() const
 {
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
-  Teuchos::TimeMonitor tm(*compute_boundary_nodes_time_);
+  Teuchos::TimeMonitor tm(*compute_boundary_faces_time_);
 #endif
 
   // get all the cell elements on each task
@@ -477,18 +481,84 @@ compute_boundary_nodes_() const
     faces = subtract(faces, shared_faces);
   }
 
-  // get all vertices on the remaining edges
+  // convert range to set
+  std::vector<moab::EntityHandle> boundary_faces(faces.begin(), faces.end());
+
+  return boundary_faces;
+}
+// =============================================================================
+mesh::boundary_data
+mesh_tetra::
+compute_boundary_data_() const
+{
+  const auto boundary_faces = this->compute_boundary_faces_();
+
+  const auto boundary_vertices =
+    this->compute_boundary_vertices_(boundary_faces);
+  const auto boundary_surface_areas =
+    this->compute_boundary_surface_areas_(boundary_vertices, boundary_faces);
+
+  const mesh::boundary_data bd = {
+    boundary_vertices,
+    boundary_surface_areas
+  };
+  return bd;
+}
+// =============================================================================
+std::vector<moab::EntityHandle>
+mesh_tetra::
+compute_boundary_vertices_(
+    const std::vector<moab::EntityHandle> & boundary_faces
+    ) const
+{
+#ifdef NOSH_TEUCHOS_TIME_MONITOR
+  Teuchos::TimeMonitor tm(*compute_boundary_vertices_time_);
+#endif
+
   const auto verts = this->mbw_->get_adjacencies(
-      faces,
+      boundary_faces,
       0,
       false,
       moab::Interface::UNION
       );
 
-  // convert range to set
-  std::set<moab::EntityHandle> boundary_verts(verts.begin(), verts.end());
+  // convert range to vector
+  std::vector<moab::EntityHandle> boundary_verts(verts.begin(), verts.end());
 
   return boundary_verts;
+}
+// =============================================================================
+std::vector<double>
+mesh_tetra::
+compute_boundary_surface_areas_(
+    const std::vector<moab::EntityHandle> & boundary_vertices,
+    const std::vector<moab::EntityHandle> & boundary_faces
+    ) const
+{
+  // Cache vector for _all_ vertices. We actually only need the boundary ones,
+  // but that'll make it easier for us here
+  const moab::Range vertices = this->mbw_->get_entities_by_dimension(0, 0);
+  const size_t num_vertices = vertices.size();
+  std::vector<double> boundary_surface_areas(num_vertices);
+  std::fill(boundary_surface_areas.begin(), boundary_surface_areas.end(), 0.0);
+
+  for (size_t k = 0; k < boundary_faces.size(); k++) {
+    const auto verts = this->mbw_->get_connectivity(boundary_faces[k]);
+    const auto splitting = this->compute_triangle_splitting_(verts);
+    // add contributions to the verts
+    boundary_surface_areas[this->local_index(verts[0])] += splitting[0];
+    boundary_surface_areas[this->local_index(verts[1])] += splitting[1];
+    boundary_surface_areas[this->local_index(verts[2])] += splitting[2];
+  }
+
+  // Sort the values into a smaller (boundary-only) vector, in sync with
+  // boundary_vertices.
+  std::vector<double> bsa(boundary_vertices.size());
+  for (size_t k = 0; k < boundary_vertices.size(); k++) {
+    bsa[k] = boundary_surface_areas[this->local_index(boundary_vertices[k])];
+  }
+
+  return bsa;
 }
 // =============================================================================
 }  // namespace nosh

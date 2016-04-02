@@ -112,6 +112,12 @@ class DirichletBC(object):
     def eval(self, x): return 0.0
 
 
+class NeumannBC(object):
+    def is_inside(self, x): return x[0] < 1e10
+
+    def eval(self, x): return 0.0
+
+
 def inner(a, b):
     assert(isinstance(a, Vector))
     assert(isinstance(b, Vector))
