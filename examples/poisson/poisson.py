@@ -20,11 +20,14 @@ class F(Expression):
     degree = 0
 
 
-class Laplace(FvmMatrix):
-    def edge_contrib(x0, x1, edge_length, edge_covolume):
+class Core0(MatrixCore):
+    def edge_contrib(self, x0, x1, edge_length, edge_covolume):
         alpha = edge_covolume / edge_length
         return [[alpha, -alpha], [-alpha, alpha]]
 
+
+class Laplace(FvmMatrix):
+    matrix_cores = [Core0()]
     boundary_conditions = [Bc1(), Bc2()]
 
 # dS n grad(u)

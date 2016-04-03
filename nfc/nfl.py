@@ -118,6 +118,16 @@ class NeumannBC(object):
     def eval(self, x): return 0.0
 
 
+class MatrixCore(object):
+    def is_inside(self, x): return x[0] < 1e10
+
+    def edge_contrib(self, x0, x1, edge_length, edge_covolume):
+        return [[0.0, 0.0], [0.0, 0.0]]
+
+    def vertex_contrib(self, x, control_volume):
+        return 0.0
+
+
 def inner(a, b):
     assert(isinstance(a, Vector))
     assert(isinstance(b, Vector))

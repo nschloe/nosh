@@ -29,10 +29,12 @@ class F(Expression):
     degree = 0
 
 
+def edge_contrib(x0, x1, edge_length, edge_covolume):
+    alpha = edge_covolume / edge_length
+    return [[alpha, -alpha], [-alpha, alpha]]
+
+
 class Laplace(FvmMatrix):
-    def edge_contrib(x0, x1, edge_length, edge_covolume):
-        alpha = edge_covolume / edge_length
-        return [[alpha, -alpha], [-alpha, alpha]]
+    edge_contribs = [edge_contrib]
 
     boundary_conditions = [Bc1(), Bc2(), Bc3()]
-
