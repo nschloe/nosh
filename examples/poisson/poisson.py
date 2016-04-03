@@ -2,21 +2,38 @@
 from nfl import *
 from sympy import *
 
-bc1 = DirichletBC(
-  lambda x: x[0] < 0,
-  lambda x: 0.0
-  )
-bc2 = DirichletBC(
-  lambda x: x[0] >= 0,
-  lambda x: 1.0
-  )
 
-f = Expression(
-    lambda x: sin(x[1]),
-    degree=0
-    )
+class Bc1(DirichletBC):
+    def is_inside(self, x): return x[1] < 0
 
-# Laplace
-class Laplace(FvmMatrix):
-    def edge_contrib(alpha, edge_midpoint):
+    def eval(self, x): return 0.0
+
+
+class Bc2(DirichletBC):
+    def is_inside(self, x): return x[1] >= 0
+
+    def eval(self, x): return 1.0
+
+
+class F(Expression):
+    def eval(x): return sin(x[1])
+    degree = 0
+
+
+class Core0(MatrixCore):
+    def edge_contrib(self, x0, x1, edge_length, edge_covolume):
+        alpha = edge_covolume / edge_length
         return [[alpha, -alpha], [-alpha, alpha]]
+
+
+class Laplace(FvmMatrix):
+    matrix_cores = [Core0()]
+    boundary_conditions = [Bc1(), Bc2()]
+
+# dS n grad(u)
+
+# class Laplace(Operator):
+#     def eval(u):
+#         return integral(- dot(n, grad(u)), dS)
+#
+#     boundary_conditions = [Bc1(), Bc2()]

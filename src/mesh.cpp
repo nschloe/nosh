@@ -1,23 +1,3 @@
-// @HEADER
-//
-//    Mesh class with compatibility to stk_mesh.
-//    Copyright (C) 2010--2012  Nico Schlömer
-//
-//    This program is free software: you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation, either version 3 of the License, or
-//    (at your option) any later version.
-//
-//    This program is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//    GNU General Public License for more details.
-//
-//    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
-// @HEADER
-// =============================================================================
 #include "mesh.hpp"
 
 #include <moab/Core.hpp>
@@ -53,7 +33,7 @@ mesh(
   complex_overlap_map_(
     this->get_map_(this->complexify_(this->get_overlap_gids_()))
     )
-  ,edge_data_(this->build_edge_data_())
+  ,relations_(this->build_entity_relations_())
   ,edge_lids(build_edge_lids_())
   ,edge_lids_complex(build_edge_lids_complex_())
   ,edge_gids(build_edge_gids_())
@@ -449,9 +429,9 @@ get_map_(const std::vector<int> & ids) const
       );
 }
 // =============================================================================
-mesh::edges_container
+mesh::entity_relations
 mesh::
-build_edge_data_()
+build_entity_relations_()
 {
   // get the number of 3D entities
   const int num3d = this->mbw_->get_number_entities_by_dimension(0, 3);
@@ -500,7 +480,7 @@ build_edge_data_()
     edge_nodes[k] = std::make_tuple(verts[0], verts[1]);
   }
 
-  mesh::edges_container edge_data = {edge_nodes, cell_edges};
+  mesh::entity_relations relations = {edge_nodes, cell_edges};
 
   //// for testing
   //moab::Range verts = this->mbw_->mb->get_adjacencies(
@@ -510,7 +490,7 @@ build_edge_data_()
   //    moab::Interface::UNION
   //    );
 
-  return edge_data;
+  return relations;
 }
 // =============================================================================
 Teuchos::RCP<const Tpetra::CrsGraph<int,int>>
@@ -747,6 +727,105 @@ compute_triangle_circumcenter_(
   const double gamma = - a.dot(a) * c.dot(b) / omega;
 
   return alpha * node0 + beta * node1 + gamma * node2;
+}
+// =============================================================================
+std::vector<double>
+mesh::
+compute_triangle_splitting_(
+    const std::vector<moab::EntityHandle> & conn
+    ) const
+{
+#ifndef NDEBUG
+  TEUCHOS_ASSERT_EQUALITY(conn.size(), 3);
+#endif
+
+  std::vector<double> splitting = {0.0, 0.0, 0.0};
+
+  // Fetch the nodal positions into 'local_node_coords'.
+  std::vector<double> coords = this->mbw_->get_coords(conn);
+
+  std::vector<Eigen::Vector3d> local_node_coords(conn.size());
+  for (size_t i = 0; i < conn.size(); i++) {
+    // TODO do something smarter than copying here
+    local_node_coords[i][0] = coords[3*i];
+    local_node_coords[i][1] = coords[3*i + 1];
+    local_node_coords[i][2] = coords[3*i + 2];
+  }
+
+  // compute the circumcenter of the cell
+  const Eigen::Vector3d cc =
+    compute_triangle_circumcenter_(local_node_coords);
+
+  // Iterate over the edges (aka pairs of nodes).
+  for (size_t e0 = 0; e0 < 3; e0++) {
+    const Eigen::Vector3d &x0 = local_node_coords[e0];
+    for (size_t e1 = e0+1; e1 < 3; e1++) {
+      const Eigen::Vector3d &x1 = local_node_coords[e1];
+      // Get the other node.
+      const unsigned int other = this->get_other_index_(e0, e1);
+
+      double edge_length = (x1-x0).norm();
+
+      // Compute the (n-1)-dimensional covolume.
+      const Eigen::Vector3d &other0 = local_node_coords[other];
+      double covolume = this->compute_covolume2d_(cc, x0, x1, other0);
+      // Compute the contributions to the finite volumes of the adjacent
+      // edges.
+      double pyramid_volume = 0.5 * edge_length * covolume / 2;
+      splitting[e0] += pyramid_volume;
+      splitting[e1] += pyramid_volume;
+    }
+  }
+
+  return splitting;
+}
+// =============================================================================
+unsigned int
+mesh::
+get_other_index_(unsigned int e0, unsigned int e1) const
+{
+#ifndef NDEBUG
+  TEUCHOS_ASSERT_INEQUALITY(e0, !=, e1);
+#endif
+
+  // Get the index in [0,1,2] which is not e0, e1.
+  if (0 != e0 && 0 != e1)
+    return 0;
+  else if (1 != e0 && 1 != e1)
+    return 1;
+  else if (2 != e0 && 2 != e1)
+    return 2;
+  else
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(
+        true,
+        "illegal"
+        );
+}
+// =============================================================================
+double
+mesh::
+compute_covolume2d_(
+    const Eigen::Vector3d &cc,
+    const Eigen::Vector3d &x0,
+    const Eigen::Vector3d &x1,
+    const Eigen::Vector3d &other0
+    ) const
+{
+  // edge midpoint
+  Eigen::Vector3d mp = 0.5 * (x0 + x1);
+
+  double coedge_length = (mp - cc).norm();
+
+  // The only difficulty here is to determine whether the length of coedge is
+  // to be taken positive or negative.
+  // To this end, make sure that the order (x0, cc, mp) is of the same
+  // orientation as (x0, other0, mp).
+  Eigen::Vector3d cell_normal = (other0 - x0).cross(mp - x0);
+  Eigen::Vector3d cc_normal = (cc - x0).cross(mp - x0);
+
+  // copysign takes the absolute value of the first argument and the sign of
+  // the second.
+  return copysign(coedge_length, cc_normal.dot(cell_normal));
 }
 // =============================================================================
 }  // namespace nosh

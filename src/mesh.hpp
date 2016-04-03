@@ -28,13 +28,23 @@ namespace nosh
 class mesh
 {
 private:
-  // Keep bulk_data a pointer since its copy constructor is private; this causes
-  // issues when trying to copy (or initialize) Mesh_dataContainer.
-  struct edges_container {
+  struct entity_relations {
     //! Local edge ID -> Global node IDs.
     std::vector<edge> edge_nodes;
     //! Local cell ID -> Local edge IDs.
     std::vector<std::vector<moab::EntityHandle>> cell_edges;
+  };
+
+public:
+
+  struct edge_data {
+    double length;
+    double covolume;
+  };
+
+  struct boundary_data {
+    std::vector<moab::EntityHandle> vertices;
+    std::vector<double> surface_areas;
   };
 
 public:
@@ -74,7 +84,7 @@ public:
   const std::vector<edge>
   my_edges() const
   {
-    return edge_data_.edge_nodes;
+    return relations_.edge_nodes;
   }
 
   std::shared_ptr<const Tpetra::Map<int,int>>
@@ -163,12 +173,16 @@ public:
   control_volumes() const = 0;
 
   virtual
-  std::vector<double>
-  edge_coefficients() const = 0;
+  std::vector<edge_data>
+  get_edge_data() const = 0;
 
   virtual
-  std::set<moab::EntityHandle>
-  boundary_nodes() const = 0;
+  std::vector<moab::EntityHandle>
+  boundary_vertices() const = 0;
+
+  virtual
+  std::vector<double>
+  boundary_surface_areas() const = 0;
 
 protected:
 
@@ -182,6 +196,11 @@ protected:
       const Eigen::Vector3d &node0,
       const Eigen::Vector3d &node1,
       const Eigen::Vector3d &node2
+      ) const;
+
+  std::vector<double>
+  compute_triangle_splitting_(
+      const std::vector<moab::EntityHandle> & conn
       ) const;
 
 private:
@@ -205,7 +224,7 @@ private:
   const std::shared_ptr<const Tpetra::Map<int,int>> complex_overlap_map_;
 
 protected:
-  const edges_container edge_data_;
+  const entity_relations relations_;
 
 public:
   const std::vector<Teuchos::Tuple<int,2>> edge_lids;
@@ -233,14 +252,25 @@ private:
       const int index
       );
 
-  std::vector<double>
-  compute_edge_coefficients_() const;
+  std::vector<edge_data>
+  compute_edge_data_() const;
 
   std::shared_ptr<const Tpetra::Map<int,int>>
   build_map_(const std::vector<moab::EntityHandle> &entityList) const;
 
-  edges_container
-  build_edge_data_();
+  entity_relations
+  build_entity_relations_();
+
+  unsigned int
+  get_other_index_(unsigned int e0, unsigned int e1) const;
+
+  double
+  compute_covolume2d_(
+      const Eigen::Vector3d &cc,
+      const Eigen::Vector3d &x0,
+      const Eigen::Vector3d &x1,
+      const Eigen::Vector3d &other0
+      ) const;
 };
 // -----------------------------------------------------------------------------
 

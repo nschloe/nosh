@@ -1,4 +1,3 @@
-
 class ${name}: public Tpetra::Operator<double,int,int> {
 
 public:
@@ -7,8 +6,7 @@ ${name}(
     const std::shared_ptr<const nosh::mesh> & mesh,
     const Tpetra::Vector<double,int,int> & x0
     ) :
-  mesh_(mesh),
-  x0_(x0)
+  ${members_init}
 {
 }
 
@@ -37,7 +35,7 @@ TEUCHOS_TEST_FOR_EXCEPT_MSG(
     beta != 0.0,
     "Only beta==0.0 supported."
     )
-${body}
+${apply}
 return;
 }
 
@@ -55,18 +53,14 @@ getRangeMap() const
 
 void
 rebuild(
-    const std::map<std::string, double> & params,
     const Tpetra::Vector<double,int,int> & x0
     )
 {
-  params_ = params;
   x0_ = x0;
   return;
 }
 
 protected:
 private:
-  const std::shared_ptr<const nosh::mesh> mesh_;
-  Tpetra::Vector<double,int,int> x0_;
-  std::map<std::string, double> params_;
+  ${members}
 } // class ${name}

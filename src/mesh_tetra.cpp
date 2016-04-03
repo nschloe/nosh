@@ -1,23 +1,3 @@
-// @HEADER
-//
-//    Mesh class with compatibility to stk_mesh.
-//    Copyright (C) 2010--2012  Nico Schlömer
-//
-//    This program is free software: you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation, either version 3 of the License, or
-//    (at your option) any later version.
-//
-//    This program is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//    GNU General Public License for more details.
-//
-//    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
-// @HEADER
-// =============================================================================
 #include "mesh_tetra.hpp"
 
 #include <memory>
@@ -41,22 +21,26 @@ mesh_tetra(
     ) :
   mesh(_comm, mcomm, mb),
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
-  compute_edge_coefficients_time_(
+  compute_edge_data_time_(
       Teuchos::TimeMonitor::getNewTimer(
-        "Nosh: mesh_tetra::compute_edge_coefficients"
+        "Nosh: mesh_tetra::compute_edge_data"
         )),
   compute_control_volumes_time_(
       Teuchos::TimeMonitor::getNewTimer(
         "Nosh: mesh_tetra::compute_control_volumes"
         )),
-  compute_boundary_nodes_time_(
+  compute_boundary_vertices_time_(
       Teuchos::TimeMonitor::getNewTimer(
-        "Nosh: mesh_tetra::compute_boundary_nodes"
+        "Nosh: mesh_tetra::compute_boundary_vertices"
+        )),
+  compute_boundary_faces_time_(
+      Teuchos::TimeMonitor::getNewTimer(
+        "Nosh: mesh_tetra::compute_boundary_faces"
         ))
 #endif
   ,control_volumes_(this->compute_control_volumes_())
-  ,edge_coefficients_(this->compute_edge_coefficients_())
-  ,boundary_nodes_(this->compute_boundary_nodes_())
+  ,edge_data_(this->compute_edge_data_())
+  ,boundary_data_(this->compute_boundary_data_())
 {
 }
 // =============================================================================
@@ -65,44 +49,46 @@ mesh_tetra::
 {
 }
 // =============================================================================
-std::vector<double>
+std::vector<mesh::edge_data>
 mesh_tetra::
-compute_edge_coefficients_() const
+compute_edge_data_() const
 {
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
-  Teuchos::TimeMonitor tm(*compute_edge_coefficients_time_);
+  Teuchos::TimeMonitor tm(*compute_edge_data_time_);
 #endif
   moab::Range cells = this->mbw_->get_entities_by_dimension(0, 3);
 
   size_t num_cells = cells.size();
 
-  size_t num_edges = edge_data_.edge_nodes.size();
+  size_t num_edges = relations_.edge_nodes.size();
+
+  std::vector<mesh::edge_data> _edge_data(num_edges);
 
   // compute all coordinates
   std::vector<Eigen::Vector3d> edge_coords(num_edges);
   for (size_t k = 0; k < num_edges; k++) {
-    auto tmp1 = std::get<0>(edge_data_.edge_nodes[k]);
+    auto tmp1 = std::get<0>(relations_.edge_nodes[k]);
     const auto coords0 = this->mbw_->get_coords({tmp1});
 
-    tmp1 = std::get<1>(edge_data_.edge_nodes[k]);
+    tmp1 = std::get<1>(relations_.edge_nodes[k]);
     const auto coords1 = this->mbw_->get_coords({tmp1});
 
     edge_coords[k][0] = coords0[0] - coords1[0];
     edge_coords[k][1] = coords0[1] - coords1[1];
     edge_coords[k][2] = coords0[2] - coords1[2];
-  }
 
-  std::vector<double> _edge_coefficients(num_edges);
+    _edge_data[k].length = edge_coords[k].norm();
+  }
 
   // Compute the contributions edge by edge.
   for (size_t k = 0; k < num_cells; k++) {
     const std::vector<size_t> edge_idxs = {
-      this->local_index(edge_data_.cell_edges[k][0]),
-      this->local_index(edge_data_.cell_edges[k][1]),
-      this->local_index(edge_data_.cell_edges[k][2]),
-      this->local_index(edge_data_.cell_edges[k][3]),
-      this->local_index(edge_data_.cell_edges[k][4]),
-      this->local_index(edge_data_.cell_edges[k][5])
+      this->local_index(relations_.cell_edges[k][0]),
+      this->local_index(relations_.cell_edges[k][1]),
+      this->local_index(relations_.cell_edges[k][2]),
+      this->local_index(relations_.cell_edges[k][3]),
+      this->local_index(relations_.cell_edges[k][4]),
+      this->local_index(relations_.cell_edges[k][5])
     };
 
     const std::vector<Eigen::Vector3d> local_edge_coords = {
@@ -118,12 +104,13 @@ compute_edge_coefficients_() const
 
     // Fill the edge coefficients into the vector.
     for (int i = 0; i < edge_coeffs.size(); i++) {
-      const size_t edge_idx = this->local_index(edge_data_.cell_edges[k][i]);
-      _edge_coefficients[edge_idx] += edge_coeffs[i];
+      const size_t edge_idx = this->local_index(relations_.cell_edges[k][i]);
+      _edge_data[edge_idx].covolume +=
+        edge_coeffs[i] * _edge_data[edge_idx].length;
     }
   }
 
-  return _edge_coefficients;
+  return _edge_data;
 }
 // =============================================================================
 Eigen::VectorXd
@@ -460,12 +447,12 @@ get_overlap_faces_() const
   return faces;
 }
 // =============================================================================
-std::set<moab::EntityHandle>
+std::vector<moab::EntityHandle>
 mesh_tetra::
-compute_boundary_nodes_() const
+compute_boundary_faces_() const
 {
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
-  Teuchos::TimeMonitor tm(*compute_boundary_nodes_time_);
+  Teuchos::TimeMonitor tm(*compute_boundary_faces_time_);
 #endif
 
   // get all the cell elements on each task
@@ -494,22 +481,84 @@ compute_boundary_nodes_() const
     faces = subtract(faces, shared_faces);
   }
 
-  // get all vertices on the remaining edges
+  // convert range to set
+  std::vector<moab::EntityHandle> boundary_faces(faces.begin(), faces.end());
+
+  return boundary_faces;
+}
+// =============================================================================
+mesh::boundary_data
+mesh_tetra::
+compute_boundary_data_() const
+{
+  const auto boundary_faces = this->compute_boundary_faces_();
+
+  const auto boundary_vertices =
+    this->compute_boundary_vertices_(boundary_faces);
+  const auto boundary_surface_areas =
+    this->compute_boundary_surface_areas_(boundary_vertices, boundary_faces);
+
+  const mesh::boundary_data bd = {
+    boundary_vertices,
+    boundary_surface_areas
+  };
+  return bd;
+}
+// =============================================================================
+std::vector<moab::EntityHandle>
+mesh_tetra::
+compute_boundary_vertices_(
+    const std::vector<moab::EntityHandle> & boundary_faces
+    ) const
+{
+#ifdef NOSH_TEUCHOS_TIME_MONITOR
+  Teuchos::TimeMonitor tm(*compute_boundary_vertices_time_);
+#endif
+
   const auto verts = this->mbw_->get_adjacencies(
-      faces,
+      boundary_faces,
       0,
       false,
       moab::Interface::UNION
       );
 
-  // convert range to set
-  // TODO perhaps there is better way?
-  std::set<moab::EntityHandle> boundary_verts;
-  for (size_t k = 0; k < verts.size(); k++) {
-    boundary_verts.insert(verts[k]);
-  }
+  // convert range to vector
+  std::vector<moab::EntityHandle> boundary_verts(verts.begin(), verts.end());
 
   return boundary_verts;
+}
+// =============================================================================
+std::vector<double>
+mesh_tetra::
+compute_boundary_surface_areas_(
+    const std::vector<moab::EntityHandle> & boundary_vertices,
+    const std::vector<moab::EntityHandle> & boundary_faces
+    ) const
+{
+  // Cache vector for _all_ vertices. We actually only need the boundary ones,
+  // but that'll make it easier for us here
+  const moab::Range vertices = this->mbw_->get_entities_by_dimension(0, 0);
+  const size_t num_vertices = vertices.size();
+  std::vector<double> boundary_surface_areas(num_vertices);
+  std::fill(boundary_surface_areas.begin(), boundary_surface_areas.end(), 0.0);
+
+  for (size_t k = 0; k < boundary_faces.size(); k++) {
+    const auto verts = this->mbw_->get_connectivity(boundary_faces[k]);
+    const auto splitting = this->compute_triangle_splitting_(verts);
+    // add contributions to the verts
+    boundary_surface_areas[this->local_index(verts[0])] += splitting[0];
+    boundary_surface_areas[this->local_index(verts[1])] += splitting[1];
+    boundary_surface_areas[this->local_index(verts[2])] += splitting[2];
+  }
+
+  // Sort the values into a smaller (boundary-only) vector, in sync with
+  // boundary_vertices.
+  std::vector<double> bsa(boundary_vertices.size());
+  for (size_t k = 0; k < boundary_vertices.size(); k++) {
+    bsa[k] = boundary_surface_areas[this->local_index(boundary_vertices[k])];
+  }
+
+  return bsa;
 }
 // =============================================================================
 }  // namespace nosh

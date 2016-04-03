@@ -1,23 +1,4 @@
 # -*- coding: utf-8 -*-
-# @HEADER
-#
-#    <description>
-#    Copyright (C) 2015  Nico Schlömer
-#
-#    This program is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation, either version 3 of the License, or
-#    (at your option) any later version.
-#
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
-#
-#    You should have received a copy of the GNU General Public License
-#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-# @HEADER
 #
 import sympy
 
@@ -32,11 +13,13 @@ class Coefficient(object):
         return
 
 
-class Expression(object):
-    def __init__(self, eval, degree=sympy.oo):
-        self.eval = eval
-        self.degree = degree
-        return
+class Operator(sympy.Function):
+    pass
+
+
+class Expression(sympy.Function):
+    pass
+    # degree = sympy.oo
 
 
 class Vector(object):
@@ -102,11 +85,12 @@ class MatrixFactory(object):
         return
 
 
-class NonlinearOperator(object):
-    def __init__(self, f=None, dfdp=None, jac=None):
+class NonlinearProblem(object):
+    def __init__(self, f=None, dfdp=None, jac=None, prec=None):
         self.f = f
         self.dfdp = dfdp
         self.jac = jac
+        self.prec = prec
         return
 
 
@@ -123,10 +107,25 @@ class Integral(object):
 
 
 class DirichletBC(object):
-    def __init__(self, inside_condition, eval_return):
-        self.is_inside = inside_condition
-        self.eval = eval_return
-        return
+    def is_inside(self, x): return x[0] < 1e10
+
+    def eval(self, x): return 0.0
+
+
+class NeumannBC(object):
+    def is_inside(self, x): return x[0] < 1e10
+
+    def eval(self, x): return 0.0
+
+
+class MatrixCore(object):
+    def is_inside(self, x): return x[0] < 1e10
+
+    def edge_contrib(self, x0, x1, edge_length, edge_covolume):
+        return [[0.0, 0.0], [0.0, 0.0]]
+
+    def vertex_contrib(self, x, control_volume):
+        return 0.0
 
 
 def inner(a, b):

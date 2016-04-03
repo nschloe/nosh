@@ -1,23 +1,3 @@
-// @HEADER
-//
-//    Builds the kinetic energy operator and its variants.
-//    Copyright (C) 2010--2012  Nico Schlömer
-//
-//    This program is free software: you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation, either version 3 of the License, or
-//    (at your option) any later version.
-//
-//    This program is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//    GNU General Public License for more details.
-//
-//    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
-// @HEADER
-// =============================================================================
 // includes
 #include "parameter_matrix_dkeo_dp.hpp"
 
@@ -103,7 +83,7 @@ refill_(const std::map<std::string, double> & params)
 
   const std::vector<edge> edges = mesh_->my_edges();
   if (!alpha_cache_up_to_date_) {
-    this->build_alpha_cache_(edges, mesh_->edge_coefficients());
+    this->build_alpha_cache_(edges, mesh_->get_edge_data());
   }
 
   double v[3];
@@ -174,7 +154,7 @@ void
 DkeoDP::
 build_alpha_cache_(
     const std::vector<edge> & edges,
-    const std::vector<double> & edge_coefficients
+    const std::vector<mesh::edge_data> & edge_data
     ) const
 {
   // This routine serves the one and only purpose of caching the thickness
@@ -210,7 +190,8 @@ build_alpha_cache_(
     const int i0 = mesh_->local_index(std::get<0>(edges[k]));
     const int i1 = mesh_->local_index(std::get<1>(edges[k]));
     // Update cache.
-    alpha_cache_[k] = edge_coefficients[k] * 0.5 * (t_data[i0] + t_data[i1]);
+    const double alpha = edge_data[k].covolume / edge_data[k].length;
+    alpha_cache_[k] = alpha * 0.5 * (t_data[i0] + t_data[i1]);
   }
 
   alpha_cache_up_to_date_ = true;

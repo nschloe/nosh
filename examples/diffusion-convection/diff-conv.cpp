@@ -1,4 +1,4 @@
-#include "singular.hpp"
+#include "diff-conv.hpp"
 #include <nosh.hpp>
 #include <memory>
 
@@ -7,20 +7,18 @@ int main(int argc, char *argv[]) {
 
   const auto mesh = nosh::read("pacman.h5m");
 
-  const singular::singular matrix(mesh);
+  diff_conv::laplace matrix(mesh);
 
-  const nosh::constant rhs(1.0);
+  const diff_conv::f rhs;
 
   nosh::function x(mesh);
 
-  nosh::linear_solve(
-    matrix, rhs, x,
-    {
-      {"package", "Belos"},
-      {"method", "Pseudo Block CG"},
-      {"preconditioner", "MueLu"}
-    }
-  );
+  nosh::scaled_linear_solve(
+      matrix, rhs, x,
+      {
+        {"package", "Belos"},
+        {"method", "Pseudo Block GMRES"}
+      });
 
   nosh::write(x, "out.h5m");
 
