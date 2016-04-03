@@ -16,13 +16,12 @@ class eps(Expression):
     pass
 
 
-class Laplace(FvmMatrix):
-    def edge_contrib(x0, x1, edge_length, edge_covolume):
+class Core(MatrixCore):
+    def edge_contrib(self, x0, x1, edge_length, edge_covolume):
         alpha = edge_covolume / edge_length
         edge_midpoint = 0.5 * (x0 + x1)
         return [
                 [
-                    # Expression(alpha) * eps(edge_midpoint) * alpha,
                     eps(edge_midpoint) * alpha,
                     -eps(edge_midpoint) * alpha
                 ],
@@ -31,6 +30,10 @@ class Laplace(FvmMatrix):
                     eps(edge_midpoint) * alpha
                 ]
                 ]
+
+
+class Laplace(FvmMatrix):
+    matrix_cores = [Core()]
     boundary_conditions = [Bc1()]
 
 

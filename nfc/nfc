@@ -32,36 +32,64 @@ def _main():
         args.infile
         ).load_module()
 
-    # loop over all locally defined entities to see if there's anything we can
-    # convert
-    entities = []
+    # Loop over all locally defined entities and collect everything we can
+    # convert.
+    # Between the entities, there are some dependencies between the entities
+    # which are not necessarily reflected in the order they appear here. For
+    # example, in the output HPP, the boundary conditions classes must
+    # typically be defined _before_ the fvm_matrix classes, since they are used
+    # there.
+    # Build directed dependency graph as a dictionary, see
+    # <https://www.python.org/doc/essays/graphs/>.
+    code_generators = {}
+    dependencies = {}
     for name, var in inmod.__dict__.items():
         if inspect.isclass(var) and \
                 issubclass(var, nfl.FvmMatrix) and \
                 var != nfl.FvmMatrix:
-            entities.append(get_code_fvm_matrix(var, name))
+            code_generators[name] = CodeFvmMatrix(var, name)
         elif inspect.isclass(var) and \
                 issubclass(var, nfl.DirichletBC) and \
                 var != nfl.DirichletBC:
             instance = var()
-            entities.append(get_code_dirichlet_bc(instance, name))
+            code_generators[name] = CodeDirichletBc(instance, name)
         elif inspect.isclass(var) and \
                 issubclass(var, nfl.MatrixCore) and \
                 var != nfl.MatrixCore:
             instance = var()
-            entities.append(get_code_matrix_core(instance, name))
+            code_generators[name] = CodeMatrixCore(instance, name)
         elif inspect.isclass(var) and \
                 issubclass(var, nfl.Expression) and \
                 var != nfl.Expression and \
                 hasattr(var, 'degree') and \
                 hasattr(var, 'eval'):
-            entities.append(get_code_expression(var, name))
+            code_generators[name] = CodeExpression(var, name)
         elif isinstance(var, nfl.Operator):
-            entities.append(get_code_operator(var, name))
+            code_generators[name] = CodeOperator(var, name)
         elif isinstance(var, nfl.NonlinearProblem):
-            entities.append(
-                get_code_nonlinear_operator(var, name)
-                )
+            code_generators[name] = CodeNonlinearOperator(var, name)
+        else:
+            continue
+
+        dependencies[name] = [
+                dep.__class__.__name__
+                for dep in code_generators[name].get_dependencies()
+                ]
+
+    # Go through dependency graph and collect code.
+    visited = set([])
+    code_pieces = []
+
+    def visit(name):
+        # take care of the dependencies first
+        for dep in dependencies[name]:
+            visit(dep)
+        if name not in visited:
+            code_pieces.append(code_generators[name].get_code())
+            visited.add(name)
+
+    for name in dependencies:
+        visit(name)
 
     # Plug it all together in main
     with open(os.path.join(templates_dir, 'main.tpl'), 'r') as f:
@@ -72,7 +100,7 @@ def _main():
         main_content = main_src.substitute({
             'name': name,
             'name_uppercase': name.upper(),
-            'content': '\n'.join(entities)
+            'content': '\n'.join(code_pieces)
             })
 
     # write it
@@ -110,278 +138,329 @@ def _run(command):
     return output
 
 
-def get_code_edge_contrib(method):
-    x0 = sympy.MatrixSymbol('x0', 1, 3)
-    x1 = sympy.MatrixSymbol('x1', 1, 3)
-    edge_length = sympy.Symbol('edge_length')
-    edge_covolume = sympy.Symbol('edge_covolume')
-    all_symbols = set([x0, x1, edge_length, edge_covolume])
+class CodeMatrixCore(object):
+    def __init__(self, core, name):
+        # handle the edge contributions
+        if callable(getattr(core, 'edge_contrib', None)):
+            edge_result, edge_unused_symbols, edge_used_expressions = \
+                    self.get_code_edge_contrib(core.edge_contrib)
 
-    specs = inspect.getargspec(method)
-    assert(len(specs.args) == len(all_symbols) + 1)
+        if callable(getattr(core, 'vertex_contrib', None)):
+            vertex_result, vertex_unused_symbols, vertex_used_expressions = \
+                    self.get_code_vertex_contrib(core.vertex_contrib)
 
-    result = method(x0, x1, edge_length, edge_covolume)
+        # Go through all used expressions and check if they are defined. If
+        # not, they need to be given as arguments to the constructor.
+        constructor_args = []
+        members_init = []
+        members_declare = []
+        used_expressions = edge_used_expressions.union(vertex_used_expressions)
+        for expr in used_expressions:
+            constructor_args.append('const nosh::expression & _%s' % expr)
+            members_init.append('%s(_%s)' % (expr, expr))
+            members_declare.append('const nosh::expression & %s;' % expr)
 
-    assert(len(result) == 2)
-    assert(len(result[0]) == 2)
-    assert(len(result[1]) == 2)
+        if members_init:
+            members_init_code = ':\n' + ',\n'.join(members_init)
+        else:
+            members_init_code = ''
 
-    # Check if any of the arguments is not used in the function.
-    # (We'll declare them (void) to supress compiler warnings.)
-    used_symbols = set()
-    used_expressions = set()
-    for r in [result[0][0], result[0][1], result[1][0], result[1][1]]:
-        used_expressions = used_expressions.union(
-                [type(atom) for atom in r.atoms(nfl.Expression)]
-                )
-        used_symbols = used_symbols.union(r.free_symbols)
+        # template substitution
+        with open(os.path.join(templates_dir, 'matrix_core.tpl'), 'r') as f:
+            src = Template(f.read())
+            self.code = src.substitute({
+                'name': name.lower(),  # class names are lowercase
+                'edge00': extract_c_expression(edge_result[0][0]),
+                'edge01': extract_c_expression(edge_result[0][1]),
+                'edge10': extract_c_expression(edge_result[1][0]),
+                'edge11': extract_c_expression(edge_result[1][1]),
+                'edge_unused_args': '\n'.join(
+                    ('(void) %s;' % name) for name in edge_unused_symbols
+                    ),
+                'vertex_contrib': extract_c_expression(vertex_result),
+                'vertex_unused_args': '\n'.join(
+                    ('(void) %s;' % name) for name in vertex_unused_symbols
+                    ),
+                'constructor_args': ',\n'.join(constructor_args),
+                'members_init': members_init_code,
+                'members_declare': '\n'.join(members_declare)
+                })
 
-    unused_args = all_symbols - used_symbols
-    return result, unused_args, used_expressions
+    def get_dependencies(self):
+        return []
+
+    def get_code(self):
+        return self.code
+
+    def get_code_edge_contrib(self, method):
+        x0 = sympy.MatrixSymbol('x0', 1, 3)
+        x1 = sympy.MatrixSymbol('x1', 1, 3)
+        edge_length = sympy.Symbol('edge_length')
+        edge_covolume = sympy.Symbol('edge_covolume')
+        all_symbols = set([x0, x1, edge_length, edge_covolume])
+
+        specs = inspect.getargspec(method)
+        assert(len(specs.args) == len(all_symbols) + 1)
+
+        result = method(x0, x1, edge_length, edge_covolume)
+
+        assert(len(result) == 2)
+        assert(len(result[0]) == 2)
+        assert(len(result[1]) == 2)
+
+        # Check if any of the arguments is not used in the function.
+        # (We'll declare them (void) to supress compiler warnings.)
+        used_symbols = set()
+        used_expressions = set()
+        for r in [result[0][0], result[0][1], result[1][0], result[1][1]]:
+            used_expressions = used_expressions.union(
+                    [type(atom) for atom in r.atoms(nfl.Expression)]
+                    )
+            used_symbols = used_symbols.union(r.free_symbols)
+
+        unused_args = all_symbols - used_symbols
+        return result, unused_args, used_expressions
+
+    def get_code_vertex_contrib(self, method):
+        # handle the vertex contributions
+        x = sympy.MatrixSymbol('x', 1, 3)
+        vol = sympy.Symbol('control_volume')
+        all_symbols = set([x, vol])
+
+        specs = inspect.getargspec(method)
+        assert(len(specs.args) == len(all_symbols) + 1)
+
+        result = method(x, vol)
+
+        try:
+            unused_args = all_symbols - result.free_symbols
+        except AttributeError:
+            unused_args = all_symbols
+
+        try:
+            used_expressions = set(
+                    [type(atom) for atom in result.atoms(nfl.Expression)]
+                    )
+        except AttributeError:
+            used_expressions = set([])
+
+        return result, unused_args, used_expressions
 
 
-def get_code_vertex_contrib(method):
-    # handle the vertex contributions
-    x = sympy.MatrixSymbol('x', 1, 3)
-    vol = sympy.Symbol('control_volume')
-    all_symbols = set([x, vol])
-
-    specs = inspect.getargspec(method)
-    assert(len(specs.args) == len(all_symbols) + 1)
-
-    result = method(x, vol)
-
-    try:
-        unused_args = all_symbols - result.free_symbols
-    except AttributeError:
-        unused_args = all_symbols
-
-    try:
-        used_expressions = set(
-                [type(atom) for atom in result.atoms(nfl.Expression)]
-                )
-    except AttributeError:
-        used_expressions = set([])
-
-    return result, unused_args, used_expressions
-
-
-def get_code_matrix_core(core, name):
-    # handle the edge contributions
-    if callable(getattr(core, 'edge_contrib', None)):
-        edge_result, edge_unused_symbols, edge_used_expressions = \
-                get_code_edge_contrib(core.edge_contrib)
-
-    if callable(getattr(core, 'vertex_contrib', None)):
-        vertex_result, vertex_unused_symbols, vertex_used_expressions = \
-          get_code_vertex_contrib(core.vertex_contrib)
-
-    # Go through all used expressions and check if they are defined. If not,
-    # they need to be given as arguments to the constructor.
-    for expr in edge_used_expressions.union(vertex_used_expressions):
-        constructor_args.append('const nosh::expression & _%s' % expr)
-        members_init.append('%s(_%s)' % (expr, expr))
-        members_declare.append('const nosh::expression & %s;' % expr)
-
-    # template substitution
-    with open(os.path.join(templates_dir, 'matrix_core.tpl'), 'r') as f:
-        src = Template(f.read())
-        code = src.substitute({
-            'name': name.lower(),  # class names are lowercase
-            'edge00': extract_c_expression(edge_result[0][0]),
-            'edge01': extract_c_expression(edge_result[0][1]),
-            'edge10': extract_c_expression(edge_result[1][0]),
-            'edge11': extract_c_expression(edge_result[1][1]),
-            'edge_unused_args': '\n'.join(
-                ('(void) %s;' % name) for name in edge_unused_symbols
-                ),
-            'vertex_contrib': extract_c_expression(vertex_result),
-            'vertex_unused_args': '\n'.join(
-                ('(void) %s;' % name) for name in vertex_unused_symbols
-                )
-            })
-
-    return code
-
-
-def get_code_fvm_matrix(eo, name):
+class CodeFvmMatrix(object):
     '''Get Nosh C++ code for an FVM matrix.
     '''
-    # handle the matrix cores
-    if getattr(eo, 'matrix_cores', None):
-        matrix_cores = eo.matrix_cores
-        for matrix_core in matrix_cores:
-            assert(isinstance(matrix_core, nfl.MatrixCore))
+    def __init__(self, eo, name):
+        self.eo = eo
+        self.name = name
+
+        if getattr(eo, 'matrix_cores', None):
+            self.matrix_cores = eo.matrix_cores
+            for matrix_core in self.matrix_cores:
+                assert(isinstance(matrix_core, nfl.MatrixCore))
+        else:
+            self.matrix_cores = []
+
+        if getattr(eo, 'boundary_conditions', None):
+            self.bcs = eo.boundary_conditions
+            for bc in self.bcs:
+                assert(isinstance(bc, nfl.DirichletBC))
+        else:
+            self.boundary_conditions = []
+
+        self.dependencies = self.matrix_cores + self.bcs
+
+    def get_dependencies(self):
+        return self.dependencies
+
+    def get_code(self):
+        # handle the matrix cores
         joined = ', '.join(
                 'std::make_shared<%s>()' %
-                type(mc).__name__.lower() for mc in matrix_cores
+                type(mc).__name__.lower() for mc in self.matrix_cores
                 )
         code_matrix_cores = '{%s}' % joined
-    else:
-        code_matrix_cores = '{}'
-    # matrix cores handling done
+        # matrix cores handling done
 
-    # handle the boundary conditions
-    if getattr(eo, 'boundary_conditions', None):
-        bcs = eo.boundary_conditions
-        for bc in bcs:
-            assert(isinstance(bc, nfl.DirichletBC))
-        code_bcs = \
-            '{%s}' % (', '.join('std::make_shared<%s>()' %
-                      type(bc).__name__.lower() for bc in bcs))
-    else:
-        code_bcs = '{}'
-    # boundary conditions handling done
+        # handle the boundary conditions
+        joined = ', '.join(
+                'std::make_shared<%s>()' %
+                type(bc).__name__.lower() for bc in self.bcs
+                )
+        code_bcs = '{%s}' % joined
+        # boundary conditions handling done
 
-    constructor_args = [
-        'const std::shared_ptr<const nosh::mesh> & _mesh'
-        ]
-    members_init = [
-      'nosh::fvm_matrix(\n_mesh,\n %s,\n %s\n)' % (code_matrix_cores, code_bcs)
-      ]
-    members_declare = []
+        constructor_args = [
+            'const std::shared_ptr<const nosh::mesh> & _mesh'
+            ]
+        members_init = [
+          'nosh::fvm_matrix(\n_mesh,\n %s,\n %s\n)' %
+          (code_matrix_cores, code_bcs)
+          ]
+        members_declare = []
 
-    # template substitution
-    with open(os.path.join(templates_dir, 'fvm_matrix.tpl'), 'r') as f:
-        src = Template(f.read())
-        code = src.substitute({
-            'name': name.lower(),  # class names are lowercase
-            'constructor_args': ',\n'.join(constructor_args),
-            'members_init': ',\n'.join(members_init),
-            'members_declare': '\n'.join(members_declare)
-            })
+        # template substitution
+        with open(os.path.join(templates_dir, 'fvm_matrix.tpl'), 'r') as f:
+            src = Template(f.read())
+            code = src.substitute({
+                'name': self.name.lower(),  # class names are lowercase
+                'constructor_args': ',\n'.join(constructor_args),
+                'members_init': ',\n'.join(members_init),
+                'members_declare': '\n'.join(members_declare)
+                })
 
-    return code
+        return code
 
 
-def get_code_dirichlet_bc(dbc, name):
-    assert(isinstance(dbc, nfl.DirichletBC))
+class CodeDirichletBc(object):
+    def __init__(self, dbc, name):
+        assert(isinstance(dbc, nfl.DirichletBC))
+        self.dbc = dbc
+        self.name = name
 
-    x = sympy.MatrixSymbol('x', 1, 3)
+    def get_dependencies(self):
+        return []
 
-    result0 = dbc.is_inside(x)
-    try:
-        is_x_used_inside = x in result0.free_symbols
-    except AttributeError:
-        is_x_used_inside = False
+    def get_code(self):
+        x = sympy.MatrixSymbol('x', 1, 3)
 
-    result1 = dbc.eval(x)
-    try:
-        is_x_used_eval = x in result1.free_symbols
-    except AttributeError:
-        is_x_used_eval = False
+        result0 = self.dbc.is_inside(x)
+        try:
+            is_x_used_inside = x in result0.free_symbols
+        except AttributeError:
+            is_x_used_inside = False
 
-    # template substitution
-    with open(os.path.join(templates_dir, 'dirichlet_bc.tpl'), 'r') as f:
-        src = Template(f.read())
-        code = src.substitute({
-            'name': name.lower(),  # class names are lowercase
-            'inside_condition': extract_c_expression(result0),
-            'inside_void': '' if is_x_used_inside else '(void) x;\n',
-            'eval_return_value': extract_c_expression(result1),
-            'eval_void': '' if is_x_used_eval else '(void) x;\n',
-            })
+        result1 = self.dbc.eval(x)
+        try:
+            is_x_used_eval = x in result1.free_symbols
+        except AttributeError:
+            is_x_used_eval = False
 
-    return code
+        # template substitution
+        with open(os.path.join(templates_dir, 'dirichlet_bc.tpl'), 'r') as f:
+            src = Template(f.read())
+            code = src.substitute({
+                'name': self.name.lower(),  # class names are lowercase
+                'inside_condition': extract_c_expression(result0),
+                'inside_void': '' if is_x_used_inside else '(void) x;\n',
+                'eval_return_value': extract_c_expression(result1),
+                'eval_void': '' if is_x_used_eval else '(void) x;\n',
+                })
 
-
-def get_code_expression(expr, name):
-    x = sympy.DeferredVector('x')
-
-    result = expr.eval(x)
-
-    # TODO
-    # Check if any of the arguments is not used in the function.
-    # (We'll declare them (void) to supress compiler warnings.)
-
-    # template substitution
-    with open(os.path.join(templates_dir, 'expression.tpl'), 'r') as f:
-        src = Template(f.read())
-        code = src.substitute({
-            'name': name.lower(),  # class names are lowercase
-            'degree': expr.degree,
-            'eval': extract_c_expression(result)
-            })
-
-    return code
+        return code
 
 
-def get_code_operator(operator, name):
-    assert(isinstance(operator, nfl.Operator))
+class CodeExpression(object):
+    def __init__(self, expr, name):
+        self.expr = expr
+        self.name = name
 
-    x = sympy.DeferredVector('x')
+    def get_dependencies(self):
+        return []
 
-    assert(callable(operator.eval))
+    def get_code(self):
+        x = sympy.DeferredVector('x')
 
-    if (len(inspect.getargspec(operator.eval).args) == 1):
-        generator = CodeGen()
-        u = sympy.Symbol('u')
-        op_code, required_ops = \
-            generator.generate(operator.eval(u), {'u': 'x'})
-
-        members = ['const std::shared_ptr<const nosh::mesh> mesh_;']
-        members_init = ['mesh_(mesh)']
-        for required_operator in required_ops:
-            members.append(
-                    'const std::shared<const Tpetra::Operator> %s;' %
-                    required_operator['var_name'].lower()
-                    )
-            members_init.append(
-                    '%s(std::make_shared<%s>(mesh))' %
-                    (required_operator['var_name'].lower(),
-                        required_operator['class_name'].lower())
-                    )
+        result = self.expr.eval(x)
 
         # TODO
         # Check if any of the arguments is not used in the function.
         # (We'll declare them (void) to supress compiler warnings.)
 
         # template substitution
-        with open(os.path.join(templates_dir, 'operator.tpl'), 'r') as f:
+        with open(os.path.join(templates_dir, 'expression.tpl'), 'r') as f:
             src = Template(f.read())
             code = src.substitute({
-                'name': name.lower(),  # class names are lowercase
-                'apply': op_code,
-                'members': '\n'.join(members),
-                'members_init': ',\n'.join(members_init)
+                'name': self.name.lower(),  # class names are lowercase
+                'degree': self.expr.degree,
+                'eval': extract_c_expression(result)
                 })
-    elif (len(inspect.getargspec(operator.eval).args) == 2):
-        code = ''
-        generator = CodeGen()
-        u = sympy.Symbol('u')
-        u0 = sympy.Symbol('u0')
-        op_code, required_ops = \
-            generator.generate(operator.eval(u, u0), {'u': 'x', 'u0': 'x0_'})
 
-        members = [
-                'const std::shared_ptr<const nosh::mesh> mesh_;'
-                'Tpetra::Vector<double,int,int> x0_;'
-                ]
-        members_init = ['mesh_(mesh)', 'x0_(x0)']
-        for required_operator in required_ops:
-            members.append(
-                    'const std::shared<const Tpetra::Operator> %s;' %
-                    required_operator['var_name'].lower()
-                    )
-            members_init.append(
-                    '%s(std::make_shared<%s>(mesh))' %
-                    (required_operator['var_name'].lower(),
-                        required_operator['class_name'].lower())
-                    )
-        # template substitution
-        template = os.path.join(templates_dir, 'operator_with_rebuild.tpl')
-        with open(template, 'r') as f:
-            src = Template(f.read())
-            code = src.substitute({
-                'name': name.lower(),  # class names are lowercase
-                'apply': op_code,
-                'members': '\n'.join(members),
-                'members_init': ',\n'.join(members_init)
-                })
-    else:
-        raise ValueError('Only methods with one or two arguments allowed.')
+        return code
 
-    return code
+
+class CodeOperator(object):
+    def __init__(self, operator, name):
+        self.operator = operator
+        self.name = name
+        return
+
+    def get_code(self):
+        assert(isinstance(operator, nfl.Operator))
+
+        x = sympy.DeferredVector('x')
+
+        assert(callable(operator.eval))
+
+        if (len(inspect.getargspec(operator.eval).args) == 1):
+            generator = CodeGen()
+            u = sympy.Symbol('u')
+            op_code, required_ops = \
+                generator.generate(operator.eval(u), {'u': 'x'})
+
+            members = ['const std::shared_ptr<const nosh::mesh> mesh_;']
+            members_init = ['mesh_(mesh)']
+            for required_operator in required_ops:
+                members.append(
+                        'const std::shared<const Tpetra::Operator> %s;' %
+                        required_operator['var_name'].lower()
+                        )
+                members_init.append(
+                        '%s(std::make_shared<%s>(mesh))' %
+                        (required_operator['var_name'].lower(),
+                            required_operator['class_name'].lower())
+                        )
+
+            # TODO
+            # Check if any of the arguments is not used in the function.
+            # (We'll declare them (void) to supress compiler warnings.)
+
+            # template substitution
+            with open(os.path.join(templates_dir, 'operator.tpl'), 'r') as f:
+                src = Template(f.read())
+                code = src.substitute({
+                    'name': name.lower(),  # class names are lowercase
+                    'apply': op_code,
+                    'members': '\n'.join(members),
+                    'members_init': ',\n'.join(members_init)
+                    })
+        elif (len(inspect.getargspec(operator.eval).args) == 2):
+            code = ''
+            generator = CodeGen()
+            u = sympy.Symbol('u')
+            u0 = sympy.Symbol('u0')
+            op_code, required_ops = \
+                generator.generate(operator.eval(u, u0), {'u': 'x', 'u0': 'x0_'})
+
+            members = [
+                    'const std::shared_ptr<const nosh::mesh> mesh_;'
+                    'Tpetra::Vector<double,int,int> x0_;'
+                    ]
+            members_init = ['mesh_(mesh)', 'x0_(x0)']
+            for required_operator in required_ops:
+                members.append(
+                        'const std::shared<const Tpetra::Operator> %s;' %
+                        required_operator['var_name'].lower()
+                        )
+                members_init.append(
+                        '%s(std::make_shared<%s>(mesh))' %
+                        (required_operator['var_name'].lower(),
+                            required_operator['class_name'].lower())
+                        )
+            # template substitution
+            template = os.path.join(templates_dir, 'operator_with_rebuild.tpl')
+            with open(template, 'r') as f:
+                src = Template(f.read())
+                code = src.substitute({
+                    'name': name.lower(),  # class names are lowercase
+                    'apply': op_code,
+                    'members': '\n'.join(members),
+                    'members_init': ',\n'.join(members_init)
+                    })
+        else:
+            raise ValueError('Only methods with one or two arguments allowed.')
+
+        return code
 
 
 def get_code_linear_operator(operator_dict):
@@ -417,80 +496,85 @@ def get_code_linear_operator(operator_dict):
     return code
 
 
-def get_code_nonlinear_operator(F, name):
-    assert(isinstance(F, nfl.NonlinearProblem))
+class CodeNonlinearOperator(object):
+    def __init__(self, F, name):
+        self.F = F
+        self.name = name
 
-    debug = True
-    if debug:
-        logging.basicConfig(level=logging.DEBUG)
+    def get_code(self):
+        assert(isinstance(F, nfl.NonlinearProblem))
 
-    # The dissection of nonlinear operators is unfortunately not so easy. We
-    # cannot use SymPy's built-in C-code generation here, since the operator
-    # may be composed of more complex operations than the basic ones. For
-    # example, the operator could involve the application of linear operator
-    # defined elsewhere.
-    # For this reason, we're doing the code generation manually. This involves
-    #   (1) generating the abstract syntax tree, and
-    #   (2) generating the code from the AST.
-    #
-    # Call the function and check the return value.
-    generator = CodeGen()
-    u = sympy.Symbol('u')
-    f_code, required_ops = generator.generate(F.f(u), {'u': 'x'})
-    print(f_code)
+        debug = True
+        if debug:
+            logging.basicConfig(level=logging.DEBUG)
 
-    print('-----------------------------')
+        # The dissection of nonlinear operators is unfortunately not so easy. We
+        # cannot use SymPy's built-in C-code generation here, since the operator
+        # may be composed of more complex operations than the basic ones. For
+        # example, the operator could involve the application of linear operator
+        # defined elsewhere.
+        # For this reason, we're doing the code generation manually. This involves
+        #   (1) generating the abstract syntax tree, and
+        #   (2) generating the code from the AST.
+        #
+        # Call the function and check the return value.
+        generator = CodeGen()
+        u = sympy.Symbol('u')
+        f_code, required_ops = generator.generate(F.f(u), {'u': 'x'})
+        print(f_code)
 
-    if F.dfdp:
-        dfdp_code, required_ops = generator.generate(F.dfdp(u), {'u': 'x'})
-        print(dfdp_code)
         print('-----------------------------')
 
-    if F.jac:
-        u0 = sympy.Symbol('u0')
-        jac_code, required_ops = generator.generate(
-            F.jac(u, u0),
-            {'u': 'x', 'u0': 'x0_'}
-            )
-        print(jac_code)
-        print('-----------------------------')
+        if F.dfdp:
+            dfdp_code, required_ops = generator.generate(F.dfdp(u), {'u': 'x'})
+            print(dfdp_code)
+            print('-----------------------------')
 
-    print(F)
-    if F.prec:
-        prec_code = get_preconditioner_code(F.prec)
-        print(prec_code)
-        print('-----------------------------')
+        if F.jac:
+            u0 = sympy.Symbol('u0')
+            jac_code, required_ops = generator.generate(
+                F.jac(u, u0),
+                {'u': 'x', 'u0': 'x0_'}
+                )
+            print(jac_code)
+            print('-----------------------------')
 
-    print('lulz')
-    exit()
+        print(F)
+        if F.prec:
+            prec_code = get_preconditioner_code(F.prec)
+            print(prec_code)
+            print('-----------------------------')
 
-    # TODO
-    # Check if any of the arguments is not used in the function.
-    # (We'll declare them (void) to supress compiler warnings.)
-    # template substitution
-    with open(os.path.join(templates_dir, 'ModelEvaluator.tpl'), 'r') as f:
-        src = Template(f.read())
-        code = src.substitute({
-            'name': name.title(),
-            'description': 'description',
-            'compute_f_body': f_code,
-            'compute_dfdp_body': dfdp_code,
-            'belos_options_code': belos_options_code
-            })
+        print('lulz')
+        exit()
 
-    print(code)
+        # TODO
+        # Check if any of the arguments is not used in the function.
+        # (We'll declare them (void) to supress compiler warnings.)
+        # template substitution
+        with open(os.path.join(templates_dir, 'ModelEvaluator.tpl'), 'r') as f:
+            src = Template(f.read())
+            code = src.substitute({
+                'name': name.title(),
+                'description': 'description',
+                'compute_f_body': f_code,
+                'compute_dfdp_body': dfdp_code,
+                'belos_options_code': belos_options_code
+                })
 
-    with open(os.path.join(templates_dir, 'jacobian.tpl'), 'r') as f:
-        src = Template(f.read())
-        code = src.substitute({
-            'name': name.title() + 'Jacobian',
-            'description': 'description',
-            'body': jac_code,
-            })
+        print(code)
 
-    print(code)
-    exit()
-    return code
+        with open(os.path.join(templates_dir, 'jacobian.tpl'), 'r') as f:
+            src = Template(f.read())
+            code = src.substitute({
+                'name': name.title() + 'Jacobian',
+                'description': 'description',
+                'body': jac_code,
+                })
+
+        print(code)
+        exit()
+        return code
 
 
 def get_preconditioner_code(prec):

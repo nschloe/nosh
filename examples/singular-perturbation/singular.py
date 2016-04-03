@@ -14,15 +14,18 @@ class Bc1(DirichletBC):
 #     boundary_conditions = [Bc1()]
 
 
-class Singular(FvmMatrix):
-    def edge_contrib(x0, x1, edge_length, edge_covolume):
+class Core0(MatrixCore):
+    def edge_contrib(self, x0, x1, edge_length, edge_covolume):
         eps = 2.0e-1
         alpha = edge_covolume / edge_length
         return [[eps * alpha, -eps * alpha],
                 [-eps * alpha, eps * alpha]
                 ]
 
-    def vertex_contrib(control_volume):
+    def vertex_contrib(self, x, control_volume):
         return control_volume
 
+
+class Singular(FvmMatrix):
+    matrix_cores = [Core0()]
     boundary_conditions = [Bc1()]
