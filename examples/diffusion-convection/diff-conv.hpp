@@ -23,23 +23,14 @@ public:
   }
 }; // class bc1
 
-class laplace:
-  public nosh::fvm_matrix
+class core0:
+  public nosh::matrix_core
 {
 public:
-  laplace(
-    const std::shared_ptr<const nosh::mesh> & _mesh
-  ):
-    nosh::fvm_matrix(_mesh, {std::make_shared<bc1>()})
-  {
-    this->fill_();
-  };
+  core0() {};
 
-  virtual
-  ~laplace()
-  {};
+  virtual ~core0() {};
 
-protected:
   virtual
   std::vector<std::vector<double>>
                                 edge_contrib(
@@ -71,12 +62,39 @@ protected:
   virtual
   double
   vertex_contrib(
+    const Eigen::Vector3d & x,
     const double control_volume
   ) const
   {
     (void) control_volume;
+    (void) x;
     return 0.0;
   }
+
+private:
+
+}; // class core0
+
+class laplace:
+  public nosh::fvm_matrix
+{
+public:
+  laplace(
+    const std::shared_ptr<const nosh::mesh> & _mesh
+  ):
+    nosh::fvm_matrix(
+        _mesh,
+        {std::make_shared<core0>()},
+        {std::make_shared<bc1>()}
+        )
+  {
+    this->fill_();
+  };
+
+  virtual
+  ~laplace()
+  {};
+
 private:
 
 }; // class laplace
