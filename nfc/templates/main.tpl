@@ -1,11 +1,11 @@
-#ifndef ${name_uppercase}_HPP
-#define ${name_uppercase}_HPP
+#ifndef ${namespace_uppercase}_HPP
+#define ${namespace_uppercase}_HPP
 
 #include <nosh.hpp>
 
-namespace ${name}
+namespace ${namespace}
 {
 ${content}
-} // namespace ${name}
+} // namespace ${namespace}
 
-#endif // ${name_uppercase}_HPP
+#endif // ${namespace_uppercase}_HPP

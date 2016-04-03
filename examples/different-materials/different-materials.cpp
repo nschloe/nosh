@@ -1,23 +1,26 @@
-#include "different-materials.hpp"
 #include <nosh.hpp>
 
 #include <Teuchos_StandardCatchMacros.hpp>
 
-class eps: public nosh::expression
-{
-public:
-  eps(): nosh::expression(0) {}
-  virtual ~eps() {}
-
-  virtual double operator()(const Eigen::Vector3d & x) const
+namespace different_materials {
+  class eps: public nosh::expression
   {
-    if (x[0] > 0.0) {
-      return 3.0;
-    } else {
-      return 1.0;
-    }
+    public:
+      eps(): nosh::expression(0) {}
+      virtual ~eps() {}
+
+      virtual double operator()(const Eigen::Vector3d & x) const
+      {
+        if (x[0] > 0.0) {
+          return 3.0;
+        } else {
+          return 1.0;
+        }
+      };
   };
-};
+}
+
+#include "different-materials.hpp"
 
 using list = std::map<std::string, boost::any>;
 int main(int argc, char *argv[]) {
@@ -28,7 +31,7 @@ int main(int argc, char *argv[]) {
   try {
   const auto mesh = nosh::read("pacman.h5m");
 
-  different_materials::laplace matrix(mesh, eps());
+  different_materials::laplace matrix(mesh);
   different_materials::f rhs;
 
   nosh::function x(mesh);

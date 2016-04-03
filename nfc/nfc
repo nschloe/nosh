@@ -32,6 +32,10 @@ def _main():
         args.infile
         ).load_module()
 
+    namespace = os.path.splitext(os.path.basename(args.infile))[0]
+    # sanitize the name
+    namespace = _sanitize(namespace)
+
     # Loop over all locally defined entities and collect everything we can
     # convert.
     # Between the entities, there are some dependencies between the entities
@@ -57,7 +61,7 @@ def _main():
                 issubclass(var, nfl.MatrixCore) and \
                 var != nfl.MatrixCore:
             instance = var()
-            code_generators[name] = CodeMatrixCore(instance, name)
+            code_generators[name] = CodeMatrixCore(namespace, instance, name)
         elif inspect.isclass(var) and \
                 issubclass(var, nfl.Expression) and \
                 var != nfl.Expression and \
@@ -71,16 +75,22 @@ def _main():
         else:
             continue
 
-        dependencies[name] = [
-                dep.__class__.__name__
-                for dep in code_generators[name].get_dependencies()
-                ]
+        dependencies[name] = []
+        for dep in code_generators[name].get_dependencies():
+            if dep.__class__.__name__ == 'FunctionClass':
+                dependencies[name].append(str(dep))
+            else:
+                dependencies[name].append(dep.__class__.__name__)
 
     # Go through dependency graph and collect code.
     visited = set([])
     code_pieces = []
+    missing_objects = set([])
 
     def visit(name):
+        if name not in dependencies:
+            missing_objects.add(name)
+            return
         # take care of the dependencies first
         for dep in dependencies[name]:
             visit(dep)
@@ -91,15 +101,20 @@ def _main():
     for name in dependencies:
         visit(name)
 
+    if missing_objects:
+        print()
+        print('You will need to manually define the objects')
+        print(5 * ' ' + ', '.join(missing_objects))
+        print('in the namespace `%s` before #including the generated header.' %
+              namespace)
+        print()
+
     # Plug it all together in main
     with open(os.path.join(templates_dir, 'main.tpl'), 'r') as f:
         main_src = Template(f.read())
-        name = os.path.splitext(os.path.basename(args.infile))[0]
-        # sanitize the name
-        name = _sanitize(name)
         main_content = main_src.substitute({
-            'name': name,
-            'name_uppercase': name.upper(),
+            'namespace': namespace,
+            'namespace_uppercase': namespace.upper(),
             'content': '\n'.join(code_pieces)
             })
 
@@ -139,7 +154,7 @@ def _run(command):
 
 
 class CodeMatrixCore(object):
-    def __init__(self, core, name):
+    def __init__(self, namespace, core, name):
         # handle the edge contributions
         if callable(getattr(core, 'edge_contrib', None)):
             edge_result, edge_unused_symbols, edge_used_expressions = \
@@ -151,19 +166,21 @@ class CodeMatrixCore(object):
 
         # Go through all used expressions and check if they are defined. If
         # not, they need to be given as arguments to the constructor.
-        constructor_args = []
         members_init = []
         members_declare = []
         used_expressions = edge_used_expressions.union(vertex_used_expressions)
         for expr in used_expressions:
-            constructor_args.append('const nosh::expression & _%s' % expr)
-            members_init.append('%s(_%s)' % (expr, expr))
-            members_declare.append('const nosh::expression & %s;' % expr)
+            members_init.append('%s(%s::%s())' % (expr, namespace, expr))
+            members_declare.append(
+                    'const %s::%s %s;' % (namespace, expr, expr)
+                    )
 
         if members_init:
             members_init_code = ':\n' + ',\n'.join(members_init)
         else:
             members_init_code = ''
+
+        self.dependencies = used_expressions
 
         # template substitution
         with open(os.path.join(templates_dir, 'matrix_core.tpl'), 'r') as f:
@@ -181,13 +198,12 @@ class CodeMatrixCore(object):
                 'vertex_unused_args': '\n'.join(
                     ('(void) %s;' % name) for name in vertex_unused_symbols
                     ),
-                'constructor_args': ',\n'.join(constructor_args),
                 'members_init': members_init_code,
                 'members_declare': '\n'.join(members_declare)
                 })
 
     def get_dependencies(self):
-        return []
+        return self.dependencies
 
     def get_code(self):
         return self.code
