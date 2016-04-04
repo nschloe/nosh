@@ -79,10 +79,54 @@ class FvmMatrix(sympy.Function):
     #    self.edge_function = edge_function
     #    return
 
+class FvmMatrix2(sympy.Function):
+    pass
+
 
 class MatrixFactory(object):
     def __init__(self):
         return
+
+
+class Measure(object):
+    pass
+
+
+class dV(Measure):
+    pass
+
+
+class dS(Measure):
+    pass
+
+
+def integrate(integrand, measure):
+    assert(isinstance(measure, Measure))
+
+    if isinstance(measure, dV):
+        return Contributions(integrand, 0)
+    elif isinstance(measure, dS):
+        return Contributions(0, integrand)
+    else:
+        raise RuntimeError('Illegal measure')
+
+
+class Contributions(object):
+    def __init__(self, vertex, edge):
+        self.vertex = vertex
+        self.edge = edge
+
+    def __add__(self, other):
+        return Contributions(
+                lambda x: self.vertex(x) + other.vertex(x),
+                lambda x: self.edge(x) + other.edge(x)
+                )
+
+    def __sub__(self, other):
+        return Contributions(
+                lambda x: self.vertex(x) - other.vertex(x),
+                lambda x: self.edge(x) - other.edge(x)
+                )
 
 
 class NonlinearProblem(object):
