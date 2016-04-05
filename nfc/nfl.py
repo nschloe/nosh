@@ -104,9 +104,15 @@ def integrate(integrand, measure):
     assert(isinstance(measure, Measure))
 
     if isinstance(measure, dV):
-        return Core(integrand, 0)
+        return Core(
+            integrand,
+            lambda x: 0
+            )
     elif isinstance(measure, dS):
-        return Core(0, integrand)
+        return Core(
+            lambda x: 0,
+            integrand
+            )
     else:
         raise RuntimeError('Illegal measure')
 

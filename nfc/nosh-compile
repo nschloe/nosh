@@ -14,10 +14,6 @@ import importlib.machinery
 
 import nfc
 
-templates_dir = os.path.join(
-    os.path.dirname(os.path.realpath(__file__)),
-    'templates'
-    )
 
 
 def _sanitize(str):

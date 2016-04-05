@@ -2,8 +2,9 @@
 #
 import nfl
 import os
+from string import Template
 import sympy
-from .helpers import templates_dir
+from .helpers import extract_c_expression, templates_dir
 
 
 class CodeDirichletBc(object):

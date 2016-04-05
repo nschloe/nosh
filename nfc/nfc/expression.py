@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 #
 import os
+from string import Template
 import sympy
-from .helpers import templates_dir
+from .helpers import extract_c_expression, templates_dir
+
 
 class CodeExpression(object):
     def __init__(self, expr, name):

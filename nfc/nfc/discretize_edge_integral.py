@@ -31,10 +31,9 @@ class DiscretizeEdgeIntegral(object):
         raise RuntimeError('Unknown node type \"', type(node), '\".')
         return
 
-    def generate(self, node, arg_translate):
+    def generate(self, term):
         '''Entrance point to this class.
         '''
-        self.arg_translate = arg_translate
         self._intermediate_count = 0
         self._get_data = set([])
         self._code = ''

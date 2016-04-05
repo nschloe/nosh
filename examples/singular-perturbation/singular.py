@@ -14,9 +14,7 @@ class Alpha(Expression):
 
 
 class Beta(Expression):
-    @classmethod
-    def eval(cls, x): return sympy.Matrix([1, 2, 0])
-    degree = 0
+    pass
 
 
 class Singular(FvmMatrix2):

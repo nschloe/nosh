@@ -1,8 +1,14 @@
 # -*- coding: utf-8 -*-
 #
+import os
+import re
 import sys
 
-templates_dir = './templates'
+templates_dir = os.path.join(
+    os.path.dirname(os.path.realpath(__file__)),
+    '..',
+    'templates'
+    )
 
 
 def extract_c_expression(expr):
