@@ -24,7 +24,7 @@ class CodeFvmMatrix2(object):
             return True
 
     def get_code(self):
-        u = sympy.Symbol('u')
+        u = sympy.Function('u')
         res = self.obj.eval(u)
         assert(isinstance(res, nfl.Core))
         print(res.vertex)
@@ -40,7 +40,7 @@ class CodeFvmMatrix2(object):
         # then evaluate it there, and multiply by the volume.
         x = sympy.MatrixSymbol('x', 1, 3)
         # Evaluate the function for u at x.
-        print(function)
+        print(function, u.is_Function)
         fx = function(x)
         # Replace all occurences of u(x) by u0 (the value at the control volume
         # center) and multiply by the control volume)

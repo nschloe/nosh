@@ -20,10 +20,10 @@ class Beta(Expression):
 class Singular(FvmMatrix2):
     def eval(u):
         return \
-              integrate(lambda x: x[0]*x[1] + 1.0 + Beta(x), dS())  # + \
-              # integrate(lambda x: n_dot(Beta(x)), dS())  # + \
-              # integrate(lambda x: n_dot_grad(u(x)), dS())  # + \
-              # integrate(lambda x: dot(n, grad(u(x))), dS()) #+ \
+              integrate(lambda x: n_dot_grad(u, x), dS())  #
+              # integrate(lambda x: 2 * dot(n, x), dS())  # works
+              # integrate(lambda x: x[0]*x[1] + 1.0 + Beta(x), dS())  # works
+              #
               # integrate(lambda x: u(x), dV())
               # integrate(lambda x: 2 * sin(x[0]) * u(x), dV())
     boundary_conditions = [Bc1()]

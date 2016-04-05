@@ -20,6 +20,10 @@ class DiscretizeEdgeIntegral(object):
             return node
         elif isinstance(node, float):
             return node
+        elif isinstance(node, sympy.FunctionClass):
+            # UndefinedFunctions are not derived from sympy.Basic, so we cannot
+            # use is_Function is the conditional below.
+            return self.visit_Call(node)
         elif isinstance(node, sympy.Basic):
             if node.is_Add:
                 return self.visit_ChainOp(node, sympy.Add)
@@ -63,17 +67,35 @@ class DiscretizeEdgeIntegral(object):
     def visit_Call(self, node):
         '''Handles calls for operators A(u) and pointwise functions sin(u).
         '''
+        print(node)
         id = node.func.__name__
         logging.debug('> Call %s' % id)
-        # Check if this is the top (or root) of the recursion. If it is, the
-        # output variable will be `y`.
-        assert(len(node.args) == 1)  # one argument, e.g., A(x)
-        arg = self.visit(node.args[0])
-        print(arg)
-        print(node)
-        print(node.func(arg))
+        # Handle special functions
+        if node.func.__name__ == 'dot':
+            assert(len(node.args) == 2)
+            assert(isinstance(node.args[0], MatrixSymbol))
+            assert(isinstance(node.args[1], MatrixSymbol))
+            arg0 = self.visit(node.args[0])
+            arg1 = self.visit(node.args[1])
+            out = node.func(arg0, arg1)
+        elif node.func.__name__ == 'n_dot_grad':
+            assert(len(node.args) == 2)
+            print(node)
+            print(node.args[1])
+            assert(node.args[0].is_Function)
+            assert(isinstance(node.args[1], MatrixSymbol))
+            arg0 = self.visit(node.args[0])
+            arg1 = self.visit(node.args[1])
+            print(arg0)
+            print(arg1)
+            out = 1
+        else:
+            # Default function handling: Assume one argument, e.g., A(x).
+            assert(len(node.args) == 1)
+            arg = self.visit(node.args[0])
+            out = node.func(arg)
         logging.debug('  Call >')
-        return node.func(arg)
+        return out
 
     def visit_UnaryOp(self, node):
         '''Handles unary operations (e.g., +, -,...).

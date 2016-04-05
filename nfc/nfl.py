@@ -184,8 +184,14 @@ def inner(a, b):
     return
 
 
-def dot(a, b):
-    return inner(a, b)
+class dot(sympy.Function):
+    pass
+
+
+class n_dot_grad(sympy.Function):
+    pass
+
+n = sympy.MatrixSymbol('n', 1, 3)
 
 
 def grad(a):
