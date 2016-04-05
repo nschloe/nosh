@@ -38,7 +38,7 @@ class CodeFvmMatrix2(object):
         # Numerically integrate function over a control volume.
         # TODO find out if the code can be evaluated at the volume "midpoint",
         # then evaluate it there, and multiply by the volume.
-        x = sympy.DeferredVector('x')
+        x = sympy.MatrixSymbol('x', 1, 3)
         # Evaluate the function for u at x.
         print(function)
         fx = function(x)
@@ -60,10 +60,10 @@ class CodeFvmMatrix2(object):
         return extract_c_expression(coeff)
 
     def get_code_edge(self, u, function):
-        x = sympy.DeferredVector('x')
+        x = sympy.MatrixSymbol('x', 1, 3)
 
         generator = DiscretizeEdgeIntegral()
-        expr = generator.generate(function)
+        expr = generator.generate(function(x))
 
         print(expr)
 

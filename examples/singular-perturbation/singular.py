@@ -20,7 +20,8 @@ class Beta(Expression):
 class Singular(FvmMatrix2):
     def eval(u):
         return \
-              integrate(lambda x: n_dot(Beta(x)), dS())  # + \
+              integrate(lambda x: x[0] + 1.0, dS())  # + \
+              # integrate(lambda x: n_dot(Beta(x)), dS())  # + \
               # integrate(lambda x: n_dot_grad(u(x)), dS())  # + \
               # integrate(lambda x: dot(n, grad(u(x))), dS()) #+ \
               # integrate(lambda x: u(x), dV())

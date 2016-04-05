@@ -17,7 +17,8 @@ class CodeNonlinearOperator(object):
         # may be composed of more complex operations than the basic ones. For
         # example, the operator could involve the application of linear operator
         # defined elsewhere.
-        # For this reason, we're doing the code generation manually. This involves
+        # For this reason, we're doing the code generation manually. This
+        # involves
         #   (1) generating the abstract syntax tree, and
         #   (2) generating the code from the AST.
         #
