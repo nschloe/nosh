@@ -73,18 +73,25 @@ class CodeFvmMatrix2(object):
         x = sympy.MatrixSymbol('x', 1, 3)
 
         generator = DiscretizeEdgeIntegral()
-        expr, _ = generator.generate(function(x), u)
-
-        print(expr)
+        expr, _ = generator.generate(function(x), u, x)
 
         # Make sure the expression is linear in u0, u1.
-        assert(is_linear(expr, [generator.u0, generator.u1]))
+        if not is_linear(expr, [generator.u0, generator.u1]):
+            raise RuntimeError((
+                'The given function\n'
+                '    f(x) = %s\n'
+                'does not seem to be linear in u.')
+                % function(x)
+                )
 
         # Get the coefficients of u0, u1.
         coeff0 = expr.subs(generator.u1, 0) / generator.u0
+        if generator.u0 in coeff0.free_symbols:
+            coeff0 = sympy.simplify(coeff0)
+
         coeff1 = expr.subs(generator.u0, 0) / generator.u1
-        print(coeff0)
-        print(coeff1)
+        if generator.u1 in coeff1.free_symbols:
+            coeff1 = sympy.simplify(coeff1)
 
         exit()
 

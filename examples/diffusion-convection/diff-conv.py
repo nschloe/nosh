@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-from nfl import *
 from sympy import *
+from nfl import *
 
 
 class Bc1(DirichletBC):
@@ -12,8 +12,12 @@ class F(Expression):
     degree = 0
 
 
-class Laplace(FvmMatrix):
+class DC(FvmMatrix2):
     def eval(u):
-        return dot(n, grad(u)) * dS + dot(n, a) * u * dS
-
+        return integrate(
+            #lambda x: n_dot_grad(u, x) + u(x),
+            # lambda x: n_dot_grad(u, x) + dot(n, Matrix([1, 2, 0])) * u(x),
+            lambda x: dot(n, Matrix([1, 2, 0])) * u(x),
+            dS()
+        )
     boundary_conditions = [Bc1()]

@@ -191,7 +191,7 @@ class dot(sympy.Function):
 class n_dot_grad(sympy.Function):
     pass
 
-n = sympy.MatrixSymbol('n', 1, 3)
+n = sympy.MatrixSymbol('n', 3, 1)
 
 
 def grad(a):

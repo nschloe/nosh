@@ -2,7 +2,8 @@
 #
 import logging
 import sympy
-from sympy.matrices.expressions.matexpr import MatrixElement, MatrixSymbol
+from sympy.matrices.expressions.matexpr import \
+        MatrixElement, MatrixExpr, MatrixSymbol
 
 
 logging.basicConfig(level=logging.DEBUG)
@@ -36,17 +37,14 @@ class DiscretizeEdgeIntegral(object):
             elif node.is_Symbol:
                 return node
             elif node.is_Function:
-                print('nnnode', node)
                 return self.visit_Call(node)
-            elif isinstance(node, MatrixElement):
-                return node
-            elif isinstance(node, MatrixSymbol):
+            elif isinstance(node, MatrixExpr):
                 return node
 
         raise RuntimeError('Unknown node type \"', type(node), '\".')
         return
 
-    def generate(self, node, u):
+    def generate(self, node, u, x):
         '''Entrance point to this class.
         '''
         self._discretization = 0
@@ -57,6 +55,8 @@ class DiscretizeEdgeIntegral(object):
         # Replace u(x0) by u0, u(x1) by u1.
         out = out.subs(u(self.x0), self.u0)
         out = out.subs(u(self.x1), self.u1)
+        # Replace u(x) by 0.5*(u0 + u1) (the edge midpoint)
+        out = out.subs(u(x), 0.5 * (self.u0 + self.u1))
         return out, self._required_operators
 
     def generic_visit(self, node):
@@ -83,8 +83,10 @@ class DiscretizeEdgeIntegral(object):
         # Handle special functions
         if id == 'dot':
             assert(len(node.args) == 2)
-            assert(isinstance(node.args[0], MatrixSymbol))
-            assert(isinstance(node.args[1], MatrixSymbol))
+            print(node.args[1])
+            print(type(node.args[1]))
+            assert(isinstance(node.args[0], MatrixExpr))
+            assert(isinstance(node.args[1], MatrixExpr))
             arg0 = self.visit(node.args[0])
             arg1 = self.visit(node.args[1])
             out = node.func(arg0, arg1)
