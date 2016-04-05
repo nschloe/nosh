@@ -13,10 +13,18 @@ class Alpha(Expression):
     degree = 0
 
 
+class Beta(Expression):
+    @classmethod
+    def eval(cls, x): return sympy.Matrix([1, 2, 0])
+    degree = 0
+
+
 class Singular(FvmMatrix2):
     def eval(u):
         return \
-              integrate(lambda x: dot(n, grad(u)), dS()) #+ \
+              integrate(lambda x: n_dot(Beta(x)), dS())  # + \
+              # integrate(lambda x: n_dot_grad(u(x)), dS())  # + \
+              # integrate(lambda x: dot(n, grad(u(x))), dS()) #+ \
               # integrate(lambda x: u(x), dV())
               # integrate(lambda x: 2 * sin(x[0]) * u(x), dV())
     boundary_conditions = [Bc1()]
