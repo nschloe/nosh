@@ -6,7 +6,9 @@ from sympy.matrices.expressions.matexpr import \
         MatrixElement, MatrixExpr, MatrixSymbol
 
 
-logging.basicConfig(level=logging.DEBUG)
+debug = False
+if debug:
+    logging.basicConfig(level=logging.DEBUG)
 
 
 class DiscretizeEdgeIntegral(object):
@@ -73,8 +75,6 @@ class DiscretizeEdgeIntegral(object):
     def visit_Call(self, node):
         '''Handles calls for operators A(u) and pointwise functions sin(u).
         '''
-        print(node)
-        print(node.is_Function)
         try:
             id = node.func.__name__
         except AttributeError:
@@ -83,8 +83,6 @@ class DiscretizeEdgeIntegral(object):
         # Handle special functions
         if id == 'dot':
             assert(len(node.args) == 2)
-            print(node.args[1])
-            print(type(node.args[1]))
             assert(isinstance(node.args[0], MatrixExpr))
             assert(isinstance(node.args[1], MatrixExpr))
             arg0 = self.visit(node.args[0])
@@ -135,29 +133,3 @@ class DiscretizeEdgeIntegral(object):
         for k in range(2, len(args)):
             ret = operator(ret, args[k])
         return ret
-
-    def visit_Name(self, node):
-        logging.debug('> Name %s >' % id)
-        return node.name
-
-    def visit_Add(self, node):
-        return '+'
-
-    def visit_Sub(self, node):
-        return '-'
-
-    def visit_Mult(self, node):
-        return '*'
-
-    def visit_Div(self, node):
-        return '/'
-
-    def visit_UAdd(self, node):
-        return '+'
-
-    def visit_USub(self, node):
-        return '-'
-
-    def visit_Num(self, node):
-        return Pointwise(str(node.n))
-

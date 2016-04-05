@@ -37,20 +37,20 @@ class CodeFvmMatrix2(object):
         u = sympy.Function('u')
         res = self.obj.eval(u)
         assert(isinstance(res, nfl.Core))
-        print(res.vertex)
-        v = self.get_code_vertex(u, res.vertex)
-        print(v)
-        e = self.get_code_edge(u, res.edge)
-        print(e)
+        v = self.get_expr_vertex(u, res.vertex)
+        e = self.get_expr_edge(u, res.edge)
+        exit()
         return
 
-    def get_code_vertex(self, u, function):
+    def expr_to_code(self, expr):
+        return extract_c_expression(expr)
+
+    def get_expr_vertex(self, u, function):
         # Numerically integrate function over a control volume.
         # TODO find out if the code can be evaluated at the volume "midpoint",
         # then evaluate it there, and multiply by the volume.
         x = sympy.MatrixSymbol('x', 1, 3)
         # Evaluate the function for u at x.
-        print(function, u.is_Function)
         fx = function(x)
         # Replace all occurences of u(x) by u0 (the value at the control volume
         # center) and multiply by the control volume)
@@ -61,15 +61,13 @@ class CodeFvmMatrix2(object):
             # 'int' object has no attribute 'subs'
             fu0 = fx
         # Make sure that f is linear in u0; we're building a matrix here.
-        print('fu0', fu0)
         assert(is_linear(fu0, [u0]))
-        coeff = fu0 / u0
+        coeff = sympy.diff(fu0, u0)
         control_volume = sympy.Symbol('control_volume')
         coeff = control_volume * coeff
-        print(coeff)
-        return extract_c_expression(coeff)
+        return coeff
 
-    def get_code_edge(self, u, function):
+    def get_expr_edge(self, u, function):
         x = sympy.MatrixSymbol('x', 3, 1)
 
         generator = DiscretizeEdgeIntegral()
@@ -85,11 +83,19 @@ class CodeFvmMatrix2(object):
                 )
 
         # Get the coefficients of u0, u1.
-        coeff0 = sympy.diff(expr, generator.u0)
-        coeff1 = sympy.diff(expr, generator.u1)
+        coeff00 = sympy.diff(expr, generator.u0)
+        coeff01 = sympy.diff(expr, generator.u1)
 
-        print(coeff0)
-        print(coeff1)
-        exit()
+        # Now construct the coefficients for the other way around.
+        coeff10 = coeff00.subs([
+            (generator.u0, generator.u1),
+            (generator.u1, generator.u0),
+            (nfl.n, -nfl.n)
+            ])
+        coeff11 = coeff01.subs([
+            (generator.u0, generator.u1),
+            (generator.u1, generator.u0),
+            (nfl.n, -nfl.n)
+            ])
 
-        return ''
+        return [[coeff00, coeff01], [coeff10, coeff11]]
