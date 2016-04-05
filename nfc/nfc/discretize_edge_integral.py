@@ -16,7 +16,6 @@ class DiscretizeEdgeIntegral(object):
         return
 
     def visit(self, node):
-        print('node', node, type(node))
         if isinstance(node, int):
             return node
         elif isinstance(node, float):
@@ -46,9 +45,8 @@ class DiscretizeEdgeIntegral(object):
         self._required_operators = []
         out = self.visit(node)
         print('out', out)
-        print('code', self._code)
         exit()
-        return self._code, self._required_operators
+        return out, self._required_operators
 
     def generic_visit(self, node):
         raise RuntimeError(
@@ -124,13 +122,10 @@ class DiscretizeEdgeIntegral(object):
         logging.debug('> BinOp %s' % operator)
         # collect the pointwise code for left and right
         args = []
-        print('args', node.args)
         for n in node.args:
             ret = self.visit(n)
             args.append(ret)
-        print(args)
         # plug it together
-        print(operator(args[0], args[1]))
         return operator(args[0], args[1])
 
     def visit_Name(self, node):
