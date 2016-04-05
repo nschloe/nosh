@@ -5,11 +5,11 @@ class CodeMatrixCore(object):
         # handle the edge contributions
         if callable(getattr(core, 'edge_contrib', None)):
             edge_result, edge_unused_symbols, edge_used_expressions = \
-                    self.get_code_edge_contrib(core.edge_contrib)
+                    self.get_expr_edge_contrib(core.edge_contrib)
 
         if callable(getattr(core, 'vertex_contrib', None)):
             vertex_result, vertex_unused_symbols, vertex_used_expressions = \
-                    self.get_code_vertex_contrib(core.vertex_contrib)
+                    self.get_expr_vertex_contrib(core.vertex_contrib)
 
         # Go through all used expressions and check if they are defined. If
         # not, they need to be given as arguments to the constructor.
@@ -55,7 +55,7 @@ class CodeMatrixCore(object):
     def get_code(self):
         return self.code
 
-    def get_code_edge_contrib(self, method):
+    def get_expr_edge_contrib(self, method):
         x0 = sympy.DeferredVector('x0')
         x1 = sympy.DeferredVector('x1')
         edge_length = sympy.Symbol('edge_length')
@@ -84,7 +84,7 @@ class CodeMatrixCore(object):
         unused_args = all_symbols - used_symbols
         return result, unused_args, used_expressions
 
-    def get_code_vertex_contrib(self, method):
+    def get_expr_vertex_contrib(self, method):
         # handle the vertex contributions
         x = sympy.DeferredVector('x')
         vol = sympy.Symbol('control_volume')

@@ -5,6 +5,7 @@ import os
 import sympy
 from .helpers import extract_c_expression
 from .discretize_edge_integral import DiscretizeEdgeIntegral
+from .code_generator_eigen.py import CodeGeneratorEigen
 
 
 def is_affine_linear(expr, vars):
@@ -39,11 +40,17 @@ class CodeFvmMatrix2(object):
         assert(isinstance(res, nfl.Core))
         v = self.get_expr_vertex(u, res.vertex)
         e = self.get_expr_edge(u, res.edge)
+        print(e[0][0])
+        print(expr_to_code(e[0][0]))
         exit()
         return
 
     def expr_to_code(self, expr):
-        return extract_c_expression(expr)
+        gen = CodeGeneratorEigen()
+        code = gen.generate(expr)
+        print(code)
+        exit()
+        return code
 
     def get_expr_vertex(self, u, function):
         # Numerically integrate function over a control volume.
