@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 #
 import logging
+import nfl
 import sympy
 from sympy.matrices.expressions.matexpr import \
         MatrixElement, MatrixExpr, MatrixSymbol
 
 
-debug = False
+debug = True
 if debug:
     logging.basicConfig(level=logging.DEBUG)
 
@@ -38,6 +39,8 @@ class CodeGeneratorEigen(object):
                 return self.visit_ChainOp(node, '+')
             elif node.is_Mul:
                 return self.visit_ChainOp(node, '-')
+            elif node.is_Pow:
+                return self.visit_ChainOp(node, '**')
             elif node.is_Number:
                 return str(node)
             elif node.is_Symbol:
@@ -45,22 +48,22 @@ class CodeGeneratorEigen(object):
             elif node.is_Function:
                 return self.visit_Call(node)
             elif isinstance(node, MatrixExpr):
-                return node
+                if node == nfl.n:
+                    return 'n'
+                else:
+                    return 'Eigen::Vector3d(%s,%s,%s)' % \
+                            (node[0], node[1], node[2])
 
         raise RuntimeError('Unknown node type \"', type(node), '\".')
         return
 
-    def generate(self, node, u, x):
+    def generate(self, node):
         '''Entrance point to this class.
         '''
+        print('node', node)
         out = self.visit(node)
-        # Now multiply the value we got out by the covolume
-        out *= self.covolume
-        # Replace u(x0) by u0, u(x1) by u1.
-        out = out.subs(u(self.x0), self.u0)
-        out = out.subs(u(self.x1), self.u1)
-        # Replace u(x) by 0.5*(u0 + u1) (the edge midpoint)
-        out = out.subs(u(x), 0.5 * (self.u0 + self.u1))
+        print(out)
+        exit()
         return out, self._required_operators
 
     def generic_visit(self, node):
@@ -89,13 +92,9 @@ class CodeGeneratorEigen(object):
             assert(isinstance(node.args[1], MatrixExpr))
             arg0 = self.visit(node.args[0])
             arg1 = self.visit(node.args[1])
-            out = node.func(arg0, arg1)
-        elif id == 'n_dot_grad':
-            assert(len(node.args) == 2)
-            f = node.args[0]
-            assert(f.is_Function)
-            assert(isinstance(node.args[1], MatrixSymbol))
-            out = (f(self.x1) - f(self.x0)) / self.edge_length
+            print(arg0)
+            print(arg1)
+            out = '%s.dot(%s)' % (arg0, arg1)
         else:
             # Default function handling: Assume one argument, e.g., A(x).
             assert(len(node.args) == 1)
@@ -124,7 +123,7 @@ class CodeGeneratorEigen(object):
     def visit_ChainOp(self, node, symbol):
         '''Handles binary operations (e.g., +, -, *,...).
         '''
-        logging.debug('> BinOp %s' % operator)
+        logging.debug('> BinOp %s' % symbol)
         # collect the pointwise code for left and right
         args = []
         for n in node.args:

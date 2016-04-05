@@ -5,7 +5,7 @@ import os
 import sympy
 from .helpers import extract_c_expression
 from .discretize_edge_integral import DiscretizeEdgeIntegral
-from .code_generator_eigen.py import CodeGeneratorEigen
+from .code_generator_eigen import CodeGeneratorEigen
 
 
 def is_affine_linear(expr, vars):
@@ -41,7 +41,7 @@ class CodeFvmMatrix2(object):
         v = self.get_expr_vertex(u, res.vertex)
         e = self.get_expr_edge(u, res.edge)
         print(e[0][0])
-        print(expr_to_code(e[0][0]))
+        print(self.expr_to_code(e[0][0]))
         exit()
         return
 
