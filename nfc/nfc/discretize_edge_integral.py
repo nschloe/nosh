@@ -2,7 +2,7 @@
 #
 import logging
 import sympy
-from sympy.matrices.expressions.matexpr import MatrixElement
+from sympy.matrices.expressions.matexpr import MatrixElement, MatrixSymbol
 
 
 logging.basicConfig(level=logging.DEBUG)
@@ -24,15 +24,16 @@ class DiscretizeEdgeIntegral(object):
             if node.is_Add:
                 return self.visit_ChainOp(node, sympy.Add)
             elif node.is_Mul:
-                return self.visit_ChainOp(node, sympy.Multiply)
+                return self.visit_ChainOp(node, sympy.Mul)
             elif node.is_Number:
                 return node
             elif node.is_Symbol:
                 return node
             elif node.is_Function:
-                a = self.visit_Call(node)
-                return a
+                return self.visit_Call(node)
             elif isinstance(node, MatrixElement):
+                return node
+            elif isinstance(node, MatrixSymbol):
                 return node
 
         raise RuntimeError('Unknown node type \"', type(node), '\".')
@@ -67,37 +68,12 @@ class DiscretizeEdgeIntegral(object):
         # Check if this is the top (or root) of the recursion. If it is, the
         # output variable will be `y`.
         assert(len(node.args) == 1)  # one argument, e.g., A(x)
-        ret = self.visit(node.args[0])
-        if isinstance(node, nfl.FvmMatrix):
-            # The argument to A(.) must be of vector type.
-            if isinstance(ret, Vector):
-                arg_name = ret
-            elif isinstance(ret, Pointwise):
-                arg_name = self._get_outvector()
-                self._to_vector(ret, arg_name)
-            else:
-                raise ValueError('Illegal input type')
-            # Get the output vector
-            # Put it all together
-            self._code += '\n%s->apply(%s, %s);\n' \
-                % (id + '_', arg_name, out_vector)
-            self._required_operators.append({
-                'var_name': id + '_',
-                'class_name': id,
-                })
-            logging.debug('  Call >')
-            return Vector(out_vector)
-        else:
-            # Assume that the operator is a C++ intrinsic or otherwise defined.
-            # The argument must be of pointwise type.
-            if isinstance(ret, Vector):
-                a = self._to_pointwise(ret)
-            elif isinstance(ret, Pointwise):
-                a = ret
-            else:
-                raise ValueError('Illegal input type')
-            logging.debug('  Call >')
-            return Pointwise('%s(%s)' % (id, a))
+        arg = self.visit(node.args[0])
+        print(arg)
+        print(node)
+        print(node.func(arg))
+        logging.debug('  Call >')
+        return node.func(arg)
 
     def visit_UnaryOp(self, node):
         '''Handles unary operations (e.g., +, -,...).
@@ -126,7 +102,10 @@ class DiscretizeEdgeIntegral(object):
             ret = self.visit(n)
             args.append(ret)
         # plug it together
-        return operator(args[0], args[1])
+        ret = operator(args[0], args[1])
+        for k in range(2, len(args)):
+            ret = operator(ret, args[k])
+        return ret
 
     def visit_Name(self, node):
         logging.debug('> Name %s >' % id)
