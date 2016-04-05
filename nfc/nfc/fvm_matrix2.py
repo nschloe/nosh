@@ -7,6 +7,23 @@ from .helpers import extract_c_expression
 from .discretize_edge_integral import DiscretizeEdgeIntegral
 
 
+def is_affine_linear(expr, vars):
+    for var in vars:
+        if not sympy.Eq(sympy.diff(expr, var, var), 0):
+            return False
+    return True
+
+
+def is_linear(expr, vars):
+    if not is_affine_linear(expr, vars):
+        return False
+    # Check that expr is not affine.
+    if isinstance(expr, int):
+        return expr == 0
+    else:
+        return expr.subs([(var, 0) for var in vars]) == 0
+
+
 class CodeFvmMatrix2(object):
     def __init__(self, obj, name):
         self.obj = obj
@@ -15,13 +32,6 @@ class CodeFvmMatrix2(object):
 
     def get_dependencies(self):
         return []
-
-    def is_linear(self, expr, var):
-        # Check if an expression is linear in a given var.
-        if not sympy.Eq(sympy.diff(expr, var, var), 0):
-            return False
-        else:
-            return True
 
     def get_code(self):
         u = sympy.Function('u')
@@ -52,7 +62,7 @@ class CodeFvmMatrix2(object):
             fu0 = fx
         # Make sure that f is linear in u0; we're building a matrix here.
         print('fu0', fu0)
-        assert(self.is_linear(fu0, u0))
+        assert(is_linear(fu0, [u0]))
         coeff = fu0 / u0
         control_volume = sympy.Symbol('control_volume')
         coeff = control_volume * coeff
@@ -63,29 +73,19 @@ class CodeFvmMatrix2(object):
         x = sympy.MatrixSymbol('x', 1, 3)
 
         generator = DiscretizeEdgeIntegral()
-        expr = generator.generate(function(x))
+        expr, _ = generator.generate(function(x), u)
 
         print(expr)
 
+        # Make sure the expression is linear in u0, u1.
+        assert(is_linear(expr, [generator.u0, generator.u1]))
+
+        # Get the coefficients of u0, u1.
+        coeff0 = expr.subs(generator.u1, 0) / generator.u0
+        coeff1 = expr.subs(generator.u0, 0) / generator.u1
+        print(coeff0)
+        print(coeff1)
+
         exit()
 
-        # # Evaluate the function for u at x.
-        # fx = function(x)
-        # print(fx)
-        # exit()
-
-        # # First, get rid of all differential operators; approximate them by
-        # # finite differences.
-        # u0 = sympy.Symbol('u0')
-        # u1 = sympy.Symbol('u1')
-        # # [...] TODO
-
-        # if u in res.free_symbols:
-        #     # Replace u by the value at the midpoint, 0.5 * (u0 + u1).
-        #     pass
-
-        # coedge_length = sympy.Symbol('coedge_length')
-        # expr = coedge_length * 0.5 * (u0 + u1)
-
-        # exit()
         return ''

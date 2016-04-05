@@ -13,6 +13,12 @@ class DiscretizeEdgeIntegral(object):
         self.arg_translate = {}
         self._discretization = 0
         self._required_operators = []
+        self.x0 = sympy.Symbol('x0')
+        self.x1 = sympy.Symbol('x1')
+        self.u0 = sympy.Symbol('u0')
+        self.u1 = sympy.Symbol('u1')
+        self.edge_length = sympy.Symbol('edge_length')
+        self.covolume = sympy.Symbol('covolume')
         return
 
     def visit(self, node):
@@ -20,10 +26,6 @@ class DiscretizeEdgeIntegral(object):
             return node
         elif isinstance(node, float):
             return node
-        elif isinstance(node, sympy.FunctionClass):
-            # UndefinedFunctions are not derived from sympy.Basic, so we cannot
-            # use is_Function is the conditional below.
-            return self.visit_Call(node)
         elif isinstance(node, sympy.Basic):
             if node.is_Add:
                 return self.visit_ChainOp(node, sympy.Add)
@@ -34,6 +36,7 @@ class DiscretizeEdgeIntegral(object):
             elif node.is_Symbol:
                 return node
             elif node.is_Function:
+                print('nnnode', node)
                 return self.visit_Call(node)
             elif isinstance(node, MatrixElement):
                 return node
@@ -43,14 +46,17 @@ class DiscretizeEdgeIntegral(object):
         raise RuntimeError('Unknown node type \"', type(node), '\".')
         return
 
-    def generate(self, node):
+    def generate(self, node, u):
         '''Entrance point to this class.
         '''
         self._discretization = 0
         self._required_operators = []
         out = self.visit(node)
-        print('out', out)
-        exit()
+        # Now multiply the value we got out by the covolume
+        out *= self.covolume
+        # Replace u(x0) by u0, u(x1) by u1.
+        out = out.subs(u(self.x0), self.u0)
+        out = out.subs(u(self.x1), self.u1)
         return out, self._required_operators
 
     def generic_visit(self, node):
@@ -68,27 +74,26 @@ class DiscretizeEdgeIntegral(object):
         '''Handles calls for operators A(u) and pointwise functions sin(u).
         '''
         print(node)
-        id = node.func.__name__
+        print(node.is_Function)
+        try:
+            id = node.func.__name__
+        except AttributeError:
+            id = repr(node)
         logging.debug('> Call %s' % id)
         # Handle special functions
-        if node.func.__name__ == 'dot':
+        if id == 'dot':
             assert(len(node.args) == 2)
             assert(isinstance(node.args[0], MatrixSymbol))
             assert(isinstance(node.args[1], MatrixSymbol))
             arg0 = self.visit(node.args[0])
             arg1 = self.visit(node.args[1])
             out = node.func(arg0, arg1)
-        elif node.func.__name__ == 'n_dot_grad':
+        elif id == 'n_dot_grad':
             assert(len(node.args) == 2)
-            print(node)
-            print(node.args[1])
-            assert(node.args[0].is_Function)
+            f = node.args[0]
+            assert(f.is_Function)
             assert(isinstance(node.args[1], MatrixSymbol))
-            arg0 = self.visit(node.args[0])
-            arg1 = self.visit(node.args[1])
-            print(arg0)
-            print(arg1)
-            out = 1
+            out = (f(self.x1) - f(self.x0)) / self.edge_length
         else:
             # Default function handling: Assume one argument, e.g., A(x).
             assert(len(node.args) == 1)
