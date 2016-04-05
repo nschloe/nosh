@@ -70,7 +70,7 @@ class CodeFvmMatrix2(object):
         return extract_c_expression(coeff)
 
     def get_code_edge(self, u, function):
-        x = sympy.MatrixSymbol('x', 1, 3)
+        x = sympy.MatrixSymbol('x', 3, 1)
 
         generator = DiscretizeEdgeIntegral()
         expr, _ = generator.generate(function(x), u, x)
@@ -85,14 +85,11 @@ class CodeFvmMatrix2(object):
                 )
 
         # Get the coefficients of u0, u1.
-        coeff0 = expr.subs(generator.u1, 0) / generator.u0
-        if generator.u0 in coeff0.free_symbols:
-            coeff0 = sympy.simplify(coeff0)
+        coeff0 = sympy.diff(expr, generator.u0)
+        coeff1 = sympy.diff(expr, generator.u1)
 
-        coeff1 = expr.subs(generator.u0, 0) / generator.u1
-        if generator.u1 in coeff1.free_symbols:
-            coeff1 = sympy.simplify(coeff1)
-
+        print(coeff0)
+        print(coeff1)
         exit()
 
         return ''
