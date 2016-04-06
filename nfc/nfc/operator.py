@@ -9,7 +9,7 @@ class CodeOperator(object):
     def get_code(self):
         assert(isinstance(operator, nfl.Operator))
 
-        x = sympy.DeferredVector('x')
+        x = sympy.MatrixSymbol('x', 3, 1)
 
         assert(callable(operator.eval))
 
