@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-from nfl import *
 from sympy import *
+from nfl import *
 
 
 class Bc1(DirichletBC):
@@ -20,20 +20,19 @@ class F(Expression):
     degree = 0
 
 
-class Core0(MatrixCore):
-    def edge_contrib(self, x0, x1, edge_length, edge_covolume):
-        alpha = edge_covolume / edge_length
-        return [[alpha, -alpha], [-alpha, alpha]]
-
-
-class Laplace(FvmMatrix):
-    matrix_cores = [Core0()]
+class Laplace(FvmMatrix2):
+    def eval(u):
+        return integrate(
+            lambda x: -n_dot_grad(u, x),
+            dS()
+        )
     boundary_conditions = [Bc1(), Bc2()]
 
-# dS n grad(u)
-
-# class Laplace(Operator):
-#     def eval(u):
-#         return integral(- dot(n, grad(u)), dS)
-#
+# Alternative (raw) syntax:
+# class Core0(MatrixCore):
+#     def edge_contrib(self, x0, x1, edge_length, edge_covolume):
+#         alpha = edge_covolume / edge_length
+#         return [[alpha, -alpha], [-alpha, alpha]]
+# class Laplace(FvmMatrix):
+#     matrix_cores = [Core0()]
 #     boundary_conditions = [Bc1(), Bc2()]

@@ -42,7 +42,7 @@ class CodeFvmMatrix2(object):
         return
 
     def get_dependencies(self):
-        return []
+        return self.dependencies
 
     def get_code(self):
         u = sympy.Function('u')

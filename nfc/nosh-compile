@@ -107,7 +107,7 @@ def _main():
     if missing_objects:
         print()
         print('You will need to manually define the objects')
-        print(5 * ' ' + ', '.join(missing_objects))
+        print('     %s' % ', '.join(missing_objects))
         print('in the namespace `%s` before #including the generated header.' %
               namespace)
         print()

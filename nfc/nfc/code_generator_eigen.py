@@ -7,7 +7,7 @@ from sympy.matrices.expressions.matexpr import \
         MatrixElement, MatrixExpr, MatrixSymbol
 
 
-debug = True
+debug = False
 if debug:
     logging.basicConfig(level=logging.DEBUG)
 
