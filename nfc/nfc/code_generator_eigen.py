@@ -38,9 +38,9 @@ class CodeGeneratorEigen(object):
             if node.is_Add:
                 return self.visit_ChainOp(node, '+')
             elif node.is_Mul:
-                return self.visit_ChainOp(node, '-')
+                return self.visit_ChainOp(node, '*')
             elif node.is_Pow:
-                return self.visit_ChainOp(node, '**')
+                return self.visit_Pow(node)
             elif node.is_Number:
                 return str(node)
             elif node.is_Symbol:
@@ -128,7 +128,24 @@ class CodeGeneratorEigen(object):
         args = []
         for n in node.args:
             ret = self.visit(n)
-            args.append(ret)
+            args.append('(%s)' % ret)
         # plug it together
         ret = symbol.join(args)
         return ret
+
+    def visit_Pow(self, node):
+        '''Handles pow(.,.).
+        '''
+        logging.debug('> Pow')
+        assert(len(node.args) == 2)
+        power = int(node.args[1])
+        if power == 1:
+            return self.visit(node.args[0])
+        elif power == 0:
+            return '1'
+        elif power == -1:
+            return '1.0/(%s)' % self.visit(node.args[0])
+        elif power > 1:
+            return 'pow(%s, %s)' % (self.visit(node.args[0]), power)
+        else:  # node.args[1] < -1
+            return '1.0 / pow(%s, %s)' % (self.visit(node.args[0]), power)
