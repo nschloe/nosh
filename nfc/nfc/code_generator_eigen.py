@@ -50,6 +50,8 @@ class CodeGeneratorEigen(object):
             elif isinstance(node, MatrixExpr):
                 if node == nfl.n:
                     return 'n'
+                elif node == nfl.neg_n:
+                    return '-n'
                 else:
                     return 'Eigen::Vector3d(%s,%s,%s)' % \
                             (node[0], node[1], node[2])
@@ -89,8 +91,6 @@ class CodeGeneratorEigen(object):
             assert(isinstance(node.args[1], MatrixExpr))
             arg0 = self.visit(node.args[0])
             arg1 = self.visit(node.args[1])
-            print(arg0)
-            print(arg1)
             out = '%s.dot(%s)' % (arg0, arg1)
         else:
             # Default function handling: Assume one argument, e.g., A(x).

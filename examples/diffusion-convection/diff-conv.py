@@ -8,7 +8,8 @@ class Bc1(DirichletBC):
 
 
 class F(Expression):
-    def eval(x): return sin(x[1])
+    # def eval(x): return sin(x[1])
+    def eval(x): return 1.0
     degree = 0
 
 

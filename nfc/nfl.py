@@ -192,7 +192,7 @@ class n_dot_grad(sympy.Function):
     pass
 
 n = sympy.MatrixSymbol('n', 3, 1)
-
+neg_n = sympy.MatrixSymbol('neg_n', 3, 1)
 
 def grad(a):
     return Vector()

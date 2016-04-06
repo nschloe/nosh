@@ -69,15 +69,16 @@ class CodeFvmMatrix2(object):
 
         edge_undefined_symbols = edge_used_symbols - edge_arguments
 
-        if nfl.n in edge_undefined_symbols:
+        if nfl.n in edge_undefined_symbols or \
+           nfl.neg_n in edge_undefined_symbols:
             edge_body.append('const auto n = (x1 - x0) / edge_length;')
             edge_unused_arguments -= set([
                 sympy.Symbol('x0'),
                 sympy.Symbol('x1')
                 ])
             edge_undefined_symbols.remove(nfl.n)
+            edge_undefined_symbols.remove(nfl.neg_n)
 
-        print(edge_undefined_symbols)
         assert(len(edge_undefined_symbols) == 0)
 
         for name in edge_unused_arguments:
@@ -220,12 +221,12 @@ class CodeFvmMatrix2(object):
         coeff10 = coeff01.subs([
             (generator.u0, generator.u1),
             (generator.u1, generator.u0),
-            (nfl.n, -nfl.n)
+            (nfl.n, nfl.neg_n)
             ])
         coeff11 = coeff00.subs([
             (generator.u0, generator.u1),
             (generator.u1, generator.u0),
-            (nfl.n, -nfl.n)
+            (nfl.n, nfl.neg_n)
             ])
 
         return [[coeff00, coeff01], [coeff10, coeff11]]
