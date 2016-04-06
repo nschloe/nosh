@@ -21,7 +21,7 @@ class DiscretizeEdgeIntegral(object):
         self.u0 = sympy.Symbol('u0')
         self.u1 = sympy.Symbol('u1')
         self.edge_length = sympy.Symbol('edge_length')
-        self.covolume = sympy.Symbol('covolume')
+        self.covolume = sympy.Symbol('edge_covolume')
         return
 
     def visit(self, node):

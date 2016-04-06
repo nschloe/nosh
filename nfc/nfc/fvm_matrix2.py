@@ -2,8 +2,9 @@
 #
 import nfl
 import os
+from string import Template
 import sympy
-from .helpers import extract_c_expression
+from .helpers import extract_c_expression, templates_dir
 from .discretize_edge_integral import DiscretizeEdgeIntegral
 from .code_generator_eigen import CodeGeneratorEigen
 
@@ -40,16 +41,39 @@ class CodeFvmMatrix2(object):
         assert(isinstance(res, nfl.Core))
         v = self.get_expr_vertex(u, res.vertex)
         e = self.get_expr_edge(u, res.edge)
-        print(e[0][0])
-        print(self.expr_to_code(e[0][0]))
+
+        name = 'dummy'
+        edge_unused_symbols = set([])
+        vertex_unused_symbols = set([])
+        members_init_code = ''
+        members_declare = []
+
+        # template substitution
+        with open(os.path.join(templates_dir, 'matrix_core.tpl'), 'r') as f:
+            src = Template(f.read())
+            matrix_core_code = src.substitute({
+                'name': name.lower(),  # class names are lowercase
+                'edge00': self.expr_to_code(e[0][0]),
+                'edge01': self.expr_to_code(e[0][1]),
+                'edge10': self.expr_to_code(e[1][0]),
+                'edge11': self.expr_to_code(e[1][1]),
+                'edge_unused_args': '\n'.join(
+                    ('(void) %s;' % name) for name in edge_unused_symbols
+                    ),
+                'vertex_contrib': extract_c_expression(v),
+                'vertex_unused_args': '\n'.join(
+                    ('(void) %s;' % name) for name in vertex_unused_symbols
+                    ),
+                'members_init': members_init_code,
+                'members_declare': '\n'.join(members_declare)
+                })
+        print(matrix_core_code)
         exit()
         return
 
     def expr_to_code(self, expr):
         gen = CodeGeneratorEigen()
-        code = gen.generate(expr)
-        print(code)
-        exit()
+        code, _ = gen.generate(expr)
         return code
 
     def get_expr_vertex(self, u, function):

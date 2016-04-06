@@ -60,10 +60,7 @@ class CodeGeneratorEigen(object):
     def generate(self, node):
         '''Entrance point to this class.
         '''
-        print('node', node)
         out = self.visit(node)
-        print(out)
-        exit()
         return out, self._required_operators
 
     def generic_visit(self, node):
