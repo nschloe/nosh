@@ -38,11 +38,11 @@ class CodeMatrixCore(object):
                 'edge01': extract_c_expression(edge_result[0][1]),
                 'edge10': extract_c_expression(edge_result[1][0]),
                 'edge11': extract_c_expression(edge_result[1][1]),
-                'edge_unused_args': '\n'.join(
+                'edge_body': '\n'.join(
                     ('(void) %s;' % name) for name in edge_unused_symbols
                     ),
                 'vertex_contrib': extract_c_expression(vertex_result),
-                'vertex_unused_args': '\n'.join(
+                'vertex_body': '\n'.join(
                     ('(void) %s;' % name) for name in vertex_unused_symbols
                     ),
                 'members_init': members_init_code,

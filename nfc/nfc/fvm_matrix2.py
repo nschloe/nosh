@@ -59,13 +59,29 @@ class CodeFvmMatrix2(object):
             sympy.Symbol('edge_length'),
             sympy.Symbol('edge_covolume')
             ])
+        edge_unused_arguments = edge_arguments.copy()
+        edge_body = []
         edge_used_symbols = set([])
         for e in [edge_expressions[0][0], edge_expressions[0][1],
                   edge_expressions[1][0], edge_expressions[1][1]]:
             edge_used_symbols = edge_used_symbols.union(e.free_symbols)
-        edge_unused_arguments = edge_arguments - edge_used_symbols
+        edge_unused_arguments -= edge_used_symbols
+
         edge_undefined_symbols = edge_used_symbols - edge_arguments
+
+        if nfl.n in edge_undefined_symbols:
+            edge_body.append('const auto n = (x1 - x0) / edge_length;')
+            edge_unused_arguments -= set([
+                sympy.Symbol('x0'),
+                sympy.Symbol('x1')
+                ])
+            edge_undefined_symbols.remove(nfl.n)
+
+        print(edge_undefined_symbols)
         assert(len(edge_undefined_symbols) == 0)
+
+        for name in edge_unused_arguments:
+            edge_body.append('(void) %s;' % name)
 
         edge_used_expressions = set()
         for e in [edge_expressions[0][0], edge_expressions[0][1],
@@ -111,11 +127,9 @@ class CodeFvmMatrix2(object):
                 'edge01': self.expr_to_code(edge_expressions[0][1]),
                 'edge10': self.expr_to_code(edge_expressions[1][0]),
                 'edge11': self.expr_to_code(edge_expressions[1][1]),
-                'edge_unused_args': '\n'.join(
-                    ('(void) %s;' % name) for name in edge_unused_arguments
-                    ),
+                'edge_body': '\n'.join(edge_body),
                 'vertex_contrib': extract_c_expression(v),
-                'vertex_unused_args': '\n'.join(
+                'vertex_body': '\n'.join(
                     ('(void) %s;' % name) for name in vertex_unused_arguments
                     ),
                 'members_init': members_init_code,
