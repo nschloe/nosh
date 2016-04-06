@@ -40,29 +40,53 @@ class CodeFvmMatrix2(object):
         res = self.obj.eval(u)
         assert(isinstance(res, nfl.Core))
         v = self.get_expr_vertex(u, res.vertex)
-        e = self.get_expr_edge(u, res.edge)
+        edge_expressions = self.get_expr_edge(u, res.edge)
 
-        name = 'dummy'
-        edge_unused_symbols = set([])
-        vertex_unused_symbols = set([])
+        # check out used an unused symbols for the edge code
+        edge_arguments = set([
+            sympy.Symbol('x0'),
+            sympy.Symbol('x1'),
+            sympy.Symbol('edge_length'),
+            sympy.Symbol('edge_covolume')
+            ])
+        edge_used_symbols = set([])
+        for e in [edge_expressions[0][0], edge_expressions[0][1],
+                  edge_expressions[1][0], edge_expressions[1][1]]:
+            edge_used_symbols = edge_used_symbols.union(e.free_symbols)
+        edge_unused_arguments = edge_arguments - edge_used_symbols
+        edge_undefined_symbols = edge_used_symbols - edge_arguments
+        assert(len(edge_undefined_symbols) == 0)
+
+        # handle vertex arguments
+        vertex_arguments = set([
+            sympy.Symbol('x'),
+            sympy.Symbol('control_volume')
+            ])
+        vertex_used_symbols = v.free_symbols
+        vertex_unused_arguments = vertex_arguments - edge_used_symbols
+        vertex_undefined_symbols = edge_used_symbols - edge_arguments
+        assert(len(vertex_undefined_symbols) == 0)
+
         members_init_code = ''
         members_declare = []
+
+        name = self.name.lower() + '_core'
 
         # template substitution
         with open(os.path.join(templates_dir, 'matrix_core.tpl'), 'r') as f:
             src = Template(f.read())
             matrix_core_code = src.substitute({
-                'name': name.lower(),  # class names are lowercase
-                'edge00': self.expr_to_code(e[0][0]),
-                'edge01': self.expr_to_code(e[0][1]),
-                'edge10': self.expr_to_code(e[1][0]),
-                'edge11': self.expr_to_code(e[1][1]),
+                'name': name,
+                'edge00': self.expr_to_code(edge_expressions[0][0]),
+                'edge01': self.expr_to_code(edge_expressions[0][1]),
+                'edge10': self.expr_to_code(edge_expressions[1][0]),
+                'edge11': self.expr_to_code(edge_expressions[1][1]),
                 'edge_unused_args': '\n'.join(
-                    ('(void) %s;' % name) for name in edge_unused_symbols
+                    ('(void) %s;' % name) for name in edge_unused_arguments
                     ),
                 'vertex_contrib': extract_c_expression(v),
                 'vertex_unused_args': '\n'.join(
-                    ('(void) %s;' % name) for name in vertex_unused_symbols
+                    ('(void) %s;' % name) for name in vertex_unused_arguments
                     ),
                 'members_init': members_init_code,
                 'members_declare': '\n'.join(members_declare)
