@@ -169,7 +169,6 @@ namespace nosh
           TEUCHOS_ASSERT_EQUALITY(num_lhs, 1);
 #endif
           // add to rhs
-          std::cout << val.rhs << std::endl;
           this->rhs.sumIntoGlobalValue(gid, val.rhs);
         }
       }
