@@ -8,7 +8,7 @@ namespace nosh
     std::vector<double> rhs;
   };
 
-  struct vertex_data {
+  struct double_data {
     double lhs;
     double rhs;
   };
@@ -39,10 +39,17 @@ namespace nosh
           ) const = 0;
 
       virtual
-      vertex_data
+      double_data
       vertex_contrib(
           const Eigen::Vector3d & x,
           const double control_volume
+          ) const = 0;
+
+      virtual
+      double_data
+      domain_boundary_contrib(
+          const Eigen::Vector3d & x,
+          const double surface_area
           ) const = 0;
   };
 } // namespace nosh

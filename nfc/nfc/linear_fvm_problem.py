@@ -50,71 +50,40 @@ class CodeLinearFvmProblem(object):
         u = sympy.Function('u')
         res = self.obj.eval(u)
         assert(isinstance(res, nfl.Core))
-        v, v_affine = self.get_expr_vertex(u, res.vertex)
-        edge_expressions, edge_affine = self.get_expr_edge(u, res.edge)
 
-        # check out used an unused symbols for the edge code
-        edge_arguments = set([
-            sympy.Symbol('x0'),
-            sympy.Symbol('x1'),
-            sympy.Symbol('edge_length'),
-            sympy.Symbol('edge_covolume')
-            ])
-        edge_unused_arguments = edge_arguments.copy()
-        edge_body = []
-        edge_used_symbols = set([])
-        for e in [edge_expressions[0][0], edge_expressions[0][1],
-                  edge_expressions[1][0], edge_expressions[1][1]]:
-            edge_used_symbols = edge_used_symbols.union(e.free_symbols)
-        edge_unused_arguments -= edge_used_symbols
+        # edge
+        edge_coeff, edge_affine = self.get_expr_edge(u, res.edge)
+        edge_body, edge_used_expressions = \
+            self.get_code_elements_edge(edge_coeff, edge_affine)
 
-        edge_undefined_symbols = edge_used_symbols - edge_arguments
-
-        if nfl.n in edge_undefined_symbols or \
-           nfl.neg_n in edge_undefined_symbols:
-            edge_body.append('const auto n = (x1 - x0) / edge_length;')
-            edge_unused_arguments -= set([
-                sympy.Symbol('x0'),
-                sympy.Symbol('x1')
-                ])
-            edge_undefined_symbols.remove(nfl.n)
-            edge_undefined_symbols.remove(nfl.neg_n)
-
-        assert(len(edge_undefined_symbols) == 0)
-
-        for name in edge_unused_arguments:
-            edge_body.append('(void) %s;' % name)
-
-        edge_used_expressions = set()
-        for e in [edge_expressions[0][0], edge_expressions[0][1],
-                  edge_expressions[1][0], edge_expressions[1][1]]:
-            edge_used_expressions = edge_used_expressions.union(
-                    [type(atom) for atom in e.atoms(nfl.Expression)]
-                    )
-
-        # handle vertex arguments
+        # vertex
+        vertex_coeff, vertex_affine = self.get_expr_vertex(u, res.vertex)
         vertex_arguments = set([
             sympy.MatrixSymbol('x', 3, 1),
             sympy.Symbol('control_volume')
             ])
-        vertex_used_symbols = v.free_symbols
-        try:
-            v_affine_used_symbols = v_affine.free_symbols
-        except AttributeError:
-            v_affine_used_symbols = set([])
-        vertex_unused_arguments = \
-            vertex_arguments - vertex_used_symbols.union(v_affine_used_symbols)
-        vertex_undefined_symbols = \
-            vertex_used_symbols.union(v_affine_used_symbols) - vertex_arguments
-        assert(len(vertex_undefined_symbols) == 0)
+        vertex_unused_arguments, vertex_used_expressions = \
+            self.scan_code(vertex_arguments, [vertex_coeff, vertex_affine])
 
-        vertex_used_expressions = [
-                type(atom) for atom in v.atoms(nfl.Expression)
-                ]
+        # domain boundary
+        db_coeff, db_affine = self.get_expr_db(res.domain_boundary)
+        db_arguments = set([
+            sympy.MatrixSymbol('x', 3, 1),
+            sympy.Symbol('surface_area')
+            ])
+        db_unused_arguments, db_used_expressions = \
+            self.scan_code(db_arguments, [db_coeff, db_affine])
 
+        # now take care of the template substitution
         members_init = []
         members_declare = []
-        used_expressions = edge_used_expressions.union(vertex_used_expressions)
+
+        # init and declare all expressions
+        used_expressions = set().union(
+                edge_used_expressions,
+                vertex_used_expressions,
+                db_used_expressions
+                )
         for expr in used_expressions:
             members_init.append('%s(%s::%s())' % (expr, self.namespace, expr))
             members_declare.append(
@@ -131,22 +100,32 @@ class CodeLinearFvmProblem(object):
             src = Template(f.read())
             matrix_core_code = src.substitute({
                 'name': self.name.lower() + '_core',
-                'edge00': self.expr_to_code(edge_expressions[0][0]),
-                'edge01': self.expr_to_code(edge_expressions[0][1]),
-                'edge10': self.expr_to_code(edge_expressions[1][0]),
-                'edge11': self.expr_to_code(edge_expressions[1][1]),
+                'edge00': self.expr_to_code(edge_coeff[0][0]),
+                'edge01': self.expr_to_code(edge_coeff[0][1]),
+                'edge10': self.expr_to_code(edge_coeff[1][0]),
+                'edge11': self.expr_to_code(edge_coeff[1][1]),
                 'edge_affine0': self.expr_to_code(-edge_affine[0]),
                 'edge_affine1': self.expr_to_code(-edge_affine[1]),
                 'edge_body': '\n'.join(edge_body),
-                'vertex_contrib': extract_c_expression(v),
-                'vertex_affine': extract_c_expression(-v_affine),
+                'vertex_contrib': extract_c_expression(vertex_coeff),
+                'vertex_affine': extract_c_expression(-vertex_affine),
                 'vertex_body': '\n'.join(
                     ('(void) %s;' % name) for name in vertex_unused_arguments
+                    ),
+                'db_coeff': extract_c_expression(db_coeff),
+                'db_affine': extract_c_expression(-db_affine),
+                'db_body': '\n'.join(
+                    ('(void) %s;' % name) for name in db_unused_arguments
                     ),
                 'members_init': members_init_code,
                 'members_declare': '\n'.join(members_declare)
                 })
 
+        linear_problem_code = self.get_linear_problem_code()
+
+        return matrix_core_code + '\n' + linear_problem_code
+
+    def get_linear_problem_code(self):
         # fvm_matrix code
         constructor_args = [
             'const std::shared_ptr<const nosh::mesh> & _mesh'
@@ -172,14 +151,13 @@ class CodeLinearFvmProblem(object):
         templ = os.path.join(templates_dir, 'linear_fvm_problem.tpl')
         with open(templ, 'r') as f:
             src = Template(f.read())
-            matrix_code = src.substitute({
+            code = src.substitute({
                 'name': self.name.lower(),
                 'constructor_args': ',\n'.join(constructor_args),
                 'members_init': ',\n'.join(members_init),
                 'members_declare': '\n'.join(members_declare)
                 })
 
-        code = matrix_core_code + '\n' + matrix_code
         return code
 
     def expr_to_code(self, expr):
@@ -211,6 +189,34 @@ class CodeLinearFvmProblem(object):
         coeff = control_volume * coeff
         # Get affine part
         if isinstance(fu0, float):
+            affine = control_volume * fu0
+        else:
+            affine = control_volume * fu0.subs(u0, 0)
+        return (coeff, affine)
+
+    def get_expr_db(self, function):
+        # Numerically integrate function over a part of the domain boundary,
+        # namely the part surrounding a vertex.
+        x = sympy.MatrixSymbol('x', 3, 1)
+        # Evaluate the function for u at x.
+        fx = function(x)
+        # Replace all occurences of u(x) by u0 (the value at the center) and
+        # multiply by the surface area)
+        u0 = sympy.Symbol('u0')
+        try:
+            fu0 = fx.subs(u(x), u0)
+        except AttributeError:
+            # 'int' object has no attribute 'subs'
+            fu0 = fx
+        # Make sure that f is affine linear in u0; we're building a matrix
+        # here.
+        assert(is_affine_linear(fu0, [u0]))
+        control_volume = sympy.Symbol('surface_area')
+        # Get coefficient of u0
+        coeff = sympy.diff(fu0, u0)
+        coeff = control_volume * coeff
+        # Get affine part
+        if isinstance(fu0, float) or isinstance(fu0, int):
             affine = control_volume * fu0
         else:
             affine = control_volume * fu0.subs(u0, 0)
@@ -253,3 +259,70 @@ class CodeLinearFvmProblem(object):
             [[coeff00, coeff01], [coeff10, coeff11]],
             [affine, affine]
             )
+
+    def get_code_elements_edge(self, edge_coeff, edge_affine):
+        # Check out used an unused symbols for the edge code.
+        # Arguments from the template.
+        arguments = set([
+            sympy.Symbol('x0'),
+            sympy.Symbol('x1'),
+            sympy.Symbol('edge_length'),
+            sympy.Symbol('edge_covolume')
+            ])
+        unused_arguments = arguments.copy()
+        body = []
+        used_symbols = set([])
+        for e in [edge_coeff[0][0], edge_coeff[0][1],
+                  edge_coeff[1][0], edge_coeff[1][1],
+                  edge_affine[0], edge_affine[1]
+                  ]:
+            used_symbols = used_symbols.union(e.free_symbols)
+        unused_arguments -= used_symbols
+
+        undefined_symbols = used_symbols - arguments
+
+        if nfl.n in undefined_symbols or \
+           nfl.neg_n in undefined_symbols:
+            body.append('const auto n = (x1 - x0) / edge_length;')
+            unused_arguments -= set([
+                sympy.Symbol('x0'),
+                sympy.Symbol('x1')
+                ])
+            undefined_symbols.remove(nfl.n)
+            undefined_symbols.remove(nfl.neg_n)
+
+        assert(len(undefined_symbols) == 0)
+
+        for name in unused_arguments:
+            body.append('(void) %s;' % name)
+
+        used_expressions = set()
+        for e in [edge_coeff[0][0], edge_coeff[0][1],
+                  edge_coeff[1][0], edge_coeff[1][1],
+                  edge_affine[0], edge_affine[1]
+                  ]:
+            used_expressions = used_expressions.union(
+                    [type(atom) for atom in e.atoms(nfl.Expression)]
+                    )
+
+        return body, used_expressions
+
+    def scan_code(self, arguments, expressions):
+        used_symbols = set([])
+        used_expressions = set([])
+
+        for expr in expressions:
+            try:
+                used_symbols.update(expr.free_symbols)
+            except AttributeError:
+                pass
+
+            used_expressions.update(set([
+                    type(atom) for atom in expr.atoms(nfl.Expression)
+                    ]))
+
+        unused_arguments = arguments - used_symbols
+        undefined_symbols = used_symbols - arguments
+        assert(len(undefined_symbols) == 0)
+
+        return unused_arguments, used_expressions

@@ -134,23 +134,23 @@ def integrate(integrand, measure):
 
 
 class Core(object):
-    def __init__(self, vertex, edge, boundary):
+    def __init__(self, vertex, edge, domain_boundary):
         self.vertex = vertex
         self.edge = edge
-        self.boundary = boundary
+        self.domain_boundary = domain_boundary
 
     def __add__(self, other):
         return Core(
                 lambda x: self.vertex(x) + other.vertex(x),
                 lambda x: self.edge(x) + other.edge(x),
-                lambda x: self.boundary(x) + other.boundary(x)
+                lambda x: self.domain_boundary(x) + other.domain_boundary(x)
                 )
 
     def __sub__(self, other):
         return Core(
                 lambda x: self.vertex(x) - other.vertex(x),
                 lambda x: self.edge(x) - other.edge(x),
-                lambda x: self.boundary(x) - other.boundary(x)
+                lambda x: self.domain_boundary(x) - other.domain_boundary(x)
                 )
 
 

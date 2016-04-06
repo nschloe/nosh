@@ -35,7 +35,7 @@ class ${name}:
       }
 
     virtual
-      nosh::vertex_data
+      nosh::double_data
       vertex_contrib(
           const Eigen::Vector3d & x,
           const double control_volume
@@ -45,6 +45,20 @@ class ${name}:
         return {
           ${vertex_contrib},
           ${vertex_affine}
+          };
+      }
+
+    virtual
+      nosh::double_data
+      domain_boundary_contrib(
+          const Eigen::Vector3d & x,
+          const double surface_area
+          ) const
+      {
+        ${db_body}
+        return {
+          ${db_coeff},
+          ${db_affine}
           };
       }
 
