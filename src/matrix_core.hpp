@@ -3,6 +3,16 @@
 
 namespace nosh
 {
+  struct edge_data {
+    std::vector<std::vector<double>> lhs;
+    std::vector<double> rhs;
+  };
+
+  struct vertex_data {
+    double lhs;
+    double rhs;
+  };
+
   class matrix_core
   {
     public:
@@ -20,7 +30,7 @@ namespace nosh
       };
 
       virtual
-      std::vector<std::vector<double>>
+      edge_data
       edge_contrib(
           const Eigen::Vector3d & x0,
           const Eigen::Vector3d & x1,
@@ -29,7 +39,7 @@ namespace nosh
           ) const = 0;
 
       virtual
-      double
+      vertex_data
       vertex_contrib(
           const Eigen::Vector3d & x,
           const double control_volume

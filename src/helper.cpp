@@ -4,6 +4,8 @@
 #include <map>
 #include <string>
 
+#include <Teuchos_VerboseObject.hpp>
+
 namespace nosh
 {
   void
@@ -42,5 +44,16 @@ namespace nosh
       std::cout << std::endl;
     }
     std::cout << std::string(indent, ' ') << "}";
+  }
+
+  void
+  show_tpetra_crs_matrix(
+    const Tpetra::CrsMatrix<double,int,int> & A
+    )
+  {
+    auto out = Teuchos::VerboseObjectBase::getDefaultOStream();
+    std::cout << "XXXXXXXXXX" << std::endl;
+    A.describe(*out);
+    std::cout << "XXXXXXXXXX" << std::endl;
   }
 }

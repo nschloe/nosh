@@ -16,30 +16,31 @@ def is_affine_linear(expr, vars):
     return True
 
 
-def is_linear(expr, vars):
-    if not is_affine_linear(expr, vars):
-        return False
-    # Check that expr is not affine.
-    if isinstance(expr, int):
-        return expr == 0
-    else:
-        return expr.subs([(var, 0) for var in vars]) == 0
+# We still need this for pure matrices
+# def is_linear(expr, vars):
+#     if not is_affine_linear(expr, vars):
+#         return False
+#     # Check that expr is not affine.
+#     if isinstance(expr, int) or isinstance(expr, float):
+#         return expr == 0
+#     else:
+#         return expr.subs([(var, 0) for var in vars]) == 0
 
 
-class CodeFvmMatrix2(object):
+class CodeLinearFvmProblem(object):
     def __init__(self, namespace, obj, name):
         self.namespace = namespace
         self.obj = obj
         self.name = name
 
-        if getattr(obj, 'boundary_conditions', None):
-            self.bcs = obj.boundary_conditions
-            for bc in self.bcs:
-                assert(isinstance(bc, nfl.DirichletBC))
+        if getattr(obj, 'dirichlet_boundary_conditions', None):
+            self.dbcs = obj.dirichlet_boundary_conditions
+            for dbc in self.dbcs:
+                assert(isinstance(dbc, nfl.DirichletBC))
         else:
-            self.boundary_conditions = []
+            self.dbcs = []
 
-        self.dependencies = self.bcs
+        self.dependencies = self.dbcs
         return
 
     def get_dependencies(self):
@@ -49,8 +50,8 @@ class CodeFvmMatrix2(object):
         u = sympy.Function('u')
         res = self.obj.eval(u)
         assert(isinstance(res, nfl.Core))
-        v = self.get_expr_vertex(u, res.vertex)
-        edge_expressions = self.get_expr_edge(u, res.edge)
+        v, v_affine = self.get_expr_vertex(u, res.vertex)
+        edge_expressions, edge_affine = self.get_expr_edge(u, res.edge)
 
         # check out used an unused symbols for the edge code
         edge_arguments = set([
@@ -128,8 +129,11 @@ class CodeFvmMatrix2(object):
                 'edge01': self.expr_to_code(edge_expressions[0][1]),
                 'edge10': self.expr_to_code(edge_expressions[1][0]),
                 'edge11': self.expr_to_code(edge_expressions[1][1]),
+                'edge_affine0': self.expr_to_code(-edge_affine[0]),
+                'edge_affine1': self.expr_to_code(-edge_affine[1]),
                 'edge_body': '\n'.join(edge_body),
                 'vertex_contrib': extract_c_expression(v),
+                'vertex_affine': extract_c_expression(-v_affine),
                 'vertex_body': '\n'.join(
                     ('(void) %s;' % name) for name in vertex_unused_arguments
                     ),
@@ -148,18 +152,19 @@ class CodeFvmMatrix2(object):
         # handle the boundary conditions
         joined = ', '.join(
                 'std::make_shared<%s>()' %
-                type(bc).__name__.lower() for bc in self.bcs
+                type(bc).__name__.lower() for bc in self.dbcs
                 )
-        init_bcs = '{%s}' % joined
+        init_dbcs = '{%s}' % joined
         # boundary conditions handling done
 
         members_init = [
-          'nosh::fvm_matrix(\n_mesh,\n %s,\n %s\n)' %
-          (init_matrix_cores, init_bcs)
+          'nosh::linear_problem(\n_mesh,\n %s,\n %s\n)' %
+          (init_matrix_cores, init_dbcs)
           ]
         members_declare = []
 
-        with open(os.path.join(templates_dir, 'fvm_matrix.tpl'), 'r') as f:
+        templ = os.path.join(templates_dir, 'linear_fvm_problem.tpl')
+        with open(templ, 'r') as f:
             src = Template(f.read())
             matrix_code = src.substitute({
                 'name': self.name.lower(),
@@ -180,7 +185,7 @@ class CodeFvmMatrix2(object):
         # Numerically integrate function over a control volume.
         # TODO find out if the code can be evaluated at the volume "midpoint",
         # then evaluate it there, and multiply by the volume.
-        x = sympy.MatrixSymbol('x', 1, 3)
+        x = sympy.MatrixSymbol('x', 3, 1)
         # Evaluate the function for u at x.
         fx = function(x)
         # Replace all occurences of u(x) by u0 (the value at the control volume
@@ -191,12 +196,16 @@ class CodeFvmMatrix2(object):
         except AttributeError:
             # 'int' object has no attribute 'subs'
             fu0 = fx
-        # Make sure that f is linear in u0; we're building a matrix here.
-        assert(is_linear(fu0, [u0]))
-        coeff = sympy.diff(fu0, u0)
+        # Make sure that f is affine linear in u0; we're building a matrix
+        # here.
+        assert(is_affine_linear(fu0, [u0]))
         control_volume = sympy.Symbol('control_volume')
+        # Get coefficient of u0
+        coeff = sympy.diff(fu0, u0)
         coeff = control_volume * coeff
-        return coeff
+        # Get affine part
+        affine = fu0.subs(u0, 0)
+        return (coeff, affine)
 
     def get_expr_edge(self, u, function):
         x = sympy.MatrixSymbol('x', 3, 1)
@@ -205,11 +214,11 @@ class CodeFvmMatrix2(object):
         expr, _ = generator.generate(function(x), u, x)
 
         # Make sure the expression is linear in u0, u1.
-        if not is_linear(expr, [generator.u0, generator.u1]):
+        if not is_affine_linear(expr, [generator.u0, generator.u1]):
             raise RuntimeError((
                 'The given function\n'
                 '    f(x) = %s\n'
-                'does not seem to be linear in u.')
+                'does not seem to be affine linear in u.')
                 % function(x)
                 )
 
@@ -229,4 +238,9 @@ class CodeFvmMatrix2(object):
             (nfl.n, nfl.neg_n)
             ])
 
-        return [[coeff00, coeff01], [coeff10, coeff11]]
+        affine = expr.subs([(generator.u0, 0), (generator.u1, 0)])
+
+        return (
+            [[coeff00, coeff01], [coeff10, coeff11]],
+            [affine, affine]
+            )

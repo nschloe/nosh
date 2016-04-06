@@ -1,5 +1,5 @@
 class ${name}:
-  public nosh::fvm_matrix
+  public nosh::linear_problem
 {
   public:
     ${name}(

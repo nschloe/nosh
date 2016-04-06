@@ -12,7 +12,7 @@ INCLUDE_DIRECTORIES(
 # generate header file
 ADD_CUSTOM_COMMAND(
   OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/neumann-boundary.hpp
-  COMMAND ${PROJECT_SOURCE_DIR}/nfc/nfc ${CMAKE_CURRENT_SOURCE_DIR}/neumann-boundary.py ${CMAKE_CURRENT_BINARY_DIR}/neumann-boundary.hpp
+  COMMAND ${PROJECT_SOURCE_DIR}/nfc/nosh-compile ${CMAKE_CURRENT_SOURCE_DIR}/neumann-boundary.py ${CMAKE_CURRENT_BINARY_DIR}/neumann-boundary.hpp
   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/neumann-boundary.py
   )
 

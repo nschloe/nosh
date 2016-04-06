@@ -11,22 +11,20 @@ int main(int argc, char *argv[]) {
 
   bool success = true;
   try {
-
   //const auto mesh = nosh::read("r2.h5m");
-  //const auto mesh = nosh::read("pacman2.h5m");
+  const auto mesh = nosh::read("pacman.h5m");
   //const auto mesh = nosh::read("screw3.h5m");
   //const auto mesh = nosh::read("cubesmall.h5m");
-  const auto mesh = nosh::read("cube.h5m");
+  //const auto mesh = nosh::read("cube.h5m");
 
-  poisson::laplace matrix(mesh);
-  poisson::f rhs;
+  poisson::poisson problem(mesh);
 
   nosh::function x(mesh);
   x.putScalar(0.0);
 
   //nosh::scaled_linear_solve(
   nosh::linear_solve(
-      matrix, rhs, x,
+      problem, x,
       {
 #if 0
         // For solver parameters, check

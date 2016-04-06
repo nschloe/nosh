@@ -83,6 +83,10 @@ class FvmMatrix2(sympy.Function):
     pass
 
 
+class LinearFvmProblem(object):
+    pass
+
+
 class MatrixFactory(object):
     def __init__(self):
         return
@@ -100,16 +104,28 @@ class dS(Measure):
     pass
 
 
+class dGamma(Measure):
+    pass
+
+
 def integrate(integrand, measure):
     assert(isinstance(measure, Measure))
 
     if isinstance(measure, dV):
         return Core(
             integrand,
+            lambda x: 0,
             lambda x: 0
             )
     elif isinstance(measure, dS):
         return Core(
+            lambda x: 0,
+            integrand,
+            lambda x: 0
+            )
+    elif isinstance(measure, dGamma):
+        return Core(
+            lambda x: 0,
             lambda x: 0,
             integrand
             )
@@ -118,20 +134,23 @@ def integrate(integrand, measure):
 
 
 class Core(object):
-    def __init__(self, vertex, edge):
+    def __init__(self, vertex, edge, boundary):
         self.vertex = vertex
         self.edge = edge
+        self.boundary = boundary
 
     def __add__(self, other):
         return Core(
                 lambda x: self.vertex(x) + other.vertex(x),
-                lambda x: self.edge(x) + other.edge(x)
+                lambda x: self.edge(x) + other.edge(x),
+                lambda x: self.boundary(x) + other.boundary(x)
                 )
 
     def __sub__(self, other):
         return Core(
                 lambda x: self.vertex(x) - other.vertex(x),
-                lambda x: self.edge(x) - other.edge(x)
+                lambda x: self.edge(x) - other.edge(x),
+                lambda x: self.boundary(x) - other.boundary(x)
                 )
 
 
