@@ -27,7 +27,8 @@ def is_linear(expr, vars):
 
 
 class CodeFvmMatrix2(object):
-    def __init__(self, obj, name):
+    def __init__(self, namespace, obj, name):
+        self.namespace = namespace
         self.obj = obj
         self.name = name
 
@@ -66,6 +67,13 @@ class CodeFvmMatrix2(object):
         edge_undefined_symbols = edge_used_symbols - edge_arguments
         assert(len(edge_undefined_symbols) == 0)
 
+        edge_used_expressions = set()
+        for e in [edge_expressions[0][0], edge_expressions[0][1],
+                  edge_expressions[1][0], edge_expressions[1][1]]:
+            edge_used_expressions = edge_used_expressions.union(
+                    [type(atom) for atom in e.atoms(nfl.Expression)]
+                    )
+
         # handle vertex arguments
         vertex_arguments = set([
             sympy.Symbol('x'),
@@ -76,16 +84,29 @@ class CodeFvmMatrix2(object):
         vertex_undefined_symbols = vertex_used_symbols - vertex_arguments
         assert(len(vertex_undefined_symbols) == 0)
 
-        members_init_code = ''
-        members_declare = []
+        vertex_used_expressions = [
+                type(atom) for atom in v.atoms(nfl.Expression)
+                ]
 
-        name = self.name.lower() + '_core'
+        members_init = []
+        members_declare = []
+        used_expressions = edge_used_expressions.union(vertex_used_expressions)
+        for expr in used_expressions:
+            members_init.append('%s(%s::%s())' % (expr, self.namespace, expr))
+            members_declare.append(
+                    'const %s::%s %s;' % (self.namespace, expr, expr)
+                    )
+
+        if members_init:
+            members_init_code = ':\n' + ',\n'.join(members_init)
+        else:
+            members_init_code = ''
 
         # template substitution
         with open(os.path.join(templates_dir, 'matrix_core.tpl'), 'r') as f:
             src = Template(f.read())
             matrix_core_code = src.substitute({
-                'name': name,
+                'name': self.name.lower() + '_core',
                 'edge00': self.expr_to_code(edge_expressions[0][0]),
                 'edge01': self.expr_to_code(edge_expressions[0][1]),
                 'edge10': self.expr_to_code(edge_expressions[1][0]),
