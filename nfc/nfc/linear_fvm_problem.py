@@ -94,12 +94,14 @@ class CodeLinearFvmProblem(object):
 
         # handle vertex arguments
         vertex_arguments = set([
-            sympy.Symbol('x'),
+            sympy.MatrixSymbol('x', 3, 1),
             sympy.Symbol('control_volume')
             ])
         vertex_used_symbols = v.free_symbols
-        vertex_unused_arguments = vertex_arguments - vertex_used_symbols
-        vertex_undefined_symbols = vertex_used_symbols - vertex_arguments
+        vertex_unused_arguments = \
+            vertex_arguments - vertex_used_symbols.union(v_affine.free_symbols)
+        vertex_undefined_symbols = \
+            vertex_used_symbols.union(v_affine.free_symbols) - vertex_arguments
         assert(len(vertex_undefined_symbols) == 0)
 
         vertex_used_expressions = [

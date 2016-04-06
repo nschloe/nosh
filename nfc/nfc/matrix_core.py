@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 #
+
+
 class CodeMatrixCore(object):
     def __init__(self, namespace, core, name):
         # handle the edge contributions
@@ -108,5 +110,3 @@ class CodeMatrixCore(object):
             used_expressions = set([])
 
         return result, unused_args, used_expressions
-
-
