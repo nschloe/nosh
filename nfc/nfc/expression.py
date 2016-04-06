@@ -19,9 +19,12 @@ class CodeExpression(object):
 
         result = self.expr.eval(x)
 
-        # TODO
-        # Check if any of the arguments is not used in the function.
-        # (We'll declare them (void) to supress compiler warnings.)
+        expr_arguments = set([sympy.Symbol('x')])
+        try:
+            free_vars = result.free_variables
+        except AttributeError:
+            free_vars = set([])
+        unused_arguments = expr_arguments - free_vars
 
         # template substitution
         with open(os.path.join(templates_dir, 'expression.tpl'), 'r') as f:
@@ -29,7 +32,10 @@ class CodeExpression(object):
             code = src.substitute({
                 'name': self.name.lower(),  # class names are lowercase
                 'degree': self.expr.degree,
-                'eval': extract_c_expression(result)
+                'eval': extract_c_expression(result),
+                'unused_args': '\n'.join(
+                    ('(void) %s;' % name) for name in unused_arguments
+                    ),
                 })
 
         return code

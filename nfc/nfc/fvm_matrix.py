@@ -67,5 +67,3 @@ class CodeFvmMatrix(object):
                 })
 
         return code
-
-
