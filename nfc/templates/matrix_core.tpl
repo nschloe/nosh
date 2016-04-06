@@ -15,7 +15,7 @@ class ${name}:
           const double edge_covolume
           ) const
       {
-        ${edge_unused_args}
+        ${edge_body}
         return {
           {
             ${edge00},
@@ -35,7 +35,7 @@ class ${name}:
           const double control_volume
           ) const
       {
-        ${vertex_unused_args}
+        ${vertex_body}
         return ${vertex_contrib};
       }
 

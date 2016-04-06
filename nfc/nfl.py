@@ -79,10 +79,60 @@ class FvmMatrix(sympy.Function):
     #    self.edge_function = edge_function
     #    return
 
+class FvmMatrix2(sympy.Function):
+    pass
+
 
 class MatrixFactory(object):
     def __init__(self):
         return
+
+
+class Measure(object):
+    pass
+
+
+class dV(Measure):
+    pass
+
+
+class dS(Measure):
+    pass
+
+
+def integrate(integrand, measure):
+    assert(isinstance(measure, Measure))
+
+    if isinstance(measure, dV):
+        return Core(
+            integrand,
+            lambda x: 0
+            )
+    elif isinstance(measure, dS):
+        return Core(
+            lambda x: 0,
+            integrand
+            )
+    else:
+        raise RuntimeError('Illegal measure')
+
+
+class Core(object):
+    def __init__(self, vertex, edge):
+        self.vertex = vertex
+        self.edge = edge
+
+    def __add__(self, other):
+        return Core(
+                lambda x: self.vertex(x) + other.vertex(x),
+                lambda x: self.edge(x) + other.edge(x)
+                )
+
+    def __sub__(self, other):
+        return Core(
+                lambda x: self.vertex(x) - other.vertex(x),
+                lambda x: self.edge(x) - other.edge(x)
+                )
 
 
 class NonlinearProblem(object):
@@ -134,9 +184,15 @@ def inner(a, b):
     return
 
 
-def dot(a, b):
-    return inner(a, b)
+class dot(sympy.Function):
+    pass
 
+
+class n_dot_grad(sympy.Function):
+    pass
+
+n = sympy.MatrixSymbol('n', 3, 1)
+neg_n = sympy.MatrixSymbol('neg_n', 3, 1)
 
 def grad(a):
     return Vector()

@@ -9,11 +9,11 @@ INCLUDE_DIRECTORIES(
   ${EIGEN3_INCLUDE_DIR}
   )
 
-# copy over header file
+# generate header file
 ADD_CUSTOM_COMMAND(
   OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/diff-conv.hpp
-  COMMAND cp ${CMAKE_CURRENT_SOURCE_DIR}/diff-conv.hpp ${CMAKE_CURRENT_BINARY_DIR}/diff-conv.hpp
-  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/diff-conv.hpp
+  COMMAND ${PROJECT_SOURCE_DIR}/nfc/nosh-compile ${CMAKE_CURRENT_SOURCE_DIR}/diff-conv.py ${CMAKE_CURRENT_BINARY_DIR}/diff-conv.hpp
+  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/diff-conv.py
   )
 
 # copy over mesh files

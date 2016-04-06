@@ -7,7 +7,7 @@ int main(int argc, char *argv[]) {
 
   const auto mesh = nosh::read("pacman.h5m");
 
-  diff_conv::laplace matrix(mesh);
+  diff_conv::dc matrix(mesh);
 
   const diff_conv::f rhs;
 

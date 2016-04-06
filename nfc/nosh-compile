@@ -1,0 +1,154 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+#
+import argparse
+import nfl
+import inspect
+# import sympy
+import re
+from string import Template
+import os
+import importlib.machinery
+# import subprocess
+
+import nfc
+
+from nfc.helpers import templates_dir, run
+
+
+def _sanitize(str):
+    # turn any string into a valid variable identifier
+    return re.sub('\W|^(?=\d)', '_', str)
+
+
+def _main():
+    args = _parse_cmd_arguments()
+
+    inmod = importlib.machinery.SourceFileLoader(
+        'inmod',
+        args.infile
+        ).load_module()
+
+    namespace = os.path.splitext(os.path.basename(args.infile))[0]
+    # sanitize the name
+    namespace = _sanitize(namespace)
+
+    # Loop over all locally defined entities and collect everything we can
+    # convert.
+    # Between the entities, there are some dependencies between the entities
+    # which are not necessarily reflected in the order they appear here. For
+    # example, in the output HPP, the boundary conditions classes must
+    # typically be defined _before_ the fvm_matrix classes, since they are used
+    # there.
+    # Build directed dependency graph as a dictionary, see
+    # <https://www.python.org/doc/essays/graphs/>.
+    code_generators = {}
+    dependencies = {}
+    for name, var in inmod.__dict__.items():
+        if inspect.isclass(var) and \
+                issubclass(var, nfl.FvmMatrix) and \
+                var != nfl.FvmMatrix:
+            code_generators[name] = nfc.CodeFvmMatrix(var, name)
+        elif inspect.isclass(var) and \
+                issubclass(var, nfl.FvmMatrix2) and \
+                var != nfl.FvmMatrix2:
+            code_generators[name] = nfc.CodeFvmMatrix2(namespace, var, name)
+        elif inspect.isclass(var) and \
+                issubclass(var, nfl.DirichletBC) and \
+                var != nfl.DirichletBC:
+            instance = var()
+            code_generators[name] = nfc.CodeDirichletBc(instance, name)
+        elif inspect.isclass(var) and \
+                issubclass(var, nfl.MatrixCore) and \
+                var != nfl.MatrixCore:
+            instance = var()
+            code_generators[name] = nfc.CodeMatrixCore(
+                    namespace, instance, name
+                    )
+        elif inspect.isclass(var) and \
+                issubclass(var, nfl.Expression) and \
+                var != nfl.Expression and \
+                hasattr(var, 'degree') and \
+                hasattr(var, 'eval'):
+            code_generators[name] = nfc.CodeExpression(var, name)
+        elif isinstance(var, nfl.Operator):
+            code_generators[name] = nfc.CodeOperator(var, name)
+        elif isinstance(var, nfl.NonlinearProblem):
+            code_generators[name] = nfc.CodeNonlinearOperator(var, name)
+        else:
+            continue
+
+        dependencies[name] = []
+        for dep in code_generators[name].get_dependencies():
+            if dep.__class__.__name__ == 'FunctionClass':
+                dependencies[name].append(str(dep))
+            else:
+                dependencies[name].append(dep.__class__.__name__)
+
+    # Go through dependency graph and collect code.
+    visited = set([])
+    code_pieces = []
+    missing_objects = set([])
+
+    def visit(name):
+        if name not in dependencies:
+            missing_objects.add(name)
+            return
+        # take care of the dependencies first
+        for dep in dependencies[name]:
+            visit(dep)
+        if name not in visited:
+            code_pieces.append(code_generators[name].get_code())
+            visited.add(name)
+
+    for name in dependencies:
+        visit(name)
+
+    if missing_objects:
+        print()
+        print('You will need to manually define the objects')
+        print('     %s' % ', '.join(missing_objects))
+        print('in the namespace `%s` before #including the generated header.' %
+              namespace)
+        print()
+
+    # Plug it all together in main
+    with open(os.path.join(templates_dir, 'main.tpl'), 'r') as f:
+        main_src = Template(f.read())
+        main_content = main_src.substitute({
+            'namespace': namespace,
+            'namespace_uppercase': namespace.upper(),
+            'content': '\n'.join(code_pieces)
+            })
+
+    # write it
+    # outfile = os.path.splitext(args.infile)[0] + '.hpp'
+    with open(args.outfile, 'w') as f:
+        f.write(main_content)
+
+    # Make sure it's formatted nicely.
+    # TODO check out uncrustify
+    run('astyle --style=ansi -s2 %s' % args.outfile)
+
+    return 0
+
+
+def _parse_cmd_arguments():
+    parser = argparse.ArgumentParser(
+        description='Convert NFL files into C++ headers.'
+        )
+    parser.add_argument(
+        'infile',
+        type=str,
+        help='input NFL file'
+        )
+    parser.add_argument(
+        'outfile',
+        type=str,
+        help='output C++ header file'
+        )
+    return parser.parse_args()
+
+
+if __name__ == '__main__':
+    _main()
