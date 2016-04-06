@@ -7,16 +7,12 @@ class Bc1(DirichletBC):
     def eval(self, x): return 0.0
 
 
-class F(Expression):
-    # def eval(x): return sin(x[1])
-    def eval(x): return 1.0
-    degree = 0
-
-
-class DC(FvmMatrix2):
+class DC(LinearFvmProblem):
     def eval(u):
-        return integrate(
-            lambda x: -n_dot_grad(u, x) + dot(n, Matrix([-1, -1, 0])) * u(x),
-            dS()
-        )
+        return \
+            integrate(
+                lambda x: -n_dot_grad(u, x) + dot(n, Matrix([-1, -1, 0])) * u(x),
+                dS()
+            ) \
+            - integrate(lambda x: 1.0, dV())
     boundary_conditions = [Bc1()]

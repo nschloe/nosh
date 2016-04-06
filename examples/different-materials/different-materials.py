@@ -7,21 +7,14 @@ class Bc1(DirichletBC):
     def eval(self, x): return 0.0
 
 
-class F(Expression):
-    def eval(x): return 1.0
-    degree = 0
-
-
 class eps(Expression):
     pass
 
 
-class Laplace(FvmMatrix2):
+class Problem(LinearFvmProblem):
     def eval(u):
-        return integrate(
-            lambda x: -eps(x) * n_dot_grad(u, x),
-            dS()
-            )
+        return integrate(lambda x: -eps(x) * n_dot_grad(u, x), dS()) \
+                - integrate(lambda x: 1.0, dV())
 
     boundary_conditions = [Bc1()]
 

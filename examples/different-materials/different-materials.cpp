@@ -31,15 +31,14 @@ int main(int argc, char *argv[]) {
   try {
   const auto mesh = nosh::read("pacman.h5m");
 
-  different_materials::laplace matrix(mesh);
-  different_materials::f rhs;
+  different_materials::problem p(mesh);
 
   nosh::function x(mesh);
   x.putScalar(0.0);
 
   //nosh::scaled_linear_solve(
   nosh::linear_solve(
-      matrix, rhs, x,
+      p, x,
       {
         {"package", "Belos"},
         {"method", "Pseudo Block GMRES"},

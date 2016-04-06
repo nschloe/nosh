@@ -7,14 +7,14 @@ int main(int argc, char *argv[]) {
 
   const auto mesh = nosh::read("pacman.h5m");
 
-  diff_conv::dc matrix(mesh);
-
-  const diff_conv::f rhs;
+  diff_conv::dc problem(mesh);
 
   nosh::function x(mesh);
 
-  nosh::scaled_linear_solve(
-      matrix, rhs, x,
+  // TODO
+  // nosh::scaled_linear_solve(
+  nosh::linear_solve(
+      problem, x,
       {
         {"package", "Belos"},
         {"method", "Pseudo Block GMRES"}

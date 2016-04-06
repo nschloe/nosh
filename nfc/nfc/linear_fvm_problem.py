@@ -204,7 +204,10 @@ class CodeLinearFvmProblem(object):
         coeff = sympy.diff(fu0, u0)
         coeff = control_volume * coeff
         # Get affine part
-        affine = fu0.subs(u0, 0)
+        if isinstance(fu0, float):
+            affine = fu0
+        else:
+            affine = fu0.subs(u0, 0)
         return (coeff, affine)
 
     def get_expr_edge(self, u, function):
