@@ -2,6 +2,7 @@
 #
 import os
 import re
+import subprocess
 import sys
 
 templates_dir = os.path.join(

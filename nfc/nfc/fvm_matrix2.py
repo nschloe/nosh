@@ -30,6 +30,15 @@ class CodeFvmMatrix2(object):
     def __init__(self, obj, name):
         self.obj = obj
         self.name = name
+
+        if getattr(obj, 'boundary_conditions', None):
+            self.bcs = obj.boundary_conditions
+            for bc in self.bcs:
+                assert(isinstance(bc, nfl.DirichletBC))
+        else:
+            self.boundary_conditions = []
+
+        self.dependencies = self.bcs
         return
 
     def get_dependencies(self):
@@ -91,9 +100,40 @@ class CodeFvmMatrix2(object):
                 'members_init': members_init_code,
                 'members_declare': '\n'.join(members_declare)
                 })
-        print(matrix_core_code)
-        exit()
-        return
+
+        # fvm_matrix code
+        constructor_args = [
+            'const std::shared_ptr<const nosh::mesh> & _mesh'
+            ]
+        init_matrix_cores = '{std::make_shared<%s>()}' % (
+                self.name.lower() + '_core'
+                )
+
+        # handle the boundary conditions
+        joined = ', '.join(
+                'std::make_shared<%s>()' %
+                type(bc).__name__.lower() for bc in self.bcs
+                )
+        init_bcs = '{%s}' % joined
+        # boundary conditions handling done
+
+        members_init = [
+          'nosh::fvm_matrix(\n_mesh,\n %s,\n %s\n)' %
+          (init_matrix_cores, init_bcs)
+          ]
+        members_declare = []
+
+        with open(os.path.join(templates_dir, 'fvm_matrix.tpl'), 'r') as f:
+            src = Template(f.read())
+            matrix_code = src.substitute({
+                'name': self.name.lower(),
+                'constructor_args': ',\n'.join(constructor_args),
+                'members_init': ',\n'.join(members_init),
+                'members_declare': '\n'.join(members_declare)
+                })
+
+        code = matrix_core_code + '\n' + matrix_code
+        return code
 
     def expr_to_code(self, expr):
         gen = CodeGeneratorEigen()

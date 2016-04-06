@@ -6,13 +6,14 @@ import nfl
 import inspect
 # import sympy
 import re
-# from string import Template
+from string import Template
 import os
 import importlib.machinery
 # import subprocess
 
 import nfc
 
+from nfc.helpers import templates_dir, run
 
 
 def _sanitize(str):
@@ -127,7 +128,7 @@ def _main():
 
     # Make sure it's formatted nicely.
     # TODO check out uncrustify
-    _run('astyle --style=ansi -s2 %s' % args.outfile)
+    run('astyle --style=ansi -s2 %s' % args.outfile)
 
     return 0
 
