@@ -16,7 +16,7 @@ class Problem(LinearFvmProblem):
         return integrate(lambda x: -eps(x) * n_dot_grad(u, x), dS()) \
                 - integrate(lambda x: 1.0, dV())
 
-    boundary_conditions = [Bc1()]
+    dirichlet_boundary_conditions = [Bc1()]
 
 
 # Alternative (raw) syntax:

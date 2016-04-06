@@ -9,10 +9,11 @@ class Bc1(DirichletBC):
 
 class DC(LinearFvmProblem):
     def eval(u):
+        a = Matrix([-1, -1, 0])
         return \
             integrate(
-                lambda x: -n_dot_grad(u, x) + dot(n, Matrix([-1, -1, 0])) * u(x),
+                lambda x: -n_dot_grad(u, x) + dot(n, a) * u(x),
                 dS()
             ) \
             - integrate(lambda x: 1.0, dV())
-    boundary_conditions = [Bc1()]
+    dirichlet_boundary_conditions = [Bc1()]

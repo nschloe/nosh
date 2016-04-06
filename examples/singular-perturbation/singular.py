@@ -12,7 +12,7 @@ class Singular(LinearFvmProblem):
         return integrate(lambda x: - 0.2 * n_dot_grad(u, x), dS()) \
                + integrate(lambda x: u(x), dV()) \
                - integrate(lambda x: 1.0, dV())
-    boundary_conditions = [Bc1()]
+    dirichlet_boundary_conditions = [Bc1()]
 
 
 # class Core0(MatrixCore):

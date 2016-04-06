@@ -1,6 +1,5 @@
 #include "singular.hpp"
 #include <nosh.hpp>
-#include <memory>
 
 int main(int argc, char *argv[]) {
   Teuchos::GlobalMPISession session(&argc, &argv, NULL);

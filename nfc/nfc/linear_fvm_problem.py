@@ -98,10 +98,14 @@ class CodeLinearFvmProblem(object):
             sympy.Symbol('control_volume')
             ])
         vertex_used_symbols = v.free_symbols
+        try:
+            v_affine_used_symbols = v_affine.free_symbols
+        except AttributeError:
+            v_affine_used_symbols = set([])
         vertex_unused_arguments = \
-            vertex_arguments - vertex_used_symbols.union(v_affine.free_symbols)
+            vertex_arguments - vertex_used_symbols.union(v_affine_used_symbols)
         vertex_undefined_symbols = \
-            vertex_used_symbols.union(v_affine.free_symbols) - vertex_arguments
+            vertex_used_symbols.union(v_affine_used_symbols) - vertex_arguments
         assert(len(vertex_undefined_symbols) == 0)
 
         vertex_used_expressions = [
@@ -207,9 +211,9 @@ class CodeLinearFvmProblem(object):
         coeff = control_volume * coeff
         # Get affine part
         if isinstance(fu0, float):
-            affine = fu0
+            affine = control_volume * fu0
         else:
-            affine = fu0.subs(u0, 0)
+            affine = control_volume * fu0.subs(u0, 0)
         return (coeff, affine)
 
     def get_expr_edge(self, u, function):
