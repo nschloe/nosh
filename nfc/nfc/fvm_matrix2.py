@@ -118,12 +118,12 @@ class CodeFvmMatrix2(object):
         coeff01 = sympy.diff(expr, generator.u1)
 
         # Now construct the coefficients for the other way around.
-        coeff10 = coeff00.subs([
+        coeff10 = coeff01.subs([
             (generator.u0, generator.u1),
             (generator.u1, generator.u0),
             (nfl.n, -nfl.n)
             ])
-        coeff11 = coeff01.subs([
+        coeff11 = coeff00.subs([
             (generator.u0, generator.u1),
             (generator.u1, generator.u0),
             (nfl.n, -nfl.n)
