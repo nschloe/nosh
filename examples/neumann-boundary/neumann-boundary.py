@@ -12,6 +12,6 @@ class Bc1(DirichletBC):
 class Problem(LinearFvmProblem):
     def eval(u):
         return integrate(lambda x: -n_dot_grad(u, x), dS()) \
-                + integrate(lambda x: 1.0, dGamma()) \
+                + integrate(lambda x: 3.0, dGamma()) \
                 - integrate(lambda x: 1.0, dV())
     dirichlet_boundary_conditions = [Bc1()]

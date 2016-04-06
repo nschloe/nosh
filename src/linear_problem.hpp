@@ -57,6 +57,7 @@ namespace nosh
 
           this->add_edge_contributions_();
           this->add_vertex_contributions_();
+          this->add_domain_boundary_contributions_();
           this->apply_dbcs_();
 
           this->matrix.fillComplete();
@@ -160,6 +161,36 @@ namespace nosh
               );
           // Add to matrix
           auto gid = this->matrix.getMap()->getGlobalElement(k);
+          int num_lhs = this->matrix.sumIntoGlobalValues(
+              gid,
+              Teuchos::tuple<int>(gid),
+              Teuchos::tuple<double>(val.lhs)
+              );
+#ifndef NDEBUG
+          TEUCHOS_ASSERT_EQUALITY(num_lhs, 1);
+#endif
+          // add to rhs
+          this->rhs.sumIntoGlobalValue(gid, val.rhs);
+        }
+      }
+
+      void
+      add_domain_boundary_contributions_()
+      {
+        const auto verts = this->mesh_->boundary_vertices();
+        const auto surfs = this->mesh_->boundary_surface_areas();
+        const auto & owned_nodes = this->mesh_->get_owned_nodes();
+#ifndef NDEBUG
+        TEUCHOS_ASSERT_EQUALITY(verts.size(), surfs.size());
+#endif
+        for (size_t k = 0; k < verts.size(); k++) {
+          const int lid = this->mesh_->local_index(verts[k]);
+          auto val = this->vertex_core_associations_[lid]->domain_boundary_contrib(
+              this->mesh_->get_coords(owned_nodes[lid]),
+              surfs[k]
+              );
+          // Add to matrix
+          auto gid = this->matrix.getMap()->getGlobalElement(lid);
           int num_lhs = this->matrix.sumIntoGlobalValues(
               gid,
               Teuchos::tuple<int>(gid),
