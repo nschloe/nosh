@@ -59,6 +59,8 @@ class DiscretizeEdgeIntegral(object):
         out = out.subs(u(self.x1), self.u1)
         # Replace u(x) by 0.5*(u0 + u1) (the edge midpoint)
         out = out.subs(u(x), 0.5 * (self.u0 + self.u1))
+        # Replace x by 0.5*(x0 + x1) (the edge midpoint)
+        out = out.subs(x, 0.5 * (self.x0 + self.x1))
         return out, self._required_operators
 
     def generic_visit(self, node):
