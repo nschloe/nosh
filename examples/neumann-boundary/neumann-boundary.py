@@ -1,40 +1,17 @@
 # -*- coding: utf-8 -*-
-from nfl import *
 from sympy import *
+from nfl import *
 
 
 class Bc1(DirichletBC):
-    def is_inside(self, x): return x[0] < 0 and x[1] < 0
+    def is_inside(self, x): return x[0] < 0
 
     def eval(self, x): return 0.0
 
 
-class Bc2(DirichletBC):
-    def is_inside(self, x): return x[0] < 0 and x[1] >= 0
-
-    def eval(self, x): return 1.0
-
-
-class Bc3(NeumannBC):
-    def is_inside(self, x): return x[0] >= 0
-
-    # Careful! This must be seen in context with edge_contrib of whatever
-    # operator it's used with.
-    # Here: Neumann condition with n.grad(u) = 1.
-    def eval(self, x, surface): return 1.0 * surface
-
-
-class F(Expression):
-    def eval(x): return 1.0
-    degree = 0
-
-
-def edge_contrib(x0, x1, edge_length, edge_covolume):
-    alpha = edge_covolume / edge_length
-    return [[alpha, -alpha], [-alpha, alpha]]
-
-
-class Laplace(FvmMatrix):
-    edge_contribs = [edge_contrib]
-
-    boundary_conditions = [Bc1(), Bc2(), Bc3()]
+class Problem(LinearFvmProblem):
+    def eval(u):
+        return integrate(lambda x: -n_dot_grad(u, x), dS()) \
+                + integrate(lambda x: 3.0, dGamma()) \
+                - integrate(lambda x: 1.0, dV())
+    dirichlet_boundary_conditions = [Bc1()]

@@ -50,9 +50,9 @@ def _main():
                 var != nfl.FvmMatrix:
             code_generators[name] = nfc.CodeFvmMatrix(var, name)
         elif inspect.isclass(var) and \
-                issubclass(var, nfl.FvmMatrix2) and \
-                var != nfl.FvmMatrix2:
-            code_generators[name] = nfc.CodeFvmMatrix2(namespace, var, name)
+                issubclass(var, nfl.LinearFvmProblem) and \
+                var != nfl.LinearFvmProblem:
+            code_generators[name] = nfc.CodeLinearFvmProblem(namespace, var, name)
         elif inspect.isclass(var) and \
                 issubclass(var, nfl.DirichletBC) and \
                 var != nfl.DirichletBC:

@@ -7,7 +7,7 @@ class ${name}:
     virtual ~${name}() {};
 
     virtual
-      std::vector<std::vector<double>>
+      nosh::edge_data
       edge_contrib(
           const Eigen::Vector3d & x0,
           const Eigen::Vector3d & x1,
@@ -18,25 +18,48 @@ class ${name}:
         ${edge_body}
         return {
           {
-            ${edge00},
-            ${edge01},
+            {
+              ${edge00},
+                ${edge01},
+            },
+              {
+                ${edge10},
+                ${edge11},
+              }
           },
           {
-            ${edge10},
-            ${edge11},
+            ${edge_affine0},
+            ${edge_affine1}
           }
         };
       }
 
     virtual
-      double
+      nosh::double_data
       vertex_contrib(
           const Eigen::Vector3d & x,
           const double control_volume
           ) const
       {
         ${vertex_body}
-        return ${vertex_contrib};
+        return {
+          ${vertex_contrib},
+          ${vertex_affine}
+          };
+      }
+
+    virtual
+      nosh::double_data
+      domain_boundary_contrib(
+          const Eigen::Vector3d & x,
+          const double surface_area
+          ) const
+      {
+        ${db_body}
+        return {
+          ${db_coeff},
+          ${db_affine}
+          };
       }
 
   private:

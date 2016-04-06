@@ -1,6 +1,7 @@
 #ifndef NOSH_LINEARSOLVER_HPP
 #define NOSH_LINEARSOLVER_HPP
 
+#include "linear_problem.hpp"
 #include "matrix.hpp"
 #include "expression.hpp"
 #include "function.hpp"
@@ -66,8 +67,7 @@ namespace nosh {
 
   void
   linear_solve(
-      const nosh::matrix & A,
-      const nosh::expression & f,
+      const nosh::linear_problem & P,
       nosh::function & x,
       std::map<std::string, boost::any> solver_params = nosh::default_linear_solver_params
       );

@@ -1,32 +1,26 @@
-#include "poisson.hpp"
+#include "neumann-boundary.hpp"
 #include <nosh.hpp>
-#include <memory>
-
-#include <Teuchos_StandardCatchMacros.hpp>
 
 using list = std::map<std::string, boost::any>;
 int main(int argc, char *argv[]) {
   Teuchos::GlobalMPISession session(&argc, &argv, NULL);
-  auto out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
   bool success = true;
   try {
-
   //const auto mesh = nosh::read("r2.h5m");
-  //const auto mesh = nosh::read("pacman2.h5m");
+  const auto mesh = nosh::read("pacman.h5m");
   //const auto mesh = nosh::read("screw3.h5m");
   //const auto mesh = nosh::read("cubesmall.h5m");
-  const auto mesh = nosh::read("cube.h5m");
+  //const auto mesh = nosh::read("cube.h5m");
 
-  poisson::laplace matrix(mesh);
-  poisson::f rhs;
+  neumann_boundary::problem p(mesh);
 
   nosh::function x(mesh);
   x.putScalar(0.0);
 
   //nosh::scaled_linear_solve(
   nosh::linear_solve(
-      matrix, rhs, x,
+      p, x,
       {
 #if 0
         // For solver parameters, check
@@ -70,7 +64,10 @@ int main(int argc, char *argv[]) {
 
   nosh::write(x, "out.h5m");
   }
-  TEUCHOS_STANDARD_CATCH_STATEMENTS(true, *out, success);
+  catch (...) {
+    std::cerr << "Unknown exception" << std::endl;
+    success = false;
+  }
 
-  return EXIT_SUCCESS;
+  return success ? EXIT_SUCCESS : EXIT_FAILURE;
 }

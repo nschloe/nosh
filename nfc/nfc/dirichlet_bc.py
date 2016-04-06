@@ -17,7 +17,7 @@ class CodeDirichletBc(object):
         return []
 
     def get_code(self):
-        x = sympy.DeferredVector('x')
+        x = sympy.MatrixSymbol('x', 3, 1)
 
         result0 = self.dbc.is_inside(x)
         try:

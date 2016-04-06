@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 #
+
+
 class CodeMatrixCore(object):
     def __init__(self, namespace, core, name):
         # handle the edge contributions
@@ -56,8 +58,8 @@ class CodeMatrixCore(object):
         return self.code
 
     def get_expr_edge_contrib(self, method):
-        x0 = sympy.DeferredVector('x0')
-        x1 = sympy.DeferredVector('x1')
+        x0 = sympy.MatrixSymbol('x0', 3, 1)
+        x1 = sympy.MatrixSymbol('x1', 3, 1)
         edge_length = sympy.Symbol('edge_length')
         edge_covolume = sympy.Symbol('edge_covolume')
         all_symbols = set([x0, x1, edge_length, edge_covolume])
@@ -86,7 +88,7 @@ class CodeMatrixCore(object):
 
     def get_expr_vertex_contrib(self, method):
         # handle the vertex contributions
-        x = sympy.DeferredVector('x')
+        x = sympy.MatrixSymbol('x')
         vol = sympy.Symbol('control_volume')
         all_symbols = set([x, vol])
 
@@ -108,5 +110,3 @@ class CodeMatrixCore(object):
             used_expressions = set([])
 
         return result, unused_args, used_expressions
-
-

@@ -15,18 +15,12 @@ class Bc2(DirichletBC):
     def eval(self, x): return 1.0
 
 
-class F(Expression):
-    def eval(x): return sin(x[1])
-    degree = 0
-
-
-class Laplace(FvmMatrix2):
+class Poisson(LinearFvmProblem):
     def eval(u):
-        return integrate(
-            lambda x: -n_dot_grad(u, x),
-            dS()
-        )
-    boundary_conditions = [Bc1(), Bc2()]
+        return integrate(lambda x: -n_dot_grad(u, x), dS()) \
+                - integrate(lambda x: sin(x[1]), dV())
+    dirichlet_boundary_conditions = [Bc1(), Bc2()]
+
 
 # Alternative (raw) syntax:
 # class Core0(MatrixCore):
@@ -36,3 +30,6 @@ class Laplace(FvmMatrix2):
 # class Laplace(FvmMatrix):
 #     matrix_cores = [Core0()]
 #     boundary_conditions = [Bc1(), Bc2()]
+# class F(Expression):
+#     def eval(x): return sin(x[1])
+#     degree = 0

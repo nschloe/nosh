@@ -1,5 +1,6 @@
 #include "linear_solver.hpp"
 
+#include "linear_problem.hpp"
 #include "matrix.hpp"
 #include "helper.hpp"
 
@@ -35,42 +36,13 @@ using NormType = MV::mag_type;
 void
 nosh::
 linear_solve(
-    const nosh::matrix & A,
-    const nosh::expression & f,
+    const nosh::linear_problem & P,
     nosh::function & x,
     std::map<std::string, boost::any> solver_params
     )
 {
-  // create rhs vector
-  auto b = nosh::integrate_over_control_volumes(f, *A.mesh);
-
-  // apply Dirichlet boundary conditions to b
-  const auto boundary_vertices = A.mesh->boundary_vertices();
-  for (const auto boundary_vertex: boundary_vertices) {
-    const auto coord = A.mesh->get_coords(boundary_vertex);
-    for (const auto & bc: A.bcs) {
-      TEUCHOS_ASSERT(bc != nullptr);
-      if (bc->is_inside(coord)) {
-        const auto gid = A.mesh->gid(boundary_vertex);
-        // TODO don't check here but only get the array of owned boundary nodes
-        // in the first place
-        if (b->getMap()->isNodeGlobalElement(gid)) {
-          b->replaceGlobalValue(gid, bc->eval(coord));
-          // if (dirichlet) {
-          //   b->replaceGlobalValue(gid, bc->eval(coord));
-          // } else if (neumann) {
-          //   const auto surface = ...;
-          //   b->sumIntoGlobalValue(gid, bc->eval(coord, surface));
-          // } else {
-          //   // error
-          // }
-          break; // only set one bc per boundary point
-        }
-      }
-    }
-  }
   // solve
-  linear_solve(A, *b, x, solver_params);
+  linear_solve(P.matrix, P.rhs, x, solver_params);
   return;
 }
 // =============================================================================

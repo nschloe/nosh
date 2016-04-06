@@ -4,6 +4,8 @@
 #include <boost/any.hpp>
 #include <map>
 
+#include <Tpetra_CrsMatrix.hpp>
+
 namespace nosh
 {
   void
@@ -13,6 +15,11 @@ namespace nosh
   show_map(
     const std::map<std::string, boost::any> & map,
     const int indent = 0
+    );
+
+  void
+  show_tpetra_crs_matrix(
+    const Tpetra::CrsMatrix<double,int,int> & A
     );
 }
 #endif

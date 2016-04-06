@@ -1,6 +1,6 @@
 #include "matrix.hpp"
 
-namespace nosh{
+namespace nosh {
 // apply boundary conditions to the matrix
 void
 matrix::

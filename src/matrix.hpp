@@ -1,5 +1,5 @@
-#ifndef NOSH_LINEAROPERATOR_HPP
-#define NOSH_LINEAROPERATOR_HPP
+#ifndef NOSH_MATRIX_HPP
+#define NOSH_MATRIX_HPP
 
 #include <memory>
 #include <set>
@@ -38,4 +38,4 @@ namespace nosh {
     apply_bcs_();
   };
 }
-#endif // NOSH_LINEAROPERATOR_HPP
+#endif // NOSH_MATRIX_HPP
