@@ -72,8 +72,8 @@ class CodeFvmMatrix2(object):
             sympy.Symbol('control_volume')
             ])
         vertex_used_symbols = v.free_symbols
-        vertex_unused_arguments = vertex_arguments - edge_used_symbols
-        vertex_undefined_symbols = edge_used_symbols - edge_arguments
+        vertex_unused_arguments = vertex_arguments - vertex_used_symbols
+        vertex_undefined_symbols = vertex_used_symbols - vertex_arguments
         assert(len(vertex_undefined_symbols) == 0)
 
         members_init_code = ''

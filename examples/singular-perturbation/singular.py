@@ -7,25 +7,10 @@ class Bc1(DirichletBC):
     def eval(self, x): return 0.0
 
 
-class Alpha(Expression):
-    @classmethod
-    def eval(cls, x): return sin(x[1])
-    degree = 0
-
-
-class Beta(Expression):
-    pass
-
-
 class Singular(FvmMatrix2):
     def eval(u):
-        return \
-              integrate(lambda x: n_dot_grad(u, x), dS())  #
-              # integrate(lambda x: 2 * dot(n, x), dS())  # works
-              # integrate(lambda x: x[0]*x[1] + 1.0 + Beta(x), dS())  # works
-              #
-              # integrate(lambda x: u(x), dV())
-              # integrate(lambda x: 2 * sin(x[0]) * u(x), dV())
+        return integrate(lambda x: - 0.2 * n_dot_grad(u, x), dS()) \
+               + integrate(lambda x: u(x), dV())
     boundary_conditions = [Bc1()]
 
 
