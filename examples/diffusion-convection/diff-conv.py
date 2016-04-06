@@ -15,8 +15,7 @@ class F(Expression):
 class DC(FvmMatrix2):
     def eval(u):
         return integrate(
-            # lambda x: -n_dot_grad(u, x) + u(x),
-            lambda x: -n_dot_grad(u, x) + dot(n, Matrix([1, 2, 0])) * u(x),
+            lambda x: -n_dot_grad(u, x) + dot(n, Matrix([-1, -1, 0])) * u(x),
             dS()
         )
     boundary_conditions = [Bc1()]
