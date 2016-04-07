@@ -1,5 +1,5 @@
-#ifndef NOSH_FVMMATRIX_H
-#define NOSH_FVMMATRIX_H
+#ifndef NOSH_LINEAR_SOLVER_H
+#define NOSH_LINEAR_SOLVER_H
 
 #include <Teuchos_Tuple.hpp>
 #include <Teuchos_RCPStdSharedPtrConversions.hpp>
@@ -202,7 +202,6 @@ namespace nosh
         }
       }
 
-
       // apply dirichlet boundary conditions
       void
       apply_dbcs_()
@@ -272,4 +271,4 @@ namespace nosh
   };
 } // namespace nosh
 
-#endif // NOSH_FVMMATRIX_H
+#endif // NOSH_LINEAR_SOLVER_H
