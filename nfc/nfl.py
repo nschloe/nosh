@@ -141,12 +141,12 @@ class Core(object):
                 lambda x: self.domain_boundary(x) + other.domain_boundary(x)
                 )
 
-    def __sub__(self, other):
-        return Core(
-                lambda x: self.vertex(x) - other.vertex(x),
-                lambda x: self.edge(x) - other.edge(x),
-                lambda x: self.domain_boundary(x) - other.domain_boundary(x)
-                )
+    # def __sub__(self, other):
+    #     return Core(
+    #             lambda x: self.vertex(x) - other.vertex(x),
+    #             lambda x: self.edge(x) - other.edge(x),
+    #             lambda x: self.domain_boundary(x) - other.domain_boundary(x)
+    #             )
 
 
 class NonlinearProblem(object):

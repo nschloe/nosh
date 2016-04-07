@@ -28,7 +28,7 @@ class Bc2(DirichletBC):
 class Poisson(LinearFvmProblem):
     def eval(u):
         return integrate(lambda x: -n_dot_grad(u, x), dS()) \
-                - integrate(lambda x: sin(x[1]), dV())
+                + integrate(lambda x: - sin(x[1]), dV())
     dirichlet_boundary_conditions = [Bc1(), Bc2()]
 
 
