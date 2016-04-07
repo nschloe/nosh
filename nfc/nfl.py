@@ -106,40 +106,22 @@ class dGamma(Measure):
 def integrate(integrand, measure):
     assert(isinstance(measure, Measure))
 
-    if isinstance(measure, dV):
-        return Core(
-            integrand,
-            lambda x: 0,
-            lambda x: 0
-            )
-    elif isinstance(measure, dS):
-        return Core(
-            lambda x: 0,
-            integrand,
-            lambda x: 0
-            )
+    if isinstance(measure, dS):
+        return Core(set([(integrand, 'dS')]))
+    elif isinstance(measure, dV):
+        return Core(set([(integrand, 'dV')]))
     elif isinstance(measure, dGamma):
-        return Core(
-            lambda x: 0,
-            lambda x: 0,
-            integrand
-            )
+        return Core(set([(integrand, 'dGamma')]))
     else:
         raise RuntimeError('Illegal measure')
 
 
 class Core(object):
-    def __init__(self, vertex, edge, domain_boundary):
-        self.vertex = vertex
-        self.edge = edge
-        self.domain_boundary = domain_boundary
+    def __init__(self, set_c):
+        self.cores = set_c
 
     def __add__(self, other):
-        return Core(
-                lambda x: self.vertex(x) + other.vertex(x),
-                lambda x: self.edge(x) + other.edge(x),
-                lambda x: self.domain_boundary(x) + other.domain_boundary(x)
-                )
+        return Core(self.cores.union(other.cores))
 
     # def __sub__(self, other):
     #     return Core(

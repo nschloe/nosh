@@ -50,20 +50,6 @@ def _get_expr_edge_contrib(self, method):
     return result['coeff'], result['affine']
 
 
-def _get_expr_vertex_contrib(self, method):
-    # handle the vertex contributions
-    x = sympy.MatrixSymbol('x')
-    vol = sympy.Symbol('control_volume')
-    all_symbols = set([x, vol])
-
-    specs = inspect.getargspec(method)
-    assert(len(specs.args) == len(all_symbols) + 1)
-
-    result = method(x, vol)
-
-    return result['coeff'], result['affine']
-
-
 def get_core_code_generator(namespace, name, core):
     '''Get code generator from raw core object.
     '''
@@ -72,37 +58,20 @@ def get_core_code_generator(namespace, name, core):
         edge_coeff, edge_affine = \
                 _get_expr_edge_contrib(core.edge_contrib)
 
-    if callable(getattr(core, 'vertex_contrib', None)):
-        vertex_coeff, vertex_affine = \
-                _get_expr_vertex_contrib(core.vertex_contrib)
-
-    if callable(getattr(core, 'domain_boundary_contrib', None)):
-        db_coeff, db_affine = \
-                _get_expr_db_contrib(core.vertex_contrib)
-    return CodeMatrixCore(
+    return CodeEdgeCore(
             namespace, name,
-            edge_coeff, edge_affine,
-            vertex_coeff, vertex_affine,
-            db_coeff, db_affine
+            edge_coeff, edge_affine
             )
 
 
-def get_core_code_from_expression(namespace, name, expr):
+def get_edge_core_code_from_expression(namespace, name, u, expr):
     '''Get code generator from expression.
     '''
-    u = sympy.Function('u')
-    res = expr(u)
-    assert(isinstance(res, nfl.Core))
+    edge_coeff, edge_affine = _get_expr_edge(u, expr)
 
-    edge_coeff, edge_affine = _get_expr_edge(u, res.edge)
-    vertex_coeff, vertex_affine = _get_expr_vertex(u, res.vertex)
-    db_coeff, db_affine = _get_expr_db(res.domain_boundary)
-
-    return CodeMatrixCore(
+    return CodeEdgeCore(
             namespace, name,
-            edge_coeff, edge_affine,
-            vertex_coeff, vertex_affine,
-            db_coeff, db_affine
+            edge_coeff, edge_affine
             )
 
 
@@ -145,102 +114,18 @@ def _get_expr_edge(u, function):
         )
 
 
-def _get_expr_vertex(u, function):
-    # Numerically integrate function over a control volume.
-    # TODO find out if the code can be evaluated at the volume "midpoint",
-    # then evaluate it there, and multiply by the volume.
-    x = sympy.MatrixSymbol('x', 3, 1)
-    # Evaluate the function for u at x.
-    fx = function(x)
-    # Replace all occurences of u(x) by u0 (the value at the control volume
-    # center) and multiply by the control volume)
-    u0 = sympy.Symbol('u0')
-    try:
-        fu0 = fx.subs(u(x), u0)
-    except AttributeError:
-        # 'int' object has no attribute 'subs'
-        fu0 = fx
-    # Make sure that f is affine linear in u0; we're building a matrix
-    # here.
-    assert(_is_affine_linear(fu0, [u0]))
-    control_volume = sympy.Symbol('control_volume')
-    # Get coefficient of u0
-    coeff = sympy.diff(fu0, u0)
-    coeff = control_volume * coeff
-    # Get affine part
-    if isinstance(fu0, float):
-        affine = control_volume * fu0
-    else:
-        affine = control_volume * fu0.subs(u0, 0)
-    return coeff, affine
-
-
-def _get_expr_db(function):
-    # Numerically integrate function over a part of the domain boundary,
-    # namely the part surrounding a vertex.
-    x = sympy.MatrixSymbol('x', 3, 1)
-    # Evaluate the function for u at x.
-    fx = function(x)
-    # Replace all occurences of u(x) by u0 (the value at the center) and
-    # multiply by the surface area)
-    u0 = sympy.Symbol('u0')
-    try:
-        fu0 = fx.subs(u(x), u0)
-    except AttributeError:
-        # 'int' object has no attribute 'subs'
-        fu0 = fx
-    # Make sure that f is affine linear in u0; we're building a matrix
-    # here.
-    assert(_is_affine_linear(fu0, [u0]))
-    control_volume = sympy.Symbol('surface_area')
-    # Get coefficient of u0
-    coeff = sympy.diff(fu0, u0)
-    coeff = control_volume * coeff
-    # Get affine part
-    if isinstance(fu0, float) or isinstance(fu0, int):
-        affine = control_volume * fu0
-    else:
-        affine = control_volume * fu0.subs(u0, 0)
-    return (coeff, affine)
-
-
-class CodeMatrixCore(object):
+class CodeEdgeCore(object):
     def __init__(
             self, namespace, name,
-            edge_coeff, edge_affine,
-            vertex_coeff, vertex_affine,
-            db_coeff, db_affine
+            edge_coeff, edge_affine
             ):
         # edge
-        edge_body, edge_used_expressions = \
+        edge_body, used_expressions = \
             self.get_code_elements_edge(edge_coeff, edge_affine)
-
-        # vertex
-        vertex_arguments = set([
-            sympy.MatrixSymbol('x', 3, 1),
-            sympy.Symbol('control_volume')
-            ])
-        vertex_unused_arguments, vertex_used_expressions = \
-            self.scan_code(vertex_arguments, [vertex_coeff, vertex_affine])
-
-        # domain boundary
-        db_arguments = set([
-            sympy.MatrixSymbol('x', 3, 1),
-            sympy.Symbol('surface_area')
-            ])
-        db_unused_arguments, db_used_expressions = \
-            self.scan_code(db_arguments, [db_coeff, db_affine])
 
         # now take care of the template substitution
         members_init = []
         members_declare = []
-
-        # init and declare all expressions
-        used_expressions = set().union(
-                edge_used_expressions,
-                vertex_used_expressions,
-                db_used_expressions
-                )
 
         self.dependencies = set()
         self.dependencies.update(used_expressions)
@@ -258,10 +143,10 @@ class CodeMatrixCore(object):
             members_init_code = ''
 
         # template substitution
-        with open(os.path.join(templates_dir, 'matrix_core.tpl'), 'r') as f:
+        with open(os.path.join(templates_dir, 'edge_core.tpl'), 'r') as f:
             src = Template(f.read())
             self.code = src.substitute({
-                'name': name.lower() + '_core',
+                'name': name.lower() + '_edge_core',
                 'edge00': self.expr_to_code(edge_coeff[0][0]),
                 'edge01': self.expr_to_code(edge_coeff[0][1]),
                 'edge10': self.expr_to_code(edge_coeff[1][0]),
@@ -269,16 +154,6 @@ class CodeMatrixCore(object):
                 'edge_affine0': self.expr_to_code(-edge_affine[0]),
                 'edge_affine1': self.expr_to_code(-edge_affine[1]),
                 'edge_body': '\n'.join(edge_body),
-                'vertex_contrib': extract_c_expression(vertex_coeff),
-                'vertex_affine': extract_c_expression(-vertex_affine),
-                'vertex_body': '\n'.join(
-                    ('(void) %s;' % name) for name in vertex_unused_arguments
-                    ),
-                'db_coeff': extract_c_expression(db_coeff),
-                'db_affine': extract_c_expression(-db_affine),
-                'db_body': '\n'.join(
-                    ('(void) %s;' % name) for name in db_unused_arguments
-                    ),
                 'members_init': members_init_code,
                 'members_declare': '\n'.join(members_declare)
                 })

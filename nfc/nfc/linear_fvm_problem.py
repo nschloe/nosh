@@ -3,13 +3,18 @@
 import nfl
 import os
 from string import Template
-from .matrix_core import get_core_code_from_expression
+import sympy
+
+from .edge_core import get_edge_core_code_from_expression
+from .vertex_core import get_vertex_core_code_from_expression
+from .boundary_core import get_boundary_core_code_from_expression
 from .helpers import templates_dir
 
 
 class CodeLinearFvmProblem(object):
     def __init__(self, namespace, name, obj):
         self.name = name
+        self.code = ''
 
         if getattr(obj, 'dirichlet_boundary_conditions', None):
             self.dbcs = set(obj.dirichlet_boundary_conditions)
@@ -20,13 +25,30 @@ class CodeLinearFvmProblem(object):
 
         self.dependencies = self.dbcs
 
-        core_code_gen = get_core_code_from_expression(
-                namespace, name, obj.eval
-                )
-        self.dependencies.update(core_code_gen.get_dependencies())
-        self.code = core_code_gen.get_code() + \
-            '\n' + \
-            self.get_code_linear_problem()
+        u = sympy.Function('u')
+        res = obj.eval(u)
+        assert(isinstance(res, nfl.Core))
+        for core in res.cores:
+            if core[1] == 'dS':
+                core_code_gen = get_edge_core_code_from_expression(
+                        namespace, name, u, core[0]
+                        )
+            elif core[1] == 'dV':
+                core_code_gen = get_vertex_core_code_from_expression(
+                        namespace, name, u, core[0]
+                        )
+            elif core[1] == 'dGamma':
+                core_code_gen = get_boundary_core_code_from_expression(
+                        namespace, name, u, core[0]
+                        )
+            else:
+                raise RuntimeError('Illegal core type \'%s\'.' % core[1])
+
+            self.dependencies.update(core_code_gen.get_dependencies())
+
+            self.code += '\n' + core_code_gen.get_code()
+
+        self.code += '\n' + self.get_code_linear_problem()
         return
 
     def get_dependencies(self):
@@ -40,8 +62,8 @@ class CodeLinearFvmProblem(object):
         constructor_args = [
             'const std::shared_ptr<const nosh::mesh> & _mesh'
             ]
-        init_matrix_cores = '{std::make_shared<%s>()}' % (
-                self.name.lower() + '_core'
+        init_edge_cores = '{std::make_shared<%s>()}' % (
+                self.name.lower() + '_edge_core'
                 )
 
         # handle the boundary conditions

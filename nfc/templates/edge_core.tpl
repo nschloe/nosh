@@ -1,5 +1,5 @@
 class ${name}:
-  public nosh::matrix_core
+  public nosh::edge_core
 {
   public:
     ${name}()${members_init} {};
@@ -7,8 +7,8 @@ class ${name}:
     virtual ~${name}() {};
 
     virtual
-      nosh::edge_data
-      edge_contrib(
+      nosh::edge_core_data
+      eval(
           const Eigen::Vector3d & x0,
           const Eigen::Vector3d & x1,
           const double edge_length,
@@ -32,34 +32,6 @@ class ${name}:
             ${edge_affine1}
           }
         };
-      }
-
-    virtual
-      nosh::double_data
-      vertex_contrib(
-          const Eigen::Vector3d & x,
-          const double control_volume
-          ) const
-      {
-        ${vertex_body}
-        return {
-          ${vertex_contrib},
-          ${vertex_affine}
-          };
-      }
-
-    virtual
-      nosh::double_data
-      domain_boundary_contrib(
-          const Eigen::Vector3d & x,
-          const double surface_area
-          ) const
-      {
-        ${db_body}
-        return {
-          ${db_coeff},
-          ${db_affine}
-          };
       }
 
   private:
