@@ -14,4 +14,5 @@
 #include "model_evaluator_nls.hpp"
 #include "parameter_matrix_keo.hpp"
 #include "scalar_field_constant.hpp"
+#include "subdomain.hpp"
 #include "vector_field_explicit_values.hpp"

@@ -9,8 +9,7 @@ class Function(sympy.Symbol):
 
 
 class Coefficient(object):
-    def __init__(self):
-        return
+    pass
 
 
 class VectorOperator(sympy.Function):
@@ -23,19 +22,19 @@ class Expression(sympy.Function):
 
 
 class Vector(object):
-    def __init__(self):
-        return
+    pass
 
 
 class ScalarParameter(object):
-    def __init__(self, name):
-        self.name = name
-        return
+    pass
 
 
 class OuterNormal(Vector):
-    def __init__(self):
-        return
+    pass
+
+
+class Subdomain(object):
+    boundary_only = False
 
 
 # Linear operator defined via the operation along edges in a Delaunay mesh
@@ -78,10 +77,6 @@ class FvmMatrix(sympy.Function):
     #    super(FvmMatrix, self).__init__(name)
     #    self.edge_function = edge_function
     #    return
-
-class FvmMatrix2(sympy.Function):
-    pass
-
 
 class LinearFvmProblem(object):
     pass

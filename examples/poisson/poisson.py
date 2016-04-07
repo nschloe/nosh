@@ -3,16 +3,26 @@ from sympy import *
 from nfl import *
 
 
-class Bc1(DirichletBC):
-    def is_inside(self, x): return x[1] < 0
+class D1(Subdomain):
+    def is_inside(self, x):
+        return x[1] < 0
+    is_boundary_only = True
 
+
+class D2(Subdomain):
+    def is_inside(self, x):
+        return x[1] >= 0
+    is_boundary_only = True
+
+
+class Bc1(DirichletBC):
     def eval(self, x): return 0.0
+    subdomains = [D1()]
 
 
 class Bc2(DirichletBC):
-    def is_inside(self, x): return x[1] >= 0
-
     def eval(self, x): return 1.0
+    subdomains = [D2()]
 
 
 class Poisson(LinearFvmProblem):

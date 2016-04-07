@@ -55,6 +55,12 @@ def _main():
             code_generators[name] = \
                     nfc.CodeLinearFvmProblem(namespace, name, var)
         elif inspect.isclass(var) and \
+                issubclass(var, nfl.Subdomain) and \
+                var != nfl.Subdomain:
+            instance = var()
+            code_generators[name] = \
+                nfc.CodeSubdomain(name, instance)
+        elif inspect.isclass(var) and \
                 issubclass(var, nfl.DirichletBC) and \
                 var != nfl.DirichletBC:
             instance = var()

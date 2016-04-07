@@ -10,3 +10,4 @@ from .linear_fvm_problem import *
 from .matrix_core import *
 from .nonlinear_operator import *
 from .operator import *
+from .subdomain import *
