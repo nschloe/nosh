@@ -11,7 +11,7 @@ namespace nosh
   class vertex_core
   {
     public:
-      explicit vertex_core(const std::set<std::string> & _subdomain_ids):
+      explicit vertex_core(const std::set<std::string> & _subdomain_ids = {}):
         subdomain_ids(_subdomain_ids)
         {};
 

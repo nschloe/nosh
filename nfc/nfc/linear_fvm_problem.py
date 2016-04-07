@@ -27,24 +27,31 @@ class CodeLinearFvmProblem(object):
 
         u = sympy.Function('u')
         res = obj.eval(u)
+        self.edge_core_names = set()
+        self.vertex_core_names = set()
+        self.boundary_core_names = set()
         assert(isinstance(res, nfl.Core))
         for core in res.cores:
             if core[1] == 'dS':
                 core_code_gen = get_edge_core_code_from_expression(
                         namespace, name, u, core[0]
                         )
+                self.edge_core_names.add(core_code_gen.class_name)
             elif core[1] == 'dV':
                 core_code_gen = get_vertex_core_code_from_expression(
                         namespace, name, u, core[0]
                         )
+                self.vertex_core_names.add(core_code_gen.class_name)
             elif core[1] == 'dGamma':
                 core_code_gen = get_boundary_core_code_from_expression(
                         namespace, name, u, core[0]
                         )
+                self.boundary_core_names.add(core_code_gen.class_name)
             else:
                 raise RuntimeError('Illegal core type \'%s\'.' % core[1])
 
-            self.dependencies.update(core_code_gen.get_dependencies())
+            # TODO do we really need this?
+            # self.dependencies.update(core_code_gen.get_dependencies())
 
             self.code += '\n' + core_code_gen.get_code()
 
@@ -62,8 +69,23 @@ class CodeLinearFvmProblem(object):
         constructor_args = [
             'const std::shared_ptr<const nosh::mesh> & _mesh'
             ]
-        init_edge_cores = '{std::make_shared<%s>()}' % (
-                self.name.lower() + '_edge_core'
+        init_edge_cores = '{%s}' % (
+                ', '.join(
+                    ['std::make_shared<%s>()' % n
+                     for n in self.edge_core_names]
+                    )
+                )
+        init_vertex_cores = '{%s}' % (
+                ', '.join(
+                    ['std::make_shared<%s>()' % n
+                     for n in self.vertex_core_names]
+                    )
+                )
+        init_boundary_cores = '{%s}' % (
+                ', '.join(
+                    ['std::make_shared<%s>()' % n
+                     for n in self.boundary_core_names]
+                    )
                 )
 
         # handle the boundary conditions
@@ -75,8 +97,8 @@ class CodeLinearFvmProblem(object):
         # boundary conditions handling done
 
         members_init = [
-          'nosh::linear_problem(\n_mesh,\n %s,\n %s\n)' %
-          (init_matrix_cores, init_dbcs)
+          'nosh::linear_problem(\n_mesh,\n %s,\n %s,\n %s,\n %s\n)' %
+          (init_edge_cores, init_vertex_cores, init_boundary_cores, init_dbcs)
           ]
         members_declare = []
 

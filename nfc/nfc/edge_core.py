@@ -142,11 +142,12 @@ class CodeEdgeCore(object):
         else:
             members_init_code = ''
 
+        self.class_name = name.lower() + '_edge_core'
         # template substitution
         with open(os.path.join(templates_dir, 'edge_core.tpl'), 'r') as f:
             src = Template(f.read())
             self.code = src.substitute({
-                'name': name.lower() + '_edge_core',
+                'name': self.class_name,
                 'edge00': self.expr_to_code(edge_coeff[0][0]),
                 'edge01': self.expr_to_code(edge_coeff[0][1]),
                 'edge10': self.expr_to_code(edge_coeff[1][0]),
