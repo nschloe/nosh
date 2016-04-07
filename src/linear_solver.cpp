@@ -359,7 +359,7 @@ scaled_linear_solve(
   //     TEUCHOS_ASSERT(bc != nullptr);
   //     if (bc->is_inside(coord)) {
   //       const auto gid = A.mesh->gid(boundary_vertex);
-  //       // TODO don't check here but only get the array of owned boundary nodes
+  //       // TODO don't check here but only get the array of owned boundary vertices
   //       // in the first place
   //       if (b->getMap()->isNodeGlobalElement(gid)) {
   //         b->replaceGlobalValue(gid, bc->eval(coord));

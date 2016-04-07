@@ -17,8 +17,10 @@ int main(int argc, char *argv[]) {
   //const auto mesh = nosh::read("cubesmall.h5m");
   //const auto mesh = nosh::read("cube.h5m");
 
-  mesh.mark_subdomain(poisson::d1());
-  mesh.mark_subdomain(poisson::d2());
+  mesh.mark_subdomains({
+      poisson::d1(),
+      poisson::d2()
+      });
 
   poisson::poisson problem(mesh);
 

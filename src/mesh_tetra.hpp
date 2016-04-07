@@ -49,7 +49,7 @@ public:
   }
 
   virtual
-  std::vector<moab::EntityHandle>
+  moab::Range
   boundary_vertices() const
   {
     return boundary_data_.vertices;
@@ -77,7 +77,7 @@ private:
   mesh::boundary_data
   compute_boundary_data_() const;
 
-  std::vector<moab::EntityHandle>
+  moab::Range
   compute_boundary_vertices_(
       const std::vector<moab::EntityHandle> & boundary_faces
       ) const;
@@ -109,7 +109,7 @@ private:
 
   Eigen::Vector3d
   compute_cell_circumcenter_(
-    const std::vector<Eigen::Vector3d> & nodes
+    const std::vector<Eigen::Vector3d> & vertices
     ) const;
 
   Eigen::VectorXd
@@ -133,7 +133,7 @@ private:
 
   Eigen::Vector3d
   compute_tetrahedron_circumcenter_(
-      const std::vector<Eigen::Vector3d> &nodes
+      const std::vector<Eigen::Vector3d> &vertices
       ) const;
 
   double

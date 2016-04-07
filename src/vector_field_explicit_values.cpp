@@ -39,7 +39,7 @@ explicit_values(
     Eigen::Vector3d A1(data[3*idx1], data[3*idx1 + 1], data[3*idx1 + 2]);
 
     // Approximate the value at the midpoint of the edge by the average of the
-    // values at the adjacent nodes.
+    // values at the adjacent vertices.
     Eigen::Vector3d av = 0.5 * (A0 + A1);
 
     const auto edge_coords = mesh.get_coords(v0) - mesh.get_coords(v1);

@@ -59,17 +59,17 @@ compute_edge_data_() const
 
   size_t num_cells = cells.size();
 
-  size_t num_edges = relations_.edge_nodes.size();
+  size_t num_edges = relations_.edge_vertices.size();
 
   std::vector<edge_data> _edge_data(num_edges);
 
   // compute all coordinates
   std::vector<Eigen::Vector3d> edge_coords(num_edges);
   for (size_t k = 0; k < num_edges; k++) {
-    auto tmp1 = std::get<0>(relations_.edge_nodes[k]);
+    auto tmp1 = std::get<0>(relations_.edge_vertices[k]);
     std::vector<double> coords0 = this->mbw_->get_coords({tmp1});
 
-    tmp1 = std::get<1>(relations_.edge_nodes[k]);
+    tmp1 = std::get<1>(relations_.edge_vertices[k]);
     std::vector<double> coords1 = this->mbw_->get_coords({tmp1});
 
     edge_coords[k][0] = coords0[0] - coords1[0];
@@ -163,23 +163,23 @@ compute_control_volumes_() const
   Teuchos::TimeMonitor tm(*compute_control_volumes_time_);
 #endif
 #ifndef NDEBUG
-  TEUCHOS_ASSERT(nodes_map_);
-  TEUCHOS_ASSERT(nodes_overlap_map_);
+  TEUCHOS_ASSERT(vertices_map_);
+  TEUCHOS_ASSERT(vertices_overlap_map_);
 #endif
 
   auto _control_volumes = std::make_shared<Tpetra::Vector<double,int,int>>(
-      Teuchos::rcp(nodes_map_)
+      Teuchos::rcp(vertices_map_)
       );
 
   // Create temporaries to hold the overlap values for control volumes.
-  Tpetra::Vector<double,int,int> cv_overlap(Teuchos::rcp(nodes_overlap_map_));
+  Tpetra::Vector<double,int,int> cv_overlap(Teuchos::rcp(vertices_overlap_map_));
 
   this->compute_control_volumes_t_(cv_overlap);
 
   // Export control volumes to a non-overlapping map, and sum the entries.
   Teuchos::RCP<const Tpetra::Export<int,int>> exporter = Tpetra::createExport(
-      Teuchos::rcp(nodes_overlap_map_),
-      Teuchos::rcp(nodes_map_)
+      Teuchos::rcp(vertices_overlap_map_),
+      Teuchos::rcp(vertices_map_)
       );
 
   _control_volumes->doExport(cv_overlap, *exporter, Tpetra::ADD);
@@ -256,19 +256,24 @@ compute_boundary_data_() const
 {
   const auto boundary_edges = this->compute_boundary_edges_();
 
-  const auto boundary_vertices =
+  const auto verts =
     this->compute_boundary_vertices_(boundary_edges);
+
+  // convert range to vector
+  // TODO settle on ranges vs. std::vector as overall format
+  std::vector<moab::EntityHandle> boundary_vertices(verts.begin(), verts.end());
+
   const auto boundary_surface_areas =
     this->compute_boundary_surface_areas_(boundary_vertices, boundary_edges);
 
   const boundary_data bd = {
-    boundary_vertices,
+    verts,
     boundary_surface_areas
   };
   return bd;
 }
 // =============================================================================
-std::vector<moab::EntityHandle>
+moab::Range
 mesh_tri::
 compute_boundary_vertices_(
     const std::vector<moab::EntityHandle> & boundary_edges
@@ -283,9 +288,9 @@ compute_boundary_vertices_(
       );
 
   // convert range to vector
-  std::vector<moab::EntityHandle> boundary_verts(verts.begin(), verts.end());
+  // std::vector<moab::EntityHandle> boundary_verts(verts.begin(), verts.end());
 
-  return boundary_verts;
+  return verts;
 }
 // =============================================================================
 std::vector<double>

@@ -39,7 +39,7 @@ public:
   }
 
   virtual
-  std::vector<moab::EntityHandle>
+  moab::Range
   boundary_vertices() const
   {
     return boundary_data_.vertices;
@@ -71,7 +71,7 @@ private:
   mesh::boundary_data
   compute_boundary_data_() const;
 
-  std::vector<moab::EntityHandle>
+  moab::Range
   compute_boundary_vertices_(
       const std::vector<moab::EntityHandle> & boundary_edges
       ) const;

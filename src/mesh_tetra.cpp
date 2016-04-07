@@ -60,17 +60,17 @@ compute_edge_data_() const
 
   size_t num_cells = cells.size();
 
-  size_t num_edges = relations_.edge_nodes.size();
+  size_t num_edges = relations_.edge_vertices.size();
 
   std::vector<mesh::edge_data> _edge_data(num_edges);
 
   // compute all coordinates
   std::vector<Eigen::Vector3d> edge_coords(num_edges);
   for (size_t k = 0; k < num_edges; k++) {
-    auto tmp1 = std::get<0>(relations_.edge_nodes[k]);
+    auto tmp1 = std::get<0>(relations_.edge_vertices[k]);
     const auto coords0 = this->mbw_->get_coords({tmp1});
 
-    tmp1 = std::get<1>(relations_.edge_nodes[k]);
+    tmp1 = std::get<1>(relations_.edge_vertices[k]);
     const auto coords1 = this->mbw_->get_coords({tmp1});
 
     edge_coords[k][0] = coords0[0] - coords1[0];
@@ -178,24 +178,24 @@ compute_control_volumes_() const
   Teuchos::TimeMonitor tm(*compute_control_volumes_time_);
 #endif
 #ifndef NDEBUG
-  TEUCHOS_ASSERT(nodes_map_);
-  TEUCHOS_ASSERT(nodes_overlap_map_);
+  TEUCHOS_ASSERT(vertices_map_);
+  TEUCHOS_ASSERT(vertices_overlap_map_);
 #endif
 
   auto _control_volumes = std::make_shared<Tpetra::Vector<double,int,int>>(
-      Teuchos::rcp(nodes_map_)
+      Teuchos::rcp(vertices_map_)
       );
 
   // Create temporaries to hold the overlap values for control volumes and
   // average thickness.
-  Tpetra::Vector<double,int,int> cv_overlap(Teuchos::rcp(nodes_overlap_map_));
+  Tpetra::Vector<double,int,int> cv_overlap(Teuchos::rcp(vertices_overlap_map_));
 
   this->compute_control_volumes_t_(cv_overlap);
 
   // Export control volumes to a non-overlapping map, and sum the entries.
   Teuchos::RCP<const Tpetra::Export<int,int>> exporter = Tpetra::createExport(
-      Teuchos::rcp(nodes_overlap_map_),
-      Teuchos::rcp(nodes_map_)
+      Teuchos::rcp(vertices_overlap_map_),
+      Teuchos::rcp(vertices_map_)
       );
   _control_volumes->doExport(cv_overlap, *exporter, Tpetra::ADD);
 
@@ -237,13 +237,13 @@ compute_control_volumes_t_(Tpetra::Vector<double,int,int> & cv_overlap) const
 
     // Iterate over the edges.
     // As true edge entities are not available here, loop over all pairs of
-    // local nodes.
+    // local vertices.
     for (size_t e0 = 0; e0 < conn.size(); e0++) {
       const Eigen::Vector3d &x0 = local_node_coords[e0];
       for (size_t e1 = e0+1; e1 < conn.size(); e1++) {
         const Eigen::Vector3d &x1 = local_node_coords[e1];
 
-        // Get the other nodes.
+        // Get the other vertices.
         std::set<unsigned int> other_set = this->get_other_indices_(e0, e1);
         // Convert to vector (easier to handle for now)
         std::vector<unsigned int> other(other_set.begin(), other_set.end() );
@@ -305,7 +305,7 @@ compute_covolume3d_(
   // There are some really tricky degenerate cases here, i.e., combinations
   // of when cc_face{0,1}, cc, sit outside of the tetrahedron.
 
-  // Use the triangle (MP, local_nodes[other[0]], local_nodes[other[1]]) (in this
+  // Use the triangle (MP, local_vertices[other[0]], local_vertices[other[1]]) (in this
   // order) to gauge the orientation of the two triangles that compose the
   // quadrilateral.
   Eigen::Vector3d gauge = (other0 - mp).cross(other1 - mp);
@@ -386,43 +386,43 @@ get_tetrahedron_volume_(
 Eigen::Vector3d
 mesh_tetra::
 compute_tetrahedron_circumcenter_(
-  const std::vector<Eigen::Vector3d> &nodes
+  const std::vector<Eigen::Vector3d> &vertices
   ) const
 {
   // http://www.cgafaq.info/wiki/Tetrahedron_Circumsphere
 #ifndef NDEBUG
-  TEUCHOS_ASSERT_EQUALITY(nodes.size(), 4);
+  TEUCHOS_ASSERT_EQUALITY(vertices.size(), 4);
 #endif
 
   // Compute with respect to the first point.
-  std::vector<Eigen::Vector3d> rel_nodes(3);
+  std::vector<Eigen::Vector3d> rel_vertices(3);
   for (int k = 0; k < 3; k++) {
-    rel_nodes[k] = nodes[k+1] - nodes[0];
+    rel_vertices[k] = vertices[k+1] - vertices[0];
   }
 
-  double omega = 2.0 * rel_nodes[0].dot(rel_nodes[1].cross(rel_nodes[2]));
+  double omega = 2.0 * rel_vertices[0].dot(rel_vertices[1].cross(rel_vertices[2]));
 
   // don't divide by 0
   TEUCHOS_TEST_FOR_EXCEPT_MSG(
       fabs(omega) < 1.0e-10,
-      "It seems that the nodes \n"
+      "It seems that the vertices \n"
       << "\n"
-      << "   " << nodes[0] << "\n"
-      << "   " << nodes[1] << "\n"
-      << "   " << nodes[2] << "\n"
-      << "   " << nodes[3] << "\n"
+      << "   " << vertices[0] << "\n"
+      << "   " << vertices[1] << "\n"
+      << "   " << vertices[2] << "\n"
+      << "   " << vertices[3] << "\n"
       << "\n"
       << "do not form a proper tetrahedron. Abort."
       << std::endl
       );
-  const double alpha = rel_nodes[0].squaredNorm() / omega;
-  const double beta  = rel_nodes[1].squaredNorm() / omega;
-  const double gamma = rel_nodes[2].squaredNorm() / omega;
+  const double alpha = rel_vertices[0].squaredNorm() / omega;
+  const double beta  = rel_vertices[1].squaredNorm() / omega;
+  const double gamma = rel_vertices[2].squaredNorm() / omega;
 
-  return nodes[0]
-    + alpha * rel_nodes[1].cross(rel_nodes[2])
-    + beta *  rel_nodes[2].cross(rel_nodes[0])
-    + gamma * rel_nodes[0].cross(rel_nodes[1]);
+  return vertices[0]
+    + alpha * rel_vertices[1].cross(rel_vertices[2])
+    + beta *  rel_vertices[2].cross(rel_vertices[0])
+    + gamma * rel_vertices[0].cross(rel_vertices[1]);
 }
 // =============================================================================
 std::vector<moab::EntityHandle>
@@ -493,19 +493,24 @@ compute_boundary_data_() const
 {
   const auto boundary_faces = this->compute_boundary_faces_();
 
-  const auto boundary_vertices =
+  const auto verts =
     this->compute_boundary_vertices_(boundary_faces);
+
+  // convert range to vector
+  // TODO settle on ranges vs. std::vector as overall format
+  std::vector<moab::EntityHandle> boundary_vertices(verts.begin(), verts.end());
+
   const auto boundary_surface_areas =
     this->compute_boundary_surface_areas_(boundary_vertices, boundary_faces);
 
   const mesh::boundary_data bd = {
-    boundary_vertices,
+    verts,
     boundary_surface_areas
   };
   return bd;
 }
 // =============================================================================
-std::vector<moab::EntityHandle>
+moab::Range
 mesh_tetra::
 compute_boundary_vertices_(
     const std::vector<moab::EntityHandle> & boundary_faces
@@ -522,10 +527,10 @@ compute_boundary_vertices_(
       moab::Interface::UNION
       );
 
-  // convert range to vector
-  std::vector<moab::EntityHandle> boundary_verts(verts.begin(), verts.end());
+  //// convert range to vector
+  //std::vector<moab::EntityHandle> boundary_verts(verts.begin(), verts.end());
 
-  return boundary_verts;
+  return verts;
 }
 // =============================================================================
 std::vector<double>
