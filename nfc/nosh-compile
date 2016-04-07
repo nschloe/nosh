@@ -52,7 +52,8 @@ def _main():
         elif inspect.isclass(var) and \
                 issubclass(var, nfl.LinearFvmProblem) and \
                 var != nfl.LinearFvmProblem:
-            code_generators[name] = nfc.CodeLinearFvmProblem(namespace, var, name)
+            code_generators[name] = \
+                    nfc.CodeLinearFvmProblem(namespace, name, var)
         elif inspect.isclass(var) and \
                 issubclass(var, nfl.DirichletBC) and \
                 var != nfl.DirichletBC:
@@ -62,8 +63,8 @@ def _main():
                 issubclass(var, nfl.MatrixCore) and \
                 var != nfl.MatrixCore:
             instance = var()
-            code_generators[name] = nfc.CodeMatrixCore(
-                    namespace, instance, name
+            code_generators[name] = nfc.get_core_code_generator(
+                    namespace, name, instance
                     )
         elif inspect.isclass(var) and \
                 issubclass(var, nfl.Expression) and \
@@ -71,7 +72,7 @@ def _main():
                 hasattr(var, 'degree') and \
                 hasattr(var, 'eval'):
             code_generators[name] = nfc.CodeExpression(var, name)
-        elif isinstance(var, nfl.Operator):
+        elif isinstance(var, nfl.VectorOperator):
             code_generators[name] = nfc.CodeOperator(var, name)
         elif isinstance(var, nfl.NonlinearProblem):
             code_generators[name] = nfc.CodeNonlinearOperator(var, name)

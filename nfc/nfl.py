@@ -13,7 +13,7 @@ class Coefficient(object):
         return
 
 
-class Operator(sympy.Function):
+class VectorOperator(sympy.Function):
     pass
 
 

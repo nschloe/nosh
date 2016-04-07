@@ -62,12 +62,10 @@ namespace nosh
 
           this->matrix.fillComplete();
 
-          // nosh::show_tpetra_crs_matrix(this->matrix);
-
           return;
         }
     private:
-      // Create a vector core_idx that associated exactly one core with each
+      // Create a vector core_idx that associates exactly one core with each
       // edge. This core will be the one used for building the matrix at that
       // edge.
       std::vector<std::shared_ptr<const matrix_core>>
