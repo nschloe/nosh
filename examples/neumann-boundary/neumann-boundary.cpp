@@ -64,8 +64,8 @@ int main(int argc, char *argv[]) {
 
   nosh::write(x, "out.h5m");
   }
-  catch (...) {
-    std::cerr << "Unknown exception" << std::endl;
+  catch (std::exception & e) {
+    std::cerr << e.what() << std::endl;
     success = false;
   }
 

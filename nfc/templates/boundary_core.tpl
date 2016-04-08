@@ -1,5 +1,5 @@
 class ${name}:
-  public nosh::matrix_core
+  public nosh::boundary_core
 {
   public:
     ${name}()${members_init} {};

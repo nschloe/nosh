@@ -148,7 +148,7 @@ mark_subdomains(const std::set<std::shared_ptr<nosh::subdomain>> & subdomains)
     for (size_t k = 0; k < verts.size(); k++) {
       const auto x = this->get_coords(verts[k]);
       if (sd->is_inside(x)) {
-        mbw_->add_entities(this->meshsets_[sd->id], {verts[k]});
+        mbw_->add_entities(this->meshsets_.at(sd->id), {verts[k]});
       }
     }
     // TODO edges
@@ -159,20 +159,32 @@ moab::Range
 mesh::
 get_vertices(const std::string & subdomain_id) const
 {
-   return this->mbw_->get_entities_by_type(
-       this->meshsets_.at(subdomain_id),
-       moab::MBVERTEX
-       );
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(
+      this->meshsets_.count(subdomain_id) == 0,
+      "Subdomain \"" << subdomain_id << "\" not found on mesh. "
+      << " Did you call mark_subdomains({...}) on the mesh?"
+      );
+
+  return this->mbw_->get_entities_by_type(
+      this->meshsets_.at(subdomain_id),
+      moab::MBVERTEX
+      );
 }
 // =============================================================================
 moab::Range
 mesh::
 get_edges(const std::string & subdomain_id) const
 {
-   return this->mbw_->get_entities_by_type(
-       this->meshsets_.at(subdomain_id),
-       moab::MBEDGE
-       );
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(
+    this->meshsets_.count(subdomain_id) == 0,
+    "Subdomain \"" << subdomain_id << "\" not found on mesh. "
+      << "Did you call mark_subdomains({...}) on the mesh?"
+      );
+
+  return this->mbw_->get_entities_by_type(
+      this->meshsets_.at(subdomain_id),
+      moab::MBEDGE
+      );
 }
 // =============================================================================
 moab::Range
