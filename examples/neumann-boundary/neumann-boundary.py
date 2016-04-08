@@ -5,13 +5,13 @@ from nfl import *
 
 class D1(Subdomain):
     def is_inside(self, x):
-        return x[1] < 0
+        return x[0] < 0.0
     is_boundary_only = True
 
 
 class D2(Subdomain):
     def is_inside(self, x):
-        return x[1] >= 0
+        return x[0] >= 0
     is_boundary_only = True
 
 

@@ -215,8 +215,9 @@ std::vector<double>
 mesh_tri::
 compute_boundary_surface_areas_() const
 {
-  // Cache vector for _all_ vertices. We actually only need the boundary ones,
-  // but that'll make it easier for us here
+  // Store data for _all_ vertices. We actually only set the boundary ones
+  // though.
+  // This could be organized more efficiently with MOAB tags.
   const moab::Range vertices = this->mbw_->get_entities_by_dimension(0, 0);
   const size_t num_vertices = vertices.size();
   std::vector<double> boundary_surface_areas(num_vertices);
@@ -233,14 +234,7 @@ compute_boundary_surface_areas_() const
       0.5 * this->edge_data_[edge_idx].length;
   }
 
-  // Sort the values into a smaller (boundary-only) vector, in sync with
-  // boundary_vertices.
-  std::vector<double> bsa(this->boundary_vertices.size());
-  for (size_t k = 0; k < this->boundary_vertices.size(); k++) {
-    bsa[k] = boundary_surface_areas[this->local_index(this->boundary_vertices[k])];
-  }
-
-  return bsa;
+  return boundary_surface_areas;
 }
 // =============================================================================
 }  // namespace nosh
