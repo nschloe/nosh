@@ -11,7 +11,9 @@ namespace nosh
   class boundary_core
   {
     public:
-      explicit boundary_core(const std::set<std::string> & _subdomain_ids = {}):
+      explicit boundary_core(
+          const std::set<std::string> & _subdomain_ids = {"boundary"}
+          ):
         subdomain_ids(_subdomain_ids)
         {};
 

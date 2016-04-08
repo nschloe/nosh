@@ -195,6 +195,10 @@ public:
   std::vector<double>
   boundary_surface_areas() const = 0;
 
+private:
+  std::map<std::string, moab::EntityHandle>
+  create_default_meshsets_();
+
 protected:
 
   Eigen::Vector3d

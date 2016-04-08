@@ -75,5 +75,5 @@ int main(int argc, char *argv[]) {
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true, *out, success);
 
-  return EXIT_SUCCESS;
+  return success ? EXIT_SUCCESS : EXIT_FAILURE;
 }

@@ -437,6 +437,22 @@ namespace nosh {
     void
     add_entities(
         const moab::EntityHandle & meshset,
+        const moab::Range & entities
+        )
+    {
+      const auto rval = this->mb->add_entities(
+          meshset,
+          entities
+          );
+      if (rval != moab::MB_SUCCESS) {
+        throw std::runtime_error("error in moab::add_entities");
+      }
+      return;
+    }
+
+    void
+    add_entities(
+        const moab::EntityHandle & meshset,
         const std::vector<moab::EntityHandle> & entities
         )
     {
@@ -449,6 +465,33 @@ namespace nosh {
         throw std::runtime_error("error in moab::add_entities");
       }
       return;
+    }
+
+    void
+    unite_meshset(
+        moab::EntityHandle meshset1,
+        const moab::EntityHandle meshset2
+        )
+    {
+      const auto rval = this->mb->unite_meshset(
+          meshset1,
+          meshset2
+          );
+      if (rval != moab::MB_SUCCESS) {
+        throw std::runtime_error("error in moab::unite_meshset");
+      }
+      return;
+    }
+
+    int
+    get_dimension()
+    {
+      int dim;
+      const auto rval = this->mb->get_dimension(dim);
+      if (rval != moab::MB_SUCCESS) {
+        throw std::runtime_error("error in moab::get_dimension");
+      }
+      return dim;
     }
 
     public:

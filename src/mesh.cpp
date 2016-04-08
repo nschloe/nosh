@@ -38,7 +38,7 @@ mesh(
   ,edge_lids_complex(build_edge_lids_complex_())
   ,edge_gids(build_edge_gids_())
   ,edge_gids_complex(build_edge_gids_complex_())
-  ,meshsets_()
+  ,meshsets_(create_default_meshsets_())
 {
 // TODO resurrect
 //#ifndef NDEBUG
@@ -50,6 +50,23 @@ mesh(
 mesh::
 ~mesh()
 {
+}
+// =============================================================================
+std::map<std::string, moab::EntityHandle>
+mesh::
+create_default_meshsets_()
+{
+  // create a meshset for all boundary vertices
+  const auto boundary = this->mbw_->create_meshset(moab::MESHSET_SET);
+  std::cout << "ABC" << mbw_->get_dimension() << std::endl;
+  mbw_->add_entities(boundary, this->boundary_vertices());
+  std::cout << "DEF" << std::endl;
+
+  return {
+    // MOAB's default meshset 0 matches everything.
+    {"everywhere", 0},
+    {"boundary", boundary}
+  };
 }
 // =============================================================================
 void

@@ -11,7 +11,9 @@ namespace nosh
   class edge_core
   {
     public:
-      explicit edge_core(const std::set<std::string> & _subdomain_ids = {}):
+      explicit edge_core(
+          const std::set<std::string> & _subdomain_ids = {"everywhere"}
+          ):
         subdomain_ids(_subdomain_ids)
         {};
 
