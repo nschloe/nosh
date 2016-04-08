@@ -140,18 +140,37 @@ mark_subdomains(const std::set<std::shared_ptr<nosh::subdomain>> & subdomains)
   const auto & owned_vertices = this->get_owned_vertices();
 
   for (const auto sd: subdomains) {
-    // Create a tag for each subdomain
+    // create meshset
     this->meshsets_[sd->id] = this->mbw_->create_meshset(moab::MESHSET_SET);
+
+    // take care of the vertices
     moab::Range verts = sd->is_boundary_only ?
       this->boundary_vertices :
       owned_vertices;
-    for (size_t k = 0; k < verts.size(); k++) {
-      const auto x = this->get_coords(verts[k]);
+    for (const auto & vert: verts) {
+      const auto x = this->get_coords(vert);
       if (sd->is_inside(x)) {
-        mbw_->add_entities(this->meshsets_.at(sd->id), {verts[k]});
+        mbw_->add_entities(this->meshsets_.at(sd->id), {vert});
       }
     }
-    // TODO edges
+
+    // Take care of the edges.
+    // We never need edges on the boundaries, so skip that here.
+    if (sd->is_boundary_only) {
+      continue;
+    }
+
+    const auto edges = this->mbw_->get_entities_by_type(0, moab::MBEDGE);
+    for (const auto & edge: edges) {
+      // Check if edge midpoint is_inside.
+      const auto v = this->mbw_->get_connectivity(edge);
+      const auto x0 = this->get_coords(v[0]);
+      const auto x1 = this->get_coords(v[1]);
+      const auto mp = 0.5 * (x0 + x1);
+      if (sd->is_inside(mp)) {
+        mbw_->add_entities(this->meshsets_.at(sd->id), {edge});
+      }
+    }
   }
 }
 // =============================================================================
