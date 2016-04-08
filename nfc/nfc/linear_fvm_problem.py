@@ -11,7 +11,7 @@ from .boundary_core import get_boundary_core_code_from_integrand
 from .helpers import templates_dir
 
 
-def get_code_linear_fvm_problem(namespace, name, obj):
+def get_code_linear_fvm_problem(namespace, class_name, obj):
     if getattr(obj, 'dirichlet_boundary_conditions', None):
         dbcs = set(obj.dirichlet_boundary_conditions)
         for dbc in dbcs:
@@ -32,23 +32,23 @@ def get_code_linear_fvm_problem(namespace, name, obj):
     for core in res.cores:
         integrand, measure = core
         if measure == 'dS':
-            class_name = 'edge_core%d' % len(edge_core_names)
+            core_class_name = 'edge_core%d' % len(edge_core_names)
             core_code, deps = get_edge_core_code_from_integrand(
-                    namespace, class_name, u, integrand
+                    namespace, core_class_name, u, integrand
                     )
-            edge_core_names.add(class_name)
+            edge_core_names.add(core_class_name)
         elif measure == 'dV':
-            class_name = 'vertex_core%d' % len(vertex_core_names)
+            core_class_name = 'vertex_core%d' % len(vertex_core_names)
             core_code, deps = get_vertex_core_code_from_integrand(
-                    namespace, class_name, u, integrand
+                    namespace, core_class_name, u, integrand
                     )
-            vertex_core_names.add(class_name)
+            vertex_core_names.add(core_class_name)
         elif measure == 'dGamma':
-            class_name = 'boundary_core%d' % len(boundary_core_names)
+            core_class_name = 'boundary_core%d' % len(boundary_core_names)
             core_code, deps = get_boundary_core_code_from_integrand(
-                    namespace, name, u, integrand
+                    namespace, core_class_name, u, integrand
                     )
-            boundary_core_names.add(class_name)
+            boundary_core_names.add(core_class_name)
         else:
             raise RuntimeError('Illegal measure type \'%s\'.' % measure)
 
@@ -60,7 +60,7 @@ def get_code_linear_fvm_problem(namespace, name, obj):
 
     # append the code of the linear problem itself
     code += '\n' + _get_code_linear_problem(
-            name,
+            class_name,
             edge_core_names,
             vertex_core_names,
             boundary_core_names,
