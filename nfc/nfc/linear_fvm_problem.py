@@ -5,9 +5,9 @@ import os
 from string import Template
 import sympy
 
-from .edge_core import get_edge_core_code_from_integrand
-from .vertex_core import get_vertex_core_code_from_integrand
-from .boundary_core import get_boundary_core_code_from_integrand
+from .edge_core import get_edge_core_code_from_integral
+from .vertex_core import get_vertex_core_code_from_integral
+from .boundary_core import get_boundary_core_code_from_integral
 from .helpers import templates_dir
 
 
@@ -31,21 +31,21 @@ def get_code_linear_fvm_problem(namespace, class_name, obj):
     code = ''
     for core in res.cores:
         integrand, measure = core
-        if measure == 'dS':
+        if isinstance(measure, nfl.dS):
             core_class_name = 'edge_core%d' % len(edge_core_names)
-            core_code, deps = get_edge_core_code_from_integrand(
-                    namespace, core_class_name, u, integrand
+            core_code, deps = get_edge_core_code_from_integral(
+                    namespace, core_class_name, u, integrand, measure
                     )
             edge_core_names.add(core_class_name)
-        elif measure == 'dV':
+        elif isinstance(measure, nfl.dV):
             core_class_name = 'vertex_core%d' % len(vertex_core_names)
-            core_code, deps = get_vertex_core_code_from_integrand(
+            core_code, deps = get_vertex_core_code_from_integral(
                     namespace, core_class_name, u, integrand
                     )
             vertex_core_names.add(core_class_name)
-        elif measure == 'dGamma':
+        elif isinstance(measure, nfl.dGamma):
             core_class_name = 'boundary_core%d' % len(boundary_core_names)
-            core_code, deps = get_boundary_core_code_from_integrand(
+            core_code, deps = get_boundary_core_code_from_integral(
                     namespace, core_class_name, u, integrand
                     )
             boundary_core_names.add(core_class_name)

@@ -34,7 +34,7 @@ class OuterNormal(Vector):
 
 
 class Subdomain(object):
-    boundary_only = False
+    pass
 
 
 # Linear operator defined via the operation along edges in a Delaunay mesh
@@ -78,6 +78,7 @@ class FvmMatrix(sympy.Function):
     #    self.edge_function = edge_function
     #    return
 
+
 class LinearFvmProblem(object):
     pass
 
@@ -88,30 +89,42 @@ class MatrixFactory(object):
 
 
 class Measure(object):
-    pass
+    def __init__(self, subdomains=None):
+        if subdomains is None:
+            self.subdomains = set()
+        else:
+            try:
+                self.subdomains = set(subdomains)
+            except TypeError:
+                # TypeError: 'B' object is not iterable
+                self.subdomains = set([subdomains])
+        return
 
 
 class dV(Measure):
-    pass
+    def __init__(self, subdomains=None):
+        super().__init__(subdomains)
 
 
 class dS(Measure):
-    pass
+    def __init__(self, subdomains=None):
+        super().__init__(subdomains)
 
 
 class dGamma(Measure):
-    pass
+    def __init__(self, subdomains=None):
+        super().__init__(subdomains)
 
 
 def integrate(integrand, measure):
     assert(isinstance(measure, Measure))
 
     if isinstance(measure, dS):
-        return Core(set([(integrand, 'dS')]))
+        return Core(set([(integrand, measure)]))
     elif isinstance(measure, dV):
-        return Core(set([(integrand, 'dV')]))
+        return Core(set([(integrand, measure)]))
     elif isinstance(measure, dGamma):
-        return Core(set([(integrand, 'dGamma')]))
+        return Core(set([(integrand, measure)]))
     else:
         raise RuntimeError('Illegal measure')
 

@@ -21,6 +21,12 @@ def get_code_subdomain(name, subdomain):
     # No undefined variables allowed
     assert(len(used_vars - expr_arguments) == 0)
 
+    try:
+        ibo = 'true' if subdomain.is_boundary_only else 'false'
+    except AttributeError:
+        # AttributeError: 'D2' object has no attribute 'is_boundary_only'
+        ibo = 'false'
+
     # template substitution
     with open(os.path.join(templates_dir, 'subdomain.tpl'), 'r') as f:
         src = Template(f.read())
@@ -28,8 +34,7 @@ def get_code_subdomain(name, subdomain):
             'name': name.lower(),
             'id': '"%s"' % name.lower(),
             'is_inside_return': extract_c_expression(result),
-            'is_boundary_only':
-                'true' if subdomain.is_boundary_only else 'false',
+            'is_boundary_only': ibo,
             'is_inside_body': '\n'.join(
                 ('(void) %s;' % name) for name in unused_arguments
                 ),

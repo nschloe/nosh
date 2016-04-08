@@ -1,5 +1,5 @@
-#ifndef NOSH_LINEAR_SOLVER_H
-#define NOSH_LINEAR_SOLVER_H
+#ifndef NOSH_LINEAR_PROBLEM_H
+#define NOSH_LINEAR_PROBLEM_H
 
 #include <Teuchos_Tuple.hpp>
 #include <Teuchos_RCPStdSharedPtrConversions.hpp>
@@ -224,4 +224,4 @@ namespace nosh
   };
 } // namespace nosh
 
-#endif // NOSH_LINEAR_SOLVER_H
+#endif // NOSH_LINEAR_PROBLEM_H

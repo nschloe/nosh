@@ -12,15 +12,15 @@ def get_code_dirichletbc(name, dbc):
 
     dependencies = dbc.subdomains
 
-    subdomain_ids = set([
-        sd.__class__.__name__.lower() for sd in dbc.subdomains
-        ])
-
     result = dbc.eval(x)
     try:
         is_x_used_eval = x in result.free_symbols
     except AttributeError:
         is_x_used_eval = False
+
+    subdomain_ids = set([
+        sd.__class__.__name__.lower() for sd in dbc.subdomains
+        ])
 
     if len(subdomain_ids) == 0:
         # If nothing is specified, use the entire boundary

@@ -30,14 +30,17 @@ def get_code_edge_core(namespace, class_name, core):
             )
 
 
-def get_edge_core_code_from_integrand(namespace, class_name, u, integrand):
+def get_edge_core_code_from_integral(
+        namespace, class_name, u, integrand, measure
+        ):
     '''Get code discretizer from expression.
     '''
     edge_coeff, edge_affine = _get_expressions_from_integrand(u, integrand)
 
     return _get_edge_core_code(
             namespace, class_name,
-            edge_coeff, edge_affine
+            edge_coeff, edge_affine,
+            measure.subdomains
             )
 
 
@@ -79,7 +82,11 @@ def _get_expressions_from_integrand(u, integrand):
         )
 
 
-def _get_edge_core_code(namespace, class_name, edge_coeff, edge_affine):
+def _get_edge_core_code(
+        namespace, class_name,
+        edge_coeff, edge_affine,
+        subdomains
+        ):
     assert(len(edge_coeff) == 2)
     assert(len(edge_coeff[0]) == 2)
     assert(len(edge_coeff[1]) == 2)
@@ -96,7 +103,20 @@ def _get_edge_core_code(namespace, class_name, edge_coeff, edge_affine):
     dependencies = set()
     dependencies.update(used_expressions)
 
-    # init and declare expressions in the C++ code
+    # init parent object
+    subdomain_ids = set([
+        sd.__class__.__name__.lower() for sd in subdomains
+        ])
+    if len(subdomain_ids) == 0:
+        # If nothing is specified, use the entire boundary
+        subdomain_ids.add('everywhere')
+    parent_init = '{%s}' % ', '.join(['"%s"' % s for s in subdomain_ids])
+
+    members_init.append(
+            'nosh::edge_core(%s)' % parent_init
+            )
+
+    # init and declare expressions
     for expr in used_expressions:
         members_init.append('%s(%s::%s())' % (expr, namespace, expr))
         members_declare.append(
