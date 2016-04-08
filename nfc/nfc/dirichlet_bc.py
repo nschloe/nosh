@@ -22,14 +22,18 @@ def get_code_dirichletbc(name, dbc):
     except AttributeError:
         is_x_used_eval = False
 
+    if len(subdomain_ids) == 0:
+        # If nothing is specified, use the entire boundary
+        subdomain_ids.add('boundary')
+
+    init = '{%s}' % ', '.join(['"%s"' % s for s in subdomain_ids])
+
     # template substitution
     with open(os.path.join(templates_dir, 'dirichlet_bc.tpl'), 'r') as f:
         src = Template(f.read())
         code = src.substitute({
             'name': name.lower(),
-            'init': 'nosh::dirichlet_bc({%s})' % ', '.join([
-                '"%s"' % s for s in subdomain_ids
-                ]),
+            'init': 'nosh::dirichlet_bc(%s)' % init,
             'eval_return_value': extract_c_expression(result),
             'eval_void': '' if is_x_used_eval else '(void) x;\n',
             })

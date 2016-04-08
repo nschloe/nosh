@@ -7,7 +7,9 @@ namespace nosh {
   class dirichlet_bc
   {
     public:
-      dirichlet_bc(const std::set<std::string> & _subdomain_ids):
+      explicit dirichlet_bc(
+          const std::set<std::string> & _subdomain_ids
+          ):
         subdomain_ids(_subdomain_ids)
       {};
 
