@@ -8,9 +8,6 @@
 #include <Tpetra_Vector.hpp>
 #include <Teuchos_VerboseObject.hpp>
 
-#include <moab/Skinner.hpp>
-#include <MBParallelConventions.h>
-
 namespace nosh
 {
 // =============================================================================
@@ -37,7 +34,7 @@ mesh_tri(
 #endif
   ,control_volumes_(this->compute_control_volumes_())
   ,edge_data_(this->compute_edge_data_())
-  ,boundary_data_(this->compute_boundary_data_())
+  ,boundary_surface_areas_(this->compute_boundary_surface_areas_())
 {
 }
 // =============================================================================
@@ -59,17 +56,17 @@ compute_edge_data_() const
 
   size_t num_cells = cells.size();
 
-  size_t num_edges = relations_.edge_nodes.size();
+  size_t num_edges = relations_.edge_vertices.size();
 
   std::vector<edge_data> _edge_data(num_edges);
 
   // compute all coordinates
   std::vector<Eigen::Vector3d> edge_coords(num_edges);
   for (size_t k = 0; k < num_edges; k++) {
-    auto tmp1 = std::get<0>(relations_.edge_nodes[k]);
+    auto tmp1 = std::get<0>(relations_.edge_vertices[k]);
     std::vector<double> coords0 = this->mbw_->get_coords({tmp1});
 
-    tmp1 = std::get<1>(relations_.edge_nodes[k]);
+    tmp1 = std::get<1>(relations_.edge_vertices[k]);
     std::vector<double> coords1 = this->mbw_->get_coords({tmp1});
 
     edge_coords[k][0] = coords0[0] - coords1[0];
@@ -163,23 +160,23 @@ compute_control_volumes_() const
   Teuchos::TimeMonitor tm(*compute_control_volumes_time_);
 #endif
 #ifndef NDEBUG
-  TEUCHOS_ASSERT(nodes_map_);
-  TEUCHOS_ASSERT(nodes_overlap_map_);
+  TEUCHOS_ASSERT(vertices_map_);
+  TEUCHOS_ASSERT(vertices_overlap_map_);
 #endif
 
   auto _control_volumes = std::make_shared<Tpetra::Vector<double,int,int>>(
-      Teuchos::rcp(nodes_map_)
+      Teuchos::rcp(vertices_map_)
       );
 
   // Create temporaries to hold the overlap values for control volumes.
-  Tpetra::Vector<double,int,int> cv_overlap(Teuchos::rcp(nodes_overlap_map_));
+  Tpetra::Vector<double,int,int> cv_overlap(Teuchos::rcp(vertices_overlap_map_));
 
   this->compute_control_volumes_t_(cv_overlap);
 
   // Export control volumes to a non-overlapping map, and sum the entries.
   Teuchos::RCP<const Tpetra::Export<int,int>> exporter = Tpetra::createExport(
-      Teuchos::rcp(nodes_overlap_map_),
-      Teuchos::rcp(nodes_map_)
+      Teuchos::rcp(vertices_overlap_map_),
+      Teuchos::rcp(vertices_map_)
       );
 
   _control_volumes->doExport(cv_overlap, *exporter, Tpetra::ADD);
@@ -214,98 +211,22 @@ compute_control_volumes_t_(Tpetra::Vector<double,int,int> & cv_overlap) const
   return;
 }
 // =============================================================================
-std::vector<moab::EntityHandle>
-mesh_tri::
-compute_boundary_edges_() const
-{
-  // get all the cell elements on each task
-  moab::Range cells = this->mbw_->get_entities_by_dimension(0, 2);
-
-  // get face skin
-  moab::Skinner tool(this->mbw_->mb.get());
-  moab::Range edges;
-  moab::ErrorCode rval;
-  rval = tool.find_skin(0, cells, false, edges);
-  TEUCHOS_ASSERT_EQUALITY(rval, moab::MB_SUCCESS);
-
-  // filter out edges that are shared with other tasks; they will not be on the
-  // true skin
-  moab::Range shared_edges;
-  rval = this->mcomm_->filter_pstatus(
-      edges,
-      PSTATUS_SHARED,
-      PSTATUS_AND,
-      -1,
-      &shared_edges
-      );
-  TEUCHOS_ASSERT_EQUALITY(rval, moab::MB_SUCCESS);
-
-  if (!shared_edges.empty()) {
-    edges = subtract(edges, shared_edges);
-  }
-
-  // convert range to vector
-  std::vector<moab::EntityHandle> boundary_edges(edges.begin(), edges.end());
-
-  return boundary_edges;
-}
-// =============================================================================
-mesh::boundary_data
-mesh_tri::
-compute_boundary_data_() const
-{
-  const auto boundary_edges = this->compute_boundary_edges_();
-
-  const auto boundary_vertices =
-    this->compute_boundary_vertices_(boundary_edges);
-  const auto boundary_surface_areas =
-    this->compute_boundary_surface_areas_(boundary_vertices, boundary_edges);
-
-  const boundary_data bd = {
-    boundary_vertices,
-    boundary_surface_areas
-  };
-  return bd;
-}
-// =============================================================================
-std::vector<moab::EntityHandle>
-mesh_tri::
-compute_boundary_vertices_(
-    const std::vector<moab::EntityHandle> & boundary_edges
-    ) const
-{
-  // get all vertices on the boundary edges
-  const auto verts = this->mbw_->get_adjacencies(
-      boundary_edges,
-      0,
-      false,
-      moab::Interface::UNION
-      );
-
-  // convert range to vector
-  std::vector<moab::EntityHandle> boundary_verts(verts.begin(), verts.end());
-
-  return boundary_verts;
-}
-// =============================================================================
 std::vector<double>
 mesh_tri::
-compute_boundary_surface_areas_(
-    const std::vector<moab::EntityHandle> & boundary_vertices,
-    const std::vector<moab::EntityHandle> & boundary_edges
-    ) const
+compute_boundary_surface_areas_() const
 {
-  // Cache vector for _all_ vertices. We actually only need the boundary ones,
-  // but that'll make it easier for us here
+  // Store data for _all_ vertices. We actually only set the boundary ones
+  // though.
+  // This could be organized more efficiently with MOAB tags.
   const moab::Range vertices = this->mbw_->get_entities_by_dimension(0, 0);
   const size_t num_vertices = vertices.size();
   std::vector<double> boundary_surface_areas(num_vertices);
   // initialize to 0
   std::fill(boundary_surface_areas.begin(), boundary_surface_areas.end(), 0.0);
 
-  for (size_t k = 0; k < boundary_edges.size(); k++) {
-    const size_t edge_idx = this->local_index(boundary_edges[k]);
-    const auto verts = this->mbw_->get_connectivity(boundary_edges[k]);
+  for (size_t k = 0; k < this->boundary_skin_.size(); k++) {
+    const size_t edge_idx = this->local_index(boundary_skin_[k]);
+    const auto verts = this->mbw_->get_connectivity(boundary_skin_[k]);
     // add contributions to the verts
     boundary_surface_areas[this->local_index(verts[0])] +=
       0.5 * this->edge_data_[edge_idx].length;
@@ -313,14 +234,7 @@ compute_boundary_surface_areas_(
       0.5 * this->edge_data_[edge_idx].length;
   }
 
-  // Sort the values into a smaller (boundary-only) vector, in sync with
-  // boundary_vertices.
-  std::vector<double> bsa(boundary_vertices.size());
-  for (size_t k = 0; k < boundary_vertices.size(); k++) {
-    bsa[k] = boundary_surface_areas[this->local_index(boundary_vertices[k])];
-  }
-
-  return bsa;
+  return boundary_surface_areas;
 }
 // =============================================================================
 }  // namespace nosh

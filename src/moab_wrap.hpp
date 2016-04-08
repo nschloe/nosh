@@ -236,29 +236,6 @@ namespace nosh {
         return adj_entities;
       }
 
-      moab::Range
-      get_adjacencies(
-          const moab::EntityHandle from_entity,
-          const int to_dimension,
-          const bool create_if_missing,
-          const int operation_type = moab::Interface::INTERSECT
-          )
-      {
-        moab::Range adj_entities;
-        const auto rval = this->mb->get_adjacencies(
-            &from_entity,
-            1,
-            to_dimension,
-            create_if_missing,
-            adj_entities,
-            operation_type
-            );
-        if (rval != moab::MB_SUCCESS) {
-          throw std::runtime_error("error in moab::get_adjacencies");
-        }
-        return adj_entities;
-      }
-
       int
       get_number_entities_by_dimension(
           const moab::EntityHandle meshset,
@@ -405,6 +382,25 @@ namespace nosh {
     void
     tag_set_data(
         moab::Tag tag_handle,
+        const std::vector<moab::EntityHandle> entity_handles,
+        const void * tag_data
+        )
+    {
+      const auto rval = this->mb->tag_set_data(
+        tag_handle,
+        &entity_handles[0],
+        entity_handles.size(),
+        tag_data
+        );
+      if (rval != moab::MB_SUCCESS) {
+        throw std::runtime_error("error in moab::tag_set_data");
+      }
+      return;
+    }
+
+    void
+    tag_set_data(
+        moab::Tag tag_handle,
         const moab::Range & entity_handles,
         const void * tag_data
         )
@@ -418,6 +414,84 @@ namespace nosh {
         throw std::runtime_error("error in moab::tag_set_data");
       }
       return;
+    }
+
+    moab::EntityHandle
+    create_meshset(
+        const unsigned int options,
+        int start_id = 0
+        )
+    {
+      moab::EntityHandle handle;
+      const auto rval = this->mb->create_meshset(
+          options,
+          handle,
+          start_id
+          );
+      if (rval != moab::MB_SUCCESS) {
+        throw std::runtime_error("error in moab::create_meshset");
+      }
+      return handle;
+    }
+
+    void
+    add_entities(
+        const moab::EntityHandle & meshset,
+        const moab::Range & entities
+        )
+    {
+      const auto rval = this->mb->add_entities(
+          meshset,
+          entities
+          );
+      if (rval != moab::MB_SUCCESS) {
+        throw std::runtime_error("error in moab::add_entities");
+      }
+      return;
+    }
+
+    void
+    add_entities(
+        const moab::EntityHandle & meshset,
+        const std::vector<moab::EntityHandle> & entities
+        )
+    {
+      const auto rval = this->mb->add_entities(
+          meshset,
+          &entities[0],
+          entities.size()
+          );
+      if (rval != moab::MB_SUCCESS) {
+        throw std::runtime_error("error in moab::add_entities");
+      }
+      return;
+    }
+
+    void
+    unite_meshset(
+        moab::EntityHandle meshset1,
+        const moab::EntityHandle meshset2
+        )
+    {
+      const auto rval = this->mb->unite_meshset(
+          meshset1,
+          meshset2
+          );
+      if (rval != moab::MB_SUCCESS) {
+        throw std::runtime_error("error in moab::unite_meshset");
+      }
+      return;
+    }
+
+    int
+    get_dimension()
+    {
+      int dim;
+      const auto rval = this->mb->get_dimension(dim);
+      if (rval != moab::MB_SUCCESS) {
+        throw std::runtime_error("error in moab::get_dimension");
+      }
+      return dim;
     }
 
     public:

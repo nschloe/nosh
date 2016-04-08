@@ -13,6 +13,11 @@ int main(int argc, char *argv[]) {
   //const auto mesh = nosh::read("cubesmall.h5m");
   //const auto mesh = nosh::read("cube.h5m");
 
+  mesh->mark_subdomains({
+      std::make_shared<neumann_boundary::d1>(),
+      std::make_shared<neumann_boundary::d2>()
+      });
+
   neumann_boundary::problem p(mesh);
 
   nosh::function x(mesh);
@@ -64,8 +69,8 @@ int main(int argc, char *argv[]) {
 
   nosh::write(x, "out.h5m");
   }
-  catch (...) {
-    std::cerr << "Unknown exception" << std::endl;
+  catch (std::exception & e) {
+    std::cerr << e.what() << std::endl;
     success = false;
   }
 

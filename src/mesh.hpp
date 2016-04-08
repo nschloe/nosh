@@ -19,6 +19,7 @@
 #include <Eigen/Dense>
 
 #include "moab_wrap.hpp"
+#include "subdomain.hpp"
 
 typedef std::tuple<moab::EntityHandle, moab::EntityHandle> edge;
 
@@ -30,7 +31,7 @@ class mesh
 private:
   struct entity_relations {
     //! Local edge ID -> Global node IDs.
-    std::vector<edge> edge_nodes;
+    std::vector<edge> edge_vertices;
     //! Local cell ID -> Local edge IDs.
     std::vector<std::vector<moab::EntityHandle>> cell_edges;
   };
@@ -43,7 +44,7 @@ public:
   };
 
   struct boundary_data {
-    std::vector<moab::EntityHandle> vertices;
+    moab::Range vertices;
     std::vector<double> surface_areas;
   };
 
@@ -56,6 +57,18 @@ public:
 
   virtual
   ~mesh();
+
+  void
+  mark_subdomains(const std::set<std::shared_ptr<nosh::subdomain>> & subdomains);
+
+  moab::Range
+  get_vertices(const std::string & subdomain_id) const;
+
+  moab::Range
+  get_edges(const std::string & subdomain_id) const;
+
+  moab::Range
+  get_vertex_tuple(const moab::EntityHandle & edge) const;
 
   void
   write(const std::string & filename) const;
@@ -84,25 +97,25 @@ public:
   const std::vector<edge>
   my_edges() const
   {
-    return relations_.edge_nodes;
+    return relations_.edge_vertices;
   }
 
   std::shared_ptr<const Tpetra::Map<int,int>>
   map() const
   {
 #ifndef NDEBUG
-    TEUCHOS_ASSERT(nodes_map_);
+    TEUCHOS_ASSERT(vertices_map_);
 #endif
-    return nodes_map_;
+    return vertices_map_;
   }
 
   std::shared_ptr<const Tpetra::Map<int,int>>
   overlap_map() const
   {
 #ifndef NDEBUG
-    TEUCHOS_ASSERT(nodes_overlap_map_);
+    TEUCHOS_ASSERT(vertices_overlap_map_);
 #endif
-    return nodes_overlap_map_;
+    return vertices_overlap_map_;
   }
 
   std::shared_ptr<const Tpetra::Map<int,int>>
@@ -124,7 +137,7 @@ public:
   }
 
   moab::Range
-  get_owned_nodes() const;
+  get_owned_vertices() const;
 
   moab::EntityHandle
   gid(const moab::EntityHandle e) const
@@ -165,8 +178,6 @@ public:
       const moab::EntityHandle vertex
       ) const;
 
-  const std::shared_ptr<nosh::moab_wrap> mbw_;
-
 public:
   virtual
   std::shared_ptr<const Tpetra::Vector<double,int,int>>
@@ -177,18 +188,26 @@ public:
   get_edge_data() const = 0;
 
   virtual
-  std::vector<moab::EntityHandle>
-  boundary_vertices() const = 0;
-
-  virtual
   std::vector<double>
   boundary_surface_areas() const = 0;
+
+private:
+  std::map<std::string, moab::EntityHandle>
+  create_default_meshsets_();
+
+  std::vector<moab::EntityHandle>
+  compute_boundary_skin_() const;
+
+  moab::Range
+  compute_boundary_vertices_(
+      const std::vector<moab::EntityHandle> & boundary_skin
+      ) const;
 
 protected:
 
   Eigen::Vector3d
   compute_triangle_circumcenter_(
-      const std::vector<Eigen::Vector3d> &nodes
+      const std::vector<Eigen::Vector3d> &vertices
       ) const;
 
   Eigen::Vector3d
@@ -211,13 +230,14 @@ private:
 
 public:
   const std::shared_ptr<const Teuchos::Comm<int>> comm;
+  const std::shared_ptr<nosh::moab_wrap> mbw_;
 
 protected:
   const std::shared_ptr<moab::ParallelComm> mcomm_;
 
 protected:
-  const std::shared_ptr<const Tpetra::Map<int,int>> nodes_map_;
-  const std::shared_ptr<const Tpetra::Map<int,int>> nodes_overlap_map_;
+  const std::shared_ptr<const Tpetra::Map<int,int>> vertices_map_;
+  const std::shared_ptr<const Tpetra::Map<int,int>> vertices_overlap_map_;
 
 private:
   const std::shared_ptr<const Tpetra::Map<int,int>> complex_map_;
@@ -232,8 +252,16 @@ public:
   const std::vector<Teuchos::Tuple<int,2>> edge_gids;
   const std::vector<Teuchos::Tuple<int,4>> edge_gids_complex;
 
-private:
+protected:
+  const std::vector<moab::EntityHandle> boundary_skin_;
 
+public:
+  const moab::Range boundary_vertices;
+
+private:
+  std::map<std::string, moab::EntityHandle> meshsets_;
+
+private:
   const std::vector<Teuchos::Tuple<int,2>>
   build_edge_lids_() const;
 

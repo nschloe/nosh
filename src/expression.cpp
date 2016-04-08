@@ -20,18 +20,18 @@ namespace nosh {
 
     auto cv_data = cv->getData();
     auto vals_data = vals->getDataNonConst();
-    auto nodes = mesh.get_owned_nodes();
+    auto vertices = mesh.get_owned_vertices();
 
 #ifndef NDEBUG
-    TEUCHOS_ASSERT_EQUALITY(nodes.size(), cv_data.size());
-    TEUCHOS_ASSERT_EQUALITY(nodes.size(), vals_data.size());
+    TEUCHOS_ASSERT_EQUALITY(vertices.size(), cv_data.size());
+    TEUCHOS_ASSERT_EQUALITY(vertices.size(), vals_data.size());
 #endif
 
     switch (expr.degree) {
       case 0:
-        for (size_t k = 0; k < nodes.size(); k++)
+        for (size_t k = 0; k < vertices.size(); k++)
         {
-          vals_data[k] = expr(mesh.get_coords(nodes[k])) * cv_data[k];
+          vals_data[k] = expr(mesh.get_coords(vertices[k])) * cv_data[k];
         }
         break;
 

@@ -17,6 +17,11 @@ int main(int argc, char *argv[]) {
   //const auto mesh = nosh::read("cubesmall.h5m");
   //const auto mesh = nosh::read("cube.h5m");
 
+  mesh->mark_subdomains({
+      std::make_shared<poisson::d1>(),
+      std::make_shared<poisson::d2>()
+      });
+
   poisson::poisson problem(mesh);
 
   nosh::function x(mesh);
@@ -70,5 +75,5 @@ int main(int argc, char *argv[]) {
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true, *out, success);
 
-  return EXIT_SUCCESS;
+  return success ? EXIT_SUCCESS : EXIT_FAILURE;
 }

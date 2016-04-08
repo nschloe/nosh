@@ -3,6 +3,7 @@
 #include <moab/Core.hpp>
 #include <moab/ParallelComm.hpp>
 #include <MBParallelConventions.h>
+#include <moab/Skinner.hpp>
 
 #include <Tpetra_Vector.hpp>
 #include <Teuchos_RCP.hpp>
@@ -27,8 +28,8 @@ mesh(
   comm(_comm),
   mbw_(std::make_shared<moab_wrap>(mb)),
   mcomm_(mcomm),
-  nodes_map_(this->get_map_(this->get_owned_gids_())),
-  nodes_overlap_map_(this->get_map_(this->get_overlap_gids_())),
+  vertices_map_(this->get_map_(this->get_owned_gids_())),
+  vertices_overlap_map_(this->get_map_(this->get_overlap_gids_())),
   complex_map_(this->get_map_(this->complexify_(this->get_owned_gids_()))),
   complex_overlap_map_(
     this->get_map_(this->complexify_(this->get_overlap_gids_()))
@@ -38,17 +39,178 @@ mesh(
   ,edge_lids_complex(build_edge_lids_complex_())
   ,edge_gids(build_edge_gids_())
   ,edge_gids_complex(build_edge_gids_complex_())
+  ,boundary_skin_(compute_boundary_skin_())
+  ,boundary_vertices(compute_boundary_vertices_(boundary_skin_))
+  ,meshsets_(create_default_meshsets_())
 {
 // TODO resurrect
 //#ifndef NDEBUG
-//  // Assert that all processes own nodes
-//  TEUCHOS_ASSERT_INEQUALITY(owned_nodes_.size(), >, 0);
+//  // Assert that all processes own vertices
+//  TEUCHOS_ASSERT_INEQUALITY(owned_vertices_.size(), >, 0);
 //#endif
 }
 // =============================================================================
 mesh::
 ~mesh()
 {
+}
+// =============================================================================
+std::map<std::string, moab::EntityHandle>
+mesh::
+create_default_meshsets_()
+{
+  // create a meshset for all boundary vertices
+  const auto boundary = this->mbw_->create_meshset(moab::MESHSET_SET);
+  mbw_->add_entities(boundary, this->boundary_vertices);
+
+  return {
+    // MOAB's default meshset 0 matches everything.
+    {"everywhere", 0},
+    {"boundary", boundary}
+  };
+}
+// =============================================================================
+std::vector<moab::EntityHandle>
+mesh::
+compute_boundary_skin_() const
+{
+  // Find the dimension we're operating on.
+  const auto dim =
+    this->mbw_->get_number_entities_by_type(0, moab::MBTET) > 0 ? 3 : 2;
+
+  // get all the cell elements on each task
+  moab::Range body_entities = this->mbw_->get_entities_by_dimension(0, dim);
+
+  // get face skin
+  moab::Skinner tool(this->mbw_->mb.get());
+  moab::Range skin_entities;
+  moab::ErrorCode rval;
+  rval = tool.find_skin(0, body_entities, false, skin_entities);
+  TEUCHOS_ASSERT_EQUALITY(rval, moab::MB_SUCCESS);
+
+  // filter out skin elements that are shared with other tasks; they will not
+  // be on the true skin
+  moab::Range shared_skin;
+  rval = this->mcomm_->filter_pstatus(
+      skin_entities,
+      PSTATUS_SHARED,
+      PSTATUS_AND,
+      -1,
+      &shared_skin
+      );
+  TEUCHOS_ASSERT_EQUALITY(rval, moab::MB_SUCCESS);
+
+  if (!shared_skin.empty()) {
+    skin_entities = subtract(skin_entities, shared_skin);
+  }
+
+  // convert range to vector
+  std::vector<moab::EntityHandle> skin_entities_vector(
+      skin_entities.begin(),
+      skin_entities.end()
+      );
+
+  return skin_entities_vector;
+}
+// =============================================================================
+moab::Range
+mesh::
+compute_boundary_vertices_(
+    const std::vector<moab::EntityHandle> & boundary_skin
+    ) const
+{
+  // get all vertices on the boundary edges
+  const auto verts = this->mbw_->get_adjacencies(
+      boundary_skin,
+      0,
+      false,
+      moab::Interface::UNION
+      );
+
+  // convert range to vector
+  // std::vector<moab::EntityHandle> boundary_verts(verts.begin(), verts.end());
+
+  return verts;
+}
+// =============================================================================
+void
+mesh::
+mark_subdomains(const std::set<std::shared_ptr<nosh::subdomain>> & subdomains)
+{
+  const auto & owned_vertices = this->get_owned_vertices();
+
+  for (const auto sd: subdomains) {
+    // create meshset
+    this->meshsets_[sd->id] = this->mbw_->create_meshset(moab::MESHSET_SET);
+
+    // take care of the vertices
+    moab::Range verts = sd->is_boundary_only ?
+      this->boundary_vertices :
+      owned_vertices;
+    for (const auto & vert: verts) {
+      const auto x = this->get_coords(vert);
+      if (sd->is_inside(x)) {
+        mbw_->add_entities(this->meshsets_.at(sd->id), {vert});
+      }
+    }
+
+    // Take care of the edges.
+    // We never need edges on the boundaries, so skip that here.
+    if (sd->is_boundary_only) {
+      continue;
+    }
+
+    const auto edges = this->mbw_->get_entities_by_type(0, moab::MBEDGE);
+    for (const auto & edge: edges) {
+      // Check if edge midpoint is_inside.
+      const auto v = this->mbw_->get_connectivity(edge);
+      const auto x0 = this->get_coords(v[0]);
+      const auto x1 = this->get_coords(v[1]);
+      const auto mp = 0.5 * (x0 + x1);
+      if (sd->is_inside(mp)) {
+        mbw_->add_entities(this->meshsets_.at(sd->id), {edge});
+      }
+    }
+  }
+}
+// =============================================================================
+moab::Range
+mesh::
+get_vertices(const std::string & subdomain_id) const
+{
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(
+      this->meshsets_.count(subdomain_id) == 0,
+      "Subdomain \"" << subdomain_id << "\" not found on mesh. "
+      << " Did you call mark_subdomains({...}) on the mesh?"
+      );
+
+  return this->mbw_->get_entities_by_type(
+      this->meshsets_.at(subdomain_id),
+      moab::MBVERTEX
+      );
+}
+// =============================================================================
+moab::Range
+mesh::
+get_edges(const std::string & subdomain_id) const
+{
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(
+    this->meshsets_.count(subdomain_id) == 0,
+    "Subdomain \"" << subdomain_id << "\" not found on mesh. "
+      << "Did you call mark_subdomains({...}) on the mesh?"
+      );
+
+  return this->mbw_->get_entities_by_type(
+      this->meshsets_.at(subdomain_id),
+      moab::MBEDGE
+      );
+}
+// =============================================================================
+moab::Range
+mesh::
+get_vertex_tuple(const moab::EntityHandle & edge) const
+{
+  return this->mbw_->get_adjacencies({edge}, 0, false);
 }
 // =============================================================================
 void
@@ -115,12 +277,12 @@ get_vector(const std::string & tag_name) const
 
   TEUCHOS_ASSERT_EQUALITY(
     data.size(),
-    this->nodes_map_->getNodeNumElements()
+    this->vertices_map_->getNodeNumElements()
     );
 
   // Set vector values from an existing array (copy)
   return std::make_shared<Tpetra::Vector<double,int,int>>(
-      Teuchos::rcp(this->nodes_map_),
+      Teuchos::rcp(this->vertices_map_),
       Teuchos::ArrayView<double>(data)
       );
 }
@@ -235,7 +397,7 @@ insert_vector(
 
   TEUCHOS_ASSERT_EQUALITY(
     data.size(),
-    this->nodes_map_->getNodeNumElements()
+    this->vertices_map_->getNodeNumElements()
     );
 
   // set data
@@ -340,7 +502,7 @@ build_edge_gids_complex_() const
 // =============================================================================
 moab::Range
 mesh::
-get_owned_nodes() const
+get_owned_vertices() const
 {
   // TODO resurrect?
   //const auto mb = this->mcomm_->get_moab();
@@ -367,7 +529,7 @@ mesh::
 get_owned_gids_() const
 {
   moab::Tag gid = mbw_->tag_get_handle("GLOBAL_ID");
-  return this->mbw_->tag_get_int_data(gid, this->get_owned_nodes());
+  return this->mbw_->tag_get_int_data(gid, this->get_owned_vertices());
 }
 // =============================================================================
 const std::vector<int>
@@ -467,7 +629,7 @@ build_entity_relations_()
 
   // create edge->node relation
   std::vector<std::tuple<moab::EntityHandle, moab::EntityHandle>>
-    edge_nodes(edges.size());
+    edge_vertices(edges.size());
 
   for (size_t k = 0; k < edges.size(); k++) {
     moab::Range verts = this->mbw_->get_adjacencies(
@@ -477,10 +639,10 @@ build_entity_relations_()
         moab::Interface::UNION
         );
 
-    edge_nodes[k] = std::make_tuple(verts[0], verts[1]);
+    edge_vertices[k] = std::make_tuple(verts[0], verts[1]);
   }
 
-  mesh::entity_relations relations = {edge_nodes, cell_edges};
+  mesh::entity_relations relations = {edge_vertices, cell_edges};
 
   //// for testing
   //moab::Range verts = this->mbw_->mb->get_adjacencies(
@@ -499,15 +661,15 @@ build_graph() const
 {
   // Which row/column map to use for the matrix?
   // The two possibilites are the non-overlapping map fetched from
-  // the owned_nodes map, and the overlapping one from the
-  // overlap_nodes.
+  // the owned_vertices map, and the overlapping one from the
+  // overlap_vertices.
   // Let's illustrate the implications with the example of the matrix
   //   [ 2 1   ]
   //   [ 1 2 1 ]
   //   [   1 2 ].
   // Suppose subdomain 1 consists of node 1, subdomain 2 of node 3,
   // and node 2 forms the boundary between them.
-  // For two processes, if process 1 owns nodes 1 and 2, the matrix
+  // For two processes, if process 1 owns vertices 1 and 2, the matrix
   // will be split as
   //   [ 2 1   ]   [       ]
   //   [ 1 2 1 ] + [       ]
@@ -532,9 +694,9 @@ build_graph() const
   //   2. Compute.
   //   3. Communicate (part of) y(2) to process 1.
   //
-  // In the general case, assuming that the number of nodes adjacent
+  // In the general case, assuming that the number of vertices adjacent
   // to a boundary (on one side) are approximately the number of
-  // nodes on that boundary, there is not much difference in
+  // vertices on that boundary, there is not much difference in
   // communication between the patterns.
   // What does differ, though, is the workload on the processes
   // during the computation phase: Process 1 that owns the whole
@@ -543,7 +705,7 @@ build_graph() const
   // lower in scenario 1 (7 vs. 8 FLOPs); the same is true for
   // storage.
   // Hence, it comes down to the question whether or not the
-  // mesh generator provided a fair share of the boundary nodes.
+  // mesh generator provided a fair share of the boundary vertices.
   // If yes, then scenario 1 will yield approximately even
   // computation times; if not, then scenario 2 will guarantee
   // equal computation times at the cost of higher total
@@ -572,7 +734,7 @@ build_graph() const
 
   const std::vector<edge> edges = this->my_edges();
 
-  // Loop over all edges and put entries wherever two nodes are connected.
+  // Loop over all edges and put entries wherever two vertices are connected.
   // TODO check if we can use LIDs here
   for (size_t k = 0; k < edges.size(); k++) {
     const Teuchos::Tuple<int,2> & idx = this->edge_gids[k];
@@ -593,15 +755,15 @@ build_complex_graph() const
 {
   // Which row/column map to use for the matrix?
   // The two possibilites are the non-overlapping map fetched from
-  // the owned_nodes map, and the overlapping one from the
-  // overlap_nodes.
+  // the owned_vertices map, and the overlapping one from the
+  // overlap_vertices.
   // Let's illustrate the implications with the example of the matrix
   //   [ 2 1   ]
   //   [ 1 2 1 ]
   //   [   1 2 ].
   // Suppose subdomain 1 consists of node 1, subdomain 2 of node 3,
   // and node 2 forms the boundary between them.
-  // For two processes, if process 1 owns nodes 1 and 2, the matrix
+  // For two processes, if process 1 owns vertices 1 and 2, the matrix
   // will be split as
   //   [ 2 1   ]   [       ]
   //   [ 1 2 1 ] + [       ]
@@ -626,9 +788,9 @@ build_complex_graph() const
   //   2. Compute.
   //   3. Communicate (part of) y(2) to process 1.
   //
-  // In the general case, assuming that the number of nodes adjacent
+  // In the general case, assuming that the number of vertices adjacent
   // to a boundary (on one side) are approximately the number of
-  // nodes on that boundary, there is not much difference in
+  // vertices on that boundary, there is not much difference in
   // communication between the patterns.
   // What does differ, though, is the workload on the processes
   // during the computation phase: Process 1 that owns the whole
@@ -637,7 +799,7 @@ build_complex_graph() const
   // lower in scenario 1 (7 vs. 8 FLOPs); the same is true for
   // storage.
   // Hence, it comes down to the question whether or not the
-  // mesh generator provided a fair share of the boundary nodes.
+  // mesh generator provided a fair share of the boundary vertices.
   // If yes, then scenario 1 will yield approximately even
   // computation times; if not, then scenario 2 will guarantee
   // equal computation times at the cost of higher total
@@ -665,7 +827,7 @@ build_complex_graph() const
 
   const std::vector<edge> edges = this->my_edges();
 
-  // Loop over all edges and put entries wherever two nodes are connected.
+  // Loop over all edges and put entries wherever two vertices are connected.
   // TODO check if we can use LIDs here
   for (size_t k = 0; k < edges.size(); k++) {
     const Teuchos::Tuple<int,4> & idx = this->edge_gids_complex[k];
@@ -686,13 +848,13 @@ build_complex_graph() const
 Eigen::Vector3d
 mesh::
 compute_triangle_circumcenter_(
-  const std::vector<Eigen::Vector3d> &nodes
+  const std::vector<Eigen::Vector3d> &vertices
   ) const
 {
 #ifndef NDEBUG
-  TEUCHOS_ASSERT_EQUALITY(nodes.size(), 3);
+  TEUCHOS_ASSERT_EQUALITY(vertices.size(), 3);
 #endif
-  return this->compute_triangle_circumcenter_(nodes[0], nodes[1], nodes[2]);
+  return this->compute_triangle_circumcenter_(vertices[0], vertices[1], vertices[2]);
 }
 // =============================================================================
 Eigen::Vector3d
@@ -712,7 +874,7 @@ compute_triangle_circumcenter_(
   // don't divide by 0
   TEUCHOS_TEST_FOR_EXCEPT_MSG(
       fabs(omega) < 1.0e-10,
-      "It seems that the nodes \n"
+      "It seems that the vertices \n"
       << "\n"
       << "   " << node0 << "\n"
       << "   " << node1 << "\n"
@@ -756,7 +918,7 @@ compute_triangle_splitting_(
   const Eigen::Vector3d cc =
     compute_triangle_circumcenter_(local_node_coords);
 
-  // Iterate over the edges (aka pairs of nodes).
+  // Iterate over the edges (aka pairs of vertices).
   for (size_t e0 = 0; e0 < 3; e0++) {
     const Eigen::Vector3d &x0 = local_node_coords[e0];
     for (size_t e1 = e0+1; e1 < 3; e1++) {

@@ -9,11 +9,10 @@ class Function(sympy.Symbol):
 
 
 class Coefficient(object):
-    def __init__(self):
-        return
+    pass
 
 
-class Operator(sympy.Function):
+class VectorOperator(sympy.Function):
     pass
 
 
@@ -23,19 +22,19 @@ class Expression(sympy.Function):
 
 
 class Vector(object):
-    def __init__(self):
-        return
+    pass
 
 
 class ScalarParameter(object):
-    def __init__(self, name):
-        self.name = name
-        return
+    pass
 
 
 class OuterNormal(Vector):
-    def __init__(self):
-        return
+    pass
+
+
+class Subdomain(object):
+    pass
 
 
 # Linear operator defined via the operation along edges in a Delaunay mesh
@@ -79,9 +78,6 @@ class FvmMatrix(sympy.Function):
     #    self.edge_function = edge_function
     #    return
 
-class FvmMatrix2(sympy.Function):
-    pass
-
 
 class LinearFvmProblem(object):
     pass
@@ -108,50 +104,40 @@ class dGamma(Measure):
     pass
 
 
-def integrate(integrand, measure):
+def integrate(integrand, measure, subdomains=None):
     assert(isinstance(measure, Measure))
 
-    if isinstance(measure, dV):
-        return Core(
-            integrand,
-            lambda x: 0,
-            lambda x: 0
-            )
-    elif isinstance(measure, dS):
-        return Core(
-            lambda x: 0,
-            integrand,
-            lambda x: 0
-            )
-    elif isinstance(measure, dGamma):
-        return Core(
-            lambda x: 0,
-            lambda x: 0,
-            integrand
-            )
-    else:
-        raise RuntimeError('Illegal measure')
+    if subdomains is None:
+        subdomains = set()
+    elif not isinstance(subdomains, set):
+        try:
+            subdomains = set(subdomains)
+        except TypeError:  # TypeError: 'D1' object is not iterable
+            subdomains = set([subdomains])
+
+    assert(
+        isinstance(measure, dS) or
+        isinstance(measure, dV) or
+        isinstance(measure, dGamma)
+        )
+
+    return Core([(integrand, measure, subdomains)])
 
 
 class Core(object):
-    def __init__(self, vertex, edge, domain_boundary):
-        self.vertex = vertex
-        self.edge = edge
-        self.domain_boundary = domain_boundary
+    def __init__(self, set_c):
+        self.cores = set_c
 
     def __add__(self, other):
-        return Core(
-                lambda x: self.vertex(x) + other.vertex(x),
-                lambda x: self.edge(x) + other.edge(x),
-                lambda x: self.domain_boundary(x) + other.domain_boundary(x)
-                )
+        self.cores.extend(other.cores)
+        return Core(self.cores)
 
-    def __sub__(self, other):
-        return Core(
-                lambda x: self.vertex(x) - other.vertex(x),
-                lambda x: self.edge(x) - other.edge(x),
-                lambda x: self.domain_boundary(x) - other.domain_boundary(x)
-                )
+    # def __sub__(self, other):
+    #     return Core(
+    #             lambda x: self.vertex(x) - other.vertex(x),
+    #             lambda x: self.edge(x) - other.edge(x),
+    #             lambda x: self.domain_boundary(x) - other.domain_boundary(x)
+    #             )
 
 
 class NonlinearProblem(object):
@@ -176,9 +162,8 @@ class Integral(object):
 
 
 class DirichletBC(object):
-    def is_inside(self, x): return x[0] < 1e10
-
     def eval(self, x): return 0.0
+    subdomains = set()
 
 
 class NeumannBC(object):
@@ -187,14 +172,8 @@ class NeumannBC(object):
     def eval(self, x): return 0.0
 
 
-class MatrixCore(object):
-    def is_inside(self, x): return x[0] < 1e10
-
-    def edge_contrib(self, x0, x1, edge_length, edge_covolume):
-        return [[0.0, 0.0], [0.0, 0.0]]
-
-    def vertex_contrib(self, x, control_volume):
-        return 0.0
+class EdgeCore(object):
+    pass
 
 
 def inner(a, b):
@@ -212,6 +191,7 @@ class n_dot_grad(sympy.Function):
 
 n = sympy.MatrixSymbol('n', 3, 1)
 neg_n = sympy.MatrixSymbol('neg_n', 3, 1)
+
 
 def grad(a):
     return Vector()

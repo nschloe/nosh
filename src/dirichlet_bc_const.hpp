@@ -9,6 +9,7 @@ namespace nosh {
   {
     public:
       dirichlet_bc_const(const double val):
+        dirichlet_bc({}),
         val_(val)
       {};
 

@@ -350,23 +350,24 @@ scaled_linear_solve(
     b_data[k] *= inv_sqrt_sc_data[k];
   }
 
-  // apply boundary conditions to b
-  const auto boundary_vertices = A.mesh->boundary_vertices();
-  for (const auto boundary_vertex: boundary_vertices) {
-    const auto coord = A.mesh->get_coords(boundary_vertex);
-    for (const auto & bc: A.bcs) {
-      TEUCHOS_ASSERT(bc != nullptr);
-      if (bc->is_inside(coord)) {
-        const auto gid = A.mesh->gid(boundary_vertex);
-        // TODO don't check here but only get the array of owned boundary nodes
-        // in the first place
-        if (b->getMap()->isNodeGlobalElement(gid)) {
-          b->replaceGlobalValue(gid, bc->eval(coord));
-          break; // only set one bc per boundary point
-        }
-      }
-    }
-  }
+  TEUCHOS_TEST_FOR_EXCEPT(true);
+  // // apply boundary conditions to b
+  // const auto boundary_vertices = A.mesh->boundary_vertices();
+  // for (const auto boundary_vertex: boundary_vertices) {
+  //   const auto coord = A.mesh->get_coords(boundary_vertex);
+  //   for (const auto & bc: A.bcs) {
+  //     TEUCHOS_ASSERT(bc != nullptr);
+  //     if (bc->is_inside(coord)) {
+  //       const auto gid = A.mesh->gid(boundary_vertex);
+  //       // TODO don't check here but only get the array of owned boundary vertices
+  //       // in the first place
+  //       if (b->getMap()->isNodeGlobalElement(gid)) {
+  //         b->replaceGlobalValue(gid, bc->eval(coord));
+  //         break; // only set one bc per boundary point
+  //       }
+  //     }
+  //   }
+  // }
 
   // solve
   linear_solve(A, *b, x, solver_params);

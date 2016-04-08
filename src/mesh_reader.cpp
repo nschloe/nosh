@@ -115,7 +115,7 @@ read(const std::string & file_name)
   std::cout << "Number of tetrahedra: " << numTets << std::endl;
 
   // Create all edges adjacent to tets.
-  // Alternative: Create all edges adjacent to nodes.
+  // Alternative: Create all edges adjacent to vertices.
   if (numTets > 0) {
      const auto tets = mbw->get_entities_by_type(0, moab::MBTET);
      (void) mbw->get_adjacencies(tets, 1, true, moab::Interface::UNION);
@@ -137,7 +137,7 @@ read(const std::string & file_name)
           rbuf[4*i + 1] << " edges, " << rbuf[4*i + 2] << " faces, " << rbuf[4*i + 3] << " elements" << std::endl;
   }
 
-  // check for illegal nodes
+  // check for illegal vertices
   const auto verts = mbw->get_entities_by_type(0, moab::MBVERTEX);
   for (size_t k = 0; k < verts.size(); k++) {
     const auto edges = mbw->get_adjacencies(

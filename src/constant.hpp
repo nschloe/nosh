@@ -7,6 +7,7 @@
 #include <Tpetra_Vector.hpp>
 #include <Eigen/Dense>
 
+#include "expression.hpp"
 #include "mesh.hpp"
 
 namespace nosh {
@@ -14,7 +15,7 @@ namespace nosh {
   class constant: public expression
   {
     public:
-      constant(const double val):
+      explicit constant(const double val):
         expression(0),
         val_(val)
       {}
