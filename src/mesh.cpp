@@ -61,9 +61,7 @@ create_default_meshsets_()
 {
   // create a meshset for all boundary vertices
   const auto boundary = this->mbw_->create_meshset(moab::MESHSET_SET);
-  std::cout << "ABC" << std::endl;
   mbw_->add_entities(boundary, this->boundary_vertices);
-  std::cout << "DEF" << std::endl;
 
   return {
     // MOAB's default meshset 0 matches everything.
