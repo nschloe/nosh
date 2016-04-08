@@ -30,23 +30,23 @@ def get_code_linear_fvm_problem(namespace, class_name, obj):
     assert(isinstance(res, nfl.Core))
     code = ''
     for core in res.cores:
-        integrand, measure = core
+        integrand, measure, subdomains = core
         if isinstance(measure, nfl.dS):
             core_class_name = 'edge_core%d' % len(edge_core_names)
             core_code, deps = get_edge_core_code_from_integral(
-                    namespace, core_class_name, u, integrand, measure
+                    namespace, core_class_name, u, integrand, subdomains
                     )
             edge_core_names.add(core_class_name)
         elif isinstance(measure, nfl.dV):
             core_class_name = 'vertex_core%d' % len(vertex_core_names)
             core_code, deps = get_vertex_core_code_from_integral(
-                    namespace, core_class_name, u, integrand
+                    namespace, core_class_name, u, integrand, subdomains
                     )
             vertex_core_names.add(core_class_name)
         elif isinstance(measure, nfl.dGamma):
             core_class_name = 'boundary_core%d' % len(boundary_core_names)
             core_code, deps = get_boundary_core_code_from_integral(
-                    namespace, core_class_name, u, integrand
+                    namespace, core_class_name, u, integrand, subdomains
                     )
             boundary_core_names.add(core_class_name)
         else:

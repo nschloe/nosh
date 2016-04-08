@@ -89,44 +89,39 @@ class MatrixFactory(object):
 
 
 class Measure(object):
-    def __init__(self, subdomains=None):
-        if subdomains is None:
-            self.subdomains = set()
-        else:
-            try:
-                self.subdomains = set(subdomains)
-            except TypeError:
-                # TypeError: 'B' object is not iterable
-                self.subdomains = set([subdomains])
-        return
+    pass
 
 
 class dV(Measure):
-    def __init__(self, subdomains=None):
-        super().__init__(subdomains)
+    pass
 
 
 class dS(Measure):
-    def __init__(self, subdomains=None):
-        super().__init__(subdomains)
+    pass
 
 
 class dGamma(Measure):
-    def __init__(self, subdomains=None):
-        super().__init__(subdomains)
+    pass
 
 
-def integrate(integrand, measure):
+def integrate(integrand, measure, subdomains=None):
     assert(isinstance(measure, Measure))
 
-    if isinstance(measure, dS):
-        return Core(set([(integrand, measure)]))
-    elif isinstance(measure, dV):
-        return Core(set([(integrand, measure)]))
-    elif isinstance(measure, dGamma):
-        return Core(set([(integrand, measure)]))
-    else:
-        raise RuntimeError('Illegal measure')
+    if subdomains is None:
+        subdomains = set()
+    elif not isinstance(subdomains, set):
+        try:
+            subdomains = set(subdomains)
+        except TypeError:  # TypeError: 'D1' object is not iterable
+            subdomains = set([subdomains])
+
+    assert(
+        isinstance(measure, dS) or
+        isinstance(measure, dV) or
+        isinstance(measure, dGamma)
+        )
+
+    return Core([(integrand, measure, subdomains)])
 
 
 class Core(object):
@@ -134,7 +129,8 @@ class Core(object):
         self.cores = set_c
 
     def __add__(self, other):
-        return Core(self.cores.union(other.cores))
+        self.cores.extend(other.cores)
+        return Core(self.cores)
 
     # def __sub__(self, other):
     #     return Core(

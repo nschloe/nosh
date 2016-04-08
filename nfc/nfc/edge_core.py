@@ -31,7 +31,7 @@ def get_code_edge_core(namespace, class_name, core):
 
 
 def get_edge_core_code_from_integral(
-        namespace, class_name, u, integrand, measure
+        namespace, class_name, u, integrand, subdomains
         ):
     '''Get code discretizer from expression.
     '''
@@ -40,7 +40,7 @@ def get_edge_core_code_from_integral(
     return _get_edge_core_code(
             namespace, class_name,
             edge_coeff, edge_affine,
-            measure.subdomains
+            subdomains
             )
 
 
@@ -103,6 +103,8 @@ def _get_edge_core_code(
     dependencies = set()
     dependencies.update(used_expressions)
 
+    dependencies.update(subdomains)
+
     # init parent object
     subdomain_ids = set([
         sd.__class__.__name__.lower() for sd in subdomains
@@ -111,10 +113,7 @@ def _get_edge_core_code(
         # If nothing is specified, use the entire boundary
         subdomain_ids.add('everywhere')
     parent_init = '{%s}' % ', '.join(['"%s"' % s for s in subdomain_ids])
-
-    members_init.append(
-            'nosh::edge_core(%s)' % parent_init
-            )
+    members_init.append('nosh::edge_core(%s)' % parent_init)
 
     # init and declare expressions
     for expr in used_expressions:
