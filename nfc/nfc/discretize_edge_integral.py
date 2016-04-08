@@ -12,10 +12,9 @@ if debug:
 
 
 class DiscretizeEdgeIntegral(object):
-    def __init__(self):  # , operators, vector_args, scalar_args):
+    def __init__(self):
         self.arg_translate = {}
         self._discretization = 0
-        self._required_operators = []
         self.x0 = sympy.Symbol('x0')
         self.x1 = sympy.Symbol('x1')
         self.u0 = sympy.Symbol('u0')
@@ -50,7 +49,6 @@ class DiscretizeEdgeIntegral(object):
         '''Entrance point to this class.
         '''
         self._discretization = 0
-        self._required_operators = []
         out = self.visit(node)
         # Now multiply the value we got out by the covolume
         out *= self.covolume
@@ -61,7 +59,7 @@ class DiscretizeEdgeIntegral(object):
         out = out.subs(u(x), 0.5 * (self.u0 + self.u1))
         # Replace x by 0.5*(x0 + x1) (the edge midpoint)
         out = out.subs(x, 0.5 * (self.x0 + self.x1))
-        return out, self._required_operators
+        return out
 
     def generic_visit(self, node):
         raise RuntimeError(

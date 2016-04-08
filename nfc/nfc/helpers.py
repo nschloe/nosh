@@ -3,6 +3,7 @@
 import os
 import re
 import subprocess
+import sympy
 import sys
 
 templates_dir = os.path.join(
@@ -40,3 +41,23 @@ def run(command):
             % (command, process.stderr.read()[:-1])
             )
     return output
+
+
+def is_affine_linear(expr, vars):
+    for var in vars:
+        if not sympy.Eq(sympy.diff(expr, var, var), 0):
+            return False
+    return True
+
+
+# We still need this for pure matrices
+# def is_linear(expr, vars):
+#     if not _is_affine_linear(expr, vars):
+#         return False
+#     # Check that expr is not affine.
+#     if isinstance(expr, int) or isinstance(expr, float):
+#         return expr == 0
+#     else:
+#         return expr.subs([(var, 0) for var in vars]) == 0
+
+

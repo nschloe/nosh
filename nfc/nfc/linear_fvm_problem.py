@@ -5,111 +5,122 @@ import os
 from string import Template
 import sympy
 
-from .edge_core import get_edge_core_code_from_expression
-from .vertex_core import get_vertex_core_code_from_expression
-from .boundary_core import get_boundary_core_code_from_expression
+from .edge_core import get_edge_core_code_from_integrand
+from .vertex_core import get_vertex_core_code_from_integrand
+from .boundary_core import get_boundary_core_code_from_integrand
 from .helpers import templates_dir
 
 
-class CodeLinearFvmProblem(object):
-    def __init__(self, namespace, name, obj):
-        self.name = name
-        self.code = ''
+def get_code_linear_fvm_problem(namespace, name, obj):
+    if getattr(obj, 'dirichlet_boundary_conditions', None):
+        dbcs = set(obj.dirichlet_boundary_conditions)
+        for dbc in dbcs:
+            assert(isinstance(dbc, nfl.DirichletBC))
+    else:
+        dbcs = set()
 
-        if getattr(obj, 'dirichlet_boundary_conditions', None):
-            self.dbcs = set(obj.dirichlet_boundary_conditions)
-            for dbc in self.dbcs:
-                assert(isinstance(dbc, nfl.DirichletBC))
+    dependencies = dbcs
+
+    u = sympy.Function('u')
+    res = obj.eval(u)
+
+    edge_core_names = set()
+    vertex_core_names = set()
+    boundary_core_names = set()
+    assert(isinstance(res, nfl.Core))
+    code = ''
+    for core in res.cores:
+        integrand, measure = core
+        if measure == 'dS':
+            class_name = 'edge_core%d' % len(edge_core_names)
+            core_code, deps = get_edge_core_code_from_integrand(
+                    namespace, class_name, u, integrand
+                    )
+            edge_core_names.add(class_name)
+        elif measure == 'dV':
+            class_name = 'vertex_core%d' % len(vertex_core_names)
+            core_code, deps = get_vertex_core_code_from_integrand(
+                    namespace, class_name, u, integrand
+                    )
+            vertex_core_names.add(class_name)
+        elif measure == 'dGamma':
+            class_name = 'boundary_core%d' % len(boundary_core_names)
+            core_code, deps = get_boundary_core_code_from_integrand(
+                    namespace, name, u, integrand
+                    )
+            boundary_core_names.add(class_name)
         else:
-            self.dbcs = set()
+            raise RuntimeError('Illegal measure type \'%s\'.' % measure)
 
-        self.dependencies = self.dbcs
+        # since this object contains the cores, its dependencies contain the
+        # dependencies of the cores as well
+        dependencies.update(deps)
 
-        u = sympy.Function('u')
-        res = obj.eval(u)
-        self.edge_core_names = set()
-        self.vertex_core_names = set()
-        self.boundary_core_names = set()
-        assert(isinstance(res, nfl.Core))
-        for core in res.cores:
-            if core[1] == 'dS':
-                core_code_gen = get_edge_core_code_from_expression(
-                        namespace, name, u, core[0]
-                        )
-                self.edge_core_names.add(core_code_gen.class_name)
-            elif core[1] == 'dV':
-                core_code_gen = get_vertex_core_code_from_expression(
-                        namespace, name, u, core[0]
-                        )
-                self.vertex_core_names.add(core_code_gen.class_name)
-            elif core[1] == 'dGamma':
-                core_code_gen = get_boundary_core_code_from_expression(
-                        namespace, name, u, core[0]
-                        )
-                self.boundary_core_names.add(core_code_gen.class_name)
-            else:
-                raise RuntimeError('Illegal core type \'%s\'.' % core[1])
+        code += '\n' + core_code
 
-            # TODO do we really need this?
-            # self.dependencies.update(core_code_gen.get_dependencies())
+    # append the code of the linear problem itself
+    code += '\n' + _get_code_linear_problem(
+            name,
+            edge_core_names,
+            vertex_core_names,
+            boundary_core_names,
+            dbcs
+            )
 
-            self.code += '\n' + core_code_gen.get_code()
+    return code, dependencies
 
-        self.code += '\n' + self.get_code_linear_problem()
-        return
 
-    def get_dependencies(self):
-        return self.dependencies
-
-    def get_code(self):
-        return self.code
-
-    def get_code_linear_problem(self):
-        # fvm_matrix code
-        constructor_args = [
-            'const std::shared_ptr<const nosh::mesh> & _mesh'
-            ]
-        init_edge_cores = '{%s}' % (
-                ', '.join(
-                    ['std::make_shared<%s>()' % n
-                     for n in self.edge_core_names]
-                    )
+def _get_code_linear_problem(
+        name,
+        edge_core_names,
+        vertex_core_names,
+        boundary_core_names,
+        dbcs
+        ):
+    constructor_args = [
+        'const std::shared_ptr<const nosh::mesh> & _mesh'
+        ]
+    init_edge_cores = '{%s}' % (
+            ', '.join(
+                ['std::make_shared<%s>()' % n
+                 for n in edge_core_names]
                 )
-        init_vertex_cores = '{%s}' % (
-                ', '.join(
-                    ['std::make_shared<%s>()' % n
-                     for n in self.vertex_core_names]
-                    )
+            )
+    init_vertex_cores = '{%s}' % (
+            ', '.join(
+                ['std::make_shared<%s>()' % n
+                 for n in vertex_core_names]
                 )
-        init_boundary_cores = '{%s}' % (
-                ', '.join(
-                    ['std::make_shared<%s>()' % n
-                     for n in self.boundary_core_names]
-                    )
+            )
+    init_boundary_cores = '{%s}' % (
+            ', '.join(
+                ['std::make_shared<%s>()' % n
+                 for n in boundary_core_names]
                 )
+            )
 
-        # handle the boundary conditions
-        joined = ', '.join(
-                'std::make_shared<%s>()' %
-                type(bc).__name__.lower() for bc in self.dbcs
-                )
-        init_dbcs = '{%s}' % joined
-        # boundary conditions handling done
+    # handle the boundary conditions
+    joined = ', '.join(
+            'std::make_shared<%s>()' %
+            type(bc).__name__.lower() for bc in dbcs
+            )
+    init_dbcs = '{%s}' % joined
+    # boundary conditions handling done
 
-        members_init = [
-          'nosh::linear_problem(\n_mesh,\n %s,\n %s,\n %s,\n %s\n)' %
-          (init_edge_cores, init_vertex_cores, init_boundary_cores, init_dbcs)
-          ]
-        members_declare = []
+    members_init = [
+      'nosh::linear_problem(\n_mesh,\n %s,\n %s,\n %s,\n %s\n)' %
+      (init_edge_cores, init_vertex_cores, init_boundary_cores, init_dbcs)
+      ]
+    members_declare = []
 
-        templ = os.path.join(templates_dir, 'linear_fvm_problem.tpl')
-        with open(templ, 'r') as f:
-            src = Template(f.read())
-            code = src.substitute({
-                'name': self.name.lower(),
-                'constructor_args': ',\n'.join(constructor_args),
-                'members_init': ',\n'.join(members_init),
-                'members_declare': '\n'.join(members_declare)
-                })
+    templ = os.path.join(templates_dir, 'linear_fvm_problem.tpl')
+    with open(templ, 'r') as f:
+        src = Template(f.read())
+        code = src.substitute({
+            'name': name.lower(),
+            'constructor_args': ',\n'.join(constructor_args),
+            'members_init': ',\n'.join(members_init),
+            'members_declare': '\n'.join(members_declare)
+            })
 
-        return code
+    return code

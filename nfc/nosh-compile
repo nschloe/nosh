@@ -42,51 +42,44 @@ def _main():
     # there.
     # Build directed dependency graph as a dictionary, see
     # <https://www.python.org/doc/essays/graphs/>.
-    code_generators = {}
+    codes = {}
     dependencies = {}
     for name, var in inmod.__dict__.items():
         if inspect.isclass(var) and \
                 issubclass(var, nfl.FvmMatrix) and \
                 var != nfl.FvmMatrix:
-            code_generators[name] = nfc.CodeFvmMatrix(var, name)
+            code, deps = nfc.get_code_fvm_matrix(name, var)
         elif inspect.isclass(var) and \
                 issubclass(var, nfl.LinearFvmProblem) and \
                 var != nfl.LinearFvmProblem:
-            code_generators[name] = \
-                    nfc.CodeLinearFvmProblem(namespace, name, var)
+            code, deps = nfc.get_code_linear_fvm_problem(namespace, name, var)
         elif inspect.isclass(var) and \
                 issubclass(var, nfl.Subdomain) and \
                 var != nfl.Subdomain:
             instance = var()
-            code_generators[name] = \
-                nfc.CodeSubdomain(name, instance)
+            code, deps = nfc.get_code_subdomain(name, instance)
         elif inspect.isclass(var) and \
                 issubclass(var, nfl.DirichletBC) and \
                 var != nfl.DirichletBC:
             instance = var()
-            code_generators[name] = nfc.CodeDirichletBc(instance, name)
+            code, deps = nfc.get_code_dirichletbc(name, instance)
         elif inspect.isclass(var) and \
-                issubclass(var, nfl.MatrixCore) and \
-                var != nfl.MatrixCore:
+                issubclass(var, nfl.EdgeCore) and \
+                var != nfl.EdgeCore:
             instance = var()
-            code_generators[name] = nfc.get_core_code_generator(
-                    namespace, name, instance
-                    )
+            code, deps = nfc.get_code_edge_core(namespace, name, instance)
         elif inspect.isclass(var) and \
                 issubclass(var, nfl.Expression) and \
                 var != nfl.Expression and \
                 hasattr(var, 'degree') and \
                 hasattr(var, 'eval'):
-            code_generators[name] = nfc.CodeExpression(var, name)
-        elif isinstance(var, nfl.VectorOperator):
-            code_generators[name] = nfc.CodeOperator(var, name)
-        elif isinstance(var, nfl.NonlinearProblem):
-            code_generators[name] = nfc.CodeNonlinearOperator(var, name)
+            code, deps = nfc.get_code_expression(name, var)
         else:
             continue
 
+        codes[name] = code
         dependencies[name] = []
-        for dep in code_generators[name].get_dependencies():
+        for dep in deps:
             if dep.__class__.__name__ == 'FunctionClass':
                 dependencies[name].append(str(dep))
             else:
@@ -105,7 +98,7 @@ def _main():
         for dep in dependencies[name]:
             visit(dep)
         if name not in visited:
-            code_pieces.append(code_generators[name].get_code())
+            code_pieces.append(codes[name])
             visited.add(name)
 
     for name in dependencies:
@@ -137,7 +130,7 @@ def _main():
     # TODO check out uncrustify
     run('astyle --style=ansi -s2 %s' % args.outfile)
 
-    return 0
+    return
 
 
 def _parse_cmd_arguments():

@@ -153,9 +153,8 @@ class Integral(object):
 
 
 class DirichletBC(object):
-    def is_inside(self, x): return x[0] < 1e10
-
     def eval(self, x): return 0.0
+    subdomains = set()
 
 
 class NeumannBC(object):
@@ -164,14 +163,8 @@ class NeumannBC(object):
     def eval(self, x): return 0.0
 
 
-class MatrixCore(object):
-    def is_inside(self, x): return x[0] < 1e10
-
-    def edge_contrib(self, x0, x1, edge_length, edge_covolume):
-        return [[0.0, 0.0], [0.0, 0.0]]
-
-    def vertex_contrib(self, x, control_volume):
-        return 0.0
+class EdgeCore(object):
+    pass
 
 
 def inner(a, b):
@@ -189,6 +182,7 @@ class n_dot_grad(sympy.Function):
 
 n = sympy.MatrixSymbol('n', 3, 1)
 neg_n = sympy.MatrixSymbol('neg_n', 3, 1)
+
 
 def grad(a):
     return Vector()
