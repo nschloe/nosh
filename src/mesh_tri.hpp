@@ -39,17 +39,10 @@ public:
   }
 
   virtual
-  moab::Range
-  boundary_vertices() const
-  {
-    return boundary_data_.vertices;
-  }
-
-  virtual
   std::vector<double>
   boundary_surface_areas() const
   {
-    return boundary_data_.surface_areas;
+    return boundary_surface_areas_;
   }
 
 private:
@@ -71,16 +64,8 @@ private:
   mesh::boundary_data
   compute_boundary_data_() const;
 
-  moab::Range
-  compute_boundary_vertices_(
-      const std::vector<moab::EntityHandle> & boundary_edges
-      ) const;
-
   std::vector<double>
-  compute_boundary_surface_areas_(
-      const std::vector<moab::EntityHandle> & boundary_vertices,
-      const std::vector<moab::EntityHandle> & boundary_edges
-      ) const;
+  compute_boundary_surface_areas_() const;
 
   double
   compute_covolume_(
@@ -111,7 +96,7 @@ private:
 
   std::shared_ptr<const Tpetra::Vector<double,int,int>> control_volumes_;
   const std::vector<edge_data> edge_data_;
-  const mesh::boundary_data boundary_data_;
+  const std::vector<double> boundary_surface_areas_;
 };
 
 } // namespace nosh

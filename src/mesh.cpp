@@ -3,6 +3,7 @@
 #include <moab/Core.hpp>
 #include <moab/ParallelComm.hpp>
 #include <MBParallelConventions.h>
+#include <moab/Skinner.hpp>
 
 #include <Tpetra_Vector.hpp>
 #include <Teuchos_RCP.hpp>
@@ -38,6 +39,8 @@ mesh(
   ,edge_lids_complex(build_edge_lids_complex_())
   ,edge_gids(build_edge_gids_())
   ,edge_gids_complex(build_edge_gids_complex_())
+  ,boundary_skin_(compute_boundary_skin_())
+  ,boundary_vertices(compute_boundary_vertices_(boundary_skin_))
   ,meshsets_(create_default_meshsets_())
 {
 // TODO resurrect
@@ -58,8 +61,8 @@ create_default_meshsets_()
 {
   // create a meshset for all boundary vertices
   const auto boundary = this->mbw_->create_meshset(moab::MESHSET_SET);
-  std::cout << "ABC" << mbw_->get_dimension() << std::endl;
-  mbw_->add_entities(boundary, this->boundary_vertices());
+  std::cout << "ABC" << std::endl;
+  mbw_->add_entities(boundary, this->boundary_vertices);
   std::cout << "DEF" << std::endl;
 
   return {
@@ -69,17 +72,81 @@ create_default_meshsets_()
   };
 }
 // =============================================================================
+std::vector<moab::EntityHandle>
+mesh::
+compute_boundary_skin_() const
+{
+  // Find the dimension we're operating on.
+  const auto dim =
+    this->mbw_->get_number_entities_by_type(0, moab::MBTET) > 0 ? 3 : 2;
+
+  // get all the cell elements on each task
+  moab::Range body_entities = this->mbw_->get_entities_by_dimension(0, dim);
+
+  // get face skin
+  moab::Skinner tool(this->mbw_->mb.get());
+  moab::Range skin_entities;
+  moab::ErrorCode rval;
+  rval = tool.find_skin(0, body_entities, false, skin_entities);
+  TEUCHOS_ASSERT_EQUALITY(rval, moab::MB_SUCCESS);
+
+  // filter out skin elements that are shared with other tasks; they will not
+  // be on the true skin
+  moab::Range shared_skin;
+  rval = this->mcomm_->filter_pstatus(
+      skin_entities,
+      PSTATUS_SHARED,
+      PSTATUS_AND,
+      -1,
+      &shared_skin
+      );
+  TEUCHOS_ASSERT_EQUALITY(rval, moab::MB_SUCCESS);
+
+  if (!shared_skin.empty()) {
+    skin_entities = subtract(skin_entities, shared_skin);
+  }
+
+  // convert range to vector
+  std::vector<moab::EntityHandle> skin_entities_vector(
+      skin_entities.begin(),
+      skin_entities.end()
+      );
+
+  return skin_entities_vector;
+}
+// =============================================================================
+moab::Range
+mesh::
+compute_boundary_vertices_(
+    const std::vector<moab::EntityHandle> & boundary_skin
+    ) const
+{
+  // get all vertices on the boundary edges
+  const auto verts = this->mbw_->get_adjacencies(
+      boundary_skin,
+      0,
+      false,
+      moab::Interface::UNION
+      );
+
+  // convert range to vector
+  // std::vector<moab::EntityHandle> boundary_verts(verts.begin(), verts.end());
+
+  return verts;
+}
+// =============================================================================
 void
 mesh::
 mark_subdomains(const std::set<std::shared_ptr<nosh::subdomain>> & subdomains)
 {
   const auto & owned_vertices = this->get_owned_vertices();
-  const auto & boundary_vertices = this->boundary_vertices();
 
   for (const auto sd: subdomains) {
     // Create a tag for each subdomain
     this->meshsets_[sd->id] = this->mbw_->create_meshset(moab::MESHSET_SET);
-    moab::Range verts = sd->is_boundary_only ? boundary_vertices : owned_vertices;
+    moab::Range verts = sd->is_boundary_only ?
+      this->boundary_vertices :
+      owned_vertices;
     for (size_t k = 0; k < verts.size(); k++) {
       const auto x = this->get_coords(verts[k]);
       if (sd->is_inside(x)) {

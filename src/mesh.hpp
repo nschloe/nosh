@@ -188,16 +188,20 @@ public:
   get_edge_data() const = 0;
 
   virtual
-  moab::Range
-  boundary_vertices() const = 0;
-
-  virtual
   std::vector<double>
   boundary_surface_areas() const = 0;
 
 private:
   std::map<std::string, moab::EntityHandle>
   create_default_meshsets_();
+
+  std::vector<moab::EntityHandle>
+  compute_boundary_skin_() const;
+
+  moab::Range
+  compute_boundary_vertices_(
+      const std::vector<moab::EntityHandle> & boundary_skin
+      ) const;
 
 protected:
 
@@ -247,6 +251,12 @@ public:
   const std::vector<Teuchos::Tuple<int,4>> edge_lids_complex;
   const std::vector<Teuchos::Tuple<int,2>> edge_gids;
   const std::vector<Teuchos::Tuple<int,4>> edge_gids_complex;
+
+protected:
+  const std::vector<moab::EntityHandle> boundary_skin_;
+
+public:
+  const moab::Range boundary_vertices;
 
 private:
   std::map<std::string, moab::EntityHandle> meshsets_;

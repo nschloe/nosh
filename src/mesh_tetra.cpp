@@ -7,8 +7,6 @@
 #include <Teuchos_RCPStdSharedPtrConversions.hpp>
 
 #include <Eigen/Dense>
-#include <moab/Skinner.hpp>
-#include <MBParallelConventions.h>
 
 namespace nosh
 {
@@ -28,19 +26,11 @@ mesh_tetra(
   compute_control_volumes_time_(
       Teuchos::TimeMonitor::getNewTimer(
         "Nosh: mesh_tetra::compute_control_volumes"
-        )),
-  compute_boundary_vertices_time_(
-      Teuchos::TimeMonitor::getNewTimer(
-        "Nosh: mesh_tetra::compute_boundary_vertices"
-        )),
-  compute_boundary_faces_time_(
-      Teuchos::TimeMonitor::getNewTimer(
-        "Nosh: mesh_tetra::compute_boundary_faces"
         ))
 #endif
   ,control_volumes_(this->compute_control_volumes_())
   ,edge_data_(this->compute_edge_data_())
-  ,boundary_data_(this->compute_boundary_data_())
+  ,boundary_surface_areas_(this->compute_boundary_surface_areas_())
 {
 }
 // =============================================================================
@@ -447,98 +437,9 @@ get_overlap_faces_() const
   return faces;
 }
 // =============================================================================
-std::vector<moab::EntityHandle>
-mesh_tetra::
-compute_boundary_faces_() const
-{
-#ifdef NOSH_TEUCHOS_TIME_MONITOR
-  Teuchos::TimeMonitor tm(*compute_boundary_faces_time_);
-#endif
-
-  // get all the cell elements on each task
-  moab::Range cells = this->mbw_->get_entities_by_dimension(0, 3);
-
-  // get face skin
-  moab::Skinner tool(this->mbw_->mb.get());
-  moab::Range faces;
-  moab::ErrorCode rval;
-  rval = tool.find_skin(0, cells, false, faces);
-  TEUCHOS_ASSERT_EQUALITY(rval, moab::MB_SUCCESS);
-
-  // filter out faces that are shared with other tasks; they will not be on the
-  // true skin
-  moab::Range shared_faces;
-  rval = this->mcomm_->filter_pstatus(
-      faces,
-      PSTATUS_SHARED,
-      PSTATUS_AND,
-      -1,
-      &shared_faces
-      );
-  TEUCHOS_ASSERT_EQUALITY(rval, moab::MB_SUCCESS);
-
-  if (!shared_faces.empty()) {
-    faces = subtract(faces, shared_faces);
-  }
-
-  // convert range to set
-  std::vector<moab::EntityHandle> boundary_faces(faces.begin(), faces.end());
-
-  return boundary_faces;
-}
-// =============================================================================
-mesh::boundary_data
-mesh_tetra::
-compute_boundary_data_() const
-{
-  const auto boundary_faces = this->compute_boundary_faces_();
-
-  const auto verts =
-    this->compute_boundary_vertices_(boundary_faces);
-
-  // convert range to vector
-  // TODO settle on ranges vs. std::vector as overall format
-  std::vector<moab::EntityHandle> boundary_vertices(verts.begin(), verts.end());
-
-  const auto boundary_surface_areas =
-    this->compute_boundary_surface_areas_(boundary_vertices, boundary_faces);
-
-  const mesh::boundary_data bd = {
-    verts,
-    boundary_surface_areas
-  };
-  return bd;
-}
-// =============================================================================
-moab::Range
-mesh_tetra::
-compute_boundary_vertices_(
-    const std::vector<moab::EntityHandle> & boundary_faces
-    ) const
-{
-#ifdef NOSH_TEUCHOS_TIME_MONITOR
-  Teuchos::TimeMonitor tm(*compute_boundary_vertices_time_);
-#endif
-
-  const auto verts = this->mbw_->get_adjacencies(
-      boundary_faces,
-      0,
-      false,
-      moab::Interface::UNION
-      );
-
-  //// convert range to vector
-  //std::vector<moab::EntityHandle> boundary_verts(verts.begin(), verts.end());
-
-  return verts;
-}
-// =============================================================================
 std::vector<double>
 mesh_tetra::
-compute_boundary_surface_areas_(
-    const std::vector<moab::EntityHandle> & boundary_vertices,
-    const std::vector<moab::EntityHandle> & boundary_faces
-    ) const
+compute_boundary_surface_areas_() const
 {
   // Cache vector for _all_ vertices. We actually only need the boundary ones,
   // but that'll make it easier for us here
@@ -547,8 +448,8 @@ compute_boundary_surface_areas_(
   std::vector<double> boundary_surface_areas(num_vertices);
   std::fill(boundary_surface_areas.begin(), boundary_surface_areas.end(), 0.0);
 
-  for (size_t k = 0; k < boundary_faces.size(); k++) {
-    const auto verts = this->mbw_->get_connectivity(boundary_faces[k]);
+  for (size_t k = 0; k < this->boundary_skin_.size(); k++) {
+    const auto verts = this->mbw_->get_connectivity(this->boundary_skin_[k]);
     const auto splitting = this->compute_triangle_splitting_(verts);
     // add contributions to the verts
     boundary_surface_areas[this->local_index(verts[0])] += splitting[0];
@@ -558,9 +459,9 @@ compute_boundary_surface_areas_(
 
   // Sort the values into a smaller (boundary-only) vector, in sync with
   // boundary_vertices.
-  std::vector<double> bsa(boundary_vertices.size());
-  for (size_t k = 0; k < boundary_vertices.size(); k++) {
-    bsa[k] = boundary_surface_areas[this->local_index(boundary_vertices[k])];
+  std::vector<double> bsa(this->boundary_vertices.size());
+  for (size_t k = 0; k < this->boundary_vertices.size(); k++) {
+    bsa[k] = boundary_surface_areas[this->local_index(this->boundary_vertices[k])];
   }
 
   return bsa;
