@@ -19,7 +19,7 @@ def get_code_linear_fvm_problem(namespace, name, obj):
     else:
         dbcs = set()
 
-    dependencies = dbcs
+    dependencies = dbcs.copy()
 
     u = sympy.Function('u')
     res = obj.eval(u)
