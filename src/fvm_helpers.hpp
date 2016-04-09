@@ -57,48 +57,50 @@ namespace nosh
             }
           }
 
-          // meshset boundary edges
-          const auto boundary_edges = mesh->get_edges(
-              subdomain_id + "_boundary"
-              );
-          for (const auto edge: boundary_edges) {
-            const auto verts = mesh->get_vertex_tuple(edge);
-
-            // check which one of the two verts is in meshset
-            int i;
-            if (mesh->contains(subdomain_id, {verts[0]})) {
-              i = 0;
-            } else if (mesh->contains(subdomain_id, {verts[1]})) {
-              i = 1;
-            } else {
-              TEUCHOS_TEST_FOR_EXCEPT_MSG(
-                  true,
-                  "Neither of the two edge vertices is contained in the subdomain."
-                  );
-            }
-
-            const auto lid = mesh->local_index(edge);
-            auto vals = edge_core->eval(
-                mesh->get_coords(verts[0]),
-                mesh->get_coords(verts[1]),
-                edge_data[lid].length,
-                edge_data[lid].covolume
+          if (subdomain_id != "everywhere") {
+            // meshset boundary edges
+            const auto boundary_edges = mesh->get_edges(
+                subdomain_id + "_boundary"
                 );
+            for (const auto edge: boundary_edges) {
+              const auto verts = mesh->get_vertex_tuple(edge);
 
-            const auto & gids = mesh->edge_gids[lid];
-            if (matrix) {
-              // Add to matrix
-              int num_lhs = matrix->sumIntoGlobalValues(
-                  gids[i], gids,
-                  Teuchos::ArrayView<double>(vals.lhs[i])
+              // check which one of the two verts is in meshset
+              int i;
+              if (mesh->contains(subdomain_id, {verts[0]})) {
+                i = 0;
+              } else if (mesh->contains(subdomain_id, {verts[1]})) {
+                i = 1;
+              } else {
+                TEUCHOS_TEST_FOR_EXCEPT_MSG(
+                    true,
+                    "Neither of the two edge vertices is contained in the subdomain."
+                    );
+              }
+
+              const auto lid = mesh->local_index(edge);
+              auto vals = edge_core->eval(
+                  mesh->get_coords(verts[0]),
+                  mesh->get_coords(verts[1]),
+                  edge_data[lid].length,
+                  edge_data[lid].covolume
                   );
+
+              const auto & gids = mesh->edge_gids[lid];
+              if (matrix) {
+                // Add to matrix
+                int num_lhs = matrix->sumIntoGlobalValues(
+                    gids[i], gids,
+                    Teuchos::ArrayView<double>(vals.lhs[i])
+                    );
 #ifndef NDEBUG
-              TEUCHOS_ASSERT_EQUALITY(num_lhs, 2);
+                TEUCHOS_ASSERT_EQUALITY(num_lhs, 2);
 #endif
-            }
-            if (rhs) {
-              // Add to rhs
-              rhs->sumIntoGlobalValue(gids[i], vals.rhs[i]);
+              }
+              if (rhs) {
+                // Add to rhs
+                rhs->sumIntoGlobalValue(gids[i], vals.rhs[i]);
+              }
             }
           }
         }
