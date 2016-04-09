@@ -494,6 +494,21 @@ namespace nosh {
       return dim;
     }
 
+    bool
+    contains_entities(
+        const moab::EntityHandle & meshset,
+        const std::vector<moab::EntityHandle> & entities,
+        const int operation_type = moab::Interface::INTERSECT
+        )
+    {
+      return this->mb->contains_entities(
+          meshset,
+          &entities[0],
+          entities.size(),
+          operation_type
+          );
+    }
+
     public:
       const std::shared_ptr<moab::Core> mb;
   };
