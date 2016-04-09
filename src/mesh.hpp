@@ -70,6 +70,12 @@ public:
   moab::Range
   get_vertex_tuple(const moab::EntityHandle & edge) const;
 
+  bool
+  contains(
+      const std::string & subdomain_id,
+      const std::vector<moab::EntityHandle> & entities
+      ) const;
+
   void
   write(const std::string & filename) const;
 
