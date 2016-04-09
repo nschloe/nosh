@@ -3,16 +3,11 @@
 import sympy
 
 
-class Function(sympy.Symbol):
-    def __init__(self):
-        return
-
-
 class Coefficient(object):
     pass
 
 
-class VectorOperator(sympy.Function):
+class Operator(sympy.Function):
     pass
 
 
@@ -37,46 +32,8 @@ class Subdomain(object):
     pass
 
 
-# Linear operator defined via the operation along edges in a Delaunay mesh
 class FvmMatrix(sympy.Function):
     pass
-
-    #def edge_contrib(self, alpha, edge_midpoint):
-    #    return []
-
-    #def vertex_contrib(self, control_volume):
-    #    return None
-
-    #def __call__(self, *args):
-    #    print(super(FvmMatrix, self))
-    #    return super(FvmMatrix, self).__call__(self, *args)
-    #    print('Called !')
-
-    ## Override __new__,
-    ## cf. <https://groups.google.com/forum/#!topic/sympy/5mLEq4Gbyfk>.
-    #def __new__(self, name, edge_function):
-    #    obj = super(FvmMatrix, self).__new__(self, name)
-    #    return obj
-
-    #def __init__(self, name, edge_function):
-    #    super(FvmMatrix, self).__init__(name)
-    #    self.edge_function = edge_function
-    #    return
-
-    #def __new__(self, *args, **kwargs):
-    #    #obj = super(FvmMatrix, self).__new__(self, name)
-    #    obj = super(FvmMatrix, self).__new__(self, *args, **kwargs)
-    #    return obj
-
-    #def __init__(self, name):
-    #    #obj = super(FvmMatrix, self).__new__(self, name)
-    #    #super(FvmMatrix, self).__init__(self, name)
-    #    return
-
-    #def __init__(self, name, edge_function):
-    #    super(FvmMatrix, self).__init__(name)
-    #    self.edge_function = edge_function
-    #    return
 
 
 class LinearFvmProblem(object):

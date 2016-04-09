@@ -1,17 +1,13 @@
-class ${name}: public Tpetra::Operator<double,int,int> {
-
+class ${light_class_name}: public Tpetra::Operator<double,int,int> {
 public:
-
-${name}(
-    const std::shared_ptr<const nosh::mesh> & mesh
-    ):
-  ${members_init}
-  ${name}_light(mesh, $args)
+${light_class_name}(
+    ${light_constructor_args}
+    )${light_members_init}
 {
 }
 
 virtual
-~${name}()
+~${light_class_name}()
 {
 }
 
@@ -19,54 +15,6 @@ void
 apply(
     const Tpetra::MultiVector<double,int,int> & x,
     Tpetra::MultiVector<double,int,int> & y,
-    Teuchos::ETransp mode,
-    double alpha,
-    double beta
-    ) const
-{
-  this->${name}_light.apply(x, y, mode, alpha, beta);
-  return;
-}
-
-Teuchos::RCP<const Tpetra::Map<int,int>>
-getDomainMap() const
-{
-  return this->${name}_light.getDomainMap();
-}
-
-Teuchos::RCP<const Tpetra::Map<int,int>>
-getRangeMap() const
-{
-  return this->${name}_light.getRangeMap();
-}
-
-protected:
-private:
-  ${members}
-} // class ${name}
-
-
-class ${name}_light: public Tpetra::Operator<double,int,int> {
-
-public:
-
-${name}_light(
-    const std::shared_ptr<const nosh::mesh> & mesh
-    ${arguments_light}
-    ) :
-  ${members_init_light}
-{
-}
-
-virtual
-~${name}_light()
-{
-}
-
-void
-apply(
-    const Tpetra::MultiVector<double,int,int> &x,
-    Tpetra::MultiVector<double,int,int> &y,
     Teuchos::ETransp mode,
     double alpha,
     double beta
@@ -84,7 +32,7 @@ TEUCHOS_TEST_FOR_EXCEPT_MSG(
     beta != 0.0,
     "Only beta==0.0 supported."
     )
-${apply}
+${light_apply}
 return;
 }
 
@@ -102,5 +50,50 @@ getRangeMap() const
 
 protected:
 private:
-  ${members_light}
-} // class ${name}_light
+${light_members_declare}
+} // class ${light_class_name}
+
+
+class ${full_class_name}: public Tpetra::Operator<double,int,int> {
+public:
+${full_class_name}(
+    const std::shared_ptr<const nosh::mesh> & mesh
+    ):
+  ${full_members_init}
+{
+}
+
+virtual
+~${full_class_name}()
+{
+}
+
+void
+apply(
+    const Tpetra::MultiVector<double,int,int> & x,
+    Tpetra::MultiVector<double,int,int> & y,
+    Teuchos::ETransp mode,
+    double alpha,
+    double beta
+    ) const
+{
+  this->${light_var_name}->apply(x, y, mode, alpha, beta);
+  return;
+}
+
+Teuchos::RCP<const Tpetra::Map<int,int>>
+getDomainMap() const
+{
+  return this->${light_var_name}->getDomainMap();
+}
+
+Teuchos::RCP<const Tpetra::Map<int,int>>
+getRangeMap() const
+{
+  return this->${light_var_name}->getRangeMap();
+}
+
+protected:
+private:
+  ${full_members_declare}
+} // class ${full_class_name}

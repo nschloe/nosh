@@ -1,5 +1,16 @@
 # -*- coding: utf-8 -*-
 #
+import logging
+import sympy
+
+import nfl
+
+
+def get_code_tpetra(expr, arg_translate=None):
+    if arg_translate is None:
+        arg_translate = {}
+    gen = TpetraCodeGenerator()
+    return gen.generate(expr, arg_translate)
 
 
 class Pointwise(str):
@@ -12,11 +23,11 @@ class Vector(str):
 
 class TpetraCodeGenerator(object):
     def __init__(self):  # , operators, vector_args, scalar_args):
-        self.arg_translate = {}
+        self._arg_translate = {}
         self._intermediate_count = 0
         self._get_data = set([])
         self._code = ''
-        self._required_operators = []
+        self._required_fvm_matrices = []
         return
 
     def visit(self, node, out_vector=None):
@@ -44,15 +55,15 @@ class TpetraCodeGenerator(object):
     def generate(self, node, arg_translate):
         '''Entrance point to this class.
         '''
-        self.arg_translate = arg_translate
+        self_arg_translate = arg_translate
         self._intermediate_count = 0
         self._get_data = set([])
         self._code = ''
-        self._required_operators = []
+        self._required_fvm_matrices = []
         out = self.visit(node, 'y')
         if isinstance(out, Pointwise):
             self._to_vector(out, 'y')
-        return self._code, self._required_operators
+        return self._code, self._required_fvm_matrices
 
     def _get_outvector(self):
         '''Sometime, one needs to store intermediate values in vectors. This
@@ -97,8 +108,8 @@ for (size_t k = 0; k < %sData.size(); k++) {
     def visit_Call(self, node):
         '''Handles calls for operators A(u) and pointwise functions sin(u).
         '''
-        id = node.func.__name__
-        logging.debug('> Call %s' % id)
+        name = node.func.__name__
+        logging.debug('> Call %s' % name)
         # Check if this is the top (or root) of the recursion. If it is, the
         # output variable will be `y`.
         assert(len(node.args) == 1)  # one argument, e.g., A(x)
@@ -118,11 +129,12 @@ for (size_t k = 0; k < %sData.size(); k++) {
             else:
                 out_vector = self._get_outvector()
             # Put it all together
+            var_name = name.lower() + '_'
             self._code += '\n%s->apply(%s, %s);\n' \
-                % (id + '_', arg_name, out_vector)
-            self._required_operators.append({
-                'var_name': id + '_',
-                'class_name': id,
+                % (var_name, arg_name, out_vector)
+            self._required_fvm_matrices.append({
+                'var_name': var_name,
+                'class': node.func,
                 })
             logging.debug('  Call >')
             return Vector(out_vector)
@@ -136,7 +148,7 @@ for (size_t k = 0; k < %sData.size(); k++) {
             else:
                 raise ValueError('Illegal input type')
             logging.debug('  Call >')
-            return Pointwise('%s(%s)' % (id, a))
+            return Pointwise('%s(%s)' % (name, a))
 
     def visit_UnaryOp(self, node):
         '''Handles unary operations (e.g., +, -,...).
@@ -180,8 +192,8 @@ for (size_t k = 0; k < %sData.size(); k++) {
     def visit_Name(self, node):
         id = node.name
         logging.debug('> Name %s >' % id)
-        if id in self.arg_translate:
-            return Vector(self.arg_translate[id])
+        if id in self._arg_translate:
+            return Vector(self._arg_translate[id])
         elif isinstance(node, sympy.Symbol):
             # Treat all other symbols as pointwise variables
             return Pointwise(id)

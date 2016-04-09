@@ -54,6 +54,10 @@ def _main():
                 var != nfl.LinearFvmProblem:
             code, deps = nfc.get_code_linear_fvm_problem(namespace, name, var)
         elif inspect.isclass(var) and \
+                issubclass(var, nfl.Operator) and \
+                var != nfl.Operator:
+            code, deps = nfc.get_code_operator(namespace, name, var)
+        elif inspect.isclass(var) and \
                 issubclass(var, nfl.Subdomain) and \
                 var != nfl.Subdomain:
             instance = var()

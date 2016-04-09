@@ -22,7 +22,7 @@ def get_code_fvm_matrix(namespace, class_name, obj):
     dependencies = dbcs.copy()
 
     u = sympy.Function('u')
-    res = obj.eval(u)
+    res = obj.apply(u)
 
     edge_core_names = set()
     vertex_core_names = set()
