@@ -1,6 +1,8 @@
 #ifndef NOSH_EDGECORE_H
 #define NOSH_EDGECORE_H
 
+#include <Eigen/Dense>
+
 namespace nosh
 {
   struct edge_core_data {

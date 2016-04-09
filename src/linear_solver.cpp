@@ -1,7 +1,7 @@
 #include "linear_solver.hpp"
 
 #include "linear_problem.hpp"
-#include "matrix.hpp"
+#include "fvm_matrix.hpp"
 #include "helper.hpp"
 
 #include <Amesos2.hpp>
@@ -312,7 +312,7 @@ linear_solve_muelu(
 void
 nosh::
 scaled_linear_solve(
-    nosh::matrix & A,
+    nosh::fvm_matrix & A,
     const nosh::expression & f,
     nosh::function & x,
     std::map<std::string, boost::any> solver_params

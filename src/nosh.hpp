@@ -4,7 +4,7 @@
 #include "dirichlet_bc.hpp"
 #include "dirichlet_bc_const.hpp"
 #include "expression.hpp"
-// #include "fvm_matrix.hpp"
+#include "fvm_matrix.hpp"
 #include "function.hpp"
 #include "mesh.hpp"
 #include "mesh_reader.hpp"
