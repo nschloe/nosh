@@ -1,62 +1,123 @@
 # -*- coding: utf-8 -*-
 #
+import nfl
 import os
+from string import Template
 import sympy
 
+from .edge_core import get_edge_core_code_from_integral
+from .vertex_core import get_vertex_core_code_from_integral
+from .boundary_core import get_boundary_core_code_from_integral
+from .helpers import templates_dir
 
-def get_code_fvm_matrix(name, obj):
-    '''Get Nosh C++ code for an FVM matrix.
-    '''
-    if getattr(obj, 'matrix_cores', None):
-        matrix_cores = obj.matrix_cores
-        for matrix_core in matrix_cores:
-            assert(isinstance(matrix_core, nfl.MatrixCore))
+
+def get_code_fvm_matrix(namespace, class_name, obj):
+    if getattr(obj, 'dirichlet_boundary_conditions', None):
+        dbcs = set(obj.dirichlet_boundary_conditions)
+        for dbc in dbcs:
+            assert(isinstance(dbc, nfl.DirichletBC))
     else:
-        matrix_cores = []
+        dbcs = set()
 
-    if getattr(obj, 'boundary_conditions', None):
-        bcs = obj.boundary_conditions
-        for bc in bcs:
-            assert(isinstance(bc, nfl.DirichletBC))
-    else:
-        boundary_conditions = []
+    dependencies = dbcs.copy()
 
-    dependencies = matrix_cores + bcs
+    u = sympy.Function('u')
+    res = obj.eval(u)
 
-    return _get_code(name, matrix_cores, bcs), dependencies
+    edge_core_names = set()
+    vertex_core_names = set()
+    boundary_core_names = set()
+    assert(isinstance(res, nfl.Core))
+    code = ''
+    for core in res.cores:
+        integrand, measure, subdomains = core
+        if isinstance(measure, nfl.dS):
+            core_class_name = 'edge_core%d' % len(edge_core_names)
+            core_code, deps = get_edge_core_code_from_integral(
+                    namespace, core_class_name, u, integrand, subdomains
+                    )
+            edge_core_names.add(core_class_name)
+        elif isinstance(measure, nfl.dV):
+            core_class_name = 'vertex_core%d' % len(vertex_core_names)
+            core_code, deps = get_vertex_core_code_from_integral(
+                    namespace, core_class_name, u, integrand, subdomains
+                    )
+            vertex_core_names.add(core_class_name)
+        elif isinstance(measure, nfl.dGamma):
+            core_class_name = 'boundary_core%d' % len(boundary_core_names)
+            core_code, deps = get_boundary_core_code_from_integral(
+                    namespace, core_class_name, u, integrand, subdomains
+                    )
+            boundary_core_names.add(core_class_name)
+        else:
+            raise RuntimeError('Illegal measure type \'%s\'.' % measure)
 
+        # since this object contains the cores, its dependencies contain the
+        # dependencies of the cores as well
+        dependencies.update(deps)
 
-def _get_code(name, matrix_cores, bcs):
-    # handle the matrix cores
-    joined = ', '.join(
-            'std::make_shared<%s>()' %
-            type(mc).__name__.lower() for mc in matrix_cores
+        code += '\n' + core_code
+
+    # append the code of the linear problem itself
+    code += '\n' + _get_code_linear_problem(
+            class_name,
+            edge_core_names,
+            vertex_core_names,
+            boundary_core_names,
+            dbcs
             )
-    code_matrix_cores = '{%s}' % joined
-    # matrix cores handling done
+
+    return code, dependencies
+
+
+def _get_code_linear_problem(
+        name,
+        edge_core_names,
+        vertex_core_names,
+        boundary_core_names,
+        dbcs
+        ):
+    constructor_args = [
+        'const std::shared_ptr<const nosh::mesh> & _mesh'
+        ]
+    init_edge_cores = '{%s}' % (
+            ', '.join(
+                ['std::make_shared<%s>()' % n
+                 for n in edge_core_names]
+                )
+            )
+    init_vertex_cores = '{%s}' % (
+            ', '.join(
+                ['std::make_shared<%s>()' % n
+                 for n in vertex_core_names]
+                )
+            )
+    init_boundary_cores = '{%s}' % (
+            ', '.join(
+                ['std::make_shared<%s>()' % n
+                 for n in boundary_core_names]
+                )
+            )
 
     # handle the boundary conditions
     joined = ', '.join(
             'std::make_shared<%s>()' %
-            type(bc).__name__.lower() for bc in bcs
+            type(bc).__name__.lower() for bc in dbcs
             )
-    code_bcs = '{%s}' % joined
+    init_dbcs = '{%s}' % joined
     # boundary conditions handling done
 
-    constructor_args = [
-        'const std::shared_ptr<const nosh::mesh> & _mesh'
-        ]
     members_init = [
-      'nosh::fvm_matrix(\n_mesh,\n %s,\n %s\n)' %
-      (code_matrix_cores, code_bcs)
+      'nosh::fvm_matrix(\n_mesh,\n %s,\n %s,\n %s,\n %s\n)' %
+      (init_edge_cores, init_vertex_cores, init_boundary_cores, init_dbcs)
       ]
     members_declare = []
 
-    # template substitution
-    with open(os.path.join(templates_dir, 'fvm_matrix.tpl'), 'r') as f:
+    templ = os.path.join(templates_dir, 'fvm_matrix.tpl')
+    with open(templ, 'r') as f:
         src = Template(f.read())
         code = src.substitute({
-            'name': name.lower(),  # class names are lowercase
+            'name': name.lower(),
             'constructor_args': ',\n'.join(constructor_args),
             'members_init': ',\n'.join(members_init),
             'members_declare': '\n'.join(members_declare)

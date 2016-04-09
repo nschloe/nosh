@@ -48,7 +48,7 @@ def _main():
         if inspect.isclass(var) and \
                 issubclass(var, nfl.FvmMatrix) and \
                 var != nfl.FvmMatrix:
-            code, deps = nfc.get_code_fvm_matrix(name, var)
+            code, deps = nfc.get_code_fvm_matrix(namespace, name, var)
         elif inspect.isclass(var) and \
                 issubclass(var, nfl.LinearFvmProblem) and \
                 var != nfl.LinearFvmProblem:
