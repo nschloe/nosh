@@ -2,9 +2,9 @@ class ${name}:
   public nosh::vertex_core
 {
   public:
-    ${name}()${members_init} {};
+    ${name}()${members_init} {}
 
-    virtual ~${name}() {};
+    virtual ~${name}() {}
 
     virtual
       nosh::vertex_data

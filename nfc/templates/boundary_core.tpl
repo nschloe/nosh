@@ -2,9 +2,9 @@ class ${name}:
   public nosh::boundary_core
 {
   public:
-    ${name}()${members_init} {};
+    ${name}()${members_init} {}
 
-    virtual ~${name}() {};
+    virtual ~${name}() {}
 
     virtual
       nosh::boundary_data
