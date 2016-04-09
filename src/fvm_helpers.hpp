@@ -58,10 +58,10 @@ namespace nosh
           }
 
           // meshset boundary edges
-          const auto boundary_edges = mesh->get_edges(
-              subdomain_id + "_boundary"
+          const auto half_edges = mesh->get_edges(
+              subdomain_id + "_halfedges"
               );
-          for (const auto edge: boundary_edges) {
+          for (const auto edge: half_edges) {
             const auto verts = mesh->get_vertex_tuple(edge);
 
             // check which one of the two verts is in meshset
