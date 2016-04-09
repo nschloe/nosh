@@ -30,13 +30,13 @@ namespace nosh
         mesh_(mesh),
         matrix(mesh->build_graph()),
         rhs(Teuchos::rcp(mesh->map())),
-        dbcs_(dbcs),
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
         fill_time_(Teuchos::TimeMonitor::getNewTimer("Nosh: linear_problem::fill_")),
 #endif
         edge_cores_(edge_cores),
         vertex_cores_(vertex_cores),
-        boundary_cores_(boundary_cores)
+        boundary_cores_(boundary_cores),
+        dbcs_(dbcs)
         {
         }
 
@@ -79,7 +79,7 @@ namespace nosh
             for (const auto edge: edges) {
               const auto verts = this->mesh_->get_vertex_tuple(edge);
               const auto lid = this->mesh_->local_index(edge);
-              auto vals = edge_core->eval(
+              const auto vals = edge_core->eval(
                   this->mesh_->get_coords(verts[0]),
                   this->mesh_->get_coords(verts[1]),
                   edge_data[lid].length,
@@ -89,7 +89,7 @@ namespace nosh
               const auto & gids = this->mesh_->edge_gids[lid];
               for (int i = 0; i < 2; i++) {
                 // Add to matrix
-                int num_lhs = this->matrix.sumIntoGlobalValues(
+                const int num_lhs = this->matrix.sumIntoGlobalValues(
                     gids[i], gids,
                     Teuchos::ArrayView<double>(vals.lhs[i])
                     );
@@ -114,13 +114,13 @@ namespace nosh
             const auto verts = this->mesh_->get_vertices(subdomain_id);
             for (const auto vertex: verts) {
               const auto lid = this->mesh_->local_index(vertex);
-              auto val = vertex_core->eval(
+              const auto val = vertex_core->eval(
                   this->mesh_->get_coords(vertex),
                   c_data[lid]
                   );
               // Add to matrix
-              auto gid = this->matrix.getMap()->getGlobalElement(lid);
-              int num_lhs = this->matrix.sumIntoGlobalValues(
+              const auto gid = this->matrix.getMap()->getGlobalElement(lid);
+              const auto num_lhs = this->matrix.sumIntoGlobalValues(
                   gid,
                   Teuchos::tuple<int>(gid),
                   Teuchos::tuple<double>(val.lhs)
@@ -143,14 +143,14 @@ namespace nosh
           for (const auto & subdomain_id: boundary_core->subdomain_ids) {
             const auto verts = this->mesh_->get_vertices(subdomain_id);
             for (const auto vert: verts) {
-              const int lid = this->mesh_->local_index(vert);
-              auto val = boundary_core->eval(
+              const auto lid = this->mesh_->local_index(vert);
+              const auto val = boundary_core->eval(
                   this->mesh_->get_coords(vert),
                   surfs[lid]
                   );
               // Add to matrix
               const auto gid = this->matrix.getMap()->getGlobalElement(lid);
-              int num_lhs = this->matrix.sumIntoGlobalValues(
+              const auto num_lhs = this->matrix.sumIntoGlobalValues(
                   gid,
                   Teuchos::tuple<int>(gid),
                   Teuchos::tuple<double>(val.lhs)
@@ -175,7 +175,7 @@ namespace nosh
             for (const auto & vertex: verts) {
               // eliminate the row in A
               const auto gid = this->mesh_->gid(vertex);
-              size_t num = this->matrix.getNumEntriesInGlobalRow(gid);
+              const size_t num = this->matrix.getNumEntriesInGlobalRow(gid);
               // It shouldn't actually happen that the specified global row
               // does not belong to this graph.
               // TODO find out if why we need this, fix the underlying issue,
@@ -213,14 +213,13 @@ namespace nosh
       Tpetra::Vector<double,int,int> rhs;
 
     private:
-      // TODO const?
-      const std::set<std::shared_ptr<const nosh::dirichlet_bc>> dbcs_;
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
       const Teuchos::RCP<Teuchos::Time> fill_time_;
 #endif
       const std::set<std::shared_ptr<const edge_core>> edge_cores_;
       const std::set<std::shared_ptr<const vertex_core>> vertex_cores_;
       const std::set<std::shared_ptr<const boundary_core>> boundary_cores_;
+      const std::set<std::shared_ptr<const nosh::dirichlet_bc>> dbcs_;
   };
 } // namespace nosh
 
