@@ -33,6 +33,7 @@ TEUCHOS_TEST_FOR_EXCEPT_MSG(
     "Only beta==0.0 supported."
     )
 ${light_apply}
+${boundary_code}
 return;
 }
 

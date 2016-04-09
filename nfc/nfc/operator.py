@@ -7,7 +7,7 @@ import sympy
 
 import nfl
 from .code_generator_tpetra import get_code_tpetra
-from .helpers import templates_dir
+from .helpers import extract_c_expression, templates_dir
 
 
 def get_code_operator(namespace, name, var):
@@ -26,6 +26,18 @@ def get_code_operator(namespace, name, var):
 def _get_code_operator_plain(name, obj):
     u = sympy.Symbol('u')
     op_code, required_fvm_matrices = get_code_tpetra(obj.eval(u), {'u': 'x'})
+
+    boundary_eval = getattr(obj, 'boundary_eval', None)
+    boundary_code = None
+    if callable(boundary_eval):
+        xk = sympy.Symbol('xData[k]')
+        code = extract_c_expression(boundary_eval(xk))
+        boundary_code = '''
+        for (const auto & vertex: this->mesh_->boundary_vertices) {
+          const auto k = this->mesh_->local_index(vertex);
+          yData[k] = %s;
+        }
+        ''' % code
 
     dependencies = set()
 
@@ -101,6 +113,7 @@ def _get_code_operator_plain(name, obj):
             'light_members_init': light_members_init,
             'light_members_declare': '\n'.join(light_members_declare),
             'light_apply': op_code,
+            'boundary_code': boundary_code,
             'full_class_name': name.lower(),
             'full_members_init': full_members_init,
             'light_var_name': light_var_name,
