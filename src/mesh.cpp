@@ -141,7 +141,8 @@ mark_subdomains(const std::set<std::shared_ptr<nosh::subdomain>> & subdomains)
 
   for (const auto sd: subdomains) {
     // create meshset
-    this->meshsets_[sd->id] = this->mbw_->create_meshset(moab::MESHSET_SET);
+    const auto meshset = this->mbw_->create_meshset(moab::MESHSET_SET);
+    this->meshsets_[sd->id] = meshset;
 
     // take care of the vertices
     moab::Range verts = sd->is_boundary_only ?
@@ -150,7 +151,7 @@ mark_subdomains(const std::set<std::shared_ptr<nosh::subdomain>> & subdomains)
     for (const auto & vert: verts) {
       const auto x = this->get_coords(vert);
       if (sd->is_inside(x)) {
-        mbw_->add_entities(this->meshsets_.at(sd->id), {vert});
+        mbw_->add_entities(meshset, {vert});
       }
     }
 
@@ -160,15 +161,30 @@ mark_subdomains(const std::set<std::shared_ptr<nosh::subdomain>> & subdomains)
       continue;
     }
 
-    const auto edges = this->mbw_->get_entities_by_type(0, moab::MBEDGE);
+    // Create meshset for storing edges of which exactly ONE vertex is in the
+    // set (the boundary of the subdomain).
+    const auto boundary_meshset = this->mbw_->create_meshset(moab::MESHSET_SET);
+    const std::string set_boundary_name = sd->id + "_boundary";
+    this->meshsets_[set_boundary_name] = boundary_meshset;
+
+    const auto contained_verts = this->mbw_->get_entities_by_type(
+        meshset, moab::MBVERTEX
+        );
+    const auto edges = this->mbw_->get_adjacencies(
+        contained_verts,
+        1,  // edges
+        false,  // don't create
+        moab::Interface::UNION
+        );
     for (const auto & edge: edges) {
       // Check if edge midpoint is_inside.
       const auto v = this->mbw_->get_connectivity(edge);
-      const auto x0 = this->get_coords(v[0]);
-      const auto x1 = this->get_coords(v[1]);
-      const auto mp = 0.5 * (x0 + x1);
-      if (sd->is_inside(mp)) {
-        mbw_->add_entities(this->meshsets_.at(sd->id), {edge});
+      const bool is_x0_inside = this->mbw_->contains_entities(meshset, {v[0]});
+      const bool is_x1_inside = this->mbw_->contains_entities(meshset, {v[1]});
+      if (is_x0_inside && is_x1_inside) {
+        mbw_->add_entities(meshset, {edge});
+      } else if (is_x0_inside || is_x1_inside) {
+        mbw_->add_entities(boundary_meshset, {edge});
       }
     }
   }
@@ -211,6 +227,19 @@ mesh::
 get_vertex_tuple(const moab::EntityHandle & edge) const
 {
   return this->mbw_->get_adjacencies({edge}, 0, false);
+}
+// =============================================================================
+bool
+mesh::
+contains(
+    const std::string & subdomain_id,
+    const std::vector<moab::EntityHandle> & entities
+    ) const
+{
+  return this->mbw_->contains_entities(
+      this->meshsets_.at(subdomain_id),
+      entities
+      );
 }
 // =============================================================================
 void

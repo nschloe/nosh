@@ -74,8 +74,10 @@ namespace nosh
       {
         for (const auto & edge_core: this->edge_cores_) {
           for (const auto & subdomain_id: edge_core->subdomain_ids) {
-            const auto edges = this->mesh_->get_edges(subdomain_id);
             const auto edge_data = this->mesh_->get_edge_data();
+
+            // meshset interior edges
+            const auto edges = this->mesh_->get_edges(subdomain_id);
             for (const auto edge: edges) {
               const auto verts = this->mesh_->get_vertex_tuple(edge);
               const auto lid = this->mesh_->local_index(edge);
@@ -99,6 +101,47 @@ namespace nosh
                 // Add to rhs
                 this->rhs.sumIntoGlobalValue(gids[i], vals.rhs[i]);
               }
+            }
+
+            // meshset boundary edges
+            const auto boundary_edges = this->mesh_->get_edges(
+                subdomain_id + "_boundary"
+                );
+            for (const auto edge: boundary_edges) {
+              const auto verts = this->mesh_->get_vertex_tuple(edge);
+
+              // check which one of the two verts is in meshset
+              int i;
+              if (this->mesh_->contains(subdomain_id, {verts[0]})) {
+                i = 0;
+              } else if (this->mesh_->contains(subdomain_id, {verts[1]})) {
+                i = 1;
+              } else {
+                TEUCHOS_TEST_FOR_EXCEPT_MSG(
+                    true,
+                    "Neither of the two edge vertices is contained in the subdomain."
+                    );
+              }
+
+              const auto lid = this->mesh_->local_index(edge);
+              auto vals = edge_core->eval(
+                  this->mesh_->get_coords(verts[0]),
+                  this->mesh_->get_coords(verts[1]),
+                  edge_data[lid].length,
+                  edge_data[lid].covolume
+                  );
+
+              const auto & gids = this->mesh_->edge_gids[lid];
+              // Add to matrix
+              int num_lhs = this->matrix.sumIntoGlobalValues(
+                  gids[i], gids,
+                  Teuchos::ArrayView<double>(vals.lhs[i])
+                  );
+#ifndef NDEBUG
+              TEUCHOS_ASSERT_EQUALITY(num_lhs, 2);
+#endif
+              // Add to rhs
+              this->rhs.sumIntoGlobalValue(gids[i], vals.rhs[i]);
             }
           }
         }
