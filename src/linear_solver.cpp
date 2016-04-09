@@ -42,7 +42,7 @@ linear_solve(
     )
 {
   // solve
-  linear_solve(P.matrix, P.rhs, x, solver_params);
+  linear_solve(*(P.matrix), *(P.rhs), x, solver_params);
   return;
 }
 // =============================================================================

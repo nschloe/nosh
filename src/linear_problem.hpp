@@ -9,6 +9,7 @@
 #endif
 
 #include "helper.hpp"
+#include "fvm_helpers.hpp"
 #include "matrix.hpp"
 #include "edge_core.hpp"
 #include "vertex_core.hpp"
@@ -28,8 +29,8 @@ namespace nosh
           const std::set<std::shared_ptr<const dirichlet_bc>> & dbcs
           ) :
         mesh_(mesh),
-        matrix(mesh->build_graph()),
-        rhs(Teuchos::rcp(mesh->map())),
+        matrix(std::make_shared<Tpetra::CrsMatrix<double,int,int>>(mesh->build_graph())),
+        rhs(std::make_shared<Tpetra::Vector<double,int,int>>(Teuchos::rcp(mesh->map()))),
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
         fill_time_(Teuchos::TimeMonitor::getNewTimer("Nosh: linear_problem::fill_")),
 #endif
@@ -53,207 +54,50 @@ namespace nosh
 #endif
 #ifndef NDEBUG
           TEUCHOS_ASSERT(this->mesh_);
+          TEUCHOS_ASSERT(this->matrix);
+          TEUCHOS_ASSERT(this->rhs);
 #endif
-          this->matrix.resumeFill();
+          this->matrix->resumeFill();
 
-          this->matrix.setAllToScalar(0.0);
-          this->rhs.putScalar(0.0);
+          this->matrix->setAllToScalar(0.0);
+          this->rhs->putScalar(0.0);
 
-          this->add_edge_contributions_();
-          this->add_vertex_contributions_();
-          this->add_domain_boundary_contributions_();
-          this->apply_dbcs_();
+          fvm_helpers::add_edge_contributions(
+              this->mesh_,
+              this->edge_cores_,
+              this->matrix,
+              this->rhs
+              );
+          fvm_helpers::add_vertex_contributions(
+              this->mesh_,
+              this->vertex_cores_,
+              this->matrix,
+              this->rhs
+              );
+          fvm_helpers::add_domain_boundary_contributions(
+              this->mesh_,
+              this->boundary_cores_,
+              this->matrix,
+              this->rhs
+              );
+          fvm_helpers::apply_dbcs(
+              this->mesh_,
+              this->dbcs_,
+              this->matrix,
+              this->rhs
+              );
 
-          this->matrix.fillComplete();
+          this->matrix->fillComplete();
 
           return;
         }
-    private:
-      void
-      add_edge_contributions_()
-      {
-        for (const auto & edge_core: this->edge_cores_) {
-          for (const auto & subdomain_id: edge_core->subdomain_ids) {
-            const auto edge_data = this->mesh_->get_edge_data();
-
-            // meshset interior edges
-            const auto edges = this->mesh_->get_edges(subdomain_id);
-            for (const auto edge: edges) {
-              const auto verts = this->mesh_->get_vertex_tuple(edge);
-              const auto lid = this->mesh_->local_index(edge);
-              const auto vals = edge_core->eval(
-                  this->mesh_->get_coords(verts[0]),
-                  this->mesh_->get_coords(verts[1]),
-                  edge_data[lid].length,
-                  edge_data[lid].covolume
-                  );
-
-              const auto & gids = this->mesh_->edge_gids[lid];
-              for (int i = 0; i < 2; i++) {
-                // Add to matrix
-                const int num_lhs = this->matrix.sumIntoGlobalValues(
-                    gids[i], gids,
-                    Teuchos::ArrayView<double>(vals.lhs[i])
-                    );
-#ifndef NDEBUG
-                TEUCHOS_ASSERT_EQUALITY(num_lhs, 2);
-#endif
-                // Add to rhs
-                this->rhs.sumIntoGlobalValue(gids[i], vals.rhs[i]);
-              }
-            }
-
-            // meshset boundary edges
-            const auto boundary_edges = this->mesh_->get_edges(
-                subdomain_id + "_boundary"
-                );
-            for (const auto edge: boundary_edges) {
-              const auto verts = this->mesh_->get_vertex_tuple(edge);
-
-              // check which one of the two verts is in meshset
-              int i;
-              if (this->mesh_->contains(subdomain_id, {verts[0]})) {
-                i = 0;
-              } else if (this->mesh_->contains(subdomain_id, {verts[1]})) {
-                i = 1;
-              } else {
-                TEUCHOS_TEST_FOR_EXCEPT_MSG(
-                    true,
-                    "Neither of the two edge vertices is contained in the subdomain."
-                    );
-              }
-
-              const auto lid = this->mesh_->local_index(edge);
-              auto vals = edge_core->eval(
-                  this->mesh_->get_coords(verts[0]),
-                  this->mesh_->get_coords(verts[1]),
-                  edge_data[lid].length,
-                  edge_data[lid].covolume
-                  );
-
-              const auto & gids = this->mesh_->edge_gids[lid];
-              // Add to matrix
-              int num_lhs = this->matrix.sumIntoGlobalValues(
-                  gids[i], gids,
-                  Teuchos::ArrayView<double>(vals.lhs[i])
-                  );
-#ifndef NDEBUG
-              TEUCHOS_ASSERT_EQUALITY(num_lhs, 2);
-#endif
-              // Add to rhs
-              this->rhs.sumIntoGlobalValue(gids[i], vals.rhs[i]);
-            }
-          }
-        }
-      }
-
-      void
-      add_vertex_contributions_()
-      {
-        const auto & control_volumes = this->mesh_->control_volumes();
-        const auto c_data = control_volumes->getData();
-        for (const auto & vertex_core: this->vertex_cores_) {
-          for (const auto & subdomain_id: vertex_core->subdomain_ids) {
-            const auto verts = this->mesh_->get_vertices(subdomain_id);
-            for (const auto vertex: verts) {
-              const auto lid = this->mesh_->local_index(vertex);
-              const auto val = vertex_core->eval(
-                  this->mesh_->get_coords(vertex),
-                  c_data[lid]
-                  );
-              // Add to matrix
-              const auto gid = this->matrix.getMap()->getGlobalElement(lid);
-              const auto num_lhs = this->matrix.sumIntoGlobalValues(
-                  gid,
-                  Teuchos::tuple<int>(gid),
-                  Teuchos::tuple<double>(val.lhs)
-                  );
-#ifndef NDEBUG
-              TEUCHOS_ASSERT_EQUALITY(num_lhs, 1);
-#endif
-              // add to rhs
-              this->rhs.sumIntoGlobalValue(gid, val.rhs);
-            }
-          }
-        }
-      }
-
-      void
-      add_domain_boundary_contributions_()
-      {
-        const auto surfs = this->mesh_->boundary_surface_areas();
-        for (const auto boundary_core: this->boundary_cores_) {
-          for (const auto & subdomain_id: boundary_core->subdomain_ids) {
-            const auto verts = this->mesh_->get_vertices(subdomain_id);
-            for (const auto vert: verts) {
-              const auto lid = this->mesh_->local_index(vert);
-              const auto val = boundary_core->eval(
-                  this->mesh_->get_coords(vert),
-                  surfs[lid]
-                  );
-              // Add to matrix
-              const auto gid = this->matrix.getMap()->getGlobalElement(lid);
-              const auto num_lhs = this->matrix.sumIntoGlobalValues(
-                  gid,
-                  Teuchos::tuple<int>(gid),
-                  Teuchos::tuple<double>(val.lhs)
-                  );
-#ifndef NDEBUG
-              TEUCHOS_ASSERT_EQUALITY(num_lhs, 1);
-#endif
-              // add to rhs
-              this->rhs.sumIntoGlobalValue(gid, val.rhs);
-            }
-          }
-        }
-      }
-
-      // apply dirichlet boundary conditions
-      void
-      apply_dbcs_()
-      {
-        for (const auto & bc: this->dbcs_) {
-          for (const auto & subdomain_id: bc->subdomain_ids) {
-            const auto verts = this->mesh_->get_vertices(subdomain_id);
-            for (const auto & vertex: verts) {
-              // eliminate the row in A
-              const auto gid = this->mesh_->gid(vertex);
-              const size_t num = this->matrix.getNumEntriesInGlobalRow(gid);
-              // It shouldn't actually happen that the specified global row
-              // does not belong to this graph.
-              // TODO find out if why we need this, fix the underlying issue,
-              // make this a TEUCHOS_TEST_*
-              if (num != Teuchos::OrdinalTraits<size_t>::invalid()) {
-                std::vector<int> cols(num);
-                std::vector<double> vals(num);
-                this->matrix.getGlobalRowCopy(gid, cols, vals, num);
-                // set vals to 0
-                std::fill(vals.begin(), vals.end(), 0.0);
-                // set diagonal entry to 1
-                auto it = std::find(cols.begin(), cols.end(), gid);
-                TEUCHOS_TEST_FOR_EXCEPT_MSG(
-                    it == cols.end(),
-                    "Matrix has no main diagonal entry."
-                    );
-                int pos = it - cols.begin();
-                // set diagonal entry to 1
-                vals[pos] = 1.0;
-                this->matrix.replaceGlobalValues(gid, cols, vals);
-                // set rhs
-                const auto coord = this->mesh_->get_coords(vertex);
-                this->rhs.replaceGlobalValue(gid, bc->eval(coord));
-              }
-            }
-          }
-        }
-      }
 
     private:
       const std::shared_ptr<const nosh::mesh> mesh_;
 
     public:
-      Tpetra::CrsMatrix<double,int,int> matrix;
-      Tpetra::Vector<double,int,int> rhs;
+      const std::shared_ptr<Tpetra::CrsMatrix<double,int,int>> matrix;
+      const std::shared_ptr<Tpetra::Vector<double,int,int>> rhs;
 
     private:
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
