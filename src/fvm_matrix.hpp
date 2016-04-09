@@ -57,6 +57,9 @@ namespace nosh
           this->resumeFill();
 
           this->setAllToScalar(0.0);
+          if (rhs) {
+            rhs->putScalar(0.0);
+          }
 
           this->add_edge_contributions_(rhs);
           this->add_vertex_contributions_(rhs);

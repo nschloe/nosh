@@ -46,12 +46,9 @@ namespace nosh
           Teuchos::TimeMonitor tm(*fill_time_);
 #endif
 #ifndef NDEBUG
-          TEUCHOS_ASSERT(this->mesh_);
           TEUCHOS_ASSERT(this->matrix);
           TEUCHOS_ASSERT(this->rhs);
 #endif
-          this->rhs->putScalar(0.0);
-
           // Fill matrix and rhs
           this->matrix->fill(rhs);
 
