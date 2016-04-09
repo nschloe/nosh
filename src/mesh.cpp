@@ -63,9 +63,16 @@ create_default_meshsets_()
   const auto boundary = this->mbw_->create_meshset(moab::MESHSET_SET);
   mbw_->add_entities(boundary, this->boundary_vertices);
 
+  // Create empty meshset for "everywhere_boundary". Normally, the _boundary
+  // meshsets hold the edges of which one vertex is in the corresponding full
+  // meshset.
+  const auto everywhere_boundary =
+    this->mbw_->create_meshset(moab::MESHSET_SET);
+
   return {
     // MOAB's default meshset 0 matches everything.
     {"everywhere", 0},
+    {"everywhere_boundary", everywhere_boundary},
     {"boundary", boundary}
   };
 }
