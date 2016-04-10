@@ -18,7 +18,7 @@ class D1(Subdomain):
 class Poisson(LinearFvmProblem):
     def eval(u):
         return integrate(lambda x: -n_dot_grad(u, x), dS()) \
-                + integrate(lambda x: - sin(x[1]), dV())
+                - integrate(lambda x: sin(x[1]), dV()) \
 
     dirichlet = [
             (lambda x: 0.0, D0()),

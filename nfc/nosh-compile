@@ -63,11 +63,6 @@ def _main():
             instance = var()
             code, deps = nfc.get_code_subdomain(name, instance)
         elif inspect.isclass(var) and \
-                issubclass(var, nfl.DirichletBC) and \
-                var != nfl.DirichletBC:
-            instance = var()
-            code, deps = nfc.get_code_dirichletbc(name, instance)
-        elif inspect.isclass(var) and \
                 issubclass(var, nfl.EdgeCore) and \
                 var != nfl.EdgeCore:
             instance = var()

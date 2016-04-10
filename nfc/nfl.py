@@ -3,10 +3,6 @@
 import sympy
 
 
-class Coefficient(object):
-    pass
-
-
 class FvmOperator(sympy.Function):
     pass
 
@@ -24,10 +20,6 @@ class ScalarParameter(object):
     pass
 
 
-class OuterNormal(Vector):
-    pass
-
-
 class Subdomain(object):
     pass
 
@@ -42,11 +34,6 @@ class FvmMatrix(sympy.Function):
 
 class LinearFvmProblem(object):
     pass
-
-
-class MatrixFactory(object):
-    def __init__(self):
-        return
 
 
 class Measure(object):
@@ -82,55 +69,66 @@ def integrate(integrand, measure, subdomains=None):
         isinstance(measure, dGamma)
         )
 
-    return Core([(integrand, measure, subdomains)])
+    return CoreList([Core(integrand, measure, subdomains)])
 
 
 class Core(object):
-    def __init__(self, set_c):
-        self.cores = set_c
+    def __init__(self, integrand, measure, subdomains):
+        self.integrand = integrand
+        self.measure = measure
+        self.subdomains = subdomains
+        return
+
+
+class CoreList(object):
+    def __init__(self, list_cores):
+        self.cores = list_cores
 
     def __add__(self, other):
         self.cores.extend(other.cores)
-        return Core(self.cores)
+        return self
 
-    # def __sub__(self, other):
-    #     return Core(
-    #             lambda x: self.vertex(x) - other.vertex(x),
-    #             lambda x: self.edge(x) - other.edge(x),
-    #             lambda x: self.domain_boundary(x) - other.domain_boundary(x)
-    #             )
+    def __sub__(self, other):
+        # flip the sign on the integrand of all 'other' cores
+        new_cores = []
+        for core in other.cores:
+            new_cores.append(Core(
+                lambda x: -core.integrand(x),
+                core.measure,
+                core.subdomains
+                ))
+        self.cores.extend(new_cores)
+        return self
 
+    def __pos__(self):
+        return self
 
-class NonlinearProblem(object):
-    def __init__(self, f=None, dfdp=None, jac=None, prec=None):
-        self.f = f
-        self.dfdp = dfdp
-        self.jac = jac
-        self.prec = prec
-        return
+    def __neg__(self):
+        # flip the sign on the integrand of all 'self' cores
+        new_cores = []
+        for core in self.cores:
+            new_cores.append(Core(
+                lambda x: -core.integrand(x),
+                core.measure,
+                core.subdomains
+                ))
+        self.cores = new_cores
+        return self
 
+    def __mul__(self, other):
+        assert(isinstance(other, float) or isinstance(other, int))
+        # flip the sign on the integrand of all 'self' cores
+        new_cores = []
+        for core in self.cores:
+            new_cores.append(Core(
+                lambda x: other * core.integrand(x),
+                core.measure,
+                core.subdomains
+                ))
+        self.cores = new_cores
+        return self
 
-class EdgeCoefficient(object):
-    def __init__(self):
-        return
-
-
-class Integral(object):
-    def __init__(self, integrand, measure):
-        self.integrand = integrand
-        self.measure = measure
-        return
-
-
-class DirichletBC(object):
-    def eval(self, x): return 0.0
-    subdomains = set()
-
-
-class NeumannBC(object):
-    def is_inside(self, x): return x[0] < 1e10
-
-    def eval(self, x): return 0.0
+    __rmul__ = __mul__
 
 
 class EdgeCore(object):

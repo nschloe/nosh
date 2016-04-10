@@ -22,29 +22,31 @@ def get_code_linear_fvm_problem(namespace, class_name, obj):
     matrix_core_edge_names = set()
     matrix_core_vertex_names = set()
     matrix_core_boundary_names = set()
-    assert(isinstance(res, nfl.Core))
+    assert(isinstance(res, nfl.CoreList))
     code = ''
     for core in res.cores:
-        integrand, measure, subdomains = core
-        if isinstance(measure, nfl.dS):
+        if isinstance(core.measure, nfl.dS):
             core_class_name = \
               'matrix_core_edge%d' % len(matrix_core_edge_names)
             core_code, deps = get_matrix_core_edge_code_from_integral(
-                    namespace, core_class_name, u, integrand, subdomains
+                    namespace, core_class_name, u,
+                    core.integrand, core.subdomains
                     )
             matrix_core_edge_names.add(core_class_name)
-        elif isinstance(measure, nfl.dV):
+        elif isinstance(core.measure, nfl.dV):
             core_class_name = \
                 'matrix_core_vertex%d' % len(matrix_core_vertex_names)
             core_code, deps = get_matrix_core_vertex_code_from_integral(
-                    namespace, core_class_name, u, integrand, subdomains
+                    namespace, core_class_name, u,
+                    core.integrand, core.subdomains
                     )
             matrix_core_vertex_names.add(core_class_name)
-        elif isinstance(measure, nfl.dGamma):
+        elif isinstance(core.measure, nfl.dGamma):
             core_class_name = \
                 'matrix_core_boundary%d' % len(matrix_core_boundary_names)
             core_code, deps = get_matrix_core_boundary_code_from_integral(
-                    namespace, core_class_name, u, integrand, subdomains
+                    namespace, core_class_name, u,
+                    core.integrand, core.subdomains
                     )
             matrix_core_boundary_names.add(core_class_name)
         else:
