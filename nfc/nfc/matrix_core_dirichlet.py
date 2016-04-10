@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 #
-import nfl
 import os
 from string import Template
 import sympy
@@ -28,7 +27,8 @@ def get_code_dirichlet(name, function, subdomains):
     init = '{%s}' % ', '.join(['"%s"' % s for s in subdomain_ids])
 
     # template substitution
-    with open(os.path.join(templates_dir, 'matrix_core_dirichlet.tpl'), 'r') as f:
+    filename = os.path.join(templates_dir, 'matrix_core_dirichlet.tpl')
+    with open(filename, 'r') as f:
         src = Template(f.read())
         code = src.substitute({
             'name': name.lower(),
