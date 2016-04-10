@@ -5,6 +5,7 @@ from .code_generator_tpetra import *
 from .discretize_edge_integral import *
 from .expression import *
 from .fvm_matrix import *
+from .fvm_operator import *
 from .linear_fvm_problem import *
 from .matrix_core_boundary import *
 from .matrix_core_dirichlet import *

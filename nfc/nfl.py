@@ -12,10 +12,6 @@ class Expression(sympy.Function):
     # degree = sympy.oo
 
 
-class Vector(object):
-    pass
-
-
 class ScalarParameter(object):
     pass
 
@@ -28,9 +24,80 @@ class Boundary(Subdomain):
     pass
 
 
-class FvmMatrix(sympy.Function):
+class Callable(object):
+    def __init__(self, *args):
+        self.args = args
+        return
+
+
+class CoreList(object):
+    '''A core is an entity that can occur in a the definition of `apply()` for
+    an operator. That's either an Integral or an FvmMatrix.
+    The purpose of organizing them into a CoreList is to make it possible to
+    "add" cores, which eventually comes down to just collecting the cores into
+    a list.
+    '''
+    def __init__(self, integrals, fvm_matrices=None):
+        self.integrals = integrals
+        if fvm_matrices is None:
+            fvm_matrices = []
+        self.fvm_matrices = fvm_matrices
+
+    def __add__(self, other):
+        self.integrals.extend(other.integrals)
+        self.fvm_matrices.extend(other.fvm_matrices)
+        return self
+
+    def __sub__(self, other):
+        if other.fvm_matrices:
+            raise NotImplemented('Cannot negate FvmMatrices yet.')
+        # flip the sign on the integrand of all 'other' cores
+        new_integrals = [Integral(
+                lambda x: -integral.integrand(x),
+                integral.measure,
+                integral.subdomains
+                ) for integral in other.integrals]
+        self.integrals.extend(new_integrals)
+        return self
+
+    def __pos__(self):
+        return self
+
+    def __neg__(self):
+        if self.fvm_matrices:
+            raise NotImplemented('Cannot negate FvmMatrices yet.')
+        # flip the sign on the integrand of all 'self' cores
+        new_integrals = [Integral(
+                lambda x: -integral.integrand(x),
+                integral.measure,
+                integral.subdomains
+                ) for integral in self.integrals]
+        self.integrals = new_integrals
+        return self
+
+    def __mul__(self, other):
+        if self.fvm_matrices:
+            raise NotImplemented('Cannot multiply FvmMatrices yet.')
+        assert(isinstance(other, float) or isinstance(other, int))
+        # flip the sign on the integrand of all 'self' cores
+        new_integrals = [Integral(
+                lambda x: other * integrals.integrand(x),
+                integral.measure,
+                integral.subdomains
+                ) for integrals in self.integrals]
+        self.integrals = new_integrals
+        return self
+
+    __rmul__ = __mul__
+
+
+class FvmMatrix(Callable, CoreList):
     # By default: No Dirichlet conditions.
     dirichlet = []
+
+    def __init__(self, arg):
+        CoreList.__init__(self, [], [self])
+        return
 
 
 class LinearFvmProblem(object):
@@ -70,10 +137,10 @@ def integrate(integrand, measure, subdomains=None):
         isinstance(measure, dGamma)
         )
 
-    return CoreList([Core(integrand, measure, subdomains)])
+    return CoreList([Integral(integrand, measure, subdomains)])
 
 
-class Core(object):
+class Integral(CoreList):
     def __init__(self, integrand, measure, subdomains):
         self.integrand = integrand
         self.measure = measure
@@ -81,65 +148,8 @@ class Core(object):
         return
 
 
-class CoreList(object):
-    def __init__(self, list_cores):
-        self.cores = list_cores
-
-    def __add__(self, other):
-        self.cores.extend(other.cores)
-        return self
-
-    def __sub__(self, other):
-        # flip the sign on the integrand of all 'other' cores
-        new_cores = []
-        for core in other.cores:
-            new_cores.append(Core(
-                lambda x: -core.integrand(x),
-                core.measure,
-                core.subdomains
-                ))
-        self.cores.extend(new_cores)
-        return self
-
-    def __pos__(self):
-        return self
-
-    def __neg__(self):
-        # flip the sign on the integrand of all 'self' cores
-        new_cores = []
-        for core in self.cores:
-            new_cores.append(Core(
-                lambda x: -core.integrand(x),
-                core.measure,
-                core.subdomains
-                ))
-        self.cores = new_cores
-        return self
-
-    def __mul__(self, other):
-        assert(isinstance(other, float) or isinstance(other, int))
-        # flip the sign on the integrand of all 'self' cores
-        new_cores = []
-        for core in self.cores:
-            new_cores.append(Core(
-                lambda x: other * core.integrand(x),
-                core.measure,
-                core.subdomains
-                ))
-        self.cores = new_cores
-        return self
-
-    __rmul__ = __mul__
-
-
 class EdgeCore(object):
     pass
-
-
-def inner(a, b):
-    assert(isinstance(a, Vector))
-    assert(isinstance(b, Vector))
-    return
 
 
 class dot(sympy.Function):

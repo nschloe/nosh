@@ -6,7 +6,11 @@ import sympy
 import nfl
 
 from .code_generator_eigen import CodeGeneratorEigen
-from .helpers import extract_c_expression, templates_dir, is_affine_linear
+from .helpers import \
+        compare_variables, \
+        extract_c_expression, \
+        is_affine_linear, \
+        templates_dir
 
 
 def get_matrix_core_vertex_code(namespace, class_name, core):
@@ -84,7 +88,7 @@ def _get_code_matrix_core_vertex(
         sympy.Symbol('control_volume')
         ])
     vertex_unused_arguments, vertex_used_expressions = \
-        _scan_code(vertex_arguments, [vertex_coeff, vertex_affine])
+        compare_variables(vertex_arguments, [vertex_coeff, vertex_affine])
 
     # now take care of the template substitution
     members_init = []
@@ -132,30 +136,3 @@ def _get_code_matrix_core_vertex(
             'members_declare': '\n'.join(members_declare)
             })
     return code, dependencies
-
-
-def _expr_to_code(expr):
-    gen = CodeGeneratorEigen()
-    code, _ = gen.generate(expr)
-    return code
-
-
-def _scan_code(arguments, expressions):
-    used_symbols = set([])
-    used_expressions = set([])
-
-    for expr in expressions:
-        try:
-            used_symbols.update(expr.free_symbols)
-        except AttributeError:
-            pass
-
-        used_expressions.update(set([
-                type(atom) for atom in expr.atoms(nfl.Expression)
-                ]))
-
-    unused_arguments = arguments - used_symbols
-    undefined_symbols = used_symbols - arguments
-    assert(len(undefined_symbols) == 0)
-
-    return unused_arguments, used_expressions

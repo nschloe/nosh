@@ -37,6 +37,8 @@ def handle_core_dependencies(namespace, obj):
     u = sympy.Function('u')
     res = obj.apply(u)
 
+    assert(isinstance(res, nfl.CoreList))
+
     matrix_core_names = {
             'edge': set(),
             'vertex': set(),
@@ -44,31 +46,30 @@ def handle_core_dependencies(namespace, obj):
             'dirichlet': []
             }
 
-    assert(isinstance(res, nfl.CoreList))
     code = ''
-    for core in res.cores:
-        if isinstance(core.measure, nfl.dS):
+    for integral in res.integrals:
+        if isinstance(integral.measure, nfl.dS):
             core_class_name = \
               'matrix_core_edge%d' % len(matrix_core_names['edge'])
             core_code, deps = get_matrix_core_edge_code_from_integral(
                     namespace, core_class_name, u,
-                    core.integrand, core.subdomains
+                    integral.integrand, integral.subdomains
                     )
             matrix_core_names['edge'].add(core_class_name)
-        elif isinstance(core.measure, nfl.dV):
+        elif isinstance(integral.measure, nfl.dV):
             core_class_name = \
                 'matrix_core_vertex%d' % len(matrix_core_names['vertex'])
             core_code, deps = get_matrix_core_vertex_code_from_integral(
                     namespace, core_class_name, u,
-                    core.integrand, core.subdomains
+                    integral.integrand, integral.subdomains
                     )
             matrix_core_names['vertex'].add(core_class_name)
-        elif isinstance(core.measure, nfl.dGamma):
+        elif isinstance(integral.measure, nfl.dGamma):
             core_class_name = \
                 'matrix_core_boundary%d' % len(matrix_core_names['boundary'])
             core_code, deps = get_matrix_core_boundary_code_from_integral(
                     namespace, core_class_name, u,
-                    core.integrand, core.subdomains
+                    integral.integrand, integral.subdomains
                     )
             matrix_core_names['boundary'].add(core_class_name)
         else:

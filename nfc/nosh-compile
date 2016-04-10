@@ -56,7 +56,7 @@ def _main():
         elif inspect.isclass(var) and \
                 issubclass(var, nfl.FvmOperator) and \
                 var != nfl.FvmOperator:
-            code, deps = nfc.get_code_operator(namespace, name, var)
+            code, deps = nfc.get_code_fvm_operator(namespace, name, var)
         elif inspect.isclass(var) and \
                 issubclass(var, nfl.Subdomain) and \
                 var != nfl.Subdomain:

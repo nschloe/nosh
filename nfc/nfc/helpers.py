@@ -6,6 +6,8 @@ import subprocess
 import sympy
 import sys
 
+import nfl
+
 templates_dir = os.path.join(
     os.path.dirname(os.path.realpath(__file__)),
     '..',
@@ -61,3 +63,22 @@ def is_affine_linear(expr, vars):
 #         return expr.subs([(var, 0) for var in vars]) == 0
 
 
+def compare_variables(arguments, expressions):
+    used_symbols = set([])
+    used_expressions = set([])
+
+    for expr in expressions:
+        try:
+            used_symbols.update(expr.free_symbols)
+        except AttributeError:
+            pass
+
+        used_expressions.update(set([
+                type(atom) for atom in expr.atoms(nfl.Expression)
+                ]))
+
+    unused_arguments = arguments - used_symbols
+    undefined_symbols = used_symbols - arguments
+    assert(len(undefined_symbols) == 0)
+
+    return unused_arguments, used_expressions
