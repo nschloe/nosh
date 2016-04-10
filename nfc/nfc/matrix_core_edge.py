@@ -10,7 +10,7 @@ from .code_generator_eigen import CodeGeneratorEigen
 from .helpers import extract_c_expression, templates_dir, is_affine_linear
 
 
-def get_code_edge_core(namespace, class_name, core):
+def get_code_matrix_core_edge(namespace, class_name, core):
     '''Get code discretizer from raw core object.
     '''
     x0 = sympy.MatrixSymbol('x0', 3, 1)
@@ -30,14 +30,14 @@ def get_code_edge_core(namespace, class_name, core):
             )
 
 
-def get_edge_core_code_from_integral(
+def get_matrix_core_edge_code_from_integral(
         namespace, class_name, u, integrand, subdomains
         ):
     '''Get code discretizer from expression.
     '''
     edge_coeff, edge_affine = _get_expressions_from_integrand(u, integrand)
 
-    return _get_edge_core_code(
+    return _get_matrix_core_edge_code(
             namespace, class_name,
             edge_coeff, edge_affine,
             subdomains
@@ -82,7 +82,7 @@ def _get_expressions_from_integrand(u, integrand):
         )
 
 
-def _get_edge_core_code(
+def _get_matrix_core_edge_code(
         namespace, class_name,
         edge_coeff, edge_affine,
         subdomains
@@ -113,7 +113,7 @@ def _get_edge_core_code(
         # If nothing is specified, use the entire boundary
         subdomain_ids.add('everywhere')
     parent_init = '{%s}' % ', '.join(['"%s"' % s for s in subdomain_ids])
-    members_init.append('nosh::edge_core(%s)' % parent_init)
+    members_init.append('nosh::matrix_core_edge(%s)' % parent_init)
 
     # init and declare expressions
     for expr in used_expressions:
@@ -128,7 +128,7 @@ def _get_edge_core_code(
         members_init_code = ''
 
     # template substitution
-    with open(os.path.join(templates_dir, 'edge_core.tpl'), 'r') as f:
+    with open(os.path.join(templates_dir, 'matrix_core_edge.tpl'), 'r') as f:
         src = Template(f.read())
         code = src.substitute({
             'name': class_name,

@@ -10,7 +10,7 @@ from .code_generator_eigen import CodeGeneratorEigen
 from .helpers import extract_c_expression, templates_dir, is_affine_linear
 
 
-def get_boundary_core_code_from_integral(
+def get_matrix_core_boundary_code_from_integral(
         namespace, class_name,
         u, integrand, subdomains
         ):
@@ -18,7 +18,7 @@ def get_boundary_core_code_from_integral(
     '''
     coeff, affine = _get_expressions_from_integral(integrand)
 
-    return _get_code_boundary_core(
+    return _get_code_matrix_core_boundary(
             namespace, class_name,
             coeff, affine,
             subdomains
@@ -54,7 +54,7 @@ def _get_expressions_from_integral(function):
     return coeff, affine
 
 
-def _get_code_boundary_core(
+def _get_code_matrix_core_boundary(
         namespace, class_name,
         db_coeff, db_affine,
         subdomains
@@ -79,7 +79,7 @@ def _get_code_boundary_core(
         # If nothing is specified, use the entire boundary
         subdomain_ids.add('everywhere')
     parent_init = '{%s}' % ', '.join(['"%s"' % s for s in subdomain_ids])
-    members_init.append('nosh::vertex_core(%s)' % parent_init)
+    members_init.append('nosh::matrix_core_vertex(%s)' % parent_init)
 
     # init and declare all expressions
     used_expressions = db_used_expressions
@@ -100,7 +100,7 @@ def _get_code_boundary_core(
         members_init_code = ''
 
     # template substitution
-    with open(os.path.join(templates_dir, 'boundary_core.tpl'), 'r') as f:
+    with open(os.path.join(templates_dir, 'matrix_core_boundary.tpl'), 'r') as f:
         src = Template(f.read())
         code = src.substitute({
             'name': class_name,

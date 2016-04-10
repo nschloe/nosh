@@ -7,10 +7,10 @@
 #include <Teuchos_Time.hpp>
 #endif
 
-#include "edge_core.hpp"
-#include "vertex_core.hpp"
-#include "boundary_core.hpp"
-#include "dirichlet_bc.hpp"
+#include "matrix_core_edge.hpp"
+#include "matrix_core_vertex.hpp"
+#include "matrix_core_boundary.hpp"
+#include "matrix_core_dirichlet.hpp"
 #include "mesh.hpp"
 
 namespace nosh
@@ -21,19 +21,19 @@ namespace nosh
     public:
       fvm_matrix(
           const std::shared_ptr<const nosh::mesh> & _mesh,
-          const std::set<std::shared_ptr<const edge_core>> & edge_cores,
-          const std::set<std::shared_ptr<const vertex_core>> & vertex_cores,
-          const std::set<std::shared_ptr<const boundary_core>> & boundary_cores,
-          const std::set<std::shared_ptr<const dirichlet_bc>> & dbcs
+          const std::set<std::shared_ptr<const matrix_core_edge>> & matrix_core_edges,
+          const std::set<std::shared_ptr<const matrix_core_vertex>> & matrix_core_vertexs,
+          const std::set<std::shared_ptr<const matrix_core_boundary>> & matrix_core_boundarys,
+          const std::set<std::shared_ptr<const matrix_core_dirichlet>> & dbcs
           ) :
         Tpetra::CrsMatrix<double,int,int>(_mesh->build_graph()),
         mesh(_mesh),
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
         fill_time_(Teuchos::TimeMonitor::getNewTimer("Nosh: fvm_matrix::fill_")),
 #endif
-        edge_cores_(edge_cores),
-        vertex_cores_(vertex_cores),
-        boundary_cores_(boundary_cores),
+        matrix_core_edges_(matrix_core_edges),
+        matrix_core_vertexs_(matrix_core_vertexs),
+        matrix_core_boundarys_(matrix_core_boundarys),
         dbcs_(dbcs)
         {
         }
@@ -78,8 +78,8 @@ namespace nosh
           const std::shared_ptr<Tpetra::Vector<double,int,int>> & rhs
           )
       {
-        for (const auto & edge_core: this->edge_cores_) {
-          for (const auto & subdomain_id: edge_core->subdomain_ids) {
+        for (const auto & matrix_core_edge: this->matrix_core_edges_) {
+          for (const auto & subdomain_id: matrix_core_edge->subdomain_ids) {
             const auto edge_data = this->mesh->get_edge_data();
 
             // this->meshset interior edges
@@ -87,7 +87,7 @@ namespace nosh
             for (const auto edge: edges) {
               const auto verts = this->mesh->get_vertex_tuple(edge);
               const auto lid = this->mesh->local_index(edge);
-              auto vals = edge_core->eval(
+              auto vals = matrix_core_edge->eval(
                   this->mesh->get_coords(verts[0]),
                   this->mesh->get_coords(verts[1]),
                   edge_data[lid].length,
@@ -132,7 +132,7 @@ namespace nosh
               }
 
               const auto lid = this->mesh->local_index(edge);
-              auto vals = edge_core->eval(
+              auto vals = matrix_core_edge->eval(
                   this->mesh->get_coords(verts[0]),
                   this->mesh->get_coords(verts[1]),
                   edge_data[lid].length,
@@ -164,12 +164,12 @@ namespace nosh
       {
         const auto & control_volumes = this->mesh->control_volumes();
         const auto c_data = control_volumes->getData();
-        for (const auto & vertex_core: this->vertex_cores_) {
-          for (const auto & subdomain_id: vertex_core->subdomain_ids) {
+        for (const auto & matrix_core_vertex: this->matrix_core_vertexs_) {
+          for (const auto & subdomain_id: matrix_core_vertex->subdomain_ids) {
             const auto verts = this->mesh->get_vertices(subdomain_id);
             for (const auto & vertex: verts) {
               const auto lid = this->mesh->local_index(vertex);
-              const auto val = vertex_core->eval(
+              const auto val = matrix_core_vertex->eval(
                   this->mesh->get_coords(vertex),
                   c_data[lid]
                   );
@@ -198,12 +198,12 @@ namespace nosh
           )
       {
         const auto surfs = this->mesh->boundary_surface_areas();
-        for (const auto boundary_core: this->boundary_cores_) {
-          for (const auto & subdomain_id: boundary_core->subdomain_ids) {
+        for (const auto matrix_core_boundary: this->matrix_core_boundarys_) {
+          for (const auto & subdomain_id: matrix_core_boundary->subdomain_ids) {
             const auto verts = this->mesh->get_vertices(subdomain_id);
             for (const auto vert: verts) {
               const auto lid = this->mesh->local_index(vert);
-              const auto val = boundary_core->eval(
+              const auto val = matrix_core_boundary->eval(
                   this->mesh->get_coords(vert),
                   surfs[lid]
                   );
@@ -277,10 +277,10 @@ namespace nosh
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
       const Teuchos::RCP<Teuchos::Time> fill_time_;
 #endif
-      const std::set<std::shared_ptr<const edge_core>> edge_cores_;
-      const std::set<std::shared_ptr<const vertex_core>> vertex_cores_;
-      const std::set<std::shared_ptr<const boundary_core>> boundary_cores_;
-      const std::set<std::shared_ptr<const nosh::dirichlet_bc>> dbcs_;
+      const std::set<std::shared_ptr<const matrix_core_edge>> matrix_core_edges_;
+      const std::set<std::shared_ptr<const matrix_core_vertex>> matrix_core_vertexs_;
+      const std::set<std::shared_ptr<const matrix_core_boundary>> matrix_core_boundarys_;
+      const std::set<std::shared_ptr<const nosh::matrix_core_dirichlet>> dbcs_;
   };
 } // namespace nosh
 

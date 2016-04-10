@@ -1,8 +1,6 @@
 // single entry point to nosh
 
 #include "constant.hpp"
-#include "dirichlet_bc.hpp"
-#include "dirichlet_bc_const.hpp"
 #include "expression.hpp"
 #include "fvm_matrix.hpp"
 #include "function.hpp"
@@ -11,6 +9,7 @@
 //#include "mesh_reader_xdmf.hpp"
 #include "linear_problem.hpp"
 #include "linear_solver.hpp"
+#include "matrix_core_dirichlet.hpp"
 #include "model_evaluator_nls.hpp"
 #include "parameter_matrix_keo.hpp"
 #include "scalar_field_constant.hpp"

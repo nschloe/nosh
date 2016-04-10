@@ -8,9 +8,9 @@
 #endif
 
 #include "fvm_matrix.hpp"
-#include "edge_core.hpp"
-#include "vertex_core.hpp"
-#include "boundary_core.hpp"
+#include "matrix_core_edge.hpp"
+#include "matrix_core_vertex.hpp"
+#include "matrix_core_boundary.hpp"
 #include "mesh.hpp"
 
 namespace nosh
@@ -20,13 +20,13 @@ namespace nosh
     public:
       linear_problem(
           const std::shared_ptr<const nosh::mesh> & mesh,
-          const std::set<std::shared_ptr<const edge_core>> & edge_cores,
-          const std::set<std::shared_ptr<const vertex_core>> & vertex_cores,
-          const std::set<std::shared_ptr<const boundary_core>> & boundary_cores,
-          const std::set<std::shared_ptr<const dirichlet_bc>> & dbcs
+          const std::set<std::shared_ptr<const matrix_core_edge>> & matrix_core_edges,
+          const std::set<std::shared_ptr<const matrix_core_vertex>> & matrix_core_vertexs,
+          const std::set<std::shared_ptr<const matrix_core_boundary>> & matrix_core_boundarys,
+          const std::set<std::shared_ptr<const matrix_core_dirichlet>> & dbcs
           ) :
         mesh_(mesh),
-        matrix(std::make_shared<nosh::fvm_matrix>(mesh, edge_cores, vertex_cores, boundary_cores, dbcs)),
+        matrix(std::make_shared<nosh::fvm_matrix>(mesh, matrix_core_edges, matrix_core_vertexs, matrix_core_boundarys, dbcs)),
         rhs(std::make_shared<Tpetra::Vector<double,int,int>>(Teuchos::rcp(mesh->map())))
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
         ,fill_time_(Teuchos::TimeMonitor::getNewTimer("Nosh: linear_problem::fill_"))

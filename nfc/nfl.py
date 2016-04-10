@@ -7,7 +7,7 @@ class Coefficient(object):
     pass
 
 
-class Operator(sympy.Function):
+class FvmOperator(sympy.Function):
     pass
 
 

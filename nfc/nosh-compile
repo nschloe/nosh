@@ -54,8 +54,8 @@ def _main():
                 var != nfl.LinearFvmProblem:
             code, deps = nfc.get_code_linear_fvm_problem(namespace, name, var)
         elif inspect.isclass(var) and \
-                issubclass(var, nfl.Operator) and \
-                var != nfl.Operator:
+                issubclass(var, nfl.FvmOperator) and \
+                var != nfl.FvmOperator:
             code, deps = nfc.get_code_operator(namespace, name, var)
         elif inspect.isclass(var) and \
                 issubclass(var, nfl.Subdomain) and \
@@ -71,7 +71,7 @@ def _main():
                 issubclass(var, nfl.EdgeCore) and \
                 var != nfl.EdgeCore:
             instance = var()
-            code, deps = nfc.get_code_edge_core(namespace, name, instance)
+            code, deps = nfc.get_code_matrix_core_edge(namespace, name, instance)
         elif inspect.isclass(var) and \
                 issubclass(var, nfl.Expression) and \
                 var != nfl.Expression and \

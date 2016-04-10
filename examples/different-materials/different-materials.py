@@ -3,10 +3,6 @@ from sympy import *
 from nfl import *
 
 
-class Bc1(DirichletBC):
-    def eval(self, x): return 0.0
-
-
 class eps(Expression):
     pass
 
@@ -16,7 +12,7 @@ class Problem(LinearFvmProblem):
         return integrate(lambda x: -eps(x) * n_dot_grad(u, x), dS()) \
                 + integrate(lambda x: -1.0, dV())
 
-    dirichlet_boundary_conditions = [Bc1()]
+    dirichlet = [(lambda x: 0.0, Boundary())]
 
 
 # Alternative (raw) syntax:

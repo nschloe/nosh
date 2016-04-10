@@ -1,28 +1,28 @@
-#ifndef NOSH_EDGECORE_H
-#define NOSH_EDGECORE_H
+#ifndef NOSH_MATRIX_CORE_EDGE_H
+#define NOSH_MATRIX_CORE_EDGE_H
 
 #include <Eigen/Dense>
 
 namespace nosh
 {
-  struct edge_core_data {
+  struct matrix_core_edge_data {
     std::vector<std::vector<double>> lhs;
     std::vector<double> rhs;
   };
 
-  class edge_core
+  class matrix_core_edge
   {
     public:
-      explicit edge_core(
+      explicit matrix_core_edge(
           const std::set<std::string> & _subdomain_ids = {"everywhere"}
           ):
         subdomain_ids(_subdomain_ids)
         {};
 
-      virtual ~edge_core() {};
+      virtual ~matrix_core_edge() {};
 
       virtual
-      edge_core_data
+      matrix_core_edge_data
       eval(
           const Eigen::Vector3d & x0,
           const Eigen::Vector3d & x1,
@@ -35,4 +35,4 @@ namespace nosh
   };
 } // namespace nosh
 
-#endif // NOSH_EDGECORE_H
+#endif // NOSH_MATRIX_CORE_EDGE_H

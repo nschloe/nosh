@@ -1,5 +1,5 @@
 class ${name}:
-  public nosh::edge_core
+  public nosh::matrix_core_edge
 {
   public:
     ${name}()${members_init} {}
@@ -7,7 +7,7 @@ class ${name}:
     virtual ~${name}() {}
 
     virtual
-      nosh::edge_core_data
+      nosh::matrix_core_edge_data
       eval(
           const Eigen::Vector3d & x0,
           const Eigen::Vector3d & x1,

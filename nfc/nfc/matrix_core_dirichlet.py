@@ -29,7 +29,7 @@ def get_code_dirichletbc(name, dbc):
     init = '{%s}' % ', '.join(['"%s"' % s for s in subdomain_ids])
 
     # template substitution
-    with open(os.path.join(templates_dir, 'dirichlet_bc.tpl'), 'r') as f:
+    with open(os.path.join(templates_dir, 'matrix_core_dirichlet.tpl'), 'r') as f:
         src = Template(f.read())
         code = src.substitute({
             'name': name.lower(),

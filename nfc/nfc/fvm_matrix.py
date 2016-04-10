@@ -5,9 +5,9 @@ import os
 from string import Template
 import sympy
 
-from .edge_core import get_edge_core_code_from_integral
-from .vertex_core import get_vertex_core_code_from_integral
-from .boundary_core import get_boundary_core_code_from_integral
+from .matrix_core_edge import get_matrix_core_edge_code_from_integral
+from .matrix_core_vertex import get_matrix_core_vertex_code_from_integral
+from .matrix_core_boundary import get_matrix_core_boundary_code_from_integral
 from .helpers import templates_dir
 
 
@@ -24,31 +24,31 @@ def get_code_fvm_matrix(namespace, class_name, obj):
     u = sympy.Function('u')
     res = obj.apply(u)
 
-    edge_core_names = set()
-    vertex_core_names = set()
-    boundary_core_names = set()
+    matrix_core_edge_names = set()
+    matrix_core_vertex_names = set()
+    matrix_core_boundary_names = set()
     assert(isinstance(res, nfl.Core))
     code = ''
     for core in res.cores:
         integrand, measure, subdomains = core
         if isinstance(measure, nfl.dS):
-            core_class_name = 'edge_core%d' % len(edge_core_names)
-            core_code, deps = get_edge_core_code_from_integral(
+            core_class_name = 'matrix_core_edge%d' % len(matrix_core_edge_names)
+            core_code, deps = get_matrix_core_edge_code_from_integral(
                     namespace, core_class_name, u, integrand, subdomains
                     )
-            edge_core_names.add(core_class_name)
+            matrix_core_edge_names.add(core_class_name)
         elif isinstance(measure, nfl.dV):
-            core_class_name = 'vertex_core%d' % len(vertex_core_names)
-            core_code, deps = get_vertex_core_code_from_integral(
+            core_class_name = 'matrix_core_vertex%d' % len(matrix_core_vertex_names)
+            core_code, deps = get_matrix_core_vertex_code_from_integral(
                     namespace, core_class_name, u, integrand, subdomains
                     )
-            vertex_core_names.add(core_class_name)
+            matrix_core_vertex_names.add(core_class_name)
         elif isinstance(measure, nfl.dGamma):
-            core_class_name = 'boundary_core%d' % len(boundary_core_names)
-            core_code, deps = get_boundary_core_code_from_integral(
+            core_class_name = 'matrix_core_boundary%d' % len(matrix_core_boundary_names)
+            core_code, deps = get_matrix_core_boundary_code_from_integral(
                     namespace, core_class_name, u, integrand, subdomains
                     )
-            boundary_core_names.add(core_class_name)
+            matrix_core_boundary_names.add(core_class_name)
         else:
             raise RuntimeError('Illegal measure type \'%s\'.' % measure)
 
@@ -61,9 +61,9 @@ def get_code_fvm_matrix(namespace, class_name, obj):
     # append the code of the linear problem itself
     code += '\n' + _get_code_linear_problem(
             class_name,
-            edge_core_names,
-            vertex_core_names,
-            boundary_core_names,
+            matrix_core_edge_names,
+            matrix_core_vertex_names,
+            matrix_core_boundary_names,
             dbcs
             )
 
@@ -72,30 +72,30 @@ def get_code_fvm_matrix(namespace, class_name, obj):
 
 def _get_code_linear_problem(
         name,
-        edge_core_names,
-        vertex_core_names,
-        boundary_core_names,
+        matrix_core_edge_names,
+        matrix_core_vertex_names,
+        matrix_core_boundary_names,
         dbcs
         ):
     constructor_args = [
         'const std::shared_ptr<const nosh::mesh> & _mesh'
         ]
-    init_edge_cores = '{%s}' % (
+    init_matrix_core_edges = '{%s}' % (
             ', '.join(
                 ['std::make_shared<%s>()' % n
-                 for n in edge_core_names]
+                 for n in matrix_core_edge_names]
                 )
             )
-    init_vertex_cores = '{%s}' % (
+    init_matrix_core_vertexs = '{%s}' % (
             ', '.join(
                 ['std::make_shared<%s>()' % n
-                 for n in vertex_core_names]
+                 for n in matrix_core_vertex_names]
                 )
             )
-    init_boundary_cores = '{%s}' % (
+    init_matrix_core_boundarys = '{%s}' % (
             ', '.join(
                 ['std::make_shared<%s>()' % n
-                 for n in boundary_core_names]
+                 for n in matrix_core_boundary_names]
                 )
             )
 
@@ -109,7 +109,7 @@ def _get_code_linear_problem(
 
     members_init = [
       'nosh::fvm_matrix(\n_mesh,\n %s,\n %s,\n %s,\n %s\n)' %
-      (init_edge_cores, init_vertex_cores, init_boundary_cores, init_dbcs)
+      (init_matrix_core_edges, init_matrix_core_vertexs, init_matrix_core_boundarys, init_dbcs)
       ]
     members_declare = []
 

@@ -1,20 +1,20 @@
-#ifndef NOSH_DIRICHLET_BC_HPP
-#define NOSH_DIRICHLET_BC_HPP
+#ifndef NOSH_MATRIX_CORE_DIRICHLET_HPP
+#define NOSH_MATRIX_CORE_DIRICHLET_HPP
 
 #include <Eigen/Dense>
 
 namespace nosh {
-  class dirichlet_bc
+  class matrix_core_dirichlet
   {
     public:
-      explicit dirichlet_bc(
+      explicit matrix_core_dirichlet(
           const std::set<std::string> & _subdomain_ids
           ):
         subdomain_ids(_subdomain_ids)
       {};
 
       virtual
-      ~dirichlet_bc()
+      ~matrix_core_dirichlet()
       {};
 
       virtual

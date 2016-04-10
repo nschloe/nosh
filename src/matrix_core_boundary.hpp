@@ -1,5 +1,5 @@
-#ifndef NOSH_BOUNDARYCORE_H
-#define NOSH_BOUNDARYCORE_H
+#ifndef NOSH_MATRIX_CORE_BOUNDARY_H
+#define NOSH_MATRIX_CORE_BOUNDARY_H
 
 namespace nosh
 {
@@ -8,16 +8,16 @@ namespace nosh
     double rhs;
   };
 
-  class boundary_core
+  class matrix_core_boundary
   {
     public:
-      explicit boundary_core(
+      explicit matrix_core_boundary(
           const std::set<std::string> & _subdomain_ids = {"boundary"}
           ):
         subdomain_ids(_subdomain_ids)
         {};
 
-      virtual ~boundary_core() {};
+      virtual ~matrix_core_boundary() {};
 
       virtual
       boundary_data
@@ -31,4 +31,4 @@ namespace nosh
   };
 } // namespace nosh
 
-#endif // NOSH_BOUNDARYCORE_H
+#endif // NOSH_MATRIX_CORE_BOUNDARY_H

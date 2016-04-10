@@ -1,5 +1,5 @@
 class ${name}:
-  public nosh::dirichlet_bc
+  public nosh::matrix_core_dirichlet
 {
   public:
     ${name}(): ${init} {}

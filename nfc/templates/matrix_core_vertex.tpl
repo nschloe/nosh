@@ -1,5 +1,5 @@
 class ${name}:
-  public nosh::vertex_core
+  public nosh::matrix_core_vertex
 {
   public:
     ${name}()${members_init} {}

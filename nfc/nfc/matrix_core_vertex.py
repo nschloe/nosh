@@ -9,7 +9,7 @@ from .code_generator_eigen import CodeGeneratorEigen
 from .helpers import extract_c_expression, templates_dir, is_affine_linear
 
 
-def get_vertex_core_code(namespace, class_name, core):
+def get_matrix_core_vertex_code(namespace, class_name, core):
     '''Get code generator from raw core object.
     '''
     # handle the vertex contributions
@@ -22,13 +22,13 @@ def get_vertex_core_code(namespace, class_name, core):
 
     vertex_coeff, vertex_affine = method(x, vol)
 
-    return _get_code_vertex_core(
+    return _get_code_matrix_core_vertex(
             namespace, class_name,
             vertex_coeff, vertex_affine
             )
 
 
-def get_vertex_core_code_from_integral(
+def get_matrix_core_vertex_code_from_integral(
         namespace, class_name,
         u, integrand, subdomains
         ):
@@ -36,7 +36,7 @@ def get_vertex_core_code_from_integral(
     '''
     vertex_coeff, vertex_affine = _get_expressions_from_integral(u, integrand)
 
-    return _get_code_vertex_core(
+    return _get_code_matrix_core_vertex(
             namespace, class_name,
             vertex_coeff, vertex_affine,
             subdomains
@@ -73,7 +73,7 @@ def _get_expressions_from_integral(u, function):
     return coeff, affine
 
 
-def _get_code_vertex_core(
+def _get_code_matrix_core_vertex(
         namespace, class_name,
         vertex_coeff, vertex_affine,
         subdomains
@@ -104,7 +104,7 @@ def _get_code_vertex_core(
         # If nothing is specified, use the entire boundary
         subdomain_ids.add('everywhere')
     parent_init = '{%s}' % ', '.join(['"%s"' % s for s in subdomain_ids])
-    members_init.append('nosh::vertex_core(%s)' % parent_init)
+    members_init.append('nosh::matrix_core_vertex(%s)' % parent_init)
 
     # init and declare expressions in the C++ code
     for expr in used_expressions:
@@ -119,7 +119,7 @@ def _get_code_vertex_core(
         members_init_code = ''
 
     # template substitution
-    with open(os.path.join(templates_dir, 'vertex_core.tpl'), 'r') as f:
+    with open(os.path.join(templates_dir, 'matrix_core_vertex.tpl'), 'r') as f:
         src = Template(f.read())
         code = src.substitute({
             'name': class_name,
