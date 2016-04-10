@@ -4,19 +4,17 @@ from nfl import *
 
 
 class D0(Subdomain):
-    def is_inside(self, x):
-        return x[1] < 0
+    def is_inside(self, x): return x[1] < 0
     is_boundary_only = True
 
 
 class D1(Subdomain):
-    def is_inside(self, x):
-        return x[1] >= 0
+    def is_inside(self, x): return x[1] >= 0
     is_boundary_only = True
 
 
 class Poisson(LinearFvmProblem):
-    def eval(u):
+    def apply(u):
         return integrate(lambda x: -n_dot_grad(u, x), dS()) \
                 - integrate(lambda x: sin(x[1]), dV()) \
 

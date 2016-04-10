@@ -29,7 +29,8 @@ class Boundary(Subdomain):
 
 
 class FvmMatrix(sympy.Function):
-    pass
+    # By default: No Dirichlet conditions.
+    dirichlet = []
 
 
 class LinearFvmProblem(object):
