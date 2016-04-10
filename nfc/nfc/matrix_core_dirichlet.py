@@ -7,19 +7,18 @@ import sympy
 from .helpers import extract_c_expression, templates_dir
 
 
-def get_code_dirichletbc(name, dbc):
+def get_code_dirichlet(name, function, subdomains):
+    dependencies = subdomains
+
     x = sympy.MatrixSymbol('x', 3, 1)
-
-    dependencies = dbc.subdomains
-
-    result = dbc.eval(x)
+    result = function(x)
     try:
         is_x_used_eval = x in result.free_symbols
     except AttributeError:
         is_x_used_eval = False
 
     subdomain_ids = set([
-        sd.__class__.__name__.lower() for sd in dbc.subdomains
+        sd.__class__.__name__.lower() for sd in subdomains
         ])
 
     if len(subdomain_ids) == 0:
@@ -33,7 +32,7 @@ def get_code_dirichletbc(name, dbc):
         src = Template(f.read())
         code = src.substitute({
             'name': name.lower(),
-            'init': 'nosh::dirichlet_bc(%s)' % init,
+            'init': 'nosh::matrix_core_dirichlet(%s)' % init,
             'eval_return_value': extract_c_expression(result),
             'eval_void': '' if is_x_used_eval else '(void) x;\n',
             })

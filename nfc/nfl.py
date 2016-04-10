@@ -32,6 +32,10 @@ class Subdomain(object):
     pass
 
 
+class Boundary(Subdomain):
+    pass
+
+
 class FvmMatrix(sympy.Function):
     pass
 

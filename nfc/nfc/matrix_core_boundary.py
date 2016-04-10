@@ -79,7 +79,7 @@ def _get_code_matrix_core_boundary(
         # If nothing is specified, use the entire boundary
         subdomain_ids.add('everywhere')
     parent_init = '{%s}' % ', '.join(['"%s"' % s for s in subdomain_ids])
-    members_init.append('nosh::matrix_core_vertex(%s)' % parent_init)
+    members_init.append('nosh::matrix_core_boundary(%s)' % parent_init)
 
     # init and declare all expressions
     used_expressions = db_used_expressions

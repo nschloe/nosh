@@ -3,16 +3,12 @@ from sympy import *
 from nfl import *
 
 
-class Bc1(DirichletBC):
-    def eval(self, x): return 0.0
-
-
 class Singular(LinearFvmProblem):
     def eval(u):
         return integrate(lambda x: - 0.2 * n_dot_grad(u, x), dS()) \
                + integrate(lambda x: u(x), dV()) \
                + integrate(lambda x: -1.0, dV())
-    dirichlet_boundary_conditions = [Bc1()]
+    dirichlet = [(lambda x: 0.0, Boundary())]
 
 
 # class Core0(MatrixCore):

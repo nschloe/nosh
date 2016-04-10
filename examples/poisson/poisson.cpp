@@ -18,8 +18,8 @@ int main(int argc, char *argv[]) {
   //const auto mesh = nosh::read("cube.h5m");
 
   mesh->mark_subdomains({
-      std::make_shared<poisson::d1>(),
-      std::make_shared<poisson::d2>()
+      std::make_shared<poisson::d0>(),
+      std::make_shared<poisson::d1>()
       });
 
   poisson::poisson problem(mesh);

@@ -5,8 +5,15 @@ from string import Template
 import sympy
 from .helpers import extract_c_expression, templates_dir
 
+import nfl
+
 
 def get_code_subdomain(name, subdomain):
+
+    if isinstance(subdomain, nfl.Boundary):
+        # 'Boundary' is already defined
+        return '', set()
+
     x = sympy.MatrixSymbol('x', 3, 1)
 
     result = subdomain.is_inside(x)

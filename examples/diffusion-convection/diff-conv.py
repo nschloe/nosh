@@ -9,4 +9,4 @@ class DC(LinearFvmProblem):
         return \
             integrate(lambda x: -n_dot_grad(u, x) + dot(n, a) * u(x), dS()) \
             + integrate(lambda x: -1.0, dV())
-    dirichlet_boundary_conditions = [(lambda x: 0.0, Boundary())]
+    dirichlet = [(lambda x: 0.0, Boundary())]
