@@ -9,7 +9,7 @@ from .matrix_core_boundary import get_matrix_core_boundary_code_from_integral
 from .matrix_core_dirichlet import get_code_dirichlet
 from .matrix_core_edge import get_matrix_core_edge_code_from_integral
 from .matrix_core_vertex import get_matrix_core_vertex_code_from_integral
-from .helpers import templates_dir
+from .helpers import get_uuid, templates_dir
 
 
 def get_code_fvm_matrix(namespace, class_name, obj):
@@ -49,24 +49,21 @@ def handle_core_dependencies(namespace, obj):
     code = ''
     for integral in res.integrals:
         if isinstance(integral.measure, nfl.dS):
-            core_class_name = \
-              'matrix_core_edge%d' % len(matrix_core_names['edge'])
+            core_class_name = 'matrix_core_edge_%s' % get_uuid()
             core_code, deps = get_matrix_core_edge_code_from_integral(
                     namespace, core_class_name, u,
                     integral.integrand, integral.subdomains
                     )
             matrix_core_names['edge'].add(core_class_name)
         elif isinstance(integral.measure, nfl.dV):
-            core_class_name = \
-                'matrix_core_vertex%d' % len(matrix_core_names['vertex'])
+            core_class_name = 'matrix_core_vertex_%s' % get_uuid()
             core_code, deps = get_matrix_core_vertex_code_from_integral(
                     namespace, core_class_name, u,
                     integral.integrand, integral.subdomains
                     )
             matrix_core_names['vertex'].add(core_class_name)
         elif isinstance(integral.measure, nfl.dGamma):
-            core_class_name = \
-                'matrix_core_boundary%d' % len(matrix_core_names['boundary'])
+            core_class_name = 'matrix_core_boundary_%s' % get_uuid()
             core_code, deps = get_matrix_core_boundary_code_from_integral(
                     namespace, core_class_name, u,
                     integral.integrand, integral.subdomains
@@ -89,7 +86,7 @@ def handle_core_dependencies(namespace, obj):
             except TypeError:  # TypeError: 'D1' object is not iterable
                 subdomains = [subdomains]
 
-        core_class_name = 'matrix_core_dirichlet%d' % k
+        core_class_name = 'matrix_core_dirichlet%s' % get_uuid()
         core_code, deps = get_code_dirichlet(core_class_name, f, subdomains)
         matrix_core_names['dirichlet'].append(core_class_name)
         dependencies.update(deps)

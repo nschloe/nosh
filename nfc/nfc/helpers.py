@@ -5,6 +5,7 @@ import re
 import subprocess
 import sympy
 import sys
+import uuid
 
 import nfl
 
@@ -13,6 +14,10 @@ templates_dir = os.path.join(
     '..',
     'templates'
     )
+
+
+def get_uuid():
+    return str(uuid.uuid4())[:8]
 
 
 def extract_c_expression(expr):

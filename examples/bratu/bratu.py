@@ -18,26 +18,22 @@ class F(FvmOperator):
     dirichlet = [(lambda x, u: u, Boundary())]
 
 
-# class dFdp(Operator):
-#     def eval(U): return -exp(U)
-#     def boundary_eval(U): return 0.0
-#
-#
-# class Jacobian(Operator):
+class dFdp(FvmOperator):
+    def apply(u): return - integrate(lambda x: exp(u(x)), dV())
+    dirichlet = [(lambda x, u: 0.0, Boundary())]
+
+
+# class Jacobian(FvmOperator):
 #     U0 = Vector()
 #     def eval(U): return - Laplace(U) - alpha * exp(U0) * U
 #     def boundary_eval(U): return U
-
 
 # class Preconditioner(VectorOperator):
 #     def eval(U, U0): return - Laplace(U)
 #     def boundary_eval(U): return U
 
-
 # class Bratu(NonlinearFvmProblem):
 #     F = F()
-
-
 
 # class Bu(NonlinearDirichletBC):
 #     def eval(u, x): return u(x)

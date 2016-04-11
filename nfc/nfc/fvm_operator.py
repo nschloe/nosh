@@ -10,7 +10,7 @@ import sympy
 from .operator_core_dirichlet import get_code_dirichlet
 # from .operator_core_edge import get_operator_core_edge_code_from_integral
 from .operator_core_vertex import get_operator_core_vertex_code_from_integral
-from .helpers import templates_dir
+from .helpers import get_uuid, templates_dir
 
 
 def get_code_fvm_operator(namespace, class_name, obj):
@@ -77,23 +77,23 @@ def handle_integrals(namespace, u, integrals):
     core_codes = []
     dependencies = set()
 
-    for k, integral in enumerate(integrals):
+    for integral in integrals:
         if isinstance(integral.measure, nfl.dS):
-            core_class_name = 'operator_core_edge%d' % k
+            core_class_name = 'operator_core_edge_%s' % get_uuid()
             core_code, deps = get_operator_core_edge_code_from_integral(
                     namespace, core_class_name, u,
                     integral.integrand, integral.subdomains
                     )
             operator_core_names['edge'].add(core_class_name)
         elif isinstance(integral.measure, nfl.dV):
-            core_class_name = 'operator_core_vertex%d' % k
+            core_class_name = 'operator_core_vertex_%s' % get_uuid()
             core_code, deps = get_operator_core_vertex_code_from_integral(
                     namespace, core_class_name, u,
                     integral.integrand, integral.subdomains
                     )
             operator_core_names['vertex'].add(core_class_name)
         elif isinstance(integral.measure, nfl.dGamma):
-            core_class_name = 'operator_core_boundary%d' % k
+            core_class_name = 'operator_core_boundary_%s' % get_uuid()
             core_code, deps = get_operator_core_boundary_code_from_integral(
                     namespace, core_class_name, u,
                     integral.integrand, integral.subdomains
@@ -121,7 +121,7 @@ def handle_dirichlets(namespace, dirichlets):
             except TypeError:  # TypeError: 'D1' object is not iterable
                 subdomains = [subdomains]
 
-        core_class_name = 'operator_core_dirichlet%d' % k
+        core_class_name = 'operator_core_dirichlet_%s' % get_uuid()
         core_code, dependencies = \
             get_code_dirichlet(core_class_name, f, subdomains)
         names.append(core_class_name)
