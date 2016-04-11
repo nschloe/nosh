@@ -18,7 +18,7 @@ namespace nosh
           const std::set<std::shared_ptr<const operator_core_edge>> & operator_core_edges,
           const std::set<std::shared_ptr<const operator_core_vertex>> & operator_core_vertexs,
           const std::set<std::shared_ptr<const operator_core_boundary>> & operator_core_boundarys,
-          const std::set<std::shared_ptr<const fvm_matrix>> & fvm_matrices,
+          const std::set<std::shared_ptr<const Tpetra::Operator<double,int,int>> & operators,
           const std::set<std::shared_ptr<const operator_core_dirichlet>> & dbcs
           ) :
         mesh(_mesh),
@@ -28,7 +28,7 @@ namespace nosh
         operator_core_edges_(operator_core_edges),
         operator_core_vertexs_(operator_core_vertexs),
         operator_core_boundarys_(operator_core_boundarys),
-        fvm_matrices_(fvm_matrices),
+        operators_(operators),
         dbcs_(dbcs)
         {
         }
@@ -74,8 +74,8 @@ namespace nosh
         this->apply_domain_boundary_contributions_(x_data, y_data);
 
         const auto yk = Tpetra::MultiVector<double,int,int>(y, Teuchos::Copy);
-        for (const auto & fvm_matrix: fvm_matrices) {
-          fvm_matrix->apply(x, yk);
+        for (const auto & operator: operators) {
+          operator->apply(x, yk);
           y.update(1.0, yk, 1.0);
         }
 
@@ -221,7 +221,7 @@ namespace nosh
       const std::set<std::shared_ptr<const operator_core_edge>> operator_core_edges_;
       const std::set<std::shared_ptr<const operator_core_vertex>> operator_core_vertexs_;
       const std::set<std::shared_ptr<const operator_core_boundary>> operator_core_boundarys_;
-      const std::set<std::shared_ptr<const fvm_matrix>> fvm_matrices_;
+      const std::set<std::shared_ptr<const Tpetra::Operator<double,int,int>>> operators_;
       const std::set<std::shared_ptr<const nosh::operator_core_dirichlet>> dbcs_;
   };
 } // namespace nosh
