@@ -21,14 +21,14 @@ namespace nosh
           const std::set<std::shared_ptr<const fvm_matrix>> & fvm_matrices,
           const std::set<std::shared_ptr<const operator_core_dirichlet>> & dbcs
           ) :
-        Tpetra::CrsMatrix<double,int,int>(_mesh->build_graph()),
         mesh(_mesh),
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
-        fill_time_(Teuchos::TimeMonitor::getNewTimer("Nosh: fvm_operator::fill_")),
+        apply_time_(Teuchos::TimeMonitor::getNewTimer("Nosh: fvm_operator::apply")),
 #endif
         operator_core_edges_(operator_core_edges),
         operator_core_vertexs_(operator_core_vertexs),
         operator_core_boundarys_(operator_core_boundarys),
+        fvm_matrices_(fvm_matrices),
         dbcs_(dbcs)
         {
         }
@@ -46,18 +46,52 @@ namespace nosh
           dobule beta=Teuchos::ScalarTraits<double>::zero()
           ) const
       {
-        // TODO
+#ifdef NOSH_TEUCHOS_TIME_MONITOR
+        Teuchos::TimeMonitor tm(*apply_time_);
+#endif
+#ifndef NDEBUG
+        TEUCHOS_ASSERT(this->mesh);
+#endif
+        TEUCHOS_TEST_FOR_EXCEPT_MSG(
+            mode != Teuchos::NO_TRANS,
+            "Only untransposed applies supported."
+            );
+        TEUCHOS_TEST_FOR_EXCEPT_MSG(
+            alpha != 1.0,
+            "Only alpha==1.0 supported."
+            );
+        TEUCHOS_TEST_FOR_EXCEPT_MSG(
+            beta != 0.0,
+            "Only beta==0.0 supported."
+            );
+        y.putScalar(0.0);
+
+        const auto x_data = x.getDataNonConst();
+        auto y_data = y.getDataNonConst();
+
+        this->apply_edge_contributions_(x_data, y_data);
+        this->apply_vertex_contributions_(x_data, y_data);
+        this->apply_domain_boundary_contributions_(x_data, y_data);
+
+        const auto yk = Tpetra::MultiVector<double,int,int>(y, Teuchos::Copy);
+        for (const auto & fvm_matrix: fvm_matrices) {
+          fvm_matrix->apply(x, yk);
+          y.update(1.0, yk, 1.0);
+        }
+
+        this->apply_dbcs_(x_data, y_data);
+
+        return;
       }
 
     protected:
       void
       apply_edge_contributions_(
-          const std::set<std::shared_ptr<const operator_core_vertex>> & cores,
           const Teuchos::ArrayRCP<const double> & x_data,
           const Teuchos::ArrayRCP<double> & y_data
           )
       {
-        for (const auto & core: cores) {
+        for (const auto & core: this->operator_core_edges_) {
           for (const auto & subdomain_id: core->subdomain_ids) {
             const auto edge_data = this->mesh->get_edge_data();
             // this->meshset interior edges
@@ -114,14 +148,13 @@ namespace nosh
 
       void
       apply_vertex_contributions(
-          const std::set<std::shared_ptr<const operator_core_vertex>> & cores,
           const Teuchos::ArrayRCP<const double> & x_data,
           const Teuchos::ArrayRCP<double> & y_data
           )
       {
         const auto & control_volumes = this->mesh->control_volumes();
         const auto c_data = control_volumes->getData();
-        for (const auto & core: cores) {
+        for (const auto & core: this->operator_core_vertexs_) {
           for (const auto & subdomain_id: core->subdomain_ids) {
             const auto verts = this->mesh->get_vertices(subdomain_id);
             for (const auto & vertex: verts) {
@@ -138,13 +171,12 @@ namespace nosh
 
       void
       apply_domain_boundary_contributions(
-          const std::set<std::shared_ptr<const operator_core_boundary>> & cores,
           const Teuchos::ArrayRCP<const double> & x_data,
           const Teuchos::ArrayRCP<double> & y_data
           )
       {
         const auto surfs = this->mesh->boundary_surface_areas();
-        for (const auto core: cores) {
+        for (const auto core: this->operator_core_boundarys_) {
           for (const auto & subdomain_id: core->subdomain_ids) {
             const auto verts = this->mesh->get_vertices(subdomain_id);
             for (const auto vert: verts) {
@@ -161,12 +193,11 @@ namespace nosh
 
       void
       apply_dbcs(
-          const std::set<std::shared_ptr<const operator_core_dirichlet>> & cores,
-          const Tpetra::Vector<double,int,int> & x,
-          Tpetra::Vector<double,int,int> & y
+          const Teuchos::ArrayRCP<const double> & x_data,
+          const Teuchos::ArrayRCP<double> & y_data
           )
       {
-        for (const auto & bc: dbcs) {
+        for (const auto & bc: this->dbcs_) {
           for (const auto & subdomain_id: bc->subdomain_ids) {
             const auto verts = this->mesh->get_vertices(subdomain_id);
             for (const auto & vertex: verts) {
@@ -185,12 +216,13 @@ namespace nosh
 
     private:
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
-      const Teuchos::RCP<Teuchos::Time> fill_time_;
+      const Teuchos::RCP<Teuchos::Time> apply_time_;
 #endif
-      const std::set<std::shared_ptr<const matrix_core_edge>> matrix_core_edges_;
-      const std::set<std::shared_ptr<const matrix_core_vertex>> matrix_core_vertexs_;
-      const std::set<std::shared_ptr<const matrix_core_boundary>> matrix_core_boundarys_;
-      const std::set<std::shared_ptr<const nosh::matrix_core_dirichlet>> dbcs_;
+      const std::set<std::shared_ptr<const operator_core_edge>> operator_core_edges_;
+      const std::set<std::shared_ptr<const operator_core_vertex>> operator_core_vertexs_;
+      const std::set<std::shared_ptr<const operator_core_boundary>> operator_core_boundarys_;
+      const std::set<std::shared_ptr<const fvm_matrix>> fvm_matrices_;
+      const std::set<std::shared_ptr<const nosh::operator_core_dirichlet>> dbcs_;
   };
 } // namespace nosh
 
