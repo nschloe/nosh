@@ -26,7 +26,7 @@ class Callable(object):
         return
 
 
-class FunctionParameter(Callable):
+class FunctionParameter(sympy.Function):
     pass
 
 

@@ -103,11 +103,11 @@ nls(
   params["g"] = g;
 
   // This merges and discards new values if their keys are already in the list.
-  auto spParams = scalar_potential_->get_parameters();
+  auto spParams = scalar_potential_->get_scalar_parameters();
   params.insert(spParams.begin(), spParams.end());
 
   // This merges and discards new values if their keys are already in the list.
-  auto mbParams = keo_->get_parameters();
+  auto mbParams = keo_->get_scalar_parameters();
   params.insert(mbParams.begin(), mbParams.end());
 
   // Out of this now complete list, create the entities that the Modelevaluator
@@ -533,7 +533,7 @@ compute_f_(
     ) const
 {
   // Compute f_vec = K*x.
-  keo_->set_parameters(params);
+  keo_->set_parameters(params, {});
   keo_->apply(x, f_vec);
 
   auto x_data = x.getData();
@@ -637,7 +637,7 @@ computeDFDP_(
     ) const
 {
   // f_vec = dK/dp * x.
-  dkeo_dp_->set_parameters(params);
+  dkeo_dp_->set_parameters(params, {});
   dkeo_dp_->apply(x, f_vec);
 
   auto x_data = x.getData();

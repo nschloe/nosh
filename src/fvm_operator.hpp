@@ -20,28 +20,38 @@ namespace nosh
   {
     public:
       fvm_operator(
-          const std::shared_ptr<const nosh::mesh> & _mesh,
-          const std::set<std::shared_ptr<const operator_core_edge>> & operator_core_edges,
-          const std::set<std::shared_ptr<const operator_core_vertex>> & operator_core_vertexs,
-          const std::set<std::shared_ptr<const operator_core_boundary>> & operator_core_boundarys,
-          const std::set<std::shared_ptr<const operator_core_dirichlet>> & dbcs,
-          const std::set<std::shared_ptr<const Tpetra::Operator<double,int,int>>> & operators
-          ) :
-        mesh(_mesh),
+        const std::shared_ptr<const nosh::mesh> & _mesh,
+        const std::set<std::shared_ptr<const operator_core_edge>> & operator_core_edges,
+        const std::set<std::shared_ptr<const operator_core_vertex>> & operator_core_vertexs,
+        const std::set<std::shared_ptr<const operator_core_boundary>> & operator_core_boundarys,
+        const std::set<std::shared_ptr<const operator_core_dirichlet>> & dbcs,
+        const std::set<std::shared_ptr<const Tpetra::Operator<double,int,int>>> & operators
+        ) :
+      mesh(_mesh),
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
-        apply_time_(Teuchos::TimeMonitor::getNewTimer("Nosh: fvm_operator::apply")),
+      apply_time_(Teuchos::TimeMonitor::getNewTimer("Nosh: fvm_operator::apply")),
 #endif
-        operator_core_edges_(operator_core_edges),
-        operator_core_vertexs_(operator_core_vertexs),
-        operator_core_boundarys_(operator_core_boundarys),
-        dbcs_(dbcs),
-        operators_(operators)
-        {
-        }
+      operator_core_edges_(operator_core_edges),
+      operator_core_vertexs_(operator_core_vertexs),
+      operator_core_boundarys_(operator_core_boundarys),
+      dbcs_(dbcs),
+      operators_(operators)
+      {
+      }
 
       virtual
       ~fvm_operator()
       {};
+
+      // virtual
+      // void
+      // rebuild(
+      //     const std::map<std::string, double> & scalar_params,
+      //     const std::map<std::string, Tpetra::Vector<double,int,int>> & vector_params
+      //     )
+      // {
+      //   throw 144;
+      // }
 
       virtual
       void

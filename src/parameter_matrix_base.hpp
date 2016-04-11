@@ -35,7 +35,7 @@ public:
   //! Get parameter map with their initial values.
   virtual
   const std::map<std::string, double>
-  get_parameters() const = 0;
+  get_scalar_parameters() const = 0;
 
 protected:
   //! Fill the matrix with the parameter entries as given in params.

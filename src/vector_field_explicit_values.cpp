@@ -64,7 +64,7 @@ set_parameters(const std::map<std::string, double> & params)
 // ============================================================================
 const std::map<std::string, double>
 explicit_values::
-get_parameters() const
+get_scalar_parameters() const
 {
   return {{"mu", mu_}};
 }

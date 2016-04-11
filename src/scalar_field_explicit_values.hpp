@@ -28,7 +28,7 @@ public:
 //! Get parameter names and initial values.
   virtual
   const std::map<std::string, double>
-  get_parameters() const;
+  get_scalar_parameters() const;
 
   virtual
   const Tpetra::Vector<double,int,int>

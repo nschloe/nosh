@@ -1,49 +1,63 @@
 #ifndef NOSH_PARAMETEROBJECT
 #define NOSH_PARAMETEROBJECT
 
-#include <map>
-#include <string>
-
 #include <Tpetra_CrsMatrix.hpp>
 #include <Teuchos_RCP.hpp>
 
-// forward declarations
-namespace nosh
-{
-class mesh;
-}
+#include <map>
+#include <string>
 
 namespace nosh
 {
 class parameter_object
 {
 public:
-  parameter_object();
+  parameter_object():
+    build_parameters_scalar_(),
+    build_parameters_vector_()
+  {
+  }
 
-  // Destructor.
   virtual
-  ~parameter_object();
+  ~parameter_object() {};
 
   //! Fill the matrix with the parameter entries as given in params.
   //! Includes some caching logic for params.
   virtual
   void
-  set_parameters(const std::map<std::string, double> &params) final;
+  set_parameters(
+      const std::map<std::string, double> & scalar_params,
+      const std::map<std::string, std::shared_ptr<Tpetra::Vector<double, int, int>>> & vector_params
+      ) final;
 
-  //! Get parameter map with their initial values.
+  //! Get scalar parameter map with their initial values.
   virtual
   const std::map<std::string, double>
-  get_parameters() const = 0;
+  get_scalar_parameters() const
+  {
+    return {};
+  };
+
+  //! Get vector parameter map with their initial values.
+  virtual
+  std::map<std::string, std::shared_ptr<Tpetra::Vector<double, int, int>>>
+  get_vector_parameters() const
+  {
+    return {};
+  };
 
 protected:
   //! Fill the matrix with the parameter entries as given in params.
   virtual
   void
-  refill_(const std::map<std::string, double> &params) = 0;
+  refill_(
+      const std::map<std::string, double> & scalar_params,
+      const std::map<std::string, std::shared_ptr<Tpetra::Vector<double, int, int>>> & vector_params
+      ) = 0;
 
 private:
-  std::map<std::string, double> build_parameters_;
+  std::map<std::string, double> build_parameters_scalar_;
+  std::map<std::string, std::shared_ptr<Tpetra::Vector<double, int, int>>> build_parameters_vector_;
 };
-} // namespace nosh
-
-#endif // NOSH_PARAMETEROBJECT
+}  // namespace nosh
+#endif  // NOSH_PARAMETEROBJECT

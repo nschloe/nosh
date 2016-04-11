@@ -40,7 +40,13 @@ def handle_dependencies(namespace, obj):
     dependencies = set()
 
     u = sympy.Function('u')
-    res = obj.apply(u)
+    u0 = sympy.Function('u0')
+    if (len(inspect.getargspec(var.eval).args) == 1):
+        res = obj.apply(u)
+    elif (len(inspect.getargspec(var.eval).args) == 2):
+        res = obj.apply(u, u0)
+    else:
+        raise ValueError('apply() must have either 1 or 2 arguments')
 
     assert(isinstance(res, nfl.CoreList))
 
