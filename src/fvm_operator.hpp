@@ -24,8 +24,8 @@ namespace nosh
           const std::set<std::shared_ptr<const operator_core_edge>> & operator_core_edges,
           const std::set<std::shared_ptr<const operator_core_vertex>> & operator_core_vertexs,
           const std::set<std::shared_ptr<const operator_core_boundary>> & operator_core_boundarys,
-          const std::set<std::shared_ptr<const Tpetra::Operator<double,int,int>>> & operators,
-          const std::set<std::shared_ptr<const operator_core_dirichlet>> & dbcs
+          const std::set<std::shared_ptr<const operator_core_dirichlet>> & dbcs,
+          const std::set<std::shared_ptr<const Tpetra::Operator<double,int,int>>> & operators
           ) :
         mesh(_mesh),
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
@@ -34,8 +34,8 @@ namespace nosh
         operator_core_edges_(operator_core_edges),
         operator_core_vertexs_(operator_core_vertexs),
         operator_core_boundarys_(operator_core_boundarys),
-        operators_(operators),
-        dbcs_(dbcs)
+        dbcs_(dbcs),
+        operators_(operators)
         {
         }
 
@@ -249,8 +249,8 @@ namespace nosh
       const std::set<std::shared_ptr<const operator_core_edge>> operator_core_edges_;
       const std::set<std::shared_ptr<const operator_core_vertex>> operator_core_vertexs_;
       const std::set<std::shared_ptr<const operator_core_boundary>> operator_core_boundarys_;
+      const std::set<std::shared_ptr<const operator_core_dirichlet>> dbcs_;
       const std::set<std::shared_ptr<const Tpetra::Operator<double,int,int>>> operators_;
-      const std::set<std::shared_ptr<const nosh::operator_core_dirichlet>> dbcs_;
   };
 } // namespace nosh
 

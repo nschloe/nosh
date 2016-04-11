@@ -7,7 +7,7 @@ class ${name}:
         ):
       ${members_init}
     {
-      this->fill_();
+      this->fill();
     }
 
     virtual
