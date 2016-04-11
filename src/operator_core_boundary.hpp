@@ -11,9 +11,7 @@ namespace nosh
       explicit operator_core_boundary(
           const std::set<std::string> & _subdomain_ids = {"boundary"}
           ):
-        subdomain_ids(_subdomain_ids),
-        scalar_parameters_({}),
-        vector_parameters_({})
+        subdomain_ids(_subdomain_ids)
         {};
 
       virtual ~operator_core_boundary() {};
@@ -28,8 +26,6 @@ namespace nosh
 
     public:
       const std::set<std::string> subdomain_ids;
-      const std::map<std::string, double> scalar_parameters_;
-      const std::map<std::string, std::shared_ptr<Tpetra::Vector<double,int,int>>> vector_parameters_;
   };
 } // namespace nosh
 

@@ -2,9 +2,10 @@
 #define NOSH_OPERATOR_CORE_DIRICHLET_HPP
 
 #include <Eigen/Dense>
+#include <parameter_object.hpp>
 
 namespace nosh {
-  class operator_core_dirichlet
+  class operator_core_dirichlet: public parameter_object
   {
     public:
       explicit operator_core_dirichlet(

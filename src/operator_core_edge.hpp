@@ -3,9 +3,11 @@
 
 #include <Eigen/Dense>
 
+#include <parameter_object.hpp>
+
 namespace nosh
 {
-  class operator_core_edge
+  class operator_core_edge: parameter_object
   {
     public:
       explicit operator_core_edge(

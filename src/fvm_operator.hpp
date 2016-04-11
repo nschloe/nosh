@@ -12,11 +12,12 @@
 #include "operator_core_dirichlet.hpp"
 #include "operator_core_edge.hpp"
 #include "operator_core_vertex.hpp"
+#include "parameter_object.hpp"
 
 namespace nosh
 {
   class fvm_operator:
-    public Tpetra::Operator<double,int,int>
+    public Tpetra::Operator<double,int,int>, public parameter_object
   {
     public:
       fvm_operator(

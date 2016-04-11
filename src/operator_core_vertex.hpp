@@ -1,9 +1,11 @@
 #ifndef NOSH_OPERATOR_CORE_VERTEX_H
 #define NOSH_OPERATOR_CORE_VERTEX_H
 
+#include <parameter_object.hpp>
+
 namespace nosh
 {
-  class operator_core_vertex
+  class operator_core_vertex: public parameter_object
   {
     public:
       explicit operator_core_vertex(
