@@ -18,41 +18,26 @@ class F(FvmOperator):
     dirichlet = [(lambda x, u: u, Boundary())]
 
 
-class dFdp(FvmOperator):
-    def apply(u): return - integrate(lambda x: exp(u(x)), dV())
-    dirichlet = [(lambda x, u: 0.0, Boundary())]
+class Jacobian(FvmOperator):
+    u0 = FunctionParameter()
+    # alpha = ScalarParameter()
 
+    def apply(u):
+        return NLaplace(u) \
+            - integrate(lambda x: alpha * exp(u0(x)) * u(x), dV())
 
-# class Jacobian(FvmOperator):
-#     U0 = Vector()
-#     def eval(U): return - Laplace(U) - alpha * exp(U0) * U
-#     def boundary_eval(U): return U
+    dirichlet = [(lambda x, u: u, Boundary())]
+
 
 # class Preconditioner(VectorOperator):
 #     def eval(U, U0): return - Laplace(U)
 #     def boundary_eval(U): return U
 
+
+# class dFdp(FvmOperator):
+#     def apply(u): return - integrate(lambda x: exp(u(x)), dV())
+#     dirichlet = [(lambda x, u: 0.0, Boundary())]
+
+
 # class Bratu(NonlinearFvmProblem):
 #     F = F()
-
-# class Bu(NonlinearDirichletBC):
-#     def eval(u, x): return u(x)
-#
-# class B0(NonlinearDirichletBC):
-#     def eval(u, x): return 0.0
-#
-# class F(VectorOperator):
-#     def eval(U): return - Laplace(U) - alpha * exp(U)
-#     boundary_evals = [Bu()]
-#
-# class dFdp(VectorOperator):
-#     def eval(u): return - exp(u)
-#     boundary_evals = [B0()]
-#
-# class Jacobian(VectorOperator):
-#     def eval(u, u0): return - Laplace(u) - alpha * exp(u0) * u
-#     boundary_evals = [Bu()]
-#
-# class Prec(VectorOperator):
-#     def eval(u, u0): return - Laplace(u)
-#     boundary_evals = [Bu()]

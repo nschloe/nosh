@@ -48,21 +48,21 @@ def handle_core_dependencies(namespace, obj):
 
     code = ''
     for integral in res.integrals:
-        if isinstance(integral.measure, nfl.dS):
+        if isinstance(integral.measure, nfl.ControlVolumeSurface):
             core_class_name = 'matrix_core_edge_%s' % get_uuid()
             core_code, deps = get_matrix_core_edge_code_from_integral(
                     namespace, core_class_name, u,
                     integral.integrand, integral.subdomains
                     )
             matrix_core_names['edge'].add(core_class_name)
-        elif isinstance(integral.measure, nfl.dV):
+        elif isinstance(integral.measure, nfl.ControlVolume):
             core_class_name = 'matrix_core_vertex_%s' % get_uuid()
             core_code, deps = get_matrix_core_vertex_code_from_integral(
                     namespace, core_class_name, u,
                     integral.integrand, integral.subdomains
                     )
             matrix_core_names['vertex'].add(core_class_name)
-        elif isinstance(integral.measure, nfl.dGamma):
+        elif isinstance(integral.measure, nfl.BoundarySurface):
             core_class_name = 'matrix_core_boundary_%s' % get_uuid()
             core_code, deps = get_matrix_core_boundary_code_from_integral(
                     namespace, core_class_name, u,

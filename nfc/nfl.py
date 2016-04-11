@@ -12,10 +12,6 @@ class Expression(sympy.Function):
     # degree = sympy.oo
 
 
-class ScalarParameter(object):
-    pass
-
-
 class Subdomain(object):
     pass
 
@@ -28,6 +24,10 @@ class Callable(object):
     def __init__(self, *args):
         self.args = args
         return
+
+
+class FunctionParameter(Callable):
+    pass
 
 
 class CoreList(object):
@@ -108,16 +108,21 @@ class Measure(object):
     pass
 
 
-class dV(Measure):
+class ControlVolume(Measure):
     pass
 
+dV = ControlVolume()
 
-class dS(Measure):
+class ControlVolumeSurface(Measure):
     pass
 
+dS = ControlVolumeSurface()
 
-class dGamma(Measure):
+
+class BoundarySurface(Measure):
     pass
+
+dGamma = BoundarySurface()
 
 
 def integrate(integrand, measure, subdomains=None):
@@ -132,9 +137,9 @@ def integrate(integrand, measure, subdomains=None):
             subdomains = set([subdomains])
 
     assert(
-        isinstance(measure, dS) or
-        isinstance(measure, dV) or
-        isinstance(measure, dGamma)
+        isinstance(measure, ControlVolumeSurface) or
+        isinstance(measure, ControlVolume) or
+        isinstance(measure, BoundarySurface)
         )
 
     return CoreList([Integral(integrand, measure, subdomains)])
