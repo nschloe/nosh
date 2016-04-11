@@ -3,6 +3,7 @@
 #include "constant.hpp"
 #include "expression.hpp"
 #include "fvm_matrix.hpp"
+#include "fvm_operator.hpp"
 #include "function.hpp"
 #include "mesh.hpp"
 #include "mesh_reader.hpp"

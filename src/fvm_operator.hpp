@@ -1,6 +1,12 @@
 #ifndef NOSH_FVM_OPERATOR_H
 #define NOSH_FVM_OPERATOR_H
 
+#include <tuple>
+
+#include <Teuchos_RCPStdSharedPtrConversions.hpp>
+#include <Tpetra_MultiVector.hpp>
+#include <Tpetra_Operator.hpp>
+
 #include "mesh.hpp"
 #include "operator_core_boundary.hpp"
 #include "operator_core_dirichlet.hpp"
@@ -18,7 +24,7 @@ namespace nosh
           const std::set<std::shared_ptr<const operator_core_edge>> & operator_core_edges,
           const std::set<std::shared_ptr<const operator_core_vertex>> & operator_core_vertexs,
           const std::set<std::shared_ptr<const operator_core_boundary>> & operator_core_boundarys,
-          const std::set<std::shared_ptr<const Tpetra::Operator<double,int,int>> & operators,
+          const std::set<std::shared_ptr<const Tpetra::Operator<double,int,int>>> & operators,
           const std::set<std::shared_ptr<const operator_core_dirichlet>> & dbcs
           ) :
         mesh(_mesh),
@@ -38,12 +44,13 @@ namespace nosh
       {};
 
       virtual
+      void
       apply(
-          const MultiVector<double,int,int> & x,
-          MultiVector<double,int,int> & y,
-          Teuchos::ETransp mode=Teuchos::NO_TRANS,
-          double alpha=Teuchos::ScalarTraits<double>::one(),
-          dobule beta=Teuchos::ScalarTraits<double>::zero()
+          const Tpetra::MultiVector<double,int,int> & x,
+          Tpetra::MultiVector<double,int,int> & y,
+          Teuchos::ETransp mode = Teuchos::NO_TRANS,
+          double alpha = Teuchos::ScalarTraits<double>::one(),
+          double beta = Teuchos::ScalarTraits<double>::zero()
           ) const
       {
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
@@ -52,6 +59,9 @@ namespace nosh
 #ifndef NDEBUG
         TEUCHOS_ASSERT(this->mesh);
 #endif
+        TEUCHOS_ASSERT_EQUALITY(x.getNumVectors(), 0);
+        TEUCHOS_ASSERT_EQUALITY(y.getNumVectors(), 0);
+
         TEUCHOS_TEST_FOR_EXCEPT_MSG(
             mode != Teuchos::NO_TRANS,
             "Only untransposed applies supported."
@@ -66,16 +76,16 @@ namespace nosh
             );
         y.putScalar(0.0);
 
-        const auto x_data = x.getDataNonConst();
-        auto y_data = y.getDataNonConst();
+        const auto x_data = x.getData(0);
+        auto y_data = y.getDataNonConst(0);
 
         this->apply_edge_contributions_(x_data, y_data);
         this->apply_vertex_contributions_(x_data, y_data);
         this->apply_domain_boundary_contributions_(x_data, y_data);
 
-        const auto yk = Tpetra::MultiVector<double,int,int>(y, Teuchos::Copy);
-        for (const auto & operator: operators) {
-          operator->apply(x, yk);
+        auto yk = Tpetra::MultiVector<double,int,int>(y, Teuchos::Copy);
+        for (const auto & op: this->operators_) {
+          op->apply(x, yk);
           y.update(1.0, yk, 1.0);
         }
 
@@ -84,12 +94,27 @@ namespace nosh
         return;
       }
 
+      virtual
+      Teuchos::RCP<const Tpetra::Map<int,int>>
+      getDomainMap() const
+      {
+        return Teuchos::rcp(this->mesh->map());
+      }
+
+      virtual
+      Teuchos::RCP<const Tpetra::Map<int,int>>
+      getRangeMap() const
+      {
+        return Teuchos::rcp(this->mesh->map());
+      }
+
+
     protected:
       void
       apply_edge_contributions_(
           const Teuchos::ArrayRCP<const double> & x_data,
           const Teuchos::ArrayRCP<double> & y_data
-          )
+          ) const
       {
         for (const auto & core: this->operator_core_edges_) {
           for (const auto & subdomain_id: core->subdomain_ids) {
@@ -99,18 +124,19 @@ namespace nosh
             for (const auto edge: edges) {
               const auto verts = this->mesh->get_vertex_tuple(edge);
               const auto lid = this->mesh->local_index(edge);
+              const auto i0 = this->mesh->local_index(verts[0]);
+              const auto i1 = this->mesh->local_index(verts[1]);
               auto vals = core->eval(
                   this->mesh->get_coords(verts[0]),
                   this->mesh->get_coords(verts[1]),
                   edge_data[lid].length,
                   edge_data[lid].covolume,
-                  // TODO lids
-                  x_data[lid[0]],
-                  x_data[lid[1]]
+                  x_data[i0],
+                  x_data[i1]
                   );
 
-              y_data[lid[0]] += vals[0];
-              y_data[lid[1]] += vals[1];
+              y_data[i0] += std::get<0>(vals);
+              y_data[i1] += std::get<1>(vals);
             }
 
             // this->meshset boundary edges
@@ -121,20 +147,22 @@ namespace nosh
               const auto verts = this->mesh->get_vertex_tuple(edge);
 
               const auto lid = this->mesh->local_index(edge);
+              const auto i0 = this->mesh->local_index(verts[0]);
+              const auto i1 = this->mesh->local_index(verts[1]);
               auto vals = core->eval(
                   this->mesh->get_coords(verts[0]),
                   this->mesh->get_coords(verts[1]),
                   edge_data[lid].length,
                   edge_data[lid].covolume,
-                  x_data[lid[0]],
-                  x_data[lid[1]]
+                  x_data[i0],
+                  x_data[i1]
                   );
 
               // check which one of the two verts is in this->meshset
               if (this->mesh->contains(subdomain_id, {verts[0]})) {
-                y_data[lid[0]] += vals[0];
+                y_data[i0] += std::get<0>(vals);
               } else if (this->mesh->contains(subdomain_id, {verts[1]})) {
-                y_data[lid[1]] += vals[1];
+                y_data[i1] += std::get<1>(vals);
               } else {
                 TEUCHOS_TEST_FOR_EXCEPT_MSG(
                     true,
@@ -147,10 +175,10 @@ namespace nosh
       }
 
       void
-      apply_vertex_contributions(
+      apply_vertex_contributions_(
           const Teuchos::ArrayRCP<const double> & x_data,
           const Teuchos::ArrayRCP<double> & y_data
-          )
+          ) const
       {
         const auto & control_volumes = this->mesh->control_volumes();
         const auto c_data = control_volumes->getData();
@@ -170,10 +198,10 @@ namespace nosh
       }
 
       void
-      apply_domain_boundary_contributions(
+      apply_domain_boundary_contributions_(
           const Teuchos::ArrayRCP<const double> & x_data,
           const Teuchos::ArrayRCP<double> & y_data
-          )
+          ) const
       {
         const auto surfs = this->mesh->boundary_surface_areas();
         for (const auto core: this->operator_core_boundarys_) {
@@ -184,7 +212,7 @@ namespace nosh
               y_data[k] += core->eval(
                   this->mesh->get_coords(vert),
                   surfs[k],
-                  x_data[i]
+                  x_data[k]
                   );
             }
           }
@@ -192,17 +220,17 @@ namespace nosh
       }
 
       void
-      apply_dbcs(
+      apply_dbcs_(
           const Teuchos::ArrayRCP<const double> & x_data,
           const Teuchos::ArrayRCP<double> & y_data
-          )
+          ) const
       {
         for (const auto & bc: this->dbcs_) {
           for (const auto & subdomain_id: bc->subdomain_ids) {
             const auto verts = this->mesh->get_vertices(subdomain_id);
             for (const auto & vertex: verts) {
-              const auto k = this->mesh->local_index(vert);
-              y_data[k] = core->eval(
+              const auto k = this->mesh->local_index(vertex);
+              y_data[k] = bc->eval(
                 this->mesh->get_coords(vertex),
                 x_data[k]
                 );
