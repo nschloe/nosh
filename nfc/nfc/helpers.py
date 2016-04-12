@@ -124,7 +124,9 @@ def members_init_declare(namespace, parent_name, dependency_class_objects):
 
     if len(subdomain_class_names) == 0:
         subdomain_class_names.append('everywhere')
-    members_init.append(
+    # initialize the parent class first
+    members_init.insert(
+        0,
         'nosh::%s({%s})' %
         (parent_name, ', '.join(['"%s"' % s for s in subdomain_class_names]))
         )
