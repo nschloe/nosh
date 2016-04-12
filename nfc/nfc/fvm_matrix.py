@@ -5,15 +5,64 @@ import os
 from string import Template
 import sympy
 
-from .matrix_core_boundary import get_matrix_core_boundary_code_from_integral
-from .matrix_core_dirichlet import get_code_dirichlet
-from .matrix_core_edge import get_matrix_core_edge_code_from_integral
-from .matrix_core_vertex import get_matrix_core_vertex_code_from_integral
+from .integral_boundary import IntegralBoundary
+from .dirichlet import Dirichlet
+from .integral_edge import IntegralEdge
+from .integral_vertex import IntegralVertex
 from .helpers import get_uuid, templates_dir
 
 
-def get_code_fvm_matrix(namespace, class_name, obj):
+class FvmMatrixCode(object):
+    def __init__(self, obj):
+        self.dependencies = gather_dependencies(obj)
+        return
 
+    def get_dependencies():
+        return self.dependencies
+
+    def get_class_object():
+        return
+
+
+def gather_dependencies(obj):
+    dependencies = set()
+    u = sympy.Function('u')
+    res = obj.apply(u)
+    for integral in res.integrals:
+        if isinstance(integral.measure, nfl.ControlVolumeSurface):
+            dependencies.add(
+                IntegralEdge(
+                    u, integral.integrand, integral.subdomains, True
+                    )
+                )
+        elif isinstance(integral.measure, nfl.ControlVolume):
+            dependencies.add(
+                IntegralVertex(
+                    u, integral.integrand, integral.subdomains, True
+                    )
+                )
+        elif isinstance(integral.measure, nfl.BoundarySurface):
+            dependencies.add(
+                IntegralBoundary(
+                    u, integral.integrand, integral.subdomains, True
+                    )
+                )
+        else:
+            raise RuntimeError('Illegal measure type \'%s\'.' % measure)
+
+    for dirichlet in obj.dirichlet:
+        f, subdomains = dirichlet
+        if not isinstance(subdomains, list):
+            try:
+                subdomains = list(subdomains)
+            except TypeError:  # TypeError: 'D1' object is not iterable
+                subdomains = [subdomains]
+        dependencies.add(Dirichlet(f, subdomains, True))
+
+    return dependencies
+
+
+def get_code_fvm_matrix(namespace, class_name, obj):
     code, dependencies, matrix_core_names = \
             handle_core_dependencies(namespace, obj)
 
@@ -29,70 +78,6 @@ def get_code_fvm_matrix(namespace, class_name, obj):
             )
 
     return code, dependencies
-
-
-def handle_core_dependencies(namespace, obj):
-    dependencies = set()
-
-    u = sympy.Function('u')
-    res = obj.apply(u)
-
-    assert(isinstance(res, nfl.CoreList))
-
-    matrix_core_names = {
-            'edge': set(),
-            'vertex': set(),
-            'boundary': set(),
-            'dirichlet': []
-            }
-
-    code = ''
-    for integral in res.integrals:
-        if isinstance(integral.measure, nfl.ControlVolumeSurface):
-            core_class_name = 'matrix_core_edge_%s' % get_uuid()
-            core_code, deps = get_matrix_core_edge_code_from_integral(
-                    namespace, core_class_name, u,
-                    integral.integrand, integral.subdomains
-                    )
-            matrix_core_names['edge'].add(core_class_name)
-        elif isinstance(integral.measure, nfl.ControlVolume):
-            core_class_name = 'matrix_core_vertex_%s' % get_uuid()
-            core_code, deps = get_matrix_core_vertex_code_from_integral(
-                    namespace, core_class_name, u,
-                    integral.integrand, integral.subdomains
-                    )
-            matrix_core_names['vertex'].add(core_class_name)
-        elif isinstance(integral.measure, nfl.BoundarySurface):
-            core_class_name = 'matrix_core_boundary_%s' % get_uuid()
-            core_code, deps = get_matrix_core_boundary_code_from_integral(
-                    namespace, core_class_name, u,
-                    integral.integrand, integral.subdomains
-                    )
-            matrix_core_names['boundary'].add(core_class_name)
-        else:
-            raise RuntimeError('Illegal measure type \'%s\'.' % measure)
-
-        # since this object contains the cores, its dependencies contain the
-        # dependencies of the cores as well
-        dependencies.update(deps)
-        code += '\n' + core_code
-
-    for k, dirichlet in enumerate(obj.dirichlet):
-        f, subdomains = dirichlet
-
-        if not isinstance(subdomains, list):
-            try:
-                subdomains = list(subdomains)
-            except TypeError:  # TypeError: 'D1' object is not iterable
-                subdomains = [subdomains]
-
-        core_class_name = 'matrix_core_dirichlet%s' % get_uuid()
-        core_code, deps = get_code_dirichlet(core_class_name, f, subdomains)
-        matrix_core_names['dirichlet'].append(core_class_name)
-        dependencies.update(deps)
-        code += '\n' + core_code
-
-    return code, dependencies, matrix_core_names
 
 
 def get_code_linear_problem(

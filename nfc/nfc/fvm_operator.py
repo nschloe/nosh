@@ -1,15 +1,17 @@
 # -*- coding: utf-8 -*-
 #
-import nfl
+import inspect
 import os
 from string import Template
 import sympy
 
+import nfl
+
 # from .operator_core_boundary \
 #     import get_operator_core_boundary_code_from_integral
-from .operator_core_dirichlet import get_code_dirichlet
+from .dirichlet import Dirichlet
 # from .operator_core_edge import get_operator_core_edge_code_from_integral
-from .operator_core_vertex import get_operator_core_vertex_code_from_integral
+from .integral_vertex import IntegralVertex
 from .helpers import get_uuid, templates_dir
 
 
@@ -41,9 +43,9 @@ def handle_dependencies(namespace, obj):
 
     u = sympy.Function('u')
     u0 = sympy.Function('u0')
-    if (len(inspect.getargspec(var.eval).args) == 1):
+    if len(inspect.getargspec(obj.apply).args) == 1:
         res = obj.apply(u)
-    elif (len(inspect.getargspec(var.eval).args) == 2):
+    elif len(inspect.getargspec(obj.apply).args) == 2:
         res = obj.apply(u, u0)
     else:
         raise ValueError('apply() must have either 1 or 2 arguments')

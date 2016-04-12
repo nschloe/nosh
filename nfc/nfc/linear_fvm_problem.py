@@ -1,17 +1,21 @@
 # -*- coding: utf-8 -*-
 #
-from .fvm_matrix import handle_core_dependencies, get_code_linear_problem
+from .fvm_matrix import gather_dependencies
 
 
-def get_code_linear_fvm_problem(namespace, class_name, obj):
+class LinearFvmProblemCode(object):
+    def __init__(self, obj):
+        self.class_name = obj.__name__.lower()
+        self.dependencies = gather_dependencies(obj)
+        return
 
-    code, dependencies, matrix_core_names = \
-            handle_core_dependencies(namespace, obj)
+    def get_dependencies(self):
+        return self.dependencies
 
-    # append the code of the linear problem itself
-    code += '\n' + get_code_linear_problem(
+    def get_class_obj(self):
+        code = get_code_linear_problem(
             'linear_fvm_problem.tpl',
-            class_name.lower(),
+            class_name,
             'nosh::linear_problem',
             matrix_core_names['edge'],
             matrix_core_names['vertex'],
@@ -19,4 +23,6 @@ def get_code_linear_fvm_problem(namespace, class_name, obj):
             matrix_core_names['dirichlet'],
             )
 
-    return code, dependencies
+        return {
+            'code': code
+            }

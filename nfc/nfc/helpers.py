@@ -87,3 +87,45 @@ def compare_variables(arguments, expressions):
     assert(len(undefined_symbols) == 0)
 
     return unused_arguments, used_expressions
+
+
+def extract_linear_components(expr, u0):
+    assert(is_affine_linear(fu0, [u0]))
+    # Get coefficient of u0
+    coeff = sympy.diff(fu0, u0)
+    coeff = control_volume * coeff
+    # Get affine part
+    if isinstance(fu0, float):
+        affine = control_volume * fu0
+    else:
+        affine = control_volume * fu0.subs(u0, 0)
+    return coeff, affine
+
+
+def members_init_declare(parent_name):
+    # now take care of the template substitution
+    members_init = []
+    members_declare = []
+    subdomain_class_names = []
+    for dep in dependency_class_objects:
+        if dep['type'] == 'subdomain':
+            subdomain_class_names.append(dep['class_name'])
+        else:
+            var_name = dep['class_name']
+            members_init.append(
+                '%s(%s::%s(%s))' %
+                (var_name, namespace,
+                 dep['class_name'], ', '.join(dep['constructor_args']))
+                )
+            members_declare.append(
+                'const %s::%s %s;' %
+                (namespace, dep['class_name'], var_name)
+                )
+
+    if len(subdomain_class_names) == 0:
+        subdomain_class_names.add('everywhere')
+    members_init.append(
+        'nosh::%s({%s})' %
+        (parent_name, ', '.join(['"%s"' % s for s in subdomain_class_names]))
+        )
+    return members_init, members_declare

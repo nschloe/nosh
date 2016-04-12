@@ -6,6 +6,13 @@ from sympy.matrices.expressions.matexpr import \
         MatrixElement, MatrixExpr, MatrixSymbol
 
 
+def discretize_edge_integral(integrand, u):
+    discretizer = DiscretizeEdgeIntegral()
+    return discretizer.generate(integrand, u), \
+        discretizer.u0, \
+        discretizer.u1
+
+
 debug = False
 if debug:
     logging.basicConfig(level=logging.DEBUG)
@@ -14,7 +21,6 @@ if debug:
 class DiscretizeEdgeIntegral(object):
     def __init__(self):
         self.arg_translate = {}
-        self._discretization = 0
         self.x0 = sympy.Symbol('x0')
         self.x1 = sympy.Symbol('x1')
         self.u0 = sympy.Symbol('u0')
@@ -45,11 +51,11 @@ class DiscretizeEdgeIntegral(object):
         raise RuntimeError('Unknown node type \"', type(node), '\".')
         return
 
-    def generate(self, node, u, x):
+    def generate(self, node, u):
         '''Entrance point to this class.
         '''
-        self._discretization = 0
-        out = self.visit(node)
+        x = sympy.MatrixSymbol('x', 3, 1)
+        out = self.visit(node(x))
         # Now multiply the value we got out by the covolume
         out *= self.covolume
         # Replace u(x0) by u0, u(x1) by u1.

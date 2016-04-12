@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-from sympy import *
 from nfl import *
+from sympy import sin
 
 
 class D0(Subdomain):
@@ -16,11 +16,11 @@ class D1(Subdomain):
 class Poisson(LinearFvmProblem):
     def apply(u):
         return integrate(lambda x: -n_dot_grad(u, x), dS) \
-                - integrate(lambda x: sin(x[1]), dV) \
+                - integrate(lambda x: sin(x[1]), dV)
 
     dirichlet = [
-            (lambda x: 0.0, D0()),
-            (lambda x: 1.0, D1())
+            (lambda x: 0.0, D0),
+            (lambda x: 1.0, D1)
             ]
 
 

@@ -4,12 +4,10 @@
 import argparse
 import nfl
 import inspect
-# import sympy
 import re
 from string import Template
 import os
 import importlib.machinery
-# import subprocess
 
 import nfc
 
@@ -24,8 +22,9 @@ def _sanitize(str):
 def _main():
     args = _parse_cmd_arguments()
 
+    inmod_name = 'inmod'
     inmod = importlib.machinery.SourceFileLoader(
-        'inmod',
+        inmod_name,
         args.infile
         ).load_module()
 
@@ -42,65 +41,64 @@ def _main():
     # there.
     # Build directed dependency graph as a dictionary, see
     # <https://www.python.org/doc/essays/graphs/>.
-    codes = {}
-    dependencies = {}
-    for name, var in inmod.__dict__.items():
-        if inspect.isclass(var) and \
-                issubclass(var, nfl.FvmMatrix) and \
-                var != nfl.FvmMatrix:
-            code, deps = nfc.get_code_fvm_matrix(namespace, name, var)
-        elif inspect.isclass(var) and \
-                issubclass(var, nfl.LinearFvmProblem) and \
-                var != nfl.LinearFvmProblem:
-            code, deps = nfc.get_code_linear_fvm_problem(namespace, name, var)
-        elif inspect.isclass(var) and \
-                issubclass(var, nfl.FvmOperator) and \
-                var != nfl.FvmOperator:
-            code, deps = nfc.get_code_fvm_operator(namespace, name, var)
-        elif inspect.isclass(var) and \
-                issubclass(var, nfl.Subdomain) and \
-                var != nfl.Subdomain:
-            instance = var()
-            code, deps = nfc.get_code_subdomain(name, instance)
-        elif inspect.isclass(var) and \
-                issubclass(var, nfl.EdgeCore) and \
-                var != nfl.EdgeCore:
-            instance = var()
-            code, deps = nfc.get_code_matrix_core_edge(namespace, name, instance)
-        elif inspect.isclass(var) and \
-                issubclass(var, nfl.Expression) and \
-                var != nfl.Expression and \
-                hasattr(var, 'degree') and \
-                hasattr(var, 'eval'):
-            code, deps = nfc.get_code_expression(name, var)
-        else:
+    def get_generator(cls):
+        if issubclass(cls, nfl.FvmMatrix):
+            return nfc.FvmMatrixCode(cls)
+        elif issubclass(cls, nfl.LinearFvmProblem):
+            return nfc.LinearFvmProblemCode(cls)
+        # elif issubclass(var, nfl.FvmOperator):
+        #     generator = nfc.get_code_fvm_operator(namespace, name, var)
+        elif issubclass(cls, nfl.Subdomain):
+            return nfc.SubdomainCode(cls)
+        # elif issubclass(var, nfl.EdgeCore):
+        #     instance = var()
+        #     generator = nfc.get_code_matrix_core_edge(namespace, name, instance)
+        # elif issubclass(var, nfl.Expression):
+        #     generator = nfc.get_code_expression(name, var)
+
+    deps = {}
+    generators = {}
+
+    # Recursively go through all generators, get the dependencies, and build
+    # the dependency tree.
+    def insert_dependencies(generator):
+        if generator.class_name in deps:
+            return
+        print(generator.get_dependencies())
+        generators[generator.class_name] = generator
+        deps[generator.class_name] = [
+            dep.class_name for dep in generator.get_dependencies()
+            ]
+        for dep in generator.get_dependencies():
+            insert_dependencies(dep)
+
+    # Loop over all inmod classes to create the dependency tree
+    for name, obj in inmod.__dict__.items():
+        # Only inspect classes from inmod
+        if not inspect.isclass(obj) or obj.__module__ != inmod_name:
             continue
 
-        codes[name] = code
-        dependencies[name] = []
-        for dep in deps:
-            if dep.__class__.__name__ == 'FunctionClass':
-                dependencies[name].append(str(dep))
-            else:
-                dependencies[name].append(dep.__class__.__name__)
+        generator = get_generator(obj)
+        insert_dependencies(generator)
 
-    # Go through dependency graph and collect code.
+    # Now that we have all generators and dependencies in place,
+    # go through dependency graph and collect code.
     visited = set([])
     code_pieces = []
     missing_objects = set([])
 
     def visit(name):
-        if name not in dependencies:
+        if name not in deps:
             missing_objects.add(name)
             return
         # take care of the dependencies first
-        for dep in dependencies[name]:
+        for dep in deps[name]:
             visit(dep)
         if name not in visited:
-            code_pieces.append(codes[name])
+            code_pieces.append(generators[name].get_class_obj())
             visited.add(name)
 
-    for name in dependencies:
+    for name in deps:
         visit(name)
 
     if missing_objects:

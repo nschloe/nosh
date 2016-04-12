@@ -15,7 +15,7 @@ class ${name}:
           const double edge_covolume
           ) const
       {
-        ${edge_body}
+        ${eval_body}
         return {
           {
             {

@@ -22,11 +22,11 @@ namespace nosh
     public:
       fvm_operator(
         const std::shared_ptr<const nosh::mesh> & _mesh,
-        const std::set<std::shared_ptr<const operator_core_edge>> & operator_core_edges,
-        const std::set<std::shared_ptr<const operator_core_vertex>> & operator_core_vertexs,
-        const std::set<std::shared_ptr<const operator_core_boundary>> & operator_core_boundarys,
-        const std::set<std::shared_ptr<const operator_core_dirichlet>> & dbcs,
-        const std::set<std::shared_ptr<const Tpetra::Operator<double,int,int>>> & operators
+        const std::vector<std::shared_ptr<const operator_core_edge>> & operator_core_edges,
+        const std::vector<std::shared_ptr<const operator_core_vertex>> & operator_core_vertexs,
+        const std::vector<std::shared_ptr<const operator_core_boundary>> & operator_core_boundarys,
+        const std::vector<std::shared_ptr<const operator_core_dirichlet>> & dbcs,
+        const std::vector<std::shared_ptr<const Tpetra::Operator<double,int,int>>> & operators
         ) :
       mesh(_mesh),
 #ifdef NOSH_TEUCHOS_TIME_MONITOR

@@ -21,10 +21,10 @@ namespace nosh
     public:
       fvm_matrix(
           const std::shared_ptr<const nosh::mesh> & _mesh,
-          const std::set<std::shared_ptr<const matrix_core_edge>> & matrix_core_edges,
-          const std::set<std::shared_ptr<const matrix_core_vertex>> & matrix_core_vertexs,
-          const std::set<std::shared_ptr<const matrix_core_boundary>> & matrix_core_boundarys,
-          const std::set<std::shared_ptr<const matrix_core_dirichlet>> & dbcs
+          const std::vector<std::shared_ptr<const matrix_core_edge>> & matrix_core_edges,
+          const std::vector<std::shared_ptr<const matrix_core_vertex>> & matrix_core_vertexs,
+          const std::vector<std::shared_ptr<const matrix_core_boundary>> & matrix_core_boundarys,
+          const std::vector<std::shared_ptr<const matrix_core_dirichlet>> & dbcs
           ) :
         Tpetra::CrsMatrix<double,int,int>(_mesh->build_graph()),
         mesh(_mesh),
@@ -277,10 +277,10 @@ namespace nosh
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
       const Teuchos::RCP<Teuchos::Time> fill_time_;
 #endif
-      const std::set<std::shared_ptr<const matrix_core_edge>> matrix_core_edges_;
-      const std::set<std::shared_ptr<const matrix_core_vertex>> matrix_core_vertexs_;
-      const std::set<std::shared_ptr<const matrix_core_boundary>> matrix_core_boundarys_;
-      const std::set<std::shared_ptr<const nosh::matrix_core_dirichlet>> dbcs_;
+      const std::vector<std::shared_ptr<const matrix_core_edge>> matrix_core_edges_;
+      const std::vector<std::shared_ptr<const matrix_core_vertex>> matrix_core_vertexs_;
+      const std::vector<std::shared_ptr<const matrix_core_boundary>> matrix_core_boundarys_;
+      const std::vector<std::shared_ptr<const nosh::matrix_core_dirichlet>> dbcs_;
   };
 } // namespace nosh
 

@@ -20,10 +20,10 @@ namespace nosh
     public:
       linear_problem(
           const std::shared_ptr<const nosh::mesh> & mesh,
-          const std::set<std::shared_ptr<const matrix_core_edge>> & matrix_core_edges,
-          const std::set<std::shared_ptr<const matrix_core_vertex>> & matrix_core_vertexs,
-          const std::set<std::shared_ptr<const matrix_core_boundary>> & matrix_core_boundarys,
-          const std::set<std::shared_ptr<const matrix_core_dirichlet>> & dbcs
+          const std::vector<std::shared_ptr<const matrix_core_edge>> & matrix_core_edges,
+          const std::vector<std::shared_ptr<const matrix_core_vertex>> & matrix_core_vertexs,
+          const std::vector<std::shared_ptr<const matrix_core_boundary>> & matrix_core_boundarys,
+          const std::vector<std::shared_ptr<const matrix_core_dirichlet>> & dbcs
           ) :
         mesh_(mesh),
         matrix(std::make_shared<nosh::fvm_matrix>(mesh, matrix_core_edges, matrix_core_vertexs, matrix_core_boundarys, dbcs)),
