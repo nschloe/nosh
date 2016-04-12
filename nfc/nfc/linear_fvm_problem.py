@@ -12,16 +12,17 @@ class LinearFvmProblemCode(object):
     def get_dependencies(self):
         return self.dependencies
 
-    def get_class_obj(self):
-        code = get_code_linear_problem(
-            'linear_fvm_problem.tpl',
-            class_name,
-            'nosh::linear_problem',
-            matrix_core_names['edge'],
-            matrix_core_names['vertex'],
-            matrix_core_names['boundary'],
-            matrix_core_names['dirichlet'],
-            )
+    def get_class_object(self, dep_class_objects):
+        code = ''  # TODO
+        # code = get_code_linear_problem(
+        #     'linear_fvm_problem.tpl',
+        #     class_name,
+        #     'nosh::linear_problem',
+        #     matrix_core_names['edge'],
+        #     matrix_core_names['vertex'],
+        #     matrix_core_names['boundary'],
+        #     matrix_core_names['dirichlet'],
+        #     )
 
         return {
             'code': code

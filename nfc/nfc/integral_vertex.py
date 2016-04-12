@@ -19,6 +19,8 @@ class IntegralVertex(object):
     def __init__(self, u, integrand, subdomains, is_matrix):
         self.class_name = 'matrix_vertex_core_' + get_uuid()
 
+        self.is_matrix = is_matrix
+
         self.expr, self.u0 = \
             _discretize_integral(u, integrand)
 
@@ -31,23 +33,19 @@ class IntegralVertex(object):
     def get_dependencies(self):
         return self.dependencies
 
-    def get_class_object(
-            self,
-            namespace, class_name,
-            vertex_coeff, vertex_affine,
-            subdomains
-            ):
+    def get_class_object(self, dependency_class_objects):
         arguments = set([
             sympy.MatrixSymbol('x', 3, 1),
             sympy.Symbol('control_volume')
             ])
         used_vars = self.expr.free_symbols
-        used_vars.remove(self.u0)
+        if self.u0 in used_vars:
+            used_vars.remove(self.u0)
         unused_args = arguments - used_vars
 
         # now take care of the template substitution
         members_init, members_declare = \
-            members_init_declare('matrix_core_vertex')
+            members_init_declare('matrix_core_vertex', dependency_class_objects)
 
         if members_init:
             members_init_code = ':\n' + ',\n'.join(members_init)
@@ -55,13 +53,13 @@ class IntegralVertex(object):
             members_init_code = ''
 
         if self.is_matrix:
-            coeff, affine = extract_linear_components(self.expr)
+            coeff, affine = extract_linear_components(self.expr, self.u0)
             type = 'matrix_core_vertex'
             filename = os.path.join(templates_dir, 'matrix_core_vertex.tpl')
             with open(filename, 'r') as f:
                 src = Template(f.read())
                 code = src.substitute({
-                    'name': class_name,
+                    'name': self.class_name,
                     'vertex_contrib': extract_c_expression(coeff),
                     'vertex_affine': extract_c_expression(-affine),
                     'vertex_body': '\n'.join(
@@ -76,7 +74,7 @@ class IntegralVertex(object):
             with open(filename, 'r') as f:
                 src = Template(f.read())
                 code = src.substitute({
-                    'name': class_name,
+                    'name': self.class_name,
                     'vertex_contrib': extract_c_expression(vertex_coeff),
                     'vertex_affine': extract_c_expression(-vertex_affine),
                     'vertex_body': '\n'.join(
@@ -89,7 +87,7 @@ class IntegralVertex(object):
         return {
             'type': type,
             'code': code,
-            'class_name': class_name,
+            'class_name': self.class_name,
             'constructor_args': []
             }
 

@@ -17,13 +17,14 @@ class SubdomainCode(object):
     def get_dependencies(self):
         return set()
 
-    def get_class_obj(self):
+    def get_class_object(self, dep_class_objects):
         if self.cls == nfl.Boundary:
             # 'Boundary' is already defined
             return '', set()
 
-        x = sympy.MatrixSymbol('x', 3, 1)
+        obj = self.cls()
 
+        x = sympy.MatrixSymbol('x', 3, 1)
         result = obj.is_inside(x)
 
         expr_arguments = set([x])
@@ -37,7 +38,7 @@ class SubdomainCode(object):
         assert(len(used_vars - expr_arguments) == 0)
 
         try:
-            ibo = 'true' if subdomain.is_boundary_only else 'false'
+            ibo = 'true' if self.cls.is_boundary_only else 'false'
         except AttributeError:
             # AttributeError: 'D2' object has no attribute 'is_boundary_only'
             ibo = 'false'
@@ -46,8 +47,8 @@ class SubdomainCode(object):
         with open(os.path.join(templates_dir, 'subdomain.tpl'), 'r') as f:
             src = Template(f.read())
             code = src.substitute({
-                'name': name.lower(),
-                'id': '"%s"' % name.lower(),
+                'name': self.class_name,
+                'id': '"%s"' % self.class_name,
                 'is_inside_return': extract_c_expression(result),
                 'is_boundary_only': ibo,
                 'is_inside_body': '\n'.join(
@@ -56,5 +57,6 @@ class SubdomainCode(object):
                 })
 
         return {
-            'code': code
+            'code': code,
+            'class_name': self.class_name
             }

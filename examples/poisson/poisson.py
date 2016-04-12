@@ -3,12 +3,12 @@ from nfl import *
 from sympy import sin
 
 
-class D0(Subdomain):
+class Gamma0(Subdomain):
     def is_inside(self, x): return x[1] < 0
     is_boundary_only = True
 
 
-class D1(Subdomain):
+class Gamma1(Subdomain):
     def is_inside(self, x): return x[1] >= 0
     is_boundary_only = True
 
@@ -19,8 +19,8 @@ class Poisson(LinearFvmProblem):
                 - integrate(lambda x: sin(x[1]), dV)
 
     dirichlet = [
-            (lambda x: 0.0, D0),
-            (lambda x: 1.0, D1)
+            (lambda x: 0.0, Gamma0),
+            (lambda x: 1.0, Gamma1)
             ]
 
 

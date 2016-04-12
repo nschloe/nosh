@@ -46,10 +46,10 @@ class IntegralEdge(object):
         used_vars = self.expr.free_symbols
         used_vars.remove(self.u0)
         used_vars.remove(self.u1)
-        eval_body = _get_code_body(self.expr.free_symbols)
+        eval_body = _get_code_body(arguments, used_vars)
 
         members_init, members_declare = \
-            members_init_declare('matrix_core_edge')
+            members_init_declare('matrix_core_edge', dependency_class_objects)
 
         if members_init:
             members_init_code = ':\n' + ',\n'.join(members_init)
@@ -104,7 +104,7 @@ class IntegralEdge(object):
             }
 
 
-def _extract_linear_components(function, u0, u1):
+def _extract_linear_components(expr, u0, u1):
     if not is_affine_linear(expr, [u0, u1]):
         raise RuntimeError((
             'The given function\n'

@@ -90,19 +90,20 @@ def compare_variables(arguments, expressions):
 
 
 def extract_linear_components(expr, u0):
-    assert(is_affine_linear(fu0, [u0]))
+    assert(is_affine_linear(expr, [u0]))
     # Get coefficient of u0
-    coeff = sympy.diff(fu0, u0)
+    coeff = sympy.diff(expr, u0)
+    control_volume = sympy.Symbol('control_volume')
     coeff = control_volume * coeff
     # Get affine part
-    if isinstance(fu0, float):
-        affine = control_volume * fu0
+    if isinstance(expr, float):
+        affine = control_volume * expr
     else:
-        affine = control_volume * fu0.subs(u0, 0)
+        affine = control_volume * expr.subs(u0, 0)
     return coeff, affine
 
 
-def members_init_declare(parent_name):
+def members_init_declare(parent_name, dependency_class_objects):
     # now take care of the template substitution
     members_init = []
     members_declare = []
@@ -123,7 +124,7 @@ def members_init_declare(parent_name):
                 )
 
     if len(subdomain_class_names) == 0:
-        subdomain_class_names.add('everywhere')
+        subdomain_class_names.append('everywhere')
     members_init.append(
         'nosh::%s({%s})' %
         (parent_name, ', '.join(['"%s"' % s for s in subdomain_class_names]))

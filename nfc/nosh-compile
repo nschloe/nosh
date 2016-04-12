@@ -64,7 +64,6 @@ def _main():
     def insert_dependencies(generator):
         if generator.class_name in deps:
             return
-        print(generator.get_dependencies())
         generators[generator.class_name] = generator
         deps[generator.class_name] = [
             dep.class_name for dep in generator.get_dependencies()
@@ -84,22 +83,29 @@ def _main():
     # Now that we have all generators and dependencies in place,
     # go through dependency graph and collect code.
     visited = set([])
-    code_pieces = []
     missing_objects = set([])
 
-    def visit(name):
+    def collect_class_objects(name):
         if name not in deps:
             missing_objects.add(name)
-            return
+            return []
         # take care of the dependencies first
+        class_objects = []
         for dep in deps[name]:
-            visit(dep)
+            class_objects.extend(collect_class_objects(dep))
         if name not in visited:
-            code_pieces.append(generators[name].get_class_obj())
+            class_object = generators[name].get_class_object(class_objects)
             visited.add(name)
+            class_objects.append(class_object)
+            return class_objects
 
+        return []
+
+    class_objects = []
     for name in deps:
-        visit(name)
+        class_objects.extend(collect_class_objects(name))
+
+    code = '\n'.join(class_object['code'] for class_object in class_objects)
 
     if missing_objects:
         print()
@@ -115,7 +121,7 @@ def _main():
         main_content = main_src.substitute({
             'namespace': namespace,
             'namespace_uppercase': namespace.upper(),
-            'content': '\n'.join(code_pieces)
+            'content': code
             })
 
     # write it
