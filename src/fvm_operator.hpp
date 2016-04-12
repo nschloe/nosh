@@ -257,11 +257,11 @@ namespace nosh
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
       const Teuchos::RCP<Teuchos::Time> apply_time_;
 #endif
-      const std::set<std::shared_ptr<const operator_core_edge>> operator_core_edges_;
-      const std::set<std::shared_ptr<const operator_core_vertex>> operator_core_vertexs_;
-      const std::set<std::shared_ptr<const operator_core_boundary>> operator_core_boundarys_;
-      const std::set<std::shared_ptr<const operator_core_dirichlet>> dbcs_;
-      const std::set<std::shared_ptr<const Tpetra::Operator<double,int,int>>> operators_;
+      const std::vector<std::shared_ptr<const operator_core_edge>> operator_core_edges_;
+      const std::vector<std::shared_ptr<const operator_core_vertex>> operator_core_vertexs_;
+      const std::vector<std::shared_ptr<const operator_core_boundary>> operator_core_boundarys_;
+      const std::vector<std::shared_ptr<const operator_core_dirichlet>> dbcs_;
+      const std::vector<std::shared_ptr<const Tpetra::Operator<double,int,int>>> operators_;
   };
 } // namespace nosh
 

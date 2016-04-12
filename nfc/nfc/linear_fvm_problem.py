@@ -1,7 +1,11 @@
 # -*- coding: utf-8 -*-
 #
+from .dirichlet import *
+from .integral_boundary import *
+from .integral_edge import *
+from .integral_vertex import *
 from .helpers import sanitize_identifier
-from .fvm_matrix import gather_dependencies
+from .fvm_matrix import gather_dependencies, get_code_linear_problem
 
 
 class LinearFvmProblemCode(object):
@@ -14,16 +18,31 @@ class LinearFvmProblemCode(object):
         return self.dependencies
 
     def get_class_object(self, dep_class_objects):
-        code = ''  # TODO
-        # code = get_code_linear_problem(
-        #     'linear_fvm_problem.tpl',
-        #     class_name,
-        #     'nosh::linear_problem',
-        #     matrix_core_names['edge'],
-        #     matrix_core_names['vertex'],
-        #     matrix_core_names['boundary'],
-        #     matrix_core_names['dirichlet'],
-        #     )
+
+        # Go through the dependencies collect the cores.
+        dirichlet_core_names = []
+        vertex_core_names = []
+        edge_core_names = []
+        boundary_core_names = []
+        for dep in self.dependencies:
+            if isinstance(dep, Dirichlet):
+                dirichlet_core_names.append(dep.class_name)
+            elif isinstance(dep, IntegralVertex):
+                vertex_core_names.append(dep.class_name)
+            elif isinstance(dep, IntegralEdge):
+                edge_core_names.append(dep.class_name)
+            elif isinstance(dep, IntegralBoundary):
+                boundary_core_names.append(dep.class_name)
+
+        code = get_code_linear_problem(
+            'linear_fvm_problem.tpl',
+            self.class_name,
+            'nosh::linear_problem',
+            edge_core_names,
+            vertex_core_names,
+            boundary_core_names,
+            dirichlet_core_names
+            )
 
         return {
             'code': code
