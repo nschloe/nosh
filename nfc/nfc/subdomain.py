@@ -24,7 +24,7 @@ class SubdomainCode(object):
     def get_class_object(self, dep_class_objects):
         if self.cls == nfl.Boundary:
             # 'Boundary' is already defined
-            return '', set()
+            return {'code': '', 'class_name': 'boundary'}
 
         obj = self.cls()
 
