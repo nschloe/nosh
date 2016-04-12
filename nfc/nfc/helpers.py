@@ -92,13 +92,11 @@ def extract_linear_components(expr, u0):
     assert(is_affine_linear(expr, [u0]))
     # Get coefficient of u0
     coeff = sympy.diff(expr, u0)
-    control_volume = sympy.Symbol('control_volume')
-    coeff = control_volume * coeff
     # Get affine part
     if isinstance(expr, float):
-        affine = control_volume * expr
+        affine = expr
     else:
-        affine = control_volume * expr.subs(u0, 0)
+        affine = expr.subs(u0, 0)
     return coeff, affine
 
 

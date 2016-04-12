@@ -12,10 +12,10 @@ class ${name}: public nosh::matrix_core_boundary
           const double surface_area
           ) const
       {
-        ${db_body}
+        ${body}
         return {
-          ${db_coeff},
-          ${db_affine}
+          ${coeff},
+          ${affine}
           };
       }
 

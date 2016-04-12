@@ -9,6 +9,7 @@ from .code_generator_eigen import CodeGeneratorEigen
 from .helpers import \
         extract_c_expression, \
         extract_linear_components, \
+        get_uuid, \
         is_affine_linear, \
         members_init_declare, \
         templates_dir
@@ -17,6 +18,11 @@ from .helpers import \
 class IntegralBoundary(object):
     def __init__(self, namespace, u, integrand, subdomains, is_matrix):
         self.namespace = namespace
+
+        self.is_matrix = is_matrix
+
+        self.class_name = 'matrix_core_boundary_' + get_uuid()
+
         self.expr, self.u0 = \
             _discretize_integral(u, integrand)
 
@@ -29,21 +35,23 @@ class IntegralBoundary(object):
     def get_dependencies(self):
         return self.dependencies
 
-    def get_class_object(self,
-            namespace, class_name,
-            subdomains
-            ):
+    def get_class_object(self, dep_class_objects):
         arguments = set([
             sympy.MatrixSymbol('x', 3, 1),
-            sympy.Symbol('control_volume')
+            sympy.Symbol('surface_area')
             ])
         used_vars = self.expr.free_symbols
-        used_vars.remove(self.u0)
+        if self.u0 in used_vars:
+            used_vars.remove(self.u0)
         unused_args = arguments - used_vars
 
         # now take care of the template substitution
         members_init, members_declare = \
-            members_init_declare('matrix_core_boundary')
+            members_init_declare(
+                    self.namespace,
+                    'matrix_core_boundary',
+                    dep_class_objects
+                    )
 
         if members_init:
             members_init_code = ':\n' + ',\n'.join(members_init)
@@ -51,16 +59,16 @@ class IntegralBoundary(object):
             members_init_code = ''
 
         if self.is_matrix:
-            coeff, affine = extract_linear_components(self.expr)
+            coeff, affine = extract_linear_components(self.expr, self.u0)
             type = 'matrix_core_boundary'
             filename = os.path.join(templates_dir, 'matrix_core_boundary.tpl')
             with open(filename, 'r') as f:
                 src = Template(f.read())
                 code = src.substitute({
-                    'name': class_name,
-                    'boundary_contrib': extract_c_expression(coeff),
-                    'boundary_affine': extract_c_expression(-affine),
-                    'boundary_body': '\n'.join(
+                    'name': self.class_name,
+                    'coeff': extract_c_expression(coeff),
+                    'affine': extract_c_expression(-affine),
+                    'body': '\n'.join(
                         ('(void) %s;' % name) for name in unused_args
                         ),
                     'members_init': members_init_code,
@@ -72,10 +80,10 @@ class IntegralBoundary(object):
             with open(filename, 'r') as f:
                 src = Template(f.read())
                 code = src.substitute({
-                    'name': class_name,
-                    'boundary_contrib': extract_c_expression(boundary_coeff),
-                    'boundary_affine': extract_c_expression(-boundary_affine),
-                    'boundary_body': '\n'.join(
+                    'name': self.class_name,
+                    'coeff': extract_c_expression(boundary_coeff),
+                    'affine': extract_c_expression(-boundary_affine),
+                    'body': '\n'.join(
                         ('(void) %s;' % name) for name in unused_args
                         ),
                     'members_init': members_init_code,
@@ -85,7 +93,7 @@ class IntegralBoundary(object):
         return {
             'type': type,
             'code': code,
-            'class_name': class_name,
+            'class_name': self.class_name,
             'constructor_args': []
             }
 
@@ -123,4 +131,4 @@ def _discretize_integral(u, function):
         # 'int' object has no attribute 'subs'
         fu0 = fx
     surface_area = sympy.Symbol('surface_area')
-    return control_volume * fu0, u0
+    return surface_area * fu0, u0
