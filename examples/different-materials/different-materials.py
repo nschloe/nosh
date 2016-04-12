@@ -3,7 +3,13 @@ from nfl import *
 
 
 class eps(Expression):
-    pass
+    eval_body = '''
+    if (x[0] > 0.0) {
+      return 3.0;
+    } else {
+      return 1.0;
+    }
+    '''
 
 
 class Problem(LinearFvmProblem):
