@@ -75,12 +75,11 @@ def compare_variables(arguments, expressions):
     for expr in expressions:
         try:
             used_symbols.update(expr.free_symbols)
+            used_expressions.update(set([
+                    type(atom) for atom in expr.atoms(nfl.Expression)
+                    ]))
         except AttributeError:
             pass
-
-        used_expressions.update(set([
-                type(atom) for atom in expr.atoms(nfl.Expression)
-                ]))
 
     unused_arguments = arguments - used_symbols
     undefined_symbols = used_symbols - arguments
