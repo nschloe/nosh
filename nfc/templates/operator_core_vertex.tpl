@@ -14,7 +14,7 @@ class ${name}:
           const double u0
           ) const
       {
-        ${vertex_body}
+        ${eval_body}
         return ${return_value};
       }
 

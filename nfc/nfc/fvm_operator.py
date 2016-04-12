@@ -1,30 +1,90 @@
 # -*- coding: utf-8 -*-
 #
-import inspect
+import nfl
 import os
 from string import Template
 import sympy
 
-import nfl
-
-# from .operator_core_boundary \
-#     import get_operator_core_boundary_code_from_integral
+from .fvm_matrix import FvmMatrixCode, gather_core_dependencies
+from .integral_boundary import IntegralBoundary
 from .dirichlet import Dirichlet
-# from .operator_core_edge import get_operator_core_edge_code_from_integral
+from .integral_edge import IntegralEdge
 from .integral_vertex import IntegralVertex
-from .helpers import get_uuid, templates_dir
+from .helpers import get_uuid, sanitize_identifier, templates_dir
+
+
+class FvmOperatorCode(object):
+    def __init__(self, namespace, cls):
+        self.class_name = sanitize_identifier(cls.__name__)
+        self.namespace = namespace
+        self.dependencies = \
+            gather_dependencies(namespace, cls, is_matrix=False)
+        return
+
+    def get_dependencies(self):
+        return self.dependencies
+
+    def get_class_object(self, dep_class_objects):
+        # Go through the dependencies collect the cores.
+        dirichlet_core_names = []
+        vertex_core_names = []
+        edge_core_names = []
+        boundary_core_names = []
+        fvm_matrix_names = []
+        for dep in self.dependencies:
+            if isinstance(dep, Dirichlet):
+                dirichlet_core_names.append(dep.class_name)
+            elif isinstance(dep, IntegralVertex):
+                vertex_core_names.append(dep.class_name)
+            elif isinstance(dep, IntegralEdge):
+                edge_core_names.append(dep.class_name)
+            elif isinstance(dep, IntegralBoundary):
+                boundary_core_names.append(dep.class_name)
+            elif isinstance(dep, FvmMatrixCode):
+                fvm_matrix_names.append(dep.class_name)
+            else:
+                raise RuntimeError(
+                    'Dependency \'%s\' not accounted for.' % dep.class_name
+                    )
+
+        code = get_code_linear_problem(
+            'fvm_operator.tpl',
+            self.class_name,
+            'nosh::fvm_operator',
+            edge_core_names,
+            vertex_core_names,
+            boundary_core_names,
+            dirichlet_core_names,
+            fvm_matrix_names
+            )
+
+        return {
+            'code': code
+            }
+
+
+def gather_dependencies(namespace, cls, is_matrix):
+    dependencies = set()
+    u = sympy.Function('u')
+    res = cls.apply(u)
+
+    dependencies = gather_core_dependencies(namespace, cls, is_matrix)
+
+    # Add dependencies on fvm_matrices
+    for fvm_matrix in res.fvm_matrices:
+        dependencies.add(
+            FvmMatrixCode(namespace, fvm_matrix.__class__)
+            )
+
+    return dependencies
 
 
 def get_code_fvm_operator(namespace, class_name, obj):
-
-    # code, dependencies, operator_core_names, fvm_operator_names = \
-    #        handle_dependencies(namespace, obj)
-
     code, dependencies, operator_core_names = \
-            handle_dependencies(namespace, obj)
+            handle_core_dependencies(namespace, obj)
 
     # append the code of the linear problem itself
-    code += '\n' + get_code_operator(
+    code += '\n' + get_code_linear_problem(
             'fvm_operator.tpl',
             class_name.lower(),
             'nosh::fvm_operator',
@@ -32,158 +92,63 @@ def get_code_fvm_operator(namespace, class_name, obj):
             operator_core_names['vertex'],
             operator_core_names['boundary'],
             operator_core_names['dirichlet'],
-            operator_core_names['operator']
             )
 
     return code, dependencies
 
 
-def handle_dependencies(namespace, obj):
-    dependencies = set()
-
-    u = sympy.Function('u')
-    u0 = sympy.Function('u0')
-    if len(inspect.getargspec(obj.apply).args) == 1:
-        res = obj.apply(u)
-    elif len(inspect.getargspec(obj.apply).args) == 2:
-        res = obj.apply(u, u0)
-    else:
-        raise ValueError('apply() must have either 1 or 2 arguments')
-
-    assert(isinstance(res, nfl.CoreList))
-
-    integrals_code, integrals_deps, core_names = \
-        handle_integrals(namespace, u, res.integrals)
-
-    dirichlet_code, dirichlet_deps, dcore_names = \
-        handle_dirichlets(namespace, obj.dirichlet)
-
-    core_names['dirichlet'] = dcore_names
-
-    operators_deps = set(res.fvm_matrices)
-    core_names['operator'] = \
-        set([op.__class__.__name__.lower() for op in res.fvm_matrices])
-
-    code = '\n'.join([integrals_code, dirichlet_code])
-    dependencies = set().union(
-            integrals_deps,
-            dirichlet_deps,
-            operators_deps
-            )
-
-    return code, dependencies, core_names
-
-
-def handle_integrals(namespace, u, integrals):
-    operator_core_names = {
-            'edge': set(),
-            'vertex': set(),
-            'boundary': set(),
-            'dirichlet': [],
-            }
-
-    core_codes = []
-    dependencies = set()
-
-    for integral in integrals:
-        if isinstance(integral.measure, nfl.ControlVolumeSurface):
-            core_class_name = 'operator_core_edge_%s' % get_uuid()
-            core_code, deps = get_operator_core_edge_code_from_integral(
-                    namespace, core_class_name, u,
-                    integral.integrand, integral.subdomains
-                    )
-            operator_core_names['edge'].add(core_class_name)
-        elif isinstance(integral.measure, nfl.ControlVolume):
-            core_class_name = 'operator_core_vertex_%s' % get_uuid()
-            core_code, deps = get_operator_core_vertex_code_from_integral(
-                    namespace, core_class_name, u,
-                    integral.integrand, integral.subdomains
-                    )
-            operator_core_names['vertex'].add(core_class_name)
-        elif isinstance(integral.measure, nfl.BoundarySurface):
-            core_class_name = 'operator_core_boundary_%s' % get_uuid()
-            core_code, deps = get_operator_core_boundary_code_from_integral(
-                    namespace, core_class_name, u,
-                    integral.integrand, integral.subdomains
-                    )
-            operator_core_names['boundary'].add(core_class_name)
-        else:
-            raise RuntimeError('Illegal measure type \'%s\'.' % measure)
-
-        # since this object contains the cores, its dependencies contain the
-        # dependencies of the cores as well
-        dependencies.update(deps)
-        core_codes.append(core_code)
-
-    return '\n'.join(core_codes), dependencies, operator_core_names
-
-
-def handle_dirichlets(namespace, dirichlets):
-    names = []
-    for k, dirichlet in enumerate(dirichlets):
-        f, subdomains = dirichlet
-
-        if not isinstance(subdomains, list):
-            try:
-                subdomains = list(subdomains)
-            except TypeError:  # TypeError: 'D1' object is not iterable
-                subdomains = [subdomains]
-
-        core_class_name = 'operator_core_dirichlet_%s' % get_uuid()
-        core_code, dependencies = \
-            get_code_dirichlet(core_class_name, f, subdomains)
-        names.append(core_class_name)
-
-    return core_code, dependencies, names
-
-
-def get_code_operator(
+def get_code_linear_problem(
         template_filename,
         class_name,
         base_class_name,
-        core_edge_names,
-        core_vertex_names,
-        core_boundary_names,
-        core_dirichlet_names,
-        core_operator_names
+        operator_core_edge_names,
+        operator_core_vertex_names,
+        operator_core_boundary_names,
+        operator_core_dirichlet_names,
+        fvm_matrix_names
         ):
     constructor_args = [
         'const std::shared_ptr<const nosh::mesh> & _mesh'
         ]
-    init_core_edge = '{%s}' % (
+    init_operator_core_edge = '{%s}' % (
             ', '.join(
-                ['std::make_shared<%s>()' % n for n in core_edge_names]
+                ['std::make_shared<%s>()' % n
+                 for n in operator_core_edge_names]
                 )
             )
-    init_core_vertex = '{%s}' % (
+    init_operator_core_vertex = '{%s}' % (
             ', '.join(
-                ['std::make_shared<%s>()' % n for n in core_vertex_names]
+                ['std::make_shared<%s>()' % n
+                 for n in operator_core_vertex_names]
                 )
             )
-    init_core_boundary = '{%s}' % (
+    init_operator_core_boundary = '{%s}' % (
             ', '.join(
-                ['std::make_shared<%s>()' % n for n in core_boundary_names]
+                ['std::make_shared<%s>()' % n
+                 for n in operator_core_boundary_names]
                 )
             )
-    init_core_dirichlet = '{%s}' % (
+    init_operator_core_dirichlet = '{%s}' % (
             ', '.join(
-                ['std::make_shared<%s>()' % n for n in core_dirichlet_names]
+                ['std::make_shared<%s>()' % n
+                 for n in operator_core_dirichlet_names]
                 )
             )
-    init_operator = '{%s}' % (
+    init_fvm_matrix = '{%s}' % (
             ', '.join(
-                ['std::make_shared<%s>(_mesh)' % n for n in core_operator_names]
+                ['std::make_shared<%s>(_mesh)' % n
+                 for n in fvm_matrix_names]
                 )
             )
 
     members_init = [
       '%s(\n_mesh,\n %s,\n %s,\n %s,\n %s,\n %s\n)' %
       (base_class_name,
-       init_core_edge,
-       init_core_vertex,
-       init_core_boundary,
-       init_core_dirichlet,
-       init_operator
+       init_operator_core_edge,
+       init_operator_core_vertex,
+       init_operator_core_boundary,
+       init_operator_core_dirichlet,
+       init_fvm_matrix
        )
       ]
     members_declare = []

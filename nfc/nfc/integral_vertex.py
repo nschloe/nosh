@@ -20,7 +20,7 @@ from .helpers import \
 class IntegralVertex(object):
     def __init__(self, namespace, u, integrand, subdomains, is_matrix):
         self.namespace = namespace
-        self.class_name = 'matrix_vertex_core_' + get_uuid()
+        self.class_name = 'vertex_core_' + get_uuid()
 
         self.is_matrix = is_matrix
 
@@ -47,11 +47,16 @@ class IntegralVertex(object):
             used_vars.remove(self.u0)
         unused_args = arguments - used_vars
 
+        if self.is_matrix:
+            parent_class = 'matrix_core_vertex'
+        else:
+            parent_class = 'operator_core_vertex'
+
         # now take care of the template substitution
         members_init, members_declare = \
             members_init_declare(
                     self.namespace,
-                    'matrix_core_vertex',
+                    parent_class,
                     dependency_class_objects
                     )
 
@@ -77,15 +82,14 @@ class IntegralVertex(object):
                     'members_declare': '\n'.join(members_declare)
                     })
         else:
-            type = 'matrix_core_operator'
-            filename = os.path.join(templates_dir, 'matrix_core_operator.tpl')
+            type = 'operator_core_vertex'
+            filename = os.path.join(templates_dir, 'operator_core_vertex.tpl')
             with open(filename, 'r') as f:
                 src = Template(f.read())
                 code = src.substitute({
                     'name': self.class_name,
-                    'vertex_contrib': extract_c_expression(vertex_coeff),
-                    'vertex_affine': extract_c_expression(-vertex_affine),
-                    'vertex_body': '\n'.join(
+                    'return_value': extract_c_expression(self.expr),
+                    'eval_body': '\n'.join(
                         ('(void) %s;' % name) for name in unused_args
                         ),
                     'members_init': members_init_code,

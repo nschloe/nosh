@@ -76,7 +76,9 @@ class IntegralBoundary(object):
                     })
         else:
             type = 'matrix_core_operator'
-            filename = os.path.join(templates_dir, 'matrix_core_operator.tpl')
+            filename = os.path.join(
+                    templates_dir, 'operator_core_boundary.tpl'
+                    )
             with open(filename, 'r') as f:
                 src = Template(f.read())
                 code = src.substitute({

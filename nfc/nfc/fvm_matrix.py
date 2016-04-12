@@ -16,7 +16,8 @@ class FvmMatrixCode(object):
     def __init__(self, namespace, cls):
         self.class_name = sanitize_identifier(cls.__name__)
         self.namespace = namespace
-        self.dependencies = gather_dependencies(namespace, cls)
+        self.dependencies = \
+            gather_core_dependencies(namespace, cls, is_matrix=True)
         return
 
     def get_dependencies(self):
@@ -38,6 +39,10 @@ class FvmMatrixCode(object):
                 edge_core_names.append(dep.class_name)
             elif isinstance(dep, IntegralBoundary):
                 boundary_core_names.append(dep.class_name)
+            else:
+                raise RuntimeError(
+                    'Dependency \'%s\' not accounted for.' % dep.class_name
+                    )
 
         code = get_code_linear_problem(
             'fvm_matrix.tpl',
@@ -54,7 +59,7 @@ class FvmMatrixCode(object):
             }
 
 
-def gather_dependencies(namespace, cls):
+def gather_core_dependencies(namespace, cls, is_matrix):
     dependencies = set()
     u = sympy.Function('u')
     res = cls.apply(u)
@@ -63,21 +68,21 @@ def gather_dependencies(namespace, cls):
             dependencies.add(
                 IntegralEdge(
                     namespace,
-                    u, integral.integrand, integral.subdomains, True
+                    u, integral.integrand, integral.subdomains, is_matrix
                     )
                 )
         elif isinstance(integral.measure, nfl.ControlVolume):
             dependencies.add(
                 IntegralVertex(
                     namespace,
-                    u, integral.integrand, integral.subdomains, True
+                    u, integral.integrand, integral.subdomains, is_matrix
                     )
                 )
         elif isinstance(integral.measure, nfl.BoundarySurface):
             dependencies.add(
                 IntegralBoundary(
                     namespace,
-                    u, integral.integrand, integral.subdomains, True
+                    u, integral.integrand, integral.subdomains, is_matrix
                     )
                 )
         else:
@@ -90,7 +95,7 @@ def gather_dependencies(namespace, cls):
                 subdomains = list(subdomains)
             except TypeError:  # TypeError: 'D1' object is not iterable
                 subdomains = [subdomains]
-        dependencies.add(Dirichlet(f, subdomains, True))
+        dependencies.add(Dirichlet(f, subdomains, is_matrix))
 
     return dependencies
 

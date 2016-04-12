@@ -5,14 +5,15 @@ from .integral_boundary import *
 from .integral_edge import *
 from .integral_vertex import *
 from .helpers import sanitize_identifier
-from .fvm_matrix import gather_dependencies, get_code_linear_problem
+from .fvm_matrix import gather_core_dependencies, get_code_linear_problem
 
 
 class LinearFvmProblemCode(object):
     def __init__(self, namespace, cls):
         self.class_name = sanitize_identifier(cls.__name__)
         self.namespace = namespace
-        self.dependencies = gather_dependencies(namespace, cls)
+        self.dependencies = \
+            gather_core_dependencies(namespace, cls, is_matrix=True)
         return
 
     def get_dependencies(self):

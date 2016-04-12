@@ -41,7 +41,7 @@ def _main():
             return nfc.FvmMatrixCode(namespace, cls)
         elif issubclass(cls, nfl.LinearFvmProblem):
             return nfc.LinearFvmProblemCode(namespace, cls)
-        elif issubclass(var, nfl.FvmOperator):
+        elif issubclass(cls, nfl.FvmOperator):
             return nfc.FvmOperatorCode(namespace, cls)
         elif issubclass(cls, nfl.Subdomain):
             return nfc.SubdomainCode(cls)

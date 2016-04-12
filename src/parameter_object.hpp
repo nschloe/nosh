@@ -53,7 +53,12 @@ protected:
   refill_(
       const std::map<std::string, double> & scalar_params,
       const std::map<std::string, std::shared_ptr<Tpetra::Vector<double, int, int>>> & vector_params
-      ) = 0;
+      )
+  {
+    // By default, don't do anything
+    (void) scalar_params;
+    (void) vector_params;
+  }
 
 private:
   std::map<std::string, double> build_parameters_scalar_;

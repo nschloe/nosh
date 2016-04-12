@@ -11,14 +11,14 @@ alpha = 0.75
 # alpha = ScalarParameter()
 
 
-# class F(FvmOperator):
-#     def apply(u):
-#         return NLaplace(u) \
-#             - integrate(lambda x: alpha * exp(u(x)), dV)
-#
-#     dirichlet = [(lambda x, u: u, Boundary)]
-#
-#
+class F(FvmOperator):
+    def apply(u):
+        return NLaplace(u) \
+            - integrate(lambda x: alpha * exp(u(x)), dV)
+
+    dirichlet = [(lambda x, u: u, Boundary)]
+
+
 # class Jacobian(FvmOperator):
 #     def apply(u, u0):
 #         return NLaplace(u) \
