@@ -9,12 +9,13 @@ from .integral_boundary import IntegralBoundary
 from .dirichlet import Dirichlet
 from .integral_edge import IntegralEdge
 from .integral_vertex import IntegralVertex
-from .helpers import get_uuid, templates_dir
+from .helpers import get_uuid, sanitize_identifier, templates_dir
 
 
 class FvmMatrixCode(object):
-    def __init__(self, obj):
-        self.dependencies = gather_dependencies(obj)
+    def __init__(self, cls):
+        self.dependencies = gather_dependencies(cls)
+        self.class_name = sanitize_identifier(cls.__name__)
         return
 
     def get_dependencies():
@@ -24,10 +25,10 @@ class FvmMatrixCode(object):
         return
 
 
-def gather_dependencies(obj):
+def gather_dependencies(cls):
     dependencies = set()
     u = sympy.Function('u')
-    res = obj.apply(u)
+    res = cls.apply(u)
     for integral in res.integrals:
         if isinstance(integral.measure, nfl.ControlVolumeSurface):
             dependencies.add(
@@ -50,7 +51,7 @@ def gather_dependencies(obj):
         else:
             raise RuntimeError('Illegal measure type \'%s\'.' % measure)
 
-    for dirichlet in obj.dirichlet:
+    for dirichlet in cls.dirichlet:
         f, subdomains = dirichlet
         if not isinstance(subdomains, list):
             try:

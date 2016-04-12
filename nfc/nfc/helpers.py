@@ -130,3 +130,8 @@ def members_init_declare(parent_name, dependency_class_objects):
         (parent_name, ', '.join(['"%s"' % s for s in subdomain_class_names]))
         )
     return members_init, members_declare
+
+
+def sanitize_identifier(string):
+    # turn any string into a valid C++ variable identifier
+    return re.sub('\W|^(?=\d)', '_', string).lower()

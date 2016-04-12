@@ -11,12 +11,7 @@ import importlib.machinery
 
 import nfc
 
-from nfc.helpers import templates_dir, run
-
-
-def _sanitize(str):
-    # turn any string into a valid variable identifier
-    return re.sub('\W|^(?=\d)', '_', str)
+from nfc.helpers import sanitize_identifier, templates_dir, run
 
 
 def _main():
@@ -28,9 +23,9 @@ def _main():
         args.infile
         ).load_module()
 
-    namespace = os.path.splitext(os.path.basename(args.infile))[0]
-    # sanitize the name
-    namespace = _sanitize(namespace)
+    namespace = sanitize_identifier(
+            os.path.splitext(os.path.basename(args.infile))[0]
+            )
 
     # Loop over all locally defined entities and collect everything we can
     # convert.

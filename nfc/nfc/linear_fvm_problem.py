@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 #
+from .helpers import sanitize_identifier
 from .fvm_matrix import gather_dependencies
 
 
 class LinearFvmProblemCode(object):
     def __init__(self, obj):
-        self.class_name = obj.__name__.lower()
+        self.class_name = sanitize_identifier(obj.__name__)
         self.dependencies = gather_dependencies(obj)
         return
 

@@ -3,7 +3,11 @@
 import os
 from string import Template
 import sympy
-from .helpers import extract_c_expression, get_uuid, templates_dir
+from .helpers import \
+        extract_c_expression, \
+        get_uuid, \
+        sanitize_identifier, \
+        templates_dir
 
 import nfl
 
@@ -11,7 +15,7 @@ import nfl
 class SubdomainCode(object):
     def __init__(self, cls):
         self.cls = cls
-        self.class_name = cls.__name__
+        self.class_name = sanitize_identifier(cls.__name__)
         return
 
     def get_dependencies(self):
