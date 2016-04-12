@@ -62,5 +62,6 @@ class SubdomainCode(object):
 
         return {
             'code': code,
-            'class_name': self.class_name
+            'class_name': self.class_name,
+            'type': 'subdomain'
             }
