@@ -155,8 +155,10 @@ def _get_code_body(arguments, used_variables):
             sympy.Symbol('x0'),
             sympy.Symbol('x1')
             ])
-        undefined_symbols.remove(nfl.n)
-        undefined_symbols.remove(nfl.neg_n)
+        if nfl.n in undefined_symbols:
+            undefined_symbols.remove(nfl.n)
+        if nfl.neg_n in undefined_symbols:
+            undefined_symbols.remove(nfl.neg_n)
 
     assert(len(undefined_symbols) == 0)
 
