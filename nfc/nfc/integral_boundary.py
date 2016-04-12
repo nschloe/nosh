@@ -15,7 +15,8 @@ from .helpers import \
 
 
 class IntegralBoundary(object):
-    def __init__(u, integrand, subdomains, is_matrix):
+    def __init__(self, namespace, u, integrand, subdomains, is_matrix):
+        self.namespace = namespace
         self.expr, self.u0 = \
             _discretize_integral(u, integrand)
 
@@ -25,10 +26,10 @@ class IntegralBoundary(object):
             )
         return
 
-    def get_dependencies():
+    def get_dependencies(self):
         return self.dependencies
 
-    def get_class_object(
+    def get_class_object(self,
             namespace, class_name,
             subdomains
             ):

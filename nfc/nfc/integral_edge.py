@@ -7,6 +7,8 @@ import nfl
 
 from .discretize_edge_integral import discretize_edge_integral
 from .code_generator_eigen import CodeGeneratorEigen
+from .expression import *
+from .subdomain import *
 from .helpers import \
         extract_c_expression, \
         is_affine_linear, \
@@ -16,7 +18,8 @@ from .helpers import \
 
 
 class IntegralEdge(object):
-    def __init__(self, u, integrand, subdomains, is_matrix):
+    def __init__(self, namespace, u, integrand, subdomains, is_matrix):
+        self.namespace = namespace
         self.class_name = 'matrix_edge_core_' + get_uuid()
 
         self.expr, self.u0, self.u1 = \
@@ -26,8 +29,9 @@ class IntegralEdge(object):
 
         # gather expressions and subdomains as dependencies
         self.dependencies = set().union(
-            [type(atom) for atom in self.expr.atoms(nfl.Expression)],
-            subdomains
+            [ExpressionCode(type(atom))
+                for atom in self.expr.atoms(nfl.Expression)],
+            [SubdomainCode(sd) for sd in subdomains]
             )
         return
 
@@ -49,7 +53,11 @@ class IntegralEdge(object):
         eval_body = _get_code_body(arguments, used_vars)
 
         members_init, members_declare = \
-            members_init_declare('matrix_core_edge', dependency_class_objects)
+            members_init_declare(
+                    self.namespace,
+                    'matrix_core_edge',
+                    dependency_class_objects
+                    )
 
         if members_init:
             members_init_code = ':\n' + ',\n'.join(members_init)

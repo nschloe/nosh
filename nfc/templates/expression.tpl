@@ -3,7 +3,7 @@ class ${name}:
 {
   public:
     ${name}():
-      nosh::expression(${degree})
+      nosh::expression(0)
     {}
 
     virtual

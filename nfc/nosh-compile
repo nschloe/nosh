@@ -38,18 +38,20 @@ def _main():
     # <https://www.python.org/doc/essays/graphs/>.
     def get_generator(cls):
         if issubclass(cls, nfl.FvmMatrix):
-            return nfc.FvmMatrixCode(cls)
+            return nfc.FvmMatrixCode(namespace, cls)
         elif issubclass(cls, nfl.LinearFvmProblem):
-            return nfc.LinearFvmProblemCode(cls)
+            return nfc.LinearFvmProblemCode(namespace, cls)
         # elif issubclass(var, nfl.FvmOperator):
-        #     generator = nfc.get_code_fvm_operator(namespace, name, var)
+        #     return nfc.get_code_fvm_operator(namespace, name, var)
         elif issubclass(cls, nfl.Subdomain):
             return nfc.SubdomainCode(cls)
         # elif issubclass(var, nfl.EdgeCore):
         #     instance = var()
-        #     generator = nfc.get_code_matrix_core_edge(namespace, name, instance)
-        # elif issubclass(var, nfl.Expression):
-        #     generator = nfc.get_code_expression(name, var)
+        #     return nfc.get_code_matrix_core_edge(namespace, name, instance)
+        elif issubclass(cls, nfl.Expression):
+            return nfc.ExpressionCode(cls)
+        else:
+            raise RuntimeError('Unknown class.')
 
     deps = {}
     generators = {}
@@ -71,7 +73,6 @@ def _main():
         # Only inspect classes from inmod
         if not inspect.isclass(obj) or obj.__module__ != inmod_name:
             continue
-
         generator = get_generator(obj)
         insert_dependencies(generator)
 

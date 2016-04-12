@@ -6,6 +6,8 @@ import sympy
 import nfl
 
 from .code_generator_eigen import CodeGeneratorEigen
+from .expression import *
+from .subdomain import *
 from .helpers import \
         extract_c_expression, \
         extract_linear_components, \
@@ -16,7 +18,8 @@ from .helpers import \
 
 
 class IntegralVertex(object):
-    def __init__(self, u, integrand, subdomains, is_matrix):
+    def __init__(self, namespace, u, integrand, subdomains, is_matrix):
+        self.namespace = namespace
         self.class_name = 'matrix_vertex_core_' + get_uuid()
 
         self.is_matrix = is_matrix
@@ -25,8 +28,9 @@ class IntegralVertex(object):
             _discretize_integral(u, integrand)
 
         self.dependencies = set().union(
-            [type(atom) for atom in self.expr.atoms(nfl.Expression)],
-            subdomains
+            [ExpressionCode(type(atom))
+                for atom in self.expr.atoms(nfl.Expression)],
+            [SubdomainCode(sd) for sd in subdomains]
             )
         return
 
@@ -45,7 +49,11 @@ class IntegralVertex(object):
 
         # now take care of the template substitution
         members_init, members_declare = \
-            members_init_declare('matrix_core_vertex', dependency_class_objects)
+            members_init_declare(
+                    self.namespace,
+                    'matrix_core_vertex',
+                    dependency_class_objects
+                    )
 
         if members_init:
             members_init_code = ':\n' + ',\n'.join(members_init)

@@ -102,7 +102,7 @@ def extract_linear_components(expr, u0):
     return coeff, affine
 
 
-def members_init_declare(parent_name, dependency_class_objects):
+def members_init_declare(namespace, parent_name, dependency_class_objects):
     # now take care of the template substitution
     members_init = []
     members_declare = []

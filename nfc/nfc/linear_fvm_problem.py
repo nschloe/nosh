@@ -9,9 +9,10 @@ from .fvm_matrix import gather_dependencies, get_code_linear_problem
 
 
 class LinearFvmProblemCode(object):
-    def __init__(self, obj):
-        self.class_name = sanitize_identifier(obj.__name__)
-        self.dependencies = gather_dependencies(obj)
+    def __init__(self, namespace, cls):
+        self.class_name = sanitize_identifier(cls.__name__)
+        self.namespace = namespace
+        self.dependencies = gather_dependencies(namespace, cls)
         return
 
     def get_dependencies(self):

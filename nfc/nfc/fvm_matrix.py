@@ -13,8 +13,9 @@ from .helpers import get_uuid, sanitize_identifier, templates_dir
 
 
 class FvmMatrixCode(object):
-    def __init__(self, cls):
-        self.dependencies = gather_dependencies(cls)
+    def __init__(self, namespace, cls):
+        self.dependencies = gather_dependencies(namespace, cls)
+        self.namespace = namespace
         self.class_name = sanitize_identifier(cls.__name__)
         return
 
@@ -25,7 +26,7 @@ class FvmMatrixCode(object):
         return
 
 
-def gather_dependencies(cls):
+def gather_dependencies(namespace, cls):
     dependencies = set()
     u = sympy.Function('u')
     res = cls.apply(u)
@@ -33,18 +34,21 @@ def gather_dependencies(cls):
         if isinstance(integral.measure, nfl.ControlVolumeSurface):
             dependencies.add(
                 IntegralEdge(
+                    namespace,
                     u, integral.integrand, integral.subdomains, True
                     )
                 )
         elif isinstance(integral.measure, nfl.ControlVolume):
             dependencies.add(
                 IntegralVertex(
+                    namespace,
                     u, integral.integrand, integral.subdomains, True
                     )
                 )
         elif isinstance(integral.measure, nfl.BoundarySurface):
             dependencies.add(
                 IntegralBoundary(
+                    namespace,
                     u, integral.integrand, integral.subdomains, True
                     )
                 )
