@@ -14,16 +14,44 @@ from .helpers import get_uuid, sanitize_identifier, templates_dir
 
 class FvmMatrixCode(object):
     def __init__(self, namespace, cls):
-        self.dependencies = gather_dependencies(namespace, cls)
-        self.namespace = namespace
         self.class_name = sanitize_identifier(cls.__name__)
+        self.namespace = namespace
+        self.dependencies = gather_dependencies(namespace, cls)
         return
 
-    def get_dependencies():
+    def get_dependencies(self):
         return self.dependencies
 
-    def get_class_object():
-        return
+    def get_class_object(self, dep_class_objects):
+
+        # Go through the dependencies collect the cores.
+        dirichlet_core_names = []
+        vertex_core_names = []
+        edge_core_names = []
+        boundary_core_names = []
+        for dep in self.dependencies:
+            if isinstance(dep, Dirichlet):
+                dirichlet_core_names.append(dep.class_name)
+            elif isinstance(dep, IntegralVertex):
+                vertex_core_names.append(dep.class_name)
+            elif isinstance(dep, IntegralEdge):
+                edge_core_names.append(dep.class_name)
+            elif isinstance(dep, IntegralBoundary):
+                boundary_core_names.append(dep.class_name)
+
+        code = get_code_linear_problem(
+            'fvm_matrix.tpl',
+            self.class_name,
+            'nosh::fvm_matrix',
+            edge_core_names,
+            vertex_core_names,
+            boundary_core_names,
+            dirichlet_core_names
+            )
+
+        return {
+            'code': code
+            }
 
 
 def gather_dependencies(namespace, cls):

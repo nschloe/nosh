@@ -41,8 +41,8 @@ def _main():
             return nfc.FvmMatrixCode(namespace, cls)
         elif issubclass(cls, nfl.LinearFvmProblem):
             return nfc.LinearFvmProblemCode(namespace, cls)
-        # elif issubclass(var, nfl.FvmOperator):
-        #     return nfc.get_code_fvm_operator(namespace, name, var)
+        elif issubclass(var, nfl.FvmOperator):
+            return nfc.FvmOperatorCode(namespace, cls)
         elif issubclass(cls, nfl.Subdomain):
             return nfc.SubdomainCode(cls)
         # elif issubclass(var, nfl.EdgeCore):
@@ -51,7 +51,7 @@ def _main():
         elif issubclass(cls, nfl.Expression):
             return nfc.ExpressionCode(cls)
         else:
-            raise RuntimeError('Unknown class.')
+            raise RuntimeError('Unknown class \'%s\'.' % cls.__name__)
 
     deps = {}
     generators = {}
