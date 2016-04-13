@@ -39,37 +39,45 @@ class IntegralEdge(object):
         return self.dependencies
 
     def get_class_object(self, dependency_class_objects):
-        # Arguments from the template.
-        arguments = set([
-            sympy.Symbol('edge')
-            ])
-
-        used_vars = self.expr.free_symbols
-        for vector_var in self.vector_vars:
-            if vector_var in used_vars:
-                used_vars.remove(vector_var)
-        extra_body, extra_init, extra_declare = \
-            _get_extra(arguments, used_vars)
-
-        members_init, members_declare = \
+        init, members_declare = \
             members_init_declare(
                     self.namespace,
                     'matrix_core_edge',
                     dependency_class_objects
                     )
 
-        members_init.extend(extra_init)
-        members_declare.extend(extra_declare)
-
-        if members_init:
-            members_init_code = ':\n' + ',\n'.join(members_init)
-        else:
-            members_init_code = ''
-
+        # Arguments from the template.
         if self.matrix_var:
             type = 'matrix_core_edge'
+
+            # Unfortunately, it's not too easy to differentiate with respect to
+            # an IndexedBase u with indices k0, k1 respectively. For this
+            # reason, we'll simply replace u[k0] by a variable uk0, and u[k1]
+            # likewise.
+            u = sympy.IndexedBase('%s' % self.matrix_var)
+            k0 = sympy.Symbol('k0')
+            k1 = sympy.Symbol('k1')
+            uk0 = sympy.Symbol('uk0')
+            uk1 = sympy.Symbol('uk1')
+            expr = self.expr.subs([(u[k0], uk0), (u[k1], uk1)])
             edge_coeff, edge_affine = \
-                _extract_linear_components(self.expr, self.matrix_var)
+                _extract_linear_components(expr, [uk0, uk1])
+
+            arguments = set([sympy.Symbol('edge')])
+
+            # gather up all used variables
+            used_vars = set()
+            for a in [edge_coeff[0][0], edge_coeff[0][1],
+                      edge_coeff[1][0], edge_coeff[1][1],
+                      edge_affine[0], edge_affine[1]
+                      ]:
+                used_vars.update(a.free_symbols)
+
+            extra_body, extra_init, extra_declare = \
+                _get_extra(arguments, used_vars)
+
+            init.extend(extra_init)
+            members_declare.extend(extra_declare)
             # template substitution
             filename = os.path.join(templates_dir, 'matrix_core_edge.tpl')
             with open(filename, 'r') as f:
@@ -83,10 +91,12 @@ class IntegralEdge(object):
                     'edge_affine0': _expr_to_code(-edge_affine[0]),
                     'edge_affine1': _expr_to_code(-edge_affine[1]),
                     'eval_body': '\n'.join(extra_body),
-                    'members_init': members_init_code,
+                    'members_init': ':\n' + ',\n'.join(init) if init else '',
                     'members_declare': '\n'.join(members_declare)
                     })
         else:
+            used_vars = self.expr.free_symbols
+
             # TODO
             type = 'operator_core_edge'
             # template substitution
@@ -102,7 +112,7 @@ class IntegralEdge(object):
                     'edge_affine0': _expr_to_code(-edge_affine[0]),
                     'edge_affine1': _expr_to_code(-edge_affine[1]),
                     'eval_body': '\n'.join(eval_body),
-                    'members_init': members_init_code,
+                    'members_init': ':\n' + ',\n'.join(init) if init else '',
                     'members_declare': '\n'.join(members_declare)
                     })
 
@@ -114,14 +124,9 @@ class IntegralEdge(object):
             }
 
 
-def _extract_linear_components(expr, u):
+def _extract_linear_components(expr, dvars):
     # Those are the variables in the expression, inserted by the edge
     # discretizer.
-    dvars = [
-            sympy.Symbol('%s[k0]' % u),
-            sympy.Symbol('%s[k1]' % u)
-            ]
-
     if not is_affine_linear(expr, dvars):
         raise RuntimeError((
             'The given function\n'

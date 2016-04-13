@@ -9,10 +9,9 @@ class ${name}:
     virtual
       double
       eval(
-          const Eigen::Vector3d & x,
-          const double control_volume,
-          const double u0
-          ) const
+        const moab::EntityHandle & vertex,
+        const Teuchos::ArrayRCP<const double> & u
+        ) const
       {
         ${eval_body}
         return ${return_value};

@@ -8,8 +8,8 @@ class ${name}:
 
     virtual double
     eval(
-      const Eigen::Vector3d & x,
-      const double u
+      const moab::EntityHandle & vertex,
+      const Teuchos::ArrayRCP<const double> & u
     ) const {
       ${eval_body}return ${eval_return_value};
     }

@@ -15,6 +15,7 @@ from .helpers import \
         is_affine_linear, \
         list_unique, \
         members_init_declare, \
+        replace_nosh_functions, \
         templates_dir
 
 
@@ -95,9 +96,7 @@ class IntegralVertex(object):
                 code = src.substitute({
                     'name': self.class_name,
                     'return_value': extract_c_expression(self.expr),
-                    'eval_body': '\n'.join(
-                        ('(void) %s;' % name) for name in unused_args
-                        ),
+                    'eval_body': '\n'.join(extra_body),
                     'members_init': members_init_code,
                     'members_declare': '\n'.join(members_declare)
                     })
@@ -130,27 +129,7 @@ class IntegralVertex(object):
 
 
 def _discretize_expression(expr):
-    # Find all Nosh function variables
-    fks = []
-    if isinstance(expr, float) or isinstance(expr, int):
-        pass
-    else:
-        function_vars = []
-        for f in expr.atoms(sympy.Function):
-            if hasattr(f, 'nosh'):
-                function_vars.append(f)
-
-        for function_var in function_vars:
-            # Replace all occurences of u(x) by u[k] (the value at the control
-            # volume center) and multiply by the control volume)
-            fk = sympy.Symbol('%s[k]' % function_var.func)
-            try:
-                expr = expr.subs(function_var, fk)
-            except AttributeError:
-                # 'int' object has no attribute 'subs'
-                pass
-            fks.append(fk)
-
+    expr, fks = replace_nosh_functions(expr)
     return sympy.Symbol('control_volume') * expr, fks
 
 

@@ -64,15 +64,15 @@ class DiscretizeEdgeIntegral(object):
         vector_vars = []
         for f in function_vars:
             # Replace f(x0) by f[k0], f(x1) by f[k1].
-            fk0 = sympy.Symbol('%s[k0]' % f)
-            fk1 = sympy.Symbol('%s[k1]' % f)
-            out = out.subs(f(self.x0), fk0)
-            out = out.subs(f(self.x1), fk1)
+            k0 = sympy.Symbol('k0')
+            k1 = sympy.Symbol('k1')
+            f_vec = sympy.IndexedBase('%s' % f)
+            out = out.subs(f(self.x0), f_vec[k0])
+            out = out.subs(f(self.x1), f_vec[k1])
             # Replace f(x) by 0.5*(f[k0] + f[k1]) (the edge midpoint)
-            out = out.subs(f(x), 0.5 * (fk0 + fk1))
+            out = out.subs(f(x), 0.5 * (f_vec[k0] + f_vec[k1]))
 
-            vector_vars.append(fk0)
-            vector_vars.append(fk1)
+            vector_vars.append(f_vec)
 
         # Replace x by 0.5*(x0 + x1) (the edge midpoint)
         out = out.subs(x, 0.5 * (self.x0 + self.x1))

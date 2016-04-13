@@ -16,7 +16,7 @@ class F(FvmOperator):
         return NLaplace(u) \
             - integrate(lambda x: alpha * exp(u(x)), dV)
 
-    dirichlet = [(lambda x, u: u, Boundary)]
+    dirichlet = [(lambda u, x: u(x), Boundary)]
 
 
 class Jacobian(FvmOperator):
@@ -25,7 +25,7 @@ class Jacobian(FvmOperator):
             - integrate(lambda x: alpha * exp(u0(x)) * u(x), dV)
             # - integrate(lambda x: beta, dV)
 
-    dirichlet = [(lambda x, u: u, Boundary)]
+    dirichlet = [(lambda u, x: u(x), Boundary)]
 
 
 # class Preconditioner(VectorOperator):

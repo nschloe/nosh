@@ -8,6 +8,7 @@ from .helpers import \
         compare_variables, \
         extract_c_expression, \
         get_uuid, \
+        replace_nosh_functions, \
         sanitize_identifier, \
         templates_dir
 from .subdomain import *
@@ -65,9 +66,13 @@ class Dirichlet(object):
 
     def _get_code_for_operator(self, init):
         x = sympy.MatrixSymbol('x', 3, 1)
+        vertex = sympy.Symbol('vertex')
         u = sympy.Function('u')
-        result = self.function(x, u)
-        unused_args, _ = compare_variables(set([x, u]), [result])
+        result = self.function(u, x)
+        result, fks = replace_nosh_functions(result)
+        available_vars = set().union([vertex, u], fks)
+
+        unused_args, _ = compare_variables(available_vars, [result])
 
         # template substitution
         filename = os.path.join(templates_dir, 'operator_core_dirichlet.tpl')

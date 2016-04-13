@@ -83,7 +83,10 @@ def compare_variables(arguments, expressions):
 
     unused_arguments = arguments - used_symbols
     undefined_symbols = used_symbols - arguments
-    assert(len(undefined_symbols) == 0)
+    if len(undefined_symbols) > 0:
+        raise RuntimeError(
+                'The following symbols are undefined: %s' % undefined_symbols
+                )
 
     return unused_arguments, used_expressions
 
@@ -142,3 +145,27 @@ def list_unique(seq):
     seen = set()
     seen_add = seen.add
     return [x for x in seq if not (x in seen or seen_add(x))]
+
+
+def replace_nosh_functions(expr):
+    fks = []
+    if isinstance(expr, float) or isinstance(expr, int):
+        pass
+    else:
+        function_vars = []
+        for f in expr.atoms(sympy.Function):
+            if hasattr(f, 'nosh'):
+                function_vars.append(f)
+
+        for function_var in function_vars:
+            # Replace all occurences of u(x) by u[k] (the value at the control
+            # volume center) and multiply by the control volume)
+            fk = sympy.Symbol('%s[k]' % function_var.func)
+            try:
+                expr = expr.subs(function_var, fk)
+            except AttributeError:
+                # 'int' object has no attribute 'subs'
+                pass
+            fks.append(fk)
+
+    return expr, fks
