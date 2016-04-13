@@ -21,7 +21,7 @@ namespace nosh
       virtual
       std::tuple<double,double>
       eval(
-          const moab::EnityHandle & edge,
+          const moab::EntityHandle & edge,
           const Teuchos::ArrayRCP<const double> & u
           ) const = 0;
 

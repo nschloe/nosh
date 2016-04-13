@@ -21,7 +21,7 @@ namespace nosh {
       virtual
       double
       eval(
-          const moab::EnityHandle & vertex,
+          const moab::EntityHandle & vertex,
           const Teuchos::ArrayRCP<const double> & u
           ) const = 0;
 

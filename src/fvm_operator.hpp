@@ -133,19 +133,11 @@ namespace nosh
             // this->meshset interior edges
             const auto edges = this->mesh->get_edges(subdomain_id);
             for (const auto edge: edges) {
+              auto vals = core->eval(edge, x_data);
+
               const auto verts = this->mesh->get_vertex_tuple(edge);
-              const auto lid = this->mesh->local_index(edge);
               const auto i0 = this->mesh->local_index(verts[0]);
               const auto i1 = this->mesh->local_index(verts[1]);
-              auto vals = core->eval(
-                  this->mesh->get_coords(verts[0]),
-                  this->mesh->get_coords(verts[1]),
-                  edge_data[lid].length,
-                  edge_data[lid].covolume,
-                  x_data[i0],
-                  x_data[i1]
-                  );
-
               y_data[i0] += std::get<0>(vals);
               y_data[i1] += std::get<1>(vals);
             }
@@ -155,24 +147,15 @@ namespace nosh
                 subdomain_id + "_halfedges"
                 );
             for (const auto edge: half_edges) {
+              auto vals = core->eval(edge, x_data);
+
               const auto verts = this->mesh->get_vertex_tuple(edge);
-
-              const auto lid = this->mesh->local_index(edge);
-              const auto i0 = this->mesh->local_index(verts[0]);
-              const auto i1 = this->mesh->local_index(verts[1]);
-              auto vals = core->eval(
-                  this->mesh->get_coords(verts[0]),
-                  this->mesh->get_coords(verts[1]),
-                  edge_data[lid].length,
-                  edge_data[lid].covolume,
-                  x_data[i0],
-                  x_data[i1]
-                  );
-
               // check which one of the two verts is in this->meshset
               if (this->mesh->contains(subdomain_id, {verts[0]})) {
+                const auto i0 = this->mesh->local_index(verts[0]);
                 y_data[i0] += std::get<0>(vals);
               } else if (this->mesh->contains(subdomain_id, {verts[1]})) {
+                const auto i1 = this->mesh->local_index(verts[1]);
                 y_data[i1] += std::get<1>(vals);
               } else {
                 TEUCHOS_TEST_FOR_EXCEPT_MSG(
@@ -198,11 +181,7 @@ namespace nosh
             const auto verts = this->mesh->get_vertices(subdomain_id);
             for (const auto & vertex: verts) {
               const auto k = this->mesh->local_index(vertex);
-              y_data[k] += core->eval(
-                  this->mesh->get_coords(vertex),
-                  c_data[k],
-                  x_data[k]
-                  );
+              y_data[k] += core->eval(vertex, x_data);
             }
           }
         }
@@ -220,11 +199,7 @@ namespace nosh
             const auto verts = this->mesh->get_vertices(subdomain_id);
             for (const auto vert: verts) {
               const auto k = this->mesh->local_index(vert);
-              y_data[k] += core->eval(
-                  this->mesh->get_coords(vert),
-                  surfs[k],
-                  x_data[k]
-                  );
+              y_data[k] += core->eval(vert, x_data);
             }
           }
         }
@@ -241,10 +216,7 @@ namespace nosh
             const auto verts = this->mesh->get_vertices(subdomain_id);
             for (const auto & vertex: verts) {
               const auto k = this->mesh->local_index(vertex);
-              y_data[k] = bc->eval(
-                this->mesh->get_coords(vertex),
-                x_data[k]
-                );
+              y_data[k] = bc->eval(vertex, x_data);
             }
           }
         }
