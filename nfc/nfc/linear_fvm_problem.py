@@ -14,6 +14,8 @@ class LinearFvmProblemCode(object):
         self.namespace = namespace
 
         u = sympy.Function('u')
+        u.nosh = True
+
         res = cls.apply(u)
         self.dependencies = \
             gather_core_dependencies(

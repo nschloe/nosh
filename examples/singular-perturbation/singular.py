@@ -5,7 +5,7 @@ from nfl import *
 
 class Singular(LinearFvmProblem):
     def apply(u):
-        return integrate(lambda x: - 0.2 * n_dot_grad(u, x), dS) \
+        return integrate(lambda x: - 0.2 * n_dot_grad(u(x)), dS) \
                + integrate(lambda x: u(x), dV) \
                - integrate(lambda x: 1.0, dV)
     dirichlet = [(lambda x: 0.0, Boundary)]

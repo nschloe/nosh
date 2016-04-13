@@ -14,7 +14,7 @@ class eps(Expression):
 
 class Problem(LinearFvmProblem):
     def apply(u):
-        return integrate(lambda x: -eps(x) * n_dot_grad(u, x), dS) \
+        return integrate(lambda x: -eps(x) * n_dot_grad(u(x)), dS) \
                 - integrate(lambda x: 1.0, dV)
 
     dirichlet = [(lambda x: 0.0, Boundary)]

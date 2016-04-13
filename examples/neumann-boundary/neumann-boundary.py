@@ -10,7 +10,7 @@ class D1(Subdomain):
 
 class Problem(LinearFvmProblem):
     def apply(u):
-        return integrate(lambda x: -n_dot_grad(u, x), dS) \
+        return integrate(lambda x: -n_dot_grad(u(x)), dS) \
                 + integrate(lambda x: 3.0, dGamma) \
                 - integrate(lambda x: 1.0, dV)
 

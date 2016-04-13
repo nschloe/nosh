@@ -67,7 +67,10 @@ class FvmOperatorCode(object):
 
 def gather_dependencies(namespace, cls, is_matrix):
     u = sympy.Function('u')
+    u.nosh = True
+
     u0 = sympy.Function('u0')
+    u0.nosh = True
 
     if (len(inspect.getargspec(cls.apply).args) == 1):
         res = cls.apply(u)

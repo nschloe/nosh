@@ -24,7 +24,9 @@ def get_code_operator(namespace, name, var):
 
 
 def _get_code_operator_plain(name, obj):
-    u = sympy.Symbol('u')
+    u = sympy.Function('u')
+    u.nosh = True
+
     op_code, required_fvm_matrices = get_code_tpetra(obj.eval(u), {'u': 'x'})
 
     boundary_eval = getattr(obj, 'boundary_eval', None)
@@ -125,8 +127,12 @@ def _get_code_operator_plain(name, obj):
 def _get_code_operator_with_rebuild():
     code = ''
     generator = CodeGen()
-    u = sympy.Symbol('x')
-    u0 = sympy.Symbol('x0_')
+    u = sympy.Function('x')
+    u.nosh = True
+
+    u0 = sympy.Function('x0_')
+    u0.nosh = True
+
     op_code, required_fvm_matrices = \
         generator.generate(operator.eval(u, u0))
 

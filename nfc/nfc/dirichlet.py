@@ -65,7 +65,7 @@ class Dirichlet(object):
 
     def _get_code_for_operator(self, init):
         x = sympy.MatrixSymbol('x', 3, 1)
-        u = sympy.Symbol('u')
+        u = sympy.Function('u')
         result = self.function(x, u)
         unused_args, _ = compare_variables(set([x, u]), [result])
 

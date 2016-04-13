@@ -17,7 +17,7 @@ class FvmMatrixCode(object):
         self.class_name = sanitize_identifier(cls.__name__)
         self.namespace = namespace
 
-        u = nfl.FvmFunction('u')
+        u = sympy.Function('u')
         u.nosh = True
 
         expr = cls.apply(u)
@@ -69,6 +69,7 @@ class FvmMatrixCode(object):
 def gather_core_dependencies(namespace, res, dirichlets, is_matrix):
     dependencies = set()
     u = sympy.Function('u')
+    u.nosh = True
     for integral in res.integrals:
         if isinstance(integral.measure, nfl.ControlVolumeSurface):
             dependencies.add(

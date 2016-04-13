@@ -10,7 +10,9 @@ def get_code_dirichlet(name, function, subdomains):
     dependencies = subdomains
 
     x = sympy.MatrixSymbol('x', 3, 1)
-    u = sympy.Symbol('u')
+    u = sympy.Function('u')
+    u.nosh = True
+
     arguments = set([x, u])
     result = function(x, u)
     try:
