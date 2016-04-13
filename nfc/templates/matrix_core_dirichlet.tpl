@@ -2,12 +2,12 @@ class ${name}:
   public nosh::matrix_core_dirichlet
 {
   public:
-    ${name}(): ${init} {}
+    ${name}(const std::shared_ptr<const nosh::mesh> & mesh): ${init} {}
 
     virtual ~${name}() {}
 
     virtual double
-    eval(const Eigen::Vector3d & x) const {
+    eval(const moab::EntityHandle & vertex) const {
       ${eval_body}return ${eval_return_value};
     }
 }; // class ${name}

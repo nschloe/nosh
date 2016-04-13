@@ -2,18 +2,13 @@ class ${name}:
   public nosh::matrix_core_edge
 {
   public:
-    ${name}()${members_init} {}
+    ${name}(const std::shared_ptr<const nosh::mesh> & mesh)${members_init} {}
 
     virtual ~${name}() {}
 
     virtual
       nosh::matrix_core_edge_data
-      eval(
-          const Eigen::Vector3d & x0,
-          const Eigen::Vector3d & x1,
-          const double edge_length,
-          const double edge_covolume
-          ) const
+      eval(const moab::EntityHandle & edge) const {
       {
         ${eval_body}
         return {

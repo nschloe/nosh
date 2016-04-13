@@ -1,6 +1,8 @@
 #ifndef NOSH_MATRIX_CORE_VERTEX_H
 #define NOSH_MATRIX_CORE_VERTEX_H
 
+#include <moab/Core.hpp>
+
 namespace nosh
 {
   struct vertex_data {
@@ -21,10 +23,7 @@ namespace nosh
 
       virtual
       vertex_data
-      eval(
-          const Eigen::Vector3d & x,
-          const double control_volume
-          ) const = 0;
+      eval(const moab::EntityHandle & vertex) const = 0;
 
     public:
       const std::set<std::string> subdomain_ids;

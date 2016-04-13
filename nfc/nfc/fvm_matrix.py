@@ -132,25 +132,25 @@ def get_code_linear_problem(
         ]
     init_matrix_core_edge = '{%s}' % (
             ', '.join(
-                ['std::make_shared<%s>()' % n
+                ['std::make_shared<%s>(_mesh)' % n
                  for n in matrix_core_edge_names]
                 )
             )
     init_matrix_core_vertex = '{%s}' % (
             ', '.join(
-                ['std::make_shared<%s>()' % n
+                ['std::make_shared<%s>(_mesh)' % n
                  for n in matrix_core_vertex_names]
                 )
             )
     init_matrix_core_boundary = '{%s}' % (
             ', '.join(
-                ['std::make_shared<%s>()' % n
+                ['std::make_shared<%s>(_mesh)' % n
                  for n in matrix_core_boundary_names]
                 )
             )
     init_matrix_core_dirichlet = '{%s}' % (
             ', '.join(
-                ['std::make_shared<%s>()' % n
+                ['std::make_shared<%s>(_mesh)' % n
                  for n in matrix_core_dirichlet_names]
                 )
             )

@@ -85,15 +85,9 @@ namespace nosh
             // this->meshset interior edges
             const auto edges = this->mesh->get_edges(subdomain_id);
             for (const auto edge: edges) {
-              const auto verts = this->mesh->get_vertex_tuple(edge);
-              const auto lid = this->mesh->local_index(edge);
-              auto vals = matrix_core_edge->eval(
-                  this->mesh->get_coords(verts[0]),
-                  this->mesh->get_coords(verts[1]),
-                  edge_data[lid].length,
-                  edge_data[lid].covolume
-                  );
+              auto vals = matrix_core_edge->eval(edge);
 
+              const auto lid = this->mesh->local_index(edge);
               const auto & gids = this->mesh->edge_gids[lid];
               for (int i = 0; i < 2; i++) {
                 // Add to matrix
@@ -131,14 +125,9 @@ namespace nosh
                     );
               }
 
-              const auto lid = this->mesh->local_index(edge);
-              auto vals = matrix_core_edge->eval(
-                  this->mesh->get_coords(verts[0]),
-                  this->mesh->get_coords(verts[1]),
-                  edge_data[lid].length,
-                  edge_data[lid].covolume
-                  );
+              auto vals = matrix_core_edge->eval(edge);
 
+              const auto lid = this->mesh->local_index(edge);
               const auto & gids = this->mesh->edge_gids[lid];
               // Add to matrix
               int num_lhs = this->sumIntoGlobalValues(
@@ -162,18 +151,13 @@ namespace nosh
           const std::shared_ptr<Tpetra::Vector<double,int,int>> & rhs
           )
       {
-        const auto & control_volumes = this->mesh->control_volumes();
-        const auto c_data = control_volumes->getData();
         for (const auto & matrix_core_vertex: this->matrix_core_vertexs_) {
           for (const auto & subdomain_id: matrix_core_vertex->subdomain_ids) {
             const auto verts = this->mesh->get_vertices(subdomain_id);
             for (const auto & vertex: verts) {
-              const auto lid = this->mesh->local_index(vertex);
-              const auto val = matrix_core_vertex->eval(
-                  this->mesh->get_coords(vertex),
-                  c_data[lid]
-                  );
+              const auto val = matrix_core_vertex->eval(vertex);
               // Add to matrix
+              const auto lid = this->mesh->local_index(vertex);
               const auto gid = this->getMap()->getGlobalElement(lid);
               const auto num_lhs = this->sumIntoGlobalValues(
                   gid,
@@ -202,12 +186,10 @@ namespace nosh
           for (const auto & subdomain_id: matrix_core_boundary->subdomain_ids) {
             const auto verts = this->mesh->get_vertices(subdomain_id);
             for (const auto vert: verts) {
-              const auto lid = this->mesh->local_index(vert);
-              const auto val = matrix_core_boundary->eval(
-                  this->mesh->get_coords(vert),
-                  surfs[lid]
-                  );
+              // eval
+              const auto val = matrix_core_boundary->eval(vert);
               // Add to matrix
+              const auto lid = this->mesh->local_index(vert);
               const auto gid = this->getMap()->getGlobalElement(lid);
               const auto num_lhs = this->sumIntoGlobalValues(
                   gid,
@@ -262,8 +244,7 @@ namespace nosh
               }
               if (rhs) {
                 // set rhs
-                const auto coord = this->mesh->get_coords(vertex);
-                rhs->replaceGlobalValue(gid, bc->eval(coord));
+                rhs->replaceGlobalValue(gid, bc->eval(vertex));
               }
             }
           }

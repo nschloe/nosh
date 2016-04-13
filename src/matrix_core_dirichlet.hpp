@@ -2,6 +2,7 @@
 #define NOSH_MATRIX_CORE_DIRICHLET_HPP
 
 #include <Eigen/Dense>
+#include <moab/Core.hpp>
 
 namespace nosh {
   class matrix_core_dirichlet
@@ -19,7 +20,7 @@ namespace nosh {
 
       virtual
       double
-      eval(const Eigen::Vector3d & x) const = 0;
+      eval(const moab::EntityHandle & vertex) const = 0;
 
     public:
       const std::set<std::string> subdomain_ids;

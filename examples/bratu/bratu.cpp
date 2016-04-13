@@ -8,6 +8,7 @@ int main(int argc, char *argv[]) {
   const auto mesh = nosh::read("pacman.h5m");
 
   const auto f = bratu::f(mesh);
+  const auto jac = bratu::jacobian(mesh);
 
 #if 0
   const auto problem = bratu::bratu(mesh);

@@ -19,13 +19,13 @@ class F(FvmOperator):
     dirichlet = [(lambda x, u: u, Boundary)]
 
 
-# class Jacobian(FvmOperator):
-#     def apply(u, u0):
-#         return NLaplace(u) \
-#             - integrate(lambda x: alpha * exp(u0(x)) * u(x), dV)
-#             # - integrate(lambda x: beta, dV)
-#
-#     dirichlet = [(lambda x, u: u, Boundary)]
+class Jacobian(FvmOperator):
+    def apply(u, u0):
+        return NLaplace(u) \
+            - integrate(lambda x: alpha * exp(u0(x)) * u(x), dV)
+            # - integrate(lambda x: beta, dV)
+
+    dirichlet = [(lambda x, u: u, Boundary)]
 
 
 # class Preconditioner(VectorOperator):

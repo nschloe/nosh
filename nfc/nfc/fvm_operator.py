@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 #
-import nfl
+import inspect
 import os
 from string import Template
 import sympy
+
+import nfl
 
 from .fvm_matrix import FvmMatrixCode, gather_core_dependencies
 from .integral_boundary import IntegralBoundary
@@ -64,11 +66,17 @@ class FvmOperatorCode(object):
 
 
 def gather_dependencies(namespace, cls, is_matrix):
-    dependencies = set()
     u = sympy.Function('u')
-    res = cls.apply(u)
+    u0 = sympy.Function('u0')
 
-    dependencies = gather_core_dependencies(namespace, cls, is_matrix)
+    if (len(inspect.getargspec(cls.apply).args) == 1):
+        res = cls.apply(u)
+    elif (len(inspect.getargspec(cls.apply).args) == 2):
+        res = cls.apply(u, u0)
+    else:
+        raise ValueError('Only methods with one or two arguments allowed.')
+
+    dependencies = gather_core_dependencies(namespace, expr, is_matrix)
 
     # Add dependencies on fvm_matrices
     for fvm_matrix in res.fvm_matrices:

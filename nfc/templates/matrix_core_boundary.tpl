@@ -1,16 +1,13 @@
 class ${name}: public nosh::matrix_core_boundary
 {
   public:
-    ${name}()${members_init} {}
+    ${name}(const std::shared_ptr<const nosh::mesh> & mesh)${members_init} {}
 
     virtual ~${name}() {}
 
     virtual
       nosh::boundary_data
-      eval(
-          const Eigen::Vector3d & x,
-          const double surface_area
-          ) const
+      eval(const moab::EntityHayyndle & vertex) const
       {
         ${body}
         return {

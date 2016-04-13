@@ -2,6 +2,7 @@
 #define NOSH_MATRIX_CORE_EDGE_H
 
 #include <Eigen/Dense>
+#include <moab/Core.hpp>
 
 namespace nosh
 {
@@ -23,12 +24,7 @@ namespace nosh
 
       virtual
       matrix_core_edge_data
-      eval(
-          const Eigen::Vector3d & x0,
-          const Eigen::Vector3d & x1,
-          const double edge_length,
-          const double covolume
-          ) const = 0;
+      eval(const moab::EntityHandle & edge) const = 0;
 
     public:
       const std::set<std::string> subdomain_ids;

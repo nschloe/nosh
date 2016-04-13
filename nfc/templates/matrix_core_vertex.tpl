@@ -2,16 +2,13 @@ class ${name}:
   public nosh::matrix_core_vertex
 {
   public:
-    ${name}()${members_init} {}
+    ${name}(const std::shared_ptr<const nosh::mesh> & mesh)${members_init} {}
 
     virtual ~${name}() {}
 
     virtual
-      nosh::vertex_data
-      eval(
-          const Eigen::Vector3d & x,
-          const double control_volume
-          ) const
+    nosh::vertex_data
+    eval(const moab::EntityHandle & vertex) const {
       {
         ${vertex_body}
         return {

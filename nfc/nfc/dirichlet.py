@@ -47,8 +47,9 @@ class Dirichlet(object):
 
     def _get_code_for_matrix(self, init):
         x = sympy.MatrixSymbol('x', 3, 1)
+        vertex = sympy.Symbol('vertex')
         result = self.function(x)
-        unused_args, _ = compare_variables(set([x]), [result])
+        unused_args, _ = compare_variables(set([vertex]), [result])
 
         # template substitution
         filename = os.path.join(templates_dir, 'matrix_core_dirichlet.tpl')

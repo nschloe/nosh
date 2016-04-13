@@ -12,6 +12,7 @@ from .subdomain import *
 from .helpers import \
         extract_c_expression, \
         is_affine_linear, \
+        list_unique, \
         get_uuid, \
         members_init_declare, \
         templates_dir
@@ -41,16 +42,13 @@ class IntegralEdge(object):
     def get_class_object(self, dependency_class_objects):
         # Arguments from the template.
         arguments = set([
-            sympy.Symbol('x0'),
-            sympy.Symbol('x1'),
-            sympy.Symbol('edge_length'),
-            sympy.Symbol('edge_covolume')
+            sympy.Symbol('edge')
             ])
 
         used_vars = self.expr.free_symbols
         used_vars.remove(self.u0)
         used_vars.remove(self.u1)
-        eval_body = _get_code_body(arguments, used_vars)
+        extra_body, extra_init, extra_declare = _get_extra(arguments, used_vars)
 
         members_init, members_declare = \
             members_init_declare(
@@ -58,6 +56,9 @@ class IntegralEdge(object):
                     'matrix_core_edge',
                     dependency_class_objects
                     )
+
+        members_init.extend(extra_init)
+        members_declare.extend(extra_declare)
 
         if members_init:
             members_init_code = ':\n' + ',\n'.join(members_init)
@@ -80,7 +81,7 @@ class IntegralEdge(object):
                     'edge11': _expr_to_code(edge_coeff[1][1]),
                     'edge_affine0': _expr_to_code(-edge_affine[0]),
                     'edge_affine1': _expr_to_code(-edge_affine[1]),
-                    'eval_body': '\n'.join(eval_body),
+                    'eval_body': '\n'.join(extra_body),
                     'members_init': members_init_code,
                     'members_declare': '\n'.join(members_declare)
                     })
@@ -143,26 +144,50 @@ def _expr_to_code(expr):
     return code
 
 
-def _get_code_body(arguments, used_variables):
+def _get_extra(arguments, used_variables):
+    edge = sympy.Symbol('edge')
     unused_arguments = arguments - used_variables
     undefined_symbols = used_variables - arguments
 
+    init = []
     body = []
-    # special treatment for n
-    if nfl.n in undefined_symbols or nfl.neg_n in undefined_symbols:
-        body.append('const auto n = (x1 - x0) / edge_length;')
-        unused_arguments -= set([
-            sympy.Symbol('x0'),
-            sympy.Symbol('x1')
-            ])
-        if nfl.n in undefined_symbols:
-            undefined_symbols.remove(nfl.n)
-        if nfl.neg_n in undefined_symbols:
-            undefined_symbols.remove(nfl.neg_n)
+    declare = []
 
-    assert(len(undefined_symbols) == 0)
+    edge_length = sympy.Symbol('edge_length')
+    if edge_length in undefined_symbols:
+        init.append('mesh_(mesh)')
+        declare.append('const std::shared_ptr<nosh::mesh> mesh_;')
+        init.append('edge_data_(mesh->edge_data())')
+        declare.append('const std::vector<nosh::edge_data> edge_data_;')
+        body.append('const auto k = this->mesh_->local_index(edge);')
+        body.append('const auto edge_length = this->edge_data_[k].length;')
+        undefined_symbols.remove(edge_length)
+        if edge in unused_arguments:
+            unused_arguments.remove(edge)
+
+    edge_covolume = sympy.Symbol('edge_covolume')
+    if edge_covolume in undefined_symbols:
+        init.append('mesh_(mesh)')
+        declare.append('const std::shared_ptr<nosh::mesh> mesh_;')
+        init.append('edge_data_(mesh->edge_data())')
+        declare.append('const std::vector<nosh::edge_data> edge_data_;')
+        body.append('const auto k = this->mesh_->local_index(edge);')
+        body.append('const auto edge_covolume = this->edge_data_[k].covolume;')
+        undefined_symbols.remove(edge_covolume)
+        if edge in unused_arguments:
+            unused_arguments.remove(edge)
+
+    if len(undefined_symbols) > 0:
+        raise RuntimeError(
+                'The following symbols are undefined: %s' % undefined_symbols
+                )
+
+    # remove double lines
+    body = list_unique(body)
+    init = list_unique(init)
+    declare = list_unique(declare)
 
     for name in unused_arguments:
-        body.append('(void) %s;' % name)
+        body.insert(0, '(void) %s;' % name)
 
-    return body
+    return body, init, declare

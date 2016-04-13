@@ -134,3 +134,11 @@ def members_init_declare(namespace, parent_name, dependency_class_objects):
 def sanitize_identifier(string):
     # turn any string into a valid C++ variable identifier
     return re.sub('\W|^(?=\d)', '_', string).lower()
+
+
+def list_unique(seq):
+    '''http://stackoverflow.com/a/480227/353337
+    '''
+    seen = set()
+    seen_add = seen.add
+    return [x for x in seq if not (x in seen or seen_add(x))]
