@@ -177,6 +177,27 @@ def _get_extra(arguments, used_variables):
         if edge in unused_arguments:
             unused_arguments.remove(edge)
 
+    x0 = sympy.Symbol('x0')
+    if x0 in undefined_symbols:
+        init.append('mesh_(mesh)')
+        declare.append('const std::shared_ptr<const nosh::mesh> mesh_;')
+        body.append('const auto verts = this->mesh_->get_vertex_tuple(edge);')
+        body.append('const auto x0 = this->mesh_->get_coords(verts[0]);')
+        undefined_symbols.remove(x0)
+        if edge in unused_arguments:
+            unused_arguments.remove(edge)
+
+    x1 = sympy.Symbol('x1')
+    if x1 in undefined_symbols:
+        init.append('mesh_(mesh)')
+        declare.append('const std::shared_ptr<const nosh::mesh> mesh_;')
+        body.append('const auto verts = this->mesh_->get_vertex_tuple(edge);')
+        body.append('const auto x1 = this->mesh_->get_coords(verts[1]);')
+        undefined_symbols.remove(x1)
+        if edge in unused_arguments:
+            unused_arguments.remove(edge)
+
+
     if len(undefined_symbols) > 0:
         raise RuntimeError(
                 'The following symbols are undefined: %s' % undefined_symbols
