@@ -7,7 +7,7 @@ class ${name}: public nosh::matrix_core_boundary
 
     virtual
       nosh::boundary_data
-      eval(const moab::EntityHayyndle & vertex) const
+      eval(const moab::EntityHandle & vertex) const
       {
         ${body}
         return {
