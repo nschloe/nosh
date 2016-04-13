@@ -150,7 +150,7 @@ def _get_extra(arguments, used_variables):
     control_volume = sympy.Symbol('control_volume')
     if control_volume in undefined_symbols:
         init.append('mesh_(mesh)')
-        declare.append('const std::shared_ptr<nosh::mesh> mesh_;')
+        declare.append('const std::shared_ptr<const nosh::mesh> mesh_;')
         init.append('c_data_(mesh->control_volumes()->getData())')
         declare.append('const Teuchos::ArrayRCP<const double> c_data_;')
         body.append('const auto k = this->mesh_->local_index(vertex);')
@@ -162,7 +162,7 @@ def _get_extra(arguments, used_variables):
     x = sympy.MatrixSymbol('x', 3, 1)
     if x in undefined_symbols:
         init.append('mesh_(mesh)')
-        declare.append('const std::shared_ptr<nosh::mesh> mesh_;')
+        declare.append('const std::shared_ptr<const nosh::mesh> mesh_;')
         init.append('c_data_(mesh->control_volumes()->getData())')
         declare.append('const Teuchos::ArrayRCP<const double> c_data_;')
         body.append('const auto k = this->mesh_->local_index(vertex);')

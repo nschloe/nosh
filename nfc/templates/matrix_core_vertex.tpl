@@ -8,14 +8,14 @@ class ${name}:
 
     virtual
     nosh::vertex_data
-    eval(const moab::EntityHandle & vertex) const {
-      {
-        ${vertex_body}
-        return {
-          ${vertex_contrib},
-          ${vertex_affine}
-          };
-      }
+    eval(const moab::EntityHandle & vertex) const
+    {
+      ${vertex_body}
+      return {
+        ${vertex_contrib},
+        ${vertex_affine}
+        };
+    }
 
   private:
     ${members_declare}

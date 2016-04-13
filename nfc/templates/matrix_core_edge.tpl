@@ -8,7 +8,7 @@ class ${name}:
 
     virtual
       nosh::matrix_core_edge_data
-      eval(const moab::EntityHandle & edge) const {
+      eval(const moab::EntityHandle & edge) const
       {
         ${eval_body}
         return {
