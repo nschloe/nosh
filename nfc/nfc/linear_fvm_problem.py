@@ -12,8 +12,13 @@ class LinearFvmProblemCode(object):
     def __init__(self, namespace, cls):
         self.class_name = sanitize_identifier(cls.__name__)
         self.namespace = namespace
+
+        u = sympy.Function('u')
+        res = cls.apply(u)
         self.dependencies = \
-            gather_core_dependencies(namespace, cls, is_matrix=True)
+            gather_core_dependencies(
+                    namespace, res, cls.dirichlet, is_matrix=True
+                    )
         return
 
     def get_dependencies(self):

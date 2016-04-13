@@ -16,8 +16,13 @@ class FvmMatrixCode(object):
     def __init__(self, namespace, cls):
         self.class_name = sanitize_identifier(cls.__name__)
         self.namespace = namespace
+
+        u = sympy.Function('u')
+        expr = cls.apply(u)
         self.dependencies = \
-            gather_core_dependencies(namespace, cls, is_matrix=True)
+            gather_core_dependencies(
+                    namespace, expr, cls.dirichlet, is_matrix=True
+                    )
         return
 
     def get_dependencies(self):
@@ -59,10 +64,9 @@ class FvmMatrixCode(object):
             }
 
 
-def gather_core_dependencies(namespace, cls, is_matrix):
+def gather_core_dependencies(namespace, res, dirichlets, is_matrix):
     dependencies = set()
     u = sympy.Function('u')
-    res = cls.apply(u)
     for integral in res.integrals:
         if isinstance(integral.measure, nfl.ControlVolumeSurface):
             dependencies.add(
@@ -75,7 +79,7 @@ def gather_core_dependencies(namespace, cls, is_matrix):
             dependencies.add(
                 IntegralVertex(
                     namespace,
-                    u, integral.integrand, integral.subdomains, is_matrix
+                    integral.integrand, integral.subdomains, matrix_var=u
                     )
                 )
         elif isinstance(integral.measure, nfl.BoundarySurface):
@@ -88,7 +92,7 @@ def gather_core_dependencies(namespace, cls, is_matrix):
         else:
             raise RuntimeError('Illegal measure type \'%s\'.' % measure)
 
-    for dirichlet in cls.dirichlet:
+    for dirichlet in dirichlets:
         f, subdomains = dirichlet
         if not isinstance(subdomains, list):
             try:

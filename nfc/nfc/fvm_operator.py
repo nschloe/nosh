@@ -76,7 +76,8 @@ def gather_dependencies(namespace, cls, is_matrix):
     else:
         raise ValueError('Only methods with one or two arguments allowed.')
 
-    dependencies = gather_core_dependencies(namespace, res, is_matrix)
+    dependencies = \
+        gather_core_dependencies(namespace, res, cls.dirichlet, is_matrix)
 
     # Add dependencies on fvm_matrices
     for fvm_matrix in res.fvm_matrices:
