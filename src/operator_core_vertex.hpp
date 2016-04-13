@@ -19,9 +19,8 @@ namespace nosh
       virtual
       double
       eval(
-          const Eigen::Vector3d & x,
-          const double control_volume,
-          const double u0
+          const moab::EnityHandle & vertex,
+          const Teuchos::ArrayRCP<const double> & u
           ) const = 0;
 
     public:

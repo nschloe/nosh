@@ -21,12 +21,8 @@ namespace nosh
       virtual
       std::tuple<double,double>
       eval(
-          const Eigen::Vector3d & x0,
-          const Eigen::Vector3d & x1,
-          const double edge_length,
-          const double covolume,
-          const double u0,
-          const double u1
+          const moab::EnityHandle & edge,
+          const Teuchos::ArrayRCP<const double> & u
           ) const = 0;
 
     public:
