@@ -42,12 +42,12 @@ class IntegralVertex(object):
 
     def get_class_object(self, dependency_class_objects):
         if self.matrix_var:
-            parent_class = 'matrix_core_vertex'
+            arguments = set([sympy.Symbol('vertex')])
         else:
-            parent_class = 'operator_core_vertex'
-
-        arguments = set([sympy.Symbol('vertex')])
+            arguments = set([sympy.Symbol('vertex'), sympy.Symbol('u')])
         used_vars = self.expr.free_symbols
+        print(self.expr)
+        print(used_vars)
         for vector_var in self.vector_vars:
             if vector_var in used_vars:
                 used_vars.remove(vector_var)
@@ -59,17 +59,13 @@ class IntegralVertex(object):
         members_init, members_declare = \
             members_init_declare(
                     self.namespace,
-                    parent_class,
+                    'matrix_core_vertex' if self.matrix_var else
+                    'operator_core_vertex',
                     dependency_class_objects
                     )
 
         members_init.extend(extra_init)
         members_declare.extend(extra_declare)
-
-        if members_init:
-            members_init_code = ':\n' + ',\n'.join(members_init)
-        else:
-            members_init_code = ''
 
         if self.matrix_var:
             coeff, affine = extract_linear_components(
@@ -85,7 +81,7 @@ class IntegralVertex(object):
                     'vertex_contrib': extract_c_expression(coeff),
                     'vertex_affine': extract_c_expression(-affine),
                     'vertex_body': '\n'.join(extra_body),
-                    'members_init': members_init_code,
+                    'members_init': ':\n' + ',\n'.join(init) if init else '',
                     'members_declare': '\n'.join(members_declare)
                     })
         else:
@@ -97,7 +93,7 @@ class IntegralVertex(object):
                     'name': self.class_name,
                     'return_value': extract_c_expression(self.expr),
                     'eval_body': '\n'.join(extra_body),
-                    'members_init': members_init_code,
+                    'members_init': ':\n' + ',\n'.join(init) if init else '',
                     'members_declare': '\n'.join(members_declare)
                     })
 
@@ -163,6 +159,15 @@ def _get_extra(arguments, used_variables):
         body.append('const auto k = this->mesh_->local_index(vertex);')
         body.append('const auto x = this->mesh_->get_coords(vertex);')
         undefined_symbols.remove(x)
+        if vertex in unused_arguments:
+            unused_arguments.remove(vertex)
+
+    k = sympy.Symbol('k')
+    if k in undefined_symbols:
+        init.append('mesh_(mesh)')
+        declare.append('const std::shared_ptr<const nosh::mesh> mesh_;')
+        body.append('const auto k = this->mesh_->local_index(vertex);')
+        undefined_symbols.remove(k)
         if vertex in unused_arguments:
             unused_arguments.remove(vertex)
 

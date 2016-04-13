@@ -159,13 +159,14 @@ def replace_nosh_functions(expr):
 
         for function_var in function_vars:
             # Replace all occurences of u(x) by u[k] (the value at the control
-            # volume center) and multiply by the control volume)
-            fk = sympy.Symbol('%s[k]' % function_var.func)
+            # volume center)
+            f = sympy.IndexedBase('%s' % function_var.func)
+            k = sympy.Symbol('k')
             try:
-                expr = expr.subs(function_var, fk)
+                expr = expr.subs(function_var, f[k])
             except AttributeError:
                 # 'int' object has no attribute 'subs'
                 pass
-            fks.append(fk)
+            fks.append(f[k])
 
     return expr, fks
