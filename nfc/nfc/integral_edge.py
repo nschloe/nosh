@@ -197,6 +197,20 @@ def _get_extra(arguments, used_variables):
         if edge in unused_arguments:
             unused_arguments.remove(edge)
 
+    if nfl.n in undefined_symbols:
+        init.append('mesh_(mesh)')
+        declare.append('const std::shared_ptr<const nosh::mesh> mesh_;')
+        body.append('const auto verts = this->mesh_->get_vertex_tuple(edge);')
+        body.append('const auto x0 = this->mesh_->get_coords(verts[0]);')
+        body.append('const auto x1 = this->mesh_->get_coords(verts[1]);')
+        init.append('edge_data_(mesh->get_edge_data())')
+        declare.append('const std::vector<nosh::mesh::edge_data> edge_data_;')
+        body.append('const auto k = this->mesh_->local_index(edge);')
+        body.append('const auto edge_length = this->edge_data_[k].length;')
+        body.append('const auto n = (x1 - x0) / edge_length;')
+        undefined_symbols.remove(nfl.n)
+        if edge in unused_arguments:
+            unused_arguments.remove(edge)
 
     if len(undefined_symbols) > 0:
         raise RuntimeError(
