@@ -19,7 +19,7 @@ class LinearFvmProblemCode(object):
         res = cls.apply(u)
         self.dependencies = \
             gather_core_dependencies(
-                    namespace, res, cls.dirichlet, is_matrix=True
+                    namespace, res, cls.dirichlet, matrix_var=u
                     )
         return
 

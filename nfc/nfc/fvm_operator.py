@@ -19,8 +19,7 @@ class FvmOperatorCode(object):
     def __init__(self, namespace, cls):
         self.class_name = sanitize_identifier(cls.__name__)
         self.namespace = namespace
-        self.dependencies = \
-            gather_dependencies(namespace, cls, is_matrix=False)
+        self.dependencies = gather_dependencies(namespace, cls)
         return
 
     def get_dependencies(self):
@@ -65,7 +64,7 @@ class FvmOperatorCode(object):
             }
 
 
-def gather_dependencies(namespace, cls, is_matrix):
+def gather_dependencies(namespace, cls):
     u = sympy.Function('u')
     u.nosh = True
 
@@ -80,7 +79,7 @@ def gather_dependencies(namespace, cls, is_matrix):
         raise ValueError('Only methods with one or two arguments allowed.')
 
     dependencies = \
-        gather_core_dependencies(namespace, res, cls.dirichlet, is_matrix)
+        gather_core_dependencies(namespace, res, cls.dirichlet, matrix_var=None)
 
     # Add dependencies on fvm_matrices
     for fvm_matrix in res.fvm_matrices:

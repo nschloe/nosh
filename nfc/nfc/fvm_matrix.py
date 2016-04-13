@@ -23,7 +23,7 @@ class FvmMatrixCode(object):
         expr = cls.apply(u)
         self.dependencies = \
             gather_core_dependencies(
-                    namespace, expr, cls.dirichlet, is_matrix=True
+                    namespace, expr, cls.dirichlet, matrix_var=u
                     )
         return
 
@@ -66,30 +66,34 @@ class FvmMatrixCode(object):
             }
 
 
-def gather_core_dependencies(namespace, res, dirichlets, is_matrix):
+def gather_core_dependencies(namespace, res, dirichlets, matrix_var):
     dependencies = set()
-    u = sympy.Function('u')
-    u.nosh = True
     for integral in res.integrals:
         if isinstance(integral.measure, nfl.ControlVolumeSurface):
             dependencies.add(
                 IntegralEdge(
                     namespace,
-                    integral.integrand, integral.subdomains, matrix_var=u
+                    integral.integrand,
+                    integral.subdomains,
+                    matrix_var=matrix_var
                     )
                 )
         elif isinstance(integral.measure, nfl.ControlVolume):
             dependencies.add(
                 IntegralVertex(
                     namespace,
-                    integral.integrand, integral.subdomains, matrix_var=u
+                    integral.integrand,
+                    integral.subdomains,
+                    matrix_var=matrix_var
                     )
                 )
         elif isinstance(integral.measure, nfl.BoundarySurface):
             dependencies.add(
                 IntegralBoundary(
                     namespace,
-                    integral.integrand, integral.subdomains, matrix_var=u
+                    integral.integrand,
+                    integral.subdomains,
+                    matrix_var=matrix_var
                     )
                 )
         else:
@@ -102,7 +106,7 @@ def gather_core_dependencies(namespace, res, dirichlets, is_matrix):
                 subdomains = list(subdomains)
             except TypeError:  # TypeError: 'D1' object is not iterable
                 subdomains = [subdomains]
-        dependencies.add(Dirichlet(f, subdomains, is_matrix))
+        dependencies.add(Dirichlet(f, subdomains, matrix_var))
 
     return dependencies
 
