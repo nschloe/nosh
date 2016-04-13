@@ -17,7 +17,9 @@ class FvmMatrixCode(object):
         self.class_name = sanitize_identifier(cls.__name__)
         self.namespace = namespace
 
-        u = sympy.Function('u')
+        u = nfl.FvmFunction('u')
+        u.nosh = True
+
         expr = cls.apply(u)
         self.dependencies = \
             gather_core_dependencies(
@@ -72,7 +74,7 @@ def gather_core_dependencies(namespace, res, dirichlets, is_matrix):
             dependencies.add(
                 IntegralEdge(
                     namespace,
-                    u, integral.integrand, integral.subdomains, is_matrix
+                    integral.integrand, integral.subdomains, matrix_var=u
                     )
                 )
         elif isinstance(integral.measure, nfl.ControlVolume):

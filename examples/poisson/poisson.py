@@ -15,7 +15,7 @@ class Gamma1(Subdomain):
 
 class Poisson(LinearFvmProblem):
     def apply(u):
-        return integrate(lambda x: -n_dot_grad(u, x), dS) \
+        return integrate(lambda x: -n_dot_grad(u(x)), dS) \
                 - integrate(lambda x: sin(x[1]), dV)
 
     dirichlet = [

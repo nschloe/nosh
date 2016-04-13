@@ -19,14 +19,13 @@ from .helpers import \
 
 
 class IntegralEdge(object):
-    def __init__(self, namespace, u, integrand, subdomains, is_matrix):
+    def __init__(self, namespace, integrand, subdomains, matrix_var=None):
         self.namespace = namespace
-        self.class_name = 'matrix_edge_core_' + get_uuid()
+        self.class_name = 'edge_core_' + get_uuid()
 
-        self.expr, self.u0, self.u1 = \
-            discretize_edge_integral(integrand, u)
+        self.expr, self.vector_vars = discretize_edge_integral(integrand)
 
-        self.is_matrix = is_matrix
+        self.matrix_var = matrix_var
 
         # gather expressions and subdomains as dependencies
         self.dependencies = set().union(
@@ -46,9 +45,11 @@ class IntegralEdge(object):
             ])
 
         used_vars = self.expr.free_symbols
-        used_vars.remove(self.u0)
-        used_vars.remove(self.u1)
-        extra_body, extra_init, extra_declare = _get_extra(arguments, used_vars)
+        for vector_var in self.vector_vars:
+            if vector_var in used_vars:
+                used_vars.remove(vector_var)
+        extra_body, extra_init, extra_declare = \
+            _get_extra(arguments, used_vars)
 
         members_init, members_declare = \
             members_init_declare(
@@ -65,10 +66,10 @@ class IntegralEdge(object):
         else:
             members_init_code = ''
 
-        if self.is_matrix:
+        if self.matrix_var:
             type = 'matrix_core_edge'
             edge_coeff, edge_affine = \
-                _extract_linear_components(self.expr, self.u0, self.u1)
+                _extract_linear_components(self.expr, self.matrix_var)
             # template substitution
             filename = os.path.join(templates_dir, 'matrix_core_edge.tpl')
             with open(filename, 'r') as f:
@@ -113,8 +114,15 @@ class IntegralEdge(object):
             }
 
 
-def _extract_linear_components(expr, u0, u1):
-    if not is_affine_linear(expr, [u0, u1]):
+def _extract_linear_components(expr, u):
+    # Those are the variables in the expression, inserted by the edge
+    # discretizer.
+    dvars = [
+            sympy.Symbol('%s[k0]' % u),
+            sympy.Symbol('%s[k1]' % u)
+            ]
+
+    if not is_affine_linear(expr, dvars):
         raise RuntimeError((
             'The given function\n'
             '    f(x) = %s\n'
@@ -123,14 +131,22 @@ def _extract_linear_components(expr, u0, u1):
             )
 
     # Get the coefficients of u0, u1.
-    coeff00 = sympy.diff(expr, u0)
-    coeff01 = sympy.diff(expr, u1)
+    coeff00 = sympy.diff(expr, dvars[0])
+    coeff01 = sympy.diff(expr, dvars[1])
 
     # Now construct the coefficients for the other way around.
-    coeff10 = coeff01.subs([(u0, u1), (u1, u0), (nfl.n, nfl.neg_n)])
-    coeff11 = coeff00.subs([(u0, u1), (u1, u0), (nfl.n, nfl.neg_n)])
+    coeff10 = coeff01.subs([
+        (dvars[0], dvars[1]),
+        (dvars[1], dvars[0]),
+        (nfl.n, nfl.neg_n)
+        ])
+    coeff11 = coeff00.subs([
+        (dvars[0], dvars[1]),
+        (dvars[1], dvars[0]),
+        (nfl.n, nfl.neg_n)
+        ])
 
-    affine = expr.subs([(u0, 0), (u1, 0)])
+    affine = expr.subs([(dvars[0], 0), (dvars[1], 0)])
 
     return (
         [[coeff00, coeff01], [coeff10, coeff11]],

@@ -130,16 +130,14 @@ class IntegralVertex(object):
 
 
 def _discretize_expression(expr):
-    # Find all function variables that are not Expressions
+    # Find all Nosh function variables
     fks = []
     if isinstance(expr, float) or isinstance(expr, int):
         pass
     else:
         function_vars = []
         for f in expr.atoms(sympy.Function):
-            # nosh Expressions can be evaluated anywhere, so they don't need
-            # particular discretization care
-            if not isinstance(f, nfl.Expression):
+            if hasattr(f, 'nosh'):
                 function_vars.append(f)
 
         for function_var in function_vars:
