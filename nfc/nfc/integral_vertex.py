@@ -45,8 +45,11 @@ class IntegralVertex(object):
             parent_class = 'operator_core_vertex'
 
         arguments = set([sympy.Symbol('vertex')])
+        used_vars = self.expr.free_symbols
+        if self.u0 in used_vars:
+            used_vars.remove(self.u0)
         extra_body, extra_init, extra_declare = _get_extra(
-                arguments, self.expr.free_symbols
+                arguments, used_vars
                 )
 
         # now take care of the template substitution
