@@ -17,15 +17,16 @@ from .helpers import \
 
 
 class IntegralBoundary(object):
-    def __init__(self, namespace, u, integrand, subdomains, is_matrix):
+    def __init__(self, namespace, integrand, subdomains, matrix_var=None):
         self.namespace = namespace
 
-        self.is_matrix = is_matrix
+        self.matrix_var = matrix_var
 
         self.class_name = 'matrix_core_boundary_' + get_uuid()
 
-        self.expr, self.u0 = \
-            _discretize_integral(u, integrand)
+        x = sympy.MatrixSymbol('x', 3, 1)
+        fx = integrand(x)
+        self.expr, self.vector_vars = _discretize_expression(fx)
 
         self.dependencies = set().union(
             [type(atom) for atom in self.expr.atoms(nfl.Expression)],
@@ -39,10 +40,11 @@ class IntegralBoundary(object):
     def get_class_object(self, dep_class_objects):
         arguments = set([sympy.Symbol('vertex')])
         used_vars = self.expr.free_symbols
-        if self.u0 in used_vars:
-            used_vars.remove(self.u0)
+        for vector_var in self.vector_vars:
+            if vector_var in used_vars:
+                used_vars.remove(vector_var)
         extra_body, extra_init, extra_declare = \
-                _get_extra(arguments, used_vars)
+            _get_extra(arguments, used_vars)
 
         # now take care of the template substitution
         members_init, members_declare = \
@@ -60,8 +62,11 @@ class IntegralBoundary(object):
         else:
             members_init_code = ''
 
-        if self.is_matrix:
-            coeff, affine = extract_linear_components(self.expr, self.u0)
+        if self.matrix_var:
+            coeff, affine = extract_linear_components(
+                    self.expr,
+                    sympy.Symbol('%s[k]' % self.matrix_var)
+                    )
             type = 'matrix_core_boundary'
             filename = os.path.join(templates_dir, 'matrix_core_boundary.tpl')
             with open(filename, 'r') as f:
@@ -119,21 +124,31 @@ class IntegralBoundary(object):
 #             )
 
 
-def _discretize_integral(u, function):
-    # Numerically integrate function over a control volume.
-    x = sympy.MatrixSymbol('x', 3, 1)
-    # Evaluate the function for u at x.
-    fx = function(x)
-    # Replace all occurences of u(x) by u0 (the value at the control volume
-    # center) and multiply by the control volume)
-    u0 = sympy.Symbol('u0')
-    try:
-        fu0 = fx.subs(u(x), u0)
-    except AttributeError:
-        # 'int' object has no attribute 'subs'
-        fu0 = fx
-    surface_area = sympy.Symbol('surface_area')
-    return surface_area * fu0, u0
+def _discretize_expression(expr):
+    # Find all function variables that are not Expressions
+    fks = []
+    if isinstance(expr, float) or isinstance(expr, int):
+        pass
+    else:
+        function_vars = []
+        for f in expr.atoms(sympy.Function):
+            # nosh Expressions can be evaluated anywhere, so they don't need
+            # particular discretization care
+            if not isinstance(f, nfl.Expression):
+                function_vars.append(f)
+
+        for function_var in function_vars:
+            # Replace all occurences of u(x) by u[k] (the value at the control
+            # volume center) and multiply by the control volume)
+            fk = sympy.Symbol('%s[k]' % function_var.func)
+            try:
+                expr = expr.subs(function_var, fk)
+            except AttributeError:
+                # 'int' object has no attribute 'subs'
+                pass
+            fks.append(fk)
+
+    return sympy.Symbol('surface_area') * expr, fks
 
 
 def _get_extra(arguments, used_variables):

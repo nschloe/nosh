@@ -86,7 +86,7 @@ def gather_core_dependencies(namespace, res, dirichlets, is_matrix):
             dependencies.add(
                 IntegralBoundary(
                     namespace,
-                    u, integral.integrand, integral.subdomains, is_matrix
+                    integral.integrand, integral.subdomains, matrix_var=u
                     )
                 )
         else:
