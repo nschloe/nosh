@@ -46,7 +46,6 @@ public:
     return {};
   };
 
-protected:
   //! Fill the matrix with the parameter entries as given in params.
   virtual
   void

@@ -13,4 +13,7 @@ class ${name}:
     ) const {
       ${eval_body}return ${eval_return_value};
     }
+
+  private:
+    ${declare}
 }; // class ${name}

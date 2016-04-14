@@ -55,7 +55,7 @@ class IntegralEdge(object):
 
         # Arguments from the template.
         if self.matrix_var:
-            type = 'matrix_core_edge'
+            type = 'nosh::matrix_core_edge'
 
             # Unfortunately, it's not too easy to differentiate with respect to
             # an IndexedBase u with indices k0, k1 respectively. For this
@@ -104,8 +104,7 @@ class IntegralEdge(object):
         else:
             used_vars = self.expr.free_symbols
 
-            # TODO
-            type = 'operator_core_edge'
+            type = 'nosh::operator_core_edge'
             # template substitution
             filename = os.path.join(templates_dir, 'operator_core_edge.tpl')
             with open(filename, 'r') as f:

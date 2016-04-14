@@ -81,6 +81,7 @@ class Dirichlet(object):
 
         init = ['nosh::operator_core_dirichlet(%s)' % init]
         init.extend(extra_init)
+        declare = extra_declare
 
         # template substitution
         filename = os.path.join(templates_dir, 'operator_core_dirichlet.tpl')
@@ -88,6 +89,7 @@ class Dirichlet(object):
             code = Template(f.read()).substitute({
                 'name': self.class_name,
                 'init': ',\n'.join(init),
+                'declare': ',\n'.join(declare),
                 'eval_return_value': extract_c_expression(result),
                 'eval_body': '\n'.join(extra_body)
                 })

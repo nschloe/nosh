@@ -219,7 +219,7 @@ def _handle_vector_parameters(vector_params):
     for v in vector_params:
         vector_init.extend([
             'mesh_(mesh)',
-            '%s_vec_(std::make_shared<%s>(mesh->map()))' % (v, tpetra_str),
+            '%s_vec_(std::make_shared<%s>(Teuchos::rcp(mesh->map())))' % (v, tpetra_str),
             '%s(%s_vec_->getData())' % (v, v)
             ])
         vector_declare.extend([

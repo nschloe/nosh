@@ -29,10 +29,10 @@ class ${name}:
     ${extra_methods}
 
   private:
-    std::vector<std::shared_ptr<operator_core_edge>> edge_cores_;
-    std::vector<std::shared_ptr<operator_core_vertex>> vertex_cores_;
-    std::vector<std::shared_ptr<operator_core_boundary>> boundary_cores_;
-    std::vector<std::shared_ptr<operator_core_dirichlet>> dirichlets_;
+    std::vector<std::shared_ptr<nosh::operator_core_edge>> edge_cores_;
+    std::vector<std::shared_ptr<nosh::operator_core_vertex>> vertex_cores_;
+    std::vector<std::shared_ptr<nosh::operator_core_boundary>> boundary_cores_;
+    std::vector<std::shared_ptr<nosh::operator_core_dirichlet>> dirichlets_;
     std::vector<std::shared_ptr<Tpetra::Operator<double,int,int>>> operators_;
     ${members_declare}
 }; // class ${name}
