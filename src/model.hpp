@@ -445,7 +445,7 @@ private:
       k++;
     }
 
-    Thyra::ModelEvaluatorBase::InArgs<double> nominal_values;
+    auto nominal_values = this->createInArgs();
     const Teuchos::RCP<const Tpetra::Vector<double,int,int>> initial_x =
       Teuchos::rcp(
         new Tpetra::Vector<double,int,int>(Teuchos::rcp(mesh_->map()))
