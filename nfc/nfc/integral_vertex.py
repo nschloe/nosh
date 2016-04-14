@@ -46,26 +46,85 @@ class IntegralVertex(object):
         else:
             arguments = set([sympy.Symbol('vertex'), sympy.Symbol('u')])
         used_vars = self.expr.free_symbols
-        print(self.expr)
-        print(used_vars)
-        for vector_var in self.vector_vars:
-            if vector_var in used_vars:
-                used_vars.remove(vector_var)
-        extra_body, extra_init, extra_declare = _get_extra(
-                arguments, used_vars
+
+        # Treat vector variables (u, u0,...)
+        vector_params = set()
+        for s in self.expr.atoms(sympy.IndexedBase):
+            # `u` is an argument to the kernel and hence already defined
+            if s != sympy.IndexedBase('u'):
+                vector_params.add(s)
+
+        body = []
+        init = []
+        declare = []
+        methods = []
+
+        print(vector_params)
+        vector_init = []
+        vector_declare = []
+        vector_methods = []
+        for vec in vector_params:
+            vector_init.append(
+                    '%s_vec_(std::make_shared<Tpetra::Vector<double,int,int>>(mesh->map()))' % vec
+                    )
+            vector_init.append(
+                    '%s(%s_vec_->getData())' % (vec, vec)
+                    )
+            vector_declare.append(
+                    'std::shared_ptr<Tpetra::Vector<double,int,int> %s_vec_;' % vec
+                    )
+            vector_declare.append(
+                    'Teuchos::ArrayRCP<const double> %s;' % vec
+                    )
+            arguments.add(sympy.Symbol('%s' % vec))
+        if len(vector_params) > 0:
+            vector_methods.append('''
+            virtual
+            std::map<std::string, std::shared_ptr<Tpetra::Vector<double, int, int>>>
+            get_vector_parameters() const
+            {
+              return {
+                %s
+                };
+            };
+            ''' % ',\n'.join(['{"%s", %s_vec_}' % (vec, vec) for vec in vector_params])
+            )
+            vector_methods.append('''
+            virtual
+            void
+            refill_(
+                const std::map<std::string, double> & scalar_params,
+                const std::map<std::string, std::shared_ptr<Tpetra::Vector<double, int, int>>> & vector_params
                 )
+            {%s}
+            ''' % ',\n'.join(['''
+            this->%s_vec_ = vector_params.at("%s");
+            this->%s = this->%s_vec_.getData();
+            ''' % (vec, vec, vec, vec) for vec in vector_params])
+            )
+
+        init.extend(vector_init)
+        declare.extend(vector_declare)
+        methods.extend(vector_methods)
 
         # now take care of the template substitution
-        init, members_declare = \
+        deps_init, deps_declare = \
             members_init_declare(
                     self.namespace,
                     'matrix_core_vertex' if self.matrix_var else
                     'operator_core_vertex',
                     dependency_class_objects
                     )
+        init.extend(deps_init)
+        declare.extend(deps_declare)
 
+        print('auv', arguments, used_vars)
+        extra_body, extra_init, extra_declare = _get_extra(
+                arguments, used_vars
+                )
+        body.extend(extra_body)
         init.extend(extra_init)
-        members_declare.extend(extra_declare)
+        declare.extend(extra_declare)
 
         if self.matrix_var:
             coeff, affine = extract_linear_components(
@@ -82,7 +141,7 @@ class IntegralVertex(object):
                     'vertex_affine': extract_c_expression(-affine),
                     'vertex_body': '\n'.join(extra_body),
                     'members_init': ':\n' + ',\n'.join(init) if init else '',
-                    'members_declare': '\n'.join(members_declare)
+                    'members_declare': '\n'.join(declare)
                     })
         else:
             type = 'operator_core_vertex'
@@ -94,7 +153,8 @@ class IntegralVertex(object):
                     'return_value': extract_c_expression(self.expr),
                     'eval_body': '\n'.join(extra_body),
                     'members_init': ':\n' + ',\n'.join(init) if init else '',
-                    'members_declare': '\n'.join(members_declare)
+                    'members_declare': '\n'.join(declare),
+                    'methods': '\n'.join(methods)
                     })
 
         return {

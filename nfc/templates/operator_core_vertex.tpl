@@ -17,6 +17,8 @@ class ${name}:
         return ${return_value};
       }
 
+    ${methods}
+
   private:
     ${members_declare}
 }; // class ${name}
