@@ -36,41 +36,11 @@ public:
     f_(f),
     jac_(jac),
     dfdp_(dfdp),
-    space_(Thyra::createVectorSpace<double>(Teuchos::rcp(mesh_->map())))
+    space_(Thyra::createVectorSpace<double>(Teuchos::rcp(mesh_->map()))),
+    p_map_(init_p_map_()),
+    p_names_(init_p_names_()),
+    nominal_values_(init_nominal_values_())
   {
-    // Initialize the parameters
-    const auto f_params = f_->get_scalar_parameters();
-    const auto jac_params = jac_->get_scalar_parameters();
-    const auto dfdp_params = dfdp_->get_scalar_parameters();
-
-    std::map<std::string, double> all_params;
-    all_params.insert(f_params.begin(), f_params.end());
-    all_params.insert(jac_params.begin(), jac_params.end());
-    all_params.insert(dfdp_params.begin(), dfdp_params.end());
-
-    p_map_ = Teuchos::rcp(new Tpetra::Map<int,int>(
-          all_params.size(),
-          0,
-          Teuchos::rcp(mesh_->comm)
-          ));
-
-    auto p_init = Thyra::createMember(this->get_p_space(0));
-    p_names_ = Teuchos::rcp(new Teuchos::Array<std::string>(all_params.size()));
-    int k = 0;
-    for (auto it = all_params.begin(); it != all_params.end(); ++it) {
-      (*p_names_)[k] = it->first;
-      Thyra::set_ele(k, it->second, p_init());
-      k++;
-    }
-
-    // set nominal values
-    const Teuchos::RCP<const Tpetra::Vector<double,int,int>> initial_x =
-      Teuchos::rcp(
-        new Tpetra::Vector<double,int,int>(Teuchos::rcp(mesh_->map()))
-        );
-    const auto xxx = Thyra::createConstVector(initial_x, space_);
-    nominal_values_.set_p(0, p_init);
-    nominal_values_.set_x(xxx);
   }
 
   virtual
@@ -413,16 +383,91 @@ protected:
   }
 
 private:
+
+  Teuchos::RCP<Tpetra::Map<int,int>>
+  init_p_map_() const
+  {
+    const auto f_params = f_->get_scalar_parameters();
+    const auto jac_params = jac_->get_scalar_parameters();
+    const auto dfdp_params = dfdp_->get_scalar_parameters();
+
+    std::map<std::string, double> all_params;
+    all_params.insert(f_params.begin(), f_params.end());
+    all_params.insert(jac_params.begin(), jac_params.end());
+    all_params.insert(dfdp_params.begin(), dfdp_params.end());
+
+    return Teuchos::rcp(new Tpetra::Map<int,int>(
+          all_params.size(),
+          0,
+          Teuchos::rcp(mesh_->comm)
+          ));
+  }
+
+  Teuchos::RCP<Teuchos::Array<std::string>>
+  init_p_names_()
+  {
+    const auto f_params = f_->get_scalar_parameters();
+    const auto jac_params = jac_->get_scalar_parameters();
+    const auto dfdp_params = dfdp_->get_scalar_parameters();
+
+    std::map<std::string, double> all_params;
+    all_params.insert(f_params.begin(), f_params.end());
+    all_params.insert(jac_params.begin(), jac_params.end());
+    all_params.insert(dfdp_params.begin(), dfdp_params.end());
+
+    auto p_names =
+      Teuchos::rcp(new Teuchos::Array<std::string>(all_params.size()));
+    int k = 0;
+    for (auto it = all_params.begin(); it != all_params.end(); ++it) {
+      (*p_names_)[k] = it->first;
+      k++;
+    }
+
+    return p_names;
+  }
+
+  Thyra::ModelEvaluatorBase::InArgs<double>
+  init_nominal_values_()
+  {
+    const auto f_params = f_->get_scalar_parameters();
+    const auto jac_params = jac_->get_scalar_parameters();
+    const auto dfdp_params = dfdp_->get_scalar_parameters();
+
+    std::map<std::string, double> all_params;
+    all_params.insert(f_params.begin(), f_params.end());
+    all_params.insert(jac_params.begin(), jac_params.end());
+    all_params.insert(dfdp_params.begin(), dfdp_params.end());
+
+    auto p_init = Thyra::createMember(this->get_p_space(0));
+    int k = 0;
+    for (auto it = all_params.begin(); it != all_params.end(); ++it) {
+      Thyra::set_ele(k, it->second, p_init());
+      k++;
+    }
+
+    Thyra::ModelEvaluatorBase::InArgs<double> nominal_values;
+    const Teuchos::RCP<const Tpetra::Vector<double,int,int>> initial_x =
+      Teuchos::rcp(
+        new Tpetra::Vector<double,int,int>(Teuchos::rcp(mesh_->map()))
+        );
+    const auto xxx = Thyra::createConstVector(initial_x, space_);
+    nominal_values.set_p(0, p_init);
+    nominal_values.set_x(xxx);
+
+    return nominal_values;
+  }
+
+private:
   const std::shared_ptr<nosh::mesh> mesh_;
   const std::shared_ptr<nosh::fvm_operator> f_;
   const std::shared_ptr<nosh::fvm_operator> jac_;
   const std::shared_ptr<nosh::fvm_operator> dfdp_;
 
+  const Teuchos::RCP<const Thyra::VectorSpaceBase<double>> space_;
+
   Teuchos::RCP<const Tpetra::Map<int,int>> p_map_;
   Teuchos::RCP<Teuchos::Array<std::string> > p_names_;
   Thyra::ModelEvaluatorBase::InArgs<double> nominal_values_;
-
-  const Teuchos::RCP<const Thyra::VectorSpaceBase<double>> space_;
 };
 } // namespace nosh
 
