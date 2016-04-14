@@ -27,6 +27,13 @@ class IntegralEdge(object):
 
         self.matrix_var = matrix_var
 
+        # collect vector parameters
+        self.vector_params = set()
+        for s in self.expr.atoms(sympy.IndexedBase):
+            # `u` is an argument to the kernel and hence already defined
+            if s != sympy.IndexedBase('u'):
+                self.vector_params.add(s)
+
         # gather expressions and subdomains as dependencies
         self.dependencies = set().union(
             [ExpressionCode(type(atom))

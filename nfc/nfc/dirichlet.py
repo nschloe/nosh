@@ -20,6 +20,7 @@ class Dirichlet(object):
         self.class_name = 'dirichlet_' + get_uuid()
         self.function = function
         self.is_matrix = is_matrix
+        self.vector_params = []
         self.dependencies = [SubdomainCode(sd) for sd in subdomains]
         if subdomains:
             self.subdomains = subdomains

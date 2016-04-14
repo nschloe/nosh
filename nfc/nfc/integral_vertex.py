@@ -30,6 +30,13 @@ class IntegralVertex(object):
         fx = integrand(x)
         self.expr, self.vector_vars = _discretize_expression(fx)
 
+        # collect vector parameters
+        self.vector_params = set()
+        for s in self.expr.atoms(sympy.IndexedBase):
+            # `u` is an argument to the kernel and hence already defined
+            if s != sympy.IndexedBase('u'):
+                self.vector_params.add(s)
+
         self.dependencies = set().union(
             [ExpressionCode(type(atom))
                 for atom in self.expr.atoms(nfl.Expression)],
@@ -64,9 +71,9 @@ class IntegralVertex(object):
         declare.extend(deps_declare)
 
         # handle vector parameters
-        symbols, vector_init, vector_declare, vector_methods = \
-            _handle_vector_parameters(self.expr)
-        arguments.update(symbols)
+        vector_parameters, vector_init, vector_declare, vector_methods = \
+            _handle_vector_parameters(self.vector_params)
+        arguments.update(vector_parameters)
         init.extend(vector_init)
         declare.extend(vector_declare)
         methods.extend(vector_methods)
@@ -118,7 +125,8 @@ class IntegralVertex(object):
             'type': type,
             'code': code,
             'class_name': self.class_name,
-            'constructor_args': []
+            'constructor_args': [],
+            'vector_parameters': vector_parameters
             }
 
 
@@ -199,19 +207,13 @@ def _get_extra(arguments, used_variables):
     return body, init, declare
 
 
-def _handle_vector_parameters(expr):
+def _handle_vector_parameters(vector_params):
     '''Treat vector variables (u, u0,...)
     '''
     symbols = set()
     vector_init = []
     vector_declare = []
     vector_methods = []
-
-    vector_params = set()
-    for s in expr.atoms(sympy.IndexedBase):
-        # `u` is an argument to the kernel and hence already defined
-        if s != sympy.IndexedBase('u'):
-            vector_params.add(s)
 
     tpetra_str = 'Tpetra::Vector<double, int, int>'
     for v in vector_params:

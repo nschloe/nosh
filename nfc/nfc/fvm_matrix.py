@@ -20,6 +20,9 @@ class FvmMatrixCode(object):
         u = sympy.Function('u')
         u.nosh = True
 
+        # TODO
+        self.vector_params = []
+
         expr = cls.apply(u)
         self.dependencies = \
             gather_core_dependencies(
@@ -31,34 +34,12 @@ class FvmMatrixCode(object):
         return self.dependencies
 
     def get_class_object(self, dep_class_objects):
-
         # Go through the dependencies collect the cores.
-        dirichlet_core_names = []
-        vertex_core_names = []
-        edge_core_names = []
-        boundary_core_names = []
-        for dep in self.dependencies:
-            if isinstance(dep, Dirichlet):
-                dirichlet_core_names.append(dep.class_name)
-            elif isinstance(dep, IntegralVertex):
-                vertex_core_names.append(dep.class_name)
-            elif isinstance(dep, IntegralEdge):
-                edge_core_names.append(dep.class_name)
-            elif isinstance(dep, IntegralBoundary):
-                boundary_core_names.append(dep.class_name)
-            else:
-                raise RuntimeError(
-                    'Dependency \'%s\' not accounted for.' % dep.class_name
-                    )
-
         code = get_code_linear_problem(
             'fvm_matrix.tpl',
             self.class_name,
             'nosh::fvm_matrix',
-            edge_core_names,
-            vertex_core_names,
-            boundary_core_names,
-            dirichlet_core_names
+            self.dependencies
             )
 
         return {
@@ -133,36 +114,56 @@ def get_code_linear_problem(
         template_filename,
         class_name,
         base_class_name,
-        matrix_core_edge_names,
-        matrix_core_vertex_names,
-        matrix_core_boundary_names,
-        matrix_core_dirichlet_names,
+        dependencies
         ):
+    # Go through the dependencies collect the cores.
+    dirichlet_cores = []
+    vertex_cores = []
+    edge_cores = []
+    boundary_cores = []
+    vector_parameters = {}
+    for dep in dependencies:
+        # Collect all vector dependencies
+        vector_parameters[dep.class_name] = dep.vector_params
+        # Sort the cores
+        if isinstance(dep, Dirichlet):
+            dirichlet_cores.append(dep)
+        elif isinstance(dep, IntegralVertex):
+            vertex_cores.append(dep)
+        elif isinstance(dep, IntegralEdge):
+            edge_cores.append(dep)
+        elif isinstance(dep, IntegralBoundary):
+            boundary_cores.append(dep)
+        else:
+            raise RuntimeError(
+                'Dependency \'%s\' not accounted for.' % dep.class_name
+                )
+
     constructor_args = [
         'const std::shared_ptr<const nosh::mesh> & _mesh'
         ]
     init_matrix_core_edge = '{%s}' % (
             ', '.join(
-                ['std::make_shared<%s>(_mesh)' % n
-                 for n in matrix_core_edge_names]
+                ['std::make_shared<%s>(_mesh)' % n.class_name
+                 for n in edge_cores]
                 )
             )
     init_matrix_core_vertex = '{%s}' % (
             ', '.join(
-                ['std::make_shared<%s>(_mesh)' % n
-                 for n in matrix_core_vertex_names]
+                ['std::make_shared<%s>(_mesh)' % n.class_name
+                 for n in vertex_cores]
                 )
             )
     init_matrix_core_boundary = '{%s}' % (
             ', '.join(
-                ['std::make_shared<%s>(_mesh)' % n
-                 for n in matrix_core_boundary_names]
+                ['std::make_shared<%s>(_mesh)' % n.class_name
+                 for n in boundary_cores]
                 )
             )
     init_matrix_core_dirichlet = '{%s}' % (
             ', '.join(
-                ['std::make_shared<%s>(_mesh)' % n
-                 for n in matrix_core_dirichlet_names]
+                ['std::make_shared<%s>(_mesh)' % n.class_name
+                 for n in dirichlet_cores]
                 )
             )
 
@@ -176,6 +177,12 @@ def get_code_linear_problem(
        )
       ]
     members_declare = []
+
+    print(vector_parameters)
+    # # If there are any vector parameters, the linear operator itself becomese a
+    # # parameter object and we have to organize getting, setting of params.
+    # for dep_name in vector_parameters:
+    #     if
 
     templ = os.path.join(templates_dir, template_filename)
     with open(templ, 'r') as f:

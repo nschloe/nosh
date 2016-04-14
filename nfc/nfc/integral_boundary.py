@@ -29,6 +29,13 @@ class IntegralBoundary(object):
         fx = integrand(x)
         self.expr, self.vector_vars = _discretize_expression(fx)
 
+        # collect vector parameters
+        self.vector_params = set()
+        for s in self.expr.atoms(sympy.IndexedBase):
+            # `u` is an argument to the kernel and hence already defined
+            if s != sympy.IndexedBase('u'):
+                self.vector_params.add(s)
+
         self.dependencies = set().union(
             [type(atom) for atom in self.expr.atoms(nfl.Expression)],
             subdomains

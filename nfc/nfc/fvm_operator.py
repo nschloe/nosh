@@ -7,7 +7,9 @@ import sympy
 
 import nfl
 
-from .fvm_matrix import FvmMatrixCode, gather_core_dependencies
+from .fvm_matrix import \
+        FvmMatrixCode, \
+        gather_core_dependencies
 from .integral_boundary import IntegralBoundary
 from .dirichlet import Dirichlet
 from .integral_edge import IntegralEdge
@@ -26,37 +28,11 @@ class FvmOperatorCode(object):
         return self.dependencies
 
     def get_class_object(self, dep_class_objects):
-        # Go through the dependencies collect the cores.
-        dirichlet_core_names = []
-        vertex_core_names = []
-        edge_core_names = []
-        boundary_core_names = []
-        fvm_matrix_names = []
-        for dep in self.dependencies:
-            if isinstance(dep, Dirichlet):
-                dirichlet_core_names.append(dep.class_name)
-            elif isinstance(dep, IntegralVertex):
-                vertex_core_names.append(dep.class_name)
-            elif isinstance(dep, IntegralEdge):
-                edge_core_names.append(dep.class_name)
-            elif isinstance(dep, IntegralBoundary):
-                boundary_core_names.append(dep.class_name)
-            elif isinstance(dep, FvmMatrixCode):
-                fvm_matrix_names.append(dep.class_name)
-            else:
-                raise RuntimeError(
-                    'Dependency \'%s\' not accounted for.' % dep.class_name
-                    )
-
         code = get_code_linear_problem(
             'fvm_operator.tpl',
             self.class_name,
             'nosh::fvm_operator',
-            edge_core_names,
-            vertex_core_names,
-            boundary_core_names,
-            dirichlet_core_names,
-            fvm_matrix_names
+            self.dependencies
             )
 
         return {
@@ -90,65 +66,68 @@ def gather_dependencies(namespace, cls):
     return dependencies
 
 
-def get_code_fvm_operator(namespace, class_name, obj):
-    code, dependencies, operator_core_names = \
-            handle_core_dependencies(namespace, obj)
-
-    # append the code of the linear problem itself
-    code += '\n' + get_code_linear_problem(
-            'fvm_operator.tpl',
-            class_name.lower(),
-            'nosh::fvm_operator',
-            operator_core_names['edge'],
-            operator_core_names['vertex'],
-            operator_core_names['boundary'],
-            operator_core_names['dirichlet'],
-            )
-
-    return code, dependencies
-
-
 def get_code_linear_problem(
         template_filename,
         class_name,
         base_class_name,
-        operator_core_edge_names,
-        operator_core_vertex_names,
-        operator_core_boundary_names,
-        operator_core_dirichlet_names,
-        fvm_matrix_names
+        dependencies
         ):
+    dirichlet_cores = []
+    vertex_cores = []
+    edge_cores = []
+    boundary_cores = []
+    fvm_matrices = []
+    vector_parameters = {}
+    for dep in dependencies:
+        # Collect all vector dependencies
+        vector_parameters[dep.class_name] = dep.vector_params
+        # Sort the cores
+        if isinstance(dep, Dirichlet):
+            dirichlet_cores.append(dep)
+        elif isinstance(dep, IntegralVertex):
+            vertex_cores.append(dep)
+        elif isinstance(dep, IntegralEdge):
+            edge_cores.append(dep)
+        elif isinstance(dep, IntegralBoundary):
+            boundary_cores.append(dep)
+        elif isinstance(dep, FvmMatrixCode):
+            fvm_matrices.append(dep)
+        else:
+            raise RuntimeError(
+                'Dependency \'%s\' not accounted for.' % dep.class_name
+                )
+
     constructor_args = [
         'const std::shared_ptr<const nosh::mesh> & _mesh'
         ]
     init_operator_core_edge = '{%s}' % (
             ', '.join(
-                ['std::make_shared<%s>()' % n
-                 for n in operator_core_edge_names]
+                ['std::make_shared<%s>()' % n.class_name
+                 for n in edge_cores]
                 )
             )
     init_operator_core_vertex = '{%s}' % (
             ', '.join(
-                ['std::make_shared<%s>()' % n
-                 for n in operator_core_vertex_names]
+                ['std::make_shared<%s>()' % n.class_name
+                 for n in vertex_cores]
                 )
             )
     init_operator_core_boundary = '{%s}' % (
             ', '.join(
-                ['std::make_shared<%s>()' % n
-                 for n in operator_core_boundary_names]
+                ['std::make_shared<%s>()' % n.class_name
+                 for n in boundary_cores]
                 )
             )
     init_operator_core_dirichlet = '{%s}' % (
             ', '.join(
-                ['std::make_shared<%s>()' % n
-                 for n in operator_core_dirichlet_names]
+                ['std::make_shared<%s>()' % n.class_name
+                 for n in dirichlet_cores]
                 )
             )
     init_fvm_matrix = '{%s}' % (
             ', '.join(
-                ['std::make_shared<%s>(_mesh)' % n
-                 for n in fvm_matrix_names]
+                ['std::make_shared<%s>(_mesh)' % n.class_name
+                 for n in fvm_matrices]
                 )
             )
 
@@ -163,6 +142,8 @@ def get_code_linear_problem(
        )
       ]
     members_declare = []
+
+    print(vector_parameters)
 
     templ = os.path.join(templates_dir, template_filename)
     with open(templ, 'r') as f:
