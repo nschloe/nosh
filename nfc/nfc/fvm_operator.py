@@ -78,43 +78,49 @@ def get_code_linear_problem(
     edge_cores = []
     boundary_cores = []
     fvm_matrices = []
-    vector_parameters = {}
+    vector_parameters = []
     for dep in dependencies:
-        # Collect all vector dependencies
-        vector_parameters[dep.class_name] = dep.vector_params
         # Sort the cores
         if isinstance(dep, Dirichlet):
+            id = ('dirichlets_', len(dirichlet_cores))
             dirichlet_cores.append(dep)
         elif isinstance(dep, IntegralVertex):
+            id = ('vertex_cores_', len(vertex_cores))
             vertex_cores.append(dep)
         elif isinstance(dep, IntegralEdge):
+            id = ('edge_cores_', len(edge_cores))
             edge_cores.append(dep)
         elif isinstance(dep, IntegralBoundary):
+            id = ('boundary_cores_', len(boundary_cores))
             boundary_cores.append(dep)
         elif isinstance(dep, FvmMatrixCode):
+            id = ('operator_', len(fvm_matrices))
             fvm_matrices.append(dep)
         else:
             raise RuntimeError(
                 'Dependency \'%s\' not accounted for.' % dep.class_name
                 )
+        # Collect all vector dependencies
+        if dep.vector_params:
+            vector_parameters.append(id)
 
     constructor_args = [
         'const std::shared_ptr<const nosh::mesh> & _mesh'
         ]
     init_operator_core_edge = '{%s}' % (
-            ', '.join(['std::make_shared<%s>()' % n.class_name
+            ', '.join(['std::make_shared<%s>(_mesh)' % n.class_name
                        for n in edge_cores])
             )
     init_operator_core_vertex = '{%s}' % (
-            ', '.join(['std::make_shared<%s>()' % n.class_name
+            ', '.join(['std::make_shared<%s>(_mesh)' % n.class_name
                        for n in vertex_cores])
             )
     init_operator_core_boundary = '{%s}' % (
-            ', '.join(['std::make_shared<%s>()' % n.class_name
+            ', '.join(['std::make_shared<%s>(_mesh)' % n.class_name
                        for n in boundary_cores])
             )
     init_operator_core_dirichlet = '{%s}' % (
-            ', '.join(['std::make_shared<%s>()' % n.class_name
+            ', '.join(['std::make_shared<%s>(_mesh)' % n.class_name
                        for n in dirichlet_cores])
             )
     init_fvm_matrix = '{%s}' % (
@@ -122,33 +128,26 @@ def get_code_linear_problem(
                        for n in fvm_matrices])
             )
 
-    members_init = [
-      '%s(\n_mesh,\n %s,\n %s,\n %s,\n %s,\n %s\n)' %
-      (base_class_name,
-       init_operator_core_edge,
-       init_operator_core_vertex,
-       init_operator_core_boundary,
-       init_operator_core_dirichlet,
-       init_fvm_matrix
-       )
-      ]
+    members_init = []
     members_declare = []
 
     print(class_name, vector_parameters)
     extra_methods = []
     lines_gvp = []
     lines_sp = []
-    for cls, params in vector_parameters.items():
-        if params:
-            lines_gvp.append('''const auto %s_v_params =
-                  %s->get_vector_parameters();
-                out_map.insert(
-                  %s_v_params.begin(),
-                  %s_v_params.end()
-                  );''' % (cls, cls, cls, cls))
-            lines_sp.append('''
-            %s->refill_(scalar_params, vector_params);
-            ''' % cls)
+    for id in vector_parameters:
+        core_set, k = id
+        var = '%s_params_%s_' % (core_set, k)
+        lines_gvp.append('''const auto %s =
+              %s[%s]->get_vector_parameters();
+            out_map.insert(
+              %s.begin(),
+              %s.end()
+              );''' % (var, core_set, k, var, var)
+              )
+        lines_sp.append('''
+        %s[%s]->refill_(scalar_params, vector_params);
+        ''' % (core_set, k))
     tpetra = 'Tpetra::Vector<double, int, int>'
     if lines_gvp:
         extra_methods.append('''
@@ -182,7 +181,12 @@ def get_code_linear_problem(
             'constructor_args': ',\n'.join(constructor_args),
             'members_init': ',\n'.join(members_init),
             'members_declare': '\n'.join(members_declare),
-            'extra_methods': '\n'.join(extra_methods)
+            'extra_methods': '\n'.join(extra_methods),
+            'init_edge_cores': init_operator_core_edge,
+            'init_vertex_cores': init_operator_core_vertex,
+            'init_boundary_cores': init_operator_core_boundary,
+            'init_dirichlets': init_operator_core_dirichlet,
+            'init_operators': init_fvm_matrix,
             })
 
     return code

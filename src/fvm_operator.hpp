@@ -44,16 +44,6 @@ namespace nosh
       ~fvm_operator()
       {};
 
-      // virtual
-      // void
-      // rebuild(
-      //     const std::map<std::string, double> & scalar_params,
-      //     const std::map<std::string, Tpetra::Vector<double,int,int>> & vector_params
-      //     )
-      // {
-      //   throw 144;
-      // }
-
       virtual
       void
       apply(

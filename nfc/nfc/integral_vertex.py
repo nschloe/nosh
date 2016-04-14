@@ -256,7 +256,7 @@ def _handle_vector_parameters(vector_params):
           tpetra_str,
           ',\n'.join(['''
           this->%s_vec_ = vector_params.at("%s");
-          this->%s = this->%s_vec_.getData();
+          this->%s = this->%s_vec_->getData();
           ''' % (vec, vec, vec, vec) for vec in vector_params])
           )
         )
