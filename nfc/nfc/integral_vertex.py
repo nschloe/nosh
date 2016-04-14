@@ -47,65 +47,10 @@ class IntegralVertex(object):
             arguments = set([sympy.Symbol('vertex'), sympy.Symbol('u')])
         used_vars = self.expr.free_symbols
 
-        # Treat vector variables (u, u0,...)
-        vector_params = set()
-        for s in self.expr.atoms(sympy.IndexedBase):
-            # `u` is an argument to the kernel and hence already defined
-            if s != sympy.IndexedBase('u'):
-                vector_params.add(s)
-
-        body = []
+        eval_body = []
         init = []
         declare = []
         methods = []
-
-        print(vector_params)
-        vector_init = []
-        vector_declare = []
-        vector_methods = []
-        for vec in vector_params:
-            vector_init.append(
-                    '%s_vec_(std::make_shared<Tpetra::Vector<double,int,int>>(mesh->map()))' % vec
-                    )
-            vector_init.append(
-                    '%s(%s_vec_->getData())' % (vec, vec)
-                    )
-            vector_declare.append(
-                    'std::shared_ptr<Tpetra::Vector<double,int,int> %s_vec_;' % vec
-                    )
-            vector_declare.append(
-                    'Teuchos::ArrayRCP<const double> %s;' % vec
-                    )
-            arguments.add(sympy.Symbol('%s' % vec))
-        if len(vector_params) > 0:
-            vector_methods.append('''
-            virtual
-            std::map<std::string, std::shared_ptr<Tpetra::Vector<double, int, int>>>
-            get_vector_parameters() const
-            {
-              return {
-                %s
-                };
-            };
-            ''' % ',\n'.join(['{"%s", %s_vec_}' % (vec, vec) for vec in vector_params])
-            )
-            vector_methods.append('''
-            virtual
-            void
-            refill_(
-                const std::map<std::string, double> & scalar_params,
-                const std::map<std::string, std::shared_ptr<Tpetra::Vector<double, int, int>>> & vector_params
-                )
-            {%s}
-            ''' % ',\n'.join(['''
-            this->%s_vec_ = vector_params.at("%s");
-            this->%s = this->%s_vec_.getData();
-            ''' % (vec, vec, vec, vec) for vec in vector_params])
-            )
-
-        init.extend(vector_init)
-        declare.extend(vector_declare)
-        methods.extend(vector_methods)
 
         # now take care of the template substitution
         deps_init, deps_declare = \
@@ -118,13 +63,25 @@ class IntegralVertex(object):
         init.extend(deps_init)
         declare.extend(deps_declare)
 
-        print('auv', arguments, used_vars)
+        # handle vector parameters
+        symbols, vector_init, vector_declare, vector_methods = \
+            _handle_vector_parameters(self.expr)
+        arguments.update(symbols)
+        init.extend(vector_init)
+        declare.extend(vector_declare)
+        methods.extend(vector_methods)
+
         extra_body, extra_init, extra_declare = _get_extra(
                 arguments, used_vars
                 )
-        body.extend(extra_body)
+        eval_body.extend(extra_body)
         init.extend(extra_init)
         declare.extend(extra_declare)
+
+        # remove double lines
+        eval_body = list_unique(eval_body)
+        init = list_unique(init)
+        declare = list_unique(declare)
 
         if self.matrix_var:
             coeff, affine = extract_linear_components(
@@ -139,7 +96,7 @@ class IntegralVertex(object):
                     'name': self.class_name,
                     'vertex_contrib': extract_c_expression(coeff),
                     'vertex_affine': extract_c_expression(-affine),
-                    'vertex_body': '\n'.join(extra_body),
+                    'vertex_body': '\n'.join(eval_body),
                     'members_init': ':\n' + ',\n'.join(init) if init else '',
                     'members_declare': '\n'.join(declare)
                     })
@@ -236,12 +193,70 @@ def _get_extra(arguments, used_variables):
                 'The following symbols are undefined: %s' % undefined_symbols
                 )
 
-    # remove double lines
-    body = list_unique(body)
-    init = list_unique(init)
-    declare = list_unique(declare)
-
     for name in unused_arguments:
         body.insert(0, '(void) %s;' % name)
 
     return body, init, declare
+
+
+def _handle_vector_parameters(expr):
+    '''Treat vector variables (u, u0,...)
+    '''
+    symbols = set()
+    vector_init = []
+    vector_declare = []
+    vector_methods = []
+
+    vector_params = set()
+    for s in expr.atoms(sympy.IndexedBase):
+        # `u` is an argument to the kernel and hence already defined
+        if s != sympy.IndexedBase('u'):
+            vector_params.add(s)
+
+    tpetra_str = 'Tpetra::Vector<double, int, int>'
+    for v in vector_params:
+        vector_init.extend([
+            'mesh_(mesh)',
+            '%s_vec_(std::make_shared<%s>(mesh->map()))' % (v, tpetra_str),
+            '%s(%s_vec_->getData())' % (v, v)
+            ])
+        vector_declare.extend([
+            'const std::shared_ptr<const nosh::mesh> mesh_;',
+            'std::shared_ptr<%s> %s_vec_;' % (tpetra_str, v),
+            'Teuchos::ArrayRCP<const double> %s;' % v
+            ])
+        symbols.add(sympy.Symbol('%s' % v))
+
+    if len(vector_params) > 0:
+        vector_methods.append('''
+        virtual
+        std::map<std::string, std::shared_ptr<%s>>
+        get_vector_parameters() const
+        {
+          return {
+            %s
+            };
+        };
+        ''' % (
+            tpetra_str,
+            ',\n'.join(['{"%s", %s_vec_}' % (v, v) for v in vector_params])
+            )
+        )
+        vector_methods.append('''
+        virtual
+        void
+        refill_(
+            const std::map<std::string, double> & scalar_params,
+            const std::map<std::string, std::shared_ptr<%s>> & vector_params
+            )
+        {%s}
+        ''' % (
+          tpetra_str,
+          ',\n'.join(['''
+          this->%s_vec_ = vector_params.at("%s");
+          this->%s = this->%s_vec_.getData();
+          ''' % (vec, vec, vec, vec) for vec in vector_params])
+          )
+        )
+
+    return symbols, vector_init, vector_declare, vector_methods
