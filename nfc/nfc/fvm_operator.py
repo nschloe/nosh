@@ -167,7 +167,7 @@ def get_code_linear_problem(
         void
         refill_(
           const std::map<std::string, double> & scalar_params,
-          const std::map<std::string, std::shared_ptr<%s>> & vector_params
+          const std::map<std::string, std::shared_ptr<const %s>> & vector_params
           )
           {%s}
         ''' % (tpetra, '\n'.join(lines_sp))

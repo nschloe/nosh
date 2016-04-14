@@ -7,21 +7,21 @@ int main(int argc, char *argv[]) {
 
   const auto mesh = nosh::read("pacman.h5m");
 
-  const auto f = bratu::f(mesh);
-  const auto jac = bratu::jacobian(mesh);
-  const auto dfdp = bratu::dfdp(mesh);
+  const auto f = std::make_shared<bratu::f>(mesh);
+  const auto jac = std::make_shared<bratu::jacobian>(mesh);
+  const auto dfdp = std::make_shared<bratu::dfdp>(mesh);
 
   // const auto problem = bratu::bratu(mesh);
 
   // Create a model evaluator.
   // Can be used with everything in Trilinos that accepts such a thing.
   const auto model = nosh::model(
-      f, jac, dfdp,
-      {
-        {"linear solver package", "Belos"},
-        {"method", "Pseudo Block CG"},
-        // {"preconditioner", problem.prec}
-      }
+      mesh, f, jac, dfdp
+      // {
+      //   {"linear solver package", "Belos"},
+      //   {"method", "Pseudo Block CG"},
+      //   // {"preconditioner", problem.prec}
+      // }
       );
 
 #if 0

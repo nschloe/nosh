@@ -27,7 +27,10 @@ public:
   void
   set_parameters(
       const std::map<std::string, double> & scalar_params,
-      const std::map<std::string, std::shared_ptr<Tpetra::Vector<double, int, int>>> & vector_params
+      const std::map<
+        std::string,
+        std::shared_ptr<const Tpetra::Vector<double,int,int>>
+        > & vector_params
       ) final;
 
   //! Get scalar parameter map with their initial values.
@@ -51,7 +54,7 @@ public:
   void
   refill_(
       const std::map<std::string, double> & scalar_params,
-      const std::map<std::string, std::shared_ptr<Tpetra::Vector<double, int, int>>> & vector_params
+      const std::map<std::string, std::shared_ptr<const Tpetra::Vector<double, int, int>>> & vector_params
       )
   {
     // By default, don't do anything
@@ -61,7 +64,7 @@ public:
 
 private:
   std::map<std::string, double> build_parameters_scalar_;
-  std::map<std::string, std::shared_ptr<Tpetra::Vector<double, int, int>>> build_parameters_vector_;
+  std::map<std::string, std::shared_ptr<const Tpetra::Vector<double, int, int>>> build_parameters_vector_;
 };
 }  // namespace nosh
 #endif  // NOSH_PARAMETEROBJECT

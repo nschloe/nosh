@@ -249,7 +249,7 @@ def _handle_vector_parameters(vector_params):
         void
         refill_(
             const std::map<std::string, double> & scalar_params,
-            const std::map<std::string, std::shared_ptr<%s>> & vector_params
+            const std::map<std::string, std::shared_ptr<const %s>> & vector_params
             )
         {%s}
         ''' % (

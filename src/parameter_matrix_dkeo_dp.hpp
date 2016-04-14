@@ -55,7 +55,7 @@ private:
   void
   refill_(
       const std::map<std::string, double> & scalar_params,
-      const std::map<std::string, std::shared_ptr<Tpetra::Vector<double, int, int>>> & vector_params
+      const std::map<std::string, std::shared_ptr<const Tpetra::Vector<double, int, int>>> & vector_params
       );
 
   void

@@ -12,6 +12,7 @@
 #include <Teuchos_Time.hpp>
 #endif
 
+#include <Stratimikos_DefaultLinearSolverBuilder.hpp>
 #include <Thyra_ModelEvaluatorDefaultBase.hpp>
 
 namespace nosh
@@ -34,27 +35,27 @@ public:
     mesh_(mesh),
     f_(f),
     jac_(jac),
-    dfdp(dfdp_),
-    space_(Thyra::createVectorSpace<double>(Teuchos::rcp(mesh_->complex_map())))
+    dfdp_(dfdp),
+    space_(Thyra::createVectorSpace<double>(Teuchos::rcp(mesh_->map())))
   {
     // Initialize the parameters
     const auto f_params = f_->get_scalar_parameters();
     const auto jac_params = jac_->get_scalar_parameters();
     const auto dfdp_params = dfdp_->get_scalar_parameters();
 
-    const std::map<std::string, double> all_params;
+    std::map<std::string, double> all_params;
     all_params.insert(f_params.begin(), f_params.end());
     all_params.insert(jac_params.begin(), jac_params.end());
     all_params.insert(dfdp_params.begin(), dfdp_params.end());
 
     p_map_ = Teuchos::rcp(new Tpetra::Map<int,int>(
-          allParams.size(),
+          all_params.size(),
           0,
           Teuchos::rcp(mesh_->comm)
           ));
 
     auto p_init = Thyra::createMember(this->get_p_space(0));
-    p_names_ = Teuchos::rcp(new Teuchos::Array<std::string>(numParams));
+    p_names_ = Teuchos::rcp(new Teuchos::Array<std::string>(all_params.size()));
     int k = 0;
     for (auto it = all_params.begin(); it != all_params.end(); ++it) {
       (*p_names_)[k] = it->first;
@@ -63,7 +64,11 @@ public:
     }
 
     // set nominal values
-    auto xxx = Thyra::createConstVector(Teuchos::rcp(initial_x), space_);
+    const Teuchos::RCP<const Tpetra::Vector<double,int,int>> initial_x =
+      Teuchos::rcp(
+        new Tpetra::Vector<double,int,int>(Teuchos::rcp(mesh_->map()))
+        );
+    const auto xxx = Thyra::createConstVector(initial_x, space_);
     nominal_values_.set_p(0, p_init);
     nominal_values_.set_x(xxx);
   }
@@ -106,6 +111,10 @@ public:
   Teuchos::RCP<const Teuchos::Array<std::string> >
   get_p_names(int l) const
   {
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(
+        l != 0,
+        "Nosh can only deal with one parameter vector."
+        );
     return p_names_;
   }
 
@@ -170,7 +179,8 @@ public:
   Teuchos::RCP<Thyra::LinearOpBase<double>>
   create_W_op() const
   {
-    return Thyra::createLinearOp(jac_, space_, space_);
+    Teuchos::RCP<Tpetra::Operator<double,int,int>> op = Teuchos::rcp(jac_);
+    return Thyra::createLinearOp(op, space_, space_);
   }
 
   virtual
@@ -234,7 +244,7 @@ public:
 
   virtual
   Thyra::ModelEvaluatorBase::InArgs<double>
-  createInArgs() const;
+  createInArgs() const
   {
     Thyra::ModelEvaluatorBase::InArgsSetup<double> in_args;
 
@@ -289,10 +299,6 @@ protected:
       const Thyra::ModelEvaluatorBase::OutArgs<double> &out_args
       ) const
   {
-#ifdef NOSH_TEUCHOS_TIME_MONITOR
-    Teuchos::TimeMonitor tm0(*eval_model_time_);
-#endif
-
     const double alpha = in_args.get_alpha();
     double beta = in_args.get_beta();
 
@@ -338,15 +344,12 @@ protected:
     // compute F
     const auto & f_out = out_args.get_f();
     if (!f_out.is_null()) {
-#ifdef NOSH_TEUCHOS_TIME_MONITOR
-      Teuchos::TimeMonitor tm1(*compute_f_time_);
-#endif
 
       auto f_out_tpetra =
         Thyra::TpetraOperatorVectorExtraction<double,int,int>::getTpetraVector(
             f_out
             );
-      this->f_->set_parameters(params);
+      this->f_->set_parameters(params, {});
       this->f_->apply(
           *x_in_tpetra,
           *f_out_tpetra
@@ -357,9 +360,6 @@ protected:
     const auto & derivMv = out_args.get_DfDp(0).getDerivativeMultiVector();
     const auto & dfdp_out = derivMv.getMultiVector();
     if (!dfdp_out.is_null()) {
-#ifdef NOSH_TEUCHOS_TIME_MONITOR
-      Teuchos::TimeMonitor tm2(*compute_dfdp_time_);
-#endif
       auto dfdp_out_tpetra =
         Thyra::TpetraOperatorVectorExtraction<double,int,int>::getTpetraMultiVector(
             dfdp_out
@@ -371,7 +371,7 @@ protected:
           dfdp_out_tpetra->getNumVectors()
           );
       // Compute all derivatives.
-      this->dfdp_->set_parameters(params);
+      this->dfdp_->set_parameters(params, {});
       for (int k = 0; k < numAllParams; k++) {
         this->dfdp_->apply(
             *x_in_tpetra,
@@ -383,24 +383,21 @@ protected:
     // Fill Jacobian.
     const auto & W_out = out_args.get_W_op();
     if(!W_out.is_null()) {
-#ifdef NOSH_TEUCHOS_TIME_MONITOR
-      Teuchos::TimeMonitor tm3(*fill_jacobian_time_);
-#endif
       auto W_outT =
         Thyra::TpetraOperatorVectorExtraction<double,int,int>::getTpetraOperator(
             W_out
             );
       const auto & jac =
         Teuchos::rcp_dynamic_cast<nosh::fvm_operator>(W_outT, true);
-      jac->set_parameters(params, {"u0", *x_in_tpetra});
+      std::shared_ptr<const Tpetra::Vector<double,int,int>> x_std =
+        Teuchos::get_shared_ptr(x_in_tpetra);
+      const std::map<std::string, std::shared_ptr<const Tpetra::Vector<double, int, int>>> mp = {{"u0", x_std}};
+      jac->set_parameters(params, mp);
     }
 
 //     // Fill preconditioner.
 //     const auto & WPrec_out = out_args.get_W_prec();
 //     if(!WPrec_out.is_null()) {
-// #ifdef NOSH_TEUCHOS_TIME_MONITOR
-//       Teuchos::TimeMonitor tm4(*fill_preconditioner_time_);
-// #endif
 //       auto WPrec_outT =
 //         Thyra::TpetraOperatorVectorExtraction<double,int,int>::getTpetraOperator(
 //             WPrec_out->getNonconstUnspecifiedPrecOp()
@@ -416,34 +413,7 @@ protected:
   }
 
 private:
-  const std::shared_ptr<const nosh::mesh> mesh_;
-
-  const std::shared_ptr<nosh::vector_field::base> mvp_;
-  const std::shared_ptr<const nosh::scalar_field::base> scalar_potential_;
-  const std::shared_ptr<const nosh::scalar_field::base> thickness_;
-
-  const std::shared_ptr<nosh::parameter_matrix::keo> keo_;
-  const std::shared_ptr<nosh::parameter_matrix::DkeoDP> dkeo_dp_;
-
-#ifdef NOSH_TEUCHOS_TIME_MONITOR
-  const Teuchos::RCP<Teuchos::Time> eval_model_time_;
-  const Teuchos::RCP<Teuchos::Time> compute_f_time_;
-  const Teuchos::RCP<Teuchos::Time> compute_dfdp_time_;
-  const Teuchos::RCP<Teuchos::Time> fill_jacobian_time_;
-  const Teuchos::RCP<Teuchos::Time> fill_preconditioner_time_;
-#endif
-
-  Teuchos::RCP<Teuchos::FancyOStream> out_;
-
-  Teuchos::RCP<const Tpetra::Map<int,int>> p_map_;
-  Teuchos::RCP<Teuchos::Array<std::string> > p_names_;
-
-  Thyra::ModelEvaluatorBase::InArgs<double> nominal_values_;
-
-  const Teuchos::RCP<const Thyra::VectorSpaceBase<double>> space_;
-
-private:
-  const std::shared_ptr<nosh::mesh> & mesh,
+  const std::shared_ptr<nosh::mesh> mesh_;
   const std::shared_ptr<nosh::fvm_operator> f_;
   const std::shared_ptr<nosh::fvm_operator> jac_;
   const std::shared_ptr<nosh::fvm_operator> dfdp_;
