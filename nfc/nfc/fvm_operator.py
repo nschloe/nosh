@@ -131,7 +131,6 @@ def get_code_linear_problem(
     members_init = []
     members_declare = []
 
-    print(class_name, vector_parameters)
     extra_methods = []
     lines_gvp = []
     lines_sp = []

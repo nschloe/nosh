@@ -73,7 +73,6 @@ class Dirichlet(object):
         result, fks = replace_nosh_functions(result)
         arguments = set([vertex, u])
 
-        # print('free', result.free_symbols)
         # unused_args, _ = compare_variables(arguments, [result])
 
         try:

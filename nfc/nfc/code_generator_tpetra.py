@@ -31,7 +31,6 @@ class TpetraCodeGenerator(object):
         return
 
     def visit(self, node, out_vector=None):
-        print('node', node, type(node))
         if isinstance(node, int):
             return Pointwise(node)
         elif isinstance(node, float):
@@ -184,7 +183,6 @@ for (size_t k = 0; k < %sData.size(); k++) {
         # plug it together
         co = ' ' + code_op + ' '
         # TODO turn "-1 *" into unary operator
-        # print(pwcode)
         pointwise_code = co.join(pwcode)
         logging.debug('  BinOp >')
         return Pointwise(pointwise_code)

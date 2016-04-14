@@ -178,8 +178,6 @@ def get_code_linear_problem(
       ]
     members_declare = []
 
-    print(class_name, vector_parameters)
-
     templ = os.path.join(templates_dir, template_filename)
     with open(templ, 'r') as f:
         src = Template(f.read())
