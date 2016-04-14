@@ -15,7 +15,7 @@ int main(int argc, char *argv[]) {
 
   // Create a model evaluator.
   // Can be used with everything in Trilinos that accepts such a thing.
-  const auto model = nosh::model(
+  const auto model = std::make_shared<nosh::model>(
       mesh, f, jac, dfdp
       // {
       //   {"linear solver package", "Belos"},

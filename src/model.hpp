@@ -74,7 +74,7 @@ public:
   }
 
   virtual
-  ~model();
+  ~model() {};
 
   virtual
   Teuchos::RCP<const Thyra::VectorSpaceBase<double>>
