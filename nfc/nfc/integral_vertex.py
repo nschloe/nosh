@@ -115,7 +115,7 @@ class IntegralVertex(object):
                 code = src.substitute({
                     'name': self.class_name,
                     'return_value': extract_c_expression(self.expr),
-                    'eval_body': '\n'.join(extra_body),
+                    'eval_body': '\n'.join(eval_body),
                     'members_init': ':\n' + ',\n'.join(init) if init else '',
                     'members_declare': '\n'.join(declare),
                     'methods': '\n'.join(methods)

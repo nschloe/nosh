@@ -28,8 +28,12 @@ def extract_c_expression(expr):
     # Hence, replace all occurrences of IndexedBase objects by simply Symbols
     # with names like 'u[k]'.
     k = sympy.Symbol('k')
-    for s in expr.atoms(sympy.IndexedBase):
-        expr = expr.subs(s[k], sympy.Symbol('%s[k]' % s))
+    try:
+        for s in expr.atoms(sympy.IndexedBase):
+            expr = expr.subs(s[k], sympy.Symbol('%s[k]' % s))
+    except AttributeError:
+        # AttributeError: 'float' object has no attribute 'atoms'
+        pass
 
     [(c_name, c_code), (h_name, c_header)] = codegen(("f", expr), "C")
     res = re.search("f_result = (.*);", c_code)

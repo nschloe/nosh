@@ -2,7 +2,7 @@ class ${name}:
   public nosh::operator_core_vertex
 {
   public:
-    ${name}()${members_init} {}
+    ${name}(const std::shared_ptr<const nosh::mesh> & mesh)${members_init} {}
 
     virtual ~${name}() {}
 

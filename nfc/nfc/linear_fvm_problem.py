@@ -27,30 +27,11 @@ class LinearFvmProblemCode(object):
         return self.dependencies
 
     def get_class_object(self, dep_class_objects):
-
-        # Go through the dependencies collect the cores.
-        dirichlet_core_names = []
-        vertex_core_names = []
-        edge_core_names = []
-        boundary_core_names = []
-        for dep in self.dependencies:
-            if isinstance(dep, Dirichlet):
-                dirichlet_core_names.append(dep.class_name)
-            elif isinstance(dep, IntegralVertex):
-                vertex_core_names.append(dep.class_name)
-            elif isinstance(dep, IntegralEdge):
-                edge_core_names.append(dep.class_name)
-            elif isinstance(dep, IntegralBoundary):
-                boundary_core_names.append(dep.class_name)
-
         code = get_code_linear_problem(
             'linear_fvm_problem.tpl',
             self.class_name,
             'nosh::linear_problem',
-            edge_core_names,
-            vertex_core_names,
-            boundary_core_names,
-            dirichlet_core_names
+            self.dependencies
             )
 
         return {

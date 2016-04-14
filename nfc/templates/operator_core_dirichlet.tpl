@@ -2,7 +2,7 @@ class ${name}:
   public nosh::operator_core_dirichlet
 {
   public:
-    ${name}(): ${init} {}
+    ${name}(const std::shared_ptr<const nosh::mesh> & mesh): ${init} {}
 
     virtual ~${name}() {}
 
