@@ -89,7 +89,7 @@ class Dirichlet(object):
                 'name': self.class_name,
                 'init': ',\n'.join(init),
                 'eval_return_value': extract_c_expression(result),
-                'eval_body': extra_body
+                'eval_body': '\n'.join(extra_body)
                 })
         return code
 
