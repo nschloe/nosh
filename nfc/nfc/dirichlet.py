@@ -67,7 +67,7 @@ class Dirichlet(object):
     def _get_code_for_operator(self, init):
         x = sympy.MatrixSymbol('x', 3, 1)
         vertex = sympy.Symbol('vertex')
-        u = sympy.Symbol('u')
+        u = sympy.Function('u')
         result = self.function(u, x)
         result, fks = replace_nosh_functions(result)
         arguments = set([vertex, u])
@@ -101,6 +101,10 @@ def _get_extra(arguments, used_variables):
     init = []
     body = []
     declare = []
+
+    u = sympy.Symbol('u')
+    if u in undefined_symbols:
+        undefined_symbols.remove(u)
 
     x = sympy.MatrixSymbol('x', 3, 1)
     if x in undefined_symbols:

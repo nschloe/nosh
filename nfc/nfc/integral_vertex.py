@@ -56,7 +56,7 @@ class IntegralVertex(object):
                 )
 
         # now take care of the template substitution
-        members_init, members_declare = \
+        init, members_declare = \
             members_init_declare(
                     self.namespace,
                     'matrix_core_vertex' if self.matrix_var else
@@ -64,7 +64,7 @@ class IntegralVertex(object):
                     dependency_class_objects
                     )
 
-        members_init.extend(extra_init)
+        init.extend(extra_init)
         members_declare.extend(extra_declare)
 
         if self.matrix_var:

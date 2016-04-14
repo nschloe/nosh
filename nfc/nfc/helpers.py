@@ -22,6 +22,15 @@ def get_uuid():
 
 def extract_c_expression(expr):
     from sympy.utilities.codegen import codegen
+    # The incoming expression may contain IndexedBase objects which cannot be
+    # translated into C code directly, cf.
+    # <https://groups.google.com/forum/?utm_medium=email&utm_source=footer#!msg/sympy/VtxujWe5Fkc/Psuy2XHbAwAJ>.
+    # Hence, replace all occurrences of IndexedBase objects by simply Symbols
+    # with names like 'u[k]'.
+    k = sympy.Symbol('k')
+    for s in expr.atoms(sympy.IndexedBase):
+        expr = expr.subs(s[k], sympy.Symbol('%s[k]' % s))
+
     [(c_name, c_code), (h_name, c_header)] = codegen(("f", expr), "C")
     res = re.search("f_result = (.*);", c_code)
     return res.group(1)
