@@ -9,21 +9,22 @@ int main(int argc, char *argv[]) {
 
   const auto f = bratu::f(mesh);
   const auto jac = bratu::jacobian(mesh);
+  const auto dfdp = bratu::dfdp(mesh);
 
-#if 0
-  const auto problem = bratu::bratu(mesh);
+  // const auto problem = bratu::bratu(mesh);
 
   // Create a model evaluator.
-  // Can be used at everything in Trilinos that accepts such a thing.
+  // Can be used with everything in Trilinos that accepts such a thing.
   const auto model = nosh::model(
-      problem.f, problem.jac, problem.dfdp,
+      f, jac, dfdp,
       {
         {"linear solver package", "Belos"},
         {"method", "Pseudo Block CG"},
-        {"preconditioner", problem.prec}
+        // {"preconditioner", problem.prec}
       }
       );
 
+#if 0
   // starting value
   nosh::function x(mesh);
   x.putScalar(0.0);
