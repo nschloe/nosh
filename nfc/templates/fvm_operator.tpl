@@ -13,6 +13,8 @@ class ${name}:
       ~${name}()
       {}
 
+    ${extra_methods}
+
   private:
     ${members_declare}
 }; // class ${name}

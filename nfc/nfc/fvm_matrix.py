@@ -21,7 +21,7 @@ class FvmMatrixCode(object):
         u.nosh = True
 
         # TODO
-        self.vector_params = []
+        self.vector_params = set()
 
         expr = cls.apply(u)
         self.dependencies = \
@@ -178,11 +178,7 @@ def get_code_linear_problem(
       ]
     members_declare = []
 
-    print(vector_parameters)
-    # # If there are any vector parameters, the linear operator itself becomese a
-    # # parameter object and we have to organize getting, setting of params.
-    # for dep_name in vector_parameters:
-    #     if
+    print(class_name, vector_parameters)
 
     templ = os.path.join(templates_dir, template_filename)
     with open(templ, 'r') as f:

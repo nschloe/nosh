@@ -54,8 +54,9 @@ def gather_dependencies(namespace, cls):
     else:
         raise ValueError('Only methods with one or two arguments allowed.')
 
-    dependencies = \
-        gather_core_dependencies(namespace, res, cls.dirichlet, matrix_var=None)
+    dependencies = gather_core_dependencies(
+            namespace, res, cls.dirichlet, matrix_var=None
+            )
 
     # Add dependencies on fvm_matrices
     for fvm_matrix in res.fvm_matrices:
@@ -101,34 +102,24 @@ def get_code_linear_problem(
         'const std::shared_ptr<const nosh::mesh> & _mesh'
         ]
     init_operator_core_edge = '{%s}' % (
-            ', '.join(
-                ['std::make_shared<%s>()' % n.class_name
-                 for n in edge_cores]
-                )
+            ', '.join(['std::make_shared<%s>()' % n.class_name
+                       for n in edge_cores])
             )
     init_operator_core_vertex = '{%s}' % (
-            ', '.join(
-                ['std::make_shared<%s>()' % n.class_name
-                 for n in vertex_cores]
-                )
+            ', '.join(['std::make_shared<%s>()' % n.class_name
+                       for n in vertex_cores])
             )
     init_operator_core_boundary = '{%s}' % (
-            ', '.join(
-                ['std::make_shared<%s>()' % n.class_name
-                 for n in boundary_cores]
-                )
+            ', '.join(['std::make_shared<%s>()' % n.class_name
+                       for n in boundary_cores])
             )
     init_operator_core_dirichlet = '{%s}' % (
-            ', '.join(
-                ['std::make_shared<%s>()' % n.class_name
-                 for n in dirichlet_cores]
-                )
+            ', '.join(['std::make_shared<%s>()' % n.class_name
+                       for n in dirichlet_cores])
             )
     init_fvm_matrix = '{%s}' % (
-            ', '.join(
-                ['std::make_shared<%s>(_mesh)' % n.class_name
-                 for n in fvm_matrices]
-                )
+            ', '.join(['std::make_shared<%s>(_mesh)' % n.class_name
+                       for n in fvm_matrices])
             )
 
     members_init = [
@@ -143,7 +134,45 @@ def get_code_linear_problem(
       ]
     members_declare = []
 
-    print(vector_parameters)
+    print(class_name, vector_parameters)
+    extra_methods = []
+    lines_gvp = []
+    lines_sp = []
+    for cls, params in vector_parameters.items():
+        if params:
+            lines_gvp.append('''const auto %s_v_params =
+                  %s->get_vector_parameters();
+                out_map.insert(
+                  %s_v_params.begin(),
+                  %s_v_params.end()
+                  );''' % (cls, cls, cls, cls))
+            lines_sp.append('''
+            %s->refill_(scalar_params, vector_params);
+            ''' % cls)
+    tpetra = 'Tpetra::Vector<double, int, int>'
+    if lines_gvp:
+        extra_methods.append('''
+        virtual
+        std::map<std::string, std::shared_ptr<%s>>
+        get_vector_parameters() const
+        {
+          std::map<std::string, std::shared_ptr<%s>> out_map;
+          %s
+          return out_map;
+        };
+        ''' % (tpetra, tpetra, '\n'.join(lines_gvp))
+        )
+    if lines_sp:
+        extra_methods.append('''
+        virtual
+        void
+        refill_(
+          const std::map<std::string, double> & scalar_params,
+          const std::map<std::string, std::shared_ptr<%s>> & vector_params
+          )
+          {%s}
+        ''' % (tpetra, '\n'.join(lines_sp))
+        )
 
     templ = os.path.join(templates_dir, template_filename)
     with open(templ, 'r') as f:
@@ -152,7 +181,8 @@ def get_code_linear_problem(
             'name': class_name,
             'constructor_args': ',\n'.join(constructor_args),
             'members_init': ',\n'.join(members_init),
-            'members_declare': '\n'.join(members_declare)
+            'members_declare': '\n'.join(members_declare),
+            'extra_methods': '\n'.join(extra_methods)
             })
 
     return code
