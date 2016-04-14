@@ -76,8 +76,13 @@ class Dirichlet(object):
         # print('free', result.free_symbols)
         # unused_args, _ = compare_variables(arguments, [result])
 
+        try:
+            free_symbols = result.free_symbols
+        except AttributeError:
+            free_symbols = set()
+
         extra_body, extra_init, extra_declare = \
-            _get_extra(arguments, result.free_symbols)
+            _get_extra(arguments, free_symbols)
 
         init = ['nosh::operator_core_dirichlet(%s)' % init]
         init.extend(extra_init)
