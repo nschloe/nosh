@@ -224,7 +224,7 @@ def _handle_vector_parameters(vector_params):
             ])
         vector_declare.extend([
             'const std::shared_ptr<const nosh::mesh> mesh_;',
-            'std::shared_ptr<%s> %s_vec_;' % (tpetra_str, v),
+            'std::shared_ptr<const %s> %s_vec_;' % (tpetra_str, v),
             'Teuchos::ArrayRCP<const double> %s;' % v
             ])
         symbols.add(sympy.Symbol('%s' % v))
