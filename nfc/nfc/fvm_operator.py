@@ -152,10 +152,10 @@ def get_code_linear_problem(
     if lines_gvp:
         extra_methods.append('''
         virtual
-        std::map<std::string, std::shared_ptr<%s>>
+        std::map<std::string, std::shared_ptr<const %s>>
         get_vector_parameters() const
         {
-          std::map<std::string, std::shared_ptr<%s>> out_map;
+          std::map<std::string, std::shared_ptr<const %s>> out_map;
           %s
           return out_map;
         };

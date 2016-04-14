@@ -232,7 +232,7 @@ def _handle_vector_parameters(vector_params):
     if len(vector_params) > 0:
         vector_methods.append('''
         virtual
-        std::map<std::string, std::shared_ptr<%s>>
+        std::map<std::string, std::shared_ptr<const %s>>
         get_vector_parameters() const
         {
           return {

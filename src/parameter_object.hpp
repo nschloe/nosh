@@ -43,7 +43,7 @@ public:
 
   //! Get vector parameter map with their initial values.
   virtual
-  std::map<std::string, std::shared_ptr<Tpetra::Vector<double, int, int>>>
+  std::map<std::string, std::shared_ptr<const Tpetra::Vector<double, int, int>>>
   get_vector_parameters() const
   {
     return {};
