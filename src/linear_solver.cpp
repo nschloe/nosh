@@ -401,8 +401,8 @@ convert_to_belos_parameters(
       {"Belos", list{{"Solver Type", method}}}
       }});
 
-  auto lst = boost::any_cast<list>(out_map.at("Linear Solver Types"));
-  auto belos = boost::any_cast<list>(lst.at("Belos"));
+  auto & lst = boost::any_cast<list&>(out_map.at("Linear Solver Types"));
+  auto & belos = boost::any_cast<list&>(lst.at("Belos"));
   if (in_map.find("parameters") != in_map.end()) {
     belos.insert({
         "Solver Types",
