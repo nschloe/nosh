@@ -1,7 +1,8 @@
 #ifndef NOSH_MODEL_H
 #define NOSH_MODEL_H
 
-// includes
+#include "helper.hpp"
+
 #include <map>
 #include <string>
 
@@ -30,12 +31,14 @@ public:
       const std::shared_ptr<nosh::mesh> & mesh,
       const std::shared_ptr<nosh::fvm_operator> & f,
       const std::shared_ptr<nosh::fvm_operator> & jac,
-      const std::shared_ptr<nosh::fvm_operator> & dfdp
+      const std::shared_ptr<nosh::fvm_operator> & dfdp,
+      const std::map<std::string, boost::any> & linear_solver_params
     ):
     mesh_(mesh),
     f_(f),
     jac_(jac),
     dfdp_(dfdp),
+    linear_solver_params_(linear_solver_params),
     space_(Thyra::createVectorSpace<double>(Teuchos::rcp(mesh_->map()))),
     p_map_(init_p_map_()),
     p_names_(init_p_names_()),
@@ -157,26 +160,12 @@ public:
   Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<double>>
   get_W_factory() const
   {
-    // TODO make configurable
     Stratimikos::DefaultLinearSolverBuilder builder;
-
-    auto p = Teuchos::rcp(new Teuchos::ParameterList);
-    p->set("Linear Solver Type", "Belos");
-    auto & belosList =
-      p->sublist("Linear Solver Types")
-      .sublist("Belos");
-    //belosList.set("Solver Type", "MINRES");
-    belosList.set("Solver Type", "Pseudo Block GMRES");
-    //belosList.set("Solver Type", "Pseudo Block CG");
-
-    auto & solverList =
-      belosList.sublist("Solver Types")
-      .sublist("Pseudo Block GMRES");
-    solverList.set("Output Frequency", 1);
-    solverList.set("Output Style", 1);
-    solverList.set("Verbosity", 33);
-
-    p->set("Preconditioner Type", "None");
+    auto p = Teuchos::rcp(new Teuchos::ParameterList());
+    std_map_to_teuchos_list(
+        convert_to_belos_parameters(this->linear_solver_params_),
+        *p
+        );
     builder.setParameterList(p);
 
     auto lowsFactory = builder.createLinearSolveStrategy("");
@@ -461,6 +450,7 @@ private:
   const std::shared_ptr<nosh::fvm_operator> f_;
   const std::shared_ptr<nosh::fvm_operator> jac_;
   const std::shared_ptr<nosh::fvm_operator> dfdp_;
+  const std::map<std::string, boost::any> linear_solver_params_;
 
   const Teuchos::RCP<const Thyra::VectorSpaceBase<double>> space_;
 

@@ -14,15 +14,18 @@ int main(int argc, char *argv[]) {
   // const auto problem = bratu::bratu(mesh);
 
   // Create a model evaluator.
-  // Can be used with everything in Trilinos that accepts such a thing.
+  const std::map<std::string, boost::any> linear_solver_params = {
+      {"package", "Belos"},
+      {"method", "Pseudo Block GMRES"},
+      {"parameters", list{
+        {"Output Frequency", 1},
+        {"Output Style", 1},
+        {"Verbosity", 33}
+      }}
+      };
   const auto model = std::make_shared<nosh::model>(
-      mesh, f, jac, dfdp
-      // {
-      //   {"linear solver package", "Belos"},
-      //   {"method", "Pseudo Block CG"},
-      //   // {"preconditioner", problem.prec}
-      // }
-  );
+      mesh, f, jac, dfdp, linear_solver_params
+      );
 
   // Check out
   // https://trilinos.org/docs/dev/packages/nox/doc/html/parameters.html
@@ -54,7 +57,7 @@ int main(int argc, char *argv[]) {
             }},
             {"Test 1", list {
               {"Test Type", "MaxIters"},
-              {"Maximum Iterations", 5}
+              {"Maximum Iterations", 1}
             }}
           }},
           {"Printing", list{
