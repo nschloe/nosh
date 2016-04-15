@@ -12,6 +12,7 @@
 #include "mesh_reader.hpp"
 #include "model.hpp"
 #include "model_evaluator_nls.hpp"
+#include "nonlinear_solver.hpp"
 #include "parameter_matrix_keo.hpp"
 #include "scalar_field_constant.hpp"
 #include "subdomain.hpp"

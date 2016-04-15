@@ -22,20 +22,28 @@ int main(int argc, char *argv[]) {
       //   {"method", "Pseudo Block CG"},
       //   // {"preconditioner", problem.prec}
       // }
-      );
+  );
 
-#if 0
-  // starting value
-  nosh::function x(mesh);
-  x.putScalar(0.0);
 
   nosh::nonlinear_solve(
-      model, x,
+      model,
       {
         {"method", "Newton"},
       }
       );
 
+  // // starting value
+  // nosh::function x(mesh);
+  // x.putScalar(0.0);
+
+  // nosh::nonlinear_solve(
+  //     model, x,
+  //     {
+  //       {"method", "Newton"},
+  //     }
+  //     );
+
+#if 0
   // nosh::nonlinear_solve(
   //     model, x,
   //     {

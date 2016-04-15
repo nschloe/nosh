@@ -122,11 +122,5 @@ namespace nosh {
   convert_to_belos_parameters(
       const std::map<std::string, boost::any> & map
       );
-
-  void
-  std_map_to_teuchos_list(
-      const std::map<std::string, boost::any> & map,
-      Teuchos::ParameterList & p
-      );
 }
 #endif // NOSH_LINEARSOLVER_HPP
