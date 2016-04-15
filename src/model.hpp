@@ -166,12 +166,12 @@ public:
       p->sublist("Linear Solver Types")
       .sublist("Belos");
     //belosList.set("Solver Type", "MINRES");
-    //belosList.set("Solver Type", "Pseudo Block GMRES");
-    belosList.set("Solver Type", "Pseudo Block CG");
+    belosList.set("Solver Type", "Pseudo Block GMRES");
+    //belosList.set("Solver Type", "Pseudo Block CG");
 
     auto & solverList =
       belosList.sublist("Solver Types")
-      .sublist("Pseudo Block CG");
+      .sublist("Pseudo Block GMRES");
     solverList.set("Output Frequency", 1);
     solverList.set("Output Style", 1);
     solverList.set("Verbosity", 33);
@@ -361,8 +361,7 @@ protected:
         Teuchos::rcp_dynamic_cast<nosh::fvm_operator>(W_outT, true);
       std::shared_ptr<const Tpetra::Vector<double,int,int>> x_std =
         Teuchos::get_shared_ptr(x_in_tpetra);
-      const std::map<std::string, std::shared_ptr<const Tpetra::Vector<double, int, int>>> mp = {{"u0", x_std}};
-      jac->set_parameters(params, mp);
+      jac->set_parameters(params, {{"u0", x_std}});
     }
 
 //     // Fill preconditioner.

@@ -60,8 +60,8 @@ namespace nosh
 #ifndef NDEBUG
         TEUCHOS_ASSERT(this->mesh);
 #endif
-        TEUCHOS_ASSERT_EQUALITY(x.getNumVectors(), 0);
-        TEUCHOS_ASSERT_EQUALITY(y.getNumVectors(), 0);
+        TEUCHOS_ASSERT_EQUALITY(x.getNumVectors(), 1);
+        TEUCHOS_ASSERT_EQUALITY(y.getNumVectors(), 1);
 
         TEUCHOS_TEST_FOR_EXCEPT_MSG(
             mode != Teuchos::NO_TRANS,
