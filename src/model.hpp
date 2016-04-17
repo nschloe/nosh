@@ -29,6 +29,7 @@ public:
   // }
   model (
       const std::shared_ptr<nosh::mesh> & mesh,
+      const std::shared_ptr<const Tpetra::Vector<double,int,int>> & init_x,
       const std::shared_ptr<nosh::fvm_operator> & f,
       const std::shared_ptr<nosh::fvm_operator> & jac,
       const std::shared_ptr<nosh::fvm_operator> & dfdp,
@@ -42,7 +43,7 @@ public:
     space_(Thyra::createVectorSpace<double>(Teuchos::rcp(mesh_->map()))),
     p_map_(init_p_map_()),
     p_names_(init_p_names_()),
-    nominal_values_(init_nominal_values_())
+    nominal_values_(init_nominal_values_(init_x))
   {
   }
 
@@ -415,7 +416,9 @@ private:
   }
 
   Thyra::ModelEvaluatorBase::InArgs<double>
-  init_nominal_values_()
+  init_nominal_values_(
+      const std::shared_ptr<const Tpetra::Vector<double,int,int>> & x
+      )
   {
     const auto f_params = f_->get_scalar_parameters();
     const auto jac_params = jac_->get_scalar_parameters();
@@ -435,9 +438,7 @@ private:
 
     auto nominal_values = this->createInArgs();
     const Teuchos::RCP<const Tpetra::Vector<double,int,int>> initial_x =
-      Teuchos::rcp(
-        new Tpetra::Vector<double,int,int>(Teuchos::rcp(mesh_->map()))
-        );
+      Teuchos::rcp(x);
     const auto xxx = Thyra::createConstVector(initial_x, space_);
     nominal_values.set_p(0, p_init);
     nominal_values.set_x(xxx);

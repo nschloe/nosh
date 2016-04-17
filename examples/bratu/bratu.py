@@ -7,7 +7,7 @@ class NLaplace(FvmMatrix):
     def apply(u):
         return integrate(lambda x: -n_dot_grad(u(x)), dS)
 
-alpha = 0.03
+alpha = 0.001
 # alpha = ScalarParameter()
 
 

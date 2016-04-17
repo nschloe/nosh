@@ -3,6 +3,7 @@
 
 #include <Teuchos_ParameterList.hpp>
 #include <Thyra_ModelEvaluatorDefaultBase.hpp>
+#include <Tpetra_Vector.hpp>
 
 #include <boost/any.hpp>
 
@@ -13,7 +14,7 @@ using list = std::map<std::string, boost::any>;
 namespace nosh {
   void
   nonlinear_solve(
-      const std::shared_ptr<Thyra::ModelEvaluatorDefaultBase<double>> & P,
+      const std::shared_ptr<Thyra::ModelEvaluatorDefaultBase<double>> & model,
       std::map<std::string, boost::any> solver_params
       );
 }

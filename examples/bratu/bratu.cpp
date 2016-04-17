@@ -23,9 +23,13 @@ int main(int argc, char *argv[]) {
         {"Verbosity", 33}
       }}
       };
+
+  auto init_x = std::make_shared<nosh::function>(mesh);
+  init_x->putScalar(0.0);
   const auto model = std::make_shared<nosh::model>(
-      mesh, f, jac, dfdp, linear_solver_params
+      mesh, init_x, f, jac, dfdp, linear_solver_params
       );
+
 
   // Check out
   // https://trilinos.org/docs/dev/packages/nox/doc/html/parameters.html
@@ -57,7 +61,7 @@ int main(int argc, char *argv[]) {
             }},
             {"Test 1", list {
               {"Test Type", "MaxIters"},
-              {"Maximum Iterations", 1}
+              {"Maximum Iterations", 10}
             }}
           }},
           {"Printing", list{
@@ -123,8 +127,8 @@ int main(int argc, char *argv[]) {
       );
       */
 
-  nosh::write(x, "out.h5m");
 #endif
+  nosh::write(*init_x, "out.h5m");
 
   return EXIT_SUCCESS;
 }
