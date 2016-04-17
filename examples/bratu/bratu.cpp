@@ -34,7 +34,7 @@ int main(int argc, char *argv[]) {
   // Check out
   // https://trilinos.org/docs/dev/packages/nox/doc/html/parameters.html
   // for a full parameter description.
-  nosh::nonlinear_solve(
+  const auto solution = nosh::nonlinear_solve(
       model,
       {
         {"method", "Newton"},
@@ -128,7 +128,7 @@ int main(int argc, char *argv[]) {
       */
 
 #endif
-  nosh::write(*init_x, "out.h5m");
+  nosh::write(solution, mesh, "out.h5m");
 
   return EXIT_SUCCESS;
 }

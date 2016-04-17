@@ -10,7 +10,7 @@
 #include <map>
 
 // =============================================================================
-void
+std::shared_ptr<const Tpetra::Vector<double,int,int>>
 nosh::
 nonlinear_solve(
     const std::shared_ptr<Thyra::ModelEvaluatorDefaultBase<double>> & model,
@@ -34,10 +34,12 @@ nonlinear_solve(
   auto p = Teuchos::rcp(new Teuchos::ParameterList());
   std_map_to_teuchos_list(solver_params, *p);
 
+  auto observer = Teuchos::rcp(new nonlinear_observer());
+
   auto piro = std::make_shared<Piro::NOXSolver<double>>(
         p,
-        Teuchos::rcp(model)
-        // Teuchos::rcp(observer)
+        Teuchos::rcp(model),
+        observer
         );
 
   // Now the setting of inputs and outputs.
@@ -69,6 +71,9 @@ nonlinear_solve(
   // // Copy over solution vector. TODO check if really necessary
   // Tpetra::deep_copy(x, *sol_tpetra);
 
-  return;
+  return Teuchos::get_shared_ptr(
+      Thyra::TpetraOperatorVectorExtraction<double,int,int>::getConstTpetraVector(
+        observer->solution
+        ));
 }
 // =============================================================================
