@@ -78,6 +78,7 @@ def get_code_linear_problem(
     edge_cores = []
     boundary_cores = []
     fvm_matrices = []
+    scalar_parameters = []
     vector_parameters = []
     for dep in dependencies:
         # Sort the cores
@@ -100,7 +101,9 @@ def get_code_linear_problem(
             raise RuntimeError(
                 'Dependency \'%s\' not accounted for.' % dep.class_name
                 )
-        # Collect all vector dependencies
+        # Collect all dependencies
+        if dep.scalar_params:
+            scalar_parameters.append(id)
         if dep.vector_params:
             vector_parameters.append(id)
 
@@ -132,21 +135,51 @@ def get_code_linear_problem(
     members_declare = []
 
     extra_methods = []
-    lines_gvp = []
-    lines_sp = []
-    for id in vector_parameters:
+
+    lines_refill = []
+    lines_gsp = []
+    for id in scalar_parameters:
         core_set, k = id
-        var = '%s_params_%s_' % (core_set, k)
-        lines_gvp.append('''const auto %s =
-              %s[%s]->get_vector_parameters();
-            out_map.insert(
+        var = '%s_scalar_params_%s_' % (core_set, k)
+        lines_gsp.append('''const auto %s =
+              %s[%s]->get_scalar_parameters();
+            scalar_params_map.insert(
               %s.begin(),
               %s.end()
               );''' % (var, core_set, k, var, var)
               )
-        lines_sp.append('''
+        lines_refill.append('''
         %s[%s]->refill_(scalar_params, vector_params);
         ''' % (core_set, k))
+
+    lines_gvp = []
+    for id in vector_parameters:
+        core_set, k = id
+        var = '%s_vector_params_%s_' % (core_set, k)
+        lines_gvp.append('''const auto %s =
+              %s[%s]->get_vector_parameters();
+            vector_params_map.insert(
+              %s.begin(),
+              %s.end()
+              );''' % (var, core_set, k, var, var)
+              )
+        lines_refill.append('''
+        %s[%s]->refill_(scalar_params, vector_params);
+        ''' % (core_set, k))
+
+    if lines_gsp:
+        extra_methods.append('''
+        virtual
+        std::map<std::string, double>
+        get_scalar_parameters() const
+        {
+          std::map<std::string, double> scalar_params_map = {};
+          %s
+          return scalar_params_map;
+        };
+        ''' % '\n'.join(lines_gsp)
+        )
+
     tpetra = 'Tpetra::Vector<double, int, int>'
     if lines_gvp:
         extra_methods.append('''
@@ -154,13 +187,14 @@ def get_code_linear_problem(
         std::map<std::string, std::shared_ptr<const %s>>
         get_vector_parameters() const
         {
-          std::map<std::string, std::shared_ptr<const %s>> out_map;
+          std::map<std::string, std::shared_ptr<const %s>> vector_params_map = {};
           %s
-          return out_map;
+          return vector_params_map;
         };
         ''' % (tpetra, tpetra, '\n'.join(lines_gvp))
         )
-    if lines_sp:
+
+    if lines_refill:
         extra_methods.append('''
         virtual
         void
@@ -169,7 +203,7 @@ def get_code_linear_problem(
           const std::map<std::string, std::shared_ptr<const %s>> & vector_params
           )
           {%s}
-        ''' % (tpetra, '\n'.join(lines_sp))
+        ''' % (tpetra, '\n'.join(lines_refill))
         )
 
     templ = os.path.join(templates_dir, template_filename)

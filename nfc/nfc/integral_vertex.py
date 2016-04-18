@@ -276,7 +276,7 @@ def _handle_parameters(scalar_params, vector_params):
         )
         refill_body.append(
           ',\n'.join(['''
-          %s = vector_params.at("%s");
+          %s = scalar_params.at("%s");
           ''' % (a, a) for a in scalar_params])
           )
 

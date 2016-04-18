@@ -21,6 +21,7 @@ class FvmMatrixCode(object):
         u.nosh = True
 
         # TODO
+        self.scalar_params = set()
         self.vector_params = set()
 
         expr = cls.apply(u)
