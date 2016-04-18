@@ -85,6 +85,7 @@ class IntegralEdge(object):
 
             init.extend(extra_init)
             members_declare.extend(extra_declare)
+
             # template substitution
             filename = os.path.join(templates_dir, 'matrix_core_edge.tpl')
             with open(filename, 'r') as f:

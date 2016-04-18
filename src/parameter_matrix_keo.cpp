@@ -46,7 +46,7 @@ keo::
 {
 }
 // =============================================================================
-const std::map<std::string, double>
+std::map<std::string, double>
 keo::
 get_scalar_parameters() const
 {

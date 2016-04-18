@@ -37,6 +37,9 @@ class IntegralVertex(object):
             if s != sympy.IndexedBase('u'):
                 self.vector_params.add(s)
 
+        # collect scalar parameters
+        self.scalar_params = self.expr.atoms(nfl.ScalarParameter)
+
         self.dependencies = set().union(
             [ExpressionCode(type(atom))
                 for atom in self.expr.atoms(nfl.Expression)],
@@ -70,13 +73,14 @@ class IntegralVertex(object):
         init.extend(deps_init)
         declare.extend(deps_declare)
 
-        # handle vector parameters
-        vector_parameters, vector_init, vector_declare, vector_methods = \
-            _handle_vector_parameters(self.vector_params)
-        arguments.update(vector_parameters)
-        init.extend(vector_init)
-        declare.extend(vector_declare)
-        methods.extend(vector_methods)
+        # handle parameters
+        params_init, params_declare, params_methods = \
+            _handle_parameters(self.scalar_params, self.vector_params)
+        arguments.update(self.scalar_params)
+        arguments.update(self.vector_params)
+        init.extend(params_init)
+        declare.extend(params_declare)
+        methods.extend(params_methods)
 
         extra_body, extra_init, extra_declare = _get_extra(
                 arguments, used_vars
@@ -126,7 +130,8 @@ class IntegralVertex(object):
             'code': code,
             'class_name': self.class_name,
             'constructor_args': [],
-            'vector_parameters': vector_parameters
+            'scalar_parameters': self.scalar_params,
+            'vector_parameters': self.vector_params
             }
 
 
@@ -207,30 +212,34 @@ def _get_extra(arguments, used_variables):
     return body, init, declare
 
 
-def _handle_vector_parameters(vector_params):
+def _handle_parameters(scalar_params, vector_params):
     '''Treat vector variables (u, u0,...)
     '''
-    symbols = set()
-    vector_init = []
-    vector_declare = []
-    vector_methods = []
+    params_init = []
+    params_declare = []
+    params_methods = []
 
     tpetra_str = 'Tpetra::Vector<double, int, int>'
     for v in vector_params:
-        vector_init.extend([
+        params_init.extend([
             'mesh_(mesh)',
             '%s_vec_(std::make_shared<%s>(Teuchos::rcp(mesh->map())))' % (v, tpetra_str),
             '%s(%s_vec_->getData())' % (v, v)
             ])
-        vector_declare.extend([
+        params_declare.extend([
             'const std::shared_ptr<const nosh::mesh> mesh_;',
             'std::shared_ptr<const %s> %s_vec_;' % (tpetra_str, v),
             'Teuchos::ArrayRCP<const double> %s;' % v
             ])
-        symbols.add(sympy.Symbol('%s' % v))
+
+    for alpha in scalar_params:
+        params_init.append('%s(0.0)' % alpha)
+        params_declare.append('double %s;' % alpha)
+
+    refill_body = []
 
     if len(vector_params) > 0:
-        vector_methods.append('''
+        params_methods.append('''
         virtual
         std::map<std::string, std::shared_ptr<const %s>>
         get_vector_parameters() const
@@ -244,7 +253,35 @@ def _handle_vector_parameters(vector_params):
             ',\n'.join(['{"%s", %s_vec_}' % (v, v) for v in vector_params])
             )
         )
-        vector_methods.append('''
+        refill_body.append(
+          ',\n'.join(['''
+          this->%s_vec_ = vector_params.at("%s");
+          this->%s = this->%s_vec_->getData();
+          ''' % (vec, vec, vec, vec) for vec in vector_params])
+          )
+
+    if len(scalar_params) > 0:
+        params_methods.append('''
+        virtual
+        std::map<std::string, double>
+        get_scalar_parameters() const
+        {
+          return {
+            %s
+            };
+        };
+        ''' % (
+            ',\n'.join(['{"%s", %s}' % (p, p) for p in scalar_params])
+            )
+        )
+        refill_body.append(
+          ',\n'.join(['''
+          %s = vector_params.at("%s");
+          ''' % (a, a) for a in scalar_params])
+          )
+
+    if len(refill_body) > 0:
+        params_methods.append('''
         virtual
         void
         refill_(
@@ -254,11 +291,8 @@ def _handle_vector_parameters(vector_params):
         {%s}
         ''' % (
           tpetra_str,
-          ',\n'.join(['''
-          this->%s_vec_ = vector_params.at("%s");
-          this->%s = this->%s_vec_->getData();
-          ''' % (vec, vec, vec, vec) for vec in vector_params])
-          )
+          '\n'.join(refill_body)
+        )
         )
 
-    return symbols, vector_init, vector_declare, vector_methods
+    return params_init, params_declare, params_methods

@@ -35,7 +35,7 @@ public:
 
   //! Get scalar parameter map with their initial values.
   virtual
-  const std::map<std::string, double>
+  std::map<std::string, double>
   get_scalar_parameters() const
   {
     return {};

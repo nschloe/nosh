@@ -50,7 +50,7 @@ DkeoDP::
 {
 }
 // =============================================================================
-const std::map<std::string, double>
+std::map<std::string, double>
 DkeoDP::
 get_scalar_parameters() const
 {

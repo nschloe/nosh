@@ -12,6 +12,10 @@ class Expression(sympy.Function):
     # degree = sympy.oo
 
 
+class ScalarParameter(sympy.Symbol):
+    pass
+
+
 class Subdomain(object):
     pass
 
