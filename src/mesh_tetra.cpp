@@ -17,13 +17,13 @@ mesh_tetra(
     const std::shared_ptr<moab::ParallelComm> & mcomm,
     const std::shared_ptr<moab::Core> & mb
     ) :
-  mesh(_comm, mcomm, mb),
+  mesh(_comm, mcomm, mb)
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
-  compute_edge_data_time_(
+  ,compute_edge_data_time_(
       Teuchos::TimeMonitor::getNewTimer(
         "Nosh: mesh_tetra::compute_edge_data"
         )),
-  compute_control_volumes_time_(
+  ,compute_control_volumes_time_(
       Teuchos::TimeMonitor::getNewTimer(
         "Nosh: mesh_tetra::compute_control_volumes"
         ))

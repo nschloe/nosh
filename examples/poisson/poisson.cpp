@@ -4,7 +4,7 @@
 
 #include <Teuchos_StandardCatchMacros.hpp>
 
-using list = std::map<std::string, boost::any>;
+using dict = std::map<std::string, boost::any>;
 int main(int argc, char *argv[]) {
   Teuchos::GlobalMPISession session(&argc, &argv, NULL);
   auto out = Teuchos::VerboseObjectBase::getDefaultOStream();
@@ -35,7 +35,7 @@ int main(int argc, char *argv[]) {
         // For solver parameters, check
         // https://trilinos.org/wordpress/wp-content/uploads/2015/05/MueLu_Users_Guide_Trilinos12_0.pdf
         {"package", "MueLu"},
-        {"parameters", list{
+        {"parameters", dict{
           {"convergence tolerance", 1.0e-10},
           {"max cycles", 25},
           {"cycle type", "W"},
@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
         // for more options.
         {"package", "Amesos2"},
         {"method", "SuperLU"},
-        {"parameters", list{
+        {"parameters", dict{
           {"Transpose", false},
           {"ColPerm", "COLAMD"}
         }}
@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
         {"package", "Belos"},
         //,{"method", "Pseudo Block GMRES"},
         {"method", "Pseudo Block CG"},
-        {"parameters", list{
+        {"parameters", dict{
           {"Convergence Tolerance", 1.0e-10},
           {"Output Frequency", 1},
           {"Output Style", 1},
@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
         }},
         {"preconditioner", "MueLu"}
         // {"preconditioner matrix", M},
-        // {"preconditioner parameters", list{
+        // {"preconditioner parameters", dict{
         //   {"cycle type", "V"}
         // }}
 #endif

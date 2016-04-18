@@ -1,7 +1,7 @@
 #include "bratu.hpp"
 #include <nosh.hpp>
 
-using list = std::map<std::string, boost::any>;
+using dict = std::map<std::string, boost::any>;
 int main(int argc, char *argv[]) {
   Teuchos::GlobalMPISession session(&argc, &argv, NULL);
 
@@ -17,7 +17,7 @@ int main(int argc, char *argv[]) {
   const std::map<std::string, boost::any> linear_solver_params = {
       {"package", "Belos"},
       {"method", "Pseudo Block GMRES"},
-      {"parameters", list{
+      {"parameters", dict{
         {"Output Frequency", 1},
         {"Output Style", 1},
         {"Verbosity", 33}
@@ -36,18 +36,18 @@ int main(int argc, char *argv[]) {
   nosh::parameter_continuation(
       model,
       {
-        {"NOX", list{
-          {"Status Tests", list{
+        {"NOX", dict{
+          {"Status Tests", dict{
             {"Test Type", "NormF"},
             {"Norm Type", "Two Norm"},
             {"Tolerance", 1.0e-8}
           }}
         }},
-        {"LOCA", list{
-          {"Predictor", list{
+        {"LOCA", dict{
+          {"Predictor", dict{
             {"Method", "Tangent"}
           }},
-          {"Stepper", list{
+          {"Stepper", dict{
             {"Continuation Method", "Arc Length"},
             {"Continuation Parameter", "lmbda"},
             {"Initial Value", 2.0e-3},
@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
             {"Max Value", 1.0},
             {"Max Nonlinear Iterations", 5},
           }},
-          {"Step Size", list{
+          {"Step Size", dict{
             {"Initial Step Size", 1.0e-3},
             {"Min Step Size", 1.0e-5},
             {"Max Step Size", 1.0e-1},

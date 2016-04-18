@@ -1,6 +1,7 @@
 #!/bin/sh
 
-#CMAKE_PREFIX_PATH=/opt/trilinos/pristine/:$CMAKE_PREFIX_PATH \
+# OMPI_CXX=clang++ \
+CMAKE_PREFIX_PATH=/opt/trilinos/launchpad/:$CMAKE_PREFIX_PATH \
 CXX=mpicxx \
 FC=mpif90 \
 cmake \

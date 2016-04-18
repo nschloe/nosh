@@ -2,7 +2,7 @@
 #include <nosh.hpp>
 #include <memory>
 
-using list = std::map<std::string, boost::any>;
+using dict = std::map<std::string, boost::any>;
 int main(int argc, char *argv[]) {
   Teuchos::GlobalMPISession session(&argc, &argv, NULL);
 
@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
         {"package", "Belos"},
         //,{"method", "Pseudo Block GMRES"},
         {"method", "Pseudo Block CG"},
-        {"parameters", list{
+        {"parameters", dict{
           {"Convergence Tolerance", 1.0e-10},
           {"Output Frequency", 1},
           {"Output Style", 1},
@@ -33,7 +33,7 @@ int main(int argc, char *argv[]) {
         }},
         {"preconditioner", "MueLu"}
         // {"preconditioner matrix", M},
-        // {"preconditioner parameters", list{
+        // {"preconditioner parameters", dict{
         //   {"cycle type", "V"}
         // }}
       }

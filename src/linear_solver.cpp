@@ -397,23 +397,23 @@ convert_to_belos_parameters(
     boost::any_cast<const char *>(in_map.at("method"));
 
   out_map.insert({"Linear Solver Type", "Belos"});
-  out_map.insert({"Linear Solver Types", list{
-      {"Belos", list{{"Solver Type", method}}}
+  out_map.insert({"Linear Solver Types", dict{
+      {"Belos", dict{{"Solver Type", method}}}
       }});
 
-  auto & lst = boost::any_cast<list&>(out_map.at("Linear Solver Types"));
-  auto & belos = boost::any_cast<list&>(lst.at("Belos"));
+  auto & lst = boost::any_cast<dict&>(out_map.at("Linear Solver Types"));
+  auto & belos = boost::any_cast<dict&>(lst.at("Belos"));
   if (in_map.find("parameters") != in_map.end()) {
     belos.insert({
         "Solver Types",
-        list{{method, in_map.at("parameters")}}
+        dict{{method, in_map.at("parameters")}}
         });
   } else {
     // insert default parameters
     belos.insert({
         "Solver Types",
-        list{{method,
-          list{
+        dict{{method,
+          dict{
             {"Convergence Tolerance", 1.0e-10},
             {"Output Frequency", 1},
             {"Output Style", 1},
