@@ -13,7 +13,7 @@
 #include <map>
 #include <memory>
 
-using list = std::map<std::string, boost::any>;
+using dict = std::map<std::string, boost::any>;
 namespace nosh {
   // https://trilinos.org/docs/dev/packages/stratimikos/doc/html/index.html
   // http://stackoverflow.com/a/14425299/353337
@@ -22,14 +22,14 @@ namespace nosh {
   const std::map<std::string, boost::any> default_linear_solver_params = {
     {"package", "Belos"},
     {"method", "Pseudo Block GMRES"},
-    {"parameters", list{
+    {"parameters", dict{
       {"Convergence Tolerance", 1.0e-10},
       {"Output Frequency", 1},
       {"Output Style", 1},
       {"Verbosity", 33}
     }},
     {"preconditioner", "MueLu"},
-    {"preconditioner parameters", list{
+    {"preconditioner parameters", dict{
     }}
   };
   */
@@ -37,23 +37,23 @@ namespace nosh {
   static
   const std::map<std::string, boost::any> default_linear_solver_params = {
     {"package", "Amesos2"},
-    {"parameters", list{}}
+    {"parameters", dict{}}
   };
 
   //static
   //const std::map<std::string, boost::any> default_linear_solver_params = {
   //  {"package", "MueLu"},
-  //  {"parameters", list{}}
+  //  {"parameters", dict{}}
   //};
 
   //std::map<std::string, boost::any> default_linear_solver_params =
   //{
   //  {"Linear Solver Type", "Belos"},
-  //  {"Linear Solver Types", list{
-  //    {"Belos", list{
+  //  {"Linear Solver Types", dict{
+  //    {"Belos", dict{
   //      {"Solver Type", "Pseudo Block GMRES"},
-  //      {"Solver Types", list{
-  //        {"Pseudo Block GMRES", list{
+  //      {"Solver Types", dict{
+  //        {"Pseudo Block GMRES", dict{
   //          {"Convergence Tolerance", 1.0e-10},
   //          {"Output Frequency", 1},
   //          {"Output Style", 1},

@@ -1,7 +1,7 @@
 #include "bratu.hpp"
 #include <nosh.hpp>
 
-using list = std::map<std::string, boost::any>;
+using dict = std::map<std::string, boost::any>;
 int main(int argc, char *argv[]) {
   Teuchos::GlobalMPISession session(&argc, &argv, NULL);
 
@@ -17,7 +17,7 @@ int main(int argc, char *argv[]) {
   const std::map<std::string, boost::any> linear_solver_params = {
       {"package", "Belos"},
       {"method", "Pseudo Block GMRES"},
-      {"parameters", list{
+      {"parameters", dict{
         {"Output Frequency", 1},
         {"Output Style", 1},
         {"Verbosity", 33}
@@ -38,22 +38,22 @@ int main(int argc, char *argv[]) {
       model,
       {
         {"method", "Newton"},
-        {"NOX", list{
-          {"Status Tests", list{
+        {"NOX", dict{
+          {"Status Tests", dict{
             {"Test Type", "Combo"},
             {"Combo Type", "OR"},
             {"Number of Tests", 2},
-            {"Test 0", list{
+            {"Test 0", dict{
               {"Test Type", "Combo"},
               {"Combo Type", "AND"},
               {"Number of Tests", 2},
-              {"Test 0", list{
+              {"Test 0", dict{
                 {"Test Type", "NormF"},
                 {"Norm Type", "Two Norm"},
                 {"Scale Type", "Scaled"},
                 {"Tolerance", 1.0e-8}
               }},
-              {"Test 1", list{
+              {"Test 1", dict{
                 {"Test Type", "NormWRMS"},
                 {"Absolute Tolerance", 1.0e-6},
                 {"Relative Tolerance", 1.0e-6}
@@ -64,8 +64,8 @@ int main(int argc, char *argv[]) {
               {"Maximum Iterations", 10}
             }}
           }},
-          {"Printing", list{
-           {"Output Information", list{
+          {"Printing", dict{
+           {"Output Information", dict{
              {"Details", true},
              {"Outer Iteration", true},
              {"Outer Iteration Status Test", true},
@@ -90,11 +90,11 @@ int main(int argc, char *argv[]) {
   //     model, x,
   //     {
   //       {"method", "Newton"},
-  //       {"Direction", list{
+  //       {"Direction", dict{
   //         {"method": "steepest descend"},
   //         {"forcing term alpha", 1.0}
   //       }},
-  //       {"parameters", list{
+  //       {"parameters", dict{
   //         {"method", "polynomial"},
   //         {"max iters", 10},
   //         {"interpolation type", "quadratic"}
@@ -106,17 +106,17 @@ int main(int argc, char *argv[]) {
   nosh::parameter_continuation(
       model, x,
       {
-        {"Stepper", list{
+        {"Stepper", dict{
           {"Continuation Method", "Arc Length"},
           {"Contunuation Parameter", "mu"},
           {"Initial Value", 0.0},
           {"Max Value", 10.0},
           {"Max Nonlinear Iterations", 5},
         }};
-        {"Step Size", list{
+        {"Step Size", dict{
           {"Initial Step Size", 1.0e-2}
         }},
-        {"jacobian solve", list{
+        {"jacobian solve", dict{
           {"jacobian", jac},
           {"linear solver package", "Belos"},
           {"method", "Pseudo Block CG"},
