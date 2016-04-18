@@ -37,5 +37,11 @@ namespace nosh {
       const std::shared_ptr<Thyra::ModelEvaluatorDefaultBase<double>> & model,
       std::map<std::string, boost::any> solver_params
       );
+
+  void
+  parameter_continuation(
+      const std::shared_ptr<Thyra::ModelEvaluatorDefaultBase<double>> & model,
+      std::map<std::string, boost::any> solver_params
+      );
 }
 #endif // NOSH_NONLINEAR_SOLVER_HPP

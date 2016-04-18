@@ -77,3 +77,34 @@ nonlinear_solve(
         ));
 }
 // =============================================================================
+void
+nosh::
+parameter_continuation(
+    const std::shared_ptr<Thyra::ModelEvaluatorDefaultBase<double>> & model,
+    std::map<std::string, boost::any> solver_params
+    )
+{
+  auto p = Teuchos::rcp(new Teuchos::ParameterList());
+  std_map_to_teuchos_list(solver_params, *p);
+
+  auto piro = std::make_shared<Piro::LOCASolver<double>>(
+      p,
+      Teuchos::rcp(model),
+      Teuchos::null
+      //Teuchos::rcp(observer)
+      );
+
+  // Now the setting of inputs and outputs.
+  Thyra::ModelEvaluatorBase::InArgs<double> inArgs = piro->createInArgs();
+  inArgs.set_p(
+      0,
+      piro->getNominalValues().get_p(0)
+      );
+
+  // Set output arguments to evalModel call.
+  Thyra::ModelEvaluatorBase::OutArgs<double> outArgs = piro->createOutArgs();
+
+  // Now solve the problem and return the responses.
+  piro->evalModel(inArgs, outArgs);
+}
+// =============================================================================
