@@ -38,42 +38,28 @@ int main(int argc, char *argv[]) {
       {
         {"NOX", list{
           {"Status Tests", list{
-            {"Test Type", "Combo"},
-            {"Combo Type", "OR"},
-            {"Number of Tests", 2},
-            {"Test 0", list{
-              {"Test Type", "Combo"},
-              {"Combo Type", "AND"},
-              {"Number of Tests", 2},
-              {"Test 0", list{
-                {"Test Type", "NormF"},
-                {"Norm Type", "Two Norm"},
-                {"Scale Type", "Scaled"},
-                {"Tolerance", 1.0e-8}
-              }},
-              {"Test 1", list{
-                {"Test Type", "NormWRMS"},
-                {"Absolute Tolerance", 1.0e-6},
-                {"Relative Tolerance", 1.0e-6}
-              }},
-            }},
-            {"Test 1", list {
-              {"Test Type", "MaxIters"},
-              {"Maximum Iterations", 10}
-            }}
+            {"Test Type", "NormF"},
+            {"Norm Type", "Two Norm"},
+            {"Tolerance", 1.0e-8}
           }}
         }},
         {"LOCA", list{
+          {"Predictor", list{
+            {"Method", "Tangent"}
+          }},
           {"Stepper", list{
             {"Continuation Method", "Arc Length"},
             {"Continuation Parameter", "lmbda"},
-            {"Initial Value", 1.0e-3},
-            {"Min Value", -10.0},
-            {"Max Value", 10.0},
+            {"Initial Value", 2.0e-3},
+            {"Min Value", -1.0},
+            {"Max Value", 1.0},
             {"Max Nonlinear Iterations", 5},
           }},
           {"Step Size", list{
-            {"Initial Step Size", 1.0e-3}
+            {"Initial Step Size", 1.0e-3},
+            {"Min Step Size", 1.0e-5},
+            {"Max Step Size", 1.0e-1},
+            {"Aggressiveness", 0.1}
           }}
         }}
       }

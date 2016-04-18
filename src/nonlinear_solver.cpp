@@ -96,12 +96,6 @@ parameter_continuation(
 
   // Now the setting of inputs and outputs.
   Thyra::ModelEvaluatorBase::InArgs<double> inArgs = piro->createInArgs();
-  inArgs.set_p(
-      0,
-      piro->getNominalValues().get_p(0)
-      );
-
-  // Set output arguments to evalModel call.
   Thyra::ModelEvaluatorBase::OutArgs<double> outArgs = piro->createOutArgs();
 
   // Now solve the problem and return the responses.
