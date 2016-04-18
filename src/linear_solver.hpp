@@ -2,7 +2,7 @@
 #define NOSH_LINEARSOLVER_HPP
 
 #include "linear_problem.hpp"
-#include "matrix.hpp"
+#include "fvm_matrix.hpp"
 #include "expression.hpp"
 #include "function.hpp"
 
@@ -112,7 +112,7 @@ namespace nosh {
 
   void
   scaled_linear_solve(
-      nosh::matrix & A,
+      nosh::fvm_matrix & A,
       const nosh::expression & f,
       nosh::function & x,
       std::map<std::string, boost::any> solver_params = nosh::default_linear_solver_params
@@ -121,12 +121,6 @@ namespace nosh {
   std::map<std::string, boost::any>
   convert_to_belos_parameters(
       const std::map<std::string, boost::any> & map
-      );
-
-  void
-  std_map_to_teuchos_list(
-      const std::map<std::string, boost::any> & map,
-      Teuchos::ParameterList & p
       );
 }
 #endif // NOSH_LINEARSOLVER_HPP

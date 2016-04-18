@@ -3,16 +3,7 @@
 import sympy
 
 
-class Function(sympy.Symbol):
-    def __init__(self):
-        return
-
-
-class Coefficient(object):
-    pass
-
-
-class VectorOperator(sympy.Function):
+class FvmOperator(sympy.Function):
     pass
 
 
@@ -21,15 +12,7 @@ class Expression(sympy.Function):
     # degree = sympy.oo
 
 
-class Vector(object):
-    pass
-
-
-class ScalarParameter(object):
-    pass
-
-
-class OuterNormal(Vector):
+class ScalarParameter(sympy.Symbol):
     pass
 
 
@@ -37,71 +20,113 @@ class Subdomain(object):
     pass
 
 
-# Linear operator defined via the operation along edges in a Delaunay mesh
-class FvmMatrix(sympy.Function):
+class Boundary(Subdomain):
     pass
 
-    #def edge_contrib(self, alpha, edge_midpoint):
-    #    return []
 
-    #def vertex_contrib(self, control_volume):
-    #    return None
+class Callable(object):
+    def __init__(self, *args):
+        self.args = args
+        return
 
-    #def __call__(self, *args):
-    #    print(super(FvmMatrix, self))
-    #    return super(FvmMatrix, self).__call__(self, *args)
-    #    print('Called !')
 
-    ## Override __new__,
-    ## cf. <https://groups.google.com/forum/#!topic/sympy/5mLEq4Gbyfk>.
-    #def __new__(self, name, edge_function):
-    #    obj = super(FvmMatrix, self).__new__(self, name)
-    #    return obj
+class FunctionParameter(sympy.Function):
+    pass
 
-    #def __init__(self, name, edge_function):
-    #    super(FvmMatrix, self).__init__(name)
-    #    self.edge_function = edge_function
-    #    return
 
-    #def __new__(self, *args, **kwargs):
-    #    #obj = super(FvmMatrix, self).__new__(self, name)
-    #    obj = super(FvmMatrix, self).__new__(self, *args, **kwargs)
-    #    return obj
+class CoreList(object):
+    '''A core is an entity that can occur in a the definition of `apply()` for
+    an operator. That's either an Integral or an FvmMatrix.
+    The purpose of organizing them into a CoreList is to make it possible to
+    "add" cores, which eventually comes down to just collecting the cores into
+    a list.
+    '''
+    def __init__(self, integrals, fvm_matrices=None):
+        self.integrals = integrals
+        if fvm_matrices is None:
+            fvm_matrices = []
+        self.fvm_matrices = fvm_matrices
 
-    #def __init__(self, name):
-    #    #obj = super(FvmMatrix, self).__new__(self, name)
-    #    #super(FvmMatrix, self).__init__(self, name)
-    #    return
+    def __add__(self, other):
+        self.integrals.extend(other.integrals)
+        self.fvm_matrices.extend(other.fvm_matrices)
+        return self
 
-    #def __init__(self, name, edge_function):
-    #    super(FvmMatrix, self).__init__(name)
-    #    self.edge_function = edge_function
-    #    return
+    def __sub__(self, other):
+        if other.fvm_matrices:
+            raise NotImplemented('Cannot negate FvmMatrices yet.')
+        # flip the sign on the integrand of all 'other' cores
+        new_integrals = [Integral(
+                lambda x: -integral.integrand(x),
+                integral.measure,
+                integral.subdomains
+                ) for integral in other.integrals]
+        self.integrals.extend(new_integrals)
+        return self
+
+    def __pos__(self):
+        return self
+
+    def __neg__(self):
+        if self.fvm_matrices:
+            raise NotImplemented('Cannot negate FvmMatrices yet.')
+        # flip the sign on the integrand of all 'self' cores
+        new_integrals = [Integral(
+                lambda x: -integral.integrand(x),
+                integral.measure,
+                integral.subdomains
+                ) for integral in self.integrals]
+        self.integrals = new_integrals
+        return self
+
+    def __mul__(self, other):
+        if self.fvm_matrices:
+            raise NotImplemented('Cannot multiply FvmMatrices yet.')
+        assert(isinstance(other, float) or isinstance(other, int))
+        # flip the sign on the integrand of all 'self' cores
+        new_integrals = [Integral(
+                lambda x: other * integrals.integrand(x),
+                integral.measure,
+                integral.subdomains
+                ) for integrals in self.integrals]
+        self.integrals = new_integrals
+        return self
+
+    __rmul__ = __mul__
+
+
+class FvmMatrix(Callable, CoreList):
+    # By default: No Dirichlet conditions.
+    dirichlet = []
+
+    def __init__(self, arg):
+        CoreList.__init__(self, [], [self])
+        return
 
 
 class LinearFvmProblem(object):
     pass
 
 
-class MatrixFactory(object):
-    def __init__(self):
-        return
-
-
 class Measure(object):
     pass
 
 
-class dV(Measure):
+class ControlVolume(Measure):
     pass
 
+dV = ControlVolume()
 
-class dS(Measure):
+class ControlVolumeSurface(Measure):
     pass
 
+dS = ControlVolumeSurface()
 
-class dGamma(Measure):
+
+class BoundarySurface(Measure):
     pass
+
+dGamma = BoundarySurface()
 
 
 def integrate(integrand, measure, subdomains=None):
@@ -116,70 +141,24 @@ def integrate(integrand, measure, subdomains=None):
             subdomains = set([subdomains])
 
     assert(
-        isinstance(measure, dS) or
-        isinstance(measure, dV) or
-        isinstance(measure, dGamma)
+        isinstance(measure, ControlVolumeSurface) or
+        isinstance(measure, ControlVolume) or
+        isinstance(measure, BoundarySurface)
         )
 
-    return Core([(integrand, measure, subdomains)])
+    return CoreList([Integral(integrand, measure, subdomains)])
 
 
-class Core(object):
-    def __init__(self, set_c):
-        self.cores = set_c
-
-    def __add__(self, other):
-        self.cores.extend(other.cores)
-        return Core(self.cores)
-
-    # def __sub__(self, other):
-    #     return Core(
-    #             lambda x: self.vertex(x) - other.vertex(x),
-    #             lambda x: self.edge(x) - other.edge(x),
-    #             lambda x: self.domain_boundary(x) - other.domain_boundary(x)
-    #             )
-
-
-class NonlinearProblem(object):
-    def __init__(self, f=None, dfdp=None, jac=None, prec=None):
-        self.f = f
-        self.dfdp = dfdp
-        self.jac = jac
-        self.prec = prec
-        return
-
-
-class EdgeCoefficient(object):
-    def __init__(self):
-        return
-
-
-class Integral(object):
-    def __init__(self, integrand, measure):
+class Integral(CoreList):
+    def __init__(self, integrand, measure, subdomains):
         self.integrand = integrand
         self.measure = measure
+        self.subdomains = subdomains
         return
-
-
-class DirichletBC(object):
-    def eval(self, x): return 0.0
-    subdomains = set()
-
-
-class NeumannBC(object):
-    def is_inside(self, x): return x[0] < 1e10
-
-    def eval(self, x): return 0.0
 
 
 class EdgeCore(object):
     pass
-
-
-def inner(a, b):
-    assert(isinstance(a, Vector))
-    assert(isinstance(b, Vector))
-    return
 
 
 class dot(sympy.Function):

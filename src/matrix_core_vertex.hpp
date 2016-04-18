@@ -1,5 +1,7 @@
-#ifndef NOSH_VERTEXCORE_H
-#define NOSH_VERTEXCORE_H
+#ifndef NOSH_MATRIX_CORE_VERTEX_H
+#define NOSH_MATRIX_CORE_VERTEX_H
+
+#include <moab/Core.hpp>
 
 namespace nosh
 {
@@ -8,27 +10,24 @@ namespace nosh
     double rhs;
   };
 
-  class vertex_core
+  class matrix_core_vertex
   {
     public:
-      explicit vertex_core(
+      explicit matrix_core_vertex(
           const std::set<std::string> & _subdomain_ids = {"everywhere"}
           ):
         subdomain_ids(_subdomain_ids)
         {};
 
-      virtual ~vertex_core() {};
+      virtual ~matrix_core_vertex() {};
 
       virtual
       vertex_data
-      eval(
-          const Eigen::Vector3d & x,
-          const double control_volume
-          ) const = 0;
+      eval(const moab::EntityHandle & vertex) const = 0;
 
     public:
       const std::set<std::string> subdomain_ids;
   };
 } // namespace nosh
 
-#endif // NOSH_VERTEXCORE_H
+#endif // NOSH_MATRIX_CORE_VERTEX_H

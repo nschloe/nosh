@@ -193,7 +193,7 @@ rebuild(
   // introduce the additional complication of having KEO depend on psi, and
   // would likely lead to some confusion in the rest of the code.  Hence, don't
   // worry too much about this until memory constrains get tight.
-  regularizedkeo_->set_parameters(params);
+  regularizedkeo_->set_parameters(params, {});
 
   const double g = params.at("g");
   // Add 2*g*|psi|^2 to the diagonal.

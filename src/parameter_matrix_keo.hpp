@@ -48,13 +48,16 @@ public:
 
   //! Gets the initial parameters from this module.
   virtual
-  const std::map<std::string, double>
-  get_parameters() const;
+  std::map<std::string, double>
+  get_scalar_parameters() const;
 
 protected:
 private:
   void
-  refill_(const std::map<std::string, double> & params);
+  refill_(
+      const std::map<std::string, double> & scalar_params,
+      const std::map<std::string, std::shared_ptr<const Tpetra::Vector<double, int, int>>> & vector_params
+      );
 
   void
   build_alpha_cache_(

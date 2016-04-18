@@ -38,7 +38,7 @@ testKeo(
   nosh::parameter_matrix::keo keo(mesh, thickness, mvp);
 
   // Explicitly create the kinetic energy operator.
-  keo.set_parameters({{"mu", initMu}});
+  keo.set_parameters({{"mu", initMu}}, {});
 
 #if 0
   // show me the matrix

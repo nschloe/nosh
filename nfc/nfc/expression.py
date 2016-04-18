@@ -3,31 +3,46 @@
 import os
 from string import Template
 import sympy
-from .helpers import extract_c_expression, templates_dir
+from .helpers import \
+        compare_variables, \
+        extract_c_expression, \
+        sanitize_identifier, \
+        templates_dir
 
 
-def get_code_expression(name, expr):
-    x = sympy.MatrixSymbol('x', 3, 1)
+class ExpressionCode(object):
+    def __init__(self, cls):
+        self.class_name = sanitize_identifier(cls.__name__)
+        self.cls = cls
+        return
 
-    result = self.expr.eval(x)
+    def get_dependencies(self):
+        return []
 
-    expr_arguments = set([sympy.Symbol('x')])
-    try:
-        free_vars = result.free_variables
-    except AttributeError:
-        free_vars = set([])
-    unused_arguments = expr_arguments - free_vars
+    def get_class_object(self, dependency_class_objects):
+        x = sympy.MatrixSymbol('x', 3, 1)
+        if isinstance(self.cls.eval_body, str):
+            # The code is specified literally.
+            eval_body = self.cls.eval_body
+        else:
+            result = self.cls.eval(x)
+            unused_args, _ = compare_variables(set([x]), [result])
+            eval_body = \
+                '\n'.join(('(void) %s;' % name) for name in unused_args) \
+                + 'return %s;' % extract_c_expression(result)
 
-    # template substitution
-    with open(os.path.join(templates_dir, 'expression.tpl'), 'r') as f:
-        src = Template(f.read())
-        code = src.substitute({
-            'name': self.name.lower(),  # class names are lowercase
-            'degree': self.expr.degree,
-            'eval': extract_c_expression(result),
-            'unused_args': '\n'.join(
-                ('(void) %s;' % name) for name in unused_arguments
-                ),
-            })
+        # template substitution
+        filename = os.path.join(templates_dir, 'expression.tpl')
+        with open(filename, 'r') as f:
+            src = Template(f.read())
+            code = src.substitute({
+                'name': self.class_name,
+                'eval_body': eval_body
+                })
 
-    return code, set()
+        return {
+            'code': code,
+            'type': 'expression',
+            'class_name': self.class_name,
+            'constructor_args': []
+            }

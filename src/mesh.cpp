@@ -63,9 +63,14 @@ create_default_meshsets_()
   const auto boundary = this->mbw_->create_meshset(moab::MESHSET_SET);
   mbw_->add_entities(boundary, this->boundary_vertices);
 
+  // Create empty meshset for "everywhere_halfedges".
+  const auto everywhere_halfedges =
+    this->mbw_->create_meshset(moab::MESHSET_SET);
+
   return {
     // MOAB's default meshset 0 matches everything.
     {"everywhere", 0},
+    {"everywhere_halfedges", everywhere_halfedges},
     {"boundary", boundary}
   };
 }
@@ -163,9 +168,9 @@ mark_subdomains(const std::set<std::shared_ptr<nosh::subdomain>> & subdomains)
 
     // Create meshset for storing edges of which exactly ONE vertex is in the
     // set (the boundary of the subdomain).
-    const auto boundary_meshset = this->mbw_->create_meshset(moab::MESHSET_SET);
-    const std::string set_boundary_name = sd->id + "_boundary";
-    this->meshsets_[set_boundary_name] = boundary_meshset;
+    const auto halfedges_meshset =
+      this->mbw_->create_meshset(moab::MESHSET_SET);
+    this->meshsets_[sd->id + "_halfedges"] = halfedges_meshset;
 
     const auto contained_verts = this->mbw_->get_entities_by_type(
         meshset, moab::MBVERTEX
@@ -184,7 +189,7 @@ mark_subdomains(const std::set<std::shared_ptr<nosh::subdomain>> & subdomains)
       if (is_x0_inside && is_x1_inside) {
         mbw_->add_entities(meshset, {edge});
       } else if (is_x0_inside || is_x1_inside) {
-        mbw_->add_entities(boundary_meshset, {edge});
+        mbw_->add_entities(halfedges_meshset, {edge});
       }
     }
   }

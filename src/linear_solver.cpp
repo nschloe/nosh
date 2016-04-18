@@ -1,7 +1,7 @@
 #include "linear_solver.hpp"
 
 #include "linear_problem.hpp"
-#include "matrix.hpp"
+#include "fvm_matrix.hpp"
 #include "helper.hpp"
 
 #include <Amesos2.hpp>
@@ -42,7 +42,7 @@ linear_solve(
     )
 {
   // solve
-  linear_solve(P.matrix, P.rhs, x, solver_params);
+  linear_solve(*(P.matrix), *(P.rhs), x, solver_params);
   return;
 }
 // =============================================================================
@@ -312,7 +312,7 @@ linear_solve_muelu(
 void
 nosh::
 scaled_linear_solve(
-    nosh::matrix & A,
+    nosh::fvm_matrix & A,
     const nosh::expression & f,
     nosh::function & x,
     std::map<std::string, boost::any> solver_params
@@ -401,8 +401,8 @@ convert_to_belos_parameters(
       {"Belos", list{{"Solver Type", method}}}
       }});
 
-  auto lst = boost::any_cast<list>(out_map.at("Linear Solver Types"));
-  auto belos = boost::any_cast<list>(lst.at("Belos"));
+  auto & lst = boost::any_cast<list&>(out_map.at("Linear Solver Types"));
+  auto & belos = boost::any_cast<list&>(lst.at("Belos"));
   if (in_map.find("parameters") != in_map.end()) {
     belos.insert({
         "Solver Types",
@@ -434,38 +434,5 @@ convert_to_belos_parameters(
   out_map.insert({"Preconditioner Type", "None"});
 
   return out_map;
-}
-// =============================================================================
-void
-nosh::
-std_map_to_teuchos_list(
-    const std::map<std::string, boost::any> & map,
-    Teuchos::ParameterList & p
-    )
-{
-  for (const auto & entry: map) {
-      if(entry.second.type() == typeid(int)) {
-        p.set(entry.first, boost::any_cast<int>(entry.second));
-      } else if(entry.second.type() == typeid(double)) {
-        p.set(entry.first, boost::any_cast<double>(entry.second));
-      } else if(entry.second.type() == typeid(bool)) {
-        p.set(entry.first, boost::any_cast<bool>(entry.second));
-      } else if(entry.second.type() == typeid(const char*)) {
-        p.set(entry.first, boost::any_cast<const char*>(entry.second));
-      } else if(entry.second.type() == typeid(std::string)) {
-        p.set(entry.first, boost::any_cast<std::string>(entry.second));
-      } else if(entry.second.type() == typeid(std::map<std::string, boost::any>)) {
-        std_map_to_teuchos_list(
-            boost::any_cast<std::map<std::string, boost::any>>(entry.second),
-            p.sublist(entry.first)
-            );
-      } else {
-        TEUCHOS_TEST_FOR_EXCEPT_MSG(
-            true,
-            "Unknown value type of key \"" << entry.first << "\"."
-            );
-      }
-  }
-  return;
 }
 // =============================================================================

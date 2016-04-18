@@ -32,7 +32,7 @@ constant::
 // ============================================================================
 const std::map<std::string, double>
 constant::
-get_parameters() const
+get_scalar_parameters() const
 {
   std::map<std::string, double> m;
   if (!param1_name_.empty())

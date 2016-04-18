@@ -14,8 +14,7 @@ int main(int argc, char *argv[]) {
   //const auto mesh = nosh::read("cube.h5m");
 
   mesh->mark_subdomains({
-      std::make_shared<neumann_boundary::d1>(),
-      std::make_shared<neumann_boundary::d2>()
+      std::make_shared<neumann_boundary::d1>()
       });
 
   neumann_boundary::problem p(mesh);

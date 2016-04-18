@@ -3,7 +3,7 @@ class ${name}:
 {
   public:
     ${name}():
-      nosh::expression(${degree})
+      nosh::expression(0)
     {}
 
     virtual
@@ -14,7 +14,6 @@ class ${name}:
     double
     operator()(const Eigen::Vector3d & x) const
     {
-      ${unused_args}
-      return ${eval};
+      ${eval_body}
     };
 };

@@ -50,17 +50,21 @@ DkeoDP::
 {
 }
 // =============================================================================
-const std::map<std::string, double>
+std::map<std::string, double>
 DkeoDP::
-get_parameters() const
+get_scalar_parameters() const
 {
-  return mvp_->get_parameters();
+  return mvp_->get_scalar_parameters();
 }
 // =============================================================================
 void
 DkeoDP::
-refill_(const std::map<std::string, double> & params)
+refill_(
+    const std::map<std::string, double> & params,
+    const std::map<std::string, std::shared_ptr<const Tpetra::Vector<double, int, int>>> & vector_params
+    )
 {
+  (void) vector_params;
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   Teuchos::TimeMonitor tm(*keo_fill_time_);
 #endif

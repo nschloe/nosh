@@ -25,7 +25,7 @@ explicit_values::
 // ============================================================================
 const std::map<std::string, double>
 explicit_values::
-get_parameters() const
+get_scalar_parameters() const
 {
   std::map<std::string, double> m;
   m["beta"] = 1.0;

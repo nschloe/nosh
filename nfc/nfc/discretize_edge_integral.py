@@ -5,6 +5,13 @@ import sympy
 from sympy.matrices.expressions.matexpr import \
         MatrixElement, MatrixExpr, MatrixSymbol
 
+import nfl
+
+
+def discretize_edge_integral(integrand):
+    discretizer = DiscretizeEdgeIntegral()
+    return discretizer.generate(integrand)
+
 
 debug = False
 if debug:
@@ -14,13 +21,9 @@ if debug:
 class DiscretizeEdgeIntegral(object):
     def __init__(self):
         self.arg_translate = {}
-        self._discretization = 0
         self.x0 = sympy.Symbol('x0')
         self.x1 = sympy.Symbol('x1')
-        self.u0 = sympy.Symbol('u0')
-        self.u1 = sympy.Symbol('u1')
         self.edge_length = sympy.Symbol('edge_length')
-        self.covolume = sympy.Symbol('edge_covolume')
         return
 
     def visit(self, node):
@@ -45,21 +48,35 @@ class DiscretizeEdgeIntegral(object):
         raise RuntimeError('Unknown node type \"', type(node), '\".')
         return
 
-    def generate(self, node, u, x):
+    def generate(self, node):
         '''Entrance point to this class.
         '''
-        self._discretization = 0
-        out = self.visit(node)
-        # Now multiply the value we got out by the covolume
-        out *= self.covolume
-        # Replace u(x0) by u0, u(x1) by u1.
-        out = out.subs(u(self.x0), self.u0)
-        out = out.subs(u(self.x1), self.u1)
-        # Replace u(x) by 0.5*(u0 + u1) (the edge midpoint)
-        out = out.subs(u(x), 0.5 * (self.u0 + self.u1))
+        x = sympy.MatrixSymbol('x', 3, 1)
+        expr = node(x)
+        # Collect all nosh function variables.
+        function_vars = []
+        for f in expr.atoms(sympy.Function):
+            if hasattr(f, 'nosh'):
+                function_vars.append(f.func)
+
+        out = sympy.Symbol('edge_covolume') * self.visit(expr)
+
+        vector_vars = []
+        for f in function_vars:
+            # Replace f(x0) by f[k0], f(x1) by f[k1].
+            k0 = sympy.Symbol('k0')
+            k1 = sympy.Symbol('k1')
+            f_vec = sympy.IndexedBase('%s' % f)
+            out = out.subs(f(self.x0), f_vec[k0])
+            out = out.subs(f(self.x1), f_vec[k1])
+            # Replace f(x) by 0.5*(f[k0] + f[k1]) (the edge midpoint)
+            out = out.subs(f(x), 0.5 * (f_vec[k0] + f_vec[k1]))
+
+            vector_vars.append(f_vec)
+
         # Replace x by 0.5*(x0 + x1) (the edge midpoint)
         out = out.subs(x, 0.5 * (self.x0 + self.x1))
-        return out
+        return out, vector_vars
 
     def generic_visit(self, node):
         raise RuntimeError(
@@ -89,10 +106,11 @@ class DiscretizeEdgeIntegral(object):
             arg1 = self.visit(node.args[1])
             out = node.func(arg0, arg1)
         elif id == 'n_dot_grad':
-            assert(len(node.args) == 2)
-            f = node.args[0]
-            assert(f.is_Function)
-            assert(isinstance(node.args[1], MatrixSymbol))
+            assert(len(node.args) == 1)
+            fx = node.args[0]
+            f = fx.func
+            assert(len(fx.args) == 1)
+            assert(isinstance(fx.args[0], MatrixSymbol))
             out = (f(self.x1) - f(self.x0)) / self.edge_length
         else:
             # Default function handling: Assume one argument, e.g., A(x).

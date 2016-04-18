@@ -122,20 +122,17 @@ rebuild(
   // store the matrix at one common place (e.g., the builder).  This might
   // however lead to complications in a situation like the following:
   //
-  //   1. The matrix is requested by the Jacobian operator,
-  //      a pointer to the common storage place is
-  //      returned.
-  //   2. The matrix is requested by compute_f()
-  //      with different parameters.
-  //      Now also the Jacobian operato's instance
-  //      has the altered matrix.
+  //   1. The matrix is requested by the Jacobian operator, a pointer to the
+  //      common storage place is returned.
+  //   2. The matrix is requested by compute_f() with different parameters.
+  //      Now also the Jacobian operator's instance has the altered matrix.
   //   3. The Jacobian operator uses the matrix.
   //
   // One might argue that this situation is does not occur in the given
   // context, but really the code shouldn't make any assumptions about it.
   // Besides, the matrix copy that happens in fill is not of much concern
   // computationally. Should this ever become an issue, revisit.
-  keo_->set_parameters(params);
+  keo_->set_parameters(params, {});
 
   // Rebuild diagonals.
   this->rebuild_diags_(params, current_x);

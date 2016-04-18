@@ -8,11 +8,11 @@ class ${name}:
       ${members_init}
     {
       this->fill_();
-    };
+    }
 
     virtual
       ~${name}()
-      {};
+      {}
 
   private:
     ${members_declare}

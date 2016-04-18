@@ -1,5 +1,7 @@
-#ifndef NOSH_BOUNDARYCORE_H
-#define NOSH_BOUNDARYCORE_H
+#ifndef NOSH_MATRIX_CORE_BOUNDARY_H
+#define NOSH_MATRIX_CORE_BOUNDARY_H
+
+#include <moab/Core.hpp>
 
 namespace nosh
 {
@@ -8,27 +10,24 @@ namespace nosh
     double rhs;
   };
 
-  class boundary_core
+  class matrix_core_boundary
   {
     public:
-      explicit boundary_core(
+      explicit matrix_core_boundary(
           const std::set<std::string> & _subdomain_ids = {"boundary"}
           ):
         subdomain_ids(_subdomain_ids)
         {};
 
-      virtual ~boundary_core() {};
+      virtual ~matrix_core_boundary() {};
 
       virtual
       boundary_data
-      eval(
-          const Eigen::Vector3d & x,
-          const double surface_area
-          ) const = 0;
+      eval(const moab::EntityHandle & vertex) const = 0;
 
     public:
       const std::set<std::string> subdomain_ids;
   };
 } // namespace nosh
 
-#endif // NOSH_BOUNDARYCORE_H
+#endif // NOSH_MATRIX_CORE_BOUNDARY_H

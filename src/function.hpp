@@ -31,8 +31,24 @@ namespace nosh {
   void
   write(
       const nosh::function & x,
-      const std::string & file_name
-      );
+      const std::string & filename
+      )
+  {
+    x.mesh->insert_vector(x, "x");
+    x.mesh->write(filename);
+  }
+
+  // Helper functions
+  void
+  write(
+      const std::shared_ptr<const Tpetra::Vector<double,int,int>> & x,
+      const std::shared_ptr<const nosh::mesh> & mesh,
+      const std::string & filename
+      )
+  {
+    mesh->insert_vector(*x, "x");
+    mesh->write(filename);
+  }
 
 }
 #endif // NOSH_FUNCTION_HPP

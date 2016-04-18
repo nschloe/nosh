@@ -1,22 +1,23 @@
 # -*- coding: utf-8 -*-
-from sympy import *
 from nfl import *
 
 
-class Bc1(DirichletBC):
-    def eval(self, x): return 0.0
-
-
 class eps(Expression):
-    pass
+    eval_body = '''
+    if (x[0] > 0.0) {
+      return 3.0;
+    } else {
+      return 1.0;
+    }
+    '''
 
 
 class Problem(LinearFvmProblem):
-    def eval(u):
-        return integrate(lambda x: -eps(x) * n_dot_grad(u, x), dS()) \
-                + integrate(lambda x: -1.0, dV())
+    def apply(u):
+        return integrate(lambda x: -eps(x) * n_dot_grad(u(x)), dS) \
+                - integrate(lambda x: 1.0, dV)
 
-    dirichlet_boundary_conditions = [Bc1()]
+    dirichlet = [(lambda x: 0.0, Boundary)]
 
 
 # Alternative (raw) syntax:

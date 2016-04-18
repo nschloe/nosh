@@ -30,7 +30,7 @@ public:
   //! Get parameter names and initial values.
   virtual
   const std::map<std::string, double>
-  get_parameters() const;
+  get_scalar_parameters() const;
 
   double
   get_edge_projection(const unsigned int edge_index) const;

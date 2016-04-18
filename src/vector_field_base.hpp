@@ -23,7 +23,7 @@ public:
   //! get parameter names and initial values.
   virtual
   const std::map<std::string, double>
-  get_parameters() const = 0;
+  get_scalar_parameters() const = 0;
 
   //! Projection of the vector field onto an edge at the midpoint of the edge.
   virtual

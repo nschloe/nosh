@@ -21,5 +21,11 @@ namespace nosh
   show_tpetra_crs_matrix(
     const Tpetra::CrsMatrix<double,int,int> & A
     );
+
+  void
+  std_map_to_teuchos_list(
+      const std::map<std::string, boost::any> & map,
+      Teuchos::ParameterList & p
+      );
 }
 #endif
