@@ -73,11 +73,16 @@ class IntegralVertex(object):
         init.extend(deps_init)
         declare.extend(deps_declare)
 
+        arguments.update(self.scalar_params)
+        # Unfortunately, we cannot just add the vector_params to the arguments
+        # since in the used_variables, given by expr.free_symbols, they are
+        # reported as sympy.Symbol, not sympy.IndexedBase.
+        for v in self.vector_params:
+            arguments.add(sympy.Symbol('%s' % v))
+
         # handle parameters
         params_init, params_declare, params_methods = \
             _handle_parameters(self.scalar_params, self.vector_params)
-        arguments.update(self.scalar_params)
-        arguments.update(self.vector_params)
         init.extend(params_init)
         declare.extend(params_declare)
         methods.extend(params_methods)
@@ -280,6 +285,7 @@ def _handle_parameters(scalar_params, vector_params):
           ''' % (a, a) for a in scalar_params])
           )
 
+    refill_body = list_unique(refill_body)
     if len(refill_body) > 0:
         params_methods.append('''
         virtual
