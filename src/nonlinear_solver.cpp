@@ -1,14 +1,36 @@
 #include "nonlinear_solver.hpp"
 #include "helper.hpp"
 
-#include <Piro_NOXSolver.hpp>
 #include <Piro_LOCASolver.hpp>
+#include <Piro_NOXSolver.hpp>
+#include <Piro_ObserverBase.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_RCPStdSharedPtrConversions.hpp>
 #include <Thyra_TpetraThyraWrappers.hpp>
 
 #include <map>
 
+// =============================================================================
+namespace nosh {
+  class nonlinear_observer: public Piro::ObserverBase<double>
+  {
+    public:
+    nonlinear_observer(): solution(Teuchos::null) {};
+
+    virtual ~nonlinear_observer() {};
+
+    using Piro::ObserverBase<double>::observeSolution;
+    virtual
+    void
+    observeSolution(const Thyra::VectorBase<double> &sol)
+    {
+      this->solution = sol.clone_v();
+    }
+
+    public:
+    Teuchos::RCP<const Thyra::VectorBase<double>> solution;
+  };
+}
 // =============================================================================
 std::shared_ptr<const Tpetra::Vector<double,int,int>>
 nosh::
@@ -81,6 +103,7 @@ void
 nosh::
 parameter_continuation(
     const std::shared_ptr<Thyra::ModelEvaluatorDefaultBase<double>> & model,
+    const std::shared_ptr<LOCA::Thyra::SaveDataStrategy> & data_saver,
     std::map<std::string, boost::any> solver_params
     )
 {
@@ -90,8 +113,7 @@ parameter_continuation(
   auto piro = std::make_shared<Piro::LOCASolver<double>>(
       p,
       Teuchos::rcp(model),
-      Teuchos::null
-      //Teuchos::rcp(observer)
+      Teuchos::rcp(data_saver)
       );
 
   // Now the setting of inputs and outputs.

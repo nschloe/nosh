@@ -1,6 +1,7 @@
 // single entry point to nosh
 
 #include "constant.hpp"
+#include "continuation_data_saver.hpp"
 #include "expression.hpp"
 #include "fvm_matrix.hpp"
 #include "fvm_operator.hpp"
