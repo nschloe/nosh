@@ -14,7 +14,8 @@ class continuation_data_saver: public LOCA::Thyra::SaveDataStrategy
   explicit continuation_data_saver(
       const std::shared_ptr<nosh::mesh> & mesh
       ):
-    mesh_(mesh)
+    mesh_(mesh),
+    index_(0)
   {
   };
 
@@ -27,7 +28,9 @@ class continuation_data_saver: public LOCA::Thyra::SaveDataStrategy
       double p
       )
   {
-    // Get NOX::Thyra::Vector
+    (void) p;
+
+    // extract Tpetra vector
     const auto x_nox_thyra = dynamic_cast<const NOX::Thyra::Vector*>(&x);
     TEUCHOS_ASSERT(x_nox_thyra != nullptr);
     const auto x_thyra = x_nox_thyra->getThyraRCPVector();
@@ -35,12 +38,20 @@ class continuation_data_saver: public LOCA::Thyra::SaveDataStrategy
       Thyra::TpetraOperatorVectorExtraction<double,int,int>::getConstTpetraVector(
           x_thyra
           );
-    std::cout << "XXX " << p << std::endl;
-    nosh::write(Teuchos::get_shared_ptr(x_tpetra), mesh_, "out.h5m");
+
+    std::ostringstream index_stream;
+    index_stream << std::setw(4) << std::setfill('0') << index_;
+    std::ostringstream filename;
+    filename << "out" << index_stream.str() << ".h5m";
+
+    nosh::write(Teuchos::get_shared_ptr(x_tpetra), mesh_, filename.str());
+
+    index_++;
   }
 
   private:
   const std::shared_ptr<nosh::mesh> mesh_;
+  size_t index_;
 };
 }  // namespace nosh
 #endif  // NOSH_CONTINUATION_DATA_SAVER
