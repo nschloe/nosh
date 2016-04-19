@@ -408,7 +408,9 @@ insert_vector(
       name,
       1,
       moab::MB_TYPE_DOUBLE,
-      moab::MB_TAG_EXCL | moab::MB_TAG_DENSE
+      moab::MB_TAG_CREAT | moab::MB_TAG_DENSE
+      // Fail if the tag exists:
+      // moab::MB_TAG_EXCL | moab::MB_TAG_DENSE
       );
 
   const moab::Tag handle = std::get<0>(out);
