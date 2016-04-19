@@ -30,11 +30,15 @@ int main(int argc, char *argv[]) {
       mesh, init_x, f, jac, dfdp, linear_solver_params
       );
 
+  const auto saver = std::make_shared<nosh::continuation_data_saver>(
+      mesh
+      );
+
   // Check out
   // https://trilinos.org/docs/dev/packages/nox/doc/html/loca_parameters.html
   // for a full parameter description.
   nosh::parameter_continuation(
-      model,
+      model, saver,
       {
         {"NOX", dict{
           {"Status Tests", dict{
