@@ -60,8 +60,7 @@ namespace nosh
 #ifndef NDEBUG
         TEUCHOS_ASSERT(this->mesh);
 #endif
-        TEUCHOS_ASSERT_EQUALITY(x.getNumVectors(), 1);
-        TEUCHOS_ASSERT_EQUALITY(y.getNumVectors(), 1);
+        TEUCHOS_ASSERT_EQUALITY(x.getNumVectors(), y.getNumVectors());
 
         TEUCHOS_TEST_FOR_EXCEPT_MSG(
             mode != Teuchos::NO_TRANS,
@@ -77,20 +76,22 @@ namespace nosh
             );
         y.putScalar(0.0);
 
-        const auto x_data = x.getData(0);
-        auto y_data = y.getDataNonConst(0);
-
-        this->apply_edge_contributions_(x_data, y_data);
-        this->apply_vertex_contributions_(x_data, y_data);
-        this->apply_domain_boundary_contributions_(x_data, y_data);
-
         auto yk = Tpetra::MultiVector<double,int,int>(y, Teuchos::Copy);
         for (const auto & op: this->operators_) {
           op->apply(x, yk);
           y.update(1.0, yk, 1.0);
         }
 
-        this->apply_dirichlets_(x_data, y_data);
+        for (size_t j = 0; j < x.getNumVectors(); j++) {
+          const auto x_data = x.getData(j);
+          auto y_data = y.getDataNonConst(j);
+
+          this->apply_edge_contributions_(x_data, y_data);
+          this->apply_vertex_contributions_(x_data, y_data);
+          this->apply_domain_boundary_contributions_(x_data, y_data);
+          // Dirichlet comes at the end, overriding everything.
+          this->apply_dirichlets_(x_data, y_data);
+        }
 
         return;
       }
