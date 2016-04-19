@@ -41,6 +41,23 @@ int main(int argc, char *argv[]) {
             {"Test Type", "NormF"},
             {"Norm Type", "Two Norm"},
             {"Tolerance", 1.0e-8}
+          }},
+          {"Printing", dict{
+           {"Output Information", dict{
+             {"Details", true},
+             {"Outer Iteration", true},
+             {"Outer Iteration Status Test", true},
+             {"Inner Iteration", true},
+             {"Linear Solver Details", true},
+             {"Parameters", true},
+             {"Warning", true},
+             {"Debug", true},
+             {"Test Details", true},
+             {"Error", true},
+             {"Stepper Iteration", true},
+             {"Stepper Details", true},
+             {"Stepper Parameters", true}
+           }}
           }}
         }},
         {"LOCA", dict{
