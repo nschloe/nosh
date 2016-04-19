@@ -5,6 +5,8 @@
 #include <NOX_Thyra_Vector.H>
 #include <Thyra_TpetraThyraWrappers.hpp>
 
+#include "function.hpp"
+
 namespace nosh {
 class continuation_data_saver: public LOCA::Thyra::SaveDataStrategy
 {
@@ -34,6 +36,7 @@ class continuation_data_saver: public LOCA::Thyra::SaveDataStrategy
           x_thyra
           );
     std::cout << "XXX " << p << std::endl;
+    nosh::write(Teuchos::get_shared_ptr(x_tpetra), mesh_, "out.h5m");
   }
 
   private:

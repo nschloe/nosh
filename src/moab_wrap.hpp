@@ -55,7 +55,8 @@ namespace nosh {
         const auto rval = this->mb->tag_get_handle(name.c_str(), tag);
         if (rval != moab::MB_SUCCESS) {
           std::ostringstream oss;
-          oss << "error in moab::tag_get_handle (error code " << rval << ")";
+          oss << "error in moab::tag_get_handle(string) "
+              << "(error code " << rval << ", " << translate_error_code_(rval) << ")";
           throw std::runtime_error(oss.str());
         }
         return tag;
@@ -68,7 +69,8 @@ namespace nosh {
         const auto rval = this->mb->tag_get_length(tag, length);
         if (rval != moab::MB_SUCCESS) {
           std::ostringstream oss;
-          oss << "error in moab::tag_get_length (error code " << rval << ")";
+          oss << "error in moab::tag_get_length "
+              << "(error code " << rval << ", " << translate_error_code_(rval) << ")";
           throw std::runtime_error(oss.str());
         }
         return length;
@@ -81,7 +83,8 @@ namespace nosh {
         const auto rval = this->mb->tag_get_data_type(tag, type);
         if (rval != moab::MB_SUCCESS) {
           std::ostringstream oss;
-          oss << "error in moab::tag_get_data_type (error code " << rval << ")";
+          oss << "error in moab::tag_get_data_type "
+              << "(error code " << rval << ", " << translate_error_code_(rval) << ")";
           throw std::runtime_error(oss.str());
         }
         return type;
@@ -100,7 +103,8 @@ namespace nosh {
         const auto rval = this->mb->tag_get_data(tag, range, data.data());
         if (rval != moab::MB_SUCCESS) {
           std::ostringstream oss;
-          oss << "error in moab::tag_get_data (error code " << rval << ")";
+          oss << "error in moab::tag_get_data "
+              << "(error code " << rval << ", " << translate_error_code_(rval) << ")";
           throw std::runtime_error(oss.str());
         }
         return data;
@@ -119,7 +123,8 @@ namespace nosh {
         const auto rval = this->mb->tag_get_data(tag, range, data.data());
         if (rval != moab::MB_SUCCESS) {
           std::ostringstream oss;
-          oss << "error in moab::tag_get_int_data (error code " << rval << ")";
+          oss << "error in moab::tag_get_int_data "
+              << "(error code " << rval << ", " << translate_error_code_(rval) << ")";
           throw std::runtime_error(oss.str());
         }
         return data;
@@ -143,7 +148,8 @@ namespace nosh {
             );
         if (rval != moab::MB_SUCCESS) {
           std::ostringstream oss;
-          oss << "error in moab::tag_get_int_data (error code " << rval << ")";
+          oss << "error in moab::tag_get_int_data "
+              << "(error code " << rval << ", " << translate_error_code_(rval) << ")";
           throw std::runtime_error(oss.str());
         }
         return data;
@@ -160,7 +166,8 @@ namespace nosh {
             );
         if (rval != moab::MB_SUCCESS) {
           std::ostringstream oss;
-          oss << "error in moab::get_coords (error code " << rval << ")";
+          oss << "error in moab::get_coords "
+              << "(error code " << rval << ", " << translate_error_code_(rval) << ")";
           throw std::runtime_error(oss.str());
         }
         return coords;
@@ -182,7 +189,8 @@ namespace nosh {
             );
         if (rval != moab::MB_SUCCESS) {
           std::ostringstream oss;
-          oss << "error in moab::get_entities_by_type (error code " << rval << ")";
+          oss << "error in moab::get_entities_by_type "
+              << "(error code " << rval << ", " << translate_error_code_(rval) << ")";
           throw std::runtime_error(oss.str());
         }
         return entities;
@@ -204,7 +212,8 @@ namespace nosh {
             );
         if (rval != moab::MB_SUCCESS) {
           std::ostringstream oss;
-          oss << "error in moab::get_entities_by_dimension (error code " << rval << ")";
+          oss << "error in moab::get_entities_by_dimension "
+              << "(error code " << rval << ", " << translate_error_code_(rval) << ")";
           throw std::runtime_error(oss.str());
         }
         return entities;
@@ -228,7 +237,8 @@ namespace nosh {
             );
         if (rval != moab::MB_SUCCESS) {
           std::ostringstream oss;
-          oss << "error in moab::get_adjacencies (error code " << rval << ")";
+          oss << "error in moab::get_adjacencies "
+              << "(error code " << rval << ", " << translate_error_code_(rval) << ")";
           throw std::runtime_error(oss.str());
         }
         return adj_entities;
@@ -253,7 +263,8 @@ namespace nosh {
             );
         if (rval != moab::MB_SUCCESS) {
           std::ostringstream oss;
-          oss << "error in moab::get_adjacencies (error code " << rval << ")";
+          oss << "error in moab::get_adjacencies "
+              << "(error code " << rval << ", " << translate_error_code_(rval) << ")";
           throw std::runtime_error(oss.str());
         }
         return adj_entities;
@@ -275,7 +286,8 @@ namespace nosh {
             );
         if (rval != moab::MB_SUCCESS) {
           std::ostringstream oss;
-          oss << "error in moab::get_number_entities_by_dimension (error code " << rval << ")";
+          oss << "error in moab::get_number_entities_by_dimension "
+              << "(error code " << rval << ", " << translate_error_code_(rval) << ")";
           throw std::runtime_error(oss.str());
         }
         return num;
@@ -297,7 +309,8 @@ namespace nosh {
             );
         if (rval != moab::MB_SUCCESS) {
           std::ostringstream oss;
-          oss << "error in moab::get_number_entities_by_type (error code " << rval << ")";
+          oss << "error in moab::get_number_entities_by_type "
+              << "(error code " << rval << ", " << translate_error_code_(rval) << ")";
           throw std::runtime_error(oss.str());
         }
         return num;
@@ -321,7 +334,8 @@ namespace nosh {
             );
         if (rval != moab::MB_SUCCESS) {
           std::ostringstream oss;
-          oss << "error in moab::get_connectivity (error code " << rval << ")";
+          oss << "error in moab::get_connectivity "
+              << "(error code " << rval << ", " << translate_error_code_(rval) << ")";
           throw std::runtime_error(oss.str());
         }
         // construct vector from array
@@ -351,7 +365,8 @@ namespace nosh {
           );
       if (rval != moab::MB_SUCCESS) {
         std::ostringstream oss;
-        oss << "error in moab::load_file (error code " << rval << ")";
+        oss << "error in moab::load_file "
+            << "(error code " << rval << ", " << translate_error_code_(rval) << ")";
         throw std::runtime_error(oss.str());
       }
       return;
@@ -377,7 +392,8 @@ namespace nosh {
           );
       if (rval != moab::MB_SUCCESS) {
         std::ostringstream oss;
-        oss << "error in moab::write_file (error code " << rval << ")";
+        oss << "error in moab::write_file "
+            << "(error code " << rval << ", " << translate_error_code_(rval) << ")";
         throw std::runtime_error(oss.str());
       }
     }
@@ -404,7 +420,8 @@ namespace nosh {
           );
       if (rval != moab::MB_SUCCESS) {
         std::ostringstream oss;
-        oss << "error in moab::tag_get_handle (error code " << rval << ")";
+        oss << "error in moab::tag_get_handle(string, size, ...) "
+            << "(error code " << rval << ", " << translate_error_code_(rval) << ")";
         throw std::runtime_error(oss.str());
       }
       return std::make_tuple(tag_handle, created);
@@ -425,7 +442,8 @@ namespace nosh {
         );
       if (rval != moab::MB_SUCCESS) {
         std::ostringstream oss;
-        oss << "error in moab::tag_set_data (error code " << rval << ")";
+        oss << "error in moab::tag_set_data "
+            << "(error code " << rval << ", " << translate_error_code_(rval) << ")";
         throw std::runtime_error(oss.str());
       }
       return;
@@ -445,7 +463,8 @@ namespace nosh {
         );
       if (rval != moab::MB_SUCCESS) {
         std::ostringstream oss;
-        oss << "error in moab::tag_set_data (error code " << rval << ")";
+        oss << "error in moab::tag_set_data "
+            << "(error code " << rval << ", " << translate_error_code_(rval) << ")";
         throw std::runtime_error(oss.str());
       }
       return;
@@ -465,7 +484,8 @@ namespace nosh {
           );
       if (rval != moab::MB_SUCCESS) {
         std::ostringstream oss;
-        oss << "error in moab::create_meshset (error code " << rval << ")";
+        oss << "error in moab::create_meshset "
+            << "(error code " << rval << ", " << translate_error_code_(rval) << ")";
         throw std::runtime_error(oss.str());
       }
       return handle;
@@ -483,7 +503,8 @@ namespace nosh {
           );
       if (rval != moab::MB_SUCCESS) {
         std::ostringstream oss;
-        oss << "error in moab::add_entities (error code " << rval << ")";
+        oss << "error in moab::add_entities "
+            << "(error code " << rval << ", " << translate_error_code_(rval) << ")";
         throw std::runtime_error(oss.str());
       }
       return;
@@ -502,7 +523,8 @@ namespace nosh {
           );
       if (rval != moab::MB_SUCCESS) {
         std::ostringstream oss;
-        oss << "error in moab::add_entities (error code " << rval << ")";
+        oss << "error in moab::add_entities "
+            << "(error code " << rval << ", " << translate_error_code_(rval) << ")";
         throw std::runtime_error(oss.str());
       }
       return;
@@ -520,7 +542,8 @@ namespace nosh {
           );
       if (rval != moab::MB_SUCCESS) {
         std::ostringstream oss;
-        oss << "error in moab::unite_meshset (error code " << rval << ")";
+        oss << "error in moab::unite_meshset "
+            << "(error code " << rval << ", " << translate_error_code_(rval) << ")";
         throw std::runtime_error(oss.str());
       }
       return;
@@ -533,7 +556,8 @@ namespace nosh {
       const auto rval = this->mb->get_dimension(dim);
       if (rval != moab::MB_SUCCESS) {
         std::ostringstream oss;
-        oss << "error in moab::get_dimension (error code " << rval << ")";
+        oss << "error in moab::get_dimension "
+            << "(error code " << rval << ", " << translate_error_code_(rval) << ")";
         throw std::runtime_error(oss.str());
       }
       return dim;
@@ -556,6 +580,48 @@ namespace nosh {
 
     public:
       const std::shared_ptr<moab::Core> mb;
+
+    private:
+      std::string
+      translate_error_code_(const moab::ErrorCode error_code)
+      {
+        switch (error_code) {
+          case moab::MB_INDEX_OUT_OF_RANGE:
+            return "MB_INDEX_OUT_OF_RANGE";
+          case moab::MB_TYPE_OUT_OF_RANGE:
+            return "MB_TYPE_OUT_OF_RANGE";
+          case moab::MB_MEMORY_ALLOCATION_FAILED:
+            return "MB_MEMORY_ALLOCATION_FAILED";
+          case moab::MB_ENTITY_NOT_FOUND:
+            return "MB_ENTITY_NOT_FOUND";
+          case moab::MB_MULTIPLE_ENTITIES_FOUND:
+            return "MB_MULTIPLE_ENTITIES_FOUND";
+          case moab::MB_TAG_NOT_FOUND:
+            return "MB_TAG_NOT_FOUND";
+          case moab::MB_FILE_DOES_NOT_EXIST:
+            return "MB_FILE_DOES_NOT_EXIST";
+          case moab::MB_FILE_WRITE_ERROR:
+            return "MB_FILE_WRITE_ERROR";
+          case moab::MB_NOT_IMPLEMENTED:
+            return "MB_NOT_IMPLEMENTED";
+          case moab::MB_ALREADY_ALLOCATED:
+            return "MB_ALREADY_ALLOCATED";
+          case moab::MB_VARIABLE_DATA_LENGTH:
+            return "MB_VARIABLE_DATA_LENGTH";
+          case moab::MB_INVALID_SIZE:
+            return "MB_INVALID_SIZE";
+          case moab::MB_UNSUPPORTED_OPERATION:
+            return "MB_UNSUPPORTED_OPERATION";
+          case moab::MB_UNHANDLED_OPTION:
+            return "MB_UNHANDLED_OPTION";
+          case moab::MB_STRUCTURED_MESH:
+            return "MB_STRUCTURED_MESH";
+          case moab::MB_FAILURE:
+            return "MB_FAILURE";
+          default:
+            return "unknown error";
+        }
+      }
   };
 }
 #endif // MOAB_WRAP_HPP
