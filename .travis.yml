@@ -22,6 +22,7 @@ before_install:
   - sudo apt-get install -y cmake
   - sudo apt-get install -y trilinos-dev
   - sudo apt-get install -y libmoab-dev moab-bin
+  - sudo apt-get install -y libmikado0
   - sudo apt-get install -y libmikado-dev
   - sudo apt install cppcheck && cppcheck --enable=all
 
