@@ -26,6 +26,8 @@ before_install:
   - sudo apt install -y libmoab-dev moab-bin
   - sudo apt install -y libmikado-dev
   - sudo apt install -y libeigen3-dev
+  # Should be added by trilinos:
+  - sudo apt install -y libmetis-dev
   # - sudo apt install -y cppcheck
   # - cppcheck --enable=all
 
