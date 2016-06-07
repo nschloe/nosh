@@ -24,7 +24,8 @@ before_install:
   - sudo apt install -y trilinos-all-dev
   - sudo apt install -y libmoab-dev moab-bin
   - sudo apt install -y libmikado-dev
-  - sudo apt install -y cppcheck && cppcheck --enable=all
+  # - sudo apt install -y cppcheck
+  # - cppcheck --enable=all
 
 install:
   - cmake -DBUILD_SHARED_LIBS:BOOL=ON -DENABLE_GCOV:BOOL=ON -DCMAKE_CXX_COMPILER:STRING=mpicxx -DCMAKE_SHARED_LINKER_FLAGS="$CMAKE_SHARED_LINKER_FLAGS -Wl,--no-undefined" .
