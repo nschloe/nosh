@@ -24,6 +24,7 @@ before_install:
   - sudo apt install -y trilinos-all-dev
   - sudo apt install -y libmoab-dev moab-bin
   - sudo apt install -y libmikado-dev
+  - sudo apt install -y libeigen3-dev
   # - sudo apt install -y cppcheck
   # - cppcheck --enable=all
 
