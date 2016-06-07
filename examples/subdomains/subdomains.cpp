@@ -18,9 +18,8 @@ int main(int argc, char *argv[]) {
   nosh::function x(mesh);
   x.putScalar(0.0);
 
-  //nosh::scaled_linear_solve(
-  nosh::linear_solve(
-      problem, x,
+  mikado::linear_solve(
+      *(problem.matrix), *(problem.rhs), x,
       {
         {"package", "Belos"},
         //,{"method", "Pseudo Block GMRES"},

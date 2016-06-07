@@ -1,5 +1,6 @@
 #include "bratu.hpp"
 #include <nosh.hpp>
+#include <mikado.hpp>
 
 using dict = std::map<std::string, boost::any>;
 int main(int argc, char *argv[]) {
@@ -37,7 +38,7 @@ int main(int argc, char *argv[]) {
   // Check out
   // https://trilinos.org/docs/dev/packages/nox/doc/html/loca_parameters.html
   // for a full parameter description.
-  nosh::parameter_continuation(
+  mikado::parameter_continuation(
       model, saver,
       {
         {"NOX", dict{

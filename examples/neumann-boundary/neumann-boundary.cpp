@@ -23,8 +23,8 @@ int main(int argc, char *argv[]) {
   x.putScalar(0.0);
 
   //nosh::scaled_linear_solve(
-  nosh::linear_solve(
-      p, x,
+  mikado::linear_solve(
+      *(p.matrix), *(p.rhs), x,
       {
 #if 0
         // For solver parameters, check

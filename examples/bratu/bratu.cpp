@@ -1,5 +1,6 @@
 #include "bratu.hpp"
 #include <nosh.hpp>
+#include <mikado.hpp>
 
 using dict = std::map<std::string, boost::any>;
 int main(int argc, char *argv[]) {
@@ -34,7 +35,7 @@ int main(int argc, char *argv[]) {
   // Check out
   // https://trilinos.org/docs/dev/packages/nox/doc/html/parameters.html
   // for a full parameter description.
-  const auto solution = nosh::nonlinear_solve(
+  const auto solution = mikado::nonlinear_solve(
       model,
       {
         {"method", "Newton"},
@@ -86,7 +87,7 @@ int main(int argc, char *argv[]) {
       );
 
 #if 0
-  // nosh::nonlinear_solve(
+  // mikado::nonlinear_solve(
   //     model, x,
   //     {
   //       {"method", "Newton"},
@@ -103,7 +104,7 @@ int main(int argc, char *argv[]) {
   //     );
 
   /*
-  nosh::parameter_continuation(
+  mikado::parameter_continuation(
       model, x,
       {
         {"Stepper", dict{

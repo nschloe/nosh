@@ -1,10 +1,10 @@
 #ifndef NOSH_MODEL_H
 #define NOSH_MODEL_H
 
-#include "helper.hpp"
-
 #include <map>
 #include <string>
+
+#include <mikado/mikado.hpp>
 
 #include <Tpetra_Map.hpp>
 #include <Tpetra_Vector.hpp>
@@ -163,8 +163,8 @@ public:
   {
     Stratimikos::DefaultLinearSolverBuilder builder;
     auto p = Teuchos::rcp(new Teuchos::ParameterList());
-    std_map_to_teuchos_list(
-        convert_to_belos_parameters(this->linear_solver_params_),
+    mikado::std_map_to_teuchos_list(
+        mikado::convert_to_belos_parameters(this->linear_solver_params_),
         *p
         );
     builder.setParameterList(p);
@@ -264,7 +264,7 @@ protected:
 
     // From packages/piro/test/MockModelEval_A.cpp
     if (alpha == 0.0 && beta == 0.0) {
-      beta = 1.0;
+      // beta = 1.0;
     }
 #ifndef NDEBUG
     TEUCHOS_ASSERT_EQUALITY(alpha, 0.0);

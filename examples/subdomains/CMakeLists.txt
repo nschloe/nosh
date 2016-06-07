@@ -25,4 +25,8 @@ ADD_CUSTOM_COMMAND(
 
 SET(MY_EXECUTABLE subdomains)
 ADD_EXECUTABLE(${MY_EXECUTABLE} subdomains.cpp subdomains.hpp pacman.e)
-TARGET_LINK_LIBRARIES(${MY_EXECUTABLE} nosh)
+TARGET_LINK_LIBRARIES(
+  ${MY_EXECUTABLE}
+  nosh
+  ${Mikado_LIBRARIES}
+  )

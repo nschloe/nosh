@@ -1,5 +1,7 @@
 #include "diff-conv.hpp"
+
 #include <nosh.hpp>
+#include <mikado.hpp>
 #include <memory>
 
 int main(int argc, char *argv[]) {
@@ -13,7 +15,7 @@ int main(int argc, char *argv[]) {
 
   // TODO
   // nosh::scaled_linear_solve(
-  nosh::linear_solve(
+  mikado::linear_solve(
       problem, x,
       {
         {"package", "Belos"},

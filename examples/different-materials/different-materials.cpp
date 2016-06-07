@@ -1,4 +1,5 @@
 #include <nosh.hpp>
+#include <mikado.hpp>
 
 #include "different-materials.hpp"
 
@@ -13,9 +14,8 @@ int main(int argc, char *argv[]) {
   nosh::function x(mesh);
   x.putScalar(0.0);
 
-  //nosh::scaled_linear_solve(
-  nosh::linear_solve(
-      p, x,
+  mikado::linear_solve(
+      *(p.matrix), *(p.rhs), x,
       {
         {"package", "Belos"},
         {"method", "Pseudo Block GMRES"},

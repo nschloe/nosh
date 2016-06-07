@@ -25,4 +25,8 @@ ADD_CUSTOM_COMMAND(
 
 SET(MY_EXECUTABLE neumann-boundary)
 ADD_EXECUTABLE(${MY_EXECUTABLE} neumann-boundary.cpp neumann-boundary.hpp pacman.e)
-TARGET_LINK_LIBRARIES(${MY_EXECUTABLE} nosh)
+TARGET_LINK_LIBRARIES(
+  ${MY_EXECUTABLE}
+  nosh
+  ${Mikado_LIBRARIES}
+  )
