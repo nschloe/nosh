@@ -27,6 +27,7 @@ before_install:
   - sudo apt install -y libmikado-dev
   - sudo apt install -y libeigen3-dev
   - sudo apt install -y python3-sympy
+  - sudo apt install -y astyle
   # Should be added by trilinos/moab:
   - sudo apt install -y libmetis-dev libhdf5-mpi-dev
   # - sudo apt install -y cppcheck
