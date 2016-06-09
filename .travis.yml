@@ -19,12 +19,14 @@ before_install:
   - sudo add-apt-repository -y ppa:nschloe/mikado-nightly
   - sudo add-apt-repository -y ppa:nschloe/moab-nightly
   - sudo add-apt-repository -y ppa:nschloe/trilinos-nightly
+  - sudo add-apt-repository -y ppa:nschloe/sympy-backports2
   - sudo apt update -qq
   - sudo apt install -y libmoab-dev moab-bin
   - sudo apt install -y libopenmpi-dev openmpi-bin
   - sudo apt install -y trilinos-all-dev
   - sudo apt install -y libmikado-dev
   - sudo apt install -y libeigen3-dev
+  - sudo apt install -y python3-sympy
   # Should be added by trilinos/moab:
   - sudo apt install -y libmetis-dev libhdf5-mpi-dev
   # - sudo apt install -y cppcheck
