@@ -28,8 +28,6 @@ before_install:
   - sudo apt install -y libeigen3-dev
   # Should be added by trilinos:
   - sudo apt install -y libmetis-dev
-  - dpkg -L libhdf5-dev
-  - ls -l /usr/lib/x86_64-linux-gnu/
   # - sudo apt install -y cppcheck
   # - cppcheck --enable=all
 
