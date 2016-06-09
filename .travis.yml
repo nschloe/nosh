@@ -18,7 +18,7 @@ before_install:
   - sudo add-apt-repository -y ppa:nschloe/hdf5-backports
   - sudo add-apt-repository -y ppa:nschloe/mikado-nightly
   - sudo add-apt-repository -y ppa:nschloe/moab-nightly
-  - sudo add-apt-repository -y ppa:nschloe/trilinos-backports
+  - sudo add-apt-repository -y ppa:nschloe/trilinos-nightly
   - sudo apt update -qq
   - sudo apt install -y libopenmpi-dev openmpi-bin
   - sudo apt install -y cmake
@@ -27,7 +27,7 @@ before_install:
   - sudo apt install -y libmikado-dev
   - sudo apt install -y libeigen3-dev
   # Should be added by trilinos:
-  - sudo apt install -y libmetis-dev libhdf5-dev
+  - sudo apt install -y libmetis-dev
   - dpkg -L libhdf5-dev
   - ls -l /usr/lib/x86_64-linux-gnu/
   # - sudo apt install -y cppcheck
