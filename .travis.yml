@@ -20,10 +20,9 @@ before_install:
   - sudo add-apt-repository -y ppa:nschloe/moab-nightly
   - sudo add-apt-repository -y ppa:nschloe/trilinos-nightly
   - sudo apt update -qq
-  - sudo apt install -y libopenmpi-dev openmpi-bin
-  - sudo apt install -y cmake
-  - sudo apt install -y trilinos-all-dev
   - sudo apt install -y libmoab-dev moab-bin
+  - sudo apt install -y libopenmpi-dev openmpi-bin
+  - sudo apt install -y trilinos-all-dev
   - sudo apt install -y libmikado-dev
   - sudo apt install -y libeigen3-dev
   # Should be added by trilinos:
