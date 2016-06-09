@@ -28,8 +28,8 @@ before_install:
   - sudo apt install -y trilinos-all-dev
   - sudo apt install -y libmikado-dev
   - sudo apt install -y libeigen3-dev
-  - sudo apt install -y python-numpy
-  - python -c "import numpy"
+  #- sudo apt install -y python-numpy
+  #- python -c "import numpy"
   - sudo apt install -y python-sympy python3-sympy
   - python -c "import sympy"
   - python3 -c "import sympy"
