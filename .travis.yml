@@ -10,6 +10,9 @@ compiler:
   # scan-build cmake && make
   # problem: mpi.h
 
+virtualenv:
+  system_site_packages: true
+
 # command to install dependencies
 before_install:
   # http://about.travis-ci.org/docs/user/build-configuration/#Installing-Packages-Using-apt
@@ -27,6 +30,8 @@ before_install:
   - sudo apt install -y libmikado-dev
   - sudo apt install -y libeigen3-dev
   - sudo apt install -y python-sympy python3-sympy
+  - dpkg -L python-sympy
+  - dpkg -L python3-sympy
   - python -c "import sympy"
   - python3 -c "import sympy"
   - sudo apt install -y astyle
