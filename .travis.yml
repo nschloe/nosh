@@ -1,14 +1,13 @@
 sudo: required
 dist: trusty
 
-language: c++
+language: python
 
-compiler:
-  - gcc
-  - clang
-  # TODO static analyisis <http://clang-analyzer.llvm.org/scan-build.html>
-  # scan-build cmake && make
-  # problem: mpi.h
+# compiler:
+#   - gcc
+#   # TODO static analyisis <http://clang-analyzer.llvm.org/scan-build.html>
+#   # scan-build cmake && make
+#   # problem: mpi.h
 
 virtualenv:
   system_site_packages: true
