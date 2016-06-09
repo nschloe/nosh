@@ -4,7 +4,7 @@ dist: trusty
 language: python
 
 python:
-    - 3
+    - "3.5"
 
 # compiler:
 #   - gcc
