@@ -32,9 +32,8 @@ before_install:
   - sudo apt install -y libmikado-dev
   - sudo apt install -y libeigen3-dev
   - sudo apt install -y python3-sympy
-  - python -c "import sympy"
-  - python3 -c "import sympy"
   - sudo apt install -y astyle
+  - sudo apt install -y catch
   # Should be added by trilinos/moab:
   - sudo apt install -y libmetis-dev libhdf5-mpi-dev
   # - sudo apt install -y cppcheck
