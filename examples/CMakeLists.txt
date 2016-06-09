@@ -1,7 +1,7 @@
 add_subdirectory(bratu)
 add_subdirectory(bratu-continuation)
-add_subdirectory(different-materials)
 # TODO reenable
+#add_subdirectory(different-materials)
 #add_subdirectory(diffusion-convection)
 add_subdirectory(neumann-boundary)
 add_subdirectory(poisson)
