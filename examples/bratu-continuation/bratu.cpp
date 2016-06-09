@@ -16,8 +16,8 @@ int main(int argc, char *argv[]) {
 
   // Create a model evaluator.
   const std::map<std::string, boost::any> linear_solver_params = {
-      {"package", "Belos"},
-      {"method", "Pseudo Block GMRES"},
+      {"package", std::string("Belos")},
+      {"method", std::string("Pseudo Block GMRES")},
       {"parameters", dict{
         {"Output Frequency", 1},
         {"Output Style", 1},
@@ -43,8 +43,8 @@ int main(int argc, char *argv[]) {
       {
         {"NOX", dict{
           {"Status Tests", dict{
-            {"Test Type", "NormF"},
-            {"Norm Type", "Two Norm"},
+            {"Test Type", std::string("NormF")},
+            {"Norm Type", std::string("Two Norm")},
             {"Tolerance", 1.0e-8}
           }},
           {"Printing", dict{
@@ -67,11 +67,11 @@ int main(int argc, char *argv[]) {
         }},
         {"LOCA", dict{
           {"Predictor", dict{
-            {"Method", "Tangent"}
+            {"Method", std::string("Tangent")}
           }},
           {"Stepper", dict{
-            {"Continuation Method", "Arc Length"},
-            {"Continuation Parameter", "lmbda"},
+            {"Continuation Method", std::string("Arc Length")},
+            {"Continuation Parameter", std::string("lmbda")},
             {"Initial Value", 2.0e-3},
             {"Min Value", -1.0},
             {"Max Value", 1.0},
@@ -88,4 +88,4 @@ int main(int argc, char *argv[]) {
       );
 
   return EXIT_SUCCESS;
-}
+:}

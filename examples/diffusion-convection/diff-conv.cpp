@@ -18,8 +18,8 @@ int main(int argc, char *argv[]) {
   mikado::linear_solve(
       problem, x,
       {
-        {"package", "Belos"},
-        {"method", "Pseudo Block GMRES"}
+        {"package", std::string("Belos")},
+        {"method", std::string("Pseudo Block GMRES")}
       });
 
   nosh::write(x, "out.h5m");

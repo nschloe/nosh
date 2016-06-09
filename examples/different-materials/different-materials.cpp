@@ -17,15 +17,15 @@ int main(int argc, char *argv[]) {
   mikado::linear_solve(
       *(p.matrix), *(p.rhs), x,
       {
-        {"package", "Belos"},
-        {"method", "Pseudo Block GMRES"},
+        {"package", std::string("Belos")},
+        {"method", std::string("Pseudo Block GMRES")},
         {"parameters", dict{
           {"Convergence Tolerance", 1.0e-10},
           {"Output Frequency", 1},
           {"Output Style", 1},
           {"Verbosity", 33}
         }},
-        {"preconditioner", "MueLu"}
+        {"preconditioner", std::string("MueLu")}
       }
       );
 

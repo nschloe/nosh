@@ -13,9 +13,9 @@ int main(int argc, char *argv[]) {
   nosh::linear_solve(
     problem, x,
     {
-      {"package", "Belos"},
-      {"method", "Pseudo Block CG"},
-      {"preconditioner", "MueLu"}
+      {"package", std::string("Belos")},
+      {"method", std::string("Pseudo Block CG")},
+      {"preconditioner", std::string("MueLu")}
     }
   );
 

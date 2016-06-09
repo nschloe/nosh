@@ -53,16 +53,16 @@ int main(int argc, char *argv[]) {
         }}
 #endif
 #if 1
-        {"package", "Belos"},
+        {"package", std::string("Belos")},
         //,{"method", "Pseudo Block GMRES"},
-        {"method", "Pseudo Block CG"},
+        {"method", std::string("Pseudo Block CG")},
         {"parameters", dict{
           {"Convergence Tolerance", 1.0e-10},
           {"Output Frequency", 1},
           {"Output Style", 1},
           {"Verbosity", 33}
         }},
-        {"preconditioner", "MueLu"}
+        {"preconditioner", std::string("MueLu")}
         // {"preconditioner matrix", M},
         // {"preconditioner parameters", dict{
         //   {"cycle type", "V"}
