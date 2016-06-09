@@ -16,8 +16,8 @@ int main(int argc, char *argv[]) {
 
   // Create a model evaluator.
   const std::map<std::string, boost::any> linear_solver_params = {
-      {"package", "Belos"},
-      {"method", "Pseudo Block GMRES"},
+      {"package", std::string("Belos")},
+      {"method", std::string("Pseudo Block GMRES")},
       {"parameters", dict{
         {"Output Frequency", 1},
         {"Output Style", 1},
@@ -38,30 +38,30 @@ int main(int argc, char *argv[]) {
   const auto solution = mikado::nonlinear_solve(
       model,
       {
-        {"method", "Newton"},
+        {"method", std::string("Newton")},
         {"NOX", dict{
           {"Status Tests", dict{
-            {"Test Type", "Combo"},
-            {"Combo Type", "OR"},
+            {"Test Type", std::string("Combo")},
+            {"Combo Type", std::string("OR")},
             {"Number of Tests", 2},
             {"Test 0", dict{
-              {"Test Type", "Combo"},
-              {"Combo Type", "AND"},
+              {"Test Type", std::string("Combo")},
+              {"Combo Type", std::string("AND")},
               {"Number of Tests", 2},
               {"Test 0", dict{
-                {"Test Type", "NormF"},
-                {"Norm Type", "Two Norm"},
-                {"Scale Type", "Scaled"},
+                {"Test Type", std::string("NormF")},
+                {"Norm Type", std::string("Two Norm")},
+                {"Scale Type", std::string("Scaled")},
                 {"Tolerance", 1.0e-8}
               }},
               {"Test 1", dict{
-                {"Test Type", "NormWRMS"},
+                {"Test Type", std::string("NormWRMS")},
                 {"Absolute Tolerance", 1.0e-6},
                 {"Relative Tolerance", 1.0e-6}
               }},
             }},
             {"Test 1", list {
-              {"Test Type", "MaxIters"},
+              {"Test Type", std::string("MaxIters")},
               {"Maximum Iterations", 10}
             }}
           }},
