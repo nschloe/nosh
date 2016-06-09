@@ -25,8 +25,8 @@ before_install:
   - sudo apt install -y trilinos-all-dev
   - sudo apt install -y libmikado-dev
   - sudo apt install -y libeigen3-dev
-  # Should be added by trilinos:
-  - sudo apt install -y libmetis-dev
+  # Should be added by trilinos/moab:
+  - sudo apt install -y libmetis-dev libhdf5-mpi-dev
   # - sudo apt install -y cppcheck
   # - cppcheck --enable=all
 
