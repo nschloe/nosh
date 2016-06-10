@@ -1,12 +1,12 @@
 # Nosh
 
 [![Build Status](https://travis-ci.org/nschloe/nosh.svg?branch=master)](https://travis-ci.org/nschloe/nosh)
-[![Coverage Status](https://img.shields.io/coveralls/nschloe/nosh.svg)](https://coveralls.io/r/nschloe/nosh)
+[![codecov](https://codecov.io/gh/nschloe/nosh/branch/master/graph/badge.svg)](https://codecov.io/gh/nschloe/nosh)
 [![Coverity Scan Build](https://scan.coverity.com/projects/1659/badge.svg)](https://scan.coverity.com/projects/1659)
 
 
 This is Nosh, a free and open-source implementation of numerical solutions
-methods for nonlinear Schr\"odinger equations of the form
+methods for nonlinear Schrödinger equations of the form
 $0=(\K+V+g|\psi|^2)\psi$.
 
 Numerical parameter continuation is the main tool for solving this nonlinear
