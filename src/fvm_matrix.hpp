@@ -38,8 +38,7 @@ namespace nosh
         {
         }
 
-      virtual
-      ~fvm_matrix()
+      ~fvm_matrix() override
       {};
 
     public:

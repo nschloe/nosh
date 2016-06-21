@@ -1,7 +1,7 @@
 #ifndef NOSH_OPERATOR_CORE_BOUNDARY_H
 #define NOSH_OPERATOR_CORE_BOUNDARY_H
 
-#include <parameter_object.hpp>
+#include "parameter_object.hpp"
 
 namespace nosh
 {

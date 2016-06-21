@@ -3,7 +3,7 @@
 
 #include <Eigen/Dense>
 
-#include <parameter_object.hpp>
+#include "parameter_object.hpp"
 
 namespace nosh
 {

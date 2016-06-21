@@ -1,7 +1,7 @@
 #ifndef NOSH_OPERATOR_CORE_VERTEX_H
 #define NOSH_OPERATOR_CORE_VERTEX_H
 
-#include <parameter_object.hpp>
+#include "parameter_object.hpp"
 
 namespace nosh
 {
