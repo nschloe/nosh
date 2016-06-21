@@ -26,35 +26,30 @@ class mesh_tetra:
 
 public:
   mesh_tetra(
-      const std::shared_ptr<const Teuchos::Comm<int>> & comm,
+      const std::shared_ptr<const Teuchos::Comm<int>> & _comm,
       const std::shared_ptr<moab::ParallelComm> & mcomm,
       const std::shared_ptr<moab::Core> & mb
       );
 
-  virtual
-  ~mesh_tetra();
+  ~mesh_tetra() override;
 
-  virtual
   std::shared_ptr<const Tpetra::Vector<double,int,int>>
-  control_volumes() const
+  control_volumes() const override
   {
     return control_volumes_;
   }
 
-  virtual
   std::vector<edge_data>
-  get_edge_data() const
+  get_edge_data() const override
   {
     return edge_data_;
   }
 
-  virtual
   std::vector<double>
-  boundary_surface_areas() const
+  boundary_surface_areas() const override
   {
     return boundary_surface_areas_;
   }
-
 
 private:
 

@@ -1,6 +1,7 @@
 #ifndef NOSH_MATRIX_CORE_BOUNDARY_H
 #define NOSH_MATRIX_CORE_BOUNDARY_H
 
+#include <set>
 #include <moab/Core.hpp>
 
 namespace nosh
@@ -14,12 +15,12 @@ namespace nosh
   {
     public:
       explicit matrix_core_boundary(
-          const std::set<std::string> & _subdomain_ids = {"boundary"}
+          std::set<std::string>  _subdomain_ids = {"boundary"}
           ):
-        subdomain_ids(_subdomain_ids)
+        subdomain_ids(std::move(_subdomain_ids))
         {};
 
-      virtual ~matrix_core_boundary() {};
+      virtual ~matrix_core_boundary() = default;
 
       virtual
       boundary_data

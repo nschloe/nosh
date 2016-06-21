@@ -20,13 +20,10 @@ namespace nosh {
         val_(val)
       {}
 
-      virtual
-      ~constant()
-      {}
+      ~constant() override = default;
 
-      virtual
       double
-      operator()(const Eigen::Vector3d & x) const
+      operator()(const Eigen::Vector3d & x) const override
       {
         (void) x;
         return val_;
@@ -36,5 +33,5 @@ namespace nosh {
       const double val_;
   };
 
-}
+} // namespace nosh
 #endif // NOSH_CONSTANT_HPP

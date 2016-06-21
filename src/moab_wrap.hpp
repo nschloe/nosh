@@ -41,12 +41,12 @@ namespace nosh {
     public:
 
       explicit
-      moab_wrap(const std::shared_ptr<moab::Core> & _mb):
-        mb(_mb)
+      moab_wrap(std::shared_ptr<moab::Core> _mb):
+        mb(std::move(_mb))
       {};
 
       virtual
-      ~moab_wrap() {};
+      ~moab_wrap() = default;
 
       moab::Tag
       tag_get_handle(const std::string & name)
@@ -320,10 +320,10 @@ namespace nosh {
       get_connectivity(
           const moab::EntityHandle entity_handle,
           bool corners_only = false,
-          std::vector<moab::EntityHandle> * storage = 0
+          std::vector<moab::EntityHandle> * storage = nullptr
           )
       {
-        const moab::EntityHandle * conn = NULL;
+        const moab::EntityHandle * conn = nullptr;
         int numV = 0;
         const auto rval = this->mb->get_connectivity(
             entity_handle,
@@ -404,7 +404,7 @@ namespace nosh {
         int size,
         moab::DataType type,
         unsigned flags = 0,
-        const void * default_value = 0
+        const void * default_value = nullptr
         )
     {
       moab::Tag tag_handle;
@@ -623,5 +623,5 @@ namespace nosh {
         }
       }
   };
-}
+} // namespace nosh
 #endif // MOAB_WRAP_HPP

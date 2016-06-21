@@ -1,7 +1,9 @@
 #ifndef NOSH_OPERATOR_CORE_VERTEX_H
 #define NOSH_OPERATOR_CORE_VERTEX_H
 
-#include <parameter_object.hpp>
+#include "parameter_object.hpp"
+
+#include <moab/Core.hpp>
 
 namespace nosh
 {
@@ -9,12 +11,12 @@ namespace nosh
   {
     public:
       explicit operator_core_vertex(
-          const std::set<std::string> & _subdomain_ids = {"everywhere"}
+          std::set<std::string>  _subdomain_ids = {"everywhere"}
           ):
-        subdomain_ids(_subdomain_ids)
+        subdomain_ids(std::move(_subdomain_ids))
         {};
 
-      virtual ~operator_core_vertex() {};
+      ~operator_core_vertex() override = default;
 
       virtual
       double

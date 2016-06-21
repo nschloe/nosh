@@ -22,7 +22,7 @@ explicit_values(
   // Initialize the cache.
   const std::vector<edge> edges = mesh.my_edges();
 
-  // TODO make mb_ private again
+  // TODO(nschloe): make mb_ private again
   moab::Range verts = mesh.mbw_->get_entities_by_dimension(0, 0);
 
   const auto data = mesh.get_data(field_name, verts);
@@ -51,8 +51,7 @@ explicit_values(
 // ============================================================================
 explicit_values::
 ~explicit_values()
-{
-}
+= default;
 // ============================================================================
 void
 explicit_values::
@@ -83,10 +82,11 @@ get_d_edge_projection_dp(
     const std::string & dParamName
     ) const
 {
-  if (dParamName.compare("mu") == 0)
+  if (dParamName.compare("mu") == 0) {
     return edgeProjectionCache_[edge_index];
-  else
+  } else {
     return 0.0;
+  }
 }
 // ============================================================================
 } // namespace vector_field

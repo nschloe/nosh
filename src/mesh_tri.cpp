@@ -1,7 +1,7 @@
 #include "mesh_tri.hpp"
 
-#include <vector>
 #include <set>
+#include <vector>
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_RCPStdSharedPtrConversions.hpp>
@@ -39,9 +39,7 @@ mesh_tri(
 }
 // =============================================================================
 mesh_tri::
-~mesh_tri()
-{
-}
+~mesh_tri() = default;
 // =============================================================================
 std::vector<mesh::edge_data>
 mesh_tri::
@@ -199,8 +197,8 @@ compute_control_volumes_t_(Tpetra::Vector<double,int,int> & cv_overlap) const
   // TEUCHOS_ASSERT_EQUALITY(ierr, moab::MB_SUCCESS);
 
   // Calculate the contributions to the finite volumes cell by cell.
-  for (size_t k = 0; k < cells.size(); k++) {
-    const auto conn = this->mbw_->get_connectivity(cells[k]);
+  for (unsigned long cell : cells) {
+    const auto conn = this->mbw_->get_connectivity(cell);
     const auto splitting = this->compute_triangle_splitting_(conn);
 
     for (int i = 0; i < 3; i++) {

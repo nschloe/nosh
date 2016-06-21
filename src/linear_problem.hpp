@@ -8,9 +8,9 @@
 #endif
 
 #include "fvm_matrix.hpp"
+#include "matrix_core_boundary.hpp"
 #include "matrix_core_edge.hpp"
 #include "matrix_core_vertex.hpp"
-#include "matrix_core_boundary.hpp"
 #include "mesh.hpp"
 
 namespace nosh
@@ -34,9 +34,7 @@ namespace nosh
         {
         }
 
-      virtual
-      ~linear_problem()
-      {};
+      virtual ~linear_problem() = default;
 
     protected:
       void

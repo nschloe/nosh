@@ -50,8 +50,8 @@ public:
 
 public:
   mesh(
-      const std::shared_ptr<const Teuchos::Comm<int>> & comm,
-      const std::shared_ptr<moab::ParallelComm> & mcomm,
+      std::shared_ptr<const Teuchos::Comm<int>>  _comm,
+      std::shared_ptr<moab::ParallelComm>  mcomm,
       const std::shared_ptr<moab::Core> & mb
       );
 
@@ -80,13 +80,13 @@ public:
   write(const std::string & filename) const;
 
   std::shared_ptr<Tpetra::Vector<double,int,int>>
-  get_vector(const std::string & field_name) const;
+  get_vector(const std::string & tag_name) const;
 
   std::shared_ptr<Tpetra::Vector<double,int,int>>
-  get_complex_vector(const std::string & field_name) const;
+  get_complex_vector(const std::string & tag_name) const;
 
   std::shared_ptr<Tpetra::MultiVector<double,int,int>>
-  get_multi_vector(const std::string & field_name) const;
+  get_multi_vector(const std::string & tag_name) const;
 
   const std::vector<int>
   get_owned_gids_() const;
@@ -170,7 +170,7 @@ public:
   void
   insert_vector(
       const Tpetra::Vector<double,int,int> &x,
-      const std::string & field_name
+      const std::string & name
       ) const;
 
   std::vector<double>

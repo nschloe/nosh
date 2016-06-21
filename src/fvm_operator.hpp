@@ -21,30 +21,27 @@ namespace nosh
   {
     public:
       fvm_operator(
-        const std::shared_ptr<const nosh::mesh> & _mesh,
-        const std::vector<std::shared_ptr<operator_core_edge>> & edge_cores,
-        const std::vector<std::shared_ptr<operator_core_vertex>> & vertex_cores,
-        const std::vector<std::shared_ptr<operator_core_boundary>> & boundary_cores,
-        const std::vector<std::shared_ptr<operator_core_dirichlet>> & dirichlets,
-        const std::vector<std::shared_ptr<Tpetra::Operator<double,int,int>>> & operators
+        std::shared_ptr<const nosh::mesh>  _mesh,
+        std::vector<std::shared_ptr<operator_core_edge>>  edge_cores,
+        std::vector<std::shared_ptr<operator_core_vertex>>  vertex_cores,
+        std::vector<std::shared_ptr<operator_core_boundary>>  boundary_cores,
+        std::vector<std::shared_ptr<operator_core_dirichlet>>  dirichlets,
+        std::vector<std::shared_ptr<Tpetra::Operator<double,int,int>>>  operators
         ) :
-      mesh(_mesh),
+      mesh(std::move(_mesh)),
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
       apply_time_(Teuchos::TimeMonitor::getNewTimer("Nosh: fvm_operator::apply")),
 #endif
-      edge_cores_(edge_cores),
-      vertex_cores_(vertex_cores),
-      boundary_cores_(boundary_cores),
-      dirichlets_(dirichlets),
-      operators_(operators)
+      edge_cores_(std::move(edge_cores)),
+      vertex_cores_(std::move(vertex_cores)),
+      boundary_cores_(std::move(boundary_cores)),
+      dirichlets_(std::move(dirichlets)),
+      operators_(std::move(operators))
       {
       }
 
-      virtual
-      ~fvm_operator()
-      {};
+      ~fvm_operator() override = default;
 
-      virtual
       void
       apply(
           const Tpetra::MultiVector<double,int,int> & x,
@@ -52,7 +49,7 @@ namespace nosh
           Teuchos::ETransp mode = Teuchos::NO_TRANS,
           double alpha = Teuchos::ScalarTraits<double>::one(),
           double beta = Teuchos::ScalarTraits<double>::zero()
-          ) const
+          ) const override
       {
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
         Teuchos::TimeMonitor tm(*apply_time_);
@@ -96,20 +93,17 @@ namespace nosh
         return;
       }
 
-      virtual
       Teuchos::RCP<const Tpetra::Map<int,int>>
-      getDomainMap() const
+      getDomainMap() const override
       {
         return Teuchos::rcp(this->mesh->map());
       }
 
-      virtual
       Teuchos::RCP<const Tpetra::Map<int,int>>
-      getRangeMap() const
+      getRangeMap() const override
       {
         return Teuchos::rcp(this->mesh->map());
       }
-
 
     protected:
       void

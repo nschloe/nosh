@@ -1,8 +1,8 @@
 #include "mesh.hpp"
 
+#include <MBParallelConventions.h>
 #include <moab/Core.hpp>
 #include <moab/ParallelComm.hpp>
-#include <MBParallelConventions.h>
 #include <moab/Skinner.hpp>
 
 #include <Tpetra_Vector.hpp>
@@ -17,17 +17,17 @@ namespace nosh
 // =============================================================================
 mesh::
 mesh(
-    const std::shared_ptr<const Teuchos::Comm<int>> & _comm,
-    const std::shared_ptr<moab::ParallelComm> & mcomm,
+    std::shared_ptr<const Teuchos::Comm<int>>  _comm,
+    std::shared_ptr<moab::ParallelComm>  mcomm,
     const std::shared_ptr<moab::Core> & mb
     ) :
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
   write_time_(Teuchos::TimeMonitor::getNewTimer("Nosh: mesh::write")),
   multi_time_(Teuchos::TimeMonitor::getNewTimer("Nosh: mesh::get_multi_vector")),
 #endif
-  comm(_comm),
+  comm(std::move(_comm)),
   mbw_(std::make_shared<moab_wrap>(mb)),
-  mcomm_(mcomm),
+  mcomm_(std::move(mcomm)),
   vertices_map_(this->get_map_(this->get_owned_gids_())),
   vertices_overlap_map_(this->get_map_(this->get_overlap_gids_())),
   complex_map_(this->get_map_(this->complexify_(this->get_owned_gids_()))),
@@ -43,7 +43,7 @@ mesh(
   ,boundary_vertices(compute_boundary_vertices_(boundary_skin_))
   ,meshsets_(create_default_meshsets_())
 {
-// TODO resurrect
+// TODO(nschloe): resurrect
 //#ifndef NDEBUG
 //  // Assert that all processes own vertices
 //  TEUCHOS_ASSERT_INEQUALITY(owned_vertices_.size(), >, 0);
@@ -52,8 +52,7 @@ mesh(
 // =============================================================================
 mesh::
 ~mesh()
-{
-}
+= default;
 // =============================================================================
 std::map<std::string, moab::EntityHandle>
 mesh::
@@ -456,8 +455,8 @@ build_edge_lids_() const
 
   for (std::size_t k = 0; k < edges.size(); k++) {
     _edge_lids[k] = Teuchos::tuple(
-        (int)this->local_index(std::get<0>(edges[k])),
-        (int)this->local_index(std::get<1>(edges[k]))
+        static_cast<int>(this->local_index(std::get<0>(edges[k]))),
+        static_cast<int>(this->local_index(std::get<1>(edges[k])))
         );
   }
 
@@ -540,7 +539,7 @@ moab::Range
 mesh::
 get_owned_vertices() const
 {
-  // TODO resurrect?
+  // TODO(nschloe): resurrect?
   //const auto mb = this->mcomm_->get_moab();
 
   // get all entities
@@ -572,7 +571,7 @@ const std::vector<int>
 mesh::
 get_overlap_gids_() const
 {
-  // TODO remove?
+  // TODO(nschloe): remove?
   //const auto mb = this->mcomm_->get_moab();
 
   // get owned
@@ -617,7 +616,7 @@ get_map_(const std::vector<int> & ids) const
   // Hence, set it to 1 as dictated by MOAB.
   //
   // The will fail for complexified maps where the minimal ID is 2.
-  // TODO derive the base from all ID vectors.
+  // TODO(nschloe): derive the base from all ID vectors.
   const int base = 1;
   return std::make_shared<Tpetra::Map<int,int>>(
       -1,
@@ -771,7 +770,7 @@ build_graph() const
   const std::vector<edge> edges = this->my_edges();
 
   // Loop over all edges and put entries wherever two vertices are connected.
-  // TODO check if we can use LIDs here
+  // TODO(nschloe): check if we can use LIDs here
   for (size_t k = 0; k < edges.size(); k++) {
     const Teuchos::Tuple<int,2> & idx = this->edge_gids[k];
     for (int i = 0; i < 2; i++) {
@@ -864,7 +863,7 @@ build_complex_graph() const
   const std::vector<edge> edges = this->my_edges();
 
   // Loop over all edges and put entries wherever two vertices are connected.
-  // TODO check if we can use LIDs here
+  // TODO(nschloe): check if we can use LIDs here
   for (size_t k = 0; k < edges.size(); k++) {
     const Teuchos::Tuple<int,4> & idx = this->edge_gids_complex[k];
     for (int i = 0; i < 4; i++) {
@@ -944,7 +943,7 @@ compute_triangle_splitting_(
 
   std::vector<Eigen::Vector3d> local_node_coords(conn.size());
   for (size_t i = 0; i < conn.size(); i++) {
-    // TODO do something smarter than copying here
+    // TODO(nschloe): do something smarter than copying here
     local_node_coords[i][0] = coords[3*i];
     local_node_coords[i][1] = coords[3*i + 1];
     local_node_coords[i][2] = coords[3*i + 2];
@@ -987,17 +986,18 @@ get_other_index_(unsigned int e0, unsigned int e1) const
 #endif
 
   // Get the index in [0,1,2] which is not e0, e1.
-  if (0 != e0 && 0 != e1)
+  if (0 != e0 && 0 != e1) {
     return 0;
-  else if (1 != e0 && 1 != e1)
+  } else if (1 != e0 && 1 != e1) {
     return 1;
-  else if (2 != e0 && 2 != e1)
+  } else if (2 != e0 && 2 != e1) {
     return 2;
-  else
+  } else {
     TEUCHOS_TEST_FOR_EXCEPT_MSG(
         true,
         "illegal"
         );
+  }
 }
 // =============================================================================
 double

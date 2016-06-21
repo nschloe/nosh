@@ -22,24 +22,20 @@ public:
       const std::string &field_name
       );
 
-  virtual
-  ~explicit_values();
+  ~explicit_values() override;
 
-//! Get parameter names and initial values.
-  virtual
+  //! Get parameter names and initial values.
   const std::map<std::string, double>
-  get_scalar_parameters() const;
+  get_scalar_parameters() const override;
 
-  virtual
   const Tpetra::Vector<double,int,int>
-  get_v(const std::map<std::string, double> & params) const;
+  get_v(const std::map<std::string, double> & params) const override;
 
-  virtual
   const Tpetra::Vector<double,int,int>
   get_dvdp(
       const std::map<std::string, double> & params,
       const std::string & param_name
-      ) const;
+      ) const override;
 
 protected:
 private:

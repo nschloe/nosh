@@ -15,28 +15,28 @@ constant::
 constant(
     const nosh::mesh & mesh,
     const double c,
-    const std::string & param1_name,
+    std::string  param1_name,
     const double param1_init_value
     ):
   map_(mesh.map()),
   c_(c),
-  param1_name_(param1_name),
+  param1_name_(std::move(param1_name)),
   param1_init_value_(param1_init_value)
 {
 }
 // ============================================================================
 constant::
 ~constant()
-{
-}
+= default;
 // ============================================================================
 const std::map<std::string, double>
 constant::
 get_scalar_parameters() const
 {
   std::map<std::string, double> m;
-  if (!param1_name_.empty())
+  if (!param1_name_.empty()) {
     m[param1_name_] = param1_init_value_;
+}
   return m;
 }
 // ============================================================================

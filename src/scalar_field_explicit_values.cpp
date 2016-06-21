@@ -19,9 +19,7 @@ explicit_values(const nosh::mesh & mesh,
 }
 // ============================================================================
 explicit_values::
-~explicit_values()
-{
-}
+~explicit_values() = default;
 // ============================================================================
 const std::map<std::string, double>
 explicit_values::
@@ -51,12 +49,11 @@ get_dvdp(const std::map<std::string, double> & params,
   (void) params;
   if (param_name.compare("beta") == 0) {
     return *node_values_;
-  } else {
+  }
     return Tpetra::Vector<double,int,int>(
         node_values_->getMap(),
         true // zero out
         );
-  }
 }
 // ============================================================================
 } // namespace scalar_field

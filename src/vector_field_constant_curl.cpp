@@ -12,11 +12,11 @@ namespace vector_field
 // ============================================================================
 constantCurl::
 constantCurl(
-    const std::shared_ptr<nosh::mesh> &mesh,
+    std::shared_ptr<nosh::mesh> mesh,
     const std::shared_ptr<Eigen::Vector3d> &b,
     const std::shared_ptr<Eigen::Vector3d> &u
     ) :
-  mesh_(mesh),
+  mesh_(std::move(mesh)),
   b_(b),
   u_(u),
   rotatedBCache_(*b),
@@ -52,8 +52,7 @@ constantCurl(
 // ============================================================================
 constantCurl::
 ~constantCurl()
-{
-}
+= default;
 // ============================================================================
 void
 constantCurl::
@@ -130,7 +129,7 @@ get_d_edge_projection_dp(
 
   if (param_name.compare("mu") == 0) {
     return rotatedBCache_.dot(edgeCache_[edge_index]);
-  } else if (param_name.compare("theta") == 0) {
+  } if (param_name.compare("theta") == 0) {
     return mu_ * dRotatedBDThetaCache_.dot(edgeCache_[edge_index]);
   } else {
     TEUCHOS_TEST_FOR_EXCEPT_MSG(

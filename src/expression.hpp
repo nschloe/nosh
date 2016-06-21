@@ -14,13 +14,13 @@ namespace nosh {
   class expression
   {
     public:
-      expression(const unsigned int _degree = UINT_MAX):
+      explicit expression(const unsigned int _degree = UINT_MAX):
         degree(_degree)
       {}
 
       virtual
       ~expression()
-      {}
+      = default;
 
       virtual
       double
@@ -37,5 +37,5 @@ namespace nosh {
       const nosh::mesh & mesh
       );
 
-}
+}  // namespace nosh
 #endif // NOSH_EXPRESSION_HPP

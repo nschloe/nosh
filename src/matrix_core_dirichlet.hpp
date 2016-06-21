@@ -1,6 +1,7 @@
 #ifndef NOSH_MATRIX_CORE_DIRICHLET_HPP
 #define NOSH_MATRIX_CORE_DIRICHLET_HPP
 
+#include <set>
 #include <Eigen/Dense>
 #include <moab/Core.hpp>
 
@@ -9,14 +10,12 @@ namespace nosh {
   {
     public:
       explicit matrix_core_dirichlet(
-          const std::set<std::string> & _subdomain_ids
+          std::set<std::string>  _subdomain_ids
           ):
-        subdomain_ids(_subdomain_ids)
+        subdomain_ids(std::move(_subdomain_ids))
       {};
 
-      virtual
-      ~matrix_core_dirichlet()
-      {};
+      virtual ~matrix_core_dirichlet() = default;
 
       virtual
       double
@@ -25,5 +24,5 @@ namespace nosh {
     public:
       const std::set<std::string> subdomain_ids;
   };
-}
+}  // namespace nosh
 #endif // NOSH_DIRICHLET_BC_HPP
