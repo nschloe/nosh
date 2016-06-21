@@ -21,25 +21,24 @@ namespace nosh
     public:
       fvm_matrix(
           const std::shared_ptr<const nosh::mesh> & _mesh,
-          const std::vector<std::shared_ptr<const matrix_core_edge>> & matrix_core_edges,
-          const std::vector<std::shared_ptr<const matrix_core_vertex>> & matrix_core_vertexs,
-          const std::vector<std::shared_ptr<const matrix_core_boundary>> & matrix_core_boundarys,
-          const std::vector<std::shared_ptr<const matrix_core_dirichlet>> & dbcs
+          std::vector<std::shared_ptr<const matrix_core_edge>>  matrix_core_edges,
+          std::vector<std::shared_ptr<const matrix_core_vertex>>  matrix_core_vertexs,
+          std::vector<std::shared_ptr<const matrix_core_boundary>>  matrix_core_boundarys,
+          std::vector<std::shared_ptr<const matrix_core_dirichlet>>  dbcs
           ) :
         Tpetra::CrsMatrix<double,int,int>(_mesh->build_graph()),
         mesh(_mesh),
 #ifdef NOSH_TEUCHOS_TIME_MONITOR
         fill_time_(Teuchos::TimeMonitor::getNewTimer("Nosh: fvm_matrix::fill_")),
 #endif
-        matrix_core_edges_(matrix_core_edges),
-        matrix_core_vertexs_(matrix_core_vertexs),
-        matrix_core_boundarys_(matrix_core_boundarys),
-        dbcs_(dbcs)
+        matrix_core_edges_(std::move(matrix_core_edges)),
+        matrix_core_vertexs_(std::move(matrix_core_vertexs)),
+        matrix_core_boundarys_(std::move(matrix_core_boundarys)),
+        dbcs_(std::move(dbcs))
         {
         }
 
-      ~fvm_matrix() override
-      {};
+      ~fvm_matrix() override = default;
 
     public:
       void
@@ -222,7 +221,7 @@ namespace nosh
               size_t num = this->getNumEntriesInGlobalRow(gid);
               // It shouldn't actually happen that the specified global row
               // does not belong to this graph.
-              // TODO find out if why we need this, fix the underlying issue,
+              // TODO(nschloe): find out if why we need this, fix the underlying issue,
               // make this a TEUCHOS_TEST_*
               if (num != Teuchos::OrdinalTraits<size_t>::invalid()) {
                 std::vector<int> cols(num);
