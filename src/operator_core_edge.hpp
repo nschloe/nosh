@@ -2,6 +2,7 @@
 #define NOSH_OPERATOR_CORE_EDGE_H
 
 #include <Eigen/Dense>
+#include <moab/Core.hpp>
 
 #include "parameter_object.hpp"
 
@@ -11,12 +12,12 @@ namespace nosh
   {
     public:
       explicit operator_core_edge(
-          const std::set<std::string> & _subdomain_ids = {"everywhere"}
+          std::set<std::string>  _subdomain_ids = {"everywhere"}
           ):
-        subdomain_ids(_subdomain_ids)
+        subdomain_ids(std::move(_subdomain_ids))
         {};
 
-      virtual ~operator_core_edge() {};
+      ~operator_core_edge() override = default;
 
       virtual
       std::tuple<double,double>

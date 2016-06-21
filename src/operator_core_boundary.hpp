@@ -3,18 +3,20 @@
 
 #include "parameter_object.hpp"
 
+#include <moab/Core.hpp>
+
 namespace nosh
 {
   class operator_core_boundary: public parameter_object
   {
     public:
       explicit operator_core_boundary(
-          const std::set<std::string> & _subdomain_ids = {"boundary"}
+          std::set<std::string>  _subdomain_ids = {"boundary"}
           ):
-        subdomain_ids(_subdomain_ids)
+        subdomain_ids(std::move(_subdomain_ids))
         {};
 
-      virtual ~operator_core_boundary() {};
+      ~operator_core_boundary() override = default;
 
       virtual
       double

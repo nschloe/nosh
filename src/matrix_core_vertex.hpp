@@ -1,6 +1,7 @@
 #ifndef NOSH_MATRIX_CORE_VERTEX_H
 #define NOSH_MATRIX_CORE_VERTEX_H
 
+#include <set>
 #include <moab/Core.hpp>
 
 namespace nosh
@@ -14,12 +15,12 @@ namespace nosh
   {
     public:
       explicit matrix_core_vertex(
-          const std::set<std::string> & _subdomain_ids = {"everywhere"}
+          std::set<std::string>  _subdomain_ids = {"everywhere"}
           ):
-        subdomain_ids(_subdomain_ids)
+        subdomain_ids(std::move(_subdomain_ids))
         {};
 
-      virtual ~matrix_core_vertex() {};
+      virtual ~matrix_core_vertex() = default;
 
       virtual
       vertex_data

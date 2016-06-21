@@ -2,6 +2,7 @@
 #define NOSH_OPERATOR_CORE_DIRICHLET_HPP
 
 #include <Eigen/Dense>
+#include <moab/Core.hpp>
 
 #include "parameter_object.hpp"
 
@@ -10,14 +11,12 @@ namespace nosh {
   {
     public:
       explicit operator_core_dirichlet(
-          const std::set<std::string> & _subdomain_ids
+          std::set<std::string>  _subdomain_ids
           ):
-        subdomain_ids(_subdomain_ids)
+        subdomain_ids(std::move(_subdomain_ids))
       {};
 
-      virtual
-      ~operator_core_dirichlet()
-      {};
+      ~operator_core_dirichlet() override = default;
 
       virtual
       double
@@ -29,5 +28,5 @@ namespace nosh {
     public:
       const std::set<std::string> subdomain_ids;
   };
-}
+}  // namespace nosh
 #endif // NOSH_DIRICHLET_BC_HPP
