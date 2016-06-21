@@ -84,8 +84,9 @@ get_d_edge_projection_dp(
 {
   if (dParamName.compare("mu") == 0) {
     return edgeProjectionCache_[edge_index];
-  se {
+  } else {
     return 0.0;
+  }
 }
 }
 // ============================================================================
