@@ -88,7 +88,6 @@ get_d_edge_projection_dp(
     return 0.0;
   }
 }
-}
 // ============================================================================
 } // namespace vector_field
 } // namespace nosh
