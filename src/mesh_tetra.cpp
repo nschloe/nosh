@@ -36,8 +36,7 @@ mesh_tetra(
 // =============================================================================
 mesh_tetra::
 ~mesh_tetra()
-{
-}
+= default;
 // =============================================================================
 std::vector<mesh::edge_data>
 mesh_tetra::
@@ -119,7 +118,7 @@ edge_coefficients_cell_(
   // for any pair of vectors u, v in the plane of the triangle.
   //
   double vol;
-  // TODO Come up with a cleaner solution here.
+  // TODO(nschloe): Come up with a cleaner solution here.
   try {
     vol = get_tetrahedron_volume_(edges[0], edges[1], edges[2]);
   } catch(...) {
@@ -216,7 +215,7 @@ compute_control_volumes_t_(Tpetra::Vector<double,int,int> & cv_overlap) const
 
     std::vector<Eigen::Vector3d> local_node_coords(conn.size());
     for (size_t i = 0; i < conn.size(); i++) {
-      // TODO do something smarter than copying here
+      // TODO(nschloe): do something smarter than copying here
       local_node_coords[i][0] = coords[3*i];
       local_node_coords[i][1] = coords[3*i + 1];
       local_node_coords[i][2] = coords[3*i + 2];
@@ -449,8 +448,8 @@ compute_boundary_surface_areas_() const
   std::vector<double> boundary_surface_areas(num_vertices);
   std::fill(boundary_surface_areas.begin(), boundary_surface_areas.end(), 0.0);
 
-  for (size_t k = 0; k < this->boundary_skin_.size(); k++) {
-    const auto verts = this->mbw_->get_connectivity(this->boundary_skin_[k]);
+  for (unsigned long k : this->boundary_skin_) {
+    const auto verts = this->mbw_->get_connectivity(k);
     const auto splitting = this->compute_triangle_splitting_(verts);
     // add contributions to the verts
     boundary_surface_areas[this->local_index(verts[0])] += splitting[0];
