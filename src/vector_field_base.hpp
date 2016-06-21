@@ -14,7 +14,7 @@ class base
 {
 public:
   virtual
-  ~base(){};
+  ~base()= default;;
 
   virtual
   void

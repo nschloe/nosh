@@ -20,29 +20,26 @@ public:
   constant(
       const nosh::mesh & mesh,
       const double c,
-      const std::string & param1_name = "",
+      std::string  param1_name = "",
       const double param1_init_value = 0.0
       );
 
   Tpetra::Vector<double,int,int>
   create_p_init_(const Tpetra::Map<int,int> & map);
 
-  ~constant();
+  ~constant() override;
 
   //! Get the parameter names and intial values.
-  virtual
   const std::map<std::string, double>
-  get_scalar_parameters() const;
+  get_scalar_parameters() const override;
 
-  virtual
   const Tpetra::Vector<double,int,int>
-  get_v(const std::map<std::string, double> & params) const;
+  get_v(const std::map<std::string, double> & params) const override;
 
-  virtual
   const Tpetra::Vector<double,int,int>
   get_dvdp(const std::map<std::string, double> & params,
           const std::string & param_name
-        ) const;
+        ) const override;
 
 protected:
 private:

@@ -16,33 +16,28 @@ namespace vector_field
 class constantCurl : public base
 {
 public:
-  constantCurl(const std::shared_ptr<nosh::mesh> &mesh,
+  constantCurl(std::shared_ptr<nosh::mesh> mesh,
                const std::shared_ptr<Eigen::Vector3d> &b,
                const std::shared_ptr<Eigen::Vector3d> &u = nullptr
               );
 
-  virtual
-  ~constantCurl();
+  ~constantCurl() override;
 
-  virtual
   void
-  set_parameters(const std::map<std::string, double> & params);
+  set_parameters(const std::map<std::string, double> & params) override;
 
   //! get parameter names and initial values.
-  virtual
   const std::map<std::string, double>
-  get_scalar_parameters() const;
+  get_scalar_parameters() const override;
 
-  virtual
   double
-  get_edge_projection(const unsigned int edge_index) const;
+  get_edge_projection(const unsigned int edge_index) const override;
 
-  virtual
   double
   get_d_edge_projection_dp(
       const unsigned int edge_index,
-      const std::string & dParam
-      ) const;
+      const std::string & param_name
+      ) const override;
 
 protected:
 private:
